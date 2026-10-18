@@ -6,9 +6,9 @@ extends RefCounted
 const SLICE_TYPE_TEXT := {
 	RC.SliceType.SHIM: "SHIM: deals damage to whatever sits at each pointer of the target wheel.",
 	RC.SliceType.OVERFLOW: "OVERFLOW: deals high damage to whatever sits at each pointer of the target wheel.",
-	RC.SliceType.DEFRAG: "DEFRAG: gains block. Block expires at the start of your next turn.",
-	RC.SliceType.SANDBOX: "SANDBOX: gains shield. Shield persists across turns (cap 15).",
-	RC.SliceType.DETOUR: "DETOUR: cancels the next incoming SHIM or OVERFLOW this turn.",
+	RC.SliceType.DEFRAG: "BLOCK: gains block. Block is removed at the end of the turn.",
+	RC.SliceType.SANDBOX: "SHIELD: gains shield. Shield persists across turns (cap 15).",
+	RC.SliceType.DETOUR: "SANDBOX: 1 charge (2 on a Perfect). Each charge negates one incoming hit whole, Pierce too. Charges are removed at the end of the turn.",
 	RC.SliceType.TROJAN: "TROJAN: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
 	RC.SliceType.HOTFIX: "HOTFIX: restores HP.",
 	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Priority drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
@@ -150,6 +150,8 @@ static func describe_effect(e: EffectData) -> String:
 			return "nudge x%d%s" % [maxi(1, e.amount), " ignoring resistance" if e.multiplier == 0.0 else ""]
 		RC.EffectType.CUSTOM:
 			return "special"
+		RC.EffectType.EVADE:
+			return "SANDBOX +%d" % maxi(1, e.amount)
 		_:
 			if e.amount != 0:
 				return "%s %+d" % [name, e.amount]

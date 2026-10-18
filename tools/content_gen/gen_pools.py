@@ -110,7 +110,7 @@ FIRMWARE = [
     ("tracer", "Tracer", "SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.", 1, 120, [0, 1], 1.0, [(5, 2, 0, [(10, 3, -1)])]),
     ("coolant_loop", "Coolant Loop", "Once per combat, a Perfect on this slice lowers Heat by 1.", 2, 150, [], 1.0, [(5, 2, 1, [(21, 6, -1)])]),
     ("skimmer", "Skimmer", "SHIM slice: +3 Cycles on a Perfect (twice per combat).", 1, 120, [0], 1.0, [(5, 2, 2, [(22, 6, 3)])]),
-    ("counterstrike", "Counterstrike", "DETOUR slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
+    ("counterstrike", "Counterstrike", "SANDBOX slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
     ("nanite_mesh", "Nanite Mesh", "HOTFIX slice: output +50%, and it cleanses itself after resolving.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
     ("power_cell", "Power Cell", "SANDBOX slice also restores 1 RAM.", 1, 110, [4], 1.0, [(5, 0, 0, [(12, 0, 1)])]),
     ("recycler", "Recycler", "The NULL slice restores 2 RAM when it resolves.", 0, 90, [8], 1.0, [(5, 0, 0, [(12, 0, 2)])]),

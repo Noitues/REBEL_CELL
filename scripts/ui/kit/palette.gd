@@ -285,15 +285,15 @@ const SLICE_GLYPHS := {
 	RC.SliceType.NULL: "✕",
 }
 const SLICE_NAMES := {
-	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "DFRG", RC.SliceType.DETOUR: "DTOR", # TR
-	RC.SliceType.SANDBOX: "SBOX", RC.SliceType.TROJAN: "TRJN", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "BLCK", RC.SliceType.DETOUR: "SBOX", # TR
+	RC.SliceType.SANDBOX: "SHLD", RC.SliceType.TROJAN: "TRJN", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
 	RC.SliceType.NULL: "NULL", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
-	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "DEFRAG", RC.SliceType.DETOUR: "DETOUR", # TR
-	RC.SliceType.SANDBOX: "SANDBOX", RC.SliceType.TROJAN: "TROJAN", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "BLOCK", RC.SliceType.DETOUR: "SANDBOX", # TR
+	RC.SliceType.SANDBOX: "SHIELD", RC.SliceType.TROJAN: "TROJAN", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
 	RC.SliceType.NULL: "NULL", # TR
 }
 ## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names

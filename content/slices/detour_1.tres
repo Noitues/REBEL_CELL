@@ -8,7 +8,7 @@
 [resource]
 script = ExtResource("1")
 id = &"detour_1"
-display_name = "Detour"
+display_name = "Sandbox"
 slice_type = 3
 target_rule = 0
 base_output = 1

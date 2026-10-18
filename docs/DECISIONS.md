@@ -127,6 +127,11 @@ default as a placeholder behind config and says so in its report.
 - **Lifecycle (Q31):** BLOCK and charges are still cleared in `start_turn`, which END_TURN runs straight after the
   resolve: that is the end of the turn (nothing reads them in between; the resolve snapshot keeps them for the
   view). SHIELD persists (cap `shield_cap`). No `start_turn` change. Save format unchanged.
+- **Display names (R13, acceptance 1):** words DEFRAG -> **BLOCK**, SANDBOX-type -> **SHIELD**, DETOUR -> **SANDBOX**
+  (`Palette.SLICE_WORDS`; tags BLCK / SHLD / SBOX), slice display names (Block N, Shield 5 / 8, Sandbox / Sandbox 2),
+  Codex slice texts, firmware / enemy / card / hub descriptions; strings re-exported. Enum members, ids, files and
+  glyphs stay (the glyph follows the mechanic). This supersedes the 2026-10-05 names-pass ban on "SHIELD slices"
+  (`test_names_pass` PART3 now bans DEFRAG / DETOUR in player text).
 
 ### 2026-10-18 — Plan 2 W0 N4: enrage (R4; rulings Q33, Q16, Q29)
 - **Schema:** new `EnrageData` (`start_turn`, `every_n_turns`, `damage_pct_step` int percent, `resistance_step` int,

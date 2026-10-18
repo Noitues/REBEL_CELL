@@ -270,6 +270,7 @@ BANKED,BANKED
 BEST ICE,BEST ICE
 BIN,BIN
 BIN IT,BIN IT
+BLCK,BLCK
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
 BOSS,BOSS
@@ -426,7 +427,7 @@ CardData.deep_strip.description,Remove 4 resistance from the target.
 CardData.deep_strip.display_name,Deep Strip
 CardData.double_jam.description,"Nudge an enemy wheel ±1 twice, ignoring resistance."
 CardData.double_jam.display_name,Double Jam
-CardData.duck.description,Evade the next incoming attack this turn.
+CardData.duck.description,Gain 1 SANDBOX charge: negate the next incoming hit this turn.
 CardData.duck.display_name,Duck
 CardData.encrypt.description,ENCRYPT a chosen slice: it absorbs the next status.
 CardData.encrypt.display_name,Encrypt
@@ -637,12 +638,9 @@ DEFEAT,DEFEAT
 DEFENSE,DEFENSE
 "DEFENSE: the Armory's defense cards; with a raid pending, the raid setup.","DEFENSE: the Armory's defense cards; with a raid pending, the raid setup."
 DEFENSES,DEFENSES
-DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT
 DELETED,DELETED
-DETOUR,DETOUR
-DFRG,DFRG
 DISCARD,DISCARD
 DISPATCH,DISPATCH
 DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP
@@ -657,7 +655,6 @@ DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
 DRAW: cards come from your pile to your hand at once.,DRAW: cards come from your pile to your hand at once.
 DRONE ENDS HERE,DRONE ENDS HERE
-DTOR,DTOR
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
 DaemonData.adrenal_loop.display_name,Adrenal Loop
@@ -886,7 +883,7 @@ EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
 EnemyData.station_commander.description,"Two readers, heavy block and a flare."
 EnemyData.station_commander.display_name,Station Commander
-EnemyData.surveillance_mast.description,Hard to pin down: DETOUR slices and an orbiting read head.
+EnemyData.surveillance_mast.description,Hard to pin down: SANDBOX slices and an orbiting read head.
 EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
@@ -949,15 +946,15 @@ Files sit in %s  //  autosaved as you play,Files sit in %s  //  autosaved as you
 Finish,Finish
 Firmware,Firmware
 Firmware chip,Firmware chip
-FirmwareData.barbed_wire.description,DEFRAG slice also deals 2 damage to the pointer target.
+FirmwareData.barbed_wire.description,BLOCK slice also deals 2 damage to the pointer target.
 FirmwareData.barbed_wire.display_name,Barbed Wire
-FirmwareData.bulkhead.description,DEFRAG and SANDBOX slices: output +50%.
+FirmwareData.bulkhead.description,BLOCK and SHIELD slices: output +50%.
 FirmwareData.bulkhead.display_name,Bulkhead
 FirmwareData.burner.description,Permanently OVERCLOCKED (1.5x); each trigger adds 1 Heat.
 FirmwareData.burner.display_name,Burner
 FirmwareData.coolant_loop.description,"Once per combat, a Perfect on this slice lowers Heat by 1."
 FirmwareData.coolant_loop.display_name,Coolant Loop
-FirmwareData.counterstrike.description,DETOUR slice also deals 4 damage to the pointer target.
+FirmwareData.counterstrike.description,SANDBOX slice also deals 4 damage to the pointer target.
 FirmwareData.counterstrike.display_name,Counterstrike
 FirmwareData.hardened.description,Slice permanently ENCRYPTED.
 FirmwareData.hardened.display_name,Hardened
@@ -971,7 +968,7 @@ FirmwareData.overvolt.description,SHIM and OVERFLOW slices: output +25%.
 FirmwareData.overvolt.display_name,Overvolt
 FirmwareData.patch_plus.description,Slice output +50%.
 FirmwareData.patch_plus.display_name,Patch+
-FirmwareData.power_cell.description,SANDBOX slice also restores 1 RAM.
+FirmwareData.power_cell.description,SHIELD slice also restores 1 RAM.
 FirmwareData.power_cell.display_name,Power Cell
 FirmwareData.recycler.description,The NULL slice restores 2 RAM when it resolves.
 FirmwareData.recycler.display_name,Recycler
@@ -981,7 +978,7 @@ FirmwareData.siphon.description,SHIM slice heals you 2 on Good or better.
 FirmwareData.siphon.display_name,Siphon
 FirmwareData.skimmer.description,SHIM slice: +3 Cycles on a Perfect (twice per combat).
 FirmwareData.skimmer.display_name,Skimmer
-FirmwareData.static_coat.description,DEFRAG slice also grants 2 shield.
+FirmwareData.static_coat.description,BLOCK slice also grants 2 shield.
 FirmwareData.static_coat.display_name,Static Coat
 FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
@@ -1143,7 +1140,7 @@ HubCoreData.emergency_powers.description,Heals 4 and gains 4 block each turn unl
 HubCoreData.emergency_powers.display_name,Emergency Powers
 HubCoreData.ghost_core.description,"First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance."
 HubCoreData.ghost_core.display_name,Ghost Core
-HubCoreData.ghost_core_mk2.description,"First two nudges on enemy wheels each turn ignore resistance. Perfect: the slice resolves twice; on each resolution, strip 3 resistance and evade the next attack."
+HubCoreData.ghost_core_mk2.description,"First two nudges on enemy wheels each turn ignore resistance. Perfect: the slice resolves twice; on each resolution, strip 3 resistance and gain 1 SANDBOX charge."
 HubCoreData.ghost_core_mk2.display_name,Ghost Core Mk2
 HubCoreData.hive_core.description,"Up to 4 drones for this fight only. Perfect: the slice resolves again at half; on each resolution, dock a drone."
 HubCoreData.hive_core.display_name,Hive Core
@@ -1153,9 +1150,9 @@ HubCoreData.overclock_core.description,"+2 max RAM. Perfect: the slice resolves 
 HubCoreData.overclock_core.display_name,Overclock Core
 HubCoreData.overclock_core_mk2.description,"+3 max RAM. Perfect: the slice resolves again at half; on each resolution, gain 3 RAM."
 HubCoreData.overclock_core_mk2.display_name,Overclock Core Mk2
-HubCoreData.phantom_core.description,"A free nudge at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack."
+HubCoreData.phantom_core.description,"A free nudge at the start of each turn. Perfect: the slice resolves twice; on each resolution, gain 1 SANDBOX charge."
 HubCoreData.phantom_core.display_name,Phantom Core
-HubCoreData.phantom_core_mk2.description,"Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack."
+HubCoreData.phantom_core_mk2.description,"Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, gain 1 SANDBOX charge."
 HubCoreData.phantom_core_mk2.display_name,Phantom Core Mk2
 HubCoreData.rig_core.description,"+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge."
 HubCoreData.rig_core.display_name,Rig Core
@@ -2191,6 +2188,7 @@ SHARE CODES,SHARE CODES
 SHIELD,SHIELD
 SHIELD %d,SHIELD %d
 SHIM,SHIM
+SHLD,SHLD
 SHOP,SHOP
 SHOWING ALL LINKS,SHOWING ALL LINKS
 SHOWING ALL NODES,SHOWING ALL NODES
@@ -2423,15 +2421,15 @@ Sites,Sites
 Skip,Skip
 Skip tutorial,Skip tutorial
 SliceData.citation.display_name,Citation
-SliceData.defrag_12.display_name,Defrag 12
-SliceData.defrag_2.display_name,Defrag 2
-SliceData.defrag_3.display_name,Defrag 3
-SliceData.defrag_4.display_name,Defrag 4
-SliceData.defrag_5.display_name,Defrag 5
-SliceData.defrag_6.display_name,Defrag 6
-SliceData.defrag_8.display_name,Defrag 8
-SliceData.detour_1.display_name,Detour
-SliceData.detour_2.display_name,Detour 2
+SliceData.defrag_12.display_name,Block 12
+SliceData.defrag_2.display_name,Block 2
+SliceData.defrag_3.display_name,Block 3
+SliceData.defrag_4.display_name,Block 4
+SliceData.defrag_5.display_name,Block 5
+SliceData.defrag_6.display_name,Block 6
+SliceData.defrag_8.display_name,Block 8
+SliceData.detour_1.display_name,Sandbox
+SliceData.detour_2.display_name,Sandbox 2
 SliceData.dose.display_name,Dose
 SliceData.hotfix_4.display_name,Hotfix 4
 SliceData.hotfix_6.display_name,Hotfix 6
@@ -2443,8 +2441,8 @@ SliceData.overflow_15.display_name,Overflow 15
 SliceData.overflow_16.display_name,Overflow 16
 SliceData.overflow_24.display_name,Overflow 24
 SliceData.priority.display_name,Priority
-SliceData.sandbox_5.display_name,Sandbox 5
-SliceData.sandbox_8.display_name,Sandbox 8
+SliceData.sandbox_5.display_name,Shield 5
+SliceData.sandbox_8.display_name,Shield 8
 SliceData.shim_10.display_name,Shim 10
 SliceData.shim_12.display_name,Shim 12
 SliceData.shim_14.display_name,Shim 14
