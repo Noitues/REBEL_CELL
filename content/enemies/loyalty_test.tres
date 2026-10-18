@@ -52,3 +52,4 @@ corporation_id = &"rebel_cell"
 hp = 54
 wheel = SubResource("wheel")
 cycle_reward = 15
+normal_pool = 0

@@ -7,7 +7,7 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool()
 
 
 ## Plan 2 N14 (ruling Q39): the SANDBOX charge counts default 1 / 2, ship 1 / 2, and bad
@@ -66,6 +66,35 @@ func _n13_undock() -> int:
 
 ## Plan 2 N4: EnrageData defaults and save round trip; bad fields are refused by name; the
 ## config's per-class defaults (normal off); EnemyData.enrage on a normal is refused.
+## Plan 2 N22 (ruling Q12): RC.NormalPool (EASY 0, HARD 1, appended); EnemyData.normal_pool
+## defaults HARD and survives a save; EASY on an elite is refused by name; the config's
+## easy_normal_fights ships 2; RunState.normal_fights_started round-trips and reads -1 when absent.
+func _n22_normal_pool() -> int:
+	var fails := 0
+	print("N22 NormalPool (expect 0 1): ", RC.NormalPool.EASY, " ", RC.NormalPool.HARD)
+	if RC.NormalPool.EASY != 0 or RC.NormalPool.HARD != 1: fails += 1
+	var e := EnemyData.new(); e.id = &"smoke_pool"
+	print("N22 normal_pool default (expect HARD=1): ", e.normal_pool)
+	if e.normal_pool != RC.NormalPool.HARD: fails += 1
+	e.normal_pool = RC.NormalPool.EASY
+	var err := ResourceSaver.save(e, "user://smoke_pool.tres")
+	var back: EnemyData = load("user://smoke_pool.tres")
+	print("N22 normal_pool save=", err, " back ", back.normal_pool if back != null else -1)
+	if err != OK or back == null or back.normal_pool != RC.NormalPool.EASY: fails += 1
+	e.is_elite = true
+	if not ",".join(e.validate(CampaignConfigData.new())).contains("pool_on_non_normal"): fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N22 easy_normal_fights (expect 2): ", cfg.easy_normal_fights)
+	if cfg.easy_normal_fights != 2: fails += 1
+	var r := RunState.new(); r.normal_fights_started = 3
+	var d := r.to_dict()
+	var rb := RunState.from_dict(d)
+	d.erase("normal_fights_started")
+	print("N22 counter round trip (expect 3 -1): ", rb.normal_fights_started, " ", RunState.from_dict(d).normal_fights_started)
+	if rb.normal_fights_started != 3 or RunState.from_dict(d).normal_fights_started != -1: fails += 1
+	return fails
+
+
 ## Plan 2 N21 (rulings Q16, Q31): the config's per-class resistance ranges; a normal at 3 and
 ## a boss at 4 are refused by name; CombatantState.resistance_gain survives a save round trip.
 func _n21_resistance() -> int:

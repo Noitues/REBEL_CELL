@@ -43,3 +43,4 @@ corporation_id = &"halcyon"
 hp = 50
 wheel = SubResource("wheel")
 cycle_reward = 15
+normal_pool = 0

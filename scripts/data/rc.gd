@@ -113,6 +113,10 @@ enum CleanseScope { NONE, OWN, PLAYER, BOTH }
 const THRESHOLD_SCALE: int = 10000
 ## Enemy classes, the index of the per-class config tables (phase counts, R1).
 enum EnemyClass { NORMAL, ELITE, MINI_BOSS, BOSS }
+## Plan 2 N22 (ruling Q12): the pool a normal-fight enemy is drawn from. The first
+## CampaignConfigData.easy_normal_fights normal fights of a run draw EASY, later ones HARD.
+## Elites, mini-bosses and bosses carry the default (HARD) and ignore it. Append-only.
+enum NormalPool { EASY, HARD }
 
 # --- Campaign ---
 enum ThresholdKind { MINOR, MAJOR, PURGE }

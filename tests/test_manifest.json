@@ -1188,6 +1188,22 @@
 		"res://tests/unit/test_enrage_sweep.gd": {
 			"seconds": 0.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_normal_pools.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_normal_pools_save.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_normal_pools_content.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_normal_pools_run.gd": {
+			"seconds": 20.0,
+			"tier": "full"
 		}
 	}
 }

@@ -455,6 +455,7 @@ enrage_damage_pct_step_by_class = PackedInt32Array(0, 25, 25, 25)
 resistance_min_by_class = PackedInt32Array(1, 3, 3, 5)
 resistance_max_by_class = PackedInt32Array(2, 4, 4, 6)
 mirror_resistance = 3
+easy_normal_fights = 2
 map_layers = 7
 map_nodes_min = 2
 map_nodes_max = 4

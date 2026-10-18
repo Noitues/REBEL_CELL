@@ -129,6 +129,10 @@ extends Resource
 @export var resistance_max_by_class: PackedInt32Array = PackedInt32Array([2, 4, 4, 6])
 
 @export_group("Netrun")
+## Plan 2 N22 (ruling Q12): the first N normal fights of a run draw from the EASY normal pool
+## (EnemyData.normal_pool), later ones from HARD. An old save without the counter counts as
+## N once its current node lies past layer N, else 0 (NetrunSession.from_dict).
+@export var easy_normal_fights: int = 2
 @export var map_layers: int = 7
 @export var map_nodes_min: int = 2
 @export var map_nodes_max: int = 4
@@ -382,6 +386,8 @@ func validate() -> PackedStringArray:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
 	_validate_enrage(errors)
+	if easy_normal_fights < 0:
+		errors.append("easy_normal_fights must be >= 0.")
 	if resistance_min_by_class.size() != RC.EnemyClass.size() or resistance_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Resistance ranges need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

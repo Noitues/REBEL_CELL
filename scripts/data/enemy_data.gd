@@ -33,6 +33,9 @@ const HP_BAND_EPSILON := 0.0001
 ## N4 (plan 2 R4): an authored enrage that replaces the class default
 ## (CampaignConfigData.enrage_for). Normals may not have one.
 @export var enrage: EnrageData
+## Plan 2 N22 (ruling Q12): EASY or HARD normal-fight pool. Only normals may be EASY; the
+## default HARD is what every non-normal carries.
+@export var normal_pool: RC.NormalPool = RC.NormalPool.HARD
 
 
 ## N2: true when starting HP comes from hp_by_tier / hp_bands, not the legacy multiplier.
@@ -104,6 +107,8 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 			errors.append("normal_has_enrage: Enemy %s is a normal; normals have no enrage." % id)
 		for problem in enrage.validate():
 			errors.append("%s (enemy %s)" % [problem, id])
+	if normal_pool == RC.NormalPool.EASY and enemy_class() != RC.EnemyClass.NORMAL:
+		errors.append("pool_on_non_normal: Enemy %s is not a normal; only normals may be in the EASY pool." % id)
 	return errors
 
 

@@ -38,6 +38,10 @@ var event_id: StringName = &""
 ## "removal_price": int}.
 var shop: Dictionary = {}
 var combats_won: int = 0
+## Plan 2 N22 (ruling Q12): normal fights started this run from a Router (EASY pool while under
+## CampaignConfigData.easy_normal_fights). -1 only between loading a save that predates it and
+## NetrunSession.from_dict resolving it (the layer rule there).
+var normal_fights_started: int = 0
 ## Server Racks captured this run (the "racks" stat).
 var racks_captured: int = 0
 ## Launched as a patrol of an already cleared or claimed Site: completion changes nothing,
@@ -82,7 +86,7 @@ func _raw_dict() -> Dictionary:
 		"banked_schematics": banked_schematics, "banked_assets": _strings(banked_assets),
 		"unbanked_assets": _strings(unbanked_assets), "combat": combat.duplicate(true),
 		"pending_rewards": rewards, "event_id": String(event_id), "shop": shop.duplicate(true),
-		"combats_won": combats_won, "elites_defeated": elites_defeated, "racks_captured": racks_captured, "patrol": patrol,
+		"combats_won": combats_won, "normal_fights_started": normal_fights_started, "elites_defeated": elites_defeated, "racks_captured": racks_captured, "patrol": patrol,
 		"null_resolved": null_resolved, "card_removals": card_removals,
 		"heat_gained": heat_gained, "streams": streams.duplicate(true),
 		"temp_cards": _strings(temp_cards),
@@ -116,6 +120,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.event_id = StringName(String(d.get("event_id", "")))
 	r.shop = d.get("shop", {}).duplicate(true)
 	r.combats_won = int(d.get("combats_won", 0))
+	r.normal_fights_started = int(d.get("normal_fights_started", -1))
 	r.racks_captured = int(d.get("racks_captured", 0))
 	r.patrol = bool(d.get("patrol", false))
 	r.elites_defeated = int(d.get("elites_defeated", 0))
