@@ -1,0 +1,27 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "key_locations.json v1 (NA02_FIELDS.md section 5, rulings O7, O8)",
+ "version": 1,
+ "type": "object",
+ "required": ["version", "layout_seed", "locations"],
+ "additionalProperties": false,
+ "properties": {
+  "version": {"const": 1},
+  "layout_seed": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$"},
+  "locations": {
+   "type": "array",
+   "x-unique-by": "site",
+   "items": {
+    "type": "object",
+    "required": ["site", "corp", "bid", "exploit"],
+    "additionalProperties": false,
+    "properties": {
+     "site": {"type": "string"},
+     "corp": {"type": "string"},
+     "bid": {"type": "string", "pattern": "^(-?[0-9]+:-?[0-9]+|hq:[a-z0-9_]+)$"},
+     "exploit": {"enum": ["intel", "breach", "virus"]}
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "run_graph.json v1 (NA02_FIELDS.md section 4, rulings O5, O13)",
+ "version": 1,
+ "type": "object",
+ "required": ["version", "run", "layers", "nodes", "edges"],
+ "additionalProperties": false,
+ "properties": {
+  "version": {"const": 1},
+  "run": {"type": "string"},
+  "layers": {"type": "integer"},
+  "nodes": {
+   "type": "array",
+   "minItems": 1,
+   "x-unique-by": "id",
+   "items": {
+    "type": "object",
+    "required": ["id", "layer", "index", "type", "elite"],
+    "additionalProperties": false,
+    "properties": {
+     "id": {"type": "string", "pattern": "^L[0-9]+N[0-9]+$"},
+     "layer": {"type": "integer"},
+     "index": {"type": "integer"},
+     "type": {"enum": ["router", "terminal", "mainframe", "server_rack"]},
+     "elite": {"type": "boolean"}
+    }
+   }
+  },
+  "edges": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["a", "b"],
+    "additionalProperties": false,
+    "properties": {
+     "a": {"type": "string", "pattern": "^L[0-9]+N[0-9]+$"},
+     "b": {"type": "string", "pattern": "^L[0-9]+N[0-9]+$"}
+    }
+   }
+  }
+ }
+}

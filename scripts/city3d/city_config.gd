@@ -442,6 +442,9 @@ extends Resource
 ## The Site that stands in 5b's `<corp>_site.glb` per corporation (content id), until the
 ## designer names them (DECISIONS "ART-5 5e", open question).
 @export var site_landmarks: Dictionary = {&"solace": &"t1_c", &"halcyon": &"lose_the_case_file", &"orbital": &"o1_d"}
+## NA-02 ruling O7: a Site whose lot holds no building takes the nearest building within
+## this many lots (Chebyshev) in the netrun-art contract; past it the export fails.
+@export var art_site_bid_reach_lots: int = 4
 ## Roof props (the concept's AC units, water tanks, antennas, roof billboards; bible 4.1:
 ## from raid zoom): shown at and below this ortho.
 @export var roof_props_below: float = 420.0

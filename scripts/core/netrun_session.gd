@@ -72,6 +72,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s._compiler_rack_bonus()
 	s._maybe_raid_interlude()
 	s._sync()
+	NetrunArtExport.on_run_start(s)  # NA-02 tooling hook: observes only, empty in the game
 	return s
 
 
