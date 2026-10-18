@@ -98,6 +98,12 @@ extends Resource
 @export var corrupted_damage_per_major: int = 1
 @export var corrupted_ram_drain: int = 1
 @export var extra_nudge_ram_cost: int = 1
+## Phases per enemy class (plan 2 R1), counting the base phase, indexed by RC.EnemyClass
+## (normal, elite, mini-boss, boss): EnemyData.validate holds `phases.size() + 1` inside
+## [min, max]. The boss minimum is 3 until the boss design passes author 4-5 (R1 says 4; N3
+## adds no content phases: DECISIONS 2026-10-18 N3).
+@export var phase_count_min_by_class: PackedInt32Array = PackedInt32Array([1, 1, 2, 3])
+@export var phase_count_max_by_class: PackedInt32Array = PackedInt32Array([1, 2, 3, 5])
 
 @export_group("Netrun")
 @export var map_layers: int = 7
@@ -352,6 +358,12 @@ func validate() -> PackedStringArray:
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
+	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
+		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
+	else:
+		for k in RC.EnemyClass.size():
+			if phase_count_min_by_class[k] < 1 or phase_count_min_by_class[k] > phase_count_max_by_class[k]:
+				errors.append("Phase count range for class %d must be 1 <= min <= max." % k)
 	for r in [cycles_combat_range, cycles_elite_range, cycles_router_range, card_price_range,
 			firmware_price_range, daemon_price_range, netrun_boost_cost_range]:
 		if r.x > r.y:

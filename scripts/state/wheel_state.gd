@@ -105,6 +105,39 @@ func _mirrored_names(names: Array[StringName]) -> Array[StringName]:
 	return out
 
 
+## Plan 2 R6: the statuses of a layout change. Each old slot's status moves to the new slot
+## that covers the old slot's centre tick (nearest new centre, the circular way round; a tick
+## on a boundary goes to the lower new index). Two statuses landing on one slot merge: the
+## same status stays one (statuses carry no stacks before N8); different ones keep the first
+## in old slot order. Pure; returns `new_count` entries.
+static func remap_statuses(old_statuses: Array[int], old_count: int, new_count: int) -> Array[int]:
+	var out: Array[int] = []
+	for j in new_count:
+		out.append(RC.Status.NONE)
+	for i in mini(old_statuses.size(), old_count):
+		var st: int = old_statuses[i]
+		if st == RC.Status.NONE:
+			continue
+		var j := covering_slot(WheelMath.slice_center(i, old_count), new_count)
+		if out[j] == RC.Status.NONE:
+			out[j] = st
+	return out
+
+
+## The slot of a `count`-slice wheel whose centre is nearest `tick` (circular distance); a
+## tie (a boundary tick) goes to the lower index.
+static func covering_slot(tick: int, count: int) -> int:
+	var best := 0
+	var best_d := RC.TICKS + 1
+	for j in count:
+		var d := posmod(tick - WheelMath.slice_center(j, count), RC.TICKS)
+		d = mini(d, RC.TICKS - d)
+		if d < best_d:
+			best_d = d
+			best = j
+	return best
+
+
 func duplicate_state() -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = slice_count

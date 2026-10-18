@@ -7,7 +7,31 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases()
+
+
+## Plan 2 N3: BossPhaseData.cleanse_on_enter defaults NONE and survives a save; an unknown
+## scope and a threshold outside (0, 1) are refused; the config's per-class phase counts.
+func _n3_phases() -> int:
+	var fails := 0
+	var p := BossPhaseData.new()
+	print("N3 cleanse default (expect 0): ", p.cleanse_on_enter)
+	if p.cleanse_on_enter != RC.CleanseScope.NONE: fails += 1
+	p.hp_threshold_pct = 0.68
+	if p.threshold_bp() != 6800 or BossPhaseData.floor_of(100, p.threshold_bp()) != 68: fails += 1
+	p.cleanse_on_enter = RC.CleanseScope.BOTH
+	var err := ResourceSaver.save(p, "user://smoke_phase.tres")
+	var back: BossPhaseData = load("user://smoke_phase.tres")
+	print("N3 phase save=", err, " cleanse ", back.cleanse_on_enter if back != null else -1)
+	if err != OK or back == null or back.cleanse_on_enter != RC.CleanseScope.BOTH or not back.validate().is_empty(): fails += 1
+	p.set("cleanse_on_enter", 9)
+	p.hp_threshold_pct = 1.0
+	print("N3 bad phase errors (expect 2): ", p.validate())
+	if p.validate().size() != 2: fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N3 phase counts min ", cfg.phase_count_min_by_class, " max ", cfg.phase_count_max_by_class)
+	if cfg.phase_count_min_by_class.size() != RC.EnemyClass.size() or cfg.phase_count_max_by_class.size() != RC.EnemyClass.size(): fails += 1
+	return fails
 
 
 ## Plan 2 N1: EffectData / SliceData.amount_mode: FLAT by default; PERCENT out of 0..100 or on a

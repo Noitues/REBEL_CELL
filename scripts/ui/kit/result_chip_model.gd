@@ -29,8 +29,10 @@ const NULL_LAND := &"null_land"
 const LETHAL := &"lethal"
 ## A random roll (a random card, a respin): the odds are in the tooltip, never the roll (GDD 2.10).
 const ODDS := &"odds"
+## Plan 2 R3: what a phase floor stopped of this wheel's losses ("PARKED −N").
+const PARKED := &"parked"
 ## The order the chips stand in (D15).
-const ORDER: Array[StringName] = [LETHAL, HP_LINE, DAMAGE, ABSORBED, GAINED, HEALED, EVADE, RAM, HEAT, HP_OTHER, SPIN, NULL_LAND, STATUS, CLEARS, ODDS]
+const ORDER: Array[StringName] = [LETHAL, HP_LINE, DAMAGE, PARKED, ABSORBED, GAINED, HEALED, EVADE, RAM, HEAT, HP_OTHER, SPIN, NULL_LAND, STATUS, CLEARS, ODDS]
 
 
 ## The chips for combatant `id` between `before` and `after` (the state the resolve leaves),
@@ -60,6 +62,9 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 			"good": (hp_after >= b.hp) if b.is_player else (hp_after <= b.hp), "lethal": false})  # green = good for the operative
 	if dmg > 0 or lethal:
 		out.append({"kind": DAMAGE, "value": dmg, "icon": "", "good": false, "lethal": lethal,
+			"beats": ForecastTicks.filter(["damage", "corrupted"], &"", id, true)})
+	if int(sums["parked"]) > 0:
+		out.append({"kind": PARKED, "value": int(sums["parked"]), "icon": "", "good": false,
 			"beats": ForecastTicks.filter(["damage", "corrupted"], &"", id, true)})
 	if int(sums["absorbed"]) > 0:
 		out.append({"kind": ABSORBED, "value": int(sums["absorbed"]), "icon": "shield", "good": true,
@@ -122,7 +127,7 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 ## absorbed (what block and shield soak of its hits), gained (block and shield it gains),
 ## healed, evade (charges gained), ram_lost (RAM spent or drained, on the operative)}.
 static func sums_for(events: Array[Dictionary], id: StringName, is_player: bool) -> Dictionary:
-	var s := {"damage": 0, "absorbed": 0, "gained": 0, "healed": 0, "evade": 0, "ram_lost": 0}
+	var s := {"damage": 0, "absorbed": 0, "gained": 0, "healed": 0, "evade": 0, "ram_lost": 0, "parked": 0}
 	for e in events:
 		var t := String(e.get("type", ""))
 		var on_me := StringName(String(e.get("target", ""))) == id
@@ -131,9 +136,11 @@ static func sums_for(events: Array[Dictionary], id: StringName, is_player: bool)
 				if on_me:
 					s["damage"] = int(s["damage"]) + int(e.get("hp_damage", 0))
 					s["absorbed"] = int(s["absorbed"]) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
+					s["parked"] = int(s["parked"]) + int(e.get("parked", 0))
 			"corrupted":
 				if on_me:
 					s["damage"] = int(s["damage"]) + int(e.get("amount", 0))
+					s["parked"] = int(s["parked"]) + int(e.get("parked", 0))
 			"heal":
 				if on_me:
 					s["healed"] = int(s["healed"]) + int(e.get("amount", 0))
@@ -195,6 +202,8 @@ static func label(c: Dictionary) -> String:
 			return "×%s" % Palette.STATUS_GLYPHS.get(int(c["status"]), "?")
 		ODDS:
 			return "?"
+		PARKED:
+			return String(TranslationServer.translate("PARKED −%d")) % v
 		HP_LINE:
 			return "%d→%d" % [int(c["before"]), int(c["after"])]
 		SPIN:
@@ -236,6 +245,8 @@ static func words(c: Dictionary) -> String:
 			return String(TranslationServer.translate("CLEARS %s")) % String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(c["status"]), ""))))
 		ODDS:
 			return String(TranslationServer.translate("A random roll: the odds are in the breakdown"))
+		PARKED:
+			return String(TranslationServer.translate("%d damage parked at the phase line: it is lost, and the next phase starts after this turn")) % v
 		HP_LINE:
 			if int(c["after"]) <= 0:
 				return String(TranslationServer.translate("HP %d → 0: the hit takes the last HP")) % int(c["before"])

@@ -63,7 +63,13 @@ func test_phase_2_at_33_percent_orbits_and_spawns_two_drones() -> void:
 	b.hp = 100  # below 33% of 360
 	CombatFixture.land(b, 5)
 	var r := s.apply(CombatAction.end_turn())
-	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 2, "both phases entered at once")
+	# Plan 2 N3 (R3): one phase per resolve; the second starts at the next resolve.
+	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 1, "one phase per resolve")
+	assert_eq(_boss(s).phase_index, 1)
+	CombatFixture.land(_boss(s), 5)
+	CombatFixture.land(s.state.player, 5)
+	r = s.apply(CombatAction.end_turn())
+	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 1)
 	assert_eq(_boss(s).phase_index, 2)
 	assert_eq(_boss(s).wheel.pointer_orbit, 3)
 	assert_eq(s.state.satellites_of(&"enemy_0").size(), 2)

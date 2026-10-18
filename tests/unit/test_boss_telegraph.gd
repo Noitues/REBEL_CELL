@@ -10,14 +10,24 @@ func before_all() -> void:
 	_resolver = CombatFixture.resolver()
 
 
+## Plan 2 N3 (R3): one phase per resolve. Runs the resolve that enters the first phase.
+func _enter_first_phase(s: CombatSession) -> void:
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
+	CombatFixture.land(s.state.player, 5)
+	s.apply(CombatAction.end_turn())
+	assert_eq(s.state.get_combatant(&"enemy_0").phase_index, 1, "first phase entered")
+
+
 func test_account_manager_migrate_is_telegraphed_then_applied_next_turn() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"account_manager"], 5, &"rank:1")
 	var b := s.state.get_combatant(&"enemy_0")
-	b.hp = 20  # below 25% of 120: both phases fire
+	b.hp = 20  # below 25% of 120: both phases fire, one per resolve (plan 2 N3, R3)
+	_enter_first_phase(s)
+	b = s.state.get_combatant(&"enemy_0")
 	CombatFixture.land(b, 5)
 	CombatFixture.land(s.state.player, 5)
 	var r := s.apply(CombatAction.end_turn())
-	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 2)
+	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 1)
 	assert_eq(CombatFixture.events_of(r, "boss_migrate_telegraph").size(), 1)
 	# The telegraph fires in RESOLVE; the next START_TURN in the same apply() moves them.
 	b = s.state.get_combatant(&"enemy_0")
@@ -27,6 +37,8 @@ func test_account_manager_migrate_is_telegraphed_then_applied_next_turn() -> voi
 	var s2 := CombatSession.start(_resolver, &"breaker", [&"account_manager"], 5, &"rank:1")
 	var b2 := s2.state.get_combatant(&"enemy_0")
 	b2.hp = 20
+	_enter_first_phase(s2)
+	b2 = s2.state.get_combatant(&"enemy_0")
 	CombatFixture.land(b2, 5)
 	CombatFixture.land(s2.state.player, 5)
 	var p := s2.preview_end_turn()
@@ -38,6 +50,8 @@ func test_renewal_engine_orbit_phase_reconfigures_the_wheel() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"renewal_engine"], 5, &"rank:1")
 	var b := s.state.get_combatant(&"enemy_0")
 	b.hp = 90
+	_enter_first_phase(s)
+	b = s.state.get_combatant(&"enemy_0")
 	CombatFixture.land(b, 5)
 	CombatFixture.land(s.state.player, 5)
 	var r := s.apply(CombatAction.end_turn())

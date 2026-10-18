@@ -1028,6 +1028,34 @@
 		"res://tests/integration/test_tier_tables_flow.gd": {
 			"seconds": 4.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_phase_validation.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_phase_parking.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_phase_transition.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_phase_status_keep.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_phase_determinism.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_phase_combat_flow.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_phase_sweep.gd": {
+			"seconds": 0.0,
+			"tier": "full"
 		}
 	}
 }

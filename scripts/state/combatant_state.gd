@@ -36,10 +36,19 @@ var output_scale: float = 1.0
 var hp_scale: float = 1.0
 ## Bosses: how many BossPhaseData entries have been entered (GDD 2.11).
 var phase_index: int = 0
+## Plan 2 R3: the threshold of the next phase in basis points (RC.THRESHOLD_SCALE), 0 when
+## there is none (normals, satellites, the last phase). Damage parks at hp_floor().
+var next_threshold_bp: int = 0
 
 
 func is_alive() -> bool:
 	return hp > 0
+
+
+## The HP this combatant cannot drop below while its phase lasts (R3): ceil(max HP x the
+## next threshold); 0 without a next phase.
+func hp_floor() -> int:
+	return BossPhaseData.floor_of(max_hp, next_threshold_bp)
 
 
 func is_hub_breached() -> bool:
@@ -76,10 +85,20 @@ func duplicate_state() -> CombatantState:
 	c.output_scale = output_scale
 	c.hp_scale = hp_scale
 	c.phase_index = phase_index
+	c.next_threshold_bp = next_threshold_bp
 	return c
 
 
 func to_dict() -> Dictionary:
+	var d := _base_dict()
+	# Only combatants with a next phase carry it, so fights without phases save (and hash)
+	# exactly as before N3.
+	if next_threshold_bp != 0:
+		d["next_threshold_bp"] = next_threshold_bp
+	return d
+
+
+func _base_dict() -> Dictionary:
 	return {
 		"id": String(id),
 		"source_id": String(source_id),
@@ -126,4 +145,5 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	c.output_scale = float(d.get("output_scale", 1.0))
 	c.hp_scale = float(d.get("hp_scale", 1.0))
 	c.phase_index = int(d.get("phase_index", 0))
+	c.next_threshold_bp = int(d.get("next_threshold_bp", 0))
 	return c

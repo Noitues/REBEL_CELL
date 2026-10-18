@@ -132,7 +132,14 @@ func validate() -> PackedStringArray:
 		if not res.has_method("validate"):
 			continue
 		# StoryPathData.validate() needs the breach minimum; the others default it.
-		var problems: Variant = res.validate(min_exploits) if res is StoryPathData else res.validate()
+		# EnemyData.validate() reads the per-class phase counts (plan 2 N3).
+		var problems: Variant
+		if res is StoryPathData:
+			problems = res.validate(min_exploits)
+		elif res is EnemyData:
+			problems = res.validate(config)
+		else:
+			problems = res.validate()
 		for p in problems:
 			errors.append("%s: %s" % [_describe(res), String(p)])
 	return errors

@@ -8,7 +8,7 @@ extends RefCounted
 ## Combatant id -> Dictionary with the before/after values the HUD can show:
 ## hp, max_hp, block, shield, evade, resistance, breached, alive, statuses
 ## (Array of {slot, before, after}), rotation, inner_rotation, dealt (damage this
-## combatant's pointers dealt, summed).
+## combatant's pointers dealt, summed), parked (losses a phase floor stopped, R3).
 var combatants: Dictionary = {}
 var ram_delta: int = 0
 var cards_drawn: int = 0
@@ -58,7 +58,10 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 						o.cycles += amount
 					RC.EffectType.GAIN_SCHEMATICS:
 						o.schematics += amount
+			"corrupted":
+				_add_parked(o, e)
 			"damage":
+				_add_parked(o, e)
 				# Every hit that lands (one per pointer of the target; evaded attacks deal
 				# none), before block and shield soak it.
 				var src := StringName(String(e.get("attacker", "")))
@@ -75,6 +78,13 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 	return o
 
 
+## Plan 2 R3: what a phase floor stopped of the losses on the event's target ("PARKED −N").
+static func _add_parked(o: CombatOutcome, e: Dictionary) -> void:
+	var victim := StringName(String(e.get("target", "")))
+	if o.combatants.has(victim):
+		o.combatants[victim]["parked"] = int(o.combatants[victim]["parked"]) + int(e.get("parked", 0))
+
+
 static func _all(s: CombatState) -> Array[CombatantState]:
 	var out: Array[CombatantState] = [s.player]
 	out.append_array(s.enemies)
@@ -83,7 +93,7 @@ static func _all(s: CombatState) -> Array[CombatantState]:
 
 
 static func _diff(b: CombatantState, a: CombatantState) -> Dictionary:
-	var d := {"dealt": 0, "dealt_to": {}, "soaked": 0}
+	var d := {"dealt": 0, "dealt_to": {}, "soaked": 0, "parked": 0}
 	var src := a if a != null else b
 	d["name"] = src.display_name
 	d["is_satellite"] = src.is_satellite

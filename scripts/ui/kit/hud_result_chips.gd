@@ -342,7 +342,7 @@ static func chip_color(c: Dictionary) -> Color:
 			return HudSkin.CHIP_ABSORBED
 		ResultChipModel.GAINED, ResultChipModel.HEALED, ResultChipModel.EVADE:
 			return HudSkin.CHIP_GAIN
-		ResultChipModel.ODDS, ResultChipModel.SPIN, ResultChipModel.NULL_LAND:
+		ResultChipModel.ODDS, ResultChipModel.SPIN, ResultChipModel.NULL_LAND, ResultChipModel.PARKED:
 			return HudSkin.CHIP_OTHER
 		ResultChipModel.LETHAL:
 			return HudSkin.CHIP_DAMAGE
