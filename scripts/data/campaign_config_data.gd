@@ -104,6 +104,12 @@ extends Resource
 ## adds no content phases: DECISIONS 2026-10-18 N3).
 @export var phase_count_min_by_class: PackedInt32Array = PackedInt32Array([1, 1, 2, 3])
 @export var phase_count_max_by_class: PackedInt32Array = PackedInt32Array([1, 2, 3, 5])
+## N11 (GDD 2.1, Q27): the most pointers a wheel or phase layout may author (validate:
+## too_many_pointers). Pointers sit on any tick 0-29, at least 1 tick apart.
+@export var max_pointers: int = 4
+## N11: where an ICE BOSS_EXTRA_POINTER pointer goes, in ticks after pointer 0, tried in
+## order; the first tick no pointer holds wins (the legacy evenly spaced 15 / 10 / ...).
+@export var boss_extra_pointer_offsets: PackedInt32Array = PackedInt32Array([15, 10, 20, 5, 25])
 ## N4 (plan 2 R4, ruling Q33): class enrage defaults, indexed by RC.EnemyClass (normal,
 ## elite, mini-boss, boss). A start turn of 0 means no enrage (normals). An EnemyData's
 ## authored `enrage` wins over these (enrage_for). Steps are additive; defaults add no

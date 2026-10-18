@@ -131,6 +131,24 @@ default as a placeholder behind config and says so in its report.
   `CombatResolver.enrage_buff_state`.
 - **Pressure:** no Pressure code path existed on main; nothing removed.
 
+### 2026-10-18 — Plan 2 W0 N11: pointers on any tick (GDD 2.1 amendment, R10; ruling Q27)
+- **Rule:** a pointer sits on any tick 0-29 and reads `(rotation + tick) mod 30`; pointers are at least 1 tick apart
+  (adjacent needles valid; two on one tick invalid). Every needle resolves on its own and shows on the preview.
+  Phase MULTIPLY / MIGRATE / ORBIT layouts take any tick. Pointer ticks already lived in data
+  (`WheelData.pointer_ticks`, `BossPhaseData.pointer_ticks`); no schema field was added on those.
+- **Config (schema):** `CampaignConfigData.max_pointers` (4) and `boss_extra_pointer_offsets` (15, 10, 20, 5, 25)
+  replace the code constant `CombatResolver.EXTRA_POINTER_OFFSETS` (ICE BOSS_EXTRA_POINTER placement, unchanged:
+  golden test over every shipped enemy layout, 0 diffs). Smoke check `_n11_pointer_ticks`.
+- **Validate:** `WheelData.pointer_errors` (used by WheelData and BossPhaseData) names `pointer_tick_out_of_range` and
+  `pointer_ticks_duplicate`; `EnemyData.validate` names `too_many_pointers` for the base wheel, each phase layout and
+  each phase wheel override over the config cap.
+- **One path:** `CombatResolver.phase_layout` is now an instance method (reads the config) and the only placement path
+  for resolve, preview and Intel's phase reveal. `WheelState.orbit_ticks_after(n)` is the orbit rule (`orbit_pointers`
+  applies it one turn at a time); placement draws no RNG.
+- **View:** needle tags (`WheelView._pointer_tag_rects`) never overlap an earlier needle's tag (6 px apart at 1.0),
+  stacking when no spot is free; with several needles a thin leader ties each tag to its own blade tip.
+- **Not changed:** save format (pointer_ticks was already saved per wheel; SAVE_VERSION unchanged).
+
 ### 2026-10-18 — Plan 2 W0 N13: fixed satellites, replacement, Undock keyword (rulings Q7, Q10)
 - **Schema:** `EffectData.undock` (bool, default false) is the global **Undock keyword**: only an effect carrying it may
   move a satellite or drone (its slice or its mini-wheel). The shipped Undock card's effect sets it. `RC.Trigger`

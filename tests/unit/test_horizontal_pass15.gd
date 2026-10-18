@@ -100,7 +100,7 @@ func test_intel_shows_the_layout_the_boss_will_use() -> void:
 	var s := CombatSession.start(CombatFixture.resolver(), &"breaker", [&"renewal_engine"], 7, &"", 0, {"remove_boss_pointers": 1})
 	s.state.flags["boss_pointer_removal"] = 1
 	var data := ContentRegistry.get_content(&"renewal_engine") as EnemyData
-	assert_eq(CombatResolver.phase_layout(s.state, data, PackedInt32Array([0, 15])).size(), 1, "Breach removes one reader from the 66% layout")
+	assert_eq(CombatFixture.resolver().phase_layout(s.state, data, PackedInt32Array([0, 15])).size(), 1, "Breach removes one reader from the 66% layout")
 
 
 func test_a_flip_cannot_refresh_firmware_limits() -> void:

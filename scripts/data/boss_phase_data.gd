@@ -38,9 +38,7 @@ func validate() -> PackedStringArray:
 		errors.append("threshold_range: phase threshold %s must be inside (0, 1)." % hp_threshold_pct)
 	if int(cleanse_on_enter) < 0 or int(cleanse_on_enter) >= RC.CleanseScope.size():
 		errors.append("cleanse_mode: cleanse_on_enter %d is not a CleanseScope." % int(cleanse_on_enter))
-	for t in pointer_ticks:
-		if t < 0 or t >= RC.TICKS:
-			errors.append("Phase pointer tick %d outside 0-%d." % [t, RC.TICKS - 1])
+	errors.append_array(WheelData.pointer_errors(pointer_ticks))
 	if pointer_behavior == RC.PointerBehavior.ORBIT and orbit_ticks_per_turn == 0:
 		errors.append("ORBIT phase needs orbit_ticks_per_turn.")
 	if pointer_behavior in [RC.PointerBehavior.MULTIPLY, RC.PointerBehavior.MIGRATE] and pointer_ticks.is_empty():

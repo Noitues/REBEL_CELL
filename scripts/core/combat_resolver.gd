@@ -17,9 +17,6 @@ var quiet: bool = false:
 const DEFENSIVE_TYPES := [RC.SliceType.DEFRAG, RC.SliceType.SANDBOX, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]
 const OFFENSIVE_TYPES := [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.TROJAN]
 const STATUS_TYPES := [RC.SliceType.INFECT]
-## Where an extra boss pointer goes (ICE 18 BOSS_EXTRA_POINTER): offsets from pointer 0
-## tried in order, the first free one wins (evenly spaced, GDD 2.1).
-const EXTRA_POINTER_OFFSETS := [15, 10, 20, 5, 25]
 ## validate_action's refusal (code SATELLITE_FIXED) when a player action would move a
 ## satellite or drone without the Undock keyword (designer 2026-10-18, Q7/Q10).
 const SATELLITE_FIXED := "Satellites are fixed to their slice: only Undock moves them."
@@ -151,19 +148,21 @@ static func _trimmed(ticks: PackedInt32Array, removal: int) -> PackedInt32Array:
 	return ticks.slice(0, maxi(1, ticks.size() - removal))
 
 
-## ICE BOSS_EXTRA_POINTER: `count` more pointers, evenly spaced from pointer 0.
-static func _add_pointers(e: CombatantState, count: int) -> void:
-	e.wheel.pointer_ticks = _with_extra(e.wheel.pointer_ticks, count)
+## ICE BOSS_EXTRA_POINTER: `count` more pointers, placed by the config offsets.
+func _add_pointers(e: CombatantState, count: int) -> void:
+	e.wheel.pointer_ticks = with_extra_pointers(e.wheel.pointer_ticks, count, config.boss_extra_pointer_offsets)
 
 
-## `ticks` plus `count` more pointers, evenly spaced from pointer 0.
-static func _with_extra(ticks: PackedInt32Array, count: int) -> PackedInt32Array:
+## N11 (GDD 2.1, Q27): `ticks` plus `count` more pointers. Each goes on the first of
+## `offsets` (ticks after pointer 0; any tick 0-29) that no pointer holds yet, so two
+## pointers never share a tick. Draws no RNG.
+static func with_extra_pointers(ticks: PackedInt32Array, count: int, offsets: PackedInt32Array) -> PackedInt32Array:
 	var out := ticks.duplicate()
 	if out.is_empty():
 		return out
 	for i in count:
-		for offset in EXTRA_POINTER_OFFSETS:
-			var tick := posmod(out[0] + int(offset), RC.TICKS)
+		for offset in offsets:
+			var tick := posmod(out[0] + offset, RC.TICKS)
 			if not out.has(tick):
 				out.append(tick)
 				break
@@ -171,14 +170,11 @@ static func _with_extra(ticks: PackedInt32Array, count: int) -> PackedInt32Array
 
 
 ## A phase's pointer layout with the ICE extra pointer (bosses) and the Breach removal.
-## Also what Intel's phase reveal shows.
-static func phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
-	return _phase_layout(s, data, ticks)
-
-
-static func _phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
+## Also what Intel's phase reveal shows. The single placement path: preview and resolve
+## both enter phases through `_check_boss_phases`, which calls this.
+func phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
 	var extra := int(s.flags.get("boss_extra_pointer", 0)) if data.is_boss else 0
-	return _trimmed(_with_extra(ticks, extra), int(s.flags.get("boss_pointer_removal", 0)))
+	return _trimmed(with_extra_pointers(ticks, extra, config.boss_extra_pointer_offsets), int(s.flags.get("boss_pointer_removal", 0)))
 
 
 ## N2 (R2): an enemy with hp_by_tier / hp_bands starts at the authored HP, not the legacy
@@ -1038,17 +1034,17 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 		e.next_threshold_bp = upcoming.threshold_bp() if upcoming != null else 0
 		match phase.pointer_behavior:
 			RC.PointerBehavior.MULTIPLY:
-				e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+				e.wheel.pointer_ticks = phase_layout(s, data, phase.pointer_ticks)
 				e.wheel.pointer_orbit = 0  # a new fixed layout locks on (H16)
 			RC.PointerBehavior.MIGRATE:
-				e.wheel.pending_pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+				e.wheel.pending_pointer_ticks = phase_layout(s, data, phase.pointer_ticks)
 				e.wheel.pointer_orbit = 0
 				events.append({"type": "boss_migrate_telegraph", "target": e.id, "ticks": Array(e.wheel.pending_pointer_ticks),
 					"text": "%s's pointers flicker: next turn they migrate to %s." % [e.display_name, str(Array(e.wheel.pending_pointer_ticks))]})
 			RC.PointerBehavior.ORBIT:
 				# A phase that lists pointers sets them before they start orbiting.
 				if not phase.pointer_ticks.is_empty():
-					e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+					e.wheel.pointer_ticks = phase_layout(s, data, phase.pointer_ticks)
 				e.wheel.pointer_orbit = phase.orbit_ticks_per_turn
 		if phase.wheel_override != null:
 			_apply_wheel_override(e, phase.wheel_override, events, int(s.flags.get("enemy_resistance", 0)))

@@ -159,10 +159,16 @@ func duplicate_state() -> WheelState:
 
 ## Moves every pointer by the orbit amount (start of turn).
 func orbit_pointers() -> void:
-	if pointer_orbit == 0:
-		return
-	for i in pointer_ticks.size():
-		pointer_ticks[i] = posmod(pointer_ticks[i] + pointer_orbit, RC.TICKS)
+	pointer_ticks = orbit_ticks_after(1)
+
+
+## N11: where the pointers stand after `turns` more orbits (any tick 0-29, mod 30); the
+## orbit trail the wheel shows, and what `orbit_pointers` applies one turn at a time.
+func orbit_ticks_after(turns: int) -> PackedInt32Array:
+	var out := pointer_ticks.duplicate()
+	for i in out.size():
+		out[i] = posmod(out[i] + pointer_orbit * turns, RC.TICKS)
+	return out
 
 
 ## Applies a telegraphed MIGRATE layout. Returns true when the pointers moved.

@@ -2182,6 +2182,10 @@ const POINTER_TAG_PAD := 6.0
 const POINTER_TAG_GAP := 4.0
 ## Half the blade's width (master units): the tag stands this far off the needle's line.
 const POINTER_TAG_BLADE := 30.0
+## N11: the least room (px at text 1.0) between two needles' tags.
+const POINTER_TAG_SEPARATION := 6.0
+## N11: the width (px at text 1.0) of the leader from a tag to its needle when a wheel has several.
+const POINTER_TAG_LEADER := 1.5
 
 
 ## The tags the needles wear: the forecast's while one is shown, else what each needle reads now.
@@ -2193,29 +2197,77 @@ func pointer_tag_model() -> Array[Dictionary]:
 
 ## Needle `i`'s tag (local rect) on the view: above its blade, clear of a boss's banner, inside the view.
 func pointer_tag_rect(i: int) -> Rect2:
+	var rects := _pointer_tag_rects()
+	return rects[i] if i >= 0 and i < rects.size() else Rect2()
+
+
+## Every needle's tag (local rects, needle order). N11 (Q27: needles may stand 1 tick apart and
+## each shows): a tag never overlaps an earlier needle's, and keeps POINTER_TAG_SEPARATION
+## between them; when no candidate spot is free it stacks under (or over) the tags it meets.
+func _pointer_tag_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
 	var model := pointer_tag_model()
 	var ps := shown_pointers()
-	if combatant == null or kit == null or i < 0 or i >= model.size() or i >= ps.size():
-		return Rect2()
+	if combatant == null or kit == null:
+		return out
 	var f := Palette.marker()
 	var fs := _fs(POINTER_TAG_FONT)
 	var ts := _ts()
-	var text := PointerTag.text(model[i])
-	var sz := Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + POINTER_TAG_PAD * 2.0 * ts, fs + 6.0 * ts)
-	var deg := fposmod(-ps[i] * DEG_PER_TICK, 360.0)
-	var dir := Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg)))
+	var sep := POINTER_TAG_SEPARATION * ts
 	# Beside the blade at the level of its tip (clear of the nudge buttons above and a boss's banner over it).
 	var reach := (frame_master() + WheelFace.BLADE_TOP) * art_scale()
-	# Candidates: right of the blade, left of it, then centred over it; the first that covers no nudge
-	# button or key hint wins (else the first).
-	var first := Rect2()
-	for cand in 3:
-		var r := _tag_candidate(dir, reach, sz, cand)
-		if cand == 0:
-			first = r
-		if not _tag_meets_controls(r):
-			return r
-	return first
+	for i in mini(model.size(), ps.size()):
+		var text := PointerTag.text(model[i])
+		var sz := Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + POINTER_TAG_PAD * 2.0 * ts, fs + 6.0 * ts)
+		var deg := fposmod(-ps[i] * DEG_PER_TICK, 360.0)
+		var dir := Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg)))
+		# Candidates: right of the blade, left of it, then centred over it; the first that covers no
+		# nudge button, key hint or earlier tag wins; else the first clear of earlier tags; else the
+		# first, stacked clear of them.
+		var first := Rect2()
+		var free := Rect2()
+		var chosen := Rect2()
+		for cand in 3:
+			var r := _tag_candidate(dir, reach, sz, cand)
+			if cand == 0:
+				first = r
+			if _tag_meets_tags(r, out, sep):
+				continue
+			if not free.has_area():
+				free = r
+			if not _tag_meets_controls(r):
+				chosen = r
+				break
+		if not chosen.has_area():
+			chosen = free if free.has_area() else _tag_stacked(first, out, sep)
+		out.append(chosen)
+	return out
+
+
+## True when `r` comes closer than `sep` to any rect of `placed`.
+func _tag_meets_tags(r: Rect2, placed: Array[Rect2], sep: float) -> bool:
+	for p in placed:
+		if r.intersects(p.grow(sep)):
+			return true
+	return false
+
+
+## `r` moved down (then up) past the placed tags it meets, `sep` apart, inside the view.
+func _tag_stacked(r: Rect2, placed: Array[Rect2], sep: float) -> Rect2:
+	for down in [true, false]:
+		var s := r
+		for _guard in placed.size() + 1:
+			var hit := -1
+			for j in placed.size():
+				if s.intersects(placed[j].grow(sep)):
+					hit = j
+					break
+			if hit < 0:
+				return s
+			s.position.y = placed[hit].end.y + sep if down else placed[hit].position.y - sep - s.size.y
+			if s.position.y < 0.0 or s.end.y > size.y:
+				break
+	return r
 
 
 ## Candidate `cand` (0 right of the blade, 1 left of it, 2 centred over its tip) for a tag of size `sz` (local).
@@ -2263,11 +2315,20 @@ func _draw_pointer_tags() -> void:
 	var model := pointer_tag_model()
 	var f := Palette.marker()
 	var fs := _fs(POINTER_TAG_FONT)
-	for i in model.size():
-		var r := pointer_tag_rect(i)
+	var rects := _pointer_tag_rects()
+	var ps := shown_pointers()
+	var reach := (frame_master() + WheelFace.BLADE_TOP) * art_scale()
+	for i in mini(model.size(), rects.size()):
+		var r := rects[i]
 		if not r.has_area():
 			continue
 		var tint := PointerTag.tint(model[i])
+		if ps.size() > 1:
+			# N11: with several needles (they may stand 1 tick apart) a leader ties each tag to its own blade tip.
+			var deg := deg_to_rad(fposmod(-ps[i] * DEG_PER_TICK, 360.0))
+			var tip := _center() + Vector2(sin(deg), -cos(deg)) * reach
+			var edge := Vector2(clampf(tip.x, r.position.x, r.end.x), clampf(tip.y, r.position.y, r.end.y))
+			draw_line(edge, tip, _col(tint), POINTER_TAG_LEADER * _ts())
 		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), _col(Palette.SHADOW))
 		draw_rect(r, _col(Palette.INK))
 		draw_rect(r, _col(tint), false, 2.0)

@@ -93,6 +93,7 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 	else:
 		errors.append_array(wheel.validate())
 	errors.append_array(_validate_phases(config if config != null else CampaignConfigData.new()))
+	errors.append_array(_validate_pointer_cap(config if config != null else CampaignConfigData.new()))
 	var band_config := config
 	if band_config == null and (not hp_by_tier.is_empty() or not hp_bands.is_empty()) and ResourceLoader.exists(CONFIG_PATH):
 		band_config = load(CONFIG_PATH) as CampaignConfigData
@@ -125,6 +126,25 @@ func _validate_phases(config: CampaignConfigData) -> PackedStringArray:
 		last = p.hp_threshold_pct
 		for problem in p.validate():
 			errors.append("%s (enemy %s)" % [problem, id])
+	return errors
+
+
+## N11: the pointer cap (config.max_pointers) on the base wheel, every phase layout and
+## every phase wheel override; range and duplicates are checked by WheelData /
+## BossPhaseData.validate. Each error starts with too_many_pointers.
+func _validate_pointer_cap(config: CampaignConfigData) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var layouts: Array[PackedInt32Array] = []
+	if wheel != null:
+		layouts.append(wheel.pointer_ticks)
+	for p in phases:
+		if p != null:
+			layouts.append(p.pointer_ticks)
+			if p.wheel_override != null:
+				layouts.append(p.wheel_override.pointer_ticks)
+	for ticks in layouts:
+		if ticks.size() > config.max_pointers:
+			errors.append("too_many_pointers: Enemy %s has a layout of %d pointers; the cap is %d." % [id, ticks.size(), config.max_pointers])
 	return errors
 
 

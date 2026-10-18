@@ -36,9 +36,23 @@ func validate() -> PackedStringArray:
 			errors.append("Slot %d firmware does not fit its slice type." % i)
 	if pointer_ticks.is_empty():
 		errors.append("Wheel needs at least one pointer.")
-	for t in pointer_ticks:
-		if t < 0 or t >= RC.TICKS:
-			errors.append("Pointer tick %d is outside 0-%d." % [t, RC.TICKS - 1])
+	errors.append_array(pointer_errors(pointer_ticks))
 	if inner_ring:
 		errors.append_array(inner_ring.validate())
+	return errors
+
+
+## N11 (GDD 2.1, Q27): a pointer layout's problems, each starting with its reason name.
+## Pointers sit on any tick 0-29 (pointer_tick_out_of_range), at least 1 tick apart: two
+## on one tick is pointer_ticks_duplicate. The count cap (too_many_pointers) needs the
+## config: EnemyData.validate checks it.
+static func pointer_errors(ticks: PackedInt32Array) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var seen := {}
+	for t in ticks:
+		if t < 0 or t >= RC.TICKS:
+			errors.append("pointer_tick_out_of_range: Pointer tick %d is outside 0-%d." % [t, RC.TICKS - 1])
+		elif seen.has(t):
+			errors.append("pointer_ticks_duplicate: Two pointers on tick %d." % t)
+		seen[t] = true
 	return errors

@@ -7,7 +7,28 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks()
+
+
+## Plan 2 N11: pointers on any tick. WheelData / BossPhaseData refuse a tick outside 0-29 and
+## two pointers on one tick by name; adjacent ticks are valid; the config carries the cap and
+## the ICE extra-pointer offsets (legacy 15 / 10 / 20 / 5 / 25).
+func _n11_pointer_ticks() -> int:
+	var fails := 0
+	var a := _slice(&"a", RC.SliceType.SHIM, 3)
+	var adjacent := _wheel([a, a], PackedInt32Array([0, 1]))
+	print("N11 adjacent pointers (expect []): ", adjacent.validate())
+	if not adjacent.validate().is_empty(): fails += 1
+	var dup := WheelData.pointer_errors(PackedInt32Array([7, 7, 30]))
+	print("N11 duplicate + out of range: ", dup)
+	if dup.size() != 2 or not dup[0].begins_with("pointer_ticks_duplicate") or not dup[1].begins_with("pointer_tick_out_of_range"): fails += 1
+	var p := BossPhaseData.new(); p.pointer_behavior = RC.PointerBehavior.MULTIPLY; p.pointer_ticks = PackedInt32Array([3, 3])
+	print("N11 phase duplicate: ", p.validate())
+	if not "pointer_ticks_duplicate" in " ".join(p.validate()): fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N11 config cap / offsets: ", cfg.max_pointers, " ", cfg.boss_extra_pointer_offsets)
+	if cfg.max_pointers != 4 or cfg.boss_extra_pointer_offsets != PackedInt32Array([15, 10, 20, 5, 25]): fails += 1
+	return fails
 
 
 ## Plan 2 N13: EffectData.undock (the Undock keyword) defaults false and survives a save; the

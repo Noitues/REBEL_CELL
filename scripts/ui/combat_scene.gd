@@ -2484,7 +2484,7 @@ func _refresh(state: CombatState) -> void:
 			for p in engine.resolver.upcoming_phases(state, e):
 				var parts := PackedStringArray()
 				if not p.pointer_ticks.is_empty():
-					parts.append(str(Array(CombatResolver.phase_layout(state, edata, p.pointer_ticks))))
+					parts.append(str(Array(engine.resolver.phase_layout(state, edata, p.pointer_ticks))))
 				if p.pointer_behavior == RC.PointerBehavior.ORBIT and p.orbit_ticks_per_turn != 0:
 					parts.append(tr("%s/turn") % signed(p.orbit_ticks_per_turn))
 				var where := " ".join(parts)
