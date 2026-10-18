@@ -433,6 +433,10 @@
 			"seconds": 33.7,
 			"tier": "full"
 		},
+		"res://tests/unit/test_site_text.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_horizontal_pass22.gd": {
 			"seconds": 5.2,
 			"tier": "fast"

@@ -6,152 +6,152 @@
 [sub_resource type="Resource" id="l0"]
 script = ExtResource("2")
 key = "site:t1_a"
-text = "Billing Farm. Every renewal in the district clears through it. Cut its Rack and the invoices stop for a day. Quiet in, quiet out."
+text = "Every renewal in the district clears through it. Cut its Rack and the invoices stop for a day. Quiet in, quiet out."
 
 [sub_resource type="Resource" id="l1"]
 script = ExtResource("2")
 key = "site:t1_b"
-text = "Provisioning Hub. New leashes are flashed here before they go into people. Nothing you take will be missed before morning."
+text = "New leashes are flashed here before they go into people. Nothing you take will be missed before morning."
 
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("2")
 key = "site:t1_c"
-text = "Records Vault. Names, dosages, missed payments. Bank what you can; the rest is evidence."
+text = "Names, dosages, missed payments. Bank what you can; the rest is evidence."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("2")
 key = "site:t1_d"
-text = "Call Center. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
+text = "Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
 
 [sub_resource type="Resource" id="l4"]
 script = ExtResource("2")
 key = "site:t1_e"
-text = "Adherence node. It logs who took their dose and who could not afford to. Compliance runs deep here."
+text = "This Site logs who took their dose and who could not afford to. Compliance runs deep here."
 
 [sub_resource type="Resource" id="l5"]
 script = ExtResource("2")
 key = "site:t1_f"
-text = "Telemetry farm. Every heartbeat in the district, timestamped. Move fast; it will notice you before you notice it."
+text = "Every heartbeat in the district, timestamped. Move fast; it will notice you before you notice it."
 
 [sub_resource type="Resource" id="l6"]
 script = ExtResource("2")
 key = "site:t1_g"
-text = "Recovery desk. Where lapsed accounts get their final offer. Collectors are staged next door."
+text = "Where lapsed accounts get their final offer. Collectors are staged next door."
 
 [sub_resource type="Resource" id="l7"]
 script = ExtResource("2")
 key = "site:t1_h"
-text = "Scheduling grid. The dosage clocks live here. Break the clocks and the Dispensers drift."
+text = "The dosage clocks live here. Break the clocks and the Dispensers drift."
 
 [sub_resource type="Resource" id="l8"]
 script = ExtResource("2")
 key = "site:t1_i"
-text = "Reconciliation hub. Insurance against insurance. A dead end on the Grid, but the camera logs behind it are worth burning."
+text = "Insurance against insurance. A dead end on the Grid, but the camera logs behind it are worth burning."
 
 [sub_resource type="Resource" id="l9"]
 script = ExtResource("2")
 key = "site:t1_j"
-text = "Signing office. Solace signs its firmware here. The biometrics vault behind it is why we want it."
+text = "Solace signs its firmware here. The biometrics vault behind it is why we want it."
 
 [sub_resource type="Resource" id="l10"]
 script = ExtResource("2")
 key = "site:t2_intel"
-text = "Memo archive. The pricing memos are in there: what the leash really costs to run and what they charge. Intel is worth more than Cycles today."
+text = "The pricing memos are in there: what the leash really costs to run and what they charge. Intel is worth more than Cycles today."
 
 [sub_resource type="Resource" id="l11"]
 script = ExtResource("2")
 key = "site:t2_breach"
-text = "Kill-Switch Authority. The bricking order comes from this Rack. Take the authority and the Genome Core loses a read head."
+text = "The bricking order comes from this Rack. Take the authority and the Genome Core loses a read head."
 
 [sub_resource type="Resource" id="l12"]
 script = ExtResource("2")
 key = "site:t2_virus"
-text = "Patch distribution. The open-source patch is quarantined here. Free it and the Engine starts the breach corrupted."
+text = "The open-source patch is quarantined here. Free it and the Engine starts the breach corrupted."
 
 [sub_resource type="Resource" id="l13"]
 script = ExtResource("2")
 key = "site:t2_d"
-text = "Clinical trial ledger. Cohorts, consent forms, the numbers they did not publish. A good Rack, a better story."
+text = "Cohorts, consent forms, the numbers they did not publish. A good Rack, a better story."
 
 [sub_resource type="Resource" id="l14"]
 script = ExtResource("2")
 key = "site:t2_e"
-text = "Audit bureau. The auditors that hunt your nodes are trained on this data. Behind it: the ledger. Burn it if you can."
+text = "The auditors that hunt your nodes are trained on this data. Behind it: the ledger. Burn it if you can."
 
 [sub_resource type="Resource" id="l15"]
 script = ExtResource("2")
 key = "site:t2_f"
-text = "Update mirror. Firmware for every implant in the region flows through here. Expect Compliance Lock."
+text = "Firmware for every implant in the region flows through here. Expect Compliance Lock."
 
 [sub_resource type="Resource" id="l16"]
 script = ExtResource("2")
 key = "site:t2_g"
-text = "Executive wellness. The board's own implants run on a separate, unbricked tier. Note that. Remember that."
+text = "The board's own implants run on a separate, unbricked tier. Note that. Remember that."
 
 [sub_resource type="Resource" id="l17"]
 script = ExtResource("2")
 key = "site:t2_h"
-text = "Recall logistics. The recall that never shipped is staged here, warehouse and all."
+text = "The recall that never shipped is staged here, warehouse and all."
 
 [sub_resource type="Resource" id="l18"]
 script = ExtResource("2")
 key = "site:t3_core"
-text = "Core cluster. The Continuum itself. Elite security, a mini-boss on the Rack, and the road to the Engine."
+text = "The Continuum itself. Elite security, a mini-boss on the Rack, and the road to the Engine."
 
 [sub_resource type="Resource" id="l19"]
 script = ExtResource("2")
 key = "site:t3_b"
-text = "Forecasting engine. It predicts churn to the decimal. It will have predicted you. Prove it wrong."
+text = "This Site predicts churn to the decimal. It will have predicted you. Prove it wrong."
 
 [sub_resource type="Resource" id="l20"]
 script = ExtResource("2")
 key = "site:t3_c"
-text = "Kill-Switch escrow. The keys to every bricking, held in trust. Trust nothing on this Rack."
+text = "The keys to every bricking, held in trust. Trust nothing on this Rack."
 
 [sub_resource type="Resource" id="l21"]
 script = ExtResource("2")
 key = "site:t3_d"
-text = "Patient twin simulator. A model of every subbie, run ahead of the real thing. Dosage Dispensers everywhere."
+text = "A model of every subbie, run ahead of the real thing. Dosage Dispensers everywhere."
 
 [sub_resource type="Resource" id="l22"]
 script = ExtResource("2")
 key = "site:t3_e"
-text = "Board comms. The executives talk here. Their traffic is worth more than the Rack."
+text = "The executives talk here. Their traffic is worth more than the Rack."
 
 [sub_resource type="Resource" id="l23"]
 script = ExtResource("2")
 key = "site:t3_f"
-text = "Licensing authority. Clause 44 lives here. Heartbeats as licensed features."
+text = "Clause 44 lives here. Heartbeats as licensed features."
 
 [sub_resource type="Resource" id="l24"]
 script = ExtResource("2")
 key = "site:t3_g"
-text = "Cohort archive. Every implant batch, every failure rate. The silent recall has a home. This is it."
+text = "Every implant batch, every failure rate. The silent recall has a home. This is it."
 
 [sub_resource type="Resource" id="l25"]
 script = ExtResource("2")
 key = "site:t3_h"
-text = "Root certificate store. Solace's signature on every device. Deepest Rack in the city. Bring everything."
+text = "Solace's signature on every device. Deepest Rack in the city. Bring everything."
 
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("2")
 key = "site:scrub_records"
-text = "Scrub run. Your own data is in their banks; get it out and the Heat drops. No Rack, no glory, no trace."
+text = "Your own data is in their banks; get it out and the Heat drops. No Rack, no glory, no trace."
 
 [sub_resource type="Resource" id="l27"]
 script = ExtResource("2")
 key = "site:purge_camera_logs"
-text = "Camera logs. They have your operatives' faces. Purge the archive and Collections loses its leads."
+text = "Solace has your operatives' faces. Purge the archive and Collections loses its leads."
 
 [sub_resource type="Resource" id="l28"]
 script = ExtResource("2")
 key = "site:wipe_biometrics"
-text = "Biometric wipe. Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
+text = "Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
 
 [sub_resource type="Resource" id="l29"]
 script = ExtResource("2")
 key = "site:burn_the_ledger"
-text = "The ledger. Every Cell transaction they have reconstructed. Burn it and Collections starts over."
+text = "Every Cell transaction they have reconstructed. Burn it and Collections starts over."
 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("2")

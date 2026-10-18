@@ -344,7 +344,7 @@ func test_the_jack_names_the_run_and_a_raid_before_the_run_exists() -> void:
 	_raid_campaign(&"solace", false)
 	var site: StringName = RunManager.launchable_sites()[0].id
 	var sd := CampaignRules.site_data(RunManager.corporation, site)
-	assert_eq(RunManager.jack_destination(site), TextDb.t(sd, "display_name"), "named from the Site before the run is built")
+	assert_eq(RunManager.jack_destination(site), SiteText.tiered(sd), "named from the Site before the run is built")
 	RunManager._before_switch = func() -> void: pass
 	# ANIM-R4 H11a (updated on purpose): the stamp names the corporation that raids.
 	assert_eq(RunManager.jack_note(), tr("RAID INCOMING\n%s") % TextDb.t(RunManager.corporation, "display_name"), "a queued raid interrupts the run")

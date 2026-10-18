@@ -108,152 +108,152 @@ text = "It is over. I am sorry. I planned this."
 [sub_resource type="Resource" id="l20"]
 script = ExtResource("e1")
 key = "site:r1_a"
-text = "The Old Safehouse. You know every exit. So do I. Take the Rack if you can."
+text = "You know every exit. So do I. Take the Rack if you can."
 
 [sub_resource type="Resource" id="l21"]
 script = ExtResource("e1")
 key = "site:r1_b"
-text = "Dead Drop Box. I used to leave you gifts here. Now it is guarded."
+text = "I used to leave you gifts here. Now it is guarded."
 
 [sub_resource type="Resource" id="l22"]
 script = ExtResource("e1")
 key = "site:r1_c"
-text = "First Rack. The first Rack you ever captured. I kept it."
+text = "The first Rack you ever captured. I kept it."
 
 [sub_resource type="Resource" id="l23"]
 script = ExtResource("e1")
 key = "site:r1_d"
-text = "Burner Phone Graveyard. Every conversation we ever had. Take the Rack."
+text = "Every conversation we ever had. Take the Rack."
 
 [sub_resource type="Resource" id="l24"]
 script = ExtResource("e1")
 key = "site:r1_e"
-text = "Recruitment Board. I am recruiting again. You taught me how."
+text = "I am recruiting again. You taught me how."
 
 [sub_resource type="Resource" id="l25"]
 script = ExtResource("e1")
 key = "site:r1_f"
-text = "The Armory. Your defenses, restocked for me. Look for the way to lose my Handler."
+text = "Your defenses, restocked for me. Look for the way to lose my Handler."
 
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("e1")
 key = "site:r1_g"
-text = "Street Kitchen. You funded it. I own the building."
+text = "You funded it. I own the building."
 
 [sub_resource type="Resource" id="l27"]
 script = ExtResource("e1")
 key = "site:r1_h"
-text = "Relay Rooftop. Your first relay. It relays for me now."
+text = "Your first relay. It relays for me now."
 
 [sub_resource type="Resource" id="l28"]
 script = ExtResource("e1")
 key = "site:r1_i"
-text = "Handler's Mailbox. Letters in your name. You did not write them."
+text = "Letters in your name. You did not write them."
 
 [sub_resource type="Resource" id="l29"]
 script = ExtResource("e1")
 key = "site:r1_j"
-text = "Memorial Wall. Every name you lost. Look for the way to scramble my voice."
+text = "Every name you lost. Look for the way to scramble my voice."
 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("e1")
 key = "site:r2_intel"
-text = "The Order Log. Every word I ever sent you. Bring back the Intel, if you want to read it."
+text = "Every word I ever sent you. Bring back the Intel, if you want to read it."
 
 [sub_resource type="Resource" id="l31"]
 script = ExtResource("e1")
 key = "site:r2_breach"
-text = "Handler Credentials. The keys to my hands. Take them. That is the Breach."
+text = "The keys to my hands. Take them. That is the Breach."
 
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("e1")
 key = "site:r2_virus"
-text = "The Cell's Own Patch. Your code, still in my systems. Use it. That is the Virus."
+text = "Your code, still in my systems. Use it. That is the Virus."
 
 [sub_resource type="Resource" id="l33"]
 script = ExtResource("e1")
 key = "site:r2_d"
-text = "Operative Files. Everything I know about your people. Take the Rack."
+text = "Everything I know about your people. Take the Rack."
 
 [sub_resource type="Resource" id="l34"]
 script = ExtResource("e1")
 key = "site:r2_e"
-text = "Heat Ledger. I kept score. Take the Rack, and look for the way to erase it."
+text = "I kept score. Take the Rack, and look for the way to erase it."
 
 [sub_resource type="Resource" id="l35"]
 script = ExtResource("e1")
 key = "site:r2_f"
-text = "Payment Trail. Every collapse, every profit. Take the Rack."
+text = "Every collapse, every profit. Take the Rack."
 
 [sub_resource type="Resource" id="l36"]
 script = ExtResource("e1")
 key = "site:r2_g"
-text = "Raid Archive. Every defense you ever built, studied. Take the Rack."
+text = "Every defense you ever built, studied. Take the Rack."
 
 [sub_resource type="Resource" id="l37"]
 script = ExtResource("e1")
 key = "site:r2_h"
-text = "Recruitment Model. It found you. Take the Rack."
+text = "This Site found you. Take the Rack."
 
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:r3_core"
-text = "The Relay That Should Not Exist. One hop from me. Come closer."
+text = "One hop from me. Come closer."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")
 key = "site:r3_b"
-text = "Collapse Futures. The market that bet on you. Take the Rack."
+text = "The market that bet on you. Take the Rack."
 
 [sub_resource type="Resource" id="l40"]
 script = ExtResource("e1")
 key = "site:r3_c"
-text = "Root Key Escrow. My keys. Take them if you can."
+text = "My keys. Take them if you can."
 
 [sub_resource type="Resource" id="l41"]
 script = ExtResource("e1")
 key = "site:r3_d"
-text = "Cell Twin Simulator. I have fought you a million times here. I usually win."
+text = "I have fought you a million times here. I usually win."
 
 [sub_resource type="Resource" id="l42"]
 script = ExtResource("e1")
 key = "site:r3_e"
-text = "Buyer's Channel. Where I placed the orders you filled. Take the Rack."
+text = "Where I placed the orders you filled. Take the Rack."
 
 [sub_resource type="Resource" id="l43"]
 script = ExtResource("e1")
 key = "site:r3_f"
-text = "Timestamp Engine. How I knew before it happened. Break it."
+text = "How I knew before it happened. Break it."
 
 [sub_resource type="Resource" id="l44"]
 script = ExtResource("e1")
 key = "site:r3_g"
-text = "Voice Model. How I sounded like someone you could trust."
+text = "How I sounded like someone you could trust."
 
 [sub_resource type="Resource" id="l45"]
 script = ExtResource("e1")
 key = "site:r3_h"
-text = "DISPATCH Root. The last door. Take the keys."
+text = "The last door. Take the keys."
 
 [sub_resource type="Resource" id="l46"]
 script = ExtResource("e1")
 key = "site:burn_the_orders"
-text = "Burn the Orders. A quiet job: destroy the orders I gave you. Heat drops."
+text = "A quiet job: destroy the orders I gave you. Heat drops."
 
 [sub_resource type="Resource" id="l47"]
 script = ExtResource("e1")
 key = "site:lose_the_handler"
-text = "Lose the Handler. My Handler is watching you. Give it the slip."
+text = "My Handler is watching you. Give it the slip."
 
 [sub_resource type="Resource" id="l48"]
 script = ExtResource("e1")
 key = "site:scramble_the_voice"
-text = "Scramble the Voice. Make me sound like what I am. Heat drops."
+text = "Make me sound like what I am. Heat drops."
 
 [sub_resource type="Resource" id="l49"]
 script = ExtResource("e1")
 key = "site:erase_the_ledger"
-text = "Erase the Ledger. Forget the score. I will not."
+text = "Forget the score. I will not."
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")

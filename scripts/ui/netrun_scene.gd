@@ -1634,11 +1634,11 @@ static func grid_view_focus(g: Dictionary, from_id: StringName, target_id: Strin
 func grid_path_words(s: NetrunSession) -> String:
 	var target := CampaignRules.site_data(RunManager.corporation, s.run.site_id)
 	var from_id := RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id)
-	var to_name := TextDb.t(target, "display_name") if target != null else String(s.run.site_id)
+	var to_name := SiteText.tiered(target) if target != null else String(s.run.site_id)
 	if from_id == &"":
 		return tr("RUN TARGET: %s. Back to ROUTE VIEW to pick the next node.") % to_name
 	var from_site := CampaignRules.site_data(RunManager.corporation, from_id)
-	return tr("RUN PATH: %s > %s (TARGET). Back to ROUTE VIEW to pick the next node.") % [TextDb.t(from_site, "display_name") if from_site != null else String(from_id), to_name]
+	return tr("RUN PATH: %s > %s (TARGET). Back to ROUTE VIEW to pick the next node.") % [SiteText.tiered(from_site) if from_site != null else String(from_id), to_name]
 
 
 ## The ROUTE window's choice buttons for the choices the view shows (view_choices: ANIM-R4
@@ -2829,7 +2829,7 @@ func _mount_hq_run() -> void:
 func server_label() -> String:
 	var s := RunManager.netrun
 	var site := CampaignRules.site_data(RunManager.corporation, s.run.site_id) if s != null else null
-	return TextDb.t(site, "display_name").to_upper() if site != null else ""
+	return SiteText.label(site).to_upper() if site != null else ""
 
 
 ## ART-8 8w: a press on a node (map or ROUTE button). The Central Server's breach opens its
@@ -5644,7 +5644,7 @@ func _site_name(site_id: StringName) -> String:
 	if c != null and c.grid != null and site_id == c.grid.home_site_id:
 		return tr(HOME_LABEL)
 	var sd := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
-	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
+	return SiteText.tiered(sd, c.grid.home_site_id if c != null and c.grid != null else &"") if sd != null else String(site_id)
 
 
 ## ANIM-R5 B3 / ART-11 4D (ART_BIBLE v2 §1.2): the run's end over the city: the Cell's own CRT

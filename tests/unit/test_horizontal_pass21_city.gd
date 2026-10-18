@@ -105,7 +105,7 @@ func test_grid_nodes_have_tooltips() -> void:
 	for n in overlay.nodes:
 		var sd := CampaignRules.site_data(RunManager.corporation, n["id"])
 		if n["id"] != home:
-			assert_string_contains(overlay.tip_of(n["id"]), sd.display_name, "the tip names the Site")
+			assert_string_contains(overlay.tip_of(n["id"]), SiteText.label(sd), "the tip names the Site by its type")
 			assert_string_contains(overlay.tip_of(n["id"]), "T%d" % sd.tier, "and its tier")
 
 

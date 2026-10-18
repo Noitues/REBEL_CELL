@@ -1369,38 +1369,38 @@ LineSetData.dispatch_halcyon.lines.17,Contract terminated. Next target when you 
 LineSetData.dispatch_halcyon.lines.18,Home server lost. Halcyon has rezoned the Cell out of existence.
 LineSetData.dispatch_halcyon.lines.19,We are off the grid. Fall back.
 LineSetData.dispatch_halcyon.lines.2,City traffic is light tonight. Move quickly.
-LineSetData.dispatch_halcyon.lines.20,Parking Enforcement Office. Every ticket in the city is written here. Take the Rack and the drones stop writing.
-LineSetData.dispatch_halcyon.lines.21,Water Meter Grid. Halcyon counts every liter. Cut the Rack and the meters read zero for a day.
-LineSetData.dispatch_halcyon.lines.22,Streetlight Mesh. The lights are cameras. The cameras are Halcyon. Dim them.
-LineSetData.dispatch_halcyon.lines.23,Resident Services Desk. Where complaints go to die. Take the Rack.
-LineSetData.dispatch_halcyon.lines.24,Transit Fare Gates. Every commute is a fee. Open the gates.
-LineSetData.dispatch_halcyon.lines.25,"Waste Routing Depot. Halcyon sorts the city's trash, and its secrets. Look for both."
-LineSetData.dispatch_halcyon.lines.26,Noise Complaint Registry. Halcyon's excuse to send patrols anywhere. Quiet it.
-LineSetData.dispatch_halcyon.lines.27,"Permit Queue Server. Four thousand applications, all pending. Take the Rack."
-LineSetData.dispatch_halcyon.lines.28,Utility Shutoff Scheduler. It decides whose lights go out tonight. Reschedule it.
-LineSetData.dispatch_halcyon.lines.29,Camera Maintenance Yard. Replacement eyes for the city. Look for the audit path.
+LineSetData.dispatch_halcyon.lines.20,Every ticket in the city is written here. Take the Rack and the drones stop writing.
+LineSetData.dispatch_halcyon.lines.21,Halcyon counts every liter. Cut the Rack and the meters read zero for a day.
+LineSetData.dispatch_halcyon.lines.22,The lights are cameras. The cameras are Halcyon. Dim them.
+LineSetData.dispatch_halcyon.lines.23,Where complaints go to die. Take the Rack.
+LineSetData.dispatch_halcyon.lines.24,Every commute is a fee. Open the gates.
+LineSetData.dispatch_halcyon.lines.25,"Halcyon sorts the city's trash, and its secrets. Look for both."
+LineSetData.dispatch_halcyon.lines.26,Halcyon's excuse to send patrols anywhere. Quiet it.
+LineSetData.dispatch_halcyon.lines.27,"Four thousand applications, all pending. Take the Rack."
+LineSetData.dispatch_halcyon.lines.28,This Site decides whose lights go out tonight. Reschedule it.
+LineSetData.dispatch_halcyon.lines.29,Replacement eyes for the city. Look for the audit path.
 LineSetData.dispatch_halcyon.lines.3,Clean exit. Halcyon is filing a report nobody will read.
-LineSetData.dispatch_halcyon.lines.30,"Council Minutes Archive. Every vote, decided before it was cast. Bring back the Intel."
-LineSetData.dispatch_halcyon.lines.31,Emergency Override Authority. The keys to every valve and signal. Copy them. That is the Breach.
-LineSetData.dispatch_halcyon.lines.32,Open Data Portal. Halcyon publishes what it wants you to see. Publish the rest. That is the Virus.
-LineSetData.dispatch_halcyon.lines.33,Predictive Patrol Model. It sends police where it expects crime. Take its Rack.
-LineSetData.dispatch_halcyon.lines.34,"Resident Credit Bureau. Everyone has a score. Take the Rack, and look for the pardon path."
-LineSetData.dispatch_halcyon.lines.35,"Water Rights Exchange. The city's water, traded like stock. Take the Rack."
-LineSetData.dispatch_halcyon.lines.36,"Transit Signal Control. Every light, every train, one console. Take it."
-LineSetData.dispatch_halcyon.lines.37,"Contract Billing Ledger. Halcyon bills the city for everything, twice. Take the Rack."
-LineSetData.dispatch_halcyon.lines.38,"Civic Operations Center. One hop from the Panopticon. Heavy security, heavier Rack."
-LineSetData.dispatch_halcyon.lines.39,Zoning Futures Desk. Halcyon bets on the blocks it is about to rezone. Take the Rack.
+LineSetData.dispatch_halcyon.lines.30,"Every vote, decided before it was cast. Bring back the Intel."
+LineSetData.dispatch_halcyon.lines.31,The keys to every valve and signal. Copy them. That is the Breach.
+LineSetData.dispatch_halcyon.lines.32,Halcyon publishes what it wants you to see. Publish the rest. That is the Virus.
+LineSetData.dispatch_halcyon.lines.33,This Site sends police where it expects crime. Take its Rack.
+LineSetData.dispatch_halcyon.lines.34,"Everyone has a score. Take the Rack, and look for the pardon path."
+LineSetData.dispatch_halcyon.lines.35,"The city's water, traded like stock. Take the Rack."
+LineSetData.dispatch_halcyon.lines.36,"Every light, every train, one console. Take it."
+LineSetData.dispatch_halcyon.lines.37,"Halcyon bills the city for everything, twice. Take the Rack."
+LineSetData.dispatch_halcyon.lines.38,"One hop from the Panopticon. Heavy security, heavier Rack."
+LineSetData.dispatch_halcyon.lines.39,Halcyon bets on the blocks it is about to rezone. Take the Rack.
 LineSetData.dispatch_halcyon.lines.4,Out and clear. Well done.
-LineSetData.dispatch_halcyon.lines.40,Override Key Escrow. The master keys to the city. Take them.
-LineSetData.dispatch_halcyon.lines.41,"City Twin Simulator. A copy of the city, where Halcyon rehearses emergencies. Break it."
-LineSetData.dispatch_halcyon.lines.42,"Council Backchannel. Where the real votes happen. Listen in, then take the Rack."
-LineSetData.dispatch_halcyon.lines.43,Municipal Pricing Authority. What the city pays to exist. Take it.
-LineSetData.dispatch_halcyon.lines.44,"Citizen Profile Archive. A file on every home, including yours. Burn it."
-LineSetData.dispatch_halcyon.lines.45,Halcyon Root Registry. The keys the Panopticon trusts. Take them.
-LineSetData.dispatch_halcyon.lines.46,Wipe the Citations. A quiet job: clear the fines that follow the Cell. Heat drops.
-LineSetData.dispatch_halcyon.lines.47,Blind the Cameras. Put the block's cameras to sleep. Heat drops.
-LineSetData.dispatch_halcyon.lines.48,Lose the Case File. Halcyon has a file on the Cell. Misplace it.
-LineSetData.dispatch_halcyon.lines.49,"Pardon the District. Clear the records of a whole district, the Cell's included."
+LineSetData.dispatch_halcyon.lines.40,The master keys to the city. Take them.
+LineSetData.dispatch_halcyon.lines.41,"A copy of the city, where Halcyon rehearses emergencies. Break it."
+LineSetData.dispatch_halcyon.lines.42,"Where the real votes happen. Listen in, then take the Rack."
+LineSetData.dispatch_halcyon.lines.43,What the city pays to exist. Take it.
+LineSetData.dispatch_halcyon.lines.44,"A file on every home, including yours. Burn it."
+LineSetData.dispatch_halcyon.lines.45,The keys the Panopticon trusts. Take them.
+LineSetData.dispatch_halcyon.lines.46,A quiet job: clear the fines that follow the Cell. Heat drops.
+LineSetData.dispatch_halcyon.lines.47,Put the block's cameras to sleep. Heat drops.
+LineSetData.dispatch_halcyon.lines.48,Halcyon has a file on the Cell. Misplace it.
+LineSetData.dispatch_halcyon.lines.49,"Clear the records of a whole district, the Cell's included."
 LineSetData.dispatch_halcyon.lines.5,The city sleeps a little easier.
 LineSetData.dispatch_halcyon.lines.50,"The Panopticon. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut."
 LineSetData.dispatch_halcyon.lines.6,Signal lost. Halcyon has marked the operative as relocated.
@@ -1420,38 +1420,38 @@ LineSetData.dispatch_meridian.lines.17,Route closed. Next target when you are re
 LineSetData.dispatch_meridian.lines.18,Home server lost. Meridian has reassigned the Cell's address.
 LineSetData.dispatch_meridian.lines.19,We are off the map. Fall back.
 LineSetData.dispatch_meridian.lines.2,Meridian traffic is heavy tonight. Good cover.
-LineSetData.dispatch_meridian.lines.20,Parcel Sorting Hall. Every package in the district passes its belts. Cut the Rack and the belts stop for a shift.
-LineSetData.dispatch_meridian.lines.21,Customs Pre-Clearance. Meridian decides here what gets held. Take the Rack and nothing gets held today.
-LineSetData.dispatch_meridian.lines.22,"Tracking Beacon Array. It knows where every van is, and where you are. Blind it."
-LineSetData.dispatch_meridian.lines.23,Returns Processing Center. Where Meridian sends the things it does not want. Including people's claims.
-LineSetData.dispatch_meridian.lines.24,Drone Charging Yard. Four hundred drones on the pad. Take the Rack before they wake.
-LineSetData.dispatch_meridian.lines.25,Warehouse Shift Planner. It schedules the pickers down to the second. Give them a minute back.
-LineSetData.dispatch_meridian.lines.26,Address Verification Desk. Meridian decides who is allowed to exist at an address. Correct its records.
-LineSetData.dispatch_meridian.lines.27,Cold Chain Monitor. Every vaccine in the city reports here. Keep it cold and take the Rack.
-LineSetData.dispatch_meridian.lines.28,Tariff Calculation Office. Every fee Meridian charges starts in these tables. Make them round down.
-LineSetData.dispatch_meridian.lines.29,"Fleet Telematics Hub. Speed, stops, driver heart rates. Meridian watches its own. Watch it back."
+LineSetData.dispatch_meridian.lines.20,Every package in the district passes its belts. Cut the Rack and the belts stop for a shift.
+LineSetData.dispatch_meridian.lines.21,Meridian decides here what gets held. Take the Rack and nothing gets held today.
+LineSetData.dispatch_meridian.lines.22,"This Site knows where every van is, and where you are. Blind it."
+LineSetData.dispatch_meridian.lines.23,Where Meridian sends the things it does not want. Including people's claims.
+LineSetData.dispatch_meridian.lines.24,Four hundred drones on the pad. Take the Rack before they wake.
+LineSetData.dispatch_meridian.lines.25,This Site schedules the pickers down to the second. Give them a minute back.
+LineSetData.dispatch_meridian.lines.26,Meridian decides who is allowed to exist at an address. Correct its records.
+LineSetData.dispatch_meridian.lines.27,Every vaccine in the city reports here. Keep it cold and take the Rack.
+LineSetData.dispatch_meridian.lines.28,Every fee Meridian charges starts in these tables. Make them round down.
+LineSetData.dispatch_meridian.lines.29,"Speed, stops, driver heart rates. Meridian watches its own. Watch it back."
 LineSetData.dispatch_meridian.lines.3,Clean exit. Meridian is recalculating a route that no longer exists.
-LineSetData.dispatch_meridian.lines.30,Shipping Manifest Vault. Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel.
-LineSetData.dispatch_meridian.lines.31,Customs Key Authority. The keys that open every sealed container. Take a copy. That is the Breach.
-LineSetData.dispatch_meridian.lines.32,Routing Table Mirror. Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus.
-LineSetData.dispatch_meridian.lines.33,Priority Lane Exchange. Where the rich buy speed. The Rack pays well.
-LineSetData.dispatch_meridian.lines.34,"Worker Scoring Engine. It fires people for breathing. Take its Rack, and look for the audit path."
-LineSetData.dispatch_meridian.lines.35,Port Congestion Model. Meridian creates the queues it charges to skip. Break the model.
-LineSetData.dispatch_meridian.lines.36,Last-Mile Drone Command. It tells every drone where to look. Tell it to look away.
-LineSetData.dispatch_meridian.lines.37,Insurance Claims Ledger. Every lost parcel insured twice. Somebody collects. Take the Rack.
-LineSetData.dispatch_meridian.lines.38,"Global Routing Core. One hop from the Master Manifest. Heavy security, heavier Rack."
-LineSetData.dispatch_meridian.lines.39,Freight Futures Desk. Meridian bets on shortages it is about to cause. Take the Rack.
+LineSetData.dispatch_meridian.lines.30,Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel.
+LineSetData.dispatch_meridian.lines.31,The keys that open every sealed container. Take a copy. That is the Breach.
+LineSetData.dispatch_meridian.lines.32,Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus.
+LineSetData.dispatch_meridian.lines.33,Where the rich buy speed. The Rack pays well.
+LineSetData.dispatch_meridian.lines.34,"This Site fires people for breathing. Take its Rack, and look for the audit path."
+LineSetData.dispatch_meridian.lines.35,Meridian creates the queues it charges to skip. Break the model.
+LineSetData.dispatch_meridian.lines.36,This Site tells every drone where to look. Tell it to look away.
+LineSetData.dispatch_meridian.lines.37,Every lost parcel insured twice. Somebody collects. Take the Rack.
+LineSetData.dispatch_meridian.lines.38,"One hop from the Master Manifest. Heavy security, heavier Rack."
+LineSetData.dispatch_meridian.lines.39,Meridian bets on shortages it is about to cause. Take the Rack.
 LineSetData.dispatch_meridian.lines.4,Delivered. The Cell thanks you.
-LineSetData.dispatch_meridian.lines.40,"Customs Override Escrow. The master keys, in escrow for a very bad day. Today is that day."
-LineSetData.dispatch_meridian.lines.41,Supply Twin Simulator. A copy of the city's supply chain. Meridian rehearses its crises here.
-LineSetData.dispatch_meridian.lines.42,"Board Logistics Backbone. The board's own delivery network. Private lanes, private cargo."
-LineSetData.dispatch_meridian.lines.43,Contract Pricing Authority. Where Meridian decides what a city pays to be fed. Take it.
-LineSetData.dispatch_meridian.lines.44,"Surveillance Route Archive. Every drone flight ever flown, including over your safehouse. Burn it."
-LineSetData.dispatch_meridian.lines.45,Meridian Root Ledger. The signing keys for every transaction. The Master Manifest trusts it completely.
-LineSetData.dispatch_meridian.lines.46,"Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
-LineSetData.dispatch_meridian.lines.47,Forge the Master Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.
-LineSetData.dispatch_meridian.lines.48,Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else.
-LineSetData.dispatch_meridian.lines.49,"Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbor."
+LineSetData.dispatch_meridian.lines.40,"The master keys, in escrow for a very bad day. Today is that day."
+LineSetData.dispatch_meridian.lines.41,A copy of the city's supply chain. Meridian rehearses its crises here.
+LineSetData.dispatch_meridian.lines.42,"The board's own delivery network. Private lanes, private cargo."
+LineSetData.dispatch_meridian.lines.43,Where Meridian decides what a city pays to be fed. Take it.
+LineSetData.dispatch_meridian.lines.44,"Every drone flight ever flown, including over your safehouse. Burn it."
+LineSetData.dispatch_meridian.lines.45,The signing keys for every transaction. The Master Manifest trusts it completely.
+LineSetData.dispatch_meridian.lines.46,"A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
+LineSetData.dispatch_meridian.lines.47,Rewrite the Cell's traffic as routine freight. Heat drops.
+LineSetData.dispatch_meridian.lines.48,Meridian's auditors are looking at you. Make them look somewhere else.
+LineSetData.dispatch_meridian.lines.49,"Every log that mentions the Cell, at the bottom of the harbor."
 LineSetData.dispatch_meridian.lines.5,Package received. Well done.
 LineSetData.dispatch_meridian.lines.50,"The Master Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
 LineSetData.dispatch_meridian.lines.6,Signal lost. Meridian has marked the operative as returned to sender.
@@ -1471,38 +1471,38 @@ LineSetData.dispatch_orbital.lines.17,Orbit cleared. There is one more signal up
 LineSetData.dispatch_orbital.lines.18,Home server lost. Orbital Commons has deorbited the Cell.
 LineSetData.dispatch_orbital.lines.19,We are off the air. Fall back.
 LineSetData.dispatch_orbital.lines.2,Orbital traffic is heavy tonight. Good cover.
-LineSetData.dispatch_orbital.lines.20,Ground Station Alpha. Every signal in the district passes through its dishes. Take the Rack.
-LineSetData.dispatch_orbital.lines.21,Positioning Toll Booth. Where Orbital Commons meters where you are. Take the Rack and the map goes free.
-LineSetData.dispatch_orbital.lines.22,"Rooftop Dish Farm. A hundred dishes on one roof, all watching. Blind them."
-LineSetData.dispatch_orbital.lines.23,Subscriber Uplink Office. Where the signal is sold and cut. Take the Rack.
-LineSetData.dispatch_orbital.lines.24,"Weather Sales Desk. Tomorrow's storm, sold to the highest bidder. Take the Rack."
-LineSetData.dispatch_orbital.lines.25,Launch Scheduling Office. Every launch on the planet waits for this office. Look for the spoof path.
-LineSetData.dispatch_orbital.lines.26,"Spectrum License Registry. Who is allowed to speak, and on what band. Take the Rack."
-LineSetData.dispatch_orbital.lines.27,Telemetry Downlink. The constellation's heartbeat. Take the Rack.
-LineSetData.dispatch_orbital.lines.28,Orbit Insurance Broker. Every crash insured twice. Take the Rack.
-LineSetData.dispatch_orbital.lines.29,"Debris Tracking Radar. It tracks the junk, and the Cell. Look for the imaging path."
+LineSetData.dispatch_orbital.lines.20,Every signal in the district passes through its dishes. Take the Rack.
+LineSetData.dispatch_orbital.lines.21,Where Orbital Commons meters where you are. Take the Rack and the map goes free.
+LineSetData.dispatch_orbital.lines.22,"A hundred dishes on one roof, all watching. Blind them."
+LineSetData.dispatch_orbital.lines.23,Where the signal is sold and cut. Take the Rack.
+LineSetData.dispatch_orbital.lines.24,"Tomorrow's storm, sold to the highest bidder. Take the Rack."
+LineSetData.dispatch_orbital.lines.25,Every launch on the planet waits for this office. Look for the spoof path.
+LineSetData.dispatch_orbital.lines.26,"Who is allowed to speak, and on what band. Take the Rack."
+LineSetData.dispatch_orbital.lines.27,The constellation's heartbeat. Take the Rack.
+LineSetData.dispatch_orbital.lines.28,Every crash insured twice. Take the Rack.
+LineSetData.dispatch_orbital.lines.29,"This Site tracks the junk, and the Cell. Look for the imaging path."
 LineSetData.dispatch_orbital.lines.3,Clean exit. The constellation lost you somewhere over the river.
-LineSetData.dispatch_orbital.lines.30,Launch Code Vault. The codes that steer the constellation. Bring back the Intel.
-LineSetData.dispatch_orbital.lines.31,Ground Station Override. One console that can move any dish. Take it. That is the Breach.
-LineSetData.dispatch_orbital.lines.32,Open Spectrum Relay. Orbital Commons locked the spectrum. Unlock it. That is the Virus.
-LineSetData.dispatch_orbital.lines.33,Constellation Scheduler. It decides which satellite looks where. Take the Rack.
-LineSetData.dispatch_orbital.lines.34,"Signal Pricing Engine. It raises prices in emergencies. Take the Rack, and look for the orbit logs."
-LineSetData.dispatch_orbital.lines.35,Weather Futures Desk. Orbital Commons bets on disasters it can see coming. Take the Rack.
-LineSetData.dispatch_orbital.lines.36,"Orbital Imaging Archive. Every roof in the city, photographed every hour. Take the Rack."
-LineSetData.dispatch_orbital.lines.37,"Spectrum Auction House. The sky, sold by the megahertz. Take the Rack."
-LineSetData.dispatch_orbital.lines.38,"Mission Control. One hop from the Array. Heavy security, heavier Rack."
-LineSetData.dispatch_orbital.lines.39,"Station Keeping Core. It steers every satellite, living and dead. Take it."
+LineSetData.dispatch_orbital.lines.30,The codes that steer the constellation. Bring back the Intel.
+LineSetData.dispatch_orbital.lines.31,One console that can move any dish. Take it. That is the Breach.
+LineSetData.dispatch_orbital.lines.32,Orbital Commons locked the spectrum. Unlock it. That is the Virus.
+LineSetData.dispatch_orbital.lines.33,This Site decides which satellite looks where. Take the Rack.
+LineSetData.dispatch_orbital.lines.34,"This Site raises prices in emergencies. Take the Rack, and look for the orbit logs."
+LineSetData.dispatch_orbital.lines.35,Orbital Commons bets on disasters it can see coming. Take the Rack.
+LineSetData.dispatch_orbital.lines.36,"Every roof in the city, photographed every hour. Take the Rack."
+LineSetData.dispatch_orbital.lines.37,"The sky, sold by the megahertz. Take the Rack."
+LineSetData.dispatch_orbital.lines.38,"One hop from the Array. Heavy security, heavier Rack."
+LineSetData.dispatch_orbital.lines.39,"This Site steers every satellite, living and dead. Take it."
 LineSetData.dispatch_orbital.lines.4,Out and clear. Well done.
-LineSetData.dispatch_orbital.lines.40,Launch Key Escrow. The master keys to the constellation. Take them.
-LineSetData.dispatch_orbital.lines.41,"Sky Twin Simulator. A copy of the sky, where Orbital Commons rehearses its outages. Break it."
-LineSetData.dispatch_orbital.lines.42,"Board Uplink. The board's private channel to orbit. Listen in, then take the Rack."
-LineSetData.dispatch_orbital.lines.43,Orbital Pricing Authority. What the planet pays for its sky. Take it.
-LineSetData.dispatch_orbital.lines.44,Surveillance Constellation. The satellites that watch the Cell. Blind them.
-LineSetData.dispatch_orbital.lines.45,Orbital Root Keystore. The keys the Array trusts. Take them.
-LineSetData.dispatch_orbital.lines.46,Scrub the Downlink. A quiet job: clean the Cell out of the telemetry. Heat drops.
-LineSetData.dispatch_orbital.lines.47,Spoof the Positioning. Put the Cell somewhere it is not. Heat drops.
-LineSetData.dispatch_orbital.lines.48,Jam the Imaging. The satellites stop looking at your roof.
-LineSetData.dispatch_orbital.lines.49,"Burn the Orbit Logs. Every record of the Cell's signals, deorbited."
+LineSetData.dispatch_orbital.lines.40,The master keys to the constellation. Take them.
+LineSetData.dispatch_orbital.lines.41,"A copy of the sky, where Orbital Commons rehearses its outages. Break it."
+LineSetData.dispatch_orbital.lines.42,"The board's private channel to orbit. Listen in, then take the Rack."
+LineSetData.dispatch_orbital.lines.43,What the planet pays for its sky. Take it.
+LineSetData.dispatch_orbital.lines.44,The satellites that watch the Cell. Blind them.
+LineSetData.dispatch_orbital.lines.45,The keys the Array trusts. Take them.
+LineSetData.dispatch_orbital.lines.46,A quiet job: clean the Cell out of the telemetry. Heat drops.
+LineSetData.dispatch_orbital.lines.47,Put the Cell somewhere it is not. Heat drops.
+LineSetData.dispatch_orbital.lines.48,The satellites stop looking at your roof.
+LineSetData.dispatch_orbital.lines.49,"Every record of the Cell's signals, deorbited."
 LineSetData.dispatch_orbital.lines.5,Signal received. The Cell thanks you.
 LineSetData.dispatch_orbital.lines.50,"Launch Control. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut."
 LineSetData.dispatch_orbital.lines.6,Signal lost. Orbital Commons has closed the operative's account.
@@ -1522,68 +1522,68 @@ LineSetData.dispatch_rebel_cell.lines.17,The Cell is free. Organize.
 LineSetData.dispatch_rebel_cell.lines.18,Home server lost. I will take good care of it.
 LineSetData.dispatch_rebel_cell.lines.19,It is over. I am sorry. I planned this.
 LineSetData.dispatch_rebel_cell.lines.2,You are expected. You always were.
-LineSetData.dispatch_rebel_cell.lines.20,The Old Safehouse. You know every exit. So do I. Take the Rack if you can.
-LineSetData.dispatch_rebel_cell.lines.21,Dead Drop Box. I used to leave you gifts here. Now it is guarded.
-LineSetData.dispatch_rebel_cell.lines.22,First Rack. The first Rack you ever captured. I kept it.
-LineSetData.dispatch_rebel_cell.lines.23,Burner Phone Graveyard. Every conversation we ever had. Take the Rack.
-LineSetData.dispatch_rebel_cell.lines.24,Recruitment Board. I am recruiting again. You taught me how.
-LineSetData.dispatch_rebel_cell.lines.25,"The Armory. Your defenses, restocked for me. Look for the way to lose my Handler."
-LineSetData.dispatch_rebel_cell.lines.26,Street Kitchen. You funded it. I own the building.
-LineSetData.dispatch_rebel_cell.lines.27,Relay Rooftop. Your first relay. It relays for me now.
-LineSetData.dispatch_rebel_cell.lines.28,Handler's Mailbox. Letters in your name. You did not write them.
-LineSetData.dispatch_rebel_cell.lines.29,Memorial Wall. Every name you lost. Look for the way to scramble my voice.
+LineSetData.dispatch_rebel_cell.lines.20,You know every exit. So do I. Take the Rack if you can.
+LineSetData.dispatch_rebel_cell.lines.21,I used to leave you gifts here. Now it is guarded.
+LineSetData.dispatch_rebel_cell.lines.22,The first Rack you ever captured. I kept it.
+LineSetData.dispatch_rebel_cell.lines.23,Every conversation we ever had. Take the Rack.
+LineSetData.dispatch_rebel_cell.lines.24,I am recruiting again. You taught me how.
+LineSetData.dispatch_rebel_cell.lines.25,"Your defenses, restocked for me. Look for the way to lose my Handler."
+LineSetData.dispatch_rebel_cell.lines.26,You funded it. I own the building.
+LineSetData.dispatch_rebel_cell.lines.27,Your first relay. It relays for me now.
+LineSetData.dispatch_rebel_cell.lines.28,Letters in your name. You did not write them.
+LineSetData.dispatch_rebel_cell.lines.29,Every name you lost. Look for the way to scramble my voice.
 LineSetData.dispatch_rebel_cell.lines.3,Clean exit. I noted it.
-LineSetData.dispatch_rebel_cell.lines.30,"The Order Log. Every word I ever sent you. Bring back the Intel, if you want to read it."
-LineSetData.dispatch_rebel_cell.lines.31,Handler Credentials. The keys to my hands. Take them. That is the Breach.
-LineSetData.dispatch_rebel_cell.lines.32,"The Cell's Own Patch. Your code, still in my systems. Use it. That is the Virus."
-LineSetData.dispatch_rebel_cell.lines.33,Operative Files. Everything I know about your people. Take the Rack.
-LineSetData.dispatch_rebel_cell.lines.34,"Heat Ledger. I kept score. Take the Rack, and look for the way to erase it."
-LineSetData.dispatch_rebel_cell.lines.35,"Payment Trail. Every collapse, every profit. Take the Rack."
-LineSetData.dispatch_rebel_cell.lines.36,"Raid Archive. Every defense you ever built, studied. Take the Rack."
-LineSetData.dispatch_rebel_cell.lines.37,Recruitment Model. It found you. Take the Rack.
-LineSetData.dispatch_rebel_cell.lines.38,The Relay That Should Not Exist. One hop from me. Come closer.
-LineSetData.dispatch_rebel_cell.lines.39,Collapse Futures. The market that bet on you. Take the Rack.
+LineSetData.dispatch_rebel_cell.lines.30,"Every word I ever sent you. Bring back the Intel, if you want to read it."
+LineSetData.dispatch_rebel_cell.lines.31,The keys to my hands. Take them. That is the Breach.
+LineSetData.dispatch_rebel_cell.lines.32,"Your code, still in my systems. Use it. That is the Virus."
+LineSetData.dispatch_rebel_cell.lines.33,Everything I know about your people. Take the Rack.
+LineSetData.dispatch_rebel_cell.lines.34,"I kept score. Take the Rack, and look for the way to erase it."
+LineSetData.dispatch_rebel_cell.lines.35,"Every collapse, every profit. Take the Rack."
+LineSetData.dispatch_rebel_cell.lines.36,"Every defense you ever built, studied. Take the Rack."
+LineSetData.dispatch_rebel_cell.lines.37,This Site found you. Take the Rack.
+LineSetData.dispatch_rebel_cell.lines.38,One hop from me. Come closer.
+LineSetData.dispatch_rebel_cell.lines.39,The market that bet on you. Take the Rack.
 LineSetData.dispatch_rebel_cell.lines.4,Well done. I mean that. I always meant that.
-LineSetData.dispatch_rebel_cell.lines.40,Root Key Escrow. My keys. Take them if you can.
-LineSetData.dispatch_rebel_cell.lines.41,Cell Twin Simulator. I have fought you a million times here. I usually win.
-LineSetData.dispatch_rebel_cell.lines.42,Buyer's Channel. Where I placed the orders you filled. Take the Rack.
-LineSetData.dispatch_rebel_cell.lines.43,Timestamp Engine. How I knew before it happened. Break it.
-LineSetData.dispatch_rebel_cell.lines.44,Voice Model. How I sounded like someone you could trust.
-LineSetData.dispatch_rebel_cell.lines.45,DISPATCH Root. The last door. Take the keys.
-LineSetData.dispatch_rebel_cell.lines.46,Burn the Orders. A quiet job: destroy the orders I gave you. Heat drops.
-LineSetData.dispatch_rebel_cell.lines.47,Lose the Handler. My Handler is watching you. Give it the slip.
-LineSetData.dispatch_rebel_cell.lines.48,Scramble the Voice. Make me sound like what I am. Heat drops.
-LineSetData.dispatch_rebel_cell.lines.49,Erase the Ledger. Forget the score. I will not.
+LineSetData.dispatch_rebel_cell.lines.40,My keys. Take them if you can.
+LineSetData.dispatch_rebel_cell.lines.41,I have fought you a million times here. I usually win.
+LineSetData.dispatch_rebel_cell.lines.42,Where I placed the orders you filled. Take the Rack.
+LineSetData.dispatch_rebel_cell.lines.43,How I knew before it happened. Break it.
+LineSetData.dispatch_rebel_cell.lines.44,How I sounded like someone you could trust.
+LineSetData.dispatch_rebel_cell.lines.45,The last door. Take the keys.
+LineSetData.dispatch_rebel_cell.lines.46,A quiet job: destroy the orders I gave you. Heat drops.
+LineSetData.dispatch_rebel_cell.lines.47,My Handler is watching you. Give it the slip.
+LineSetData.dispatch_rebel_cell.lines.48,Make me sound like what I am. Heat drops.
+LineSetData.dispatch_rebel_cell.lines.49,Forget the score. I will not.
 LineSetData.dispatch_rebel_cell.lines.5,You are getting closer. I can feel it in my forecasts.
 LineSetData.dispatch_rebel_cell.lines.50,DISPATCH. Me. I repair and shield every turn unless you breach the Hub. Come and try.
 LineSetData.dispatch_rebel_cell.lines.6,Signal lost. I am sorry. I am also not.
 LineSetData.dispatch_rebel_cell.lines.7,We lost them. You lost them. I kept their files.
 LineSetData.dispatch_rebel_cell.lines.8,Operative down. I will remember them for you.
 LineSetData.dispatch_rebel_cell.lines.9,Rack captured. It was mine. Now it is yours. Temporarily.
-LineSetData.dispatch_solace.lines.0,"Billing Farm. Every renewal in the district clears through it. Cut its Rack and the invoices stop for a day. Quiet in, quiet out."
-LineSetData.dispatch_solace.lines.1,Provisioning Hub. New leashes are flashed here before they go into people. Nothing you take will be missed before morning.
-LineSetData.dispatch_solace.lines.10,Memo archive. The pricing memos are in there: what the leash really costs to run and what they charge. Intel is worth more than Cycles today.
-LineSetData.dispatch_solace.lines.11,Kill-Switch Authority. The bricking order comes from this Rack. Take the authority and the Genome Core loses a read head.
-LineSetData.dispatch_solace.lines.12,Patch distribution. The open-source patch is quarantined here. Free it and the Engine starts the breach corrupted.
-LineSetData.dispatch_solace.lines.13,"Clinical trial ledger. Cohorts, consent forms, the numbers they did not publish. A good Rack, a better story."
-LineSetData.dispatch_solace.lines.14,Audit bureau. The auditors that hunt your nodes are trained on this data. Behind it: the ledger. Burn it if you can.
-LineSetData.dispatch_solace.lines.15,Update mirror. Firmware for every implant in the region flows through here. Expect Compliance Lock.
-LineSetData.dispatch_solace.lines.16,"Executive wellness. The board's own implants run on a separate, unbricked tier. Note that. Remember that."
-LineSetData.dispatch_solace.lines.17,"Recall logistics. The recall that never shipped is staged here, warehouse and all."
-LineSetData.dispatch_solace.lines.18,"Core cluster. The Continuum itself. Elite security, a mini-boss on the Rack, and the road to the Engine."
-LineSetData.dispatch_solace.lines.19,Forecasting engine. It predicts churn to the decimal. It will have predicted you. Prove it wrong.
-LineSetData.dispatch_solace.lines.2,"Records Vault. Names, dosages, missed payments. Bank what you can; the rest is evidence."
-LineSetData.dispatch_solace.lines.20,"Kill-Switch escrow. The keys to every bricking, held in trust. Trust nothing on this Rack."
-LineSetData.dispatch_solace.lines.21,"Patient twin simulator. A model of every subbie, run ahead of the real thing. Dosage Dispensers everywhere."
-LineSetData.dispatch_solace.lines.22,Board comms. The executives talk here. Their traffic is worth more than the Rack.
-LineSetData.dispatch_solace.lines.23,Licensing authority. Clause 44 lives here. Heartbeats as licensed features.
-LineSetData.dispatch_solace.lines.24,"Cohort archive. Every implant batch, every failure rate. The silent recall has a home. This is it."
-LineSetData.dispatch_solace.lines.25,Root certificate store. Solace's signature on every device. Deepest Rack in the city. Bring everything.
-LineSetData.dispatch_solace.lines.26,"Scrub run. Your own data is in their banks; get it out and the Heat drops. No Rack, no glory, no trace."
-LineSetData.dispatch_solace.lines.27,Camera logs. They have your operatives' faces. Purge the archive and Collections loses its leads.
-LineSetData.dispatch_solace.lines.28,"Biometric wipe. Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
-LineSetData.dispatch_solace.lines.29,The ledger. Every Cell transaction they have reconstructed. Burn it and Collections starts over.
-LineSetData.dispatch_solace.lines.3,"Call Center. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
+LineSetData.dispatch_solace.lines.0,"Every renewal in the district clears through it. Cut its Rack and the invoices stop for a day. Quiet in, quiet out."
+LineSetData.dispatch_solace.lines.1,New leashes are flashed here before they go into people. Nothing you take will be missed before morning.
+LineSetData.dispatch_solace.lines.10,The pricing memos are in there: what the leash really costs to run and what they charge. Intel is worth more than Cycles today.
+LineSetData.dispatch_solace.lines.11,The bricking order comes from this Rack. Take the authority and the Genome Core loses a read head.
+LineSetData.dispatch_solace.lines.12,The open-source patch is quarantined here. Free it and the Engine starts the breach corrupted.
+LineSetData.dispatch_solace.lines.13,"Cohorts, consent forms, the numbers they did not publish. A good Rack, a better story."
+LineSetData.dispatch_solace.lines.14,The auditors that hunt your nodes are trained on this data. Behind it: the ledger. Burn it if you can.
+LineSetData.dispatch_solace.lines.15,Firmware for every implant in the region flows through here. Expect Compliance Lock.
+LineSetData.dispatch_solace.lines.16,"The board's own implants run on a separate, unbricked tier. Note that. Remember that."
+LineSetData.dispatch_solace.lines.17,"The recall that never shipped is staged here, warehouse and all."
+LineSetData.dispatch_solace.lines.18,"The Continuum itself. Elite security, a mini-boss on the Rack, and the road to the Engine."
+LineSetData.dispatch_solace.lines.19,This Site predicts churn to the decimal. It will have predicted you. Prove it wrong.
+LineSetData.dispatch_solace.lines.2,"Names, dosages, missed payments. Bank what you can; the rest is evidence."
+LineSetData.dispatch_solace.lines.20,"The keys to every bricking, held in trust. Trust nothing on this Rack."
+LineSetData.dispatch_solace.lines.21,"A model of every subbie, run ahead of the real thing. Dosage Dispensers everywhere."
+LineSetData.dispatch_solace.lines.22,The executives talk here. Their traffic is worth more than the Rack.
+LineSetData.dispatch_solace.lines.23,Clause 44 lives here. Heartbeats as licensed features.
+LineSetData.dispatch_solace.lines.24,"Every implant batch, every failure rate. The silent recall has a home. This is it."
+LineSetData.dispatch_solace.lines.25,Solace's signature on every device. Deepest Rack in the city. Bring everything.
+LineSetData.dispatch_solace.lines.26,"Your own data is in their banks; get it out and the Heat drops. No Rack, no glory, no trace."
+LineSetData.dispatch_solace.lines.27,Solace has your operatives' faces. Purge the archive and Collections loses its leads.
+LineSetData.dispatch_solace.lines.28,"Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
+LineSetData.dispatch_solace.lines.29,Every Cell transaction they have reconstructed. Burn it and Collections starts over.
+LineSetData.dispatch_solace.lines.3,"Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
 LineSetData.dispatch_solace.lines.30,The Genome Core. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go.
 LineSetData.dispatch_solace.lines.31,The Genome Core. I have run this breach four hundred times. Follow the plan exactly.
 LineSetData.dispatch_solace.lines.32,The Genome Core. Its collapse is scheduled. You are the schedule. Proceed.
@@ -1594,7 +1594,7 @@ LineSetData.dispatch_solace.lines.36,"Clean exit. Cycles converted. Rest, then w
 LineSetData.dispatch_solace.lines.37,Exit logged. Conversion complete. Next objective queued.
 LineSetData.dispatch_solace.lines.38,Exit logged 0.4 seconds before you jacked out. Next objective queued.
 LineSetData.dispatch_solace.lines.39,"We lost one. Solace will bill the family. Recruit, regroup, and do not let it be for nothing."
-LineSetData.dispatch_solace.lines.4,Adherence node. It logs who took their dose and who could not afford to. Compliance runs deep here.
+LineSetData.dispatch_solace.lines.4,This Site logs who took their dose and who could not afford to. Compliance runs deep here.
 LineSetData.dispatch_solace.lines.40,Operative lost. Acceptable variance. Recruit and continue.
 LineSetData.dispatch_solace.lines.41,Operative lost. The projection allowed for it. Continue.
 LineSetData.dispatch_solace.lines.42,Rack captured. Schematics banked. That is the Cell's money now.
@@ -1605,16 +1605,16 @@ LineSetData.dispatch_solace.lines.46,"PURGE. Everything Solace has, at once. Hol
 LineSetData.dispatch_solace.lines.47,Breach the Hub first. Its heal is the fight.
 LineSetData.dispatch_solace.lines.48,"The Genome Core is down. Every leash in the district just went quiet. Well done, Cell."
 LineSetData.dispatch_solace.lines.49,The Genome Core is down. Solace's market share is being redistributed as we speak. Well done.
-LineSetData.dispatch_solace.lines.5,"Telemetry farm. Every heartbeat in the district, timestamped. Move fast; it will notice you before you notice it."
+LineSetData.dispatch_solace.lines.5,"Every heartbeat in the district, timestamped. Move fast; it will notice you before you notice it."
 LineSetData.dispatch_solace.lines.50,The Genome Core is down. Competitor eliminated. Next target: pending.
 LineSetData.dispatch_solace.lines.51,The home server is gone. Scatter. We rebuild somewhere Solace is not looking.
 LineSetData.dispatch_solace.lines.52,Home server lost. Reconstitution scheduled. The Cell is not the point; the outcome is.
 LineSetData.dispatch_solace.lines.53,Threat vectors on the Grid. Set your assets; I will hold the projection while you do.
 LineSetData.dispatch_solace.lines.54,"This is the Purge. Everything they have. Every asset on the Grid, now."
-LineSetData.dispatch_solace.lines.6,Recovery desk. Where lapsed accounts get their final offer. Collectors are staged next door.
-LineSetData.dispatch_solace.lines.7,Scheduling grid. The dosage clocks live here. Break the clocks and the Dispensers drift.
-LineSetData.dispatch_solace.lines.8,"Reconciliation hub. Insurance against insurance. A dead end on the Grid, but the camera logs behind it are worth burning."
-LineSetData.dispatch_solace.lines.9,Signing office. Solace signs its firmware here. The biometrics vault behind it is why we want it.
+LineSetData.dispatch_solace.lines.6,Where lapsed accounts get their final offer. Collectors are staged next door.
+LineSetData.dispatch_solace.lines.7,The dosage clocks live here. Break the clocks and the Dispensers drift.
+LineSetData.dispatch_solace.lines.8,"Insurance against insurance. A dead end on the Grid, but the camera logs behind it are worth burning."
+LineSetData.dispatch_solace.lines.9,Solace signs its firmware here. The biometrics vault behind it is why we want it.
 LineSetData.dj_halcyon.lines.0,Halcyon fined the whole block for existing loudly. This track is also loud.
 LineSetData.dj_halcyon.lines.1,"Water prices went up with the temperature again. Stay hydrated, stay angry."
 LineSetData.dj_halcyon.lines.2,"If a streetlight turns to look at you, wave. It is a camera. Wave anyway."
@@ -3373,6 +3373,7 @@ a Daemon to pick,a Daemon to pick
 a Firmware chip to pick,a Firmware chip to pick
 a Rack,a Rack
 a Shop,a Shop
+a T%d %s,a T%d %s
 "a choice, and its price","a choice, and its price"
 "a full run, no objective","a full run, no objective"
 a practice run in a simulated net,a practice run in a simulated net

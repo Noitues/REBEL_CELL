@@ -695,7 +695,7 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 func _terminal_name(site: SiteData, fallback: String) -> String:
 	if site == null:
 		return fallback
-	return "_".join(TextDb.t(site, "display_name").to_upper().split(" ", false))
+	return "_".join(SiteText.tiered(site).to_upper().split(" ", false))
 
 
 ## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its
@@ -704,11 +704,11 @@ func jack_destination(site_id: StringName = &"") -> String:
 	if site_id != &"" and corporation != null:
 		var named := CampaignRules.site_data(corporation, site_id)
 		if named != null:
-			return TextDb.t(named, "display_name")
+			return SiteText.tiered(named)
 	if netrun != null and corporation != null:
 		var sd := CampaignRules.site_data(corporation, netrun.run.site_id)
 		if sd != null:
-			return TextDb.t(sd, "display_name")
+			return SiteText.tiered(sd)
 	return tr("the net")
 
 

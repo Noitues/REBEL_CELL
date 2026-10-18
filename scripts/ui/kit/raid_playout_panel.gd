@@ -595,7 +595,7 @@ func site_word(id: Variant) -> String:
 	if sid == _home():
 		return tr("HOME SERVER")
 	var sd := CampaignRules.site_data(RunManager.corporation, sid) if RunManager.corporation != null else null
-	return TextDb.t(sd, "display_name") if sd != null else String(sid)
+	return SiteText.tiered(sd, _home()) if sd != null else String(sid)
 
 
 ## ANIM-R4 H4: a threat's name in the player's language, from the content the event names
