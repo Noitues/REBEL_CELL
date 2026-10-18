@@ -34,3 +34,26 @@ static func tiered(site: SiteData, home_site_id: StringName = &"") -> String:
 	if is_named(site) or (home_site_id != &"" and site.id == home_site_id):
 		return label(site, home_site_id)
 	return "%s %s" % [CityMapOverlay.tier_text(site.tier), label(site, home_site_id)]
+
+
+## W0 GRIDCARD: the word for the Site's objective, which the reward header, the combat address line
+## and the Site card's title say instead of the type: "Exploit", "Heat sink", "Site" (no objective),
+## HOME SERVER for the home Site, the translated name for the Central Server Site.
+const HEAT_SINK_WORD := "Heat sink" # TR
+
+
+static func objective_word(site: SiteData, home_site_id: StringName = &"") -> String:
+	if site == null:
+		return ""
+	if site.objective == RC.SiteObjective.HEAT_REDUCTION and not (home_site_id != &"" and site.id == home_site_id):
+		return CityMapOverlay.tr_word(HEAT_SINK_WORD)
+	return label(site, home_site_id)
+
+
+## `objective_word` with the tier in front ("T1 Heat sink"); the named Site and the home Site keep their name.
+static func tiered_objective(site: SiteData, home_site_id: StringName = &"") -> String:
+	if site == null:
+		return ""
+	if is_named(site) or (home_site_id != &"" and site.id == home_site_id):
+		return objective_word(site, home_site_id)
+	return "%s %s" % [CityMapOverlay.tier_text(site.tier), objective_word(site, home_site_id)]

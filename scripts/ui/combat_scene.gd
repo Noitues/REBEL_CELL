@@ -2827,7 +2827,7 @@ func address_line() -> String:
 			parts.append(TextDb.t(corp, "display_name"))
 			var site := CampaignRules.site_data(corp, run.site_id) if run.site_id != &"" else null
 			if site != null:
-				parts.append(SiteText.tiered(site))
+				parts.append(SiteText.tiered_objective(site))
 	var names := PackedStringArray()
 	for e in engine.state().enemies:
 		if not e.is_satellite:
