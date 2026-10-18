@@ -35,13 +35,18 @@ def font(size: int) -> ImageFont.ImageFont:
 
 def main() -> None:
     before, after, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-    sheet = Image.new("RGB", (2 * W, HEAD + len(ROWS) * (H + HEAD)), (18, 18, 22))
+    # Optional: row numbers to keep (e.g. 2,6,7), then the two column headings.
+    keep = sys.argv[4].split(",") if len(sys.argv) > 4 else [r[0] for r in ROWS]
+    rows = [r for r in ROWS if r[0] in keep]
+    left = sys.argv[5] if len(sys.argv) > 5 else "BEFORE (main 04bf2973)"
+    right = sys.argv[6] if len(sys.argv) > 6 else "AFTER (B-TEACH + B-CODEX)"
+    sheet = Image.new("RGB", (2 * W, HEAD + len(rows) * (H + HEAD)), (18, 18, 22))
     d = ImageDraw.Draw(sheet)
     f = font(18)
-    d.text((10, 6), "BEFORE (main 04bf2973)", fill=(255, 120, 120), font=f)
-    d.text((W + 10, 6), "AFTER (B-TEACH + B-CODEX)", fill=(120, 255, 160), font=f)
+    d.text((10, 6), left, fill=(255, 120, 120), font=f)
+    d.text((W + 10, 6), right, fill=(120, 255, 160), font=f)
     y = HEAD
-    for num, label, stem in ROWS:
+    for num, label, stem in rows:
         d.text((10, y + 5), "%s  %s" % (num, label), fill=(240, 240, 240), font=f)
         for col, folder in enumerate((before, after)):
             p = folder / (stem + ".png")

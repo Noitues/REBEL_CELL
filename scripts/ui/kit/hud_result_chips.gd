@@ -258,7 +258,7 @@ static func tag_of(kind: StringName) -> String:
 		ResultChipModel.GAINED:
 			word = "GUARD"
 		ResultChipModel.EVADE:
-			word = "EVADE"
+			word = "SANDBOX"
 		ResultChipModel.RAM:
 			word = "RAM"
 		ResultChipModel.HEAT:

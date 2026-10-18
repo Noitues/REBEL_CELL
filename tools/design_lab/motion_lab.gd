@@ -1879,7 +1879,7 @@ func _fx_call(what: String, ev: WheelView) -> void:
 		"fx_ram":
 			fx.ram_gain(Vector2(_scene.get_global_rect().get_center().x, _scene.get_global_rect().position.y), CombatBeatFx.ram_pips(_scene.ram_note, 0, DEMO_RAM_SPEND))
 		"fx_label":
-			fx.temp_label(ev.global_center(), tr("EVADED"), Palette.GAIN)
+			fx.temp_label(ev.global_center(), tr("SANDBOXED"), Palette.GAIN)
 		"fx_daemon":
 			fx.trigger_fx(_scene.daemon_row.get_global_rect().get_center(), pv.global_center(), Palette.NEON_VIOLET, &"daemon_trigger")
 		"fx_firmware":

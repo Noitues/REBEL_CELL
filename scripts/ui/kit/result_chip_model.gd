@@ -229,7 +229,7 @@ static func words(c: Dictionary) -> String:
 		HEALED:
 			return String(TranslationServer.translate("+%d HP healed")) % v
 		EVADE:
-			return String(TranslationServer.translate("+%d EVADE")) % v
+			return String(TranslationServer.translate("+%d SANDBOX")) % v
 		RAM:
 			return String(TranslationServer.translate("%d RAM lost")) % v
 		HEAT:
