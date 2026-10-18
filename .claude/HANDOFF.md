@@ -1,170 +1,83 @@
-# Handoff — REBEL_CELL (change plan 1, gate PT-002 in progress)
+# Handoff — REBEL_CELL (build session; start W0 of REPLAN_2026-10-16)
 
 | | |
 |---|---|
-| Written | 2026-10-13 21:03 local |
-| Session id | be016cca-ea5b-43a2-b75d-e286cee33d9f |
-| Branch / commit | main @ 84c8aa3e (pushed: origin/main @ d086ca5a; 52ba1e94 merge + PT-002 list + routes are local only) |
-| Reason for pause | Designer: the session is long; hand off and resume in a new one |
+| Written | 2026-10-18 |
+| Branch / commit | main, pushed (see `git log origin/main -1`) |
+| Reason | The designer cleared the old session after the plan-only freeze. The weekly token reset is in: **full parallel development resumes.** |
 
 ## Goal
-REBEL_CELL (Godot 4.7 roguelite deckbuilder). M14 is complete (gate PT-001). We are running **change plan 1**
-(`docs/handoff/gates/CHANGE_PLAN_1.md`), built from Claude-playtester feedback and the designer's playtests:
-- wave 1 / 1b: flow bugs;
-- wave 2: combat legibility (precision tags, planned-outcome chips, labels / legend, card faces, round 45 inner ring);
-- wave 3: city clarity (next).
+REBEL_CELL (Godot 4.7 roguelite deckbuilder). M14, change plan 1 (gates PT-001..PT-003) and change plan 2's design
+work are done. Now: **build W0 of `docs/handoff/gates/REPLAN_2026-10-16.md`** (→ gate PT-004, closes plan 2), then W1
+to W3 (gates PT-005..PT-007).
 
-The designer said "keep going to the gate": finish **gate PT-002**, hand the designer the playtest list, then STOP
-and wait for their feedback. **Rule CP-002 #1:** gather feedback, act on none until the designer decides; triage →
-rulings → plan.
+## First steps for the new session
+1. Read: `CLAUDE.md`, the replan (all of it, esp. §C.1-C.3 and §D), `docs/handoff/plan2/CONTENT_DESIGN_V2.md`
+   (R1-R13, N1-N20), the newest entries of `docs/DECISIONS.md`.
+2. **Designer answers to the decision sheet** (`docs/handoff/plan2/drafts/questions/DECISION_SHEET.md`, Q1-Q47 and
+   A1-A7) arrive in the designer's first prompt. Log them in `docs/DECISIONS.md` (one entry, "Designer rulings
+   2026-10-18: decision sheet"), each as `Qn: <choice>`; "default" means the sheet's RECOMMENDED option. A5/A6 go to
+   the art-pass session; A7 is ours. Unanswered questions: take the default and list them in the entry as "default
+   taken, designer may revisit".
+3. Fold the rulings into the W0 briefs (`docs/handoff/plan2/drafts/briefs/`) where they touch them, then cut slices.
+4. Start W0 in parallel (limits below).
 
-## State of the tree
-- **Main @ 84c8aa3e** has everything for PT-002 merged: waves 1b + 2, raid STEP divider, US English pass, deferred
-  test tier, round 45 ring + polish (52ba1e94), INCOMING fixes, routes for build 52ba1e94.
-- **Uncommitted in main:** nothing of mine. Untracked files that belong to others stay untouched:
-  - `docs/HANDOFF_H20_MERGE.md`, `docs/art_asset.md`, `du.exe.stackdump`;
-  - `.playtest_sessions/*`, `.playtest_saves/*` (gitignored);
-  - some `*.gd.uid` import leftovers.
-- **`project.godot`:** the designer's open editor keeps re-saving it (it drops the translations line and
-  `aspect="keep"`, adds `[dotnet]`). The designer authorized restoring it: `git restore project.godot` whenever it
-  shows as modified.
-- **Not pushed:** 52ba1e94 (ring polish + PT-002 list draft) and 84c8aa3e (routes). Push only through the push gate
-  (below).
+## W0 (replan §C.1)
+- **Art build:** NA-02 → NA-03 → NA-04 (briefs `na02/na03/na04.md`). NA-01 is merged (21a22a52).
+- **Content foundation:** N1 → N2 → N3 → N4 → N19, with N11, N13, N14 in parallel (briefs `n*.md`; test plans
+  `drafts/test_plans/n*.md`).
+- **Queued:** the PANOPTICON rename (display name only; id `civic_core` stays); B-TEACH follow-ups 1-3
+  (`docs/art_review/PLAN2/B_TEACH.md`); the B-MENU + C-SCREENS capture sheet; the F-RULE5 remainder (skip files being
+  retired); S5 balance sweeps incl. step-0 calibration (specs in `drafts/balance_sweeps/`, feeds N2; tool
+  `tools/balance/`, branch `balance`); remove Site names (before NA-23's overlay). The pending HQ camera test
+  (`tests/unit/test_hq_b_city.gd`) folds into NA-34.
+- **Ordering rules:** replan §C.2 (one slice per merge wave on `netrun_session.gd`: N2 → NA-02 → ...).
+- **D6 corrected overrides the replan text:** the City Grid view STAYS (campaign monitoring + raids). JACK IN zooms
+  into the netrun; the player can zoom out to the grid and back at will. Only the old 2D route page retires (§C.4).
+- **D4 nodes:** REST (heal or swap firmware), Workshop, Cache (vet the minipuzzle); Relay only in unique runs; Ambush
+  maybe as an event option; Safehouse and Heat Sink are grid-view nodes; Black Market maybe as an unknown event.
 
-## In flight (independent of this session)
-1. **PT-002 combat screen batch**: `python tools/playtest/gate.py --gate PT-002 --profile combat --compare PB-010
-   --build 52ba1e94` (started via PowerShell Start-Process, pid 23456).
-   - Logs: `%TEMP%\gate_pt002\gate_combat.log` and `.err`.
-   - Output: `docs/playtest/claude/gates/PT-002.md`, the batch under `.playtest_sessions/<batch>/`, `_FINDINGS.md`
-     in `docs/playtest/claude/<batch>/`.
-   - Testers: 2 novice + 1 intermediate + 1 keyboard_only, from `route:to_netrun`, combat escalation off, decision
-     parity on the first intermediate.
-   - About $4–10, ~60–90 min.
-   - It pins build 52ba1e94 because the routes are recorded for that sha. Routes are keyed by the playtest-build
-     HEAD[:8], so a new build sha means copying the routes (JSON **and** the step-PNG folders) or re-recording.
-2. **Perfect-quiz probe** (PB-016 / glasswing, intermediate casual_evening, focus wheel_combat; cmd.exe pid 6112):
-   - `harness.py --probe-perfect 30 --route to_netrun --minutes 25 --max-usd 1.0 --defer`, then
-     `perfect_quiz.py --session .playtest_sessions/PB-016/glasswing`.
-   - Logs: `%TEMP%\gate_pt002\probe_play.log`, `probe_quiz.log`. Output: `docs/playtest/claude/probes/perfect_PB-016_glasswing.md`.
-   - Baseline is `docs/playtest/claude/probes/perfect_PB-013_nullpoint.md`: vision 87% vs "always no" 90%. The goal is
-     that A1's PERFECT tag lets a reader beat "always no" clearly.
-3. **Leak-fix agent** (fix-mechanical, worktree `.claude/worktrees/agent-aeead6f2686f9638a`, base 52ba1e94, temp tag
-   `plan1-gate-leaks`). It **dies with this session**. Fast-tier-only reds that the full suite didn't show:
-   - `test_art10_menus::test_simulate_starts_the_tutorial_and_overthrow_a_new_campaign`: order-dependent, probably
-     a save-slot leak;
-   - `test_art0_kit_states::test_a_confirm_sits_on_a_scrim_that_takes_the_page_clicks_and_traps_the_pad`.
+## Design material ready (Batch API drafts, all unreviewed by the designer unless the sheet rules on them)
+Index: `docs/handoff/plan2/drafts/README.md`. Rounds 1-3 + the sheet cost about $20 total.
+- Round 1: 96 drafts (enemies 50, bosses 2, HQ 7, nodes 6, raids 1, events 30). **Use the `v2/` versions** (revised
+  against their critic files).
+- Round 2: critic reviews (all FIX; triage by BLOCKER count), stations, slice / card upgrades, inner ring a/b/c, rim
+  gates, status + parasite catalogs, Sync Strike, firmware, GDD amendment drafts.
+- Round 3: `triage/BLOCKERS.md` (192 blockers; top: phase HP / tick math vs R2 and the 3-4 turn rule), test plans
+  N1-N20, `raids/unified.md`, names, balance sweeps, v2 drafts, W0 briefs.
+- Netrun art: `docs/handoff/netrun_art/batch/` (spec audit, vision review, landmark drafts, golden plates draft,
+  Aurelian DESIGN, Tethys shots, asset matrix). **The spec audit's 3 BLOCKERs** (spec vs D3/D4/Gantry; data contract
+  vs D8 with three layout inputs and two building-id forms; Central Server names) must be settled with the art-pass
+  session before NA-02 freezes `city.json` / `net.json` / `run_graph.json`.
 
-   In the new session, check its branch (`git log worktree-agent-aeead6f2686f9638a`). If no useful commit, re-spawn
-   the same brief (fix-mechanical, QUICK precommit) or fix by hand.
+## Art-pass session (separate)
+Lives in `C:/Users/noitu/Documents/Godot/rebel_cell` (branch `art-pass`). It never writes here; we never merge
+`docs/concepts` (4 GB). Ownership (D8): art-pass = Blender, look-dev, golden plates, `.glb` exports; we = `tools/netrun_art`
+pure modules, checks, GDScript twins, Godot. Its addendum from this session:
+`docs/handoff/netrun_art/ART_ADDENDUM_2026-10-18.md`. Address it by session id from `list_sessions`.
 
-## Gate PT-002 status
-- **Part 1 done**, on 52ba1e94 code. Summary file: `%TEMP%\gate_pt002\summary.txt`.
-  - Full suite once: `python tools/run_tests.py -j 4` → 2286 tests, 0 failing, 104 pending (deferred), 716 s wall.
-  - Smoke 0, validate 0.
-  - Heuristic sweep `docs/playtest/claude/state/SA-004-PT002.md`: 15/20 won, identical to SA-003 (deterministic,
-    no regression); boss 25 attempts / 15 wins; Schematics end mean 177.
-  - Fast-tier timing: 193 s vs 196 s before the deferred tier. **No measurable saving** (the deferred tier moved
-    mostly full-tier work); the full suite is slower than PT-002a's 498 s because it has more tests. Say so honestly
-    in the report.
-- **Part 2 running:** screen batch + parity, Perfect probe (above).
-- **Left to do:** the gate report and tagging (Next steps).
-
-## Decisions and rationale (this session; all logged in docs/DECISIONS.md, newest at the top of "Implementation decisions")
-**Scope and process**
-- Scope until gameplay is final: **text 1.0 + mouse/keyboard only**. 1.6 / 2.0, high contrast, gamepad and
-  accessibility are deferred.
-  - Tier `deferred` in `tests/test_manifest.json`, skipped by `run_tests.py` and `select_tests.py`.
-  - Helper `tests/helpers/test_scope.gd`: `TestScope.deferred()` and `scales()`.
-- **US English** for all player text (test `test_us_english.gd`).
-- **Route cheapest first** (memory `route-cheapest-first`): Batch API (Haiku) for patch-shaped work, code-cleanup
-  (Haiku) for one diff, Sonnet agents only when Godot runs or captures are needed, Opus only with `OPUS-BECAUSE:`.
-  **The designer flagged that I drifted. Use the batch lane for test-expectation / lint / literal-move fixes.**
-  - Batch API key: user env var. In PowerShell: `$env:ANTHROPIC_API_KEY=[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')`.
-    Never print it.
-- **Precommit:**
-  - Agents use `QUICK=1 bash tools/precommit.sh` / `QUICK=1 git commit` (parse + their changed tests only).
-  - Merges within a wave use `git commit --no-verify`.
-  - The orchestrator runs ONE full diff-selected check per wave batch as a background shell (no model).
-  - Default `-j 4`.
-  - The full suite runs once per gate only.
-
-**Rulings: features and content**
-- **Gate state sweep** = free heuristic strategist (`state_agent.py --strategist heuristic`). The LLM sweep only when
-  the designer asks (`gate.py --llm-sweep`).
-- **PT-002a** had no screen testers (fixed, tested bugs); screen testers return at PT-002 for the A+B re-test.
-- **Inner ring:** round 45 spec (art-pass commit 2216c126, `docs/concepts/round45_inner_ring/NOTES.md`) replaced the
-  W2-A6 plates.
-  - Twin Pointer: every needle lights its own segment and wedge.
-  - ANCHOR / ACCEL / ECHO marks at 1.4× with a keyline; a keyline rule for future modifiers.
-- **Resting hand cards** don't grow; a later pass makes them readable at rest (maybe icon only).
-- **Boss:** the designer beat the Genome Core easily but found it **boring**. D1 becomes a **content design pass**
-  (enemies, bosses, events, raids: what they do, unique fun mechanics), planned after change plan 1, concepts and
-  rulings before any build.
-- **Raid feed:** "Step N:" became one "— STEP N —" divider per step.
-- **CP-002 #7:** hostile tick marks stay off by default (colour-blind setting only), long-term removal.
-- **Freeze** targets enemy wheels only (GDD A.2 #15); unchanged.
-
-## Constraints and gotchas discovered
-- **Merge conflicts every time** in `docs/DECISIONS.md`, `tests/test_manifest.json` and `assets/text/strings.csv`. The
-  tools are in the scratchpad; recreate them if it's gone:
-  - `keep_both.py`: keep both sides of conflict blocks;
-  - `merge_manifest.py`: JSON union of git stages :2 and :3;
-  - `group_sheet.py`: numbered review sheet, stacked at 1600 px wide.
-
-  For `strings.csv`: `git checkout --ours` it, then `godot --headless --path . -s tools/export_text.gd` (regenerates
-  from code), then `git add`.
-- **Before `git merge` of an agent branch:** remove untracked `*.gd.uid` in main that exist in the branch
-  (`git cat-file -e <sha>:<f>` then `rm`), or the merge refuses.
-- **After any merge that adds a `class_name`:** `godot --headless --path . --import`, or every dependent script
-  fails to compile (stale class cache).
-- Agents put DECISIONS entries at the file top (above "Locked design decisions"). Move them under "Implementation
-  decisions" as `### date — title`.
-- **Precommit's per-file parse check is slow** (~6 s per file; 35 min for ~300 files). For big batches, parse-check
-  the changed files yourself and run `run_tests.py --tier fast` instead. One Godot process parsing all files would
-  be a good tooling fix.
-- **`roll_testers.py --count 0 --build X`** fails on a missing batch.json after checking out. The checkout still
-  worked; run `godot --headless --path .claude/worktrees/playtest-build --import` yourself. Untracked `.uid` files in
-  the playtest-build worktree block its checkout; delete those that are tracked on main.
-- **Labs and captures used to write the player's `settings.json`**, which set reduce_effects ON and skipped every
-  playout. Fixed in 1B-PLAYOUT (windowed runs use `settings_windowed.json`). If the designer reports skipped
-  animations, check `%APPDATA%\Godot\app_userdata\REBEL_CELL\settings.json`.
-- **Never `python -` with a heredoc**: it hangs on stdin (done twice this session). Never pipe Godot output.
-- **TaskStop on agents:** the designer refused it once. Prefer messaging the agent to stop and commit WIP.
-- **Agents hand back while their own background runs are still alive**, then re-notify repeatedly. Merge from the
-  branch and ignore the repeats.
-
-## Verification status
-- Gate PT-002 part 1 as above (full suite PASS on 52ba1e94).
-- Batch checks: fast tier on d086ca5a = 1531 tests, 0 failing, 67 pending (fast, smoke and validate all 0); pushed.
-- **Not yet run:** the full suite on 84c8aa3e. It only adds route data, so it's covered by the 52ba1e94 run.
-- Art-pass session (REBEL_CELL art direction and integration) APPROVED:
-  - W1b + W2 (with the ring item replaced by round 45);
-  - W2 R2 (round 45 ring + INCOMING) after three polish items, all merged in 52ba1e94 / d086ca5a.
-
-  No further review loop is owed for wave 2.
-
-## Next steps
-1. Wait for part 2: check `%TEMP%\gate_pt002\gate_combat.log` and `probe_quiz.log`, and that
-   `docs/playtest/claude/gates/PT-002.md` exists.
-2. Leak-fix agent: merge its branch if done (QUICK checks), else redo. Re-run `python tools/run_tests.py --tier
-   fast` once to confirm 0 failing.
-3. Write the gate report `docs/handoff/gates/PT-002.md` (template `docs/process/templates/GATE_REPORT.md`):
-   - verdict;
-   - screen batch vs PB-010 (replay audit: tester Perfect rate vs the ~20% baseline; deaths; damage vs best plan);
-   - parity vs PB-015;
-   - Perfect quiz vs PB-013;
-   - sweep SA-004;
-   - the timing finding;
-   - retrospective (agents × model, batch tokens = 0 so far: say so; hook denials);
-   - light replan: wave 3 next, then the input-prompt pass + rewards screen, then the content design pass.
-4. Set the build sha in `docs/playtest/PT-002_plan-1-waves-1b-and-2-combat-legibility.md` (draft already written,
-   20 steps, ~34 min; header says "main @ (set at the gate)").
-5. Commit, `git tag gate/PT-002`, then push through the push gate: parse a summary file for suite / fast / smoke /
-   validate = 0 and a matching sha, never chain push after grep (memory `push-gate`).
-6. Hand the designer the PT-002 list, then STOP and wait for feedback (CP-002 rule 1). Triage their feedback before
-   acting.
-7. Update `docs/handoff/STATE.md` (its "Current goal" block is long; trim and refresh it).
-
-## Open questions for the user
-- None blocking. After PT-002 the plan says wave 3 (city clarity, with F1/F2 HQ fixes, R5–R8, smear notches); the
-  designer will rule after their playtest.
+## How to work (hard-won rules)
+- **Lanes (memory `route-cheapest-first`):** Batch API for patch- and draft-shaped work (`tools/batch/`); code-cleanup
+  (Haiku) for one diff; Sonnet agents for Godot runs and captures; Opus only with `OPUS-BECAUSE:`. API key: user env
+  var (PowerShell `$env:ANTHROPIC_API_KEY=[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')`), never
+  printed.
+- **Parallelism (replan §C.3):** 3 local agent worktrees (2 Godot + 1 Python-only), cap 5; windowed / GPU jobs one at
+  a time; balance sims at most 2; the full suite only at a gate, alone. Agent briefs ≤ 4000 chars (hook): rules file
+  path + footer.
+- **Checks:** agents `QUICK=1 bash tools/precommit.sh --base main`; one fast tier per merge wave; full suite once per
+  gate (rerun-alone verdicts on red, never ×3).
+- **Push gate:** write fast / smoke / validate exit codes and the sha to a summary file; push only if
+  `fast=0`, `smoke=0`, `validate=0` and the sha matches HEAD.
+- **Merges:** conflicts in `docs/DECISIONS.md` (keep both), `tests/test_manifest.json` (JSON union of stages :2/:3),
+  `assets/text/strings.csv` (`--ours`, then `godot --headless --path . -s tools/export_text.gd`). Before merging,
+  delete untracked `.uid` files in main that the branch tracks. After merges adding a `class_name`:
+  `godot --headless --path . --import`. Fresh worktrees need the import before precommit.
+- **Shell:** never `python -` or stdin heredocs into python; never pipe Godot output (redirect to a file); windowed
+  Godot only via `tools/run_windowed.py`. Git Bash `grep` in pipes can core-dump on this machine: use the Grep tool or
+  redirect to a file first.
+- **`project.godot`:** the designer's editor re-saves it; `git restore project.godot` when it shows modified.
+- **Playtests:** `tools/playtest/gate.py` (aborts on build mismatch); scripted steps runner judged on the Batch API
+  (`tools/playtest/steps_judge.py`). CP-002: gather feedback, act on none until the designer rules.
+- Untracked `docs/HANDOFF_H20_MERGE.md`, `docs/art_asset.md` belong to the designer: leave them.
+- Local tags `archive/worktree-agent-*` hold 11 old unmerged M14 branches (restorable); `worktree-agent-a71a521e…`
+  is the on-hold W2R1 ring-plate WIP.
