@@ -87,21 +87,22 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 				deal_hit(state, owner, t, _scaled(e.amount, e.multiplier), false, false, events, ctx.get("source_id", &""))
 		RC.EffectType.GAIN_BLOCK:
 			for t in targets:
-				gain_block(t, _scaled(e.amount, e.multiplier), events)
+				gain_block(t, effect_amount(e, owner), events)
 		RC.EffectType.GAIN_SHIELD:
 			for t in targets:
-				gain_shield(t, _scaled(e.amount, e.multiplier), events)
+				gain_shield(t, effect_amount(e, owner), events)
 		RC.EffectType.EVADE:
 			for t in targets:
 				gain_evade(t, maxi(1, e.amount), events)
 		RC.EffectType.HEAL:
 			for t in targets:
-				heal(t, _scaled(e.amount, e.multiplier), events)
+				heal(t, effect_amount(e, owner), events)
 		RC.EffectType.APPLY_STATUS:
 			for t in targets:
-				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
-				if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
-					events[events.size() - 1]["random"] = true
+				for k in status_count(e, t):
+					var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
+					if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+						events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
@@ -608,6 +609,43 @@ func _targets_of(state: CombatState, target: int, ctx: Dictionary) -> Array[Comb
 			if t != null:
 				out.append(t)
 	return out
+
+
+## The heal, block or shield `e` yields for `owner` (plan 2 R2, R5). PERCENT: a share of
+## the owner's max HP, never rescaled. FLAT: the amount, times the owner's tier damage
+## factor (`output_scale`) unless the owner is the operative. `e.multiplier` applies to both.
+func effect_amount(e: EffectData, owner: CombatantState) -> int:
+	if e.amount_mode == RC.AmountMode.PERCENT:
+		return _scaled(percent_of(owner.max_hp, e.amount), e.multiplier)
+	var scale := 1.0 if owner.is_player else owner.output_scale
+	return _scaled(e.amount, e.multiplier * scale)
+
+
+## How many slices an APPLY_STATUS `e` hits on `t`. Only a CORRUPTED random pick counts:
+## FLAT N (0 reads 1, the Virus Exploit's convention) or PERCENT of `t`'s non-NULL slices,
+## capped by the slices still eligible (non-NULL, not CORRUPTED). Anything else: 1.
+func status_count(e: EffectData, t: CombatantState) -> int:
+	if e.status != RC.Status.CORRUPTED or e.slice_pick != RC.SlicePick.RANDOM_NON_NULL:
+		return 1
+	var non_null := 0
+	var eligible := 0
+	for i in t.wheel.slot_slice_ids.size():
+		if slice_of(t.wheel, i).slice_type == RC.SliceType.NULL:
+			continue
+		non_null += 1
+		if t.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+			eligible += 1
+	var wanted := percent_of(non_null, e.amount) if e.amount_mode == RC.AmountMode.PERCENT else maxi(1, e.amount)
+	return mini(wanted, eligible)
+
+
+## `pct` percent of `base`, rounded to nearest (half up), at least 1 when both are
+## positive, 0 otherwise (designer ruling Q13, 2026-10-18). Integer arithmetic only.
+static func percent_of(base: int, pct: int) -> int:
+	if base <= 0 or pct <= 0:
+		return 0
+	@warning_ignore("integer_division")
+	return maxi(1, (base * pct + RC.PERCENT_MAX / 2) / RC.PERCENT_MAX)
 
 
 static func _scaled(amount: int, multiplier: float) -> int:

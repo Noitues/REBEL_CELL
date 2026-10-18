@@ -77,6 +77,13 @@ enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, 
 ## the slice under the pointer (Overdrive, Corrupt segment), a random non-NULL slice
 ## (Solace DOSE), or one the player picks (Cleanse, Encrypt).
 enum SlicePick { UNDER_POINTER, RANDOM_NON_NULL, CHOSEN }
+## How a heal, block, shield or corruption amount reads (plan 2 R5, N1). FLAT: the number
+## itself (an enemy's is multiplied by its tier damage factor, R2). PERCENT: a share of the
+## owner's max HP (heal, block, shield) or of the target's non-NULL slices (corruption),
+## rounded to nearest, minimum 1, never rescaled. Append-only: FLAT = 0 so old content loads FLAT.
+enum AmountMode { FLAT, PERCENT }
+## A PERCENT amount is a share out of this (a definition, not a tuning number).
+const PERCENT_MAX: int = 100
 
 # --- Netrun map ---
 enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK }

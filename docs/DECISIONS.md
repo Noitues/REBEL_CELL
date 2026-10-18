@@ -107,6 +107,24 @@ default as a placeholder behind config and says so in its report.
   Q12) join W0 after N2. Enrage (N4) drops the countdown chip (Q33). The preview "?" rule (Q19), the status audit (Q40),
   the two corp drafts (Q45) and the turn lifecycle for locks (Q31, with N7) are queued.
 
+### 2026-10-18 — Plan 2 W0 N1: amount modes (R2, R5; rulings Q13, Q15)
+- **Schema:** `RC.AmountMode { FLAT, PERCENT }` (append-only, FLAT = 0) and `RC.PERCENT_MAX` = 100 (a definition).
+  `EffectData.amount_mode` and `SliceData.amount_mode`, default FLAT, so every shipped `.tres` loads FLAT and
+  resolves as before. `EffectData.amount_mode_errors()` / `SliceData.validate()` (new) refuse PERCENT outside 0..100
+  (`percent_out_of_range`) or on a type without a percent reading (`mode_unsupported_for_type`). PERCENT effects:
+  GAIN_BLOCK, GAIN_SHIELD, HEAL, APPLY_STATUS CORRUPTED. PERCENT slices: HOTFIX, DEFRAG, SANDBOX (an INFECT slice's
+  corruption mode lives on its APPLY_STATUS effect). Smoke check `_n1_amount_mode`.
+- **Arithmetic:** PERCENT = round-half-up(base × pct / 100) in integers, minimum 1 when both are positive, else 0
+  (`EffectInterpreter.percent_of`); base = owner's max HP, never rescaled by the tier factor; precision / Firmware /
+  status / segment multipliers still apply after it (WEAK halves it). FLAT heal / block / shield effects owned by
+  a non-operative are × the owner's `output_scale` (the tier damage factor), one rounding: the enemy Hub HEAL
+  (Auto-Renew 10 → 10 / 13 / 17 / 22) now scales. The operative's FLAT amounts are never scaled.
+- **Corruption:** APPLY_STATUS CORRUPTED with RANDOM_NON_NULL now corrupts N slices: FLAT `max(1, amount)` (the Virus
+  Exploit's convention, so amount 0 stays one slice) or PERCENT of the target's non-NULL slices, capped by the
+  slices still eligible. One draw per slice on the same stream; count 1 draws exactly as before. Other picks: 1.
+- **Not changed:** the shield cap still applies to every combatant (no new caps, Q13); enemy DEAL_DAMAGE effects and
+  RAM effects stay unscaled (Q15 keeps RAM flat; listener hits are out of N1's scope). Save format unchanged.
+
 ### 2026-10-15 — Plan 2 B-TEACH: the tutorial teaches aiming for a PERFECT (PB-PT-002 C2 / C3 / C9; PB-PT-003b C1 / C3 / B8 / D1)
 - The steps are rewritten short (one idea each, at most 45 words) and reordered: THE WHEEL, THE TAGS (NULL / WEAK / GOOD / PERFECT), AIM (ends only when your wheel reads PERFECT after your play), FREE NUDGE (ends on a nudge; extra nudges cost RAM, shown as the pending (-N) next to RAM; there is no RAM debt and the word is not used), SWITCHES (Q/E-W keys, outer/inner), RESISTANCE, CARDS, STAGED (a played card waits in THIS TURN until SEND IT; hover only previews), RAM FORECAST (THIS PLAY vs AT SEND IT), UNDO (or Esc), SEND IT ("aim for PERFECT, then SEND IT"), HEAT & BANKING.
 - The AIM beat uses a view-side event `aim_perfect` that `combat_scene` sends the tutorial after a play when `player_aim_is_perfect` (every needle reads PERFECT), never on a turn or fight start. No rule changes. NEXT wears the lit terminal color (it read as greyed out) and still pulses when it is what moves a step on. Codex links are plain text until B-CODEX lands its term ids.

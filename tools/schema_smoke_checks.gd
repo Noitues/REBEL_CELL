@@ -7,7 +7,27 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist()
+		+ _t2_heuristic_strategist() + _n1_amount_mode()
+
+
+## Plan 2 N1: EffectData / SliceData.amount_mode: FLAT by default; PERCENT out of 0..100 or on a
+## type without a percent reading is refused; a save keeps PERCENT.
+func _n1_amount_mode() -> int:
+	var fails := 0
+	var e := EffectData.new(); e.type = RC.EffectType.HEAL; e.amount = 5
+	var s := SliceData.new(); s.id = &"smoke_pct"; s.slice_type = RC.SliceType.HOTFIX; s.base_output = 5
+	print("N1 amount_mode defaults (expect 0 0): ", e.amount_mode, " ", s.amount_mode)
+	if e.amount_mode != RC.AmountMode.FLAT or s.amount_mode != RC.AmountMode.FLAT: fails += 1
+	e.amount_mode = RC.AmountMode.PERCENT; e.amount = 101
+	s.amount_mode = RC.AmountMode.PERCENT; s.slice_type = RC.SliceType.SHIM
+	print("N1 bad PERCENT effect / slice errors (expect 1 1): ", e.validate(), " ", s.validate())
+	if e.validate().size() != 1 or s.validate().size() != 1: fails += 1
+	s.slice_type = RC.SliceType.HOTFIX
+	var err := ResourceSaver.save(s, "user://smoke_amount_mode.tres")
+	var back: SliceData = load("user://smoke_amount_mode.tres")
+	print("N1 slice save=", err, " mode ", back.amount_mode if back != null else -1)
+	if err != OK or back == null or back.amount_mode != RC.AmountMode.PERCENT or back.validate().size() != 0: fails += 1
+	return fails
 
 
 ## Tooling 1 T2: HeuristicStrategistConfigData (the playtest strategist's thresholds): the shipped

@@ -980,6 +980,30 @@
 		"res://tests/unit/test_balance_sim.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_amount_modes.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_amount_modes_content.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_amount_modes_resolve.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_amount_modes_hub_heal.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_amount_modes_sweep.gd": {
+			"seconds": 0.0,
+			"tier": "full"
+		},
+		"res://tests/integration/test_amount_modes_flow.gd": {
+			"seconds": 0.0,
+			"tier": "full"
 		}
 	}
 }
