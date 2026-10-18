@@ -15,6 +15,116 @@ const NUMBER_OUTLINE := 6
 ## Star burst: spikes round a crit, and their inner radius share.
 const BURST_SPIKES := 10
 const BURST_INNER := 0.35
+## A word or impact box: horizontal padding as a share of the font size (each side).
+const BOX_PAD_X := 0.2
+## A word or impact box: how far above the text center the box starts (share of font size).
+const BOX_RISE := 0.65
+## A word or impact box: total extra width (share of font size).
+const BOX_PAD_W := 0.4
+## An impact box: height (share of font size).
+const BOX_HEIGHT := 1.3
+## Baseline drop below a text center (share of font size) for centered draw_text.
+const TEXT_BASELINE := 0.35
+## Smallest divisor/duration used where a division by a span could hit zero.
+const MIN_SPAN := 0.001
+## Smallest share of the hit-line flight.
+const HIT_LINE_MIN := 0.05
+## Largest share of the hit-line flight.
+const HIT_LINE_MAX := 0.95
+## Start of the gloss sweep over a card (before the card edge).
+const GLOSS_FROM := -0.2
+## End of the gloss sweep over a card (past the card edge).
+const GLOSS_TO := 1.2
+## Segments of a growing ring.
+const RING_SEGMENTS := 40
+## Width of a ring or lens arc.
+const RING_WIDTH := 3.0
+## Segments of a lens arc.
+const LENS_SEGMENTS := 32
+## Width of a reticle arc.
+const RETICLE_WIDTH := 2.5
+## Width of a burst spike.
+const BURST_WIDTH := 2.5
+## Turn (radians) of the spike fan per burst serial, so successive bursts differ.
+const BURST_SERIAL_TURN := 0.37
+## Glyph backdrop disc radius (share of the glyph box).
+const GLYPH_DISC_SHARE := 0.55
+## Glyph icon radius (share of the glyph box).
+const GLYPH_ICON_SHARE := 0.45
+## Alpha of the glyph backdrop disc.
+const GLYPH_DISC_ALPHA := 0.8
+## Alpha of the impact word plate.
+const IMPACT_PLATE_ALPHA := 0.85
+## Alpha of a projectile trail halo (share of the trail alpha).
+const HALO_ALPHA := 0.7
+## Extra width (px) of a projectile trail halo.
+const HALO_EXTRA := 4.0
+## Broken piece gravity: fixed share.
+const PIECE_GRAVITY_BASE := 0.6
+## Broken piece gravity: share varied per piece.
+const PIECE_GRAVITY_VARY := 0.4
+## Alpha of a broken piece rim.
+const PIECE_RIM_ALPHA := 0.95
+## Width of a broken piece rim.
+const PIECE_RIM_WIDTH := 1.8
+## Where a spark starts (share of the radius).
+const SPARK_START := 0.4
+## Spark size: fixed share of the radius.
+const SPARK_SIZE_BASE := 0.18
+## Spark size: share varied per spark.
+const SPARK_SIZE_VARY := 0.12
+## Alpha of a spark.
+const SPARK_ALPHA := 0.85
+## Alpha of the VHS paper band.
+const VHS_PAPER_ALPHA := 0.22
+## Alpha of the VHS pink band.
+const VHS_PINK_ALPHA := 0.25
+## Spacing (px) of the VHS rewind marks.
+const VHS_MARK_STEP := 12.0
+## Alpha of the VHS rewind marks.
+const VHS_MARK_ALPHA := 0.9
+## Tape bar: left edge (share of the box width).
+const TAPE_BAR_X := 0.3
+## Tape bar: width (share of the box width).
+const TAPE_BAR_W := 0.4
+## Tape bar: height (px), drawn above the box.
+const TAPE_BAR_H := 6.0
+## Width of the tape box rim.
+const TAPE_RIM_WIDTH := 1.5
+## Hit shards reach multiplier on a crit.
+const CRIT_REACH_MULT := 1.4
+## Hit shards spread multiplier on a crit.
+const CRIT_SPREAD_MULT := 1.25
+## Spacing (px) of the nudge-resist bits across the label.
+const NUDGE_SPACING := 40.0
+## Radius (px) of a traveling dot head.
+const TRAVEL_HEAD_R := 5.0
+## How far (share of the flight) the traveling tail trails the head.
+const TRAVEL_TAIL_LAG := 0.25
+## Width (px) of the traveling tail.
+const TRAVEL_TAIL_W := 4.0
+## Progress where a gain token starts to fade.
+const TOKEN_FADE_FROM := 0.7
+## Progress span over which a gain token fades.
+const TOKEN_FADE_SPAN := 0.3
+## Progress where a tear wipe starts to fade.
+const TEARS_FADE_FROM := 0.8
+## Progress span over which a tear wipe fades.
+const TEARS_FADE_SPAN := 0.2
+## Progress where a bit stream starts to fade.
+const BITS_FADE_FROM := 0.9
+## Progress span over which a bit stream fades.
+const BITS_FADE_SPAN := 0.1
+## Multiplier on STREAM_TRAVEL for the long-flying streams (heal, flow, drone).
+const STREAM_TRAVEL_LONG := 1.4
+## Phase bits arc: half spread (share of PI).
+const PHASE_ARC_HALF := 0.45
+## Phase bits: control point reach beyond the arc radius.
+const PHASE_CTRL_REACH := 1.05
+## Phase bits: travel time as a share of the duration.
+const PHASE_TRAVEL := 0.55
+## Shockwave start radius (share of the wheel radius).
+const SHOCK_START := 0.3
 ## Hit line arrowhead (px).
 const ARROW_HEAD := 9.0
 ## A number's rise shape: it grows over this share of its life, then holds, and fades
@@ -222,7 +332,7 @@ static func impact_rect(at: Vector2, text: String, icon: int, items: Array = [])
 	var fs := roundi(NUMBER_FONT * Settings.text_scale * IMPACT_FONT_SHARE)
 	var w := equation_width(items, fs, Palette.display()) if not items.is_empty() \
 		else Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + glyph_width(fs, icon)
-	return Rect2(at - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3))
+	return Rect2(at - Vector2(w * 0.5 + fs * BOX_PAD_X, fs * BOX_RISE), Vector2(w + fs * BOX_PAD_W, fs * BOX_HEIGHT))
 
 
 ## ANIM-R4 C6c: one notation for a hit and its guard, everywhere (the mark where a hit
@@ -248,15 +358,15 @@ static func draw_equation(ci: CanvasItem, left_mid: Vector2, items: Array, fs: i
 		var col := Color(it.get("color", Palette.PAPER), alpha)
 		var sep := String(it.get("sep", ""))
 		if sep != "":
-			HighContrast.draw_text(ci, font, Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * EQ_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
+			HighContrast.draw_text(ci, font, Vector2(x, mid + fs * TEXT_BASELINE), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * EQ_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
 			x += fs * EQ_SEP_SHARE
 		if int(it.get("icon", -1)) >= 0:
 			SliceIcon.draw_icon(ci, Vector2(x + fs * EQ_ICON_SHARE * 0.5, mid), fs * 0.45, int(it["icon"]), col)
 			x += fs * EQ_ICON_SHARE
 		var t := String(it["text"])
 		if outline > 0:
-			ci.draw_string_outline(font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.NIGHT_SKY, alpha))
-		HighContrast.draw_text(ci, font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+			ci.draw_string_outline(font, Vector2(x, mid + fs * TEXT_BASELINE), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.NIGHT_SKY, alpha))
+		HighContrast.draw_text(ci, font, Vector2(x, mid + fs * TEXT_BASELINE), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 		x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * EQ_GAP_SHARE
 
 
@@ -411,7 +521,7 @@ static func impact_seconds() -> float:
 
 ## ANIM-R4 C5: the share of `hit_line` the projectile flies (the table's `hit_line_flight`).
 static func line_share() -> float:
-	return clampf(Motion.amplitude(&"hit_line_flight"), 0.05, 0.95)
+	return clampf(Motion.amplitude(&"hit_line_flight"), HIT_LINE_MIN, HIT_LINE_MAX)
 
 
 ## ANIM-R2 E5: a short local flash (a disc of `radius` at `at`, global) in `color`, `id`'s
@@ -833,7 +943,7 @@ func _slap(at: Vector2, card: Control) -> void:
 	if is_instance_valid(card):
 		var e := Motion.entry(&"card_slap_ring")
 		var tw := card.create_tween()
-		tw.tween_method(StickerSeam.set_gloss.bind(card), -0.2, 1.2, dur).set_ease(e.ease).set_trans(e.trans)
+		tw.tween_method(StickerSeam.set_gloss.bind(card), GLOSS_FROM, GLOSS_TO, dur).set_ease(e.ease).set_trans(e.trans)
 		tw.tween_callback(StickerSeam.set_gloss.bind(-1.0, card))
 
 
@@ -954,7 +1064,7 @@ func _draw() -> void:
 				_draw_burst(s)
 			"ring":
 				var p := _p(s)
-				draw_arc(_local(s["at"]), float(s["r0"]) + float(s["grow"]) * p, 0, TAU, 40, Color(s["color"], 1.0 - p), 3.0, true)
+				draw_arc(_local(s["at"]), float(s["r0"]) + float(s["grow"]) * p, 0, TAU, RING_SEGMENTS, Color(s["color"], 1.0 - p), RING_WIDTH, true)
 			"line":
 				_draw_line(s)
 			"disc":
@@ -985,7 +1095,7 @@ func _draw() -> void:
 		var r := RETICLE_RADIUS + Motion.amplitude(&"target_snap") * reticle_pop
 		for k in 4:
 			var a := PI * 0.25 + k * PI * 0.5
-			draw_arc(c, r, a - RETICLE_ARC, a + RETICLE_ARC, 6, Palette.CELL_ACID, 2.5, true)
+			draw_arc(c, r, a - RETICLE_ARC, a + RETICLE_ARC, 6, Palette.CELL_ACID, RETICLE_WIDTH, true)
 
 
 func _draw_number(s: Dictionary) -> void:
@@ -1005,12 +1115,12 @@ func _draw_number(s: Dictionary) -> void:
 	var icon := int(s.get("icon", -1))
 	var gw := glyph_width(size, icon)
 	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + gw
-	var base := at + Vector2(-w * 0.5 + gw, size * 0.35)
+	var base := at + Vector2(-w * 0.5 + gw, size * TEXT_BASELINE)
 	if icon >= 0:
 		# ANIM-R3 A6e: a guard is its glyph and its number (a shield and "5", not "5 BLOCKED").
 		var gc := at + Vector2(-w * 0.5 + size * GLYPH_SHARE * 0.5, 0.0)
-		draw_circle(gc, size * GLYPH_SHARE * 0.55, Color(Palette.NIGHT_SKY, 0.8 * alpha))
-		SliceIcon.draw_icon(self, gc, size * GLYPH_SHARE * 0.45, icon, Color(s["color"], alpha))
+		draw_circle(gc, size * GLYPH_SHARE * GLYPH_DISC_SHARE, Color(Palette.NIGHT_SKY, GLYPH_DISC_ALPHA * alpha))
+		SliceIcon.draw_icon(self, gc, size * GLYPH_SHARE * GLYPH_ICON_SHARE, icon, Color(s["color"], alpha))
 	# ART-2 2D (§6.4 live numbers): 1A's live_number look: the LIVE_NUMBER_RIM rim and a glow
 	# in the number's own colour (its LabelSettings, drawn at the number's animated size).
 	var ls := UiTheme.live_number(UiTheme.DISPLAY, Color(s["color"]))
@@ -1023,7 +1133,7 @@ func _draw_number(s: Dictionary) -> void:
 ## ANIM-R3 A6a: a hit's outcome where it struck: its glyph and "0", popping in and fading.
 func _draw_impact(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
-	var d := maxf(0.001, float(s["dur"]))
+	var d := maxf(MIN_SPAN, float(s["dur"]))
 	var q := clampf(a / (d * GROW_SHARE), 0.0, 1.0)
 	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
@@ -1035,15 +1145,15 @@ func _draw_impact(s: Dictionary) -> void:
 	var w := equation_width(items, fs, f) if not items.is_empty() else f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw
 	var c := _local(s["at"])
 	var col := Color(s["color"], alpha)
-	var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.85))  # M14 12Q-ACCESS: opaque under high contrast
-	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), Color(plate, plate.a * alpha))
-	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), col, false, 2.0)
+	var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, IMPACT_PLATE_ALPHA))  # M14 12Q-ACCESS: opaque under high contrast
+	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * BOX_PAD_X, fs * BOX_RISE), Vector2(w + fs * BOX_PAD_W, fs * BOX_HEIGHT)), Color(plate, plate.a * alpha))
+	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * BOX_PAD_X, fs * BOX_RISE), Vector2(w + fs * BOX_PAD_W, fs * BOX_HEIGHT)), col, false, 2.0)
 	if not items.is_empty():
 		# ANIM-R4 C6c: the hit meets its guard: sword 8 - shield 8 = 0.
 		draw_equation(self, c - Vector2(w * 0.5, 0.0), items, fs, f, alpha, NUMBER_OUTLINE)
 		return
-	SliceIcon.draw_icon(self, c + Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.45, int(s["icon"]), col)
-	var base := c + Vector2(-w * 0.5 + gw, fs * 0.35)
+	SliceIcon.draw_icon(self, c + Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * GLYPH_ICON_SHARE, int(s["icon"]), col)
+	var base := c + Vector2(-w * 0.5 + gw, fs * TEXT_BASELINE)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Color(Palette.NIGHT_SKY, alpha))
 	HighContrast.draw_text(self, f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
@@ -1060,13 +1170,13 @@ func _draw_travel(s: Dictionary) -> void:
 	if a < swap:
 		# ANIM-R2: the hit's raw number first (its guard takes its part meanwhile).
 		text = String(s["raw"])
-		var grow := clampf(a / maxf(0.001, swap * GROW_SHARE), 0.0, 1.0)
+		var grow := clampf(a / maxf(MIN_SPAN, swap * GROW_SHARE), 0.0, 1.0)
 		size = fs * (lerpf(CRIT_POP_SCALE, 1.0, grow) if bool(s["crit"]) else lerpf(GROW_FROM, 1.0, grow))
 	elif a < hold:
-		var grow := clampf((a - swap) / maxf(0.001, (hold - swap) * GROW_SHARE), 0.0, 1.0)
+		var grow := clampf((a - swap) / maxf(MIN_SPAN, (hold - swap) * GROW_SHARE), 0.0, 1.0)
 		size = fs * (lerpf(CRIT_POP_SCALE, 1.0, grow) if bool(s["crit"]) or swap > 0.0 else lerpf(GROW_FROM, 1.0, grow))
 	else:
-		var d := maxf(0.001, float(s["dur"]) - hold)
+		var d := maxf(MIN_SPAN, float(s["dur"]) - hold)
 		var q: float = Tween.interpolate_value(0.0, 1.0, clampf((a - hold) / d, 0.0, 1.0), 1.0, int(s["trans"]), int(s["ease"]))
 		at = at.lerp(_local(s["to"]), q)
 		size = fs * lerpf(1.0, float(s["shrink"]), q)
@@ -1074,7 +1184,7 @@ func _draw_travel(s: Dictionary) -> void:
 	var isz := maxi(1, roundi(size))
 	var f := Palette.display()
 	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz).x
-	var base := at + Vector2(-w * 0.5, isz * 0.35)
+	var base := at + Vector2(-w * 0.5, isz * TEXT_BASELINE)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
 	HighContrast.draw_text(self, f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, Color(s["color"], alpha))
 
@@ -1112,13 +1222,13 @@ func _draw_tag(s: Dictionary) -> void:
 	if icon == GUARD_NULL and -w * 0.5 >= cut_x:
 		draw_guard_null(self, Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.5, Color(ink, alpha))
 	if cut <= 0.0:
-		HighContrast.draw_text(self, font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+		HighContrast.draw_text(self, font, Vector2(-w * 0.5 + iw, fs * TEXT_BASELINE), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
 	else:
 		var x := -w * 0.5 + iw
 		for ch in text:
 			var cw := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			if x + cw * 0.5 >= cut_x:
-				HighContrast.draw_text(self, font, Vector2(x, fs * 0.35), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+				HighContrast.draw_text(self, font, Vector2(x, fs * TEXT_BASELINE), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
 			x += cw
 	draw_set_transform(Vector2.ZERO)
 
@@ -1138,9 +1248,9 @@ func _draw_burst(s: Dictionary) -> void:
 	var r := float(s["radius"]) * (0.5 + 0.5 * p)
 	var col := Color(s["color"], 1.0 - p)
 	for k in BURST_SPIKES:
-		var a := TAU * k / BURST_SPIKES + int(s["serial"]) * 0.37
+		var a := TAU * k / BURST_SPIKES + int(s["serial"]) * BURST_SERIAL_TURN
 		var d := Vector2(cos(a), sin(a))
-		draw_line(c + d * r * BURST_INNER, c + d * r, col, 2.5)
+		draw_line(c + d * r * BURST_INNER, c + d * r, col, BURST_WIDTH)
 
 
 func _draw_line(s: Dictionary) -> void:
@@ -1154,7 +1264,7 @@ func _draw_line(s: Dictionary) -> void:
 	var tail := from.lerp(to, fade)
 	var col := Color(s["color"], 1.0 - fade)
 	var width := float(s["width"])
-	draw_line(tail, head, Color(Palette.NIGHT_SKY, col.a * 0.7), width + 4.0)
+	draw_line(tail, head, Color(Palette.NIGHT_SKY, col.a * HALO_ALPHA), width + HALO_EXTRA)
 	draw_line(tail, head, col, width)
 	var d := (to - from).normalized()
 	var arrow := ARROW_HEAD + width
@@ -1184,7 +1294,7 @@ func _draw_line(s: Dictionary) -> void:
 			var off := d.orthogonal() * fs * RIDE_OFFSET
 			if off.y > 0.0:
 				off = -off
-			var base := head + off + Vector2(-w * 0.5, fs * 0.35)
+			var base := head + off + Vector2(-w * 0.5, fs * TEXT_BASELINE)
 			draw_string_outline(f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Palette.NIGHT_SKY)
 			HighContrast.draw_text(self, f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
 
@@ -1200,7 +1310,7 @@ func _draw_stamp(s: Dictionary) -> void:
 	draw_circle(c, STAMP_DISC * Settings.text_scale * sc, Color(Palette.NIGHT_SKY, 0.9 * alpha))
 	draw_arc(c, STAMP_DISC * Settings.text_scale * sc, 0, TAU, 20, Color(s["color"], alpha), 2.0)
 	var w := Palette.mono().get_string_size(String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	HighContrast.draw_text(self, Palette.mono(), c + Vector2(-w * 0.5, fs * 0.35), String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
+	HighContrast.draw_text(self, Palette.mono(), c + Vector2(-w * 0.5, fs * TEXT_BASELINE), String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
 
 
 func _draw_shards(s: Dictionary) -> void:
@@ -1238,7 +1348,7 @@ func _draw_shards(s: Dictionary) -> void:
 		var side := (_h(int(s["serial"]), k) - 0.5) * 2.0
 		var spin := side * PI * 0.5 * q
 		var away := (centre - mid).normalized() if centre.distance_to(mid) > 0.5 else Vector2.UP
-		var shift := away * fall * PIECE_FLY * q + Vector2(0.0, -fall * PIECE_UP * q + fall * PIECE_GRAVITY * (0.6 + 0.4 * _h(k, int(s["serial"]), 1)) * q * q)
+		var shift := away * fall * PIECE_FLY * q + Vector2(0.0, -fall * PIECE_UP * q + fall * PIECE_GRAVITY * (PIECE_GRAVITY_BASE + PIECE_GRAVITY_VARY * _h(k, int(s["serial"]), 1)) * q * q)
 		var xf := Transform2D(spin, centre + shift - origin) * Transform2D(0.0, -centre)
 		var fade := 1.0 - q
 		var col: Color = pieces[k][1]
@@ -1250,7 +1360,7 @@ func _draw_shards(s: Dictionary) -> void:
 		var closed := poly.duplicate()
 		closed.append(poly[0])
 		var rim: Color = art.get("rim", Palette.PAPER)
-		draw_polyline(closed, Color(rim, 0.95 * fade), 1.8, true)
+		draw_polyline(closed, Color(rim, PIECE_RIM_ALPHA * fade), PIECE_RIM_WIDTH, true)
 		if art.has("type"):
 			SliceIcon.draw_on_slice(self, art["icon_at"], float(art["icon_r"]), int(art["type"]), Color(art["slice_col"], fade))
 		if String(art.get("value", "")) != "":
@@ -1271,10 +1381,10 @@ func _draw_glass(s: Dictionary) -> void:
 	for k in GLASS_SHARDS:
 		var a := TAU * (k + _h(k, int(s["serial"]))) / GLASS_SHARDS
 		var d := Vector2(cos(a), sin(a))
-		var p := c + d * (r * 0.4 + float(s["fly"]) * q)
-		var size := r * (0.18 + 0.12 * _h(k, 7, int(s["serial"])))
+		var p := c + d * (r * SPARK_START + float(s["fly"]) * q)
+		var size := r * (SPARK_SIZE_BASE + SPARK_SIZE_VARY * _h(k, 7, int(s["serial"])))
 		var tri := PackedVector2Array([p + d * size, p + d.orthogonal() * size * 0.5, p - d.orthogonal() * size * 0.5])
-		draw_colored_polygon(tri, Color(Palette.PAPER, 0.85 * (1.0 - q)))
+		draw_colored_polygon(tri, Color(Palette.PAPER, SPARK_ALPHA * (1.0 - q)))
 		draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color(s["color"], 1.0 - q), 1.0)
 	# The crack star on the hub glass itself.
 	for k in GLASS_SHARDS / 2:
@@ -1290,13 +1400,13 @@ func _draw_vhs(s: Dictionary) -> void:
 	for k in VHS_BANDS:
 		var y := o.y + fmod((_h(k, frame >> 1) + p) * r.size.y, r.size.y)
 		var x := (_h(frame, k, 3) - 0.5) * 2.0 * float(s["jitter"])
-		draw_rect(Rect2(Vector2(o.x + x, y), Vector2(r.size.x, VHS_BAND_PX)), Color(Palette.PAPER, 0.22 * (1.0 - p)))
-		draw_rect(Rect2(Vector2(o.x - x, y + VHS_BAND_PX), Vector2(r.size.x, 1.0)), Color(Palette.CELL_PINK, 0.25 * (1.0 - p)))
+		draw_rect(Rect2(Vector2(o.x + x, y), Vector2(r.size.x, VHS_BAND_PX)), Color(Palette.PAPER, VHS_PAPER_ALPHA * (1.0 - p)))
+		draw_rect(Rect2(Vector2(o.x - x, y + VHS_BAND_PX), Vector2(r.size.x, 1.0)), Color(Palette.CELL_PINK, VHS_PINK_ALPHA * (1.0 - p)))
 	# Tape-rewind marks: two left-pointing triangles in the corner.
 	var m := o + Vector2(12, 12)
 	for k in 2:
-		var x0 := m.x + k * 12.0
-		draw_colored_polygon(PackedVector2Array([Vector2(x0, m.y + 7), Vector2(x0 + 11, m.y), Vector2(x0 + 11, m.y + 14)]), Color(Palette.PAPER, 0.9 * (1.0 - p)))
+		var x0 := m.x + k * VHS_MARK_STEP
+		draw_colored_polygon(PackedVector2Array([Vector2(x0, m.y + 7), Vector2(x0 + 11, m.y), Vector2(x0 + 11, m.y + 14)]), Color(Palette.PAPER, VHS_MARK_ALPHA * (1.0 - p)))
 
 
 func _draw_word(s: Dictionary) -> void:
@@ -1308,7 +1418,7 @@ func _draw_word(s: Dictionary) -> void:
 	var fs := roundi(float(s.get("fs", WORD_FONT * Settings.text_scale)) * sc)
 	var text := String(s["text"])
 	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var base := _local(s["at"]) + Vector2(-w * 0.5, fs * 0.35)
+	var base := _local(s["at"]) + Vector2(-w * 0.5, fs * TEXT_BASELINE)
 	draw_string_outline(Palette.marker(), base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE + 2, Color(Palette.NIGHT_SKY, alpha))
 	HighContrast.draw_text(self, Palette.marker(), base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
 
@@ -1316,14 +1426,14 @@ func _draw_word(s: Dictionary) -> void:
 func _draw_pile(s: Dictionary) -> void:
 	var a := float(s["age"])
 	var fade := float(s["fade"])
-	var alpha := float(s["alpha"]) * minf(1.0, a / maxf(0.001, fade)) * minf(1.0, (float(s["dur"]) - a) / maxf(0.001, fade))
+	var alpha := float(s["alpha"]) * minf(1.0, a / maxf(MIN_SPAN, fade)) * minf(1.0, (float(s["dur"]) - a) / maxf(MIN_SPAN, fade))
 	var size := PILE_SIZE * Settings.text_scale
 	var c := _local(s["at"])
 	for k in PILE_LAYERS:
 		var r := Rect2(c - size * 0.5 + Vector2(k * 2.0, -k * 2.0), size)
 		draw_rect(r, Color(Palette.INK, alpha))
-		draw_rect(r, Color(Palette.PAPER, alpha), false, 1.5)
-	draw_rect(Rect2(c - size * 0.5 + Vector2(size.x * 0.3, -6.0), Vector2(size.x * 0.4, 6.0)), Color(Palette.TAPE, alpha))
+		draw_rect(r, Color(Palette.PAPER, alpha), false, TAPE_RIM_WIDTH)
+	draw_rect(Rect2(c - size * 0.5 + Vector2(size.x * TAPE_BAR_X, -TAPE_BAR_H), Vector2(size.x * TAPE_BAR_W, TAPE_BAR_H)), Color(Palette.TAPE, alpha))
 
 
 func _draw_embers(s: Dictionary) -> void:
@@ -1408,7 +1518,7 @@ const SMALL_BIT := 17.0
 func bits(path: BitPath, color: Color, id: StringName, delay: float = 0.0, dim: float = 1.0, trail: bool = true) -> float:
 	if path == null or path.bits.is_empty() or not Motion.live(id):
 		return 0.0
-	_add({"kind": "bits", "path": path, "color": color, "delay": delay, "dur": maxf(0.001, path.length()), "dim": dim, "trail": trail})
+	_add({"kind": "bits", "path": path, "color": color, "delay": delay, "dur": maxf(MIN_SPAN, path.length()), "dim": dim, "trail": trail})
 	return path.length()
 
 
@@ -1435,10 +1545,10 @@ func hit_shards(hit_at: Vector2, center: Vector2, r_out: float, targets: Array[V
 	var n := cfg.fx_shard_count(damage, crit)
 	var big := _bit_px(cfg.fx_glyph_px(damage, crit))
 	var normal := (hit_at - center).normalized()
-	var reach := VfxTier.clamp_radius(tier, Motion.amplitude(&"hit_shards") * (1.4 if crit else 1.0), r_out, r_out * WHEEL_REGION)
+	var reach := VfxTier.clamp_radius(tier, Motion.amplitude(&"hit_shards") * (CRIT_REACH_MULT if crit else 1.0), r_out, r_out * WHEEL_REGION)
 	var through := clampf(Motion.amplitude(&"hit_blocked_wall"), 0.0, 1.0) if blocked and Motion.live(&"hit_blocked_wall") else 1.0
 	var seed := hash([hit_at.snapped(Vector2.ONE), damage, crit])
-	var path := BitPath.shards(seed, hit_at, normal, n, SHARD_SPREAD * (1.25 if crit else 1.0), reach, dur * SHARD_FREE, dur * SHARD_STAGGER,
+	var path := BitPath.shards(seed, hit_at, normal, n, SHARD_SPREAD * (CRIT_SPREAD_MULT if crit else 1.0), reach, dur * SHARD_FREE, dur * SHARD_STAGGER,
 		dur * SHARD_TRAVEL, targets, center, r_out, big * SHARD_MIN_SHARE, big, BIT_END, blocked, through, BOUNCE_FALL)
 	last_origin = hit_at
 	bits(path, color, &"hit_shards", delay)
@@ -1497,7 +1607,7 @@ func heal_inflow(center: Vector2, r: float, targets: Array[Vector2], delay: floa
 		var t: Vector2 = targets[k % targets.size()]
 		var away := (t - center).normalized()
 		below.append(t + away.rotated((BitPath.noise(n, k, 21) - 0.5) * 0.8) * r * (HEAL_FROM_BELOW + 0.4 * BitPath.noise(n, k, 22)))
-	var path := BitPath.inflow(hash(center.snapped(Vector2.ONE)), below, targets, n, dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4, STREAM_BOW * 0.5,
+	var path := BitPath.inflow(hash(center.snapped(Vector2.ONE)), below, targets, n, dur * STREAM_STAGGER, dur * STREAM_TRAVEL * STREAM_TRAVEL_LONG, STREAM_BOW * 0.5,
 		_bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END, HEAL_PLUS_SHARE)
 	last_origin = below[0]
 	bits(path, Palette.GAIN, &"heal_inflow", delay)
@@ -1627,14 +1737,14 @@ func phase_bits(center: Vector2, r: float, pip: Vector2, color: Color = Palette.
 	var n := int(Motion.amplitude(&"phase_change_bits"))
 	# Along under the arc: targets spread from the pip round to the bezel's side (the arc's
 	# ends), half each way.
-	var ends := BitPath.arc_points(center, r * PHASE_ARC_OUT, a0 - PI * 0.45, a0 + PI * 0.45, n)
+	var ends := BitPath.arc_points(center, r * PHASE_ARC_OUT, a0 - PI * PHASE_ARC_HALF, a0 + PI * PHASE_ARC_HALF, n)
 	last_origin = pip
 	var path := BitPath.new()
 	for i in n:
 		var to: Vector2 = ends[i]
-		var ctrl := center + ((pip + to) * 0.5 - center).normalized() * r * PHASE_ARC_OUT * 1.05
+		var ctrl := center + ((pip + to) * 0.5 - center).normalized() * r * PHASE_ARC_OUT * PHASE_CTRL_REACH
 		var appear := dur * STREAM_STAGGER * float(i) / maxf(1.0, float(n - 1))
-		path.bits.append({"from": pip, "burst": Vector2.ZERO, "ctrl": ctrl, "to": to, "appear": appear, "release": appear, "travel": dur * 0.55,
+		path.bits.append({"from": pip, "burst": Vector2.ZERO, "ctrl": ctrl, "to": to, "appear": appear, "release": appear, "travel": dur * PHASE_TRAVEL,
 			"glyph": BitPath.ONE if BitPath.noise(n, i, 31) > 0.5 else BitPath.ZERO, "size": _bit_px(BIT_MAX), "fade": true, "end_scale": 1.0})
 	bits(path, color, &"phase_change_bits", Motion.delay_of(&"phase_change_bits"))
 
@@ -1651,7 +1761,7 @@ func respin_bits(pips: Array[Vector2], hub: Vector2, word: String = "") -> void:
 		for k in per:
 			from.append(p)
 	last_origin = pips[0]
-	bits(BitPath.inflow(hash(hub.snapped(Vector2.ONE)), from, [hub], from.size(), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4, STREAM_BOW * 2.0,
+	bits(BitPath.inflow(hash(hub.snapped(Vector2.ONE)), from, [hub], from.size(), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * STREAM_TRAVEL_LONG, STREAM_BOW * 2.0,
 		_bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), Palette.NET_CYAN, &"respin_bits")
 	if word != "":
 		temp_label(hub, word, Palette.NET_CYAN)
@@ -1666,7 +1776,7 @@ func nudge_resist(at: Vector2, word: String = "", delay: float = 0.0) -> void:
 	var n := int(Motion.amplitude(&"nudge_resist_bits"))
 	var pts: Array[Vector2] = []
 	for k in n:
-		pts.append(at + Vector2((float(k) / maxf(1.0, n - 1.0) - 0.5) * 40.0 * Settings.text_scale, 0.0))
+		pts.append(at + Vector2((float(k) / maxf(1.0, n - 1.0) - 0.5) * NUDGE_SPACING * Settings.text_scale, 0.0))
 	last_origin = at
 	bits(BitPath.drift(hash(at.snapped(Vector2.ONE)), pts, dur * 0.3, dur * 0.7, LABEL_RISE, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)), Palette.DISABLED,
 		&"nudge_resist_bits", delay)
@@ -1699,7 +1809,7 @@ func trigger_fx(from: Vector2, to: Vector2, color: Color, id: StringName = &"dae
 	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
 	last_origin = from
 	_add({"kind": "lens", "at": from, "color": color, "r": FxDraw.DRONE_HEX * Settings.text_scale, "grow": FxDraw.DRONE_HEX * 0.5, "dur": dur * 0.4, "delay": delay})
-	bits(BitPath.inflow(hash([from.snapped(Vector2.ONE), id]), [from], [to], int(Motion.amplitude(id)), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4,
+	bits(BitPath.inflow(hash([from.snapped(Vector2.ONE), id]), [from], [to], int(Motion.amplitude(id)), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * STREAM_TRAVEL_LONG,
 		STREAM_BOW, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), color, id, delay + dur * 0.15)
 
 
@@ -1742,7 +1852,7 @@ func defeat_fx(center: Vector2, r: float, colors: Array[Color], word: String = "
 	var id := &"enemy_defeated_bits"
 	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
 	var delay := Motion.delay_of(id)
-	_add({"kind": "shockwave", "at": center, "r0": r * 0.3, "r1": r * SHOCK_REACH, "color": colors[0] if not colors.is_empty() else Palette.PAPER,
+	_add({"kind": "shockwave", "at": center, "r0": r * SHOCK_START, "r1": r * SHOCK_REACH, "color": colors[0] if not colors.is_empty() else Palette.PAPER,
 		"dur": dur * 0.5, "delay": delay})
 	var n := int(Motion.amplitude(id))
 	var per := maxi(1, n / maxi(1, colors.size()))
@@ -1783,35 +1893,35 @@ func _draw_fx2(s: Dictionary) -> void:
 		"relight":
 			var a := sin(p * PI)
 			for t in s["targets"]:
-				draw_circle(_local(t), 5.0 * Settings.text_scale, Color((Palette.PAPER as Color).lerp(s["color"], p), a))
+				draw_circle(_local(t), TRAVEL_HEAD_R * Settings.text_scale, Color((Palette.PAPER as Color).lerp(s["color"], p), a))
 		"token":
 			var lift := float(s.get("lift", 0.0))
-			var q := clampf((p - lift) / maxf(0.001, 1.0 - lift), 0.0, 1.0) if lift > 0.0 else 0.0
+			var q := clampf((p - lift) / maxf(MIN_SPAN, 1.0 - lift), 0.0, 1.0) if lift > 0.0 else 0.0
 			var at := (s["at"] as Vector2).lerp(s["to"], q * q)
 			var sc := clampf(p * 4.0, 0.0, 1.0) if bool(s.get("grow", false)) else 1.0
-			FxDraw.token(self, at - o, sc, Palette.GAIN, 1.0 - (q if lift > 0.0 else clampf((p - 0.7) / 0.3, 0.0, 1.0)))
+			FxDraw.token(self, at - o, sc, Palette.GAIN, 1.0 - (q if lift > 0.0 else clampf((p - TOKEN_FADE_FROM) / TOKEN_FADE_SPAN, 0.0, 1.0)))
 		"chase":
 			# The attack bends off its line and chases the token out.
 			var from: Vector2 = s["from"]
 			var at0: Vector2 = s["at"]
 			var to: Vector2 = s["to"]
 			var head := BitPath.quad(from, at0, to, p)
-			var tail := BitPath.quad(from, at0, to, maxf(0.0, p - 0.25))
-			draw_line(tail - o, head - o, Color(s["color"], 1.0 - p), 4.0, true)
-			draw_circle(head - o, 5.0, Color(Palette.PAPER, 1.0 - p))
+			var tail := BitPath.quad(from, at0, to, maxf(0.0, p - TRAVEL_TAIL_LAG))
+			draw_line(tail - o, head - o, Color(s["color"], 1.0 - p), TRAVEL_TAIL_W, true)
+			draw_circle(head - o, TRAVEL_HEAD_R, Color(Palette.PAPER, 1.0 - p))
 		"tears":
 			var r: Rect2 = s["rect"]
-			FxDraw.tears(self, Rect2(r.position - o, r.size), clampf(p / float(s["wipe"]), 0.0, 1.0), s["color"], s["color2"], 1.0 - clampf((p - 0.8) / 0.2, 0.0, 1.0), int(s["seed"]))
+			FxDraw.tears(self, Rect2(r.position - o, r.size), clampf(p / float(s["wipe"]), 0.0, 1.0), s["color"], s["color2"], 1.0 - clampf((p - TEARS_FADE_FROM) / TEARS_FADE_SPAN, 0.0, 1.0), int(s["seed"]))
 		"tear":
 			FxDraw.pixel_tear(self, _local(s["at"]), TEAR_PX * Settings.text_scale, s["color"], int(p * 3.0), int(s["seed"]))
 		"drone_hex":
 			FxDraw.drone_hex(self, _local(s["at"]), s["color"], clampf(p / (STREAM_STAGGER + STREAM_TRAVEL), 0.0, 1.0),
-				clampf((p - STREAM_STAGGER - STREAM_TRAVEL) / maxf(0.01, 1.0 - STREAM_STAGGER - STREAM_TRAVEL), 0.0, 1.0), 1.0 - clampf((p - 0.9) / 0.1, 0.0, 1.0))
+				clampf((p - STREAM_STAGGER - STREAM_TRAVEL) / maxf(0.01, 1.0 - STREAM_STAGGER - STREAM_TRAVEL), 0.0, 1.0), 1.0 - clampf((p - BITS_FADE_FROM) / BITS_FADE_SPAN, 0.0, 1.0))
 		"drone_burst":
 			FxDraw.drone_burst(self, _local(s["at"]), s["color"], p, float(s["fly"]))
 		"lens":
 			var c := _local(s["at"])
-			draw_arc(c, float(s["r"]) + float(s["grow"]) * (1.0 - p), 0.0, TAU, 32, Color(s["color"], p), 3.0, true)
+			draw_arc(c, float(s["r"]) + float(s["grow"]) * (1.0 - p), 0.0, TAU, LENS_SEGMENTS, Color(s["color"], p), RING_WIDTH, true)
 		"crit":
 			FxDraw.cracks(self, _local(s["at"]), int(s["n"]), float(s["reach"]), p, int(s["seed"]))
 			FxDraw.streaks(self, _local(s["at"]), int(s["n"]), float(s["reach"]), p, STREAK_FLY, s["color"], int(s["seed"]))
