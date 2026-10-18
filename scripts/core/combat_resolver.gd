@@ -686,7 +686,11 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var ctx := {"owner": owner, "target": _pointer_target(s, owner), "pointer_index": r["pointer_index"],
 		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
 	var listeners := _slice_listeners(s, r)
-	var mult: float = owner.output_scale * float(r.get("extra_multiplier", 1.0))
+	# Plan 2 R5: a PERCENT slice reads the owner's max HP and skips the tier factor; the
+	# precision, Firmware, status and segment multipliers still apply after it.
+	var base := slice_base(owner, slice)
+	var tier_factor := 1.0 if slice.amount_mode == RC.AmountMode.PERCENT else owner.output_scale
+	var mult: float = tier_factor * float(r.get("extra_multiplier", 1.0))
 	if r["tier"] == RC.PrecisionTier.WEAK:
 		mult *= config.weak_multiplier
 	var fw: FirmwareData = r["firmware"]
@@ -723,7 +727,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	# Daemons fire once per landing: never on a Mirror copy of a neighbour (H16).
 	var once: Array = once_all if is_landing(r) else []
 	for m in instances:
-		var output := roundi(slice.base_output * m)
+		var output := roundi(base * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW] and s.damage_bonus > 0:
 			output += s.damage_bonus
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
@@ -733,6 +737,14 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
+
+
+## A slice's output before any multiplier (plan 2 R5): `base_output`, or for a PERCENT
+## slice that share of `owner`'s max HP (rounded to nearest, minimum 1).
+static func slice_base(owner: CombatantState, slice: SliceData) -> int:
+	if slice.amount_mode == RC.AmountMode.PERCENT:
+		return EffectInterpreter.percent_of(owner.max_hp, slice.base_output)
+	return slice.base_output
 
 
 ## Whether resolution `r` stands for its pointer's landing: the landing itself, or the

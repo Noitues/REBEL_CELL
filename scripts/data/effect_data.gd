@@ -8,6 +8,10 @@ extends Resource
 ## Nudges hit one ring; spins, flips and respins always hit the whole wheel.
 @export var ring_scope: RC.RingScope = RC.RingScope.OUTER
 @export var amount: int = 0
+## FLAT or PERCENT (plan 2 R5). PERCENT only on GAIN_BLOCK, GAIN_SHIELD, HEAL (share of
+## the owner's max HP) and APPLY_STATUS CORRUPTED (share of the target's non-NULL slices);
+## `amount` is then 0..100.
+@export var amount_mode: RC.AmountMode = RC.AmountMode.FLAT
 @export var multiplier: float = 1.0
 @export var status: RC.Status = RC.Status.NONE
 ## Slice-level effects only (APPLY_STATUS, CLEANSE): which slice of the target wheel.
@@ -29,4 +33,19 @@ func validate() -> PackedStringArray:
 		errors.append("APPLY_STATUS needs a status.")
 	if type == RC.EffectType.CUSTOM and custom_handler == null:
 		errors.append("CUSTOM effect needs a custom_handler script.")
+	errors.append_array(amount_mode_errors())
+	return errors
+
+
+## The amount_mode problems alone, each led by a stable code: PERCENT on a type that has
+## no percent reading (`mode_unsupported_for_type`), or outside 0..100 (`percent_out_of_range`).
+func amount_mode_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	if amount_mode != RC.AmountMode.PERCENT:
+		return errors
+	var percent_types := [RC.EffectType.GAIN_BLOCK, RC.EffectType.GAIN_SHIELD, RC.EffectType.HEAL]
+	if not (type in percent_types or (type == RC.EffectType.APPLY_STATUS and status == RC.Status.CORRUPTED)):
+		errors.append("mode_unsupported_for_type: PERCENT is for heal, block, shield and CORRUPTED, not %s." % RC.EffectType.keys()[type])
+	if amount < 0 or amount > RC.PERCENT_MAX:
+		errors.append("percent_out_of_range: PERCENT amount %d is outside 0..%d." % [amount, RC.PERCENT_MAX])
 	return errors
