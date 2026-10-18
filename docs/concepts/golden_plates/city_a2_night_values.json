@@ -1,5 +1,9 @@
 {
  "checks": {
+  "baseline": [
+   "R-HUE-1",
+   "R-HUE-2"
+  ],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -9,6 +13,7 @@
    "landmark_ratio": "no id pass: ratio_median is null"
   },
   "pre_accepted": [],
+  "report_only": [],
   "status": {
    "R-CALM-1": "n/a",
    "R-CALM-2": "n/a",

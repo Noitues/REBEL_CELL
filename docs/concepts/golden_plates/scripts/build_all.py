@@ -56,6 +56,8 @@ def hq_entry(corp, view, png_rel, corp_dir, frame, index_rel, accepted=None, ext
                          index_pass=(index_rel + "_index.npy") if index_rel else None,
                          yaw_convention="rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"),
              pending=["layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"])
+    if corp == "rebel_cell":
+        e["class_map"] = {3: 1}          # AD 2026-10-18: pass 3 (the MAINFRAME sign quad) is landmark, class 1
     if extra:
         e.update(extra)
     if not index_rel:

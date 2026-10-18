@@ -1,5 +1,6 @@
 {
  "checks": {
+  "baseline": [],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -14,6 +15,10 @@
     "check": "landmark_ratio",
     "note": "2.56x above 2.0 pre-accepted (Solace 2.8x accepted 2026-10-16, Q5; 12.8)"
    }
+  ],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
   ],
   "status": {
    "R-CALM-1": "fail",

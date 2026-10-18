@@ -1,5 +1,8 @@
 {
  "checks": {
+  "baseline": [
+   "R-VAL-2"
+  ],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -14,6 +17,10 @@
     "check": "R-VAL-1",
     "note": "approved HQ overview plate median 0.109, pre-accepted 2026-10-18 (12.8)"
    }
+  ],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
   ],
   "status": {
    "R-CALM-1": "fail",

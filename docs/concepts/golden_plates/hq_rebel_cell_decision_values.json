@@ -1,5 +1,8 @@
 {
  "checks": {
+  "baseline": [
+   "landmark_ratio"
+  ],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -11,6 +14,10 @@
    "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 2559, 1439]"
   },
   "pre_accepted": [],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
+  ],
   "status": {
    "R-CALM-1": "pass",
    "R-CALM-2": "pass",

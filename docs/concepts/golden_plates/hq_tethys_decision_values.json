@@ -1,5 +1,6 @@
 {
  "checks": {
+  "baseline": [],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -10,6 +11,10 @@
    "landmark_ratio": "no id pass: ratio_median is null; ratio_mean / ratio_peak copied from H_decision_v2_plate_values.json (post_tethys disc mask round the station, not id.png classes); ratio_median stays null until an id pass exists"
   },
   "pre_accepted": [],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
+  ],
   "status": {
    "R-CALM-1": "fail",
    "R-CALM-2": "pass",

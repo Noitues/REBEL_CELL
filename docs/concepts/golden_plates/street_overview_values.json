@@ -1,5 +1,6 @@
 {
  "checks": {
+  "baseline": [],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -9,6 +10,7 @@
    "landmark_ratio": "street: no landmark expected in frame (12.8)"
   },
   "pre_accepted": [],
+  "report_only": [],
   "status": {
    "R-CALM-1": "pass",
    "R-CALM-2": "pass",

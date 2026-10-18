@@ -1,5 +1,9 @@
 {
  "checks": {
+  "baseline": [
+   "R-VAL-2",
+   "landmark_ratio"
+  ],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -7,10 +11,14 @@
   },
   "notes": {
    "R-FOCUS-1": "empty ring: the landmark box fills the frame (n/a, 12.0 O-4)",
-   "id_alignment": "class-variance share / shifted-class share = 1.9741 (above 1 = the index pass matches this beauty plate)",
+   "id_alignment": "class-variance share / shifted-class share = 1.8682 (above 1 = the index pass matches this beauty plate)",
    "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 2559, 1439]"
   },
   "pre_accepted": [],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
+  ],
   "status": {
    "R-CALM-1": "pass",
    "R-CALM-2": "pass",
@@ -51,8 +59,8 @@
  },
  "median": 0.121,
  "over_085": 0.0193,
- "ratio_mean": 2.0483,
- "ratio_median": 1.1718,
+ "ratio_mean": 2.051,
+ "ratio_median": 1.182,
  "ratio_peak": 7.9681,
  "under_010": 0.4227
 }

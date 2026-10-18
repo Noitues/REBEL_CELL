@@ -16,7 +16,7 @@ spec.json keys (see build_all.py for the real ones):
 
 Index pass -> 12.0 class map (the passes are written by hq_scene.py `Acc(name, mat, pass_index, coll)`):
   0 sky -> 0         1 landmark compound -> 1     2 city (and sky dome, city emit) -> 2
-  3 -> 4  (NOT link structure in the HQ passes: Solace uses 3 for the plaza apron ring, Rebel Cell for the MAINFRAME
+  3 -> 4  (spec.class_map overrides: Rebel Cell maps 3 -> 1, AD 2026-10-18; NOT link structure in the HQ passes: Solace uses 3 for the plaza apron ring, Rebel Cell for the MAINFRAME
           sign quad; mapped to 4 so the 12.2 masks {1,5,6} / {0,2} stay identical to hq_values.py)
   4 ground -> 4      5 rooms -> 5                 6 landmark movers -> 6
   7 light streaks -> 4 (not in any 12.2 mask)
@@ -96,7 +96,7 @@ def luma(rgb):
     return rgb[..., 0] * 0.2126 + rgb[..., 1] * 0.7152 + rgb[..., 2] * 0.0722
 
 
-def load_class(index_path, shape):
+def load_class(index_path, shape, class_map=None):
     """Saved Object Index pass -> uint8 class image of `shape` (h, w)."""
     idx = np.load(index_path)
     if idx.ndim == 3:
@@ -109,7 +109,7 @@ def load_class(index_path, shape):
     if unknown:
         raise ValueError("unmapped pass indices %s in %s" % (unknown, index_path))
     lut = np.zeros(256, np.uint8)
-    for k, v in CLASS_MAP.items():
+    for k, v in {**CLASS_MAP, **(class_map or {})}.items():
         lut[k] = v
     return lut[r], np.unique(r).tolist()
 
@@ -256,7 +256,9 @@ def compute_values(beauty_path, cls, spec):
     if kind == "hq" and "R-FOCUS-1" in rules and box_norm is None:
         notes["R-FOCUS-1"] = "no id pass: landmark box unavailable"
     out["composition"] = comp
-    out["checks"] = {"status": status, "notes": notes,
+    report_only = ["R-CALM-1", "R-CALM-2"] if kind == "hq" else []          # AD ruling 2026-10-18 (12.7)
+    baseline = sorted(k for k, v in status.items() if v == "fail" and k not in report_only)
+    out["checks"] = {"status": status, "baseline": baseline, "report_only": report_only, "notes": notes,
                      "exempt": spec.get("exempt") or {"hover_cut": False, "red_seq": False, "flash": False},
                      "pre_accepted": spec.get("accepted") or []}
     out["inputs"] = {k: None for k in ("city.json", "net.json", "run_graph.json", "zoned.json", "derive_run.json")}
@@ -298,7 +300,7 @@ def build_plate(spec, out_dir):
     cls, used = (None, None)
     align = None
     if spec.get("index"):
-        cls, used = load_class(spec["index"], (h, w))
+        cls, used = load_class(spec["index"], (h, w), {int(k): v for k, v in (spec.get("class_map") or {}).items()})
         write_id(cls, os.path.join(out_dir, stem + "_id.png"))
     vals, L = compute_values(dst, cls, spec)
     if cls is not None:
