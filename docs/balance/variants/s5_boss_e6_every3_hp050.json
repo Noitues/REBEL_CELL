@@ -1,0 +1,1 @@
+{"name": "s5_boss_e6_every3_hp050", "set": ["config.enrage_start_turn_by_class=[0,8,10,6]", "config.enrage_every_n_turns_by_class=[0,5,5,3]", "renewal_engine.hp*=0.5"]}
