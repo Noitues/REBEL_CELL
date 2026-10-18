@@ -1,0 +1,62 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 191.7366,
+  "lens": 30.0,
+  "loc": [
+   218.529,
+   11.5,
+   100.2713
+  ],
+  "ortho": false,
+  "pitch": 15.2,
+  "shift_x": -0.0729,
+  "shift_y": 0.0023,
+  "tgt": [
+   33.5,
+   11.5,
+   50.0
+  ],
+  "yaw": -90.0,
+  "zoom_detail": null,
+  "zoom_dive": null,
+  "zoom_job": 1.0
+ },
+ "corp": "halcyon",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "46d161ce",
+  "final": "route_map_graph/hq_halcyon/plates/H_decision_E_v2_plate.png",
+  "index_pass": "hq_rev/halcyon/bl_stills/H_decision_E_index.npy",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   6,
+   7
+  ],
+  "pose": "route_map_graph/hq_halcyon/scratch/ov_stills.json[H_decision_E] (job_stills_final_0.json holds the same pose)",
+  "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
+ },
+ "stem": "hq_halcyon_decision",
+ "version": 1,
+ "view": "decision"
+}

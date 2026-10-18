@@ -1,0 +1,57 @@
+{
+ "checks": {
+  "exempt": {
+   "flash": false,
+   "hover_cut": false,
+   "red_seq": false
+  },
+  "notes": {
+   "id_alignment": "class-variance share / shifted-class share = 1.5287 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 2374, 1439]"
+  },
+  "pre_accepted": [],
+  "status": {
+   "R-CALM-1": "pass",
+   "R-CALM-2": "pass",
+   "R-DET-1": "n/a",
+   "R-DET-2": "n/a",
+   "R-FOCUS-1": "fail",
+   "R-HOR-1": "n/a",
+   "R-HUE-1": "n/a",
+   "R-HUE-2": "n/a",
+   "R-REP-1": "fail",
+   "R-SIL-1": "n/a",
+   "R-SIL-2": "n/a",
+   "R-VAL-1": "warn",
+   "R-VAL-2": "pass",
+   "R-VAL-3": "fail",
+   "landmark_ratio": "fail"
+  }
+ },
+ "composition": {
+  "R-CALM-1": 0.598,
+  "R-CALM-2": 0.2,
+  "R-DET-1": null,
+  "R-DET-2": null,
+  "R-FOCUS-1": 1.1603,
+  "R-HOR-1": null,
+  "R-HUE-1": null,
+  "R-HUE-2": null,
+  "R-REP-1": 0.6918,
+  "R-SIL-1": null,
+  "R-SIL-2": null
+ },
+ "inputs": {
+  "city.json": null,
+  "derive_run.json": null,
+  "net.json": null,
+  "run_graph.json": null,
+  "zoned.json": null
+ },
+ "median": 0.1749,
+ "over_085": 0.0278,
+ "ratio_mean": 1.4425,
+ "ratio_median": 1.0648,
+ "ratio_peak": 5.584,
+ "under_010": 0.2531
+}

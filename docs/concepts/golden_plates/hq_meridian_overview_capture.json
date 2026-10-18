@@ -1,0 +1,61 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 801.9871,
+  "lens": 36.0,
+  "loc": [
+   -362.4856,
+   -517.6832,
+   527.7525
+  ],
+  "ortho": false,
+  "pitch": 38.0,
+  "shift_x": -0.0672,
+  "shift_y": 0.0241,
+  "tgt": [
+   0.0,
+   0.0,
+   34.0
+  ],
+  "yaw": 35.0,
+  "zoom_detail": null,
+  "zoom_dive": null,
+  "zoom_job": 0.0
+ },
+ "corp": "meridian",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "5c97940f",
+  "final": "route_map_graph/hq_meridian_v3/plates/H_overview_v3_plate.png",
+  "index_pass": "meridian_v3/bl_stills/H_overview_index.npy",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   7
+  ],
+  "pose": "route_map_graph/hq_meridian_v3/scratch/ov_stills.json[H_overview] (job_stills_final_0.json holds the same pose)",
+  "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
+ },
+ "stem": "hq_meridian_overview",
+ "version": 1,
+ "view": "overview"
+}

@@ -1,0 +1,55 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 114.6201,
+  "lens": 40.0,
+  "loc": [
+   110.5336,
+   -99.1988,
+   9.7002
+  ],
+  "ortho": false,
+  "pitch": 2.0,
+  "shift_x": -0.0548,
+  "shift_y": 0.1172,
+  "tgt": [
+   96.1767,
+   14.4483,
+   5.7
+  ],
+  "yaw": -7.2,
+  "yaw_note": "yaw / pitch / dist derived from loc and tgt (the job stores loc, tgt, lens, sx, sy only)",
+  "zoom_detail": null,
+  "zoom_dive": null
+ },
+ "corp": "",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "street",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "id.png: street_r2 writes albedo/emit/z/combined only, no Object Index; re-render with the pass",
+  "layout_seed (art seed 1 is recorded in source, the 12.8 decimal u64 is not), run id, anim_t, run_graph, inputs hashes: street_r2 predates derive v2"
+ ],
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": null,
+ "source": {
+  "commit": "ded90765",
+  "final": "route_map_graph/street_r2/plates/01_OVERVIEW_closed_s1_plate.png",
+  "index_pass": null,
+  "index_pass_indices": null,
+  "pose": "D:/rc_scratch/street_r2/job_finals_s1_ov_closed_dec_closed.json frame F_ov_closed (art seed 1, walls closed); storyboard t 13.45",
+  "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
+ },
+ "stem": "street_overview",
+ "version": 1,
+ "view": "overview"
+}

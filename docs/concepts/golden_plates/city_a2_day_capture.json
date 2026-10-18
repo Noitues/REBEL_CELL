@@ -1,0 +1,57 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 1130.0,
+  "lens": 28.0,
+  "loc": [
+   12.0,
+   -960.0,
+   615.0
+  ],
+  "loc_note": "loc / tgt are the render log's CAM line (rounded to 1 BU); lens, pitch, dist, shift from CAMS['hero'] (A2 mode: layout yaw 90 -> rig 0, target_ab (2,-2))",
+  "ortho": false,
+  "pitch": 33.0,
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   12.0,
+   -12.0,
+   0.0
+  ],
+  "yaw": 0.0,
+  "yaw_note": "perspective hero camera, NOT the orthographic yaw 135 / pitch 40 of 4.2 that 12.8 lists: the finished art uses this camera",
+  "zoom_detail": null,
+  "zoom_dive": null
+ },
+ "corp": "",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "city",
+ "layout_seed": null,
+ "look": null,
+ "pending": [
+  "id.png: the city render writes rgb/emit/z passes only, no Object Index (landmark classes 1/6, city 2, sky 0); re-render with the pass",
+  "camera.ortho: 12.8 asks yaw 135 / pitch 40 ortho; the plate is the perspective hero frame, AD to confirm which the build session should match",
+  "layout_seed, run id, anim_t, inputs hashes: city A2 predates derive v2"
+ ],
+ "resolution": [
+  3840,
+  2160
+ ],
+ "run": null,
+ "source": {
+  "commit": "199a450e",
+  "final": "city_all_corps/city_all_corps_day.png",
+  "index_pass": null,
+  "index_pass_indices": null,
+  "pose": "D:/rc_scratch/city_all_corps/a2final/hero_day.log (CAM line) + city_preset.CAMS['hero']",
+  "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
+ },
+ "stem": "city_a2_day",
+ "version": 1,
+ "view": "city"
+}

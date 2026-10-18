@@ -1,0 +1,56 @@
+{
+ "checks": {
+  "exempt": {
+   "flash": false,
+   "hover_cut": false,
+   "red_seq": false
+  },
+  "notes": {
+   "landmark_ratio": "street: no landmark expected in frame (12.8)"
+  },
+  "pre_accepted": [],
+  "status": {
+   "R-CALM-1": "pass",
+   "R-CALM-2": "pass",
+   "R-DET-1": "pass",
+   "R-DET-2": "fail",
+   "R-FOCUS-1": "n/a",
+   "R-HOR-1": "n/a",
+   "R-HUE-1": "pass",
+   "R-HUE-2": "pass",
+   "R-REP-1": "fail",
+   "R-SIL-1": "n/a",
+   "R-SIL-2": "n/a",
+   "R-VAL-1": "pass",
+   "R-VAL-2": "pass",
+   "R-VAL-3": "pass",
+   "landmark_ratio": "n/a"
+  }
+ },
+ "composition": {
+  "R-CALM-1": 0.7419,
+  "R-CALM-2": 0.2,
+  "R-DET-1": 0.0293,
+  "R-DET-2": 402.5608,
+  "R-FOCUS-1": null,
+  "R-HOR-1": null,
+  "R-HUE-1": 3.8098,
+  "R-HUE-2": 0.393,
+  "R-REP-1": 0.7944,
+  "R-SIL-1": null,
+  "R-SIL-2": null
+ },
+ "inputs": {
+  "city.json": null,
+  "derive_run.json": null,
+  "net.json": null,
+  "run_graph.json": null,
+  "zoned.json": null
+ },
+ "median": 0.141,
+ "over_085": 0.0108,
+ "ratio_mean": null,
+ "ratio_median": null,
+ "ratio_peak": null,
+ "under_010": 0.3187
+}

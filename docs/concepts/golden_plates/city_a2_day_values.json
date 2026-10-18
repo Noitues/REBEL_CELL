@@ -1,0 +1,57 @@
+{
+ "checks": {
+  "exempt": {
+   "flash": false,
+   "hover_cut": false,
+   "red_seq": false
+  },
+  "notes": {
+   "R-VAL-1": "day plate: median target 0.25 (3.7); recorded and reported only until the AD sets a day band",
+   "landmark_ratio": "no id pass: ratio_median is null"
+  },
+  "pre_accepted": [],
+  "status": {
+   "R-CALM-1": "n/a",
+   "R-CALM-2": "n/a",
+   "R-DET-1": "n/a",
+   "R-DET-2": "n/a",
+   "R-FOCUS-1": "n/a",
+   "R-HOR-1": "pass",
+   "R-HUE-1": "fail",
+   "R-HUE-2": "fail",
+   "R-REP-1": "pass",
+   "R-SIL-1": "n/a",
+   "R-SIL-2": "n/a",
+   "R-VAL-1": "n/a",
+   "R-VAL-2": "n/a",
+   "R-VAL-3": "n/a",
+   "landmark_ratio": "n/a"
+  }
+ },
+ "composition": {
+  "R-CALM-1": null,
+  "R-CALM-2": null,
+  "R-DET-1": null,
+  "R-DET-2": null,
+  "R-FOCUS-1": null,
+  "R-HOR-1": 0.0397,
+  "R-HUE-1": 2.844,
+  "R-HUE-2": 0.641,
+  "R-REP-1": 0.1801,
+  "R-SIL-1": null,
+  "R-SIL-2": null
+ },
+ "inputs": {
+  "city.json": null,
+  "derive_run.json": null,
+  "net.json": null,
+  "run_graph.json": null,
+  "zoned.json": null
+ },
+ "median": 0.2501,
+ "over_085": 0.0006,
+ "ratio_mean": null,
+ "ratio_median": null,
+ "ratio_peak": null,
+ "under_010": 0.0834
+}

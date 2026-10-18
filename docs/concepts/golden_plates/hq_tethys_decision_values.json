@@ -1,0 +1,57 @@
+{
+ "checks": {
+  "exempt": {
+   "flash": false,
+   "hover_cut": false,
+   "red_seq": false
+  },
+  "notes": {
+   "R-FOCUS-1": "no id pass: landmark box unavailable",
+   "landmark_ratio": "no id pass: ratio_median is null; ratio_mean / ratio_peak copied from H_decision_v2_plate_values.json (post_tethys disc mask round the station, not id.png classes); ratio_median stays null until an id pass exists"
+  },
+  "pre_accepted": [],
+  "status": {
+   "R-CALM-1": "fail",
+   "R-CALM-2": "pass",
+   "R-DET-1": "n/a",
+   "R-DET-2": "n/a",
+   "R-FOCUS-1": "n/a",
+   "R-HOR-1": "n/a",
+   "R-HUE-1": "n/a",
+   "R-HUE-2": "n/a",
+   "R-REP-1": "pass",
+   "R-SIL-1": "n/a",
+   "R-SIL-2": "n/a",
+   "R-VAL-1": "pass",
+   "R-VAL-2": "pass",
+   "R-VAL-3": "pass",
+   "landmark_ratio": "n/a"
+  }
+ },
+ "composition": {
+  "R-CALM-1": 0.4128,
+  "R-CALM-2": 0.1227,
+  "R-DET-1": null,
+  "R-DET-2": null,
+  "R-FOCUS-1": null,
+  "R-HOR-1": null,
+  "R-HUE-1": null,
+  "R-HUE-2": null,
+  "R-REP-1": 0.2936,
+  "R-SIL-1": null,
+  "R-SIL-2": null
+ },
+ "inputs": {
+  "city.json": null,
+  "derive_run.json": null,
+  "net.json": null,
+  "run_graph.json": null,
+  "zoned.json": null
+ },
+ "median": 0.14,
+ "over_085": 0.0023,
+ "ratio_mean": 1.57,
+ "ratio_median": null,
+ "ratio_peak": 3.1,
+ "under_010": 0.2929
+}

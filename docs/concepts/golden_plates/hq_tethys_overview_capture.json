@@ -1,0 +1,55 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 210.0,
+  "lens": 30.0,
+  "loc": [
+   -233.3009,
+   179.8009,
+   160.8693
+  ],
+  "loc_note": "tgt fitted to 28 room anchors of D:/rc_scratch/tethys/final4/t_over_aaa_rooms.json (+-0.25 BU); render log: loc (-233,180,161) tgt (-329,275,0)",
+  "ortho": false,
+  "pitch": 50.0,
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   -328.75,
+   275.25,
+   0.0
+  ],
+  "yaw": -45.0,
+  "zoom_detail": null,
+  "zoom_dive": null
+ },
+ "corp": "tethys",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "id.png: the Tethys pipeline writes rgb/emit/z passes only, no Object Index; re-render with the pass",
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "3092f4a6",
+  "final": "route_map_graph/hq_tethys/H_overview_v2_plate.png",
+  "index_pass": null,
+  "index_pass_indices": null,
+  "pose": "tethys_preset.CAMS t_over / t_dec (layout yaw converted to rig: rig = 90 - layout)",
+  "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
+ },
+ "stem": "hq_tethys_overview",
+ "version": 1,
+ "view": "overview"
+}

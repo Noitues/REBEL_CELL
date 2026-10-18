@@ -1,0 +1,60 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 235.7492,
+  "lens": 30.0,
+  "loc": [
+   -124.0,
+   -115.401,
+   105.1355
+  ],
+  "ortho": false,
+  "pitch": 23.8,
+  "shift_x": -0.0728,
+  "shift_y": 0.0225,
+  "tgt": [
+   -124.0,
+   100.3,
+   10.0
+  ],
+  "yaw": 0.0,
+  "zoom_detail": null,
+  "zoom_dive": null,
+  "zoom_job": 1.0
+ },
+ "corp": "rebel_cell",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "untracked",
+  "final": "route_map_graph/hq_rebel_cell/plates/H_decision_v3_plate.png",
+  "index_pass": "hq_rev/rebel_cell/v3/bl_stills/H_decision_index.npy",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5
+  ],
+  "pose": "route_map_graph/hq_rebel_cell/scratch/ov_stills.json[H_decision] (job_stills_final_0.json holds the same pose)",
+  "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
+ },
+ "stem": "hq_rebel_cell_decision",
+ "version": 1,
+ "view": "decision"
+}

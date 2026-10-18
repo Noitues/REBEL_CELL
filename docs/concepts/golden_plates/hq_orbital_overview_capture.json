@@ -1,0 +1,62 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 443.9485,
+  "lens": 36.0,
+  "loc": [
+   -154.1963,
+   267.0758,
+   339.3498
+  ],
+  "ortho": false,
+  "pitch": 46.0,
+  "shift_x": -0.0729,
+  "shift_y": -0.0299,
+  "tgt": [
+   0.0,
+   0.0,
+   20.0
+  ],
+  "yaw": 150.0,
+  "zoom_detail": null,
+  "zoom_dive": null,
+  "zoom_job": 0.0
+ },
+ "corp": "orbital",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "46d161ce",
+  "final": "route_map_graph/hq_orbital/plates/H_overview_v2_plate.png",
+  "index_pass": "hq_rev/orbital/bl_stills/H_overview_index.npy",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   6,
+   7
+  ],
+  "pose": "route_map_graph/hq_orbital/scratch/ov_stills.json[H_overview] (job_stills_final_0.json holds the same pose)",
+  "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
+ },
+ "stem": "hq_orbital_overview",
+ "version": 1,
+ "view": "overview"
+}

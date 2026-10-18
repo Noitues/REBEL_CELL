@@ -1,0 +1,55 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 142.0,
+  "lens": 30.0,
+  "loc": [
+   -288.9317,
+   191.9545,
+   91.2758
+  ],
+  "loc_note": "exact from tethys_preset.CAMS['t_dec'] (target_xy, layout yaw 118 -> rig -28); render log: loc (-289,192,91) tgt (-340,288,0)",
+  "ortho": false,
+  "pitch": 40.0,
+  "shift_x": -0.056,
+  "shift_y": -0.017,
+  "tgt": [
+   -340.0,
+   288.0,
+   0.0
+  ],
+  "yaw": -28.0,
+  "zoom_detail": null,
+  "zoom_dive": null
+ },
+ "corp": "tethys",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "id.png: the Tethys pipeline writes rgb/emit/z passes only, no Object Index; re-render with the pass",
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "fd462c07",
+  "final": "route_map_graph/hq_tethys/H_decision_v2_plate.png",
+  "index_pass": null,
+  "index_pass_indices": null,
+  "pose": "tethys_preset.CAMS t_over / t_dec (layout yaw converted to rig: rig = 90 - layout)",
+  "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
+ },
+ "stem": "hq_tethys_decision",
+ "version": 1,
+ "view": "decision"
+}
