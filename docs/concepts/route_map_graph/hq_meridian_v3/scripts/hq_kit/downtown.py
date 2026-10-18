@@ -151,7 +151,10 @@ def build(cfg, A, geo, pal):
                     else:
                         yy = by0 if ly > 0 else by1
                         box(A["city_neon"], bx0 + 0.4, yy - 0.08, top - 0.9, bx1 - 0.4, yy + 0.08, top - 0.55, c_, 3.0)
-                # roof clutter
+                # roof clutter. Aurelian HQ (cfg mast_pad, default off): the clutter (antenna masts, tanks, holo poles)
+                # is added to the occlusion stub set with a wider footprint, so a mast beside the cone is cut too
+                if cfg.get("mast_pad"):
+                    bc(lx, ly, top=h2 + 25.0, hx=cfg["mast_pad"], hy=cfg["mast_pad"])   # clutter top: the cone test sees it
                 for _ in range(rd.randint(1, 3)):
                     ux, uy = rd.uniform(bx0 + 1.5, bx1 - 1.5), rd.uniform(by0 + 1.5, by1 - 1.5)
                     box(A["city_metal"], ux - 0.9, uy - 0.6, top, ux + 0.9, uy + 0.6, top + 1.1, (0.16, 0.16, 0.17))
