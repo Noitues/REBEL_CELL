@@ -196,7 +196,7 @@ The contract between the tools and Godot. Fields as written today by `SB/sb_ocjo
 | `columns` | `[[layer, bid]]` | Route column per layer; `bid` is the string building id (3.1) |
 | `route_keys` | `[bid]` | Every building part of every route column |
 | `col_info` | `[{layer, bid, top, u0, u1, face}]` | Column extents |
-| `rooms` | `{node id: {front[4], back[4], floor, span, bld, parts, layer, kind}}` | Room boxes (world BU); `bld` is a `bid`; `kind` also takes `rest`, `workshop`, `cache` (3.3) |
+| `rooms` | `{node id: {front[4], back[4], floor, span, ground_z, bld, parts, layer, kind}}` | Room boxes (world BU); `ground_z` is the local ground height under the room and the box z values are above it (audit row 9, 2026-10-18); `bld` is a `bid`; `kind` also takes `rest`, `workshop`, `cache` (3.3) |
 | `edges` | `[{a, b, type, path[]}]` | Link polylines on the facade plane |
 | `overview`, `decision` | pose dicts | Solved poses (section 6) |
 | `frontage` | `[[bid, h, floors, taper]]` | The street's frontage, for checks |
@@ -281,7 +281,7 @@ Rules, in order:
    `room_px_target`, use span 2. A building without the floors for span 2 keeps span 1. Never rescale a building.
 7. **Rooms** (`room_boxes`, 253-278): rooms of a layer take consecutive floors from `base_floor`, bottom up in slot
    order (`K`). Box: inset `room_inset` from the corners, `room_depth` deep, z from `floor * 1.9 + 0.12` to
-   `(floor + span) * 1.9 - 0.12`.
+   `(floor + span) * 1.9 - 0.12`, both above the room's `ground_z` (2.3; audit row 9, 2026-10-18).
 8. **Walls** (`M44/onecity_build.py:28-80`): cut every facade face of a route building whose centre lies inside an
    opening (pad 0.12 BU, depth -0.45..0.25 BU); build one wall object per room from the kit's own facade rule
    (`fgrid` cells 1.7 BU, windows in the building colour, 35 % lit). Walls are closed until the REVEAL.
@@ -315,14 +315,14 @@ node kinds, so they get no entry.
 ### 3.4 District building types per corp (`CAC/city_preset.py:29-55`, generators in `CAC/city_build.py:282-541`)
 
 Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-69`):
-1. Z1: the five game territories keep their buildings.
-2. Z2-Z3: unclaimed buildings split into `k_neutral` 3 k-means clusters (farthest-point init from the lowest key). The
+1. Z1 (applies only with `CITY_LAYOUT=legacy`; A2 reads the 7 districts from the planner JSON through `zoning_a2.py`, 3.7; audit row 7, 2026-10-18): the seven game territories keep their buildings.
+2. Z2-Z3 (legacy only, as Z1; A2 takes its districts from the JSON; audit row 7, 2026-10-18): unclaimed buildings split into `k_neutral` 3 k-means clusters (farthest-point init from the lowest key). The
    coastal cluster (mean depth within `coast_band` 40 lots) becomes TETHYS; the one nearest the centre AURELIAN; the
    rest THE SPRAWL.
 3. Z4-Z6: the coast is the deepest building + 0.8 lot from the map camera (yaw 135); the seawall bows into a bay
    (`BAY` depth 16, width 60, headlands from 120 with k 0.004); the seaward `lagoon_frac` 0.68 of Tethys is the
-   **drowned quarter** (ground subsides 2.5 -> 30 BU, water at z 2.5, levee 4.2, seawall 8.0; `WATER`, lines 72-92).
-4. L1-L2: HQ lots are the layout's; a new corp's HQ lot is its district's pole of inaccessibility (ties: lower lot x,
+   **drowned quarter** (**legacy values, `CITY_LAYOUT=legacy` only:** ground subsides 2.5 -> 30 BU, water at z 2.5, levee 4.2, seawall 8.0; `WATER`, lines 72-92. A2 uses `WATER.z` -1.2 from `zoning_a2.py` (3.7); audit row 6, 2026-10-18).
+4. L1-L2 (applies only with `CITY_LAYOUT=legacy`; A2 reads the 6 HQ lots from the planner JSON, 3.7; audit row 7, 2026-10-18): HQ lots are the layout's; a new corp's HQ lot is its district's pole of inaccessibility (ties: lower lot x,
    then y). Every landmark clears `landmark_r` 5.6 lots. Rebel Cell has no landmark: its base lot is refilled.
    **Designer 2026-10-16:** HQ positions (and the non-HQ key locations) are game output per seed (2.0 steps 1-2).
    L1 is a concept stand-in for the art city only; the pipeline reads the game's lots. Zoning Z1-Z6, L3, L4 and T1 stay
@@ -339,11 +339,11 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
      (rail polyline `CAC/zoning.py:381-402`; corridor clearing `:616-660`; rail-side cap `:684-697`; NA03_NA04_ANSWERS, 2026-10-18) is **superseded (Designer 2026-10-16)** and kept only as the fallback when the layout
      has no rail polyline (`CITY_LAYOUT=legacy`); the fallback starts at the lot's N edge and ends at the port, never at
      a gate. The N side is the train side, so no truck road or highway exit leaves it.
-   - **Deck height: `deck_z` = 17.5 BU.** It clears the tallest street front the layout rules can make (6 floors +
+   - **Deck height: `deck_z` = 17.5 BU above local ground** (the deck sits at ground `H` + 17.5 at each point of the line, so it follows the terrain lift of 3.7; audit row 9, 2026-10-18). It clears the tallest street front the layout rules can make (6 floors +
      the 0-2 key floors: `8 * 1.9 + 0.1` = 15.3 BU) plus 2.2 BU, so it clears a 6-floor frontage (11.5 BU) plus 2 BU
      anywhere along the line. It replaces `RAIL.deck_z` 9.0 (`CAC/city_preset.py:162-163`; NA03_NA04_ANSWERS, 2026-10-18) and the HQ kit's 22
      (kit units; `HM/hq_preset.py:51`).
-   - Buildings within `corridor_low` of the line stay at least 2 BU under the deck (cap 15.5 BU).
+   - Buildings within `corridor_low` of the line stay at least 2 BU under the deck (cap 15.5 BU above local ground; audit row 9, 2026-10-18).
    - Piers every 7 BU on street tiles, ramp 60 (end ramp 45), signals every 36 (`CAC/city_preset.py:162-163`; the code value of the approved city renders wins over the old "ramp 30"; AD 2026-10-18).
    - The HQ scene imports this polyline and `deck_z` from `zoned.json`. The straight viaduct at x 66 to y 1180 in the
      Meridian kit (`HM/hq_preset.py:51-52`) is superseded by the v3 module (audit row 1, 2026-10-18).
@@ -754,7 +754,7 @@ spike from a tier swap.
 
 1. **Corridor:** the camera side of the street centre line (side test `(p - a) . nrm < -0.4`), along the street from
    min(a, c) - `corridor_pad` to max(a, c) + `corridor_pad`, `corridor_pad` 30 BU (`M44/onecity_build.py:157, 191-199`).
-2. **Cut height:** `z_cut(zoom_dive) = exp(lerp(ln 60, ln 0.4, smoothstep((zoom_dive - 0.25) / 0.60)))`, and no cut
+2. **Cut height** (a height above the local ground: the cut plane is `ground_z + z_cut`, with `ground_z` from the room boxes, 2.3; audit row 9, 2026-10-18): `z_cut(zoom_dive) = exp(lerp(ln 60, ln 0.4, smoothstep((zoom_dive - 0.25) / 0.60)))`, and no cut
    (1e4) while the smoothstep is 0 (`SB/sb_ocjobs.py:111-115`). Inside the corridor, everything above `z_cut` is not
    drawn.
 3. **Plinth rule:** what is left of the cut blocks beyond the camera-side kerb (`plinth_off` = border street width / 2
@@ -1414,7 +1414,7 @@ written by the same checks.
 1. No building footprint (inset 0) meets a corridor segment (`in_corridor`, `HK/downtown.py:397-410`); the zoning
    rail never crosses a building or the landmark footprint (`CAC/zoning.py:381-402`, clearing `:616-660`; NA03_NA04_ANSWERS, 2026-10-18).
 2. Within `rail.side_d` = 7.2 BU (1.2 lots, one-city BU; the kit's `corridor_low` tuple is retired) of the rail polyline the building tops stay at least 2 BU under the viaduct deck
-   (`deck_z` 17.5 BU, so tops <= `rail.side_cap` 15.5 BU; the corridor half-width is `rail.half_clear` = 4.5 BU; AD ruling 2026-10-15, C8; NA03_NA04_ANSWERS, 2026-10-18).
+   (`deck_z` 17.5 BU above local ground, so tops <= `rail.side_cap` 15.5 BU above local ground, i.e. ground + value at each building (audit row 9, 2026-10-18); the corridor half-width is `rail.half_clear` = 4.5 BU; AD ruling 2026-10-15, C8; NA03_NA04_ANSWERS, 2026-10-18).
 3. Viaduct piers stand on street tiles only.
 4. ONE line: the HQ scene's rail polyline and `deck_z` are byte-equal to `zoned.json`'s (C8).
 5. Also checked: no link path (2.3 `edges`) passes through a non-route building's volume; no room opening is inside
@@ -1468,6 +1468,108 @@ passes exist.
 **Defaults (O-7; provisional; NA03_NA04_ANSWERS, 2026-10-18):** skyline range `[0.0, 0.85]` for `kind == "street"` with `view == "overview"`, `[0.05, 0.40]` for `kind == "city"`, none for HQ;
 facade band `[0.0, 0.10, 1.0, 0.80]` for the street OVERVIEW, `[0, 0, 1, 1]` otherwise; overridable by `checks.composition.skyline.<kind>` and `.facade.<kind>.<view>`. The R-FOCUS-1 box is
 the bounding box of `id.png` classes {1, 5, 6} (the hand-placed config boxes are used only in `--mode reference`).
+
+### 12.8 Golden plates (D8, 2026-10-18)
+
+A golden plate is a frozen Blender reference frame. The build session compares its Godot captures against it. A plate is the 12.0 triple (`beauty.png`, `id.png`, `capture.json`) plus a values file. The same check code measures plates and captures (12.0). Where this section differs from 12.0, 12.1 or 12.2, those sections win.
+
+**Plate list.** 18 plates. `<corp>` is one of halcyon, solace, orbital, meridian, tethys, aurelian, rebel_cell.
+
+| Stem | View | `kind` / `view` / `corp` in capture.json |
+|---|---|---|
+| `hq_<corp>_overview` | HQ OVERVIEW, the corp's own pose (6.4) | hq / overview / `<corp>` |
+| `hq_<corp>_decision` | HQ DECISION on the current room + options (6.4) | hq / decision / `<corp>` |
+| `street_overview` | street OVERVIEW (6.2 one-city override) | street / overview / `""` |
+| `street_decision` | street DECISION (6.2 one-city override) | street / decision / `""` |
+| `city_a2_night` | city A2 hero frame, night (4.4) | city / city / `""` |
+| `city_a2_day` | city A2 hero frame, day (3.7) | city / city / `""` |
+
+Rules:
+1. A plate is frozen. A change is a re-bake, logged by the AD, never an edit in place.
+2. A plate has no UI. Hover frames are not plates.
+3. Each plate fixes `layout_seed`, the run id and the run graph. The HQ and street plates use a fixture run graph of the GDD 4.2 shape (7 layers of 2-4 nodes). It is a test fixture, not game output (8.4). The capture gets the same `run_graph.json`.
+4. Moving things are functions of `t` (3.6 rule 4). Each plate records `anim_t` (s, 0..4.0), and the capture uses the same value.
+5. Re-bake triggers: the `LOOK` refresh after the storyboard v3 revision (4.1, `TODO(refresh after sb v3 rev)`), a `version` bump of `derive_<run>.json`, a change to a kit, landmark or preset, and a change to the layout rules (3.2) or zoning (3.4).
+
+**Files per plate.** All under `docs/concepts/golden_plates/`. `<stem>` is the plate stem above.
+
+| File | Content |
+|---|---|
+| `<stem>.png` | The 12.0 `beauty.png`: 8-bit sRGB, no UI |
+| `<stem>_id.png` | The 12.0 `id.png`: unlit, nearest-sampled, no UI. R = class (0 sky, 1 landmark compound, 2 city, 3 link structure, 5 rooms, 6 landmark movers; 4 reserved). G = room index and B = layer, as in 12.0 |
+| `<stem>_capture.json` | The 12.0 `capture.json` with the camera block below |
+| `<stem>_values.json` | The measured values below, written by the 12 checks (UTF-8, sorted keys, floats rounded to 1e-4; 11.5) |
+
+`<stem>_values.json` fields:
+
+| Field | Meaning |
+|---|---|
+| `median`, `under_010`, `over_085` | Rec.709 luma median; share of pixels under 0.10; share over 0.85 (fractions 0..1; 12.1) |
+| `ratio_median` | The 12.2 landmark ratio (median of classes {1, 5, 6} over median of {0, 2} inside the landmark box grown 35 %). This is the gated measure |
+| `ratio_mean`, `ratio_peak` | The landmark ratio on mean and on peak luma, as `HM/hq_values.py` writes them today. Reported only |
+| `composition` | Raw 12.7 metrics per rule ID (R-SIL-1/2, R-DET-1/2, R-CALM-1/2, R-HUE-1/2, R-FOCUS-1, R-HOR-1, R-REP-1). `null` where the rule is not scoped to the plate (12.7 defaults) |
+| `checks` | Status of each check (pass, warn, fail, `n/a`) and the exempt flags (12.0) |
+| `inputs` | SHA-256 of the `city.json`, `net.json`, `run_graph.json`, `zoned.json` and `derive_<run>.json` the plate was built from |
+
+Plates with no landmark in frame (street) report `ratio_median`, `ratio_mean` and `ratio_peak` as `null`, with status `n/a` (12.0).
+
+**Tolerances on the plate.** The pass and warn bands are the 12.1 and 12.2 bands.
+
+| Check | Pass | Warn (reported, never blocks) | Fail |
+|---|---|---|---|
+| Median (R-VAL-1) | 0.14 +- 0.03 (0.11-0.17) | 0.09-0.11 and 0.17-0.19 (0.14 +- 0.05) | below 0.09 or above 0.19 |
+| Under 0.10 (R-VAL-2) | 25-40 % | - | outside |
+| Over 0.85 (R-VAL-3) | <= 2.5 % | - | above |
+| Landmark ratio (12.2) | 1.5-2.0 | above 2.0 | below 1.5 |
+
+The city day plate is not held to the 0.14 band. Its median target is 0.25 (3.7). Its values are recorded and compared with the capture, and reported only until the AD sets a day band. Exempt frames (12.1) are recorded and not failed.
+
+**Pre-accepted warns.** These stay warns on the plate and on captures of it. They are reported, and they do not block or raise a new item:
+
+| Plate | Warn | Accepted |
+|---|---|---|
+| `hq_tethys_overview` | landmark ratio peak 3.7x (above 2.0) | 2026-10-18 |
+| `hq_solace_overview`, `hq_solace_decision` | landmark ratio 2.56x (above 2.0) | pre-accepted (Solace 2.8x accepted 2026-10-16, Q5) |
+| the approved HQ overview plate (`decisions/DECISIONS.md` Q4) | median 0.109 (warn band 0.09-0.11) | pre-accepted |
+
+A capture that moves beyond these numbers, or another plate that enters a warn band, is reported as new.
+
+**Camera parameters in `<stem>_capture.json`.** Added to the 12.0 fields (pose, resolution, `layout_seed` as a decimal string, run id) and the optional scope keys (`kind`, `view`, `look`, `look_blend`, `corp`, `exempt`). The values are the solved pose of the plate, not a re-solve (the rig is checked by its own parity test, 12.6).
+
+| Key | Meaning |
+|---|---|
+| `camera` | The pose object of derive v2 (`DERIVE_V2_REVIEW.md` 1.5 and AD resolutions): `loc`, `tgt` `[x, y, z]` BU (x east, y north, z above local ground), `yaw` (rig convention: 0 = north, clockwise), `pitch` deg, `dist` BU, `lens` mm on the 36 mm sensor (horizontal fit), `shift_x`, `shift_y` in frame widths (Godot: `frustum_offset`, pixel-parity tested) |
+| `camera.ortho` | true for the mainline map camera. For `city_a2_night` and `city_a2_day`: yaw 135, pitch 40, lot 6 BU (4.2) |
+| `camera.zoom_dive`, `camera.zoom_detail` | The two zoom floats of 5.1 |
+| `resolution` | `[w, h]` of the beauty and id images |
+| `anim_t` | s within the 4.0 s loop (3.6 rule 4) |
+| `art_seeds`, `run` | The `derive_<run>.json` seed table (decimal strings) and the run id |
+
+Godot converts axes at the boundary (11.2). The build session reads these keys and never solves the camera again.
+
+**How the build session uses the plates.**
+1. For each plate, build the same scene in Godot: the plate's `inputs`, its `layout_seed`, its run graph, its `camera` and its `anim_t`. No UI.
+2. Write the 12.0 triple for the capture: `beauty.png`, `id.png`, `capture.json`.
+3. Run the section 12 checks that 12.0 lists for Godot captures: 12.1, 12.2, 12.7, the 12.6 room checks, and the data checks (12.3.1, 12.4 data part, 12.5.1, 12.5.3). The geometry hash, the image hash and the 12.5.2 beam profile stay Blender only. Each capture is held to its own thresholds, so a capture can fail on its own even when it matches the plate.
+4. Compare the capture's values with `<stem>_values.json` within the 12.0 renderer tolerances (config `checks.tolerance.renderer`; provisional until the first measured delta replaces them):
+
+| Value | Tolerance |
+|---|---|
+| Median luma | +- 0.02 |
+| Share under 0.10 | +- 5 pp |
+| Share over 0.85 | +- 1 pp |
+| Landmark ratio | +- 0.15 |
+| Composition metrics | +- 10 % relative |
+| Hue entropy, hue top share, calm share | +- 0.2 bit, +- 0.05, +- 4 pp |
+
+5. Write a drift report per plate with one row per check: plate value, capture value, delta, tolerance, status. Any row outside its tolerance is drift. Drift is reported to art-pass, which decides whether to fix the capture, re-bake the plate, or change a tolerance. A pre-accepted warn (above) is not drift.
+
+**Python / GDScript parity notes.** The parity row of 12.6 and the seed rules of 3.5 (FNV-1a 64, splitmix64, decimal-string u64, the `na02_vectors.json` vectors) and 3.6 are not repeated here. These rules apply to every twin (provisional until the vectors show a difference):
+1. Round to 1e-4 half up, `floor(x * 1e4 + 0.5) / 1e4`, on both sides. Python `round()` rounds half to even and GDScript `round()` rounds half away from zero, so neither is used.
+2. Hash-critical code uses 64-bit `float` and `PackedFloat64Array`, never `Vector2` or `Vector3` (32-bit components in default builds). GDScript `int` is signed: mask after `>>`, and compare u64 values as decimal strings.
+3. Hashed JSON goes through one hand-written serializer (no spaces, keys sorted, floats rounded and printed without exponent, `-0` printed as `0`, strings ASCII-escaped). Neither side relies on its JSON library.
+4. `sin`, `cos`, `atan2`, `exp`, `log` and `pow` may differ in the last digits. Byte-exact outputs are produced after rounding to 1e-4, and other comparisons use a float tolerance.
+5. Parity vectors for derive, rig and occlusion follow the `na02_vectors.json` pattern. The Python reference generates them once, and Godot reads them headless.
 
 ---
 
