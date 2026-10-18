@@ -133,6 +133,26 @@ default as a placeholder behind config and says so in its report.
 - **View:** `WheelView.standing_chips` adds a static grease-pencil "+N" (Permanent Marker, threat ink over the pencil
   shadow; `pencil: true`) after RESIST while `resistance_gain` > 0; `HudResultChips` draws it without a chip.
 
+### 2026-10-18 — Plan 2 W0 N22: EASY / HARD normal-fight pools (ruling Q12)
+- **Schema:** `RC.NormalPool { EASY, HARD }` (new enum, appended after `EnemyClass`); `EnemyData.normal_pool` (default
+  HARD); `EnemyData.validate` refuses EASY on a non-normal (`pool_on_non_normal`, with the id). Config
+  `CampaignConfigData.easy_normal_fights` = 2 (the "first 2"; validate refuses < 0). `RunState.normal_fights_started`
+  (saved; save format gains one key). Smoke check `_n22_normal_pool`.
+- **Rule:** `NetrunSession._build_pools` splits the normals into `easy_enemies` / `hard_enemies` (content-id order;
+  `enemies` keeps the union). A Router fight (`_start_combat(false)` off the final Rack) draws from `normal_pool()`:
+  EASY while `normal_fights_started < easy_normal_fights`, else HARD; an empty pool falls back to the other, then
+  (as before) to the elites. Still one `randi_range` on the combat stream per pick, then the fight seed; the counter
+  rises in `_start_combat` only, so a setup drawn from a stream copy (previews) changes nothing. Elite nodes, the
+  final Rack's mini-boss and forced special-run enemies are unchanged and do not count.
+- **Old saves (orchestrator call, acceptance 2):** a run without the key loads as 0 normal fights started while its
+  current node is in layers 1..`easy_normal_fights` (or no node entered), and as `easy_normal_fights` (EASY
+  exhausted) once its current node lies past that layer (`NetrunSession.legacy_normal_fights`).
+- **Content:** classified by the proposed rule (no listeners or locks, at most one status source, resistance 1, sim
+  win >= 90 % at T1 with mean HP lost <= 25 %). Sim: `balance.py run fight`, 20 seeds, T1, one process per corp;
+  every normal won 20 / 20 under 25 % HP lost, so resistance and status sources decide. EASY written as
+  `normal_pool = 0` on 22 normals. Table: `docs/handoff/N22_POOLS.md`. Per corp EASY / HARD: Halcyon 6 / 0,
+  Meridian 5 / 1, Orbital 5 / 1, REBEL_CELL 2 / 4, Solace 4 / 2 (see the open question).
+
 ### 2026-10-18 — Plan 2 W0 N4: enrage (R4; rulings Q33, Q16, Q29)
 - **Schema:** new `EnrageData` (`start_turn`, `every_n_turns`, `damage_pct_step` int percent, `resistance_step` int,
   `validate()` errors start with the field name). `EnemyData.enrage` (optional, authored; `normal_has_enrage` refuses it
@@ -7677,6 +7697,11 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 N22, pools too lopsided under the proposed rule (rule built as written):** every shipped normal wins
+  100 % at T1 in the sim, so only resistance 2 or two status sources make a normal HARD. Halcyon has **no** HARD
+  normal (its fights 3+ fall back to EASY, Q12 changes nothing there); Meridian and Orbital have one each, so every
+  later Router fight there is `cargo_hauler` / `orbital_debris`. Tighten the rule (e.g. EASY = no status source, a
+  lower HP-lost bar, spawns count as HARD), hand-pick, or author more HARD normals? Table: `docs/handoff/N22_POOLS.md`.
 - **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) drones replace too, so a Trojan re-landing on its slice swaps its drone rather than adding one (Botnet builds drones more slowly; a Trojan worth N docks on N slices clockwise); (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
 - **2026-10-18 N21, resistance edges (defaults built):** (1) satellites (2- and 3-slice wheels) keep 0 resistance and are outside the class table; say if a docked drone should resist too. (2) `resistance_carry` is kept (a RESOLVE-time change lands on the next refresh); the follow-up sheet recommends retiring it: say which. (3) The migration is rank-preserving (authored 2 -> the top of the elite / mini-boss range); the S5 sweeps re-run after this lands.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.

@@ -54,3 +54,4 @@ hp = 25
 wheel = SubResource("wheel")
 cycle_reward = 15
 spawns = Array[ExtResource("4")]([SubResource("spawn")])
+normal_pool = 0

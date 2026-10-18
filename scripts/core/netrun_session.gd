@@ -189,10 +189,23 @@ static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: 
 	s.corporation = corp
 	s._build_pools()  # a built REBEL_CELL picks its own elites
 	s.run = RunState.from_dict(d.get("run", {}))
+	if s.run.normal_fights_started < 0:
+		s.run.normal_fights_started = legacy_normal_fights(s.run, s.config)
 	s.streams = RngStreams.from_dict(s.run.streams)
 	if not s.run.combat.is_empty():
 		s.combat = CombatSession.from_dict(p_resolver, s.run.combat)
 	return s
+
+
+## N22 (designer call 2026-10-18): a save from before the normal-fight counter counts as no
+## normal fight started while the run's current node is in layers 1..config.easy_normal_fights
+## (or the run has not entered a node), and as config.easy_normal_fights (EASY exhausted) once
+## its current node lies past that layer.
+static func legacy_normal_fights(r: RunState, cfg: CampaignConfigData) -> int:
+	var node := r.current_node()
+	if node.is_empty() or int(node.get("layer", 1)) <= cfg.easy_normal_fights:
+		return 0
+	return cfg.easy_normal_fights
 
 
 func to_dict() -> Dictionary:
@@ -297,6 +310,8 @@ func _start_combat(elite: bool) -> void:
 	var final_rack := run.kind == "netrun" and run.current_node_id == run.map.final_node_id()
 	var setup := _combat_setup(elite, final_rack, streams.get_stream(&"combat"))
 	var enemy_id: StringName = setup["enemy_id"]
+	if not elite and not final_rack:
+		run.normal_fights_started += 1
 	combat = _combat_from(setup)
 	run.phase = RunState.Phase.COMBAT
 	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
@@ -307,7 +322,7 @@ func _start_combat(elite: bool) -> void:
 ## The fight a node would start: the foe and the fight seed drawn from `combat_rng` (the
 ## run's combat stream, or a copy of it for a preview), and the operative's overrides.
 func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator) -> Dictionary:
-	var pool: Array = _pools["elites"] if elite else _pools["enemies"]
+	var pool: Array = _pools["elites"] if elite else normal_pool()
 	if final_rack and not _pools["mini_bosses"].is_empty():
 		pool = _pools["mini_bosses"]
 	if pool.is_empty():
@@ -350,6 +365,17 @@ func breach_preview() -> CombatSession:
 		return null
 	var copy := RngStreams.from_dict(streams.to_dict())
 	return _combat_from(_combat_setup(true, false, copy.get_stream(&"combat")))
+
+
+## N22 (ruling Q12): the normal enemies the next Router fight draws from: the EASY pool while
+## fewer than config.easy_normal_fights normal fights have started this run, else HARD; an
+## empty pool falls back to the other one (both sorted by content id).
+func normal_pool() -> Array:
+	var easy: Array = _pools["easy_enemies"]
+	var hard: Array = _pools["hard_enemies"]
+	var want_easy := run.normal_fights_started < config.easy_normal_fights
+	var first := easy if want_easy else hard
+	return first if not first.is_empty() else (hard if want_easy else easy)
 
 
 ## N2 (R2): the legacy HP multiplier at this run's tier (config enemy_hp_scale_by_tier),
@@ -1221,6 +1247,8 @@ func _build_pools() -> void:
 	var enemies: Array = []
 	var elites: Array = []
 	var mini_bosses: Array = []
+	var easy_enemies: Array = []
+	var hard_enemies: Array = []
 	for id in lookup.ids_of_class(&"EnemyData"):
 		var e := lookup.get_content(id) as EnemyData
 		if e.corporation_id != campaign.corporation_id or e.is_boss or e.wheel == null or e.wheel.slice_count != RC.SLICES:
@@ -1231,6 +1259,10 @@ func _build_pools() -> void:
 			elites.append(id)
 		else:
 			enemies.append(id)
+			if e.normal_pool == RC.NormalPool.EASY:
+				easy_enemies.append(id)
+			else:
+				hard_enemies.append(id)
 	# REBEL_CELL (built at runtime): its elites are this campaign's Mirrors only. Mirrors
 	# from earlier builds in the session stay in the lookup and must not leak in.
 	if corporation != null and corporation.generated_from_profile:
@@ -1269,7 +1301,7 @@ func _build_pools() -> void:
 		if (lookup.get_content(id) as FirmwareData).rarity == RC.Rarity.COMMON:
 			common_firmware.append(id)
 	_pools = {
-		"enemies": enemies, "elites": elites, "mini_bosses": mini_bosses, "shared_cards": shared_cards, "class_cards": class_cards,
+		"enemies": enemies, "easy_enemies": easy_enemies, "hard_enemies": hard_enemies, "elites": elites, "mini_bosses": mini_bosses, "shared_cards": shared_cards, "class_cards": class_cards,
 		"firmware": lookup.ids_of_class(&"FirmwareData"), "common_firmware": common_firmware,
 		"daemons": lookup.ids_of_class(&"DaemonData"), "assets": assets, "events": events,
 	}

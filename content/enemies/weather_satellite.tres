@@ -53,3 +53,4 @@ corporation_id = &"orbital"
 hp = 44
 wheel = SubResource("wheel")
 cycle_reward = 15
+normal_pool = 0
