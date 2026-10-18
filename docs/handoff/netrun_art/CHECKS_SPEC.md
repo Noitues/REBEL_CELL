@@ -226,3 +226,13 @@ The reference scopes by image id and config. A capture has neither, so the same 
 | O-10 | The config key `checks.composition` file and its schema (spec 12.7 says the thresholds live there) | 12.7 |
 | O-11 | The 12.5.1 input file: no NA-02 schema for the beam/light placement list or preset (NA-03 Open O-I) | 12.5.1, 12.5.3, 12.4.5c |
 | O-12 | The ground-truth pier positions and the HQ scene's rail polyline for 12.4.3 and 12.4.4: no NA-02 schema (`zoned.json`, NA-03 Open O-C) | 12.4 |
+
+## Build-session rulings (2026-10-18)
+- **O-3:** two modes. `--mode reference` reproduces `rules_check.md` exactly (R-VAL-1 0.12-0.17, no warn band) and is
+  what NA-04 acceptance 2 compares (100 % of rows). `--mode spec` (default) uses spec 12.1 (0.11-0.17 with warn bands).
+  The ~8 rows that differ are listed in the report, not "fixed".
+- **O-8:** acceptance 2 compares all 44 `rules_check.md` rows on every column NA-04 implements; the "8-row" table in
+  the brief means one summary row per check id (rows compared / matched).
+- **O-A:** numpy and Pillow allowed (see NA03_MODULES rulings).
+- **Art-pass to answer (sent 2026-10-18):** O-1 (`capture.json` view / look / exemption fields), O-4, O-5, O-6, O-7,
+  O-9, O-10, and the stale `CAC/zoning.py:353-375` rail citation. NA-04 implements everything else first.

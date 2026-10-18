@@ -221,3 +221,15 @@ BPY: none. `look_preset` is imported by `sb_ocjobs` (`LP.PRESET["lod_bands"]`); 
 | O-I | Schemas of the `dress` placement lists (lamps, washes, glows, beams, streak lanes, signs) | dress |
 | O-J | Nested derive shapes beyond the concept's (NA02 Ruling O10 leaves them to NA-03). This document lists the concept shapes only (3.5); freezing them is NA-03's schema bump | derive.street |
 | O-K | Kit-unit constants in the HQ sources (`OCC.stub` 6.4, `CLUTTER` 25, `section_params` bands `+ 30.0` / `+ 24.0`, `margin=1.5`) are not all rescaled in the spec: 7.2 gives `stub` and `CLUTTER` only. The `section_params` literals have no spec value | occlusion, section |
+
+## Build-session rulings (2026-10-18)
+- **O-A:** numpy (2.x) and Pillow are allowed in `tools/netrun_art/` and the NA-04 checks; nothing else beyond the
+  standard library; never `bpy`, Godot or network.
+- **O-B, O-F, O-I, O-J:** NA-03 names `io` functions and writes schemas for `poses_<run>.json`, the lod/section
+  parameter files, the dress lists and the nested derive shapes as **schema version 2 of derive** (one bump, listed in
+  its report; art-pass reviews it).
+- **O-E:** NA-03 writes the generic HQ slot generator (no concept source): layered placement of a GDD 4.2 graph inside
+  the HQ lot, deterministic, ties by node id; acceptance 6 is its test. Art-pass reviews the look later.
+- **Art-pass to answer (sent 2026-10-18):** O-C (zoned / city_base / rail shapes), O-D (which links are border links),
+  O-G (zoom convention), O-H (units of `side_d`, `corridor_low`), O-K (kit-unit constants). NA-03 ports what does not
+  depend on them first and leaves these behind clearly named TODO constants in one `units.py`.
