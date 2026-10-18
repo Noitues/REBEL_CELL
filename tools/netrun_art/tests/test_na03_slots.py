@@ -79,8 +79,8 @@ def test_first_decision_frames_the_entrance_slot():
     g = GRAPHS["gdd_7x2to4"]
     rooms = slots.place_slots(g, RECT, "hq:m")
     comp = slots.plan_compound(RECT, 7)
+    slots.set_entrance(comp, orbit.hq_overview(rooms, comp, ["L1N0", "L1N1"], None))
     ent = comp["entrance"]
-    assert ent == [comp["centre"][0], comp["centre"][1] - comp["half"][0], 0.0]
     first = ["L1N0", "L1N1"]
     plain = orbit.hq_decision(rooms, None, first, 0, 7)
     framed = orbit.hq_decision(rooms, None, first, 0, 7, None, ent)
@@ -88,3 +88,29 @@ def test_first_decision_frames_the_entrance_slot():
     assert framed.proj(ent) is not None                                     # and the anchor is in view
     cur = orbit.hq_decision(rooms, "L1N0", first, 0, 7, None, ent)
     assert cur.to_json() == orbit.hq_decision(rooms, "L1N0", first, 0, 7).to_json()   # a real current ignores it
+
+
+def _yaw_pose(look_xy):
+    """A pose whose view direction in plan is `look_xy` (the camera sits on the opposite side)."""
+    import math
+    return orbit.Pose([0.0, 0.0, 0.0], math.degrees(math.atan2(look_xy[0], look_xy[1])), 30.0, 50.0, 50.0)
+
+
+def test_entrance_face_follows_overview_camera_and_ties_n_e_s_w():
+    comp = slots.plan_compound(RECT, 7)
+    cx, cy, h = comp["centre"][0], comp["centre"][1], comp["half"][0]
+    east = slots.set_entrance(dict(comp), _yaw_pose((-1.0, 0.0)))        # looking west: the camera sits east
+    assert east["entry_nrm"] == [1.0, 0.0] and east["entrance"] == [cx + h, cy, 0.0]
+    south = slots.set_entrance(dict(comp), _yaw_pose((0.0, 1.0)))
+    assert south["entry_nrm"] == [0.0, -1.0] and south["entrance"] == [cx, cy - h, 0.0]
+    # corner overviews tie two faces exactly: N before E before S before W
+    assert slots.set_entrance(dict(comp), _yaw_pose((-1.0, -1.0)))["entry_nrm"] == [0.0, 1.0]     # camera NE: N
+    assert slots.set_entrance(dict(comp), _yaw_pose((-1.0, 1.0)))["entry_nrm"] == [1.0, 0.0]      # camera SE: E
+    assert slots.set_entrance(dict(comp), _yaw_pose((1.0, 1.0)))["entry_nrm"] == [0.0, -1.0]      # camera SW: S
+    assert slots.set_entrance(dict(comp), _yaw_pose((1.0, -1.0)))["entry_nrm"] == [0.0, 1.0]      # camera NW: N
+    slots.LANDMARK_ENTRIES["zz"] = {"entry": [1.0, 2.0, 0.5], "entry_nrm": [0, 1]}
+    try:
+        o = slots.set_entrance(dict(comp), _yaw_pose((0.0, 1.0)), "zz")
+        assert o["entrance"] == [cx + 1.0, cy + 2.0, 0.5] and o["entry_nrm"] == [0.0, 1.0]
+    finally:
+        del slots.LANDMARK_ENTRIES["zz"]

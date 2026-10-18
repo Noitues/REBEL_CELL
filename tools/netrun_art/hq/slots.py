@@ -50,8 +50,41 @@ def plan_compound(rect: Sequence[float], n_tiers: int, params: Optional[Dict[str
         raise SlotError("lot too small for the landmark")
     hs = [base - (base - top) * t / max(1, n_tiers - 1) for t in range(n_tiers)]
     tier_h = p["tier_floors"] * FLOOR_BU
-    entrance = [cx, cy - hs[0], 0.0]   # ground centre of the base tier's south face (FACES[2]): the HQ entrance slot (AD 2026-10-18 Q2)
-    return dict(entrance=entrance, centre=[cx, cy], half=hs, tier_h=tier_h, z0=[t * tier_h for t in range(n_tiers)], rect=list(rect))
+    return dict(centre=[cx, cy], half=hs, tier_h=tier_h, z0=[t * tier_h for t in range(n_tiers)], rect=list(rect))
+
+
+LANDMARK_ENTRIES: Dict[str, Dict[str, Any]] = {}
+"""HOOK for the real entrance anchors: `{corp: {"entry": [x, y, z], "entry_nrm": [nx, ny]}}` from art-pass's
+`<corp>_landmark.py`, in BU relative to the HQ lot centre. An entry here overrides the placeholder of `set_entrance`."""
+
+ENTRANCE_EPS = 1e-9      # camera-direction dot products closer than this tie (a corner overview ties two faces exactly)
+
+
+def set_entrance(comp: Dict[str, Any], overview: Any, corp: Optional[str] = None) -> Dict[str, Any]:
+    """Add `entrance` ([x, y, z] BU, ground) and `entry_nrm` ([nx, ny]) to `comp` (AD 2026-10-18 Q2, art-pass ruling).
+
+    PLACEHOLDER: the ground-level centre of the base tier face whose outward normal is closest to the direction from the
+    landmark to the OVERVIEW camera (spec 6.4); ties go N, E, S, W. A `LANDMARK_ENTRIES[corp]` entry overrides it.
+    Placeholder entrance: regen the HQ parity fixtures when the landmark entries land.
+    """
+    cx, cy = comp["centre"]
+    ov = overview.dir()
+    cam = (-ov[0], -ov[1])                       # landmark -> camera, plan
+    best = None
+    for k, n in enumerate(FACES):
+        d = n[0] * cam[0] + n[1] * cam[1]
+        if best is None or d > best[0] + ENTRANCE_EPS:
+            best = (d, k)
+    n = FACES[best[1]]
+    h = comp["half"][0]
+    comp["entrance"] = [cx + n[0] * h, cy + n[1] * h, 0.0]
+    comp["entry_nrm"] = [float(n[0]), float(n[1])]
+    hook = LANDMARK_ENTRIES.get(corp or "")
+    if hook:
+        e = hook["entry"]
+        comp["entrance"] = [cx + e[0], cy + e[1], e[2]]
+        comp["entry_nrm"] = [float(v) for v in hook["entry_nrm"]]
+    return comp
 
 
 def _quad(c: Tuple[float, float], n: Tuple[int, int], s0: float, s1: float, z0: float, z1: float, off: float):
@@ -154,6 +187,7 @@ def derive_hq(city: Dict[str, Any], run_graph: Dict[str, Any], corp: str, partia
     comp = plan_compound(rect, len(layer_nodes(run_graph)), params)
     first = [n["id"] for n in layer_nodes(run_graph)[0][1]]
     ov = orbit.hq_overview(rooms, comp, first, None, rig)
+    set_entrance(comp, ov, corp)
     dec = orbit.hq_decision(rooms, None, first, 0, len(layer_nodes(run_graph)), rig, comp["entrance"])
     base = dict(partial) if partial else game_partial(city["layout_seed"], run_graph.get("run", "run"), "hq", [corp])
     base.update(version=VERSION, kind="hq")

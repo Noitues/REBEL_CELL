@@ -65,7 +65,7 @@ class _Ctx:
         self.boxes = OCC.building_boxes(city, skip)
         if self.kind == "hq":
             corp = derive["route_keys"][0].split(":", 1)[1]
-            self.comp = HS.plan_compound(HS.hq_lot_rect(city, corp), len(layer_nodes(run_graph)))
+            self.comp = HS.set_entrance(HS.plan_compound(HS.hq_lot_rect(city, corp), len(layer_nodes(run_graph))), self.ov, corp)
         self.d0 = None
         if self.kind == "street" and net is not None:
             tgt, w = RG.hq_page_camera(net)
