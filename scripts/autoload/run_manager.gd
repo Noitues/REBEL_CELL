@@ -690,12 +690,13 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices}
 
 
-## A Site's name as the Cell's terminal writes it ("DEPOT_15"): its translated name, upper
-## case, words joined by "_".
+## A Site as the Cell's terminal writes it ("T1_A"): its node id, upper case. Site names are gone
+## (W0 SITENAMES) and two Sites can share a type word, so the id keeps `--from` / `--to` distinct
+## (art-pass review 2026-10-18).
 func _terminal_name(site: SiteData, fallback: String) -> String:
 	if site == null:
 		return fallback
-	return "_".join(SiteText.tiered(site).to_upper().split(" ", false))
+	return String(site.id).to_upper()
 
 
 ## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its
