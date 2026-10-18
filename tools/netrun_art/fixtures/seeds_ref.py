@@ -1,4 +1,4 @@
-# Copied verbatim from C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass/docs/concepts/HANDOFF_PACKAGE/na02/seeds_ref.py (2026-10-18). Frozen NA-02 reference; do not edit.
+# Copied verbatim from art-pass@6a58733c docs/concepts/HANDOFF_PACKAGE/na02/seeds_ref.py (2026-10-18). Frozen NA-02 reference; do not edit.
 """Reference art-seed hash for the NA-02 contract (C3). Pure Python, no deps.
 
 python seeds_ref.py  -> writes na02_vectors.json next to this file.
@@ -22,7 +22,8 @@ def art_seed(layout_seed: int, stream: str, *keys) -> int:
     for k in keys:
         if isinstance(k, float) or isinstance(k, bool) or not isinstance(k, (int, str)):
             raise TypeError("keys are int or str only")
-    arr = [str(layout_seed), "art/" + stream, *keys]
+    # A signed GDScript seed (CityModel.city_seed) is written as its two's-complement u64.
+    arr = [str(layout_seed & M64), "art/" + stream, *keys]
     return fnv1a64(json.dumps(arr, separators=(",", ":"), ensure_ascii=True).encode("utf-8"))
 
 
@@ -52,6 +53,9 @@ CASES = [
     (77, "key_landmark.tethys", ["21:14", 0]),
     (123456789, "fauna.tethys", [-3, "pod"]),
     (5, "beams", ["\u00e9t\u00e9"]),
+    (-1, "building", ["3:4"]),
+    (-9223372036854775808, "scene", []),
+    (-424242, "room_wall", ["n3"]),
 ]
 
 if __name__ == "__main__":
@@ -60,7 +64,7 @@ if __name__ == "__main__":
         s = art_seed(ls, st, *ks)
         g = splitmix64(s)
         draws = [next(g) for _ in range(3)]
-        out.append({"layout_seed": str(ls), "stream": st, "keys": ks, "seed": str(s),
+        out.append({"layout_seed": str(ls & M64), "layout_seed_signed": ls, "stream": st, "keys": ks, "seed": str(s),
                     "splitmix64_first3": [str(d) for d in draws], "uniform_first": round(uniform(draws[0]), 12)})
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "na02_vectors.json")
     with open(p, "w", encoding="utf-8", newline="\n") as f:

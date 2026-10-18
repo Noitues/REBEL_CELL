@@ -331,3 +331,6 @@ These close O1-O13 for v1; NA-02 implements them.
 - **O11:** the Godot ID capture is its own W1 slice; the class table is fixed here.
 - **O12:** pretty-printed, indent 1 space, sorted keys, LF, trailing newline.
 - **O13:** `run_graph.json` v1 = the static graph with today's 4 types; new node kinds bump it (N16 / D4 nodes).
+- **Spec and vectors pinned (2026-10-18):** art-pass f4f3f839 (BLOCKERs 1-5), b68f2871 (§3.6 tie-break by bid),
+  6a58733c (signed seed rule). `tools/netrun_art/fixtures/na02_vectors.json` now has 14 vectors (3 signed seeds: -1,
+  INT64_MIN, -424242, with `layout_seed_signed`); the 11 earlier ones are unchanged.
