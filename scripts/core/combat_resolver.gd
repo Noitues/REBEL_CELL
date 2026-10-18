@@ -831,9 +831,9 @@ func _corrupted_trigger(s: CombatState, r: Dictionary, events: Array[Dictionary]
 	if not owner.is_alive():
 		return
 	var damage := config.corrupted_self_damage + config.corrupted_damage_per_major * s.heat_majors_crossed
-	var dealt := mini(owner.hp, damage)
-	owner.hp -= dealt
-	events.append({"type": "corrupted", "target": owner.id, "amount": dealt,
+	var loss := EffectInterpreter.lose_hp(owner, damage)  # self-damage parks at a phase floor too (R3)
+	var dealt := loss.x
+	events.append({"type": "corrupted", "target": owner.id, "amount": dealt, "parked": loss.y,
 		"text": "%s's CORRUPTED slice bites: %d self-damage (%d HP)." % [owner.display_name, dealt, owner.hp]})
 	if owner == s.player:
 		fx.drain_ram(s, config.corrupted_ram_drain, events)
@@ -896,65 +896,91 @@ func _apply_deaths(s: CombatState, _alive_before: Array[StringName], events: Arr
 			events.append({"type": "died", "target": c.id, "text": "%s is destroyed." % c.display_name})
 
 
-## Boss pointer phases (GDD 2.11): entered when HP falls to the threshold. MULTIPLY sets
-## the pointer layout at once (minus any Breach removal); MIGRATE telegraphs it and the
-## pointers move at the next start of turn; ORBIT sets the per-turn drift; spawns dock
-## satellites; wheel and hub overrides swap the layout.
+## Enemy phases (GDD 2.11, plan 2 R1/R3): checked at the end of the resolve, when HP stands
+## at (or under) the next phase's floor; at most one phase per enemy per resolve (the hit
+## that reached the floor parked the rest). MULTIPLY sets the pointer layout at once (minus
+## any Breach removal); MIGRATE telegraphs it and the pointers move at the next start of
+## turn; ORBIT sets the per-turn drift; wheel and hub overrides swap the layout (statuses
+## remapped, R6); cleanse_on_enter clears the stated side; spawns dock satellites. The new
+## phase's floor is the one after it (none for the last).
 func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	for e in s.enemies:
 		if e.is_satellite or not e.is_alive():
 			continue
 		var data := lookup.get_content(e.source_id) as EnemyData
-		if data == null or data.phases.is_empty():
+		if data == null or e.phase_index >= data.phases.size():
 			continue
-		while e.phase_index < data.phases.size():
-			var phase := data.phases[e.phase_index]
-			if phase == null or float(e.hp) > e.max_hp * phase.hp_threshold_pct:
-				break
-			e.phase_index += 1
-			match phase.pointer_behavior:
-				RC.PointerBehavior.MULTIPLY:
+		var phase := data.phases[e.phase_index]
+		if phase == null or e.hp > BossPhaseData.floor_of(e.max_hp, phase.threshold_bp()):
+			continue
+		e.phase_index += 1
+		var upcoming: BossPhaseData = data.phases[e.phase_index] if e.phase_index < data.phases.size() else null
+		e.next_threshold_bp = upcoming.threshold_bp() if upcoming != null else 0
+		match phase.pointer_behavior:
+			RC.PointerBehavior.MULTIPLY:
+				e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+				e.wheel.pointer_orbit = 0  # a new fixed layout locks on (H16)
+			RC.PointerBehavior.MIGRATE:
+				e.wheel.pending_pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+				e.wheel.pointer_orbit = 0
+				events.append({"type": "boss_migrate_telegraph", "target": e.id, "ticks": Array(e.wheel.pending_pointer_ticks),
+					"text": "%s's pointers flicker: next turn they migrate to %s." % [e.display_name, str(Array(e.wheel.pending_pointer_ticks))]})
+			RC.PointerBehavior.ORBIT:
+				# A phase that lists pointers sets them before they start orbiting.
+				if not phase.pointer_ticks.is_empty():
 					e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
-					e.wheel.pointer_orbit = 0  # a new fixed layout locks on (H16)
-				RC.PointerBehavior.MIGRATE:
-					e.wheel.pending_pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
-					e.wheel.pointer_orbit = 0
-					events.append({"type": "boss_migrate_telegraph", "target": e.id, "ticks": Array(e.wheel.pending_pointer_ticks),
-						"text": "%s's pointers flicker: next turn they migrate to %s." % [e.display_name, str(Array(e.wheel.pending_pointer_ticks))]})
-				RC.PointerBehavior.ORBIT:
-					# A phase that lists pointers sets them before they start orbiting.
-					if not phase.pointer_ticks.is_empty():
-						e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
-					e.wheel.pointer_orbit = phase.orbit_ticks_per_turn
-			if phase.wheel_override != null:
-				_apply_wheel_override(e, phase.wheel_override, events, int(s.flags.get("enemy_resistance", 0)))
-			if phase.hub_override != null:
-				e.wheel.hub_id = phase.hub_override.id
-				e.hub_resistance = phase.hub_override.hub_resistance
-			# The facts the replay shows (ANIM-R1): who docked (with the HP they start on) and
-			# the needles the phase left.
-			var spawned: Array = []
-			for spawn in phase.spawns:
-				if spawn != null and spawn.satellite != null:
-					for k in spawn.max_active:
-						var sat := _spawn_satellite(s, e, spawn, rng)
-						_scale_enemy(sat, e.hp_scale, e.output_scale)
-						spawned.append({"id": sat.id, "hp": sat.hp, "slot": sat.dock_slot})
-			events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
-				"spawned": spawned, "ticks": Array(e.wheel.pointer_ticks),
-				"text": "%s enters phase %d (%s)%s" % [e.display_name, e.phase_index, RC.PointerBehavior.keys()[phase.pointer_behavior],
-					(": " + phase.phase_line) if phase.phase_line != "" else "."]})
+				e.wheel.pointer_orbit = phase.orbit_ticks_per_turn
+		if phase.wheel_override != null:
+			_apply_wheel_override(e, phase.wheel_override, events, int(s.flags.get("enemy_resistance", 0)))
+		if phase.hub_override != null:
+			e.wheel.hub_id = phase.hub_override.id
+			e.hub_resistance = phase.hub_override.hub_resistance
+		_cleanse_on_enter(s, e, phase.cleanse_on_enter, events)
+		# The facts the replay shows (ANIM-R1): who docked (with the HP they start on) and
+		# the needles the phase left.
+		var spawned: Array = []
+		for spawn in phase.spawns:
+			if spawn != null and spawn.satellite != null:
+				for k in spawn.max_active:
+					var sat := _spawn_satellite(s, e, spawn, rng)
+					_scale_enemy(sat, e.hp_scale, e.output_scale)
+					spawned.append({"id": sat.id, "hp": sat.hp, "slot": sat.dock_slot})
+		events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
+			"spawned": spawned, "ticks": Array(e.wheel.pointer_ticks), "floor": e.hp_floor(),
+			"text": "%s enters phase %d (%s)%s" % [e.display_name, e.phase_index, RC.PointerBehavior.keys()[phase.pointer_behavior],
+				(": " + phase.phase_line) if phase.phase_line != "" else "."]})
+
+
+## R6: a phase's cleanse_on_enter clears every temporary status of the stated side, after
+## the remap. OWN = `e` and the satellites docked on it; PLAYER = the operative and its
+## drones; BOTH = both; NONE = nothing (the default, Q31).
+func _cleanse_on_enter(s: CombatState, e: CombatantState, scope: int, events: Array[Dictionary]) -> void:
+	var sides: Array[CombatantState] = []
+	if scope == RC.CleanseScope.OWN or scope == RC.CleanseScope.BOTH:
+		sides.append(e)
+		sides.append_array(s.satellites_of(e.id))
+	if scope == RC.CleanseScope.PLAYER or scope == RC.CleanseScope.BOTH:
+		sides.append(s.player)
+		sides.append_array(s.drones)
+	for c in sides:
+		if c == null or c.wheel == null:
+			continue
+		for slot in c.wheel.slice_statuses.size():
+			if c.wheel.slice_statuses[slot] != RC.Status.NONE:
+				fx.cleanse(c, slot, events)
 
 
 ## Swaps the boss's slices, Firmware and passive resistance for the phase layout. The
-## rotation, pointers and any pending migration are kept; temporary statuses reset.
+## rotation, pointers and any pending migration are kept; statuses stay, each moved to the
+## new slice covering its old slice's centre tick (plan 2 R6, WheelState.remap_statuses).
 func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
+	var kept := WheelState.remap_statuses(w.slice_statuses, w.slice_count, fresh.slice_count)
 	w.slice_count = fresh.slice_count
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
-	w.slice_statuses = fresh.slice_statuses
+	w.slice_statuses = kept
 	w.passive_resistance = fresh.passive_resistance + bonus_resistance  # ICE / Heat resistance stays
 	if data.hub != null:
 		w.hub_id = data.hub.id

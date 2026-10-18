@@ -286,7 +286,8 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 
 ## One hit of `amount` on `victim`. Evade cancels attacks; block then shield absorb
 ## unless `pierce` (designer ruling: Pierce ignores block and shield, not satellites);
-## the rest is HP damage. HP never drops below 0.
+## the rest is HP damage through lose_hp (never below 0 or the phase floor; the event's
+## "parked" says what the floor stopped).
 func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantState, amount: int, pierce: bool, is_attack: bool, events: Array[Dictionary], source_id: StringName = &"") -> int:
 	if amount <= 0:
 		return 0
@@ -305,13 +306,27 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 		shielded = mini(victim.shield, remaining)
 		victim.shield -= shielded
 		remaining -= shielded
-	var hp_damage := mini(victim.hp, remaining)
-	victim.hp -= hp_damage
+	# Pierce skips block and shield, never the phase floor (R3).
+	var loss := lose_hp(victim, remaining)
+	var hp_damage := loss.x
 	events.append({"type": "damage", "attacker": attacker.id, "target": victim.id, "amount": amount,
-		"blocked": blocked, "shielded": shielded, "hp_damage": hp_damage, "pierce": pierce, "source_id": source_id,
+		"blocked": blocked, "shielded": shielded, "hp_damage": hp_damage, "parked": loss.y, "pierce": pierce, "source_id": source_id,
 		"text": "" if quiet else "%s hits %s for %d%s%s -> %d HP damage (%d HP left)." % [attacker.display_name, victim.display_name, amount,
 			" (pierce)" if pierce else "", _absorb_text(blocked, shielded), hp_damage, victim.hp]})
 	return hp_damage
+
+
+## The one clamp every HP-loss path goes through (plan 2 R3): hits (pierce too), self-damage,
+## parasites and CORRUPTED bites. Takes up to `amount` HP from `c`, never below 0 and never
+## below its phase floor; what the floor stops is parked (lost, not carried). Healing never
+## comes here. Returns Vector2i(HP lost, HP parked).
+static func lose_hp(c: CombatantState, amount: int) -> Vector2i:
+	if amount <= 0:
+		return Vector2i.ZERO
+	var plain := mini(c.hp, amount)
+	var lost := mini(maxi(0, c.hp - c.hp_floor()), amount)
+	c.hp -= lost
+	return Vector2i(lost, plain - lost)
 
 
 func gain_block(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
@@ -549,6 +564,9 @@ static func make_combatant(data: EnemyData, id: StringName, is_satellite: bool) 
 	c.wheel = WheelState.from_wheel_data(data.wheel)
 	c.hub_resistance = data.wheel.hub.hub_resistance if data.wheel.hub != null else 0
 	c.resistance = c.full_resistance()
+	# R3: the first phase's threshold is the floor until it is entered.
+	if not data.phases.is_empty() and data.phases[0] != null:
+		c.next_threshold_bp = data.phases[0].threshold_bp()
 	return c
 
 

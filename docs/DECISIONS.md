@@ -107,6 +107,25 @@ default as a placeholder behind config and says so in its report.
   Q12) join W0 after N2. Enrage (N4) drops the countdown chip (Q33). The preview "?" rule (Q19), the status audit (Q40),
   the two corp drafts (Q45) and the turn lifecycle for locks (Q31, with N7) are queued.
 
+### 2026-10-18 — Plan 2 W0 N3: phases on every class, threshold parking, status keep (R1, R3, R6; Q31)
+- **Schema:** `RC.CleanseScope { NONE, OWN, PLAYER, BOTH }` (append-only, NONE = 0), `RC.EnemyClass { NORMAL, ELITE,
+  MINI_BOSS, BOSS }`, `RC.THRESHOLD_SCALE` = 10000 (a definition: thresholds read in basis points so floors are integer
+  math; 0.68 of 100 is 68, never 69 from float error). `BossPhaseData.cleanse_on_enter` (default NONE: phases persist
+  state, Q31). `CampaignConfigData.phase_count_min_by_class` / `phase_count_max_by_class` (base phase included, R1's
+  table; boss minimum 3 as a placeholder, see open questions). `EnemyData.validate(config = null)` reads them
+  (ContentRegistry passes its config); each phase error starts with a reason name (`normal_has_phases`,
+  `elite_too_many_phases`, `mini_boss_phase_count`, `boss_phase_count`, `threshold_order`, `threshold_range`,
+  `cleanse_mode`) and carries the id. Smoke check `_n3_phases`.
+- **State:** `CombatantState.next_threshold_bp` (0 = no floor) and `hp_floor()` = ceil(max HP x it), so the floor follows
+  any max-HP scaling. Saved only when non-zero: saves and replay hashes of fights without phases are unchanged; a save
+  with phases gains the key (save compatibility not required, 2026-10-05).
+- **Parking (R3):** `EffectInterpreter.lose_hp` is the one clamp for every HP loss (`deal_hit` incl. pierce, self-damage
+  effects, parasites, CORRUPTED bites). `damage` / `corrupted` events carry `parked`; `CombatOutcome` sums it per
+  combatant; `ResultChipModel.PARKED` draws "PARKED −N". Heal is never clamped. A phase starts at the end of the resolve
+  when HP <= its floor (not the float threshold, which could softlock a ceil'd floor), one phase per resolve.
+- **Status keep (R6):** `_apply_wheel_override` keeps statuses through `WheelState.remap_statuses` (old centre tick ->
+  nearest new centre, ties to the lower index; same statuses merge). `cleanse_on_enter` runs after the remap.
+
 ### 2026-10-18 — Plan 2 W0 N1: amount modes (R2, R5; rulings Q13, Q15)
 - **Schema:** `RC.AmountMode { FLAT, PERCENT }` (append-only, FLAT = 0) and `RC.PERCENT_MAX` = 100 (a definition).
   `EffectData.amount_mode` and `SliceData.amount_mode`, default FLAT, so every shipped `.tres` loads FLAT and
@@ -7568,6 +7587,8 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 N3, boss phase minimum:** R1 says a boss has 4-5 phases; every shipped boss has 3 (2 entries) and N3 adds no content phases, so `phase_count_min_by_class` ships [1, 1, 2, **3**] (placeholder). Raise the boss entry to 4 when the boss design passes land (Genome Core has 4).
+- **2026-10-18 N3, open points (simplest option built):** (a) two *different* statuses remapped onto one slice keep the first in old slot order (no stacks before N8); (b) `cleanse_on_enter` OWN includes the enemy's docked satellites and PLAYER includes the operative's drones ("side"); (c) a phase whose floor HP is already under at entry (healing, an enrage skip, an HP override) starts at the end of the next resolve, one phase per resolve; (d) parked damage is reported as an event field only, so on-hit listeners (N6) see the pre-clamp hit: say if they should see post-clamp; (e) validate does not reject tiny HP gaps where two floors round to the same value (the sweep checks shipped floors strictly descend).
 - **2026-10-13 W4-REWARDS, single-pick payouts**: the rewards list shows from two picks (or once one is settled); a payout with one pick shows that pick's page straight away, and the screen leaves when the last pick is settled (no PROCEED on an empty list). Slay the Spire keeps the list for one pick and waits for PROCEED: say if you want that (`rewards_list_on` plus a session phase hold).
 - **2026-10-11 12Q-RAID, hostile shape cue**: the raid's hazard ticks and reticles show only with the colour-blind setting on (default look unchanged). ART_BIBLE §5.1 says never colour alone: show them always (a deutan player who never opens Options sees red and lime both as yellow), or keep them behind the setting?
 - **2026-10-11 12Q-HQ, the HQ at text 2.0**: the selected Site's file pages one row a page (its header and foot take about 150 of the column's 215 px) and the crew hand shows two polaroids a page. Keep paging, or move JACK IN's system word beside the sticker at big text (bible 1.3 says under it) or the MAP KEY off the column to give the card its room?

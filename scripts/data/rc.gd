@@ -100,6 +100,15 @@ enum ThreatRouting { SHORTEST_TO_HOME, HIGHEST_VALUE, WEAKEST_NODE }
 
 # --- Enemies & bosses ---
 enum PointerBehavior { FIXED, MULTIPLY, MIGRATE, ORBIT }
+## Whose wheel statuses a phase clears as it is entered, after the status remap (plan 2 R6,
+## N3). OWN = the enemy and the satellites docked on it; PLAYER = the operative and its
+## drones. Append-only: NONE = 0, so phases authored before N3 keep every status (Q31).
+enum CleanseScope { NONE, OWN, PLAYER, BOTH }
+## Phase thresholds are read in parts of this (basis points), so a floor is integer
+## arithmetic: ceil(max HP x bp / THRESHOLD_SCALE) (a definition, not a tuning number).
+const THRESHOLD_SCALE: int = 10000
+## Enemy classes, the index of the per-class config tables (phase counts, R1).
+enum EnemyClass { NORMAL, ELITE, MINI_BOSS, BOSS }
 
 # --- Campaign ---
 enum ThresholdKind { MINOR, MAJOR, PURGE }

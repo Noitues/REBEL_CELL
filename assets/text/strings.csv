@@ -41,6 +41,7 @@ keys,en
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
 %d cards,%d cards
+"%d damage parked at the phase line: it is lost, and the next phase starts after this turn","%d damage parked at the phase line: it is lost, and the next phase starts after this turn"
 %d fps,%d fps
 %d held,%d held
 %d netruns,%d netruns
@@ -1842,6 +1843,7 @@ Out of reach from here.,Out of reach from here.
 "
 PARASITE,PARASITE
 PARKED,PARKED
+PARKED −%d,PARKED −%d
 PASSED,PASSED
 PATCH,PATCH
 PATCH HOME SERVER: +%d integrity (%d Schematics).,PATCH HOME SERVER: +%d integrity (%d Schematics).
