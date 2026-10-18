@@ -102,16 +102,17 @@ city and for every game seed.
 
 ### 2.0c Data contract (AD + build session, 2026-10-18)
 
-Source: `HANDOFF_PACKAGE/NA02_CONTRACT_PROPOSAL.md` C1-C4 (audit rows 3, 4, 13, 14). The build session owns the final
-field list (D8); this is the art side's reading.
+Source: `HANDOFF_PACKAGE/NA02_CONTRACT_PROPOSAL.md` C1-C4 (audit rows 3, 4, 13, 14). **The normative field list is the
+build session's `MAIN/docs/handoff/plan2/NA02_FIELDS.md` (main 73ff1358); where it differs from this table, it wins.**
+This table is aligned to it (2026-10-18). Every file carries `version` 1 (int) and `layout_seed` (decimal string).
 
 | File | Producer | Reader modules | Key fields |
 |---|---|---|---|
 | `city.json` v1 | the game (per seed); the art-pass adapter converts the concept `city_A2.json` (planner metres) | `layout.import_city`, `layout.rules`, `zoning`, `derive.*`, `dress`, `export` | **the ONLY game-exported layout file.** Header: `version` 1, `layout_seed` (**decimal string**, u64), `units: "BU"`, `lot_bu` 6.0, `origin_lot [CX, CY]`. `buildings[]` sorted by `bid`: `bid`, `parts[] {poly [[x, y]], z0, h, taper}`, `terr`, `cell [i, j, w, h]` (lots), `hq` (bool), `key` (int, legacy, look-dev parity only). `streets[]` (lot, along_i, along_j, traffic), `plazas[]`, `hqs {corp: [i, j, w, h]}`. Terrain, water, rails and the other planner layers are optional sections in v1 |
-| `net.json` | the game (City network) | `layout.import_net`, `layout.rules`, `derive.street` | nodes (id, lot, state), links (a, b, state, pts in lots) |
-| `run_graph.json` v1 | the game (per run) | `derive.*`, `hq.slots` | nodes, layers, kinds (incl. rest, workshop, cache), edges, walked state |
-| `key_locations.json` | the game (per territory) | `zoning` (clearances), `derive.*`, `corps.<corp>.key_landmarks` | the access-key locations: `bid`, kind, corp |
-| `derive_<run>.json` | the tools (`derive.street` / `hq.slots`) | Godot (`NetrunArtDeriver`), `rig`, `checks` | schema 2.3, including `art_seeds {stream: "<u64>"}` |
+| `net.json` v1 | the game (City network) | `layout.import_net`, `layout.rules`, `derive.street` | BU plan coordinates (not lots). nodes (id, position, `state` in {core, owned, corporate, cleared, taken}); links (a, b, `state` in {open, locked, opened}, `pts`). v1 `pts` is the straight segment [a, b]; a street-routed polyline is a v2 change |
+| `run_graph.json` v1 | the game (per run) | `derive.*`, `hq.slots` | the static graph only: `layers`, `nodes[] {id, layer, index, type, elite}`, `edges[] {a, b}`, `run`. `type` is one of today's 4 types; rest / workshop / cache (D4) and the walked state come with a v2 bump. Until then the tools take walked state from the overlay state, not this file |
+| `key_locations.json` v1 | the game | `zoning` (clearances), `derive.*`, `corps.<corp>.key_landmarks` | `locations[] {site, corp, bid, exploit}`, `exploit` in {intel, breach, virus}. A Site's `bid` is the building whose cell contains the Site lot, else the nearest building within 4 lots (Chebyshev; ties by (i, j)) |
+| `derive_<run>.json` v1 | the game writes `version`, `kind`, `layout_seed`, `art_seeds`, `run`; the tools (`derive.street` / `hq.slots`) fill the rest | Godot (`NetrunArtDeriver`), `rig`, `checks` | schema 2.3. `art_seeds {stream: "<u64>"}` holds the unkeyed streams plus the **base** seeds of `variance`, `terrain`, `fauna.tethys`, `key_landmark.<corp>`; consumers compute per-object seeds (3.5 rule 3) |
 
 Rules (C1):
 - `city.json` v1 is the only game-exported layout file and carries `layout_seed` as a decimal string. A signed `CityModel.city_seed` is written as its two's-complement u64.
@@ -120,7 +121,7 @@ Rules (C1):
   generator lands it fills the same `city.json` (D3).
 - Units are BU. Plan coordinates are `[x, y]` with x = east = Godot world X and y = north = minus Godot world Z.
   Heights are BU **above local ground** (audit row 9). Floats are rounded to 1e-4 and written in a fixed format
-  (11.5). Every u64 in JSON is a decimal string (3.5).
+  (11.5). Every u64 in JSON is a decimal string (3.5). JSON is pretty-printed with a 1-space indent, sorted keys, LF.
 - v2 adds data (terrain, rails, water as optional sections) without changing the v1 layout.
 
 ### 2.1 Overview
@@ -200,7 +201,7 @@ The contract between the tools and Godot. Fields as written today by `SB/sb_ocjo
 | `overview`, `decision` | pose dicts | Solved poses (section 6) |
 | `frontage` | `[[bid, h, floors, taper]]` | The street's frontage, for checks |
 | `art_seeds` | `{stream name: "<u64>"}` | New: one seed per art stream (the 3.5 table, plus `variance`, `terrain`, `fauna.tethys`, `key_landmark.<corp>`), computed from `layout_seed` by the 3.5 rule 1 hash and exported here as **decimal strings**, so Blender never invents a seed (Designer 2026-10-16, Q9; contract C3, audit rows 13 and 14, 2026-10-18; the earlier "derived on the game side from an `RngService`-derived seed" wording is **withdrawn (2026-10-18)**) |
-| `version` | string | New: the rules version (bump on any rule change) |
+| `version` | int | New: the contract version, 1 (NA02_FIELDS.md; bump on any rule change) |
 
 ---
 
@@ -413,7 +414,7 @@ Stream table (current literal in brackets; keep the literal as the stream's `leg
 | `flicker` | flicker tables | 9700 |
 | `glitch` | billboard glitch slices | 9800 / 9900 |
 | `city_fill` | AAA fill city (legacy street set) | 9950 (`SB/NOTES.md:214`) |
-| `zoning` .. `post` | all-corps city | 7701-7708 (`CAC/city_preset.py:24`) |
+| `city.zoning`, `city.build`, `city.ring`, `city.streaks`, `city.beams`, `city.sea`, `city.landmark`, `city.post` | all-corps city (named 2026-10-18, NA02_FIELDS O6) | 7701-7708 in that order (`CAC/city_preset.py:24` `SEEDS`) |
 | `downtown` | HQ downtown fallback: towers, dressing, traffic | cfg seed, +1, +2 (`HK/downtown.py:27`); per corp 4340 / 5340 / 6340 / 7340 |
 | `ring` | HQ ring city fallback | per corp (Meridian 5311, `HM/hq_preset.py:107`) |
 | `landmark.<corp>` | landmark detail | Meridian 5320-5330 (`HQ_meridian/scripts/hq_build.py:20`) |
