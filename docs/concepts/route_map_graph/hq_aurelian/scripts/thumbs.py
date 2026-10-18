@@ -240,9 +240,9 @@ def city(acc, rs):
 
 def room(acc_body, acc_front, s, state):
     """A cut-open room box behind its front face (the kit cutaway, city units), front lit in its state colour."""
-    w, d, h = s["size"]
+    w, h, d = s["size"]
     px, py, pz = s["pos"]
-    nx, ny, _ = s["normal"]
+    nx, ny, _ = s["normal"] or (0.0, -1.0, 0.0)
     tx, ty = -ny, nx
     if s["kind"] == "vault":
         return
@@ -261,8 +261,8 @@ def room(acc_body, acc_front, s, state):
 
 def link_path(a, b):
     """Polyline between two room fronts: along the rim walk for the attic -> cavea crossing, else straight."""
-    pa = Vector(a["pos"]) + Vector((0, 0, 1.2)) + Vector(a["normal"]) * 0.4
-    pb = Vector(b["pos"]) + Vector((0, 0, 1.2)) + Vector(b["normal"]) * 0.4
+    pa = Vector(a["pos"]) + Vector((0, 0, 1.2)) + Vector(a["normal"] or (0, -1, 0)) * 0.4
+    pb = Vector(b["pos"]) + Vector((0, 0, 1.2)) + Vector(b["normal"] or (0, -1, 0)) * 0.4
     if a["kind"] == "attic" and b["kind"] == "cavea":
         r = AL.RING_R[0] + 0.1
         t0 = math.radians(a["t"])

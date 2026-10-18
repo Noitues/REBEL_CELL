@@ -1,6 +1,6 @@
 # Aurelian Concord HQ: THE CIRCUS AURELIUS (design pass, 2026-10-18)
 
-Status: **design + massing thumbnails only.** No test or final render. The concept pick is waiting on the coordinator.
+Status: **concept B approved (designer, 2026-10-18); `build_hq` written; Cycles test round done (section 13). No finals.**
 Builds on the draft head start `D:/Godot/rebel_cell/docs/handoff/netrun_art/batch/aurelian_design/DESIGN.md`
 (unverified, not approved). Where this file and the draft differ, this file wins. Section 10 lists the differences.
 
@@ -98,10 +98,10 @@ Concept C moves the vault under the arena (section 9).
 4. Within a level, each layer takes a contiguous sub-arc. Its nodes are spread evenly, with one empty slot between
    layer groups, so the layers read as separate steps (D10: every layer is unique).
 5. Slot record: `layer, node, level, kind, t, pos` (the front-centre at floor level), `normal`, `size`, `tier`.
-   - The room is the kit cutaway at city scale, 3.3 × 1.9 × 2.4. Loggia rooms are 3.4 tall to fill their arch bay.
+   - The room is the kit cutaway at city scale, 3.3 w × 1.9 h × 2.4 d. Loggia rooms are 3.4 tall to fill their arch bay; attic rooms 2.9 (their band); cavea rooms are 3.5-tall loges (section 13.2), all sized to the 46 px OVERVIEW target.
    - The box goes *behind* the front face: into the loggia wall, the attic or the terrace riser.
 
-   No room stands proud of the canonical surfaces, so the silhouette is unchanged.
+   No room crosses the outer silhouette. The loges stand up to about 0.6 BU proud of the seats behind them, inside the bowl and level with the rim (section 13.2).
 
 ### 4.2 Recommended levels (concept B) and their capacity
 
@@ -119,7 +119,7 @@ Layer counts:
   level stays inside its arc capacity.
 - Beyond that (more than 2 layers per level), the cavea arcs widen symmetrically onto the near half. The near
   colosseum wall is compound geometry and is never cut (spec 7.1 rule 3), so near-half cavea slots are seen only
-  from DECISION cameras. That limit is flagged as Q3, not solved here.
+  from DECISION cameras. **Accepted for now (designer default, 2026-10-18):** runs over 16 route layers spill onto the near half, which the OVERVIEW does not see.
 
 ### 4.3 Link geometry by step class (spec 8.4 rule 3; the type is a hint only)
 
@@ -174,7 +174,7 @@ Watch:
 | Key | Value | Notes |
 |---|---|---|
 | OVERVIEW | bearing 200° (SSW), pitch 40, lens 36, distance about 116 BU (488 kit), target (0, 2, 7); fill 0.95 / 0.90 | sees both route faces at once: the south loggia (near, facing the camera) and the north cavea (far, facing the camera over the near rim). The two campanili in the frame bracket the bowl |
-| DECISION, loggia / attic | camera outside, azimuth along the room's outward normal; pitch `lerp(14, 22)` across T1-AT; lens 30; `dmin` 32 BU (135 kit × `k_units`) | the city blocks in front are flattened or ghosted by the spec 7 rule; the columns are compound geometry and never cut, hence the doorway bays |
+| DECISION, loggia / attic | camera outside, azimuth along the room's outward normal; **revised in 13.2:** pitch `lerp(30, 34)` across T1-AT, lens 42, `dmin` 260 kit (62 BU), above the roofs across the boulevard | the city blocks in front are flattened or ghosted by the spec 7 rule; the columns are compound geometry and never cut, hence the doorway bays |
 | DECISION, cavea | camera **inside the bowl**, above the arena on the room's inward normal; pitch `lerp(26, 36)` R1-R4; lens 30; `dmin` 32 BU | deeper rings get steeper pitch; the near rim is behind the camera, so nothing occludes |
 | DECISION, vault | the OVERVIEW bearing, pitch 38, 0.6 × the OVERVIEW distance | frames the tholos, the column and the laurel ring |
 | DECISION azimuth | the spec rule (the mean of the distinct room normals). **Exception:** when the mean is degenerate (\|mean\| < 0.3, as at the AT→R1 crossing, where the normals are opposite), use the options' normal | proposal; flagged |
@@ -235,7 +235,7 @@ Risks of B, to test first:
 | A "replace the city model with the Circus" open question (draft Q3) | moot: the city model is canonical and the HQ follows it |
 | The camera from the south, pitch 40 | kept (bearing 200, pitch 40), plus the cavea DECISION from inside the bowl |
 
-## 11. Open questions for the designer
+## 11. Open questions for the designer (round 1; all four settled 2026-10-18, see 13.1)
 
 1. **Gilt or verdigris neon?** The canonical landmark's neon is gilt, and the corp hue verdigris appears nowhere on
    it. Keep gilt (default), or change the city model's crown and ring lines to verdigris? That would be a city change,
@@ -254,19 +254,90 @@ Risks of B, to test first:
 |---|---|
 | `DESIGN.md` | this file |
 | `concepts_sheet.jpg` | the three thumbnails, 1278 × 880 |
-| `scripts/aurelian_landmark.py` | the standalone landmark module: `canonical()`, the city `build(ctx)` (8.6c), `slots()`, `level_of()`, `fixture_edges()` (mock), `state_colour()` (from the shared `hq_kit.states`); `build_hq` is a stub until the pick |
+| `scripts/aurelian_landmark.py` | the standalone landmark module: `canonical()`, the city `build(ctx)` (8.6c), `slots()`, `level_of()`, `fixture_edges()` (mock), `state_colour()` (from the shared `hq_kit.states`); `build_hq` (the HQ-kit hook: the canonical model in kit units, doorway bays, room cuts, lit loggia arches, the vault core, the light rig) |
 | `scripts/thumbs.py` | the Eevee massing thumbnails (city-primitive shim, a seeded stand-in city, mock route) |
 | `scripts/concepts_sheet.py` | the contact sheet |
+| `scripts/hq_preset.py`, `hq_graph.py`, `hq_build.py`, `hq_mechui.py` | the corp modules for the HQ engine: preset (palette, light rig, city, cameras, post), the slots + MOCK graph + camera rule + stills, the build hook, the neutral mechanic UI |
+| `scripts/aur_env.py`, `hq_scene.py`, `hq_run.py` | the engine runs **in place** from `hq_meridian_v3/scripts` (no copies): `aur_env` preloads the corp modules and the shared kit (`hq_meridian/scripts/hq_kit`); `hq_scene.py` is the Blender entry; `hq_run.py` runs px / cams / stills / post |
+| `scripts/test_sheet.py`, `test_sheet.jpg` | the test frames + values, 1280 × 802 |
 
 Rebuild (from `scripts/`):
 
 ```
 "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup --python thumbs.py -- D:/rc_scratch/aurelian/thumbs A,B,C
 python concepts_sheet.py D:/rc_scratch/aurelian/thumbs
+python hq_run.py px                       # the OVERVIEW room sizes against 46 px
+python hq_run.py stills eevee             # layout preview, no GPU lock
+python hq_run.py stills test              # Cycles test (takes and releases the GPU lock, owner "aurelian")
+python test_sheet.py ../scratch/test ../test_sheet.jpg
 ```
 
-Next, after the pick:
-- `build_hq` (K hook, the doorway bays, the light rig, the room cutaways through the kit);
-- a preset;
-- the Cycles OVERVIEW / DECISION / HOVER tests with the §12 values (under the GPU lock);
-- then the finals.
+## 13. Round 2: concept B built and tested (2026-10-18)
+
+### 13.1 Designer defaults (round 1 questions)
+
+| Q | Ruling | Done |
+|---|---|---|
+| 1 | Keep the gilt neon; the city model is unchanged | the canonical colours; verdigris is used only as rim *light*, never as paint |
+| 2 | Dim the gilt lines next to the orange option links | the gilt lines are their own object, at × 0.45 in every DECISION / HOVER frame (zoom > 0.5; `GILT_DIM_DECISION`) |
+| 3 | Over 16 route layers spill onto the near half; the OVERVIEW not seeing them is accepted for now | noted in 4.2 |
+| 4 | Dropping 1-2 columns at a loggia room's bay is fine (HQ only) | `bays_for()`: 12 bays open in the test (12 loggia rooms) |
+
+### 13.2 What the build changed against round 1
+
+1. **Room size check first** (`hq_run.py px`, OVERVIEW at 1920 × 1080, target 46 px tall). With the closer bowl framing
+   (the OVERVIEW frames the colonnade base and the rim all round plus the laurel crown, not the campanili tops), the
+   near-colonnade rooms **pass as designed**: T1 46.3-48.6, T2 49.7-51.7, T3 52.2-55.4 px. Two-bay rooms were not
+   needed. The other levels failed with the kit's 1.9-tall room (attic 31-33, cavea 29-34 px), so:
+   - **attic rooms** fill their band: 2.9 tall (47.4-50.1 px);
+   - **cavea rooms are loges**: the floor flush with the next ring's top, the opening in the ring-edge riser, cut
+     2.4 BU back into the seats, 3.5 tall, the roof at most about 0.6 BU proud of the seats behind (R1 50.5-53.4,
+     R2 48.7-51.5, R3 47.6-49.2, R4 46.3-47.3 px); the vault 46 px. **Every room passes.**
+   - OVERVIEW: yaw 20 (camera SSW), **pitch 36** (was 40), lens 36, fill 0.97 / 0.94, distance 465 kit (110 BU).
+2. **The loggia DECISION camera** (was pitch 14-22, `dmin` 135 kit): the city across the street is tall (the city
+   looks down into the circus), so a low camera at 135 kit sat *inside* the blocks (a black frame in the Eevee
+   check). Now pitch **30-34**, `dmin_loggia` **260 kit**, lens **42**: above the roofs, looking down onto the
+   colonnade; the occlusion rule flattens the blocks in the cone.
+3. **A boulevard round the circus**: downtown `street0` 40 kit (9.5 BU). This is a street, not a belt (the blocks still
+   face it all round), but it is wider than the 6 BU apron alone. Flagged (Q5).
+4. **The room cut**: every face of the canonical model is clipped against the room volumes (`Cutter`: a convex
+   polygon minus oriented boxes, Sutherland-Hodgman), so the openings are clean holes in the loggia wall, the attic and
+   the seats. The silhouette is untouched.
+5. **The lit loggia**: an emissive round-headed arch panel in each of the 60 bays × 3 tiers, just proud of the recessed
+   wall (the city shader's lit arches made explicit), with a fixed per-bay tone pattern against R-REP-1; a warm cove
+   line under each entablature.
+6. **THE CONCORDAT VAULT**: a server core in the tholos (state-driven emission: plinth disc, 5 rings round the core
+   column, 6 racks), the gilt inscription band on the entablature, the kit's room light, a front key spot.
+7. **The rig** (kit units; `light` in the preset): the two canonical searchlights (× 0.006 of the city power × k²),
+   24 base uplights grazing the colonnade, two cavea fills over the near rim, the vault key, two rim lights behind
+   (verdigris and warm) light-linked to the compound only, the beam from the laurel crown.
+8. **Exposure**: the corp's post exposure is 1.6 with no zoom fall-off (Meridian: 2.85 × (1 − 0.55 zoom)). The
+   travertine is the brightest HQ albedo, so the frame median is set by exposure and the landmark ratio by light.
+
+### 13.3 Test values (Cycles, 1280 × 720, 32 spp; `scratch/test/values.json`; 4 frames in one locked batch of 2.5 min)
+
+| Shot | median (0.14 ± 0.03) | under 0.10 (25-40 %) | over 0.85 (≤ 2.5 %) | landmark / local bg (1.5-2.0; > 2 warns) |
+|---|---|---|---|---|
+| H_overview | **0.156** pass | **36.7 %** pass | **1.8 %** pass | 0.261 / 0.095 = **2.76** (warn) |
+| H_decision (loggia) | 0.110 (warn edge) | 48.5 % (high) | 1.5 % | 0.348 / 0.060 = 5.83 (warn) |
+| H_decision_cavea | 0.188 (warn) | 23.7 % (low) | 0.8 % | 0.243 / 0.113 = **2.15** (warn) |
+| H_hover | exempt (power cut) | | | 6.21 |
+
+Reading:
+- The OVERVIEW passes the value band. Its ratio is above 2 (a warning, not a fail; Solace at 2.8 was accepted).
+- The loggia DECISION is dark because the frame's left half is tall dark towers outside the occlusion cone, and its
+  local background is the dark street below. A brighter near city or a tighter frame would fix both.
+- The cavea DECISION is the brightest frame (the bowl fills 47 % of it); a −0.15 stop on DECISION frames would put it in band.
+- Not checked yet: the 1280 × 720 sticker size (≥ 24 px), the 8.6b silhouette IoU against a full-city render (no city
+  render was made this round), determinism of the derived JSON.
+
+Known look issues: roof masts of the cut blocks still stand in front of the colonnade in the loggia DECISION (the
+cut keeps a few antennas); the engine overlay draws the TARGET sticker over the colonnade when the vault is hidden
+behind it (an engine behaviour, the same for every corp).
+
+### 13.4 Open questions (round 2)
+
+5. **The boulevard.** Accept a 9.5 BU ring street round the circus (`street0` 40 kit), or keep the 6 BU apron and
+   accept a closer, higher loggia camera?
+6. **Loges.** The cavea rooms are 3.5-tall loges standing up to 0.6 BU proud of the seats. Accept, or shrink them and
+   accept 30 px rooms on the seating rings at OVERVIEW?
