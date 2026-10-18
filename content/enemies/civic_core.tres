@@ -15,7 +15,7 @@
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
 [ext_resource type="Resource" path="res://content/enemies/civic_drone.tres" id="e13"]
 
-; The Civic Core, Halcyon final boss (M9, decision 2026-09-24): 360 HP; Emergency Powers heals 4 and
+; The Panopticon, Halcyon final boss (M9, decision 2026-09-24): 360 HP; Emergency Powers heals 4 and
 ; blocks 4 per turn unless breached; 66%: three pointers; 33%: orbit 2 (two pointers), Crit wheel, 2 drones.
 
 [sub_resource type="Resource" id="hfx0"]
@@ -126,7 +126,7 @@ phase_line = "Martial services: the readers drift, the drones launch, everything
 [resource]
 script = ExtResource("main_script")
 id = &"civic_core"
-display_name = "The Civic Core"
+display_name = "The Panopticon"
 description = "Halcyon's city brain. It keeps the lights on, and the bill running."
 corporation_id = &"halcyon"
 hp = 360

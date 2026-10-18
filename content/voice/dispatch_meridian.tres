@@ -78,12 +78,12 @@ text = "Meridian is rerouting the city around the Cell. Everything is coming."
 [sub_resource type="Resource" id="l14"]
 script = ExtResource("e1")
 key = "boss"
-text = "The Manifest. It shields itself every turn. Breach the Hub, then cut."
+text = "The Master Manifest. It shields itself every turn. Breach the Hub, then cut."
 
 [sub_resource type="Resource" id="l15"]
 script = ExtResource("e1")
 key = "win"
-text = "The Manifest is down. For one day, the city moves itself."
+text = "The Master Manifest is down. For one day, the city moves itself."
 
 [sub_resource type="Resource" id="l16"]
 script = ExtResource("e1")
@@ -168,7 +168,7 @@ text = "Customs Key Authority. The keys that open every sealed container. Take a
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("e1")
 key = "site:m2_virus"
-text = "Routing Table Mirror. Meridian's map of the world. Poison it and the Manifest reads a lie. That is the Virus."
+text = "Routing Table Mirror. Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus."
 
 [sub_resource type="Resource" id="l33"]
 script = ExtResource("e1")
@@ -198,7 +198,7 @@ text = "Insurance Claims Ledger. Every lost parcel insured twice. Somebody colle
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:m3_core"
-text = "Global Routing Core. One hop from the Manifest. Heavy security, heavier Rack."
+text = "Global Routing Core. One hop from the Master Manifest. Heavy security, heavier Rack."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")
@@ -233,7 +233,7 @@ text = "Surveillance Route Archive. Every drone flight ever flown, including ove
 [sub_resource type="Resource" id="l45"]
 script = ExtResource("e1")
 key = "site:m3_h"
-text = "Meridian Root Ledger. The signing keys for every transaction. The Manifest trusts it completely."
+text = "Meridian Root Ledger. The signing keys for every transaction. The Master Manifest trusts it completely."
 
 [sub_resource type="Resource" id="l46"]
 script = ExtResource("e1")
@@ -243,7 +243,7 @@ text = "Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. 
 [sub_resource type="Resource" id="l47"]
 script = ExtResource("e1")
 key = "site:forge_the_manifest"
-text = "Forge the Manifest. Rewrite the Cell's traffic as routine freight. Heat drops."
+text = "Forge the Master Manifest. Rewrite the Cell's traffic as routine freight. Heat drops."
 
 [sub_resource type="Resource" id="l48"]
 script = ExtResource("e1")
@@ -258,7 +258,7 @@ text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
 key = "site:the_master_manifest"
-text = "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
+text = "The Master Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
 
 [resource]
 script = ExtResource("main_script")

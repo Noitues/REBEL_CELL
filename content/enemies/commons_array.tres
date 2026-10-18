@@ -15,7 +15,7 @@
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
 [ext_resource type="Resource" path="res://content/enemies/orbital_drone.tres" id="e13"]
 
-; The Commons Array, Orbital Commons final boss (M10, decision 2026-09-24): 420 HP; Station Keeping repairs 3
+; Launch Control, Orbital Commons final boss (M10, decision 2026-09-24): 420 HP; Station Keeping repairs 3
 ; and shields 3 per turn unless breached; 66%: two pointers orbiting 4; 33%: three pointers, Crit wheel, 2 drones.
 
 [sub_resource type="Resource" id="hfx0"]
@@ -126,7 +126,7 @@ phase_line = "Full constellation: three readers lock on and the drones deploy."
 [resource]
 script = ExtResource("main_script")
 id = &"commons_array"
-display_name = "The Commons Array"
+display_name = "Launch Control"
 description = "The constellation's brain. It owns the sky and rents it back to you."
 corporation_id = &"orbital"
 hp = 420

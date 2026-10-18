@@ -50,7 +50,7 @@
 [ext_resource type="Resource" path="res://content/events/ev_orb_night_sky.tres" id="e47"]
 
 ; Orbital Commons (M10, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid in the shared shape; Solar Flares
-; OVERCLOCK the player's slices (1.5x, then CORRUPTED); the Commons Array shields and repairs each turn.
+; OVERCLOCK the player's slices (1.5x, then CORRUPTED); Launch Control shields and repairs each turn.
 
 [sub_resource type="Resource" id="site_o_home"]
 script = ExtResource("e1")
@@ -416,7 +416,7 @@ text = "Halcyon Civic's city brain ran on this sky. Orbital Commons kept the dep
 script = ExtResource("e6")
 id = &"the_enclosure_f"
 title = "The Enclosure: Finale"
-text = "The Commons Array goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
+text = "Launch Control goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
 
 [sub_resource type="Resource" id="sp_the_enclosure"]
 script = ExtResource("e7")
@@ -467,7 +467,7 @@ text = "A hedge fund paid four million for tonight's storm. It is betting on the
 script = ExtResource("e6")
 id = &"blackout_weather_f"
 title = "Blackout Weather: Finale"
-text = "The Commons Array falls and every forecast on its servers broadcasts at once, free. The eastern districts board up in time."
+text = "Launch Control falls and every forecast on its servers broadcasts at once, free. The eastern districts board up in time."
 
 [sub_resource type="Resource" id="sp_blackout_weather"]
 script = ExtResource("e7")
@@ -517,7 +517,7 @@ text = "The rate doubles in an emergency. Demand is less elastic then, says the 
 script = ExtResource("e6")
 id = &"gps_tax_f"
 title = "Positioning Tax: Finale"
-text = "The Commons Array falls and positioning goes free for the whole planet. Every map in the city is suddenly, exactly right."
+text = "Launch Control falls and positioning goes free for the whole planet. Every map in the city is suddenly, exactly right."
 
 [sub_resource type="Resource" id="sp_gps_tax"]
 script = ExtResource("e7")
@@ -568,7 +568,7 @@ text = "The listening post keeps a profile of the Cell's habits: which nodes you
 script = ExtResource("e6")
 id = &"final_transmission_f"
 title = "Final Transmission: Finale"
-text = "The Commons Array dies, and the satellite that should not exist changes orbit. It is coming home. It has a name for itself: REBEL_CELL."
+text = "Launch Control dies, and the satellite that should not exist changes orbit. It is coming home. It has a name for itself: REBEL_CELL."
 
 [sub_resource type="Resource" id="sp_final_transmission"]
 script = ExtResource("e7")
@@ -619,7 +619,7 @@ text = "A map of the blocked lanes. Every one belongs to a public agency."
 script = ExtResource("e6")
 id = &"dead_satellites_f"
 title = "Dead Satellites: Finale"
-text = "The Commons Array falls and the keeping core runs the abandoned cleanup. For a week, the night sky rains slow, harmless fire."
+text = "Launch Control falls and the keeping core runs the abandoned cleanup. For a week, the night sky rains slow, harmless fire."
 
 [sub_resource type="Resource" id="sp_dead_satellites"]
 script = ExtResource("e7")
@@ -670,7 +670,7 @@ text = "The original charter is still valid. Nobody ever revoked it. They just s
 script = ExtResource("e6")
 id = &"the_commons_f"
 title = "The Commons: Finale"
-text = "The Commons Array falls and the founder reads the original charter aloud on every band at once. The sky, for one night, is free again."
+text = "Launch Control falls and the founder reads the original charter aloud on every band at once. The sky, for one night, is free again."
 
 [sub_resource type="Resource" id="sp_the_commons"]
 script = ExtResource("e7")

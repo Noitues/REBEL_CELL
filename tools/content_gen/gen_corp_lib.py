@@ -3,6 +3,7 @@ slices, satellite, enemies, threats, raids, corporation resource (grid, exploits
 paths), events, voice sets and Profile unlock. Same schema and conventions as M8's
 Meridian generator. Enum values: see gen_meridian.py / gen_pools.py headers."""
 import os
+import re
 HERE = os.path.dirname(os.path.abspath(__file__))
 _src = open(os.path.join(HERE, "gen_classes.py"), encoding="utf-8").read()
 exec(_src[:_src.index("# ---- standalone ring segments")])
@@ -21,6 +22,20 @@ S_BEAT = "res://scripts/data/story_beat_data.gd"
 S_PATH = "res://scripts/data/story_path_data.gd"
 S_LINE = "res://scripts/data/voice_line_data.gd"
 S_CHOICE = "res://scripts/data/event_choice_data.gd"
+
+
+def normal_pools():
+    """N22: {enemy id: "EASY" | "HARD"} from docs/handoff/N22_POOLS.md (rows: corp | `id` | pool)."""
+    path = os.path.join(HERE, "..", "..", "docs", "handoff", "N22_POOLS.md")
+    out = {}
+    for line in open(path, encoding="utf-8").read().splitlines():
+        m = re.match(r"\|\s*\w+\s*\|\s*`(\w+)`\s*\|\s*(EASY|HARD)\s*\|", line)
+        if m:
+            out[m.group(1)] = m.group(2)
+    return out
+
+
+NORMAL_POOLS = normal_pools()
 
 
 def wheel_sub(r, sid, slices, pointers=(0,), passive=0, orbit=0, hub=None):
@@ -81,6 +96,9 @@ def enemy(corp, e):
             fields.append(("phase_line", '"%s"' % ph["line"]))
             psubs.append(r.sub("phase%d" % i, S_PHASE, fields))
         main.append("phases = " + arr(r.script(S_PHASE), psubs))
+    # N22: a normal's pool (RC.NormalPool EASY = 0, HARD = 1; HARD is the default and is not written).
+    if not (e.get("elite") or e.get("boss") or e.get("mini")) and NORMAL_POOLS.get(e["id"]) == "EASY":
+        main.append("normal_pool = 0")
     r.main = main
     r.write("content/enemies/%s.tres" % e["id"], e.get("comment", "%s enemy (decision 2026-09-24)." % corp))
 

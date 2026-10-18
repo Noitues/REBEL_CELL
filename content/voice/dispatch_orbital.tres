@@ -78,12 +78,12 @@ text = "Orbital Commons is clearing our orbit. Everything is coming down."
 [sub_resource type="Resource" id="l14"]
 script = ExtResource("e1")
 key = "boss"
-text = "The Commons Array. It repairs and shields every turn. Breach the Hub, then cut."
+text = "Launch Control. It repairs and shields every turn. Breach the Hub, then cut."
 
 [sub_resource type="Resource" id="l15"]
 script = ExtResource("e1")
 key = "win"
-text = "The Commons Array is down. The sky is quiet."
+text = "Launch Control is down. The sky is quiet."
 
 [sub_resource type="Resource" id="l16"]
 script = ExtResource("e1")
@@ -258,7 +258,7 @@ text = "Burn the Orbit Logs. Every record of the Cell's signals, deorbited."
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
 key = "site:launch_control"
-text = "The Commons Array. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut."
+text = "Launch Control. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut."
 
 [resource]
 script = ExtResource("main_script")

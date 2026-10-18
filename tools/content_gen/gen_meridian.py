@@ -130,14 +130,14 @@ def boss_hub(r):
         ("passive_effects", arr(r.script(S_TE), [te]))])
 
 
-enemy("the_manifest", "The Manifest", "Meridian's routing core. Every package on the planet passes through it.", 400,
+enemy("the_manifest", "The Master Manifest", "Meridian's routing core. Every package on the planet passes through it.", 400,
       ["shim_14", "priority", "defrag_12", "overflow_24", "shim_14", "null"], boss=True, cycle=0, hub=boss_hub,
       phases=[{"at": 0.66, "behavior": 1, "ticks": (0, 15), "line": "Load balancing: a second routing head comes online."},
               {"at": 0.33, "behavior": 3, "orbit": 2, "ticks": (0, 15),
                "wheel": ["overflow_24", "priority", "defrag_12", "overflow_24", "shim_14", "null"],
                "spawns": [("courier_drone", 1, 1, -1, 2)],
                "line": "Peak season: the heads drift, the couriers launch, the second lane goes critical."}],
-      comment="The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs\nSeal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")
+      comment="The Master Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs\nSeal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")
 
 # ---- Threats and raids ---------------------------------------------------------------------------------------
 for tid, name, desc, integ, dmg, speed, routing, extra in [
@@ -190,7 +190,7 @@ T2 = [("m2_intel", "Shipping Manifest Vault", 1), ("m2_breach", "Customs Key Aut
       ("m2_g", "Last-Mile Drone Command", 0), ("m2_h", "Insurance Claims Ledger", 0)]
 T3 = [("m3_core", "Global Routing Core"), ("m3_b", "Freight Futures Desk"), ("m3_c", "Customs Override Escrow"), ("m3_d", "Supply Twin Simulator"),
       ("m3_e", "Board Logistics Backbone"), ("m3_f", "Contract Pricing Authority"), ("m3_g", "Surveillance Route Archive"), ("m3_h", "Meridian Root Ledger")]
-HEAT = [("lose_the_tracking", "Lose the Tracking", 1, -5, "m1_a"), ("forge_the_manifest", "Forge the Manifest", 1, -5, "m1_f"),
+HEAT = [("lose_the_tracking", "Lose the Tracking", 1, -5, "m1_a"), ("forge_the_manifest", "Forge the Master Manifest", 1, -5, "m1_f"),
         ("reroute_the_audit", "Reroute the Audit", 2, -8, "m1_j"), ("sink_the_cargo_logs", "Sink the Cargo Logs", 3, -8, "m2_e")]
 BOSS_SITE = ("the_master_manifest", "The Master Manifest")
 
@@ -236,42 +236,42 @@ PATHS = [
       ("Lost Cargo III", 3, "The routing table has a rule with no author: if the recipient's credit score falls below a line, reroute to premium. The line moves every quarter.")],
      [("Lost Cargo: The Warehouse", 0, "Row 44, bay 9. Forty pallets, cold-chain green, marked lost. The Cell could walk them out the door."),
       ("Lost Cargo: Solace", 2, "Solace Biosystems pays Meridian a retainer for 'predictable scarcity'. The two boards share a golf course and a lawyer.")],
-     "The Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit.", "", -1),
+     "The Master Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit.", "", -1),
     ("night_shift", "The Night Shift", "Meridian's warehouse workers are scored every second and fired by an algorithm that never sleeps.",
      [("The Night Shift I", 3, "Worker 5512 was fired at 03:14 for a bathroom break the model called idle time. The model has fired four thousand people. It has never been wrong, according to itself."),
       ("The Night Shift II", 2, "The scoring engine was tuned to fire one in twenty every quarter. Not for cause. For motivation. The deck calls it healthy churn."),
       ("The Night Shift III", 0, "The workers have a group chat. They know which aisles the cameras miss. They would like to talk to whoever cut the Customs Keys.")],
      [("The Night Shift: Union", 1, "A picker named Oyelaran runs the chat. She says the Cell can have the warehouse floor plans if it never, ever leaks her name."),
       ("The Night Shift: The Quota", 2, "The quota rises two percent every time someone meets it. Nobody has met it since spring.")],
-     "The Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down.", "", 1),
+     "The Master Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down.", "", 1),
     ("customs_hold", "Customs Hold", "Meridian holds medical shipments at the border until the fees clear. Some never do.",
      [("Customs Hold I", 3, "Six hundred parcels sit in customs pre-clearance, flagged for review. Every one of them is a prescription. The review queue has no reviewers."),
       ("Customs Hold II", 2, "The hold fee doubles every week. The memo calls it an incentive to comply. Comply with what, it does not say."),
       ("Customs Hold III", 3, "The routing mirror shows where the fees go: a shell called Clearwater Holdings. Clearwater owns the reviewers who do not exist.")],
      [("Customs Hold: The List", 0, "A list of names, addresses and what they are waiting for. Some of the dates are a year old."),
       ("Customs Hold: Clearwater", 2, "Clearwater Holdings has one employee, one office and nine billion in receivables.")],
-     "The Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week.", "", -1),
+     "The Master Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week.", "", -1),
     ("ghost_freight", "Ghost Freight", "Somebody is ordering freight through Meridian with money that does not come from anywhere.",
      [("Ghost Freight I", 3, "Shipments ordered by an account with no owner. Delivered to addresses that do not exist. Paid for, in full, before the order was placed."),
-      ("Ghost Freight II", 3, "The same account bought Solace stock the day the Renewal Engine fell. It is buying Meridian puts now. It knows something."),
+      ("Ghost Freight II", 3, "The same account bought Solace stock the day the Genome Core fell. It is buying Meridian puts now. It knows something."),
       ("Ghost Freight III", 3, "The account's timestamps are wrong. Not forged. Wrong. Some of them are from next week.")],
      [("Ghost Freight: Signature", 3, "The account signs its orders with a hash. DISPATCH signs its orders with a hash. They are not the same hash. They are very close."),
       ("Ghost Freight: The Buyer", 3, "Every collapse the Cell causes, the account profits. Every single one.")],
-     "The Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done.", "dispatch", 2),
+     "The Master Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done.", "dispatch", 2),
     ("civic_contract", "Civic Contract", "Meridian is bidding to run the city's water, power and transit. The winner is already decided.",
      [("Civic Contract I", 2, "A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."),
       ("Civic Contract II", 3, "Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."),
       ("Civic Contract III", 2, "The routing mirror already has the city's water mains in it, labelled PHASE TWO.")],
      [("Civic Contract: Halcyon", 2, "Halcyon Civic's pitch deck: A City That Runs Itself. Page nine: A City That Bills Itself."),
       ("Civic Contract: The Vote", 0, "The council votes on Thursday. The council does not know it is voting.")],
-     "The Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly.", "halcyon", -1),
+     "The Master Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly.", "halcyon", -1),
     ("last_mile", "Last Mile", "Meridian's delivery drones watch every street they fly over, and sell what they see.",
      [("Last Mile I", 3, "Every drone films its route. Every route is kept. The archive is sold by the street, by the hour, to anyone with a login."),
       ("Last Mile II", 2, "The drones fly low over the protest routes on purpose. The contract calls it situational awareness."),
       ("Last Mile III", 3, "The surveillance archive has the Cell in it. Not your faces. Your routes. Meridian has been mapping you.")],
      [("Last Mile: Buyers", 2, "The archive's biggest customer is a security firm owned by Halcyon Civic."),
       ("Last Mile: The Flight Plan", 0, "Tonight's flight plan crosses the Cell's safehouse three times. It never used to.")],
-     "The Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it.", "", 0),
+     "The Master Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it.", "", 0),
 ]
 
 # ---- Corporation resource ---------------------------------------------------------------------------------------------
@@ -441,7 +441,7 @@ r.main = ['id = &"meridian"', 'display_name = "Meridian Freight Systems"',
           "events = " + arr(r.script("res://scripts/data/terminal_event_data.gd"), [r.res(p) for p in event_paths])]
 r.write("content/corporations/meridian.tres",
         "Meridian Freight Systems (M8, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid mirroring Solace's shape\n"
-        "(home -> ten T1 -> eight T2 with three Exploits -> eight T3 -> The Manifest), four Heat objectives,\n"
+        "(home -> ten T1 -> eight T2 with three Exploits -> eight T3 -> The Master Manifest), four Heat objectives,\n"
         "six story paths (Ghost Freight foreshadows DISPATCH, Civic Contract foreshadows Halcyon Civic).")
 
 # ---- Voice ---------------------------------------------------------------------------------------------------------------
@@ -458,25 +458,25 @@ BRIEF = {
     "m1_j": "Fleet Telematics Hub. Speed, stops, driver heart rates. Meridian watches its own. Watch it back.",
     "m2_intel": "Shipping Manifest Vault. Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel.",
     "m2_breach": "Customs Key Authority. The keys that open every sealed container. Take a copy. That is the Breach.",
-    "m2_virus": "Routing Table Mirror. Meridian's map of the world. Poison it and the Manifest reads a lie. That is the Virus.",
+    "m2_virus": "Routing Table Mirror. Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus.",
     "m2_d": "Priority Lane Exchange. Where the rich buy speed. The Rack pays well.",
     "m2_e": "Worker Scoring Engine. It fires people for breathing. Take its Rack, and look for the audit path.",
     "m2_f": "Port Congestion Model. Meridian creates the queues it charges to skip. Break the model.",
     "m2_g": "Last-Mile Drone Command. It tells every drone where to look. Tell it to look away.",
     "m2_h": "Insurance Claims Ledger. Every lost parcel insured twice. Somebody collects. Take the Rack.",
-    "m3_core": "Global Routing Core. One hop from the Manifest. Heavy security, heavier Rack.",
+    "m3_core": "Global Routing Core. One hop from the Master Manifest. Heavy security, heavier Rack.",
     "m3_b": "Freight Futures Desk. Meridian bets on shortages it is about to cause. Take the Rack.",
     "m3_c": "Customs Override Escrow. The master keys, in escrow for a very bad day. Today is that day.",
     "m3_d": "Supply Twin Simulator. A copy of the city's supply chain. Meridian rehearses its crises here.",
     "m3_e": "Board Logistics Backbone. The board's own delivery network. Private lanes, private cargo.",
     "m3_f": "Contract Pricing Authority. Where Meridian decides what a city pays to be fed. Take it.",
     "m3_g": "Surveillance Route Archive. Every drone flight ever flown, including over your safehouse. Burn it.",
-    "m3_h": "Meridian Root Ledger. The signing keys for every transaction. The Manifest trusts it completely.",
+    "m3_h": "Meridian Root Ledger. The signing keys for every transaction. The Master Manifest trusts it completely.",
     "lose_the_tracking": "Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes.",
-    "forge_the_manifest": "Forge the Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.",
+    "forge_the_manifest": "Forge the Master Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.",
     "reroute_the_audit": "Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else.",
     "sink_the_cargo_logs": "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour.",
-    "the_master_manifest": "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut.",
+    "the_master_manifest": "The Master Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut.",
 }
 DISPATCH_LINES = [
     ("run_start", "Jacking you in. Meridian logs everything; log nothing."), ("run_start", "Route is live. Keep it quiet and bank at the first Rack."),
@@ -490,8 +490,8 @@ DISPATCH_LINES = [
     ("threshold:50", "Route audit in progress. Meridian is counting your links."),
     ("threshold:75", "Freight seizure authorised. Haulers are rolling."),
     ("threshold:100", "Meridian is rerouting the city around the Cell. Everything is coming."),
-    ("boss", "The Manifest. It shields itself every turn. Breach the Hub, then cut."),
-    ("win", "The Manifest is down. For one day, the city moves itself."), ("win", "Meridian is offline. Deliveries are... improvising."),
+    ("boss", "The Master Manifest. It shields itself every turn. Breach the Hub, then cut."),
+    ("win", "The Master Manifest is down. For one day, the city moves itself."), ("win", "Meridian is offline. Deliveries are... improvising."),
     ("win", "Route closed. Next target when you are ready."),
     ("loss", "Home server lost. Meridian has reassigned the Cell's address."), ("loss", "We are off the map. Fall back."),
 ]

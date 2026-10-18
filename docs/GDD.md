@@ -316,7 +316,7 @@ Permadeath. HP carries between fights within a netrun; survivors heal fully at H
 | Botnet | 45 | Shim, Shim, Defrag, Trojan, Trojan, Null | Up to 3 drones; drones persist between combats in a run | Perfect Trojan docks a Parasite drone on an enemy slice (halves its output) | Node gains one free asset per raid |
 
 *M6 balance ruling (2026-09-24, DECISIONS.md):* every class needs burst to outpace the
-Renewal Engine's heal, so the Ghost hook also resolves the slice twice, and the Rigger and
+Genome Core's heal, so the Ghost hook also resolves the slice twice, and the Rigger and
 Botnet hooks also resolve it again at half (Botnet on any slice; Trojan Perfects still plant
 the Parasite). Wheels are interleaved so adjacent slices differ; exact slice values live in
 `content/classes/`.
@@ -450,7 +450,7 @@ Software for life-critical implants, sold as the **Continuum** subscription; pri
 rose; missed payments get implants bricked. Enemies are medical security software
 (self-healing, "dosages", resistance called Compliance Lock). Raids are **Collections**.
 Exploits: Intel (pricing memos), Breach (disable the kill-switch), Virus (open-source
-patch that frees implants). Final server: the **Renewal Engine**.
+patch that frees implants). Final server: **The Genome Core** (display name; DECISIONS 2026-10-18, A1; id `renewal_engine`).
 
 ### 8.4 Story Beat Paths (locked structure)
 Each corporation has 5–6 hidden story paths; one is chosen at random at campaign start.
@@ -465,20 +465,20 @@ Logistics: automated freight, tariffs, tracking, last-mile drones. Enemies lean 
 **WEIGHT** (spin resistance; was Inertia, D4), **PRIORITY** (RAM drain; its OVERFLOW shows as **AIRMAIL**; DECISIONS
 2026-10-05, names for M14, D3), Conveyors (orbiting pointers) and courier
 drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Virus (rogue
-routing table). Final server: **The Manifest**, which shields itself every turn unless its
+routing table). Final server: **The Master Manifest** (DECISIONS 2026-10-18, A4; id `the_manifest`), which shields itself every turn unless its
 Hub, the **Customs Seal** (was Priority Routing; DECISIONS 2026-10-05, ruling 6.1), is breached.
 
 ### 8.4c Halcyon Civic (M9, DECISIONS.md 2026-09-24)
 Smart-city services: water, power, transit, policing-as-a-service. Enemies issue
 **Citations** (PARASITE on your slice), heal and shield each other. Exploits: Intel
 (council minutes), Breach (emergency override), Virus (open data leak). Final server:
-**The Civic Core**, which heals and blocks every turn unless its Hub is breached.
+**The Panopticon** (DECISIONS 2026-10-16, D2; id `civic_core`), which heals and blocks every turn unless its Hub is breached.
 
 ### 8.4d Orbital Commons (M10, DECISIONS.md 2026-09-24)
 Privatised orbit: satellite internet, positioning, weather. Enemies throw **Solar Flares**
 (OVERCLOCK your slice: stronger once, then CORRUPTED) and orbit fast. Exploits: Intel
 (launch codes), Breach (ground station override), Virus (open spectrum). Final server:
-**The Commons Array**, which repairs and shields every turn unless its Hub is breached.
+**Launch Control** (DECISIONS 2026-10-18, A2; id `commons_array`), which repairs and shields every turn unless its Hub is breached.
 
 ### 8.5 REBEL_CELL (final unlock corporation)
 Unlocked by clearing every other corporation at ICE 10; has its own ICE 0–20 ladder.
@@ -711,13 +711,13 @@ Breaker Rank 1 ring: ×2 / Pierce / —.
 | Care Swarm | 25 | Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Null | 3 satellites (4 HP; Shim 3, Shim 3, Defrag 2) |
 | **Elite:** Claims Adjuster | 90 | Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Null | 2 pointers (ticks 0, 15) |
 | **Elite:** Recall Unit | 85 | Shim 9, Shim 9, Defrag 8, Overflow 15, Sandbox 5, Null | Pointer orbits +2 ticks/turn; passive resistance 1 |
-| **Boss:** Renewal Engine | 300 | Shim 14, Shim 14, Defrag 12, Dose, Overflow 24, Null | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |
+| **Boss:** The Genome Core | 300 | Shim 14, Shim 14, Defrag 12, Dose, Overflow 24, Null | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |
 
 Dose = INFECT slice applying CORRUPTED to a random non-NULL player slice. Solace wheels show
 HOTFIX as **GROWTH** (DECISIONS 2026-10-05, names for M14, D4).
 
 *M7 balance ruling (2026-09-24, DECISIONS.md):* elites +25% HP (Claims Adjuster 112, Recall
-Unit 106, Account Manager 150) and the Renewal Engine 360 HP; enemy damage scales 1.3 per
+Unit 106, Account Manager 150) and the Genome Core 360 HP; enemy damage scales 1.3 per
 tier. The table keeps the original values for reference.
 
 ### A.4 Slice Firmware & Daemons

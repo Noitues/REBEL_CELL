@@ -35,7 +35,7 @@ func test_the_win_names_the_corporations_own_boss() -> void:
 	for e in events:
 		if e.get("type", "") == "campaign_won":
 			won = e["text"]
-	assert_true(won.begins_with("The Manifest"), won)
+	assert_true(won.begins_with("The Master Manifest"), won)
 
 
 func test_corporate_lines_carry_their_corporation() -> void:

@@ -50,7 +50,7 @@
 [ext_resource type="Resource" path="res://content/events/ev_mer_billing_error.tres" id="e47"]
 
 ; Meridian Freight Systems (M8, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid mirroring Solace's shape
-; (home -> ten T1 -> eight T2 with three Exploits -> eight T3 -> The Manifest), four Heat objectives,
+; (home -> ten T1 -> eight T2 with three Exploits -> eight T3 -> The Master Manifest), four Heat objectives,
 ; six story paths (Ghost Freight foreshadows DISPATCH, Civic Contract foreshadows Halcyon Civic).
 
 [sub_resource type="Resource" id="site_m_home"]
@@ -301,7 +301,7 @@ map_position = Vector2(330, 20)
 [sub_resource type="Resource" id="site_forge_the_manifest"]
 script = ExtResource("e1")
 id = &"forge_the_manifest"
-display_name = "Forge the Manifest"
+display_name = "Forge the Master Manifest"
 tier = 1
 objective = 2
 heat_change = -5
@@ -417,7 +417,7 @@ text = "Solace Biosystems pays Meridian a retainer for 'predictable scarcity'. T
 script = ExtResource("e6")
 id = &"lost_cargo_f"
 title = "Lost Cargo: Finale"
-text = "The Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit."
+text = "The Master Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit."
 
 [sub_resource type="Resource" id="sp_lost_cargo"]
 script = ExtResource("e7")
@@ -468,7 +468,7 @@ text = "The quota rises two percent every time someone meets it. Nobody has met 
 script = ExtResource("e6")
 id = &"night_shift_f"
 title = "The Night Shift: Finale"
-text = "The Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down."
+text = "The Master Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down."
 
 [sub_resource type="Resource" id="sp_night_shift"]
 script = ExtResource("e7")
@@ -518,7 +518,7 @@ text = "Clearwater Holdings has one employee, one office and nine billion in rec
 script = ExtResource("e6")
 id = &"customs_hold_f"
 title = "Customs Hold: Finale"
-text = "The Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week."
+text = "The Master Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week."
 
 [sub_resource type="Resource" id="sp_customs_hold"]
 script = ExtResource("e7")
@@ -542,7 +542,7 @@ script = ExtResource("e6")
 id = &"ghost_freight_2"
 title = "Ghost Freight II"
 speaker = 3
-text = "The same account bought Solace stock the day the Renewal Engine fell. It is buying Meridian puts now. It knows something."
+text = "The same account bought Solace stock the day the Genome Core fell. It is buying Meridian puts now. It knows something."
 dispatch_clue = true
 
 [sub_resource type="Resource" id="b_ghost_freight_3"]
@@ -572,7 +572,7 @@ text = "Every collapse the Cell causes, the account profits. Every single one."
 script = ExtResource("e6")
 id = &"ghost_freight_f"
 title = "Ghost Freight: Finale"
-text = "The Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done."
+text = "The Master Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done."
 
 [sub_resource type="Resource" id="sp_ghost_freight"]
 script = ExtResource("e7")
@@ -623,7 +623,7 @@ text = "The council votes on Thursday. The council does not know it is voting."
 script = ExtResource("e6")
 id = &"civic_contract_f"
 title = "Civic Contract: Finale"
-text = "The Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly."
+text = "The Master Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly."
 
 [sub_resource type="Resource" id="sp_civic_contract"]
 script = ExtResource("e7")
@@ -675,7 +675,7 @@ text = "Tonight's flight plan crosses the Cell's safehouse three times. It never
 script = ExtResource("e6")
 id = &"last_mile_f"
 title = "Last Mile: Finale"
-text = "The Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it."
+text = "The Master Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it."
 
 [sub_resource type="Resource" id="sp_last_mile"]
 script = ExtResource("e7")

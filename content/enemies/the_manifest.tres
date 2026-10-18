@@ -15,7 +15,7 @@
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
 [ext_resource type="Resource" path="res://content/enemies/courier_drone.tres" id="e13"]
 
-; The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs
+; The Master Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs
 ; Seal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.
 
 [sub_resource type="Resource" id="fx_shield"]
@@ -120,7 +120,7 @@ phase_line = "Peak season: the heads drift, the couriers launch, the second lane
 [resource]
 script = ExtResource("main_script")
 id = &"the_manifest"
-display_name = "The Manifest"
+display_name = "The Master Manifest"
 description = "Meridian's routing core. Every package on the planet passes through it."
 corporation_id = &"meridian"
 hp = 400

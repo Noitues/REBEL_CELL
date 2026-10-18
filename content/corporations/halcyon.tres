@@ -50,7 +50,7 @@
 [ext_resource type="Resource" path="res://content/events/ev_hal_orbital_dish.tres" id="e47"]
 
 ; Halcyon Civic (M9, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid in the Solace/Meridian shape; Citations
-; plant PARASITE on the player's slices; the Civic Core heals and blocks each turn unless breached.
+; plant PARASITE on the player's slices; the Panopticon heals and blocks each turn unless breached.
 
 [sub_resource type="Resource" id="site_h_home"]
 script = ExtResource("e1")
@@ -416,7 +416,7 @@ text = "Meridian Freight Systems hauls bottled water into the districts Halcyon 
 script = ExtResource("e6")
 id = &"water_rights_f"
 title = "Water Rights: Finale"
-text = "The Civic Core goes dark and every valve in the city fails open. For one hot week, the water is free."
+text = "The Panopticon goes dark and every valve in the city fails open. For one hot week, the water is free."
 
 [sub_resource type="Resource" id="sp_water_rights"]
 script = ExtResource("e7")
@@ -467,7 +467,7 @@ text = "Stop quotas rise every quarter. Nobody at Halcyon has ever asked what th
 script = ExtResource("e6")
 id = &"predictive_policing_f"
 title = "Predictive Policing: Finale"
-text = "The Civic Core falls and the patrol model forgets every name on its list. For a month, nobody is a pre-offender."
+text = "The Panopticon falls and the patrol model forgets every name on its list. For a month, nobody is a pre-offender."
 
 [sub_resource type="Resource" id="sp_predictive_policing"]
 script = ExtResource("e7")
@@ -517,7 +517,7 @@ text = "Next week's maintenance windows are already set. They match a march nobo
 script = ExtResource("e6")
 id = &"transit_blackout_f"
 title = "Transit Blackout: Finale"
-text = "The Civic Core crashes and every tram in the city runs its whole route, doors open, lights on. Nobody pays."
+text = "The Panopticon crashes and every tram in the city runs its whole route, doors open, lights on. Nobody pays."
 
 [sub_resource type="Resource" id="sp_transit_blackout"]
 script = ExtResource("e7")
@@ -571,7 +571,7 @@ text = "A recording from the census call center. A caller asks for the Cell's le
 script = ExtResource("e6")
 id = &"the_census_f"
 title = "The Census: Finale"
-text = "The Civic Core dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
+text = "The Panopticon dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
 
 [sub_resource type="Resource" id="sp_the_census"]
 script = ExtResource("e7")
@@ -588,7 +588,7 @@ script = ExtResource("e6")
 id = &"orbital_uplink_1"
 title = "Orbital Uplink I"
 speaker = 2
-text = "The Civic Core's uptime is guaranteed by a contract with Orbital Commons. If the link drops, the city drops."
+text = "The Panopticon's uptime is guaranteed by a contract with Orbital Commons. If the link drops, the city drops."
 
 [sub_resource type="Resource" id="b_orbital_uplink_2"]
 script = ExtResource("e6")
@@ -622,7 +622,7 @@ text = "Orbital Commons calls its satellites public infrastructure. It has never
 script = ExtResource("e6")
 id = &"orbital_uplink_f"
 title = "Orbital Uplink: Finale"
-text = "The Civic Core falls. Somewhere above the city, an Orbital Commons satellite notes the lost customer and adjusts its orbit toward the Cell."
+text = "The Panopticon falls. Somewhere above the city, an Orbital Commons satellite notes the lost customer and adjusts its orbit toward the Cell."
 
 [sub_resource type="Resource" id="sp_orbital_uplink"]
 script = ExtResource("e7")
@@ -674,7 +674,7 @@ text = "The overcrowding surcharge funds the patrol units that evict the overcro
 script = ExtResource("e6")
 id = &"smart_meters_f"
 title = "Smart Meters: Finale"
-text = "The Civic Core falls and the meters go deaf all at once. The city is quiet in a way it has not been for years."
+text = "The Panopticon falls and the meters go deaf all at once. The city is quiet in a way it has not been for years."
 
 [sub_resource type="Resource" id="sp_smart_meters"]
 script = ExtResource("e7")

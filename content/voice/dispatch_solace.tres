@@ -61,7 +61,7 @@ text = "Memo archive. The pricing memos are in there: what the leash really cost
 [sub_resource type="Resource" id="l11"]
 script = ExtResource("2")
 key = "site:t2_breach"
-text = "Kill-Switch Authority. The bricking order comes from this Rack. Take the authority and the Renewal Engine loses a read head."
+text = "Kill-Switch Authority. The bricking order comes from this Rack. Take the authority and the Genome Core loses a read head."
 
 [sub_resource type="Resource" id="l12"]
 script = ExtResource("2")
@@ -156,19 +156,19 @@ text = "The ledger. Every Cell transaction they have reconstructed. Burn it and 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("2")
 key = "site:the_genome_core"
-text = "The Renewal Engine. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go."
+text = "The Genome Core. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go."
 
 [sub_resource type="Resource" id="l31"]
 script = ExtResource("2")
 key = "site:the_genome_core"
-text = "The Renewal Engine. I have run this breach four hundred times. Follow the plan exactly."
+text = "The Genome Core. I have run this breach four hundred times. Follow the plan exactly."
 drift_stage = 1
 dispatch_clue = true
 
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("2")
 key = "site:the_genome_core"
-text = "The Renewal Engine. Its collapse is scheduled. You are the schedule. Proceed."
+text = "The Genome Core. Its collapse is scheduled. You are the schedule. Proceed."
 drift_stage = 2
 dispatch_clue = true
 
@@ -259,19 +259,19 @@ text = "Breach the Hub first. Its heal is the fight."
 [sub_resource type="Resource" id="l48"]
 script = ExtResource("2")
 key = "win"
-text = "The Renewal Engine is down. Every leash in the district just went quiet. Well done, Cell."
+text = "The Genome Core is down. Every leash in the district just went quiet. Well done, Cell."
 
 [sub_resource type="Resource" id="l49"]
 script = ExtResource("2")
 key = "win"
-text = "The Renewal Engine is down. Solace's market share is being redistributed as we speak. Well done."
+text = "The Genome Core is down. Solace's market share is being redistributed as we speak. Well done."
 drift_stage = 1
 dispatch_clue = true
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("2")
 key = "win"
-text = "The Renewal Engine is down. Competitor eliminated. Next target: pending."
+text = "The Genome Core is down. Competitor eliminated. Next target: pending."
 drift_stage = 2
 dispatch_clue = true
 

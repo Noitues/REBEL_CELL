@@ -417,3 +417,27 @@ func test_b3_the_purge_band_starts_where_the_purge_fires() -> void:
 	var purge := int(c.rule_modifier(cfg, RC.RuleModifierType.PURGE_THRESHOLD))
 	assert_gt(purge, 0, "the ladder lowers the Purge")
 	assert_eq(HeatRules.band_levels(c, cfg).back(), purge, "the PURGE band starts at the lowered Purge")
+
+
+## Plan 2 W0 NAMES (DECISIONS 2026-10-16 D2, 2026-10-18 A1-A4): the Central Server names on the
+## boss enemies (ids stay), DISPATCH unchanged, and no player string under the old words.
+func test_w0_central_server_names_on_the_bosses() -> void:
+	var want := {&"renewal_engine": "The Genome Core", &"the_manifest": "The Master Manifest",
+		&"civic_core": "The Panopticon", &"commons_array": "Launch Control"}
+	for id in want:
+		var e := ContentRegistry.get_content(id) as EnemyData
+		assert_not_null(e, "%s keeps its id" % id)
+		if e != null:
+			assert_eq(e.display_name, want[id], "%s display name" % id)
+	var corp := ContentRegistry.get_content(&"rebel_cell") as CorporationData
+	var names: Array[String] = []
+	for s in corp.city_grid.sites:
+		if s.objective == RC.SiteObjective.CENTRAL_SERVER:
+			names.append(s.display_name)
+	assert_true(names.size() == 1 and names[0].begins_with("DISPATCH"), "REBEL_CELL stays DISPATCH")
+	var old := RegEx.create_from_string("(?i)" + "civic " + "core|renewal " + "engine|commons " + "array|the " + "manifest\\b")
+	var hits: Array[String] = []
+	for s in _csv_strings() + _content_strings():
+		if old.search(s) != null:
+			hits.append(s)
+	assert_eq(hits, [] as Array[String], "no player string uses an old Central Server name")

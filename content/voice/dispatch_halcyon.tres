@@ -78,12 +78,12 @@ text = "Urban renewal scheduled. Halcyon means to erase the Cell."
 [sub_resource type="Resource" id="l14"]
 script = ExtResource("e1")
 key = "boss"
-text = "The Civic Core. It heals and walls up every turn. Breach the Hub, then cut."
+text = "The Panopticon. It heals and walls up every turn. Breach the Hub, then cut."
 
 [sub_resource type="Resource" id="l15"]
 script = ExtResource("e1")
 key = "win"
-text = "The Civic Core is down. The city runs itself for a day."
+text = "The Panopticon is down. The city runs itself for a day."
 
 [sub_resource type="Resource" id="l16"]
 script = ExtResource("e1")
@@ -198,7 +198,7 @@ text = "Contract Billing Ledger. Halcyon bills the city for everything, twice. T
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:h3_core"
-text = "Civic Operations Center. One hop from the Civic Core. Heavy security, heavier Rack."
+text = "Civic Operations Center. One hop from the Panopticon. Heavy security, heavier Rack."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")
@@ -233,7 +233,7 @@ text = "Citizen Profile Archive. A file on every home, including yours. Burn it.
 [sub_resource type="Resource" id="l45"]
 script = ExtResource("e1")
 key = "site:h3_h"
-text = "Halcyon Root Registry. The keys the Civic Core trusts. Take them."
+text = "Halcyon Root Registry. The keys the Panopticon trusts. Take them."
 
 [sub_resource type="Resource" id="l46"]
 script = ExtResource("e1")
@@ -258,7 +258,7 @@ text = "Pardon the District. Clear the records of a whole district, the Cell's i
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
 key = "site:the_panopticon"
-text = "The Civic Core. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut."
+text = "The Panopticon. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut."
 
 [resource]
 script = ExtResource("main_script")

@@ -50,7 +50,7 @@
 
 ; Solace Biosystems (GDD 8.3, 4.1): 32-Site City Grid. Home -> ten T1 Sites; eight of them
 ; open a T2 (Intel, Breach and Virus Exploits among them); every T2 opens a T3; every T3
-; reaches the Renewal Engine (T4 boss). Four Heat objectives (two T1 -5, a T2 -8 off t1_j,
+; reaches the Genome Core (T4 boss). Four Heat objectives (two T1 -5, a T2 -8 off t1_j,
 ; a T3 -8 off t2_e). Locked cross-links open with the Intel Exploit (or Icebreakers).
 ; SiteObjective: 0 NONE, 1 EXPLOIT, 2 HEAT_REDUCTION, 4 BOSS. ExploitType: 1 INTEL, 2 BREACH, 3 VIRUS.
 
@@ -423,7 +423,7 @@ text = "Four thousand subbies in batch 22 are still walking around with a clock 
 script = ExtResource("6")
 id = &"recall_notice_f"
 title = "Recall Notice: Finale"
-text = "The Renewal Engine goes dark and the recall notice ships itself: every batch 22 device pulls the patch on its next check-in. Solace announces nothing. The district hears the silence where the bricking used to be."
+text = "The Genome Core goes dark and the recall notice ships itself: every batch 22 device pulls the patch on its next check-in. Solace announces nothing. The district hears the silence where the bricking used to be."
 
 [sub_resource type="Resource" id="sp_recall_notice"]
 script = ExtResource("5")
@@ -521,7 +521,7 @@ text = "Somebody in the district printed the Cell's own terms on stickers: your 
 script = ExtResource("6")
 id = &"terms_of_service_f"
 title = "Terms of Service: Finale"
-text = "The Renewal Engine cannot enforce a contract it cannot read. When it goes dark, the terms go with it. Nobody agrees to clause 44 again."
+text = "The Genome Core cannot enforce a contract it cannot read. When it goes dark, the terms go with it. Nobody agrees to clause 44 again."
 
 [sub_resource type="Resource" id="sp_terms_of_service"]
 script = ExtResource("5")
@@ -676,7 +676,7 @@ text = "Every Meridian truck in the district runs the same handler protocol the 
 script = ExtResource("6")
 id = &"hostile_takeover_f"
 title = "Hostile Takeover: Finale"
-text = "The Renewal Engine goes dark and Meridian's bid clears before the sun comes up. Solace is gone. The leash is not; it changed hands. The Cell's next target names itself."
+text = "The Genome Core goes dark and Meridian's bid clears before the sun comes up. Solace is gone. The leash is not; it changed hands. The Cell's next target names itself."
 
 [sub_resource type="Resource" id="sp_hostile_takeover"]
 script = ExtResource("5")
