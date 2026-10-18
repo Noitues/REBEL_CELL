@@ -9,10 +9,9 @@
 2. Two needles one tick apart on both wheels (gap 1), each with its own leader tag.
 3. Resistance "+4" grease-pen mark beside RESIST 4, as it stands after the turn refresh.
 4. BLOCK / SHIELD / SANDBOX: the words sit on the slices (rim bands), BLOCK / SHIELD chips, the SANDBOX
-   charge hexes on the wheel, and the LAST TURN line after SEND IT reads "EVADED 4" (hits negated whole).
+   charge hexes on the wheel, and the LAST TURN line after SEND IT reads "SANDBOXED 4" (hits negated whole).
 5. PARKED -18 chip: a 30 hit at 80 HP against a 68% phase floor; HP -12 real, 18 parked.
 6. Satellite refusal toast ("Satellites are fixed to their slice: only Undock moves them.") after a nudge aimed at
    the targeted satellite; its two nudge arrows are drawn disabled (grey, struck) beside the aim ring.
 
-Notes: the chips still say "EVADE" / "EVADED" (result chip, LAST TURN line) where the slice and the standing chips
-say SANDBOX; a naming sweep was not done here (view words, no rule).
+Notes (W0 TEACH): the result chip and LAST TURN line now say SANDBOX words (N14 sweep); the boss reads THE PANOPTICON.

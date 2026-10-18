@@ -12,7 +12,7 @@ PANELS = [
     ("1  ENRAGE 1 badge on a boss at turn 10, tooltip open", "1_ENRAGE"),
     ("2  two adjacent needles (gap 1), each with its leader tag", "2_NEEDLES"),
     ("3  resistance +N grease-pen mark at the turn refresh (RESIST 4, +4)", "3_RESIST"),
-    ("4  BLOCK / SHIELD / SANDBOX on slices, 2 charges, LAST TURN: EVADED 4", "4_DEFENSE"),
+    ("4  BLOCK / SHIELD / SANDBOX on slices, 2 charges, LAST TURN: SANDBOXED 4", "4_DEFENSE"),
     ("5  PARKED -18 chip at the 68% phase threshold", "5_PARKED"),
     ("6  satellite refusal toast, its nudge arrows disabled", "6_SATELLITE"),
 ]
@@ -32,11 +32,14 @@ def font(size: int) -> ImageFont.ImageFont:
 
 def main() -> None:
     src, out = Path(sys.argv[1]), Path(sys.argv[2])
-    rows = (len(PANELS) + 1) // 2
+    # Optional third argument: the panel numbers to keep, e.g. 1,4.
+    keep = sys.argv[3].split(",") if len(sys.argv) > 3 else [p[1][0] for p in PANELS]
+    panels = [p for p in PANELS if p[1][0] in keep]
+    rows = (len(panels) + 1) // 2
     sheet = Image.new("RGB", (2 * W, rows * (H + HEAD)), (18, 18, 22))
     d = ImageDraw.Draw(sheet)
     f = font(18)
-    for i, (label, stem) in enumerate(PANELS):
+    for i, (label, stem) in enumerate(panels):
         x, y = (i % 2) * W, (i // 2) * (H + HEAD)
         d.text((x + 10, y + 5), label, fill=(240, 240, 240), font=f)
         sheet.paste(Image.open(src / (stem + ".png")).convert("RGB").resize((W, H), Image.LANCZOS), (x, y + HEAD))
