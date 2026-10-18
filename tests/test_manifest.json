@@ -980,6 +980,30 @@
 		"res://tests/unit/test_balance_sim.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_tier_tables.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_enemy_hp_bands.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_enemy_scale_tables.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_tier_tables_replay.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_band_lint.gd": {
+			"seconds": 2.0,
+			"tier": "full"
+		},
+		"res://tests/integration/test_tier_tables_flow.gd": {
+			"seconds": 4.0,
+			"tier": "full"
 		}
 	}
 }

@@ -23,7 +23,7 @@ func test_overrides_never_mutate_a_loaded_resource() -> void:
 	var bc := BalanceContent.new(ContentRegistry)
 	var errors := bc.apply_all([
 		"config.heat_max=%d" % (before_heat + 50), "%s.hp=999" % ENEMY, "config.rack_heat_by_tier.0=77",
-		"config.cycles_combat_range*=2", "config.enemy_scale_per_tier+=1"])
+		"config.cycles_combat_range*=2", "config.target_turns_per_phase+=1"])
 	assert_eq(errors.size(), 0, "all overrides apply: %s" % str(errors))
 	# the loaded Resources are untouched
 	assert_eq(cfg.heat_max, before_heat)

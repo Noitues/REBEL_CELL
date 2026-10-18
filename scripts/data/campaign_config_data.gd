@@ -18,12 +18,27 @@ extends Resource
 @export var rack_schematics_by_tier: PackedInt32Array = PackedInt32Array([10, 17, 29, 50])
 @export var raid_schematics_by_tier: PackedInt32Array = PackedInt32Array([8, 12, 18, 25])
 @export var node_repair_ratio: float = 0.5
-## Enemy HP per tier: base x this^(tier - 1) (GDD 11.6).
-@export var enemy_scale_per_tier: float = 1.6
-## Enemy slice output (damage, block, heal) per tier (decision 2026-09-24: split from HP
-## scaling after the balance simulation; operatives do not gain HP, so 1.6^3 damage at T4
-## one-shot them). Applies to bosses and mini-bosses like everything else.
-@export var enemy_damage_scale_per_tier: float = 1.6
+## N2 (CONTENT_DESIGN_V2 R2, decision 2026-10-18): tier sets base values only. Enemy slice
+## output (damage, block, heal, shield, hits) per tier, indexed by tier - 1. One table
+## replaces GDD 11.6's 1.2^(t-1), the old config 1.3 and the old schema default 1.6. Applies
+## to bosses and mini-bosses like everything else. Read it through enemy_damage_factor(tier).
+@export var enemy_damage_by_tier: PackedFloat64Array = PackedFloat64Array([1.0, 1.3, 1.69, 2.2])
+## N2 legacy HP fallback: an enemy with no hp_by_tier / hp_bands keeps base HP x this entry
+## (the old 1.6^(t-1) made explicit), so no fight changes before the re-author pass. Read
+## it through enemy_hp_scale(tier).
+@export var enemy_hp_scale_by_tier: PackedFloat64Array = PackedFloat64Array([1.0, 1.6, 2.56, 4.096])
+## R2 phase budget: the reference player's damage per turn, indexed by tier - 1.
+@export var reference_dpt_by_tier: PackedInt32Array = PackedInt32Array([9, 11, 14, 18])
+## R1 / R2: the turns one phase should last.
+@export var target_turns_per_phase: float = 3.5
+## R2 HP bands per class: [min, max] pairs for T1..T4 (8 entries; 0, 0 = no band at that
+## tier). EnemyData.validate() checks hp_by_tier against them; HpBandLint lints content.
+@export var hp_band_normal: PackedInt32Array = PackedInt32Array([28, 36, 34, 44, 44, 56, 56, 70])
+@export var hp_band_elite: PackedInt32Array = PackedInt32Array([56, 72, 68, 88, 88, 112, 112, 144])
+@export var hp_band_mini_boss_2: PackedInt32Array = PackedInt32Array([56, 72, 68, 88, 88, 112, 0, 0])
+@export var hp_band_mini_boss_3: PackedInt32Array = PackedInt32Array([85, 105, 104, 128, 132, 162, 0, 0])
+## A boss's last hp_bands ceiling must be at least this: the open-ended "above" zone.
+@export var boss_hp_band_open_ceiling: float = 99.0
 @export var reward_scale_per_tier: float = 1.7
 ## Cycles earned (11.1) as inclusive [min, max] ranges.
 @export var cycles_combat_range: Vector2i = Vector2i(10, 20)
@@ -251,8 +266,87 @@ func heat_band_levels() -> Array[int]:
 	return out
 
 
+## N2: a tier (1..4) as an index into the per-tier tables; tiers below 1 clamp to 0, above
+## 4 to 3.
+static func tier_index(tier: int) -> int:
+	return clampi(tier - 1, 0, 3)
+
+
+## N2 (R2): enemy slice output factor at `tier` (clamped to 1..4).
+func enemy_damage_factor(tier: int) -> float:
+	return _table_at(enemy_damage_by_tier, tier)
+
+
+## N2: legacy HP multiplier at `tier` (clamped) for enemies without hp_by_tier / hp_bands.
+func enemy_hp_scale(tier: int) -> float:
+	return _table_at(enemy_hp_scale_by_tier, tier)
+
+
+## N2 (R2): the reference player's damage per turn at `tier` (clamped).
+func reference_dpt(tier: int) -> int:
+	if reference_dpt_by_tier.is_empty():
+		return 0
+	return reference_dpt_by_tier[mini(tier_index(tier), reference_dpt_by_tier.size() - 1)]
+
+
+## N2 (R2): the HP band [min, max] of `band_class` (&"normal", &"elite", &"mini_boss_2",
+## &"mini_boss_3") at `tier` (clamped). Vector2i.ZERO = no band at that tier.
+func hp_band(band_class: StringName, tier: int) -> Vector2i:
+	var arr: PackedInt32Array = hp_band_table(band_class)
+	var i := tier_index(tier) * 2
+	if arr.size() < i + 2:
+		return Vector2i.ZERO
+	return Vector2i(arr[i], arr[i + 1])
+
+
+## N2: the raw 8-entry band array of `band_class`; empty for an unknown class.
+func hp_band_table(band_class: StringName) -> PackedInt32Array:
+	match band_class:
+		&"normal": return hp_band_normal
+		&"elite": return hp_band_elite
+		&"mini_boss_2": return hp_band_mini_boss_2
+		&"mini_boss_3": return hp_band_mini_boss_3
+	return PackedInt32Array()
+
+
+func _table_at(arr: PackedFloat64Array, tier: int) -> float:
+	if arr.is_empty():
+		return 1.0
+	return arr[mini(tier_index(tier), arr.size() - 1)]
+
+
+func _validate_tier_tables(errors: PackedStringArray) -> void:
+	for pair in [["enemy_damage_by_tier", enemy_damage_by_tier], ["enemy_hp_scale_by_tier", enemy_hp_scale_by_tier],
+			["reference_dpt_by_tier", reference_dpt_by_tier]]:
+		var arr: Variant = pair[1]
+		if arr.size() != 4:
+			errors.append("%s must have 4 entries." % pair[0])
+			continue
+		for i in 4:
+			if arr[i] <= 0:
+				errors.append("%s must be > 0." % pair[0])
+				break
+		for i in range(1, 4):
+			if arr[i] < arr[i - 1]:
+				errors.append("%s must be non-decreasing." % pair[0])
+				break
+	if target_turns_per_phase <= 0.0:
+		errors.append("target_turns_per_phase must be > 0.")
+	for band_class: StringName in [&"normal", &"elite", &"mini_boss_2", &"mini_boss_3"]:
+		var arr := hp_band_table(band_class)
+		if arr.size() != 8:
+			errors.append("hp_band_%s must have 8 entries (min, max per tier)." % band_class)
+			continue
+		for t in 4:
+			if arr[t * 2] > arr[t * 2 + 1] or arr[t * 2] < 0:
+				errors.append("hp_band_%s T%d has min above max." % [band_class, t + 1])
+	if boss_hp_band_open_ceiling <= 1.0:
+		errors.append("boss_hp_band_open_ceiling must be above 1.0.")
+
+
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
+	_validate_tier_tables(errors)
 	if max_replays < 0:
 		errors.append("max_replays must be >= 0 (0 = no cap).")
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:

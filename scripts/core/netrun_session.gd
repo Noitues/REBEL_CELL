@@ -321,7 +321,7 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
-		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "enemy_output_scale": enemy_output_scale(), "hub_id": String(op.hub_id(cls)),
+		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "enemy_output_scale": enemy_output_scale(), "tier": run.tier, "hub_id": String(op.hub_id(cls)),
 	}
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
@@ -351,15 +351,17 @@ func breach_preview() -> CombatSession:
 	return _combat_from(_combat_setup(true, false, copy.get_stream(&"combat")))
 
 
-## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1), for every
-## enemy including mini-bosses and the final boss (designer ruling 2026-09-24).
+## N2 (R2): the legacy HP multiplier at this run's tier (config enemy_hp_scale_by_tier),
+## used only by enemies without hp_by_tier / hp_bands; those read their own table in
+## CombatResolver.create_combat.
 func enemy_scale() -> float:
-	return pow(config.enemy_scale_per_tier, run.tier - 1)
+	return config.enemy_hp_scale(run.tier)
 
 
-## Enemy slice outputs per tier (enemy_damage_scale_per_tier^(tier - 1)).
+## N2 (R2): the enemy output factor at this run's tier (config enemy_damage_by_tier), for
+## every enemy including mini-bosses and the final boss. Flat enemy amounts read it (N1).
 func enemy_output_scale() -> float:
-	return pow(config.enemy_damage_scale_per_tier, run.tier - 1)
+	return config.enemy_damage_factor(run.tier)
 
 
 ## Combat-side ICE and Heat rule modifiers (GDD 11.9, 4.3) as CombatResolver overrides:

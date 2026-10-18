@@ -123,7 +123,7 @@ func test_netrun_reads_the_ice_ladder_into_combat() -> void:
 	assert_true(boss.in_combat())
 	var b := boss.combat.state.get_combatant(&"enemy_0")
 	assert_eq(b.wheel.pointer_ticks.size(), 2, "ICE 18: +1 boss pointer")
-	assert_eq(b.max_hp, roundi(roundi(360 * pow(_cfg.enemy_scale_per_tier, 3)) * 1.25), "tier 4 scale x ICE 9 strength")
+	assert_eq(b.max_hp, roundi(roundi(360 * _cfg.enemy_hp_scale(4)) * 1.25), "tier 4 scale x ICE 9 strength")
 
 
 func test_heat_50_threshold_adds_enemy_resistance_through_the_netrun() -> void:

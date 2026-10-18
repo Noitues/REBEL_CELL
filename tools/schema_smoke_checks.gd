@@ -309,8 +309,15 @@ func _batch5() -> int:
 	var cfg2 := CampaignConfigData.new()
 	print("Config home repair / retaliation defaults: ", cfg2.home_repair_cost_per_point, " ", cfg2.retaliation_min_heat)
 	if cfg2.home_repair_cost_per_point != 1.0 or cfg2.retaliation_min_heat != 50: fails += 1
-	print("Config damage scale default: ", cfg2.enemy_damage_scale_per_tier)
-	if cfg2.enemy_damage_scale_per_tier != 1.6: fails += 1
+	print("Config damage table default: ", cfg2.enemy_damage_by_tier)
+	if cfg2.enemy_damage_by_tier != PackedFloat64Array([1.0, 1.3, 1.69, 2.2]): fails += 1
+	# N2: tier tables, bands and the EnemyData HP table fields.
+	print("Config N2 tables: ", cfg2.reference_dpt_by_tier, " ", cfg2.target_turns_per_phase, " ", cfg2.hp_band_normal)
+	if cfg2.reference_dpt_by_tier != PackedInt32Array([9, 11, 14, 18]) or cfg2.target_turns_per_phase != 3.5: fails += 1
+	if cfg2.hp_band(&"normal", 3) != Vector2i(44, 56) or cfg2.enemy_damage_factor(9) != 2.2: fails += 1
+	var en := EnemyData.new()
+	print("EnemyData N2 defaults: ", en.hp_by_tier, " ", en.hp_bands, " uses table: ", en.uses_hp_table())
+	if not en.hp_by_tier.is_empty() or not en.hp_bands.is_empty() or en.uses_hp_table(): fails += 1
 	return fails + _m6()
 
 
