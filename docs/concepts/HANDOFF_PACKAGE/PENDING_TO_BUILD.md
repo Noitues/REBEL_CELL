@@ -46,3 +46,8 @@ The app paused session-to-session messages after 10 sends. Send these on the des
      - Either anchor the toast beside the aim ring, or give it a leader line to the ring.
    - **Known items, also required before approval:** THE PANOPTICON name, and the EVADE / EVADED → SANDBOX / SANDBOXED word sweep (result chip and LAST TURN line).
    - Re-send the sheet once these are in. I will review only panels 1 and 6, plus the changed words.
+6. **W0_SITENAMES review (main 0a596d73): FIX LIST. Panel 2 (raid map) is approved.**
+   - **Panel 1, Grid:** the before and after halves are pixel-alike, with no name label and no Site card in either, so the panel shows nothing to judge. A flow test isn't visual evidence. Re-capture with a Site selected, so its card renders, and with one Site hovered. The card and the hover label must show the SiteText type, not a name.
+   - **Panel 3, netrun header:** no visible difference between the halves. Add a 2× crop of the spot where the Site name used to sit (header or dossier line), before and after. If no name was shown there, say so and drop the panel.
+   - **Panel 4, reward header:** "SITE" is too weak. Use the tier and the SiteText type: `LOOT // NETRUN: T2 <TYPE>`, e.g. "T2 SERVER RACK". Use the type word, not the objective. The tier tells the player why the loot is what it is. HQ runs keep `LOOT // NETRUN: <HQ BUILDING>`.
+   - Re-send the sheet with panels 1, 3 and 4 only.
