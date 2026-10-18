@@ -24,6 +24,9 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import phase_metrics as pm  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 SIM = "tools/balance/balance_sim.gd"
 BOOTSTRAP = 2000
@@ -212,6 +215,7 @@ def render_report(m):
     lines.append("")
     body = {"campaign": report_campaign, "fight": report_fight, "boss": report_boss, "netrun": report_netrun}[mode]
     lines.append(body(m, stats))
+    lines.append(phase_section(m))
     return "\n".join(lines) + "\n"
 
 
@@ -358,6 +362,18 @@ def report_fight(m, stats):
     return "\n".join(out)
 
 
+def phase_section(m):
+    """N19: the per-phase metrics table and its warnings; empty for files without metrics."""
+    groups = pm.by_group(m["records"])
+    if not any(groups.values()):
+        return ""
+    lines = ["## Phase metrics (N19)\n", pm.render_table(groups)]
+    warn = [w for g, a in sorted(groups.items()) for w in pm.warnings(g, a, boss=m["mode"] == "boss")]
+    if warn:
+        lines.append("Warnings:\n\n" + "\n".join("- " + w for w in warn) + "\n")
+    return "\n".join(lines)
+
+
 def cmd_report(args):
     m = json.loads(Path(args.file).read_text(encoding="utf-8"))
     text = render_report(m)
@@ -371,7 +387,8 @@ def cmd_report(args):
 # --- Compare ----------------------------------------------------------------------------------
 
 HEADLINE = ["won", "turns", "hp_lost", "runs", "raids", "heat_peak", "minutes", "deaths", "died", "schematics_unspent", "schematics_income",
-            "taken_per_turn", "dealt_per_turn", "layers", "hp_end_frac", "recruits"]
+            "taken_per_turn", "dealt_per_turn", "layers", "hp_end_frac", "recruits", "parked", "intake", "resistance_absorbed", "enrage_step",
+            "turns_both_share"]
 
 
 def cmd_compare(args):
@@ -408,6 +425,12 @@ def cmd_compare(args):
              "- %d of %d metrics moved outside the noise (the interval excludes 0)\n" % (outside, total),
              "## Changed outside noise\n", table(head, rows_out) if rows_out else "None: every difference is within noise.\n",
              "## Headline metrics\n", table(head, rows_head)]
+    ga, gb = pm.by_group(A["records"]), pm.by_group(B["records"])
+    if any(ga.values()) or any(gb.values()):
+        both = {}
+        for g in sorted(set(ga) | set(gb)):
+            both["A " + g], both["B " + g] = ga.get(g), gb.get(g)
+        lines += ["## Phase metrics (N19), A then B per group\n", pm.render_table(both)]
     out = Path(args.out) if args.out else ROOT / "docs" / "balance" / ("CMP_%s.md" % args.name)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")

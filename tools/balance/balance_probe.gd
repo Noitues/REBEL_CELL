@@ -23,6 +23,8 @@ var recruits: int = 0
 var raid_causes: Dictionary = {"flatline": 0, "heat_actions": 0, "other": 0}
 
 var _fight: Dictionary = {}
+var metrics_enabled: bool = true  # N19: off only in the purity test
+var _metrics: SimMetrics = null  # N19: observational per-phase metrics of the fight in progress
 var _run: Dictionary = {}
 var _sch_mark: int = -1
 
@@ -94,6 +96,7 @@ func begin_fight(state: CombatState, tier: int, kind: String, layer: int) -> voi
 	var category := "enemy"
 	if data != null:
 		category = "boss" if data.is_boss else ("mini_boss" if data.is_mini_boss else ("elite" if data.is_elite else "enemy"))
+	_metrics = SimMetrics.new(state.player.id) if metrics_enabled else null
 	_fight = {"enemy": String(foe.source_id) if foe != null else "", "category": category, "tier": tier, "kind": kind, "layer": layer,
 		"turns": 0, "hp_in": state.player.hp, "hp_max": state.player.max_hp, "hp_out": state.player.hp, "dealt": 0, "taken": 0, "enemy_hp": hp_total,
 		"pointers": 0, "perfects": 0, "heal_turns": 0, "heal_total": 0, "ram_left": 0, "ram_mark": state.ram,
@@ -105,6 +108,8 @@ func begin_fight(state: CombatState, tier: int, kind: String, layer: int) -> voi
 func observe(action: CombatAction, result: CombatResult, state: CombatState) -> void:
 	if _fight.is_empty() or bool(_fight["done"]):
 		return
+	if _metrics != null:
+		_metrics.observe(action.type == CombatAction.Type.END_TURN, result.events, _enrage_max(state))
 	if action.type != CombatAction.Type.END_TURN:
 		_fight["ram_mark"] = state.ram
 	else:
@@ -138,6 +143,8 @@ func observe(action: CombatAction, result: CombatResult, state: CombatState) -> 
 	if state.is_over():
 		if action.type != CombatAction.Type.END_TURN:
 			_fight["turns"] = int(_fight["turns"]) + 1  # a card finished it mid-turn
+			if _metrics != null:
+				_metrics.finish_mid_turn()
 			_fight["dealt"] = int(_fight["dealt"]) + maxi(0, int(_fight["_prev_enemy"]) - _enemy_hp(state))
 			_fight["taken"] = int(_fight["taken"]) + maxi(0, int(_fight["_prev_player"]) - state.player.hp)
 		_fight["won"] = state.outcome == CombatState.Outcome.VICTORY
@@ -222,9 +229,17 @@ func _finish_fight() -> void:
 	f.erase("_prev_player")
 	f.erase("_prev_enemy")
 	f.erase("ram_mark")
+	f["metrics"] = _metrics.to_dict(bool(f["won"])) if _metrics != null else null
 	f["hp_lost"] = int(f["hp_in"]) - int(f["hp_out"])
 	fights.append(f)
 	_fight["done"] = true
+
+
+static func _enrage_max(state: CombatState) -> int:
+	var top := 0
+	for e in state.enemies:
+		top = maxi(top, e.enrage_step)
+	return top
 
 
 static func _enemy_hp(state: CombatState) -> int:
