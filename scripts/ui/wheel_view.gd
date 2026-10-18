@@ -187,6 +187,84 @@ const ARROW_RADIUS := 48.0
 const ARROW_INNER_RADIUS := 74.0
 const ARROW_SPAN := 13.0
 const ARROW_HIT := 18.0
+## Where the precision-good ring pulse starts (just above 0 so the ring draws).
+const RING_PULSE_START := 0.001
+## Slice wedge inset at each end (radians), so neighbouring wedges do not touch.
+const WEDGE_INSET_RAD := 0.03
+## Fill alpha of a NULL slice.
+const SLICE_FILL_ALPHA_NULL := 0.18
+## Fill alpha of any other slice.
+const SLICE_FILL_ALPHA := 0.5
+## Alpha of the (pulsing) target outline when it is not hot.
+const TARGET_RING_ALPHA := 0.55
+## Width of the target outline when hot.
+const TARGET_LINE_HOT := 3.0
+## Width of the target outline when not hot.
+const TARGET_LINE_IDLE := 1.5
+## Share of the defeat drain over which the rows start to release.
+const DRAIN_RELEASE_SPAN := 0.75
+## Share of the defeat drain a row takes to fall once released.
+const DRAIN_FALL_SPAN := 0.25
+## Per-bit random stagger on the fall speed of the drain.
+const DRAIN_STAGGER := 0.1
+## Gap (degrees) at each side of a guard wall brick.
+const BRICK_GAP_DEG := 0.4
+## Alpha of a guard wall brick.
+const BRICK_ALPHA := 0.85
+## Distance (px) from the guard wall or hex ring to its number.
+const GUARD_NUMBER_GAP := 14.0
+## Gap (px) between the guard wall and the shield hex ring.
+const HEX_RING_GAP := 4.0
+## Shield hex spacing as a multiple of the hex radius.
+const HEX_SPACING := 1.8
+## Alpha of a shield hex fill.
+const HEX_FILL_ALPHA := 0.35
+## Width of a shield hex outline.
+const HEX_LINE_WIDTH := 1.5
+## Where the shield number sits within the hex arc (share of the half arc).
+const SHIELD_NUMBER_SHARE := 0.6
+## Pointer arrow: distance from the satellite to the head tip (px).
+const ARROW_TIP_LEN := 21.0
+## Pointer arrow: distance from the satellite to the head base (px).
+const ARROW_BACK_LEN := 13.0
+## Pointer arrow: half width of the head base (px).
+const ARROW_HEAD_HALF := 5.0
+## Arrow arc width when hot.
+const ARROW_ARC_HOT := 4.0
+## Arrow arc width when not hot.
+const ARROW_ARC_IDLE := 2.5
+## Arrow button disc radius as a share of ARROW_HIT.
+const ARROW_DISC_SHARE := 0.9
+## Arrow button disc alpha when hot.
+const ARROW_DISC_ALPHA_HOT := 0.75
+## Arrow button disc alpha when not hot.
+const ARROW_DISC_ALPHA_IDLE := 0.55
+## Total horizontal padding around a pointer tag text (px).
+const TAG_TEXT_PAD := 16.0
+## Alpha of the pointer tag fill.
+const TAG_FILL_ALPHA := 0.92
+## Alpha of the pointer tag rim.
+const TAG_RIM_ALPHA := 0.8
+## Width of the pointer tag rim.
+const TAG_RIM_WIDTH := 1.5
+## Text inset (px) inside a floating readout frame, after the arrow mark.
+const FLOAT_TEXT_X := 17
+## Horizontal padding (px) added to the width of a next-intent tag text.
+const NEXT_TAG_PAD := 22.0
+## Gap (px) between the HP text and the next-intent tag.
+const NEXT_TAG_GAP := 8.0
+## Vertical padding (px) added to a readout row height.
+const READOUT_V_PAD := 6.0
+## Dash length (px) of a dashed line.
+const DASH_LEN := 6.0
+## Width of a dashed line.
+const DASH_LINE_WIDTH := 1.5
+## Dash step (radians) of a dashed arc.
+const DASH_ARC_STEP := 0.12
+## Margin (px) of the dim disc behind the wheel beyond its radius.
+const DIM_RING_MARGIN := 40
+## Alpha of the dim disc behind the wheel.
+const DIM_RING_ALPHA := 0.55
 ## Satellite marker hit radius (px at text scale 1.0).
 const SATELLITE_HIT := 14.0
 ## Slice values sit this far outside the rim; satellites dock beyond them with this gap.
@@ -913,10 +991,10 @@ func play_pulse(index: int, sat: StringName = &"") -> void:
 func play_good_ring() -> void:
 	if not Motion.live(&"precision_good_ring"):
 		return
-	ring_pulse = 0.001
+	ring_pulse = RING_PULSE_START
 	var e := Motion.entry(&"precision_good_ring")
 	var tw := _tw(&"ring")
-	tw.tween_method(func(v: float) -> void: ring_pulse = v; queue_redraw(), 0.001, 1.0, Motion.seconds(&"precision_good_ring")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_method(func(v: float) -> void: ring_pulse = v; queue_redraw(), RING_PULSE_START, 1.0, Motion.seconds(&"precision_good_ring")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: ring_pulse = 0.0; _end(&"ring"); queue_redraw())
 
 
@@ -1540,7 +1618,7 @@ func slice_pieces() -> Array:
 			if slice.base_output > 0:
 				art["value"] = str(slice.base_output)
 				art["value_at"] = center + dir * (radius + VALUE_OUT)
-		out.append([_wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03), Color(sc, 0.18 if is_null_slice else 0.5), art])
+		out.append([_wedge(center, inner, radius, minf(a0, a1) + WEDGE_INSET_RAD, maxf(a0, a1) - WEDGE_INSET_RAD), Color(sc, SLICE_FILL_ALPHA_NULL if is_null_slice else SLICE_FILL_ALPHA), art])
 		var fan := PackedVector2Array([center])
 		for k in 11:
 			var a := lerpf(minf(a0, a1), maxf(a0, a1), k / 10.0)
@@ -1672,7 +1750,7 @@ func _arrow_meets(tag: Rect2, r: float, a: float) -> bool:
 	var c := _center()
 	for d in [-1.0, 1.0]:
 		var at := c + Vector2(sin(deg_to_rad(a)) * d, -cos(deg_to_rad(a))) * r
-		var disc := ARROW_HIT * 0.9
+		var disc := ARROW_HIT * ARROW_DISC_SHARE
 		if tag.intersects(Rect2(at - Vector2(disc, disc), Vector2(disc, disc) * 2.0)):
 			return true
 		for t in [a - ARROW_SPAN, a + ARROW_SPAN]:
@@ -2062,7 +2140,7 @@ func _draw_view() -> void:
 	var rot := shown_rotation() + stutter_deg / DEG_PER_TICK
 	var k := art_scale()
 	# Platform so the wheel reads over the city.
-	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
+	draw_circle(center, radius + DIM_RING_MARGIN, Color(Palette.NIGHT_SKY, DIM_RING_ALPHA))
 	if defeated():
 		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
 		# can never read as this one coming back).
@@ -2092,10 +2170,10 @@ func _draw_view() -> void:
 		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
 		var mid := _tick_angle(i * tps, rot)
 		var deg := slice_deg(i, rot)
-		var wedge := _wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03)
+		var wedge := _wedge(center, inner, radius, minf(a0, a1) + WEDGE_INSET_RAD, maxf(a0, a1) - WEDGE_INSET_RAD)
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
 			var hot := _zone_is([hover_zone], {"kind": "slot", "slot": i})
-			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5, true)
+			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, TARGET_RING_ALPHA * zone_pulse)), TARGET_LINE_HOT if hot else TARGET_LINE_IDLE, true)
 		if i == null_slot and null_static > 0.0:
 			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		var lift := WheelFace.READ_R * (0.025 if i == active else 0.0)
@@ -2200,7 +2278,7 @@ func _draw_view() -> void:
 		draw_line(cm + Vector2(0, -11), cm + Vector2(0, 11), _col(TARGET_COLOR), 2.0)
 	if _zone_is(valid_zones, {"kind": "hub"}):
 		var hot := _zone_is([hover_zone], {"kind": "hub"})
-		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5)
+		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, TARGET_RING_ALPHA * zone_pulse)), TARGET_LINE_HOT if hot else TARGET_LINE_IDLE)
 	# Intent: a taped paper tag above the needle (what resolves next and its results).
 	var tag := _intent_rect_local()
 	_check_tag_change(tag)
@@ -2603,10 +2681,10 @@ func _draw_drain(center: Vector2, hr: float) -> void:
 	var rows := int(hr * 2.0 / b)
 	for r in rows:
 		var y := -hr + (r + 0.5) * b
-		var release := (1.0 - float(r) / rows) * 0.75
+		var release := (1.0 - float(r) / rows) * DRAIN_RELEASE_SPAN
 		if drain_p < release:
 			continue
-		var t := (drain_p - release) / 0.25
+		var t := (drain_p - release) / DRAIN_FALL_SPAN
 		var half := sqrt(maxf(0.0, hr * hr - y * y))
 		var cols := int(half * 2.0 / b)
 		for c in cols:
@@ -2614,7 +2692,7 @@ func _draw_drain(center: Vector2, hr: float) -> void:
 			if h % 3 != 0:
 				continue
 			var x := -half + (c + 0.5) * b
-			var fy := y + t * t * hr * (1.0 + float(h % 7) * 0.1)
+			var fy := y + t * t * hr * (1.0 + float(h % 7) * DRAIN_STAGGER)
 			if x * x + fy * fy > hr * hr:
 				continue
 			var col := Palette.TEXT_HI.lerp(kit.accent, clampf(t, 0.0, 1.0))
@@ -2705,27 +2783,27 @@ func _draw_guards(center: Vector2, k: float) -> void:
 			var off := BRICK_DEG * 0.5 if course % 2 == 1 else 0.0
 			var a := face - WALL_HALF + off
 			while a + BRICK_DEG <= face + WALL_HALF + 0.01:
-				var brick := WheelFace.arc_band(center, k, ra, rb, a + 0.4, a + BRICK_DEG - 0.4)
-				draw_colored_polygon(brick, Color(Palette.NET_CYAN, 0.85))
+				var brick := WheelFace.arc_band(center, k, ra, rb, a + BRICK_GAP_DEG, a + BRICK_DEG - BRICK_GAP_DEG)
+				draw_colored_polygon(brick, Color(Palette.NET_CYAN, BRICK_ALPHA))
 				draw_polyline(brick, Palette.INK, maxf(1.0, k), true)
 				a += BRICK_DEG
-		_guard_number(center, k, r0 + WALL_DEPTH + 14.0, face, str(c.block), Palette.NET_CYAN)
+		_guard_number(center, k, r0 + WALL_DEPTH + GUARD_NUMBER_GAP, face, str(c.block), Palette.NET_CYAN)
 	if c.shield > 0:
 		# SANDBOX: hex plates tiled beyond the wall
-		var rh := r0 + (WALL_DEPTH + HEX_R + 4.0 if c.block > 0 else HEX_R)
-		var step := rad_to_deg(HEX_R * 1.8 / rh)
+		var rh := r0 + (WALL_DEPTH + HEX_R + HEX_RING_GAP if c.block > 0 else HEX_R)
+		var step := rad_to_deg(HEX_R * HEX_SPACING / rh)
 		var a2 := face - HEX_HALF
 		while a2 <= face + HEX_HALF + 0.01:
 			var hc := WheelFace.at(center, k, rh, a2)
 			var hexp := PackedVector2Array()
 			for j in 6:
 				hexp.append(hc + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * HEX_R * k)
-			draw_colored_polygon(hexp, Color(Palette.NET_CYAN, 0.35))
+			draw_colored_polygon(hexp, Color(Palette.NET_CYAN, HEX_FILL_ALPHA))
 			var closed := hexp.duplicate()
 			closed.append(hexp[0])
-			draw_polyline(closed, Palette.NET_CYAN, maxf(1.0, 1.5 * k), true)
+			draw_polyline(closed, Palette.NET_CYAN, maxf(1.0, HEX_LINE_WIDTH * k), true)
 			a2 += step
-		_guard_number(center, k, rh + HEX_R + 14.0, face + HEX_HALF * 0.6, str(c.shield), Palette.NET_CYAN)
+		_guard_number(center, k, rh + HEX_R + GUARD_NUMBER_GAP, face + HEX_HALF * SHIELD_NUMBER_SHARE, str(c.shield), Palette.NET_CYAN)
 	if c.evade_charges > 0:
 		# EVADE: the >> token on the rim, one per charge
 		for e in c.evade_charges:
@@ -3597,14 +3675,14 @@ static func draw_skull(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void
 func _draw_caption(text: String, shown: float) -> void:
 	var fs := _fs(INTENT_FONT_SIZE)
 	var font := Palette.marker()
-	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 16.0)
+	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + TAG_TEXT_PAD)
 	var h := INTENT_HEIGHT * _ts()
 	var bottom := _center().y - _radius() - _above() - INTENT_HEIGHT
 	var r := Rect2(Vector2(clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w)), maxf(0.0, bottom - h)), Vector2(w, h))
 	var a := clampf(shown, 0.0, 1.0)
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(Palette.SHADOW, Palette.SHADOW.a * a))
-	draw_rect(r, Color(Palette.INK, 0.92 * a))
-	draw_rect(r, Color(Palette.PAPER, 0.8 * a), false, 1.5)
+	draw_rect(r, Color(Palette.INK, TAG_FILL_ALPHA * a))
+	draw_rect(r, Color(Palette.PAPER, TAG_RIM_ALPHA * a), false, TAG_RIM_WIDTH)
 	HighContrast.draw_text(self, font, Vector2(r.position.x, r.position.y + h * 0.7), text, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Color(Palette.PAPER, a))
 
 
@@ -3654,7 +3732,7 @@ func _draw_satellites() -> void:
 			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
-			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5)
+			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, TARGET_RING_ALPHA * zone_pulse)), TARGET_LINE_HOT if hot else TARGET_LINE_IDLE)
 			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
 			# should turn to (the clockwise side is +1).
 			var cw := (satp - _center()).normalized().orthogonal() * -1.0
@@ -3662,10 +3740,10 @@ func _draw_satellites() -> void:
 				if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id and z.has("direction"):
 					var d := float(z["direction"])
 					var side_hot := hot and int(hover_zone.get("direction", 0)) == int(d)
-					var tip := satp + cw * d * 21.0
-					var back := satp + cw * d * 13.0
-					var n := cw.orthogonal() * 5.0
-					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, 0.55)))
+					var tip := satp + cw * d * ARROW_TIP_LEN
+					var back := satp + cw * d * ARROW_BACK_LEN
+					var n := cw.orthogonal() * ARROW_HEAD_HALF
+					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, TARGET_RING_ALPHA)))
 
 
 ## Where a satellite's HP plate goes (local): outward from the wheel, else to either side,
@@ -3768,12 +3846,12 @@ func _draw_arrows() -> void:
 		var col := Palette.PAPER
 		if droppable:
 			col = TARGET_COLOR
-		var width := 4.0 if hot else 2.5
+		var width := ARROW_ARC_HOT if hot else ARROW_ARC_IDLE
 		var r := _radius() + (ARROW_INNER_RADIUS if ring == RC.RingScope.INNER else ARROW_RADIUS)
 		var mid := -90.0 + arrow_angle(ring) * d
 		var from := deg_to_rad(mid - ARROW_SPAN * d)
 		var to := deg_to_rad(mid + ARROW_SPAN * d)
-		draw_circle(c, ARROW_HIT * 0.9, Color(Palette.NIGHT_SKY, 0.75 if hot else 0.55))
+		draw_circle(c, ARROW_HIT * ARROW_DISC_SHARE, Color(Palette.NIGHT_SKY, ARROW_DISC_ALPHA_HOT if hot else ARROW_DISC_ALPHA_IDLE))
 		draw_arc(_center(), r, minf(from, to), maxf(from, to), 10, _col(col), width, true)
 		var tip := _center() + Vector2(cos(to), sin(to)) * r
 		var tangent := Vector2(-sin(to), cos(to)) * float(d)
@@ -3869,11 +3947,11 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			_draw_dashed_rect(fr, fcol)
 		var ay := fr.position.y + fr.size.y * 0.5
 		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
-		HighContrast.draw_text(self, Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(fr.position.x + FLOAT_TEXT_X, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 		if lethal:
 			# The skull sits in the gap before LETHAL.
 			var head := String(lay.get("next_head", next_head(after)))
-			var gx := fr.position.x + 17 + Palette.mono().get_string_size(head + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var gx := fr.position.x + FLOAT_TEXT_X + Palette.mono().get_string_size(head + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			draw_skull(self, Vector2(gx, ay), fs * LETHAL_SKULL_SHARE, fcol)
 	if (lay["icons"] as Rect2).has_area():
 		_draw_icon_row(lay["icons"], int(lay["icons_fs"]), clampf(last_turn_shown, 0.0, 1.0))
@@ -3950,7 +4028,7 @@ func hp_layout() -> Dictionary:
 		while ifs > ICON_ROW_MIN_FONT and iw > room:
 			ifs -= 1
 			iw = icon_row_width(items, ifs)
-		out["icons"] = Rect2(Vector2(maxf(left_reserve, center.x - tw * 0.5 - ICON_ROW_GAP - iw), base_y - hs * 0.75), Vector2(iw, ifs + 6.0))
+		out["icons"] = Rect2(Vector2(maxf(left_reserve, center.x - tw * 0.5 - ICON_ROW_GAP - iw), base_y - hs * 0.75), Vector2(iw, ifs + READOUT_V_PAD))
 		out["icons_fs"] = ifs
 	var after := int(outcome.get("hp_after", combatant.hp))
 	out["lethal"] = lethal_forecast()
@@ -3963,16 +4041,16 @@ func hp_layout() -> Dictionary:
 			# and LETHAL on a solid red plate; the red cross over the hub struck through its
 			# name and read as "disabled").
 			ftext += "    " + tr("LETHAL")
-		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
+		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + NEXT_TAG_PAD
 		out["next_text"] = ftext
-		var x0 := center.x + tw * 0.5 + 8.0
+		var x0 := center.x + tw * 0.5 + NEXT_TAG_GAP
 		# Kept inside the view (a long translation shifts it left, never off the edge); ANIM-R6
 		# A4: it shrinks rather than slide onto the HP number (the turn's change made it longer).
 		while fs > ICON_ROW_MIN_FONT and x0 + fw + 2.0 > size.x:
 			fs -= 1
-			fw = Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
+			fw = Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + NEXT_TAG_PAD
 		var x := minf(x0, size.x - fw - 2.0)
-		out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + READOUT_V_PAD))
 		out["next_fs"] = fs
 	if last_turn != "":
 		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
@@ -4120,10 +4198,10 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 	for k in 4:
 		var a: Vector2 = pts[k]
 		var b: Vector2 = pts[k + 1]
-		var n := maxi(2, int(a.distance_to(b) / 6.0))
+		var n := maxi(2, int(a.distance_to(b) / DASH_LEN))
 		for i in n:
 			if i % 2 == 0:
-				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, 1.5)
+				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, DASH_LINE_WIDTH)
 
 
 ## The hub name's font size and lines for a hub `width` px wide: one line shrinking to
@@ -4659,7 +4737,7 @@ static func forecast_caption() -> String:
 
 func _draw_dashed_arc(center: Vector2, radius: float, start: float, end: float, color: Color, width: float) -> void:
 	var span := end - start
-	var dashes := maxi(3, int(absf(span) / 0.12))
+	var dashes := maxi(3, int(absf(span) / DASH_ARC_STEP))
 	for i in dashes:
 		if i % 2 == 1:
 			continue

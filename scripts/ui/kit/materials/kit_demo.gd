@@ -7,6 +7,22 @@ extends RefCounted
 ## demos; `test_motion_lab_demos.gd` checks the piece reads the entry. A view (dev tool path).
 
 const DEMO_ANCHOR := Vector2(300, 260)
+## Offset from the anchor to the CRT panel's top-left corner.
+const CRT_OFFSET := Vector2(200, 40)
+## Size of the demo CRT panel.
+const CRT_SIZE := Vector2(420, 80)
+## Where the dissolving sticker's bits fly to, from the anchor.
+const BITS_TARGET_OFFSET := Vector2(260, -160)
+## Radii of the demo pencil circle.
+const PENCIL_RADII := Vector2(60, 48)
+## Offset from the anchor to the holo panel's top-left corner.
+const HOLO_OFFSET := Vector2(200, 120)
+## Size of the demo holo panel.
+const HOLO_SIZE := Vector2(400, 240)
+## Offset from the anchor to the bits-burst source rect's top-left corner.
+const BURST_RECT_OFFSET := Vector2(80, 30)
+## Size of the bits-burst source rect.
+const BURST_RECT_SIZE := Vector2(160, 60)
 
 
 ## Builds the piece for `id` on `host` and plays its motion. Returns the demo's length (s).
@@ -22,8 +38,8 @@ static func play(id: StringName, host: Control) -> float:
 			return Motion.seconds(CentralServerGate.STAGGER) * all_kinds.size() + Motion.seconds(CentralServerGate.SLAP) 				+ Motion.seconds(CentralServerGate.RING) + Motion.seconds(CentralServerGate.READY)
 		&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll":
 			var p := CrtTerminalPanel.new()
-			p.position = DEMO_ANCHOR - Vector2(200, 40)
-			p.size = Vector2(420, 80)
+			p.position = DEMO_ANCHOR - CRT_OFFSET
+			p.size = CRT_SIZE
 			host.add_child(p)
 			return p.type_on("RAM 5/12  // next turn +2")
 		&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_sweep_period", &"sticker_peel_back", &"sticker_corner_flutter", \
@@ -41,7 +57,7 @@ static func play(id: StringName, host: Control) -> float:
 				&"sticker_dissolve":
 					var bits := BinaryBits.new()
 					host.add_child(bits)
-					return s.dissolve(bits, host.global_position + DEMO_ANCHOR + Vector2(260, -160))
+					return s.dissolve(bits, host.global_position + DEMO_ANCHOR + BITS_TARGET_OFFSET)
 				&"sticker_gloss_sweep":
 					return s.sweep()
 				&"sticker_sweep_period":
@@ -66,15 +82,15 @@ static func play(id: StringName, host: Control) -> float:
 			m.ink = GreasePencilMark.Ink.THREAT
 			m.auto_write = false  # the demo plays the write or the wipe itself
 			host.add_child(m)
-			m.add_stroke(PencilShapes.hand_circle(DEMO_ANCHOR, Vector2(60, 48), 3))
+			m.add_stroke(PencilShapes.hand_circle(DEMO_ANCHOR, PENCIL_RADII, 3))
 			if id == &"pencil_wipe":
 				return m.wipe()
 			return m.write_on()
 		&"holo_bands":
 			var h := DecryptedHoloPanel.new()
 			h.scrim = false
-			h.position = DEMO_ANCHOR - Vector2(200, 120)
-			h.size = Vector2(400, 240)
+			h.position = DEMO_ANCHOR - HOLO_OFFSET
+			h.size = HOLO_SIZE
 			host.add_child(h)
 			return Motion.seconds(id)
 		&"light_spill_breathe":
@@ -86,6 +102,6 @@ static func play(id: StringName, host: Control) -> float:
 			var b := BinaryBits.new()
 			host.add_child(b)
 			var o := host.global_position
-			var arr := b.burst_from_rect(Rect2(o + DEMO_ANCHOR - Vector2(80, 30), Vector2(160, 60)), o + DEMO_ANCHOR + Vector2(260, -160), Palette.CELL_PINK)
+			var arr := b.burst_from_rect(Rect2(o + DEMO_ANCHOR - BURST_RECT_OFFSET, BURST_RECT_SIZE), o + DEMO_ANCHOR + BITS_TARGET_OFFSET, Palette.CELL_PINK)
 			return arr[arr.size() - 1] if not arr.is_empty() else 0.0
 	return 0.0

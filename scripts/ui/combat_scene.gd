@@ -29,6 +29,28 @@ const PASS_MOTION := &"resolve_pass"
 const MENU_LAYER := 10
 ## Right column width at text scale 1.0 (Polaroid, Heat, Daemons, subtitles, tutorial).
 const RIGHT_WIDTH := 300.0
+## Gap (px) between the right column and the aim hint.
+const AIM_HINT_GAP_X := 8.0
+## Gap (px) between the aim hint and the thing it points at.
+const AIM_HINT_GAP_Y := 4.0
+## Alpha of a wheel pointer when the view shows it.
+const POINTER_ALPHA_SHOWN := 0.6
+## How far the city backdrop dims in the arena (wheels first, city second).
+const ARENA_CITY_DIM := 0.55
+## Largest seed the debug seed spinner takes.
+const SEED_SPIN_MAX := 999999
+## Separation (px) in the side column, the bottom row and the hand box.
+const COLUMN_SEPARATION := 10
+## Tilt (degrees) of the portrait polaroid.
+const PORTRAIT_TILT := -3.0
+## Height (px) of the preview and log notes in the right column.
+const SIDE_NOTE_HEIGHT := 150
+## Smallest card-scale change that counts as a change (also guards a division).
+const SCALE_EPS := 0.01
+## Satellite label: how far above the token (share of font size).
+const SAT_LABEL_RISE := 0.6
+## Satellite label: how far beside the token (share of font size).
+const SAT_LABEL_SIDE := 0.9
 ## Subtitle dock in the right column: lines per page, one line's height and the speaker
 ## line plus margins at text scale 1.0 (px).
 const SUBTITLE_LINES := 3
@@ -1479,7 +1501,7 @@ func _show_aim_hint() -> void:
 	# screen's edge (H24: at 1.6 it ran over "RAM 6/12" and off the screen).
 	var hand := _hand_box.get_global_rect()
 	var right := _enemy_views_box.get_global_rect()
-	var x := right.position.x + 8.0
+	var x := right.position.x + AIM_HINT_GAP_X
 	var room := get_global_rect().end.x - x - AIM_HINT_MARGIN
 	var fs := roundi(AIM_HINT_FONT * Settings.text_scale)
 	var font := _aim_hint.get_theme_font("font")
@@ -1495,7 +1517,7 @@ func _show_aim_hint() -> void:
 	var top := hand.position.y
 	if ram_note != null and ram_note.is_visible_in_tree() and _cell_panel.get_parent() == _bottom_row:
 		top = minf(top, ram_note.get_global_rect().position.y)
-	_aim_hint.global_position = Vector2(clampf(x, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), top - hs.y - 4.0)
+	_aim_hint.global_position = Vector2(clampf(x, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), top - hs.y - AIM_HINT_GAP_Y)
 	# B2 (designer Q2): key hints live in the tooltip only, never a caption line: the hint keeps its
 	# words (the readers, the preview labels' blockers) and the aimed card's tooltip says them.
 	_aim_hint.visible = false
@@ -1936,7 +1958,7 @@ func _start_migrate_flicker(view: WheelView) -> void:
 	if _migrate_tween != null and _migrate_tween.is_valid():
 		_migrate_tween.kill()
 	if not Motion.live(&"pointer_flicker"):
-		view.pointer_alpha = 0.6
+		view.pointer_alpha = POINTER_ALPHA_SHOWN
 		view.queue_redraw()
 		return
 	_migrate_tween = Motion.loop_pulse(view, ^"pointer_alpha", &"pointer_flicker")
@@ -1966,7 +1988,7 @@ func _start_music() -> void:
 
 func _build_ui() -> void:
 	background = WireframeBackground.new()
-	background.city.dim = 0.55  # the arena: wheels first, city second
+	background.city.dim = ARENA_CITY_DIM  # the arena: wheels first, city second
 	add_child(background)
 	arena_backdrop = CombatBackdrop.new()  # ART-2 2B: the target's close-up covers the net city (§3.14)
 	arena_backdrop.wheel_source = _views
@@ -2008,7 +2030,7 @@ func _build_ui() -> void:
 	_picker_controls.append(seed_label)
 	_seed_spin = SpinBox.new()
 	_seed_spin.min_value = 0
-	_seed_spin.max_value = 999999
+	_seed_spin.max_value = SEED_SPIN_MAX
 	_seed_spin.value = 1
 	top.add_child(_seed_spin)
 	_picker_controls.append(_seed_spin)
@@ -2107,9 +2129,9 @@ func _build_ui() -> void:
 	_arena.add_child(_enemy_views_box)
 	var side_top := HBoxContainer.new()
 	side_top.visible = false
-	side_top.add_theme_constant_override("separation", 10)
+	side_top.add_theme_constant_override("separation", COLUMN_SEPARATION)
 	_right.add_child(side_top)
-	portrait = Polaroid.new("Breaker", "[BREAKER PORTRAIT]", -3.0)
+	portrait = Polaroid.new("Breaker", "[BREAKER PORTRAIT]", PORTRAIT_TILT)
 	portrait.name = "Polaroid"
 	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	side_top.add_child(portrait)
@@ -2141,11 +2163,11 @@ func _build_ui() -> void:
 	_right.add_child(_notes_area)
 	_zine_elements.append_array([portrait, heat_poster])
 	# Hidden text records.
-	preview_note = ZineNote.new(tr("WHAT WILL RESOLVE"), Vector2(RIGHT_WIDTH, 150))
+	preview_note = ZineNote.new(tr("WHAT WILL RESOLVE"), Vector2(RIGHT_WIDTH, SIDE_NOTE_HEIGHT))
 	preview_note.name = "PreviewNote"
 	preview_note.visible = false
 	_right.add_child(preview_note)
-	log_note = ZineNote.new(tr("LOG"), Vector2(RIGHT_WIDTH, 150))
+	log_note = ZineNote.new(tr("LOG"), Vector2(RIGHT_WIDTH, SIDE_NOTE_HEIGHT))
 	log_note.name = "LogStrip"
 	log_note.visible = false
 	_right.add_child(log_note)
@@ -2186,7 +2208,7 @@ func _build_ui() -> void:
 	controls.add_child(_slot_option)
 
 	var bottom := HBoxContainer.new()
-	bottom.add_theme_constant_override("separation", 10)
+	bottom.add_theme_constant_override("separation", COLUMN_SEPARATION)
 	root.add_child(bottom)
 	_bottom_row = bottom
 	# ART-2 2D (§3.1): bottom left, the CELL-9 // CLASS sticker over the RAM panel.
@@ -2206,7 +2228,7 @@ func _build_ui() -> void:
 	_piles = CardPiles.new(Settings.text_scale)
 	bottom.add_child(_piles)
 	_hand_box = HBoxContainer.new()
-	_hand_box.add_theme_constant_override("separation", 10)
+	_hand_box.add_theme_constant_override("separation", COLUMN_SEPARATION)
 	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(_hand_box)
 	# RESPIN and UNDO stand between the hand and SEND IT, clear of every wheel: terminal chips
@@ -2396,7 +2418,7 @@ func _relayout() -> void:
 		# The bottom row's start, or the notes column's top (clear of the wheels' HP chips).
 		cell_home.move_child(_cell_panel, 0)
 		_relayout.call_deferred()  # the notes' room changed: dock the subtitles and the tutorial again
-	if engine.has_fight() and absf(_card_scale_for(engine.state().hand.size()) - _hand_scale) > 0.01:
+	if engine.has_fight() and absf(_card_scale_for(engine.state().hand.size()) - _hand_scale) > SCALE_EPS:
 		var had_focus := UiFocus.owner_of(self) != null and _hand_box.is_ancestor_of(UiFocus.owner_of(self))
 		_build_hand(engine.state())
 		_link_hand_focus()
@@ -2977,7 +2999,7 @@ func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 	# 1.0 card's growth (every word on it)
 	c.body_floor = ZineCard.HAND_REST_FLOOR
 	c.grown_floor = ZineCard.BODY_FLOOR
-	c.hover_to = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / maxf(s, 0.01))
+	c.hover_to = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / maxf(s, SCALE_EPS))
 	# Plan 2 A-HAND (PB-PT-003b C2): the pictogram row gives its room to the rules text when the text needs it at
 	# rest, so every card's words fit its resting face (the art glyph still says what it does)
 	c.pictos_give_way = true
@@ -5006,14 +5028,14 @@ func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Ar
 		var tok := v.satellite_spot(target)
 		if kind in ResolveBeats.HP_KINDS and amount > 0:
 			var heal := kind == "heal"
-			var at := tok + Vector2(0.0, -(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.6))
+			var at := tok + Vector2(0.0, -(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * SAT_LABEL_RISE))
 			out.append({"at": at, "rise": 0.0, "text": (tr("+%d HP") % amount) if heal else "-%d" % amount,
 				"color": WheelView.HP_COLOR if heal else WheelView.LOSS_COLOR, "crit": false, "id": &"number_float", "view": v, "fs": fs,
 				"band": "%d:sat:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "hp": amount, "icon": -1})
 		var guard := _guard_of(b)
 		if not guard.is_empty():
 			# The token's own guard pops beside it (a satellite guards itself).
-			var gat := tok + Vector2(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.9, 0.0)
+			var gat := tok + Vector2(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * SAT_LABEL_SIDE, 0.0)
 			out.append({"at": gat, "rise": 0.0, "text": String(guard["text"]), "color": CHIP_GUARD, "crit": false, "id": &"block_number", "view": v,
 				"fs": fs, "band": "%d:satguard:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "icon": int(guard["icon"])})
 		return out
