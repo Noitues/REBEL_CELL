@@ -185,7 +185,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		elif status == GridState.SiteStatus.TAKEN:
 			mark = CityMapOverlay.MARK_CROSS
 		# H22: the translated name (TextDb), as on every other screen.
-		var site_label := home_label() if home else TextDb.t(sd, "display_name")
+		var site_label := home_label() if home else SiteText.label(sd)
 		var node := {"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
 			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.CENTRAL_SERVER,
 			"tier": 0 if home else sd.tier,

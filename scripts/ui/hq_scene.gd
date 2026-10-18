@@ -3925,7 +3925,9 @@ func _site_kind_name(id: StringName) -> String:
 	if kind == CityMapOverlay.KIND_HOME:
 		return tr("%s, your home server") % tr(CityLayout.HOME_LABEL)
 	var word := CityMapOverlay.kind_word(kind)  # already translated
-	return tr("%s, a T%d %s") % [site_name(id), sd.tier, word if kind == CityMapOverlay.KIND_TIER else tr("%s Site") % word]
+	if SiteText.is_named(sd):
+		return tr("%s, a T%d %s") % [SiteText.label(sd), sd.tier, word]
+	return tr("a T%d %s") % [sd.tier, word if kind == CityMapOverlay.KIND_TIER else tr("%s Site") % word]
 
 
 ## The glyph the map puts on a Site (objective, tier, CORE).
@@ -4136,7 +4138,7 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var corp_word := CorpPaperPanel.letterhead_of(RunManager.corporation)
 	if corp_word == "":
 		corp_word = TextDb.t(RunManager.corporation, "display_name").to_upper()
-	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), site_name(site.id).to_upper()]
+	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), SiteText.label(site, c.grid.home_site_id).to_upper()]
 	var card := SiteHoloCard.new(c.corporation_id, title, tr(SiteHoloCard.FILE_LINE) % [corp_word, "%03d" % SiteHoloCard.file_number(site.id)])
 	card.set_meta(&"shows", [site.id, int(c.grid.status_of(site.id))])  # ANIM-R3 B6: what refresh_site_card compares
 	var launchable_here := false
@@ -7006,7 +7008,7 @@ func site_name(site_id: StringName) -> String:
 	if c != null and c.grid != null and site_id == c.grid.home_site_id:
 		return tr(HOME_LABEL)
 	var sd := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
-	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
+	return SiteText.tiered(sd, c.grid.home_site_id if c != null and c.grid != null else &"") if sd != null else String(site_id)
 
 
 ## A content id's display name (node types, assets, boosts) through TextDb (H21 #19), else

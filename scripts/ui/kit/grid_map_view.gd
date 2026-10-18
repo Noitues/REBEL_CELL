@@ -97,7 +97,7 @@ static func label_size(base: int) -> int:
 func site_label(s: SiteData, dense: bool) -> String:
 	if campaign != null and s.id == campaign.grid.home_site_id:
 		return CityLayout.home_label()
-	return CityMapOverlay.tier_text(s.tier) if dense else "%s %s" % [CityMapOverlay.tier_text(s.tier), TextDb.t(s, "display_name")]
+	return CityMapOverlay.tier_text(s.tier) if dense else SiteText.tiered(s)
 
 
 func show_grid(p_campaign: CampaignState, p_corp: CorporationData, p_threat_paths: Array[Array] = []) -> void:
@@ -430,7 +430,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 	if sd == null:
 		return tooltip_text
 	var kind := CityLayout.site_kind(campaign, sd)
-	var name_text := CityLayout.home_label() if kind == CityMapOverlay.KIND_HOME else TextDb.t(sd, "display_name")
+	var name_text := CityLayout.home_label() if kind == CityMapOverlay.KIND_HOME else SiteText.label(sd)
 	return UiTip.fold(CityLayout.site_tip(name_text, sd.tier, campaign.grid.status_of(id), kind))
 
 

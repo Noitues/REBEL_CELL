@@ -8695,3 +8695,5 @@ Text-only import of the netrun art spec, handoff README, art decisions, directio
   cannot name an autoload), `schema_check.gd` (JSON Schema subset + `x-unique-by`), `schemas/*.schema.json`.
 - Measured (this machine): run export (net, run_graph, key_locations, derive) 4.7 ms for a 40-Site city; city.json for
   the full city (13,306 buildings, 9.0 MB) about 1.9 s on top of the 1.1 s city build (once per layout seed).
+
+- **W0 SITENAMES (2026-10-18):** Site names removed from player text through `SiteText` (scripts/ui/kit/site_text.gd): `label(site)` is the type word (Site / Exploit / Heat reduction / HOME SERVER), `tiered(site)` prefixes the tier (T2 Site) for lists and paths; only the Central Server Site (HQ building and boss) keeps its name. `SiteData.display_name` stays as data (no schema change). The `site:*` dispatch lines in content/voice lost their leading name sentence (boss lines kept). Known cost: lists of several plain Sites (raid feed, network rows) now read T2 Site; same-tier Sites are told apart only by position and status.

@@ -159,12 +159,12 @@ func test_map_labels_and_tips_use_translated_site_names() -> void:
 	var c := RunManager.campaign
 	var site: SiteData = null
 	for sd in corp.city_grid.sites:
-		if sd != null and sd.id != c.grid.home_site_id:
+		if sd != null and sd.id != c.grid.home_site_id and sd.objective == RC.SiteObjective.NONE:
 			site = sd
 			break
 	_translation = Translation.new()
 	_translation.locale = TEST_LOCALE
-	_translation.add_message(TextDb.key_for(site, "display_name"), "XL_SITE")
+	_translation.add_message("Site", "XL_SITE")
 	TranslationServer.add_translation(_translation)
 	_locale_before = TranslationServer.get_locale()
 	TranslationServer.set_locale(TEST_LOCALE)

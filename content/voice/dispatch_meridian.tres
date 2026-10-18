@@ -108,152 +108,152 @@ text = "We are off the map. Fall back."
 [sub_resource type="Resource" id="l20"]
 script = ExtResource("e1")
 key = "site:m1_a"
-text = "Parcel Sorting Hall. Every package in the district passes its belts. Cut the Rack and the belts stop for a shift."
+text = "Every package in the district passes its belts. Cut the Rack and the belts stop for a shift."
 
 [sub_resource type="Resource" id="l21"]
 script = ExtResource("e1")
 key = "site:m1_b"
-text = "Customs Pre-Clearance. Meridian decides here what gets held. Take the Rack and nothing gets held today."
+text = "Meridian decides here what gets held. Take the Rack and nothing gets held today."
 
 [sub_resource type="Resource" id="l22"]
 script = ExtResource("e1")
 key = "site:m1_c"
-text = "Tracking Beacon Array. It knows where every van is, and where you are. Blind it."
+text = "This Site knows where every van is, and where you are. Blind it."
 
 [sub_resource type="Resource" id="l23"]
 script = ExtResource("e1")
 key = "site:m1_d"
-text = "Returns Processing Center. Where Meridian sends the things it does not want. Including people's claims."
+text = "Where Meridian sends the things it does not want. Including people's claims."
 
 [sub_resource type="Resource" id="l24"]
 script = ExtResource("e1")
 key = "site:m1_e"
-text = "Drone Charging Yard. Four hundred drones on the pad. Take the Rack before they wake."
+text = "Four hundred drones on the pad. Take the Rack before they wake."
 
 [sub_resource type="Resource" id="l25"]
 script = ExtResource("e1")
 key = "site:m1_f"
-text = "Warehouse Shift Planner. It schedules the pickers down to the second. Give them a minute back."
+text = "This Site schedules the pickers down to the second. Give them a minute back."
 
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("e1")
 key = "site:m1_g"
-text = "Address Verification Desk. Meridian decides who is allowed to exist at an address. Correct its records."
+text = "Meridian decides who is allowed to exist at an address. Correct its records."
 
 [sub_resource type="Resource" id="l27"]
 script = ExtResource("e1")
 key = "site:m1_h"
-text = "Cold Chain Monitor. Every vaccine in the city reports here. Keep it cold and take the Rack."
+text = "Every vaccine in the city reports here. Keep it cold and take the Rack."
 
 [sub_resource type="Resource" id="l28"]
 script = ExtResource("e1")
 key = "site:m1_i"
-text = "Tariff Calculation Office. Every fee Meridian charges starts in these tables. Make them round down."
+text = "Every fee Meridian charges starts in these tables. Make them round down."
 
 [sub_resource type="Resource" id="l29"]
 script = ExtResource("e1")
 key = "site:m1_j"
-text = "Fleet Telematics Hub. Speed, stops, driver heart rates. Meridian watches its own. Watch it back."
+text = "Speed, stops, driver heart rates. Meridian watches its own. Watch it back."
 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("e1")
 key = "site:m2_intel"
-text = "Shipping Manifest Vault. Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel."
+text = "Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel."
 
 [sub_resource type="Resource" id="l31"]
 script = ExtResource("e1")
 key = "site:m2_breach"
-text = "Customs Key Authority. The keys that open every sealed container. Take a copy. That is the Breach."
+text = "The keys that open every sealed container. Take a copy. That is the Breach."
 
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("e1")
 key = "site:m2_virus"
-text = "Routing Table Mirror. Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus."
+text = "Meridian's map of the world. Poison it and the Master Manifest reads a lie. That is the Virus."
 
 [sub_resource type="Resource" id="l33"]
 script = ExtResource("e1")
 key = "site:m2_d"
-text = "Priority Lane Exchange. Where the rich buy speed. The Rack pays well."
+text = "Where the rich buy speed. The Rack pays well."
 
 [sub_resource type="Resource" id="l34"]
 script = ExtResource("e1")
 key = "site:m2_e"
-text = "Worker Scoring Engine. It fires people for breathing. Take its Rack, and look for the audit path."
+text = "This Site fires people for breathing. Take its Rack, and look for the audit path."
 
 [sub_resource type="Resource" id="l35"]
 script = ExtResource("e1")
 key = "site:m2_f"
-text = "Port Congestion Model. Meridian creates the queues it charges to skip. Break the model."
+text = "Meridian creates the queues it charges to skip. Break the model."
 
 [sub_resource type="Resource" id="l36"]
 script = ExtResource("e1")
 key = "site:m2_g"
-text = "Last-Mile Drone Command. It tells every drone where to look. Tell it to look away."
+text = "This Site tells every drone where to look. Tell it to look away."
 
 [sub_resource type="Resource" id="l37"]
 script = ExtResource("e1")
 key = "site:m2_h"
-text = "Insurance Claims Ledger. Every lost parcel insured twice. Somebody collects. Take the Rack."
+text = "Every lost parcel insured twice. Somebody collects. Take the Rack."
 
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:m3_core"
-text = "Global Routing Core. One hop from the Master Manifest. Heavy security, heavier Rack."
+text = "One hop from the Master Manifest. Heavy security, heavier Rack."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")
 key = "site:m3_b"
-text = "Freight Futures Desk. Meridian bets on shortages it is about to cause. Take the Rack."
+text = "Meridian bets on shortages it is about to cause. Take the Rack."
 
 [sub_resource type="Resource" id="l40"]
 script = ExtResource("e1")
 key = "site:m3_c"
-text = "Customs Override Escrow. The master keys, in escrow for a very bad day. Today is that day."
+text = "The master keys, in escrow for a very bad day. Today is that day."
 
 [sub_resource type="Resource" id="l41"]
 script = ExtResource("e1")
 key = "site:m3_d"
-text = "Supply Twin Simulator. A copy of the city's supply chain. Meridian rehearses its crises here."
+text = "A copy of the city's supply chain. Meridian rehearses its crises here."
 
 [sub_resource type="Resource" id="l42"]
 script = ExtResource("e1")
 key = "site:m3_e"
-text = "Board Logistics Backbone. The board's own delivery network. Private lanes, private cargo."
+text = "The board's own delivery network. Private lanes, private cargo."
 
 [sub_resource type="Resource" id="l43"]
 script = ExtResource("e1")
 key = "site:m3_f"
-text = "Contract Pricing Authority. Where Meridian decides what a city pays to be fed. Take it."
+text = "Where Meridian decides what a city pays to be fed. Take it."
 
 [sub_resource type="Resource" id="l44"]
 script = ExtResource("e1")
 key = "site:m3_g"
-text = "Surveillance Route Archive. Every drone flight ever flown, including over your safehouse. Burn it."
+text = "Every drone flight ever flown, including over your safehouse. Burn it."
 
 [sub_resource type="Resource" id="l45"]
 script = ExtResource("e1")
 key = "site:m3_h"
-text = "Meridian Root Ledger. The signing keys for every transaction. The Master Manifest trusts it completely."
+text = "The signing keys for every transaction. The Master Manifest trusts it completely."
 
 [sub_resource type="Resource" id="l46"]
 script = ExtResource("e1")
 key = "site:lose_the_tracking"
-text = "Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
+text = "A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
 
 [sub_resource type="Resource" id="l47"]
 script = ExtResource("e1")
 key = "site:forge_the_manifest"
-text = "Forge the Master Manifest. Rewrite the Cell's traffic as routine freight. Heat drops."
+text = "Rewrite the Cell's traffic as routine freight. Heat drops."
 
 [sub_resource type="Resource" id="l48"]
 script = ExtResource("e1")
 key = "site:reroute_the_audit"
-text = "Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else."
+text = "Meridian's auditors are looking at you. Make them look somewhere else."
 
 [sub_resource type="Resource" id="l49"]
 script = ExtResource("e1")
 key = "site:sink_the_cargo_logs"
-text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbor."
+text = "Every log that mentions the Cell, at the bottom of the harbor."
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")

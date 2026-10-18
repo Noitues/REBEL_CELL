@@ -108,152 +108,152 @@ text = "We are off the grid. Fall back."
 [sub_resource type="Resource" id="l20"]
 script = ExtResource("e1")
 key = "site:h1_a"
-text = "Parking Enforcement Office. Every ticket in the city is written here. Take the Rack and the drones stop writing."
+text = "Every ticket in the city is written here. Take the Rack and the drones stop writing."
 
 [sub_resource type="Resource" id="l21"]
 script = ExtResource("e1")
 key = "site:h1_b"
-text = "Water Meter Grid. Halcyon counts every liter. Cut the Rack and the meters read zero for a day."
+text = "Halcyon counts every liter. Cut the Rack and the meters read zero for a day."
 
 [sub_resource type="Resource" id="l22"]
 script = ExtResource("e1")
 key = "site:h1_c"
-text = "Streetlight Mesh. The lights are cameras. The cameras are Halcyon. Dim them."
+text = "The lights are cameras. The cameras are Halcyon. Dim them."
 
 [sub_resource type="Resource" id="l23"]
 script = ExtResource("e1")
 key = "site:h1_d"
-text = "Resident Services Desk. Where complaints go to die. Take the Rack."
+text = "Where complaints go to die. Take the Rack."
 
 [sub_resource type="Resource" id="l24"]
 script = ExtResource("e1")
 key = "site:h1_e"
-text = "Transit Fare Gates. Every commute is a fee. Open the gates."
+text = "Every commute is a fee. Open the gates."
 
 [sub_resource type="Resource" id="l25"]
 script = ExtResource("e1")
 key = "site:h1_f"
-text = "Waste Routing Depot. Halcyon sorts the city's trash, and its secrets. Look for both."
+text = "Halcyon sorts the city's trash, and its secrets. Look for both."
 
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("e1")
 key = "site:h1_g"
-text = "Noise Complaint Registry. Halcyon's excuse to send patrols anywhere. Quiet it."
+text = "Halcyon's excuse to send patrols anywhere. Quiet it."
 
 [sub_resource type="Resource" id="l27"]
 script = ExtResource("e1")
 key = "site:h1_h"
-text = "Permit Queue Server. Four thousand applications, all pending. Take the Rack."
+text = "Four thousand applications, all pending. Take the Rack."
 
 [sub_resource type="Resource" id="l28"]
 script = ExtResource("e1")
 key = "site:h1_i"
-text = "Utility Shutoff Scheduler. It decides whose lights go out tonight. Reschedule it."
+text = "This Site decides whose lights go out tonight. Reschedule it."
 
 [sub_resource type="Resource" id="l29"]
 script = ExtResource("e1")
 key = "site:h1_j"
-text = "Camera Maintenance Yard. Replacement eyes for the city. Look for the audit path."
+text = "Replacement eyes for the city. Look for the audit path."
 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("e1")
 key = "site:h2_intel"
-text = "Council Minutes Archive. Every vote, decided before it was cast. Bring back the Intel."
+text = "Every vote, decided before it was cast. Bring back the Intel."
 
 [sub_resource type="Resource" id="l31"]
 script = ExtResource("e1")
 key = "site:h2_breach"
-text = "Emergency Override Authority. The keys to every valve and signal. Copy them. That is the Breach."
+text = "The keys to every valve and signal. Copy them. That is the Breach."
 
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("e1")
 key = "site:h2_virus"
-text = "Open Data Portal. Halcyon publishes what it wants you to see. Publish the rest. That is the Virus."
+text = "Halcyon publishes what it wants you to see. Publish the rest. That is the Virus."
 
 [sub_resource type="Resource" id="l33"]
 script = ExtResource("e1")
 key = "site:h2_d"
-text = "Predictive Patrol Model. It sends police where it expects crime. Take its Rack."
+text = "This Site sends police where it expects crime. Take its Rack."
 
 [sub_resource type="Resource" id="l34"]
 script = ExtResource("e1")
 key = "site:h2_e"
-text = "Resident Credit Bureau. Everyone has a score. Take the Rack, and look for the pardon path."
+text = "Everyone has a score. Take the Rack, and look for the pardon path."
 
 [sub_resource type="Resource" id="l35"]
 script = ExtResource("e1")
 key = "site:h2_f"
-text = "Water Rights Exchange. The city's water, traded like stock. Take the Rack."
+text = "The city's water, traded like stock. Take the Rack."
 
 [sub_resource type="Resource" id="l36"]
 script = ExtResource("e1")
 key = "site:h2_g"
-text = "Transit Signal Control. Every light, every train, one console. Take it."
+text = "Every light, every train, one console. Take it."
 
 [sub_resource type="Resource" id="l37"]
 script = ExtResource("e1")
 key = "site:h2_h"
-text = "Contract Billing Ledger. Halcyon bills the city for everything, twice. Take the Rack."
+text = "Halcyon bills the city for everything, twice. Take the Rack."
 
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:h3_core"
-text = "Civic Operations Center. One hop from the Panopticon. Heavy security, heavier Rack."
+text = "One hop from the Panopticon. Heavy security, heavier Rack."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")
 key = "site:h3_b"
-text = "Zoning Futures Desk. Halcyon bets on the blocks it is about to rezone. Take the Rack."
+text = "Halcyon bets on the blocks it is about to rezone. Take the Rack."
 
 [sub_resource type="Resource" id="l40"]
 script = ExtResource("e1")
 key = "site:h3_c"
-text = "Override Key Escrow. The master keys to the city. Take them."
+text = "The master keys to the city. Take them."
 
 [sub_resource type="Resource" id="l41"]
 script = ExtResource("e1")
 key = "site:h3_d"
-text = "City Twin Simulator. A copy of the city, where Halcyon rehearses emergencies. Break it."
+text = "A copy of the city, where Halcyon rehearses emergencies. Break it."
 
 [sub_resource type="Resource" id="l42"]
 script = ExtResource("e1")
 key = "site:h3_e"
-text = "Council Backchannel. Where the real votes happen. Listen in, then take the Rack."
+text = "Where the real votes happen. Listen in, then take the Rack."
 
 [sub_resource type="Resource" id="l43"]
 script = ExtResource("e1")
 key = "site:h3_f"
-text = "Municipal Pricing Authority. What the city pays to exist. Take it."
+text = "What the city pays to exist. Take it."
 
 [sub_resource type="Resource" id="l44"]
 script = ExtResource("e1")
 key = "site:h3_g"
-text = "Citizen Profile Archive. A file on every home, including yours. Burn it."
+text = "A file on every home, including yours. Burn it."
 
 [sub_resource type="Resource" id="l45"]
 script = ExtResource("e1")
 key = "site:h3_h"
-text = "Halcyon Root Registry. The keys the Panopticon trusts. Take them."
+text = "The keys the Panopticon trusts. Take them."
 
 [sub_resource type="Resource" id="l46"]
 script = ExtResource("e1")
 key = "site:wipe_the_citations"
-text = "Wipe the Citations. A quiet job: clear the fines that follow the Cell. Heat drops."
+text = "A quiet job: clear the fines that follow the Cell. Heat drops."
 
 [sub_resource type="Resource" id="l47"]
 script = ExtResource("e1")
 key = "site:blind_the_cameras"
-text = "Blind the Cameras. Put the block's cameras to sleep. Heat drops."
+text = "Put the block's cameras to sleep. Heat drops."
 
 [sub_resource type="Resource" id="l48"]
 script = ExtResource("e1")
 key = "site:lose_the_case_file"
-text = "Lose the Case File. Halcyon has a file on the Cell. Misplace it."
+text = "Halcyon has a file on the Cell. Misplace it."
 
 [sub_resource type="Resource" id="l49"]
 script = ExtResource("e1")
 key = "site:pardon_the_district"
-text = "Pardon the District. Clear the records of a whole district, the Cell's included."
+text = "Clear the records of a whole district, the Cell's included."
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
