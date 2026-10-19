@@ -37,6 +37,6 @@ static func site_access(campaign: CampaignState, corp: CorporationData, config: 
 	for s in corp.city_grid.sites:
 		if s != null and (s.links.has(site.id) or (s.locked_links.has(site.id) and campaign.grid.is_link_open(s.id, site.id))):
 			prereqs.append(s.id)
-	prereqs.sort()
+	prereqs.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	out["why"] = WHY_FROM if not prereqs.is_empty() else WHY_FAR
 	return out
