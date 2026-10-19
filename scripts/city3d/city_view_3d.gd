@@ -353,7 +353,7 @@ var _id_hidden: Array[Node] = []
 
 ## NA-23: the id pass of PIPELINE_SPEC 12.0 (PNG capture only): flat unlit class colours (the building material's `id_mode`, the
 ## rooms'), black sky, no fog, glow, tonemap, ink post, veil or ground. `on` false puts everything back. Callers capture between.
-func set_id_pass(on: bool) -> void:
+func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
 	if on == not _id_saved.is_empty():
 		return
 	if on:
@@ -373,7 +373,8 @@ func set_id_pass(on: bool) -> void:
 		_building_mat.set_shader_parameter(&"id_mode", true)
 		_building_mat.set_shader_parameter(&"id_class", 2.0)
 		var hide: Array[Node] = []
-		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"ground"), layer(&"network"), layer(&"landmarks"), layer(&"traffic"), layer(&"sky")]:
+		# NA-ID: `keep_landmarks` leaves the landmarks layer in (IdCapture paints it class 1 / 6).
+		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"ground"), layer(&"network"), layer(&"traffic"), layer(&"sky")] + ([] if keep_landmarks else [layer(&"landmarks")]):
 			if n != null:
 				hide.append(n)
 		for key: Vector2i in _chunks:

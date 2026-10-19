@@ -16,18 +16,14 @@
 ## W1 status (briefs: `docs/handoff/plan2/drafts/briefs_w1/` + README queue rows)
 - Merged: NA-21, NA-22/22b/22c/22d, NA-23, NA-24, NA-25 (+fix), NA-11, NA-11b, NA-04b/c, OCCBAND, OCC-OUTLINE,
   LAMPSHIFT, N8, N9, N20, N6, N7, N12. Replan draft for W2+: `docs/handoff/gates/REPLAN_2026-10-19.md`.
-- NA-26 (street on by default, old route page retired): merge BACKED OUT twice for reds; its agent is fixing 4 tests
-  (pass24 translated twice, pass21_city route tooltips, anim_r5 route move, motion_lab orphaned route_* ids).
 - NA-04d merged (a35b41b0): 12.6 by depth.png, R-REP-1 facade band, drift vs art-pass 7772e6ba = 0 DRIFT (sent to art-pass).
-- Merged 2026-10-19: NA-26 (950d7775), NA-11c (c6785017, W1_NA11 APPROVED); fast tier 2359/0 at c6785017.
-  Worktree agent-af172bbbba0380977 dir was locked at delete: remove it later.
-- Running: NA-23b (span so every room >= 46 px, Meridian seed-1 capacity; Python + twin), NA-23c (lb1 look in
-  DECISION/HOVER, cutaway rooms, lanes, rooms -25 %, closed facade, depth.png), NA-24c (sign core+panel, blade hero
-  signs, district palettes, R-SIL-1/R-HOR-1 canyon numbers for art-pass). NA-25b after NA-23c.
-- Next (art-pass fix lists, ART_REPLIES items 11-13): NA-23b (derive: every room >= 46 px, Meridian seed 1 capacity),
-  NA-23c (NA-22c look in DECISION/HOVER, cutaway rooms, quieter lanes, closed facade for unrevealed rooms, depth.png),
-  NA-24c (sign core+panel, blade hero signs, district palettes table, rooms -25 %), NA-25b (+ blotch fix: wet mask,
-  wash vertical faces only), NA-24b, N12b, NA-ID, CAP-W1, Q19-PREVIEW, MOTION-TIMINGS, RULE5-CMO, NA-12. Then PT-005.
+- Merged 2026-10-19 (all art-pass APPROVED where visual): NA-26, NA-11c, RULE5-CMO, MOTION-TIMINGS, NA-23b (61029e84),
+  CAP-W1/N12b, NA-24c (c983ca7b), NA-23c (fd0c9aa7). DECISION R-REP-1 ~0.62 accepted as warn (art-pass owns the 8 px lag).
+- Running: Q19-PREVIEW (core forecast + "?" chip), NA-25b (blotches, reveal dissolve, jack-out reverses, zoom reuse),
+  NA-24b (lane clock k*T + DECISION R-REP-1 re-measure).
+- Left in W1: NA-ID (after NA-23/NA-04), NA-12 (city generator; Opus lane questioned), then PT-005 automated gate.
+- Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
+  precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
 
 ## Art-pass session
 `local_9bc8d6cd-...` ("Resume Art-Pass"); reads spec from art-pass and re-import text into

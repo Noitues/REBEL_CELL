@@ -2,7 +2,7 @@
 // additive strip. The mesh is a strip along the lane: UV.x = BU along the lane (0 .. lane_len), UV.y = across (-1 .. 1).
 // The lane's streaks come from the derive (dress `streak_lanes[].streaks` = u0, len, gap, bright), as an N x 1 float texture
 // (u0, len, bright) read with texelFetch. Each streak slides by dir * speed * t and wraps on its own, modulo lane_len; the
-// speed is quantized so lane_len = k * speed * loop_s, which makes the lane loop seamlessly on loop_s. The streak's brightness
+// speed is quantized so lane_len = k * speed * loop_s, which makes the lane loop seamlessly on k * loop_s (NA-24b). The streak's brightness
 // rises toward its head: floor + (1 - floor) * f^power.
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, specular_disabled, fog_disabled;
@@ -27,7 +27,10 @@ uniform float look_blend = 1.0;
 const int MAX_STREAKS = 64;
 
 void fragment() {
-	float t = mod(nr_clock(anim_t, anim_t_frozen), loop_s);
+	// NA-24b: the lane repeats after k * loop_s (lane_len = k * speed * loop_s), not after loop_s: with k > 1 the streaks have
+	// moved only lane_len / k at loop_s, so mod(t, loop_s) jumped. Period k * loop_s is continuous for every k.
+	float k = max(1.0, floor(lane_len / max(speed * loop_s, 0.0001) + 0.5));
+	float t = mod(nr_clock(anim_t, anim_t_frozen), k * loop_s);
 	float u = UV.x;
 	float acc = 0.0;
 	for (int i = 0; i < MAX_STREAKS; i++) {

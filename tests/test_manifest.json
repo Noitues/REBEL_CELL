@@ -1389,12 +1389,24 @@
 			"seconds": 25.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_id_capture.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_na23_route_view.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_enemy_listeners.gd": {
 			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_preview_unknown_flow.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_preview_unknown.gd": {
+			"seconds": 3.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_listener_preview.gd": {

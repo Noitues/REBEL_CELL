@@ -1061,6 +1061,10 @@ func play_entry(reverse: bool, beats: Array = EntryBeats.STREET_BEATS) -> void:
 func _set_entry_ui(k: float) -> void:
 	if _panel_host != null and is_instance_valid(_panel_host):
 		_panel_host.modulate.a = k
+	# The page's darkening pools and shadows (UiScrimPools) belong to the page: they go with it (a soft dark rectangle stayed over the
+	# dive back from an end page).
+	if scrim != null and is_instance_valid(scrim):
+		scrim.visible = k > 0.0
 
 
 # --- Panels --------------------------------------------------------------------------

@@ -348,6 +348,10 @@ func test_an_end_page_rebuilds_the_street_to_play_the_dive_backwards() -> void:
 	assert_eq(v.run_state()["current"], String(s.run.current_node_id))
 	assert_true(v.visible)
 	assert_null(_scene.entry_cover, "the reverse ended: no cover is left playing")
+	_scene._set_entry_ui(0.0)
+	assert_false(_scene.scrim.visible, "no page scrim is left over the dive back")
+	_scene._set_entry_ui(1.0)
+	assert_true(_scene.scrim.visible, "and it is back with the page")
 
 
 func test_the_grid_zoom_out_and_in_runs_the_dive_hooks_and_changes_no_state() -> void:

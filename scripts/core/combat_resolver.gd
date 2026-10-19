@@ -385,6 +385,27 @@ func preview(state: CombatState, action: CombatAction, rng: RandomNumberGenerato
 	return apply(state, action, clone_rng(rng))
 
 
+## Plan 2 Q19: the forecast of `action`: its result with every known part exact and each random
+## part (a respin's landing, a RANDOM_NON_NULL pick, a reshuffle) left undecided and listed in
+## `unknowns`. Draws nothing from `rng` and leaves `state` untouched. A play with no random part
+## forecasts exactly what apply() then does (tested over seeded states).
+func forecast(state: CombatState, action: CombatAction, rng: RandomNumberGenerator) -> PreviewResult:
+	var out := PreviewResult.new()
+	var fork := clone_rng(rng)
+	var drawn_from := fork.state
+	var marks: Array = []
+	fx.forecast_marks = marks
+	fx.forecast_in_listener = false
+	out.result = apply(state, action, fork)
+	fx.forecast_marks = null
+	fx.forecast_in_listener = false
+	for m in marks:
+		out.unknowns.append(m)
+	if fork.state != drawn_from and marks.is_empty():
+		out.unknowns.append({"kind": PreviewResult.UNMODELLED, "target": &"", "listener": false})
+	return out
+
+
 ## The End Turn preview: RESOLVE only, on copies. Equals apply(END_TURN).resolved_state.
 func preview_end_turn(state: CombatState, rng: RandomNumberGenerator) -> CombatResult:
 	var result := CombatResult.new()
@@ -864,6 +885,7 @@ func fire_listeners(s: CombatState, trigger: int, info: Dictionary, rng: RandomN
 	var tier := int(info.get("tier", RC.PrecisionTier.PERFECT))
 	var fired := 0
 	_in_listener = true
+	fx.forecast_in_listener = true
 	for c in _listening_enemies(s):
 		for entry in enemy_listeners(c):
 			var l: ListenerData = entry["data"]
@@ -888,6 +910,7 @@ func fire_listeners(s: CombatState, trigger: int, info: Dictionary, rng: RandomN
 				if e != null:
 					fx.apply_effect(s, e, ctx, rng, events)
 	_in_listener = false
+	fx.forecast_in_listener = false
 	return fired
 
 

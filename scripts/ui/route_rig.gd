@@ -37,6 +37,7 @@ var _clock_mats: Array = []
 ## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
 var dressing: StreetDressing = null
 var _anim_t := 0.0
+var _anim_frozen := false
 # The camera move.
 var _from: NetrunPose = null
 var _to: NetrunPose = null
@@ -446,16 +447,7 @@ func set_depth_pass(on: bool) -> void:
 	if on == (_depth_quad != null):
 		return
 	if on:
-		var q := QuadMesh.new()
-		q.size = Vector2(2, 2)
-		_depth_quad = MeshInstance3D.new()
-		_depth_quad.name = "DepthPass"
-		_depth_quad.mesh = q
-		_depth_quad.extra_cull_margin = 16384.0
-		_depth_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		var m := ShaderMaterial.new()
-		m.shader = load("res://shaders/city/route_depth.gdshader")
-		_depth_quad.material_override = m
+		_depth_quad = IdCapture.make_depth_quad()
 		view.camera.add_child(_depth_quad)
 	else:
 		_depth_quad.queue_free()
@@ -582,12 +574,25 @@ func room_box_px(id: String, at: NetrunPose = null) -> Rect2:
 
 # --- Frame loop -------------------------------------------------------------------------------
 
+## The always-alive loops' clock (s).
+func anim_t() -> float:
+	return _anim_t
+
+
+## NA-ID: holds the loops' clock at `t` (on) or lets it run on from `t` (off); the id capture freezes it around a frame.
+func freeze_anim(on: bool, t: float) -> void:
+	_anim_frozen = on
+	_anim_t = t
+	if not _clock_mats.is_empty():
+		NetrunShaderKit.set_clock(_clock_mats, _anim_t, 0.0)
+
+
 func _process(delta: float) -> void:
 	if view == null:
 		return
 	if Vector2i(view.size) != render_px():
 		_resize_view()
-	if not _clock_mats.is_empty():
+	if not _clock_mats.is_empty() and not _anim_frozen:
 		# The always-alive loops (T = loop_s): the clock of the dressing, lanes, beams and fog.
 		_anim_t = fposmod(_anim_t + delta, float(CityShaderConfigData.shipped().streak["loop_s"]))
 		NetrunShaderKit.set_clock(_clock_mats, _anim_t, 0.0)
