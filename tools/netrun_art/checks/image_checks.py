@@ -134,7 +134,9 @@ def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any],
                            depth_bu: Optional[np.ndarray] = None) -> Record:
     """12.6 "Route never occluded", counted by depth (PIPELINE_SPEC 12.0 / 12.6, art-pass `r2_occlusion.py`).
 
-    `ids_rgb` is the id.png as (h, w, 3) float (R class, G room index, B layer); `depth_bu` is depth.png in BU (already
+    `ids_rgb` is the id.png as (h, w, 3) float. Encoding (ours, NA02_FIELDS "id.png encoding"): R = class; G = the 1-based
+    place of the room in the run graph (0 = none); B = layer (the room's layer; 0 elsewhere). Route-column walls are class 2
+    with B = 1 (`cut_layer_min`); occlusion stubs are class 2 with G = 255 (`stub_room`) and B = 0. `depth_bu` is depth.png in BU (already
     divided by `depth_scale`), same size. Per visible route room (class 5 pixels with G > 0) the screen box is grown by
     `grow_px`. A pixel counts when it is an occluder class (city, class 2), inside the grown box, more than `near_bu`
     NEARER than the room front (median depth of the room's own pixels), not a route-column cut surface (class 2 with

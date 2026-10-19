@@ -335,3 +335,10 @@ These close O1-O13 for v1; NA-02 implements them.
 - **Spec and vectors pinned (2026-10-18):** art-pass f4f3f839 (BLOCKERs 1-5), b68f2871 (§3.6 tie-break by bid),
   6a58733c (signed seed rule). `tools/netrun_art/fixtures/na02_vectors.json` now has 14 vectors (3 signed seeds: -1,
   INT64_MIN, -424242, with `layout_seed_signed`); the 11 earlier ones are unchanged.
+
+## id.png encoding (confirmed ours, NA-23b, 2026-10-19)
+`id.png` is the game's ID capture (O11), not the art pass's: **R = class** (0 sky, 1 landmark compound, 2 city, 3 link
+structure, 5 rooms, 6 landmark movers); **G = the 1-based place of the room in the run graph** (0 = none; on class 5 it is
+the room index); **B = layer** (the room's layer; 0 elsewhere). **Route-column walls** are class 2 with **B = 1**;
+**occlusion stubs** are class 2 with **G = 255, B = 0**. `route_occlusion_record` (`checks/image_checks.py`,
+`composition.json` `route_occlusion`: `cut_layer_min` 1, `stub_room` 255) reads exactly this.
