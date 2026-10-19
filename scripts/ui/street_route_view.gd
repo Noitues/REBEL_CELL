@@ -493,6 +493,25 @@ func entry_zoom(u: float) -> void:
 	overlay.mark_dirty()
 
 
+## NA-25b: the Grid / Route toggle's one camera ease at `u` (0 = the Grid's framing, the HQ page pose, 1 = the street DECISION): rooms
+## open, the street's occlusion on, the overlay whole. Without an HQ pose the camera holds the DECISION.
+func entry_toggle(u: float) -> void:
+	var dec: Dictionary = _dec_state
+	var hq := data.hq_pose()
+	overlay.intro = false
+	overlay.reveal_s = overlay.reveal_total
+	overlay.mark_s = Motion.seconds(&"entry_mark")
+	_entry_occlusion(true)
+	rig.set_pose(hq.mix(dec["pose"], NetrunCameraRig.ease(u)) if hq != null else dec["pose"])
+	var want := StreetRouteRules.View.DECISION
+	if want != base_view:
+		base_view = want
+		_sync_toggle()
+		rig.set_occlusion(dec["rec"])
+	_entry_rooms(func(_layer: int) -> float: return 1.0)
+	overlay.mark_dirty()
+
+
 ## The end state of beat 7 (CHOOSE): DECISION on the current room, input back, the overlay whole. The same whether the beats played
 ## or were skipped.
 func entry_end() -> void:

@@ -11,8 +11,9 @@ const PREFIX := "entry_"
 const HQ_BEATS: Array[StringName] = [&"terminal", &"rain", &"collapse"]
 ## The street side's beats (`EntryCover`), in animatic order.
 const STREET_BEATS: Array[StringName] = [&"dive", &"reveal", &"mark", &"mark_hold", &"zoom", &"zoom_settle"]
-## NA-25b: the Grid / Route zoom reuses the dive (D6): the dive to the street OVERVIEW and the ZOOM to DECISION, rooms already open.
-const ZOOM_BEATS: Array[StringName] = [&"dive", &"zoom", &"zoom_settle"]
+## NA-25b (ART_BIBLE 4.1, one camera; only target and zoom change): the Grid / Route toggle is one camera ease between the Grid's framing
+## (the HQ page pose) and the street DECISION, rooms already open: no dive, REVEAL or MARK beats.
+const ZOOM_BEATS: Array[StringName] = [&"toggle"]
 ## The animatic's start of beat 7 (CHOOSE), seconds from the HQ idle's end; with the table above it is the whole entry.
 const SELECT_HOLD := &"entry_select_hold"
 

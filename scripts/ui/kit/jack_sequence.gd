@@ -142,6 +142,14 @@ func _play_link(switch: Callable) -> void:
 			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
 		await get_tree().process_frame
 	terminal.visible = false
+	await _play_wheel(switch)
+
+
+## Beats 4-5 of the LOCKED chain (ART_BIBLE 4.6), shared by the link jack and the street entry: the operative's wheel slaps onto the
+## link's Site end and spins up, the wheel lens swells to cover (the switch runs under it), then opens onto the run.
+func _play_wheel(switch: Callable) -> void:
+	var vp := get_viewport_rect().size
+	var t := 0.0
 	# 4. The wheel slaps onto the link's Site end and spins up.
 	wheel_at = points[points.size() - 1]
 	wheel_r = WHEEL_R * Settings.text_scale
@@ -201,8 +209,8 @@ func _play_link(switch: Callable) -> void:
 
 
 ## NA-25 (PIPELINE_SPEC 10, beats 3a-3c): the terminal types over `entry_terminal`, the rain falls over `entry_rain`, the
-## terminal collapses over `entry_collapse`; the switch then happens under the night sky (the dive covers the load). No wheel,
-## no lens.
+## terminal collapses over `entry_collapse`; then the LOCKED chain goes on (`_play_wheel`): the wheel slaps onto the link, the lens swells
+## and the switch happens under the covering hub, which opens onto the dive.
 func _play_street(switch: Callable) -> void:
 	var lines: PackedStringArray = _text.get_meta(&"lines")
 	var type_s := Motion.seconds_live(&"entry_terminal")
@@ -234,36 +242,76 @@ func _play_street(switch: Callable) -> void:
 			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
 		await get_tree().process_frame
 	terminal.visible = false
-	night = true
-	switched = true
-	queue_redraw()
-	await switch.call()
-	_end()
+	await _play_wheel(switch)
 
 
-## NA-25b (the HQ side of the jack-out, PIPELINE_SPEC 10 backwards): the street entry's HQ beats in reverse. The cover is the night sky
-## while the switch loads the HQ (`switch`), then the CRT comes back on (the collapse reversed: a dot, a line, the whole terminal),
-## the rain rises over the link and the lines untype, and the HQ is left as it was. One press skips to the end (the HQ, no terminal).
+## NA-25b (the HQ side of the jack-out, ART_BIBLE 4.6 backwards): the lens closes over the dive's last frame (the HQ page), the switch
+## loads the HQ under the covering hub, the hub shrinks back to the wheel on the link, the wheel un-slaps, then the CRT comes back on
+## (the collapse reversed), the rain rises and the lines untype. One press skips to the end (the HQ, no terminal).
 func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_begin(link)
 	street = true
 	visible = true
-	night = true
-	switched = true
 	terminal.visible = false
 	_text.visible_characters = -1
+	var vp := get_viewport_rect().size
+	wheel_at = vp * 0.5
+	wheel_r = WHEEL_R * Settings.text_scale
+	var cover_r := vp.length() * 0.5 * LENS_OVERSCAN / HUB_SHARE
+	var spin_s := Motion.seconds_live(&"jack_wheel_spin")
+	var spin_rate := TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
+	var lens_s := Motion.seconds_live(&"jack_lens")
+	var cover_s := lens_s * LENS_COVER_SHARE
+	var open_s := lens_s - cover_s
+	wheel_scale = cover_r / maxf(wheel_r, 1.0)
+	# 1. The lens closes over the street.
+	var t := 0.0
+	while t < open_s and not skipping:
+		t += get_process_delta_time()
+		open_t = 1.0 - clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
+		wheel_turn += spin_rate * get_process_delta_time()
+		queue_redraw()
+		await get_tree().process_frame
+	open_t = -1.0
+	switched = true
 	queue_redraw()
 	await switch.call()
-	night = false
+	if skipping:
+		_end()
+		return
+	# 2. The hub shrinks back to the wheel on the link's Site end.
+	var site_at: Vector2 = points[points.size() - 1]
+	t = 0.0
+	while t < cover_s and not skipping:
+		t += get_process_delta_time()
+		var e := 1.0 - clampf(t / maxf(cover_s, 0.001), 0.0, 1.0)
+		e = e * e
+		wheel_at = site_at.lerp(vp * 0.5, e)
+		wheel_scale = lerpf(1.0, cover_r / maxf(wheel_r, 1.0), e)
+		wheel_turn += spin_rate * get_process_delta_time()
+		queue_redraw()
+		await get_tree().process_frame
+	# 3. The wheel spins down and comes off the link.
+	var off_s := Motion.seconds_live(&"jack_wheel_slap") + spin_s
+	wheel_at = site_at
+	t = 0.0
+	while t < off_s and not skipping:
+		t += get_process_delta_time()
+		wheel_scale = 1.0 - clampf(t / maxf(off_s, 0.001), 0.0, 1.0)
+		wheel_turn += spin_rate * get_process_delta_time()
+		queue_redraw()
+		await get_tree().process_frame
+	wheel_scale = 0.0
 	queue_redraw()
 	if skipping:
 		_end()
 		return
+	# 4. The CRT comes back on, the rain rises, the lines untype.
 	var col_s := Motion.seconds_live(&"entry_collapse")
 	var line_share := clampf(Motion.amplitude(&"entry_collapse"), 0.05, 0.95)
 	terminal.pivot_offset = terminal.size * 0.5
 	terminal.visible = true
-	var t := 0.0
+	t = 0.0
 	while t < col_s and not skipping:
 		t += get_process_delta_time()
 		var u := 1.0 - clampf(t / maxf(col_s, 0.001), 0.0, 1.0)
@@ -355,6 +403,11 @@ func _make_terminal(lines: PackedStringArray) -> void:
 	terminal.position = at.clamp(Vector2.ZERO, (vp - terminal.size).max(Vector2.ZERO))
 
 
+func _process(_delta: float) -> void:
+	if covering():
+		queue_redraw()
+
+
 func _draw() -> void:
 	if night:
 		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Palette.NIGHT_SKY)
@@ -422,5 +475,8 @@ func _draw_wheel() -> void:
 	draw_arc(wheel_at, r, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
 	draw_arc(wheel_at, hub, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
 	if open_t < 0.0:
-		draw_circle(wheel_at, hub, Palette.NIGHT_SKY)
+		# The covering hub is held while the switch loads: not one flat colour. A slow lift toward the ring's cyan breathes through it, so a
+		# held frame is never a flat navy panel (art-pass on the night switch).
+		var breathe := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * 0.004)
+		draw_circle(wheel_at, hub, Palette.NIGHT_SKY.lerp(Palette.NET_CYAN, 0.10 + 0.10 * breathe))
 		draw_arc(wheel_at, hub * 0.8, 0, TAU, 48, Color(Palette.NET_CYAN, 0.5), WHEEL_KEYLINE * k * 0.5)

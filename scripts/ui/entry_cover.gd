@@ -53,7 +53,7 @@ func start(p_view: StreetRouteView, p_reverse: bool = false, beats: Array = Entr
 	_mark_start = 0.0
 	for row in _fwd:
 		var b := StringName(row["beat"])
-		if b == &"mark" or (zoom_only and b == &"zoom"):
+		if b == &"mark" or (zoom_only and b == &"toggle"):
 			_mark_start = float(row["start"])
 	view.entry_begin(zoom_only)
 	ui_changed.emit(0.0)
@@ -126,6 +126,8 @@ func _apply() -> void:
 			view.entry_zoom(u)
 		&"zoom_settle":
 			view.entry_zoom(1.0)
+		&"toggle":
+			view.entry_toggle(u)
 
 
 func _finish(skipped: bool) -> void:
