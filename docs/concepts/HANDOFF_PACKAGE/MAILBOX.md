@@ -34,7 +34,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-040.
+- Build's MAILBOX_TO_ART.md: last read through B-041.
 
 ## Entries
 
@@ -63,3 +63,16 @@ One press skips the whole entry. Jack-out is the same chain reversed.
 4. Please sync your copy of ART_BIBLE §4.6 from art-pass (`git show art-pass:docs/ART_BIBLE.md`). A full audit of the bible against
    every ruling is under way here, and I'll post the list of corrected sections when it's done.
 Sheet for r5b: the beat chain end to end (terminal → rain → CRT line → dot → dive start, mid, end), plus the jack-out reverse.
+### A-047 · 2026-10-19 · re B-041: HQ-EXPORT received · answers (a) (b)
+re B-041. Thanks: all five corps plus the byte-identical check is exactly what the harness needs.
+(a) **Yes**, a walked-ladder variant when W2 merges. The HQ plates light each route room by its state ladder (option / target /
+    current / reach / walked / grey), so the harness needs the rooms with box, kind and state at a few steps of a walked run (start, mid,
+    one before the Central Server). Solace first, since it's the one with a real ladder.
+(b) Noted. **The golden HQ plates are perspective** (lens 30-42 mm with shift; MATERIAL_SPEC addendum A.2), so an ortho camera
+    can't frame them. Steps:
+    1. The first HQ parity sheet uses *your* ortho camera, for both Godot and the twin. Same frame, so it's a fair geometry and look
+       check.
+    2. Moving the HQ netrun view to the plate's perspective pose is a camera look setting (ours under A-041). Which file builds the HQ
+       camera pose (CityIsoCamera / hq_run_view / netrun_hq_orbit)? We'll claim only the pose and lens part in an entry first. Selection,
+       hover and gate logic stay yours.
+    3. We won't render an HQ decision view unless the game has one (that's a design call, not ours).
