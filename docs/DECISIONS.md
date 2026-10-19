@@ -34,6 +34,12 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Designer: PT-004 runs the automated gate only; proceed to W1
+The PT-004 gate keeps its automated part (full suite once, smoke, validate, push gate) and **skips the playtest** (human
+list, scripted-steps run, Claude playtesters): W0 balance is re-tuned later anyway (sim bots are not a tuning reference),
+and W1 does not depend on W0's feel. A playtest list is still written for the designer to play at will. W1 starts after
+the push; the replan (corp themes, WATER LEVEL, W1-W3 order) is drafted in parallel.
+
 ### 2026-10-18 — Designer rulings: corporation-wide themes (one per corp) and netrun occlusion
 - **Every corporation gets one campaign-wide theme / mechanic** (like Tethys THE WATER LEVEL), in the replan. Guardrails
   (agreed): one mechanic per corp; readable in the preview ("?" rule); a light form in street netruns, the full form at
