@@ -33,8 +33,8 @@ func _state(v: CityView3D) -> int:
 
 
 func test_the_class_table_is_the_adopted_one() -> void:
-	assert_eq(IdCaptureClasses.CLASSES, [0, 1, 2, 3, 5, 6] as Array[int])
-	assert_false(IdCaptureClasses.is_written(IdCaptureClasses.RESERVED_GROUND), "class 4 is never written")
+	assert_eq(IdCaptureClasses.CLASSES, [0, 1, 2, 3, 4, 5, 6] as Array[int])
+	assert_true(IdCaptureClasses.is_written(IdCaptureClasses.GROUND), "class 4 (the ground) is written")
 	assert_eq(IdCaptureClasses.room_bytes(3, 2), Vector3i(5, 3, 2), "class 5: G the place in the run graph, B the layer")
 	assert_eq(IdCaptureClasses.bytes(2, IdCaptureClasses.STUB_G, 0), Vector3i(2, 255, 0), "a stub is class 2, G 255, B 0")
 	assert_eq(IdCaptureClasses.bytes(9, 999, -4), Vector3i(9, 255, 0), "bytes clamp")
@@ -49,7 +49,9 @@ func test_class_counts_and_the_written_set() -> void:
 	assert_eq(IdCaptureClasses.count_classes(img), {2: 5, 0: 1, 5: 1, 6: 1})
 	assert_true(IdCaptureClasses.only_written_classes(img))
 	img.set_pixel(3, 1, Color8(4, 0, 0))
-	assert_false(IdCaptureClasses.only_written_classes(img), "a class 4 pixel is not allowed")
+	assert_true(IdCaptureClasses.only_written_classes(img), "a class 4 pixel is allowed")
+	img.set_pixel(3, 1, Color8(7, 0, 0))
+	assert_false(IdCaptureClasses.only_written_classes(img), "a class 7 pixel is not")
 
 
 func test_capture_json_is_canonical() -> void:
@@ -62,6 +64,9 @@ func test_capture_json_is_canonical() -> void:
 	assert_eq(parsed["layout_seed"], "18446744073709551615", "the seed stays a decimal string")
 	assert_eq(parsed["anim_t"], 1.2346, "floats round to 1e-4")
 	assert_eq(parsed["camera"]["position"], [1.0, 2.0, 4.0])
+	assert_true(a.contains("
+ \"anim_t\""), "one-space indent")
+	assert_false(a.contains("	") or a.contains(""), "no tabs, LF only")
 	var keys := a.find("\"anim_t\"") < a.find("\"camera\"") and a.find("\"camera\"") < a.find("\"layout_seed\"") and a.find("\"layout_seed\"") < a.find("\"version\"")
 	assert_true(keys, "keys are sorted")
 
@@ -76,6 +81,8 @@ func test_capture_dict_carries_the_optional_scope_keys_only_when_given() -> void
 	assert_eq(full["kind"], "hq")
 	assert_eq(full["anim_t"], 2.0)
 	assert_true(full["camera"].has("position"))
+	assert_eq(bare["time"], "night" if v.night_share >= 0.5 else "day", "time follows the view's night share")
+	assert_eq(IdCapture.capture_dict(v, 640, 360, {"time": "day"}, 0.0)["time"], "day", "meta time wins")
 
 
 func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restored() -> void:
@@ -88,6 +95,8 @@ func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restore
 	var link := _mesh(v.layer(&"props"))
 	link.add_to_group(IdCaptureClasses.GROUP_LINK)
 	var prop := _mesh(v.layer(&"props"))
+	var floor_part := _mesh(lm)
+	floor_part.add_to_group(IdCaptureClasses.GROUP_GROUND)
 	var before := _state(v)
 	var cap := IdCapture.new(get_tree(), v)
 	cap.begin_id()
@@ -96,6 +105,14 @@ func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restore
 	assert_eq(cls[crane], IdCaptureClasses.MOVER, "a mover under a landmark stays 6")
 	assert_eq(cls[link], IdCaptureClasses.LINK)
 	assert_eq(cls[prop], IdCaptureClasses.CITY, "a loose mesh is city")
+	assert_eq(cls[floor_part], IdCaptureClasses.GROUND, "an id_ground part of a compound is class 4, not 1")
+	var ground_meshes := 0
+	for gm in cls:
+		if cls[gm] == IdCaptureClasses.GROUND:
+			ground_meshes += 1
+	assert_gt(ground_meshes, 1, "the ground itself is drawn as class 4")
+	var lmat := tower.material_override as ShaderMaterial
+	assert_eq(lmat.get_shader_parameter(&"ground_max_y"), IdCaptureClasses.GROUND_MAX_Y, "class 1 draws its parts at grade as 4")
 	var mat := tower.material_override as ShaderMaterial
 	assert_not_null(mat, "the override is in place during the pass")
 	assert_eq((mat.get_shader_parameter(&"id_rgb") as Vector3).x, 1.0)

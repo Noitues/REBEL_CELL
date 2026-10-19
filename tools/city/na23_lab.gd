@@ -10,6 +10,9 @@ extends Control
 ##   --settle=<frames>    frames to wait after a state change (default 90)
 ##   --perf=<frames>      after the shots, time this many frames of the overview and print the GPU / CPU frame ms
 ##   --fog=0|1            fog volume on (default 1)
+##   --plate_dir=<dir>    parity harness (tools/netrun_art/parity_sheet.py): the camera of the overview / decision shot is replaced
+##                        by the plate's pose in <dir>/street_<state>_capture.json: our focus and yaw (street frame) with the plate's
+##                        pitch, dist, lens and shift; --plate_abs=1 uses the plate's world pose as is (Blender world, not this city)
 ## Prints NA23 lines.
 
 const SETTLE_DEFAULT := 90
@@ -120,6 +123,17 @@ func _next() -> void:
 			view.set_base_view(StreetRouteRules.View.DECISION)
 			var opts: Array = _walk["options"]
 			view._set_hover(String(opts[clampi(int(_args.get("hover", "0")), 0, opts.size() - 1)]))
+	if _args.has("plate_dir") and st != "hover":
+		var pj := FileAccess.get_file_as_string("%s/street_%s_capture.json" % [String(_args["plate_dir"]), st])
+		var cam: Variant = (JSON.parse_string(pj) as Dictionary).get("camera", null) if pj != "" else null
+		if cam is Dictionary:
+			var pp := NetrunPose.from_json(cam)
+			if String(_args.get("plate_abs", "0")) != "1":
+				# The plate's world is Blender's own street (art seed 1), not this city: keep OUR focus and yaw (the street frame)
+				# and take the plate's pitch, distance, lens and shift.
+				var ours := view.rig.pose
+				pp = NetrunPose.make(ours.F, ours.yaw, pp.pitch, pp.dist, pp.lens, pp.sx, pp.sy)
+			view.rig.set_pose(pp)
 	_phase = "settle"
 
 
