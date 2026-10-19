@@ -204,3 +204,31 @@ def sheet(corp, names, cols=3, tw_=416, th=234, accent=(200, 200, 210), bg=(10, 
     p = out or os.path.join(STILLS, corp, corp + "_sheet.jpg")
     sh.save(p, quality=88)
     return sh.size
+
+
+def nsmooth(a, valid, r):
+    """Normalised box smoothing of a field that is only defined where `valid` (float64 cumulative sums, edge safe)."""
+    num = np.where(valid, a, 0.0).astype(np.float64)
+    den = valid.astype(np.float64)
+    for ax in (0, 1):
+        for arr in (num, den):
+            pass
+        pad = [(0, 0), (0, 0)]
+        pad[ax] = (r + 1, r)
+        res = []
+        for arr in (num, den):
+            c = np.cumsum(np.pad(arr, pad), axis=ax)
+            n = arr.shape[ax]
+            hi = np.take(c, np.arange(2 * r + 1, 2 * r + 1 + n), axis=ax)
+            lo = np.take(c, np.arange(0, n), axis=ax)
+            res.append(hi - lo)
+        num, den = res
+    return (num / np.maximum(den, 1e-9)).astype(np.float32), den > 0.25 * (2 * r + 1) ** 2
+
+
+def med_cols(v, k):
+    """Running median along a 1D array (window k, odd)."""
+    p = k // 2
+    vp = np.pad(v, (p, p), mode="edge")
+    win = np.lib.stride_tricks.sliding_window_view(vp, k)
+    return np.median(win, axis=1)
