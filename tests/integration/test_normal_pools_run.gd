@@ -59,7 +59,7 @@ func _walk(s: NetrunSession, reload_each: bool = false) -> Array[Dictionary]:
 		var open := s.available_nodes()
 		if open.is_empty():
 			break
-		open.sort()
+		open.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 		var pick := open[0]
 		for id in open:
 			var n := s.run.map.get_node(id)
@@ -107,3 +107,17 @@ func test_same_seed_same_encounters_and_reload_between_fights_changes_nothing() 
 	var c := _walk(_start(31), true)
 	assert_eq(a, b, "same seed, same encounter sequence")
 	assert_eq(a, c, "a save / load after every fight keeps the sequence")
+
+
+## Array.sort() on StringNames orders by interned address, not text, so it changes with what
+## the process loaded earlier (the ORDER-DEPENDENT N22 failure). Rules code sorts ids with
+## sort_custom on String(a) < String(b); this guards the two sites that used a bare sort().
+func test_rules_code_never_sorts_ids_with_a_bare_sort() -> void:
+	for path in ["res://scripts/core/grid_access.gd", "res://scripts/core/netrun_session.gd"]:
+		var text := FileAccess.get_file_as_string(path)
+		assert_false(text.contains("prereqs.sort()"), "%s: prereqs sorts by String" % path)
+		assert_false(text.contains("elites.sort()"), "%s: elites sort by String" % path)
+	var s := _start(31)
+	var open := s.available_nodes()
+	open.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	assert_eq(open, [&"L1N0", &"L1N1", &"L1N2"] as Array[StringName], "text order, whatever was interned first")

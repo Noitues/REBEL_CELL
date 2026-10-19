@@ -1270,7 +1270,7 @@ func _build_pools() -> void:
 		for e in corporation.elites:
 			if e != null:
 				elites.append(e.id)
-		elites.sort()
+		elites.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	var shared_cards: Array = []
 	var class_cards := {}
 	for id in lookup.ids_of_class(&"CardData"):
