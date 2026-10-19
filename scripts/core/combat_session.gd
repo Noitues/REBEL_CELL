@@ -135,6 +135,11 @@ func preview(action: CombatAction) -> CombatResult:
 	return resolver.preview(state, action, rng)
 
 
+## Q19: the forecast of `action` with its random parts marked unknown (draws nothing).
+func forecast(action: CombatAction) -> PreviewResult:
+	return resolver.forecast(state, action, rng)
+
+
 ## Preview of End Turn: the resolved state before the next turn's random respins.
 func preview_end_turn() -> CombatResult:
 	return resolver.preview_end_turn(state, rng)

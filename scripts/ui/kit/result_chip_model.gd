@@ -27,7 +27,7 @@ const SPIN := &"spin"
 const NULL_LAND := &"null_land"
 ## W2-A2: the operative's HP would hit 0 this turn.
 const LETHAL := &"lethal"
-## A random roll (a random card, a respin): the odds are in the tooltip, never the roll (GDD 2.10).
+## A random part (a random card, a respin; Q19): only "?" is shown, never the roll, a range or the odds.
 const ODDS := &"odds"
 ## Plan 2 R3: what a phase floor stopped of this wheel's losses ("PARKED −N").
 const PARKED := &"parked"
@@ -206,7 +206,7 @@ static func label(c: Dictionary) -> String:
 		CLEARS:
 			return "×%s" % Palette.STATUS_GLYPHS.get(int(c["status"]), "?")
 		ODDS:
-			return "?"
+			return String(c.get("subject", "?"))
 		PARKED:
 			return String(TranslationServer.translate("PARKED −%d")) % v
 		HP_LINE:
@@ -249,7 +249,7 @@ static func words(c: Dictionary) -> String:
 		CLEARS:
 			return String(TranslationServer.translate("CLEARS %s")) % String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(c["status"]), ""))))
 		ODDS:
-			return String(TranslationServer.translate("A random roll: the odds are in the breakdown"))
+			return String(TranslationServer.translate("A random result: shown as ? until you play it"))
 		PARKED:
 			return String(TranslationServer.translate("%d damage parked at the phase line: it is lost, and the next phase starts after this turn")) % v
 		HP_LINE:
@@ -267,8 +267,23 @@ static func words(c: Dictionary) -> String:
 
 
 ## The chip a random roll shows (its odds go in the breakdown).
-static func odds_chip() -> Dictionary:
-	return {"kind": ODDS, "value": 0, "icon": "", "good": false}
+static func odds_chip(subject: String = "") -> Dictionary:
+	return {"kind": ODDS, "value": 0, "icon": "", "good": false, "subject": subject if subject != "" else "?"}
+
+
+## Q19 (art-pass r2): the "?" chip names what is unknown: "? LANDING" (a respin), "? <glyph> <status>"
+## (a random slice for a known status), "? STATUS" (the kind itself is random), "? SLICE" (any other pick).
+static func unknown_chip(kind: StringName, status: int = RC.Status.NONE) -> Dictionary:
+	if kind == PreviewResult.RESPIN:
+		return odds_chip(String(TranslationServer.translate("? LANDING")))
+	if kind == PreviewResult.RANDOM_SLICE:
+		if status != RC.Status.NONE:
+			var word := String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, ""))))
+			return odds_chip(String(TranslationServer.translate("? %s %s")) % [Palette.STATUS_GLYPHS.get(status, ""), word])
+		return odds_chip(String(TranslationServer.translate("? SLICE")))
+	if kind == PreviewResult.RESHUFFLE:
+		return odds_chip(String(TranslationServer.translate("? DRAW")))
+	return odds_chip(String(TranslationServer.translate("? STATUS")))
 
 
 static func _sorted_keys(d: Dictionary) -> Array:
