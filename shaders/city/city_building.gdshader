@@ -120,6 +120,9 @@ const int ROOM_MAX = 32;
 uniform int room_n = 0;
 uniform vec4 room_box[32];
 uniform vec2 room_z[32];
+// NA-25b: how far each room's window has dissolved open, 0 = the closed facade, 1 = the window cut; between, a Bayer 4 x 4 share of
+// the window's pixels is cut (the REVEAL's facade dissolve; the room mesh behind it comes up with the same share).
+uniform float room_open[32];
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -196,7 +199,9 @@ void fragment() {
 			vec4 bx = room_box[i];
 			vec2 zr = room_z[i];
 			if (pw.x > bx.x && pw.x < bx.z && pw.y > bx.y && pw.y < bx.w && pw.z > zr.x && pw.z < zr.y) {
-				discard;
+				if (room_open[i] >= 0.999 || float(bayer4(ivec2(FRAGCOORD.xy))) + 0.5 < room_open[i] * 16.0) {
+					discard;
+				}
 			}
 		}
 	}

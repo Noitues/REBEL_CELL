@@ -277,3 +277,101 @@ func test_the_street_look_is_set_on_the_route_street_only() -> void:
 	var lane := v.rig.view.lane_material()
 	assert_true(lane.shader.resource_path.ends_with("route_lane.gdshader"), "the lane lines are the quiet route lane")
 	assert_almost_eq(float(lane.get_shader_parameter(&"lane_sat")), float(look["lane"]["sat"]), 0.0001, "desaturated lane lines")
+
+
+# --- NA-25b: the facade dissolve ------------------------------------------------------------------------------
+
+func test_a_room_dissolves_open_by_a_share_and_lands_on_the_same_end_state() -> void:
+	var v := _view()
+	var id: String = v.rig.room_ids()[0]
+	var bm := v.rig.view.building_material()
+	v.rig.set_room_dissolve(id, 0.0)
+	assert_false(v.rig.room_is_open(id), "0: the closed facade, the room hidden")
+	assert_almost_eq(v.rig.room_dissolve_of(id), 0.0, 0.0001)
+	v.rig.set_room_dissolve(id, 0.4)
+	assert_true(v.rig.room_is_open(id), "between: the room shows through the dissolving wall")
+	assert_almost_eq(v.rig.room_dissolve_of(id), 0.4, 0.0001)
+	var opens: PackedFloat32Array = bm.get_shader_parameter(&"room_open")
+	var slots := 0
+	for k in opens:
+		if k > 0.39 and k < 0.41:
+			slots += 1
+	assert_eq(slots, 1, "the shader reads the share for that one room's slot")
+	v.rig.set_room_dissolve(id, 1.0)
+	var open_state := [v.rig.room_is_open(id), v.rig.room_dissolve_of(id), _open_window_count(v)]
+	v.rig.set_room_dissolve(id, 0.0)
+	v.rig.set_room_open(id, true)
+	assert_eq([v.rig.room_is_open(id), v.rig.room_dissolve_of(id), _open_window_count(v)], open_state, "set_room_open(true) is dissolve 1: one end state")
+	v.rig.set_room_dissolve(id, 7.0)
+	assert_almost_eq(v.rig.room_dissolve_of(id), 1.0, 0.0001, "the share is clamped")
+
+
+func test_the_reveal_dissolves_each_layer_by_its_timeline_share() -> void:
+	var live_before := Motion.force_live
+	Motion.force_live = true  # headless takes every beat as 0 s; the share needs the beat's real length
+	var v := _view()
+	var layers := int(v.data.run_graph["layers"])
+	var total := Motion.seconds(&"entry_reveal")
+	var s := EntryBeats.layer_times(1, layers, total)
+	v.entry_begin()
+	var first: String = ""
+	for id: String in v.rig.room_ids():
+		if StreetRouteRules.layer_of(v.data.run_graph, id) == 1:
+			first = id
+			break
+	assert_ne(first, "")
+	v.entry_reveal(float(s["up_start"]) + (float(s["up_end"]) - float(s["up_start"])) * 0.5, total)
+	var half := v.rig.room_dissolve_of(first)
+	assert_gt(half, 0.0, "mid-rise the facade is partly dissolved")
+	assert_lt(half, 1.0)
+	v.entry_reveal(total, total)
+	assert_almost_eq(v.rig.room_dissolve_of(first), 1.0, 0.0001, "the end of the beat has it whole")
+	v.entry_end()
+	assert_almost_eq(v.rig.room_dissolve_of(first), 1.0, 0.0001, "and the entry's end state keeps it")
+	Motion.force_live = live_before
+
+
+# --- NA-25b: the jack-out from an end-of-run page, the zoom reusing the dive -------------------------------------
+
+func test_an_end_page_rebuilds_the_street_to_play_the_dive_backwards() -> void:
+	# Headless nothing animates, so the page never starts the reverse itself; the rebuild must still work on a run with no options.
+	assert_false(_scene._street_reverse_possible(), "headless: no dive to play")
+	var s := RunManager.netrun
+	var old: StreetRouteView = _scene.street_view
+	old.queue_free()
+	_scene.street_view = null
+	await get_tree().process_frame
+	await _scene._street_reverse_from_page()
+	var v: StreetRouteView = _scene.street_view
+	assert_not_null(v, "the street is rebuilt behind the page")
+	assert_eq((v.run_state()["options"] as Array).size(), 0, "an end page has no options")
+	assert_eq(v.run_state()["current"], String(s.run.current_node_id))
+	assert_true(v.visible)
+	assert_null(_scene.entry_cover, "the reverse ended: no cover is left playing")
+
+
+func test_the_grid_zoom_out_and_in_runs_the_dive_hooks_and_changes_no_state() -> void:
+	var s := RunManager.netrun
+	var before := s.state_hash()
+	await _scene._zoom_out_to_grid()
+	assert_true(_scene._grid_zoomed, "the zoom out ends on the Grid page")
+	var back := _scene._panel.find_child("GridZoom", true, false) as Button
+	back.pressed.emit()
+	assert_false(_scene._grid_zoomed)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_false(_scene._zoom_in_wanted, "the request is spent")
+	assert_not_null(_scene.street_view, "the way back down is the street page again")
+	assert_false(_scene.street_view.entry_active, "the dive ended on the DECISION state")
+	assert_eq(_scene.street_view.current_view(), StreetRouteRules.View.DECISION)
+	assert_eq(s.state_hash(), before, "a zoom is a view")
+
+
+func test_a_street_jack_out_ends_on_the_hq_through_the_street_link() -> void:
+	# Headless Fx.jack_out_link falls back to the plain jack-out: the switch runs once, at once.
+	var hit := [0]
+	await Fx.jack_out_link(func() -> void: hit[0] += 1, {"street": true, "from": "A", "to": "B"}, "HQ")
+	assert_eq(hit[0], 1, "the switch ran")
+	RunManager.street_link = {"street": true}
+	RunManager.reset()
+	assert_true(RunManager.street_link.is_empty(), "a new campaign forgets the last jack's link")

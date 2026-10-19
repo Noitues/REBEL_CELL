@@ -942,7 +942,10 @@ func prebake_run_end() -> String:
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
-	# NA-25: the dive starts on a drawn street, so a street entry waits for its city.
+	# NA-25: the dive starts on a drawn street, so a street entry waits for its city. NA-25b: that includes the street page not being up yet
+	# (the city's chunks only start to build with it: the dive used to start with 64 of them pending, 12 frames of 125 ms).
+	if _entry_wanted and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP and RunManager.netrun.run.kind != "boss" 			and not _grid_zoomed:
+		return false
 	if street_view != null and is_instance_valid(street_view) and street_view.rig != null and not street_view.rig.is_prepared():
 		return false
 	var city: NeonCity = background.city if background != null else null
@@ -958,8 +961,15 @@ func finish_run() -> void:
 	# ANIM-R1 M1: a second press during the jack out asks nothing again.
 	if RunManager.scene_change_pending():
 		return
+	# NA-25b: the jack-out reverses from the end-of-run pages too (the street dive backwards, then the HQ side's CRT).
+	var street_back := false
+	if _street_reverse_possible():
+		await _street_reverse_from_page()
+		street_back = true
+		if not is_inside_tree():
+			return
 	RunManager.clear_run()
-	RunManager.go_to_hq()
+	RunManager.go_to_hq(street_back)
 	_show_start()
 
 
@@ -979,17 +989,57 @@ func save_and_quit() -> void:
 	RunManager.autosave()
 	_log.append_text(tr("Saved.") + "\n")
 	# NA-25: leaving from the street page plays the entry backwards (the dive back to the HQ page), then the HQ.
+	var street_back := false
 	if street_view != null and is_instance_valid(street_view) and not (entry_cover != null and entry_cover.playing):
 		await play_entry(true)
+		street_back = true
 		if not is_inside_tree():
 			return
-	RunManager.go_to_hq()
+	RunManager.go_to_hq(street_back)
 	_show_start()
+
+
+## NA-25b: true when a jack-out from a page without a street view (the end-of-run pages) can still play the dive backwards: the run's
+## street was derived this session, the entry animates (not headless, reduce effects or switched off) and a run is there to leave.
+func _street_reverse_possible() -> bool:
+	return street_route and _street_data != null and _street_data.error == "" and RunManager.netrun != null 			and (street_view == null or not is_instance_valid(street_view)) and not Settings.reduce_effects 			and DisplayServer.get_name() != "headless" and Motion.live(&"entry_dive") and CityView3D.can_render()
+
+
+## NA-25b: the street view rebuilt behind an end-of-run page (the run's last room, no options), then the entry played backwards over it.
+## The page fades out with the markers (`_set_entry_ui`). A view that never prepares (bounded wait) is dropped and the jack-out goes on.
+func _street_reverse_from_page() -> void:
+	var s := RunManager.netrun
+	var visited: Array = []
+	for id in s.run.visited:
+		visited.append(String(id))
+	var cfg := CityView3D.CONFIG
+	street_view = StreetRouteView.new()
+	street_view.name = "StreetRoute"
+	street_view.visible = false
+	background.add_child(street_view)
+	street_view.setup(_street_data, CityModel.shared(cfg, cfg.city_seed), String(s.run.current_node_id), visited, [])
+	await _wait_street_ready()
+	if street_view == null or not is_instance_valid(street_view):
+		return
+	street_view.visible = true
+	await play_entry(true)
+
+
+## Waits (bounded, a frame at a time) until the street view's city is drawn.
+func _wait_street_ready() -> void:
+	var left := STREET_READY_FRAMES
+	while left > 0 and street_view != null and is_instance_valid(street_view) and street_view.rig != null and not street_view.rig.is_prepared():
+		left -= 1
+		await get_tree().process_frame
+
+
+## The most frames a street view's city is waited for before the zoom or the jack-out goes on without it.
+const STREET_READY_FRAMES := 600
 
 
 ## NA-25 (PIPELINE_SPEC 10): plays the street entry over the street view (`reverse`: the jack-out) and returns when it has ended
 ## (played or skipped; at once when no beat animates). The route UI comes in with the markers.
-func play_entry(reverse: bool) -> void:
+func play_entry(reverse: bool, beats: Array = EntryBeats.STREET_BEATS) -> void:
 	if street_view == null or not is_instance_valid(street_view):
 		return
 	if entry_cover != null and is_instance_valid(entry_cover):
@@ -998,7 +1048,7 @@ func play_entry(reverse: bool) -> void:
 	entry_cover = cover
 	street_view.add_child(cover)
 	cover.ui_changed.connect(_set_entry_ui)
-	cover.start(street_view, reverse)
+	cover.start(street_view, reverse, beats)
 	if cover.playing:
 		await cover.entry_finished
 	if entry_cover == cover:
@@ -1514,6 +1564,7 @@ func _show_map() -> void:
 	if street_route and s != null and _street_map_ok(s):
 		_show_street_map(s)
 		return
+	_entry_wanted = false  # no street to dive into: the ROUTE window page
 	# The route on the city in blueprint, zoomed into the target Site's neighbourhood;
 	# GRID VIEW zooms out to the whole campaign Grid (greyed city). `map_view` stays as the
 	# route model (hidden): pad keys and clicks go through it as before.
@@ -1559,6 +1610,8 @@ func _show_map() -> void:
 	_route_confirm = null
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
+		# NA-25b: the way back down to the street plays the dive (the street page's view is built anew and plays it once drawn).
+		_zoom_in_wanted = not _grid_zoomed and street_route and _street_data != null and _street_data.error == ""
 		_show_map())
 	zoom_btn.name = "GridZoom"
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
@@ -1596,6 +1649,35 @@ func _show_map() -> void:
 
 var _street_data: StreetRouteData = null
 var _street_key := ""
+## NA-25b: the next street page plays the zoom's dive (the way down from the City Grid).
+var _zoom_in_wanted := false
+
+
+## NA-25b (D6): the street's GRID VIEW zooms out by playing the dive backwards to the Grid's framing, then shows the Grid page.
+func _zoom_out_to_grid() -> void:
+	if street_view != null and is_instance_valid(street_view) and not (entry_cover != null and entry_cover.playing):
+		await play_entry(true, EntryBeats.ZOOM_BEATS)
+		_set_entry_ui(1.0)
+		if not is_inside_tree():
+			return
+	_grid_zoomed = true
+	_show_map()
+
+
+## NA-25: the first entry plays once the street's city is drawn (the jack's cover waits for it: `arrival_ready`), so no beat of the dive
+## is spent under the cover or on a city that is still building.
+func _play_entry_when_ready() -> void:
+	await _wait_street_ready()
+	_entry_wanted = false
+	if street_view != null and is_instance_valid(street_view):
+		play_entry(false)
+
+
+## NA-25b (D6): the way back down plays the dive forward over the street, once its city is drawn.
+func _zoom_in_from_grid() -> void:
+	await _wait_street_ready()
+	if street_view != null and is_instance_valid(street_view):
+		await play_entry(false, EntryBeats.ZOOM_BEATS)
 
 const STREET_PROMPT := "PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW." # TR
 const STREET_PROMPT_TIP := "Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange." # TR
@@ -1655,9 +1737,7 @@ func _show_street_map(s: NetrunSession) -> void:
 	_route_confirm.name = "RouteConfirm"
 	_route_confirm.disabled = true
 	win.body.add_child(_route_confirm)
-	var zoom_btn := _button(tr("GRID VIEW"), func() -> void:
-		_grid_zoomed = true
-		_show_map())
+	var zoom_btn := _button(tr("GRID VIEW"), _zoom_out_to_grid)
 	zoom_btn.name = "GridZoom"
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid."))
 	IconMark.attach(zoom_btn, StatIcon.MAP)
@@ -1707,8 +1787,10 @@ func _show_street_map(s: NetrunSession) -> void:
 			_route_selected = StringName(id)
 			confirm_route_node())
 		if _entry_wanted:
-			_entry_wanted = false
-			play_entry(false)
+			_play_entry_when_ready()
+		elif _zoom_in_wanted:
+			_zoom_in_wanted = false
+			_zoom_in_from_grid()
 	else:
 		street_view.set_run_state(current, visited, options)
 	route_legend.show_links_hovered.connect(func(on: bool) -> void:
