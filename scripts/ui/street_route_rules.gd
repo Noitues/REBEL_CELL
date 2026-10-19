@@ -138,3 +138,30 @@ static func arrow_on(share: float, was_on: bool, switch_share: float, hysteresis
 	if was_on:
 		return share <= switch_share + hysteresis
 	return share <= switch_share - hysteresis
+
+
+## Where the red TARGET pencil word sits (A-025: the pencil is never cut by the frame). The word's baseline starts up and to
+## the right of the circle at `c` (radius `rr`); when its padded box would leave `frame` (the safe frame, same space as `c`) it
+## flips to the circle's left; a last clamp keeps it inside whatever the camera does. `size` is the word's size, `pad` the
+## room kept for its tilt. Returns `{"baseline": Vector2, "rect": Rect2 (padded), "flipped": bool}`.
+static func target_word_place(c: Vector2, rr: float, size: Vector2, pad: float, frame: Rect2) -> Dictionary:
+	var by := c.y - rr * 0.95
+	var x := c.x + rr * 0.7
+	var flipped := false
+	var rect := Rect2(Vector2(x, by - size.y), size).grow(pad)
+	if rect.end.x > frame.end.x:
+		flipped = true
+		x = c.x - rr * 0.7 - size.x
+		rect = Rect2(Vector2(x, by - size.y), size).grow(pad)
+	var dx := 0.0
+	var dy := 0.0
+	if rect.position.x < frame.position.x:
+		dx = frame.position.x - rect.position.x
+	elif rect.end.x > frame.end.x:
+		dx = frame.end.x - rect.end.x
+	if rect.position.y < frame.position.y:
+		dy = frame.position.y - rect.position.y
+	elif rect.end.y > frame.end.y:
+		dy = frame.end.y - rect.end.y
+	rect.position += Vector2(dx, dy)
+	return {"baseline": Vector2(x + dx, by + dy), "rect": rect, "flipped": flipped}

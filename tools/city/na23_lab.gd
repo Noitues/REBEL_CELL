@@ -10,6 +10,7 @@ extends Control
 ##   --settle=<frames>    frames to wait after a state change (default 90)
 ##   --perf=<frames>      after the shots, time this many frames of the overview and print the GPU / CPU frame ms
 ##   --fog=0|1            fog volume on (default 1)
+##   --export=<dir>       writes city.json, net.json, run_graph.json and derive_street.json of the street (STREET-CAM, plate inputs)
 ##   --plate_dir=<dir>    parity harness (tools/netrun_art/parity_sheet.py): the camera of the overview / decision shot is replaced
 ##                        by the plate's pose in <dir>/street_<state>_capture.json: our focus and yaw (street frame) with the plate's
 ##                        pitch, dist, lens and shift; --plate_abs=1 uses the plate's world pose as is (Blender world, not this city)
@@ -50,6 +51,8 @@ func _ready() -> void:
 	if _data.error != "":
 		get_tree().quit(1)
 		return
+	if _args.has("export"):
+		_export_contract(String(_args["export"]))
 	var walks := NetrunPoseBuilder.fixture_walks(_data.run_graph)
 	var w := String(_args.get("walk", "none"))
 	if w != "none" and walks.has(w) and not (walks[w] as Array).is_empty():
@@ -81,6 +84,18 @@ func _ready() -> void:
 	if _args.has("exposure"):
 		view.rig.view.environment().tonemap_exposure = float(_args["exposure"])
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
+
+
+## STREET-CAM: writes the street derive's inputs and output as contract text into `dir` (city.json, net.json, run_graph.json,
+## derive_street.json), the files art-pass re-renders the plates from.
+func _export_contract(dir: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	var files := {"city.json": _data.city, "net.json": _data.net, "run_graph.json": _data.run_graph, "derive_street.json": _data.derive}
+	for fn: String in files:
+		var f := FileAccess.open("%s/%s" % [dir, fn], FileAccess.WRITE)
+		f.store_string(NetrunArtExport.canonical(files[fn]))
+		f.close()
+	print("NA23 exported ", dir)
 
 
 func _on_ready() -> void:
