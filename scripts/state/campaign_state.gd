@@ -9,6 +9,10 @@ enum Outcome { NONE, WON, LOST, ABANDONED }
 
 var corporation_id: StringName = &"solace"
 var campaign_seed: int = 0
+## Plan 2 NA-12: the campaign's city (CityPlan.for_seed), set once at campaign start from the
+## campaign seed (CampaignRules.city_seed_for) and saved as a u64 decimal string; 0 = the fixed
+## city. Its own field so a "reroll city" can set another without a save-format change.
+var city_seed: int = 0
 var heat: int = 0
 var schematics: int = 0
 var roster: Array[OperativeState] = []
@@ -54,6 +58,10 @@ var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
 var last_raid: Dictionary = {}
 var outcome: int = Outcome.NONE
+## Plan 2 WH-02: the corporation themes' campaign and raid fields (CampaignThemeState). Saved
+## as "corp_theme" only when a field is not default, so older saves load it as defaults and a
+## campaign without theme data hashes as before.
+var corp_theme: CampaignThemeState = CampaignThemeState.new()
 
 
 func is_over() -> bool:
@@ -162,8 +170,9 @@ func _raw_dict() -> Dictionary:
 	var armory_out := []
 	for a in armory:
 		armory_out.append(String(a))
-	return {
+	var out := {
 		"corporation_id": String(corporation_id), "campaign_seed": str(campaign_seed),
+		"city_seed": ArtSeed.u64_str(city_seed),
 		"heat": heat, "schematics": schematics, "roster": ops, "armory": armory_out,
 		"exploits": exploits.duplicate(), "runs_started": runs_started, "runs_completed": runs_completed,
 		"deaths": deaths, "next_operative_number": next_operative_number,
@@ -177,12 +186,17 @@ func _raw_dict() -> Dictionary:
 		"raids_won": raids_won, "raids_lost": raids_lost,
 		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
+	var theme := corp_theme.to_dict()
+	if not theme.is_empty():  # absent at defaults: campaigns without theme data hash as before WH-02
+		out["corp_theme"] = theme
+	return out
 
 
 static func from_dict(d: Dictionary) -> CampaignState:
 	var c := CampaignState.new()
 	c.corporation_id = StringName(String(d.get("corporation_id", "solace")))
 	c.campaign_seed = int(String(d.get("campaign_seed", "0")))
+	c.city_seed = ArtSeed.u64_from_str(String(d.get("city_seed", "0")))
 	c.heat = int(d.get("heat", 0))
 	c.schematics = int(d.get("schematics", 0))
 	for od in d.get("roster", []):
@@ -219,6 +233,9 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	c.raids_lost = int(d.get("raids_lost", 0))
 	c.last_raid = d.get("last_raid", {}).duplicate(true)
 	c.outcome = int(d.get("outcome", Outcome.NONE))
+	var theme: Variant = d.get("corp_theme", {})
+	if theme is Dictionary:
+		c.corp_theme.load_dict(theme)
 	return c
 
 

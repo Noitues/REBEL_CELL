@@ -75,8 +75,8 @@ func test_a_replay_file_reloads_and_replays_to_the_same_result_hash() -> void:
 
 
 func test_a_save_of_an_older_version_is_refused_without_a_crash() -> void:
-	assert_eq(SaveServiceScript.SAVE_VERSION, 4, "N8 bumped it to 3 (status stacks), N12 to 4 (slot sizes); nothing before v2 migrates")
-	assert_eq(_saves._migrations.keys(), [2, 3], "the v2 -> v3 step (N8) and v3 -> v4 (N12)")
+	assert_eq(SaveServiceScript.SAVE_VERSION, 5, "N8 bumped it to 3 (status stacks), N12 to 4 (slot sizes), NA-12 to 5 (city seed); nothing before v2 migrates")
+	assert_eq(_saves._migrations.keys(), [2, 3, 4], "the v2 -> v3 step (N8), v3 -> v4 (N12) and v4 -> v5 (NA-12)")
 	var slot := "gut_old_%d" % OS.get_process_id()
 	var path := SaveService.campaign_path(slot)
 	assert_eq(SaveService.ensure_dir(path.get_base_dir()), OK)

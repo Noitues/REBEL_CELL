@@ -40,18 +40,22 @@ func _init() -> void:
 
 
 ## Plays the entry over `p_view` (`p_reverse`: the jack-out, ending on the HQ select state). Ends at once when no beat animates.
-func start(p_view: StreetRouteView, p_reverse: bool = false) -> void:
+## `beats` is the street timeline (`EntryBeats.STREET_BEATS`) or the zoom's (`EntryBeats.ZOOM_BEATS`, NA-25b: the Grid / Route zoom
+## reuses the dive over rooms that are already open, with no select hold on the way out).
+func start(p_view: StreetRouteView, p_reverse: bool = false, beats: Array = EntryBeats.STREET_BEATS) -> void:
 	view = p_view
 	reverse = p_reverse
-	_fwd = EntryBeats.table(EntryBeats.STREET_BEATS)
+	_fwd = EntryBeats.table(beats)
 	_total = EntryBeats.total(_fwd)
-	_hold = EntryBeats.beat_seconds(&"select_hold") if reverse else 0.0
+	var zoom_only := not beats.has(&"reveal")
+	_hold = EntryBeats.beat_seconds(&"select_hold") if reverse and not zoom_only else 0.0
 	_t = 0.0
 	_mark_start = 0.0
 	for row in _fwd:
-		if StringName(row["beat"]) == &"mark":
+		var b := StringName(row["beat"])
+		if b == &"mark" or (zoom_only and b == &"toggle"):
 			_mark_start = float(row["start"])
-	view.entry_begin()
+	view.entry_begin(zoom_only)
 	ui_changed.emit(0.0)
 	if _total + _hold <= 0.0:
 		_finish(false)
@@ -122,6 +126,8 @@ func _apply() -> void:
 			view.entry_zoom(u)
 		&"zoom_settle":
 			view.entry_zoom(1.0)
+		&"toggle":
+			view.entry_toggle(u)
 
 
 func _finish(skipped: bool) -> void:

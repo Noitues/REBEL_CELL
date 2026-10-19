@@ -179,7 +179,13 @@ func layout_rules_job() -> Dictionary:
 		var c := reg.call("get_content", cid) as CorporationData
 		if c != null and c.city_grid != null:
 			corps.append(c)
-	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
+	var plan := CityPlan.for_seed(city_seed)  # NA-12: this model's city, not the running campaign's
+	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan))
+
+
+## NA-12 r2: the optional `city.json` sections of this model's city (`coast`, `terrain`; {} for the fixed city).
+func city_sections() -> Dictionary:
+	return CityPlan.for_seed(city_seed).city_sections(cfg.lot_bu, cfg.district_centre)
 
 
 ## One recorded extrusion (lots, height px) as a world prism.

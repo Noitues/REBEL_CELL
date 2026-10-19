@@ -42,7 +42,8 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 		# the frontage set on the plain geometry
 		var city := NetrunArtExport.city_json(plain.city_seed, _cfg.lot_bu, _cfg.district_centre, plain.prisms, plain.streets,
 			plain.plazas, plain.hqs)
-		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
+		var plan_s := CityPlan.for_seed(s)  # NA-12: the seed's own city (the rules use it), not the running campaign's
+		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan_s))
 		var bases := NetrunArtLayout.merged_buildings(city)
 		var front := {}
 		for link: Dictionary in NetrunArtLayoutRules.links_of(net, "all"):
@@ -105,7 +106,8 @@ func test_hq_zone_cap_and_spike_exemption_at_three_seeds() -> void:
 		assert_gt(in_zone, 0, "seed %d: buildings stand in the HQ zone" % s)
 		assert_eq(over, [], "seed %d: zone buildings above the cap" % s)
 		# spikes: the stats of the pass on the plain city
-		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
+		var plan_s := CityPlan.for_seed(s)  # NA-12: the seed's own city (the rules use it), not the running campaign's
+		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan_s))
 		var st := {}
 		NetrunArtLayoutRules.apply_rules(before, net, {}, "all", st)
 		assert_between(int(st.get("spikes", 0)), 0, spikes_max, "seed %d: spikes" % s)

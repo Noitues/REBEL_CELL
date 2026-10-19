@@ -71,6 +71,9 @@ var title_box: Control
 ## The yellow sticker that names the screen (null while the screen has no title).
 var title_sticker: VerbSticker
 var stats: HudStats
+## Plan 2 WH-02: the corporation-theme chip slot after the stats (hidden until a theme rule
+## fills it: set_theme_chip).
+var theme_chip: ThemeChip
 var loadout_button: Button
 ## One DAEMONS icon (stacked sigils + count) that opens the Daemon tray.
 var daemon_button: Button
@@ -117,6 +120,8 @@ func _init() -> void:
 	stats = HudStats.new()
 	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(stats)
+	theme_chip = ThemeChip.new()
+	row.add_child(theme_chip)
 	# H24 S4: the bar shows its words as given, translated once here.
 	TextDb.shown_as_given(self)
 	loadout_button = Button.new()
@@ -232,6 +237,12 @@ func set_stats(items: Array, captions: Array = []) -> void:
 	stats.items = items
 	stats.queue_redraw()
 	label.tooltip_text = label.text
+
+
+## Plan 2 WH-02: fills the theme chip with `text` (translated by the caller) and its live
+## `value` (Anton) in `kind`'s look (RunThemeState.ChipKind); "" hides it.
+func set_theme_chip(text: String, value: String, kind: int) -> void:
+	theme_chip.show_chip(text, value, kind)
 
 
 ## ANIM-R5 B5 / ANIM-R6 B7: a bought or picked item of `kind` ("card", "daemon", else a chip

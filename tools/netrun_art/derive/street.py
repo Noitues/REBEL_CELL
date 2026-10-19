@@ -20,6 +20,7 @@ RULES: Dict[str, Any] = dict(
     room_z_inset=0.12,       # room box inset above and below its floors (SB/sb_onecity.py:266-267)
     link_offset=0.5,         # facade link plane in front of the faces
     link_stub=0.3,           # link leaves / enters a room this far along the facade
+    extend_retry=(2.0, 3.0, 4.0),   # W1 close: a street that fits no layer retries with the leg extension x each factor
     span_max=4)              # NA-23b: the street span (floors per room) is searched in 1..span_max
 ROOM_KINDS = ("router", "terminal", "mainframe", "server_rack", "rest", "workshop", "cache")
 LINK_TYPES = ("facade",)     # "hq" is reserved for HQ landmark links (AD 2026-10-18)
@@ -143,7 +144,9 @@ def choose_street_fitting(B: Sequence[Dict[str, Any]], legs: Sequence[Sequence[f
     """`(best, step)`: `choose_street`, then, only when it does not fit every layer, the same on the squared legs.
 
     Step 0 is the legs as given; step 1 the legs squared (`square_legs`). A street that fits at step 0 is never changed
-    (bids and derive output stay as they were). When neither fits the step 0 result is returned with step 0.
+    (bids and derive output stay as they were). W1 close: when neither fits, step 2 + 2*i is the legs as given and step
+    3 + 2*i the legs squared, both with the extension scaled by `extend_retry[i]` (a short or sparse link street runs on
+    along its own line). When nothing fits the step 0 result is returned with step 0.
     """
     r = rules or RULES
     first = choose_street(B, legs, layers, r)
@@ -154,6 +157,14 @@ def choose_street_fitting(B: Sequence[Dict[str, Any]], legs: Sequence[Sequence[f
         best = choose_street(B, sq, layers, r)
         if best is not None and best[5] and best[7]:
             return best, 1
+    for i, k in enumerate(r["extend_retry"]):
+        wide = dict(r, extend=(r["extend"][0] * k, r["extend"][1] * k))
+        for j, ls in enumerate((legs, sq)):
+            if j == 1 and sq == [list(p) for p in legs]:
+                continue
+            best = choose_street(B, ls, layers, wide)
+            if best is not None and best[5] and best[7]:
+                return best, 2 + 2 * i + j
     return first, 0
 
 
@@ -301,7 +312,7 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
     _, pts = select_link(net, site)
     legs = LY.link_legs(city, pts)
     B = LY.merged_buildings(city)
-    best, _ = choose_street_fitting(B, legs, layers, r)
+    best, step = choose_street_fitting(B, legs, layers, r)
     if best is None or not best[5]:
         raise DeriveError("no frontage along the link of " + site)
     score, li, side, a, c, fr, asg, ok, start_left = best
@@ -334,4 +345,6 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
         columns=[[l, b["bid"]] for l, b in asg], route_keys=[b["bid"] for _, b in asg], col_info=col_info,
         rooms=out_rooms, edges=edges, overview=ov.to_json(), decision=dec.to_json(),
         frontage=[[b["bid"], round(b["h"], 1), floors(b, r), round(b["ts"], 2)] for b in fr])
+    if step >= 2:        # A-025: a replay shows the leg-extension retry (the step is `choose_street_fitting`'s)
+        base.update(retry="leg_extend", retry_step=step)
     return base

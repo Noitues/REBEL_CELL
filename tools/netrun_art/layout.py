@@ -108,6 +108,33 @@ def border_links(net: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
+def coast_of(city: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """NA-12 r2: a generated city's optional `coast` section as {"sea_side", "shoreline" set, "sea_cells" set} of `(i, j)`
+    lots, or None (the fixed city has no sea)."""
+    c = city.get("coast")
+    if c is None:
+        return None
+    return {"sea_side": c["sea_side"], "shoreline": {(int(p[0]), int(p[1])) for p in c["shoreline"]},
+            "sea_cells": {(int(p[0]), int(p[1])) for p in c["sea_cells"]}}
+
+
+def hills_of(city: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """NA-12 r2: the optional `terrain.hills` (plan BU, city_A2.json's Gaussian form), [] when absent."""
+    return list(city.get("terrain", {}).get("hills", []))
+
+
+def hill_height(hills: Sequence[Dict[str, Any]], x: float, y: float) -> float:
+    """Ground height (BU) at plan point (x, y): the sum of the rotated Gaussians (data only until NA-12c renders it)."""
+    z = 0.0
+    for h in hills:
+        dx, dy = x - float(h["centre"][0]), y - float(h["centre"][1])
+        r = float(h["rotation"])
+        u = dx * math.cos(r) + dy * math.sin(r)
+        v = -dx * math.sin(r) + dy * math.cos(r)
+        z += float(h["height"]) * math.exp(-0.5 * ((u / float(h["sigma_x"])) ** 2 + (v / float(h["sigma_y"])) ** 2))
+    return z
+
+
 def street_cells(city: Dict[str, Any]) -> set:
     """Set of `(i, j)` street lot cells."""
     return {(int(s["lot"][0]), int(s["lot"][1])) for s in city["streets"]}

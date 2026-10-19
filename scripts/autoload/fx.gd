@@ -771,6 +771,27 @@ func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "
 	_set_jacking(false)
 
 
+## NA-25b: the street entry's HQ side backwards, the jack-out after the dive reversed to the HQ page: the switch under the night sky,
+## then the CRT comes back on over the link (`JackSequence.play_out`). `link` is the jack-in's (kept by RunManager). Headless, reduce
+## effects, reduce motion, an entry switched off or no link: `jack_out` as before.
+func jack_out_link(on_switch: Callable, link: Dictionary, destination: String = "") -> void:
+	if _jacking:
+		return
+	var headless := DisplayServer.get_name() == "headless" and not Motion.force_live
+	if link.is_empty() or headless or not effects_enabled() or not Motion.camera_moves_allowed() or not Motion.live(&"jack_out") 			or not Motion.live(&"entry_collapse"):
+		await jack_out(on_switch, -1.0, destination)
+		return
+	_destination = destination
+	_destination_tier = 0
+	_set_jacking(true)
+	if input_gate != null:
+		input_gate.on_press = jack_link.skip
+	await jack_link.play_out(link, self, _street_switch.bind(on_switch))
+	if input_gate != null:
+		input_gate.on_press = Callable()
+	_set_jacking(false)
+
+
 ## ART-7 3B: the link jack's switch under the covering hub: the new scene, the CONNECTING
 ## line while it builds (its reading time), then the lens may open.
 func _link_switch(on_switch: Callable) -> void:

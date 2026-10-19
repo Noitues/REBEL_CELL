@@ -1,0 +1,39 @@
+{
+ "anim_t": 2.5095,
+ "camera": {
+  "dist": 114.62,
+  "lens": 40.0,
+  "loc": [
+   -557.4261,
+   33.3995,
+   9.7002
+  ],
+  "pitch": 2.0,
+  "shift_x": -0.0548,
+  "shift_y": 0.1172,
+  "tgt": [
+   -443.7792,
+   47.7564,
+   5.7
+  ],
+  "yaw": 82.8
+ },
+ "corp": "",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "street",
+ "layout_seed": "7",
+ "look": "aaa2",
+ "look_blend": 1.0,
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "t1_a-642657411",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

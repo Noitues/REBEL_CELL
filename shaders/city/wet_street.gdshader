@@ -64,7 +64,8 @@ void fragment() {
 			float k = smoothstep(rough_noise.x, rough_noise.y, n);
 			float rough = mix(rough_wet.x, rough_wet.y, k);
 			rough = mix(rough_wet.x, rough, clamp(puddles_sharp, 0.0, 1.0));
-			ROUGHNESS = mix(0.0, rough, look_blend);
+			// NA-25b: the wet roughness at every look_blend (it used to scale with it: a half blend was a near mirror).
+			ROUGHNESS = rough;
 			SPECULAR = mix(0.5, wet_specular, look_blend);
 			col *= mix(1.0, albedo_mul, look_blend);
 		}
@@ -86,7 +87,9 @@ void light() {
 		vec3 h = normalize(LIGHT + VIEW);
 		float nh = max(dot(NORMAL, h), 0.0);
 		float dd = a * a / (3.14159265 * pow(nh * nh * (a * a - 1.0) + 1.0, 2.0));
-		SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * min(dd * 0.25 * SPECULAR_AMOUNT, 6.0) * max(dot(NORMAL, LIGHT), 0.0) * look_blend;
+		// NA-25b: the glint also comes in with `puddles_sharp` (the camera near the street, spec 5.2). A far camera (the dive)
+		// saw the sun lobe on lit ground clip to flat white patches.
+		SPECULAR_LIGHT += LIGHT_COLOR * ATTENUATION * min(dd * 0.25 * SPECULAR_AMOUNT, 6.0) * max(dot(NORMAL, LIGHT), 0.0) * look_blend * clamp(puddles_sharp, 0.0, 1.0);
 	}
 	DIFFUSE_LIGHT = band;
 }

@@ -7,7 +7,30 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _p2_street_r2_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
+		+ _wh02_corp_theme_config() + _p2_street_r2_config()
+
+
+## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
+## (one key per corporation spot-checked, the shipped config reading them) and a save keeps a
+## changed key.
+func _wh02_corp_theme_config() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	print("WH-02 corp theme defaults (expect 3000 45 3 1 5 [ROOF, STREET, SEWER]): ", d.bloom_hq_start_gap_milli, " ", d.eye_step_deg,
+		" ", d.hq_lanes_required, " ", d.street_dark_nodes, " ", d.meridian_capacity_base, " ", d.hq_lane_ids)
+	if d.bloom_hq_start_gap_milli != 3000 or d.eye_step_deg != 45 or d.hq_lanes_required != 3 or d.street_dark_nodes != 1 or d.meridian_capacity_base != 5: fails += 1
+	if d.hq_lane_ids != ([&"ROOF", &"STREET", &"SEWER"] as Array[StringName]) or d.lane_tag_default != &"STREET": fails += 1
+	if d.raid_infection_lost_bp != 10000 or d.meridian_weigh_station_layers != PackedInt32Array([4, 7, 10]): fails += 1
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	if shipped == null or shipped.bloom_max_gap_milli != d.bloom_max_gap_milli or shipped.hq_lead_limit != d.hq_lead_limit: fails += 1
+	d.bloom_dose_price = 21
+	d.blade_classes_l1 = [&"ELITE"] as Array[StringName]
+	var err := ResourceSaver.save(d, "user://smoke_wh02_config.tres")
+	var back: CampaignConfigData = ResourceLoader.load("user://smoke_wh02_config.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	print("WH-02 corp theme save=", err, " dose price ", back.bloom_dose_price if back != null else -1)
+	if err != OK or back == null or back.bloom_dose_price != 21 or back.blade_classes_l1 != ([&"ELITE"] as Array[StringName]): fails += 1
+	return fails
 
 
 ## Plan 2 N6: ListenerData defaults (ON_PERFECT, unauthored caps, WEAK), the two appended
@@ -76,6 +99,39 @@ func _n20_slice_riders() -> int:
 
 ## NA-24: DressingConfigData (the street dressing's reveal groups, palettes, districts, bands): the shipped one validates, an
 ## empty one reports its gaps, a district naming an unknown palette set is refused by name.
+## NA-12: CampaignConfigData's city generator numbers: the shipped ones match the defaults and
+## validate, a bad range and a zero gap are refused by name; CampaignState keeps its city seed
+## through to_dict / from_dict as a u64 decimal string.
+func _na12_city_gen() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("NA-12 city gen (expect 26 26 2 2 Vector2(34, 42)): ", d.city_gen_hq_gap, " ", cfg.city_gen_hq_gap, " ", d.city_gen_budget_s, " ",
+		cfg.city_gen_budget_s, " ", cfg.city_gen_ring_lots)
+	if d.city_gen_hq_gap != cfg.city_gen_hq_gap or d.city_gen_budget_s != cfg.city_gen_budget_s or cfg.city_gen_ring_lots != Vector2(34, 42): fails += 1
+	if ",".join(cfg.validate()).contains("city_gen"): fails += 1
+	var bad: CampaignConfigData = cfg.duplicate()
+	bad.city_gen_ring_lots = Vector2(40, 30)
+	bad.city_gen_hq_gap = 0.0
+	var codes := ",".join(bad.validate())
+	print("NA-12 bad city gen: ", codes.contains("city_gen range"), " ", codes.contains("city_gen_hq_gap"))
+	if not (codes.contains("city_gen range") and codes.contains("city_gen_hq_gap")): fails += 1
+	# NA-12 r2: the A2 bay, shore corporations and hills.
+	print("NA-12 r2 bay (expect [&\"tethys\"] (18, 30) 220): ", cfg.city_gen_shore_corps, " ", cfg.city_gen_bay_depth, " ", cfg.city_gen_ring_arc_deg)
+	if cfg.city_gen_shore_corps != d.city_gen_shore_corps or cfg.city_gen_bay_depth != d.city_gen_bay_depth or cfg.city_gen_hill_count != d.city_gen_hill_count: fails += 1
+	var bad_bay: CampaignConfigData = cfg.duplicate()
+	bad_bay.city_gen_bay_shift = 0.6
+	bad_bay.city_gen_hill_count = Vector2i(3, 1)
+	var bay_codes := ",".join(bad_bay.validate())
+	if not (bay_codes.contains("city_gen_bay_shift") and bay_codes.contains("city_gen_hill_count")): fails += 1
+	var c := CampaignState.new()
+	c.city_seed = -2
+	var back := CampaignState.from_dict(c.to_dict())
+	print("NA-12 city_seed save (expect 18446744073709551614 -2): ", c.to_dict()["city_seed"], " ", back.city_seed)
+	if c.to_dict()["city_seed"] != "18446744073709551614" or back.city_seed != -2: fails += 1
+	return fails
+
+
 func _na24_dressing_config() -> int:
 	var fails := 0
 	var cfg: DressingConfigData = load(DressingConfigData.CONFIG_PATH)

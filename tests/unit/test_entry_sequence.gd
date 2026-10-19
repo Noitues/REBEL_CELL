@@ -10,7 +10,10 @@ class StubView extends StreetRouteView:
 	var calls: Array[String] = []
 	var last_u := -1.0
 
-	func entry_begin() -> void:
+	var rooms_open_arg := false
+
+	func entry_begin(rooms_open: bool = false) -> void:
+		rooms_open_arg = rooms_open
 		calls.append("begin")
 
 	func entry_dive(u: float) -> void:
@@ -24,6 +27,9 @@ class StubView extends StreetRouteView:
 
 	func entry_zoom(u: float) -> void:
 		_note("zoom", u)
+
+	func entry_toggle(u: float) -> void:
+		_note("toggle", u)
 
 	func entry_end() -> void:
 		calls.append("end")
@@ -46,13 +52,13 @@ func after_each() -> void:
 	Motion.force_live = _live_before
 
 
-func _cover(reverse: bool) -> Array:
+func _cover(reverse: bool, beats: Array = EntryBeats.STREET_BEATS) -> Array:
 	var view := StubView.new()
 	add_child_autofree(view)
 	var cover := EntryCover.new()
 	add_child_autofree(cover)
 	watch_signals(cover)
-	cover.start(view, reverse)
+	cover.start(view, reverse, beats)
 	return [cover, view]
 
 
@@ -228,3 +234,69 @@ func test_the_skip_key_is_space_behind_the_input_map() -> void:
 	Settings.add_runtime_actions()
 	assert_true(InputMap.has_action(&"route_skip"))
 	assert_eq(Settings.key_for(&"route_skip"), KEY_SPACE)
+
+
+# --- The zoom reuses the dive (NA-25b, D6) ------------------------------------------------------------------
+
+func test_the_toggle_is_one_camera_ease_with_the_rooms_open() -> void:
+	var made := _cover(false, EntryBeats.ZOOM_BEATS)
+	var cover: EntryCover = made[0]
+	var view: StubView = made[1]
+	assert_true(view.rooms_open_arg, "no REVEAL: the rooms stay open")
+	_run(cover, 60.0)
+	assert_eq(view.calls, ["begin", "toggle", "end"] as Array[String], "one ease: no dive, REVEAL, MARK or ZOOM beats")
+	var tbl := EntryBeats.table(EntryBeats.ZOOM_BEATS, false, false)
+	assert_almost_eq(float(tbl[0]["end"]) - float(tbl[0]["start"]), 1.1, FRAME, "about 1.1 s")
+
+
+func test_the_toggle_out_reads_it_backwards_with_no_select_hold_and_a_press_skips_it() -> void:
+	var made := _cover(true, EntryBeats.ZOOM_BEATS)
+	var cover: EntryCover = made[0]
+	var view: StubView = made[1]
+	_run(cover, 0.3)
+	assert_true(cover.playing)
+	cover.skip()
+	assert_false(cover.playing, "skippable")
+	assert_eq(view.calls, ["begin", "toggle"] as Array[String])
+	assert_almost_eq(cover.total_seconds(), 1.1, FRAME, "no select hold, nothing after the ease")
+
+
+func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
+	var made := _cover(false)
+	var view: StubView = made[1]
+	assert_false(view.rooms_open_arg)
+
+
+# --- The HQ side backwards (NA-25b) --------------------------------------------------------------------------
+
+func test_the_hq_side_switches_under_the_covering_hub_and_a_press_ends_it_on_the_hq() -> void:
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	var seen := {"covering": false, "calls": 0}
+	var switch := func() -> void:
+		seen["calls"] += 1
+		seen["covering"] = seq.covering()
+	seq.play_out({"street": true, "from": "A", "to": "B"}, self, switch)
+	assert_eq(seen["calls"], 0, "the lens closes over the street first")
+	seq.skip()
+	for i in 4:
+		await get_tree().process_frame
+	assert_eq(seen["calls"], 1, "the switch ran once")
+	assert_true(seen["covering"], "the HQ loads under the covering hub (no night-sky panel)")
+	assert_false(seq.visible, "a press ends it on the HQ with no terminal left")
+	assert_null(seq.terminal)
+
+
+func test_the_street_entry_keeps_the_locked_chain_slap_and_lens_before_the_dive() -> void:
+	# ART_BIBLE 4.6: terminal, CONNECTED, rain, CRT collapse, wheel slap, wheel lens; the street entry no longer cuts to a night panel.
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	var order: Array[String] = []
+	var switch := func() -> void:
+		order.append("switch:wheel=%s,covering=%s" % [str(seq.wheel_scale > 1.0), str(seq.covering())])
+	seq.play({"street": true, "from": "A", "to": "B"}, self, switch)
+	seq.skip()
+	for i in 4:
+		await get_tree().process_frame
+	assert_eq(order.size(), 1, "one switch")
+	assert_false(seq.night, "no night-sky panel in the chain")

@@ -28,7 +28,7 @@ static func build(session: NetrunSession, model: CityModel, cfg: CityConfig, sit
 	var d := StreetRouteData.new()
 	var key := "%s|%d" % [cfg.resource_path, model.city_seed]
 	if not _city_cache.has(key):
-		var cj := NetrunArtExport.city_json(model.city_seed, cfg.lot_bu, cfg.district_centre, model.prisms, model.streets, model.plazas, model.hqs)
+		var cj := NetrunArtExport.city_json(model.city_seed, cfg.lot_bu, cfg.district_centre, model.prisms, model.streets, model.plazas, model.hqs, model.city_sections())
 		_city_cache[key] = {"city": cj, "index": NetrunArtExport.lot_index(cj["buildings"])}
 	var cached: Dictionary = _city_cache[key]
 	d.city = cached["city"]

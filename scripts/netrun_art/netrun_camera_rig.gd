@@ -128,6 +128,21 @@ static func street_yaw0(nrm: Array) -> float:
 	return yaw_of_nrm(nrm)
 
 
+## The plate camera rule (art-pass A-025 / A-026): focus on the box centre of `pts`, the plate's fixed `dist` and lens shift
+## (`ov_*` / `dec_*` in the rig config), the yaw along the street face normal. Twin of `rig.plate_pose`.
+static func plate_pose(pts: Array, yaw: float, pitch: float, lens: float, dist: float, shift: Array) -> NetrunPose:
+	var mn: Array = [INF, INF, INF]
+	var mx: Array = [-INF, -INF, -INF]
+	for p: Array in pts:
+		for i in 3:
+			mn[i] = minf(mn[i], float(p[i]))
+			mx[i] = maxf(mx[i], float(p[i]))
+	var pose: NetrunPose = NetrunPose.make([(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2], yaw, pitch, dist, lens)
+	pose.sx = float(shift[0])
+	pose.sy = float(shift[1])
+	return pose
+
+
 ## The street OVERVIEW pose (one-city overrides, rig convention); `rig_over` {} = none.
 static func street_overview(rooms: Dictionary, nrm: Array, start_left: bool, rig_over: Dictionary = {}) -> NetrunPose:
 	var g: Dictionary = NetrunArtUnits.merge(NetrunArtConfigData.shipped().rig, rig_over)
@@ -135,18 +150,8 @@ static func street_overview(rooms: Dictionary, nrm: Array, start_left: bool, rig
 	var pts: Array = []
 	for r: Dictionary in rooms.values():
 		pts.append_array(room_corners(r))
-	var ov: NetrunPose = frame_points(pts, street_yaw0(nrm) + sgn * float(g["ov_yaw_k"]) * float(g["yaw_max"]),
-		g["pitch_o"], g["lens_o"], g["fill_ow"], g["fill_oh"])
-	var low: Array = []
-	for r: Dictionary in rooms.values():
-		for p: Array in r["front"]:
-			if float(p[2]) < 0.5:
-				var q: Array = ov.proj([float(p[0]), float(p[1]), float(p[2]) + float(r.get("ground_z", 0.0))])
-				if not q.is_empty():
-					low.append(q[1])
-	if not low.is_empty():
-		ov.sy += (float(g["ov_base_frac"]) * float(g["ref_h"]) - float(low.max())) / float(g["ref_w"])
-	return ov
+	return plate_pose(pts, street_yaw0(nrm) + sgn * float(g["ov_yaw_k"]) * float(g["yaw_max"]), g["pitch_o"], g["lens_o"],
+		float(g["ov_dist"]), g["ov_shift"])
 
 
 ## `u = layer / (layers - 1)` clamped 0..1.
@@ -158,7 +163,6 @@ static func street_u(layers: int, current_layer: int) -> float:
 static func street_decision(rooms: Dictionary, current: String, options: Array, u: float, nrm: Array,
 		start_left: bool, rig_over: Dictionary = {}, entry: Array = []) -> NetrunPose:
 	var g: Dictionary = NetrunArtUnits.merge(NetrunArtConfigData.shipped().rig, rig_over)
-	var look_sign: float = NetrunArtConfigData.shipped().look_bias_sign
 	var sgn: float = 1.0 if start_left else -1.0
 	var ids: Array = []
 	if current != "":
@@ -172,8 +176,7 @@ static func street_decision(rooms: Dictionary, current: String, options: Array, 
 	if current == "" and not entry.is_empty():
 		pts.append(entry.duplicate())
 	var off: float = sgn * float(g["yaw_max"]) * (1.0 - 2.0 * NetrunArtUnits.clamp01(u))
-	return frame_points(pts, street_yaw0(nrm) + off, g["pitch_d"], g["lens_d"], g["fill_w"], g["fill_h"],
-		look_sign * float(g["look_bias"]) * off / float(g["yaw_max"]))
+	return plate_pose(pts, street_yaw0(nrm) + off, g["pitch_d"], g["lens_d"], float(g["dec_dist"]), g["dec_shift"])
 
 
 ## The street HOVER pose at ease `k` (1 = fully hovered): pull toward the room, turn toward it, dolly in.

@@ -50,13 +50,15 @@ var _lit_all := false
 ## NA-25: true while the entry sequence (`EntryCover`) drives the camera and the overlay; the view takes no input then.
 var entry_active := false
 var _entry_occ_on := true
+## NA-25b: the rooms stay open through the entry (the Grid / Route zoom reuses the dive; only the REVEAL builds the rooms up).
+var _entry_rooms_open := false
 
 
 ## The data of the run `session` on the game's city, or a data object with `error` set. The city model is the shared one (built on
 ## this thread when no scene has built it yet).
 static func build_data(session: NetrunSession, corp: CorporationData) -> StreetRouteData:
 	var cfg := CityView3D.CONFIG
-	var model := CityModel.shared(cfg, cfg.city_seed)
+	var model := CityModel.shared(cfg, CityPlan.current_seed())
 	return StreetRouteData.build(session, model, cfg, CityLayout.site_points(corp))
 
 
@@ -412,8 +414,9 @@ func press_escape() -> int:
 
 ## Starts the entry: the view locks its input, shows the OVERVIEW toggle state, and the rooms and overlay go dark (the dive's
 ## first frame is the HQ page). `EntryCover` drives the `entry_*` calls below and ends with `entry_end`.
-func entry_begin() -> void:
+func entry_begin(rooms_open: bool = false) -> void:
 	entry_active = true
+	_entry_rooms_open = rooms_open
 	if _toggle_box != null:
 		_toggle_box.visible = false
 	if _hit != null:
@@ -478,6 +481,7 @@ func entry_zoom(u: float) -> void:
 	overlay.intro = false
 	overlay.reveal_s = overlay.reveal_total
 	overlay.mark_s = Motion.seconds(&"entry_mark")
+	_entry_occlusion(true)
 	rig.set_pose(ov.mix(dec["pose"], NetrunCameraRig.ease(u)))
 	var to_dec := u >= 0.5
 	var want := StreetRouteRules.View.DECISION if to_dec else StreetRouteRules.View.OVERVIEW
@@ -489,10 +493,30 @@ func entry_zoom(u: float) -> void:
 	overlay.mark_dirty()
 
 
+## NA-25b: the Grid / Route toggle's one camera ease at `u` (0 = the Grid's framing, the HQ page pose, 1 = the street DECISION): rooms
+## open, the street's occlusion on, the overlay whole. Without an HQ pose the camera holds the DECISION.
+func entry_toggle(u: float) -> void:
+	var dec: Dictionary = _dec_state
+	var hq := data.hq_pose()
+	overlay.intro = false
+	overlay.reveal_s = overlay.reveal_total
+	overlay.mark_s = Motion.seconds(&"entry_mark")
+	_entry_occlusion(true)
+	rig.set_pose(hq.mix(dec["pose"], NetrunCameraRig.ease(u)) if hq != null else dec["pose"])
+	var want := StreetRouteRules.View.DECISION
+	if want != base_view:
+		base_view = want
+		_sync_toggle()
+		rig.set_occlusion(dec["rec"])
+	_entry_rooms(func(_layer: int) -> float: return 1.0)
+	overlay.mark_dirty()
+
+
 ## The end state of beat 7 (CHOOSE): DECISION on the current room, input back, the overlay whole. The same whether the beats played
 ## or were skipped.
 func entry_end() -> void:
 	entry_active = false
+	_entry_rooms_open = false
 	if _toggle_box != null:
 		_toggle_box.visible = true
 	if _hit != null:
@@ -516,9 +540,13 @@ func _entry_occlusion(on: bool) -> void:
 
 
 ## Rooms at `up_of(layer)` of their resting energy. A room at 0 is closed: its building shows the closed facade (windows and wash),
-## never a black box; above 0 the window opens (no dissolve yet, NA-25b).
+## never a black box; between 0 and 1 the facade dissolves into the cutaway room (NA-25b; the timeline's `k`, so a skip, a scrub and the
+## jack-out reverse land on the same state); under reduce effects it is open or closed, never between.
 func _entry_rooms(up_of: Callable) -> void:
 	for id: String in rig.room_ids():
-		var k := float(up_of.call(StreetRouteRules.layer_of(data.run_graph, id)))
-		rig.set_room_open(id, k > 0.0)
+		var k := 1.0 if _entry_rooms_open else float(up_of.call(StreetRouteRules.layer_of(data.run_graph, id)))
+		if Settings.reduce_effects:
+			rig.set_room_open(id, k > 0.0)
+		else:
+			rig.set_room_dissolve(id, k)
 		rig.set_room_energy(id, _room_energy(id) * k)

@@ -53,8 +53,8 @@ const OUTER_GROUND_BU := 8000.0
 const NET_MARGIN_BU := 60.0
 
 var cfg: CityConfig = CONFIG
-## The layout's look seed (NeonCity.city_seed: the game's city is seed 7 everywhere).
-var city_seed: int = 7
+## The city seed (NeonCity.city_seed; NA-12: the running campaign's city, CityPlan.current_seed).
+var city_seed: int = CityPlan.current_seed()
 var model: CityModel = null
 var iso: CityIsoCamera = null
 var camera: Camera3D
@@ -166,6 +166,13 @@ func _ready() -> void:
 	if model != null:
 		_on_model(model)
 	else:
+		# NA-12: deferred, so a host that hands its model right after add_child (RouteRig.setup) starts no build of the
+		# running campaign's city it never uses (an orphan worker job at exit).
+		_start_model_unless_given.call_deferred()
+
+
+func _start_model_unless_given() -> void:
+	if model == null and is_inside_tree():
 		_start_model()
 
 
@@ -255,8 +262,12 @@ func host_paused() -> bool:
 ## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
+	if water != null:
+		water.set_night(night_share)
 	if _building_mat == null or day.is_empty():
 		return
+	_last_day = day
+	_ramp_water(day)
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
@@ -297,6 +308,8 @@ var _netrun_setup: bool = false
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
 	look_blend = clampf(lb, 0.0, 1.0)
+	if water != null:
+		water.set_look_blend(look_blend)
 	if _building_mat == null:
 		return
 	if not _netrun_setup:
@@ -325,6 +338,14 @@ func set_look_blend(lb: float) -> void:
 ## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
 func building_material() -> ShaderMaterial:
 	return _building_mat
+
+
+## NA-25b: the wet ground's `puddles_sharp` weight (0 .. 1; spec 5.2 band by camera distance, `RevealTiers.band(d, "puddles_sharp")`).
+## Far from the street the puddles go to their blurry mean, so the ground never shows flat mirror patches (the dive).
+func set_puddles_sharp(k: float) -> void:
+	for m: ShaderMaterial in [_ground_mat, _outer_mat]:
+		if m != null:
+			m.set_shader_parameter(&"puddles_sharp", clampf(k, 0.0, 1.0))
 
 
 ## The lane lines' material (the street netrun swaps its shader for the quiet `route_lane`).
@@ -400,6 +421,8 @@ func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
 
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
+## NA-12 r2: the last day look set_night_share was given (the sea wall built later takes its ramp).
+var _last_day: Dictionary = {}
 var _landmarks_night: bool = true
 var _env: Environment
 
@@ -553,6 +576,8 @@ func _sync_ambient() -> void:
 		_post.set_shader_parameter("time_scale", s)
 		_net_mat.set_shader_parameter("time_scale", s)
 		_net_xray_mat.set_shader_parameter("time_scale", s)
+	if water != null:
+		water.set_time_scale(s)
 	if not is_equal_approx(s, ambient_scale):
 		ambient_scale = s
 		ambient_changed.emit(s)
@@ -833,6 +858,7 @@ func _on_model(m: CityModel) -> void:
 		set_iso(iso)
 	if can_render():
 		place_landmarks()
+	_build_water(m)
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -847,6 +873,39 @@ func _on_model(m: CityModel) -> void:
 		model_ready.emit()
 		return
 	set_process(true)
+
+
+## NA-12 r2: the sea of a generated city (CityWater: sea, void, sea wall, piers) for model `m`; none for the fixed city
+## (no coast) or headless.
+var water: CityWater = null
+
+
+func _build_water(m: CityModel) -> void:
+	if water != null:
+		water.queue_free()
+		water = null
+	var plan := CityPlan.for_seed(m.city_seed)
+	if plan.coast.is_empty() or not can_render():
+		return
+	water = CityWater.make(cfg, plan, m, OUTER_GROUND_BU)
+	add_to_layer(&"ground", water, true)
+	water.set_night(night_share)
+	water.set_look_blend(look_blend)
+	water.set_time_scale(ambient_scale)
+	if not _last_day.is_empty():
+		_ramp_water(_last_day)
+
+
+## The day ramp on the sea wall and pier decks (as on the ground).
+func _ramp_water(day: Dictionary) -> void:
+	if water == null:
+		return
+	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
+	var day_ramp: Array = day["ramp"]
+	for k in 3:
+		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		for mat in water.lit_materials():
+			mat.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 
 
 func _chunk_centre(key: Vector2i) -> Vector2:
@@ -1111,7 +1170,7 @@ func place_landmarks() -> void:
 		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
 		if _place_landmark(corp, path, landmark_slot(corp), look):
 			hide_stand_in(corp)
-	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
 	_place_site_landmark()
 

@@ -57,6 +57,10 @@ var temp_cards: Array[StringName] = []
 ## Botnet drones carried between fights: {"source_id", "hp", "dock_slot"}.
 var drones: Array[Dictionary] = []
 var streams: Dictionary = {}
+## Plan 2 WH-02: the corporation themes' netrun fields (RunThemeState). Saved as "corp_theme"
+## only when a field is not default, so older saves load it as defaults and a run without
+## theme data hashes as before.
+var corp_theme: RunThemeState = RunThemeState.new()
 
 
 func current_node() -> Dictionary:
@@ -76,7 +80,7 @@ func _raw_dict() -> Dictionary:
 	var rewards := []
 	for r in pending_rewards:
 		rewards.append(r.duplicate(true))
-	return {
+	var out := {
 		"run_seed": str(run_seed), "tier": tier, "site_id": String(site_id),
 		"kind": kind, "forced_enemy_id": String(forced_enemy_id), "combat_overrides": combat_overrides.duplicate(true),
 		"operative": operative.to_dict() if operative != null else {},
@@ -92,6 +96,10 @@ func _raw_dict() -> Dictionary:
 		"temp_cards": _strings(temp_cards),
 		"drones": drones.duplicate(true),
 	}
+	var theme := corp_theme.to_dict()
+	if not theme.is_empty():  # absent at defaults: runs without theme data hash as before WH-02
+		out["corp_theme"] = theme
+	return out
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -131,6 +139,9 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.temp_cards = _names(d.get("temp_cards", []))
 	for dd in d.get("drones", []):
 		r.drones.append({"source_id": String(dd.get("source_id", "")), "hp": int(dd.get("hp", 1)), "dock_slot": int(dd.get("dock_slot", 0))})
+	var theme: Variant = d.get("corp_theme", {})
+	if theme is Dictionary:
+		r.corp_theme.load_dict(theme)
 	return r
 
 

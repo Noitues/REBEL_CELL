@@ -252,6 +252,175 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## ART-0 audit B4: the most replay files the replay folder keeps; writing one more deletes
 ## the oldest (storyboard, demo and harness runs would pile them up). 0 = no cap.
 @export var max_replays: int = 50
+@export_group("Corp theme")
+## Plan 2 WH-02 (REPLAN 2026-10-19 A 2.4): the W2 corporation themes' numbers, one section,
+## keys and defaults from the WH-01 tables (docs/handoff/plan2/drafts/themes/tables/). WH-02
+## adds them unread; each corp slice (WH-11, WH-21, WH-30, WH-41, WH-51) reads its own.
+## Solace THE BLOOM: thousandths of a layer (milli); per-tier arrays are T1..T4.
+@export var bloom_start_gap_milli_by_tier: PackedInt32Array = PackedInt32Array([4000, 3500, 3000, 2500])
+@export var bloom_hq_start_gap_milli: int = 3000
+@export var bloom_pace_node_milli_by_tier: PackedInt32Array = PackedInt32Array([500, 600, 650, 700])
+@export var bloom_hq_pace_node_milli: int = 700
+## Front advance per combat turn, applied at fight end.
+@export var bloom_pace_turn_milli: int = 100
+## Extra front advance for an HQ ACROSS move.
+@export var bloom_pace_cross_milli: int = 500
+@export var bloom_dose_push_milli: int = 1000
+## Cycles per dose (Mainframe, Terminal option).
+@export var bloom_dose_price: int = 15
+## Gap clamp after a dose.
+@export var bloom_max_gap_milli: int = 5000
+## Doses granted at T1 netrun start.
+@export var bloom_free_doses_t1: int = 1
+## Band ceilings (gap <=): CLOSE, CATCHING.
+@export var bloom_close_gap_milli: int = 2000
+@export var bloom_catch_gap_milli: int = 1000
+## Percent multiplier on node and turn pace with the Virus key (floor division, minimum 1).
+@export var bloom_virus_pace_pct: int = 75
+## Mini-boss and boss fights add no turn pace (node entry still applies).
+@export var bloom_exempt_boss_turn_cost: bool = true
+## Heat never changes street pace.
+@export var bloom_heat_affects_street: bool = false
+## Solace raid infection, basis points: start per Heat band (COOL, NOTICED, FLAGGED, HUNTED,
+## PURGE), per step base, per living threat per step, the CITY LOST threshold.
+@export var raid_infection_start_bp_by_band: PackedInt32Array = PackedInt32Array([0, 500, 1000, 1500, 2000])
+@export var raid_infection_bp_base: int = 50
+@export var raid_infection_bp_per_threat: int = 100
+@export var raid_infection_lost_bp: int = 10000
+## Halcyon THE EYE: sector width and step (degrees), octants moved per counted netrun, netruns
+## fixed after an Exploit.
+@export var eye_sector_deg: int = 90
+@export var eye_step_deg: int = 45
+@export var eye_move_per_netrun: int = 1
+@export var eye_fix_netruns: int = 2
+## TIER_DOWN stacks on the scanned slice; Blade classes per level (EnemyClass names plus RACK).
+@export var blade_tier_drop: int = 1
+@export var blade_classes_l1: Array[StringName] = [&"ELITE", &"MINI_BOSS", &"RACK"]
+@export var blade_classes_l2: Array[StringName] = [&"NORMAL", &"ELITE", &"MINI_BOSS", &"BOSS", &"RACK"]
+## Heat added per Elite fight at Spotted level 2.
+@export var spotted_elite_heat: int = 1
+## HQ gaze steps per completed node and per climb; BLOCKED half width (degrees); dial centres.
+@export var hq_gaze_step_per_node: int = 1
+@export var hq_gaze_step_per_climb: int = 2
+@export var hq_beam_half_width_deg: int = 4
+@export var hq_dial_steps: int = 3
+## Threat damage bonus inside the sector (percent).
+@export var raid_eye_damage_pct: int = 25
+## Heat charged to use a non-fight HQ node in the eye.
+@export var eye_shuttered_cost_heat: int = 1
+## REBEL_CELL DISPATCH: operatives (one per lane), layers per lane graph, lead limit (layers).
+@export var hq_lanes_required: int = 3
+@export var hq_lane_layers: int = 7
+@export var hq_lead_limit: int = 2
+## Heal percent of max HP per Rest node and at THROW.
+@export var hq_rest_heal_pct: int = 30
+@export var hq_throw_heal_pct: int = 20
+## Extra starting RAM in a scouted lane's first fight.
+@export var lane_scout_ram: int = 2
+## Step thresholds for seq 1 and seq 2 (seq 3 on THROW).
+@export var hq_seq_steps: PackedInt32Array = PackedInt32Array([3, 5])
+## Percent node weights per lane (the rest goes as the generator allocates).
+@export var hq_lane_node_weights: Dictionary = {
+	&"ROOF": {&"elite": 30, &"event": 15, &"shop": 10},
+	&"STREET": {&"elite": 20, &"event": 25, &"shop": 15},
+	&"SEWER": {&"elite": 15, &"event": 40, &"shop": 15},
+}
+## Percent of the HQ tilt away from neutral STREET weights in a street netrun.
+@export var street_lane_tilt_pct: int = 50
+## Start-of-fight modifiers on dispatch_core, one per ARMED lane.
+@export var hq_lane_effects: Dictionary = {
+	&"ROOF": {&"enemy_resistance_delta": -2, &"enemy_resistance_floor": 0},
+	&"STREET": {&"first_phase_hub_heal": false},
+	&"SEWER": {&"operative_ram_bonus": 2},
+}
+## First-wave threat count for REBEL_CELL raids (the table's raid_config key; no raid config
+## resource exists, so it lives here).
+@export var rebel_raid_first_wave: int = 3
+## Fixed lane order, also the finale resolve order (Q34); a Site without a lane tag reads
+## `lane_tag_default` (RebelCellCampaignTheme).
+@export var hq_lane_ids: Array[StringName] = [&"ROOF", &"STREET", &"SEWER"]
+@export var lane_tag_default: StringName = &"STREET"
+## Orbital BLACKOUT: dark fight nodes per street netrun and their layer range, DARK turn
+## cadence (street, HQ) and first DARK turn; the HQ dark residues of `layer mod modulus`.
+@export var street_dark_nodes: int = 1
+@export var dark_layer_min: int = 3
+@export var dark_layer_max: int = 6
+@export var street_dark_every: int = 3
+@export var hq_dark_every: int = 2
+@export var dark_turn_first: int = 1
+@export var hq_dark_pattern: PackedInt32Array = PackedInt32Array([0, 1])
+@export var dark_pattern_modulus: int = 4
+## Layers lit after an Uplink Dish clear; Uplink Dish nodes per HQ run; Dead Zone hops.
+@export var uplink_lit_layers: int = 2
+@export var hq_uplink_count: int = 3
+@export var raid_dark_radius: int = 1
+## Meridian A PAYLOAD (the table's `meridian.` keys): Load weights, Capacity (base, per Rank,
+## per target tier T1..T4), Over resistance cap, Jettison refund percent and Cycles values,
+## Weigh Stations (capacity penalty, HQ layers), boss hub divisor, raid node capacity and delay.
+@export var meridian_weight_firmware: int = 1
+@export var meridian_weight_daemon: int = 2
+@export var meridian_weight_asset: int = 2
+@export var meridian_capacity_base: int = 5
+@export var meridian_capacity_per_rank: int = 1
+@export var meridian_capacity_tier_bonus: PackedInt32Array = PackedInt32Array([2, 1, 1, 0])
+@export var meridian_over_resistance_cap: int = 3
+@export var meridian_jettison_refund_pct: int = 50
+@export var meridian_station_capacity_penalty: int = 2
+@export var meridian_weigh_station_layers: PackedInt32Array = PackedInt32Array([4, 7, 10])
+@export var meridian_hub_load_divisor: int = 3
+@export var meridian_raid_node_capacity: int = 2
+@export var meridian_raid_overcap_delay_steps: int = 1
+@export var meridian_jettison_value_firmware: int = 30
+@export var meridian_jettison_value_daemon: int = 60
+@export var meridian_jettison_value_asset: int = 40
+@export_group("City generator")
+## Plan 2 NA-12 (D3): the per-seed city (CityGenerator), in lots. The Cell's territory stands
+## within `city_gen_cell_jitter` of the land's centre; every corporation's HQ centre on a ring
+## round it (`city_gen_ring_lots` min / max radius), evenly turned with `city_gen_angle_jitter`
+## (share of the even step) of play, two HQ centres at least `city_gen_hq_gap` apart. HQ rects
+## and Site layouts stay `city_gen_edge_lots` inside the city and `city_gen_coast_clear` from
+## the water. Territory pull per corporation and per neutral Sprawl centre (count, range);
+## `city_gen_candidates` best-candidate draws per Sprawl centre; `city_gen_attempts` whole
+## layouts before the fixed city is the fallback.
+@export var city_gen_cell_jitter: float = 10.0
+@export var city_gen_ring_lots: Vector2 = Vector2(34.0, 42.0)
+@export var city_gen_angle_jitter: float = 0.2
+@export var city_gen_hq_gap: float = 26.0
+@export var city_gen_edge_lots: int = 6
+@export var city_gen_coast_clear: int = 4
+@export var city_gen_pull_range: Vector2 = Vector2(0.9, 1.2)
+@export var city_gen_neutral_count: int = 3
+@export var city_gen_neutral_pull_range: Vector2 = Vector2(0.8, 1.0)
+@export var city_gen_candidates: int = 24
+@export var city_gen_attempts: int = 16
+## The coast (one side of the city is sea): depth from the city's edge, wave amplitude and
+## wavelength (lots, min / max).
+@export var city_gen_coast_depth: Vector2 = Vector2(8.0, 18.0)
+@export var city_gen_coast_wave: Vector2 = Vector2(2.0, 5.0)
+@export var city_gen_coast_wavelength: Vector2 = Vector2(40.0, 80.0)
+## NA-12 r2 (art-pass item 17, the A2 bay): a second, shorter shore wave (amplitude, wavelength); the bay (a
+## Gaussian bump of the shore into the land: depth, width (sigma), and how far its middle may sit off the sea edge's
+## middle, as a share of that edge); the Cell's HQ centre this many lots inland of the bay head; the arc (degrees,
+## centred on the inland direction) the ring's corporations share; corporations whose HQ stands on the shore (its
+## rect within `city_gen_shore_touch` lots of the water, on a bay flank `city_gen_shore_flank` bay widths off its middle).
+@export var city_gen_coast_wave2: Vector2 = Vector2(1.0, 3.0)
+@export var city_gen_coast_wavelength2: Vector2 = Vector2(15.0, 30.0)
+@export var city_gen_bay_depth: Vector2 = Vector2(18.0, 30.0)
+@export var city_gen_bay_width: Vector2 = Vector2(16.0, 26.0)
+@export var city_gen_bay_shift: float = 0.15
+@export var city_gen_cell_inland: float = 10.0
+@export var city_gen_ring_arc_deg: float = 220.0
+@export var city_gen_shore_corps: Array[StringName] = [&"tethys"]
+@export var city_gen_shore_touch: float = 2.0
+@export var city_gen_shore_flank: Vector2 = Vector2(1.2, 2.0)
+## Terrain hills (data only until NA-12c): count, sigma (lots) and height (BU) ranges, on land.
+@export var city_gen_hill_count: Vector2i = Vector2i(2, 4)
+@export var city_gen_hill_sigma: Vector2 = Vector2(8.0, 20.0)
+@export var city_gen_hill_height: Vector2 = Vector2(6.0, 24.0)
+## Site layout headings tried round each HQ (degrees apart).
+@export var city_gen_aim_step_deg: float = 15.0
+## The most one seed's generation may take (seconds, this machine; the 1,000-seed sweep asserts it).
+@export var city_gen_budget_s: float = 2.0
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -431,6 +600,7 @@ func validate() -> PackedStringArray:
 	errors.append_array(config_errors())  # N9
 	if max_replays < 0:
 		errors.append("max_replays must be >= 0 (0 = no cap).")
+	_validate_city_gen(errors)
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
@@ -520,6 +690,29 @@ func enrage_for(data: EnemyData) -> EnrageData:
 	if data.enrage != null:
 		return data.enrage
 	return enrage_default(data.enemy_class())
+
+
+## NA-12: the city generator's numbers (ranges min <= max, counts and gaps positive).
+func _validate_city_gen(errors: PackedStringArray) -> void:
+	for r: Vector2 in [city_gen_ring_lots, city_gen_pull_range, city_gen_neutral_pull_range, city_gen_coast_depth,
+			city_gen_coast_wave, city_gen_coast_wavelength, city_gen_coast_wave2, city_gen_coast_wavelength2, city_gen_bay_depth,
+			city_gen_bay_width, city_gen_shore_flank, city_gen_hill_sigma, city_gen_hill_height]:
+		if r.x > r.y or r.x < 0.0:
+			errors.append("city_gen range %s must be 0 <= min <= max." % r)
+	if city_gen_pull_range.x <= 0.0 or city_gen_neutral_pull_range.x <= 0.0 or city_gen_coast_wavelength.x <= 0.0:
+		errors.append("city_gen pulls and the coast wavelength must be > 0.")
+	if city_gen_hq_gap <= 0.0 or city_gen_candidates < 1 or city_gen_attempts < 1 or city_gen_neutral_count < 0:
+		errors.append("city_gen_hq_gap, city_gen_candidates and city_gen_attempts must be > 0, city_gen_neutral_count >= 0.")
+	if city_gen_edge_lots < 0 or city_gen_coast_clear < 0 or city_gen_cell_jitter < 0.0 or city_gen_angle_jitter < 0.0:
+		errors.append("city_gen_edge_lots, city_gen_coast_clear, city_gen_cell_jitter and city_gen_angle_jitter must be >= 0.")
+	if city_gen_coast_wavelength2.x <= 0.0 or city_gen_bay_width.x <= 0.0 or city_gen_hill_sigma.x <= 0.0:
+		errors.append("city_gen_coast_wavelength2, city_gen_bay_width and city_gen_hill_sigma must be > 0.")
+	if city_gen_ring_arc_deg <= 0.0 or city_gen_ring_arc_deg > 360.0 or city_gen_bay_shift < 0.0 or city_gen_bay_shift >= 0.5:
+		errors.append("city_gen_ring_arc_deg must be in (0, 360] and city_gen_bay_shift in [0, 0.5).")
+	if city_gen_hill_count.x < 0 or city_gen_hill_count.x > city_gen_hill_count.y or city_gen_shore_touch < 0.0 or city_gen_cell_inland < 0.0:
+		errors.append("city_gen_hill_count must be 0 <= min <= max; city_gen_shore_touch and city_gen_cell_inland >= 0.")
+	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0 or city_gen_budget_s <= 0.0:
+		errors.append("city_gen_aim_step_deg must be in (0, 360] and city_gen_budget_s > 0.")
 
 
 func _validate_enrage(errors: PackedStringArray) -> void:

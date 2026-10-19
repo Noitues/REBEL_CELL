@@ -342,6 +342,15 @@
     "minItems": 4,
     "maxItems": 4
    }
+  },
+  "retry": {
+   "const": "leg_extend",
+   "description": "present only when the street fitted after the leg-extension retry (A-025)"
+  },
+  "retry_step": {
+   "type": "integer",
+   "minimum": 2,
+   "description": "the choose_street_fitting step that fitted (2 + 2*i legs as given, 3 + 2*i squared; i = the extend_retry index)"
   }
  }
 }

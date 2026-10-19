@@ -7,6 +7,11 @@ extends RefCounted
 ## 64-bit seeds and states are serialised as decimal strings (JSON keeps only 2^53).
 
 const STREAM_NAMES: Array[StringName] = [&"map", &"combat", &"rewards", &"events", &"raids"]
+## Plan 2 NA-12: named streams made on demand by `make_stream`, never part of the saved set
+## (so a city never advances a gameplay stream): the campaign's city seed from its campaign
+## seed (`CITY_SEED_STREAM`), and a city's layout from its city seed (`CITY_LAYOUT_STREAM`).
+const CITY_SEED_STREAM: StringName = &"city_seed"
+const CITY_LAYOUT_STREAM: StringName = &"city_layout"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

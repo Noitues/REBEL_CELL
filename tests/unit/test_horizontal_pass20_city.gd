@@ -170,7 +170,10 @@ func test_raid_results_sway_the_corporate_territory() -> void:
 	c.raids_lost = 2
 	var lost := CityInfluence.value_at(CityInfluence.of(c, corp), p, corp.id)
 	assert_gt(won, lost, "won raids lean the district to the Cell, lost ones to the corporation")
-	assert_eq(CityInfluence.value_at(CityInfluence.of(c, corp), p, &"meridian" if corp.id != &"meridian" else &"solace"), 0.0, "other territories are untouched")
+	var other: StringName = &"meridian" if corp.id != &"meridian" else &"solace"
+	var inf := CityInfluence.of(c, corp)
+	assert_eq(CityInfluence.sway_share(inf, p, corp.id), 1.0, "the whole sway inside the corporation's territory")
+	assert_lt(CityInfluence.sway_share(inf, Vector2(-1.0e6, -1.0e6), other), 0.001, "other territories, away from its Sites, are untouched")
 	assert_eq(CityInfluence.of(null, corp), {}, "no campaign, no influence")
 
 
