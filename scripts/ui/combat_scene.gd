@@ -211,6 +211,8 @@ var _option_index: int = -1
 var _dragging: bool = false
 ## The aim in grease pencil (S-COMBAT-HUD, CMB-10): it asks `aim_spec` each frame.
 var aim_pencil: AimLinePencil
+## N7 (18.1): the locks' circle-slash pencil.
+var nudge_lock_pencil: NudgeLockPencil
 ## The aiming instruction over the hand.
 var _aim_hint: Label
 const AIM_HINT_FONT := 14
@@ -664,26 +666,43 @@ func _toast_spot() -> Rect2:
 const SATELLITE_TOAST_W := 240.0
 
 
-## N7: px added to the wheel's outer radius so a lock toast stays at least Toast.BESIDE_GAP clear of the tick ring (rounding).
-const LOCK_TOAST_RING_PAD := 2.0
-
-
-## N7: the view of the wheel a lock refusal (`reason`) is about (the first one carrying that lock), else null.
-func _locked_view(reason: String) -> WheelView:
-	var kind := &""
-	if reason == CombatResolver.NUDGE_LOCKED:
-		kind = WheelState.LOCK_NUDGE
-	elif reason == CombatResolver.RESPIN_LOCKED:
-		kind = WheelState.LOCK_RESPIN
-	if kind == &"":
-		return null
+## N7 (18.1): the group a lock refusal (`reason`) re-scribbles: the combatant id of the first wheel
+## carrying that nudge lock, "respin" for a respin lock, else "".
+func _locked_group(reason: String) -> String:
+	if reason == CombatResolver.RESPIN_LOCKED:
+		return NUDGE_LOCK_RESPIN_GROUP
+	if reason != CombatResolver.NUDGE_LOCKED:
+		return ""
 	var views: Array = [_player_view]
 	views.append_array(_enemy_views.values())
 	for v in views:
 		var view := v as WheelView
-		if view != null and view.combatant != null and view.combatant.wheel.is_locked(kind):
-			return view
-	return null
+		if view != null and view.combatant != null and view.combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
+			return String(view.combatant.id)
+	return ""
+
+
+## N7 (18.1): the group of the RESPIN chip's slash.
+const NUDGE_LOCK_RESPIN_GROUP := "respin"
+
+
+## N7 (18.1): what the lock slash marks now, for NudgeLockPencil: one {key, group, center, radii}
+## per nudge button of a nudge-locked wheel, and one on the RESPIN chip while the operative's
+## respin is locked. The slash shows exactly when the lock state says so.
+func nudge_lock_marks() -> Array:
+	var out: Array = []
+	if hud_layer != null:
+		for b in hud_layer.buttons():
+			var wv: WheelView = b["view"]
+			if wv.combatant == null or wv.combatant.wheel == null or not wv.combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
+				continue
+			var r: float = b["radius"]
+			out.append({"key": "nudge|%s|%d|%d" % [wv.combatant.id, int(b["ring"]), int(b["direction"])],
+				"group": String(wv.combatant.id), "center": b["center"], "radii": Vector2(r, r)})
+	if _respin_button != null and engine.has_fight() and engine.state().player.wheel.is_locked(WheelState.LOCK_RESPIN):
+		var box := _respin_button.get_global_rect()
+		out.append({"key": "respin", "group": NUDGE_LOCK_RESPIN_GROUP, "center": box.get_center(), "radii": box.size * 0.5})
+	return out
 
 
 ## W0 ARTFIX: the aim ring of the satellite a move was refused on: {"at", "radius", "view"} (empty
@@ -1740,10 +1759,10 @@ func _on_action_refused(reason: String) -> void:
 	preview_note.append(reason)
 	var at := _toast_spot()
 	var aimed := _refused_satellite_ring() if reason == CombatResolver.SATELLITE_FIXED else {}
-	var locked := _locked_view(reason)
-	if aimed.is_empty() and locked != null:
-		# N7 (CAP-W1 fix): beside the locked wheel, clear of its HP row, chips and state label.
-		toast.show_beside(tr(reason), locked.global_center(), locked.outer_radius() + LOCK_TOAST_RING_PAD, get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
+	var locked := _locked_group(reason)
+	if locked != "":
+		# N7 (18.1): no words, no toast: the wax circle-slash on the button writes itself once more.
+		nudge_lock_pencil.rescribble(locked)
 	elif aimed.is_empty():
 		toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
 	else:
@@ -2317,6 +2336,9 @@ func _build_ui() -> void:
 	aim_pencil = AimLinePencil.new()
 	aim_pencil.spec = aim_spec
 	add_child(aim_pencil)
+	nudge_lock_pencil = NudgeLockPencil.new()  # N7 (18.1): the wax circle-slash on a locked nudge button / RESPIN chip
+	nudge_lock_pencil.spec = nudge_lock_marks
+	add_child(nudge_lock_pencil)
 	# B1a: the TURN strip and the hand row lie on dark bands; the strip and the RAM panel cast
 	# shadows; SEND IT (and the next step's sticker) spills its pink.
 	UiScrimPools.mark_band(_banner, SIDE_TOP)

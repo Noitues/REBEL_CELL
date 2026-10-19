@@ -1716,7 +1716,6 @@ NODE BUILT,NODE BUILT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
-NUDGE LOCKED,NUDGE LOCKED
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 "NULL: the needle sits on a NULL slice, so nothing happens.","NULL: the needle sits on a NULL slice, so nothing happens."
@@ -2029,7 +2028,6 @@ RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
-RESPIN LOCKED,RESPIN LOCKED
 RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 RETALIATION,RETALIATION

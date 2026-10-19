@@ -157,6 +157,8 @@ const DEMOS := {
 	# ART-2 2B (wheel attachments and the arena): on the live fight's wheels and backdrop.
 	&"backdrop_won_lights": ["scene", "arena_won"], &"drone_bloom": ["scene", "attach_bloom"],
 	&"preview_chevron_chase": ["scene", "attach_preview"], &"preview_ghost": ["scene", "attach_preview"],
+	# Q19 / N7 (art-pass 3.17, 18.1): the respin ghost's chevron chase and the lock slash's refused re-scribble.
+	&"respin_ghost_chase": ["scene", "respin_ghost"], &"nudge_lock_scribble": ["scene", "nudge_lock"],
 	&"daemon_rack_scan": ["scene", "attach_rack"],
 	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
 	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
@@ -1693,6 +1695,13 @@ func _play_scene(what: String) -> void:
 	match what:
 		"attach_bloom", "attach_preview", "attach_rack", "arena_won":
 			_play_attach(what)
+		"respin_ghost":
+			_scene._show_respin_odds()
+		"nudge_lock":
+			_scene.engine.state().player.wheel.add_lock(WheelState.LOCK_NUDGE, &"lab_lock", 1)
+			for k in SCENE_SETTLE:
+				await get_tree().process_frame
+			_scene._on_action_refused(CombatResolver.NUDGE_LOCKED)
 		"send":
 			_scene.end_turn()
 		"send_hit", "send_kill":

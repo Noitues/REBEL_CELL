@@ -101,5 +101,5 @@ func test_a_lock_on_an_enemy_wheel_blocks_the_players_nudge_of_it_only() -> void
 
 func test_the_refusal_texts_are_us_english_and_in_the_text_table() -> void:
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in [CombatResolver.NUDGE_LOCKED, CombatResolver.RESPIN_LOCKED, "NUDGE LOCKED", "RESPIN LOCKED"]:
+	for key in [CombatResolver.NUDGE_LOCKED, CombatResolver.RESPIN_LOCKED]:
 		assert_true(csv.contains("\n" + key + ","), key)
