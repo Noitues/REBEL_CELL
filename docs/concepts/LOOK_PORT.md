@@ -139,3 +139,14 @@ Numbers on the decision view: median 0.122 against 0.141, under_010 0.44 against
 
 **Order this confirms:** L4 starts by framing the same street (the A2 export plus the twin from it). Then facade materials and
 washes (gaps 1-2), reflections (3), fog/sky (4), signs (5), with a parity sheet after each.
+
+### 7b. L1b, after P6 (w1-close @ 8208c5be): `look_parity/L1b_8208c5be/`
+- Values are closer (overview median 0.125 against the plate's 0.130, under_010 0.32 against 0.30), but the frame reads murkier. Three or four
+  large coloured sky blobs come from the high fog-only lights near the camera ray (B-036 item 2), and they read as fake moons. That is
+  an art-bible §1.2 fail: the sky must be a haze field, not light sources.
+- The reflections don't show at this camera: blobs/MP is 18 against 676 overview and 94 against 459 decision. The street is in deep
+  shadow behind the towers. The camera is still 681 BU off the plate's, so this is not yet a test of P6's wet street.
+- 12.2 still fails, and the facades are still flat (gaps 1 and 2 unchanged).
+- Inherited from P6 (B-036, now on the art-pass board): P7 (stubs / storefront rooms / no light columns), sky blobs, a fog-top
+  band at the roofline, by-eye numbers, bokeh count and saturation, **perf 19.4 / 18.3 ms p95 against the 16.7 ms line** (reflection
+  march 40 steps plus 18 lights, about 8 ms). Perf is a hard gate on every art/look ready post.

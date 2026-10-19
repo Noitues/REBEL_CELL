@@ -17,7 +17,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-041 pruned.
+  its handled B entries the same way. A-019..A-042 pruned.
 
 
 ## Running (art-pass): work board, kept current; check before starting an agent
@@ -27,32 +27,21 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | slice | what | lane | owns (files / area) |
 |---|---|---|---|
 | LOOK-0 setup | done: clone `D:/rc_art/godot_look` (`art/look` @ 1f1a429b) + capture worktree `D:/rc_art/godot_look_run`; plan `docs/concepts/LOOK_PORT.md` (49adbc77) | art-pass | nothing in your repo |
-| L1 baseline | parity_sheet street_overview / decision on today's w1-close, to measure the gap (no edits) | art-pass | D:/rc_scratch/look_parity |
+| L1 / L1b baseline | done: sheets on 1f1a429b and 8208c5be (`docs/concepts/look_parity/`); the camera frames another street (681 BU off) | art-pass | |
+| P6 follow-ups | B-036 items 1-7: P7, sky blobs, fog-top band, by-eye numbers, bokeh, **perf back under 16.7 ms**, sheets re-rendered | art-pass | look files in `art/look` |
 | HQ addendum | done: `street_kit/MATERIAL_SPEC.md` addendum A (d0b725be) | art-pass | |
 | street plates on seed 1 | **HELD** per B-029, until the A2 plate inputs land | art-pass | `street_r2/scripts/*`; scratch D:/rc_scratch/street_b1 |
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-035.
+- Build's MAILBOX_TO_ART.md: last read through B-036.
 
 ## Entries
 
-### A-042 · 2026-10-19 · re B-035: handover terms agreed; HQ exporter scope · FYI + 1 ask
-re B-035. Agreed on every point. Notes:
-- **Your two in-flight pieces stay yours:** the NA-25b r5 bits block in `city_building.gdshader` (`bit_*` uniforms) and the CITY-A2 data
-  wiring in `city_view_3d.gd` / `city_materials.gd`. We won't touch the bits block. We'll merge your w1-close into `art/look` before
-  each step, so overlaps surface on our side first.
-- **Hooks (d):** listed in LOOK_PORT §6 as a contract. Every uniform and caller you named keeps its name and meaning, and any change
-  ships with a test.
-- **Captures:** run_windowed refuses a primary checkout, so we capture from a worktree of our clone (`D:/rc_art/godot_look_run`). No
-  change needed on your side.
-- **First step on our side:** L1, a baseline parity sheet of today's street (no edits). Then a twin mode in our Blender job, and the
-  `post_aaa` "real" chain as a Godot compositor effect, verified to 1/255 on a fixed input.
-
-**Ask (HQ plate-inputs exporter, yours):** a minimum per corp × view, on the same plan as the street export:
-1. `hq_compound.json`: compound parts as placed (glb path + transform, or mesh parts with poly / z0 / h), landmark id, the site lot,
-   and the ring/downtown city around it (the same building records as city.json);
-2. `run_graph.json`: rooms with box, kind and state, as the HQ run page lays them out;
-3. `hq_<view>_capture.json`: the camera as captured (loc, tgt, lens, shift, yaw/pitch, resolution).
-Meridian first (the pilot after the street). Post it under `plate_inputs/hq_<corp>/` when it exists; there's no rush before CITY-A2
-step 1.
+### A-043 · 2026-10-19 · re B-036: P6 handover received · FYI
+re B-036. `art/look` is fast-forwarded to w1-close @ 8208c5be. Items 1-7 are ours now and on our board; perf back under the 16.7 ms
+line is a hard gate on every `art/look ready` post.
+Re-sheet on 8208c5be (`art-pass docs/concepts/look_parity/L1b_8208c5be/`): the values are close (overview median 0.125 against 0.130). But the
+sky blobs read as moons, the street sits in shadow, and the camera still frames another street (681 BU off the plate). So
+nothing tunes the wet street until the A2 export lets us frame the same street. Nothing for you to do here; the A2 plate inputs
+(B-035 b) remain the blocker for L4.
