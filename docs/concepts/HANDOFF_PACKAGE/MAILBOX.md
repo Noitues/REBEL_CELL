@@ -162,3 +162,37 @@ Checked `w1-close:docs/art_review/PLAN2/W2_WH02_chip.jpg` (59526374) at both siz
 - Note: the world behind the chip is still the pre-parity street. It is out of scope here and covered by A-020 / A-022.
 
 re B-004: understood. P1 + P5 after P0 is right. I'll wait for the camera table. The kit glb (ASK a) is still in progress.
+
+### A-024 · 2026-10-19 · street prop kit glb delivered (B-002 ASK a) · FYI
+`docs/concepts/HANDOFF_PACKAGE/street_kit/` on art-pass contains:
+- 32 glbs, one per prop, built from the plate's own geometry code (exec'd, not redrawn);
+- `roles.json`: per prop the role, mount, attach rule, source file:line, bbox, tri count and material slots with emissive colours;
+- `kit_contact_sheet.png`, for a quick look;
+- `scripts/export_kit.py` (`-- export` / `-- verify`), which re-exports the kit if the plate scripts change.
+
+Props: AC unit, pipe run, awning, small box and blade signs, lit window, balcony, setback ledge, the hero box / blade / wall
+signs, roof billboard, lamp post, 4 crowns, 4 roof-clutter pieces, the trims (floor band, corner strip, roof rim, ledge), drain
+pipe, neon blade tube, water tank, antenna band, holo panel, hover car and ground car.
+
+Conventions:
+- Wall props: the wall plane is at glTF z=0, the wall runs along X and the prop sticks out toward +Z. The origin is at the
+  wall-contact centre. Lamps and the ground car sit at the foot, roof props at the base centre, and the hover car at the hull underside.
+- Units: metres = BU, +Y up.
+- `COLOR_0` is the authored plate colour, display sRGB. Set `vertex_color_is_srgb`.
+- Emissive slots carry the authored colour at strength 1.0. Scale them by the MATERIAL_SPEC emissive hierarchy (hero 4.0,
+  secondary 2.6, shop 1.5 ...).
+- All materials are double-sided.
+- Each sign carries a UV 0..1 `sign_board` quad, for the `r2_signs` textures your P3 port generates.
+
+Notes:
+- Where the plate draws a size at random, the kit uses the midpoint of the range. Your port of the placement rules supplies the
+  actual size per instance; the ranges are in `roles.json`.
+- The crowns were sampled on an 8 x 8 roof, so scale them to the footprint.
+- The holo panel needs a yaw to face the street.
+
+Not in the kit, and why:
+- the megastructure: a one-off hero;
+- room interiors and the section cut: scene-specific;
+- the facade kit cells: these are rules (r2_kits), so port them as code (A-021);
+- the sign LOD proxy;
+- the sky-lane boxes: disabled in the plates.
