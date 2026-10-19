@@ -12,6 +12,7 @@ shader_type spatial;
 render_mode cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
+#include "res://shaders/lib/netrun_clock.gdshaderinc"
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -46,8 +47,16 @@ uniform vec3 pbr_concrete = vec3(0.55, 0.0, 0.5);
 uniform vec3 pbr_glass = vec3(0.12, 0.2, 1.0);
 uniform vec3 glass_col = vec3(0.22, 0.26, 0.34);
 uniform vec2 glass_tone = vec2(0.8, 1.2);
+// The six concrete colour families of the plates (MATERIAL_SPEC 3), picked per building by its seed; blended in by look_blend.
+uniform vec3 concrete_fam[6];
 uniform float pbr_diffuse_k = 1.0;
 uniform float pbr_spec_k = 1.0;
+// The wet top of a cut near-side block (MATERIAL_SPEC 7: the plinth tops take the street's wet recipe): value-noise roughness
+// `wet_rough_noise` -> `wet_rough` at `wet_noise_scale`, spec `wet_spec`; the base colour is (plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue).
+uniform float wet_noise_scale = 0.09;
+uniform vec2 wet_rough_noise = vec2(0.45, 0.6);
+uniform vec2 wet_rough = vec2(0.32, 0.03);
+uniform float wet_spec = 0.7;
 // (rough, metal, spec) of this fragment for light().
 varying vec3 v_pbr;
 
@@ -250,7 +259,11 @@ void fragment() {
 	// AAA-2: the per-triangle tone jitter is Eevee-only in the plates (Cycles ignores it): the facets show by their own light.
 	float tone = mix(mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13)), 1.0, look_blend);
 	bool roof = v_c0.y > 0.5;
-	vec3 base = COLOR.rgb * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
+	vec3 body = COLOR.rgb;
+	if (look_blend > 0.0) {
+		body = mix(body, concrete_fam[int(floor(fract(seed * 17.31) * 6.0)) % 6], look_blend);
+	}
+	vec3 base = body * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
@@ -407,6 +420,25 @@ void fragment() {
 		// The open top of a cut building: its back faces show the near-black poche.
 		ALBEDO = poche;
 		EMISSION = vec3(0.0);
+		if (look_blend > 0.0) {
+			// AAA-2: the cut top is a wet plinth top: (a, a, 1.2 a), a puddle roughness by noise, spec 0.7, an up normal: it takes the
+			// lamps' pools and the SSR reflections of the street like the ground does.
+			float wn = 0.0;
+			float wa = 0.5;
+			vec3 wp = vec3(v_world.x, 0.0, v_world.z) * wet_noise_scale;
+			for (int i = 0; i < 5; i++) {
+				wn += wa * nr_noise3(wp);
+				wp *= 2.0;
+				wa *= 0.5;
+			}
+			wn /= 0.96875;
+			float wr = mix(wet_rough.x, wet_rough.y, smoothstep(wet_rough_noise.x, wet_rough_noise.y, wn));
+			ALBEDO = mix(poche, vec3(plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue), look_blend);
+			NORMAL = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+			ROUGHNESS = wr;
+			SPECULAR = wet_spec;
+			v_pbr = vec3(wr, 0.0, wet_spec);
+		}
 	}
 	if (id_mode) {
 		ALBEDO = vec3(0.0);

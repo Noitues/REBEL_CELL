@@ -418,7 +418,7 @@ func _apply_fog_density() -> void:
 	_scale_transparent_emitters(expo)
 
 
-## AAA-2: the transparent emitters (beam shafts, streaks, plumes, sign flickers: drawn after the post's screen copy, so the chain does not
+## AAA-2: the transparent emitters (beam shafts, plumes, sign flickers: drawn after the post's screen copy, so the chain does not
 ## see them) take the exposure themselves, as the Environment tonemap exposure used to scale them.
 func _scale_transparent_emitters(expo: float) -> void:
 	for m: Variant in _clock_mats:
@@ -426,7 +426,7 @@ func _scale_transparent_emitters(expo: float) -> void:
 		if sm == null or sm.shader == null:
 			continue
 		var path: String = sm.shader.resource_path
-		if path.ends_with("dress_neon.gdshader") or path.ends_with("beam_shaft.gdshader") or path.ends_with("streak_lane.gdshader"):
+		if path.ends_with("dress_neon.gdshader") or path.ends_with("beam_shaft.gdshader"):
 			sm.set_shader_parameter(&"emission_multiplier", expo)
 		elif path.ends_with("dress_plume.gdshader"):
 			sm.set_shader_parameter(&"emit", float(DressingConfigData.shipped().plume["emit"]) * expo)

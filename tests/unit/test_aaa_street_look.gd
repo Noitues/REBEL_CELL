@@ -1,7 +1,7 @@
 extends GutTest
 ## A-022 street look parity (P1 + P5): the MATERIAL_SPEC "Realistic night" numbers are in the config and reach the materials, the
 ## emissive hierarchy is on the dressing, the facet grit is deterministic geometry, the street's real lights obey their budget and
-## their fog-only cull mask, the moon and the flat world are applied, and look_blend 0 (the mainline city) is untouched.
+## their fog energy, the moon and the flat world are applied, and look_blend 0 (the mainline city) is untouched.
 
 const CFG := preload("res://content/config/city_config.tres")
 var _cache: Dictionary = {}
@@ -192,7 +192,9 @@ func test_the_light_rig_obeys_its_caps_its_fog_only_mask_and_the_watt_to_energy_
 	for n: Node in rig.root.get_children():
 		var l := n as Light3D
 		if n.name.begins_with("fog_") or n.name.begins_with("beam_"):
-			assert_eq(l.light_cull_mask, StreetLightRig.FOG_ONLY_MASK, "%s lights the fog only" % n.name)
+			assert_eq(l.light_volumetric_fog_energy, StreetLightRig.FOG_ENERGY_CAP, "%s: fog energy at the cap" % n.name)
+			var want: float = float(lc["city_glow" if n.name.begins_with("fog_") else "beam"]["energy"])
+			assert_almost_eq(l.light_energy * l.light_volumetric_fog_energy, want, 0.0001, "%s: the fog gets the configured energy, surfaces 1/16 of it" % n.name)
 			assert_false(l.shadow_enabled)
 		else:
 			assert_ne(l.light_cull_mask & 1, 0, "%s lights the surfaces" % n.name)

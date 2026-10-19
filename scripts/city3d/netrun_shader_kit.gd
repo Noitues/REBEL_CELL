@@ -66,6 +66,11 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"edge_a", _v3(b["edge_a"]))
 	m.set_shader_parameter(&"edge_b", _v3(b["edge_b"]))
 	m.set_shader_parameter(&"haze_col", _v3(b["haze_col"]))
+	var wet: Dictionary = _cfg().wet
+	m.set_shader_parameter(&"wet_noise_scale", float(wet["noise_scale"]))
+	m.set_shader_parameter(&"wet_rough_noise", _v2(wet["rough_noise"]))
+	m.set_shader_parameter(&"wet_rough", _v2(wet["rough_wet"]))
+	m.set_shader_parameter(&"wet_spec", float(wet["specular"]))
 	# AAA-2 PBR (MATERIAL_SPEC 4): concrete (rough, metal, spec), the glass panes, the light gains.
 	var pbr: Dictionary = _cfg().aaa["pbr"]
 	var cc: Dictionary = pbr["concrete"]
@@ -74,6 +79,10 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"pbr_glass", Vector3(float(gl["rough"]), float(gl["metal"]), float(gl["spec"])))
 	m.set_shader_parameter(&"glass_col", _v3(gl["col"]))
 	m.set_shader_parameter(&"glass_tone", _v2(gl["tone"]))
+	var fam := PackedVector3Array()
+	for c: Array in cc["families"]:
+		fam.append(_v3(c))
+	m.set_shader_parameter(&"concrete_fam", fam)
 	m.set_shader_parameter(&"pbr_diffuse_k", float(pbr["diffuse_k"]))
 	m.set_shader_parameter(&"pbr_spec_k", float(pbr["spec_k"]))
 

@@ -2,12 +2,13 @@ class_name StreetLightRig
 extends RefCounted
 ## AAA-2 (A-022 / MATERIAL_SPEC 9): the street's real coloured local lights as Godot OmniLight3D / SpotLight3D nodes within a budget
 ## (`CityShaderConfigData.aaa.lights` caps): kerb lamps (60 W warm / cool), street-level glows (20 W), the route column washes and one
-## facade wash per frontage column, and the fog-only city glow and beam spots (they light the volumetric fog, never a surface: their
-## cull mask is a layer nothing is drawn on). Watts become Godot energy through `omni_k` / `spot_k`; the range is where the inverse-square
+## facade wash per frontage column, and the fog-mostly city glow and beam spots (their fog energy is the volumetric multiplier at its
+## cap, so the energy that lights surfaces is 1/16 of what lights the fog; Godot's fog also honours the cull mask, so a mask cannot make a
+## light fog-only). Watts become Godot energy through `omni_k` / `spot_k`; the range is where the inverse-square
 ## falloff is gone (`range_k` x sqrt(watts), at most `range_max`). View glue: it builds nodes from `StreetDressing.light_sources`.
 
-## The render layer no mesh is on (bit 20): a light with only this cull mask lights the volumetric fog alone.
-const FOG_ONLY_MASK := 1 << 19
+## Godot's cap on `light_volumetric_fog_energy`.
+const FOG_ENERGY_CAP := 16.0
 
 var root: Node3D = null
 ## Light count by kind ("lamp", "glow", "wash", "facade", "fog", "beam").
@@ -44,16 +45,15 @@ func _build(src: Dictionary) -> void:
 	for s: Dictionary in src["city_glow"]:
 		var l := _omni("fog", s["pos"], s["col"], float(cg["watts"]), lc)
 		l.omni_range = float(cg["range"])
-		l.light_energy = float(cg["energy"])
-		l.light_cull_mask = FOG_ONLY_MASK
-		l.light_volumetric_fog_energy = float(cg["volumetric"])
+		l.light_volumetric_fog_energy = FOG_ENERGY_CAP
+		l.light_energy = float(cg["energy"]) / FOG_ENERGY_CAP
 	var bm: Dictionary = lc["beam"]
 	for i: int in mini(src["beams"].size(), int(bm["cap"])):
 		var s: Dictionary = src["beams"][i]
-		var l := _spot("beam", s["pos"], s["dir"], s["col"], float(bm["watts"]), float(bm["cone_deg"]), 1.0, lc, FOG_ONLY_MASK)
+		var l := _spot("beam", s["pos"], s["dir"], s["col"], float(bm["watts"]), float(bm["cone_deg"]), 1.0, lc, 0)
 		l.spot_range = float(bm["range"])
-		l.light_energy = float(bm["energy"])
-		l.light_volumetric_fog_energy = float(bm["volumetric"])
+		l.light_volumetric_fog_energy = FOG_ENERGY_CAP
+		l.light_energy = float(bm["energy"]) / FOG_ENERGY_CAP
 
 
 ## `cap` indices evenly spread over `list` (all of them when it is shorter), in list order.

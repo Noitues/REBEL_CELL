@@ -12,6 +12,8 @@ shader_type fog;
 
 uniform float look_blend = 1.0;
 uniform float density_mul = 1.0;
+// The multiplier on the sky haze and the backdrop haze (they are thin and keep the spec numbers; `density_mul` is the street's body calibration).
+uniform float haze_mul = 1.0;
 uniform float peak = 0.0507;
 uniform float h_front = 14.0;
 uniform float h_sky = 30.8;
@@ -110,7 +112,8 @@ void fog() {
 	// Back haze above h_sky.
 	float hz = haze * exp(-max(0.0, z - h_sky) / haze_efold);
 	float bh = back_haze * smoothstep(back_depth.x, back_depth.y, side) * exp(-z / (back_h_k * h_sky));
-	float total = dens + gb + mb + hz + bh;
+	float body_total = dens + gb + mb;
+	float total = body_total + hz + bh;
 
 	// Underlight ramp by zw / (2.2 h_front): tint_a -> tint_b -> tint_c, and the glow tints.
 	float ramp = clamp(zw / (2.2 * h_front), 0.0, 1.0);
@@ -120,7 +123,7 @@ void fog() {
 	vec3 mcol = nglow < 0.5 ? mix(tint_b, tint_c, nglow * 2.0) : mix(tint_c, tint_a, nglow * 2.0 - 1.0);
 	vec3 emis = under * dens * underlight_k + gcol * gb * ground_glow + mcol * mb * mid_glow;
 
-	DENSITY = total * density_mul * clamp(look_blend, 0.0, 1.0);
+	DENSITY = (body_total * density_mul + (hz + bh) * haze_mul) * clamp(look_blend, 0.0, 1.0);
 	ALBEDO = scatter;
 	EMISSION = emis * emit_gain * clamp(look_blend, 0.0, 1.0);
 }
