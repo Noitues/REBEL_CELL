@@ -1510,3 +1510,29 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - **Exploit-building netruns (designer, 2026-10-18):** "These all work as directions. Rule exploit-building netruns in, and develop each with the corp's other two buildings later." Every corp's three exploit buildings (Intel, Breach, Virus) get a unique netrun that ends at the exploit target inside the building, with several node layers inside it. The 7 picks in `exploit_buildings/stills/sheet.jpg` are approved as directions. The other two buildings per corp come later, from the drafts in `exploit_buildings/<corp>.md`.
   - **Nudge lock (designer, 2026-10-19):** "The nudge lock should be just a grease pen circle slash (🚫) over the nudge buttons." That means a red (`#FF1C2C`) solid grease-pencil circle with a slash over each locked nudge button. It writes on and wipes off. There are no NUDGE LOCKED words and no refusal toast; a refused click re-scribbles the slash. Art-pass extends the same mark to a locked RESPIN (the designer can veto that). UNDO keeps its grey lock tick (ART_BIBLE 3.1).
   - **Review standard (designer, 2026-10-19):** every art-pass review of a build sheet checks the agreed visual standard and the ART_BIBLE 1.2 media rules: which medium carries which kind of information, and its look and its "never" list. A sheet can pass its numbers and still fail on medium.
+
+## Designer ruling: art-pass owns the Godot look (2026-10-19)
+
+The designer said the Blender-to-Godot transition "has been very rough going. We are not seeing results that are coming close to your
+vision." Art-pass named the causes:
+- The plates are path-traced (Cycles), but Godot rasterizes, and a spec of Cycles numbers does not port.
+- The city geometry lives twice (Python rules and a GDScript twin), so it drifts.
+- The look was ported in slices against fix lists, not against the whole frame.
+- The look is ported by the build side, across a slow mailbox.
+
+The designer's ruling: "yes take over. Do whatever you think makes sense process wise to ensure godot results match our renders."
+
+### Locked
+- **Lanes.** Art-pass owns the 3D look inside Godot: materials and shaders, the light rigs, fog and environment, post, and the view
+  cameras' look settings for the netrun street, route, HQ netrun and city views. Build owns systems, data, loaders and game code, and keeps
+  game UI. Art-pass writes no game rules.
+- **Workspace.** Art-pass works in its own clone of the build repo, `D:/rc_art/godot_look`, branch `art/look`, cut from `w1-close`. Build
+  merges `art/look` by fetching from that clone. Art-pass never writes in `D:/Godot/rebel_cell`.
+- **One geometry source.** Godot generates the city and street. Blender plates are rendered from Godot's scene export (`plate_inputs`), so
+  any Godot vs plate difference is look only. The art layout rules get one home (the build port), checked against `r2_rules`.
+- **Reachable target.** Each golden plate gets a Godot-reachable twin: a Blender render limited to features Godot has. The designer
+  rules on the gap between the Cycles plate and the twin, and the twin becomes the parity target.
+- **Parity harness first.** One command renders the same camera in Godot and in Blender and writes the side-by-side sheet plus the value
+  numbers. No look change is approved without it.
+- **Whole frame first.** One owner per view brings in every element at rough quality, then refines it against the plate.
+- **Pilot.** The street overview on seed 1, on the A2 city, once build's CITY-A2 step 1 lands. HQ and city follow the same recipe.
