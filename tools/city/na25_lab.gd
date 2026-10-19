@@ -81,6 +81,8 @@ func _process(_delta: float) -> void:
 			_step(true)
 		"skip":
 			_step_skip()
+		"stills":
+			_step_stills()
 		"lb":
 			_step_lb()
 		"hq":
@@ -198,12 +200,63 @@ func _step_skip() -> void:
 	_grab("skip_after")
 	var got: Array = view.rig.pose.to_json().values()
 	print("NA25 skip at %.1f s: end pose equals the played end pose = %s; view=%d; dark_frames=%d" % [SKIP_AT, str(got == _end_pose), view.current_view(), _dark_frames])
-	# NA-25b: the look blend swept 0 .. 1 at a mid-dive pose (the wet ground must not clip to white at any blend).
-	view.entry_begin()
-	view.entry_dive(LB_SWEEP_U)
-	_lb_i = 0
-	_lb_f = 0
-	_phase = "lb"
+	_still_i = 0
+	_still_f = 0
+	_phase = "stills"
+
+
+## NA-25b stills: the facade's bits dissolve with every room mid-way (rooms in frame are counted), the toggle's camera ease.
+const STILL_SETTLE := 8
+var _still_i := 0
+var _still_f := 0
+
+
+func _still_names() -> Array[String]:
+	return ["bits_overview_0.30", "bits_overview_0.55", "bits_decision_0.45", "toggle_0.00", "toggle_0.25", "toggle_0.50", "toggle_0.75", "toggle_1.00"]
+
+
+func _set_still(name: String) -> void:
+	view.entry_end()
+	var ids: Array = view.rig.room_ids()
+	if name.begins_with("bits_"):
+		var parts := name.split("_")
+		var k := float(parts[2])
+		if parts[1] == "overview":
+			view.rig.set_pose(_data.overview_state()["pose"])
+		for id: String in ids:
+			view.rig.set_room_dissolve(id, k)
+		var n := 0
+		var vr := Rect2(Vector2.ZERO, view.size)
+		for id: String in ids:
+			if vr.encloses(view.rig.room_box_px(id)) and view.rig.room_box_px(id).size.x > 0.0:
+				n += 1
+		print("NA25 still %s: %d rooms in frame, dissolve %.2f" % [name, n, k])
+	else:
+		var u := float(name.split("_")[1])
+		view.entry_begin(true)
+		view.entry_toggle(u)
+
+
+func _step_stills() -> void:
+	var names := _still_names()
+	if _still_i >= names.size():
+		view.entry_end()
+		for id: String in view.rig.room_ids():
+			view.rig.set_room_dissolve(id, 1.0)
+		# NA-25b: the look blend swept 0 .. 1 at a mid-dive pose (the wet ground must not clip to white at any blend).
+		view.entry_begin()
+		view.entry_dive(LB_SWEEP_U)
+		_lb_i = 0
+		_lb_f = 0
+		_phase = "lb"
+		return
+	if _still_f == 0:
+		_set_still(names[_still_i])
+	_still_f += 1
+	if _still_f >= STILL_SETTLE:
+		_grab(names[_still_i])
+		_still_i += 1
+		_still_f = 0
 
 
 const LB_SWEEP := [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
