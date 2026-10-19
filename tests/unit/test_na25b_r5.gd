@@ -1,18 +1,8 @@
 extends GutTest
-## NA-25b r5 (art-pass A-037): the CRT hold's glass is the class field's hue at 0.8x its value, the SAVED stamp waits out the jack
+## NA-25b r5 / r6 (art-pass A-037, A-046): the SAVED stamp waits out the jack
 ## transition, and the dissolve's 0 / 1 glyphs thin out (fewer) as the share falls instead of shrinking.
 
 const SHADER_PATH := "res://shaders/city/city_building.gdshader"
-
-
-func test_the_hold_glass_is_the_field_hue_at_a_share_of_its_value() -> void:
-	for accent: Color in [Palette.NET_CYAN, Palette.CELL_PINK, Palette.CELL_ACID]:
-		var f := JackHubField.field_color(accent)
-		var g := JackWheel.glass_color(accent)
-		assert_almost_eq(g.v, f.v * JackWheel.HOLD_GLASS_VALUE, 0.01, "0.8x the field's value")
-		assert_almost_eq(g.s, f.s, 0.01, "the field's saturation")
-		if f.s > 0.05:
-			assert_almost_eq(g.h, f.h, 0.01, "the field's hue")
 
 
 func test_the_saved_stamp_is_held_through_the_transition_and_shows_after() -> void:
@@ -70,15 +60,16 @@ func test_the_shader_draws_fixed_size_glyphs_on_the_netrun_clock() -> void:
 
 func test_the_hold_hex_is_the_rim_hue_with_an_age_fade() -> void:
 	var rim := PaletteSkins.chrome(Palette.NET_CYAN)
-	var c := JackWheel.hex_color(rim)
+	var c := JackSequence.hex_color(rim)
 	assert_almost_eq(c.h, rim.h, 0.01, "the rim's hue")
 	assert_almost_eq(c.v, rim.v * 0.75, 0.01, "0.75 of the rim's value")
-	assert_almost_eq(JackWheel.HOLD_HEX_ALPHA, 0.65, 0.001, "newest rows")
-	assert_almost_eq(JackWheel.HOLD_HEX_OLDEST_ALPHA, 0.35, 0.001, "oldest rows")
-	assert_gt(JackWheel.HOLD_HEX_ALPHA, JackWheel.HOLD_HEX_OLDEST_ALPHA)
-	var w := JackWheel.new()
-	w.setup({}, Vector2(1280.0, 720.0))
-	var ov := w.hold.shader_overrides
-	assert_eq(ov[&"hex_tint"], JackWheel.hex_color(w.hold.accent()))
-	assert_almost_eq(float(ov[&"hex_age_oldest"]) * JackWheel.HOLD_HEX_ALPHA, JackWheel.HOLD_HEX_OLDEST_ALPHA, 0.001)
-	w.free()
+	assert_almost_eq(JackSequence.HOLD_HEX_ALPHA, 0.65, 0.001, "newest rows")
+	assert_almost_eq(JackSequence.HOLD_HEX_OLDEST_ALPHA, 0.35, 0.001, "oldest rows")
+	assert_gt(JackSequence.HOLD_HEX_ALPHA, JackSequence.HOLD_HEX_OLDEST_ALPHA)
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	seq._begin({"street": true, "from": "A", "to": "B"})
+	var ov := seq.hold.shader_overrides
+	assert_eq(ov[&"hex_tint"], JackSequence.hex_color(seq.hold.accent()))
+	assert_almost_eq(float(ov[&"hex_age_oldest"]) * JackSequence.HOLD_HEX_ALPHA, JackSequence.HOLD_HEX_OLDEST_ALPHA, 0.001)
+	assert_false(ov.has(&"glass_top") or ov.has(&"glass_bottom"), "the glass is the terminal panel's own, not a field colour")

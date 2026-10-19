@@ -17,7 +17,7 @@ const WAIT_FRAMES := 1800
 ## Frames the SAVED stamp has been up before its frame is taken (past its stamp-down).
 const SAVED_SETTLE_FRAMES := 20
 ## Cover times (s into the street timeline) of the dive, REVEAL (mid-dissolve of layer 1 and the end) key frames.
-const FWD_SHOTS := {"dive_1.50": 1.5, "reveal_mid": 3.70, "reveal_end": 6.60}
+const FWD_SHOTS := {"dive_0.05": 0.05, "dive_1.50": 1.5, "reveal_mid": 3.70, "reveal_end": 6.60}
 ## Cover times (s into the reverse run) of the jack-out frames over the end page.
 const REV_SHOTS := {"rev_zoom": 0.5, "rev_reveal": 4.0, "rev_dive": 8.44}
 
@@ -174,7 +174,7 @@ func _track_jack(delta: float) -> void:
 			_shoot_fwd(e)
 	if _mode == "shots":
 		_shoot_chain()
-		if _shot_done.has("chain_7_lens_open") and Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
+		if _shot_done.has("chain_4_dot_to_dive") and Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
 			_saved_frames += 1  # let the stamp land (it stamps down first), then take the frame
 			if _saved_frames >= SAVED_SETTLE_FRAMES:
 				_shot_done["chain_8_saved"] = true
@@ -197,8 +197,8 @@ func _track_jack(delta: float) -> void:
 		_phase = "choose"
 
 
-## The LOCKED jack-in chain (ART_BIBLE 4.6) by the sequence's own state: terminal typed, rain, collapse, wheel slap, lens swell, the
-## covering hub (held), the lens opening.
+## The jack-in chain (ART_BIBLE 4.6) by the sequence's own state: terminal typed, rain, collapse, the dot handing to the dive (the
+## switch under the night sky, a slow load as the CRT hold).
 func _shoot_chain() -> void:
 	var j: JackSequence = Fx.jack_link
 	if j == null or not j.visible or not j.street:
@@ -209,19 +209,15 @@ func _shoot_chain() -> void:
 			tag = "chain_2_rain"
 		elif j.terminal.scale.y < 0.3 and j.terminal.scale.x > 0.5:
 			tag = "chain_3_collapse"
+		elif j.terminal.scale.y < 0.3 and j.terminal.scale.x < 0.12:
+			tag = "chain_3b_dot"
 		elif j._text.visible_characters == -1 and j.rain_t < 0.0 and j.terminal.scale.y >= 0.99:
 			tag = "chain_1_terminal"
-	elif j.open_t >= 0.3:
-		tag = "chain_7_lens_open"
 	elif j.covering():
-		# The hub hold: the plain breathe first, then (a slow load, past `jack_hub_crt`) the CRT terminal with its routing line typed.
-		tag = "chain_6_cover_hold"
-		if j.wheel_view != null and j.wheel_view.holding() and not j.wheel_view.hold.typing():
-			tag = "chain_6b_crt_hold"
-	elif j.wheel_scale > 3.0:
-		tag = "chain_5_lens_swell"
-	elif j.wheel_scale > 0.0 and j.wheel_scale <= 1.4:
-		tag = "chain_4_slap"
+		# The switch under the night sky; a slow load (past `jack_hold_crt`) becomes the CRT hold with its routing line typed.
+		tag = "chain_4_dot_to_dive"
+		if j.holding() and not j.hold.typing():
+			tag = "chain_4b_crt_hold"
 	if tag != "" and not _shot_done.has(tag):
 		_shot_done[tag] = true
 		get_viewport().get_texture().get_image().save_png("%s/%s.png" % [_shots, tag])
@@ -237,7 +233,7 @@ func _shoot_fwd(e: float) -> void:
 func _end_run_and_leave() -> void:
 	_report_stats("jack-in", _all)
 	_report_stats("dive (first 3.0 s of the cover)", _dive)
-	print("NA25E covering hub (the held switch frames): %d frames, %d lifted-then-back (flicker), %d off-colour, %d dark frames" % [_night_frames, _night_off_then_on, _night_bad, _dark])
+	print("NA25E night-sky switch frames: %d frames, %d lifted-then-back (flicker), %d off-colour, %d dark frames" % [_night_frames, _night_off_then_on, _night_bad, _dark])
 	if _mode == "shots":
 		get_viewport().get_texture().get_image().save_png("%s/choose.png" % _shots)
 	var s := RunManager.netrun
@@ -279,13 +275,9 @@ func _track_out(delta: float) -> void:
 	if j != null and j.visible and j.street and j.terminal != null and is_instance_valid(j.terminal) and _mode == "shots":
 		if j.covering() and not _hq_out_seen.has("night"):
 			_hq_out_seen["night"] = true
-			var hub_r := j.wheel_r * j.wheel_scale * j.wheel_view.hub_share()
-			print("NA25E HQ-side switch frame: the hub covers the screen = %s (hub %.0f px)" % [str(JackWheel.covers(j.wheel_at, hub_r, 0.0, get_viewport_rect().size)), hub_r])
+			print("NA25E HQ-side switch frame: under the night sky = %s" % str(j.night))
 			get_viewport().get_texture().get_image().save_png("%s/hq_out_cover.png" % _shots)
-		elif j.wheel_scale > 0.0 and j.wheel_scale < 1.0 and not _hq_out_seen.has("unslap"):
-			_hq_out_seen["unslap"] = true
-			get_viewport().get_texture().get_image().save_png("%s/hq_out_unslap.png" % _shots)
-		elif j.wheel_scale <= 0.0 and j.terminal.visible:
+		elif j.terminal.visible:
 			if j.terminal.scale.x < 0.9 and j.terminal.scale.y < 0.3 and not _hq_out_seen.has("line"):
 				_hq_out_seen["line"] = true
 				get_viewport().get_texture().get_image().save_png("%s/hq_out_crt_on.png" % _shots)

@@ -269,34 +269,58 @@ func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
 
 # --- The HQ side backwards (NA-25b) --------------------------------------------------------------------------
 
-func test_the_hq_side_switches_under_the_covering_hub_and_a_press_ends_it_on_the_hq() -> void:
+func test_the_hq_side_switches_under_the_night_sky_and_a_press_ends_it_on_the_hq() -> void:
 	var seq := JackSequence.new()
 	add_child_autofree(seq)
-	var seen := {"covering": false, "calls": 0}
+	var seen := {"covering": false, "calls": 0, "night": false}
 	var switch := func() -> void:
 		seen["calls"] += 1
 		seen["covering"] = seq.covering()
+		seen["night"] = seq.night
 	seq.play_out({"street": true, "from": "A", "to": "B"}, self, switch)
-	assert_eq(seen["calls"], 0, "the lens closes over the street first")
+	assert_eq(seen["calls"], 0, "no wheel or lens beat first: the switch waits only for the sky to draw")
 	seq.skip()
 	for i in 4:
 		await get_tree().process_frame
 	assert_eq(seen["calls"], 1, "the switch ran once")
-	assert_true(seen["covering"], "the HQ loads under the covering hub (no night-sky panel)")
+	assert_true(seen["covering"])
+	assert_true(seen["night"], "the HQ loads under the night sky")
 	assert_false(seq.visible, "a press ends it on the HQ with no terminal left")
 	assert_null(seq.terminal)
+	assert_false(seq.holding())
 
 
-func test_the_street_entry_keeps_the_locked_chain_slap_and_lens_before_the_dive() -> void:
-	# ART_BIBLE 4.6: terminal, CONNECTED, rain, CRT collapse, wheel slap, wheel lens; the street entry no longer cuts to a night panel.
+func test_the_crt_dot_hands_straight_to_the_switch_with_no_wheel_beat() -> void:
+	# ART_BIBLE 4.6 (A-046): terminal, CONNECTED, rain, CRT collapse (line, then dot), then the dive; one press skips all of it.
 	var seq := JackSequence.new()
 	add_child_autofree(seq)
 	var order: Array[String] = []
 	var switch := func() -> void:
-		order.append("switch:wheel=%s,covering=%s" % [str(seq.wheel_scale > 1.0), str(seq.covering())])
+		order.append("switch:night=%s" % str(seq.night))
 	seq.play({"street": true, "from": "A", "to": "B"}, self, switch)
+	assert_eq(order.size(), 0, "nothing switches before the chain has played")
 	seq.skip()
 	for i in 4:
 		await get_tree().process_frame
-	assert_eq(order.size(), 1, "one switch")
-	assert_false(seq.night, "no night-sky panel in the chain")
+	assert_eq(order, ["switch:night=true"] as Array[String], "one switch, straight after the terminal beats")
+	assert_false(seq.visible, "skip ends everything")
+	assert_false("wheel_view" in seq, "there is no wheel in the sequence")
+	assert_null(seq.terminal)
+
+
+func test_a_slow_load_becomes_the_crt_hold_and_the_end_clears_it() -> void:
+	var was := Motion.force_live
+	Motion.force_live = true
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	seq._begin({"street": true, "from": "A", "to": "B", "build": "site_x"})
+	assert_eq(seq._hold_line, "routing ... building street_site_x", "the CRT line names the building")
+	seq.switched = true
+	seq._holding = true
+	seq._process(Motion.seconds(&"jack_hold_crt") * 0.4)
+	assert_false(seq.holding(), "under the threshold: the night sky alone")
+	seq._process(Motion.seconds(&"jack_hold_crt"))
+	assert_true(seq.holding(), "past it: the CRT terminal")
+	seq._end()
+	assert_false(seq.holding(), "the end clears the hold")
+	Motion.force_live = was

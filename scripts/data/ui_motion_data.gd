@@ -127,8 +127,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
 	# sign loops, the ON AIR ticker.
 	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
-	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
-	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens", &"jack_hub_crt",
+	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, the slow-load hold).
+	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_hold_crt",
 	# NA-25 (PIPELINE_SPEC 10): the street entry sequence (terminal, rain, collapse, dive, reveal, mark, zoom) and its jack-out hold.
 	&"entry_terminal", &"entry_rain", &"entry_collapse", &"entry_dive", &"entry_reveal", &"entry_reveal_lead", &"entry_reveal_write", &"entry_reveal_dissolve",
 	&"entry_mark", &"entry_mark_hold", &"entry_mark_slap", &"entry_mark_stagger", &"entry_mark_rings", &"entry_mark_numbers", &"entry_mark_target", &"entry_ui_in",

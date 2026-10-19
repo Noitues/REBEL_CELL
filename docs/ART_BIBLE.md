@@ -805,14 +805,24 @@ Reference: `round37_netrun/*`, `round38_netrun_transit/transit_v3.png`, `transit
   straight segments with 45° or 90° turns only, crossing streets rather than riding them; the walked
   path is a **solid** lime line; available (orange) and not-yet (white) paths are dashed; crossings
   avoided, the rest bridged with a hop; ~7 layers, 15–20 nodes; the lighter city grade.
-- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name, Heat stamp); the
-  node info window shows only tier, type and rewards, and only when decrypted; the TARGET keeps its
-  red pencil circle; DECK and MENU.
-- **Transition (LOCKED, ~4.4 s, skippable):** JACK IN → the Cell's terminal types
-  `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED, binary rain along the chosen
-  link only → the terminal window despawns as a CRT collapse (line, then dot) → the operative's wheel
-  slaps onto the link and spins up → **wheel lens**: the hub opens onto the transit view and the ring
-  flies past the camera. Beats 1–3 can shorten after the first runs (setting).
+- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name; no Heat stamp,
+  Heat is in the top strip, 4.3); the node info window shows only tier, type and rewards, and only
+  when decrypted; the TARGET keeps its red pencil circle; the ROUTE terminal holds only GRID VIEW
+  and Save & quit.
+- **Route page (LOCKED round 44, `round44_undesigned/A_map/route_page*.png`):** zoomed so the run
+  fills most of the frame; no text tags on nodes and no YOU ARE HERE words (the lime token is the
+  position; option numbers stay); only the links the route uses are drawn, and hovering shows every
+  run link as a 25 % white hairline; top strip = Heat, HP, Cycles.
+- **Transition (LOCKED, netrun entry flow 2026-10-15; one press skips the whole entry):** JACK IN →
+  the Cell's terminal types `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED,
+  binary rain along the chosen link only → the terminal window despawns as a CRT collapse (line,
+  then dot) → **straight into the dive**: one camera path in the mainline world from the HQ camera
+  down to the street OVERVIEW (about 3.0 s, walls closed, no route, no room light) → route rooms
+  stay hidden until street level, then the walls dissolve to bits left to right while the links
+  write on → the markers draw → zoom to the start room. **No wheel slap, no wheel lens, no hub or
+  class field** (dropped 2026-10-15, DIRECTION_REVIEW "Netrun entry flow"; storyboard
+  `route_map_graph/storyboard/NOTES.md` beat 3; PIPELINE_SPEC 3c). Jack-out is the same chain
+  reversed. Beats 1–3 can shorten after the first runs (setting).
 - **Node backdrops:** a dressed room per HQ node (desk/screen-wall Terminal room etc.).
 
 ### 4.7 HQ runs: the compound and unique mechanics (LOCKED "good for now", round 43)

@@ -776,7 +776,7 @@ func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "
 ## ART-7 3B (ART_BIBLE v2 4.6, LOCKED ~4.4 s, skippable): the jack into a netrun along the
 ## chosen link (`link`: {from, to: the ends' words; points: the link in screen px; slices:
 ## the operative's wheel colours}): the terminal types it, bits rain along the link, the
-## terminal collapses, the wheel slaps on and spins, and its lens opens onto the run
+## terminal collapses to a dot, which hands straight to the dive
 ## (JackSequence). One press skips to the run (the gate passes it to the sequence). Headless,
 ## reduce effects, reduce motion, an entry switched off or no link: `jack_in` as before.
 func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "", note: String = "", tier: int = 0) -> void:
@@ -785,7 +785,7 @@ func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "
 	var headless := DisplayServer.get_name() == "headless" and not Motion.force_live
 	var street := bool(link.get("street", false))
 	if link.is_empty() or headless or not effects_enabled() or not Motion.camera_moves_allowed() or not Motion.live(&"jack_in") \
-			or not Motion.live(&"entry_collapse" if street else &"jack_lens"):
+			or not Motion.live(&"entry_collapse" if street else &"jack_crt_collapse"):
 		await jack_in(on_switch, -1.0, destination, note, tier)
 		return
 	_destination = destination
