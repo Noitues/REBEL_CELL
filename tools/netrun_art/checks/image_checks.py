@@ -30,6 +30,15 @@ def _in(x: float, lo_hi: Sequence[float]) -> bool:
 
 
 # ---------------------------------------------------------------- 12.1
+def is_day(capture: Dict[str, Any], cfg: Dict[str, Any]) -> bool:
+    """True for a day frame: `capture.json` `time == "day"` (default "night"). Only a capture without `time` (the
+    concept plates) falls back to its stem being listed in `landmark_ratio.day_stems`."""
+    t = capture.get("time")
+    if t is None:
+        return capture.get("stem") in cfg["landmark_ratio"].get("day_stems", [])
+    return t == "day"
+
+
 def exempt_reason(capture: Dict[str, Any]) -> str:
     """Why 12.1 does not apply to this capture (empty string = it applies)."""
     ex = capture.get("exempt") or {}
@@ -50,6 +59,8 @@ def value_band_records(stats: Dict[str, float], capture: Dict[str, Any], cfg: Di
     th2, th3 = c["under_010"], c["over_085_max"]
     why = exempt_reason(capture)
     look = capture.get("look")
+    if not why and is_day(capture, cfg):
+        why = "day frame: report only"
     if not why and look == "mainline":
         ok = _in(m, c["mainline_median"])
         return [record("R-VAL-1", PASS if ok else FAIL, m, c["mainline_median"], "mainline look: held to the capture median"),
@@ -86,14 +97,70 @@ def landmark_ratio_record(L: np.ndarray, idx: Optional[np.ndarray], capture: Dic
     if st["ratio"] is None:
         return record("12.2", NA, None, th, "empty local background")
     r = st["ratio"]
+    note = f"landmark share {st['landmark_share']:.4f}"
+    if is_day(capture, cfg):
+        return record("12.2", NA, r, th, "report only (AD 2026-10-18): never a fail, never a baseline item; " + note)
     status = FAIL if r < c["pass"][0] else (WARN if r > c["warn_above"] else PASS)
-    return record("12.2", status, r, th, f"landmark share {st['landmark_share']:.4f}")
+    if status == WARN:
+        note += _pre_accepted_note(r, capture, c, cfg["tolerance"]["renderer"]["lm_ratio"])
+    return record("12.2", status, r, th, note)
+
+
+def _pre_accepted_note(ratio: float, capture: Dict[str, Any], c: Dict[str, Any], tol: float) -> str:
+    """Note for a 12.2 warn: pre-accepted when the capture's stem is listed and the ratio is within `tol` of it."""
+    for e in c.get("pre_accepted", []):
+        if capture.get("stem") == e["stem"]:
+            if ratio <= e["value"] + tol:
+                return f"; pre-accepted warn {e['value']} ({e['date']})"
+            return f"; NEW: beyond the pre-accepted {e['value']} ({e['date']})"
+    return ""
+
+
+# ---------------------------------------------------------------- 12.6 route never occluded
+def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -> Record:
+    """12.6 "Route never occluded". `ids_rgb` is the id.png as (h, w, 3) float (R class, G room index, B layer).
+
+    Per visible route room (class 5 pixels with G > 0) the screen box is grown by `grow_px`. A pixel of an
+    occluder class (city, class 2) inside any grown box is an occlusion, except the cut surfaces of room columns
+    (class 2 with B >= `cut_layer_min`) and the occlusion stubs of cut or ghosted buildings (class 2 with
+    G == `stub_room` and B == 0). Fails when the count exceeds `max_px`.
+    """
+    c = cfg["route_occlusion"]
+    th = {"max_px": c["max_px"], "grow_px": c["grow_px"]}
+    if ids_rgb is None:
+        return record("12.6.route", NA, None, th, "no id.png")
+    cls = np.round(ids_rgb[..., 0])
+    room = np.round(ids_rgb[..., 1])
+    layer = np.round(ids_rgb[..., 2])
+    rooms = np.isin(cls, c["room_classes"])
+    if not rooms.any():
+        return record("12.6.route", NA, None, th, "no visible route room")
+    if not (rooms & (room > 0)).any():
+        return record("12.6.route", NA, None, th, "id.png carries no room indices (G = 0)")
+    h, w = cls.shape
+    g = int(c["grow_px"])
+    occ = np.isin(cls, c["occluder_classes"]) & (layer < c["cut_layer_min"]) & ~((room == c["stub_room"]) & (layer == 0))
+    hit = np.zeros((h, w), bool)
+    hit_rooms: List[int] = []
+    for rid in sorted(int(v) for v in np.unique(room[rooms & (room > 0)])):
+        ys, xs = np.nonzero(rooms & (room == rid))
+        y0, y1 = max(0, ys.min() - g), min(h, ys.max() + 1 + g)
+        x0, x1 = max(0, xs.min() - g), min(w, xs.max() + 1 + g)
+        part = occ[y0:y1, x0:x1]
+        if part.any():
+            hit_rooms.append(rid)
+            hit[y0:y1, x0:x1] |= part
+    n = int(hit.sum())
+    note = "no occluder in any room box" if n == 0 else "occluded rooms " + ",".join(str(r) for r in hit_rooms[:8])
+    return record("12.6.route", FAIL if n > c["max_px"] else PASS, n, th, note)
 
 
 # ---------------------------------------------------------------- 12.7
-def scope_applies(rule: Dict[str, Any], capture: Dict[str, Any], has_landmark: bool) -> Tuple[bool, str]:
+def scope_applies(rule: Dict[str, Any], capture: Dict[str, Any], has_landmark: bool, cfg: Dict[str, Any]) -> Tuple[bool, str]:
     """Scope decision for a rule from the capture scope keys (O-1). A scope key the capture lacks is n/a."""
     sc = rule.get("scope", {})
+    if sc.get("day_report_only") and is_day(capture, cfg):
+        return False, "day frame: report only"
     for key in ("kind", "view"):
         if key in sc:
             v = capture.get(key)
@@ -161,17 +228,21 @@ def check_capture_folder(folder: str, cfg: Optional[Dict[str, Any]] = None,
     stats = M.value_stats(L, None, cfg["value"])
     recs += value_band_records(stats, capture, cfg)
     idx = None
+    ids_rgb = None
     ip = os.path.join(folder, "id.png")
     if os.path.exists(ip):
-        idx = M.resize_ids(np.asarray(Image.open(ip).convert("RGB"))[..., 0].astype(np.float32), im.size)
+        raw = np.asarray(Image.open(ip).convert("RGB")).astype(np.float32)
+        ids_rgb = np.stack([M.resize_ids(raw[..., i], im.size) for i in range(3)], axis=-1)
+        idx = ids_rgb[..., 0]
     recs.append(landmark_ratio_record(L, idx, capture, cfg))
+    recs.append(route_occlusion_record(ids_rgb, cfg))
     lm_stats = M.landmark_stats(L, idx, cfg["landmark_ratio"]) if idx is not None else {"ratio": None}
     box = M.box_from_mask(M.class_mask(idx, cfg["landmark_ratio"]["classes_landmark"])) if idx is not None else None
     sky, facade = default_ranges(capture, cfg)
     wrgb = M.work_array(im, cfg["composition"]["work_w"])
     valid = np.ones(wrgb.shape[:2], bool)
     mv = M.composition_metrics(wrgb, valid, cfg["composition"]["constants"], facade, sky, box)
-    recs += evaluate_rules(mv, lambda rid, rule: scope_applies(rule, capture, box is not None), cfg)
+    recs += evaluate_rules(mv, lambda rid, rule: scope_applies(rule, capture, box is not None, cfg), cfg)
     measured = dict(stats)
     measured["ratio"] = lm_stats["ratio"]
     measured.update(mv)

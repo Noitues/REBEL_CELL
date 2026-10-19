@@ -107,6 +107,7 @@
      "op": ">=",
      "rule": "landmark.lead",
      "scope": {
+      "day_report_only": true,
       "landmark": true
      },
      "value": 1.5
@@ -228,13 +229,40 @@
     5,
     6
    ],
+   "day_stems": [
+    "city_a2_day"
+   ],
    "grow": 0.35,
    "pass": [
     1.5,
     2.0
    ],
+   "pre_accepted": [
+    {
+     "date": "2026-10-18",
+     "stem": "hq_tethys_decision",
+     "value": 2.02
+    },
+    {
+     "date": "2026-10-18",
+     "stem": "city_a2_night",
+     "value": 2.8
+    }
+   ],
    "thumb_w": 320,
    "warn_above": 2.0
+  },
+  "route_occlusion": {
+   "cut_layer_min": 1,
+   "grow_px": 12,
+   "max_px": 0,
+   "occluder_classes": [
+    2
+   ],
+   "room_classes": [
+    5
+   ],
+   "stub_room": 255
   },
   "tolerance": {
    "renderer": {
