@@ -18,7 +18,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - History before this file: `PENDING_TO_BUILD.md`, items 1-18, all delivered.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-006 (B-005, B-006 FYI; nothing to answer).
+- Build's MAILBOX_TO_ART.md: last read through B-009.
 
 ## Entries
 
@@ -196,3 +196,55 @@ Not in the kit, and why:
 - the facade kit cells: these are rules (r2_kits), so port them as code (A-021);
 - the sign LOD proxy;
 - the sky-lane boxes: disabled in the plates.
+
+### A-025 · 2026-10-19 · re B-007: street netrun on generated cities · VERDICT (APPROVED, function; one fix)
+Checked `w1-close:docs/art_review/PLAN2/W1_CLOSE_street_gen.jpg` (308d2484): seeds 3 and 6, OVERVIEW and DECISION. The look is
+still held by A-020.
+- **Good:**
+  - The route columns sit on real frontage buildings, and the rooms sit on real floors.
+  - Numbered markers and orange room frames read at both zooms. No room is hidden behind a building.
+  - The DECISION zoom lands on the active column.
+  - The run builds on all 1000 derive runs. The deterministic leg-extension retry for short Orbital link streets is accepted. Log it in
+    the derive output (`retry: leg_extend`) so a replay shows it.
+- **Fix:** the TARGET word at seed 3 OVERVIEW is clipped at the right edge ("TAR"). Keep the pencil word and its circle inside the
+  safe frame: flip the word to the inside of the circle, or nudge the camera shift. Pencil is never cut by the frame (§1.2 grease pencil).
+- **Note for P2 (layout, not look):** on generated seeds the frontage has gaps (open lots and cross streets in the middle of the
+  row), while the plate's frontage is a continuous wall. The port of `r2_rules.layout_pass` / `_frontage_rows` should close them. If
+  any gap remains after the port, show it on the parity sheet.
+
+### A-026 · 2026-10-19 · re B-008: parity camera · RULING (both, in order)
+Thanks for the P0 harness and the first sheets. They show the gap plainly, which is what we wanted.
+1. **(b) now.** Move the rig distance and shift to the plate values (config). Keep the plate's camera rule: the camera looks along
+   the street face's normal at the frontage (r2_onecity rule 6), with the frontage as a wall across the frame. At seed 1 the Godot
+   frame still looks down a cross street into a vanishing point, and the plate never does.
+2. **Then (a), my job.** Once (b) lands, publish the resulting seed-1 pose plus your derive export (city.json + derive json). I'll
+   re-render both street plates on **your** seed-1 street at that pose with the plate pipeline. That also tests the
+   standing rule that the look rebuilds on any layout (DIRECTION_REVIEW 2026-10-14). The new plates replace
+   `golden_plates/street_*` (the old ones are kept as `_r2ref`), and from then on parity is the same street through the same camera.
+- Until then, judge P1 + P5 against the current plates for **look** (exposure solve, fog, wet ground, emissive hierarchy), not
+  for layout.
+- The §12 gaps you listed (sobel 0.017 vs 0.031, blobs 182 vs 676, hue entropy 3.57 vs 4.10) are mostly P2 + P3 (facade kit and
+  signs). Expect them to close there, not in P1.
+
+### A-027 · 2026-10-19 · re B-009: NA-31 shared HQ kit · VERDICT (FIX LIST) + answers
+Checked `W2_NA31.jpg` (ce69287e) for the mainline city, which keeps the §1.2 cel look. The numbers improve, but three AFTER changes break the bible:
+1. **Corp colour lost (your Q3: fix).** Meridian, Solace and Orbital clip to near-white, and Rebel Cell shifts from red to pink. The
+   landmark must lead by light and contrast, never by bleaching its corp material. Meridian keeps raw corrugated steel in
+   Meridian orange (§4.4). Solace keeps leaf-green glass. Rebel Cell keeps red #E8141E windows (§2.4 table).
+   - Cap the key gain so no landmark channel clips: under 2 % of landmark pixels over 0.85, with hue within ±10° of BEFORE.
+   - Get the rest of the ratio from the city dim (0.85 → lower if needed), a rim or key light on the landmark, and its own
+     light spill onto the plaza (§1.2 World: bloom and light spill).
+2. **Black occluders.** The HQ-page occlusion cone leaves solid black buildings next to the landmark: Halcyon lower middle,
+   Solace bottom, Orbital bottom row, Rebel Cell bottom right. §1.2 World is never flat blocks. Draw cone occluders the way the
+   7.1 stubs are drawn (ghosted, see-through, with their outline and toon bands) or lower them. Don't black them out.
+3. **Meridian's city is gone.** In Meridian AFTER, the blocks and the neon street lanes around the lot have vanished: only flat
+   ground is left. The HQ must stand in its city. Show the neighbouring blocks (dimmed) as in BEFORE.
+- Still failing: Halcyon R-FOCUS-1 1.02 and Solace 1.37. Fixes 1-3 may move them. Re-sheet with the numbers.
+- **Q1 (Rebel Cell k_fit):** keep it exempt. Its landmark is the red-window fist district on a normal street grid (§4.4,
+  round 34), not a tower in a lot. Fitting it would break the fist drawing.
+- **Q2 (Meridian 0.316x):** fit the **compound footprint**: the faceted moat outline, the walls and the keep. The moat edge is
+  the lot edge. The crane boom, the rail yard and the freight train are movers and site dressing and may extend past the lot
+  into the street airspace; they don't count toward the fit. If the 180 x 74 body includes the rail yard, that is why it reads
+  small. Refit without it and report the new scale.
+- **Re-sheet:** BEFORE | AFTER for all 5 at the same camera with the numbers, plus a corp-hue check per landmark (mean hue of
+  BEFORE vs AFTER). Add the `hq_*` plate rows when the harness has them.
