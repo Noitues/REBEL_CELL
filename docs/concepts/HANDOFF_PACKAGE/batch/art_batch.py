@@ -40,7 +40,7 @@ def submit(job_path: Path) -> None:
     job = json.loads(job_path.read_text(encoding="utf-8"))
     reqs = [{"custom_id": it["id"], "params": {
         "model": it.get("model", "claude-sonnet-5-5"), "max_tokens": it.get("max_tokens", 16000),
-        "system": it.get("system", ""), "messages": [{"role": "user", "content": content(it)}]}} for it in job["items"]]
+        "system": it.get("system", ""), "messages": [{"role": "user", "content": content(it)}], **it.get("params", {})}} for it in job["items"]]
     b = anthropic.Anthropic(api_key=api_key()).messages.batches.create(requests=reqs)
     job_path.with_suffix(".ids.json").write_text(json.dumps({"batch": b.id}), encoding="utf-8")
     print("submitted", b.id, len(reqs))
@@ -62,7 +62,7 @@ def collect(job_path: Path, poll: int = 60) -> None:
         (out / f"{r.custom_id}.md").write_text(text, encoding="utf-8", newline="\n")
         pi, po = PRICE.get(m.model, (1.0, 5.0))
         cost += m.usage.input_tokens / 1e6 * pi + m.usage.output_tokens / 1e6 * po
-        print(r.custom_id, m.stop_reason, m.usage.input_tokens, m.usage.output_tokens)
+        print(r.custom_id, m.stop_reason, m.usage.input_tokens, m.usage.output_tokens, "chars", len(text), "EMPTY" if not text else "")
     print(f"cost about {cost:.3f} USD")
 
 
