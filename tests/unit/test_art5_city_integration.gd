@@ -154,7 +154,7 @@ func test_the_grid_city_life_reads_the_campaign() -> void:
 	var want: Array[StringName] = []
 	for s in CampaignRules.launchable_sites(c, solace, cc):
 		want.append(s.id)
-	want.sort()
+	IdSort.sort_ids(want)
 	assert_eq(life["hardened"], want, "the launchable Sites are hardened")
 	assert_eq(life, GridCityLife.of(c, solace, cc), "same campaign, same life")
 	var cell := _corp(&"rebel_cell")
