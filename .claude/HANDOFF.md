@@ -82,6 +82,11 @@
     P1+P5 (+ A-034 items 2+3), NA-12 r3, NA-25b r4, NA-ID-c. NA-31b in review (B-021, branch worktree-agent-ac27ef2c44ccd856f
     @ 57eb6d30, not on w1-close). QUEUED: COMBAT-LOCK r3 (A-033: 10-15 % alpha dropout on stroke edges + lighter broken thin
     core, 1:1 + 2x; RESPIN chip crop held + re-scribbled 2x; base branch worktree-agent-aa06f4192301aa04a @ d029c896).
+  - Later still: P1+P5 merged into w1-close (ac54140d; fix: bits use nr_clock(anim_t) not TIME, building mat joins the rig
+    clock; test_city_shaders had been red on w1-close since NA-25b r2). NA-ID-c merged to main (a8e8c70d). COMBAT-LOCK r3 in
+    review (B-025, branch worktree-agent-acf2da816a329ac10 @ b7bb01a6). RUNNING: P2 step 2, P6 (+P7 items, lit-haze sky),
+    NA-12 r3, NA-25b r4, W2 WH-11 Solace rules (on w1-close). Defaults: fog body multiplier 0.12 + light unit factors kept.
+    Scratch left by agents (blocked rm): D:/rc_tmp, D:/tmp_r3, D:/r3pc.log.
   - QUEUED NA-31c (A-035 CORRECTION: HQ netrun view = AAA-2 chain like the street, NOT cel; only the mainline city map is cel).
     Fixes 1-5 of NA-31b APPROVED, carry over. Base NA-31b branch; starts after P1+P5 lands AND art-pass's HQ addendum to
     MATERIAL_SPEC (own A entry). Targets: 12.2 = each corp's plate ratio_median (hq_<corp>_overview_values.json) +-0.3, R-FOCUS-1
