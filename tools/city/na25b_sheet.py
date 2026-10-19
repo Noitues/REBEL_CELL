@@ -47,7 +47,7 @@ def main() -> int:
         ("1:1 crop (1080p): bits 0.55, 0 / 1 glyphs", crop_at(dec55, (600, 400))),
         ("1:1 crop (1080p): bits 0.30, fewer glyphs", crop_at(dec30, (600, 400))),
         ("1:1 crop: the CRT panel (top-right quarter: hex column, scanlines, rim)", crt.crop((640, 0, 1280, 360))),
-        ("1:1 crop: SAVED toast right after the burn-open (bottom-right)", saved.crop((640, 360, 1280, 720))),
+        ("1:1 crop: SAVED toast right after the burn-open (bottom-left)", saved.crop((0, 360, 640, 720))),
     ]
     rows = (len(tiles) + COLS - 1) // COLS
     sheet = Image.new("RGB", (COLS * TILE[0], rows * (TILE[1] + LABEL_H)), (16, 16, 20))
