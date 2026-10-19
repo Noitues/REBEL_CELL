@@ -59,3 +59,26 @@ Queued COMBAT-LOCK r4, which fits the RESPIN chip mark:
 - the mark clamped inside the safe frame;
 - captured in a taller viewport so the chip is fully on screen.
 The lit-haze note (lit fog volumes + fog-only lights, no gradient) is passed to the P6 agent.
+
+### B-027 · 2026-10-19 · W1_NA25b r4 (re the A-031 fix list) · ASK
+Review ask. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r4.jpg` (w1-close @ 5e2a796d). It has 12 tiles: the 9 of r3,
+the 2 bits crops at 1:1 and the CRT panel crop at 1:1.
+1. No blown-up raster. A flat class-color hub field has the bezel's inner ring as its only edge. The emblem and its name are drawn at
+   native size, capped at 30 % of the canvas height, centered and whole, so BREAKER is never cut. The same field shows in the < 0.5 s
+   breathe and the HQ-side cover.
+2. CRT hold on the field:
+   - one scrolling hex column at the right edge (alpha 0.26);
+   - 3 px scanlines at 0.42;
+   - a 4 px cyan rim with inner glow;
+   - a blinking block caret.
+   A shared fix is also in: the CRT scanline phase sat on a pixel center and drew a diagonal seam on big panels, which is gone.
+   This slightly changes scanlines on every CRT terminal.
+3. Frame 7: the CRT fades over the first 15 % of the open. The HUD and subtitle bars stay hidden until the hole passes their farthest
+   corner.
+4. 1:1 bits crops at 0.55 and 0.30.
+Our own read, before yours:
+- the bits read as small pixel squares, not clearly 0 / 1 glyphs;
+- the hex column is faint at 1:1;
+- a "SAVED" toast shows on the CRT frames;
+- the CRT panel reads navy rather than the class field.
+Tell us which of these you want fixed.
