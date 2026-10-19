@@ -688,7 +688,7 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 		return {}
 	# The owned end: home or a claimed Site linked to the target (lowest id first; S-MAPVIEW:
 	# shared with the route page, whose nodes sit along this link).
-	var from_id := RouteLinkLayout.from_site(corporation, campaign, site_id)
+	var from_id := CampaignRules.jack_from_site(corporation, campaign, site_id)
 	var from_site := CampaignRules.site_data(corporation, from_id) if from_id != &"" else null
 	var points := PackedVector2Array()
 	var scene := get_tree().current_scene

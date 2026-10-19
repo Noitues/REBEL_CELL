@@ -325,45 +325,5 @@ func test_rows_rise_in_order_and_are_whole_at_once_without_motion() -> void:
 
 # --- R5 ---------------------------------------------------------------------------------------
 
-func test_the_lit_route_node_reaches_out_to_its_building() -> void:
-	var scene := _netrun()
-	await _frames(4)
-	var ov := scene.city_overlay as RouteOverlay
-	assert_not_null(ov)
-	var id: StringName = RunManager.netrun.available_nodes()[0]
-	ov.hover_id = id
-	assert_eq(ov._mv.value(&"hover_out_t"), 1.0, "headless: the reach is whole at once")
-	ov.hover_id = &""
-	_live()
-	ov.hover_id = id
-	assert_eq(ov._mv.value(&"hover_out_t"), 0.0, "it starts at the sticker")
-	var out := await _until(func() -> bool: return ov._mv.value(&"hover_out_t") >= 1.0)
-	assert_true(out, "and ends on the building after route_hover_out")
-	ov.hover_id = &""
-	assert_eq(ov._mv.value(&"hover_out_t"), 1.0, "lighting nothing leaves no stem")
-
-
-func test_the_travel_marker_rides_the_route_to_the_node() -> void:
-	var scene := _netrun()
-	await _frames(4)
-	_live()
-	var ov := scene.city_overlay as RouteOverlay
-	var from: StringName = &""
-	var to: StringName = &""
-	for e in ov.edges if ov != null else []:
-		if ov.icon_at(e["a"]).x != INF and ov.icon_at(e["b"]).x != INF and ov.icon_at(e["a"]).distance_to(ov.icon_at(e["b"])) > 40.0:
-			from = e["a"]
-			to = e["b"]
-			break
-	if to == &"":
-		pending("no placed route map in this run")
-		return
-	var secs := ov.travel(from, to)
-	assert_gt(secs, 0.0)
-	await _frames(1)
-	ov.travel_t = 0.5  # halfway (a loaded machine may have played the whole move by now)
-	var at := ov.here_marker_pos()
-	assert_ne(at, ov.icon_at(to), "mid-move the marker is on the way")
-	assert_ne(at, ov.icon_at(from), "and off where it left")
-	ov.finish_travel()
-	assert_eq(ov.here_marker_pos(), ov.icon_at(to), "it lands on the node")
+## NA-26: the lit route node's reach to its building and the travel marker rode the 2D route overlay; both retired with that
+## page (see NA26_PORT_MAP.md). The street page's camera moves are NA-23 / NA-25 tests.

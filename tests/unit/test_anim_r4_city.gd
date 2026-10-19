@@ -541,57 +541,7 @@ func test_a_drop_runs_its_road_to_core_and_every_forecast_change_reads_as_arrows
 
 # --- H11 c: the route ---------------------------------------------------------------------------------
 
-func test_a_move_shows_the_new_choices_at_once_the_marker_off_them_and_the_trail() -> void:
-	Motion.force_live = true
-	if Settings.reduce_effects:
-		Settings.set_reduce_effects(false)
-	RunManager.new_campaign(1)
-	var scene := _scene(NETRUN)
-	scene.start_run(1)
-	await _frames(3)
-	var s := RunManager.netrun
-	var to: StringName = s.available_nodes()[0]
-	scene.enter_node(to)
-	var overlay: CityMapOverlay = scene.city_overlay
-	var next: Array[StringName] = []
-	for n in s.run.current_node().get("next", []):
-		next.append(n)
-	assert_eq(NetrunScript.view_choices(s), next, "the view's choices are the node's next ones while it plays")
-	if overlay != null and is_instance_valid(overlay) and scene._travelling:
-		var labelled: Array[StringName] = []
-		for n in overlay.nodes:
-			if n.get("next", false):
-				labelled.append(n["id"])
-		labelled.sort()
-		var want := next.duplicate()
-		want.sort()
-		assert_eq(labelled, want, "the map's [1] / [2] labels are on the new choices as the move starts")
-		var row: Node = scene._panel.find_child("RouteNodes", true, false)
-		var buttons := 0
-		for b in row.get_children():
-			if b is Button and (b as Button).visible and not b.is_queued_for_deletion():
-				buttons += 1
-		assert_eq(buttons, next.size(), "the ROUTE window lists the new choices")
-		for u in [0.0, 0.5, 1.0]:
-			overlay.travel_t = u
-			var here := overlay.here_marker_pos()
-			for id in next:
-				assert_true(here.distance_to(overlay.icon_at(id)) > overlay.icon_radius(overlay._node_dict(id)), "the marker is never on a choice (t %.1f)" % u)
-		scene._end_travel()
-	else:
-		fail_test("the move did not play on the route map")
-	# The walked route stays as a faint trail: one move on, the link walked is the trail.
-	if not s.run.visited.has(to):
-		s.run.visited.append(to)
-	s.run.current_node_id = next[0]
-	var g: Dictionary = scene.route_graph()
-	var trail: Array = []
-	for e: Dictionary in g["edges"]:
-		if e.get("trail", false):
-			trail.append([e["a"], e["b"]])
-			assert_lt((e["color"] as Color).a, 0.6, "faint")
-			assert_false(bool(e.get("dashed", true)), "a solid line")
-	assert_eq(trail, [[to, next[0]]], "the walked link is the trail")
+## NA-26: the 2D route map's travel pulse, labels and trail retired with that page (see NA26_PORT_MAP.md)
 
 
 # --- H11 d: territory -----------------------------------------------------------------------------------

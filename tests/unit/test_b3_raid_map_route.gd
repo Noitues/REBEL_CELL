@@ -13,12 +13,10 @@ const SCALES: Array[float] = [1.0, 1.6, 2.0]
 const CORPORATIONS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
 
 var _scale: float
-var _all_nodes: bool
 
 
 func before_each() -> void:
 	_scale = Settings.text_scale
-	_all_nodes = Settings.always_show_all_nodes
 	Motion.force_live = false
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_b3_raid_map_route"
@@ -33,8 +31,6 @@ func after_each() -> void:
 	Motion.force_live = false
 	if not is_equal_approx(Settings.text_scale, _scale):
 		Settings.set_text_scale(_scale)
-	if Settings.always_show_all_nodes != _all_nodes:
-		Settings.set_always_show_all_nodes(_all_nodes)
 	Fx._set_jacking(false)
 	Dialogue.clear()
 	AudioDirector.muted = false
@@ -177,93 +173,8 @@ func test_the_raid_setup_map_has_no_node_tags_and_no_resource_bar() -> void:
 
 # --- The route (D14, Q4, Q15, bible 4.6 round 44) ---------------------------------------------------
 
-func test_route_links_are_only_the_ones_the_route_uses_until_the_strip_is_hovered() -> void:
-	Settings.set_always_show_all_nodes(false)
-	var scene := _netrun()
-	await _frames(4)
-	var ov := scene.city_overlay as RouteOverlay
-	var used := 0
-	var other := 0
-	for e in ov.edges:
-		if ov.route_uses(e):
-			used += 1
-			assert_gt(ov.edge_shown(e), 0.0, "a link the route uses is drawn")
-		else:
-			other += 1
-			assert_eq(ov.edge_shown(e), 0.0, "a link the route does not use is not drawn")
-			assert_eq(ov.link_hint(e), 0.0, "nor its hairline before the hover")
-	assert_gt(other, 0, "the run has links the route does not use yet")
-	scene.route_legend.show_links_hovered.emit(true)
-	ov.links_t = 1.0
-	for e in ov.edges:
-		if not ov.route_uses(e):
-			assert_eq(ov.link_hint(e), 1.0, "the hover shows every run link as a hairline")
-	assert_almost_eq(RouteOverlay.LINK_HINT_ALPHA, 0.25, 0.001, "25 % white")
-	scene.route_legend.show_links_hovered.emit(false)
-	for e in ov.edges:
-		assert_eq(ov.link_hint(e), 0.0, "and they go again")
-
-
-## B3 b (art director, round 44 `route_page.png`): the route frames the walked path, the options
-## and one layer ahead at ortho 130-190 (at a run's start and mid-run, 1.0 / 1.6 / 2.0); the
-## TARGET need not be in frame: off frame it has the red pencil edge arrow.
-func test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow() -> void:
-	var cfg: CityConfig = CityView3D.CONFIG
-	assert_almost_eq(cfg.route_ortho_near, 130.0, 0.001)
-	assert_almost_eq(cfg.route_ortho_far, 190.0, 0.001)
-	for corp in CORPORATIONS:
-		for mid in [false, true]:
-			for scale in TestScope.scales([1.0, 1.6, 2.0]):
-				Settings.set_text_scale(scale)
-				RunManager.reset()
-				var scene := _netrun(corp)
-				await _frames(8)
-				if mid:
-					var s := RunManager.netrun
-					var first: StringName = s.available_nodes()[0]
-					s.run.current_node_id = first
-					s.run.visited.append(first)
-					scene._show_map()
-					await _frames(8)
-				var tag := "%s %s x%.1f" % [corp, "mid-run" if mid else "start", scale]
-				var ov := scene.city_overlay as RouteOverlay
-				var ortho: float = scene.route_ortho()
-				gut.p("%s: route ortho %.0f" % [tag, ortho])
-				assert_gte(ortho, cfg.route_ortho_near - 1.0, "%s: never closer than 130 (%.0f)" % [tag, ortho])
-				assert_lte(ortho, cfg.route_ortho_far + 1.0, "%s: never further than 190 (%.0f)" % [tag, ortho])
-				var free: Rect2 = scene.route_free_area()
-				assert_true(scene.route_frames(free), "%s: where the player is and the options are in frame" % tag)
-				# The TARGET: in frame, or the edge arrow shows (with the TARGET word).
-				var target: Dictionary = {}
-				for n in ov.nodes:
-					if bool(n.get("target", false)):
-						target = n
-				assert_false(target.is_empty(), "%s: the run has its TARGET" % tag)
-				var arrow: TargetEdgeMarker = scene.route_target
-				assert_not_null(arrow, "%s: the edge arrow is on the page" % tag)
-				arrow.refresh()
-				# B3 c: "in frame" is the whole TARGET (its circle) inside the area and clear of the top
-				# bar; while the arrow shows the TARGET's own circle hides.
-				var at := ov.get_global_transform_with_canvas() * ov.icon_pos(target)
-				var reach: float = ov.target_reach(target) * ov.get_global_transform_with_canvas().get_scale().x
-				var area := (arrow.get_parent() as Control).get_global_rect()
-				var whole := Rect2(at - Vector2(reach, reach), Vector2(reach, reach) * 2.0)
-				var in_frame: bool = area.encloses(whole) and not (scene.hud as Control).get_global_rect().intersects(whole)
-				assert_eq(arrow.showing(), not in_frame, "%s: the arrow shows exactly when the TARGET is (partly) off frame" % tag)
-				assert_eq(ov.target_off, arrow.showing(), "%s: the TARGET's circle hides while its arrow shows" % tag)
-				if ov.target_off:
-					assert_false(ov.target_drawn(), "%s: and its sticker" % tag)
-				if arrow.showing():
-					var tip: Vector2 = arrow.get_global_transform() * arrow.tip()
-					assert_false(scene.hud.get_global_rect().has_point(tip), "%s: the arrow keeps off the top bar" % tag)
-				# Node stickers at least 44 px at 1080p (their die-cut).
-				var k := ov.get_global_transform_with_canvas().get_scale().x
-				var r := ov.icon_radius(ov.nodes[0]) * k
-				var die := (r - (RouteOverlay.RING_WIDTH + RouteOverlay.RING_GAP) * k) * 2.0
-				assert_gte(die * TO_1080, 44.0, "%s: a node sticker is %.0f px at 1080p" % [tag, die * TO_1080])
-				Settings.set_text_scale(1.0)
-				scene.get_parent().queue_free()
-				await _frames(1)
+## NA-26: the 2D route page's link hairlines and its camera framing / TARGET edge arrow tests retired with the page (see
+## NA26_PORT_MAP.md); the street page's camera and hover power cut are asserted by test_na23_route_flow / test_na23_route_view.
 
 
 func test_the_edge_arrow_finds_the_route_target() -> void:
@@ -280,13 +191,10 @@ func test_the_edge_arrow_finds_the_route_target() -> void:
 func test_the_route_window_keeps_grid_view_and_save_and_quit_only() -> void:
 	var scene := _netrun()
 	await _frames(4)
-	var row := scene._panel.find_child("RouteNodes", true, false) as Control
-	var win := row.get_parent()
-	while win != null and not (win is TerminalWindow):
-		win = win.get_parent()
+	var win: Control = scene._panel.find_child("RouteWindow", true, false)
 	assert_not_null(win)
 	var shown: Array[String] = []
-	for b in (win as Control).find_children("*", "Button", true, false):
+	for b in win.find_children("*", "Button", true, false):
 		var btn := b as Button
 		if btn.is_visible_in_tree() and not btn.top_level:
 			shown.append(btn.name)

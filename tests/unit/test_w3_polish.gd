@@ -115,7 +115,7 @@ func test_grid_view_frames_the_run_path() -> void:
 	scene._show_map()
 	await _frames(12)
 	var s := RunManager.netrun
-	var from_id := RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id)
+	var from_id := CampaignRules.jack_from_site(RunManager.corporation, RunManager.campaign, s.run.site_id)
 	var overlay: CityMapOverlay = scene.city_overlay
 	var screen := Rect2(Vector2.ZERO, SCREEN)
 	var window := scene._panel.find_child("RouteWindow", true, false) as Control

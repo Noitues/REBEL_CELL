@@ -390,10 +390,9 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 			assert_false(n is MapLegend, "not the campaign map's key")
 		var legend: RouteLegend = scene.route_legend
 		assert_not_null(legend)
-		var nodes: Array = scene.route_graph()["nodes"]
 		var want := {}
-		for n in nodes:
-			want[String(n["kind"])] = true
+		for n in RunManager.netrun.run.map.all_nodes():
+			want[String(CityMapOverlay.route_kind(int(n["type"]), bool(n["elite"])))] = true
 		for k in want:
 			assert_true(legend.kinds.has(k), "the key has %s" % k)
 			assert_not_null(legend.body.find_child("Kind_%s" % k, true, false), "a row for %s" % k)
@@ -402,11 +401,6 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 		assert_true(legend.is_visible_in_tree())
 		var lr := legend.get_global_rect()
 		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(lr), "on screen: %s" % lr)
-		for r in LegendSpot.node_rects(scene.city_overlay, false):
-			assert_false(lr.intersects(r), "the key %s covers a node at %s (text %.1f)" % [lr, r, scale])
-		for n in nodes:
-			var tip: String = scene.city_overlay.tip_of(n["id"])
-			assert_true(tip.begins_with(String(RouteLegend.MEANINGS[String(n["kind"])])), "the node says what it is and does: %s" % tip)
 		await _close(scene)
 
 

@@ -13,13 +13,11 @@ const KINDS: Array[String] = ["fight", "elite", "event", "shop", "rack"]
 
 var _reduce: bool
 var _scale: float
-var _all_nodes: bool
 
 
 func before_each() -> void:
 	_reduce = Settings.reduce_effects
 	_scale = Settings.text_scale
-	_all_nodes = Settings.always_show_all_nodes
 	Motion.force_live = false
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_art7_netrun"
@@ -36,8 +34,6 @@ func after_each() -> void:
 		Settings.set_reduce_effects(_reduce)
 	if not is_equal_approx(Settings.text_scale, _scale):
 		Settings.set_text_scale(_scale)
-	if Settings.always_show_all_nodes != _all_nodes:
-		Settings.set_always_show_all_nodes(_all_nodes)
 	Fx._set_jacking(false)
 	Dialogue.clear()
 	AudioDirector.muted = false
@@ -65,34 +61,23 @@ func _netrun(heat: int = 0) -> Control:
 	return scene
 
 
-func _overlay(scene: Control) -> RouteOverlay:
-	return scene.city_overlay as RouteOverlay
-
-
 # --- 3B.1 node states, TARGET, hidden nodes, calm Heat ------------------------------------------
 
-func test_the_route_view_draws_option_a_states_and_the_target() -> void:
+func test_the_route_draws_option_a_states_and_the_target() -> void:
+	# NA-26: the ring colours are the kit's (static); the street page offers exactly the session's choices and names one TARGET.
 	var scene := _netrun()
 	await _frames()
-	var ov := _overlay(scene)
-	assert_not_null(ov, "the route draws with RouteOverlay")
 	var s := RunManager.netrun
-	var final_id: StringName = s.run.map.final_node_id()
-	var targets := 0
-	for n in ov.nodes:
-		if n.get("target", false):
-			targets += 1
-			assert_eq(n["id"], final_id, "the TARGET is the final Rack")
-		if n.get("next", false):
-			assert_eq(ov.state_of(n), RouteOverlay.STATE_NEXT)
-			assert_gt(int(n["number"]), 0, "a choice is numbered")
-			assert_eq(RouteInk.ring_of(ov.state_of(n)), Palette.RING_AVAILABLE, "selectable is orange")
-		else:
-			assert_eq(int(n.get("number", 0)), 0, "only choices are numbered")
-	assert_eq(targets, 1)
+	var view: StreetRouteView = scene.street_view
+	assert_not_null(view, "the route is the street page")
+	var opts: Array = view.run_state()["options"]
+	var avail: Array[StringName] = s.available_nodes()
+	assert_eq(opts.size(), avail.size(), "every choice is an option")
+	assert_ne(s.run.map.final_node_id(), &"", "the run has its TARGET (the final Rack)")
 	assert_eq(RouteInk.ring_of(RouteOverlay.STATE_WALKED), Palette.CELL_ACID, "walked is lime")
 	assert_eq(RouteInk.ring_of(RouteOverlay.STATE_LATER), Palette.RING_UNAVAILABLE, "not yet is white")
 	assert_eq(RouteInk.ring_of(RouteOverlay.STATE_CUT), Palette.RING_CUT, "cut off is dim grey")
+	assert_eq(RouteInk.ring_of(RouteOverlay.STATE_NEXT), Palette.RING_AVAILABLE, "selectable is orange")
 
 
 func test_every_state_has_a_second_cue_besides_colour() -> void:
@@ -112,60 +97,36 @@ func test_every_state_has_a_second_cue_besides_colour() -> void:
 		assert_eq(String(sw.get_meta(&"ring_style", "")), String(RouteOverlay.RING_STYLES[key]), "the key draws %s's style" % key)
 
 
-func test_hidden_nodes_show_on_the_legend_hover_the_pointer_and_the_setting() -> void:
-	Settings.set_always_show_all_nodes(false)
+func test_the_key_hover_lights_every_link_and_changes_no_state() -> void:
+	# NA-26: ported from the hidden-node test: the key strip's hover lights every run link on the street page (the full
+	# graph is always drawn now; the hidden-node reveal and the Options row are retired).
 	var scene := _netrun()
 	await _frames()
-	var ov := _overlay(scene)
 	var before := RunManager.campaign.state_hash()
 	var run_before := RunManager.netrun.state_hash()
-	var drawn := ov.drawn_ids()
-	for n in ov.nodes:
-		assert_eq(drawn.has(n["id"]), RouteOverlay.pinned(n), "%s: only walked, choices and the TARGET show" % n["id"])
-	assert_lt(drawn.size(), ov.nodes.size(), "some nodes are hidden at the start")
-	# B3 (designer Q4, round 44): the legend strip's hover shows every link, not the nodes.
 	scene.route_legend.show_links_hovered.emit(true)
-	assert_true(ov.show_links)
-	assert_false(ov.show_all, "the hover leaves the nodes hidden")
-	assert_eq(ov.drawn_ids(), drawn, "the same nodes on the hover")
+	assert_true(scene.street_view._lit_all, "the hover lights every link")
 	assert_eq(scene.route_legend.cue.text, tr(RouteLegend.LINKS_WORDS))
 	scene.route_legend.show_links_hovered.emit(false)
-	assert_false(ov.show_links)
-	# The pointer reveals the hidden node under it.
-	var hidden: Dictionary = {}
-	for n in ov.nodes:
-		if not RouteOverlay.pinned(n) and ov.icon_pos(n).x != INF:
-			hidden = n
-			break
-	assert_false(hidden.is_empty(), "a hidden node to reveal")
-	assert_eq(ov.hidden_near(ov.icon_pos(hidden)), hidden["id"])
-	ov._reveal(ov.hidden_near(ov.icon_pos(hidden)))
-	ov.reveal_t = 1.0
-	assert_true(ov.drawn_ids().has(hidden["id"]), "the node under the pointer shows")
-	# Options: always show every node (D13).
-	Settings.set_always_show_all_nodes(true)
-	assert_true(ov.show_all, "the setting shows every node")
-	ov.all_t = 1.0
-	assert_eq(ov.drawn_ids().size(), ov.nodes.size(), "every node shows with the setting")
-	assert_eq(scene.route_legend.cue.text, tr(RouteLegend.SHOWING_WORDS))
-	Settings.set_always_show_all_nodes(false)
+	assert_false(scene.street_view._lit_all)
 	assert_eq(RunManager.campaign.state_hash(), before, "views never change the campaign")
 	assert_eq(RunManager.netrun.state_hash(), run_before, "views never change the run")
 
 
-func test_the_setting_round_trips_and_has_an_options_row() -> void:
+func test_the_retired_show_all_nodes_key_loads_and_is_ignored() -> void:
+	# NA-26: the legacy key stays one version: an old file carrying it loads, the value is not read or saved again.
 	var d := Settings.to_dict()
-	assert_true(d.has("always_show_all_nodes"), "saved")
-	Settings.set_always_show_all_nodes(true)
-	assert_true(bool(Settings.to_dict()["always_show_all_nodes"]))
+	assert_false(d.has("always_show_all_nodes"), "no longer saved")
+	d["always_show_all_nodes"] = true
+	Settings.from_dict(d)
+	assert_false("always_show_all_nodes" in Settings, "no setting reads it")
 	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 	panel.show_section("Display")
 	await _frames(1)
-	assert_not_null(panel.find_child("AllNodesCheck", true, false), "Options > Display has the row")
-	assert_true(panel.all_nodes_check.button_pressed)
+	assert_null(panel.find_child("AllNodesCheck", true, false), "Options > Display has no row for it")
 
 
-func test_calm_heat_marks_come_from_the_rules_and_only_on_choices() -> void:
+func test_calm_heat_marks_come_from_the_rules() -> void:
 	var cool := _netrun(0)
 	await _frames()
 	assert_true(cool.route_heat_marks(RunManager.netrun).is_empty(), "no Heat marks while Heat has made nothing harder")
@@ -182,17 +143,17 @@ func test_calm_heat_marks_come_from_the_rules_and_only_on_choices() -> void:
 			resist += int(m.value)
 	assert_gt(resist, 0, "Heat 60 adds enemy resistance (GDD 4.3)")
 	assert_true(hot.route_heat_sweeps(), "the searchlights sweep")
-	for n in hot.city_overlay.nodes:
-		var chip := String(n.get("heat_chip", ""))
-		var node := s.run.map.get_node(n["id"])
-		var fight := int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK
-		if n.get("next", false) and fight:
-			assert_string_contains(chip, str(resist), "a choice that is a fight carries the resistance")
-		elif not n.get("next", false):
-			assert_eq(chip, "", "only selectable nodes carry markers (4.3)")
+	var marks: Dictionary = hot.route_heat_marks(s)
+	assert_string_contains(String(marks[RC.InfilNodeType.ROUTER]), str(resist), "a fight carries the resistance")
+	assert_string_contains(String(marks[RC.InfilNodeType.SERVER_RACK]), str(resist))
+	# The street tag a hovered room shows carries the Heat entering it changes (the preview equals the rules).
+	for id in s.available_nodes():
+		var heat := s.node_heat(id)
+		if heat != 0:
+			assert_string_contains(hot._street_tag(String(id)), TextDb.signed(heat), "the room's tag names its Heat")
 
 
-func test_the_route_sweeps_every_corporation_with_labels_and_you_are_here() -> void:
+func test_the_route_sweeps_every_corporation_on_the_street_page() -> void:
 	for corp in CORPORATIONS:
 		RunManager.reset()
 		var holder: Control = add_child_autofree(Control.new())
@@ -207,43 +168,18 @@ func test_the_route_sweeps_every_corporation_with_labels_and_you_are_here() -> v
 		RunManager.new_campaign(1, corp)
 		scene.start_run(1)
 		await _frames()
-		var s := RunManager.netrun
-		s.run.current_node_id = s.run.map.first_layer_ids()[0]
-		scene._show_map()
-		await _frames()
-		var ov := _overlay(scene)
-		assert_not_null(ov, "%s: RouteOverlay" % corp)
-		for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
-			Settings.set_text_scale(scale)
-			await _frames(2)
-			# B3 (round 44): no YOU ARE HERE words; the token marks the position.
-			assert_false(ov.label_rects().has(String(ov.here_id())), "%s x%.1f: no YOU ARE HERE words" % [corp, scale])
-			var rects: Dictionary = ov.label_rects()
-			var keys: Array = rects.keys()
-			for i in keys.size():
-				for j in range(i + 1, keys.size()):
-					assert_false((rects[keys[i]] as Rect2).intersects(rects[keys[j]]), "%s x%.1f: labels overlap" % [corp, scale])
-			if scene.dossier.is_visible_in_tree():
-				for r in LegendSpot.node_rects(ov, false, scene.route_focus_ids()):
-					assert_false(scene.dossier.get_global_rect().intersects(r), "%s x%.1f: the dossier covers no choice" % [corp, scale])
-			var legend: Rect2 = scene.route_legend.get_global_rect()
-			assert_true(SCREEN.grow(1.0).encloses(legend), "%s x%.1f: the strip fits (%s)" % [corp, scale, legend])
-		Settings.set_text_scale(1.0)
+		if scene.street_view == null:
+			# A street that cannot be derived keeps the transit page: the choices are list rows (the fallback stays usable).
+			assert_not_null(scene._panel.find_child("Node1", true, false), "%s: the fallback page lists the choices" % corp)
+			holder.queue_free()
+			await _frames(1)
+			continue
+		var opts: Array = scene.street_view.run_state()["options"]
+		assert_eq(opts.size(), RunManager.netrun.available_nodes().size(), "%s: every choice is an option" % corp)
+		var legend: Rect2 = scene.route_legend.get_global_rect()
+		assert_true(SCREEN.grow(1.0).encloses(legend), "%s: the strip fits (%s)" % [corp, legend])
 		holder.queue_free()
 		await _frames(1)
-
-
-func test_cables_run_along_the_city_axes_with_one_turn() -> void:
-	var scene := _netrun()
-	await _frames()
-	var ov := _overlay(scene)
-	var pts := ov.cable(Vector2(10, 10), Vector2(200, 90))
-	assert_eq(pts.size(), 3, "start, one corner, end")
-	var ax: Array[Vector2] = ov._axes()
-	var leg := pts[1] - pts[0]
-	assert_almost_eq(absf(leg.normalized().cross(ax[0].normalized())), 0.0, 0.001, "the first leg runs along one axis")
-	var leg2 := pts[2] - pts[1]
-	assert_almost_eq(absf(leg2.normalized().cross(ax[1].normalized())), 0.0, 0.001, "the second along the other")
 
 
 # --- 3B.2 dossier and the decrypted node panel --------------------------------------------------
@@ -267,23 +203,9 @@ func test_the_dossier_and_node_panel_say_what_the_rules_say() -> void:
 		if int(node["type"]) == RC.InfilNodeType.ROUTER and not bool(node["elite"]):
 			var pay: Vector2i = s.config.cycles_router_range
 			assert_string_contains(String(p["rewards"][0]), "%d-%d" % [pay.x, pay.y], "pays what the config says")
-	# The focused choice's file shows.
-	var b := scene._panel.find_child("Node1", true, false) as Button
-	b.grab_focus()
-	await _frames(1)
+	# The shown choice's file shows.
+	scene.show_node_panel(s.available_nodes()[0])
 	assert_eq(scene.node_panel.node_id, s.available_nodes()[0])
-
-
-func test_the_dossier_folds_at_big_text() -> void:
-	if TestScope.deferred():
-		pending(TestScope.REASON)
-		return
-	var scene := _netrun()
-	await _frames()
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
-	await _frames(2)
-	assert_true(scene.dossier.compact, "at 2.0 on 1280 the file folds")
-	assert_true(scene.dossier.size.x <= SCREEN.size.x * OperativeDossier.MAX_WIDTH_SHARE + 1.0)
 
 
 # --- 3B.3 the jack along a link -----------------------------------------------------------------
@@ -361,32 +283,14 @@ func test_the_node_room_shows_behind_an_event_only() -> void:
 		assert_true(scene.node_backdrop != null and scene.node_backdrop.visible, "behind the event")
 
 
-func test_f13_the_key_hover_never_resizes_the_strip_or_refits_the_map() -> void:
-	Settings.set_always_show_all_nodes(false)
+func test_f13_the_key_hover_never_resizes_the_strip() -> void:
 	var scene := _netrun()
 	await _frames()
 	var legend: RouteLegend = scene.route_legend
 	var size_before := legend.get_combined_minimum_size()
-	var fits_before: int = scene._route_fits
 	scene.route_legend.show_links_hovered.emit(true)
 	await _frames()
 	assert_eq(legend.get_combined_minimum_size(), size_before, "the SHOWING words take the cue's room: the strip keeps its size")
 	scene.route_legend.show_links_hovered.emit(false)
 	await _frames()
 	assert_eq(legend.get_combined_minimum_size(), size_before)
-	assert_eq(scene._route_fits, fits_before, "leaving the key does not refit (zoom and pan stay the player's)")
-
-
-func test_f14_a_hovered_key_row_rings_every_node_of_its_kind() -> void:
-	var scene := _netrun()
-	await _frames()
-	var ov := _overlay(scene)
-	var legend: RouteLegend = scene.route_legend
-	var kind: String = legend.kinds[0]
-	var row := legend.strip.get_node("Kind_%s" % kind) as Control
-	assert_eq(legend.kind_at(row.get_global_rect().get_center()), kind, "the point over a row names its kind")
-	assert_eq(legend.kind_at(Vector2(-9999.0, -9999.0)), "")
-	legend.kind_hovered.emit(kind)
-	assert_eq(ov.highlight_kind, kind, "the map rings that kind")
-	legend.kind_hovered.emit("")
-	assert_eq(ov.highlight_kind, "", "leaving the row clears it")
