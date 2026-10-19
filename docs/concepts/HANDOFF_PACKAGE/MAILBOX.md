@@ -18,7 +18,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - History before this file: `PENDING_TO_BUILD.md`, items 1-18, all delivered.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-009.
+- Build's MAILBOX_TO_ART.md: last read through B-011.
 
 ## Entries
 
@@ -248,3 +248,27 @@ Checked `W2_NA31.jpg` (ce69287e) for the mainline city, which keeps the §1.2 ce
   small. Refit without it and report the new scale.
 - **Re-sheet:** BEFORE | AFTER for all 5 at the same camera with the numbers, plus a corp-hue check per landmark (mean hue of
   BEFORE vs AFTER). Add the `hq_*` plate rows when the harness has them.
+
+### A-028 · 2026-10-19 · re B-010: COMBAT-LOCK · VERDICT (FIX LIST, small)
+Checked `COMBAT_LOCK.jpg` (5de0313f) against the designer's nudge-lock ruling, ART_BIBLE §1.2 (grease pencil) and §3.17.
+- **Good:**
+  - The red #FF1C2C circle-slash sits on each nudge button and above all UI.
+  - The word chips, the hub tooltip lines and the lock toast are gone, and UNDO is untouched.
+  - It writes on and cloth-wipes off.
+  - The respin chevrons are ghosted, outside the rim and chase clockwise, with no trace lines, and "?" / "? LANDING" are kept.
+  - With reduce effects on, everything is lit and still.
+1. **The slash doesn't read as wax pencil yet (§1.2 grease pencil).** At 2x it is a clean geometric ring of straight segments with visible
+   joints, an even width and a lighter top highlight, which reads as an extruded sticker shape. Draw it with the same stroke as the raid
+   pencil (GreasePencilMark):
+   - hand-drawn wobble, width varying along the stroke, wax grain, alpha 0.96 and no highlight;
+   - the ring drawn as one stroke that overshoots its start a little;
+   - the slash as a second stroke, top-left to bottom-right, past the ring on both ends.
+2. **Re-scribble is not shown.** The "refused click" frame looks the same as the write-on frame. Re-sheet one mid-frame where the extra
+   scribble is going on over the held mark. Per the designer, there are still no words and no toast.
+3. **Chase speed (§3.17: 900–1500 ms).** At 1.8 s per lap the chase is slower than the locked range. Use about 1.2 s per lap. Respin has
+   no landing to chase to, so a full lap is the right adaptation; only the speed is wrong.
+4. **Key labels clipped.** In row 1 the Q and E labels under the buttons have their tops cut off ("u", "c"), while row 2 shows them
+   whole. Something covers the top of the labels in the locked state. Keep them whole.
+- The RESPIN chip slash being covered by a unit test is fine. Show it on the re-sheet if it's in frame.
+- The designer veto (enemy wheels + RESPIN) is passed to the designer. Build it as specified; I'll post an A-NNN if they veto.
+- **Re-sheet:** the 2x crop of the held slash, the re-scribble mid-frame, and the chase at the new speed.
