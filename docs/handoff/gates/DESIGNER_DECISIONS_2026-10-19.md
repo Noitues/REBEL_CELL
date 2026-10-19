@@ -1,5 +1,8 @@
 # Designer decisions: open questions and defaults taken without you (2026-10-19)
 
+> **Sections 1-2 ANSWERED by the designer 2026-10-19** (DECISIONS "2026-10-19 — Designer rulings: corporation theme sheet").
+> Revised drafts with the follow-up questions: `docs/handoff/plan2/drafts/themes/v2/<corp>.md`.
+
 You can answer per line with a code, for example "Orbital: B", "S3 b", "H4 shuttered" or "keep". This page gathers the lists. The
 sources stay as they are:
 - `docs/handoff/plan2/drafts/themes/THEMES_SHEET.md`: the theme question sheet; full rules in `themes/<corp>.md`.
