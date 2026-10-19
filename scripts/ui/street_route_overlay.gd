@@ -12,6 +12,8 @@ const WORD_TARGET := "TARGET"
 const TARGET_SHARE := 1.75
 const TARGET_SQUASH := 0.86
 const TARGET_FONT := 20
+## Share of the TARGET word's width kept free round it by the safe-frame test (its -0.12 rad tilt, the pencil wobble).
+const TARGET_WORD_PAD := 0.15
 const HEAD_PX := 20.0
 const SHAFT_PX := 64.0
 const WORD_BACK := 30.0
@@ -627,7 +629,9 @@ func _lay_target() -> void:
 		var rr := sticker_radius() * TARGET_SHARE
 		_pencil.circle("target_loop", c, Vector2(rr, rr * TARGET_SQUASH), GreasePencilMark.Ink.THREAT, LOOP_SEED)
 		var wk := maxf(kk, 0.5)
-		var base := c + Vector2(rr * 0.7, -rr * 0.95) - Vector2(0.0, 0.0)
+		var wsz := PencilSet.word_size(tword, TARGET_FONT) * wk
+		var place := StreetRouteRules.target_word_place(c, rr, wsz, wsz.x * TARGET_WORD_PAD, Rect2(Vector2.ZERO, usable.size))
+		var base: Vector2 = place["baseline"]
 		var wc := PencilSet.centre_of(base, tword, TARGET_FONT, wk, -0.12)
 		_pencil.word("target_word", tword, wc, TARGET_FONT, GreasePencilMark.Ink.THREAT, wk, PencilSet.AUTO, 0.0, -0.12)
 	_pencil.end()

@@ -312,7 +312,7 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
     _, pts = select_link(net, site)
     legs = LY.link_legs(city, pts)
     B = LY.merged_buildings(city)
-    best, _ = choose_street_fitting(B, legs, layers, r)
+    best, step = choose_street_fitting(B, legs, layers, r)
     if best is None or not best[5]:
         raise DeriveError("no frontage along the link of " + site)
     score, li, side, a, c, fr, asg, ok, start_left = best
@@ -345,4 +345,6 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
         columns=[[l, b["bid"]] for l, b in asg], route_keys=[b["bid"] for _, b in asg], col_info=col_info,
         rooms=out_rooms, edges=edges, overview=ov.to_json(), decision=dec.to_json(),
         frontage=[[b["bid"], round(b["h"], 1), floors(b, r), round(b["ts"], 2)] for b in fr])
+    if step >= 2:        # A-025: a replay shows the leg-extension retry (the step is `choose_street_fitting`'s)
+        base.update(retry="leg_extend", retry_step=step)
     return base

@@ -449,7 +449,9 @@ static func derive_street(city: Dictionary, net: Dictionary, run_graph: Dictiona
 		return sl
 	var legs: Array = NetrunArtLayout.link_legs(city, sl["pts"])
 	var B: Array = NetrunArtLayout.merged_buildings(city)
-	var best: Dictionary = (choose_street_fitting(B, legs, layers, r) as Array)[0]
+	var fitted: Array = choose_street_fitting(B, legs, layers, r)
+	var best: Dictionary = fitted[0]
+	var fit_step: int = int(fitted[1])
 	if best.is_empty() or (best["front"] as Array).is_empty():
 		return {"error": "no frontage along the link of " + site}
 	var li: int = best["li"]
@@ -525,4 +527,7 @@ static func derive_street(city: Dictionary, net: Dictionary, run_graph: Dictiona
 	base["overview"] = ov.to_json()
 	base["decision"] = dec.to_json()
 	base["frontage"] = front_rows
+	if fit_step >= 2:
+		base["retry"] = "leg_extend"
+		base["retry_step"] = fit_step
 	return base

@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-SRC = Path("C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass/docs/concepts")  # READ ONLY
+SRC = Path("D:/rc_art/art-pass/docs/concepts")  # READ ONLY
 RMG = SRC / "route_map_graph"
 MAIN_ASSET_LIST = Path("D:/Godot/rebel_cell/docs/art_asset.md")  # main's list (untracked in some worktrees)
 OUT_ROOT = ROOT / "docs/handoff/netrun_art/batch"

@@ -26,6 +26,7 @@ RIG: Dict[str, Any] = dict(
     yaw_max=24.0, pitch_d=9.0, lens_d=30.0, fill_w=0.66, fill_h=0.70, look_bias=0.10,
     hover_pull=0.22, hover_yaw=3.0, hover_dolly=0.96,
     ov_yaw_k=0.3, pitch_o=2.0, lens_o=40.0, fill_ow=0.95, fill_oh=0.90, ov_base_frac=0.815,
+    ov_dist=114.62, ov_shift=[-0.0548, 0.1172], dec_dist=42.10, dec_shift=[0.0345, 0.0002],
     t_step=0.9, t_hover_in=0.30, t_hover_out=0.35, t_zoom=1.0,
     sensor_mm=SENSOR, ref_w=REF_W, ref_h=REF_H, use=list(USE),
     solver_iters=SOLVER_ITERS, solver_bracket=list(SOLVER_BRACKET))
@@ -202,6 +203,14 @@ def street_yaw0(nrm: Sequence[float]) -> float:
     return yaw_of_nrm(nrm)
 
 
+def plate_pose(pts: Sequence[Pt3], yaw: float, pitch: float, lens: float, dist: float, shift: Sequence[float]) -> Pose:
+    """The plate camera rule (art-pass A-025 / A-026): focus on the box centre of `pts`, the plate's fixed `dist` and lens
+    shift (`ov_*` / `dec_*` in `RIG`), the yaw along the street face normal."""
+    xs, ys, zs = zip(*pts)
+    F = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2)
+    return Pose(F, yaw, pitch, dist, lens, shift[0], shift[1])
+
+
 def street_overview(rooms: Dict[str, Dict[str, Any]], nrm: Sequence[float], start_left: bool,
                     rig: Optional[Dict[str, Any]] = None) -> Pose:
     """The street OVERVIEW pose (spec 6.2 one-city overrides, rig convention).
@@ -212,13 +221,8 @@ def street_overview(rooms: Dict[str, Dict[str, Any]], nrm: Sequence[float], star
     g = dict(RIG, **(rig or {}))
     sgn = 1.0 if start_left else -1.0
     pts = [p for r in rooms.values() for p in room_corners(r)]
-    ov = frame_points(pts, street_yaw0(nrm) + sgn * g["ov_yaw_k"] * g["yaw_max"], g["pitch_o"], g["lens_o"], g["fill_ow"],
-                      g["fill_oh"])
-    low = [ov.proj([p[0], p[1], p[2] + r.get("ground_z", 0.0)]) for r in rooms.values() for p in r["front"] if p[2] < 0.5]
-    low = [q[1] for q in low if q]
-    if low:
-        ov.sy += (g["ov_base_frac"] * REF_H - max(low)) / REF_W
-    return ov
+    return plate_pose(pts, street_yaw0(nrm) + sgn * g["ov_yaw_k"] * g["yaw_max"], g["pitch_o"], g["lens_o"], g["ov_dist"],
+                      g["ov_shift"])
 
 
 def street_u(layers: int, current_layer: int) -> float:
@@ -244,8 +248,7 @@ def street_decision(rooms: Dict[str, Dict[str, Any]], current: Optional[str], op
     if not current and entry is not None:
         pts.append(list(entry))
     off = sgn * g["yaw_max"] * (1.0 - 2.0 * clamp01(u))
-    return frame_points(pts, street_yaw0(nrm) + off, g["pitch_d"], g["lens_d"], g["fill_w"], g["fill_h"],
-                        bias=LOOK_BIAS_SIGN * g["look_bias"] * off / g["yaw_max"])
+    return plate_pose(pts, street_yaw0(nrm) + off, g["pitch_d"], g["lens_d"], g["dec_dist"], g["dec_shift"])
 
 
 def street_hover(decision: Pose, target_room: Dict[str, Any], nrm: Sequence[float], k: float = 1.0,
