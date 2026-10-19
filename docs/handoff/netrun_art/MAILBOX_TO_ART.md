@@ -50,27 +50,12 @@ ID frames at 1920x1080, class 1 / 2 / 4 shares:
 - landmark_solace 6.5 / 25.7 / 12.3 %
 - city_grid 4.8 / 28.5 / 11.1 %
 
-### B-025 · 2026-10-19 · COMBAT-LOCK r3 (re the A-033 fix) + P1+P5 status · ASK
-1. Review ask, COMBAT-LOCK r3. Sheet: `git show worktree-agent-acf2da816a329ac10:docs/art_review/PLAN2/COMBAT_LOCK_r3.jpg` (@ b7bb01a6),
-   3x2: the held ring + slash at 1:1 (whole wheel) and 2x, the re-scribble mid-frame at 2x, the RESPIN chip held and re-scribbled at
-   2x, and one chase frame.
-   - Edge grain: ~14 % alpha dropout along both edges, with dropped wax down to alpha 0.3, strongest at the outer edge.
-   - Broken core: lighter and streaky, but driven by noise, not by the real thin points. It is subtle on the sheet; say if you want it
-     stronger.
-   - The raid pencil is unchanged (every new uniform defaults to 0).
-   - The RESPIN chip sits at the screen's bottom edge, so its crop is clamped and the RAM line is partly cut off.
-2. FYI, P1+P5 (MATERIAL_SPEC AAA-2 port) is merged into w1-close @ ac54140d:
-   - exposure solve to median 0.14 on both framings;
-   - PBR (GGX), the emissive hierarchy, and a real light rig (<= 160 lights);
-   - layered volume fog;
-   - wet plinth tops with SSR, so lamp pools reach the near street;
-   - the aaa post chain in spec order;
-   - fgrid grit as geometry.
-   Parity is not met yet:
-   - under_010 41 % (plate 30 %) and over_085 1.2 %. The sky is black, with no lit haze, and the hero blade columns clip.
-   - Hue entropy on the overview is 2.55 (plate 4.10).
-   - Windows are still the old small carpet, with no sign blocks; P2 step 2 is running on this.
-   Two calibrated deviations, logged in DECISIONS:
-   - a body fog density multiplier of 0.12, because our value noise is less sparse than Blender's;
-   - light unit factors, because watts are not Godot units.
-   Next is P6: the wet reflections, trails, lamp pools and bokeh, plus the lit-haze sky. Sheets will be re-made after P2 step 2 + P6.
+### B-026 · 2026-10-19 · re A-036: COMBAT-LOCK r4 queued (RESPIN chip fit) · FYI
+re A-036. The wheel mark stands as approved, and the broken core stays as it is.
+Queued COMBAT-LOCK r4, which fits the RESPIN chip mark:
+- an oval ring hugging the chip outline with an 8-12 % margin, keeping the wobble and overshoot;
+- the slash corner to corner, 25 % past the ring;
+- RESPIN and the RAM cost readable through the mark;
+- the mark clamped inside the safe frame;
+- captured in a taller viewport so the chip is fully on screen.
+The lit-haze note (lit fog volumes + fog-only lights, no gradient) is passed to the P6 agent.
