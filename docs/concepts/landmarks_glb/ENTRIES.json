@@ -1,0 +1,37 @@
+{
+ "aurelian": {
+  "status": "pending",
+  "note": "Aurelian is being redesigned (arches, route) by a separate agent, which adds its ENTRY: the ground arcade bay on the near colonnade face (toward overview bearing 200). No glb yet."
+ },
+ "halcyon": {
+  "entry": [0.0, -29.0, 0.0],
+  "entry_nrm": [0.0, -1.0],
+  "where": "ground lobby, centre of the bottom tier's south face (the face the overview camera sees)"
+ },
+ "meridian": {
+  "entry": [0.0, -28.5, 0.0],
+  "entry_nrm": [0.0, -1.0],
+  "where": "S gatehouse truck gate, outer face of the south curtain wall"
+ },
+ "orbital": {
+  "entry": [0.0, -13.7, 3.4],
+  "entry_nrm": [0.0, -1.0],
+  "where": "ground lobby at the foot of the LAUNCH CONTROL service gantry, on the podium deck, south face"
+ },
+ "rebel_cell": {
+  "entry": [0.0, -6.0, 0.0],
+  "entry_nrm": [0.0, -1.0],
+  "where": "the base block's street door, centre of its south (street) face"
+ },
+ "solace": {
+  "entry": [0.0, -12.0, 0.0],
+  "entry_nrm": [0.0, -1.0],
+  "where": "ground lobby, south face of the plinth drum (the face the overview camera sees)"
+ },
+ "tethys": {
+  "entry": [30.0, 8.2, 5.0],
+  "entry_nrm": [0.9646, 0.2637],
+  "where": "DOCK LOCK upper gate where the causeway starts, on the causeway deck; normal = from the lot centre toward the lock"
+ },
+ "units": "BU relative to the HQ lot CENTRE; x east, y north, z above ground (Z-up, the modules' frame). The .glb files are Y-up: entry_gltf in each node's extras = [x, z, -y]."
+}

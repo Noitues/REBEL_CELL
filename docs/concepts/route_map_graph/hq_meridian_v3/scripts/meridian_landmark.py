@@ -1099,3 +1099,8 @@ def build(K, rooms=True, rail=True):
     if hasattr(K, "SURF") and not hasattr(K, "A"):
         return _build_city(K)
     return build_hq(K, rooms, rail)
+
+
+# HQ entry anchor (BU relative to the HQ lot CENTRE, x east, y north, z above ground): the S gatehouse's TRUCK GATE, in the
+# outer face of the south curtain wall (CP lot 120 kit BU x K_UNITS = 28.5 BU, gate at s_x 0), looking south
+ENTRY = {"entry": [0.0, -28.5, 0.0], "entry_nrm": [0.0, -1.0]}

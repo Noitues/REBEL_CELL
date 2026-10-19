@@ -527,3 +527,9 @@ def build_whales(ns, centre=None, seed=None):
     ns["spot_at"]((pod_c[0], pod_c[1], pod_c[2]), (pod_c[0] + 2.0, pod_c[1] - 2.0, zl), LP["col"], LP["power"], LP["cone"])
     print("TETHYS whales", out, flush=True)
     return dict(whales=out, centre=tuple(pod_c))
+
+
+# HQ entry anchor (BU relative to the HQ lot CENTRE, x east, y north, z above ground): the DOCK LOCK's upper gate where the
+# causeway starts (tethys_quarter.lock_pose / causeway p0 on the zoned layout: the dam point nearest the HQ, +0.4 off the wet
+# face), on the causeway deck (TP.CAUSEWAY z 5.0). entry_nrm = the unit vector from the lot centre toward the lock (outward).
+ENTRY = {"entry": [30.0, 8.2, 5.0], "entry_nrm": [0.9646, 0.2637]}

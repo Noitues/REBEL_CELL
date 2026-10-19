@@ -568,6 +568,7 @@ def landmark_from_module(corp, path):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     r_ = mod.build(landmark_ctx(corp))
+    SIGNS.extend(STATION.pop("signs", []))          # a module's textured sign quads (Rebel Cell MAINFRAME) -> the renderer's list
     return tuple(r_["label"]), (tuple(r_["crown"]) if r_.get("crown") else None), tuple(r_["hue"])
 
 
@@ -576,8 +577,31 @@ import city_idpass as _IDP  # noqa: E402  (ID pass: the faces added from here on
 LMK_MARK = _IDP.face_counts(globals())
 BUILTIN_LM = (("halcyon", halcyon), ("meridian", meridian), ("solace", solace), ("orbital", orbital),
               ("aurelian", aurelian), ("tethys", tethys), ("rebel_cell", rebel_cell))
+# check hooks (queue item 4): CITY_LM_OVERRIDE="corp=path;corp=path" swaps a landmark module in (or "corp=builtin" forces
+# the built-in); CITY_LM_DUMP=<dir> writes the faces each landmark added (<dir>/<corp>.json) for the 1:1 module check
+_OVR = dict(kv.split("=", 1) for kv in os.environ.get("CITY_LM_OVERRIDE", "").split(";") if "=" in kv)
+_DUMP = os.environ.get("CITY_LM_DUMP")
+
+
+def _dump_faces(corp, before):
+    import json
+    out = {}
+    for k, v in _IDP.ACC_VARS.items():
+        if v not in globals() or k not in before:
+            continue
+        a = globals()[v]
+        lo = before[k]
+        out[k] = [[[round(c, 3) for c in a.V[i]] for i in f] + [[round(c, 4) for c in a.col[n + lo]]] for n, f in enumerate(a.F[lo:])]
+    os.makedirs(_DUMP, exist_ok=True)
+    json.dump(dict(faces=out, lights=[dict(loc=[round(c, 3) for c in d["loc"]], tgt=[round(c, 3) for c in d["tgt"]], power=d["power"])
+                                      for d in LIGHT_SPOTS[_L0:]], ret=repr(LM[corp])), open(os.path.join(_DUMP, corp + ".json"), "w"))
+
+
 for _k, _fn in BUILTIN_LM:
-    _mp = CP.LANDMARK_MODULES.get(_k)
+    _mp = _OVR.get(_k, CP.LANDMARK_MODULES.get(_k))
+    if _mp == "builtin":
+        _mp = None
+    _b0, _L0 = _IDP.face_counts(globals()), len(LIGHT_SPOTS)
     if _mp and os.path.exists(_mp):
         LM[_k] = landmark_from_module(_k, _mp)
         print("LANDMARK", _k, "from module", _mp, flush=True)
@@ -586,3 +610,5 @@ for _k, _fn in BUILTIN_LM:
             print("LANDMARK", _k, "module missing, built-in used:", _mp, flush=True)
         LM[_k] = _fn()
         print("LANDMARK", _k, flush=True)
+    if _DUMP:
+        _dump_faces(_k, _b0)
