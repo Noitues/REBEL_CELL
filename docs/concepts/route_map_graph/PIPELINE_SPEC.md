@@ -1458,7 +1458,7 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 | R-HUE-1 / R-HUE-2 | street, city | entropy >= 3.8 bits; top cluster <= 45 % | fail; corp HQ views exempt (rule `palette.districts`) |
 | R-FOCUS-1 | any frame with a landmark, city views included; **report only by day** (`capture.json` `time: "day"`; AD 2026-10-18) | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
 | R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
-| R-REP-1 | all | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
+| R-REP-1 | all; on street views measured on the facade band only (frame rows above the kerb line), since the foreground streak lanes are periodic by design (AD 2026-10-18) | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
 | R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | 12.1 (median warn band 0.09-0.11 / 0.17-0.19 reports only; Designer 2026-10-16) | fail outside the fail band (rule `values.solve`) |
 
 Exempt as in 12.1 (hover power cut, mainline frames, red sequence, flash frames). The landmark and crop boxes come
