@@ -25,7 +25,8 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
 | COMBAT-LOCK label | RESPIN / 4 RAM drawn over the mark (A-040) | combat-lock-label | nudge_lock_pencil.gd, combat_scene chip |
 | done | on w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4, NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
-| queued | HQ launch through the Solace ladder (W2); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
+| HQ-LAUNCH | Solace HQ breach runs through the GENOME CORE ladder (rules + minimal scene wiring, no look files) | w2 | netrun_session.gd, HQ run kind, netrun_scene graph walk |
+| queued | NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
