@@ -27,13 +27,18 @@ static var _shipped: CityShaderConfigData = null
 @export var streak: Dictionary = {}
 ## `city_fog` (PIPELINE_SPEC 4.1 and the calibration of 12.1): every term of the scatter volume.
 @export var fog: Dictionary = {}
+## The night sky at look_blend 1 (NA-22b, `city_sky`): zenith, horizon (the warm city glow) and ground colours (linear) and
+## `glow_k`, the falloff of the glow band with sin(elevation); mixed from the mainline `sky` colour as look_blend rises.
+@export var sky: Dictionary = {}
 
 ## Keys each Dictionary field must hold (what the shaders and the kit read).
 const REQUIRED: Dictionary = {
 	"look": ["ink_fade", "ink_floor", "exposure"],
 	"reduce": ["anim_t_default", "ease_s"],
 	"building": ["corridor_pad", "side_test", "plinth_albedo", "plinth_blue", "plinth_on", "plinth_off_bu", "edge_band_bu",
-		"edge_alpha_boost", "window_dim"],
+		"edge_alpha_boost", "window_dim", "facade_albedo", "facade_light", "win_share", "win_floor", "win_pow", "win_emit",
+		"trim_emit", "landmark_dim", "haze_col", "haze_k", "haze_h", "haze_hi"],
+	"sky": ["top", "horizon", "ground", "glow_k"],
 	"wet": ["noise_scale", "noise_octaves", "rough_noise", "rough_wet", "specular", "albedo_mul", "pbr_fade"],
 	"beam": ["core_sigma", "core_w", "skirt_sigma", "skirt_w", "efold", "fade", "fade_from", "fade_in", "noise_scale",
 		"noise_lo", "noise_hi", "hot", "emit", "period_s", "pitch_share", "start_radius", "length_front", "half_deg"],

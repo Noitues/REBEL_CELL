@@ -9,6 +9,7 @@ const FOG := preload("res://shaders/city/city_fog.gdshader")
 const BEAM := preload("res://shaders/city/beam_shaft.gdshader")
 const WET := preload("res://shaders/city/wet_street.gdshader")
 const STREAK := preload("res://shaders/city/streak_lane.gdshader")
+const SKY := preload("res://shaders/city/city_sky.gdshader")
 const BEAM_SEGMENTS := 48
 const BEAM_RINGS := 24
 
@@ -55,6 +56,10 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"plinth_off", float(b["plinth_off_bu"]))
 	m.set_shader_parameter(&"plinth_albedo", float(b["plinth_albedo"]))
 	m.set_shader_parameter(&"plinth_blue", float(b["plinth_blue"]))
+	for k: String in ["facade_albedo", "facade_light", "win_share", "win_floor", "win_pow", "win_emit", "trim_emit", "haze_k", "haze_h",
+			"haze_hi"]:
+		m.set_shader_parameter(StringName(k), float(b[k]))
+	m.set_shader_parameter(&"haze_col", _v3(b["haze_col"]))
 
 
 ## Switches the street section on: corridor beside the plan segment `a` -> `c` (plan x, y), camera-side normal `nrm`, local
@@ -290,6 +295,59 @@ static func fog_volume(centre: Vector3, h_front: float = -1.0) -> FogVolume:
 ## The Environment tonemap exposure at `look_blend`: 1 at 0 (the page as before), `look.exposure` at 1 (the value-band solve).
 static func exposure_at(look_blend: float) -> float:
 	return lerpf(1.0, float(_cfg().look["exposure"]), clampf(look_blend, 0.0, 1.0))
+
+
+## The night sky at `look_blend`: `base` is the mainline background colour. Above 0 the Environment shows the `city_sky` sky
+## (near-black zenith, warm city-glow band at the horizon) mixed from `base`; at 0 it is the flat background colour as before.
+## The sky only fills the background (ambient and reflections stay disabled).
+static func apply_sky(env: Environment, look_blend: float, base: Color) -> void:
+	var lb: float = clampf(look_blend, 0.0, 1.0)
+	if lb <= 0.0:
+		env.background_mode = Environment.BG_COLOR
+		env.background_color = base
+		return
+	var s: Dictionary = _cfg().sky
+	var mat: ShaderMaterial = null
+	if env.sky != null:
+		mat = env.sky.sky_material as ShaderMaterial
+	if mat == null:
+		mat = ShaderMaterial.new()
+		mat.shader = SKY
+		var sky := Sky.new()
+		sky.sky_material = mat
+		sky.radiance_size = Sky.RADIANCE_SIZE_32
+		sky.process_mode = Sky.PROCESS_MODE_QUALITY
+		env.sky = sky
+	mat.set_shader_parameter(&"base", Vector3(base.r, base.g, base.b))
+	mat.set_shader_parameter(&"top", _v3(s["top"]))
+	mat.set_shader_parameter(&"horizon", _v3(s["horizon"]))
+	mat.set_shader_parameter(&"ground", _v3(s["ground"]))
+	mat.set_shader_parameter(&"glow_k", float(s["glow_k"]))
+	mat.set_shader_parameter(&"look_blend", lb)
+	env.background_mode = Environment.BG_SKY
+
+
+## Darkens the landmark toon materials `mats` (the `landmark_mats` of CityView3D: key -> {name -> ShaderMaterial}) toward the
+## lights-out facade at `look_blend`: the ramp and the self-lit share (`lit_emission`) scale by `building.landmark_dim` at 1.
+## The mainline values are kept in the material's meta, so 0 restores the page as before and a re-call is idempotent.
+static func dim_landmarks(mats: Dictionary, look_blend: float) -> void:
+	var k: float = lerpf(1.0, float(_cfg().building["landmark_dim"]), clampf(look_blend, 0.0, 1.0))
+	for group: Variant in mats.values():
+		if not group is Dictionary:
+			continue
+		for m: Variant in (group as Dictionary).values():
+			var sm := m as ShaderMaterial
+			if sm == null or not sm.shader.resource_path.ends_with("landmark_toon.gdshader"):
+				continue
+			if not sm.has_meta(&"nr_base"):
+				sm.set_meta(&"nr_base", {"ramp_shadow": sm.get_shader_parameter(&"ramp_shadow"), "ramp_mid": sm.get_shader_parameter(&"ramp_mid"),
+					"ramp_lit": sm.get_shader_parameter(&"ramp_lit"), "lit_emission": sm.get_shader_parameter(&"lit_emission")})
+			var base: Dictionary = sm.get_meta(&"nr_base")
+			for n: StringName in [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]:
+				if base[n] != null:
+					sm.set_shader_parameter(n, base[n] * k)
+			if base[&"lit_emission"] != null:
+				sm.set_shader_parameter(&"lit_emission", float(base[&"lit_emission"]) * k)
 
 
 ## Volumetric fog settings on `env` (the scene's Environment): enabled, zero global density (the FogVolume carries it), the

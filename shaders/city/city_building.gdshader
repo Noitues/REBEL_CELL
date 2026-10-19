@@ -68,6 +68,23 @@ uniform float edge_band = 0.095;
 uniform float edge_boost = 0.22;
 // 1 = the windows dim with the ghost opacity, 0 = they stay.
 uniform float ghost_dim = 1.0;
+// NA-22b (the lights-out street): at look_blend 1 the diffuse facade is near-black and the light comes from the emissives.
+// `facade_albedo` / `facade_light` multiply the facade albedo and the diffuse light, `win_share` is the share of windows lit
+// (the carpet; any facade face, tapered or not), `win_floor` / `win_pow` the per-window brightness spread, `win_emit` and
+// `trim_emit` the emission gains. All blend in with look_blend (0 = the page as before).
+uniform float facade_albedo = 1.0;
+uniform float facade_light = 1.0;
+uniform float win_share = 0.3;
+uniform float win_floor = 0.5;
+uniform float win_pow = 1.0;
+uniform float win_emit = 1.0;
+uniform float trim_emit = 1.0;
+// Depth haze (spec 4.1 cityglow, perspective views only): colour, density per BU of view distance, height e-fold (BU above the
+// local ground) and the share of the haze the highest parts keep.
+uniform vec3 haze_col = vec3(0.0);
+uniform float haze_k = 0.0;
+uniform float haze_h = 30.0;
+uniform float haze_hi = 0.15;
 // The id pass (PIPELINE_SPEC 12.0): unlit class colour in R, G = 255 and B = 0 for a cut / ghosted / dissolved building.
 uniform bool id_mode = false;
 uniform float id_class = 2.0;
@@ -122,6 +139,8 @@ void fragment() {
 	if (n.z < 0.0) {
 		n = -n;
 	}
+	float view_d = length(VERTEX);
+	bool persp = PROJECTION_MATRIX[3][3] < 0.5;
 	NORMAL = n;
 	ROUGHNESS = 1.0;
 	// INSTANCE_CUSTOM.w = crest + 2 * bits (NetrunInstancePack): cut 9, ghost 5, edge 3, dissolve 5 bits. Decoded here, not
@@ -167,7 +186,7 @@ void fragment() {
 	float seed = v_inst.z;
 	float tone = mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13));
 	bool roof = v_c0.y > 0.5;
-	vec3 base = COLOR.rgb * tone * (roof ? roof_gain : 1.0);
+	vec3 base = COLOR.rgb * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
@@ -186,7 +205,7 @@ void fragment() {
 			}
 		}
 		float L = length(v_edge);
-		if (v_inst.x > 0.99 && v_h > 2.4 && L > 1.2) {
+		if ((v_inst.x > 0.99 || look_blend > 0.0) && v_h > 2.4 && L > 1.2) {
 			vec3 t = v_edge / L;
 			float along = dot(v_world - v_corner, t);
 			float nx = floor((L - 0.6) / window_pitch.x);
@@ -198,12 +217,14 @@ void fragment() {
 			if (ui >= 0.0 && ui < nx && vi >= 0.0 && vi < nz && lu < window_size.x && lv < window_size.y) {
 				vec3 key = vec3(ui + floor(v_corner.x * 3.0), vi + floor(v_corner.z * 3.0), seed * 977.0);
 				float r = hash1(key);
-				float share = v_crest > 0.5 ? 0.6 : window_share;
+				float share = v_crest > 0.5 ? 0.6 : mix(window_share, win_share, look_blend);
 				if (r < share) {
 					int ci = int(hash1(key + 17.0) * 6.0) % 6;
 					vec3 wc = v_crest > 0.5 && hash1(key + 5.0) < 0.8 ? vec3(0.95, 0.24, 0.22) : window_colors[ci];
 					float s = window_dim_min + (1.0 - window_dim_min) * hash1(key + 9.0);
-					em = wc * s * window_gain;
+					float s_nr = win_floor + (1.0 - win_floor) * pow(hash1(key + 9.0), win_pow);
+					s = mix(s, s_nr, look_blend);
+					em = wc * s * window_gain * mix(1.0, win_emit, look_blend);
 					base = wc * s * 0.25;
 				}
 			}
@@ -226,7 +247,7 @@ void fragment() {
 		float px = fwidth(v_rim) * v_half * v_inst.x;
 		if (dist < max(trim_bu, px * 1.5)) {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
-			em = ink_colors[ii] * neon_gain;
+			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
 		}
 	}
@@ -246,6 +267,12 @@ void fragment() {
 		if (edge_px) {
 			em += edge_col * edge_gain * v_occ.z;
 		}
+	}
+	if (persp && look_blend > 0.0 && haze_k > 0.0) {
+		// Depth haze: far blocks lose contrast into the glow colour, low parts more than high ones; layers separate by distance.
+		float hz = (1.0 - exp(-view_d * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
+		base *= 1.0 - hz;
+		em = em * (1.0 - hz) + haze_col * hz;
 	}
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
@@ -270,5 +297,5 @@ void light() {
 		// Toon ramp -> a smooth lambert ramp over the same colours (the AAA-2 PBR diffuse stand-in).
 		band = mix(band, mix(ramp_shadow, ramp_lit, clamp(ndl, 0.0, 1.0)), look_blend);
 	}
-	DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band;
+	DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band * mix(1.0, facade_light, look_blend);
 }

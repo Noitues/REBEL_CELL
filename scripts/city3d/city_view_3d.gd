@@ -318,6 +318,8 @@ func set_look_blend(lb: float) -> void:
 	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
 	_env.tonemap_exposure = NetrunShaderKit.exposure_at(look_blend)
+	NetrunShaderKit.apply_sky(_env, look_blend, cfg.sky)
+	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 
 
 ## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
@@ -995,6 +997,8 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	var node := scene.instantiate() as Node3D
 	node.name = "Landmark_%s" % corp
 	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
+	if look_blend > 0.0:
+		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	node.transform = at
 	add_to_layer(&"landmarks", node)
 	landmarks[corp] = node
@@ -1150,6 +1154,8 @@ func _restyle_landmarks() -> void:
 	_prop_mats.clear()
 	for nm: StringName in _prop_meshes:
 		_style_prop_mesh(nm)
+	if look_blend > 0.0:
+		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	# ART-3 6w: the uplink pads take the new look too.
 	_uplink_meshes.clear()
 	if not uplink_pads.is_empty():
