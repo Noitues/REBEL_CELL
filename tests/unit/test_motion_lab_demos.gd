@@ -67,7 +67,6 @@ const AWAITING_FIX := {
 	&"beacon_blink": "neon_city (fix agent C city/raid)",
 	&"city_sign_pick": "neon_city (fix agent C city/raid)",
 	&"raid_outcome_stagger": "raid_fx_layer (fix agent C city/raid)",
-	&"route_target_pulse": "city_map_overlay (fix agent C city/raid)",
 	&"select_ring_pulse": "city_map_overlay (fix agent C city/raid)",
 }
 ## Game time a demo gets to read its entry (at SPEED), s.

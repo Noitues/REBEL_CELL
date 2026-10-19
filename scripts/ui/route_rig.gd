@@ -365,6 +365,9 @@ func _apply_fog_density() -> void:
 		_haze_cur = haze
 		view.building_material().set_shader_parameter(&"haze_k", haze)
 	# The value band holds on both framings: the exposure eases from the OVERVIEW solve to the DECISION solve (`look.exposure`).
+	var fk: Array = StreetRouteConfigData.shipped().look["frame"]
+	for rid: String in _room_mats:
+		(_room_mats[rid] as ShaderMaterial).set_shader_parameter(&"frame_k", lerpf(float(fk[0]), float(fk[1]), zd))
 	var ex: Array = StreetRouteConfigData.shipped().look["exposure"]
 	view.environment().tonemap_exposure = lerpf(float(ex[0]), float(ex[1]), zd)
 

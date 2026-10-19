@@ -30,7 +30,8 @@ static var _shipped: StreetRouteConfigData = null
 ## The street's look on the city (NA-23c): `building` = `city_building` uniform overrides the rig sets on the netrun street only
 ## (wash, floor-band trims), `lane` = the lane lines (`gain`, `sat` of `route_lane`), `haze` = [OVERVIEW, DECISION] depth-haze
 ## density (`haze_k`; the near DECISION frame keeps its facades), `exposure` = [OVERVIEW, DECISION] tonemap exposure (the 12.1 value
-## band solved on both framings; `atmosphere.exposure` is the fallback of a pose-less rig).
+## band solved on both framings; `atmosphere.exposure` is the fallback of a pose-less rig),
+## `frame` = [OVERVIEW, DECISION] brightness factor of the room frame bars.
 @export var look: Dictionary = {}
 
 ## Keys each Dictionary field must hold.
@@ -43,7 +44,7 @@ const REQUIRED: Dictionary = {
 	"hover": ["cut_level", "cut_desat", "branch_boost", "type_glow", "grow_px", "blur_px", "mask_scale"],
 	"frame": ["top_px", "bottom_px", "left_px", "right_px", "ref_h"],
 	"atmosphere": ["density_overview", "exposure", "density_decision", "front_sym", "glow_count", "glow_energy", "glow_range", "glow_height", "glow_side"],
-	"look": ["building", "lane", "haze", "exposure"],
+	"look": ["building", "lane", "haze", "exposure", "frame"],
 }
 
 

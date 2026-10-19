@@ -138,6 +138,12 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_dock_circle", &"raid_drag_arrow", &"raid_beacon_idle",
 	&"raid_incoming",  # B3 (review section c): the raid interlude's INCOMING transition
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
+	# MOTION-TIMINGS: shares of combat effects' seconds that were inline in CombatFxLayer and WheelView.
+	&"hit_blocked_wall_lead", &"wall_stagger_share", &"wall_travel_share", &"corrupt_apply_stagger",
+	&"corrupt_apply_travel", &"corrupt_tick_free_share", &"drone_destroyed_stagger", &"drone_destroyed_travel",
+	&"nudge_resist_stagger", &"nudge_resist_travel", &"trigger_lens_share", &"trigger_bits_lead",
+	&"temp_label_stagger", &"temp_label_travel", &"defeat_shock_share", &"defeat_bits_stagger",
+	&"defeat_bits_travel", &"defeat_word_lead", &"precision_word_hold",
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
 
 	# ART-11 4D (ART_BIBLE v2 §4.8): the campaign lost lock (RansomLock), the audit dossier
@@ -182,7 +188,10 @@ const OFF_PARTS: Dictionary = {
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
 const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",
-	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share", &"sticker_sweep_period", &"sticker_peel_back"]
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share", &"sticker_sweep_period", &"sticker_peel_back",
+	&"hit_blocked_wall_lead", &"wall_stagger_share", &"wall_travel_share", &"corrupt_apply_stagger", &"corrupt_apply_travel", &"corrupt_tick_free_share",
+	&"drone_destroyed_stagger", &"drone_destroyed_travel", &"nudge_resist_stagger", &"nudge_resist_travel", &"trigger_lens_share", &"trigger_bits_lead",
+	&"temp_label_stagger", &"temp_label_travel", &"defeat_shock_share", &"defeat_bits_stagger", &"defeat_bits_travel", &"defeat_word_lead", &"precision_word_hold"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

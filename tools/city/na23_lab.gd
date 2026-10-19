@@ -65,9 +65,12 @@ func _ready() -> void:
 	if String(_args.get("noroom", "0")) == "1":
 		for id: String in view.rig._rooms:
 			(view.rig._rooms[id] as MeshInstance3D).visible = false
-	for k: String in ["haze_k", "wash_gain", "win_emit", "win_share", "facade_light", "plinth_off", "sec_side", "edge_gain"]:
+	for k: String in ["haze_k", "wash_gain", "win_emit", "win_share", "facade_light", "plinth_off", "sec_side", "edge_gain", "band_emit", "ledge_bu"]:
 		if _args.has(k):
 			view.rig.view.building_material().set_shader_parameter(StringName(k), float(_args[k]))
+	for k: String in ["rain_alpha", "ink_alpha", "ink_wobble_px", "ink_fade"]:
+		if _args.has(k):
+			view.rig.view._post.set_shader_parameter(StringName(k), float(_args[k]))
 	if _args.has("wpx"):
 		var wp := float(_args["wpx"])
 		view.rig.view.building_material().set_shader_parameter(&"window_pitch", Vector2(wp, 1.9))
