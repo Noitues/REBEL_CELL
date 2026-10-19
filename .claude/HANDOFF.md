@@ -19,9 +19,45 @@
 - NA-04d merged (a35b41b0): 12.6 by depth.png, R-REP-1 facade band, drift vs art-pass 7772e6ba = 0 DRIFT (sent to art-pass).
 - Merged 2026-10-19 (all art-pass APPROVED where visual): NA-26, NA-11c, RULE5-CMO, MOTION-TIMINGS, NA-23b (61029e84),
   CAP-W1/N12b, NA-24c (c983ca7b), NA-23c (fd0c9aa7). DECISION R-REP-1 ~0.62 accepted as warn (art-pass owns the 8 px lag).
-- Running: Q19-PREVIEW (core forecast + "?" chip), NA-25b (blotches, reveal dissolve, jack-out reverses, zoom reuse),
-  NA-24b (lane clock k*T + DECISION R-REP-1 re-measure).
-- Left in W1: NA-ID (after NA-23/NA-04), NA-12 (city generator; Opus lane questioned), then PT-005 automated gate.
+- Merged later 2026-10-19: Q19-PREVIEW (3f4e1d46), NA-24b, NA-ID (093308f9), W2 drafts WH-01/EX-01 (b946de66).
+- Integration branch `w1-close` (worktree .claude/worktrees/w1-close) = main + NA-25b + NA-12; merge to main when
+  art-pass approves both. Agents based on it: street-on-generated-city fix, WH-02 (Opus), NA-31.
+- Art-pass held replies 15-18 (art-pass b4a8cb42, docs/concepts/HANDOFF_PACKAGE/PENDING_TO_BUILD.md) = OPEN fix lists:
+  - 15 NA-ID-b (QUEUED): ground drawn as class 4 (not hidden), ground-lying compound parts (plaza, aprons, rails) class 4
+    via `id_ground` group / glb role, capture.json 1-space indent + sorted + LF + `time` night|day; re-run 3 frames.
+  - 16 NA-25b r3 (QUEUED, base branch worktree-agent-a81de4284bc1f9b35 @ bad12255; worktree removed): chain order, bits,
+    toggle APPROVED. Fix: (1) the real class wheel (D4 bezel + glass crescent, slices with read blocks, cream blades, class
+    hub core 3.3) for slap (sticker overshoot/settle, spin-up) and lens (hub core opening); (2) hub hold > 0.5 s = CRT
+    terminal (navy glass, 3 px scanlines, scrolling hex dump, edge glow, type-on `> routing ... building street_<bid>` +
+    caret); (3) HQ-side switch frame: normal city material if ever visible (no neon wireframe), else say it is covered;
+    (4) black windowless prism in bits frames = 7.1 ghost stub (see-through + outline) or missing material. Re-send
+    frames 4-6, HQ-side, bits frame. Sheet W1_NA25b_r3.jpg.
+  - 17 NA-12 r2 (RUNNING, agent adf53274290f3bfd9): water material, sea wall, piers, darker void, day blue; concave bay +
+    noise; city.json `coast` + `terrain.hills` (additive); CENTRAL SERVER chip clear of pins. Sheet W1_NA12_r2.jpg.
+    Terrain rendering = new slice NA-12c in W2 (before NA-32 HQ scenes).
+  - 18.1+18.2 COMBAT-LOCK (QUEUED, on main): nudge lock = wax circle-slash per designer ruling (DECISIONS 34069fe7), word
+    chips + toast removed, slash on locked RESPIN; Q19 respin ghost = 9 x 46 px chevrons chasing outside the rim (3.17),
+    no dashed ring. Re-send CAP_W1 panel 3 and Q19 panel 2.
+  - 18.3 NA-24d: folded into parity P3 (A-021).
+- STREET LOOK PARITY (A-020 designer ruling, blocks w1-close; plan B-002, answers A-021 art-pass 3dccef4e). Every netrun /
+  city sheet = golden plate + Godot at the same camera AND the §12 numbers. Queue (serial on city_building.gdshader):
+  - P0 parity harness (READY): tools/netrun_art/parity_sheet.py, plate via git show to %TEMP%, Godot at plate camera
+    (plate cams: art-pass golden_plates/street_*_capture.json, 1920x1080); publish our cameras in B-003.
+  - P1+P5 (A-022 CORRECTION): netrun street = AAA-2 realistic night (PBR, volumetric fog + FogVolumes, emissive-lit), NOT
+    toon/ink; keep the smooth look_blend 1. Port art-pass HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md (read §0 and "What
+    makes the look" first): exposure solve to median 0.14 FIRST; layered colored volume fog (0.152/BU cores, aniso 0.45,
+    ground band 0-2.2 BU 0.12/BU); wet street rough 0.03-0.30, spec IOR level 0.7, SSR; emissive hierarchy (hero 4.0 ...
+    lamp heads 8.0), 3-radius bloom, ACES hue-preserving + teal shadow / warm-pink highlight grade, vignette 0.38, CA, grain.
+    Facet grit is geometry (fgrid, cell 1.7 BU). No sky gradient, no bokeh pass (P6 bokeh = rough reflections).
+  - P2+P3+P4: PORT art-pass street_r2/scripts r2_config (-> .tres), r2_facade, r2_kits (code), r2_rules plan_pass /
+    layout_pass / checks, r2_signs as Python twin + GDScript at the same art_seed (fnv64). Props glb + roles.json from
+    street_kit/ (A-NNN). Cut the ~8 tall yellow-green/teal glow bars -> blade signs + lit_atrium slots. Words = r2_config
+    WORDS / SUBS as is. Absorbs NA-24d. Props KIT DELIVERED (A-024): 32 glb + roles.json in art-pass
+    HANDOFF_PACKAGE/street_kit/ (wall plane z=0, +Z out, metres=BU, COLOR_0 sRGB, emissive x MATERIAL_SPEC hierarchy,
+    sign_board UV quad for r2_signs textures); import into assets/ per D8 (glb only, no concept images).
+  - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
+    route rooms read as storefronts, no light columns).
+- PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
 
@@ -35,3 +71,7 @@ Lanes: Batch for drafts; fix-rules defaults to Sonnet (Opus only with OPUS-BECAU
 Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, smoke-check chain line + both funcs
 (check every func still ends with `return fails`), import after new class_names, never a bare `.sort()` on ids
 (`IdSort.sort_ids`; allowlist int sorts in `tests/unit/test_no_bare_id_sort.gd`).
+
+## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
+- Read art -> build at the start of EVERY turn: `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.
