@@ -570,6 +570,9 @@ const UNDO_BLOCKED_RESPIN := "Nothing to undo since your RESPIN: a random spin c
 const UNDO_BLOCKED_CARD := "Nothing to undo since %s rolled a random result: a roll can't be undone." # TR
 ## N13: the toast for a move aimed at a satellite (the resolver's SATELLITE_FIXED refusal, said here
 ## through TextDb so the words are exported).
+## N7: the lock refusals (the resolver's NUDGE_LOCKED / RESPIN_LOCKED texts) as TextDb keys.
+const NUDGE_LOCKED_TEXT := "That wheel's nudges are locked this turn." # TR
+const RESPIN_LOCKED_TEXT := "That wheel's respins are locked this turn." # TR
 const SATELLITE_FIXED_TEXT := "Satellites are fixed to their slice: only Undock moves them." # TR
 const UNDO_BLOCKED_END_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
 const UNDO_BLOCKED_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR

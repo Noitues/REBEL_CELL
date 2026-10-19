@@ -42,6 +42,8 @@ func validate(stack_cap: int = 0) -> PackedStringArray:
 		errors.append("APPLY_STATUS needs a status.")
 	if type == RC.EffectType.CUSTOM and custom_handler == null:
 		errors.append("CUSTOM effect needs a custom_handler script.")
+	if (type == RC.EffectType.LOCK_NUDGE or type == RC.EffectType.LOCK_RESPIN) and amount < 1:
+		errors.append("lock_turns_lt_1: %s lasts %d turns; at least 1." % [RC.EffectType.keys()[type], amount])
 	errors.append_array(amount_mode_errors())
 	errors.append_array(stack_errors(stack_cap))
 	return errors

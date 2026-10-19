@@ -58,6 +58,8 @@ ids = {
 &"effect_gain_cycles": &"pending",
 &"effect_gain_schematics": &"pending",
 &"effect_custom": &"pending",
+&"effect_lock_nudge": &"picto_nudge",
+&"effect_lock_respin": &"picto_respin",
 &"hub_breaker_core": &"hub_breaker_core",
 &"hub_breaker_core_mk2": &"hub_breaker_core",
 &"hub_wrecker_core": &"hub_wrecker_core",

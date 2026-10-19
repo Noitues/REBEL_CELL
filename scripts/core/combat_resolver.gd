@@ -20,6 +20,9 @@ const STATUS_TYPES := [RC.SliceType.INFECT]
 ## validate_action's refusal (code SATELLITE_FIXED) when a player action would move a
 ## satellite or drone without the Undock keyword (designer 2026-10-18, Q7/Q10).
 const SATELLITE_FIXED := "Satellites are fixed to their slice: only Undock moves them."
+## N7 refusals (codes NUDGE_LOCKED / RESPIN_LOCKED; the source ids are in lock_refusal()).
+const NUDGE_LOCKED := "That wheel's nudges are locked this turn."
+const RESPIN_LOCKED := "That wheel's respins are locked this turn."
 ## Effect types that move the wheel they hit (refused on satellites without Undock).
 const SATELLITE_MOVING_EFFECTS := [RC.EffectType.NUDGE, RC.EffectType.SPIN, RC.EffectType.FLIP,
 	RC.EffectType.RESPIN, RC.EffectType.FREEZE, RC.EffectType.SNAP_TO_CENTER]
@@ -242,6 +245,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if t == null or not t.is_alive() or t.is_player:
 				return "Invalid target."
 		CombatAction.Type.RESPIN:
+			if state.player.wheel.is_locked(WheelState.LOCK_RESPIN):
+				return RESPIN_LOCKED
 			var respin_cost := RamCost.of_action(state, action, self)
 			if state.ram < respin_cost:
 				return "Not enough RAM for a respin (%d needed)." % respin_cost
@@ -251,6 +256,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				return "Invalid wheel."
 			if t.is_satellite:
 				return SATELLITE_FIXED
+			if t.wheel.is_locked(WheelState.LOCK_NUDGE):
+				return NUDGE_LOCKED  # free and paid nudges alike; costs nothing
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
 			var nudge_cost := RamCost.of_action(state, action, self)
@@ -276,6 +283,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			for e in card.effects:
 				if e == null:
 					continue
+				if e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(WheelState.LOCK_RESPIN):
+					return RESPIN_LOCKED
 				if (e.type == RC.EffectType.FLIP or e.type == RC.EffectType.RESPIN) and target != state.player and target.resistance > 0:
 					return "%s blocked: %s has %d resistance." % [RC.EffectType.keys()[e.type], target.display_name, target.resistance]
 				if e.type == RC.EffectType.NUDGE and EffectInterpreter.nudge_ring(e, action, target) == RC.RingScope.INNER and not target.wheel.has_inner_ring():
@@ -283,6 +292,34 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				if e.slice_pick == RC.SlicePick.CHOSEN and e.type in [RC.EffectType.APPLY_STATUS, RC.EffectType.CLEANSE, RC.EffectType.DEPLOY_DRONE] and action.slot_index < 0:
 					return "Choose a slice."
 	return ""
+
+
+## The wheel the card effect `e` hits when the card's target wheel is `target`.
+func _effect_wheel(state: CombatState, e: EffectData, target: CombatantState) -> CombatantState:
+	match e.target:
+		RC.EffectTarget.SELF, RC.EffectTarget.OWN_WHEEL, RC.EffectTarget.CAMPAIGN:
+			return state.player
+	return target
+
+
+## N7: the lock behind a refusal, {"code": "NUDGE_LOCKED" | "RESPIN_LOCKED", "sources": [ids]}, or
+## {} when `action` is not refused by a lock. Same checks, same order as validate_action.
+func lock_refusal(state: CombatState, action: CombatAction) -> Dictionary:
+	var reason := validate_action(state, action)
+	if reason != NUDGE_LOCKED and reason != RESPIN_LOCKED:
+		return {}
+	var kind := WheelState.LOCK_NUDGE if reason == NUDGE_LOCKED else WheelState.LOCK_RESPIN
+	var wheel_of: CombatantState = state.player
+	if action.type == CombatAction.Type.NUDGE:
+		wheel_of = state.get_combatant(action.wheel_id)
+	elif action.type == CombatAction.Type.PLAY_CARD:
+		var card := lookup.get_content(state.hand[action.hand_index]) as CardData
+		var target := card_target(state, card, action)
+		for e in card.effects:
+			if e != null and e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(kind):
+				wheel_of = _effect_wheel(state, e, target)
+				break
+	return {"code": "NUDGE_LOCKED" if kind == WheelState.LOCK_NUDGE else "RESPIN_LOCKED", "sources": wheel_of.wheel.lock_sources(kind)}
 
 
 ## Whether `e`, played by the operative at `target`, would move a satellite or drone (its
@@ -435,6 +472,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		if not c.is_player:
 			refresh_enrage(s, c, events)
 			_refresh_resistance(c, events)
+	_apply_pending_locks(s, events)
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -459,6 +497,17 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		s.phase = CombatState.Phase.PLAYER_PHASE
 
 
+## N7 (Q31 answer 1): the locks queued at RESOLVE take hold of their wheels, after the
+## start-of-turn spin; a wheel that is gone gets none. They clear at the end of this turn.
+func _apply_pending_locks(s: CombatState, events: Array[Dictionary]) -> void:
+	for p in s.pending_locks:
+		var c := s.get_combatant(StringName(p["wheel"]))
+		if c != null and c.is_alive() and c.wheel.add_lock(StringName(p["kind"]), StringName(p["source"]), int(p["turns"])):
+			events.append({"type": "lock", "target": c.id, "kind": StringName(p["kind"]), "source": StringName(p["source"]),
+				"text": "%s's %s is locked this turn." % [c.display_name, p["kind"]]})
+	s.pending_locks.clear()
+
+
 ## N21 (rulings Q16, Q31): the turn's resistance refresh. `c` regains its full per-turn
 ## resistance (passive + hub while up + enrage) plus any change carried from the last
 ## RESOLVE, from 0 (end_turn zeroed it). A gain above 0 is the HUD's "+N" mark and a
@@ -478,6 +527,8 @@ func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
 ## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
 func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
 	for c in s.combatants_in_order():
+		if c.wheel != null:
+			c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)
 		if c.is_player:
 			continue
 		c.resistance = 0
@@ -1299,6 +1350,11 @@ func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dic
 
 
 func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:
+	if s.player.hp <= 0 or s.living_enemies(false).is_empty():
+		for c in s.combatants_in_order():
+			if c.wheel != null:
+				c.wheel.clear_locks()  # N7: nothing leaks past the combat
+		s.pending_locks.clear()
 	if s.player.hp <= 0:
 		s.outcome = CombatState.Outcome.DEFEAT
 		s.phase = CombatState.Phase.END_COMBAT

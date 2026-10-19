@@ -149,6 +149,13 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					continue
 				t.wheel.frozen = true
 				events.append({"type": "freeze", "target": t.id, "text": "%s is FROZEN: it skips its next respin." % t.display_name})
+		RC.EffectType.LOCK_NUDGE, RC.EffectType.LOCK_RESPIN:
+			var lock_kind := WheelState.LOCK_NUDGE if e.type == RC.EffectType.LOCK_NUDGE else WheelState.LOCK_RESPIN
+			var lock_source := StringName(String(ctx.get("source_id", &"")))
+			if lock_source == &"":
+				lock_source = owner.source_id
+			for t in targets:
+				place_lock(state, t, lock_kind, lock_source, e.amount, events)
 		RC.EffectType.MODIFY_RESISTANCE:
 			for t in targets:
 				modify_resistance(t, e.amount, events, state.phase == CombatState.Phase.RESOLVE)
@@ -542,6 +549,32 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	events.append({"type": "respin", "target": c.id, "tick": wheel.tick_at(0),
 		"text": "%s respins to tick %d." % [c.display_name, wheel.tick_at(0)]})
 	return true
+
+
+## N7: locks `kind` on `c`'s wheel for `turns` turns. During RESOLVE the lock is QUEUED and
+## applies at the start of the next turn after the start-of-turn spin (it would otherwise be
+## cleared with the turn it was placed in); in the player's turn it applies at once. A lock
+## of fewer than 1 turns places nothing. No RNG.
+func place_lock(state: CombatState, c: CombatantState, kind: StringName, source: StringName, turns: int, events: Array[Dictionary]) -> void:
+	if turns < 1:
+		return
+	if state.phase == CombatState.Phase.RESOLVE:
+		for p in state.pending_locks:
+			if p["wheel"] == String(c.id) and p["kind"] == String(kind) and p["source"] == String(source):
+				p["turns"] = maxi(int(p["turns"]), turns)
+				return
+		state.pending_locks.append({"wheel": String(c.id), "kind": String(kind), "source": String(source), "turns": turns})
+		state.pending_locks.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			for k in ["wheel", "kind", "source"]:
+				if a[k] != b[k]:
+					return IdSort.less(a[k], b[k])
+			return false)
+		events.append({"type": "lock_queued", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s will be locked next turn." % [c.display_name, kind]})
+		return
+	if c.wheel.add_lock(kind, source, turns):
+		events.append({"type": "lock", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s is locked." % [c.display_name, kind]})
 
 
 ## Changes `c`'s resistance now. During RESOLVE the change also carries into the next

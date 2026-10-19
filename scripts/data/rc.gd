@@ -95,6 +95,12 @@ enum EffectType {
 	GAIN_CYCLES,
 	GAIN_SCHEMATICS,
 	CUSTOM,
+	## Plan 2 N7: lock the target wheel's nudges (free and paid; nudge cards still work) for
+	## the player's turn. `amount` = turns (>= 1). Append-only.
+	LOCK_NUDGE,
+	## Plan 2 N7: lock the target wheel's player respins (the Respin card, the RAM respin; never
+	## the start-of-turn respin). `amount` = turns (>= 1).
+	LOCK_RESPIN,
 }
 
 enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, CHOSEN, CAMPAIGN }
