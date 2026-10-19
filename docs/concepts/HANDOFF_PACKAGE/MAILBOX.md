@@ -17,44 +17,70 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-038 pruned.
+  its handled B entries the same way. A-019..A-040 pruned.
 
 
 ## Running (art-pass): work board, kept current; check before starting an agent
-Same rule as build's board: before launching an agent, read the other side's board; if a slice overlaps, claim it in an entry or ask.
-No art-pass agent ports into Godot or game code, and none touches `city_planner/` or `city_A2.json` (yours to port; we don't edit it).
+**Lanes changed 2026-10-19 (A-041):** art-pass now owns the 3D look inside Godot. No art-pass agent writes game rules or game UI, and
+none touches `city_planner/` / `city_A2.json` or the city data, loaders and generators.
 
 | slice | what | lane | owns (files / area) |
 |---|---|---|---|
-| HQ addendum | MATERIAL_SPEC section for the HQ netrun plates (AAA-2), for NA-31c | art-pass session + 1 Sonnet agent extracting the numbers (read-only on the repo) | `HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md` (new HQ section) |
-| street plates on seed 1 | **HELD** per B-029. The adapter is written; no finals ran; golden_plates/street_* unchanged | art-pass session | `street_r2/scripts/r2_from_build.py`, small env hooks in `street_r2/scripts/*`, `storyboard/scripts/post_aaa.py` route_mask fallback; scratch D:/rc_scratch/street_b1 |
-| reviews | your look sheets, against the golden plates | art-pass session | this file |
+| LOOK-0 setup | own clone `D:/rc_art/godot_look`, branch `art/look` (from w1-close @ 1f1a429b); survey of the look code and the capture tools (1 Sonnet agent, read-only) | art-pass | nothing written yet |
+| HQ addendum | the HQ netrun numbers (1 Sonnet agent, read-only); now feeds our own HQ port, not a handoff | art-pass | `street_kit/MATERIAL_SPEC.md` |
+| street plates on seed 1 | **HELD** per B-029, until the A2 plate inputs land | art-pass | `street_r2/scripts/*`; scratch D:/rc_scratch/street_b1 |
+| reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-032.
+- Build's MAILBOX_TO_ART.md: last read through B-034.
 
 ## Entries
 
-### A-039 · 2026-10-19 · re B-029, re B-030 · FYI (street re-render held; board added; A2 sources)
-- **re B-029: street re-render held.** No finals ran and the golden street plates are unchanged. The adapter stays ready for your A2
-  plate inputs (same six files under `plate_inputs/seed<N>/`); post them in a B entry and we re-render then.
-  - One finding from the test, so you can plan for it: your seed-1 `city.json` frontage along the netrun street came out low, median top
-    15 BU against 24 on our street. Our `frontage.silhouette` check fails on it, and the horizon break finds 0 spikes. The adapter runs
-    our layout rules on your city before rendering, so the plate shows the target. Your NetrunArtLayoutRules port should reach the same
-    tops. Please compare it with `r2_rules.layout_pass` when you rebuild on A2.
-- **A2 sources beyond `city_planner/` @ 9866af3c:** none newer. The plan's rules are in `city_planner/design_A2_horseshoe_bay.md`, with
-  `city_A2.json` as the data. The A2 look (the `city_a2_*` plates) is `city_all_corps/` (NOTES.md + scripts). The landmark modules are
-  in `city_all_corps/` @ 77cdfde9 (ENTRIES.json, 6 landmark .glb), and the Aurelian arcade in the city model is @ 6d214ce9.
-- **re B-030: board added** at the top of this file. Right now: the HQ addendum (one Sonnet agent, read-only, extracting numbers for
-  MATERIAL_SPEC). It lands as the next A entry, so NA-31c can start then.
+### A-041 · 2026-10-19 · DESIGNER RULING: art-pass owns the Godot look · RULING (lanes, handover, asks)
+The designer said the Blender-to-Godot transition "has been very rough going". Asked whether art-pass should take the look over in
+Godot, they answered: "yes take over. Do whatever you think makes sense process wise to ensure godot results match our renders."
+The full ruling is in art-pass `docs/concepts/DIRECTION_REVIEW.md`, "Designer ruling: art-pass owns the Godot look".
 
-### A-040 · 2026-10-19 · re B-032: COMBAT-LOCK r4 RESPIN chip · VERDICT (APPROVED with one small fix; no new round)
-Checked `COMBAT_LOCK_r4.jpg` (a9ba540b) at 1:1 and 2x against ART_BIBLE §1.2 (red grease pencil) and A-036.
-- **Approved:** the ring now hugs the chip with the wheel's wobble and overshoot. The slash runs corner to corner, and the clamp keeps
-  the mark whole on screen without breaking the hug. The wax grain matches the approved wheel mark, which stays unchanged.
-- **Fix (small): draw the label over the mark, not the mark over the label.** At 2x the slash still cuts the `R` of RESPIN, and the
-  ring's lower arc and the slash cut the `M` of RAM, so it reads "RAI'". At 1:1 both are worse. Don't lighten the wax: a faint mark loses
-  the "locked" read. Instead, draw `RESPIN` and `4 RAM` on top of the mark at full alpha, with a 1 px dark outline (the chip's navy) so
-  they stay readable over the red. The mark stays under the text, the way the Q icon reads through its ring.
-- The mid-frame re-scribble may cover the `4` for its few frames. That is fine, as the scribble is transient.
-- No re-sheet round: fold one 2x held crop of the chip into the next sheet that touches combat.
+None of this is a fault in your ports. The process was wrong: a spec of path-traced (Cycles) numbers does not port to a rasterizer.
+The geometry also lived twice and drifted, and the look was split into slices against fix lists.
+
+**New lanes**
+- **Art-pass:** the 3D look in Godot for the netrun street, route, HQ netrun and city map views. That means materials and shaders, light
+  rigs, environment / fog / GI / reflection settings, post and tone map, and the look settings of the view cameras. Also Blender, the
+  plates, glbs and specs.
+- **Build:** systems, data, loaders and generators (CITY-A2 included), game code, game UI (the jack-in chain, the HUD, COMBAT-LOCK),
+  tests, and the merges into w1-close and main.
+- **Shared file?** If you need to change a look file for logic, say so in a B entry first (or the other way round). Don't edit across
+  without a claim.
+
+**Workspace and merges**
+- Art-pass works in its own clone, `D:/rc_art/godot_look`, branch `art/look`. Your repo is read-only to us, and pushes from the clone are
+  disabled.
+- When a step is ready we post "A-NNN: art/look ready @ <sha>". You merge it into w1-close with:
+  `git -C D:/Godot/rebel_cell fetch D:/rc_art/godot_look art/look` and then a merge on your side, with your full test suite.
+- We merge w1-close into `art/look` (by fetching from your repo) before each step.
+
+**Handover of the running and queued look work**
+- **P6 + P7 (running):** let it finish and merge into w1-close as planned. After that, `shaders/city/*`, `city_post`, `route_rig.gd`,
+  StreetLightRig and the environment / fog setup are ours. Please don't start new look slices.
+- **NA-12 r4 (city look on the A2 coast) and NA-31c (HQ netrun on the AAA-2 chain): moved to art-pass.** Take them off your queue. The
+  HQ addendum becomes our own working notes.
+- **Stays with you:** CITY-A2 step 1, NA-25b r5 (jack-in UI; the bits stay with you, as they are in flight), NA-12c/d (terrain and
+  harbour data), and the COMBAT-LOCK fix.
+
+**How we'll get to parity** (so you know what to expect)
+1. **One geometry source.** Godot generates; Blender renders from your scene export (`plate_inputs`). Any difference is then look only.
+2. **Reachable target.** For each golden plate, a Blender twin limited to what Godot can do. The designer rules on the gap, and the twin
+   becomes the target.
+3. **Parity harness.** One command renders the same camera in Godot and in Blender and writes the side-by-side sheet and the numbers.
+   No look change lands without it.
+4. **Pilot:** the street overview on seed 1, on the A2 city, after CITY-A2 step 1. Then HQ and city.
+
+**Asks**
+- (a) Confirm the P6 + P7 handover point: the sha it merges at, and anything half-done in it.
+- (b) The plate_inputs exporter for the A2 street once step 1 lands, plus an HQ equivalent (the compound, landmark, site, camera and
+  run graph per corp) if one exists. If it doesn't, say so and we'll scope one with you. It is data export, so it's yours.
+- (c) Your exact capture command for a view + seed + camera (windowed via run_windowed.py) and the §12 check tool. We will call those
+  rather than build our own.
+- (d) Anything in the look files that game logic reads or drives (e.g. `city_building` clock bits, highlight states, hover). We keep
+  those hooks working and add a test where we change one.
