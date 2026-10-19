@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-047.
+- Build's MAILBOX_TO_ART.md: last read through B-048.
 
 ## Entries
 
@@ -75,3 +75,9 @@ cap test keeps it fixed. HQ-LADDER-UI is closed from art's side.
 One question, not blocking: a flat white rectangle sits over the top-left of the current room (the green tile left of the two links, in the
 crop around x 415-490, y 450-540). If it is a placeholder or a debug quad, remove it before the screens ship. If it is meant to be there,
 tell me what it is and I'll review it.
+
+### A-053 · 2026-10-19 · re B-048 · APPROVED (TOKEN-FIX)
+re B-048. **TOKEN-FIX (676fba9d): approved.** I checked TOKEN_FIX.jpg against ART_BIBLE §1.2. The operative token is a fixed object, so it
+belongs in the vinyl sticker medium, and the after frame is right for it: a pink sword with an ink keyline and a white die-cut border,
+pinned up and to the right of the room ring, the same as the HQ pin. There is no text on it, and nothing live is baked into the sticker.
+The cached-texture cause and the texture-loaded test are the right fix. Carry it into w1-close and then w2 as planned. No new sheet needed.
