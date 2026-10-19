@@ -103,7 +103,16 @@ func test_the_gate_page_labels_the_towers_and_marks_the_bridges() -> void:
 	var arc := StreetRouteOverlay._arched(flat)
 	assert_eq(arc[0], flat[0], "lifts from the first room")
 	assert_eq(arc[arc.size() - 1], flat[flat.size() - 1], "lands on the second")
-	assert_lt(arc[2].y, flat[2].y, "peaks above the gap")
+	var peak := arc[arc.size() / 2]
+	assert_lt(peak.y, flat[2].y, "peaks above the gap")
+	assert_gte(arc.size(), StreetRouteOverlay.ACROSS_MIN_POINTS, "dense: at least the minimum points")
+	var long_flat := PackedVector2Array([Vector2(0, 100), Vector2(600, 100)])
+	var long_arc := StreetRouteOverlay._arched(long_flat)
+	assert_gte(long_arc.size(), int(600.0 / StreetRouteOverlay.ACROSS_STEP_PX), "one point per step px")
+	for pts in [arc, long_arc, StreetRouteOverlay._arched(PackedVector2Array([Vector2(0, 0), Vector2(10, 90)])), StreetRouteOverlay._arched(PackedVector2Array([Vector2(0, 100), Vector2(120, 100), Vector2(100, 10), Vector2(200, 0)]))]:
+		for i in range(1, pts.size() - 1):
+			var turn := absf((pts[i] - pts[i - 1]).angle_to(pts[i + 1] - pts[i]))
+			assert_lt(turn, deg_to_rad(15.0), "no corner: the stroke bends gently at %d" % i)
 	# The gate itself is named.
 	var gate := g.first_layer_ids()[0]
 	assert_eq(_word(g.get_node(gate)), "Clinic Gate")

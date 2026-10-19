@@ -50,6 +50,9 @@ var kind_overrides: Dictionary = {}
 var across_keys: Dictionary = {}
 ## The bridge arc's lift at its middle, as a share of the link's drawn length (px follow the link, so it scales with the view).
 const ACROSS_LIFT := 0.28
+## The bridge stroke's density: one point per this many px of link length, never fewer than the minimum.
+const ACROSS_STEP_PX := 6.0
+const ACROSS_MIN_POINTS := 24
 
 var _clip: Control = null
 var _pencil: PencilSet = null
@@ -382,16 +385,27 @@ func _collect_links(kk: float, r: float) -> Array:
 	return out
 
 
-## `pts` lifted into a bridge arc: each point rises by a half sine of its place along the stroke, so the stroke leaves the
-## first room, peaks over the gap and lands on the second.
+## `pts` as a bridge arc: the chord between the link's two ends (the street path's own bends are dropped), sampled densely (one point per ACROSS_STEP_PX, at least
+## ACROSS_MIN_POINTS) and lifted by a half sine to the chord's upward side, so it leaves the first room, peaks over the gap
+## and lands on the second as one smooth curve with no visible corners.
 static func _arched(pts: PackedVector2Array) -> PackedVector2Array:
-	var n := pts.size()
-	if n < 3:
+	var n0 := pts.size()
+	if n0 < 2:
 		return pts
-	var lift := pts[0].distance_to(pts[n - 1]) * ACROSS_LIFT
+	var from := pts[0]
+	var chord := pts[n0 - 1] - from
+	var total := chord.length()
+	if total <= 0.0:
+		return pts
+	var norm := Vector2(chord.y, -chord.x) / total
+	if norm.y > 0.0 or (is_zero_approx(norm.y) and norm.x > 0.0):
+		norm = -norm
+	var lift := total * ACROSS_LIFT
+	var n := maxi(ACROSS_MIN_POINTS, ceili(total / ACROSS_STEP_PX) + 1)
 	var out := PackedVector2Array()
 	for i in n:
-		out.append(pts[i] + Vector2(0.0, -lift * sin(PI * float(i) / float(n - 1))))
+		var t := float(i) / float(n - 1)
+		out.append(from + chord * t + norm * lift * sin(PI * t))
 	return out
 
 
