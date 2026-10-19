@@ -15,10 +15,11 @@ const SLICE_TYPE_TEXT := {
 	RC.SliceType.NULL: "NULL: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {
-	RC.Status.CORRUPTED: "CORRUPTED: when the slice resolves, 3 self-damage (+1 per MAJOR Heat threshold) and -1 RAM. Lasts until cleansed.",
+	RC.Status.CORRUPTED: "CORRUPTED: while a needle is on this slice, all your RAM costs double (a cost of 0 stays 0). On an enemy wheel it halves what you pay to manipulate that wheel (rounded up). No damage. Lasts until cleansed.",
 	RC.Status.OVERCLOCKED: "OVERCLOCKED: 1.5x output on the slice's next trigger, then it becomes CORRUPTED.",
 	RC.Status.ENCRYPTED: "ENCRYPTED: absorbs the next status applied to that slice.",
 	RC.Status.OUTPUT_DOWN: "OUTPUT DOWN: the slice resolves at 25% less output per stack. Stacks add up (a Botnet parasite or a Halcyon Citation plants 2: half output). Lasts until cleansed.",
+	RC.Status.TIER_DOWN: "TIER DOWN: the slice lands one precision step lower per stack (Perfect to Good to Weak, never below Weak), so Perfect hooks do not fire. Lasts until cleansed.",
 }
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",

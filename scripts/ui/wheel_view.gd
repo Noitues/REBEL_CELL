@@ -2875,7 +2875,7 @@ const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corru
 const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5"} # TR
 ## The disc shader's status looks (its `stat` codes): OUTPUT_DOWN wears the parasite's bug
 ## (N8, R8: today's PARASITE is OUTPUT_DOWN x2) until it has its own look.
-const SHADER_STATUS := {RC.Status.OUTPUT_DOWN: RC.Status.PARASITE}
+const SHADER_STATUS := {RC.Status.OUTPUT_DOWN: RC.Status.PARASITE, RC.Status.TIER_DOWN: RC.Status.PARASITE}
 ## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
 const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 

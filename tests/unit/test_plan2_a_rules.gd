@@ -175,8 +175,8 @@ func test_b1_the_screen_undoes_a_card_played_after_the_spin_and_then_says_nothin
 	scene.get_parent().queue_free()
 
 
-## With nothing hovered or aimed, a RAM change SEND IT itself makes (a CORRUPTED bite) is not
-## "THIS PLAY" (nullpoint read it as a staged card holding RAM).
+## With nothing hovered or aimed, the plain forecast is not "THIS PLAY" (nullpoint read it as a
+## staged card holding RAM). N9: CORRUPTED no longer drains RAM at SEND IT, so it forecasts none.
 func test_b1_the_plain_forecast_ram_change_is_not_called_this_play() -> void:
 	var scene := await _combat()
 	var st: CombatState = scene.engine.state()
@@ -184,10 +184,9 @@ func test_b1_the_plain_forecast_ram_change_is_not_called_this_play() -> void:
 		st.player.wheel.set_status(k, RC.Status.CORRUPTED)
 	scene._refresh(st)
 	await _frames(1)
-	assert_lt(scene.ram_note.pending, 0, "the bite drains RAM at SEND IT")
+	assert_eq(scene.ram_note.pending, 0, "CORRUPTED no longer drains RAM at SEND IT")
 	assert_false(scene.ram_note.pending_from_play, "nothing is played")
 	assert_false(scene.ram_note._label().contains("THIS PLAY"), scene.ram_note._label())
-	assert_true(scene.ram_note._label().contains("AT SEND IT"), scene.ram_note._label())
 	var i := _plain_card(scene.engine.session)
 	scene._preview_action(CombatAction.play_card(i, &"enemy_0"))
 	assert_true(scene.ram_note.pending_from_play, "a hovered card's RAM is this play's")

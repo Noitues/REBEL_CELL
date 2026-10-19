@@ -1233,6 +1233,22 @@
 			"seconds": 20.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_status_output_tier.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_corruption_ram_cost.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_n9_preview_replay.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_n9_save_content.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_status_stacks.gd": {
 			"seconds": 4.0,
 			"tier": "fast"

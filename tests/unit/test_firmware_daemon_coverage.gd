@@ -162,7 +162,7 @@ func test_nanite_mesh_hotfix_output_is_boosted_and_cleansed() -> void:
 	var r := _land_and_end(s, 1)
 	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE, "nanite_mesh: the slice cleanses itself")
 	var plain := _fw_session(&"nanite_mesh", _slice("cv_hotfix", RC.SliceType.HOTFIX, 4, RC.TargetRule.SELF))
-	assert_gt(r.events.size(), _land_and_end(plain, 1).events.size(), "nanite_mesh: the cleanse of the corrupted slice is extra")
+	assert_gte(r.events.size(), _land_and_end(plain, 1).events.size(), "nanite_mesh: the cleanse never loses events (N9: a corrupted slice no longer bites)")
 
 
 func test_overvolt_boosts_shim_and_overflow_by_25_percent() -> void:

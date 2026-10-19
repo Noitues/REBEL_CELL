@@ -13,6 +13,7 @@ func _init() -> void:
 	errors.append_array(registry.validate())
 	errors.append_array(_motion_errors(registry.motion))
 	errors.append_array(_hq_compound_errors(registry))
+	errors.append_array(_config_errors(registry))  # N9
 	errors.append_array(LandmarkAssetChecks.errors(_corporation_ids(registry)))
 	errors.append_array(RoofPropAssetChecks.errors())  # ART-5 5e
 	errors.append_array(_letterhead_errors(registry))  # M14 FOLLOW-UP
@@ -61,6 +62,16 @@ func _motion_errors(motion: UiMotionData) -> PackedStringArray:
 	for id in UiMotionData.REQUIRED_IDS:
 		if motion.find(id) == null:
 			errors.append("UiMotionData has no entry '%s'." % id)
+	return errors
+
+
+## N9: the retired CORRUPTED damage fields are gone
+## from the .tres text.
+func _config_errors(_registry: Node) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var f := FileAccess.open("res://content/config/campaign_config.tres", FileAccess.READ)
+	if f != null:
+		errors.append_array(CampaignConfigData.retired_field_errors(f.get_as_text()))
 	return errors
 
 

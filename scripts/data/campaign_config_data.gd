@@ -1,5 +1,8 @@
 class_name CampaignConfigData
 extends Resource
+
+## Config fields N9 retired; the content validator rejects them (retired_field_errors).
+const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damage_per_major", "corrupted_ram_drain"]
 ## Global tuning in one place (Section 11). One .tres for the whole game.
 
 @export_group("Heat")
@@ -104,10 +107,12 @@ extends Resource
 ## and at PERFECT. Each charge negates one incoming hit whole; charges add up.
 @export var sandbox_charges: int = 1
 @export var sandbox_charges_perfect: int = 2
-@export var corrupted_self_damage: int = 3
-## Added to corrupted_self_damage per MAJOR Heat threshold crossed.
-@export var corrupted_damage_per_major: int = 1
-@export var corrupted_ram_drain: int = 1
+## N9 (ruling Q36): while a needle of the operative's wheel touches a CORRUPTED slice, every RAM
+## cost is multiplied by this (a cost of 0 stays 0; no cap). At least 1.
+@export var corrupted_ram_cost_multiplier: int = 2
+## N9 (ruling Q37): manipulating an enemy wheel whose needle touches a CORRUPTED slice costs
+## this many times less (halved, rounded up). At least 1.
+@export var corrupted_enemy_ram_divisor: int = 2
 @export var extra_nudge_ram_cost: int = 1
 ## Phases per enemy class (plan 2 R1), counting the base phase, indexed by RC.EnemyClass
 ## (normal, elite, mini-boss, boss): EnemyData.validate holds `phases.size() + 1` inside
@@ -263,6 +268,28 @@ extends Resource
 
 
 ## ART-2 2C: the 0/1 shard count for a hit of `damage` (a crit takes the most).
+## Config problems (N9): a RAM-cost multiplier or divisor below 1.
+func config_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	if corrupted_ram_cost_multiplier < 1:
+		errors.append("corrupted_ram_cost_multiplier: %d is below 1." % corrupted_ram_cost_multiplier)
+	if corrupted_enemy_ram_divisor < 1:
+		errors.append("corrupted_enemy_ram_divisor: %d is below 1." % corrupted_enemy_ram_divisor)
+	return errors
+
+
+## The N9 retired fields still written in a config .tres text (CORRUPTED no longer damages
+## or drains; it is a RAM cost, ruling Q36). One error per field found.
+static func retired_field_errors(tres_text: String) -> PackedStringArray:
+	var errors := PackedStringArray()
+	for field in RETIRED_FIELDS:
+		for line in tres_text.split("\n"):
+			if line.strip_edges().begins_with(field + " ="):
+				errors.append("%s: retired by N9 (CORRUPTED is a RAM cost, ruling Q36); remove it from the config." % field)
+				break
+	return errors
+
+
 func fx_shard_count(damage: int, crit: bool = false) -> int:
 	if crit:
 		return fx_shard_max
@@ -387,6 +414,7 @@ func _validate_tier_tables(errors: PackedStringArray) -> void:
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	_validate_tier_tables(errors)
+	errors.append_array(config_errors())  # N9
 	if max_replays < 0:
 		errors.append("max_replays must be >= 0 (0 = no cap).")
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
