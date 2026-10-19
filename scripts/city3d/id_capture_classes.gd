@@ -21,9 +21,9 @@ const GROUP_LINK := &"id_link"
 const GROUP_MOVER := &"id_mover"
 ## A builder sets this on any node whose meshes lie on the ground (the whole mesh is then class 4, even under the landmarks layer).
 const GROUP_GROUND := &"id_ground"
-## The glb compounds merge their parts per material, so a part at grade is found by height: a class 1 fragment whose world y is at or
-## below this (BU) is class 4. Meridian's plaza carpet tops out at 0.25, its apron trims and rails at 0.78 or lower; the next part up is 0.95.
-const GROUND_MAX_Y := 0.8
+## The glb compounds and landmarks carry a root-level node of this name (tools/art_pipeline/city/id_ground.py, one material slot per
+## role) holding every part that lies on the ground (plaza carpet, aprons, rails, moat water, shaft floor): the whole node is class 4.
+const GROUND_NODE_NAME := "id_ground"
 ## The `stub` byte of an occluded building (class 2, G = STUB_G, B = 0).
 const STUB_G := 255
 ## The `capture.json` float precision.

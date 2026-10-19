@@ -31,6 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, V34)
 import hq_compound_spec as SPEC  # noqa: E402
 import cfg28  # noqa: E402
+import id_ground as IDG  # noqa: E402
 
 _args = sys.argv[sys.argv.index("--") + 1:]
 CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
@@ -68,6 +69,7 @@ exec("\n".join(_SRC[504:682]))  # container(), ziggurat(), depot()
 exec(open(os.path.join(V43, "heroes25.py"), encoding="utf-8-sig").read())
 exec(open(os.path.join(V34, "kit26.py"), encoding="utf-8-sig").read())
 exec(open(os.path.join(V34, "street34.py"), encoding="utf-8-sig").read())
+IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement (pavements, sign streaks) are tagged
 
 # ------------------------------------------------------------------ the hero (hq34.py "the hero", unchanged maths)
 _ox, _oy = W(cfg28.Cfg.canyon_origin())
@@ -94,7 +96,8 @@ build_xf(canyon, _ox, _oy, 90.0)
 # The alley floor: hq34's city street tile colour (GROUND tiles), the canyon's length plus its head crossing.
 FLOOR = (0.13, 0.13, 0.16)
 _fa, _fb = C2W(-SW, -SPEC.CANYON_FLOOR_PAD), C2W(SW, LCAN + SPEC.CANYON_FLOOR_PAD)
-SOLID.face([(_fa[0], _fa[1], 0.01), (_fb[0], _fa[1], 0.01), (_fb[0], _fb[1], 0.01), (_fa[0], _fb[1], 0.01)], FLOOR, rid())
+with IDG.ground():
+    SOLID.face([(_fa[0], _fa[1], 0.01), (_fb[0], _fa[1], 0.01), (_fb[0], _fb[1], 0.01), (_fa[0], _fb[1], 0.01)], FLOOR, rid())
 
 # ------------------------------------------------------------------ objects, vertex colours, role materials (as 8p)
 import bmesh  # noqa: E402,F811
@@ -188,14 +191,19 @@ for o in list(bpy.data.objects):
         o.name = "hq_rebel_cell_sign_%03d" % n_sign
         n_sign += 1
 
+ground_objs = []
 for acc, role, toned in ((SOLID, "toon", True), (NEON, "neon", False), (WIN, "win", False)):
+    g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
     acc_object(acc, role, "hq_rebel_cell_%s" % role, toned)
+    if g is not None:
+        ground_objs.append(acc_object(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, toned))
 for g in ("BEAM", "LIT"):  # the kit's other accumulators (unused by the canyon): exported only if they hold faces
     if g in globals():
         acc_object(globals()[g], "beam" if g == "BEAM" else "lit", "hq_rebel_cell_%s" % g.lower(), g == "LIT")
 for o in list(bpy.data.objects):
     if o.type not in ("MESH",):
         bpy.data.objects.remove(o, do_unlink=True)
+IDG.join_ground(ground_objs)  # one mesh, node "id_ground", a material slot per role, at the scene root like every part
 bpy.context.view_layer.update()
 
 # ------------------------------------------------------------------ anchors (the spec's canyon slots, snapped)
@@ -240,8 +248,11 @@ tris = {}
 for o in bpy.data.objects:
     me = o.data
     me.calc_loop_triangles()
-    role = me.materials[0].get("hq_role", "?") if me.materials else "?"
-    tris[role] = tris.get(role, 0) + len(me.loop_triangles)
+    for k, m in enumerate(me.materials or [None]):  # id_ground has one slot per role: count each slot's triangles
+        n = len(me.loop_triangles) if len(me.materials) <= 1 else sum(
+            len(p.vertices) - 2 for p in me.polygons if p.material_index == k)
+        role = m.get("hq_role", "?") if m else "?"
+        tris[role] = tris.get(role, 0) + n
     mw = o.matrix_world
     for v in me.vertices:
         w = mw @ v.co

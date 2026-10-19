@@ -24,6 +24,7 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
 import landmark_spec_v1 as SPEC  # noqa: E402
+import id_ground as IDG  # noqa: E402
 
 _C = os.path.join(_HERE, "concept_r31")
 _argv = sys.argv[sys.argv.index("--") + 1:]
@@ -32,6 +33,7 @@ SP = SPEC.JOBS[JOB]
 sys.argv = [sys.argv[0], "--", SP["concept_job"], OUTDIR]  # target_corps reads its variant from argv
 _SRC = open(os.path.join(_C, "target_corps.py"), encoding="utf-8-sig").read().splitlines()
 exec("\n".join(_SRC[0:314]))  # setup + primitives + materials (scene reset, Acc, box, beam, ..., TOON, NEONM, WINM, SIGNM)
+IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement are tagged; static_objects splits them into id_ground
 
 CORP, KIND = SP["corp"], SP["kind"]
 VIEW = "close"
@@ -200,12 +202,20 @@ def fresh_accs():
     SOLID, NEON, WIN, BEAM, LIT = Acc("solid"), Acc("neon"), Acc("win"), Acc("beam"), Acc("lit")
 
 
-def static_objects(prefix, parent):
+GROUND = []  # the per-role pieces of the grade-level faces, joined into ONE `id_ground` under ROOT at export
+
+
+def static_objects(prefix, parent, ground=True):
     objs = []
     for acc, role in ((SOLID, "solid"), (LIT, "lit"), (NEON, "neon"), (WIN, "win"), (BEAM, "beam")):
+        g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
         o = objectify(acc, role, "%s__%s" % (prefix, role), parent)
         if o:
             objs.append(o)
+        if g is not None and ground:
+            GROUND.append(objectify(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, ROOT))
+        elif g is not None:
+            g.free()  # a second state's copy of the same ground (Orbital's open silo): the first state's is the one kept
     if KIND == "district":
         for role, acc in DIST_ACCS.items():
             o = objectify(acc, role, "%s__%s" % (prefix, role), parent)
@@ -332,7 +342,7 @@ if CORP == "orbital" and KIND == "hq":  # two silo states, each a full node: "st
                 bpy.data.objects.remove(o, do_unlink=True)
         else:
             take_texts(ROOT, JOB)
-        static_objects("%s__%s" % (JOB, nm), node)
+        static_objects("%s__%s" % (JOB, nm), node, ground=not st)
 else:
     build_hero(STATE)
     static_objects(JOB, ROOT)
@@ -685,12 +695,16 @@ def export_glb():
     for o in meshes:
         r = ROLES[o["lm_role"]][1]
         INFO["triangles_by_role"][r] = INFO["triangles_by_role"].get(r, 0) + sum(len(p.vertices) - 2 for p in o.data.polygons)
+    if GROUND:  # the grade-level pieces become one mesh (a slot per role) named id_ground, parented to ROOT
+        gone = {o.name for o in GROUND[1:]}
+        LANDMARK[:] = [o for o in LANDMARK if o.name not in gone]
+        IDG.join_ground(GROUND)
     for o in LANDMARK:
         INFO["nodes"].append(o.name)
         if o.type == "MESH":
-            r = o["lm_role"]
-            INFO["roles"].setdefault(ROLES[r][1], 0)
-            INFO["roles"][ROLES[r][1]] += 1
+            for m in o.data.materials:
+                INFO["roles"].setdefault(m.name, 0)
+                INFO["roles"][m.name] += 1
     path = os.path.join(OUTDIR, JOB + ".glb")
     props = bpy.ops.export_scene.gltf.get_rna_type().properties.keys()
     # NORMAL per SPEC.EXPORT_NORMALS (shading uses the facet normal from screen derivatives; shadows use NORMAL)

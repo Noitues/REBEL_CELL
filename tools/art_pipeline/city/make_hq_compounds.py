@@ -44,7 +44,7 @@ MATERIALS = {
 
 def source_files():
     files = ["build_hq_compound.py", "build_dispatch_canyon.py", "hq_compound_spec.py", "make_hq_compounds.py",
-             "validate_hq_compounds.py", "hq_compound_toon.gdshader"]
+             "validate_hq_compounds.py", "hq_compound_toon.gdshader", "id_ground.py"]
     for v in ("vendor_r43", "vendor_r34"):
         files += [v + "/" + f for f in sorted(os.listdir(os.path.join(HERE, v))) if f.endswith(".py")]
     return files

@@ -15,7 +15,7 @@ Two runs of the same seed and pose give byte-identical `id.png` and `depth.png` 
 | 1 | landmark compound | every mesh under the CityView3D `landmarks` layer (landmarks, staged HQ compounds), except the parts at grade (class 4); light cones (`lm_beam`) are hidden |
 | 2 | city | building prisms (`city_building` `id_mode`), and every other visible mesh outside rooms (roof props, dressing) |
 | 3 | link structure | meshes under a node in group `id_link` (none shipped yet: the network is a ground decal) |
-| 4 | ground | the ground: the outer plane and every chunk's ground and lane mesh (NA-ID-b); and the parts of a compound that lie on it: meshes under an `id_ground` node, and any class 1 fragment with world y <= `IdCaptureClasses.GROUND_MAX_Y` (0.8 BU: plaza carpet, apron trims, rails at grade; the glb compounds merge parts per material, so the shader cuts by height). The MAINFRAME sign stays class 1 |
+| 4 | ground | the ground: the outer plane and every chunk's ground and lane mesh (NA-ID-b); and the parts of a compound that lie on it: every mesh under a node named `id_ground` (the root-level node tools/art_pipeline/city/id_ground.py puts in each HQ compound and landmark glb: plaza carpet, aprons, rails, moat water, shaft floor; one material slot per role). There is no height cut. The MAINFRAME sign stays class 1 |
 | 5 | rooms | `route_room` meshes of the street rig |
 | 6 | landmark movers | meshes under a node in group `id_mover` (none shipped yet: the compounds are static) |
 The ground is drawn, never hidden: a hidden ground would be class 0 and join the {0, 2} background mask of 12.2 / R-FOCUS-1. A ground

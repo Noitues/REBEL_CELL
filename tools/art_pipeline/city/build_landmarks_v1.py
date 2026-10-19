@@ -28,7 +28,7 @@ BLENDER = os.environ.get("BLENDER", r"C:\Program Files\Blender Foundation\Blende
 SCRATCH = os.environ.get("LANDMARK_SCRATCH", os.path.join(os.environ.get("TEMP", "/tmp"), "a5b", "build"))
 ASSETS = os.path.join(ROOT, "assets", "city", "landmarks")
 SCRIPTS = ["landmark_spec_v1.py", "landmark_build_v1.py", "landmark_district_v1.py", "landmark_crest_v1.py",
-           "landmark_post_v1.py", "gltf_anim_v1.py", "build_landmarks_v1.py"] + ["concept_r31/%s.py" % n for n in
+           "landmark_post_v1.py", "gltf_anim_v1.py", "build_landmarks_v1.py", "id_ground.py"] + ["concept_r31/%s.py" % n for n in
                                                             ("target_corps", "heroes24", "heroes25", "heroes26", "heroes27",
                                                              "heroes28", "heroes29", "heroes30", "heroes31")]
 

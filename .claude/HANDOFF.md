@@ -72,6 +72,46 @@
     GreasePencilMark stroke (wobble, varying width, wax grain, alpha 0.96, no highlight; ring = one stroke overshooting its
     start, slash = second stroke TL->BR past the ring); re-sheet a re-scribble mid-frame; chase ~1.2 s/lap (3.17: 900-1500 ms);
     Q/E key labels unclipped in the locked state. Re-sheet: 2x held slash, re-scribble mid-frame, chase at new speed.
+  - NA-12 r3 (A-030, base w1-close): sea look vs city_a2 plates: night sea deep teal-blue between void and land (median
+    value strip void < sea < land), day saturated mid-blue + lighter shallows; marbled caustics + foam; shore reflections =
+    soft short vertical smears under each shore light broken by ripple (never regular dashes = grease-pencil vocabulary);
+    coping strip brighter/wider scaled by zoom. Re-sheet with plates beside: whole city seed 1 night + day, bay crop, value strip.
+  - NA-12 r3 RUNNING (on w1-close). COMBAT-LOCK r2 DONE (branch worktree-agent-aa06f4192301aa04a @ d029c896, review B-019).
+  - 2026-10-19 later: STREET-CAM APPROVED (A-034) and merged into w1-close (ab1d758a). P2 step 1 (exact r2 rules port, data
+    only) merged to main 2325c775 (pytest 223, precommit green). RUNNING: P2 step 2 (frontage row render, A-034 items 1+4),
+    P1+P5 (+ A-034 items 2+3), NA-12 r3, NA-25b r4, NA-ID-c. NA-31b in review (B-021, branch worktree-agent-ac27ef2c44ccd856f
+    @ 57eb6d30, not on w1-close). QUEUED: COMBAT-LOCK r3 (A-033: 10-15 % alpha dropout on stroke edges + lighter broken thin
+    core, 1:1 + 2x; RESPIN chip crop held + re-scribbled 2x; base branch worktree-agent-aa06f4192301aa04a @ d029c896).
+  - Later still: P1+P5 merged into w1-close (ac54140d; fix: bits use nr_clock(anim_t) not TIME, building mat joins the rig
+    clock; test_city_shaders had been red on w1-close since NA-25b r2). NA-ID-c merged to main (a8e8c70d). COMBAT-LOCK r3 in
+    review (B-025, branch worktree-agent-acf2da816a329ac10 @ b7bb01a6). RUNNING: P2 step 2, P6 (+P7 items, lit-haze sky),
+    NA-12 r3, NA-25b r4, W2 WH-11 Solace rules (on w1-close). Defaults: fog body multiplier 0.12 + light unit factors kept.
+    Scratch left by agents (blocked rm): D:/rc_tmp, D:/tmp_r3, D:/r3pc.log.
+  - **CORRECTION 2026-10-19 (designer):** the city must use art-pass's `city_planner/city_A2.json` FORMAT (D3), not the old
+    lot grid with a carved bay (NA-12 r1-r3 did that). CITY-A2 step 1 RUNNING (Opus, brief docs/handoff/plan2/briefs_city_a2/
+    step1.md). B-028 withdrawn; NA-12c/d and the sea look re-base on A2; seed-1 plate re-render on hold (new plate inputs come
+    from the A2 city). NA-12 r3 + NA-25b r4 are merged on w1-close (5e2a796d + NA-12 merge, quick checks green).
+  - **DESIGNER RULING (A-041): art-pass owns the 3D look in Godot** (materials, shaders, lights, env / fog / post, camera look) in
+    its clone D:/rc_art/godot_look `art/look`; we fetch + merge it into w1-close on "art/look ready @ sha". Build = systems, data,
+    CITY-A2, game UI, tests, merges, plate_inputs exporters (HQ exporter to scope). NA-12 r4 + NA-31c moved to art-pass; P6 is
+    the last build look slice (post its merge sha + half-done items in a B entry). Claim shared look files in a B entry first.
+  - **Work board (designer):** "Running (build)" table atop MAILBOX_TO_ART.md; update on every launch / finish; read art-pass's
+    "Running (art-pass)" board before launching (asked in B-030).
+  - DONE COMBAT-LOCK r4 launch (A-036; wheel mark APPROVED): RESPIN chip mark = oval hugging the chip outline (8-12 % margin, same
+    wobble/overshoot), slash corner to corner 25 % past the ring, RESPIN + RAM cost readable through it, clamped in the safe frame;
+    capture in a taller viewport so the chip is whole. Base branch worktree-agent-acf2da816a329ac10 @ b7bb01a6.
+  - QUEUED NA-31c (A-035 CORRECTION: HQ netrun view = AAA-2 chain like the street, NOT cel; only the mainline city map is cel).
+    Fixes 1-5 of NA-31b APPROVED, carry over. Base NA-31b branch; starts after P1+P5 lands AND art-pass's HQ addendum to
+    MATERIAL_SPEC (own A entry). Targets: 12.2 = each corp's plate ratio_median (hq_<corp>_overview_values.json) +-0.3, R-FOCUS-1
+    >= 1.5 drives; clip on luma < 2 % + hue +-10°. Re-sheet AFTER x5 beside hq_<corp>_overview plates. Log the ruling in DECISIONS.
+  - (was) QUEUED (A-031): NA-25b r4 on w1-close: no 25x raster (flat class-color hub field + bezel inner ring + emblem native/hi-res,
+    centered, whole; same in < 0.5 s breathe); CRT hold: visible hex dump column 15-20 % value, 3 px scanlines at 1:1, cyan edge
+    rim, blinking block caret; frame 7: CRT fades with the hub, HUD stays under the lens until the hole passes. Re-sheet 9 tiles +
+    2 bits crops (1:1 at 0.55 / 0.30) + 1:1 CRT crop.
+  - QUEUED (A-032): NA-ID-c on main: `git apply` art-pass HANDOFF_PACKAGE/id_ground/id_ground.patch, re-run the hq compound +
+    landmark builders, tris unchanged except orbital_hq -656, remove the 0.8 BU height cut, re-run the 3 ID frames.
+  - W2 adds: NA-12c terrain (hills heightfield render, coastlines, marinas, lighthouse, islands), NA-12d harbour movers (boats
+    on the bay, ships at piers, lit offshore platforms).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
@@ -88,6 +128,6 @@ Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, 
 (`IdSort.sort_ids`; allowlist int sorts in `tests/unit/test_no_bare_id_sort.gd`).
 
 ## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
-- Read art -> build at the start of EVERY turn: `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Read art -> build at the start of EVERY turn: `git -C D:/rc_art/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
 - Prune: delete your own B entries once art-pass cites them (designer ruling); no history kept.
 - Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.
