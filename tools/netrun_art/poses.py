@@ -15,6 +15,7 @@ from . import rig as RG
 from . import section as SEC
 from .derive.street import layer_nodes
 from .hq import orbit as HO
+from .hq.face_outlines import FACE_OUTLINES
 from .hq import slots as HS
 
 VERSION = 1
@@ -65,6 +66,7 @@ class _Ctx:
         self.boxes = OCC.building_boxes(city, skip)
         if self.kind == "hq":
             corp = derive["route_keys"][0].split(":", 1)[1]
+            self.outline = FACE_OUTLINES.get(corp)
             self.comp = HS.set_entrance(HS.plan_compound(HS.hq_lot_rect(city, corp), len(layer_nodes(run_graph))), self.ov, corp)
         self.d0 = None
         if self.kind == "street" and net is not None:
@@ -92,7 +94,7 @@ class _Ctx:
         if not ids:
             return []
         if self.kind == "hq":
-            return OCC.hq_band_points(self.rooms, ids, self.comp["centre"], pose, RG.REF_W, RG.REF_H)
+            return OCC.hq_band_points(self.rooms, ids, self.comp["centre"], pose, RG.REF_W, RG.REF_H, None, self.outline)
         ext = {self.rooms[i]["bld"]: OCC.building_extent(self.city, self.rooms[i]["bld"]) for i in ids}
         return OCC.street_band_points(self.rooms, ids, ext, pose, RG.REF_W, RG.REF_H)
 
