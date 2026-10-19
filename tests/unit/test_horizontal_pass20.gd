@@ -220,13 +220,15 @@ func test_card_hover_and_respin_show_on_screen() -> void:
 	var texts := PackedStringArray()
 	for c in scene._player_view.intent.get("chips", []):
 		texts.append(String(c["text"]))
-	assert_true(texts.has("RESPIN: ODDS"), "respin odds on the player's tag")
+	# W1 Q19: the hovered respin shows only "?" (no odds): the tag says RESPIN: ? and the wheel row a ? LANDING chip.
+	assert_true(texts.has("RESPIN: ?"), "respin shows a ? on the player's tag")
 	scene._preview_card(1)
-	var odds := false
+	# W1 Q19: a random card shows "?" chips on the wheels its random parts hit (no odds, no roll).
+	var unknown := false
 	for v in scene._views():
-		for c in v.intent.get("chips", []):
-			odds = odds or String(c["text"]) == "RANDOM: ODDS"
-	assert_true(odds, "a random card shows odds, not a roll")
+		for c in scene.hud_layer.row_for(v).chips:
+			unknown = unknown or String(c.get("subject", "")).begins_with("?")
+	assert_true(unknown, "a random card shows ? chips, not a roll")
 
 
 func test_refusals_toast() -> void:
