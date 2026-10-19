@@ -58,7 +58,7 @@ COMP_RULES = {                                 # rule: (metric key in pvc_metric
 }
 SCOPE = {                                      # 12.7 defaults: rules measured per kind
     "hq": ("R-CALM-1", "R-CALM-2", "R-FOCUS-1", "R-REP-1"),       # corp HQ views are exempt from R-HUE
-    "street": ("R-SIL-1", "R-SIL-2", "R-DET-1", "R-DET-2", "R-CALM-1", "R-CALM-2", "R-HUE-1", "R-HUE-2", "R-REP-1"),
+    "street": ("R-SIL-1", "R-SIL-2", "R-DET-1", "R-DET-2", "R-CALM-1", "R-CALM-2", "R-HUE-1", "R-HUE-2", "R-REP-1"),   # no R-FOCUS-1: no class 1, room box ~ frame (AD 2026-10-19)
     "city": ("R-HUE-1", "R-HUE-2", "R-HOR-1", "R-REP-1", "R-FOCUS-1"),   # R-FOCUS-1 on city: box from the id.png landmark classes
 }
 

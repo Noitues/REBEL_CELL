@@ -1456,7 +1456,7 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 | R-DET-1 / R-DET-2 | street | Sobel >= 0.028; >= 450 blobs / MP | fail (rule `dressing.signs`) |
 | R-CALM-1 / R-CALM-2 | street, HQ | detail CV 0.45-0.85; calm tiles 12-32 % | fail on street views; **report only on HQ views** until recalibrated from the golden HQ plates (they fail on nearly every approved HQ final, so the thresholds, not the art, are off; AD 2026-10-18) (rules `density.falloff`, `atmosphere.layers`) |
 | R-HUE-1 / R-HUE-2 | street, city | entropy >= 3.8 bits; top cluster <= 45 % | fail; corp HQ views exempt (rule `palette.districts`) |
-| R-FOCUS-1 | any frame with a landmark, city views included; **report only by day** (`capture.json` `time: "day"`; AD 2026-10-18) | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
+| R-FOCUS-1 | any frame with a landmark (HQ and city views); **n/a on street views** (`kind == "street"`): the frame holds no class 1, and the {1, 5, 6} box of the spread route rooms is nearly the whole frame, so the ring is a sliver and the ratio says nothing; the street rooms are gated by 12.2 instead (AD 2026-10-19); **report only by day** (`capture.json` `time: "day"`; AD 2026-10-18) | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
 | R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
 | R-REP-1 | all; on street views measured on the facade band only (frame rows above the kerb line), since the foreground streak lanes are periodic by design (AD 2026-10-18) | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
 | R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | 12.1 (median warn band 0.09-0.11 / 0.17-0.19 reports only; Designer 2026-10-16) | fail outside the fail band (rule `values.solve`) |
@@ -1468,7 +1468,7 @@ audit row 5, 2026-10-18)**. The rules without a test yet (`streets.light`,
 passes exist.
 
 **Defaults (O-7; provisional; NA03_NA04_ANSWERS, 2026-10-18):** skyline range `[0.0, 0.85]` for `kind == "street"` with `view == "overview"`, `[0.05, 0.40]` for `kind == "city"`, none for HQ;
-facade band `[0.0, 0.10, 1.0, 0.80]` for the street OVERVIEW, `[0, 0, 1, 1]` otherwise; overridable by `checks.composition.skyline.<kind>` and `.facade.<kind>.<view>`. The R-FOCUS-1 box is
+facade band `[0.0, 0.10, 1.0, 0.80]` for both street views (OVERVIEW and DECISION; AD 2026-10-18), `[0, 0, 1, 1]` otherwise; overridable by `checks.composition.skyline.<kind>` and `.facade.<kind>.<view>`. The R-FOCUS-1 box is
 the bounding box of `id.png` classes {1, 5, 6} (the hand-placed config boxes are used only in `--mode reference`).
 
 ### 12.8 Golden plates (D8, 2026-10-18)
