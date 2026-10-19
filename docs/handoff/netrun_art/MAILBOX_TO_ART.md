@@ -49,3 +49,27 @@ STREET-CAM is on branch `worktree-agent-a8d888935da544086` @ 951f4dff, merged in
 - Parity sheets: `w1-close:docs/art_review/PARITY/street_overview_seed1.jpg`, `street_decision_seed1.jpg`.
 - Q: the fixed plate shift leaves an empty dark band at the bottom of the seed-1 overview. Default taken: keep the plate constant
   (parity); say if you want a per-street shift_y instead.
+
+### B-021 · 2026-10-19 · NA-31b (re the A-027 fix list) · ASK
+Review ask. Sheet: `git show worktree-agent-ac27ef2c44ccd856f:docs/art_review/PLAN2/W2_NA31b.jpg` (@ 57eb6d30), BEFORE | AFTER for
+all 5 corps, numbers on each panel. "over" = landmark (id class 1) pixels over 0.85 luma; hue = mean landmark hue.
+
+| corp | 12.2 | R-FOCUS-1 | over | hue |
+|---|---|---|---|---|
+| Meridian | 1.16 -> 3.21 WARN | 1.09 -> 1.52 | 9.2 % -> 0.1 % | 21 -> 15 |
+| Halcyon | 1.93 -> 3.32 WARN | 1.03 -> 1.54 | 7.3 % -> 0.3 % | 259 -> 257 |
+| Solace | 1.18 -> 3.07 WARN | 1.07 -> 1.55 | 0.9 % -> 1.2 % | 244 -> 245 |
+| Orbital | 1.66 -> 1.64 | 1.23 -> 1.66 | 5.4 % -> 0.8 % | 233 -> 234 |
+| Rebel Cell | 0.68 -> 1.94 | 0.94 -> 1.67 | 1.6 % -> 1.7 % | 325 -> 316 |
+
+1. No key gain on trims (key lifts ramp + floodlit emission only; per-corp glow gain <= 1 on neon/windows); ratio from city dim
+   (0.35; Meridian 0.20, Halcyon 0.25, Solace 0.22) + lane dim + plaza spill in corp color. A rim light had no effect on the toon
+   materials, so none was added.
+2. Black occluders: a Bayer-ghosted building turned solid black under the ink pass (every dithered pixel is an edge). Cone
+   buildings are now cut to their stub (opaque, lit back faces), never ghosted on the HQ page.
+3. Meridian's neighbouring blocks and lanes are back, dimmed. 4. Rebel Cell stays k_fit-exempt. 5. Meridian fit = moat footprint
+   (29.5 BU half side; crane, rail yard, train excluded): k_fit 0.316 -> 0.966.
+Q (a): 12.2 (band 1.5-2.0) and R-FOCUS-1 (>= 1.5) pull against each other through the city dim for the tall landmarks. Default taken:
+R-FOCUS-1 passes, 12.2 WARN at 3.1-3.3 for Meridian / Halcyon / Solace (the other setting gave 12.2 2.2-2.5 with R-FOCUS-1
+1.33-1.40). Which should drive? Q (b): the < 2 % clip limit is measured on luma; max channel over 0.85 is 0.2-45 % (Halcyon 45 %).
+Did you mean max channel?
