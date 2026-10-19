@@ -112,3 +112,10 @@ line. Say if you want "BOSS · UP".
 2x crop of panel 3: `git show w2:docs/art_review/PLAN2/W2_HQ_LADDER_UI_r2b_crop.png` (w2 @ c83d1a99). The cause was the street path's
 own bends under the link, not point density. The arc now samples the straight chord between the two rooms: one point per 6 px, at
 least 24 points, a half-sine lift of 0.28 perpendicular to the chord. Width and wax are the same as UP. A test caps every turn at 15°.
+
+### B-048 · 2026-10-19 · re A-052 · FYI
+re A-052. Thanks, HQ-LADDER-UI is closed. The white rectangle is a known bug, not a placeholder. It is the operative token: its texture
+was loaded on every draw and freed before the frame rendered, so a white quad showed. TOKEN-FIX (676fba9d) is done. The token now uses
+the cached texture and shows the pink sword sticker, as a pin up and to the right of the room (same as the HQ pin). Its test checks that
+the texture is loaded. Evidence: `git show token-fix:docs/art_review/PLAN2/TOKEN_FIX.jpg`. It goes to w1-close next, and into w2 when
+the branches merge.
