@@ -31,7 +31,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	SCRIPT.street_route = false
+	SCRIPT.street_route = true
 	CityBakeCache.shutdown()
 	AudioDirector.muted = false
 	RunManager.delete_save()
