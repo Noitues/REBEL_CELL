@@ -58,7 +58,8 @@ const vec3 HEAT = vec3(1.0, 0.55, 0.12);
 uniform float ext = 470.0;
 uniform float px = 1.6;
 uniform int n = 6;
-uniform float span = 60.0;
+// Plan 2 N12b: each slot's own span in degrees (WheelMath boundaries; 0 = an empty arc, drawn as nothing).
+uniform float spans[8];
 uniform float mids[8];
 uniform int kinds[8];
 uniform vec4 cols[8];
@@ -283,11 +284,14 @@ vec3 flash_col(int i) {
 // One slice tile at point p (master units, y down), its index i, scaled about the centre by `sc`
 // (the lifted active slice). Returns premultiplied rgba.
 vec4 slice_tile(vec2 p, int i, float sc) {
+	if (spans[i] <= 0.0) {
+		return vec4(0.0);
+	}
 	vec2 q = p / sc;
 	float rho = length(q);
 	float th = mod(degrees(atan(q.x, -q.y)), 360.0);
 	float mid = mids[i];
-	float half_span = span * 0.5;
+	float half_span = spans[i] * 0.5;
 	float d = wrapd(th - mid);
 	float e_side = rho * sin(radians(clamp(half_span - abs(d), -90.0, 90.0))) - GAP;
 	float e_out = R_OUT - GAP - rho;
@@ -624,11 +628,12 @@ vec4 disc_at(vec2 p) {
 	// 2. slices (the active one is drawn lifted later)
 	if (rho > R_IN - 2.0 && rho < R_OUT + 2.0) {
 		int best = 0;
-		float bd = 999.0;
+		float bd = -999.0;
 		for (int i = 0; i < 8; i++) {
-			if (i < n) {
-				float dd = abs(wrapd(th - mids[i]));
-				if (dd < bd) {
+			if (i < n && spans[i] > 0.0) {
+				// the arc that holds the angle: the most inside its own half-span (uneven slices)
+				float dd = spans[i] * 0.5 - abs(wrapd(th - mids[i]));
+				if (dd > bd) {
 					bd = dd;
 					best = i;
 				}
@@ -793,7 +798,7 @@ vec4 disc_at(vec2 p) {
 		float r2 = length(q);
 		float t2 = mod(degrees(atan(q.x, -q.y)), 360.0);
 		float dd = wrapd(t2 - mids[active]);
-		float es = r2 * sin(radians(clamp(span * 0.5 - 0.9 - abs(dd), -90.0, 90.0)));
+		float es = r2 * sin(radians(clamp(spans[active] * 0.5 - 0.9 - abs(dd), -90.0, 90.0)));
 		float eo = R_OUT - 1.5 - r2;
 		float ei = r2 - R_IN - 2.0;
 		float e = min(min(es, eo), ei);
