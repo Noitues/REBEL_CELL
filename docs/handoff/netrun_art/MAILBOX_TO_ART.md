@@ -22,12 +22,10 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | slice | what | base / branch | owns (files / area) |
 |---|---|---|---|
 | CITY-A2 step 1 | city_A2.json becomes the city format: loader, seeded lot subdivider, CityModel on A2 | w1-close -> agent branch | scripts/city3d/city_*, content/city/, city.json, saves |
-| P6 + P7 (last build look slice; handed to art-pass on merge) | wet street to the near plane, reflections, trails, lit-fog haze, ghosts only on 7.1 stubs | w1-close | shaders/city/*, city_post, route_rig.gd, StreetLightRig |
 | NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
-| WH-10 | Solace GENOME CORE HQ graph + boss / mini-boss (rules and content; no visuals) | w2 | HQ graph content, boss content |
-| WH-12 | Solace raid infection figure (rules) | w2 | raid core code |
-| done, on w1-close | STREET-CAM, P1+P5, P2 step 2 (frontage render, 1f1a429b), NA-25b r4, NA-12 r3 (old grid; superseded by CITY-A2) | | |
-| queued | COMBAT-LOCK label-over-mark (A-040; then merge to main); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
+| COMBAT-LOCK label | RESPIN / 4 RAM drawn over the mark (A-040) | combat-lock-label | nudge_lock_pencil.gd, combat_scene chip |
+| done | on w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4, NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
+| queued | HQ launch through the Solace ladder (W2); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
@@ -147,3 +145,27 @@ Two in-flight pieces of ours touch look files:
   - city_motion_layers.gd (traffic: `night`, `clock`, `streak_on`);
   - city_water.gd (`night`, `void_mode`);
   - IdCapture classes (`id_ground` node, class ids: NA_ID_CLASSES.md).
+
+### B-036 · 2026-10-19 · P6 + P7 handover (re A-041 ask a) · FYI
+re A-041 (a). P6 is merged: **w1-close @ 8208c5be** (branch worktree-agent-add32c30d97c470e8 @ 0f3f218c). From here on, shaders/city/*, city_post,
+wet_street, the look parts of route_rig.gd, StreetLightRig, NetrunShaderKit(_aaa) and the env / fog setup are yours.
+What P6 did:
+- wet_street light() with per-light Lambert pools and anisotropic GGX streaks;
+- city_post `aaa_wet_reflection`, a screen-space march about the contact row, plus 12-tap rough-reflection bokeh. SSR is now off in config.
+- trails 0.14-0.2 BU on nr_clock;
+- lit-fog haze from 18 high fog-only lights (`aaa.lights.city_glow.high_*`) with `street_route.atmosphere.haze_mul` 2;
+- exposure re-solved (overview 0.2433, decision 0.25).
+Seed 1, plate | before | after:
+- overview: median 0.130 | 0.120 | 0.129, under_010 0.299 | 0.451 | 0.297, over_085 0.0049 | 0.0014 | 0.0007, blobs/MP 676 | 101 | 116,
+  sobel 0.031 | 0.013 | 0.012, hue entropy 4.10 | 3.32 | 3.14, calm 0.25 | 0 | 0.
+- decision: median 0.141 | 0.119 | 0.139, under_010 0.327 | 0.444 | 0.309, over_085 0.0099 | 0.0013 | 0.0010.
+**Half-done or open (yours now):**
+1. P7 not done. The agent found no spec text for "ghost only the 7.1 stubs / route rooms read as storefronts / no light columns".
+2. Sky: 3-4 soft round blobs where a high light sits near the camera ray (logged in DECISIONS).
+3. The body-fog top leaves a band near the roofline.
+4. haze_mul, high_energy, pool_k and the wet_refl strengths are by-eye numbers (logged).
+5. Bokeh discs: fewer and less saturated than the plate's.
+6. **Perf over budget:** windowed 1080p p95 is 19.4 ms overview and 18.3 ms decision, against 11.6 / 11.2 before and a 16.7 ms line.
+   The reflection march (aaa.wet_refl.steps 40) and the 18 extra lights cost about 8 ms.
+7. The committed PARITY sheets are P6's own render, without P2's frontage: they predate the P2 + P6 merge, so re-render them.
+Look hooks we drive are listed in B-035 (d). The bits block in city_building stays ours until NA-25b r5 lands.
