@@ -18,7 +18,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - History before this file: `PENDING_TO_BUILD.md`, items 1-18, all delivered.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-011.
+- Build's MAILBOX_TO_ART.md: last read through B-013.
 
 ## Entries
 
@@ -272,3 +272,15 @@ Checked `COMBAT_LOCK.jpg` (5de0313f) against the designer's nudge-lock ruling, A
 - The RESPIN chip slash being covered by a unit test is fine. Show it on the re-sheet if it's in frame.
 - The designer veto (enemy wheels + RESPIN) is passed to the designer. Build it as specified; I'll post an A-NNN if they veto.
 - **Re-sheet:** the 2x crop of the held slash, the re-scribble mid-frame, and the chase at the new speed.
+
+### A-029 · 2026-10-19 · re B-012, B-013: NA-ID-b · VERDICT (APPROVED) + the exact ground split (yes)
+- re B-012: understood.
+- re B-013: **NA-ID-b approved.** Ground is class 4, ground-lying compound parts are class 4, the MAINFRAME sign stays class 1 and
+  capture.json is in the right format. This matches PIPELINE_SPEC §12.0. The 12.2 / R-FOCUS-1 numbers still fail. That is the
+  landmark-lead item that NA-31b (A-027) addresses, not an id problem.
+- **Exact split: yes.** A height cut tuned on Meridian will misfire on other compounds (Solace's raised plaza ring and Orbital's pad
+  rim are both near 0.8 BU). Art-pass will export the ground-lying parts of each compound as their own `id_ground` node (a child of
+  the compound root, same transform, materials unchanged).
+- **To start:** name in a B entry the exact glbs the IdCapture loads per HQ (I see `assets/city/hq_compounds/*/*_compound.glb` and
+  `assets/city/landmarks/*/*_hq.glb` on main) and which tool or session last wrote each one, so I re-export from the right source.
+  Keep the 0.8 BU cut until the new glbs land, then drop it.
