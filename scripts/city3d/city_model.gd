@@ -26,6 +26,8 @@ var hqs: Dictionary = {}
 ## "streets": PackedInt32Array, "plazas": PackedInt32Array, "top": float (tallest top, BU)}.
 var chunks: Dictionary = {}
 var buildings: int = 0
+## Prisms the layout rules changed in `finish` (0 when they did not run).
+var ruled_parts: int = 0
 
 ## Built models, by config path and seed (a view cache: the layout is a pure function of
 ## the seed; the game's city is built once per process).
@@ -147,6 +149,24 @@ func finish() -> void:
 				"ink": Palette.corp_color(cid), "terr": cid, "key": 7919 + k, "building": buildings, "cell": r,
 				"centre": Vector2(wc.x, wc.z), "chunk": key, "hq": true})
 		buildings += 1
+	_apply_layout_rules()
+
+
+## NA-11: the layout rules on a whole city (not on a part of it), when the content registry holds the corporations. Sets
+## `ruled_parts` to the number of prisms changed.
+func _apply_layout_rules() -> void:
+	if not cfg.layout_rules_on or chunks.size() != chunk_keys(cfg, cfg.city_rect).size():
+		return
+	var loop := Engine.get_main_loop() as SceneTree
+	var reg: Node = loop.root.get_node_or_null("ContentRegistry") if loop != null else null
+	if reg == null:
+		return
+	var corps: Array = []
+	for cid: StringName in reg.call("all_ids"):
+		var c := reg.call("get_content", cid) as CorporationData
+		if c != null and c.city_grid != null:
+			corps.append(c)
+	ruled_parts = CityLayoutRuler.apply(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
 
 
 ## One recorded extrusion (lots, height px) as a world prism.

@@ -1,7 +1,7 @@
 class_name NetrunArtLayout
 extends RefCounted
 ## NA-21 twin of `tools/netrun_art/layout.py`: city.json / net.json helpers (lots, base parts, border links, street routing).
-## `apply_layout_rules` and `LAYOUT_RULES` are not ported. Plan coordinates are BU `[x, y]`.
+## `apply_layout_rules` and the r2 height passes live in `NetrunArtLayoutRules` (NA-11). Plan coordinates are BU `[x, y]`.
 
 ## Link states that count as open.
 const OPEN_STATES: Array = ["open", "opened"]
@@ -160,22 +160,29 @@ static func _best(c: Vector2i, d: Variant, goal: Vector2i, dist: Dictionary, mem
 	return memo[key]
 
 
-## Shortest 4-connected cell path `a -> b` (fewest turns, then lowest tile); empty Array when unreachable.
-static func _bfs(a: Vector2i, b: Vector2i, cells: Dictionary) -> Array:
-	var dist: Dictionary = {b: 0}
-	var q: Array = [b]
-	var head: int = 0
-	while head < q.size():
-		var c: Vector2i = q[head]
-		head += 1
-		for step: Vector2i in BFS_STEPS:
-			var n: Vector2i = c + step
-			if cells.has(n) and not dist.has(n):
-				dist[n] = int(dist[c]) + 1
-				q.append(n)
+## Shortest 4-connected cell path `a -> b` (fewest turns, then lowest tile); empty Array when unreachable. `ctx` (optional,
+## shared between calls on one city) caches the distance field and the DP memo per goal `b`: same result, far fewer BFS runs.
+static func _bfs(a: Vector2i, b: Vector2i, cells: Dictionary, ctx: Dictionary = {}) -> Array:
+	var dists: Dictionary = ctx.get_or_add("dist", {})
+	var memos: Dictionary = ctx.get_or_add("memo", {})
+	if not dists.has(b):
+		var field: Dictionary = {b: 0}
+		var q: Array = [b]
+		var head: int = 0
+		while head < q.size():
+			var c: Vector2i = q[head]
+			head += 1
+			for step: Vector2i in BFS_STEPS:
+				var n: Vector2i = c + step
+				if cells.has(n) and not field.has(n):
+					field[n] = int(field[c]) + 1
+					q.append(n)
+		dists[b] = field
+		memos[b] = {}
+	var dist: Dictionary = dists[b]
 	if not dist.has(a):
 		return []
-	var memo: Dictionary = {}
+	var memo: Dictionary = memos[b]
 	var out: Array = [a]
 	var d: Variant = null
 	while (out[out.size() - 1] as Vector2i) != b:
@@ -208,7 +215,9 @@ static func _nearest_cell(p: Array, cells: Array) -> Vector2i:
 	var best_d: float = 0.0
 	var have: bool = false
 	for c: Vector2i in cells:
-		var dd: float = NetrunArtUnits.hypot(float(c.x) + 0.5 - float(p[0]), float(c.y) + 0.5 - float(p[1]))
+		var ex: float = float(c.x) + 0.5 - float(p[0])
+		var ey: float = float(c.y) + 0.5 - float(p[1])
+		var dd: float = sqrt(ex * ex + ey * ey)
 		if not have or dd < best_d or (dd == best_d and (c.x < best.x or (c.x == best.x and c.y < best.y))):
 			best = c
 			best_d = dd
@@ -217,12 +226,17 @@ static func _nearest_cell(p: Array, cells: Array) -> Vector2i:
 
 
 ## Axis-aligned plan polyline (BU) from `a` to `b` along street tiles; L-shaped fallback when no street path exists.
-static func route_on_streets(city: Dictionary, a: Array, b: Array) -> Array:
+static func route_on_streets(city: Dictionary, a: Array, b: Array, ctx: Dictionary = {}) -> Array:
 	var ol: Array = city["origin_lot"]
 	var lot_bu: float = float(city["lot_bu"])
-	var cell_set: Dictionary = street_cells(city)
-	var cells: Array = cell_set.keys()
-	cells.sort_custom(func(p: Vector2i, q: Vector2i) -> bool: return p.x < q.x or (p.x == q.x and p.y < q.y))
+	if not ctx.has("cell_set"):
+		var cs: Dictionary = street_cells(city)
+		var sorted_cells: Array = cs.keys()
+		sorted_cells.sort_custom(func(p: Vector2i, q: Vector2i) -> bool: return p.x < q.x or (p.x == q.x and p.y < q.y))
+		ctx["cell_set"] = cs
+		ctx["cells"] = sorted_cells
+	var cell_set: Dictionary = ctx["cell_set"]
+	var cells: Array = ctx["cells"]
 	var la: Array = plan_to_lot(a, ol, lot_bu)
 	var lb_pt: Array = plan_to_lot(b, ol, lot_bu)
 	if not cells.is_empty():
@@ -230,7 +244,7 @@ static func route_on_streets(city: Dictionary, a: Array, b: Array) -> Array:
 		var cb: Vector2i = _nearest_cell(lb_pt, cells)
 		var path: Array = []
 		if ca != cb:
-			path = _bfs(ca, cb, cell_set)
+			path = _bfs(ca, cb, cell_set, ctx)
 		if path.size() >= 2:
 			var out: Array = []
 			for p: Array in _simplify(path):
@@ -240,7 +254,7 @@ static func route_on_streets(city: Dictionary, a: Array, b: Array) -> Array:
 
 
 ## The link polyline made of axis-aligned legs: a diagonal segment is replaced by a street route.
-static func link_legs(city: Dictionary, pts: Array) -> Array:
+static func link_legs(city: Dictionary, pts: Array, ctx: Dictionary = {}) -> Array:
 	var axis_tol: float = float(NetrunArtConfigData.shipped().layout["axis_tol"])
 	var out: Array = [(pts[0] as Array).duplicate()]
 	for i in range(pts.size() - 1):
@@ -249,7 +263,7 @@ static func link_legs(city: Dictionary, pts: Array) -> Array:
 		if absf(float(p[0]) - float(q[0])) < axis_tol or absf(float(p[1]) - float(q[1])) < axis_tol:
 			out.append(q.duplicate())
 		else:
-			var r: Array = route_on_streets(city, p, q)
+			var r: Array = route_on_streets(city, p, q, ctx)
 			for j in range(1, r.size()):
 				out.append(r[j])
 	return out

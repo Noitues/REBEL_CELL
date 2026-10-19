@@ -47,6 +47,10 @@ func _ready() -> void:
 		_lbs.append(float(s))
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	view = CityView3D.new()
+	if _args.get("rules", "1") == "0":  # NA-11 before/after sheets: the city without the layout rules
+		var plain := CFG.duplicate() as CityConfig
+		plain.layout_rules_on = false
+		view.cfg = plain
 	view.size = Vector2i(int(wh[0]), int(wh[1]))
 	add_child(view)
 	_rect = TextureRect.new()
