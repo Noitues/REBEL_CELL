@@ -55,6 +55,8 @@ func _n8_status_stacks() -> int:
 	var fails := 0
 	print("N8: OUTPUT_DOWN = ", RC.Status.OUTPUT_DOWN, " PARASITE = ", RC.Status.PARASITE, " CleanseMode = ", RC.CleanseMode.keys())
 	if RC.Status.OUTPUT_DOWN != 5 or RC.Status.PARASITE != 4 or RC.CleanseMode.ONE_STACK != 1: fails += 1
+	# N9: TIER_DOWN is appended, the RAM-cost numbers default 2 / 2 and ship so.
+	if RC.Status.TIER_DOWN != 6 or CampaignConfigData.new().corrupted_ram_cost_multiplier != 2 or CampaignConfigData.new().corrupted_enemy_ram_divisor != 2: fails += 1
 	var e := EffectData.new()
 	e.type = RC.EffectType.APPLY_STATUS
 	e.status = RC.Status.OUTPUT_DOWN

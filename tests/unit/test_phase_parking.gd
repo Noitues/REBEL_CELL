@@ -102,19 +102,6 @@ func test_parasite_damage_parks() -> void:
 	assert_eq(int(events[0]["parked"]), 2)
 
 
-func test_corrupted_bite_parks() -> void:
-	var data := PhaseFixture.enemy(&"pk_bitten", 100, [0.68], RC.EnemyClass.ELITE)
-	var s := PhaseFixture.session(data, 0)
-	var e := PhaseFixture.aim(s)
-	e.hp = 69
-	e.wheel.set_status(0, RC.Status.CORRUPTED)
-	var r := s.apply(CombatAction.end_turn())
-	var bite := CombatFixture.events_of(r, "corrupted")
-	assert_eq(bite.size(), 1)
-	assert_eq(int(bite[0]["amount"]), 1, "69 -> 68")
-	assert_eq(int(bite[0]["parked"]), CombatFixture.config().corrupted_self_damage - 1)
-
-
 func test_multi_hit_slice_parks_once_rest_lost() -> void:
 	var data := PhaseFixture.enemy(&"pk_multi", 100, [0.68, 0.33], RC.EnemyClass.MINI_BOSS)
 	var s := PhaseFixture.session(data, 10, [0, 10, 20])

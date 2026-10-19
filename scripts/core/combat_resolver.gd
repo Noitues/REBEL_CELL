@@ -242,8 +242,9 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if t == null or not t.is_alive() or t.is_player:
 				return "Invalid target."
 		CombatAction.Type.RESPIN:
-			if state.ram < config.respin_ram_cost:
-				return "Not enough RAM for a respin (%d needed)." % config.respin_ram_cost
+			var respin_cost := RamCost.of_action(state, action, self)
+			if state.ram < respin_cost:
+				return "Not enough RAM for a respin (%d needed)." % respin_cost
 		CombatAction.Type.NUDGE:
 			var t := state.get_combatant(action.wheel_id)
 			if t == null or not t.is_alive():
@@ -252,16 +253,18 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				return SATELLITE_FIXED
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
-			if state.free_nudges <= 0 and state.ram < config.extra_nudge_ram_cost:
-				return "No free nudge left, and an extra nudge costs %d RAM." % config.extra_nudge_ram_cost
+			var nudge_cost := RamCost.of_action(state, action, self)
+			if state.free_nudges <= 0 and state.ram < nudge_cost:
+				return "No free nudge left, and an extra nudge costs %d RAM." % nudge_cost
 		CombatAction.Type.PLAY_CARD:
 			if action.hand_index < 0 or action.hand_index >= state.hand.size():
 				return "No such card in hand."
 			var card := lookup.get_content(state.hand[action.hand_index]) as CardData
 			if card == null:
 				return "Unknown card."
-			if state.ram < card.ram_cost:
-				return "Not enough RAM (%d needed)." % card.ram_cost
+			var card_cost := RamCost.of_action(state, action, self)
+			if state.ram < card_cost:
+				return "Not enough RAM (%d needed)." % card_cost
 			var target := card_target(state, card, action)
 			if target == null or not target.is_alive():
 				return "Card has no valid target wheel."
@@ -322,8 +325,9 @@ func apply(state: CombatState, action: CombatAction, rng: RandomNumberGenerator)
 		CombatAction.Type.NUDGE:
 			_apply_nudge(s, action, rng, result.events)
 		CombatAction.Type.RESPIN:
-			s.ram -= config.respin_ram_cost
-			result.events.append({"type": "ram", "amount": -config.respin_ram_cost, "text": "Respin costs %d RAM (%d)." % [config.respin_ram_cost, s.ram]})
+			var respin_cost := RamCost.of_action(state, action, self)
+			s.ram -= respin_cost
+			result.events.append({"type": "ram", "amount": -respin_cost, "text": "Respin costs %d RAM (%d)." % [respin_cost, s.ram]})
 			fx.respin(s.player, rng, result.events, true)
 		CombatAction.Type.PLAY_CARD:
 			_apply_card(s, action, rng, result.events)
@@ -520,9 +524,6 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	for r in resolutions:
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.NULL:
 			_resolve_pointer(s, r, rng, events)
-	for r in resolutions:
-		if stacks_in(r, RC.Status.CORRUPTED) > 0 and is_landing(r):
-			_corrupted_trigger(s, r, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
 	_apply_deaths(s, alive_before, rng, events)
@@ -611,6 +612,7 @@ func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictiona
 	var guard := s.satellite_at(c.id, slice_index)
 	var stacks: Dictionary = wheel.slice_stacks[slice_index].duplicate() if slice_index < wheel.slice_stacks.size() else {}
 	var permanent := fx.permanent_status(wheel, slice_index)
+	tier = downgraded_tier(tier, int(stacks.get(RC.Status.TIER_DOWN, 0)))  # N9: Perfect hooks read the lowered tier
 	return {
 		"owner": c, "pointer_index": pointer_index, "tick": tick, "slice_index": slice_index,
 		"slice": fx.slice_of(wheel, slice_index), "firmware": fx.firmware_of(wheel, slice_index),
@@ -626,8 +628,9 @@ func _apply_nudge(s: CombatState, action: CombatAction, rng: RandomNumberGenerat
 	if s.free_nudges > 0:
 		s.free_nudges -= 1
 	else:
-		s.ram -= config.extra_nudge_ram_cost
-		events.append({"type": "ram", "amount": -config.extra_nudge_ram_cost, "text": "Extra nudge costs %d RAM (%d)." % [config.extra_nudge_ram_cost, s.ram]})
+		var cost := RamCost.of_action(s, action, self)
+		s.ram -= cost
+		events.append({"type": "ram", "amount": -cost, "text": "Extra nudge costs %d RAM (%d)." % [cost, s.ram]})
 	var target := s.get_combatant(action.wheel_id)
 	var ignore := fx.ghost_bypass(s, target, events)
 	fx.nudge(s, s.player, target, action.ring, action.direction, ignore, events)
@@ -639,10 +642,11 @@ func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerato
 	var card_id := s.hand[action.hand_index]
 	var card := lookup.get_content(card_id) as CardData
 	var target := card_target(s, card, action)
+	var cost := RamCost.of_action(s, action, self)  # judged before the card leaves the hand or moves anything
 	s.hand.remove_at(action.hand_index)
-	s.ram -= card.ram_cost
-	events.append({"type": "card", "card_id": card_id, "target": target.id, "cost": card.ram_cost,
-		"text": "Play %s on %s (RAM -%d, %d left)." % [card.display_name if card.display_name != "" else String(card_id), target.display_name, card.ram_cost, s.ram]})
+	s.ram -= cost
+	events.append({"type": "card", "card_id": card_id, "target": target.id, "cost": cost,
+		"text": "Play %s on %s (RAM -%d, %d left)." % [card.display_name if card.display_name != "" else String(card_id), target.display_name, cost, s.ram]})
 	var ctx := {"owner": s.player, "target": target, "action": action, "source_id": card_id,
 		"spin_bonus": fx.spin_bonus_of(s.player), "pointer_index": 0, "is_card": true}
 	for e in card.effects:
@@ -863,6 +867,11 @@ static func stacks_in(r: Dictionary, status: int) -> int:
 	return int((r.get("stacks", {}) as Dictionary).get(status, 0))
 
 
+## `tier` lowered one step per TIER_DOWN stack, floored at WEAK (N9, R9).
+static func downgraded_tier(tier: int, stacks: int) -> int:
+	return maxi(RC.PrecisionTier.WEAK, tier - maxi(0, stacks))
+
+
 ## The output factor of `stacks` OUTPUT_DOWN stacks (N8, R8): the per-stack shares add up
 ## (one signed sum, ruling Q35 b) and the factor never drops below 0. Two stacks with the
 ## 0.25 share are the old PARASITE's half output.
@@ -966,19 +975,6 @@ func _pointer_target(s: CombatState, owner: CombatantState) -> CombatantState:
 		var t := s.get_combatant(s.target_id)
 		return t if t != null and t.is_alive() else null
 	return s.player
-
-
-func _corrupted_trigger(s: CombatState, r: Dictionary, events: Array[Dictionary]) -> void:
-	var owner: CombatantState = r["owner"]
-	if not owner.is_alive():
-		return
-	var damage := config.corrupted_self_damage + config.corrupted_damage_per_major * s.heat_majors_crossed
-	var loss := EffectInterpreter.lose_hp(owner, damage)  # self-damage parks at a phase floor too (R3)
-	var dealt := loss.x
-	events.append({"type": "corrupted", "target": owner.id, "amount": dealt, "parked": loss.y,
-		"text": "%s's CORRUPTED slice bites: %d self-damage (%d HP)." % [owner.display_name, dealt, owner.hp]})
-	if owner == s.player:
-		fx.drain_ram(s, config.corrupted_ram_drain, events)
 
 
 ## Enemy start-of-turn passives: the Hub's (unless breached) and Heat-gated behaviour.

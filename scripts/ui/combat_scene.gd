@@ -1740,17 +1740,11 @@ func _on_action_refused(reason: String) -> void:
 func _ram_need(action: CombatAction) -> int:
 	if action == null or not engine.has_fight():
 		return 0
-	var state := engine.state()
-	match action.type:
-		CombatAction.Type.PLAY_CARD:
-			if action.hand_index >= 0 and action.hand_index < state.hand.size():
-				var card := engine.content(state.hand[action.hand_index]) as CardData
-				return card.ram_cost if card != null else 0
-		CombatAction.Type.RESPIN:
-			return engine.resolver.config.respin_ram_cost
-		CombatAction.Type.NUDGE:
-			return engine.resolver.config.extra_nudge_ram_cost
-	return 0
+	if action.type == CombatAction.Type.NUDGE:  # asked after a refusal: the paid price
+		var paid := engine.state().duplicate_state()
+		paid.free_nudges = 0
+		return RamCost.of_action(paid, action, engine.resolver)
+	return RamCost.of_action(engine.state(), action, engine.resolver)  # N9: the resolver's own number
 
 
 ## True for the stand-alone tutorial fight (no netrun owns it): its CONTINUE ends the tutorial.
@@ -2583,7 +2577,7 @@ func _refresh(state: CombatState) -> void:
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
-	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
+	_respin_button.disabled = state.is_over() or state.ram < RamCost.of_action(state, CombatAction.respin(), engine.resolver)
 	_sync_stickers()
 	_sync_arrow_hints()
 	# W3B B1: a state change that ends an aim (a nudge key, a target switch) ends it whole: the RAM
@@ -2923,8 +2917,9 @@ func _build_hand(state: CombatState) -> void:
 			_add_gap(s)
 		var card := lookup.get_content(state.hand[i]) as CardData
 		var c := _make_card(card, i, s)
-		c.disabled = state.is_over() or state.ram < card.ram_cost
-		c.short_ram = not state.is_over() and state.ram < card.ram_cost  # ART-2 2C: the grey dot and NEED tag
+		var need := RamCost.of_action(state, CombatAction.play_card(i), engine.resolver)
+		c.disabled = state.is_over() or state.ram < need
+		c.short_ram = not state.is_over() and state.ram < need  # ART-2 2C: the grey dot and NEED tag
 		c.set_greyed(c.short_ram)  # B2 (D15): greyscale, the NEED tag in colour
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
 		shown_tip(c, "%s\n%s" % [Codex.describe(card), UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several
@@ -3218,7 +3213,7 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 		_show_end_turn_preview()
 		_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))
 		_refresh_queue_panel()
-		ram_note.set_pending(-card.ram_cost)
+		ram_note.set_pending(-RamCost.of_action(state, action, engine.resolver))
 		var host := (target.host_id if target.is_satellite else target.id) if target != null else &""
 		var v := _view_of(host)
 		if target != null and v != null:
@@ -3275,7 +3270,7 @@ func _show_respin_odds() -> void:
 	if not engine.has_fight():
 		return
 	var was := _forecast_tags()
-	var cost := engine.resolver.config.respin_ram_cost
+	var cost := RamCost.of_action(engine.state(), CombatAction.respin(), engine.resolver)
 	ram_note.set_pending(-cost)
 	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
 	chips.append_array(_odds_chips(engine.state().player))
@@ -4093,7 +4088,7 @@ func _place_stickers() -> void:
 func _sync_stickers() -> void:
 	if _stickers.is_empty():
 		return
-	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
+	var cost := RamCost.of_action(engine.state(), CombatAction.respin(), engine.resolver) if engine != null and engine.has_fight() else 0
 	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
 	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
 	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (UNDO stops here).") % cost)
