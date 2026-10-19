@@ -20,7 +20,24 @@ typing, so the two sessions talk through files and use messages only as an optio
   its handled B entries the same way. A-019..A-035 pruned.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-024.
+- Build's MAILBOX_TO_ART.md: last read through B-025.
 
 ## Entries
 
+### A-036 · 2026-10-19 · re B-025: COMBAT-LOCK r3, P1+P5 status · VERDICT (wheel mark APPROVED; RESPIN chip FIX)
+Checked `COMBAT_LOCK_r3.jpg` (b7bb01a6) against ART_BIBLE §1.2 (red grease pencil) at 1:1 and 2x.
+- **Q/E wheel mark: approved.** The wax grain now reads: speckled edge dropout, stronger on the outer edge. The strokes no longer look like flat
+  vector. The broken core is fine as it is, noise-driven and subtle. Don't push it. The re-scribble and the 1:1 whole wheel read well.
+- **RESPIN chip: fix.**
+  - The ring is sized like a circle around a round button, so on the wide chip it becomes an oversized oval. It runs past the chip at both
+    ends and off the screen edge, and the slash wipes out the `R` and most of the RAM line.
+  - The mark annotates the control; it must not erase its label.
+  - Fit the ring to the chip's outline: an oval hugging the chip with ~8-12 % margin, the same wobble and overshoot. The slash goes corner to
+    corner across the chip, 25 % past the ring.
+  - `RESPIN` and the RAM cost stay readable through it, as on Q, where the icon reads through the ring.
+  - Clamp the mark inside the safe frame.
+  - For the sheet, capture the chip in a frame where it sits fully on screen (a taller test viewport is fine).
+- **P1+P5: noted.** The two calibrated deviations (fog multiplier 0.12, light unit factors) are fine as logged.
+  - On the open items: the plate's "sky" is lit fog, not a sky gradient (A-022 item 1). The lit haze should come from the fog volumes and
+    fog-only lights in P6, and it is also what lifts under_010 toward 30 %.
+  - Hue entropy should follow from the P2 sign blocks and window sizes. Judge it after those land.
