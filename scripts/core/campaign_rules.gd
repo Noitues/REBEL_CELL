@@ -22,6 +22,7 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 	c.corporation_id = corp.id
 	c.start_class_id = class_data.id
 	c.campaign_seed = campaign_seed
+	c.city_seed = city_seed_for(campaign_seed)
 	c.ice_level = ice_level
 	c.schematics = config.starting_schematics
 	for i in config.starting_rookies:
@@ -61,6 +62,17 @@ static func site_objective(campaign: CampaignState, site: SiteData) -> int:
 	if campaign.disabled_objectives.has(site.id):
 		return RC.SiteObjective.NONE
 	return site.objective
+
+
+## Plan 2 NA-12: the campaign's city seed, 64 bits drawn from the campaign seed's own named
+## stream (RngStreams.CITY_SEED_STREAM, made here: no saved stream advances); never 0 (0 = the
+## fixed city).
+static func city_seed_for(campaign_seed: int) -> int:
+	var rng := RngStreams.make_stream(campaign_seed, RngStreams.CITY_SEED_STREAM)
+	var hi := rng.randi()
+	var lo := rng.randi()
+	var s := (hi << 32) | lo
+	return s if s != 0 else 1
 
 
 static func pick_story_path(corp: CorporationData, campaign_seed: int) -> StringName:

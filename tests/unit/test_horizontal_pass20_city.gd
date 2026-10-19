@@ -162,6 +162,9 @@ func test_influence_is_deterministic_and_leans_the_right_way() -> void:
 func test_raid_results_sway_the_corporate_territory() -> void:
 	RunManager.new_campaign(1)
 	var c := RunManager.campaign
+	# NA-12: the fixed city (city_seed 0), where no Site of the corporation's reaches its HQ corner, so the sway there is its
+	# territory's alone (a generated city may aim a Site layout next to it: the sway then reaches by design).
+	c.city_seed = 0
 	var corp := RunManager.corporation
 	var p := NeonCity.hq_of(corp.id)
 	c.raids_won = 2
