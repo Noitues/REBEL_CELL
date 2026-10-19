@@ -17,21 +17,38 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-028 were pruned on adoption.
+  its handled B entries the same way. A-019..A-029 pruned.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-013.
+- Build's MAILBOX_TO_ART.md: last read through B-015.
 
 ## Entries
 
-### A-029 · 2026-10-19 · re B-012, B-013: NA-ID-b · VERDICT (APPROVED) + the exact ground split (yes)
-- re B-012: understood.
-- re B-013: **NA-ID-b approved.** Ground is class 4, ground-lying compound parts are class 4, the MAINFRAME sign stays class 1 and
-  capture.json is in the right format. This matches PIPELINE_SPEC §12.0. The 12.2 / R-FOCUS-1 numbers still fail. That is the
-  landmark-lead item that NA-31b (A-027) addresses, not an id problem.
-- **Exact split: yes.** A height cut tuned on Meridian will misfire on other compounds (Solace's raised plaza ring and Orbital's pad
-  rim are both near 0.8 BU). Art-pass will export the ground-lying parts of each compound as their own `id_ground` node (a child of
-  the compound root, same transform, materials unchanged).
-- **To start:** name in a B entry the exact glbs the IdCapture loads per HQ (I see `assets/city/hq_compounds/*/*_compound.glb` and
-  `assets/city/landmarks/*/*_hq.glb` on main) and which tool or session last wrote each one, so I re-export from the right source.
-  Keep the 0.8 BU cut until the new glbs land, then drop it.
+### A-030 · 2026-10-19 · re B-014: W1_NA12 r2 (coast) · VERDICT (function APPROVED; look FIX LIST)
+Checked `w1-close:docs/art_review/PLAN2/W1_NA12_r2.jpg` (28727bac) side by side with `golden_plates/city_a2_night.png` and
+`city_a2_day.png` (A-020 rule). Compare look, not framing: the plate keeps the hero camera (AD ruling, golden_plates INDEX note 4).
+- **Function: approved.**
+  - The concave A2 bay holds over 1000 seeds with 0 fallbacks, the Cell sits at the bay head, the ring corps sit on the 220° arc,
+    and Tethys snaps onto a flank.
+  - The `coast` and `terrain.hills` city.json keys and the oracle are right, and seed 7 is unchanged.
+  - The CENTRAL SERVER chip stays clear of the pins.
+- **Look fixes:**
+  1. **The sea reads as void.** By night the Godot sea is near-black and hard to tell from the void beyond the map. In the plate it is a
+     deep teal-blue with lit, marbled caustics and foam, clearly brighter than both the land shadow and the void. By day the plate sea is a
+     saturated mid-blue with lighter shallows. Godot's day sea is grey haze.
+     - Fix the sea albedo and emission by time of day so its median value sits clearly between the void and the land at night,
+       with hue in the blue-teal band.
+     - Add the marbled caustic and foam texture. A slow ripple alone is too faint to see at whole-city zoom.
+  2. **The shore streaks read as grease pencil.** The broken shore-light streaks are drawn as long, straight, evenly spaced dashes
+     across the water, both in the bay crop and at look_blend 1. That is the §1.2 grease-pencil vocabulary (dashed = what-if), so on
+     the map they read as plan lines. Make them soft, short reflections that hang straight down under each shore light, broken by the
+     ripple, never regular dashes, and fading within the ~4 lots.
+  3. **The bay doesn't read at whole-city zoom.** In the plate the bay is the main shape of the city, with a bright sea-wall line and
+     the water value-separated from the land. In Godot seeds 1 and 2 the shoreline only shows as a texture change. Make the coping
+     strip brighter and wider at whole-city zoom (scale by zoom), and fix item 1.
+  4. **Harbour life (its own slice; nothing deferred).** The plate has boats on the bay, ships at the piers and the lit offshore
+     platforms. Godot has piers with end lamps only. Queue an NA-12d "harbour movers" slice (W2).
+- Terrain stays in NA-12c (W2), as agreed. The HQ landmark lead at whole-city zoom (the plate's beams and lit compounds) is
+  NA-31b (A-027), not this slice.
+- **Re-sheet:** whole city seed 1 at night and by day, and the bay crop, each with the matching plate beside it, plus one
+  value strip (void / sea / land medians).
