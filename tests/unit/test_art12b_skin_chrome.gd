@@ -61,7 +61,6 @@ const ALLOWED := {
 	"scripts/ui/kit/raid_terminal.gd": [1, "CHROME, routed: compares the accent to pick the Cell's CRT, which follows the skin"],
 	"scripts/ui/kit/ram_bar.gd": [1, "SEMANTIC: the +RAM float is the RAM resource colour"],
 	"scripts/ui/kit/route_ink.gd": [1, SEM_NET],
-	"scripts/ui/kit/route_overlay.gd": [1, "SEMANTIC: the route label's ring colour when a node has no state (net cyan)"],
 	"scripts/ui/kit/spinner_mini.gd": [1, SEM_PROTECT],
 	"scripts/ui/kit/spinner_view.gd": [1, SEM_PROTECT],
 	"scripts/ui/kit/stat_icon.gd": [2, SEM_BADGE],
@@ -72,7 +71,7 @@ const ALLOWED := {
 	"scripts/ui/kit/wireframe_background.gd": [1, SEM_WORLD],
 	"scripts/ui/kit/zine_card.gd": [1, "SEMANTIC: a card's default accent (S-CARDFACE: the holo hues and the PROTECT fill went with the drawn sticker)"],
 	"scripts/ui/kit/zine_panel.gd": [1, "CHROME, routed: the glass's first colour; _draw_terminal re-values it through PaletteSkins.chrome"],
-	"scripts/ui/netrun_scene.gd": [10, "SEMANTIC: net-map nodes and edges, the result colour and chip tiles (net cyan); five more are the accent of a CrtWindow (loot, payout, clerk, info, the event RUN terminal), which routes it through the skin (CrtWindow.skin_accent, CrtTerminalPanel.accent)"],
+	"scripts/ui/netrun_scene.gd": [7, "SEMANTIC: net-map nodes and edges, the result colour and chip tiles (net cyan); five more are the accent of a CrtWindow (loot, payout, clerk, info, the event RUN terminal), which routes it through the skin (CrtWindow.skin_accent, CrtTerminalPanel.accent)"],
 	"scripts/ui/kit/chrome/crt_window.gd": [1, "CHROME, routed: kind_for only compares the accent to pick the Cell's CRT kind, which follows the skin"],
 	"scripts/ui/wheel_view.gd": [15, SEM_PROTECT],  # B2: + FROZEN and LOCKDOWN as standing chips (status colour as data)
 }

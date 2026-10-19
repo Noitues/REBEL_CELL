@@ -195,8 +195,7 @@ func _state(st: String) -> void:
 			net._show_map()
 			await _settle(net)
 			if st == "show_all":
-				(net.city_overlay as RouteOverlay).show_all = true
-				await _frames(SETTLE)
+				await _frames(SETTLE)  # NA-26: the street page draws every room; nothing to switch on
 			await _shot(st)
 		"heat":
 			var net := await _open_netrun(&"meridian", 1.0, 60)

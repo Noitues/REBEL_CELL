@@ -255,7 +255,6 @@ Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
 "Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses.","Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses."
 Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.,Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.
-Always show all nodes on the netrun map,Always show all nodes on the netrun map
 An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).,An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).
 An operative is stationed here: their class's station bonus helps the node in raids.,An operative is stationed here: their class's station bonus helps the node in raids.
 Armory,Armory
@@ -1815,7 +1814,6 @@ OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s,OPERATION: %s  //  TARG
 OPERATIONS,OPERATIONS
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
-OPTIONS > DISPLAY: SHOW ALL NODES,OPTIONS > DISPLAY: SHOW ALL NODES
 ORDERS,ORDERS
 OURS NOW,OURS NOW
 OUTCOME,OUTCOME
@@ -2209,7 +2207,6 @@ SHIM,SHIM
 SHLD,SHLD
 SHOP,SHOP
 SHOWING ALL LINKS,SHOWING ALL LINKS
-SHOWING ALL NODES,SHOWING ALL NODES
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
 SINKS,SINKS
@@ -2937,7 +2934,6 @@ TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
 THE MAINFRAME,THE MAINFRAME
-THE SPRAWL,THE SPRAWL
 THE TAGS,THE TAGS
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL

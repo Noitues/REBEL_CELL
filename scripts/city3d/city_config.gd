@@ -499,7 +499,7 @@ extends Resource
 ## frame: off frame it gets the red pencil edge arrow).
 @export var route_ortho_near: float = 130.0
 @export var route_ortho_far: float = 190.0
-## A netrun's route along its link (RouteLinkLayout): a layer's nodes side by side across the
+## NA-26: unused since the 2D route page retired (kept so city_config.tres loads). A netrun route along its link: a layer's nodes side by side across the
 ## link this far apart (lots), and the shortest link the route is laid on (lots; a shorter one
 ## reaches back along its heading from the target).
 @export var route_link_lateral: float = 2.0

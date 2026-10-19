@@ -1360,7 +1360,7 @@ func _play_context(scene: String, what: String) -> void:
 			_pick_first_reward(hq)
 		"route_hover":
 			# Plan 1 W3-ROUTE R5: the pointer lights the first open node: its sticker reaches out to its building.
-			var ov := hq.city_overlay as RouteOverlay
+			var ov := hq.city_overlay as CityMapOverlay  # NA-26: the 2D route page is retired; this stays a no-op unless an overlay shows
 			if ov != null:
 				ov.hover_id = RunManager.netrun.available_nodes()[0]
 		"fight_won":
@@ -1379,7 +1379,7 @@ func _play_context(scene: String, what: String) -> void:
 			hq._show_current()
 		"route_heat":
 			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
-			(hq.city_overlay as RouteOverlay).show_all = true
+			pass  # NA-26: the 2D route page's reveal / heat orbit / searchlight motions retired with it (kept declared for ui_motion.tres)
 		"select":
 			hq.show_grid()
 			await get_tree().process_frame

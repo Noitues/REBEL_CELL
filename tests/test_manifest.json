@@ -1037,10 +1037,6 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_art_r1.gd": {
-			"seconds": 5.0,
-			"tier": "fast"
-		},
 		"res://tests/unit/test_w3_polish.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
@@ -1379,6 +1375,10 @@
 		},
 		"res://tests/unit/test_na23_route_flow.gd": {
 			"seconds": 45.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na26_route_port.gd": {
+			"seconds": 25.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_na23_route_view.gd": {

@@ -137,7 +137,7 @@ func test_the_idle_verb_is_jack_in_and_its_plan_is_one_yellow_wax_arrow() -> voi
 	assert_not_null(hq._panel.get_node("VerbSlot").get_node_or_null("Launch"), "JACK IN is the idle verb")
 	var plan := hq._panel.get_node("PlanPencil") as HqPlanPencil
 	assert_eq(plan.to_id, site.id, "the plan runs to the selected Site")
-	assert_eq(plan.from_id, RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, site.id), "from JACK IN's owned end")
+	assert_eq(plan.from_id, CampaignRules.jack_from_site(RunManager.corporation, RunManager.campaign, site.id), "from JACK IN's owned end")
 	# Selecting a node of the Cell's: its verb, no plan.
 	var node: StringName = &""
 	for id in RunManager.campaign.grid.claimed_ids():

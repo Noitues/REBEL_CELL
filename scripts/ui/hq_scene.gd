@@ -2809,7 +2809,7 @@ func _mount_plan_pencil(page: Control, site: SiteData, launchable: Array[SiteDat
 			runnable = true
 	if String(site_verb(site, runnable).get("verb", "")) != VERB_JACK_IN:
 		return
-	var from := RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, site.id)
+	var from := CampaignRules.jack_from_site(RunManager.corporation, RunManager.campaign, site.id)
 	if from != &"":
 		plan.set_plan(city_overlay, from, site.id)
 
@@ -4167,7 +4167,7 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		card.add_row("RewardsRow", tr(ROW_REWARDS), rewards)
 	var why := why_not_runnable(site, launchable_here, living)
 	if why == "" and launchable_here:
-		var from_id := RouteLinkLayout.from_site(RunManager.corporation, c, site.id)
+		var from_id := CampaignRules.jack_from_site(RunManager.corporation, c, site.id)
 		if from_id != &"":
 			card.add_row("LinkRow", tr(ROW_LINK), tr("from %s") % site_name(from_id).to_upper())
 	if not launchable_here and c.grid.status_of(site.id) == GridState.SiteStatus.CORPORATE and card.holo != null and card.holo.stamp_slot != null:

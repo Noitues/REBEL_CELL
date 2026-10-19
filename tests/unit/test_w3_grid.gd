@@ -139,7 +139,7 @@ func test_grid_view_draws_the_active_run_path() -> void:
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
 	var site: SiteData = CampaignRules.launchable_sites(c, corp, cfg)[0]
-	var from_id := RouteLinkLayout.from_site(corp, c, site.id)
+	var from_id := CampaignRules.jack_from_site(corp, c, site.id)
 	var g := CityLayout.grid_graph(c, corp, [] as Array[Array], site.id, true, cfg)
 	var edges_before: int = (g["edges"] as Array).size()
 	g = CityLayout.with_run_path(g, from_id, site.id)

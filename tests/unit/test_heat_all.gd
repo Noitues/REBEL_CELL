@@ -136,8 +136,7 @@ func test_the_route_dossier_has_no_heat_stamp() -> void:
 	var d: Dictionary = scene.dossier_data()
 	assert_false(d.has("heat"), "the file carries no Heat")
 	assert_false(d.has("band"))
-	assert_false(scene.dossier.has_method("heat_words"), "the dossier draws no Heat stamp (Q10)")
-	assert_true(scene.dossier.is_visible_in_tree(), "the dossier itself stays")
+	assert_false(autofree(OperativeDossier.new()).has_method("heat_words"), "the dossier draws no Heat stamp (Q10)")
 	assert_eq(String(d["subject"]), RunManager.netrun.run.operative.name)
 
 

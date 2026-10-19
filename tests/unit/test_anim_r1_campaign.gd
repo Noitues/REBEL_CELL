@@ -464,32 +464,7 @@ func test_the_heat_number_stays_on_the_poster_whatever_the_word() -> void:
 
 # --- M7: the route after a move --------------------------------------------------------------------------------
 
-func test_after_a_move_the_choice_labels_sit_on_the_new_next_nodes() -> void:
-	var scene := _scene(NETRUN)
-	scene.new_campaign(1)
-	scene.start_run(1)
-	await _frames()
-	var s := RunManager.netrun
-	var from := s.run.current_node_id
-	var to: StringName = s.available_nodes()[0]
-	var overlay: CityMapOverlay = scene.city_overlay
-	var landed := [false]
-	overlay.travel(from, to, func() -> void: landed[0] = true)
-	assert_true(landed[0], "headless: the move lands at once")
-	# The run's state after a move, drawn on the map as the pulse lands.
-	if not s.run.visited.has(s.run.current_node_id):
-		s.run.visited.append(s.run.current_node_id)
-	var r: Dictionary = scene.route_graph()
-	for n: Dictionary in r["nodes"]:
-		if n.get("next", false):
-			assert_ne(String(n["label"]), "", "a next node carries its choice label")
-		if s.run.visited.has(n["id"]) and n["id"] != s.run.current_node_id:
-			assert_true(n.get("visited", false), "a node passed through is marked visited")
-	overlay.set_graph(r["nodes"], r["edges"])
-	for n in overlay.nodes:
-		if n.get("visited", false):
-			assert_false(overlay.is_dimmed(n["id"]), "visited reads apart from unreachable")
-	await _close(scene)
+## NA-26: the 2D route map's choice labels after a move retired with that page (see NA26_PORT_MAP.md)
 
 
 # --- M8: the jack lands on a built screen ------------------------------------------------------------------------

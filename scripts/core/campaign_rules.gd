@@ -111,6 +111,36 @@ static func site_data(corp: CorporationData, site_id: StringName) -> SiteData:
 	return corp.city_grid.get_site(site_id)
 
 
+## The Site a run on `site_id` jacks in from: home or a claimed Site linked to it (the target's own links, lowest id
+## first; else an owned Site whose links name it, lowest id first); &"" when none. RunManager.jack_link's choice, shared
+## so the jack, the run's path on the Grid and the street route ride one link (NA-26: the old 2D route layout is retired).
+static func jack_from_site(corp: CorporationData, campaign: CampaignState, site_id: StringName) -> StringName:
+	if corp == null or campaign == null or site_id == &"":
+		return &""
+	var to_site := site_data(corp, site_id)
+	if to_site == null:
+		return &""
+	var owned: Array[StringName] = []
+	if corp.city_grid != null:
+		owned.append(corp.city_grid.home_site_id)
+	if campaign.grid != null:
+		owned.append_array(campaign.grid.claimed_ids())
+	var links: Array = to_site.links.duplicate()
+	IdSort.sort_ids(links)
+	for l in links:
+		if owned.has(l) and l != site_id:
+			return l
+	var mine := owned.duplicate()
+	IdSort.sort_ids(mine)
+	for o in mine:
+		if o == site_id:
+			continue
+		var od := site_data(corp, o)
+		if od != null and od.links.has(site_id):
+			return o
+	return &""
+
+
 ## Whether the Site touches the player's territory (home or a claimed/cleared Site).
 static func touches_territory(campaign: CampaignState, corp: CorporationData, site_id: StringName) -> bool:
 	for n in campaign.grid.neighbors(site_id, corp.city_grid):
