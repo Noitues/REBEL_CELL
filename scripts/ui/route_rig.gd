@@ -36,6 +36,8 @@ var _extras: Array[Node3D] = []
 var _clock_mats: Array = []
 ## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
 var dressing: StreetDressing = null
+## The street r2 frontage (P2 step 2).
+var frontage: StreetR2Builder = null
 var _anim_t := 0.0
 var _anim_frozen := false
 # The camera move.
@@ -353,10 +355,14 @@ func _build_atmosphere() -> void:
 ## The street dressing of NA-24 (signs, lamps, glows, washes, beams, lanes, plumes): placed from the derive and the city only, one
 ## group per reveal tier. Held in `_extras`, so the id pass hides it; its materials join the netrun clock after the fog's.
 func _build_dressing() -> void:
-	dressing = StreetDressing.build(data.derive, data.city)
+	dressing = StreetDressing.build(data.derive, data.city, {}, true)
 	view.add_to_layer(&"props", dressing.root)
 	_extras.append(dressing.root)
 	_clock_mats.append_array(dressing.clock_mats)
+	# P2 step 2: the plate's street frontage (facade kits, planned signs, kit props, lamps, crowns) replaces the old signs and shops.
+	frontage = StreetR2Builder.build(data.city, data.derive, data.city["layout_seed"])
+	view.add_to_layer(&"props", frontage.root)
+	_extras.append(frontage.root)
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
 
 
