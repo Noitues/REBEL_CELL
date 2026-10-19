@@ -103,20 +103,26 @@ static func _hover(cx: Dictionary, dec: NetrunPose, node: String) -> NetrunPose:
 	return NetrunCameraRig.street_hover(dec, cx["rooms"][node], cx["d"]["nrm"])
 
 
-static func _record(cx: Dictionary, pose: NetrunPose, ids: Array) -> Dictionary:
+static func _record(cx: Dictionary, pose: NetrunPose, ids: Array, decision: bool = false) -> Dictionary:
 	var loc: Array = pose.loc()
 	var rooms: Dictionary = cx["rooms"]
-	var pts: Array = []
-	for i: String in ids:
-		var gz: float = rooms[i].get("ground_z", 0.0)
-		for q: Array in rooms[i]["front"]:
-			pts.append([q[0], q[1], q[2] + gz])
+	var pts: Array = _front_points(rooms, ids)
+	var occ_pts: Array = pts
+	if decision:
+		# a DECISION cone targets EVERY route room in frame, the `ids` rooms included (art-pass 6d214ce9, NA-04c)
+		var rcfg: Dictionary = NetrunArtConfigData.shipped().rig
+		var occ_ids: Array = OcclusionHelper.rooms_in_frame(rooms, pose, rcfg["ref_w"], rcfg["ref_h"], cx["kind"] == "hq")
+		for i: String in ids:
+			if not occ_ids.has(i):
+				occ_ids.append(i)
+		IdSort.sort_ids(occ_ids)
+		occ_pts = _front_points(rooms, occ_ids)
 	var rec: Dictionary = {"pose": pose.to_json()}
 	if cx["has_d0"]:
 		rec["zoom_dive"] = RevealTiers.zoom_dive(NetrunCameraRig.dive_distance(pose, cx["ov"]), cx["d0"], cx["d1"])
 	rec["zoom_detail"] = RevealTiers.zoom_detail(pose.dist, cx["d_ov"], cx["d_dec"])
 	rec["lod_weights"] = RevealTiers.weights(pose.dist)
-	rec["occlusion"] = OcclusionHelper.occlusion_block(OcclusionHelper.occlusion_params(loc, pts), cx["boxes"])
+	rec["occlusion"] = OcclusionHelper.occlusion_block(OcclusionHelper.occlusion_params(loc, occ_pts), cx["boxes"])
 	if cx["kind"] == "hq":
 		var hs: float = cx["comp"]["half"][0]
 		var sec_pts: Array = pts if ids != rooms.keys() else []
@@ -142,7 +148,7 @@ static func build_poses(derive: Dictionary, city: Dictionary, run_graph: Diction
 	out["layout_seed"] = derive["layout_seed"]
 	out["kind"] = derive["kind"]
 	out["overview"] = _record(cx, ov, room_ids)
-	out["decision"] = _record(cx, dec, first)
+	out["decision"] = _record(cx, dec, first, true)
 	out["rig"] = NetrunCameraRig.street_rig_json() if cx["kind"] == "street" else NetrunHqOrbit.hq_rig()
 	out["zoom"] = {"d_ov": cx["d_ov"], "d_dec": cx["d_dec"]}
 	out["lod"] = RevealTiers.lod_block()
@@ -173,6 +179,16 @@ static func build_poses(derive: Dictionary, city: Dictionary, run_graph: Diction
 		ids.append_array(opts)
 		var current_v: Variant = cur if cur != "" else null
 		fixtures.append({"name": wname, "walked": walked.duplicate(), "current": current_v, "options": opts,
-			"hover": opts[0], "decision": _record(cx, d, ids), "hover_pose": hov.to_json()})
+			"hover": opts[0], "decision": _record(cx, d, ids, true), "hover_pose": hov.to_json()})
 	out["fixtures"] = fixtures
 	return out
+
+
+## The front-quad corner points (ground_z added to z) of the rooms `ids`, in the order given.
+static func _front_points(rooms: Dictionary, ids: Array) -> Array:
+	var pts: Array = []
+	for i: String in ids:
+		var gz: float = rooms[i].get("ground_z", 0.0)
+		for q: Array in rooms[i]["front"]:
+			pts.append([q[0], q[1], q[2] + gz])
+	return pts

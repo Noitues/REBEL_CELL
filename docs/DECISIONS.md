@@ -8798,4 +8798,4 @@ Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checke
 - Godot 4.7 `PROJECTION_FRUSTUM` multiplies `size` by the viewport aspect: `size` = frame height at the near plane, `frustum_offset` = shift x frame width (`NetrunFrustum`, pixel-parity tested).
 - `NetrunArtExport.float_str` now rounds half up first (spec 12.8 rule 1), as `io.py`.
 - Not ported: `layout.apply_layout_rules`, `zoning`, the dress writer (input city arrives laid out and zoned). Dress has no room kinds; AD 19 is enforced by `DressReader.check_derive`.
-- Pending: NA-04c changes the DECISION occlusion cone (all route rooms) and the Aurelian landmark row; re-target the OcclusionHelper twin and fixtures when it merges.
+- NA-04c merged: the DECISION occlusion cone covers every route room in frame (`OcclusionHelper.rooms_in_frame`), Aurelian entry row in config; parity re-run green on the regenerated fixtures.

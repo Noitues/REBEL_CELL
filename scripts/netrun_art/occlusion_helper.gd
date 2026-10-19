@@ -222,3 +222,36 @@ static func rail_cap(rail: Dictionary, x: float, y: float, h: float) -> Array:
 	if corridor_dist(rail_segments(rail), x, y) > float(rail["side_d"]) or h <= float(rail["side_cap"]):
 		return [h, false]
 	return [rail["side_cap"], true]
+
+
+## Ids (sorted) of the route rooms the DECISION cone must cover (art-pass 6d214ce9, NA-04c): every room whose front quad
+## projects fully in front of the camera with its centre inside the `ref_w` x `ref_h` frame and, when `hq_visible` is set
+## (HQ), facing the camera (`NetrunHqOrbit.visible_room`).
+static func rooms_in_frame(rooms: Dictionary, pose: NetrunPose, ref_w: float, ref_h: float, hq_visible: bool = false) -> Array:
+	var ids: Array = rooms.keys()
+	IdSort.sort_ids(ids)
+	var out: Array = []
+	for rid: String in ids:
+		var r: Dictionary = rooms[rid]
+		var gz: float = r.get("ground_z", 0.0)
+		var sx := 0.0
+		var sy := 0.0
+		var ok := true
+		for c: Array in r["front"]:
+			var q: Array = pose.proj([c[0], c[1], c[2] + gz])
+			if q.is_empty():
+				ok = false
+				break
+			sx += q[0]
+			sy += q[1]
+		if not ok:
+			continue
+		var n: float = float((r["front"] as Array).size())
+		var cx: float = sx / n
+		var cy: float = sy / n
+		if not (cx >= 0.0 and cx <= ref_w and cy >= 0.0 and cy <= ref_h):
+			continue
+		if hq_visible and not NetrunHqOrbit.visible_room(r, pose):
+			continue
+		out.append(rid)
+	return out
