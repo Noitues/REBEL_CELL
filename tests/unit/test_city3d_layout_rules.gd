@@ -78,6 +78,38 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 		assert_eq(_heights(CityModel.build(_cfg, s)), _heights(ruled), "seed %d: same seed, same heights" % s)
 
 
+## NA-11c: within 2 lots of an HQ lot no building is taller than 0.6x the HQ top, and nothing there is a spike (the live
+## full city at 3 seeds); the spikes elsewhere are at most `spikes_max`.
+func test_hq_zone_cap_and_spike_exemption_at_three_seeds() -> void:
+	var hp: Dictionary = NetrunArtConfigData.shipped().layout_rules["hq"]
+	var spikes_max: int = int(NetrunArtConfigData.shipped().layout_rules["horizon"]["spikes_max"])
+	for s in SEEDS:
+		var ruled := CityModel.build(_cfg, s)
+		var plain := CityModel.build(_plain, s)
+		var before := NetrunArtExport.city_json(plain.city_seed, _cfg.lot_bu, _cfg.district_centre, plain.prisms, plain.streets,
+			plain.plazas, plain.hqs)
+		var after := NetrunArtExport.city_json(ruled.city_seed, _cfg.lot_bu, _cfg.district_centre, ruled.prisms, ruled.streets,
+			ruled.plazas, ruled.hqs)
+		var hq_list := NetrunArtLayoutRules.hq_rects(after)
+		assert_gt(hq_list.size(), 0, "seed %d has HQs" % s)
+		var reach: float = float(hp["zone_lots"]) * _cfg.lot_bu
+		var over: Array = []
+		var in_zone := 0
+		for bi: Dictionary in NetrunArtLayout.merged_buildings(after):
+			var top := NetrunArtLayoutRules.hq_zone_top(hq_list, reach, bi)
+			if is_nan(top):
+				continue
+			in_zone += 1
+			if float(bi["h"]) > float(hp["cap_k"]) * top + 1.0e-6:
+				over.append(bi["bid"])
+		assert_gt(in_zone, 0, "seed %d: buildings stand in the HQ zone" % s)
+		assert_eq(over, [], "seed %d: zone buildings above the cap" % s)
+		# spikes: the stats of the pass on the plain city
+		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
+		var st := {}
+		NetrunArtLayoutRules.apply_rules(before, net, {}, "all", st)
+		assert_between(int(st.get("spikes", 0)), 0, spikes_max, "seed %d: spikes" % s)
+
 ## The async path (rules deferred, run on a worker thread, landed on the main thread) gives the synchronous heights.
 func test_worker_thread_rules_match_synchronous_heights() -> void:
 	var s := SEEDS[0]

@@ -70,7 +70,7 @@ const REQUIRED: Dictionary = {
 	"street_rules": ["base_floor", "room_inset", "room_depth", "room_px_target", "min_width", "max_setback", "room_z_inset",
 		"link_offset", "link_stub"],
 	"layout": ["front_band", "extend", "base_tol", "axis_tol"],
-	"layout_rules": ["frontage_min_floors", "border_street_width", "base_street_width", "hero_sign_rule", "silhouette", "horizon"],
+	"layout_rules": ["frontage_min_floors", "border_street_width", "base_street_width", "hero_sign_rule", "silhouette", "horizon", "hq"],
 	"slot_params": ["lot_margin", "top_share", "min_half", "corner_pad", "room_w_max", "room_fill", "room_depth", "tier_floors",
 		"link_out"],
 }
