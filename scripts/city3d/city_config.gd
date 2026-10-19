@@ -543,6 +543,49 @@ extends Resource
 ## pan is not exact).
 @export var hq_run_fit_slack_px: float = 4.0
 
+@export_group("Water")
+## NA-12 r2 (art-pass item 17): a generated city's sea (CityWater; the fixed city has none). The sea's deep and
+## near-shore tones by night and by day (night_share blends them), the void past the city (darker than the sea),
+## the ripple (world BU per cell, speed, brightness swing), the shore-light reflections (reach into the sea in lots,
+## gain, streak width along the shore in lots, their colours), the netrun look's gain (look_blend 1), and how far the
+## sea runs past the city rect (lots).
+@export var water_deep_night: Color = Color(0.012, 0.03, 0.06)
+@export var water_deep_day: Color = Color(0.09, 0.26, 0.42)
+@export var water_shore_night: Color = Color(0.03, 0.07, 0.12)
+@export var water_shore_day: Color = Color(0.16, 0.38, 0.55)
+@export var water_void_night: Color = Color(0.0, 0.0, 0.0)
+@export var water_void_day: Color = Color(0.035, 0.05, 0.07)
+@export var water_ripple_bu: float = 9.0
+@export var water_ripple_speed: float = 0.12
+@export var water_ripple_gain: float = 0.35
+@export var water_reflect_reach_lots: float = 4.0
+@export var water_reflect_gain: float = 1.3
+@export var water_reflect_streak_lots: float = 1.0
+## The share of a reflection band its streak covers, and the share of bands lit.
+@export var water_reflect_width: float = 0.3
+@export var water_reflect_share: float = 0.4
+@export var water_reflect_colors: PackedColorArray = PackedColorArray([Color(1.0, 0.69, 0.0), Color(1.0, 0.24, 0.66),
+	Color(0.36, 0.88, 1.0), Color(0.69, 0.3, 1.0)])
+@export var water_look_gain: float = 1.6
+@export var water_extend_lots: int = 60
+## The sea wall along the shore: height above the water and depth below it (BU), its face colour, and its lit coping
+## (strip height BU, emission colour).
+@export var seawall_h: float = 2.4
+@export var seawall_drop: float = 1.0
+@export var seawall_color: Color = Color(0.16, 0.17, 0.2)
+@export var seawall_light_h: float = 0.35
+@export var seawall_light_color: Color = Color(1.0, 0.78, 0.45)
+## The coping and pier lamps' emission gain (their own, not the streets' lane gain the map zooms step back).
+@export var seawall_light_gain: float = 3.0
+## Piers where a street meets the water: length and width (lots), deck height (BU), deck colour, and the lamp at the
+## end (size BU, emission colour).
+@export var pier_len_lots: float = 3.0
+@export var pier_w_lots: float = 0.5
+@export var pier_h: float = 0.9
+@export var pier_color: Color = Color(0.2, 0.19, 0.18)
+@export var pier_lamp_bu: float = 0.7
+@export var pier_lamp_color: Color = Color(0.55, 0.95, 1.0)
+
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:

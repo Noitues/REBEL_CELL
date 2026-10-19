@@ -183,6 +183,11 @@ func layout_rules_job() -> Dictionary:
 	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan))
 
 
+## NA-12 r2: the optional `city.json` sections of this model's city (`coast`, `terrain`; {} for the fixed city).
+func city_sections() -> Dictionary:
+	return CityPlan.for_seed(city_seed).city_sections(cfg.lot_bu, cfg.district_centre)
+
+
 ## One recorded extrusion (lots, height px) as a world prism.
 static func prism_of(p_cfg: CityConfig, e: Dictionary) -> Dictionary:
 	var base: PackedVector2Array = e["base"]

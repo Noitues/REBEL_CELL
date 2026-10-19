@@ -18,6 +18,8 @@ const VIEW := Vector2(1920, 1080)
 ## A label's size at text scale 1.0 (px) for the headless placement sweep.
 const LABEL_BOX := Vector2(84, 14)
 const SETTLE := 12
+## NA-12 r2: the whole-city framing (ortho BU) of the review capture.
+const WHOLE_CITY_ORTHO := 1250.0
 
 var _text_scale_before: float = 1.0
 var _legend_before: bool = true
@@ -354,6 +356,28 @@ func _hq_grid(corp: StringName) -> Control:
 	_open_all()
 	hq.new_campaign(1, 0, RunManager.DEFAULT_HOME, RunManager.DEFAULT_CLASS, corp)
 	return hq
+
+
+## NA-12 r2 (art-pass 4.1 / 4.5): zoomed out to the whole city (the markers packed tight), the boss chip still keeps
+## clear of every marker shown and of its own TARGET pencil, for both campaign cities of the review sheet.
+func test_the_boss_chip_keeps_off_the_pins_on_the_whole_city() -> void:
+	Settings.set_map_legend(true)
+	Settings.set_text_scale(1.0)
+	for corp: StringName in [&"solace", &"meridian"]:
+		var hq := _hq_grid(corp)
+		hq.show_grid()
+		await _frames(SETTLE)
+		hq._frame_city(float(hq.size.x) / (WHOLE_CITY_ORTHO * NeonCity.px_per_bu()), Vector2(2.5, 2.5), Vector2(0.5, 0.5))
+		await _frames(SETTLE)
+		var overlay: CityMapOverlay = hq.city_overlay
+		var chip := overlay.boss_chip_rect
+		assert_ne(chip, Rect2(), "%s: the boss chip shows" % corp)
+		for n in overlay.nodes:
+			if CityMapOverlay.is_boss(n) or not overlay.marker_shown(n):
+				continue
+			assert_false(chip.intersects(overlay.icon_rect(n)), "%s: the chip keeps off %s" % [corp, n["id"]])
+		hq.get_parent().queue_free()
+		await _frames(2)
 
 
 func test_the_grid_draws_v4_markers_hides_unselectable_sites_and_lights_won_fights() -> void:

@@ -75,7 +75,10 @@ static func export_run(session: NetrunSession, city: Dictionary, index: Dictiona
 ## origin lot (CityConfig.district_centre), the world prisms, street and plaza lots and the
 ## HQ rects. One building per cell (`bid` "i:j" of the cell's origin lot; HQ stand-ins
 ## "hq:<corp>"), parts sorted by (z0, recorded order).
-static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Array, streets: Array, plazas: Array, hqs: Dictionary) -> Dictionary:
+## NA-12 r2: `sections` adds the optional v1 sections of a generated city (CityPlan.city_sections: `coast`, `terrain`;
+## {} for the fixed city, so its file is unchanged).
+static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Array, streets: Array, plazas: Array, hqs: Dictionary,
+		sections: Dictionary = {}) -> Dictionary:
 	var by_bid := {}
 	for pr: Dictionary in prisms:
 		var cell: Rect2i = pr["cell"]
@@ -114,9 +117,12 @@ static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Ar
 	var hq_out := {}
 	for cid: Variant in hqs:
 		hq_out[String(cid)] = _rect(hqs[cid])
-	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "units": "BU", "lot_bu": lot_bu,
+	var out := {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "units": "BU", "lot_bu": lot_bu,
 		"origin_lot": [origin.x, origin.y], "buildings": buildings, "streets": st, "plazas": pl, "hqs": hq_out,
 		"hq_overlaps": hq_overlaps(buildings, hqs)}
+	for k: String in sections:
+		out[k] = sections[k]
+	return out
 
 
 ## Diagnostic: every non-HQ building whose cell intersects an HQ rect, as {bid, corp}, sorted

@@ -34,6 +34,25 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+- **2026-10-19 W1 NA-12 r2: art-pass fix list (b4a8cb42, PENDING_TO_BUILD item 17); sheet `docs/art_review/PLAN2/W1_NA12_r2.jpg`.**
+  - **A2 bay:** the sea side's shore is `CityPlan.shore_at`: base depth (now 8-18 lots) + two waves + a Gaussian bay (depth 18-30, sigma 16-26, its middle within 15 % of the edge's middle), all drawn from the city's layout stream. The Cell's HQ stands `city_gen_cell_inland` (10) lots inland of the bay head (further when the bay's slope needs it). The Cell's Site heading comes first: the heading nearest inland whose layout box is on land. The ring corporations sit on a 220-degree arc facing inland (34-42 lots), each the first of 24 draws (even turn, play widening) clear of the HQs, the water and the Cell's Sites. The Site checks use each corporation's real Sites (`CityLayout.site_uvs`, read from `content/corporations`), and the whole box only when a corporation has no Grid yet. Result: 1,000 seeds, 0 fallbacks, 372 retried, slowest 50 ms.
+  - **Shore corporations** (`city_gen_shore_corps`, default `tethys`): placed on a bay flank, 1.2-2 bay widths off the head, before the ring, with their HQ rect snapped to touch the water (`CityGenerator.touches_water`).
+    - Tethys has no territory in content yet (D1), so this is a no-op today. It is tested with Solace's Site layout standing in.
+  - **Contract:** `city.json` v1 gains two optional additive keys from `CityPlan.city_sections` (passed as `city_json(..., sections)`, `CityModel.city_sections()`). The fixed seed gets neither key, so its file and every fixture are unchanged.
+    - `coast {sea_side "N" / "E" / "S" / "W" (plan compass), shoreline [[i, j]...] (land lots beside the sea), sea_cells [[i, j]...] (sea lots in the city rect)}`, rows in (j, i) order.
+    - `terrain {hills [{centre [x, y] plan BU, sigma_x, sigma_y BU, height BU, rotation rad (plan frame)}]}`: city_A2's Gaussian form in BU, z = height * exp(-((u/sx)^2 + (v/sy)^2) / 2). The hills are data only until NA-12c renders them.
+    - Schema `city.schema.json` takes both. The Python oracle reads the same keys (`contract.validate_city`, `layout.coast_of`, `layout.hills_of`, `layout.hill_height`; pytest `test_na12_city_sections`).
+    - The street netrun's own city.json (`street_route_data.gd`, not touched) carries no sections yet.
+  - **Water (CityWater on CityView3D's ground layer, generated cities only):**
+    - The sea mesh (sea lots of the city rect grown by 60 lots) with `city_water.gdshader`: deep blue-black by night, blue by day (`night_share`), a slow two-octave ripple (frozen under reduce motion), and shore-light reflections as thin broken streaks within ~4 lots of the wall.
+    - The void past the city: the same shader, black by night, darker than the sea.
+    - A sea wall face on every shore edge (toon-lit, the day ramp reaches it) with a lit coping strip.
+    - A pier with an end lamp where a street runs into the water.
+    - Under the NA-22 look_blend path the sea and the void are lifted by `water_look_gain`. Every number is in `city_config.tres` "Water".
+  - **Label avoidance (4.1 / 4.5):** the boss chip (`CENTRAL SERVER // EXPLOITS`) now tries 4 more rings of spots (8 directions, on the map's open part) before settling on the least-covered one. Test: `test_the_boss_chip_keeps_off_the_pins_on_the_whole_city`.
+    - The whole-city zoom also showed degenerate roof slivers on the marker layer; they are no longer filled (they were a triangulation error).
+  - **Not built (NA-12c, W2):** terrain rendering (foothills, mountains), marinas, ships, lighthouse, barrier lights, islands.
+
 ### 2026-10-19 - W1 close: the street netrun builds on the campaign's own city
 - `StreetRouteView.build_data`, `NetrunScene` (both street builds) and the labs (na23, na25, motion) read `CityPlan.current_seed()` instead of `cfg.city_seed`; `dump_game_worlds.gd` defaults to the same. No other `cfg.city_seed` reader sits on the netrun / street / HQ path (the rest are fixed-city goldens, the exporter CLI defaults and `CityConfig` itself).
 - `test_na23_route_flow` and the raid-sway test of `test_horizontal_pass20_city` no longer pin city_seed 0. The sway test now asserts the rule (whole sway inside the corporation's own territory; other territories share only by Site reach) instead of "zero at the fixed city's HQ corner". The occlusion-restore test asserts on the decision rows (no longer conditional on the fixed city's geometry).

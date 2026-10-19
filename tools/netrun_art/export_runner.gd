@@ -34,7 +34,7 @@ func _run() -> int:
 		push_error("export_contract: building id collisions: %s" % str(conflicts))
 		return 1
 	var city := NetrunArtExport.city_json(model.city_seed, cfg.lot_bu, cfg.district_centre, model.prisms, model.streets,
-		model.plazas, model.hqs)
+		model.plazas, model.hqs, model.city_sections())
 	var city_text := NetrunArtExport.canonical(city)
 	var index := NetrunArtExport.lot_index(city["buildings"])
 	var t2 := Time.get_ticks_usec()
