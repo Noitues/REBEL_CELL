@@ -67,7 +67,9 @@ func test_the_sea_holds_no_street_and_no_building() -> void:
 	var m := _model
 	var wet := 0
 	for st: Dictionary in m.streets:
-		if plan.is_water((st["lot"] as Vector2i).x, (st["lot"] as Vector2i).y):
+		var l: Vector2i = st["lot"]
+		# CITY-A2: A2 roads cross the water on bridges and local streets bridge rivers.
+		if plan.is_water(l.x, l.y) and not (plan.a2 != null and (plan.a2.road_rank(l.x, l.y) > 0 or plan.a2.is_river(l.x, l.y))):
 			wet += 1
 	for pr: Dictionary in m.prisms:
 		var c: Rect2i = pr["cell"]
@@ -84,11 +86,18 @@ func test_the_sea_holds_no_street_and_no_building() -> void:
 	assert_gt(sea, cfg.city_rect.size.x * int(_cfg.city_gen_coast_depth.x - _cfg.city_gen_coast_wave.y) - 1, "a coast strip of sea")
 
 
+## The NA-12 grid generator's config (CITY-A2: `city_layout_source` &"grid", the fallback step 2 removes).
+func _grid_cfg() -> CampaignConfigData:
+	var g := _cfg.duplicate() as CampaignConfigData
+	g.city_layout_source = &"grid"
+	return g
+
+
 ## NA-12 r2 (A2): the coast is a concave bay (its head reaches deeper into the land than both ends of the sea edge),
 ## the Cell's HQ is the HQ nearest the bay head, the hills stand on land.
 func test_the_coast_is_a_bay_with_the_cell_at_its_head() -> void:
 	for k in SEEDS:
-		var plan := CityPlan.generate(CityGenFixture.seed_of(k), _cfg)
+		var plan := CityPlan.generate(CityGenFixture.seed_of(k), _grid_cfg())  # NA-12's parametric bay (CITY-A2: grid fallback)
 		var side := int(plan.coast["side"])
 		var lo := float(plan.rect.position.y if side < 2 else plan.rect.position.x)
 		var hi := float(plan.rect.end.y if side < 2 else plan.rect.end.x)

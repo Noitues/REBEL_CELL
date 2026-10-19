@@ -82,14 +82,14 @@ func _seed(campaign_seed: int, extras: bool) -> void:
 		plan.sea_side(), plan.attempts, view.water.piers if view.water != null else -1, view.water.wall_edges if view.water != null else -1, view.water.smears if view.water != null else -1,
 		" ".join(hqs)])
 	if view.water != null:
-		print("NA12 smear_lots %s bay_at=%s" % [str(view.water.smear_lots), str(plan.coast["bay_at"])])
+		print("NA12 smear_lots %s bay_at=%s" % [str(view.water.smear_lots), str(plan.coast.get("bay_at", "a2"))])
 	await _shot("grid_%d" % campaign_seed)
 	hq._frame_city(float(hq.size.x) / (WHOLE_ORTHO * NeonCity.px_per_bu()), Vector2(plan.rect.get_center()), Vector2(0.5, 0.5))
 	await _settle()
 	await _shot("city_%d" % campaign_seed)
 	await _view_shot(view, "v_city_%d" % campaign_seed)
 	_values(view, plan, "night")
-	if extras:
+	if extras and plan.coast.has("bay_at"):  # CITY-A2: no parametric bay on an A2 plan
 		var head := float(plan.coast["bay_at"])
 		var shore := plan.edge_point(head, plan.shore_at(head) - SHORE_SEA_LOTS)
 		hq._frame_city(float(hq.size.x) / (SHORE_ORTHO * NeonCity.px_per_bu()), shore, Vector2(0.5, 0.5))

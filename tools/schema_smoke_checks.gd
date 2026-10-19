@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config()
+		+ _wh02_corp_theme_config() + _city_a2_config()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -99,6 +99,29 @@ func _n20_slice_riders() -> int:
 
 ## NA-24: DressingConfigData (the street dressing's reveal groups, palettes, districts, bands): the shipped one validates, an
 ## empty one reports its gaps, a district naming an unknown palette set is refused by name.
+## CITY-A2 step 1: CampaignConfigData's planner-city fields (`city_layout_source`, `city_a2_*`): the shipped ones match
+## the defaults and validate, the vendored city_A2.json loads clean, an unknown source and a bad block range are refused.
+func _city_a2_config() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("CITY-A2 config (expect a2 a2 Vector2i(4, 7) 121.212): ", d.city_layout_source, " ", cfg.city_layout_source, " ",
+		cfg.city_a2_block_lots, " ", cfg.city_a2_metres_per_lot)
+	if d.city_layout_source != cfg.city_layout_source or d.city_a2_block_lots != cfg.city_a2_block_lots \
+			or d.city_a2_path != cfg.city_a2_path or d.city_a2_budget_s != cfg.city_a2_budget_s: fails += 1
+	if ",".join(cfg.validate()).contains("city_a2") or ",".join(cfg.validate()).contains("city_layout_source"): fails += 1
+	var a2 := CityPlanA2.load_path(cfg.city_a2_path)
+	print("CITY-A2 file (expect 0 7 53): ", a2.errors.size(), " ", a2.districts.size(), " ", a2.roads.size())
+	if not a2.errors.is_empty() or a2.districts.size() != 7: fails += 1
+	var bad: CampaignConfigData = cfg.duplicate()
+	bad.city_layout_source = &"maze"
+	bad.city_a2_block_lots = Vector2i(5, 3)
+	var codes := ",".join(bad.validate())
+	print("CITY-A2 bad: ", codes.contains("city_layout_source"), " ", codes.contains("city_a2_block_lots"))
+	if not (codes.contains("city_layout_source") and codes.contains("city_a2_block_lots")): fails += 1
+	return fails
+
+
 ## NA-12: CampaignConfigData's city generator numbers: the shipped ones match the defaults and
 ## validate, a bad range and a zero gap are refused by name; CampaignState keeps its city seed
 ## through to_dict / from_dict as a u64 decimal string.
