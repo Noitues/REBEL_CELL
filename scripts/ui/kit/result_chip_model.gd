@@ -27,7 +27,7 @@ const SPIN := &"spin"
 const NULL_LAND := &"null_land"
 ## W2-A2: the operative's HP would hit 0 this turn.
 const LETHAL := &"lethal"
-## A random roll (a random card, a respin): the odds are in the tooltip, never the roll (GDD 2.10).
+## A random part (a random card, a respin; Q19): only "?" is shown, never the roll, a range or the odds.
 const ODDS := &"odds"
 ## Plan 2 R3: what a phase floor stopped of this wheel's losses ("PARKED −N").
 const PARKED := &"parked"
@@ -249,7 +249,7 @@ static func words(c: Dictionary) -> String:
 		CLEARS:
 			return String(TranslationServer.translate("CLEARS %s")) % String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(c["status"]), ""))))
 		ODDS:
-			return String(TranslationServer.translate("A random roll: the odds are in the breakdown"))
+			return String(TranslationServer.translate("A random result: shown as ? until you play it"))
 		PARKED:
 			return String(TranslationServer.translate("%d damage parked at the phase line: it is lost, and the next phase starts after this turn")) % v
 		HP_LINE:

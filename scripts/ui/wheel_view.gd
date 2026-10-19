@@ -46,6 +46,9 @@ var wheel_color: Color = Palette.CELL_PINK
 ## Ghost preview (GDD 9.2): predicted outer/inner rotation after a hovered card, or null.
 var ghost_rotation: Variant = null
 var ghost_inner_rotation: Variant = null
+## Q19: a hovered respin (or a card that respins this wheel): a ghosted needle with "?" where
+## the needle stands and the way it would turn. The landing is a random event, so none is shown.
+var unknown_ghost: bool = false
 ## Perfect feedback: wheel-local inversion for a couple of frames.
 var inverted: bool = false
 var shake: Vector2 = Vector2.ZERO
@@ -506,6 +509,13 @@ func set_ghost(outer: Variant, inner: Variant = null) -> void:
 	ghost_rotation = outer
 	ghost_inner_rotation = inner
 	queue_redraw()
+
+
+## Q19: shows or hides the "?" ghost needle of a random respin.
+func set_unknown_ghost(on: bool) -> void:
+	if unknown_ghost != on:
+		unknown_ghost = on
+		queue_redraw()
 
 
 # --- Motion (Animation pass ANIM-2) ----------------------------------------------------------
@@ -2268,6 +2278,7 @@ func _draw_view() -> void:
 	if not replaying and attachments == null:
 		_draw_ghost(center, radius, wheel)
 		_draw_inner_ghost(center, radius, wheel)
+		_draw_unknown_ghost(center, radius, wheel)
 	if flip_squash < 1.0:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
@@ -3838,6 +3849,36 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	draw_circle(from, 11, Palette.NIGHT_SKY)
 	if slice != null:
 		SliceIcon.draw_icon(self, from, 8, slice.slice_type, Palette.slice_color(slice.slice_type))
+
+
+## Q19: the ghosted needle of a random respin: a dashed needle on the real one, a dashed arc
+## ahead of it (the way the rim turns) and a "?" disc on the rim. Nothing says where it lands.
+func _draw_unknown_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
+	if not unknown_ghost or wheel.pointer_ticks.is_empty():
+		return
+	var a_needle := _ang(wheel.pointer_ticks[0])
+	var a_ahead := _ang(wheel.pointer_ticks[0] + UNKNOWN_GHOST_TICKS)
+	var r := radius + GHOST_OUT
+	var col := Color(_col(Palette.CELL_ACID), UNKNOWN_GHOST_ALPHA)
+	var dir := Vector2(cos(a_needle), sin(a_needle))
+	var from := center + dir * radius * UNKNOWN_GHOST_NEEDLE_FROM
+	var steps := UNKNOWN_GHOST_DASHES
+	for d in steps:
+		if d % 2 == 0:
+			draw_line(from.lerp(center + dir * r, float(d) / steps), from.lerp(center + dir * r, float(d + 1) / steps), col, 2.0)
+	_draw_dashed_arc(center, r, minf(a_needle, a_ahead), maxf(a_needle, a_ahead), col, 2.0)
+	var disc := center + dir * r
+	draw_circle(disc, UNKNOWN_GHOST_DISC, Palette.NIGHT_SKY)
+	HighContrast.draw_text(self, Palette.mono(), disc + Vector2(-4, 5), "?", HORIZONTAL_ALIGNMENT_CENTER, -1, _fs(HUB_FONT_SIZE + 4), col)
+
+
+## The "?" ghost needle: how far ahead its dashed arc runs (ticks), its dash count, alpha, the
+## share of the radius its needle starts at, and the disc's radius (px).
+const UNKNOWN_GHOST_TICKS := RC.TICKS / 4
+const UNKNOWN_GHOST_DASHES := 8
+const UNKNOWN_GHOST_ALPHA := 0.75
+const UNKNOWN_GHOST_NEEDLE_FROM := 0.35
+const UNKNOWN_GHOST_DISC := 11.0
 
 
 ## The inner ring's ghost (H21): a dashed arc inside the band from the segment that will

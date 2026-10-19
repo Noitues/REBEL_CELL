@@ -3098,8 +3098,10 @@ func _describe_slot(c: CombatantState, slot: int) -> String:
 
 func _clear_ghost() -> void:
 	_player_view.set_ghost(null)
+	_player_view.set_unknown_ghost(false)
 	for v in _enemy_views.values():
 		v.set_ghost(null)
+		v.set_unknown_ghost(false)
 
 
 # --- Previews: the tags, the HP arcs, the RAM bar ------------------------------------
@@ -3213,25 +3215,7 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 	_clear_ghost()
 	var card := engine.content(state.hand[action.hand_index]) as CardData if action.type == CombatAction.Type.PLAY_CARD else null
 	if card != null and CardTargeting.is_random(card):
-		var target := engine.resolver.card_target(state, card, action)
-		_show_end_turn_preview()
-		_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))
-		_refresh_queue_panel()
-		ram_note.set_pending(-RamCost.of_action(state, action, engine.resolver))
-		var host := (target.host_id if target.is_satellite else target.id) if target != null else &""
-		var v := _view_of(host)
-		if target != null and v != null:
-			var non_null := false
-			for e in card.effects:
-				if e != null and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
-					non_null = true
-			var chips: Array = [{"text": tr("RANDOM: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
-			chips.append_array(_odds_chips(target, non_null))
-			v.intent = {"type": -1, "text": tr("%s rolls") % TextDb.t(card, "display_name"), "chips": chips,
-				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_null)}
-			v.queue_redraw()
-			_set_chips(v, [ResultChipModel.odds_chip()], tr("%s rolls") % TextDb.t(card, "display_name"), String(v.intent["tooltip"]))
-		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
+		_preview_forecast(action, card)
 		return
 	var after := result.state
 	if after.player.wheel.rotation != state.player.wheel.rotation or after.player.wheel.inner_rotation != state.player.wheel.inner_rotation:
@@ -3270,22 +3254,73 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	hud_layer.row_for(v).prepend_note(tr("YOUR %s") % what)
 
 
+## Q19: the hovered respin: its RAM cost and every known reaction exact, the landing a "?" over
+## a ghosted needle (no range, no odds). The wheel does not move.
 func _show_respin_odds() -> void:
 	if not engine.has_fight():
 		return
 	var was := _forecast_tags()
+	var fc := engine.forecast(CombatAction.respin())
+	if fc == null or not fc.ok():
+		return
 	var cost := RamCost.of_action(engine.state(), CombatAction.respin(), engine.resolver)
-	ram_note.set_pending(-cost)
-	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
-	chips.append_array(_odds_chips(engine.state().player))
-	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
-		"tooltip": tr("Respin your wheel for %d RAM: a random result (UNDO stops here). %s") % [cost, odds_text(engine.state().player)]}
+	_show_forecast_outcome(fc)
+	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": [{"text": tr("RESPIN: ?"), "color": Palette.INK, "ink": Palette.PAPER}],
+		"tooltip": tr("Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).") % cost}
 	_player_view.queue_redraw()
-	_set_chips(_player_view, [ResultChipModel.odds_chip()], tr("Respin for %d RAM") % cost, String(_player_view.intent["tooltip"]))
+	_mark_unknown_parts(fc)
 	_mark_was(was)
 	preview_note.clear()
 	preview_note.append("Respin your wheel for %d RAM (a random event: UNDO stops here)." % cost)
-	preview_note.append(odds_text(engine.state().player))
+
+
+## Q19: a hovered card with a random part: the play's own known results exactly (the forecast),
+## "?" chips and ghost needles on the wheels its random parts hit.
+func _preview_forecast(action: CombatAction, card: CardData) -> void:
+	var fc := engine.forecast(action)
+	_show_end_turn_preview()
+	if fc == null or not fc.ok():
+		return
+	_queue_pending = TurnQueue.step_between(engine.state(), fc.state(), _queue_label(engine.state(), action))
+	_show_forecast_outcome(fc)
+	_mark_unknown_parts(fc)
+	_refresh_queue_panel()
+	for e in fc.events():
+		if e.has("text"):
+			preview_note.append(String(e["text"]))
+	preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
+	_mark_preview_source(action, card)
+
+
+## Q19: the tags and chips for the forecast's own state (the End Turn resolve that follows
+## depends on the unknown, so it is not forecast).
+func _show_forecast_outcome(fc: PreviewResult) -> void:
+	_clear_ghost()
+	_show_outcome(fc.state(), fc.state(), fc.events())
+	_sync_listener_chips(fc.events())
+
+
+## Q19: each unknown part shows as a "?" chip on the wheel it hits (a respin landing also puts
+## the ghosted needle on it). Only "?": no range, no odds.
+func _mark_unknown_parts(fc: PreviewResult) -> void:
+	for u in fc.unknowns:
+		var target := engine.state().get_combatant(StringName(u["target"]))
+		if target == null:
+			continue
+		var v := _view_of(target.host_id if target.is_satellite else target.id)
+		if v == null:
+			continue
+		if StringName(u["kind"]) == PreviewResult.RESPIN:
+			v.set_unknown_ghost(true)
+		var row := hud_layer.row_for(v)
+		var has_odds := false
+		for ch in row.chips:
+			has_odds = has_odds or StringName(ch["kind"]) == ResultChipModel.ODDS
+		if has_odds:
+			continue
+		var chips: Array = row.chips.duplicate(true)
+		chips.append(ResultChipModel.odds_chip())
+		row.set_result(chips, row.tip_title, row.tip_body)
 
 
 ## The End Turn preview as it stands (GDD 2.10): what every needle lands on and the full
@@ -4082,7 +4117,9 @@ func _build_stickers() -> void:
 	_respin_button.focus_entered.connect(func() -> void:
 		if _nav_focus:
 			_show_respin_odds())
-	_respin_button.mouse_exited.connect(_show_end_turn_preview)
+	_respin_button.mouse_exited.connect(func() -> void:
+		_clear_ghost()
+		_show_end_turn_preview())
 	_sync_undo_tip()
 
 
