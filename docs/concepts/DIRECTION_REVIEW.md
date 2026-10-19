@@ -1507,3 +1507,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
     - **Tethys:** WATER LEVEL.
     - **Meridian, Orbital:** still open. Orbital leans toward comms blackouts.
     - Art starts only the settled ones: Solace, Halcyon, Aurelian, REBEL_CELL DISPATCH, Tethys. Occlusion on every netrun is confirmed as the designer's own ruling.
+  - **Exploit-building netruns (designer, 2026-10-18):** "These all work as directions. Rule exploit-building netruns in, and develop each with the corp's other two buildings later." Every corp's three exploit buildings (Intel, Breach, Virus) get a unique netrun that ends at the exploit target inside the building, with several node layers inside it. The 7 picks in `exploit_buildings/stills/sheet.jpg` are approved as directions. The other two buildings per corp come later, from the drafts in `exploit_buildings/<corp>.md`.
