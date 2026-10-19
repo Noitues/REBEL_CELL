@@ -18,6 +18,7 @@ const ALLOWED: Array[String] = [
 	"text_db.gd:out", "netrun_scene.gd:kids", "city_perf_probe.gd:sorted", "na25_e2e_lab.gd:sorted", "profile_frames.gd:_times",
 	"schema_check.gd:keys", "lint_static_cli.gd:keys", "perf_pack.gd:sorted", "perf_pack.gd:names",
 	"visual_lint_static.gd:out", "visual_lint_static.gd:sorted",
+	"na25_e2e_lab.gd:sorted",   # frame times (floats)
 	"wheel_state.gd:status_ints", "result_chip_model.gd:seen_statuses",
 ]
 

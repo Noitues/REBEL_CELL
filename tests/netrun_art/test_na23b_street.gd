@@ -58,3 +58,27 @@ func test_span_scan_and_choice_match_python_on_a_fixture() -> void:
 	assert_eq(rows[0]["fallback"], [])
 	assert_true(float(rows[1]["min_px"]) >= float(rules["room_px_target"]))
 	assert_eq(NetrunStreetDeriver.choose_span(best["asg"], layers, best["front"][0]["nrm"], best["start_left"], rules), 2)
+
+
+func _sparse_world(xs: Array) -> Array:
+	var b: Array = []
+	for i in xs.size():
+		b.append({"bid": "b%02d" % i, "x0": float(xs[i]), "x1": float(xs[i]) + 5.0, "y0": 2.0, "y1": 9.0, "h": 40.0, "ts": 1.0, "axis": 0})
+	var nodes: Array = []
+	for l in range(1, 8):
+		nodes.append({"id": "n%d" % l, "index": 0, "layer": l})
+	return [b, NetrunStreetDeriver.layer_nodes({"nodes": nodes})]
+
+
+func test_a_sparse_street_retries_with_a_longer_extension_like_python() -> void:
+	# python test_w1_street_retry: 3 buildings inside the 12 / 60 BU extension, 4 more past it
+	var legs: Array = [[0.0, 0.0], [10.0, 0.0]]
+	var fit := _sparse_world([0, 8, 16, 24, 32, 40, 48])
+	assert_eq(NetrunStreetDeriver.choose_street_fitting(fit[0], legs, fit[1])[1], 0, "a street that fits is never changed")
+	var sparse := _sparse_world([0, 8, 16, 90, 98, 106, 114])
+	var res := NetrunStreetDeriver.choose_street_fitting(sparse[0], legs, sparse[1])
+	assert_true(int(res[1]) >= 2 and bool((res[0] as Dictionary)["ok"]), "the retry fits every layer")
+	var few := _sparse_world([0, 8])
+	var none := NetrunStreetDeriver.choose_street_fitting(few[0], legs, few[1])
+	assert_eq(none[1], 0)
+	assert_false(bool((none[0] as Dictionary)["ok"]))

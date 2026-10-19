@@ -763,7 +763,7 @@ func _play_entry(reverse: bool) -> void:
 		_entry_view = StreetRouteView.new()
 		_entry_view.size = _entry_host.size
 		_entry_host.add_child(_entry_view)
-		_entry_view.setup(data, CityModel.shared(cfg, cfg.city_seed), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
+		_entry_view.setup(data, CityModel.shared(cfg, CityPlan.current_seed()), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
 	_entry_host.visible = true
 	if _entry_cover != null and is_instance_valid(_entry_cover):
 		_entry_cover.free()

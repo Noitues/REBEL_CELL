@@ -206,7 +206,8 @@ static func _fits(best: Dictionary) -> bool:
 
 
 ## `[best, step]`: `choose_street`, then, only when it does not fit every layer, the same on the squared legs (step 1).
-## A street that fits at step 0 is never changed. When neither fits the step 0 result is returned with step 0.
+## A street that fits at step 0 is never changed. W1 close: when neither fits, step 2 + 2*i is the legs as given and step 3 + 2*i the
+## legs squared, with the extension scaled by `extend_retry[i]`. When nothing fits the step 0 result is returned with step 0.
 static func choose_street_fitting(B: Array, legs: Array, layers: Array, rules_over: Dictionary = {}) -> Array:
 	var r: Dictionary = _rl(rules_over)
 	var first: Dictionary = choose_street(B, legs, layers, r)
@@ -217,6 +218,18 @@ static func choose_street_fitting(B: Array, legs: Array, layers: Array, rules_ov
 		var best: Dictionary = choose_street(B, sq, layers, r)
 		if _fits(best):
 			return [best, 1]
+	var retry: Array = r["extend_retry"]
+	var base_ext: Array = r["extend"]
+	for i in retry.size():
+		var k := float(retry[i])
+		var wide: Dictionary = r.duplicate()
+		wide["extend"] = [float(base_ext[0]) * k, float(base_ext[1]) * k]
+		for j in 2:
+			if j == 1 and sq == legs:
+				continue
+			var cand: Dictionary = choose_street(B, legs if j == 0 else sq, layers, wide)
+			if _fits(cand):
+				return [cand, 2 + 2 * i + j]
 	return [first, 0]
 
 
