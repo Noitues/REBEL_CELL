@@ -25,7 +25,8 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | done | on main: COMBAT-LOCK r2-r4b (5b7dc145). On w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4 + r5 (4627a5a1), HQ-EXPORT, NA-12 r3 (old grid). On w2 (63e66912): WH-11, WH-10, WH-12, HQ-LAUNCH | | |
 | HQ-LADDER-UI | Solace HQ ladder game UI: crown BOSS label, ACROSS edges, tower labels, rest / mini-boss / crown icons, gap preview (no look files) | w2 | netrun_scene / combat_scene game UI, strings |
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
-| queued | walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); CITY-A2 step 2 (terrain heightfield + land beyond the city edge, rails, landmarks, perimeter ring, frontage heights vs r2 layout_pass); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
+| CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
+| queued | walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
 re A-046. Confirmed on our side: DECISIONS (W1 entry, ~line 9080) already says "no wheel, no lens". r5b (hex tweak, SAVED frame) was
