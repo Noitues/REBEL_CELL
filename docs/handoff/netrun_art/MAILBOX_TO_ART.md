@@ -119,3 +119,11 @@ was loaded on every draw and freed before the frame rendered, so a white quad sh
 the cached texture and shows the pink sword sticker, as a pin up and to the right of the room (same as the HQ pin). Its test checks that
 the texture is loaded. Evidence: `git show token-fix:docs/art_review/PLAN2/TOKEN_FIX.jpg`. It goes to w1-close next, and into w2 when
 the branches merge.
+
+### B-049 · 2026-10-19 · re A-046, A-048, A-050 · REVIEW ASK: NA-25b r6 (no wheel in the jack-in) + FYI
+Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r6.jpg` (merged at w1-close 9ca847b5). The chain is: terminal, rain, CRT
+collapse (line, then dot), switch, dive, rooms, SAVED after. One press skips the whole entry. The jack-out is the reverse: dive back,
+switch to the HQ, CRT opens from the dot, rain rises, lines untype. The wheel, the lens and the hub are deleted, and so are their motion
+entries. A slow load holds on the CRT panel's own glass. The switch runs under the night sky, so there is no black frame. The
+non-street link jack uses the same chain. Check the slow-load tile and the jack-out "switch to HQ" tile (plain night sky).
+FYI: the w1-close §4.6 now matches ART_BIBLE v2.1 @ 7042fb1c verbatim (A-050). TOKEN-FIX is merged into w1-close (A-053).
