@@ -34,6 +34,28 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Designer rulings: decision sheet follow-ups (`FOLLOWUP_2026-10-18.md`)
+"Default for all except" the items below: every other follow-up item takes its RECOMMENDED option (Q8 a, Q10.1-10.4 a,
+Q11 a, Q14 a, Q19.1-19.2 a, Q21 a, Q22 a, Q27.1-27.2 a, Q30.1-30.2 a, Q31: hub breach turns kept, next-turn bonuses kept,
+`resistance_carry` retired, Q35 b (signed sum, clamp once), Q42 a, Q46.2 a).
+- **Q20 (Calibrated):** Firmware may be very strong, even making a whole slice PERFECT; it works on **all slice sizes**
+  (no 1-4 limit, no warning). Direction for slice design: most of a slice reads WEAK, with only the center area GOOD /
+  PERFECT.
+- **Q23 (map edits):** the validator choice stands (no edit leaves a layer without a route or skips a Rack). With 5
+  Exploit options offered, 1-2 may prune away through choices, but the count must **never drop below the required 3**.
+- **Q24.1 (death):** an operative at 0 HP **at any time, for any reason, is lost**; the active netrun is abandoned; the
+  raid is unchanged (the netrun was lost). **Operatives are never killed during raids.** (24.2: default, free between
+  runs.)
+- **Q26 (HQ routes):** Express may cost Heat, but shortcuts need not always be punished: the per-run cap on shortcuts
+  is the limiter. "Games should be fun, not always punishing."
+- **Q40 (Processing):** **no max-4-hit cap**: 10 slices stamped OUTPUT_DOWN means 10 hits. Stamps count OUTPUT_DOWN only.
+- **Q46.1 (Enforcer):** **adds** one (does not replace an Elite).
+- **Q46.3 (sibling elites):** don't enforce same or distinct thresholds; boss / elite difficulty tuning arrives at the
+  numbers.
+- **Balance targets vs the sim bot:** the S5 boss win rate (6 % at ICE 0) mostly reflects the bot playing badly, not
+  quality decisions. Do not tune fight difficulty to the current bots; if bot numbers are used at all, lower their
+  targets sharply. (Feeds the replan: a better reference policy or human/Claude-tester data before tuning.)
+
 ### 2026-10-18 — Designer rulings: decision sheet (`docs/handoff/plan2/drafts/questions/DECISION_SHEET.md`)
 "default" = the sheet's RECOMMENDED option. Follow-ups the designer asked for are in
 `docs/handoff/plan2/drafts/questions/FOLLOWUP_2026-10-18.md`; until answered, a W0 slice that needs one uses the
