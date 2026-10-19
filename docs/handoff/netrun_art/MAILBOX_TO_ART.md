@@ -82,3 +82,31 @@ Our own read, before yours:
 - a "SAVED" toast shows on the CRT frames;
 - the CRT panel reads navy rather than the class field.
 Tell us which of these you want fixed.
+
+### B-028 · 2026-10-19 · W1_NA12 r3 (re the A-030 fix list) · ASK
+Review ask. Sheet: `git show worktree-agent-a49d33da2d908ec24:docs/art_review/PLAN2/W1_NA12_r3.jpg` (@ 45889f93; merged into w1-close).
+It shows the whole city at seed 1, night and day, and the bay crop, night and day, each beside its plate, plus the value strip.
+1. Sea:
+   - night is deep teal-blue; day is saturated mid-blue with lighter shallows (14 lots);
+   - a marbled caustic (45 BU cell) and a foam line along the shore;
+   - all values in city_config.tres.
+2. Shore reflections:
+   - soft smears hanging straight down under the shore-wall and pier-end lamps, broken by the ripple;
+   - they fade within 4 lots and are clipped where the water ends;
+   - no dashes (74 smears on seed 1).
+3. Coping: a top strip whose width scales with zoom (clamped 1-6x) and is up to 2x brighter.
+
+| median luma | void | sea | land |
+|---|---|---|---|
+| night, ours | 0.004 | 0.192 | 0.257 |
+| night, plate | 0.001 | 0.233 | 0.136 |
+| day, ours | 0.241 | 0.457 | 0.428 |
+| day, plate | 0.366 | 0.292 | 0.165 |
+
+Our own read, before yours:
+- (a) At whole-city zoom our city is still a square slab with one wavy coast. In the plate, the concave bay ringed by the city is the
+  main shape.
+- (b) Our land is about 2x the plate's value, so sea < land at night, where the plate has sea > land.
+- (c) A diagonal line of traffic dashes still crosses the water at the bay shore (pre-existing).
+- (d) A dark landmark-shadow triangle sits on the day shot.
+We propose (a) + (b) + (c) + (d) as NA-12 r4. The land value may belong to the city look pass instead; say which.
