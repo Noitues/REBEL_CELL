@@ -468,7 +468,7 @@ CardData.jam.description,"Nudge an enemy wheel ±1, ignoring resistance."
 CardData.jam.display_name,Jam
 CardData.jolt.description,Spin a wheel 3 ticks clockwise.
 CardData.jolt.display_name,Jolt
-CardData.leech_worm.description,Pointed enemy slice gets a PARASITE (half output). Exhaust.
+CardData.leech_worm.description,Pointed enemy slice gets OUTPUT DOWN x2 (half output). Exhaust.
 CardData.leech_worm.display_name,Leech Worm
 CardData.lock_on.description,Move your outer ring to the nearest slice center (Perfect). Exhaust.
 CardData.lock_on.display_name,Lock On
@@ -486,7 +486,7 @@ CardData.overdrive.description,"OVERCLOCK the pointed slice: 1.5x once, then COR
 CardData.overdrive.display_name,Overdrive
 CardData.overload.description,Deal 10 damage to the target and take 4. Exhaust.
 CardData.overload.display_name,Overload
-CardData.parasite_pulse.description,Pointed target slice gets a PARASITE (half output). Exhaust.
+CardData.parasite_pulse.description,Pointed target slice gets OUTPUT DOWN x2 (half output). Exhaust.
 CardData.parasite_pulse.display_name,Parasite Pulse
 CardData.patch_up.description,Heal 6. Exhaust.
 CardData.patch_up.display_name,Patch Up
@@ -1815,6 +1815,7 @@ ORDERS,ORDERS
 OURS NOW,OURS NOW
 OUTCOME,OUTCOME
 OUTER,OUTER
+OUTPUT DOWN,OUTPUT DOWN
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
 OVERTHROW,OVERTHROW
@@ -3541,7 +3542,6 @@ wheel,wheel
 withdraw,withdraw
 won,won
 x%d,x%d
-x0.5,x0.5
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.
@@ -3550,4 +3550,6 @@ your wheel,your wheel
 yours,yours
 {nudge_switch},{nudge_switch}
 "{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it.","{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it."
+×%d,×%d
+×%d: %d stacks of %s on this slice.,×%d: %d stacks of %s on this slice.
 — STEP %d —,— STEP %d —

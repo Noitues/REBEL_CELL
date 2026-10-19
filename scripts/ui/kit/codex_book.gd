@@ -69,7 +69,7 @@ const ID_PREFIX := {"Firmware": "firmware_", "Daemons": "daemon_", "Ring segment
 const SECTION_FILLS := {"Classes": Palette.CELL_PINK, "Cards": Palette.GLYPH_FILL}
 const ICON_FILLED: Array[String] = ["Firmware", "Daemons", "Ring segments"]
 const STATUS_FILLS := {RC.Status.CORRUPTED: Palette.HARM, RC.Status.OVERCLOCKED: Palette.WARN, RC.Status.ENCRYPTED: Palette.PROTECT,
-	RC.Status.PARASITE: Palette.SLICE_INFECT}
+	RC.Status.PARASITE: Palette.SLICE_INFECT, RC.Status.OUTPUT_DOWN: Palette.SLICE_INFECT}
 
 ## Emitted after a section's entries are rebuilt (a host relinks its focus).
 signal section_shown(name: String)

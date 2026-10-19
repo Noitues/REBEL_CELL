@@ -32,7 +32,7 @@ func test_slice_picker_is_needed_for_cleanse_and_encrypt() -> void:
 	_scene.cycle_slot()
 	assert_eq(_scene.selected_slot(), 4)
 	_scene.play_card(0)
-	assert_eq(_state().player.wheel.slice_statuses[4], RC.Status.ENCRYPTED)
+	assert_eq(_state().player.wheel.status_at(4), RC.Status.ENCRYPTED)
 
 
 func test_direction_picker_steers_nudge_cards() -> void:

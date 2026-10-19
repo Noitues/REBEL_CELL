@@ -31,7 +31,7 @@ func _session(enemy: EnemyData = null, heat_majors: int = 0) -> CombatSession:
 
 func test_corrupted_slice_deals_self_damage_and_drains_ram_when_it_resolves() -> void:
 	var s := _session()
-	s.state.player.wheel.slice_statuses[1] = RC.Status.CORRUPTED
+	s.state.player.wheel.set_status(1, RC.Status.CORRUPTED)
 	var ram := s.state.ram
 	var r := s.apply(CombatAction.end_turn())
 	var bites := CombatFixture.events_of(r, "corrupted")
@@ -40,19 +40,19 @@ func test_corrupted_slice_deals_self_damage_and_drains_ram_when_it_resolves() ->
 	assert_eq(s.state.player.hp, 60 - _cfg.corrupted_self_damage)
 	assert_eq(s.state.ram, ram - _cfg.corrupted_ram_drain + 4, "-1 RAM, then +4 at the next turn start")
 	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 6, "the slice still attacks normally")
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.CORRUPTED, "lasts until cleansed")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.CORRUPTED, "lasts until cleansed")
 
 
 func test_corrupted_damage_scales_with_major_heat_thresholds() -> void:
 	var s := _session(_dummy, 2)
-	s.state.player.wheel.slice_statuses[1] = RC.Status.CORRUPTED
+	s.state.player.wheel.set_status(1, RC.Status.CORRUPTED)
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "corrupted")[0]["amount"], _cfg.corrupted_self_damage + 2 * _cfg.corrupted_damage_per_major)
 
 
 func test_corrupted_slice_not_under_a_pointer_does_nothing() -> void:
 	var s := _session()
-	s.state.player.wheel.slice_statuses[3] = RC.Status.CORRUPTED
+	s.state.player.wheel.set_status(3, RC.Status.CORRUPTED)
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "corrupted").size(), 0)
 	assert_eq(s.state.player.hp, 60)
@@ -63,7 +63,7 @@ func test_corrupted_applies_to_enemies_too() -> void:
 	var s := _session(enemy)
 	var e := s.state.get_combatant(&"enemy_0")
 	CombatFixture.land(e, 0)
-	e.wheel.slice_statuses[0] = RC.Status.CORRUPTED
+	e.wheel.set_status(0, RC.Status.CORRUPTED)
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").hp, 50 - 6 - _cfg.corrupted_self_damage, "6 from the player, 3 from its own corruption")
 
@@ -73,10 +73,10 @@ func test_overclocked_gives_1_5x_once_then_becomes_corrupted() -> void:
 	var idx := s.state.hand.find(&"s_overdrive")
 	var r := s.apply(CombatAction.play_card(idx))
 	assert_true(r.ok(), r.error)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.OVERCLOCKED, "slice under the pointer overclocked")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.OVERCLOCKED, "slice under the pointer overclocked")
 	r = s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], roundi(6 * _cfg.overclock_multiplier))
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.CORRUPTED, "burned out")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.CORRUPTED, "burned out")
 	assert_eq(CombatFixture.events_of(r, "corrupted").size(), 0, "corruption bites from the next trigger on")
 
 
@@ -84,10 +84,10 @@ func test_encrypted_absorbs_the_next_status_then_clears() -> void:
 	var s := _session()
 	var r := s.apply(CombatAction.play_card(s.state.hand.find(&"s_encrypt")))
 	assert_true(r.ok(), r.error)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.ENCRYPTED)
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.ENCRYPTED)
 	r = s.apply(CombatAction.play_card(s.state.hand.find(&"s_overdrive")))
 	assert_eq(CombatFixture.events_of(r, "status_absorbed").size(), 1)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE, "encryption consumed, no overclock")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE, "encryption consumed, no overclock")
 
 
 func test_hardened_firmware_is_permanent_encryption() -> void:
@@ -102,7 +102,7 @@ func test_hardened_firmware_is_permanent_encryption() -> void:
 	for i in 2:
 		var r := s.apply(CombatAction.play_card(0))
 		assert_eq(CombatFixture.events_of(r, "status_absorbed").size(), 1, "absorbed every time")
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE)
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE)
 
 
 func test_dose_corrupts_a_random_non_null_player_slice() -> void:
@@ -115,4 +115,4 @@ func test_dose_corrupts_a_random_non_null_player_slice() -> void:
 	assert_eq(statuses.size(), 1)
 	assert_eq(statuses[0]["target"], &"player")
 	assert_ne(statuses[0]["slot"], 5, "never the NULL slice")
-	assert_eq(s.state.player.wheel.slice_statuses.count(RC.Status.CORRUPTED), 1)
+	assert_eq(s.state.player.wheel.count_status(RC.Status.CORRUPTED), 1)

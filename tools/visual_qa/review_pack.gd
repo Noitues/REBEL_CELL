@@ -1495,8 +1495,8 @@ func _s_combat_ring_busy() -> void:
 	var w := st.player.wheel
 	w.ring_segment_ids = [&"seg_x2", &"seg_pierce", &"seg_corrupt"]
 	w.inner_rotation = 4
-	w.slice_statuses[1] = RC.Status.CORRUPTED
-	w.slice_statuses[3] = RC.Status.ENCRYPTED
+	w.set_status(1, RC.Status.CORRUPTED)
+	w.set_status(3, RC.Status.ENCRYPTED)
 	combat._refresh(st)
 	combat._preview_card(0)
 	await _settle(combat.get_parent())
@@ -2346,9 +2346,9 @@ func _v1_real(combat: Control) -> Dictionary:
 		var cs: CombatantState = c
 		var sl := []
 		if cs.wheel != null:
-			for i in cs.wheel.slice_statuses.size():
-				if cs.wheel.slice_statuses[i] != RC.Status.NONE:
-					sl.append("%d:%s" % [i, RC.Status.keys()[cs.wheel.slice_statuses[i]]])
+			for i in cs.wheel.slice_stacks.size():
+				for stt in cs.wheel.statuses_at(i):
+					sl.append("%d:%s x%d" % [i, RC.Status.keys()[stt], cs.wheel.stacks_of(i, stt)])
 		rows.append({"who": String(cs.id), "hp": cs.hp, "block": cs.block, "shield": cs.shield, "alive": cs.is_alive(), "statuses": sl})
 	return {"rows": rows, "ram": st.ram}
 

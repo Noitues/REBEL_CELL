@@ -109,9 +109,12 @@ static func _diff(b: CombatantState, a: CombatantState) -> Dictionary:
 	d["breached"] = a != null and a.is_hub_breached() and not (b != null and b.is_hub_breached())
 	var statuses: Array[Dictionary] = []
 	if a != null and b != null and a.wheel != null and b.wheel != null:
-		for i in mini(a.wheel.slice_statuses.size(), b.wheel.slice_statuses.size()):
-			if a.wheel.slice_statuses[i] != b.wheel.slice_statuses[i]:
-				statuses.append({"slot": i, "before": b.wheel.slice_statuses[i], "after": a.wheel.slice_statuses[i]})
+		# N8: a slot whose stacks changed; before / after are the one-badge statuses
+		# (WheelState.status_at), stacks_before / stacks_after the whole slot.
+		for i in mini(a.wheel.slice_stacks.size(), b.wheel.slice_stacks.size()):
+			if a.wheel.slice_stacks[i] != b.wheel.slice_stacks[i]:
+				statuses.append({"slot": i, "before": b.wheel.status_at(i), "after": a.wheel.status_at(i),
+					"stacks_before": b.wheel.slice_stacks[i].duplicate(), "stacks_after": a.wheel.slice_stacks[i].duplicate()})
 		d["rotation_before"] = b.wheel.rotation
 		d["rotation_after"] = a.wheel.rotation
 		d["inner_before"] = b.wheel.inner_rotation

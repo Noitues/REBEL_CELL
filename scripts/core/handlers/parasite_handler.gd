@@ -1,6 +1,6 @@
 extends RefCounted
 ## Swarm Core Perfect hook (GDD 5.2 Botnet): a Perfect on a TROJAN slice docks a Parasite
-## on the target's slice under the matching pointer (Status.PARASITE: half output until
+## on the target's slice under the matching pointer (a PARASITE: OUTPUT_DOWN x2 since N8, half output until
 ## cleansed). Other Perfects do nothing extra.
 
 
@@ -19,5 +19,5 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	var victim_slot := target.wheel.slice_at(pointer)
 	var events: Array[Dictionary] = [{"type": "parasite", "target": target.id, "slot": victim_slot,
 		"text": "Perfect Trojan: a parasite drone latches onto %s slot %d." % [target.display_name, victim_slot]}]
-	fx.apply_status(target, victim_slot, RC.Status.PARASITE, events)
+	fx.apply_status(target, victim_slot, RC.Status.OUTPUT_DOWN, events, fx.config.parasite_output_down_stacks)
 	return events

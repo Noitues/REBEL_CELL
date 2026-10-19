@@ -46,7 +46,7 @@ func test_hardened_is_permanent_encryption() -> void:
 	var events: Array[Dictionary] = []
 	var absorbed := s.resolver.fx.apply_status(s.state.player, 1, RC.Status.CORRUPTED, events)
 	assert_false(absorbed)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE)
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE)
 	assert_eq(events[0]["type"], "status_absorbed")
 
 
@@ -58,7 +58,7 @@ func test_burner_is_permanently_overclocked_and_adds_heat() -> void:
 	assert_eq(heat.size(), 1)
 	assert_eq(heat[0]["effect"], RC.EffectType.MODIFY_HEAT)
 	assert_eq(heat[0]["amount"], 1)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE, "does not burn out into CORRUPTED")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE, "does not burn out into CORRUPTED")
 	CombatFixture.land(s.state.player, 1)
 	r = s.apply(CombatAction.end_turn())
 	assert_eq(_hits(r)[0]["amount"], 9, "still overclocked next turn")

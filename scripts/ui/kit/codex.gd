@@ -18,7 +18,7 @@ const STATUS_TEXT := {
 	RC.Status.CORRUPTED: "CORRUPTED: when the slice resolves, 3 self-damage (+1 per MAJOR Heat threshold) and -1 RAM. Lasts until cleansed.",
 	RC.Status.OVERCLOCKED: "OVERCLOCKED: 1.5x output on the slice's next trigger, then it becomes CORRUPTED.",
 	RC.Status.ENCRYPTED: "ENCRYPTED: absorbs the next status applied to that slice.",
-	RC.Status.PARASITE: "PARASITE: something is feeding on the slice (a Botnet parasite, a Halcyon Citation); it resolves at half output until cleansed.",
+	RC.Status.OUTPUT_DOWN: "OUTPUT DOWN: the slice resolves at 25% less output per stack. Stacks add up (a Botnet parasite or a Halcyon Citation plants 2: half output). Lasts until cleansed.",
 }
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",
@@ -158,8 +158,13 @@ static func describe_effect(e: EffectData) -> String:
 			return name
 
 
-static func status_text(status: int) -> String:
-	return STATUS_TEXT.get(status, "")
+## What `status` does; with `stacks` of 2 or more, followed by the stack line (N8).
+static func status_text(status: int, stacks: int = 1) -> String:
+	var text: String = STATUS_TEXT.get(status, "")
+	if stacks >= 2 and text != "":
+		text += "\n" + TranslationServer.translate("×%d: %d stacks of %s on this slice.") % [stacks, stacks,
+			TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, "")))]
+	return text
 
 
 static func tier_text(tier: int) -> String:
@@ -196,7 +201,7 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 		out["Slices"].append({"title": String(Palette.SLICE_NAMES.get(t, "")), "text": SLICE_TYPE_TEXT[t], "slice": t})
 	# The status's glyph is the 1C atlas's (the view draws it): the title is its name alone.
 	for st in STATUS_TEXT:
-		out["Statuses & precision"].append({"title": String(RC.Status.keys()[st]), "text": STATUS_TEXT[st], "status": st})
+		out["Statuses & precision"].append({"title": String(Palette.STATUS_WORDS.get(st, RC.Status.keys()[st])), "text": STATUS_TEXT[st], "status": st})
 	for tier in TIER_TEXT:
 		out["Statuses & precision"].append({"title": RC.PrecisionTier.keys()[tier], "text": TIER_TEXT[tier], "tier": tier})
 	var sections := {"Cards": &"CardData", "Firmware": &"FirmwareData", "Daemons": &"DaemonData", "Ring segments": &"RingSegmentData",

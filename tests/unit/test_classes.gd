@@ -76,17 +76,17 @@ func test_botnet_perfect_trojan_plants_a_parasite() -> void:
 	# resolution (the Breaker Mk2 rule), so the parasite lands once per resolution.
 	assert_eq(ev.size(), 2)
 	var e := s.state.get_combatant(&"enemy_0")
-	assert_eq(e.wheel.slice_statuses[int(ev[0]["slot"])], RC.Status.PARASITE)
+	assert_eq(e.wheel.stacks_of(int(ev[0]["slot"]), RC.Status.OUTPUT_DOWN), mini(2 * _cfg.parasite_output_down_stacks, _cfg.status_stack_cap), "N8: each parasite is OUTPUT_DOWN x2, and the two stack")
 
 
 func test_parasite_halves_the_slice_output() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"triage_unit"], 4, &"", 0, {"ring_segment_ids": ["seg_blank", "seg_blank", "seg_blank"]})
-	s.state.player.wheel.slice_statuses[1] = RC.Status.PARASITE
+	s.state.player.wheel.set_status(1, RC.Status.OUTPUT_DOWN, 2)  # N8: a parasite is OUTPUT_DOWN x2
 	CombatFixture.land(s.state.player, 1, 1)  # Shim 6, Good
 	var r := s.apply(CombatAction.end_turn())
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_true(hits.size() >= 1)
-	assert_eq(int(hits[0]["amount"]), roundi(6 * _cfg.parasite_multiplier))
+	assert_eq(int(hits[0]["amount"]), roundi(6 * CombatResolver.output_down_factor(2, _cfg)))
 
 
 func test_drones_persist_between_fights_of_a_run() -> void:

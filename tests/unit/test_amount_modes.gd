@@ -155,7 +155,7 @@ func _corrupted_after(e: EffectData, slices: Array) -> int:
 	var state: CombatState = pair[1]
 	var events: Array[Dictionary] = []
 	resolver.fx.apply_effect(state, e, {"owner": state.get_combatant(&"enemy_0"), "target": state.player, "source_id": &"am"}, CombatFixture.rng(3), events)
-	return state.player.wheel.slice_statuses.count(RC.Status.CORRUPTED)
+	return state.player.wheel.count_status(RC.Status.CORRUPTED)
 
 
 func test_percent_corruption_counts_non_null_slices() -> void:
@@ -178,7 +178,7 @@ func test_corruption_count_one_draws_like_before() -> void:
 	var expected := resolver.fx.pick_slot(state, state.player, RC.SlicePick.RANDOM_NON_NULL, {}, CombatFixture.rng(11))
 	var events: Array[Dictionary] = []
 	resolver.fx.apply_effect(state, _corrupt(1, RC.AmountMode.FLAT), {"owner": state.get_combatant(&"enemy_0"), "target": state.player}, rng, events)
-	assert_eq(state.player.wheel.slice_statuses[expected], RC.Status.CORRUPTED)
+	assert_eq(state.player.wheel.status_at(expected), RC.Status.CORRUPTED)
 	var ref := CombatFixture.rng(11)
 	ref.randi_range(0, 4)
 	assert_eq(rng.state, ref.state, "exactly one draw from the passed stream")

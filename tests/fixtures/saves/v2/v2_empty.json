@@ -1,0 +1,450 @@
+{
+	"expect_end_turn": {
+		"enemy_0": 290,
+		"enemy_0_sat_0": 30,
+		"player": 70
+	},
+	"fixture": "v2_empty",
+	"run": {
+		"combat": {
+			"actions_since_checkpoint": [],
+			"checkpoint_cause": {
+				"kind": "turn"
+			},
+			"checkpoint_rng_state": "-8244280316584043209",
+			"checkpoint_state": {
+				"campaign_heat": 0,
+				"consecutive_perfects": 0,
+				"daemon_ids": [],
+				"damage_bonus": 0,
+				"discard_pile": [],
+				"double_nudge_cards": false,
+				"double_nudge_cards_next": false,
+				"draw_pile": [],
+				"drones": [],
+				"enemies": [
+					{
+						"block": 0,
+						"display_name": "ssf_enemy",
+						"dock_slot": -1,
+						"evade_charges": 0,
+						"host_id": "",
+						"hp": 300,
+						"hp_scale": 1.0,
+						"hub_breached_turns": 0,
+						"hub_resistance": 0,
+						"id": "enemy_0",
+						"is_player": false,
+						"is_satellite": false,
+						"max_hp": 300,
+						"output_scale": 1.0,
+						"phase_index": 0,
+						"resistance": 0,
+						"resistance_carry": 0,
+						"shield": 0,
+						"source_id": "ssf_enemy",
+						"wheel": {
+							"frozen": false,
+							"hub_id": "",
+							"inner_rotation": 0,
+							"passive_resistance": 0,
+							"pending_pointer_ticks": [],
+							"pointer_orbit": 0,
+							"pointer_ticks": [
+								0
+							],
+							"respin_skipped": false,
+							"ring_segment_ids": [],
+							"rotation": 0,
+							"slice_count": 6,
+							"slice_statuses": [
+								0,
+								0,
+								0,
+								0,
+								0,
+								0
+							],
+							"slot_firmware_ids": [
+								"",
+								"",
+								"",
+								"",
+								"",
+								""
+							],
+							"slot_slice_ids": [
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10"
+							]
+						}
+					},
+					{
+						"block": 0,
+						"display_name": "ssf_sat",
+						"dock_slot": 2,
+						"evade_charges": 0,
+						"host_id": "enemy_0",
+						"hp": 30,
+						"hp_scale": 1.0,
+						"hub_breached_turns": 0,
+						"hub_resistance": 0,
+						"id": "enemy_0_sat_0",
+						"is_player": false,
+						"is_satellite": true,
+						"max_hp": 30,
+						"output_scale": 1.0,
+						"phase_index": 0,
+						"resistance": 0,
+						"resistance_carry": 0,
+						"shield": 0,
+						"source_id": "ssf_sat",
+						"wheel": {
+							"frozen": false,
+							"hub_id": "",
+							"inner_rotation": 0,
+							"passive_resistance": 0,
+							"pending_pointer_ticks": [],
+							"pointer_orbit": 0,
+							"pointer_ticks": [
+								0
+							],
+							"respin_skipped": false,
+							"ring_segment_ids": [],
+							"rotation": 79,
+							"slice_count": 2,
+							"slice_statuses": [
+								0,
+								0
+							],
+							"slot_firmware_ids": [
+								"",
+								""
+							],
+							"slot_slice_ids": [
+								"ssf_atk10",
+								"ssf_atk10"
+							]
+						}
+					}
+				],
+				"exhaust_pile": [],
+				"flags": {
+					"boss_extra_pointer": 0,
+					"boss_pointer_removal": 0,
+					"enemy_resistance": 0,
+					"extra_free_nudges": 0
+				},
+				"free_nudges": 1,
+				"free_nudges_next_turn": 0,
+				"hand": [
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive"
+				],
+				"heat_majors_crossed": 0,
+				"max_ram": 12,
+				"null_resolved": false,
+				"outcome": 0,
+				"per_combat_uses": {},
+				"phase": 1,
+				"player": {
+					"block": 0,
+					"display_name": "ssf_class",
+					"dock_slot": -1,
+					"evade_charges": 0,
+					"host_id": "",
+					"hp": 90,
+					"hp_scale": 1.0,
+					"hub_breached_turns": 0,
+					"hub_resistance": 0,
+					"id": "player",
+					"is_player": true,
+					"is_satellite": false,
+					"max_hp": 90,
+					"output_scale": 1.0,
+					"phase_index": 0,
+					"resistance": 0,
+					"resistance_carry": 0,
+					"shield": 0,
+					"source_id": "ssf_class",
+					"wheel": {
+						"frozen": false,
+						"hub_id": "",
+						"inner_rotation": 0,
+						"passive_resistance": 0,
+						"pending_pointer_ticks": [],
+						"pointer_orbit": 0,
+						"pointer_ticks": [
+							0
+						],
+						"respin_skipped": false,
+						"ring_segment_ids": [],
+						"rotation": 5,
+						"slice_count": 6,
+						"slice_statuses": [
+							0,
+							0,
+							0,
+							0,
+							0,
+							0
+						],
+						"slot_firmware_ids": [
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"slot_slice_ids": [
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_null"
+						]
+					}
+				},
+				"ram": 6,
+				"ram_bonus_next_turn": 0,
+				"ring_locked": false,
+				"spawn_counter": 1,
+				"spins_this_turn": 0,
+				"target_id": "enemy_0",
+				"turn": 1
+			},
+			"history": [],
+			"rng_state": "-8244280316584043209",
+			"seed": "8080",
+			"setup": {
+				"class_id": "ssf_class",
+				"enemy_ids": [
+					"ssf_enemy"
+				],
+				"heat_majors_crossed": 0.0,
+				"overrides": {},
+				"ring_id": ""
+			},
+			"state": {
+				"campaign_heat": 0,
+				"consecutive_perfects": 0,
+				"daemon_ids": [],
+				"damage_bonus": 0,
+				"discard_pile": [],
+				"double_nudge_cards": false,
+				"double_nudge_cards_next": false,
+				"draw_pile": [],
+				"drones": [],
+				"enemies": [
+					{
+						"block": 0,
+						"display_name": "ssf_enemy",
+						"dock_slot": -1,
+						"evade_charges": 0,
+						"host_id": "",
+						"hp": 300,
+						"hp_scale": 1.0,
+						"hub_breached_turns": 0,
+						"hub_resistance": 0,
+						"id": "enemy_0",
+						"is_player": false,
+						"is_satellite": false,
+						"max_hp": 300,
+						"output_scale": 1.0,
+						"phase_index": 0,
+						"resistance": 0,
+						"resistance_carry": 0,
+						"shield": 0,
+						"source_id": "ssf_enemy",
+						"wheel": {
+							"frozen": false,
+							"hub_id": "",
+							"inner_rotation": 0,
+							"passive_resistance": 0,
+							"pending_pointer_ticks": [],
+							"pointer_orbit": 0,
+							"pointer_ticks": [
+								0
+							],
+							"respin_skipped": false,
+							"ring_segment_ids": [],
+							"rotation": 0,
+							"slice_count": 6,
+							"slice_statuses": [
+								0,
+								0,
+								0,
+								0,
+								0,
+								0
+							],
+							"slot_firmware_ids": [
+								"",
+								"",
+								"",
+								"",
+								"",
+								""
+							],
+							"slot_slice_ids": [
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10",
+								"ssf_atk10"
+							]
+						}
+					},
+					{
+						"block": 0,
+						"display_name": "ssf_sat",
+						"dock_slot": 2,
+						"evade_charges": 0,
+						"host_id": "enemy_0",
+						"hp": 30,
+						"hp_scale": 1.0,
+						"hub_breached_turns": 0,
+						"hub_resistance": 0,
+						"id": "enemy_0_sat_0",
+						"is_player": false,
+						"is_satellite": true,
+						"max_hp": 30,
+						"output_scale": 1.0,
+						"phase_index": 0,
+						"resistance": 0,
+						"resistance_carry": 0,
+						"shield": 0,
+						"source_id": "ssf_sat",
+						"wheel": {
+							"frozen": false,
+							"hub_id": "",
+							"inner_rotation": 0,
+							"passive_resistance": 0,
+							"pending_pointer_ticks": [],
+							"pointer_orbit": 0,
+							"pointer_ticks": [
+								0
+							],
+							"respin_skipped": false,
+							"ring_segment_ids": [],
+							"rotation": 79,
+							"slice_count": 2,
+							"slice_statuses": [
+								0,
+								0
+							],
+							"slot_firmware_ids": [
+								"",
+								""
+							],
+							"slot_slice_ids": [
+								"ssf_atk10",
+								"ssf_atk10"
+							]
+						}
+					}
+				],
+				"exhaust_pile": [],
+				"flags": {
+					"boss_extra_pointer": 0,
+					"boss_pointer_removal": 0,
+					"enemy_resistance": 0,
+					"extra_free_nudges": 0
+				},
+				"free_nudges": 1,
+				"free_nudges_next_turn": 0,
+				"hand": [
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive",
+					"ssf_overdrive"
+				],
+				"heat_majors_crossed": 0,
+				"max_ram": 12,
+				"null_resolved": false,
+				"outcome": 0,
+				"per_combat_uses": {},
+				"phase": 1,
+				"player": {
+					"block": 0,
+					"display_name": "ssf_class",
+					"dock_slot": -1,
+					"evade_charges": 0,
+					"host_id": "",
+					"hp": 90,
+					"hp_scale": 1.0,
+					"hub_breached_turns": 0,
+					"hub_resistance": 0,
+					"id": "player",
+					"is_player": true,
+					"is_satellite": false,
+					"max_hp": 90,
+					"output_scale": 1.0,
+					"phase_index": 0,
+					"resistance": 0,
+					"resistance_carry": 0,
+					"shield": 0,
+					"source_id": "ssf_class",
+					"wheel": {
+						"frozen": false,
+						"hub_id": "",
+						"inner_rotation": 0,
+						"passive_resistance": 0,
+						"pending_pointer_ticks": [],
+						"pointer_orbit": 0,
+						"pointer_ticks": [
+							0
+						],
+						"respin_skipped": false,
+						"ring_segment_ids": [],
+						"rotation": 5,
+						"slice_count": 6,
+						"slice_statuses": [
+							0,
+							0,
+							0,
+							0,
+							0,
+							0
+						],
+						"slot_firmware_ids": [
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"slot_slice_ids": [
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_atk10",
+							"ssf_null"
+						]
+					}
+				},
+				"ram": 6,
+				"ram_bonus_next_turn": 0,
+				"ring_locked": false,
+				"spawn_counter": 1,
+				"spins_this_turn": 0,
+				"target_id": "enemy_0",
+				"turn": 1
+			}
+		}
+	},
+	"version": 2
+}

@@ -101,13 +101,13 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 			for t in targets:
 				for k in status_count(e, t):
 					var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
-					if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+					if slot >= 0 and apply_status(t, slot, e.status, events, e.stacks) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
 						events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
 				if slot >= 0:
-					cleanse(t, slot, events)
+					cleanse(t, slot, events, e.cleanse_mode)
 		RC.EffectType.NUDGE:
 			var action: CombatAction = ctx.get("action")
 			var direction: int = 1
@@ -387,26 +387,41 @@ func heal(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
 	events.append({"type": "heal", "target": c.id, "amount": healed, "text": "" if quiet else "%s heals %d (%d/%d)." % [c.display_name, healed, c.hp, c.max_hp]})
 
 
-## Applies `status` to slot `slot`. ENCRYPTED (temporary or Hardened) absorbs it.
-func apply_status(c: CombatantState, slot: int, status: int, events: Array[Dictionary]) -> bool:
+## Applies `stacks` stacks of `status` to slot `slot` (plan 2 N8): they add to what the slot
+## holds, up to config.status_stack_cap (ENCRYPTED and CORRUPTED uncapped). A PARASITE is
+## config.parasite_output_down_stacks OUTPUT_DOWN stacks per stack (R8). Hardened (permanent
+## ENCRYPTED) absorbs every apply; a temporary ENCRYPTED stack absorbs one apply of any other
+## status, whatever its stacks, and is used up (ENCRYPTED on ENCRYPTED adds a stack). Returns
+## true when the status landed.
+func apply_status(c: CombatantState, slot: int, status: int, events: Array[Dictionary], stacks: int = 1) -> bool:
 	var wheel := c.wheel
+	if status == RC.Status.PARASITE:
+		status = RC.Status.OUTPUT_DOWN
+		stacks *= config.parasite_output_down_stacks
 	if permanent_status(wheel, slot) == RC.Status.ENCRYPTED:
 		events.append({"type": "status_absorbed", "target": c.id, "slot": slot, "status": status,
 			"text": "%s slot %d is Hardened: %s absorbed." % [c.display_name, slot, RC.Status.keys()[status]]})
 		return false
-	if wheel.slice_statuses[slot] == RC.Status.ENCRYPTED:
-		wheel.slice_statuses[slot] = RC.Status.NONE
+	if status != RC.Status.ENCRYPTED and wheel.has_status(slot, RC.Status.ENCRYPTED):
+		wheel.remove_stacks(slot, RC.Status.ENCRYPTED, 1)
 		events.append({"type": "status_absorbed", "target": c.id, "slot": slot, "status": status,
 			"text": "%s slot %d ENCRYPTED absorbs %s." % [c.display_name, slot, RC.Status.keys()[status]]})
 		return false
-	wheel.slice_statuses[slot] = status
-	events.append({"type": "status", "target": c.id, "slot": slot, "status": status,
-		"text": "%s slot %d becomes %s." % [c.display_name, slot, RC.Status.keys()[status]]})
+	wheel.add_stacks(slot, status, maxi(1, stacks), config.status_stack_cap)
+	var now := wheel.stacks_of(slot, status)
+	events.append({"type": "status", "target": c.id, "slot": slot, "status": status, "stacks": now,
+		"text": "%s slot %d becomes %s%s." % [c.display_name, slot, RC.Status.keys()[status], (" x%d" % now) if now > 1 else ""]})
 	return true
 
 
-func cleanse(c: CombatantState, slot: int, events: Array[Dictionary]) -> void:
-	c.wheel.slice_statuses[slot] = RC.Status.NONE
+## Cleanses slot `slot` (N8): every stack of every status (CleanseMode.ALL, the default), or
+## one stack of each status on it (ONE_STACK).
+func cleanse(c: CombatantState, slot: int, events: Array[Dictionary], mode: int = RC.CleanseMode.ALL) -> void:
+	if mode == RC.CleanseMode.ONE_STACK:
+		for st in c.wheel.statuses_at(slot):
+			c.wheel.remove_stacks(slot, st, 1)
+	else:
+		c.wheel.clear_slot(slot)
 	events.append({"type": "cleanse", "target": c.id, "slot": slot, "text": "%s slot %d cleansed." % [c.display_name, slot]})
 
 
@@ -420,7 +435,7 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 		RC.SlicePick.RANDOM_NON_NULL:
 			var candidates: Array[int] = []
 			for i in c.wheel.slot_slice_ids.size():
-				if slice_of(c.wheel, i).slice_type != RC.SliceType.NULL and c.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+				if slice_of(c.wheel, i).slice_type != RC.SliceType.NULL and not c.wheel.has_status(i, RC.Status.CORRUPTED):
 					candidates.append(i)
 			if candidates.is_empty():
 				return -1
@@ -697,7 +712,7 @@ func status_count(e: EffectData, t: CombatantState) -> int:
 		if slice_of(t.wheel, i).slice_type == RC.SliceType.NULL:
 			continue
 		non_null += 1
-		if t.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+		if not t.wheel.has_status(i, RC.Status.CORRUPTED):
 			eligible += 1
 	var wanted := percent_of(non_null, e.amount) if e.amount_mode == RC.AmountMode.PERCENT else maxi(1, e.amount)
 	return mini(wanted, eligible)

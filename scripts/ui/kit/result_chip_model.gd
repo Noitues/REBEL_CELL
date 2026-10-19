@@ -103,15 +103,20 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 	elif a != null and a.wheel != null and b.wheel != null:
 		var put := {}
 		var cleared := {}
-		for i in mini(a.wheel.slice_statuses.size(), b.wheel.slice_statuses.size()):
-			var was: int = b.wheel.slice_statuses[i]
-			var now: int = a.wheel.slice_statuses[i]
-			if was == now:
-				continue
-			if now != RC.Status.NONE:
-				put[now] = int(put.get(now, 0)) + 1
-			else:
-				cleared[was] = int(cleared.get(was, 0)) + 1
+		# N8: per slot and status, gaining stacks puts it, losing the last stack clears it.
+		for i in mini(a.wheel.slice_stacks.size(), b.wheel.slice_stacks.size()):
+			var seen_statuses: Array[int] = b.wheel.statuses_at(i)
+			for st in a.wheel.statuses_at(i):
+				if not seen_statuses.has(st):
+					seen_statuses.append(st)
+			seen_statuses.sort()
+			for st in seen_statuses:
+				var was := b.wheel.stacks_of(i, st)
+				var now := a.wheel.stacks_of(i, st)
+				if now > was:
+					put[st] = int(put.get(st, 0)) + 1
+				elif now == 0 and was > 0:
+					cleared[st] = int(cleared.get(st, 0)) + 1
 		for s in _sorted_keys(put):
 			out.append({"kind": STATUS, "status": s, "count": int(put[s]), "random": false,
 				"good": WheelView.status_good_for_you(s, b.is_player),

@@ -138,6 +138,8 @@ func validate() -> PackedStringArray:
 			problems = res.validate(min_exploits)
 		elif res is EnemyData:
 			problems = res.validate(config)
+		elif res is EffectData and config != null:
+			problems = res.validate(config.status_stack_cap)  # N8: stacks above the cap
 		else:
 			problems = res.validate()
 		for p in problems:

@@ -10,7 +10,8 @@
 script = ExtResource("e1")
 type = 4
 target = 3
-status = 4
+status = 5
+stacks = 2
 slice_pick = 1
 
 [sub_resource type="Resource" id="te"]

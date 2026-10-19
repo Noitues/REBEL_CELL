@@ -81,14 +81,14 @@ func test_a_copy_carries_none_of_the_neighbours_statuses() -> void:
 	var enemy := CombatFixture.enemy(&"h18_dummy", 300, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	s.state.player.wheel.slot_firmware_ids[0] = &"mirror"
-	s.state.player.wheel.slice_statuses[1] = RC.Status.OVERCLOCKED
+	s.state.player.wheel.set_status(1, RC.Status.OVERCLOCKED)
 	CombatFixture.land(s.state.player, 0, 1)  # Good towards slot 1: Mirror copies it
 	var r := s.apply(CombatAction.end_turn())
 	var amounts := []
 	for e in CombatFixture.events_of(r, "attack"):
 		amounts.append(int(e["amount"]))
 	assert_eq(amounts, [6, 6], "the copy of an Overclocked slot is not boosted")
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.OVERCLOCKED, "the slot keeps its Overclock for its own landing")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.OVERCLOCKED, "the slot keeps its Overclock for its own landing")
 
 
 func test_stolen_intent_swaps_no_permanent_status() -> void:
