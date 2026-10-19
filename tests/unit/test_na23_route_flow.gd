@@ -209,7 +209,9 @@ func test_wax_stays_clear_of_stickers_chips_and_ui() -> void:
 			assert_false(ui.has_point(p), "no pencil inside a UI rect")
 			for sr in stickers:
 				var c := sr.get_center()
-				if sr.size.x <= r * 2.0 + 0.1 and absf(sr.size.x - sr.size.y) < 0.1:
+				# a sticker ring is 2r wide; a number chip (chip_px 26 vs radius_px 26) is half of that: the old `<=` test took
+				# chips for rings, which only failed once NA-11 moved a pencil past a chip
+				if absf(sr.size.x - r * 2.0) < 0.1 and absf(sr.size.x - sr.size.y) < 0.1:
 					assert_gte(c.distance_to(p), r + pad - 0.5, "no pencil inside a sticker ring + pad")
 				else:
 					assert_false(sr.grow(pad - 0.5).has_point(p), "no pencil under a number chip")

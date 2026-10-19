@@ -9,7 +9,7 @@ const ROOTS: Array[String] = ["res://scripts", "res://tools"]
 const ALLOWED: Array[String] = [
 	"na22_lab.gd:keys", "netrun_art_layout.gd:members", "netrun_hq_orbit.gd:faces", "netrun_street_deriver.gd:keys",  # NA-21: int part / face / layer indices
 	"content_registry.gd:paths", "save_service.gd:out", "city_mesh_kit.gd:keys",
-	"city_motion_site.gd:keys", "city_view_3d.gd:keys", "campaign_rules.gd:crosses",
+	"city_motion_site.gd:keys", "city_layout_ruler.gd:keys", "city_view_3d.gd:keys", "campaign_rules.gd:crosses",
 	"heat_rules.gd:out", "map_graph.gd:targets", "netrun_session.gd:ids",
 	"raid_resolver.gd:steps", "campaign_config_data.gd:out", "netrun_art_export.gd:bids",
 	"netrun_art_export.gd:corps", "netrun_art_export.gd:sorted_keys", "dossier_facts.gd:heat_marks",
