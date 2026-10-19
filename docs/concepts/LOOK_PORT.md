@@ -150,3 +150,35 @@ washes (gaps 1-2), reflections (3), fog/sky (4), signs (5), with a parity sheet 
 - Inherited from P6 (B-036, now on the art-pass board): P7 (stubs / storefront rooms / no light columns), sky blobs, a fog-top
   band at the roofline, by-eye numbers, bokeh count and saturation, **perf 19.4 / 18.3 ms p95 against the 16.7 ms line** (reflection
   march 40 steps plus 18 lights, about 8 ms). Perf is a hard gate on every art/look ready post.
+
+## 8. L3, post chain parity (art/look @ eca4a7a1 → fix @ next commit): `look_parity/L3_post/`
+
+Test: one linear HDR frame (Cycles `T_ov_closed_combined.npy`, 960x540, street_b1 render_s1) through both chains at the
+plate's exposure 2.4. Plate = `post_aaa` "real" from stage 6 (`netrun_art/post_parity.py`, with emit / volume bloom,
+background dim and rain off: Godot has no passes for them). Godot = the real `city_post` aaa branch configured by
+`NetrunShaderKitAaa.setup_post` (`netrun_art/post_parity_lab`, a SubViewport, rain and wet reflections off).
+Sheet: top plate | Godot; bottom diff x8 with bloom | diff x8 without bloom.
+
+| run | before fix (mean / p99 / max, /255) | after fix |
+|---|---|---|
+| frame plumbing (no post) | 0.07 / 1 / 1 | same |
+| chain without bloom | 9.6 / 13 / 17 | **0.4 / 6 / 8** |
+| full chain | 8.8 / 13 / 45 | 2.1 / 14 / 52 (bloom halos 6.1) |
+| full + CA | 9.4 / 23 / 166 | 2.8 / 21 / 159 |
+
+Found and fixed (city_post, art/look):
+1. **Shadow tint.** Godot divided the tint by its luminance, so shadows turned teal without losing light; the plate
+   multiplies by the raw tint (luminance 0.43). Godot's mids were 9.6/255 brighter than the plate on the same input. Now raw.
+   The street's `aaa.post.exposure` 0.6 was solved against the old tint: re-run `exposure_solve` before the next sheet.
+2. **Grain** was 44 % of the plate's (sum of three uniforms x 1.15 = sd 0.58); now x 2.0 (sd 1.0): 5.9 vs plate 7.6 before the
+   luminance weight.
+
+Open (L3b):
+3. **Bloom carries 25 % of the plate's energy** (mean lift 0.42 vs 1.70 /255; 4 % vs 16 % of pixels lifted). Cause, confirmed
+   by emulation: Godot thresholds after the mip average, so a thin neon tube is averaged below 1.2 before the threshold.
+   Per band: b1 100 %, b2 37 %, b3 9 %. The fix is a bright-pass prefilter (threshold at full res, then the mip chain), which
+   needs a second pass (CompositorEffect or a bright-pass SubViewport); weigh it against the perf gate (19.4 ms p95 already).
+4. **CA**: the plate shifts R/B after the knee by `cq * k` (1.41 k in the corners, nearest pixel); Godot shifts the HDR input
+   by a unit direction * k with bilinear taps. Edge-only, max 159/255 on thin lit edges near the frame border. Low priority.
+5. Not testable on a still with this harness: emit term in the bloom (`emit * exposure * 0.04`), volume glow, background
+   dim/desat (sem pass), rain (procedural in Godot, PIL lines in the plate). They move to L4 with the scene twin.
