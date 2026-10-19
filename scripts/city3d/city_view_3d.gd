@@ -769,10 +769,22 @@ func _poll_model() -> void:
 		return
 	var k := "%s|%d" % [cfg.resource_path, city_seed]
 	var job: Dictionary = _jobs.get(k, {})
-	if job.is_empty() or not WorkerThreadPool.is_group_task_completed(int(job["task"])):
+	if job.is_empty():
+		return
+	if job.has("rules_task"):
+		# Stage 2: the layout rules run on a worker; the city appears when they land.
+		if not WorkerThreadPool.is_task_completed(int(job["rules_task"])):
+			return
+		WorkerThreadPool.wait_for_task_completion(int(job["rules_task"]))
+		_jobs.erase(k)
+		m = job["model"]
+		m.ruled_parts = CityLayoutRuler.land_job(m, job["rules"])
+		CityModel.keep_shared(m)
+		_on_model(m)
+		return
+	if not WorkerThreadPool.is_group_task_completed(int(job["task"])):
 		return
 	WorkerThreadPool.wait_for_group_task_completion(int(job["task"]))
-	_jobs.erase(k)
 	m = CityModel.new()
 	m.cfg = cfg
 	m.city_seed = city_seed
@@ -782,9 +794,15 @@ func _poll_model() -> void:
 	for i in keys.size():
 		m.add_recording(keys[i], rects[i], recs[i])
 		recs[i].free()
-	m.finish()
-	CityModel.keep_shared(m)
-	_on_model(m)
+	m.finish(true)
+	var rules := m.layout_rules_job()
+	if rules.is_empty():
+		_jobs.erase(k)
+		CityModel.keep_shared(m)
+		_on_model(m)
+		return
+	_jobs[k] = {"model": m, "rules": rules,
+		"rules_task": WorkerThreadPool.add_task(func() -> void: CityLayoutRuler.run_job(rules), true, "CityLayoutRules")}
 
 
 ## Takes model `m` and queues its chunks, nearest the camera first.

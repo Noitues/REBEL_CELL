@@ -76,3 +76,18 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 				assert_eq(float(ruled.prisms[i]["h"]), float(plain.prisms[i]["h"]), "seed %d: HQ stand-in height" % s)
 		# deterministic
 		assert_eq(_heights(CityModel.build(_cfg, s)), _heights(ruled), "seed %d: same seed, same heights" % s)
+
+
+## The async path (rules deferred, run on a worker thread, landed on the main thread) gives the synchronous heights.
+func test_worker_thread_rules_match_synchronous_heights() -> void:
+	var s := SEEDS[0]
+	var sync := CityModel.build(_cfg, s)
+	var m := CityModel.build(_plain, s)
+	m.cfg = _cfg
+	var job := m.layout_rules_job()
+	assert_false(job.is_empty(), "the rules job exists for the full city")
+	var task := WorkerThreadPool.add_task(func() -> void: CityLayoutRuler.run_job(job), true, "test layout rules")
+	WorkerThreadPool.wait_for_task_completion(task)
+	m.ruled_parts = CityLayoutRuler.land_job(m, job)
+	assert_eq(m.ruled_parts, sync.ruled_parts, "same count of prisms changed")
+	assert_eq(_heights(m), _heights(sync), "worker rules == synchronous rules")

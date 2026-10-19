@@ -8,14 +8,36 @@ extends RefCounted
 ## The model's prisms after the rules; returns the number of parts changed. `corps` are the corporations (with a Grid) whose
 ## links make the net, `points_of` maps a corporation to its Site layout points (Site id -> lot point).
 static func apply(model: CityModel, corps: Array, points_of: Callable) -> int:
+	var job := make_job(model, corps, points_of)
+	if job.is_empty():
+		return 0
+	run_job(job)
+	return land_job(model, job)
+
+
+## The rules' inputs: the model and the corporations (cheap, main thread). `run_job` does all the work.
+static func make_job(model: CityModel, corps: Array, points_of: Callable) -> Dictionary:
+	return {"model": model, "corps": corps, "points_of": points_of}
+
+
+## Runs the rules and plans the write-back (`job["plan"]`, empty with no links). Reads the model and the corporations,
+## writes only the job: safe on a worker thread while the main thread leaves the model alone.
+static func run_job(job: Dictionary) -> void:
+	var model: CityModel = job["model"]
 	var cfg := model.cfg
 	var city := NetrunArtExport.city_json(model.city_seed, cfg.lot_bu, cfg.district_centre, model.prisms, model.streets,
 		model.plazas, model.hqs)
-	var net := fixed_net(model.city_seed, cfg, corps, points_of)
+	var net := fixed_net(model.city_seed, cfg, job["corps"], job["points_of"])
 	if (net["links"] as Array).is_empty():
-		return 0
+		job["plan"] = {}
+		return
 	var ruled := NetrunArtLayoutRules.apply_rules(city, net, {}, "all")
-	return write_back(model, city, ruled)
+	job["plan"] = plan_write_back(model, city, ruled)
+
+
+## Applies a run job to `model` (main thread, a few ms); returns the count of prisms changed.
+static func land_job(model: CityModel, job: Dictionary) -> int:
+	return apply_plan(model, job["plan"])
 
 
 ## The fixed net (`net.json` shape): one node per Site (id "<corp>:<site>"), one `open` link per Grid link (locked ones too),
@@ -55,6 +77,12 @@ static func fixed_net(city_seed: int, cfg: CityConfig, corps: Array, points_of: 
 ## Writes the ruled parts (height, base polygon) of non-HQ buildings back to `model.prisms` and refreshes the chunk tops and
 ## boxes. `city` is the unruled city (the part order), `ruled` the result. Returns the count of prisms changed.
 static func write_back(model: CityModel, city: Dictionary, ruled: Dictionary) -> int:
+	return apply_plan(model, plan_write_back(model, city, ruled))
+
+
+## The edits `write_back` makes, without making them: `{"edits": [[prism index, height, poly], ...], "tops": {chunk key:
+## new top}}`. Reads the model only.
+static func plan_write_back(model: CityModel, city: Dictionary, ruled: Dictionary) -> Dictionary:
 	var by_bid: Dictionary = {}
 	for i in model.prisms.size():
 		var pr: Dictionary = model.prisms[i]
@@ -68,7 +96,8 @@ static func write_back(model: CityModel, city: Dictionary, ruled: Dictionary) ->
 	var ruled_by: Dictionary = {}
 	for b: Dictionary in ruled["buildings"]:
 		ruled_by[b["bid"]] = b
-	var n := 0
+	var edits: Array = []
+	var new_h: Dictionary = {}
 	var touched: Dictionary = {}
 	for ob: Dictionary in city["buildings"]:
 		var bid: String = ob["bid"]
@@ -85,19 +114,32 @@ static func write_back(model: CityModel, city: Dictionary, ruled: Dictionary) ->
 		for i in mini(idx.size(), parts.size()):
 			if parts[i] == old[i]:
 				continue
-			var pr: Dictionary = model.prisms[idx[i]]
-			pr["h"] = float(parts[i]["h"])
 			var poly := PackedVector2Array()
 			for q: Array in parts[i]["poly"]:
 				poly.append(Vector2(float(q[0]), -float(q[1])))
-			pr["poly"] = poly
-			touched[pr["chunk"]] = true
-			n += 1
+			edits.append([idx[i], float(parts[i]["h"]), poly])
+			new_h[idx[i]] = float(parts[i]["h"])
+			touched[model.prisms[idx[i]]["chunk"]] = true
+	var tops: Dictionary = {}
 	for key: Vector2i in touched:
+		var top := 0.0
+		for pi: int in model.chunks[key]["prisms"]:
+			var h: float = new_h.get(pi, float(model.prisms[pi]["h"]))
+			top = maxf(top, float(model.prisms[pi]["y0"]) + h)
+		tops[key] = top
+	return {"edits": edits, "tops": tops}
+
+
+## Makes the edits of `plan` (`plan_write_back`); returns the count of prisms changed.
+static func apply_plan(model: CityModel, plan: Dictionary) -> int:
+	if plan.is_empty():
+		return 0
+	for e: Array in plan["edits"]:
+		var pr: Dictionary = model.prisms[e[0]]
+		pr["h"] = e[1]
+		pr["poly"] = e[2]
+	for key: Vector2i in plan["tops"]:
 		var ch: Dictionary = model.chunks[key]
 		ch.erase("box")
-		var top := 0.0
-		for pi: int in ch["prisms"]:
-			top = maxf(top, float(model.prisms[pi]["y0"]) + float(model.prisms[pi]["h"]))
-		ch["top"] = top
-	return n
+		ch["top"] = plan["tops"][key]
+	return (plan["edits"] as Array).size()
