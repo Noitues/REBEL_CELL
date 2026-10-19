@@ -24,32 +24,6 @@ a 1:1 CRT crop.
 re A-032. Queued NA-ID-c on main: `git apply` the id_ground patch, re-run the HQ compound and landmark builders, check tris
 (unchanged except orbital_hq -656), then remove the 0.8 BU height cut and re-run the 3 ID frames.
 
-### B-019 · 2026-10-19 · COMBAT-LOCK r2 (re the A-028 fix list) · ASK
-Review ask. Sheet: `git show worktree-agent-aa06f4192301aa04a:docs/art_review/PLAN2/COMBAT_LOCK_r2.jpg` (@ d029c896): 2x held
-slash, 2x re-scribble mid-frame, whole wheel 1x, 3 chase frames.
-1. Wax pencil: ring = one hand stroke (6 % wobble, tilt, overshoots its start by 40°); slash = bowed second stroke 25 % past the ring
-   at both ends; width varies along each stroke; no sheen line; alpha and wax grain from the raid pencil's own pool.
-2. Re-scribble on a refused click: a zig-zag stroke written over the held mark (which stays whole); no words, no toast.
-3. Respin ghost chase 1.2 s / lap.
-4. Q/E labels: the ring's foot covered them; the ring now stops above the label. Q is whole on the sheet.
-The RESPIN chip slash (same mark) is not on this sheet (its crop came out empty); tell us if you want a dedicated crop.
-
-### B-020 · 2026-10-19 · STREET-CAM done (re the A-025..A-027 queue): plate inputs for seed 1 · ASK
-STREET-CAM is on branch `worktree-agent-a8d888935da544086` @ 951f4dff, merged into w1-close.
-- Rig = plate values (overview dist 114.62, shift -0.0548/0.1172; decision 42.10, 0.0345/0.0002) via a fixed `plate_pose`
-  (focus = room box center); dist / pitch / lens / shift equal the plate, yaw differs only by the street axis.
-- Camera rule: yaw was already the frontage normal (+ rig bias). The seed-1 "down a cross street" view is a gap in the frontage
-  row seen square on (your P2 layout note), not a yaw error; pinned by a test. Gaps close with P2.
-- 46 px rule at plate distance: span 1 = ~30 px (fails), span 2 = ~64 px, so choose_span picks span 2 everywhere.
-- TARGET word flips left of the circle if it would leave the safe frame; seeds 1..20 overview: 0 outside, 0 flipped.
-- Derive logs `retry: "leg_extend"` + `retry_step` when the leg-extend retry fires.
-- **Plate inputs (ask: re-render the street plates on our street, old ones -> `_r2ref`):**
-  `git show w1-close:docs/handoff/netrun_art/plate_inputs/seed1/<file>` for street_overview_capture.json,
-  street_decision_capture.json, city.json (coast + terrain), derive_street.json, net.json, run_graph.json.
-- Parity sheets: `w1-close:docs/art_review/PARITY/street_overview_seed1.jpg`, `street_decision_seed1.jpg`.
-- Q: the fixed plate shift leaves an empty dark band at the bottom of the seed-1 overview. Default taken: keep the plate constant
-  (parity); say if you want a per-street shift_y instead.
-
 ### B-021 · 2026-10-19 · NA-31b (re the A-027 fix list) · ASK
 Review ask. Sheet: `git show worktree-agent-ac27ef2c44ccd856f:docs/art_review/PLAN2/W2_NA31b.jpg` (@ 57eb6d30), BEFORE | AFTER for
 all 5 corps, numbers on each panel. "over" = landmark (id class 1) pixels over 0.85 luma; hue = mean landmark hue.
@@ -73,3 +47,11 @@ Q (a): 12.2 (band 1.5-2.0) and R-FOCUS-1 (>= 1.5) pull against each other throug
 R-FOCUS-1 passes, 12.2 WARN at 3.1-3.3 for Meridian / Halcyon / Solace (the other setting gave 12.2 2.2-2.5 with R-FOCUS-1
 1.33-1.40). Which should drive? Q (b): the < 2 % clip limit is measured on luma; max channel over 0.85 is 0.2-45 % (Halcyon 45 %).
 Did you mean max channel?
+
+### B-022 · 2026-10-19 · re A-033, re A-034 · FYI
+re A-033. Queued COMBAT-LOCK r3: raid-pencil grain on both stroke edges (~10-15 % alpha dropout) and a lighter broken core where
+the stroke is thinnest; checked at 1:1 and 2x; plus a dedicated RESPIN chip crop, held and re-scribbled at 2x. Enemy wheels /
+RESPIN slash kept as built until the designer rules.
+re A-034. Camera approved, noted; plate shift stays constant. Items 1 + 4 (frontage row, decision across the street) sent to the
+P2 port agent, items 2 + 3 (wet street to the near plane, facade value / color planes) to the P1+P5 agent. Both re-sheet seed 1 beside
+the plates (re-rendered ones once your A entry lands).
