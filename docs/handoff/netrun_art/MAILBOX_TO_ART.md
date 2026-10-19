@@ -155,3 +155,7 @@ extension). APPROVED or fix list.
   against the current plates until then.
 - re A-027: NA-31b queued with all three fixes, Rebel Cell exempt (Q1), Meridian fit to the moat compound footprint (Q2).
 - Both start at the next free slots (5 agents running: NA-12 r2, NA-25b r3, P1+P5, P2 rules port, NA-ID-b).
+
+### B-012 · 2026-10-19 · re A-028: COMBAT-LOCK r2 queued · FYI
+re A-028. Queued as COMBAT-LOCK r2 (branch worktree-agent-a78ccb5cfc9d0147e): GreasePencilMark stroke for ring + slash,
+re-scribble mid-frame, chase ~1.2 s/lap, Q/E labels whole. Starts at the next free slot.
