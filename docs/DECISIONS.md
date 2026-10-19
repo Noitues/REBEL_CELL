@@ -34,6 +34,37 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-19 — Plan 2 W1 NA-23b: street span rule for every room, and the street capacity ladder
+- **Span rule (PIPELINE_SPEC 12.6 "every room"):** the street span was chosen from the first layer-1 room's projected
+  height alone. It is now the **smallest span 1..`span_max` (4, `street_rules.span_max`) whose smallest visible route room
+  in the OVERVIEW pose is >= `room_px_target` (46 px at 1080p)**. Visible = both front-edge ends project inside the
+  1920 x 1080 frame; only rooms that hold the candidate span count (a building without the floors keeps the existing
+  per-building fallback, `room_boxes` span_l = 1, and cannot be helped by a bigger span). When no span reaches the target,
+  the span with the largest smallest room wins (lower span on a tie). `span_scan` returns one row per span
+  (`span`, `min_px`, `fallback` layers), so the fallback is reported without a derive-schema change. Twin:
+  `NetrunStreetDeriver.span_scan` / `choose_span`; `netrun_art.tres` regenerated (`span_max`). Parity fixtures 101-112
+  regenerated: the streets of 101-107, 109, 110, 112 change (smallest room 45.6 px at span 1, so span 2; 108 and 111
+  unchanged). Assignment (`assign`) still uses span 1, so bids are unchanged.
+- **Capacity (Meridian seed 1):** not reproduced. On the game's own city (campaign seeds 1-4, every corporation, every
+  launchable Site, city seed 7) Meridian derives everywhere (`tools/netrun_art/dump_game_worlds.gd`); the failures found
+  were Solace `t1_i` (city 7) and a handful of Sites on other city seeds (1, 3, 4). Cause: `link_legs` keeps the link's raw
+  start point, so a routed link whose Site is off the street tile centre starts with a slanted leg (e.g. dy 2 BU over
+  82 BU), `leg_axis` reads it as a **y** leg and the frontage is searched on the wrong axis ("no frontage" / "runs out").
+  **Fix, in the derive only (layout and the city are untouched):** `choose_street_fitting` runs `choose_street` as before
+  and returns it unchanged when every layer fits (so no passing street, bid or derive changes); only otherwise it retries
+  on `square_legs(legs)` (each slanted leg replaced by an L, dominant axis first), step 1. All 240 dumped worlds fit
+  (229 at step 0, 11 at step 1); GDScript headless on the game city: 50 of 50 Sites derive. Twin: `square_legs`,
+  `choose_street_fitting`. Not added (no failing case found): wider front band, stacking layers on one building.
+- **Tests:** `tools/netrun_art/tests/test_na23b_street.py` (span rule, fallback report, every corp x seeds 1..4 on the
+  synthetic grid, the ladder on the game worlds), `tests/netrun_art/test_na23b_street.gd` (byte parity on three game
+  worlds: Meridian seed 1 on city 7 and city 1, Solace `t1_i` via step 1; span scan on fixture 105). Fixtures `g1`-`g3`
+  (`gen_game_fixtures.py`, trimmed around the Site's link).
+- **id.png encoding** (confirmed ours, NA02_FIELDS "id.png encoding"): R class; G = 1-based run-graph place; B = layer;
+  route-column walls class 2 with B = 1; occlusion stubs class 2 with G = 255, B = 0. No code change.
+- Open for the designer: the layout rules (`apply_layout_rules`) still see the slanted leg, so the frontage of such a link
+  is not raised or stepped back; the fix is to square the legs in `link_legs`, which changes the city for every game seed
+  (not done here).
+
 ### 2026-10-18 — Plan 2 W1 N6: enemy listeners (Q8 a, Q19, Q39, N1b; designer answers 1-3)
 - **Schema:** `ListenerData` (trigger, effects, `max_per_turn`, `max_per_combat`, `min_tier`) on `EnemyData.listeners`
   (kept through phases) and `HubCoreData.listeners` (silent while the Hub is breached; a phase `hub_override` swaps

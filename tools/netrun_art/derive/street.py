@@ -19,7 +19,8 @@ RULES: Dict[str, Any] = dict(
     min_width=2.5, max_setback=0.6, extend=LY.EXTEND,
     room_z_inset=0.12,       # room box inset above and below its floors (SB/sb_onecity.py:266-267)
     link_offset=0.5,         # facade link plane in front of the faces
-    link_stub=0.3)           # link leaves / enters a room this far along the facade
+    link_stub=0.3,           # link leaves / enters a room this far along the facade
+    span_max=4)              # NA-23b: the street span (floors per room) is searched in 1..span_max
 ROOM_KINDS = ("router", "terminal", "mainframe", "server_rack", "rest", "workshop", "cache")
 LINK_TYPES = ("facade",)     # "hq" is reserved for HQ landmark links (AD 2026-10-18)
 GROUND_Z_DEFAULT = 0.0       # city.json v1 has no terrain; the local ground height under a room
@@ -122,6 +123,40 @@ def choose_street(B: Sequence[Dict[str, Any]], legs: Sequence[Sequence[float]],
     return best
 
 
+def square_legs(legs: Sequence[Sequence[float]]) -> List[List[float]]:
+    """`legs` with every slanted leg replaced by an L (dominant axis first); axis-aligned legs are kept as they are.
+
+    A routed link whose end points are off the street tile centres leaves a leg a few BU off the axis; `leg_axis` then
+    reads it as a y leg and the frontage is looked up on the wrong axis (NA-23b).
+    """
+    out = [list(legs[0])]
+    for p, q in zip(legs, legs[1:]):
+        dx, dy = abs(q[0] - p[0]), abs(q[1] - p[1])
+        if dx >= LY.AXIS_TOL and dy >= LY.AXIS_TOL:
+            out.append([q[0], p[1]] if dx >= dy else [p[0], q[1]])
+        out.append(list(q))
+    return out
+
+
+def choose_street_fitting(B: Sequence[Dict[str, Any]], legs: Sequence[Sequence[float]],
+                          layers: Sequence[Tuple[int, List[Dict[str, Any]]]], rules: Optional[Dict[str, Any]] = None):
+    """`(best, step)`: `choose_street`, then, only when it does not fit every layer, the same on the squared legs.
+
+    Step 0 is the legs as given; step 1 the legs squared (`square_legs`). A street that fits at step 0 is never changed
+    (bids and derive output stay as they were). When neither fits the step 0 result is returned with step 0.
+    """
+    r = rules or RULES
+    first = choose_street(B, legs, layers, r)
+    if first is not None and first[5] and first[7]:
+        return first, 0
+    sq = square_legs(legs)
+    if sq != [list(p) for p in legs]:
+        best = choose_street(B, sq, layers, r)
+        if best is not None and best[5] and best[7]:
+            return best, 1
+    return first, 0
+
+
 def select_link(net: Dict[str, Any], site: str) -> Tuple[Dict[str, Any], List[List[float]]]:
     """The selected Site's border link (or, with none, any link at the Site) and its points from the relay end.
 
@@ -209,6 +244,50 @@ def _span_poses(rooms: Dict[str, Dict[str, Any]], layers, nrm, start_left: bool,
     return ov, dec
 
 
+def room_px(ov: Any, room: Dict[str, Any]) -> Optional[float]:
+    """Projected height in px (1920 x 1080 frame) of a room's front edge in the pose `ov`; None when the edge is not visible."""
+    c = RG.room_corners(room)
+    p0, p3 = ov.proj(c[0]), ov.proj(c[3])
+    if not p0 or not p3:
+        return None
+    for p in (p0, p3):
+        if not (0.0 <= p[0] <= RG.REF_W and 0.0 <= p[1] <= RG.REF_H):
+            return None
+    return abs(p0[1] - p3[1])
+
+
+def span_scan(asg: Sequence[Tuple[int, Dict[str, Any]]], layers, nrm, start_left: bool, rules: Dict[str, Any],
+              rig: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """One row per candidate span 1..span_max: `{span, min_px, fallback}`.
+
+    `min_px` is the smallest visible route-room height in the OVERVIEW pose over the rooms that hold the span (0.0 with none);
+    `fallback` lists the layers whose building cannot fit the span (its rooms keep span 1, `room_boxes` span_l).
+    """
+    rows = []
+    for span in range(1, int(rules["span_max"]) + 1):
+        rooms = room_boxes(asg, layers, span, rules)
+        ov = RG.street_overview(rooms, nrm, start_left, rig)
+        px = [q for rm in rooms.values() if rm["span"] == span for q in [room_px(ov, rm)] if q is not None]
+        fb = sorted({rm["layer"] for rm in rooms.values() if rm["span"] != span})
+        rows.append(dict(span=span, min_px=min(px) if px else 0.0, fallback=fb))
+    return rows
+
+
+def choose_span(asg, layers, nrm, start_left: bool, rules: Optional[Dict[str, Any]] = None,
+                rig: Optional[Dict[str, Any]] = None) -> int:
+    """The smallest span whose smallest visible route room in the OVERVIEW pose reaches `room_px_target` (NA-23b, spec 12.6).
+
+    When no span up to `span_max` reaches it, the span with the largest smallest room (the lower span on a tie).
+    Buildings that cannot fit the chosen span keep the per-building fallback of `room_boxes`; `span_scan` reports them.
+    """
+    r = rules or RULES
+    rows = span_scan(asg, layers, nrm, start_left, r, rig)
+    for row in rows:
+        if row["min_px"] >= r["room_px_target"]:
+            return row["span"]
+    return max(rows, key=lambda q: (q["min_px"], -q["span"]))["span"]
+
+
 def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str, Any], site: str,
                   partial: Optional[Dict[str, Any]] = None, rules: Optional[Dict[str, Any]] = None,
                   rig: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -222,19 +301,14 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
     _, pts = select_link(net, site)
     legs = LY.link_legs(city, pts)
     B = LY.merged_buildings(city)
-    best = choose_street(B, legs, layers, r)
+    best, _ = choose_street_fitting(B, legs, layers, r)
     if best is None or not best[5]:
         raise DeriveError("no frontage along the link of " + site)
     score, li, side, a, c, fr, asg, ok, start_left = best
     if not ok:
         raise DeriveError(f"frontage runs out: {len(asg)} of {len(layers)} layers assigned on leg {li} side {side}")
     nrm = fr[0]["nrm"]
-    rooms = room_boxes(asg, layers, 1, r)
-    ov, _ = _span_poses(rooms, layers, nrm, start_left, rig)
-    first = layers[0][1][0]["id"]
-    p0, p3 = ov.proj(RG.room_corners(rooms[first])[0]), ov.proj(RG.room_corners(rooms[first])[3])
-    fpx = abs(p0[1] - p3[1]) if p0 and p3 else 0.0
-    span = 2 if fpx < r["room_px_target"] else 1
+    span = choose_span(asg, layers, nrm, start_left, r, rig)
     rooms = room_boxes(asg, layers, span, r)
     ov, dec = _span_poses(rooms, layers, nrm, start_left, rig, [a[0], a[1], 0.0])
     edges = link_paths(rooms, run_graph["edges"], r)

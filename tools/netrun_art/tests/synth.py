@@ -30,8 +30,8 @@ def _rect(i, j, w=1, h=1, inset=0.0):
     return [[x0 + inset, y0 + inset], [x1 - inset, y0 + inset], [x1 - inset, y1 - inset], [x0 + inset, y1 - inset]]
 
 
-def make_city(layout_seed: str) -> Dict[str, Any]:
-    """The city.json v1 dict."""
+def make_city(layout_seed: str, corp: str = CORP) -> Dict[str, Any]:
+    """The city.json v1 dict (`corp` names the HQ stand-in)."""
     blds, streets = [], []
     hi, hj = HQ_BLOCK
     for i in range(N):
@@ -46,7 +46,7 @@ def make_city(layout_seed: str) -> Dict[str, Any]:
             parts = [dict(poly=_rect(i, j), z0=0.0, h=h, taper=taper)]
             if _u(layout_seed, "st", i, j) < 0.2:
                 parts.append(dict(poly=_rect(i, j, inset=1.0), z0=h, h=4.0 + 6.0 * _u(layout_seed, "sh", i, j), taper=1.0))
-            blds.append(dict(bid=f"{i}:{j}", cell=[i, j, 1, 1], terr="" if (i + j) % 3 else "meridian", hq=False,
+            blds.append(dict(bid=f"{i}:{j}", cell=[i, j, 1, 1], terr="" if (i + j) % 3 else corp, hq=False,
                              key=int(_u(layout_seed, "k", i, j) * 1000), parts=parts))
     cx, cy = hi + 1.5, hj + 1.5
     tiers = []
@@ -54,11 +54,11 @@ def make_city(layout_seed: str) -> Dict[str, Any]:
         c = plan(cx, cy)
         tiers.append(dict(poly=[[c[0] - half, c[1] - half], [c[0] + half, c[1] - half], [c[0] + half, c[1] + half],
                                 [c[0] - half, c[1] + half]], z0=t * 7.0, h=h, taper=1.0))
-    blds.append(dict(bid="hq:" + CORP, cell=[hi, hj, 3, 3], terr=CORP, hq=True, key=7919, parts=tiers))
+    blds.append(dict(bid="hq:" + corp, cell=[hi, hj, 3, 3], terr=corp, hq=True, key=7919, parts=tiers))
     blds.sort(key=lambda b: b["bid"])
     streets.sort(key=lambda s: tuple(s["lot"]))
     return dict(version=1, layout_seed=layout_seed, units="BU", lot_bu=LOT, origin_lot=list(ORIGIN), buildings=blds,
-                streets=streets, plazas=[], hqs={CORP: [hi, hj, 3, 3]})
+                streets=streets, plazas=[], hqs={corp: [hi, hj, 3, 3]})
 
 
 def make_net(layout_seed: str) -> Dict[str, Any]:
@@ -114,11 +114,11 @@ def make_graph(layout_seed: str, layers: int = 7) -> Dict[str, Any]:
     return dict(version=1, run="run1", layers=layers, nodes=nodes, edges=[dict(a=a, b=b) for a, b in edges])
 
 
-def make_world(seed: int) -> Dict[str, Any]:
-    """A whole fixture world for layout seed `seed`."""
+def make_world(seed: int, corp: str = CORP) -> Dict[str, Any]:
+    """A whole fixture world for layout seed `seed` and HQ corporation `corp`."""
     from netrun_art import layout
     ls = str(seed)
     net = make_net(ls)
     own = {n["id"] for n in net["nodes"] if n["state"] in layout.OWN_STATES}
     sites = sorted({l["b"] if l["a"] in own else l["a"] for l in layout.border_links(net)})
-    return dict(city=make_city(ls), net=net, run_graph=make_graph(ls), site=sites[seed % len(sites)], corp=CORP, seed=ls)
+    return dict(city=make_city(ls, corp), net=net, run_graph=make_graph(ls), site=sites[seed % len(sites)], corp=corp, seed=ls)
