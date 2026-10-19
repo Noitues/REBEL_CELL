@@ -34,6 +34,31 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Overnight: defaults taken on open calls (designer: "don't stop and wait for my decisions")
+Each is a default the designer may revisit; work proceeds on it.
+- **Themes (THEMES_SHEET):** Meridian = **A PAYLOAD** (the draft's recommendation); Orbital = **A DEAD ZONE** (the
+  designer's stated leaning toward comm blackouts, over the draft's recommendation B), with relays as the escape so it
+  is not "always punishing". Every other THEMES_SHEET line takes the draft's **(default)**; lines with no default take
+  the lighter / less punishing option: M1 reward-leaning, O1 no nudge lock beyond the free nudge on dark turns, O2 never
+  ignore SANDBOX, O3 own nodes only, O4 full form at the HQ, O5 no permanent run cost; S2 Heat affects raids only, S3
+  bosses and mini-bosses exempt from the turn cost, S4 debts cut, S5 keep the T1 free dose, S6 Virus; H1 HQ keeps gaze,
+  Spotted fights and the beam only, H2 completed netruns only, H3 Elites and Racks + 1 Heat, H4 working at a cost, H5
+  threats inside the sector hit harder; A1 HQ only, A3 fixed order (INTEL outer, BREACH middle, VIRUS inner), A4 key-gated
+  Cache, A5 same layout on retry, A6 drop a seating ring (~25 min); T2 raids start LOW, T3 mutes turrets only, T4 keep
+  Dry salvage, T5 free, T6 expires after one layer.
+- **Exploit-building netruns:** treated as ruled in (relayed by art-pass); rules drafted on the Batch API, build with
+  NA-41 / B2 / D5.
+- **N8:** OUTPUT_DOWN stacks ADD (x2 = old half, x4 = 0). Botnet PERFECT Trojan planting x4 stays.
+- **N13 / N21:** satellites keep 0 resistance and never enrage; a frozen turn counts toward enrage.
+- **N14:** detour_1 / detour_2 stay as is (charges by precision); a guarded host spends its SANDBOX charge before its
+  drone takes the hit.
+- **N2:** a mini-boss on hp_by_tier still takes the boss-strength multiplier; the boss zone reads the combined
+  boss_strength_pct; the boss band-lint ceiling stays a warning. GDD 11.6 is updated to the new damage table in the
+  next docs pass.
+- **N3:** the boss phase minimum stays 3 until boss content is authored to R1's 4-5.
+- **Small:** kit_demo offsets stay as consts; the neon_city bake constants stay in code; `POINTER_ALPHA_SHOWN` keeps its
+  name; a sim "boss from saved campaign state" source is added (tool-only) when the boss tuning pass needs it.
+
 ### 2026-10-18 — Plan 2 W1 N8: ×N status stacks, save v3 (R8, Q35 b, Q36, Q40)
 - **Storage:** `WheelState.slice_stacks: Array[Dictionary]`, one `{RC.Status int: stacks >= 1}` per slot on every
   wheel (operative, enemy, satellite, drone); a status with no stacks is never stored; reads go through
