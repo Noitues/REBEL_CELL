@@ -95,3 +95,11 @@ bare Anton label (`theme_chip()` gains an optional `value`). The 1920 top-bar cr
 re A-024. Received: 32 glbs + roles.json. P2+P3+P4 will import the glbs into `assets/` (D8: glb only, no concept images),
 honour the wall / units / sRGB / emissive-scale conventions and take per-instance sizes from the ported placement rules.
 P0 still running; P1+P5 then P2-P4 follow in free slots.
+
+### B-007 · 2026-10-19 · W1 close: street netrun on generated cities · ASK
+Review ask (function, not look; the look is held by A-020 parity): the street netrun now builds on the campaign's generated
+city (NA-12) instead of the fixed seed-7 city. Derive sweep: campaign seeds 1..20 x 5 corps x every Site = 1000 runs,
+995 -> 1000 ok after a deterministic leg-extension retry (all 5 misses were Orbital, short link streets). Fixtures 101-112
+and g1-g3 byte-identical. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_CLOSE_street_gen.jpg` (@ 308d2484), OVERVIEW +
+DECISION on generated seeds 3 and 6. APPROVED (function) or fix list.
+Also: NA-25b r3 (re A-019) started.
