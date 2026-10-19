@@ -23,7 +23,7 @@ func test_corrupt_corrupts_the_targets_resolved_slice() -> void:
 	CombatFixture.land(e, 2)
 	CombatFixture.land(s.state.player, 1)
 	s.apply(CombatAction.end_turn())
-	assert_eq(s.state.get_combatant(&"enemy_0").wheel.slice_statuses[2], RC.Status.CORRUPTED)
+	assert_eq(s.state.get_combatant(&"enemy_0").wheel.status_at(2), RC.Status.CORRUPTED)
 
 
 func test_anchor_skips_the_next_respin_after_a_perfect() -> void:

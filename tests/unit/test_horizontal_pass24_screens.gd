@@ -11,6 +11,7 @@ extends GutTest
 ## text of loot and Mainframe items on focus.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
+const NetrunScript := preload("res://scripts/ui/netrun_scene.gd")
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE := "res://scenes/menu/title_scene.tscn"
 const SLOT := "gut_s24_screens"
@@ -55,6 +56,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	NetrunScript.street_route = true
 	if _translation != null:
 		TranslationServer.remove_translation(_translation)
 		_translation = null
@@ -449,11 +451,9 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	var scene := _netrun()
 	await _frames(6)
 	_assert_once(scene, "route")
-	var b := scene._panel.find_child("Node1", true, false) as Button
-	assert_true(_shown_text(b).contains(PSEUDO_PREFIX), "route choice '%s'" % _shown_text(b))
-	for n in scene.city_overlay.nodes:
-		if String(n.get("label", "")) != "":
-			assert_true(String(n["label"]).contains(PSEUDO_PREFIX), "map label '%s'" % n["label"])
+	# NA-26: the route page is the street view; its toggles are the translated words (the list rows are the fallback page).
+	var b := scene.street_view.find_child("ToggleDecision", true, false) as Button
+	assert_true(_shown_text(b).contains(PSEUDO_PREFIX), "route toggle '%s'" % _shown_text(b))
 	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "THE GRID translated")
 	_shop(scene)
 	await _frames(4)
@@ -878,6 +878,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 # --- S12 the route ----------------------------------------------------------------------------------
 
 func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void:
+	NetrunScript.street_route = false
 	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
@@ -885,18 +886,7 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 		await _frames(24)
 		var col := scene._panel.find_child("RouteColumn", true, false) as Control
 		var win := scene._panel.find_child("RouteWindow", true, false) as Control
-		# B3 b (art director): the TARGET may be off the route's frame (its red pencil edge arrow).
-		var framed: Array = []
-		for n in scene.city_overlay.nodes:
-			if not bool(n.get("target", false)):
-				framed.append(n["id"])
-		for r in LegendSpot.node_rects(scene.city_overlay, false, framed):
-			assert_false(win.get_global_rect().intersects(r), "a node %s under the ROUTE window %s (text %.1f)" % [r, win.get_global_rect(), scale])
-			assert_false(col.get_global_rect().intersects(r), "a node %s under the route column (text %.1f)" % [r, scale])
-			assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(r), "on screen: %s" % r)
-		var legend: RouteLegend = scene.route_legend
-		for k in RouteLegend.COLOR_KEYS:
-			assert_not_null(legend.body.find_child("Color_%s" % k, true, false), "the key says what %s nodes are" % k)
+		# NA-26: the 2D map nodes under the column are retired with that page; the choices are the fallback list rows.
 		# Each choice says where it leads; the tooltips of two fights differ.
 		var s := RunManager.netrun
 		var tips := {}

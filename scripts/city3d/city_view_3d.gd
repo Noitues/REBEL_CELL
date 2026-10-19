@@ -120,6 +120,7 @@ var _inks: Array[Color] = []
 var _building_mat: ShaderMaterial
 var _ground_mat: ShaderMaterial
 var _lane_mat: ShaderMaterial
+var _outer_mat: ShaderMaterial
 var _post: ShaderMaterial
 var _ground_vp: SubViewport
 var _ground_cam: Camera3D
@@ -284,6 +285,118 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		_landmarks_night = lm_night
 		_restyle_landmarks()
 
+
+
+## The look blend (NA-22, PIPELINE_SPEC 4.3): 0 = the mainline page (exactly as before), 1 = the netrun (AAA-2) look.
+var look_blend: float = 0.0
+var _netrun_setup: bool = false
+
+
+## Sets the look blend on the buildings (toon ramp -> smooth ramp, the per-instance cut / ghost / dissolve start above 0),
+## the ground (city_ground <-> wet_street, so 0 is the old shader itself), the ink (faded by `look.ink_fade`) and the
+## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
+func set_look_blend(lb: float) -> void:
+	look_blend = clampf(lb, 0.0, 1.0)
+	if _building_mat == null:
+		return
+	if not _netrun_setup:
+		_netrun_setup = true
+		NetrunShaderKit.setup_building(_building_mat)
+	_building_mat.set_shader_parameter(&"look_blend", look_blend)
+	var wet: bool = look_blend > 0.0
+	for m: ShaderMaterial in [_ground_mat, _lane_mat, _outer_mat]:
+		if m == null:
+			continue
+		var want: Shader = CityMaterials.WET_STREET if wet else CityMaterials.GROUND
+		if m.shader != want:
+			m.shader = want
+			if wet:
+				NetrunShaderKit.setup_wet(m)
+		if wet:
+			m.set_shader_parameter(&"look_blend", look_blend)
+	var look: Dictionary = CityShaderConfigData.shipped().look
+	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
+	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
+	_env.tonemap_exposure = NetrunShaderKit.exposure_at(look_blend)
+	NetrunShaderKit.apply_sky(_env, look_blend, cfg.sky)
+	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+
+
+## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
+func building_material() -> ShaderMaterial:
+	return _building_mat
+
+
+## The lane lines' material (the street netrun swaps its shader for the quiet `route_lane`).
+func lane_material() -> ShaderMaterial:
+	return _lane_mat
+
+
+## The scene's Environment (the netrun views set its volumetric fog through `NetrunShaderKit.configure_environment`).
+func environment() -> Environment:
+	return _env
+
+
+const ID_ENV_PROPS: Array[StringName] = [&"background_mode", &"background_color", &"tonemap_mode", &"tonemap_exposure", &"glow_enabled",
+	&"volumetric_fog_enabled", &"fog_enabled", &"ambient_light_source", &"adjustment_enabled", &"ssao_enabled", &"ssil_enabled"]
+var _id_saved: Dictionary = {}
+var _id_hidden: Array[Node] = []
+
+
+## NA-ID-b: the nodes that make up the ground: the `ground` layer (the outer asphalt plane) and every chunk's ground and lane mesh. The id
+## pass hides them; IdCapture shows them again and paints them class 4.
+func id_ground_nodes() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	var g := layer(&"ground")
+	if g != null:
+		out.append(g)
+	for key: Vector2i in _chunks:
+		for c: Node in (_chunks[key]["node"] as Node).get_children():
+			if c is MeshInstance3D and ((c as MeshInstance3D).material_override == _ground_mat or (c as MeshInstance3D).material_override == _lane_mat):
+				out.append(c as Node3D)
+	return out
+
+
+## NA-23: the id pass of PIPELINE_SPEC 12.0 (PNG capture only): flat unlit class colours (the building material's `id_mode`, the
+## rooms'), black sky, no fog, glow, tonemap, ink post, veil or ground. `on` false puts everything back. Callers capture between.
+func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
+	if on == not _id_saved.is_empty():
+		return
+	if on:
+		for p in ID_ENV_PROPS:
+			_id_saved[p] = _env.get(p)
+		_env.background_mode = Environment.BG_COLOR
+		_env.background_color = Color.BLACK
+		_env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		_env.tonemap_exposure = 1.0
+		_env.glow_enabled = false
+		_env.volumetric_fog_enabled = false
+		_env.fog_enabled = false
+		_env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+		_env.adjustment_enabled = false
+		_env.ssao_enabled = false
+		_env.ssil_enabled = false
+		_building_mat.set_shader_parameter(&"id_mode", true)
+		_building_mat.set_shader_parameter(&"id_class", 2.0)
+		var hide: Array[Node] = []
+		# NA-ID: `keep_landmarks` leaves the landmarks layer in (IdCapture paints it class 1 / 6).
+		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"network"), layer(&"traffic"), layer(&"sky")] + ([] if keep_landmarks else [layer(&"landmarks")]):
+			if n != null:
+				hide.append(n)
+		hide.append_array(id_ground_nodes())
+		for n in hide:
+			if (n as Node3D).visible:
+				(n as Node3D).visible = false
+				_id_hidden.append(n)
+	else:
+		for p: StringName in _id_saved:
+			_env.set(p, _id_saved[p])
+		_id_saved.clear()
+		_building_mat.set_shader_parameter(&"id_mode", false)
+		for n in _id_hidden:
+			if is_instance_valid(n):
+				(n as Node3D).visible = true
+		_id_hidden.clear()
 
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
@@ -514,6 +627,7 @@ func _build_scene() -> void:
 	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
+	_outer_mat = om
 	outer.material_override = om
 	outer.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	outer.visible = _outer_ground_on  # B2: a street-level close-up hides it (show_outer_ground)
@@ -672,10 +786,22 @@ func _poll_model() -> void:
 		return
 	var k := "%s|%d" % [cfg.resource_path, city_seed]
 	var job: Dictionary = _jobs.get(k, {})
-	if job.is_empty() or not WorkerThreadPool.is_group_task_completed(int(job["task"])):
+	if job.is_empty():
+		return
+	if job.has("rules_task"):
+		# Stage 2: the layout rules run on a worker; the city appears when they land.
+		if not WorkerThreadPool.is_task_completed(int(job["rules_task"])):
+			return
+		WorkerThreadPool.wait_for_task_completion(int(job["rules_task"]))
+		_jobs.erase(k)
+		m = job["model"]
+		m.ruled_parts = CityLayoutRuler.land_job(m, job["rules"])
+		CityModel.keep_shared(m)
+		_on_model(m)
+		return
+	if not WorkerThreadPool.is_group_task_completed(int(job["task"])):
 		return
 	WorkerThreadPool.wait_for_group_task_completion(int(job["task"]))
-	_jobs.erase(k)
 	m = CityModel.new()
 	m.cfg = cfg
 	m.city_seed = city_seed
@@ -685,9 +811,15 @@ func _poll_model() -> void:
 	for i in keys.size():
 		m.add_recording(keys[i], rects[i], recs[i])
 		recs[i].free()
-	m.finish()
-	CityModel.keep_shared(m)
-	_on_model(m)
+	m.finish(true)
+	var rules := m.layout_rules_job()
+	if rules.is_empty():
+		_jobs.erase(k)
+		CityModel.keep_shared(m)
+		_on_model(m)
+		return
+	_jobs[k] = {"model": m, "rules": rules,
+		"rules_task": WorkerThreadPool.add_task(func() -> void: CityLayoutRuler.run_job(rules), true, "CityLayoutRules")}
 
 
 ## Takes model `m` and queues its chunks, nearest the camera first.
@@ -762,6 +894,40 @@ func _build_chunk(key: Vector2i) -> void:
 	_chunks[key] = entry
 
 
+## NA-23: prism index -> [MultiMesh, instance index] of its building instance, and the packed INSTANCE_CUSTOM.w the street
+## netrun view wrote for it (`NetrunInstancePack`), kept across chunk rebuilds.
+var _inst_of: Dictionary = {}
+var _w_over: Dictionary = {}
+
+
+## NA-23: writes the packed per-instance state `w` (`NetrunInstancePack.pack`) of prism `prism` (an index into `model.prisms`).
+## View state only; 0 restores the building as the page draws it. Survives a chunk rebuild.
+func set_prism_w(prism: int, w: float) -> void:
+	if w == 0.0:
+		_w_over.erase(prism)
+	else:
+		_w_over[prism] = w
+	_write_prism_w(prism, w)
+
+
+## The packed `w` last written for prism `prism` (0 when none).
+func prism_w(prism: int) -> float:
+	return float(_w_over.get(prism, 0.0))
+
+
+func _write_prism_w(prism: int, w: float) -> void:
+	var at: Array = _inst_of.get(prism, [])
+	if at.is_empty() or not is_instance_valid(at[0]):
+		return
+	var mm: MultiMesh = at[0]
+	var i: int = at[1]
+	if i >= mm.instance_count:
+		return
+	var c: Color = mm.get_instance_custom_data(i)
+	c.a = w
+	mm.set_instance_custom_data(i, c)
+
+
 func _free_chunk(key: Vector2i) -> void:
 	var e: Dictionary = _chunks.get(key, {})
 	if e.is_empty():
@@ -792,6 +958,10 @@ func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: 
 		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
 		# (its prisms) is the cull box.
 		mm.custom_aabb = model.chunk_aabb(key)
+		for i in ids.size():
+			_inst_of[ids[i]] = [mm, i]
+			if _w_over.has(ids[i]):
+				_write_prism_w(ids[i], float(_w_over[ids[i]]))
 		var mi := MultiMeshInstance3D.new()
 		mi.name = ("Far_%d" if far else "Fam_%d") % fk
 		mi.multimesh = mm
@@ -955,6 +1125,8 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	var node := scene.instantiate() as Node3D
 	node.name = "Landmark_%s" % corp
 	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
+	if look_blend > 0.0:
+		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	node.transform = at
 	add_to_layer(&"landmarks", node)
 	landmarks[corp] = node
@@ -1110,6 +1282,8 @@ func _restyle_landmarks() -> void:
 	_prop_mats.clear()
 	for nm: StringName in _prop_meshes:
 		_style_prop_mesh(nm)
+	if look_blend > 0.0:
+		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	# ART-3 6w: the uplink pads take the new look too.
 	_uplink_meshes.clear()
 	if not uplink_pads.is_empty():

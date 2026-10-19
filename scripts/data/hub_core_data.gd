@@ -21,3 +21,6 @@ extends Resource
 @export var max_ram_bonus: int = 0
 ## Ghost: this many nudges on enemy wheels each turn ignore resistance.
 @export var free_resistance_nudges: int = 0
+## Plan 2 N6: enemy Hub listeners (ListenerData). Silent while the Hub is breached; a phase's
+## hub_override brings its own. Validated through the owning EnemyData.
+@export var listeners: Array[ListenerData] = []

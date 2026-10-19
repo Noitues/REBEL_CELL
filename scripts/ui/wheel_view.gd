@@ -46,6 +46,9 @@ var wheel_color: Color = Palette.CELL_PINK
 ## Ghost preview (GDD 9.2): predicted outer/inner rotation after a hovered card, or null.
 var ghost_rotation: Variant = null
 var ghost_inner_rotation: Variant = null
+## Q19: a hovered respin (or a card that respins this wheel): a ghosted needle with "?" where
+## the needle stands and the way it would turn. The landing is a random event, so none is shown.
+var unknown_ghost: bool = false
 ## Perfect feedback: wheel-local inversion for a couple of frames.
 var inverted: bool = false
 var shake: Vector2 = Vector2.ZERO
@@ -451,6 +454,10 @@ func _get_tooltip(at_position: Vector2) -> String:
 				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
 			if combatant.wheel.frozen:
 				lines.append(tr("FROZEN"))
+			if combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
+				lines.append(tr("NUDGE LOCKED"))
+			if combatant.wheel.is_locked(WheelState.LOCK_RESPIN):
+				lines.append(tr("RESPIN LOCKED"))
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
 			# B2 (D2): the upcoming phases a reveal shows were hub lines; they are the tooltip's.
@@ -467,10 +474,9 @@ func _slice_label(i: int) -> String:
 	var ring := ring_tip(i)
 	if ring != "":
 		parts.append(ring)
-	var status: int = wheel.slice_statuses[i]
-	if status != RC.Status.NONE:
-		# ANIM-R4 C6f: whose win it is, as its colour says.
-		parts.append((tr("Good for you: %s") if status_good_for_you(status, combatant.is_player) else tr("Bad for you: %s")) % Codex.status_text(status))
+	for status in wheel.statuses_at(i):
+		# ANIM-R4 C6f: whose win it is, as its colour says. N8: every status, with its stacks.
+		parts.append((tr("Good for you: %s") if status_good_for_you(status, combatant.is_player) else tr("Bad for you: %s")) % Codex.status_text(status, wheel.stacks_of(i, status)))
 	if wheel.slot_firmware_ids[i] != &"":
 		parts.append(Codex.describe(lookup.get_content(wheel.slot_firmware_ids[i])))
 	return "\n".join(parts)
@@ -503,6 +509,13 @@ func set_ghost(outer: Variant, inner: Variant = null) -> void:
 	ghost_rotation = outer
 	ghost_inner_rotation = inner
 	queue_redraw()
+
+
+## Q19: shows or hides the "?" ghost needle of a random respin.
+func set_unknown_ghost(on: bool) -> void:
+	if unknown_ghost != on:
+		unknown_ghost = on
+		queue_redraw()
 
 
 # --- Motion (Animation pass ANIM-2) ----------------------------------------------------------
@@ -1216,10 +1229,17 @@ func fade_replay_tag() -> void:
 
 ## A status lands on slice `slot` during the replay: the view's own snapshot shows it on
 ## that slice from now on, with a ring round its mark (`status_mark`).
-func show_slice_status(slot: int, status: int) -> void:
-	if shown_state == null or slot < 0 or slot >= shown_state.wheel.slice_statuses.size():
+func show_slice_status(slot: int, status: int, stacks: int = 0) -> void:
+	if shown_state == null or slot < 0 or slot >= shown_state.wheel.slice_stacks.size():
 		return
-	shown_state.wheel.slice_statuses[slot] = status
+	# N8: the view's own snapshot takes the landed status on top of what the slice shows, at
+	# the stack count the beat names (`stacks`; 0: one more stack).
+	var w := shown_state.wheel
+	if stacks > 0:
+		w.remove_stacks(slot, status)
+		w.add_stacks(slot, status, stacks, WheelState.NO_STACK_LIMIT)
+	else:
+		w.add_stacks(slot, status, 1, WheelState.NO_STACK_LIMIT)
 	if not Motion.live(&"status_mark"):
 		queue_redraw()
 		return
@@ -1517,7 +1537,7 @@ func needle_slot_spot(index: int, slot: int) -> Vector2:
 	if c == null or slot < 0 or index < 0 or index >= ps.size():
 		return slot_spot(slot)
 	var rot := shown_rotation()
-	var under := WheelMath.slice_at(roundi(ps[index] + rot), c.wheel.slice_count)
+	var under := c.wheel.slot_of_tick(roundi(ps[index] + rot))
 	if under != slot:
 		return slot_spot(slot)
 	var a := _ang(ps[index])
@@ -1536,8 +1556,7 @@ func room_above_disc() -> Rect2:
 ## The middle of slice `slot` on screen (at its status mark), as shown.
 func slot_spot(slot: int) -> Vector2:
 	var c := _shown()
-	var tps := c.wheel.ticks_per_slice()
-	var a := _ang(slot * tps - shown_rotation())
+	var a := _ang(c.wheel.slot_arc_mid(slot) - shown_rotation())
 	var dir := Vector2(cos(a), sin(a))
 	return global_center() + dir * (_radius() - _band() * 0.5)
 
@@ -1600,13 +1619,15 @@ func slice_pieces() -> Array:
 	var radius := _radius()
 	var band := _band()
 	var inner := radius - band
-	var tps := c.wheel.ticks_per_slice()
 	var rot := shown_rotation()
 	for i in c.wheel.slice_count:
+		if c.wheel.slot_size(i) <= 0:
+			continue  # N12b: an empty arc draws no wedge
 		var slice := lookup.get_content(c.wheel.slot_slice_ids[i]) as SliceData
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
-		var mid := _tick_angle(i * tps, rot)
+		var arc := slot_arc_ticks(c.wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
+		var mid := _tick_angle(arc.z, rot)
 		var dir := Vector2(cos(mid), sin(mid))
 		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
 		var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
@@ -1710,7 +1731,7 @@ func slot_at_global(point: Vector2) -> int:
 	# Mirror of _ang(): screen angle -> ticks from the pointer's zero.
 	var x := -(rad_to_deg(atan2(local.y, local.x)) + 90.0) / DEG_PER_TICK
 	var tick := posmod(roundi(x) + combatant.wheel.rotation, RC.TICKS)
-	return WheelMath.slice_at(tick, combatant.wheel.slice_count)
+	return combatant.wheel.slot_of_tick(tick)
 
 
 ## Whether a global point is inside the wheel disc (hub included).
@@ -1780,8 +1801,7 @@ func zone_center(zone: Dictionary) -> Vector2:
 			var sat := _satellite(StringName(zone["id"]))
 			return _satellite_pos(sat) if sat != null else global_center()
 		"slot":
-			var tps := combatant.wheel.ticks_per_slice()
-			var a := _ang(int(zone["slot"]) * tps - shown_rotation())
+			var a := _ang(combatant.wheel.slot_arc_mid(int(zone["slot"])) - shown_rotation())
 			return global_center() + Vector2(cos(a), sin(a)) * (_radius() - _band() * 0.5)
 	return global_center()
 
@@ -1845,8 +1865,7 @@ func _satellite(id: StringName) -> CombatantState:
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	if attachments != null:
 		return attachments.satellite_global_pos(sat)  # ART-2 2B: docked by the attachments
-	var tps := combatant.wheel.ticks_per_slice()
-	var a := _ang(sat.dock_slot * tps - shown_rotation())
+	var a := _ang(combatant.wheel.slot_arc_mid(sat.dock_slot) - shown_rotation())
 	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + satellite_out(a))
 	# ANIM-R2 E7: a token under the tag turns round the rim, away from the top, until it is
 	# clear of it (at 1.6 a drone's hex sat on the tag's chips).
@@ -2077,6 +2096,12 @@ func frame_master() -> float:
 	return kit.frame_radius() + (WheelKit.ELITE_COLLAR if kit.is_elite else 0.0) + (WheelFace.THREAT_DEPTH if kit.is_boss else 0.0)
 
 
+## N7: the outer edge (px) of everything the wheel draws round its slices: the frame, or the tick ring
+## (WheelFace.RCH1) when that reaches further. A toast stands beside this, not the slice rim.
+func outer_radius() -> float:
+	return maxf(frame_master(), WheelFace.RCH1) * art_scale()
+
+
 ## The radius (px) of the blades' value windows: where a needle's value reads (3.2).
 func window_radius() -> float:
 	var rt := frame_master()
@@ -2136,7 +2161,6 @@ func _draw_view() -> void:
 	var band := _band()
 	var inner := radius - band
 	var line := _col(wheel_color if combatant.is_alive() else Color(wheel_color, 0.3))
-	var tps := wheel.ticks_per_slice()
 	var rot := shown_rotation() + stutter_deg / DEG_PER_TICK
 	var k := art_scale()
 	# Platform so the wheel reads over the city.
@@ -2161,14 +2185,16 @@ func _draw_view() -> void:
 	if not replaying:
 		for st in outcome.get("statuses", []):
 			status_ghosts[int(st["slot"])] = int(st["after"])
-	var span := tps * DEG_PER_TICK
 	# Per slice over the disc, in the round 41 stack: drop-zone outline, NULL static, the read
 	# block (7, always re-stamped on top), the state badge and its tag (8), the status landing.
 	for i in wheel.slice_count:
+		if wheel.slot_size(i) <= 0:
+			continue  # N12b: an empty arc owns no ticks and draws no face, badge or outline
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
-		var mid := _tick_angle(i * tps, rot)
+		var arc := slot_arc_ticks(wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
+		var mid := _tick_angle(arc.z, rot)
 		var deg := slice_deg(i, rot)
 		var wedge := _wedge(center, inner, radius, minf(a0, a1) + WEDGE_INSET_RAD, maxf(a0, a1) - WEDGE_INSET_RAD)
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
@@ -2178,13 +2204,14 @@ func _draw_view() -> void:
 			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		var lift := WheelFace.READ_R * (0.025 if i == active else 0.0)
 		WheelFace.read_block(self, center + Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg))) * lift * k, k, deg, WheelGlyphs.slice_id(slice), _read_value(slice))
-		var status: int = wheel.slice_statuses[i]
+		var status: int = wheel.status_at(i)
 		var sp := badge_spot(i) - global_position
 		# ANIM-R4 C6f: a status wears its good / bad colour for the operative (green: good for
 		# you, red: bad for you), on its mark, its ring and the slice's rim as it lands.
 		var scol := status_color(status, combatant.is_player)
 		if status != RC.Status.NONE and radius >= BADGE_MIN_RADIUS:
-			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status) if radius >= TAG_MIN_RADIUS else "")
+			var n := wheel.stacks_of(i, status)
+			WheelFace.badge(self, center, k, deg, wheel.slot_size(i) * DEG_PER_TICK, status, status_good_for_owner(status), _status_tag(status, n) if radius >= TAG_MIN_RADIUS else stack_badge(n))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -2203,7 +2230,7 @@ func _draw_view() -> void:
 			var dir := Vector2(cos(mid), sin(mid))
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
-	_draw_landed(center, radius, inner, tps, rot)
+	_draw_landed(center, radius, inner, rot)
 	if wheel.has_inner_ring():
 		_draw_notch_tick(center, k)
 	if ring_pulse > 0.0:
@@ -2223,12 +2250,12 @@ func _draw_view() -> void:
 	for p in ps:
 		degs.append(fposmod(-p * DEG_PER_TICK, 360.0))
 	for pk in ps.size():
-		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var at_slot := wheel.slot_of_tick(roundi(ps[pk] + rot))
 		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
 		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
 		WheelFace.rail(self, center, k, degs[pk], degs, rail_text(pk, sl), sc, _rail_word_tint(pk))
 	for pk in ps.size():
-		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var at_slot := wheel.slot_of_tick(roundi(ps[pk] + rot))
 		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
 		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
 		var body := kit.accent.lightened(0.25) if kit.is_boss else Palette.PAPER
@@ -2261,6 +2288,8 @@ func _draw_view() -> void:
 	if not replaying and attachments == null:
 		_draw_ghost(center, radius, wheel)
 		_draw_inner_ghost(center, radius, wheel)
+	if not replaying:
+		_draw_unknown_ghost(center, radius, wheel)
 	if flip_squash < 1.0:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
@@ -2456,17 +2485,18 @@ func _draw_pointer_tags() -> void:
 		if not r.has_area():
 			continue
 		var tint := PointerTag.tint(model[i])
+		var dim := UNKNOWN_TAG_DIM if unknown_ghost else 1.0  # Q19: the needle may land elsewhere
 		if ps.size() > 1:
 			# N11: with several needles (they may stand 1 tick apart) a leader ties each tag to its own blade tip.
 			var deg := deg_to_rad(fposmod(-ps[i] * DEG_PER_TICK, 360.0))
 			var tip := _center() + Vector2(sin(deg), -cos(deg)) * reach
 			var edge := Vector2(clampf(tip.x, r.position.x, r.end.x), clampf(tip.y, r.position.y, r.end.y))
-			draw_line(edge, tip, _col(tint), POINTER_TAG_LEADER * _ts())
-		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), _col(Palette.SHADOW))
-		draw_rect(r, _col(Palette.INK))
-		draw_rect(r, _col(tint), false, 2.0)
+			draw_line(edge, tip, Color(_col(tint), dim), POINTER_TAG_LEADER * _ts())
+		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), Color(_col(Palette.SHADOW), dim))
+		draw_rect(r, Color(_col(Palette.INK), dim))
+		draw_rect(r, Color(_col(tint), dim), false, 2.0)
 		HighContrast.draw_text(self, f, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fs * 0.35), PointerTag.text(model[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, _col(tint))
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, Color(_col(tint), dim))
 
 
 # --- ART-2 2A: precision landings (ART_BIBLE 3.19) and the player's defeat (3.3) ----------------
@@ -2489,9 +2519,6 @@ var stutter_deg: float = 0.0
 ## The defeat drain (0 .. 1): the core's rows release from the bottom and their bits fall.
 var drain_p: float = 0.0
 
-## The landing word's share of its life spent holding before it leaves as bits (3.20: hold, then
-## dissolve within 0.5 s).
-const WORD_HOLD := 0.62
 ## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
 const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
@@ -2519,11 +2546,12 @@ func play_precision(tier: int, slot: int, needle: int = 0) -> void:
 		queue_redraw()
 		return
 	var e := Motion.entry(&"precision_word")
-	var life := Motion.seconds(&"precision_word") / WORD_HOLD
+	var hold := Motion.amplitude(&"precision_word_hold")
+	var life := Motion.seconds(&"precision_word") / hold
 	_show_land_sticker(tier)
 	var tw := _tw(&"landing")
 	tw.set_parallel(true)
-	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / WORD_HOLD); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / hold); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
 	if tier == RC.PrecisionTier.PERFECT and Motion.live(&"precision_latch"):
 		var le := Motion.entry(&"precision_latch")
 		tw.tween_method(func(x: float) -> void: latch = x; queue_redraw(), 0.0, 1.0, Motion.seconds(&"precision_latch")).set_ease(le.ease).set_trans(le.trans)
@@ -2864,16 +2892,27 @@ const RING_WORD_FALLBACK := "EMPTY"
 ## The segment kinds the disc shader textures (its SEG_COL order).
 const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
 	&"seg_accelerator": 5, &"seg_echo": 6}
-## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5, PARASITE x0.5.
-const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"} # TR
+## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5 (N8: OUTPUT_DOWN per stack).
+const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5"} # TR
+## The disc shader's status looks (its `stat` codes): OUTPUT_DOWN wears the parasite's bug
+## (N8, R8: today's PARASITE is OUTPUT_DOWN x2) until it has its own look.
+const SHADER_STATUS := {RC.Status.OUTPUT_DOWN: RC.Status.PARASITE, RC.Status.TIER_DOWN: RC.Status.PARASITE}
 ## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
 const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 
 ## The angle (degrees clockwise from the top) slot `i` is shown at, for a rotation of `rot` ticks.
 func slice_deg(i: int, rot: float) -> float:
 	var c := _shown()
-	var tps := c.wheel.ticks_per_slice() if c != null else RC.TICKS / RC.SLICES
-	return fposmod((rot - i * tps) * DEG_PER_TICK, 360.0)
+	var mid := c.wheel.slot_arc_mid(i) if c != null else float(i * RC.TICKS_PER_SLICE)
+	return fposmod((rot - mid) * DEG_PER_TICK, 360.0)
+
+
+## Plan 2 N12: slot `i`'s drawn arc in wheel ticks (x = start, y = end, z = middle), from
+## WheelMath's cumulative boundaries: an uneven slot draws its own span, an empty one none.
+static func slot_arc_ticks(w: WheelState, i: int) -> Vector3:
+	var mid := w.slot_arc_mid(i)
+	var half := w.slot_size(i) * 0.5
+	return Vector3(mid - half, mid + half, mid)
 
 
 ## The slice the first needle stands on, as shown (-1 without one): it is lifted (3.2).
@@ -2882,13 +2921,13 @@ func active_slot() -> int:
 	var ps := shown_pointers()
 	if c == null or ps.is_empty():
 		return -1
-	return WheelMath.slice_at(roundi(ps[0] + shown_rotation()), c.wheel.slice_count)
+	return c.wheel.slot_of_tick(roundi(ps[0] + shown_rotation()))
 
 
 ## Where slot `slot`'s state badge sits (global): its outer clockwise corner (3.8).
 func badge_spot(slot: int) -> Vector2:
 	var c := _shown()
-	var span := c.wheel.ticks_per_slice() * DEG_PER_TICK
+	var span := c.wheel.slot_size(slot) * DEG_PER_TICK
 	return global_position + WheelFace.at(_center(), art_scale(), WheelFace.BADGE_R, slice_deg(slot, shown_rotation()) + span * 0.5 - WheelFace.BADGE_INSET)
 
 
@@ -2899,8 +2938,23 @@ func _read_value(slice: SliceData) -> String:
 	return str(slice.base_output)
 
 
-func _status_tag(status: int) -> String:
-	return String(STATUS_TAGS.get(status, ""))
+## N8: the tag under a status badge: its stacks ("×N", from 2) and its multiplier (OVERCLOCKED
+## x1.5; OUTPUT_DOWN its factor at that stack count).
+func _status_tag(status: int, stacks: int = 1) -> String:
+	var parts := PackedStringArray()
+	if stack_badge(stacks) != "":
+		parts.append(stack_badge(stacks))
+	var mult := String(STATUS_TAGS.get(status, ""))
+	if status == RC.Status.OUTPUT_DOWN and ContentRegistry.config != null:
+		mult = "x" + String.num(CombatResolver.output_down_factor(stacks, ContentRegistry.config), 2)
+	if mult != "":
+		parts.append(mult)
+	return " ".join(parts)
+
+
+## N8: a status's stack count as its badge shows it: "×N" from 2 stacks, nothing below.
+static func stack_badge(stacks: int) -> String:
+	return TranslationServer.translate("×%d") % stacks if stacks >= 2 else ""
 
 
 ## The rail's words for needle `index` on `slice`: `OVERFLOW 12 // PERFECT // ` (3.2; the recipe's
@@ -2997,14 +3051,14 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 			row = WheelKit.SPECIAL_ROW
 		kinds.append(row)
 		cols.append(Palette.slice_color(type))
-		stats.append(wheel.slice_statuses[i] if i < wheel.slice_statuses.size() else RC.Status.NONE)
+		stats.append(SHADER_STATUS.get(wheel.status_at(i), wheel.status_at(i)))
 		flashes.append(land_fx * 0.8 if i == landing_slot_shown and land_fx > 0.0 else (landing_pulse * 0.6 if landed.has(i) else 0.0))
 		plates.append(WheelFace.plate_radii(_read_value(slice)))
 	disc.place(center, radius)
 	disc.scale = Vector2(flip_squash, 1.0)
 	disc.pivot_offset = disc.size * 0.5
 	disc.put(&"n", n)
-	disc.put(&"span", wheel.ticks_per_slice() * DEG_PER_TICK)
+	disc.put(&"spans", WheelDisc.slot_spans(wheel.layout(), DEG_PER_TICK))
 	disc.put(&"mids", mids)
 	disc.put(&"kinds", kinds)
 	disc.put(&"cols", cols)
@@ -3107,7 +3161,7 @@ func pointer_slot(pointer: int) -> int:
 	var ps := shown_pointers()
 	if c == null or pointer < 0 or pointer >= ps.size():
 		return -1
-	return WheelMath.slice_at(roundi(ps[pointer] + shown_rotation()), c.wheel.slice_count)
+	return c.wheel.slot_of_tick(roundi(ps[pointer] + shown_rotation()))
 
 
 ## Round 45: what needle `pointer`'s ghost wedge shows: {pointer, slot, seg, seg_id, mod, a_mid, half, cover} for the
@@ -3126,7 +3180,7 @@ func wedge_state(pointer: int = 0) -> Dictionary:
 	var seg_id: StringName = c.wheel.ring_segment_ids[seg]
 	if RingMods.mod_id(seg_id) == RingMods.NONE:
 		return {}
-	var half := c.wheel.ticks_per_slice() * DEG_PER_TICK * 0.5
+	var half := c.wheel.slot_size(slot) * DEG_PER_TICK * 0.5
 	var mid := slice_deg(slot, shown_rotation())
 	var s: Dictionary = ring_segments()[seg]
 	var seg_half := (float(s["a1"]) - float(s["a0"])) * 0.5
@@ -3482,7 +3536,7 @@ func tag_flipping() -> bool:
 
 ## The slices the needles landed on (ANIM-R1): a thick rim in the slice's colour, bright
 ## as they latch; a NULL slice gets a big grey X.
-func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot: float) -> void:
+func _draw_landed(center: Vector2, radius: float, inner: float, rot: float) -> void:
 	if landed.is_empty():
 		return
 	for slot in landed:
@@ -3491,8 +3545,9 @@ func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot:
 			continue
 		var slice := lookup.get_content(combatant.wheel.slot_slice_ids[i]) as SliceData
 		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
+		var arc := slot_arc_ticks(combatant.wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
 		var wedge := _wedge(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		draw_colored_polygon(wedge, _col(Color(sc.lightened(0.3), 0.55 * landing_pulse)))
 		var closed := wedge.duplicate()
@@ -3800,12 +3855,47 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	var tip := center + Vector2(cos(a_needle), sin(a_needle)) * r
 	var normal := tangent.orthogonal()
 	draw_colored_polygon(PackedVector2Array([tip + tangent * 8.0, tip - tangent * 4.0 + normal * 6.0, tip - tangent * 4.0 - normal * 6.0]), _col(Palette.CELL_ACID))
-	var slot := WheelMath.slice_at(WheelMath.tick_at(int(ghost_rotation), p0), wheel.slice_count)
+	var slot := wheel.slot_of_tick(WheelMath.tick_at(int(ghost_rotation), p0))
 	var slice := lookup.get_content(wheel.slot_slice_ids[slot]) as SliceData
 	var from := center + Vector2(cos(a_from), sin(a_from)) * r
 	draw_circle(from, 11, Palette.NIGHT_SKY)
 	if slice != null:
 		SliceIcon.draw_icon(self, from, 8, slice.slice_type, Palette.slice_color(slice.slice_type))
+
+
+## Q19 (art-pass r2): a random respin: a dashed ring just outside the slice rim, all the way round
+## (it points at no slice), with chevrons on it for the way the wheel turns, and a "?" disc on the hub.
+## Nothing says where the needle lands.
+func _draw_unknown_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
+	if not unknown_ghost or wheel.pointer_ticks.is_empty():
+		return
+	var r := radius + GHOST_OUT
+	var col := Color(_col(Palette.CELL_ACID), UNKNOWN_GHOST_ALPHA)
+	_draw_dashed_arc(center, r, 0.0, TAU, col, UNKNOWN_GHOST_LINE)
+	for i in UNKNOWN_GHOST_CHEVRONS:
+		var a := TAU * (float(i) + 0.5) / UNKNOWN_GHOST_CHEVRONS
+		var tangent := Vector2(-sin(a), cos(a))
+		var normal := Vector2(cos(a), sin(a))
+		var tip := center + normal * r + tangent * UNKNOWN_CHEVRON_PX
+		var back := center + normal * r - tangent * UNKNOWN_CHEVRON_PX
+		draw_polyline(PackedVector2Array([back + normal * UNKNOWN_CHEVRON_PX, tip, back - normal * UNKNOWN_CHEVRON_PX]), col, UNKNOWN_GHOST_LINE * 1.5)
+	var ts := _ts()
+	draw_circle(center, UNKNOWN_HUB_DISC * ts, Color(_col(Palette.NIGHT_SKY), UNKNOWN_DISC_BACK_ALPHA))
+	HighContrast.draw_text(self, Palette.marker(), center + Vector2(-UNKNOWN_HUB_DISC * 0.5, UNKNOWN_HUB_DISC * 0.4) * ts, "?",
+		HORIZONTAL_ALIGNMENT_CENTER, UNKNOWN_HUB_DISC * ts, _fs(UNKNOWN_HUB_FONT), _col(Palette.CELL_ACID))
+
+
+## The "?" respin ghost: ring alpha and width (px), chevron count and half size (px), the hub disc's
+## radius (px at text 1.0: 24 across, the ODDS chip's size) and its backing alpha, its font, and how
+## far the old needle's tier tag (PERFECT / GOOD / WEAK) dims (share of full).
+const UNKNOWN_GHOST_ALPHA := 0.6
+const UNKNOWN_GHOST_LINE := 2.0
+const UNKNOWN_GHOST_CHEVRONS := 3
+const UNKNOWN_CHEVRON_PX := 7.0
+const UNKNOWN_HUB_DISC := 12.0
+const UNKNOWN_DISC_BACK_ALPHA := 0.85
+const UNKNOWN_HUB_FONT := 20
+const UNKNOWN_TAG_DIM := 0.4
 
 
 ## The inner ring's ghost (H21): a dashed arc inside the band from the segment that will
@@ -4271,6 +4361,11 @@ func standing_chips() -> Array[Dictionary]:
 		out.append({"text": tr("+%d") % c.resistance_gain, "color": Palette.PENCIL_THREAT, "pencil": true})
 	if c.wheel.frozen:
 		out.append({"text": tr("FROZEN"), "color": Palette.NET_CYAN})
+	# N7: the lock overlay, a chip per lock on this wheel.
+	if c.wheel.is_locked(WheelState.LOCK_NUDGE):
+		out.append({"text": tr("NUDGE LOCKED"), "color": Palette.PENCIL_THREAT})
+	if c.wheel.is_locked(WheelState.LOCK_RESPIN):
+		out.append({"text": tr("RESPIN LOCKED"), "color": Palette.PENCIL_THREAT})
 	# The passive itself is the hub's emblem (its core's glyph) and its tooltip line; only its
 	# being switched off is a chip.
 	if c.wheel.hub_id != &"" and c.is_hub_breached():

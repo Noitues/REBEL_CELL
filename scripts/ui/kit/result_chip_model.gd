@@ -27,7 +27,7 @@ const SPIN := &"spin"
 const NULL_LAND := &"null_land"
 ## W2-A2: the operative's HP would hit 0 this turn.
 const LETHAL := &"lethal"
-## A random roll (a random card, a respin): the odds are in the tooltip, never the roll (GDD 2.10).
+## A random part (a random card, a respin; Q19): only "?" is shown, never the roll, a range or the odds.
 const ODDS := &"odds"
 ## Plan 2 R3: what a phase floor stopped of this wheel's losses ("PARKED −N").
 const PARKED := &"parked"
@@ -103,15 +103,20 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 	elif a != null and a.wheel != null and b.wheel != null:
 		var put := {}
 		var cleared := {}
-		for i in mini(a.wheel.slice_statuses.size(), b.wheel.slice_statuses.size()):
-			var was: int = b.wheel.slice_statuses[i]
-			var now: int = a.wheel.slice_statuses[i]
-			if was == now:
-				continue
-			if now != RC.Status.NONE:
-				put[now] = int(put.get(now, 0)) + 1
-			else:
-				cleared[was] = int(cleared.get(was, 0)) + 1
+		# N8: per slot and status, gaining stacks puts it, losing the last stack clears it.
+		for i in mini(a.wheel.slice_stacks.size(), b.wheel.slice_stacks.size()):
+			var seen_statuses: Array[int] = b.wheel.statuses_at(i)
+			for st in a.wheel.statuses_at(i):
+				if not seen_statuses.has(st):
+					seen_statuses.append(st)
+			seen_statuses.sort()
+			for st in seen_statuses:
+				var was := b.wheel.stacks_of(i, st)
+				var now := a.wheel.stacks_of(i, st)
+				if now > was:
+					put[st] = int(put.get(st, 0)) + 1
+				elif now == 0 and was > 0:
+					cleared[st] = int(cleared.get(st, 0)) + 1
 		for s in _sorted_keys(put):
 			out.append({"kind": STATUS, "status": s, "count": int(put[s]), "random": false,
 				"good": WheelView.status_good_for_you(s, b.is_player),
@@ -201,7 +206,7 @@ static func label(c: Dictionary) -> String:
 		CLEARS:
 			return "×%s" % Palette.STATUS_GLYPHS.get(int(c["status"]), "?")
 		ODDS:
-			return "?"
+			return String(c.get("subject", "?"))
 		PARKED:
 			return String(TranslationServer.translate("PARKED −%d")) % v
 		HP_LINE:
@@ -244,7 +249,7 @@ static func words(c: Dictionary) -> String:
 		CLEARS:
 			return String(TranslationServer.translate("CLEARS %s")) % String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(c["status"]), ""))))
 		ODDS:
-			return String(TranslationServer.translate("A random roll: the odds are in the breakdown"))
+			return String(TranslationServer.translate("A random result: shown as ? until you play it"))
 		PARKED:
 			return String(TranslationServer.translate("%d damage parked at the phase line: it is lost, and the next phase starts after this turn")) % v
 		HP_LINE:
@@ -262,8 +267,23 @@ static func words(c: Dictionary) -> String:
 
 
 ## The chip a random roll shows (its odds go in the breakdown).
-static func odds_chip() -> Dictionary:
-	return {"kind": ODDS, "value": 0, "icon": "", "good": false}
+static func odds_chip(subject: String = "") -> Dictionary:
+	return {"kind": ODDS, "value": 0, "icon": "", "good": false, "subject": subject if subject != "" else "?"}
+
+
+## Q19 (art-pass r2): the "?" chip names what is unknown: "? LANDING" (a respin), "? <glyph> <status>"
+## (a random slice for a known status), "? STATUS" (the kind itself is random), "? SLICE" (any other pick).
+static func unknown_chip(kind: StringName, status: int = RC.Status.NONE) -> Dictionary:
+	if kind == PreviewResult.RESPIN:
+		return odds_chip(String(TranslationServer.translate("? LANDING")))
+	if kind == PreviewResult.RANDOM_SLICE:
+		if status != RC.Status.NONE:
+			var word := String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, ""))))
+			return odds_chip(String(TranslationServer.translate("? %s %s")) % [Palette.STATUS_GLYPHS.get(status, ""), word])
+		return odds_chip(String(TranslationServer.translate("? SLICE")))
+	if kind == PreviewResult.RESHUFFLE:
+		return odds_chip(String(TranslationServer.translate("? DRAW")))
+	return odds_chip(String(TranslationServer.translate("? STATUS")))
 
 
 static func _sorted_keys(d: Dictionary) -> Array:

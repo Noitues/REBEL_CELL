@@ -14,6 +14,11 @@ extends Resource
 @export var amount_mode: RC.AmountMode = RC.AmountMode.FLAT
 @export var multiplier: float = 1.0
 @export var status: RC.Status = RC.Status.NONE
+## APPLY_STATUS only (plan 2 N8): the stacks one apply adds to the slot (1 or more, at most
+## CampaignConfigData.status_stack_cap; the cap clamps the slot at run time).
+@export var stacks: int = 1
+## CLEANSE only (N8): ALL stacks of every status on the slot, or ONE_STACK of each.
+@export var cleanse_mode: RC.CleanseMode = RC.CleanseMode.ALL
 ## Slice-level effects only (APPLY_STATUS, CLEANSE): which slice of the target wheel.
 @export var slice_pick: RC.SlicePick = RC.SlicePick.UNDER_POINTER
 ## 0 = instant or permanent.
@@ -26,7 +31,7 @@ extends Resource
 @export var undock: bool = false
 
 
-func validate() -> PackedStringArray:
+func validate(stack_cap: int = 0) -> PackedStringArray:
 	var errors := PackedStringArray()
 	var whole_wheel_only := [RC.EffectType.SPIN, RC.EffectType.FLIP, RC.EffectType.RESPIN]
 	if type in whole_wheel_only and ring_scope != RC.RingScope.WHOLE_WHEEL:
@@ -37,7 +42,29 @@ func validate() -> PackedStringArray:
 		errors.append("APPLY_STATUS needs a status.")
 	if type == RC.EffectType.CUSTOM and custom_handler == null:
 		errors.append("CUSTOM effect needs a custom_handler script.")
+	if (type == RC.EffectType.LOCK_NUDGE or type == RC.EffectType.LOCK_RESPIN) and amount < 1:
+		errors.append("lock_turns_lt_1: %s lasts %d turns; at least 1." % [RC.EffectType.keys()[type], amount])
 	errors.append_array(amount_mode_errors())
+	errors.append_array(stack_errors(stack_cap))
+	return errors
+
+
+## The N8 stack problems, each led by a stable code: an APPLY_STATUS adding fewer than one
+## stack (`stack_amount_lt_1`) or more than `cap` (`stack_amount_gt_cap`, checked when a cap
+## is given: the content validator passes CampaignConfigData.status_stack_cap), the retired
+## PARASITE (`status_retired`: author OUTPUT_DOWN stacks), or a cleanse_mode outside
+## RC.CleanseMode (`cleanse_mode_invalid`).
+func stack_errors(cap: int = 0) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if type == RC.EffectType.APPLY_STATUS:
+		if stacks < 1:
+			errors.append("stack_amount_lt_1: APPLY_STATUS adds %d stacks; at least 1." % stacks)
+		elif cap > 0 and stacks > cap and not (status in RC.UNCAPPED_STATUSES):
+			errors.append("stack_amount_gt_cap: APPLY_STATUS adds %d stacks; the cap is %d." % [stacks, cap])
+		if status == RC.Status.PARASITE:
+			errors.append("status_retired: PARASITE is OUTPUT_DOWN x2 since N8; author OUTPUT_DOWN stacks.")
+	if type == RC.EffectType.CLEANSE and not (cleanse_mode in RC.CleanseMode.values()):
+		errors.append("cleanse_mode_invalid: cleanse_mode %d is not an RC.CleanseMode." % cleanse_mode)
 	return errors
 
 

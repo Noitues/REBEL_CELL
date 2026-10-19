@@ -1,6 +1,38 @@
 {
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite, deferred = text scale > 1.0 / high contrast / gamepad / colour-blind scripts, skipped by every default run (run_tests.py --tier deferred runs only them). Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
+		"res://tests/unit/test_wheel_sizes.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_wheel_layout_validation.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_wheel_geometry_ops.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_tick_quality_firmware.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_variable_size_combat.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_wheel_size_save.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_loadout_subtick_map.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_wheel_size_sweep.gd": {
+			"seconds": 5.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_pointer_ticks.gd": {
 			"seconds": 0.5,
 			"tier": "fast"
@@ -236,6 +268,10 @@
 		"res://tests/unit/test_anim_r6_rules.gd": {
 			"seconds": 4.7,
 			"tier": "full"
+		},
+		"res://tests/unit/test_motion_timings.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
 		},
 		"res://tests/unit/test_playtest_tools.gd": {
 			"seconds": 1.5,
@@ -518,7 +554,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_motion_lab_demos.gd": {
-			"seconds": 100.7,
+			"seconds": 128.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_names_pass.gd": {
@@ -580,6 +616,30 @@
 		"res://tests/unit/test_resolution_order.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_wheel_locks.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_validation.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_effects.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_content_validation.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_replay_save.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_sweep.gd": {
+			"seconds": 25.0,
+			"tier": "full"
 		},
 		"res://tests/unit/test_respin_action.gd": {
 			"seconds": 0.0,
@@ -981,10 +1041,6 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_art_r1.gd": {
-			"seconds": 5.0,
-			"tier": "fast"
-		},
 		"res://tests/unit/test_w3_polish.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
@@ -1149,6 +1205,38 @@
 			"seconds": 2.2,
 			"tier": "fast"
 		},
+		"res://tests/netrun_art/test_na21_parity.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_na23b_street.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na24_dressing.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_entry_sequence.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_street_r2_streams.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_street_r2_parity.gd": {
+			"seconds": 14.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_na24_dress_parity.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_na21_camera_pixels.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_seed_stream_isolation.gd": {
 			"seconds": 1.5,
 			"tier": "fast"
@@ -1201,6 +1289,30 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_slice_riders_data.gd": {
+			"seconds": 0.2,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_slice_riders_resolve.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_slice_riders_preview.gd": {
+			"seconds": 0.2,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_slice_riders_determinism.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_slice_riders_flow.gd": {
+			"seconds": 0.2,
+			"tier": "full"
+		},
+		"res://tests/unit/test_slice_riders_sweep.gd": {
+			"seconds": 7.0,
+			"tier": "full"
+		},
 		"res://tests/integration/test_enrage_hud_flow.gd": {
 			"seconds": 0.0,
 			"tier": "full"
@@ -1223,6 +1335,122 @@
 		},
 		"res://tests/integration/test_normal_pools_run.gd": {
 			"seconds": 20.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_status_output_tier.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_corruption_ram_cost.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_n9_preview_replay.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_n9_save_content.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_status_stacks.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_status_stack_math.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_status_stack_determinism.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_save_migration_v3.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_status_stack_content.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_status_stack_flow.gd": {
+			"seconds": 8.0,
+			"tier": "full"
+		},
+		"res://tests/integration/test_status_stack_sweep.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_city_shaders.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_shaders_render.gd": {
+			"seconds": 2.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_na23_route_flow.gd": {
+			"seconds": 45.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na26_route_port.gd": {
+			"seconds": 25.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_id_capture.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na23_route_view.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_enemy_listeners.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_preview_unknown_flow.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_preview_unknown.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_preview.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_undo.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_determinism.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_content.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_save.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_listener_flow.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_sweep.gd": {
+			"seconds": 5.0,
+			"tier": "full"
+		},
+		"res://tests/netrun_art/test_na11_layout_rules.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city3d_layout_rules.gd": {
+			"seconds": 110.0,
 			"tier": "full"
 		}
 	}

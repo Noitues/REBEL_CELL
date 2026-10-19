@@ -38,6 +38,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	NetrunScript.street_route = true
 	if _translation != null:
 		TranslationServer.set_locale(_locale_before)
 		TranslationServer.remove_translation(_translation)
@@ -462,6 +463,8 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 	if TestScope.deferred():
 		pending(TestScope.REASON)
 		return
+	# NA-26: the list rows are the transit page (a street that cannot be derived); the street page has no list.
+	NetrunScript.street_route = false
 	var scene := _netrun()
 	await _frames()
 	var s := RunManager.netrun
@@ -477,19 +480,11 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 			seen[b.text] = true
 			assert_string_contains(b.text, scene.node_word(node), "the button says what the node is")
 			assert_true(b.text.begins_with(scene.route_index_text(i)), "an index on every device: '%s'" % b.text)
-			# Parity ROUTE-04: the choice is a stop on its map sticker (the sticker is its icon).
-			assert_eq(StringName(b.get_meta(&"route_stop", &"")), available[i], "the stop is on its node's sticker")
 			assert_ne(b.tooltip_text, "", "a tooltip")
 		if pad:
 			assert_eq(scene.route_index_text(0), "1", "pad: the number")
 		else:
 			assert_eq(scene.route_index_text(0), Settings.hint(&"card_1"), "keyboard: the key")
-		var g: Dictionary = scene.route_graph()
-		for n in g["nodes"]:
-			var idx := available.find(n["id"])
-			if idx >= 0:
-				assert_true(String(n["label"]).begins_with(scene.route_index_text(idx)), "the map label carries the same index")
-				assert_eq(n["kind"], scene.node_icon(s.run.map.get_node(n["id"])))
 	var elite := {"type": RC.InfilNodeType.ROUTER, "elite": true}
 	assert_eq(scene.node_word(elite), "Elite fight")
 	assert_eq(scene.node_icon(elite), StatIcon.ELITE)

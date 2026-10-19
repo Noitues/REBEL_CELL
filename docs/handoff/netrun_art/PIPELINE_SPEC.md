@@ -877,7 +877,7 @@ occlusion rule are shared.
 ### 7.1 The rule
 
 0. **Scope (Designer 2026-10-18):** the rule applies to **every netrun view**: street netruns, HQ netruns and the exploit-building netruns (8.8), in OVERVIEW, DECISION, HOVER and every camera move between them. No netrun view may show a non-route building standing in front of the route.
-1. **Target volume:** the front points of the active room (the HQ's, the street column's, or the exploit building's) plus the visible route nodes. DECISION / HOVER: the
+1. **Target volume:** the front points of the active room (the HQ's, the street column's, or the exploit building's) plus the visible route nodes. **Extended (AD 2026-10-18, Aurelian v2):** in every view the target set holds every route room in frame that faces the camera, not only the current room and its options; and in DECISION / HOVER it also holds the **face band of the current level**: points on the landmark's (or route building's) face at floor and room-top height, every 3 deg (HQ) or every 1 BU along the street (street netrun), that project inside the frame. So a building in front of the facade the player is reading is cut even when no room sits directly behind it. DECISION / HOVER: the
    current room + its options. OVERVIEW (`zoom_detail < 0.5`): every route node (`HM/hq_jobs.py:55-67`).
 2. **Cone:** every ray from the camera to the target volume, widened by a **10 % margin** of the volume's span.
 3. **Occluder:** a city building whose footprint meets the cone of the targets behind it and whose top reaches into
@@ -1358,7 +1358,7 @@ capture below supplies the same data.
 - `id.png`: unlit, nearest-sampled, no UI, R = class. Classes match the Blender pass indices of `HM/hq_values.py`:
   0 sky, 1 landmark compound, 2 city, 5 rooms, 6 landmark movers; 3 and 4 are reserved as in `hq_scene.py`.
   **Additions (O-6, v1-compatible, R unchanged; NA03_NA04_ANSWERS, 2026-10-18):** class 3 = link structure (reported only; class 4 stays as the Blender pass uses it for ground).
-  `G` = room index, 1-based (0 = none), and `B` = layer, 1-based (0 = none), on class 5 pixels and on the cut surfaces of room columns (class 2 pixels with `B > 0`); byte values, no separate mask.
+  `G` = room index, 1-based (0 = none), and `B` = layer, 1-based (0 = none), on class 5 pixels and on the cut surfaces of room columns (class 2 pixels with `B > 0`); byte values, no separate mask. **Occlusion stubs (AD 2026-10-18):** a class 2 pixel of a building cut or ghosted by the 7.1 rule writes `B = 0`, `G = 255`; the 12.6 route-never-occluded check excludes those pixels (a route-column cut surface keeps `B > 0`, so the two never collide). **As built (NA-23, AD 2026-10-18), this replaces the G/B rule above:** `G` = the room's 1-based place in the run graph (unique per room), `B` = layer; route-building walls are class 2 with `B = 1`; stubs stay class 2 with `G = 255`, `B = 0`. **`depth.png` (new, 4th capture file):** 16-bit linear camera depth in BU x 100, nearest-sampled, no UI. The 12.6 route check counts a pixel only when it is more than 1 BU nearer than the room front (and above stub, surviving a 4 px erosion), as `street_r2/scripts/r2_occlusion.py`.
 - `capture.json`: camera pose, resolution, `layout_seed` (decimal string), run id.
   **Optional scope keys (O-1; unknown keys ignored; NA03_NA04_ANSWERS, 2026-10-18):** `kind` (`street` / `hq` / `city`), `view` (`overview` / `decision` / `hover` / `street` / `city`),
   `look` (`aaa2` / `mainline` / `blend`), `look_blend` (float 0..1, required when `look == "blend"`), `corp` (corp id, `""` for street and city), `exempt {hover_cut, red_seq, flash}` (bools).
@@ -1456,9 +1456,9 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 | R-DET-1 / R-DET-2 | street | Sobel >= 0.028; >= 450 blobs / MP | fail (rule `dressing.signs`) |
 | R-CALM-1 / R-CALM-2 | street, HQ | detail CV 0.45-0.85; calm tiles 12-32 % | fail on street views; **report only on HQ views** until recalibrated from the golden HQ plates (they fail on nearly every approved HQ final, so the thresholds, not the art, are off; AD 2026-10-18) (rules `density.falloff`, `atmosphere.layers`) |
 | R-HUE-1 / R-HUE-2 | street, city | entropy >= 3.8 bits; top cluster <= 45 % | fail; corp HQ views exempt (rule `palette.districts`) |
-| R-FOCUS-1 | any frame with a landmark | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
+| R-FOCUS-1 | any frame with a landmark, city views included; **report only by day** (`capture.json` `time: "day"`; AD 2026-10-18) | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
 | R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
-| R-REP-1 | all | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
+| R-REP-1 | all; on street views measured on the facade band only (frame rows above the kerb line), since the foreground streak lanes are periodic by design (AD 2026-10-18) | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
 | R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | 12.1 (median warn band 0.09-0.11 / 0.17-0.19 reports only; Designer 2026-10-16) | fail outside the fail band (rule `values.solve`) |
 
 Exempt as in 12.1 (hover power cut, mainline frames, red sequence, flash frames). The landmark and crop boxes come
@@ -1540,7 +1540,7 @@ A capture that moves beyond these numbers, or another plate that enters a warn b
 
 **Baseline fails (AD 2026-10-18).** The golden plates are the approved finals as they are. A check that a plate already fails is recorded in its `values.json` `checks` as `baseline`. On the Godot capture of that plate the same check reports `warn (baseline)` and the drift compare still applies; it is not a capture failure. Each baseline fail is an art item on art-pass (`golden_plates/INDEX.md`), cleared by a re-bake. Rebel Cell: pass index 3 (the MAINFRAME sign) maps to class 1, the sign is part of the landmark.
 
-**Camera parameters in `<stem>_capture.json`.** Added to the 12.0 fields (pose, resolution, `layout_seed` as a decimal string, run id) and the optional scope keys (`kind`, `view`, `look`, `look_blend`, `corp`, `exempt`). The values are the solved pose of the plate, not a re-solve (the rig is checked by its own parity test, 12.6).
+**Camera parameters in `<stem>_capture.json`.** Added to the 12.0 fields (pose, resolution, `layout_seed` as a decimal string, run id) and the optional scope keys (`kind`, `view`, `look`, `look_blend`, `corp`, `exempt`, and `time`: `"night"` (default) or `"day"`; day makes the value band, the landmark ratio and R-FOCUS-1 report only; AD 2026-10-18). The values are the solved pose of the plate, not a re-solve (the rig is checked by its own parity test, 12.6).
 
 | Key | Meaning |
 |---|---|

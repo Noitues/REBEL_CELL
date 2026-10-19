@@ -136,8 +136,10 @@ func validate() -> PackedStringArray:
 		var problems: Variant
 		if res is StoryPathData:
 			problems = res.validate(min_exploits)
-		elif res is EnemyData:
-			problems = res.validate(config)
+		elif res is EnemyData or res is ClassData:
+			problems = res.validate(config)  # N12: ClassData reads the operative slice cap
+		elif res is EffectData and config != null:
+			problems = res.validate(config.status_stack_cap)  # N8: stacks above the cap
 		else:
 			problems = res.validate()
 		for p in problems:

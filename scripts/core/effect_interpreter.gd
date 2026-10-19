@@ -20,11 +20,31 @@ var config: CampaignConfigData
 var lookup: ContentLookup
 ## See CombatResolver.quiet.
 var quiet: bool = false
+## Plan 2 Q19: non-null while CombatResolver.forecast runs. Every random part then marks itself
+## here ({kind, target, listener}) and is left undecided instead of rolled: a respin does not
+## turn the wheel, a random slice pick picks nothing, a reshuffle stops the draw.
+var forecast_marks: Variant = null
+## True while a listener's reaction runs (a mark made then says so).
+var forecast_in_listener: bool = false
+## The status the APPLY_STATUS effect now running would place (NONE otherwise): a random slice
+## pick marked meanwhile says which status it is for ("? status").
+var forecast_status: int = RC.Status.NONE
 
 
 func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 	config = p_config
 	lookup = p_lookup
+
+
+## Q19: true while a forecast runs.
+func forecasting() -> bool:
+	return forecast_marks != null
+
+
+## Q19: records a random part left undecided (forecast only).
+func mark_unknown(kind: StringName, target_id: StringName) -> void:
+	if forecast_marks != null:
+		(forecast_marks as Array).append({"kind": kind, "target": target_id, "listener": forecast_in_listener, "status": forecast_status})
 
 
 # --- Content helpers -------------------------------------------------------------
@@ -69,6 +89,27 @@ func spin_bonus_of(c: CombatantState) -> int:
 
 
 ## Permanent status from Firmware in `slot`, or NONE.
+## Plan 2 N12 (R11): slot `slot`'s sub-tick quality map as the rules read it, one
+## RC.PrecisionTier per tick from the slot's first tick: its authored map (WheelSlotData
+## tick_quality) or the default for its size (CampaignConfigData.tick_quality_good_reach),
+## each tick raised by its Firmware's tick_quality_step (Calibrated), capped at PERFECT.
+func tick_tiers(wheel: WheelState, slot: int) -> PackedInt32Array:
+	var tiers := wheel.quality_override(slot).duplicate()
+	if tiers.size() != wheel.slot_size(slot):
+		tiers = WheelMath.default_quality(wheel.slot_size(slot), config.tick_quality_good_reach)
+	var fw := firmware_of(wheel, slot)
+	if fw != null and fw.tick_quality_step != 0:
+		for i in tiers.size():
+			tiers[i] = WheelMath.raised_tier(tiers[i], fw.tick_quality_step)
+	return tiers
+
+
+## The precision tier wheel tick `tick` reads on `wheel` (tick_tiers of its slot).
+func tier_at_tick(wheel: WheelState, tick: int) -> int:
+	var slot := wheel.slot_of_tick(tick)
+	return tick_tiers(wheel, slot)[WheelMath.index_in_slot(tick, wheel.layout())]
+
+
 func permanent_status(wheel: WheelState, slot: int) -> int:
 	var fw := firmware_of(wheel, slot)
 	return fw.permanent_status if fw != null else RC.Status.NONE
@@ -100,14 +141,16 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.APPLY_STATUS:
 			for t in targets:
 				for k in status_count(e, t):
+					forecast_status = e.status
 					var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
-					if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+					forecast_status = RC.Status.NONE
+					if slot >= 0 and apply_status(t, slot, e.status, events, e.stacks) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
 						events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
 				if slot >= 0:
-					cleanse(t, slot, events)
+					cleanse(t, slot, events, e.cleanse_mode)
 		RC.EffectType.NUDGE:
 			var action: CombatAction = ctx.get("action")
 			var direction: int = 1
@@ -149,6 +192,13 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					continue
 				t.wheel.frozen = true
 				events.append({"type": "freeze", "target": t.id, "text": "%s is FROZEN: it skips its next respin." % t.display_name})
+		RC.EffectType.LOCK_NUDGE, RC.EffectType.LOCK_RESPIN:
+			var lock_kind := WheelState.LOCK_NUDGE if e.type == RC.EffectType.LOCK_NUDGE else WheelState.LOCK_RESPIN
+			var lock_source := StringName(String(ctx.get("source_id", &"")))
+			if lock_source == &"":
+				lock_source = owner.source_id
+			for t in targets:
+				place_lock(state, t, lock_kind, lock_source, e.amount, events)
 		RC.EffectType.MODIFY_RESISTANCE:
 			for t in targets:
 				modify_resistance(t, e.amount, events, state.phase == CombatState.Phase.RESOLVE)
@@ -195,6 +245,8 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
 					break
 				var slot := pick_slot(state, owner, e.slice_pick, ctx, rng)
+				if forecasting() and slot < 0 and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+					break  # Q19: the slice is undecided, so no drone is docked in the forecast
 				if at_cap and state.satellite_at(owner.id, maxi(0, slot)) == null:
 					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
 					break
@@ -387,26 +439,41 @@ func heal(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
 	events.append({"type": "heal", "target": c.id, "amount": healed, "text": "" if quiet else "%s heals %d (%d/%d)." % [c.display_name, healed, c.hp, c.max_hp]})
 
 
-## Applies `status` to slot `slot`. ENCRYPTED (temporary or Hardened) absorbs it.
-func apply_status(c: CombatantState, slot: int, status: int, events: Array[Dictionary]) -> bool:
+## Applies `stacks` stacks of `status` to slot `slot` (plan 2 N8): they add to what the slot
+## holds, up to config.status_stack_cap (ENCRYPTED and CORRUPTED uncapped). A PARASITE is
+## config.parasite_output_down_stacks OUTPUT_DOWN stacks per stack (R8). Hardened (permanent
+## ENCRYPTED) absorbs every apply; a temporary ENCRYPTED stack absorbs one apply of any other
+## status, whatever its stacks, and is used up (ENCRYPTED on ENCRYPTED adds a stack). Returns
+## true when the status landed.
+func apply_status(c: CombatantState, slot: int, status: int, events: Array[Dictionary], stacks: int = 1) -> bool:
 	var wheel := c.wheel
+	if status == RC.Status.PARASITE:
+		status = RC.Status.OUTPUT_DOWN
+		stacks *= config.parasite_output_down_stacks
 	if permanent_status(wheel, slot) == RC.Status.ENCRYPTED:
 		events.append({"type": "status_absorbed", "target": c.id, "slot": slot, "status": status,
 			"text": "%s slot %d is Hardened: %s absorbed." % [c.display_name, slot, RC.Status.keys()[status]]})
 		return false
-	if wheel.slice_statuses[slot] == RC.Status.ENCRYPTED:
-		wheel.slice_statuses[slot] = RC.Status.NONE
+	if status != RC.Status.ENCRYPTED and wheel.has_status(slot, RC.Status.ENCRYPTED):
+		wheel.remove_stacks(slot, RC.Status.ENCRYPTED, 1)
 		events.append({"type": "status_absorbed", "target": c.id, "slot": slot, "status": status,
 			"text": "%s slot %d ENCRYPTED absorbs %s." % [c.display_name, slot, RC.Status.keys()[status]]})
 		return false
-	wheel.slice_statuses[slot] = status
-	events.append({"type": "status", "target": c.id, "slot": slot, "status": status,
-		"text": "%s slot %d becomes %s." % [c.display_name, slot, RC.Status.keys()[status]]})
+	wheel.add_stacks(slot, status, maxi(1, stacks), config.status_stack_cap)
+	var now := wheel.stacks_of(slot, status)
+	events.append({"type": "status", "target": c.id, "slot": slot, "status": status, "stacks": now,
+		"text": "%s slot %d becomes %s%s." % [c.display_name, slot, RC.Status.keys()[status], (" x%d" % now) if now > 1 else ""]})
 	return true
 
 
-func cleanse(c: CombatantState, slot: int, events: Array[Dictionary]) -> void:
-	c.wheel.slice_statuses[slot] = RC.Status.NONE
+## Cleanses slot `slot` (N8): every stack of every status (CleanseMode.ALL, the default), or
+## one stack of each status on it (ONE_STACK).
+func cleanse(c: CombatantState, slot: int, events: Array[Dictionary], mode: int = RC.CleanseMode.ALL) -> void:
+	if mode == RC.CleanseMode.ONE_STACK:
+		for st in c.wheel.statuses_at(slot):
+			c.wheel.remove_stacks(slot, st, 1)
+	else:
+		c.wheel.clear_slot(slot)
 	events.append({"type": "cleanse", "target": c.id, "slot": slot, "text": "%s slot %d cleansed." % [c.display_name, slot]})
 
 
@@ -420,9 +487,12 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 		RC.SlicePick.RANDOM_NON_NULL:
 			var candidates: Array[int] = []
 			for i in c.wheel.slot_slice_ids.size():
-				if slice_of(c.wheel, i).slice_type != RC.SliceType.NULL and c.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+				if slice_of(c.wheel, i).slice_type != RC.SliceType.NULL and not c.wheel.has_status(i, RC.Status.CORRUPTED):
 					candidates.append(i)
 			if candidates.is_empty():
+				return -1
+			if forecasting():
+				mark_unknown(PreviewResult.RANDOM_SLICE, c.id)
 				return -1
 			return candidates[rng.randi_range(0, candidates.size() - 1)]
 		_:
@@ -520,6 +590,11 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	if not force and c.resistance > 0:
 		events.append({"type": "respin_blocked", "target": c.id, "text": "%s resists the RESPIN (resistance %d)." % [c.display_name, c.resistance]})
 		return false
+	if forecasting():
+		mark_unknown(PreviewResult.RESPIN, c.id)
+		events.append({"type": "respin", "target": c.id, "unknown": true,
+			"text": "%s respins (the landing is a random event)." % c.display_name})
+		return true
 	var wheel := c.wheel
 	wheel.rotation += 2 * RC.TICKS + rng.randi_range(0, RC.TICKS - 1)
 	if wheel.has_inner_ring():
@@ -527,6 +602,32 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	events.append({"type": "respin", "target": c.id, "tick": wheel.tick_at(0),
 		"text": "%s respins to tick %d." % [c.display_name, wheel.tick_at(0)]})
 	return true
+
+
+## N7: locks `kind` on `c`'s wheel for `turns` turns. During RESOLVE the lock is QUEUED and
+## applies at the start of the next turn after the start-of-turn spin (it would otherwise be
+## cleared with the turn it was placed in); in the player's turn it applies at once. A lock
+## of fewer than 1 turns places nothing. No RNG.
+func place_lock(state: CombatState, c: CombatantState, kind: StringName, source: StringName, turns: int, events: Array[Dictionary]) -> void:
+	if turns < 1:
+		return
+	if state.phase == CombatState.Phase.RESOLVE:
+		for p in state.pending_locks:
+			if p["wheel"] == String(c.id) and p["kind"] == String(kind) and p["source"] == String(source):
+				p["turns"] = maxi(int(p["turns"]), turns)
+				return
+		state.pending_locks.append({"wheel": String(c.id), "kind": String(kind), "source": String(source), "turns": turns})
+		state.pending_locks.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			for k in ["wheel", "kind", "source"]:
+				if a[k] != b[k]:
+					return IdSort.less(a[k], b[k])
+			return false)
+		events.append({"type": "lock_queued", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s will be locked next turn." % [c.display_name, kind]})
+		return
+	if c.wheel.add_lock(kind, source, turns):
+		events.append({"type": "lock", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s is locked." % [c.display_name, kind]})
 
 
 ## Changes `c`'s resistance now. During RESOLVE the change also carries into the next
@@ -561,9 +662,12 @@ func drain_ram(state: CombatState, amount: int, events: Array[Dictionary]) -> vo
 func snap_to_center(c: CombatantState, ring: int, events: Array[Dictionary]) -> void:
 	var wheel := c.wheel
 	if ring == RC.RingScope.INNER and wheel.has_inner_ring():
-		wheel.inner_rotation += -WheelMath.offset_at(wheel.inner_tick_at(0), RC.RING_SEGMENTS)
+		wheel.inner_rotation += -WheelMath.ring_offset(wheel.inner_tick_at(0))
 	else:
-		wheel.rotation += WheelMath.snap_delta(wheel.tick_at(0), wheel.slice_count)
+		# N12 (Q20): onto the nearest best tick of the slot under the pointer (its quality map,
+		# Calibrated included); a tie goes counter-clockwise (the lower tick).
+		var tick := wheel.tick_at(0)
+		wheel.rotation += WheelMath.snap_delta_in(tick, wheel.layout(), tick_tiers(wheel, wheel.slot_of_tick(tick)))
 	events.append({"type": "snap", "target": c.id, "text": "%s snaps to the slice center." % c.display_name})
 
 
@@ -574,6 +678,9 @@ func draw_cards(state: CombatState, count: int, rng: RandomNumberGenerator, even
 	for i in count:
 		if state.draw_pile.is_empty():
 			if state.discard_pile.is_empty():
+				break
+			if forecasting():
+				mark_unknown(PreviewResult.RESHUFFLE, state.player.id)
 				break
 			state.draw_pile = state.discard_pile.duplicate()
 			state.discard_pile.clear()
@@ -677,8 +784,11 @@ func effect_amount(e: EffectData, owner: CombatantState) -> int:
 ## (`output_scale`) unless the owner is the operative or one of its drones; rounded as N1.
 ## This is the tier-factor step of the hit order (tier factor, enrage, SANDBOX, bodyguard,
 ## BLOCK, SHIELD, HP). Slice hits never come here: `_resolve_pointer` already folds the
-## factor into their output, so no hit is scaled twice. A PERCENT amount is never rescaled.
+## factor into their output, so no hit is scaled twice. A PERCENT amount (allowed on enemy
+## listeners only, N6) is that share of the owner's max HP and is never rescaled.
 func damage_amount(e: EffectData, owner: CombatantState) -> int:
+	if e.amount_mode == RC.AmountMode.PERCENT and owner != null:
+		return _scaled(percent_of(owner.max_hp, e.amount), e.multiplier)
 	var scale := 1.0
 	if owner != null and not owner.is_player and e.amount_mode != RC.AmountMode.PERCENT:
 		scale = owner.output_scale
@@ -697,7 +807,7 @@ func status_count(e: EffectData, t: CombatantState) -> int:
 		if slice_of(t.wheel, i).slice_type == RC.SliceType.NULL:
 			continue
 		non_null += 1
-		if t.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+		if not t.wheel.has_status(i, RC.Status.CORRUPTED):
 			eligible += 1
 	var wanted := percent_of(non_null, e.amount) if e.amount_mode == RC.AmountMode.PERCENT else maxi(1, e.amount)
 	return mini(wanted, eligible)

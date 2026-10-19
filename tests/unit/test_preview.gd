@@ -87,4 +87,4 @@ func test_random_dose_target_is_previewed_exactly() -> void:
 	CombatFixture.land(session.state.get_combatant(&"enemy_0"), 0)
 	var predicted := session.preview_end_turn()
 	var actual := session.apply(CombatAction.end_turn())
-	assert_eq(predicted.state.player.wheel.slice_statuses, actual.resolved_state.player.wheel.slice_statuses)
+	assert_eq(predicted.state.player.wheel.slice_stacks, actual.resolved_state.player.wheel.slice_stacks)

@@ -7,7 +7,175 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _p2_street_r2_config()
+
+
+## Plan 2 N6: ListenerData defaults (ON_PERFECT, unauthored caps, WEAK), the two appended
+## triggers, a bad listener refused by code, a save keeps it on an EnemyData and a HubCoreData,
+## the config default ships 1 and 0 is refused.
+func _n6_listeners() -> int:
+	var fails := 0
+	var l := ListenerData.new()
+	print("N6 listener defaults (expect 6 -1 -1 0; triggers 15 16): ", l.trigger, " ", l.max_per_turn, " ", l.max_per_combat, " ", l.min_tier,
+		"; ", RC.Trigger.ON_RAM_SPENT, " ", RC.Trigger.ON_HIT_DEALT)
+	if l.trigger != RC.Trigger.ON_PERFECT or l.max_per_turn != -1 or l.max_per_combat != -1 or l.min_tier != RC.PrecisionTier.WEAK: fails += 1
+	if RC.Trigger.ON_RAM_SPENT != RC.Trigger.ON_SATELLITE_DESTROYED + 1 or RC.Trigger.ON_HIT_DEALT != RC.Trigger.ON_RAM_SPENT + 1: fails += 1
+	l.trigger = RC.Trigger.ON_TURN_START
+	l.max_per_turn = 0
+	var codes := ",".join(l.validate())
+	print("N6 bad listener: ", codes)
+	if not (codes.contains("trigger_not_listenable") and codes.contains("no_effects") and codes.contains("cap_not_positive")): fails += 1
+	var block := EffectData.new(); block.type = RC.EffectType.GAIN_BLOCK; block.target = RC.EffectTarget.SELF; block.amount = 2
+	l.trigger = RC.Trigger.ON_HIT_DEALT; l.max_per_turn = 2; l.max_per_combat = 3
+	var fx_list: Array[EffectData] = [block]
+	l.effects = fx_list
+	var ls: Array[ListenerData] = [l]
+	var e := EnemyData.new(); e.id = &"smoke_listener_enemy"; e.listeners = ls
+	var h := HubCoreData.new(); h.id = &"smoke_listener_hub"; h.listeners = ls
+	var err := ResourceSaver.save(e, "user://smoke_listener_enemy.tres")
+	var err2 := ResourceSaver.save(h, "user://smoke_listener_hub.tres")
+	var back: EnemyData = ResourceLoader.load("user://smoke_listener_enemy.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	var back_h: HubCoreData = ResourceLoader.load("user://smoke_listener_hub.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	var ok := back != null and back_h != null and back.listeners.size() == 1 and back_h.listeners.size() == 1
+	print("N6 listener save=", err, " ", err2, " back ", [back.listeners[0].trigger, back.listeners[0].max_per_turn, back.listeners[0].max_per_combat] if ok else [])
+	if err != OK or err2 != OK or not ok or back.listeners[0].trigger != RC.Trigger.ON_HIT_DEALT or back.listeners[0].max_per_combat != 3 \
+			or back.listeners[0].validate().size() != 0: fails += 1
+	var d := CampaignConfigData.new()
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N6 listener default cap (expect 1 1): ", d.listener_max_per_turn_default, " ", cfg.listener_max_per_turn_default)
+	if d.listener_max_per_turn_default != 1 or cfg.listener_max_per_turn_default != 1: fails += 1
+	d.listener_max_per_turn_default = 0
+	if not ",".join(d.validate()).contains("listener_max_per_turn_default"): fails += 1
+	return fails
+
+
+## Plan 2 N20: SliceData riders default to a plain slice; a bad one is refused by code; a
+## save keeps all four; riders on a non-damage slice are refused.
+func _n20_slice_riders() -> int:
+	var fails := 0
+	var s := SliceData.new(); s.id = &"smoke_rider"; s.slice_type = RC.SliceType.SHIM; s.base_output = 2
+	print("N20 rider defaults (expect 1 0 0 1 false false): ", s.hits, " ", s.hits_per_target_status, " ", s.hits_per_status_slice, " ", s.perfect_multiplier, " ", s.pierce, " ", s.has_riders())
+	if s.hits != 1 or s.hits_per_target_status != RC.Status.NONE or s.hits_per_status_slice != 0 or s.perfect_multiplier != 1.0 or s.pierce or s.has_riders(): fails += 1
+	s.hits = 0; s.perfect_multiplier = 0.0
+	var codes := ",".join(s.validate())
+	print("N20 bad riders: ", codes)
+	if not (codes.contains("hits_lt_1") and codes.contains("perfect_multiplier_not_positive")): fails += 1
+	s.hits = 3; s.perfect_multiplier = 4.0; s.pierce = true
+	s.hits_per_target_status = RC.Status.CORRUPTED; s.hits_per_status_slice = 1
+	var err := ResourceSaver.save(s, "user://smoke_riders.tres")
+	var back: SliceData = ResourceLoader.load("user://smoke_riders.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	print("N20 rider save=", err, " back ", [back.hits, back.hits_per_target_status, back.hits_per_status_slice, back.perfect_multiplier, back.pierce] if back != null else [])
+	if err != OK or back == null or back.hits != 3 or back.hits_per_target_status != RC.Status.CORRUPTED or back.hits_per_status_slice != 1 \
+			or back.perfect_multiplier != 4.0 or not back.pierce or back.validate().size() != 0: fails += 1
+	s.slice_type = RC.SliceType.DEFRAG
+	if not ",".join(s.validate()).contains("riders_on_non_damage"): fails += 1
+	return fails
+
+
+
+
+## NA-24: DressingConfigData (the street dressing's reveal groups, palettes, districts, bands): the shipped one validates, an
+## empty one reports its gaps, a district naming an unknown palette set is refused by name.
+func _na24_dressing_config() -> int:
+	var fails := 0
+	var cfg: DressingConfigData = load(DressingConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-24 shipped dressing config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	if DressingConfigData.new().validate().size() <= 5: fails += 1
+	var bad: DressingConfigData = cfg.duplicate(true)
+	bad.districts["halcyon"] = {"palette": "no_such_set"}
+	if not ",".join(bad.validate()).contains("districts.halcyon"): fails += 1
+	var no_acc: DressingConfigData = cfg.duplicate(true)
+	(no_acc.palettes["solace_mint"] as Dictionary).erase("accent")
+	if not ",".join(no_acc.validate()).contains("palettes.solace_mint.accent"): fails += 1
+	return fails
+
+
+## NA-23: StreetRouteConfigData (the street netrun view's tuning numbers): the shipped one validates, an empty one reports its
+## gaps, a bad hover level is refused by name.
+func _na23_street_route_config() -> int:
+	var fails := 0
+	var cfg: StreetRouteConfigData = load(StreetRouteConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-23 shipped street route config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	if StreetRouteConfigData.new().validate().size() <= 20: fails += 1
+	var bad: StreetRouteConfigData = cfg.duplicate(true)
+	bad.hover["cut_level"] = 2.0
+	if not ",".join(bad.validate()).contains("hover.cut_level"): fails += 1
+	return fails
+
+
+## NA-22: CityShaderConfigData (the netrun city shaders' tuning numbers): the shipped one validates, an empty one reports
+## its gaps, a bad loop is refused by name.
+func _na22_city_shader_config() -> int:
+	var fails := 0
+	var cfg: CityShaderConfigData = load(CityShaderConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-22 shipped city shader config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	var empty := CityShaderConfigData.new()
+	if empty.validate().size() <= 20: fails += 1
+	var bad: CityShaderConfigData = cfg.duplicate(true)
+	bad.streak["loop_s"] = 0.0
+	if not ",".join(bad.validate()).contains("streak.loop_s"): fails += 1
+	return fails
+
+
+## NA-21: NetrunArtConfigData (the netrun-art twins' tuning numbers): the shipped one validates, the timings are
+## the frozen 0.9 s step and 1.0 s Z, an empty one reports its gaps, and a save keeps the rig.
+func _na21_netrun_art_config() -> int:
+	var fails := 0
+	var cfg: NetrunArtConfigData = load(NetrunArtConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-21 shipped netrun art config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	print("NA-21 timings (expect 0.9 1.0): ", cfg.rig["t_step"], " ", cfg.rig["t_zoom"])
+	if not is_equal_approx(float(cfg.rig["t_step"]), 0.9) or not is_equal_approx(float(cfg.rig["t_zoom"]), 1.0): fails += 1
+	var empty := NetrunArtConfigData.new()
+	var ee := empty.validate()
+	print("NA-21 empty config errors (expect more than 10): ", ee.size())
+	if ee.size() <= 10: fails += 1
+	var t := NetrunArtConfigData.new()
+	t.rig = {"t_step": 1.5}
+	var err := ResourceSaver.save(t, "user://smoke_netrun_art.tres")
+	var back: NetrunArtConfigData = load("user://smoke_netrun_art.tres")
+	if err != OK or back == null or not is_equal_approx(float(back.rig["t_step"]), 1.5): fails += 1
+	return fails
+
+
+## Plan 2 N8 (×N status stacks): RC.Status.OUTPUT_DOWN = 5 (PARASITE stays 4 for v2 saves),
+## EffectData.stacks (default 1) and cleanse_mode (default ALL) survive a save, the config's
+## stack fields default 0.25 / 2 / 5 and ship so, and bad stack counts are refused.
+func _n8_status_stacks() -> int:
+	var fails := 0
+	print("N8: OUTPUT_DOWN = ", RC.Status.OUTPUT_DOWN, " PARASITE = ", RC.Status.PARASITE, " CleanseMode = ", RC.CleanseMode.keys())
+	if RC.Status.OUTPUT_DOWN != 5 or RC.Status.PARASITE != 4 or RC.CleanseMode.ONE_STACK != 1: fails += 1
+	# N9: TIER_DOWN is appended, the RAM-cost numbers default 2 / 2 and ship so.
+	if RC.Status.TIER_DOWN != 6 or CampaignConfigData.new().corrupted_ram_cost_multiplier != 2 or CampaignConfigData.new().corrupted_enemy_ram_divisor != 2: fails += 1
+	var e := EffectData.new()
+	e.type = RC.EffectType.APPLY_STATUS
+	e.status = RC.Status.OUTPUT_DOWN
+	print("N8: EffectData stacks default ", e.stacks, " cleanse_mode default ", e.cleanse_mode)
+	if e.stacks != 1 or e.cleanse_mode != RC.CleanseMode.ALL: fails += 1
+	e.stacks = 3
+	e.cleanse_mode = RC.CleanseMode.ONE_STACK
+	var err := ResourceSaver.save(e, "user://smoke_n8_effect.tres")
+	var back: EffectData = load("user://smoke_n8_effect.tres")
+	print("N8: effect save=", err, " stacks ", back.stacks if back != null else -1, " mode ", back.cleanse_mode if back != null else -1)
+	if err != OK or back == null or back.stacks != 3 or back.cleanse_mode != RC.CleanseMode.ONE_STACK: fails += 1
+	e.stacks = 0
+	if not " ".join(e.validate()).contains("stack_amount_lt_1"): fails += 1
+	e.stacks = 6
+	if not " ".join(e.validate(5)).contains("stack_amount_gt_cap"): fails += 1
+	var fresh := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N8: config defaults ", [fresh.output_down_per_stack, fresh.parasite_output_down_stacks, fresh.status_stack_cap],
+		" shipped ", [shipped.output_down_per_stack, shipped.parasite_output_down_stacks, shipped.status_stack_cap])
+	if fresh.output_down_per_stack != 0.25 or fresh.parasite_output_down_stacks != 2 or fresh.status_stack_cap != 5: fails += 1
+	if shipped.output_down_per_stack != 0.25 or shipped.parasite_output_down_stacks != 2 or shipped.status_stack_cap != 5: fails += 1
+	return fails
 
 
 ## Plan 2 N14 (ruling Q39): the SANDBOX charge counts default 1 / 2, ship 1 / 2, and bad
@@ -41,6 +209,33 @@ func _n11_pointer_ticks() -> int:
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("N11 config cap / offsets: ", cfg.max_pointers, " ", cfg.boss_extra_pointer_offsets)
 	if cfg.max_pointers != 4 or cfg.boss_extra_pointer_offsets != PackedInt32Array([15, 10, 20, 5, 25]): fails += 1
+	return fails
+
+
+## Plan 2 N12: WheelSlotData.size_ticks (AUTO default) and tick_quality, FirmwareData
+## tick_quality_step, WheelData.slice_count up to 30, the config caps and the default reach.
+func _n12_slot_sizes() -> int:
+	var fails := 0
+	var slot := WheelSlotData.new()
+	print("N12 slot defaults (expect -1, []): ", slot.size_ticks, " ", slot.tick_quality)
+	if slot.size_ticks != RC.SIZE_AUTO or not slot.tick_quality.is_empty(): fails += 1
+	print("N12 firmware step default (expect 0): ", FirmwareData.new().tick_quality_step)
+	if FirmwareData.new().tick_quality_step != 0: fails += 1
+	var a := _slice(&"a", RC.SliceType.SHIM, 3)
+	var legacy := _wheel([a, a, a, a, a, a])
+	print("N12 legacy sizes (expect six 5s): ", legacy.slot_sizes(), " ", legacy.validate())
+	if legacy.slot_sizes() != PackedInt32Array([5, 5, 5, 5, 5, 5]) or not legacy.validate().is_empty(): fails += 1
+	var uneven := _wheel([a, a, a, a, a, a, a, a])
+	var sizes := [5, 4, 3, 4, 4, 3, 4, 3]
+	for i in 8:
+		uneven.slots[i].size_ticks = sizes[i]
+	print("N12 uneven 8-slot wheel (expect []): ", uneven.validate())
+	if not uneven.validate().is_empty(): fails += 1
+	uneven.slots[0].size_ticks = 6
+	if not "size_sum" in " ".join(uneven.validate()): fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N12 config caps / min / reach: ", cfg.operative_slice_cap, " ", cfg.enemy_slice_cap, " ", cfg.slice_size_min, " ", cfg.tick_quality_good_reach)
+	if cfg.operative_slice_cap != 6 or cfg.enemy_slice_cap != 30 or cfg.slice_size_min != 1 or cfg.tick_quality_good_reach != 1: fails += 1
 	return fails
 
 
@@ -486,7 +681,7 @@ func _batch5() -> int:
 
 
 ## M6 class roster: HubCoreData drones_persist / max_ram_bonus / free_resistance_nudges,
-## Status.PARASITE, config parasite_multiplier / station_deploy_asset, RunState.drones and
+## Status.PARASITE, config parasite_output_down_stacks (N8, was parasite_multiplier) / station_deploy_asset, RunState.drones and
 ## WheelState.respin_skipped (freeze cooldown).
 func _m6() -> int:
 	var fails := 0
@@ -498,8 +693,8 @@ func _m6() -> int:
 	print("Status.PARASITE = ", RC.Status.PARASITE)
 	if RC.Status.PARASITE != 4: fails += 1
 	var cfg := CampaignConfigData.new()
-	print("Config parasite multiplier default: ", cfg.parasite_multiplier, " station asset: ", cfg.station_deploy_asset)
-	if cfg.parasite_multiplier != 0.5 or cfg.station_deploy_asset != null: fails += 1
+	print("Config parasite OUTPUT_DOWN stacks default (N8): ", cfg.parasite_output_down_stacks, " station asset: ", cfg.station_deploy_asset)
+	if cfg.parasite_output_down_stacks != 2 or cfg.station_deploy_asset != null: fails += 1
 	var r := RunState.new(); r.drones = [{"source_id": "botnet_drone", "hp": 4, "dock_slot": 1}]
 	var rb := RunState.from_dict(r.to_dict())
 	print("RunState drones round trip: ", rb.drones)
@@ -861,4 +1056,27 @@ func _art8_hq_compound() -> int:
 	print("ART-8 8p: layout save=", err, " rows ", back.layer_rows() if back != null else -1, " L2S1 ", back.slot_position(2, 1) if back != null else Vector3.ZERO)
 	if err != OK or back == null or back.validate().size() != 0 or back.layer_rows() != 2 or back.slot_position(2, 1) != Vector3(10, 11, 12): fails += 1
 	if back == null or back.central_server != Vector3(0, 30, 0) or back.entry != Vector3(40, 0, 0): fails += 1
+	return fails
+
+
+## P2-P4 step 1: StreetR2ConfigData (the street look rules' numbers): the shipped one validates, the plate's constants are intact
+## (art seed 1, 4 kits, the kinds in weight order), an empty one reports its gaps, a missing kit row and a save round trip are caught.
+func _p2_street_r2_config() -> int:
+	var fails := 0
+	var cfg: StreetR2ConfigData = load(StreetR2ConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("P2 shipped street r2 config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	print("P2 plate constants (expect 1, 4, [ac, pipe, awning, small_sign, lit_room]): ", cfg.seeds["s1"], " ", (cfg.materials_mix["kits"] as Array).size(), " ", cfg.props_facade["kinds"].keys())
+	if int(cfg.seeds["s1"]) != 1 or (cfg.materials_mix["kits"] as Array).size() != 4: fails += 1
+	if (cfg.props_facade["kinds"] as Dictionary).keys() != ["ac", "pipe", "awning", "small_sign", "lit_room"]: fails += 1
+	if StreetR2ConfigData.new().validate().size() <= 20: fails += 1
+	var bad: StreetR2ConfigData = cfg.duplicate(true)
+	(bad.kits["kit_w"] as Dictionary).erase("lit_atrium")
+	if not ",".join(bad.validate()).contains("kits.kit_w.lit_atrium"): fails += 1
+	var t := StreetR2ConfigData.new()
+	t.subs = ["A", "B"]
+	var err := ResourceSaver.save(t, "user://smoke_street_r2.tres")
+	var back: StreetR2ConfigData = load("user://smoke_street_r2.tres")
+	if err != OK or back == null or back.subs != ["A", "B"]: fails += 1
 	return fails

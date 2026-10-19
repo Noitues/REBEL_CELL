@@ -36,6 +36,9 @@ const HP_BAND_EPSILON := 0.0001
 ## Plan 2 N22 (ruling Q12): EASY or HARD normal-fight pool. Only normals may be EASY; the
 ## default HARD is what every non-normal carries.
 @export var normal_pool: RC.NormalPool = RC.NormalPool.HARD
+## Plan 2 N6: reactions to the player's actions (ListenerData), fired in index order and kept
+## through every phase. Hub listeners sit on the Hub (HubCoreData.listeners).
+@export var listeners: Array[ListenerData] = []
 
 
 ## N2: true when starting HP comes from hp_by_tier / hp_bands, not the legacy multiplier.
@@ -97,6 +100,7 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 		errors.append_array(wheel.validate())
 	errors.append_array(_validate_phases(config if config != null else CampaignConfigData.new()))
 	errors.append_array(_validate_pointer_cap(config if config != null else CampaignConfigData.new()))
+	errors.append_array(_validate_slice_cap(config if config != null else CampaignConfigData.new()))
 	errors.append_array(_validate_resistance(config if config != null else CampaignConfigData.new()))
 	var band_config := config
 	if band_config == null and (not hp_by_tier.is_empty() or not hp_bands.is_empty()) and ResourceLoader.exists(CONFIG_PATH):
@@ -109,6 +113,28 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 			errors.append("%s (enemy %s)" % [problem, id])
 	if normal_pool == RC.NormalPool.EASY and enemy_class() != RC.EnemyClass.NORMAL:
 		errors.append("pool_on_non_normal: Enemy %s is not a normal; only normals may be in the EASY pool." % id)
+	errors.append_array(listener_errors())
+	return errors
+
+
+## N6: every listener's problems (its own, its base Hub's and each phase override's Hub),
+## each tagged with this enemy's id.
+func listener_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	var all: Array[ListenerData] = listeners.duplicate()
+	if wheel != null and wheel.hub != null:
+		all.append_array(wheel.hub.listeners)
+	for p in phases:
+		if p != null and p.hub_override != null:
+			all.append_array(p.hub_override.listeners)
+		if p != null and p.wheel_override != null and p.wheel_override.hub != null:
+			all.append_array(p.wheel_override.hub.listeners)
+	for l in all:
+		if l == null:
+			errors.append("empty_effect: Enemy %s has an empty listener entry." % id)
+			continue
+		for problem in l.validate():
+			errors.append("%s (enemy %s)" % [problem, id])
 	return errors
 
 
@@ -122,11 +148,11 @@ func turn_resistance() -> int:
 
 ## N21: the per-turn resistance at fight start and after each phase's overrides lies inside
 ## the class range (`resistance_out_of_range`, with the id). Satellite wheels (fewer than
-## RC.SLICES slices) are not fights and are not held to it.
+## RC.SLICES slots) are not fights and are not held to it.
 func _validate_resistance(config: CampaignConfigData) -> PackedStringArray:
 	var errors := PackedStringArray()
 	var cls := enemy_class()
-	if wheel == null or wheel.slice_count != RC.SLICES:
+	if wheel == null or wheel.slice_count < RC.SLICES:  # N12: enemy wheels may hold more slices
 		return errors
 	if cls >= config.resistance_min_by_class.size() or cls >= config.resistance_max_by_class.size():
 		return errors
@@ -191,6 +217,21 @@ func _validate_pointer_cap(config: CampaignConfigData) -> PackedStringArray:
 	for ticks in layouts:
 		if ticks.size() > config.max_pointers:
 			errors.append("too_many_pointers: Enemy %s has a layout of %d pointers; the cap is %d." % [id, ticks.size(), config.max_pointers])
+	return errors
+
+
+## Plan 2 N12 (Q20): the base wheel and every phase wheel override within the enemy slice cap
+## (satellites included: their 2-3 slots are far under it), each problem tagged with the id.
+func _validate_slice_cap(config: CampaignConfigData) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var wheels: Array[WheelData] = [wheel]
+	for p in phases:
+		if p != null and p.wheel_override != null:
+			wheels.append(p.wheel_override)
+	for w in wheels:
+		if w != null:
+			for problem in w.slice_cap_errors(config.enemy_slice_cap, config.slice_size_min):
+				errors.append("%s (enemy %s)" % [problem, id])
 	return errors
 
 

@@ -48,6 +48,10 @@ var next_threshold_bp: int = 0
 var enrage_step: int = 0
 var enrage_percent: int = RC.PERCENT_MAX
 var enrage_resistance: int = 0
+## Plan 2 N6: how often each of this enemy's listeners fired this turn and this combat, by
+## listener key (CombatResolver.listener_key). The turn counts reset in start_turn.
+var listener_fires_turn: Dictionary = {}
+var listener_fires_combat: Dictionary = {}
 
 
 func is_alive() -> bool:
@@ -99,6 +103,8 @@ func duplicate_state() -> CombatantState:
 	c.enrage_step = enrage_step
 	c.enrage_percent = enrage_percent
 	c.enrage_resistance = enrage_resistance
+	c.listener_fires_turn = listener_fires_turn.duplicate()
+	c.listener_fires_combat = listener_fires_combat.duplicate()
 	return c
 
 
@@ -116,7 +122,30 @@ func to_dict() -> Dictionary:
 	# N21: only a combatant that regained resistance this turn carries the "+N" amount.
 	if resistance_gain != 0:
 		d["resistance_gain"] = resistance_gain
+	# N6: only a combatant whose listeners fired carries the counts.
+	if not listener_fires_turn.is_empty():
+		d["listener_fires_turn"] = _sorted_counts(listener_fires_turn)
+	if not listener_fires_combat.is_empty():
+		d["listener_fires_combat"] = _sorted_counts(listener_fires_combat)
 	return d
+
+
+## `counts` with its keys in text order (a stable save and hash).
+static func _sorted_counts(counts: Dictionary) -> Dictionary:
+	var keys := counts.keys()
+	IdSort.sort_ids(keys)
+	var out := {}
+	for k in keys:
+		out[String(k)] = int(counts[k])
+	return out
+
+
+static func _counts_from(v: Variant) -> Dictionary:
+	var out := {}
+	if v is Dictionary:
+		for k in v:
+			out[String(k)] = int(v[k])
+	return out
 
 
 func _base_dict() -> Dictionary:
@@ -171,4 +200,6 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	c.enrage_step = int(d.get("enrage_step", 0))
 	c.enrage_percent = int(d.get("enrage_percent", RC.PERCENT_MAX))
 	c.enrage_resistance = int(d.get("enrage_resistance", 0))
+	c.listener_fires_turn = _counts_from(d.get("listener_fires_turn", {}))
+	c.listener_fires_combat = _counts_from(d.get("listener_fires_combat", {}))
 	return c

@@ -20,6 +20,9 @@ const STATUS_TYPES := [RC.SliceType.INFECT]
 ## validate_action's refusal (code SATELLITE_FIXED) when a player action would move a
 ## satellite or drone without the Undock keyword (designer 2026-10-18, Q7/Q10).
 const SATELLITE_FIXED := "Satellites are fixed to their slice: only Undock moves them."
+## N7 refusals (codes NUDGE_LOCKED / RESPIN_LOCKED; the source ids are in lock_refusal()).
+const NUDGE_LOCKED := "That wheel's nudges are locked this turn."
+const RESPIN_LOCKED := "That wheel's respins are locked this turn."
 ## Effect types that move the wheel they hit (refused on satellites without Undock).
 const SATELLITE_MOVING_EFFECTS := [RC.EffectType.NUDGE, RC.EffectType.SPIN, RC.EffectType.FLIP,
 	RC.EffectType.RESPIN, RC.EffectType.FREEZE, RC.EffectType.SNAP_TO_CENTER]
@@ -125,7 +128,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			for k in int(overrides.get("boss_corrupt_slices", 0)):
 				var slot := fx.pick_slot(s, e, RC.SlicePick.RANDOM_NON_NULL, {}, rng)
 				if slot >= 0:
-					e.wheel.slice_statuses[slot] = RC.Status.CORRUPTED
+					e.wheel.add_stacks(slot, RC.Status.CORRUPTED, 1, config.status_stack_cap)
 		s.enemies.append(e)
 		for spawn in enemy_datas[i].spawns:
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
@@ -242,26 +245,33 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if t == null or not t.is_alive() or t.is_player:
 				return "Invalid target."
 		CombatAction.Type.RESPIN:
-			if state.ram < config.respin_ram_cost:
-				return "Not enough RAM for a respin (%d needed)." % config.respin_ram_cost
+			if state.player.wheel.is_locked(WheelState.LOCK_RESPIN):
+				return RESPIN_LOCKED
+			var respin_cost := RamCost.of_action(state, action, self)
+			if state.ram < respin_cost:
+				return "Not enough RAM for a respin (%d needed)." % respin_cost
 		CombatAction.Type.NUDGE:
 			var t := state.get_combatant(action.wheel_id)
 			if t == null or not t.is_alive():
 				return "Invalid wheel."
 			if t.is_satellite:
 				return SATELLITE_FIXED
+			if t.wheel.is_locked(WheelState.LOCK_NUDGE):
+				return NUDGE_LOCKED  # free and paid nudges alike; costs nothing
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
-			if state.free_nudges <= 0 and state.ram < config.extra_nudge_ram_cost:
-				return "No free nudge left, and an extra nudge costs %d RAM." % config.extra_nudge_ram_cost
+			var nudge_cost := RamCost.of_action(state, action, self)
+			if state.free_nudges <= 0 and state.ram < nudge_cost:
+				return "No free nudge left, and an extra nudge costs %d RAM." % nudge_cost
 		CombatAction.Type.PLAY_CARD:
 			if action.hand_index < 0 or action.hand_index >= state.hand.size():
 				return "No such card in hand."
 			var card := lookup.get_content(state.hand[action.hand_index]) as CardData
 			if card == null:
 				return "Unknown card."
-			if state.ram < card.ram_cost:
-				return "Not enough RAM (%d needed)." % card.ram_cost
+			var card_cost := RamCost.of_action(state, action, self)
+			if state.ram < card_cost:
+				return "Not enough RAM (%d needed)." % card_cost
 			var target := card_target(state, card, action)
 			if target == null or not target.is_alive():
 				return "Card has no valid target wheel."
@@ -273,6 +283,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			for e in card.effects:
 				if e == null:
 					continue
+				if e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(WheelState.LOCK_RESPIN):
+					return RESPIN_LOCKED
 				if (e.type == RC.EffectType.FLIP or e.type == RC.EffectType.RESPIN) and target != state.player and target.resistance > 0:
 					return "%s blocked: %s has %d resistance." % [RC.EffectType.keys()[e.type], target.display_name, target.resistance]
 				if e.type == RC.EffectType.NUDGE and EffectInterpreter.nudge_ring(e, action, target) == RC.RingScope.INNER and not target.wheel.has_inner_ring():
@@ -280,6 +292,34 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				if e.slice_pick == RC.SlicePick.CHOSEN and e.type in [RC.EffectType.APPLY_STATUS, RC.EffectType.CLEANSE, RC.EffectType.DEPLOY_DRONE] and action.slot_index < 0:
 					return "Choose a slice."
 	return ""
+
+
+## The wheel the card effect `e` hits when the card's target wheel is `target`.
+func _effect_wheel(state: CombatState, e: EffectData, target: CombatantState) -> CombatantState:
+	match e.target:
+		RC.EffectTarget.SELF, RC.EffectTarget.OWN_WHEEL, RC.EffectTarget.CAMPAIGN:
+			return state.player
+	return target
+
+
+## N7: the lock behind a refusal, {"code": "NUDGE_LOCKED" | "RESPIN_LOCKED", "sources": [ids]}, or
+## {} when `action` is not refused by a lock. Same checks, same order as validate_action.
+func lock_refusal(state: CombatState, action: CombatAction) -> Dictionary:
+	var reason := validate_action(state, action)
+	if reason != NUDGE_LOCKED and reason != RESPIN_LOCKED:
+		return {}
+	var kind := WheelState.LOCK_NUDGE if reason == NUDGE_LOCKED else WheelState.LOCK_RESPIN
+	var wheel_of: CombatantState = state.player
+	if action.type == CombatAction.Type.NUDGE:
+		wheel_of = state.get_combatant(action.wheel_id)
+	elif action.type == CombatAction.Type.PLAY_CARD:
+		var card := lookup.get_content(state.hand[action.hand_index]) as CardData
+		var target := card_target(state, card, action)
+		for e in card.effects:
+			if e != null and e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(kind):
+				wheel_of = _effect_wheel(state, e, target)
+				break
+	return {"code": "NUDGE_LOCKED" if kind == WheelState.LOCK_NUDGE else "RESPIN_LOCKED", "sources": wheel_of.wheel.lock_sources(kind)}
 
 
 ## Whether `e`, played by the operative at `target`, would move a satellite or drone (its
@@ -322,9 +362,12 @@ func apply(state: CombatState, action: CombatAction, rng: RandomNumberGenerator)
 		CombatAction.Type.NUDGE:
 			_apply_nudge(s, action, rng, result.events)
 		CombatAction.Type.RESPIN:
-			s.ram -= config.respin_ram_cost
-			result.events.append({"type": "ram", "amount": -config.respin_ram_cost, "text": "Respin costs %d RAM (%d)." % [config.respin_ram_cost, s.ram]})
+			var respin_cost := RamCost.of_action(state, action, self)
+			s.ram -= respin_cost
+			result.events.append({"type": "ram", "amount": -respin_cost, "text": "Respin costs %d RAM (%d)." % [respin_cost, s.ram]})
 			fx.respin(s.player, rng, result.events, true)
+			if fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": respin_cost, "action": action}, rng, result.events) > 0:
+				_settle_deaths(s, rng, result.events)
 		CombatAction.Type.PLAY_CARD:
 			_apply_card(s, action, rng, result.events)
 		CombatAction.Type.END_TURN:
@@ -340,6 +383,27 @@ func apply(state: CombatState, action: CombatAction, rng: RandomNumberGenerator)
 ## Preview must equal the real result (tested).
 func preview(state: CombatState, action: CombatAction, rng: RandomNumberGenerator) -> CombatResult:
 	return apply(state, action, clone_rng(rng))
+
+
+## Plan 2 Q19: the forecast of `action`: its result with every known part exact and each random
+## part (a respin's landing, a RANDOM_NON_NULL pick, a reshuffle) left undecided and listed in
+## `unknowns`. Draws nothing from `rng` and leaves `state` untouched. A play with no random part
+## forecasts exactly what apply() then does (tested over seeded states).
+func forecast(state: CombatState, action: CombatAction, rng: RandomNumberGenerator) -> PreviewResult:
+	var out := PreviewResult.new()
+	var fork := clone_rng(rng)
+	var drawn_from := fork.state
+	var marks: Array = []
+	fx.forecast_marks = marks
+	fx.forecast_in_listener = false
+	out.result = apply(state, action, fork)
+	fx.forecast_marks = null
+	fx.forecast_in_listener = false
+	for m in marks:
+		out.unknowns.append(m)
+	if fork.state != drawn_from and marks.is_empty():
+		out.unknowns.append({"kind": PreviewResult.UNMODELLED, "target": &"", "listener": false})
+	return out
 
 
 ## The End Turn preview: RESOLVE only, on copies. Equals apply(END_TURN).resolved_state.
@@ -417,6 +481,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 				"text": "%s's pointers migrate to %s." % [c.display_name, str(Array(c.wheel.pointer_ticks))]})
 		c.block = 0
 		c.evade_charges = 0
+		c.listener_fires_turn.clear()  # N6: per-turn listener caps start over
 		# Hub start-of-turn passives (Auto-Renew) run while the breach still holds, so a
 		# Hub Breach played last turn stops this turn's heal; then the breach expires.
 		if not c.is_player:
@@ -428,6 +493,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		if not c.is_player:
 			refresh_enrage(s, c, events)
 			_refresh_resistance(c, events)
+	_apply_pending_locks(s, events)
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -452,6 +518,17 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		s.phase = CombatState.Phase.PLAYER_PHASE
 
 
+## N7 (Q31 answer 1): the locks queued at RESOLVE take hold of their wheels, after the
+## start-of-turn spin; a wheel that is gone gets none. They clear at the end of this turn.
+func _apply_pending_locks(s: CombatState, events: Array[Dictionary]) -> void:
+	for p in s.pending_locks:
+		var c := s.get_combatant(StringName(p["wheel"]))
+		if c != null and c.is_alive() and c.wheel.add_lock(StringName(p["kind"]), StringName(p["source"]), int(p["turns"])):
+			events.append({"type": "lock", "target": c.id, "kind": StringName(p["kind"]), "source": StringName(p["source"]),
+				"text": "%s's %s is locked this turn." % [c.display_name, p["kind"]]})
+	s.pending_locks.clear()
+
+
 ## N21 (rulings Q16, Q31): the turn's resistance refresh. `c` regains its full per-turn
 ## resistance (passive + hub while up + enrage) plus any change carried from the last
 ## RESOLVE, from 0 (end_turn zeroed it). A gain above 0 is the HUD's "+N" mark and a
@@ -471,6 +548,8 @@ func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
 ## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
 func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
 	for c in s.combatants_in_order():
+		if c.wheel != null:
+			c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)
 		if c.is_player:
 			continue
 		c.resistance = 0
@@ -506,23 +585,25 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
 			"text": "" if quiet else "%s pointer %d: tick %d -> %s (offset %+d, %s%s)." % [r["owner"].display_name, r["pointer_index"], r["tick"],
 				r["slice"].display_name if r["slice"].display_name != "" else String(r["slice"].id), r["offset"],
-				RC.PrecisionTier.keys()[r["tier"]] if r["owner"].wheel.slice_count == RC.SLICES else "full output",
+				RC.PrecisionTier.keys()[r["tier"]] if not r["owner"].is_satellite else "full output",
 				(", ring " + r["segment"].display_name) if r["segment"] != null else ""]})
+	# N6: ON_PERFECT / ON_HIT_DEALT occurrences the slice passes collect, heard after them.
+	var heard: Array = []
 	events.append({"type": "pass", "pass": "defensive", "text": "[defensive pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in DEFENSIVE_TYPES:
-			_resolve_pointer(s, r, rng, events)
+			_resolve_pointer(s, r, rng, events, heard)
 	events.append({"type": "pass", "pass": "offensive", "text": "[offensive pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in OFFENSIVE_TYPES:
-			_resolve_pointer(s, r, rng, events)
+			_resolve_pointer(s, r, rng, events, heard)
 	events.append({"type": "pass", "pass": "statuses", "text": "[status pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.NULL:
-			_resolve_pointer(s, r, rng, events)
-	for r in resolutions:
-		if r["status"] == RC.Status.CORRUPTED and is_landing(r):
-			_corrupted_trigger(s, r, events)
+			_resolve_pointer(s, r, rng, events, heard)
+	# N6 (acceptance 9): enemy listeners after the slice passes, in occurrence order.
+	for h in heard:
+		fire_listeners(s, int(h["trigger"]), h, rng, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
 	_apply_deaths(s, alive_before, rng, events)
@@ -600,55 +681,72 @@ func upcoming_phases(s: CombatState, c: CombatantState) -> Array[BossPhaseData]:
 func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictionary:
 	var wheel := c.wheel
 	var tick := wheel.tick_at(pointer_index)
-	var slice_index := WheelMath.slice_at(tick, wheel.slice_count)
-	var offset := WheelMath.offset_at(tick, wheel.slice_count)
-	var tier: int = WheelMath.tier(offset) if wheel.slice_count == RC.SLICES else RC.PrecisionTier.PERFECT
+	# N12 (R11): cumulative slot boundaries; the tier is the slot's sub-tick quality map
+	# (Calibrated included). Satellites and drones resolve at full output.
+	var slice_index := wheel.slot_of_tick(tick)
+	var offset := WheelMath.offset_in(tick, wheel.layout())
+	var map_tier: int = fx.tier_at_tick(wheel, tick)
+	var tier: int = map_tier if not c.is_satellite else RC.PrecisionTier.PERFECT
 	var segment_index := -1
 	var segment: RingSegmentData = null
 	if wheel.has_inner_ring():
 		segment_index = WheelMath.ring_segment(wheel.inner_tick_at(pointer_index))
 		segment = fx.segment_of(wheel, segment_index)
 	var guard := s.satellite_at(c.id, slice_index)
-	var status: int = wheel.slice_statuses[slice_index]
+	var stacks: Dictionary = wheel.slice_stacks[slice_index].duplicate() if slice_index < wheel.slice_stacks.size() else {}
 	var permanent := fx.permanent_status(wheel, slice_index)
+	tier = downgraded_tier(tier, int(stacks.get(RC.Status.TIER_DOWN, 0)))  # N9: Perfect hooks read the lowered tier
 	return {
 		"owner": c, "pointer_index": pointer_index, "tick": tick, "slice_index": slice_index,
 		"slice": fx.slice_of(wheel, slice_index), "firmware": fx.firmware_of(wheel, slice_index),
 		"offset": offset, "tier": tier, "segment_index": segment_index, "segment": segment,
+		"side": WheelMath.side_in(tick, wheel.layout()) if map_tier != RC.PrecisionTier.PERFECT else 0,
 		"guard_id": guard.id if guard != null else &"",
-		"status": status, "permanent_status": permanent,
+		"stacks": stacks, "permanent_status": permanent,
 	}
 
 
 # --- Internals: actions ----------------------------------------------------------
 
 func _apply_nudge(s: CombatState, action: CombatAction, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	var spent := 0
 	if s.free_nudges > 0:
 		s.free_nudges -= 1
 	else:
-		s.ram -= config.extra_nudge_ram_cost
-		events.append({"type": "ram", "amount": -config.extra_nudge_ram_cost, "text": "Extra nudge costs %d RAM (%d)." % [config.extra_nudge_ram_cost, s.ram]})
+		var cost := RamCost.of_action(s, action, self)
+		s.ram -= cost
+		spent = cost
+		events.append({"type": "ram", "amount": -cost, "text": "Extra nudge costs %d RAM (%d)." % [cost, s.ram]})
 	var target := s.get_combatant(action.wheel_id)
 	var ignore := fx.ghost_bypass(s, target, events)
 	fx.nudge(s, s.player, target, action.ring, action.direction, ignore, events)
 	var ctx := {"owner": s.player, "target": target, "action": action, "pointer_index": 0}
 	fx.run_triggers(s, RC.Trigger.ON_NUDGE, ctx, _player_listeners(s), rng, events)
+	# N6: the enemies hear the accepted nudge (a free one spends no RAM).
+	var fired := fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": spent, "action": action}, rng, events)
+	fired += fire_listeners(s, RC.Trigger.ON_NUDGE, {"action": action, "victim": target}, rng, events)
+	if fired > 0:
+		_settle_deaths(s, rng, events)
 
 
 func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	var card_id := s.hand[action.hand_index]
 	var card := lookup.get_content(card_id) as CardData
 	var target := card_target(s, card, action)
+	var cost := RamCost.of_action(s, action, self)  # judged before the card leaves the hand or moves anything
 	s.hand.remove_at(action.hand_index)
-	s.ram -= card.ram_cost
-	events.append({"type": "card", "card_id": card_id, "target": target.id, "cost": card.ram_cost,
-		"text": "Play %s on %s (RAM -%d, %d left)." % [card.display_name if card.display_name != "" else String(card_id), target.display_name, card.ram_cost, s.ram]})
+	s.ram -= cost
+	events.append({"type": "card", "card_id": card_id, "target": target.id, "cost": cost,
+		"text": "Play %s on %s (RAM -%d, %d left)." % [card.display_name if card.display_name != "" else String(card_id), target.display_name, cost, s.ram]})
 	var ctx := {"owner": s.player, "target": target, "action": action, "source_id": card_id,
 		"spin_bonus": fx.spin_bonus_of(s.player), "pointer_index": 0, "is_card": true}
 	for e in card.effects:
 		if e != null:
 			fx.apply_effect(s, e, ctx, rng, events)
 	fx.run_triggers(s, RC.Trigger.ON_CARD_PLAYED, ctx, _player_listeners(s), rng, events)
+	# N6: the enemies hear the accepted play, after its effects and the operative's hooks.
+	fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": cost, "action": action, "card_id": card_id}, rng, events)
+	fire_listeners(s, RC.Trigger.ON_CARD_PLAYED, {"action": action, "card_id": card_id, "victim": target}, rng, events)
 	if card.exhaust:
 		s.exhaust_pile.append(card_id)
 	else:
@@ -688,10 +786,12 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 			if fw == null or fw.neighbor_rule == RC.NeighborRule.NONE:
 				out.append(r)
 				continue
-			var offset: int = r["offset"]
+			# N12: the side of the slot's true middle the needle landed on (0 on a Perfect
+			# tick of the map before any TIER_DOWN, or the exact middle of an odd slot).
+			var side_of: int = r["side"]
 			var sides: Array[int] = []
-			if offset != 0:
-				sides.append(signi(offset))
+			if side_of != 0:
+				sides.append(side_of)
 			elif fw.neighbor_rule == RC.NeighborRule.MIRROR:
 				sides = [1, -1]
 			if fw.neighbor_rule == RC.NeighborRule.MIRROR or sides.is_empty():
@@ -700,8 +800,8 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				var n := _neighbor_resolution(s, r, side, fw.neighbor_multiplier)
 				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
 					n["landing"] = true  # the shunted slice resolves instead of the landing
-				elif n["status"] == RC.Status.OVERCLOCKED:
-					n["status"] = RC.Status.NONE  # H18/H19: no Overclock boost without its burn-out
+				elif stacks_in(n, RC.Status.OVERCLOCKED) > 0:
+					(n["stacks"] as Dictionary).erase(RC.Status.OVERCLOCKED)  # H18/H19: no Overclock boost without its burn-out
 				out.append(n)
 		# GDD 5.2: a drone triggers when its slice does, so after the neighbour rules.
 		if c == s.player:
@@ -713,7 +813,7 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 
 func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: float) -> Dictionary:
 	var c: CombatantState = r["owner"]
-	var slot := posmod(int(r["slice_index"]) + side, c.wheel.slice_count)
+	var slot := WheelMath.neighbor_slot(int(r["slice_index"]), side, c.wheel.layout())  # N12: skips empty arcs
 	var d := r.duplicate()
 	d["slice_index"] = slot
 	d["slice"] = fx.slice_of(c.wheel, slot)
@@ -721,7 +821,7 @@ func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: 
 	# socket's own landing (H17). A Mirror copy also drops the slot's statuses (H18); a
 	# Shunt, which is the landing, keeps them.
 	d["firmware"] = null
-	d["status"] = c.wheel.slice_statuses[slot]
+	d["stacks"] = c.wheel.slice_stacks[slot].duplicate()
 	d["permanent_status"] = RC.Status.NONE
 	d["derived"] = true
 	d["extra_multiplier"] = multiplier
@@ -764,6 +864,93 @@ func _player_listeners(s: CombatState) -> Array:
 	return out
 
 
+## N6: true while an enemy listener's effects run; fire_listeners refuses to nest (a
+## listener never fires another listener: acceptance 5).
+var _in_listener: bool = false
+
+
+## Plan 2 N6: fires every living enemy's listeners on `trigger`, enemies in id order
+## (IdSort), each enemy's own listeners then its Hub's (silent while breached), in index
+## order. `info` describes the occurrence: "amount" (RAM spent, HP damage, landed output),
+## "tier" (RESOLVE triggers; actions pass any min_tier), "action", "card_id", "victim".
+## Caps: per turn (authored, else the config default) and per combat, counted on the
+## enemy's CombatantState. ON_RAM_SPENT with amount 0 is not heard. Effects run with the
+## enemy as owner and the operative as target and draw no RNG (validated). Logs one
+## "listener" event per fire. Returns how many listeners fired.
+func fire_listeners(s: CombatState, trigger: int, info: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary]) -> int:
+	if _in_listener:
+		return 0
+	if trigger == RC.Trigger.ON_RAM_SPENT and int(info.get("amount", 0)) <= 0:
+		return 0
+	var tier := int(info.get("tier", RC.PrecisionTier.PERFECT))
+	var fired := 0
+	_in_listener = true
+	fx.forecast_in_listener = true
+	for c in _listening_enemies(s):
+		for entry in enemy_listeners(c):
+			var l: ListenerData = entry["data"]
+			if int(l.trigger) != trigger or tier < int(l.min_tier) or not c.is_alive():
+				continue
+			var key: String = entry["key"]
+			var turn_fires := int(c.listener_fires_turn.get(key, 0))
+			var combat_fires := int(c.listener_fires_combat.get(key, 0))
+			if turn_fires >= l.turn_cap(config):
+				continue
+			if l.max_per_combat != ListenerData.UNAUTHORED and combat_fires >= l.max_per_combat:
+				continue
+			c.listener_fires_turn[key] = turn_fires + 1
+			c.listener_fires_combat[key] = combat_fires + 1
+			fired += 1
+			events.append({"type": "listener", "owner": c.id, "listener": key, "trigger": trigger,
+				"amount": int(info.get("amount", 0)), "fires_turn": turn_fires + 1,
+				"text": "" if quiet else "%s reacts (%s)." % [c.display_name, RC.Trigger.keys()[trigger]]})
+			var ctx := {"owner": c, "target": s.player, "pointer_index": 0, "source_id": StringName(key),
+				"action": info.get("action"), "trigger_amount": int(info.get("amount", 0)), "listener": true}
+			for e in l.effects:
+				if e != null:
+					fx.apply_effect(s, e, ctx, rng, events)
+	_in_listener = false
+	fx.forecast_in_listener = false
+	return fired
+
+
+## N6: `c`'s listeners in firing order: its EnemyData's, then its current Hub's (none while
+## breached), as [{key, data}]. The key ("<content id>:L<index>") names the counter.
+func enemy_listeners(c: CombatantState) -> Array:
+	var out := []
+	if c == null or c.is_player:
+		return out
+	var data := lookup.get_content(c.source_id) as EnemyData
+	if data != null:
+		for i in data.listeners.size():
+			if data.listeners[i] != null:
+				out.append({"key": listener_key(data.id, i), "data": data.listeners[i]})
+	var hub := fx.hub_of(c.wheel) if c.wheel != null else null
+	if hub != null and not c.is_hub_breached():
+		for i in hub.listeners.size():
+			if hub.listeners[i] != null:
+				out.append({"key": listener_key(hub.id, i), "data": hub.listeners[i]})
+	return out
+
+
+## N6: the counter key of listener `index` of content `owner_id`.
+static func listener_key(owner_id: StringName, index: int) -> String:
+	return "%s:L%d" % [owner_id, index]
+
+
+## N6: the living enemies (satellites included), by combatant id in text order.
+func _listening_enemies(s: CombatState) -> Array[CombatantState]:
+	var ids: Array = []
+	for e in s.enemies:
+		if e.is_alive():
+			ids.append(e.id)
+	IdSort.sort_ids(ids)
+	var out: Array[CombatantState] = []
+	for id in ids:
+		out.append(s.get_combatant(id))
+	return out
+
+
 ## The operative's Daemons as listeners, in id order (deterministic).
 func _daemon_listeners(s: CombatState) -> Array:
 	var out := []
@@ -792,7 +979,16 @@ func _heat_listeners(s: CombatState, owner: CombatantState, slice: SliceData = n
 
 ## Resolves one pointer: computes multipliers and extra resolutions, runs the base
 ## slice action per instance, then the slice's own listeners.
-func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+## Plan 2 N20 rider order: tier output (tier factor, WEAK factor) -> `perfect_multiplier`
+## (PERFECT only) -> the other multipliers (Firmware, OVERCLOCKED, OUTPUT_DOWN, segment),
+## one product and one rounding per instance -> the hit list (`hit_count` hits of that
+## amount, each per target needle) -> per-hit absorption in `deal_hit` (enrage, SANDBOX
+## charge, bodyguard, BLOCK and SHIELD unless pierce, then HP). A retrigger (a Breaker
+## Perfect "resolves twice") repeats the whole hit list. Riders draw no RNG.
+## N6: `heard` collects the enemy-listener occurrences this pointer makes (each landed hit of
+## the operative's side, ON_HIT_DEALT; a Perfect landing of the operative, ON_PERFECT, once
+## per needle whatever its retriggers); resolve_turn fires them after the slice passes.
+func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary], heard: Array = []) -> void:
 	# No liveness check: resolution is simultaneous, so a combatant that dropped to 0 HP
 	# earlier in this resolve still fires everything it landed on. Deaths apply at the end.
 	var owner: CombatantState = r["owner"]
@@ -800,7 +996,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var wheel := owner.wheel
 	var slot: int = r["slice_index"]
 	var ctx := {"owner": owner, "target": _pointer_target(s, owner), "pointer_index": r["pointer_index"],
-		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
+		"tier": r["tier"], "slice_index": slot, "source_id": slice.id, "heard": heard}
 	var listeners := _slice_listeners(s, r)
 	# Plan 2 R5: a PERCENT slice reads the owner's max HP and skips the tier factor; the
 	# precision, Firmware, status and segment multipliers still apply after it.
@@ -809,19 +1005,21 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var mult: float = tier_factor * float(r.get("extra_multiplier", 1.0))
 	if r["tier"] == RC.PrecisionTier.WEAK:
 		mult *= config.weak_multiplier
+	elif r["tier"] == RC.PrecisionTier.PERFECT:
+		mult *= slice.perfect_multiplier  # N20 rider (Medicine); 1.0 by default
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
 		mult *= fw.output_multiplier
-	var overclocked: bool = r["status"] == RC.Status.OVERCLOCKED or r["permanent_status"] == RC.Status.OVERCLOCKED
+	# N8: OVERCLOCKED is 1.5x at any stack count; OUTPUT_DOWN takes its share per stack.
+	var overclocked: bool = stacks_in(r, RC.Status.OVERCLOCKED) > 0 or r["permanent_status"] == RC.Status.OVERCLOCKED
 	if overclocked:
 		mult *= config.overclock_multiplier
-	if r["status"] == RC.Status.PARASITE:
-		mult *= config.parasite_multiplier
-	var pierce := false
+	mult *= output_down_factor(stacks_in(r, RC.Status.OUTPUT_DOWN), config)
+	var pierce := slice.pierce  # N20 rider (Adrenaline)
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:
 		mult *= seg.output_multiplier
-		pierce = seg.pierce
+		pierce = pierce or seg.pierce
 	var instances: Array[float] = [mult]
 	for extra in fx.retrigger_multipliers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners):
 		instances.append(mult * extra)
@@ -842,17 +1040,47 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 			per_instance.append(l)
 	# Daemons fire once per landing: never on a Mirror copy of a neighbour (H16).
 	var once: Array = once_all if is_landing(r) else []
+	var landed_output := 0
 	for m in instances:
 		var output := roundi(base * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW] and s.damage_bonus > 0:
 			output += s.damage_bonus
+		landed_output += output
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
 	_landing_triggers(s, r, slice, ctx, once, rng, events)
-	if r["status"] == RC.Status.OVERCLOCKED and is_landing(r):
-		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
+	# N6 (ruling Q8 a): one ON_PERFECT per Perfect needle of the operative (a NULL landing is
+	# no Perfect slice), carrying the landed slice's output (every resolution summed, before
+	# absorption).
+	if owner == s.player and r["tier"] == RC.PrecisionTier.PERFECT and is_landing(r) and slice.slice_type != RC.SliceType.NULL:
+		heard.append({"trigger": RC.Trigger.ON_PERFECT, "tier": r["tier"], "amount": landed_output,
+			"slice_id": slice.id, "pointer_index": r["pointer_index"]})
+	if stacks_in(r, RC.Status.OVERCLOCKED) > 0 and is_landing(r):
+		# N8: the burn-out takes every OVERCLOCKED stack and leaves one CORRUPTED stack.
+		wheel.remove_stacks(slot, RC.Status.OVERCLOCKED)
+		wheel.add_stacks(slot, RC.Status.CORRUPTED, 1, config.status_stack_cap)
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
+			"stacks": wheel.stacks_of(slot, RC.Status.CORRUPTED),
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
+
+
+## Stacks of `status` a resolution readout `r` carries (N8; 0 when absent).
+static func stacks_in(r: Dictionary, status: int) -> int:
+	return int((r.get("stacks", {}) as Dictionary).get(status, 0))
+
+
+## `tier` lowered one step per TIER_DOWN stack, floored at WEAK (N9, R9).
+static func downgraded_tier(tier: int, stacks: int) -> int:
+	return maxi(RC.PrecisionTier.WEAK, tier - maxi(0, stacks))
+
+
+## The output factor of `stacks` OUTPUT_DOWN stacks (N8, R8): the per-stack shares add up
+## (one signed sum, ruling Q35 b) and the factor never drops below 0. Two stacks with the
+## 0.25 share are the old PARASITE's half output.
+static func output_down_factor(stacks: int, cfg: CampaignConfigData) -> float:
+	if stacks <= 0:
+		return 1.0
+	return maxf(0.0, 1.0 - cfg.output_down_per_stack * stacks)
 
 
 ## A slice's output before any multiplier (plan 2 R5): `base_output`, or for a PERCENT
@@ -868,6 +1096,21 @@ static func slice_base(owner: CombatantState, slice: SliceData) -> int:
 ## it doesn't resolve the NULL for Cold Exit).
 static func is_landing(r: Dictionary) -> bool:
 	return not r.get("derived", false) or r.get("landing", false)
+
+
+## Plan 2 N20: how many hits one resolution of attack `slice` deals to `target` (per target
+## needle). `slice.hits`, or with `hits_per_target_status` set, the target wheel's non-NULL
+## slices carrying that status (one per slice, not per stack) times `hits_per_status_slice`,
+## never below `slice.hits` (the minimum, 1 by default). No cap (ruling Q40). Pure.
+func hit_count(slice: SliceData, target: CombatantState) -> int:
+	var n := maxi(1, slice.hits)
+	if slice.hits_per_target_status == RC.Status.NONE or target == null:
+		return n
+	var carrying := 0
+	for i in target.wheel.slot_slice_ids.size():
+		if target.wheel.has_status(i, slice.hits_per_target_status) and fx.slice_of(target.wheel, i).slice_type != RC.SliceType.NULL:
+			carrying += 1
+	return maxi(n, carrying * slice.hits_per_status_slice)
 
 
 ## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_NULL_SLICE on the NULL, for `listeners`.
@@ -887,22 +1130,33 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			var target: CombatantState = ctx["target"]
 			if target == null or not target.is_alive():
 				return
+			# N20: the hit list is fixed when the slice resolves (the target's statuses now).
+			var hits := hit_count(slice, target)
 			# N4: the attack line reports the hit as it lands (deal_hit applies the enrage).
-			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce,
-				"text": "" if quiet else "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
-			for q in target.wheel.pointer_ticks.size():
-				# N14: the target's SANDBOX charge comes before its bodyguard (Pierce too).
-				if fx.sandboxed(owner, target, output, events, slice.id):
-					continue
-				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
-				# and shield only). The operative's drones guard the operative the same way.
-				var victim := target
-				var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
-				if guard != null:
-					victim = guard
-					events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
-						"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
-				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
+			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce, "hits": hits,
+				"text": "" if quiet else "%s %s for %s at %s." % [owner.display_name, _slice_name(slice), ("%d x %d" % [hits, output]) if hits > 1 else str(output), target.display_name]})
+			# N20: every hit runs the whole damage path on its own, hit by hit, each on
+			# every needle of the target (pointer index order).
+			for h in hits:
+				for q in target.wheel.pointer_ticks.size():
+					# N14: the target's SANDBOX charge comes before its bodyguard (Pierce too).
+					if fx.sandboxed(owner, target, output, events, slice.id):
+						continue
+					# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
+					# and shield only). The operative's drones guard the operative the same way.
+					var victim := target
+					var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
+					if guard != null:
+						victim = guard
+						events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
+							"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
+					var before := events.size()
+					var hp_damage := fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
+					# N6: a player-side hit that landed (not negated, not zero) is heard as
+					# ON_HIT_DEALT with its HP damage after BLOCK and SHIELD.
+					if owner.is_player and ctx.has("heard") and events.size() > before and events[events.size() - 1].get("type") == "damage":
+						(ctx["heard"] as Array).append({"trigger": RC.Trigger.ON_HIT_DEALT, "tier": int(ctx.get("tier", RC.PrecisionTier.PERFECT)),
+							"amount": hp_damage, "victim": victim, "slice_id": slice.id, "attacker": owner.id})
 		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
 		RC.SliceType.SANDBOX:
@@ -949,19 +1203,6 @@ func _pointer_target(s: CombatState, owner: CombatantState) -> CombatantState:
 		var t := s.get_combatant(s.target_id)
 		return t if t != null and t.is_alive() else null
 	return s.player
-
-
-func _corrupted_trigger(s: CombatState, r: Dictionary, events: Array[Dictionary]) -> void:
-	var owner: CombatantState = r["owner"]
-	if not owner.is_alive():
-		return
-	var damage := config.corrupted_self_damage + config.corrupted_damage_per_major * s.heat_majors_crossed
-	var loss := EffectInterpreter.lose_hp(owner, damage)  # self-damage parks at a phase floor too (R3)
-	var dealt := loss.x
-	events.append({"type": "corrupted", "target": owner.id, "amount": dealt, "parked": loss.y,
-		"text": "%s's CORRUPTED slice bites: %d self-damage (%d HP)." % [owner.display_name, dealt, owner.hp]})
-	if owner == s.player:
-		fx.drain_ram(s, config.corrupted_ram_drain, events)
 
 
 ## Enemy start-of-turn passives: the Hub's (unless breached) and Heat-gated behaviour.
@@ -1111,22 +1352,24 @@ func _cleanse_on_enter(s: CombatState, e: CombatantState, scope: int, events: Ar
 	for c in sides:
 		if c == null or c.wheel == null:
 			continue
-		for slot in c.wheel.slice_statuses.size():
-			if c.wheel.slice_statuses[slot] != RC.Status.NONE:
+		for slot in c.wheel.slice_stacks.size():
+			if c.wheel.has_any_status(slot):
 				fx.cleanse(c, slot, events)
 
 
 ## Swaps the boss's slices, Firmware and passive resistance for the phase layout. The
 ## rotation, pointers and any pending migration are kept; statuses stay, each moved to the
-## new slice covering its old slice's centre tick (plan 2 R6, WheelState.remap_statuses).
+## new slice covering its old slice's centre tick (plan 2 R6, WheelState.remap_stacks: N8 stacks merge).
 func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
-	var kept := WheelState.remap_statuses(w.slice_statuses, w.slice_count, fresh.slice_count)
+	var kept := WheelState.remap_stacks_sized(w.slice_stacks, w.layout(), fresh.layout(), config.status_stack_cap)
 	w.slice_count = fresh.slice_count
+	w.slot_sizes = fresh.slot_sizes  # N12: the phase layout's own slot sizes and quality maps
+	w.slot_quality = fresh.slot_quality
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
-	w.slice_statuses = kept
+	w.slice_stacks = kept
 	w.passive_resistance = fresh.passive_resistance + bonus_resistance  # ICE / Heat resistance stays
 	if data.hub != null:
 		w.hub_id = data.hub.id
@@ -1138,6 +1381,11 @@ func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dic
 
 
 func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:
+	if s.player.hp <= 0 or s.living_enemies(false).is_empty():
+		for c in s.combatants_in_order():
+			if c.wheel != null:
+				c.wheel.clear_locks()  # N7: nothing leaks past the combat
+		s.pending_locks.clear()
 	if s.player.hp <= 0:
 		s.outcome = CombatState.Outcome.DEFEAT
 		s.phase = CombatState.Phase.END_COMBAT

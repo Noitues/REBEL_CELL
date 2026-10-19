@@ -4,9 +4,9 @@ extends GutTest
 
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Vector2(1280, 720)
+const NetrunScript := preload("res://scripts/ui/netrun_scene.gd")
 
 var _resolver: CombatResolver
-var _all_nodes: bool
 
 
 func before_all() -> void:
@@ -14,7 +14,6 @@ func before_all() -> void:
 
 
 func before_each() -> void:
-	_all_nodes = Settings.always_show_all_nodes
 	Motion.force_live = false
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_w3_route"
@@ -27,8 +26,7 @@ func before_each() -> void:
 func after_each() -> void:
 	CityBakeCache.shutdown()
 	Motion.force_live = false
-	if Settings.always_show_all_nodes != _all_nodes:
-		Settings.set_always_show_all_nodes(_all_nodes)
+	NetrunScript.street_route = true
 	AudioDirector.muted = false
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
@@ -64,7 +62,8 @@ func test_every_node_kind_has_its_own_badge_shape() -> void:
 	assert_eq(seen.size(), RouteLegend.ORDER.size())
 
 
-func test_a_click_selects_and_the_confirm_travels() -> void:
+func test_a_selection_waits_for_the_confirm_which_travels() -> void:
+	# NA-26: ported to the street page (the click on a room is `select_route_node`; the confirm button names it).
 	var scene := _netrun()
 	await _frames(4)
 	var s := RunManager.netrun
@@ -74,14 +73,9 @@ func test_a_click_selects_and_the_confirm_travels() -> void:
 	assert_not_null(prompt, "the pick prompt shows")
 	assert_not_null(confirm)
 	assert_true(confirm.disabled, "nothing to confirm before a pick")
-	var b := scene._panel.find_child("Node1", true, false) as Button
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	b.gui_input.emit(click)
-	b.pressed.emit()
+	scene.street_view.node_selected.emit(String(first))
 	assert_eq(scene.route_selected(), first, "the click selected the node")
-	assert_eq(s.run.phase, RunState.Phase.MAP, "a click alone does not travel")
+	assert_eq(s.run.phase, RunState.Phase.MAP, "a select alone does not travel")
 	assert_false(confirm.disabled)
 	assert_string_contains(confirm.text, "Enter")
 	confirm.pressed.emit()
@@ -89,11 +83,14 @@ func test_a_click_selects_and_the_confirm_travels() -> void:
 	assert_eq(s.run.current_node_id, first)
 
 
-func test_the_keyboard_press_still_travels_directly() -> void:
+func test_a_run_whose_street_cannot_be_derived_keeps_the_transit_page_and_a_press_travels() -> void:
+	# NA-26: the fallback page (no 2D map): the ROUTE window lists the choices; the number key / a press travels directly.
+	NetrunScript.street_route = false
 	var scene := _netrun()
 	await _frames(4)
 	var s := RunManager.netrun
 	var first: StringName = s.available_nodes()[0]
+	assert_null(scene.street_view, "no street view on the fallback page")
 	(scene._panel.find_child("Node1", true, false) as Button).pressed.emit()
 	assert_eq(s.run.current_node_id, first)
 
@@ -110,28 +107,6 @@ func test_the_node_file_shows_the_hp_the_run_arrives_with() -> void:
 		assert_string_contains(String(d["hp"]), "%d" % s.run.operative.hp)
 		assert_string_contains(String(d["hp"]), "%d" % s.run.operative.max_hp)
 		assert_ne(String(d["heals"]), "", "says where it heals")
-
-
-func test_links_between_drawn_nodes_are_drawn() -> void:
-	Settings.set_always_show_all_nodes(false)
-	var scene := _netrun()
-	await _frames(4)
-	var ov := scene.city_overlay as RouteOverlay
-	var both := 0
-	for e in ov.edges:
-		var a := ov.shown(ov._node_dict(e["a"]))
-		var b := ov.shown(ov._node_dict(e["b"]))
-		if a > 0.0 and b > 0.0:
-			both += 1
-			assert_gt(ov.edge_shown(e), 0.0, "a link between two drawn nodes is drawn")
-		else:
-			assert_eq(ov.edge_shown(e), 0.0, "a link to a hidden node waits for it")
-	Settings.set_always_show_all_nodes(true)
-	ov.all_t = 1.0
-	await _frames(2)
-	for e in ov.edges:
-		assert_gt(ov.edge_shown(e), 0.0, "with every node shown, every link is")
-	assert_gte(both, 0)
 
 
 func _walk_hp(seed: int) -> void:

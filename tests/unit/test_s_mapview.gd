@@ -5,8 +5,8 @@ extends GutTest
 ## in CityConfig), on for the RAID and NETRUN bands and off everywhere else; the marks keep
 ## their contrast over the dimmed city (fixtures: the map-mode render, windowed); the raid view
 ## keeps the major (raid) nodes only (RaidMapNodes); a netrun's route nodes sit along the link
-## it jacks along (RouteLinkLayout), deterministic on seeded replays, the jack riding the same
-## link. Headless (nothing renders; the looks are read windowed with raid_lab / netrun_states).
+## it jacks along (NA-26: the street route; CampaignRules.jack_from_site picks the link's end), deterministic on
+## seeded replays, the jack riding the same link. Headless (nothing renders; the looks are read windowed with raid_lab / netrun_states).
 
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const HQ := "res://scenes/hq/hq_scene.tscn"
@@ -264,47 +264,22 @@ func test_the_raid_maps_routes_are_the_raids_own() -> void:
 
 # --- The netrun route along its link ---------------------------------------------------------
 
-func _route_points(seed_v: int) -> Dictionary:
+func _street_bids(seed_v: int) -> Array:
 	RunManager.reset()
-	var net := _scene(NETRUN)
 	RunManager.new_campaign(seed_v)
+	var net := _scene(NETRUN)
 	net.start_run(1)
-	var g: Dictionary = net.route_graph()
-	var out := {"entry": g["entry"]}
-	for n in g["nodes"]:
-		out[n["id"]] = n["at"]
-	var s := RunManager.netrun
-	out["link"] = RouteLinkLayout.link_of(cfg, RunManager.corporation, s.campaign, s.run.site_id, CityLayout.site_points(RunManager.corporation))
-	out["from"] = RouteLinkLayout.from_site(RunManager.corporation, s.campaign, s.run.site_id)
-	out["site"] = s.run.site_id
-	out["widest"] = 0
-	for li in range(1, s.run.map.layer_count() + 1):
-		out["widest"] = maxi(int(out["widest"]), s.run.map.nodes_in_layer(li).size())
-	out["final"] = s.run.map.final_node_id()
+	var data := StreetRouteView.build_data(RunManager.netrun, RunManager.corporation)
+	var out: Array = [data.error, data.route_bids()]
 	net.get_parent().queue_free()
 	return out
 
 
-func test_every_route_node_lies_on_the_link_between_two_raid_nodes() -> void:
-	for seed_v in [1, 2, 5]:
-		var r := _route_points(seed_v)
-		var link: PackedVector2Array = r["link"]
-		var points := CityLayout.site_points(RunManager.corporation)
-		assert_ne(r["from"], &"", "seed %d: the run jacks in from a node of the Cell" % seed_v)
-		assert_eq(link[1], points[r["site"]], "the link ends on the run's Site")
-		if (points[r["site"]] - points[r["from"]]).length() >= cfg.route_link_min_lots:
-			assert_eq(link[0], points[r["from"]], "and starts on the Cell's node")
-		var tol := (int(r["widest"]) - 1) * 0.5 * cfg.route_link_lateral + 0.001
-		for id in r:
-			if r[id] is Vector2 and String(id).begins_with("L"):
-				assert_lte(RouteLinkLayout.off_link(r[id], link), tol, "seed %d: %s on the link" % [seed_v, id])
-		assert_almost_eq((r[r["final"]] as Vector2).distance_to(link[1]), 0.0, 0.001, "the final Rack on the target Site")
-		assert_eq(r["entry"], link[0], "the Cell starts at the link's own end")
-
-
-func test_route_placement_is_deterministic_on_seeded_replays() -> void:
-	var a := _route_points(3)
-	var b := _route_points(3)
+## NA-26: ported from the 2D route's placement (retired): the street route's derive is deterministic on
+## seeded replays (same seed, same buildings).
+func test_street_route_placement_is_deterministic_on_seeded_replays() -> void:
+	var a := _street_bids(3)
+	var b := _street_bids(3)
 	assert_eq(a, b, "same seed, same places")
 
 
@@ -313,27 +288,11 @@ func test_the_jack_rides_the_link_the_route_sits_on() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	for sd in CampaignRules.launchable_sites(c, corp, RunManager.config()):
-		var from := RouteLinkLayout.from_site(corp, c, sd.id)
+		var from := CampaignRules.jack_from_site(corp, c, sd.id)
 		var jack := RunManager.jack_link(sd.id)
 		var from_site := CampaignRules.site_data(corp, from)
 		var want := RunManager.TERMINAL_NODE % corp.city_grid.sites.find(from_site) if from_site != null else "RELAY"
 		assert_eq(jack["from"], want, "%s: the jack starts where the route does" % sd.id)
-
-
-func test_layers_spread_across_the_link_in_node_order() -> void:
-	var m := MapGraph.new()
-	m.layers = [[{"id": &"L1N0", "layer": 1, "index": 0, "next": []}],
-		[{"id": &"L2N1", "layer": 2, "index": 1, "next": []}, {"id": &"L2N0", "layer": 2, "index": 0, "next": []}],
-		[{"id": &"L3N0", "layer": 3, "index": 0, "next": []}]]
-	var link := PackedVector2Array([Vector2(0, 0), Vector2(12, 0)])
-	var p: Dictionary = RouteLinkLayout.place(cfg, m, link)
-	var at: Dictionary = p["nodes"]
-	assert_eq(at[&"L1N0"], Vector2(4, 0))
-	assert_eq(at[&"L3N0"], Vector2(12, 0), "the last layer on the target")
-	assert_almost_eq((at[&"L2N0"] as Vector2).x, 8.0, 0.001)
-	assert_almost_eq((at[&"L2N0"] as Vector2).y, -cfg.route_link_lateral * 0.5, 0.001, "index 0 first across the link")
-	assert_almost_eq((at[&"L2N1"] as Vector2).y, cfg.route_link_lateral * 0.5, 0.001)
-	assert_eq(p["entry"], Vector2.ZERO)
 
 
 ## FIX-REDS-3: the HQ's raid map and the netrun's mid-run raid map build a node's socket with one

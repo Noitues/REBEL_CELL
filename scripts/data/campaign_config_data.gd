@@ -1,5 +1,8 @@
 class_name CampaignConfigData
 extends Resource
+
+## Config fields N9 retired; the content validator rejects them (retired_field_errors).
+const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damage_per_major", "corrupted_ram_drain"]
 ## Global tuning in one place (Section 11). One .tres for the whole game.
 
 @export_group("Heat")
@@ -90,17 +93,29 @@ extends Resource
 @export var respin_ram_cost: int = 4
 @export var weak_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
-## Output of a slice with a PARASITE docked on it (Botnet).
-@export var parasite_multiplier: float = 0.5
+## N8 (R8): each OUTPUT_DOWN stack takes this share off the slice's output; the stacks add
+## (one signed sum, ruling Q35 b) and the factor never goes below 0: 1 - share x stacks.
+@export var output_down_per_stack: float = 0.25
+## N8 (R8): a PARASITE (the retired Botnet status) is this many OUTPUT_DOWN stacks; with
+## 0.25 a stack, 2 keeps the old half output. Applies and the v2 -> v3 save migration read it.
+@export var parasite_output_down_stacks: int = 2
+## N8: the most stacks one status may hold on one slot (placeholder, designer 2026-10-18).
+## RC.UNCAPPED_STATUSES (ENCRYPTED, CORRUPTED) ignore it.
+@export var status_stack_cap: int = 5
 @export var shield_cap: int = 15
 ## N14 (ruling Q39): SANDBOX charges a DETOUR slice gives when it resolves at WEAK or GOOD,
 ## and at PERFECT. Each charge negates one incoming hit whole; charges add up.
 @export var sandbox_charges: int = 1
 @export var sandbox_charges_perfect: int = 2
-@export var corrupted_self_damage: int = 3
-## Added to corrupted_self_damage per MAJOR Heat threshold crossed.
-@export var corrupted_damage_per_major: int = 1
-@export var corrupted_ram_drain: int = 1
+## Plan 2 N6 (designer 2026-10-18, answer 1; ruling Q8 a): how often an enemy listener with no
+## authored `max_per_turn` may fire each turn. At least 1.
+@export var listener_max_per_turn_default: int = 1
+## N9 (ruling Q36): while a needle of the operative's wheel touches a CORRUPTED slice, every RAM
+## cost is multiplied by this (a cost of 0 stays 0; no cap). At least 1.
+@export var corrupted_ram_cost_multiplier: int = 2
+## N9 (ruling Q37): manipulating an enemy wheel whose needle touches a CORRUPTED slice costs
+## this many times less (halved, rounded up). At least 1.
+@export var corrupted_enemy_ram_divisor: int = 2
 @export var extra_nudge_ram_cost: int = 1
 ## Phases per enemy class (plan 2 R1), counting the base phase, indexed by RC.EnemyClass
 ## (normal, elite, mini-boss, boss): EnemyData.validate holds `phases.size() + 1` inside
@@ -114,6 +129,17 @@ extends Resource
 ## N11: where an ICE BOSS_EXTRA_POINTER pointer goes, in ticks after pointer 0, tried in
 ## order; the first tick no pointer holds wins (the legacy evenly spaced 15 / 10 / ...).
 @export var boss_extra_pointer_offsets: PackedInt32Array = PackedInt32Array([15, 10, 20, 5, 25])
+## Plan 2 N12 (R11, ruling Q20; designer W1 N12): slice sizes run 0-30 and every wheel sums
+## to 30, so the ticks are the only size cap. The slot-count caps stay (an empty 0-size slot
+## does not count): an operative wheel holds at most operative_slice_cap slices, an enemy
+## wheel enemy_slice_cap. A slice with ticks is at least slice_size_min ticks.
+@export var operative_slice_cap: int = 6
+@export var enemy_slice_cap: int = 30
+@export var slice_size_min: int = 1
+## Plan 2 N12 (R11): the default sub-tick quality map. A tick at distance d from its slice's
+## middle reads PERFECT at d = 0, GOOD at d <= tick_quality_good_reach, else WEAK
+## (WheelMath.default_quality; 1 gives 5 = W G P G W, 4 = W G G W).
+@export var tick_quality_good_reach: int = 1
 ## N4 (plan 2 R4, ruling Q33): class enrage defaults, indexed by RC.EnemyClass (normal,
 ## elite, mini-boss, boss). A start turn of 0 means no enrage (normals). An EnemyData's
 ## authored `enrage` wins over these (enrage_for). Steps are additive; defaults add no
@@ -256,6 +282,28 @@ extends Resource
 
 
 ## ART-2 2C: the 0/1 shard count for a hit of `damage` (a crit takes the most).
+## Config problems (N9): a RAM-cost multiplier or divisor below 1.
+func config_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	if corrupted_ram_cost_multiplier < 1:
+		errors.append("corrupted_ram_cost_multiplier: %d is below 1." % corrupted_ram_cost_multiplier)
+	if corrupted_enemy_ram_divisor < 1:
+		errors.append("corrupted_enemy_ram_divisor: %d is below 1." % corrupted_enemy_ram_divisor)
+	return errors
+
+
+## The N9 retired fields still written in a config .tres text (CORRUPTED no longer damages
+## or drains; it is a RAM cost, ruling Q36). One error per field found.
+static func retired_field_errors(tres_text: String) -> PackedStringArray:
+	var errors := PackedStringArray()
+	for field in RETIRED_FIELDS:
+		for line in tres_text.split("\n"):
+			if line.strip_edges().begins_with(field + " ="):
+				errors.append("%s: retired by N9 (CORRUPTED is a RAM cost, ruling Q36); remove it from the config." % field)
+				break
+	return errors
+
+
 func fx_shard_count(damage: int, crit: bool = false) -> int:
 	if crit:
 		return fx_shard_max
@@ -380,6 +428,7 @@ func _validate_tier_tables(errors: PackedStringArray) -> void:
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	_validate_tier_tables(errors)
+	errors.append_array(config_errors())  # N9
 	if max_replays < 0:
 		errors.append("max_replays must be >= 0 (0 = no cap).")
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
@@ -396,6 +445,8 @@ func validate() -> PackedStringArray:
 				errors.append("Resistance range for class %d must be 0 <= min <= max." % k)
 	if sandbox_charges < 1 or sandbox_charges_perfect < sandbox_charges:
 		errors.append("sandbox_charges must be >= 1 and sandbox_charges_perfect >= sandbox_charges.")
+	if listener_max_per_turn_default < 1:
+		errors.append("listener_max_per_turn_default must be >= 1.")
 	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

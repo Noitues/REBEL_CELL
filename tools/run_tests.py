@@ -50,7 +50,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "tests" / "test_manifest.json"
-TEST_DIRS = ["tests/unit", "tests/integration"]
+TEST_DIRS = ["tests/unit", "tests/integration", "tests/netrun_art"]
 # A script missing from the manifest (added on another branch) is still run; it is
 # scheduled with this estimate and reported so it can be added.
 DEFAULT_SECONDS = 10.0

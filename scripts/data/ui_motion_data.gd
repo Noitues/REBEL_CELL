@@ -86,7 +86,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"hp_chip_pulse",
 	# Plan 1 ANIM-FLOW: M5 map to fight dissolve and the close-up's reveal, M6 loot sheet dim and the
 	# rewards page's rise, M10 press dip and menu rows rising in.
-	&"combat_enter", &"backdrop_reveal", &"loot_page_dim", &"reward_page_in", &"press_dip", &"menu_page_in", &"raid_continue_in", &"route_hover_out",
+	&"combat_enter", &"backdrop_reveal", &"loot_page_dim", &"reward_page_in", &"press_dip", &"menu_page_in", &"raid_continue_in",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
@@ -127,15 +127,23 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
 	# sign loops, the ON AIR ticker.
 	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
-	# ART-7 3B (ART_BIBLE v2 4.6): the netrun map's hidden-node reveal and calm Heat, and the
-	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
-	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
+	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
 	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
+	# NA-25 (PIPELINE_SPEC 10): the street entry sequence (terminal, rain, collapse, dive, reveal, mark, zoom) and its jack-out hold.
+	&"entry_terminal", &"entry_rain", &"entry_collapse", &"entry_dive", &"entry_reveal", &"entry_reveal_lead", &"entry_reveal_write", &"entry_reveal_dissolve",
+	&"entry_mark", &"entry_mark_hold", &"entry_mark_slap", &"entry_mark_stagger", &"entry_mark_rings", &"entry_mark_numbers", &"entry_mark_target", &"entry_ui_in",
+	&"entry_zoom", &"entry_zoom_settle", &"entry_select_hold",
 	&"mainframe_takeover", &"mainframe_rain", &"shop_wheel_spin", &"loot_peel", &"event_cam_noise",  # ART-9 4A
 	# ART-6 3A (raid presentation): pencil marks, routes, panels, stickers and the drag.
 	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_dock_circle", &"raid_drag_arrow", &"raid_beacon_idle",
 	&"raid_incoming",  # B3 (review section c): the raid interlude's INCOMING transition
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
+	# MOTION-TIMINGS: shares of combat effects' seconds that were inline in CombatFxLayer and WheelView.
+	&"hit_blocked_wall_lead", &"wall_stagger_share", &"wall_travel_share", &"corrupt_apply_stagger",
+	&"corrupt_apply_travel", &"corrupt_tick_free_share", &"drone_destroyed_stagger", &"drone_destroyed_travel",
+	&"nudge_resist_stagger", &"nudge_resist_travel", &"trigger_lens_share", &"trigger_bits_lead",
+	&"temp_label_stagger", &"temp_label_travel", &"defeat_shock_share", &"defeat_bits_stagger",
+	&"defeat_bits_travel", &"defeat_word_lead", &"precision_word_hold",
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
 
 	# ART-11 4D (ART_BIBLE v2 §4.8): the campaign lost lock (RansomLock), the audit dossier
@@ -180,7 +188,10 @@ const OFF_PARTS: Dictionary = {
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
 const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",
-	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share", &"sticker_sweep_period", &"sticker_peel_back"]
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share", &"sticker_sweep_period", &"sticker_peel_back",
+	&"hit_blocked_wall_lead", &"wall_stagger_share", &"wall_travel_share", &"corrupt_apply_stagger", &"corrupt_apply_travel", &"corrupt_tick_free_share",
+	&"drone_destroyed_stagger", &"drone_destroyed_travel", &"nudge_resist_stagger", &"nudge_resist_travel", &"trigger_lens_share", &"trigger_bits_lead",
+	&"temp_label_stagger", &"temp_label_travel", &"defeat_shock_share", &"defeat_bits_stagger", &"defeat_bits_travel", &"defeat_word_lead", &"precision_word_hold"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

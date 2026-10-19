@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StreetRouteConfigData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/street_route_config_data.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+rooms = {"colors": {"router": [0.22, 0.62, 1.0], "terminal": [0.3, 0.95, 0.5], "mainframe": [0.4, 0.45, 1.0], "server_rack": [1.0, 0.58, 0.2], "rest": [0.75, 0.45, 1.0], "workshop": [1.0, 0.82, 0.3], "cache": [0.3, 0.95, 0.9]}, "elite": [1.0, 0.35, 0.12], "wall_gain": 0.8, "floor_gain": 0.4, "ceil_gain": 0.12, "side_gain": 0.55, "prop": [0.015, 0.015, 0.02], "frame": [0.9, 0.95, 1.0], "frame_bu": 0.04, "frame_gain": 1.0, "glass_pad_bu": 0.02, "energy_idle": 0.55, "energy_lit": 0.76}
+links = {"walked": {"color": [0.831, 1.0, 0.0], "width": 8.0, "dash": [], "alpha": 1.0, "glow": 95.0}, "option": {"color": [1.0, 0.549, 0.102], "width": 8.5, "dash": [], "alpha": 1.0, "glow": 110.0}, "ahead": {"color": [0.949, 0.965, 1.0], "width": 5.2, "dash": [14.0, 9.0], "alpha": 1.0, "glow": 0.0}, "past": {"color": [0.478, 0.463, 0.525], "width": 4.0, "dash": [], "alpha": 0.38, "glow": 0.0}, "wobble_px": 0.7, "clear_pad_px": 5.0, "ref_h": 1080.0}
+stickers = {"radius_px": 26.0, "anchor": [0.0, 0.38], "chip_px": 26.0, "min_px_720": 24.0, "ref_h": 1080.0}
+target = {"switch_share": 0.5, "hysteresis": 0.05, "fade_s": 0.15, "margin_px": 46.0, "circle_pad_px": 14.0}
+hover = {"cut_level": 0.2, "cut_desat": 0.7, "branch_boost": 1.35, "type_glow": 1.0, "grow_px": 8.0, "blur_px": 8.0, "mask_scale": 0.25}
+frame = {"top_px": 130.0, "bottom_px": 64.0, "left_px": 320.0, "right_px": 24.0, "ref_h": 1080.0}
+atmosphere = {"density_overview": 0.02, "exposure": 0.8, "density_decision": 0.02, "front_sym": 0.0, "glow_count": 6, "glow_energy": 6.0, "glow_range": 90.0, "glow_height": 12.0, "glow_side": 9.0}
+look = {"building": {"wash_gain": 0.3, "band_emit": 1.1}, "lane": {"gain": 0.45, "sat": 0.3}, "haze": [0.009, 0.004], "exposure": [0.74, 0.37], "frame": [0.35, 0.7]}

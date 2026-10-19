@@ -908,9 +908,9 @@ func test_a_status_marks_its_slice_as_it_lands() -> void:
 	ev.shown_state = ev.combatant.duplicate_state()
 	ev.replaying = true
 	ev.show_slice_status(1, RC.Status.CORRUPTED)
-	assert_eq(int(ev.shown_state.wheel.slice_statuses[1]), RC.Status.CORRUPTED, "the view's snapshot shows it on the slice")
+	assert_eq(int(ev.shown_state.wheel.status_at(1)), RC.Status.CORRUPTED, "the view's snapshot shows it on the slice")
 	assert_true(ev.status_flash.has(1), "with a ring as it lands")
-	assert_eq(int(ev.combatant.wheel.slice_statuses[1]), int(scene.engine.state().get_combatant(ev.combatant.id).wheel.slice_statuses[1]), "the state is untouched")
+	assert_eq(int(ev.combatant.wheel.status_at(1)), int(scene.engine.state().get_combatant(ev.combatant.id).wheel.status_at(1)), "the state is untouched")
 	scene.skip_motion()
 	await _close(scene)
 

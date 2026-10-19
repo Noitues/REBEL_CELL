@@ -140,7 +140,7 @@ func test_the_disc_gets_what_the_view_shows() -> void:
 	var scene := await _combat()
 	var v: WheelView = scene._player_view
 	var st: CombatState = scene.engine.state()
-	st.player.wheel.slice_statuses[1] = RC.Status.CORRUPTED
+	st.player.wheel.set_status(1, RC.Status.CORRUPTED)
 	scene._refresh(st)
 	v._sync_disc(v._center(), v._radius(), v.shown_rotation())
 	var mids: PackedFloat32Array = v.disc.mat.get_shader_parameter(&"mids")

@@ -1,0 +1,227 @@
+extends GutTest
+## NA-24: the street dressing. Config soundness; every group's `visibility_range` is the config's (no literal ranges); tiers reveal in
+## order and the count of a group changes by exactly its instance count at its band edge; streak lanes obey `L = k speed T`;
+## the same layout gives identical node transforms and no RNG stream is drawn; district palettes and HQ-distance bands differ; the
+## loops (lane streaks, flicker, plumes) repeat after the 4 s loop.
+
+var _cache: Dictionary = {}
+
+
+func after_all() -> void:
+	for k: String in _cache:
+		((_cache[k] as Dictionary)["dressing"] as StreetDressing).root.free()
+	_cache.clear()
+
+
+func _street(seed_name: String) -> Dictionary:
+	if not _cache.has(seed_name):
+		var w: Dictionary = NaFixture.load_inputs(seed_name)
+		var d: Dictionary = NetrunArtDeriver.derive_street(w["city"], w["net"], w["run_graph"], w["site"], w["partial_street"])
+		_cache[seed_name] = {"derive": d, "city": w["city"], "dressing": StreetDressing.build(d, w["city"])}
+	return _cache[seed_name]
+
+
+func _visible_count(sd: StreetDressing, group: String, d: float) -> int:
+	return int(sd.counts.get(group, 0)) if DressReveal.is_drawn(group, d) else 0
+
+
+func test_config_is_sound_and_names_only_listed_assets() -> void:
+	var cfg := DressingConfigData.shipped()
+	assert_eq(cfg.validate().size(), 0, str(cfg.validate()))
+	assert_true(DressingConfigData.new().validate().size() > 5, "an empty config reports its gaps")
+	for g: String in cfg.groups:
+		var asset: String = cfg.groups[g]["asset"]
+		assert_true(asset == "" or NetrunArtConfigData.shipped().reveal.has(asset), "group %s asset %s" % [g, asset])
+
+
+func test_every_group_takes_its_visibility_range_from_the_config() -> void:
+	var sd: StreetDressing = _street("101")["dressing"]
+	var tiered := 0
+	for g: String in sd.nodes:
+		var r: Dictionary = DressReveal.range_of(g)
+		for n in sd.nodes[g]:
+			var gi := n as GeometryInstance3D
+			assert_eq(gi.visibility_range_end, float(r["end"]), "%s end" % g)
+			assert_eq(gi.visibility_range_end_margin, float(r["margin"]), "%s margin" % g)
+			assert_eq(gi.visibility_range_begin, 0.0)
+		if float(r["end"]) > 0.0:
+			tiered += 1
+			var row: Array = DressReveal.row_of(String(DressingConfigData.shipped().groups[g]["asset"]), int(DressingConfigData.shipped().groups[g]["tier"]))
+			assert_eq(float(r["end"]), float(row[1]), "%s end is the reveal row's far edge" % g)
+			assert_true(float(r["margin"]) >= 0.1 * (float(row[1]) - float(row[2])) - 0.0001, "%s fades over at least 10 percent of its interval" % g)
+	assert_true(tiered >= 8, "tiered groups present: %d" % tiered)
+
+
+func test_tiers_reveal_in_order_and_counts_change_by_the_authored_amount_at_each_edge() -> void:
+	var sd: StreetDressing = _street("101")["dressing"]
+	assert_true(DressReveal.is_drawn("sign_neon", 600.0) and not DressReveal.is_drawn("sign_full", 600.0), "neon block first")
+	assert_true(DressReveal.is_drawn("sign_full", 300.0) and not DressReveal.is_drawn("sign_flicker", 300.0), "full sign second")
+	assert_true(DressReveal.is_drawn("sign_flicker", 200.0), "flicker last")
+	assert_false(DressReveal.is_drawn("sign_neon", 900.0), "nothing beyond the first tier edge")
+	assert_true(DressReveal.is_drawn("beam", 5000.0) and DressReveal.is_drawn("glow", 5000.0), "the big layer is never hidden")
+	for g: String in sd.counts:
+		var r: Dictionary = DressReveal.range_of(g)
+		if float(r["end"]) <= 0.0:
+			continue
+		var inside := _visible_count(sd, g, float(r["end"]) - 0.01)
+		var outside := _visible_count(sd, g, float(r["end"]) + 0.01)
+		assert_eq(inside - outside, int(sd.counts[g]), "%s changes by its whole count at its edge" % g)
+		assert_eq(DressReveal.weight(g, float(r["near"]) - 0.01), 1.0, "%s fully in inside its near edge" % g)
+		assert_eq(DressReveal.weight(g, float(r["end"]) + 0.01), 0.0, "%s out beyond its far edge" % g)
+	assert_true(sd.counts["sign_neon"] > 0 and sd.counts["hero_neon"] > 0, "city and hero signs are placed")
+
+
+func test_signs_never_exceed_their_caps_and_beams_stay_within_the_spot_budget() -> void:
+	var sd: StreetDressing = _street("101")["dressing"]
+	var caps: Dictionary = DressingConfigData.shipped().caps
+	assert_true(int(sd.plan["signs"].size()) <= int(caps["city_signs"]))
+	assert_true(int(sd.plan["shops"].size()) <= int(caps["shopfronts"]))
+	assert_true(int(sd.counts.get("beam", 0)) <= int(caps["beam_spots"]))
+	assert_true(int(caps["glow_lights"]) <= 14)
+
+
+func test_streak_lanes_are_a_whole_number_of_loops() -> void:
+	for s in ["101", "104", "109"]:
+		var sd: StreetDressing = _street(s)["dressing"]
+		for lane: Dictionary in sd.dress["streak_lanes"]:
+			var a := Vector2(float(lane["a"][0]), float(lane["a"][1]))
+			var b := Vector2(float(lane["b"][0]), float(lane["b"][1]))
+			var q: Dictionary = NetrunShaderKit.quantize_speed(a.distance_to(b), float(lane["speed"]), 4.0)
+			var k: int = int(q["k"])
+			assert_true(k >= 1)
+			assert_almost_eq(a.distance_to(b), float(k) * float(q["speed"]) * 4.0, 0.001, "seed %s lane %s: L = k speed T" % [s, lane["lane_id"]])
+			assert_true(not (lane["streaks"] as Array).is_empty())
+
+
+func test_flicker_and_plume_loops_repeat_after_the_loop() -> void:
+	# The shaders' time terms: fract(t / T * k + phase) with whole k, a hum of 4 cycles, and the plume phase fract(t / T + p).
+	for k in [1, 2, 3]:
+		for t in [0.0, 0.7, 2.9]:
+			assert_almost_eq(fposmod(t / 4.0 * float(k) + 0.3, 1.0), fposmod((t + 4.0) / 4.0 * float(k) + 0.3, 1.0), 0.0001)
+	assert_almost_eq(sin(TAU * (0.7 / 4.0 * 4.0 + 0.2)), sin(TAU * ((0.7 + 4.0) / 4.0 * 4.0 + 0.2)), 0.0001)
+	assert_almost_eq(fposmod(1.3 / 4.0 + 0.4 + 0.1, 1.0), fposmod((1.3 + 4.0) / 4.0 + 0.4 + 0.1, 1.0), 0.0001)
+	assert_eq(float(DressingConfigData.shipped().plume["loop_s"]), float(CityShaderConfigData.shipped().streak["loop_s"]), "one loop")
+
+
+func _fingerprint(sd: StreetDressing) -> Array:
+	var out: Array = []
+	var names: Array = sd.nodes.keys()
+	IdSort.sort_ids(names)
+	for g: String in names:
+		for n in sd.nodes[g]:
+			if n is MultiMeshInstance3D:
+				var mm: MultiMesh = (n as MultiMeshInstance3D).multimesh
+				for i in mm.instance_count:
+					out.append([n.name, mm.get_instance_transform(i), mm.get_instance_color(i)])
+			else:
+				out.append([n.name, (n as Node3D).transform])
+	return out
+
+
+func test_same_layout_gives_identical_transforms_without_touching_a_stream() -> void:
+	var s: Dictionary = _street("102")
+	var again := StreetDressing.build(s["derive"], s["city"])
+	var fp_again: Array = _fingerprint(again)
+	again.root.free()
+	assert_eq(fp_again, _fingerprint(s["dressing"]), "node transforms and colours repeat")
+	assert_eq(again.counts, (s["dressing"] as StreetDressing).counts)
+	var src: String = FileAccess.get_file_as_string("res://scripts/city3d/street_dressing.gd") + FileAccess.get_file_as_string("res://scripts/city3d/dress_frontage.gd") \
+		+ FileAccess.get_file_as_string("res://scripts/city3d/dress_districts.gd")
+	for banned in ["randi(", "randf(", "randomize(", "RandomNumberGenerator", "RngService"]:
+		assert_false(src.contains(banned), "no random draw: %s" % banned)
+
+
+func _city3() -> Dictionary:
+	var b: Array = []
+	var terrs := ["halcyon", "meridian", "solace"]
+	for i in 3:
+		var x: float = 200.0 * float(i)
+		b.append({"bid": "b%d" % i, "hq": i == 0, "terr": terrs[i], "parts": [{"z0": 0.0, "h": 20.0, "poly": [[x, 0.0], [x + 10.0, 0.0], [x + 10.0, 10.0], [x, 10.0]]}]})
+	return {"buildings": b}
+
+
+func test_districts_show_distinct_palettes_and_hq_bands_vary() -> void:
+	var dd := DressDistricts.new(_city3())
+	var seen: Dictionary = {}
+	for i in 3:
+		var c: Color = dd.color("district_a", 200.0 * float(i) + 5.0, 5.0)
+		seen[c.to_html()] = true
+		assert_eq(dd.terr_at(200.0 * float(i) + 5.0, 5.0), ["halcyon", "meridian", "solace"][i])
+	assert_eq(seen.size(), 3, "three districts, three district_a colours")
+	var sets: Dictionary = {}
+	for t: String in DressingConfigData.shipped().districts:
+		sets[DressingConfigData.shipped().districts[t]["palette"]] = true
+	assert_true(sets.size() >= 3, "at least three palette sets in the language table")
+	var near: Dictionary = dd.band_at(20.0, 5.0)
+	var far: Dictionary = dd.band_at(400.0, 5.0)
+	assert_true(float(near["sign_mul"]) > float(far["sign_mul"]), "signage is denser near the HQ")
+	assert_ne(float(near["emit_mul"]), float(far["emit_mul"]))
+	assert_eq(DressDistricts.hash01("sign", "10:13"), DressDistricts.hash01("sign", "10:13"))
+	assert_ne(DressDistricts.hash01("sign", "10:13"), DressDistricts.hash01("sign", "10:14"))
+
+
+func test_district_palettes_come_from_the_art_pass_table() -> void:
+	var pal: Dictionary = DressingConfigData.shipped().palettes
+	var d: Dictionary = DressingConfigData.shipped().districts
+	assert_eq(pal["solace_mint"]["district_a"], [0.239, 1.0, 0.545])
+	assert_eq(pal["solace_mint"]["district_b"], [0.85, 1.0, 0.9])
+	assert_eq([pal["solace_mint"]["win_0"], pal["solace_mint"]["win_1"], pal["solace_mint"]["win_2"]], [[0.75, 1.0, 0.82], [0.45, 1.0, 0.62], [0.95, 1.0, 0.95]])
+	assert_eq(pal["orbital_ice"]["district_a"], [0.498, 0.659, 1.0])
+	assert_eq(pal["orbital_ice"]["district_b"], [0.92, 0.96, 1.0])
+	assert_eq([pal["orbital_ice"]["win_0"], pal["orbital_ice"]["win_1"], pal["orbital_ice"]["win_2"]], [[0.70, 0.84, 1.0], [0.92, 0.95, 1.0], [0.55, 0.75, 1.0]])
+	assert_eq(String(d["solace"]["palette"]), "solace_mint")
+	assert_eq(String(d["orbital"]["palette"]), "orbital_ice")
+	assert_eq(pal["halcyon_dusk"]["district_a"], [0.549, 0.482, 1.0])
+	assert_eq(pal["meridian_forge"]["district_a"], [1.0, 0.549, 0.102])
+	assert_eq(pal["rebel_cell_ember"]["district_a"], [0.91, 0.078, 0.118])
+	assert_eq(DressDistricts.color_in("district_a", "solace_mint"), Color(0.239, 1.0, 0.545))
+	for t: String in ["halcyon", "meridian", "rebel_cell"]:
+		assert_ne(String(d[t]["palette"]), "neon_bay", "%s uses its art-pass set" % t)
+
+
+func test_hero_signs_are_blades_with_varied_panels_and_sign_pieces_use_the_sign_shader() -> void:
+	var sd: StreetDressing = _street("101")["dressing"]
+	var pr: Array = DressingConfigData.shipped().sign["hero_panels"]
+	var hero_n: int = int(sd.dress["signs"].size())
+	assert_true(hero_n > 0)
+	var n_full: int = int(sd.counts["hero_full"])
+	assert_true(n_full >= hero_n * (int(pr[0]) + 1) and n_full <= hero_n * (int(pr[1]) + 2), "hero_full %d for %d signs" % [n_full, hero_n])
+	var cols: Dictionary = {}
+	var gains: Dictionary = {}
+	for it: Dictionary in sd.items["hero_full"]:
+		cols[(it["col"] as Color).to_html()] = true
+		gains[snappedf((it["custom"] as Color).b, 0.001)] = true
+	assert_true(cols.size() >= 2, "hue plus accent panels: %d" % cols.size())
+	assert_true(gains.size() >= 3, "per-panel brightness: %d" % gains.size())
+	var secs: Dictionary = {}
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id != "common":
+			secs[DressDistricts.color_in("district_b", set_id).to_html()] = true
+	for g: String in ["hero_neon", "hero_full", "sign_neon", "sign_full"]:
+		for it: Dictionary in sd.items[g]:
+			assert_false(secs.has((it["col"] as Color).to_html()), "%s: sec is trim only, never a panel fill" % g)
+		var m := (sd.nodes[g][0] as MultiMeshInstance3D).material_override as ShaderMaterial
+		assert_eq(m.shader, DressKit.SIGN, g)
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id == "common":
+			continue
+		var a: Color = DressDistricts.color_in("district_a", set_id)
+		var c: Color = DressDistricts.color_in("accent", set_id)
+		var dh: float = absf(a.h - c.h)
+		assert_true(minf(dh, 1.0 - dh) > 0.12, "%s: accent contrasts with the district hue" % set_id)
+	for n in range(3, 7):
+		for b in 40:
+			var acc: Array = sd._accent_panels("b%d" % b, n)
+			assert_true(acc.size() >= 1 and acc.size() <= 2, "1-2 accent panels")
+			assert_false(acc.has(n - 1), "never the top panel (n %d)" % n)
+			if acc.size() == 2:
+				assert_true(absi(int(acc[0]) - int(acc[1])) >= 2, "never adjacent panels (n %d)" % n)
+	var yr: Vector2 = ((sd.nodes["sign_neon"][0] as MultiMeshInstance3D).material_override as ShaderMaterial).get_shader_parameter(&"yield_range")
+	assert_eq(yr.x, float(DressReveal.range_of("sign_full")["end"]), "the far block yields to the tier that covers it")
+
+
+func test_sign_levels_keep_the_core_above_the_panel_and_under_the_clamp() -> void:
+	var sg: Dictionary = DressingConfigData.shipped().sign
+	assert_true(float(sg["panel_level"]) >= 0.35 and float(sg["panel_level"]) <= 0.55, "panel 0.35-0.55")
+	assert_true(float(sg["core_level"]) >= 0.85 and float(sg["core_level"]) <= float(sg["core_max"]), "core about 0.9")
+	assert_true(float(sg["core_max"]) <= 1.0)

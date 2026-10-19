@@ -56,7 +56,7 @@ const RESETS := {
 		[&"subtitle_typing", &"set_subtitle_typing"], [&"assist_mode", &"set_assist_mode"], [&"text_scale", &"set_text_scale"],
 		[&"colorblind_mode", &"set_colorblind_mode"], [&"resolve_speed", &"set_resolve_speed"]],
 	"Display": [[&"window_mode", &"set_window_mode"], [&"resolution", &"set_resolution"], [&"vsync", &"set_vsync"], [&"show_fps", &"set_show_fps"],
-		[&"map_legend", &"set_map_legend"], [&"always_show_all_nodes", &"set_always_show_all_nodes"], [&"system_log", &"set_system_log"],
+		[&"map_legend", &"set_map_legend"], [&"system_log", &"set_system_log"],
 		[&"palette_skin", &"set_palette_skin"]],
 	"Audio": [[&"master_volume", &"set_master_volume"], [&"music_volume", &"set_music_volume"], [&"sfx_volume", &"set_sfx_volume"]],
 	"Controls": [[&"pad_glyph_set", &"set_pad_glyph_set"]],
@@ -136,8 +136,6 @@ var vsync_check: CheckButton
 var fps_check: CheckButton
 var legend_check: CheckButton
 var log_check: CheckButton
-## ART-7 3B (D13): "Always show all nodes" on the netrun map.
-var all_nodes_check: CheckButton
 var language_option: OptionButton
 var close_button: Button
 ## Parity OPT-01: the foot's RESET TO DEFAULTS (the open tab's settings).
@@ -267,8 +265,6 @@ func _init() -> void:
 	legend_check.name = "LegendCheck"
 	log_check = _check(tr("System log strip at the foot of the screen"), Settings.system_log, Settings.set_system_log)
 	log_check.name = "LogCheck"
-	all_nodes_check = _check(tr("Always show all nodes on the netrun map"), Settings.always_show_all_nodes, Settings.set_always_show_all_nodes)
-	all_nodes_check.name = "AllNodesCheck"
 	language_option = OptionButton.new()
 	var langs := Settings.available_languages()
 	for i in langs.size():
@@ -404,7 +400,7 @@ func show_section(name: String) -> void:
 			cols.add_child(right)
 			_body.add_child(cols)
 		"Display":
-			for w in [_heading(tr("Window mode")), mode_option, _heading(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check,
+			for w in [_heading(tr("Window mode")), mode_option, _heading(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check,
 					_heading(tr(SKIN_HEADING)), skin_option]:
 				_body.add_child(w)
 		"Audio":
@@ -514,7 +510,7 @@ func _sync_scale() -> void:
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
 	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, master_slider, music_slider,
-		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, all_nodes_check, language_option,
+		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option,
 		reduce_motion_check, high_contrast_check, colorblind_tiles, resolve_tiles, glyph_option, _scale_block, glitch_preview, skin_option]
 
 
@@ -608,7 +604,7 @@ func sync_widgets() -> void:
 	for pair in [[reduce_check, Settings.reduce_effects], [reduce_motion_check, Settings.reduce_motion], [flash_check, Settings.flash_limiter],
 			[heat_glitch_check, Settings.heat_glitch], [high_contrast_check, Settings.high_contrast], [subtitles_check, Settings.subtitles],
 			[typing_check, Settings.subtitle_typing], [assist_check, Settings.assist_mode], [vsync_check, Settings.vsync], [fps_check, Settings.show_fps],
-			[legend_check, Settings.map_legend], [log_check, Settings.system_log], [all_nodes_check, Settings.always_show_all_nodes]]:
+			[legend_check, Settings.map_legend], [log_check, Settings.system_log]]:
 		(pair[0] as CheckButton).set_pressed_no_signal(bool(pair[1]))
 		(pair[0] as Control).queue_redraw()
 	for pair in [[scale_slider, Settings.text_scale], [master_slider, Settings.master_volume], [music_slider, Settings.music_volume], [sfx_slider, Settings.sfx_volume]]:

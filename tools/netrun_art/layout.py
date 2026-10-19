@@ -8,14 +8,14 @@ Standard library only.
 import copy
 import math
 from collections import deque
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 from .units import FLOOR_BU
 
 Pt = Sequence[float]
 
 LAYOUT_RULES: Dict[str, Any] = dict(
-    frontage_min_floors=6, border_street_width=8.0, base_street_width=6.0,
+    frontage_min_floors=6, border_street_width=8.0, base_street_width=6.0, face_tol=0.05,
     hero_sign_rule=dict(blade=True, band=True, palette=["district_a", "district_b"]))
 # Street frontage numbers shared with derive.street (spec 3.3 table; SB/sb_onecity.py RULES)
 FRONT_BAND = (0.8, 6.5)     # near-edge distance band from the leg centre line, BU
@@ -210,7 +210,7 @@ def leg_axis(a: Pt, c: Pt) -> int:
 
 
 def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optional[Dict[str, Any]] = None,
-                       stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+                       stats: Optional[Dict[str, int]] = None, border_mode: str = "state") -> Dict[str, Any]:
     """`layout.rules`: a new city.json with the street-front band raised and border streets widened (spec 3.2).
 
     Every street-level non-HQ building whose near edge lies within `FRONT_BAND` of a leg of a border link (extended
@@ -227,7 +227,7 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
     done: set = set()
     raised = moved = 0
     reach = max(EXTEND)
-    for link in border_links(net):
+    for link in links_of(net, border_mode):
         legs = link_legs(city, link["pts"])
         for a, c in zip(legs, legs[1:]):
             ax = leg_axis(a, c)
@@ -249,7 +249,7 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
                 ref = (bi["y0"] if sgn > 0 else bi["y1"]) if ax == 0 else (bi["x0"] if sgn > 0 else bi["x1"])
                 k = 1 if ax == 0 else 0
                 for p in base["poly"]:
-                    if abs(p[k] - ref) < FACE_TOL:
+                    if abs(p[k] - ref) < r["face_tol"]:
                         p[k] += sgn * step
                         moved += 1
                 want = (r["frontage_min_floors"] + abs(bi["key"]) % 3) * FLOOR_BU + 0.1
@@ -259,3 +259,282 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
     if stats is not None:
         stats.update(frontage=len(done), raised=raised, moved=moved)
     return out
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# NA-11: the street r2 height passes (frontage.silhouette, horizon.break) and the full rule pipeline.
+# Ports `street_r2/scripts/r2_rules.py` `layout_pass` (art-pass ded90765, the revision in this repo's history; ed8675a8
+# was not reachable): see docs/handoff/plan2/drafts/NA11_RULES.md. Changes from the original: draws are splitmix64 art
+# streams (not Python's `random`), the sightline term and the screen-projected spike heights are dropped (no camera at
+# layout time), and the passes are keyed on `bid`.
+# ---------------------------------------------------------------------------------------------------------------------
+R2_RULES: Dict[str, Any] = dict(
+    # r2_config.py RULES_R2["frontage.silhouette"]
+    silhouette=dict(floors_low=[6, 7], floors_mid=[8, 9], floors_tall=[9, 10], rhythm_p=[0.34, 0.33, 0.33],
+                    height_step_min=2, triple_span_min=3, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
+    # RULES_R2["horizon.break"]; spike_spacing_bu replaces the 1/6-frame spacing (no camera at layout time)
+    horizon=dict(spikes_min=3, spikes_max=5, spike_k=1.6, backdrop_band=[24.0, 170.0], spike_min_w=4.0,
+                 spike_spacing_bu=30.0, pick_jitter=25.0, default_median=15.0),
+    # NA-11c (art-pass W1_NA11 fix 2): within `zone_lots` lots of an HQ lot no building is taller than `cap_k` x the HQ
+    # stand-in top (the landmark top; landmarks lead), and those buildings are exempt from spikes. Route columns keep their height.
+    hq=dict(zone_lots=2.0, cap_k=0.6, clamp_eps=0.1),
+)
+RHYTHM = ("low", "mid", "tall")
+
+
+def links_of(net: Dict[str, Any], border_mode: str = "state") -> List[Dict[str, Any]]:
+    """The links the rules treat as border streets, sorted by `(a, b)`.
+
+    "state": `border_links` (O-D, by Grid state). "all": every link, state ignored (the fixed city, NA-11 ruling).
+    """
+    if border_mode == "all":
+        return sorted(net["links"], key=lambda q: (q["a"], q["b"]))
+    return border_links(net)
+
+
+def _draws(layout_seed: Any, stream: str, *keys: Any) -> Iterator[float]:
+    """Uniform draws in `[0, 1)` of the art stream (`seeds.art_seed`, then splitmix64)."""
+    from . import seeds
+    for x in seeds.splitmix64(seeds.art_seed(layout_seed, stream, *keys)):
+        yield seeds.uniform(x)
+
+
+def _randint(u: float, lo: int, hi: int) -> int:
+    """Integer in `[lo, hi]` from one uniform draw."""
+    return lo + min(int(math.floor(u * (hi - lo + 1))), hi - lo)
+
+
+def frontage_rows(bases: List[Dict[str, Any]], a: Pt, c: Pt) -> Dict[int, List[Dict[str, Any]]]:
+    """The frontage rows of a leg per side (`+1` / `-1`), in order along the leg (ties by `bid`): the 3.2 band and extension."""
+    ax = leg_axis(a, c)
+    lo, hi = sorted((a[ax], c[ax]))
+    reach = max(EXTEND)
+    lo, hi = lo - reach, hi + reach
+    rows: Dict[int, list] = {1: [], -1: []}
+    for bi in bases:
+        if ax == 0:
+            a0, a1, d0, d1 = bi["x0"], bi["x1"], bi["y0"] - a[1], a[1] - bi["y1"]
+        else:
+            a0, a1, d0, d1 = bi["y0"], bi["y1"], bi["x0"] - a[0], a[0] - bi["x1"]
+        near = d0 if d0 > 0 else d1
+        if a1 > lo and a0 < hi and FRONT_BAND[0] < near < FRONT_BAND[1]:
+            rows[1 if d0 > 0 else -1].append(((a0 + a1) / 2.0, bi["bid"], bi))
+    return {s: [r[2] for r in sorted(v, key=lambda r: (r[0], r[1]))] for s, v in rows.items()}
+
+
+def is_stacked(b: Dict[str, Any], bi: Dict[str, Any]) -> bool:
+    """True when a part above the base reaches higher than the base (the building's top is not its base)."""
+    base = b["parts"][bi["base"]]
+    return bi["h"] > base["z0"] + base["h"] + 1e-6
+
+
+def frontage_silhouette(city: Dict[str, Any], net: Dict[str, Any], rules: Optional[Dict[str, Any]] = None,
+                        route_tops: Optional[Dict[str, int]] = None, border_mode: str = "state",
+                        stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+    """`frontage.silhouette` (r2_rules.py:115-215): the street front is a rhythm of heights, not a flat band.
+
+    Per side of every border leg (links by `(a, b)`, legs in order), buildings along the leg take a class
+    (low / mid / tall, never 3 in a row) and a floor count in its range. A floor count never drops under
+    `frontage_min_floors`; any 3 neighbours span at least `triple_span_min` floors; neighbours differ by at least
+    `height_step_min`. `route_tops` (bid -> top room floor) lifts a route column to that plus `route_sign_floors` (the
+    hero sign zone, r2 `route_sign_floors`). A building with stacked parts is never changed. Each building is set once
+    (first leg that reaches it). Draws: stream `frontage`, key `bid`: class, rotate, floors.
+    """
+    r = dict(LAYOUT_RULES, **(rules or {}))
+    P = R2_RULES["silhouette"]
+    min_f = int(r["frontage_min_floors"])
+    out = copy.deepcopy(city)
+    byid = {b["bid"]: b for b in out["buildings"]}
+    bases = merged_buildings(city)
+    route_tops = route_tops or {}
+    seed = city["layout_seed"]
+    done: set = set()
+    assigned: Dict[str, int] = {}
+    n_set = 0
+    for link in links_of(net, border_mode):
+        legs = link_legs(city, link["pts"])
+        for a, c in zip(legs, legs[1:]):
+            rows = frontage_rows(bases, a, c)
+            for side in (1, -1):
+                prev_cls: Optional[str] = None
+                run = 0
+                prev_f: Optional[int] = None
+                hist: List[int] = []
+                for bi in rows[side]:
+                    bid = bi["bid"]
+                    if bid in done:
+                        prev_f = assigned[bid]
+                        hist.append(prev_f)
+                        continue
+                    done.add(bid)
+                    b = byid[bid]
+                    d = _draws(seed, "frontage", bid)
+                    u_cls, u_rot, u_fl = next(d), next(d), next(d)
+                    top0 = bi["h"]
+                    f0 = int(top0 / FLOOR_BU)
+                    acc, cls = 0.0, RHYTHM[-1]
+                    for name, p in zip(RHYTHM, P["rhythm_p"]):
+                        acc += p
+                        if u_cls * sum(P["rhythm_p"]) < acc:
+                            cls = name
+                            break
+                    if cls == prev_cls and run >= P["rotate_run"]:
+                        cls = RHYTHM[(RHYTHM.index(cls) + 1 + int(u_rot * 2)) % 3]
+                    lo, hi = P["floors_" + cls]
+                    f = max(_randint(u_fl, lo, hi), min_f)
+                    if bid in route_tops:
+                        f = max(f, route_tops[bid] + P["route_sign_floors"])
+                    stacked = is_stacked(b, bi)
+                    floor_min = max(min_f, f0 if stacked else 0)
+                    f = max(f, floor_min)
+                    span = P["triple_span_min"]
+                    if len(hist) >= 2:
+                        lo3, hi3 = min(hist[-2:] + [f]), max(hist[-2:] + [f])
+                        if hi3 - lo3 < span:
+                            mean2 = sum(hist[-2:]) / 2.0
+                            lift, drop = min(hist[-2:]) + span, max(hist[-2:]) - span
+                            ceil_f = P["floors_tall"][1]
+                            if f >= mean2 and lift <= ceil_f:
+                                f = lift
+                            elif drop >= floor_min:
+                                f = drop
+                            elif lift <= ceil_f:
+                                f = lift
+                    step = P["height_step_min"]
+                    if prev_f is not None and abs(f - prev_f) < step:
+                        down = prev_f - step
+                        go_down = down >= floor_min and (f < prev_f or prev_f + step > P["floors_tall"][1])
+                        f = down if go_down else prev_f + step
+                    want = f * FLOOR_BU + 0.1
+                    got = f0 if stacked else f
+                    if not stacked and abs(top0 - want) > P["base_h_eps"]:
+                        base = b["parts"][bi["base"]]
+                        base["h"] = want - base["z0"]
+                        n_set += 1
+                    assigned[bid] = got
+                    prev_f = got
+                    hist.append(got)
+                    run = run + 1 if cls == prev_cls else 1
+                    prev_cls = cls
+    if stats is not None:
+        stats.update(silhouette_buildings=len(done), silhouette_set=n_set)
+    return out
+
+
+def hq_rects(city: Dict[str, Any]) -> List[Tuple[float, float, float, float, float]]:
+    """`(x0, x1, y0, y1, top)` of every HQ stand-in (plan bbox of all its parts, top of the highest part), by `bid`."""
+    out = []
+    for b in sorted(city["buildings"], key=lambda q: q["bid"]):
+        if not b["hq"] or not b["parts"]:
+            continue
+        bb = [poly_bbox(p["poly"]) for p in b["parts"]]
+        out.append((min(q[0] for q in bb), max(q[1] for q in bb), min(q[2] for q in bb), max(q[3] for q in bb),
+                    max(p["z0"] + p["h"] for p in b["parts"])))
+    return out
+
+
+def hq_zone_top(city: Dict[str, Any], bi: Dict[str, Any]) -> Optional[float]:
+    """The HQ top (BU) of the tallest HQ lot within `zone_lots` lots of building `bi` (plan gap, both axes), else None."""
+    reach = R2_RULES["hq"]["zone_lots"] * city["lot_bu"]
+    best = None
+    for x0, x1, y0, y1, top in hq_rects(city):
+        gap = max(x0 - bi["x1"], bi["x0"] - x1, y0 - bi["y1"], bi["y0"] - y1, 0.0)
+        if gap <= reach and (best is None or top > best):
+            best = top
+    return best
+
+
+def hq_cap(city: Dict[str, Any], route_bids: Sequence[str] = (), stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+    """Within `zone_lots` lots of an HQ lot no building is taller than `cap_k` x the HQ stand-in top (route columns exempt).
+
+    Every part of a too-tall building is clamped: `h <= cap - z0`; a stacked part that would start at or above the cap
+    drops to `cap - clamp_eps`, so the building top is the cap.
+    """
+    P = R2_RULES["hq"]
+    out = copy.deepcopy(city)
+    byid = {b["bid"]: b for b in out["buildings"]}
+    route = set(route_bids)
+    n = 0
+    for bi in merged_buildings(city):
+        top = hq_zone_top(city, bi)
+        if top is None or bi["bid"] in route:
+            continue
+        cap = P["cap_k"] * top
+        if bi["h"] <= cap + 1e-9:
+            continue
+        n += 1
+        for j in bi["parts"]:
+            part = byid[bi["bid"]]["parts"][j]
+            part["z0"] = min(part["z0"], cap - P["clamp_eps"])
+            part["h"] = min(part["h"], cap - part["z0"])
+    if stats is not None:
+        stats.update(hq_capped=n)
+    return out
+
+
+def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequence[str] = (), border_mode: str = "state",
+                  stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+    """`horizon.break` (r2_rules.py:216-251): `spikes_min..spikes_max` backdrop towers reach `spike_k` x the median roof (the cap; NA-11c 1.6).
+
+    The reference street is the first leg of the first border link. Candidates: street-level, unstacked, non-route
+    buildings centred `backdrop_band` BU behind the street line (either side) along the extended leg, with a footprint
+    of at least `spike_min_w`. Picks by `(-(top + jitter), bid)`, jitter a `spike_pick` draw x `pick_jitter`, at least
+    `spike_spacing_bu` apart along the street. Raised to `max(spike_k * median, top)`. No border link: unchanged.
+    """
+    H = R2_RULES["horizon"]
+    out = copy.deepcopy(city)
+    links = links_of(net, border_mode)
+    if not links:
+        return out
+    legs = link_legs(city, links[0]["pts"])
+    if len(legs) < 2:
+        return out
+    a, c = legs[0], legs[1]
+    ax = leg_axis(a, c)
+    lo, hi = sorted((a[ax], c[ax]))
+    lo, hi = lo - max(EXTEND), hi + max(EXTEND)
+    byid = {b["bid"]: b for b in out["buildings"]}
+    route = set(route_bids)
+    cand = []
+    for bi in merged_buildings(city):
+        if bi["bid"] in route or is_stacked(byid[bi["bid"]], bi) or hq_zone_top(city, bi) is not None:
+            continue
+        if ax == 0:
+            along, far = (bi["x0"] + bi["x1"]) / 2.0, abs((bi["y0"] + bi["y1"]) / 2.0 - a[1])
+        else:
+            along, far = (bi["y0"] + bi["y1"]) / 2.0, abs((bi["x0"] + bi["x1"]) / 2.0 - a[0])
+        if not (lo <= along <= hi and H["backdrop_band"][0] < far < H["backdrop_band"][1]):
+            continue
+        if min(bi["x1"] - bi["x0"], bi["y1"] - bi["y0"]) < H["spike_min_w"]:
+            continue
+        cand.append((bi["h"], along, bi))
+    med = sorted(x[0] for x in cand)[len(cand) // 2] if cand else H["default_median"]
+    seed = city["layout_seed"]
+    n_sp = _randint(next(_draws(seed, "spikes", links[0]["a"], links[0]["b"])), H["spikes_min"], H["spikes_max"])
+    scored = sorted(((-(t + next(_draws(seed, "spike_pick", bi["bid"])) * H["pick_jitter"]), bi["bid"], t, al, bi)
+                     for t, al, bi in cand), key=lambda s: (s[0], s[1]))
+    picked: List[float] = []
+    for _, bid, t, al, bi in scored:
+        if len(picked) >= n_sp:
+            break
+        if all(abs(al - p) >= H["spike_spacing_bu"] for p in picked):
+            picked.append(al)
+            base = byid[bid]["parts"][bi["base"]]
+            base["h"] = H["spike_k"] * med - base["z0"]
+    if stats is not None:
+        stats.update(spikes=len(picked))
+    return out
+
+
+def apply_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optional[Dict[str, Any]] = None,
+                route_tops: Optional[Dict[str, int]] = None, border_mode: str = "state",
+                stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+    """The whole layout rule pipeline in spec order (3.2): frontage minimum + border width, silhouette, horizon.
+
+    `border_mode` "state" (border links by Grid state) or "all" (every link: the fixed city the game builds).
+    """
+    st = stats if stats is not None else {}
+    c1 = apply_layout_rules(city, net, rules, st, border_mode)
+    c2 = frontage_silhouette(c1, net, rules, route_tops, border_mode, st)
+    routes = list((route_tops or {}).keys())
+    return horizon_break(hq_cap(c2, routes, st), net, routes, border_mode, st)

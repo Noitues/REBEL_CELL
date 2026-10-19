@@ -24,6 +24,8 @@ uniform vec3 ink_color = vec3(0.05, 0.04, 0.09);
 uniform float ink_normal_edge = 0.42;
 uniform float ink_depth_edge = 1.2;
 uniform float ink_alpha = 0.85;
+// NA-22: the share of the ink the netrun look (look_blend) removes; 0 = the page as before.
+uniform float ink_fade = 0.0;
 uniform float ink_wobble_px = 1.4;
 uniform float ink_width = 1.0;
 // M14 perf slice: the ink runs only inside this box (view px: x0, y0, x1, y1) while ink_keep_on,
@@ -150,7 +152,7 @@ void fragment() {
 			e = max(e, step(ink_normal_edge, length(cn.xyz - c0.xyz) * 0.5 + abs(cn.w - c0.w)));
 			e = max(e, step(dthr, abs(zn - zc)));
 		}
-		float a = e * ink_alpha * ink_k;
+		float a = e * ink_alpha * ink_k * (1.0 - ink_fade);
 		if (has_ground && opacity < 0.999) {
 			a *= 1.0 - (1.0 - opacity) * 0.55 * bld;
 		}

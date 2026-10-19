@@ -52,7 +52,7 @@ func test_flipped_wheel_table_for_all_30_rotations() -> void:
 		for i in 6:
 			w.slot_slice_ids.append(StringName("s%d" % i))
 			w.slot_firmware_ids.append(&"")
-			w.slice_statuses.append(RC.Status.NONE)
+			w.slice_stacks.append({})
 		w.rotation = rotation
 		var old_tick := w.tick_at(0)
 		var opposite_slice := w.slot_slice_ids[WheelMath.slice_at((old_tick + 15) % 30)]

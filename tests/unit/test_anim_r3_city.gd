@@ -161,28 +161,7 @@ func test_a_choice_that_differs_further_on_shows_what_only_it_reaches() -> void:
 
 # --- B8: route framing ------------------------------------------------------------------------------
 
-func test_the_route_frames_the_marker_and_the_next_choices_at_every_text_size() -> void:
-	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
-		Settings.set_text_scale(scale)
-		RunManager.reset()
-		RunManager.new_campaign(1)
-		var nr := _scene(NETRUN)
-		await _frames(1)
-		nr.start_run(1)
-		await BoundedWait.until(get_tree(), func() -> bool: return nr._route_area != null and nr.city_overlay != null and nr.city_overlay.here_marker_rects().size() == 1, 3.0)
-		await _frames(8)
-		var overlay: CityMapOverlay = nr.city_overlay
-		assert_eq(overlay.here_id(), &"", "at the start no node is here")
-		assert_ne(overlay.here_at.x, INF, "the marker stands at the street (%.1f)" % scale)
-		var area: Rect2 = nr._route_area.get_global_rect().intersection(SCREEN)
-		var rects := LegendSpot.node_rects(overlay, false, nr.route_focus_ids())
-		rects.append_array(overlay.here_marker_rects())
-		assert_eq(rects.size(), nr.route_focus_ids().size() * 2 + 1 - _pipless(overlay, nr.route_focus_ids()), "the choices and the marker are measured (%.1f)" % scale)
-		for r in rects:
-			assert_true(area.grow(1.0).encloses(r), "%s inside the map area %s at %.1f" % [r, area, scale])
-			assert_true(r.position.x >= area.position.x + NetrunScript.ROUTE_MARGIN * 0.5, "off the screen's left edge with a margin at %.1f" % scale)
-		nr.get_parent().queue_free()
-		await _frames(1)
+## NA-26: the 2D route's YOU ARE HERE framing retired with that page (see NA26_PORT_MAP.md)
 
 
 ## How many of `ids` have no tier pips (node_rects adds a pip rect for the rest).

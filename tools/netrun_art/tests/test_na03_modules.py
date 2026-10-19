@@ -233,14 +233,21 @@ def test_link_route_ties_fewest_turns_then_tile():
     assert layout._bfs((0, 0), (3, 3), cells) == path and layout._bfs((0, 0), (9, 9), cells) is None
 
 
-def test_lamps_skip_openings_without_shifting_others():
+def test_lamps_shift_off_openings_others_stay():
     d = producer.produce_world(synth.make_world(11))["derive_street"]
     p = dict(dress.PRESET)
-    full = dress.lamps(d, dict(p, lamp_skip_margin=-1e9))
+    full = dress.lamps(d, dict(p, lamp_skip_margin=-1e9))          # no opening test: every grid slot
     cut = dress.lamps(d, p)
-    assert len(cut) < len(full)
-    byk = {(l["u"], l["side"]): l["pal"] for l in full}
-    assert all(byk[(l["u"], l["side"])] == l["pal"] for l in cut)
+    dropped = dress.lamps(d, dict(p, lamp_shift_steps=()))         # no shift candidates: the old drop behaviour
+    assert len(dropped) < len(cut) <= len(full)
+    keys = {(l["u"], l["side"]): l["pal"] for l in full}
+    stay = [l for l in cut if (l["u"], l["side"]) in keys]
+    moved = [l for l in cut if (l["u"], l["side"]) not in keys]
+    assert moved and all(keys[(l["u"], l["side"])] == l["pal"] for l in stay)
+    assert len(stay) == len(dropped)                               # the others do not move
+    mx = max(p["lamp_shift_steps"])
+    slots = sorted({u for u, _ in keys})
+    assert all(min(abs(l["u"] - u) for u in slots) <= mx + 1e-9 for l in moved)
 
 
 def test_foreground_only_solid_dressing_counts():
@@ -261,3 +268,51 @@ def test_foreground_only_solid_dressing_counts():
     assert DC.check_foreground(d, lights, 0.15)["status"] == "pass"
     lamp = dict(lights, washes=[], glows=[], lamps=[{"pos": [x, fy + 0.3 * out_dir, z]}])
     assert DC.check_foreground(d, lamp, 0.15)["status"] == "fail"
+
+
+def test_decision_cone_targets_every_room_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+
+    def room(x):
+        return {"front": [[x - 1, 0, 0], [x + 1, 0, 0], [x + 1, 0, 2], [x - 1, 0, 2]]}
+    rooms = {"a": room(0.0), "b": room(3.0), "far": room(500.0)}
+    assert occlusion.rooms_in_frame(rooms, pose, rig.REF_W, rig.REF_H) == ["a", "b"]
+    assert occlusion.rooms_in_frame(rooms, pose, rig.REF_W, rig.REF_H, lambda r, p: r is not rooms["b"]) == ["a"]
+    behind = rig.Pose([0, 100, 0], 0.0, 0.0, 10.0, 36.0)
+    assert occlusion.rooms_in_frame(rooms, behind, rig.REF_W, rig.REF_H) == []
+
+
+def _band_room(face_y, x0, x1, out_sign):
+    """A room on a face at constant y; `out_sign` -1 = outward normal is -y (toward a camera at -y)."""
+    back = face_y - out_sign
+    return {"front": [[x0, face_y, 0], [x1, face_y, 0], [x1, face_y, 3], [x0, face_y, 3]],
+            "back": [[x0, back, 0], [x1, back, 0], [x1, back, 3], [x0, back, 3]], "layer": 1, "floor": 0, "span": 1, "bld": "b"}
+
+
+def test_room_faces_camera():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)            # camera at y = -50
+    assert occlusion.room_faces_camera(_band_room(0.0, -1, 1, -1), pose)
+    assert not occlusion.room_faces_camera(_band_room(0.0, -1, 1, 1), pose)
+
+
+def test_hq_face_band_every_3_deg_facing_and_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+    rooms = {"a": _band_room(0.0, -1, 1, -1)}                   # tier face y = 0, half 10, centre (0, 10)
+    pts = occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], pose, rig.REF_W, rig.REF_H)
+    assert pts and all(p[1] == 0.0 and p[2] in (0.0, 3.0) for p in pts)     # only the camera-facing face, floor + top
+    xs = sorted({p[0] for p in pts})
+    assert len(pts) == 2 * len(xs) and len(xs) > 20                          # 3 deg steps over the face, both heights
+    coarse = occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], pose, rig.REF_W, rig.REF_H, step_deg=6.0)
+    assert 0 < len(coarse) < len(pts)
+    behind = rig.Pose([0, 100, 0], 0.0, 0.0, 10.0, 36.0)
+    assert occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], behind, rig.REF_W, rig.REF_H) == []
+
+
+def test_street_face_band_every_bu_facing_and_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+    rooms = {"a": _band_room(0.0, -1, 1, -1)}
+    pts = occlusion.street_band_points(rooms, ["a"], {"b": [-6, 6, 0, 10]}, pose, rig.REF_W, rig.REF_H)
+    assert [p[0] for p in pts[::2]] == [float(x) for x in range(-6, 7)]       # 1 BU apart, whole face width
+    assert {p[2] for p in pts} == {0.0, 3.0}
+    away = {"a": _band_room(0.0, -1, 1, 1)}
+    assert occlusion.street_band_points(away, ["a"], {"b": [-6, 6, 0, 10]}, pose, rig.REF_W, rig.REF_H) == []

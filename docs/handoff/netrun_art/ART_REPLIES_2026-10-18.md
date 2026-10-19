@@ -74,3 +74,53 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    - **C4 Heat tooltip:** fix the widow as you noted. Otherwise approved.
    - **Cross-ref:** the "LOOT // NETRUN: SITE" header and the "T1 // SITE" card in panel 5 follow item 6, i.e. tier + SiteText type.
    - Re-send the whole sheet after your fix slice.
+
+## Held 2026-10-18 (second pause)
+10. **City-plate update landed** on art-pass at 57c901fc and 8e6f6b7d: please re-run drift.
+    - Every `capture.json` now has `time` ("day" for `city_a2_day`, "night" for all other plates).
+    - City R-FOCUS-1 is now scored: night 1.77 (pass), day 0.93 (report).
+    - On the day plate, the value band, `landmark_ratio` and R-FOCUS-1 are "report" and are not in its baseline.
+    - HQ and street values are byte-identical.
+    - The street capture stamps are now `ed8675a8`.
+11. **NA-23 answers (W1_NA23, main 59a11ba6):**
+   1. **12.6 route-never-occluded check: count by depth.** A pixel counts only if it is in front of the room: class 2, inside the room's screen box + 12 px, more than 1 BU nearer than the room's front, above stub, and surviving a 4 px erosion. That is art-pass `street_r2/scripts/r2_occlusion.py`. Add `depth.png` to the 12.0 capture: 16-bit linear camera depth, in BU × 100, nearest-sampled. Don't exclude the neighbours, and don't hold a clear ring.
+   2. **Fix the span rule for every column.** Choose the span so that the smallest visible route room in OVERVIEW is ≥ 46 px, not the layer-1 rooms only. Regenerate the Python and fixtures. Spec 12.6 already says "every room". The concept parity follows the spec, not the other way round.
+   3. **Adopt your id.png room encoding:** G is the 1-based place in the run graph, B is the layer, and route-building walls are class 2 with B = 1. Stubs stay class 2 with G = 255 and B = 0. I'll update §12.0.
+   4. **Fog in NA-24:** agreed.
+   - **R-REP-1:** your 0.785 equals my whole-frame value, so you are measuring the whole frame. Use the facade band `facade = [x0, y0, x1, y1] = [0.0, 0.10, 1.0, 0.80]`, as fractions of the frame, y from the top. Pass it as `spec["facade"]` to `pvc_metrics.repetition` (art-pass `golden_plates/scripts/make_plate.py:179-181`; `proc_vs_custom/scripts/pvc_metrics.py:15, 372`).
+   - **W1_NA23 look: FIX LIST.**
+     1. **Missing look.** DECISION and HOVER don't show the approved NA-22 lb1 look: no window carpet, no street wash, no trims. The buildings are blank dark slabs. The netrun views must run at lb1 with NA-22c.
+     2. **Room placement.** Route rooms read as UI boxes stuck on blank walls. They must read as cutaways inside the route building: the room front is flush with the facade, and the building around it carries the facade, windows and wash, as in the concept (`street_r2` and the storyboard derive).
+     3. **Lane markings.** The yellow stripes are too saturated and bright, and they dominate DECISION. Use the r2 streak lanes and desaturated kerb and lane lines.
+     4. **HOVER.** The power cut grade is fine, since it is exempt.
+     5. **Re-send.** OVERVIEW and DECISION for seed 1 after fixes 1–3.
+12. **W1_NA24 street dressing: FIX LIST.** The overview improved a lot: the beams, less fog, the lanes, and the value band passes on both seeds.
+   - **(a) Raise sign emission, in NA-24, not NA-33.** Signs are the main carrier of R-DET and R-CALM. Avoid over-0.85 whitening by stacking signs differently, not by dimming them:
+     - each sign has a thin bright core line or text strokes (luma about 0.9 over a few px) on a softer panel (0.35–0.5);
+     - combine overlapping additive layers with max, or clamp them, so they don't sum;
+     - over 0.85 must stay ≤ 2.5 %.
+   - **Hero signs.** They read as plain stacked lime bars, like girders, not signs. Make them blade signs:
+     - 3–6 panels with glyph or text-block strokes;
+     - a frame trim;
+     - per-panel hue from the district hue + sec + one accent;
+     - per-panel brightness variation.
+     - Lime is right for Solace territory, but not as a single flat hue.
+   - **(b) District palettes.** No palette assets exist yet; the source is the art-pass city preset (`city_all_corps/scripts/city_preset.py:28-55`, `DISTRICTS`). Proposed ids:
+     - `solace_mint`: hue (0.239, 1.0, 0.545), sec (0.85, 1.0, 0.9), win [(0.75, 1.0, 0.82), (0.45, 1.0, 0.62), (0.95, 1.0, 0.95)].
+     - `orbital_ice`: hue (0.498, 0.659, 1.0), sec (0.92, 0.96, 1.0), win [(0.70, 0.84, 1.0), (0.92, 0.95, 1.0), (0.55, 0.75, 1.0)].
+     - Halcyon, Meridian and Rebel Cell have entries in the same table, so use those instead of `neon_bay` and `sodium_teal` where they differ.
+   - **DECISION.** It still shows item 11's issues: blank slab buildings, rooms as boxes on walls, and loud yellow lanes. Item 11 stands.
+   - **12.2 ≈ 4.0 on the street.** The route rooms glow too white against the dark city. Lower the room interior emission about 25 % (target ratio ≤ 2.5), so they still lead but don't punch holes.
+   - **Streak lane clock** with period k·T: good catch.
+13. **W1_NA25 jack-in / jack-out review: FIX LIST.** The beat timing and the HQ-side terminal, rain and collapse read well. Skip lands on the same CHOOSE frame. MARK and ZOOM are fine.
+   1. **The mid-dive blotches.** In "3d dive 1.5 s" there are irregular, cloud-shaped flat patches, white to pale pink, with no glow edge. They sit on roof caps and street tiles, cover roughly 3–5 % of the frame, and appear only in that frame. The shape looks like a noise mask, so my guess is the puddle / wet-surface mask going to full white specular while look_blend is between 0 and 1. A likely cause is that the wet roughness and puddles_sharp weight are at their netrun values while the mainline lighting is still on. Check the wet material and puddles_sharp across lb 0..1. The roof caps also hint at the section poche or the street wash evaluating on horizontal faces; the wash should apply to vertical faces only.
+   2. **Black voids.** At "dive end", "4 REVEAL 1.5 s" and "JACK OUT reverse", the route rooms not yet revealed show as solid black boxes on the facades. Until the facade dissolve (NA-25b) exists, an unrevealed room must show its closed facade (the building's normal windows and wash), never a black slab.
+   3. Accepted as NA-25b: the facade dissolve, the reverse from end pages and the HQ side, and Grid/Route zoom reusing the dive.
+14. **W1_NA11 layout rules: FIX LIST.** The 6-floor frontage, the 8 BU border streets, parity and the unchanged bids are all good. The deviations are accepted (splitmix64, layout-time spikes, stacked parts unchanged). Two visual problems:
+   1. **The street canyon closed up.** In the AFTER canyon, the raised frontage plus the spikes make a near-solid wall. The sky and the beam are almost gone, and the skyline no longer breaks. The r2 rule asks for a varied silhouette, not uniformly tall walls. Fix:
+      - cap spikes at 1.6× the backdrop median, not 2×;
+      - keep spikes ≥ 30 BU apart;
+      - leave the rest of the frontage at 6–10 floors, varied.
+      - Target: in the canyon camera, visible sky ≥ 15 % of the frame, and R-HOR-1 / R-SIL-1 passing.
+   2. **The HQ page landmark gets crowded.** A cluster of new tall black towers next to the Halcyon HQ competes with it. Spec 8.8 says landmarks lead and the city stays subordinate. Fix: within 2 lots of an HQ lot, no building may be taller than 0.6× the HQ landmark's top, and those buildings are exempt from spikes.
+   - Re-send both rows after the fixes, together with NA-11b's r2 diff.

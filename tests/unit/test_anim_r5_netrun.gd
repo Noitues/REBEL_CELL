@@ -296,37 +296,8 @@ func test_a_bought_card_flies_long_enough_and_lands_with_a_pulse() -> void:
 
 # --- B6: the route move ---------------------------------------------------------------------------
 
-func test_a_press_during_a_route_move_ends_it_and_is_never_refused() -> void:
-	var scene := await _netrun()
-	_live()
-	var s := RunManager.netrun
-	var to: StringName = s.available_nodes()[0]
-	scene.enter_node(to)
-	if not scene._travelling:
-		fail_test("the move did not play on the route map")
-		await _close(scene)
-		return
-	var owner := get_viewport().gui_get_focus_owner()
-	assert_false(owner != null and scene._panel.is_ancestor_of(owner), "no route choice has focus during the move")
-	# A choice on the page (the new ones are shown) pressed with accept: kept by the move.
-	var row: Node = scene._panel.find_child("RouteNodes", true, false)
-	var b: Button = null
-	for c in row.get_children():
-		if c is Button and (c as Button).visible and not c.is_queued_for_deletion():
-			b = c as Button
-			break
-	assert_not_null(b, "the new choices are listed")
-	b.grab_focus()
-	var phase := s.run.phase
-	get_viewport().push_input(_key(KEY_ENTER))
-	await _frames(2)
-	assert_false(scene._travelling, "the press ends the move")
-	for e in s.last_events:
-		assert_ne(String(e.get("type", "")), "refused", "the press never reached the session: %s" % e)
-	assert_eq(s.run.phase, phase, "and did nothing else")
-	assert_eq(s.run.current_node_id, to)
-	assert_true(scene.route_keep().is_empty() or not scene._travelling, "the keep list only matters mid-move")
-	await _close(scene)
+## NA-26: "a press during a route move ends it" rode the 2D route map's travel pulse; the street page has no travel pulse (a node
+## entry opens its screen at once, test_na23_route_flow::test_enter_confirms...), so there is no move to press during (see NA26_PORT_MAP.md).
 
 
 # --- B7: the route demo ---------------------------------------------------------------------------

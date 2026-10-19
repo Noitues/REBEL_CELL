@@ -15,6 +15,7 @@ from . import rig as RG
 from . import section as SEC
 from .derive.street import layer_nodes
 from .hq import orbit as HO
+from .hq.face_outlines import FACE_OUTLINES
 from .hq import slots as HS
 
 VERSION = 1
@@ -65,6 +66,7 @@ class _Ctx:
         self.boxes = OCC.building_boxes(city, skip)
         if self.kind == "hq":
             corp = derive["route_keys"][0].split(":", 1)[1]
+            self.outline = FACE_OUTLINES.get(corp)
             self.comp = HS.set_entrance(HS.plan_compound(HS.hq_lot_rect(city, corp), len(layer_nodes(run_graph))), self.ov, corp)
         self.d0 = None
         if self.kind == "street" and net is not None:
@@ -86,16 +88,36 @@ class _Ctx:
             return HO.hq_hover(dec, self.rooms[node])
         return RG.street_hover(dec, self.rooms[node], self.d["nrm"])
 
-    def record(self, pose: RG.Pose, ids: List[str]) -> Dict[str, Any]:
-        """Pose plus its check values: zoom_dive / zoom_detail, lod weights, occlusion (and HQ section) params."""
+    def band(self, pose: RG.Pose, ids: List[str]) -> List[List[float]]:
+        """Face band of the current level (DECISION / HOVER only): the landmark's tier face on an HQ, the route
+        building's face on a street (spec 7.1 rule 1)."""
+        if not ids:
+            return []
+        if self.kind == "hq":
+            return OCC.hq_band_points(self.rooms, ids, self.comp["centre"], pose, RG.REF_W, RG.REF_H, None, self.outline)
+        ext = {self.rooms[i]["bld"]: OCC.building_extent(self.city, self.rooms[i]["bld"]) for i in ids}
+        return OCC.street_band_points(self.rooms, ids, ext, pose, RG.REF_W, RG.REF_H)
+
+    def record(self, pose: RG.Pose, ids: List[str], decision: bool = False) -> Dict[str, Any]:
+        """Pose plus its check values: zoom_dive / zoom_detail, lod weights, occlusion (and HQ section) params.
+
+        A `decision` record's occlusion cone targets EVERY route room in frame that faces the camera (art-pass 6d214ce9), the
+        `ids` rooms included, plus the face band of the current level (art-pass 7a3e72cd, spec 7.1); the HQ section params keep the `ids` points.
+        """
         loc = pose.loc()
         pts = [[q[0], q[1], q[2] + self.rooms[i].get("ground_z", 0.0)] for i in ids for q in self.rooms[i]["front"]]
+        occ_pts = pts
+        if decision:
+            vis = HO.visible_room if self.kind == "hq" else OCC.room_faces_camera
+            occ_ids = sorted(set(ids) | set(OCC.rooms_in_frame(self.rooms, pose, RG.REF_W, RG.REF_H, vis)))
+            occ_pts = [[q[0], q[1], q[2] + self.rooms[i].get("ground_z", 0.0)] for i in occ_ids for q in self.rooms[i]["front"]]
+            occ_pts += self.band(pose, ids)
         rec: Dict[str, Any] = dict(pose=pose.to_json())
         if self.d0 is not None:
             rec["zoom_dive"] = LOD.zoom_dive(RG.dive_distance(pose, self.ov), self.d0, self.d1)
         rec["zoom_detail"] = LOD.zoom_detail(pose.dist, self.d_ov, self.d_dec)
         rec["lod_weights"] = LOD.weights(pose.dist)
-        rec["occlusion"] = OCC.occlusion_block(OCC.occlusion_params(loc, pts), self.boxes)
+        rec["occlusion"] = OCC.occlusion_block(OCC.occlusion_params(loc, occ_pts), self.boxes)
         if self.kind == "hq":
             hs = self.comp["half"][0]
             rec["section"] = SEC.section_params(loc, ("rect", hs, hs), pts if ids != list(self.rooms) else None)
@@ -109,7 +131,7 @@ def build_poses(derive: Dict[str, Any], city: Dict[str, Any], run_graph: Dict[st
     first = successors(run_graph, None)
     out: Dict[str, Any] = dict(
         version=VERSION, run=derive["run"], layout_seed=derive["layout_seed"], kind=derive["kind"],
-        overview=cx.record(cx.ov, sorted(cx.rooms)), decision=cx.record(cx.dec, first),
+        overview=cx.record(cx.ov, sorted(cx.rooms)), decision=cx.record(cx.dec, first, True),
         rig=dict(RG.RIG, look_bias_sign=RG.LOOK_BIAS_SIGN) if cx.kind == "street" else dict(HO.HQ_RIG),
         zoom=dict(d_ov=cx.d_ov, d_dec=cx.d_dec), lod=LOD.lod_block(), section=SEC.section_block())
     if cx.d0 is not None:
@@ -126,6 +148,6 @@ def build_poses(derive: Dict[str, Any], city: Dict[str, Any], run_graph: Dict[st
         dec = cx.decision(cur, opts)
         hov = cx.hover(dec, opts[0])
         fixtures.append(dict(name=name, walked=walked, current=cur, options=opts, hover=opts[0],
-                             decision=cx.record(dec, ([cur] if cur else []) + opts), hover_pose=hov.to_json()))
+                             decision=cx.record(dec, ([cur] if cur else []) + opts, True), hover_pose=hov.to_json()))
     out["fixtures"] = fixtures
     return out

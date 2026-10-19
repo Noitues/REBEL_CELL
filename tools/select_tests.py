@@ -34,7 +34,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "tests" / "test_manifest.json"
-TEST_DIRS = [ROOT / "tests" / "unit", ROOT / "tests" / "integration"]
+TEST_DIRS = [ROOT / "tests" / "unit", ROOT / "tests" / "integration", ROOT / "tests" / "netrun_art"]
 # Rule guards that run whenever the deterministic core or runtime state changes
 # (CLAUDE.md rule 6). Substrings of test script paths.
 CORE_GUARDS = [
@@ -54,7 +54,9 @@ CORE_DIRS = ("scripts/core/", "scripts/state/", "scripts/autoload/")
 CONTENT_DIRS = ("content/", "scripts/data/")
 # Only changes here can break a test; docs, process files and Python tooling never do
 # (tools/run_tests.py is covered by its own unittest, run by test_anim_r6_rules in the suite).
-CODE_DIRS = ("scripts/", "scenes/", "content/", "tests/", "addons/", "assets/", "project.godot")
+CODE_DIRS = ("scripts/", "scenes/", "content/", "tests/", "addons/", "assets/", "project.godot", "tools/netrun_art/")
+# NA-21: the Python oracle and its fixtures drive the GDScript twins' parity tests (path prefix -> test script stems).
+PATH_TESTS = {"tools/netrun_art/": ("test_na21_parity", "test_na21_camera_pixels")}
 CODE_SUFFIXES = (".gd", ".tscn", ".tres", ".gdshader", ".csv")
 
 
@@ -115,6 +117,11 @@ def select(files: list[str]) -> tuple[set[str], list[str]]:
 
     for f in files:
         p = ROOT / f
+        for prefix, stems in PATH_TESTS.items():
+            if f.startswith(prefix):
+                for t in tests:
+                    if t.stem in stems:
+                        add(t, f"{f} (Python oracle)")
         if f.startswith("tests/") and f.endswith(".gd") and Path(f).name.startswith("test_"):
             if "res://" + f not in deferred_scripts():
                 add(p, "changed test")

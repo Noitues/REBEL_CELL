@@ -229,6 +229,95 @@ const ROOF_FILL_STRONG := 0.45
 const ROOF_FILL_SOFT := 0.28
 ## Overlay veil colour alpha for the ISOLATE look.
 const ISOLATE_VEIL_ALPHA := 0.62
+## RULE5-CMO: the drawing literals of the overlay, named (values unchanged). Dark keyline alpha shared by the
+## rings, plates and node outlines (the twin of wheel_view's and combat_fx_layer's keyline alpha, kept local).
+const KEYLINE_ALPHA := 0.85
+## Roof outline width (px) of the selected Site as it draws on.
+const SELECT_OUTLINE_WIDTH := 1.5
+## Prerequisite double ring: arc points, keyline width, ring width (px x k), and the rise of CLEAR FIRST over it.
+const PREREQ_ARC_POINTS := 40
+const PREREQ_KEY_WIDTH := 6.0
+const PREREQ_RING_WIDTH := 3.0
+const PREREQ_WORDS_RISE := 2.0
+## Alpha of the plate under the CLEAR FIRST words.
+const PREREQ_PLATE_ALPHA := 0.92
+## Arc points of the lit node's ring and of the selection ring.
+const RING_ARC_POINTS := 32
+## The lit node's ring: keyline width, ring width and tick width (px x k), and how many ticks.
+const HOVER_KEY_WIDTH := 5.0
+const HOVER_RING_WIDTH := 2.0
+const HOVER_TICKS := 4
+## Width (px x k) of the selection ring's pulse.
+const SELECT_PULSE_WIDTH := 2.0
+## Forecast change tag: keyline growth (px x k), plate alpha, edge width (px x k), caption alpha.
+const CHANGE_KEY_GROW := 2.0
+const CHANGE_PLATE_ALPHA := 0.95
+const CHANGE_EDGE_WIDTH := 2.0
+const CHANGE_CAPTION_ALPHA := 0.85
+## Spotlight (focus fog): ellipse radius (px), its segment count, flattening, feather and far-ring scales,
+## fog colours, and the rim arc (scale of the radius, points, alpha, width).
+const SPOT_RADIUS := 230.0
+const SPOT_SEGMENTS := 48
+const SPOT_FLAT := 0.6
+const SPOT_FEATHER := 1.35
+const SPOT_OUTER := 12.0
+const SPOT_FOG := Color(0.01, 0.01, 0.03, 0.8)
+const SPOT_CLEAR := Color(0.01, 0.01, 0.03, 0.0)
+const SPOT_RIM_SCALE := 1.02
+const SPOT_RIM_POINTS := 64
+const SPOT_RIM_ALPHA := 0.25
+const SPOT_RIM_WIDTH := 1.5
+## Width (px x k) of a locked link's grey dashes.
+const LOCKED_WIDTH := 2.0
+## A route's default width (px), its dark keyline (alpha, extra width px), its glow (alpha, width multiple)
+## and the packet's extra radius (px).
+const EDGE_WIDTH := 3.0
+const EDGE_KEYLINE_ALPHA := 0.7
+const EDGE_KEYLINE_EXTRA := 5.0
+const EDGE_GLOW_ALPHA := 0.16
+const EDGE_GLOW_MUL := 4.0
+const PACKET_EXTRA := 2.0
+## Chevron keyline and body widths (px x k).
+const CHEVRON_INK_WIDTH := 4.5
+const CHEVRON_WIDTH := 2.2
+## Pillars look: foot and top half-widths (px), fill alpha, stalk alpha, roof alpha, keyline and outline widths (px).
+const PILLAR_FOOT_HALF := 7.0
+const PILLAR_TOP_HALF := 3.0
+const PILLAR_FILL_ALPHA := 0.16
+const PILLAR_STALK_ALPHA := 0.8
+const PILLAR_ROOF_ALPHA := 0.3
+const PILLAR_KEY_WIDTH := 6.0
+const PILLAR_LINE_WIDTH := 2.0
+## Stalk and riser line width (px) and the riser's alpha (ISOLATE / XRAY look and the v4 Site's riser).
+const STALK_WIDTH := 1.5
+const RISER_ALPHA := 0.6
+## The visited tick: start (shares of the icon radius), elbow and rise (shares of TICK), keyline alpha, widths (px x k).
+const TICK_AT := Vector2(0.55, 0.35)
+const TICK_ELBOW := Vector2(0.35, 0.4)
+const TICK_RISE := 0.55
+const TICK_KEY_ALPHA := 0.9
+const TICK_KEY_WIDTH := 5.0
+const TICK_WIDTH := 2.5
+## A placed defence's marker plate (share of the asset icon), the landing stamp (fill alpha, keyline alpha,
+## arc points, keyline and body widths px x k), the ring (arc points, width px x k) and its name plate alpha.
+const ASSET_PLATE := 1.25
+const STAMP_FILL_ALPHA := 0.35
+const STAMP_KEY_ALPHA := 0.8
+const STAMP_ARC_POINTS := 28
+const STAMP_KEY_WIDTH := 7.0
+const STAMP_WIDTH := 4.0
+const ASSET_ARC_POINTS := 20
+const ASSET_RING_WIDTH := 2.0
+const DROP_LABEL_PLATE_ALPHA := 0.86
+## Threat marker diamond: half-width as a share of its half-height, edge width (px).
+const MARKER_WING := 0.9
+const MARKER_EDGE_WIDTH := 1.2
+## v4 Site roof: fill alpha, keyline width (px), outline alpha and width (px), and the boss pad scale.
+const MARK_FILL_ALPHA := 0.22
+const MARK_KEY_WIDTH := 5.0
+const MARK_LINE_ALPHA := 0.8
+const MARK_LINE_WIDTH := 1.8
+const BOSS_PAD_SCALE := 1.4
 
 var city: NeonCity
 var look: int = Look.TRACE
@@ -263,7 +352,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0, &"hover_out_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -304,7 +393,6 @@ var hover_id: StringName = &"":
 		if v == hover_id:
 			return
 		hover_id = v
-		_hover_out_changed()
 		if _top != null:
 			_queue_tags()
 			_hi.queue_redraw()
@@ -951,29 +1039,15 @@ func _notification(what: int) -> void:
 			city.view3d.set_network(null)
 
 
-## Plan 1 ANIM-FLOW (W3-ROUTE R5): true on a map whose lit node reaches out to its building
-## (`route_hover_out`): the route map.
-var hover_out: bool = false
 ## The node lit now: the pointer's, else the one lit from outside (a list row, the pad).
 func lit_id() -> StringName:
 	return _pointer_id if _pointer_id != &"" else hover_id
-
-
-## The lit node changed: the reach out to its building starts over (at rest at once when the
-## motion doesn't play).
-func _hover_out_changed() -> void:
-	if not hover_out or _mv == null:
-		return
-	_mv.put(&"hover_out_t", 0.0 if lit_id() != &"" else 1.0)
-	if lit_id() != &"":
-		Motion.run(&"route_hover_out", _mv, ^"hover_out_t", 1.0)
 
 
 ## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
 func _point_at(id: StringName) -> void:
 	if id != _pointer_id:
 		_pointer_id = id
-		_hover_out_changed()
 		node_hovered.emit(id)
 		_queue_sync()  # ART-5 5d: an Exploit Site's file shows while pointed at
 
@@ -1299,7 +1373,7 @@ func _flow_plan() -> Dictionary:
 			ok = ok and mesh_edges.is_empty() and not arrows
 			packet_edges.append(i)
 		if dashed or arrows:
-			var m := {"pts": pts, "color": _flow_colour(e), "width": float(e.get("width", 3.0)),
+			var m := {"pts": pts, "color": _flow_colour(e), "width": float(e.get("width", EDGE_WIDTH)),
 				"flow": bool(e.get("flow", true)), "dashed": dashed, "arrows": arrows}
 			# draw_multiline draws a width under 0 as thin lines: the CPU's.
 			ok = ok and (not dashed or m["width"] >= 0.0)
@@ -1519,7 +1593,7 @@ func _draw_hi() -> void:
 			closed.append(closed[0])
 			var c0 := _c
 			_c = _hi
-			_stroke_on(closed, select_reveal, Palette.CELL_ACID, 1.5)
+			_stroke_on(closed, select_reveal, Palette.CELL_ACID, SELECT_OUTLINE_WIDTH)
 			_c = c0
 	var icons := _icon_positions() if not prereq_ids.is_empty() else {}
 	for pid in prereq_ids:
@@ -1531,25 +1605,25 @@ func _draw_hi() -> void:
 		# W3-POLISH F2: two full-weight rings with a clear gap between them (a single orange ring is
 		# the reachable Site's), and the words CLEAR FIRST under them.
 		var outer := pr + PREREQ_GAP * pk
-		_hi.draw_arc(icons[pid], outer, 0, TAU, 40, Color(Palette.INK, 0.85), 6.0 * pk)
-		_hi.draw_arc(icons[pid], pr, 0, TAU, 40, Color(Palette.INK, 0.85), 6.0 * pk)
-		_hi.draw_arc(icons[pid], outer, 0, TAU, 40, Palette.PAPER, 3.0 * pk)
-		_hi.draw_arc(icons[pid], pr, 0, TAU, 40, Palette.RING_AVAILABLE, 3.0 * pk)
-		_draw_prereq_words(icons[pid], outer + 2.0 * pk)
+		_hi.draw_arc(icons[pid], outer, 0, TAU, PREREQ_ARC_POINTS, Color(Palette.INK, KEYLINE_ALPHA), PREREQ_KEY_WIDTH * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, PREREQ_ARC_POINTS, Color(Palette.INK, KEYLINE_ALPHA), PREREQ_KEY_WIDTH * pk)
+		_hi.draw_arc(icons[pid], outer, 0, TAU, PREREQ_ARC_POINTS, Palette.PAPER, PREREQ_RING_WIDTH * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, PREREQ_ARC_POINTS, Palette.RING_AVAILABLE, PREREQ_RING_WIDTH * pk)
+		_draw_prereq_words(icons[pid], outer + PREREQ_WORDS_RISE * pk)
 	var hc := hover_centre()
 	if hc.x != INF:
 		var k := _k()
 		var hr := hover_ring_radius()
-		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
-		_hi.draw_arc(hc, hr, 0, TAU, 32, Palette.PAPER, 2.0 * k)
-		for q in 4:
+		_hi.draw_arc(hc, hr, 0, TAU, RING_ARC_POINTS, Color(0, 0, 0, KEYLINE_ALPHA), HOVER_KEY_WIDTH * k)
+		_hi.draw_arc(hc, hr, 0, TAU, RING_ARC_POINTS, Palette.PAPER, HOVER_RING_WIDTH * k)
+		for q in HOVER_TICKS:
 			var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
-			_hi.draw_line(hc + d * hr, hc + d * (hr + HOVER_TICK * k), Palette.PAPER, 2.0 * k)
+			_hi.draw_line(hc + d * hr, hc + d * (hr + HOVER_TICK * k), Palette.PAPER, HOVER_RING_WIDTH * k)
 	var at := ring_centre()
 	if at.x == INF or not select_ring_shown:
 		return
 	var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
-	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
+	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, RING_ARC_POINTS, Color(Palette.CELL_ACID, ring_ease), SELECT_PULSE_WIDTH * _k())
 
 
 ## W3-POLISH F2: where the CLEAR FIRST words stand for a prerequisite ringed at `at` with outer
@@ -1558,7 +1632,7 @@ func prereq_words_rect(at: Vector2, outer: float) -> Rect2:
 	var fs := label_font_size()
 	var f := Palette.mono()
 	var w := f.get_string_size(tr_word(PREREQ_WORDS), HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
-	var pad := 3.0 * _k()
+	var pad := TAG_PAD * _k()
 	var box := Vector2(w.x + pad * 2.0, f.get_height(fs) + pad * 2.0)
 	# Over the ring when the map has the room (a name tag usually stands beside or under a node),
 	# else under it.
@@ -1572,9 +1646,9 @@ func _draw_prereq_words(at: Vector2, outer: float) -> void:
 	var fs := label_font_size()
 	var f := Palette.mono()
 	var r := prereq_words_rect(at, outer)
-	_hi.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.92)))
+	_hi.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, PREREQ_PLATE_ALPHA)))
 	_hi.draw_rect(r, Palette.RING_AVAILABLE, false, 1.0 * _k())
-	var pad := 3.0 * _k()
+	var pad := TAG_PAD * _k()
 	HighContrast.draw_text(_hi, f, r.position + Vector2(pad, pad + f.get_ascent(fs)), tr_word(PREREQ_WORDS), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.PAPER))
 
 
@@ -1605,11 +1679,11 @@ func _draw_changes() -> void:
 		var size := Vector2(maxf(tw.x, cw.x), tw.y + cf.get_height(cfs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
-		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
-		var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.95))
+		_hi.draw_rect(box.grow(CHANGE_KEY_GROW * k), Color(0, 0, 0, KEYLINE_ALPHA * a))
+		var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, CHANGE_PLATE_ALPHA))
 		_hi.draw_rect(box, Color(plate, plate.a * a))
-		_hi.draw_rect(box, Color(col, a), false, HighContrast.edge(2.0 * k))
-		var cap := HighContrast.ink(Color(Palette.PAPER, 0.85))
+		_hi.draw_rect(box, Color(col, a), false, HighContrast.edge(CHANGE_EDGE_WIDTH * k))
+		var cap := HighContrast.ink(Color(Palette.PAPER, CHANGE_CAPTION_ALPHA))
 		HighContrast.draw_text(_hi, cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(cap, cap.a * a))
 		HighContrast.draw_text(_hi, f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HighContrast.ink(col), a))
 
@@ -1670,23 +1744,23 @@ func _spotlight() -> void:
 	var c := size * 0.5
 	if focus_id != &"" and _lots.has(focus_id):
 		c = _to_local(Vector2(_lots[focus_id]) + Vector2(0.5, 0.5))
-	var r := 230.0
-	var fog := Color(0.01, 0.01, 0.03, 0.8)
-	var clear := Color(0.01, 0.01, 0.03, 0.0)
+	var r := SPOT_RADIUS
+	var fog := SPOT_FOG
+	var clear := SPOT_CLEAR
 	var ring := PackedVector2Array()
-	for k in 49:
-		ring.append(c + Vector2(cos(TAU * k / 48.0), sin(TAU * k / 48.0) * 0.6) * r)
+	for k in SPOT_SEGMENTS + 1:
+		ring.append(c + Vector2(cos(TAU * k / float(SPOT_SEGMENTS)), sin(TAU * k / float(SPOT_SEGMENTS)) * SPOT_FLAT) * r)
 	# Fog outside an ellipse: a feathered band, then an opaque ring out past the screen.
-	for k in 48:
+	for k in SPOT_SEGMENTS:
 		var a := ring[k]
 		var b := ring[k + 1]
-		var a2 := c + (a - c) * 1.35
-		var b2 := c + (b - c) * 1.35
-		var a3 := c + (a - c) * 12.0
-		var b3 := c + (b - c) * 12.0
+		var a2 := c + (a - c) * SPOT_FEATHER
+		var b2 := c + (b - c) * SPOT_FEATHER
+		var a3 := c + (a - c) * SPOT_OUTER
+		var b3 := c + (b - c) * SPOT_OUTER
 		draw_polygon(PackedVector2Array([a, b, b2, a2]), PackedColorArray([clear, clear, fog, fog]))
 		draw_colored_polygon(PackedVector2Array([a2, b2, b3, a3]), fog)
-	draw_arc(c, r * 1.02, 0, TAU, 64, Color(Palette.NET_CYAN, 0.25), 1.5)
+	draw_arc(c, r * SPOT_RIM_SCALE, 0, TAU, SPOT_RIM_POINTS, Color(Palette.NET_CYAN, SPOT_RIM_ALPHA), SPOT_RIM_WIDTH)
 
 
 func _is_dashed(e: Dictionary) -> bool:
@@ -1706,15 +1780,15 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 		var total := PencilShapes.length_of(pts)
 		var d := 0.0
 		while d < total:
-			draw_polyline(PencilShapes.trim(pts, d, minf(total, d + DASH_ON * k)), Color(Palette.TEXT_LO, 0.85), maxf(1.0, 2.0 * k), true)
+			draw_polyline(PencilShapes.trim(pts, d, minf(total, d + DASH_ON * k)), Color(Palette.TEXT_LO, KEYLINE_ALPHA), maxf(1.0, LOCKED_WIDTH * k), true)
 			d += DASH_PERIOD * k
 		SiteMarker.draw_lock_disc(self, _halfway(pts), LOCK_DISC * k)
 		return
 	var col: Color = e.get("color", Palette.NET_CYAN)
-	var width: float = e.get("width", 3.0)
+	var width: float = e.get("width", EDGE_WIDTH)
 	# Dark keyline under every path so it separates from the city's own ink.
-	draw_polyline(pts, Color(0, 0, 0, 0.7), width + 5.0, true)
-	draw_polyline(pts, Color(col, 0.16), width * 4.0, true)
+	draw_polyline(pts, Color(0, 0, 0, EDGE_KEYLINE_ALPHA), width + EDGE_KEYLINE_EXTRA, true)
+	draw_polyline(pts, Color(col, EDGE_GLOW_ALPHA), width * EDGE_GLOW_MUL, true)
 	if not _is_dashed(e):
 		draw_polyline(pts, col, width, true)
 
@@ -1723,7 +1797,7 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 	if pts.size() < 2 or bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
 		return
 	var col := _flow_colour(e)
-	var width: float = e.get("width", 3.0)
+	var width: float = e.get("width", EDGE_WIDTH)
 	if _is_dashed(e):
 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0
 		# M14 perf slice: the edge's dashes as one multiline (the same quads as a draw_line each).
@@ -1759,7 +1833,7 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 		for k in pts.size() - 1:
 			var seg := pts[k].distance_to(pts[k + 1])
 			if d <= seg:
-				_c.draw_circle(pts[k].lerp(pts[k + 1], d / maxf(seg, 0.001)), width + 2.0, Palette.PAPER)
+				_c.draw_circle(pts[k].lerp(pts[k + 1], d / maxf(seg, 0.001)), width + PACKET_EXTRA, Palette.PAPER)
 				break
 			d -= seg
 
@@ -1787,8 +1861,8 @@ func _chevrons(e: Dictionary, pts: PackedVector2Array) -> void:
 			var p := a + dir * (carry + i * step)
 			var tip := p + dir * s
 			var wing := PackedVector2Array([p - dir * s + side * s, tip, p - dir * s - side * s])
-			_c.draw_polyline(wing, CHEVRON_INK, 4.5 * k)
-			_c.draw_polyline(wing, col, 2.2 * k)
+			_c.draw_polyline(wing, CHEVRON_INK, CHEVRON_INK_WIDTH * k)
+			_c.draw_polyline(wing, col, CHEVRON_WIDTH * k)
 		# Where the next chevron falls on the next segment (the spacing runs on round corners).
 		carry = maxf(0.0, carry + n * step - length)
 
@@ -1831,7 +1905,7 @@ func _node(n: Dictionary) -> void:
 	var top := _centroid(roof)
 	var closed := roof.duplicate()
 	closed.append(roof[0])
-	var ink := Color(0, 0, 0, 0.85 * (DIM_ALPHA if dim else 1.0))
+	var ink := Color(0, 0, 0, KEYLINE_ALPHA * (DIM_ALPHA if dim else 1.0))
 	var at := icon_pos(n)
 	var r := icon_radius(n)
 	if n.has("socket"):
@@ -1839,15 +1913,15 @@ func _node(n: Dictionary) -> void:
 		# the riser ties it to its building); under it no roof fill, outline or glow (the lime
 		# "spray" pool), only the socket's own thin halo.
 		var k := _k()
-		_c.draw_arc(at, r + SOCKET_HALO_GAP * k, 0, TAU, 40, Color(col, col.a * SOCKET_HALO_ALPHA), SOCKET_HALO_PX * k, true)
+		_c.draw_arc(at, r + SOCKET_HALO_GAP * k, 0, TAU, PREREQ_ARC_POINTS, Color(col, col.a * SOCKET_HALO_ALPHA), SOCKET_HALO_PX * k, true)
 	else:
 		match look:
 			Look.PILLARS:
-				_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-7, 0), base + Vector2(7, 0), at + Vector2(3, 0), at + Vector2(-3, 0)]), Color(col, col.a * 0.16))
-				_c.draw_line(base, at, Color(col, col.a * 0.8), 1.5)
-				_c.draw_colored_polygon(roof, Color(col, col.a * 0.3))
-				_c.draw_polyline(closed, ink, 6.0, true)
-				_c.draw_polyline(closed, col, 2.0, true)
+				_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-PILLAR_FOOT_HALF, 0), base + Vector2(PILLAR_FOOT_HALF, 0), at + Vector2(PILLAR_TOP_HALF, 0), at + Vector2(-PILLAR_TOP_HALF, 0)]), Color(col, col.a * PILLAR_FILL_ALPHA))
+				_c.draw_line(base, at, Color(col, col.a * PILLAR_STALK_ALPHA), STALK_WIDTH)
+				_c.draw_colored_polygon(roof, Color(col, col.a * PILLAR_ROOF_ALPHA))
+				_c.draw_polyline(closed, ink, PILLAR_KEY_WIDTH, true)
+				_c.draw_polyline(closed, col, PILLAR_LINE_WIDTH, true)
 			_:
 				var fill_a := ROOF_FILL_STRONG if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else ROOF_FILL_SOFT
 				_c.draw_colored_polygon(roof, Color(col, col.a * fill_a))
@@ -1855,9 +1929,9 @@ func _node(n: Dictionary) -> void:
 				_c.draw_polyline(closed, Color(col, col.a * ROOF_GLOW_ALPHA), ROOF_GLOW_WIDTH, true)
 				_c.draw_polyline(closed, col, ROOF_LINE_WIDTH, true)
 				if look == Look.ISOLATE or look == Look.XRAY:
-					_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
+					_c.draw_line(base, top, Color(col, col.a * RISER_ALPHA), STALK_WIDTH)
 				# A short stalk ties the floating icon to its roof.
-				_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * STALK_ALPHA), 1.5)
+				_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * STALK_ALPHA), STALK_WIDTH)
 	if not n.has("socket"):
 		_mark(n, top, col)  # ART-6 3A: a socket carries its own status (no spray ring)
 	if _travel.is_empty():
@@ -1875,10 +1949,10 @@ func _node(n: Dictionary) -> void:
 		# ANIM-R1 M7: a tick on a node passed through (it fades in as the node dims).
 		var ta := 1.0 if visited else dim_t
 		var tk := _k()
-		var t0 := at + Vector2(r * 0.55, r * 0.35)
-		var tick := PackedVector2Array([t0, t0 + Vector2(TICK * 0.35, TICK * 0.4) * tk, t0 + Vector2(TICK, -TICK * 0.55) * tk])
-		_c.draw_polyline(tick, Color(0, 0, 0, 0.9 * ta), 5.0 * tk)
-		_c.draw_polyline(tick, Color(Palette.PAPER, ta), 2.5 * tk)
+		var t0 := at + Vector2(r * TICK_AT.x, r * TICK_AT.y)
+		var tick := PackedVector2Array([t0, t0 + Vector2(TICK * TICK_ELBOW.x, TICK * TICK_ELBOW.y) * tk, t0 + Vector2(TICK, -TICK * TICK_RISE) * tk])
+		_c.draw_polyline(tick, Color(0, 0, 0, TICK_KEY_ALPHA * ta), TICK_KEY_WIDTH * tk)
+		_c.draw_polyline(tick, Color(Palette.PAPER, ta), TICK_WIDTH * tk)
 	if tier_of(n) > 0:
 		draw_tier(_c, tier_pips_centre(n), tier_of(n), col, _pip_scale(n), DIM_ALPHA if dim else 1.0)
 		drawn_tiers[n["id"]] = tier_of(n)
@@ -1898,13 +1972,13 @@ func _node(n: Dictionary) -> void:
 		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
 			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
 			var fade := 1.0 - drop_stamp_t
-			_c.draw_circle(slot, ar * 1.25 * grow, Color(Palette.CELL_PINK, 0.35 * fade))
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * fade), 7.0 * _k())
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, fade), 4.0 * _k())
+			_c.draw_circle(slot, ar * ASSET_PLATE * grow, Color(Palette.CELL_PINK, STAMP_FILL_ALPHA * fade))
+			_c.draw_arc(slot, ar * ASSET_PLATE * grow, 0, TAU, STAMP_ARC_POINTS, Color(0, 0, 0, STAMP_KEY_ALPHA * fade), STAMP_KEY_WIDTH * _k())
+			_c.draw_arc(slot, ar * ASSET_PLATE * grow, 0, TAU, STAMP_ARC_POINTS, Color(Palette.PAPER, fade), STAMP_WIDTH * _k())
 		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
 		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
-		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
-		_c.draw_arc(slot, ar * 1.25, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
+		_c.draw_circle(slot, ar * ASSET_PLATE, Color(0, 0, 0, KEYLINE_ALPHA))
+		_c.draw_arc(slot, ar * ASSET_PLATE, 0, TAU, ASSET_ARC_POINTS, Palette.CELL_PINK, ASSET_RING_WIDTH * _k())
 		AssetIcon.draw_icon(_c, slot, ar, assets[k])
 		if landing and String(_drop.get("label", "")) != "":
 			# ANIM-R2 R6: the defence that just landed keeps its name under it.
@@ -1912,8 +1986,8 @@ func _node(n: Dictionary) -> void:
 			var fs := label_font_size()
 			var word: String = str(_drop["label"])
 			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
+			var lab_at := slot + Vector2(-w * 0.5, ar * ASSET_PLATE + LABEL_GAP * _k() + f.get_ascent(fs))
+			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), HighContrast.plate(Color(Palette.NIGHT_SKY, DROP_LABEL_PLATE_ALPHA)))
 			HighContrast.draw_text(_c, f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(AssetIcon.color_of(assets[k])))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
@@ -1921,9 +1995,9 @@ func _node(n: Dictionary) -> void:
 		for k in names.size():
 			var mp := row + Vector2((k - (names.size() - 1) * 0.5) * MARKER_STEP * _k(), 0)
 			var s := MARKER_SIZE * _k()
-			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * 0.9, 0), mp + Vector2(0, s), mp + Vector2(-s * 0.9, 0)])
+			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * MARKER_WING, 0), mp + Vector2(0, s), mp + Vector2(-s * MARKER_WING, 0)])
 			_c.draw_colored_polygon(dia, Palette.corp_color(StringName(n.get("threat_corp", "solace"))) if n.has("threat_corp") else Palette.CORP_SOLACE)
-			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
+			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, MARKER_EDGE_WIDTH)
 
 
 # --- ART-5 5d: Site markers v4 on the Grid -----------------------------------------------
@@ -1993,14 +2067,14 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	closed.append(roof[0])
 	if spec.get("status") == SiteMarker.ST_DOWN:
 		col = SiteMarker.greyed(col)
-	_c.draw_colored_polygon(roof, Color(col, 0.22))
-	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, 0.85), 5.0, true)
-	_c.draw_polyline(closed, Color(col, 0.8), 1.8, true)
+	_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA))
+	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, KEYLINE_ALPHA), MARK_KEY_WIDTH, true)
+	_c.draw_polyline(closed, Color(col, MARK_LINE_ALPHA), MARK_LINE_WIDTH, true)
 	if bool(spec.get("won", false)):
 		_won_lights(n["id"], rec)
 	var at := icon_pos(n)
 	if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
-		SiteMarker.draw_pad(_c, spec, top, k * 1.4)
+		SiteMarker.draw_pad(_c, spec, top, k * BOSS_PAD_SCALE)
 		if target_hidden:
 			boss_chip_rect = boss_layout(n).get("chip", _boss_chip_box(at))  # the arrow's chip stands in
 		else:
@@ -2008,7 +2082,7 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 		return
 	SiteMarker.draw_pad(_c, spec, top, k)
 	var rc := SiteMarker.ring_color(spec)
-	_c.draw_line(top, at + Vector2(0, SiteMarker.ring_radius(spec, k)), Color(rc, 0.6), maxf(1.0, 1.5 * k))
+	_c.draw_line(top, at + Vector2(0, SiteMarker.ring_radius(spec, k)), Color(rc, RISER_ALPHA), maxf(1.0, STALK_WIDTH * k))
 	if SiteMarker.pip_count(spec) > 0:
 		drawn_tiers[n["id"]] = int(spec.get("tier", 0))
 	# PT-003 fix 4: a v4 marker (the HOME SERVER) shows its placed defences on itself too: a pink ring just outside its own
@@ -2899,8 +2973,10 @@ func _draw_travel() -> void:
 	# ANIM-R2 R12: the node it heads for pulses (`route_target_pulse`) while it travels.
 	var to := icon_at(_travel["to"])
 	if to.x != INF:
-		var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
-		var swell := (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
+		var swell := 0.0
+		if Motion.live(&"route_target_pulse"):
+			var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
+			swell = (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
 		var tr_r := icon_radius(_node_dict(_travel["to"])) + (SELECT_RING + swell) * k
 		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(0, 0, 0, 0.8), 6.0 * k)
 		_hi.draw_arc(to, tr_r, 0, TAU, 32, Palette.CELL_ACID, 3.0 * k)

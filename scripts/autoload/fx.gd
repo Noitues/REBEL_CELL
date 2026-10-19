@@ -754,8 +754,9 @@ func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "
 	if _jacking:
 		return
 	var headless := DisplayServer.get_name() == "headless" and not Motion.force_live
+	var street := bool(link.get("street", false))
 	if link.is_empty() or headless or not effects_enabled() or not Motion.camera_moves_allowed() or not Motion.live(&"jack_in") \
-			or not Motion.live(&"jack_lens"):
+			or not Motion.live(&"entry_collapse" if street else &"jack_lens"):
 		await jack_in(on_switch, -1.0, destination, note, tier)
 		return
 	_destination = destination
@@ -764,7 +765,7 @@ func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "
 	_set_jacking(true)
 	if input_gate != null:
 		input_gate.on_press = jack_link.skip
-	await jack_link.play(link, self, _link_switch.bind(on_switch))
+	await jack_link.play(link, self, (_street_switch if street else _link_switch).bind(on_switch))
 	if input_gate != null:
 		input_gate.on_press = Callable()
 	_set_jacking(false)
@@ -782,6 +783,18 @@ func _link_switch(on_switch: Callable) -> void:
 	if not jack_link.skipping:
 		await _hold_connect()
 	_hide_connect()
+	_cover_opaque = false
+	cover_lifting.emit()
+
+
+## NA-25: the street entry's switch under the night sky: the new scene, then the arrival wait (the dive covers the rest of the
+## load); no CONNECTING line, no black.
+func _street_switch(on_switch: Callable) -> void:
+	_cover_opaque = true
+	on_switch.call()
+	for f in 2:
+		await get_tree().process_frame
+	await _wait_arrival()
 	_cover_opaque = false
 	cover_lifting.emit()
 

@@ -324,7 +324,7 @@ static func float_str(x: float) -> String:
 	if is_nan(x) or is_inf(x):
 		push_error("NetrunArtExport: NaN or Inf in a contract file.")
 		return "0.0"
-	var s := "%.4f" % x
+	var s := "%.4f" % (floorf(x * 1e4 + 0.5) / 1e4)  # half up first (spec 12.8 rule 1), as io.py round_half_up
 	s = s.rstrip("0")
 	if s.ends_with("."):
 		s += "0"

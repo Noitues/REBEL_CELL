@@ -131,7 +131,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s on a random slice,%s on a random slice
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
-%s rolls,%s rolls
 %s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.,%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
 "%s turns it back, %s forward.","%s turns it back, %s forward."
@@ -149,6 +148,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
 %s: HQ RUN,%s: HQ RUN
+%s: SKIP,%s: SKIP
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
@@ -205,6 +205,11 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > focus an item: what it does shows here.,> focus an item: what it does shows here.
 > jack --from %s --to %s,> jack --from %s --to %s
 > point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.,> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.
+? %s %s,? %s %s
+? DRAW,? DRAW
+? LANDING,? LANDING
+? SLICE,? SLICE
+? STATUS,? STATUS
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
@@ -214,8 +219,7 @@ A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no s
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).,A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).
 A raid's route toward your HOME SERVER.,A raid's route toward your HOME SERVER.
-A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
-A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
+A random result: shown as ? until you play it,A random result: shown as ? until you play it
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 "A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
 ABANDON CAMPAIGN,ABANDON CAMPAIGN
@@ -254,7 +258,6 @@ Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
 "Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses.","Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses."
 Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.,Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.
-Always show all nodes on the netrun map,Always show all nodes on the netrun map
 An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).,An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).
 An operative is stationed here: their class's station bonus helps the node in raids.,An operative is stationed here: their class's station bonus helps the node in raids.
 Armory,Armory
@@ -468,7 +471,7 @@ CardData.jam.description,"Nudge an enemy wheel ±1, ignoring resistance."
 CardData.jam.display_name,Jam
 CardData.jolt.description,Spin a wheel 3 ticks clockwise.
 CardData.jolt.display_name,Jolt
-CardData.leech_worm.description,Pointed enemy slice gets a PARASITE (half output). Exhaust.
+CardData.leech_worm.description,Pointed enemy slice gets OUTPUT DOWN x2 (half output). Exhaust.
 CardData.leech_worm.display_name,Leech Worm
 CardData.lock_on.description,Move your outer ring to the nearest slice center (Perfect). Exhaust.
 CardData.lock_on.display_name,Lock On
@@ -486,7 +489,7 @@ CardData.overdrive.description,"OVERCLOCK the pointed slice: 1.5x once, then COR
 CardData.overdrive.display_name,Overdrive
 CardData.overload.description,Deal 10 damage to the target and take 4. Exhaust.
 CardData.overload.display_name,Overload
-CardData.parasite_pulse.description,Pointed target slice gets a PARASITE (half output). Exhaust.
+CardData.parasite_pulse.description,Pointed target slice gets OUTPUT DOWN x2 (half output). Exhaust.
 CardData.parasite_pulse.display_name,Parasite Pulse
 CardData.patch_up.description,Heal 6. Exhaust.
 CardData.patch_up.display_name,Patch Up
@@ -634,6 +637,7 @@ DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DE-ORBITED,DE-ORBITED
 DECEASED,DECEASED
+DECISION,DECISION
 DECK,DECK
 DECRYPTED,DECRYPTED
 DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
@@ -992,6 +996,7 @@ Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at mos
 Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
+G,G
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
@@ -1128,6 +1133,7 @@ HomeServerVariantData.home_relay_nest.description,"50 integrity spread thin, 5 a
 HomeServerVariantData.home_relay_nest.display_name,Relay Nest home server
 HomeServerVariantData.home_standard.description,The default home server layout.
 HomeServerVariantData.home_standard.display_name,Standard home server
+"Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange.","Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange."
 Hover or right-click,Hover or right-click
 "How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."
 HubCoreData.auto_renew.description,Heals 10 each turn unless the Hub is breached.
@@ -1710,6 +1716,7 @@ NODE BUILT,NODE BUILT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
+NUDGE LOCKED,NUDGE LOCKED
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 "NULL: the needle sits on a NULL slice, so nothing happens.","NULL: the needle sits on a NULL slice, so nothing happens."
@@ -1810,14 +1817,15 @@ OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s,OPERATION: %s  //  TARG
 OPERATIONS,OPERATIONS
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
-OPTIONS > DISPLAY: SHOW ALL NODES,OPTIONS > DISPLAY: SHOW ALL NODES
 ORDERS,ORDERS
 OURS NOW,OURS NOW
 OUTCOME,OUTCOME
 OUTER,OUTER
+OUTPUT DOWN,OUTPUT DOWN
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
 OVERTHROW,OVERTHROW
+OVERVIEW,OVERVIEW
 OVERWRITTEN,OVERWRITTEN
 OVFL,OVFL
 Off (no correction),Off (no correction)
@@ -1846,6 +1854,7 @@ Out of reach from here.,Out of reach from here.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
+P,P
 PARASITE,PARASITE
 PARKED,PARKED
 PARKED −%d,PARKED −%d
@@ -1864,6 +1873,7 @@ PERSON OF INTEREST // FILE,PERSON OF INTEREST // FILE
 PERSONNEL  //  IDENTIFIED OPERATIVES,PERSONNEL  //  IDENTIFIED OPERATIVES
 PHASE %d,PHASE %d
 "PICK A NODE: click one of the numbered stickers, then confirm.","PICK A NODE: click one of the numbered stickers, then confirm."
+"PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW.","PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW."
 PICK THE NODE TO BUILD,PICK THE NODE TO BUILD
 PIERCE,PIERCE
 PIRATE RADIO 88.1,PIRATE RADIO 88.1
@@ -1987,11 +1997,12 @@ RAM 0,RAM 0
 RAM FORECAST,RAM FORECAST
 RAM%s,RAM%s
 RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
-RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RARE,RARE
 "RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
+REACTS x%d,REACTS x%d
+REACTS: %d DMG,REACTS: %d DMG
 "READOUTS (HP, RAM and the chips)","READOUTS (HP, RAM and the chips)"
 READY,READY
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
@@ -2018,7 +2029,8 @@ RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
-RESPIN: ODDS,RESPIN: ODDS
+RESPIN LOCKED,RESPIN LOCKED
+RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 RETALIATION,RETALIATION
 REWARDS,REWARDS
@@ -2132,6 +2144,7 @@ Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
+Reacts to your play: %s.,Reacts to your play: %s.
 Reads %s now.,Reads %s now.
 Recall %s,Recall %s
 "Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"
@@ -2147,7 +2160,7 @@ Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed aft
 Respin,Respin
 Respin for %d RAM,Respin for %d RAM
 Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
-Respin your wheel for %d RAM: a random result (UNDO stops here). %s,Respin your wheel for %d RAM: a random result (UNDO stops here). %s
+Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).,Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -2196,7 +2209,6 @@ SHIM,SHIM
 SHLD,SHLD
 SHOP,SHOP
 SHOWING ALL LINKS,SHOWING ALL LINKS
-SHOWING ALL NODES,SHOWING ALL NODES
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
 SINKS,SINKS
@@ -2229,6 +2241,7 @@ STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
 STOPPED %d/%d,STOPPED %d/%d
 STRENGTH,STRENGTH
 STRENGTH %s%%,STRENGTH %s%%
+SUB-TICK MAP  //  W weak  G good  P perfect,SUB-TICK MAP  //  W weak  G good  P perfect
 SUBJECT,SUBJECT
 SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
@@ -2923,7 +2936,6 @@ TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
 THE MAINFRAME,THE MAINFRAME
-THE SPRAWL,THE SPRAWL
 THE TAGS,THE TAGS
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
@@ -2932,6 +2944,7 @@ THIS TURN,THIS TURN
 THREAT INTEL // SCAN,THREAT INTEL // SCAN
 THREATS STOPPED,THREATS STOPPED
 TIER,TIER
+TIER DOWN,TIER DOWN
 TITLE,TITLE
 TLE OC-55 / DECAY,TLE OC-55 / DECAY
 TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL
@@ -3214,6 +3227,8 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
+That wheel's nudges are locked this turn.,That wheel's nudges are locked this turn.
+That wheel's respins are locked this turn.,That wheel's respins are locked this turn.
 "The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
@@ -3321,6 +3336,7 @@ VIRUS,VIRUS
 VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
 VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
+W,W
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK
@@ -3371,6 +3387,7 @@ Your run is saved where it is: BREACH on the title picks it up.,Your run is save
 Your spinner.,Your spinner.
 Your stats and achievements stay.,Your stats and achievements stay.
 Your uplink has been reassigned to the commons. Burn-up in progress.,Your uplink has been reassigned to the commons. Burn-up in progress.
+Z flips between OVERVIEW and DECISION.,Z flips between OVERVIEW and DECISION.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Daemon to pick,a Daemon to pick
 a Firmware chip to pick,a Firmware chip to pick
@@ -3541,7 +3558,6 @@ wheel,wheel
 withdraw,withdraw
 won,won
 x%d,x%d
-x0.5,x0.5
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.
@@ -3550,4 +3566,6 @@ your wheel,your wheel
 yours,yours
 {nudge_switch},{nudge_switch}
 "{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it.","{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it."
+×%d,×%d
+×%d: %d stacks of %s on this slice.,×%d: %d stacks of %s on this slice.
 — STEP %d —,— STEP %d —

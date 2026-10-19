@@ -92,8 +92,8 @@ func test_breach_exploit_removes_a_pointer_in_every_phase() -> void:
 
 func test_virus_exploit_corrupts_two_boss_slices_at_the_start() -> void:
 	var s := _session({"boss_corrupt_slices": 2})
-	var statuses := _boss(s).wheel.slice_statuses
-	assert_eq(statuses.count(RC.Status.CORRUPTED), 2)
-	assert_eq(statuses[5], RC.Status.NONE, "never the NULL slice")
+	var statuses := _boss(s).wheel.slice_stacks
+	assert_eq(_boss(s).wheel.count_status(RC.Status.CORRUPTED), 2)
+	assert_false(_boss(s).wheel.has_any_status(5), "never the NULL slice")
 	var replayed := CombatSession.replay(_resolver, s.setup, s.combat_seed, s.history)
-	assert_eq(replayed.state.get_combatant(&"enemy_0").wheel.slice_statuses, statuses, "deterministic")
+	assert_eq(replayed.state.get_combatant(&"enemy_0").wheel.slice_stacks, statuses, "deterministic")

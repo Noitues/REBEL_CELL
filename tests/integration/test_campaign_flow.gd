@@ -83,7 +83,7 @@ func test_winning_the_breach_with_three_exploits_wins_the_campaign_and_records_i
 	assert_eq(RunManager.netrun.run.combat_overrides["remove_boss_pointers"], 1)
 	RunManager.netrun.enter_node(RunManager.netrun.available_nodes()[0])
 	assert_eq(RunManager.netrun.combat.state.get_combatant(&"enemy_0").source_id, &"renewal_engine")
-	assert_eq(RunManager.netrun.combat.state.get_combatant(&"enemy_0").wheel.slice_statuses.count(RC.Status.CORRUPTED), 2, "Virus")
+	assert_eq(RunManager.netrun.combat.state.get_combatant(&"enemy_0").wheel.count_status(RC.Status.CORRUPTED), 2, "Virus")
 	_finish_run()
 	assert_eq(c.outcome, CampaignState.Outcome.WON)
 	assert_eq(RunManager.profile.campaigns_won, 1, "profile records the win")

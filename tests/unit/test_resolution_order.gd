@@ -49,7 +49,7 @@ func test_passes_run_defensive_then_offensive_then_statuses() -> void:
 	assert_true(d < o and o < st, "pass markers in order")
 	assert_true(CombatFixture.index_of_event(r, "block") < o, "DEFRAG resolves in the defensive pass")
 	assert_true(CombatFixture.index_of_event(r, "status") > st, "DOSE applies its status in the status pass")
-	assert_eq(s.state.player.wheel.slice_statuses.count(RC.Status.CORRUPTED), 1, "one player slice corrupted")
+	assert_eq(s.state.player.wheel.count_status(RC.Status.CORRUPTED), 1, "one player slice corrupted")
 
 
 func test_both_sides_resolve_even_when_one_dies() -> void:

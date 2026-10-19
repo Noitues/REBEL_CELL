@@ -570,6 +570,9 @@ const UNDO_BLOCKED_RESPIN := "Nothing to undo since your RESPIN: a random spin c
 const UNDO_BLOCKED_CARD := "Nothing to undo since %s rolled a random result: a roll can't be undone." # TR
 ## N13: the toast for a move aimed at a satellite (the resolver's SATELLITE_FIXED refusal, said here
 ## through TextDb so the words are exported).
+## N7: the lock refusals (the resolver's NUDGE_LOCKED / RESPIN_LOCKED texts) as TextDb keys.
+const NUDGE_LOCKED_TEXT := "That wheel's nudges are locked this turn." # TR
+const RESPIN_LOCKED_TEXT := "That wheel's respins are locked this turn." # TR
 const SATELLITE_FIXED_TEXT := "Satellites are fixed to their slice: only Undock moves them." # TR
 const UNDO_BLOCKED_END_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
 const UNDO_BLOCKED_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
@@ -659,6 +662,28 @@ func _toast_spot() -> Rect2:
 
 ## W0 ARTFIX: the width a refusal shown beside a satellite's aim ring wraps to (px at text 1.0).
 const SATELLITE_TOAST_W := 240.0
+
+
+## N7: px added to the wheel's outer radius so a lock toast stays at least Toast.BESIDE_GAP clear of the tick ring (rounding).
+const LOCK_TOAST_RING_PAD := 2.0
+
+
+## N7: the view of the wheel a lock refusal (`reason`) is about (the first one carrying that lock), else null.
+func _locked_view(reason: String) -> WheelView:
+	var kind := &""
+	if reason == CombatResolver.NUDGE_LOCKED:
+		kind = WheelState.LOCK_NUDGE
+	elif reason == CombatResolver.RESPIN_LOCKED:
+		kind = WheelState.LOCK_RESPIN
+	if kind == &"":
+		return null
+	var views: Array = [_player_view]
+	views.append_array(_enemy_views.values())
+	for v in views:
+		var view := v as WheelView
+		if view != null and view.combatant != null and view.combatant.wheel.is_locked(kind):
+			return view
+	return null
 
 
 ## W0 ARTFIX: the aim ring of the satellite a move was refused on: {"at", "radius", "view"} (empty
@@ -1715,7 +1740,11 @@ func _on_action_refused(reason: String) -> void:
 	preview_note.append(reason)
 	var at := _toast_spot()
 	var aimed := _refused_satellite_ring() if reason == CombatResolver.SATELLITE_FIXED else {}
-	if aimed.is_empty():
+	var locked := _locked_view(reason)
+	if aimed.is_empty() and locked != null:
+		# N7 (CAP-W1 fix): beside the locked wheel, clear of its HP row, chips and state label.
+		toast.show_beside(tr(reason), locked.global_center(), locked.outer_radius() + LOCK_TOAST_RING_PAD, get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
+	elif aimed.is_empty():
 		toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
 	else:
 		# W0 ARTFIX: the refusal stands beside the aim ring and the ring shakes (the satellite flashes red).
@@ -1740,17 +1769,11 @@ func _on_action_refused(reason: String) -> void:
 func _ram_need(action: CombatAction) -> int:
 	if action == null or not engine.has_fight():
 		return 0
-	var state := engine.state()
-	match action.type:
-		CombatAction.Type.PLAY_CARD:
-			if action.hand_index >= 0 and action.hand_index < state.hand.size():
-				var card := engine.content(state.hand[action.hand_index]) as CardData
-				return card.ram_cost if card != null else 0
-		CombatAction.Type.RESPIN:
-			return engine.resolver.config.respin_ram_cost
-		CombatAction.Type.NUDGE:
-			return engine.resolver.config.extra_nudge_ram_cost
-	return 0
+	if action.type == CombatAction.Type.NUDGE:  # asked after a refusal: the paid price
+		var paid := engine.state().duplicate_state()
+		paid.free_nudges = 0
+		return RamCost.of_action(paid, action, engine.resolver)
+	return RamCost.of_action(engine.state(), action, engine.resolver)  # N9: the resolver's own number
 
 
 ## True for the stand-alone tutorial fight (no netrun owns it): its CONTINUE ends the tutorial.
@@ -2583,7 +2606,7 @@ func _refresh(state: CombatState) -> void:
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
-	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
+	_respin_button.disabled = state.is_over() or state.ram < RamCost.of_action(state, CombatAction.respin(), engine.resolver)
 	_sync_stickers()
 	_sync_arrow_hints()
 	# W3B B1: a state change that ends an aim (a nudge key, a target switch) ends it whole: the RAM
@@ -2923,8 +2946,9 @@ func _build_hand(state: CombatState) -> void:
 			_add_gap(s)
 		var card := lookup.get_content(state.hand[i]) as CardData
 		var c := _make_card(card, i, s)
-		c.disabled = state.is_over() or state.ram < card.ram_cost
-		c.short_ram = not state.is_over() and state.ram < card.ram_cost  # ART-2 2C: the grey dot and NEED tag
+		var need := RamCost.of_action(state, CombatAction.play_card(i), engine.resolver)
+		c.disabled = state.is_over() or state.ram < need
+		c.short_ram = not state.is_over() and state.ram < need  # ART-2 2C: the grey dot and NEED tag
 		c.set_greyed(c.short_ram)  # B2 (D15): greyscale, the NEED tag in colour
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
 		shown_tip(c, "%s\n%s" % [Codex.describe(card), UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several
@@ -3090,9 +3114,8 @@ func _describe_slot(c: CombatantState, slot: int) -> String:
 	lines.append(Codex.describe(lookup.get_content(c.wheel.slot_slice_ids[slot])))
 	if c.wheel.slot_firmware_ids[slot] != &"":
 		lines.append(Codex.describe(lookup.get_content(c.wheel.slot_firmware_ids[slot])))
-	var status: int = c.wheel.slice_statuses[slot]
-	if status != RC.Status.NONE:
-		lines.append(Codex.status_text(status))
+	for status in c.wheel.statuses_at(slot):
+		lines.append(Codex.status_text(status, c.wheel.stacks_of(slot, status)))
 	var guard := engine.state().satellite_at(c.id, slot)
 	if guard != null:
 		lines.append(tr("Guarded by %s (%d HP): it takes hits aimed at this slice.") % [_name_of(guard), guard.hp])
@@ -3101,8 +3124,10 @@ func _describe_slot(c: CombatantState, slot: int) -> String:
 
 func _clear_ghost() -> void:
 	_player_view.set_ghost(null)
+	_player_view.set_unknown_ghost(false)
 	for v in _enemy_views.values():
 		v.set_ghost(null)
+		v.set_unknown_ghost(false)
 
 
 # --- Previews: the tags, the HP arcs, the RAM bar ------------------------------------
@@ -3150,6 +3175,7 @@ func _preview_action(action: CombatAction) -> void:
 		base[v] = hud_layer.row_for(v).chips.duplicate(true)
 	_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))  # W2-A2: the hovered play joins the list
 	_preview_result(action, state, result)
+	_sync_listener_chips(result.events)  # N6: what the enemies' listeners do to this play
 	_mark_was(was)
 	if selecting >= 0 and _option_index >= 0 and action.type == CombatAction.Type.PLAY_CARD:
 		_show_play_results(action, base)
@@ -3215,25 +3241,7 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 	_clear_ghost()
 	var card := engine.content(state.hand[action.hand_index]) as CardData if action.type == CombatAction.Type.PLAY_CARD else null
 	if card != null and CardTargeting.is_random(card):
-		var target := engine.resolver.card_target(state, card, action)
-		_show_end_turn_preview()
-		_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))
-		_refresh_queue_panel()
-		ram_note.set_pending(-card.ram_cost)
-		var host := (target.host_id if target.is_satellite else target.id) if target != null else &""
-		var v := _view_of(host)
-		if target != null and v != null:
-			var non_null := false
-			for e in card.effects:
-				if e != null and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
-					non_null = true
-			var chips: Array = [{"text": tr("RANDOM: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
-			chips.append_array(_odds_chips(target, non_null))
-			v.intent = {"type": -1, "text": tr("%s rolls") % TextDb.t(card, "display_name"), "chips": chips,
-				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_null)}
-			v.queue_redraw()
-			_set_chips(v, [ResultChipModel.odds_chip()], tr("%s rolls") % TextDb.t(card, "display_name"), String(v.intent["tooltip"]))
-		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
+		_preview_forecast(action, card)
 		return
 	var after := result.state
 	if after.player.wheel.rotation != state.player.wheel.rotation or after.player.wheel.inner_rotation != state.player.wheel.inner_rotation:
@@ -3272,22 +3280,74 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	hud_layer.row_for(v).prepend_note(tr("YOUR %s") % what)
 
 
+## Q19: the hovered respin: its RAM cost and every known reaction exact, the landing a "?" over
+## a ghosted needle (no range, no odds). The wheel does not move.
 func _show_respin_odds() -> void:
 	if not engine.has_fight():
 		return
 	var was := _forecast_tags()
-	var cost := engine.resolver.config.respin_ram_cost
-	ram_note.set_pending(-cost)
-	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
-	chips.append_array(_odds_chips(engine.state().player))
-	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
-		"tooltip": tr("Respin your wheel for %d RAM: a random result (UNDO stops here). %s") % [cost, odds_text(engine.state().player)]}
+	var fc := engine.forecast(CombatAction.respin())
+	if fc == null or not fc.ok():
+		return
+	var cost := RamCost.of_action(engine.state(), CombatAction.respin(), engine.resolver)
+	_show_forecast_outcome(fc)
+	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": [{"text": tr("RESPIN: ?"), "color": Palette.INK, "ink": Palette.PAPER}],
+		"tooltip": tr("Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).") % cost}
 	_player_view.queue_redraw()
-	_set_chips(_player_view, [ResultChipModel.odds_chip()], tr("Respin for %d RAM") % cost, String(_player_view.intent["tooltip"]))
+	_mark_unknown_parts(fc)
 	_mark_was(was)
 	preview_note.clear()
 	preview_note.append("Respin your wheel for %d RAM (a random event: UNDO stops here)." % cost)
-	preview_note.append(odds_text(engine.state().player))
+
+
+## Q19: a hovered card with a random part: the play's own known results exactly (the forecast),
+## "?" chips and ghost needles on the wheels its random parts hit.
+func _preview_forecast(action: CombatAction, card: CardData) -> void:
+	var fc := engine.forecast(action)
+	_show_end_turn_preview()
+	if fc == null or not fc.ok():
+		return
+	_queue_pending = TurnQueue.step_between(engine.state(), fc.state(), _queue_label(engine.state(), action))
+	_show_forecast_outcome(fc)
+	_mark_unknown_parts(fc)
+	_refresh_queue_panel()
+	for e in fc.events():
+		if e.has("text"):
+			preview_note.append(String(e["text"]))
+	preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
+	_mark_preview_source(action, card)
+
+
+## Q19: the tags and chips for the forecast's own state (the End Turn resolve that follows
+## depends on the unknown, so it is not forecast).
+func _show_forecast_outcome(fc: PreviewResult) -> void:
+	_clear_ghost()
+	_show_outcome(fc.state(), fc.state(), fc.events())
+	_sync_listener_chips(fc.events())
+
+
+## Q19: each unknown part shows as a "?" chip on the wheel it hits (a respin landing also puts
+## the ghosted needle on it). Only "?": no range, no odds.
+func _mark_unknown_parts(fc: PreviewResult) -> void:
+	for u in fc.unknowns:
+		var target := engine.state().get_combatant(StringName(u["target"]))
+		if target == null:
+			continue
+		var v := _view_of(target.host_id if target.is_satellite else target.id)
+		if v == null:
+			continue
+		if StringName(u["kind"]) == PreviewResult.RESPIN:
+			v.set_unknown_ghost(true)
+		var row := hud_layer.row_for(v)
+		var chip := ResultChipModel.unknown_chip(StringName(u["kind"]), int(u.get("status", RC.Status.NONE)))
+		var has_odds := false
+		for ch in row.chips:
+			has_odds = has_odds or (StringName(ch["kind"]) == ResultChipModel.ODDS and ch.get("subject") == chip["subject"])
+		if has_odds:
+			continue
+		var chips: Array = row.chips.duplicate(true)
+		chips.append(chip)
+		row.set_result(chips, row.tip_title, row.tip_body)
 
 
 ## The End Turn preview as it stands (GDD 2.10): what every needle lands on and the full
@@ -3315,6 +3375,7 @@ func _show_end_turn_preview() -> void:
 		ram_note.set_pending(0)
 		ram_note.set_next_turn(-1)
 		_queue_resolved = null
+		_sync_listener_chips([])
 		_refresh_queue_panel()
 		return
 	if state.is_over() or _hold_forecast:
@@ -3327,6 +3388,7 @@ func _show_end_turn_preview() -> void:
 		ram_note.set_pending(0)
 		ram_note.set_next_turn(-1)
 		_queue_resolved = null
+		_sync_listener_chips([])
 		_refresh_queue_panel()
 		return
 	var result := engine.preview_end_turn()
@@ -3344,6 +3406,14 @@ func _show_end_turn_preview() -> void:
 			summary.append("%s %d HP" % [e.display_name, e.hp])
 	preview_note.append("[b]=> You %d HP | %s[/b]" % [after.player.hp, ", ".join(summary)])
 	_show_outcome(state, after, result.events)
+	_sync_listener_chips(result.events)  # N6: the resolve's listener fires
+
+
+## N6 (acceptance 10): each enemy view's listener chip for the previewed `events` (none
+## clears every chip).
+func _sync_listener_chips(events: Array) -> void:
+	for id in _enemy_views.keys():
+		ListenerChip.sync(_enemy_views[id], ListenerChip.state_for(events, id))
 
 
 ## Puts an outcome on screen: each spinner's tag (what its needles land on in `landing`,
@@ -4074,7 +4144,9 @@ func _build_stickers() -> void:
 	_respin_button.focus_entered.connect(func() -> void:
 		if _nav_focus:
 			_show_respin_odds())
-	_respin_button.mouse_exited.connect(_show_end_turn_preview)
+	_respin_button.mouse_exited.connect(func() -> void:
+		_clear_ghost()
+		_show_end_turn_preview())
 	_sync_undo_tip()
 
 
@@ -4094,7 +4166,7 @@ func _place_stickers() -> void:
 func _sync_stickers() -> void:
 	if _stickers.is_empty():
 		return
-	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
+	var cost := RamCost.of_action(engine.state(), CombatAction.respin(), engine.resolver) if engine != null and engine.has_fight() else 0
 	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
 	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
 	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (UNDO stops here).") % cost)
@@ -5287,7 +5359,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
 		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), scol, motion_seconds_left(), impact)
 		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
-		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
+		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"]), int(b.get("stacks", 0))))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
 		_after(impact, fx_layer.ring.bind(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring"))
 	var hp_after := int(b["hp_after"])

@@ -62,6 +62,7 @@ LANDMARK_ENTRIES: Dict[str, Dict[str, Any]] = {
     "orbital": {"entry": [0.0, -13.7, 3.4], "entry_nrm": [0.0, -1.0]},
     "rebel_cell": {"entry": [0.0, -6.0, 0.0], "entry_nrm": [0.0, -1.0]},
     "tethys": {"entry": [30.0, 8.2, 5.0], "entry_nrm": [0.9646, 0.2637]},
+    "aurelian": {"entry": [-15.547, -21.871, 0.0], "entry_nrm": [-0.342, -0.9397]},
 }
 """HOOK for the real entrance anchors: `{corp: {"entry": [x, y, z], "entry_nrm": [nx, ny]}}` from art-pass's
 `<corp>_landmark.py`, in BU relative to the HQ lot centre. An entry here overrides the placeholder of `set_entrance`."""

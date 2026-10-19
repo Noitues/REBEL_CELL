@@ -55,3 +55,6 @@ End with the RESULT envelope from `docs/process/agent_rules/common.md` (round ta
 
 Q: Should the inventory also cover timings in other combat views (e.g. `ram_bar`, HUD chips), or only these two files?
 Q: Does the lab demo need one demo per id, or may related ids share one demo entry?
+
+## Added 2026-10-19 (NA-26)
+- `route_target_pulse`: CityMapOverlay must honor the motion switch (it is back in AWAITING_FIX). `CityMapOverlay.hover_out` and motion lab `_staying_node` are now dead: remove them.

@@ -94,7 +94,7 @@ const DEMOS := {
 	&"combat_enter": ["netrun", "fight_won"], &"backdrop_reveal": ["netrun", "fight_won"],
 	&"loot_page_dim": ["netrun", "loot_pick"], &"reward_page_in": ["netrun", "loot_pick"],
 	&"press_dip": ["screen", "rows"], &"menu_page_in": ["screen", "rows"], &"raid_continue_in": ["hq", "raid"],
-	&"route_hover_out": ["netrun", "route_hover"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
+	&"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 	# ANIM-5 (map, raid, jack and Heat):
@@ -160,6 +160,26 @@ const DEMOS := {
 	&"daemon_rack_scan": ["scene", "attach_rack"],
 	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
 	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
+	# MOTION-TIMINGS: each share plays with the effect it tunes.
+	&"hit_blocked_wall_lead": ["scene", "fx_blocked"],
+	&"wall_stagger_share": ["scene", "fx_block"],
+	&"wall_travel_share": ["scene", "fx_block"],
+	&"corrupt_apply_stagger": ["scene", "fx_corrupt"],
+	&"corrupt_apply_travel": ["scene", "fx_corrupt"],
+	&"corrupt_tick_free_share": ["scene", "fx_corrupt_tick"],
+	&"drone_destroyed_stagger": ["scene", "fx_drone_down"],
+	&"drone_destroyed_travel": ["scene", "fx_drone_down"],
+	&"nudge_resist_stagger": ["scene", "fx_resist"],
+	&"nudge_resist_travel": ["scene", "fx_resist"],
+	&"trigger_lens_share": ["scene", "fx_daemon"],
+	&"trigger_bits_lead": ["scene", "fx_daemon"],
+	&"temp_label_stagger": ["scene", "fx_label"],
+	&"temp_label_travel": ["scene", "fx_label"],
+	&"defeat_shock_share": ["scene", "fx_defeat"],
+	&"defeat_bits_stagger": ["scene", "fx_defeat"],
+	&"defeat_bits_travel": ["scene", "fx_defeat"],
+	&"defeat_word_lead": ["scene", "fx_defeat"],
+	&"precision_word_hold": ["view", "landing_word"],
 	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
 	&"hit_shards": ["scene", "fx_hit"], &"hit_crit_streaks": ["scene", "fx_crit"], &"hit_blocked_wall": ["scene", "fx_blocked"],
 	&"block_wall": ["scene", "fx_block"], &"shield_hex": ["scene", "fx_shield"], &"heal_inflow": ["scene", "fx_heal"],
@@ -190,11 +210,11 @@ const DEMOS := {
 	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
 	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
 	&"on_air_ticker": ["screen", "ticker"],
-	# ART-7 3B: the netrun map's reveal and calm Heat (the route at Heat 60, every node shown),
-	# and the jack-in transition along a link (Fx.jack_in_link).
-	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
+	# ART-7 3B: the jack-in transition along a link (Fx.jack_in_link).
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_select_hold": ["entry", "out"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
@@ -273,12 +293,15 @@ const LOOT_DEMO_WAIT := 900
 const LOOT_DEMO_BEAT := 30
 const CONTEXT_BAKE_FRAMES := 240
 const CONTEXT_LOOP := 6.0
+## NA-25: the entry demo's replay gap (s) and the step its timeline is driven with (s of game time per call).
+const ENTRY_LOOP := 4.0
+const ENTRY_STEP := 0.25
+const ENTRY_MAX_STEPS := 400
 const DEMO_CAMPAIGN_SEED := 1
 ## The jack demos' destination line and the raid interlude's stamp (translated).
 const JACK_DESTINATION := "SOLACE // THE RACK"
 ## ART-7 3B: the link jack demo's loop length (s) and the route Heat demo's Heat.
 const JACK_LINK_LOOP := 6.0
-const DEMO_ROUTE_HEAT := 60
 ## ANIM-R6 C14: the words the game stamps (RunManager.jack_note: "RAID INCOMING" over the
 ## raiding corporation), for the demo campaign's corporation.
 const RAID_NOTE := "RAID INCOMING\n%s"
@@ -349,6 +372,10 @@ var _scene: Control = null
 ## ANIM-R5: the HQ or netrun scene a context demo plays in (and its host).
 var _context: Control = null
 var _context_host: Control = null
+## NA-25: the street route the entry demos play on, built once and kept across the 16 entry demos.
+var _entry_host: Control = null
+var _entry_view: StreetRouteView = null
+var _entry_cover: EntryCover = null
 var _scene_host: Control = null
 var _screen_host: Control = null
 var _hud: HudStats = null
@@ -548,6 +575,8 @@ func _clear_screen() -> void:
 
 func _reset_stage() -> void:
 	_clear_screen()
+	if _entry_host != null and is_instance_valid(_entry_host):
+		_entry_host.visible = false
 	_clear_context()
 	for key in _pieces:
 		var c: Control = _pieces[key]
@@ -667,6 +696,9 @@ func _play() -> void:
 		"hq", "netrun":
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
+		"entry":
+			await _play_entry(demo[1] == "out")
+			length = ENTRY_LOOP
 		"kit":
 			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
 	_show_values()
@@ -701,6 +733,49 @@ func _play_kit(id: StringName) -> float:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_screen_host.add_child(bg)
 	return KitDemo.play(id, _screen_host)
+
+
+## NA-25: the street entry (`reverse`: the jack-out) on the real StreetRouteView, driven by its own timeline: one view is
+## built for all the entry demos, a fresh EntryCover is stepped (ENTRY_STEP s of game time per call, no wall-clock wait)
+## until it ends.
+func _play_entry(reverse: bool) -> void:
+	var gen := _generation
+	_show_scene(false)
+	_clear_screen()
+	if _entry_view == null or not is_instance_valid(_entry_view):
+		RunManager.scene_switching_enabled = false
+		RunManager.save_slot = LAB_SLOT
+		RunManager.delete_save()
+		RunManager.new_campaign(DEMO_CAMPAIGN_SEED)
+		var s := RunManager.start_run()
+		if s == null:
+			return
+		var data := StreetRouteView.build_data(s, RunManager.corporation)
+		if data.error != "":
+			push_warning("motion_lab: the street entry cannot be built (%s)" % data.error)
+			return
+		_entry_host = Control.new()
+		_entry_host.name = "EntryDemo"
+		_entry_host.position = Vector2(PANEL_W, 0)
+		_entry_host.size = Vector2(1280 - PANEL_W, 720)
+		add_child(_entry_host)
+		var cfg := CityView3D.CONFIG
+		_entry_view = StreetRouteView.new()
+		_entry_view.size = _entry_host.size
+		_entry_host.add_child(_entry_view)
+		_entry_view.setup(data, CityModel.shared(cfg, cfg.city_seed), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
+	_entry_host.visible = true
+	if _entry_cover != null and is_instance_valid(_entry_cover):
+		_entry_cover.free()
+	_entry_cover = EntryCover.new()
+	_entry_view.add_child(_entry_cover)
+	_entry_cover.set_process(false)  # stepped below, not by wall-clock frames
+	_entry_cover.start(_entry_view, reverse)
+	var n := 0
+	while is_instance_valid(_entry_cover) and _entry_cover.playing and n < ENTRY_MAX_STEPS and gen == _generation:
+		_entry_cover._process(ENTRY_STEP)
+		await get_tree().process_frame  # the overlay draws its beats on a rendered frame
+		n += 1
 
 
 ## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
@@ -1106,6 +1181,11 @@ func _play_screen(what: String) -> void:
 			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			_screen_host.add_child(dossier)
 			length = dossier.motion_end()
+		"entry":
+			# NA-25: the street entry's beats at their real times, one playhead.
+			var strip := EntryTimelineDemo.new()
+			_screen_host.add_child(strip)
+			length = strip.length()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1266,9 +1346,10 @@ func _play_context(scene: String, what: String) -> void:
 			var first: StringName = s.available_nodes()[0]
 			s.run.current_node_id = first
 			s.run.visited.append(first)
-			if what == "route_heat":
-				# ART-7 3B: Heat past the resistance band (calm Heat marks and searchlights).
-				RunManager.campaign.heat = DEMO_ROUTE_HEAT
+			if what == "route":
+				# NA-26: the run's route is the street view; the map motions (pulse, node pop, dim, target pulse, hover reach)
+				# play on the City Grid view's CityMapOverlay, which the zoom-out shows.
+				_context._grid_zoomed = true
 			_context._show_map()
 	else:
 		_demo_campaign(what)
@@ -1295,11 +1376,6 @@ func _play_context(scene: String, what: String) -> void:
 			# Plan 1 ANIM-FLOW: won, then the first reward is picked (a list opens its first row first).
 			hq._demo_combat_end("win")
 			_pick_first_reward(hq)
-		"route_hover":
-			# Plan 1 W3-ROUTE R5: the pointer lights the first open node: its sticker reaches out to its building.
-			var ov := hq.city_overlay as RouteOverlay
-			if ov != null:
-				ov.hover_id = RunManager.netrun.available_nodes()[0]
 		"fight_won":
 			# The fight is won by SEND IT; VICTORY stands until the netrun opens the loot after
 			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
@@ -1308,15 +1384,13 @@ func _play_context(scene: String, what: String) -> void:
 			# Plan 1 M5 made a fight open as the pulse lands, so entering a fight can leave the route before
 			# the landing's own motions (node_pop, visited_dim) start. The demo plays the move on the route
 			# itself (a settled travel: a view, no game state changes), whatever the open node's type.
-			var s := RunManager.netrun
-			(hq.city_overlay as CityMapOverlay).travel(s.run.current_node_id, _staying_node(s))
+			var ov := hq.city_overlay as CityMapOverlay
+			if ov != null and ov.nodes.size() > 1:
+				ov.travel(ov.nodes[0]["id"], ov.nodes[1]["id"])
 		"raid_interlude":
 			# B3: a raid queued mid-run: the route page goes into the raid (RaidIncoming).
 			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
 			hq._show_current()
-		"route_heat":
-			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
-			(hq.city_overlay as RouteOverlay).show_all = true
 		"select":
 			hq.show_grid()
 			await get_tree().process_frame
@@ -1399,16 +1473,6 @@ func _play_context(scene: String, what: String) -> void:
 
 
 ## Clears and claims the first launchable Site of `c` not yet claimed.
-## An open node whose page stays on the route (an event or a shop), else the first open node.
-func _staying_node(s: NetrunSession) -> StringName:
-	var open := s.available_nodes()
-	for id: StringName in open:
-		var t := int(s.run.map.get_node(id)["type"])
-		if t == RC.InfilNodeType.TERMINAL or t == RC.InfilNodeType.MAINFRAME:
-			return id
-	return open[0]
-
-
 func _claim_next(c: CampaignState) -> void:
 	var corp := RunManager.corporation
 	for sd in RunManager.launchable_sites():

@@ -166,7 +166,7 @@ func test_the_preview_after_a_reshuffling_card_equals_the_result() -> void:
 	assert_not_null(predicted)
 	scene.engine.submit(a)
 	var real: CombatResult = scene.engine.session.apply(CombatAction.end_turn())
-	assert_eq(predicted.state.player.wheel.slice_statuses, real.resolved_state.player.wheel.slice_statuses, "same statuses")
+	assert_eq(predicted.state.player.wheel.slice_stacks, real.resolved_state.player.wheel.slice_stacks, "same statuses")
 	assert_eq(predicted.state.player.hp, real.resolved_state.player.hp, "same HP")
 
 

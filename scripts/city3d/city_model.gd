@@ -26,6 +26,8 @@ var hqs: Dictionary = {}
 ## "streets": PackedInt32Array, "plazas": PackedInt32Array, "top": float (tallest top, BU)}.
 var chunks: Dictionary = {}
 var buildings: int = 0
+## Prisms the layout rules changed in `finish` (0 when they did not run).
+var ruled_parts: int = 0
 
 ## Built models, by config path and seed (a view cache: the layout is a pure function of
 ## the seed; the game's city is built once per process).
@@ -122,7 +124,9 @@ func add_recording(key: Vector2i, r: Rect2i, rec: CityLayoutRecorder) -> void:
 
 ## After the last chunk: the HQ stand-ins (stepped towers until the landmarks land, 5b),
 ## each in the chunk holding its rect's centre.
-func finish() -> void:
+## `defer_rules` leaves the layout rules to the caller (`layout_rules_job`, `CityLayoutRuler.run_job` on a worker,
+## `CityLayoutRuler.land_job`): the async build keeps the ~5 s of pure rules off the main thread.
+func finish(defer_rules: bool = false) -> void:
 	var ids: Array = hqs.keys()
 	IdSort.sort_ids(ids)
 	for cid: StringName in ids:
@@ -147,6 +151,35 @@ func finish() -> void:
 				"ink": Palette.corp_color(cid), "terr": cid, "key": 7919 + k, "building": buildings, "cell": r,
 				"centre": Vector2(wc.x, wc.z), "chunk": key, "hq": true})
 		buildings += 1
+	if not defer_rules:
+		_apply_layout_rules()
+
+
+## NA-11: the layout rules on a whole city (not on a part of it), when the content registry holds the corporations. Sets
+## `ruled_parts` to the number of prisms changed. Synchronous (headless, export, tests).
+func _apply_layout_rules() -> void:
+	var job := layout_rules_job()
+	if job.is_empty():
+		return
+	CityLayoutRuler.run_job(job)
+	ruled_parts = CityLayoutRuler.land_job(self, job)
+
+
+## The inputs of the layout rules (main thread: reads the content registry), or {} when they do not apply: rules off,
+## a part of the city, no registry, no Grid links. Pass to `CityLayoutRuler.run_job` (any thread), then `land_job`.
+func layout_rules_job() -> Dictionary:
+	if not cfg.layout_rules_on or chunks.size() != chunk_keys(cfg, cfg.city_rect).size():
+		return {}
+	var loop := Engine.get_main_loop() as SceneTree
+	var reg: Node = loop.root.get_node_or_null("ContentRegistry") if loop != null else null
+	if reg == null:
+		return {}
+	var corps: Array = []
+	for cid: StringName in reg.call("all_ids"):
+		var c := reg.call("get_content", cid) as CorporationData
+		if c != null and c.city_grid != null:
+			corps.append(c)
+	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
 
 
 ## One recorded extrusion (lots, height px) as a world prism.

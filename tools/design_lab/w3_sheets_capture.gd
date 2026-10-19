@@ -199,7 +199,6 @@ func _route() -> void:
 		_hover_at(pr.get_center() + Vector2(1, 1))
 		await _frames(60)
 		await _shot("route_3")
-	print("dossier: ", nr.dossier, " vis=", nr.dossier.visible if nr.dossier != null else false)
 	_hover_at(Vector2(5, 5))
 
 

@@ -7,8 +7,7 @@ extends TerminalWindow
 ## next; B3: hidden nodes are fully hidden and cut-off ones never drawn, round 44
 ## `route_page.png`), then the cue "HOVER: SHOW ALL LINKS": hovering the strip shows every run
 ## link as a hairline (`show_links_hovered`; the scene tells the map; designer Q4), and reads
-## "SHOWING ALL LINKS" while it holds. With Options "Always show all nodes" on it reads
-## "SHOWING ALL NODES". Each entry's tooltip says what the kind does (MEANINGS). Follows
+## "SHOWING ALL LINKS" while it holds. Each entry's tooltip says what the kind does (MEANINGS). Follows
 ## Settings.map_legend and the text size, like MapLegend. View only.
 
 ## Emitted when the pointer enters (true) or leaves (false) the strip (B3, Q4: every link).
@@ -34,9 +33,8 @@ const COLOR_WORDS: Array[String] = ["walked", "next: pick one (numbered)"] # TR
 ## words (UiTip.for_input(HOVER_WORDS, PAD_WORDS)), the words while the hover shows every link,
 ## and the words while Options shows every node.
 const HOVER_WORDS := "HOVER: SHOW ALL LINKS" # TR
-const PAD_WORDS := "OPTIONS > DISPLAY: SHOW ALL NODES" # TR
+const PAD_WORDS := "HOVER: SHOW ALL LINKS" # TR
 const LINKS_WORDS := "SHOWING ALL LINKS" # TR
-const SHOWING_WORDS := "SHOWING ALL NODES" # TR
 ## Entry order (the kinds a route can have).
 const ORDER: Array[String] = [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_EVENT,
 	CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_RACK]
@@ -51,7 +49,6 @@ const GROUP_GAP := 18.0
 ## The kinds shown, in ORDER.
 var kinds: Array[String] = []
 var _built_scale: float = -1.0
-var _built_all: bool = false
 var _built_pad: bool = false
 ## The corporation's colour (kept for callers; option A's stickers keep their kind colours).
 var corp_color: Color = Palette.CORP_SOLACE
@@ -109,7 +106,7 @@ func _set_hovered_kind(k: String) -> void:
 	kind_hovered.emit(k)
 
 
-## The route kinds of every node in `graph_nodes` (route_graph's "kind"), in ORDER.
+## The route kinds of every node in `graph_nodes` (the nodes' "kind"), in ORDER.
 static func kinds_of(graph_nodes: Array) -> Array[String]:
 	var out: Array[String] = []
 	for k in ORDER:
@@ -122,7 +119,6 @@ static func kinds_of(graph_nodes: Array) -> Array[String]:
 
 func _build() -> void:
 	_built_scale = Settings.text_scale
-	_built_all = Settings.always_show_all_nodes
 	_built_pad = Settings.pad_active
 	var s := Settings.text_scale
 	for child in body.get_children():
@@ -153,7 +149,7 @@ func _build() -> void:
 	var font := cue.get_theme_font("font")
 	var fsize := roundi(FONT * s)
 	var widest := 0.0
-	for w in [HOVER_WORDS, PAD_WORDS, LINKS_WORDS, SHOWING_WORDS]:
+	for w in [HOVER_WORDS, PAD_WORDS, LINKS_WORDS]:
 		widest = maxf(widest, font.get_string_size(TranslationServer.translate(w), HORIZONTAL_ALIGNMENT_LEFT, -1.0, fsize).x)
 	cue.custom_minimum_size.x = ceilf(widest)
 	_set_cue()
@@ -180,28 +176,14 @@ func one_row_width() -> float:
 func _set_cue() -> void:
 	if cue == null:
 		return
-	if Settings.always_show_all_nodes:
-		cue.text = TranslationServer.translate(SHOWING_WORDS)
-	else:
-		cue.text = UiTip.for_input(TranslationServer.translate(HOVER_WORDS), TranslationServer.translate(PAD_WORDS))
+	cue.text = UiTip.for_input(TranslationServer.translate(HOVER_WORDS), TranslationServer.translate(PAD_WORDS))
 
 
-## Shows "SHOWING ALL NODES" while the map shows every node (`on`), else the cue.
-func set_showing_all(on: bool) -> void:
-	if cue == null:
-		return
-	if on:
-		cue.text = TranslationServer.translate(SHOWING_WORDS)
-	else:
-		_set_cue()
-
-
-## B3 (Q4): "SHOWING ALL LINKS" while the strip's hover shows every link (`on`), else the cue
-## (or "SHOWING ALL NODES" while Options shows every node).
+## B3 (Q4): "SHOWING ALL LINKS" while the strip's hover shows every link (`on`), else the cue.
 func set_showing_links(on: bool) -> void:
 	if cue == null:
 		return
-	if on and not Settings.always_show_all_nodes:
+	if on:
 		cue.text = TranslationServer.translate(LINKS_WORDS)
 	else:
 		_set_cue()
@@ -278,5 +260,5 @@ func _row(kind: String, s: float) -> HBoxContainer:
 
 func _on_settings_changed() -> void:
 	visible = Settings.map_legend
-	if not is_equal_approx(_built_scale, Settings.text_scale) or _built_all != Settings.always_show_all_nodes or _built_pad != Settings.pad_active:
+	if not is_equal_approx(_built_scale, Settings.text_scale) or _built_pad != Settings.pad_active:
 		_build()

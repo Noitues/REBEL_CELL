@@ -5,6 +5,8 @@ extends RefCounted
 const TICKS: int = 30
 const SLICES: int = 6
 const TICKS_PER_SLICE: int = 5
+## Plan 2 N12: WheelSlotData.size_ticks for an equal share of the 30 ticks (a definition).
+const SIZE_AUTO: int = -1
 const RING_SEGMENTS: int = 3
 const TICKS_PER_RING_SEGMENT: int = 10
 
@@ -15,8 +17,22 @@ enum TargetRule { SELF, POINTER, SWEEP, CHOSEN }
 ## Ordered low to high so tiers can be compared with >=. There is no Miss
 ## tier: every landing is within 2 ticks of some slice centre (GDD 2.4).
 enum PrecisionTier { WEAK, GOOD, PERFECT }
-## PARASITE (Botnet, 2026-09-24): a parasite drone halves the slice's output until cleansed.
-enum Status { NONE, CORRUPTED, OVERCLOCKED, ENCRYPTED, PARASITE }
+## Slot statuses carry ×N stacks (plan 2 N8, R8): a slot holds {Status: stacks}.
+## OUTPUT_DOWN (R8): -output_down_per_stack of the slice's output per stack.
+## PARASITE (Botnet, 2026-09-24) is retired by N8: it reads as OUTPUT_DOWN ×2
+## (CampaignConfigData.parasite_output_down_stacks). The value stays so v2 saves migrate;
+## nothing stores it any more (apply_status converts it). Append-only.
+## TIER_DOWN (N9, R9): each stack lowers the slice landing tier one step (floored at WEAK).
+enum Status { NONE, CORRUPTED, OVERCLOCKED, ENCRYPTED, PARASITE, OUTPUT_DOWN, TIER_DOWN }
+## Statuses that ignore CampaignConfigData.status_stack_cap (N8): ENCRYPTED is a one-shot
+## absorb per stack, not a stack that grows (designer 2026-10-18), and CORRUPTED has no cap
+## (ruling Q36).
+const UNCAPPED_STATUSES: Array[int] = [Status.CORRUPTED, Status.ENCRYPTED]
+## The statuses a slot may store (N8): every Status but NONE and the retired PARASITE.
+const STORED_STATUSES: Array[int] = [Status.CORRUPTED, Status.OVERCLOCKED, Status.ENCRYPTED, Status.OUTPUT_DOWN, Status.TIER_DOWN]
+## How a CLEANSE effect clears a slot (N8): ALL stacks of every status (the default), or
+## ONE_STACK of each status on it. Append-only.
+enum CleanseMode { ALL, ONE_STACK }
 enum RingScope { OUTER, INNER, WHOLE_WHEEL }
 enum NeighborRule { NONE, MIRROR, SHUNT }
 enum ResistanceRefresh { NONE, EACH_PLAYER_TURN }
@@ -46,6 +62,13 @@ enum Trigger {
 	## cleared with its host (designer 2026-10-18, Q7/Q10). Context: "satellite" (the
 	## destroyed one), "host_id", "cause" (&"killed", &"replaced", &"cleared"). Append-only.
 	ON_SATELLITE_DESTROYED,
+	## Plan 2 N6: the operative spent RAM on an accepted action (a paid nudge, a card with a
+	## cost, a respin). Context "amount" = the RAM spent (never 0). Enemy listeners only.
+	ON_RAM_SPENT,
+	## Plan 2 N6: a player-side slice hit (operative or drone) landed on an enemy at RESOLVE:
+	## not negated by SANDBOX, after BLOCK and SHIELD. Context "amount" = the HP damage,
+	## "victim", "tier". Enemy listeners only. Append-only.
+	ON_HIT_DEALT,
 }
 
 enum EffectType {
@@ -74,6 +97,12 @@ enum EffectType {
 	GAIN_CYCLES,
 	GAIN_SCHEMATICS,
 	CUSTOM,
+	## Plan 2 N7: lock the target wheel's nudges (free and paid; nudge cards still work) for
+	## the player's turn. `amount` = turns (>= 1). Append-only.
+	LOCK_NUDGE,
+	## Plan 2 N7: lock the target wheel's player respins (the Respin card, the RAM respin; never
+	## the start-of-turn respin). `amount` = turns (>= 1).
+	LOCK_RESPIN,
 }
 
 enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, CHOSEN, CAMPAIGN }

@@ -8,7 +8,7 @@ extends GutTest
 ## this script stays a few seconds.
 
 const MANIFEST := "res://tests/test_manifest.json"
-const TEST_DIRS: Array[String] = ["res://tests/unit", "res://tests/integration"]
+const TEST_DIRS: Array[String] = ["res://tests/unit", "res://tests/integration", "res://tests/netrun_art"]
 ## deferred: text scale > 1.0, high contrast, gamepad, colour-blind (skipped by every default run).
 const TIERS: Array[String] = ["fast", "full", "deferred"]
 ## The guards the fast tier must always run (CLAUDE.md rule 6 and TECH_SPEC 9): preview ==

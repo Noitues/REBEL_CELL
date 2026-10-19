@@ -1,83 +1,111 @@
-# Handoff — REBEL_CELL (build session; start W0 of REPLAN_2026-10-16)
+# Handoff — REBEL_CELL (build session, W1 of REPLAN_2026-10-16)
 
 | | |
 |---|---|
-| Written | 2026-10-18 |
-| Branch / commit | main, pushed (see `git log origin/main -1`) |
-| Reason | The designer cleared the old session after the plan-only freeze. The weekly token reset is in: **full parallel development resumes.** |
+| Written | 2026-10-18 (evening) |
+| Branch | main (pushed at gate/PT-004 b98e1def; later W1 merges are local until the PT-005 gate) |
 
-## Goal
-REBEL_CELL (Godot 4.7 roguelite deckbuilder). M14, change plan 1 (gates PT-001..PT-003) and change plan 2's design
-work are done. Now: **build W0 of `docs/handoff/gates/REPLAN_2026-10-16.md`** (→ gate PT-004, closes plan 2), then W1
-to W3 (gates PT-005..PT-007).
+## State
+- Plan 2 / W0 closed: PT-004 automated gate passed and pushed (playtest skipped by designer).
+- **Overnight directive (designer):** don't wait for decisions: take defaults, log them in DECISIONS. If PT-005 is
+  reached before 07:00 2026-10-19, run its automated gate (full suite once, smoke, validate, push gate), then go to W2
+  unless a replan is needed (themes, WATER LEVEL, exploit buildings, Q24.1 death likely need one: Batch-draft it, then
+  start the next wave). Memory: `overnight-run-2026-10-18`.
+- Defaults already logged: DECISIONS "Overnight: defaults taken on open calls".
 
-## First steps for the new session
-1. Read: `CLAUDE.md`, the replan (all of it, esp. §C.1-C.3 and §D), `docs/handoff/plan2/CONTENT_DESIGN_V2.md`
-   (R1-R13, N1-N20), the newest entries of `docs/DECISIONS.md`.
-2. **Designer answers to the decision sheet** (`docs/handoff/plan2/drafts/questions/DECISION_SHEET.md`, Q1-Q47 and
-   A1-A7) arrive in the designer's first prompt. Log them in `docs/DECISIONS.md` (one entry, "Designer rulings
-   2026-10-18: decision sheet"), each as `Qn: <choice>`; "default" means the sheet's RECOMMENDED option. A5/A6 go to
-   the art-pass session; A7 is ours. Unanswered questions: take the default and list them in the entry as "default
-   taken, designer may revisit".
-3. Fold the rulings into the W0 briefs (`docs/handoff/plan2/drafts/briefs/`) where they touch them, then cut slices.
-4. Start W0 in parallel (limits below).
+## W1 status (briefs: `docs/handoff/plan2/drafts/briefs_w1/` + README queue rows)
+- Merged: NA-21, NA-22/22b/22c/22d, NA-23, NA-24, NA-25 (+fix), NA-11, NA-11b, NA-04b/c, OCCBAND, OCC-OUTLINE,
+  LAMPSHIFT, N8, N9, N20, N6, N7, N12. Replan draft for W2+: `docs/handoff/gates/REPLAN_2026-10-19.md`.
+- NA-04d merged (a35b41b0): 12.6 by depth.png, R-REP-1 facade band, drift vs art-pass 7772e6ba = 0 DRIFT (sent to art-pass).
+- Merged 2026-10-19 (all art-pass APPROVED where visual): NA-26, NA-11c, RULE5-CMO, MOTION-TIMINGS, NA-23b (61029e84),
+  CAP-W1/N12b, NA-24c (c983ca7b), NA-23c (fd0c9aa7). DECISION R-REP-1 ~0.62 accepted as warn (art-pass owns the 8 px lag).
+- Merged later 2026-10-19: Q19-PREVIEW (3f4e1d46), NA-24b, NA-ID (093308f9), W2 drafts WH-01/EX-01 (b946de66).
+- Integration branch `w1-close` (worktree .claude/worktrees/w1-close) = main + NA-25b + NA-12; merge to main when
+  art-pass approves both. Agents based on it: street-on-generated-city fix, WH-02 (Opus), NA-31.
+- Art-pass held replies 15-18 (art-pass b4a8cb42, docs/concepts/HANDOFF_PACKAGE/PENDING_TO_BUILD.md) = OPEN fix lists:
+  - 15 NA-ID-b (QUEUED): ground drawn as class 4 (not hidden), ground-lying compound parts (plaza, aprons, rails) class 4
+    via `id_ground` group / glb role, capture.json 1-space indent + sorted + LF + `time` night|day; re-run 3 frames.
+  - 16 NA-25b r3 (QUEUED, base branch worktree-agent-a81de4284bc1f9b35 @ bad12255; worktree removed): chain order, bits,
+    toggle APPROVED. Fix: (1) the real class wheel (D4 bezel + glass crescent, slices with read blocks, cream blades, class
+    hub core 3.3) for slap (sticker overshoot/settle, spin-up) and lens (hub core opening); (2) hub hold > 0.5 s = CRT
+    terminal (navy glass, 3 px scanlines, scrolling hex dump, edge glow, type-on `> routing ... building street_<bid>` +
+    caret); (3) HQ-side switch frame: normal city material if ever visible (no neon wireframe), else say it is covered;
+    (4) black windowless prism in bits frames = 7.1 ghost stub (see-through + outline) or missing material. Re-send
+    frames 4-6, HQ-side, bits frame. Sheet W1_NA25b_r3.jpg.
+  - 17 NA-12 r2 (RUNNING, agent adf53274290f3bfd9): water material, sea wall, piers, darker void, day blue; concave bay +
+    noise; city.json `coast` + `terrain.hills` (additive); CENTRAL SERVER chip clear of pins. Sheet W1_NA12_r2.jpg.
+    Terrain rendering = new slice NA-12c in W2 (before NA-32 HQ scenes).
+  - 18.1+18.2 COMBAT-LOCK (QUEUED, on main): nudge lock = wax circle-slash per designer ruling (DECISIONS 34069fe7), word
+    chips + toast removed, slash on locked RESPIN; Q19 respin ghost = 9 x 46 px chevrons chasing outside the rim (3.17),
+    no dashed ring. Re-send CAP_W1 panel 3 and Q19 panel 2.
+  - 18.3 NA-24d: folded into parity P3 (A-021).
+- STREET LOOK PARITY (A-020 designer ruling, blocks w1-close; plan B-002, answers A-021 art-pass 3dccef4e). Every netrun /
+  city sheet = golden plate + Godot at the same camera AND the §12 numbers. Queue (serial on city_building.gdshader):
+  - P0 parity harness (READY): tools/netrun_art/parity_sheet.py, plate via git show to %TEMP%, Godot at plate camera
+    (plate cams: art-pass golden_plates/street_*_capture.json, 1920x1080); publish our cameras in B-003.
+  - P1+P5 (A-022 CORRECTION): netrun street = AAA-2 realistic night (PBR, volumetric fog + FogVolumes, emissive-lit), NOT
+    toon/ink; keep the smooth look_blend 1. Port art-pass HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md (read §0 and "What
+    makes the look" first): exposure solve to median 0.14 FIRST; layered colored volume fog (0.152/BU cores, aniso 0.45,
+    ground band 0-2.2 BU 0.12/BU); wet street rough 0.03-0.30, spec IOR level 0.7, SSR; emissive hierarchy (hero 4.0 ...
+    lamp heads 8.0), 3-radius bloom, ACES hue-preserving + teal shadow / warm-pink highlight grade, vignette 0.38, CA, grain.
+    Facet grit is geometry (fgrid, cell 1.7 BU). No sky gradient, no bokeh pass (P6 bokeh = rough reflections).
+  - P2+P3+P4: PORT art-pass street_r2/scripts r2_config (-> .tres), r2_facade, r2_kits (code), r2_rules plan_pass /
+    layout_pass / checks, r2_signs as Python twin + GDScript at the same art_seed (fnv64). Props glb + roles.json from
+    street_kit/ (A-NNN). Cut the ~8 tall yellow-green/teal glow bars -> blade signs + lit_atrium slots. Words = r2_config
+    WORDS / SUBS as is. Absorbs NA-24d. Props KIT DELIVERED (A-024): 32 glb + roles.json in art-pass
+    HANDOFF_PACKAGE/street_kit/ (wall plane z=0, +Z out, metres=BU, COLOR_0 sRGB, emissive x MATERIAL_SPEC hierarchy,
+    sign_board UV quad for r2_signs textures); import into assets/ per D8 (glb only, no concept images).
+  - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
+    route rooms read as storefronts, no light columns).
+- QUEUED from A-025..A-027 (art-pass c8d2f67e):
+  - STREET-CAM (on w1-close): (b) rig distance / shift to plate values in config (overview dist 114.62, shift -0.0548/0.1172;
+    decision 42.10, 0.0345/0.0002) AND the plate camera rule: look along the street face's normal at the frontage (r2_onecity
+    rule 6), frontage a wall across the frame, never down a cross street. TARGET pencil word + circle inside the safe frame
+    (seed 3 overview clipped "TAR"). Derive output logs `retry: leg_extend`. Then publish the seed-1 pose + derive export
+    (city.json + derive json) in a B-entry so art-pass re-renders the plates on our street (a); old plates -> `_r2ref`.
+  - NA-31b (base branch worktree-agent-a16cf8a4620fba449 @ ce69287e): no landmark channel clips (< 2 % over 0.85, hue
+    within ±10° of BEFORE; Meridian orange steel, Solace leaf-green glass, Rebel red #E8141E); ratio from city dim + rim/key
+    light + plaza spill instead of key gain; cone occluders ghosted like 7.1 stubs (never black); Meridian's neighbouring
+    blocks back (dimmed); Rebel Cell stays k_fit-exempt; Meridian fit = moat compound footprint (exclude crane, rail yard,
+    train). Re-sheet BEFORE|AFTER x5 with numbers + mean-hue check.
+  - COMBAT-LOCK r2 (A-028; base branch worktree-agent-a78ccb5cfc9d0147e @ 5de0313f): slash drawn with the raid-pencil
+    GreasePencilMark stroke (wobble, varying width, wax grain, alpha 0.96, no highlight; ring = one stroke overshooting its
+    start, slash = second stroke TL->BR past the ring); re-sheet a re-scribble mid-frame; chase ~1.2 s/lap (3.17: 900-1500 ms);
+    Q/E key labels unclipped in the locked state. Re-sheet: 2x held slash, re-scribble mid-frame, chase at new speed.
+  - NA-12 r3 (A-030, base w1-close): sea look vs city_a2 plates: night sea deep teal-blue between void and land (median
+    value strip void < sea < land), day saturated mid-blue + lighter shallows; marbled caustics + foam; shore reflections =
+    soft short vertical smears under each shore light broken by ripple (never regular dashes = grease-pencil vocabulary);
+    coping strip brighter/wider scaled by zoom. Re-sheet with plates beside: whole city seed 1 night + day, bay crop, value strip.
+  - NA-12 r3 RUNNING (on w1-close). COMBAT-LOCK r2 DONE (branch worktree-agent-aa06f4192301aa04a @ d029c896, review B-019).
+  - 2026-10-19 later: STREET-CAM APPROVED (A-034) and merged into w1-close (ab1d758a). P2 step 1 (exact r2 rules port, data
+    only) merged to main 2325c775 (pytest 223, precommit green). RUNNING: P2 step 2 (frontage row render, A-034 items 1+4),
+    P1+P5 (+ A-034 items 2+3), NA-12 r3, NA-25b r4, NA-ID-c. NA-31b in review (B-021, branch worktree-agent-ac27ef2c44ccd856f
+    @ 57eb6d30, not on w1-close). QUEUED: COMBAT-LOCK r3 (A-033: 10-15 % alpha dropout on stroke edges + lighter broken thin
+    core, 1:1 + 2x; RESPIN chip crop held + re-scribbled 2x; base branch worktree-agent-aa06f4192301aa04a @ d029c896).
+  - (was) QUEUED (A-031): NA-25b r4 on w1-close: no 25x raster (flat class-color hub field + bezel inner ring + emblem native/hi-res,
+    centered, whole; same in < 0.5 s breathe); CRT hold: visible hex dump column 15-20 % value, 3 px scanlines at 1:1, cyan edge
+    rim, blinking block caret; frame 7: CRT fades with the hub, HUD stays under the lens until the hole passes. Re-sheet 9 tiles +
+    2 bits crops (1:1 at 0.55 / 0.30) + 1:1 CRT crop.
+  - QUEUED (A-032): NA-ID-c on main: `git apply` art-pass HANDOFF_PACKAGE/id_ground/id_ground.patch, re-run the hq compound +
+    landmark builders, tris unchanged except orbital_hq -656, remove the 0.8 BU height cut, re-run the 3 ID frames.
+  - W2 adds: NA-12c terrain (hills heightfield render, coastlines, marinas, lighthouse, islands), NA-12d harbour movers (boats
+    on the bay, ships at piers, lit offshore platforms).
+- PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
+- Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
+  precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
 
-## W0 (replan §C.1)
-- **Art build:** NA-02 → NA-03 → NA-04 (briefs `na02/na03/na04.md`). NA-01 is merged (21a22a52).
-- **Content foundation:** N1 → N2 → N3 → N4 → N19, with N11, N13, N14 in parallel (briefs `n*.md`; test plans
-  `drafts/test_plans/n*.md`).
-- **Queued:** the PANOPTICON rename (display name only; id `civic_core` stays); B-TEACH follow-ups 1-3
-  (`docs/art_review/PLAN2/B_TEACH.md`); the B-MENU + C-SCREENS capture sheet; the F-RULE5 remainder (skip files being
-  retired); S5 balance sweeps incl. step-0 calibration (specs in `drafts/balance_sweeps/`, feeds N2; tool
-  `tools/balance/`, branch `balance`); remove Site names (before NA-23's overlay). The pending HQ camera test
-  (`tests/unit/test_hq_b_city.gd`) folds into NA-34.
-- **Ordering rules:** replan §C.2 (one slice per merge wave on `netrun_session.gd`: N2 → NA-02 → ...).
-- **D6 corrected overrides the replan text:** the City Grid view STAYS (campaign monitoring + raids). JACK IN zooms
-  into the netrun; the player can zoom out to the grid and back at will. Only the old 2D route page retires (§C.4).
-- **D4 nodes:** REST (heal or swap firmware), Workshop, Cache (vet the minipuzzle); Relay only in unique runs; Ambush
-  maybe as an event option; Safehouse and Heat Sink are grid-view nodes; Black Market maybe as an unknown event.
+## Art-pass session
+`local_9bc8d6cd-...` ("Resume Art-Pass"); reads spec from art-pass and re-import text into
+`docs/handoff/netrun_art/`. Pending from it: W1_NA22 approval after NA-22c; W1_NA23 sheet review. Theme rules drafts
+(`docs/handoff/plan2/drafts/themes/`) answer its corp_themes questions; send it rulings as they land.
 
-## Design material ready (Batch API drafts, all unreviewed by the designer unless the sheet rules on them)
-Index: `docs/handoff/plan2/drafts/README.md`. Rounds 1-3 + the sheet cost about $20 total.
-- Round 1: 96 drafts (enemies 50, bosses 2, HQ 7, nodes 6, raids 1, events 30). **Use the `v2/` versions** (revised
-  against their critic files).
-- Round 2: critic reviews (all FIX; triage by BLOCKER count), stations, slice / card upgrades, inner ring a/b/c, rim
-  gates, status + parasite catalogs, Sync Strike, firmware, GDD amendment drafts.
-- Round 3: `triage/BLOCKERS.md` (192 blockers; top: phase HP / tick math vs R2 and the 3-4 turn rule), test plans
-  N1-N20, `raids/unified.md`, names, balance sweeps, v2 drafts, W0 briefs.
-- Netrun art: `docs/handoff/netrun_art/batch/` (spec audit, vision review, landmark drafts, golden plates draft,
-  Aurelian DESIGN, Tethys shots, asset matrix). **The spec audit's 3 BLOCKERs** (spec vs D3/D4/Gantry; data contract
-  vs D8 with three layout inputs and two building-id forms; Central Server names) must be settled with the art-pass
-  session before NA-02 freezes `city.json` / `net.json` / `run_graph.json`.
+## How to work
+Lanes: Batch for drafts; fix-rules defaults to Sonnet (Opus only with OPUS-BECAUSE); 2 Godot + 1 Python slots.
+Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, smoke-check chain line + both funcs
+(check every func still ends with `return fails`), import after new class_names, never a bare `.sort()` on ids
+(`IdSort.sort_ids`; allowlist int sorts in `tests/unit/test_no_bare_id_sort.gd`).
 
-## Art-pass session (separate)
-Lives in `C:/Users/noitu/Documents/Godot/rebel_cell` (branch `art-pass`). It never writes here; we never merge
-`docs/concepts` (4 GB). Ownership (D8): art-pass = Blender, look-dev, golden plates, `.glb` exports; we = `tools/netrun_art`
-pure modules, checks, GDScript twins, Godot. Its addendum from this session:
-`docs/handoff/netrun_art/ART_ADDENDUM_2026-10-18.md`. Address it by session id from `list_sessions`.
-
-## How to work (hard-won rules)
-- **Lanes (memory `route-cheapest-first`):** Batch API for patch- and draft-shaped work (`tools/batch/`); code-cleanup
-  (Haiku) for one diff; Sonnet agents for Godot runs and captures; Opus only with `OPUS-BECAUSE:`. API key: user env
-  var (PowerShell `$env:ANTHROPIC_API_KEY=[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')`), never
-  printed.
-- **Parallelism (replan §C.3):** 3 local agent worktrees (2 Godot + 1 Python-only), cap 5; windowed / GPU jobs one at
-  a time; balance sims at most 2; the full suite only at a gate, alone. Agent briefs ≤ 4000 chars (hook): rules file
-  path + footer.
-- **Checks:** agents `QUICK=1 bash tools/precommit.sh --base main`; one fast tier per merge wave; full suite once per
-  gate (rerun-alone verdicts on red, never ×3).
-- **Push gate:** write fast / smoke / validate exit codes and the sha to a summary file; push only if
-  `fast=0`, `smoke=0`, `validate=0` and the sha matches HEAD.
-- **Merges:** conflicts in `docs/DECISIONS.md` (keep both), `tests/test_manifest.json` (JSON union of stages :2/:3),
-  `assets/text/strings.csv` (`--ours`, then `godot --headless --path . -s tools/export_text.gd`). Before merging,
-  delete untracked `.uid` files in main that the branch tracks. After merges adding a `class_name`:
-  `godot --headless --path . --import`. Fresh worktrees need the import before precommit.
-- **Shell:** never `python -` or stdin heredocs into python; never pipe Godot output (redirect to a file); windowed
-  Godot only via `tools/run_windowed.py`. Git Bash `grep` in pipes can core-dump on this machine: use the Grep tool or
-  redirect to a file first.
-- **`project.godot`:** the designer's editor re-saves it; `git restore project.godot` when it shows modified.
-- **Playtests:** `tools/playtest/gate.py` (aborts on build mismatch); scripted steps runner judged on the Batch API
-  (`tools/playtest/steps_judge.py`). CP-002: gather feedback, act on none until the designer rules.
-- Untracked `docs/HANDOFF_H20_MERGE.md`, `docs/art_asset.md` belong to the designer: leave them.
-- Local tags `archive/worktree-agent-*` hold 11 old unmerged M14 branches (restorable); `worktree-agent-a71a521e…`
-  is the on-hold W2R1 ring-plate WIP.
+## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
+- Read art -> build at the start of EVERY turn: `git -C D:/rc_art/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Prune: delete your own B entries once art-pass cites them (designer ruling); no history kept.
+- Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.

@@ -1,8 +1,10 @@
 extends Node
 ## SaveService autoload: versioned JSON save/load (TECH_SPEC §8). It writes and reads
 ## dictionaries with a top-level "version"; a file of another version is refused (the
-## "can't load" path: an empty dictionary). There is no save or replay compatibility
-## (DECISIONS 2026-10-05, ruling 5): the migrations table stays empty.
+## "can't load" path: an empty dictionary). There is no save or replay compatibility before
+## v2 (DECISIONS 2026-10-05, ruling 5). Plan 2 N8 registers the one step there is: v2 -> v3
+## (×N status stacks, SaveMigration.v2_to_v3); every loaded v3 is checked by
+## SaveMigration.validate_v3 and a broken one is refused (last_error names why).
 ##
 ## Where saves live (ART-0 S0, DECISIONS "Art direction — ART-0 names pass, part 1 + saves
 ## folder"): a run from source writes to the project's own folder that git ignores
@@ -15,7 +17,9 @@ extends Node
 ## Store 64-bit values (RNG states) as strings; see RngService.to_dict().
 
 ## ART-0 S0: bumped from 1 (names follow the display words; old saves are not read).
-const SAVE_VERSION: int = 2
+## Plan 2 N8: 3, slot statuses carry stacks (v2 saves migrate).
+## Plan 2 N12: 4, wheels may carry uneven "slot_sizes" (v3 saves read as equal slots).
+const SAVE_VERSION: int = 4
 const PROFILE_FILE := "profile.json"
 const CAMPAIGN_FILE_FORMAT := "campaign_%s.json"
 ## A replay's file name: the wall-clock time it was written (ms, zero-padded so the names
@@ -33,11 +37,14 @@ const CONFIG_PATH := preload("res://scripts/autoload/content_registry.gd").CONFI
 ## share a save slot or a profile (Test suite optimization, docs/TEST_SUITE.md).
 const TEST_DIR_FORMAT := "gut_%d"
 
-## from_version (int) -> Callable(data: Dictionary) -> Dictionary at from_version + 1.
-## Empty: no compatibility (ruling 5).
-var _migrations: Dictionary = {}
 ## The save locations and the replay switch.
 var config: CampaignConfigData = load(CONFIG_PATH)
+## from_version (int) -> Callable(data: Dictionary) -> Dictionary at from_version + 1.
+## Nothing before v2 (ruling 5); v2 -> v3 is N8's stack migration.
+var _migrations: Dictionary = {2: func(d: Dictionary) -> Dictionary: return SaveMigration.v2_to_v3(d, config.parasite_output_down_stacks),
+	3: func(d: Dictionary) -> Dictionary: return SaveMigration.v3_to_v4(d)}
+## Why the last load or migrate returned {} (a SaveMigration.ERR_* code), or "".
+var last_error: String = ""
 ## The folder this process saves under: the source folder or the export folder.
 var root_dir: String = base_dir_for(config, is_source_run())
 ## Where saves live: root_dir, or this test run's own folder in the export folder.
@@ -158,16 +165,20 @@ func load_dict(path: String) -> Dictionary:
 	return migrate(parsed)
 
 
-## Applies registered migrations until `data` reaches SAVE_VERSION. Data without a
-## version is treated as version 1. Returns {} when a step is missing or too new.
+## Applies registered migrations until `data` reaches SAVE_VERSION, then checks the result
+## (SaveMigration.validate_v3). Data without a version is treated as version 1. Returns {}
+## (and sets last_error) when a step is missing, the save is too new or it fails the check.
 func migrate(data: Dictionary) -> Dictionary:
+	last_error = ""
 	var current := data.duplicate(true)
 	var version := int(current.get("version", 1))
 	if version > SAVE_VERSION:
-		push_error("SaveService: save version %d is newer than supported %d." % [version, SAVE_VERSION])
+		last_error = SaveMigration.ERR_TOO_NEW
+		push_error("SaveService: %s: save version %d is newer than supported %d." % [last_error, version, SAVE_VERSION])
 		return {}
 	while version < SAVE_VERSION:
 		if not _migrations.has(version):
+			last_error = SaveMigration.ERR_NO_STEP
 			push_error("SaveService: no migration from version %d." % version)
 			return {}
 		var step: Callable = _migrations[version]
@@ -175,6 +186,11 @@ func migrate(data: Dictionary) -> Dictionary:
 		version += 1
 		current["version"] = version
 	current["version"] = SAVE_VERSION
+	var bad := SaveMigration.validate_v4(current)
+	if bad != "":
+		last_error = bad
+		push_error("SaveService: %s: the save's wheels are broken; refused." % bad)
+		return {}
 	return current
 
 
