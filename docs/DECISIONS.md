@@ -34,6 +34,8 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+- **2026-10-19 W1 MOTION-TIMINGS (overnight defaults, designer may revisit): scope is only `combat_fx_layer` and `wheel_view` (other combat views stay out); related ids may share one lab demo entry (every id still exercised).** 19 inline fractions (`dur * 0.2`-style, the wall/corrupt/drone/nudge/trigger/label/defeat bit timings, `WORD_HOLD`) became shares in `ui_motion.tres` (amplitude = the share, ALWAYS_ON tunings, REQUIRED_IDS, lab demo = the effect they tune); values equal the old literals. Named consts in the two files (e.g. `TEAR_SECONDS`, `STREAM_STAGGER`, `SETTLE_SHARE`) are curve or layout constants and stay. NA-26: `CityMapOverlay` now asks `Motion.live(&"route_target_pulse")` (off = no swell), the id left AWAITING_FIX; dead `CityMapOverlay.hover_out` (with `route_hover_out` calls) and the lab's `_staying_node` removed. Supersedes the NA-26 follow-up note below.
+
 - **2026-10-19 W1 RULE5-CMO: literals shared with `wheel_view` / `combat_fx_layer` (keyline alpha 0.85 and the like) stay local consts in `scripts/ui/kit/city_map_overlay.gd` with a `##` note naming the twin; no new `ui_motion` ids (overnight default, designer may revisit).** Values unchanged; no timing literals were moved.
 
 - **2026-10-19 NA-26 follow-up: `route_target_pulse` stays AWAITING_FIX (overnight default, designer may revisit).** On the real Grid view overlay it still ignores its motion switch; the fix edits CityMapOverlay, so it moves to the MOTION-TIMINGS slice. NA-11c route columns stay exempt from the HQ-zone 0.6x cap (art-pass, W1_NA11 APPROVED). R-FOCUS-1 is n/a on street views (art-pass 7ad41a22, 12.7).
