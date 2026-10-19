@@ -28,7 +28,13 @@ func _wait(sec: float) -> void:
 func _scene() -> Control:
 	var s := LK.session()
 	_holder = Control.new()
-	_holder.size = get_viewport().get_visible_rect().size
+	# a taller test viewport (1920x1200, expand): the scene keeps its 1280x720 layout at the top so
+	# the bottom-anchored RESPIN chip has room under it (r4)
+	_holder.size = Vector2(1280.0, 720.0)
+	var floor_fill := ColorRect.new()  # the strip under the 720 px layout: dark, not the engine's grey
+	floor_fill.color = Color(0.02, 0.03, 0.05)
+	floor_fill.size = Vector2(1280.0, 900.0)
+	add_child(floor_fill)
 	add_child(_holder)
 	var scene: Control = load(COMBAT).instantiate()
 	scene.auto_start = false
@@ -55,7 +61,9 @@ func _shot(scene: Control, name: String) -> void:
 func _zoom(name: String, c: Vector2) -> void:
 	await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
-	var r := Rect2i(Vector2i(c) - Vector2i(ZOOM_HALF, ZOOM_HALF), Vector2i(ZOOM_HALF * 2, ZOOM_HALF * 2)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	var pos := Vector2i(c) - Vector2i(ZOOM_HALF, ZOOM_HALF)
+	pos = pos.clamp(Vector2i.ZERO, img.get_size() - Vector2i(ZOOM_HALF * 2, ZOOM_HALF * 2))
+	var r := Rect2i(pos, Vector2i(ZOOM_HALF * 2, ZOOM_HALF * 2))
 	img.get_region(r).save_png("%s/%s.png" % [_out, name])
 	print("zoom ", name, " ", r)
 
@@ -65,7 +73,8 @@ func _ready() -> void:
 		if a.begins_with("--out="):
 			_out = a.substr(6)
 	DirAccess.make_dir_recursive_absolute(_out)
-	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	DisplayServer.window_set_size(Vector2i(1920, 1200))
 	await _frames(6)
 	RunManager.save_slot = "combat_lock_cap"
 	RunManager.scene_switching_enabled = false
@@ -88,11 +97,13 @@ func _ready() -> void:
 	await _shot(scene, "lock_3_scribble")
 	await _zoom("zoom_scribble", qc + Vector2(0.0, 12.0))
 	await _wait(0.8)
-	var rc: Vector2 = scene._respin_button.get_global_rect().get_center() * (float(get_window().size.x) / get_viewport().get_visible_rect().size.x) - Vector2(0.0, 70.0)
-	await _zoom("zoom_respin_held", rc)
+	var k := float(get_window().size.x) / get_viewport().get_visible_rect().size.x
+	var rc: Vector2 = scene._respin_button.get_global_rect().get_center() * k
+	print("CHIP ", scene._respin_button.get_global_rect(), " k ", k, " win ", get_window().size)
+	await _zoom("chip_held", rc)
 	scene._on_action_refused(CombatResolver.RESPIN_LOCKED)
 	await _wait(0.1)
-	await _zoom("zoom_respin_scribble", rc)
+	await _zoom("chip_scribble", rc)
 	await _wait(0.8)
 	wheel.clear_locks()
 	await _wait(0.2)

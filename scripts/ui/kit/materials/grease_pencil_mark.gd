@@ -136,6 +136,15 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 		core_break = v
 		_sync()
 
+## The wax's (and its shadow's) top alpha: WAX_ALPHA, or lower where the mark runs over a label
+## that must stay readable (COMBAT-LOCK r4: the RESPIN chip's slash).
+var wax_alpha: float = WAX_ALPHA:
+	set(v):
+		if v == wax_alpha:
+			return
+		wax_alpha = v
+		_sync()
+
 ## Written share 0..1 (by length, in writing order) and the wiped share from the start.
 var progress: float = 1.0:
 	set(v):
@@ -426,7 +435,8 @@ func _sync() -> void:
 	_set_param(false, &"seed", shader_seed(seed))
 	_set_param(false, &"dashed", dashed)
 	_set_param(false, &"smear", smear)
-	_set_param(false, &"alpha_max", WAX_ALPHA)
+	_set_param(false, &"alpha_max", wax_alpha)
+	_set_param(true, &"alpha_max", wax_alpha)
 	_set_param(false, &"sheen", SHEEN if highlight else 0.0)
 	_set_param(false, &"edge_grain", edge_grain)
 	_set_param(false, &"core_break", core_break)

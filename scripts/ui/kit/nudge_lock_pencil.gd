@@ -30,6 +30,16 @@ const TILT_DEG := 12.0
 const SLASH_REACH := 1.25
 const SLASH_TILT_DEG := 6.0
 const SLASH_BOW := 0.08
+## A wide chip (RESPIN): the ring is an oval hugging the chip's outline, this share of its half
+## sizes past it (r4), tilted at most FIT_TILT_DEG so the ends stay by the chip; the slash runs
+## the chip's own corner to corner, FIT_SLASH_REACH of the ring's reach along it. The wax is
+## lowered to FIT_ALPHA so `RESPIN` and the RAM cost read through it. The whole mark is kept
+## FIT_SAFE_MARGIN px inside the screen.
+const FIT_MARGIN := 0.1
+const FIT_TILT_DEG := 3.0
+const FIT_SLASH_REACH := 1.25
+const FIT_ALPHA := 0.55
+const FIT_SAFE_MARGIN := 12.0
 ## The ring's foot keeps this far above a label under the button (px: wax half width and shadow).
 const FOOT_CLEAR := 7.0
 ## The wax pressure share (width varies along each stroke) of the lock marks.
@@ -76,11 +86,11 @@ func _exit_tree() -> void:
 ## past the ring at both ends. `keep_above` (a global y; INF = none) is the top of what sits under
 ## the button (its key label): the ring's foot, its stroke and shadow stay above it. Pure (tests
 ## read it).
-static func shapes(center: Vector2, radii: Vector2, seed: int, keep_above: float = INF) -> Array[PackedVector2Array]:
-	var rr := radii * CIRCLE_SHARE
+static func shapes(center: Vector2, radii: Vector2, seed: int, keep_above: float = INF, fit: bool = false) -> Array[PackedVector2Array]:
+	var rr := radii * ((1.0 + FIT_MARGIN) if fit else CIRCLE_SHARE)
 	if keep_above < INF:
 		rr.y = minf(rr.y, maxf(radii.y, keep_above - center.y - FOOT_CLEAR))
-	var tilt := KitNoise.h11(seed, 3) * TILT_DEG
+	var tilt := KitNoise.h11(seed, 3) * (FIT_TILT_DEG if fit else TILT_DEG)
 	var ring := PencilShapes.hand_circle(center, rr, seed, 1.0 + OVERSHOOT_DEG / 360.0, deg_to_rad(tilt))
 	for i in ring.size():
 		var w := 1.0 + WOBBLE * (KitNoise.smooth(seed + 5, float(i) / WOBBLE_KNOT_PTS) * 2.0 - 1.0)
@@ -88,6 +98,9 @@ static func shapes(center: Vector2, radii: Vector2, seed: int, keep_above: float
 	ring = PencilShapes.chaikin(ring)
 	var reach := rr.length() * SLASH_REACH
 	var d := Vector2.from_angle(deg_to_rad(SLASH_DEG + 180.0 + KitNoise.h11(seed, 4) * SLASH_TILT_DEG))
+	if fit:
+		d = -radii.normalized()
+		reach = _fit_reach(rr, d)
 	var a := center + d * reach
 	var b := center - d * reach * (1.0 + 0.08 * KitNoise.h11(seed, 6))
 	var bow := (b - a).orthogonal().normalized() * (reach * SLASH_BOW * KitNoise.h11(seed, 8))
@@ -95,18 +108,86 @@ static func shapes(center: Vector2, radii: Vector2, seed: int, keep_above: float
 	return [ring, slash] as Array[PackedVector2Array]
 
 
+## How far along unit direction `d` the slash of an oval ring with radii `rr` reaches: the ring's
+## own radius that way, times FIT_SLASH_REACH. Pure.
+static func _fit_reach(rr: Vector2, d: Vector2) -> float:
+	var k := sqrt(pow(d.x / rr.x, 2.0) + pow(d.y / rr.y, 2.0))
+	return FIT_SLASH_REACH / maxf(k, 0.0001)
+
+
+## The bounds of `strokes`, grown by the wax's half width and shadow. Pure.
+static func mark_bounds(strokes: Array[PackedVector2Array]) -> Rect2:
+	var box := Rect2()
+	var first := true
+	for st in strokes:
+		for p in st:
+			if first:
+				box = Rect2(p, Vector2.ZERO)
+				first = false
+			else:
+				box = box.expand(p)
+	return box.grow(GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW)
+
+
+## `strokes` brought inside `frame` shrunk by FIT_SAFE_MARGIN: on each axis the overflow is taken
+## half by moving the mark in and half by squashing it toward its far side, so a chip flush with
+## the screen edge keeps a ring that still hugs it. A mark larger than the frame is centred on it
+## and squashed to fit. Pure.
+static func clamp_into(strokes: Array[PackedVector2Array], frame: Rect2) -> Array[PackedVector2Array]:
+	if strokes.is_empty():
+		return strokes
+	var pad := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW
+	var box := mark_bounds(strokes).grow(-pad)  # the points' own bounds: the wax's width is not squashed
+	var safe := frame.grow(-(FIT_SAFE_MARGIN + pad))
+	var scale := Vector2.ONE
+	var origin := Vector2.ZERO
+	var off := Vector2.ZERO
+	for axis in 2:
+		var lo: float = box.position[axis]
+		var hi: float = box.end[axis]
+		var s: float = box.size[axis]
+		if s >= safe.size[axis]:
+			scale[axis] = safe.size[axis] / s
+			origin[axis] = lo
+			off[axis] = safe.position[axis] - lo
+		elif lo < safe.position[axis]:
+			var o: float = safe.position[axis] - lo
+			scale[axis] = (s - o * 0.5) / s
+			origin[axis] = hi
+			off[axis] = o * 0.5
+		elif hi > safe.end[axis]:
+			var o: float = hi - safe.end[axis]
+			scale[axis] = (s - o * 0.5) / s
+			origin[axis] = lo
+			off[axis] = -o * 0.5
+	if scale == Vector2.ONE and off == Vector2.ZERO:
+		return strokes
+	var out: Array[PackedVector2Array] = []
+	for st in strokes:
+		var q := PackedVector2Array()
+		for p in st:
+			q.append(origin + (p - origin) * scale + off)
+		out.append(q)
+	return out
+
+
 ## The re-scribble of a refused click: one back-and-forth stroke of SCRIBBLE_PASSES zig-zags down
 ## the slash's line, over the held mark (which stays whole). Pure.
-static func scribble(center: Vector2, radii: Vector2, seed: int) -> PackedVector2Array:
-	var rr := radii * CIRCLE_SHARE
+static func scribble(center: Vector2, radii: Vector2, seed: int, fit: bool = false) -> PackedVector2Array:
+	var rr := radii * ((1.0 + FIT_MARGIN) if fit else CIRCLE_SHARE)
 	var d := Vector2.from_angle(deg_to_rad(SLASH_DEG + 180.0))
-	var n := d.orthogonal()
 	var reach := rr.length() * SLASH_REACH
+	var swing := rr.length() * SCRIBBLE_WIDTH
+	if fit:
+		d = -radii.normalized()
+		reach = _fit_reach(rr, d)
+		swing = minf(rr.y, swing)
+	var n := d.orthogonal()
 	var pts := PackedVector2Array()
 	var count := SCRIBBLE_PASSES * 2 + 1
 	for i in count:
 		var u := float(i) / float(count - 1)
-		var side := (1.0 if i % 2 == 0 else -1.0) * rr.length() * SCRIBBLE_WIDTH
+		var side := (1.0 if i % 2 == 0 else -1.0) * swing
 		side *= 1.0 + 0.2 * KitNoise.h11(seed, i, 9)
 		pts.append(center + d * reach * (1.0 - 2.0 * u) + n * side)
 	return PencilShapes.resample(pts, SLASH_STEP)
@@ -167,7 +248,10 @@ func _process(delta: float) -> void:
 	for key: String in want:
 		var m: Dictionary = want[key]
 		var seed := key.hash()
-		var strokes := shapes(m["center"], m["radii"], seed, float(m.get("keep_above", INF)))
+		var fit := bool(m.get("fit", false))
+		var strokes := shapes(m["center"], m["radii"], seed, float(m.get("keep_above", INF)), fit)
+		if fit:
+			strokes = clamp_into(strokes, _frame())
 		if not _live.has(key):
 			_live[key] = {"group": String(m["group"]), "t": 0.0 if Motion.live(WRITE_MOTION) else 1.0, "dur": Motion.seconds(WRITE_MOTION)}
 		var st: Dictionary = _live[key]
@@ -175,6 +259,7 @@ func _process(delta: float) -> void:
 		st["center"] = m["center"]
 		st["radii"] = m["radii"]
 		st["seed"] = seed
+		st["fit"] = fit
 		if float(st["t"]) < 1.0:
 			st["t"] = minf(1.0, float(st["t"]) + delta / maxf(float(st["dur"]), 0.001))
 		if float(st.get("scr", 1.0)) < 1.0:
@@ -185,12 +270,17 @@ func _process(delta: float) -> void:
 	_lay()
 
 
+## The screen the marks must stay inside.
+func _frame() -> Rect2:
+	return get_viewport().get_visible_rect() if is_inside_tree() else Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
+
+
 func _start_wipe(key: String) -> void:
 	if not Motion.live(WIPE_MOTION):
 		return
 	var st: Dictionary = _live[key]
 	_wipe_count += 1
-	_wipes.append({"key": "wipe_%d" % _wipe_count, "strokes": st["strokes"], "seed": st["seed"], "t": 0.0})
+	_wipes.append({"key": "wipe_%d" % _wipe_count, "strokes": st["strokes"], "seed": st["seed"], "fit": st.get("fit", false), "t": 0.0})
 
 
 func _lay() -> void:
@@ -203,16 +293,20 @@ func _lay() -> void:
 		var st: Dictionary = _live[key]
 		var scr := float(st.get("scr", 1.0))
 		if scr < 1.0:
-			var sp: Array[PackedVector2Array] = [scribble(st["center"], st["radii"], int(st["seed"]))]
-			_flat(_pool.stroke(key + "|scr", sp, GreasePencilMark.Ink.THREAT, scr, 0.0, false, int(st["seed"]) + 1))
-		_flat(_pool.stroke(key, st["strokes"], GreasePencilMark.Ink.THREAT, float(st["t"]), 0.0, false, int(st["seed"])))
+			var fit := bool(st.get("fit", false))
+			var sp: Array[PackedVector2Array] = [scribble(st["center"], st["radii"], int(st["seed"]), fit)]
+			if fit:
+				sp = clamp_into(sp, _frame())
+			_flat(_pool.stroke(key + "|scr", sp, GreasePencilMark.Ink.THREAT, scr, 0.0, false, int(st["seed"]) + 1), fit)
+		_flat(_pool.stroke(key, st["strokes"], GreasePencilMark.Ink.THREAT, float(st["t"]), 0.0, false, int(st["seed"])), bool(st.get("fit", false)))
 	for w in _wipes:
-		_flat(_pool.stroke(String(w["key"]), w["strokes"], GreasePencilMark.Ink.THREAT, 1.0, float(w["t"]), false, int(w["seed"])))
+		_flat(_pool.stroke(String(w["key"]), w["strokes"], GreasePencilMark.Ink.THREAT, 1.0, float(w["t"]), false, int(w["seed"])), bool(w.get("fit", false)))
 	_pool.end()
 
 
 ## Hand pressure along the stroke, no lit side: a flat wax stroke.
-func _flat(m: GreasePencilMark) -> void:
+func _flat(m: GreasePencilMark, fit: bool = false) -> void:
+	m.wax_alpha = FIT_ALPHA if fit else GreasePencilMark.WAX_ALPHA
 	m.wobble = PRESSURE
 	m.highlight = false
 	m.edge_grain = EDGE_GRAIN

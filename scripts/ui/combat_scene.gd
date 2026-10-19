@@ -706,7 +706,7 @@ func nudge_lock_marks() -> Array:
 			out.append(mark)
 	if _respin_button != null and engine.has_fight() and engine.state().player.wheel.is_locked(WheelState.LOCK_RESPIN):
 		var box := _respin_button.get_global_rect()
-		out.append({"key": "respin", "group": NUDGE_LOCK_RESPIN_GROUP, "center": box.get_center(), "radii": box.size * 0.5})
+		out.append({"key": "respin", "group": NUDGE_LOCK_RESPIN_GROUP, "center": box.get_center(), "radii": box.size * 0.5, "fit": true})
 	return out
 
 

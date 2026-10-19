@@ -107,3 +107,27 @@ func test_the_respin_ghost_lights_one_chevron_at_a_time_all_the_way_round() -> v
 	assert_almost_eq(WheelView.unknown_chevron_light(4, at), 1.0, 0.001)
 	assert_almost_eq(WheelView.unknown_chevron_light(3, at), 1.0 - 1.0 / WheelView.UNKNOWN_CHASE_TAIL, 0.001, "the trail is behind the head")
 	assert_eq(WheelView.unknown_chevron_light(5, at), 0.0, "nothing ahead of the head is lit")
+
+
+func test_the_chip_mark_hugs_the_chip_and_stays_inside_the_safe_frame() -> void:
+	var center := Vector2(1760.0, 640.0)
+	var half := Vector2(70.0, 26.0)
+	var chip := Rect2(center - half, half * 2.0)
+	var frame := Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
+	var wax := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW
+	for seed in [1, 7, 21, 99]:
+		var strokes := NudgeLockPencil.shapes(center, half, seed, INF, true)
+		var box := NudgeLockPencil.mark_bounds(strokes)
+		var allowed := chip.grow_individual(half.x * 0.25, half.y * 0.25, half.x * 0.25, half.y * 0.25).grow(wax)
+		assert_true(allowed.encloses(box), "the ring hugs the chip (seed %d): %s in %s" % [seed, box, allowed])
+		var slash: PackedVector2Array = strokes[1]
+		assert_lt(slash[0].x, center.x, "the slash starts upper left")
+		assert_gt(slash[slash.size() - 1].x, center.x, "and ends lower right")
+	# at the screen edge the whole mark is moved back inside the safe frame
+	var edge_center := Vector2(1890.0, 500.0)
+	var moved := NudgeLockPencil.clamp_into(NudgeLockPencil.shapes(edge_center, half, 3, INF, true), frame)
+	var safe := frame.grow(-NudgeLockPencil.FIT_SAFE_MARGIN)
+	assert_true(safe.encloses(NudgeLockPencil.mark_bounds(moved)), "inside the safe frame")
+	var a := NudgeLockPencil.shapes(Vector2(100, 100), Vector2(17, 17), 7)
+	var b := NudgeLockPencil.shapes(Vector2(100, 100), Vector2(17, 17), 7, INF, false)
+	assert_eq(a[0], b[0], "the wheel mark is unchanged")
