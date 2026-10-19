@@ -1,6 +1,6 @@
-# Drift compare against the 18 golden plates (NA-04b, refreshed W1 NA-04c, 2026-10-18)
+# Drift compare against the 18 golden plates (NA-04b, refreshed W1 NA-04c, re-run W1 LAMPSHIFT on the re-baked street plates, 2026-10-18)
 
-Drift compare of our image checks (`tools/netrun_art/checks`) against the golden plates of art-pass `8e7e72e2` (PIPELINE_SPEC 12.8), read-only: the plates were read with `git show` from the art-pass repo and extracted to a scratch folder; no image was copied into the repo. Command, from `tools`:
+Drift compare of our image checks (`tools/netrun_art/checks`) against the golden plates of art-pass `ed8675a8` (street plates re-baked; the street baselines are now empty) (PIPELINE_SPEC 12.8), read-only: the plates were read with `git show` from the art-pass repo and extracted to a scratch folder; no image was copied into the repo. Command, from `tools`:
 
     python -m netrun_art.checks.drift <plates dir> --work <scratch dir> --out <file>
 
@@ -8,12 +8,15 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 
 ## Result
 
-- 18 plates, 0 DRIFT rows. Deltas are 0 to rounding, except R-FOCUS-1 (up to 0.0042, nearest resample of the id box). The plates' values were written by the same metric code, so this is a regression anchor for the renderer comparison; the first Godot capture of a plate is the first real delta.
+- 18 plates, 1 DRIFT row (street_decision R-REP-1, see below); the other 17 plates are 0 DRIFT. Deltas are 0 to rounding, except R-FOCUS-1 (up to 0.0042, nearest resample of the id box). The plates' values were written by the same metric code, so this is a regression anchor for the renderer comparison; the first Godot capture of a plate is the first real delta.
 - Day/night (AD answers 2026-10-18, spec 12.0 / 12.7): `capture.json` `time` is `"night"` (default) or `"day"`. A day frame makes the 12.1 value band (R-VAL-1/2/3), the 12.2 landmark ratio and R-FOCUS-1 report only: status n/a, value kept. The earlier kind/look heuristic is gone. The concept plates' `capture.json` lacks `time`, so for them (and only when `time` is absent) the stem is looked up in `landmark_ratio.day_stems` (`city_a2_day`). Result: `city_a2_day` R-VAL-1/2/3 (0.2501 / 0.0834 / 0.0006), ratio 1.1977 and R-FOCUS-1 are n/a with values kept; `city_a2_night` passes R-FOCUS-1 at 1.7756.
 - Tethys decision 2.0242 and city night 2.7990 are warns, tagged pre-accepted from config (`landmark_ratio.pre_accepted`). HQ Tethys overview ratio 1.8067 passes with the id mask.
 - 12.6 route never occluded: n/a on all 18 plates (HQ and street plates have G = 0 everywhere; city plates have no route rooms). The check now also excludes occlusion stubs (class 2 with G = 255 and B = 0, written for a cut or ghosted building) besides the route-column cut surface (class 2 with B > 0); it first runs on Godot captures.
-- Honored baseline fails (`[baseline]` rows): Halcyon overview R-VAL-2, Halcyon decision R-REP-1, Meridian decision R-VAL-3 / ratio 1.06 / R-FOCUS-1 / R-REP-1, Orbital R-VAL-2 / R-VAL-3 / R-FOCUS-1, Rebel Cell ratio 1.40 / 1.18 and overview R-VAL-2, Tethys R-FOCUS-1, street decision R-REP-1, city R-HUE-1/2. None is a capture failure.
-- art-pass to fix in `values.json` (their side, later): (1) `street_decision` lists R-DET-2 in its baseline, but 12.7 scopes R-DET-1/2 to street OVERVIEW only, so the entry is stale. (2) the `city_a2_day` baseline still lists `landmark_ratio`, which is report only by day (stale). `city_a2_night` and `street_decision` have R-FOCUS-1 null in `values.json` while we score it (1.7756 pass and 1.6659 pass); art-pass to fill it, not a drift.
+- Honored baseline fails (`[baseline]` rows): Halcyon overview R-VAL-2, Halcyon decision R-REP-1, Meridian decision R-VAL-3 / ratio 1.06 / R-FOCUS-1 / R-REP-1, Orbital R-VAL-2 / R-VAL-3 / R-FOCUS-1, Rebel Cell ratio 1.40 / 1.18 and overview R-VAL-2, Tethys R-FOCUS-1, city R-HUE-1/2 (the street plates no longer carry a baseline). None is a capture failure.
+- art-pass to fix in `values.json` (their side, later): (1) the `city_a2_day` baseline still lists `landmark_ratio`, which is report only by day (stale). (2) `city_a2_night` and `street_decision` have R-FOCUS-1 null in `values.json` while we score it (city_a2_night 1.7756 pass; street_decision 1.1087 fail on the re-baked plate); art-pass to fill it, not a drift.
+
+- LAMPSHIFT (kerb lamps shifted, not dropped; dress fixtures regenerated) does not touch the image checks: the plates are read-only art-pass renders, so the street rows below depend only on the re-baked plates.
+- DRIFT, street_decision R-REP-1: ours 0.7850, theirs 0.5885 (delta 0.1965, tol 0.0785, our status fail, their status pass). The values.json R-REP-1 was written by art-pass metric code, so this is a real difference between our R-REP-1 and theirs on the re-baked plate, not a rounding. Not fixed here (a metric/design call): open question for the owner of `checks/image_checks.py` R-REP-1 vs art-pass. R-FOCUS-1 is null in their values.json for street_decision and we score it 1.1087 (fail); art-pass to fill it.
 
 ## Summary
 
@@ -35,7 +38,7 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 | hq_solace_overview | 8 | 0 | 0 |
 | hq_tethys_decision | 8 | 0 | 0 |
 | hq_tethys_overview | 8 | 0 | 0 |
-| street_decision | 11 | 0 | 1 |
+| street_decision | 10 | 1 | 1 |
 | street_overview | 13 | 0 | 0 |
 
 ## Rows
@@ -61,23 +64,23 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 | city_a2_night | R-HUE-2 | 0.6060 | 0.6060 | 0.0000 | 0.0500 | fail | ok [baseline] |
 | city_a2_night | R-REP-1 | 0.2474 | 0.2474 | 0.0000 | 0.0247 | pass | ok |
 | city_a2_night | 12.6 route never occluded | - | - | - | - | n/a | n/a: no visible route room |
-| hq_aurelian_decision | R-VAL-1 | 0.1447 | 0.1447 | 0.0000 | 0.0200 | pass | ok |
-| hq_aurelian_decision | R-VAL-2 | 0.2972 | 0.2972 | 0.0000 | 0.0500 | pass | ok |
-| hq_aurelian_decision | R-VAL-3 | 0.0086 | 0.0086 | 0.0000 | 0.0100 | pass | ok |
-| hq_aurelian_decision | 12.2 ratio | 2.2551 | 2.2551 | 0.0000 | 0.1500 | warn | ok |
-| hq_aurelian_decision | R-CALM-1 | 0.6082 | 0.6082 | 0.0000 | 0.0608 | pass | ok |
-| hq_aurelian_decision | R-CALM-2 | 0.2818 | 0.2818 | 0.0000 | 0.0400 | pass | ok |
-| hq_aurelian_decision | R-FOCUS-1 | 1.9896 | 1.9896 | 0.0000 | 0.1990 | pass | ok |
-| hq_aurelian_decision | R-REP-1 | 0.5629 | 0.5629 | 0.0000 | 0.0563 | pass | ok |
+| hq_aurelian_decision | R-VAL-1 | 0.1535 | 0.1535 | 0.0000 | 0.0200 | pass | ok |
+| hq_aurelian_decision | R-VAL-2 | 0.3599 | 0.3599 | 0.0000 | 0.0500 | pass | ok |
+| hq_aurelian_decision | R-VAL-3 | 0.0047 | 0.0047 | 0.0000 | 0.0100 | pass | ok |
+| hq_aurelian_decision | 12.2 ratio | 2.7923 | 2.7923 | 0.0000 | 0.1500 | warn | ok |
+| hq_aurelian_decision | R-CALM-1 | 0.5430 | 0.5430 | 0.0000 | 0.0543 | pass | ok |
+| hq_aurelian_decision | R-CALM-2 | 0.1773 | 0.1773 | 0.0000 | 0.0400 | pass | ok |
+| hq_aurelian_decision | R-FOCUS-1 | 2.2608 | 2.2608 | 0.0000 | 0.2261 | pass | ok |
+| hq_aurelian_decision | R-REP-1 | 0.4887 | 0.4887 | 0.0000 | 0.0489 | pass | ok |
 | hq_aurelian_decision | 12.6 route never occluded | - | - | - | - | n/a | n/a: id.png carries no room indices (G = 0) |
-| hq_aurelian_overview | R-VAL-1 | 0.1481 | 0.1481 | 0.0000 | 0.0200 | pass | ok |
-| hq_aurelian_overview | R-VAL-2 | 0.3849 | 0.3849 | 0.0000 | 0.0500 | pass | ok |
-| hq_aurelian_overview | R-VAL-3 | 0.0073 | 0.0073 | 0.0000 | 0.0100 | pass | ok |
-| hq_aurelian_overview | 12.2 ratio | 2.5159 | 2.5159 | 0.0000 | 0.1500 | warn | ok |
-| hq_aurelian_overview | R-CALM-1 | 0.4769 | 0.4769 | 0.0000 | 0.0477 | pass | ok |
-| hq_aurelian_overview | R-CALM-2 | 0.1455 | 0.1455 | 0.0000 | 0.0400 | pass | ok |
-| hq_aurelian_overview | R-FOCUS-1 | 1.8937 | 1.8937 | 0.0000 | 0.1894 | pass | ok |
-| hq_aurelian_overview | R-REP-1 | 0.4628 | 0.4628 | 0.0000 | 0.0463 | pass | ok |
+| hq_aurelian_overview | R-VAL-1 | 0.1520 | 0.1520 | 0.0000 | 0.0200 | pass | ok |
+| hq_aurelian_overview | R-VAL-2 | 0.3814 | 0.3814 | 0.0000 | 0.0500 | pass | ok |
+| hq_aurelian_overview | R-VAL-3 | 0.0076 | 0.0076 | 0.0000 | 0.0100 | pass | ok |
+| hq_aurelian_overview | 12.2 ratio | 2.4602 | 2.4602 | 0.0000 | 0.1500 | warn | ok |
+| hq_aurelian_overview | R-CALM-1 | 0.4901 | 0.4901 | 0.0000 | 0.0490 | pass | ok |
+| hq_aurelian_overview | R-CALM-2 | 0.1682 | 0.1682 | 0.0000 | 0.0400 | pass | ok |
+| hq_aurelian_overview | R-FOCUS-1 | 1.9013 | 1.9013 | 0.0000 | 0.1901 | pass | ok |
+| hq_aurelian_overview | R-REP-1 | 0.4463 | 0.4463 | 0.0000 | 0.0446 | pass | ok |
 | hq_aurelian_overview | 12.6 route never occluded | - | - | - | - | n/a | n/a: id.png carries no room indices (G = 0) |
 | hq_halcyon_decision | R-VAL-1 | 0.1656 | 0.1656 | 0.0000 | 0.0200 | pass | ok |
 | hq_halcyon_decision | R-VAL-2 | 0.3168 | 0.3168 | 0.0000 | 0.0500 | pass | ok |
@@ -185,30 +188,30 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 | hq_tethys_overview | R-FOCUS-1 | 1.3668 | 1.3659 | 0.0009 | 0.1367 | fail | ok [baseline] |
 | hq_tethys_overview | R-REP-1 | 0.2470 | 0.2470 | 0.0000 | 0.0247 | pass | ok |
 | hq_tethys_overview | 12.6 route never occluded | - | - | - | - | n/a | n/a: no visible route room |
-| street_decision | R-VAL-1 | 0.1410 | 0.1410 | 0.0000 | 0.0200 | pass | ok |
-| street_decision | R-VAL-2 | 0.3187 | 0.3187 | 0.0000 | 0.0500 | pass | ok |
-| street_decision | R-VAL-3 | 0.0108 | 0.0108 | 0.0000 | 0.0100 | pass | ok |
-| street_decision | 12.2 ratio | 1.7576 | 1.7576 | 0.0000 | 0.1500 | pass | ok |
-| street_decision | R-CALM-1 | 0.7419 | 0.7419 | 0.0000 | 0.0742 | pass | ok |
-| street_decision | R-CALM-2 | 0.2000 | 0.2000 | 0.0000 | 0.0400 | pass | ok |
-| street_decision | R-DET-1 | 0.0293 | 0.0293 | 0.0000 | 0.0029 | n/a | ok |
-| street_decision | R-DET-2 | 402.5608 | 402.5608 | 0.0000 | 40.2561 | n/a | ok [baseline (theirs)] |
-| street_decision | R-FOCUS-1 | 1.6659 | - | - | 0.1666 | pass | n/a (theirs null) |
-| street_decision | R-HUE-1 | 3.8098 | 3.8098 | 0.0000 | 0.2000 | pass | ok |
-| street_decision | R-HUE-2 | 0.3930 | 0.3930 | 0.0000 | 0.0500 | pass | ok |
-| street_decision | R-REP-1 | 0.7944 | 0.7944 | 0.0000 | 0.0794 | fail | ok [baseline] |
+| street_decision | R-VAL-1 | 0.1407 | 0.1407 | 0.0000 | 0.0200 | pass | ok |
+| street_decision | R-VAL-2 | 0.3267 | 0.3267 | 0.0000 | 0.0500 | pass | ok |
+| street_decision | R-VAL-3 | 0.0099 | 0.0099 | 0.0000 | 0.0100 | pass | ok |
+| street_decision | 12.2 ratio | 1.6957 | 1.6957 | 0.0000 | 0.1500 | pass | ok |
+| street_decision | R-CALM-1 | 0.6650 | 0.6650 | 0.0000 | 0.0665 | pass | ok |
+| street_decision | R-CALM-2 | 0.1318 | 0.1318 | 0.0000 | 0.0400 | pass | ok |
+| street_decision | R-DET-1 | 0.0314 | 0.0314 | 0.0000 | 0.0031 | n/a | ok |
+| street_decision | R-DET-2 | 458.9844 | 458.9844 | 0.0000 | 45.8984 | n/a | ok |
+| street_decision | R-FOCUS-1 | 1.1087 | - | - | 0.1109 | fail | n/a (theirs null) |
+| street_decision | R-HUE-1 | 3.8970 | 3.8970 | 0.0000 | 0.2000 | pass | ok |
+| street_decision | R-HUE-2 | 0.4360 | 0.4360 | 0.0000 | 0.0500 | pass | ok |
+| street_decision | R-REP-1 | 0.7850 | 0.5885 | 0.1965 | 0.0785 | fail | DRIFT |
 | street_decision | 12.6 route never occluded | - | - | - | - | n/a | n/a: id.png carries no room indices (G = 0) |
-| street_overview | R-VAL-1 | 0.1361 | 0.1361 | 0.0000 | 0.0200 | pass | ok |
-| street_overview | R-VAL-2 | 0.2692 | 0.2692 | 0.0000 | 0.0500 | pass | ok |
-| street_overview | R-VAL-3 | 0.0051 | 0.0051 | 0.0000 | 0.0100 | pass | ok |
-| street_overview | 12.2 ratio | 1.7005 | 1.7005 | 0.0000 | 0.1500 | pass | ok |
-| street_overview | R-CALM-1 | 0.6176 | 0.6176 | 0.0000 | 0.0618 | pass | ok |
-| street_overview | R-CALM-2 | 0.2182 | 0.2182 | 0.0000 | 0.0400 | pass | ok |
-| street_overview | R-DET-1 | 0.0292 | 0.0292 | 0.0000 | 0.0029 | pass | ok |
-| street_overview | R-DET-2 | 555.5556 | 555.5556 | 0.0000 | 55.5556 | pass | ok |
-| street_overview | R-HUE-1 | 4.0492 | 4.0492 | 0.0000 | 0.2000 | pass | ok |
-| street_overview | R-HUE-2 | 0.4360 | 0.4360 | 0.0000 | 0.0500 | pass | ok |
-| street_overview | R-REP-1 | 0.5061 | 0.5061 | 0.0000 | 0.0506 | pass | ok |
-| street_overview | R-SIL-1 | 0.1808 | 0.1808 | 0.0000 | 0.0181 | pass | ok |
-| street_overview | R-SIL-2 | 0.1349 | 0.1349 | 0.0000 | 0.0135 | pass | ok |
+| street_overview | R-VAL-1 | 0.1302 | 0.1302 | 0.0000 | 0.0200 | pass | ok |
+| street_overview | R-VAL-2 | 0.2987 | 0.2987 | 0.0000 | 0.0500 | pass | ok |
+| street_overview | R-VAL-3 | 0.0049 | 0.0049 | 0.0000 | 0.0100 | pass | ok |
+| street_overview | 12.2 ratio | 1.6698 | 1.6698 | 0.0000 | 0.1500 | pass | ok |
+| street_overview | R-CALM-1 | 0.5985 | 0.5985 | 0.0000 | 0.0599 | pass | ok |
+| street_overview | R-CALM-2 | 0.2545 | 0.2545 | 0.0000 | 0.0400 | pass | ok |
+| street_overview | R-DET-1 | 0.0309 | 0.0309 | 0.0000 | 0.0031 | pass | ok |
+| street_overview | R-DET-2 | 675.9983 | 675.9983 | 0.0000 | 67.5998 | pass | ok |
+| street_overview | R-HUE-1 | 4.0958 | 4.0958 | 0.0000 | 0.2000 | pass | ok |
+| street_overview | R-HUE-2 | 0.4380 | 0.4380 | 0.0000 | 0.0500 | pass | ok |
+| street_overview | R-REP-1 | 0.4086 | 0.4086 | 0.0000 | 0.0409 | pass | ok |
+| street_overview | R-SIL-1 | 0.1828 | 0.1828 | 0.0000 | 0.0183 | pass | ok |
+| street_overview | R-SIL-2 | 0.1394 | 0.1394 | 0.0000 | 0.0139 | pass | ok |
 | street_overview | 12.6 route never occluded | - | - | - | - | n/a | n/a: id.png carries no room indices (G = 0) |

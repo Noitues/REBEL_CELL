@@ -233,14 +233,21 @@ def test_link_route_ties_fewest_turns_then_tile():
     assert layout._bfs((0, 0), (3, 3), cells) == path and layout._bfs((0, 0), (9, 9), cells) is None
 
 
-def test_lamps_skip_openings_without_shifting_others():
+def test_lamps_shift_off_openings_others_stay():
     d = producer.produce_world(synth.make_world(11))["derive_street"]
     p = dict(dress.PRESET)
-    full = dress.lamps(d, dict(p, lamp_skip_margin=-1e9))
+    full = dress.lamps(d, dict(p, lamp_skip_margin=-1e9))          # no opening test: every grid slot
     cut = dress.lamps(d, p)
-    assert len(cut) < len(full)
-    byk = {(l["u"], l["side"]): l["pal"] for l in full}
-    assert all(byk[(l["u"], l["side"])] == l["pal"] for l in cut)
+    dropped = dress.lamps(d, dict(p, lamp_shift_steps=()))         # no shift candidates: the old drop behaviour
+    assert len(dropped) < len(cut) <= len(full)
+    keys = {(l["u"], l["side"]): l["pal"] for l in full}
+    stay = [l for l in cut if (l["u"], l["side"]) in keys]
+    moved = [l for l in cut if (l["u"], l["side"]) not in keys]
+    assert moved and all(keys[(l["u"], l["side"])] == l["pal"] for l in stay)
+    assert len(stay) == len(dropped)                               # the others do not move
+    mx = max(p["lamp_shift_steps"])
+    slots = sorted({u for u, _ in keys})
+    assert all(min(abs(l["u"] - u) for u in slots) <= mx + 1e-9 for l in moved)
 
 
 def test_foreground_only_solid_dressing_counts():
