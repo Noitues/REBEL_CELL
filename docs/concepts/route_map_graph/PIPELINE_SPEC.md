@@ -877,7 +877,7 @@ occlusion rule are shared.
 ### 7.1 The rule
 
 0. **Scope (Designer 2026-10-18):** the rule applies to **every netrun view**: street netruns, HQ netruns and the exploit-building netruns (8.8), in OVERVIEW, DECISION, HOVER and every camera move between them. No netrun view may show a non-route building standing in front of the route.
-1. **Target volume:** the front points of the active room (the HQ's, the street column's, or the exploit building's) plus the visible route nodes. DECISION / HOVER: the
+1. **Target volume:** the front points of the active room (the HQ's, the street column's, or the exploit building's) plus the visible route nodes. **Extended (AD 2026-10-18, Aurelian v2):** in every view the target set holds every route room in frame that faces the camera, not only the current room and its options; and in DECISION / HOVER it also holds the **face band of the current level**: points on the landmark's (or route building's) face at floor and room-top height, every 3 deg (HQ) or every 1 BU along the street (street netrun), that project inside the frame. So a building in front of the facade the player is reading is cut even when no room sits directly behind it. DECISION / HOVER: the
    current room + its options. OVERVIEW (`zoom_detail < 0.5`): every route node (`HM/hq_jobs.py:55-67`).
 2. **Cone:** every ray from the camera to the target volume, widened by a **10 % margin** of the volume's span.
 3. **Occluder:** a city building whose footprint meets the cone of the targets behind it and whose top reaches into
