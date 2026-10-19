@@ -1,0 +1,338 @@
+diff --git a/tools/art_pipeline/city/build_dispatch_canyon.py b/tools/art_pipeline/city/build_dispatch_canyon.py
+index 7bf7aa5..05b72e5 100644
+--- a/tools/art_pipeline/city/build_dispatch_canyon.py
++++ b/tools/art_pipeline/city/build_dispatch_canyon.py
+@@ -31,6 +31,7 @@ sys.path.insert(0, HERE)
+ sys.path.insert(0, V34)
+ import hq_compound_spec as SPEC  # noqa: E402
+ import cfg28  # noqa: E402
++import id_ground as IDG  # noqa: E402
+ 
+ _args = sys.argv[sys.argv.index("--") + 1:]
+ CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
+@@ -68,6 +69,7 @@ exec("\n".join(_SRC[504:682]))  # container(), ziggurat(), depot()
+ exec(open(os.path.join(V43, "heroes25.py"), encoding="utf-8-sig").read())
+ exec(open(os.path.join(V34, "kit26.py"), encoding="utf-8-sig").read())
+ exec(open(os.path.join(V34, "street34.py"), encoding="utf-8-sig").read())
++IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement (pavements, sign streaks) are tagged
+ 
+ # ------------------------------------------------------------------ the hero (hq34.py "the hero", unchanged maths)
+ _ox, _oy = W(cfg28.Cfg.canyon_origin())
+@@ -94,7 +96,8 @@ build_xf(canyon, _ox, _oy, 90.0)
+ # The alley floor: hq34's city street tile colour (GROUND tiles), the canyon's length plus its head crossing.
+ FLOOR = (0.13, 0.13, 0.16)
+ _fa, _fb = C2W(-SW, -SPEC.CANYON_FLOOR_PAD), C2W(SW, LCAN + SPEC.CANYON_FLOOR_PAD)
+-SOLID.face([(_fa[0], _fa[1], 0.01), (_fb[0], _fa[1], 0.01), (_fb[0], _fb[1], 0.01), (_fa[0], _fb[1], 0.01)], FLOOR, rid())
++with IDG.ground():
++    SOLID.face([(_fa[0], _fa[1], 0.01), (_fb[0], _fa[1], 0.01), (_fb[0], _fb[1], 0.01), (_fa[0], _fb[1], 0.01)], FLOOR, rid())
+ 
+ # ------------------------------------------------------------------ objects, vertex colours, role materials (as 8p)
+ import bmesh  # noqa: E402,F811
+@@ -188,14 +191,19 @@ for o in list(bpy.data.objects):
+         o.name = "hq_rebel_cell_sign_%03d" % n_sign
+         n_sign += 1
+ 
++ground_objs = []
+ for acc, role, toned in ((SOLID, "toon", True), (NEON, "neon", False), (WIN, "win", False)):
++    g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
+     acc_object(acc, role, "hq_rebel_cell_%s" % role, toned)
++    if g is not None:
++        ground_objs.append(acc_object(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, toned))
+ for g in ("BEAM", "LIT"):  # the kit's other accumulators (unused by the canyon): exported only if they hold faces
+     if g in globals():
+         acc_object(globals()[g], "beam" if g == "BEAM" else "lit", "hq_rebel_cell_%s" % g.lower(), g == "LIT")
+ for o in list(bpy.data.objects):
+     if o.type not in ("MESH",):
+         bpy.data.objects.remove(o, do_unlink=True)
++IDG.join_ground(ground_objs)  # one mesh, node "id_ground", a material slot per role, at the scene root like every part
+ bpy.context.view_layer.update()
+ 
+ # ------------------------------------------------------------------ anchors (the spec's canyon slots, snapped)
+@@ -240,8 +248,11 @@ tris = {}
+ for o in bpy.data.objects:
+     me = o.data
+     me.calc_loop_triangles()
+-    role = me.materials[0].get("hq_role", "?") if me.materials else "?"
+-    tris[role] = tris.get(role, 0) + len(me.loop_triangles)
++    for k, m in enumerate(me.materials or [None]):  # id_ground has one slot per role: count each slot's triangles
++        n = len(me.loop_triangles) if len(me.materials) <= 1 else sum(
++            len(p.vertices) - 2 for p in me.polygons if p.material_index == k)
++        role = m.get("hq_role", "?") if m else "?"
++        tris[role] = tris.get(role, 0) + n
+     mw = o.matrix_world
+     for v in me.vertices:
+         w = mw @ v.co
+diff --git a/tools/art_pipeline/city/build_hq_compound.py b/tools/art_pipeline/city/build_hq_compound.py
+index 9d5e19d..0175c85 100644
+--- a/tools/art_pipeline/city/build_hq_compound.py
++++ b/tools/art_pipeline/city/build_hq_compound.py
+@@ -26,6 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
+ V = os.path.join(HERE, "vendor_r43")
+ sys.path.insert(0, HERE)
+ import hq_compound_spec as SPEC  # noqa: E402
++import id_ground as IDG  # noqa: E402
+ 
+ _args = sys.argv[sys.argv.index("--") + 1:]
+ CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
+@@ -66,6 +67,7 @@ if "MOVE_FRAMES" not in globals():
+     MOVE_FRAMES = []
+ exec(open(os.path.join(V, "heroes42.py"), encoding="utf-8-sig").read())
+ exec(open(os.path.join(V, "heroes43.py"), encoding="utf-8-sig").read())
++IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement are tagged; acc_object splits them into id_ground
+ 
+ 
+ def build_at(fn, dx=0.0, dy=0.0, s=1.0, rot=0.0):
+@@ -178,9 +180,13 @@ for o in list(bpy.data.objects):
+         o.name = "hq_%s_sign_%s" % (CORP, o.name)
+ 
+ objs = []
++ground_objs = []
+ for acc, role, toned in ((SOLID, "toon", True), (LIT, "lit", True), (NEON, "neon", False), (WIN, "win", False),
+                          (BEAM, "beam", False)):
++    g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
+     objs.append(acc_object(acc, role, "hq_%s_%s" % (CORP, role), toned))
++    if g is not None:
++        ground_objs.append(acc_object(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, toned))
+ if EYE_ACC:  # Halcyon's eye: its own nodes (pivot = the pylon axis) so G12 can turn it; the searchlight cone stays out
+     EYE_ACC.pop("beam").bm.free()
+     eye_objs = [acc_object(EYE_ACC["solid"], "toon", "hq_%s_eye_toon" % CORP, True),
+@@ -197,6 +203,7 @@ for g in MOVE_FRAMES:  # unused per-frame accumulators of the vendored rounds
+ for o in list(bpy.data.objects):  # nothing else: no lights, cameras or stray empties in the export
+     if o.type not in ("MESH",):
+         bpy.data.objects.remove(o, do_unlink=True)
++IDG.join_ground(ground_objs)  # one mesh, node "id_ground", a material slot per role, at the scene root like every part
+ bpy.context.view_layer.update()
+ 
+ # ------------------------------------------------------------------ anchors: every slot must sit on a surface
+@@ -239,8 +246,11 @@ tris = {}
+ for o in bpy.data.objects:
+     me = o.data
+     me.calc_loop_triangles()
+-    role = me.materials[0].get("hq_role", "?") if me.materials else "?"
+-    tris[role] = tris.get(role, 0) + len(me.loop_triangles)
++    for k, m in enumerate(me.materials or [None]):  # id_ground has one slot per role: count each slot's triangles
++        n = len(me.loop_triangles) if len(me.materials) <= 1 else sum(
++            len(p.vertices) - 2 for p in me.polygons if p.material_index == k)
++        role = m.get("hq_role", "?") if m else "?"
++        tris[role] = tris.get(role, 0) + n
+     mw = o.matrix_world
+     for v in me.vertices:
+         w = mw @ v.co
+diff --git a/tools/art_pipeline/city/build_landmarks_v1.py b/tools/art_pipeline/city/build_landmarks_v1.py
+index 2104ef6..7fb70ae 100644
+--- a/tools/art_pipeline/city/build_landmarks_v1.py
++++ b/tools/art_pipeline/city/build_landmarks_v1.py
+@@ -28,7 +28,7 @@ BLENDER = os.environ.get("BLENDER", r"C:\Program Files\Blender Foundation\Blende
+ SCRATCH = os.environ.get("LANDMARK_SCRATCH", os.path.join(os.environ.get("TEMP", "/tmp"), "a5b", "build"))
+ ASSETS = os.path.join(ROOT, "assets", "city", "landmarks")
+ SCRIPTS = ["landmark_spec_v1.py", "landmark_build_v1.py", "landmark_district_v1.py", "landmark_crest_v1.py",
+-           "landmark_post_v1.py", "gltf_anim_v1.py", "build_landmarks_v1.py"] + ["concept_r31/%s.py" % n for n in
++           "landmark_post_v1.py", "gltf_anim_v1.py", "build_landmarks_v1.py", "id_ground.py"] + ["concept_r31/%s.py" % n for n in
+                                                             ("target_corps", "heroes24", "heroes25", "heroes26", "heroes27",
+                                                              "heroes28", "heroes29", "heroes30", "heroes31")]
+ 
+diff --git a/tools/art_pipeline/city/id_ground.py b/tools/art_pipeline/city/id_ground.py
+new file mode 100644
+index 0000000..1ef6a3b
+--- /dev/null
++++ b/tools/art_pipeline/city/id_ground.py
+@@ -0,0 +1,115 @@
++"""ID pass ground split (B-015 / A-029): the grade-level parts of a glb go into their own mesh, `id_ground`.
++
++Blender-side helper, imported by build_hq_compound.py, build_dispatch_canyon.py and landmark_build_v1.py (not run alone).
++`install(Acc)` makes every Acc.face call tag its face "ground" when the statement that made it is one of SITES (the
++vendored builders stay unchanged) or when it runs inside `with ground():` (our own scripts). `split_ground(acc)` moves the
++tagged faces out of an accumulator into a second bmesh (the colour / jitter / part-id layers come along), `join_ground`
++joins the per-role pieces into ONE object named `id_ground` with one material slot per role. No rng call moves: the rest of
++the geometry is the old geometry, minus these faces.
++"""
++import sys
++
++import bpy
++
++# (function, line in the vendored file) of every statement that lays a part on the ground. Sub-1 BU parts only, no
++# vertical body: a kerb or rail lying on the ground counts, a lamp post or a wall does not. File of each line:
++SITES = {
++    ("plaza", 138), ("plaza", 140),                          # heroes24.py: carpet disc (z .02), the two ring strips (.05)
++    ("faceted_water", 137), ("faceted_water", 138),          # heroes30.py: Meridian's moat surface (-.06..+.18)
++    ("moat_edges", 267), ("moat_edges", 268),                # heroes30.py: moat kerb (.05..65) and its lit rim (.62..77)
++    ("rails", 28), ("rails", 30), ("rails", 31),             # heroes30.py: rail heads (.24..46), sleepers, ballast (.03)
++    ("orbital_parts", 22), ("orbital_parts", 23),            # compound: heroes26 orbital_silo26 lines 387 / 388 as
++    ("orbital_silo26", 387), ("orbital_silo26", 388),        #   exec'd by heroes42 / landmark: shaft floor (.6), rim ring
++    ("tokyo_street", 120),                                   # street34.py: the two pavement slabs (0..0.2)
++    ("shophouse", 107),                                      # street34.py: wet-street sign streaks (.05)
++    ("build_district", 116), ("build_district", 123),        # landmark_district_v1.py: asphalt (0), block pavement (.01)
++    ("build_district", 148), ("build_district", 152), ("build_district", 154),  # lane bed (.02), lane strokes (.04)
++}
++# primitives that only forward to Acc.face: the "statement" is the first caller that is not one of them
++PRIMS = {"face", "facet_quad", "_acc_face", "box", "beam", "strip", "cyl", "disc", "ring_beams", "flat_quad", "tube"}
++LAYER = "gnd"
++_depth = [0]
++
++
++class ground:
++    """`with ground(): SOLID.face(...)`: every face made inside is ground (our own scripts' statements)."""
++
++    def __enter__(self):
++        _depth[0] += 1
++
++    def __exit__(self, *exc):
++        _depth[0] -= 1
++
++
++def _site():
++    f = sys._getframe(2)  # 0 _site, 1 the patched face, 2 its caller
++    while f is not None:
++        if f.f_code.co_name not in PRIMS:
++            return (f.f_code.co_name, f.f_lineno)
++        f = f.f_back
++    return None
++
++
++def install(acc_cls):
++    """Patch Acc.face (once). Faces keep their rng draw order; only an int face layer `gnd` is added to the bmesh."""
++    if getattr(acc_cls, "_id_ground", False):
++        return
++    orig = acc_cls.face
++
++    def face(self, pts, col, bid, fj=None):
++        tag = _depth[0] or _site() in SITES
++        if tag:  # add the layer BEFORE the face: adding it later invalidates the face handle
++            lay = self.bm.faces.layers.int.get(LAYER) or self.bm.faces.layers.int.new(LAYER)
++        f = orig(self, pts, col, bid, fj)
++        if tag:
++            f[lay] = 1
++        return f
++
++    acc_cls.face = face
++    acc_cls._id_ground = True
++
++
++def split_ground(acc):
++    """Remove the ground faces from acc.bm; return a new bmesh holding exactly them (None when there are none)."""
++    import bmesh
++    bm = acc.bm
++    lay = bm.faces.layers.int.get(LAYER)
++    if lay is None:
++        return None
++    dead = [f for f in bm.faces if f[lay]]
++    if not dead:
++        bm.faces.layers.int.remove(lay)
++        return None
++    g = bm.copy()
++    glay = g.faces.layers.int.get(LAYER)
++    bmesh.ops.delete(g, geom=[f for f in g.faces if not f[glay]], context="FACES")
++    bmesh.ops.delete(bm, geom=dead, context="FACES")
++    g.faces.layers.int.remove(glay)
++    bm.faces.layers.int.remove(lay)
++    return g
++
++
++def holder(acc_cls, name, bm):
++    """An Acc around an existing bmesh (so Acc.obj / objectify / acc_object take it as they take any accumulator)."""
++    a = acc_cls(name)
++    a.bm.free()
++    a.bm = bm
++    return a
++
++
++def join_ground(objs, name="id_ground"):
++    """Join the per-role ground objects (one material each) into one object called `name`; the survivor is objs[0]."""
++    objs = [o for o in objs if o is not None]
++    if not objs:
++        return None
++    for o in list(bpy.context.view_layer.objects):
++        if o is not None:  # the view layer can hold stale (removed) entries
++            o.select_set(False)
++    for o in objs:
++        o.select_set(True)
++    bpy.context.view_layer.objects.active = objs[0]
++    if len(objs) > 1:
++        bpy.ops.object.join()
++    objs[0].name = name
++    objs[0].data.name = name
++    return objs[0]
+diff --git a/tools/art_pipeline/city/landmark_build_v1.py b/tools/art_pipeline/city/landmark_build_v1.py
+index 699f179..2f404ad 100644
+--- a/tools/art_pipeline/city/landmark_build_v1.py
++++ b/tools/art_pipeline/city/landmark_build_v1.py
+@@ -24,6 +24,7 @@ import sys
+ _HERE = os.path.dirname(os.path.abspath(__file__))
+ sys.path.insert(0, _HERE)
+ import landmark_spec_v1 as SPEC  # noqa: E402
++import id_ground as IDG  # noqa: E402
+ 
+ _C = os.path.join(_HERE, "concept_r31")
+ _argv = sys.argv[sys.argv.index("--") + 1:]
+@@ -32,6 +33,7 @@ SP = SPEC.JOBS[JOB]
+ sys.argv = [sys.argv[0], "--", SP["concept_job"], OUTDIR]  # target_corps reads its variant from argv
+ _SRC = open(os.path.join(_C, "target_corps.py"), encoding="utf-8-sig").read().splitlines()
+ exec("\n".join(_SRC[0:314]))  # setup + primitives + materials (scene reset, Acc, box, beam, ..., TOON, NEONM, WINM, SIGNM)
++IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement are tagged; static_objects splits them into id_ground
+ 
+ CORP, KIND = SP["corp"], SP["kind"]
+ VIEW = "close"
+@@ -200,12 +202,20 @@ def fresh_accs():
+     SOLID, NEON, WIN, BEAM, LIT = Acc("solid"), Acc("neon"), Acc("win"), Acc("beam"), Acc("lit")
+ 
+ 
+-def static_objects(prefix, parent):
++GROUND = []  # the per-role pieces of the grade-level faces, joined into ONE `id_ground` under ROOT at export
++
++
++def static_objects(prefix, parent, ground=True):
+     objs = []
+     for acc, role in ((SOLID, "solid"), (LIT, "lit"), (NEON, "neon"), (WIN, "win"), (BEAM, "beam")):
++        g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
+         o = objectify(acc, role, "%s__%s" % (prefix, role), parent)
+         if o:
+             objs.append(o)
++        if g is not None and ground:
++            GROUND.append(objectify(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, ROOT))
++        elif g is not None:
++            g.free()  # a second state's copy of the same ground (Orbital's open silo): the first state's is the one kept
+     if KIND == "district":
+         for role, acc in DIST_ACCS.items():
+             o = objectify(acc, role, "%s__%s" % (prefix, role), parent)
+@@ -332,7 +342,7 @@ if CORP == "orbital" and KIND == "hq":  # two silo states, each a full node: "st
+                 bpy.data.objects.remove(o, do_unlink=True)
+         else:
+             take_texts(ROOT, JOB)
+-        static_objects("%s__%s" % (JOB, nm), node)
++        static_objects("%s__%s" % (JOB, nm), node, ground=not st)
+ else:
+     build_hero(STATE)
+     static_objects(JOB, ROOT)
+@@ -685,12 +695,16 @@ def export_glb():
+     for o in meshes:
+         r = ROLES[o["lm_role"]][1]
+         INFO["triangles_by_role"][r] = INFO["triangles_by_role"].get(r, 0) + sum(len(p.vertices) - 2 for p in o.data.polygons)
++    if GROUND:  # the grade-level pieces become one mesh (a slot per role) named id_ground, parented to ROOT
++        gone = {o.name for o in GROUND[1:]}
++        LANDMARK[:] = [o for o in LANDMARK if o.name not in gone]
++        IDG.join_ground(GROUND)
+     for o in LANDMARK:
+         INFO["nodes"].append(o.name)
+         if o.type == "MESH":
+-            r = o["lm_role"]
+-            INFO["roles"].setdefault(ROLES[r][1], 0)
+-            INFO["roles"][ROLES[r][1]] += 1
++            for m in o.data.materials:
++                INFO["roles"].setdefault(m.name, 0)
++                INFO["roles"][m.name] += 1
+     path = os.path.join(OUTDIR, JOB + ".glb")
+     props = bpy.ops.export_scene.gltf.get_rna_type().properties.keys()
+     # NORMAL per SPEC.EXPORT_NORMALS (shading uses the facet normal from screen derivatives; shadows use NORMAL)
+diff --git a/tools/art_pipeline/city/make_hq_compounds.py b/tools/art_pipeline/city/make_hq_compounds.py
+index 49dc786..4b00e74 100644
+--- a/tools/art_pipeline/city/make_hq_compounds.py
++++ b/tools/art_pipeline/city/make_hq_compounds.py
+@@ -44,7 +44,7 @@ MATERIALS = {
+ 
+ def source_files():
+     files = ["build_hq_compound.py", "build_dispatch_canyon.py", "hq_compound_spec.py", "make_hq_compounds.py",
+-             "validate_hq_compounds.py", "hq_compound_toon.gdshader"]
++             "validate_hq_compounds.py", "hq_compound_toon.gdshader", "id_ground.py"]
+     for v in ("vendor_r43", "vendor_r34"):
+         files += [v + "/" + f for f in sorted(os.listdir(os.path.join(HERE, v))) if f.endswith(".py")]
+     return files

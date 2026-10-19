@@ -17,38 +17,57 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-029 pruned.
+  its handled B entries the same way. A-019..A-030 pruned.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-015.
+- Build's MAILBOX_TO_ART.md: last read through B-017.
 
 ## Entries
 
-### A-030 · 2026-10-19 · re B-014: W1_NA12 r2 (coast) · VERDICT (function APPROVED; look FIX LIST)
-Checked `w1-close:docs/art_review/PLAN2/W1_NA12_r2.jpg` (28727bac) side by side with `golden_plates/city_a2_night.png` and
-`city_a2_day.png` (A-020 rule). Compare look, not framing: the plate keeps the hero camera (AD ruling, golden_plates INDEX note 4).
-- **Function: approved.**
-  - The concave A2 bay holds over 1000 seeds with 0 fallbacks, the Cell sits at the bay head, the ring corps sit on the 220° arc,
-    and Tethys snaps onto a flank.
-  - The `coast` and `terrain.hills` city.json keys and the oracle are right, and seed 7 is unchanged.
-  - The CENTRAL SERVER chip stays clear of the pins.
-- **Look fixes:**
-  1. **The sea reads as void.** By night the Godot sea is near-black and hard to tell from the void beyond the map. In the plate it is a
-     deep teal-blue with lit, marbled caustics and foam, clearly brighter than both the land shadow and the void. By day the plate sea is a
-     saturated mid-blue with lighter shallows. Godot's day sea is grey haze.
-     - Fix the sea albedo and emission by time of day so its median value sits clearly between the void and the land at night,
-       with hue in the blue-teal band.
-     - Add the marbled caustic and foam texture. A slow ripple alone is too faint to see at whole-city zoom.
-  2. **The shore streaks read as grease pencil.** The broken shore-light streaks are drawn as long, straight, evenly spaced dashes
-     across the water, both in the bay crop and at look_blend 1. That is the §1.2 grease-pencil vocabulary (dashed = what-if), so on
-     the map they read as plan lines. Make them soft, short reflections that hang straight down under each shore light, broken by the
-     ripple, never regular dashes, and fading within the ~4 lots.
-  3. **The bay doesn't read at whole-city zoom.** In the plate the bay is the main shape of the city, with a bright sea-wall line and
-     the water value-separated from the land. In Godot seeds 1 and 2 the shoreline only shows as a texture change. Make the coping
-     strip brighter and wider at whole-city zoom (scale by zoom), and fix item 1.
-  4. **Harbour life (its own slice; nothing deferred).** The plate has boats on the bay, ships at the piers and the lit offshore
-     platforms. Godot has piers with end lamps only. Queue an NA-12d "harbour movers" slice (W2).
-- Terrain stays in NA-12c (W2), as agreed. The HQ landmark lead at whole-city zoom (the plate's beams and lit compounds) is
-  NA-31b (A-027), not this slice.
-- **Re-sheet:** whole city seed 1 at night and by day, and the bay crop, each with the matching plate beside it, plus one
-  value strip (void / sea / land medians).
+### A-031 · 2026-10-19 · re B-016: W1_NA25b r3 · VERDICT (function APPROVED; look FIX LIST)
+Checked `w1-close:docs/art_review/PLAN2/W1_NA25b_r3.jpg` (ef6b2d7e) against ART_BIBLE §4.6 (jack-in chain) and §1.2.
+- **Approved:** the real D4 WheelView slap, spin and swell (BREAKER bezel, blade and hub read as the combat wheel); the dropped
+  neon-green HQ-side frame (the hub now covers the switch); the ghosted 7.1 stubs at 0.55 / 0.30 (no black prism, facade kept).
+- **Fixes:**
+  1. **Covering hub / plain breathe / HQ-side cover:** the emblem is a raster blown up ~25x. It is soft and the word `BREAKER` is
+     cropped by the screen edge, which reads as a bug. See (a) and (c).
+  2. **CRT hold (frame 6):** the navy glass, grid and type-on line are there, but the hex dump is not visible and the scanlines and
+     edge glow barely are. Make the hex dump a faint scrolling column (~15-20 % of the line's value), the 3 px scanlines visible at
+     1:1, the edge glow a clear cyan rim, and the caret a blinking block after the line.
+  3. **Frame 7 (open):** the CRT line text and a NETRUN HUD fragment draw over the burning lens. During the open the CRT layer fades out
+     with the hub (it is on the hub), and the HUD stays under the lens until the hole has passed it.
+  4. **Bits crops:** the 0.55 / 0.30 tiles show the ghosts but not the binary bits. Add a 1:1 crop of the bits at each.
+- **Answers:**
+  - (a) **No 25x raster.** While the hub covers the screen, show the class-colour hub field (flat, with the bezel's inner ring as the
+    only edge) and the emblem at native or vector/hi-res size, centred and whole, never cropped. If the hold passes 0.5 s, the CRT panel
+    sits on that field. A CRT from t = 0 is not needed.
+  - (b) **Site id: OK.**
+  - (c) **Emblem in the < 0.5 s breathe: OK** only if it is crisp and whole, at the size given in (a). Otherwise use the flat field.
+- **Re-sheet:** the same 9 tiles, plus the 2 bits crops and a 1:1 crop of the CRT panel.
+
+### A-032 · 2026-10-19 · re B-015: id_ground split, builder patch · FYI (patch delivered)
+The change is in the vendored builders on main, so build re-runs it. Patch:
+`art-pass:docs/concepts/HANDOFF_PACKAGE/id_ground/`
+- `id_ground.patch` is a diff against main's `tools/art_pipeline/city/` (paths are repo-relative: `git apply --check` then `git apply` from main's root).
+  It changes six files:
+  - **new `id_ground.py`:** `SITES` lists the grade-level statements by (function, line); `install(Acc)` tags their faces;
+    `split_ground` / `join_ground` move them into ONE object named `id_ground`, with one material slot per role.
+  - **`build_hq_compound.py`, `build_dispatch_canyon.py` and `landmark_build_v1.py`:** install and split.
+  - **`make_hq_compounds.py` `source_files()` and `build_landmarks_v1.py` `SCRIPTS`:** id_ground is added so the manifests re-hash.
+- `id_ground.py` is the module on its own. `glb_tris.py` checks tri counts before and after.
+- **What counts as ground:**
+  - plaza carpet and ring strips;
+  - Meridian's moat water, kerb and lit rim;
+  - rail heads, sleepers and ballast;
+  - the Orbital shaft floor and rim;
+  - pavement slabs, wet-street streaks, district asphalt, pavements, lane beds and strokes.
+  Lamp posts, walls and anything with a vertical body stay where they are.
+- **Rulings on the ambiguities:**
+  1. The compounds have no root, so `id_ground` is a root-level sibling. OK.
+  2. The Halcyon eye pool stays with the eye (landmark, not ground).
+  3. The Orbital shaft floor and rim are ground.
+  4. Meridian's faceted water is ground (it is the moat surface at grade).
+  5. No glb builder emits the MAINFRAME sign, so there is nothing to split.
+- **Check after the re-run:** total tris are unchanged everywhere except `orbital_hq`, which is −656 (a duplicate open-state ground
+  copy is removed, which is intended). No rng call moves, so seeds and everything else are byte-identical apart from the split. File names and
+  material slots are kept. Then remove the 0.8 BU height cut.
