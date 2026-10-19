@@ -300,34 +300,33 @@ Proxies for the rules without a 12.7 test (`metrics_r2.md`):
 ## W1 street base-look fix (2026-10-18): facade rhythm, facade props, route never occluded
 
 New rules, all pure seeded passes (`r2_facade.py`, planned in `r2_rules.plan_pass`, built by `r2_kits.py` / `r2_props.py`); config in `r2_config.py`
-(`repetition.guard`, `props.facade`, `foreground.street`).
+(`repetition.guard`, `props.facade`).
 
-- `repetition.guard` extended: per-building bay motif with contrast (min / max multiplier ratio of at least 1.9) and jitter, a window module per
-  floor band (mixed modules), varied floor heights (tall ground floor, doubles, short top; the floors under a route column's top room stay at the
-  1.9 BU pitch), setbacks with a lit ledge, balconies (slab, rail, lit door), per-cell tone jitter, irregular slat pitch, mullions and spandrels
-  that skip bays, lit bands with gaps. Concrete_band faces take the same bays and floors for their windows.
-- `props.facade`: AC units, pipes, awnings, small lit signs, lit rooms, from `rng(seed, "facade_props", bid)`. No prop on a route opening
-  (0.15 BU lateral, vertical overlap, in front of the opening's plane), none on a sign, shopfront or another prop; 30 % of faces are quiet (calm wall).
-  The kerb lamp posts obey the same rule (spec 12.4 item 5): they shift up to 2.4 BU along the street, else drop (3 dropped of 64).
-- `foreground.street`: the streak lanes are dashes, the street tiles' parallel strokes have spacing / width jitter and gaps, the wettest puddle
-  roughness is 0.2 (was 0.03). A long straight bright line is self-similar under shift and the R-REP-1 lattice test reads it as a repeat. This changes
-  the look of the foreground a little: shorter streaks, softer reflections.
+- `repetition.guard` extended: per-building bay motif with contrast and jitter, a window module per floor band (mixed modules), varied floor heights
+  (floors under a route column's top room stay at the 1.9 BU pitch), setbacks (p 0.65) with a lit ledge, balcony runs, per-cell depth relief
+  (geometry), brightness-only cell tone, irregular slat pitch, mullions that skip bays, lit bands with gaps. Concrete_band windows follow the same
+  bays and floors.
+- Window colour (AD review): at most 2 tones per building, taken from `window_tone_pool` (the scene's window palette); no accents on facade cells.
+  Warm accents only on the `lit_room` props.
+- `props.facade`: AC units, pipes, awnings, small lit signs, lit rooms, from `rng(seed, "facade_props", bid)` (736 props). No prop on a route
+  opening (0.15 BU lateral, vertical overlap, in front of the opening's plane), none on a sign, shopfront or another prop; 30 % of faces are quiet.
+  Kerb lamp posts obey the same rule (spec 12.4 item 5): they shift up to 2.4 BU along the street, else drop (0 dropped).
+- The foreground (streak lanes, street strokes, puddle roughness 0.03) is the approved original: an earlier W1 pass that broke the lanes into dashes
+  was reverted on AD review. Streak lanes are periodic by design; R-REP-1 on street views is the facade band only (`r2_checks`; `make_plate.py`
+  now measures the decision view the same way).
 - Route never occluded (7.1 rule 0 / 12.6): `r2_occlusion.py` measures from the index + Z pass. A pixel occludes when it is class 2, inside a room's
-  front-quad box + 12 px, nearer than the room plane by more than 1 BU, higher than the 3.8 BU stub, and survives a 4 px erosion (lamps and cables
-  are not buildings). Result: 0 occluder blobs on OVERVIEW (19 rooms in frame) and DECISION (7), before and after. Neither the cone nor the stub
-  needed a change. The street has no separate HOVER camera: HOVER shares the DECISION frame.
-- Eevee iteration: `python r2_jobs.py eevee 1` (24 s, no GPU) checks geometry. It is the toon look, so the metrics need Cycles at the final spp (a 16 spp test
-  hid periodic structure under noise and misled twice).
+  front-quad box + 12 px, more than 1 BU nearer than the room plane, above the 3.8 BU stub, and survives a 4 px erosion. 0 occluder blobs on OVERVIEW
+  (19 rooms in frame) and DECISION (7), before and after; no cone or stub change was needed. The street has no separate HOVER camera (shares DECISION).
+- Eevee iteration: `python r2_jobs.py eevee 1` (24 s, no GPU) checks geometry only (toon look). Metrics need Cycles at the final spp: a 16 spp test hid
+  periodic structure under noise.
 
 | Metric | before | after |
 |---|---|---|
-| DECISION R-REP-1, facade band (`r2_checks`) | 0.664 | 0.608 (fail, limit 0.60) |
-| DECISION R-REP-1, whole frame (golden measure) | 0.794 | 0.646 (fail) |
-| DECISION R-DET-2 blobs / MP | 402.6 | 476.3 (pass) |
-| OVERVIEW R-REP-1 / R-DET-2 | 0.506 / 555.6 | 0.467 / 692.3 |
-| OVERVIEW value median / under 0.10 / over 0.85 | 0.136 / 27.0 % / 0.5 % | 0.136 / 26.7 % / 0.4 % |
-| DECISION value median / under 0.10 / over 0.85 | 0.141 / 31.9 % / 1.1 % | 0.141 / 33.1 % / 1.0 % |
+| DECISION R-REP-1, facade band | 0.664 | 0.589 (pass) |
+| DECISION R-DET-2 blobs / MP | 402.6 | 459.0 (pass) |
+| OVERVIEW R-REP-1 / R-DET-2 | 0.506 / 555.6 | 0.409 / 676.0 |
+| OVERVIEW value median / under 0.10 / over 0.85 | 0.136 / 27.0 % / 0.5 % | 0.130 / 29.9 % / 0.5 % |
+| DECISION value median / under 0.10 / over 0.85 | 0.141 / 31.9 % / 1.1 % | 0.141 / 32.7 % / 1.0 % |
 | Route occluder blobs OVERVIEW / DECISION | 0 / 0 (lamps only) | 0 / 0 |
 
-Not done: DECISION R-REP-1 is still above 0.60. The tiles that remain are the sidewalk stroke bundles with the shopfront strips, and tiles with one
-long neon trim. Stills 03 (walls open) and 04 (seed 2) were not re-rendered: they are the pre-W1 geometry. `w1_before_after.jpg` is the sheet.
+Stills 03 (walls open) and 04 (seed 2) were not re-rendered: they are the pre-W1 geometry. `w1_before_after.jpg` is the sheet.

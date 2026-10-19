@@ -58,6 +58,8 @@ def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=
     bid = rid()
     floor0 = int(round(z0 / fl))
     ac_ = tuple(rh["acc"]) if rh else (0.4, 0.8, 1.0)
+    wt = [tuple(t) for t in rh["tones"]] if rh and rh.get("tones") else WIN_COLS      # at most 2 window tones per building
+    rel = rh.get("relief", 0.0) if rh else 0.0                 # per-cell depth relief (geometry, not colour)
     tlo, thi = rh["tone"] if rh and rh.get("tone") else (1.0, 1.0)
 
     def tn(cc):
@@ -89,12 +91,12 @@ def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=
                     accs["win"].face(cp(j, za + 0.35, zb - 0.3, u0 + 0.06 * du, u1 - 0.06 * du, 0.02), tuple(v * sv for v in wc), (0, 0, 0), fj=0.5)
                 elif r.random() < 0.08:
                     accs["win"].face(cp(j, za + 0.4, zb - 0.35, u0 + 0.12 * du, u1 - 0.12 * du, 0.02),
-                                     tuple(v * (0.4 + 0.4 * r.random()) for v in r.choice(WIN_COLS)), (0, 0, 0), fj=0.5)
+                                     tuple(v * (0.4 + 0.4 * r.random()) for v in r.choice(wt)), (0, 0, 0), fj=0.5)
             elif kit == "panel_grille":
                 slats = 2 + m
                 pc = tuple(v * 0.9 for v in col)
                 dk = tuple(v * 0.55 for v in col)
-                accs["panel"].face(cp(j, za, zb, u0, u1, 0.0), tn(pc), bid, fj=0.4 + 0.2 * r.random())
+                accs["panel"].face(cp(j, za, zb, u0, u1, r.uniform(0.0, rel)), tn(pc), bid, fj=0.4 + 0.2 * r.random())
                 zz = zb - r.uniform(0.08, 0.2)
                 for k in range(0 if lite else slats):               # slats at irregular pitch and thickness (a periodic louvre repeats)
                     th = r.uniform(0.04, 0.1)
@@ -102,11 +104,11 @@ def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=
                         bq(j, zz - th, zz, u0, u1, 0.0, r.uniform(0.12, 0.26), dk)
                     zz -= r.uniform(0.14, 0.32)
                 if r.random() < 0.35:
-                    sv = 0.45 + 0.5 * r.random()
+                    sv = 0.7 + 0.3 * r.random()
                     um = (u0 + u1) / 2
                     hw = min(0.3 / max(L, 1e-3), du * 0.4)
                     accs["win"].face(cp(j, za + 0.45, min(zb - 0.1, za + 1.0), um - hw, um + hw, 0.03),
-                                     tuple(v * sv for v in r.choice(WIN_COLS[:3] + WIN_COLS[5:])), (0, 0, 0), fj=0.5)
+                                     tuple(v * sv for v in r.choice(wt)), (0, 0, 0), fj=0.5)
                 if r.random() < 0.05 and j > 0:
                     um = (u0 + u1) / 2
                     hw = min(0.35 / max(L, 1e-3), du * 0.4)
@@ -124,13 +126,13 @@ def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=
                     accs["panel"].face(cp(j, za, zb, u0, min(u1, u0 + 0.07 / max(L, 1e-3)), 0.04), METAL_COL, bid, fj=0.5)
                     accs["panel"].face(cp(j, zb - 0.1, zb, u0, u1, 0.04), METAL_COL, bid, fj=0.5)
                 else:
-                    accs["conc"].face(cp(j, za, zb, u0, u1, 0.0), tn(col), bid, fj=0.45 + 0.1 * r.random())
+                    accs["conc"].face(cp(j, za, zb, u0, u1, r.uniform(0.0, rel)), tn(col), bid, fj=0.45 + 0.1 * r.random())
                     if i % every == 0:
                         hw = min(0.11 / max(L, 1e-3), du * 0.4)
                         accs["win"].face(cp(j, za, zb, (u0 + u1) / 2 - hw, (u0 + u1) / 2 + hw, 0.03), tuple(v * 0.75 for v in sc), (0, 0, 0), fj=0.5)
                     elif r.random() < 0.1:
                         accs["win"].face(cp(j, za + 0.5, zb - 0.4, u0 + 0.2 * du, u1 - 0.2 * du, 0.02),
-                                         tuple(v * 0.6 for v in r.choice(WIN_COLS)), (0, 0, 0), fj=0.5)
+                                         tuple(v * 0.6 for v in r.choice(wt)), (0, 0, 0), fj=0.5)
     if rh and not lite:
         # setback ledge: a slab and a lit lip where the facade steps back
         sb = rh.get("setback")

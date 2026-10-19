@@ -55,7 +55,7 @@ for _pr in PLAN.get("props", []):
     elif _k == "small_sign":
         _dd = _pr["depth"]
         _pbox(CPANEL, _pr, _pr["u0"], _pr["u1"], _pr["z0"], _pr["z1"], 0.0, 0.07, (0.08, 0.08, 0.1), _bid)
-        _fc = tuple(min(1.0, v * 1.3) for v in _c)
+        _fc = tuple(min(1.0, v * 0.6 + 0.5) for v in _c)         # a lit board: pushed toward white so it reads as a bright light
         _quad(CNEON, _pr, _pr["u0"] + 0.04, _pr["u1"] - 0.04, _pr["z0"] + 0.04, _pr["z1"] - 0.04, 0.085, _fc, (0, 0, 0))
         _h = _pr["z1"] - _pr["z0"]
         _w = _pr["u1"] - _pr["u0"]

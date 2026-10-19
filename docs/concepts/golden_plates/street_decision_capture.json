@@ -41,7 +41,7 @@
  ],
  "run": null,
  "source": {
-  "commit": "ded90765",
+  "commit": "b3ff79ae",
   "final": "route_map_graph/street_r2/plates/02_DECISION_closed_s1_plate.png",
   "index_pass": "idpass/street/F_dec_closed_index.npy (ID re-render 2026-10-18: r2_scene.py _idpass, same seed 1, cameras and 40 spp)",
   "index_pass_indices": [

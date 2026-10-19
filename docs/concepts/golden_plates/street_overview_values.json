@@ -7,7 +7,7 @@
    "red_seq": false
   },
   "notes": {
-   "id_alignment": "class-variance share / shifted-class share = 0.9634 (above 1 = the index pass matches this beauty plate)",
+   "id_alignment": "class-variance share / shifted-class share = 1.014 (above 1 = the index pass matches this beauty plate)",
    "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 1919, 1079]"
   },
   "pre_accepted": [],
@@ -31,17 +31,17 @@
   }
  },
  "composition": {
-  "R-CALM-1": 0.5888,
-  "R-CALM-2": 0.2636,
-  "R-DET-1": 0.0295,
-  "R-DET-2": 692.2743,
+  "R-CALM-1": 0.5985,
+  "R-CALM-2": 0.2545,
+  "R-DET-1": 0.0309,
+  "R-DET-2": 675.9983,
   "R-FOCUS-1": null,
   "R-HOR-1": null,
-  "R-HUE-1": 4.0571,
-  "R-HUE-2": 0.435,
-  "R-REP-1": 0.4674,
-  "R-SIL-1": 0.1774,
-  "R-SIL-2": 0.1351
+  "R-HUE-1": 4.0958,
+  "R-HUE-2": 0.438,
+  "R-REP-1": 0.4086,
+  "R-SIL-1": 0.1828,
+  "R-SIL-2": 0.1394
  },
  "inputs": {
   "city.json": null,
@@ -50,10 +50,10 @@
   "run_graph.json": null,
   "zoned.json": null
  },
- "median": 0.1361,
- "over_085": 0.0039,
- "ratio_mean": 2.0663,
- "ratio_median": 1.6303,
- "ratio_peak": 6.2652,
- "under_010": 0.267
+ "median": 0.1302,
+ "over_085": 0.0049,
+ "ratio_mean": 2.1692,
+ "ratio_median": 1.6698,
+ "ratio_peak": 6.3216,
+ "under_010": 0.2987
 }

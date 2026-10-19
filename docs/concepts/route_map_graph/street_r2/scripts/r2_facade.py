@@ -77,7 +77,8 @@ def make_rhythm(r, kit, wdt, h, cfg, pal, rigid_top=None, fl=1.9):
                 balc.append(dict(floor=j, c=round(c, 3), w=round(min(bw, max(0.9, wdt * 0.6)), 2), depth=round(r.uniform(*cfg["balcony_depth"]), 2),
                                  lit=r.random() < 0.55))
     return dict(bays=bays, phase=r.randrange(len(bays)), fm=[round(x, 3) for x in fm], mods=mods, setback=setback, balc=balc,
-                rigid_top=rigid_top, acc=list(pal[r.randrange(len(pal))]), tone=list(cfg["cell_tone"]))
+                rigid_top=rigid_top, acc=list(pal[r.randrange(len(pal))]), tone=list(cfg["cell_tone"]), relief=cfg["cell_relief"],
+                tones=[list(t) for t in r.sample(list(cfg["window_tone_pool"]), cfg["window_tones"])])
 
 
 def floor_bounds(rh, z0, h, fl=1.9):
@@ -207,7 +208,7 @@ def make_props(r, uid, b, face_frame, axis, line, rh, pal, rooms, rects, cfg, fl
             w = r.uniform(0.9, 2.0)
             u0 = bu0 + 0.3 + r.random() * max(0.01, wdt - w - 0.6)
             wc = [(1.0, 0.7, 0.35), (0.5, 0.92, 1.0), (1.0, 0.5, 0.8), (1.0, 0.85, 0.6)][r.randrange(4)]
-            p = dict(kind=k, u0=u0, u1=u0 + w, z0=zb + 0.35, z1=zb + 1.25, depth=0.05, col=[v * (0.55 + 0.4 * r.random()) for v in wc], mull=r.random() < 0.6)
+            p = dict(kind=k, u0=u0, u1=u0 + w, z0=zb + 0.35, z1=zb + 1.25, depth=0.05, col=[v * (0.8 + 0.2 * r.random()) for v in wc], mull=r.random() < 0.6)
         else:
             continue
         box = [p["u0"], p["z0"], p["u1"], p["z1"]]

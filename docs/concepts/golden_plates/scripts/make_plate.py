@@ -176,6 +176,8 @@ def composition_spec(kind, view, box_norm):
         if view == "overview":
             spec["skyline"] = [0.0, 0.85]
             spec["facade"] = [0.0, 0.10, 1.0, 0.80]
+        else:
+            spec["facade"] = [0.0, 0.10, 1.0, 0.80]       # AD 2026-10-18: R-REP-1 on street views is the facade band only (the lanes are periodic by design)
     elif kind == "city":
         spec["skyline"] = [0.05, 0.40]
     return spec

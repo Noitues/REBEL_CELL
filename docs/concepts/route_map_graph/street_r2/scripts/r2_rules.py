@@ -678,7 +678,7 @@ def plan_pass(seed):
     plan = dict(seed=seed, axis=axis, nrm=nrm, line=line, route=route, front=fkeys, front_faces=faces, near_faces=near, trims=trims, rhythm=rhythm, props=props, lamps_dropped=lamps_dropped,
                 underlight=ul + [[1.0, 0.16, 0.6]], kits={str(k): v for k, v in kits.items()},
                 modules={str(k): v for k, v in modules.items()}, crowns=crowns, signs=signs, mega=mega, lamps=lamps,
-                plumes=plumes, bank_stops=stops, spikes=spikes, fg_lanes=list(R["foreground.street"]["fg_lanes"]), street_rule={k: R["foreground.street"][k] for k in ("dash", "dash_gap", "stroke_jit", "stroke_w", "puddle_rough_min", "stroke_break")},
+                plumes=plumes, bank_stops=stops, spikes=spikes, fg_lanes=list(R["foreground.street"]["fg_lanes"]),
                 lod=R["lod.signs"], districts_in_view=sorted({dist_of(k) for k in fkeys}))
     plan["checks"] = checks(seed, plan, D, OC, B, bk)
     json.dump(plan, open(os.path.join(SCR, "plan_s%s.json" % seed), "w"), indent=1)

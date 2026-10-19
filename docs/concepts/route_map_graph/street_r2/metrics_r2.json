@@ -1,110 +1,110 @@
 {
  "01_OVERVIEW_closed_s1": {
   "R-SIL-1": {
-   "value": 0.1774,
+   "value": 0.1828,
    "ok": true
   },
   "R-SIL-2": {
-   "value": 0.1351,
+   "value": 0.1394,
    "ok": true
   },
   "R-DET-1": {
-   "value": 0.0295,
+   "value": 0.0309,
    "ok": true
   },
   "R-DET-2": {
-   "value": 692.2743,
+   "value": 675.9983,
    "ok": true
   },
   "R-HUE-1": {
-   "value": 4.0571,
+   "value": 4.0958,
    "ok": true
   },
   "R-HUE-2": {
-   "value": 0.435,
+   "value": 0.438,
    "ok": true
   },
   "R-FOCUS-1": {
-   "value": 1.9456,
+   "value": 1.9182,
    "ok": true
   },
   "R-REP-1": {
-   "value": 0.4674,
+   "value": 0.4086,
    "ok": true
   },
   "R-VAL-1": {
-   "value": 0.1361,
+   "value": 0.1302,
    "ok": true
   },
   "R-VAL-2": {
-   "value": 0.2685,
+   "value": 0.2998,
    "ok": true
   },
   "R-VAL-3": {
-   "value": 0.004,
+   "value": 0.0054,
    "ok": true
   },
   "R-CALM-1": {
-   "value": 0.5888,
+   "value": 0.5985,
    "ok": true
   },
   "R-CALM-2": {
-   "value": 0.2636,
+   "value": 0.2545,
    "ok": true
   },
   "_proxies": {
-   "fg_hue_ratio": 1.0031597221691697,
-   "fg_blob_ratio": 0.6504702194357366,
-   "sky_empty_share": 0.14950737847222223,
+   "fg_hue_ratio": 0.9747056319103985,
+   "fg_blob_ratio": 0.3932584269662921,
+   "sky_empty_share": 0.15499674479166667,
    "planes": {
-    "front": 0.14540785551071167,
-    "mid": 0.11404549330472946,
-    "back": 0.15849569439888
+    "front": 0.13998432457447052,
+    "mid": 0.10837411880493164,
+    "back": 0.1492321640253067
    },
    "hero_lum_ratios": [
-    1.87,
-    1.37,
-    0.78,
-    1.26,
-    0.44,
-    0.59,
-    1.44,
-    1.16
+    1.91,
+    1.39,
+    0.79,
+    1.36,
+    0.43,
+    0.58,
+    1.7,
+    0.91
    ]
   },
   "_raw": {
    "w_src": 1920.0,
-   "median": 0.1361,
-   "p95": 0.6066,
-   "under_010": 0.2685,
-   "over_085": 0.004,
-   "sobel_mean": 0.0295,
-   "hf_upper": 0.2266,
-   "sobel_upper": 0.0218,
-   "hf_lower": 0.0686,
-   "sobel_lower": 0.0277,
-   "detail_cv": 0.5888,
-   "calm_share": 0.2636,
-   "hue_entropy_bits": 4.0571,
-   "chroma_share": 0.5903,
-   "hue_top_share": 0.435,
-   "rep_median": 0.2836,
-   "rep_p90": 0.4674,
-   "rep_tiled_share": 0.1239,
+   "median": 0.1302,
+   "p95": 0.6005,
+   "under_010": 0.2998,
+   "over_085": 0.0054,
+   "sobel_mean": 0.0309,
+   "hf_upper": 0.2451,
+   "sobel_upper": 0.0217,
+   "hf_lower": 0.1096,
+   "sobel_lower": 0.0332,
+   "detail_cv": 0.5985,
+   "calm_share": 0.2545,
+   "hue_entropy_bits": 4.0958,
+   "chroma_share": 0.559,
+   "hue_top_share": 0.438,
+   "rep_median": 0.2392,
+   "rep_p90": 0.4086,
+   "rep_tiled_share": 0.0531,
    "rep_tiles": 113.0,
-   "lm_ratio": 1.9456,
-   "lm_p95_ratio": 4.6996,
+   "lm_ratio": 1.9182,
+   "lm_p95_ratio": 4.0677,
    "lm_centre_thirds_dist": 0.2964,
-   "sky_std": 0.1119,
-   "sky_min_q_std": 0.0662,
-   "sky_mean_h": 0.6332,
-   "lit_std": 0.1774,
-   "lit_min_q_std": 0.1351,
+   "sky_std": 0.1101,
+   "sky_min_q_std": 0.0596,
+   "sky_mean_h": 0.634,
+   "lit_std": 0.1828,
+   "lit_min_q_std": 0.1394,
    "profile": null,
    "profile_lit": null,
-   "blobs_per_mp": 692.2743,
-   "focal_conc": 0.2418,
-   "focal_thirds_dist": 0.2913
+   "blobs_per_mp": 675.9983,
+   "focal_conc": 0.2293,
+   "focal_thirds_dist": 0.2238
   },
   "_plan_checks": {
    "frontage.silhouette": {
@@ -177,7 +177,7 @@
     "ok": true
    },
    "props.facade": {
-    "props": 515,
+    "props": 736,
     "kinds": [
      "ac",
      "awning",
@@ -187,7 +187,7 @@
     ],
     "blocked_by_opening": [],
     "lamps_in_front_of_openings": 0,
-    "lamps_dropped": 3,
+    "lamps_dropped": 0,
     "rhythm_buildings": 3669,
     "ok": true
    },
@@ -205,19 +205,19 @@
  },
  "02_DECISION_closed_s1": {
   "R-DET-1": {
-   "value": 0.0302,
+   "value": 0.0314,
    "ok": true
   },
   "R-DET-2": {
-   "value": 476.3455,
+   "value": 458.9844,
    "ok": true
   },
   "R-HUE-1": {
-   "value": 3.8065,
+   "value": 3.897,
    "ok": true
   },
   "R-HUE-2": {
-   "value": 0.389,
+   "value": 0.436,
    "ok": true
   },
   "R-FOCUS-1": {
@@ -225,66 +225,66 @@
    "ok": null
   },
   "R-REP-1": {
-   "value": 0.6085,
-   "ok": false
+   "value": 0.5885,
+   "ok": true
   },
   "R-VAL-1": {
-   "value": 0.1416,
+   "value": 0.1412,
    "ok": true
   },
   "R-VAL-2": {
-   "value": 0.3314,
+   "value": 0.3269,
    "ok": true
   },
   "R-VAL-3": {
-   "value": 0.0098,
+   "value": 0.0097,
    "ok": true
   },
   "R-CALM-1": {
-   "value": 0.7176,
+   "value": 0.665,
    "ok": true
   },
   "R-CALM-2": {
-   "value": 0.1682,
+   "value": 0.1318,
    "ok": true
   },
   "_proxies": {
-   "fg_hue_ratio": 0.9056324189583351,
-   "fg_blob_ratio": 0.13667425968109337,
-   "sky_empty_share": 0.0303515625,
+   "fg_hue_ratio": 0.907905638875635,
+   "fg_blob_ratio": 0.10638297872340426,
+   "sky_empty_share": 0.033423394097222225,
    "planes": {
-    "front": 0.14518707990646362,
-    "mid": 0.11461254954338074,
-    "back": 0.11922785639762878
+    "front": 0.1446007937192917,
+    "mid": 0.11319686472415924,
+    "back": 0.125269815325737
    },
    "hero_lum_ratios": [
-    1.68,
+    1.7,
     0.37
    ]
   },
   "_raw": {
    "w_src": 1920.0,
-   "median": 0.1416,
-   "p95": 0.6031,
-   "under_010": 0.3314,
-   "over_085": 0.0098,
-   "sobel_mean": 0.0302,
-   "hf_upper": 0.1501,
-   "sobel_upper": 0.0277,
-   "hf_lower": 0.0478,
-   "sobel_lower": 0.0208,
-   "detail_cv": 0.7176,
-   "calm_share": 0.1682,
-   "hue_entropy_bits": 3.8065,
-   "chroma_share": 0.594,
-   "hue_top_share": 0.389,
-   "rep_median": 0.4342,
-   "rep_p90": 0.6085,
-   "rep_tiled_share": 0.4737,
+   "median": 0.1412,
+   "p95": 0.6185,
+   "under_010": 0.3269,
+   "over_085": 0.0097,
+   "sobel_mean": 0.0314,
+   "hf_upper": 0.1516,
+   "sobel_upper": 0.03,
+   "hf_lower": 0.0534,
+   "sobel_lower": 0.0249,
+   "detail_cv": 0.665,
+   "calm_share": 0.1318,
+   "hue_entropy_bits": 3.897,
+   "chroma_share": 0.6093,
+   "hue_top_share": 0.436,
+   "rep_median": 0.3868,
+   "rep_p90": 0.5885,
+   "rep_tiled_share": 0.3596,
    "rep_tiles": 114.0,
-   "blobs_per_mp": 476.3455,
-   "focal_conc": 0.2539,
-   "focal_thirds_dist": 0.1843
+   "blobs_per_mp": 458.9844,
+   "focal_conc": 0.1805,
+   "focal_thirds_dist": 0.2349
   },
   "_plan_checks": {
    "frontage.silhouette": {
@@ -357,7 +357,7 @@
     "ok": true
    },
    "props.facade": {
-    "props": 515,
+    "props": 736,
     "kinds": [
      "ac",
      "awning",
@@ -367,7 +367,7 @@
     ],
     "blocked_by_opening": [],
     "lamps_in_front_of_openings": 0,
-    "lamps_dropped": 3,
+    "lamps_dropped": 0,
     "rhythm_buildings": 3669,
     "ok": true
    },
@@ -561,7 +561,7 @@
     "ok": true
    },
    "props.facade": {
-    "props": 515,
+    "props": 736,
     "kinds": [
      "ac",
      "awning",
@@ -571,7 +571,7 @@
     ],
     "blocked_by_opening": [],
     "lamps_in_front_of_openings": 0,
-    "lamps_dropped": 3,
+    "lamps_dropped": 0,
     "rhythm_buildings": 3669,
     "ok": true
    },

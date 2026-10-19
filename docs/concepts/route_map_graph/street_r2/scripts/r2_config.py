@@ -54,20 +54,20 @@ RULES_R2 = {
     "repetition.guard": dict(
         max_same_module_adjacent=2,     # identical = same kit AND same window module
         # per-building facade rhythm (r2_facade.make_rhythm): bay motif, floor heights, mixed modules, setbacks, balconies
-        bay_mults=(0.7, 0.85, 1.0, 1.25, 1.6, 2.1), motif_len=(2, 4), bay_jitter=0.25, feature_bay_p=0.12,
+        bay_mults=(0.55, 0.7, 0.85, 1.0, 1.25, 1.6, 2.1, 2.8), motif_len=(2, 4), bay_jitter=0.3, feature_bay_p=0.12,
         floor_mults=(0.8, 0.9, 1.0, 1.0, 1.15, 1.35), p_double=0.08, double_mult=1.9,
         ground_mult=(1.3, 1.7), top_mult=(0.75, 0.95),
-        band_floors=(2, 4), cell_tone=(0.7, 1.3), p_mixed_modules=0.8,
-        p_setback=0.4, setback_min_floors=8, setback_from=(0.4, 0.75), setback_depth=(0.5, 1.1),
-        p_balcony_floor=0.16, balcony_w=(1.2, 3.4), balcony_depth=(0.45, 0.7),
+        band_floors=(2, 4), window_tone_pool=((1.0, 0.68, 0.28), (1.0, 0.8, 0.5), (0.45, 0.9, 1.0), (0.9, 0.9, 1.0), (1.0, 0.42, 0.72)), window_tones=2, cell_tone=(0.8, 1.2), cell_relief=0.22, p_mixed_modules=0.8,
+        p_setback=0.65, setback_min_floors=8, setback_from=(0.4, 0.75), setback_depth=(0.6, 1.4),
+        p_balcony_floor=0.3, balcony_w=(1.5, 5.5), balcony_depth=(0.45, 0.7),
         rhythm_radius=90.0,             # BU from the street centre line: buildings whose faces the netrun cameras resolve
     ),
     # facade props (dressing.signs, R-DET-2): AC units, pipes, awnings, small lit signs, lit rooms; per-building stream
     "props.facade": dict(
-        density=0.07, p_quiet=0.22, quiet_k=0.2,   # a quiet face keeps calm wall (R-CALM-2)
+        density=0.105, p_quiet=0.22, quiet_k=0.2,   # a quiet face keeps calm wall (R-CALM-2)
                          # props per BU^2 of street face above the shopfront
-        min_per_face=4, max_per_face=22,
-        kinds={"ac": 0.18, "pipe": 0.08, "awning": 0.12, "small_sign": 0.42, "lit_room": 0.26},
+        min_per_face=5, max_per_face=26,
+        kinds={"ac": 0.12, "pipe": 0.07, "awning": 0.12, "small_sign": 0.55, "lit_room": 0.14},
         opening_margin=0.15,            # spec 12.4 item 5: lateral margin around a room opening
         second_row_band=40.0,           # BU behind the frontage face: the second row also gets props
         lamp_shift_max=2.4,             # a lamp post that stands in front of an opening moves at most this far along the street, else is dropped
@@ -99,7 +99,7 @@ RULES_R2 = {
     ),
     # rank 4
     "streets.light": dict(
-        lamp_step=6.0, lamp_jit=1.5, lamp_post_h=4.6, lamp_arm=1.1, kerb_off=3.3,
+        lamp_step=6.0, lamp_jit=0.6, lamp_post_h=4.6, lamp_arm=1.1, kerb_off=3.3,
         p_shopfront=0.55,               # street-level faces off the frontage (the kit's own rule, kept)
         shopfront_frontage=1.0,         # every frontage base
         lanes=4, lane_period=80.0,
@@ -115,9 +115,6 @@ RULES_R2 = {
         zcut_street=0.15,               # the section fill in front of the road is lowered to road level
         fill_albedo=0.045,              # the lowered fill takes the wet road's albedo (no checkerboard)
         fg_lanes=(-6.5, -9.5, -13.0, -17.5),         # extra streak lanes on the section floor (camera side, BU from the centre line)
-        dash=(0.5, 2.6), dash_gap=(1.0, 6.0),     # streak lanes are broken into dashes (a long straight line is self-similar: R-REP-1)
-        puddle_rough_min=0.2, stroke_break=True,                    # the wettest roughness (v3: 0.03): reflections smear instead of mirroring each streak (R-REP-1)
-        stroke_jit=0.45, stroke_w=(0.08, 0.3),    # the street tiles' parallel strokes: spacing jitter (share of the pitch) and width
         edge_silhouettes=0,             # near-black cut blocks at the frame's side edges: allowed by the spec, not used
     ),
     # rank 6

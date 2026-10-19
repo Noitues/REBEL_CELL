@@ -227,8 +227,8 @@ def city_building(b):
                     hh_ = min(0.5 + 0.35 * r.random(), (zsw[jf + 1] - zsw[jf]) * 0.55)
                     t0 = (u0f + u1f) * L / 2 - ww_ / 2
                     zw = zsw[jf] + 0.35
-                    wc = CREST_RED if crest and r.random() < 0.8 else r.choice(WIN_COLS)
-                    s_ = 0.5 + 0.5 * r.random()
+                    wc = CREST_RED if crest and r.random() < 0.8 else r.choice([tuple(t) for t in rh_["tones"]])
+                    s_ = 0.72 + 0.28 * r.random()
                     p0 = (a[0] + ux * t0 + nx * 0.05, a[1] + uy * t0 + ny * 0.05)
                     p1 = (p0[0] + ux * ww_, p0[1] + uy * ww_)
                     CWIN.face([(p0[0], p0[1], zw), (p1[0], p1[1], zw), (p1[0], p1[1], zw + hh_), (p0[0], p0[1], zw + hh_)],
@@ -375,19 +375,10 @@ for t in LAY["tiles"]:
     hr = random.Random(t["i"] * 7919 + t["j"])
     for k in range(nl):
         u = (k + 0.5) / nl * 2 - 1
-        _sr = PLAN.get("street_rule") or {}
-        lane = u * half * 0.8 + (hr.random() - 0.5) * (0.25 + 2.0 * _sr.get("stroke_jit", 0.0) * (2 * half * 0.8 / max(nl, 1)))
+        lane = u * half * 0.8 + (hr.random() - 0.5) * 0.25
         al = 0.55 + 0.35 * hr.random() + tr * 0.15
-        sw_ = hr.uniform(*(_sr.get("stroke_w") or (0.18, 0.18)))
-        t0_, t1_ = -0.35, L + 0.35
-        pieces = [(t0_, t1_)]
-        if _sr.get("stroke_break"):                 # repetition.guard: a stroke is 1-3 pieces with gaps, not a full-length line
-            cuts = sorted(hr.uniform(0.15, 0.85) * L for _ in range(hr.randint(0, 2)))
-            edges_ = [t0_] + [v for c_ in cuts for v in (c_ - hr.uniform(0.2, 0.9), c_ + hr.uniform(0.2, 0.9))] + [t1_]
-            pieces = [(edges_[i], edges_[i + 1]) for i in range(0, len(edges_), 2) if edges_[i + 1] > edges_[i] + 0.3]
-        for (p0_, p1_) in pieces:
-            strip(GLANE, (a[0] + nx * lane + dx * p0_, a[1] + ny * lane + dy * p0_), (a[0] + nx * lane + dx * p1_, a[1] + ny * lane + dy * p1_),
-                  sw_, 0.04, tuple(min(1, v * al) for v in col))
+        strip(GLANE, (a[0] + nx * lane - dx * 0.35, a[1] + ny * lane - dy * 0.35), (b[0] + nx * lane + dx * 0.35, b[1] + ny * lane + dy * 0.35),
+              0.18, 0.04, tuple(min(1, v * al) for v in col))
 for t in LAY["trails"]:
     a, b = W(t["a"]), W(t["b"])
     strip(GLANE, a, b, 0.32, 0.06, tuple(t["col"]))
