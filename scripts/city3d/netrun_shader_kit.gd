@@ -26,6 +26,19 @@ static func _v3(a: Array) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 
+## NA-25b r5: the dissolve's stagger and a glyph cell's life (city_building.gdshader: `tc = (open - h * 0.6) / 0.4`).
+const BIT_STAGGER := 0.6
+const BIT_LIFE := 0.4
+
+
+## The share of a wall's bit cells that show a glyph at room-open share `open` (the cells' hashes spread evenly over 0..1): a cell shows
+## its glyph from `h * BIT_STAGGER` for BIT_LIFE of the open share, then is cut. The glyphs keep their size, so the count is what thins out.
+static func bit_glyph_share(open: float) -> float:
+	if open <= 0.0 or open >= BIT_STAGGER + BIT_LIFE:
+		return 0.0
+	return clampf(open / BIT_STAGGER, 0.0, 1.0) - clampf((open - BIT_LIFE) / BIT_STAGGER, 0.0, 1.0)
+
+
 ## The clock for `mats` (materials on the netrun shaders): `anim_t` seconds (the 4.0 s loop) and, under reduce effects, the
 ## `frozen_t` value they stop at (the plate's recorded `anim_t`; `NAN` = the config `reduce.anim_t_default`).
 static func set_clock(mats: Array, anim_t: float, frozen_t: float = NAN) -> void:

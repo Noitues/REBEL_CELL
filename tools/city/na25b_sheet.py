@@ -31,6 +31,8 @@ def main() -> int:
     crt = Image.open(e2e / "chain_6b_crt_hold.png").convert("RGB")
     bits55 = Image.open(lab / "bits_overview_0.55.png").convert("RGB")
     bits30 = Image.open(lab / "bits_overview_0.30.png").convert("RGB")
+    dec55 = Image.open(lab / "bits_decision_0.55.png").convert("RGB")
+    dec30 = Image.open(lab / "bits_decision_0.30.png").convert("RGB")
     tiles: list[tuple[str, Image.Image]] = [
         ("4 wheel slaps on: the operative's real class wheel", Image.open(e2e / "chain_4_slap.png")),
         ("5 lens swells: the hub core grows toward the screen", Image.open(e2e / "chain_5_lens_swell.png")),
@@ -41,8 +43,8 @@ def main() -> int:
         ("HQ side: the wheel comes off the link", Image.open(e2e / "hq_out_unslap.png")),
         ("bits dissolve 0.55 (ghosted stubs, no black prism)", bits55),
         ("bits dissolve 0.30", bits30),
-        ("1:1 crop: bits 0.55", crop_at(bits55, (640, 400))),
-        ("1:1 crop: bits 0.30", crop_at(bits30, (640, 400))),
+        ("1:1 crop (1080p): bits 0.55, 0 / 1 glyphs", crop_at(dec55, (600, 400))),
+        ("1:1 crop (1080p): bits 0.30, fewer glyphs", crop_at(dec30, (600, 400))),
         ("1:1 crop: the CRT panel (top-right quarter: hex column, scanlines, rim)", crt.crop((640, 0, 1280, 360))),
     ]
     rows = (len(tiles) + COLS - 1) // COLS

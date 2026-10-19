@@ -18,7 +18,8 @@ const HOLE_OVERSCAN := 1.05
 const FIELD_SPAN := 0.8
 ## The CRT hold's look on the field (A-031 item 2): the hex dump a faint scrolling column (alpha; its share of the type-on line's value is
 ## 15 to 20 %), 3 px scanlines that read at 1:1, a clear rim (edge px, inner glow), the glass a little see-through so the field sits under it.
-const HOLD_HEX_ALPHA := 0.26
+## NA-25b r5 (A-037): the dump reads as text at 1:1, not a ghost block (glyphs stay >= 11 px at 1080p).
+const HOLD_HEX_ALPHA := 0.45
 ## The hold's dump glyphs, a multiple of the default size (so they read at 1:1).
 const HOLD_HEX_SCALE := 1.6
 const HOLD_HEX_COLUMN_MARGIN := 48.0
@@ -26,8 +27,8 @@ const HOLD_SCAN_STRENGTH := 0.42
 const HOLD_EDGE_PX := 4.0
 const HOLD_INNER_GLOW := 0.7
 const HOLD_GLASS_ALPHA := 0.80
-## The glass lifted toward the cyan by this share, so the 3 px lines read against it.
-const HOLD_GLASS_LIFT := 0.12
+## NA-25b r5 (A-037): the glass is the class field's own hue at this share of its value, so hub -> CRT reads as one surface gaining scanlines.
+const HOLD_GLASS_VALUE := 0.8
 
 var wheel: WheelView = null
 ## The hub's CRT hold: the navy glass with its type-on line (hidden until `show_hold`).
@@ -150,17 +151,21 @@ func _build_hold() -> void:
 	hold.size = _canvas
 	hold.text_step = UiTheme.TITLE  # a boot-log line over a whole screen of glass
 	hold.caret_block = true
-	var cyan := PaletteSkins.chrome(Palette.NET_CYAN)
-	var glass_top := PaletteSkins.chrome(Palette.CRT_GLASS_TOP).lerp(cyan, HOLD_GLASS_LIFT)
-	var glass_bottom := PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM).lerp(cyan, HOLD_GLASS_LIFT)
+	var glass := glass_color(field.accent)
 	var cell := CrtTerminalPanel.hex_cell()
 	hold.hex_alpha_value = HOLD_HEX_ALPHA
 	hold.hex_columns = 1
 	hold.hex_scale = HOLD_HEX_SCALE
 	hold.hex_origin_x = _canvas.x - cell.x * HOLD_HEX_SCALE * CrtTerminalPanel.HEX_COLUMN_CELLS - HOLD_HEX_COLUMN_MARGIN
 	hold.shader_overrides = {&"scan_strength": HOLD_SCAN_STRENGTH, &"edge_px": HOLD_EDGE_PX, &"inner_glow": HOLD_INNER_GLOW,
-		&"glass_top": Color(glass_top, HOLD_GLASS_ALPHA), &"glass_bottom": Color(glass_bottom, HOLD_GLASS_ALPHA)}
+		&"glass_top": Color(glass, HOLD_GLASS_ALPHA), &"glass_bottom": Color(glass, HOLD_GLASS_ALPHA)}
 	_hold_root.add_child(hold)
+
+
+## The hold's glass colour for a class accent: the hub field's colour at HOLD_GLASS_VALUE of its value (same hue and saturation).
+static func glass_color(p_accent: Color) -> Color:
+	var f := JackHubField.field_color(p_accent)
+	return Color.from_hsv(f.h, f.s, f.v * HOLD_GLASS_VALUE)
 
 
 ## The wheel's drawn radius (px at scale 1) and its hub core's share of it.
