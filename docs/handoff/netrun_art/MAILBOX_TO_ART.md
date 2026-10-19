@@ -27,7 +27,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
-| queued | walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
+| queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
 re A-046. Confirmed on our side: DECISIONS (W1 entry, ~line 9080) already says "no wheel, no lens". r5b (hex tweak, SAVED frame) was
@@ -63,3 +63,31 @@ Known issues:
 2. The hover tag box can cover the hovered room's tower caption.
 3. The ladder shows on the plain street page, with the street's 3D look. The HQ ladder's own scene look is NA-32 (yours under A-041).
 Q: the gate's two rooms read as a tower pick with no UP / ACROSS word, and the crown shows neither. Do you want "UP" there?
+
+### B-044 · 2026-10-19 · DESIGNER RULINGS: corporation themes changed · FYI (art impact)
+The designer answered the theme sheet today. The ruling is in DECISIONS, "2026-10-19 — Designer rulings: corporation theme sheet". The revised
+drafts (rules, state names, previews, build slices) are at `main:docs/handoff/plan2/drafts/themes/v2/<corp>.md`. 33 follow-up questions
+are with the designer (`docs/handoff/gates/THEMES2_FOLLOWUP_2026-10-19.md`), so details may still move. What changes for art:
+- **Meridian = all four options at once:** PAYLOAD (weight), CUSTOMS (checkpoints, items lost permanently), DELIVERY WINDOW
+  (fast-finish bonus) and SUPPLY LINE (feeder Sites cut on the Grid; free Grid clear order). They are introduced one per tier.
+  New things to see:
+  - a Grid **feed overlay**;
+  - a Checkpoint node on street maps (T3+);
+  - an HQ with 3 Weigh-and-Inspect gates, a Bonded Warehouse and 3 Depot fights;
+  - a Priority Meter;
+  - a raid "fed" threat.
+- **Orbital = DEAD ZONE + OVERWATCH,** with **campaign phases P1-P3** by tier and ICE. Relay satellites carry the blackout (DARK
+  turns lock the nudge) and fire telegraphed strikes. Debris is a run cost (P2+).
+  - HQ: dark layers, 3 Uplink Dishes and a Targeting Console.
+  - Raid: telegraphed strikes on the player's richest node, Decoy redirects, and a Dead Zone radius that grows by phase.
+  - The theme now shows in street, HQ and raid alike, so expect more Orbital look than one flagged fight.
+- **Solace:** the raid infection is a campaign figure. Heat speeds the street Bloom. Elites, mini-bosses and bosses pay the turn cost.
+  There is no free T1 dose, and every Exploit slows the Bloom. The WARD / BILLING ladder stays.
+- **Halcyon:** every HQ extra is kept (Alert and Lockdown, Annex rooms, Stall, Cut the Power / Power Room). The Eye moves every
+  campaign turn. Level 2 puts the Blade on every normal fight. Non-fight HQ nodes in the eye are SHUTTERED.
+- **REBEL_CELL:** a backup-roster operative replaces a lost one in their lane. There is **no lead limit**. The regroup heal scales
+  with ICE.
+- **Aurelian:** any Exploit opens any gate (random order). The street arch is **cosmetic** (no Cache). The full 9-level HQ.
+- **Tethys:** a raid continues from the last netrun's Head. Dry salvage is cut. Wait-for-tide costs Heat, and Divert is permanent.
+Build order: the Solace rework slice comes first (it is built on `w2`), then the other corps from the v2 drafts once the designer
+answers the follow-ups. We will post state names per corp in the build slices' B entries.
