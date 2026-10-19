@@ -1527,7 +1527,7 @@ func needle_slot_spot(index: int, slot: int) -> Vector2:
 	if c == null or slot < 0 or index < 0 or index >= ps.size():
 		return slot_spot(slot)
 	var rot := shown_rotation()
-	var under := WheelMath.slice_at(roundi(ps[index] + rot), c.wheel.slice_count)
+	var under := c.wheel.slot_of_tick(roundi(ps[index] + rot))
 	if under != slot:
 		return slot_spot(slot)
 	var a := _ang(ps[index])
@@ -1546,8 +1546,7 @@ func room_above_disc() -> Rect2:
 ## The middle of slice `slot` on screen (at its status mark), as shown.
 func slot_spot(slot: int) -> Vector2:
 	var c := _shown()
-	var tps := c.wheel.ticks_per_slice()
-	var a := _ang(slot * tps - shown_rotation())
+	var a := _ang(c.wheel.slot_arc_mid(slot) - shown_rotation())
 	var dir := Vector2(cos(a), sin(a))
 	return global_center() + dir * (_radius() - _band() * 0.5)
 
@@ -1610,13 +1609,13 @@ func slice_pieces() -> Array:
 	var radius := _radius()
 	var band := _band()
 	var inner := radius - band
-	var tps := c.wheel.ticks_per_slice()
 	var rot := shown_rotation()
 	for i in c.wheel.slice_count:
 		var slice := lookup.get_content(c.wheel.slot_slice_ids[i]) as SliceData
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
-		var mid := _tick_angle(i * tps, rot)
+		var arc := slot_arc_ticks(c.wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
+		var mid := _tick_angle(arc.z, rot)
 		var dir := Vector2(cos(mid), sin(mid))
 		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
 		var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
@@ -1720,7 +1719,7 @@ func slot_at_global(point: Vector2) -> int:
 	# Mirror of _ang(): screen angle -> ticks from the pointer's zero.
 	var x := -(rad_to_deg(atan2(local.y, local.x)) + 90.0) / DEG_PER_TICK
 	var tick := posmod(roundi(x) + combatant.wheel.rotation, RC.TICKS)
-	return WheelMath.slice_at(tick, combatant.wheel.slice_count)
+	return combatant.wheel.slot_of_tick(tick)
 
 
 ## Whether a global point is inside the wheel disc (hub included).
@@ -1790,8 +1789,7 @@ func zone_center(zone: Dictionary) -> Vector2:
 			var sat := _satellite(StringName(zone["id"]))
 			return _satellite_pos(sat) if sat != null else global_center()
 		"slot":
-			var tps := combatant.wheel.ticks_per_slice()
-			var a := _ang(int(zone["slot"]) * tps - shown_rotation())
+			var a := _ang(combatant.wheel.slot_arc_mid(int(zone["slot"])) - shown_rotation())
 			return global_center() + Vector2(cos(a), sin(a)) * (_radius() - _band() * 0.5)
 	return global_center()
 
@@ -1855,8 +1853,7 @@ func _satellite(id: StringName) -> CombatantState:
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	if attachments != null:
 		return attachments.satellite_global_pos(sat)  # ART-2 2B: docked by the attachments
-	var tps := combatant.wheel.ticks_per_slice()
-	var a := _ang(sat.dock_slot * tps - shown_rotation())
+	var a := _ang(combatant.wheel.slot_arc_mid(sat.dock_slot) - shown_rotation())
 	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + satellite_out(a))
 	# ANIM-R2 E7: a token under the tag turns round the rim, away from the top, until it is
 	# clear of it (at 1.6 a drone's hex sat on the tag's chips).
@@ -2146,7 +2143,6 @@ func _draw_view() -> void:
 	var band := _band()
 	var inner := radius - band
 	var line := _col(wheel_color if combatant.is_alive() else Color(wheel_color, 0.3))
-	var tps := wheel.ticks_per_slice()
 	var rot := shown_rotation() + stutter_deg / DEG_PER_TICK
 	var k := art_scale()
 	# Platform so the wheel reads over the city.
@@ -2171,14 +2167,14 @@ func _draw_view() -> void:
 	if not replaying:
 		for st in outcome.get("statuses", []):
 			status_ghosts[int(st["slot"])] = int(st["after"])
-	var span := tps * DEG_PER_TICK
 	# Per slice over the disc, in the round 41 stack: drop-zone outline, NULL static, the read
 	# block (7, always re-stamped on top), the state badge and its tag (8), the status landing.
 	for i in wheel.slice_count:
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
-		var mid := _tick_angle(i * tps, rot)
+		var arc := slot_arc_ticks(wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
+		var mid := _tick_angle(arc.z, rot)
 		var deg := slice_deg(i, rot)
 		var wedge := _wedge(center, inner, radius, minf(a0, a1) + WEDGE_INSET_RAD, maxf(a0, a1) - WEDGE_INSET_RAD)
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
@@ -2195,7 +2191,7 @@ func _draw_view() -> void:
 		var scol := status_color(status, combatant.is_player)
 		if status != RC.Status.NONE and radius >= BADGE_MIN_RADIUS:
 			var n := wheel.stacks_of(i, status)
-			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status, n) if radius >= TAG_MIN_RADIUS else stack_badge(n))
+			WheelFace.badge(self, center, k, deg, wheel.slot_size(i) * DEG_PER_TICK, status, status_good_for_owner(status), _status_tag(status, n) if radius >= TAG_MIN_RADIUS else stack_badge(n))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -2214,7 +2210,7 @@ func _draw_view() -> void:
 			var dir := Vector2(cos(mid), sin(mid))
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
-	_draw_landed(center, radius, inner, tps, rot)
+	_draw_landed(center, radius, inner, rot)
 	if wheel.has_inner_ring():
 		_draw_notch_tick(center, k)
 	if ring_pulse > 0.0:
@@ -2234,12 +2230,12 @@ func _draw_view() -> void:
 	for p in ps:
 		degs.append(fposmod(-p * DEG_PER_TICK, 360.0))
 	for pk in ps.size():
-		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var at_slot := wheel.slot_of_tick(roundi(ps[pk] + rot))
 		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
 		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
 		WheelFace.rail(self, center, k, degs[pk], degs, rail_text(pk, sl), sc, _rail_word_tint(pk))
 	for pk in ps.size():
-		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var at_slot := wheel.slot_of_tick(roundi(ps[pk] + rot))
 		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
 		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
 		var body := kit.accent.lightened(0.25) if kit.is_boss else Palette.PAPER
@@ -2886,8 +2882,16 @@ const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD:
 ## The angle (degrees clockwise from the top) slot `i` is shown at, for a rotation of `rot` ticks.
 func slice_deg(i: int, rot: float) -> float:
 	var c := _shown()
-	var tps := c.wheel.ticks_per_slice() if c != null else RC.TICKS / RC.SLICES
-	return fposmod((rot - i * tps) * DEG_PER_TICK, 360.0)
+	var mid := c.wheel.slot_arc_mid(i) if c != null else float(i * RC.TICKS_PER_SLICE)
+	return fposmod((rot - mid) * DEG_PER_TICK, 360.0)
+
+
+## Plan 2 N12: slot `i`'s drawn arc in wheel ticks (x = start, y = end, z = middle), from
+## WheelMath's cumulative boundaries: an uneven slot draws its own span, an empty one none.
+static func slot_arc_ticks(w: WheelState, i: int) -> Vector3:
+	var mid := w.slot_arc_mid(i)
+	var half := w.slot_size(i) * 0.5
+	return Vector3(mid - half, mid + half, mid)
 
 
 ## The slice the first needle stands on, as shown (-1 without one): it is lifted (3.2).
@@ -2896,13 +2900,13 @@ func active_slot() -> int:
 	var ps := shown_pointers()
 	if c == null or ps.is_empty():
 		return -1
-	return WheelMath.slice_at(roundi(ps[0] + shown_rotation()), c.wheel.slice_count)
+	return c.wheel.slot_of_tick(roundi(ps[0] + shown_rotation()))
 
 
 ## Where slot `slot`'s state badge sits (global): its outer clockwise corner (3.8).
 func badge_spot(slot: int) -> Vector2:
 	var c := _shown()
-	var span := c.wheel.ticks_per_slice() * DEG_PER_TICK
+	var span := c.wheel.slot_size(slot) * DEG_PER_TICK
 	return global_position + WheelFace.at(_center(), art_scale(), WheelFace.BADGE_R, slice_deg(slot, shown_rotation()) + span * 0.5 - WheelFace.BADGE_INSET)
 
 
@@ -3136,7 +3140,7 @@ func pointer_slot(pointer: int) -> int:
 	var ps := shown_pointers()
 	if c == null or pointer < 0 or pointer >= ps.size():
 		return -1
-	return WheelMath.slice_at(roundi(ps[pointer] + shown_rotation()), c.wheel.slice_count)
+	return c.wheel.slot_of_tick(roundi(ps[pointer] + shown_rotation()))
 
 
 ## Round 45: what needle `pointer`'s ghost wedge shows: {pointer, slot, seg, seg_id, mod, a_mid, half, cover} for the
@@ -3155,7 +3159,7 @@ func wedge_state(pointer: int = 0) -> Dictionary:
 	var seg_id: StringName = c.wheel.ring_segment_ids[seg]
 	if RingMods.mod_id(seg_id) == RingMods.NONE:
 		return {}
-	var half := c.wheel.ticks_per_slice() * DEG_PER_TICK * 0.5
+	var half := c.wheel.slot_size(slot) * DEG_PER_TICK * 0.5
 	var mid := slice_deg(slot, shown_rotation())
 	var s: Dictionary = ring_segments()[seg]
 	var seg_half := (float(s["a1"]) - float(s["a0"])) * 0.5
@@ -3511,7 +3515,7 @@ func tag_flipping() -> bool:
 
 ## The slices the needles landed on (ANIM-R1): a thick rim in the slice's colour, bright
 ## as they latch; a NULL slice gets a big grey X.
-func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot: float) -> void:
+func _draw_landed(center: Vector2, radius: float, inner: float, rot: float) -> void:
 	if landed.is_empty():
 		return
 	for slot in landed:
@@ -3520,8 +3524,9 @@ func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot:
 			continue
 		var slice := lookup.get_content(combatant.wheel.slot_slice_ids[i]) as SliceData
 		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
-		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
-		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
+		var arc := slot_arc_ticks(combatant.wheel, i)
+		var a0 := _tick_angle(arc.x, rot)
+		var a1 := _tick_angle(arc.y, rot)
 		var wedge := _wedge(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		draw_colored_polygon(wedge, _col(Color(sc.lightened(0.3), 0.55 * landing_pulse)))
 		var closed := wedge.duplicate()
@@ -3829,7 +3834,7 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	var tip := center + Vector2(cos(a_needle), sin(a_needle)) * r
 	var normal := tangent.orthogonal()
 	draw_colored_polygon(PackedVector2Array([tip + tangent * 8.0, tip - tangent * 4.0 + normal * 6.0, tip - tangent * 4.0 - normal * 6.0]), _col(Palette.CELL_ACID))
-	var slot := WheelMath.slice_at(WheelMath.tick_at(int(ghost_rotation), p0), wheel.slice_count)
+	var slot := wheel.slot_of_tick(WheelMath.tick_at(int(ghost_rotation), p0))
 	var slice := lookup.get_content(wheel.slot_slice_ids[slot]) as SliceData
 	var from := center + Vector2(cos(a_from), sin(a_from)) * r
 	draw_circle(from, 11, Palette.NIGHT_SKY)

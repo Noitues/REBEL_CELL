@@ -29,12 +29,15 @@ func pool_class_id() -> StringName:
 	return alternative_of if alternative_of != &"" else id
 
 
-func validate() -> PackedStringArray:
+## Plan 2 N12: `config` gives the operative slice cap and the smallest slice (defaults when null).
+func validate(config: CampaignConfigData = null) -> PackedStringArray:
 	var errors := PackedStringArray()
+	var cfg := config if config != null else CampaignConfigData.new()
 	if starting_wheel == null:
 		errors.append("Class %s has no starting wheel." % id)
 	else:
 		errors.append_array(starting_wheel.validate())
+		errors.append_array(starting_wheel.slice_cap_errors(cfg.operative_slice_cap, cfg.slice_size_min))
 		if starting_wheel.hub == null or starting_wheel.hub.perfect_hook == null:
 			errors.append("Class %s needs a Hub Core with a Perfect hook." % id)
 	if starting_deck.is_empty():

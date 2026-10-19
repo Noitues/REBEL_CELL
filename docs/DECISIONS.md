@@ -410,6 +410,42 @@ default as a placeholder behind config and says so in its report.
   `CombatResolver.enrage_buff_state`.
 - **Pressure:** no Pressure code path existed on main; nothing removed.
 
+### 2026-10-18 — Plan 2 W1 N12: variable slice sizes 0-30 + sub-tick map (R11; rulings Q20, Q20 follow-up)
+- **Designer answers to the brief (orchestrator, W1 N12):** (1) no slice cap from sizes alone, the 30 ticks are the
+  cap; the slot-count caps stay in config (`CampaignConfigData.operative_slice_cap` 6, `enemy_slice_cap` 30); the
+  smallest non-zero slice is `slice_size_min` 1. (2) A 0-size slot is an empty arc: it does not count toward the cap,
+  owns no tick, is never landed on, and lists no ticks on the loadout. (3) The centre of an even slice is the lower
+  tick of the middle pair; a tick on a boundary belongs to the slice clockwise of it, as WheelMath read it before.
+- **Geometry (WheelMath):** a layout is the slot sizes clockwise from slot 0, boundaries cumulative; slot 0 starts at
+  tick -(size / 2), so an odd slot 0 is centred on tick 0 and every equal layout (6 x 5, satellites 2 x 15 / 3 x 10)
+  reads exactly as before (golden test over all 30 ticks). `slot_of_tick`, `index_in_slot`, `offset_in`, `side_in`,
+  `center_tick`, `arc_mid`, `neighbor_slot` (skips empty arcs), `default_quality`, `raised_tier`, `snap_delta_in`,
+  `resized`; the count-based functions are wrappers over the equal sizes; `ring_offset` is the inner ring's own.
+- **Schema:** `WheelSlotData.size_ticks` (default `RC.SIZE_AUTO` = -1, an equal share: a 6-slot wheel reads 5, a
+  satellite's slots 15 / 10; the brief's "default 5" would break the 2-3 slot satellites) and `tick_quality`;
+  `FirmwareData.tick_quality_step` (Calibrated placeholder: +N tiers on every tick, capped at PERFECT, all sizes, no
+  warnings); `WheelData.slice_count` range 1-30; config `operative_slice_cap`, `enemy_slice_cap`, `slice_size_min`,
+  `tick_quality_good_reach` (1). Validate reasons: `size_mixed`, `size_range`, `size_sum`, `quality_length`,
+  `quality_tier`, `slice_cap`. Smoke check `_n12_slot_sizes`.
+- **Tier:** a landing reads its slot's sub-tick map (authored, else the default by distance from the true middle:
+  P at 0, G within the reach, else W), raised by Calibrated; satellites and drones keep full output. **Snap** goes to
+  the nearest best tick of the slot (ties counter-clockwise). **Mirror / Shunt** pick the side of the true middle
+  (both / none on a Perfect tick of the map before TIER_DOWN), and the neighbour skips empty arcs. **Flip** mirrors
+  sizes and maps (a map reads backwards) and adds `WheelMath.flip_shift` (-1 when slot 0 is even) so every arc lands
+  on its mirror image; still an involution. **Fixed neighbour resize** (Q20) is `WheelMath.resized`: the clockwise
+  neighbour gives or takes the difference (refused below 0); nothing calls it yet (slice upgrades are a later pass).
+  The shop overwrite changes only the slice, never the slot size.
+- **Status remap (R6) supersedes N3's tie:** each old slot's stacks go to the new slot that owns the old slot's
+  centre tick (`remap_stacks_sized`); a boundary tick goes clockwise (answer 3), not to the lower index.
+  `test_phase_status_keep` updated; its pending variable-size case is now a test.
+- **Save v4:** `WheelState.slot_sizes` / `slot_quality` are written only for an uneven layout / an authored map, so
+  legacy wheels save and hash exactly as before; v3 -> v4 changes nothing (absent = equal slots);
+  `SaveMigration.validate_v4` refuses broken sizes (`invalid_slot_sizes`). Fixture
+  `tests/fixtures/saves/v3/v3_pre_n12.json` recorded on the pre-N12 build: same hash, same End Turn HP.
+- **View:** wheel_view slot angles, wedge arcs, badges and the ring wedge use the WheelState slot arcs; the loadout's
+  SPINNER tab lists each slot's map ("SLOT 1  W G P G W"). Not done: the combat disc shader still draws one span for
+  every slice (`WheelDisc` "span"), so an uneven wheel's disc art needs a view slice before uneven content ships.
+
 ### 2026-10-18 — Plan 2 W0 N11: pointers on any tick (GDD 2.1 amendment, R10; ruling Q27)
 - **Rule:** a pointer sits on any tick 0-29 and reads `(rotation + tick) mod 30`; pointers are at least 1 tick apart
   (adjacent needles valid; two on one tick invalid). Every needle resolves on its own and shows on the preview.

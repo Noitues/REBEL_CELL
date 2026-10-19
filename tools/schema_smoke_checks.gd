@@ -7,7 +7,7 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config()
 
 
 ## Plan 2 N6: ListenerData defaults (ON_PERFECT, unauthored caps, WEAK), the two appended
@@ -206,6 +206,33 @@ func _n11_pointer_ticks() -> int:
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("N11 config cap / offsets: ", cfg.max_pointers, " ", cfg.boss_extra_pointer_offsets)
 	if cfg.max_pointers != 4 or cfg.boss_extra_pointer_offsets != PackedInt32Array([15, 10, 20, 5, 25]): fails += 1
+	return fails
+
+
+## Plan 2 N12: WheelSlotData.size_ticks (AUTO default) and tick_quality, FirmwareData
+## tick_quality_step, WheelData.slice_count up to 30, the config caps and the default reach.
+func _n12_slot_sizes() -> int:
+	var fails := 0
+	var slot := WheelSlotData.new()
+	print("N12 slot defaults (expect -1, []): ", slot.size_ticks, " ", slot.tick_quality)
+	if slot.size_ticks != RC.SIZE_AUTO or not slot.tick_quality.is_empty(): fails += 1
+	print("N12 firmware step default (expect 0): ", FirmwareData.new().tick_quality_step)
+	if FirmwareData.new().tick_quality_step != 0: fails += 1
+	var a := _slice(&"a", RC.SliceType.SHIM, 3)
+	var legacy := _wheel([a, a, a, a, a, a])
+	print("N12 legacy sizes (expect six 5s): ", legacy.slot_sizes(), " ", legacy.validate())
+	if legacy.slot_sizes() != PackedInt32Array([5, 5, 5, 5, 5, 5]) or not legacy.validate().is_empty(): fails += 1
+	var uneven := _wheel([a, a, a, a, a, a, a, a])
+	var sizes := [5, 4, 3, 4, 4, 3, 4, 3]
+	for i in 8:
+		uneven.slots[i].size_ticks = sizes[i]
+	print("N12 uneven 8-slot wheel (expect []): ", uneven.validate())
+	if not uneven.validate().is_empty(): fails += 1
+	uneven.slots[0].size_ticks = 6
+	if not "size_sum" in " ".join(uneven.validate()): fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N12 config caps / min / reach: ", cfg.operative_slice_cap, " ", cfg.enemy_slice_cap, " ", cfg.slice_size_min, " ", cfg.tick_quality_good_reach)
+	if cfg.operative_slice_cap != 6 or cfg.enemy_slice_cap != 30 or cfg.slice_size_min != 1 or cfg.tick_quality_good_reach != 1: fails += 1
 	return fails
 
 

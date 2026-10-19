@@ -15,4 +15,8 @@ extends Resource
 ## SHUNT resolves that neighbour instead, and does nothing on Perfect.
 @export var neighbor_rule: RC.NeighborRule = RC.NeighborRule.NONE
 @export var neighbor_multiplier: float = 1.0
+## Plan 2 N12 (R11, ruling Q20 follow-up; placeholder "Calibrated"): every sub-tick of the
+## socketed slot reads this many tiers higher, capped at PERFECT (WheelMath.raised_tier). Works
+## on every slice size; 0 = no change.
+@export var tick_quality_step: int = 0
 @export var triggered_effects: Array[TriggeredEffectData] = []

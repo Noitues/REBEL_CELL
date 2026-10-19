@@ -88,8 +88,8 @@ func unit() -> float:
 ## Screen angle of slice `slot`'s midline at wheel rotation `rot` (ticks).
 func slot_angle(slot: int, rot: float) -> float:
 	var c := shown()
-	var tps := c.wheel.ticks_per_slice() if c != null and c.wheel != null else 1
-	return WheelView._ang(slot * tps - rot)
+	var mid := c.wheel.slot_arc_mid(slot) if c != null and c.wheel != null else float(slot)
+	return WheelView._ang(mid - rot)  # N12: WheelMath boundaries
 
 
 ## The HP arc's outer edge (px) and its sector: drones dock outside it there (§3.11).

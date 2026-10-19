@@ -7,6 +7,12 @@ extends RefCounted
 const NO_STACK_LIMIT: int = 1 << 30
 
 var slice_count: int = RC.SLICES
+## Plan 2 N12 (R11): each slot's size in ticks, clockwise from slot 0, summing to 30 (0 = an
+## empty arc). Empty means the equal layout of slice_count (read it through layout()).
+var slot_sizes: PackedInt32Array = PackedInt32Array()
+## Plan 2 N12 (R11): each slot's authored quality map (one RC.PrecisionTier per tick), or an
+## empty array for the default map of its size. Empty overall when no slot authors one.
+var slot_quality: Array[PackedInt32Array] = []
 var slot_slice_ids: Array[StringName] = []
 ## Same length as slot_slice_ids; &"" means no Firmware in that socket.
 var slot_firmware_ids: Array[StringName] = []
@@ -46,6 +52,9 @@ var pending_pointer_ticks: PackedInt32Array = PackedInt32Array()
 static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_ids: Array[StringName] = [], firmware_ids: Array[StringName] = [], segment_ids: Array[StringName] = []) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = data.slice_count
+	if not data.is_auto_sized():
+		w.slot_sizes = data.slot_sizes()
+	w.set_quality_maps(data.slot_quality())
 	for i in data.slots.size():
 		var slot := data.slots[i]
 		w.slot_slice_ids.append(slice_ids[i] if i < slice_ids.size() else (slot.slice.id if slot.slice != null else &""))
@@ -75,6 +84,46 @@ func ticks_per_slice() -> int:
 	return WheelMath.ticks_per_slice(slice_count)
 
 
+## Plan 2 N12: the slot sizes WheelMath reads (slot_sizes, or the equal layout of slice_count).
+func layout() -> PackedInt32Array:
+	return slot_sizes if slot_sizes.size() == slice_count else WheelMath.uniform_sizes(slice_count)
+
+
+## Stores `maps` as the authored quality maps (all empty -> none stored).
+func set_quality_maps(maps: Array[PackedInt32Array]) -> void:
+	slot_quality = []
+	for m in maps:
+		if not m.is_empty():
+			for k in maps:
+				slot_quality.append(k.duplicate())
+			return
+
+
+## Slot `slot`'s authored quality map, or an empty array (the default for its size).
+func quality_override(slot: int) -> PackedInt32Array:
+	return slot_quality[slot] if slot >= 0 and slot < slot_quality.size() else PackedInt32Array()
+
+
+## Slot `slot`'s size in ticks.
+func slot_size(slot: int) -> int:
+	return layout()[slot]
+
+
+## The slot owning wheel tick `tick` (never a 0-size slot).
+func slot_of_tick(tick: int) -> int:
+	return WheelMath.slot_of_tick(tick, layout())
+
+
+## Centre tick of slot `slot` (the lower of the middle pair on an even size).
+func slot_center_tick(slot: int) -> int:
+	return WheelMath.center_tick(slot, layout())
+
+
+## Middle of slot `slot`'s drawn arc as a fractional wheel tick (views centre wedges on it).
+func slot_arc_mid(slot: int) -> float:
+	return WheelMath.arc_mid(slot, layout())
+
+
 ## Outer-ring tick under pointer `pointer_index`.
 func tick_at(pointer_index: int) -> int:
 	return WheelMath.tick_at(rotation, pointer_ticks[pointer_index])
@@ -87,7 +136,7 @@ func inner_tick_at(pointer_index: int) -> int:
 
 ## Slice index under pointer `pointer_index`.
 func slice_at(pointer_index: int) -> int:
-	return WheelMath.slice_at(tick_at(pointer_index), slice_count)
+	return WheelMath.slot_of_tick(tick_at(pointer_index), layout())
 
 
 ## Mirrors the wheel across the horizontal axis (GDD 2.3, designer ruling 2026-09-24):
@@ -95,8 +144,20 @@ func slice_at(pointer_index: int) -> int:
 ## them), both rings included, and the rotation is remapped so the tick under the top
 ## pointer becomes 15 - t. Orientation stays clockwise, so nudges and spins are unchanged.
 ## Flipping twice restores the wheel exactly. Docked satellites are the caller's job.
+## Plan 2 N12: slot sizes and quality maps mirror with their slots (a map reads backwards),
+## and an even slot 0 shifts the rotation one tick (WheelMath.flip_shift) so every arc lands
+## exactly on its mirror image.
 func flip() -> void:
-	rotation = -rotation - WheelMath.FLIP_OFFSET
+	rotation = -rotation - WheelMath.FLIP_OFFSET + WheelMath.flip_shift(layout())
+	if not slot_sizes.is_empty():
+		slot_sizes = WheelMath.mirrored_sizes(slot_sizes)
+	if not slot_quality.is_empty():
+		var maps: Array[PackedInt32Array] = []
+		for i in slot_quality.size():
+			var m := slot_quality[WheelMath.mirrored_slot(i, slot_quality.size())].duplicate()
+			m.reverse()
+			maps.append(m)
+		slot_quality = maps
 	slot_slice_ids = _mirrored_names(slot_slice_ids)
 	slot_firmware_ids = _mirrored_names(slot_firmware_ids)
 	var stacks: Array[Dictionary] = []
@@ -118,17 +179,23 @@ func _mirrored_names(names: Array[StringName]) -> Array[StringName]:
 	return out
 
 
-## Plan 2 R6 with N8 stacks: the statuses of a layout change. Each old slot's stacks move to
-## the new slot that covers the old slot's centre tick (nearest new centre, the circular way
-## round; a tick on a boundary goes to the lower new index). Stacks landing on one slot merge:
-## the same status adds up (to `cap`, RC.UNCAPPED_STATUSES excepted), different ones sit side
-## by side. Pure; returns `new_count` entries.
+## Plan 2 R6 with N8 stacks: the statuses of a change between two equal layouts
+## (remap_stacks_sized with the equal sizes of each count).
 static func remap_stacks(old_stacks: Array[Dictionary], old_count: int, new_count: int, cap: int) -> Array[Dictionary]:
+	return remap_stacks_sized(old_stacks, WheelMath.uniform_sizes(old_count), WheelMath.uniform_sizes(new_count), cap)
+
+
+## Plan 2 R6 with N8 stacks and N12 sizes: each old slot's stacks move to the new slot that
+## owns the old slot's centre tick (WheelMath.center_tick; a tick on a boundary belongs to the
+## slot clockwise of it, as every pointer reads it: designer W1 N12). Stacks landing on one
+## slot merge: the same status adds up (to `cap`, RC.UNCAPPED_STATUSES excepted), different
+## ones sit side by side. Pure; returns one entry per new slot.
+static func remap_stacks_sized(old_stacks: Array[Dictionary], old_sizes: PackedInt32Array, new_sizes: PackedInt32Array, cap: int) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for j in new_count:
+	for j in new_sizes.size():
 		out.append({})
-	for i in mini(old_stacks.size(), old_count):
-		var j := covering_slot(WheelMath.slice_center(i, old_count), new_count)
+	for i in mini(old_stacks.size(), old_sizes.size()):
+		var j := WheelMath.slot_of_tick(WheelMath.center_tick(i, old_sizes), new_sizes)
 		for st in sorted_statuses(old_stacks[i]):
 			var n: int = mini(int(out[j].get(st, 0)) + int(old_stacks[i][st]), stack_limit(st, cap))
 			out[j][st] = n
@@ -266,18 +333,10 @@ static func stacks_from_json(d: Dictionary) -> Dictionary:
 	return ordered
 
 
-## The slot of a `count`-slice wheel whose centre is nearest `tick` (circular distance); a
-## tie (a boundary tick) goes to the lower index.
+## The slot of a `count`-slice equal wheel that owns `tick`; a boundary tick belongs to the
+## slot clockwise of it (plan 2 N12, designer W1 N12: as every pointer reads it).
 static func covering_slot(tick: int, count: int) -> int:
-	var best := 0
-	var best_d := RC.TICKS + 1
-	for j in count:
-		var d := posmod(tick - WheelMath.slice_center(j, count), RC.TICKS)
-		d = mini(d, RC.TICKS - d)
-		if d < best_d:
-			best_d = d
-			best = j
-	return best
+	return WheelMath.slice_at(tick, count)
 
 
 ## Locks `kind` with `turns` turns left, named for `source`. Two locks merge: the larger
@@ -322,6 +381,8 @@ func clear_locks() -> void:
 func duplicate_state() -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = slice_count
+	w.slot_sizes = slot_sizes.duplicate()
+	w.set_quality_maps(slot_quality)
 	w.slot_slice_ids = slot_slice_ids.duplicate()
 	w.slot_firmware_ids = slot_firmware_ids.duplicate()
 	w.hub_id = hub_id
@@ -384,6 +445,15 @@ func to_dict() -> Dictionary:
 		"pointer_orbit": pointer_orbit,
 		"pending_pointer_ticks": Array(pending_pointer_ticks),
 	}
+	# Save v4 (N12): absent for the equal layout and the default maps, so legacy wheels save
+	# and hash exactly as before.
+	if not slot_sizes.is_empty() and not WheelMath.is_uniform(slot_sizes):
+		d["slot_sizes"] = Array(slot_sizes)
+	if not slot_quality.is_empty():
+		var maps := []
+		for m in slot_quality:
+			maps.append(Array(m))
+		d["slot_quality"] = maps
 	if not locks.is_empty():  # absent when empty: wheels without a lock hash as before N7
 		var out := {}
 		for kind in [String(LOCK_NUDGE), String(LOCK_RESPIN)]:
@@ -396,6 +466,17 @@ func to_dict() -> Dictionary:
 static func from_dict(d: Dictionary) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = int(d.get("slice_count", RC.SLICES))
+	w.slot_sizes = PackedInt32Array()
+	for t in d.get("slot_sizes", []):  # absent (v3 and the equal layout): equal slots
+		w.slot_sizes.append(int(t))
+	var maps: Array[PackedInt32Array] = []
+	for m in d.get("slot_quality", []):
+		var q := PackedInt32Array()
+		if m is Array:
+			for t in m:
+				q.append(int(t))
+		maps.append(q)
+	w.set_quality_maps(maps)
 	w.slot_slice_ids = _strings_to_names(d.get("slot_slice_ids", []))
 	w.slot_firmware_ids = _strings_to_names(d.get("slot_firmware_ids", []))
 	w.hub_id = StringName(String(d.get("hub_id", "")))

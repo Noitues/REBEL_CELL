@@ -69,6 +69,27 @@ func spin_bonus_of(c: CombatantState) -> int:
 
 
 ## Permanent status from Firmware in `slot`, or NONE.
+## Plan 2 N12 (R11): slot `slot`'s sub-tick quality map as the rules read it, one
+## RC.PrecisionTier per tick from the slot's first tick: its authored map (WheelSlotData
+## tick_quality) or the default for its size (CampaignConfigData.tick_quality_good_reach),
+## each tick raised by its Firmware's tick_quality_step (Calibrated), capped at PERFECT.
+func tick_tiers(wheel: WheelState, slot: int) -> PackedInt32Array:
+	var tiers := wheel.quality_override(slot).duplicate()
+	if tiers.size() != wheel.slot_size(slot):
+		tiers = WheelMath.default_quality(wheel.slot_size(slot), config.tick_quality_good_reach)
+	var fw := firmware_of(wheel, slot)
+	if fw != null and fw.tick_quality_step != 0:
+		for i in tiers.size():
+			tiers[i] = WheelMath.raised_tier(tiers[i], fw.tick_quality_step)
+	return tiers
+
+
+## The precision tier wheel tick `tick` reads on `wheel` (tick_tiers of its slot).
+func tier_at_tick(wheel: WheelState, tick: int) -> int:
+	var slot := wheel.slot_of_tick(tick)
+	return tick_tiers(wheel, slot)[WheelMath.index_in_slot(tick, wheel.layout())]
+
+
 func permanent_status(wheel: WheelState, slot: int) -> int:
 	var fw := firmware_of(wheel, slot)
 	return fw.permanent_status if fw != null else RC.Status.NONE
@@ -609,9 +630,12 @@ func drain_ram(state: CombatState, amount: int, events: Array[Dictionary]) -> vo
 func snap_to_center(c: CombatantState, ring: int, events: Array[Dictionary]) -> void:
 	var wheel := c.wheel
 	if ring == RC.RingScope.INNER and wheel.has_inner_ring():
-		wheel.inner_rotation += -WheelMath.offset_at(wheel.inner_tick_at(0), RC.RING_SEGMENTS)
+		wheel.inner_rotation += -WheelMath.ring_offset(wheel.inner_tick_at(0))
 	else:
-		wheel.rotation += WheelMath.snap_delta(wheel.tick_at(0), wheel.slice_count)
+		# N12 (Q20): onto the nearest best tick of the slot under the pointer (its quality map,
+		# Calibrated included); a tie goes counter-clockwise (the lower tick).
+		var tick := wheel.tick_at(0)
+		wheel.rotation += WheelMath.snap_delta_in(tick, wheel.layout(), tick_tiers(wheel, wheel.slot_of_tick(tick)))
 	events.append({"type": "snap", "target": c.id, "text": "%s snaps to the slice center." % c.display_name})
 
 

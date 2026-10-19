@@ -993,6 +993,7 @@ Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at mos
 Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
+G,G
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
@@ -1851,6 +1852,7 @@ Out of reach from here.,Out of reach from here.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
+P,P
 PARASITE,PARASITE
 PARKED,PARKED
 PARKED −%d,PARKED −%d
@@ -2215,6 +2217,7 @@ SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle
 SLICES (on the wheels),SLICES (on the wheels)
+SLOT %d  %s,SLOT %d  %s
 SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
@@ -3334,6 +3337,7 @@ VIRUS,VIRUS
 VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
 VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
+W,W
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK

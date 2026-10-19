@@ -135,7 +135,7 @@ func landing_slots() -> Array[int]:
 	if c == null or c.wheel == null or ghost.is_empty():
 		return out
 	for p in c.wheel.pointer_ticks:
-		out.append(WheelMath.slice_at(WheelMath.tick_at(int(ghost["rot"]), p), c.wheel.slice_count))
+		out.append(c.wheel.slot_of_tick(WheelMath.tick_at(int(ghost["rot"]), p)))
 	return out
 
 
@@ -190,14 +190,14 @@ func _draw() -> void:
 	var ride := float(int(ghost["base"])) if not committed else v.shown_rotation()
 	var shift := float(int(ghost["rot"])) - ride
 	var landings := landing_slots()
-	var tps := w.ticks_per_slice()
 	# Landing slices: dashed outline in their program colour.
 	for i in landings.size():
 		var slot: int = landings[i]
 		var slice := v.lookup.get_content(w.slot_slice_ids[slot]) as SliceData
 		var sc := AttachStyle.slice_color(slice.slice_type) if slice != null else Palette.TEXT_HI
-		var a0 := WheelView._ang(slot * tps - tps * 0.5 - ride)
-		var a1 := WheelView._ang(slot * tps + tps * 0.5 - ride)
+		var arc := WheelView.slot_arc_ticks(w, slot)  # N12: WheelMath boundaries
+		var a0 := WheelView._ang(arc.x - ride)
+		var a1 := WheelView._ang(arc.y - ride)
 		var wedge := AttachStyle.sector(center, rim - host.band(), rim, minf(a0, a1), maxf(a0, a1), WEDGE_SEGMENTS)
 		draw_colored_polygon(wedge, Color(sc, LANDING_FILL * alpha))
 		wedge.append(wedge[0])

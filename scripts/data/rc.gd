@@ -5,6 +5,8 @@ extends RefCounted
 const TICKS: int = 30
 const SLICES: int = 6
 const TICKS_PER_SLICE: int = 5
+## Plan 2 N12: WheelSlotData.size_ticks for an equal share of the 30 ticks (a definition).
+const SIZE_AUTO: int = -1
 const RING_SEGMENTS: int = 3
 const TICKS_PER_RING_SEGMENT: int = 10
 

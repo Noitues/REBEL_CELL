@@ -15,7 +15,7 @@ static func touches_corrupted(c: CombatantState) -> bool:
 	if c == null or c.wheel == null:
 		return false
 	for i in c.wheel.pointer_ticks.size():
-		var slot := WheelMath.slice_at(c.wheel.tick_at(i), c.wheel.slice_count)
+		var slot := c.wheel.slot_of_tick(c.wheel.tick_at(i))
 		if slot >= 0 and slot < c.wheel.slice_stacks.size() and c.wheel.stacks_of(slot, RC.Status.CORRUPTED) > 0:
 			return true
 	return false

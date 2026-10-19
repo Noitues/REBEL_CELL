@@ -564,7 +564,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
 			"text": "" if quiet else "%s pointer %d: tick %d -> %s (offset %+d, %s%s)." % [r["owner"].display_name, r["pointer_index"], r["tick"],
 				r["slice"].display_name if r["slice"].display_name != "" else String(r["slice"].id), r["offset"],
-				RC.PrecisionTier.keys()[r["tier"]] if r["owner"].wheel.slice_count == RC.SLICES else "full output",
+				RC.PrecisionTier.keys()[r["tier"]] if not r["owner"].is_satellite else "full output",
 				(", ring " + r["segment"].display_name) if r["segment"] != null else ""]})
 	# N6: ON_PERFECT / ON_HIT_DEALT occurrences the slice passes collect, heard after them.
 	var heard: Array = []
@@ -660,9 +660,12 @@ func upcoming_phases(s: CombatState, c: CombatantState) -> Array[BossPhaseData]:
 func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictionary:
 	var wheel := c.wheel
 	var tick := wheel.tick_at(pointer_index)
-	var slice_index := WheelMath.slice_at(tick, wheel.slice_count)
-	var offset := WheelMath.offset_at(tick, wheel.slice_count)
-	var tier: int = WheelMath.tier(offset) if wheel.slice_count == RC.SLICES else RC.PrecisionTier.PERFECT
+	# N12 (R11): cumulative slot boundaries; the tier is the slot's sub-tick quality map
+	# (Calibrated included). Satellites and drones resolve at full output.
+	var slice_index := wheel.slot_of_tick(tick)
+	var offset := WheelMath.offset_in(tick, wheel.layout())
+	var map_tier: int = fx.tier_at_tick(wheel, tick)
+	var tier: int = map_tier if not c.is_satellite else RC.PrecisionTier.PERFECT
 	var segment_index := -1
 	var segment: RingSegmentData = null
 	if wheel.has_inner_ring():
@@ -676,6 +679,7 @@ func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictiona
 		"owner": c, "pointer_index": pointer_index, "tick": tick, "slice_index": slice_index,
 		"slice": fx.slice_of(wheel, slice_index), "firmware": fx.firmware_of(wheel, slice_index),
 		"offset": offset, "tier": tier, "segment_index": segment_index, "segment": segment,
+		"side": WheelMath.side_in(tick, wheel.layout()) if map_tier != RC.PrecisionTier.PERFECT else 0,
 		"guard_id": guard.id if guard != null else &"",
 		"stacks": stacks, "permanent_status": permanent,
 	}
@@ -761,10 +765,12 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 			if fw == null or fw.neighbor_rule == RC.NeighborRule.NONE:
 				out.append(r)
 				continue
-			var offset: int = r["offset"]
+			# N12: the side of the slot's true middle the needle landed on (0 on a Perfect
+			# tick of the map before any TIER_DOWN, or the exact middle of an odd slot).
+			var side_of: int = r["side"]
 			var sides: Array[int] = []
-			if offset != 0:
-				sides.append(signi(offset))
+			if side_of != 0:
+				sides.append(side_of)
 			elif fw.neighbor_rule == RC.NeighborRule.MIRROR:
 				sides = [1, -1]
 			if fw.neighbor_rule == RC.NeighborRule.MIRROR or sides.is_empty():
@@ -786,7 +792,7 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 
 func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: float) -> Dictionary:
 	var c: CombatantState = r["owner"]
-	var slot := posmod(int(r["slice_index"]) + side, c.wheel.slice_count)
+	var slot := WheelMath.neighbor_slot(int(r["slice_index"]), side, c.wheel.layout())  # N12: skips empty arcs
 	var d := r.duplicate()
 	d["slice_index"] = slot
 	d["slice"] = fx.slice_of(c.wheel, slot)
@@ -1334,8 +1340,10 @@ func _cleanse_on_enter(s: CombatState, e: CombatantState, scope: int, events: Ar
 func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
-	var kept := WheelState.remap_stacks(w.slice_stacks, w.slice_count, fresh.slice_count, config.status_stack_cap)
+	var kept := WheelState.remap_stacks_sized(w.slice_stacks, w.layout(), fresh.layout(), config.status_stack_cap)
 	w.slice_count = fresh.slice_count
+	w.slot_sizes = fresh.slot_sizes  # N12: the phase layout's own slot sizes and quality maps
+	w.slot_quality = fresh.slot_quality
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
 	w.slice_stacks = kept
