@@ -105,12 +105,12 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 		var cleared := {}
 		# N8: per slot and status, gaining stacks puts it, losing the last stack clears it.
 		for i in mini(a.wheel.slice_stacks.size(), b.wheel.slice_stacks.size()):
-			var seen: Array[int] = b.wheel.statuses_at(i)
+			var seen_statuses: Array[int] = b.wheel.statuses_at(i)
 			for st in a.wheel.statuses_at(i):
-				if not seen.has(st):
-					seen.append(st)
-			seen.sort()
-			for st in seen:
+				if not seen_statuses.has(st):
+					seen_statuses.append(st)
+			seen_statuses.sort()
+			for st in seen_statuses:
 				var was := b.wheel.stacks_of(i, st)
 				var now := a.wheel.stacks_of(i, st)
 				if now > was:

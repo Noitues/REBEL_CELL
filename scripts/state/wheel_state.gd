@@ -133,11 +133,11 @@ static func remap_stacks(old_stacks: Array[Dictionary], old_count: int, new_coun
 ## The keys of a slot's stack Dictionary in RC.Status order (the only order statuses are
 ## read in: hashing, resolving and views never use Dictionary order).
 static func sorted_statuses(stacks: Dictionary) -> Array[int]:
-	var out: Array[int] = []
+	var status_ints: Array[int] = []
 	for k in stacks.keys():
-		out.append(int(k))
-	out.sort()
-	return out
+		status_ints.append(int(k))
+	status_ints.sort()  # ints, not ids: plain numeric order
+	return status_ints
 
 
 ## The most stacks `status` may hold on one slot under `cap` (CampaignConfigData
