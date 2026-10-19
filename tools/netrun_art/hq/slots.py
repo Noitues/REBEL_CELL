@@ -53,7 +53,16 @@ def plan_compound(rect: Sequence[float], n_tiers: int, params: Optional[Dict[str
     return dict(centre=[cx, cy], half=hs, tier_h=tier_h, z0=[t * tier_h for t in range(n_tiers)], rect=list(rect))
 
 
-LANDMARK_ENTRIES: Dict[str, Dict[str, Any]] = {}
+# Art-pass 77cdfde9 (docs/concepts/landmarks_glb/ENTRIES.json). Meridian is firm; the others are provisional (art-pass
+# checks each face against its overview yaw); Aurelian comes with its v2 HQ.
+LANDMARK_ENTRIES: Dict[str, Dict[str, Any]] = {
+    "meridian": {"entry": [0.0, -28.5, 0.0], "entry_nrm": [0.0, -1.0]},
+    "halcyon": {"entry": [0.0, -29.0, 0.0], "entry_nrm": [0.0, -1.0]},
+    "solace": {"entry": [0.0, -12.0, 0.0], "entry_nrm": [0.0, -1.0]},
+    "orbital": {"entry": [0.0, -13.7, 3.4], "entry_nrm": [0.0, -1.0]},
+    "rebel_cell": {"entry": [0.0, -6.0, 0.0], "entry_nrm": [0.0, -1.0]},
+    "tethys": {"entry": [30.0, 8.2, 5.0], "entry_nrm": [0.9646, 0.2637]},
+}
 """HOOK for the real entrance anchors: `{corp: {"entry": [x, y, z], "entry_nrm": [nx, ny]}}` from art-pass's
 `<corp>_landmark.py`, in BU relative to the HQ lot centre. An entry here overrides the placeholder of `set_entrance`."""
 
