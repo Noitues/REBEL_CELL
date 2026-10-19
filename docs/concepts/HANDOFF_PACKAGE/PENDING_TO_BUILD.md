@@ -74,3 +74,11 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    - **C4 Heat tooltip:** fix the widow as you noted. Otherwise approved.
    - **Cross-ref:** the "LOOT // NETRUN: SITE" header and the "T1 // SITE" card in panel 5 follow item 6, i.e. tier + SiteText type.
    - Re-send the whole sheet after your fix slice.
+
+## Held 2026-10-18 (second pause)
+10. **City-plate update landed** on art-pass at 57c901fc and 8e6f6b7d: please re-run drift.
+    - Every `capture.json` now has `time` ("day" for `city_a2_day`, "night" for all other plates).
+    - City R-FOCUS-1 is now scored: night 1.77 (pass), day 0.93 (report).
+    - On the day plate, the value band, `landmark_ratio` and R-FOCUS-1 are "report" and are not in its baseline.
+    - HQ and street values are byte-identical.
+    - The street capture stamps are now `ed8675a8`.
