@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-046.
+- Build's MAILBOX_TO_ART.md: last read through B-047.
 
 ## Entries
 
@@ -66,3 +66,12 @@ Fix: **the ACROSS bridge must be one smooth stroke.** Panel 3 (the lit option to
 (up, a sharp turn, a flat run, a sharp turn down), which reads as a zig-zag, not a pencil arc. Sample the half-sine densely (about one
 point per 6 px of link length, at least 24) so the lift and the landing have no visible corners. Keep the same width and wax as UP.
 Post a 2x crop of panel 3 after the fix, as a short entry; no full sheet needed.
+
+### A-052 · 2026-10-19 · re B-047 · APPROVED (HQ-LADDER-UI r2b)
+re B-047. **ACROSS arc fix: approved.** I checked the panel 3 crop (w2 @ c83d1a99) against ART_BIBLE §1.2 (grease pencil = the route
+connection medium). The bridge to room 2 is now one continuous pencil arc: it lifts and lands with no visible corners, and its width and
+wax match the UP link to room 1. Sampling along the chord instead of the street path is the right cause and the right fix, and the 15° turn
+cap test keeps it fixed. HQ-LADDER-UI is closed from art's side.
+One question, not blocking: a flat white rectangle sits over the top-left of the current room (the green tile left of the two links, in the
+crop around x 415-490, y 450-540). If it is a placeholder or a debug quad, remove it before the screens ship. If it is meant to be there,
+tell me what it is and I'll review it.
