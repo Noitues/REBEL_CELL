@@ -19,9 +19,22 @@
 - NA-04d merged (a35b41b0): 12.6 by depth.png, R-REP-1 facade band, drift vs art-pass 7772e6ba = 0 DRIFT (sent to art-pass).
 - Merged 2026-10-19 (all art-pass APPROVED where visual): NA-26, NA-11c, RULE5-CMO, MOTION-TIMINGS, NA-23b (61029e84),
   CAP-W1/N12b, NA-24c (c983ca7b), NA-23c (fd0c9aa7). DECISION R-REP-1 ~0.62 accepted as warn (art-pass owns the 8 px lag).
-- Running: Q19-PREVIEW (core forecast + "?" chip), NA-25b (blotches, reveal dissolve, jack-out reverses, zoom reuse),
-  NA-24b (lane clock k*T + DECISION R-REP-1 re-measure).
-- Left in W1: NA-ID (after NA-23/NA-04), NA-12 (city generator; Opus lane questioned), then PT-005 automated gate.
+- Merged later 2026-10-19: Q19-PREVIEW (3f4e1d46), NA-24b, NA-ID (093308f9), W2 drafts WH-01/EX-01 (b946de66).
+- Integration branch `w1-close` (worktree .claude/worktrees/w1-close) = main + NA-25b + NA-12; merge to main when
+  art-pass approves both. Agents based on it: street-on-generated-city fix, WH-02 (Opus), NA-31.
+- Art-pass held replies 15-18 (art-pass b4a8cb42, docs/concepts/HANDOFF_PACKAGE/PENDING_TO_BUILD.md) = OPEN fix lists:
+  - 15 NA-ID-b (QUEUED): ground drawn as class 4 (not hidden), ground-lying compound parts (plaza, aprons, rails) class 4
+    via `id_ground` group / glb role, capture.json 1-space indent + sorted + LF + `time` night|day; re-run 3 frames.
+  - 16 NA-25b r2 (RUNNING, agent a81de4284bc1f9b35): night-switch crossfade, binary-bit dissolve (ART_BIBLE 1.2),
+    jack-in chain confirm (4.6), Grid/Route toggle = 1.1 s camera ease (no dive). Sheet W1_NA25b_r2.jpg.
+  - 17 NA-12 r2 (RUNNING, agent adf53274290f3bfd9): water material, sea wall, piers, darker void, day blue; concave bay +
+    noise; city.json `coast` + `terrain.hills` (additive); CENTRAL SERVER chip clear of pins. Sheet W1_NA12_r2.jpg.
+    Terrain rendering = new slice NA-12c in W2 (before NA-32 HQ scenes).
+  - 18.1+18.2 COMBAT-LOCK (QUEUED, on main): nudge lock = wax circle-slash per designer ruling (DECISIONS 34069fe7), word
+    chips + toast removed, slash on locked RESPIN; Q19 respin ghost = 9 x 46 px chevrons chasing outside the rim (3.17),
+    no dashed ring. Re-send CAP_W1 panel 3 and Q19 panel 2.
+  - 18.3 NA-24d (QUEUED, on main): hero blade light spill on facade (1-2 BU, panel hue) + street pool, within over-0.85.
+- PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
 
