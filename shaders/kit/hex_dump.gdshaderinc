@@ -22,6 +22,8 @@ uniform vec2 hex_cell = vec2(6.5, 13.5);
 uniform vec2 hex_origin = vec2(8.0, 0.0);
 uniform float hex_scroll = 6.0;
 uniform float hex_seed = 7.0;
+// NA-25b r4: how many dump columns draw (0 fills the panel edge to edge).
+uniform int hex_blocks = 0;
 uniform vec4 hex_tint : source_color = vec4(0.361, 0.882, 1.0, 1.0);
 // B1c-b: the words over the glass (panel-local x0, y0, x1, y1): the dump fades to
 // `hex_text_fade` under them, so it stays texture and never competes with a line of text.
@@ -49,6 +51,9 @@ float rc_hex_dump(vec2 p) {
 	float x = p.x - hex_origin.x;
 	float span_col = floor(x / cell.x);
 	float block_x = floor(span_col / HEX_SPAN);
+	if (hex_blocks > 0 && (block_x < 0.0 || block_x >= float(hex_blocks))) {
+		return 0.0;
+	}
 	float col = mod(span_col, HEX_SPAN);
 	if (x < 0.0 || col >= HEX_COLS) {
 		return 0.0;

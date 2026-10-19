@@ -14,6 +14,20 @@ const VIEW_SIZE := Vector2(480.0, 480.0)
 const RIM_PX := 6.0
 ## Hole radius at the end of the opening, as a share past the screen's half diagonal.
 const HOLE_OVERSCAN := 1.05
+## The enlargement span (wheel scales past rest) over which the flat field takes the hub core's place.
+const FIELD_SPAN := 0.8
+## The CRT hold's look on the field (A-031 item 2): the hex dump a faint scrolling column (alpha; its share of the type-on line's value is
+## 15 to 20 %), 3 px scanlines that read at 1:1, a clear rim (edge px, inner glow), the glass a little see-through so the field sits under it.
+const HOLD_HEX_ALPHA := 0.26
+## The hold's dump glyphs, a multiple of the default size (so they read at 1:1).
+const HOLD_HEX_SCALE := 1.6
+const HOLD_HEX_COLUMN_MARGIN := 48.0
+const HOLD_SCAN_STRENGTH := 0.42
+const HOLD_EDGE_PX := 4.0
+const HOLD_INNER_GLOW := 0.7
+const HOLD_GLASS_ALPHA := 0.80
+## The glass lifted toward the cyan by this share, so the 3 px lines read against it.
+const HOLD_GLASS_LIFT := 0.12
 
 var wheel: WheelView = null
 ## The hub's CRT hold: the navy glass with its type-on line (hidden until `show_hold`).
@@ -23,6 +37,8 @@ var _tex: TextureRect = null
 var _mat: ShaderMaterial = null
 var _hold_root: Control = null
 var _breathe: ColorRect = null
+## NA-25b r4: the flat class-colour hub field over the swelling hub core (the emblem at its own native size, never blown up).
+var field: JackHubField = null
 var _canvas := Vector2(1280.0, 720.0)
 
 
@@ -99,6 +115,16 @@ func _build_hold() -> void:
 		_hold_root.queue_free()
 	if _breathe != null and is_instance_valid(_breathe):
 		_breathe.queue_free()
+	if field != null and is_instance_valid(field):
+		field.queue_free()
+	field = JackHubField.new()
+	field.canvas = _canvas
+	field.size = _canvas
+	if wheel != null and wheel.combatant != null:
+		field.accent = wheel.kit.accent
+		field.glyph = wheel.kit.hub_glyph(wheel.combatant)
+		field.hub_name = wheel.shown_name().to_upper()
+	_vp.add_child(field)
 	_breathe = ColorRect.new()
 	_breathe.name = "Breathe"
 	_breathe.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -117,11 +143,23 @@ func _build_hold() -> void:
 	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	back.size = _canvas
 	_hold_root.add_child(back)
+	back.visible = false  # the glass sits on the hub field, not on a second navy
 	hold = CrtTerminalPanel.new()
 	hold.name = "HubTerminal"
 	hold.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hold.size = _canvas
 	hold.text_step = UiTheme.TITLE  # a boot-log line over a whole screen of glass
+	hold.caret_block = true
+	var cyan := PaletteSkins.chrome(Palette.NET_CYAN)
+	var glass_top := PaletteSkins.chrome(Palette.CRT_GLASS_TOP).lerp(cyan, HOLD_GLASS_LIFT)
+	var glass_bottom := PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM).lerp(cyan, HOLD_GLASS_LIFT)
+	var cell := CrtTerminalPanel.hex_cell()
+	hold.hex_alpha_value = HOLD_HEX_ALPHA
+	hold.hex_columns = 1
+	hold.hex_scale = HOLD_HEX_SCALE
+	hold.hex_origin_x = _canvas.x - cell.x * HOLD_HEX_SCALE * CrtTerminalPanel.HEX_COLUMN_CELLS - HOLD_HEX_COLUMN_MARGIN
+	hold.shader_overrides = {&"scan_strength": HOLD_SCAN_STRENGTH, &"edge_px": HOLD_EDGE_PX, &"inner_glow": HOLD_INNER_GLOW,
+		&"glass_top": Color(glass_top, HOLD_GLASS_ALPHA), &"glass_bottom": Color(glass_bottom, HOLD_GLASS_ALPHA)}
 	_hold_root.add_child(hold)
 
 
@@ -143,8 +181,29 @@ func place(at: Vector2, r: float, turn: float = 0.0, scale_xy: Vector2 = Vector2
 	wheel.position = at - wheel._center() * s
 	wheel.anim_rotation = turn / TAU * float(RC.TICKS)
 	wheel.queue_redraw()
+	if field != null:
+		field.center = at
+		field.radius = r * hub_share()
+		field.natural_emblem_px = wheel.hub_emblem_px(wheel.art_scale()) * s.x
+		field.queue_redraw()
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	visible = true
+
+
+## Shows the flat class-colour field over the hub core for a wheel enlarged to `wheel_scale` times its rest size (none at rest).
+func set_enlargement(wheel_scale: float) -> void:
+	if field != null:
+		field.k = JackHubField.k_for_scale(wheel_scale, FIELD_SPAN)
+		field.queue_redraw()
+		# Under the whole-screen field the wheel is never seen (nor drawn).
+		if wheel != null:
+			wheel.visible = not (field.k >= 1.0 and field.covers_screen())
+
+
+## Fades the CRT hold (it lives on the hub: it goes as the hub opens): 1 whole, 0 gone.
+func set_hold_fade(a: float) -> void:
+	if _hold_root != null:
+		_hold_root.modulate.a = clampf(a, 0.0, 1.0)
 
 
 ## Cuts the hub open at `center` with a hole of radius `r` (canvas units); 0 closes it.
@@ -183,9 +242,15 @@ func show_hold(on: bool, line: String = "") -> void:
 		return
 	if on and not _hold_root.visible:
 		_hold_root.visible = true
+		_hold_root.modulate.a = 1.0
 		hold.type_on(line)
+		if field != null:
+			field.emblem_alpha = 0.0  # the glass sits on the bare field
+			field.queue_redraw()
 	elif not on:
 		_hold_root.visible = false
+		if field != null:
+			field.emblem_alpha = 1.0
 
 
 ## True while the CRT hold shows.
@@ -200,4 +265,9 @@ func clear() -> void:
 		_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	if _hold_root != null:
 		_hold_root.visible = false
+	if field != null:
+		field.k = 0.0
+		field.emblem_alpha = 1.0
+	if wheel != null:
+		wheel.visible = true
 	set_breathe(0.0)

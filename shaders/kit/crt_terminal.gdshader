@@ -73,7 +73,8 @@ void fragment() {
 		}
 	} else {
 		if (sd <= 0.0) {
-			float line = step(0.5, fract((p.y - panel.y) / scan_px));
+			// NA-25b r4: the phase keeps a pixel centre off the 0.5 edge (it fell on it, so the two triangles of a big panel drew different duty).
+			float line = step(0.5, fract((p.y - panel.y) / scan_px - 0.08));
 			float roll = 0.0;
 			float h = max(panel.w, 1.0);
 			float band = fract(rc_time(TIME) / max(roll_seconds, 0.1));

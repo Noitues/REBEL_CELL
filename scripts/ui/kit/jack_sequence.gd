@@ -41,6 +41,11 @@ const BREATHE_RATE := 0.004
 ## past the screen's half-diagonal the hub swells (share).
 const LENS_COVER_SHARE := 0.45
 const LENS_OVERSCAN := 1.15
+## NA-25b r4 (A-031 item 3): the CRT hold lives on the hub, so it fades out over this share of the opening; the destination's HUD bar and
+## subtitle bar stay hidden under the hub until the hole has passed their farthest corner, then come in over this share of the screen's
+## diagonal.
+const OPEN_HOLD_FADE_SHARE := 0.15
+const HUD_FADE_SHARE := 0.04
 
 ## The link (screen px): from its owned end to the Site.
 var points: PackedVector2Array = PackedVector2Array()
@@ -66,6 +71,10 @@ var _spin_rate := 0.0
 var _cover_t := 0.0
 ## True while the switch loads under the covering hub (the hub's hold).
 var _holding := false
+## The destination's HUD controls held under the hub while the lens opens (their rects union), and the hole's radius now.
+var _hud_hidden: Array[Control] = []
+var _hud_rect: Rect2 = Rect2()
+var _hole_r := 0.0
 var terminal: CrtTerminalPanel
 var _text: Label
 
@@ -218,12 +227,15 @@ func _play_wheel(switch: Callable) -> void:
 	# Open: the hub core burns through; the hole grows past the screen.
 	var open_s := lens_s - cover_s
 	open_t = 0.0
+	_hold_hud()
 	t = 0.0
 	while t < open_s and not skipping:
 		t += get_process_delta_time()
 		open_t = clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
 		wheel_turn += _spin_rate * get_process_delta_time()
 		_place()
+		wheel_view.set_hold_fade(1.0 - open_t / OPEN_HOLD_FADE_SHARE)
+		_reveal_hud(vp)
 		await get_tree().process_frame
 	if not switched:
 		await switch.call()
@@ -246,11 +258,10 @@ func _place(squash: Vector2 = Vector2.ONE) -> void:
 		return
 	var r := wheel_r * wheel_scale
 	wheel_view.place(wheel_at, r, wheel_turn, squash)
+	wheel_view.set_enlargement(wheel_scale)
 	var vp := get_viewport_rect().size
-	if open_t >= 0.0:
-		wheel_view.set_hole(wheel_at, JackWheel.hole_radius(open_t, r * wheel_view.hub_share(), vp))
-	else:
-		wheel_view.set_hole(wheel_at, 0.0)
+	_hole_r = JackWheel.hole_radius(open_t, r * wheel_view.hub_share(), vp) if open_t >= 0.0 else 0.0
+	wheel_view.set_hole(wheel_at, _hole_r)
 
 
 ## NA-25 (PIPELINE_SPEC 10, beats 3a-3c): the terminal types over `entry_terminal`, the rain falls over `entry_rain`, the
@@ -402,6 +413,7 @@ func skip() -> void:
 
 
 func _end() -> void:
+	_restore_hud()
 	visible = false
 	night = false
 	open_t = -1.0
@@ -413,6 +425,49 @@ func _end() -> void:
 		terminal.queue_free()
 	terminal = null
 	queue_redraw()
+
+
+## The HUD alpha at a hole of radius `hole_r` centred on `at`: 0 until the hole has passed the farthest corner of `rect`, whole `fade_px`
+## later (the pure rule the opening and its test share).
+static func hud_alpha(at: Vector2, hole_r: float, rect: Rect2, fade_px: float) -> float:
+	var far := 0.0
+	for corner in [rect.position, Vector2(rect.end.x, rect.position.y), Vector2(rect.position.x, rect.end.y), rect.end]:
+		far = maxf(far, at.distance_to(corner))
+	return clampf((hole_r - far) / maxf(fade_px, 0.001), 0.0, 1.0)
+
+
+## Takes the destination's HUD bar and the subtitle bar (the scene's `hud`, `Dialogue.bar`) out of sight: they stay under the hub until the hole passes.
+func _hold_hud() -> void:
+	_restore_hud()
+	var scene := get_tree().current_scene
+	var held: Array[Control] = [Dialogue.bar]  # the subtitle bar docked under the HUD (the autoload's, layer 90: under the lens too)
+	if scene != null:
+		held.append(scene.get(&"hud") as Control)
+	var first := true
+	for c in held:
+		if c == null or not is_instance_valid(c) or not c.is_visible_in_tree():
+			continue
+		_hud_rect = c.get_global_rect() if first else _hud_rect.merge(c.get_global_rect())
+		first = false
+		c.modulate.a = 0.0
+		_hud_hidden.append(c)
+
+
+## Brings the held HUD in as the hole passes it.
+func _reveal_hud(vp: Vector2) -> void:
+	if _hud_hidden.is_empty():
+		return
+	var a := hud_alpha(wheel_at, _hole_r, _hud_rect, vp.length() * HUD_FADE_SHARE)
+	for c in _hud_hidden:
+		if is_instance_valid(c):
+			c.modulate.a = a
+
+
+func _restore_hud() -> void:
+	for c in _hud_hidden:
+		if is_instance_valid(c):
+			c.modulate.a = 1.0
+	_hud_hidden.clear()
 
 
 ## True while the lens covers the whole screen (before it opens).
