@@ -59,10 +59,11 @@ def main() -> None:
     assert section.CONSTS["widen"] == 0.45
     srules = {k: v for k, v in street.RULES.items() if k not in ("floor_bu", "front_band", "extend")}
     lay = dict(front_band=list(layout.FRONT_BAND), extend=list(layout.EXTEND), base_tol=layout.BASE_TOL, axis_tol=layout.AXIS_TOL)
+    lay_rules = dict(layout.LAYOUT_RULES, **layout.R2_RULES)
     fields = [
         ("units", dict(floor_bu=units.FLOOR_BU, kit_storey=units.KIT_STOREY, k_fit=units.K_FIT)),
         ("rig", rig.RIG), ("look_bias_sign", rig.LOOK_BIAS_SIGN), ("dive", rig.DIVE), ("hq_page", rig.HQ_PAGE),
-        ("hq_rig", hq_rig), ("occlusion", occ), ("lod", lod_d), ("section", sec), ("street_rules", srules), ("layout", lay),
+        ("hq_rig", hq_rig), ("occlusion", occ), ("lod", lod_d), ("section", sec), ("street_rules", srules), ("layout", lay), ("layout_rules", lay_rules),
         ("slot_params", slots.SLOT_PARAMS), ("landmark_entries", slots.LANDMARK_ENTRIES), ("face_outlines", FACE_OUTLINES), ("reveal", REVEAL),
         ("frustum_tolerance", 1.0e-4)]
     lines = ['[gd_resource type="Resource" script_class="NetrunArtConfigData" load_steps=2 format=3]', "",

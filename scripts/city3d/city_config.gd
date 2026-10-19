@@ -445,6 +445,8 @@ extends Resource
 ## NA-02 ruling O7: a Site whose lot holds no building takes the nearest building within
 ## this many lots (Chebyshev) in the netrun-art contract; past it the export fails.
 @export var art_site_bid_reach_lots: int = 4
+## NA-11: the layout rules (frontage floors, border street width, street r2 height passes) shape the full city at build time.
+@export var layout_rules_on: bool = true
 ## Roof props (the concept's AC units, water tanks, antennas, roof billboards; bible 4.1:
 ## from raid zoom): shown at and below this ortho.
 @export var roof_props_below: float = 420.0

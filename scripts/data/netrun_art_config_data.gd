@@ -34,6 +34,9 @@ static var _shipped: NetrunArtConfigData = null
 @export var street_rules: Dictionary = {}
 ## Layout numbers the street derivation reads (`layout.py`): front_band, extend, base_tol, axis_tol.
 @export var layout: Dictionary = {}
+## NA-11 layout rules (`layout.LAYOUT_RULES` + `layout.R2_RULES`): frontage_min_floors, border_street_width, base_street_width,
+## hero_sign_rule, silhouette {...}, horizon {...}.
+@export var layout_rules: Dictionary = {}
 ## HQ slot parameters (`hq.slots.SLOT_PARAMS`).
 @export var slot_params: Dictionary = {}
 ## Art-pass landmark entrance anchors (`hq.slots.LANDMARK_ENTRIES`), provisional except Meridian.
@@ -67,6 +70,7 @@ const REQUIRED: Dictionary = {
 	"street_rules": ["base_floor", "room_inset", "room_depth", "room_px_target", "min_width", "max_setback", "room_z_inset",
 		"link_offset", "link_stub"],
 	"layout": ["front_band", "extend", "base_tol", "axis_tol"],
+	"layout_rules": ["frontage_min_floors", "border_street_width", "base_street_width", "hero_sign_rule", "silhouette", "horizon"],
 	"slot_params": ["lot_margin", "top_share", "min_half", "corner_pad", "room_w_max", "room_fill", "room_depth", "tier_floors",
 		"link_out"],
 }
