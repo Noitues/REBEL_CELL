@@ -25,8 +25,13 @@
 - Art-pass held replies 15-18 (art-pass b4a8cb42, docs/concepts/HANDOFF_PACKAGE/PENDING_TO_BUILD.md) = OPEN fix lists:
   - 15 NA-ID-b (QUEUED): ground drawn as class 4 (not hidden), ground-lying compound parts (plaza, aprons, rails) class 4
     via `id_ground` group / glb role, capture.json 1-space indent + sorted + LF + `time` night|day; re-run 3 frames.
-  - 16 NA-25b r2 (RUNNING, agent a81de4284bc1f9b35): night-switch crossfade, binary-bit dissolve (ART_BIBLE 1.2),
-    jack-in chain confirm (4.6), Grid/Route toggle = 1.1 s camera ease (no dive). Sheet W1_NA25b_r2.jpg.
+  - 16 NA-25b r3 (QUEUED, base branch worktree-agent-a81de4284bc1f9b35 @ bad12255; worktree removed): chain order, bits,
+    toggle APPROVED. Fix: (1) the real class wheel (D4 bezel + glass crescent, slices with read blocks, cream blades, class
+    hub core 3.3) for slap (sticker overshoot/settle, spin-up) and lens (hub core opening); (2) hub hold > 0.5 s = CRT
+    terminal (navy glass, 3 px scanlines, scrolling hex dump, edge glow, type-on `> routing ... building street_<bid>` +
+    caret); (3) HQ-side switch frame: normal city material if ever visible (no neon wireframe), else say it is covered;
+    (4) black windowless prism in bits frames = 7.1 ghost stub (see-through + outline) or missing material. Re-send
+    frames 4-6, HQ-side, bits frame. Sheet W1_NA25b_r3.jpg.
   - 17 NA-12 r2 (RUNNING, agent adf53274290f3bfd9): water material, sea wall, piers, darker void, day blue; concave bay +
     noise; city.json `coast` + `terrain.hills` (additive); CENTRAL SERVER chip clear of pins. Sheet W1_NA12_r2.jpg.
     Terrain rendering = new slice NA-12c in W2 (before NA-32 HQ scenes).
