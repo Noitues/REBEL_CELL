@@ -47,7 +47,8 @@ def main() -> None:
     hq_rig = {k: v for k, v in orbit.HQ_RIG.items() if k != "dmin"}
     hq_rig["dmin_kit"] = 135.0
     assert orbit.HQ_RIG["dmin"] == units.kit(135.0)
-    occ = dict(occlusion.OCC, front_fade_kit=6.0, clutter_kit=25.0, ease_s=occlusion.EASE_S, min_span=occlusion.MIN_SPAN)
+    occ = dict(occlusion.OCC, front_fade_kit=6.0, clutter_kit=25.0, ease_s=occlusion.EASE_S, min_span=occlusion.MIN_SPAN,
+               **occlusion.BAND)
     assert occlusion.FRONT_FADE == units.kit(6.0) and occlusion.CLUTTER == units.kit(25.0)
     lod_d = dict(d0=lod.D0, d1=lod.D1, bands={k: list(v) for k, v in lod.DEFAULT_BANDS.items()}, floors=dict(lod.FLOORS),
                  ramps={k: list(v) for k, v in lod.RAMPS.items()}, ramp_levels=dict(lod.RAMP_LEVELS))

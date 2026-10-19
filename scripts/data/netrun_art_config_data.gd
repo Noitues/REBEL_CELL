@@ -23,7 +23,8 @@ static var _shipped: NetrunArtConfigData = null
 @export var hq_page: Dictionary = {}
 ## HQ orbit rig (`orbit.HQ_RIG`); `dmin_kit` is the minimum distance in kit units (the rig's `dmin` = kit(dmin_kit)).
 @export var hq_rig: Dictionary = {}
-## Occlusion numbers (`occlusion.OCC`) plus `front_fade_kit`, `clutter_kit`, `ease_s`, `min_span`.
+## Occlusion numbers (`occlusion.OCC`) plus `front_fade_kit`, `clutter_kit`, `ease_s`, `min_span` and the face band
+## spacing (`occlusion.BAND`: `hq_step_deg`, `street_step_bu`).
 @export var occlusion: Dictionary = {}
 ## LOD (`lod.py`): `d0`, `d1`, `bands` {name: [a, b]}, `floors`, `ramps`, `ramp_levels`.
 @export var lod: Dictionary = {}
@@ -55,7 +56,8 @@ const REQUIRED: Dictionary = {
 	"hq_page": ["fit_margin", "fit_share", "anchor", "ortho_clamp", "grid_ortho", "free"],
 	"hq_rig": ["dmin_kit", "look_ahead", "pitch_lo", "pitch_hi", "lens_d", "fill_w", "fill_h", "hover_pull", "hover_yaw",
 		"hover_dolly", "pitch_o", "lens_o", "fill_ow", "fill_oh", "vis_margin"],
-	"occlusion": ["cone_margin", "stub", "ghost", "edge", "tsoft", "vsoft", "front_fade_kit", "clutter_kit", "ease_s", "min_span"],
+	"occlusion": ["cone_margin", "stub", "ghost", "edge", "tsoft", "vsoft", "front_fade_kit", "clutter_kit", "ease_s", "min_span",
+		"hq_step_deg", "street_step_bu"],
 	"lod": ["d0", "d1", "bands", "floors", "ramps", "ramp_levels"],
 	"section": ["zcut", "look_blend", "no_cut", "poche", "edge_col", "band_overview_kit", "band_rooms_kit", "zref_margin_kit",
 		"plinth_kit", "widen"],

@@ -53,6 +53,7 @@ static func _layer_of(run_graph: Dictionary, node: String) -> int:
 static func _make_ctx(derive: Dictionary, city: Dictionary, run_graph: Dictionary, net: Dictionary) -> Dictionary:
 	var cx: Dictionary = {}
 	cx["d"] = derive
+	cx["city"] = city
 	cx["g"] = run_graph
 	cx["kind"] = derive["kind"]
 	cx["rooms"] = derive["rooms"]
@@ -111,12 +112,14 @@ static func _record(cx: Dictionary, pose: NetrunPose, ids: Array, decision: bool
 	if decision:
 		# a DECISION cone targets EVERY route room in frame, the `ids` rooms included (art-pass 6d214ce9, NA-04c)
 		var rcfg: Dictionary = NetrunArtConfigData.shipped().rig
-		var occ_ids: Array = OcclusionHelper.rooms_in_frame(rooms, pose, rcfg["ref_w"], rcfg["ref_h"], cx["kind"] == "hq")
+		var is_hq: bool = cx["kind"] == "hq"
+		var occ_ids: Array = OcclusionHelper.rooms_in_frame(rooms, pose, rcfg["ref_w"], rcfg["ref_h"], is_hq, not is_hq)
 		for i: String in ids:
 			if not occ_ids.has(i):
 				occ_ids.append(i)
 		IdSort.sort_ids(occ_ids)
 		occ_pts = _front_points(rooms, occ_ids)
+		occ_pts.append_array(_band(cx, pose, ids))
 	var rec: Dictionary = {"pose": pose.to_json()}
 	if cx["has_d0"]:
 		rec["zoom_dive"] = RevealTiers.zoom_dive(NetrunCameraRig.dive_distance(pose, cx["ov"]), cx["d0"], cx["d1"])
@@ -182,6 +185,21 @@ static func build_poses(derive: Dictionary, city: Dictionary, run_graph: Diction
 			"hover": opts[0], "decision": _record(cx, d, ids, true), "hover_pose": hov.to_json()})
 	out["fixtures"] = fixtures
 	return out
+
+
+## Face band of the current level (DECISION / HOVER only; spec 7.1 rule 1): the landmark's tier face on an HQ, the route
+## building's face on a street.
+static func _band(cx: Dictionary, pose: NetrunPose, ids: Array) -> Array:
+	if ids.is_empty():
+		return []
+	var rcfg: Dictionary = NetrunArtConfigData.shipped().rig
+	if cx["kind"] == "hq":
+		return OcclusionHelper.hq_band_points(cx["rooms"], ids, cx["comp"]["centre"], pose, rcfg["ref_w"], rcfg["ref_h"])
+	var ext: Dictionary = {}
+	for i: String in ids:
+		var bid: String = cx["rooms"][i]["bld"]
+		ext[bid] = OcclusionHelper.building_extent(cx["city"], bid)
+	return OcclusionHelper.street_band_points(cx["rooms"], ids, ext, pose, rcfg["ref_w"], rcfg["ref_h"])
 
 
 ## The front-quad corner points (ground_z added to z) of the rooms `ids`, in the order given.

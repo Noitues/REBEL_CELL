@@ -273,3 +273,39 @@ def test_decision_cone_targets_every_room_in_frame():
     assert occlusion.rooms_in_frame(rooms, pose, rig.REF_W, rig.REF_H, lambda r, p: r is not rooms["b"]) == ["a"]
     behind = rig.Pose([0, 100, 0], 0.0, 0.0, 10.0, 36.0)
     assert occlusion.rooms_in_frame(rooms, behind, rig.REF_W, rig.REF_H) == []
+
+
+def _band_room(face_y, x0, x1, out_sign):
+    """A room on a face at constant y; `out_sign` -1 = outward normal is -y (toward a camera at -y)."""
+    back = face_y - out_sign
+    return {"front": [[x0, face_y, 0], [x1, face_y, 0], [x1, face_y, 3], [x0, face_y, 3]],
+            "back": [[x0, back, 0], [x1, back, 0], [x1, back, 3], [x0, back, 3]], "layer": 1, "floor": 0, "span": 1, "bld": "b"}
+
+
+def test_room_faces_camera():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)            # camera at y = -50
+    assert occlusion.room_faces_camera(_band_room(0.0, -1, 1, -1), pose)
+    assert not occlusion.room_faces_camera(_band_room(0.0, -1, 1, 1), pose)
+
+
+def test_hq_face_band_every_3_deg_facing_and_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+    rooms = {"a": _band_room(0.0, -1, 1, -1)}                   # tier face y = 0, half 10, centre (0, 10)
+    pts = occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], pose, rig.REF_W, rig.REF_H)
+    assert pts and all(p[1] == 0.0 and p[2] in (0.0, 3.0) for p in pts)     # only the camera-facing face, floor + top
+    xs = sorted({p[0] for p in pts})
+    assert len(pts) == 2 * len(xs) and len(xs) > 20                          # 3 deg steps over the face, both heights
+    coarse = occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], pose, rig.REF_W, rig.REF_H, step_deg=6.0)
+    assert 0 < len(coarse) < len(pts)
+    behind = rig.Pose([0, 100, 0], 0.0, 0.0, 10.0, 36.0)
+    assert occlusion.hq_band_points(rooms, ["a"], [0.0, 10.0], behind, rig.REF_W, rig.REF_H) == []
+
+
+def test_street_face_band_every_bu_facing_and_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+    rooms = {"a": _band_room(0.0, -1, 1, -1)}
+    pts = occlusion.street_band_points(rooms, ["a"], {"b": [-6, 6, 0, 10]}, pose, rig.REF_W, rig.REF_H)
+    assert [p[0] for p in pts[::2]] == [float(x) for x in range(-6, 7)]       # 1 BU apart, whole face width
+    assert {p[2] for p in pts} == {0.0, 3.0}
+    away = {"a": _band_room(0.0, -1, 1, 1)}
+    assert occlusion.street_band_points(away, ["a"], {"b": [-6, 6, 0, 10]}, pose, rig.REF_W, rig.REF_H) == []

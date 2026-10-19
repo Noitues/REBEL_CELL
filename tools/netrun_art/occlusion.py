@@ -14,7 +14,8 @@ NK = 5                                  # depth knots of the cone
 OCC: Dict[str, float] = dict(cone_margin=0.10, stub=3.8, ghost=0.18, edge=0.6, tsoft=0.035, vsoft=0.025)
 FRONT_FADE = kit(6.0)                   # 1.425 BU: soft fade past the farthest target
 CLUTTER = kit(25.0)                     # 5.9375 BU (spec: 5.94): roof clutter above a building's top
-EASE_S = 0.35                           # per-instance ease, seconds (spec 7.1 rule 6)
+BAND: Dict[str, float] = dict(hq_step_deg=3.0, street_step_bu=1.0)   # face band spacing (spec 7.1 rule 1, AD 2026-10-18)
+EASE_S = 0.35                          # per-instance ease, seconds (spec 7.1 rule 6)
 MIN_SPAN = 0.02                         # smallest tangent span used for the margin
 KEYS: Tuple[str, ...] = ("occ_on", "occ_cx", "occ_cy", "occ_cz", "occ_ux", "occ_uy", "occ_tsoft", "occ_a0", "occ_amax",
                          "occ_vsoft", "occ_stub", "occ_ghost", "occ_edge") + tuple(
@@ -43,6 +44,104 @@ def rooms_in_frame(rooms: Dict[str, Dict[str, Any]], pose: Any, ref_w: float, re
             continue
         out.append(rid)
     return out
+
+
+def room_normal_xy(room: Dict[str, Any]) -> List[float]:
+    """Outward plan normal of a room (back centre -> front centre, unit)."""
+    f = room["front"]
+    b = room["back"]
+    nx = sum(q[0] for q in f) / len(f) - sum(q[0] for q in b) / len(b)
+    ny = sum(q[1] for q in f) / len(f) - sum(q[1] for q in b) / len(b)
+    ln = math.hypot(nx, ny) or 1.0
+    return [nx / ln, ny / ln]
+
+
+def room_faces_camera(room: Dict[str, Any], pose: Any) -> bool:
+    """True when the room's outward normal points toward the camera (street netruns; an HQ uses `visible_room`)."""
+    loc = pose.loc()
+    n = room_normal_xy(room)
+    f = room["front"]
+    cx = sum(q[0] for q in f) / len(f)
+    cy = sum(q[1] for q in f) / len(f)
+    return n[0] * (loc[0] - cx) + n[1] * (loc[1] - cy) > 0.0
+
+
+def _band_point_ok(p: Sequence[float], nrm: Sequence[float], pose: Any, ref_w: float, ref_h: float) -> bool:
+    loc = pose.loc()
+    if nrm[0] * (loc[0] - p[0]) + nrm[1] * (loc[1] - p[1]) <= 0.0:
+        return False
+    q = pose.proj(list(p))
+    return q is not None and 0.0 <= q[0] <= ref_w and 0.0 <= q[1] <= ref_h
+
+
+def _band_levels(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], key: Any) -> List[Dict[str, Any]]:
+    """One representative room (lowest id) per distinct `key(room)`, sorted by key."""
+    seen: Dict[Any, str] = {}
+    for i in sorted(ids):
+        seen.setdefault(key(rooms[i]), i)
+    return [rooms[seen[k]] for k in sorted(seen)]
+
+
+def hq_band_points(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], centre: Sequence[float], pose: Any,
+                   ref_w: float, ref_h: float, step_deg: Optional[float] = None) -> List[List[float]]:
+    """Face band of the HQ's current level (spec 7.1 rule 1): for each tier (layer) of the rooms `ids`, points on the
+    tier's square face every `step_deg` (default `BAND["hq_step_deg"]`) around the compound centre, at floor and room-top
+    height, that face the camera and project inside the frame."""
+    st = BAND["hq_step_deg"] if step_deg is None else step_deg
+    out: List[List[float]] = []
+    for r in _band_levels(rooms, ids, lambda q: q["layer"]):
+        n = room_normal_xy(r)
+        f = r["front"]
+        hs = (sum(q[0] for q in f) / len(f) - centre[0]) * n[0] + (sum(q[1] for q in f) / len(f) - centre[1]) * n[1]
+        gz = r.get("ground_z", 0.0)
+        z0 = min(q[2] for q in f) + gz
+        z1 = max(q[2] for q in f) + gz
+        for k in range(int(360.0 / st)):
+            a = math.radians(k * st)
+            ca, sa = math.cos(a), math.sin(a)
+            s = hs / max(abs(ca), abs(sa))
+            if abs(ca) >= abs(sa):
+                nrm = [1.0 if ca > 0 else -1.0, 0.0]
+            else:
+                nrm = [0.0, 1.0 if sa > 0 else -1.0]
+            for z in (z0, z1):
+                p = [centre[0] + s * ca, centre[1] + s * sa, z]
+                if _band_point_ok(p, nrm, pose, ref_w, ref_h):
+                    out.append(p)
+    return out
+
+
+def street_band_points(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], extents: Dict[str, Sequence[float]],
+                       pose: Any, ref_w: float, ref_h: float, step_bu: Optional[float] = None) -> List[List[float]]:
+    """Face band of the route building(s) holding the rooms `ids` (spec 7.1 rule 1): points along the building's face
+    every `step_bu` (default `BAND["street_step_bu"]`), at the floor and room-top height of each distinct (building,
+    floor, span) level, that face the camera and project inside the frame. `extents[bid] = (x0, x1, y0, y1)`."""
+    st = BAND["street_step_bu"] if step_bu is None else step_bu
+    out: List[List[float]] = []
+    for r in _band_levels(rooms, ids, lambda q: (q["bld"], q["floor"], q["span"])):
+        n = room_normal_xy(r)
+        f = r["front"]
+        gz = r.get("ground_z", 0.0)
+        z0 = min(q[2] for q in f) + gz
+        z1 = max(q[2] for q in f) + gz
+        x0, x1, y0, y1 = extents[r["bld"]]
+        along_x = abs(f[0][1] - f[1][1]) < 1e-9          # the face runs along x (constant y)
+        lo, hi = (x0, x1) if along_x else (y0, y1)
+        for k in range(int((hi - lo) / st) + 1):
+            u = lo + k * st
+            for z in (z0, z1):
+                p = [u, f[0][1], z] if along_x else [f[0][0], u, z]
+                if _band_point_ok(p, n, pose, ref_w, ref_h):
+                    out.append(p)
+    return out
+
+
+def building_extent(city: Dict[str, Any], bid: str) -> List[float]:
+    """`[x0, x1, y0, y1]` bounding box over all parts of the city building `bid`."""
+    b = next(q for q in city["buildings"] if q["bid"] == bid)
+    xs = [p[0] for pt in b["parts"] for p in pt["poly"]]
+    ys = [p[1] for pt in b["parts"] for p in pt["poly"]]
+    return [min(xs), max(xs), min(ys), max(ys)]
 
 
 def occlusion_params(cam: Pt3, pts: Sequence[Pt3], cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

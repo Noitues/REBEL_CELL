@@ -86,19 +86,30 @@ class _Ctx:
             return HO.hq_hover(dec, self.rooms[node])
         return RG.street_hover(dec, self.rooms[node], self.d["nrm"])
 
+    def band(self, pose: RG.Pose, ids: List[str]) -> List[List[float]]:
+        """Face band of the current level (DECISION / HOVER only): the landmark's tier face on an HQ, the route
+        building's face on a street (spec 7.1 rule 1)."""
+        if not ids:
+            return []
+        if self.kind == "hq":
+            return OCC.hq_band_points(self.rooms, ids, self.comp["centre"], pose, RG.REF_W, RG.REF_H)
+        ext = {self.rooms[i]["bld"]: OCC.building_extent(self.city, self.rooms[i]["bld"]) for i in ids}
+        return OCC.street_band_points(self.rooms, ids, ext, pose, RG.REF_W, RG.REF_H)
+
     def record(self, pose: RG.Pose, ids: List[str], decision: bool = False) -> Dict[str, Any]:
         """Pose plus its check values: zoom_dive / zoom_detail, lod weights, occlusion (and HQ section) params.
 
-        A `decision` record's occlusion cone targets EVERY route room in frame (art-pass 6d214ce9), the `ids` rooms
-        included; the HQ section params keep the `ids` points.
+        A `decision` record's occlusion cone targets EVERY route room in frame that faces the camera (art-pass 6d214ce9), the
+        `ids` rooms included, plus the face band of the current level (art-pass 7a3e72cd, spec 7.1); the HQ section params keep the `ids` points.
         """
         loc = pose.loc()
         pts = [[q[0], q[1], q[2] + self.rooms[i].get("ground_z", 0.0)] for i in ids for q in self.rooms[i]["front"]]
         occ_pts = pts
         if decision:
-            vis = HO.visible_room if self.kind == "hq" else None
+            vis = HO.visible_room if self.kind == "hq" else OCC.room_faces_camera
             occ_ids = sorted(set(ids) | set(OCC.rooms_in_frame(self.rooms, pose, RG.REF_W, RG.REF_H, vis)))
             occ_pts = [[q[0], q[1], q[2] + self.rooms[i].get("ground_z", 0.0)] for i in occ_ids for q in self.rooms[i]["front"]]
+            occ_pts += self.band(pose, ids)
         rec: Dict[str, Any] = dict(pose=pose.to_json())
         if self.d0 is not None:
             rec["zoom_dive"] = LOD.zoom_dive(RG.dive_distance(pose, self.ov), self.d0, self.d1)

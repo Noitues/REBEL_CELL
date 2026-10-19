@@ -227,7 +227,9 @@ static func rail_cap(rail: Dictionary, x: float, y: float, h: float) -> Array:
 ## Ids (sorted) of the route rooms the DECISION cone must cover (art-pass 6d214ce9, NA-04c): every room whose front quad
 ## projects fully in front of the camera with its centre inside the `ref_w` x `ref_h` frame and, when `hq_visible` is set
 ## (HQ), facing the camera (`NetrunHqOrbit.visible_room`).
-static func rooms_in_frame(rooms: Dictionary, pose: NetrunPose, ref_w: float, ref_h: float, hq_visible: bool = false) -> Array:
+## A street netrun (`street_facing`) uses `room_faces_camera` instead.
+static func rooms_in_frame(rooms: Dictionary, pose: NetrunPose, ref_w: float, ref_h: float, hq_visible: bool = false,
+		street_facing: bool = false) -> Array:
 	var ids: Array = rooms.keys()
 	IdSort.sort_ids(ids)
 	var out: Array = []
@@ -253,5 +255,137 @@ static func rooms_in_frame(rooms: Dictionary, pose: NetrunPose, ref_w: float, re
 			continue
 		if hq_visible and not NetrunHqOrbit.visible_room(r, pose):
 			continue
+		if street_facing and not room_faces_camera(r, pose):
+			continue
 		out.append(rid)
 	return out
+
+
+## True when the room's outward normal points toward the camera (street netruns; an HQ uses `visible_room`).
+static func room_faces_camera(room: Dictionary, pose: NetrunPose) -> bool:
+	var loc: Array = pose.loc()
+	var n: Array = NetrunHqOrbit.room_normal(room)
+	var sx := 0.0
+	var sy := 0.0
+	for q: Array in room["front"]:
+		sx += q[0]
+		sy += q[1]
+	var cnt: float = float((room["front"] as Array).size())
+	return n[0] * (loc[0] - sx / cnt) + n[1] * (loc[1] - sy / cnt) > 0.0
+
+
+static func _band_point_ok(p: Array, nrm: Array, pose: NetrunPose, ref_w: float, ref_h: float) -> bool:
+	var loc: Array = pose.loc()
+	if nrm[0] * (loc[0] - p[0]) + nrm[1] * (loc[1] - p[1]) <= 0.0:
+		return false
+	var q: Array = pose.proj(p)
+	return not q.is_empty() and q[0] >= 0.0 and q[0] <= ref_w and q[1] >= 0.0 and q[1] <= ref_h
+
+
+## One representative room (lowest id) per distinct level key, sorted by key (`street` keys are [bld, floor, span],
+## HQ keys the tier `layer`).
+static func _band_levels(rooms: Dictionary, ids: Array, street: bool) -> Array:
+	var sorted_ids: Array = ids.duplicate()
+	IdSort.sort_ids(sorted_ids)
+	var seen: Dictionary = {}
+	var keys: Array = []
+	for i: String in sorted_ids:
+		var r: Dictionary = rooms[i]
+		var k: Array = [r["bld"], int(r["floor"]), int(r["span"])] if street else [int(r["layer"])]
+		var ks: String = "|".join(k.map(func(v: Variant) -> String: return str(v)))
+		if not seen.has(ks):
+			seen[ks] = r
+			keys.append(k)
+	keys.sort_custom(_band_key_less)
+	var out: Array = []
+	for k: Array in keys:
+		out.append(seen["|".join(k.map(func(v: Variant) -> String: return str(v)))])
+	return out
+
+
+static func _band_key_less(a: Array, b: Array) -> bool:
+	for j in a.size():
+		if a[j] != b[j]:
+			return a[j] < b[j]
+	return false
+
+
+static func _front_z_range(r: Dictionary) -> Array:
+	var z0 := INF
+	var z1 := -INF
+	for q: Array in r["front"]:
+		z0 = minf(z0, float(q[2]))
+		z1 = maxf(z1, float(q[2]))
+	var gz: float = r.get("ground_z", 0.0)
+	return [z0 + gz, z1 + gz]
+
+
+## Face band of the HQ's current level (spec 7.1 rule 1; twin of `hq_band_points`): per tier of the rooms `ids`, points on
+## the tier's square face every `hq_step_deg` around `centre`, at floor and room-top height, facing the camera and inside
+## the frame. `step_deg` <= 0 = config.
+static func hq_band_points(rooms: Dictionary, ids: Array, centre: Array, pose: NetrunPose, ref_w: float, ref_h: float,
+		step_deg: float = 0.0) -> Array:
+	var st: float = step_deg if step_deg > 0.0 else float(NetrunArtConfigData.shipped().occlusion["hq_step_deg"])
+	var out: Array = []
+	for r: Dictionary in _band_levels(rooms, ids, false):
+		var n: Array = NetrunHqOrbit.room_normal(r)
+		var fx := 0.0
+		var fy := 0.0
+		for q: Array in r["front"]:
+			fx += q[0]
+			fy += q[1]
+		var cnt: float = float((r["front"] as Array).size())
+		var hs: float = (fx / cnt - centre[0]) * n[0] + (fy / cnt - centre[1]) * n[1]
+		var zr: Array = _front_z_range(r)
+		for k in int(360.0 / st):
+			var a: float = deg_to_rad(float(k) * st)
+			var ca: float = cos(a)
+			var sa: float = sin(a)
+			var s: float = hs / maxf(absf(ca), absf(sa))
+			var nrm: Array
+			if absf(ca) >= absf(sa):
+				nrm = [1.0 if ca > 0.0 else -1.0, 0.0]
+			else:
+				nrm = [0.0, 1.0 if sa > 0.0 else -1.0]
+			for z: float in zr:
+				var p: Array = [centre[0] + s * ca, centre[1] + s * sa, z]
+				if _band_point_ok(p, nrm, pose, ref_w, ref_h):
+					out.append(p)
+	return out
+
+
+## Face band of the route building(s) holding the rooms `ids` (twin of `street_band_points`): points along the face every
+## `street_step_bu`, at floor and room-top height of each (building, floor, span) level. `extents[bid] = [x0, x1, y0, y1]`.
+static func street_band_points(rooms: Dictionary, ids: Array, extents: Dictionary, pose: NetrunPose, ref_w: float,
+		ref_h: float, step_bu: float = 0.0) -> Array:
+	var st: float = step_bu if step_bu > 0.0 else float(NetrunArtConfigData.shipped().occlusion["street_step_bu"])
+	var out: Array = []
+	for r: Dictionary in _band_levels(rooms, ids, true):
+		var n: Array = NetrunHqOrbit.room_normal(r)
+		var f: Array = r["front"]
+		var zr: Array = _front_z_range(r)
+		var ex: Array = extents[r["bld"]]
+		var along_x: bool = absf(float(f[0][1]) - float(f[1][1])) < 1e-9
+		var lo: float = ex[0] if along_x else ex[2]
+		var hi: float = ex[1] if along_x else ex[3]
+		for k in int((hi - lo) / st) + 1:
+			var u: float = lo + float(k) * st
+			for z: float in zr:
+				var p: Array = [u, f[0][1], z] if along_x else [f[0][0], u, z]
+				if _band_point_ok(p, n, pose, ref_w, ref_h):
+					out.append(p)
+	return out
+
+
+## `[x0, x1, y0, y1]` bounding box over all parts of the city building `bid`.
+static func building_extent(city: Dictionary, bid: String) -> Array:
+	for b: Dictionary in city["buildings"]:
+		if b["bid"] == bid:
+			var xs: Array = []
+			var ys: Array = []
+			for pt: Dictionary in b["parts"]:
+				for p: Array in pt["poly"]:
+					xs.append(float(p[0]))
+					ys.append(float(p[1]))
+			return [xs.min(), xs.max(), ys.min(), ys.max()]
+	return []
