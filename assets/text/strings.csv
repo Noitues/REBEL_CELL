@@ -634,6 +634,7 @@ DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DE-ORBITED,DE-ORBITED
 DECEASED,DECEASED
+DECISION,DECISION
 DECK,DECK
 DECRYPTED,DECRYPTED
 DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
@@ -1128,6 +1129,7 @@ HomeServerVariantData.home_relay_nest.description,"50 integrity spread thin, 5 a
 HomeServerVariantData.home_relay_nest.display_name,Relay Nest home server
 HomeServerVariantData.home_standard.description,The default home server layout.
 HomeServerVariantData.home_standard.display_name,Standard home server
+"Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange.","Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange."
 Hover or right-click,Hover or right-click
 "How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."
 HubCoreData.auto_renew.description,Heals 10 each turn unless the Hub is breached.
@@ -1819,6 +1821,7 @@ OUTPUT DOWN,OUTPUT DOWN
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
 OVERTHROW,OVERTHROW
+OVERVIEW,OVERVIEW
 OVERWRITTEN,OVERWRITTEN
 OVFL,OVFL
 Off (no correction),Off (no correction)
@@ -1865,6 +1868,7 @@ PERSON OF INTEREST // FILE,PERSON OF INTEREST // FILE
 PERSONNEL  //  IDENTIFIED OPERATIVES,PERSONNEL  //  IDENTIFIED OPERATIVES
 PHASE %d,PHASE %d
 "PICK A NODE: click one of the numbered stickers, then confirm.","PICK A NODE: click one of the numbered stickers, then confirm."
+"PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW.","PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW."
 PICK THE NODE TO BUILD,PICK THE NODE TO BUILD
 PIERCE,PIERCE
 PIRATE RADIO 88.1,PIRATE RADIO 88.1
@@ -3373,6 +3377,7 @@ Your run is saved where it is: BREACH on the title picks it up.,Your run is save
 Your spinner.,Your spinner.
 Your stats and achievements stay.,Your stats and achievements stay.
 Your uplink has been reassigned to the commons. Burn-up in progress.,Your uplink has been reassigned to the commons. Burn-up in progress.
+Z flips between OVERVIEW and DECISION.,Z flips between OVERVIEW and DECISION.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Daemon to pick,a Daemon to pick
 a Firmware chip to pick,a Firmware chip to pick

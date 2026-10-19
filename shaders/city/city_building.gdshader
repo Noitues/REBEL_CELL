@@ -103,6 +103,13 @@ uniform float haze_hi = 0.15;
 // The id pass (PIPELINE_SPEC 12.0): unlit class colour in R, G = 255 and B = 0 for a cut / ghosted / dissolved building.
 uniform bool id_mode = false;
 uniform float id_class = 2.0;
+// NA-23: the route rooms. A route building (instance bit `route`) loses the pixels of its walls inside a room volume
+// (`room_box` = plan x0, y0, x1, y1; `room_z` = height range; plan y = -world z), so the room's own mesh shows as a lit
+// window. `room_n` of the 32 slots are used.
+const int ROOM_MAX = 32;
+uniform int room_n = 0;
+uniform vec4 room_box[32];
+uniform vec2 room_z[32];
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -169,6 +176,20 @@ void fragment() {
 	bool occ_cut = v_occ.x > 0.0;
 	bool ghosted = v_occ.y > 0.0;
 	bool dissolved = v_occ.w > 0.0;
+	bool route_bld = look_blend > 0.0 && ((bits >> 22) & 1) == 1;
+	if (route_bld && room_n > 0) {
+		vec3 pw = vec3(v_world.x, -v_world.z, v_world.y);
+		for (int i = 0; i < ROOM_MAX; i++) {
+			if (i >= room_n) {
+				break;
+			}
+			vec4 bx = room_box[i];
+			vec2 zr = room_z[i];
+			if (pw.x > bx.x && pw.x < bx.z && pw.y > bx.y && pw.y < bx.w && pw.z > zr.x && pw.z < zr.y) {
+				discard;
+			}
+		}
+	}
 	float cut_h = v_h * (1.0 - v_occ.x);
 	if (occ_cut && zl > cut_h) {
 		discard;
@@ -324,7 +345,8 @@ void fragment() {
 	}
 	if (id_mode) {
 		ALBEDO = vec3(0.0);
-		EMISSION = id_lin(vec3(id_class, (occ_cut || ghosted || dissolved) ? 255.0 : 0.0, 0.0) / 255.0);
+		// A route building is a room column: its walls are class 2 with B > 0 (12.6 reads them as cut surfaces, not occluders).
+		EMISSION = id_lin(vec3(id_class, (occ_cut || ghosted || dissolved) ? 255.0 : 0.0, route_bld ? 1.0 : 0.0) / 255.0);
 	}
 }
 

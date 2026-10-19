@@ -39,6 +39,16 @@ static func camera_transform(pose: NetrunPose) -> Transform3D:
 	return Transform3D(basis, to_world(pose.loc()))
 
 
+## NA-23: `apply` for a camera that RENDERS. `Camera3D.get_camera_projection` (and so `unproject_position`) reads `size` as the
+## frame height whatever `keep_aspect` says, but the renderer honours `keep_aspect`: with KEEP_WIDTH `size` is the frame WIDTH at
+## the near plane, so `apply` alone draws the picture 16 / 9 too large (measured on a 1920 x 1080 SubViewport: the rooms came out
+## 1.78 times the twin's `Pose.proj` size, and matched it with `size` = `frame_width`). A view that draws uses this; projections
+## for the overlay come from `NetrunPose.proj` (script-side `unproject_position` disagrees by the same factor).
+static func apply_render(cam: Camera3D, pose: NetrunPose, near: float, far: float) -> void:
+	apply(cam, pose, near, far)
+	cam.size = frame_width(pose.lens, near)
+
+
 ## Sets `cam` (a Camera3D) to the pose: frustum projection, size, offset, near/far and the transform.
 static func apply(cam: Camera3D, pose: NetrunPose, near: float, far: float) -> void:
 	cam.keep_aspect = Camera3D.KEEP_WIDTH

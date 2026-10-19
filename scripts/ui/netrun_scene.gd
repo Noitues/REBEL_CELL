@@ -135,6 +135,13 @@ var node_panel: RouteNodePanel = null
 var node_backdrop: NodeBackdrop = null
 ## ART-8 8w: the HQ run's page on the compound (boss runs) and the Central Server's gate.
 var hq_run_view: HqRunView = null
+## NA-23: the run's route drawn at street level (StreetRouteView: the netrun camera, the rooms, the occlusion and the grease-pencil
+## overlay) instead of the transit map. Off until the entry sequence (NA-25) and the old page's retirement (NA-26) turn it on;
+## tests and the NA-23 lab set it. A run whose street cannot be derived (`StreetRouteData.error`) keeps the old page.
+static var street_route: bool = false
+var street_view: StreetRouteView = null
+var _keep_street := false
+var _street_error := ""
 var gate: CentralServerGate = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
@@ -1505,6 +1512,9 @@ func _show_start() -> void:
 ## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
+	if street_route and s != null and _street_map_ok(s):
+		_show_street_map(s)
+		return
 	# The route on the city in blueprint, zoomed into the target Site's neighbourhood;
 	# GRID VIEW zooms out to the whole campaign Grid (greyed city). `map_view` stays as the
 	# route model (hidden): pad keys and clicks go through it as before.
@@ -1632,6 +1642,145 @@ func _show_map() -> void:
 	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Mainframe, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
+
+
+var _street_data: StreetRouteData = null
+var _street_key := ""
+
+const STREET_PROMPT := "PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW." # TR
+const STREET_PROMPT_TIP := "Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange." # TR
+
+
+## NA-23: true when the run's street can be derived (and keeps the data for the view). False keeps the transit page.
+func _street_map_ok(s: NetrunSession) -> bool:
+	if _grid_zoomed or s.run.kind == "boss" or s.run.phase != RunState.Phase.MAP or RunManager.corporation == null:
+		return false
+	var key := NetrunArtExport.run_id(s.run)
+	if _street_data == null or _street_key != key:
+		_street_data = StreetRouteView.build_data(s, RunManager.corporation)
+		_street_key = key
+	_street_error = _street_data.error
+	if _street_error != "":
+		push_warning("NetrunScene: the street route cannot be derived (%s); the transit page stays." % _street_error)
+		return false
+	return true
+
+
+## NA-23: the route page at street level. The ROUTE window (prompt, confirm, GRID VIEW, Save & quit), the node file and the key
+## stay; the map is the StreetRouteView on the city. The view lives across refreshes of the same page and is freed with the page.
+func _show_street_map(s: NetrunSession) -> void:
+	if street_view != null and (not is_instance_valid(street_view) or street_view.data != _street_data):
+		if is_instance_valid(street_view):
+			street_view.queue_free()
+		street_view = null
+	var panel := VBoxContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_child(top)
+	var route_col := VBoxContainer.new()
+	route_col.name = "RouteColumn"
+	route_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	route_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	route_col.add_theme_constant_override("separation", 8)
+	top.add_child(route_col)
+	var win := TerminalWindow.new(tr("ROUTE"), Palette.CELL_ACID)
+	win.name = "RouteWindow"
+	win.custom_minimum_size.x = 300
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	route_col.add_child(win)
+	_route_buttons.clear()
+	_route_selected = &""
+	_route_mouse_pick = false
+	_route_prompt = Label.new()
+	_route_prompt.name = "RoutePrompt"
+	_route_prompt.text = tr(STREET_PROMPT)
+	_route_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_route_prompt.custom_minimum_size.x = 260.0
+	_route_prompt.mouse_filter = Control.MOUSE_FILTER_PASS
+	_route_prompt.tooltip_text = UiTip.fold(tr(STREET_PROMPT_TIP))
+	win.body.add_child(_route_prompt)
+	_route_confirm = _button(tr(ROUTE_CONFIRM_NONE), confirm_route_node)
+	_route_confirm.name = "RouteConfirm"
+	_route_confirm.disabled = true
+	win.body.add_child(_route_confirm)
+	var zoom_btn := _button(tr("GRID VIEW"), func() -> void:
+		_grid_zoomed = true
+		_show_map())
+	zoom_btn.name = "GridZoom"
+	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid."))
+	IconMark.attach(zoom_btn, StatIcon.MAP)
+	win.body.add_child(zoom_btn)
+	var quit_btn := _button(tr("Save & quit"), save_and_quit)
+	quit_btn.name = "SaveQuit"
+	quit_btn.tooltip_text = UiTip.fold(tr("Save the run and leave it; Continue picks it up here."))
+	IconMark.attach(quit_btn, StatIcon.SAVE)
+	win.body.add_child(quit_btn)
+	var gap := Control.new()
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	route_col.add_child(gap)
+	node_panel = RouteNodePanel.new()
+	route_col.add_child(node_panel)
+	var kinds: Array = []
+	for n in s.run.map.all_nodes():
+		var k := CityMapOverlay.route_kind(int(n["type"]), bool(n["elite"]))
+		if not kinds.has(k):
+			kinds.append(k)
+	route_legend = RouteLegend.new(kinds, Palette.corp_color(RunManager.campaign.corporation_id))
+	panel.add_child(route_legend)
+	_keep_street = street_view != null
+	_set_panel(panel, false)
+	_keep_street = false
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var options: Array = []
+	for id in s.available_nodes():
+		options.append(String(id))
+	var visited: Array = []
+	for id in s.run.visited:
+		visited.append(String(id))
+	var current := String(s.run.current_node_id)
+	if street_view == null:
+		var cfg := CityView3D.CONFIG
+		street_view = StreetRouteView.new()
+		street_view.name = "StreetRoute"
+		background.add_child(street_view)
+		street_view.tag_text = _street_tag
+		street_view.setup(_street_data, CityModel.shared(cfg, cfg.city_seed), current, visited, options)
+		street_view.node_hovered.connect(func(id: String) -> void:
+			if id != "":
+				show_node_panel(StringName(id)))
+		street_view.node_selected.connect(func(id: String) -> void: select_route_node(StringName(id)))
+		street_view.node_confirmed.connect(func(id: String) -> void:
+			_route_selected = StringName(id)
+			confirm_route_node())
+	else:
+		street_view.set_run_state(current, visited, options)
+	route_legend.show_links_hovered.connect(func(on: bool) -> void:
+		if street_view != null and is_instance_valid(street_view):
+			street_view.set_lit_all(on)
+		if route_legend != null and is_instance_valid(route_legend):
+			route_legend.set_showing_links(on))
+	show_node_panel(StringName(options[0]) if not options.is_empty() else &"")
+	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
+	_prebake_backdrops.call_deferred()
+
+
+## NA-23: the tag a hovered room shows: its kind word and the Heat entering it changes.
+func _street_tag(id: String) -> String:
+	var s := RunManager.netrun
+	if s == null:
+		return ""
+	var node := s.run.map.get_node(StringName(id))
+	if node.is_empty():
+		return ""
+	var text := node_word(node)
+	var heat := s.node_heat(StringName(id))
+	if heat != 0:
+		text += tr(" %s Heat") % TextDb.signed(heat)
+	return text
 
 
 ## W3-POLISH F5: the Grid point GRID VIEW's camera centers on: the middle of the run's path (its
@@ -2823,6 +2972,10 @@ func _clear_route() -> void:
 	if hq_run_view != null and is_instance_valid(hq_run_view):
 		hq_run_view.queue_free()
 	hq_run_view = null
+	if street_view != null and not _keep_street:
+		if is_instance_valid(street_view):
+			street_view.queue_free()
+		street_view = null
 	close_gate()
 	var city := background.city
 	if city.focus_grid != Vector2.INF or city.scale != Vector2.ONE:
