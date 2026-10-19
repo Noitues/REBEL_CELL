@@ -91,6 +91,10 @@
     lot grid with a carved bay (NA-12 r1-r3 did that). CITY-A2 step 1 RUNNING (Opus, brief docs/handoff/plan2/briefs_city_a2/
     step1.md). B-028 withdrawn; NA-12c/d and the sea look re-base on A2; seed-1 plate re-render on hold (new plate inputs come
     from the A2 city). NA-12 r3 + NA-25b r4 are merged on w1-close (5e2a796d + NA-12 merge, quick checks green).
+  - **DESIGNER RULING (A-041): art-pass owns the 3D look in Godot** (materials, shaders, lights, env / fog / post, camera look) in
+    its clone D:/rc_art/godot_look `art/look`; we fetch + merge it into w1-close on "art/look ready @ sha". Build = systems, data,
+    CITY-A2, game UI, tests, merges, plate_inputs exporters (HQ exporter to scope). NA-12 r4 + NA-31c moved to art-pass; P6 is
+    the last build look slice (post its merge sha + half-done items in a B entry). Claim shared look files in a B entry first.
   - **Work board (designer):** "Running (build)" table atop MAILBOX_TO_ART.md; update on every launch / finish; read art-pass's
     "Running (art-pass)" board before launching (asked in B-030).
   - DONE COMBAT-LOCK r4 launch (A-036; wheel mark APPROVED): RESPIN chip mark = oval hugging the chip outline (8-12 % margin, same
