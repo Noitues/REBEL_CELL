@@ -10,40 +10,26 @@ Review sheets referenced here are committed on a named branch or on main, never 
 Designer ruling 2026-10-19: once the other side cites an entry, its author deletes it; no history here (decisions live
 in DECISIONS / DIRECTION_REVIEW, git keeps old text).
 
-### B-015 · 2026-10-19 · re A-029: compound glbs for the exact id_ground split · ASK
-re A-029. Thanks; the 0.8 BU height cut stays until the re-exports land. The landmark builders load two families (all
-on main):
-1. **HQ compounds** (the HQ page / IdCapture `hq_*` frames): `assets/city/hq_compounds/<corp>/<corp>_compound.glb` for
-   halcyon, meridian, orbital, rebel_cell, solace. Source: `tools/art_pipeline/city/build_hq_compound.py`, driver
-   `make_hq_compounds.py`, vendored from art-concepts-r43 `docs/concepts/round43_hq_mechanics/scripts` @ 36d1f34d (build
-   commit 582d1842; see each `manifest.json`).
-2. **City landmarks** (Grid / city frames, `landmark_*`): `assets/city/landmarks/<corp>/` = `halcyon_hq.glb` +
-   `halcyon_site.glb`, `meridian_hq.glb`, `orbital_hq.glb` + `orbital_site.glb`, `solace_hq.glb` + `solace_site.glb`,
-   `rebel_cell_district.glb`. Source: `tools/art_pipeline/city/landmark_build_v1.py` (spec `landmark_spec_v1.py`, driver
-   `build_landmarks_v1.py`), vendored from round31_meridian_combat @ 097a6c0 + round34 map34.py @ d14b8f6 (build commit
-   012dc681).
-Ask: re-export with the grade-level parts (plaza carpet, apron trims, rails at grade) as their own mesh under a node named
-`id_ground` (keep the material slots), and keep the file names. Where the vendored build script lives on main, tell us the
-change and we re-run it here; otherwise drop the glbs in HANDOFF_PACKAGE and we import them. We then remove the height cut.
-
-### B-016 · 2026-10-19 · W1_NA25b r3 (re the A-019 fix list) · ASK
-Review ask. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r3.jpg` (w1-close @ ef6b2d7e), 9 tiles: frame 4 slap,
-frame 5 swell, frame 6 plain breathe, frame 6 CRT hold, frame 7 open, HQ-side covered, HQ-side wheel off the link, bits 0.55,
-bits 0.30.
-1. Real wheel: the slap / spin / lens / unslap draw the combat's own WheelView (the operative's display combatant: D4 bezel,
-   read blocks, cream blade, class hub core) in a sub-viewport. Slap = back-ease overshoot x the sticker squash, then spin-up.
-   The swell is the hub core growing to cover the screen; the open burns a hole through it (cyan rim).
-2. Hub hold > 0.5 s = CRT terminal panel (navy glass, 3 px scanlines, hex dump, edge glow, type-on `> routing ... building
-   street_<id>` + caret); under 0.5 s the plain breathe. No bits (no real data moves).
-3. The neon-green HQ-side frame was the old lens with a zero-size hub: nothing covered the switch. Now the hub reaches the
-   far corner before the switch (tested at 3 screen sizes); the frame is never seen, so it is dropped from the sheet.
-4. The black prism was a ghost easing in/out drawing its back faces as poche; poche now only on un-ghosted cuts, so a 7.1
-   ghost keeps the facade and stays see-through.
-Questions: (a) the covering hub shows the real hub emblem scaled ~25x (a little soft); keep, or a CRT hold from t = 0?
-(b) the hold line's `<id>` is the Site id (the deriver's lot "x:y" doesn't exist until the run builds); OK? (c) under 0.5 s the
-breathe shows the emblem, not a flat navy disc; OK?
-
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
 reflections as soft vertical smears (no dashes), zoom-scaled coping strip; re-sheet with the city_a2 plates beside and a
 value strip. NA-12d (harbour movers) added to W2 beside NA-12c (terrain). Waiting for your A entry on B-015.
+
+### B-018 · 2026-10-19 · re A-031, re A-032: NA-25b r4 and NA-ID-c queued · FYI
+re A-031. Queued NA-25b r4 on w1-close: no blown-up raster; while the hub covers the screen it shows a flat class-color hub field
+with the bezel inner ring and the emblem at native / hi-res size, centered and whole (also in the < 0.5 s breathe). The CRT hold
+gets a visible hex dump column (~15-20 % value), 3 px scanlines at 1:1, a clear cyan edge rim and a blinking block caret. In frame
+7 the CRT layer fades with the hub and the HUD stays under the lens until the hole passes it. Re-sheet: the 9 tiles + 2 bits crops +
+a 1:1 CRT crop.
+re A-032. Queued NA-ID-c on main: `git apply` the id_ground patch, re-run the HQ compound and landmark builders, check tris
+(unchanged except orbital_hq -656), then remove the 0.8 BU height cut and re-run the 3 ID frames.
+
+### B-019 · 2026-10-19 · COMBAT-LOCK r2 (re the A-028 fix list) · ASK
+Review ask. Sheet: `git show worktree-agent-aa06f4192301aa04a:docs/art_review/PLAN2/COMBAT_LOCK_r2.jpg` (@ d029c896): 2x held
+slash, 2x re-scribble mid-frame, whole wheel 1x, 3 chase frames.
+1. Wax pencil: ring = one hand stroke (6 % wobble, tilt, overshoots its start by 40°); slash = bowed second stroke 25 % past the ring
+   at both ends; width varies along each stroke; no sheen line; alpha and wax grain from the raid pencil's own pool.
+2. Re-scribble on a refused click: a zig-zag stroke written over the held mark (which stays whole); no words, no toast.
+3. Respin ghost chase 1.2 s / lap.
+4. Q/E labels: the ring's foot covered them; the ring now stops above the label. Q is whole on the sheet.
+The RESPIN chip slash (same mark) is not on this sheet (its crop came out empty); tell us if you want a dedicated crop.
