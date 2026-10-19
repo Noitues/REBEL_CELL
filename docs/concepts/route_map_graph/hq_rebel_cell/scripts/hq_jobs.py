@@ -31,6 +31,7 @@ QUAL = {
     "final": dict(res=[2560, 1440], samples=64, threshold=0.015, step_rate=1.2),
     "sheet": dict(res=[1280, 720], samples=48, threshold=0.02, step_rate=1.5),
     "video": dict(res=[960, 540], samples=12, threshold=0.06, step_rate=3.0),   # upscaled to 1280 x 720 by the encoder
+    "t2k": dict(res=[2560, 1440], samples=24, threshold=0.03, step_rate=2.0),
     "test": dict(res=[1280, 720], samples=32, threshold=0.04, step_rate=2.0),
     "mini": dict(res=[640, 360], samples=16, threshold=0.06, step_rate=3.0),
     "eevee": dict(res=[960, 540], samples=24, engine="EEVEE"),
@@ -95,7 +96,7 @@ def reveal():
 def have_lock():
     if not os.path.exists(LOCK):
         return False
-    return "hq_rev" in open(LOCK, errors="replace").read()
+    return "hq_" in open(LOCK, errors="replace").read()
 
 
 def run(kind, frames, quality, out_dir, chunk=None, extra=None):

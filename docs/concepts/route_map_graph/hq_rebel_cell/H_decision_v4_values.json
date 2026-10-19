@@ -1,0 +1,63 @@
+{
+ "median": 0.16184000670909882,
+ "under_010": 0.3412272135416667,
+ "over_085": 0.019358452690972222,
+ "ratio_median": 1.9574810693550455,
+ "ratio_mean": 2.9427130295340445,
+ "ratio_peak": 9.337014686639574,
+ "composition": {
+  "R-SIL-1": null,
+  "R-SIL-2": null,
+  "R-DET-1": null,
+  "R-DET-2": null,
+  "R-CALM-1": 0.4827275309416426,
+  "R-CALM-2": 0.15,
+  "R-HUE-1": null,
+  "R-HUE-2": null,
+  "R-FOCUS-1": null,
+  "R-HOR-1": null,
+  "R-REP-1": 0.5461147487163543
+ },
+ "checks": {
+  "status": {
+   "R-VAL-1": "pass",
+   "R-VAL-2": "pass",
+   "R-VAL-3": "pass",
+   "landmark_ratio": "pass",
+   "R-CALM-1": "pass",
+   "R-CALM-2": "pass",
+   "R-FOCUS-1": "n/a",
+   "R-REP-1": "pass",
+   "R-SIL-1": "n/a",
+   "R-SIL-2": "n/a",
+   "R-DET-1": "n/a",
+   "R-DET-2": "n/a",
+   "R-HUE-1": "n/a",
+   "R-HUE-2": "n/a",
+   "R-HOR-1": "n/a"
+  },
+  "baseline": [],
+  "report_only": [
+   "R-CALM-1",
+   "R-CALM-2"
+  ],
+  "notes": {
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 2559, 1439]",
+   "R-FOCUS-1": "empty ring: the landmark box fills the frame (n/a, 12.0 O-4)",
+   "id_alignment": "class-variance share / shifted-class share = 1.7116 (above 1 = the index pass matches this beauty plate)"
+  },
+  "exempt": {
+   "hover_cut": false,
+   "red_seq": false,
+   "flash": false
+  },
+  "pre_accepted": []
+ },
+ "inputs": {
+  "city.json": null,
+  "net.json": null,
+  "run_graph.json": null,
+  "zoned.json": null,
+  "derive_run.json": null
+ }
+}

@@ -1,9 +1,6 @@
 {
  "checks": {
-  "baseline": [
-   "R-VAL-2",
-   "landmark_ratio"
-  ],
+  "baseline": [],
   "exempt": {
    "flash": false,
    "hover_cut": false,
@@ -11,7 +8,7 @@
   },
   "notes": {
    "R-FOCUS-1": "empty ring: the landmark box fills the frame (n/a, 12.0 O-4)",
-   "id_alignment": "class-variance share / shifted-class share = 1.8682 (above 1 = the index pass matches this beauty plate)",
+   "id_alignment": "class-variance share / shifted-class share = 1.7116 (above 1 = the index pass matches this beauty plate)",
    "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [0, 0, 2559, 1439]"
   },
   "pre_accepted": [],
@@ -32,21 +29,21 @@
    "R-SIL-1": "n/a",
    "R-SIL-2": "n/a",
    "R-VAL-1": "pass",
-   "R-VAL-2": "fail",
+   "R-VAL-2": "pass",
    "R-VAL-3": "pass",
-   "landmark_ratio": "fail"
+   "landmark_ratio": "pass"
   }
  },
  "composition": {
-  "R-CALM-1": 0.6048,
-  "R-CALM-2": 0.2045,
+  "R-CALM-1": 0.5804,
+  "R-CALM-2": 0.2136,
   "R-DET-1": null,
   "R-DET-2": null,
   "R-FOCUS-1": null,
   "R-HOR-1": null,
   "R-HUE-1": null,
   "R-HUE-2": null,
-  "R-REP-1": 0.5054,
+  "R-REP-1": 0.5016,
   "R-SIL-1": null,
   "R-SIL-2": null
  },
@@ -57,10 +54,10 @@
   "run_graph.json": null,
   "zoned.json": null
  },
- "median": 0.121,
- "over_085": 0.0193,
- "ratio_mean": 2.051,
- "ratio_median": 1.182,
- "ratio_peak": 7.9681,
- "under_010": 0.4227
+ "median": 0.1397,
+ "over_085": 0.0183,
+ "ratio_mean": 2.8633,
+ "ratio_median": 1.8157,
+ "ratio_peak": 9.3359,
+ "under_010": 0.3748
 }

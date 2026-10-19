@@ -41,7 +41,7 @@
  ],
  "run": null,
  "source": {
-  "commit": "untracked",
+  "commit": "ced68d20",
   "final": "route_map_graph/hq_meridian_v3/plates/H_overview_v4_plate.png",
   "index_pass": "hq_fix/meridian_v3/bl_stills/H_overview_index.npy",
   "index_pass_indices": [

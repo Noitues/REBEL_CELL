@@ -41,9 +41,9 @@
  ],
  "run": null,
  "source": {
-  "commit": "6d3a5658",
-  "final": "route_map_graph/hq_rebel_cell/plates/H_overview_v3_plate.png",
-  "index_pass": "hq_rev/rebel_cell/v3/bl_stills/H_overview_index.npy",
+  "commit": "untracked",
+  "final": "route_map_graph/hq_rebel_cell/plates/H_overview_v4_plate.png",
+  "index_pass": "hq_fix/rebel_cell/bl_stills/H_overview_index.npy",
   "index_pass_indices": [
    0,
    1,

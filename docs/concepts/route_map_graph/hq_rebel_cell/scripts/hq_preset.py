@@ -125,8 +125,9 @@ PRESET["post"].update({"exposure": 2.4})
 # level or two, and varied signage (blades, boxes, wraps, banners, LED tickers, paper lanterns, holograms; on the roofs
 # too). Topology and rules unchanged. v2 numbers stay above; v3 overrides them here.
 PRESET["hq"]["rev"] = 3
-PRESET["hq"]["out_big"] = r"D:\rc_scratch\hq_rev\rebel_cell\v3"
-PRESET["hq"]["suffix"] = "_v3"
+PRESET["hq"]["out_big"] = r"D:/rc_scratch/hq_fix/rebel_cell"
+PRESET["hq"]["suffix"] = "_v4"
+PRESET["hq"]["frame_stops"] = {"H_overview": 0.35, "H_decision": 0.2}          # v4: per-frame exposure trims in stops (hq_compose.stills, fix_post)
 PRESET["hq"]["v3"] = {
     # 1. red as an accent: the share of the fist's windows that turn red in the NETRUN section (the red sequence from
     # above keeps the full concept: RS frames use red_mix 1.0)
@@ -178,8 +179,8 @@ if _os.environ.get("HQ_VARIANT", "A") == "A" and not _os.environ.get("HQ_DISTRIC
     PRESET["hq"]["cam"].update({"pitch_lo": 23.0, "pitch_hi": 25.0, "pitch_o": 25.0})
     PRESET["hq"]["cam"]["ov_sy_add"] = -0.022           # finals (AD): the vault cut at ~20 % from the bottom, no void
     PRESET["hq_fog"].update({"haze": 0.0013})                                   # depth between the rows
-    PRESET["hq"]["city"].update({"win_p": 0.15, "win_k": 0.2})                 # the far city: fewer, dimmer windows
-    PRESET["hq"]["light"]["cityglow_k"] = 0.52          # the glow in the haze behind the skyline (towers in silhouette)
+    PRESET["hq"]["city"].update({"win_p": 0.15, "win_k": 0.10})                 # the far city: fewer, dimmer windows
+    PRESET["hq"]["light"]["cityglow_k"] = 0.10          # the glow in the haze behind the skyline (towers in silhouette)
     PRESET["hq"]["v3"]["sign_k"] = 2.0                  # signs a touch lower (the > 0.85 share)
 # designer (t4): MAINFRAME's neon down so the letterforms read crisply (legible tubes, a soft halo, no bloom smear);
 # the TARGET stays the landmark by lighting DISPATCH's building and the room round it (about 2x the local background)
@@ -187,7 +188,7 @@ PRESET["hq"]["v3"].update({"mf_k": 0.62, "gallery_d": 30.0, "vaults": [(-226.0, 
                            "target_wash_w": 3000.0})
 PRESET["hq"]["light"]["mf_spill_w"] = 1100.0
 PRESET["hq"]["v3"].update({"node_prop_k": 1.3, "tower_rim_w": 900.0})       # finals (AD): node props, tower rims
-PRESET["post"]["knee_top"] = 0.88
+PRESET["post"]["knee_top"] = 0.87
 if _os.environ.get("HQ_DISTRICT_ONLY"):
     PRESET["hq"]["v3"]["red_mix"] = 1.0                 # the red sequence keeps the full concept (blackout -> fist)
     PRESET["hq"]["v3"]["red_k_mix"] = 1.0

@@ -73,7 +73,12 @@ def stills(names=None, bl=None, kind="stills"):
         if not os.path.exists(stem + "_combined.npy"):
             print("missing", stem)
             continue
-        plate = PO.finish(stem, ov["zoom"], t=2.0)
+        e0 = PO.P["exposure"]
+        PO.P["exposure"] = e0 * 2.0 ** HP.PRESET["hq"].get("frame_stops", {}).get(name, 0.0)
+        try:
+            plate = PO.finish(stem, ov["zoom"], t=2.0)
+        finally:
+            PO.P["exposure"] = e0
         sfx = HP.PRESET["hq"].get("suffix", "")                # HQ_REV_V2: v2 outputs never overwrite v1
         plate.save(os.path.join(pdir, name + sfx + "_plate.png"))
         ex = ov.get("extra") or {}

@@ -96,11 +96,11 @@ def entries():
                       "hq_fix/meridian_v3/bl_stills/H_overview"))
     E.append(hq_entry("meridian", "decision", "hq_meridian_v3/plates/H_decision_v4_plate.png", "hq_meridian_v3", "H_decision",
                       "hq_fix/meridian_v3/bl_stills/H_decision"))
-    # Rebel Cell v3
-    E.append(hq_entry("rebel_cell", "overview", "hq_rebel_cell/plates/H_overview_v3_plate.png", "hq_rebel_cell", "H_overview",
-                      ob + "rebel_cell/v3/bl_stills/H_overview"))
-    E.append(hq_entry("rebel_cell", "decision", "hq_rebel_cell/plates/H_decision_v3_plate.png", "hq_rebel_cell", "H_decision",
-                      ob + "rebel_cell/v3/bl_stills/H_decision"))
+    # Rebel Cell v4 (light: landmark ratio, overview under 0.10; handoff queue 5)
+    E.append(hq_entry("rebel_cell", "overview", "hq_rebel_cell/plates/H_overview_v4_plate.png", "hq_rebel_cell", "H_overview",
+                      "hq_fix/rebel_cell/bl_stills/H_overview"))
+    E.append(hq_entry("rebel_cell", "decision", "hq_rebel_cell/plates/H_decision_v4_plate.png", "hq_rebel_cell", "H_decision",
+                      "hq_fix/rebel_cell/bl_stills/H_decision"))
     # Tethys v2: no index pass (the Tethys pipeline writes rgb / emit / z only). Cameras from the preset + render logs.
     t_acc = [{"check": "landmark_ratio", "note": "peak 3.7x above 2.0 (overview) pre-accepted 2026-10-18 (12.8)"}]
     ov = MP.pose_from_loc_tgt([-233.0, 180.0, 161.0], [-329.0, 275.0, 0.0], 30.0, 0.0, 0.0)
