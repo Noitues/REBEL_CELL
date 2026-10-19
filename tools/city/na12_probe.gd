@@ -41,7 +41,7 @@ func _init() -> void:
 			passes += 1
 	print("NA12PROBE attempts=%d passes=%d" % [n, passes])
 	var keys: Array = tally.keys()
-	keys.sort()
+	IdSort.sort_ids(keys)
 	for k: String in keys:
 		print("NA12PROBE %4d  %s" % [tally[k], k])
 	quit(0)
