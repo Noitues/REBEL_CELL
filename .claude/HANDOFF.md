@@ -57,6 +57,27 @@
     sign_board UV quad for r2_signs textures); import into assets/ per D8 (glb only, no concept images).
   - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
     route rooms read as storefronts, no light columns).
+- QUEUED from A-025..A-027 (art-pass c8d2f67e):
+  - STREET-CAM (on w1-close): (b) rig distance / shift to plate values in config (overview dist 114.62, shift -0.0548/0.1172;
+    decision 42.10, 0.0345/0.0002) AND the plate camera rule: look along the street face's normal at the frontage (r2_onecity
+    rule 6), frontage a wall across the frame, never down a cross street. TARGET pencil word + circle inside the safe frame
+    (seed 3 overview clipped "TAR"). Derive output logs `retry: leg_extend`. Then publish the seed-1 pose + derive export
+    (city.json + derive json) in a B-entry so art-pass re-renders the plates on our street (a); old plates -> `_r2ref`.
+  - NA-31b (base branch worktree-agent-a16cf8a4620fba449 @ ce69287e): no landmark channel clips (< 2 % over 0.85, hue
+    within ±10° of BEFORE; Meridian orange steel, Solace leaf-green glass, Rebel red #E8141E); ratio from city dim + rim/key
+    light + plaza spill instead of key gain; cone occluders ghosted like 7.1 stubs (never black); Meridian's neighbouring
+    blocks back (dimmed); Rebel Cell stays k_fit-exempt; Meridian fit = moat compound footprint (exclude crane, rail yard,
+    train). Re-sheet BEFORE|AFTER x5 with numbers + mean-hue check.
+  - COMBAT-LOCK r2 (A-028; base branch worktree-agent-a78ccb5cfc9d0147e @ 5de0313f): slash drawn with the raid-pencil
+    GreasePencilMark stroke (wobble, varying width, wax grain, alpha 0.96, no highlight; ring = one stroke overshooting its
+    start, slash = second stroke TL->BR past the ring); re-sheet a re-scribble mid-frame; chase ~1.2 s/lap (3.17: 900-1500 ms);
+    Q/E key labels unclipped in the locked state. Re-sheet: 2x held slash, re-scribble mid-frame, chase at new speed.
+  - NA-12 r3 (A-030, base w1-close): sea look vs city_a2 plates: night sea deep teal-blue between void and land (median
+    value strip void < sea < land), day saturated mid-blue + lighter shallows; marbled caustics + foam; shore reflections =
+    soft short vertical smears under each shore light broken by ripple (never regular dashes = grease-pencil vocabulary);
+    coping strip brighter/wider scaled by zoom. Re-sheet with plates beside: whole city seed 1 night + day, bay crop, value strip.
+  - W2 adds: NA-12c terrain (hills heightfield render, coastlines, marinas, lighthouse, islands), NA-12d harbour movers (boats
+    on the bay, ships at piers, lit offshore platforms).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
@@ -73,5 +94,6 @@ Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, 
 (`IdSort.sort_ids`; allowlist int sorts in `tests/unit/test_no_bare_id_sort.gd`).
 
 ## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
-- Read art -> build at the start of EVERY turn: `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Read art -> build at the start of EVERY turn: `git -C D:/rc_art/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Prune: delete your own B entries once art-pass cites them (designer ruling); no history kept.
 - Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.

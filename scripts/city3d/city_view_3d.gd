@@ -379,6 +379,20 @@ var _id_saved: Dictionary = {}
 var _id_hidden: Array[Node] = []
 
 
+## NA-ID-b: the nodes that make up the ground: the `ground` layer (the outer asphalt plane) and every chunk's ground and lane mesh. The id
+## pass hides them; IdCapture shows them again and paints them class 4.
+func id_ground_nodes() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	var g := layer(&"ground")
+	if g != null:
+		out.append(g)
+	for key: Vector2i in _chunks:
+		for c: Node in (_chunks[key]["node"] as Node).get_children():
+			if c is MeshInstance3D and ((c as MeshInstance3D).material_override == _ground_mat or (c as MeshInstance3D).material_override == _lane_mat):
+				out.append(c as Node3D)
+	return out
+
+
 ## NA-23: the id pass of PIPELINE_SPEC 12.0 (PNG capture only): flat unlit class colours (the building material's `id_mode`, the
 ## rooms'), black sky, no fog, glow, tonemap, ink post, veil or ground. `on` false puts everything back. Callers capture between.
 func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
@@ -402,13 +416,10 @@ func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
 		_building_mat.set_shader_parameter(&"id_class", 2.0)
 		var hide: Array[Node] = []
 		# NA-ID: `keep_landmarks` leaves the landmarks layer in (IdCapture paints it class 1 / 6).
-		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"ground"), layer(&"network"), layer(&"traffic"), layer(&"sky")] + ([] if keep_landmarks else [layer(&"landmarks")]):
+		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"network"), layer(&"traffic"), layer(&"sky")] + ([] if keep_landmarks else [layer(&"landmarks")]):
 			if n != null:
 				hide.append(n)
-		for key: Vector2i in _chunks:
-			for c: Node in (_chunks[key]["node"] as Node).get_children():
-				if c is MeshInstance3D and ((c as MeshInstance3D).material_override == _ground_mat or (c as MeshInstance3D).material_override == _lane_mat):
-					hide.append(c)
+		hide.append_array(id_ground_nodes())
 		for n in hide:
 			if (n as Node3D).visible:
 				(n as Node3D).visible = false
