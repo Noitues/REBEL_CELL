@@ -1260,6 +1260,14 @@
 		"res://tests/integration/test_status_stack_sweep.gd": {
 			"seconds": 40.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_city_shaders.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_shaders_render.gd": {
+			"seconds": 2.0,
+			"tier": "full"
 		}
 	}
 }

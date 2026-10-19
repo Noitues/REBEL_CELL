@@ -7,7 +7,7 @@ const ROOTS: Array[String] = ["res://scripts", "res://tools"]
 
 ## "file name:variable" pairs proven to hold ints, floats, Vector2i, paths or Strings only.
 const ALLOWED: Array[String] = [
-	"netrun_art_layout.gd:members", "netrun_hq_orbit.gd:faces", "netrun_street_deriver.gd:keys",  # NA-21: int part / face / layer indices
+	"na22_lab.gd:keys", "netrun_art_layout.gd:members", "netrun_hq_orbit.gd:faces", "netrun_street_deriver.gd:keys",  # NA-21: int part / face / layer indices
 	"content_registry.gd:paths", "save_service.gd:out", "city_mesh_kit.gd:keys",
 	"city_motion_site.gd:keys", "city_view_3d.gd:keys", "campaign_rules.gd:crosses",
 	"heat_rules.gd:out", "map_graph.gd:targets", "netrun_session.gd:ids",

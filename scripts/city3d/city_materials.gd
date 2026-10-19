@@ -10,6 +10,8 @@ extends RefCounted
 
 const BUILDING := preload("res://shaders/city/city_building.gdshader")
 const GROUND := preload("res://shaders/city/city_ground.gdshader")
+## NA-22: the ground shader with the wet-street look blended in by look_blend (0 = GROUND exactly).
+const WET_STREET := preload("res://shaders/city/wet_street.gdshader")
 const POST := preload("res://shaders/city/city_post.gdshader")
 const NETWORK := preload("res://shaders/city/city_network.gdshader")
 const NETWORK_XRAY := preload("res://shaders/city/city_network_xray.gdshader")
