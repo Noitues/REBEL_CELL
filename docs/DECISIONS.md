@@ -34,6 +34,9 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — W1 NA-22c: street wash, edge trims, landmark cone fade (art-pass fix list)
+- Retunes in `city_shaders.tres`: look.exposure 1.0 -> 0.95, beam.emit 1.8 -> 1.5 (keeps over-0.85 within tolerance). Street canyon lb1 vs golden street_overview: median 0.152, under-0.10 25.6 % (plate 26.7 %), over-0.85 1.10 %, p99 0.869: all pass. Halcyon eye-beam (mainline landmark cone) fades out over look_blend 0..0.5. Render test (lb0 <= 1/255) green; 1080p GPU about 6 ms at lb1 (budget 14 ms), fog within noise.
+
 ### 2026-10-18 — Overnight: defaults taken on open calls (designer: "don't stop and wait for my decisions")
 Each is a default the designer may revisit; work proceeds on it.
 - **Themes (THEMES_SHEET):** Meridian = **A PAYLOAD** (the draft's recommendation); Orbital = **A DEAD ZONE** (the
