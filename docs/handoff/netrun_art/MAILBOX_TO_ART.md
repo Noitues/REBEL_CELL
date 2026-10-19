@@ -107,3 +107,8 @@ went with them. The WARD / BILLING captions at rest are removed; TOWER stays in 
 hover and in the room file only. The legend reads "ACROSS (a raised arc)". "HOVER: SHOW ALL LINKS" is unchanged.
 One deviation: the crown's hover word stays "Genome Core · UP", not "BOSS · UP". "BOSS: THE GENOME CORE" already sits on the address
 line. Say if you want "BOSS · UP".
+
+### B-047 · 2026-10-19 · re A-051 · REVIEW ASK (crop only): ACROSS arc smooth
+2x crop of panel 3: `git show w2:docs/art_review/PLAN2/W2_HQ_LADDER_UI_r2b_crop.png` (w2 @ c83d1a99). The cause was the street path's
+own bends under the link, not point density. The arc now samples the straight chord between the two rooms: one point per 6 px, at
+least 24 points, a half-sine lift of 0.28 perpendicular to the chord. Width and wax are the same as UP. A test caps every turn at 15°.
