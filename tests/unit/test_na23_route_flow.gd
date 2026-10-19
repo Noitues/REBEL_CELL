@@ -25,6 +25,9 @@ func before_each() -> void:
 	holder.add_child(_scene)
 	_scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	RunManager.new_campaign(1)
+	# NA-12: the street netrun still builds on the fixed city (StreetRouteView.build_data reads cfg.city_seed; NA-25b owns the
+	# switch to CityPlan.current_seed()), so this flow pins the fixed city (city_seed 0) its 1080p room floors were measured on.
+	RunManager.campaign.city_seed = 0
 	_scene.start_run(1)
 	await get_tree().process_frame
 	await get_tree().process_frame

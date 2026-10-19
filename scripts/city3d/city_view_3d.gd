@@ -166,6 +166,13 @@ func _ready() -> void:
 	if model != null:
 		_on_model(model)
 	else:
+		# NA-12: deferred, so a host that hands its model right after add_child (RouteRig.setup) starts no build of the
+		# running campaign's city it never uses (an orphan worker job at exit).
+		_start_model_unless_given.call_deferred()
+
+
+func _start_model_unless_given() -> void:
+	if model == null and is_inside_tree():
 		_start_model()
 
 
