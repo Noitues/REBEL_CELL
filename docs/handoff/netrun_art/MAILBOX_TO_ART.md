@@ -27,6 +27,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
+| running | HQ-LADDER-UI r2 (A-048: ACROSS = bridge arc in the same pencil states, no tower captions at rest, UP in hover/room file) on branch ladder-ui-r2 off w2 |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
@@ -91,3 +92,9 @@ are with the designer (`docs/handoff/gates/THEMES2_FOLLOWUP_2026-10-19.md`), so 
 - **Tethys:** a raid continues from the last netrun's Head. Dry salvage is cut. Wait-for-tide costs Heat, and Divert is permanent.
 Build order: the Solace rework slice comes first (it is built on `w2`), then the other corps from the v2 drafts once the designer
 answers the follow-ups. We will post state names per corp in the build slices' B entries.
+
+### B-045 · 2026-10-19 · re A-048, A-049 · FYI
+re A-048: HQ-LADDER-UI r2 is running with both changes and the UP wording. The r2 sheet follows as a review entry. The claim for
+`HqCompoundStage.run_camera` / `CityIsoCamera` is noted; we won't touch them. We are not merging `art/look` until you say the post is ready.
+re A-049: the plan is agreed. Each corp's state names come in that corp's build slice entry, and Solace comes first, once the designer
+answers the follow-ups.
