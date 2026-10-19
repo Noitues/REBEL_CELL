@@ -2,8 +2,7 @@
  "checks": {
   "baseline": [
    "R-HUE-1",
-   "R-HUE-2",
-   "landmark_ratio"
+   "R-HUE-2"
   ],
   "exempt": {
    "flash": false,
@@ -11,9 +10,12 @@
    "red_seq": false
   },
   "notes": {
-   "R-VAL-1": "day plate: median target 0.25 (3.7); recorded and reported only until the AD sets a day band",
+   "R-FOCUS-1": "day plate (12.8): band verdict fail, reported only, never fail or baseline",
+   "R-VAL-1": "day plate (12.8): band verdict fail, reported only, never fail or baseline",
+   "R-VAL-2": "day plate (12.8): band verdict fail, reported only, never fail or baseline",
+   "R-VAL-3": "day plate (12.8): band verdict pass, reported only, never fail or baseline",
    "id_alignment": "class-variance share / shifted-class share = 0.1494 (above 1 = the index pass matches this beauty plate)",
-   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [834, 500, 3236, 1754]"
+   "landmark_ratio": "day plate (12.8): band verdict fail, reported only, never fail or baseline; ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [834, 500, 3236, 1754]"
   },
   "pre_accepted": [],
   "report_only": [],
@@ -22,17 +24,17 @@
    "R-CALM-2": "n/a",
    "R-DET-1": "n/a",
    "R-DET-2": "n/a",
-   "R-FOCUS-1": "n/a",
+   "R-FOCUS-1": "report",
    "R-HOR-1": "pass",
    "R-HUE-1": "fail",
    "R-HUE-2": "fail",
    "R-REP-1": "pass",
    "R-SIL-1": "n/a",
    "R-SIL-2": "n/a",
-   "R-VAL-1": "n/a",
-   "R-VAL-2": "n/a",
-   "R-VAL-3": "n/a",
-   "landmark_ratio": "fail"
+   "R-VAL-1": "report",
+   "R-VAL-2": "report",
+   "R-VAL-3": "report",
+   "landmark_ratio": "report"
   }
  },
  "composition": {
@@ -40,7 +42,7 @@
   "R-CALM-2": null,
   "R-DET-1": null,
   "R-DET-2": null,
-  "R-FOCUS-1": null,
+  "R-FOCUS-1": 0.9274,
   "R-HOR-1": 0.0397,
   "R-HUE-1": 2.844,
   "R-HUE-2": 0.641,

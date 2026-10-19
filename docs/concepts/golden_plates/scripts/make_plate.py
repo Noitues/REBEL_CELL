@@ -10,7 +10,7 @@ CLI:   python make_plate.py <spec.json> [--out DIR]
 spec.json keys (see build_all.py for the real ones):
   stem, kind (hq|street|city), view (overview|decision|city), corp, beauty (path), index (path to *_index.npy or null),
   camera (dict: loc, tgt, yaw, pitch, dist, lens, shift_x, shift_y), resolution [w, h] (optional),
-  look ("aaa2"|"mainline"|"blend"|null), exempt {hover_cut, red_seq, flash}, day (bool: value band reported only),
+  look ("aaa2"|"mainline"|"blend"|null), exempt {hover_cut, red_seq, flash}, day (bool: capture time "day"; value band, landmark_ratio, R-FOCUS-1 reported only),
   source {...free provenance...}, pending [str, ...], extra_values {...} (merged into values: ratio_mean etc. from another tool)
   accepted [{check, note}] (pre-accepted warns, 12.8)
 
@@ -47,6 +47,7 @@ GROW = 0.35                                    # 12.2: the landmark box grown 35
 MEDIAN_PASS, MEDIAN_WARN = (0.11, 0.17), (0.09, 0.19)
 UNDER_BAND, OVER_MAX = (0.25, 0.40), 0.025
 RATIO_PASS = (1.5, 2.0)
+DAY_REPORT = ("R-VAL-1", "R-VAL-2", "R-VAL-3", "landmark_ratio", "R-FOCUS-1")   # 12.8 / 12.7: by day reported only, never fail, never baseline
 COMP_RULES = {                                 # rule: (metric key in pvc_metrics.measure, op, limit)
     "R-SIL-1": ("lit_std", ">=", 0.15), "R-SIL-2": ("lit_min_q_std", ">=", 0.08),
     "R-DET-1": ("sobel_mean", ">=", 0.028), "R-DET-2": ("blobs_per_mp", ">=", 450.0),
@@ -58,7 +59,7 @@ COMP_RULES = {                                 # rule: (metric key in pvc_metric
 SCOPE = {                                      # 12.7 defaults: rules measured per kind
     "hq": ("R-CALM-1", "R-CALM-2", "R-FOCUS-1", "R-REP-1"),       # corp HQ views are exempt from R-HUE
     "street": ("R-SIL-1", "R-SIL-2", "R-DET-1", "R-DET-2", "R-CALM-1", "R-CALM-2", "R-HUE-1", "R-HUE-2", "R-REP-1"),
-    "city": ("R-HUE-1", "R-HUE-2", "R-HOR-1", "R-REP-1"),
+    "city": ("R-HUE-1", "R-HUE-2", "R-HOR-1", "R-REP-1", "R-FOCUS-1"),   # R-FOCUS-1 on city: box from the id.png landmark classes
 }
 
 
@@ -193,13 +194,9 @@ def compute_values(beauty_path, cls, spec):
     status, notes = {}, {}
     day = bool(spec.get("day"))
     sv = status_band(out["median"], *MEDIAN_PASS, *MEDIAN_WARN)
-    if day:
-        status["R-VAL-1"] = status["R-VAL-2"] = status["R-VAL-3"] = "n/a"
-        notes["R-VAL-1"] = "day plate: median target 0.25 (3.7); recorded and reported only until the AD sets a day band"
-    else:
-        status["R-VAL-1"] = sv
-        status["R-VAL-2"] = "pass" if UNDER_BAND[0] <= out["under_010"] <= UNDER_BAND[1] else "fail"
-        status["R-VAL-3"] = "pass" if out["over_085"] <= OVER_MAX else "fail"
+    status["R-VAL-1"] = sv
+    status["R-VAL-2"] = "pass" if UNDER_BAND[0] <= out["under_010"] <= UNDER_BAND[1] else "fail"
+    status["R-VAL-3"] = "pass" if out["over_085"] <= OVER_MAX else "fail"
 
     box_norm = None
     if cls is not None:
@@ -257,6 +254,12 @@ def compute_values(beauty_path, cls, spec):
             status[r] = "n/a"
     if kind == "hq" and "R-FOCUS-1" in rules and box_norm is None:
         notes["R-FOCUS-1"] = "no id pass: landmark box unavailable"
+    if day:                                                                  # 12.8 day rule: the band verdicts stay in notes, the status is report
+        for k in DAY_REPORT:
+            if status.get(k) not in (None, "n/a", "report"):
+                notes[k] = ("day plate (12.8): band verdict %s, reported only, never fail or baseline; " % status[k]
+                            + notes.get(k, "")).rstrip("; ")
+                status[k] = "report"
     out["composition"] = comp
     report_only = ["R-CALM-1", "R-CALM-2"] if kind == "hq" else []          # AD ruling 2026-10-18 (12.7)
     baseline = sorted(k for k, v in status.items() if v == "fail" and k not in report_only)
@@ -311,7 +314,7 @@ def build_plate(spec, out_dir):
             "class-variance share / shifted-class share = %s (above 1 = the index pass matches this beauty plate)" % r4(align))
     cap = {
         "version": 1, "stem": stem, "kind": spec["kind"], "view": spec["view"], "corp": spec.get("corp", ""),
-        "look": spec.get("look"), "exempt": vals["checks"]["exempt"],
+        "look": spec.get("look"), "time": "day" if spec.get("day") else "night", "exempt": vals["checks"]["exempt"],
         "resolution": [w, h], "layout_seed": None, "run": None, "anim_t": None, "art_seeds": None,
         "camera": full_camera(spec["camera"]) if spec.get("camera") else None,
         "source": dict(spec.get("source") or {}, index_pass_indices=used),

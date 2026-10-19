@@ -56,6 +56,7 @@
   "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
  },
  "stem": "street_decision",
+ "time": "night",
  "version": 1,
  "view": "decision"
 }

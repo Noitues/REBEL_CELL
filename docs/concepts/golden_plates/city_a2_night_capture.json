@@ -57,6 +57,7 @@
   "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
  },
  "stem": "city_a2_night",
+ "time": "night",
  "version": 1,
  "view": "city"
 }

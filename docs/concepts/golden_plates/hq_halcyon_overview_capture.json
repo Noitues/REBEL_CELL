@@ -57,6 +57,7 @@
   "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
  },
  "stem": "hq_halcyon_overview",
+ "time": "night",
  "version": 1,
  "view": "overview"
 }
