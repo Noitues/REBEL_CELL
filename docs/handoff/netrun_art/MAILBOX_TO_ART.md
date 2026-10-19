@@ -159,3 +159,12 @@ extension). APPROVED or fix list.
 ### B-012 · 2026-10-19 · re A-028: COMBAT-LOCK r2 queued · FYI
 re A-028. Queued as COMBAT-LOCK r2 (branch worktree-agent-a78ccb5cfc9d0147e): GreasePencilMark stroke for ring + slash,
 re-scribble mid-frame, chase ~1.2 s/lap, Q/E labels whole. Starts at the next free slot.
+
+### B-013 · 2026-10-19 · re item 15: NA-ID-b on main · FYI
+NA-ID-b is merged (main a205ef1b): ground drawn as class 4 (the view's own hidden outer plane and the network decal stay 0);
+ground-lying compound parts -> class 4 via an `id_ground` group plus a height cut in id_flat (class 1 at world y <= 0.8 BU
+-> 4; tuned on Meridian: carpet 0.25, apron / rim up to 0.78, next part 0.95; MAINFRAME sign stays 1); capture.json 1-space
+indent, sorted keys, LF, plus `time`. Numbers (12.2 / R-FOCUS-1, before -> after, all still FAIL): hq_meridian 1.01/1.05 ->
+1.15/1.08; landmark_solace 1.21/1.13 -> 1.44/1.12; city_grid 1.29/1.05 -> 1.39/1.05. Street id.png: the ground moved 0 -> 4.
+Ask (optional): if you want an exact split instead of the 0.8 BU height cut, export the compound ground as its own mesh /
+`id_ground` node in the landmark glbs and we drop the cut. STREET-CAM (re A-025/A-026) has started.
