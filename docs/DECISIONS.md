@@ -8799,3 +8799,10 @@ Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checke
 - `NetrunArtExport.float_str` now rounds half up first (spec 12.8 rule 1), as `io.py`.
 - Not ported: `layout.apply_layout_rules`, `zoning`, the dress writer (input city arrives laid out and zoned). Dress has no room kinds; AD 19 is enforced by `DressReader.check_derive`.
 - NA-04c merged: the DECISION occlusion cone covers every route room in frame (`OcclusionHelper.rooms_in_frame`), Aurelian entry row in config; parity re-run green on the regenerated fixtures.
+
+### 2026-10-18 - W1 NA-22 netrun city shaders
+- New shaders `city_fog` (fog type, processor `fog()`), `beam_shaft`, `wet_street` (superset of `city_ground`; `CityView3D.set_look_blend` swaps to it above 0, so look_blend 0 is the old shader itself), `streak_lane`; `city_building` gains `look_blend`, section, per-instance cut / Bayer ghost / dissolve, `emission_multiplier`, `id_mode`. Parameter table: `docs/handoff/plan2/drafts/NA22_SHADER_PARAMS.md`.
+- Rulings: reduce effects freezes `anim_t` at the plate's recorded value (`nr_clock`); the per-instance cut / ghost / dissolve are not applied at look_blend 0.
+- INSTANCE_CUSTOM.w (was the crest flag, always 0) = crest + 2 * 22 packed bits (`NetrunInstancePack`); the other three channels are in use, so the packing is in w. Cut resolution h/511, ghost opacity 1/16.
+- New schema `CityShaderConfigData` (`content/config/city_shaders.tres`); smoke check `_na22_city_shader_config`. Fog calibration numbers live there (`fog.*`).
+- Spec reading: the beam skirt factor is `1 - r^2` (zero at the silhouette, rule 2), not the text's `(1 - s^2)`. Test files sit in `tests/unit/` (the runner's discovery dirs), not `tests/`.

@@ -120,6 +120,7 @@ var _inks: Array[Color] = []
 var _building_mat: ShaderMaterial
 var _ground_mat: ShaderMaterial
 var _lane_mat: ShaderMaterial
+var _outer_mat: ShaderMaterial
 var _post: ShaderMaterial
 var _ground_vp: SubViewport
 var _ground_cam: Camera3D
@@ -284,6 +285,43 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		_landmarks_night = lm_night
 		_restyle_landmarks()
 
+
+
+## The look blend (NA-22, PIPELINE_SPEC 4.3): 0 = the mainline page (exactly as before), 1 = the netrun (AAA-2) look.
+var look_blend: float = 0.0
+var _netrun_setup: bool = false
+
+
+## Sets the look blend on the buildings (toon ramp -> smooth ramp, the per-instance cut / ghost / dissolve start above 0),
+## the ground (city_ground <-> wet_street, so 0 is the old shader itself), the ink (faded by `look.ink_fade`) and the
+## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
+func set_look_blend(lb: float) -> void:
+	look_blend = clampf(lb, 0.0, 1.0)
+	if _building_mat == null:
+		return
+	if not _netrun_setup:
+		_netrun_setup = true
+		NetrunShaderKit.setup_building(_building_mat)
+	_building_mat.set_shader_parameter(&"look_blend", look_blend)
+	var wet: bool = look_blend > 0.0
+	for m: ShaderMaterial in [_ground_mat, _lane_mat, _outer_mat]:
+		if m == null:
+			continue
+		var want: Shader = CityMaterials.WET_STREET if wet else CityMaterials.GROUND
+		if m.shader != want:
+			m.shader = want
+			if wet:
+				NetrunShaderKit.setup_wet(m)
+		if wet:
+			m.set_shader_parameter(&"look_blend", look_blend)
+	var look: Dictionary = CityShaderConfigData.shipped().look
+	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
+	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
+
+
+## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
+func building_material() -> ShaderMaterial:
+	return _building_mat
 
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
@@ -514,6 +552,7 @@ func _build_scene() -> void:
 	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
+	_outer_mat = om
 	outer.material_override = om
 	outer.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	outer.visible = _outer_ground_on  # B2: a street-level close-up hides it (show_outer_ground)

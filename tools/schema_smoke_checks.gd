@@ -7,7 +7,23 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _na22_city_shader_config()
+
+
+## NA-22: CityShaderConfigData (the netrun city shaders' tuning numbers): the shipped one validates, an empty one reports
+## its gaps, a bad loop is refused by name.
+func _na22_city_shader_config() -> int:
+	var fails := 0
+	var cfg: CityShaderConfigData = load(CityShaderConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-22 shipped city shader config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	var empty := CityShaderConfigData.new()
+	if empty.validate().size() <= 20: fails += 1
+	var bad: CityShaderConfigData = cfg.duplicate(true)
+	bad.streak["loop_s"] = 0.0
+	if not ",".join(bad.validate()).contains("streak.loop_s"): fails += 1
+	return fails
 
 
 ## NA-21: NetrunArtConfigData (the netrun-art twins' tuning numbers): the shipped one validates, the timings are
