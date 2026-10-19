@@ -44,6 +44,10 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 
 ## Records every lot of `box` (lots), in draw order.
 func record(box: Rect2i) -> void:
+	var p := CityPlan.for_seed(city_seed)
+	if p.a2 != null:
+		_record_a2(p, box)
+		return
 	_placing = true
 	_painter = true
 	_camera()
@@ -73,6 +77,42 @@ func record(box: Rect2i) -> void:
 				streets.append(rec)
 				continue
 			_lot(i, j)
+
+
+## CITY-A2 step 1: the lots of `box` from the seed's A2 subdivision (CityA2Builder.lots_for), in the same draw order
+## (diagonals i + j, then i) and the same record forms; a building is recorded at its front lot. Lots past the city
+## rect hold nothing.
+func _record_a2(p: CityPlan, box: Rect2i) -> void:
+	var cfg := CityPlan.plan_config()
+	var lots := CityA2Builder.lots_for(p, cfg, HQ_LOTS, FIST_TERRITORY, 1.0 / CityView3D.CONFIG.height_px_bu)
+	var rects := p.hq_rects(HQ_LOTS)
+	var ids: Array = rects.keys()
+	IdSort.sort_ids(ids)
+	for cid: StringName in ids:
+		if cid != FIST_TERRITORY and (rects[cid] as Rect2i).intersects(box):
+			hqs[cid] = rects[cid]
+	var R: Rect2i = lots["rect"]
+	var b := box.intersection(R)
+	if b.size.x <= 0 or b.size.y <= 0:
+		return
+	var w := R.size.x
+	var streets_in: Dictionary = lots["streets"]
+	var plazas_in: Dictionary = lots["plazas"]
+	var front: Dictionary = lots["front"]
+	var cells: Array = lots["cells"]
+	for s in range(b.position.x + b.position.y, b.end.x + b.end.y):
+		for i in range(b.position.x, b.end.x):
+			var j := s - i
+			if j < b.position.y or j >= b.end.y:
+				continue
+			var k := (j - R.position.y) * w + (i - R.position.x)
+			if plazas_in.has(k):
+				plazas.append({"lot": Vector2i(i, j), "terr": plazas_in[k]})
+			elif streets_in.has(k):
+				streets.append((streets_in[k] as Dictionary).duplicate())
+			elif front.has(k):
+				for e: Dictionary in cells[front[k]]["extrusions"]:
+					extrusions.append(e.duplicate())
 
 
 ## Lot point of a placement-space point (the painter camera: origin at lot (0, 0)).

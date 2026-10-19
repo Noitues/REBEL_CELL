@@ -522,3 +522,47 @@ city_gen_hill_sigma = Vector2(8, 20)
 city_gen_hill_height = Vector2(6, 24)
 city_gen_aim_step_deg = 15.0
 city_gen_budget_s = 2.0
+city_layout_source = &"a2"
+city_a2_path = "res://content/city/city_A2.json"
+city_a2_metres_per_lot = 121.212
+city_a2_raster_margin = 16
+city_a2_river_kinds = PackedStringArray("river")
+city_a2_road_half_min = 0.5
+city_a2_territories = {
+"centre": "rebel_cell",
+"halcyon": "halcyon",
+"meridian": "meridian",
+"orbital": "orbital",
+"solace": "solace"
+}
+city_a2_hq_jitter = 4.0
+city_a2_hq_tries = 24
+city_a2_hq_gap = 1
+city_a2_hq_search = 12
+city_a2_block_lots = Vector2i(4, 7)
+city_a2_merge_share = 0.35
+city_a2_inset = 0.12
+city_a2_heights = {
+&"corp": Vector2(10, 34),
+&"industrial": Vector2(4, 10),
+&"informal": Vector2(2, 6),
+&"old_core": Vector2(5, 16),
+&"rail_grid": Vector2(5, 14),
+&"sprawl": Vector2(4, 14),
+&"suburb": Vector2(3, 8)
+}
+city_a2_hq_rise = 1.2
+city_a2_hq_rise_lots = 18.0
+city_a2_setback_from = 18.0
+city_a2_setback = Vector2(0.18, 0.6)
+city_a2_taper = Vector2(0.85, 1)
+city_a2_corp_ink_share = 0.35
+city_a2_traffic = {
+&"arterial": 0.6,
+&"collector": 0.45,
+&"local": 0.2,
+&"motorway": 1.0,
+&"ring": 1.0,
+&"truck": 0.8
+}
+city_a2_budget_s = 2.0

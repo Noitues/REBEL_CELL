@@ -35,6 +35,11 @@ var coast: Dictionary = {}
 var hills: Array[Dictionary] = []
 ## The city rect the coast is measured from (lots).
 var rect: Rect2i = Rect2i()
+## CITY-A2 step 1: the planner city A2 on the lot grid (CityA2Builder), or null for the fixed and grid-generated cities.
+## When set it answers water, land depth and territories (`coast` then holds only "side" and "a2").
+var a2: CityA2Raster = null
+## CITY-A2: the lots the Site layouts stand on (Vector2i -> true; a building there stays one lot, never merged).
+var a2_sites: Dictionary = {}
 
 const FIXED_CONFIG_PATH := "res://content/config/campaign_config.tres"
 
@@ -103,6 +108,8 @@ func edge_point(along: float, d: float) -> Vector2:
 
 ## How far point (x, y) (lots) lies inland of the coast (negative: in the sea); INF without one.
 func land_depth(x: float, y: float) -> float:
+	if a2 != null:
+		return a2.depth_at(x, y)
 	if coast.is_empty():
 		return INF
 	var side := int(coast["side"])
@@ -120,7 +127,15 @@ func land_depth(x: float, y: float) -> float:
 
 ## True when lot (i, j)'s centre is in the sea.
 func is_water(i: int, j: int) -> bool:
+	if a2 != null:
+		return a2.is_water(i, j)
 	return not coast.is_empty() and land_depth(i + 0.5, j + 0.5) < 0.0
+
+
+## CITY-A2: [owner, runner-up, border 0-1] of lot (i, j) from the A2 districts (NeonCity's `_territory_pair` form),
+## or [] for a city without A2 (NeonCity then uses its nearest-centre territories).
+func territory_pair(i: int, j: int) -> Array:
+	return a2.territory_pair(i, j) if a2 != null else []
 
 
 ## The sea lots inside `rect`, row by row (j, then i).
@@ -192,9 +207,21 @@ func to_dict() -> Dictionary:
 	for h in hills:
 		var c: Vector2 = h["centre"]
 		hl.append({"centre": [c.x, c.y], "sigma_x": h["sigma_x"], "sigma_y": h["sigma_y"], "height": h["height"], "rotation": h["rotation"]})
+	var sites: Array = []
+	for l: Vector2i in a2_sites:
+		sites.append(l)
+	sites.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y if a.y != b.y else a.x < b.x)
+	var site_list: Array = []
+	for l: Vector2i in sites:
+		site_list.append([l.x, l.y])
 	return {"layout_seed": ArtSeed.u64_str(city_seed), "fixed": fixed, "fallback": fallback, "territories": terr,
 		"site_aim": aims, "site_mirror": mirrors, "coast": coast.duplicate(), "hills": hl,
-		"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y]}
+		"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y], "source": source(), "a2_sites": site_list}
+
+
+## Where this plan's city comes from: "fixed", "a2" (the planner city) or "grid" (NA-12's CityGenerator).
+func source() -> String:
+	return "fixed" if fixed else ("a2" if a2 != null else "grid")
 
 
 # --- The game's plans ---------------------------------------------------------------------------
@@ -232,14 +259,44 @@ static func for_seed(p_seed: int) -> CityPlan:
 	return p
 
 
-## A fresh generator run for `p_seed` with config `cfg` (not cached): the RNG is the seed's own
-## named stream (RngStreams.make_stream(p_seed, CITY_LAYOUT_STREAM)), never a campaign stream.
+## A fresh plan for `p_seed` with config `cfg` (not cached): CITY-A2, the planner city (CityA2Builder.make_plan) when
+## `cfg.city_layout_source` is &"a2", else NA-12's grid generator (`generate_grid`). The RNG is the seed's own named
+## stream (RngStreams.make_stream(p_seed, CITY_LAYOUT_STREAM)), never a campaign stream; a failed plan falls back to the
+## fixed city with `fallback` set.
 static func generate(p_seed: int, cfg: CampaignConfigData) -> CityPlan:
-	var frame := site_frame()
-	var corp_ids: Array = []
+	if cfg.city_layout_source != &"a2":
+		return generate_grid(p_seed, cfg)
+	var p := CityA2Builder.make_plan(p_seed, cfg, CityView3D.CONFIG.city_rect, _corp_ids(), NeonCity.FIST_TERRITORY, NeonCity.HQ_LOTS,
+		site_frame(), NeonCity.BORDER_BLEND, CityView3D.CONFIG.lot_bu)
+	if p.fallback:
+		var f := make_fixed()
+		f.fallback = true
+		f.failure = p.failure
+		p = f
+	p.city_seed = p_seed
+	return p
+
+
+## Forgets every cached plan and A2 subdivision (tests: a rebuild from scratch).
+static func forget_all() -> void:
+	_mutex.lock()
+	_cache.clear()
+	_mutex.unlock()
+	CityA2Builder.forget()
+
+
+static func _corp_ids() -> Array:
+	var out: Array = []
 	for t in NeonCity.TERRITORIES:
 		if t["id"] != &"":
-			corp_ids.append(t["id"])
+			out.append(t["id"])
+	return out
+
+
+## NA-12's grid generator run for `p_seed` (CityGenerator; the `city_layout_source` &"grid" fallback, step 2 removes it).
+static func generate_grid(p_seed: int, cfg: CampaignConfigData) -> CityPlan:
+	var frame := site_frame()
+	var corp_ids := _corp_ids()
 	var p := CityGenerator.generate(RngStreams.make_stream(p_seed, RngStreams.CITY_LAYOUT_STREAM), cfg, CityView3D.CONFIG.city_rect,
 		corp_ids, NeonCity.FIST_TERRITORY, NeonCity.HQ_LOTS, frame)
 	if p.fallback:
@@ -278,6 +335,11 @@ static func site_frame() -> Dictionary:
 	return {"right": CityLayout.RIGHT, "down": CityLayout.DOWN, "run_half": CityLayout.RUN_HALF, "cross_half": CityLayout.CROSS_HALF,
 		"boss_gap": CityLayout.BOSS_GAP, "cross_offset": CityLayout.CROSS_OFFSET, "spread": maxf(CityView3D.CONFIG.site_spread, 0.1),
 		"uvs": _uvs}
+
+
+## The campaign config the game's plans are made with (the generator's and A2's numbers).
+static func plan_config() -> CampaignConfigData:
+	return _config()
 
 
 static func _config() -> CampaignConfigData:

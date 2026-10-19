@@ -12,6 +12,8 @@ const STREAM_NAMES: Array[StringName] = [&"map", &"combat", &"rewards", &"events
 ## seed (`CITY_SEED_STREAM`), and a city's layout from its city seed (`CITY_LAYOUT_STREAM`).
 const CITY_SEED_STREAM: StringName = &"city_seed"
 const CITY_LAYOUT_STREAM: StringName = &"city_layout"
+## CITY-A2: a city's blocks, lots and buildings inside the A2 plan (CityA2Builder.lots_for), from its city seed.
+const CITY_BLOCKS_STREAM: StringName = &"city_blocks"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

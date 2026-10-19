@@ -1262,7 +1262,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_netrun_art_export_sweep.gd": {
-			"seconds": 63.5,
+			"seconds": 2884.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_enrage_data.gd": {
@@ -1499,6 +1499,14 @@
 		},
 		"res://tests/unit/test_city_generator_sweep.gd": {
 			"seconds": 80.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_city_a2.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_a2_sweep.gd": {
+			"seconds": 150.0,
 			"tier": "full"
 		}
 	}

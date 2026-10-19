@@ -421,6 +421,48 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_gen_aim_step_deg: float = 15.0
 ## The most one seed's generation may take (seconds, this machine; the 1,000-seed sweep asserts it).
 @export var city_gen_budget_s: float = 2.0
+@export_group("City plan A2")
+## CITY-A2 step 1 (D3, 2026-10-19): every generated city seed (not the fixed one) is the art-pass planner city
+## `city_a2_path` (CityPlanA2) when `city_layout_source` is &"a2"; &"grid" keeps the NA-12 CityGenerator (the fallback
+## step 2 removes). A2 metres per lot (20 km over the 165-lot city), the lots rasterised past the city rect, the river
+## kinds that are water, the least road half width (lots), and A2 district id -> game territory id (others: Sprawl).
+@export var city_layout_source: StringName = &"a2"
+@export var city_a2_path: String = "res://content/city/city_A2.json"
+@export var city_a2_metres_per_lot: float = 121.212
+@export var city_a2_raster_margin: int = 16
+@export var city_a2_river_kinds: PackedStringArray = PackedStringArray(["river"])
+@export var city_a2_road_half_min: float = 0.5
+@export var city_a2_territories: Dictionary = {"centre": "rebel_cell", "halcyon": "halcyon", "solace": "solace",
+	"orbital": "orbital", "meridian": "meridian"}
+## Per seed: an HQ centre within `city_a2_hq_jitter` lots of its A2 HQ (draws, then the A2 spot, then the nearest fit),
+## the whole rect on land in its own district, `city_gen_edge_lots` inside the city, `city_a2_hq_gap` lots off any other.
+@export var city_a2_hq_jitter: float = 4.0
+@export var city_a2_hq_tries: int = 24
+@export var city_a2_hq_gap: int = 1
+@export var city_a2_hq_search: int = 12
+## Local streets: per A2 district a seeded spacing (lots, min / max, both axes) and phase; a building cell spans two
+## lots with `city_a2_merge_share`; footprints inset `city_a2_inset` lots.
+@export var city_a2_block_lots: Vector2i = Vector2i(4, 7)
+@export var city_a2_merge_share: float = 0.35
+@export var city_a2_inset: float = 0.12
+## Building height (BU, min / max) by neighbourhood kind (A2 `neighbourhoods[].kind`, a lot inside its radius), else
+## &"corp" (a corporation's district), &"old_core" (the Old City), &"sprawl"; within `city_a2_hq_rise_lots` of a
+## corporation's HQ heights grow up to x(1 + `city_a2_hq_rise`). Towers over `city_a2_setback_from` BU get a setback
+## tier (`city_a2_setback`: x inset lots, y share of the height below it); taper range on the top tier.
+@export var city_a2_heights: Dictionary = {&"corp": Vector2(10.0, 34.0), &"old_core": Vector2(5.0, 16.0),
+	&"sprawl": Vector2(4.0, 14.0), &"industrial": Vector2(4.0, 10.0), &"informal": Vector2(2.0, 6.0),
+	&"rail_grid": Vector2(5.0, 14.0), &"suburb": Vector2(3.0, 8.0)}
+@export var city_a2_hq_rise: float = 1.2
+@export var city_a2_hq_rise_lots: float = 18.0
+@export var city_a2_setback_from: float = 18.0
+@export var city_a2_setback: Vector2 = Vector2(0.18, 0.6)
+@export var city_a2_taper: Vector2 = Vector2(0.85, 1.0)
+## Street look: share of a territory's street lots in its corporation's color; traffic by A2 road class (local: &"local").
+@export var city_a2_corp_ink_share: float = 0.35
+@export var city_a2_traffic: Dictionary = {&"ring": 1.0, &"motorway": 1.0, &"truck": 0.8, &"arterial": 0.6,
+	&"collector": 0.45, &"local": 0.2}
+## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
+@export var city_a2_budget_s: float = 2.0
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -713,6 +755,31 @@ func _validate_city_gen(errors: PackedStringArray) -> void:
 		errors.append("city_gen_hill_count must be 0 <= min <= max; city_gen_shore_touch and city_gen_cell_inland >= 0.")
 	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0 or city_gen_budget_s <= 0.0:
 		errors.append("city_gen_aim_step_deg must be in (0, 360] and city_gen_budget_s > 0.")
+	_validate_city_a2(errors)
+
+
+## CITY-A2: the planner city's numbers.
+func _validate_city_a2(errors: PackedStringArray) -> void:
+	if not city_layout_source in [&"a2", &"grid"]:
+		errors.append("city_layout_source must be a2 or grid.")
+	if city_a2_metres_per_lot <= 0.0 or city_a2_raster_margin < 0 or city_a2_road_half_min <= 0.0 or city_a2_budget_s <= 0.0:
+		errors.append("city_a2_metres_per_lot, city_a2_road_half_min and city_a2_budget_s must be > 0, city_a2_raster_margin >= 0.")
+	if city_a2_hq_jitter < 0.0 or city_a2_hq_tries < 0 or city_a2_hq_gap < 0 or city_a2_hq_search < 0:
+		errors.append("city_a2_hq_jitter, city_a2_hq_tries, city_a2_hq_gap and city_a2_hq_search must be >= 0.")
+	if city_a2_block_lots.x < 2 or city_a2_block_lots.x > city_a2_block_lots.y:
+		errors.append("city_a2_block_lots must be 2 <= min <= max.")
+	if city_a2_merge_share < 0.0 or city_a2_merge_share > 1.0 or city_a2_corp_ink_share < 0.0 or city_a2_corp_ink_share > 1.0:
+		errors.append("city_a2_merge_share and city_a2_corp_ink_share must be in [0, 1].")
+	if city_a2_inset < 0.0 or city_a2_inset >= 0.5 or city_a2_setback.x < 0.0 or city_a2_setback.y <= 0.0 or city_a2_setback.y >= 1.0:
+		errors.append("city_a2_inset must be in [0, 0.5), city_a2_setback x >= 0 and y in (0, 1).")
+	if city_a2_taper.x <= 0.0 or city_a2_taper.x > city_a2_taper.y or city_a2_hq_rise < 0.0 or city_a2_hq_rise_lots <= 0.0:
+		errors.append("city_a2_taper must be 0 < min <= max, city_a2_hq_rise >= 0, city_a2_hq_rise_lots > 0.")
+	for k: StringName in [&"corp", &"old_core", &"sprawl"]:
+		var h: Variant = city_a2_heights.get(k)
+		if not (h is Vector2 and (h as Vector2).x > 0.0 and (h as Vector2).x <= (h as Vector2).y):
+			errors.append("city_a2_heights %s must be a Vector2 0 < min <= max." % k)
+	if not city_a2_traffic.has(&"local"):
+		errors.append("city_a2_traffic needs a local entry.")
 
 
 func _validate_enrage(errors: PackedStringArray) -> void:
