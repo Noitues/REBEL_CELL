@@ -64,3 +64,40 @@ func test_the_short_hold_breathes_and_the_long_one_becomes_a_crt_terminal() -> v
 	seq._end()
 	assert_false(seq.wheel_view.holding(), "the sequence's end clears the hold")
 	Motion.force_live = was
+
+
+func test_the_covering_emblem_never_grows_past_its_native_size_or_the_screen() -> void:
+	var canvas := SCREENS[0]
+	var native := 120.0
+	assert_eq(JackHubField.emblem_px(40.0, native, canvas.y), 40.0, "small it follows the hub")
+	assert_eq(JackHubField.emblem_px(40000.0, native, canvas.y), minf(native, canvas.y * JackHubField.EMBLEM_CAP), "a 25x hub does not blow the emblem up")
+	assert_lt(JackHubField.emblem_px(40000.0, 9999.0, canvas.y), canvas.y, "never the whole screen: the name under it stays on screen")
+
+
+func test_the_flat_field_replaces_the_hub_only_once_the_wheel_has_grown() -> void:
+	assert_eq(JackHubField.k_for_scale(1.0, JackWheel.FIELD_SPAN), 0.0, "at rest the real hub shows")
+	assert_eq(JackHubField.k_for_scale(1.0 + JackWheel.FIELD_SPAN, JackWheel.FIELD_SPAN), 1.0)
+	assert_eq(JackHubField.k_for_scale(40.0, JackWheel.FIELD_SPAN), 1.0, "covering: the flat field")
+
+
+func test_the_burning_hole_reveals_the_hud_only_after_it_has_passed_it() -> void:
+	var screen := SCREENS[0]
+	var bar := Rect2(0.0, 0.0, screen.x, 90.0)
+	var at := screen * 0.5
+	var far := at.distance_to(Vector2.ZERO)
+	assert_eq(JackSequence.hud_alpha(at, far * 0.5, bar, 40.0), 0.0, "under the hub while the rim is still crossing it")
+	assert_eq(JackSequence.hud_alpha(at, far - 1.0, bar, 40.0), 0.0, "not before its farthest corner is clear")
+	assert_gt(JackSequence.hud_alpha(at, far + 20.0, bar, 40.0), 0.0, "then it comes in")
+	assert_eq(JackSequence.hud_alpha(at, far + 100.0, bar, 40.0), 1.0, "whole once well past")
+
+
+func test_the_sequences_end_gives_the_held_hud_back() -> void:
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	seq._begin(_link())
+	var held := Control.new()
+	add_child_autofree(held)
+	held.modulate.a = 0.0
+	seq._hud_hidden.append(held)
+	seq._end()
+	assert_eq(held.modulate.a, 1.0, "a skip or an end never leaves the HUD hidden")
