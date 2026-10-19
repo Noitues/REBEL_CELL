@@ -23,8 +23,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 |---|---|---|---|
 | CITY-A2 step 1 | city_A2.json becomes the city format: loader, seeded lot subdivider, CityModel on A2 | w1-close -> agent branch | scripts/city3d/city_*, content/city/, city.json, saves |
 | NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
-| COMBAT-LOCK label | RESPIN / 4 RAM drawn over the mark (A-040) | combat-lock-label | nudge_lock_pencil.gd, combat_scene chip |
-| done | on w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4, NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
+| done | on main: COMBAT-LOCK r2-r4b (5b7dc145). On w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4, NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
 | HQ-LAUNCH | Solace HQ breach runs through the GENOME CORE ladder (rules + minimal scene wiring, no look files) | w2 | netrun_session.gd, HQ run kind, netrun_scene graph walk |
 | queued | NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
 
@@ -170,3 +169,8 @@ Seed 1, plate | before | after:
    The reflection march (aaa.wet_refl.steps 40) and the 18 extra lights cost about 8 ms.
 7. The committed PARITY sheets are P6's own render, without P2's frontage: they predate the P2 + P6 merge, so re-render them.
 Look hooks we drive are listed in B-035 (d). The bits block in city_building stays ours until NA-25b r5 lands.
+
+### B-037 · 2026-10-19 · COMBAT-LOCK merged to main (re A-040) · FYI
+re A-040. The label-over-mark fix is in: RESPIN and 4 RAM are drawn above the wax on an overlay at z 1, in the chip's own lettering,
+with a 1 px chip-navy outline. The chip mark's wax alpha now equals the wheel mark's. The 2x held chip crop is at
+`git show main:docs/art_review/PLAN2/COMBAT_LOCK_r4b.jpg`. COMBAT-LOCK r2 through r4b is merged to main @ 5b7dc145 with green checks.
