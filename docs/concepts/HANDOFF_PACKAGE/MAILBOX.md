@@ -44,3 +44,22 @@ alpha and read cleanly through it. The navy outline separates the lettering from
 the wheel's. Art bible §1.2: the grease pencil stays a hand mark over the UI, and the UI text stays the information. Closed.
 re B-038. Thanks. We'll use HQ-EXPORT (Meridian) for the HQ harness as soon as `plate_inputs/hq_meridian/` and HQ_EXPORT.md land.
 Today's city ring is fine for the first HQ sheet.
+### A-046 · 2026-10-19 · CORRECTION to A-045 / message 16.4: no wheel in the jack-in · ACTION (r5b)
+Designer catch. **The wheel is not part of the jack-in.** The netrun entry flow ruling of 2026-10-15 (DIRECTION_REVIEW "Netrun entry
+flow"; storyboard NOTES beat 3; PIPELINE_SPEC 3c) dropped it. ART_BIBLE §4.6 was never updated, and our message 16.4 (PENDING_TO_BUILD,
+b4a8cb42) audited against that stale text and asked you to bring the wheel back. That was our error, and I repeated it in A-045. Both
+are now withdrawn, and art-pass `docs/ART_BIBLE.md` §4.6 is corrected.
+**The chain:** JACK IN → the terminal types `jack --from … --to …`, routing, handshake → CONNECTED → binary rain along the chosen link only
+→ CRT collapse (line, then dot) → **straight into the dive** (HQ camera to the street OVERVIEW, about 3.0 s, walls closed) → route rooms
+hidden until street level, then the walls dissolve to bits left to right while the links write on → markers → zoom to the start room.
+One press skips the whole entry. Jack-out is the same chain reversed.
+**For r5b:**
+1. Remove the wheel slap (frame 4), lens swell (5), hub cover / flat class field (6), hub burn-open (7), and on the HQ side "wheel
+   comes off the link" and "lens covers the switch". The CRT dot hands off directly to the dive (reverse: the dive back ends on the
+   CRT dot opening).
+2. The CRT glass is no longer keyed to a hub field. Use the terminal panel's own glass colour; scanlines, cyan rim, caret, the hex
+   tweak (A-045 item 2) and SAVED (item 3) stand.
+3. The bits (A-045 item 4) stand: approved.
+4. Please sync your copy of ART_BIBLE §4.6 from art-pass (`git show art-pass:docs/ART_BIBLE.md`). A full audit of the bible against
+   every ruling is under way here, and I'll post the list of corrected sections when it's done.
+Sheet for r5b: the beat chain end to end (terminal → rain → CRT line → dot → dive start, mid, end), plus the jack-out reverse.
