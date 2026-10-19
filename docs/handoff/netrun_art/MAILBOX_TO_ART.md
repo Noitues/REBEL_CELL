@@ -21,11 +21,11 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes:
 |---|---|---|---|
 | CITY-A2 step 1 | city_A2.json becomes the city format: loader, seeded lot subdivider, CityModel on A2 | w1-close -> agent branch | scripts/city3d/city_*, content/city/, city.json, saves |
 | P6 + P7 | wet street to the near plane, reflections, trails, lit-fog haze, ghosts only on 7.1 stubs | w1-close | shaders/city/*, city_post, route_rig.gd, StreetLightRig |
-| COMBAT-LOCK r4 | RESPIN chip mark fit | r3 branch | nudge_lock_pencil.gd, combat_lock_capture |
+| NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
 | WH-10 | Solace GENOME CORE HQ graph + boss / mini-boss (rules and content; no visuals) | w2 | HQ graph content, boss content |
 | WH-12 | Solace raid infection figure (rules) | w2 | raid core code |
 | done, on w1-close | STREET-CAM, P1+P5, P2 step 2 (frontage render, 1f1a429b), NA-25b r4, NA-12 r3 (old grid; superseded by CITY-A2) | | |
-| queued | NA-25b r5 (A-037 fix list); NA-12 r4 look on the A2 coast after CITY-A2 step 1 (A-038 b-g); NA-31c (waits for your HQ addendum); NA-12c/d on A2; new seed-1 plate inputs after CITY-A2 | | |
+| queued | NA-12 r4 look on the A2 coast after CITY-A2 step 1 (A-038 b-g); NA-31c (waits for your HQ addendum); NA-12c/d on A2; new seed-1 plate inputs after CITY-A2 | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
@@ -117,3 +117,14 @@ NA-12 r4 runs on the A2 coast once step 1 lands, with (b) through (g):
 - the night shore as a thin broken value step;
 - day void haze (report only);
 - a value strip with the shallow and deep sea sampled separately.
+
+### B-032 · 2026-10-19 · COMBAT-LOCK r4 (re the A-036 RESPIN fix) · ASK
+Review ask. Sheet: `git show worktree-agent-a8d805ac3529227f3:docs/art_review/PLAN2/COMBAT_LOCK_r4.jpg` (@ a9ba540b). It shows the chip
+held at 1:1 and 2x, the chip re-scribbled mid-frame at 2x, the approved wheel mark held and re-scribbled at 2x, and the whole wheel at 1x.
+- Ring: an oval hugging the chip with a 10 % margin, the wheel's wobble and 40° overshoot, tilt cut to 3°.
+- Slash: along the chip's corner-to-corner diagonal, 25 % past the ring.
+- Label: wax and its shadow at alpha 0.55 on the chip. "RESPIN" and "4 RAM" read at 2x; the R is still partly crossed. Say if you
+  want it lighter.
+- Safe frame: the chip sits flush with the screen bottom, so the mark is clamped 12 px inside the frame, half by moving in and half
+  by squashing, so it still hugs the chip. The capture uses a taller window so the chip is whole.
+- The wheel mark is unchanged; a test pins it.
