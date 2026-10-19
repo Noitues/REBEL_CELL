@@ -14,6 +14,8 @@ const LUMA_MIN := 0.02
 const NIGHT_TOL := 0.15
 const SETTLE_FRAMES := 90
 const WAIT_FRAMES := 1800
+## Frames the SAVED stamp has been up before its frame is taken (past its stamp-down).
+const SAVED_SETTLE_FRAMES := 20
 ## Cover times (s into the street timeline) of the dive, REVEAL (mid-dissolve of layer 1 and the end) key frames.
 const FWD_SHOTS := {"dive_1.50": 1.5, "reveal_mid": 3.70, "reveal_end": 6.60}
 ## Cover times (s into the reverse run) of the jack-out frames over the end page.
@@ -40,6 +42,7 @@ var _hq_out_seen: Dictionary = {}
 var _end_wait := 0
 var _hq_seq := 0
 var _prev_night := false
+var _saved_frames := 0
 
 
 func _ready() -> void:
@@ -171,6 +174,11 @@ func _track_jack(delta: float) -> void:
 			_shoot_fwd(e)
 	if _mode == "shots":
 		_shoot_chain()
+		if _shot_done.has("chain_7_lens_open") and Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
+			_saved_frames += 1  # let the stamp land (it stamps down first), then take the frame
+			if _saved_frames >= SAVED_SETTLE_FRAMES:
+				_shot_done["chain_8_saved"] = true
+				get_viewport().get_texture().get_image().save_png("%s/chain_8_saved.png" % _shots)
 	if _mode == "shots" and _frames > 1:
 		var img := get_viewport().get_texture().get_image()
 		if not _luma_ok(img):

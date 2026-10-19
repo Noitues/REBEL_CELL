@@ -66,3 +66,19 @@ func test_the_shader_draws_fixed_size_glyphs_on_the_netrun_clock() -> void:
 	assert_false(code.contains("(1.0 - 0.8 * tc)"), "the glyph no longer shrinks with its life")
 	assert_true(code.contains("h * 0.6) / 0.4"), "the stagger / life the kit mirrors (BIT_STAGGER, BIT_LIFE)")
 	assert_true(code.contains("nr_clock(anim_t, anim_t_frozen)"))
+
+
+func test_the_hold_hex_is_the_rim_hue_with_an_age_fade() -> void:
+	var rim := PaletteSkins.chrome(Palette.NET_CYAN)
+	var c := JackWheel.hex_color(rim)
+	assert_almost_eq(c.h, rim.h, 0.01, "the rim's hue")
+	assert_almost_eq(c.v, rim.v * 0.75, 0.01, "0.75 of the rim's value")
+	assert_almost_eq(JackWheel.HOLD_HEX_ALPHA, 0.65, 0.001, "newest rows")
+	assert_almost_eq(JackWheel.HOLD_HEX_OLDEST_ALPHA, 0.35, 0.001, "oldest rows")
+	assert_gt(JackWheel.HOLD_HEX_ALPHA, JackWheel.HOLD_HEX_OLDEST_ALPHA)
+	var w := JackWheel.new()
+	w.setup({}, Vector2(1280.0, 720.0))
+	var ov := w.hold.shader_overrides
+	assert_eq(ov[&"hex_tint"], JackWheel.hex_color(w.hold.accent()))
+	assert_almost_eq(float(ov[&"hex_age_oldest"]) * JackWheel.HOLD_HEX_ALPHA, JackWheel.HOLD_HEX_OLDEST_ALPHA, 0.001)
+	w.free()

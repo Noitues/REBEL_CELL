@@ -30,6 +30,10 @@ uniform vec4 hex_tint : source_color = vec4(0.361, 0.882, 1.0, 1.0);
 uniform vec4 hex_text_rects[16];
 uniform int hex_text_count = 0;
 uniform float hex_text_fade : hint_range(0.0, 1.0) = 0.5;
+// NA-25b r5b: an age fade (the newest rows sit at the panel's bottom): the alpha share at the top (oldest) row, 1 at the bottom.
+// `hex_age_height` is the panel height it spans; 0 (the default) leaves the dump flat.
+uniform float hex_age_oldest : hint_range(0.0, 1.0) = 1.0;
+uniform float hex_age_height = 0.0;
 
 const float HEX_BYTES = 12.0;
 const float HEX_ROWS = 48.0;
@@ -86,6 +90,9 @@ float rc_hex_dump(vec2 p) {
 			fade = hex_text_fade;
 			break;
 		}
+	}
+	if (hex_age_height > 0.0) {
+		fade *= mix(hex_age_oldest, 1.0, clamp(p.y / hex_age_height, 0.0, 1.0));
 	}
 	return fade * textureGrad(hex_atlas, uv, dFdx(p) * scale, dFdy(p) * scale).a;
 }

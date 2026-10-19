@@ -19,7 +19,11 @@ const FIELD_SPAN := 0.8
 ## The CRT hold's look on the field (A-031 item 2): the hex dump a faint scrolling column (alpha; its share of the type-on line's value is
 ## 15 to 20 %), 3 px scanlines that read at 1:1, a clear rim (edge px, inner glow), the glass a little see-through so the field sits under it.
 ## NA-25b r5 (A-037): the dump reads as text at 1:1, not a ghost block (glyphs stay >= 11 px at 1080p).
-const HOLD_HEX_ALPHA := 0.45
+const HOLD_HEX_ALPHA := 0.65
+## NA-25b r5b (A-045): the dump's alpha on the oldest (top) row; the newest (bottom) rows are HOLD_HEX_ALPHA. It replaces the flat text fade.
+const HOLD_HEX_OLDEST_ALPHA := 0.35
+## The dump's glyph colour: the rim (accent) cyan at this share of its value.
+const HOLD_HEX_VALUE := 0.75
 ## The hold's dump glyphs, a multiple of the default size (so they read at 1:1).
 const HOLD_HEX_SCALE := 1.6
 const HOLD_HEX_COLUMN_MARGIN := 48.0
@@ -157,9 +161,15 @@ func _build_hold() -> void:
 	hold.hex_columns = 1
 	hold.hex_scale = HOLD_HEX_SCALE
 	hold.hex_origin_x = _canvas.x - cell.x * HOLD_HEX_SCALE * CrtTerminalPanel.HEX_COLUMN_CELLS - HOLD_HEX_COLUMN_MARGIN
-	hold.shader_overrides = {&"scan_strength": HOLD_SCAN_STRENGTH, &"edge_px": HOLD_EDGE_PX, &"inner_glow": HOLD_INNER_GLOW,
+	hold.shader_overrides = {&"hex_tint": hex_color(hold.accent()), &"hex_text_fade": 1.0, &"hex_age_height": _canvas.y,
+		&"hex_age_oldest": HOLD_HEX_OLDEST_ALPHA / HOLD_HEX_ALPHA, &"scan_strength": HOLD_SCAN_STRENGTH, &"edge_px": HOLD_EDGE_PX, &"inner_glow": HOLD_INNER_GLOW,
 		&"glass_top": Color(glass, HOLD_GLASS_ALPHA), &"glass_bottom": Color(glass, HOLD_GLASS_ALPHA)}
 	_hold_root.add_child(hold)
+
+
+## The hold's dump glyph colour for the rim colour `rim`: its hue and saturation at HOLD_HEX_VALUE of its value.
+static func hex_color(rim: Color) -> Color:
+	return Color.from_hsv(rim.h, rim.s, rim.v * HOLD_HEX_VALUE)
 
 
 ## The hold's glass colour for a class accent: the hub field's colour at HOLD_GLASS_VALUE of its value (same hue and saturation).
