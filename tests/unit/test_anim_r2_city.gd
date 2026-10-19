@@ -20,7 +20,11 @@ var _reduce: bool
 var _scale: float
 
 
+const NetrunRouteScript := preload("res://scripts/ui/netrun_scene.gd")
+
 func before_each() -> void:
+	# W1 NA-26 made the street view the default route page; this test reads the route-window page (Node buttons, map overlay).
+	NetrunRouteScript.street_route = false
 	_reduce = Settings.reduce_effects
 	_scale = Settings.text_scale
 	Motion.force_live = false
@@ -33,6 +37,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	NetrunRouteScript.street_route = true
 	CityBakeCache.simulate = false
 	CityBakeCache.shutdown()
 	Motion.force_live = false
@@ -103,7 +108,7 @@ func test_the_route_and_the_raid_setup_draw_their_nodes_before_any_bake() -> voi
 	nr.new_campaign(1)
 	nr.start_run(1)
 	await _frames(1)
-	assert_eq(_placed_nodes(nr.city_overlay), nr.city_overlay.nodes.size(), "route: every node on its first frame")
+	# W1 NA-26: the route page has no CityMapOverlay (it is the street view or the ROUTE window's map_view); the overlay is the Grid / raid map.
 	# ART-7 7w / ART-3 6w: the route (and the raid setup) are on the 3D city: there is no bake to
 	# land, so the nodes-before-the-bake check applies only to a 2D city.
 	if not nr.background.city.city3d:
@@ -581,9 +586,7 @@ func test_equal_route_choices_say_they_are_the_same() -> void:
 			assert_string_contains(b.text, tr(nr.TWIN_WORDS) % (int(twins[open[i]]) + 1), "a twin choice says which it equals (ANIM-R6 B14: the same road)")
 		else:
 			assert_false(b.text.contains("(same road"), "a choice unlike the others says nothing")
-	for n: Dictionary in nr.city_overlay.nodes:
-		if twins.has(n["id"]):
-			assert_string_contains(String(n["label"]), "(same road", "and so does its map label")
+	# W1 NA-26: the route has no map overlay labels any more; the choice buttons carry the words.
 
 
 # --- R13: big text -------------------------------------------------------------------------------------

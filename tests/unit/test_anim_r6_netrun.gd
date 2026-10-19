@@ -28,7 +28,11 @@ func before_all() -> void:
 	_typing = Settings.subtitle_typing
 
 
+const NetrunRouteScript := preload("res://scripts/ui/netrun_scene.gd")
+
 func before_each() -> void:
+	# W1 NA-26 made the street view the default route page; this test reads the route-window page (Node buttons, map overlay).
+	NetrunRouteScript.street_route = false
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_anim_r6"
 	RunManager.scene_switching_enabled = false
@@ -43,6 +47,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	NetrunRouteScript.street_route = true
 	Motion.force_live = false
 	Motion.set_speed(1.0)
 	Motion.use_config(null)
