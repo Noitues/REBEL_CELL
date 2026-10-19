@@ -2535,7 +2535,7 @@ func jack_system_word(site: SiteData) -> String:
 	if at == null:
 		return ""
 	var link := RunManager.jack_link(at.id)
-	return "> jack --from %s --to %s" % [String(link.get("from", "")), String(link.get("to", site_name(at.id)))]
+	return tr(JackSequence.LINE_JACK) % [String(link.get("from", "")), String(link.get("to", site_name(at.id)))]
 
 
 ## HQ-B (e): the Site a saved run was started on (&"" with none waiting): its resume jacks along

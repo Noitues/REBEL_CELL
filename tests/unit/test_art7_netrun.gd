@@ -337,7 +337,7 @@ func test_the_launch_jack_names_its_link() -> void:
 	var site := RunManager.launchable_sites()[0]
 	var link := RunManager.jack_link(site.id)
 	assert_ne(String(link["from"]), "", "the owned end")
-	assert_eq(String(link["to"]), String(site.id).to_upper(), "the terminal names the Site by its node id (two Sites can share a type word)")
+	assert_eq(String(link["to"]), RunManager.TERMINAL_NODE % RunManager.corporation.city_grid.sites.find(site), "the terminal names the Site by its node number (two Sites can share a type word)")
 	assert_false((link["slices"] as Array).is_empty(), "the operative's wheel")
 
 

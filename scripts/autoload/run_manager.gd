@@ -654,6 +654,10 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 ## ART-7 3B (4.6): the link a jack in runs along: {from, to: the ends' terminal names; points:
 ## the link on screen (from the City Grid's map in the current scene, empty when none shows);
 ## slices: the operative's wheel colours}; {} when no Site is named.
+## The terminal's node number for a Site (`_terminal_name`).
+const TERMINAL_NODE := "S-%02d"
+
+
 func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionary:
 	if site_id == &"" or corporation == null or campaign == null:
 		return {}
@@ -690,13 +694,13 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices}
 
 
-## A Site as the Cell's terminal writes it ("T1_A"): its node id, upper case. Site names are gone
-## (W0 SITENAMES) and two Sites can share a type word, so the id keeps `--from` / `--to` distinct
-## (art-pass review 2026-10-18).
+## A Site as the Cell's terminal writes it ("S-07"): its node number on the corporation's grid.
+## Site names are gone (W0 SITENAMES), some Site ids read as names, and two Sites can share a type
+## word, so a number keeps `--from` / `--to` distinct (art-pass review 2026-10-18).
 func _terminal_name(site: SiteData, fallback: String) -> String:
-	if site == null:
+	if site == null or corporation == null:
 		return fallback
-	return String(site.id).to_upper()
+	return TERMINAL_NODE % corporation.city_grid.sites.find(site)
 
 
 ## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its

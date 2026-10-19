@@ -316,7 +316,7 @@ func test_the_jack_rides_the_link_the_route_sits_on() -> void:
 		var from := RouteLinkLayout.from_site(corp, c, sd.id)
 		var jack := RunManager.jack_link(sd.id)
 		var from_site := CampaignRules.site_data(corp, from)
-		var want := String(from_site.id).to_upper() if from_site != null else "RELAY"
+		var want := RunManager.TERMINAL_NODE % corp.city_grid.sites.find(from_site) if from_site != null else "RELAY"
 		assert_eq(jack["from"], want, "%s: the jack starts where the route does" % sd.id)
 
 
