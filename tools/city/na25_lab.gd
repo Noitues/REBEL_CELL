@@ -212,7 +212,7 @@ var _still_f := 0
 
 
 func _still_names() -> Array[String]:
-	return ["bits_overview_0.30", "bits_overview_0.55", "bits_decision_0.45", "toggle_0.00", "toggle_0.25", "toggle_0.50", "toggle_0.75", "toggle_1.00"]
+	return ["bits_overview_0.30", "bits_overview_0.55", "bits_decision_0.30", "bits_decision_0.55", "bits_decision_0.45", "toggle_0.00", "toggle_0.25", "toggle_0.50", "toggle_0.75", "toggle_1.00"]
 
 
 func _set_still(name: String) -> void:
@@ -232,6 +232,7 @@ func _set_still(name: String) -> void:
 		for id: String in ids:
 			if vr.encloses(view.rig.room_box_px(id)) and view.rig.room_box_px(id).size.x > 0.0:
 				n += 1
+				print("NA25 room %s %s" % [id, str(view.rig.room_box_px(id))])
 		print("NA25 still %s: %d rooms in frame, dissolve %.2f" % [name, n, k])
 	else:
 		var u := float(name.split("_")[1])

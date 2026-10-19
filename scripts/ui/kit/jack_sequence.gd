@@ -97,6 +97,7 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 ## operative: OperativeState; build: the Site id}); Fx's `switch` coroutine (on_switch under the covering hub, the
 ## arrival wait) runs once the lens covers the screen, or at once on a skip.
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_hold_saved(fx, true)
 	_begin(link)
 	if street:
 		await _play_street(switch)
@@ -305,6 +306,7 @@ func _play_street(switch: Callable) -> void:
 ## loads the HQ under the covering hub, the hub shrinks back to the wheel on the link, the wheel un-slaps, then the CRT comes back on
 ## (the collapse reversed), the rain rises and the lines untype. One press skips to the end (the HQ, no terminal).
 func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_hold_saved(fx, true)
 	_begin(link)
 	street = true
 	visible = true
@@ -412,7 +414,21 @@ func skip() -> void:
 	skipping = true
 
 
+## NA-25b r5: the SAVED stamp waits out the transition (frames 4-7 and both HQ-side frames) and shows once the hub has burnt open.
+func _hold_saved(fx: Node, on: bool) -> void:
+	if on:
+		_fx = fx
+	if _fx != null and is_instance_valid(_fx) and _fx.has_method(&"hold_saved"):
+		_fx.hold_saved(on)
+	if not on:
+		_fx = null
+
+
+var _fx: Node = null
+
+
 func _end() -> void:
+	_hold_saved(null, false)
 	_restore_hud()
 	visible = false
 	night = false

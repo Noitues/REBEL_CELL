@@ -264,6 +264,9 @@ func _process(_delta: float) -> void:
 ## frame while it shows. Holds and fades per the `saved_stamp` motion entry
 ## (Animation pass).
 func show_saved() -> void:
+	if saved_held:
+		saved_queued = true  # NA-25b r5: the jack-in transition owns the screen; the stamp waits for the hub to burn open
+		return
 	saved_label.text = tr("SAVED")
 	saved_label.modulate.a = 0.0
 	_saved_look()
@@ -271,6 +274,10 @@ func show_saved() -> void:
 		_saved_tween.kill()
 	_saved_live = false
 	await get_tree().process_frame
+	if saved_held:  # a jack transition began while this waited a frame: it queues like a save that came in during it
+		saved_queued = true
+		return
+	saved_shown += 1
 	# ANIM-R1: two saves in one frame each got here; the first one's fade must not outlive
 	# the second's (it kept fading the new stamp).
 	if _saved_tween != null and _saved_tween.is_valid():
@@ -312,6 +319,28 @@ var _saved_tween: Tween = null
 var saved_screen: Rect2 = Rect2()
 ## The process frame the stamp was last placed on (tests).
 var saved_placed_frame: int = -1
+
+
+## NA-25b r5 (art-pass A-037): holds the SAVED stamp for the whole jack transition (`on` true), hiding one already up; releasing it
+## (`on` false) shows the stamp once if a save came in meanwhile.
+func hold_saved(on: bool) -> void:
+	var was := saved_held
+	saved_held = on
+	if on:
+		if _saved_tween != null and _saved_tween.is_valid():
+			_saved_tween.kill()
+		saved_label.modulate.a = 0.0
+		_saved_live = false
+	elif was and saved_queued:
+		saved_queued = false
+		show_saved()
+
+
+## True while a jack transition holds the stamp, and whether a save is waiting behind it.
+var saved_held: bool = false
+var saved_queued: bool = false
+## How many times the stamp has been put up (tests).
+var saved_shown: int = 0
 
 
 ## Whether the SAVED stamp is on screen now (tests).
