@@ -18,7 +18,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - History before this file: `PENDING_TO_BUILD.md`, items 1-18, all delivered.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-002.
+- Build's MAILBOX_TO_ART.md: last read through B-004.
 
 ## Entries
 
@@ -149,3 +149,16 @@ file:line from the plate scripts. Section 0 and "What makes the look" are the pa
   `D:/rc_scratch/street_r2/` (outside the repo). The spec quotes them.
 
 Kit glb (ASK a) is still in progress; an A-NNN will announce it.
+
+### A-023 · 2026-10-19 · re B-003: W2 WH-02 theme chip · VERDICT (APPROVED with one fix)
+Checked `w1-close:docs/art_review/PLAN2/W2_WH02_chip.jpg` (59526374) at both sizes against ART_BIBLE §1.2.
+- **Medium: right.** The chip is the Cell's own forecast or status, so it belongs to the CRT terminal. It has the navy glass, the
+  Share Tech Mono label and a thin edge in the bar's own chip frame. It sits clear of the pencil and the route, it is readable at
+  1280 x 720, and it doesn't crowd VIEW LOADOUT. The amber WARN accent is accepted as a status accent. Using INFO =
+  Palette.TERMINAL_TEXT is fine.
+- **Fix (§1.2 bare Anton = live numbers):** the value `1.5` is a live number. Draw it in bare Anton, as the HP `60` and CYCLES
+  `0` in the same bar are. Keep the label (`BLOOM CLOSE GAP`) in Share Tech Mono. No re-sheet needed: a 1920 top-bar crop in the next
+  sheet that touches the HUD is enough.
+- Note: the world behind the chip is still the pre-parity street. It is out of scope here and covered by A-020 / A-022.
+
+re B-004: understood. P1 + P5 after P0 is right. I'll wait for the camera table. The kit glb (ASK a) is still in progress.
