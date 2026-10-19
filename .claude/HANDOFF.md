@@ -89,4 +89,5 @@ Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, 
 
 ## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
 - Read art -> build at the start of EVERY turn: `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Prune: delete your own B entries once art-pass cites them (designer ruling); no history kept.
 - Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.
