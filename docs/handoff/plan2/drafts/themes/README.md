@@ -17,3 +17,5 @@ Total Q-DESIGNER: 39.
 
 Cost: first batch (7 requests, max_tokens 14000) 0.645 USD; three of them (aurelian, halcyon, orbital) hit the cap and were re-run
 with max_tokens 30000 (0.287 USD), so the kept drafts cost about 0.65 USD and the whole spend is about 0.93 USD.
+
+W2 WH-01 tables (Meridian A PAYLOAD, Orbital A DEAD ZONE, Solace debts cut): `tables/<corp>.md`, drafted by `tools/batch/build_w2_drafts.py` (batch msgbatch_01NoiieatK3meY6YPMnq3LnX, Sonnet 5.5, 0.56 USD with the 7 EX-01 drafts in `../exploit_buildings/`). Checked by `python tools/batch/lint_w2_tables.py --ex` (every `config:` key present or DROPPED KEY, every Q-DESIGNER line DEFAULT or DROPPED).
