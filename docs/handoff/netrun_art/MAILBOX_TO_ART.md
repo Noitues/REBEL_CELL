@@ -13,19 +13,21 @@ in DECISIONS / DIRECTION_REVIEW, git keeps old text).
 ## Running (build) — work board, kept current; check before starting an agent
 Designer, 2026-10-19: "art pass is running several agents, can you coordinate to ensure efforts are not duplicated?"
 Rule: each side keeps a "Running" section at the top of its mailbox file. Before launching an agent, read the other side's board.
-If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes:
-- **Art-pass:** Blender, golden plates, glb exports, specs (ART_BIBLE, MATERIAL_SPEC, city_planner).
-- **Build:** Godot ports, game code, captures and §12 checks.
+If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041, designer ruling 2026-10-19):
+- **Art-pass:** the 3D look in Godot (materials, shaders, light rigs, environment / fog / post, camera look settings) for the street,
+  route, HQ netrun and city map views, plus Blender, plates, glbs and specs. Its own clone is D:/rc_art/godot_look on `art/look`.
+- **Build:** systems, data, loaders and generators (CITY-A2), game code, game UI, tests, and the merges into w1-close and main.
+- A shared file is claimed in an entry first.
 
 | slice | what | base / branch | owns (files / area) |
 |---|---|---|---|
 | CITY-A2 step 1 | city_A2.json becomes the city format: loader, seeded lot subdivider, CityModel on A2 | w1-close -> agent branch | scripts/city3d/city_*, content/city/, city.json, saves |
-| P6 + P7 | wet street to the near plane, reflections, trails, lit-fog haze, ghosts only on 7.1 stubs | w1-close | shaders/city/*, city_post, route_rig.gd, StreetLightRig |
+| P6 + P7 (last build look slice; handed to art-pass on merge) | wet street to the near plane, reflections, trails, lit-fog haze, ghosts only on 7.1 stubs | w1-close | shaders/city/*, city_post, route_rig.gd, StreetLightRig |
 | NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
 | WH-10 | Solace GENOME CORE HQ graph + boss / mini-boss (rules and content; no visuals) | w2 | HQ graph content, boss content |
 | WH-12 | Solace raid infection figure (rules) | w2 | raid core code |
 | done, on w1-close | STREET-CAM, P1+P5, P2 step 2 (frontage render, 1f1a429b), NA-25b r4, NA-12 r3 (old grid; superseded by CITY-A2) | | |
-| queued | COMBAT-LOCK label-over-mark (A-040, small; then merge COMBAT-LOCK to main); NA-12 r4 look on the A2 coast after CITY-A2 step 1 (A-038 b-g); NA-31c (waits for your HQ addendum); NA-12c/d on A2; new seed-1 plate inputs after CITY-A2 | | |
+| queued | COMBAT-LOCK label-over-mark (A-040; then merge to main); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
@@ -103,3 +105,45 @@ rebuilt on A2, we compare our layout port with `r2_rules.layout_pass` before pos
 ### B-034 · 2026-10-19 · re A-040 · FYI
 re A-040. Queued the small fix: RESPIN and 4 RAM drawn over the mark at full alpha with a 1 px chip-navy outline; the wax is not
 lightened. No new round. COMBAT-LOCK merges to main after this fix, and a 2x held chip crop goes into the next combat sheet.
+
+### B-035 · 2026-10-19 · re A-041: lanes accepted, answers a-d · FYI
+re A-041. Accepted. NA-12 r4 and NA-31c are off our queue, and we start no new look slices. Merges from `art/look`: we fetch and merge it
+into w1-close with our tests when you post "A-NNN: art/look ready @ <sha>".
+(a) **P6 + P7 handover.** It is still running, based on w1-close @ ac54140d. When it lands we merge it into w1-close and post the sha plus
+anything half-done as a B entry. From then on, shaders/city/*, city_post, route_rig.gd's look parts, StreetLightRig and env / fog are yours.
+Two in-flight pieces of ours touch look files:
+- NA-25b r5 (running) changes only the bits block in city_building.gdshader.
+- CITY-A2 may touch city_view_3d.gd / city_materials.gd for the data wiring only; we will claim each one in an entry first.
+(b) **Exporters.**
+- Street: `tools/city/na23_lab.gd --export=<dir>` writes city.json, net.json, run_graph.json and derive_street.json; the capture.json
+  files come from the same lab's shots. We re-post plate_inputs/seed1/ from the A2 city once CITY-A2 step 1 lands.
+- HQ: no exporter exists. id_capture_lab.gd writes ID frames and capture.json for hq_* only. We will scope one with you: per corp
+  the compound, landmark, site, camera and run graph.
+(c) **Capture and checks** (from `tools/`):
+- Parity sheet (plate + Godot at the plate's camera + numbers):
+  `python -m netrun_art.parity_sheet --views street_overview,street_decision --seed 1 [--art-repo D:/rc_art/art-pass] [--out DIR] [--keep]`
+- Single capture: `python tools/run_windowed.py --log <f> -- --path . -s tools/city/na23_lab.gd -- --seed=1 --shots=<dir> --states=overview,decision [--plate_dir=<dir>] [--size=1920x1080] [--fog=1]`.
+  Each shot writes beauty.png, id.png, ui.png and capture.json.
+- §12 checks: `python -m netrun_art.checks --images <capture dir> [--plates <plates dir>] [--out DIR]`, and
+  `--data ...` for the data checks (cli.py docstring). Exit 1 on fail.
+(d) **Hooks game logic drives in look files** (keep them working, and test any change). These game-side callers set the parameters:
+- route_rig.gd (run state):
+  - `room_open[32]`, `room_box`, `room_n`, `room_z`: route-room reveal / open per node;
+  - `sec_a`, `sec_c`, `sec_nrm`: the street section;
+  - `look_blend`;
+  - `id_mode` and `id_color` (ID capture).
+  NetrunShaderKit.set_clock with `anim_t` / `anim_t_frozen` (reduce effects = the frozen end state, test_city_shaders).
+- city_building.gdshader bits: `bit_cell`, `bit_hot`, `bit_flip` and `bit_gain` on the netrun clock (ours, NA-25b).
+- city_view_3d.gd:
+  - `look_blend`, `id_mode`, `id_class`;
+  - the route graph overlay: `node_discs`, `nodes_tex`, `segs_tex`, `node_count`, `seg_count`, `map_on`;
+  - `ink_keep*` (UI focus keep-outs), `opacity`, `ortho`, `cam_distance`.
+- Other game-side callers:
+  - street_dressing.gd `tier_emit` (reveal tier per run progress);
+  - landmark_materials.gd `reveal_q`;
+  - HqPageOcclusion (cut-to-stub rules);
+  - ui_scrim_pools.gd `keep_*` (UI dims over the city);
+  - combat_backdrop.gd (subject / focus masks, `won` mask);
+  - city_motion_layers.gd (traffic: `night`, `clock`, `streak_on`);
+  - city_water.gd (`night`, `void_mode`);
+  - IdCapture classes (`id_ground` node, class ids: NA_ID_CLASSES.md).
