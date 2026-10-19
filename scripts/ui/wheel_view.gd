@@ -2086,6 +2086,12 @@ func frame_master() -> float:
 	return kit.frame_radius() + (WheelKit.ELITE_COLLAR if kit.is_elite else 0.0) + (WheelFace.THREAT_DEPTH if kit.is_boss else 0.0)
 
 
+## N7: the outer edge (px) of everything the wheel draws round its slices: the frame, or the tick ring
+## (WheelFace.RCH1) when that reaches further. A toast stands beside this, not the slice rim.
+func outer_radius() -> float:
+	return maxf(frame_master(), WheelFace.RCH1) * art_scale()
+
+
 ## The radius (px) of the blades' value windows: where a needle's value reads (3.2).
 func window_radius() -> float:
 	var rt := frame_master()

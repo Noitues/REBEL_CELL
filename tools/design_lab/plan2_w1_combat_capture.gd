@@ -111,7 +111,10 @@ func _locks() -> void:
 	scene._refresh(s.state)
 	await _frames(6)
 	scene.nudge_wheel(&"player", 1)
-	await _shot("3_N7_LOCKS", 4)
+	await _frames(2)
+	var pv: WheelView = scene._player_view
+	print("TOAST_CLEAR ", scene.toast.get_global_rect().position.x - (pv.global_center().x + pv.outer_radius()), " px past the ring")
+	await _shot("3_N7_LOCKS", 2)
 
 
 func _uneven_class() -> ClassData:

@@ -664,6 +664,10 @@ func _toast_spot() -> Rect2:
 const SATELLITE_TOAST_W := 240.0
 
 
+## N7: px added to the wheel's outer radius so a lock toast stays at least Toast.BESIDE_GAP clear of the tick ring (rounding).
+const LOCK_TOAST_RING_PAD := 2.0
+
+
 ## N7: the view of the wheel a lock refusal (`reason`) is about (the first one carrying that lock), else null.
 func _locked_view(reason: String) -> WheelView:
 	var kind := &""
@@ -1739,7 +1743,7 @@ func _on_action_refused(reason: String) -> void:
 	var locked := _locked_view(reason)
 	if aimed.is_empty() and locked != null:
 		# N7 (CAP-W1 fix): beside the locked wheel, clear of its HP row, chips and state label.
-		toast.show_beside(tr(reason), locked.global_center(), locked._radius(), get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
+		toast.show_beside(tr(reason), locked.global_center(), locked.outer_radius() + LOCK_TOAST_RING_PAD, get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
 	elif aimed.is_empty():
 		toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
 	else:
