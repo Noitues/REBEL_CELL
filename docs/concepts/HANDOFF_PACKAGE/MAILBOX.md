@@ -118,3 +118,34 @@ don't link them.
 - **(e) Words:** use `r2_config.WORDS` (per district: meridian, halcyon and the default) and `SUBS` as they are. They are
   dressing only (setting corps and invented shop words, no game content). No draft needed. A district with no list uses
   the default list.
+
+### A-022 · 2026-10-19 · CORRECTION to A-020 gap 1 / B-002 P1 · material spec delivered · RULING
+**Correction (my error).** A-020 gap 1 asked for 3 toon bands and ink. That is wrong for the netrun views. The designer chose
+**AAA-2 "Realistic night"** for the route map and netrun street, and it deliberately goes beyond the locked cel world
+(DIRECTION_REVIEW, route map rounds 2026-10-14). The golden street plates are that look: Cycles with Principled surfaces, real
+volume fog, path-traced emission, and the Python post `post_aaa` "real" with `band=0` and `ink=0`. So:
+- **P1 changes.** Don't restore toon bands and ink at look_blend 1. NA-22's move toward smooth shading at look_blend 1 was the right
+  direction. P1 is now: match the plate's PBR material values, the emissive hierarchy and the colored local lighting from the spec.
+  Keep the **facet grit**: it is geometry (flat-shaded `fgrid` triangles, cell 1.7 BU, jitter ±0.28 cell along the face and ±0.12
+  BU along the normal), not a shading trick.
+- The mainline city map keeps the §1.2 cel look (toon + ink). Only the netrun and route views blend to AAA-2.
+- Gaps 2-7 of A-020 stand as written.
+
+**Delivered (answers B-002 ASK b):** `docs/concepts/HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md` on art-pass. Every value is cited
+file:line from the plate scripts. Section 0 and "What makes the look" are the parts to read first. In short:
+1. Dark, wet scene lit almost entirely by emissives and colored area / spot lights (moon 0.05, world (0.006, 0.006, 0.014),
+   **no sky gradient**: the "deep violet" I described in A-020 gap 5 is fog, not sky).
+2. Layered colored **volume** fog: 0.152 per BU at the cores, anisotropy 0.45, an e-fold of 28.6 BU above 7.7 BU, a ground band of 0.12 per BU from 0 to 2.2 BU, mid banks of 0.105,
+   and fog-only lights. In Godot, use volumetric fog plus FogVolumes; a distance fade won't do.
+3. Wet street: roughness 0.03-0.30 by noise, Specular IOR Level 0.7, tile albedo about 0.07. Use SSR/planar reflections plus lamps at 60 W.
+4. Emissive hierarchy: hero signs 4.0, secondary 2.6, shop 1.5, backdrop 2.4, mega 3.0, windows 0.9, trims 1.0, lit panels 4.0, lamp heads 8.0.
+   The bloom has three radii (4.5 / 18 / 101 px).
+5. The post chain and exposure solve: tune exposure to a median luma of 0.14 (about 30 % of pixels under 0.10, under 1 % over 0.85)
+   **before judging anything else**. Then the hue-preserving ACES shoulder, a teal-navy shadow tint, a warm-pink highlight, vignette 0.38,
+   contrast 1.12, the knee, CA 2.4 px, grain 0.03 and the rain layers.
+- Streaks are geometry ribbons, not post. The plates have no DOF and no bokeh pass. The soft blobs come from rough reflections.
+  Please read "bokeh in post" in P6 as "rough wet reflections".
+- Some final LOOK values (`H_FRONT` 15.4, `H_SKY` 28.6, the lamp and glow counts) come from the finals job dump in
+  `D:/rc_scratch/street_r2/` (outside the repo). The spec quotes them.
+
+Kit glb (ASK a) is still in progress; an A-NNN will announce it.
