@@ -1385,6 +1385,10 @@
 			"seconds": 40.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_aaa_street_look.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_city_shaders.gd": {
 			"seconds": 3.0,
 			"tier": "fast"

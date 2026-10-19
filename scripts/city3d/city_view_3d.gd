@@ -330,9 +330,30 @@ func set_look_blend(lb: float) -> void:
 	var look: Dictionary = CityShaderConfigData.shipped().look
 	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
-	_env.tonemap_exposure = NetrunShaderKit.exposure_at(look_blend)
-	NetrunShaderKit.apply_sky(_env, look_blend, cfg.sky)
+	# AAA-2 (A-022): above 0 the post runs the plate's chain and holds the exposure (solved per framing by the street rig); the
+	# Environment tonemap stays linear at 1. The world is the flat colour, the key light the moon.
+	if look_blend > 0.0 and _aaa_exposure <= 0.0:
+		_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0)
+	_env.tonemap_exposure = 1.0
+	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure)
+	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+
+
+var _aaa_exposure: float = 0.0
+
+
+## AAA-2: the exposure the post chain multiplies the linear picture by (the solved value of the framing, `look.exposure` of the
+## street config). Above look_blend 0 only; the mainline page has no exposure.
+func set_aaa_exposure(e: float) -> void:
+	_aaa_exposure = e
+	if look_blend > 0.0 and _post != null:
+		_post.set_shader_parameter(&"aaa_exposure", e)
+
+
+## The post exposure now (0 until the AAA chain has been switched on).
+func aaa_exposure() -> float:
+	return _aaa_exposure
 
 
 ## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
@@ -921,8 +942,18 @@ func _build_chunk(key: Vector2i) -> void:
 	var split := CityLod.split_far(cfg, model.prisms, idx, far_keep, far_lean)
 	var node := Node3D.new()
 	node.name = "Chunk_%d_%d" % [key.x, key.y]
-	var entry := {"node": node, "families": {}, "far_families": {}, "far_sig": far_signature(split["far"])}
-	_add_families(key, node, split["near"], entry["families"], false)
+	var entry := {"node": node, "families": {}, "far_families": {}, "far_sig": far_signature(split["far"]), "grit": []}
+	var near_ids: PackedInt32Array = split["near"]
+	if grit_filter.is_valid() and not near_ids.is_empty():
+		# AAA-2 facet grit: the prisms the filter names get their own fgrid mesh (a building each); the rest the family meshes.
+		var rest := PackedInt32Array()
+		for n: int in near_ids:
+			if bool(grit_filter.call(model.prisms[n], n)):
+				_add_grit(node, n, entry["grit"])
+			else:
+				rest.append(n)
+		near_ids = rest
+	_add_families(key, node, near_ids, entry["families"], false)
 	_add_families(key, node, split["far"], entry["far_families"], true)
 	layer(&"buildings").add_child(node)
 	entry["props"] = _add_roof_props(node, split["near"])
@@ -993,6 +1024,41 @@ func _free_chunk(key: Vector2i) -> void:
 		return
 	(e["node"] as Node).queue_free()
 	_chunks.erase(key)
+
+
+## AAA-2 (MATERIAL_SPEC 3): selects the prisms that draw with their own fgrid facet geometry (`NetrunFgrid`: flat triangles of
+## `aaa.grit.cell` BU, jittered along the wall and its normal from the building's seed). A Callable(prism: Dictionary, index: int) -> bool; an
+## invalid one (the default) draws every building from the family meshes as the page does. Set before the model is given.
+var grit_filter: Callable = Callable()
+## prism key + height -> its fgrid mesh (kept across chunk rebuilds).
+var _grit_meshes: Dictionary = {}
+
+
+## One building (prism `n`) as its own one-instance MultiMesh with the fgrid mesh of its footprint and seed; appended to `out`.
+func _add_grit(node: Node3D, n: int, out: Array) -> void:
+	var pr: Dictionary = model.prisms[n]
+	var mk := "%d|%.3f|%.3f" % [int(pr["key"]), float(pr["y0"]), float(pr["h"])]
+	if not _grit_meshes.has(mk):
+		_grit_meshes[mk] = NetrunFgrid.mesh_of(pr["poly"], float(pr["y0"]), float(pr["h"]), int(pr["key"]))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.use_custom_data = true
+	mm.mesh = _grit_meshes[mk]
+	mm.instance_count = 1
+	mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, PackedInt32Array([n]), _inks)
+	mm.custom_aabb = model.chunk_aabb(pr["chunk"])
+	_inst_of[n] = [mm, 0]
+	if _w_over.has(n):
+		_write_prism_w(n, float(_w_over[n]))
+	var mi := MultiMeshInstance3D.new()
+	mi.name = "Grit_%d" % n
+	mi.multimesh = mm
+	mi.material_override = _building_mat
+	mi.layers = 1 << (WORLD_LAYER - 1)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_child(mi)
+	out.append(mi)
 
 
 ## One MultiMesh per building family of prisms `ids` under `node` into `out` (family key ->
@@ -1121,6 +1187,7 @@ func far_lod_counts() -> Dictionary:
 	for key: Vector2i in _chunks:
 		for mi: MultiMeshInstance3D in (_chunks[key]["families"] as Dictionary).values():
 			near += mi.multimesh.instance_count
+		near += (_chunks[key]["grit"] as Array).size()
 		for mi: MultiMeshInstance3D in (_chunks[key].get("far_families", {}) as Dictionary).values():
 			far += mi.multimesh.instance_count
 	return {"near": near, "far": far}

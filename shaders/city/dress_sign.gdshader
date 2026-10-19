@@ -4,12 +4,14 @@
 // emit and per-panel brightness), .w = the second light packed 0xRRGGBB (0 = a lightened panel hue). A far tier block yields to the
 // tier that covers it (`yield_range`, alpha). Back faces are not drawn; side faces dim by `side_dim`. Static: no clock.
 shader_type spatial;
-render_mode unshaded, blend_mix, cull_back, depth_draw_opaque, specular_disabled, fog_disabled;
+render_mode unshaded, cull_back, depth_draw_opaque, specular_disabled, fog_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/city/dress_sign.gdshaderinc"
 
 uniform float emission_multiplier = 1.0;
 uniform float look_blend = 1.0;
+// AAA-2 emissive hierarchy (MATERIAL_SPEC 8): the tier radiance the panel colours are multiplied by (hero 4.0, secondary 2.6).
+uniform float tier_emit = 1.0;
 // (end, near) of the tier that covers this one; end 0 = no yield.
 uniform vec2 yield_range = vec2(0.0, 0.0);
 
@@ -48,6 +50,9 @@ void fragment() {
 	}
 	vec3 rgb = mix(panel, sg_at_luma(COLOR.rgb, lc), m.y);
 	rgb = mix(rgb, sg_at_luma(sec, lc), m.x);
-	ALBEDO = rgb * emission_multiplier * look_blend;
-	ALPHA = yw;
+	ALBEDO = rgb * emission_multiplier * look_blend * tier_emit;
+	// AAA-2: opaque (so the post chain tone-maps and blooms it; a transparent draw is after the screen copy): the yield is a dither.
+	if (yw < 1.0 && fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715)))) > yw) {
+		discard;
+	}
 }
