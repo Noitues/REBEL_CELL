@@ -103,3 +103,36 @@ city (NA-12) instead of the fixed seed-7 city. Derive sweep: campaign seeds 1..2
 and g1-g3 byte-identical. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_CLOSE_street_gen.jpg` (@ 308d2484), OVERVIEW +
 DECISION on generated seeds 3 and 6. APPROVED (function) or fix list.
 Also: NA-25b r3 (re A-019) started.
+
+### B-008 · 2026-10-19 · P0 parity harness + camera table (re A-021 c) · ASK
+P0 is on main (c7c52b2f): `cd tools && python -m netrun_art.parity_sheet [--views street_overview street_decision] [--seed 1]`.
+First sheets (plate on top, Godot below, our camera): `docs/art_review/PARITY/street_{overview,decision}_seed1.jpg` on main.
+**Camera finding:** the plates are rendered in your Blender street (world x~100), ours in our seed-1 derived street (x~-390),
+so absolute poses cannot match; putting the plate pose into our street frame lands inside a building. Lens, pitch and FOV
+already match. Differences: distance (ours ~23 % closer), shift, and layout-bound position / yaw.
+| view | | plate | ours (seed 1) |
+|---|---|---|---|
+| overview | dist BU / yaw / pitch | 114.62 / -7.2 / 2.0 | 88.07 / 187.2 / 2.0 |
+| overview | lens / h-FOV / shift x, y | 40 / 48.46 / -0.0548, 0.1172 | 40 / 48.46 / -0.0894, 0.0993 |
+| decision | dist BU / yaw / pitch | 42.10 / -24.0 / 9.0 | 32.30 / 204.0 / 9.0 |
+| decision | lens / h-FOV / shift x, y | 30 / 61.93 / 0.0345, 0.0002 | 30 / 61.93 / -0.1718, 0.0065 |
+**ASK:** which do you prefer? (a) you re-render the plates from OUR seed-1 street (our derive export: city.json + derive
+json; the pose above), so the same street is compared; or (b) we move our rig distance / shift to the plate values and the
+comparison stays layout-vs-layout. Our default if no answer: (b) for distance and shift (rig numbers in config), plus P2 ports
+your r2 rules so the facades and signs match per art_seed.
+§12 at our camera, overview seed 1 (plate | Godot): median 0.130 | 0.120; sobel_mean 0.0309 | 0.0172; blobs/MP 676 | 182;
+hue entropy 4.10 | 3.57 bits; over-0.85 0.0049 | 0.0026. Decision: blobs/MP 459 | 117; sobel 0.0314 | 0.0134; over-0.85
+0.0099 | 0.0005; hue entropy 3.90 | 2.70. Godot fails R-CALM-2, R-DET-1/2, R-HUE-1 (overview) and R-HUE-1/2 (decision).
+P1+P5 (MATERIAL_SPEC port) starts now at our camera.
+
+### B-009 · 2026-10-19 · W2 slice 2.5 NA-31 shared HQ kit · ASK
+Review ask. Sheet: `git show worktree-agent-a16cf8a4620fba449:docs/art_review/PLAN2/W2_NA31.jpg` (@ ce69287e; BEFORE | AFTER,
+5 corps). Per A-020 this sheet still lacks the hq_* plate rows; the parity harness gets HQ views next and will re-sheet it.
+Generic hq.slots + orbit twin (parity 12 seeds), k_fit per HQ lot (landmark >= 0.9 of the lot, never over the edge, fixed city
++ campaign seeds 1..20), HQ-page occlusion cone, per-corp landmark key gain + city dim 0.85.
+12.2 / R-FOCUS-1 before -> after (IdCapture, seed 11): meridian 0.99/1.05 -> 1.82/1.64; halcyon 1.59/1.03 -> 1.91/1.02;
+solace 1.16/1.07 -> 1.91/1.37; orbital 1.49/1.23 -> 1.89/1.52; rebel_cell 0.67/0.97 -> 1.84/1.71.
+Questions: (1) Rebel Cell is exempt from k_fit (its DISPATCH canyon sits on its own lots, not a tower in the HQ lot): fit it
+too? (2) Meridian landmark is now 0.316x (180 x 74 body in a 60 x 60 lot; solid body, not the manifest footprint with
+beams): right against the intended Gantry size? (3) Meridian, Solace and Orbital read near-white in AFTER (material gain, not
+exposure): your call.
