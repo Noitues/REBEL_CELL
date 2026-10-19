@@ -23,14 +23,14 @@ TILES = [
     ("2 binary rain along the chosen link", "chain_2_rain"),
     ("3 CRT collapse: the line", "chain_3_collapse"),
     ("3 CRT collapse: the dot (hands straight to the dive)", "chain_3b_dot"),
-    ("4 dive start (HQ camera, walls closed)", "dive_0.05"),
+    ("4 dive start (HQ camera, walls closed)", "dive_0.40"),
     ("4 dive mid", "dive_1.50"),
     ("4 dive end / reveal", "reveal_mid"),
     ("SAVED shown after the entry", "chain_8_saved"),
     ("slow load: CRT hold on the terminal panel's own glass", "chain_4b_crt_hold"),
     ("jack-out: the dive reversed", "rev_dive"),
     ("jack-out: switch to the HQ", "hq_out_cover"),
-    ("jack-out: the CRT dot opening", "hq_out_crt_on"),
+    ("jack-out: the CRT is back on over the HQ, lines untyping", "hqseq_12"),
     ("jack-out: rain rises", "hq_out_rain"),
 ]
 

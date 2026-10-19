@@ -17,7 +17,7 @@ const WAIT_FRAMES := 1800
 ## Frames the SAVED stamp has been up before its frame is taken (past its stamp-down).
 const SAVED_SETTLE_FRAMES := 20
 ## Cover times (s into the street timeline) of the dive, REVEAL (mid-dissolve of layer 1 and the end) key frames.
-const FWD_SHOTS := {"dive_0.05": 0.05, "dive_1.50": 1.5, "reveal_mid": 3.70, "reveal_end": 6.60}
+const FWD_SHOTS := {"dive_0.40": 0.4, "dive_1.50": 1.5, "reveal_mid": 3.70, "reveal_end": 6.60}
 ## Cover times (s into the reverse run) of the jack-out frames over the end page.
 const REV_SHOTS := {"rev_zoom": 0.5, "rev_reveal": 4.0, "rev_dive": 8.44}
 
@@ -278,7 +278,7 @@ func _track_out(delta: float) -> void:
 			print("NA25E HQ-side switch frame: under the night sky = %s" % str(j.night))
 			get_viewport().get_texture().get_image().save_png("%s/hq_out_cover.png" % _shots)
 		elif j.terminal.visible:
-			if j.terminal.scale.x < 0.9 and j.terminal.scale.y < 0.3 and not _hq_out_seen.has("line"):
+			if j.terminal.scale.x > 0.3 and j.terminal.scale.x < 0.9 and j.terminal.scale.y < 0.3 and not _hq_out_seen.has("line"):
 				_hq_out_seen["line"] = true
 				get_viewport().get_texture().get_image().save_png("%s/hq_out_crt_on.png" % _shots)
 			elif j.rain_t >= 0.4 and not _hq_out_seen.has("rain"):
