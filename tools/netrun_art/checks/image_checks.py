@@ -30,6 +30,15 @@ def _in(x: float, lo_hi: Sequence[float]) -> bool:
 
 
 # ---------------------------------------------------------------- 12.1
+def is_day(capture: Dict[str, Any], cfg: Dict[str, Any]) -> bool:
+    """True for a day frame: `capture.json` `time == "day"` (default "night"). Only a capture without `time` (the
+    concept plates) falls back to its stem being listed in `landmark_ratio.day_stems`."""
+    t = capture.get("time")
+    if t is None:
+        return capture.get("stem") in cfg["landmark_ratio"].get("day_stems", [])
+    return t == "day"
+
+
 def exempt_reason(capture: Dict[str, Any]) -> str:
     """Why 12.1 does not apply to this capture (empty string = it applies)."""
     ex = capture.get("exempt") or {}
@@ -50,6 +59,8 @@ def value_band_records(stats: Dict[str, float], capture: Dict[str, Any], cfg: Di
     th2, th3 = c["under_010"], c["over_085_max"]
     why = exempt_reason(capture)
     look = capture.get("look")
+    if not why and is_day(capture, cfg):
+        why = "day frame: report only"
     if not why and look == "mainline":
         ok = _in(m, c["mainline_median"])
         return [record("R-VAL-1", PASS if ok else FAIL, m, c["mainline_median"], "mainline look: held to the capture median"),
@@ -87,17 +98,12 @@ def landmark_ratio_record(L: np.ndarray, idx: Optional[np.ndarray], capture: Dic
         return record("12.2", NA, None, th, "empty local background")
     r = st["ratio"]
     note = f"landmark share {st['landmark_share']:.4f}"
-    if _matches_any(capture, c.get("report_only", [])):
+    if is_day(capture, cfg):
         return record("12.2", NA, r, th, "report only (AD 2026-10-18): never a fail, never a baseline item; " + note)
     status = FAIL if r < c["pass"][0] else (WARN if r > c["warn_above"] else PASS)
     if status == WARN:
         note += _pre_accepted_note(r, capture, c, cfg["tolerance"]["renderer"]["lm_ratio"])
     return record("12.2", status, r, th, note)
-
-
-def _matches_any(capture: Dict[str, Any], entries: Sequence[Dict[str, Any]]) -> bool:
-    """True when every key of some entry equals the same key of the capture (a missing key reads as None)."""
-    return any(all(capture.get(k) == v for k, v in e.items()) for e in entries)
 
 
 def _pre_accepted_note(ratio: float, capture: Dict[str, Any], c: Dict[str, Any], tol: float) -> str:
@@ -116,7 +122,8 @@ def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -
 
     Per visible route room (class 5 pixels with G > 0) the screen box is grown by `grow_px`. A pixel of an
     occluder class (city, class 2) inside any grown box is an occlusion, except the cut surfaces of room columns
-    (class 2 with B >= `cut_layer_min`). Fails when the count exceeds `max_px`.
+    (class 2 with B >= `cut_layer_min`) and the occlusion stubs of cut or ghosted buildings (class 2 with
+    G == `stub_room` and B == 0). Fails when the count exceeds `max_px`.
     """
     c = cfg["route_occlusion"]
     th = {"max_px": c["max_px"], "grow_px": c["grow_px"]}
@@ -132,7 +139,7 @@ def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -
         return record("12.6.route", NA, None, th, "id.png carries no room indices (G = 0)")
     h, w = cls.shape
     g = int(c["grow_px"])
-    occ = np.isin(cls, c["occluder_classes"]) & (layer < c["cut_layer_min"])
+    occ = np.isin(cls, c["occluder_classes"]) & (layer < c["cut_layer_min"]) & ~((room == c["stub_room"]) & (layer == 0))
     hit = np.zeros((h, w), bool)
     hit_rooms: List[int] = []
     for rid in sorted(int(v) for v in np.unique(room[rooms & (room > 0)])):
@@ -149,9 +156,11 @@ def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -
 
 
 # ---------------------------------------------------------------- 12.7
-def scope_applies(rule: Dict[str, Any], capture: Dict[str, Any], has_landmark: bool) -> Tuple[bool, str]:
+def scope_applies(rule: Dict[str, Any], capture: Dict[str, Any], has_landmark: bool, cfg: Dict[str, Any]) -> Tuple[bool, str]:
     """Scope decision for a rule from the capture scope keys (O-1). A scope key the capture lacks is n/a."""
     sc = rule.get("scope", {})
+    if sc.get("day_report_only") and is_day(capture, cfg):
+        return False, "day frame: report only"
     for key in ("kind", "view"):
         if key in sc:
             v = capture.get(key)
@@ -233,7 +242,7 @@ def check_capture_folder(folder: str, cfg: Optional[Dict[str, Any]] = None,
     wrgb = M.work_array(im, cfg["composition"]["work_w"])
     valid = np.ones(wrgb.shape[:2], bool)
     mv = M.composition_metrics(wrgb, valid, cfg["composition"]["constants"], facade, sky, box)
-    recs += evaluate_rules(mv, lambda rid, rule: scope_applies(rule, capture, box is not None), cfg)
+    recs += evaluate_rules(mv, lambda rid, rule: scope_applies(rule, capture, box is not None, cfg), cfg)
     measured = dict(stats)
     measured["ratio"] = lm_stats["ratio"]
     measured.update(mv)

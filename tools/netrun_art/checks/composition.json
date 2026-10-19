@@ -107,6 +107,7 @@
      "op": ">=",
      "rule": "landmark.lead",
      "scope": {
+      "day_report_only": true,
       "landmark": true
      },
      "value": 1.5
@@ -228,6 +229,9 @@
     5,
     6
    ],
+   "day_stems": [
+    "city_a2_day"
+   ],
    "grow": 0.35,
    "pass": [
     1.5,
@@ -245,19 +249,6 @@
      "value": 2.8
     }
    ],
-   "report_only": [
-    {
-     "kind": "city",
-     "look": null
-    },
-    {
-     "kind": "city",
-     "time": "day"
-    },
-    {
-     "stem": "city_a2_day"
-    }
-   ],
    "thumb_w": 320,
    "warn_above": 2.0
   },
@@ -270,7 +261,8 @@
    ],
    "room_classes": [
     5
-   ]
+   ],
+   "stub_room": 255
   },
   "tolerance": {
    "renderer": {

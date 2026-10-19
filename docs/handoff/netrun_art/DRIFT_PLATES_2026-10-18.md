@@ -1,26 +1,25 @@
-# Drift compare against the 18 golden plates (NA-04b, 2026-10-18)
+# Drift compare against the 18 golden plates (NA-04b, refreshed W1 NA-04c, 2026-10-18)
 
-First drift compare of our image checks (`tools/netrun_art/checks`) against the golden plates of art-pass `8e7e72e2` (PIPELINE_SPEC 12.8). The plates were read with `git show` and extracted to a temp folder; no image was copied into the repo. Command, from `tools`:
+Drift compare of our image checks (`tools/netrun_art/checks`) against the golden plates of art-pass `8e7e72e2` (PIPELINE_SPEC 12.8), read-only: the plates were read with `git show` from the art-pass repo and extracted to a scratch folder; no image was copied into the repo. Command, from `tools`:
 
     python -m netrun_art.checks.drift <plates dir> --work <scratch dir> --out <file>
 
-Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run through `check_capture_folder` (12.1, 12.2, 12.7, 12.6 route) and each image value is compared with the plate's `values.json` inside `checks.tolerance.renderer` (median 0.02, under 0.10 0.05, over 0.85 0.01, landmark ratio 0.15, calm share 0.04, hue entropy 0.2, hue top share 0.05, everything else 10 % relative). The derive fields of every plate are null (concept renders), so only image values are compared. `our status` is the status our check gives the value; `[baseline]` marks a check the plate already fails (reported, not a capture failure); `[baseline (theirs)]` marks a plate baseline item that our check does not score (out of scope or report only); `[pre-accepted]` a config pre-accepted warn.
+Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run through `check_capture_folder` (12.1, 12.2, 12.7, 12.6 route) and each image value is compared with the plate's `values.json` inside `checks.tolerance.renderer` (median 0.02, under 0.10 0.05, over 0.85 0.01, landmark ratio 0.15, calm share 0.04, hue entropy 0.2, hue top share 0.05, everything else 10 % relative). The derive fields of every plate are null (concept renders), so only image values are compared. `our status` is the status our check gives the value; `[baseline]` marks a check the plate already fails (reported, not a capture failure); `[baseline (theirs)]` a plate baseline item our check does not score (out of scope or report only); `[pre-accepted]` a config pre-accepted warn.
 
 ## Result
 
-- 18 plates, 0 DRIFT rows. All deltas are 0 to rounding except R-FOCUS-1 (Meridian decision 0.0042, Tethys overview 0.0009, Tethys decision 0.0001), caused by the nearest resample of the id box. This is expected: the plates' values were written by the same metric code, so the compare is a regression anchor for the renderer comparison, not yet a renderer delta. The first Godot capture of a plate is the first real delta.
-- HQ Tethys overview: landmark ratio 1.8067 with the id mask, pass (the 3.7x disc-mask peak is superseded).
-- Tethys decision 2.0242 and city night 2.7990 are warns, tagged pre-accepted from config (`landmark_ratio.pre_accepted`).
-- City day: ratio 1.1977 is report only (status n/a, never a fail, never a baseline item). The plate's `checks.baseline` still lists `landmark_ratio` (art-pass wrote it by the generic rule); that entry should be dropped on art-pass (AD 2026-10-18).
-- 12.6 route never occluded: n/a on all 18 plates. HQ and street plates have G = 0 everywhere (no room indices in the Blender passes; INDEX note 1), city plates have no route rooms. The check needs `id.png` with G > 0 on class 5, so it first runs on Godot captures.
+- 18 plates, 0 DRIFT rows. Deltas are 0 to rounding, except R-FOCUS-1 (up to 0.0042, nearest resample of the id box). The plates' values were written by the same metric code, so this is a regression anchor for the renderer comparison; the first Godot capture of a plate is the first real delta.
+- Day/night (AD answers 2026-10-18, spec 12.0 / 12.7): `capture.json` `time` is `"night"` (default) or `"day"`. A day frame makes the 12.1 value band (R-VAL-1/2/3), the 12.2 landmark ratio and R-FOCUS-1 report only: status n/a, value kept. The earlier kind/look heuristic is gone. The concept plates' `capture.json` lacks `time`, so for them (and only when `time` is absent) the stem is looked up in `landmark_ratio.day_stems` (`city_a2_day`). Result: `city_a2_day` R-VAL-1/2/3 (0.2501 / 0.0834 / 0.0006), ratio 1.1977 and R-FOCUS-1 are n/a with values kept; `city_a2_night` passes R-FOCUS-1 at 1.7756.
+- Tethys decision 2.0242 and city night 2.7990 are warns, tagged pre-accepted from config (`landmark_ratio.pre_accepted`). HQ Tethys overview ratio 1.8067 passes with the id mask.
+- 12.6 route never occluded: n/a on all 18 plates (HQ and street plates have G = 0 everywhere; city plates have no route rooms). The check now also excludes occlusion stubs (class 2 with G = 255 and B = 0, written for a cut or ghosted building) besides the route-column cut surface (class 2 with B > 0); it first runs on Godot captures.
 - Honored baseline fails (`[baseline]` rows): Halcyon overview R-VAL-2, Halcyon decision R-REP-1, Meridian decision R-VAL-3 / ratio 1.06 / R-FOCUS-1 / R-REP-1, Orbital R-VAL-2 / R-VAL-3 / R-FOCUS-1, Rebel Cell ratio 1.40 / 1.18 and overview R-VAL-2, Tethys R-FOCUS-1, street decision R-REP-1, city R-HUE-1/2. None is a capture failure.
-- Items for the AD (no code change made): (1) `street_decision` R-DET-2 is a plate baseline fail, but 12.7 scopes R-DET-1/2 to street OVERVIEW only, so our check is n/a for the decision view; the plate's baseline entry is stale under the 12.7 scope. (2) `city_a2_night` and `city_a2_day` have R-FOCUS-1 null in `values.json`, while our check scores it (0.93 fail on day, 1.78 pass on night) because a landmark is in frame. (3) Plates carry no `time` key; the day plate is recognized by `kind: city` with `look: null`, or `stem: city_a2_day`, or an optional `time: "day"` capture key (config `landmark_ratio.report_only`). The Godot capture of the day frame needs one of these.
+- art-pass to fix in `values.json` (their side, later): (1) `street_decision` lists R-DET-2 in its baseline, but 12.7 scopes R-DET-1/2 to street OVERVIEW only, so the entry is stale. (2) the `city_a2_day` baseline still lists `landmark_ratio`, which is report only by day (stale). `city_a2_night` and `street_decision` have R-FOCUS-1 null in `values.json` while we score it (1.7756 pass and 1.6659 pass); art-pass to fill it, not a drift.
 
 ## Summary
 
 | plate | ok | DRIFT | n/a |
 |---|---|---|---|
-| city_a2_day | 8 | 0 | 1 |
+| city_a2_day | 8 | 0 | 0 |
 | city_a2_night | 8 | 0 | 1 |
 | hq_aurelian_decision | 8 | 0 | 0 |
 | hq_aurelian_overview | 8 | 0 | 0 |
@@ -43,11 +42,10 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 
 | plate | check | ours | theirs | delta | tol | our status | verdict |
 |---|---|---|---|---|---|---|---|
-| city_a2_day | R-VAL-1 | 0.2501 | 0.2501 | 0.0000 | 0.0200 | n/a | ok |
-| city_a2_day | R-VAL-2 | 0.0834 | 0.0834 | 0.0000 | 0.0500 | n/a | ok |
-| city_a2_day | R-VAL-3 | 0.0006 | 0.0006 | 0.0000 | 0.0100 | n/a | ok |
+| city_a2_day | R-VAL-1 | 0.2501 | 0.2501 | 0.0000 | 0.0200 | n/a | ok [report-only] |
+| city_a2_day | R-VAL-2 | 0.0834 | 0.0834 | 0.0000 | 0.0500 | n/a | ok [report-only] |
+| city_a2_day | R-VAL-3 | 0.0006 | 0.0006 | 0.0000 | 0.0100 | n/a | ok [report-only] |
 | city_a2_day | 12.2 ratio | 1.1977 | 1.1977 | 0.0000 | 0.1500 | n/a | ok [baseline (theirs), report-only] |
-| city_a2_day | R-FOCUS-1 | 0.9274 | - | - | 0.0927 | fail | n/a (theirs null) |
 | city_a2_day | R-HOR-1 | 0.0397 | 0.0397 | 0.0000 | 0.0040 | pass | ok |
 | city_a2_day | R-HUE-1 | 2.8440 | 2.8440 | 0.0000 | 0.2000 | fail | ok [baseline] |
 | city_a2_day | R-HUE-2 | 0.6410 | 0.6410 | 0.0000 | 0.0500 | fail | ok [baseline] |

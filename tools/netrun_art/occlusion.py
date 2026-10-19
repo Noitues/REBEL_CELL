@@ -23,6 +23,28 @@ KEYS: Tuple[str, ...] = ("occ_on", "occ_cx", "occ_cy", "occ_cz", "occ_ux", "occ_
 Pt3 = Sequence[float]
 
 
+def rooms_in_frame(rooms: Dict[str, Dict[str, Any]], pose: Any, ref_w: float, ref_h: float,
+                   visible: Optional[Any] = None) -> List[str]:
+    """Ids (sorted) of the route rooms the DECISION cone must cover: every room whose front quad projects fully in
+    front of the camera, with its centre inside the frame, and (when `visible(room, pose)` is given) facing the camera.
+    Twin of art-pass `occ_check.in_frame_rooms` (6d214ce9, `hq_aurelian/scripts/occ_check.py`)."""
+    out: List[str] = []
+    for rid in sorted(rooms):
+        r = rooms[rid]
+        gz = r.get("ground_z", 0.0)
+        q = [pose.proj([c[0], c[1], c[2] + gz]) for c in r["front"]]
+        if any(v is None for v in q):
+            continue
+        cx = sum(v[0] for v in q) / len(q)
+        cy = sum(v[1] for v in q) / len(q)
+        if not (0.0 <= cx <= ref_w and 0.0 <= cy <= ref_h):
+            continue
+        if visible is not None and not visible(r, pose):
+            continue
+        out.append(rid)
+    return out
+
+
 def occlusion_params(cam: Pt3, pts: Sequence[Pt3], cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The per-frame cone of the target volume as the 28 flat `occ_*` keys (spec 7.3).
 

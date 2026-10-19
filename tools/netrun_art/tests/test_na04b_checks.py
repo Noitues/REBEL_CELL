@@ -21,12 +21,33 @@ def _ratio(tmp_path, name, lum, capture):
 
 
 def test_city_day_ratio_is_report_only(tmp_path):
-    low = _ratio(tmp_path, "day_low", 1.1, {"kind": "city", "view": "city", "look": None})
-    assert low["status"] == "n/a" and low["value"] < 1.5 and "report only" in low["note"]
-    by_time = _ratio(tmp_path, "day_time", 1.1, {"kind": "city", "view": "city", "look": "aaa2", "time": "day"})
-    assert by_time["status"] == "n/a"
-    night = _ratio(tmp_path, "night_low", 1.1, {"kind": "city", "view": "city", "look": "aaa2"})
+    day = _ratio(tmp_path, "day_time", 1.1, {"kind": "city", "view": "city", "look": "aaa2", "time": "day"})
+    assert day["status"] == "n/a" and day["value"] < 1.5 and "report only" in day["note"]
+    night = _ratio(tmp_path, "night_low", 1.1, {"kind": "city", "view": "city", "look": "aaa2", "time": "night"})
     assert night["status"] == "fail"
+    default = _ratio(tmp_path, "default_low", 1.1, {"kind": "city", "view": "city", "look": None})
+    assert default["status"] == "fail"  # no time key = night; the old kind/look heuristic is gone
+
+
+def test_day_stem_fallback_only_without_time_key(tmp_path):
+    stem = _ratio(tmp_path, "stem_day", 1.1, {"kind": "city", "view": "city", "look": None, "stem": "city_a2_day"})
+    assert stem["status"] == "n/a"
+    night = _ratio(tmp_path, "stem_night", 1.1, {"kind": "city", "view": "city", "look": None, "stem": "city_a2_day",
+                                                 "time": "night"})
+    assert night["status"] == "fail"
+
+
+def test_day_makes_value_band_and_focus_report_only(tmp_path):
+    def run(name, time):
+        folder = F.landmark_capture(tmp_path / name, lum_in=40, capture={"kind": "city", "view": "city", "look": "aaa2",
+                                                                         "time": time})
+        return by_id(IC.check_capture_folder(folder, CFG)[0])
+    day, night = run("d", "day"), run("n", "night")
+    for rid in ("R-VAL-1", "R-VAL-2", "R-VAL-3", "R-FOCUS-1"):
+        assert day[rid]["status"] == "n/a" and "day" in day[rid]["note"]
+    assert night["R-FOCUS-1"]["status"] in ("pass", "fail") and night["R-FOCUS-1"]["value"] is not None
+    assert day["R-FOCUS-1"]["value"] == night["R-FOCUS-1"]["value"]  # value kept
+    assert day["R-VAL-1"]["value"] == night["R-VAL-1"]["value"]
 
 
 def test_pre_accepted_warns_are_config_and_flag_new(tmp_path):
@@ -79,6 +100,13 @@ def test_route_occlusion_ignores_cut_surfaces_and_na_cases():
     ids[40:60, 80:90, 0] = 2  # cut surface of a room column: class 2 with B > 0
     ids[40:60, 80:90, 2] = 1
     assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "pass"
+    ids[40:60, 80:90, 2] = 0  # a cut or ghosted building stub: class 2, G = 255, B = 0
+    ids[40:60, 80:90, 1] = 255
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "pass"
+    ids[40:60, 80:90, 1] = 7  # same pixels without the stub encoding occlude
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "fail"
+    ids[40:60, 80:90, 0] = 0
+    ids[40:60, 80:90, 1] = 0
     assert IC.route_occlusion_record(np.zeros((100, 160, 3), np.float32), CFG)["status"] == "n/a"
     ids[..., 1] = 0
     assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "n/a"

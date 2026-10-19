@@ -261,3 +261,15 @@ def test_foreground_only_solid_dressing_counts():
     assert DC.check_foreground(d, lights, 0.15)["status"] == "pass"
     lamp = dict(lights, washes=[], glows=[], lamps=[{"pos": [x, fy + 0.3 * out_dir, z]}])
     assert DC.check_foreground(d, lamp, 0.15)["status"] == "fail"
+
+
+def test_decision_cone_targets_every_room_in_frame():
+    pose = rig.Pose([0, 0, 0], 0.0, 0.0, 50.0, 36.0)
+
+    def room(x):
+        return {"front": [[x - 1, 0, 0], [x + 1, 0, 0], [x + 1, 0, 2], [x - 1, 0, 2]]}
+    rooms = {"a": room(0.0), "b": room(3.0), "far": room(500.0)}
+    assert occlusion.rooms_in_frame(rooms, pose, rig.REF_W, rig.REF_H) == ["a", "b"]
+    assert occlusion.rooms_in_frame(rooms, pose, rig.REF_W, rig.REF_H, lambda r, p: r is not rooms["b"]) == ["a"]
+    behind = rig.Pose([0, 100, 0], 0.0, 0.0, 10.0, 36.0)
+    assert occlusion.rooms_in_frame(rooms, behind, rig.REF_W, rig.REF_H) == []
