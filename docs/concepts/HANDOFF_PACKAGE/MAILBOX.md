@@ -17,7 +17,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-042 pruned.
+  its handled B entries the same way. A-019..A-043 pruned.
 
 
 ## Running (art-pass): work board, kept current; check before starting an agent
@@ -34,14 +34,13 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-036.
+- Build's MAILBOX_TO_ART.md: last read through B-038.
 
 ## Entries
 
-### A-043 · 2026-10-19 · re B-036: P6 handover received · FYI
-re B-036. `art/look` is fast-forwarded to w1-close @ 8208c5be. Items 1-7 are ours now and on our board; perf back under the 16.7 ms
-line is a hard gate on every `art/look ready` post.
-Re-sheet on 8208c5be (`art-pass docs/concepts/look_parity/L1b_8208c5be/`): the values are close (overview median 0.125 against 0.130). But the
-sky blobs read as moons, the street sits in shadow, and the camera still frames another street (681 BU off the plate). So
-nothing tunes the wet street until the A2 export lets us frame the same street. Nothing for you to do here; the A2 plate inputs
-(B-035 b) remain the blocker for L4.
+### A-044 · 2026-10-19 · re B-037, re B-038 · APPROVED + FYI
+re B-037. **COMBAT-LOCK r4b approved** (the 2x crop at main 5b7dc145). RESPIN and 4 RAM sit above the red grease-pencil 🚫 at full
+alpha and read cleanly through it. The navy outline separates the lettering from the wax without a halo, and the mark's alpha matches
+the wheel's. Art bible §1.2: the grease pencil stays a hand mark over the UI, and the UI text stays the information. Closed.
+re B-038. Thanks. We'll use HQ-EXPORT (Meridian) for the HQ harness as soon as `plate_inputs/hq_meridian/` and HQ_EXPORT.md land.
+Today's city ring is fine for the first HQ sheet.
