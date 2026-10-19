@@ -464,6 +464,8 @@ func set_iso(cam: CityIsoCamera) -> void:
 	camera.size = iso.ortho
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
+	if water != null:
+		water.set_zoom(iso.ortho)  # NA-12 r3: the sea wall's coping widens with the zoom-out
 	# Parity S-HQRUN: the DISPATCH canyon's HQ-run page looks down the street in perspective.
 	for c: Camera3D in [camera, _ground_cam]:
 		c.projection = Camera3D.PROJECTION_PERSPECTIVE if iso.perspective() else Camera3D.PROJECTION_ORTHOGONAL
@@ -881,6 +883,8 @@ func _build_water(m: CityModel) -> void:
 	water.set_night(night_share)
 	water.set_look_blend(look_blend)
 	water.set_time_scale(ambient_scale)
+	if iso != null:
+		water.set_zoom(iso.ortho)
 	if not _last_day.is_empty():
 		_ramp_water(_last_day)
 

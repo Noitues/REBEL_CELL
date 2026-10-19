@@ -549,25 +549,35 @@ extends Resource
 ## the ripple (world BU per cell, speed, brightness swing), the shore-light reflections (reach into the sea in lots,
 ## gain, streak width along the shore in lots, their colours), the netrun look's gain (look_blend 1), and how far the
 ## sea runs past the city rect (lots).
-@export var water_deep_night: Color = Color(0.012, 0.03, 0.06)
-@export var water_deep_day: Color = Color(0.09, 0.26, 0.42)
-@export var water_shore_night: Color = Color(0.03, 0.07, 0.12)
-@export var water_shore_day: Color = Color(0.16, 0.38, 0.55)
+@export var water_deep_night: Color = Color(0.006, 0.03, 0.05)
+@export var water_deep_day: Color = Color(0.03, 0.15, 0.42)
+@export var water_shore_night: Color = Color(0.01, 0.055, 0.075)
+@export var water_shore_day: Color = Color(0.12, 0.42, 0.66)
 @export var water_void_night: Color = Color(0.0, 0.0, 0.0)
 @export var water_void_day: Color = Color(0.035, 0.05, 0.07)
 @export var water_ripple_bu: float = 9.0
 @export var water_ripple_speed: float = 0.12
 @export var water_ripple_gain: float = 0.35
 @export var water_reflect_reach_lots: float = 4.0
-@export var water_reflect_gain: float = 1.3
-@export var water_reflect_streak_lots: float = 1.0
-## The share of a reflection band its streak covers, and the share of bands lit.
-@export var water_reflect_width: float = 0.3
-@export var water_reflect_share: float = 0.4
+@export var water_reflect_gain: float = 5.0
+## NA-12 r3: a shore light's reflection is a soft smear hanging straight down the screen under it (width BU), fading
+## within `water_reflect_reach_lots`; `water_reflect_share` of the shore edges carry a light.
+@export var water_smear_w_bu: float = 3.5
+@export var water_reflect_share: float = 0.8
+## NA-12 r3: the sea's marbled caustic and foam (readable at whole-city zoom): cell size (BU), speed, gain, the
+## caustic tones by night / day, the shallows' reach from the shore (lots) and the foam line's width (lots) and gain.
+@export var water_caustic_bu: float = 45.0
+@export var water_caustic_speed: float = 0.04
+@export var water_caustic_gain: float = 0.35
+@export var water_caustic_night: Color = Color(0.06, 0.3, 0.36)
+@export var water_caustic_day: Color = Color(0.4, 0.7, 0.9)
+@export var water_shallow_lots: float = 14.0
+@export var water_foam_lots: float = 1.5
+@export var water_foam_gain: float = 0.3
 @export var water_reflect_colors: PackedColorArray = PackedColorArray([Color(1.0, 0.69, 0.0), Color(1.0, 0.24, 0.66),
 	Color(0.36, 0.88, 1.0), Color(0.69, 0.3, 1.0)])
 @export var water_look_gain: float = 1.6
-@export var water_extend_lots: int = 60
+@export var water_extend_lots: int = 110
 ## The sea wall along the shore: height above the water and depth below it (BU), its face colour, and its lit coping
 ## (strip height BU, emission colour).
 @export var seawall_h: float = 2.4
@@ -577,6 +587,13 @@ extends Resource
 @export var seawall_light_color: Color = Color(1.0, 0.78, 0.45)
 ## The coping and pier lamps' emission gain (their own, not the streets' lane gain the map zooms step back).
 @export var seawall_light_gain: float = 3.0
+## NA-12 r3: the coping reads at whole-city zoom. Its top strip is `seawall_coping_bu` wide at `coping_ref_ortho`
+## (the shore close) and nearer, growing in step with the zoom-out (ortho / ref) up to `coping_zoom_max` times, its
+## emission gain rising to `coping_gain_far` times at that most-zoomed-out width.
+@export var seawall_coping_bu: float = 0.9
+@export var coping_ref_ortho: float = 240.0
+@export var coping_zoom_max: float = 6.0
+@export var coping_gain_far: float = 2.0
 ## Piers where a street meets the water: length and width (lots), deck height (BU), deck colour, and the lamp at the
 ## end (size BU, emission colour).
 @export var pier_len_lots: float = 3.0
