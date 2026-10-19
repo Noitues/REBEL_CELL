@@ -204,7 +204,13 @@ def route_mask(A, W, H):
     st, opts = G.states(G.WALK_START)
     m = Image.new("L", (W, H), 0)
     d = ImageDraw.Draw(m)
-    for i in [G.WALK_START[-1]] + list(opts) + ["L7_0"]:
+    keep = [G.WALK_START[-1]] + list(opts) + ["L7_0"]
+    if not all(i in A["rooms"] for i in keep):
+        # another street's graph (build's derive: rooms L<layer>N<n>, the run starting at the street): the first layer's
+        # rooms are the options, the last layer's the target
+        lay = {i: int(i[1:].split("N")[0].split("_")[0]) for i in A["rooms"]}
+        keep = sorted(i for i in lay if lay[i] in (min(lay.values()), max(lay.values())))
+    for i in keep:
         p = A["rooms"][i]["front"]
         if p and all(q is not None for q in p):
             d.polygon([(q[0] * sx, q[1] * sx) for q in p], fill=255)

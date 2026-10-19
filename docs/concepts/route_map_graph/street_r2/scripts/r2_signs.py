@@ -20,7 +20,7 @@ import numpy as np  # noqa: E402
 
 import ui31 as K  # noqa: E402
 
-SCR = "D:/rc_scratch/street_r2"
+SCR = os.environ.get("R2_SCR", "D:/rc_scratch/street_r2")   # R2_SCR: another street, e.g. build seed 1
 ADS = os.path.join(os.path.dirname(SBS), "scratch", "ads")
 PALE = (235, 230, 245)
 

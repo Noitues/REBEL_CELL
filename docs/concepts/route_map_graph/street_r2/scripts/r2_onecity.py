@@ -63,7 +63,7 @@ def floors(b):
 SITE, RELAY = "m2_d", "m1_d"
 LAYPATH0 = os.path.join(SBS, "scratch", "layout", "unified.json")
 LAYPATH_V3 = os.path.join(SBS, "scratch", "layout", "unified_v3.json")    # the city with the v3 layout rules applied
-SCR = "D:/rc_scratch/street_r2"
+SCR = os.environ.get("R2_SCR", "D:/rc_scratch/street_r2")   # R2_SCR: another street, e.g. build seed 1
 # R2_SEED unset or "v3": the approved v3 city (the derivation and the cameras are solved on it); else the r2 layout
 _SEED = os.environ.get("R2_SEED", "v3")
 LAYPATH = LAYPATH_V3 if _SEED == "v3" else os.path.join(SCR, "unified_r2_s%s.json" % _SEED)

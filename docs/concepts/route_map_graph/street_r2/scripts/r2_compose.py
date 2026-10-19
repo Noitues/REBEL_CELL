@@ -25,10 +25,10 @@ import sb_frames2 as F2  # noqa: E402
 import sb_reveal as RV  # noqa: E402
 import sb_ui as U  # noqa: E402
 
-SCR = "D:/rc_scratch/street_r2"
+SCR = os.environ.get("R2_SCR", "D:/rc_scratch/street_r2")   # R2_SCR: another street, e.g. build seed 1
 ROOT = os.path.dirname(HERE)
-STILLS = os.path.join(ROOT, "stills")
-PLATES = os.path.join(ROOT, "plates")
+STILLS = os.environ.get("R2_STILLS") or os.path.join(ROOT, "stills")   # R2_STILLS / R2_PLATES: keep another street apart
+PLATES = os.environ.get("R2_PLATES") or os.path.join(ROOT, "plates")
 TARGET_MEDIAN = 0.14
 
 

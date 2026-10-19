@@ -26,7 +26,7 @@ import numpy as np  # noqa: E402
 import pvc_metrics as M  # noqa: E402
 import r2_config as CFG  # noqa: E402
 
-SCR = "D:/rc_scratch/street_r2"
+SCR = os.environ.get("R2_SCR", "D:/rc_scratch/street_r2")   # R2_SCR: another street, e.g. build seed 1
 R = CFG.RULES_R2
 TESTS = [
     ("R-SIL-1", "lit_std", ">=", 0.15), ("R-SIL-2", "lit_min_q_std", ">=", 0.08),

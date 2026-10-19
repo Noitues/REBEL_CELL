@@ -34,7 +34,8 @@ sys.dont_write_bytecode = True
 import r2_config as CFG  # noqa: E402
 import r2_facade as FC  # noqa: E402
 
-SCR = "D:/rc_scratch/street_r2"
+SCR = os.environ.get("R2_SCR", "D:/rc_scratch/street_r2")   # R2_SCR: another street, e.g. build seed 1
+FROM_BUILD = bool(os.environ.get("R2_FROM_BUILD"))   # the city, street and cameras come from build (r2_from_build.py)
 R = CFG.RULES_R2
 
 
@@ -114,10 +115,18 @@ def _tops(bases):
 
 # ---------------------------------------------------------------- LAYOUT: frontage.silhouette + horizon.break
 def layout_pass(seed):
-    OCv = _oc("v3")
-    D = OCv.derive()
+    if FROM_BUILD:
+        # another street (r2_from_build.py): its city before the rules, its own derivation, and the netrun street as the
+        # one leg (the build net has no border links)
+        OCv = _oc("base")
+        OCv.LAYPATH = os.path.join(SCR, "unified_base_s%s.json" % seed)
+        D = derive_v3()
+        LAY = copy.deepcopy(json.load(open(OCv.LAYPATH)))
+    else:
+        OCv = _oc("v3")
+        D = OCv.derive()
+        LAY = copy.deepcopy(json.load(open(OCv.LAYPATH_V3)))
     ov = D["overview"]
-    LAY = copy.deepcopy(json.load(open(OCv.LAYPATH_V3)))
     bymap = {"%d_%d" % (b["ci"], b["key"]): b for b in LAY["buildings"]}
     bases = [dict(OCv.bld_info(b)) for b in LAY["buildings"]]
     tops = _tops(bases)
@@ -140,7 +149,8 @@ def layout_pass(seed):
         _, a, c = leg
         ax = 0 if abs(a[1] - c[1]) < 1e-6 else 1
         return 0 if ax == st_axis and abs(a[1 - ax] - st_line) < 1e-3 else 1
-    for lid, a, c in sorted(_border_legs(OCv), key=lambda lg: (on_netrun(lg), lg[0])):
+    legs = [("netrun", D["a"], D["c"])] if FROM_BUILD else _border_legs(OCv)
+    for lid, a, c in sorted(legs, key=lambda lg: (on_netrun(lg), lg[0])):
         rows = _frontage_rows(OCv, bases, a, c)
         for side in (1, -1):
             row = rows[side]
@@ -445,6 +455,8 @@ def plan_pass(seed):
             # hero sign over the rooms, in the district pair (hero_i alternates) - blade (vertical) or wall (board)
             z0 = room_top.get(key, 6 * fl) + 0.45
             z1 = top - 0.7
+            if z1 <= z0:          # rooms up to the roof (a short route column): the hero blade stands over the roof edge
+                z1 = z0 + 1.6
             kind = S["hero_kinds"][r_.randrange(2)] if (z1 - z0) > 3.2 and wdt > 4.2 else "blade"
             hcol = pal[hero_i % 2] if dis != "" else [(1.0, 0.16, 0.6), (0.16, 0.8, 1.0)][hero_i % 2]
             wd = words[r_.randrange(len(words))]

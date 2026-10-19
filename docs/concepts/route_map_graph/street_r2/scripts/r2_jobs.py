@@ -128,7 +128,7 @@ def run(seed, frames, spp, tag, gpu=True, mode=None, cams_list=None):
         acquire()
     t0 = time.time()
     try:
-        env = dict(os.environ, NET36="net_scope.json")
+        env = dict(os.environ, NET36=os.environ.get("NET36", "net_scope.json"))
         with open(log, "w") as f:
             r = subprocess.run([BLENDER, "-b", "--factory-startup", "--python", os.path.join(HERE, "r2_scene.py"), "--",
                                 "meridian_hq", od, cf, of], stdout=f, stderr=subprocess.STDOUT, env=env)
