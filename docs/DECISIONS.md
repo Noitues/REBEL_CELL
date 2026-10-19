@@ -34,6 +34,27 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Designer rulings: corporation-wide themes (one per corp) and netrun occlusion
+- **Every corporation gets one campaign-wide theme / mechanic** (like Tethys THE WATER LEVEL), in the replan. Guardrails
+  (agreed): one mechanic per corp; readable in the preview ("?" rule); a light form in street netruns, the full form at
+  the HQ, one hook in raids; reuse systems being built (Parasite ring, rim gates, enrage, resistance) over new code;
+  introduce in difficulty order. Drafted per corp on the Batch API; the designer picks; rules land beside each HQ (W2).
+- **Solace:** a virus spreads through the netrun BEHIND the operative; if it catches up, the operative dies and is
+  caught. In city raids, a population infection figure rises (a percentage); the longer the player delays, the more
+  die; if the player is too slow the city is infected, only Solace has the cure, and Solace wins.
+- **Meridian:** the draft theme is weak: iterate several options for the designer to choose from.
+- **Halcyon:** the Eye (THE PANOPTICON) scans the city; runs through Spotted territory get some difficulty raised. The
+  Eye moves; taking an Exploit makes the Eye focus on that area for 2 netruns before it starts moving again. The HQ
+  run keeps the Eye effect.
+- **Orbital:** the draft theme is bad: iterate several more. Frame: they control satellites and communications and
+  can bomb anyone. Leaning toward communication blackouts affecting netruns and city raids.
+- **Aurelian:** the city raid view as a larger colosseum of rings the player moves into, finding keys and opening
+  gates to get closer to the HQ.
+- **REBEL_CELL (DISPATCH):** a simultaneous infiltration: one operative by rooftop, one by street level, one by the
+  sewers; each must reach its end point, then all three go for the mainframe HQ.
+- **Occlusion:** confirmed as the designer's own call: the building flatten / ghost applies to every netrun (street,
+  HQ, exploit-building) so every netrun stays clearly visible (spec bee83225 §7.1 rule 0).
+
 ### 2026-10-18 — Designer ruling (relayed by the art-pass session): Tethys THE WATER LEVEL
 Quoted from the designer via art-pass: "Adopt THE WATER LEVEL (Head) as the Tethys mechanic and carry it into Tethys
 street netruns and raids. Route it to the design session." There is no separate design session, so the build session
