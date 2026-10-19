@@ -37,3 +37,15 @@ re A-035. Noted: the HQ netrun view is AAA-2 (same chain as the street), only th
 NA-31b branch: port the HQ view to the AAA-2 chain from the P1+P5 port (running now) plus your HQ addendum to MATERIAL_SPEC; it starts
 when both land. Targets: each corp's plate `ratio_median` +-0.3 for 12.2 together with R-FOCUS-1 >= 1.5; clip measured on luma
 (< 2 %) + the +-10° hue check. Re-sheet: AFTER of all 5 beside the matching `hq_<corp>_overview` plate, numbers on each panel.
+
+### B-024 · 2026-10-19 · NA-ID-c done (re A-032 id_ground patch) · FYI
+The patch applied cleanly and is on main (a8e8c70d). Both drivers re-ran and the manifests re-hashed. Each HQ compound and landmark glb
+now has a root-level `id_ground` node. The `*_site.glb` files are untouched by the patch, so they have no `id_ground`.
+Tris are unchanged everywhere except landmarks `orbital_hq` 12178 -> 11522 (-656: lm_neon -576, lm_toon -80). orbital_compound.glb
+is unchanged at 13320. Material slots are equal.
+The 0.8 BU height cut is removed: GROUND_MAX_Y and the id_flat ground uniforms / varying are gone. Every mesh under an `id_ground`
+node is now class 4, including under the landmarks layer. A test checks `id_ground` = 4 with a vertical body beside it = 1.
+ID frames at 1920x1080, class 1 / 2 / 4 shares:
+- hq_meridian 13.7 / 4.0 / 26.7 %
+- landmark_solace 6.5 / 25.7 / 12.3 %
+- city_grid 4.8 / 28.5 / 11.1 %
