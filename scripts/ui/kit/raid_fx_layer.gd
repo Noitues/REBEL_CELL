@@ -599,7 +599,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			var at := t0
 			var last := t0 - gap
 			var ids: Array = _results.get("nodes", {}).keys()
-			ids.sort()
+			IdSort.sort_ids(ids)
 			for id in ids:
 				var sid := StringName(String(id))
 				if sid == home_id:
@@ -730,7 +730,7 @@ func token_alive(id: String) -> bool:
 func standing() -> Dictionary:
 	var out := {}
 	var ids := _tokens.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		if token_alive(String(id)):
 			(out.get_or_add(_tokens[id]["site"], []) as Array).append(String(id))
@@ -969,7 +969,7 @@ func _token_positions() -> Dictionary:
 	var out := {}
 	var resting := {}
 	var ids := _tokens.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		var t: Dictionary = _tokens[id]
 		var mv: Dictionary = t.get("move", {})

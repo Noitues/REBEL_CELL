@@ -192,7 +192,7 @@ func _lay() -> void:
 				var w := GreasePencilMark.stroke_width()
 				_pool.stroke("whatif_ticks_%d" % i, RaidPencil.hazard_ticks(street, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, 1.0, 0.0, false, 171 + i)
 	var ids := letters.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		var c := RaidMapAnchor.site(overlay, id)
 		if c.x == INF:
@@ -217,7 +217,7 @@ func lay_signature() -> int:
 		anchors.append(RaidMapAnchor.site(overlay, StringName(String(r[0]))))
 		anchors.append(RaidMapAnchor.site(overlay, StringName(String(r[r.size() - 1]))))
 	var ids := letters.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		anchors.append(RaidMapAnchor.site(overlay, id))
 	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size, RaidPencil.hostile_cues()])

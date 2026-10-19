@@ -137,7 +137,7 @@ func _build_buildings() -> void:
 	_building_mat.set_shader_parameter("ink_colors", ink_v)
 	var fams := CityMeshKit.families(cfg, district)
 	var keys: Array = fams.keys()
-	keys.sort()
+	IdSort.sort_ids(keys)
 	for key: int in keys:
 		var sides := key / 16
 		var hc := key % 16

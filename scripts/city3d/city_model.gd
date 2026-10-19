@@ -124,7 +124,7 @@ func add_recording(key: Vector2i, r: Rect2i, rec: CityLayoutRecorder) -> void:
 ## each in the chunk holding its rect's centre.
 func finish() -> void:
 	var ids: Array = hqs.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for cid: StringName in ids:
 		var r: Rect2i = hqs[cid]
 		var c := Vector2(r.get_center())

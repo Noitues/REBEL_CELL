@@ -268,5 +268,5 @@ static func odds_chip() -> Dictionary:
 
 static func _sorted_keys(d: Dictionary) -> Array:
 	var k := d.keys()
-	k.sort()
+	IdSort.sort_ids(k)
 	return k

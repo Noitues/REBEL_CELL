@@ -20,7 +20,7 @@ static func of(c: CampaignState, corp: CorporationData, cfg: CampaignConfigData)
 	if c.rule_modifier(cfg, RC.RuleModifierType.ENEMY_RESISTANCE) > 0.0:
 		for s in CampaignRules.launchable_sites(c, corp, cfg):
 			hardened.append(s.id)
-	hardened.sort()
+	IdSort.sort_ids(hardened)
 	var home: Vector2 = points.get(c.grid.home_site_id, Vector2.INF)
 	var ccfg: CityConfig = CityView3D.CONFIG
 	var site_lot := CityLandmarks.site_lot(ccfg, corp.id, points)

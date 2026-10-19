@@ -226,7 +226,7 @@ func place_rows() -> void:
 				var ohp: Rect2 = ow.hp_layout()["hp"]
 				keep_clear.append(Rect2(ow.global_position + ohp.position, ohp.size))
 		var ids: Array = (sat_rows.get(v, {}) as Dictionary).keys()
-		ids.sort()
+		IdSort.sort_ids(ids)
 		for sid in ids:
 			var srow: HudResultChips = sat_rows[v][sid]
 			if not is_instance_valid(srow):

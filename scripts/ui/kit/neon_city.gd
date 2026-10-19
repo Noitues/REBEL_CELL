@@ -1532,7 +1532,7 @@ func look_key(inf: Variant = null) -> String:
 		sketch.append(material.get_shader_parameter(p))
 	var cult := []
 	var names: Array = cultures.keys()
-	names.sort()
+	IdSort.sort_ids(names)
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
 	return CityBakeCache.key_of([city_seed, String(district), net_mode, ink_set, face_texture, cult, _baked_creep(),
@@ -2561,7 +2561,7 @@ func _placement() -> NeonCity:
 	_placer_stale = false
 	var cult := []
 	var names: Array = cultures.keys()
-	names.sort()
+	IdSort.sort_ids(names)
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
 	var key := var_to_str([city_seed, String(district), cult, fist_roads])
@@ -2644,7 +2644,7 @@ func _memo_key() -> String:
 		return ""
 	var cult := []
 	var names: Array = cultures.keys()
-	names.sort()
+	IdSort.sort_ids(names)
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
 	return var_to_str([emit_triangles, city_seed, String(district), net_mode, ink_set, face_texture, cult, corp_creep, corp_color,

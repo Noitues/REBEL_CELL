@@ -70,7 +70,7 @@ static func from_recording(p_cfg: CityConfig, extrusions: Array[Dictionary], p_s
 ## The HQs within the district as stepped stand-in towers (the locked heroes are ART-5).
 func _add_hq_stand_ins() -> void:
 	var ids: Array = hqs.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for cid: StringName in ids:
 		var r: Rect2i = hqs[cid]
 		var c := Vector2(r.get_center())

@@ -535,7 +535,7 @@ func forecast_changes(was: Dictionary) -> Array:
 		return out
 	var now := forecast_values()
 	var ids := now.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		if was.has(id) and int(was[id]) != int(now[id]):
 			out.append({"site": StringName(id), "from": int(was[id]), "to": int(now[id])})
@@ -6078,7 +6078,7 @@ func show_raid_summary() -> void:
 	report.body = box
 	# Each node of the raid, by name: its integrity before and after and its outcome.
 	var ids: Array = r.get("nodes", {}).keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		var n: Dictionary = r["nodes"][id]
 		var outcome := shown_outcome(String(n["outcome"]), StringName(String(id)) == c.grid.home_site_id, int(n["after"]))
