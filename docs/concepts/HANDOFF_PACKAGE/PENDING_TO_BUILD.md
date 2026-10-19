@@ -132,3 +132,10 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    2. Ground-lying compound parts go to class 4, not class 1: the plaza carpet, the apron trims, the rails at grade (the yellow on the HQ sheet), via an `id_ground` group or by glb mesh role. This is likely most of Meridian's 1.01 at a 0.48 landmark share. Rebel Cell's MAINFRAME sign stays class 1.
    3. capture.json: 1-space indent, sorted keys, LF (NA-02 JSON), not tabs. Add `time` ("night" by default, "day" for day frames).
    - Then re-run hq_meridian, landmark_solace and city_grid; whatever still fails goes on the art list. City R-FOCUS-1 at 1.05 is probably real. Class 3 / 6 at 0 px and no class 5 on HQ frames: fine.
+
+16. **W1_NA25b (@7b5b02c4): APPROVED once the 3 items below land; re-send only those frames.**
+   - Good: the blotches are fixed at the cause (glint scaled by distance, no near-mirror at half look_blend), worst frame at 0.003. The reverse order (dive back, NIGHT_SKY switch, CRT, rain, untype) reads in that order. The dive waits for the view, at 24 ms p95.
+   1. The "dive back" scrim, as you already know.
+   2. The "HQ side: night switch" panel is a flat navy frame. If it's a true hold in motion, it is a dark frame, which contradicts "0 dark frames". Either it lasts 1 frame or less (then say so) or crossfade through it. Re-send the 3 frames around it.
+   3. Reveal dissolve: it's too subtle to read mid-frame. Make the Bayer cell at least 2 px at 1080p (4x4 matrix) so the grain reads as a dissolve and not as noise, and capture one mid frame on a seed with 5 or more rooms in frame.
+   - Q, Grid/Route zoom: use the short zoom-only beat set, about 1.2 s. A toggle the player uses often shouldn't replay 4.5 s. The full dive plays only on entry (jack in) and on the jack-out reverse. Space still skips both.
