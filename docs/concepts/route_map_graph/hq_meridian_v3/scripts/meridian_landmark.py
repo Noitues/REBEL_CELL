@@ -1104,3 +1104,11 @@ def build(K, rooms=True, rail=True):
 # HQ entry anchor (BU relative to the HQ lot CENTRE, x east, y north, z above ground): the S gatehouse's TRUCK GATE, in the
 # outer face of the south curtain wall (CP lot 120 kit BU x K_UNITS = 28.5 BU, gate at s_x 0), looking south
 ENTRY = {"entry": [0.0, -28.5, 0.0], "entry_nrm": [0.0, -1.0]}
+
+# FACE_OUTLINE (BU, CCW): lot curtain wall, lot 120 kit x K_UNITS (28.5) - the corners plus 4 segments per edge.
+FACE_OUTLINE = [
+    [-28.5, -28.5], [-14.25, -28.5], [0.0, -28.5], [14.25, -28.5],
+    [28.5, -28.5], [28.5, -14.25], [28.5, 0.0], [28.5, 14.25],
+    [28.5, 28.5], [14.25, 28.5], [0.0, 28.5], [-14.25, 28.5],
+    [-28.5, 28.5], [-28.5, 14.25], [-28.5, 0.0], [-28.5, -14.25]
+]

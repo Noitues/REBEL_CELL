@@ -163,6 +163,14 @@ def build(K, rooms=True, rail=False):
 # the ground lobby: centre of the bottom tier's south face (the face the overview camera sees)
 ENTRY = {"entry": [0.0, -HALF[0], 0.0], "entry_nrm": [0.0, -1.0]}
 
+# FACE_OUTLINE (BU, CCW): base tier square, HALF[0] = 29.0 - the corners plus 4 segments per edge.
+FACE_OUTLINE = [
+    [-29.0, -29.0], [-14.5, -29.0], [0.0, -29.0], [14.5, -29.0],
+    [29.0, -29.0], [29.0, -14.5], [29.0, 0.0], [29.0, 14.5],
+    [29.0, 29.0], [14.5, 29.0], [0.0, 29.0], [-14.5, 29.0],
+    [-29.0, 29.0], [-29.0, 14.5], [-29.0, 0.0], [-29.0, -14.5]
+]
+
 
 HQ_DISTRICT = {"hue": (0.549, 0.482, 1.0)}      # the Halcyon district hue (PIPELINE_SPEC district table)
 

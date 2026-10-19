@@ -533,3 +533,16 @@ def build_whales(ns, centre=None, seed=None):
 # causeway starts (tethys_quarter.lock_pose / causeway p0 on the zoned layout: the dam point nearest the HQ, +0.4 off the wet
 # face), on the causeway deck (TP.CAUSEWAY z 5.0). entry_nrm = the unit vector from the lot centre toward the lock (outward).
 ENTRY = {"entry": [30.0, 8.2, 5.0], "entry_nrm": [0.9646, 0.2637]}
+
+# FACE_OUTLINE (BU, CCW): lot circle PIER lot_r = 34.0 (tethys_preset) - sampled every 10 deg.
+FACE_OUTLINE = [
+    [34.0, 0.0], [33.48, 5.9], [31.95, 11.63], [29.44, 17.0],
+    [26.05, 21.85], [21.85, 26.05], [17.0, 29.44], [11.63, 31.95],
+    [5.9, 33.48], [0.0, 34.0], [-5.9, 33.48], [-11.63, 31.95],
+    [-17.0, 29.44], [-21.85, 26.05], [-26.05, 21.85], [-29.44, 17.0],
+    [-31.95, 11.63], [-33.48, 5.9], [-34.0, 0.0], [-33.48, -5.9],
+    [-31.95, -11.63], [-29.44, -17.0], [-26.05, -21.85], [-21.85, -26.05],
+    [-17.0, -29.44], [-11.63, -31.95], [-5.9, -33.48], [0.0, -34.0],
+    [5.9, -33.48], [11.63, -31.95], [17.0, -29.44], [21.85, -26.05],
+    [26.05, -21.85], [29.44, -17.0], [31.95, -11.63], [33.48, -5.9]
+]

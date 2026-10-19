@@ -178,6 +178,14 @@ def build(K, rooms=True, rail=False):
 # the base block's street door: centre of its south (street) face
 ENTRY = {"entry": [0.0, -BLOCK_HALF[1], 0.0], "entry_nrm": [0.0, -1.0]}
 
+# FACE_OUTLINE (BU, CCW): base block BLOCK_HALF = (7.0, 6.0) - the corners plus 4 segments per edge.
+FACE_OUTLINE = [
+    [-7.0, -6.0], [-3.5, -6.0], [0.0, -6.0], [3.5, -6.0],
+    [7.0, -6.0], [7.0, -3.0], [7.0, 0.0], [7.0, 3.0],
+    [7.0, 6.0], [3.5, 6.0], [0.0, 6.0], [-3.5, 6.0],
+    [-7.0, 6.0], [-7.0, 3.0], [-7.0, 0.0], [-7.0, -3.0]
+]
+
 
 def _hq_module(fname, tag):
     """The HQ-kit builder next to this file (hq_build.py), loaded by path under a unique name (the HQ dirs each have an

@@ -223,6 +223,19 @@ def build(K, rooms=True, rail=False):
 # the ground lobby: the LAUNCH CONTROL gantry foot (gantry centre y -10.5, half 3.2) on the podium deck, south face
 ENTRY = {"entry": [0.0, -13.7, 3.4], "entry_nrm": [0.0, -1.0]}
 
+# FACE_OUTLINE (BU, CCW): podium rim at HQ scale, hq_preset podium_r 64.0 kit x K_UNITS - sampled every 10 deg.
+FACE_OUTLINE = [
+    [15.2, 0.0], [14.97, 2.64], [14.28, 5.2], [13.16, 7.6],
+    [11.64, 9.77], [9.77, 11.64], [7.6, 13.16], [5.2, 14.28],
+    [2.64, 14.97], [0.0, 15.2], [-2.64, 14.97], [-5.2, 14.28],
+    [-7.6, 13.16], [-9.77, 11.64], [-11.64, 9.77], [-13.16, 7.6],
+    [-14.28, 5.2], [-14.97, 2.64], [-15.2, 0.0], [-14.97, -2.64],
+    [-14.28, -5.2], [-13.16, -7.6], [-11.64, -9.77], [-9.77, -11.64],
+    [-7.6, -13.16], [-5.2, -14.28], [-2.64, -14.97], [0.0, -15.2],
+    [2.64, -14.97], [5.2, -14.28], [7.6, -13.16], [9.77, -11.64],
+    [11.64, -9.77], [13.16, -7.6], [14.28, -5.2], [14.97, -2.64]
+]
+
 
 def _hq_module(fname, tag):
     """The HQ-kit builder next to this file (hq_build.py), loaded by path under a unique name (the HQ dirs each have an

@@ -232,6 +232,19 @@ def landmark_info():
 # the ground lobby: south face of the plinth drum (the face the overview camera sees)
 ENTRY = {"entry": [0.0, -C_PLINTH_R, 0.0], "entry_nrm": [0.0, -1.0]}
 
+# FACE_OUTLINE (BU, CCW): plinth drum C_PLINTH_R = 12.0 - sampled every 10 deg.
+FACE_OUTLINE = [
+    [12.0, 0.0], [11.82, 2.08], [11.28, 4.1], [10.39, 6.0],
+    [9.19, 7.71], [7.71, 9.19], [6.0, 10.39], [4.1, 11.28],
+    [2.08, 11.82], [0.0, 12.0], [-2.08, 11.82], [-4.1, 11.28],
+    [-6.0, 10.39], [-7.71, 9.19], [-9.19, 7.71], [-10.39, 6.0],
+    [-11.28, 4.1], [-11.82, 2.08], [-12.0, 0.0], [-11.82, -2.08],
+    [-11.28, -4.1], [-10.39, -6.0], [-9.19, -7.71], [-7.71, -9.19],
+    [-6.0, -10.39], [-4.1, -11.28], [-2.08, -11.82], [0.0, -12.0],
+    [2.08, -11.82], [4.1, -11.28], [6.0, -10.39], [7.71, -9.19],
+    [9.19, -7.71], [10.39, -6.0], [11.28, -4.1], [11.82, -2.08]
+]
+
 
 def _hq_module(fname, tag):
     """The HQ-kit builder next to this file (hq_build.py), loaded by path under a unique name (the HQ dirs each have an
