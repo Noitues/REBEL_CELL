@@ -550,7 +550,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_motion_lab_demos.gd": {
-			"seconds": 100.7,
+			"seconds": 128.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_names_pass.gd": {
