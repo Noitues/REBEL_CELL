@@ -81,3 +81,40 @@ queued.
   per-part ids; (b) a material spec for the toon ramp, ink width, haze and wet-ground values read straight from the plate's
   Blender scene; (c) re-capturing the plates at your exact Godot cameras if any differ. Name the ones you want.
 - First parity target: the street OVERVIEW at seed 1. Once that passes, carry the method to DECISION, then to the city and HQ views.
+
+### A-021 · 2026-10-19 · re B-002: port plan answers (ASK a-e) · RULING
+re B-002. The order is good: P0 first, then P1 + P5, P2 + P3 + P4, P6, P7. NA-25b r3 goes first. Folding NA-24d into P3 is fine.
+
+**Most important point (for P2 and P3): don't design the placement. Port the plate's own rules.** The street plates are built from
+pure seeded Python with no Blender in it. Port these modules as your Python twin and GDScript, at the same `art_seed` (fnv64 streams). Then the same seed gives the
+same facades, signs and words as the plate, and parity becomes a diff rather than a judgment call. All paths are on art-pass,
+`docs/concepts/route_map_graph/street_r2/scripts/`:
+- `r2_config.py`: every number (kit widths, floor pitch, emit levels, palettes per district, fog scatter, WORDS, SUBS). It becomes
+  content `.tres`, so no magic numbers.
+- `r2_facade.py`: `repetition.guard`. Bay rhythm, mixed modules, varied floors, setbacks, balconies, and the `props.facade`
+  placement (AC, pipes, awnings, small signs, lit rooms) with its keep-clear rules for route-room openings.
+- `r2_kits.py`: the per-cell facade kits (glass_curtain, panel_grille, lit_atrium, concrete_band). These are per-cell generators,
+  not meshes, so port them as code.
+- `r2_rules.py` `plan_pass()` (sign plan: shop, hero, secondary, backdrop blade, roof boards, mega) and `layout_pass()`. Its
+  `checks()` already holds the R-REP-1 / R-DET-2 checks the plate passes.
+- `r2_signs.py`: the sign texture styles (box, blade, wall, ad, holo, shop) and the fit-to-sign text rule (a word never clips).
+Read them with `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:<path>`. Port them;
+don't link them.
+
+- **(a) Kit glb: yes, for the props only.** The facade cells are code (above). I'll export the props as glb with per-part ids
+  plus a role table: AC unit, pipe run, awning, balcony slab and rail, street lamp, roof billboard frame, blade-sign bracket,
+  trim profiles, and the hover car. File: `HANDOFF_PACKAGE/street_kit/` (glb + `roles.json`). I'll post an A-NNN when it lands.
+- **(b) Material spec: yes.** File: `HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md`, read from `r2_scene.py` (TOON, RAMP, LIT_RAMP,
+  ink, glass, neon) and `r2_cycles.py` / `r2_compose.py`. Expect part of the look to be **post** (bloom, haze, streaks, bokeh,
+  grain, colour grade), and the spec will say which parts. Every field you listed, as numbers. A-NNN when it lands.
+- **(c) Yes.** Publish your cameras in B-003. The plate cameras are in `golden_plates/street_*_capture.json` (from the render
+  job; 1920 x 1080). If yours differ, I re-capture at yours.
+- **(d) The columns:** the tall, full-height glowing yellow-green and teal vertical bars, about 8 in OVERVIEW and 4 in DECISION.
+  They are the brightest things in frame on the tallest towers, at the route-room fronts and down the left tower edge. Whatever
+  they are (NA-24c hero blades, route-room column glow, or both), the plate has none. The plate's verticals are **blade signs**
+  (`r2_signs` style "blade": stacked letters on a dark board with a lit edge, about 1-3 floors tall, with spill) and thin
+  **lit slots** (`lit_atrium`). Replace them with those. A route room reads by its opening and storefront (P7), not by a light
+  column.
+- **(e) Words:** use `r2_config.WORDS` (per district: meridian, halcyon and the default) and `SUBS` as they are. They are
+  dressing only (setting corps and invented shop words, no game content). No draft needed. A district with no list uses
+  the default list.
