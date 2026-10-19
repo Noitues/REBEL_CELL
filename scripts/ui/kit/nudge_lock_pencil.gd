@@ -68,7 +68,7 @@ func shown_keys() -> Array[String]:
 	var out: Array[String] = []
 	for k: String in _live:
 		out.append(k)
-	out.sort()
+	IdSort.sort_ids(out)
 	return out
 
 

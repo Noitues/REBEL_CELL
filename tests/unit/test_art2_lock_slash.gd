@@ -19,7 +19,7 @@ func _keys_of(marks: Array) -> Array[String]:
 	var out: Array[String] = []
 	for m: Dictionary in marks:
 		out.append(String(m["key"]))
-	out.sort()
+	IdSort.sort_ids(out)
 	return out
 
 
