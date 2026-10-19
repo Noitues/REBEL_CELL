@@ -17,6 +17,14 @@ func _ready() -> void:
 			print("BUILD seed %d no-rules %.0f ms prisms %d" % [s + k, (Time.get_ticks_usec() - b0) / 1000.0, bm.prisms.size()])
 		get_tree().quit()
 		return
+	if args.size() > 1 and args[1] == "--landmarks":
+		_landmarks(s)
+		get_tree().quit()
+		return
+	if args.size() > 1 and args[1] == "--terrain":
+		_terrain()
+		get_tree().quit()
+		return
 	if args.size() > 1 and args[1] == "--time":
 		_time(s)
 		get_tree().quit()
@@ -55,6 +63,95 @@ func _ready() -> void:
 			row += c
 		print("M ", row)
 	get_tree().quit()
+
+
+## CITY-A2 step 2: our landmark glTFs (assets/city/landmarks) against art-pass ENTRIES.json @ 77cdfde9 (`ENTRIES`, the
+## entry anchors: BU from the HQ lot centre, x east, y north, on the south face) and A2's HQ landmarks: each glb's ground
+## box (world BU: x east, z south), its south face's distance from the centre against the entry's, and where the seed's
+## HQ stands from A2's HQ position (lots).
+const ENTRIES := {&"halcyon": Vector3(0.0, -29.0, 0.0), &"meridian": Vector3(0.0, -28.5, 0.0), &"orbital": Vector3(0.0, -13.7, 3.4),
+	&"rebel_cell": Vector3(0.0, -6.0, 0.0), &"solace": Vector3(0.0, -12.0, 0.0)}
+
+
+func _landmarks(s: int) -> void:
+	var plan := CityPlan.for_seed(s)
+	var m := CityModel.build(CityView3D.CONFIG, s)
+	var ids: Array = ENTRIES.keys()
+	IdSort.sort_ids(ids)
+	for corp: StringName in ids:
+		var path := "res://assets/city/landmarks/%s/%s_hq.glb" % [corp, corp]
+		if corp == NeonCity.FIST_TERRITORY:
+			path = "res://assets/city/landmarks/%s/%s_district.glb" % [corp, corp]
+		var box := AABB()
+		if ResourceLoader.exists(path):
+			var n := (load(path) as PackedScene).instantiate() as Node3D
+			box = _box_of(n, Transform3D())
+			n.free()
+		var e: Vector3 = ENTRIES[corp]
+		var a2_hq := Vector2.INF
+		for lm: Dictionary in plan.a2.a2.landmarks:
+			var want := &"centre" if corp == NeonCity.FIST_TERRITORY else corp
+			if lm["kind"] == &"hq" and lm["district"] == want:
+				a2_hq = plan.a2.lot_of(lm["pos"])
+		var hq: Vector2 = plan.hq_of(corp) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+		print("LANDMARK %s glb=%s box=%s south_face=%.1f entry_south=%.1f match=%s hq_lot=%s a2_hq_lot=%s off_lots=%.1f ground=%.2f" % [
+			corp, ResourceLoader.exists(path), box, box.end.z, -e.y, absf(box.end.z + e.y) <= ENTRY_TOL_BU, hq, a2_hq,
+			hq.distance_to(a2_hq) if a2_hq != Vector2.INF else -1.0, m.ground_at(hq)])
+
+
+## Entries within this many BU of a glb's south face match it.
+const ENTRY_TOL_BU := 2.0
+
+
+static func _box_of(n: Node, xf: Transform3D) -> AABB:
+	var out := AABB()
+	var first := true
+	var t := xf * ((n as Node3D).transform if n is Node3D else Transform3D())
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		out = t * (n as MeshInstance3D).mesh.get_aabb()
+		first = false
+	for c in n.get_children():
+		var b := _box_of(c, t)
+		if b.size != Vector3.ZERO:
+			out = b if first else out.merge(b)
+			first = false
+	return out
+
+
+## CITY-A2 step 2: the terrain's build time, its highest ground in the city and past it, and an ASCII height map of the
+## coarse grid (~ water, then " .:-=+*#%@" by `TERRAIN_CHAR_BU` BU bands).
+const TERRAIN_CHAR_BU := 6.0
+
+
+func _terrain() -> void:
+	var cfg := CityPlan.plan_config()
+	var cc := CityView3D.CONFIG
+	var t0 := Time.get_ticks_usec()
+	var ras := CityA2Builder.raster(cfg, cc.city_rect, NeonCity.BORDER_BLEND)
+	var t1 := Time.get_ticks_usec()
+	var t := CityA2Builder.terrain(cfg, cc.city_rect, NeonCity.BORDER_BLEND, cc.lot_bu)
+	var t2 := Time.get_ticks_usec()
+	print("TERRAIN raster_ms=%.0f terrain_ms=%.0f fine=%s coarse=%s step=%d" % [(t1 - t0) / 1000.0, (t2 - t1) / 1000.0, t.fine_rect,
+		t.coarse_rect, t.step])
+	var hi := -INF
+	var at := Vector2i.ZERO
+	for j in range(cc.city_rect.position.y, cc.city_rect.end.y):
+		for i in range(cc.city_rect.position.x, cc.city_rect.end.x):
+			if t.lot_height(i, j) > hi:
+				hi = t.lot_height(i, j)
+				at = Vector2i(i, j)
+	var hal := ras.lot_of(Vector2(700, 5900))
+	var mx := -INF
+	for k in t.coarse.size():
+		mx = maxf(mx, t.coarse[k])
+	print("TERRAIN city_max=%.2f at %s halcyon_hill=%.2f beyond_max=%.2f" % [hi, at, t.height_at(hal.x, hal.y), mx])
+	var w := t.coarse_rect.size.x / t.step + 1
+	for j in range(0, t.coarse.size() / w, 3):
+		var line := ""
+		for i in range(0, w, 2):
+			var k := j * w + i
+			line += "~" if t.coarse_water[k] != 0 else " .:-=+*#%@"[clampi(int(t.coarse[k] / TERRAIN_CHAR_BU), 0, 9)]
+		print("T ", line)
 
 
 ## Plan and subdivision times (ms) of `n` seeds from `s`: max and mean of each.
@@ -97,7 +194,7 @@ func _why(s: int) -> void:
 			for k in 24:
 				var why := [0, 0, 0, 0, 0, 0]
 				var tot := 0
-				for q: Vector2 in CityGenerator.site_points_at(c, k * 15.0, mir, frame, frame["uvs"][id]):
+				for q: Vector2 in CityA2Builder.site_points_at(c, k * 15.0, mir, frame, frame["uvs"][id]):
 					var l := Vector2i(q.floor())
 					if not CityView3D.CONFIG.city_rect.grow(-gcfg.city_gen_edge_lots).has_point(l):
 						why[0] += 1

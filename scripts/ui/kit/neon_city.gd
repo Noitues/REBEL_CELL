@@ -124,8 +124,8 @@ const CULTURES := {
 
 ## Territory centres (grid lots) and their pull (bigger = larger territory). The
 ## corporations' HQs stand on their centres; &"" entries are the neutral Sprawl.
-## NA-12: the FIXED city's (CityPlan.make_fixed, seed CityConfig.city_seed); every other seed's
-## territories come from CityGenerator. Read a city's through `plan()` / CityPlan, not here.
+## CITY-A2 step 2: only a fallback plan (A2 could not be made) uses these; every city seed's
+## territories come from A2 (CityA2Builder). Read a city's through `plan()` / CityPlan, not here.
 const TERRITORIES: Array[Dictionary] = [
 	{"id": &"", "at": Vector2(0, 0), "pull": 1.0},
 	{"id": &"solace", "at": Vector2(-34, -4), "pull": 1.15},

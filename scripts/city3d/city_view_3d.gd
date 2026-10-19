@@ -216,7 +216,7 @@ func landmark_slot(corp: StringName) -> Transform3D:
 	if model == null or not model.hqs.has(corp):
 		return Transform3D()
 	var r: Rect2i = model.hqs[corp]
-	return Transform3D(Basis(), lot_world(Vector2(r.get_center())))
+	return Transform3D(Basis(), ground_world(Vector2(r.get_center())))
 
 
 ## Hides (or shows again) the stepped stand-in tower on `corp`'s HQ lot (a landmark took
@@ -457,9 +457,9 @@ func pick(p: Vector2) -> Dictionary:
 	return model.pick_info(iso, p)
 
 
-## The ground lot under pixel `p`.
+## The ground lot under pixel `p` (CITY-A2 step 2: on the model's terrain once it is built).
 func lot_at(p: Vector2) -> Vector2i:
-	var l := CityIsoCamera.world_to_lot(cfg, iso.unproject(p, 0.0))
+	var l := CityIsoCamera.world_to_lot(cfg, model.ground_point(iso, p) if model != null else iso.unproject(p, 0.0))
 	return Vector2i(floori(l.x), floori(l.y))
 
 
@@ -476,6 +476,11 @@ func unproject(p: Vector2, height: float = 0.0) -> Vector3:
 ## The world point of lot point `lot` (lots, not lot centres) at `height` BU.
 func lot_world(lot: Vector2, height: float = 0.0) -> Vector3:
 	return CityIsoCamera.lot_to_world(cfg, lot, height)
+
+
+## CITY-A2 step 2: the world point of lot point `lot` on the ground (the model's terrain; sea level before the model).
+func ground_world(lot: Vector2) -> Vector3:
+	return lot_world(lot, model.ground_at(lot) if model != null else 0.0)
 
 
 ## The tallest roof (BU) over lot `lot` (0 before the model is built).
@@ -581,11 +586,18 @@ func set_network(d: CityNetworkData) -> void:
 		sm.set_shader_parameter("node_count", mini(d.nodes.size(), cfg.net_nodes_max))
 		sm.set_shader_parameter("seg_count", mini(d.segments.size(), cfg.net_points_max))
 	var b := d.bounds().grow(NET_MARGIN_BU)
-	var pm := PlaneMesh.new()
-	pm.size = b.size
+	var pm: Mesh = null
+	var at := Vector3(b.get_center().x, cfg.lane_stroke_bu, b.get_center().y)
+	if model != null and model.terrain != null:
+		# CITY-A2 step 2: the decal follows the hills (its shader reads world X/Z).
+		pm = CityMeshKit.terrain_plane(cfg, b, model.terrain, cfg.lane_stroke_bu + cfg.net_terrain_lift_bu, cfg.lot_bu)
+		at = Vector3.ZERO
+	else:
+		var plane := PlaneMesh.new()
+		plane.size = b.size
+		pm = plane
 	_net_mi.mesh = pm
 	_net_xray_mi.mesh = pm
-	var at := Vector3(b.get_center().x, cfg.lane_stroke_bu, b.get_center().y)
 	_net_mi.position = at
 	_net_xray_mi.position = at
 
@@ -882,6 +894,10 @@ func _on_model(m: CityModel) -> void:
 	if can_render():
 		place_landmarks()
 	_build_water(m)
+	_build_land(m)
+	_build_features(m)
+	if network != null and m.terrain != null:
+		set_network(network)  # CITY-A2 step 2: the decal now follows the model's terrain
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -919,6 +935,47 @@ func _build_water(m: CityModel) -> void:
 		water.set_zoom(iso.ortho)
 	if not _last_day.is_empty():
 		_ramp_water(_last_day)
+
+
+## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the ground material;
+## none without terrain or headless. It shows and hides with the outer ground plane (`show_outer_ground`).
+var land: MeshInstance3D = null
+
+
+func _build_land(m: CityModel) -> void:
+	if land != null:
+		land.queue_free()
+		land = null
+	if m.terrain == null or not can_render():
+		return
+	var mesh := CityMeshKit.land_mesh(cfg, m.terrain, cfg.city_rect)
+	if mesh == null:
+		return
+	land = MeshInstance3D.new()
+	land.name = "OuterLand"
+	land.mesh = mesh
+	land.material_override = _outer_mat
+	land.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
+	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	land.visible = _outer_ground_on
+	layer(&"ground").add_child(land)
+
+
+## CITY-A2 step 2: A2's roads by class, rails and stations, walls and checkpoints, the port, the drowned quarter and the
+## undercity entrances (CityA2Features), on the ground layer; none without terrain or headless.
+var features: CityA2Features = null
+
+
+func _build_features(m: CityModel) -> void:
+	if features != null:
+		features.queue_free()
+		features = null
+	var plan := CityPlan.for_seed(m.city_seed)
+	if plan.a2 == null or plan.terrain == null or not can_render():
+		return
+	var wm: Material = water.water_mat if water != null else _outer_mat
+	features = CityA2Features.make(cfg, plan, _outer_mat, _lane_mat, wm)
+	add_to_layer(&"ground", features)
 
 
 ## The day ramp on the sea wall and pier decks (as on the ground).
@@ -972,12 +1029,12 @@ func _build_chunk(key: Vector2i) -> void:
 	for n: int in ch["streets"]:
 		streets.append(model.streets[n])
 	var g := MeshInstance3D.new()
-	g.mesh = CityMeshKit.ground_mesh_of(cfg, area, plazas, streets)
+	g.mesh = CityMeshKit.ground_mesh_on(cfg, r, plazas, streets, model.terrain) if model.terrain != null 		else CityMeshKit.ground_mesh_of(cfg, area, plazas, streets)
 	g.material_override = _ground_mat
 	g.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(g)
-	var lm := CityMeshKit.lane_mesh_of(cfg, streets)
+	var lm := CityMeshKit.lane_mesh_of(cfg, streets, model.terrain)
 	if lm != null:
 		var l := MeshInstance3D.new()
 		l.mesh = lm
@@ -1242,7 +1299,7 @@ func place_landmarks() -> void:
 		if _place_landmark(corp, path, landmark_slot(corp), look):
 			hide_stand_in(corp)
 	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
-	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
+	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), ground_world(centre)), look)
 	_place_site_landmark()
 
 
@@ -1368,7 +1425,7 @@ func _place_site_landmark() -> bool:
 		return false
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	var before := _cleared.size()
-	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(site_landmark["lot"])), look):
+	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), ground_world(site_landmark["lot"])), look):
 		return false
 	_rebuild_under(_cleared[before] if _cleared.size() > before else Rect2())
 	if _under_compound(_ground_box(landmarks[SITE_KEY])):
@@ -1604,6 +1661,8 @@ func show_outer_ground(on: bool) -> void:
 	var outer := g.get_node_or_null(^"OuterGround") as Node3D if g != null else null
 	if outer != null:
 		outer.visible = on
+	if land != null:
+		land.visible = on
 
 
 ## Whether the asphalt plane round the city shows (tests).

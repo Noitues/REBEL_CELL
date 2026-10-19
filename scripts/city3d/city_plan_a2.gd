@@ -25,8 +25,34 @@ var rivers: Array[Dictionary] = []
 ## Hills, A2's Gaussians: {"centre": Vector2 (m), "sigma": Vector2 (m), "height": float (m), "rotation": float (rad)}.
 var hills: Array[Dictionary] = []
 ## Roads: {"id": StringName, "name", "class": StringName, "width": float (m), "polyline": PackedVector2Array (m;
-## a closed road repeats its first point last)}.
+## a closed road repeats its first point last), "closed": bool, "tunnels" / "bridges": Array of PackedVector2Array (m;
+## sub-polylines of the main one)}.
 var roads: Array[Dictionary] = []
+## CITY-A2 step 2. Rails: {"id": StringName, "name", "kind": StringName (freight / commuter / metro), "gauge": float (m),
+## "polyline": PackedVector2Array (m), "closed": bool, "tunnels": Array of PackedVector2Array (m)}.
+var rails: Array[Dictionary] = []
+## Stations: {"id": StringName, "name", "kind": StringName (rail / metro / hub / freight), "position": Vector2 (m)}.
+var stations: Array[Dictionary] = []
+## Landmarks: {"kind": StringName ("hq" or "glyph:<what>"), "name", "pos": Vector2 (m), "district": StringName (hq only),
+## "style": StringName (hq only), "radius": float (m; 0 when the file gives none)}.
+var landmarks: Array[Dictionary] = []
+## Interchanges: {"id": StringName, "type": StringName (diamond / stack / cloverleaf), "position": Vector2 (m),
+## "ramps": Array of PackedVector2Array (m)}.
+var interchanges: Array[Dictionary] = []
+## Corporate district walls: district id -> {"wall": PackedVector2Array (m, closed), "gates": PackedVector2Array (m)}.
+var walls: Dictionary = {}
+## Checkpoints: {"district": StringName, "position": Vector2 (m)}.
+var checkpoints: Array[Dictionary] = []
+## The drowned quarter's polygon (m; empty when the file has none) and its water depth (m).
+var drowned: PackedVector2Array = PackedVector2Array()
+var drowned_depth_m: float = 0.0
+## The port: {"terminal": PackedVector2Array (m), "piers": Array of {"base": Vector2, "length", "width", "bearing_deg"}} or {}.
+var port: Dictionary = {}
+## Undercity tunnels (m polylines) and their entrances (m).
+var undercity_tunnels: Array[PackedVector2Array] = []
+var undercity_entrances: PackedVector2Array = PackedVector2Array()
+## Dams, barriers and sea walls (m polylines).
+var sea_defences: Array[PackedVector2Array] = []
 ## Neighbourhoods: {"name", "kind": StringName, "centre": Vector2 (m), "radius": float (m)}.
 var neighbourhoods: Array[Dictionary] = []
 ## Parks (m).
@@ -158,7 +184,9 @@ func _read(d: Dictionary) -> void:
 			"height": float(h["height_m"]), "rotation": float(h.get("rotation_rad", 0.0))})
 	for r: Dictionary in d["roads"]:
 		roads.append({"id": StringName(String(r["id"])), "name": String(r.get("name", "")), "class": StringName(String(r["class"])),
-			"width": float(r["width_m"]), "polyline": _poly(r["polyline"])})
+			"width": float(r["width_m"]), "polyline": _poly(r["polyline"]), "closed": bool(r.get("closed", false)),
+			"tunnels": _polys(r.get("tunnels", [])), "bridges": _polys(r.get("bridges", []))})
+	_read_step2(d)
 	for n: Variant in d.get("neighbourhoods", []):
 		if n is Dictionary and _is_pair(n.get("centre")):
 			neighbourhoods.append({"name": String(n.get("name", "")), "kind": StringName(String(n.get("kind", ""))),
@@ -166,6 +194,80 @@ func _read(d: Dictionary) -> void:
 	for pk: Variant in d.get("parks", []):
 		if pk is Dictionary and _is_poly(pk.get("polygon")):
 			parks.append(_poly(pk["polygon"]))
+
+
+## CITY-A2 step 2: rails, stations, landmarks, interchanges, walls and gates, checkpoints, the drowned quarter, the port,
+## the undercity tunnels and the sea defences (each optional: a missing section reads as empty).
+func _read_step2(d: Dictionary) -> void:
+	for r: Variant in d.get("rails", []):
+		if r is Dictionary and r.get("polyline") is Array and (r["polyline"] as Array).size() >= 2:
+			rails.append({"id": StringName(String(r.get("id", ""))), "name": String(r.get("name", "")),
+				"kind": StringName(String(r.get("kind", ""))), "gauge": float(r.get("gauge_m", 0.0)), "polyline": _poly(r["polyline"]),
+				"closed": bool(r.get("closed", false)), "tunnels": _polys(r.get("tunnels", []))})
+	for s: Variant in d.get("stations", []):
+		if s is Dictionary and _is_pair(s.get("position")):
+			stations.append({"id": StringName(String(s.get("id", ""))), "name": String(s.get("name", "")),
+				"kind": StringName(String(s.get("kind", ""))), "position": _v(s["position"])})
+	for l: Variant in d.get("landmarks", []):
+		if l is Dictionary and _is_pair(l.get("pos")):
+			landmarks.append({"kind": StringName(String(l.get("kind", ""))), "name": String(l.get("name", "")), "pos": _v(l["pos"]),
+				"district": StringName(String(l.get("district", ""))), "style": StringName(String(l.get("style", ""))),
+				"radius": float(l.get("radius_m", l.get("ring_radius_m", l.get("half_size_m", 0.0))))})
+	for ix: Variant in d.get("interchanges", []):
+		if ix is Dictionary and _is_pair(ix.get("position")):
+			interchanges.append({"id": StringName(String(ix.get("id", ""))), "type": StringName(String(ix.get("type", ""))),
+				"position": _v(ix["position"]), "ramps": _polys(ix.get("ramps", []))})
+	for di: Dictionary in d["districts"]:
+		if _is_poly(di.get("wall")):
+			var g := PackedVector2Array()
+			for q: Variant in di.get("gates", []):
+				if _is_pair(q):
+					g.append(_v(q))
+			walls[StringName(String(di["id"]))] = {"wall": _poly(di["wall"]), "gates": g}
+	for c: Variant in d.get("checkpoints", []):
+		if c is Dictionary and _is_pair(c.get("position")):
+			checkpoints.append({"district": StringName(String(c.get("district", ""))), "position": _v(c["position"])})
+	var dq: Variant = d.get("drowned_quarter", {})
+	if dq is Dictionary and _is_poly(dq.get("polygon")):
+		drowned = _poly(dq["polygon"])
+		drowned_depth_m = float(dq.get("water_depth_m", 0.0))
+	var pt: Variant = d.get("port", {})
+	if pt is Dictionary and _is_poly(pt.get("terminal_polygon")):
+		var piers: Array = []
+		for p: Variant in pt.get("piers", []):
+			if p is Dictionary and _is_pair(p.get("base")):
+				piers.append({"base": _v(p["base"]), "length": float(p.get("length_m", 0.0)), "width": float(p.get("width_m", 0.0)),
+					"bearing_deg": float(p.get("bearing_deg", 0.0))})
+		port = {"terminal": _poly(pt["terminal_polygon"]), "piers": piers}
+	var uc: Variant = d.get("undercity", {})
+	if uc is Dictionary:
+		undercity_tunnels = _polys(uc.get("tunnels", []))
+		for e: Variant in uc.get("entrances", []):
+			if e is Dictionary and _is_pair(e.get("position")):
+				undercity_entrances.append(_v(e["position"]))
+	var df: Variant = d.get("defences", {})
+	if df is Dictionary:
+		for k: String in ["dams_and_barriers", "sea_walls"]:
+			for w: Variant in df.get(k, []):
+				if w is Dictionary and w.get("polyline") is Array and (w["polyline"] as Array).size() >= 2:
+					sea_defences.append(_poly(w["polyline"]))
+
+
+## The road whose id is `id`, or {}.
+func road(id: StringName) -> Dictionary:
+	for r in roads:
+		if r["id"] == id:
+			return r
+	return {}
+
+
+static func _polys(a: Variant) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	if a is Array:
+		for pl: Variant in a:
+			if pl is Array and (pl as Array).size() >= 2 and _is_pair(pl[0]):
+				out.append(_poly(pl))
+	return out
 
 
 static func _is_pair(v: Variant) -> bool:

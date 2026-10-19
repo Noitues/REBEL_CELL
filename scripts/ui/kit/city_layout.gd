@@ -65,7 +65,7 @@ static func home_label() -> String:
 ## the layout round its HQ, site_mirror flips it across its run axis), the boss end staying
 ## next to the HQ. Presentation only: the Grid's rules never read it.
 ## NA-12: the heading and mirror come from the running campaign's city plan (CityPlan.current:
-## the config's for the fixed city, CityGenerator's for a generated one).
+## the A2 plan's heading for its seed, CityA2Builder).
 static func site_points(corp: CorporationData) -> Dictionary:
 	return site_points_in(corp, CityPlan.current())
 
@@ -116,7 +116,7 @@ static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: boo
 
 
 ## NA-12 r2: the Site layout of `corp` in unit form (each Site's `uv` in [-1, 1]^2, as site_points_aimed spreads it),
-## in its Grid's Site order, for the city generator's Site heading check (CityGenerator.site_points_at).
+## in its Grid's Site order, for the A2 Site heading check (CityA2Builder.site_points_at).
 static func site_uvs(corp: CorporationData) -> PackedVector2Array:
 	var min_p := Vector2(1e9, 1e9)
 	var max_p := Vector2(-1e9, -1e9)

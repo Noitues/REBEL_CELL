@@ -374,59 +374,16 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var meridian_jettison_value_daemon: int = 60
 @export var meridian_jettison_value_asset: int = 40
 @export_group("City generator")
-## Plan 2 NA-12 (D3): the per-seed city (CityGenerator), in lots. The Cell's territory stands
-## within `city_gen_cell_jitter` of the land's centre; every corporation's HQ centre on a ring
-## round it (`city_gen_ring_lots` min / max radius), evenly turned with `city_gen_angle_jitter`
-## (share of the even step) of play, two HQ centres at least `city_gen_hq_gap` apart. HQ rects
-## and Site layouts stay `city_gen_edge_lots` inside the city and `city_gen_coast_clear` from
-## the water. Territory pull per corporation and per neutral Sprawl centre (count, range);
-## `city_gen_candidates` best-candidate draws per Sprawl centre; `city_gen_attempts` whole
-## layouts before the fixed city is the fallback.
-@export var city_gen_cell_jitter: float = 10.0
-@export var city_gen_ring_lots: Vector2 = Vector2(34.0, 42.0)
-@export var city_gen_angle_jitter: float = 0.2
-@export var city_gen_hq_gap: float = 26.0
+## Plan 2 NA-12 (D3), kept by the planner city A2 (CITY-A2 step 2 removed the grid generator and its other numbers):
+## HQ rects and Site layouts stay `city_gen_edge_lots` inside the city and Sites `city_gen_coast_clear` lots from the
+## water; Site layout headings are tried `city_gen_aim_step_deg` degrees apart round each HQ.
 @export var city_gen_edge_lots: int = 6
 @export var city_gen_coast_clear: int = 4
-@export var city_gen_pull_range: Vector2 = Vector2(0.9, 1.2)
-@export var city_gen_neutral_count: int = 3
-@export var city_gen_neutral_pull_range: Vector2 = Vector2(0.8, 1.0)
-@export var city_gen_candidates: int = 24
-@export var city_gen_attempts: int = 16
-## The coast (one side of the city is sea): depth from the city's edge, wave amplitude and
-## wavelength (lots, min / max).
-@export var city_gen_coast_depth: Vector2 = Vector2(8.0, 18.0)
-@export var city_gen_coast_wave: Vector2 = Vector2(2.0, 5.0)
-@export var city_gen_coast_wavelength: Vector2 = Vector2(40.0, 80.0)
-## NA-12 r2 (art-pass item 17, the A2 bay): a second, shorter shore wave (amplitude, wavelength); the bay (a
-## Gaussian bump of the shore into the land: depth, width (sigma), and how far its middle may sit off the sea edge's
-## middle, as a share of that edge); the Cell's HQ centre this many lots inland of the bay head; the arc (degrees,
-## centred on the inland direction) the ring's corporations share; corporations whose HQ stands on the shore (its
-## rect within `city_gen_shore_touch` lots of the water, on a bay flank `city_gen_shore_flank` bay widths off its middle).
-@export var city_gen_coast_wave2: Vector2 = Vector2(1.0, 3.0)
-@export var city_gen_coast_wavelength2: Vector2 = Vector2(15.0, 30.0)
-@export var city_gen_bay_depth: Vector2 = Vector2(18.0, 30.0)
-@export var city_gen_bay_width: Vector2 = Vector2(16.0, 26.0)
-@export var city_gen_bay_shift: float = 0.15
-@export var city_gen_cell_inland: float = 10.0
-@export var city_gen_ring_arc_deg: float = 220.0
-@export var city_gen_shore_corps: Array[StringName] = [&"tethys"]
-@export var city_gen_shore_touch: float = 2.0
-@export var city_gen_shore_flank: Vector2 = Vector2(1.2, 2.0)
-## Terrain hills (data only until NA-12c): count, sigma (lots) and height (BU) ranges, on land.
-@export var city_gen_hill_count: Vector2i = Vector2i(2, 4)
-@export var city_gen_hill_sigma: Vector2 = Vector2(8.0, 20.0)
-@export var city_gen_hill_height: Vector2 = Vector2(6.0, 24.0)
-## Site layout headings tried round each HQ (degrees apart).
 @export var city_gen_aim_step_deg: float = 15.0
-## The most one seed's generation may take (seconds, this machine; the 1,000-seed sweep asserts it).
-@export var city_gen_budget_s: float = 2.0
 @export_group("City plan A2")
-## CITY-A2 step 1 (D3, 2026-10-19): every generated city seed (not the fixed one) is the art-pass planner city
-## `city_a2_path` (CityPlanA2) when `city_layout_source` is &"a2"; &"grid" keeps the NA-12 CityGenerator (the fallback
-## step 2 removes). A2 metres per lot (20 km over the 165-lot city), the lots rasterised past the city rect, the river
+## CITY-A2 (D3, 2026-10-19): every city seed is the art-pass planner city `city_a2_path` (CityPlanA2; step 2: the
+## default seed too). A2 metres per lot (20 km over the 165-lot city), the lots rasterised past the city rect, the river
 ## kinds that are water, the least road half width (lots), and A2 district id -> game territory id (others: Sprawl).
-@export var city_layout_source: StringName = &"a2"
 @export var city_a2_path: String = "res://content/city/city_A2.json"
 @export var city_a2_metres_per_lot: float = 121.212
 @export var city_a2_raster_margin: int = 16
@@ -463,6 +420,25 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 	&"collector": 0.45, &"local": 0.2}
 ## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
 @export var city_a2_budget_s: float = 2.0
+## CITY-A2 step 2: the terrain (CityA2Terrain). A2's hills (height_m x lot_bu / metres per lot x `city_a2_hill_exag`);
+## outside the outer ring road `city_a2_outer_ring` (a closed A2 road id) foothills and mountains rising with the distance
+## d (lots) past it: over `city_a2_foot` (d from / to) up to `city_a2_foot_h` BU, over `city_a2_mountain` up to
+## `city_a2_mountain_h` BU, shaped by value noise on lattices of `city_a2_noise_cells` lots (broad, fine, ridge) drawn
+## from stream `city_terrain` of `city_a2_terrain_seed`; no mountain within `city_a2_mountain_shore` lots of the water; the
+## land falls to the sea over `city_a2_beach` lots. The land runs `city_a2_land_margin` lots past the city rect, sampled
+## every `city_a2_land_step` lots past the raster.
+@export var city_a2_hill_exag: float = 1.0
+@export var city_a2_outer_ring: StringName = &"road_001"
+@export var city_a2_foot: Vector2 = Vector2(2.5, 25.0)
+@export var city_a2_foot_h: float = 12.0
+@export var city_a2_mountain: Vector2 = Vector2(20.0, 64.0)
+@export var city_a2_mountain_h: float = 60.0
+@export var city_a2_noise_cells: Vector3 = Vector3(33.0, 13.0, 40.0)
+@export var city_a2_terrain_seed: int = 5101
+@export var city_a2_mountain_shore: Vector2 = Vector2(1.2, 7.5)
+@export var city_a2_beach: Vector2 = Vector2(0.5, 2.5)
+@export var city_a2_land_margin: int = 80
+@export var city_a2_land_step: int = 2
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -734,34 +710,17 @@ func enrage_for(data: EnemyData) -> EnrageData:
 	return enrage_default(data.enemy_class())
 
 
-## NA-12: the city generator's numbers (ranges min <= max, counts and gaps positive).
+## NA-12: the numbers the planner city keeps from the grid generator.
 func _validate_city_gen(errors: PackedStringArray) -> void:
-	for r: Vector2 in [city_gen_ring_lots, city_gen_pull_range, city_gen_neutral_pull_range, city_gen_coast_depth,
-			city_gen_coast_wave, city_gen_coast_wavelength, city_gen_coast_wave2, city_gen_coast_wavelength2, city_gen_bay_depth,
-			city_gen_bay_width, city_gen_shore_flank, city_gen_hill_sigma, city_gen_hill_height]:
-		if r.x > r.y or r.x < 0.0:
-			errors.append("city_gen range %s must be 0 <= min <= max." % r)
-	if city_gen_pull_range.x <= 0.0 or city_gen_neutral_pull_range.x <= 0.0 or city_gen_coast_wavelength.x <= 0.0:
-		errors.append("city_gen pulls and the coast wavelength must be > 0.")
-	if city_gen_hq_gap <= 0.0 or city_gen_candidates < 1 or city_gen_attempts < 1 or city_gen_neutral_count < 0:
-		errors.append("city_gen_hq_gap, city_gen_candidates and city_gen_attempts must be > 0, city_gen_neutral_count >= 0.")
-	if city_gen_edge_lots < 0 or city_gen_coast_clear < 0 or city_gen_cell_jitter < 0.0 or city_gen_angle_jitter < 0.0:
-		errors.append("city_gen_edge_lots, city_gen_coast_clear, city_gen_cell_jitter and city_gen_angle_jitter must be >= 0.")
-	if city_gen_coast_wavelength2.x <= 0.0 or city_gen_bay_width.x <= 0.0 or city_gen_hill_sigma.x <= 0.0:
-		errors.append("city_gen_coast_wavelength2, city_gen_bay_width and city_gen_hill_sigma must be > 0.")
-	if city_gen_ring_arc_deg <= 0.0 or city_gen_ring_arc_deg > 360.0 or city_gen_bay_shift < 0.0 or city_gen_bay_shift >= 0.5:
-		errors.append("city_gen_ring_arc_deg must be in (0, 360] and city_gen_bay_shift in [0, 0.5).")
-	if city_gen_hill_count.x < 0 or city_gen_hill_count.x > city_gen_hill_count.y or city_gen_shore_touch < 0.0 or city_gen_cell_inland < 0.0:
-		errors.append("city_gen_hill_count must be 0 <= min <= max; city_gen_shore_touch and city_gen_cell_inland >= 0.")
-	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0 or city_gen_budget_s <= 0.0:
-		errors.append("city_gen_aim_step_deg must be in (0, 360] and city_gen_budget_s > 0.")
+	if city_gen_edge_lots < 0 or city_gen_coast_clear < 0:
+		errors.append("city_gen_edge_lots and city_gen_coast_clear must be >= 0.")
+	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0:
+		errors.append("city_gen_aim_step_deg must be in (0, 360].")
 	_validate_city_a2(errors)
 
 
 ## CITY-A2: the planner city's numbers.
 func _validate_city_a2(errors: PackedStringArray) -> void:
-	if not city_layout_source in [&"a2", &"grid"]:
-		errors.append("city_layout_source must be a2 or grid.")
 	if city_a2_metres_per_lot <= 0.0 or city_a2_raster_margin < 0 or city_a2_road_half_min <= 0.0 or city_a2_budget_s <= 0.0:
 		errors.append("city_a2_metres_per_lot, city_a2_road_half_min and city_a2_budget_s must be > 0, city_a2_raster_margin >= 0.")
 	if city_a2_hq_jitter < 0.0 or city_a2_hq_tries < 0 or city_a2_hq_gap < 0 or city_a2_hq_search < 0:
@@ -780,6 +739,14 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 			errors.append("city_a2_heights %s must be a Vector2 0 < min <= max." % k)
 	if not city_a2_traffic.has(&"local"):
 		errors.append("city_a2_traffic needs a local entry.")
+	if city_a2_hill_exag < 0.0 or city_a2_foot_h < 0.0 or city_a2_mountain_h < 0.0 or city_a2_land_margin < 0 or city_a2_land_step < 1:
+		errors.append("city_a2_hill_exag, city_a2_foot_h, city_a2_mountain_h, city_a2_land_margin must be >= 0, city_a2_land_step >= 1.")
+	for v: Vector2 in [city_a2_foot, city_a2_mountain, city_a2_mountain_shore, city_a2_beach]:
+		if v.x < 0.0 or v.x >= v.y:
+			errors.append("city_a2_foot, city_a2_mountain, city_a2_mountain_shore and city_a2_beach must be 0 <= from < to.")
+			break
+	if city_a2_noise_cells.x <= 0.0 or city_a2_noise_cells.y <= 0.0 or city_a2_noise_cells.z <= 0.0:
+		errors.append("city_a2_noise_cells must be > 0.")
 
 
 func _validate_enrage(errors: PackedStringArray) -> void:

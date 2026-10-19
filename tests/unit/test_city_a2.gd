@@ -3,7 +3,8 @@ extends GutTest
 ## validates (and a broken one does not); same seed -> byte-identical plan and full-city `city.json`; two seeds differ
 ## inside the same A2 plan; every corporation's HQ rect lies on land inside its own A2 district and is the model's HQ;
 ## every A2 road inside the city is on the model's streets (or an HQ plaza); every Site has a building; the plan has no
-## plan-level problem; the &"grid" config still gives NA-12's generator. The 200-seed sweep and the time budget:
+## plan-level problem; the default seed is an A2 city too (step 2). Step 2: the terrain (heights, rails, landmarks) is
+## the same after a rebuild from scratch; buildings stand on the ground. The 200-seed sweep and the time budget:
 ## test_city_a2_sweep.gd.
 
 const CITY_CONFIG := preload("res://content/config/city_config.tres")
@@ -32,10 +33,7 @@ func test_generated_seed_is_the_a2_city() -> void:
 	var p := CityPlan.for_seed(SEED)
 	assert_eq(p.source(), "a2", "a generated seed is the planner city")
 	assert_false(p.fallback, "no fallback: %s" % p.failure)
-	assert_eq(CityPlan.for_seed(CityPlan.fixed_seed()).source(), "fixed", "the fixed seed stays today's city")
-	var grid := _cfg.duplicate() as CampaignConfigData
-	grid.city_layout_source = &"grid"
-	assert_eq(CityPlan.generate(SEED, grid).source(), "grid", "the grid config keeps NA-12's generator")
+	assert_eq(CityPlan.for_seed(CityPlan.default_seed()).source(), "a2", "CITY-A2 step 2: the default seed is an A2 city too")
 
 
 func test_same_seed_gives_a_byte_identical_city() -> void:
@@ -118,6 +116,88 @@ func test_layout_draws_no_global_rng() -> void:
 		NeonCity.HQ_LOTS, CityPlan.site_frame(), NeonCity.BORDER_BLEND, CITY_CONFIG.lot_bu)
 	CityA2Builder.lots_for(CityPlan.for_seed(SEED_B), _cfg, NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0)
 	assert_eq(randi(), before, "the global RNG did not advance")
+
+
+## CITY-A2 step 2: the terrain is a pure function of the A2 file and the config (two fresh builds agree to the bit), A2's
+## hills rise where the file puts them (the Panopticon's hill, 247 m -> about 12 BU), the water stays at sea level, and the
+## mountains rise past the outer ring.
+func test_terrain_is_deterministic_and_follows_a2() -> void:
+	var cc: CityConfig = CITY_CONFIG
+	var ras := CityA2Builder.raster(_cfg, cc.city_rect, NeonCity.BORDER_BLEND)
+	var a := CityA2Terrain.make(ras, _cfg, cc.city_rect, cc.lot_bu)
+	var b := CityA2Terrain.make(ras, _cfg, cc.city_rect, cc.lot_bu)
+	assert_eq(a.fine, b.fine, "same fine grid")
+	assert_eq(a.coarse, b.coarse, "same coarse grid")
+	var hill := ras.lot_of(Vector2(700.0, 5900.0))
+	var want := 247.0 * cc.lot_bu / _cfg.city_a2_metres_per_lot * _cfg.city_a2_hill_exag
+	assert_between(a.height_at(hill.x, hill.y), want, want * 1.5, "the Panopticon's hill")
+	var wet := 0
+	for j in range(cc.city_rect.position.y, cc.city_rect.end.y, 3):
+		for i in range(cc.city_rect.position.x, cc.city_rect.end.x, 3):
+			if ras.is_water(i, j) and ras.water[ras.index(i, j)] == CityA2Raster.SEA and a.lot_height(i, j) > 0.0:
+				wet += 1
+	assert_eq(wet, 0, "the sea lots are at sea level")
+	var top := 0.0
+	for k in a.coarse.size():
+		top = maxf(top, a.coarse[k])
+	assert_gt(top, _cfg.city_a2_foot_h, "mountains past the outer ring")
+	assert_almost_eq(CityPlan.for_seed(SEED).ground_at(hill.x, hill.y), a.height_at(hill.x, hill.y), 0.0001, "the plan's ground")
+
+
+## CITY-A2 step 2: every building stands on the ground (its "ground" is its cell's lowest corner, its base on it); city.json
+## keeps parts relative to that ground and carries it; a screen pick lands on the terrain.
+func test_buildings_and_picks_follow_the_ground() -> void:
+	var t := CityPlan.for_seed(SEED).terrain
+	var off := 0
+	var raised := 0
+	for pr: Dictionary in _model.prisms:
+		var g := t.cell_ground(pr["cell"])
+		if absf(float(pr["ground"]) - g) > 0.0001 or float(pr["y0"]) < g - 0.0001:
+			off += 1
+		if g > 1.0:
+			raised += 1
+	assert_eq(off, 0, "every prism on its cell's ground")
+	assert_gt(raised, 100, "the hills lift buildings")
+	var doc: Dictionary = JSON.parse_string(_export(_model))
+	var by_bid := {}
+	for b: Dictionary in doc["buildings"]:
+		by_bid[b["bid"]] = b
+	for pr: Dictionary in _model.prisms.slice(0, 200):
+		var cell: Rect2i = pr["cell"]
+		var bid := "hq:%s" % pr["terr"] if bool(pr["hq"]) else "%d:%d" % [cell.position.x, cell.position.y]
+		assert_almost_eq(float(by_bid[bid]["ground"]), float(pr["ground"]), 0.0001, bid)
+		assert_true(float(by_bid[bid]["parts"][0]["z0"]) < float(pr["y0"]) + 0.0001, "%s: z0 relative" % bid)
+	var cam := CityIsoCamera.for_view(CITY_CONFIG, "grid", Vector2(1920, 1080))
+	var hill := CityPlan.for_seed(SEED).a2.lot_of(Vector2(700.0, 5900.0))
+	cam.target = CityIsoCamera.lot_to_world(CITY_CONFIG, hill, t.height_at(hill.x, hill.y))
+	var g := _model.ground_point(cam, Vector2(960, 540))
+	var l := CityIsoCamera.world_to_lot(CITY_CONFIG, g)
+	assert_almost_eq(g.y, t.height_at(l.x, l.y), 0.05, "the pick lands on the hill")
+
+
+## CITY-A2 step 2: the features (roads by class, rails and stations, walls and checkpoints, port, drowned quarter,
+## undercity entrances) come from the plan alone: two builds give the same vertices; every part is there; tunnels stay
+## under ground and the walls open at their gates; every deck vertex stands at or over the ground.
+func test_features_are_deterministic_and_complete() -> void:
+	var plan := CityPlan.for_seed(SEED)
+	var a := CityA2Features.build(CITY_CONFIG, plan)
+	var b := CityA2Features.build(CITY_CONFIG, plan)
+	for k: String in CityA2Features.ORDER:
+		var pa: Dictionary = a["parts"][k]
+		assert_gt(int(pa["quads"]), 0, "%s drawn" % k)
+		assert_eq(int(pa["quads"]), int(b["parts"][k]["quads"]), "%s: same count" % k)
+		if pa["mesh"] != null:
+			assert_eq((pa["mesh"] as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_VERTEX],
+				(b["parts"][k]["mesh"] as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_VERTEX], "%s: same vertices" % k)
+	assert_gt(int(a["hidden"]), 0, "tunnel stretches are not drawn")
+	assert_gt(int(a["gates"]), 0, "the walls open at their gates")
+	var below := 0
+	var verts: PackedVector3Array = (a["parts"]["roads"]["mesh"] as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for k in range(0, verts.size(), 7):
+		var l := CityIsoCamera.world_to_lot(CITY_CONFIG, verts[k])
+		if verts[k].y < plan.ground_at(l.x, l.y) - 0.001:
+			below += 1
+	assert_eq(below, 0, "road decks stand on the ground")
 
 
 func _export(m: CityModel) -> String:

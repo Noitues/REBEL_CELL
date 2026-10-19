@@ -14,6 +14,8 @@ const CITY_SEED_STREAM: StringName = &"city_seed"
 const CITY_LAYOUT_STREAM: StringName = &"city_layout"
 ## CITY-A2: a city's blocks, lots and buildings inside the A2 plan (CityA2Builder.lots_for), from its city seed.
 const CITY_BLOCKS_STREAM: StringName = &"city_blocks"
+## CITY-A2 step 2: the A2 terrain's noise lattice (CityA2Terrain), from the config's fixed terrain seed (no campaign seed).
+const CITY_TERRAIN_STREAM: StringName = &"city_terrain"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

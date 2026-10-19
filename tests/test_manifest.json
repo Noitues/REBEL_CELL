@@ -1497,10 +1497,6 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_city_generator_sweep.gd": {
-			"seconds": 80.0,
-			"tier": "full"
-		},
 		"res://tests/unit/test_city_a2.gd": {
 			"seconds": 30.0,
 			"tier": "fast"

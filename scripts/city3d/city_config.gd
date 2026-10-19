@@ -358,6 +358,11 @@ extends Resource
 ## Chunk size (lots): one MultiMesh per building family per chunk, so frustum culling
 ## drops what the camera does not see.
 @export var chunk_lots: int = 24
+## CITY-A2 step 2: fixed-point steps a screen pick takes to land on the terrain (CityModel.ground_point).
+@export var ground_pick_steps: int = 3
+## CITY-A2 step 2: the network decal's lift (BU) over the terrain (its grid is flat between lot points: the lift keeps it
+## over the ground's bends).
+@export var net_terrain_lift_bu: float = 0.15
 ## Building LOD by camera ortho (bible §6.1, never distance): LOD0 (full facet grid) at or
 ## below lod0_below, LOD2 (plain extrusion) above lod2_above, LOD1 between; the swap keeps
 ## lod_hysteresis.
@@ -542,6 +547,39 @@ extends Resource
 ## A pan that keeps the run's top in aims this far (px) inside the free part (a perspective
 ## pan is not exact).
 @export var hq_run_fit_slack_px: float = 4.0
+
+@export_group("A2 features (CITY-A2 step 2: roads by class, rails, walls, port)")
+## CityA2Features: A2's roads as decks over the ground by class (lift BU; at least `a2_road_min_half_bu` half wide), a glow
+## line down each in its class colour (the lane material); decks over `a2_deck_skirt_from` BU get side faces to the ground.
+@export var a2_road_lift: Dictionary = {&"ring": 1.2, &"motorway": 0.9, &"truck": 0.6, &"arterial": 0.06, &"collector": 0.05}
+@export var a2_road_glow: Dictionary = {&"ring": Color(1.0, 0.62, 0.32), &"motorway": Color(0.95, 0.55, 0.30),
+	&"truck": Color(0.85, 0.48, 0.25), &"arterial": Color(0.55, 0.45, 0.40), &"collector": Color(0.40, 0.36, 0.34)}
+@export var a2_road_glow_share: float = 0.3
+@export var a2_road_min_half_bu: float = 0.6
+@export var a2_deck_skirt_from: float = 0.3
+## Rails by kind (lift BU, glow colour), at least `a2_rail_min_half_bu` half wide; their colour; tunnels are not drawn.
+@export var a2_rail_lift: Dictionary = {&"freight": 0.08, &"commuter": 0.7, &"metro": 1.0}
+@export var a2_rail_glow: Dictionary = {&"freight": Color(0.35, 0.30, 0.22), &"commuter": Color(0.30, 0.60, 0.90),
+	&"metro": Color(0.70, 0.40, 0.95)}
+@export var a2_rail_min_half_bu: float = 0.4
+@export var a2_rail_color: Color = Color(0.10, 0.10, 0.12)
+## Station boxes by kind (x along, y across, z high; BU).
+@export var a2_station_box: Dictionary = {&"rail": Vector3(3.0, 1.5, 1.2), &"metro": Vector3(2.0, 1.2, 1.4),
+	&"hub": Vector3(5.0, 3.0, 2.5), &"freight": Vector3(4.0, 2.0, 1.0)}
+## Corporate walls (height, half thickness BU, their colour), open `a2_gate_gap_m` metres round each gate; checkpoint
+## boxes on the gates; undercity entrance boxes; a road or rail point within `a2_tunnel_tol_m` metres of a tunnel is
+## underground.
+@export var a2_wall_h_bu: float = 2.5
+@export var a2_wall_half_bu: float = 0.25
+@export var a2_wall_color: Color = Color(0.16, 0.16, 0.20)
+@export var a2_gate_gap_m: float = 160.0
+@export var a2_checkpoint_box: Vector3 = Vector3(2.0, 2.0, 2.2)
+@export var a2_entrance_box: Vector3 = Vector3(1.0, 1.0, 0.6)
+@export var a2_tunnel_tol_m: float = 5.0
+## The port's terminal slab and piers (lift BU over the ground / sea level); the drowned quarter's water sheet (lift BU).
+@export var a2_port_lift_bu: float = 0.25
+@export var a2_pier_lift_bu: float = 0.35
+@export var a2_drowned_lift_bu: float = 0.2
 
 @export_group("Water")
 ## NA-12 r2 (art-pass item 17): a generated city's sea (CityWater; the fixed city has none). The sea's deep and

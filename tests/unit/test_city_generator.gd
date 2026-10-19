@@ -1,10 +1,10 @@
 extends GutTest
-## Plan 2 NA-12 (D3), fast tier: the per-seed city generator on 50 seeds. Same seed, same plan
-## (and a byte-identical full-city `city.json`); every corporation's HQ rect is exclusive
-## (no other HQ, inside the city, off the water); every Site of every corporation lies on land
-## inside the city and off another HQ; on full cities every Site has a building and every Grid
-## link a street route; no global RNG; the fixed seed is today's city; the generator advances
-## no campaign stream. The 1,000-seed sweep and the time budget: test_city_generator_sweep.gd.
+## Plan 2 NA-12 (D3), fast tier: the per-seed city on 50 seeds, CITY-A2 step 2: every seed is the planner city A2
+## (CityPlan.generate; the grid generator is gone). Same seed, same plan (and a byte-identical full-city `city.json`);
+## every corporation's HQ rect is exclusive (no other HQ, inside the city, off the water); every Site of every
+## corporation lies on land inside the city and off another HQ; on full cities every Site has a building and every Grid
+## link a street route; no global RNG; the default seed is an A2 city; the plan advances no campaign stream. The seed
+## sweep and the time budget: test_city_a2_sweep.gd.
 
 const CITY_CONFIG := preload("res://content/config/city_config.tres")
 const SEEDS := 50
@@ -83,65 +83,30 @@ func test_the_sea_holds_no_street_and_no_building() -> void:
 		for j in range(cfg.city_rect.position.y, cfg.city_rect.end.y):
 			if plan.is_water(i, j):
 				sea += 1
-	assert_gt(sea, cfg.city_rect.size.x * int(_cfg.city_gen_coast_depth.x - _cfg.city_gen_coast_wave.y) - 1, "a coast strip of sea")
+	assert_gt(sea, 0, "A2's bay and coast are sea")
 
 
-## The NA-12 grid generator's config (CITY-A2: `city_layout_source` &"grid", the fallback step 2 removes).
-func _grid_cfg() -> CampaignConfigData:
-	var g := _cfg.duplicate() as CampaignConfigData
-	g.city_layout_source = &"grid"
-	return g
-
-
-## NA-12 r2 (A2): the coast is a concave bay (its head reaches deeper into the land than both ends of the sea edge),
-## the Cell's HQ is the HQ nearest the bay head, the hills stand on land.
-func test_the_coast_is_a_bay_with_the_cell_at_its_head() -> void:
+## The Cell's HQ is the HQ nearest A2's Old City (the bay head).
+func test_the_cell_holds_the_bay_head() -> void:
 	for k in SEEDS:
-		var plan := CityPlan.generate(CityGenFixture.seed_of(k), _grid_cfg())  # NA-12's parametric bay (CITY-A2: grid fallback)
-		var side := int(plan.coast["side"])
-		var lo := float(plan.rect.position.y if side < 2 else plan.rect.position.x)
-		var hi := float(plan.rect.end.y if side < 2 else plan.rect.end.x)
-		var head := float(plan.coast["bay_at"])
-		assert_gt(plan.shore_at(head), maxf(plan.shore_at(lo), plan.shore_at(hi)) + _cfg.city_gen_bay_depth.x * 0.5,
-			"seed %d: the bay reaches into the land" % CityGenFixture.seed_of(k))
-		var head_pt := plan.edge_point(head, plan.shore_at(head))
+		var plan := CityPlan.generate(CityGenFixture.seed_of(k), _cfg)
+		var head := plan.a2.lot_of(plan.a2.a2.old_city_centre)
 		var nearest: StringName = &""
 		var best := INF
 		var rects := plan.hq_rects(NeonCity.HQ_LOTS)
 		var ids: Array = rects.keys()
 		IdSort.sort_ids(ids)
 		for id: StringName in ids:
-			var d := Vector2((rects[id] as Rect2i).get_center()).distance_to(head_pt)
+			var d := Vector2((rects[id] as Rect2i).get_center()).distance_to(head)
 			if d < best:
 				best = d
 				nearest = id
 		assert_eq(nearest, NeonCity.FIST_TERRITORY, "seed %d: the Cell holds the bay head" % CityGenFixture.seed_of(k))
-		for h in plan.hills:
-			assert_false(plan.is_water(floori((h["centre"] as Vector2).x), floori((h["centre"] as Vector2).y)), "a hill on land")
 
 
-## NA-12 r2: a shore corporation (Tethys, when its territory lands) touches the water; the others keep clear of it.
-func test_tethys_touches_the_water() -> void:
-	var ids: Array = [&"tethys"]
-	for t in NeonCity.TERRITORIES:
-		if t["id"] != &"":
-			ids.append(t["id"])
-	# Tethys has no Grid in content yet: it borrows Solace's Site layout (its own lands with D1).
-	var frame := CityPlan.site_frame()
-	var uvs: Dictionary = (frame["uvs"] as Dictionary).duplicate()
-	uvs[&"tethys"] = uvs[&"solace"]
-	frame["uvs"] = uvs
-	for k in SEEDS:
-		var plan := CityGenerator.generate(RngStreams.make_stream(CityGenFixture.seed_of(k), RngStreams.CITY_LAYOUT_STREAM), _cfg,
-			CITY_CONFIG.city_rect, ids, NeonCity.FIST_TERRITORY, NeonCity.HQ_LOTS, frame)
-		assert_false(plan.fallback, "seed %d: %s" % [CityGenFixture.seed_of(k), plan.failure])
-		var rects := plan.hq_rects(NeonCity.HQ_LOTS)
-		assert_true(CityGenerator.touches_water(plan, rects[&"tethys"]), "seed %d: Tethys on the shore" % CityGenFixture.seed_of(k))
-
-
-## NA-12 r2: city.json's optional `coast` / `terrain` sections: present and valid for a generated city (every shoreline
-## lot land beside a sea cell, every sea cell sea), absent for the fixed seed (its file unchanged).
-func test_city_json_carries_the_coast_and_hills_of_a_generated_city_only() -> void:
+## NA-12 r2: city.json's optional `coast` / `terrain` sections: present and valid (every shoreline lot land beside a sea
+## cell, every sea cell sea); CITY-A2 step 2: the terrain's corner heights match the plan's ground.
+func test_city_json_carries_the_coast_hills_and_heights() -> void:
 	var cfg: CityConfig = CITY_CONFIG
 	var sch := preload("res://tools/netrun_art/schema_check.gd")
 	var city := NetrunArtExport.city_json(_model.city_seed, cfg.lot_bu, cfg.district_centre, _model.prisms, _model.streets,
@@ -163,8 +128,11 @@ func test_city_json_carries_the_coast_and_hills_of_a_generated_city_only() -> vo
 				break
 	assert_eq(wet, (doc["coast"]["shoreline"] as Array).size(), "every shoreline lot meets the sea")
 	assert_eq((doc["terrain"]["hills"] as Array).size(), plan.hills.size())
-	var fixed := CityPlan.for_seed(CityPlan.fixed_seed())
-	assert_eq(fixed.city_sections(cfg.lot_bu, cfg.district_centre), {}, "the fixed city adds no key")
+	var hs: Dictionary = doc["terrain"]["heights"]
+	assert_eq([int(hs["size"][0]), int(hs["size"][1])], [plan.rect.size.x + 1, plan.rect.size.y + 1])
+	for c: Vector2i in [Vector2i(0, 0), Vector2i(40, 90), Vector2i(plan.rect.size.x, plan.rect.size.y)]:
+		var want := plan.ground_at(plan.rect.position.x + c.x, plan.rect.position.y + c.y)
+		assert_almost_eq(float(hs["rows"][c.y][c.x]), want, 0.001, "corner %s" % c)
 
 
 ## NA-12 r2: the sea's meshes come from the plan alone: a sea wall face on every shoreline edge, piers where streets
@@ -183,24 +151,18 @@ func test_the_sea_builds_its_wall_piers_and_void_from_the_plan() -> void:
 		assert_not_null(w.get_node_or_null(n), n)
 
 
-func test_the_fixed_seed_is_todays_city() -> void:
-	var plan := CityPlan.for_seed(CityPlan.fixed_seed())
-	assert_eq(CityPlan.fixed_seed(), CITY_CONFIG.city_seed)
-	assert_true(plan.fixed)
-	assert_true(plan.coast.is_empty(), "no sea")
-	assert_eq(plan.territories.size(), NeonCity.TERRITORIES.size())
-	for k in NeonCity.TERRITORIES.size():
-		assert_eq(plan.territories[k]["id"], NeonCity.TERRITORIES[k]["id"])
-		assert_eq(plan.territories[k]["at"], NeonCity.TERRITORIES[k]["at"])
-		assert_eq(plan.territories[k]["pull"], NeonCity.TERRITORIES[k]["pull"])
-	for cid: StringName in CITY_CONFIG.site_aim_deg:
-		assert_eq(plan.site_aim[cid], float(CITY_CONFIG.site_aim_deg[cid]))
-	assert_eq(CityPlan.current_seed(), CityPlan.fixed_seed(), "no campaign: the fixed city")
+func test_the_default_seed_is_an_a2_city() -> void:
+	var plan := CityPlan.for_seed(CityPlan.default_seed())
+	assert_eq(CityPlan.default_seed(), CITY_CONFIG.city_seed)
+	assert_eq(plan.source(), "a2", "CITY-A2 step 2: the default seed is the planner city")
+	assert_false(plan.coast.is_empty(), "A2's sea")
+	assert_not_null(plan.terrain, "A2's ground")
+	assert_eq(CityPlan.current_seed(), CityPlan.default_seed(), "no campaign: the default city")
 
 
 func test_the_generator_draws_no_global_rng_and_no_campaign_stream() -> void:
 	var re := RegEx.create_from_string("(?<![\\w.])(randi|randf|randomize|randf_range|randi_range|randfn|rand_from_seed)\\s*\\(")
-	for path in ["res://scripts/city3d/city_generator.gd", "res://scripts/city3d/city_plan.gd"]:
+	for path in ["res://scripts/city3d/city_a2_builder.gd", "res://scripts/city3d/city_a2_terrain.gd", "res://scripts/city3d/city_plan.gd"]:
 		var src := FileAccess.get_file_as_string(path)
 		assert_ne(src, "", path)
 		var hits := PackedStringArray()
