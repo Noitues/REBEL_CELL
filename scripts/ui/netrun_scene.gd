@@ -1737,6 +1737,18 @@ func _show_street_map(s: NetrunSession) -> void:
 	_route_prompt.mouse_filter = Control.MOUSE_FILTER_PASS
 	_route_prompt.tooltip_text = UiTip.fold(tr(STREET_PROMPT_TIP))
 	win.body.add_child(_route_prompt)
+	if HqLadderWords.is_ladder(s):
+		var ladder_key := Label.new()
+		ladder_key.name = "LadderKey"
+		ladder_key.text = tr(LADDER_KEY)
+		ladder_key.autowrap_mode = TextServer.AUTOWRAP_WORD
+		ladder_key.custom_minimum_size.x = 260.0
+		ladder_key.add_theme_font_override("font", Palette.mono())
+		ladder_key.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		ladder_key.add_theme_color_override("font_color", Palette.CELL_PINK)
+		ladder_key.tooltip_text = UiTip.fold(tr(LADDER_KEY_TIP))
+		ladder_key.mouse_filter = Control.MOUSE_FILTER_PASS
+		win.body.add_child(ladder_key)
 	_route_confirm = _button(tr(ROUTE_CONFIRM_NONE), confirm_route_node)
 	_route_confirm.name = "RouteConfirm"
 	_route_confirm.disabled = true
@@ -1797,6 +1809,7 @@ func _show_street_map(s: NetrunSession) -> void:
 			_zoom_in_from_grid()
 	else:
 		street_view.set_run_state(current, visited, options)
+	_apply_ladder_marks(s)
 	route_legend.show_links_hovered.connect(func(on: bool) -> void:
 		if street_view != null and is_instance_valid(street_view):
 			street_view.set_lit_all(on)
@@ -1805,6 +1818,22 @@ func _show_street_map(s: NetrunSession) -> void:
 	show_node_panel(StringName(options[0]) if not options.is_empty() else &"")
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
 	_prebake_backdrops.call_deferred()
+
+
+const LADDER_KEY := "UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace." # TR
+const LADDER_KEY_TIP := "WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves." # TR
+
+
+## HQ-LADDER-UI: the Solace ladder's marks on the street overlay: ACROSS bridges as pink dashes, the towers' names over the
+## rooms in play, and the rest / mini-boss stickers. View state only; nothing for any other run.
+func _apply_ladder_marks(s: NetrunSession) -> void:
+	if not HqLadderWords.is_ladder(s) or street_view == null or not is_instance_valid(street_view) or street_view.overlay == null:
+		return
+	var ov := street_view.overlay
+	ov.across_keys = HqLadderWords.across_keys(s.run.map)
+	ov.tower_names = HqLadderWords.tower_names(s.run.map)
+	ov.kind_overrides = HqLadderWords.kind_overrides(s.run.map)
+	ov.mark_dirty()
 
 
 ## NA-23: the tag a hovered room shows: its kind word and the Heat entering it changes.
@@ -1816,6 +1845,8 @@ func _street_tag(id: String) -> String:
 	if node.is_empty():
 		return ""
 	var text := node_word(node)
+	if HqLadderWords.is_ladder(s):
+		text = HqLadderWords.tag(s, StringName(id), text)
 	var heat := s.node_heat(StringName(id))
 	if heat != 0:
 		text += tr(" %s Heat") % TextDb.signed(heat)
@@ -2007,6 +2038,9 @@ func _prebake_backdrops() -> void:
 
 ## A route node in a word: Fight, Elite fight, Event, Shop, Rack (translated).
 static func node_word(node: Dictionary) -> String:
+	var ladder := HqLadderWords.special_word(node)
+	if ladder != "":
+		return ladder  # the HQ ladder's gate, rest, mini-boss and crown rooms
 	return TranslationServer.translate(ELITE_WORD if _is_elite(node) else String(NODE_WORDS.get(node["type"], "?")))
 
 
@@ -2044,6 +2078,11 @@ static func route_tip(s: NetrunSession, node: Dictionary, heat: int) -> String:
 
 ## A route node's icon: crosshair, crown (elite), terminal, bag (shop), server rack.
 static func node_icon(node: Dictionary) -> StringName:
+	match HqLadderWords.room_kind(node):
+		&"rest":
+			return StatIcon.HP
+		&"mini_boss":
+			return StatIcon.ELITE
 	return StatIcon.ELITE if _is_elite(node) else StringName(NODE_ICONS.get(node["type"], &""))
 
 
@@ -2288,6 +2327,7 @@ const REWARD_DAEMON := "a Daemon to pick" # TR
 const REWARD_OBJECTIVE := "the Site's objective" # TR
 const REWARD_SHOP := "spend Cycles: cards, Firmware, slices" # TR
 const REWARD_EVENT := "a choice, and its price" # TR
+const REWARD_WARD_REST := "the Bloom front goes back %s layers" # TR
 const PANEL_HEAT := "%s Heat on entry" # TR
 ## W3-ROUTE (7A): the HP the operative arrives with, and where the route heals.
 const PANEL_HP := "%d / %d on arrival" # TR
@@ -2409,6 +2449,11 @@ func node_panel_data(id: StringName) -> Dictionary:
 			rewards.append(tr(REWARD_SHOP))
 		RC.InfilNodeType.TERMINAL:
 			rewards.append(tr(REWARD_EVENT))
+	var extra: Array = []
+	if HqLadderWords.is_ladder(s):
+		if HqLadderWords.room_kind(node) == &"rest":
+			rewards = [tr(REWARD_WARD_REST) % NetrunSession.bloom_gap_text(cfg.bloom_dose_push_milli)]
+		extra = HqLadderWords.panel_rows(s, id)
 	var heat := s.node_heat(id)
 	var heat_words := tr(PANEL_HEAT) % TextDb.signed(heat) if heat != 0 else ""
 	var mark := String(route_heat_marks(s).get(int(node["type"]), ""))
@@ -2419,7 +2464,7 @@ func node_panel_data(id: StringName) -> Dictionary:
 		"hp": tr(PANEL_HP) % [int(arrive["hp"]), int(arrive["max_hp"])],
 		"heals": tr(PANEL_HEALS_EVENT) if RouteHp.heals_at(int(node["type"])) else tr(PANEL_HEALS_NONE),
 		"type": tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), node_word(node)))),
-		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
+		"rewards": rewards, "heat": heat_words, "extra": extra, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
 
 
 func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2, raid_view: bool = false) -> void:

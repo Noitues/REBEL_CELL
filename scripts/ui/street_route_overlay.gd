@@ -43,6 +43,16 @@ var usable: Rect2 = Rect2()
 var avoid: Array[Rect2] = []
 ## The branch the hover lights (ids), set by the view.
 var branch: Array = []
+## HQ-LADDER-UI (the Solace ladder): id -> overlay kind for rooms with their own sticker (rest, mini-boss), id -> tower name
+## (captioned over the rooms in play), and the "<from>><to>" keys of the ACROSS bridge links (drawn as pink dashes, never as UP).
+var kind_overrides: Dictionary = {}
+var tower_names: Dictionary = {}
+var across_keys: Dictionary = {}
+## The ACROSS bridge pencil, its dash (on, off in px at 1280) and the tower captions' font and colors.
+const ACROSS_COLOR := Palette.CELL_PINK
+const ACROSS_DASH: Array = [14.0, 7.0]
+const TOWER_FONT := 15
+const TOWER_COLORS := {"WARD": Palette.CORP_SOLACE, "BILLING": Palette.CRT_AMBER}
 
 var _clip: Control = null
 var _pencil: PencilSet = null
@@ -185,6 +195,8 @@ func _elite(id: String) -> bool:
 
 ## The overlay kind of node `id` (CityMapOverlay.KIND_* for the four types, the D4 names otherwise).
 func kind_name(id: String) -> String:
+	if kind_overrides.has(id):
+		return String(kind_overrides[id])
 	match _kind_of(id):
 		"router":
 			return CityMapOverlay.KIND_ELITE if _elite(id) else CityMapOverlay.KIND_FIGHT
@@ -236,6 +248,7 @@ func _draw() -> void:
 				_draw_chip(_chip_rects[oid], i + 1, kk)
 		_draw_token(r, kk)
 	if not intro:
+		_draw_tower_names(kk, r)
 		_draw_tags(kk, r)
 
 
@@ -342,6 +355,10 @@ func _collect_links(kk: float, r: float) -> Array:
 		var e: Dictionary = row[3]
 		var st: String = row[2]
 		var style := _link_style(st)
+		if across_keys.has(row[1]):
+			style = style.duplicate()
+			style["dash"] = ACROSS_DASH
+			style["glow"] = maxf(float(style["glow"]), 0.5)
 		var pts := PackedVector2Array()
 		var ok := true
 		for q: Array in e["path"]:
@@ -357,6 +374,8 @@ func _collect_links(kk: float, r: float) -> Array:
 			var lit := lit_all or (branch.has(String(e["a"])) and branch.has(String(e["b"])))
 			dim = 1.0 if lit else DIM_IDLE
 		var col := _color(style["color"], float(style["alpha"]) * dim)
+		if across_keys.has(row[1]) and st != StreetRouteRules.LINK_WALKED:
+			col = Color(ACROSS_COLOR, col.a)
 		var rs := PencilShapes.resample(pts, SAMPLE_PX)
 		if intro:
 			var wk := EntryBeats.write_k(StreetRouteRules.layer_of(data.run_graph, String(e["b"])), int(data.run_graph["layers"]), reveal_total, reveal_s) 					if reveal_s >= 0.0 else 0.0
@@ -494,12 +513,9 @@ func _draw_d4(kind_id: String, p: Vector2, rr: float, dim: float, kk: float) -> 
 	var inner := rr - 5.0 * kk
 	match kind_id:
 		"rest":
-			var pts := PackedVector2Array()
-			for i in 17:
-				pts.append(p + Vector2.from_angle(-PI * 0.5 + PI * float(i) / 16.0 + PI * 0.0) * inner)
-			for i in 17:
-				pts.append(p + Vector2(inner * 0.35, 0.0) + Vector2.from_angle(PI * 0.5 - PI * float(i) / 16.0) * inner * 0.82)
-			draw_colored_polygon(pts, fill)
+			# A crescent: the disc with a die-cut disc bitten out of its right side (the polygon form did not triangulate).
+			draw_circle(p, inner, fill)
+			draw_circle(p + Vector2(inner * 0.42, -inner * 0.1), inner * 0.8, Color(RouteInk.DIE_CUT, dim))
 		"workshop":
 			var pts2 := PackedVector2Array()
 			for i in 6:
@@ -561,6 +577,27 @@ func _draw_token(r: float, kk: float) -> void:
 	var side := r * 1.05 * 2.0
 	var sz := Vector2(tex.get_width(), tex.get_height()) * (side / maxf(1.0, float(tex.get_width())))
 	draw_texture_rect(tex, Rect2(p + Vector2(r * 0.75, -r * 1.45) - sz * 0.5, sz), false)
+
+
+## HQ-LADDER-UI: the tower's name over each room in play (the one stood in and the choices), so the two towers read apart.
+func _draw_tower_names(kk: float, r: float) -> void:
+	if tower_names.is_empty():
+		return
+	var f := Palette.mono()
+	var fs := maxi(1, roundi(float(TOWER_FONT) * kk))
+	var ids: Array = (state["options"] as Array).duplicate()
+	ids.append(String(state["current"]))
+	for id in ids:
+		var key := String(id)
+		if not tower_names.has(key) or not _stick_px.has(key):
+			continue
+		var text := String(tower_names[key])
+		var sz := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
+		var p: Vector2 = _stick_px[key]
+		var at := Vector2(p.x - sz.x * 0.5, p.y - r * 1.25)
+		var col: Color = TOWER_COLORS.get(text, Palette.TEXT_HI)
+		draw_rect(Rect2(at - Vector2(4.0, sz.y - 2.0) * kk, sz + Vector2(8.0, 4.0) * kk), Color(Palette.NIGHT_SKY, 0.85))
+		draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 ## The hover tag (9.3 rule 3: tags show only on hover; the legend lights them all).

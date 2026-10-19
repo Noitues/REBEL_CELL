@@ -125,6 +125,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
+%s layers after entering,%s layers after entering
+%s layers: the Bloom has you,%s layers: the Bloom has you
 %s moves from %s to %s.,%s moves from %s to %s.
 %s on %d slice(s),%s on %d slice(s)
 %s on %s hits %s for %d.,%s on %s hits %s for %d.
@@ -227,6 +229,7 @@ ABANDON RUN,ABANDON RUN
 ABANDONED,ABANDONED
 ACCEL,ACCEL
 ACHIEVEMENTS  %d / %d  //  stickers you keep,ACHIEVEMENTS  %d / %d  //  stickers you keep
+ACROSS,ACROSS
 ACTIVE,ACTIVE
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
@@ -274,11 +277,13 @@ BACK TO THE GRID,BACK TO THE GRID
 BADGES,BADGES
 BANKED,BANKED
 BEST ICE,BEST ICE
+BILLING,BILLING
 BIN,BIN
 BIN IT,BIN IT
 BLCK,BLCK
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
+BLOOM GAP,BLOOM GAP
 BOSS,BOSS
 BOSS: %s,BOSS: %s
 BOSSES ON FILE,BOSSES ON FILE
@@ -316,6 +321,7 @@ Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Strength,Boss Strength
 Breach,Breach
+Bridge: the other tower's next rung; the front gains extra pace.,Bridge: the other tower's next rung; the front gains extra pace.
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
 Buy,Buy
@@ -590,6 +596,7 @@ Click,Click
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
 "Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange.","Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange."
 Click to play.,Click to play.
+Clinic Gate,Clinic Gate
 Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
@@ -780,6 +787,7 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
+Each fight turn there: front +%s,Each fight turn there: front +%s
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -942,6 +950,7 @@ FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
 FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
 FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS,FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS
+FRONT,FRONT
 FROZEN,FROZEN
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 Fight,Fight
@@ -997,6 +1006,8 @@ Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
 G,G
+GAP %s,GAP %s
+GAP %s CAUGHT,GAP %s CAUGHT
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
@@ -1006,6 +1017,7 @@ GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING,GROUND SEGMENT  //  DEBRIS CON
 GROWTH,GROWTH
 GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
+Genome Core,Genome Core
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.,Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.
@@ -1658,12 +1670,14 @@ MARKET,MARKET
 "MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics.","MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics."
 MENU,MENU
 MINI BOSS,MINI BOSS
+MINI-BOSS: %s,MINI-BOSS: %s
 MINIMAP,MINIMAP
 "MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold.","MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold."
 MORE,MORE
 MORE ABOVE,MORE ABOVE
 MORE BELOW,MORE BELOW
 MOST TROUBLESOME -> %s,MOST TROUBLESOME -> %s
+MOVE,MOVE
 Main menu,Main menu
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
@@ -1671,6 +1685,7 @@ Mainframe: the cyber shop,Mainframe: the cyber shop
 Manifest closed: every node repossessed under freight lien.,Manifest closed: every node repossessed under freight lien.
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
+Mini-boss,Mini-boss
 More on the next page: press NEXT.,More on the next page: press NEXT.
 More sections this way: the tabs scroll to them.,More sections this way: the tabs scroll to them.
 Move it to %s.,Move it to %s.
@@ -2161,6 +2176,7 @@ Respin,Respin
 Respin for %d RAM,Respin for %d RAM
 Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
 Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).,Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).
+Rest,Rest
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -2249,6 +2265,7 @@ SWITCHES,SWITCHES
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
+"Same tower, next rung.","Same tower, next rung."
 Satellites are fixed to their slice: only Undock moves them.,Satellites are fixed to their slice: only Undock moves them.
 Save & quit,Save & quit
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
@@ -2951,6 +2968,7 @@ TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s  
 TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG,TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG
 TODAY'S RUN,TODAY'S RUN
 TOP %d ONLY,TOP %d ONLY
+TOWER,TOWER
 TRAFFIC CONTROL,TRAFFIC CONTROL
 TRAINING SIM,TRAINING SIM
 TRANSCRIPT // DISPATCH // VOICE LOG,TRANSCRIPT // DISPATCH // VOICE LOG
@@ -3323,6 +3341,8 @@ UNFINISHED,UNFINISHED
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
+UP,UP
+"UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace.","UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace."
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
@@ -3338,6 +3358,8 @@ VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
 W,W
 WANTED,WANTED
+WARD,WARD
+"WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves.","WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves."
 WAS,WAS
 WEAK,WEAK
 WEAK x0.5,WEAK x0.5
@@ -3534,6 +3556,7 @@ system,system
 taken,taken
 target,target
 the %s Exploit,the %s Exploit
+the Bloom front goes back %s layers,the Bloom front goes back %s layers
 the Site's objective,the Site's objective
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
