@@ -19,8 +19,11 @@
 - NA-26 (street on by default, old route page retired): merge BACKED OUT twice for reds; its agent is fixing 4 tests
   (pass24 translated twice, pass21_city route tooltips, anim_r5 route move, motion_lab orphaned route_* ids).
 - NA-04d merged (a35b41b0): 12.6 by depth.png, R-REP-1 facade band, drift vs art-pass 7772e6ba = 0 DRIFT (sent to art-pass).
-- Running: NA-11c (spike cap 1.6x, 6-10 floors, sky >= 15 %, HQ proximity 0.6x landmark), NA-23b (span so every
-  room >= 46 px, Meridian seed-1 capacity; Python + twin).
+- Merged 2026-10-19: NA-26 (950d7775), NA-11c (c6785017, W1_NA11 APPROVED); fast tier 2359/0 at c6785017.
+  Worktree agent-af172bbbba0380977 dir was locked at delete: remove it later.
+- Running: NA-23b (span so every room >= 46 px, Meridian seed-1 capacity; Python + twin), NA-23c (lb1 look in
+  DECISION/HOVER, cutaway rooms, lanes, rooms -25 %, closed facade, depth.png), NA-24c (sign core+panel, blade hero
+  signs, district palettes, R-SIL-1/R-HOR-1 canyon numbers for art-pass). NA-25b after NA-23c.
 - Next (art-pass fix lists, ART_REPLIES items 11-13): NA-23b (derive: every room >= 46 px, Meridian seed 1 capacity),
   NA-23c (NA-22c look in DECISION/HOVER, cutaway rooms, quieter lanes, closed facade for unrevealed rooms, depth.png),
   NA-24c (sign core+panel, blade hero signs, district palettes table, rooms -25 %), NA-25b (+ blotch fix: wet mask,
