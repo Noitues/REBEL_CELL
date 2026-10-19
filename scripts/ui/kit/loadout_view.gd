@@ -19,6 +19,10 @@ var _view: Control = null
 ## ANIM-4: drag and drop inside the view (the screen wires its check and its drops): at
 ## Rank 3 the ring segment swaps sit beside the wheel as chips to drag onto a segment.
 var drops: DropLayer = null
+## Plan 2 N12 (R11): the letter each precision tier shows in a slice's sub-tick map.
+const QUALITY_LETTERS := {RC.PrecisionTier.WEAK: "W", RC.PrecisionTier.GOOD: "G", RC.PrecisionTier.PERFECT: "P"} # TR
+## Margin (px at text 1.0) of the sub-tick map panel from the view's bottom-left corner.
+const MAP_MARGIN := 24.0
 
 
 func _init(p_op: OperativeState, p_lookup: ContentLookup, p_upgrades: Array[SliceData] = [], p_crew: Array[OperativeState] = []) -> void:
@@ -64,6 +68,42 @@ func show_spinner() -> void:
 	view.set_core(core["hub"], core["ring"])
 	_add_tabs()
 	_add_swaps(view, core["ring"])
+	_add_subtick_map(view)
+
+
+## Plan 2 N12 (R11): each slice's sub-tick map ("W G P G W"), one line per slot, at the view's
+## bottom-left. Read-only text from subtick_maps; an empty arc lists no ticks.
+func _add_subtick_map(view: Control) -> void:
+	var lines := PackedStringArray()
+	var maps := subtick_maps(op, lookup, RunManager.config())
+	for i in maps.size():
+		lines.append(tr("SLOT %d  %s") % [i + 1, maps[i]])
+	var label := Label.new()
+	label.name = "SubtickMap"
+	label.text = "\n".join(lines)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	label.offset_left = MAP_MARGIN
+	label.offset_bottom = -MAP_MARGIN
+	view.add_child(label)
+
+
+## Plan 2 N12 (R11): the operative's sub-tick maps as the fight reads them (the slot sizes,
+## authored maps and Calibrated steps; EffectInterpreter.tick_tiers), one string per slot of
+## space-separated tier letters ("W G P G W"; "" for an empty arc).
+static func subtick_maps(p_op: OperativeState, p_lookup: ContentLookup, config: CampaignConfigData) -> PackedStringArray:
+	var out := PackedStringArray()
+	var c := display_combatant(p_op, p_lookup)
+	if c.wheel == null:
+		return out
+	var fx := EffectInterpreter.new(config, p_lookup)
+	for i in c.wheel.slot_slice_ids.size():
+		var letters := PackedStringArray()
+		for t in fx.tick_tiers(c.wheel, i):
+			letters.append(TranslationServer.translate(QUALITY_LETTERS[t]))
+		out.append(" ".join(letters))
+	return out
 
 
 ## ANIM-4: the Rank 3 ring segment swaps (GDD 6.4) as chips beside the wheel (the class

@@ -994,6 +994,7 @@ Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at mos
 Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
+G,G
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
@@ -1713,6 +1714,7 @@ NODE BUILT,NODE BUILT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
+NUDGE LOCKED,NUDGE LOCKED
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 "NULL: the needle sits on a NULL slice, so nothing happens.","NULL: the needle sits on a NULL slice, so nothing happens."
@@ -1851,6 +1853,7 @@ Out of reach from here.,Out of reach from here.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
+P,P
 PARASITE,PARASITE
 PARKED,PARKED
 PARKED −%d,PARKED −%d
@@ -2026,6 +2029,7 @@ RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
+RESPIN LOCKED,RESPIN LOCKED
 RESPIN: ODDS,RESPIN: ODDS
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 RETALIATION,RETALIATION
@@ -2214,6 +2218,7 @@ SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle
 SLICES (on the wheels),SLICES (on the wheels)
+SLOT %d  %s,SLOT %d  %s
 SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
@@ -3224,6 +3229,8 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
+That wheel's nudges are locked this turn.,That wheel's nudges are locked this turn.
+That wheel's respins are locked this turn.,That wheel's respins are locked this turn.
 "The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
@@ -3331,6 +3338,7 @@ VIRUS,VIRUS
 VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
 VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
+W,W
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK

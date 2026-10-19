@@ -11,6 +11,10 @@ const ERR_STACK_COUNT := "invalid_stack_count"
 const ERR_UNKNOWN_STATUS := "unknown_status"
 const ERR_STACKS_SHAPE := "invalid_stacks_shape"
 const ERR_NO_STEP := "no_migration_step"
+## Plan 2 N12 (save v4): a wheel's "slot_sizes" that is not one 0-30 int per slot summing to 30.
+const ERR_SLOT_SIZES := "invalid_slot_sizes"
+## Plan 2 N12: the v4 wheel key (absent for an equal layout).
+const V4_SIZES_KEY := "slot_sizes"
 ## The v2 and v3 wheel keys.
 const V2_KEY := "slice_statuses"
 const V3_KEY := "slice_stacks"
@@ -52,6 +56,48 @@ static func _slot_v3(status: int, parasite_stacks: int) -> Dictionary:
 	if status == RC.Status.PARASITE:
 		return {str(RC.Status.OUTPUT_DOWN): parasite_stacks}
 	return {str(status): 1}
+
+
+## v3 -> v4 (plan 2 N12): wheels gain an optional "slot_sizes" (written only for an uneven
+## layout). A v3 wheel has equal slots, which v4 reads from its absence, so the step changes
+## nothing. Pure: returns a copy.
+static func v3_to_v4(data: Dictionary) -> Dictionary:
+	return data.duplicate(true)
+
+
+## Checks v4 `data`: validate_v3's stack checks, then every wheel's "slot_sizes" (an Array of
+## whole numbers 0-30, one per slot of "slot_slice_ids", summing to 30; ERR_SLOT_SIZES).
+static func validate_v4(data: Variant) -> String:
+	var err := validate_v3(data)
+	return err if err != "" else _check_sizes(data)
+
+
+static func _check_sizes(data: Variant) -> String:
+	if data is Array:
+		for item in data:
+			var err := _check_sizes(item)
+			if err != "":
+				return err
+		return ""
+	if not (data is Dictionary):
+		return ""
+	var d: Dictionary = data
+	if d.has(V4_SIZES_KEY):
+		var sizes: Variant = d[V4_SIZES_KEY]
+		if not (sizes is Array) or (sizes as Array).size() != (d.get("slot_slice_ids", []) as Array).size():
+			return ERR_SLOT_SIZES
+		var total := 0
+		for n in sizes:
+			if not (n is int or n is float) or float(n) != floorf(float(n)) or float(n) < 0.0 or float(n) > RC.TICKS:
+				return ERR_SLOT_SIZES
+			total += int(n)
+		if total != RC.TICKS:
+			return ERR_SLOT_SIZES
+	for k in d.keys():
+		var err := _check_sizes(d[k])
+		if err != "":
+			return err
+	return ""
 
 
 ## Checks every "slice_stacks" in v3 `data`. Returns "" when sound, else a code: a slot that

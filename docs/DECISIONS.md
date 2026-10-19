@@ -410,6 +410,42 @@ default as a placeholder behind config and says so in its report.
   `CombatResolver.enrage_buff_state`.
 - **Pressure:** no Pressure code path existed on main; nothing removed.
 
+### 2026-10-18 — Plan 2 W1 N12: variable slice sizes 0-30 + sub-tick map (R11; rulings Q20, Q20 follow-up)
+- **Designer answers to the brief (orchestrator, W1 N12):** (1) no slice cap from sizes alone, the 30 ticks are the
+  cap; the slot-count caps stay in config (`CampaignConfigData.operative_slice_cap` 6, `enemy_slice_cap` 30); the
+  smallest non-zero slice is `slice_size_min` 1. (2) A 0-size slot is an empty arc: it does not count toward the cap,
+  owns no tick, is never landed on, and lists no ticks on the loadout. (3) The centre of an even slice is the lower
+  tick of the middle pair; a tick on a boundary belongs to the slice clockwise of it, as WheelMath read it before.
+- **Geometry (WheelMath):** a layout is the slot sizes clockwise from slot 0, boundaries cumulative; slot 0 starts at
+  tick -(size / 2), so an odd slot 0 is centred on tick 0 and every equal layout (6 x 5, satellites 2 x 15 / 3 x 10)
+  reads exactly as before (golden test over all 30 ticks). `slot_of_tick`, `index_in_slot`, `offset_in`, `side_in`,
+  `center_tick`, `arc_mid`, `neighbor_slot` (skips empty arcs), `default_quality`, `raised_tier`, `snap_delta_in`,
+  `resized`; the count-based functions are wrappers over the equal sizes; `ring_offset` is the inner ring's own.
+- **Schema:** `WheelSlotData.size_ticks` (default `RC.SIZE_AUTO` = -1, an equal share: a 6-slot wheel reads 5, a
+  satellite's slots 15 / 10; the brief's "default 5" would break the 2-3 slot satellites) and `tick_quality`;
+  `FirmwareData.tick_quality_step` (Calibrated placeholder: +N tiers on every tick, capped at PERFECT, all sizes, no
+  warnings); `WheelData.slice_count` range 1-30; config `operative_slice_cap`, `enemy_slice_cap`, `slice_size_min`,
+  `tick_quality_good_reach` (1). Validate reasons: `size_mixed`, `size_range`, `size_sum`, `quality_length`,
+  `quality_tier`, `slice_cap`. Smoke check `_n12_slot_sizes`.
+- **Tier:** a landing reads its slot's sub-tick map (authored, else the default by distance from the true middle:
+  P at 0, G within the reach, else W), raised by Calibrated; satellites and drones keep full output. **Snap** goes to
+  the nearest best tick of the slot (ties counter-clockwise). **Mirror / Shunt** pick the side of the true middle
+  (both / none on a Perfect tick of the map before TIER_DOWN), and the neighbour skips empty arcs. **Flip** mirrors
+  sizes and maps (a map reads backwards) and adds `WheelMath.flip_shift` (-1 when slot 0 is even) so every arc lands
+  on its mirror image; still an involution. **Fixed neighbour resize** (Q20) is `WheelMath.resized`: the clockwise
+  neighbour gives or takes the difference (refused below 0); nothing calls it yet (slice upgrades are a later pass).
+  The shop overwrite changes only the slice, never the slot size.
+- **Status remap (R6) supersedes N3's tie:** each old slot's stacks go to the new slot that owns the old slot's
+  centre tick (`remap_stacks_sized`); a boundary tick goes clockwise (answer 3), not to the lower index.
+  `test_phase_status_keep` updated; its pending variable-size case is now a test.
+- **Save v4:** `WheelState.slot_sizes` / `slot_quality` are written only for an uneven layout / an authored map, so
+  legacy wheels save and hash exactly as before; v3 -> v4 changes nothing (absent = equal slots);
+  `SaveMigration.validate_v4` refuses broken sizes (`invalid_slot_sizes`). Fixture
+  `tests/fixtures/saves/v3/v3_pre_n12.json` recorded on the pre-N12 build: same hash, same End Turn HP.
+- **View:** wheel_view slot angles, wedge arcs, badges and the ring wedge use the WheelState slot arcs; the loadout's
+  SPINNER tab lists each slot's map ("SLOT 1  W G P G W"). Not done: the combat disc shader still draws one span for
+  every slice (`WheelDisc` "span"), so an uneven wheel's disc art needs a view slice before uneven content ships.
+
 ### 2026-10-18 — Plan 2 W0 N11: pointers on any tick (GDD 2.1 amendment, R10; ruling Q27)
 - **Rule:** a pointer sits on any tick 0-29 and reads `(rotation + tick) mod 30`; pointers are at least 1 tick apart
   (adjacent needles valid; two on one tick invalid). Every needle resolves on its own and shows on the preview.
@@ -8980,3 +9016,11 @@ Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checke
 - `NetrunScene.street_route` stays off by default (NA-26 flips it). With it on, `RunManager.go_to_netrun` marks the link `street` and the scene plays the dive on its first street page (`RunManager.take_street_entry`); the scene's `arrival_ready` also waits for the street rig. Zoom out/in during a netrun is the existing view toggle (animated `rig.move_to`), same camera path as the dive's end (criterion 9 only partly: the toggle does not replay the dive).
 - Differences, reported: REVEAL is link write-on plus rooms rising by layer (the NA-24 `dissolve` shader and per-wall bits are not built); MARK is slap scale and staged visibility, no alpha fade; jack-out reverse plays from the street page's Save & quit (the end-of-run pages no longer hold a street view); the HQ-side reverse (CRT back on) is not built.
 - Name: the brief's `RouteCover` already exists (kit: the route page's arrival cover, ART-R1 9a), so the entry player is `EntryCover` (`scripts/ui/entry_cover.gd`).
+## 2026-10-18 - W1 N7: block nudge / respin locks
+
+Rulings applied: Q9 (locks refuse every nudge, free ones included; only player-initiated respins count; start-of-turn respin never blocked), Q31 (all locks removed at end of turn; Freeze alone persists and is spent at the next start-of-turn spin).
+- Lock = per-wheel `WheelState.locks` {kind: {turns_left >= 1, sources sorted by id}}; merge = larger turns_left, never the sum. Saved only when non-empty, so old hashes and saves are unchanged.
+- Answer 1: a lock an enemy places during RESOLVE is queued in `CombatState.pending_locks` (plain saved data, sorted by wheel, kind, source) and applies at the start of the next turn after the start-of-turn spin; it clears at that turn end.
+- Answer 2: locks placed in the player turn (cards on enemy wheels, listeners) apply at once for the rest of the turn and clear at its end.
+- New EffectType LOCK_NUDGE, LOCK_RESPIN (append-only, `amount` = turns, validation code lock_turns_lt_1). Refusal strings CombatResolver.NUDGE_LOCKED / RESPIN_LOCKED; `lock_refusal()` returns code + source ids.
+- Not built: the full-tier overlay flow test (view glue is two wheel chips and the existing refusal toast); the Linked Bus Daemon mirrored nudge is not refused (not player-initiated).

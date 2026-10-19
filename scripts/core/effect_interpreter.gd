@@ -69,6 +69,27 @@ func spin_bonus_of(c: CombatantState) -> int:
 
 
 ## Permanent status from Firmware in `slot`, or NONE.
+## Plan 2 N12 (R11): slot `slot`'s sub-tick quality map as the rules read it, one
+## RC.PrecisionTier per tick from the slot's first tick: its authored map (WheelSlotData
+## tick_quality) or the default for its size (CampaignConfigData.tick_quality_good_reach),
+## each tick raised by its Firmware's tick_quality_step (Calibrated), capped at PERFECT.
+func tick_tiers(wheel: WheelState, slot: int) -> PackedInt32Array:
+	var tiers := wheel.quality_override(slot).duplicate()
+	if tiers.size() != wheel.slot_size(slot):
+		tiers = WheelMath.default_quality(wheel.slot_size(slot), config.tick_quality_good_reach)
+	var fw := firmware_of(wheel, slot)
+	if fw != null and fw.tick_quality_step != 0:
+		for i in tiers.size():
+			tiers[i] = WheelMath.raised_tier(tiers[i], fw.tick_quality_step)
+	return tiers
+
+
+## The precision tier wheel tick `tick` reads on `wheel` (tick_tiers of its slot).
+func tier_at_tick(wheel: WheelState, tick: int) -> int:
+	var slot := wheel.slot_of_tick(tick)
+	return tick_tiers(wheel, slot)[WheelMath.index_in_slot(tick, wheel.layout())]
+
+
 func permanent_status(wheel: WheelState, slot: int) -> int:
 	var fw := firmware_of(wheel, slot)
 	return fw.permanent_status if fw != null else RC.Status.NONE
@@ -149,6 +170,13 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					continue
 				t.wheel.frozen = true
 				events.append({"type": "freeze", "target": t.id, "text": "%s is FROZEN: it skips its next respin." % t.display_name})
+		RC.EffectType.LOCK_NUDGE, RC.EffectType.LOCK_RESPIN:
+			var lock_kind := WheelState.LOCK_NUDGE if e.type == RC.EffectType.LOCK_NUDGE else WheelState.LOCK_RESPIN
+			var lock_source := StringName(String(ctx.get("source_id", &"")))
+			if lock_source == &"":
+				lock_source = owner.source_id
+			for t in targets:
+				place_lock(state, t, lock_kind, lock_source, e.amount, events)
 		RC.EffectType.MODIFY_RESISTANCE:
 			for t in targets:
 				modify_resistance(t, e.amount, events, state.phase == CombatState.Phase.RESOLVE)
@@ -544,6 +572,32 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	return true
 
 
+## N7: locks `kind` on `c`'s wheel for `turns` turns. During RESOLVE the lock is QUEUED and
+## applies at the start of the next turn after the start-of-turn spin (it would otherwise be
+## cleared with the turn it was placed in); in the player's turn it applies at once. A lock
+## of fewer than 1 turns places nothing. No RNG.
+func place_lock(state: CombatState, c: CombatantState, kind: StringName, source: StringName, turns: int, events: Array[Dictionary]) -> void:
+	if turns < 1:
+		return
+	if state.phase == CombatState.Phase.RESOLVE:
+		for p in state.pending_locks:
+			if p["wheel"] == String(c.id) and p["kind"] == String(kind) and p["source"] == String(source):
+				p["turns"] = maxi(int(p["turns"]), turns)
+				return
+		state.pending_locks.append({"wheel": String(c.id), "kind": String(kind), "source": String(source), "turns": turns})
+		state.pending_locks.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			for k in ["wheel", "kind", "source"]:
+				if a[k] != b[k]:
+					return IdSort.less(a[k], b[k])
+			return false)
+		events.append({"type": "lock_queued", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s will be locked next turn." % [c.display_name, kind]})
+		return
+	if c.wheel.add_lock(kind, source, turns):
+		events.append({"type": "lock", "target": c.id, "kind": kind, "source": source,
+			"text": "%s's %s is locked." % [c.display_name, kind]})
+
+
 ## Changes `c`'s resistance now. During RESOLVE the change also carries into the next
 ## turn's restore (Ghost Core strip, Tracer, an enemy's own +resistance slice), which
 ## would otherwise wipe it before the player acts.
@@ -576,9 +630,12 @@ func drain_ram(state: CombatState, amount: int, events: Array[Dictionary]) -> vo
 func snap_to_center(c: CombatantState, ring: int, events: Array[Dictionary]) -> void:
 	var wheel := c.wheel
 	if ring == RC.RingScope.INNER and wheel.has_inner_ring():
-		wheel.inner_rotation += -WheelMath.offset_at(wheel.inner_tick_at(0), RC.RING_SEGMENTS)
+		wheel.inner_rotation += -WheelMath.ring_offset(wheel.inner_tick_at(0))
 	else:
-		wheel.rotation += WheelMath.snap_delta(wheel.tick_at(0), wheel.slice_count)
+		# N12 (Q20): onto the nearest best tick of the slot under the pointer (its quality map,
+		# Calibrated included); a tie goes counter-clockwise (the lower tick).
+		var tick := wheel.tick_at(0)
+		wheel.rotation += WheelMath.snap_delta_in(tick, wheel.layout(), tick_tiers(wheel, wheel.slot_of_tick(tick)))
 	events.append({"type": "snap", "target": c.id, "text": "%s snaps to the slice center." % c.display_name})
 
 

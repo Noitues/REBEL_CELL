@@ -115,7 +115,7 @@ static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: 
 static func landing(sat: CombatantState, lookup: ContentLookup) -> SliceData:
 	if sat == null or sat.wheel == null or sat.wheel.pointer_ticks.is_empty() or lookup == null:
 		return null
-	var slot := WheelMath.slice_at(WheelMath.tick_at(sat.wheel.rotation, sat.wheel.pointer_ticks[0]), sat.wheel.slice_count)
+	var slot := sat.wheel.slot_of_tick(WheelMath.tick_at(sat.wheel.rotation, sat.wheel.pointer_ticks[0]))
 	if slot < 0 or slot >= sat.wheel.slot_slice_ids.size():
 		return null
 	return lookup.get_content(sat.wheel.slot_slice_ids[slot]) as SliceData

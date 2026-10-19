@@ -5,6 +5,8 @@ extends RefCounted
 const TICKS: int = 30
 const SLICES: int = 6
 const TICKS_PER_SLICE: int = 5
+## Plan 2 N12: WheelSlotData.size_ticks for an equal share of the 30 ticks (a definition).
+const SIZE_AUTO: int = -1
 const RING_SEGMENTS: int = 3
 const TICKS_PER_RING_SEGMENT: int = 10
 
@@ -95,6 +97,12 @@ enum EffectType {
 	GAIN_CYCLES,
 	GAIN_SCHEMATICS,
 	CUSTOM,
+	## Plan 2 N7: lock the target wheel's nudges (free and paid; nudge cards still work) for
+	## the player's turn. `amount` = turns (>= 1). Append-only.
+	LOCK_NUDGE,
+	## Plan 2 N7: lock the target wheel's player respins (the Respin card, the RAM respin; never
+	## the start-of-turn respin). `amount` = turns (>= 1).
+	LOCK_RESPIN,
 }
 
 enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, CHOSEN, CAMPAIGN }

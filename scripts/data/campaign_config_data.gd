@@ -129,6 +129,17 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## N11: where an ICE BOSS_EXTRA_POINTER pointer goes, in ticks after pointer 0, tried in
 ## order; the first tick no pointer holds wins (the legacy evenly spaced 15 / 10 / ...).
 @export var boss_extra_pointer_offsets: PackedInt32Array = PackedInt32Array([15, 10, 20, 5, 25])
+## Plan 2 N12 (R11, ruling Q20; designer W1 N12): slice sizes run 0-30 and every wheel sums
+## to 30, so the ticks are the only size cap. The slot-count caps stay (an empty 0-size slot
+## does not count): an operative wheel holds at most operative_slice_cap slices, an enemy
+## wheel enemy_slice_cap. A slice with ticks is at least slice_size_min ticks.
+@export var operative_slice_cap: int = 6
+@export var enemy_slice_cap: int = 30
+@export var slice_size_min: int = 1
+## Plan 2 N12 (R11): the default sub-tick quality map. A tick at distance d from its slice's
+## middle reads PERFECT at d = 0, GOOD at d <= tick_quality_good_reach, else WEAK
+## (WheelMath.default_quality; 1 gives 5 = W G P G W, 4 = W G G W).
+@export var tick_quality_good_reach: int = 1
 ## N4 (plan 2 R4, ruling Q33): class enrage defaults, indexed by RC.EnemyClass (normal,
 ## elite, mini-boss, boss). A start turn of 0 means no enrage (normals). An EnemyData's
 ## authored `enrage` wins over these (enrage_for). Steps are additive; defaults add no

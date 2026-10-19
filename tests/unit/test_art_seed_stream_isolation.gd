@@ -96,4 +96,4 @@ func test_identical_across_save_and_reload() -> void:
 
 
 func test_save_version_unchanged() -> void:
-	assert_eq(SaveService.SAVE_VERSION, 3, "NA-02 adds no save field (N8 alone moved it to 3)")
+	assert_eq(SaveService.SAVE_VERSION, 4, "NA-02 adds no save field (N8 moved it to 3, N12 to 4)")

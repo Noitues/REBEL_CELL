@@ -7,6 +7,12 @@ extends RefCounted
 const NO_STACK_LIMIT: int = 1 << 30
 
 var slice_count: int = RC.SLICES
+## Plan 2 N12 (R11): each slot's size in ticks, clockwise from slot 0, summing to 30 (0 = an
+## empty arc). Empty means the equal layout of slice_count (read it through layout()).
+var slot_sizes: PackedInt32Array = PackedInt32Array()
+## Plan 2 N12 (R11): each slot's authored quality map (one RC.PrecisionTier per tick), or an
+## empty array for the default map of its size. Empty overall when no slot authors one.
+var slot_quality: Array[PackedInt32Array] = []
 var slot_slice_ids: Array[StringName] = []
 ## Same length as slot_slice_ids; &"" means no Firmware in that socket.
 var slot_firmware_ids: Array[StringName] = []
@@ -21,6 +27,13 @@ var frozen: bool = false
 ## The wheel skipped its respin this turn (it was frozen). It cannot be frozen again until
 ## it has respun (decision 2026-09-24: closes the Anchor / Freeze perpetual lock).
 var respin_skipped: bool = false
+## Plan 2 N7: the player-turn locks on this wheel, {kind: {"turns_left": int >= 1, "sources":
+## Array[String] sorted by content id}}, kind LOCK_NUDGE or LOCK_RESPIN. A kind with no lock is
+## absent. Every lock is removed at end of turn (ruling Q31); place them only through add_lock.
+var locks: Dictionary = {}
+## The kinds of lock (a definition, not a tuning number).
+const LOCK_NUDGE: StringName = &"nudge"
+const LOCK_RESPIN: StringName = &"respin"
 ## The temporary statuses of each slot (permanent ones come from Firmware), plan 2 N8:
 ## one Dictionary per slot, {RC.Status int: stacks >= 1}. A status with no stacks is never
 ## stored (its key is absent). Read them in RC.Status order through statuses_at(), never
@@ -39,6 +52,9 @@ var pending_pointer_ticks: PackedInt32Array = PackedInt32Array()
 static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_ids: Array[StringName] = [], firmware_ids: Array[StringName] = [], segment_ids: Array[StringName] = []) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = data.slice_count
+	if not data.is_auto_sized():
+		w.slot_sizes = data.slot_sizes()
+	w.set_quality_maps(data.slot_quality())
 	for i in data.slots.size():
 		var slot := data.slots[i]
 		w.slot_slice_ids.append(slice_ids[i] if i < slice_ids.size() else (slot.slice.id if slot.slice != null else &""))
@@ -68,6 +84,46 @@ func ticks_per_slice() -> int:
 	return WheelMath.ticks_per_slice(slice_count)
 
 
+## Plan 2 N12: the slot sizes WheelMath reads (slot_sizes, or the equal layout of slice_count).
+func layout() -> PackedInt32Array:
+	return slot_sizes if slot_sizes.size() == slice_count else WheelMath.uniform_sizes(slice_count)
+
+
+## Stores `maps` as the authored quality maps (all empty -> none stored).
+func set_quality_maps(maps: Array[PackedInt32Array]) -> void:
+	slot_quality = []
+	for m in maps:
+		if not m.is_empty():
+			for k in maps:
+				slot_quality.append(k.duplicate())
+			return
+
+
+## Slot `slot`'s authored quality map, or an empty array (the default for its size).
+func quality_override(slot: int) -> PackedInt32Array:
+	return slot_quality[slot] if slot >= 0 and slot < slot_quality.size() else PackedInt32Array()
+
+
+## Slot `slot`'s size in ticks.
+func slot_size(slot: int) -> int:
+	return layout()[slot]
+
+
+## The slot owning wheel tick `tick` (never a 0-size slot).
+func slot_of_tick(tick: int) -> int:
+	return WheelMath.slot_of_tick(tick, layout())
+
+
+## Centre tick of slot `slot` (the lower of the middle pair on an even size).
+func slot_center_tick(slot: int) -> int:
+	return WheelMath.center_tick(slot, layout())
+
+
+## Middle of slot `slot`'s drawn arc as a fractional wheel tick (views centre wedges on it).
+func slot_arc_mid(slot: int) -> float:
+	return WheelMath.arc_mid(slot, layout())
+
+
 ## Outer-ring tick under pointer `pointer_index`.
 func tick_at(pointer_index: int) -> int:
 	return WheelMath.tick_at(rotation, pointer_ticks[pointer_index])
@@ -80,7 +136,7 @@ func inner_tick_at(pointer_index: int) -> int:
 
 ## Slice index under pointer `pointer_index`.
 func slice_at(pointer_index: int) -> int:
-	return WheelMath.slice_at(tick_at(pointer_index), slice_count)
+	return WheelMath.slot_of_tick(tick_at(pointer_index), layout())
 
 
 ## Mirrors the wheel across the horizontal axis (GDD 2.3, designer ruling 2026-09-24):
@@ -88,8 +144,20 @@ func slice_at(pointer_index: int) -> int:
 ## them), both rings included, and the rotation is remapped so the tick under the top
 ## pointer becomes 15 - t. Orientation stays clockwise, so nudges and spins are unchanged.
 ## Flipping twice restores the wheel exactly. Docked satellites are the caller's job.
+## Plan 2 N12: slot sizes and quality maps mirror with their slots (a map reads backwards),
+## and an even slot 0 shifts the rotation one tick (WheelMath.flip_shift) so every arc lands
+## exactly on its mirror image.
 func flip() -> void:
-	rotation = -rotation - WheelMath.FLIP_OFFSET
+	rotation = -rotation - WheelMath.FLIP_OFFSET + WheelMath.flip_shift(layout())
+	if not slot_sizes.is_empty():
+		slot_sizes = WheelMath.mirrored_sizes(slot_sizes)
+	if not slot_quality.is_empty():
+		var maps: Array[PackedInt32Array] = []
+		for i in slot_quality.size():
+			var m := slot_quality[WheelMath.mirrored_slot(i, slot_quality.size())].duplicate()
+			m.reverse()
+			maps.append(m)
+		slot_quality = maps
 	slot_slice_ids = _mirrored_names(slot_slice_ids)
 	slot_firmware_ids = _mirrored_names(slot_firmware_ids)
 	var stacks: Array[Dictionary] = []
@@ -111,17 +179,23 @@ func _mirrored_names(names: Array[StringName]) -> Array[StringName]:
 	return out
 
 
-## Plan 2 R6 with N8 stacks: the statuses of a layout change. Each old slot's stacks move to
-## the new slot that covers the old slot's centre tick (nearest new centre, the circular way
-## round; a tick on a boundary goes to the lower new index). Stacks landing on one slot merge:
-## the same status adds up (to `cap`, RC.UNCAPPED_STATUSES excepted), different ones sit side
-## by side. Pure; returns `new_count` entries.
+## Plan 2 R6 with N8 stacks: the statuses of a change between two equal layouts
+## (remap_stacks_sized with the equal sizes of each count).
 static func remap_stacks(old_stacks: Array[Dictionary], old_count: int, new_count: int, cap: int) -> Array[Dictionary]:
+	return remap_stacks_sized(old_stacks, WheelMath.uniform_sizes(old_count), WheelMath.uniform_sizes(new_count), cap)
+
+
+## Plan 2 R6 with N8 stacks and N12 sizes: each old slot's stacks move to the new slot that
+## owns the old slot's centre tick (WheelMath.center_tick; a tick on a boundary belongs to the
+## slot clockwise of it, as every pointer reads it: designer W1 N12). Stacks landing on one
+## slot merge: the same status adds up (to `cap`, RC.UNCAPPED_STATUSES excepted), different
+## ones sit side by side. Pure; returns one entry per new slot.
+static func remap_stacks_sized(old_stacks: Array[Dictionary], old_sizes: PackedInt32Array, new_sizes: PackedInt32Array, cap: int) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for j in new_count:
+	for j in new_sizes.size():
 		out.append({})
-	for i in mini(old_stacks.size(), old_count):
-		var j := covering_slot(WheelMath.slice_center(i, old_count), new_count)
+	for i in mini(old_stacks.size(), old_sizes.size()):
+		var j := WheelMath.slot_of_tick(WheelMath.center_tick(i, old_sizes), new_sizes)
 		for st in sorted_statuses(old_stacks[i]):
 			var n: int = mini(int(out[j].get(st, 0)) + int(old_stacks[i][st]), stack_limit(st, cap))
 			out[j][st] = n
@@ -259,23 +333,56 @@ static func stacks_from_json(d: Dictionary) -> Dictionary:
 	return ordered
 
 
-## The slot of a `count`-slice wheel whose centre is nearest `tick` (circular distance); a
-## tie (a boundary tick) goes to the lower index.
+## The slot of a `count`-slice equal wheel that owns `tick`; a boundary tick belongs to the
+## slot clockwise of it (plan 2 N12, designer W1 N12: as every pointer reads it).
 static func covering_slot(tick: int, count: int) -> int:
-	var best := 0
-	var best_d := RC.TICKS + 1
-	for j in count:
-		var d := posmod(tick - WheelMath.slice_center(j, count), RC.TICKS)
-		d = mini(d, RC.TICKS - d)
-		if d < best_d:
-			best_d = d
-			best = j
-	return best
+	return WheelMath.slice_at(tick, count)
+
+
+## Locks `kind` with `turns` turns left, named for `source`. Two locks merge: the larger
+## turns_left wins (never the sum) and the sources are kept sorted by content id. Returns
+## false (no lock) for turns < 1.
+func add_lock(kind: StringName, source: StringName, turns: int) -> bool:
+	if turns < 1:
+		return false
+	var entry: Dictionary = locks.get(String(kind), {"turns_left": 0, "sources": []})
+	var sources: Array = entry["sources"]
+	if source != &"" and not sources.has(String(source)):
+		sources.append(String(source))
+		IdSort.sort_ids(sources)
+	entry["turns_left"] = maxi(int(entry["turns_left"]), turns)
+	entry["sources"] = sources
+	locks[String(kind)] = entry
+	return true
+
+
+## Whether `kind` is locked on this wheel.
+func is_locked(kind: StringName) -> bool:
+	return locks.has(String(kind))
+
+
+## The sources of `kind`'s lock, sorted by content id (empty when not locked).
+func lock_sources(kind: StringName) -> Array:
+	if not locks.has(String(kind)):
+		return []
+	return (locks[String(kind)]["sources"] as Array).duplicate()
+
+
+## The turns left on `kind`'s lock (0 when not locked).
+func lock_turns(kind: StringName) -> int:
+	return int(locks[String(kind)]["turns_left"]) if locks.has(String(kind)) else 0
+
+
+## Removes every lock (end of turn, combat end).
+func clear_locks() -> void:
+	locks.clear()
 
 
 func duplicate_state() -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = slice_count
+	w.slot_sizes = slot_sizes.duplicate()
+	w.set_quality_maps(slot_quality)
 	w.slot_slice_ids = slot_slice_ids.duplicate()
 	w.slot_firmware_ids = slot_firmware_ids.duplicate()
 	w.hub_id = hub_id
@@ -285,6 +392,7 @@ func duplicate_state() -> WheelState:
 	w.pointer_ticks = pointer_ticks.duplicate()
 	w.frozen = frozen
 	w.respin_skipped = respin_skipped
+	w.locks = locks.duplicate(true)
 	w.slice_stacks = copy_stacks()
 	w.passive_resistance = passive_resistance
 	w.pointer_orbit = pointer_orbit
@@ -321,7 +429,7 @@ func to_dict() -> Dictionary:
 	var stacks := []
 	for d in slice_stacks:
 		stacks.append(stacks_to_json(d))
-	return {
+	var d := {
 		"slice_count": slice_count,
 		"slot_slice_ids": _names_to_strings(slot_slice_ids),
 		"slot_firmware_ids": _names_to_strings(slot_firmware_ids),
@@ -337,11 +445,38 @@ func to_dict() -> Dictionary:
 		"pointer_orbit": pointer_orbit,
 		"pending_pointer_ticks": Array(pending_pointer_ticks),
 	}
+	# Save v4 (N12): absent for the equal layout and the default maps, so legacy wheels save
+	# and hash exactly as before.
+	if not slot_sizes.is_empty() and not WheelMath.is_uniform(slot_sizes):
+		d["slot_sizes"] = Array(slot_sizes)
+	if not slot_quality.is_empty():
+		var maps := []
+		for m in slot_quality:
+			maps.append(Array(m))
+		d["slot_quality"] = maps
+	if not locks.is_empty():  # absent when empty: wheels without a lock hash as before N7
+		var out := {}
+		for kind in [String(LOCK_NUDGE), String(LOCK_RESPIN)]:
+			if locks.has(kind):
+				out[kind] = {"turns_left": int(locks[kind]["turns_left"]), "sources": (locks[kind]["sources"] as Array).duplicate()}
+		d["locks"] = out
+	return d
 
 
 static func from_dict(d: Dictionary) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = int(d.get("slice_count", RC.SLICES))
+	w.slot_sizes = PackedInt32Array()
+	for t in d.get("slot_sizes", []):  # absent (v3 and the equal layout): equal slots
+		w.slot_sizes.append(int(t))
+	var maps: Array[PackedInt32Array] = []
+	for m in d.get("slot_quality", []):
+		var q := PackedInt32Array()
+		if m is Array:
+			for t in m:
+				q.append(int(t))
+		maps.append(q)
+	w.set_quality_maps(maps)
 	w.slot_slice_ids = _strings_to_names(d.get("slot_slice_ids", []))
 	w.slot_firmware_ids = _strings_to_names(d.get("slot_firmware_ids", []))
 	w.hub_id = StringName(String(d.get("hub_id", "")))
@@ -353,6 +488,14 @@ static func from_dict(d: Dictionary) -> WheelState:
 		w.pointer_ticks.append(int(t))
 	w.frozen = bool(d.get("frozen", false))
 	w.respin_skipped = bool(d.get("respin_skipped", false))
+	var saved_locks: Dictionary = d.get("locks", {})
+	for kind in [String(LOCK_NUDGE), String(LOCK_RESPIN)]:
+		var entry: Variant = saved_locks.get(kind)
+		if entry is Dictionary and int(entry.get("turns_left", 0)) >= 1:
+			var srcs: Array = []
+			for x in entry.get("sources", []):
+				srcs.append(String(x))
+			w.locks[kind] = {"turns_left": int(entry["turns_left"]), "sources": srcs}
 	w.slice_stacks = []
 	for s in d.get("slice_stacks", []):
 		w.slice_stacks.append(stacks_from_json(s) if s is Dictionary else {})

@@ -52,6 +52,10 @@ var campaign_heat: int = 0
 ## Accelerator segment: nudge cards resolve twice this turn / are armed for next turn.
 var double_nudge_cards: bool = false
 var double_nudge_cards_next: bool = false
+## Plan 2 N7 (Q31 answer 1): locks an enemy placed during RESOLVE. They apply to their wheel at
+## the start of the next turn, after the start-of-turn spin. Entries {wheel, kind, source,
+## turns}, kept sorted (wheel, kind, source); plain saved data.
+var pending_locks: Array[Dictionary] = []
 
 
 func get_combatant(id: StringName) -> CombatantState:
@@ -158,6 +162,8 @@ func duplicate_state() -> CombatState:
 	s.campaign_heat = campaign_heat
 	s.double_nudge_cards = double_nudge_cards
 	s.double_nudge_cards_next = double_nudge_cards_next
+	for p in pending_locks:
+		s.pending_locks.append(p.duplicate())
 	return s
 
 
@@ -168,7 +174,7 @@ func to_dict() -> Dictionary:
 	var drone_dicts := []
 	for d in drones:
 		drone_dicts.append(d.to_dict())
-	return {
+	var d := {
 		"turn": turn,
 		"phase": phase,
 		"outcome": outcome,
@@ -198,6 +204,9 @@ func to_dict() -> Dictionary:
 		"double_nudge_cards": double_nudge_cards,
 		"double_nudge_cards_next": double_nudge_cards_next,
 	}
+	if not pending_locks.is_empty():  # absent when empty: states without a lock hash as before N7
+		d["pending_locks"] = pending_locks.duplicate(true)
+	return d
 
 
 static func from_dict(d: Dictionary) -> CombatState:
@@ -236,6 +245,10 @@ static func from_dict(d: Dictionary) -> CombatState:
 	s.campaign_heat = int(d.get("campaign_heat", 0))
 	s.double_nudge_cards = bool(d.get("double_nudge_cards", false))
 	s.double_nudge_cards_next = bool(d.get("double_nudge_cards_next", false))
+	for p in d.get("pending_locks", []):
+		if p is Dictionary and int(p.get("turns", 0)) >= 1:
+			s.pending_locks.append({"wheel": String(p.get("wheel", "")), "kind": String(p.get("kind", "")),
+				"source": String(p.get("source", "")), "turns": int(p["turns"])})
 	return s
 
 

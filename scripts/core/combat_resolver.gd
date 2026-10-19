@@ -20,6 +20,9 @@ const STATUS_TYPES := [RC.SliceType.INFECT]
 ## validate_action's refusal (code SATELLITE_FIXED) when a player action would move a
 ## satellite or drone without the Undock keyword (designer 2026-10-18, Q7/Q10).
 const SATELLITE_FIXED := "Satellites are fixed to their slice: only Undock moves them."
+## N7 refusals (codes NUDGE_LOCKED / RESPIN_LOCKED; the source ids are in lock_refusal()).
+const NUDGE_LOCKED := "That wheel's nudges are locked this turn."
+const RESPIN_LOCKED := "That wheel's respins are locked this turn."
 ## Effect types that move the wheel they hit (refused on satellites without Undock).
 const SATELLITE_MOVING_EFFECTS := [RC.EffectType.NUDGE, RC.EffectType.SPIN, RC.EffectType.FLIP,
 	RC.EffectType.RESPIN, RC.EffectType.FREEZE, RC.EffectType.SNAP_TO_CENTER]
@@ -242,6 +245,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if t == null or not t.is_alive() or t.is_player:
 				return "Invalid target."
 		CombatAction.Type.RESPIN:
+			if state.player.wheel.is_locked(WheelState.LOCK_RESPIN):
+				return RESPIN_LOCKED
 			var respin_cost := RamCost.of_action(state, action, self)
 			if state.ram < respin_cost:
 				return "Not enough RAM for a respin (%d needed)." % respin_cost
@@ -251,6 +256,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				return "Invalid wheel."
 			if t.is_satellite:
 				return SATELLITE_FIXED
+			if t.wheel.is_locked(WheelState.LOCK_NUDGE):
+				return NUDGE_LOCKED  # free and paid nudges alike; costs nothing
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
 			var nudge_cost := RamCost.of_action(state, action, self)
@@ -276,6 +283,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			for e in card.effects:
 				if e == null:
 					continue
+				if e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(WheelState.LOCK_RESPIN):
+					return RESPIN_LOCKED
 				if (e.type == RC.EffectType.FLIP or e.type == RC.EffectType.RESPIN) and target != state.player and target.resistance > 0:
 					return "%s blocked: %s has %d resistance." % [RC.EffectType.keys()[e.type], target.display_name, target.resistance]
 				if e.type == RC.EffectType.NUDGE and EffectInterpreter.nudge_ring(e, action, target) == RC.RingScope.INNER and not target.wheel.has_inner_ring():
@@ -283,6 +292,34 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				if e.slice_pick == RC.SlicePick.CHOSEN and e.type in [RC.EffectType.APPLY_STATUS, RC.EffectType.CLEANSE, RC.EffectType.DEPLOY_DRONE] and action.slot_index < 0:
 					return "Choose a slice."
 	return ""
+
+
+## The wheel the card effect `e` hits when the card's target wheel is `target`.
+func _effect_wheel(state: CombatState, e: EffectData, target: CombatantState) -> CombatantState:
+	match e.target:
+		RC.EffectTarget.SELF, RC.EffectTarget.OWN_WHEEL, RC.EffectTarget.CAMPAIGN:
+			return state.player
+	return target
+
+
+## N7: the lock behind a refusal, {"code": "NUDGE_LOCKED" | "RESPIN_LOCKED", "sources": [ids]}, or
+## {} when `action` is not refused by a lock. Same checks, same order as validate_action.
+func lock_refusal(state: CombatState, action: CombatAction) -> Dictionary:
+	var reason := validate_action(state, action)
+	if reason != NUDGE_LOCKED and reason != RESPIN_LOCKED:
+		return {}
+	var kind := WheelState.LOCK_NUDGE if reason == NUDGE_LOCKED else WheelState.LOCK_RESPIN
+	var wheel_of: CombatantState = state.player
+	if action.type == CombatAction.Type.NUDGE:
+		wheel_of = state.get_combatant(action.wheel_id)
+	elif action.type == CombatAction.Type.PLAY_CARD:
+		var card := lookup.get_content(state.hand[action.hand_index]) as CardData
+		var target := card_target(state, card, action)
+		for e in card.effects:
+			if e != null and e.type == RC.EffectType.RESPIN and _effect_wheel(state, e, target).wheel.is_locked(kind):
+				wheel_of = _effect_wheel(state, e, target)
+				break
+	return {"code": "NUDGE_LOCKED" if kind == WheelState.LOCK_NUDGE else "RESPIN_LOCKED", "sources": wheel_of.wheel.lock_sources(kind)}
 
 
 ## Whether `e`, played by the operative at `target`, would move a satellite or drone (its
@@ -435,6 +472,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		if not c.is_player:
 			refresh_enrage(s, c, events)
 			_refresh_resistance(c, events)
+	_apply_pending_locks(s, events)
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -459,6 +497,17 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 		s.phase = CombatState.Phase.PLAYER_PHASE
 
 
+## N7 (Q31 answer 1): the locks queued at RESOLVE take hold of their wheels, after the
+## start-of-turn spin; a wheel that is gone gets none. They clear at the end of this turn.
+func _apply_pending_locks(s: CombatState, events: Array[Dictionary]) -> void:
+	for p in s.pending_locks:
+		var c := s.get_combatant(StringName(p["wheel"]))
+		if c != null and c.is_alive() and c.wheel.add_lock(StringName(p["kind"]), StringName(p["source"]), int(p["turns"])):
+			events.append({"type": "lock", "target": c.id, "kind": StringName(p["kind"]), "source": StringName(p["source"]),
+				"text": "%s's %s is locked this turn." % [c.display_name, p["kind"]]})
+	s.pending_locks.clear()
+
+
 ## N21 (rulings Q16, Q31): the turn's resistance refresh. `c` regains its full per-turn
 ## resistance (passive + hub while up + enrage) plus any change carried from the last
 ## RESOLVE, from 0 (end_turn zeroed it). A gain above 0 is the HUD's "+N" mark and a
@@ -478,6 +527,8 @@ func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
 ## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
 func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
 	for c in s.combatants_in_order():
+		if c.wheel != null:
+			c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)
 		if c.is_player:
 			continue
 		c.resistance = 0
@@ -513,7 +564,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
 			"text": "" if quiet else "%s pointer %d: tick %d -> %s (offset %+d, %s%s)." % [r["owner"].display_name, r["pointer_index"], r["tick"],
 				r["slice"].display_name if r["slice"].display_name != "" else String(r["slice"].id), r["offset"],
-				RC.PrecisionTier.keys()[r["tier"]] if r["owner"].wheel.slice_count == RC.SLICES else "full output",
+				RC.PrecisionTier.keys()[r["tier"]] if not r["owner"].is_satellite else "full output",
 				(", ring " + r["segment"].display_name) if r["segment"] != null else ""]})
 	# N6: ON_PERFECT / ON_HIT_DEALT occurrences the slice passes collect, heard after them.
 	var heard: Array = []
@@ -609,9 +660,12 @@ func upcoming_phases(s: CombatState, c: CombatantState) -> Array[BossPhaseData]:
 func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictionary:
 	var wheel := c.wheel
 	var tick := wheel.tick_at(pointer_index)
-	var slice_index := WheelMath.slice_at(tick, wheel.slice_count)
-	var offset := WheelMath.offset_at(tick, wheel.slice_count)
-	var tier: int = WheelMath.tier(offset) if wheel.slice_count == RC.SLICES else RC.PrecisionTier.PERFECT
+	# N12 (R11): cumulative slot boundaries; the tier is the slot's sub-tick quality map
+	# (Calibrated included). Satellites and drones resolve at full output.
+	var slice_index := wheel.slot_of_tick(tick)
+	var offset := WheelMath.offset_in(tick, wheel.layout())
+	var map_tier: int = fx.tier_at_tick(wheel, tick)
+	var tier: int = map_tier if not c.is_satellite else RC.PrecisionTier.PERFECT
 	var segment_index := -1
 	var segment: RingSegmentData = null
 	if wheel.has_inner_ring():
@@ -625,6 +679,7 @@ func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictiona
 		"owner": c, "pointer_index": pointer_index, "tick": tick, "slice_index": slice_index,
 		"slice": fx.slice_of(wheel, slice_index), "firmware": fx.firmware_of(wheel, slice_index),
 		"offset": offset, "tier": tier, "segment_index": segment_index, "segment": segment,
+		"side": WheelMath.side_in(tick, wheel.layout()) if map_tier != RC.PrecisionTier.PERFECT else 0,
 		"guard_id": guard.id if guard != null else &"",
 		"stacks": stacks, "permanent_status": permanent,
 	}
@@ -710,10 +765,12 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 			if fw == null or fw.neighbor_rule == RC.NeighborRule.NONE:
 				out.append(r)
 				continue
-			var offset: int = r["offset"]
+			# N12: the side of the slot's true middle the needle landed on (0 on a Perfect
+			# tick of the map before any TIER_DOWN, or the exact middle of an odd slot).
+			var side_of: int = r["side"]
 			var sides: Array[int] = []
-			if offset != 0:
-				sides.append(signi(offset))
+			if side_of != 0:
+				sides.append(side_of)
 			elif fw.neighbor_rule == RC.NeighborRule.MIRROR:
 				sides = [1, -1]
 			if fw.neighbor_rule == RC.NeighborRule.MIRROR or sides.is_empty():
@@ -735,7 +792,7 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 
 func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: float) -> Dictionary:
 	var c: CombatantState = r["owner"]
-	var slot := posmod(int(r["slice_index"]) + side, c.wheel.slice_count)
+	var slot := WheelMath.neighbor_slot(int(r["slice_index"]), side, c.wheel.layout())  # N12: skips empty arcs
 	var d := r.duplicate()
 	d["slice_index"] = slot
 	d["slice"] = fx.slice_of(c.wheel, slot)
@@ -1283,8 +1340,10 @@ func _cleanse_on_enter(s: CombatState, e: CombatantState, scope: int, events: Ar
 func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
-	var kept := WheelState.remap_stacks(w.slice_stacks, w.slice_count, fresh.slice_count, config.status_stack_cap)
+	var kept := WheelState.remap_stacks_sized(w.slice_stacks, w.layout(), fresh.layout(), config.status_stack_cap)
 	w.slice_count = fresh.slice_count
+	w.slot_sizes = fresh.slot_sizes  # N12: the phase layout's own slot sizes and quality maps
+	w.slot_quality = fresh.slot_quality
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
 	w.slice_stacks = kept
@@ -1299,6 +1358,11 @@ func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dic
 
 
 func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:
+	if s.player.hp <= 0 or s.living_enemies(false).is_empty():
+		for c in s.combatants_in_order():
+			if c.wheel != null:
+				c.wheel.clear_locks()  # N7: nothing leaks past the combat
+		s.pending_locks.clear()
 	if s.player.hp <= 0:
 		s.outcome = CombatState.Outcome.DEFEAT
 		s.phase = CombatState.Phase.END_COMBAT

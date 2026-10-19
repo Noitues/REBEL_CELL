@@ -57,28 +57,29 @@ func test_remap_to_slice_covering_old_centre_tick() -> void:
 
 
 func test_two_old_slices_land_on_one_new_merge_stacks() -> void:
-	# Old 6-slice slots 0 and 1 (ticks 0, 5) both land on a 3-slice wheel's slot 0 (0, 10, 20):
-	# tick 5 is a boundary between 0 and 10 -> the lower index. N8: the same status adds its
-	# stacks; different statuses sit side by side.
-	var out := _remap_stacks([RC.Status.CORRUPTED, RC.Status.CORRUPTED, 0, 0, 0, 0], 6, 3)
+	# Old 6-slice slots 0 and 5 (ticks 0, 25) both land on a 3-slice wheel's slot 0 (ticks
+	# 25-4: tick 25 is the boundary, which belongs to the slot clockwise of it, N12). N8: the
+	# same status adds its stacks; different statuses sit side by side.
+	var out := _remap_stacks([RC.Status.CORRUPTED, 0, 0, 0, 0, RC.Status.CORRUPTED], 6, 3)
 	assert_eq(out, [{RC.Status.CORRUPTED: 2}, {}, {}] as Array[Dictionary], "CORRUPTED x1 + x1 = x2")
-	var mixed := _remap_stacks([RC.Status.OVERCLOCKED, RC.Status.CORRUPTED, 0, 0, 0, 0], 6, 3)
+	var mixed := _remap_stacks([RC.Status.OVERCLOCKED, 0, 0, 0, 0, RC.Status.CORRUPTED], 6, 3)
 	assert_eq(mixed[0], {RC.Status.CORRUPTED: 1, RC.Status.OVERCLOCKED: 1}, "different statuses: both kept")
 
 
 func test_merged_stacks_stop_at_the_cap() -> void:
 	var cap := CombatFixture.config().status_stack_cap
-	var a: Array[Dictionary] = [{RC.Status.OUTPUT_DOWN: cap - 1}, {RC.Status.OUTPUT_DOWN: 2}, {}, {}, {}, {}]
+	var a: Array[Dictionary] = [{RC.Status.OUTPUT_DOWN: cap - 1}, {}, {}, {}, {}, {RC.Status.OUTPUT_DOWN: 2}]
 	var out := WheelState.remap_stacks(a, 6, 3, cap)
 	assert_eq(int(out[0][RC.Status.OUTPUT_DOWN]), cap, "OUTPUT_DOWN merges up to the cap")
-	var c: Array[Dictionary] = [{RC.Status.CORRUPTED: cap}, {RC.Status.CORRUPTED: 2}, {}, {}, {}, {}]
+	var c: Array[Dictionary] = [{RC.Status.CORRUPTED: cap}, {}, {}, {}, {}, {RC.Status.CORRUPTED: 2}]
 	assert_eq(int(WheelState.remap_stacks(c, 6, 3, cap)[0][RC.Status.CORRUPTED]), cap + 2, "CORRUPTED has no cap (Q36)")
 
 
 func test_centre_on_boundary_tiebreak() -> void:
-	assert_eq(WheelState.covering_slot(5, 3), 0, "tick 5 between centres 0 and 10: lower index")
-	assert_eq(WheelState.covering_slot(15, 3), 1, "tick 15 between 10 and 20: lower index")
-	assert_eq(WheelState.covering_slot(25, 3), 0, "tick 25 between 20 and 0 (30): index 0 is lower")
+	# N12 (designer W1 N12): a boundary tick belongs to the slot clockwise of it, as pointers read it.
+	assert_eq(WheelState.covering_slot(5, 3), 1, "tick 5 starts slot 1 (5-14)")
+	assert_eq(WheelState.covering_slot(15, 3), 2, "tick 15 starts slot 2 (15-24)")
+	assert_eq(WheelState.covering_slot(25, 3), 0, "tick 25 starts slot 0 (25-4)")
 	assert_eq(WheelState.covering_slot(10, 6), 2, "on a centre: that slot")
 
 
@@ -126,7 +127,21 @@ func test_cleanse_on_enter_runs_after_remap() -> void:
 
 
 func test_override_with_variable_sizes() -> void:
-	pending("needs N12 (slice sizes 0-30)")
+	# N12: the phase swaps in an uneven wheel [6, 4, 4, 6, 4, 6] (slots 27-2 | 3-6 | 7-10 |
+	# 11-16 | 17-20 | 21-26). Old equal slot 2 (centre tick 10) -> new slot 2; slot 3 (15) -> 3.
+	var nul := CombatFixture.slice(&"ps_nul", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
+	var data := PhaseFixture.enemy(&"ps_elite", 100, [0.68], RC.EnemyClass.ELITE)
+	data.phases[0].wheel_override = WheelFixtures.make_layout([6, 4, 4, 6, 4, 6], [nul, nul, nul, nul, nul, nul])
+	var s := PhaseFixture.session(data, 40, [0], 1001, [nul])
+	var e := PhaseFixture.aim(s)
+	e.wheel.set_status(2, RC.Status.CORRUPTED)
+	e.wheel.set_status(3, RC.Status.OVERCLOCKED)
+	var r := s.apply(CombatAction.end_turn())
+	assert_eq(CombatFixture.events_of(r, "boss_wheel_override").size(), 1)
+	var w := r.resolved_state.get_combatant(&"enemy_0").wheel
+	assert_eq(w.layout(), PackedInt32Array([6, 4, 4, 6, 4, 6]), "the phase brings its slot sizes")
+	assert_eq(w.status_at(2), RC.Status.CORRUPTED)
+	assert_eq(w.status_at(3), RC.Status.OVERCLOCKED)
 
 
 func test_encrypted_survives_and_still_absorbs() -> void:
