@@ -4,8 +4,7 @@ extends RefCounted
 ## one outline ring carrying the state: lime walked, orange selectable, white not yet, dim grey cut off), the state ring, the
 ## node-type shape badge, the TARGET loop and the operative token. NA-26 retired the 2D route page that mounted it as a
 ## CityMapOverlay (the run's route is the street view now, `StreetRouteView`); what stays is the static drawing the HQ run's
-## compound (`HqRunView`) and the route key (`RouteLegend`) share. The three motion ids below stay declared for
-## `ui_motion.tres` and the motion lab (their route page is gone; a motion-pass item).
+## compound (`HqRunView`) and the route key (`RouteLegend`) share. 
 
 const STATE_WALKED := "walked"
 const STATE_NEXT := "next"
@@ -64,36 +63,6 @@ const CABLE_GLOW_ALPHA := 0.18
 ## The later and cut dashes' alpha.
 const LATER_ALPHA := 0.7
 const CUT_EDGE_ALPHA := 0.5
-## B3 (designer Q4, round 44 `route_page_hover_all.png`): every run link the route does not
-## use, while the legend strip is hovered: a white hairline (width share of CABLE_LATER) at
-## this alpha.
-const LINK_HINT_SHARE := 0.6
-const LINK_HINT_ALPHA := 0.25
-## Hover reveal (D13): radius round the pointer (screen px), and the motion that fades a
-## hidden node in.
-const REVEAL_RADIUS := 40.0
-const REVEAL_MOTION := &"route_node_reveal"
-## Calm Heat: the ring's gap off the sticker and width (screen px), the lights' radius (screen
-## px), the orbit motion (one turn per its duration).
-const HEAT_RING_GAP := 5.0
-const HEAT_RING_WIDTH := 1.6
-const HEAT_LIGHT := 3.4
-const HEAT_LIGHT_GLOW := 2.4
-const HEAT_ORBIT_MOTION := &"route_heat_orbit"
-## F14: the ring that marks every node of the kind the key's hovered row names: its gap off
-## the sticker and width (screen px).
-const KIND_RING_GAP := 10.0
-const KIND_RING_WIDTH := 3.2
-## Searchlights: their motion (one sweep per duration; amplitude = the sweep's half angle in
-## degrees), the cone's half width (rad), reach (share of the map's diagonal), alpha, and the
-## two lights' phase offset (share of a period) and base angles (rad from straight down).
-const SEARCHLIGHT_MOTION := &"route_searchlight"
-const SEARCH_HALF_WIDTH := 0.11
-const SEARCH_REACH := 1.1
-const SEARCH_ALPHA := 0.07
-const SEARCH_PHASE := 0.37
-const SEARCH_BASES: Array[float] = [0.35, -0.45]
-const SEARCH_ORIGINS: Array[float] = [0.18, 0.82]
 
 
 ## Draws a route node sticker of `kind` at `p` (outer reach `r`, ring included) in state

@@ -110,11 +110,17 @@ func test_grid_nodes_have_tooltips() -> void:
 
 
 func test_route_nodes_have_tooltips() -> void:
+	# NA-26: the 2D map's node tooltips retired; the street page tags a hovered room (`_street_tag`) and shows its file, and the
+	# fallback list page's choices carry tooltips.
 	var scene: Control = await _route(&"solace")
-	var overlay: CityMapOverlay = scene.city_overlay
-	_assert_tooltips(overlay, "route")
-	for n in overlay.nodes:
-		assert_ne(String(n.get("kind", "")), "", "route node %s has an icon kind" % n["id"])
+	var s := RunManager.netrun
+	if scene.street_view != null:
+		for id in s.available_nodes():
+			assert_ne(scene._street_tag(String(id)), "", "street room %s has its tag" % id)
+			assert_false(scene.node_panel_data(id).is_empty(), "and its file")
+	else:
+		for b: Button in scene._route_buttons:
+			assert_ne(b.tooltip_text, "", "choice %s has a tooltip" % b.name)
 
 
 func test_raid_nodes_have_tooltips() -> void:
@@ -146,41 +152,27 @@ func test_a_node_without_a_tip_gets_one_from_what_it_carries() -> void:
 
 # --- You are here, unreachable nodes --------------------------------------------------------
 
-func test_the_route_marks_you_are_here_and_dims_what_you_cannot_reach() -> void:
+func test_the_street_route_follows_where_you_are_and_offers_only_what_you_can_reach() -> void:
+	# NA-26: ported from the 2D map's you-are-here / dimmed nodes: the street view's current room and options follow the run.
 	var scene: Control = await _route(&"solace")
 	var s := RunManager.netrun
 	var first := s.run.map.first_layer_ids()
 	assert_gt(first.size(), 0)
-	# At the start nothing is behind you: every node lies ahead.
-	var overlay: CityMapOverlay = scene.city_overlay
-	assert_eq(overlay.here_id(), &"", "not on the map yet")
-	for n in overlay.nodes:
-		assert_false(overlay.is_dimmed(n["id"]), "everything is still reachable at the start")
-	# Step onto the first node (view state only) and redraw the route.
-	s.run.current_node_id = first[0]
+	if scene.street_view == null:
+		pending("this run's street cannot be derived (the fallback page has no map)")
+		return
+	var st: Dictionary = scene.street_view.run_state()
+	assert_eq(st["current"], "", "not on the map yet")
+	assert_eq((st["options"] as Array).size(), s.available_nodes().size(), "every first-layer choice is open")
+	s.run.current_node_id = first[0]  # view state only
 	scene._show_map()
 	await _frames()
-	overlay = scene.city_overlay
-	assert_eq(overlay.here_id(), first[0], "the current node carries the you-are-here mark")
-	assert_false(overlay.is_dimmed(first[0]))
-	# B3 (round 44 `route_page.png`): no YOU ARE HERE words on the route: the operative's token
-	# marks the position, the tooltip says so.
-	assert_false(overlay.label_rects().has(String(first[0])), "no you-are-here label")
-	assert_string_contains(overlay.tip_of(first[0]), "You are here")
+	st = scene.street_view.run_state()
+	assert_eq(st["current"], String(first[0]), "the current room carries the you-are-here mark")
+	var want: Array = []
 	for id in s.available_nodes():
-		assert_false(overlay.is_dimmed(id), "open nodes stay lit")
-		assert_string_contains(overlay.tip_of(id), "move here")
-	var dimmed := 0
-	for n in overlay.nodes:
-		if n["id"] in first and n["id"] != first[0]:
-			assert_true(overlay.is_dimmed(n["id"]), "the other entry nodes are out of reach")
-			assert_eq(overlay.label_lines(n["id"]).size(), 0, "dimmed nodes carry no label")
-			dimmed += 1
-	assert_eq(dimmed, first.size() - 1)
-	# The Server Rack stays ahead of you (every path ends there).
-	for n in overlay.nodes:
-		if n["kind"] == CityMapOverlay.KIND_RACK:
-			assert_false(overlay.is_dimmed(n["id"]), "the Rack is still ahead")
+		want.append(String(id))
+	assert_eq(st["options"], want, "only the open nodes are options (the others are out of reach)")
 
 
 func test_grid_nodes_are_never_dimmed() -> void:

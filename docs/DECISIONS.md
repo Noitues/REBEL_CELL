@@ -9031,7 +9031,7 @@ Rulings applied: Q9 (locks refuse every nudge, free ones included; only player-i
 - Designer D6 corrected: the City Grid view stays; street -> GRID VIEW -> Grid -> ROUTE VIEW -> street (`test_na26_route_port`). Only the toggle page of the old 2D route retires.
 - Answer 1: `always_show_all_nodes` stays one version as an ignored legacy key (old settings files load; the value is not read or saved). Drop it from `Settings.from_dict` at the next save-version bump.
 - Answer 2: no GRID VIEW toggle test existed in hq_scene; the netrun GRID VIEW flow is ported to the zoom-out flow test. HQ camera test stays in NA-34.
-- Left in place (not NA-26 scope): the motion ids `route_node_reveal`, `route_heat_orbit`, `route_searchlight`, `route_hover_out`, `route_target_pulse` (declared in `ui_motion.tres` / the motion lab; their page is gone: a motion-pass item); `CityConfig.route_link_*` / `route_ortho_*` (unused).
+- Motion ids retired with the page (no view plays them): `route_node_reveal`, `route_heat_orbit`, `route_searchlight`, `route_hover_out` (removed from `ui_motion.tres`, REQUIRED_IDS and the motion lab). `route_pulse`, `node_pop`, `visited_dim`, `route_target_pulse` stay (CityMapOverlay still plays them; the lab demo now runs them on the Grid view). `route_target_pulse` stays in AWAITING_FIX; `CityMapOverlay.hover_out` is now a dead flag. `CityConfig.route_link_*` / `route_ortho_*` unused.
 - The route key's pad cue (`PAD_WORDS`) pointed at the removed Options row; it now reads the hover words (open question for the designer: a pad cue for "show all links").
 - Test map: `docs/handoff/plan2/NA26_PORT_MAP.md`.
 

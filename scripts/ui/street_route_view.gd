@@ -112,12 +112,15 @@ func _build_toggle() -> void:
 	add_child(box)
 	_toggle_dec = Button.new()
 	_toggle_dec.name = "ToggleDecision"
+	_toggle_dec.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # the text is translated once, here
 	_toggle_dec.text = tr("DECISION")
 	_toggle_dec.toggle_mode = true
 	_toggle_dec.pressed.connect(set_base_view.bind(StreetRouteRules.View.DECISION))
 	box.add_child(_toggle_dec)
 	_toggle_ov = Button.new()
 	_toggle_ov.name = "ToggleOverview"
+	_toggle_ov.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_toggle_ov.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_toggle_ov.text = tr("OVERVIEW")
 	_toggle_ov.toggle_mode = true
 	_toggle_ov.tooltip_text = tr("Z flips between OVERVIEW and DECISION.")

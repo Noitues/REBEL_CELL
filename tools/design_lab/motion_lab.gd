@@ -94,7 +94,7 @@ const DEMOS := {
 	&"combat_enter": ["netrun", "fight_won"], &"backdrop_reveal": ["netrun", "fight_won"],
 	&"loot_page_dim": ["netrun", "loot_pick"], &"reward_page_in": ["netrun", "loot_pick"],
 	&"press_dip": ["screen", "rows"], &"menu_page_in": ["screen", "rows"], &"raid_continue_in": ["hq", "raid"],
-	&"route_hover_out": ["netrun", "route_hover"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
+	&"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 	# ANIM-5 (map, raid, jack and Heat):
@@ -190,9 +190,7 @@ const DEMOS := {
 	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
 	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
 	&"on_air_ticker": ["screen", "ticker"],
-	# ART-7 3B: the netrun map's reveal and calm Heat (the route at Heat 60, every node shown),
-	# and the jack-in transition along a link (Fx.jack_in_link).
-	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
+	# ART-7 3B: the jack-in transition along a link (Fx.jack_in_link).
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
 	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
@@ -284,7 +282,6 @@ const DEMO_CAMPAIGN_SEED := 1
 const JACK_DESTINATION := "SOLACE // THE RACK"
 ## ART-7 3B: the link jack demo's loop length (s) and the route Heat demo's Heat.
 const JACK_LINK_LOOP := 6.0
-const DEMO_ROUTE_HEAT := 60
 ## ANIM-R6 C14: the words the game stamps (RunManager.jack_note: "RAID INCOMING" over the
 ## raiding corporation), for the demo campaign's corporation.
 const RAID_NOTE := "RAID INCOMING\n%s"
@@ -1329,9 +1326,10 @@ func _play_context(scene: String, what: String) -> void:
 			var first: StringName = s.available_nodes()[0]
 			s.run.current_node_id = first
 			s.run.visited.append(first)
-			if what == "route_heat":
-				# ART-7 3B: Heat past the resistance band (calm Heat marks and searchlights).
-				RunManager.campaign.heat = DEMO_ROUTE_HEAT
+			if what == "route":
+				# NA-26: the run's route is the street view; the map motions (pulse, node pop, dim, target pulse, hover reach)
+				# play on the City Grid view's CityMapOverlay, which the zoom-out shows.
+				_context._grid_zoomed = true
 			_context._show_map()
 	else:
 		_demo_campaign(what)
@@ -1358,11 +1356,6 @@ func _play_context(scene: String, what: String) -> void:
 			# Plan 1 ANIM-FLOW: won, then the first reward is picked (a list opens its first row first).
 			hq._demo_combat_end("win")
 			_pick_first_reward(hq)
-		"route_hover":
-			# Plan 1 W3-ROUTE R5: the pointer lights the first open node: its sticker reaches out to its building.
-			var ov := hq.city_overlay as CityMapOverlay  # NA-26: the 2D route page is retired; this stays a no-op unless an overlay shows
-			if ov != null:
-				ov.hover_id = RunManager.netrun.available_nodes()[0]
 		"fight_won":
 			# The fight is won by SEND IT; VICTORY stands until the netrun opens the loot after
 			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
@@ -1371,15 +1364,13 @@ func _play_context(scene: String, what: String) -> void:
 			# Plan 1 M5 made a fight open as the pulse lands, so entering a fight can leave the route before
 			# the landing's own motions (node_pop, visited_dim) start. The demo plays the move on the route
 			# itself (a settled travel: a view, no game state changes), whatever the open node's type.
-			var s := RunManager.netrun
-			(hq.city_overlay as CityMapOverlay).travel(s.run.current_node_id, _staying_node(s))
+			var ov := hq.city_overlay as CityMapOverlay
+			if ov != null and ov.nodes.size() > 1:
+				ov.travel(ov.nodes[0]["id"], ov.nodes[1]["id"])
 		"raid_interlude":
 			# B3: a raid queued mid-run: the route page goes into the raid (RaidIncoming).
 			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
 			hq._show_current()
-		"route_heat":
-			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
-			pass  # NA-26: the 2D route page's reveal / heat orbit / searchlight motions retired with it (kept declared for ui_motion.tres)
 		"select":
 			hq.show_grid()
 			await get_tree().process_frame

@@ -86,7 +86,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"hp_chip_pulse",
 	# Plan 1 ANIM-FLOW: M5 map to fight dissolve and the close-up's reveal, M6 loot sheet dim and the
 	# rewards page's rise, M10 press dip and menu rows rising in.
-	&"combat_enter", &"backdrop_reveal", &"loot_page_dim", &"reward_page_in", &"press_dip", &"menu_page_in", &"raid_continue_in", &"route_hover_out",
+	&"combat_enter", &"backdrop_reveal", &"loot_page_dim", &"reward_page_in", &"press_dip", &"menu_page_in", &"raid_continue_in",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
@@ -127,9 +127,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
 	# sign loops, the ON AIR ticker.
 	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
-	# ART-7 3B (ART_BIBLE v2 4.6): the netrun map's hidden-node reveal and calm Heat, and the
-	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
-	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
+	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
 	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
 	# NA-25 (PIPELINE_SPEC 10): the street entry sequence (terminal, rain, collapse, dive, reveal, mark, zoom) and its jack-out hold.
 	&"entry_terminal", &"entry_rain", &"entry_collapse", &"entry_dive", &"entry_reveal", &"entry_reveal_lead", &"entry_reveal_write", &"entry_reveal_dissolve",
