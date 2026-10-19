@@ -25,9 +25,6 @@ func before_each() -> void:
 	holder.add_child(_scene)
 	_scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	RunManager.new_campaign(1)
-	# NA-12: the street netrun still builds on the fixed city (StreetRouteView.build_data reads cfg.city_seed; NA-25b owns the
-	# switch to CityPlan.current_seed()), so this flow pins the fixed city (city_seed 0) its 1080p room floors were measured on.
-	RunManager.campaign.city_seed = 0
 	_scene.start_run(1)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -139,16 +136,16 @@ func test_the_occlusion_on_the_city_equals_the_helper_and_spares_the_route() -> 
 func test_occlusion_restores_when_the_cone_moves_away() -> void:
 	var v := _view()
 	var rows: Array = (v.data.decision_state("", v.run_state()["options"])["rec"]["occlusion"] as Dictionary)["buildings"]
-	var bid := String(rows[0]["bid"])
+	assert_gt(rows.size(), 0, "the decision cone occludes at least one building")
 	v.set_base_view(StreetRouteRules.View.OVERVIEW)
 	var ov: Array = (v.data.overview_state()["rec"]["occlusion"] as Dictionary)["buildings"]
-	var still := false
+	var in_ov := {}
 	for r: Dictionary in ov:
-		if String(r["bid"]) == bid:
-			still = true
-	if not still:
-		var now := v.rig.occlusion_of(bid)
-		assert_almost_eq(float(now[1]), 1.0, 0.001, "a building out of the new cone is whole again")
+		in_ov[String(r["bid"])] = true
+	for r: Dictionary in rows:
+		var bid := String(r["bid"])
+		if not in_ov.has(bid):
+			assert_almost_eq(float(v.rig.occlusion_of(bid)[1]), 1.0, 0.001, "a building out of the new cone is whole again")
 
 
 func test_hover_cuts_power_to_the_rest_and_leaving_restores() -> void:

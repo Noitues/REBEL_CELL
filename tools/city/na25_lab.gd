@@ -63,7 +63,7 @@ func _ready() -> void:
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
 	var opts := NetrunPoseBuilder.successors(_data.run_graph, "")
-	view.setup(_data, CityModel.shared(cfg, cfg.city_seed), "", [], opts)
+	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), "", [], opts)
 	view.ready_to_show.connect(func() -> void: _phase = "settle", CONNECT_ONE_SHOT)
 	for row in EntryBeats.table(EntryBeats.HQ_BEATS + EntryBeats.STREET_BEATS, false, false):
 		print("NA25 beat %s %.3f-%.3f" % [row["beat"], row["start"], row["end"]])

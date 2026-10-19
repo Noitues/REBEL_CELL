@@ -58,7 +58,7 @@ func _ready() -> void:
 	view = StreetRouteView.new()
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
-	view.setup(_data, CityModel.shared(cfg, cfg.city_seed), String(_walk["current"]), _walk["visited"], _walk["options"])
+	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), String(_walk["current"]), _walk["visited"], _walk["options"])
 	if String(_args.get("fog", "1")) == "0":
 		for n in view.rig._extras:
 			n.visible = false

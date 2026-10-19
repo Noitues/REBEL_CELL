@@ -1017,7 +1017,7 @@ func _street_reverse_from_page() -> void:
 	street_view.name = "StreetRoute"
 	street_view.visible = false
 	background.add_child(street_view)
-	street_view.setup(_street_data, CityModel.shared(cfg, cfg.city_seed), String(s.run.current_node_id), visited, [])
+	street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), String(s.run.current_node_id), visited, [])
 	await _wait_street_ready()
 	if street_view == null or not is_instance_valid(street_view):
 		return
@@ -1782,7 +1782,7 @@ func _show_street_map(s: NetrunSession) -> void:
 		street_view.name = "StreetRoute"
 		background.add_child(street_view)
 		street_view.tag_text = _street_tag
-		street_view.setup(_street_data, CityModel.shared(cfg, cfg.city_seed), current, visited, options)
+		street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), current, visited, options)
 		street_view.node_hovered.connect(func(id: String) -> void:
 			if id != "":
 				show_node_panel(StringName(id)))

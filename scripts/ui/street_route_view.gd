@@ -58,7 +58,7 @@ var _entry_rooms_open := false
 ## this thread when no scene has built it yet).
 static func build_data(session: NetrunSession, corp: CorporationData) -> StreetRouteData:
 	var cfg := CityView3D.CONFIG
-	var model := CityModel.shared(cfg, cfg.city_seed)
+	var model := CityModel.shared(cfg, CityPlan.current_seed())
 	return StreetRouteData.build(session, model, cfg, CityLayout.site_points(corp))
 
 
