@@ -30,7 +30,8 @@ const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_ta
 ## project.godot; `reset_keybinds` falls back to these defaults.
 ## W2-A3: `open_legend` (L) opens the fight's legend.
 ## HQ-B (M14, Q1): `open_heat` (H) drops the Heat terminal from the HEAT gauge.
-const RUNTIME_ACTIONS := {&"resolve_fast_forward": KEY_SHIFT, &"open_heat": KEY_H, &"toggle_minimap": KEY_M, &"open_legend": KEY_L}
+## NA-25: `route_skip` (Space) is the key the street entry shows as its skip (a press of any kind ends the entry; MotionSkip).
+const RUNTIME_ACTIONS := {&"resolve_fast_forward": KEY_SHIFT, &"open_heat": KEY_H, &"toggle_minimap": KEY_M, &"open_legend": KEY_L, &"route_skip": KEY_SPACE}
 
 ## Disables scanlines, flicker, chromatic aberration and the distortion pulse everywhere.
 var reduce_effects: bool = false

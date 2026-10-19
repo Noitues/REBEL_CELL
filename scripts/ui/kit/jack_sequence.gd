@@ -52,6 +52,11 @@ var wheel_r: float = 0.0
 var open_t: float = -1.0
 var switched: bool = false
 var skipping: bool = false
+## NA-25: the street entry's variant (`link["street"]`): the beats take the `entry_*` times, there is no wheel or lens, and the
+## switch happens under the night sky (`night`) so no frame is black.
+var street: bool = false
+var night: bool = false
+var _rain_id: StringName = &"jack_link_rain"
 var terminal: CrtTerminalPanel
 var _text: Label
 
@@ -85,11 +90,17 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 		points = PackedVector2Array([vp * Vector2(0.35, 0.6), vp * Vector2(0.65, 0.4)])
 	switched = false
 	skipping = false
+	night = false
+	street = bool(link.get("street", false))
+	_rain_id = &"entry_rain" if street else &"jack_link_rain"
 	rain_t = -1.0
 	wheel_scale = 0.0
 	open_t = -1.0
 	visible = true
 	_make_terminal(lines_for(String(link.get("from", "")), String(link.get("to", ""))))
+	if street:
+		await _play_street(switch)
+		return
 	# 1-2. Typing, the rain joining over its last lines.
 	var lines: PackedStringArray = _text.get_meta(&"lines")
 	var per_char := Motion.seconds_live(&"jack_terminal_type")
@@ -179,6 +190,47 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_end()
 
 
+## NA-25 (PIPELINE_SPEC 10, beats 3a-3c): the terminal types over `entry_terminal`, the rain falls over `entry_rain`, the
+## terminal collapses over `entry_collapse`; the switch then happens under the night sky (the dive covers the load). No wheel,
+## no lens.
+func _play_street(switch: Callable) -> void:
+	var lines: PackedStringArray = _text.get_meta(&"lines")
+	var type_s := Motion.seconds_live(&"entry_terminal")
+	var per_char := type_s / maxf(float(_text.text.length()), 1.0)
+	var t := 0.0
+	while t < type_s and not skipping:
+		t += get_process_delta_time()
+		_text.visible_characters = _typed_at(t, lines, per_char, 0.0)
+		await get_tree().process_frame
+	_text.visible_characters = -1
+	var rain_s := Motion.seconds_live(&"entry_rain")
+	t = 0.0
+	while t < rain_s and not skipping:
+		t += get_process_delta_time()
+		rain_t = clampf(t / maxf(rain_s, 0.001), 0.0, 1.0)
+		queue_redraw()
+		await get_tree().process_frame
+	rain_t = -1.0
+	var col_s := Motion.seconds_live(&"entry_collapse")
+	var line_share := clampf(Motion.amplitude(&"entry_collapse"), 0.05, 0.95)
+	terminal.pivot_offset = terminal.size * 0.5
+	t = 0.0
+	while t < col_s and not skipping:
+		t += get_process_delta_time()
+		var u := clampf(t / maxf(col_s, 0.001), 0.0, 1.0)
+		if u < line_share:
+			terminal.scale = Vector2(1.0, lerpf(1.0, 0.02, u / line_share))
+		else:
+			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
+		await get_tree().process_frame
+	terminal.visible = false
+	night = true
+	switched = true
+	queue_redraw()
+	await switch.call()
+	_end()
+
+
 ## One press: straight to the end state (Fx switches at once if it has not).
 func skip() -> void:
 	skipping = true
@@ -186,6 +238,7 @@ func skip() -> void:
 
 func _end() -> void:
 	visible = false
+	night = false
 	open_t = -1.0
 	wheel_scale = 0.0
 	if terminal != null and is_instance_valid(terminal):
@@ -243,6 +296,8 @@ func _make_terminal(lines: PackedStringArray) -> void:
 
 
 func _draw() -> void:
+	if night:
+		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Palette.NIGHT_SKY)
 	if rain_t >= 0.0:
 		_draw_rain()
 	if wheel_scale > 0.0:
@@ -257,7 +312,7 @@ func _draw_rain() -> void:
 	var total := 0.0
 	for i in points.size() - 1:
 		total += points[i].distance_to(points[i + 1])
-	var count := maxi(4, roundi(total / 100.0 * Motion.amplitude(&"jack_link_rain")))
+	var count := maxi(4, roundi(total / 100.0 * Motion.amplitude(_rain_id)))
 	for i in count:
 		var h := absi(hash(i * 7919))
 		var u := float(h % 1000) / 1000.0

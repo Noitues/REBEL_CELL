@@ -53,6 +53,14 @@ var _stick_px: Dictionary = {}  # id -> Vector2
 var _chip_rects: Dictionary = {}
 var _art: Dictionary = {}
 var _dirty := true
+## NA-25: the entry sequence's staging. While `intro` is on, links write on by layer (`reveal_s` seconds into the REVEAL of
+## `reveal_total` s; < 0 = none yet) and the stickers, rings, numbers and the TARGET circle come in over `mark_s` seconds into
+## MARK (< 0 = none yet). Off, the overlay draws the whole route.
+var intro := false
+var reveal_s := -1.0
+var reveal_total := 0.0
+var mark_s := -1.0
+var _intro_index: Dictionary = {}
 
 
 func _ready() -> void:
@@ -204,17 +212,42 @@ func _draw() -> void:
 	var kk := k()
 	_layout_stickers()
 	var options: Array = state["options"]
-	_draw_frames(ids, kk)
+	if not intro or EntryBeats.rings_on(mark_s) and mark_s >= 0.0:
+		_draw_frames(ids, kk)
 	_draw_links(kk, r)
 	for id: String in ids:
-		if _stick_px.has(id):
+		if not _stick_px.has(id):
+			continue
+		if not intro:
 			_draw_sticker(id, _stick_px[id], r, kk)
-	for i in options.size():
-		var oid := String(options[i])
-		if _chip_rects.has(oid):
-			_draw_chip(_chip_rects[oid], i + 1, kk)
-	_draw_token(r, kk)
-	_draw_tags(kk, r)
+			continue
+		var sc := EntryBeats.slap_scale(_intro_idx(id), mark_s) if mark_s >= 0.0 else 0.0
+		if sc > 0.0:
+			var at: Vector2 = _stick_px[id]
+			draw_set_transform(at * (1.0 - sc), 0.0, Vector2(sc, sc))
+			_draw_sticker(id, at, r, kk)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if not intro or mark_s >= 0.0 and EntryBeats.numbers_on(mark_s):
+		for i in options.size():
+			var oid := String(options[i])
+			if _chip_rects.has(oid):
+				_draw_chip(_chip_rects[oid], i + 1, kk)
+		_draw_token(r, kk)
+	if not intro:
+		_draw_tags(kk, r)
+
+
+## The sticker's place in the MARK's slap order: layer, then id (ties by id, never by dictionary order).
+func _intro_idx(id: String) -> int:
+	if _intro_index.is_empty():
+		var ids: Array = data.rooms().keys()
+		ids.sort_custom(func(a: String, b: String) -> bool:
+			var la := StreetRouteRules.layer_of(data.run_graph, a)
+			var lb := StreetRouteRules.layer_of(data.run_graph, b)
+			return la < lb if la != lb else IdSort.less(a, b))
+		for i in ids.size():
+			_intro_index[String(ids[i])] = i
+	return int(_intro_index.get(id, 0))
 
 
 ## The sticker centres and the option chip rects for the displayed pose.
@@ -323,6 +356,11 @@ func _collect_links(kk: float, r: float) -> Array:
 			dim = 1.0 if lit else DIM_IDLE
 		var col := _color(style["color"], float(style["alpha"]) * dim)
 		var rs := PencilShapes.resample(pts, SAMPLE_PX)
+		if intro:
+			var wk := EntryBeats.write_k(StreetRouteRules.layer_of(data.run_graph, String(e["b"])), int(data.run_graph["layers"]), reveal_total, reveal_s) 					if reveal_s >= 0.0 else 0.0
+			if wk <= 0.0:
+				continue
+			rs = rs.slice(0, maxi(2, ceili(float(rs.size()) * wk)))
 		var wobbled := PackedVector2Array()
 		for i in rs.size():
 			var j := _wobble(String(row[1]), i) * wob
@@ -581,6 +619,7 @@ func _lay_target() -> void:
 	_clip.position = usable.position
 	_clip.size = usable.size
 	var kk := k()
+	_clip.visible = not intro or (mark_s >= 0.0 and EntryBeats.target_on(mark_s))
 	_pencil.begin()
 	var tword := CityMapOverlay.tr_word(WORD_TARGET)
 	if _share > 0.0 and _stick_px.has(tid):
@@ -596,7 +635,7 @@ func _lay_target() -> void:
 
 
 func _lay_arrow(tid: String, kk: float) -> void:
-	var show_it := _arrow_k > 0.001 and usable.size.x > 0.0
+	var show_it := _arrow_k > 0.001 and usable.size.x > 0.0 and not intro
 	var box := rig.room_box_px(tid)
 	if not show_it or box.size == Vector2.ZERO:
 		_arrow_mark.visible = false

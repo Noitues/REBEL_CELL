@@ -195,6 +195,8 @@ const DEMOS := {
 	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["screen", "entry"], &"entry_reveal": ["screen", "entry"], &"entry_reveal_lead": ["screen", "entry"], &"entry_reveal_write": ["screen", "entry"], &"entry_reveal_dissolve": ["screen", "entry"], &"entry_mark": ["screen", "entry"], &"entry_mark_hold": ["screen", "entry"], &"entry_mark_slap": ["screen", "entry"], &"entry_mark_stagger": ["screen", "entry"], &"entry_mark_rings": ["screen", "entry"], &"entry_mark_numbers": ["screen", "entry"], &"entry_mark_target": ["screen", "entry"], &"entry_ui_in": ["screen", "entry"], &"entry_zoom": ["screen", "entry"], &"entry_zoom_settle": ["screen", "entry"], &"entry_select_hold": ["screen", "entry"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
@@ -1106,6 +1108,11 @@ func _play_screen(what: String) -> void:
 			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			_screen_host.add_child(dossier)
 			length = dossier.motion_end()
+		"entry":
+			# NA-25: the street entry's beats at their real times, one playhead.
+			var strip := EntryTimelineDemo.new()
+			_screen_host.add_child(strip)
+			length = strip.length()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
