@@ -10,14 +10,20 @@ const CITY := 2
 const LINK := 3
 const ROOM := 5
 const MOVER := 6
-## Class 4 (the Blender ground pass) is reserved and never written by Godot.
-const RESERVED_GROUND := 4
-const CLASSES: Array[int] = [SKY, LANDMARK, CITY, LINK, ROOM, MOVER]
+## NA-ID-b: class 4 is the ground: the ground meshes, and the parts of a landmark compound that lie on it (plaza carpet, apron trims,
+## rails at grade). A hidden ground would read as class 0 and join the {0, 2} background mask of the 12.2 / R-FOCUS-1 checks.
+const GROUND := 4
+const CLASSES: Array[int] = [SKY, LANDMARK, CITY, LINK, GROUND, ROOM, MOVER]
 
 ## Scene groups a builder sets on a node (and, for a mover or a link, on any mesh under it): the id pass paints every mesh of a
 ## tagged node with that class. Landmark compounds need no group (everything under the `landmarks` layer is class 1).
 const GROUP_LINK := &"id_link"
 const GROUP_MOVER := &"id_mover"
+## A builder sets this on any node whose meshes lie on the ground (the whole mesh is then class 4, even under the landmarks layer).
+const GROUP_GROUND := &"id_ground"
+## The glb compounds merge their parts per material, so a part at grade is found by height: a class 1 fragment whose world y is at or
+## below this (BU) is class 4. Meridian's plaza carpet tops out at 0.25, its apron trims and rails at 0.78 or lower; the next part up is 0.95.
+const GROUND_MAX_Y := 0.8
 ## The `stub` byte of an occluded building (class 2, G = STUB_G, B = 0).
 const STUB_G := 255
 ## The `capture.json` float precision.
@@ -34,7 +40,7 @@ static func room_bytes(place_1based: int, layer: int) -> Vector3i:
 	return bytes(ROOM, place_1based, layer)
 
 
-## True when `cls` is a class Godot writes (0, 1, 2, 3, 5, 6).
+## True when `cls` is a class Godot writes (0, 1, 2, 3, 4, 5, 6).
 static func is_written(cls: int) -> bool:
 	return CLASSES.has(cls)
 
@@ -82,6 +88,6 @@ static func canonical(v: Variant) -> Variant:
 	return v
 
 
-## The canonical capture.json text: sorted keys, floats rounded to JSON_STEP, tab-indented.
+## The canonical capture.json text: sorted keys, floats rounded to JSON_STEP, one-space indent, LF line ends.
 static func capture_json(cap: Dictionary) -> String:
-	return JSON.stringify(canonical(cap), "\t", true)
+	return JSON.stringify(canonical(cap), " ", true)
