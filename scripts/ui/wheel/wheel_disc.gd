@@ -104,6 +104,21 @@ static func segment_at(a: float, params: Dictionary) -> int:
 	return -1
 
 
+## Plan 2 N12b: each slot's drawn span in degrees for the shader's `spans`, read off WheelMath's cumulative
+## boundaries (slot 0 starts at -(size / 2)); an empty arc is 0, drawn as nothing. Padded to MAX_SLICES.
+static func slot_spans(sizes: PackedInt32Array, deg_per_tick: float) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	var starts := WheelMath.slot_starts(sizes)
+	for i in MAX_SLICES:
+		if i >= sizes.size():
+			out.append(0.0)
+			continue
+		# the boundary after slot i is the next slot's start; the last one closes on slot 0's start + a turn
+		var stop := starts[i + 1] if i + 1 < sizes.size() else starts[0] + RC.TICKS
+		out.append(float(posmod(stop - starts[i], RC.TICKS) if sizes[i] < RC.TICKS else RC.TICKS) * deg_per_tick)
+	return out
+
+
 ## Places the quad on `center` (local to the parent) for a slice rim of `radius` px.
 func place(center: Vector2, radius: float) -> void:
 	var k := radius / R_OUT

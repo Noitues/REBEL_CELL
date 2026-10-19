@@ -1611,6 +1611,8 @@ func slice_pieces() -> Array:
 	var inner := radius - band
 	var rot := shown_rotation()
 	for i in c.wheel.slice_count:
+		if c.wheel.slot_size(i) <= 0:
+			continue  # N12b: an empty arc draws no wedge
 		var slice := lookup.get_content(c.wheel.slot_slice_ids[i]) as SliceData
 		var arc := slot_arc_ticks(c.wheel, i)
 		var a0 := _tick_angle(arc.x, rot)
@@ -2170,6 +2172,8 @@ func _draw_view() -> void:
 	# Per slice over the disc, in the round 41 stack: drop-zone outline, NULL static, the read
 	# block (7, always re-stamped on top), the state badge and its tag (8), the status landing.
 	for i in wheel.slice_count:
+		if wheel.slot_size(i) <= 0:
+			continue  # N12b: an empty arc owns no ticks and draws no face, badge or outline
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
 		var arc := slot_arc_ticks(wheel, i)
 		var a0 := _tick_angle(arc.x, rot)
@@ -3038,6 +3042,7 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	disc.pivot_offset = disc.size * 0.5
 	disc.put(&"n", n)
 	disc.put(&"span", wheel.ticks_per_slice() * DEG_PER_TICK)
+	disc.put(&"spans", WheelDisc.slot_spans(wheel.layout(), DEG_PER_TICK))
 	disc.put(&"mids", mids)
 	disc.put(&"kinds", kinds)
 	disc.put(&"cols", cols)

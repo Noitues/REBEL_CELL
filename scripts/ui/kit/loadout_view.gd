@@ -21,8 +21,6 @@ var _view: Control = null
 var drops: DropLayer = null
 ## Plan 2 N12 (R11): the letter each precision tier shows in a slice's sub-tick map.
 const QUALITY_LETTERS := {RC.PrecisionTier.WEAK: "W", RC.PrecisionTier.GOOD: "G", RC.PrecisionTier.PERFECT: "P"} # TR
-## Margin (px at text 1.0) of the sub-tick map panel from the view's bottom-left corner.
-const MAP_MARGIN := 24.0
 
 
 func _init(p_op: OperativeState, p_lookup: ContentLookup, p_upgrades: Array[SliceData] = [], p_crew: Array[OperativeState] = []) -> void:
@@ -71,9 +69,10 @@ func show_spinner() -> void:
 	_add_subtick_map(view)
 
 
-## Plan 2 N12 (R11): each slice's sub-tick map ("W G P G W"), one line per slot, at the view's
-## bottom-left. Read-only text from subtick_maps; an empty arc lists no ticks.
-func _add_subtick_map(view: Control) -> void:
+## Plan 2 N12 (R11): each slice's sub-tick map ("W G P G W"), one line per slot, in the
+## wheel pool's bottom-left corner (the round wheel leaves it free). Read-only text from subtick_maps;
+## an empty arc lists no ticks.
+func _add_subtick_map(view: SpinnerView) -> void:
 	var lines := PackedStringArray()
 	var maps := subtick_maps(op, lookup, RunManager.config())
 	for i in maps.size():
@@ -82,11 +81,8 @@ func _add_subtick_map(view: Control) -> void:
 	label.name = "SubtickMap"
 	label.text = "\n".join(lines)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	label.offset_left = MAP_MARGIN
-	label.offset_bottom = -MAP_MARGIN
-	view.add_child(label)
+	label.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.CAPTION))
+	view.add_wheel_note(label)
 
 
 ## Plan 2 N12 (R11): the operative's sub-tick maps as the fight reads them (the slot sizes,

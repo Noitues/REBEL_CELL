@@ -310,6 +310,16 @@ func _glyph_row(glyph: StringName, col: Color, title: String, words: String) -> 
 	return row
 
 
+## N12b: `note` (the loadout's sub-tick map) sits in the wheel pool's bottom-left corner, which the round
+## wheel leaves empty; it never takes the mouse.
+func add_wheel_note(note: Control) -> void:
+	_wheel.add_child(note)
+	note.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	note.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	note.offset_left = UiTheme.SP_S
+	note.offset_bottom = -UiTheme.SP_S
+
+
 func _ready() -> void:
 	# Modal for keys and the pad (H20); inside the loadout view, the loadout view holds.
 	if not (get_parent() is LoadoutView):
