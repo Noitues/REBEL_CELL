@@ -320,11 +320,41 @@ static func _front_z_range(r: Dictionary) -> Array:
 	return [z0 + gz, z1 + gz]
 
 
-## Face band of the HQ's current level (spec 7.1 rule 1; twin of `hq_band_points`): per tier of the rooms `ids`, points on
-## the tier's square face every `hq_step_deg` around `centre`, at floor and room-top height, facing the camera and inside
-## the frame. `step_deg` <= 0 = config.
+## Where the ray from the origin at `angle_rad` leaves the closed CCW polyline `outline` (the farthest crossing; twin of
+## `outline_hit`): `[x, y, nx, ny]` (unit outward normal of the hit segment), or `[]` when the ray misses.
+static func outline_hit(outline: Array, angle_rad: float) -> Array:
+	var dx: float = cos(angle_rad)
+	var dy: float = sin(angle_rad)
+	var best: Array = []
+	var best_t := 0.0
+	var n: int = outline.size()
+	for i in n:
+		var a: Array = outline[i]
+		var b: Array = outline[(i + 1) % n]
+		var ax: float = a[0]
+		var ay: float = a[1]
+		var ex: float = float(b[0]) - ax
+		var ey: float = float(b[1]) - ay
+		var den: float = dx * ey - dy * ex
+		if absf(den) < 1e-12:
+			continue
+		var t: float = (ax * ey - ay * ex) / den
+		var u: float = (ax * dy - ay * dx) / den
+		if t > best_t + 1e-12 and u >= -1e-9 and u <= 1.0 + 1e-9:
+			var ln: float = NetrunArtUnits.hypot(ex, ey)
+			if ln == 0.0:
+				ln = 1.0
+			best_t = t
+			best = [dx * t, dy * t, ey / ln, -ex / ln]
+	return best
+
+
+## Face band of the HQ's current level (spec 7.1 rule 1; twin of `hq_band_points`): per tier of the rooms `ids`, points
+## every `hq_step_deg` around `centre`, at floor and room-top height, facing the camera and inside the frame. They lie on
+## the landmark's face `outline` (relative to `centre`, closed CCW) when it is not empty, else on the tier's square face.
+## `step_deg` <= 0 = config.
 static func hq_band_points(rooms: Dictionary, ids: Array, centre: Array, pose: NetrunPose, ref_w: float, ref_h: float,
-		step_deg: float = 0.0) -> Array:
+		step_deg: float = 0.0, outline: Array = []) -> Array:
 	var st: float = step_deg if step_deg > 0.0 else float(NetrunArtConfigData.shipped().occlusion["hq_step_deg"])
 	var out: Array = []
 	for r: Dictionary in _band_levels(rooms, ids, false):
@@ -339,6 +369,15 @@ static func hq_band_points(rooms: Dictionary, ids: Array, centre: Array, pose: N
 		var zr: Array = _front_z_range(r)
 		for k in int(360.0 / st):
 			var a: float = deg_to_rad(float(k) * st)
+			if not outline.is_empty():
+				var hit: Array = outline_hit(outline, a)
+				if hit.is_empty():
+					continue
+				for z: float in zr:
+					var hp: Array = [centre[0] + hit[0], centre[1] + hit[1], z]
+					if _band_point_ok(hp, [hit[2], hit[3]], pose, ref_w, ref_h):
+						out.append(hp)
+				continue
 			var ca: float = cos(a)
 			var sa: float = sin(a)
 			var s: float = hs / maxf(absf(ca), absf(sa))

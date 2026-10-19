@@ -6,6 +6,7 @@ from typing import Any
 from netrun_art import layout, lod, occlusion, rig, section, units
 from netrun_art.derive import street
 from netrun_art.hq import orbit, slots
+from netrun_art.hq.face_outlines import FACE_OUTLINES
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(ROOT, "content", "config", "netrun_art.tres")
@@ -62,7 +63,7 @@ def main() -> None:
         ("units", dict(floor_bu=units.FLOOR_BU, kit_storey=units.KIT_STOREY, k_fit=units.K_FIT)),
         ("rig", rig.RIG), ("look_bias_sign", rig.LOOK_BIAS_SIGN), ("dive", rig.DIVE), ("hq_page", rig.HQ_PAGE),
         ("hq_rig", hq_rig), ("occlusion", occ), ("lod", lod_d), ("section", sec), ("street_rules", srules), ("layout", lay),
-        ("slot_params", slots.SLOT_PARAMS), ("landmark_entries", slots.LANDMARK_ENTRIES), ("reveal", REVEAL),
+        ("slot_params", slots.SLOT_PARAMS), ("landmark_entries", slots.LANDMARK_ENTRIES), ("face_outlines", FACE_OUTLINES), ("reveal", REVEAL),
         ("frustum_tolerance", 1.0e-4)]
     lines = ['[gd_resource type="Resource" script_class="NetrunArtConfigData" load_steps=2 format=3]', "",
              '[ext_resource type="Script" path="res://scripts/data/netrun_art_config_data.gd" id="1_cfg"]', "", "[resource]",

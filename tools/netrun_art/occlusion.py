@@ -82,11 +82,37 @@ def _band_levels(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], key: Any)
     return [rooms[seen[k]] for k in sorted(seen)]
 
 
+def outline_hit(outline: Sequence[Sequence[float]], angle_rad: float) -> Optional[Tuple[float, float, float, float]]:
+    """Where the ray from the origin at `angle_rad` leaves the closed counter-clockwise polyline `outline` (the farthest
+    crossing, so a concave outline gives its outer surface) -> `(x, y, nx, ny)` with the unit outward normal of the hit
+    segment, or None when the ray misses. Points are relative to the ray origin."""
+    dx, dy = math.cos(angle_rad), math.sin(angle_rad)
+    best: Optional[Tuple[float, float, float, float]] = None
+    best_t = 0.0
+    n = len(outline)
+    for i in range(n):
+        ax, ay = outline[i][0], outline[i][1]
+        bx, by = outline[(i + 1) % n][0], outline[(i + 1) % n][1]
+        ex, ey = bx - ax, by - ay
+        den = dx * ey - dy * ex
+        if abs(den) < 1e-12:
+            continue
+        t = (ax * ey - ay * ex) / den
+        u = (ax * dy - ay * dx) / den
+        if t > best_t + 1e-12 and -1e-9 <= u <= 1.0 + 1e-9:
+            ln = math.hypot(ex, ey) or 1.0
+            best_t = t
+            best = (dx * t, dy * t, ey / ln, -ex / ln)
+    return best
+
+
 def hq_band_points(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], centre: Sequence[float], pose: Any,
-                   ref_w: float, ref_h: float, step_deg: Optional[float] = None) -> List[List[float]]:
-    """Face band of the HQ's current level (spec 7.1 rule 1): for each tier (layer) of the rooms `ids`, points on the
-    tier's square face every `step_deg` (default `BAND["hq_step_deg"]`) around the compound centre, at floor and room-top
-    height, that face the camera and project inside the frame."""
+                   ref_w: float, ref_h: float, step_deg: Optional[float] = None,
+                   outline: Optional[Sequence[Sequence[float]]] = None) -> List[List[float]]:
+    """Face band of the HQ's current level (spec 7.1 rule 1): for each tier (layer) of the rooms `ids`, points every
+    `step_deg` (default `BAND["hq_step_deg"]`) around the compound centre, at floor and room-top height, that face the
+    camera and project inside the frame. The points lie on the landmark's own face `outline` (BU relative to `centre`,
+    closed CCW; ray from the centre, see `outline_hit`) when given, else on the tier's square face."""
     st = BAND["hq_step_deg"] if step_deg is None else step_deg
     out: List[List[float]] = []
     for r in _band_levels(rooms, ids, lambda q: q["layer"]):
@@ -98,6 +124,15 @@ def hq_band_points(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], centre:
         z1 = max(q[2] for q in f) + gz
         for k in range(int(360.0 / st)):
             a = math.radians(k * st)
+            if outline:
+                hit = outline_hit(outline, a)
+                if hit is None:
+                    continue
+                for z in (z0, z1):
+                    p = [centre[0] + hit[0], centre[1] + hit[1], z]
+                    if _band_point_ok(p, hit[2:], pose, ref_w, ref_h):
+                        out.append(p)
+                continue
             ca, sa = math.cos(a), math.sin(a)
             s = hs / max(abs(ca), abs(sa))
             if abs(ca) >= abs(sa):

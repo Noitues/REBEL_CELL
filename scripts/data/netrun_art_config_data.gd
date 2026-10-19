@@ -38,6 +38,9 @@ static var _shipped: NetrunArtConfigData = null
 @export var slot_params: Dictionary = {}
 ## Art-pass landmark entrance anchors (`hq.slots.LANDMARK_ENTRIES`), provisional except Meridian.
 @export var landmark_entries: Dictionary = {}
+## Art-pass landmark face outlines (`hq.face_outlines.FACE_OUTLINES`, d591aa84): {corp: [[x, y], ...]}, BU relative to the HQ
+## lot centre, closed, counter-clockwise. The HQ occlusion face band samples these.
+@export var face_outlines: Dictionary = {}
 ## Reveal tiers per asset (PIPELINE_SPEC 5.2b): {asset: [[tier, d_far, d_near], ...]}, camera-to-asset BU. Placeholder
 ## defaults until the art-pass calibrates (open number N1).
 @export var reveal: Dictionary = {}

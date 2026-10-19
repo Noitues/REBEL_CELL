@@ -73,6 +73,8 @@ static func _make_ctx(derive: Dictionary, city: Dictionary, run_graph: Dictionar
 		if comp.has("error"):
 			return comp
 		cx["comp"] = NetrunHqSlots.set_entrance(comp, ov, corp)
+		var outlines: Dictionary = NetrunArtConfigData.shipped().face_outlines
+		cx["outline"] = outlines.get(corp, [])
 	cx["has_d0"] = false
 	cx["d0"] = NAN
 	if cx["kind"] == "street" and not net.is_empty():
@@ -194,7 +196,8 @@ static func _band(cx: Dictionary, pose: NetrunPose, ids: Array) -> Array:
 		return []
 	var rcfg: Dictionary = NetrunArtConfigData.shipped().rig
 	if cx["kind"] == "hq":
-		return OcclusionHelper.hq_band_points(cx["rooms"], ids, cx["comp"]["centre"], pose, rcfg["ref_w"], rcfg["ref_h"])
+		return OcclusionHelper.hq_band_points(cx["rooms"], ids, cx["comp"]["centre"], pose, rcfg["ref_w"], rcfg["ref_h"],
+			0.0, cx["outline"])
 	var ext: Dictionary = {}
 	for i: String in ids:
 		var bid: String = cx["rooms"][i]["bld"]
