@@ -59,6 +59,7 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	for k: String in ["facade_albedo", "facade_light", "win_share", "win_floor", "win_pow", "win_emit", "trim_emit", "haze_k", "haze_h",
 			"haze_hi", "wash_gain", "edge_share", "edge_emit", "edge_bu"]:
 		m.set_shader_parameter(StringName(k), float(b[k]))
+	m.set_shader_parameter(&"edge_blend", _v2(b["edge_blend"]))
 	m.set_shader_parameter(&"wash_floors", _v2(b["wash_floors"]))
 	m.set_shader_parameter(&"wash_a", _v3(b["wash_a"]))
 	m.set_shader_parameter(&"wash_b", _v3(b["wash_b"]))

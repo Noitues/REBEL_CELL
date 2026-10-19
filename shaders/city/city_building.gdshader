@@ -94,6 +94,8 @@ uniform vec3 edge_a = vec3(0.16, 0.8, 1.0);
 uniform vec3 edge_b = vec3(1.0, 0.16, 0.6);
 uniform float edge_emit = 0.0;
 uniform float edge_bu = 0.16;
+// NA-22d: the trims fade in over smoothstep(edge_blend.x, edge_blend.y, look_blend), so frames below x stay clean.
+uniform vec2 edge_blend = vec2(0.3, 0.8);
 // Depth haze (spec 4.1 cityglow, perspective views only): colour, density per BU of view distance, height e-fold (BU above the
 // local ground) and the share of the haze the highest parts keep.
 uniform vec3 haze_col = vec3(0.0);
@@ -306,8 +308,9 @@ void fragment() {
 				on_edge = (v_h - zl) < edge_bu;
 			}
 			if (on_edge) {
-				em += ec * edge_emit * look_blend;
-				base = mix(base, ec * 0.3, look_blend);
+				float eb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
+				em += ec * edge_emit * eb;
+				base = mix(base, ec * 0.3, eb);
 			}
 		}
 	}

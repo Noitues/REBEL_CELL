@@ -38,7 +38,7 @@ const REQUIRED: Dictionary = {
 	"building": ["corridor_pad", "side_test", "plinth_albedo", "plinth_blue", "plinth_on", "plinth_off_bu", "edge_band_bu",
 		"edge_alpha_boost", "window_dim", "facade_albedo", "facade_light", "win_share", "win_floor", "win_pow", "win_emit",
 		"trim_emit", "landmark_dim", "haze_col", "haze_k", "haze_h", "haze_hi", "wash_floors", "wash_a", "wash_b", "wash_gain",
-		"edge_share", "edge_a", "edge_b", "edge_emit", "edge_bu", "beam_fade", "wash_floor_bu", "landmark_wash_gain"],
+		"edge_share", "edge_a", "edge_b", "edge_emit", "edge_bu", "edge_blend", "beam_fade", "wash_floor_bu", "landmark_wash_gain"],
 	"sky": ["top", "horizon", "ground", "glow_k"],
 	"wet": ["noise_scale", "noise_octaves", "rough_noise", "rough_wet", "specular", "albedo_mul", "pbr_fade"],
 	"beam": ["core_sigma", "core_w", "skirt_sigma", "skirt_w", "efold", "fade", "fade_from", "fade_in", "noise_scale",

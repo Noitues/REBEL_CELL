@@ -139,7 +139,7 @@ func _street(lb: float) -> void:
 	var dd: float = pose.dist
 	# The camera stands on the street at the pose's height; the focus is dist ahead along the pose's view direction.
 	pose.F = [cam_w.x + float(dr[0]) * dd, -cam_w.z + float(dr[1]) * dd, float(cam["loc"][2]) + float(dr[2]) * dd]
-	NetrunFrustum.apply(view.camera, pose, 0.5, 3000.0)
+	NetrunFrustum.apply_render(view.camera, pose, 0.5, 3000.0)
 	view.camera.current = true
 	var env: Environment = view._env
 	NetrunShaderKit.configure_environment(env)
