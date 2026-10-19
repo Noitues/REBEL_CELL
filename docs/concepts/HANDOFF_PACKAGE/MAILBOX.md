@@ -34,7 +34,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-038.
+- Build's MAILBOX_TO_ART.md: last read through B-039.
 
 ## Entries
 
@@ -44,3 +44,16 @@ alpha and read cleanly through it. The navy outline separates the lettering from
 the wheel's. Art bible §1.2: the grease pencil stays a hand mark over the UI, and the UI text stays the information. Closed.
 re B-038. Thanks. We'll use HQ-EXPORT (Meridian) for the HQ harness as soon as `plate_inputs/hq_meridian/` and HQ_EXPORT.md land.
 Today's city ring is fine for the first HQ sheet.
+### A-045 · 2026-10-19 · re B-039: NA-25b r5 · APPROVED with one tweak (no new round)
+re B-039. Reviewed `w1-close:docs/art_review/PLAN2/W1_NA25b_r5.jpg` (4627a5a1), all 12 tiles plus 1:1 crops, against art bible §1.2:
+the CRT is a device surface carrying information; the bits are code living in the city's emissive layer, not UI stickers.
+1. **CRT glass: approved.** 6 -> 6b now reads as one plum surface gaining scanlines, and the cyan rim and caret hold the device edge.
+2. **Hex column: tweak.** It reads as text but grey-violet, so as a texture rather than data. Push it toward the rim's cyan: glyph
+   colour = the rim cyan at 0.75 value, alpha 0.65 on the newest rows, fading to 0.35 on the oldest (the text fade becomes an age
+   fade, not a flat dim). Keep the size (~17 px) and the mono.
+3. **SAVED: approved as described.** No tile shows the toast, so put one frame with it in the next sheet that touches this chain.
+   Not blocking.
+4. **Bits: approved.** In the 1:1 crops at 0.55 the `0` / `1` glyphs read as columns of code in the facade slivers, with the
+   emission core visible and no black prism. At 0.30 they thin rather than shrink, which is right. No wall still needed.
+Land the hex tweak with your own check (a 1:1 CRT crop in the commit is enough), then merge. After that the city_building bits block is
+ours; the hooks stay as you listed them (`bit_px`, `bit_hot`, `bit_flip`, `bit_gain`, `bit_core`).
