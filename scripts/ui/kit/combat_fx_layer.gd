@@ -1561,7 +1561,7 @@ func hit_shards(hit_at: Vector2, center: Vector2, r_out: float, targets: Array[V
 	if blocked and Motion.live(&"hit_blocked_wall"):
 		_add({"kind": "wall", "shape": "brick", "at": center, "r": r_out, "face": normal.angle(), "n": int(Motion.amplitude(&"block_wall")),
 			"color": Palette.NET_CYAN, "dur": VfxTier.clamp_seconds(VfxTier.of(&"hit_blocked_wall"), Motion.seconds(&"hit_blocked_wall")),
-			"delay": maxf(0.0, delay - Motion.seconds(&"hit_blocked_wall") * 0.25)})
+			"delay": maxf(0.0, delay - Motion.seconds(&"hit_blocked_wall") * Motion.amplitude(&"hit_blocked_wall_lead"))})
 	if crit and Motion.live(&"hit_crit_streaks"):
 		var cd := VfxTier.clamp_seconds(VfxTier.of(&"hit_crit_streaks"), Motion.seconds(&"hit_crit_streaks"))
 		_add({"kind": "crit", "at": hit_at, "n": int(Motion.amplitude(&"hit_crit_streaks")), "reach": r_out * CRIT_REACH, "color": color,
@@ -1587,9 +1587,9 @@ func wall(center: Vector2, r: float, foe: Vector2, shape: String, origin: Vector
 	var n := int(Motion.amplitude(id))
 	var targets := BitPath.arc_points(center, r * (1.0 + FxDraw.WALL_OUT), face - FxDraw.WALL_SPAN * 0.5, face + FxDraw.WALL_SPAN * 0.5, n)
 	last_origin = origin
-	bits(BitPath.inflow(hash([center.snapped(Vector2.ONE), shape]), [origin], targets, n, dur * STREAM_STAGGER * 0.5, dur * STREAM_TRAVEL * 0.6,
+	bits(BitPath.inflow(hash([center.snapped(Vector2.ONE), shape]), [origin], targets, n, dur * STREAM_STAGGER * Motion.amplitude(&"wall_stagger_share"), dur * STREAM_TRAVEL * Motion.amplitude(&"wall_travel_share"),
 		STREAM_BOW, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END), col, id, delay)
-	_add({"kind": "wall", "shape": shape, "at": center, "r": r, "face": face, "n": n, "color": col, "dur": dur, "delay": delay + dur * STREAM_STAGGER * 0.5})
+	_add({"kind": "wall", "shape": shape, "at": center, "r": r, "face": face, "n": n, "color": col, "dur": dur, "delay": delay + dur * STREAM_STAGGER * Motion.amplitude(&"wall_stagger_share")})
 
 
 ## ART-2 2C §3.20 heal: green +/1/0 rise in from outside, below the wheel at `center`
@@ -1649,7 +1649,7 @@ func corrupt_apply(slice_at: Vector2, origin: Vector2, delay: float = 0.0) -> vo
 		return
 	var dur := VfxTier.clamp_seconds(VfxTier.of(&"corrupt_apply"), Motion.seconds(&"corrupt_apply"))
 	last_origin = origin
-	var travel := bits(BitPath.inflow(hash(slice_at.snapped(Vector2.ONE)), [origin], [slice_at], int(Motion.amplitude(&"corrupt_tick")), dur * 0.2, dur * 0.3,
+	var travel := bits(BitPath.inflow(hash(slice_at.snapped(Vector2.ONE)), [origin], [slice_at], int(Motion.amplitude(&"corrupt_tick")), dur * Motion.amplitude(&"corrupt_apply_stagger"), dur * Motion.amplitude(&"corrupt_apply_travel"),
 		STREAM_BOW * 0.4, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END), Palette.CELL_PINK, &"corrupt_apply", delay)
 	var box := SLICE_BOX * Settings.text_scale
 	_add({"kind": "tears", "rect": Rect2(slice_at - box * 0.5, box), "wipe": clampf(Motion.amplitude(&"corrupt_apply") / maxf(0.01, dur), 0.05, 1.0),
@@ -1666,7 +1666,7 @@ func corrupt_tick(slice_at: Vector2, center: Vector2, r_out: float, targets: Arr
 	var dur := VfxTier.clamp_seconds(VfxTier.of(&"corrupt_tick"), Motion.seconds(&"corrupt_tick"))
 	var n := int(Motion.amplitude(&"corrupt_tick"))
 	var seed := hash([slice_at.snapped(Vector2.ONE), n])
-	var path := BitPath.shards(seed, slice_at, (slice_at - center).normalized(), n, SHARD_SPREAD, r_out * 0.2, dur * SHARD_FREE * 0.5, dur * SHARD_STAGGER,
+	var path := BitPath.shards(seed, slice_at, (slice_at - center).normalized(), n, SHARD_SPREAD, r_out * 0.2, dur * SHARD_FREE * Motion.amplitude(&"corrupt_tick_free_share"), dur * SHARD_STAGGER,
 		dur * SHARD_TRAVEL, targets, center, r_out, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END)
 	last_origin = slice_at
 	# Pink and green bits: two halves of the stream in each colour.
@@ -1722,7 +1722,7 @@ func drone_destroyed(at: Vector2, color: Color, delay: float = 0.0) -> void:
 	for k in n:
 		var a := TAU * k / n
 		pts.append(at + Vector2(cos(a), sin(a)) * fly)
-	bits(BitPath.inflow(hash(at.snapped(Vector2.ONE)), [at], pts, n, dur * 0.1, dur * 0.8, STREAM_BOW * 0.2, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), 1.0),
+	bits(BitPath.inflow(hash(at.snapped(Vector2.ONE)), [at], pts, n, dur * Motion.amplitude(&"drone_destroyed_stagger"), dur * Motion.amplitude(&"drone_destroyed_travel"), STREAM_BOW * 0.2, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), 1.0),
 		color, &"drone_destroyed", delay)
 	_add({"kind": "drone_burst", "at": at, "color": color, "fly": fly, "dur": dur, "delay": delay})
 
@@ -1778,7 +1778,7 @@ func nudge_resist(at: Vector2, word: String = "", delay: float = 0.0) -> void:
 	for k in n:
 		pts.append(at + Vector2((float(k) / maxf(1.0, n - 1.0) - 0.5) * NUDGE_SPACING * Settings.text_scale, 0.0))
 	last_origin = at
-	bits(BitPath.drift(hash(at.snapped(Vector2.ONE)), pts, dur * 0.3, dur * 0.7, LABEL_RISE, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)), Palette.DISABLED,
+	bits(BitPath.drift(hash(at.snapped(Vector2.ONE)), pts, dur * Motion.amplitude(&"nudge_resist_stagger"), dur * Motion.amplitude(&"nudge_resist_travel"), LABEL_RISE, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)), Palette.DISABLED,
 		&"nudge_resist_bits", delay)
 	if word != "":
 		temp_label(at, word, Palette.RESIST_GOLD, delay)
@@ -1808,9 +1808,9 @@ func trigger_fx(from: Vector2, to: Vector2, color: Color, id: StringName = &"dae
 		return
 	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
 	last_origin = from
-	_add({"kind": "lens", "at": from, "color": color, "r": FxDraw.DRONE_HEX * Settings.text_scale, "grow": FxDraw.DRONE_HEX * 0.5, "dur": dur * 0.4, "delay": delay})
+	_add({"kind": "lens", "at": from, "color": color, "r": FxDraw.DRONE_HEX * Settings.text_scale, "grow": FxDraw.DRONE_HEX * 0.5, "dur": dur * Motion.amplitude(&"trigger_lens_share"), "delay": delay})
 	bits(BitPath.inflow(hash([from.snapped(Vector2.ONE), id]), [from], [to], int(Motion.amplitude(id)), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * STREAM_TRAVEL_LONG,
-		STREAM_BOW, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), color, id, delay + dur * 0.15)
+		STREAM_BOW, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), color, id, delay + dur * Motion.amplitude(&"trigger_bits_lead"))
 
 
 ## ART-2 2C §3.20 temporary label (one TempLabel look): a word sticker pops in at `at`,
@@ -1834,7 +1834,7 @@ func _label_bits(s: Dictionary) -> void:
 		var x := -w * 0.5 + w * (float(k) + 0.5) / n
 		pts.append(at + Vector2(x, (BitPath.noise(n, k, 41) - 0.5) * fs * 0.6).rotated(WORD_TILT))
 	var dur := Motion.seconds(&"temp_label")
-	bits(BitPath.drift(hash([at.snapped(Vector2.ONE), text]), pts, dur * 0.4, dur * 0.6, LABEL_RISE * Settings.text_scale, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)),
+	bits(BitPath.drift(hash([at.snapped(Vector2.ONE), text]), pts, dur * Motion.amplitude(&"temp_label_stagger"), dur * Motion.amplitude(&"temp_label_travel"), LABEL_RISE * Settings.text_scale, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)),
 		s["color"], &"temp_label", float(s.get("delay", 0.0)) + _tag_dissolve_at(s))
 
 
@@ -1853,7 +1853,7 @@ func defeat_fx(center: Vector2, r: float, colors: Array[Color], word: String = "
 	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
 	var delay := Motion.delay_of(id)
 	_add({"kind": "shockwave", "at": center, "r0": r * SHOCK_START, "r1": r * SHOCK_REACH, "color": colors[0] if not colors.is_empty() else Palette.PAPER,
-		"dur": dur * 0.5, "delay": delay})
+		"dur": dur * Motion.amplitude(&"defeat_shock_share"), "delay": delay})
 	var n := int(Motion.amplitude(id))
 	var per := maxi(1, n / maxi(1, colors.size()))
 	for c in maxi(1, colors.size()):
@@ -1864,13 +1864,13 @@ func defeat_fx(center: Vector2, r: float, colors: Array[Color], word: String = "
 			var d := Vector2(cos(a), sin(a))
 			from.append(center + d * r * DEFEAT_BITS_OUT * (0.5 + 0.5 * BitPath.noise(c, k, 52)))
 			to.append(center + d * r * SHOCK_REACH + Vector2(0, DEFEAT_FALL))
-		var path := BitPath.inflow(hash([center.snapped(Vector2.ONE), c]), from, to, per, dur * 0.5, dur * 0.45, STREAM_BOW * 0.3, _bit_px(SMALL_BIT), _bit_px(BIT_MAX), 1.0)
+		var path := BitPath.inflow(hash([center.snapped(Vector2.ONE), c]), from, to, per, dur * Motion.amplitude(&"defeat_bits_stagger"), dur * Motion.amplitude(&"defeat_bits_travel"), STREAM_BOW * 0.3, _bit_px(SMALL_BIT), _bit_px(BIT_MAX), 1.0)
 		for b in path.bits:
 			b["fade"] = true
 		bits(path, colors[c] if not colors.is_empty() else Palette.PAPER, id, delay)
 	last_origin = center
 	if word != "":
-		temp_label(center, word, Palette.HARM, delay + dur * 0.3)
+		temp_label(center, word, Palette.HARM, delay + dur * Motion.amplitude(&"defeat_word_lead"))
 
 
 # --- ART-2 2C drawing ---------------------------------------------------------------------------

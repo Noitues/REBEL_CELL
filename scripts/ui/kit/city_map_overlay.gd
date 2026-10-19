@@ -352,7 +352,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0, &"hover_out_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -393,7 +393,6 @@ var hover_id: StringName = &"":
 		if v == hover_id:
 			return
 		hover_id = v
-		_hover_out_changed()
 		if _top != null:
 			_queue_tags()
 			_hi.queue_redraw()
@@ -1040,29 +1039,15 @@ func _notification(what: int) -> void:
 			city.view3d.set_network(null)
 
 
-## Plan 1 ANIM-FLOW (W3-ROUTE R5): true on a map whose lit node reaches out to its building
-## (`route_hover_out`): the route map.
-var hover_out: bool = false
 ## The node lit now: the pointer's, else the one lit from outside (a list row, the pad).
 func lit_id() -> StringName:
 	return _pointer_id if _pointer_id != &"" else hover_id
-
-
-## The lit node changed: the reach out to its building starts over (at rest at once when the
-## motion doesn't play).
-func _hover_out_changed() -> void:
-	if not hover_out or _mv == null:
-		return
-	_mv.put(&"hover_out_t", 0.0 if lit_id() != &"" else 1.0)
-	if lit_id() != &"":
-		Motion.run(&"route_hover_out", _mv, ^"hover_out_t", 1.0)
 
 
 ## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
 func _point_at(id: StringName) -> void:
 	if id != _pointer_id:
 		_pointer_id = id
-		_hover_out_changed()
 		node_hovered.emit(id)
 		_queue_sync()  # ART-5 5d: an Exploit Site's file shows while pointed at
 
@@ -2988,8 +2973,10 @@ func _draw_travel() -> void:
 	# ANIM-R2 R12: the node it heads for pulses (`route_target_pulse`) while it travels.
 	var to := icon_at(_travel["to"])
 	if to.x != INF:
-		var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
-		var swell := (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
+		var swell := 0.0
+		if Motion.live(&"route_target_pulse"):
+			var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
+			swell = (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
 		var tr_r := icon_radius(_node_dict(_travel["to"])) + (SELECT_RING + swell) * k
 		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(0, 0, 0, 0.8), 6.0 * k)
 		_hi.draw_arc(to, tr_r, 0, TAU, 32, Palette.CELL_ACID, 3.0 * k)

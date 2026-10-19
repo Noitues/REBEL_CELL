@@ -2500,9 +2500,6 @@ var stutter_deg: float = 0.0
 ## The defeat drain (0 .. 1): the core's rows release from the bottom and their bits fall.
 var drain_p: float = 0.0
 
-## The landing word's share of its life spent holding before it leaves as bits (3.20: hold, then
-## dissolve within 0.5 s).
-const WORD_HOLD := 0.62
 ## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
 const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
@@ -2530,11 +2527,12 @@ func play_precision(tier: int, slot: int, needle: int = 0) -> void:
 		queue_redraw()
 		return
 	var e := Motion.entry(&"precision_word")
-	var life := Motion.seconds(&"precision_word") / WORD_HOLD
+	var hold := Motion.amplitude(&"precision_word_hold")
+	var life := Motion.seconds(&"precision_word") / hold
 	_show_land_sticker(tier)
 	var tw := _tw(&"landing")
 	tw.set_parallel(true)
-	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / WORD_HOLD); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / hold); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
 	if tier == RC.PrecisionTier.PERFECT and Motion.live(&"precision_latch"):
 		var le := Motion.entry(&"precision_latch")
 		tw.tween_method(func(x: float) -> void: latch = x; queue_redraw(), 0.0, 1.0, Motion.seconds(&"precision_latch")).set_ease(le.ease).set_trans(le.trans)

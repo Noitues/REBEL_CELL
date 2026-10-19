@@ -160,6 +160,26 @@ const DEMOS := {
 	&"daemon_rack_scan": ["scene", "attach_rack"],
 	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
 	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
+	# MOTION-TIMINGS: each share plays with the effect it tunes.
+	&"hit_blocked_wall_lead": ["scene", "fx_blocked"],
+	&"wall_stagger_share": ["scene", "fx_block"],
+	&"wall_travel_share": ["scene", "fx_block"],
+	&"corrupt_apply_stagger": ["scene", "fx_corrupt"],
+	&"corrupt_apply_travel": ["scene", "fx_corrupt"],
+	&"corrupt_tick_free_share": ["scene", "fx_corrupt_tick"],
+	&"drone_destroyed_stagger": ["scene", "fx_drone_down"],
+	&"drone_destroyed_travel": ["scene", "fx_drone_down"],
+	&"nudge_resist_stagger": ["scene", "fx_resist"],
+	&"nudge_resist_travel": ["scene", "fx_resist"],
+	&"trigger_lens_share": ["scene", "fx_daemon"],
+	&"trigger_bits_lead": ["scene", "fx_daemon"],
+	&"temp_label_stagger": ["scene", "fx_label"],
+	&"temp_label_travel": ["scene", "fx_label"],
+	&"defeat_shock_share": ["scene", "fx_defeat"],
+	&"defeat_bits_stagger": ["scene", "fx_defeat"],
+	&"defeat_bits_travel": ["scene", "fx_defeat"],
+	&"defeat_word_lead": ["scene", "fx_defeat"],
+	&"precision_word_hold": ["view", "landing_word"],
 	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
 	&"hit_shards": ["scene", "fx_hit"], &"hit_crit_streaks": ["scene", "fx_crit"], &"hit_blocked_wall": ["scene", "fx_blocked"],
 	&"block_wall": ["scene", "fx_block"], &"shield_hex": ["scene", "fx_shield"], &"heal_inflow": ["scene", "fx_heal"],
@@ -1453,16 +1473,6 @@ func _play_context(scene: String, what: String) -> void:
 
 
 ## Clears and claims the first launchable Site of `c` not yet claimed.
-## An open node whose page stays on the route (an event or a shop), else the first open node.
-func _staying_node(s: NetrunSession) -> StringName:
-	var open := s.available_nodes()
-	for id: StringName in open:
-		var t := int(s.run.map.get_node(id)["type"])
-		if t == RC.InfilNodeType.TERMINAL or t == RC.InfilNodeType.MAINFRAME:
-			return id
-	return open[0]
-
-
 func _claim_next(c: CampaignState) -> void:
 	var corp := RunManager.corporation
 	for sd in RunManager.launchable_sites():
