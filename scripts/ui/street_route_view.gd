@@ -273,6 +273,7 @@ func _refresh(animate: bool, seconds: float) -> void:
 
 func _sync_energies() -> void:
 	for id: String in rig.room_ids():
+		rig.set_room_open(id, true)
 		rig.set_room_energy(id, _room_energy(id))
 
 
@@ -514,7 +515,10 @@ func _entry_occlusion(on: bool) -> void:
 	rig.set_occlusion(data.overview_state()["rec"] if on else {"occlusion": {"buildings": []}})
 
 
-## Rooms at `up_of(layer)` of their resting energy (0 = dark, 1 = at rest).
+## Rooms at `up_of(layer)` of their resting energy. A room at 0 is closed: its building shows the closed facade (windows and wash),
+## never a black box; above 0 the window opens (no dissolve yet, NA-25b).
 func _entry_rooms(up_of: Callable) -> void:
 	for id: String in rig.room_ids():
-		rig.set_room_energy(id, _room_energy(id) * float(up_of.call(StreetRouteRules.layer_of(data.run_graph, id))))
+		var k := float(up_of.call(StreetRouteRules.layer_of(data.run_graph, id)))
+		rig.set_room_open(id, k > 0.0)
+		rig.set_room_energy(id, _room_energy(id) * k)
