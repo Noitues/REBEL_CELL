@@ -41,8 +41,8 @@
  ],
  "run": null,
  "source": {
-  "commit": "c8f41aa6",
-  "final": "route_map_graph/hq_aurelian/plates/H_overview_v1_plate.png",
+  "commit": "untracked",
+  "final": "route_map_graph/hq_aurelian/plates/H_overview_v2_plate.png",
   "index_pass": "aurelian/big/bl_stills/H_overview_index.npy",
   "index_pass_indices": [
    0,

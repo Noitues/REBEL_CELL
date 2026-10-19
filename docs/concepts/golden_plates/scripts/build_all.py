@@ -135,11 +135,11 @@ def entries():
                  pending=["layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"])
         e["extra_values_note"] = "ratio_peak 3.72 / 3.10 and ratio_mean 1.88 / 1.57 of the 2026-10-17 post_tethys disc mask are superseded by the id-class ratios"
         E.append(e)
-    # Aurelian v1 finals (2560 x 1440, Cycles 64 spp); index passes from the same final run
+    # Aurelian v2 finals (2560 x 1440, Cycles 64 spp, 2026-10-18 AD round 3: outside-in route, arcade, occlusion fix); index passes from the same final run
     aur = [{"check": "landmark_ratio", "note": "Aurelian ratios 2.2-2.5 above 2.0 are warns, accepted like Solace (AD 2026-10-18)"}]
-    E.append(hq_entry("aurelian", "overview", "hq_aurelian/plates/H_overview_v1_plate.png", "hq_aurelian", "H_overview",
+    E.append(hq_entry("aurelian", "overview", "hq_aurelian/plates/H_overview_v2_plate.png", "hq_aurelian", "H_overview",
                       "aurelian/big/bl_stills/H_overview", accepted=aur))
-    E.append(hq_entry("aurelian", "decision", "hq_aurelian/plates/H_decision_v1_plate.png", "hq_aurelian", "H_decision",
+    E.append(hq_entry("aurelian", "decision", "hq_aurelian/plates/H_decision_v2_plate.png", "hq_aurelian", "H_decision",
                       "aurelian/big/bl_stills/H_decision", accepted=aur))
     # Street (rule-based street_r2, 1920 x 1080): poses from the render job; no Object Index pass was written
     sj = json.load(open(SCR + "street_r2/job_finals_s1_ov_closed_dec_closed.json"))

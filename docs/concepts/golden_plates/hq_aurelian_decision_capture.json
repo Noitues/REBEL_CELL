@@ -2,23 +2,23 @@
  "anim_t": null,
  "art_seeds": null,
  "camera": {
-  "dist": 264.9678,
+  "dist": 338.5314,
   "lens": 42.0,
   "loc": [
-   81.9932,
-   -313.5431,
-   142.1681
+   53.0691,
+   -379.3079,
+   177.8973
   ],
   "ortho": false,
   "pitch": 30.0,
   "shift_x": -0.0729,
   "shift_y": 0.0182,
   "tgt": [
-   22.4228,
-   -91.9414,
-   9.6842
+   -28.7024,
+   -97.7656,
+   8.6316
   ],
-  "yaw": -15.0464,
+  "yaw": -16.1955,
   "zoom_detail": null,
   "zoom_dive": null,
   "zoom_job": 1.0
@@ -41,8 +41,8 @@
  ],
  "run": null,
  "source": {
-  "commit": "c8f41aa6",
-  "final": "route_map_graph/hq_aurelian/plates/H_decision_v1_plate.png",
+  "commit": "untracked",
+  "final": "route_map_graph/hq_aurelian/plates/H_decision_v2_plate.png",
   "index_pass": "aurelian/big/bl_stills/H_decision_index.npy",
   "index_pass_indices": [
    0,
