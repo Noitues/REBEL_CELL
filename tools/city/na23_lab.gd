@@ -32,6 +32,20 @@ func _ready() -> void:
 		if a.begins_with("--") and a.contains("="):
 			var kv := a.trim_prefix("--").split("=", true, 1)
 			_args[kv[0]] = kv[1]
+	# --cfg.<field>.<key>[.<key>...]=<json>: a tuning override of the shipped shader config (CityShaderConfigData field) for this run only.
+	for k: String in _args:
+		if k.begins_with("cfg."):
+			var parts := k.split(".")
+			var node: Variant = CityShaderConfigData.shipped().get(parts[1])
+			for i in range(2, parts.size() - 1):
+				node = (node as Dictionary)[parts[i]]
+			(node as Dictionary)[parts[parts.size() - 1]] = JSON.parse_string(String(_args[k]))
+		elif k.begins_with("street."):
+			var parts := k.split(".")
+			var node: Variant = StreetRouteConfigData.shipped().get(parts[1])
+			for i in range(2, parts.size() - 1):
+				node = (node as Dictionary)[parts[i]]
+			(node as Dictionary)[parts[parts.size() - 1]] = JSON.parse_string(String(_args[k]))
 	var wh := String(_args.get("size", "1920x1080")).split("x")
 	DisplayServer.window_set_size(Vector2i(int(wh[0]), int(wh[1])))
 	get_window().size = Vector2i(int(wh[0]), int(wh[1]))
@@ -79,7 +93,8 @@ func _ready() -> void:
 		view.rig.view.building_material().set_shader_parameter(&"window_pitch", Vector2(wp, 1.9))
 		view.rig.view.building_material().set_shader_parameter(&"window_size", Vector2(wp * 0.5, 0.7))
 	if _args.has("exposure"):
-		view.rig.view.environment().tonemap_exposure = float(_args["exposure"])
+		view.rig.exposure_override = float(_args["exposure"])
+		view.rig.view.set_aaa_exposure(float(_args["exposure"]))
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
 
 

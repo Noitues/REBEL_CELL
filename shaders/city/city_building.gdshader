@@ -39,6 +39,18 @@ uniform float spill_mid = 0.62;
 uniform float spill_low = 0.32;
 uniform float spill_gain = 1.9;
 
+// AAA-2 PBR (A-022 / MATERIAL_SPEC 4; values from `CityShaderConfigData.aaa.pbr`, used above look_blend 0 only): concrete
+// (rough, spec IOR level, metal), the glass of the unlit window panes (colour, rough, metal, spec, tone range) and the gains on
+// the diffuse and specular of every light (the moon, the street's coloured local lights).
+uniform vec3 pbr_concrete = vec3(0.55, 0.0, 0.5);
+uniform vec3 pbr_glass = vec3(0.12, 0.2, 1.0);
+uniform vec3 glass_col = vec3(0.22, 0.26, 0.34);
+uniform vec2 glass_tone = vec2(0.8, 1.2);
+uniform float pbr_diffuse_k = 1.0;
+uniform float pbr_spec_k = 1.0;
+// (rough, metal, spec) of this fragment for light().
+varying vec3 v_pbr;
+
 // NA-22. 0 = the mainline page, 1 = the netrun (AAA-2) look. The per-instance cut / ghost / dissolve start above 0.
 uniform float look_blend = 0.0;
 // Scales every emissive output (windows, trims, shopfronts, spill, ghost edges); 1 = as before.
@@ -235,12 +247,14 @@ void fragment() {
 	float g_open = ghosted ? 1.0 - v_occ.y / 16.0 : 1.0;
 	bool poche_face = !FRONT_FACING && was_cut;
 	float seed = v_inst.z;
-	float tone = mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13));
+	// AAA-2: the per-triangle tone jitter is Eevee-only in the plates (Cycles ignores it): the facets show by their own light.
+	float tone = mix(mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13)), 1.0, look_blend);
 	bool roof = v_c0.y > 0.5;
 	vec3 base = COLOR.rgb * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
+	v_pbr = pbr_concrete;
 	if (!roof) {
 		if (ghosted && v_occ.z > 0.0) {
 			float eL = length(v_edge);
@@ -278,6 +292,11 @@ void fragment() {
 			if (ui >= 0.0 && ui < nx && vi >= 0.0 && vi < nz && lu >= 0.0 && lv >= 0.0 && lu < window_size.x && lv < window_size.y) {
 				vec3 key = vec3(ui + floor(v_corner.x * 3.0), vi + floor(v_corner.z * 3.0), seed * 977.0);
 				float r = hash1(key);
+				if (look_blend > 0.0) {
+					// An unlit pane is glass (AAA-2: its own colour, tone, rough, metal); a lit one below overwrites it with light.
+					base = mix(base, glass_col * mix(glass_tone.x, glass_tone.y, hash1(key + 3.0)), look_blend);
+					v_pbr = mix(pbr_concrete, vec3(pbr_glass.x, pbr_glass.y, pbr_glass.z), look_blend);
+				}
 				float share = v_crest > 0.5 ? 0.6 : mix(window_share, win_share, look_blend);
 				if (look_blend > 0.0 && v_crest < 0.5) {
 					// NA-23c (art-pass r2_facade.py, repetition.guard): a lit fraction per building, floor bands of 3 floors that are dark
@@ -404,5 +423,30 @@ void light() {
 		// Toon ramp -> a smooth lambert ramp over the same colours (the AAA-2 PBR diffuse stand-in).
 		band = mix(band, mix(ramp_shadow, ramp_lit, clamp(ndl, 0.0, 1.0)), look_blend);
 	}
-	DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band * mix(1.0, facade_light, look_blend);
+	if (look_blend <= 0.0) {
+		DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band;
+	} else if (id_mode) {
+		DIFFUSE_LIGHT = vec3(0.0);
+	} else {
+		// AAA-2: a Lambert diffuse and a GGX specular (rough / metal / spec of the fragment) of the light's own colour, added per light
+	// (the moon, the street's coloured local lights). At look_blend 1 the toon ramp is gone; between, the ramp fades out.
+	vec3 lc = LIGHT_COLOR * ATTENUATION;
+	float nl = max(dot(NORMAL, LIGHT), 0.0);
+	float rough = max(v_pbr.x, 0.04);
+	float metal = v_pbr.y;
+	float a = rough * rough;
+	vec3 h = normalize(LIGHT + VIEW);
+	float nh = max(dot(NORMAL, h), 0.0);
+	float vh = max(dot(VIEW, h), 0.0);
+	float nv = max(dot(NORMAL, VIEW), 0.001);
+	float dd = a * a / (3.14159265 * pow(nh * nh * (a * a - 1.0) + 1.0, 2.0));
+	float k = (rough + 1.0) * (rough + 1.0) / 8.0;
+	float gg = (nl / (nl * (1.0 - k) + k)) * (nv / (nv * (1.0 - k) + k));
+	vec3 f0 = mix(vec3(0.08 * v_pbr.z), ALBEDO, metal);
+	vec3 fr = f0 + (vec3(1.0) - f0) * pow(1.0 - vh, 5.0);
+	vec3 spec = dd * gg * fr / max(4.0 * nl * nv, 0.001) * nl;
+	vec3 pbr_d = lc * nl * (1.0 - metal) * pbr_diffuse_k;
+	DIFFUSE_LIGHT += mix(band * mix(1.0, facade_light, look_blend), pbr_d, look_blend);
+	SPECULAR_LIGHT += lc * spec * pbr_spec_k * look_blend;
+	}
 }

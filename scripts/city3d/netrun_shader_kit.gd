@@ -66,6 +66,16 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"edge_a", _v3(b["edge_a"]))
 	m.set_shader_parameter(&"edge_b", _v3(b["edge_b"]))
 	m.set_shader_parameter(&"haze_col", _v3(b["haze_col"]))
+	# AAA-2 PBR (MATERIAL_SPEC 4): concrete (rough, metal, spec), the glass panes, the light gains.
+	var pbr: Dictionary = _cfg().aaa["pbr"]
+	var cc: Dictionary = pbr["concrete"]
+	var gl: Dictionary = pbr["glass"]
+	m.set_shader_parameter(&"pbr_concrete", Vector3(float(cc["rough"]), float(cc["metal"]), float(cc["spec"])))
+	m.set_shader_parameter(&"pbr_glass", Vector3(float(gl["rough"]), float(gl["metal"]), float(gl["spec"])))
+	m.set_shader_parameter(&"glass_col", _v3(gl["col"]))
+	m.set_shader_parameter(&"glass_tone", _v2(gl["tone"]))
+	m.set_shader_parameter(&"pbr_diffuse_k", float(pbr["diffuse_k"]))
+	m.set_shader_parameter(&"pbr_spec_k", float(pbr["spec_k"]))
 
 
 ## Switches the street section on: corridor beside the plan segment `a` -> `c` (plan x, y), camera-side normal `nrm`, local
@@ -268,13 +278,14 @@ static func fog_material(h_front: float = -1.0, octave_w: Vector3 = Vector3.ONE)
 	m.set_shader_parameter(&"h_front", h)
 	m.set_shader_parameter(&"h_sky", h * float(f["h_sky_k"]))
 	for k: String in ["strata_k", "warp_k", "tilt", "wisp_at", "wisp_half", "wisp_k", "gb_top", "ground_bank", "mid_bank", "haze",
-			"haze_efold", "underlight_k", "ground_glow", "mid_glow", "emit_gain"]:
+			"haze_efold", "underlight_k", "ground_glow", "mid_glow", "emit_gain", "back_haze", "back_h_k"]:
 		m.set_shader_parameter(StringName(k), float(f[k]))
 	for k: String in ["bank_freq", "wisp_freq", "clump_freq", "scatter", "wind", "tint_a", "tint_b", "tint_c"]:
 		m.set_shader_parameter(StringName(k), _v3(f[k]))
 	for k: String in ["bank_mix", "remap_oct", "remap_clump", "front", "gb_off", "mid_range", "mid_remap"]:
 		m.set_shader_parameter(StringName(k), _v2(f[k]))
 	m.set_shader_parameter(&"floor_range", _v2(f["floor"]))
+	m.set_shader_parameter(&"back_depth", _v2(f["back_depth"]))
 	m.set_shader_parameter(&"octave_w", octave_w)
 	return m
 
@@ -386,4 +397,14 @@ static func configure_environment(env: Environment) -> void:
 	env.volumetric_fog_albedo = Color(sc.x, sc.y, sc.z)
 	env.volumetric_fog_anisotropy = float(f["anisotropy"])
 	env.volumetric_fog_length = float(f["length"])
+	# AAA-2: the fog is a real volume to the far skyline (the froxels past `length` repeat the last slice, which turned every far
+	# building to fog at the plate's density): finer froxels, the length follows the camera (`fog_length_for`).
+	env.volumetric_fog_detail_spread = float(f["detail_spread"])
+	var fx: Array = f["froxel"]
+	RenderingServer.environment_set_volumetric_fog_volume_size(int(fx[0]), int(fx[1]))
 	env.volumetric_fog_temporal_reprojection_enabled = false
+
+
+## The volumetric fog length (BU) for a camera `dist` BU from its target: the target plus `fog.length` beyond it.
+static func fog_length_for(dist: float) -> float:
+	return minf(dist + float(_cfg().fog["length"]), float(_cfg().fog["length_max"]))

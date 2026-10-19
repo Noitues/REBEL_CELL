@@ -168,6 +168,10 @@ func _na22_city_shader_config() -> int:
 	var bad: CityShaderConfigData = cfg.duplicate(true)
 	bad.streak["loop_s"] = 0.0
 	if not ",".join(bad.validate()).contains("streak.loop_s"): fails += 1
+	# A-022: the `aaa` block (the plates' street look) is required and each of its sections is named when missing.
+	var no_post: CityShaderConfigData = cfg.duplicate(true)
+	no_post.aaa.erase("post")
+	if not ",".join(no_post.validate()).contains("aaa.post"): fails += 1
 	return fails
 
 

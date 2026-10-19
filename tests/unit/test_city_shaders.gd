@@ -233,13 +233,19 @@ func test_look_blend_zero_is_the_old_ground_shader_itself() -> void:
 	assert_eq(view._ground_mat.shader, CityMaterials.WET_STREET, "above 0: the wet street")
 	assert_eq(view._lane_mat.shader, CityMaterials.WET_STREET)
 	assert_gt(float(view._post.get_shader_parameter(&"ink_fade")), 0.0, "the ink fades")
-	assert_almost_eq(view._env.tonemap_exposure, NetrunShaderKit.exposure_at(0.5), 0.0001, "the exposure solve of the value band (look.exposure, blended)")
-	assert_eq(view._env.background_mode, Environment.BG_SKY, "the night sky above 0")
+	assert_eq(view._env.tonemap_exposure, 1.0, "AAA-2: the Environment tonemap stays linear at 1; the post chain holds the exposure")
+	assert_true(bool(view._post.get_shader_parameter(&"aaa_on")), "above 0 the post runs the plate's chain (no toon bands, no ink)")
+	assert_almost_eq(float(view._post.get_shader_parameter(&"aaa_exposure")), NetrunShaderKitAaa.exposure_at(1.0), 0.0001, "the post exposure (aaa.post.exposure until the street solves its own)")
+	assert_eq(view._env.background_mode, Environment.BG_COLOR, "AAA-2: a flat world colour, no sky gradient")
+	assert_true(view._env.ssr_enabled, "SSR for the wet street")
 	assert_lt(float(view._post.get_shader_parameter(&"fog_amount")), CFG.fog_amount, "the mainline fog patches fade")
 	view.set_look_blend(0.0)
 	assert_eq(view._ground_mat.shader, CityMaterials.GROUND, "back to the old shader")
 	assert_eq(float(view._post.get_shader_parameter(&"ink_fade")), 0.0)
 	assert_eq(view._env.tonemap_exposure, 1.0, "look_blend 0: exposure 1, the page as before")
+	assert_false(bool(view._post.get_shader_parameter(&"aaa_on")), "look_blend 0: the mainline post, exactly as before")
+	assert_false(view._env.ssr_enabled)
+	assert_eq(view._env.background_mode, Environment.BG_COLOR)
 	assert_eq(float(view._post.get_shader_parameter(&"fog_amount")), CFG.fog_amount)
 
 
@@ -314,10 +320,15 @@ func test_the_street_wash_and_edge_trims_are_off_at_0_and_set_by_the_kit() -> vo
 	assert_eq(float(toon.get_shader_parameter(&"wash_k")), 1.0)
 
 
-func test_the_kit_sets_existing_facade_uniforms_and_the_facade_goes_dark_at_1() -> void:
+func test_the_kit_sets_the_aaa_facade_pbr_uniforms() -> void:
 	var m := ShaderMaterial.new()
 	m.shader = load(BUILDING)
 	NetrunShaderKit.setup_building(m, 1.0)
 	_material_params_exist(m, "city_building")
-	assert_lt(float(m.get_shader_parameter(&"facade_albedo")), 0.2, "near-black facades at 1")
-	assert_lt(float(m.get_shader_parameter(&"facade_light")), 0.2, "the diffuse light is gone at 1")
+	var pbr: Dictionary = CityShaderConfigData.shipped().aaa["pbr"]
+	assert_almost_eq(float(m.get_shader_parameter(&"facade_albedo")), float(pbr["concrete"]["albedo"]), 0.0001, "concrete base colour x 0.85 (MATERIAL_SPEC 4)")
+	var c: Vector3 = m.get_shader_parameter(&"pbr_concrete")
+	assert_almost_eq(c.x, 0.55, 0.0001, "concrete roughness 0.55")
+	var g: Vector3 = m.get_shader_parameter(&"pbr_glass")
+	assert_almost_eq(g.x, 0.12, 0.0001, "glass roughness 0.12")
+	assert_almost_eq(g.y, 0.2, 0.0001, "glass metallic 0.2")

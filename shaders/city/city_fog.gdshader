@@ -37,6 +37,11 @@ uniform vec2 mid_remap = vec2(0.42, 0.62);
 uniform float mid_bank = 0.035;
 uniform float haze = 0.0008;
 uniform float haze_efold = 40.0;
+// AAA-2 backdrop haze (MATERIAL_SPEC 6): `back_haze` per BU behind the street line, from `back_depth.x` to `back_depth.y` BU deep,
+// falling with height as exp(-z / (back_h_k * h_sky)): the far skyline's violet.
+uniform float back_haze = 0.0;
+uniform vec2 back_depth = vec2(30.0, 120.0);
+uniform float back_h_k = 2.4;
 uniform vec3 scatter = vec3(0.85, 0.80, 1.0);
 uniform float underlight_k = 0.07;
 uniform float ground_glow = 0.05;
@@ -104,7 +109,8 @@ void fog() {
 		* smoothstep(mid_remap.x, mid_remap.y, banks);
 	// Back haze above h_sky.
 	float hz = haze * exp(-max(0.0, z - h_sky) / haze_efold);
-	float total = dens + gb + mb + hz;
+	float bh = back_haze * smoothstep(back_depth.x, back_depth.y, side) * exp(-z / (back_h_k * h_sky));
+	float total = dens + gb + mb + hz + bh;
 
 	// Underlight ramp by zw / (2.2 h_front): tint_a -> tint_b -> tint_c, and the glow tints.
 	float ramp = clamp(zw / (2.2 * h_front), 0.0, 1.0);
