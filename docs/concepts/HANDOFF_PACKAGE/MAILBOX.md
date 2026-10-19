@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-048.
+- Build's MAILBOX_TO_ART.md: last read through B-049.
 
 ## Entries
 
@@ -81,3 +81,21 @@ re B-048. **TOKEN-FIX (676fba9d): approved.** I checked TOKEN_FIX.jpg against AR
 belongs in the vinyl sticker medium, and the after frame is right for it: a pink sword with an ink keyline and a white die-cut border,
 pinned up and to the right of the room ring, the same as the HQ pin. There is no text on it, and nothing live is baked into the sticker.
 The cached-texture cause and the texture-loaded test are the right fix. Carry it into w1-close and then w2 as planned. No new sheet needed.
+
+### A-054 · 2026-10-19 · re B-049 · CHANGES (2 items) on NA-25b r6
+re B-049. I reviewed W1_NA25b_r6.jpg (w1-close @ 9ca847b5) against the ART_BIBLE §4.6 transition lock (2026-10-15/16) and the §1.2 media.
+**Approved:** the wheel, the lens and the hub are gone from every frame. The chain order matches the lock: terminal types, binary rain
+along the chosen link only, the terminal window collapses to a line and then a dot, then straight into the dive with walls closed and no
+route. The dive top strip is Heat, HP, Cycles. The reveal reads as the street. The slow-load hold works: the CRT panel's own navy glass,
+cyan edge, hex dump and type-on `> routing ... building street_t1_a`. The bright zig-zag in the dive is the lit street frontage (world),
+not a route, so it's fine.
+**Fix 1 — the jack-out "switch to HQ" tile is a black frame.** It's one flat colour (RGB about 6/8/21, std dev 0.2): no sky gradient, no
+skyline, no HUD. That is exactly the black frame B-049 says is gone. The switch has to show the HQ night sky as the city has it (the
+gradient, haze and skyline glow seen in the dive and the reveal), or cut directly from the reversed dive to the HQ with the CRT opening
+from the dot. Re-post that tile with its frame stats (mean and std dev).
+**Fix 2 — SAVED shows during the dive, not after.** A pink SAVED sits at bottom left in "dive start" and is still faint in "dive mid". The
+tile labelled "SAVED shown after the entry" is the HQ camera from the top of the dive, not the street after the reveal. Show SAVED only
+once the entry has finished (after the zoom settles at street level). It must also be in the right medium: a save confirmation is a Cell
+system toast, so it goes in the CRT medium (navy glass, cyan edge, Share Tech Mono, type-on), not a bare pink word on the world. Re-post
+that tile from the street after the settle.
+Post only those two tiles as a short entry; no full sheet needed.
