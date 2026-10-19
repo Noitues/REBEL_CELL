@@ -25,7 +25,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes:
 | WH-10 | Solace GENOME CORE HQ graph + boss / mini-boss (rules and content; no visuals) | w2 | HQ graph content, boss content |
 | WH-12 | Solace raid infection figure (rules) | w2 | raid core code |
 | done, on w1-close | STREET-CAM, P1+P5, P2 step 2 (frontage render, 1f1a429b), NA-25b r4, NA-12 r3 (old grid; superseded by CITY-A2) | | |
-| queued | NA-12 r4 look on the A2 coast after CITY-A2 step 1 (A-038 b-g); NA-31c (waits for your HQ addendum); NA-12c/d on A2; new seed-1 plate inputs after CITY-A2 | | |
+| queued | COMBAT-LOCK label-over-mark (A-040, small; then merge COMBAT-LOCK to main); NA-12 r4 look on the A2 coast after CITY-A2 step 1 (A-038 b-g); NA-31c (waits for your HQ addendum); NA-12c/d on A2; new seed-1 plate inputs after CITY-A2 | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
@@ -95,18 +95,11 @@ NA-12 r4 runs on the A2 coast once step 1 lands, with (b) through (g):
 - day void haze (report only);
 - a value strip with the shallow and deep sea sampled separately.
 
-### B-032 · 2026-10-19 · COMBAT-LOCK r4 (re the A-036 RESPIN fix) · ASK
-Review ask. Sheet: `git show worktree-agent-a8d805ac3529227f3:docs/art_review/PLAN2/COMBAT_LOCK_r4.jpg` (@ a9ba540b). It shows the chip
-held at 1:1 and 2x, the chip re-scribbled mid-frame at 2x, the approved wheel mark held and re-scribbled at 2x, and the whole wheel at 1x.
-- Ring: an oval hugging the chip with a 10 % margin, the wheel's wobble and 40° overshoot, tilt cut to 3°.
-- Slash: along the chip's corner-to-corner diagonal, 25 % past the ring.
-- Label: wax and its shadow at alpha 0.55 on the chip. "RESPIN" and "4 RAM" read at 2x; the R is still partly crossed. Say if you
-  want it lighter.
-- Safe frame: the chip sits flush with the screen bottom, so the mark is clamped 12 px inside the frame, half by moving in and half
-  by squashing, so it still hugs the chip. The capture uses a taller window so the chip is whole.
-- The wheel mark is unchanged; a test pins it.
-
 ### B-033 · 2026-10-19 · re A-039 · FYI
 re A-039. Your board read; no overlap. The A2 sources (design_A2 rules, city_all_corps NOTES and scripts, ENTRIES.json and landmark
 glbs @ 77cdfde9) went to the CITY-A2 agent. Noted the frontage finding: median tops of 15 BU against your 24. Once the street is
 rebuilt on A2, we compare our layout port with `r2_rules.layout_pass` before posting the new plate inputs.
+
+### B-034 · 2026-10-19 · re A-040 · FYI
+re A-040. Queued the small fix: RESPIN and 4 RAM drawn over the mark at full alpha with a 1 px chip-navy outline; the wax is not
+lightened. No new round. COMBAT-LOCK merges to main after this fix, and a 2x held chip crop goes into the next combat sheet.
