@@ -337,7 +337,9 @@ vec3 aaa_fragment(vec2 uv, vec2 vps, float tt, mat4 ip, mat4 iv) {
 	// Grade (stage 5): teal-navy shadow tint, warm-pink highlight tint, lift.
 	float lum = dot(img, vec3(0.2126, 0.7152, 0.0722));
 	float sh_w = clamp(1.0 - aaa_shadow.y * lum, 0.0, 1.0) * aaa_shadow.x;
-	vec3 st = aaa_shadow_tint / max(dot(aaa_shadow_tint, vec3(0.2126, 0.7152, 0.0722)), 0.0001);
+	// The plate multiplies by the raw tint (post_aaa: out * (1 - k w) + out * tint * k w): the shadows lose light as well as turn
+	// teal. L3 parity: a luminance-normalised tint left the mids 9.6/255 brighter than the plate.
+	vec3 st = aaa_shadow_tint;
 	img *= mix(vec3(1.0), st, sh_w);
 	float hi_w = clamp(aaa_hi.z * lum - aaa_hi.y, 0.0, 1.0) * aaa_hi.x;
 	img *= mix(vec3(1.0), aaa_hi_tint, hi_w);
@@ -350,7 +352,8 @@ vec3 aaa_fragment(vec2 uv, vec2 vps, float tt, mat4 ip, mat4 iv) {
 	d = mix(d, aaa_knee.x + (aaa_knee.y - aaa_knee.x) * tanh(over / aaa_knee.z), step(vec3(aaa_knee.x), d));
 	// Film grain (stage 11): noise at pixel scale, weaker on bright pixels.
 	vec2 gp = floor(uv * vps / max(sc * 0.55 * 1.5, 0.5));
-	float gn = (hash12(gp) + hash12(gp + 31.7) + hash12(gp + 77.3) - 1.5) * 1.15;
+	// Three uniforms, centred: sd 0.5, scaled to the plate's unit normal (L3: the 1.15 scale gave 44 % of the plate grain).
+	float gn = (hash12(gp) + hash12(gp + 31.7) + hash12(gp + 77.3) - 1.5) * 2.0;
 	d += gn * aaa_grain.x * (1.0 - aaa_grain.y * dot(d, vec3(0.2126, 0.7152, 0.0722)));
 	return to_lin(clamp(d, 0.0, 1.0));
 }
