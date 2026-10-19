@@ -14,7 +14,7 @@ Method: each plate's `<stem>.png`, `<stem>_id.png`, `<stem>_capture.json` is run
 - City plates (`57c901fc`, `8e6f6b7d`): `time` key present; city_a2_day value band, ratio and R-FOCUS-1 are n/a (report only, values kept); city_a2_night R-FOCUS-1 is 1.7756 vs theirs 1.7731 (delta 0.0025, ok), ratio 2.7990 warn is pre-accepted from config.
 - Warns / fails that are not baseline and not drift (same as before, plate and ours agree): 12.2 ratio warns on most HQ plates (over 2.0 landmark ratio), R-CALM-1/2 fails on the HQ plates.
 - 12.6 route never occluded is now counted by depth (NA-04d, spec 12.0): n/a on all 18 plates, since none has `depth.png` (and HQ / street plates have G = 0, city plates no route rooms). It first runs on Godot captures.
-- art-pass to fix in `values.json` (their side): `street_decision` has R-FOCUS-1 null in `values.json` while we score it (1.1087, fail); art-pass to fill it, not a drift.
+- street_decision R-FOCUS-1: n/a on street views (art-pass ruling 7ad41a22, PIPELINE_SPEC 12.7: no class 1 in a street frame, so the ring is a sliver; 12.2 gates the street rooms). Our check now scopes it out (`kind_not: [street]`), matching their null.
 
 ## Summary
 

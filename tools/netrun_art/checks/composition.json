@@ -108,6 +108,9 @@
      "rule": "landmark.lead",
      "scope": {
       "day_report_only": true,
+      "kind_not": [
+       "street"
+      ],
       "landmark": true
      },
      "value": 1.5

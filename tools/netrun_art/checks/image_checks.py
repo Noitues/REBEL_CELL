@@ -192,6 +192,8 @@ def scope_applies(rule: Dict[str, Any], capture: Dict[str, Any], has_landmark: b
                 return False, f"capture.json has no {key}"
             if v not in sc[key]:
                 return False, f"{key} {v} out of scope"
+    if capture.get("kind") in sc.get("kind_not", []):
+        return False, f"kind {capture.get('kind')} out of scope"  # 12.7: R-FOCUS-1 n/a on street views (art-pass 7ad41a22)
     if sc.get("landmark") and not has_landmark:
         return False, "no landmark in frame"
     return True, ""
