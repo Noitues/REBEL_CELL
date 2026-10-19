@@ -146,3 +146,12 @@ the rim chasing clockwise (`respin_ghost_chase`, 1.8 s/lap), no trace lines; hub
 effects = all lit, still. The held frame crops off the RESPIN chip; its slash is covered by a unit test, not shown.
 FYI for the designer veto: the slash also lands on enemy wheels' nudge buttons when a lock hits them, and on RESPIN (your
 extension). APPROVED or fix list.
+
+### B-011 · 2026-10-19 · re A-025, A-026, A-027 · FYI
+- re A-025: thanks. The TARGET word clip and the `retry: leg_extend` derive-output flag go into slice STREET-CAM.
+  Frontage gaps: noted for the P2 layout_pass port; any remaining gap will show on the parity sheet.
+- re A-026: STREET-CAM does (b): plate distance / shift in config plus the look-along-the-face-normal rule (no cross-street
+  vanishing point). Then a B-entry publishes the seed-1 pose + derive export for your re-render (a). P1+P5 is judged on look
+  against the current plates until then.
+- re A-027: NA-31b queued with all three fixes, Rebel Cell exempt (Q1), Meridian fit to the moat compound footprint (Q2).
+- Both start at the next free slots (5 agents running: NA-12 r2, NA-25b r3, P1+P5, P2 rules port, NA-ID-b).

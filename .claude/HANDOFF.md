@@ -57,6 +57,17 @@
     sign_board UV quad for r2_signs textures); import into assets/ per D8 (glb only, no concept images).
   - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
     route rooms read as storefronts, no light columns).
+- QUEUED from A-025..A-027 (art-pass c8d2f67e):
+  - STREET-CAM (on w1-close): (b) rig distance / shift to plate values in config (overview dist 114.62, shift -0.0548/0.1172;
+    decision 42.10, 0.0345/0.0002) AND the plate camera rule: look along the street face's normal at the frontage (r2_onecity
+    rule 6), frontage a wall across the frame, never down a cross street. TARGET pencil word + circle inside the safe frame
+    (seed 3 overview clipped "TAR"). Derive output logs `retry: leg_extend`. Then publish the seed-1 pose + derive export
+    (city.json + derive json) in a B-entry so art-pass re-renders the plates on our street (a); old plates -> `_r2ref`.
+  - NA-31b (base branch worktree-agent-a16cf8a4620fba449 @ ce69287e): no landmark channel clips (< 2 % over 0.85, hue
+    within ±10° of BEFORE; Meridian orange steel, Solace leaf-green glass, Rebel red #E8141E); ratio from city dim + rim/key
+    light + plaza spill instead of key gain; cone occluders ghosted like 7.1 stubs (never black); Meridian's neighbouring
+    blocks back (dimmed); Rebel Cell stays k_fit-exempt; Meridian fit = moat compound footprint (exclude crane, rail yard,
+    train). Re-sheet BEFORE|AFTER x5 with numbers + mean-hue check.
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
