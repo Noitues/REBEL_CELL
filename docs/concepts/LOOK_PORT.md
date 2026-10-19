@@ -151,7 +151,7 @@ washes (gaps 1-2), reflections (3), fog/sky (4), signs (5), with a parity sheet 
   band at the roofline, by-eye numbers, bokeh count and saturation, **perf 19.4 / 18.3 ms p95 against the 16.7 ms line** (reflection
   march 40 steps plus 18 lights, about 8 ms). Perf is a hard gate on every art/look ready post.
 
-## 8. L3, post chain parity (art/look @ eca4a7a1 → fix @ next commit): `look_parity/L3_post/`
+## 8. L3, post chain parity (art/look @ eca4a7a1, fix 6bf02d88): `look_parity/L3_post/`
 
 Test: one linear HDR frame (Cycles `T_ov_closed_combined.npy`, 960x540, street_b1 render_s1) through both chains at the
 plate's exposure 2.4. Plate = `post_aaa` "real" from stage 6 (`netrun_art/post_parity.py`, with emit / volume bloom,
