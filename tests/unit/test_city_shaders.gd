@@ -233,7 +233,7 @@ func test_look_blend_zero_is_the_old_ground_shader_itself() -> void:
 	assert_eq(view._ground_mat.shader, CityMaterials.WET_STREET, "above 0: the wet street")
 	assert_eq(view._lane_mat.shader, CityMaterials.WET_STREET)
 	assert_gt(float(view._post.get_shader_parameter(&"ink_fade")), 0.0, "the ink fades")
-	assert_almost_eq(view._env.tonemap_exposure, float(CityShaderConfigData.shipped().look["exposure"]), 0.0001, "the exposure solve of the value band (look.exposure)")
+	assert_almost_eq(view._env.tonemap_exposure, NetrunShaderKit.exposure_at(0.5), 0.0001, "the exposure solve of the value band (look.exposure, blended)")
 	assert_eq(view._env.background_mode, Environment.BG_SKY, "the night sky above 0")
 	assert_lt(float(view._post.get_shader_parameter(&"fog_amount")), CFG.fog_amount, "the mainline fog patches fade")
 	view.set_look_blend(0.0)
@@ -277,6 +277,41 @@ func test_dimming_landmarks_scales_the_ramp_and_restores_exactly_at_0() -> void:
 	NetrunShaderKit.dim_landmarks(mats, 0.0)
 	assert_eq(m.get_shader_parameter(&"lit_emission"), 0.42, "0 = the page as before")
 	assert_eq(m.get_shader_parameter(&"ramp_lit"), Vector3(0.4, 0.3, 0.5))
+
+
+func test_the_mainline_light_cone_fades_out_with_look_blend_and_restores_at_0() -> void:
+	var m := ShaderMaterial.new()
+	m.shader = load("res://assets/city/landmarks/landmark_beam.gdshader")
+	m.set_shader_parameter(&"beam_alpha", 0.22)
+	var mats := {&"hq": {"lm_beam": m}}
+	var fade: Array = CityShaderConfigData.shipped().building["beam_fade"]
+	NetrunShaderKit.dim_landmarks(mats, 0.0)
+	var a0: float = float(m.get_shader_parameter(&"beam_alpha"))
+	assert_gt(a0, 0.0, "look_blend 0: the cone as before")
+	NetrunShaderKit.dim_landmarks(mats, (float(fade[0]) + float(fade[1])) * 0.5)
+	var mid: float = float(m.get_shader_parameter(&"beam_alpha"))
+	assert_true(mid < a0 and mid > 0.0, "partway: fading")
+	NetrunShaderKit.dim_landmarks(mats, float(fade[1]))
+	assert_eq(float(m.get_shader_parameter(&"beam_alpha")), 0.0, "gone at the end of the fade range")
+	NetrunShaderKit.dim_landmarks(mats, 0.0)
+	assert_eq(float(m.get_shader_parameter(&"beam_alpha")), a0, "0 restores exactly")
+
+
+func test_the_street_wash_and_edge_trims_are_off_at_0_and_set_by_the_kit() -> void:
+	var b: Dictionary = CityShaderConfigData.shipped().building
+	var m := ShaderMaterial.new()
+	m.shader = load(BUILDING)
+	NetrunShaderKit.setup_building(m, 1.0)
+	_material_params_exist(m, "city_building")
+	assert_eq(float(m.get_shader_parameter(&"wash_gain")), float(b["wash_gain"]))
+	assert_eq(float(m.get_shader_parameter(&"edge_share")), float(b["edge_share"]))
+	var toon := ShaderMaterial.new()
+	toon.shader = load("res://assets/city/landmarks/landmark_toon.gdshader")
+	var mats := {&"hq": {"lm_wall": toon}}
+	NetrunShaderKit.dim_landmarks(mats, 0.0)
+	assert_eq(float(toon.get_shader_parameter(&"wash_k")), 0.0, "no landmark wash at look_blend 0")
+	NetrunShaderKit.dim_landmarks(mats, 1.0)
+	assert_eq(float(toon.get_shader_parameter(&"wash_k")), 1.0)
 
 
 func test_the_kit_sets_existing_facade_uniforms_and_the_facade_goes_dark_at_1() -> void:

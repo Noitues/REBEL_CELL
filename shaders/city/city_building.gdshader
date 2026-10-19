@@ -79,6 +79,21 @@ uniform float win_floor = 0.5;
 uniform float win_pow = 1.0;
 uniform float win_emit = 1.0;
 uniform float trim_emit = 1.0;
+// NA-22c (the street-level wash, art-pass ruling on W1 NA-22): the lowest floors take the street's sign hues so the facade luma
+// rises toward the street. `wash_floors` = floors (window_pitch.y BU each) kept at full strength and floors where it reaches 0
+// (the fade), `wash_a` / `wash_b` the two hues (pink, violet; one per building by its seed), `wash_gain` the emission at full
+// strength. Applies to every wall, windowed or not. Blends in with look_blend.
+uniform vec2 wash_floors = vec2(2.5, 6.5);
+uniform vec3 wash_a = vec3(1.0, 0.16, 0.6);
+uniform vec3 wash_b = vec3(0.62, 0.38, 1.0);
+uniform float wash_gain = 0.0;
+// NA-22c edge trims: a thin emissive trim on the roof edge (and the top band of the walls) of `edge_share` of the buildings
+// (by seed), cyan (`edge_a`) or pink (`edge_b`), `edge_emit` emission, `edge_bu` wide.
+uniform float edge_share = 0.34;
+uniform vec3 edge_a = vec3(0.16, 0.8, 1.0);
+uniform vec3 edge_b = vec3(1.0, 0.16, 0.6);
+uniform float edge_emit = 0.0;
+uniform float edge_bu = 0.16;
 // Depth haze (spec 4.1 cityglow, perspective views only): colour, density per BU of view distance, height e-fold (BU above the
 // local ground) and the share of the haze the highest parts keep.
 uniform vec3 haze_col = vec3(0.0);
@@ -249,6 +264,30 @@ void fragment() {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
 			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
+		}
+	}
+	if (look_blend > 0.0) {
+		// NA-22c: street wash and edge trims, chosen per building from its seed (the layout's look seed, never gameplay RNG).
+		float pick = hash1(vec3(seed * 311.7, 5.0, 2.0));
+		if (!roof && wash_gain > 0.0) {
+			float fl = zl / window_pitch.y;
+			float wash = 1.0 - smoothstep(wash_floors.x, wash_floors.y, fl);
+			em += mix(wash_a, wash_b, step(0.5, pick)) * wash_gain * wash * look_blend;
+		}
+		if (edge_emit > 0.0 && hash1(vec3(seed * 137.3, 9.0, 4.0)) < edge_share) {
+			vec3 ec = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
+			bool on_edge = false;
+			if (roof) {
+				float rd = (1.0 - v_rim) * v_half * v_inst.x;
+				float rpx = fwidth(v_rim) * v_half * v_inst.x;
+				on_edge = rd < max(edge_bu, rpx * 1.5);
+			} else {
+				on_edge = (v_h - zl) < edge_bu;
+			}
+			if (on_edge) {
+				em += ec * edge_emit * look_blend;
+				base = mix(base, ec * 0.3, look_blend);
+			}
 		}
 	}
 	if (plinth_w > 0.0) {

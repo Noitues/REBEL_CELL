@@ -10,6 +10,10 @@ extends Control
 ##   --at=<lotx>,<loty>      street: the lot the pose's target is moved onto
 ##   --fog=<k>               street: fog density multiplier (default 1), --emit=<k> fog emit gain, --peak=<k> peak
 ##   --exposure=<k>          street: a linear gain on the final frame (the plate's exposure solve)
+##   --hide=<Name,Name>      hide nodes whose name starts with one of these (a probe for stray shapes)
+##   --dump=1                print every visible mesh node (name, parent, world aabb)
+##   --perf=<n>              measure n frames after the settle (GPU / CPU render ms) instead of saving shots
+##   --nofog=1               street: leave the fog volume out (the fog cost is the difference)
 ##   --settle=<frames>
 ## Prints NA22 lines.
 
@@ -22,6 +26,9 @@ var _args: Dictionary = {}
 var _lbs: Array[float] = []
 var _i: int = -1
 var _frame: int = 0
+var _perf_gpu: float = 0.0
+var _perf_cpu: float = 0.0
+var _perf_wall: float = 0.0
 var _extras: Array[Node3D] = []
 var _mats: Array = []
 
@@ -67,7 +74,30 @@ func _next() -> void:
 	else:
 		var at := NeonCity.hq_of(&"halcyon") + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5) - CityLayout.RIGHT * 11.0
 		view.set_iso(CityIsoCamera.make(CFG, view.lot_world(at), 220.0, Vector2(view.size)))
+	_probe()
 	print("NA22 state lb=%s" % lb)
+
+
+func _probe() -> void:
+	var hide: PackedStringArray = String(_args.get("hide", "")).split(",", false)
+	var dump: bool = _args.get("dump", "0") == "1"
+	if hide.is_empty() and not dump:
+		return
+	print("NA22 camera ", view.camera.global_position)
+	var stack: Array[Node] = [view]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		for c in n.get_children():
+			stack.append(c)
+		if not (n is VisualInstance3D):
+			continue
+		var vi := n as VisualInstance3D
+		for h in hide:
+			if String(vi.name).begins_with(h):
+				vi.visible = false
+		if dump and vi.visible and (vi is MeshInstance3D or vi is MultiMeshInstance3D):
+			var ab: AABB = vi.global_transform * vi.get_aabb()
+			print("NA22 node %s / %s  pos=%s size=%s" % [vi.get_parent().name, vi.name, ab.position.snapped(Vector3(0.1, 0.1, 0.1)), ab.size.snapped(Vector3(0.1, 0.1, 0.1))])
 
 
 func _street(lb: float) -> void:
@@ -129,6 +159,7 @@ func _street(lb: float) -> void:
 	fm.set_shader_parameter(&"sec_nrm", Vector2(0.0, 1.0))
 	fm.set_shader_parameter(&"front_sym", 1.0)
 	view.add_to_layer(&"props", fv)
+	fv.visible = _args.get("nofog", "0") != "1"
 	_extras.append(fv)
 	_mats.append(fm)
 	# Fog-only lights (the rule's cityglow): energy 0, volumetric energy only.
@@ -170,6 +201,26 @@ func _process(_delta: float) -> void:
 	if _i < 0 or _i >= _lbs.size():
 		return
 	_frame += 1
+	var perf_n: int = int(_args.get("perf", "0"))
+	if perf_n > 0:
+		# Frame time of the view (windowed): the viewport's measured GPU and CPU render time per frame over `perf_n` frames after the settle.
+		var vp: RID = view.get_viewport_rid()
+		var settle_f: int = int(_args.get("settle", str(SETTLE_DEFAULT)))
+		if _frame == settle_f - 1:
+			RenderingServer.viewport_set_measure_render_time(vp, true)
+			_perf_gpu = 0.0
+			_perf_cpu = 0.0
+			_perf_wall = 0.0
+		elif _frame >= settle_f and _frame < settle_f + perf_n:
+			_perf_gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
+			_perf_cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
+			_perf_wall += _delta
+		elif _frame == settle_f + perf_n:
+			print("NA22 perf lb=%s fog=%s gpu_ms=%.2f cpu_ms=%.2f wall_ms=%.2f" % [_lbs[_i], "off" if _args.get("nofog", "0") == "1" else "on",
+				_perf_gpu / perf_n, _perf_cpu / perf_n, _perf_wall * 1000.0 / perf_n])
+			RenderingServer.viewport_set_measure_render_time(vp, false)
+			_next()
+		return
 	if _frame == int(_args.get("settle", str(SETTLE_DEFAULT))):
 		var img := view.get_texture().get_image()
 		var name := "%s_lb%s" % [String(_args.get("mode", "hq")), str(_lbs[_i]).replace(".", "p")]

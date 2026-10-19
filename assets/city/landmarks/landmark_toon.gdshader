@@ -32,6 +32,13 @@ uniform float flicker_frame = 0.0;
 // The red fist burns brighter than the city's windows (map34 lights it denser and adds a red glow), so it blooms.
 uniform float fist_gain = 1.0;
 
+// NA-22c street-level wash (the landmark side of city_building's wash): toon roles gain `wash_col * wash_gain` of emission below
+// `wash_h` (world height BU: full strength to .x, gone at .y), scaled by `wash_k` (the look_blend; 0 = the page as before).
+uniform float wash_k = 0.0;
+uniform vec3 wash_col = vec3(0.0);
+uniform float wash_gain = 0.0;
+uniform vec2 wash_h = vec2(4.0, 12.0);
+
 varying vec3 v_world;
 
 void vertex() {
@@ -58,6 +65,9 @@ void fragment() {
 			ALBEDO = mix(c, lines_dark, lines_dark_k * reveal_q);
 		} else if (role == 2) {
 			EMISSION = c * lit_emission;
+		}
+		if (wash_k > 0.0) {
+			EMISSION += wash_col * wash_gain * wash_k * (1.0 - smoothstep(wash_h.x, wash_h.y, v_world.y));
 		}
 	} else if (role == 3) {
 		ALBEDO = vec3(0.0);
