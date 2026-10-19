@@ -876,7 +876,8 @@ occlusion rule are shared.
 
 ### 7.1 The rule
 
-1. **Target volume:** the front points of the HQ's active room plus the visible route nodes. DECISION / HOVER: the
+0. **Scope (Designer 2026-10-18):** the rule applies to **every netrun view**: street netruns, HQ netruns and the exploit-building netruns (8.8), in OVERVIEW, DECISION, HOVER and every camera move between them. No netrun view may show a non-route building standing in front of the route.
+1. **Target volume:** the front points of the active room (the HQ's, the street column's, or the exploit building's) plus the visible route nodes. DECISION / HOVER: the
    current room + its options. OVERVIEW (`zoom_detail < 0.5`): every route node (`HM/hq_jobs.py:55-67`).
 2. **Cone:** every ray from the camera to the target volume, widened by a **10 % margin** of the volume's span.
 3. **Occluder:** a city building whose footprint meets the cone of the targets behind it and whose top reaches into
@@ -1438,6 +1439,7 @@ written by the same checks.
 | Room readability | every room's front projects >= 46 px tall at OVERVIEW 1080p (span rule), >= `room_px_target` | `SB/sb_onecity.py:36` |
 | Available rooms unblocked | <= 8 % of an available room's opening blocked (opening shrunk 3 px), in DECISION / HOVER | `V3D/../NOTES.md:161-165` |
 | Occlusion never hides | every building's opacity >= `ghost`; stub >= min(stub, top) | 7.1 |
+| Route never occluded (Designer 2026-10-18) | every netrun frame (street, HQ, exploit building): no non-route, non-landmark building above `stub` overlaps a visible route room's screen box grown 12 px; measured from `id.png` class 2 against class 5 | 7.1 rule 0 |
 | Frame continuity (sequences) | mean absolute frame-to-frame difference at 320 x 180 has no isolated spike (> 3x its neighbours) and no black frame (mean luma > 0.05) | `SB/NOTES.md:265-295` |
 | Wax clear of stickers and UI | no pencil pixel inside a sticker ring + 5 px or a UI rect | `SB/wax_r2.py:8-9, 28` |
 | 1280 x 720 readability | DECISION at 1280 x 720 renders every sticker >= 24 px and every option number legible (manual review frame produced automatically) | ROUTE_REQUIREMENTS 3, 13 |
