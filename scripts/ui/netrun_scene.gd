@@ -6161,11 +6161,12 @@ func _refresh_status() -> void:
 func _show_theme_chip(s: NetrunSession) -> void:
 	var chip := s.theme_chip() if s != null and not s.run.is_over() else {}
 	if chip.is_empty():
-		hud.set_theme_chip("", RunThemeState.ChipKind.INFO)
+		hud.set_theme_chip("", "", RunThemeState.ChipKind.INFO)
 		return
 	var args: Array = chip.get("args", [])
 	var words := tr(String(chip.get("key", "")))
-	hud.set_theme_chip(words % args if not args.is_empty() else words, int(chip.get("kind", RunThemeState.ChipKind.INFO)))
+	hud.set_theme_chip(words % args if not args.is_empty() else words, String(chip.get("value", "")),
+			int(chip.get("kind", RunThemeState.ChipKind.INFO)))
 
 
 ## B5 (review section f): the bar's tags a netrun page shows (keys; BAR_ALL: the full bar): the route and transit

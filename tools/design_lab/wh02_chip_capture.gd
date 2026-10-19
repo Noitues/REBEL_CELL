@@ -10,7 +10,8 @@ const SLOT := "gut_wh02_chip"
 const BAKE_FRAMES := 600
 const SETTLE := 30
 ## The placeholder a Solace rule would show (dev tool only; no TextDb key).
-const PLACEHOLDER := "BLOOM CLOSE  GAP 1.5"
+const PLACEHOLDER := "BLOOM CLOSE  GAP"
+const PLACEHOLDER_VALUE := "1.5"
 const SIZES: Array[Vector2i] = [Vector2i(1920, 1080), Vector2i(1280, 720)]
 
 var _out := ""
@@ -50,7 +51,7 @@ func _run() -> void:
 	for sz in SIZES:
 		DisplayServer.window_set_size(sz)
 		await _frames(SETTLE)
-		net.hud.set_theme_chip(PLACEHOLDER, RunThemeState.ChipKind.WARN)
+		net.hud.set_theme_chip(PLACEHOLDER, PLACEHOLDER_VALUE, RunThemeState.ChipKind.WARN)
 		await _frames(6)
 		var img := get_viewport().get_texture().get_image()
 		print("WH02 chip: size %s image %s chip visible %s rect %s" % [sz, img.get_size(), net.hud.theme_chip.visible, net.hud.theme_chip.get_global_rect()])

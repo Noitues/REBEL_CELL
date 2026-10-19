@@ -219,7 +219,8 @@ func state_hash() -> int:
 
 
 ## Plan 2 WH-02: the HUD theme chip a corporation theme rule fills from the run's corp_theme
-## block: {"key": text key (tr, may hold % placeholders), "args": Array for them, "kind":
+## block: {"key": text key for the words (tr, may hold % placeholders), "args": Array for them,
+## "value": the live number as a String (drawn in Anton apart from the words; optional), "kind":
 ## RunThemeState.ChipKind}; {} hides the chip. No theme rule fills it yet (WH-11 and the
 ## later corp slices add theirs here); like every preview it reads state and changes nothing.
 func theme_chip() -> Dictionary:

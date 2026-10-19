@@ -239,10 +239,10 @@ func set_stats(items: Array, captions: Array = []) -> void:
 	label.tooltip_text = label.text
 
 
-## Plan 2 WH-02: fills the theme chip with `text` (translated by the caller) in `kind`'s look
-## (RunThemeState.ChipKind); "" hides it.
-func set_theme_chip(text: String, kind: int) -> void:
-	theme_chip.show_chip(text, kind)
+## Plan 2 WH-02: fills the theme chip with `text` (translated by the caller) and its live
+## `value` (Anton) in `kind`'s look (RunThemeState.ChipKind); "" hides it.
+func set_theme_chip(text: String, value: String, kind: int) -> void:
+	theme_chip.show_chip(text, value, kind)
 
 
 ## ANIM-R5 B5 / ANIM-R6 B7: a bought or picked item of `kind` ("card", "daemon", else a chip
