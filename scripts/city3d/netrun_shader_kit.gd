@@ -287,6 +287,11 @@ static func fog_volume(centre: Vector3, h_front: float = -1.0) -> FogVolume:
 	return fv
 
 
+## The Environment tonemap exposure at `look_blend`: 1 at 0 (the page as before), `look.exposure` at 1 (the value-band solve).
+static func exposure_at(look_blend: float) -> float:
+	return lerpf(1.0, float(_cfg().look["exposure"]), clampf(look_blend, 0.0, 1.0))
+
+
 ## Volumetric fog settings on `env` (the scene's Environment): enabled, zero global density (the FogVolume carries it), the
 ## scatter albedo and anisotropy, length and the temporal reprojection.
 static func configure_environment(env: Environment) -> void:

@@ -317,6 +317,7 @@ func set_look_blend(lb: float) -> void:
 	var look: Dictionary = CityShaderConfigData.shipped().look
 	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
+	_env.tonemap_exposure = NetrunShaderKit.exposure_at(look_blend)
 
 
 ## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).

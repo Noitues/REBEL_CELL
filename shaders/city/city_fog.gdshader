@@ -53,6 +53,8 @@ uniform vec2 sec_a = vec2(0.0);
 uniform vec2 sec_c = vec2(0.0, 1.0);
 uniform vec2 sec_nrm = vec2(1.0, 0.0);
 uniform float kerb = 4.0;
+// 1 = the front mask uses |side| (a canyon view along the street: fog on both sides), 0 = behind the street face only.
+uniform float front_sym = 0.0;
 uniform float anim_t = 0.0;
 uniform float anim_t_frozen = 0.0;
 
@@ -89,7 +91,7 @@ void fog() {
 	float wisp = wisp_k * (1.0 - smoothstep(0.0, wisp_half * h_front, abs(z - wisp_at * h_front))) * smoothstep(0.5, 0.62, wisps);
 	body = max(body, wisp);
 
-	float behind = smoothstep(front.x, front.y, side);
+	float behind = smoothstep(front.x, front.y, mix(side, abs(side), front_sym));
 	float flo = smoothstep(floor_range.x * h_front, floor_range.y * h_front, z);
 	float dens = peak * body * fall * behind * flo;
 

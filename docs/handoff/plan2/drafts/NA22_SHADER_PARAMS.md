@@ -53,7 +53,8 @@ which writes the per-instance `w`; the shader does not take them.
 ## `city_post.gdshader`
 
 `ink_fade` (float, 0): multiplies the ink alpha by `1 - ink_fade`. `CityView3D.set_look_blend` sets
-`min(look_blend * look.ink_fade, 1 - look.ink_floor)` and fades the mainline `fog_amount` by `1 - look_blend`.
+`min(look_blend * look.ink_fade, 1 - look.ink_floor)`, fades the mainline `fog_amount` by `1 - look_blend` and sets the
+Environment `tonemap_exposure` to `lerp(1, look.exposure, look_blend)` (the value-band solve, calibrated with `fog.peak`).
 
 ## `wet_street.gdshader` (ground and lane strips; same parameters as `city_ground`)
 
@@ -105,6 +106,6 @@ All terms of spec 4.1 "Fog": `peak`, `h_front`, `h_sky` (= `h_sky_k` x `h_front`
 (`bank_freq`, `wisp_freq`, `bank_mix`, `remap_oct`, `clump_freq`, `remap_clump`), wisp layer, `front`, `floor_range`, ground
 bank (`gb_off`, `gb_top`, `ground_bank`), mid banks, back haze, `scatter`, glow tints and `emit_gain`, `wind`, the street
 (`sec_a`, `sec_c`, `sec_nrm`, `kerb`), `octave_w` (the `fog_octaves` LOD weights, `NetrunShaderKit.octave_weights`),
-`density_mul`, `look_blend` (scales the whole density), clock. All from `fog.*`. `NetrunShaderKit.configure_environment` sets
+`density_mul`, `front_sym` (1 = fog on both sides of the street line, for a canyon view along the street; 0 = behind the street face only), `look_blend` (scales the whole density), clock. All from `fog.*`. `NetrunShaderKit.configure_environment` sets
 the volumetric fog on the Environment (global density 0, the volume carries it); `fog_volume` builds the box.
-The value-band calibration (12.1) is in the capture report of the round.
+Calibration (12.1, golden `street_overview`, the game-city canyon frame of `tools/city/na22_lab.gd`): `fog.peak` 0.1014 (2 x the spec's 0.0507) and `look.exposure` 0.4 give median luma 0.134 (plate 0.136), under 0.10 29.1 % (26.9 %), over 0.85 0.0 % (0.5 %), all inside the 12.8 provisional tolerances. Composition metrics (hue, signage, detail) are not matched: the game city has no signage or district hue spread.

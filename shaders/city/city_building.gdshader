@@ -82,9 +82,6 @@ varying flat vec4 v_c0;
 varying float v_rim;
 varying flat float v_iid;
 varying flat float v_half;
-// NA-22: cut share, ghost code (16 - drawn Bayer levels), edge strength, dissolve share; crest flag.
-varying flat vec4 v_occ;
-varying flat float v_crest;
 
 float hash1(vec3 p) {
 	p = fract(p * 0.1031);
@@ -117,14 +114,6 @@ void vertex() {
 	v_rim = CUSTOM0.z;
 	v_iid = float(INSTANCE_ID);
 	v_half = 0.5 * length(MODEL_MATRIX[0].xyz);
-	// INSTANCE_CUSTOM.w = crest + 2 * bits (NetrunInstancePack): cut 9, ghost 5, edge 3, dissolve 5 bits.
-	int iw = int(floor(INSTANCE_CUSTOM.w + 0.5));
-	int bits = iw >> 1;
-	v_crest = float(iw & 1);
-	v_occ = vec4(float(bits & 511) / 511.0, float((bits >> 9) & 31), float((bits >> 14) & 7) / 7.0, float((bits >> 17) & 31) / 16.0);
-	if (look_blend <= 0.0) {
-		v_occ = vec4(0.0);
-	}
 }
 
 void fragment() {
@@ -135,6 +124,13 @@ void fragment() {
 	}
 	NORMAL = n;
 	ROUGHNESS = 1.0;
+	// INSTANCE_CUSTOM.w = crest + 2 * bits (NetrunInstancePack): cut 9, ghost 5, edge 3, dissolve 5 bits. Decoded here, not
+	// in vertex(): touching the vertex stage moves a few ink-edge pixels of the old page (parity at look_blend 0).
+	int iw = int(floor(v_inst.w + 0.5));
+	int bits = iw >> 1;
+	float v_crest = float(iw & 1);
+	// Cut share, ghost code (16 - drawn Bayer levels), edge strength, dissolve share; none below look_blend > 0.
+	vec4 v_occ = look_blend > 0.0 ? vec4(float(bits & 511) / 511.0, float((bits >> 9) & 31), float((bits >> 14) & 7) / 7.0, float((bits >> 17) & 31) / 16.0) : vec4(0.0);
 	float zl = v_world.y - v_h0;
 	bool occ_cut = v_occ.x > 0.0;
 	bool ghosted = v_occ.y > 0.0;

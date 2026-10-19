@@ -11,7 +11,8 @@ const CONFIG_PATH := "res://content/config/city_shaders.tres"
 
 static var _shipped: CityShaderConfigData = null
 
-## Look blend: `ink_fade` (share of the ink pass removed at look_blend 1), `ink_floor` (lowest ink alpha factor).
+## Look blend: `ink_fade` (share of the ink pass removed at look_blend 1), `ink_floor` (lowest ink alpha factor), `exposure`
+## (the Environment tonemap exposure at look_blend 1; 1 at 0; calibrated with `fog.peak` against the golden plate, 12.1).
 @export var look: Dictionary = {}
 ## Reduce effects (ruling W1 NA-22 Q1): the clock stops at the plate's recorded `anim_t`; `anim_t_default` is used when the
 ## view gives none, `ease_s` is the ghost / cut ease (0 = the end state at once).
@@ -29,7 +30,7 @@ static var _shipped: CityShaderConfigData = null
 
 ## Keys each Dictionary field must hold (what the shaders and the kit read).
 const REQUIRED: Dictionary = {
-	"look": ["ink_fade", "ink_floor"],
+	"look": ["ink_fade", "ink_floor", "exposure"],
 	"reduce": ["anim_t_default", "ease_s"],
 	"building": ["corridor_pad", "side_test", "plinth_albedo", "plinth_blue", "plinth_on", "plinth_off_bu", "edge_band_bu",
 		"edge_alpha_boost", "window_dim"],
