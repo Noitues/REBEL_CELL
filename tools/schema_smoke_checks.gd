@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _p2_street_r2_render_config()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -1139,4 +1139,18 @@ func _p2_street_r2_config() -> int:
 	var err := ResourceSaver.save(t, "user://smoke_street_r2.tres")
 	var back: StreetR2ConfigData = load("user://smoke_street_r2.tres")
 	if err != OK or back == null or back.subs != ["A", "B"]: fails += 1
+	return fails
+
+
+
+## P2 step 2: the street r2 renderer config ships every key its builder reads, and validation catches a missing material.
+func _p2_street_r2_render_config() -> int:
+	var fails := 0
+	var cfg: StreetR2RenderConfigData = load(StreetR2RenderConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("P2 street r2 render config errors (expect 0): ", errs)
+	if errs.size() != 0: return fails + 1
+	var bad: StreetR2RenderConfigData = cfg.duplicate(true)
+	(bad.materials as Dictionary).erase("neon")
+	if not ",".join(bad.validate()).contains("materials.neon"): fails += 1
 	return fails

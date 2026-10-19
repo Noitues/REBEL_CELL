@@ -63,4 +63,14 @@ func _make(mat: String, use_tint: float, emit_override: float) -> ShaderMaterial
 		e *= float(StreetR2RenderConfigData.shipped().props["emit_k"]) if emit_override < 0.0 else 1.0
 	m.set_shader_parameter(&"emit", e)
 	m.set_shader_parameter(&"use_tint", use_tint)
+	if e <= 0.0:
+		var b: Dictionary = CityShaderConfigData.shipped().building
+		var fl := StreetR2OneCity.floor_bu()
+		var wf: Array = b["wash_floors"]
+		var wa: Array = b["wash_a"]
+		var wb: Array = b["wash_b"]
+		m.set_shader_parameter(&"wash_gain", float(b["wash_gain"]) * float(StreetR2RenderConfigData.shipped().facade["wash_k"]))
+		m.set_shader_parameter(&"wash_h", Vector2(float(wf[0]) * fl, float(wf[1]) * fl))
+		m.set_shader_parameter(&"wash_a", Vector3(float(wa[0]), float(wa[1]), float(wa[2])))
+		m.set_shader_parameter(&"wash_b", Vector3(float(wb[0]), float(wb[1]), float(wb[2])))
 	return m
