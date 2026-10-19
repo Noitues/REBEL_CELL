@@ -233,10 +233,56 @@ func test_look_blend_zero_is_the_old_ground_shader_itself() -> void:
 	assert_eq(view._ground_mat.shader, CityMaterials.WET_STREET, "above 0: the wet street")
 	assert_eq(view._lane_mat.shader, CityMaterials.WET_STREET)
 	assert_gt(float(view._post.get_shader_parameter(&"ink_fade")), 0.0, "the ink fades")
-	assert_lt(view._env.tonemap_exposure, 1.0, "the exposure solve of the value band (look.exposure)")
+	assert_almost_eq(view._env.tonemap_exposure, float(CityShaderConfigData.shipped().look["exposure"]), 0.0001, "the exposure solve of the value band (look.exposure)")
+	assert_eq(view._env.background_mode, Environment.BG_SKY, "the night sky above 0")
 	assert_lt(float(view._post.get_shader_parameter(&"fog_amount")), CFG.fog_amount, "the mainline fog patches fade")
 	view.set_look_blend(0.0)
 	assert_eq(view._ground_mat.shader, CityMaterials.GROUND, "back to the old shader")
 	assert_eq(float(view._post.get_shader_parameter(&"ink_fade")), 0.0)
 	assert_eq(view._env.tonemap_exposure, 1.0, "look_blend 0: exposure 1, the page as before")
 	assert_eq(float(view._post.get_shader_parameter(&"fog_amount")), CFG.fog_amount)
+
+
+# --- NA-22b: the lights-out look (sky, landmarks, facade uniforms) ---------------------------------
+
+func test_the_sky_is_the_flat_colour_at_look_blend_0_and_the_city_sky_above() -> void:
+	var env := Environment.new()
+	var base := Color(0.04, 0.03, 0.08)
+	NetrunShaderKit.apply_sky(env, 0.0, base)
+	assert_eq(env.background_mode, Environment.BG_COLOR, "0 = the page as before")
+	assert_eq(env.background_color, base)
+	NetrunShaderKit.apply_sky(env, 1.0, base)
+	assert_eq(env.background_mode, Environment.BG_SKY)
+	var m := env.sky.sky_material as ShaderMaterial
+	_material_params_exist(m, "city_sky")
+	assert_eq(m.get_shader_parameter(&"look_blend"), 1.0)
+	NetrunShaderKit.apply_sky(env, 0.0, base)
+	assert_eq(env.background_mode, Environment.BG_COLOR, "back to 0 restores the flat colour")
+
+
+func test_dimming_landmarks_scales_the_ramp_and_restores_exactly_at_0() -> void:
+	var toon: Shader = load("res://assets/city/landmarks/landmark_toon.gdshader")
+	var m := ShaderMaterial.new()
+	m.shader = toon
+	m.set_shader_parameter(&"ramp_lit", Vector3(0.4, 0.3, 0.5))
+	m.set_shader_parameter(&"ramp_mid", Vector3(0.2, 0.2, 0.3))
+	m.set_shader_parameter(&"ramp_shadow", Vector3(0.1, 0.1, 0.2))
+	m.set_shader_parameter(&"lit_emission", 0.42)
+	var mats := {&"hq": {"lm_wall": m}}
+	var k: float = float(CityShaderConfigData.shipped().building["landmark_dim"])
+	NetrunShaderKit.dim_landmarks(mats, 1.0)
+	NetrunShaderKit.dim_landmarks(mats, 1.0)
+	assert_almost_eq(float(m.get_shader_parameter(&"lit_emission")), 0.42 * k, 0.0001, "idempotent at 1")
+	assert_almost_eq((m.get_shader_parameter(&"ramp_lit") as Vector3).x, 0.4 * k, 0.0001)
+	NetrunShaderKit.dim_landmarks(mats, 0.0)
+	assert_eq(m.get_shader_parameter(&"lit_emission"), 0.42, "0 = the page as before")
+	assert_eq(m.get_shader_parameter(&"ramp_lit"), Vector3(0.4, 0.3, 0.5))
+
+
+func test_the_kit_sets_existing_facade_uniforms_and_the_facade_goes_dark_at_1() -> void:
+	var m := ShaderMaterial.new()
+	m.shader = load(BUILDING)
+	NetrunShaderKit.setup_building(m, 1.0)
+	_material_params_exist(m, "city_building")
+	assert_lt(float(m.get_shader_parameter(&"facade_albedo")), 0.2, "near-black facades at 1")
+	assert_lt(float(m.get_shader_parameter(&"facade_light")), 0.2, "the diffuse light is gone at 1")

@@ -75,8 +75,8 @@ func _street(lb: float) -> void:
 		n.queue_free()
 	_extras.clear()
 	_mats.clear()
-	var cam: Dictionary = {"loc": [110.5336, -99.1988, 9.7002], "tgt": [96.1767, 14.4483, 5.7], "lens": 40.0, "shift_x": -0.0548, "shift_y": 0.1172,
-		"yaw": -7.2, "pitch": 2.0, "dist": 114.6201}
+	var cam: Dictionary = {"loc": [110.5336, -99.1988, 9.7002], "tgt": [96.1767, 14.4483, 5.7], "lens": 28.0, "shift_x": -0.0548, "shift_y": 0.1172,
+		"yaw": 97.0, "pitch": 5.0, "dist": 114.6201}
 	if _args.has("pose"):
 		cam = (JSON.parse_string(FileAccess.get_file_as_string(String(_args["pose"]))) as Dictionary)["camera"]
 	for k in ["yaw", "pitch", "dist", "lens"]:
@@ -155,7 +155,7 @@ func _street(lb: float) -> void:
 		_mats.append(node.material_override)
 	# Three beams.
 	for b in 3:
-		var beam := {"pos": [cam_w.x + 25.0 + float(b) * 22.0, (-cam_w.z) + (14.0 if b % 2 == 0 else -14.0), 26.0], "lean": [4.0 + float(b), 7.0], "sweep_deg": 5.0, "phase": 0.3 * float(b)}
+		var beam := {"pos": [cam_w.x + 45.0 + float(b) * 30.0, (-cam_w.z) + (10.0 if b % 2 == 0 else -10.0), 16.0], "lean": [4.0 + float(b), 7.0], "sweep_deg": 5.0, "phase": 0.3 * float(b)}
 		var col2: Color = [Color(1.0, 0.16, 0.6), Color(0.16, 0.8, 1.0), Color(1.0, 0.58, 0.18)][b]
 		var node2 := NetrunShaderKit.beam_node(beam, col2, 14.0)
 		view.add_to_layer(&"props", node2)

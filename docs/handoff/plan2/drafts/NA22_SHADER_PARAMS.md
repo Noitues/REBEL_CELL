@@ -41,6 +41,11 @@ Cut resolution is `h / 511` (0.2 BU at 100 BU). The ghost opacity is quantized t
 | `sec_ground` | float | 0 | derive room boxes `ground_z` |
 | `z_cut` | float | 1e4 | `NetrunSection.zcut` (`section.no_cut` while the smoothstep is 0) |
 | `plinth_on` (vec2), `plinth_off`, `plinth_albedo`, `plinth_blue` | | (5,1.5), 4.2, 0.012, 1.2 | `building.*` |
+| `facade_albedo`, `facade_light` (NA-22b) | float | 1, 1 (old page); config 0.1, 0.12 | `building.*`; multiply the facade albedo / the diffuse light, blended by `look_blend` |
+| `win_share`, `win_floor`, `win_pow`, `win_emit`, `trim_emit` (NA-22b) | float | 0.3, 0.5, 1, 1, 1 (old page) | `building.*`; the window carpet (share lit, per-window brightness spread, emission gain on any facade face above look_blend 0) and the roof-trim gain |
+| `haze_col` (vec3), `haze_k`, `haze_h`, `haze_hi` (NA-22b) | | off (`haze_k` 0) | `building.*`; depth haze, perspective cameras only: `1 - exp(-view_d * haze_k)` toward `haze_col`, less on the high parts (`haze_hi`, e-fold `haze_h`) |
+| `building.landmark_dim` (NA-22b) | float | 0.1 | `NetrunShaderKit.dim_landmarks`: the landmark toon ramp and `lit_emission` scale to this at look_blend 1 |
+| `city_sky.gdshader` (NA-22b): `base`, `top`, `horizon`, `ground`, `glow_k`, `look_blend` | | | `sky.*`; `NetrunShaderKit.apply_sky` (look_blend 0 = the flat background colour) |
 | `poche`, `edge_col` | vec3 | (0.01,0.01,0.013), (0.55,0.68,0.85) | `section.poche`, `section.edge_col` |
 | `edge_gain`, `edge_band`, `edge_boost`, `ghost_dim` | float | 0.6, 0.095, 0.22, 1 | `occlusion.edge`, `building.edge_band_bu`, `building.edge_alpha_boost`, `building.window_dim` |
 | `id_mode`, `id_class` | bool, float | false, 2 | id pass (NA-ID): unlit R = class, G = 255 and B = 0 for a cut / ghosted / dissolved building (12.0) |
