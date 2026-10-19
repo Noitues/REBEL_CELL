@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FIX = os.path.join(HERE, "fixtures", "r2")
 SEED = 1
 RADIUS = 300.0
-DEFAULT_ART = os.environ.get("R2_ART_PASS", r"C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass")
+DEFAULT_ART = os.environ.get("R2_ART_PASS", r"D:\rc_art\art-pass")
 
 
 def jr(v: Any) -> Any:
@@ -117,12 +117,18 @@ def main(art_root: str) -> None:
     canon.dump_input(dict(plan=r2_cases.pack_signs(plan), measure=sg["measure"]), os.path.join(FIX, "inputs", "s1_signs.json"))
     write(os.path.join(FIX, "expected", "s1_signs.json"), canon.dumps(specs))
     # ---- stream vectors (the Mersenne Twister / key text contract)
-    write(os.path.join(FIX, "inputs", "streams.json"),
-          json.dumps(dict(cases=r2_cases.STREAM_CASES, ops=r2_cases.STREAM_OPS, raw=r2_cases.RAW_SEEDS), separators=(",", ":")) + "\n")
-    write(os.path.join(FIX, "expected", "streams.json"), canon.dumps(r2_cases.stream_vectors(), 2))
+    write_streams()
     with open(os.path.join(FIX, "README.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write(README.format(commit=r2_oracle.art_commit(art_root)))
     print("wrote", FIX, "| checks:", {k: v.get("ok") for k, v in plan["checks"].items()})
+
+
+def write_streams() -> None:
+    """The stream vectors (no art-pass needed): cases with float keys as hex strings, and the expected draws."""
+    os.makedirs(os.path.join(FIX, "inputs"), exist_ok=True)
+    os.makedirs(os.path.join(FIX, "expected"), exist_ok=True)
+    canon.dump_input(dict(cases=r2_cases.STREAM_CASES, ops=r2_cases.STREAM_OPS, raw=r2_cases.RAW_SEEDS), os.path.join(FIX, "inputs", "streams.json"))
+    write(os.path.join(FIX, "expected", "streams.json"), canon.dumps(r2_cases.stream_vectors(), 2))
 
 
 def write(path: str, text: str) -> None:
@@ -146,4 +152,7 @@ Expected files are the canonical text of `netrun_art.r2.canon` (floats to 1e-6);
 """
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ART)
+    if sys.argv[1:] == ["--streams"]:
+        write_streams()
+    else:
+        main(sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ART)

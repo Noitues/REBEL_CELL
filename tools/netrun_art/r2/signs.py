@@ -86,6 +86,7 @@ class Draw:
 
 
 def box(word, sub, col, aspect, r, measure):
+    """Shop / secondary box sign."""
     w, h = size_for(aspect)
     d = Draw(w, h)
     d.grad(c8(col, 0.10), (6, 4, 12))
@@ -101,6 +102,7 @@ def box(word, sub, col, aspect, r, measure):
 
 
 def blade(word, sub, col, aspect, r, measure):
+    """Vertical stacked letters on a dark board."""
     w, h = size_for(aspect)
     d = Draw(w, h)
     d.grad((16, 4, 24), (4, 2, 10))
@@ -158,6 +160,7 @@ def ad(name, aspect):
 
 
 def holo(word, sub, col, aspect, r, measure):
+    """Holo sign: black = additive, scanlines, red / blue channel shift."""
     w, h = size_for(aspect)
     d = Draw(w, h)
     d.ops.append(dict(op="fill", w=w, h=h, col=[0, 0, 0]))

@@ -126,11 +126,13 @@ def bay_edges(L, cw, rh, band):
 
 
 def floor_inset(rh, j):
+    """Setback depth in force on floor j."""
     sb = rh.get("setback") if rh else None
     return sb["d"] if sb and j >= sb["floor"] else 0.0
 
 
 def floor_module(rh, j, module):
+    """Window module of floor j."""
     if not rh or not rh.get("mods"):
         return module
     return rh["mods"][j % len(rh["mods"])]

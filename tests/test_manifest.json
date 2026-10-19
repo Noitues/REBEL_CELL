@@ -1221,6 +1221,14 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/netrun_art/test_street_r2_streams.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_street_r2_parity.gd": {
+			"seconds": 14.0,
+			"tier": "fast"
+		},
 		"res://tests/netrun_art/test_na24_dress_parity.gd": {
 			"seconds": 8.0,
 			"tier": "fast"
