@@ -87,7 +87,13 @@
     review (B-025, branch worktree-agent-acf2da816a329ac10 @ b7bb01a6). RUNNING: P2 step 2, P6 (+P7 items, lit-haze sky),
     NA-12 r3, NA-25b r4, W2 WH-11 Solace rules (on w1-close). Defaults: fog body multiplier 0.12 + light unit factors kept.
     Scratch left by agents (blocked rm): D:/rc_tmp, D:/tmp_r3, D:/r3pc.log.
-  - QUEUED COMBAT-LOCK r4 (A-036; wheel mark APPROVED): RESPIN chip mark = oval hugging the chip outline (8-12 % margin, same
+  - **CORRECTION 2026-10-19 (designer):** the city must use art-pass's `city_planner/city_A2.json` FORMAT (D3), not the old
+    lot grid with a carved bay (NA-12 r1-r3 did that). CITY-A2 step 1 RUNNING (Opus, brief docs/handoff/plan2/briefs_city_a2/
+    step1.md). B-028 withdrawn; NA-12c/d and the sea look re-base on A2; seed-1 plate re-render on hold (new plate inputs come
+    from the A2 city). NA-12 r3 + NA-25b r4 are merged on w1-close (5e2a796d + NA-12 merge, quick checks green).
+  - **Work board (designer):** "Running (build)" table atop MAILBOX_TO_ART.md; update on every launch / finish; read art-pass's
+    "Running (art-pass)" board before launching (asked in B-030).
+  - DONE COMBAT-LOCK r4 launch (A-036; wheel mark APPROVED): RESPIN chip mark = oval hugging the chip outline (8-12 % margin, same
     wobble/overshoot), slash corner to corner 25 % past the ring, RESPIN + RAM cost readable through it, clamped in the safe frame;
     capture in a taller viewport so the chip is whole. Base branch worktree-agent-acf2da816a329ac10 @ b7bb01a6.
   - QUEUED NA-31c (A-035 CORRECTION: HQ netrun view = AAA-2 chain like the street, NOT cel; only the mainline city map is cel).
