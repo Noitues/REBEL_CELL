@@ -32,6 +32,9 @@ var _route_bids: Dictionary = {}
 var _built := false
 var _extras: Array[Node3D] = []
 var _clock_mats: Array = []
+## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
+var dressing: StreetDressing = null
+var _anim_t := 0.0
 # The camera move.
 var _from: NetrunPose = null
 var _to: NetrunPose = null
@@ -71,6 +74,7 @@ func setup(p_data: StreetRouteData, model: CityModel) -> void:
 	_mount_route_buildings()
 	_apply_section()
 	_build_atmosphere()
+	_build_dressing()
 	pose = data.overview_state()["pose"]
 	_apply_pose()
 	view.model_ready.connect(_on_model_ready, CONNECT_ONE_SHOT)
@@ -242,6 +246,8 @@ func _build_atmosphere() -> void:
 	fm.set_shader_parameter(&"sec_nrm", Vector2(float(nrm[0]), float(nrm[1])))
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	fm.set_shader_parameter(&"front_sym", float(atm["front_sym"]))
+	# The street's value-band solve (12.1, both seeds' OVERVIEW) with the dressing on: the exposure of this view.
+	env.tonemap_exposure = float(atm["exposure"])
 	view.add_to_layer(&"props", fv)
 	_extras.append(fv)
 	_clock_mats.append(fm)
@@ -261,6 +267,16 @@ func _build_atmosphere() -> void:
 		l.position = Vector3(p.x + float(nrm[0]) * side * off, float(atm["glow_height"]), -(p.y + float(nrm[1]) * side * off))
 		view.add_to_layer(&"props", l)
 		_extras.append(l)
+	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
+
+
+## The street dressing of NA-24 (signs, lamps, glows, washes, beams, lanes, plumes): placed from the derive and the city only, one
+## group per reveal tier. Held in `_extras`, so the id pass hides it; its materials join the netrun clock after the fog's.
+func _build_dressing() -> void:
+	dressing = StreetDressing.build(data.derive, data.city)
+	view.add_to_layer(&"props", dressing.root)
+	_extras.append(dressing.root)
+	_clock_mats.append_array(dressing.clock_mats)
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
 
 
@@ -455,6 +471,10 @@ func _process(delta: float) -> void:
 		return
 	if Vector2i(view.size) != render_px():
 		_resize_view()
+	if not _clock_mats.is_empty():
+		# The always-alive loops (T = loop_s): the clock of the dressing, lanes, beams and fog.
+		_anim_t = fposmod(_anim_t + delta, float(CityShaderConfigData.shipped().streak["loop_s"]))
+		NetrunShaderKit.set_clock(_clock_mats, _anim_t, 0.0)
 	if _to != null:
 		_move_t = minf(1.0, _move_t + delta / maxf(_move_dur, 0.001))
 		if _move_t >= 1.0:

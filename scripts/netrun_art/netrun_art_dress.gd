@@ -42,6 +42,16 @@ static func dress_street(derive: Dictionary, city: Dictionary, preset: Dictionar
 		"fog_fields": fog_fields(city, float(h["h_sky"]), p)}
 
 
+## The street frame of a derive: `a`, `c`, `ax` (0 = along x), `sgn`, `nrm`, `length`, `cline`, `ncross`.
+static func frame(derive: Dictionary) -> Dictionary:
+	return _frame(derive)
+
+
+## Plan xyz of street coordinate `u`, cross-axis coordinate `cross` and height `z` in frame `f` (`frame`).
+static func world(f: Dictionary, u: float, cross: float, z: float) -> Array:
+	return _world(f, u, cross, z)
+
+
 static func _stream_seed(layout_seed: String, name: String, keys: Array) -> int:
 	return ArtSeed.derive(ArtSeed.u64_from_str(layout_seed), name, keys)
 

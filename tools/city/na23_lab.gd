@@ -121,7 +121,7 @@ func _process(_delta: float) -> void:
 	elif _phase == "perf":
 		_frame += 1
 		if _frame == 1:
-			view.set_base_view(StreetRouteRules.View.OVERVIEW)
+			view.set_base_view(StreetRouteRules.View.DECISION if String(_args.get("perfstate", "overview")) == "decision" else StreetRouteRules.View.OVERVIEW)
 			RenderingServer.viewport_set_measure_render_time(view.rig.view.get_viewport_rid(), true)
 			_perf_cpu = []
 			_perf_gpu = []

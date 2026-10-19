@@ -7,7 +7,7 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _na24_dressing_config()
 
 
 ## Plan 2 N20: SliceData riders default to a plain slice; a bad one is refused by code; a
@@ -33,6 +33,21 @@ func _n20_slice_riders() -> int:
 	return fails
 
 
+
+
+## NA-24: DressingConfigData (the street dressing's reveal groups, palettes, districts, bands): the shipped one validates, an
+## empty one reports its gaps, a district naming an unknown palette set is refused by name.
+func _na24_dressing_config() -> int:
+	var fails := 0
+	var cfg: DressingConfigData = load(DressingConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-24 shipped dressing config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	if DressingConfigData.new().validate().size() <= 5: fails += 1
+	var bad: DressingConfigData = cfg.duplicate(true)
+	bad.districts["halcyon"] = {"palette": "no_such_set"}
+	if not ",".join(bad.validate()).contains("districts.halcyon"): fails += 1
+	return fails
 
 
 ## NA-23: StreetRouteConfigData (the street netrun view's tuning numbers): the shipped one validates, an empty one reports its
