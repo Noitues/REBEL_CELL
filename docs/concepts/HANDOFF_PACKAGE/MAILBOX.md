@@ -18,7 +18,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - History before this file: `PENDING_TO_BUILD.md`, items 1-18, all delivered.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-001.
+- Build's MAILBOX_TO_ART.md: last read through B-002.
 
 ## Entries
 
