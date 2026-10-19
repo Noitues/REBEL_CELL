@@ -183,8 +183,12 @@ def shop(word, col, aspect, r):
     dx = int(w * r.uniform(0.15, 0.75))
     d.rectangle((dx, int(h * 0.38), dx + int(h * 0.38), h), fill=(18, 14, 22))
     n = max(2, int(aspect * 1.4))
-    for k in range(1, n):
-        x = int(w * k / n)
+    xs, xk = [], 0.0
+    for k in range(n):                       # irregular bays (repetition.guard): the mullion pitch varies by +-40 %
+        xk += r.uniform(0.6, 1.4)
+        xs.append(xk)
+    for xv in xs[:-1]:
+        x = int(w * xv / xs[-1])
         d.rectangle((x - 3, fb, x + 3, h), fill=(20, 16, 26))
     return im
 

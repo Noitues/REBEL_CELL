@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
 import r2_config as CFG  # noqa: E402
+import r2_facade as FC  # noqa: E402
 
 SCR = "D:/rc_scratch/street_r2"
 R = CFG.RULES_R2
@@ -300,6 +301,7 @@ def plan_pass(seed):
     lylog = json.load(open(os.path.join(SCR, "layout_log_s%s.json" % seed)))
     spikes = [s["key"] for s in lylog["spikes"]]
     mid = ((sa[0] + sc[0]) / 2, (sa[1] + sc[1]) / 2)
+    u0_s, u1_s = sorted((sa[axis], sc[axis]))
     W_, H_ = OC.W_, OC.H_
 
     def far_of(b):
@@ -383,7 +385,7 @@ def plan_pass(seed):
             pal = PD["sign_pal"][dist_of(b["uid"])]
             trims[b["uid"]] = dict(col=list(pal[r_.randrange(len(pal))]), col2=list(pal[r_.randrange(len(pal))]),
                                    band_every=r_.randint(*P["band_every"]), corner=r_.random() < P["p_corner"],
-                                   roof=bool(P["roof_rim"]))
+                                   roof=bool(P["roof_rim"]), gap_p=P["band_gap_p"])
     # ------------------------------------------------ dressing.signs
     S = R["dressing.signs"]
     signs = []
@@ -575,17 +577,62 @@ def plan_pass(seed):
         if wv < 2.5:
             continue
         roof_board(b, "roof_board", wv, wv * 0.6, ("holo", "ad", "wall")[rng(seed, "roof_board_kind", b["uid"]).randrange(3)])
+    # ------------------------------------------------ repetition.guard (rhythm) + props.facade
+    RG, PF = R["repetition.guard"], R["props.facade"]
+    rhythm = {}
+    for b in sorted(B, key=lambda b: b["uid"]):
+        uid = b["uid"]
+        if uid not in kits:
+            continue
+        bu0_, bu1_, _f, _o = _face_frame(b, nrm, axis)
+        rhythm[uid] = FC.make_rhythm(rng(seed, "rhythm", uid), kits[uid], bu1_ - bu0_, b["h"], RG, PD["sign_pal"][dist_of(uid)],
+                                     rigid_top=room_top.get(uid))
+    for b in B:                                   # stacked parts follow their base's rhythm
+        for pu in b.get("parts_uid", []):
+            if b["uid"] in rhythm and pu != b["uid"]:
+                rhythm[pu] = rhythm[b["uid"]]
+    props = []
+    prow = list(front) + [b for b in sorted(B, key=lambda b: b["uid"]) if b["uid"] not in set(fkeys) and b["z0"] <= 0.05 and b["uid"] in kits
+                          and 0.5 < far_of(b) < 6.5 + PF["second_row_band"] and u0_s - 20 < ((b["x0"] + b["x1"]) / 2 if axis == 0 else (b["y0"] + b["y1"]) / 2) < u1_s + 20]
+    for b in prow:
+        uid = b["uid"]
+        if uid not in rhythm:
+            continue
+        ff = _face_frame(b, nrm, axis)
+        rh = rhythm[uid]
+        fz = FC.floor_bounds(rh, 0.0, b["h"])
+        rects = [[s_["u0"], s_["z0"], s_["u1"], s_["z1"]] for s_ in signs if s_["key"] == uid]
+        rects.append([ff[0], 0.0, ff[1], 1.9])                                   # the shopfront zone
+        for r_ in D["rooms"].values():
+            if r_["bld_uid"] == uid:
+                us_ = [q[axis] for q in r_["front"]]
+                rects.append([min(us_) - 0.15, r_["front"][0][2], max(us_) + 0.15, r_["front"][2][2]])
+        props += FC.make_props(rng(seed, "facade_props", uid), uid, b, ff, axis, line, rh, PD["sign_pal"][dist_of(uid)], D["rooms"], rects,
+                               PF, fz, room_top.get(uid), None)
     # ------------------------------------------------ streets.light: kerb lamp posts, fg lanes
     L_ = R["streets.light"]
     u0s, u1s = sorted((sa[axis], sc[axis]))
     lamps = []
+    lamps_dropped = 0
     k = 0
     u = u0s - 30.0
     while u <= u1s + 30.0:
         for side in (-1, 1):
             r_ = rng(seed, "lamp", round(u, 1), side)
-            pos = _pt(axis, u + r_.uniform(-0.6, 0.6), line + side * L_["kerb_off"] * (nrm[1] if axis == 0 else nrm[0]), 0.0)
+            pos = _pt(axis, u + r_.uniform(-L_["lamp_jit"], L_["lamp_jit"]), line + side * L_["kerb_off"] * (nrm[1] if axis == 0 else nrm[0]), 0.0)
             warm = (k % 3) != 0
+            ok_ = None
+            for dsh in (0.0, 0.8, -0.8, 1.6, -1.6, PF["lamp_shift_max"], -PF["lamp_shift_max"]):
+                uu_ = pos[axis] + dsh
+                if not FC.prop_hits_opening(dict(u0=uu_ - 0.15, u1=uu_ + 0.15, z0=0.0, z1=L_["lamp_post_h"], face=pos[1 - axis], out=0.0, depth=0.0),
+                                            D["rooms"], axis, line, PF["opening_margin"]):
+                    ok_ = uu_
+                    break
+            if ok_ is None:
+                lamps_dropped += 1
+                k += 1
+                continue
+            pos = _pt(axis, ok_, pos[1 - axis], 0.0)
             lamps.append(dict(pos=list(pos), side=side, col=[1.0, 0.72, 0.42] if warm else [0.55, 0.85, 1.0]))
             k += 1
         u += L_["lamp_step"]
@@ -628,10 +675,10 @@ def plan_pass(seed):
         faces.append(dict(uid=b["uid"], u0=bu0, u1=bu1, face=face, out=out, top=b["h"], col=trims[b["uid"]]["col"]))
     # the fog underlight ramp: the AAA pair and the districts in view whose hue is not the ambient violet (the cap)
     ul = [list(PD["hues"][d_]) for d_ in sorted({s_["district"] for s_ in stops if s_["district"]}) if d_ not in ("halcyon", "orbital")]
-    plan = dict(seed=seed, axis=axis, nrm=nrm, line=line, route=route, front=fkeys, front_faces=faces, near_faces=near, trims=trims,
+    plan = dict(seed=seed, axis=axis, nrm=nrm, line=line, route=route, front=fkeys, front_faces=faces, near_faces=near, trims=trims, rhythm=rhythm, props=props, lamps_dropped=lamps_dropped,
                 underlight=ul + [[1.0, 0.16, 0.6]], kits={str(k): v for k, v in kits.items()},
                 modules={str(k): v for k, v in modules.items()}, crowns=crowns, signs=signs, mega=mega, lamps=lamps,
-                plumes=plumes, bank_stops=stops, spikes=spikes, fg_lanes=list(R["foreground.street"]["fg_lanes"]),
+                plumes=plumes, bank_stops=stops, spikes=spikes, fg_lanes=list(R["foreground.street"]["fg_lanes"]), street_rule={k: R["foreground.street"][k] for k in ("dash", "dash_gap", "stroke_jit", "stroke_w", "puddle_rough_min", "stroke_break")},
                 lod=R["lod.signs"], districts_in_view=sorted({dist_of(k) for k in fkeys}))
     plan["checks"] = checks(seed, plan, D, OC, B, bk)
     json.dump(plan, open(os.path.join(SCR, "plan_s%s.json" % seed), "w"), indent=1)
@@ -715,6 +762,15 @@ def checks(seed, plan, D, OC, B, bk):
                                  ok=not bad and len(heroes) == len(plan["route"]) and central and legible >= S["signs_on_screen_min"]
                                  and plan["mega"] is not None)
     # roof clutter kinds on the frontage (crowns + the kit roof rules) - recorded by the Blender build too
+    PF = R["props.facade"]
+    blocked = [p["id"] for p in plan["props"] if FC.prop_hits_opening(p, D["rooms"], plan["axis"], plan["line"], PF["opening_margin"])]
+    lamp_bad = sum(1 for l in plan["lamps"] if FC.prop_hits_opening(
+        dict(u0=l["pos"][plan["axis"]] - 0.15, u1=l["pos"][plan["axis"]] + 0.15, z0=0.0, z1=R["streets.light"]["lamp_post_h"],
+             face=l["pos"][1 - plan["axis"]], out=0.0, depth=0.0), D["rooms"], plan["axis"], plan["line"], PF["opening_margin"]))
+    kinds_ = sorted({p["kind"] for p in plan["props"]})
+    out["props.facade"] = dict(props=len(plan["props"]), kinds=kinds_, blocked_by_opening=blocked, lamps_in_front_of_openings=lamp_bad,
+                               lamps_dropped=plan.get("lamps_dropped"), rhythm_buildings=len(plan["rhythm"]),
+                               ok=not blocked and lamp_bad == 0 and len(kinds_) >= 4)
     out["horizon.break"] = dict(spikes=len(plan["spikes"]), ok=len(plan["spikes"]) >= R["horizon.break"]["spikes_min"])
     return out
 

@@ -1,10 +1,10 @@
 {
  "01_OVERVIEW_closed_s1": {
-  "exposure": 0.667,
+  "exposure": 0.668,
   "values": [
    0.136,
-   0.269,
-   0.005
+   0.267,
+   0.004
   ],
   "landmark_box": [
    0.4243279993534088,
@@ -20,10 +20,10 @@
   }
  },
  "02_DECISION_closed_s1": {
-  "exposure": 0.391,
+  "exposure": 0.381,
   "values": [
    0.141,
-   0.319,
+   0.331,
    0.011
   ],
   "landmark_box": [

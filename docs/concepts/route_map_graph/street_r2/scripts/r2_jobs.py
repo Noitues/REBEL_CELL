@@ -113,13 +113,16 @@ def release():
         print("GPU lock released", flush=True)
 
 
-def run(seed, frames, spp, tag, gpu=True):
+def run(seed, frames, spp, tag, gpu=True, mode=None, cams_list=None):
     od = out_dir(seed)
     os.makedirs(od, exist_ok=True)
     cf = os.path.join(SCR, "cams_%s.json" % tag)
     of = os.path.join(SCR, "job_%s.json" % tag)
-    json.dump([], open(cf, "w"))
-    json.dump(job_block(seed, frames, spp), open(of, "w"))
+    json.dump(cams_list or [], open(cf, "w"))
+    jb = job_block(seed, frames, spp)
+    if mode:
+        jb["mode"] = mode
+    json.dump(jb, open(of, "w"))
     log = os.path.join(SCR, "blender_%s.log" % tag)
     if gpu:
         acquire()
@@ -155,6 +158,14 @@ if __name__ == "__main__":
         prep(seed)
     elif w == "dry":
         run(seed, [], 1, "dry_s%s" % seed, gpu=False)
+    elif w == "eevee":          # Eevee beauty only, no GPU lock: geometry / rule iteration (the look is the toon one, not the final)
+        res = [int(kv.get("res", 1280)), int(kv.get("res", 1280)) * 9 // 16]
+        cl = []
+        for nm, c in (("E_ov", ov), ("E_dec", dec)):
+            if names and nm not in names:
+                continue
+            cl.append(dict(tag=nm, persp=dict(c["persp"]), res=res, zcut=FG["zcut_street"], samples=8, beauty_only=True))
+        run(seed, [], 1, "eevee_s%s" % seed, gpu=False, mode="eevee", cams_list=cl)
     elif w == "test":
         res = [int(kv.get("res", 960)), int(kv.get("res", 960)) * 9 // 16]
         fr = [frame("T_ov_closed", ov, res), frame("T_dec_closed", dec, res)]

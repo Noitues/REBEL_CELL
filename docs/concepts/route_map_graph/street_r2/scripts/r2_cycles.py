@@ -88,7 +88,7 @@ def _wet_mat():
     mr.inputs["From Min"].default_value = 0.45
     mr.inputs["From Max"].default_value = 0.6
     mr.inputs["To Min"].default_value = 0.3
-    mr.inputs["To Max"].default_value = 0.03
+    mr.inputs["To Max"].default_value = float(PLAN.get("street_rule", {}).get("puddle_rough_min", 0.03))
     nt.links.new(nz.outputs["Fac"], mr.inputs["Value"])
     nt.links.new(mr.outputs[0], bs.inputs["Roughness"])
     try:
@@ -762,7 +762,8 @@ for li, (fr_, dirn, col) in enumerate(((0.28, 1, (1.0, 0.92, 0.8)), (0.62, 1, (1
     off = fr_ * _half
     x = _u0 - LANE_P * 2 - 120
     while x < _u1 + 120 + LANE_P:
-        L_ = _lr.uniform(3.0, 16.0)
+        _SR0 = PLAN.get("street_rule") or {}
+        L_ = _lr.uniform(*[v * 1.6 for v in _SR0.get("dash", (1.9, 10.0))])
         k_ = _lr.uniform(0.5, 1.3)
         c_ = tuple(v * k_ for v in col)
         za, zb = (0.42, 0.6) if dirn > 0 else (0.5, 0.64)
@@ -770,7 +771,7 @@ for li, (fr_, dirn, col) in enumerate(((0.28, 1, (1.0, 0.92, 0.8)), (0.62, 1, (1
             acc.face([(x, _cline + off, za), (x + L_, _cline + off, za), (x + L_, _cline + off, zb), (x, _cline + off, zb)], c_, (0, 0, 0))
         else:
             acc.face([(_cline + off, x, za), (_cline + off, x + L_, za), (_cline + off, x + L_, zb), (_cline + off, x, zb)], c_, (0, 0, 0))
-        x += L_ + _lr.uniform(4.0, 22.0)
+        x += L_ + _lr.uniform(*[v * 1.6 for v in _SR0.get("dash_gap", (2.5, 14.0))])
     ob = acc.obj(LANEM)
     LANES.append((ob, dirn))
 
@@ -783,15 +784,19 @@ for li, off in enumerate(PLAN.get("fg_lanes", [])):
     dirn = 1 if li % 2 == 0 else -1
     x = _u0 - LANE_P * 2 - 160
     while x < _u1 + 160 + LANE_P:
-        L_ = _lr.uniform(4.0, 18.0)
+        _SR = PLAN.get("street_rule") or {}
+        L_ = _lr.uniform(*_SR.get("dash", (4.0, 18.0)))
         c_ = tuple(v * _lr.uniform(0.5, 1.3) for v in col)
-        cc = _cline + _side * abs(off)
+        cc = _cline + _side * abs(off) + _lr.uniform(-0.6, 0.6)
         za, zb = (0.42, 0.62)
-        if _ax0:
-            acc.face([(x, cc, za), (x + L_, cc, za), (x + L_, cc, zb), (x, cc, zb)], c_, (0, 0, 0))
-        else:
-            acc.face([(cc, x, za), (cc, x + L_, za), (cc, x + L_, zb), (cc, x, zb)], c_, (0, 0, 0))
-        x += L_ + _lr.uniform(5.0, 26.0)
+        zb = za + (zb - za) * _lr.uniform(0.4, 1.4)
+        for (z_a, z_b, kk) in ((za - 0.14, za, 0.3), (za, zb, 1.0), (zb, zb + 0.14, 0.3)):       # a soft ribbon: dim edges, bright core
+            ck = tuple(v * kk for v in c_)
+            if _ax0:
+                acc.face([(x, cc, z_a), (x + L_, cc, z_a), (x + L_, cc, z_b), (x, cc, z_b)], ck, (0, 0, 0))
+            else:
+                acc.face([(cc, x, z_a), (cc, x + L_, z_a), (cc, x + L_, z_b), (cc, x, z_b)], ck, (0, 0, 0))
+        x += L_ + _lr.uniform(*_SR.get("dash_gap", (5.0, 26.0)))
     ob = acc.obj(FGLANEM)
     LANES.append((ob, dirn))
 

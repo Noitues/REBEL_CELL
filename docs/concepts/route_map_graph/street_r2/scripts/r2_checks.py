@@ -158,6 +158,11 @@ def report():
         r = check(p, an, os.path.join(SCR, "render_s%d" % seed, shot + "_z.npy"), view)
         r["_proxies"]["hero_lum_ratios"] = hero_ratio(p, an, plan)
         r["_plan_checks"] = plan["checks"]
+        ip = os.path.join("D:/rc_scratch/idpass/street", shot + "_index.npy")
+        if os.path.exists(ip) and seed == 1 and name[:2] in ("01", "02"):      # spec 7.1 rule 0 / 12.6: route never occluded
+            import r2_occlusion as OCC
+            oc = OCC.measure(ip, ip.replace("_index", "_z"), an, plan=plan)
+            r["_occlusion"] = dict(rooms=oc["rooms"], occluder_blobs=oc["occluder_blobs"], occluder_px=oc["occluder_px"], ok=oc["occluder_blobs"] == 0)
         out[name] = r
         md.append("## " + name)
         md.append("")
@@ -170,6 +175,9 @@ def report():
         md.append("")
         md.append("Proxies: `" + json.dumps(r["_proxies"], default=float) + "`")
         md.append("")
+        if "_occlusion" in r:
+            md.append("Route never occluded (7.1 rule 0): `" + json.dumps(r["_occlusion"]) + "`")
+            md.append("")
         md.append("Plan checks: `" + json.dumps({k: v.get("ok") for k, v in plan["checks"].items()}) + "`")
         md.append("")
     json.dump(out, open(os.path.join(root, "metrics_r2.json"), "w"), indent=1, default=float)

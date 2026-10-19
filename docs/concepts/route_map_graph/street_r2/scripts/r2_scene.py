@@ -35,6 +35,9 @@ PLAN = json.load(open(JOB_OC["plan_path"]))
 KITS = PLAN["kits"]
 MODS = PLAN["modules"]
 FRONT_UIDS = set(PLAN["front"])
+sys.path.insert(0, _ME)
+import r2_facade as FC
+RHY = PLAN.get("rhythm", {})
 TRIMS = PLAN.get("trims", {})
 
 
@@ -62,7 +65,10 @@ def trim_face(a, c, z0, h, nx, ny, tr, acc, zr=None, uspan=None):
         p0 = (a[0] + nx * off, a[1] + ny * off, zb)
         p1 = (c[0] + nx * off, c[1] + ny * off, zb)
         for q0, q1 in _segs(p0, p1):
-            beam(q0, q1, 0.12, tuple(tr["col"]), acc=acc)
+            rg = random.Random(int(q0[0] * 97) * 7919 + int(q0[1] * 89) * 104729 + int(zb * 131))
+            if rg.random() < tr.get("gap_p", 0.0):          # repetition.guard: a lit band is broken, a straight line repeats under shift
+                continue
+            beam(q0, q1, rg.uniform(0.08, 0.17), tuple(tr["col"]), acc=acc)
     if tr["corner"] and zr is None:
         for p_ in (a, c):
             for q0, q1 in _segs((p_[0] + nx * off, p_[1] + ny * off, z0 + 2.0), (p_[0] + nx * off, p_[1] + ny * off, z0 + h - 0.3)):
@@ -192,7 +198,7 @@ def city_building(b):
             seen_st = nx * -_SNRM[0] + ny * -_SNRM[1] > 0.1
             if seen_st:
                 kit_face(kit, a, c, z0, z0 + h, nx, ny, col, rk, dict(conc=CITY, glass=CGLASS, panel=CPANEL, win=CWIN, neon=CNEON),
-                         module=MODS.get(uid, 0), lite=math.hypot(cxq - _SMID[0], cyq - _SMID[1]) > 150.0)
+                         module=MODS.get(uid, 0), lite=math.hypot(cxq - _SMID[0], cyq - _SMID[1]) > 150.0, rh=RHY.get(uid))
             else:
                 {"glass_curtain": CGLASS, "panel_grille": CPANEL}.get(kit, CITY).face(quad, GLASS_COL if kit == "glass_curtain" else col, bid)
             continue
@@ -207,7 +213,27 @@ def city_building(b):
             px_, py_ = a[0] + ux * t0 + nx * 0.12, a[1] + uy * t0 + ny * 0.12
             beam((px_, py_, z0), (px_, py_, z0 + h - 0.2), 0.14, (0.22, 0.22, 0.26))
         # window grid (crest: red, denser - the round 34 locked fist of red lights)
-        if h > 2.4:
+        rh_ = RHY.get(uid) if (seen and ts >= 0.99) else None
+        if h > 2.4 and rh_ is not None and nx * -_SNRM[0] + ny * -_SNRM[1] > 0.1:
+            # r2 repetition.guard on a concrete_band face: windows on the rhythm's bays and floors (mixed modules)
+            zsw = FC.floor_bounds(rh_, z0, h)
+            for jf in range(1, len(zsw) - 1):
+                mj = FC.floor_module(rh_, jf, 0)
+                for (u0f, u1f) in FC.bay_edges(L, (1.5, 1.8, 2.3)[mj % 3], rh_, jf):
+                    if r.random() > wp:
+                        continue
+                    bw_ = (u1f - u0f) * L
+                    ww_ = max(0.35, min(bw_ * (0.35 + 0.4 * r.random()), 1.4))
+                    hh_ = min(0.5 + 0.35 * r.random(), (zsw[jf + 1] - zsw[jf]) * 0.55)
+                    t0 = (u0f + u1f) * L / 2 - ww_ / 2
+                    zw = zsw[jf] + 0.35
+                    wc = CREST_RED if crest and r.random() < 0.8 else r.choice(WIN_COLS)
+                    s_ = 0.5 + 0.5 * r.random()
+                    p0 = (a[0] + ux * t0 + nx * 0.05, a[1] + uy * t0 + ny * 0.05)
+                    p1 = (p0[0] + ux * ww_, p0[1] + uy * ww_)
+                    CWIN.face([(p0[0], p0[1], zw), (p1[0], p1[1], zw), (p1[0], p1[1], zw + hh_), (p0[0], p0[1], zw + hh_)],
+                              tuple(x * s_ for x in wc), (0, 0, 0))
+        elif h > 2.4:
             nxw, nzw = int((L - 0.6) / 1.6), int((h - 1.6) / 1.9)
             for u in range(nxw):
                 for v in range(nzw):
@@ -322,6 +348,7 @@ for b in LAY["buildings"]:
     else:
         city_building(b)
 exec(open(os.path.join(_ME, "r2_build.py"), encoding="utf-8").read())
+exec(open(os.path.join(_ME, "r2_props.py"), encoding="utf-8").read())
 print("BUILDINGS", len(BUILT), "faces", len(CITY.bm.faces), flush=True)
 
 # ground: asphalt, plazas, the game's street tiles + glowing lanes (round 6 restyler rules, in lots)
@@ -348,10 +375,19 @@ for t in LAY["tiles"]:
     hr = random.Random(t["i"] * 7919 + t["j"])
     for k in range(nl):
         u = (k + 0.5) / nl * 2 - 1
-        lane = u * half * 0.8 + (hr.random() - 0.5) * 0.25
+        _sr = PLAN.get("street_rule") or {}
+        lane = u * half * 0.8 + (hr.random() - 0.5) * (0.25 + 2.0 * _sr.get("stroke_jit", 0.0) * (2 * half * 0.8 / max(nl, 1)))
         al = 0.55 + 0.35 * hr.random() + tr * 0.15
-        strip(GLANE, (a[0] + nx * lane - dx * 0.35, a[1] + ny * lane - dy * 0.35), (b[0] + nx * lane + dx * 0.35, b[1] + ny * lane + dy * 0.35),
-              0.18, 0.04, tuple(min(1, v * al) for v in col))
+        sw_ = hr.uniform(*(_sr.get("stroke_w") or (0.18, 0.18)))
+        t0_, t1_ = -0.35, L + 0.35
+        pieces = [(t0_, t1_)]
+        if _sr.get("stroke_break"):                 # repetition.guard: a stroke is 1-3 pieces with gaps, not a full-length line
+            cuts = sorted(hr.uniform(0.15, 0.85) * L for _ in range(hr.randint(0, 2)))
+            edges_ = [t0_] + [v for c_ in cuts for v in (c_ - hr.uniform(0.2, 0.9), c_ + hr.uniform(0.2, 0.9))] + [t1_]
+            pieces = [(edges_[i], edges_[i + 1]) for i in range(0, len(edges_), 2) if edges_[i + 1] > edges_[i] + 0.3]
+        for (p0_, p1_) in pieces:
+            strip(GLANE, (a[0] + nx * lane + dx * p0_, a[1] + ny * lane + dy * p0_), (a[0] + nx * lane + dx * p1_, a[1] + ny * lane + dy * p1_),
+                  sw_, 0.04, tuple(min(1, v * al) for v in col))
 for t in LAY["trails"]:
     a, b = W(t["a"]), W(t["b"])
     strip(GLANE, a, b, 0.32, 0.06, tuple(t["col"]))
@@ -661,6 +697,8 @@ def shoot(spec):
     scene.render.filter_size = 1.5
     set_mode("night")
     render(P("beauty_night.png"))
+    if spec.get("beauty_only"):
+        return
     mats = {o.name: list(o.data.materials) for o in ALLM}
     blackm, _ = mat_flat("black", (0.0, 0.0, 0.0))
     for o in SOLIDS:

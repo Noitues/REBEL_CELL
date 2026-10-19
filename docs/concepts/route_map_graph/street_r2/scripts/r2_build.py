@@ -51,6 +51,15 @@ n2, n3, n4, n5 = _cut(RBW, UPAD), _cut(RBN, 0.12), _cut(RBG, UPAD), _cut(RBP, UP
 print("R2 cut faces", n1, n2, n3, n4, n5, flush=True)
 
 WALLS = {}
+
+
+def _wall_rh(uid):
+    """The wall over a room keeps its building's bay rhythm only: the rooms sit on the rigid 1.9 BU floors, and a wall has no
+    setback or balcony."""
+    rh = RHY.get(uid)
+    return None if rh is None else dict(rh, fm=None, setback=None, balc=[])
+
+
 ROOM_LIGHTS = []
 RINT = Acc("oc_rooms")          # room interiors (surfaces)
 RPAN = Acc("oc_panels")         # lit back panels (emissive)
@@ -92,7 +101,8 @@ for (i, ax, face, u0, u1, z0, z1, nrm) in OPEN:
         pa, pc = P(u0 - UPAD, -0.03, 0.0), P(u1 + UPAD, -0.03, 0.0)
         onx, ony = (0.0, -nrm) if ax == 0 else (-nrm, 0.0)
         kit_face(kit, (pa[0], pa[1]), (pc[0], pc[1]), z0 - 0.12, z1 + 0.12, onx, ony, col, rr,
-                 dict(conc=wa, glass=wg, panel=wp, win=ww, neon=wn), module=MODS.get(r["bld_uid"], 0))
+                 dict(conc=wa, glass=wg, panel=wp, win=ww, neon=wn), module=MODS.get(r["bld_uid"], 0),
+                 rh=_wall_rh(r["bld_uid"]))
     if r["bld_uid"] in TRIMS:                    # the lit bands carry across the closed wall
         pa, pc = P(u0 - UPAD, -0.03, 0.0), P(u1 + UPAD, -0.03, 0.0)
         onx, ony = (0.0, -nrm) if ax == 0 else (-nrm, 0.0)

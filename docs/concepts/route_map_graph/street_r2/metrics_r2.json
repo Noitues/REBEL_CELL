@@ -1,35 +1,35 @@
 {
  "01_OVERVIEW_closed_s1": {
   "R-SIL-1": {
-   "value": 0.1808,
+   "value": 0.1774,
    "ok": true
   },
   "R-SIL-2": {
-   "value": 0.1349,
+   "value": 0.1351,
    "ok": true
   },
   "R-DET-1": {
-   "value": 0.0292,
+   "value": 0.0295,
    "ok": true
   },
   "R-DET-2": {
-   "value": 555.5556,
+   "value": 692.2743,
    "ok": true
   },
   "R-HUE-1": {
-   "value": 4.0492,
+   "value": 4.0571,
    "ok": true
   },
   "R-HUE-2": {
-   "value": 0.436,
+   "value": 0.435,
    "ok": true
   },
   "R-FOCUS-1": {
-   "value": 2.0349,
+   "value": 1.9456,
    "ok": true
   },
   "R-REP-1": {
-   "value": 0.5061,
+   "value": 0.4674,
    "ok": true
   },
   "R-VAL-1": {
@@ -37,74 +37,74 @@
    "ok": true
   },
   "R-VAL-2": {
-   "value": 0.2704,
+   "value": 0.2685,
    "ok": true
   },
   "R-VAL-3": {
-   "value": 0.0053,
+   "value": 0.004,
    "ok": true
   },
   "R-CALM-1": {
-   "value": 0.6176,
+   "value": 0.5888,
    "ok": true
   },
   "R-CALM-2": {
-   "value": 0.2182,
+   "value": 0.2636,
    "ok": true
   },
   "_proxies": {
-   "fg_hue_ratio": 1.0028769877251977,
-   "fg_blob_ratio": 0.6640625,
-   "sky_empty_share": 0.14569010416666667,
+   "fg_hue_ratio": 1.0031597221691697,
+   "fg_blob_ratio": 0.6504702194357366,
+   "sky_empty_share": 0.14950737847222223,
    "planes": {
-    "front": 0.14598509669303894,
-    "mid": 0.11123059689998627,
-    "back": 0.15803764760494232
+    "front": 0.14540785551071167,
+    "mid": 0.11404549330472946,
+    "back": 0.15849569439888
    },
    "hero_lum_ratios": [
-    1.84,
+    1.87,
     1.37,
     0.78,
-    1.21,
+    1.26,
     0.44,
-    0.55,
-    1.76,
-    1.2
+    0.59,
+    1.44,
+    1.16
    ]
   },
   "_raw": {
    "w_src": 1920.0,
    "median": 0.1361,
-   "p95": 0.6012,
-   "under_010": 0.2704,
-   "over_085": 0.0053,
-   "sobel_mean": 0.0292,
-   "hf_upper": 0.2227,
-   "sobel_upper": 0.02,
-   "hf_lower": 0.1087,
-   "sobel_lower": 0.0343,
-   "detail_cv": 0.6176,
-   "calm_share": 0.2182,
-   "hue_entropy_bits": 4.0492,
-   "chroma_share": 0.5892,
-   "hue_top_share": 0.436,
-   "rep_median": 0.3337,
-   "rep_p90": 0.5061,
-   "rep_tiled_share": 0.2035,
+   "p95": 0.6066,
+   "under_010": 0.2685,
+   "over_085": 0.004,
+   "sobel_mean": 0.0295,
+   "hf_upper": 0.2266,
+   "sobel_upper": 0.0218,
+   "hf_lower": 0.0686,
+   "sobel_lower": 0.0277,
+   "detail_cv": 0.5888,
+   "calm_share": 0.2636,
+   "hue_entropy_bits": 4.0571,
+   "chroma_share": 0.5903,
+   "hue_top_share": 0.435,
+   "rep_median": 0.2836,
+   "rep_p90": 0.4674,
+   "rep_tiled_share": 0.1239,
    "rep_tiles": 113.0,
-   "lm_ratio": 2.0349,
-   "lm_p95_ratio": 5.039,
+   "lm_ratio": 1.9456,
+   "lm_p95_ratio": 4.6996,
    "lm_centre_thirds_dist": 0.2964,
-   "sky_std": 0.114,
-   "sky_min_q_std": 0.0738,
-   "sky_mean_h": 0.6333,
-   "lit_std": 0.1808,
-   "lit_min_q_std": 0.1349,
+   "sky_std": 0.1119,
+   "sky_min_q_std": 0.0662,
+   "sky_mean_h": 0.6332,
+   "lit_std": 0.1774,
+   "lit_min_q_std": 0.1351,
    "profile": null,
    "profile_lit": null,
-   "blobs_per_mp": 555.5556,
-   "focal_conc": 0.2987,
-   "focal_thirds_dist": 0.274
+   "blobs_per_mp": 692.2743,
+   "focal_conc": 0.2418,
+   "focal_thirds_dist": 0.2913
   },
   "_plan_checks": {
    "frontage.silhouette": {
@@ -176,27 +176,48 @@
     "megastructure": "arch",
     "ok": true
    },
+   "props.facade": {
+    "props": 515,
+    "kinds": [
+     "ac",
+     "awning",
+     "lit_room",
+     "pipe",
+     "small_sign"
+    ],
+    "blocked_by_opening": [],
+    "lamps_in_front_of_openings": 0,
+    "lamps_dropped": 3,
+    "rhythm_buildings": 3669,
+    "ok": true
+   },
    "horizon.break": {
     "spikes": 4,
     "ok": true
    }
+  },
+  "_occlusion": {
+   "rooms": 19,
+   "occluder_blobs": 0,
+   "occluder_px": 0,
+   "ok": true
   }
  },
  "02_DECISION_closed_s1": {
   "R-DET-1": {
-   "value": 0.0293,
+   "value": 0.0302,
    "ok": true
   },
   "R-DET-2": {
-   "value": 402.5608,
-   "ok": false
+   "value": 476.3455,
+   "ok": true
   },
   "R-HUE-1": {
-   "value": 3.8098,
+   "value": 3.8065,
    "ok": true
   },
   "R-HUE-2": {
-   "value": 0.393,
+   "value": 0.389,
    "ok": true
   },
   "R-FOCUS-1": {
@@ -204,66 +225,66 @@
    "ok": null
   },
   "R-REP-1": {
-   "value": 0.6635,
+   "value": 0.6085,
    "ok": false
   },
   "R-VAL-1": {
-   "value": 0.1415,
+   "value": 0.1416,
    "ok": true
   },
   "R-VAL-2": {
-   "value": 0.3197,
+   "value": 0.3314,
    "ok": true
   },
   "R-VAL-3": {
-   "value": 0.0104,
+   "value": 0.0098,
    "ok": true
   },
   "R-CALM-1": {
-   "value": 0.7419,
+   "value": 0.7176,
    "ok": true
   },
   "R-CALM-2": {
-   "value": 0.2,
+   "value": 0.1682,
    "ok": true
   },
   "_proxies": {
-   "fg_hue_ratio": 0.9101844469782211,
-   "fg_blob_ratio": 0.10781671159029649,
-   "sky_empty_share": 0.03251627604166667,
+   "fg_hue_ratio": 0.9056324189583351,
+   "fg_blob_ratio": 0.13667425968109337,
+   "sky_empty_share": 0.0303515625,
    "planes": {
-    "front": 0.14425019919872284,
-    "mid": 0.11539451777935028,
-    "back": 0.1157231405377388
+    "front": 0.14518707990646362,
+    "mid": 0.11461254954338074,
+    "back": 0.11922785639762878
    },
    "hero_lum_ratios": [
-    1.67,
-    0.38
+    1.68,
+    0.37
    ]
   },
   "_raw": {
    "w_src": 1920.0,
-   "median": 0.1415,
-   "p95": 0.6176,
-   "under_010": 0.3197,
-   "over_085": 0.0104,
-   "sobel_mean": 0.0293,
-   "hf_upper": 0.1299,
-   "sobel_upper": 0.0237,
-   "hf_lower": 0.0578,
-   "sobel_lower": 0.0252,
-   "detail_cv": 0.7419,
-   "calm_share": 0.2,
-   "hue_entropy_bits": 3.8098,
-   "chroma_share": 0.615,
-   "hue_top_share": 0.393,
-   "rep_median": 0.4524,
-   "rep_p90": 0.6635,
-   "rep_tiled_share": 0.5,
+   "median": 0.1416,
+   "p95": 0.6031,
+   "under_010": 0.3314,
+   "over_085": 0.0098,
+   "sobel_mean": 0.0302,
+   "hf_upper": 0.1501,
+   "sobel_upper": 0.0277,
+   "hf_lower": 0.0478,
+   "sobel_lower": 0.0208,
+   "detail_cv": 0.7176,
+   "calm_share": 0.1682,
+   "hue_entropy_bits": 3.8065,
+   "chroma_share": 0.594,
+   "hue_top_share": 0.389,
+   "rep_median": 0.4342,
+   "rep_p90": 0.6085,
+   "rep_tiled_share": 0.4737,
    "rep_tiles": 114.0,
-   "blobs_per_mp": 402.5608,
-   "focal_conc": 0.1788,
-   "focal_thirds_dist": 0.2347
+   "blobs_per_mp": 476.3455,
+   "focal_conc": 0.2539,
+   "focal_thirds_dist": 0.1843
   },
   "_plan_checks": {
    "frontage.silhouette": {
@@ -335,10 +356,31 @@
     "megastructure": "arch",
     "ok": true
    },
+   "props.facade": {
+    "props": 515,
+    "kinds": [
+     "ac",
+     "awning",
+     "lit_room",
+     "pipe",
+     "small_sign"
+    ],
+    "blocked_by_opening": [],
+    "lamps_in_front_of_openings": 0,
+    "lamps_dropped": 3,
+    "rhythm_buildings": 3669,
+    "ok": true
+   },
    "horizon.break": {
     "spikes": 4,
     "ok": true
    }
+  },
+  "_occlusion": {
+   "rooms": 7,
+   "occluder_blobs": 0,
+   "occluder_px": 0,
+   "ok": true
   }
  },
  "03_OVERVIEW_route_overlay_s1": {
@@ -516,6 +558,21 @@
      "roof_board_6062_2619_68"
     ],
     "megastructure": "arch",
+    "ok": true
+   },
+   "props.facade": {
+    "props": 515,
+    "kinds": [
+     "ac",
+     "awning",
+     "lit_room",
+     "pipe",
+     "small_sign"
+    ],
+    "blocked_by_opening": [],
+    "lamps_in_front_of_openings": 0,
+    "lamps_dropped": 3,
+    "rhythm_buildings": 3669,
     "ok": true
    },
    "horizon.break": {

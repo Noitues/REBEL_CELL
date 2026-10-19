@@ -36,86 +36,131 @@ def _boxq(acc, a, c, z0, z1, u0, u1, nx, ny, d0, d1, col, bid):
     acc.face([f[3], f[2], b[2], b[3]], col, bid, fj=0.55)     # top
 
 
-def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=None, lite=False):
-    """Draw one face (a -> c along the bottom, z0..z1) in `kit` into accs (dict conc / glass / panel / win / neon)."""
+def kit_face(kit, a, c, z0, z1, nx, ny, col, r, accs, module=0, fl=1.9, lit_low=None, lite=False, rh=None):
+    """Draw one face (a -> c along the bottom, z0..z1) in `kit` into accs (dict conc / glass / panel / win / neon).
+    rh = the building's rhythm record (r2_facade): bay widths, floor heights, window module per floor band, setback,
+    balconies. Without it the face is the uniform grid of the first r2 pass."""
     L = math.hypot(c[0] - a[0], c[1] - a[1])
     h = z1 - z0
     if L < 0.5 or h < 0.5:
         return
-    cw = _KIT_W[kit][module % 3]
-    nu = max(1, int(round(L / cw)))
-    nf = max(1, int(round(h / fl)))
-    du = 1.0 / nu
-    zs = [z0 + h * j / nf for j in range(nf + 1)]
+    zs = FC.floor_bounds(rh, z0, h, fl)
+    nf = len(zs) - 1
+    mods = [FC.floor_module(rh, j, module) for j in range(nf)]
+    # one bay list per floor band (the bay edges change where the module changes: mixed window modules)
+    edges, band_of = [], []
+    for j in range(nf):
+        if j and mods[j] == mods[j - 1]:
+            edges.append(edges[-1])
+        else:
+            edges.append(FC.bay_edges(L, _KIT_W[kit][mods[j] % 3], rh, j))
+    ins = [FC.floor_inset(rh, j) for j in range(nf)]
     bid = rid()
     floor0 = int(round(z0 / fl))
+    ac_ = tuple(rh["acc"]) if rh else (0.4, 0.8, 1.0)
+    tlo, thi = rh["tone"] if rh and rh.get("tone") else (1.0, 1.0)
+
+    def tn(cc):
+        k = r.uniform(tlo, thi)
+        return (min(1.0, cc[0] * k), min(1.0, cc[1] * k), min(1.0, cc[2] * k))
+
+    def cp(j, za, zb, u0, u1, off):
+        return _cell_pts(a, c, za, zb, u0, u1, nx, ny, off - ins[j])
+
+    def bq(j, za, zb, u0, u1, d0, d1, colr):
+        _boxq(accs["panel"], a, c, za, zb, u0, u1, nx, ny, d0 - ins[j], d1 - ins[j], colr, bid)
     if kit == "glass_curtain":
         lit_floor = [r.random() < 0.22 for _ in range(nf)]
-        for j in range(nf):
-            for i in range(nu):
-                u0, u1 = i * du, (i + 1) * du
-                accs["glass"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0, u1, nx, ny, 0.0), GLASS_COL, bid, fj=0.5)
-                # mullion (left edge of the cell, every cell; module 1: every 2nd heavier) and spandrel (cell bottom)
+    for j in range(nf):
+        za, zb = zs[j], zs[j + 1]
+        for i, (u0, u1) in enumerate(edges[j]):
+            du = u1 - u0
+            m = mods[j]
+            if kit == "glass_curtain":
+                accs["glass"].face(cp(j, za, zb, u0, u1, 0.0), tn(GLASS_COL), bid, fj=0.5)
                 mw = 0.06 / max(L, 1e-3)
-                if not lite and (module != 1 or i % 2 == 0):
-                    accs["panel"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0, u0 + mw * (2 if module == 1 else 1), nx, ny, 0.05),
-                                       METAL_COL, bid, fj=0.5)
-                if not lite:
-                    accs["panel"].face(_cell_pts(a, c, zs[j], zs[j] + 0.22, u0, u1, nx, ny, 0.04), METAL_COL, bid, fj=0.5)
+                if not lite and (m != 1 or i % 2 == 0) and r.random() > 0.3:       # mullions are not on every bay edge
+                    accs["panel"].face(cp(j, za, zb, u0, u0 + mw * r.choice((1, 1, 2, 3)), 0.05), METAL_COL, bid, fj=0.5)
+                if not lite and r.random() > 0.2:
+                    accs["panel"].face(cp(j, za, min(zb, za + r.uniform(0.08, 0.36)), u0, u1, 0.04), METAL_COL, bid, fj=0.5)
                 if lit_floor[j] and r.random() < 0.85:
-                    s = 0.5 + 0.5 * r.random()
+                    sv = 0.5 + 0.5 * r.random()
                     wc = (0.78, 0.9, 1.0) if r.random() < 0.7 else (0.55, 1.0, 0.9)
-                    accs["win"].face(_cell_pts(a, c, zs[j] + 0.35, zs[j + 1] - 0.3, u0 + 0.06 * du, u1 - 0.06 * du, nx, ny, 0.02),
-                                     tuple(v * s for v in wc), (0, 0, 0), fj=0.5)
+                    accs["win"].face(cp(j, za + 0.35, zb - 0.3, u0 + 0.06 * du, u1 - 0.06 * du, 0.02), tuple(v * sv for v in wc), (0, 0, 0), fj=0.5)
                 elif r.random() < 0.08:
-                    accs["win"].face(_cell_pts(a, c, zs[j] + 0.4, zs[j + 1] - 0.35, u0 + 0.12 * du, u1 - 0.12 * du, nx, ny, 0.02),
+                    accs["win"].face(cp(j, za + 0.4, zb - 0.35, u0 + 0.12 * du, u1 - 0.12 * du, 0.02),
                                      tuple(v * (0.4 + 0.4 * r.random()) for v in r.choice(WIN_COLS)), (0, 0, 0), fj=0.5)
-    elif kit == "panel_grille":
-        slats = 2 + module
-        pc = tuple(v * 0.9 for v in col)
-        dk = tuple(v * 0.55 for v in col)
-        for j in range(nf):
-            for i in range(nu):
-                u0, u1 = i * du, (i + 1) * du
-                accs["panel"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0, u1, nx, ny, 0.0), pc, bid, fj=0.4 + 0.2 * r.random())
-                zt = zs[j + 1]
-                for k in range(0 if lite else slats):
-                    zz = zt - 0.12 - k * 0.2
-                    _boxq(accs["panel"], a, c, zz - 0.06, zz, u0, u1, nx, ny, 0.0, 0.2, dk, bid)
+            elif kit == "panel_grille":
+                slats = 2 + m
+                pc = tuple(v * 0.9 for v in col)
+                dk = tuple(v * 0.55 for v in col)
+                accs["panel"].face(cp(j, za, zb, u0, u1, 0.0), tn(pc), bid, fj=0.4 + 0.2 * r.random())
+                zz = zb - r.uniform(0.08, 0.2)
+                for k in range(0 if lite else slats):               # slats at irregular pitch and thickness (a periodic louvre repeats)
+                    th = r.uniform(0.04, 0.1)
+                    if zz - th > za:
+                        bq(j, zz - th, zz, u0, u1, 0.0, r.uniform(0.12, 0.26), dk)
+                    zz -= r.uniform(0.14, 0.32)
                 if r.random() < 0.35:
-                    s = 0.45 + 0.5 * r.random()
+                    sv = 0.45 + 0.5 * r.random()
                     um = (u0 + u1) / 2
-                    hw = 0.3 / max(L, 1e-3)
-                    accs["win"].face(_cell_pts(a, c, zs[j] + 0.45, zs[j] + 1.0, um - hw, um + hw, nx, ny, 0.03),
-                                     tuple(v * s for v in r.choice(WIN_COLS[:3] + WIN_COLS[5:])), (0, 0, 0), fj=0.5)
+                    hw = min(0.3 / max(L, 1e-3), du * 0.4)
+                    accs["win"].face(cp(j, za + 0.45, min(zb - 0.1, za + 1.0), um - hw, um + hw, 0.03),
+                                     tuple(v * sv for v in r.choice(WIN_COLS[:3] + WIN_COLS[5:])), (0, 0, 0), fj=0.5)
                 if r.random() < 0.05 and j > 0:
                     um = (u0 + u1) / 2
-                    hw = 0.35 / max(L, 1e-3)
-                    _boxq(accs["conc"], a, c, zs[j] + 0.05, zs[j] + 0.5, um - hw, um + hw, nx, ny, 0.0, 0.45, (0.32, 0.32, 0.35), bid)
-    elif kit == "lit_atrium":
-        low = lit_low if lit_low is not None else 2 + r.randrange(2)
-        every = 2 + module
-        warm = r.random() < 0.55
-        lc = (1.0, 0.74, 0.46) if warm else (0.45, 0.95, 1.0)
-        sc = r.choice([(1.0, 0.3, 0.7), (0.3, 0.85, 1.0), (1.0, 0.6, 0.2), (0.7, 0.45, 1.0)])
-        for j in range(nf):
-            fj_ = floor0 + j
-            for i in range(nu):
-                u0, u1 = i * du, (i + 1) * du
-                if fj_ < low:
-                    accs["win"].face(_cell_pts(a, c, zs[j] + 0.08, zs[j + 1] - 0.08, u0 + 0.03 * du, u1 - 0.03 * du, nx, ny, 0.0),
+                    hw = min(0.35 / max(L, 1e-3), du * 0.4)
+                    _boxq(accs["conc"], a, c, za + 0.05, za + 0.5, um - hw, um + hw, nx, ny, 0.0 - ins[j], 0.45 - ins[j], (0.32, 0.32, 0.35), bid)
+            elif kit == "lit_atrium":
+                if j == 0 and i == 0:
+                    warm = r.random() < 0.55
+                    lit_pal = ((1.0, 0.74, 0.46) if warm else (0.45, 0.95, 1.0), r.choice([(1.0, 0.3, 0.7), (0.3, 0.85, 1.0), (1.0, 0.6, 0.2), (0.7, 0.45, 1.0)]))
+                    low = lit_low if lit_low is not None else 2 + r.randrange(2)
+                lc, sc = lit_pal
+                every = 2 + m
+                if floor0 + j < low:
+                    accs["win"].face(cp(j, za + 0.08, zb - 0.08, u0 + 0.03 * du, u1 - 0.03 * du, 0.0),
                                      tuple(v * (0.55 + 0.25 * r.random()) for v in lc), (0, 0, 0), fj=0.5)
-                    accs["panel"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0, u0 + 0.07 / max(L, 1e-3), nx, ny, 0.04), METAL_COL, bid, fj=0.5)
-                    accs["panel"].face(_cell_pts(a, c, zs[j + 1] - 0.1, zs[j + 1], u0, u1, nx, ny, 0.04), METAL_COL, bid, fj=0.5)
+                    accs["panel"].face(cp(j, za, zb, u0, min(u1, u0 + 0.07 / max(L, 1e-3)), 0.04), METAL_COL, bid, fj=0.5)
+                    accs["panel"].face(cp(j, zb - 0.1, zb, u0, u1, 0.04), METAL_COL, bid, fj=0.5)
                 else:
-                    accs["conc"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0, u1, nx, ny, 0.0), col, bid, fj=0.45 + 0.1 * r.random())
+                    accs["conc"].face(cp(j, za, zb, u0, u1, 0.0), tn(col), bid, fj=0.45 + 0.1 * r.random())
                     if i % every == 0:
-                        hw = 0.11 / max(L, 1e-3)
-                        accs["win"].face(_cell_pts(a, c, zs[j], zs[j + 1], u0 + 0.5 * du - hw, u0 + 0.5 * du + hw, nx, ny, 0.03),
-                                         tuple(v * 0.75 for v in sc), (0, 0, 0), fj=0.5)
+                        hw = min(0.11 / max(L, 1e-3), du * 0.4)
+                        accs["win"].face(cp(j, za, zb, (u0 + u1) / 2 - hw, (u0 + u1) / 2 + hw, 0.03), tuple(v * 0.75 for v in sc), (0, 0, 0), fj=0.5)
                     elif r.random() < 0.1:
-                        accs["win"].face(_cell_pts(a, c, zs[j] + 0.5, zs[j + 1] - 0.4, u0 + 0.2 * du, u1 - 0.2 * du, nx, ny, 0.02),
+                        accs["win"].face(cp(j, za + 0.5, zb - 0.4, u0 + 0.2 * du, u1 - 0.2 * du, 0.02),
                                          tuple(v * 0.6 for v in r.choice(WIN_COLS)), (0, 0, 0), fj=0.5)
+    if rh and not lite:
+        # setback ledge: a slab and a lit lip where the facade steps back
+        sb = rh.get("setback")
+        if sb and 0 < sb["floor"] < nf:
+            zl = zs[sb["floor"]]
+            d = sb["d"]
+            q0 = _cell_pts(a, c, zl, zl, 0.0, 1.0, nx, ny, 0.0)
+            q1 = _cell_pts(a, c, zl, zl, 0.0, 1.0, nx, ny, -d)
+            accs["conc"].face([q0[0], q0[1], q1[1], q1[0]], tuple(v * 0.8 for v in col), bid, fj=0.5)
+            ln = _cell_pts(a, c, zl - 0.06, zl + 0.02, 0.0, 1.0, nx, ny, 0.04)
+            accs["neon"].face(ln, ac_, (0, 0, 0), fj=0.5)
+        # balconies: slab, rail, a lit door behind
+        for bc in rh.get("balc", []):
+            j = bc["floor"]
+            if j >= nf or bc["floor"] < 1:
+                continue
+            wf = min(0.9, bc["w"] / L)
+            u0 = max(0.02, bc["c"] - wf / 2)
+            u1 = min(0.98, u0 + wf)
+            zf = zs[j]
+            dp = bc["depth"]
+            _boxq(accs["conc"], a, c, zf, zf + 0.14, u0, u1, nx, ny, -ins[j], dp - ins[j], tuple(v * 0.85 for v in col), bid)
+            rz = zf + 0.14 + 0.85
+            q = _cell_pts(a, c, rz, rz + 0.05, u0, u1, nx, ny, dp - ins[j])
+            accs["panel"].face(q, METAL_COL, bid, fj=0.5)
+            for pu in (u0, u1):
+                accs["panel"].face(_cell_pts(a, c, zf + 0.14, rz, pu, pu + 0.04 / max(L, 1e-3), nx, ny, dp - ins[j]), METAL_COL, bid, fj=0.5)
+            if bc["lit"] and zs[j + 1] - zf > 1.2:
+                accs["win"].face(_cell_pts(a, c, zf + 0.15, min(zs[j + 1] - 0.2, zf + 1.6), u0 + wf * 0.25, u1 - wf * 0.25, nx, ny, 0.045 - ins[j]),
+                                 tuple(v * 0.7 for v in ac_), (0, 0, 0), fj=0.5)
 
 
 def roof_clutter(kit, top, zt, r, acc_s, acc_n, kinds):
