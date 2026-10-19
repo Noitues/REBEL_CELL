@@ -79,6 +79,15 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 ## slices: Array[Color]}); Fx's `switch` coroutine (on_switch under the covering hub, the
 ## arrival wait) runs once the lens covers the screen, or at once on a skip.
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_begin(link)
+	if street:
+		await _play_street(switch)
+		return
+	await _play_link(switch)
+
+
+## The state both directions start from: the link's points and slices, the flags, the terminal.
+func _begin(link: Dictionary) -> void:
 	points = link.get("points", PackedVector2Array())
 	slices.clear()
 	for c in link.get("slices", []):
@@ -98,9 +107,10 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	open_t = -1.0
 	visible = true
 	_make_terminal(lines_for(String(link.get("from", "")), String(link.get("to", ""))))
-	if street:
-		await _play_street(switch)
-		return
+
+
+func _play_link(switch: Callable) -> void:
+	var vp := get_viewport_rect().size
 	# 1-2. Typing, the rain joining over its last lines.
 	var lines: PackedStringArray = _text.get_meta(&"lines")
 	var per_char := Motion.seconds_live(&"jack_terminal_type")
@@ -228,6 +238,56 @@ func _play_street(switch: Callable) -> void:
 	switched = true
 	queue_redraw()
 	await switch.call()
+	_end()
+
+
+## NA-25b (the HQ side of the jack-out, PIPELINE_SPEC 10 backwards): the street entry's HQ beats in reverse. The cover is the night sky
+## while the switch loads the HQ (`switch`), then the CRT comes back on (the collapse reversed: a dot, a line, the whole terminal),
+## the rain rises over the link and the lines untype, and the HQ is left as it was. One press skips to the end (the HQ, no terminal).
+func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_begin(link)
+	street = true
+	visible = true
+	night = true
+	switched = true
+	terminal.visible = false
+	_text.visible_characters = -1
+	queue_redraw()
+	await switch.call()
+	night = false
+	queue_redraw()
+	if skipping:
+		_end()
+		return
+	var col_s := Motion.seconds_live(&"entry_collapse")
+	var line_share := clampf(Motion.amplitude(&"entry_collapse"), 0.05, 0.95)
+	terminal.pivot_offset = terminal.size * 0.5
+	terminal.visible = true
+	var t := 0.0
+	while t < col_s and not skipping:
+		t += get_process_delta_time()
+		var u := 1.0 - clampf(t / maxf(col_s, 0.001), 0.0, 1.0)
+		if u < line_share:
+			terminal.scale = Vector2(1.0, lerpf(1.0, 0.02, u / line_share))
+		else:
+			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
+		await get_tree().process_frame
+	terminal.scale = Vector2.ONE
+	var rain_s := Motion.seconds_live(&"entry_rain")
+	t = 0.0
+	while t < rain_s and not skipping:
+		t += get_process_delta_time()
+		rain_t = 1.0 - clampf(t / maxf(rain_s, 0.001), 0.0, 1.0)
+		queue_redraw()
+		await get_tree().process_frame
+	rain_t = -1.0
+	var type_s := Motion.seconds_live(&"entry_terminal")
+	var chars := _text.text.length()
+	t = 0.0
+	while t < type_s and not skipping:
+		t += get_process_delta_time()
+		_text.visible_characters = int(float(chars) * (1.0 - clampf(t / maxf(type_s, 0.001), 0.0, 1.0)))
+		await get_tree().process_frame
 	_end()
 
 

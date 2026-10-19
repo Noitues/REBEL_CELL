@@ -58,6 +58,10 @@ var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
 var last_raid: Dictionary = {}
 var outcome: int = Outcome.NONE
+## Plan 2 WH-02: the corporation themes' campaign and raid fields (CampaignThemeState). Saved
+## as "corp_theme" only when a field is not default, so older saves load it as defaults and a
+## campaign without theme data hashes as before.
+var corp_theme: CampaignThemeState = CampaignThemeState.new()
 
 
 func is_over() -> bool:
@@ -166,7 +170,7 @@ func _raw_dict() -> Dictionary:
 	var armory_out := []
 	for a in armory:
 		armory_out.append(String(a))
-	return {
+	var out := {
 		"corporation_id": String(corporation_id), "campaign_seed": str(campaign_seed),
 		"city_seed": ArtSeed.u64_str(city_seed),
 		"heat": heat, "schematics": schematics, "roster": ops, "armory": armory_out,
@@ -182,6 +186,10 @@ func _raw_dict() -> Dictionary:
 		"raids_won": raids_won, "raids_lost": raids_lost,
 		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
+	var theme := corp_theme.to_dict()
+	if not theme.is_empty():  # absent at defaults: campaigns without theme data hash as before WH-02
+		out["corp_theme"] = theme
+	return out
 
 
 static func from_dict(d: Dictionary) -> CampaignState:
@@ -225,6 +233,9 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	c.raids_lost = int(d.get("raids_lost", 0))
 	c.last_raid = d.get("last_raid", {}).duplicate(true)
 	c.outcome = int(d.get("outcome", Outcome.NONE))
+	var theme: Variant = d.get("corp_theme", {})
+	if theme is Dictionary:
+		c.corp_theme.load_dict(theme)
 	return c
 
 

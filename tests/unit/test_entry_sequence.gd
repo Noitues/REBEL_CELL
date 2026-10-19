@@ -10,7 +10,10 @@ class StubView extends StreetRouteView:
 	var calls: Array[String] = []
 	var last_u := -1.0
 
-	func entry_begin() -> void:
+	var rooms_open_arg := false
+
+	func entry_begin(rooms_open: bool = false) -> void:
+		rooms_open_arg = rooms_open
 		calls.append("begin")
 
 	func entry_dive(u: float) -> void:
@@ -46,13 +49,13 @@ func after_each() -> void:
 	Motion.force_live = _live_before
 
 
-func _cover(reverse: bool) -> Array:
+func _cover(reverse: bool, beats: Array = EntryBeats.STREET_BEATS) -> Array:
 	var view := StubView.new()
 	add_child_autofree(view)
 	var cover := EntryCover.new()
 	add_child_autofree(cover)
 	watch_signals(cover)
-	cover.start(view, reverse)
+	cover.start(view, reverse, beats)
 	return [cover, view]
 
 
@@ -228,3 +231,56 @@ func test_the_skip_key_is_space_behind_the_input_map() -> void:
 	Settings.add_runtime_actions()
 	assert_true(InputMap.has_action(&"route_skip"))
 	assert_eq(Settings.key_for(&"route_skip"), KEY_SPACE)
+
+
+# --- The zoom reuses the dive (NA-25b, D6) ------------------------------------------------------------------
+
+func test_the_zoom_is_the_dive_then_the_zoom_with_the_rooms_open() -> void:
+	var made := _cover(false, EntryBeats.ZOOM_BEATS)
+	var cover: EntryCover = made[0]
+	var view: StubView = made[1]
+	assert_true(view.rooms_open_arg, "no REVEAL: the rooms stay open through the dive")
+	_run(cover, 60.0)
+	assert_eq(view.calls, ["begin", "dive", "zoom", "end"] as Array[String], "the dive, then the zoom to DECISION")
+	var tbl := EntryBeats.table(EntryBeats.ZOOM_BEATS, false, false)
+	assert_almost_eq(float(tbl[0]["end"]) - float(tbl[0]["start"]), 3.0, FRAME, "the same dive")
+
+
+func test_the_zoom_out_reads_it_backwards_with_no_select_hold() -> void:
+	var made := _cover(true, EntryBeats.ZOOM_BEATS)
+	var cover: EntryCover = made[0]
+	var view: StubView = made[1]
+	_run(cover, 60.0)
+	assert_eq(view.calls, ["begin", "zoom", "dive"] as Array[String], "the zoom, then the dive back to the HQ page")
+	assert_almost_eq(cover.elapsed(), cover.total_seconds(), FRAME * 3.0, "nothing follows the dive: no hold, no REVEAL")
+	assert_false(view.calls.has("reveal"))
+
+
+func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
+	var made := _cover(false)
+	var view: StubView = made[1]
+	assert_false(view.rooms_open_arg)
+
+
+# --- The HQ side backwards (NA-25b) --------------------------------------------------------------------------
+
+func test_the_hq_side_switches_under_the_night_sky_then_brings_the_crt_back() -> void:
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	var seen := {"night": false, "terminal_hidden": false, "calls": 0}
+	var switch := func() -> void:
+		seen["calls"] += 1
+		seen["night"] = seq.night
+		seen["terminal_hidden"] = not seq.terminal.visible
+	seq.play_out({"street": true, "from": "A", "to": "B"}, self, switch)
+	assert_true(seen["night"], "the switch loads the HQ under the night sky")
+	assert_true(seen["terminal_hidden"], "the CRT is off until the HQ is there")
+	assert_eq(seen["calls"], 1)
+	await get_tree().process_frame
+	assert_false(seq.night, "the sky lifts once the HQ is in")
+	assert_true(seq.terminal.visible, "the CRT comes back on (the collapse reversed)")
+	seq.skip()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_false(seq.visible, "a press ends it on the HQ with no terminal left")
+	assert_null(seq.terminal)

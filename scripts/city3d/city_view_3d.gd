@@ -340,6 +340,14 @@ func building_material() -> ShaderMaterial:
 	return _building_mat
 
 
+## NA-25b: the wet ground's `puddles_sharp` weight (0 .. 1; spec 5.2 band by camera distance, `RevealTiers.band(d, "puddles_sharp")`).
+## Far from the street the puddles go to their blurry mean, so the ground never shows flat mirror patches (the dive).
+func set_puddles_sharp(k: float) -> void:
+	for m: ShaderMaterial in [_ground_mat, _outer_mat]:
+		if m != null:
+			m.set_shader_parameter(&"puddles_sharp", clampf(k, 0.0, 1.0))
+
+
 ## The lane lines' material (the street netrun swaps its shader for the quiet `route_lane`).
 func lane_material() -> ShaderMaterial:
 	return _lane_mat

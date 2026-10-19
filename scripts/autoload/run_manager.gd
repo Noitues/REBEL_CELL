@@ -86,6 +86,7 @@ func has_save() -> bool:
 func reset() -> void:
 	campaign = null
 	netrun = null
+	street_link = {}
 	_restore_lookup()
 	load_profile()
 
@@ -626,12 +627,16 @@ func go_to_title() -> void:
 	change_scene(TITLE_SCENE)
 
 
-## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT.
-func go_to_hq() -> void:
+## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT. NA-25b: `street` (the street dive has just played backwards to the
+## HQ page) ends with the HQ side of the entry in reverse, the CRT coming back on over the jack-in's link.
+func go_to_hq(street: bool = false) -> void:
 	if scene_change_pending():
 		return
 	if scene_switching_enabled:
-		Fx.jack_out(func() -> void: change_scene(HQ_SCENE), -1.0, tr("HQ"))
+		if street and not street_link.is_empty():
+			Fx.jack_out_link(func() -> void: change_scene(HQ_SCENE), street_link, tr("HQ"))
+		else:
+			Fx.jack_out(func() -> void: change_scene(HQ_SCENE), -1.0, tr("HQ"))
 	else:
 		change_scene(HQ_SCENE)
 
@@ -651,11 +656,15 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 		street_entry = street_route_on()
 		if street_entry and not link.is_empty():
 			link["street"] = true
+			street_link = link.duplicate()
 		Fx.jack_in_link(_switch_to_netrun, link, jack_destination(site_id), jack_note(), jack_tier(site_id))
 	else:
 		street_entry = false
 		_switch_to_netrun()
 
+
+## NA-25b: the street jack-in's link (screen px of the HQ's map), kept for the jack-out's CRT (`go_to_hq(true)`).
+var street_link: Dictionary = {}
 
 ## NA-25: true from a jack in with the street route on until the netrun scene takes it (it then plays the entry's dive).
 var street_entry: bool = false

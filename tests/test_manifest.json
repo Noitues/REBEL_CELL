@@ -1,6 +1,10 @@
 {
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite, deferred = text scale > 1.0 / high contrast / gamepad / colour-blind scripts, skipped by every default run (run_tests.py --tier deferred runs only them). Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
+		"res://tests/unit/test_w1_street_gen_sweep.gd": {
+			"seconds": 360.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_wheel_sizes.gd": {
 			"seconds": 1.0,
 			"tier": "fast"
@@ -1450,6 +1454,10 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_city_seed_save.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_corp_theme_state.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
 		},

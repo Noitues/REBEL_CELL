@@ -54,6 +54,7 @@ var _room_slot: Dictionary = {}  # node id -> slot
 var _room_vol: Dictionary = {}  # node id -> {"box": Vector4, "z": Vector2}
 var _win_boxes := PackedVector4Array()
 var _win_zs := PackedVector2Array()
+var _win_open := PackedFloat32Array()
 var _haze_cur := -1.0
 var _depth_quad: MeshInstance3D = null
 
@@ -184,6 +185,7 @@ func _mount_rooms() -> void:
 	var zs := PackedVector2Array()
 	boxes.resize(ROOM_MAX)
 	zs.resize(ROOM_MAX)
+	_win_open.resize(ROOM_MAX)
 	var n_win := 0
 	for id: String in ids:
 		var room: Dictionary = rooms[id]
@@ -216,6 +218,7 @@ func _mount_rooms() -> void:
 			zs[n_win] = vol["z"]
 			_room_slot[id] = n_win
 			_room_vol[id] = vol
+			_win_open[n_win] = 1.0
 			n_win += 1
 	_win_boxes = boxes
 	_win_zs = zs
@@ -223,6 +226,7 @@ func _mount_rooms() -> void:
 	bm.set_shader_parameter(&"room_n", n_win)
 	bm.set_shader_parameter(&"room_box", boxes)
 	bm.set_shader_parameter(&"room_z", zs)
+	bm.set_shader_parameter(&"room_open", _win_open)
 
 
 ## The route buildings carry the `route` bit: the shader cuts the room windows out of their walls.
@@ -249,25 +253,42 @@ func _apply_street_look() -> void:
 		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
 
 
-## Opens or closes room `id`: closed, the building keeps its facade over the room (no window cut into the wall, the room mesh
-## hidden), so an unrevealed room never reads as a black box (the jack-in dive, the REVEAL and the reverse). No dissolve (NA-25b).
+## Opens or closes room `id` at once (`set_room_dissolve` at 1 or 0): closed, the building keeps its facade over the room (no window
+## cut into the wall, the room mesh hidden), so an unrevealed room never reads as a black box.
 func set_room_open(id: String, open: bool) -> void:
+	set_room_dissolve(id, 1.0 if open else 0.0)
+
+
+## NA-25b: the facade of room `id` dissolved into its cutaway room by `k` (0 = the closed facade, 1 = the window cut and the room
+## whole). The REVEAL drives `k` by its timeline (`EntryBeats.up_k`, `entry_reveal_dissolve` seconds), so scrubbing, the jack-out reverse
+## and a skip all land on the same end state; under reduce effects the view passes 0 or 1 only. A share of the window's pixels is cut
+## by a Bayer order (`city_building` `room_open`).
+func set_room_dissolve(id: String, k: float) -> void:
+	k = clampf(k, 0.0, 1.0)
 	var m: MeshInstance3D = _rooms.get(id)
 	if m != null:
-		m.visible = open
+		m.visible = k > 0.0
 	if not _room_slot.has(id):
 		return
 	var slot: int = _room_slot[id]
 	var vol: Dictionary = _room_vol[id]
+	var open: bool = k > 0.0
 	var want_box: Vector4 = vol["box"] if open else Vector4()
 	var want_z: Vector2 = vol["z"] if open else Vector2()
-	if _win_boxes[slot] == want_box and _win_zs[slot] == want_z:
+	if _win_boxes[slot] == want_box and _win_zs[slot] == want_z and is_equal_approx(_win_open[slot], k):
 		return
 	_win_boxes[slot] = want_box
 	_win_zs[slot] = want_z
+	_win_open[slot] = k
 	var bm := view.building_material()
 	bm.set_shader_parameter(&"room_box", _win_boxes)
 	bm.set_shader_parameter(&"room_z", _win_zs)
+	bm.set_shader_parameter(&"room_open", _win_open)
+
+
+## How far room `id`'s facade has dissolved open (0 closed .. 1 whole).
+func room_dissolve_of(id: String) -> float:
+	return _win_open[_room_slot[id]] if _room_slot.has(id) else (1.0 if room_is_open(id) else 0.0)
 
 
 ## True when room `id` is open (drawn, its window cut).
@@ -357,6 +378,7 @@ func _apply_fog_density() -> void:
 	var d_ov: float = NetrunPose.from_json(data.derive["overview"]).dist
 	var d_dec: float = NetrunPose.from_json(z).dist
 	var zd := RevealTiers.zoom_detail(pose.dist, d_ov, d_dec)
+	view.set_puddles_sharp(RevealTiers.band(pose.dist, "puddles_sharp"))
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
 	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).

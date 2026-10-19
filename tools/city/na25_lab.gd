@@ -12,6 +12,11 @@ const STEP := 1.0 / 60.0
 const DEFAULT_TIMES := "0,1.5,3.0,4.5,6.0,7.0,7.8,9.0,10.0,11.5,12.5,13.0"
 const SKIP_AT := 4.0
 const LUMA_MIN := 0.02
+## NA-25b blotch metric: a pixel is "flat near-white" when its darkest channel is above WHITE_MIN (192 x 108 reduction); only the
+## interior of a region counts (a pixel whose 3 x 3 neighbourhood is all near-white), so a lit sign, a window or a beam does not. A frame
+## fails when that share of it is above FLAT_WHITE_MAX (the mid-dive cloud patches were 3 to 5 % of the frame, flat and wide).
+const WHITE_MIN := 0.62
+const FLAT_WHITE_MAX := 0.005
 
 var view: StreetRouteView
 var cover: EntryCover
@@ -25,6 +30,7 @@ var _dark_frames := 0
 var _frames := 0
 var _end_pose: Array = []
 var _shots := ""
+var _white_max := 0.0
 
 
 func _ready() -> void:
@@ -57,7 +63,7 @@ func _ready() -> void:
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
 	var opts := NetrunPoseBuilder.successors(_data.run_graph, "")
-	view.setup(_data, CityModel.shared(cfg, cfg.city_seed), "", [], opts)
+	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), "", [], opts)
 	view.ready_to_show.connect(func() -> void: _phase = "settle", CONNECT_ONE_SHOT)
 	for row in EntryBeats.table(EntryBeats.HQ_BEATS + EntryBeats.STREET_BEATS, false, false):
 		print("NA25 beat %s %.3f-%.3f" % [row["beat"], row["start"], row["end"]])
@@ -75,6 +81,8 @@ func _process(_delta: float) -> void:
 			_step(true)
 		"skip":
 			_step_skip()
+		"lb":
+			_step_lb()
 		"hq":
 			_step_hq()
 
@@ -111,8 +119,37 @@ func _luma_ok(img: Image) -> bool:
 	return best > LUMA_MIN
 
 
+## The share of the frame that is flat near-white (the NA-25b blotch metric).
+static func flat_white(img: Image) -> float:
+	var small := img.duplicate() as Image
+	small.resize(192, 108, Image.INTERPOLATE_TRILINEAR)
+	var w := small.get_width()
+	var h := small.get_height()
+	var white := PackedByteArray()
+	white.resize(w * h)
+	for y in h:
+		for x in w:
+			var c := small.get_pixel(x, y)
+			white[y * w + x] = 1 if minf(c.r, minf(c.g, c.b)) > WHITE_MIN else 0
+	var n := 0
+	for y in range(1, h - 1):
+		for x in range(1, w - 1):
+			var all_white := true
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					if white[(y + dy) * w + x + dx] == 0:
+						all_white = false
+			if all_white:
+				n += 1
+	return float(n) / float(w * h)
+
+
 func _grab(tag: String) -> void:
 	var img := get_viewport().get_texture().get_image()
+	var wf := flat_white(img)
+	if not tag.begins_with("hq_"):
+		_white_max = maxf(_white_max, wf)
+	print("NA25 flat white %s %.4f" % [tag, wf])
 	if not _luma_ok(img):
 		_dark_frames += 1
 	img.save_png("%s/%s.png" % [_shots, tag])
@@ -161,7 +198,37 @@ func _step_skip() -> void:
 	_grab("skip_after")
 	var got: Array = view.rig.pose.to_json().values()
 	print("NA25 skip at %.1f s: end pose equals the played end pose = %s; view=%d; dark_frames=%d" % [SKIP_AT, str(got == _end_pose), view.current_view(), _dark_frames])
-	# The HQ side (beats 3a-3c): the JackSequence street variant over the dive's first frame, in real time.
+	# NA-25b: the look blend swept 0 .. 1 at a mid-dive pose (the wet ground must not clip to white at any blend).
+	view.entry_begin()
+	view.entry_dive(LB_SWEEP_U)
+	_lb_i = 0
+	_lb_f = 0
+	_phase = "lb"
+
+
+const LB_SWEEP := [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
+const LB_SWEEP_U := 0.4
+var _lb_i := 0
+var _lb_f := 0
+
+
+func _step_lb() -> void:
+	if _lb_i >= LB_SWEEP.size():
+		view.rig.view.set_look_blend(1.0)
+		_start_hq()
+		return
+	if _lb_f == 0:
+		view.rig.view.set_look_blend(float(LB_SWEEP[_lb_i]))
+	_lb_f += 1
+	if _lb_f >= 6:
+		_grab("lb_%.2f" % float(LB_SWEEP[_lb_i]))
+		_lb_i += 1
+		_lb_f = 0
+
+
+## The HQ side (beats 3a-3c): the JackSequence street variant over the dive's first frame, in real time.
+func _start_hq() -> void:
+	print("NA25 blotch max flat white %.4f (limit %.3f): %s" % [_white_max, FLAT_WHITE_MAX, "ok" if _white_max <= FLAT_WHITE_MAX else "FAIL"])
 	view.entry_begin()
 	view.entry_dive(0.0)
 	_hq_t0 = Time.get_ticks_msec()
