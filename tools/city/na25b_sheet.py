@@ -29,6 +29,7 @@ def crop_at(img: Image.Image, centre: tuple[int, int]) -> Image.Image:
 def main() -> int:
     e2e, lab, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     crt = Image.open(e2e / "chain_6b_crt_hold.png").convert("RGB")
+    saved = Image.open(e2e / "chain_8_saved.png").convert("RGB")
     bits55 = Image.open(lab / "bits_overview_0.55.png").convert("RGB")
     bits30 = Image.open(lab / "bits_overview_0.30.png").convert("RGB")
     dec55 = Image.open(lab / "bits_decision_0.55.png").convert("RGB")
@@ -46,6 +47,7 @@ def main() -> int:
         ("1:1 crop (1080p): bits 0.55, 0 / 1 glyphs", crop_at(dec55, (600, 400))),
         ("1:1 crop (1080p): bits 0.30, fewer glyphs", crop_at(dec30, (600, 400))),
         ("1:1 crop: the CRT panel (top-right quarter: hex column, scanlines, rim)", crt.crop((640, 0, 1280, 360))),
+        ("1:1 crop: SAVED toast right after the burn-open (bottom-right)", saved.crop((640, 360, 1280, 720))),
     ]
     rows = (len(tiles) + COLS - 1) // COLS
     sheet = Image.new("RGB", (COLS * TILE[0], rows * (TILE[1] + LABEL_H)), (16, 16, 20))

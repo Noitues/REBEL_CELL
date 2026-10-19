@@ -171,6 +171,9 @@ func _track_jack(delta: float) -> void:
 			_shoot_fwd(e)
 	if _mode == "shots":
 		_shoot_chain()
+		if _shot_done.has("chain_7_lens_open") and Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
+			_shot_done["chain_8_saved"] = true
+			get_viewport().get_texture().get_image().save_png("%s/chain_8_saved.png" % _shots)
 	if _mode == "shots" and _frames > 1:
 		var img := get_viewport().get_texture().get_image()
 		if not _luma_ok(img):
