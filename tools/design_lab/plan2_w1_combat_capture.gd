@@ -83,7 +83,10 @@ func _stacks() -> void:
 	# (WheelView._slice_label) on a plate beside the slice, as hover would show it.
 	var plate := PanelContainer.new()
 	var label := Label.new()
-	label.text = v._slice_label(1)
+	# The live tooltip: what hovering the slice asks the view for (WheelView._get_tooltip at the slice's badge).
+	var live := v._get_tooltip(v.badge_spot(1) - v.global_position)
+	print("TIP_MATCH ", live == v._slice_label(1), " live_len ", live.length())
+	label.text = live
 	label.custom_minimum_size.x = 460
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	plate.add_child(label)

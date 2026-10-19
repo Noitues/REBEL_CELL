@@ -53,6 +53,8 @@ const HUB_MIN_FONT_SIZE := 8
 const D4_WINDOW := Vector2(1160, 580)
 const D4_POOL := Vector2(600, 440)
 const D4_ROWS_W := 500.0
+## N12b: the height (px) the rows column keeps for the pinned sub-tick map under the scrolling rows.
+const D4_MAP_H := 130.0
 ## M14 12Q-MAIN: the least height the D4 pool (and the rows beside it) keeps when the window gives up
 ## height to keep on the canvas at big text (px; the wheel is drawn to the pool).
 const D4_POOL_MIN_H := 300.0
@@ -81,6 +83,8 @@ const CORE_PAD_PX: int = 44
 var d4: WheelView = null
 var _d4_combatant: CombatantState = null
 var _rows: VBoxContainer = null
+## The pinned section under the scrolling rows (the loadout's sub-tick map).
+var _pinned: VBoxContainer = null
 var _slice_rows: VBoxContainer = null
 var _core_rows: VBoxContainer = null
 
@@ -197,16 +201,27 @@ func use_d4(c: CombatantState) -> void:
 	rows_scroll.name = "RowsScroll"
 	rows_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	rows_scroll.follow_focus = true
-	rows_scroll.custom_minimum_size = Vector2(D4_ROWS_W, D4_POOL.y)
+	rows_scroll.custom_minimum_size = Vector2(D4_ROWS_W, D4_POOL.y - D4_MAP_H)
+	rows_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows_scroll.add_child(_rows)
-	row.add_child(rows_scroll)
+	var column := VBoxContainer.new()
+	column.name = "RowsColumn"
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(rows_scroll)
+	_pinned = VBoxContainer.new()
+	_pinned.name = "Pinned"
+	_pinned.custom_minimum_size.y = D4_MAP_H
+	column.add_child(_pinned)
+	row.add_child(column)
 	_rows_scroll = rows_scroll
 	_rows.add_child(_caption(tr("SLICES  //  read clockwise from the needle")))
 	_slice_rows = VBoxContainer.new()
 	_slice_rows.name = "SliceRows"
 	_rows.add_child(_slice_rows)
 	for i in slices.size():
+		if _d4_combatant != null and _d4_combatant.wheel.slot_size(i) <= 0:
+			continue  # N12b: an empty arc has no row
 		var s := _slice(i)
 		var type := s.slice_type if s != null else RC.SliceType.NULL
 		var words := tr(String(Codex.SLICE_TYPE_TEXT.get(type, ""))) if s != null else ""  # what the slice does (round 44)
@@ -243,7 +258,7 @@ func _fit_d4_window() -> void:
 		var h := maxf(D4_POOL_MIN_H, _wheel.custom_minimum_size.y - over)
 		_wheel.custom_minimum_size.y = h
 		if _rows_scroll != null:
-			_rows_scroll.custom_minimum_size.y = h
+			_rows_scroll.custom_minimum_size.y = h - D4_MAP_H
 		window.custom_minimum_size.y = maxf(0.0, window.custom_minimum_size.y - over)
 	window.size = window.get_combined_minimum_size()
 	window.position = Vector2(maxf(0.0, (view.x - window.size.x) * 0.5), maxf(0.0, minf(top, CANVAS_BOTTOM - window.size.y)))
@@ -310,14 +325,10 @@ func _glyph_row(glyph: StringName, col: Color, title: String, words: String) -> 
 	return row
 
 
-## N12b: `note` (the loadout's sub-tick map) sits in the wheel pool's bottom-left corner, which the round
-## wheel leaves empty; it never takes the mouse.
-func add_wheel_note(note: Control) -> void:
-	_wheel.add_child(note)
-	note.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	note.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	note.offset_left = UiTheme.SP_S
-	note.offset_bottom = -UiTheme.SP_S
+## N12b: `section` (the loadout's sub-tick map) is pinned under the scrolling rows: in the rows column,
+## clear of the wheel, and never scrolled out of view.
+func add_rows_section(section: Control) -> void:
+	_pinned.add_child(section)
 
 
 func _ready() -> void:

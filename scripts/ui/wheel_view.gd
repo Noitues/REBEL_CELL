@@ -3039,7 +3039,6 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	disc.scale = Vector2(flip_squash, 1.0)
 	disc.pivot_offset = disc.size * 0.5
 	disc.put(&"n", n)
-	disc.put(&"span", wheel.ticks_per_slice() * DEG_PER_TICK)
 	disc.put(&"spans", WheelDisc.slot_spans(wheel.layout(), DEG_PER_TICK))
 	disc.put(&"mids", mids)
 	disc.put(&"kinds", kinds)

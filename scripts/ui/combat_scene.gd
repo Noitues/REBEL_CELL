@@ -664,6 +664,24 @@ func _toast_spot() -> Rect2:
 const SATELLITE_TOAST_W := 240.0
 
 
+## N7: the view of the wheel a lock refusal (`reason`) is about (the first one carrying that lock), else null.
+func _locked_view(reason: String) -> WheelView:
+	var kind := &""
+	if reason == CombatResolver.NUDGE_LOCKED:
+		kind = WheelState.LOCK_NUDGE
+	elif reason == CombatResolver.RESPIN_LOCKED:
+		kind = WheelState.LOCK_RESPIN
+	if kind == &"":
+		return null
+	var views: Array = [_player_view]
+	views.append_array(_enemy_views.values())
+	for v in views:
+		var view := v as WheelView
+		if view != null and view.combatant != null and view.combatant.wheel.is_locked(kind):
+			return view
+	return null
+
+
 ## W0 ARTFIX: the aim ring of the satellite a move was refused on: {"at", "radius", "view"} (empty
 ## when none is aimed at).
 func _refused_satellite_ring() -> Dictionary:
@@ -1718,7 +1736,11 @@ func _on_action_refused(reason: String) -> void:
 	preview_note.append(reason)
 	var at := _toast_spot()
 	var aimed := _refused_satellite_ring() if reason == CombatResolver.SATELLITE_FIXED else {}
-	if aimed.is_empty():
+	var locked := _locked_view(reason)
+	if aimed.is_empty() and locked != null:
+		# N7 (CAP-W1 fix): beside the locked wheel, clear of its HP row, chips and state label.
+		toast.show_beside(tr(reason), locked.global_center(), locked._radius(), get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
+	elif aimed.is_empty():
 		toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
 	else:
 		# W0 ARTFIX: the refusal stands beside the aim ring and the ring shakes (the satellite flashes red).

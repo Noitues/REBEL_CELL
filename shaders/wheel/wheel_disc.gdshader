@@ -58,7 +58,6 @@ const vec3 HEAT = vec3(1.0, 0.55, 0.12);
 uniform float ext = 470.0;
 uniform float px = 1.6;
 uniform int n = 6;
-uniform float span = 60.0;
 // Plan 2 N12b: each slot's own span in degrees (WheelMath boundaries; 0 = an empty arc, drawn as nothing).
 uniform float spans[8];
 uniform float mids[8];
