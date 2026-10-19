@@ -1806,7 +1806,7 @@ func _s_card_detail() -> void:
 func _s_daemon_tray() -> void:
 	var net: Node = await _netrun()
 	var ids: Array = RunManager.lookup().ids_of_class(&"DaemonData")
-	ids.sort()
+	IdSort.sort_ids(ids)
 	if not ids.is_empty():
 		var first: Array[StringName] = [StringName(ids[0])]
 		DemoSetup.add_daemons(RunManager.netrun, first)

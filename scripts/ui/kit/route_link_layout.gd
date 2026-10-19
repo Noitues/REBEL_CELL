@@ -26,12 +26,12 @@ static func from_site(corp: CorporationData, campaign: CampaignState, site_id: S
 	if campaign.grid != null:
 		owned.append_array(campaign.grid.claimed_ids())
 	var links: Array = to_site.links.duplicate()
-	links.sort()
+	IdSort.sort_ids(links)
 	for l in links:
 		if owned.has(l) and l != site_id:
 			return l
 	var mine := owned.duplicate()
-	mine.sort()
+	IdSort.sort_ids(mine)
 	for o in mine:
 		if o == site_id:
 			continue

@@ -45,7 +45,7 @@ func _corporation_ids(registry: Node) -> Array[StringName]:
 		var r: Resource = registry.get_content(id)
 		if r is CorporationData:
 			out.append(id)
-	out.sort()
+	IdSort.sort_ids(out)
 	return out
 
 

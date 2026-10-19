@@ -777,7 +777,7 @@ func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: 
 		return
 	var fams := CityMeshKit.families_of(cfg, model.prisms, ids_all)
 	var keys: Array = fams.keys()
-	keys.sort()
+	IdSort.sort_ids(keys)
 	var lod := CityLod.far_level(cfg, building_lod) if far else maxi(0, building_lod)
 	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows)
 	for fk: int in keys:
@@ -936,7 +936,7 @@ const CLEAR_SHARE := 0.92
 func place_landmarks() -> void:
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	var corps: Array = model.hqs.keys()
-	corps.sort()
+	IdSort.sort_ids(corps)
 	for corp: StringName in corps:
 		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
 		if _place_landmark(corp, path, landmark_slot(corp), look):

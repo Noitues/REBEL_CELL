@@ -4003,7 +4003,7 @@ func breakdown(landing: CombatState, state: CombatState, resolved: CombatState, 
 	var lines := PackedStringArray()
 	var hits := hit_totals(events)
 	var attackers: Array = hits.keys()
-	attackers.sort()
+	IdSort.sort_ids(attackers)
 	for src in attackers:
 		var per: Dictionary = hits[src]
 		if not per.has(id):

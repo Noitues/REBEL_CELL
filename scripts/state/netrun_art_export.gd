@@ -62,7 +62,7 @@ static func export_run(session: NetrunSession, city: Dictionary, index: Dictiona
 		if d.has("error"):
 			return {"files": {}, "error": d["error"]}
 	var corps: Array = (city["hqs"] as Dictionary).keys()
-	corps.sort()
+	IdSort.sort_ids(corps)
 	return {"error": "", "files": {
 		"net.json": canonical(net),
 		"run_graph.json": canonical(run_graph_json(session.run.map, rid)),

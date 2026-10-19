@@ -637,6 +637,10 @@
 			"seconds": 0.5,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_no_bare_id_sort.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_wheel_math.gd": {
 			"seconds": 0.1,
 			"tier": "fast"

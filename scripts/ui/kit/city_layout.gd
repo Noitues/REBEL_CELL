@@ -115,7 +115,7 @@ static func spread_report(city: NeonCity, corp: CorporationData, points: Diction
 	var r := {"sites": 0, "in": 0, "off": {}, "hq": 0, "out": 0, "dup": 0}
 	var lots := {}
 	var ids: Array = points.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		var p: Vector2 = points[id]
 		var l := Vector2i(floori(p.x), floori(p.y))
