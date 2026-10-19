@@ -5,7 +5,7 @@
 // speed is quantized so lane_len = k * speed * loop_s, which makes the lane loop seamlessly on k * loop_s (NA-24b). The streak's brightness
 // rises toward its head: floor + (1 - floor) * f^power.
 shader_type spatial;
-render_mode unshaded, blend_add, cull_disabled, depth_draw_never, specular_disabled, fog_disabled;
+render_mode unshaded, cull_disabled, depth_draw_opaque, specular_disabled, fog_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
 
@@ -46,5 +46,8 @@ void fragment() {
 	}
 	float across = 1.0 - smoothstep(0.5, 1.0, abs(UV.y));
 	ALBEDO = lane_col * emit * acc * across * emission_multiplier * look_blend;
-	ALPHA = 1.0;
+	// AAA-2: an opaque emitter (discard where there is no streak) so the post chain blooms it and the SSR reflects it in the wet street.
+	if (acc * across < 0.01) {
+		discard;
+	}
 }

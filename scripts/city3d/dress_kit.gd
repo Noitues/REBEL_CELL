@@ -5,6 +5,7 @@ extends RefCounted
 ## (x, height, -y), as everywhere in the netrun view.
 
 const NEON := preload("res://shaders/city/dress_neon.gdshader")
+const SOLID := preload("res://shaders/city/dress_solid.gdshader")
 const SIGN := preload("res://shaders/city/dress_sign.gdshader")
 const PLUME := preload("res://shaders/city/dress_plume.gdshader")
 const SHAPE_SOLID := 0
@@ -30,7 +31,7 @@ static func pos_w(p: Array) -> Vector3:
 ## A neon material of `shape` with emission `emit`.
 static func neon_material(shape: int, emit: float) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
-	m.shader = NEON
+	m.shader = SOLID if shape == SHAPE_SOLID else NEON
 	m.set_shader_parameter(&"shape", shape)
 	m.set_shader_parameter(&"emit", emit)
 	m.set_shader_parameter(&"loop_s", float(CityShaderConfigData.shipped().streak["loop_s"]))
