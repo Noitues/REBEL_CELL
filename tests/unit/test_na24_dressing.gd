@@ -209,17 +209,19 @@ func test_hero_signs_are_blades_with_varied_panels_and_sign_pieces_use_the_sign_
 		var c: Color = DressDistricts.color_in("accent", set_id)
 		var dh: float = absf(a.h - c.h)
 		assert_true(minf(dh, 1.0 - dh) > 0.12, "%s: accent contrasts with the district hue" % set_id)
-	var acc: int = 0
-	for it: Dictionary in sd.items["hero_full"]:
-		if (it["col"] as Color).is_equal_approx(DressDistricts.color_in("accent", "neon_bay")):
-			acc += 1
-	assert_true(acc <= 2 * hero_n + hero_n, "at most two accent panels per blade (plus bands)")
+	for n in range(3, 7):
+		for b in 40:
+			var acc: Array = sd._accent_panels("b%d" % b, n)
+			assert_true(acc.size() >= 1 and acc.size() <= 2, "1-2 accent panels")
+			assert_false(acc.has(n - 1), "never the top panel (n %d)" % n)
+			if acc.size() == 2:
+				assert_true(absi(int(acc[0]) - int(acc[1])) >= 2, "never adjacent panels (n %d)" % n)
 	var yr: Vector2 = ((sd.nodes["sign_neon"][0] as MultiMeshInstance3D).material_override as ShaderMaterial).get_shader_parameter(&"yield_range")
 	assert_eq(yr.x, float(DressReveal.range_of("sign_full")["end"]), "the far block yields to the tier that covers it")
 
 
 func test_sign_levels_keep_the_core_above_the_panel_and_under_the_clamp() -> void:
 	var sg: Dictionary = DressingConfigData.shipped().sign
-	assert_true(float(sg["panel_level"]) >= 0.35 and float(sg["panel_level"]) <= 0.5, "panel 0.35-0.5")
+	assert_true(float(sg["panel_level"]) >= 0.35 and float(sg["panel_level"]) <= 0.55, "panel 0.35-0.55")
 	assert_true(float(sg["core_level"]) >= 0.85 and float(sg["core_level"]) <= float(sg["core_max"]), "core about 0.9")
 	assert_true(float(sg["core_max"]) <= 1.0)

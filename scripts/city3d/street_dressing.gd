@@ -132,10 +132,14 @@ func _fill_pal(pal: String) -> String:
 func _accent_panels(bid: String, n: int) -> Array:
 	var cnt: Array = _cfg.sign["hero_accent"]
 	var k: int = int(cnt[1]) if n >= int(_cfg.sign["hero_accent_from"]) else int(cnt[0])
-	var first: int = mini(int(DressDistricts.hash01("hero_acc", bid) * float(n)), n - 1)
+	# Never the top panel (index n - 1), never two adjacent panels: the district hue owns the blade.
+	var first: int = mini(int(DressDistricts.hash01("hero_acc", bid) * float(n - 1)), n - 2)
 	var out: Array = [first]
 	if k > 1:
-		out.append((first + n / 2) % n)
+		if first + 2 <= n - 2:
+			out.append(first + 2)
+		elif first - 2 >= 0:
+			out.append(first - 2)
 	return out
 
 
