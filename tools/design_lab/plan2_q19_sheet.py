@@ -10,8 +10,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 PANELS = [
     ("1  NUDGE: exact numbers", "1_NUDGE"),
-    ("2  RESPIN: ? over the ghosted needle", "2_RESPIN"),
-    ("3  COMPOUND: damage + block exact, ? on the random status", "3_COMPOUND"),
+    ("2  RESPIN: ? LANDING, ring ghost, ? on the hub, old tag dimmed", "2_RESPIN"),
+    ("3  COMPOUND: damage + block exact, ? names the known status", "3_COMPOUND"),
 ]
 W = 800
 H = 450
@@ -29,10 +29,13 @@ def font(size: int) -> ImageFont.ImageFont:
 
 def main() -> None:
     src, out = Path(sys.argv[1]), Path(sys.argv[2])
-    rows = 2
+    # Optional third argument: the panel numbers to keep, e.g. "2,3" (one row).
+    keep = sys.argv[3].split(",") if len(sys.argv) > 3 else [p[1][0] for p in PANELS]
+    panels = [p for p in PANELS if p[1][0] in keep]
+    rows = (len(panels) + 1) // 2
     sheet = Image.new("RGB", (W * 2, (H + HEAD) * rows), (20, 20, 24))
     d = ImageDraw.Draw(sheet)
-    for i, (label, name) in enumerate(PANELS):
+    for i, (label, name) in enumerate(panels):
         x, y = (i % 2) * W, (i // 2) * (H + HEAD)
         d.text((x + 8, y + 6), label, fill=(240, 240, 230), font=font(16))
         p = src / (name + ".png")

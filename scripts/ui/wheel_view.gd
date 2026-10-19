@@ -2485,17 +2485,18 @@ func _draw_pointer_tags() -> void:
 		if not r.has_area():
 			continue
 		var tint := PointerTag.tint(model[i])
+		var dim := UNKNOWN_TAG_DIM if unknown_ghost else 1.0  # Q19: the needle may land elsewhere
 		if ps.size() > 1:
 			# N11: with several needles (they may stand 1 tick apart) a leader ties each tag to its own blade tip.
 			var deg := deg_to_rad(fposmod(-ps[i] * DEG_PER_TICK, 360.0))
 			var tip := _center() + Vector2(sin(deg), -cos(deg)) * reach
 			var edge := Vector2(clampf(tip.x, r.position.x, r.end.x), clampf(tip.y, r.position.y, r.end.y))
-			draw_line(edge, tip, _col(tint), POINTER_TAG_LEADER * _ts())
-		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), _col(Palette.SHADOW))
-		draw_rect(r, _col(Palette.INK))
-		draw_rect(r, _col(tint), false, 2.0)
+			draw_line(edge, tip, Color(_col(tint), dim), POINTER_TAG_LEADER * _ts())
+		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), Color(_col(Palette.SHADOW), dim))
+		draw_rect(r, Color(_col(Palette.INK), dim))
+		draw_rect(r, Color(_col(tint), dim), false, 2.0)
 		HighContrast.draw_text(self, f, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fs * 0.35), PointerTag.text(model[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, _col(tint))
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, Color(_col(tint), dim))
 
 
 # --- ART-2 2A: precision landings (ART_BIBLE 3.19) and the player's defeat (3.3) ----------------
@@ -3862,34 +3863,39 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 		SliceIcon.draw_icon(self, from, 8, slice.slice_type, Palette.slice_color(slice.slice_type))
 
 
-## Q19: the ghosted needle of a random respin: a dashed needle on the real one, a dashed arc
-## ahead of it (the way the rim turns) and a "?" disc on the rim. Nothing says where it lands.
+## Q19 (art-pass r2): a random respin: a dashed ring just outside the slice rim, all the way round
+## (it points at no slice), with chevrons on it for the way the wheel turns, and a "?" disc on the hub.
+## Nothing says where the needle lands.
 func _draw_unknown_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	if not unknown_ghost or wheel.pointer_ticks.is_empty():
 		return
-	var a_needle := _ang(wheel.pointer_ticks[0])
-	var a_ahead := _ang(wheel.pointer_ticks[0] + UNKNOWN_GHOST_TICKS)
 	var r := radius + GHOST_OUT
 	var col := Color(_col(Palette.CELL_ACID), UNKNOWN_GHOST_ALPHA)
-	var dir := Vector2(cos(a_needle), sin(a_needle))
-	var from := center + dir * radius * UNKNOWN_GHOST_NEEDLE_FROM
-	var steps := UNKNOWN_GHOST_DASHES
-	for d in steps:
-		if d % 2 == 0:
-			draw_line(from.lerp(center + dir * r, float(d) / steps), from.lerp(center + dir * r, float(d + 1) / steps), col, 2.0)
-	_draw_dashed_arc(center, r, minf(a_needle, a_ahead), maxf(a_needle, a_ahead), col, 2.0)
-	var disc := center + dir * r
-	draw_circle(disc, UNKNOWN_GHOST_DISC, Palette.NIGHT_SKY)
-	HighContrast.draw_text(self, Palette.mono(), disc + Vector2(-4, 5), "?", HORIZONTAL_ALIGNMENT_CENTER, -1, _fs(HUB_FONT_SIZE + 4), col)
+	_draw_dashed_arc(center, r, 0.0, TAU, col, UNKNOWN_GHOST_LINE)
+	for i in UNKNOWN_GHOST_CHEVRONS:
+		var a := TAU * (float(i) + 0.5) / UNKNOWN_GHOST_CHEVRONS
+		var tangent := Vector2(-sin(a), cos(a))
+		var normal := Vector2(cos(a), sin(a))
+		var tip := center + normal * r + tangent * UNKNOWN_CHEVRON_PX
+		var back := center + normal * r - tangent * UNKNOWN_CHEVRON_PX
+		draw_polyline(PackedVector2Array([back + normal * UNKNOWN_CHEVRON_PX, tip, back - normal * UNKNOWN_CHEVRON_PX]), col, UNKNOWN_GHOST_LINE * 1.5)
+	var ts := _ts()
+	draw_circle(center, UNKNOWN_HUB_DISC * ts, Color(_col(Palette.NIGHT_SKY), UNKNOWN_DISC_BACK_ALPHA))
+	HighContrast.draw_text(self, Palette.marker(), center + Vector2(-UNKNOWN_HUB_DISC * 0.5, UNKNOWN_HUB_DISC * 0.4) * ts, "?",
+		HORIZONTAL_ALIGNMENT_CENTER, UNKNOWN_HUB_DISC * ts, _fs(UNKNOWN_HUB_FONT), _col(Palette.CELL_ACID))
 
 
-## The "?" ghost needle: how far ahead its dashed arc runs (ticks), its dash count, alpha, the
-## share of the radius its needle starts at, and the disc's radius (px).
-const UNKNOWN_GHOST_TICKS := RC.TICKS / 4
-const UNKNOWN_GHOST_DASHES := 8
-const UNKNOWN_GHOST_ALPHA := 0.75
-const UNKNOWN_GHOST_NEEDLE_FROM := 0.35
-const UNKNOWN_GHOST_DISC := 11.0
+## The "?" respin ghost: ring alpha and width (px), chevron count and half size (px), the hub disc's
+## radius (px at text 1.0: 24 across, the ODDS chip's size) and its backing alpha, its font, and how
+## far the old needle's judgement tag dims (share of full).
+const UNKNOWN_GHOST_ALPHA := 0.6
+const UNKNOWN_GHOST_LINE := 2.0
+const UNKNOWN_GHOST_CHEVRONS := 3
+const UNKNOWN_CHEVRON_PX := 7.0
+const UNKNOWN_HUB_DISC := 12.0
+const UNKNOWN_DISC_BACK_ALPHA := 0.85
+const UNKNOWN_HUB_FONT := 20
+const UNKNOWN_TAG_DIM := 0.4
 
 
 ## The inner ring's ghost (H21): a dashed arc inside the band from the segment that will

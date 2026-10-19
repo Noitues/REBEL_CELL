@@ -96,6 +96,7 @@ func test_compound_play_exact_except_random_part() -> void:
 		assert_true(f.ok(), f.result.error if f.result != null else "")
 		assert_eq(s.rng.state, rng_before)
 		assert_true(f.is_unknown(PreviewResult.RANDOM_SLICE, &"enemy_0"), "the status slice is random")
+		assert_eq(int(f.unknowns[0]["status"]), RC.Status.OVERCLOCKED, "the mark says which status")
 		var r := s.apply(CombatAction.play_card(0, &"enemy_0"))
 		var fe := f.state().get_combatant(&"enemy_0")
 		var re := r.state.get_combatant(&"enemy_0")

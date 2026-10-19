@@ -3,8 +3,9 @@ extends RefCounted
 ## Plan 2 Q19: a forecast of one staged action (a nudge, a respin or a card play): the result
 ## with every KNOWN part exact and each random part marked unknown instead of rolled. The
 ## forecast draws nothing from the real RNG and changes no state (CombatResolver.forecast).
-## An unknown part is {kind, target, listener}: `target` is the wheel the roll would hit and
-## `listener` says it happened inside an enemy listener's reaction (that part only is "?").
+## An unknown part is {kind, target, listener, status}: `target` is the wheel the roll would hit and
+## `listener` says it happened inside an enemy listener's reaction (that part only is "?"); `status` is the
+## RC.Status a random slice pick would place (NONE when it places none).
 
 ## Unknown kinds.
 const RESPIN := &"respin"  # a respin's landing: the needle stays where it is

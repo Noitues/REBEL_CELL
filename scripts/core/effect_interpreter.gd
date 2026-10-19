@@ -26,6 +26,9 @@ var quiet: bool = false
 var forecast_marks: Variant = null
 ## True while a listener's reaction runs (a mark made then says so).
 var forecast_in_listener: bool = false
+## The status the APPLY_STATUS effect now running would place (NONE otherwise): a random slice
+## pick marked meanwhile says which status it is for ("? status").
+var forecast_status: int = RC.Status.NONE
 
 
 func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
@@ -41,7 +44,7 @@ func forecasting() -> bool:
 ## Q19: records a random part left undecided (forecast only).
 func mark_unknown(kind: StringName, target_id: StringName) -> void:
 	if forecast_marks != null:
-		(forecast_marks as Array).append({"kind": kind, "target": target_id, "listener": forecast_in_listener})
+		(forecast_marks as Array).append({"kind": kind, "target": target_id, "listener": forecast_in_listener, "status": forecast_status})
 
 
 # --- Content helpers -------------------------------------------------------------
@@ -138,7 +141,9 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.APPLY_STATUS:
 			for t in targets:
 				for k in status_count(e, t):
+					forecast_status = e.status
 					var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
+					forecast_status = RC.Status.NONE
 					if slot >= 0 and apply_status(t, slot, e.status, events, e.stacks) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
 						events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:

@@ -3339,13 +3339,14 @@ func _mark_unknown_parts(fc: PreviewResult) -> void:
 		if StringName(u["kind"]) == PreviewResult.RESPIN:
 			v.set_unknown_ghost(true)
 		var row := hud_layer.row_for(v)
+		var chip := ResultChipModel.unknown_chip(StringName(u["kind"]), int(u.get("status", RC.Status.NONE)))
 		var has_odds := false
 		for ch in row.chips:
-			has_odds = has_odds or StringName(ch["kind"]) == ResultChipModel.ODDS
+			has_odds = has_odds or (StringName(ch["kind"]) == ResultChipModel.ODDS and ch.get("subject") == chip["subject"])
 		if has_odds:
 			continue
 		var chips: Array = row.chips.duplicate(true)
-		chips.append(ResultChipModel.odds_chip())
+		chips.append(chip)
 		row.set_result(chips, row.tip_title, row.tip_body)
 
 

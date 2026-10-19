@@ -28,6 +28,11 @@ func test_respin_hover_shows_question_mark_and_ghost_needle() -> void:
 	_scene._show_respin_odds()
 	assert_true(_scene._player_view.unknown_ghost, "the ghosted needle is up")
 	assert_true(_kinds(engine.state().player.id).has(ResultChipModel.ODDS), "the chip is a ?")
+	var subjects := []
+	for c in _scene.result_chips(engine.state().player.id):
+		if StringName(c["kind"]) == ResultChipModel.ODDS:
+			subjects.append(ResultChipModel.label(c))
+	assert_eq(subjects, ["? LANDING"], "the ? names its subject")
 	var tip := String(_scene._player_view.intent.get("tooltip", ""))
 	assert_false(tip.contains("%"), "no odds in the tooltip: " + tip)
 	assert_eq(engine.state().player.wheel.rotation, rot, "the needle does not move")
@@ -52,6 +57,10 @@ func test_compound_card_hover_is_exact_but_for_the_question_mark() -> void:
 	var hash_before := engine.state().state_hash()
 	_scene._preview_card(0)
 	assert_true(_kinds(enemy).has(ResultChipModel.ODDS), "the random part is a ?")
+	var named := false
+	for c in _scene.result_chips(enemy):
+		named = named or (StringName(c["kind"]) == ResultChipModel.ODDS and ResultChipModel.label(c).ends_with("OVERCLOCKED"))
+	assert_true(named, "the ? names the known status")
 	var hp_lost := engine.state().get_combatant(enemy).hp - fc.state().get_combatant(enemy).hp
 	if hp_lost > 0:
 		var shown := 0

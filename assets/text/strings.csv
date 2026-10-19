@@ -205,6 +205,11 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > focus an item: what it does shows here.,> focus an item: what it does shows here.
 > jack --from %s --to %s,> jack --from %s --to %s
 > point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.,> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.
+? %s %s,? %s %s
+? DRAW,? DRAW
+? LANDING,? LANDING
+? SLICE,? SLICE
+? STATUS,? STATUS
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
