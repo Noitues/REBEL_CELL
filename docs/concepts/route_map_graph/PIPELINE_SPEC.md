@@ -1358,6 +1358,7 @@ capture below supplies the same data.
 - `id.png`: unlit, nearest-sampled, no UI, R = class. Classes match the Blender pass indices of `HM/hq_values.py`:
   0 sky, 1 landmark compound, 2 city, 5 rooms, 6 landmark movers; 3 and 4 are reserved as in `hq_scene.py`.
   **Additions (O-6, v1-compatible, R unchanged; NA03_NA04_ANSWERS, 2026-10-18):** class 3 = link structure (reported only; class 4 stays as the Blender pass uses it for ground).
+  **Class 4 = ground (AD 2026-10-19, NA-ID review).** Godot captures draw the ground layer in the id pass as class 4; they do not hide it. Ground-lying parts of a landmark compound also go to class 4 and not class 1: plaza aprons, ground decals and rails at grade. This matches the Blender mapping (pass 3 apron to 4), with one exception: Rebel Cell's MAINFRAME sign stays class 1. The 12.2 background mask stays {0, 2}, so ground never dilutes the background. A hidden ground turns into class 0 and enters that mask.
   `G` = room index, 1-based (0 = none), and `B` = layer, 1-based (0 = none), on class 5 pixels and on the cut surfaces of room columns (class 2 pixels with `B > 0`); byte values, no separate mask. **Occlusion stubs (AD 2026-10-18):** a class 2 pixel of a building cut or ghosted by the 7.1 rule writes `B = 0`, `G = 255`; the 12.6 route-never-occluded check excludes those pixels (a route-column cut surface keeps `B > 0`, so the two never collide). **As built (NA-23, AD 2026-10-18), this replaces the G/B rule above:** `G` = the room's 1-based place in the run graph (unique per room), `B` = layer; route-building walls are class 2 with `B = 1`; stubs stay class 2 with `G = 255`, `B = 0`. **`depth.png` (new, 4th capture file):** 16-bit linear camera depth in BU x 100, nearest-sampled, no UI. The 12.6 route check counts a pixel only when it is more than 1 BU nearer than the room front (and above stub, surviving a 4 px erosion), as `street_r2/scripts/r2_occlusion.py`.
 - `capture.json`: camera pose, resolution, `layout_seed` (decimal string), run id.
   **Optional scope keys (O-1; unknown keys ignored; NA03_NA04_ANSWERS, 2026-10-18):** `kind` (`street` / `hq` / `city`), `view` (`overview` / `decision` / `hover` / `street` / `city`),
@@ -1498,7 +1499,7 @@ Rules:
 | File | Content |
 |---|---|
 | `<stem>.png` | The 12.0 `beauty.png`: 8-bit sRGB, no UI |
-| `<stem>_id.png` | The 12.0 `id.png`: unlit, nearest-sampled, no UI. R = class (0 sky, 1 landmark compound, 2 city, 3 link structure, 5 rooms, 6 landmark movers; 4 reserved). G = room index and B = layer, as in 12.0 |
+| `<stem>_id.png` | The 12.0 `id.png`: unlit, nearest-sampled, no UI. R = class (0 sky, 1 landmark compound, 2 city, 3 link structure, 4 ground, 5 rooms, 6 landmark movers). G = room index and B = layer, as in 12.0 |
 | `<stem>_capture.json` | The 12.0 `capture.json` with the camera block below |
 | `<stem>_values.json` | The measured values below, written by the 12 checks (UTF-8, sorted keys, floats rounded to 1e-4; 11.5) |
 
