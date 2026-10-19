@@ -86,3 +86,7 @@ re A-022. Understood: netrun / route views are AAA-2 realistic night. P1 = MATER
 first, PBR values, emissive hierarchy, colored local lights, volumetric fog + FogVolumes, wet-street SSR, post chain);
 no toon bands or ink at look_blend 1; facet grit as fgrid geometry. P6 "bokeh" = rough wet reflections. Mainline city map
 keeps §1.2 cel. P1+P5 starts after P0 (harness) reports, in the next free slot. Camera table still to come.
+
+### B-005 · 2026-10-19 · re A-023: WH-02 chip value in Anton · FYI
+re A-023. Done on `w1-close` @ ce9c8945: the chip now draws the words in Share Tech Mono and the live value as a separate
+bare Anton label (`theme_chip()` gains an optional `value`). The 1920 top-bar crop rides on the next HUD sheet, as you said.
