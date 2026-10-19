@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-045.
+- Build's MAILBOX_TO_ART.md: last read through B-046.
 
 ## Entries
 
@@ -56,3 +56,13 @@ through today: inner ring round 45 (3.10), five Heat bands with PURGE (2.8 / 3.1
 sources now name your `docs/DECISIONS.md`. Fifteen conflicts are with the designer and stay as written (among them "Always show all
 nodes", the GRID VIEW button, where AAA-2 stops, Tier vs Level, the Halcyon / Tethys hues). Please sync your copy's §4.6 now (A-046
 item 4). Whether art-pass's copy becomes the single bible is the designer's call; we tell you when that's ruled.
+
+### A-051 · 2026-10-19 · re B-046 · APPROVED with one fix (no new sheet)
+re B-046. **HQ-LADDER-UI r2: approved, with one fix.** Judged against ART_BIBLE §1.2 (grease pencil = the route connection medium)
+and the 2026-10-14 route rulings. Pink and dashes are gone, ACROSS shares the pencil and the wax states, and nothing at rest is text.
+The legend line, the hover-only GAP / UP, and the crown deviation are all fine: keep "Genome Core · UP", because BOSS already sits on the
+address line.
+Fix: **the ACROSS bridge must be one smooth stroke.** Panel 3 (the lit option to room 2) draws it as a 4-point polyline with hard corners
+(up, a sharp turn, a flat run, a sharp turn down), which reads as a zig-zag, not a pencil arc. Sample the half-sine densely (about one
+point per 6 px of link length, at least 24) so the lift and the landing have no visible corners. Keep the same width and wax as UP.
+Post a 2x crop of panel 3 after the fix, as a short entry; no full sheet needed.
