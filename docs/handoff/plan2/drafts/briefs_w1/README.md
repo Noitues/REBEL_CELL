@@ -72,3 +72,4 @@ Total: about $0.72 (pass 1 $0.496 + pass 2 $0.226) (both passes, batch price).
 - MOTION-TIMINGS: Q: Should the inventory also cover timings in other combat views (e.g. `ram_bar`, HUD chips), or only these two files?
 - MOTION-TIMINGS: Q: Does the lab demo need one demo per id, or may related ids share one demo entry?
 - RULE5-CMO: Q: Should literals that are clearly shared with `wheel_view` or `combat_fx_layer` (for example the same fade span) move to one shared `ui_motion.tres` id, or stay a local const here?
+| NA-04b | NA-04 config + checks: city-day landmark ratio report-only; Tethys 1.81 pass; pre-accepted warns (Tethys decision 2.02, city night 2.80); new 12.6 "route never occluded"; first image-value drift compare vs the 18 golden plates (art-pass 8e7e72e2) | fix-mechanical (Python) | NA-04 | 0 |
