@@ -1149,6 +1149,14 @@
 			"seconds": 2.2,
 			"tier": "fast"
 		},
+		"res://tests/netrun_art/test_na21_parity.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_na21_camera_pixels.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_seed_stream_isolation.gd": {
 			"seconds": 1.5,
 			"tier": "fast"

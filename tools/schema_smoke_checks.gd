@@ -7,7 +7,29 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config()
+
+
+## NA-21: NetrunArtConfigData (the netrun-art twins' tuning numbers): the shipped one validates, the timings are
+## the frozen 0.9 s step and 1.0 s Z, an empty one reports its gaps, and a save keeps the rig.
+func _na21_netrun_art_config() -> int:
+	var fails := 0
+	var cfg: NetrunArtConfigData = load(NetrunArtConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-21 shipped netrun art config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	print("NA-21 timings (expect 0.9 1.0): ", cfg.rig["t_step"], " ", cfg.rig["t_zoom"])
+	if not is_equal_approx(float(cfg.rig["t_step"]), 0.9) or not is_equal_approx(float(cfg.rig["t_zoom"]), 1.0): fails += 1
+	var empty := NetrunArtConfigData.new()
+	var ee := empty.validate()
+	print("NA-21 empty config errors (expect more than 10): ", ee.size())
+	if ee.size() <= 10: fails += 1
+	var t := NetrunArtConfigData.new()
+	t.rig = {"t_step": 1.5}
+	var err := ResourceSaver.save(t, "user://smoke_netrun_art.tres")
+	var back: NetrunArtConfigData = load("user://smoke_netrun_art.tres")
+	if err != OK or back == null or not is_equal_approx(float(back.rig["t_step"]), 1.5): fails += 1
+	return fails
 
 
 ## Plan 2 N14 (ruling Q39): the SANDBOX charge counts default 1 / 2, ship 1 / 2, and bad

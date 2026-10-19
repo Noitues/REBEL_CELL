@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NetrunArtConfigData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/netrun_art_config_data.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+units = {"floor_bu": 1.9, "kit_storey": 8.0, "k_fit": 1.0}
+rig = {"yaw_max": 24.0, "pitch_d": 9.0, "lens_d": 30.0, "fill_w": 0.66, "fill_h": 0.7, "look_bias": 0.1, "hover_pull": 0.22, "hover_yaw": 3.0, "hover_dolly": 0.96, "ov_yaw_k": 0.3, "pitch_o": 2.0, "lens_o": 40.0, "fill_ow": 0.95, "fill_oh": 0.9, "ov_base_frac": 0.815, "t_step": 0.9, "t_hover_in": 0.3, "t_hover_out": 0.35, "t_zoom": 1.0, "sensor_mm": 36.0, "ref_w": 1920.0, "ref_h": 1080.0, "use": [300.0, 138.0, 1900.0, 1012.0], "solver_iters": 60, "solver_bracket": [5.0, 3000.0]}
+look_bias_sign = 1.0
+dive = {"duration_s": 3.0, "hq_lens": 300.0, "hq_yaw_l36": 135.0, "hq_pitch": 40.0, "lag_k": 1.08, "lag_pow": 1.6}
+hq_page = {"fit_margin": 40.0, "fit_share": 0.65, "anchor": [0.45, 0.42], "ortho_clamp": [220.0, 640.0], "grid_ortho": 460.0, "free": [230.0, 90.0, 1460.0, 800.0]}
+hq_rig = {"look_ahead": 0.0, "pitch_lo": 13.0, "pitch_hi": 24.0, "lens_d": 30.0, "fill_w": 0.66, "fill_h": 0.7, "hover_pull": 0.22, "hover_yaw": 3.0, "hover_dolly": 0.96, "pitch_o": 26.0, "lens_o": 40.0, "fill_ow": 0.95, "fill_oh": 0.9, "vis_margin": 0.12, "dmin_kit": 135.0}
+occlusion = {"cone_margin": 0.1, "stub": 3.8, "ghost": 0.18, "edge": 0.6, "tsoft": 0.035, "vsoft": 0.025, "front_fade_kit": 6.0, "clutter_kit": 25.0, "ease_s": 0.35, "min_span": 0.02}
+lod = {"d0": 3833.0, "d1": 114.6, "bands": {"fog_octaves": [0.25, 0.6], "wisps": [0.45, 0.7], "plumes": [0.5, 0.72], "signage": [0.6, 0.82], "small_lights": [0.75, 0.92], "puddles_sharp": [0.85, 1.0]}, "floors": {"signage": 0.0, "small_lights": 0.25}, "ramps": {"fog_density": [0.3, 0.9], "cityglow": [0.3, 0.9], "look_blend": [0.2, 0.55], "section": [0.25, 0.85]}, "ramp_levels": {"fog_density": 0.35, "cityglow": 0.45}}
+section = {"zcut": {"zf": 60.0, "zn": 0.4, "a": 0.25, "b": 0.85}, "look_blend": [0.2, 0.55], "no_cut": 10000.0, "poche": [0.01, 0.01, 0.013], "edge_col": [0.55, 0.68, 0.85], "band_overview_kit": 30.0, "band_rooms_kit": 24.0, "zref_margin_kit": 1.5, "plinth_kit": 0.6, "widen": 0.45}
+street_rules = {"base_floor": 0, "room_inset": 0.45, "room_depth": 2.6, "room_px_target": 46.0, "min_width": 2.5, "max_setback": 0.6, "room_z_inset": 0.12, "link_offset": 0.5, "link_stub": 0.3}
+layout = {"front_band": [0.8, 6.5], "extend": [12.0, 60.0], "base_tol": 0.05, "axis_tol": 1e-06}
+slot_params = {"lot_margin": 0.5, "top_share": 0.45, "min_half": 3.0, "corner_pad": 1.8, "room_w_max": 3.2, "room_fill": 0.8, "room_depth": 1.6, "tier_floors": 2, "link_out": 0.5}
+landmark_entries = {"meridian": {"entry": [0.0, -28.5, 0.0], "entry_nrm": [0.0, -1.0]}, "halcyon": {"entry": [0.0, -29.0, 0.0], "entry_nrm": [0.0, -1.0]}, "solace": {"entry": [0.0, -12.0, 0.0], "entry_nrm": [0.0, -1.0]}, "orbital": {"entry": [0.0, -13.7, 3.4], "entry_nrm": [0.0, -1.0]}, "rebel_cell": {"entry": [0.0, -6.0, 0.0], "entry_nrm": [0.0, -1.0]}, "tethys": {"entry": [30.0, 8.2, 5.0], "entry_nrm": [0.9646, 0.2637]}}
+reveal = {"street_sign": [[1, 790.0, 466.0], [2, 466.0, 216.0], [3, 216.0, 152.0]], "billboard": [[2, 466.0, 216.0], [3, 216.0, 152.0]], "hero_sign": [[2, 466.0, 216.0], [3, 216.0, 152.0]], "shopfront": [[2, 466.0, 216.0], [3, 276.0, 152.0]], "roof_clutter": [[1, 790.0, 328.0], [2, 276.0, 152.0]], "kerb_lamp": [[1, 276.0, 152.0], [2, 194.0, 115.0]], "traffic": [[2, 663.0, 307.0], [3, 194.0, 115.0]], "steam_plume": [[1, 663.0, 307.0]], "fog_detail": [[2, 1594.0, 466.0], [3, 790.0, 328.0]]}
+frustum_tolerance = 0.0001
