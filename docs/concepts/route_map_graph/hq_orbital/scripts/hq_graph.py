@@ -359,3 +359,67 @@ def LAUNCH_SHOTS(CR):
     out.append(("L7_zoom_back", CR.overview(WALK_DEC), ["start"], dict(base, trail=1.0, boom=0.5, movers=m, rocket_k=0.0,
                                                                        door_k=0.3)))
     return out
+
+
+BAND_STEP_DEG = 3.0
+BAND_BAYS = 1
+
+
+def band_points(walked, mt=None, pose=None, w=2560):
+    """PIPELINE_SPEC 7.1 rule 1 (extended): the FACE BAND of the current level, as kit points at floor and room-top height every
+    3 deg (the landmark's FACE_OUTLINE is the podium rim, hq_preset podium_r): (a) ring stations: the arc of the ring wall (radius
+    ring_r + room_d) from the current room / options' azimuths, one bay (6 deg) either side, to the frame edge; (b) antenna rooms: the
+    tower's outward face (width 2 x half) at the rooms' floor and top; (c) always the podium rim arc that looks at the camera
+    (the face the player reads the silo from). Points are kept when they project inside the frame."""
+    cur = walked[-1]
+    st, opts = states(walked, mt)  # noqa: F821
+    ids = [i for i in [cur] + list(opts) if i in ROOM and i != "start"] + ([cur] if cur == "start" else [])
+    pts = []
+
+    def keep(p_):
+        if pose is not None:
+            q = pose.proj(p_, w=w)
+            if q is None or not (0 <= q[0] <= w and 0 <= q[1] <= w * 9 / 16):
+                return False
+        return True
+
+    def arc(rad, z0, z1, a0, a1):
+        n_ = max(1, int((a1 - a0) / BAND_STEP_DEG))
+        for k in range(n_ + 1):
+            a = a0 + (a1 - a0) * k / n_
+            v = az_vec(a)
+            for z in (z0, z1):
+                p_ = (v[0] * rad, v[1] * rad, z)
+                if keep(p_) and (pose is None or _faces(v, p_, pose)):
+                    pts.append(p_)
+
+    ring = [i for i in ids if i in STATION]
+    if ring:
+        az = [STATION[i] for i in ring]
+        a0, a1 = min(az) - 6.0 * BAND_BAYS, max(az) + 6.0 * BAND_BAYS
+        if pose is not None:
+            a0, a1 = a0 - 24.0, a1 + 24.0
+        arc(RR + RD, GROUND_Z, GROUND_Z + RH, a0, a1)
+    if any(i in ("ant1", "ant2") for i in ids):
+        v = az_vec(AN["az"])
+        t = (v[1], -v[0])
+        r_ = AN["r"] + AN["half"]
+        zs = [z for (nid, z) in AN["rooms"] if nid in ids] or [AN["rooms"][0][1]]
+        n_ = max(2, int(2 * AN["half"] / 1.5))
+        for k in range(n_ + 1):
+            u = -AN["half"] + 2 * AN["half"] * k / n_
+            for z in (min(zs) + 0.6, max(zs) + 0.6 + RH):
+                p_ = (v[0] * r_ + t[0] * u, v[1] * r_ + t[1] * u, z)
+                if keep(p_):
+                    pts.append(p_)
+    if pose is not None:
+        c = pose.loc()
+        ca = math.degrees(math.atan2(c[0], c[1])) % 360.0
+        arc(CP["podium_r"], PH, PH + 4.0, ca - 50.0, ca + 50.0)
+    return pts
+
+
+def _faces(v, p_, pose):
+    c = pose.loc()
+    d = (c[0] - p_[0], c[1] - p_[1])
+    return (v[0] * d[0] + v[1] * d[1]) / max(math.hypot(*d), 1e-6) > 0.12

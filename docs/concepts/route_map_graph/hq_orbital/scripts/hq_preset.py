@@ -14,8 +14,8 @@ PRESET["hq"] = {
     "corp": "orbital", "corp_name": "ORBITAL COMMONS",
     "dossier": ("ORBITAL", "LAUNCH SECURITY", (205, 240, 255)),
     "target_name": "LAUNCH CONTROL", "target_place": "the service gantry",
-    "out_big": r"D:\rc_scratch\hq_rev\orbital",          # v2 revision; v1 passes stay in D:\rc_scratch\hq_orbital
-    "suffix": "_v2",
+    "out_big": r"D:/rc_scratch/hq_fix/orbital",          # v2 revision; v1 passes stay in D:\rc_scratch\hq_orbital
+    "suffix": "_v3",
     "palette": {
         "ice": (0.61, 0.87, 1.00),            # #CDF0FF linear: the corp light (work lights, dish rims, the crest)
         "steel": (0.30, 0.33, 0.37),          # pale steel (albedo)
@@ -51,7 +51,7 @@ PRESET["hq"] = {
     "light": {"room_k": 1.0, "room_w": 3000.0, "lockdown_k": 2.0, "sign_k": 0.5, "trim_k": 2.4, "cityglow_k": 0.15,
               "city_beam_k": 0.8, "bank_glow": 3200.0, "shop_w": 900.0, "flood_w": 3.0e4, "dish_k": 3.0,
               "shaft_w": 1.2e4, "shaft_beam_w": 6.0e6,                 # v2: no more yellow-orange blob
-              "pad_albedo": (0.06, 0.065, 0.075), "door_albedo": (0.11, 0.12, 0.14), "rim_w": 1.2e5, "key_w": 6.0e4, "halo_r": (180.0, 290.0), "halo_h": 110.0,
+              "pad_albedo": (0.06, 0.065, 0.075), "door_albedo": (0.11, 0.12, 0.14), "rim_w": 1.4e5, "key_w": 6.0e4, "halo_r": (180.0, 290.0), "halo_h": 110.0,
               "halo_peak": 0.010, "halo_fill_w": 4.5e4, "marker_k": 14.0,
               "svc_w": 2.5e4, "pad_flood_w": 2.5e4, "room_key_w": 9000.0, "underfog_w": 1.5e4,
               # the launch cutscene (H_launch_board): the Orbital facility struck in the city, the trail, the blast
@@ -89,7 +89,8 @@ PRESET["hq_fog"] = {
     "haze": 0.0003, "aniso": 0.45, "colour": (0.85, 0.9, 1.0),
 }
 
-PRESET["post"].update({"exposure": 2.4})
+PRESET["post"].update({"exposure": 2.4, "knee_top": 0.88})
+PRESET["hq"]["frame_stops"] = {"H_overview": 0.06}          # v3: per-frame exposure trims in stops (hq_compose.stills, fix_post)
 PRESET.setdefault("lod_bands", {
     "fog_octaves_by_zoom": (0.25, 0.60), "wisps_on_at": (0.45, 0.70), "plumes_on_at": (0.50, 0.72),
     "signage_on_at": (0.60, 0.82), "small_lights_on_at": (0.75, 0.92), "puddles_sharp_at": (0.85, 1.00),

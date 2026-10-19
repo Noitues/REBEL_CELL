@@ -15,8 +15,8 @@ Value status lists the checks that are not `pass` (values are in `<stem>_values.
 | `hq_halcyon_decision` | `.../hq_halcyon/plates/H_decision_E_v3_plate.png` (variant E, v3) | untracked until the v3 commit | yes | 0.155 / 33.1 % / 0.3 % / 2.35. Ratio warn. R-CALM-1/2 fail (report only). R-REP-1 0.573 pass. Occluders: 7 rooms in frame, 0 hit; face band 0 | same |
 | `hq_solace_overview` | `.../hq_solace/plates/H_overview_v4_plate.png` | 1827e4ac | yes | 0.127 / 37.4 % / 0.7 % / 2.56. Ratio warn (pre-accepted). R-CALM-1/2 fail | same |
 | `hq_solace_decision` | `.../hq_solace/plates/H_decision_v4_plate.png` | 1827e4ac | yes | 0.121 / 34.9 % / 2.1 % / 2.57. Ratio warn (pre-accepted). R-CALM-1/2 fail | same |
-| `hq_orbital_overview` | `.../hq_orbital/plates/H_overview_v2_plate.png` | 46d161ce | yes | 0.118 / 40.9 % / 1.1 % / 3.85. R-VAL-2 fail (40.9 %), ratio warn, R-CALM-1/2 fail | same; Halcyon and Orbital also predate the occlusion rule (handoff queue 5) |
-| `hq_orbital_decision` | `.../hq_orbital/plates/H_decision_v2_plate.png` | 46d161ce | yes | 0.122 / 41.3 % / 2.7 % / 3.44. R-VAL-2 fail, R-VAL-3 fail (2.71 % over 0.85), ratio warn, R-FOCUS-1 fail | same |
+| `hq_orbital_overview` | `.../hq_orbital/plates/H_overview_v3_plate.png` | untracked until the v3 commit (occlusion re-render, 2026-10-18) | yes | 0.130 / 36.6 % / 0.8 % / 3.84. Ratio warn (not pre-accepted). R-CALM-1/2 fail (report only). R-VAL-1/2/3, R-FOCUS-1 (2.19), R-REP-1 pass. Occluders: 8 rooms in frame, 0 hit, 0 buildings above stub | derive inputs, layout seed, run graph |
+| `hq_orbital_decision` | `.../hq_orbital/plates/H_decision_v3_plate.png` | untracked until the v3 commit | yes | 0.128 / 39.2 % / 1.6 % / 3.50. Ratio warn. R-CALM-1 fail (report only). R-VAL-2/3 pass, R-FOCUS-1 1.536 pass, R-REP-1 pass. Occluders: 4 rooms in frame, 0 hit; face band 0 | same |
 | `hq_meridian_overview` | `.../hq_meridian_v3/plates/H_overview_v3_plate.png` | 5c97940f | yes | 0.139 / 35.9 % / 1.8 % / 2.51. Ratio warn. R-CALM-1/2 fail | same |
 | `hq_meridian_decision` | `.../hq_meridian_v3/plates/H_decision_v3_plate.png` | 5c97940f | yes | 0.175 / 25.3 % / 2.8 % / **1.06**. R-VAL-1 warn (known, handoff 3), R-VAL-3 fail, **ratio fail (below 1.5)**, R-FOCUS-1 fail, R-REP-1 fail | same |
 | `hq_rebel_cell_overview` | `.../hq_rebel_cell/plates/H_overview_v3_plate.png` | 6d3a5658 | yes | 0.121 / 42.3 % / 1.9 % / **1.18**. R-VAL-2 fail, ratio fail. R-FOCUS-1 n/a (box fills the frame, empty ring) | same |
@@ -62,7 +62,7 @@ Read-outs: in Tethys the drowned quarter shows as class 2 through the water (the
 
 Recorded in each plate as `checks.baseline`; each is an art item, not a plate defect.
 - **Meridian decision:** landmark ratio 1.06 (needs 1.5-2.0), R-FOCUS-1 fail, over 0.85 at 2.8 %, R-REP-1 fail.
-- **Orbital overview:** under 0.10 at 40.9 % (band 25-40 %). **Orbital decision:** under 0.10 at 41.3 %, over 0.85 at 2.7 %, R-FOCUS-1 fail.
+- **Orbital (v3, 2026-10-18):** cleared. Overview under 0.10 40.9 % -> 36.6 %, decision under 0.10 41.3 % -> 39.2 %, over 0.85 2.7 % -> 1.6 % (display knee_top 0.93 -> 0.88), R-FOCUS-1 fail -> 1.536 (rim_w 1.2e5 -> 1.4e5). Ratios 3.84 / 3.50 are warns (not pre-accepted).
 - **Halcyon (v3, 2026-10-18):** cleared. Overview under 0.10 46.3 % -> 38.8 % (occlusion cone + a +0.2 stop trim), decision R-REP-1 0.74 -> 0.573 (irregular fins / slits / mullions, dashed cornice lines, tone runs on the cornice). Ratios 2.62 / 2.35 are warns (not pre-accepted).
 - **Rebel Cell:** ratio still fails after the pass 3 mapping: overview 1.18 (also under 0.10 at 42.3 %), decision 1.40.
 - **Street decision:** none (W1: R-DET-2 and R-REP-1 pass).

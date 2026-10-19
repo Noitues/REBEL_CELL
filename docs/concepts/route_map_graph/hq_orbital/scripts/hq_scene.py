@@ -1021,6 +1021,21 @@ def apply_frame(fr):
         _st = [KDT.occlusion_state(_oc, b_) for b_ in BLD]
         log("occlusion %s: flattened %d ghosted %d of %d" % (fr.get("name"), sum(1 for (z_, a_), b_ in zip(_st, BLD)
             if z_ < b_[2] - 0.5), sum(1 for (z_, a_) in _st if a_ < 0.6), len(BLD)))
+    if _oc and "occ_on" in _oc and BLD:           # PIPELINE_SPEC 7.1: the python twin counts occluders of the in-frame rooms + the band
+        import hq_cam as CR_
+        import occ_check as OC_
+        _pose = CR_.pose_of(fr["pose"])
+        _mt = int(fr.get("mt", 0))
+        _ids = [i for i in G.NODES if i != "start"] if float(fr.get("zoom", 0.0)) < 0.5 else OC_.in_frame_rooms(G, CR_, _pose, mt=_mt)
+        _res = OC_.count(BLD, _oc, _pose, G, _ids, mt=_mt)
+        _res.update(frame=fr.get("name"), n_buildings=len(BLD))
+        if fr.get("band_pts"):
+            _res["band_occluders"] = OC_.count_band(BLD, _oc, _pose, [tuple(b_) for b_ in fr["band_pts"]])
+        _od = JOB.get("occ_dir") or "D:/rc_scratch/hq_fix/orbital"
+        os.makedirs(_od, exist_ok=True)
+        json.dump(_res, open(os.path.join(_od, "occ_%s.json" % fr.get("name")), "w"), indent=1)
+        log("OCC %s rooms %d hit %d occluders %d band %s" % (fr.get("name"), _res["rooms"], _res["rooms_hit"], _res["buildings"],
+                                                          _res.get("band_occluders")))
     zoom = float(fr.get("zoom", 0.0))
     FOG_ZOOM.outputs[0].default_value = zoom
     FOG.update_tag()
@@ -1034,7 +1049,7 @@ def apply_frame(fr):
     keep = set(pw["keep"]) if pw else set()
     cut = pw["k"] if pw else 1.0
     boost = pw.get("boost", 1.45) if pw else 1.0
-    base = {"sign": ksig * 0.85 + 0.15, "city_sign": ksig, "small": 0.25 + 0.75 * ksm, "city_small": 0.3 + 0.7 * ksm}
+    base = {"sign": ksig * 0.85 + 0.15, "city_sign": ksig * HP.PRESET["hq"]["light"].get("city_sign_gain", 1.0), "small": 0.25 + 0.75 * ksm, "city_small": 0.3 + 0.7 * ksm}
     base.update({k: f(zoom) for k, f in HOOKS.get("lod_weights", {}).items()})
     for name, ob in OBJ.items():
         if ob is None or not ob.data.materials or ob.data.materials[0] not in (M_EMIT, M_CITY, M_CEMIT):

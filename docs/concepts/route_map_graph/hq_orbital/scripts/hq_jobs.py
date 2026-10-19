@@ -31,6 +31,7 @@ QUAL = {
     "final": dict(res=[2560, 1440], samples=64, threshold=0.015, step_rate=1.2),
     "sheet": dict(res=[1280, 720], samples=48, threshold=0.02, step_rate=1.5),
     "video": dict(res=[960, 540], samples=12, threshold=0.06, step_rate=3.0),   # upscaled to 1280 x 720 by the encoder
+    "t2k": dict(res=[2560, 1440], samples=24, threshold=0.03, step_rate=2.0),
     "test": dict(res=[1280, 720], samples=32, threshold=0.04, step_rate=2.0),
     "mini": dict(res=[640, 360], samples=16, threshold=0.06, step_rate=3.0),
     "eevee": dict(res=[960, 540], samples=24, engine="EEVEE"),
@@ -59,11 +60,21 @@ def frame(name, pose, walked, zoom, hover=None, hover_k=0.0, mt=None, extra=None
         from hq_kit import downtown as KDT
         # v3: the OCCLUSION rule (flatten, then ghost): the cone from the camera to the target volume = the active
         # room + the visible route nodes (overview: every route node)
+        # PIPELINE_SPEC 7.1 rules 0-1 (v3): every route room in frame that faces the camera, the current room + options, and
+        # (DECISION / HOVER) the face band of the current level
+        import occ_check as OC
         if zoom < 0.5 or (extra or {}).get("section_keep"):
             ids = [i for i in G.NODES if i != "start"]
         else:
             ids = [i for i in [walked[-1]] + list(opts) if i != "start"]
+            for i in OC.in_frame_rooms(G, CR, pose, mt=int(mt)):
+                if i not in ids:
+                    ids.append(i)
         pts = [c for i in ids for c in G.room_front(i, mt)]
+        if zoom >= 0.5 and not (extra or {}).get("section_keep"):
+            band = G.band_points(walked, int(mt), pose)
+            fr["band_pts"] = [list(b) for b in band]
+            pts = pts + band
         if pts:
             fr["section"] = KDT.occlusion_params(pose.loc(), pts, dtc)
     ov = dict(walked=walked, hover=hover, hover_k=hover_k, zoom=zoom, mt=mt, pose=pose.to_json(), extra=extra or {})
@@ -96,7 +107,7 @@ def reveal():
 def have_lock():
     if not os.path.exists(LOCK):
         return False
-    return "hq_rev" in open(LOCK, errors="replace").read()
+    return "hq_" in open(LOCK, errors="replace").read()
 
 
 def run(kind, frames, quality, out_dir, chunk=None, extra=None):

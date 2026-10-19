@@ -86,11 +86,11 @@ def entries():
                       ob + "solace/v4/bl_stills/H_overview", accepted=sol))
     E.append(hq_entry("solace", "decision", "hq_solace/plates/H_decision_v4_plate.png", "hq_solace", "H_decision",
                       ob + "solace/v4/bl_stills/H_decision", accepted=sol))
-    # Orbital v2
-    E.append(hq_entry("orbital", "overview", "hq_orbital/plates/H_overview_v2_plate.png", "hq_orbital", "H_overview",
-                      ob + "orbital/bl_stills/H_overview"))
-    E.append(hq_entry("orbital", "decision", "hq_orbital/plates/H_decision_v2_plate.png", "hq_orbital", "H_decision",
-                      ob + "orbital/bl_stills/H_decision"))
+    # Orbital v3 (occlusion rule 7.1 rules 0-1, handoff queue 5)
+    E.append(hq_entry("orbital", "overview", "hq_orbital/plates/H_overview_v3_plate.png", "hq_orbital", "H_overview",
+                      "hq_fix/orbital/bl_stills/H_overview"))
+    E.append(hq_entry("orbital", "decision", "hq_orbital/plates/H_decision_v3_plate.png", "hq_orbital", "H_decision",
+                      "hq_fix/orbital/bl_stills/H_decision"))
     # Meridian v3 (Gatehouse Gantry)
     E.append(hq_entry("meridian", "overview", "hq_meridian_v3/plates/H_overview_v3_plate.png", "hq_meridian_v3", "H_overview",
                       "meridian_v3/bl_stills/H_overview"))
