@@ -61,11 +61,36 @@ TRAVERTINE_FALLBACK = (0.86, 0.78, 0.62)
 GILT_FALLBACK = (0.788, 0.639, 0.353)          # DISTRICTS["aurelian"]["sec"]: the city's neon rings are gilt
 VERDIGRIS = (0.161, 0.859, 0.651)              # the corp hue (#29DBA6)
 
+# ENTRY: the outer arcade's ground arch facing the overview bearing 200 (the camera sits SSW of the bowl). The ellipse normal
+# at parameter t is along (cos t, sin t / BK^2); bearing 200 = the direction (sin 200, cos 200).
+ARC_RF = 0.45              # the arcade outer plane (A + 0.45; same value as in arcade_tier)
+OV_BEARING = 200.0
+ENTRY_T = math.degrees(math.atan2(BK * BK * math.cos(math.radians(OV_BEARING)), math.sin(math.radians(OV_BEARING)))) % 360.0
+ENTRY_OPEN = 3.6          # the clear width of the entry arch (BU)
+
+
+def _entry():
+    t = math.radians(ENTRY_T)
+    r = A + ARC_RF
+    nx, ny = math.cos(t), math.sin(t) / (BK * BK)
+    L = math.hypot(nx, ny)
+    return {"entry": [round(r * math.cos(t), 3), round(r * BK * math.sin(t), 3), 0.0],
+            "entry_nrm": [round(nx / L, 4), round(ny / L, 4)]}
+
+
+ENTRY = _entry()
+
 # HQ room box in city units (the kit's 14 w x 8 h x 10 d cutaway x k_units)
 ROOM = dict(w=3.3, h=1.9, d=2.4)
 ROOM_BAY_H = 3.4          # a loggia room fills its arch bay (tier 5.0 minus the base and entablature bands)
 LOGE_H = 3.5              # a cavea room is a LOGE in the ring edge: its floor on the next ring's top, its opening in the
                           # riser, cut back 2.4 BU into the seats (roof at most ~0.6 BU proud of the seats behind). 3.5 tall
+ARC_ARC = (205.0, 332.0)  # the ground arcade's room arc (south face, west -> east); the entry bay is skipped (DESIGN.md 14.2)
+ARC_ROOM_H = 3.5          # (46 px at OVERVIEW: the arcade room is 0.1 taller than a loggia bay)
+ARC_ROOM_W = 2.8          # an arcade room is narrower than the kit's 3.3 so it sits inside one arch opening (same 3.4 height)
+ARC_CLEAR = 0.6           # clear each side of a room in its arch opening (BU)
+ARC_PITCH_MIN = 4.9       # the least slot pitch along the arcade: room opening + a shared pier
+GATE_EXTRA = 12.0         # a gate stands this many degrees beyond the end of its level's arc
 ATTIC_ROOM_H = 2.9        # so every room clears the 46 px OVERVIEW target (hq_run.py px); the attic room fills its band
 
 
@@ -99,6 +124,109 @@ def ell_normal(t, r, inward):
     return (s * nx / L, s * ny / L, 0.0)
 
 
+# ------------------------------------------------------------------ the Roman arcade (v2, 2026-10-18): piers + round arches
+# (archivolts) + engaged half-columns + an entablature band per tier; identical in landmarks.py aurelian() and
+# aurelian_landmark.canonical() (spec 8.6b). The recessed lit wall stays behind. PIER_H = pier half width (BU).
+ARC_PIER_H = 0.5
+ARC_RF = 0.45            # the arcade's outer plane: A + 0.45
+ARC_HC = 0.5             # engaged half-column radius (centred on the pier's outer face)
+ARC_N = 8                # segments per arch (half circle)
+ARC_AT = 0.30            # archivolt thickness
+ARC_MIN_OPEN = 1.2       # the narrowest opening (BU)
+
+
+def _arc_rate(A_, Bk_, t):
+    return math.hypot(A_ * math.sin(t), A_ * Bk_ * math.cos(t))
+
+
+def arcade_piers(A_, Bk_, ncols, open_arcs=()):
+    """Pier list [(t radians, half width BU)] sorted by t, for one tier. open_arcs: (t0, t1) clear openings (radians) a
+    room bay needs (HQ only): piers stand at their edges, grid piers within 2.2 BU of one are dropped."""
+    TAU = 2 * math.pi
+    arcs = []
+    for (t0, t1) in open_arcs:
+        t0 %= TAU
+        t1 %= TAU
+        if t1 < t0:
+            t1 += TAU
+        arcs.append((t0, t1))
+    arcs.sort()
+    rp = []                                              # room piers (t, half)
+    for i, (t0, t1) in enumerate(arcs):
+        ra = _arc_rate(A_, Bk_, (t0 + t1) / 2)
+        pa, pb = t0 - ARC_PIER_H / ra, t1 + ARC_PIER_H / ra
+        if rp and (pa - rp[-1][0]) * ra < 2 * ARC_PIER_H + 1e-6:        # openings share one pier
+            g = (t0 - (arcs[i - 1][1])) * ra
+            rp[-1] = ((t0 + arcs[i - 1][1]) / 2, max(g / 2, 0.3))
+        else:
+            rp.append((pa, ARC_PIER_H))
+        rp.append((pb, ARC_PIER_H))
+    P = list(rp)
+    for m in range(ncols):
+        t = TAU * m / ncols
+        ra = _arc_rate(A_, Bk_, t)
+        near = False
+        for (tp, _h) in rp:
+            d = abs(((t - tp + math.pi) % TAU) - math.pi) * ra
+            if d < ARC_MIN_OPEN + 1.0:
+                near = True
+                break
+        if not near:
+            P.append((t, ARC_PIER_H))
+    return sorted(P)
+
+
+def arcade_tier(SURF, SMOOTH, cyl, sc, hx, hy, A_, Bk_, z0, z1, tr, k, piers, ent=0.7, base=0.25, rec=1.7):
+    """One tier's arcade wall on the outer ellipse. piers from arcade_piers()."""
+    TAU = 2 * math.pi
+    rf, rb = A_ + ARC_RF, A_ - rec
+    zb, zt = z0 + base, z1 - ent
+    c_face, c_pier, c_sof, c_jam, c_arch, c_col = (sc(tr, 0.93 - 0.03 * k), sc(tr, 0.90 - 0.03 * k), sc(tr, 0.52),
+                                                   sc(tr, 0.70), sc(tr, 1.08 - 0.03 * k), sc(tr, 1.04 - 0.03 * k))
+    n = len(piers)
+
+    def pt(ta, s, rate, z, rr):
+        t = ta + s / rate
+        return (hx + rr * math.cos(t), hy + rr * Bk_ * math.sin(t), z)
+    for i in range(n):
+        ta, ha = piers[i]
+        tb, hb = piers[(i + 1) % n]
+        if tb <= ta:
+            tb += TAU
+        tm = (ta + tb) / 2
+        rate = _arc_rate(A_, Bk_, tm)
+        S = (tb - ta) * rate
+        wd = S - ha - hb
+        ri = wd / 2.0
+        ro = ri + ARC_AT
+        sc_ = ha + ri
+        zs = max(zb + 0.8, zt - 0.06 - ro)
+        # the engaged half-column on pier a: a drum on the outer face, a capital and a base block
+        px, py = hx + rf * math.cos(ta), hy + rf * Bk_ * math.sin(ta)
+        cyl(SMOOTH, px, py, zb, zt - 0.25, ARC_HC, 8, c_col)
+        cyl(SURF, px, py, zt - 0.25, zt, ARC_HC * 1.25, 8, sc(tr, 1.06))
+        cyl(SURF, px, py, zb, zb + 0.2, ARC_HC * 1.2, 8, sc(tr, 0.98))
+        # the front wall: pier half, the slabs above the arch, pier half
+        SURF.face([pt(ta, 0.0, rate, zb, rf), pt(ta, ha, rate, zb, rf), pt(ta, ha, rate, zt, rf), pt(ta, 0.0, rate, zt, rf)],
+                  c_pier)
+        SURF.face([pt(ta, S - hb, rate, zb, rf), pt(ta, S, rate, zb, rf), pt(ta, S, rate, zt, rf),
+                   pt(ta, S - hb, rate, zt, rf)], c_pier)
+        SURF.face([pt(ta, ha, rate, zb, rb), pt(ta, ha, rate, zb, rf), pt(ta, ha, rate, zs, rf), pt(ta, ha, rate, zs, rb)],
+                  c_jam)
+        SURF.face([pt(ta, S - hb, rate, zb, rf), pt(ta, S - hb, rate, zb, rb), pt(ta, S - hb, rate, zs, rb),
+                   pt(ta, S - hb, rate, zs, rf)], c_jam)
+        arc = []
+        for j in range(ARC_N + 1):
+            ph = math.pi * j / ARC_N
+            arc.append((sc_ - ri * math.cos(ph), zs + ri * math.sin(ph), sc_ - ro * math.cos(ph), zs + ro * math.sin(ph)))
+        for j in range(ARC_N):
+            a, b = arc[j], arc[j + 1]
+            SURF.face([pt(ta, a[0], rate, a[1], rf), pt(ta, b[0], rate, b[1], rf), pt(ta, b[0], rate, zt, rf),
+                       pt(ta, a[0], rate, zt, rf)], c_face)
+            SURF.face([pt(ta, a[0], rate, a[1], rb), pt(ta, b[0], rate, b[1], rb), pt(ta, b[0], rate, b[1], rf),
+                       pt(ta, a[0], rate, a[1], rf)], c_sof)
+            SURF.face([pt(ta, a[0], rate, a[1], rf + 0.1), pt(ta, b[0], rate, b[1], rf + 0.1),
+                       pt(ta, b[2], rate, b[3], rf + 0.1), pt(ta, a[2], rate, a[3], rf + 0.1)], c_arch)
 # ------------------------------------------------------------------ the canonical geometry
 def canonical(ctx, hx, hy, open_bays=()):
     """The full-city Circus Aurelius at (hx, hy) with the ctx primitives. open_bays: (tier, t0, t1) arcs (radians) where
@@ -112,20 +240,13 @@ def canonical(ctx, hx, hy, open_bays=()):
     LM = _lm(ctx)
     rec, n, th, attic = LM["recess"], NSEG, TIER_H, ATTIC_H
 
-    def bay_open(k, t):
-        tt = t % (2 * math.pi)
-        return any(k == kb and t0 <= tt <= t1 for (kb, t0, t1) in open_bays)
-
     for k in range(TIERS):
         z0, z1 = k * th, (k + 1) * th
         prism(SURF, circle(hx, hy, A - rec, n, ry=(A - rec) * BK), z0, z1, sc(tr, 0.86 - 0.03 * k), top=False,
               wc=(1.0, 0.76, 0.42), wl=0.8, wm=4, bid=0.1 * k, uvs=(1.6 / 3.4, 1.9 / th), vz0=0.0)
-        for m in range(LM["cols"]):
-            t = 2 * math.pi * m / LM["cols"]
-            if bay_open(k, t):
-                continue
-            cyl(SMOOTH, hx + A * math.cos(t), hy + A * BK * math.sin(t), z0 + 0.25, z1 - 0.7, LM["col_r"], 10,
-                sc(tr, 1.04 - 0.03 * k))
+        # v2 (AD 2026-10-18): a true Roman arcade, piers + round arches + engaged half-columns (room bays: HQ only)
+        arcade_tier(SURF, SMOOTH, cyl, sc, hx, hy, A, BK, z0, z1, tr, k,
+                    arcade_piers(A, BK, LM["cols"], [(t0, t1) for (kb, t0, t1) in open_bays if kb == k]), rec=rec)
         prism(SURF, circle(hx, hy, A + LM["col_r"] + 0.25, n, ry=A * BK + LM["col_r"] + 0.25), z0, z0 + 0.25,
               sc(tr, 0.95), top=False)
         prism(SURF, circle(hx, hy, A + LM["col_r"] + 0.35, n, ry=A * BK + LM["col_r"] + 0.35), z1 - 0.7, z1,
@@ -201,8 +322,8 @@ def _levels(concept):
         st = [t for t in T if t[3] == k]
         zring.append(RING_Z[k + 1] + 0.05)             # the loge floor: flush with the next ring's top (arena last)
         rin.append(st[-1][1] + 0.15)                   # its opening on the ring's lit edge
-    cav = [dict(name="R%d" % (k + 1), kind="cavea", r=(rin[k] if concept == "B" else rmid[k]),
-                z=(zring[k] if concept == "B" else st_mid(T, k)), arc=(160.0, 20.0), inward=True) for k in range(4)]
+    cav = [dict(name="R%d" % (k + 1), kind="cavea", r=(rin[k] if concept in ("B", "R") else rmid[k]),
+                z=(zring[k] if concept in ("B", "R") else st_mid(T, k)), arc=(160.0, 20.0), inward=True) for k in range(4)]
     rec = LM_DEFAULT["recess"]
     log = [dict(name="T%d" % (k + 1), kind="loggia", r=A - rec, z=k * TIER_H + 0.6, arc=(205.0, 335.0), inward=False,
                 tier=k) for k in range(TIERS)]
@@ -211,6 +332,12 @@ def _levels(concept):
         lv = cav + [dict(name="AR", kind="arena", r=RING_R[4] - 2.6, z=3.0, arc=(150.0, 30.0), inward=True)]
     elif concept == "B":
         lv = log + [attic] + cav
+    elif concept == "R":
+        # v2 (AD 2026-10-18): from the outside in. ARC = the ground arcade (the ambulatory); R1-R3 = the seating rings;
+        # POD = the podium / arena floor (the old R4); the vault last. DESIGN.md 14.2.
+        arc = dict(name="ARC", kind="arcade", r=A + ARC_RF - 0.15, z=0.3, arc=(ARC_ARC[0], ARC_ARC[1]), inward=False, tier=0)
+        pod = dict(cav[3], name="POD", kind="podium")
+        lv = [arc] + cav[:3] + [pod]
     elif concept == "C":
         lv = cav[:2] + [dict(name="H%d" % (k + 1), kind="hypogeum", r=RING_R[4] * (0.82 - 0.22 * k), z=-2.2 - 2.8 * k,
                              arc=(170.0, 10.0), inward=True) for k in range(3)]
@@ -246,23 +373,77 @@ def slots(layers, concept="B"):
         if L["dir"] < 0:
             a0, a1 = a1, a0
         total = sum(c for _, c in members) + (len(members) - 1)            # one empty slot between layer groups
+        segs = [(a0, a1)]
+        if L["kind"] == "arcade":
+            # the entry bay is never a room slot: the arc runs east of it, or on both sides when the rooms would crowd
+            ez = (ENTRY_OPEN / 2 + 1.0 + ARC_CLEAR + ARC_ROOM_W / 2) / (0.4887)           # degrees (about 0.49 BU / deg)
+            lo, hi = ENTRY_T - ez, ENTRY_T + ez
+            if total * ARC_PITCH_MIN <= (a1 - hi) * 0.4887:
+                segs = [(hi, a1)]
+            else:
+                segs = [(a0, lo), (hi, a1)]
+        lens = [abs(b - a) for a, b in segs]
         u = 0
         for (i, cnt) in members:
             for j in range(cnt):
                 f = (u + 0.5) / total
-                td = a0 + (a1 - a0) * f
+                d_ = f * sum(lens)
+                td = segs[-1][0]
+                for (sa, sb), ln in zip(segs, lens):
+                    if d_ <= ln + 1e-9:
+                        td = sa + (d_ if sb > sa else -d_)
+                        break
+                    d_ -= ln
+                    td = sb
                 t = math.radians(td)
                 x, y = ell(t, L["r"])
                 nrm = ell_normal(t, L["r"], L["inward"])
                 out.append(dict(layer=i, node=j, level=L["name"], kind=L["kind"], t=td, pos=(x, y, L["z"]),
                                 normal=nrm, tier=L.get("tier"), li=li,
-                                size=(ROOM["w"], {"loggia": ROOM_BAY_H, "cavea": LOGE_H, "attic": ATTIC_ROOM_H}.get(L["kind"], ROOM["h"]),
+                                size=(ARC_ROOM_W if L["kind"] == "arcade" else ROOM["w"],
+                                      {"loggia": ROOM_BAY_H, "arcade": ARC_ROOM_H, "cavea": LOGE_H, "podium": LOGE_H,
+                                       "attic": ATTIC_ROOM_H}.get(L["kind"], ROOM["h"]),
                                       ROOM["d"])))           # (w, h, d)
                 u += 1
             u += 1
     vz = -11.0 if concept == "C" else ROSTRUM["plinth_z"][1]
     out.append(dict(layer=len(layers) - 1, node=0, level="VAULT", kind="vault", t=270.0, pos=(0.0, -0.0, vz),
                     normal=None, size=(2 * ROSTRUM["tholos_r"], 3.3, 2 * ROSTRUM["tholos_r"]), tier=None, li=None))
+    return out
+
+
+def gates(concept="R"):
+    """The gate between each pair of consecutive levels (DESIGN.md 14.2), at the end of the lower level's walk, GATE_EXTRA
+    degrees past its last slot. kind "outer": the vomitorium arch in the outer arcade at the end of ARC, a stair up inside the
+    wall to the top ring; kind "riser": a stair cut through the riser from ring k down to ring k + 1 (or the podium).
+    Each: dict(a, b, kind, t (deg), li, p (the link's polyline, city units), n (the arch's outward-facing 2D normal),
+    w, h, z (the arch's sill))."""
+    lv = _levels(concept)
+    out = []
+    for i in range(len(lv) - 1):
+        L, N = lv[i], lv[i + 1]
+        a0, a1 = L["arc"]
+        if L["dir"] < 0:
+            a0, a1 = a1, a0
+        sgn = 1.0 if a1 > a0 else -1.0
+        td = (a1 + sgn * GATE_EXTRA) % 360.0
+        t = math.radians(td)
+        if L["kind"] == "arcade":
+            rf = A + ARC_RF
+            x, y = ell(t, rf)
+            xi, yi = ell(t, A - 2.0)
+            xn, yn = ell(t, N["r"])
+            n = ell_normal(t, rf, False)
+            p = [(x, y, L["z"]), (xi, yi, L["z"]), (xi, yi, N["z"]), (xn, yn, N["z"])]
+            out.append(dict(a=L["name"], b=N["name"], kind="outer", t=td, li=i, p=p, n=(n[0], n[1]), w=ARC_ROOM_W,
+                            h=ROOM_BAY_H, z=L["z"]))
+        else:
+            x, y = ell(t, L["r"])
+            xn, yn = ell(t, N["r"])
+            n = ell_normal(t, L["r"], True)
+            p = [(x, y, L["z"]), (xn, yn, N["z"])]
+            out.append(dict(a=L["name"], b=N["name"], kind="riser", t=td, li=i, p=p, n=(n[0], n[1]), w=2.6, h=3.0,
+                            z=L["z"]))
     return out
 
 
@@ -376,15 +557,27 @@ def p_sc(c, k):
 
 
 def bays_for(slot_list):
-    """The doorway bays (tier, t0, t1 radians) the loggia slots open in the colonnade (HQ only)."""
+    """The room bays (tier, t0, t1 radians) the arcade opens for HQ rooms: the CLEAR opening, arcade_piers() puts a pier
+    at each edge (HQ only; the city passes none). An arcade room sits inside its arch opening (w + 2 x ARC_CLEAR)."""
     out = []
     for s in slot_list:
-        if s["kind"] != "loggia":
+        if s["kind"] not in ("loggia", "arcade"):
             continue
         t = math.radians(s["t"])
         rate = math.hypot(A * math.sin(t), A * BK * math.cos(t))
-        dt = (s["size"][0] / 2 + 0.5) / rate
+        dt = (s["size"][0] / 2 + (ARC_CLEAR if s["kind"] == "arcade" else 0.5)) / rate
         out.append((s["tier"], (t - dt) % (2 * math.pi), (t + dt) % (2 * math.pi)))
+    return out
+
+
+def portal_arcs(concept="R"):
+    """The entry arch and the ARC -> R1 gate arch as clear openings (tier 0, radians), HQ only."""
+    out = []
+    for t_deg in [ENTRY_T] + [g["t"] for g in gates(concept) if g["kind"] == "outer"]:
+        t = math.radians(t_deg)
+        rate = math.hypot(A * math.sin(t), A * BK * math.cos(t))
+        dt = (ENTRY_OPEN / 2) / rate
+        out.append((0, (t - dt) % (2 * math.pi), (t + dt) % (2 * math.pi)))
     return out
 
 
@@ -506,7 +699,7 @@ def build_hq(K, rooms=True):
     ctx.district = dict(mat=[K.pal("travertine")], sec=K.pal("gilt"))
     ctx.CP = None
     ctx.arena_open = False
-    open_bays = bays_for(G.SLOTS) if G else []
+    open_bays = (bays_for(G.SLOTS) + [(kk, a_, b_) for (kk, a_, b_) in portal_arcs(getattr(G, 'CONCEPT', 'R'))]) if G else []
     info = canonical(ctx, 0.0, 0.0, open_bays=open_bays)
     # the lit loggia: an arch panel in every bay of every tier on the recessed wall (the city shader's lit arches)
     LG = _KitAcc(loggia_acc, ks, cut, LH["loggia_k"])
@@ -529,6 +722,50 @@ def build_hq(K, rooms=True):
                 pts.append((x, y, zs + half * math.sin(a)))
             pts.append((p0[0], p0[1], zs))
             LG.face(pts, sc_jit(warm, m, k))
+    # the gates (DESIGN.md 14.2): the entry arch and the outer vomitorium are lit portals in the arcade (a wide round-headed
+    # panel on the recessed wall, a gilt archivolt line, a rising stair inside); the riser gates are a gilt arch frame on the
+    # riser over a lit stair strip down to the next ring
+    if G:
+        GB = _KitAcc(gilt_acc, ks, None, LH["gilt_k"] * 1.2)
+        warm_g = K.pal("loggia")
+
+        def arch_frame(cx, cy, n, z0, w, h, wd=0.2):
+            tx, ty = n[1], -n[0]
+            hw = w / 2.0
+            zs = z0 + h - hw
+            pts_ = [(cx - tx * hw, cy - ty * hw, z0), (cx - tx * hw, cy - ty * hw, zs)]
+            for q in range(1, 8):
+                a_ = math.pi * q / 8
+                pts_.append((cx - tx * hw * math.cos(a_), cy - ty * hw * math.cos(a_), zs + hw * math.sin(a_)))
+            pts_ += [(cx + tx * hw, cy + ty * hw, zs), (cx + tx * hw, cy + ty * hw, z0)]
+            for u_, v_ in zip(pts_[:-1], pts_[1:]):
+                p_bar(GB, u_, v_, wd, K.pal("gilt"))
+
+        def steps(p0, p1, n, w, cnt, col, k_):
+            tx, ty = n[1], -n[0]
+            S_ = _KitAcc(loggia_acc, ks, None, LH["loggia_k"] * k_)
+            for q in range(cnt):
+                f = (q + 0.5) / cnt
+                x, y, z = (p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f, p0[2] + (p1[2] - p0[2]) * f)
+                p_bar(S_, (x - tx * w / 2, y - ty * w / 2, z), (x + tx * w / 2, y + ty * w / 2, z), 0.22, sc_jit(col, q, 0))
+        for g in gates(getattr(G, "CONCEPT", "R")):
+            if g["kind"] == "outer":
+                x0, y0, z0 = g["p"][0]
+                n = g["n"]
+                arch_frame(x0 + n[0] * 0.55, y0 + n[1] * 0.55, n, 0.25, ENTRY_OPEN + 0.2, ROOM_BAY_H + 0.55, 0.22)
+                steps((x0 - n[0] * 0.1, y0 - n[1] * 0.1, 0.55), (x0 - n[0] * 1.9, y0 - n[1] * 1.9, 1.9), n, ENTRY_OPEN - 0.6, 6,
+                      warm_g, 1.6)
+            else:
+                x0, y0, z0 = g["p"][0]
+                x1, y1, z1 = g["p"][1]
+                n = g["n"]
+                arch_frame(x0 + n[0] * 0.12, y0 + n[1] * 0.12, n, z0 + 0.05, g["w"], g["h"], 0.18)
+                steps((x0 + n[0] * 0.9, y0 + n[1] * 0.9, z0 + 0.05), (x1 - n[0] * 0.2, y1 - n[1] * 0.2, z1 + 0.15), n, g["w"] - 0.5,
+                      9, warm_g, 1.0)
+        e0 = ENTRY["entry"]
+        en = ENTRY["entry_nrm"]
+        arch_frame(e0[0] + en[0] * 0.55, e0[1] + en[1] * 0.55, en, 0.25, ENTRY_OPEN + 0.2, ROOM_BAY_H + 0.55, 0.22)
+        steps((e0[0], e0[1], 0.3), (e0[0] - en[0] * 1.6, e0[1] - en[1] * 1.6, 0.3), en, ENTRY_OPEN - 0.6, 4, warm_g, 1.4)
     # warm cove strips under every entablature (the travertine's own light line)
     CV = _KitAcc(A_["trim"], ks, cut, LH["cove_k"])
     for k in range(TIERS):
@@ -659,6 +896,11 @@ def build_hq(K, rooms=True):
                 lob.data.energy = e0 * (d_ / 265.0) ** 2 * LH.get("camfill_frame", {}).get(fr.get("name"), 1.0) * c["cut"]
             elif lob.name.startswith("up_"):                   # the colonnade uplights: per-frame trim (landmark / city ratio)
                 lob.data.energy = e0 * LH.get("up_frame", {}).get(fr.get("name"), 1.0) * c["cut"]
+    _apply_light = apply
+
+    def apply(fr, c):                                           # noqa: F811
+        _apply_light(fr, c)
+        _occ_report(K, fr)
     hooks["apply"] = apply
     K.log("aurelian landmark: rooms", len(rooms_), "open bays", len(open_bays), "lights", len(lights) + nup + 6)
     return hooks
@@ -668,3 +910,27 @@ def sc_jit(c, m, k):
     """Seeded-free tone jitter for the loggia arches (R-REP-1): a fixed per-bay pattern, deterministic by index."""
     j = 0.82 + 0.18 * (((m * 7 + k * 3) % 5) / 4.0)
     return tuple(v * j for v in c)
+
+
+def _occ_report(K, fr):
+    """Per frame (inside Blender): the python twin of the occlusion rule against the city buildings (BLD in the engine's
+    globals) and the route rooms in frame; writes ../scratch/occ_<frame>.json (DESIGN.md section 14.1)."""
+    sec = fr.get("section")
+    if not sec or "occ_on" not in sec:
+        return
+    import json
+    glb = sys._getframe(2).f_globals
+    BLD = glb.get("BLD")
+    if not BLD:
+        return
+    import hq_cam as CR
+    import occ_check as OC
+    pose = CR.pose_of(fr["pose"])
+    G = K.G
+    ids = OC.in_frame_rooms(G, CR, pose)
+    res = OC.count(BLD, sec, pose, G, ids)
+    res.update(frame=fr.get("name"), n_buildings=len(BLD))
+    d = os.path.join(os.path.dirname(_HERE), "scratch")
+    os.makedirs(d, exist_ok=True)
+    json.dump(res, open(os.path.join(d, "occ_%s.json" % fr.get("name")), "w"), indent=1)
+    K.log("OCC %s rooms %d hit %d occluders %d" % (fr.get("name"), res["rooms"], res["rooms_hit"], res["buildings"]))

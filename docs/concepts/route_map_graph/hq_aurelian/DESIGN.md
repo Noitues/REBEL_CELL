@@ -1,6 +1,6 @@
 # Aurelian Concord HQ: THE CIRCUS AURELIUS (design pass, 2026-10-18)
 
-Status: **concept B approved (designer, 2026-10-18); `build_hq` written; Cycles test round done (section 13). No finals.**
+Status: **concept B approved (designer, 2026-10-18); v1 finals done (13.6); AD round 3 built: route outside-in, Roman arcade, occlusion fix, ENTRY (section 14); v2 finals done.**
 Builds on the draft head start `D:/Godot/rebel_cell/docs/handoff/netrun_art/batch/aurelian_design/DESIGN.md`
 (unverified, not approved). Where this file and the draft differ, this file wins. Section 10 lists the differences.
 
@@ -388,3 +388,134 @@ to ratio 2.67 at 64 spp); `ov_loggia` 0.70. Files: `H_*_v1.png` (composite), `pl
 | H_decision_v1 | 0.145 | 29.7 % | 0.9 % | 0.268 / 0.119 = 2.26 |
 | H_decision_cavea_v1 | 0.148 | 30.8 % | 1.1 % | 0.193 / 0.087 = 2.22 |
 | H_hover_v1 | 0.013 (exempt) | 81 % | 1.1 % | 12.7 (exempt) |
+
+## 14. Round 3: AD rulings (2026-10-18), v2
+
+Four rulings on the v1 finals. Everything below is built in `scripts/` and checked; the numbers are in 14.6. The v1 files
+stay as they were (`*_v1.*`); v2 is `*_v2.*`. Concept B's up-colonnade / rim walk / down-seats order is replaced by
+concept **R** (`aurelian_landmark._levels("R")`, `hq_graph.CONCEPT`); concepts A, B and C stay in the thumbnails code.
+
+### 14.1 Ruling 1: occlusion (no building above stub height in front of any route room)
+
+**Why the cone missed them.** The engine (`hq_jobs.frame`) builds the cone from the OVERVIEW's every route node, but in
+DECISION and HOVER only from the **current room + its options**. Every other route room in frame (v1: the loggia rooms
+on both sides, the rings behind, the vault) was not a target, so the towers in front of them kept their full height. In the
+v1 DECISION frames 31 buildings overlapped 5 rooms, and in the HOVER frame 27. The OVERVIEW was already clean. The camera
+distance (`dmin` 260 kit) was not the cause: the cone is built from the camera, whatever its distance.
+
+**Fix** (`hq_run._frame`, a wrapper on the engine's `frame`; the engine files stay untouched): the cone target set is every
+route room in the frame that faces the camera, plus the vault, plus the current room and its options (OVERVIEW: every route
+node, as before). The rule itself (`downtown.occlusion_params`, spec 7: stub 6.4 BU, ghost 0.18) is unchanged.
+
+**Measure** (two independent checks, both in `scripts/`):
+- `occ_check.py` (the python twin, runs inside Blender for every rendered frame; `scratch/occ_<frame>.json`): for each room
+  in frame, the buildings the rule leaves above stub height + 0.5 whose projected hull overlaps the room's screen box +12 px
+  and that stand nearer the camera than the room.
+- `occ_index.py` (on the render's object-index pass): the share of city pixels (index 2) in each room's front box. The raw
+  Cycles pass is speckled (22-25 % of the landmark's own pixels carry the city index), so a building in front means a share
+  above 50 %.
+
+### 14.2 Ruling 2: the route runs from the outer ring to the centre
+
+Bands, outer to inner (`aurelian_landmark._levels("R")`, `gates()`):
+
+| Band | Level | Where | Room floor z | Faces | Arc | Capacity |
+|---|---|---|---|---|---|---|
+| (a) | **ARC** | the ground arcade (the ambulatory), south face, one room per arch opening | 0.3 | out | 205-332 deg, entry bay skipped | 12 |
+| (b) | gate | the **outer vomitorium**: a lit arch in the arcade at 344 deg, a stair inside the wall up to the top ring | 0.3 up to 15.05 | | | |
+| (c) | **R1** | top seating ring, north arc, loges in the ring edge | 15.05 | in | 160-20 deg | 15 |
+| | gate | a stair cut through the riser, at the end of the ring, in a gilt arch frame (west) | 15.05 down to 10.55 | | | |
+| (c) | **R2** | second ring | 10.55 | in | | 13 |
+| | gate | riser stair (east) | 10.55 down to 6.55 | | | |
+| (c) | **R3** | third ring | 6.55 | in | | 11 |
+| | gate | riser stair (west) | 6.55 down to 3.05 | | | |
+| (d) | **POD** | the podium / arena floor, loges at the arena edge | 3.05 | in | | 9 |
+| | link | the arena stair straight across the sand | | | | |
+| (e) | **VAULT** | THE CONCORDAT VAULT, the Rostrum's tholos | 4.2 | all | | 1 |
+
+- **Layer to band** (deterministic, D10 kept): the route layers are every layer except the last (the vault). With *n*
+  route layers and the 5 levels ARC, R1, R2, R3, POD (`level_of`): n >= 5 gives `level = floor(i * 5 / n)`, so consecutive
+  layers share a level, 1-3 layers each up to 15 route layers (n = 9 gives 2, 2, 2, 2, 1; a 7-layer GDD run, n = 6, gives
+  2, 1, 1, 1, 1); n < 5 spreads the layers from ARC to POD by `round(i * 4 / (n - 1))`. Above 15 route layers a level holds
+  more than 3 layers and its arc widens (the DESIGN 4.2 rule, unchanged).
+- **Slots**: within a level each layer takes a contiguous sub-arc, one empty slot between layer groups, nodes spread evenly.
+  Walk directions alternate (ARC west to east, R1 east to west, ...), so a gate is at the end of the arc it leaves, 12 deg
+  past the last slot. The ARC arc skips the entry bay (a room never takes the entry arch).
+- **Edges**: a gate edge runs to the end of its level, through the gate's arch (14.2 table), and along the next level; the
+  start's ramp runs in through the entry arch; the topology (nodes, edges, kinds) is still only the game's (the fixture is a
+  mock for these renders).
+- The ground-arcade room is 2.8 wide and 3.5 tall (it sits inside one arch opening, 4.0 wide with a 0.6 clear each side; 3.5
+  keeps it at the 46 px OVERVIEW target, `hq_run.py px`: ARC 47.6-50.0, R1 50.1-54.7, R2 48.7-52.0, R3 47.4-49.9, POD
+  46.3-47.3, vault 46.0). Where rooms stand, `arcade_piers()` puts a pier at each edge of the opening and drops the grid
+  piers within 2.2 BU, so the arches next to a room are never narrower than 1.2 BU.
+
+### 14.3 Cameras: the pitch rises as the route moves inward
+
+OVERVIEW is unchanged (outside and above: bearing 200, pitch 36, lens 36). **DECISION** orbits round the colosseum to face
+the current room's bearing (the spec rule: the mean look of the distinct room normals; the options' when that mean is
+degenerate, as across a gate). The pitch is a function of the band (`hq_preset` `cam.pitch_band`):
+
+| Band | ARC | R1 | R2 | R3 | POD | VAULT |
+|---|---|---|---|---|---|---|
+| Pitch (deg) | 30 | 38 | 44 | 50 | 55 | 55 |
+
+The camera is outside the colonnade for the ARC rooms (`dmin_loggia` 260 kit, lens 42), inside the bowl above the arena for
+the rings and the podium (lens 30, `dmin` 32 BU) looking down across it, and from the OVERVIEW bearing at 0.6 of its distance for
+the vault. HOVER is the kit's (22 % pull, 3 deg, x 0.96).
+
+### 14.4 Ruling 3: the outer wall is a Roman arcade (city model and HQ, spec 8.6b)
+
+`arcade_tier()` / `arcade_piers()` (identical in `city_all_corps/scripts/landmarks.py aurelian()` and in
+`aurelian_landmark.canonical()`), per tier: 60 piers (1.0 wide) on the outer ellipse, a **round arch** between each pair
+(8 segments per half circle; the springing is set so the crown is the same on every arch) with an **archivolt** band (0.3,
+proud by 0.1), a soffit and jambs through the 2.15 BU wall depth, spandrels to the entablature, an **engaged half-column**
+(r 0.5, capital and base) on each pier's outer face, and the existing **entablature** band over each tier and the **attic** on
+top. The recessed lit wall is behind (the lit arches show through the openings). Faces: about 3 900 per tier, against 600 for
+the v1 free columns. The silhouette (the ellipses, the tier heights, the campanili, the cavea, the Rostrum) is unchanged.
+HQ only: the room bays (a wide arch with piers at its edges, 14.2), the entry arch and the outer gate are extra openings; the
+city has none.
+
+### 14.5 Ruling 4: ENTRY
+
+```
+ENTRY = {"entry": [-15.547, -21.871, 0.0], "entry_nrm": [-0.342, -0.9397]}
+```
+(`aurelian_landmark.ENTRY`; BU relative to the HQ lot centre, x east, y north, z above ground.) It is the outer arcade's ground
+arch at parameter 240.37 deg, whose outward normal is the overview bearing 200 (the camera's side). The Cell's box stands
+6 BU in front of it; the start's ramp runs in through it.
+
+### 14.6 Results (Cycles, 2560 x 1440, 64 spp; one frame per locked batch, about 7 min each)
+
+Files: `H_overview_v2`, `H_decision_v2` (an outer-arcade room: current room layer 0, options layer 1), `H_decision_inner_v2`
+(a seating-ring room, R2), `H_hover_v2` (`.png`, `_values.json`, `_rooms.json`), `plates/H_*_v2_plate.png`,
+`finals_sheet_v2.jpg` (1280 x 802), `city_colosseum_before_after.jpg` (the city model, v1 free columns beside v2 arcade,
+city a2 `dbg_aur`, Eevee main look). The v1 files are kept.
+
+| Final | median (0.14 +- 0.03) | under 0.10 (25-40 %) | over 0.85 (<= 2.5 %) | landmark / local bg |
+|---|---|---|---|---|
+| H_overview_v2 | 0.152 | 38.1 % | 0.8 % | 0.234 / 0.095 = 2.46 (warn, aim 2.5) |
+| H_decision_v2 | 0.129 | 40.7 % (0.7 over the band) | 0.5 % | 0.296 / 0.121 = 2.44 (warn) |
+| H_decision_inner_v2 | 0.127 | 42.0 % (over the band) | 0.8 % | 0.209 / 0.114 = 1.84 |
+| H_hover_v2 | 0.010 (exempt) | 88 % | 0.2 % | 10.49 (exempt) |
+
+The decision frames are a little dark at the bottom: the wider cone (14.1) flattens more of the city that lit them. Per-frame trims in
+`hq_preset` (`H_decision` -0.2 stop, uplights x 0.8; `H_decision_inner` -0.30). Flagged for the AD, not tuned further.
+
+**Occluders** (buildings above stub height, in front of and overlapping a route room's screen box + 12 px; `scratch/occ_<frame>.json`,
+written by the render job itself, and `occ_index.py` on the index pass; the count for the rooms in frame):
+
+| Frame | rooms in frame | v1 (the cone = current + options) | v2 twin | v2 index pass (rooms with city > 50 % of the front box) |
+|---|---|---|---|---|
+| H_overview | 27 | 0 | **0** | 0 (max city share 0.26 = the pass speckle) |
+| H_decision | 18 | 31 buildings on 5 rooms | **0** | 0 (0.25) |
+| H_decision_inner | 19 | 1 (v1 cavea frame) | **0** | 0 (0.00) |
+| H_hover | 18 | 27 on 5 rooms | **0** | 0 (0.26) |
+
+Other checks: `hq_run.py px` (rooms at the 46 px OVERVIEW target) passes for every band (14.2); the city model vs the HQ module is
+1:1 (the `CITY_LM_DUMP` check against the built-in `aurelian()`: 16 511 faces, 0 mismatches, 2 lights equal); a face-count budget of
+about 3 900 faces per tier (14.4).
+
+Open for the AD:
+- **Q7. DECISION `under 0.10` at 40.7 % / 42 %** (the band is 25-40 %): accept, or lift the city lift on those frames?
+- **Q8. The arcade room is 2.8 x 3.5** (v1 3.3 x 3.4): it must fit one arch opening. Accept (default), or widen the arcade to 40 bays?
+- **Q9. The gate arches and stairs are HQ-only dressing** (lit arch frames, lit step bars): the city model has none.

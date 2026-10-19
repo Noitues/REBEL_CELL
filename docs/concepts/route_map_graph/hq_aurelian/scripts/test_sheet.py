@@ -9,7 +9,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 SRC, OUT = sys.argv[1], sys.argv[2]
-NAMES = ["H_overview", "H_decision", "H_decision_cavea", "H_hover"]
+NAMES = ["H_overview", "H_decision", "H_decision_inner", "H_hover"]
 V = json.load(open(os.path.join(SRC, "values.json")))
 
 
@@ -25,7 +25,7 @@ def font(sz, bold=False):
 W, H, TOP, CAP = 636, 358, 34, 24
 sheet = Image.new("RGB", (2 * W + 8, TOP + 2 * (H + CAP) + 4), (12, 12, 16))
 d = ImageDraw.Draw(sheet)
-d.text((6, 8), "AURELIAN HQ, concept B: Cycles test 1280 x 720, 32 spp (mock 10-layer route; neutral mechanic UI)",
+d.text((6, 8), "AURELIAN HQ v2 (outside-in route, Roman arcade): Cycles finals 2560 x 1440, 64 spp, shown at 636 px (mock route)",
        fill=(214, 178, 104), font=font(17, True))
 for k, n in enumerate(NAMES):
     im = Image.open(os.path.join(SRC, n + ".png")).convert("RGB").resize((W, H), Image.LANCZOS)

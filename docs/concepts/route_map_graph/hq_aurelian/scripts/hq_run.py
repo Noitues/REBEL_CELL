@@ -3,7 +3,7 @@
 python hq_run.py px                         the OVERVIEW room sizes (px tall at 1920 x 1080) against the 46 px target
 python hq_run.py stills <quality> [names]   render (test: Cycles under the GPU lock, owner "aurelian"; eevee: preview,
                                             no lock), then plates + composites + values -> ../scratch/<quality>/
-Names default to all stills (H_overview, H_decision, H_decision_cavea, H_hover).
+Names default to all stills (H_overview, H_decision, H_decision_inner, H_hover).
 """
 import json
 import os
@@ -27,8 +27,32 @@ J.SCR = aur_env.SCR
 J.BIG = aur_env.BIG
 J.have_lock = lambda: os.path.exists(J.LOCK) and open(J.LOCK, errors="replace").read().startswith("aurelian")
 TARGET_PX = 46.0
+import occ_check as OC  # noqa: E402
+_frame0 = J.frame
+
+
+def _frame(name, pose, walked, zoom, hover=None, hover_k=0.0, mt=None, extra=None):
+    """DESIGN.md 14.1: the occlusion cone covers EVERY route room in frame that faces the camera (and the vault), not only
+    the current room + options (the engine's default), in OVERVIEW, DECISION and HOVER."""
+    fr, ov = _frame0(name, pose, walked, zoom, hover, hover_k, mt, extra)
+    mt_ = (len(walked) - 1) if mt is None else mt
+    ids = OC.in_frame_rooms(G, CR, pose, mt=int(mt_)) if zoom >= 0.5 else [i for i in G.NODES if i != "start"]
+    cur = walked[-1]
+    st_, opts = G.states(walked, int(mt_))
+    for i in ([cur] + list(opts)):
+        if i != "start" and i not in ids:
+            ids.append(i)
+    dtc = _HQP_PRESET.get("downtown")
+    if dtc and "section" in fr and ids:
+        from hq_kit import downtown as KDT
+        fr["section"] = KDT.occlusion_params(pose.loc(), OC.cone_points(G, ids, int(mt_)), dtc)
+    return fr, ov
+
+
+J.frame = _frame
 import hq_preset as _HQP  # noqa: E402
 HP_H = _HQP.PRESET["hq"]
+_HQP_PRESET = HP_H
 
 
 def px():
@@ -116,5 +140,27 @@ if __name__ == "__main__":
         q = sys.argv[2]
         names = sys.argv[3].split(",") if len(sys.argv) > 3 else None
         sys.exit(stills(q, names))
+    elif what == "shots":
+        # python hq_run.py shots <G function> <quality>: a debug shot list (plates only, no overlay) -> ../scratch/<fn>_<q>/
+        fn, q = sys.argv[2], sys.argv[3]
+        S = [J.frame(n, p, s["walked"], CR.zoom_of(p, s["walked"]), s.get("hover"), s.get("hover_k", 0.0), s.get("mt"),
+                     s.get("extra")) for n, (p, s) in getattr(G, fn)(CR).items()]
+        out = os.path.join(aur_env.BIG, "bl_%s_%s" % (fn, q))
+        cycles = J.QUAL[q].get("engine", "CYCLES") == "CYCLES"
+        if cycles:
+            gpu_lock.acquire("aurelian shots " + fn, poll=60)
+        try:
+            rc = J.run("shots_%s_%s" % (fn, q), [f for f, _ in S], q, out, extra=dict(force=True))
+        finally:
+            if cycles:
+                gpu_lock.release()
+        if rc:
+            sys.exit(rc)
+        import hq_post as PO
+        dst = os.path.join(aur_env.SCR, "%s_%s" % (fn, q))
+        os.makedirs(dst, exist_ok=True)
+        for f, o in S:
+            PO.finish(os.path.join(out, f["name"]), o["zoom"], t=2.0).save(os.path.join(dst, f["name"] + ".png"))
+            print("plate", f["name"])
     elif what == "post":
         sys.exit(post(sys.argv[2], sys.argv[3].split(",")))

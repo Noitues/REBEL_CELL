@@ -345,6 +345,109 @@ def orbital():
 
 
 # ------------------------------------------------------------------ AURELIAN: the Circus Aurelius
+# ------------------------------------------------------------------ the Roman arcade (v2, 2026-10-18): piers + round arches
+# (archivolts) + engaged half-columns + an entablature band per tier; identical in landmarks.py aurelian() and
+# aurelian_landmark.canonical() (spec 8.6b). The recessed lit wall stays behind. PIER_H = pier half width (BU).
+ARC_PIER_H = 0.5
+ARC_RF = 0.45            # the arcade's outer plane: A + 0.45
+ARC_HC = 0.5             # engaged half-column radius (centred on the pier's outer face)
+ARC_N = 8                # segments per arch (half circle)
+ARC_AT = 0.30            # archivolt thickness
+ARC_MIN_OPEN = 1.2       # the narrowest opening (BU)
+
+
+def _arc_rate(A_, Bk_, t):
+    return math.hypot(A_ * math.sin(t), A_ * Bk_ * math.cos(t))
+
+
+def arcade_piers(A_, Bk_, ncols, open_arcs=()):
+    """Pier list [(t radians, half width BU)] sorted by t, for one tier. open_arcs: (t0, t1) clear openings (radians) a
+    room bay needs (HQ only): piers stand at their edges, grid piers within 2.2 BU of one are dropped."""
+    TAU = 2 * math.pi
+    arcs = []
+    for (t0, t1) in open_arcs:
+        t0 %= TAU
+        t1 %= TAU
+        if t1 < t0:
+            t1 += TAU
+        arcs.append((t0, t1))
+    arcs.sort()
+    rp = []                                              # room piers (t, half)
+    for i, (t0, t1) in enumerate(arcs):
+        ra = _arc_rate(A_, Bk_, (t0 + t1) / 2)
+        pa, pb = t0 - ARC_PIER_H / ra, t1 + ARC_PIER_H / ra
+        if rp and (pa - rp[-1][0]) * ra < 2 * ARC_PIER_H + 1e-6:        # openings share one pier
+            g = (t0 - (arcs[i - 1][1])) * ra
+            rp[-1] = ((t0 + arcs[i - 1][1]) / 2, max(g / 2, 0.3))
+        else:
+            rp.append((pa, ARC_PIER_H))
+        rp.append((pb, ARC_PIER_H))
+    P = list(rp)
+    for m in range(ncols):
+        t = TAU * m / ncols
+        ra = _arc_rate(A_, Bk_, t)
+        near = False
+        for (tp, _h) in rp:
+            d = abs(((t - tp + math.pi) % TAU) - math.pi) * ra
+            if d < ARC_MIN_OPEN + 1.0:
+                near = True
+                break
+        if not near:
+            P.append((t, ARC_PIER_H))
+    return sorted(P)
+
+
+def arcade_tier(SURF, SMOOTH, cyl, sc, hx, hy, A_, Bk_, z0, z1, tr, k, piers, ent=0.7, base=0.25, rec=1.7):
+    """One tier's arcade wall on the outer ellipse. piers from arcade_piers()."""
+    TAU = 2 * math.pi
+    rf, rb = A_ + ARC_RF, A_ - rec
+    zb, zt = z0 + base, z1 - ent
+    c_face, c_pier, c_sof, c_jam, c_arch, c_col = (sc(tr, 0.93 - 0.03 * k), sc(tr, 0.90 - 0.03 * k), sc(tr, 0.52),
+                                                   sc(tr, 0.70), sc(tr, 1.08 - 0.03 * k), sc(tr, 1.04 - 0.03 * k))
+    n = len(piers)
+
+    def pt(ta, s, rate, z, rr):
+        t = ta + s / rate
+        return (hx + rr * math.cos(t), hy + rr * Bk_ * math.sin(t), z)
+    for i in range(n):
+        ta, ha = piers[i]
+        tb, hb = piers[(i + 1) % n]
+        if tb <= ta:
+            tb += TAU
+        tm = (ta + tb) / 2
+        rate = _arc_rate(A_, Bk_, tm)
+        S = (tb - ta) * rate
+        wd = S - ha - hb
+        ri = wd / 2.0
+        ro = ri + ARC_AT
+        sc_ = ha + ri
+        zs = max(zb + 0.8, zt - 0.06 - ro)
+        # the engaged half-column on pier a: a drum on the outer face, a capital and a base block
+        px, py = hx + rf * math.cos(ta), hy + rf * Bk_ * math.sin(ta)
+        cyl(SMOOTH, px, py, zb, zt - 0.25, ARC_HC, 8, c_col)
+        cyl(SURF, px, py, zt - 0.25, zt, ARC_HC * 1.25, 8, sc(tr, 1.06))
+        cyl(SURF, px, py, zb, zb + 0.2, ARC_HC * 1.2, 8, sc(tr, 0.98))
+        # the front wall: pier half, the slabs above the arch, pier half
+        SURF.face([pt(ta, 0.0, rate, zb, rf), pt(ta, ha, rate, zb, rf), pt(ta, ha, rate, zt, rf), pt(ta, 0.0, rate, zt, rf)],
+                  c_pier)
+        SURF.face([pt(ta, S - hb, rate, zb, rf), pt(ta, S, rate, zb, rf), pt(ta, S, rate, zt, rf),
+                   pt(ta, S - hb, rate, zt, rf)], c_pier)
+        SURF.face([pt(ta, ha, rate, zb, rb), pt(ta, ha, rate, zb, rf), pt(ta, ha, rate, zs, rf), pt(ta, ha, rate, zs, rb)],
+                  c_jam)
+        SURF.face([pt(ta, S - hb, rate, zb, rf), pt(ta, S - hb, rate, zb, rb), pt(ta, S - hb, rate, zs, rb),
+                   pt(ta, S - hb, rate, zs, rf)], c_jam)
+        arc = []
+        for j in range(ARC_N + 1):
+            ph = math.pi * j / ARC_N
+            arc.append((sc_ - ri * math.cos(ph), zs + ri * math.sin(ph), sc_ - ro * math.cos(ph), zs + ro * math.sin(ph)))
+        for j in range(ARC_N):
+            a, b = arc[j], arc[j + 1]
+            SURF.face([pt(ta, a[0], rate, a[1], rf), pt(ta, b[0], rate, b[1], rf), pt(ta, b[0], rate, zt, rf),
+                       pt(ta, a[0], rate, zt, rf)], c_face)
+            SURF.face([pt(ta, a[0], rate, a[1], rb), pt(ta, b[0], rate, b[1], rb), pt(ta, b[0], rate, b[1], rf),
+                       pt(ta, a[0], rate, a[1], rf)], c_sof)
+            SURF.face([pt(ta, a[0], rate, a[1], rf + 0.1), pt(ta, b[0], rate, b[1], rf + 0.1),
+                       pt(ta, b[2], rate, b[3], rf + 0.1), pt(ta, a[2], rate, a[3], rf + 0.1)], c_arch)
 def aurelian():
     hx, hy = hq_w("aurelian")
     D = DIST["aurelian"]
@@ -361,11 +464,9 @@ def aurelian():
         # the wall stands back behind the columns: lit gilt arches deep in the loggia
         prism(SURF, circle(hx, hy, A - rec, n, ry=(A - rec) * Bk), z0, z1, sc(tr, 0.86 - 0.03 * k), top=False, wc=(1.0, 0.76, 0.42),
               wl=0.8, wm=4, bid=0.1 * k, uvs=(1.6 / 3.4, 1.9 / th), vz0=0.0)
-        # the colonnade: round columns on the outer ellipse, a base and an entablature band per tier
-        for m in range(AL["cols"]):
-            t = 2 * math.pi * (m + 0.5 * (k % 2 == 1) * 0) / AL["cols"]
-            cx_, cy_ = hx + A * math.cos(t), hy + A * Bk * math.sin(t)
-            cyl(SMOOTH, cx_, cy_, z0 + 0.25, z1 - 0.7, AL["col_r"], 10, sc(tr, 1.04 - 0.03 * k))
+        # v2 (AD 2026-10-18): a true Roman arcade: piers + round arches (archivolts) + engaged half-columns on the outer
+        # ellipse, a base and an entablature band per tier (aurelian_landmark.canonical keeps this 1:1)
+        arcade_tier(SURF, SMOOTH, cyl, sc, hx, hy, A, Bk, z0, z1, tr, k, arcade_piers(A, Bk, AL["cols"], []), rec=rec)
         prism(SURF, circle(hx, hy, A + AL["col_r"] + 0.25, n, ry=A * Bk + AL["col_r"] + 0.25), z0, z0 + 0.25, sc(tr, 0.95), top=False)
         prism(SURF, circle(hx, hy, A + AL["col_r"] + 0.35, n, ry=A * Bk + AL["col_r"] + 0.35), z1 - 0.7, z1, sc(tr, 1.05), top=False)
         annulus(SURF, hx, hy, z1, A - rec, A + AL["col_r"] + 0.35, sc(tr, 1.0), n=n, k0=Bk, k1=(A * Bk + AL["col_r"] + 0.35) / (A + AL["col_r"] + 0.35))

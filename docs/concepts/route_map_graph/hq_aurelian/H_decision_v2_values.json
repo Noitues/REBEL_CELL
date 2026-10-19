@@ -1,0 +1,16 @@
+{
+ "median": 0.12862040102481842,
+ "under_010": 0.40677870008680556,
+ "over_085": 0.004955512152777778,
+ "landmark": 0.29585060477256775,
+ "local_bg": 0.12132784724235535,
+ "landmark_share": 0.2448828125,
+ "ratio": 2.4384394143382346,
+ "occluders": {
+  "rooms_in_frame": 18,
+  "rooms_hit": 0,
+  "buildings_above_stub": 0,
+  "pad_px": 12,
+  "per_room": {}
+ }
+}

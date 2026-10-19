@@ -34,7 +34,9 @@ def nid(layer, node):
     return "srv" if layer == len(LAYERS) - 1 else "n%d_%d" % (layer, node)
 
 
-SLOTS = AL.slots(LAYERS, "B")
+CONCEPT = "R"                                    # DESIGN.md 14.2: the route runs from the outer arcade in to the vault
+SLOTS = AL.slots(LAYERS, CONCEPT)
+GATES = {g_["a"]: g_ for g_ in AL.gates(CONCEPT)}   # the gate that leaves each level
 for s_ in SLOTS:
     s_["id"] = nid(s_["layer"], s_["node"])
 SLOT = {s_["id"]: s_ for s_ in SLOTS}
@@ -47,8 +49,8 @@ def _rec(s):
     return dict(o=(x * KS, y * KS, z * KS), n=n, w=w * KS, h=h * KS, d=d * KS)
 
 
-_st = AL.ell(math.radians(218.0), AL.A + 6.0)
-ROOM = {"start": dict(o=(_st[0] * KS, _st[1] * KS, 0.4), n=(0.0, -1.0), w=8.0, h=4.6, d=6.0)}
+_en, _nn = AL.ENTRY["entry"], AL.ENTRY["entry_nrm"]      # the Cell's box on the boulevard, in front of the entry arch
+ROOM = {"start": dict(o=((_en[0] + _nn[0] * 6.0) * KS, (_en[1] + _nn[1] * 6.0) * KS, 0.4), n=tuple(_nn), w=8.0, h=4.6, d=6.0)}
 for s_ in SLOTS:
     ROOM[s_["id"]] = _rec(s_)
 NODES = ["start"] + [s_["id"] for s_ in SLOTS if s_["id"] != "srv"] + ["srv"]
@@ -82,12 +84,9 @@ def edge_type(a, b):
         return "ramp"
     if b == "srv":
         return "arena_stair"
-    ka, kb = SLOT[a]["kind"], SLOT[b]["kind"]
-    if ka == "attic" and kb == "cavea":
-        return "rim_walk"
     if SLOT[a]["level"] == SLOT[b]["level"]:
         return "gallery"
-    return "stair_up" if SLOT[b]["pos"][2] > SLOT[a]["pos"][2] else "vomitorium"
+    return "gate"
 
 
 def door(i):
@@ -111,30 +110,45 @@ def _short(t0, t1):
     return t0 + ((t1 - t0 + math.pi) % (2 * math.pi)) - math.pi
 
 
+def _level_r(sl):
+    """The city radius of the ellipse a slot sits on, and the side its door faces."""
+    return math.hypot(sl["pos"][0], sl["pos"][1] / AL.BK)
+
+
+def _run(sl, t0, t1, z, n=14):
+    """A walk along the slot's level between two parameters (radians, the short way), at door height z (kit)."""
+    inward = sl["kind"] in ("cavea", "podium")
+    return _arc(t0, _short(t0, t1), _level_r(sl), z, YF * 3 / KS, inward, n)
+
+
 def edge_path(a, b, mt=None):
-    """World polylines (kit units): galleries follow the ellipse, stairs rise / fall at the end of a level, the rim walk
-    crosses round the end of the bowl on the attic cap, the arena stair runs straight to the tholos."""
+    """World polylines (kit units). Galleries follow the level's ellipse (the ground arcade, a seating ring, the podium).
+    A GATE edge (DESIGN.md 14.2) runs to the end of the level, through the gate's arch (the outer vomitorium, or a stair cut
+    through the riser) and along the next level. The start's ramp runs in through the entry arch. The arena stair
+    runs straight across the sand to the tholos."""
     da, db = door(a), door(b)
-    if a == "start":
-        return [da, (db[0], db[1] + 0.0, da[2]), db]
     if b == "srv":
         o = ROOM["srv"]["o"]
         v = (da[0] - o[0], da[1] - o[1])
         L = math.hypot(*v) or 1.0
         end = (o[0] + v[0] / L * 5.6 * KS, o[1] + v[1] / L * 5.6 * KS, o[2] + DOOR_Z)
         return [da, (da[0], da[1], end[2]), end]
-    sa, sb = SLOT[a], SLOT[b]
-    ta, tb = math.radians(sa["t"]), math.radians(sb["t"])
-    if sa["kind"] == "attic" and sb["kind"] == "cavea":
-        zr = (AL.RING_Z[0] + 0.7) * KS
-        tb2 = _short(ta, tb)
-        return [da, (da[0], da[1], zr)] + _arc(ta, tb2, AL.RING_R[0] + 0.2, zr, 0.0, True, 24) + [(db[0], db[1], zr), db]
-    inward = sa["kind"] == "cavea"
-    ra = math.hypot(sa["pos"][0], sa["pos"][1] / AL.BK)
-    pts = [da] + _arc(ta, tb, ra, da[2], YF * 3 / KS, inward, 14)
-    if abs(db[2] - da[2]) > 0.5 or SLOT[a]["level"] != SLOT[b]["level"]:
-        pts.append((pts[-1][0], pts[-1][1], db[2]))
-    pts.append(db)
+    sb = SLOT[b]
+    tb = math.radians(sb["t"])
+    if a == "start":
+        te = math.radians(AL.ENTRY_T)
+        en = AL.ENTRY["entry"]
+        zf = db[2]
+        return [da, (en[0] * KS, en[1] * KS, zf)] + _run(sb, te, tb, zf, 16) + [db]
+    sa = SLOT[a]
+    ta = math.radians(sa["t"])
+    if sa["level"] == sb["level"]:
+        return [da] + _run(sa, ta, tb, da[2], 14) + [db]
+    g = GATES[sa["level"]]
+    tg = math.radians(g["t"])
+    pts = [da] + _run(sa, ta, tg, da[2], 10)
+    pts += [(x * KS, y * KS, z * KS + DOOR_Z) for (x, y, z) in g["p"]]
+    pts += _run(sb, tg, tb, db[2], 10) + [db]
     return pts
 
 
@@ -169,8 +183,8 @@ def walk_to(n):
     return w
 
 
-WALK_DEC = walk_to(2)              # current on T1 (layer 1), options up on T2
-WALK_CAV = walk_to(7)              # current on R2 (layer 6), options down on R3
+WALK_DEC = walk_to(1)              # current in the outer arcade (layer 0), its options in the same arcade (layer 1)
+WALK_CAV = walk_to(5)              # current on a seating ring (R2, layer 4), its options on the same ring (layer 5)
 WALK_OV = WALK_DEC
 WALK_MID = WALK_DEC
 HOVER_DEC = None
@@ -185,9 +199,11 @@ def _lerp(a, b, t):
 
 
 def CAM_RULE(walked, mt, CR):
-    """DESIGN.md section 7: loggia / attic rooms from outside (pitch 14-22 by tier), cavea rooms from inside the bowl
-    (pitch 26-36 by ring); the yaw is the mean look of the distinct room normals, or the options' when that mean is
-    degenerate (the rim-walk crossing, where the normals are opposite)."""
+    """DESIGN.md 14.3: the camera orbits the colosseum to face the current room's bearing (the yaw is the mean look of the
+    distinct room normals holding the current room and the options, or the options' when that mean is degenerate, as at a
+    gate where the normals are opposite); the PITCH RISES as the route moves inward (CAMP pitch_band, outer arcade 30 to
+    arena and vault 55). Outside the colonnade for the arcade rooms; inside the bowl for the seating rings and the podium,
+    looking down across the arena; the vault from the OVERVIEW bearing, closer."""
     ids = CR.decision_ids(walked, mt)
     cur = walked[-1]
     _, opts = states(walked, mt)  # noqa: F821
@@ -204,17 +220,17 @@ def CAM_RULE(walked, mt, CR):
         (sx, sy), cnt = mean(opts)
     yaw = CR.yaw_of((sx, sy)) if cnt else CAMP["ov_yaw"]
     s = SLOT.get(cur)
-    if s is None or s["kind"] in ("loggia", "attic"):
-        lvl = 0 if s is None else s["li"]
-        pitch = _lerp(CAMP["pitch_lo"], CAMP["pitch_hi"], min(1.0, lvl / 3.0))
-    else:
-        ring = s["li"] - 4
-        pitch = _lerp(CAMP["pitch_lo_cav"], CAMP["pitch_hi_cav"], max(0.0, min(1.0, ring / 3.0)))
+    band = CAMP["pitch_band"]
+    pitch = band["ARC"] if s is None else band[s["level"]]
     pts = []
     for i in ids:
         pts += room_corners(i, mt)  # noqa: F821
     c = room_center(cur, mt)  # noqa: F821
-    if s is not None and s["kind"] in ("loggia", "attic"):
+    if s is not None and s["kind"] == "vault":
+        p = CR.frame_points(pts, CAMP["ov_yaw"], pitch, CR.LENS_D, CR.FILL_W, CR.FILL_H, centre=c,
+                            dmin=0.6 * CR.overview(WALK_OV).dist)
+        return CR.centre_on(p, c)
+    if s is None or s["kind"] in ("loggia", "attic", "arcade"):
         # outside the colonnade the camera rides above the roofs across the boulevard (the blocks are tall: the city
         # looks down into the circus), at least dmin_loggia out; the occlusion rule flattens the blocks in the cone
         p = CR.frame_points(pts, yaw, pitch, CAMP["lens_loggia"], CR.FILL_W, CR.FILL_H, centre=c, dmin=CAMP["dmin_loggia"])
@@ -223,15 +239,33 @@ def CAM_RULE(walked, mt, CR):
     return CR.centre_on(p, c)
 
 
-
-
 def STILLS(CR):
     _, opts = states(WALK_DEC)  # noqa: F821
     hov = opts[-1]
     return {"H_overview": (CR.overview(WALK_OV), dict(walked=WALK_OV)),
             "H_decision": (CR.decision(WALK_DEC), dict(walked=WALK_DEC)),
-            "H_decision_cavea": (CR.decision(WALK_CAV), dict(walked=WALK_CAV)),
+            "H_decision_inner": (CR.decision(WALK_CAV), dict(walked=WALK_CAV)),
             "H_hover": (CR.hover(WALK_DEC, hov), dict(walked=WALK_DEC, hover=hov, hover_k=1.0))}
+
+
+def CLOSE_SHOTS(CR):
+    """Close-up checks (python hq_run.py shots CLOSE_SHOTS <quality>): the arcade rooms, the entry, the outer gate, a riser gate."""
+    out = {}
+    P = CR.Pose
+
+    def look(n):
+        return CR.yaw_of((-n[0], -n[1]))
+    r = ROOM["n0_1"]
+    c = room_center("n0_1")  # noqa: F821
+    out["C_arcade"] = (P(c, look(r["n"]), 30.0, 150.0, 42.0), dict(walked=WALK_DEC))
+    en = AL.ENTRY["entry"]
+    nn = AL.ENTRY["entry_nrm"]
+    out["C_entry"] = (P((en[0] * KS, en[1] * KS, 6.0), look(nn), 30.0, 160.0, 42.0), dict(walked=WALK_DEC))
+    g = AL.gates(CONCEPT)[0]
+    out["C_gate_outer"] = (P((g["p"][0][0] * KS, g["p"][0][1] * KS, 6.0), look(g["n"]), 24.0, 100.0, 42.0), dict(walked=WALK_DEC))
+    g = AL.gates(CONCEPT)[1]
+    out["C_gate_riser"] = (P((g["p"][0][0] * KS, g["p"][0][1] * KS, 11.0 * KS), look(g["n"]), 32.0, 80.0, 36.0), dict(walked=WALK_CAV))
+    return out
 
 
 def SHEET_SHOTS(CR):
