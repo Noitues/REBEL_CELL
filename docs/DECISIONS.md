@@ -34,6 +34,48 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Plan 2 W1 N8: ×N status stacks, save v3 (R8, Q35 b, Q36, Q40)
+- **Storage:** `WheelState.slice_stacks: Array[Dictionary]`, one `{RC.Status int: stacks >= 1}` per slot on every
+  wheel (operative, enemy, satellite, drone); a status with no stacks is never stored; reads go through
+  `statuses_at()` (RC.Status order), never Dictionary order. Different statuses share a slot (Q40: no slot limit).
+  `slice_statuses` is gone; `status_at(slot)` is the one-badge view (first status in enum order).
+- **New status `OUTPUT_DOWN` (enum 5, append-only):** −`output_down_per_stack` (0.25) of the slice's output per stack;
+  the shares **add** (Q35 b: one signed sum) and the factor is clamped at 0, one rounding as every slice multiplier:
+  base 20 → 20 / 15 / 10 / 5 / 0 at ×0..×4. **PARASITE is retired (R8):** it reads as OUTPUT_DOWN ×
+  `parasite_output_down_stacks` (2) everywhere: `apply_status` converts it, the parasite handler and the three
+  PARASITE contents (leech_worm, parasite_pulse, citation) now author OUTPUT_DOWN `stacks = 2`, the validator
+  refuses PARASITE (`status_retired`). ×2 = the old half output exactly, so stack-free and parasite fights resolve as
+  before (the v2 fixtures' End Turn HP match). The PARASITE int (4) stays only so v2 saves migrate.
+  `parasite_multiplier` is retired from CampaignConfigData.
+- **Cap:** `status_stack_cap` (placeholder 5, config); `RC.UNCAPPED_STATUSES` = ENCRYPTED (designer 2026-10-18: a
+  one-shot absorb, not a stack) and CORRUPTED (Q36: no corruption cap). An apply over the cap clamps; content above
+  the cap is refused (`stack_amount_gt_cap`), below 1 too (`stack_amount_lt_1`).
+- **Apply:** `EffectData.stacks` (new, default 1) stacks per apply. Hardened absorbs every apply; one temporary
+  ENCRYPTED stack absorbs one apply of any **other** status, whatever its stacks, and is used up; ENCRYPTED on
+  ENCRYPTED adds a stack (before N8 the second ENCRYPTED was absorbed by the first: it now banks, so ×N absorbs N).
+- **Cleanse:** `EffectData.cleanse_mode` (new `RC.CleanseMode`): ALL (default; every stack of every status, as before)
+  or ONE_STACK (one stack of each status on the slot).
+- **OVERCLOCKED:** 1.5× at any stack count; the burn-out takes every OVERCLOCKED stack and adds CORRUPTED ×1 (beside
+  whatever else the slot holds).
+- **Layout change (R6):** `WheelState.remap_stacks` merges stacks landing on one slot (same status adds, to the cap;
+  different ones coexist); before N8 the first in old order won.
+- **State hash:** `to_dict` writes `"slice_stacks"` as `{"<int>": n}` with keys in RC.Status order, so the hash never
+  depends on insertion order (`test_status_stack_determinism`).
+- **Save v3:** `SAVE_VERSION` 2 → 3. `SaveMigration.v2_to_v3` (pure, `scripts/state/save_migration.gd`) walks the
+  whole save and turns every `slice_statuses` int list (state, rewind checkpoint, every wheel) into `slice_stacks`
+  (NONE → {}, PARASITE → OUTPUT_DOWN ×2 on **all** slices (designer 2026-10-18), others ×1); SaveService registers it
+  as the step from 2. Every load runs `SaveMigration.validate_v3`: a bad count (`invalid_stack_count`), a key that is
+  not a stored status (`unknown_status`; NONE and PARASITE included) or a bad shape (`invalid_stacks_shape`) is
+  refused with `SaveService.last_error` set, as is a newer version (`save_version_too_new`). A load never rewrites
+  the file, so no `.v2.bak` is kept. v2 fixtures (written by the v2 build before the change):
+  `tests/fixtures/saves/v2/`, content in `tests/helpers/status_save_fixture.gd`. Old replays load but their
+  `result_hash` no longer matches (the hash format changed).
+- **View:** the badge tag reads "×N" from 2 stacks then the multiplier (OUTPUT_DOWN shows its factor at that count);
+  the slot tooltip lists every status with a "×N: N stacks of …" line (TextDb keys); OUTPUT_DOWN wears the parasite's
+  glyph and disc look until it has its own art; the Codex lists OUTPUT DOWN instead of PARASITE.
+- **Consequence to watch:** a Botnet Perfect Trojan resolves twice (Swarm Core retrigger), so it now plants ×4 (output
+  0) where two PARASITEs used to leave half. Logged as an open question.
+
 ### 2026-10-18 — PT-004 gate (automated) passed; main pushed
 Full suite once: 2826 tests, 0 failing, 108 pending; smoke 0, validate 0, fast 0; sha b98e1def pushed (tag
 `gate/PT-004`). The first full run found 2 reds, both fixed before the push: an untranslated HQ jack line (Sites are now
@@ -7806,6 +7848,14 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 W1 N8, ×N stacks (placeholders built):** (a) OUTPUT_DOWN shares **add** (1 − 0.25 n, clamped at 0:
+  ×4 = no output) rather than compound (0.75ⁿ); additive keeps ×2 = the old PARASITE half exactly (test plan's table
+  assumed compounding). (b) The cap is 5 for OUTPUT_DOWN and OVERCLOCKED; ENCRYPTED and CORRUPTED are uncapped
+  (designer 2026-10-18, Q36). (c) A Botnet Perfect Trojan resolves twice, so it now plants OUTPUT_DOWN ×4 (output 0)
+  where two PARASITEs left half; re-author the hook (one plant per landing) or keep? (d) ENCRYPTED on ENCRYPTED now
+  banks a second absorb instead of being eaten by the first. (e) With several statuses on one slot the wheel badge
+  shows the first in enum order (the tooltip lists all); a multi-badge view is a view pass. (f) The Codex text is
+  English constants as before (not TextDb rows); the new tooltip words are.
 - **2026-10-18 W0 N14, SANDBOX charges:** charges now come from precision only, so `detour_1` and `detour_2` (base output 1 and 2) play the same. Re-author `detour_2` (or let output add charges) in a content pass? Also: a guarded host's SANDBOX is spent before its drone takes the hit (brief order); say if the drone should shield the charge instead.
 - **2026-10-18 N22, pools too lopsided under the proposed rule (rule built as written):** every shipped normal wins
   100 % at T1 in the sim, so only resistance 2 or two status sources make a normal HARD. Halcyon has **no** HARD

@@ -58,8 +58,11 @@ static func key_for_slice_type(type: int) -> StringName:
 	return StringName("type_" + String(RC.SliceType.keys()[type]).to_lower())
 
 
-## The table key of status `status` (RC.Status, not NONE).
+## The table key of status `status` (RC.Status, not NONE). OUTPUT_DOWN wears the parasite's
+## glyph (plan 2 N8, R8: today's PARASITE became OUTPUT_DOWN x2) until it has its own art.
 static func key_for_status(status: int) -> StringName:
+	if status == RC.Status.OUTPUT_DOWN:
+		status = RC.Status.PARASITE
 	return StringName("status_" + String(RC.Status.keys()[status]).to_lower())
 
 

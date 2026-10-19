@@ -703,7 +703,7 @@ func test_statuses_show_whose_win_they_are() -> void:
 	assert_eq(stamps.size(), 1, "the status lands as its glyph")
 	if not stamps.is_empty():
 		assert_eq(stamps[0]["color"], WheelView.LOSS_COLOR, "in red on your wheel")
-	state.player.wheel.slice_statuses[1] = RC.Status.CORRUPTED
+	state.player.wheel.set_status(1, RC.Status.CORRUPTED)
 	assert_string_contains(pv._slice_label(1), "Bad for you", "the slice says so on hover")
 	scene.skip_motion()
 	await _close(scene)

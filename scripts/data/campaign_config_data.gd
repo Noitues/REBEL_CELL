@@ -90,8 +90,15 @@ extends Resource
 @export var respin_ram_cost: int = 4
 @export var weak_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
-## Output of a slice with a PARASITE docked on it (Botnet).
-@export var parasite_multiplier: float = 0.5
+## N8 (R8): each OUTPUT_DOWN stack takes this share off the slice's output; the stacks add
+## (one signed sum, ruling Q35 b) and the factor never goes below 0: 1 - share x stacks.
+@export var output_down_per_stack: float = 0.25
+## N8 (R8): a PARASITE (the retired Botnet status) is this many OUTPUT_DOWN stacks; with
+## 0.25 a stack, 2 keeps the old half output. Applies and the v2 -> v3 save migration read it.
+@export var parasite_output_down_stacks: int = 2
+## N8: the most stacks one status may hold on one slot (placeholder, designer 2026-10-18).
+## RC.UNCAPPED_STATUSES (ENCRYPTED, CORRUPTED) ignore it.
+@export var status_stack_cap: int = 5
 @export var shield_cap: int = 15
 ## N14 (ruling Q39): SANDBOX charges a DETOUR slice gives when it resolves at WEAK or GOOD,
 ## and at PERFECT. Each charge negates one incoming hit whole; charges add up.

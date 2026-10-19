@@ -125,7 +125,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			for k in int(overrides.get("boss_corrupt_slices", 0)):
 				var slot := fx.pick_slot(s, e, RC.SlicePick.RANDOM_NON_NULL, {}, rng)
 				if slot >= 0:
-					e.wheel.slice_statuses[slot] = RC.Status.CORRUPTED
+					e.wheel.add_stacks(slot, RC.Status.CORRUPTED, 1, config.status_stack_cap)
 		s.enemies.append(e)
 		for spawn in enemy_datas[i].spawns:
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
@@ -521,7 +521,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.NULL:
 			_resolve_pointer(s, r, rng, events)
 	for r in resolutions:
-		if r["status"] == RC.Status.CORRUPTED and is_landing(r):
+		if stacks_in(r, RC.Status.CORRUPTED) > 0 and is_landing(r):
 			_corrupted_trigger(s, r, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
@@ -609,14 +609,14 @@ func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictiona
 		segment_index = WheelMath.ring_segment(wheel.inner_tick_at(pointer_index))
 		segment = fx.segment_of(wheel, segment_index)
 	var guard := s.satellite_at(c.id, slice_index)
-	var status: int = wheel.slice_statuses[slice_index]
+	var stacks: Dictionary = wheel.slice_stacks[slice_index].duplicate() if slice_index < wheel.slice_stacks.size() else {}
 	var permanent := fx.permanent_status(wheel, slice_index)
 	return {
 		"owner": c, "pointer_index": pointer_index, "tick": tick, "slice_index": slice_index,
 		"slice": fx.slice_of(wheel, slice_index), "firmware": fx.firmware_of(wheel, slice_index),
 		"offset": offset, "tier": tier, "segment_index": segment_index, "segment": segment,
 		"guard_id": guard.id if guard != null else &"",
-		"status": status, "permanent_status": permanent,
+		"stacks": stacks, "permanent_status": permanent,
 	}
 
 
@@ -700,8 +700,8 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				var n := _neighbor_resolution(s, r, side, fw.neighbor_multiplier)
 				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
 					n["landing"] = true  # the shunted slice resolves instead of the landing
-				elif n["status"] == RC.Status.OVERCLOCKED:
-					n["status"] = RC.Status.NONE  # H18/H19: no Overclock boost without its burn-out
+				elif stacks_in(n, RC.Status.OVERCLOCKED) > 0:
+					(n["stacks"] as Dictionary).erase(RC.Status.OVERCLOCKED)  # H18/H19: no Overclock boost without its burn-out
 				out.append(n)
 		# GDD 5.2: a drone triggers when its slice does, so after the neighbour rules.
 		if c == s.player:
@@ -721,7 +721,7 @@ func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: 
 	# socket's own landing (H17). A Mirror copy also drops the slot's statuses (H18); a
 	# Shunt, which is the landing, keeps them.
 	d["firmware"] = null
-	d["status"] = c.wheel.slice_statuses[slot]
+	d["stacks"] = c.wheel.slice_stacks[slot].duplicate()
 	d["permanent_status"] = RC.Status.NONE
 	d["derived"] = true
 	d["extra_multiplier"] = multiplier
@@ -812,11 +812,11 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
 		mult *= fw.output_multiplier
-	var overclocked: bool = r["status"] == RC.Status.OVERCLOCKED or r["permanent_status"] == RC.Status.OVERCLOCKED
+	# N8: OVERCLOCKED is 1.5x at any stack count; OUTPUT_DOWN takes its share per stack.
+	var overclocked: bool = stacks_in(r, RC.Status.OVERCLOCKED) > 0 or r["permanent_status"] == RC.Status.OVERCLOCKED
 	if overclocked:
 		mult *= config.overclock_multiplier
-	if r["status"] == RC.Status.PARASITE:
-		mult *= config.parasite_multiplier
+	mult *= output_down_factor(stacks_in(r, RC.Status.OUTPUT_DOWN), config)
 	var pierce := false
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:
@@ -849,10 +849,27 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
 	_landing_triggers(s, r, slice, ctx, once, rng, events)
-	if r["status"] == RC.Status.OVERCLOCKED and is_landing(r):
-		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
+	if stacks_in(r, RC.Status.OVERCLOCKED) > 0 and is_landing(r):
+		# N8: the burn-out takes every OVERCLOCKED stack and leaves one CORRUPTED stack.
+		wheel.remove_stacks(slot, RC.Status.OVERCLOCKED)
+		wheel.add_stacks(slot, RC.Status.CORRUPTED, 1, config.status_stack_cap)
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
+			"stacks": wheel.stacks_of(slot, RC.Status.CORRUPTED),
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
+
+
+## Stacks of `status` a resolution readout `r` carries (N8; 0 when absent).
+static func stacks_in(r: Dictionary, status: int) -> int:
+	return int((r.get("stacks", {}) as Dictionary).get(status, 0))
+
+
+## The output factor of `stacks` OUTPUT_DOWN stacks (N8, R8): the per-stack shares add up
+## (one signed sum, ruling Q35 b) and the factor never drops below 0. Two stacks with the
+## 0.25 share are the old PARASITE's half output.
+static func output_down_factor(stacks: int, cfg: CampaignConfigData) -> float:
+	if stacks <= 0:
+		return 1.0
+	return maxf(0.0, 1.0 - cfg.output_down_per_stack * stacks)
 
 
 ## A slice's output before any multiplier (plan 2 R5): `base_output`, or for a PERCENT
@@ -1111,22 +1128,22 @@ func _cleanse_on_enter(s: CombatState, e: CombatantState, scope: int, events: Ar
 	for c in sides:
 		if c == null or c.wheel == null:
 			continue
-		for slot in c.wheel.slice_statuses.size():
-			if c.wheel.slice_statuses[slot] != RC.Status.NONE:
+		for slot in c.wheel.slice_stacks.size():
+			if c.wheel.has_any_status(slot):
 				fx.cleanse(c, slot, events)
 
 
 ## Swaps the boss's slices, Firmware and passive resistance for the phase layout. The
 ## rotation, pointers and any pending migration are kept; statuses stay, each moved to the
-## new slice covering its old slice's centre tick (plan 2 R6, WheelState.remap_statuses).
+## new slice covering its old slice's centre tick (plan 2 R6, WheelState.remap_stacks: N8 stacks merge).
 func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
-	var kept := WheelState.remap_statuses(w.slice_statuses, w.slice_count, fresh.slice_count)
+	var kept := WheelState.remap_stacks(w.slice_stacks, w.slice_count, fresh.slice_count, config.status_stack_cap)
 	w.slice_count = fresh.slice_count
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
-	w.slice_statuses = kept
+	w.slice_stacks = kept
 	w.passive_resistance = fresh.passive_resistance + bonus_resistance  # ICE / Heat resistance stays
 	if data.hub != null:
 		w.hub_id = data.hub.id

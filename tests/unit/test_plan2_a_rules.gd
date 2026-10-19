@@ -180,8 +180,8 @@ func test_b1_the_screen_undoes_a_card_played_after_the_spin_and_then_says_nothin
 func test_b1_the_plain_forecast_ram_change_is_not_called_this_play() -> void:
 	var scene := await _combat()
 	var st: CombatState = scene.engine.state()
-	for k in st.player.wheel.slice_statuses.size():
-		st.player.wheel.slice_statuses[k] = RC.Status.CORRUPTED
+	for k in st.player.wheel.slice_stacks.size():
+		st.player.wheel.set_status(k, RC.Status.CORRUPTED)
 	scene._refresh(st)
 	await _frames(1)
 	assert_lt(scene.ram_note.pending, 0, "the bite drains RAM at SEND IT")

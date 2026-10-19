@@ -158,9 +158,9 @@ func test_power_cell_sandbox_restores_1_ram() -> void:
 
 func test_nanite_mesh_hotfix_output_is_boosted_and_cleansed() -> void:
 	var s := _fw_session(&"nanite_mesh", _slice("cv_hotfix", RC.SliceType.HOTFIX, 4, RC.TargetRule.SELF))
-	s.state.player.wheel.slice_statuses[1] = RC.Status.CORRUPTED
+	s.state.player.wheel.set_status(1, RC.Status.CORRUPTED)
 	var r := _land_and_end(s, 1)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE, "nanite_mesh: the slice cleanses itself")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE, "nanite_mesh: the slice cleanses itself")
 	var plain := _fw_session(&"nanite_mesh", _slice("cv_hotfix", RC.SliceType.HOTFIX, 4, RC.TargetRule.SELF))
 	assert_gt(r.events.size(), _land_and_end(plain, 1).events.size(), "nanite_mesh: the cleanse of the corrupted slice is extra")
 

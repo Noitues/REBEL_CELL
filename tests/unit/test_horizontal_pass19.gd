@@ -76,7 +76,7 @@ func test_a_mirror_copy_of_a_parasited_slot_is_halved() -> void:
 	var enemy := CombatFixture.enemy(&"h19_dummy", 300, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	s.state.player.wheel.slot_firmware_ids[0] = &"mirror"
-	s.state.player.wheel.slice_statuses[1] = RC.Status.PARASITE
+	s.state.player.wheel.set_status(1, RC.Status.OUTPUT_DOWN, 2)  # N8: a parasite is OUTPUT_DOWN x2
 	CombatFixture.land(s.state.player, 0, 1)  # Good towards slot 1: Mirror copies it
 	var r := s.apply(CombatAction.end_turn())
 	var amounts := []

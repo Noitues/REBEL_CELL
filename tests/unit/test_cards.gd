@@ -89,7 +89,7 @@ func test_mirror_flip_mirrors_the_target() -> void:
 func test_overdrive_overclocks_the_slice_under_the_pointer() -> void:
 	var s := _session([&"overdrive"])
 	_play(s, &"overdrive")
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.OVERCLOCKED)
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.OVERCLOCKED)
 	assert_eq(_card(&"overdrive").class_id, &"breaker")
 
 
@@ -272,18 +272,18 @@ func test_pull_draws_2() -> void:
 
 func test_cleanse_removes_corrupted_from_a_chosen_slice() -> void:
 	var s := _session([&"cleanse"])
-	s.state.player.wheel.slice_statuses[3] = RC.Status.CORRUPTED
+	s.state.player.wheel.set_status(3, RC.Status.CORRUPTED)
 	assert_false(s.apply(CombatAction.play_card(0, &"player")).ok(), "needs a chosen slice")
 	_play(s, &"cleanse", &"player", 3)
-	assert_eq(s.state.player.wheel.slice_statuses[3], RC.Status.NONE)
+	assert_eq(s.state.player.wheel.status_at(3), RC.Status.NONE)
 
 
 func test_encrypt_protects_a_chosen_slice() -> void:
 	var s := _session([&"encrypt", &"overdrive"])
 	_play(s, &"encrypt", &"player", 1)
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.ENCRYPTED)
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.ENCRYPTED)
 	_play(s, &"overdrive")
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE, "encryption absorbed the overclock")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.NONE, "encryption absorbed the overclock")
 
 
 func test_all_25_slice_cards_exist_with_their_a1_a2_costs() -> void:

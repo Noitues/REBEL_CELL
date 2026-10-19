@@ -69,7 +69,7 @@ static func body() -> Font:
 ## 1C: the atlas glyph for a HUD mark (&"" = the drawn mark below), and for a status.
 const GLYPHS := {"shield": &"picto_block", "ram": &"picto_ram", "hp": &"picto_hp", "ccw": &"picto_spin_ccw", "cw": &"picto_spin"}
 const STATUS_GLYPHS := {RC.Status.CORRUPTED: &"status_corrupted", RC.Status.OVERCLOCKED: &"status_overclocked",
-	RC.Status.ENCRYPTED: &"status_encrypted", RC.Status.PARASITE: &"status_parasite"}
+	RC.Status.ENCRYPTED: &"status_encrypted", RC.Status.PARASITE: &"status_parasite", RC.Status.OUTPUT_DOWN: &"status_parasite"}
 ## The smallest a glyph box is drawn (ART_BIBLE v2 §5.2, the 16 px glyph rule).
 const GLYPH_MIN_PX := 16.0
 

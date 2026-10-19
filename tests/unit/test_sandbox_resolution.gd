@@ -130,5 +130,5 @@ func test_status_only_resolution_is_not_negated() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	var after := r.resolved_state.get_combatant(&"enemy_0")
 	assert_eq(after.evade_charges, 1, "no charge spent on a status")
-	assert_true(after.wheel.slice_statuses.has(RC.Status.CORRUPTED), "the status lands")
+	assert_true(after.wheel.count_status(RC.Status.CORRUPTED) > 0, "the status lands")
 	assert_eq(pv.resolved_state.state_hash(), r.resolved_state.state_hash(), "preview == result")

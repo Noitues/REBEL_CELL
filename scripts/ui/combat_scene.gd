@@ -3090,9 +3090,8 @@ func _describe_slot(c: CombatantState, slot: int) -> String:
 	lines.append(Codex.describe(lookup.get_content(c.wheel.slot_slice_ids[slot])))
 	if c.wheel.slot_firmware_ids[slot] != &"":
 		lines.append(Codex.describe(lookup.get_content(c.wheel.slot_firmware_ids[slot])))
-	var status: int = c.wheel.slice_statuses[slot]
-	if status != RC.Status.NONE:
-		lines.append(Codex.status_text(status))
+	for status in c.wheel.statuses_at(slot):
+		lines.append(Codex.status_text(status, c.wheel.stacks_of(slot, status)))
 	var guard := engine.state().satellite_at(c.id, slot)
 	if guard != null:
 		lines.append(tr("Guarded by %s (%d HP): it takes hits aimed at this slice.") % [_name_of(guard), guard.hp])
@@ -5287,7 +5286,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
 		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), scol, motion_seconds_left(), impact)
 		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
-		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
+		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"]), int(b.get("stacks", 0))))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
 		_after(impact, fx_layer.ring.bind(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring"))
 	var hp_after := int(b["hp_after"])

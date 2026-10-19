@@ -117,8 +117,8 @@ func _check(label: String, shown: Dictionary, before: CombatState, landing: Comb
 			assert_eq(ResultChipModel.value_of(chips, ResultChipModel.RAM), int(sums["ram_lost"]), "%s: RAM lost" % label)
 		if random_status >= 0 and a != null:
 			var landed := false
-			for i in a.wheel.slice_statuses.size():
-				if a.wheel.slice_statuses[i] == random_status and b.wheel.slice_statuses[i] != random_status:
+			for i in a.wheel.slice_stacks.size():
+				if a.wheel.status_at(i) == random_status and b.wheel.status_at(i) != random_status:
 					landed = true
 			assert_true(landed, "%s %s: the random status the chip announced landed" % [label, id])
 		checked += chips.size()
@@ -209,11 +209,11 @@ func test_d15_chip_format_and_order() -> void:
 	p.hp = 40
 	p.max_hp = 60
 	p.wheel = WheelState.new()
-	p.wheel.slice_statuses.assign([RC.Status.NONE, RC.Status.NONE, RC.Status.NONE])
+	p.wheel.slice_stacks.assign([{}, {}, {}])
 	before.player = p
 	var after := before.duplicate_state()
 	after.player.hp = 34
-	after.player.wheel.slice_statuses.assign([RC.Status.CORRUPTED, RC.Status.CORRUPTED, RC.Status.NONE])
+	after.player.wheel.slice_stacks.assign([{RC.Status.CORRUPTED: 1}, {RC.Status.CORRUPTED: 1}, {}])
 	var events: Array[Dictionary] = [
 		{"type": "damage", "attacker": &"e0", "target": &"player", "amount": 10, "blocked": 4, "shielded": 0, "hp_damage": 6},
 		{"type": "shield", "target": &"player", "amount": 4},

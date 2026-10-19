@@ -467,10 +467,9 @@ func _slice_label(i: int) -> String:
 	var ring := ring_tip(i)
 	if ring != "":
 		parts.append(ring)
-	var status: int = wheel.slice_statuses[i]
-	if status != RC.Status.NONE:
-		# ANIM-R4 C6f: whose win it is, as its colour says.
-		parts.append((tr("Good for you: %s") if status_good_for_you(status, combatant.is_player) else tr("Bad for you: %s")) % Codex.status_text(status))
+	for status in wheel.statuses_at(i):
+		# ANIM-R4 C6f: whose win it is, as its colour says. N8: every status, with its stacks.
+		parts.append((tr("Good for you: %s") if status_good_for_you(status, combatant.is_player) else tr("Bad for you: %s")) % Codex.status_text(status, wheel.stacks_of(i, status)))
 	if wheel.slot_firmware_ids[i] != &"":
 		parts.append(Codex.describe(lookup.get_content(wheel.slot_firmware_ids[i])))
 	return "\n".join(parts)
@@ -1216,10 +1215,17 @@ func fade_replay_tag() -> void:
 
 ## A status lands on slice `slot` during the replay: the view's own snapshot shows it on
 ## that slice from now on, with a ring round its mark (`status_mark`).
-func show_slice_status(slot: int, status: int) -> void:
-	if shown_state == null or slot < 0 or slot >= shown_state.wheel.slice_statuses.size():
+func show_slice_status(slot: int, status: int, stacks: int = 0) -> void:
+	if shown_state == null or slot < 0 or slot >= shown_state.wheel.slice_stacks.size():
 		return
-	shown_state.wheel.slice_statuses[slot] = status
+	# N8: the view's own snapshot takes the landed status on top of what the slice shows, at
+	# the stack count the beat names (`stacks`; 0: one more stack).
+	var w := shown_state.wheel
+	if stacks > 0:
+		w.remove_stacks(slot, status)
+		w.add_stacks(slot, status, stacks, WheelState.NO_STACK_LIMIT)
+	else:
+		w.add_stacks(slot, status, 1, WheelState.NO_STACK_LIMIT)
 	if not Motion.live(&"status_mark"):
 		queue_redraw()
 		return
@@ -2178,13 +2184,14 @@ func _draw_view() -> void:
 			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		var lift := WheelFace.READ_R * (0.025 if i == active else 0.0)
 		WheelFace.read_block(self, center + Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg))) * lift * k, k, deg, WheelGlyphs.slice_id(slice), _read_value(slice))
-		var status: int = wheel.slice_statuses[i]
+		var status: int = wheel.status_at(i)
 		var sp := badge_spot(i) - global_position
 		# ANIM-R4 C6f: a status wears its good / bad colour for the operative (green: good for
 		# you, red: bad for you), on its mark, its ring and the slice's rim as it lands.
 		var scol := status_color(status, combatant.is_player)
 		if status != RC.Status.NONE and radius >= BADGE_MIN_RADIUS:
-			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status) if radius >= TAG_MIN_RADIUS else "")
+			var n := wheel.stacks_of(i, status)
+			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status, n) if radius >= TAG_MIN_RADIUS else stack_badge(n))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -2864,8 +2871,11 @@ const RING_WORD_FALLBACK := "EMPTY"
 ## The segment kinds the disc shader textures (its SEG_COL order).
 const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
 	&"seg_accelerator": 5, &"seg_echo": 6}
-## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5, PARASITE x0.5.
-const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"} # TR
+## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5 (N8: OUTPUT_DOWN per stack).
+const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5"} # TR
+## The disc shader's status looks (its `stat` codes): OUTPUT_DOWN wears the parasite's bug
+## (N8, R8: today's PARASITE is OUTPUT_DOWN x2) until it has its own look.
+const SHADER_STATUS := {RC.Status.OUTPUT_DOWN: RC.Status.PARASITE}
 ## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
 const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 
@@ -2899,8 +2909,23 @@ func _read_value(slice: SliceData) -> String:
 	return str(slice.base_output)
 
 
-func _status_tag(status: int) -> String:
-	return String(STATUS_TAGS.get(status, ""))
+## N8: the tag under a status badge: its stacks ("×N", from 2) and its multiplier (OVERCLOCKED
+## x1.5; OUTPUT_DOWN its factor at that stack count).
+func _status_tag(status: int, stacks: int = 1) -> String:
+	var parts := PackedStringArray()
+	if stack_badge(stacks) != "":
+		parts.append(stack_badge(stacks))
+	var mult := String(STATUS_TAGS.get(status, ""))
+	if status == RC.Status.OUTPUT_DOWN and ContentRegistry.config != null:
+		mult = "x" + String.num(CombatResolver.output_down_factor(stacks, ContentRegistry.config), 2)
+	if mult != "":
+		parts.append(mult)
+	return " ".join(parts)
+
+
+## N8: a status's stack count as its badge shows it: "×N" from 2 stacks, nothing below.
+static func stack_badge(stacks: int) -> String:
+	return TranslationServer.translate("×%d") % stacks if stacks >= 2 else ""
 
 
 ## The rail's words for needle `index` on `slice`: `OVERFLOW 12 // PERFECT // ` (3.2; the recipe's
@@ -2997,7 +3022,7 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 			row = WheelKit.SPECIAL_ROW
 		kinds.append(row)
 		cols.append(Palette.slice_color(type))
-		stats.append(wheel.slice_statuses[i] if i < wheel.slice_statuses.size() else RC.Status.NONE)
+		stats.append(SHADER_STATUS.get(wheel.status_at(i), wheel.status_at(i)))
 		flashes.append(land_fx * 0.8 if i == landing_slot_shown and land_fx > 0.0 else (landing_pulse * 0.6 if landed.has(i) else 0.0))
 		plates.append(WheelFace.plate_radii(_read_value(slice)))
 	disc.place(center, radius)

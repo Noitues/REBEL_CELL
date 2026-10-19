@@ -190,7 +190,7 @@ func test_citations_plant_a_parasite_on_your_wheel() -> void:
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Citation
 	CombatFixture.land(s.state.player, 5)
 	s.apply(CombatAction.end_turn())
-	assert_true(s.state.player.wheel.slice_statuses.has(RC.Status.PARASITE), "a Citation halves one of your slices")
+	assert_true(s.state.player.wheel.count_status(RC.Status.OUTPUT_DOWN) > 0, "a Citation halves one of your slices (OUTPUT_DOWN x2)")
 
 
 func test_the_civic_core_heals_and_blocks_unless_breached() -> void:
@@ -213,7 +213,7 @@ func test_solar_flares_overclock_your_slice() -> void:
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Solar Flare
 	CombatFixture.land(s.state.player, 5)
 	s.apply(CombatAction.end_turn())
-	assert_true(s.state.player.wheel.slice_statuses.has(RC.Status.OVERCLOCKED), "a Solar Flare overclocks one of your slices")
+	assert_true(s.state.player.wheel.count_status(RC.Status.OVERCLOCKED) > 0, "a Solar Flare overclocks one of your slices")
 
 
 func test_the_commons_array_repairs_and_shields_unless_breached() -> void:

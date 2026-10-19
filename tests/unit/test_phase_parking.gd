@@ -107,7 +107,7 @@ func test_corrupted_bite_parks() -> void:
 	var s := PhaseFixture.session(data, 0)
 	var e := PhaseFixture.aim(s)
 	e.hp = 69
-	e.wheel.slice_statuses[0] = RC.Status.CORRUPTED
+	e.wheel.set_status(0, RC.Status.CORRUPTED)
 	var r := s.apply(CombatAction.end_turn())
 	var bite := CombatFixture.events_of(r, "corrupted")
 	assert_eq(bite.size(), 1)

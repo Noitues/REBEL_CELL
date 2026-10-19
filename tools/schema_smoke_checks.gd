@@ -7,7 +7,38 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _n8_status_stacks()
+
+
+## Plan 2 N8 (×N status stacks): RC.Status.OUTPUT_DOWN = 5 (PARASITE stays 4 for v2 saves),
+## EffectData.stacks (default 1) and cleanse_mode (default ALL) survive a save, the config's
+## stack fields default 0.25 / 2 / 5 and ship so, and bad stack counts are refused.
+func _n8_status_stacks() -> int:
+	var fails := 0
+	print("N8: OUTPUT_DOWN = ", RC.Status.OUTPUT_DOWN, " PARASITE = ", RC.Status.PARASITE, " CleanseMode = ", RC.CleanseMode.keys())
+	if RC.Status.OUTPUT_DOWN != 5 or RC.Status.PARASITE != 4 or RC.CleanseMode.ONE_STACK != 1: fails += 1
+	var e := EffectData.new()
+	e.type = RC.EffectType.APPLY_STATUS
+	e.status = RC.Status.OUTPUT_DOWN
+	print("N8: EffectData stacks default ", e.stacks, " cleanse_mode default ", e.cleanse_mode)
+	if e.stacks != 1 or e.cleanse_mode != RC.CleanseMode.ALL: fails += 1
+	e.stacks = 3
+	e.cleanse_mode = RC.CleanseMode.ONE_STACK
+	var err := ResourceSaver.save(e, "user://smoke_n8_effect.tres")
+	var back: EffectData = load("user://smoke_n8_effect.tres")
+	print("N8: effect save=", err, " stacks ", back.stacks if back != null else -1, " mode ", back.cleanse_mode if back != null else -1)
+	if err != OK or back == null or back.stacks != 3 or back.cleanse_mode != RC.CleanseMode.ONE_STACK: fails += 1
+	e.stacks = 0
+	if not " ".join(e.validate()).contains("stack_amount_lt_1"): fails += 1
+	e.stacks = 6
+	if not " ".join(e.validate(5)).contains("stack_amount_gt_cap"): fails += 1
+	var fresh := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N8: config defaults ", [fresh.output_down_per_stack, fresh.parasite_output_down_stacks, fresh.status_stack_cap],
+		" shipped ", [shipped.output_down_per_stack, shipped.parasite_output_down_stacks, shipped.status_stack_cap])
+	if fresh.output_down_per_stack != 0.25 or fresh.parasite_output_down_stacks != 2 or fresh.status_stack_cap != 5: fails += 1
+	if shipped.output_down_per_stack != 0.25 or shipped.parasite_output_down_stacks != 2 or shipped.status_stack_cap != 5: fails += 1
+	return fails
 
 
 ## Plan 2 N14 (ruling Q39): the SANDBOX charge counts default 1 / 2, ship 1 / 2, and bad
@@ -486,7 +517,7 @@ func _batch5() -> int:
 
 
 ## M6 class roster: HubCoreData drones_persist / max_ram_bonus / free_resistance_nudges,
-## Status.PARASITE, config parasite_multiplier / station_deploy_asset, RunState.drones and
+## Status.PARASITE, config parasite_output_down_stacks (N8, was parasite_multiplier) / station_deploy_asset, RunState.drones and
 ## WheelState.respin_skipped (freeze cooldown).
 func _m6() -> int:
 	var fails := 0
@@ -498,8 +529,8 @@ func _m6() -> int:
 	print("Status.PARASITE = ", RC.Status.PARASITE)
 	if RC.Status.PARASITE != 4: fails += 1
 	var cfg := CampaignConfigData.new()
-	print("Config parasite multiplier default: ", cfg.parasite_multiplier, " station asset: ", cfg.station_deploy_asset)
-	if cfg.parasite_multiplier != 0.5 or cfg.station_deploy_asset != null: fails += 1
+	print("Config parasite OUTPUT_DOWN stacks default (N8): ", cfg.parasite_output_down_stacks, " station asset: ", cfg.station_deploy_asset)
+	if cfg.parasite_output_down_stacks != 2 or cfg.station_deploy_asset != null: fails += 1
 	var r := RunState.new(); r.drones = [{"source_id": "botnet_drone", "hp": 4, "dock_slot": 1}]
 	var rb := RunState.from_dict(r.to_dict())
 	print("RunState drones round trip: ", rb.drones)

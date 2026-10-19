@@ -49,10 +49,10 @@ func test_the_pause_menu_backdrop_covers_the_screen_and_eats_clicks() -> void:
 func test_a_shunt_onto_an_overclocked_slot_burns_it_out() -> void:
 	var s := _session([_atk, _atk, _atk, _atk, _atk, _null])
 	s.state.player.wheel.slot_firmware_ids[0] = &"shunt"
-	s.state.player.wheel.slice_statuses[1] = RC.Status.OVERCLOCKED
+	s.state.player.wheel.set_status(1, RC.Status.OVERCLOCKED)
 	_land_good(s, 0)
 	s.apply(CombatAction.end_turn())
-	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.CORRUPTED, "the shunted slot burns out like a landing")
+	assert_eq(s.state.player.wheel.status_at(1), RC.Status.CORRUPTED, "the shunted slot burns out like a landing")
 
 
 func test_a_copy_does_not_take_the_neighbours_burner() -> void:

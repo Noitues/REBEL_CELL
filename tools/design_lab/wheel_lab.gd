@@ -103,16 +103,16 @@ func _combat() -> void:
 	var foe: CombatantState = st.enemies[0]
 	match case_name:
 		"typical":
-			st.player.wheel.slice_statuses[2] = RC.Status.OVERCLOCKED
+			st.player.wheel.set_status(2, RC.Status.OVERCLOCKED)
 			st.player.block = 6
 			st.player.evade_charges = 1
 			foe.shield = 4
-			foe.wheel.slice_statuses[4] = RC.Status.ENCRYPTED
+			foe.wheel.set_status(4, RC.Status.ENCRYPTED)
 		"worst":
-			var kinds := [RC.Status.CORRUPTED, RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED, RC.Status.PARASITE]
+			var kinds := [RC.Status.CORRUPTED, RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED, RC.Status.OUTPUT_DOWN]
 			for c: CombatantState in [st.player, foe]:
 				for i in c.wheel.slice_count:
-					c.wheel.slice_statuses[i] = kinds[i % kinds.size()]
+					c.wheel.set_status(i, kinds[i % kinds.size()])
 	_scene._refresh(st)
 	_scene.skip_motion()
 	if case_name == "landing":
@@ -180,12 +180,12 @@ func _hub_rows() -> Array:
 
 func _state_rows() -> Array:
 	var rows: Array = []
-	for s in [RC.Status.CORRUPTED, RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED, RC.Status.PARASITE]:
+	for s in [RC.Status.CORRUPTED, RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED, RC.Status.OUTPUT_DOWN]:
 		var status: int = s
 		rows.append([RC.Status.keys()[status], &"", func(c: CombatantState, _st: CombatState) -> void:
 			for i in c.wheel.slice_count:
-				c.wheel.slice_statuses[i] = status])
+				c.wheel.set_status(i, status)])
 	rows.append(["MIXED (boss)", &"the_manifest", func(c: CombatantState, _st: CombatState) -> void:
 		for i in c.wheel.slice_count:
-			c.wheel.slice_statuses[i] = 1 + i % 4])
+			c.wheel.set_status(i, RC.STORED_STATUSES[i % RC.STORED_STATUSES.size()], 1 + i % 3)])
 	return rows
