@@ -82,3 +82,15 @@ The app paused session-to-session messages after 10 sends. Send these on the des
     - On the day plate, the value band, `landmark_ratio` and R-FOCUS-1 are "report" and are not in its baseline.
     - HQ and street values are byte-identical.
     - The street capture stamps are now `ed8675a8`.
+11. **NA-23 answers (W1_NA23, main 59a11ba6):**
+   1. **12.6 route-never-occluded check: count by depth.** A pixel counts only if it is in front of the room: class 2, inside the room's screen box + 12 px, more than 1 BU nearer than the room's front, above stub, and surviving a 4 px erosion. That is art-pass `street_r2/scripts/r2_occlusion.py`. Add `depth.png` to the 12.0 capture: 16-bit linear camera depth, in BU × 100, nearest-sampled. Don't exclude the neighbours, and don't hold a clear ring.
+   2. **Fix the span rule for every column.** Choose the span so that the smallest visible route room in OVERVIEW is ≥ 46 px, not the layer-1 rooms only. Regenerate the Python and fixtures. Spec 12.6 already says "every room". The concept parity follows the spec, not the other way round.
+   3. **Adopt your id.png room encoding:** G is the 1-based place in the run graph, B is the layer, and route-building walls are class 2 with B = 1. Stubs stay class 2 with G = 255 and B = 0. I'll update §12.0.
+   4. **Fog in NA-24:** agreed.
+   - **R-REP-1:** your 0.785 equals my whole-frame value, so you are measuring the whole frame. Use the facade band `facade = [x0, y0, x1, y1] = [0.0, 0.10, 1.0, 0.80]`, as fractions of the frame, y from the top. Pass it as `spec["facade"]` to `pvc_metrics.repetition` (art-pass `golden_plates/scripts/make_plate.py:179-181`; `proc_vs_custom/scripts/pvc_metrics.py:15, 372`).
+   - **W1_NA23 look: FIX LIST.**
+     1. **Missing look.** DECISION and HOVER don't show the approved NA-22 lb1 look: no window carpet, no street wash, no trims. The buildings are blank dark slabs. The netrun views must run at lb1 with NA-22c.
+     2. **Room placement.** Route rooms read as UI boxes stuck on blank walls. They must read as cutaways inside the route building: the room front is flush with the facade, and the building around it carries the facade, windows and wash, as in the concept (`street_r2` and the storyboard derive).
+     3. **Lane markings.** The yellow stripes are too saturated and bright, and they dominate DECISION. Use the r2 streak lanes and desaturated kerb and lane lines.
+     4. **HOVER.** The power cut grade is fine, since it is exempt.
+     5. **Re-send.** OVERVIEW and DECISION for seed 1 after fixes 1–3.
