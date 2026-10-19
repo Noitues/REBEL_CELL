@@ -38,7 +38,19 @@
   - 18.1+18.2 COMBAT-LOCK (QUEUED, on main): nudge lock = wax circle-slash per designer ruling (DECISIONS 34069fe7), word
     chips + toast removed, slash on locked RESPIN; Q19 respin ghost = 9 x 46 px chevrons chasing outside the rim (3.17),
     no dashed ring. Re-send CAP_W1 panel 3 and Q19 panel 2.
-  - 18.3 NA-24d (QUEUED, on main): hero blade light spill on facade (1-2 BU, panel hue) + street pool, within over-0.85.
+  - 18.3 NA-24d: folded into parity P3 (A-021).
+- STREET LOOK PARITY (A-020 designer ruling, blocks w1-close; plan B-002, answers A-021 art-pass 3dccef4e). Every netrun /
+  city sheet = golden plate + Godot at the same camera AND the §12 numbers. Queue (serial on city_building.gdshader):
+  - P0 parity harness (READY): tools/netrun_art/parity_sheet.py, plate via git show to %TEMP%, Godot at plate camera
+    (plate cams: art-pass golden_plates/street_*_capture.json, 1920x1080); publish our cameras in B-003.
+  - P1+P5 material + air: keep 3 toon bands / ink / facet grit at look_blend 1 (NA-22 blended them to smooth); sky, haze,
+    fog band, silhouette layers. Needs MATERIAL_SPEC.md (art-pass HANDOFF_PACKAGE/street_kit/, announced by A-NNN).
+  - P2+P3+P4: PORT art-pass street_r2/scripts r2_config (-> .tres), r2_facade, r2_kits (code), r2_rules plan_pass /
+    layout_pass / checks, r2_signs as Python twin + GDScript at the same art_seed (fnv64). Props glb + roles.json from
+    street_kit/ (A-NNN). Cut the ~8 tall yellow-green/teal glow bars -> blade signs + lit_atrium slots. Words = r2_config
+    WORDS / SUBS as is. Absorbs NA-24d.
+  - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
+    route rooms read as storefronts, no light columns).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
