@@ -140,9 +140,9 @@ var _perf_gpu: Array = []
 
 func _perf_report() -> void:
 	var g := _perf_gpu.duplicate()
-	g.sort()
+	IdSort.sort_ids(g)
 	var c := _perf_cpu.duplicate()
-	c.sort()
+	IdSort.sort_ids(c)
 	var sum_g := 0.0
 	for v in g:
 		sum_g += float(v)
