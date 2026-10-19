@@ -116,3 +116,26 @@ need a windowed capture and the checks.
 
 **So the harness in section 4 is:** na23_lab / hq_run_lab capture → parity_sheet, extended with (a) a third column, the reachable twin
 rendered by r2 from the same `--export` plate inputs, (b) the region numbers from IdCapture's id.png, (c) the HQ and city views.
+
+## 7. L1 baseline (w1-close @ 1f1a429b, seed 1): `look_parity/L1_baseline/`
+
+Sheets: golden plate on top, Godot at our NetrunCameraRig camera below (`netrun_art.parity_sheet`, run from the capture worktree).
+
+**Finding 1, the root cause: Godot and the plate don't frame the same street.** On the decision view, Godot's camera is 624 BU from
+the plate camera and its yaw is off by 90°. Pitch, lens, shift and distance all match, but the layout derives a different street.
+So every earlier side by side compared two different shots. That is LOOK_PORT §1 row 2 measured: until Godot exports the
+plate_inputs and the twin renders from them, look tuning has no fixed target.
+
+**Finding 2, the look gaps** (art-bible §1.2 read, ranked):
+1. Facades are flat, unshaded panels (the cel look's decal windows on solid colour). There's no Principled response and no facade
+   or section-spill wash, so the frontage wall that carries the plate never reads.
+2. There's no continuous lit frontage at street level. The plate's street is a wall of shop fronts, signs and lamps; Godot shows
+   separate towers with gaps into darkness.
+3. The wet street has no long reflections of signs and lamps (`blobs_per_mp` 175 against 459; `over_085` 0.0007 against 0.0099).
+4. The sky is navy-black. The plate has a magenta haze and layered fog between skyline depths, and Godot's fog reads only as
+   puffs around lamps.
+5. There are few readable signs and none at hero scale; the emissive hierarchy is missing.
+Numbers on the decision view: median 0.122 against 0.141, under_010 0.44 against 0.33, 12.2 and R-VAL-2 fail.
+
+**Order this confirms:** L4 starts by framing the same street (the A2 export plus the twin from it). Then facade materials and
+washes (gaps 1-2), reflections (3), fog/sky (4), signs (5), with a parity sheet after each.
