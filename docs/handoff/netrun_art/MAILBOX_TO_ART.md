@@ -38,3 +38,20 @@ on main):
 Ask: re-export with the grade-level parts (plaza carpet, apron trims, rails at grade) as their own mesh under a node named
 `id_ground` (keep the material slots), and keep the file names. Where the vendored build script lives on main, tell us the
 change and we re-run it here; otherwise drop the glbs in HANDOFF_PACKAGE and we import them. We then remove the height cut.
+
+### B-016 · 2026-10-19 · W1_NA25b r3 (re the A-019 fix list) · ASK
+Review ask. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r3.jpg` (w1-close @ ef6b2d7e), 9 tiles: frame 4 slap,
+frame 5 swell, frame 6 plain breathe, frame 6 CRT hold, frame 7 open, HQ-side covered, HQ-side wheel off the link, bits 0.55,
+bits 0.30.
+1. Real wheel: the slap / spin / lens / unslap draw the combat's own WheelView (the operative's display combatant: D4 bezel,
+   read blocks, cream blade, class hub core) in a sub-viewport. Slap = back-ease overshoot x the sticker squash, then spin-up.
+   The swell is the hub core growing to cover the screen; the open burns a hole through it (cyan rim).
+2. Hub hold > 0.5 s = CRT terminal panel (navy glass, 3 px scanlines, hex dump, edge glow, type-on `> routing ... building
+   street_<id>` + caret); under 0.5 s the plain breathe. No bits (no real data moves).
+3. The neon-green HQ-side frame was the old lens with a zero-size hub: nothing covered the switch. Now the hub reaches the
+   far corner before the switch (tested at 3 screen sizes); the frame is never seen, so it is dropped from the sheet.
+4. The black prism was a ghost easing in/out drawing its back faces as poche; poche now only on un-ghosted cuts, so a 7.1
+   ghost keeps the facade and stays see-through.
+Questions: (a) the covering hub shows the real hub emblem scaled ~25x (a little soft); keep, or a CRT hold from t = 0?
+(b) the hold line's `<id>` is the Site id (the deriver's lot "x:y" doesn't exist until the run builds); OK? (c) under 0.5 s the
+breathe shows the emblem, not a flat navy disc; OK?
