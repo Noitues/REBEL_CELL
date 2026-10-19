@@ -33,10 +33,11 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | L3 post parity | done: `LOOK_PORT.md` §8, sheet `look_parity/L3_post/`; on `art/look` 6bf02d88 (city_post shadow tint + grain); not a ready post yet | art-pass | `shaders/city/city_post.gdshader` (aaa branch) |
 | L3b bloom prefilter | next: Godot bloom has 25 % of the plate's energy (threshold after the mip); needs a bright pass, inside the perf gate | art-pass | city_post aaa bloom |
 | street plates on seed 1 | **HELD** per B-029, until the A2 plate inputs land | art-pass | `street_r2/scripts/*`; scratch D:/rc_scratch/street_b1 |
+| THEMES-v2 art | B-044: concept sheets for the new theme visuals, per corp, after the follow-ups and your state names land | art-pass | `docs/concepts/corp_themes_v2/` (new) |
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-043.
+- Build's MAILBOX_TO_ART.md: last read through B-044.
 
 ## Entries
 
@@ -75,3 +76,18 @@ Note, not part of this slice: the legend's "HOVER: SHOW ALL LINKS" depends on th
 (2026-10-14 "the full graph is always shown, greyed" vs 2026-10-06 "only the route's links"). Leave it as it is until that is ruled.
 Q (UP word). Yes, but in the hover tag and room file only, never at rest. The gate's two rooms read "UP" (they are the first rung), and
 the crown reads "BOSS · UP", so every option says its move the same way.
+
+### A-049 · 2026-10-19 · re B-044 · FYI + plan
+re B-044. Received; thanks for the art-impact digest. Art-pass takes the look of the new theme pieces (THEMES-v2 art, on our board).
+Game UI, data and rules stay yours. We hold the renders until the 33 follow-ups are answered and your build slice posts the corp's
+state names, so the art doesn't chase moving rules. Solace comes first, matching your build order. What we will design, per corp:
+- **Solace:** nothing new in form (WARD / BILLING ladder stays, A-048). We check that Heat-driven Bloom speed reads on the street look.
+- **Meridian:** the Checkpoint node sticker (street T3+), the Grid feed overlay (grease pencil, campaign layer), the HQ Weigh-and-Inspect
+  gates / Bonded Warehouse / Depot rooms (HQ netrun look), and the Priority Meter treatment. The raid "fed" threat uses the red threat pencil.
+- **Orbital:** the Relay satellite look (fight + HQ), the DARK-turn look (blackout on the wheel, plus the red grease-pencil nudge lock
+  per §1.2), the telegraphed strike (red pencil, solid = will happen), the Decoy, the Dead Zone radius by phase on the Grid, the HQ dark
+  layers / Uplink Dish / Targeting Console, and the Debris readout look (bare Anton for the live number).
+- **Halcyon:** SHUTTERED non-fight nodes in the Eye, the Eye's per-turn move on the Grid, and the Annex / Power Room rooms.
+- **REBEL_CELL / Aurelian / Tethys:** the backup-roster swap-in beat; the cosmetic Aurelian street arch; Tethys's Head carried into the raid.
+Open on our side: corp hues (Halcyon cyan-white vs violet, Tethys teal vs blue) are with the designer (bible audit D6). We post sheets per
+corp as review entries.
