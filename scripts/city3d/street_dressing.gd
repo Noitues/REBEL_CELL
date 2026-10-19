@@ -21,11 +21,15 @@ var _cfg: DressingConfigData = null
 ## Group id -> the instance dicts (`DressKit.item`) of the group (the MultiMesh data read back is empty headless).
 var items: Dictionary = {}
 var _mats: Dictionary = {}
+var _r2_frontage: bool = false
 
 
 ## Builds the dressing of the street `derive` over `city`. `dress_in` is the dress v1 dict (empty: `NetrunArtDress.dress_street`).
-static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}) -> StreetDressing:
+## `r2_frontage` leaves out the signs, shops, billboards and lamps (the hero blade bars and the rest of the old frontage dressing): the
+## street r2 frontage (`StreetR2Builder`) draws them instead; glows, washes, plumes, beams and lanes stay.
+static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}, r2_frontage: bool = false) -> StreetDressing:
 	var s := StreetDressing.new()
+	s._r2_frontage = r2_frontage
 	s._build(derive, city, dress_in)
 	return s
 
@@ -41,11 +45,12 @@ func _build(derive: Dictionary, city: Dictionary, dress_in: Dictionary) -> void:
 	var col_by_bid: Dictionary = {}
 	for ci: Dictionary in derive["col_info"]:
 		col_by_bid[String(ci["bid"])] = ci
-	_hero_signs(dress["signs"], col_by_bid)
-	_city_signs(plan["signs"])
-	_shops(plan["shops"])
-	_billboards(plan["billboards"])
-	_lamps(dress["lamps"])
+	if not _r2_frontage:
+		_hero_signs(dress["signs"], col_by_bid)
+		_city_signs(plan["signs"])
+		_shops(plan["shops"])
+		_billboards(plan["billboards"])
+		_lamps(dress["lamps"])
 	_discs("glow", dress["glows"], false)
 	_discs("wash", dress["washes"], true)
 	_plumes(plan["plumes"])

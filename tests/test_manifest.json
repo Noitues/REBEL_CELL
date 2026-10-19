@@ -1229,6 +1229,18 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/netrun_art/test_street_r2_streams.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_street_r2_builder.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/netrun_art/test_street_r2_parity.gd": {
+			"seconds": 14.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_jack_wheel.gd": {
 			"seconds": 3.0,
 			"tier": "fast"

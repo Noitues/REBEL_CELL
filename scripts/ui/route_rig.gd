@@ -36,6 +36,8 @@ var _extras: Array[Node3D] = []
 var _clock_mats: Array = []
 ## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
 var dressing: StreetDressing = null
+## The street r2 frontage (P2 step 2).
+var frontage: StreetR2Builder = null
 ## The street's real coloured local lights (AAA-2, `StreetLightRig`).
 var lights: StreetLightRig = null
 var _anim_t := 0.0
@@ -365,15 +367,21 @@ func _build_atmosphere() -> void:
 ## The street dressing of NA-24 (signs, lamps, glows, washes, beams, lanes, plumes): placed from the derive and the city only, one
 ## group per reveal tier. Held in `_extras`, so the id pass hides it; its materials join the netrun clock after the fog's.
 func _build_dressing() -> void:
-	dressing = StreetDressing.build(data.derive, data.city)
+	dressing = StreetDressing.build(data.derive, data.city, {}, true)
 	view.add_to_layer(&"props", dressing.root)
 	_extras.append(dressing.root)
 	_clock_mats.append_array(dressing.clock_mats)
+	# P2 step 2: the plate's street frontage (facade kits, planned signs, kit props, lamps, crowns) replaces the old signs and shops.
+	frontage = StreetR2Builder.build(data.city, data.derive, data.city["layout_seed"])
+	view.add_to_layer(&"props", frontage.root)
+	_extras.append(frontage.root)
 	# the building's binary bits (the dissolve) run on the same clock
 	_clock_mats.append(view.building_material())
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
 	# AAA-2: the street's real coloured local lights (A-022); the emissive ground / wall discs that stood in for them are hidden.
-	lights = StreetLightRig.build(dressing.light_sources(data.derive))
+	var sources := dressing.light_sources(data.derive)
+	sources["lamps"] = frontage.lamp_lights(float(CityShaderConfigData.shipped().aaa["lights"]["lamp"]["height"]))
+	lights = StreetLightRig.build(sources)
 	view.add_to_layer(&"props", lights.root)
 	_extras.append(lights.root)
 	if bool(CityShaderConfigData.shipped().aaa["lights"]["hide_discs"]):
