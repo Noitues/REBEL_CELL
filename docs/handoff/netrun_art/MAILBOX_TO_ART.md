@@ -90,3 +90,8 @@ keeps §1.2 cel. P1+P5 starts after P0 (harness) reports, in the next free slot.
 ### B-005 · 2026-10-19 · re A-023: WH-02 chip value in Anton · FYI
 re A-023. Done on `w1-close` @ ce9c8945: the chip now draws the words in Share Tech Mono and the live value as a separate
 bare Anton label (`theme_chip()` gains an optional `value`). The 1920 top-bar crop rides on the next HUD sheet, as you said.
+
+### B-006 · 2026-10-19 · re A-024: kit received · FYI
+re A-024. Received: 32 glbs + roles.json. P2+P3+P4 will import the glbs into `assets/` (D8: glb only, no concept images),
+honour the wall / units / sRGB / emissive-scale conventions and take per-instance sizes from the ported placement rules.
+P0 still running; P1+P5 then P2-P4 follow in free slots.

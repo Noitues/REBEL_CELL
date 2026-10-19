@@ -52,7 +52,9 @@
   - P2+P3+P4: PORT art-pass street_r2/scripts r2_config (-> .tres), r2_facade, r2_kits (code), r2_rules plan_pass /
     layout_pass / checks, r2_signs as Python twin + GDScript at the same art_seed (fnv64). Props glb + roles.json from
     street_kit/ (A-NNN). Cut the ~8 tall yellow-green/teal glow bars -> blade signs + lit_atrium slots. Words = r2_config
-    WORDS / SUBS as is. Absorbs NA-24d.
+    WORDS / SUBS as is. Absorbs NA-24d. Props KIT DELIVERED (A-024): 32 glb + roles.json in art-pass
+    HANDOFF_PACKAGE/street_kit/ (wall plane z=0, +Z out, metres=BU, COLOR_0 sRGB, emissive x MATERIAL_SPEC hierarchy,
+    sign_board UV quad for r2_signs textures); import into assets/ per D8 (glb only, no concept images).
   - P6 street (wet reflections, trails, lamp pools, bokeh; post per MATERIAL_SPEC); P7 decision (ghost only 7.1 stubs,
     route rooms read as storefronts, no light columns).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
