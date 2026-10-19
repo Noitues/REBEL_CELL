@@ -87,6 +87,9 @@
     review (B-025, branch worktree-agent-acf2da816a329ac10 @ b7bb01a6). RUNNING: P2 step 2, P6 (+P7 items, lit-haze sky),
     NA-12 r3, NA-25b r4, W2 WH-11 Solace rules (on w1-close). Defaults: fog body multiplier 0.12 + light unit factors kept.
     Scratch left by agents (blocked rm): D:/rc_tmp, D:/tmp_r3, D:/r3pc.log.
+  - QUEUED COMBAT-LOCK r4 (A-036; wheel mark APPROVED): RESPIN chip mark = oval hugging the chip outline (8-12 % margin, same
+    wobble/overshoot), slash corner to corner 25 % past the ring, RESPIN + RAM cost readable through it, clamped in the safe frame;
+    capture in a taller viewport so the chip is whole. Base branch worktree-agent-acf2da816a329ac10 @ b7bb01a6.
   - QUEUED NA-31c (A-035 CORRECTION: HQ netrun view = AAA-2 chain like the street, NOT cel; only the mainline city map is cel).
     Fixes 1-5 of NA-31b APPROVED, carry over. Base NA-31b branch; starts after P1+P5 lands AND art-pass's HQ addendum to
     MATERIAL_SPEC (own A entry). Targets: 12.2 = each corp's plate ratio_median (hq_<corp>_overview_values.json) +-0.3, R-FOCUS-1
