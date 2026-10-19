@@ -34,6 +34,42 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Plan 2 W1 N6: enemy listeners (Q8 a, Q19, Q39, N1b; designer answers 1-3)
+- **Schema:** `ListenerData` (trigger, effects, `max_per_turn`, `max_per_combat`, `min_tier`) on `EnemyData.listeners`
+  (kept through phases) and `HubCoreData.listeners` (silent while the Hub is breached; a phase `hub_override` swaps
+  them). `RC.Trigger` gains **ON_RAM_SPENT (15)** and **ON_HIT_DEALT (16)**, appended (existing ints pinned by test).
+  `validate()` codes: `trigger_not_listenable` (only ON_NUDGE, ON_CARD_PLAYED, ON_PERFECT, ON_RAM_SPENT, ON_HIT_DEALT),
+  `no_effects`, `empty_effect`, `cap_not_positive` (-1 = unauthored), `rng_effect` (RESPIN, DRAW_CARDS, CUSTOM, any
+  RANDOM_NON_NULL pick), plus the effect's own codes; PERCENT is allowed on a listener's DEAL_DAMAGE (a share of the
+  owner's max HP, never rescaled; `EffectInterpreter.damage_amount` reads it, other DEAL_DAMAGE still refuse PERCENT).
+  `EnemyData.validate` includes `listener_errors()` (own, base Hub, phase Hubs). Smoke check `_n6_listeners`.
+- **Caps (answer 1):** an unauthored `max_per_turn` reads `CampaignConfigData.listener_max_per_turn_default` (1);
+  authored caps override. Per-combat cap unauthored = none. Counters live on the enemy's `CombatantState`
+  (`listener_fires_turn` / `listener_fires_combat`, keyed `<content id>:L<index>`), turn counts cleared in `start_turn`;
+  saved (and hashed) only when non-empty, so fights without fires save and hash as before. **Save format:** two
+  optional combatant keys; old saves load empty counters.
+- **When (answer 2, Q19):** listeners fire inside the committed action, in `CombatResolver.apply` (so `preview` ==
+  result exactly, and hovering alone never fires them): a nudge fires ON_RAM_SPENT (paid only, amount = RAM) then
+  ON_NUDGE; a card fires ON_RAM_SPENT (cost > 0) then ON_CARD_PLAYED after its effects and the operative's hooks; a
+  respin fires ON_RAM_SPENT. At RESOLVE the slice passes collect occurrences and the listeners fire after the status pass,
+  before ON_TURN_END: **ON_PERFECT** once per Perfect needle landing of the operative (not drones, not a NULL slice,
+  not Mirror copies; retriggers do not add fires; context amount = the landed output, all resolutions summed),
+  **ON_HIT_DEALT (answer 3)** once per player-side slice hit (operative and its drones) that lands on an enemy: not
+  negated by SANDBOX, amount > 0 after enrage, carrying the HP damage after BLOCK / SHIELD. Card / Daemon / listener
+  DEAL_DAMAGE effects are not slice hits and are not heard. Order: enemies by combatant id (IdSort), own listeners then
+  Hub listeners, index order; occurrences in resolve order. A dead enemy (HP 0) does not listen; one parked at its
+  floor does. `min_tier` gates RESOLVE triggers by the landing's precision tier; actions always pass it.
+- **Effects:** owner = the enemy, target = the operative; FLAT damage x the owner's tier factor (N1b), then enrage,
+  SANDBOX charge (Q39), BLOCK, SHIELD, HP (no bodyguard step: listener hits are not needle hits). No RNG (validated;
+  tests check the stream is untouched). A recursion guard (`_in_listener`) stops any nesting. A listener hit that drops
+  the operative to 0 on a nudge / respin settles deaths at once (Q24.1).
+- **View:** `ListenerChip` (kit) on each enemy wheel under the enrage badge, from the preview's events: "REACTS: N DMG"
+  (HP its listeners take) or "REACTS xN" (fires); End Turn forecast and hovered plays; no motion.
+- **Not built:** concrete mini-boss listeners (W2: Echo's percent-of-landed amount reads the ON_PERFECT context
+  amount, still to wire as an amount source), Shadow / Favor / Verdict content. Tests: `test_enemy_listeners`,
+  `test_listener_preview`, `test_listener_undo`, `test_listener_determinism`, `test_listener_content`,
+  `test_listener_save`, `test_listener_flow` (fast), `test_listener_sweep` (full).
+
 ### 2026-10-18 — W1 NA-22c: street wash, edge trims, landmark cone fade (art-pass fix list)
 - Retunes in `city_shaders.tres`: look.exposure 1.0 -> 0.95, beam.emit 1.8 -> 1.5 (keeps over-0.85 within tolerance). Street canyon lb1 vs golden street_overview: median 0.152, under-0.10 25.6 % (plate 26.7 %), over-0.85 1.10 %, p99 0.869: all pass. Halcyon eye-beam (mainline landmark cone) fades out over look_blend 0..0.5. Render test (lb0 <= 1/255) green; 1080p GPU about 6 ms at lb1 (budget 14 ms), fog within noise.
 
@@ -7897,6 +7933,12 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 W1 N6, enemy listeners (simplest option built):** (a) every living enemy hears every player action
+  and hit (not only the enemy that was hit or nudged); the context carries the victim for content that wants to
+  filter. (b) ON_HIT_DEALT fires on a landed hit that BLOCK / SHIELD soak whole (amount 0 HP); a SANDBOX-negated hit
+  is not heard. (c) Its amount is the HP actually lost (after the phase-floor clamp: answers N3 open point d with
+  post-clamp). (d) ON_PERFECT ignores NULL landings and the drones' slices. (e) `min_tier` is the landing's
+  precision tier, not the campaign tier. Say if any should differ.
 - **2026-10-18 W1 N8, ×N stacks (placeholders built):** (a) OUTPUT_DOWN shares **add** (1 − 0.25 n, clamped at 0:
   ×4 = no output) rather than compound (0.75ⁿ); additive keeps ×2 = the old PARASITE half exactly (test plan's table
   assumed compounding). (b) The cap is 5 for OUTPUT_DOWN and OVERCLOCKED; ENCRYPTED and CORRUPTED are uncapped

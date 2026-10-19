@@ -3144,6 +3144,7 @@ func _preview_action(action: CombatAction) -> void:
 		base[v] = hud_layer.row_for(v).chips.duplicate(true)
 	_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))  # W2-A2: the hovered play joins the list
 	_preview_result(action, state, result)
+	_sync_listener_chips(result.events)  # N6: what the enemies' listeners do to this play
 	_mark_was(was)
 	if selecting >= 0 and _option_index >= 0 and action.type == CombatAction.Type.PLAY_CARD:
 		_show_play_results(action, base)
@@ -3309,6 +3310,7 @@ func _show_end_turn_preview() -> void:
 		ram_note.set_pending(0)
 		ram_note.set_next_turn(-1)
 		_queue_resolved = null
+		_sync_listener_chips([])
 		_refresh_queue_panel()
 		return
 	if state.is_over() or _hold_forecast:
@@ -3321,6 +3323,7 @@ func _show_end_turn_preview() -> void:
 		ram_note.set_pending(0)
 		ram_note.set_next_turn(-1)
 		_queue_resolved = null
+		_sync_listener_chips([])
 		_refresh_queue_panel()
 		return
 	var result := engine.preview_end_turn()
@@ -3338,6 +3341,14 @@ func _show_end_turn_preview() -> void:
 			summary.append("%s %d HP" % [e.display_name, e.hp])
 	preview_note.append("[b]=> You %d HP | %s[/b]" % [after.player.hp, ", ".join(summary)])
 	_show_outcome(state, after, result.events)
+	_sync_listener_chips(result.events)  # N6: the resolve's listener fires
+
+
+## N6 (acceptance 10): each enemy view's listener chip for the previewed `events` (none
+## clears every chip).
+func _sync_listener_chips(events: Array) -> void:
+	for id in _enemy_views.keys():
+		ListenerChip.sync(_enemy_views[id], ListenerChip.state_for(events, id))
 
 
 ## Puts an outcome on screen: each spinner's tag (what its needles land on in `landing`,

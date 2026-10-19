@@ -118,7 +118,11 @@ func test_percent_amount_never_rescaled() -> void:
 	var dmg := CombatFixture.effect(RC.EffectType.DEAL_DAMAGE, RC.EffectTarget.POINTER_TARGET, 10)
 	dmg.amount_mode = RC.AmountMode.PERCENT
 	var s := _session(_hub_enemy, 4)
-	assert_eq(s.resolver.fx.damage_amount(dmg, s.state.get_combatant(&"enemy_0")), 10, "PERCENT skips the tier factor")
+	# N6 (acceptance 5): a PERCENT hit (listeners only) is that share of the owner's max HP,
+	# 10 % of 300 = 30, with no tier factor (66 at T4 would be scaled).
+	var owner := s.state.get_combatant(&"enemy_0")
+	assert_eq(owner.max_hp, 300)
+	assert_eq(s.resolver.fx.damage_amount(dmg, owner), 30, "PERCENT skips the tier factor")
 
 
 func test_seeded_replay_matches() -> void:

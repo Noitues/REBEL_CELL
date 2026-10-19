@@ -329,6 +329,8 @@ func apply(state: CombatState, action: CombatAction, rng: RandomNumberGenerator)
 			s.ram -= respin_cost
 			result.events.append({"type": "ram", "amount": -respin_cost, "text": "Respin costs %d RAM (%d)." % [respin_cost, s.ram]})
 			fx.respin(s.player, rng, result.events, true)
+			if fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": respin_cost, "action": action}, rng, result.events) > 0:
+				_settle_deaths(s, rng, result.events)
 		CombatAction.Type.PLAY_CARD:
 			_apply_card(s, action, rng, result.events)
 		CombatAction.Type.END_TURN:
@@ -421,6 +423,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 				"text": "%s's pointers migrate to %s." % [c.display_name, str(Array(c.wheel.pointer_ticks))]})
 		c.block = 0
 		c.evade_charges = 0
+		c.listener_fires_turn.clear()  # N6: per-turn listener caps start over
 		# Hub start-of-turn passives (Auto-Renew) run while the breach still holds, so a
 		# Hub Breach played last turn stops this turn's heal; then the breach expires.
 		if not c.is_player:
@@ -512,18 +515,23 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 				r["slice"].display_name if r["slice"].display_name != "" else String(r["slice"].id), r["offset"],
 				RC.PrecisionTier.keys()[r["tier"]] if r["owner"].wheel.slice_count == RC.SLICES else "full output",
 				(", ring " + r["segment"].display_name) if r["segment"] != null else ""]})
+	# N6: ON_PERFECT / ON_HIT_DEALT occurrences the slice passes collect, heard after them.
+	var heard: Array = []
 	events.append({"type": "pass", "pass": "defensive", "text": "[defensive pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in DEFENSIVE_TYPES:
-			_resolve_pointer(s, r, rng, events)
+			_resolve_pointer(s, r, rng, events, heard)
 	events.append({"type": "pass", "pass": "offensive", "text": "[offensive pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in OFFENSIVE_TYPES:
-			_resolve_pointer(s, r, rng, events)
+			_resolve_pointer(s, r, rng, events, heard)
 	events.append({"type": "pass", "pass": "statuses", "text": "[status pass]"})
 	for r in resolutions:
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.NULL:
-			_resolve_pointer(s, r, rng, events)
+			_resolve_pointer(s, r, rng, events, heard)
+	# N6 (acceptance 9): enemy listeners after the slice passes, in occurrence order.
+	for h in heard:
+		fire_listeners(s, int(h["trigger"]), h, rng, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
 	_apply_deaths(s, alive_before, rng, events)
@@ -625,17 +633,24 @@ func _readout(s: CombatState, c: CombatantState, pointer_index: int) -> Dictiona
 # --- Internals: actions ----------------------------------------------------------
 
 func _apply_nudge(s: CombatState, action: CombatAction, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	var spent := 0
 	if s.free_nudges > 0:
 		s.free_nudges -= 1
 	else:
 		var cost := RamCost.of_action(s, action, self)
 		s.ram -= cost
+		spent = cost
 		events.append({"type": "ram", "amount": -cost, "text": "Extra nudge costs %d RAM (%d)." % [cost, s.ram]})
 	var target := s.get_combatant(action.wheel_id)
 	var ignore := fx.ghost_bypass(s, target, events)
 	fx.nudge(s, s.player, target, action.ring, action.direction, ignore, events)
 	var ctx := {"owner": s.player, "target": target, "action": action, "pointer_index": 0}
 	fx.run_triggers(s, RC.Trigger.ON_NUDGE, ctx, _player_listeners(s), rng, events)
+	# N6: the enemies hear the accepted nudge (a free one spends no RAM).
+	var fired := fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": spent, "action": action}, rng, events)
+	fired += fire_listeners(s, RC.Trigger.ON_NUDGE, {"action": action, "victim": target}, rng, events)
+	if fired > 0:
+		_settle_deaths(s, rng, events)
 
 
 func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
@@ -653,6 +668,9 @@ func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerato
 		if e != null:
 			fx.apply_effect(s, e, ctx, rng, events)
 	fx.run_triggers(s, RC.Trigger.ON_CARD_PLAYED, ctx, _player_listeners(s), rng, events)
+	# N6: the enemies hear the accepted play, after its effects and the operative's hooks.
+	fire_listeners(s, RC.Trigger.ON_RAM_SPENT, {"amount": cost, "action": action, "card_id": card_id}, rng, events)
+	fire_listeners(s, RC.Trigger.ON_CARD_PLAYED, {"action": action, "card_id": card_id, "victim": target}, rng, events)
 	if card.exhaust:
 		s.exhaust_pile.append(card_id)
 	else:
@@ -768,6 +786,91 @@ func _player_listeners(s: CombatState) -> Array:
 	return out
 
 
+## N6: true while an enemy listener's effects run; fire_listeners refuses to nest (a
+## listener never fires another listener: acceptance 5).
+var _in_listener: bool = false
+
+
+## Plan 2 N6: fires every living enemy's listeners on `trigger`, enemies in id order
+## (IdSort), each enemy's own listeners then its Hub's (silent while breached), in index
+## order. `info` describes the occurrence: "amount" (RAM spent, HP damage, landed output),
+## "tier" (RESOLVE triggers; actions pass any min_tier), "action", "card_id", "victim".
+## Caps: per turn (authored, else the config default) and per combat, counted on the
+## enemy's CombatantState. ON_RAM_SPENT with amount 0 is not heard. Effects run with the
+## enemy as owner and the operative as target and draw no RNG (validated). Logs one
+## "listener" event per fire. Returns how many listeners fired.
+func fire_listeners(s: CombatState, trigger: int, info: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary]) -> int:
+	if _in_listener:
+		return 0
+	if trigger == RC.Trigger.ON_RAM_SPENT and int(info.get("amount", 0)) <= 0:
+		return 0
+	var tier := int(info.get("tier", RC.PrecisionTier.PERFECT))
+	var fired := 0
+	_in_listener = true
+	for c in _listening_enemies(s):
+		for entry in enemy_listeners(c):
+			var l: ListenerData = entry["data"]
+			if int(l.trigger) != trigger or tier < int(l.min_tier) or not c.is_alive():
+				continue
+			var key: String = entry["key"]
+			var turn_fires := int(c.listener_fires_turn.get(key, 0))
+			var combat_fires := int(c.listener_fires_combat.get(key, 0))
+			if turn_fires >= l.turn_cap(config):
+				continue
+			if l.max_per_combat != ListenerData.UNAUTHORED and combat_fires >= l.max_per_combat:
+				continue
+			c.listener_fires_turn[key] = turn_fires + 1
+			c.listener_fires_combat[key] = combat_fires + 1
+			fired += 1
+			events.append({"type": "listener", "owner": c.id, "listener": key, "trigger": trigger,
+				"amount": int(info.get("amount", 0)), "fires_turn": turn_fires + 1,
+				"text": "" if quiet else "%s reacts (%s)." % [c.display_name, RC.Trigger.keys()[trigger]]})
+			var ctx := {"owner": c, "target": s.player, "pointer_index": 0, "source_id": StringName(key),
+				"action": info.get("action"), "trigger_amount": int(info.get("amount", 0)), "listener": true}
+			for e in l.effects:
+				if e != null:
+					fx.apply_effect(s, e, ctx, rng, events)
+	_in_listener = false
+	return fired
+
+
+## N6: `c`'s listeners in firing order: its EnemyData's, then its current Hub's (none while
+## breached), as [{key, data}]. The key ("<content id>:L<index>") names the counter.
+func enemy_listeners(c: CombatantState) -> Array:
+	var out := []
+	if c == null or c.is_player:
+		return out
+	var data := lookup.get_content(c.source_id) as EnemyData
+	if data != null:
+		for i in data.listeners.size():
+			if data.listeners[i] != null:
+				out.append({"key": listener_key(data.id, i), "data": data.listeners[i]})
+	var hub := fx.hub_of(c.wheel) if c.wheel != null else null
+	if hub != null and not c.is_hub_breached():
+		for i in hub.listeners.size():
+			if hub.listeners[i] != null:
+				out.append({"key": listener_key(hub.id, i), "data": hub.listeners[i]})
+	return out
+
+
+## N6: the counter key of listener `index` of content `owner_id`.
+static func listener_key(owner_id: StringName, index: int) -> String:
+	return "%s:L%d" % [owner_id, index]
+
+
+## N6: the living enemies (satellites included), by combatant id in text order.
+func _listening_enemies(s: CombatState) -> Array[CombatantState]:
+	var ids: Array = []
+	for e in s.enemies:
+		if e.is_alive():
+			ids.append(e.id)
+	IdSort.sort_ids(ids)
+	var out: Array[CombatantState] = []
+	for id in ids:
+		out.append(s.get_combatant(id))
+	return out
+
+
 ## The operative's Daemons as listeners, in id order (deterministic).
 func _daemon_listeners(s: CombatState) -> Array:
 	var out := []
@@ -802,7 +905,10 @@ func _heat_listeners(s: CombatState, owner: CombatantState, slice: SliceData = n
 ## amount, each per target needle) -> per-hit absorption in `deal_hit` (enrage, SANDBOX
 ## charge, bodyguard, BLOCK and SHIELD unless pierce, then HP). A retrigger (a Breaker
 ## Perfect "resolves twice") repeats the whole hit list. Riders draw no RNG.
-func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+## N6: `heard` collects the enemy-listener occurrences this pointer makes (each landed hit of
+## the operative's side, ON_HIT_DEALT; a Perfect landing of the operative, ON_PERFECT, once
+## per needle whatever its retriggers); resolve_turn fires them after the slice passes.
+func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary], heard: Array = []) -> void:
 	# No liveness check: resolution is simultaneous, so a combatant that dropped to 0 HP
 	# earlier in this resolve still fires everything it landed on. Deaths apply at the end.
 	var owner: CombatantState = r["owner"]
@@ -810,7 +916,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var wheel := owner.wheel
 	var slot: int = r["slice_index"]
 	var ctx := {"owner": owner, "target": _pointer_target(s, owner), "pointer_index": r["pointer_index"],
-		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
+		"tier": r["tier"], "slice_index": slot, "source_id": slice.id, "heard": heard}
 	var listeners := _slice_listeners(s, r)
 	# Plan 2 R5: a PERCENT slice reads the owner's max HP and skips the tier factor; the
 	# precision, Firmware, status and segment multipliers still apply after it.
@@ -854,13 +960,21 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 			per_instance.append(l)
 	# Daemons fire once per landing: never on a Mirror copy of a neighbour (H16).
 	var once: Array = once_all if is_landing(r) else []
+	var landed_output := 0
 	for m in instances:
 		var output := roundi(base * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW] and s.damage_bonus > 0:
 			output += s.damage_bonus
+		landed_output += output
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
 	_landing_triggers(s, r, slice, ctx, once, rng, events)
+	# N6 (ruling Q8 a): one ON_PERFECT per Perfect needle of the operative (a NULL landing is
+	# no Perfect slice), carrying the landed slice's output (every resolution summed, before
+	# absorption).
+	if owner == s.player and r["tier"] == RC.PrecisionTier.PERFECT and is_landing(r) and slice.slice_type != RC.SliceType.NULL:
+		heard.append({"trigger": RC.Trigger.ON_PERFECT, "tier": r["tier"], "amount": landed_output,
+			"slice_id": slice.id, "pointer_index": r["pointer_index"]})
 	if stacks_in(r, RC.Status.OVERCLOCKED) > 0 and is_landing(r):
 		# N8: the burn-out takes every OVERCLOCKED stack and leaves one CORRUPTED stack.
 		wheel.remove_stacks(slot, RC.Status.OVERCLOCKED)
@@ -956,7 +1070,13 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 						victim = guard
 						events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
 							"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
-					fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
+					var before := events.size()
+					var hp_damage := fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
+					# N6: a player-side hit that landed (not negated, not zero) is heard as
+					# ON_HIT_DEALT with its HP damage after BLOCK and SHIELD.
+					if owner.is_player and ctx.has("heard") and events.size() > before and events[events.size() - 1].get("type") == "damage":
+						(ctx["heard"] as Array).append({"trigger": RC.Trigger.ON_HIT_DEALT, "tier": int(ctx.get("tier", RC.PrecisionTier.PERFECT)),
+							"amount": hp_damage, "victim": victim, "slice_id": slice.id, "attacker": owner.id})
 		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
 		RC.SliceType.SANDBOX:

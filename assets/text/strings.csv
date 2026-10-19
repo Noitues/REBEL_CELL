@@ -1997,6 +1997,8 @@ RANK,RANK
 RARE,RARE
 "RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
+REACTS x%d,REACTS x%d
+REACTS: %d DMG,REACTS: %d DMG
 "READOUTS (HP, RAM and the chips)","READOUTS (HP, RAM and the chips)"
 READY,READY
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
@@ -2137,6 +2139,7 @@ Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
+Reacts to your play: %s.,Reacts to your play: %s.
 Reads %s now.,Reads %s now.
 Recall %s,Recall %s
 "Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"

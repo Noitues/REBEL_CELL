@@ -60,6 +60,13 @@ enum Trigger {
 	## cleared with its host (designer 2026-10-18, Q7/Q10). Context: "satellite" (the
 	## destroyed one), "host_id", "cause" (&"killed", &"replaced", &"cleared"). Append-only.
 	ON_SATELLITE_DESTROYED,
+	## Plan 2 N6: the operative spent RAM on an accepted action (a paid nudge, a card with a
+	## cost, a respin). Context "amount" = the RAM spent (never 0). Enemy listeners only.
+	ON_RAM_SPENT,
+	## Plan 2 N6: a player-side slice hit (operative or drone) landed on an enemy at RESOLVE:
+	## not negated by SANDBOX, after BLOCK and SHIELD. Context "amount" = the HP damage,
+	## "victim", "tier". Enemy listeners only. Append-only.
+	ON_HIT_DEALT,
 }
 
 enum EffectType {

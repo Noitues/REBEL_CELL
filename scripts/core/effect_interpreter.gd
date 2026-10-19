@@ -692,8 +692,11 @@ func effect_amount(e: EffectData, owner: CombatantState) -> int:
 ## (`output_scale`) unless the owner is the operative or one of its drones; rounded as N1.
 ## This is the tier-factor step of the hit order (tier factor, enrage, SANDBOX, bodyguard,
 ## BLOCK, SHIELD, HP). Slice hits never come here: `_resolve_pointer` already folds the
-## factor into their output, so no hit is scaled twice. A PERCENT amount is never rescaled.
+## factor into their output, so no hit is scaled twice. A PERCENT amount (allowed on enemy
+## listeners only, N6) is that share of the owner's max HP and is never rescaled.
 func damage_amount(e: EffectData, owner: CombatantState) -> int:
+	if e.amount_mode == RC.AmountMode.PERCENT and owner != null:
+		return _scaled(percent_of(owner.max_hp, e.amount), e.multiplier)
 	var scale := 1.0
 	if owner != null and not owner.is_player and e.amount_mode != RC.AmountMode.PERCENT:
 		scale = owner.output_scale

@@ -443,6 +443,7 @@ status_stack_cap = 5
 shield_cap = 15
 sandbox_charges = 1
 sandbox_charges_perfect = 2
+listener_max_per_turn_default = 1
 corrupted_ram_cost_multiplier = 2
 corrupted_enemy_ram_divisor = 2
 extra_nudge_ram_cost = 1

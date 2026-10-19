@@ -7,7 +7,46 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners()
+
+
+## Plan 2 N6: ListenerData defaults (ON_PERFECT, unauthored caps, WEAK), the two appended
+## triggers, a bad listener refused by code, a save keeps it on an EnemyData and a HubCoreData,
+## the config default ships 1 and 0 is refused.
+func _n6_listeners() -> int:
+	var fails := 0
+	var l := ListenerData.new()
+	print("N6 listener defaults (expect 6 -1 -1 0; triggers 15 16): ", l.trigger, " ", l.max_per_turn, " ", l.max_per_combat, " ", l.min_tier,
+		"; ", RC.Trigger.ON_RAM_SPENT, " ", RC.Trigger.ON_HIT_DEALT)
+	if l.trigger != RC.Trigger.ON_PERFECT or l.max_per_turn != -1 or l.max_per_combat != -1 or l.min_tier != RC.PrecisionTier.WEAK: fails += 1
+	if RC.Trigger.ON_RAM_SPENT != RC.Trigger.ON_SATELLITE_DESTROYED + 1 or RC.Trigger.ON_HIT_DEALT != RC.Trigger.ON_RAM_SPENT + 1: fails += 1
+	l.trigger = RC.Trigger.ON_TURN_START
+	l.max_per_turn = 0
+	var codes := ",".join(l.validate())
+	print("N6 bad listener: ", codes)
+	if not (codes.contains("trigger_not_listenable") and codes.contains("no_effects") and codes.contains("cap_not_positive")): fails += 1
+	var block := EffectData.new(); block.type = RC.EffectType.GAIN_BLOCK; block.target = RC.EffectTarget.SELF; block.amount = 2
+	l.trigger = RC.Trigger.ON_HIT_DEALT; l.max_per_turn = 2; l.max_per_combat = 3
+	var fx_list: Array[EffectData] = [block]
+	l.effects = fx_list
+	var ls: Array[ListenerData] = [l]
+	var e := EnemyData.new(); e.id = &"smoke_listener_enemy"; e.listeners = ls
+	var h := HubCoreData.new(); h.id = &"smoke_listener_hub"; h.listeners = ls
+	var err := ResourceSaver.save(e, "user://smoke_listener_enemy.tres")
+	var err2 := ResourceSaver.save(h, "user://smoke_listener_hub.tres")
+	var back: EnemyData = ResourceLoader.load("user://smoke_listener_enemy.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	var back_h: HubCoreData = ResourceLoader.load("user://smoke_listener_hub.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	var ok := back != null and back_h != null and back.listeners.size() == 1 and back_h.listeners.size() == 1
+	print("N6 listener save=", err, " ", err2, " back ", [back.listeners[0].trigger, back.listeners[0].max_per_turn, back.listeners[0].max_per_combat] if ok else [])
+	if err != OK or err2 != OK or not ok or back.listeners[0].trigger != RC.Trigger.ON_HIT_DEALT or back.listeners[0].max_per_combat != 3 \
+			or back.listeners[0].validate().size() != 0: fails += 1
+	var d := CampaignConfigData.new()
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N6 listener default cap (expect 1 1): ", d.listener_max_per_turn_default, " ", cfg.listener_max_per_turn_default)
+	if d.listener_max_per_turn_default != 1 or cfg.listener_max_per_turn_default != 1: fails += 1
+	d.listener_max_per_turn_default = 0
+	if not ",".join(d.validate()).contains("listener_max_per_turn_default"): fails += 1
+	return fails
 
 
 ## Plan 2 N20: SliceData riders default to a plain slice; a bad one is refused by code; a
