@@ -28,7 +28,7 @@ Value status lists the checks that are not `pass` (values are in `<stem>_values.
 | `city_a2_night` | `city_all_corps/city_all_corps_night.png` | 199a450e | yes | 0.155 / 27.6 % / 0.9 % / 2.80 (landmark 65.6 k px of 8.3 M). Ratio warn (>2.0, not pre-accepted). R-HUE-1/2 fail (city night is one hue family) | camera is partial (note 4) |
 | `city_a2_day` | `city_all_corps/city_all_corps_day.png` | 199a450e | yes | 0.250 / 8.3 % / 0.06 % / **1.20**. Ratio fail (below 1.5; the day band is reported only in 12.8, recorded in the baseline by the generic rule, AD to rule). R-VAL checks n/a. R-HUE-1/2 fail. Alignment 0.15 by the variance test (flat daylight); overlay checked by eye, the pass sits on the plate | same camera |
 | `hq_aurelian_overview` | `.../hq_aurelian/plates/H_overview_v2_plate.png` | untracked (v2 finals, AD round 3, 2026-10-18) | yes | 0.152 / 38.1 % / 0.8 % / 2.46. Ratio warn, accepted as for v1 (AD 2026-10-18). Every other check pass. No baseline fails | derive inputs, layout seed, run graph |
-| `hq_aurelian_decision` | `.../hq_aurelian/plates/H_decision_v2_plate.png` (an outer-arcade room, v2) | untracked (v2 finals) | yes | 0.129 / 40.7 % / 0.5 % / 2.44. Ratio warn, accepted as for v1. Baseline fail: R-VAL-2 (under 0.10 at 40.7 %, the band is 25-40 %; v1 was 29.7 %), for the AD | same |
+| `hq_aurelian_decision` | `.../hq_aurelian/plates/H_decision_v2_plate.png` (an outer-arcade room, v2 + face band, 2026-10-18) | untracked (v2 finals) | yes | 0.153 / 36.0 % / 0.5 % / 2.79. Ratio warn, accepted as for v1. No baseline fails | same |
 
 ## Missing, by reason
 
@@ -68,5 +68,5 @@ Recorded in each plate as `checks.baseline`; each is an art item, not a plate de
 - **Street decision:** R-DET-2 (bright blobs per MP) and R-REP-1.
 - **City night and day:** R-HUE-1/2 (one hue family), baseline. Day landmark ratio 1.20 (fail; AD to rule whether the ratio band applies by day); night 2.80 warn.
 - **Tethys:** R-FOCUS-1 fail on both views (new with the id pass); decision ratio 2.02 warn.
-- **Aurelian (v2, 2026-10-18):** overview no baseline fails; decision fails R-VAL-2 (under 0.10 at 40.7 %, band 25-40 %), for the AD; ratios 2.46 and 2.44 are accepted warns (as for v1).
+- **Aurelian (v2, 2026-10-18):** no baseline fails; ratios 2.46 and 2.79 are warns (accepted as for v1).
 - **Look bias:** see `look_bias_check.jpg`: the derive sign (+sgn x 0.10) is the right one; the 6.2 table row and the `cam_rig.py:34` comment need the edit.

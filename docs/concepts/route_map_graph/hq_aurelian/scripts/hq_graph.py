@@ -156,6 +156,45 @@ def seg_normal(p):
     return None
 
 
+BAND_BAYS = 1          # DESIGN.md 14.7: one grid bay (6 deg) either side of the current room and its options
+
+
+def band_points(walked, mt=None, pose=None):
+    """The landmark's FACE BAND at the current level (DESIGN.md 14.7): the arc of the level's face from the current room to the
+    options' rooms, plus one bay either side, as kit points (the front plane, floor and room-top heights). The occlusion cone
+    covers it, so a tower in front of the colonnade (or the ring) is cut even where no room sits behind it."""
+    cur = walked[-1]
+    st, opts = states(walked, mt)  # noqa: F821
+    ids = [i for i in [cur] + list(opts) if i in SLOT]
+    pts = []
+    for lv in sorted(set(SLOT[i]["level"] for i in ids)):
+        ts = [SLOT[i]["t"] for i in ids if SLOT[i]["level"] == lv]
+        sl = next(SLOT[i] for i in ids if SLOT[i]["level"] == lv)
+        pad = BAND_BAYS * 360.0 / 60.0
+        t0, t1 = min(ts) - pad, max(ts) + pad
+        r = _level_r(sl)
+        z0, h = sl["pos"][2], sl["size"][1]
+        if pose is not None:
+            # the band runs on to the frame edge: every point of the level's face in frame (the AD's left-centre tower stood two bays
+            # beyond the options' +1 bay and still hid the colonnade)
+            a0, a1 = next(L_ for L_ in AL._levels(CONCEPT) if L_["name"] == lv)["arc"]
+            t0, t1 = min(a0, a1) - 12.0, max(a0, a1) + 12.0
+            n_ = int((t1 - t0) / 3.0)
+        else:
+            n_ = 8
+        for k in range(n_ + 1):
+            t = math.radians(t0 + (t1 - t0) * k / n_)
+            x, y = AL.ell(t, r)
+            for z in (z0, z0 + h):
+                p_ = (x * KS, y * KS, z * KS)
+                if pose is not None:
+                    q = pose.proj(p_, w=2560)
+                    if q is None or not (0 <= q[0] <= 2560 and 0 <= q[1] <= 1440):
+                        continue
+                pts.append(p_)
+    return pts
+
+
 def mech(walked, mt=None):
     return dict(affected=[])
 

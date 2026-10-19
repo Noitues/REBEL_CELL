@@ -45,7 +45,12 @@ def _frame(name, pose, walked, zoom, hover=None, hover_k=0.0, mt=None, extra=Non
     dtc = _HQP_PRESET.get("downtown")
     if dtc and "section" in fr and ids:
         from hq_kit import downtown as KDT
-        fr["section"] = KDT.occlusion_params(pose.loc(), OC.cone_points(G, ids, int(mt_)), dtc)
+        pts_ = OC.cone_points(G, ids, int(mt_))
+        if zoom >= 0.5:                      # DESIGN.md 14.7: DECISION / HOVER also cover the face band at the current level
+            band = G.band_points(walked, int(mt_), pose) or G.band_points(walked, int(mt_))
+            fr["band_pts"] = [list(b) for b in band]
+            pts_ = pts_ + band
+        fr["section"] = KDT.occlusion_params(pose.loc(), pts_, dtc)
     return fr, ov
 
 

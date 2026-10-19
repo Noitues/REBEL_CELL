@@ -494,8 +494,8 @@ city a2 `dbg_aur`, Eevee main look). The v1 files are kept.
 | Final | median (0.14 +- 0.03) | under 0.10 (25-40 %) | over 0.85 (<= 2.5 %) | landmark / local bg |
 |---|---|---|---|---|
 | H_overview_v2 | 0.152 | 38.1 % | 0.8 % | 0.234 / 0.095 = 2.46 (warn, aim 2.5) |
-| H_decision_v2 | 0.129 | 40.7 % (0.7 over the band) | 0.5 % | 0.296 / 0.121 = 2.44 (warn) |
-| H_decision_inner_v2 | 0.127 | 42.0 % (over the band) | 0.8 % | 0.209 / 0.114 = 1.84 |
+| H_decision_v2 | 0.153 | 36.0 % | 0.5 % | 0.262 / 0.094 = 2.79 (warn) |
+| H_decision_inner_v2 | 0.133 | 39.9 % | 0.8 % | 0.210 / 0.125 = 1.67 |
 | H_hover_v2 | 0.010 (exempt) | 88 % | 0.2 % | 10.49 (exempt) |
 
 The decision frames are a little dark at the bottom: the wider cone (14.1) flattens more of the city that lit them. Per-frame trims in
@@ -515,7 +515,25 @@ Other checks: `hq_run.py px` (rooms at the 46 px OVERVIEW target) passes for eve
 1:1 (the `CITY_LM_DUMP` check against the built-in `aurelian()`: 16 511 faces, 0 mismatches, 2 lights equal); a face-count budget of
 about 3 900 faces per tier (14.4).
 
-Open for the AD:
-- **Q7. DECISION `under 0.10` at 40.7 % / 42 %** (the band is 25-40 %): accept, or lift the city lift on those frames?
-- **Q8. The arcade room is 2.8 x 3.5** (v1 3.3 x 3.4): it must fit one arch opening. Accept (default), or widen the arcade to 40 bays?
-- **Q9. The gate arches and stairs are HQ-only dressing** (lit arch frames, lit step bars): the city model has none.
+Settled by the AD (2026-10-18): Q8 accept the 2.8 x 3.5 arcade rooms; Q9 the gate arches and stairs are HQ-only dressing. Q7 (DECISION
+`under 0.10` at 40.7 % / 42 %) was answered with a lift of the city fill, see 14.7. The table above is the 14.7 re-render of the two decision frames.
+
+### 14.7 Follow-up round (AD, 2026-10-18): the face band, and Q7
+
+1. **The face band joins the cone.** In the v2 H_decision a tall tower at the frame's left-centre still hid a third of the colonnade
+   although no room stood behind it. DECISION and HOVER now also cover the landmark's **face band at the current level**
+   (`hq_graph.band_points`, added to the cone in `hq_run._frame`): the AD's rule is the arcade bays from the current room to the
+   options plus one bay either side (`BAND_BAYS`). That alone left the tower (it stood two bays past the +1 bay), so the band
+   runs on to the frame edge: every point of the level's face (floor and room-top heights, 3 deg apart) that projects inside the
+   frame. `occ_check.count_band` counts buildings above stub height that stand in front of and overlap the band's screen box
+   +12 px (`band_occluders` in `scratch/occ_<frame>.json`, `occluders` in the values json).
+2. **Q7, by light.** `fill_frame` / `camfill_frame` (the city lift) H_decision x 1.45 and H_decision_inner x 0.8 (were 1.0 and 0.5);
+   H_decision trim -0.38 stop (was -0.2); the uplights stay x 0.8.
+
+| Final (re-rendered, 2560 x 1440, 64 spp) | median | under 0.10 | over 0.85 | landmark / local bg | rooms occluded (twin / index) | band occluders |
+|---|---|---|---|---|---|---|
+| H_decision_v2 | 0.153 | 36.0 % | 0.5 % | 0.262 / 0.094 = 2.79 (warn) | 0 of 18 / 0 | 0 |
+| H_decision_inner_v2 | 0.133 | 39.9 % | 0.8 % | 0.210 / 0.125 = 1.67 | 0 of 19 / 0 | 0 |
+
+The wider cone flattens more of the near city, so the local background of H_decision is darker (ratio 2.44 to 2.79, a warn; the
+ratio is the price of the cleared view). H_overview and H_hover are the 14.6 renders (not re-rendered; their rooms are unchanged).

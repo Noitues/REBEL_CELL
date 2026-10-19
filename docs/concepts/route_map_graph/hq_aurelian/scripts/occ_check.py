@@ -133,3 +133,31 @@ def count(BLD, section, pose, G, ids, w=2560, mt=None, KDT=None):
     info = {str(bi): [round(v, 1) for v in BLD[bi]] + [round(KDT.occlusion_state(section, BLD[bi])[0], 1)] for bi in sorted(bset)}
     return dict(per_room={i: len(v) for i, v in per.items() if v}, buildings=len(bset), info=info,
                 rooms_hit=sum(1 for v in per.values() if v), rooms=len(ids), detail={i: v for i, v in per.items() if v})
+
+
+def count_band(BLD, section, pose, pts, w=2560, KDT=None):
+    """Buildings above stub height in front of and overlapping the face band's screen box (+PAD px)."""
+    if KDT is None:
+        from hq_kit import downtown as KDT  # noqa: N806
+    q = [pose.proj(p, w=w) for p in pts]
+    q = [v for v in q if v]
+    xs, ys = [v[0] for v in q], [v[1] for v in q]
+    box = (min(xs) - PAD, min(ys) - PAD, max(xs) + PAD, max(ys) + PAD)
+    f, cam = pose.dir(), pose.loc()
+    dep = min(sum((p[k] - cam[k]) * f[k] for k in range(3)) for p in pts)
+    n = 0
+    for b in BLD:
+        zc, _a = KDT.occlusion_state(section, b)
+        if zc <= section["occ_stub"] + STUB_TOL:
+            continue
+        x, y, top, hx, hy = b
+        zt = min(zc, top)
+        dc = (x - cam[0]) * f[0] + (y - cam[1]) * f[1] + (zt * 0.5 - cam[2]) * f[2]
+        if dc - math.hypot(hx, hy) > dep:
+            continue
+        hp = [pose.proj((x + sx * hx, y + sy * hy, z), w=w) for sx in (-1, 1) for sy in (-1, 1) for z in (0.0, zt)]
+        if any(v is None for v in hp):
+            continue
+        if _clip_area(_hull(hp), *box) > 4.0:
+            n += 1
+    return n

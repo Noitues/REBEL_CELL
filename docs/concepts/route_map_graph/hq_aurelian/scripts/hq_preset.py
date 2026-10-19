@@ -57,8 +57,8 @@ PRESET["hq"] = {
               "up_n": 24, "up_w": 450.0, "cavea_w": 2.5e3, "vault_key_w": 4.0e3, "rim_w": 9.0e3,
               # round 2 test fixes: the city lift (block uplights, light-linked to city + ground), per-frame multipliers
               "transparent_bounces": 128, "fill_n": 40, "fill_w": 25000.0, "camfill_w": 28000.0, "fill_cone": 95.0,
-              "up_frame": {"H_decision": 0.8}, "fill_frame": {"H_overview": 0.6, "H_decision_inner": 0.5},
-              "camfill_frame": {"H_overview": 0.6, "H_decision_inner": 0.5},
+              "up_frame": {"H_decision": 0.8}, "fill_frame": {"H_overview": 0.6, "H_decision": 1.45, "H_decision_inner": 0.8},
+              "camfill_frame": {"H_overview": 0.6, "H_decision": 1.45, "H_decision_inner": 0.8},
               "ov_loggia": 0.70, "ov_laurel": 0.60},
     "beams": {"power": 2.4e7, "cone": 1.2},
     "bank_glow_cols": ["work", "sodium"],
@@ -86,7 +86,7 @@ PRESET["hq"] = {
             "pitch_band": {"ARC": 30.0, "R1": 38.0, "R2": 44.0, "R3": 50.0, "POD": 55.0, "VAULT": 55.0},
             "pitch_o": 36.0, "lens_o": 36.0, "fill_o": (0.97, 0.94), "ov_yaw": 20.0, "ov_centre": (0.0, 6.0, 30.0)},
     "post": {"black": 0.04, "exposure": 1.6, "exposure_zoom_k": 0.0},
-    "frame_stops": {"H_overview": -0.08, "H_decision": -0.2, "H_decision_inner": -0.30},       # per-frame exposure trim in stops (the cavea frame is the brightest)
+    "frame_stops": {"H_overview": -0.08, "H_decision": -0.38, "H_decision_inner": -0.30},       # per-frame exposure trim in stops (the cavea frame is the brightest)
 }
 
 PRESET["hq_fog"] = {

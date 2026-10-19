@@ -930,7 +930,10 @@ def _occ_report(K, fr):
     ids = OC.in_frame_rooms(G, CR, pose)
     res = OC.count(BLD, sec, pose, G, ids)
     res.update(frame=fr.get("name"), n_buildings=len(BLD))
+    if fr.get("band_pts"):
+        res["band_occluders"] = OC.count_band(BLD, sec, pose, [tuple(b) for b in fr["band_pts"]])
     d = os.path.join(os.path.dirname(_HERE), "scratch")
     os.makedirs(d, exist_ok=True)
     json.dump(res, open(os.path.join(d, "occ_%s.json" % fr.get("name")), "w"), indent=1)
-    K.log("OCC %s rooms %d hit %d occluders %d" % (fr.get("name"), res["rooms"], res["rooms_hit"], res["buildings"]))
+    K.log("OCC %s rooms %d hit %d occluders %d band %s" % (fr.get("name"), res["rooms"], res["rooms_hit"], res["buildings"],
+                                                          res.get("band_occluders")))
