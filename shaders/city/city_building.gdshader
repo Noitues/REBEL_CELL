@@ -96,6 +96,14 @@ uniform float edge_emit = 0.0;
 uniform float edge_bu = 0.16;
 // NA-22d: the trims fade in over smoothstep(edge_blend.x, edge_blend.y, look_blend), so frames below x stay clean.
 uniform vec2 edge_blend = vec2(0.3, 0.8);
+// NA-23c floor-band trims (the street netrun): a thin emissive band on the walls every `band_every` BU (first at `band_first` plus a
+// per-building phase of up to one `band_every`),
+// `band_bu` thick, on `band_share` of the buildings (by seed), in the edge hues; `band_emit` 0 = none (the default).
+uniform float band_emit = 0.0;
+uniform float band_every = 11.4;
+uniform float band_first = 7.6;
+uniform float band_bu = 0.2;
+uniform float band_share = 0.5;
 // Depth haze (spec 4.1 cityglow, perspective views only): colour, density per BU of view distance, height e-fold (BU above the
 // local ground) and the share of the haze the highest parts keep.
 uniform vec3 haze_col = vec3(0.0);
@@ -247,6 +255,10 @@ void fragment() {
 			vec3 t = v_edge / L;
 			float along = dot(v_world - v_corner, t);
 			float nx = floor((L - 0.6) / window_pitch.x);
+			if (look_blend > 0.0 && L > 1.55) {
+				// NA-23c: a narrow face still carries one column of the carpet (the netrun look; the page at 0 is unchanged).
+				nx = max(nx, 1.0);
+			}
 			float nz = floor((v_h - window_first) / window_pitch.y);
 			float ui = floor((along - 0.7) / window_pitch.x);
 			float lu = along - 0.7 - ui * window_pitch.x;
@@ -312,6 +324,16 @@ void fragment() {
 				em += ec * edge_emit * eb;
 				base = mix(base, ec * 0.3, eb);
 			}
+		}
+	}
+	if (look_blend > 0.0 && band_emit > 0.0 && !roof && hash1(vec3(seed * 53.7, 1.0, 6.0)) < band_share) {
+		float b0 = band_first + hash1(vec3(seed * 19.3, 2.0, 5.0)) * band_every;
+		float bz = mod(zl - b0, band_every);
+		if (zl >= b0 && bz < band_bu && zl < v_h - 0.5) {
+			vec3 bc = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
+			float bb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
+			em += bc * band_emit * bb;
+			base = mix(base, bc * 0.3, bb);
 		}
 	}
 	if (plinth_w > 0.0) {

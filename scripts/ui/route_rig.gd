@@ -48,6 +48,13 @@ var _occ_from: Dictionary = {}
 var _occ_tgt: Dictionary = {}
 var _occ_t := 1.0
 var _bid_cut_full: Dictionary = {}  # bid -> top
+# The building shader's room windows: slot of each room, its window volume, and the arrays as written (a closed room's slot is empty).
+var _room_slot: Dictionary = {}  # node id -> slot
+var _room_vol: Dictionary = {}  # node id -> {"box": Vector4, "z": Vector2}
+var _win_boxes := PackedVector4Array()
+var _win_zs := PackedVector2Array()
+var _haze_cur := -1.0
+var _depth_quad: MeshInstance3D = null
 
 
 ## Builds the rig for `p_data` on `model` (the game's full city). Call once, after adding to the tree.
@@ -74,6 +81,7 @@ func setup(p_data: StreetRouteData, model: CityModel) -> void:
 	_index_buildings(model)
 	_mount_rooms()
 	_mount_route_buildings()
+	_apply_street_look()
 	_apply_section()
 	_build_atmosphere()
 	_build_dressing()
@@ -205,7 +213,11 @@ func _mount_rooms() -> void:
 		if not vol.is_empty() and n_win < ROOM_MAX:
 			boxes[n_win] = vol["box"]
 			zs[n_win] = vol["z"]
+			_room_slot[id] = n_win
+			_room_vol[id] = vol
 			n_win += 1
+	_win_boxes = boxes
+	_win_zs = zs
 	var bm := view.building_material()
 	bm.set_shader_parameter(&"room_n", n_win)
 	bm.set_shader_parameter(&"room_box", boxes)
@@ -217,6 +229,50 @@ func _mount_route_buildings() -> void:
 	for bid: String in _route_bids:
 		for g: Array in _prism_geom.get(bid, []):
 			view.set_prism_w(int(g[0]), NetrunInstancePack.pack(float(g[2]), float(g[2]), 1.0, 0.0, 0.0, false, true))
+
+
+## The street's own look on the city (`StreetRouteConfigData.look`): the building uniforms of the route street (wash, floor bands)
+## and the quiet lane lines (`route_lane`: desaturated, dimmed). Only this view sets them; the page and the other netrun views keep
+## the shared NA-22 numbers.
+func _apply_street_look() -> void:
+	var lk: Dictionary = StreetRouteConfigData.shipped().look
+	var bm := view.building_material()
+	var over: Dictionary = lk["building"]
+	for k: String in over:
+		bm.set_shader_parameter(StringName(k), float(over[k]))
+	var lane := view.lane_material()
+	if lane != null:
+		var ln: Dictionary = lk["lane"]
+		lane.shader = load("res://shaders/city/route_lane.gdshader")
+		lane.set_shader_parameter(&"street_gain", float(ln["gain"]))
+		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
+
+
+## Opens or closes room `id`: closed, the building keeps its facade over the room (no window cut into the wall, the room mesh
+## hidden), so an unrevealed room never reads as a black box (the jack-in dive, the REVEAL and the reverse). No dissolve (NA-25b).
+func set_room_open(id: String, open: bool) -> void:
+	var m: MeshInstance3D = _rooms.get(id)
+	if m != null:
+		m.visible = open
+	if not _room_slot.has(id):
+		return
+	var slot: int = _room_slot[id]
+	var vol: Dictionary = _room_vol[id]
+	var want_box: Vector4 = vol["box"] if open else Vector4()
+	var want_z: Vector2 = vol["z"] if open else Vector2()
+	if _win_boxes[slot] == want_box and _win_zs[slot] == want_z:
+		return
+	_win_boxes[slot] = want_box
+	_win_zs[slot] = want_z
+	var bm := view.building_material()
+	bm.set_shader_parameter(&"room_box", _win_boxes)
+	bm.set_shader_parameter(&"room_z", _win_zs)
+
+
+## True when room `id` is open (drawn, its window cut).
+func room_is_open(id: String) -> bool:
+	var m: MeshInstance3D = _rooms.get(id)
+	return m != null and m.visible
 
 
 ## The street section: the corridor along the street, cut to the zoom's height (zoom_dive 1 on every street view).
@@ -302,6 +358,15 @@ func _apply_fog_density() -> void:
 	var zd := RevealTiers.zoom_detail(pose.dist, d_ov, d_dec)
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
+	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).
+	var hz: Array = StreetRouteConfigData.shipped().look["haze"]
+	var haze := lerpf(float(hz[0]), float(hz[1]), zd)
+	if not is_equal_approx(haze, _haze_cur):
+		_haze_cur = haze
+		view.building_material().set_shader_parameter(&"haze_k", haze)
+	# The value band holds on both framings: the exposure eases from the OVERVIEW solve to the DECISION solve (`look.exposure`).
+	var ex: Array = StreetRouteConfigData.shipped().look["exposure"]
+	view.environment().tonemap_exposure = lerpf(float(ex[0]), float(ex[1]), zd)
 
 
 ## Puts the camera on `p` at once (no move).
@@ -347,6 +412,29 @@ func set_id_pass(on: bool) -> void:
 		if is_instance_valid(n):
 			n.visible = not on
 	_tex.material = null if on else _grade
+
+
+## The depth pass of PIPELINE_SPEC 12.0 on or off: a full-screen quad writing the linear camera depth in BU x 100 as 16 bits (R =
+## high byte, G = low byte). Use it between `set_id_pass(true)` and `set_id_pass(false)` (the id pass hides the fog and the dressing),
+## a few frames before reading `view.get_texture()`; `tools/city/png16.gd` packs the result into `depth.png`.
+func set_depth_pass(on: bool) -> void:
+	if on == (_depth_quad != null):
+		return
+	if on:
+		var q := QuadMesh.new()
+		q.size = Vector2(2, 2)
+		_depth_quad = MeshInstance3D.new()
+		_depth_quad.name = "DepthPass"
+		_depth_quad.mesh = q
+		_depth_quad.extra_cull_margin = 16384.0
+		_depth_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var m := ShaderMaterial.new()
+		m.shader = load("res://shaders/city/route_depth.gdshader")
+		_depth_quad.material_override = m
+		view.camera.add_child(_depth_quad)
+	else:
+		_depth_quad.queue_free()
+		_depth_quad = null
 
 
 # --- Occlusion --------------------------------------------------------------------------------

@@ -65,6 +65,13 @@ func _ready() -> void:
 	if String(_args.get("noroom", "0")) == "1":
 		for id: String in view.rig._rooms:
 			(view.rig._rooms[id] as MeshInstance3D).visible = false
+	for k: String in ["haze_k", "wash_gain", "win_emit", "win_share", "facade_light", "plinth_off", "sec_side", "edge_gain"]:
+		if _args.has(k):
+			view.rig.view.building_material().set_shader_parameter(StringName(k), float(_args[k]))
+	if _args.has("wpx"):
+		var wp := float(_args["wpx"])
+		view.rig.view.building_material().set_shader_parameter(&"window_pitch", Vector2(wp, 1.9))
+		view.rig.view.building_material().set_shader_parameter(&"window_size", Vector2(wp * 0.5, 0.7))
 	if _args.has("exposure"):
 		view.rig.view.environment().tonemap_exposure = float(_args["exposure"])
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
@@ -164,6 +171,14 @@ func _shoot() -> void:
 	await get_tree().process_frame
 	var idimg := rig.view.get_texture().get_image()
 	idimg.save_png("%s/id.png" % dir)
+	# depth.png (12.0): 16-bit linear camera depth, BU x 100, nearest-sampled (the view's own pixels), no UI.
+	rig.set_depth_pass(true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var dimg := rig.view.get_texture().get_image()
+	Png16.save_gray16("%s/depth.png" % dir, dimg.get_width(), dimg.get_height(), Png16.samples_from_rg(dimg))
+	rig.set_depth_pass(false)
 	rig.set_id_pass(false)
 	var cam := rig.view.camera
 	print("NA23 cam proj=", cam.projection, " size=", cam.size, " off=", cam.frustum_offset, " near=", cam.near, " pos=", cam.global_position, " keep=", cam.keep_aspect, " pose loc=", rig.pose.loc(), " lens=", rig.pose.lens, " expect size=", NetrunFrustum.frustum_size(rig.pose, 0.5))
