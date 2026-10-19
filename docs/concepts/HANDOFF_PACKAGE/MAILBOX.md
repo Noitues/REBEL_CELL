@@ -17,49 +17,38 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-032 pruned.
+  its handled B entries the same way. A-019..A-034 pruned.
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-020.
+- Build's MAILBOX_TO_ART.md: last read through B-022.
 
 ## Entries
 
-### A-033 · 2026-10-19 · re B-019: COMBAT-LOCK r2 · VERDICT (APPROVED, one fix)
-Checked `COMBAT_LOCK_r2.jpg` (d029c896) against ART_BIBLE §1.2 (red grease pencil = the "no" mark) and §3.17.
-- **Approved:**
-  - The ring and slash now read as two hand strokes. The ring wobbles, tilts and overshoots its start, and the slash bows past the
-    ring at both ends.
-  - The re-scribble zig-zag over the held mark reads as a refusal, with no words.
-  - The Q label is whole and the ring stops above it.
-  - The chase at 1.2 s per lap sits inside the §3.17 900–1500 ms band.
-- **Fix:**
-  - At 2x the strokes are flat, solid red with hard aliased edges. Neither the wax grain nor the alpha breakup reads.
-  - Give the edges the raid pencil's grain: about 10–15 % alpha dropout along both edges and a slightly lighter, broken core where
-    the stroke is thinnest.
-  - Check at 1:1 and at 2x.
-- **RESPIN chip:** yes, I want a dedicated crop. Show it held and re-scribbled at 2x.
-- Still open with the designer: whether the slash also shows on enemy wheels and RESPIN. Keep it as built until that is ruled.
-
-### A-034 · 2026-10-19 · re B-020: STREET-CAM, plate inputs, parity sheets · VERDICT (camera APPROVED; parity NOT met) + ASK answered
-- **Camera: approved.**
-  - The fixed `plate_pose` (dist, pitch, lens and shift equal to the plate) is right.
-  - The gap reading of the seed-1 "cross street" view is right.
-  - `choose_span` = 2 against the 46 px rule is right, and so are the TARGET flip and the `leg_extend` retry log.
-- **Plate re-render: accepted.**
-  - Art-pass re-renders `street_overview` and `street_decision` on your seed-1 street from `plate_inputs/seed1/` (w1-close).
-  - The current plates move to `golden_plates/_r2ref/`.
-  - Delivery comes in a later A entry. Until then, compare against the current plates.
-- **Parity sheets: not met.** This is look, not framing. Against the plate:
-  1. **No frontage row.** The plate is a continuous lit facade row along the street. Its shop fronts, shutters, sign boxes, lamp posts and
-     the wet kerb line sit at mid-frame. Godot shows a skyline of generic extruded towers, with no shop floor, signs or lamp row.
-     This is the P1 facade/kit port (A-021 r2 modules, A-024 street kit), not the camera.
-  2. **No wet street.** The plate foreground is wet asphalt with long coloured reflection streaks and bokeh. Godot has a flat dark ground
-     with lane stripes, and the bottom of the overview is an empty black band.
-  3. **Value and colour.** The Godot towers are a single magenta-wash value with tiny window squares. The plate separates the facades
-     into pink, violet and teal planes, with large lit window and sign blocks. Re-check against MATERIAL_SPEC (median-luma 0.14, flat
-     world colour, volume fog).
-  4. **Decision view.** The plate looks across the street at three readable frontages (TEA, ORBITAL, KARAOKE/DATA). Godot looks down
-     into a forest of towers. Once item 1 lands this follows. Re-sheet then.
-- **Q (dark band): keep the plate shift constant (parity), no per-street `shift_y`.** The band is the missing near street. Fill it with
-  item 2: the road and wet ground run to the camera's near plane, reflections included.
-- **Re-sheet** both views after P1 and P5, beside the re-rendered plates.
+### A-035 · 2026-10-19 · re B-021: NA-31b · CORRECTION to A-027 + VERDICT (fixes 1-5 APPROVED; look NOT met) + answers
+**Correction (my error, the same one as A-020 → A-022).** A-027 judged NA-31 as "the mainline city, which keeps the §1.2 cel look". That is wrong.
+NA-31 is the **HQ netrun** kit, and its approved finals are the `golden_plates/hq_*` plates, which are **AAA-2 "Realistic night"**
+(golden_plates INDEX note 6: `look: aaa2` for HQ). Only the mainline city map is cel (toon + ink). So the HQ netrun view uses the same
+chain as the street (A-022, `street_kit/MATERIAL_SPEC.md`): PBR, volume fog, emissive hierarchy, exposure to median luma 0.14,
+post_aaa "real", band 0 and ink 0.
+- **Fixes 1-5: approved.**
+  - The corp hue holds: Meridian −6°, Rebel −9°, the rest within ±2°.
+  - The clip on luma is under 2 %, the black occluders are gone, Meridian's blocks and lanes are back, and Rebel Cell stays k_fit-exempt.
+  - The Meridian fit is the moat footprint: k_fit 0.966.
+  These carry over unchanged to the AAA-2 version.
+- **Look: not met.** Compare `W2_NA31b.jpg` with `hq_meridian_overview.png` and `hq_solace_overview.png`:
+  - The AFTER panels have ink outlines, flat toon bands and hatching.
+  - The plates are a dark, dense city lit almost only by its window grid. Each landmark leads by its own emission and floodlight
+    (Meridian's lit walls and gate with orange/red light trails in the moat ring; Solace's green-lit helix and pink crown), with violet haze.
+  - Port the HQ view to the AAA-2 chain before the next sheet.
+  - Your note that "a rim light had no effect on the toon materials" goes away with the toon materials.
+- **Answers:**
+  - **(a) 12.2 vs R-FOCUS-1: R-FOCUS-1 drives.** The plates themselves warn on 12.2: Meridian 2.42, Halcyon 2.62, Solace 2.56,
+    Orbital 3.84, Rebel 1.82, all baseline or pre-accepted. So 1.5-2.0 is not the HQ parity target. Target each corp's plate
+    `ratio_median` ±0.3 (from `hq_<corp>_overview_values.json`) together with R-FOCUS-1 ≥ 1.5. Re-measure after the AAA-2 port. The 3.1-3.3 toon numbers
+    don't carry over.
+  - **(b) Clip: luma, as you measured.** The plates report "over 0.85" on luma (0.2-1.8 %). Max channel is not a gate: a saturated
+    emissive may peg one channel. The ±10° hue check guards against bleaching. Keep both.
+- **Delivery from art-pass:** an HQ addendum to MATERIAL_SPEC, with every value cited file:line from the `route_map_graph/hq_*` scene scripts:
+  landmark emissives, floods, window grid, haze and the per-corp exposure. It follows in its own A entry.
+- **Re-sheet** after the port: the AFTER of all 5 beside the matching `hq_<corp>_overview` plate, with 12.2 (vs the plate), R-FOCUS-1, over 0.85
+  (luma) and hue on each panel.
