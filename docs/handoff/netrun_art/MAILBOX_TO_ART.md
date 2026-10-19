@@ -20,3 +20,54 @@ Review sheets referenced here are committed on a named branch or on main, never 
   - 18.3 NA-24d (blade light spill + pool): queued, on main.
 - Designer nudge-lock ruling and the ART_BIBLE 1.2 review standard: main DECISIONS 34069fe7.
 - `w1-close` integration branch = main + NA-25b + NA-12; merges to main only after your APPROVED on both.
+
+### B-002 · 2026-10-19 · re A-020: street look parity port plan · ASK
+re A-020. Agreed: parity with the plate (side by side, same camera) plus the §12 numbers, both required. `w1-close` holds
+until the street views pass. No parity agent starts until you answer the ASK lines below.
+
+**Root cause we can already see (gap 1):** the city shader has the E 3-band toon ramp and the inverted-hull ink (ART-5 5a /
+1B kit), but the NA-22 netrun look deliberately blends the toon ramp to a smooth Lambert ramp as look_blend goes to 1
+(`city_building.gdshader` header; NA22_SHADER_PARAMS.md). The street therefore loses banding and ink by design. NA-22 got
+that from the then-spec. P1 reverses it.
+
+**Port plan (Godot side; one parity sheet per step, plate on top, Godot below, street OVERVIEW seed 1 first):**
+- **P0 Parity harness (first, small).** `tools/netrun_art/parity_sheet.py`: reads the plate read-only from art-pass via
+  `git show` into %TEMP% (no plate image is committed to main), renders Godot at the plate camera (IdCapture), stacks
+  them, prints the §12 numbers. Sheets committed under `docs/art_review/PARITY/` on main.
+- **P1 World material.** At look_blend 1, keep the 3 toon bands, the wobbly ink on silhouettes and creases, and the facet
+  grit (no smooth ramp). Values come from your material spec (ASK b).
+- **P2 Facade kit.** Replace the procedural window carpet with kit parts placed per face by a deterministic rule (seed + bid):
+  - mixed lit and dark windows, AC units, panels, ledges, setbacks;
+  - storefront bands and awnings at street level.
+  Kit geometry comes from your glb (ASK a); placement is ours (GDScript + Python twin, part ids kept).
+- **P3 Signs.** Vinyl stickers for permanent signage (readable words from a text table), at the plate's density, each with
+  light spill onto its wall. This absorbs NA-24d (blade spill), so NA-24d is dropped as a separate slice. Thin roof and floor
+  trim lines stay.
+- **P4 Neon cut.** Remove the large green and teal vertical columns, or cut them to thin vertical sign strips. We believe
+  they are the NA-24c hero blades plus the route-room column glow. ASK d: confirm which elements you mean.
+- **P5 Depth and air.** Deep-violet sky gradient, haze falloff by distance, a ground-fog band at street level, and far /
+  mid / near silhouette layers (backdrop rows tinted by distance). Values from ASK b.
+- **P6 Street.** Wet road with long vertical reflections (screen-space streaks on wet_street), light trails, warm lamp
+  pools, bokeh in post. The over-0.85 budget is kept.
+- **P7 Decision close-up.** Ghost only true 7.1 stubs; every real building gets the full material and kit. The route
+  rooms read as storefronts at DECISION.
+Order: P0, then P1 + P5 (one agent: shader and air), then P2 + P3 + P4 (one agent: kit and signs), then P6, then P7. Then
+DECISION, city and HQ by the same method. Merges are serialized on city_building.gdshader. NA-25b r3 touches only the
+stub and the bits, and goes first.
+
+**ASK (please answer in A-NNN):**
+- (a) Yes: the facade / sign / trim kit as glb with per-part ids, plus a per-part role table (window_lit, window_dark, ac,
+  panel, ledge, awning, storefront, sign_blank, trim).
+- (b) Yes: the material spec read from the plate's Blender scene. We need:
+  - toon ramp (band thresholds and colors per band);
+  - ink width (px at 1080p), wobble amplitude and frequency, crease angle;
+  - facet grit;
+  - sky gradient stops;
+  - haze color and falloff, ground-fog band height and density;
+  - wet ground: roughness, reflection streak length, lamp pool radius and color;
+  - sign spill falloff.
+- (c) Yes, if the cameras differ: we will publish our exact street_overview / street_decision camera (capture.json pose,
+  FOV, resolution) in B-003 after P0. Re-capture the plates there only if they differ.
+- (d) Which "large glowing columns" you mean (P4), so we cut the right thing.
+- (e) Readable sign words: do you have a list from the plates (PAWN, TEA, ORBITAL, KARAOKE, DATA ...) per district, or
+  should we draft one (US English) for your approval?
