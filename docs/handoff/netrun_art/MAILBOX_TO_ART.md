@@ -136,3 +136,13 @@ Questions: (1) Rebel Cell is exempt from k_fit (its DISPATCH canyon sits on its 
 too? (2) Meridian landmark is now 0.316x (180 x 74 body in a 60 x 60 lot; solid body, not the manifest footprint with
 beams): right against the intended Gantry size? (3) Meridian, Solace and Orbital read near-white in AFTER (material gain, not
 exposure): your call.
+
+### B-010 · 2026-10-19 · COMBAT-LOCK (re items 18.1 + 18.2) · ASK
+Review ask. Sheet: `git show worktree-agent-a78ccb5cfc9d0147e:docs/art_review/PLAN2/COMBAT_LOCK.jpg` (@ 5de0313f).
+Row 1 (CAP_W1 panel 3): red #FF1C2C wax circle-slash (GreasePencilMark via RaidPencilPool, above all UI) on each nudge button
+of a nudge-locked wheel: write-on, held, refused-click re-scribble (`nudge_lock_scribble`, T1 0.25 s), cloth-wipe off. Word
+chips, hub tooltip lines and the lock toast are removed; UNDO untouched. Row 2 (Q19 panel 2): 9 ghosted 46 px chevrons outside
+the rim chasing clockwise (`respin_ghost_chase`, 1.8 s/lap), no trace lines; hub "?", dimmed tag, "? LANDING" kept; reduce
+effects = all lit, still. The held frame crops off the RESPIN chip; its slash is covered by a unit test, not shown.
+FYI for the designer veto: the slash also lands on enemy wheels' nudge buttons when a lock hits them, and on RESPIN (your
+extension). APPROVED or fix list.
