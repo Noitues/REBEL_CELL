@@ -1389,6 +1389,10 @@
 			"seconds": 25.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_id_capture.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_na23_route_view.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
