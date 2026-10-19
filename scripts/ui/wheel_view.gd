@@ -454,10 +454,6 @@ func _get_tooltip(at_position: Vector2) -> String:
 				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
 			if combatant.wheel.frozen:
 				lines.append(tr("FROZEN"))
-			if combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
-				lines.append(tr("NUDGE LOCKED"))
-			if combatant.wheel.is_locked(WheelState.LOCK_RESPIN):
-				lines.append(tr("RESPIN LOCKED"))
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
 			# B2 (D2): the upcoming phases a reveal shows were hub lines; they are the tooltip's.
@@ -515,7 +511,13 @@ func set_ghost(outer: Variant, inner: Variant = null) -> void:
 func set_unknown_ghost(on: bool) -> void:
 	if unknown_ghost != on:
 		unknown_ghost = on
+		_unknown_chase = 0.0 if Motion.live(UNKNOWN_CHASE_MOTION) else 1.0
+		if on:
+			set_process(true)
 		queue_redraw()
+
+
+var _unknown_chase: float = 0.0
 
 
 # --- Motion (Animation pass ANIM-2) ----------------------------------------------------------
@@ -1671,7 +1673,10 @@ func _process(delta: float) -> void:
 	blur = move_toward(blur, want, rate)
 	if blur != was:
 		queue_redraw()
-	if not _tweens.has(&"turn") and blur <= 0.0:
+	if unknown_ghost and Motion.live(UNKNOWN_CHASE_MOTION):
+		_unknown_chase = fposmod(_unknown_chase + delta / maxf(0.001, Motion.seconds(UNKNOWN_CHASE_MOTION)), 1.0)
+		queue_redraw()
+	if not _tweens.has(&"turn") and blur <= 0.0 and not unknown_ghost:
 		_last_shown_rot = NAN
 		set_process(false)
 
@@ -3863,23 +3868,38 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 		SliceIcon.draw_icon(self, from, 8, slice.slice_type, Palette.slice_color(slice.slice_type))
 
 
-## Q19 (art-pass r2): a random respin: a dashed ring just outside the slice rim, all the way round
-## (it points at no slice), with chevrons on it for the way the wheel turns, and a "?" disc on the hub.
-## Nothing says where the needle lands.
+## Q19 (3.17 LOCKED, correcting the r2 approval): a random respin: UNKNOWN_CHEVRONS ghosted chevrons
+## of UNKNOWN_CHEVRON_PX outside the rim, lit one at a time in the way the wheel turns (clockwise),
+## chasing all the way round on a loop (`respin_ghost_chase`; reduce effects: all lit, still). No
+## trace lines and no ring; the "?" disc stays on the hub. Nothing says where the needle lands.
+## How lit chevron `k` is at `chase` (0..1, looping): the head full, UNKNOWN_CHASE_TAIL chevrons of
+## tail behind it fading, the rest dim. Pure (tests read it).
+static func unknown_chevron_light(k: int, chase: float) -> float:
+	var behind := fposmod(floorf(chase * UNKNOWN_CHEVRONS) - float(k), float(UNKNOWN_CHEVRONS))
+	return clampf(1.0 - behind / UNKNOWN_CHASE_TAIL, 0.0, 1.0)
+
+
+## Draws the Q19 ghost (see unknown_chevron_light).
 func _draw_unknown_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	if not unknown_ghost or wheel.pointer_ticks.is_empty():
 		return
-	var r := radius + GHOST_OUT
-	var col := Color(_col(Palette.CELL_ACID), UNKNOWN_GHOST_ALPHA)
-	_draw_dashed_arc(center, r, 0.0, TAU, col, UNKNOWN_GHOST_LINE)
-	for i in UNKNOWN_GHOST_CHEVRONS:
-		var a := TAU * (float(i) + 0.5) / UNKNOWN_GHOST_CHEVRONS
+	var ts := _ts()
+	var size := UNKNOWN_CHEVRON_PX * ts
+	var at := radius + GHOST_OUT + size * UNKNOWN_CHEVRON_OUT
+	var base := Color(_col(Palette.CELL_ACID), UNKNOWN_GHOST_ALPHA)
+	for k in UNKNOWN_CHEVRONS:
+		var a := -PI * 0.5 + TAU * float(k) / UNKNOWN_CHEVRONS
+		var lit := unknown_chevron_light(k, _unknown_chase) if Motion.live(UNKNOWN_CHASE_MOTION) else 1.0
+		var col := Color(base, base.a * lerpf(UNKNOWN_CHEVRON_DIM, 1.0, lit))
 		var tangent := Vector2(-sin(a), cos(a))
 		var normal := Vector2(cos(a), sin(a))
-		var tip := center + normal * r + tangent * UNKNOWN_CHEVRON_PX
-		var back := center + normal * r - tangent * UNKNOWN_CHEVRON_PX
-		draw_polyline(PackedVector2Array([back + normal * UNKNOWN_CHEVRON_PX, tip, back - normal * UNKNOWN_CHEVRON_PX]), col, UNKNOWN_GHOST_LINE * 1.5)
-	var ts := _ts()
+		var mid := center + normal * at
+		var tip := mid + tangent * size * CardPreviewOverlay.CHEVRON_HALF_LEN
+		var back := mid - tangent * size * CardPreviewOverlay.CHEVRON_HALF_LEN
+		var arm := size * CardPreviewOverlay.CHEVRON_ARM
+		var thick := size * CardPreviewOverlay.CHEVRON_THICK
+		draw_colored_polygon(PackedVector2Array([back + normal * arm, tip, back - normal * arm, back - normal * arm + tangent * thick,
+			tip + tangent * thick, back + normal * arm + tangent * thick]), col)
 	draw_circle(center, UNKNOWN_HUB_DISC * ts, Color(_col(Palette.NIGHT_SKY), UNKNOWN_DISC_BACK_ALPHA))
 	HighContrast.draw_text(self, Palette.marker(), center + Vector2(-UNKNOWN_HUB_DISC * 0.5, UNKNOWN_HUB_DISC * 0.4) * ts, "?",
 		HORIZONTAL_ALIGNMENT_CENTER, UNKNOWN_HUB_DISC * ts, _fs(UNKNOWN_HUB_FONT), _col(Palette.CELL_ACID))
@@ -3888,10 +3908,16 @@ func _draw_unknown_ghost(center: Vector2, radius: float, wheel: WheelState) -> v
 ## The "?" respin ghost: ring alpha and width (px), chevron count and half size (px), the hub disc's
 ## radius (px at text 1.0: 24 across, the ODDS chip's size) and its backing alpha, its font, and how
 ## far the old needle's tier tag (PERFECT / GOOD / WEAK) dims (share of full).
-const UNKNOWN_GHOST_ALPHA := 0.6
-const UNKNOWN_GHOST_LINE := 2.0
-const UNKNOWN_GHOST_CHEVRONS := 3
-const UNKNOWN_CHEVRON_PX := 7.0
+const UNKNOWN_GHOST_ALPHA := 0.95
+## Q19 (3.17 LOCKED): nine chevrons of 46 px, centred this share of a chevron outside the rim ring,
+## dim (alpha share) until the chase lights them, with this many chevrons of lit tail.
+const UNKNOWN_CHEVRONS := 9
+const UNKNOWN_CHEVRON_PX := 46.0
+const UNKNOWN_CHEVRON_OUT := 0.5
+const UNKNOWN_CHEVRON_DIM := 0.3
+const UNKNOWN_CHASE_TAIL := 3.0
+## The chase's loop (`respin_ghost_chase`) and where it is now (0..1).
+const UNKNOWN_CHASE_MOTION := &"respin_ghost_chase"
 const UNKNOWN_HUB_DISC := 12.0
 const UNKNOWN_DISC_BACK_ALPHA := 0.85
 const UNKNOWN_HUB_FONT := 20
@@ -4361,11 +4387,7 @@ func standing_chips() -> Array[Dictionary]:
 		out.append({"text": tr("+%d") % c.resistance_gain, "color": Palette.PENCIL_THREAT, "pencil": true})
 	if c.wheel.frozen:
 		out.append({"text": tr("FROZEN"), "color": Palette.NET_CYAN})
-	# N7: the lock overlay, a chip per lock on this wheel.
-	if c.wheel.is_locked(WheelState.LOCK_NUDGE):
-		out.append({"text": tr("NUDGE LOCKED"), "color": Palette.PENCIL_THREAT})
-	if c.wheel.is_locked(WheelState.LOCK_RESPIN):
-		out.append({"text": tr("RESPIN LOCKED"), "color": Palette.PENCIL_THREAT})
+	# N7 (18.1): a lock is no chip and no word: NudgeLockPencil's wax circle-slash sits on the button.
 	# The passive itself is the hub's emblem (its core's glyph) and its tooltip line; only its
 	# being switched off is a chip.
 	if c.wheel.hub_id != &"" and c.is_hub_breached():

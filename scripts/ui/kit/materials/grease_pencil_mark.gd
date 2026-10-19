@@ -72,6 +72,9 @@ const SEED_FOLD := 997
 ## The resample step (px).
 const STEP_PX := 3.0
 ## The wipe drags the wax this way (a palm down-left) while it trims from the start.
+## `wobble`'s knots along a stroke, and the share of the width a stroke's two ends keep.
+const WOBBLE_KNOTS := 14
+const WOBBLE_ENDS := 0.6
 const WIPE_DRAG := Vector2(-0.6, 0.8)
 
 ## M14 perf slice: the setters below do nothing when the value is unchanged (a pool owner lays
@@ -95,11 +98,52 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 			return
 		seed = v
 		_sync()
+		_set_curves()
 ## Writes itself on when it first shows (and each time it shows again after being hidden).
 @export var auto_write: bool = true:
 	set(v):
 		auto_write = v
 		_arm()
+
+## A hand's pressure: the stroke's width varies along it by this share (0 = even; the raid pencil
+## and the rest keep 0), from `seed`, the pen landing light and lifting off thin.
+@export var wobble: float = 0.0:
+	set(v):
+		if v == wobble:
+			return
+		wobble = v
+		_set_curves()
+## False drops the 1 px sheen line (a flat wax stroke, no lit side).
+@export var highlight: bool = true:
+	set(v):
+		if v == highlight:
+			return
+		highlight = v
+		_sync()
+
+## Hand-mark wax grain (COMBAT-LOCK r3): the share of both edges whose wax drops out, and how
+## much the core breaks into lighter streaks. 0 = the raid pencil, unchanged.
+@export_range(0.0, 1.0) var edge_grain: float = 0.0:
+	set(v):
+		if v == edge_grain:
+			return
+		edge_grain = v
+		_sync()
+@export_range(0.0, 1.0) var core_break: float = 0.0:
+	set(v):
+		if v == core_break:
+			return
+		core_break = v
+		_sync()
+
+## The wax's (and its shadow's) top alpha: WAX_ALPHA, or lower where the mark runs over a label
+## that must stay readable (COMBAT-LOCK r4: the RESPIN chip's slash).
+var wax_alpha: float = WAX_ALPHA:
+	set(v):
+		if v == wax_alpha:
+			return
+		wax_alpha = v
+		_sync()
 
 ## Written share 0..1 (by length, in writing order) and the wiped share from the start.
 var progress: float = 1.0:
@@ -325,10 +369,31 @@ func _make_line(mat: ShaderMaterial) -> Line2D:
 	l.texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	l.texture = _tile
 	l.antialiased = true
+	l.width_curve = _width_curve()
 	l.material = mat.duplicate() as ShaderMaterial
 	l.default_color = Palette.NO_TINT
 	add_child(l)
 	return l
+
+
+## The pressure curve (null when even): WOBBLE_KNOTS knots, seeded, thin at both ends.
+func _width_curve() -> Curve:
+	if wobble <= 0.0:
+		return null
+	var c := Curve.new()
+	c.min_value = 0.0
+	c.max_value = 2.0
+	for i in WOBBLE_KNOTS:
+		var u := float(i) / float(WOBBLE_KNOTS - 1)
+		var y := 1.0 + wobble * KitNoise.h11(seed, i, 7)
+		y *= lerpf(WOBBLE_ENDS, 1.0, minf(1.0, minf(u, 1.0 - u) * 6.0))
+		c.add_point(Vector2(u, y))
+	return c
+
+
+func _set_curves() -> void:
+	for ln: Line2D in _lines + _shadows:
+		ln.width_curve = _width_curve()
 
 
 func _notification(what: int) -> void:
@@ -370,8 +435,11 @@ func _sync() -> void:
 	_set_param(false, &"seed", shader_seed(seed))
 	_set_param(false, &"dashed", dashed)
 	_set_param(false, &"smear", smear)
-	_set_param(false, &"alpha_max", WAX_ALPHA)
-	_set_param(false, &"sheen", SHEEN)
+	_set_param(false, &"alpha_max", wax_alpha)
+	_set_param(true, &"alpha_max", wax_alpha)
+	_set_param(false, &"sheen", SHEEN if highlight else 0.0)
+	_set_param(false, &"edge_grain", edge_grain)
+	_set_param(false, &"core_break", core_break)
 	for sh in [false, true]:
 		for m in _mats(sh):
 			set_dropouts(m, DROPOUT_GAP)
