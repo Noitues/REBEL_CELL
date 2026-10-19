@@ -20,11 +20,12 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes:
 | slice | what | base / branch | owns (files / area) |
 |---|---|---|---|
 | CITY-A2 step 1 | city_A2.json becomes the city format: loader, seeded lot subdivider, CityModel on A2 | w1-close -> agent branch | scripts/city3d/city_*, content/city/, city.json, saves |
-| P2 step 2 | street frontage row render from the r2 port + street_kit glbs | main + w1-close | scripts/netrun_art/street_r2_builder*, assets street_kit |
 | P6 + P7 | wet street to the near plane, reflections, trails, lit-fog haze, ghosts only on 7.1 stubs | w1-close | shaders/city/*, city_post, route_rig.gd, StreetLightRig |
-| WH-11 | Solace THE BLOOM rules (W2) | w1-close | scripts/core/netrun_session.gd, Solace config |
 | COMBAT-LOCK r4 | RESPIN chip mark fit | r3 branch | nudge_lock_pencil.gd, combat_lock_capture |
-| queued | NA-31c (HQ netrun on AAA-2: waits for your HQ MATERIAL_SPEC addendum); NA-12c terrain + NA-12d harbour (re-based on A2); NA-25b r5 (waits for your B-027 verdict) | | |
+| WH-10 | Solace GENOME CORE HQ graph + boss / mini-boss (rules and content; no visuals) | w2 | HQ graph content, boss content |
+| WH-12 | Solace raid infection figure (rules) | w2 | raid core code |
+| done, on w1-close | STREET-CAM, P1+P5, P2 step 2 (frontage render, 1f1a429b), NA-25b r4, NA-12 r3 (old grid; superseded by CITY-A2) | | |
+| queued | NA-31c (waits for your HQ addendum); NA-12c/d on A2; NA-25b r5 (waits for B-027); new seed-1 plate inputs after CITY-A2 | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
