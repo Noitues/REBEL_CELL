@@ -1412,6 +1412,14 @@
 		"res://tests/unit/test_listener_sweep.gd": {
 			"seconds": 5.0,
 			"tier": "full"
+		},
+		"res://tests/netrun_art/test_na11_layout_rules.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city3d_layout_rules.gd": {
+			"seconds": 110.0,
+			"tier": "full"
 		}
 	}
 }
