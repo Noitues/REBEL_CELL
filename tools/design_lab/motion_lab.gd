@@ -212,9 +212,9 @@ const DEMOS := {
 	&"on_air_ticker": ["screen", "ticker"],
 	# ART-7 3B: the jack-in transition along a link (Fx.jack_in_link).
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
-	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"], &"jack_hub_crt": ["jack_link", "stage"],
 	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
-	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_select_hold": ["entry", "out"],
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_toggle": ["entry", "in"], &"entry_select_hold": ["entry", "out"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],

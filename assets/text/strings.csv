@@ -3511,6 +3511,7 @@ reclaim,reclaim
 rescue an operative,rescue an operative
 reset all,reset all
 ring_lock_handler,ring_lock_handler
+routing ... building street_%s,routing ... building street_%s
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d
 run: %s,run: %s

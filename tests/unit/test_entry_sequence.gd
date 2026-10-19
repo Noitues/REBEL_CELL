@@ -28,6 +28,9 @@ class StubView extends StreetRouteView:
 	func entry_zoom(u: float) -> void:
 		_note("zoom", u)
 
+	func entry_toggle(u: float) -> void:
+		_note("toggle", u)
+
 	func entry_end() -> void:
 		calls.append("end")
 
@@ -235,25 +238,27 @@ func test_the_skip_key_is_space_behind_the_input_map() -> void:
 
 # --- The zoom reuses the dive (NA-25b, D6) ------------------------------------------------------------------
 
-func test_the_zoom_is_the_dive_then_the_zoom_with_the_rooms_open() -> void:
+func test_the_toggle_is_one_camera_ease_with_the_rooms_open() -> void:
 	var made := _cover(false, EntryBeats.ZOOM_BEATS)
 	var cover: EntryCover = made[0]
 	var view: StubView = made[1]
-	assert_true(view.rooms_open_arg, "no REVEAL: the rooms stay open through the dive")
+	assert_true(view.rooms_open_arg, "no REVEAL: the rooms stay open")
 	_run(cover, 60.0)
-	assert_eq(view.calls, ["begin", "dive", "zoom", "end"] as Array[String], "the dive, then the zoom to DECISION")
+	assert_eq(view.calls, ["begin", "toggle", "end"] as Array[String], "one ease: no dive, REVEAL, MARK or ZOOM beats")
 	var tbl := EntryBeats.table(EntryBeats.ZOOM_BEATS, false, false)
-	assert_almost_eq(float(tbl[0]["end"]) - float(tbl[0]["start"]), 3.0, FRAME, "the same dive")
+	assert_almost_eq(float(tbl[0]["end"]) - float(tbl[0]["start"]), 1.1, FRAME, "about 1.1 s")
 
 
-func test_the_zoom_out_reads_it_backwards_with_no_select_hold() -> void:
+func test_the_toggle_out_reads_it_backwards_with_no_select_hold_and_a_press_skips_it() -> void:
 	var made := _cover(true, EntryBeats.ZOOM_BEATS)
 	var cover: EntryCover = made[0]
 	var view: StubView = made[1]
-	_run(cover, 60.0)
-	assert_eq(view.calls, ["begin", "zoom", "dive"] as Array[String], "the zoom, then the dive back to the HQ page")
-	assert_almost_eq(cover.elapsed(), cover.total_seconds(), FRAME * 3.0, "nothing follows the dive: no hold, no REVEAL")
-	assert_false(view.calls.has("reveal"))
+	_run(cover, 0.3)
+	assert_true(cover.playing)
+	cover.skip()
+	assert_false(cover.playing, "skippable")
+	assert_eq(view.calls, ["begin", "toggle"] as Array[String])
+	assert_almost_eq(cover.total_seconds(), 1.1, FRAME, "no select hold, nothing after the ease")
 
 
 func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
@@ -264,23 +269,34 @@ func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
 
 # --- The HQ side backwards (NA-25b) --------------------------------------------------------------------------
 
-func test_the_hq_side_switches_under_the_night_sky_then_brings_the_crt_back() -> void:
+func test_the_hq_side_switches_under_the_covering_hub_and_a_press_ends_it_on_the_hq() -> void:
 	var seq := JackSequence.new()
 	add_child_autofree(seq)
-	var seen := {"night": false, "terminal_hidden": false, "calls": 0}
+	var seen := {"covering": false, "calls": 0}
 	var switch := func() -> void:
 		seen["calls"] += 1
-		seen["night"] = seq.night
-		seen["terminal_hidden"] = not seq.terminal.visible
+		seen["covering"] = seq.covering()
 	seq.play_out({"street": true, "from": "A", "to": "B"}, self, switch)
-	assert_true(seen["night"], "the switch loads the HQ under the night sky")
-	assert_true(seen["terminal_hidden"], "the CRT is off until the HQ is there")
-	assert_eq(seen["calls"], 1)
-	await get_tree().process_frame
-	assert_false(seq.night, "the sky lifts once the HQ is in")
-	assert_true(seq.terminal.visible, "the CRT comes back on (the collapse reversed)")
+	assert_eq(seen["calls"], 0, "the lens closes over the street first")
 	seq.skip()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	for i in 4:
+		await get_tree().process_frame
+	assert_eq(seen["calls"], 1, "the switch ran once")
+	assert_true(seen["covering"], "the HQ loads under the covering hub (no night-sky panel)")
 	assert_false(seq.visible, "a press ends it on the HQ with no terminal left")
 	assert_null(seq.terminal)
+
+
+func test_the_street_entry_keeps_the_locked_chain_slap_and_lens_before_the_dive() -> void:
+	# ART_BIBLE 4.6: terminal, CONNECTED, rain, CRT collapse, wheel slap, wheel lens; the street entry no longer cuts to a night panel.
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	var order: Array[String] = []
+	var switch := func() -> void:
+		order.append("switch:wheel=%s,covering=%s" % [str(seq.wheel_scale > 1.0), str(seq.covering())])
+	seq.play({"street": true, "from": "A", "to": "B"}, self, switch)
+	seq.skip()
+	for i in 4:
+		await get_tree().process_frame
+	assert_eq(order.size(), 1, "one switch")
+	assert_false(seq.night, "no night-sky panel in the chain")

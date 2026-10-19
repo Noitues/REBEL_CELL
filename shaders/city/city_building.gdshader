@@ -120,9 +120,15 @@ const int ROOM_MAX = 32;
 uniform int room_n = 0;
 uniform vec4 room_box[32];
 uniform vec2 room_z[32];
-// NA-25b: how far each room's window has dissolved open, 0 = the closed facade, 1 = the window cut; between, a Bayer 4 x 4 share of
-// the window's pixels is cut (the REVEAL's facade dissolve; the room mesh behind it comes up with the same share).
+// NA-25b: how far each room's window has dissolved open, 0 = the closed facade, 1 = the window cut. Between, the facade breaks into
+// binary bits (ART_BIBLE 1.2: 0 / 1 glyphs in the window colour, white-hot for the first `bit_hot` share of a cell's life, flipping 0 <-> 1
+// at `bit_flip` Hz, then shrinking and pulled toward the room); cells of `bit_cell` BU go in a staggered order, the glyph's pixels stay
+// and the rest of the cell is cut, so the room shows through. The room mesh behind comes up with the same share.
 uniform float room_open[32];
+uniform float bit_cell = 0.9;
+uniform float bit_hot = 0.3;
+uniform float bit_flip = 14.0;
+uniform float bit_gain = 2.4;
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -190,6 +196,10 @@ void fragment() {
 	bool ghosted = v_occ.y > 0.0;
 	bool dissolved = v_occ.w > 0.0;
 	bool route_bld = look_blend > 0.0 && ((bits >> 22) & 1) == 1;
+	float bit_k = 0.0;
+	vec3 bit_ctr = vec3(0.0);
+	bool bit_on = false;
+	vec3 bit_em = vec3(0.0);
 	if (route_bld && room_n > 0) {
 		vec3 pw = vec3(v_world.x, -v_world.z, v_world.y);
 		for (int i = 0; i < ROOM_MAX; i++) {
@@ -199,9 +209,46 @@ void fragment() {
 			vec4 bx = room_box[i];
 			vec2 zr = room_z[i];
 			if (pw.x > bx.x && pw.x < bx.z && pw.y > bx.y && pw.y < bx.w && pw.z > zr.x && pw.z < zr.y) {
-				if (room_open[i] >= 0.999 || float(bayer4(ivec2(FRAGCOORD.xy))) + 0.5 < room_open[i] * 16.0) {
+				if (room_open[i] >= 0.999) {
 					discard;
 				}
+				if (room_open[i] > 0.0) {
+					bit_k = room_open[i];
+					bit_ctr = vec3((bx.x + bx.z) * 0.5, (bx.y + bx.w) * 0.5, (zr.x + zr.y) * 0.5);
+				}
+			}
+		}
+		if (bit_k > 0.0) {
+			float tl = max(length(v_edge), 0.0001);
+			vec3 tt = v_edge / tl;
+			vec2 cell = vec2(dot(v_world - v_corner, tt), v_world.y) / bit_cell;
+			vec2 ci = floor(cell);
+			float h = hash1(vec3(ci, v_inst.z * 13.0));
+			float tc = clamp((bit_k - h * 0.6) / 0.4, 0.0, 1.0);
+			if (tc >= 1.0) {
+				discard;
+			}
+			if (tc > 0.0) {
+				vec3 cw = vec3(bit_ctr.x, bit_ctr.z, -bit_ctr.y);
+				vec2 cc = (ci + 0.5) * bit_cell;
+				vec2 to_room = vec2(dot(cw - v_corner, tt), cw.y) - cc;
+				vec2 off = normalize(to_room + vec2(0.0001)) * 0.35 * tc * tc;
+				vec2 g = (fract(cell) - 0.5 - off) / (1.0 - 0.8 * tc) + 0.5;
+				if (g.x < 0.0 || g.x > 1.0 || g.y < 0.0 || g.y > 1.0) {
+					discard;
+				}
+				bool one = (int(floor(rc_time(TIME) * bit_flip * (0.6 + h) + h * 7.0)) & 1) == 1;
+				bool ink;
+				if (one) {
+					ink = (g.x > 0.42 && g.x < 0.58) || (g.x > 0.24 && g.x < 0.42 && g.y > 0.74 && g.y < 0.9);
+				} else {
+					ink = g.x > 0.2 && g.x < 0.8 && g.y > 0.1 && g.y < 0.9 && !(g.x > 0.38 && g.x < 0.62 && g.y > 0.3 && g.y < 0.7);
+				}
+				if (!ink) {
+					discard;
+				}
+				bit_on = true;
+				bit_em = (tc < bit_hot ? vec3(1.0) : window_colors[int(h * 6.0) % 6]) * bit_gain;
 			}
 		}
 	}
@@ -233,7 +280,9 @@ void fragment() {
 		discard;
 	}
 	float g_open = ghosted ? 1.0 - v_occ.y / 16.0 : 1.0;
-	bool poche_face = !FRONT_FACING && was_cut;
+	// NA-25b r3 (art-pass A-019): a ghosted building is see-through (7.1), so its inner walls keep the facade look; the flat poche is for a
+	// cut that is not ghosted (the section, a cut at full opacity). A ghost easing in or out was a solid black windowless prism.
+	bool poche_face = !FRONT_FACING && was_cut && !ghosted;
 	float seed = v_inst.z;
 	float tone = mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13));
 	bool roof = v_c0.y > 0.5;
@@ -388,6 +437,10 @@ void fragment() {
 		// The open top of a cut building: its back faces show the near-black poche.
 		ALBEDO = poche;
 		EMISSION = vec3(0.0);
+	}
+	if (bit_on) {
+		ALBEDO = vec3(0.0);
+		EMISSION = bit_em;
 	}
 	if (id_mode) {
 		ALBEDO = vec3(0.0);
