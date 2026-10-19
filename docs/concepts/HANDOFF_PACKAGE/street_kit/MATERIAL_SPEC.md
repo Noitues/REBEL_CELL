@@ -241,3 +241,407 @@ Post runs once at 1920 x 1080 after `resize((1920,1080), LANCZOS)`, which is a n
 3. **The wet street: roughness 0.03 to 0.30 by noise, Specular IOR Level 0.7, tile albedo about 0.07.** The long soft reflections of signs, lamps (60 W warm / cool points), 93 street-level glow points and the geometry streak ribbons (emission 2.5 / 2.0) are what fill the foreground. Reflections must be real or well faked (planar / SSR plus lights), at a roughness that gives bokeh-like soft blobs rather than mirrors.
 4. **The emissive hierarchy.** Signs: hero 4.0, secondary 2.6, shop 1.5, backdrop 2.4, megastructure 3.0 (texture color, with a baked glow halo); windows 0.9, neon trims 1.0, lit panels 4.0, lamp heads 8.0, room glows 60 W per BU width. Values are multiplied by face colors that are mostly below 1.0; the peak pixels come from emission, and the bloom (threshold 1.2 after exposure, three radii at 4.5 / 18 / 101 px, weights 0.12 / 0.10 / 0.08) is what makes them glow.
 5. **The post tone chain and the exposure solve.** Linear exposure (0.626 overview, 0.372 decision, solved for median luma 0.14), max-RGB hue-preserving ACES shoulder, teal-navy shadow tint (0.25, 0.45, 0.6) at 0.30, warm-pink highlight tint (1.0, 0.86, 0.86), vignette 0.38, contrast 1.12 around 0.18 in sRGB space, a soft knee at 0.66 -> 0.93 ceiling, chromatic aberration 2.4 px at the edges, grain 0.03, and three layers of lit rain streaks. In Godot, tune exposure to the same median luma (0.14, with about 30 % of pixels under 0.10 and under 1 % over 0.85) before judging anything else.
+
+
+---
+
+# Addendum A: HQ netrun views (golden plates `hq_<corp>_overview` / `hq_<corp>_decision`)
+
+Added 2026-10-19. Since the designer ruling of the same day (DIRECTION_REVIEW, "art-pass owns the Godot look"), this addendum is **art-pass's own working reference for the Godot HQ port (NA-31c)**. It is not a handoff for build to port from. It is the Cycles source of truth. The Godot target is the reachable Eevee twin of each plate (see LOOK_PORT), and Godot results are judged in the parity harness, not against these numbers alone.
+
+Verified: re-posting the saved passes with each corp's `hq_post` reproduces all 12 golden PNGs exactly (mean abs diff 0, script `D:/rc_scratch/art_session/hq_verify.py`).
+
+
+
+- `RM` = `route_map_graph/`
+- `V3` = `RM/hq_meridian_v3/scripts/` (the shared HQ engine: hq_scene.py, hq_post.py, hq_jobs.py, hq_compose.py, fix_post.py, hq_preset.py (Meridian), look_preset.py, meridian_landmark.py)
+- `KIT` = `V3/hq_kit/` (city_ring.py, downtown.py, section.py, states.py, lod.py; byte-identical in hq_meridian, hq_halcyon, hq_orbital, hq_rebel_cell, hq_solace: checked with `diff -rq`)
+- `AU` = `RM/hq_aurelian/scripts/` · `HA` = `RM/hq_halcyon/scripts/` · `OR` = `RM/hq_orbital/scripts/` · `RC` = `RM/hq_rebel_cell/scripts/` · `SO` = `RM/hq_solace/scripts/`
+- `S3` = `V3/hq_scene.py` · `P3` = `V3/hq_post.py` · `J3` = `V3/hq_jobs.py` · `HP3` = `V3/hq_preset.py` · `LP` = `V3/look_preset.py` (a copy of `RM/storyboard/scripts/look_preset.py`)
+- `SB` = `RM/storyboard/scripts/` (post_aaa.py, the street post; compared in section 7)
+- `GP` = `golden_plates/` (INDEX.md, `hq_<corp>_<view>_capture.json`, `_values.json`, `scripts/build_all.py`)
+- `D:` = `D:/rc_scratch/` (render passes, job dumps; NOT in the repo)
+
+Notation `file:line`. "Blender default" = not set in code. BU = Blender unit; in the HQ scenes 1 storey = 8 BU (the city landmark scale is `k_units` 0.2375, i.e. 1 city BU = 4.21 HQ BU), so HQ densities per BU are NOT comparable with the street's. All colours are linear floats.
+
+
+---
+
+## A.0. READ FIRST: which look the HQ plates are, and which code made them
+
+`GP/INDEX.md` note 6 (line 57) says `look = aaa2` for the HQ rows. Confirmed: Cycles path trace, Principled BSDF surfaces, a real volume fog, emission, then a Python post. **No toon ramp, no band, no ink stage exists anywhere in the HQ pipeline** (grep of S3, P3, HA hq_scene/hq_post, V3 hq_compose for toon / ink / band / solidify / freestyle / outline: none; the only "band" in P3 is the LOD name `puddles_sharp_at`). See section 8.
+
+Three things differ from the street and matter for a port:
+
+1. **The post is not `post_aaa.finish`.** Each HQ corp has its own `hq_post.py` (a re-implementation "copied below" from post_aaa "real": P3:1-31). It is identical in V3, OR, RC, SO (diff 0 lines) and used by AU in place; `HA/hq_post.py` differs only by an `iris` argument (not used by stills). Section 7 lists every delta.
+2. **Exposure is not solved per plate.** It is a preset number x a zoom factor x a hand trim in stops (section 7.1). `ratio_median` (12.2) is a measured result, not a solve target. NOT FOUND: any exposure solver in the HQ scripts (searched `solve`, `secant`, `target` in V3/*.py, HA/hq_*.py, RC/hq_*.py; only `V3/target_values.py` and `V3/hq_values.py`, which measure).
+3. **One scene builder, two generations of it** (section 1). Aurelian and Meridian use the newest copy; Orbital, Rebel Cell, Solace use an older copy; Halcyon its own fork.
+
+Blender 5.2.2 LTS, Cycles, GPU (HIP). Source: log tail `RM/hq_*/scratch/bl_stills_final_0.log` ("Blender 5.2.2 LTS (hash d13f752e3b9c ...)"); `S3:1129-1131` (`compute_device_type = "HIP"`, `use_hiprt = False`).
+
+Plate size 2560 x 1440 (`GP/*_capture.json` `resolution`; `J3:31`). The plates are the **no-UI plates** (`H_*_plate.png`, `C3:79-83`); the route overlay is composited after (`C3:84-86`) and is not part of the look.
+
+---
+
+## A.1. Shared vs per-corp
+
+One builder (`hq_scene.py`) + one post (`hq_post.py`) + one shared kit (`KIT`); the per-corp part is `hq_preset.py` (numbers, palette) and a landmark module (geometry + the landmark's own lights). Which scene file each plate came from (`GP/scripts/build_all.py:78-103, 139-142` gives the final PNG and folder):
+
+| Corp (plate source) | Scene file actually executed | Relation to V3 `hq_scene.py` | Source |
+|---|---|---|---|
+| Meridian (`hq_meridian_v3/plates/H_*_v4_plate.png`) | `V3/hq_scene.py` | the newest copy (v4: mid-scale surface noise in `mat_plain`, per-frame key lights, per-frame light gains, occlusion python twin) | `S3:282-285, 620, 1098-1117` |
+| Aurelian (`hq_aurelian/plates/H_*_v2_plate.png`) | `AU/hq_scene.py` = 12-line wrapper that `exec`s `V3/hq_scene.py` in place, after loading the Aurelian preset / graph / landmark first | identical engine, Aurelian modules | `AU/hq_scene.py:1-12`; `AU/aur_env.py:1-12` |
+| Orbital (`H_*_v3`) | `OR/hq_scene.py` | V3 minus 34 diff lines: no `n2` mid-scale noise in `mat_plain`, no `EXTRA_LIGHTS` / `light_gain`, no `band_points` guard; `city_sign` x `LH.city_sign_gain` (preset has none, so 1.0) | `diff V3/hq_scene.py OR/hq_scene.py` |
+| Rebel Cell (`H_*_v4`) | `RC/hq_scene.py` | V3 minus 45 diff lines: same omissions as Orbital; adds `HZ.room_inner` (0.17,0.14,0.15) and `HZ.room_strip` (1.0,0.72,0.45) for room interiors | `RC/hq_scene.py:561, 576` (via diff) ; `RC/hq_preset.py:115-116` |
+| Solace (`H_*_v4`) | `SO/hq_scene.py` | V3 minus 52 diff lines: same omissions; adds `HZ.sky_ramp` (a graded sky, EASE interpolation) | `SO/hq_scene.py:988-997` (via diff); `SO/hq_preset.py:97-98` |
+| Halcyon (`H_overview_v3`, `H_decision_E_v3`) | `HA/hq_scene.py` (1617 lines) | its own older fork: same render settings and fog/world code, own compound builder (tiers, podium, **the eye**), v3 material tweaks (see section 3), no `rough` material, an `eye` collection | `HA/hq_scene.py:1513-1560, 1337-1356` |
+
+What differs per corp (everything else is the same code):
+
+| Item | Where it lives | Notes |
+|---|---|---|
+| Palette (compound colours, district pair, accent) | `PRESET["hq"]["palette"]` (HA: `PRESET["halcyon"]["palette"]`) | section 3.1. The district pair `district_a/b` (neon around the lot, city beams, cityglow) defaults to the street's magenta (1.0,0.16,0.6) / cyan (0.16,0.8,1.0) (`LP:12-13`) unless the corp palette overrides it: only Aurelian does (`AU/hq_preset.py:43-44`). |
+| Fog (`hq_fog`) | per-corp dict | section 4 |
+| Light gains + landmark rig | `PRESET["hq"]["light"]` + the landmark module's `K.add_light` calls | section 5 |
+| City ring / downtown | `PRESET["hq"]["city"]`, `["downtown"]` | seeds, ring radii, `win_p`, `win_k` (window emission scale) |
+| Post | `PRESET["post"]` (exposure, knee_top) + `PRESET["hq"]["post"]` (black, exposure_zoom_k; Aurelian also exposure) + `["hq"]["frame_stops"]` | section 7 |
+| Camera | `PRESET["hq"]["cam"]`; per-plate poses in `RM/hq_*/scratch/ov_stills.json` | section 2 |
+| Landmark geometry / rooms | `meridian_landmark.py`, `aurelian_landmark.py`, `orbital hq_build.py`, `solace hq_build.py` (+ `hq_imap.py`), `rc_*.py` + `hq_build_A.py`, `halcyon` compound in `hq_scene.py` | out of scope here |
+
+---
+
+## A.2. Engine and render settings
+
+Final-quality jobs: `D:/rc_scratch/hq_fix/<corp>/bl_stills/` etc. The job JSONs that survive in `RM/hq_*/scratch/job_stills_final_0.json` are the LAST chunk written (they hold only some frames) but their header keys are the quality dict; they match the code defaults below (job beats code default; here they agree), so the values are as run.
+
+| Field | Value | Source |
+|---|---|---|
+| Engine | Cycles, GPU (HIP), `use_hiprt` False | S3:1143-1145, 1121-1140 |
+| Samples | **64** (Meridian, Orbital, Rebel Cell, Solace, Aurelian); **128** (Halcyon) | job header `RM/hq_{meridian_v3,orbital,rebel_cell,solace,aurelian}/scratch/job_stills_final_0.json` (res 2560x1440, samples 64, threshold 0.015, step_rate 1.2); `RM/hq_halcyon/scratch/job_stills_final_0.json` (samples 128, threshold 0.01, step_rate 1.0); code `J3:31`, `HA/hq_jobs.py:30` |
+| Adaptive sampling | on; threshold 0.015 (0.01 Halcyon); min samples min(16, spp) | S3:1147-1149 |
+| Denoiser | OpenImageDenoise, input passes RGB_ALBEDO_NORMAL, prefilter ACCURATE, quality HIGH, GPU denoise | S3:1150-1156 |
+| Bounces | max 6, diffuse 2, glossy 3, transmission 3, volume **0**, transparent 16 (Aurelian sets 128 per frame: a view ray crosses columns of cut blocks, 16 left a black mast) | S3:1159-1164; AU `aurelian_landmark.py:878-886`; `AU/hq_preset.py:59` |
+| Indirect clamp | 6.0 (direct clamp Blender default 0) | S3:1165 |
+| Caustics | reflective and refractive off | S3:1166-1167 |
+| Light tree | on | S3:1158 |
+| Volume | step_rate 1.2 (Halcyon 1.0), max_steps 256 (`JOB.max_steps` absent, code default) | S3:1168-1169; job header |
+| Seed | 7 (street: 0) | S3:1157 |
+| Resolution | 2560 x 1440, 100 % | job header; S3:1171-1172 |
+| Output | OPEN_EXR_MULTILAYER 32-bit; passes Combined (denoised, includes fog), Emission, Object Index, Volume Direct, Depth (Depth is enabled but NOT written to npy). Saved as float16 npy: `combined`, `emit`, `voldir`, `index` | S3:1175-1190, 1252-1253; `exr_to_npy` S3:1193-1214 |
+| View transform | "Standard", Look None, exposure 0, gamma 1 (the exr is scene-linear; the tone map is the Python post) | S3:1173-1174 |
+| Camera model | Perspective, sensor_fit HORIZONTAL, sensor width 36, clip 0.5 .. 6000, lens / shift per plate (below) | S3:995-1010 |
+| Light visibility | EVERY light has `visible_camera = False` | S3:646-649 |
+| Object index classes | 0 sky, 1 compound, 2 city, 4 ground, 5 rooms, 6 movers, 7 light streaks (class 3 = Solace apron ring / Rebel MAINFRAME sign quad) | S3:466-485; GP/INDEX.md note 1 |
+| Eevee | only a layout preview (`quality eevee`); not the plates | S3:1222-1239; J3:37 |
+
+Cameras (`GP/hq_*_capture.json` `camera`; yaw 0 = north, clockwise; loc/tgt in BU, x east y north z up; sensor 36 mm horizontal):
+
+| Plate | lens (mm) | shift_x | shift_y | loc | tgt | dist |
+|---|---|---|---|---|---|---|
+| aurelian overview | 36 | -0.0768 | -0.0046 | (-128.57, -347.24, 303.11) | (0, 6, 30) | 464.65 |
+| aurelian decision | 42 | -0.0729 | 0.0182 | (53.07, -379.31, 177.90) | (-28.70, -97.77, 8.63) | 338.53 |
+| halcyon overview | 40 | -0.0877 | -0.0144 | (370.64, -370.64, 304.15) | (0, 0, 48.5) | 583.19 |
+| halcyon decision (E) | 30 | -0.0729 | 0.0023 | (218.53, 11.5, 100.27) | (33.5, 11.5, 50) | 191.74 |
+| meridian overview | 36 | -0.0672 | 0.0241 | (-362.49, -517.68, 527.75) | (0, 0, 34) | 801.99 |
+| meridian decision | 30 | -0.0729 | 0.0182 | (215.96, -88.96, 87.57) | (115, 12, 23) | 156.70 |
+| orbital overview | 36 | -0.0729 | -0.0299 | (-154.20, 267.08, 339.35) | (0, 0, 20) | 443.95 |
+| orbital decision | 30 | -0.0729 | 0.0182 | (0, 216.88, 99.96) | (0, 108, 56.6) | 117.19 |
+| rebel_cell overview | 30 | -0.1269 | -0.0019 | (-80, -176.97, 145.02) | (-80, 104, 14) | 310.01 |
+| rebel_cell decision | 30 | -0.0728 | 0.0225 | (-124, -115.40, 105.14) | (-124, 100.3, 10) | 235.75 |
+| solace overview | 34 | -0.0622 | 0.0360 | (-645.92, 235.10, 525.23) | (0, 0, 175) | 771.46 |
+| solace decision | 30 | -0.1119 | -0.0306 | (-100.85, 122.43, 187.86) | (0.23, 5.77, 141.65) | 161.12 |
+
+Camera numbers are from the capture files, which `build_all.py:36-46` derives from `RM/hq_<corp>/scratch/ov_stills.json[frame]` (the job pose, checked to 0.3 deg). Aurelian's `GP` decision plate (`H_decision`) is not the `H_decision_inner` frame in the surviving job JSON.
+
+Pixel scale (use for any line you add): focal in px = lens / 36 x 2560. E.g. 30 mm = 2133 px, 36 mm = 2560 px.
+
+---
+
+## A.3. Materials
+
+All Cycles materials are built in `S3` (HA: `HA/hq_scene.py`). Surface colour = the face's `col` float colour attribute (vertex colour) x a procedural factor -> Principled Base Color. Principled inputs not listed are Blender defaults (Metallic 0, IOR 1.5, Transmission 0, Coat 0, Subsurface 0). Emission materials are pure Emission nodes.
+
+### 3.1 Surface materials
+
+| Material (accumulator users) | Base colour | Metallic | Roughness | Specular IOR Level | Coat | Source |
+|---|---|---|---|---|---|---|
+| `civic` (compound panels: wet composite / concrete / stone) | `col` x k x (0.78 + 0.22 x seam). `k` = (0.88 + 0.16 x grime) x (1 - 0.22 x streak); grime = smoothstep(Noise scale 0.06, detail 4, rough 0.6; 0.30 .. 0.75); streak = smoothstep(Noise scale 0.9, detail 3 on pos x (1,1,0.08); 0.50 .. 0.78); seam = smoothstep(Brick fac, 0 .. 1) of a Brick texture on (x+y, z): scale 1, mortar 0.035, brick width 2.3, row height 1.62 | 0 | 0.16 + 0.22 x streak | 0.5 (default) | weight 0.35, roughness 0.08. Bump: strength 0.25, distance 0.05 from the seam | S3:240-271 |
+| `civic` in Halcyon | same, times `ptone` = (0.80 + 0.20 x brick-colour R, brick colours 0.25 / 1.0) x (0.55 + 0.9 x Noise scale 2.6 detail 8 rough 0.7): a per-panel tone (v3, R-REP-1) | 0 | same | 0.5 | same | HA/hq_scene.py:235-278 |
+| `cut` (room frames / cut concrete) | via `mat_plain` below | 0 | 0.5 | 0.4 | 0 | S3:445 |
+| `interior` (room shells) | `mat_plain` | 0 | 0.35 | 0.5 | 0.2 | S3:446 |
+| `metal` | `mat_plain` | **0.7** | 0.32 | 0.6 | 0 | S3:447 |
+| `rough` (V3 engine only) | `mat_plain` | 0 | 0.7 | 0.35 | 0 | S3:448 |
+| `city_metal` | `mat_plain` | 0.7 | 0.32 | 0.6 | 0 | S3:455 |
+| `mat_plain` colour (all above) | `col` x (0.8 + 0.4 x Noise A) with A = Noise scale 0.4 detail 5 rough 0.6 on Position. **V3 engine copies (Meridian, Aurelian) also x (1 + 2.6 x (Noise B - 0.5))**, B = Noise scale 3.5 detail 5 rough 0.7 (v4, R-REP-1). OR / RC / SO / HA do not have the B factor | - | - | - | - | S3:274-292 (B at 282-285); diff in section 1 |
+| `glass` (compound glass, Principled, opaque) | `col` | 0 | **0.04** | **0.9** | weight 0.5 (roughness default 0.03) | S3:295-305 |
+| `ground` (wet tiles k=1, asphalt k=0) | `col` x tile x (1 - 0.55 x puddle). tile = (1-k) + k x (0.55 + 0.45 x Brick fac), Brick on (x,y): scale 1, mortar 0.04, width 3.0, row 3.0; puddle = smoothstep(Noise scale 0.075 detail 5 rough 0.55 on Position; 0.47 .. 0.55) | 0 | 0.02 + 0.24 x (1 - puddle): **0.02 in puddles, 0.26 dry** | **0.6** | 0 | S3:352-382 |
+| `ground` bump | Bump strength 0.08, distance 0.04, height = Noise(scale 2.2, detail 3) x (1 - puddle) + Brick fac x k x 0.6 | | | | | S3:374-381 |
+| `city` (the 360-degree towers, downtown) | see 3.3 | 0 | max(0.6 - 0.5 x dark, 0.05) | 0.5 | 0 | S3:385-438 |
+| Occlusion poche (cut top of a flattened foreground building) | Diffuse (0.010, 0.010, 0.013) | | | | | KIT/section.py:41, 134-136 |
+
+Wet ground vs the street's: street roughness 0.03 .. 0.30 at noise scale 0.27, spec 0.7 (MATERIAL_SPEC 7); HQ 0.02 .. 0.26 at scale 0.075 (about 3.6x larger puddles per BU, in a 4x smaller BU), spec 0.6, plus tile bump.
+
+Generic ground in the shared engine (the corp landmark may add its own plaza / roads): a 3200 x 3200 slab at z -0.05..-0.02, colour (0.06, 0.06, 0.07), k=0 (asphalt) (S3:698); downtown sidewalk slabs (0.22, 0.22, 0.24), k=1, top at z 0.16 (KIT/downtown.py:107). The square plaza / ring road / perimeter wall (plaza (0.40,0.42,0.45); road (0.055,0.055,0.06); walk (0.30,0.30,0.32); centre dashes (0.55,0.52,0.42) 0.012 high) are built ONLY when the preset has neither `downtown` nor `no_plaza` (S3:688-709): in practice none of the six corps' finals use it (all have `downtown` or `no_plaza`; Halcyon builds its own plaza).
+
+Per-corp palettes (linear; `pal()` looks in the corp palette first, then the street palette):
+
+| Corp | Palette entries that carry the look | Source |
+|---|---|---|
+| Meridian | steel (0.075,0.037,0.024); steel_alt rust (0.078,0.032,0.021), navy (0.035,0.046,0.056), ochre (0.07,0.049,0.025), oxblood (0.052,0.021,0.021), green-grey (0.025,0.035,0.032); gantry rust-orange (0.30,0.075,0.022); edge sodium-white (1.0,0.80,0.52); stone (0.085,0.075,0.07); keep (0.20,0.19,0.18); corp_orange (1.0,0.26,0.012); corp_red (1.0,0.027,0.02); yard_white (1.0,0.86,0.66); yard_cool (0.62,0.84,1.0); sodium (1.0,0.42,0.09); work (1.0,0.30,0.04); panel (0.30,0.31,0.33); concrete (0.20,0.20,0.21); glass (0.015,0.03,0.035). district_a/b = street magenta/cyan | HP3:60-81 |
+| Aurelian | travertine (0.86,0.78,0.62); gilt (0.788,0.639,0.353); loggia (1.0,0.76,0.42); uplight (1.0,0.86,0.66); cavea_fill (1.0,0.90,0.76); server (1.0,0.78,0.40); rim_a verdigris (0.161,0.859,0.651); rim_b (1.0,0.80,0.55); **district_a (0.161,0.859,0.651), district_b (0.788,0.639,0.353), accent_cool (0.45,0.62,1.0), accent_warm (1.0,0.58,0.18)** | AU/hq_preset.py:34-50 |
+| Halcyon | civic_white (0.80,0.93,1.0); civic_teal (0.30,1.0,0.86); scan (0.78,1.0,0.97); corp_violet (0.43,0.16,1.0); corp_amber (1.0,0.40,0.03) (the eye); panel (0.40,0.43,0.46); panel_dark (0.20,0.22,0.25); lockdown (1.0,0.05,0.08) | HA/halcyon_preset.py:22-34 |
+| Orbital | ice (0.61,0.87,1.0); steel (0.30,0.33,0.37); caution (1.0,0.62,0.0); launch (1.0,0.30,0.06); marker (1.0,0.04,0.03); panel (0.40,0.43,0.46); concrete (0.24,0.25,0.26); glass (0.02,0.04,0.06); pad_albedo (0.06,0.065,0.075); door_albedo (0.11,0.12,0.14) | OR/hq_preset.py:19-28, 54 |
+| Rebel Cell | cell_red (0.80,0.007,0.013); red_hot (1.0,0.05,0.07); pale_pink (1.0,0.45,0.48); sodium (1.0,0.45,0.10); neon_a (1.0,0.16,0.6); neon_b (0.16,0.8,1.0); panel_dark (0.14,0.14,0.15); concrete (0.16,0.16,0.17); room_inner (0.17,0.14,0.15); room_strip (1.0,0.72,0.45) | RC/hq_preset.py:21-28, 115-116 |
+| Solace | porcelain (0.13,0.15,0.15); leaf (0.30,1.0,0.06); leaf_dim (0.10,0.45,0.04); pink (1.0,0.06,0.28); clinic (0.85,0.97,1.0); frost (0.55,0.75,0.62); glass (0.02,0.06,0.03); panel (0.40,0.43,0.44) | SO/hq_preset.py:20-30 |
+
+### 3.2 Emission materials (all Emission nodes, Color = `col`)
+
+Strength = per-face attribute `k` x per-object weight `pwo` x material factor `k_mat` (1.0 for `emit` and `city_emit`) (S3:308-318). `pwo` is a per-object, per-frame number set in `apply_frame` (S3:1049-1071): the LOD weights below, the room state ladder, and a power cut (not used in the 12 plates: `power` is null for overview and decision, J3:46-52 and the job dump).
+
+| Emission use | Strength (`k`) | Source |
+|---|---|---|
+| Room ceiling strips (every room) | (0.80, 0.93, 1.0) at k 4.0, two strips at 0.3 d and 0.7 d; Rebel: colour (1.0, 0.72, 0.45) | S3:577-579; RC/hq_preset.py:116 |
+| Room back-wall lights by kind | k 3.2 router (4 panels), 4.0 elite (3 racks), 2.6 terminal, 3.0 modem (3 shelves), colour = `TYPE_COL[kind]`: router (0.30,0.85,1.0), elite (1.0,0.36,0.10), terminal (0.20,1.0,0.50), modem (0.30,0.50,1.0), rack (1.0,0.70,0.20), target (1.0,0.22,0.12), start (0.83,1.0,0.0) | S3:491-492, 581-601 |
+| Room emission weight by state (`pwo` on `room_<id>`) | option 0.9, target 0.85, current 0.6, reach 0.34, walked 0.32, grey 0.07 (unlisted state 0.3) | KIT/states.py:30; S3:1062-1064 |
+| Compound LOD weights (`pwo`) | `sign` = 0.85 x ksig + 0.15; `small` = 0.25 + 0.75 x ksm; city: `city_sign` = ksig; `city_small` = 0.3 + 0.7 x ksm; everything else 1.0. ksig = smoothstep(zoom, 0.60, 0.82); ksm = smoothstep(zoom, 0.75, 0.92). Overview zoom 0 => sign 0.15, small 0.25, city_sign **0**, city_small 0.3. Decision zoom 1 => all 1.0 | S3:1049-1057; LP/KIT lod bands `hq_preset` `lod_bands` (HP3:143-146) |
+| City rooftop beacons | (1.0, 0.06, 0.04) at k 10 (city ring), 9 (downtown antennas), 14 (downtown lamp heads: colour (1.0,0.62,0.3) 70 % or (0.85,0.92,1.0)) | KIT/city_ring.py:27, 73; downtown.py:171, 198-199 |
+| City crown neon (ring) | district colours at k 4.0 x ring `far` (1.0 / 0.7 / 0.45) | KIT/city_ring.py:68 |
+| City blade signs (ring) | district colours at k 5.0 x far; near-ring shop front 0.7 x colour at k 2.2; billboards 0.8 x colour at k 1.6 + text lines (1,1,1) at k 2.0 | KIT/city_ring.py:83, 88, 135, 140 |
+| Downtown shop fronts / fascia / blades / crown trims / holo boards | shop 0.8 x `SHOP_COLS` at k U(1.2, 2.4); fascia `SIGN_COLS` k 2.6; blade k U(2, 4); crown trim k 3.0; roof holo 0.55 x colour k 2.4 | KIT/downtown.py:33-35, 221, 225, 238, 150, 179 |
+| Traffic streaks (ring road, class 7) | ribbons 0.16 BU high at z 0.55 +- 0.1; head (1.0,0.92,0.82) 70 % / (1.0,0.72,0.45), tail (1.0,0.08,0.05); k U(2.0, 4.5) x (0.15 + 0.85 x fall^1.6) over 6 segments | KIT/city_ring.py:155-162 |
+| Downtown streets streaks | same colours, k U(1.5, 3.5), 4 segments, z 0.5..0.65 | KIT/downtown.py:259-269 |
+| Sky lanes | (1.0,0.9,0.8) 60 % / (1.0,0.1,0.06), 0.35 BU thick, k 4.0 x f^2, on square loops at half-size `sky_lanes` | KIT/city_ring.py:164-173 |
+| Landmark seams / trim / logo / sign | per corp, `LH.seam_k` etc. (section 5.3) | landmark modules |
+| Lockdown plane (red holo, an "affected" room) | Transparent / Emission mix; strength (0.25 + pattern) x 3.0 x pwo; not in the 12 plates' route state except where the graph says so | S3:321-349 |
+
+Ghost edge lines of flattened foreground blocks are an Emission of (0.55, 0.68, 0.85) at strength `occ_edge` 0.6 x ghost x edge mask (KIT/section.py:42, 126-136; `OCC.edge` 0.6 at KIT/downtown.py:322). See section 8.
+
+### 3.3 City (towers, downtown): `city` material
+
+| Field | Value | Source |
+|---|---|---|
+| Base colour | per-tower `col` (0.075,0.07,0.09) 65-70 % or (0.10,0.085,0.09); x grime (0.7 + 0.6 x Noise scale 0.3 detail 6 rough 0.65) x (1 - 0.5 x dark); dark = window cell on and unlit | S3:428-434; KIT/city_ring.py:49; downtown.py:125 |
+| Window grid | pitch su = 2.1 along (x + y), sv = 3.1 in z; opening 0.28 .. 0.72 of u, 0.32 .. 0.68 of v (Halcyon: jittered edges +-0.16 per cell) ; vertical faces only (abs(Normal Z) < 0.3) | S3:393-401; HA/hq_scene.py:167-183 (via diff) |
+| Lit rule | lit = (floor-noise < 0.5, a white-noise per 23-BU column and storey) x (cell white-noise < face `k` x `win_p` x 2) | S3:411-420 |
+| Window colour | warm (1.0, 0.66, 0.40) by default; cool (0.86, 0.92, 1.0) when the cell noise R > 0.78; the district_a colour when R > 0.95 | S3:421-423 |
+| Window emission | `win_k` x exp((B - 0.5) x 1.7) x on x lit x pwo (B = cell white-noise blue channel) | S3:424-427 |
+| `win_k` / `win_p` final | Meridian 0.34 / 0.36; Aurelian 0.55 / 0.36; Halcyon 0.30 / 0.30; Orbital 0.20 / 0.30; Solace 0.52 / 0.34; Rebel Cell 0.10 / 0.15 (variant A) | HP3:108; AU/hq_preset.py:75; HA/halcyon_preset.py:87; OR/hq_preset.py:71; SO/hq_preset.py:86; RC/hq_preset.py:182 |
+
+### 3.4 Special materials per corp (not in the shared set)
+
+| Corp | Material | Values | Source |
+|---|---|---|---|
+| Solace (windows) | interior-mapping shader: a virtual box (half width 10, depth 10.5, height 8.4, floor -3.15, window plane depth 1.45) sampling an atlas PNG (rows = lab / greenhouse / ward / dim), Principled base (0.02,0.03,0.03), roughness 0.30, coat 0.4 / 0.10; Emission Color = atlas colour x tint, Strength = (0.10 + 0.9 x lit) x pwo x `imap_k` 0.55 | SO/hq_imap.py:12-17, 129-140; SO/hq_build.py:320-322 |
+| Rebel Cell (signs, holos, cloth) | textured quads: Emission(texture, interpolation Cubic) x pwo x k; "holo" mode = Transparent / Emission mix with alpha = max(RGB) x 0.9 (dithered); "cloth" = Principled roughness 0.85 with emission = texture x k | RC/rc_alley3.py:76-120 |
+| Halcyon (the eye) | turret + iris emission (`eye_iris` pwo from the frame); gobo spot lights (section 5) | HA/hq_scene.py:1219-1334 |
+
+---
+
+## A.4. World, fog, haze, beams
+
+### 4.1 World
+
+| Field | Value | Source |
+|---|---|---|
+| Type | Background with a Color Ramp driven by the Z of `Texture Coordinate > Generated` (in a world shader this is the ray direction; NOT verified in Blender, assumed), strength 1.0 | S3:972-994 |
+| Ramp stops | 0.0 -> (0.10, 0.035, 0.11); 0.12 -> (0.03, 0.016, 0.055); 0.42 -> (0.004, 0.005, 0.016); interpolation Blender default (Linear) | S3:985-991 |
+| Solace override | 4 stops 0.0 (0.035,0.03,0.05), 0.05 (0.028,0.022,0.045), 0.16 (0.012,0.012,0.03), 0.45 (0.003,0.004,0.012), interpolation EASE | SO/hq_preset.py:97-98; SO/hq_scene.py:988-997 |
+| Sun / moon | **NONE.** No SUN light in any HQ scene (grep `"SUN"` found only `AU/thumbs.py:386`, a thumbnail tool). Differs from the street, which has a 0.05 W moon. | grep |
+
+### 4.2 Fog volume (one box, Volume Scatter only)
+
+One cube object `fog` with a single Volume Scatter (no second haze scatter, **no emission volumes**; the glow in the fog comes only from lights linked to the media, section 5). Colour `hq_fog.colour`, anisotropy 0.45. Density (per BU) =
+
+`(peak x J.fog_k) x (base + layer x clump x ragk) x hf x (flo x calm) + bank x bank_peak + haze x J.haze_k`
+
+(`J.fog_k` and `J.haze_k` absent -> 1.0). Sources S3:822-886.
+
+| Term | Definition | Source |
+|---|---|---|
+| warp | Z + 18 x (Noise scale 1.0 on (0.006 x, 0.006 y) - 0.5): the strata wobble | S3:830-835 |
+| layer | smoothstep(0.62 x Noise(scale (0.004, 0.012, 0.075) x xyz, on warped Z) + 0.38 x wisp octave, remap `layer_remap` (0.47, 0.64)); the wisp octave (scale (0.009, 0.02, 0.33)) is faded in by zoom `wisps_on_at` (0.45, 0.70): overview has NO wisps | S3:836-849; LP:30-31 |
+| clump | smoothstep(Noise scale (0.0075, 0.014, 0.022), remap (0.40, 0.62)) | S3:850-856 |
+| ragk | 1 + ko x ((0.45 + 0.75 x Noise scale 0.05) - 1), ko = smoothstep(zoom, 0.25, 0.60) ("ragged edges" fade in with zoom; overview ragk = 1) | S3:857-865 |
+| hf | exp(-max(Z - 30, 0) / `height_scale`) | S3:866-867 |
+| flo | smoothstep(Z, `floor` - 6, `floor` + 4) (fog thins to zero at the ground) | S3:868 |
+| calm | `k` + (1 - `k`) x smoothstep(max(abs x, abs y), `r`, `r` + `soft`): thin over the compound footprint so the landmark stays crisp | S3:870-872 |
+| bank | smoothstep(sq, r0 - 10, r0) x (1 - smoothstep(sq, r1, r1 + 10)) x (1 - smoothstep(Z, z0, z1)) x clump, x `bank.peak`: a ring-shaped low ground bank outside the compound | S3:875-879 |
+| LOD | zoom is the Value node `ZOOM`, set per frame to the frame's `zoom` (0 overview .. 1 decision) | S3:827-829, 1043-1045 |
+| Cycles volume | volume bounces 0, step_rate 1.2, max_steps 256 | section 2 |
+
+Per-corp fog dicts (`hq_fog`; the box is X,Y -N..N, Z 0..top):
+
+| Corp | peak | base | height_scale | floor | box half / top | calm r / soft / k | bank r / z / peak | haze | colour | Source |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Meridian | 0.0065 | 0.10 | 60 | 10 | 1100 / 300 | 130 / 30 / 0.45 | (150, 260) / (0, 24) / 0.008 | 0.0005 | (0.94, 0.90, 0.88) | HP3:132-140 |
+| Aurelian | 0.0055 | 0.10 | 60 | 10 | 1400 / 360 | 170 / 40 / 0.45 | (190, 320) / (0, 24) / 0.007 | 0.0005 | (0.94, 0.90, 0.88) | AU/hq_preset.py:92-100 |
+| Halcyon | 0.0065 | 0.10 | 60 | 10 | 1100 / 300 | 105 / 45 / 0.35 | (100, 172) / (0, 9) / 0.012 | 0.0002 | (0.85, 0.82, 1.0) | HA/halcyon_preset.py:98-106 |
+| Orbital | 0.0060 | 0.10 | 60 | 10 | 1100 / 300 | 125 / 45 / 0.35 | (125, 175) / (0, 9) / 0.012 | 0.0003 | (0.85, 0.90, 1.0) | OR/hq_preset.py:82-90 |
+| Rebel Cell (variant A, finals) | 0.0065 | 0.10 | 60 | 10 | x ±1100, y from 85.6 (the section cut, no fog in front of the kerb) / 300 | 140 / 45 / 0.40 | (190, 300) / (0, 12) / 0.012 | **0.0013** (raised from 0.0003 for depth between the rows) | (0.95, 0.85, 0.90) | RC/hq_preset.py:94-108, 181 |
+| Solace | 0.0065 | 0.10 | 70 | 10 | 1100 / 320 | 100 / 40 / 0.10 | (150, 210) / (0, 9) / 0.008 | 0.0006 | (0.86, 0.95, 0.90) | SO/hq_preset.py:101-109 |
+
+Units: to compare with the street, multiply per-HQ-BU densities by 4.21 (about 0.027 per city BU at the peak vs the street's 0.152 per BU).
+
+### 4.3 Plumes
+
+8 Volume Scatter cubes (18 x 18 BU footprint, height U(55, 70) BU, seed 9510) on near-ring roofs at least 90 BU apart. Colour (0.9, 0.88, 1.0), anisotropy 0.4, density = radial x vertical shape x smoothstep(Noise scale 4 detail 6; 0.42 .. 0.70) x 0.09 (`plumes.peak`) x LODK. LODK = smoothstep(zoom, 0.50, 0.72): **no plumes in the overview plates, full in the decision plates**. Sources S3:904-945; LP:45-46; HP3:143-146.
+
+### 4.4 Beams
+
+Not geometry. Each beam is a Spot light: radius 0, blend 0.15, no shadow, **light-linked to the media collection only** (so it lights the fog, never a surface) (S3:961-967). Sky beams exist only as in-scatter in the fog.
+
+| Beam set | Power | Cone | Colour / placement | Source |
+|---|---|---|---|---|
+| City beams (8 sectors, one per 45 deg on the tallest `mid`-ring roof, leaning radially out) | 1.6e6 x 60 x 0.6 x `city_beam_k` = 5.76e7 x `city_beam_k` (0.8 Meridian / Aurelian / Halcyon / Orbital, 0.7 Rebel, 0.6 Solace) | 1.3 deg | district_a / district_b / accent_warm / accent_cool by sector | KIT/city_ring.py:177-194; LP:50-61 |
+| Corp beams (`hooks["beams"]`) | `HZ.beams.power` (Meridian / Aurelian / Halcyon 2.4e7, Orbital 2.6e7, Rebel 2.4e7, Solace 2.0e7) x per-use factor (Meridian keep beacon x1.6 power, x1.3 cone) | `HZ.beams.cone` (1.2, 1.1 Orbital / Rebel / Solace) | landmark crown / spires | HP3:94; meridian_landmark.py:941-942 |
+| Halcyon civic searchlights | 3.0e7 W, cone 1.1, lean 0.10-0.34 | tier corners + podium corners | cold white | HA/halcyon_preset.py:64-65; HA/hq_scene.py:1196-1211 |
+
+---
+
+## A.5. Lights
+
+Units are Blender light power (Cycles Watts). Created in `S3` (all go through `add_light`, S3:623-656; every light `visible_camera = False`) and the landmark modules. Group strings control per-frame scaling (S3:1081-1095): `room:<id>` follows the room state; `civic` / `city` / `start` / `corp` are reset to their base each frame.
+
+### 5.1 Lights every HQ gets (engine-level)
+
+| Light | Type | Energy | Colour | Shape / placement rule | Linking / shadow | Source |
+|---|---|---|---|---|---|---|
+| Room lights (one per route room except `start`) | AREA rectangle | `room_w` x STATE_K[state] x `room_k` (1.0) | 0.55 x TYPE_COL + 0.45 (a pale tint of the room kind) | size (w - 1) x (d - 1.5), at 0.45 d inside, 0.3 below the ceiling, aimed down | shadows on | S3:783-803, 1081-1091 |
+| Room light (rooms with no frame: the central server) | POINT | `room_w` x 2 | (1.0, 0.3, 0.15) | radius 2 | on | S3:791-793 |
+| Downtown street lamps (nearest `lamp_lights` to the keep, sorted by distance, ties by x,y) | SPOT | `lamp_w` 1800 | (1.0,0.62,0.3) 70 % / (0.85,0.92,1.0) | cone 100 deg, blend 0.9, radius 0.4, aimed straight down, at the lamp head (z 6.0) | no shadow | S3:805-810; KIT/downtown.py:196-200. Count: Meridian / Aurelian 120, Orbital / Solace / Halcyon 70 |
+| City glow (8 sectors, radii alternate 430 / 700, z 6) | AREA 110 x 60 | 1.4e5 x `cityglow_k` x `J.glow_k` (1.0) | district_a (even sectors) / district_b (odd) | aimed up (+z), positions `(rad sin az, -rad cos az)` | no shadow; **linked to the media only** | S3:948-952; KIT/city_ring.py:197-204 |
+| Bank glow (8, at `bank.r[0]` + 12, z 0.3) | AREA 30 x 14 | `bank_glow` (Meridian 1.0e4, Halcyon 4000, Orbital 3200, Solace 2500, Rebel 2500, Aurelian 1.0e4) | cycle `bank_glow_cols` (Meridian work/sodium, Halcyon teal/civic white, Orbital ice/sodium, Rebel cell_red/sodium, Solace clinic/leaf_dim, Aurelian work/sodium) | aimed up | no shadow; media only | S3:953-959; per-corp presets |
+| Shop spill (12 street-level areas) | | `shop_w` | | built only when the preset has no `downtown`: **none of the finals** | | S3:812-818 |
+| Beams | SPOT | section 4.4 | | | media only | S3:961-967 |
+| Per-frame key lights (V3 engine only: Meridian decision) | SPOT | see 5.2 | | `extra_lights` from `frame_keys`, placed relative to the camera, aimed at a room or a point | `visible_volume_scatter` False (lights the landmark, not the fog in front) | S3:1098-1113; J3:80-88 |
+| Per-frame light gains | multiply energy of lights by name prefix | Meridian decision: `wash_` x3, `legup_` x2, `span_down_` x2, `keep_wash` x2, `keep_key` x2 | | | | S3:1114-1117; HP3:124-126 |
+
+### 5.2 Meridian decision key lights (V3 only)
+
+`frame_keys["H_decision"]` (HP3:127-131): lmkey_0 rel camera (0,0,30), aim room `o2`, 1.8e6 W, (1.0,0.80,0.55), size 6, cone 55, blend 0.8; lmkey_1 rel (-40,40,30), aim (40,-100,10), 3.5e6 W, (1.0,0.78,0.5), cone 60; lmkey_2 rel (-60,60,40), aim (-30,-40,14), 3.0e6 W, (1.0,0.82,0.58), cone 75. Check: the surviving job dump `RM/hq_meridian_v3/scratch/job_stills_final_0.json` lists the same three with `light_gain`. Frame exposure trim -1.25 stops balances them (section 7).
+
+### 5.3 The landmark rig per corp (key landmark lights, washes)
+
+Preset values in `PRESET["hq"]["light"]` (final); light creation in the landmark module.
+
+| Corp | Key landmark lights | Notable numbers | Source |
+|---|---|---|---|
+| Meridian | `legup_s_` / `legup_o_` SPOT cone 40 blend 0.6 at the gantry legs, `leg_up_w` 9.0e4 (x0.6 for the sodium twin); `span_down_` 5 SPOTs under the span, 2.8e4, cone 46, alternate yard_white / sodium; `keep_wash_` 2 SPOTs 6.0e4 cone 40; `keep_key` 5.0e4 cone 22; `lantern` POINT 5000 (1.0,0.42,0.16); `hook_spot` 1.2e4; `rim_0/1` AREA 120x60, 2.0e5, district_a / district_b, **light-linked to the `rim_rx` collection = the compound only**; `wash_s_/wash_` SPOTs 9000 at street height 0.6; `lane_` AREAs 9000; `quay_` SPOTs 3000x1.5; `tflood_` 1.2e5; `railgate_` 6000x3; `train_head` 2.0e6 / `train_glow` 8000; trucks 1500; ring 6000 | trim_k 2.2, seam_k 3.0, logo_k 3.5, sign_k 0.5, cityglow_k 0.25 | HP3:85-93; meridian_landmark.py:258-975 |
+| Aurelian | `arena_n` SPOTs (flood_k 0.006 x arena power, blend 0.85); `up_q` 24 SPOTs 450 W, cone 44; `cavea_0/2` AREA 2.5e3 (1.0,0.90,0.76); `vault_key` SPOT 4.0e3 cone 24; `rim_q` AREA 9.0e3 verdigris, linked to `rim_rx`; 40 `cityfill_q` SPOTs 25000 W cone 95 blend 0.8 warm (frame mult overview 0.6, decision 1.45), linked to the city fill collection; `camfill` AREA 60x60 at z 100, 28000 (0.62,0.76,1.0) (same frame mults) | gilt_k 0.6, loggia_k 0.35, cove_k 0.35, server_k 4.0; `ov_loggia` 0.70, `ov_laurel` 0.60 in the overview; `up_frame` decision 0.8 | AU/hq_preset.py:54-62; aurelian_landmark.py:811-870 |
+| Halcyon | uplights: SPOT 0.6 radius, `uplight_w` 320, cone 70 blend 0.6, cold white (0.80,0.93,1.0), one per gap between rooms on every face of every tier; plinth washes 400 (cone 60); `gate` POINT 900; the eye: `eye_wash` (2.2e6, cone 150, gobo half-planes, linked to compound + rooms + eye only), `eye_wash_vol` (x0.07, media only), `eye_blade` 9.0e6 cone 120, `eye_beam` 6.0e7 cone 2.2 (+ soft x0.35 cone 6.0, media only), `eye_glow` 6000 POINT. Eye azimuth 45 deg in both plates | cove_k 1.4, teal_k 1.6, slit_k 0.2, sign_k 0.12; cityglow_k 0.15 | HA/halcyon_preset.py:54-71; HA/hq_scene.py:1012-1040, 1219-1334; `RM/hq_halcyon/scratch/ov_stills.json` `eye_az` 45.0 |
+| Orbital | `shaft` POINT 1.2e4 (launch orange) + `shaft_beam` SPOT 6.0e6 cone 9 blend 0.4 (media only); `rocket_svc` 2.5e4; `work_<id>` SPOTs flood_w x 0.5 ice, cone 70; `ant_key` 6.0e4 cone 34; `ant_red` POINT 6000; `rim_k` AREA 120x80, 1.4e5, district colours, linked to `rim_rx`; `pad_flood_k` 2.5e4 cone 48; 3 `key_room_` (1.0,0.95,0.88) + 3 `rim_room_` ice SPOTs `room_key_w` 9000 (x0.6), cone 40, re-aimed per frame; `underfog_k` AREAs 1.5e4 ice / sodium at z 0.4, media only | dish_k 3.0, trim_k 2.4, marker_k 14, halo_peak 0.010 | OR/hq_preset.py:51-58; OR/hq_build.py:108-110, 169, 214, 311-313, 340-365 |
+| Rebel Cell | `mainframe_spill` AREA 1100 W red (1.0,0.08,0.08) (+ floor x0.35 and shop spill cyan); `alley_lamp_` SPOTs 2600 (1.0,0.72,0.42); `fist_spill`/`fist_glow_` AREAs red; `room_warm_` POINTs 900; `strip_` AREAs 9000 per street strip; `tun_` AREAs 900 green (0.62,1.0,0.72); `sod_`/`roof_` SPOTs `sod_w` 2500; `section_key` AREA 260x60, `key_w` 3.0e4 x 0.8, (0.8,0.82,0.95); `rim_k` AREAs 160x80, `rim_w` 8.0e4, linked to `rim_rx`; `target_wash_1..` AREAs 3000 + `target_room` 1500 around DISPATCH; sewer GREEN spots (lamp 900) | v3 final: `mf_k` 0.62 (MAINFRAME neon), `sign_k` 2.0, `win_k_net` 0.52, `cityglow_k` 0.10, city `win_k` 0.10, `mf_spill_w` 1100, `fist_spill_w` 2500 | RC/hq_preset.py:58-66, 162-190; rc_alley3.py:745-760, 795, 861, 902; hq_build_A.py:165-197 |
+| Solace | `down_<tower>` SPOTs `down_w` 600 cone 80 blend 0.9 (slab downlights); `room_<id>` POINTs `room_w` x 0.6; `crown_glow` POINT 2.0e4 pink; `entry_glow` AREA `entry_w` 0.0 (off in finals); `plaza_wash_` AREAs 2.5e3 (1.0,0.78,0.55); `ground_spot_` SPOTs 3.5e4 cone 26 (clinic / (0.75,1.0,0.7)) aimed up the strands, linked to `rim_rx`; `rim_k` AREAs 90x140, `rim_w` 1.0e5, district colours, linked to `rim_rx`; `halofill_` AREAs 4.0e3 clinic, media only | rim_k 0.32 (fresnel rim on strands), porthole_k 0.45, glass_k 2.4, atrium_k 1.6, down_k 1.4, band_k 0.22, bridge_k 1.1, imap_k 0.55 | SO/hq_preset.py:60-73; SO/hq_build.py:316-349, 468, 493, 526, 536, 544, 576 |
+
+Light-linking summary for a port: fog-only (receiver = media): cityglow, bankglow, all beams, Halcyon `eye_wash_vol` / `eye_beam`, Orbital `underfog` / `shaft_beam`, Solace `halofill`. Landmark-only (receiver = `rim_rx` = the compound collection): the rim AREAs, Solace ground spots, Aurelian rims. Everything else is global.
+
+### 5.4 Occlusion (the section cut on foreground city blocks)
+
+Not a light, but it changes what is lit. For every city building, a camera-dependent cut height and ghost opacity is computed (PIPELINE_SPEC 7.1): a building inside the cone from the camera to the route rooms is cut to a lit 6.4 BU stub (`stub`), its open top is the near-black poche, and if the stub still blocks the cone it is dithered to 18 % opacity with a faint cool edge line. Plates: Meridian overview "flattened/ghosted" counts in `RM/hq_meridian_v3/scratch/bl_stills_final_0.log`; per-corp numbers in INDEX.md. Defaults `OCC = margin 0.10, stub 6.4, ghost 0.18, edge 0.6, tsoft 0.035, vsoft 0.025` (KIT/downtown.py:322); Meridian overrides `margin 0.03, vsoft 0.012` (HP3:116), Aurelian `margin 0.10` (AU/hq_preset.py:81). Shader: KIT/section.py:76-171; Godot twin spec in its docstring (KIT/section.py:21-24).
+
+---
+
+## A.6. Ground, plaza, wet surfaces around the compound
+
+| Item | Value | Source |
+|---|---|---|
+| Ground material | `ground` (3.1): puddle noise scale 0.075, roughness 0.02 / 0.26, spec 0.6, tile Brick 3 x 3 BU for k=1 surfaces | S3:352-382 |
+| Base slab | 3200 x 3200, z -0.05 .. -0.02, (0.06, 0.06, 0.07), k 0 (Rebel Cell variant A: starts at `ground_cut_y` = 104 + 0.6 - 18 = 86.6, "no ground in front of the kerb") | S3:698; RC/hq_preset.py:89-90 |
+| Downtown blocks | each block on a sidewalk slab (0.22,0.22,0.24) k 1.0 to z 0.16; streets are the gaps (7 BU wide, cell 30) of the base slab; streaks at z 0.5 (section 3.2) | KIT/downtown.py:62-76, 107, 242-270 |
+| Street pools | Street-lamp SPOTs (5.1) are the pool source; there are no glow decals and no emissive ground lanes except the streaks (class 7) | S3:805-810 |
+| Ground bank | the fog `bank` term (4.2): a ring of low fog just outside the compound lit by the 8 bank-glow areas | S3:875-879, 953-959 |
+| Reflections | Cycles glossy bounces 3 (real reflections); post blurs the ground's reflections in the overview (7, stage 2) | S3:1161; P3:105-110 |
+| Plaza / ring road / perimeter | NOT built by the engine for these six (all use downtown or `no_plaza`); each corp's landmark module builds its own podium / plaza / roads (e.g. Solace `plaza_wash`, Meridian ring road + lanes, Halcyon plaza) | S3:688; per-corp |
+
+---
+
+## A.7. Post chain
+
+Run by `hq_post.finish(stem, zoom, t=2.0)` (each corp's own preset in memory). Image is 2560 x 1440, so `sc = 1.0` (street: 0.75). `t = 2.0` is the rain fall offset (`C3:79`). Input: Combined (denoised, fog included), Emission, Volume Direct, Object Index (P3:94-102). Order and parameters (P3:94-180), with the delta to the street's `post_aaa` "real" (MATERIAL_SPEC 10):
+
+| # | Stage | HQ parameters | Delta vs street "real" |
+|---|---|---|---|
+| 0 | Input | `comb`, `emit`, `voldir` (blur 2.0 sc), `idx` (Object Index) | street reads Albedo, Depth; has no Volume pass |
+| 1 | Ground reflection LOD | ground = Object Index == 4. k = 1 - smoothstep(zoom, 0.85, 1.00). If k > 0.01: gm = blur(ground, 1 sc) x k x 0.85; img = img x (1 - gm) + blur(img, 3 sc, half-res) x gm. Overview k = 1 (puddles softened), decision k = 0 | NEW: street has `puddle_blur` off |
+| 2 | Exposure | `expo = exposure x (1 - exposure_zoom_k x zoom)`, then x 2^stops (7.1) | street: solved per plate to median 0.14 |
+| 3 | Bloom (HDR) | hot = max(img - 1.2, 0) + emit x expo x 0.04 + max(voldir - 0.02, 0) x (1.3 x expo x 0.8 x **0.5**); Gaussians sigma 6 / 24 / 135 sc = 6 / 24 / 135 px at half / quarter / eighth resolution; weights 0.12 / 0.10 / 0.08 (Rebel Cell's 0.20/0.17/0.13 with thr 0.9 applies only to the red-sequence variant `HQ_DISTRICT_ONLY`, not to the plates) | street: bloom px = 4.5 / 18 / 101 (sc 0.75), no voldir term (vol = 0), no 0.5 factor. HQ adds the Volume-Direct halo. |
+| 4 | Tone map | the same max-RGB hue-preserving ACES shoulder (a=2.51, b=0.03, c=2.43, d=0.59, e=0.14), per-channel ACES blended up to 20 % where max > 3 | same |
+| 5 | Rain | the same 3 layers (4000 / 1800 / 60 drops, lengths 3-6 / 14-24 / 60-95 px, alpha 0.05 / 0.10 / 0.25, widths 1 / 1 / 3, speed 0.6 / 1.0 / 1.6), seed 41. Lit factor = (clip(0.25 + 2.4 x lum(ACES(b2 + 1.5 b3)), 0.25, 2.2)) x (0.55 + 0.45 x ksm) + 1.6 x clip(lum(voldir) x 1.3 x expo, 0, 1.5). **ksm = smoothstep(zoom, 0.75, 0.92): overview rain is x0.55, decision x1.0.** No route mask (street cuts rain to x0.25 over the route) | NEW: ksm LOD, voldir term from the Volume pass |
+| 6 | Grade | teal-navy shadow tint (0.25, 0.45, 0.6) k 0.30 weighted clip(1 - 2.2 lum); highlight tint (1.0, 0.86, 0.86) x 0.25 weighted clip(2 lum - 0.6); saturation 1.0; lift (0, 0, 0.004) | same |
+| 7 | Vignette (linear) | 1 - 0.38 x clip(r - 0.35, 0, 1)^1.6 | same |
+| 8 | sRGB encode | piecewise | same |
+| 9 | Contrast | 0.18 x (x / 0.18)^1.12 | same |
+| 10 | **Black point** | out = (out - black) / (1 - black); black = **0.04** (Halcyon 0.03) | NEW (street none) |
+| 11 | Display knee | above 0.66: 0.66 + (top - 0.66) x tanh((x - 0.66) / (top - 0.66)); top = **0.93 default; 0.88 Orbital, 0.87 Rebel Cell, 0.86 Halcyon** (Meridian, Aurelian, Solace default) | street: fixed 0.93 |
+| 12 | Chromatic aberration | R out / B in by 2.4 sc x clip(r - 0.3, 0, 1)^1.5 px | same formula; at sc 1.0 the shift is at most 1.4 px at the corner (street, sc 0.75: 1.05 px) |
+| 13 | Film grain | Gaussian sigma 0.55 sc, amplitude 0.03 x (1 - 0.6 lum), seed 107 | same |
+| - | Lens flash | `flash` argument 0 for stills | n/a on the street |
+| - | Bg dimming, `vol_soft`, route mask, sem pass | none | the street has the logic but it is dead for the street plates too |
+| - | Bokeh, glare, LUT, Blender compositor | NOT FOUND (searched P3, HA/hq_post.py, C3) | same |
+
+Constants: P3:24-31 (`P = dict(exposure=2.65, bloom=(0.12,0.10,0.08), bloom_thr=1.2, grain=0.03, ca=2.4, vignette=0.38, tint_k=0.30, shadow_tint, hi_tint, sat=1.0, contrast=1.12, vol_k=1.3, vol_glow=0.8, vol_glow_thr=0.02, rain_vol=1.6, lift)`), then `P.update(PRESET["post"])` and `P.update(PRESET["hq"]["post"])` (P3:27-28; Halcyon `PRESET["halcyon"]["post"]`, HA/hq_post.py:27-28).
+
+### 7.1 Per-plate exposure (all 12 verified against the golden PNGs)
+
+Final exposure = `exposure_base x (1 - zoom_k x zoom) x 2^stops` (`C3:76-81`, `fix_post.py:17-26`; `zoom` 0 overview, 1 decision from `ov_stills.json`). The `HQ_EXP_STOPS` env trim exists but is unnecessary: the preset reproduces every plate exactly.
+
+| Corp | exposure_base | zoom_k | black | knee top | Overview stops -> final | Decision stops -> final | Source |
+|---|---|---|---|---|---|---|---|
+| Aurelian | **1.6** (set in `hq.post`, overrides the 2.85 in `PRESET["post"]`) | **0.0** | 0.04 | 0.93 | -0.08 -> **1.5137** | -0.38 -> **1.2295** | AU/hq_preset.py:88-89, 102 |
+| Halcyon | 3.4 | 0.61 | 0.03 | 0.86 | +0.2 -> **3.9056** | 0 -> **1.3260** | HA/halcyon_preset.py:67, 109 |
+| Meridian | 2.85 | 0.55 | 0.04 | 0.93 | 0 -> **2.8500** | -1.25 -> **0.5392** | HP3:120, 123, 142 |
+| Orbital | 2.4 | 0.40 | 0.04 | 0.88 | +0.06 -> **2.5019** | 0 -> **1.4400** | OR/hq_preset.py:79, 92-93 |
+| Rebel Cell | 2.4 | 0.25 | 0.04 | 0.87 | +0.35 -> **3.0589** | +0.2 -> **2.0677** | RC/hq_preset.py:84, 119, 130, 164, 191 |
+| Solace | 2.6 | 0.32 | 0.04 | 0.93 | 0 -> **2.6000** | 0 -> **1.7680** | SO/hq_preset.py:95, 111 |
+
+PIPELINE_SPEC line 629 ("Halcyon 3.4 / 0.61, others 2.4 / 0.40") and line 630 ("black 0.04 others") are out of date: only Orbital still has 2.4 / 0.40.
+
+### 7.2 The value targets (not a solve)
+
+`hq_values.py:3-7, 15-38` and `GP/scripts/make_plate.py:44-58`: median luma band 0.11-0.17 (warn 0.09-0.19), share under 0.10 in 0.25-0.40, over 0.85 <= 0.025, and the 12.2 landmark ratio `ratio_median` = median luma of Object Index classes {1,5,6} divided by median of {0,2} inside the landmark's box grown 35 % (pass band 1.5-2.0, warn above 2.0, fail below 1.5; `RATIO_PASS` make_plate.py:48). R-FOCUS-1: landmark box mean luma / ring mean luma >= 1.5. PIPELINE_SPEC 8.3 rule 2 says the ratio is reached **with light, not exposure** (rims, keys, floods); exposure is only trimmed per frame to hold the median. Nothing iterates exposure toward the ratio.
+
+---
+
+## A.8. Anything that is NOT AAA-2 (flagged)
+
+- **No toon, ink, band or facet jitter stage is active in any of the 12 HQ plates.** Checked three ways: no such code in the HQ scene / post, the post is bit-exactly reproduced by the code in this document, and the street's `band`/`ink` keys do not exist in `hq_post.py`. (The street's own Eevee toon mode is also absent here: Eevee is only a layout preview, `S3:1222-1239`.)
+- **LOUD:** the post is **not** `post_aaa.finish(..., "real")`. It is a separate copy with the deltas in section 7 (Volume-Direct halo, ground-reflection blur by zoom, black point, per-corp knee top, rain LOD, zoom-dependent exposure). Reproduce `hq_post.py`, not `post_aaa.py`, for the HQ views.
+- **LOUD:** several lights are non-physical Cycles tricks that Godot cannot copy as-is: light linking to the media only (cityglow, bank glow, all beams, Halcyon wash_vol, Orbital underfog), light linking to the compound only (`rim_rx` rims), `visible_camera = False` on every light, spot cones of 1.1-1.3 deg at 2.4e7-5.8e7 W used purely as fog shafts (no beam mesh exists), Aurelian's 128 transparent bounces, `visible_volume_scatter = False` on key lights.
+- The occlusion shader draws faint cool **edge lines** (emission (0.55, 0.68, 0.85)) on ghosted foreground stubs (KIT/section.py:113-136). It is the only line-like element in the 3D render; it is part of the spec rule (PIPELINE_SPEC 7.1), not ink.
+- Not in the plates (do not render): the route overlay, labels, rings, wax links (`hq_compose.compose`, `C3:31-60`), the red lockdown planes when the graph does not ask for them.
+- Mixed material generations: Meridian + Aurelian have the mid-scale surface noise (`mat_plain` B factor); Orbital, Rebel Cell, Solace, Halcyon do not. A port should expose it as a per-corp flag, not unify silently.
+
+---
+
+## A.9. What makes the HQ look different from the street (5 things)
+
+1. **No moon, no sun: the light is the landmark.** World is a dim magenta-to-navy ramp (0.10,0.035,0.11 -> 0.004,0.005,0.016), no sun or moon; the HQ is picked out by hand-placed keys, washes and rims (up to 1e5-6e6 W spots) and its own emissives (seams 3.0, logo 3.5, trim 2.2-2.4), with the 360-degree city kept dim (window `win_k` 0.1-0.55, signs off in the overview via LOD).
+2. **Thin, long fog lit only by linked lights.** One Volume Scatter box (peak 0.0055-0.0065 per BU, aniso 0.45, e-fold 60-70 BU above 30 BU, `calm` hole over the compound, ground bank ring) with NO emission volume: all glow is in-scatter from 8 city-glow + 8 bank-glow areas and fog-only 1.1-1.3 deg beam spots. Wisps, ragged edges and plumes fade in with `zoom` (overview has none).
+3. **Zoom is a render input.** One scalar `zoom` (0 overview .. 1 decision) drives fog octaves, plumes (0.50-0.72), signage (0.60-0.82), small lights (0.75-0.92), rain brightness, ground-reflection blur, and the exposure factor (1 - zoom_k x zoom: decision exposure factor (1 - zoom_k) is 0.39-0.75, Aurelian 1.0).
+4. **Hand-set exposure and a black point; no per-plate solve.** Preset exposure 1.6-3.4 x zoom factor x per-frame trim (-1.25 .. +0.35 stops), black point 0.04, knee 0.86-0.93; quality is judged by median / under_010 / `ratio_median`, achieved with light.
+5. **Cutaway game rooms and sectioned city.** Route rooms are real lit boxes whose emission and area light follow a state ladder (0.9 / 0.85 / 0.6 / 0.34 / 0.32 / 0.07), and foreground city blocks are flattened to 6.4 BU stubs or ghosted at 18 % by the camera-to-rooms cone, so the rooms are never blocked.
+
+---
+
+## A.10. Per-corp table (plate values: `GP/hq_<corp>_<view>_values.json`)
+
+| Corp | Key colour(s) (linear) | Landmark emissive | Fog tint | Exposure ov / dec | median ov / dec | under 0.10 ov / dec | over 0.85 ov / dec | ratio_median ov / dec |
+|---|---|---|---|---|---|---|---|---|
+| Aurelian | gilt (0.788,0.639,0.353), loggia (1.0,0.76,0.42), verdigris (0.161,0.859,0.651) as light only | gilt_k 0.6, loggia_k 0.35, cove_k 0.35, server_k 4.0 | (0.94, 0.90, 0.88) | 1.514 / 1.230 | 0.152 / 0.153 | 0.381 / 0.360 | 0.0076 / 0.0047 | 2.460 / 2.792 |
+| Halcyon | civic white (0.80,0.93,1.0), teal (0.30,1.0,0.86), amber eye (1.0,0.40,0.03) | cove_k 1.4, teal_k 1.6, slit_k 0.2, eye wash 2.2e6 W | (0.85, 0.82, 1.0) | 3.906 / 1.326 | 0.127 / 0.155 | 0.388 / 0.331 | 0.0022 / 0.0029 | 2.622 / 2.352 |
+| Meridian | corp orange (1.0,0.26,0.012), edge sodium-white (1.0,0.80,0.52), rust gantry (0.30,0.075,0.022) | seam_k 3.0, logo_k 3.5, trim_k 2.2, keys 1.8e6-3.5e6 W (decision) | (0.94, 0.90, 0.88) | 2.850 / 0.539 | 0.138 / 0.166 | 0.361 / 0.314 | 0.0178 / 0.0174 | 2.418 / **1.802** |
+| Orbital | ice (0.61,0.87,1.0), launch (1.0,0.30,0.06), marker red (1.0,0.04,0.03) | trim_k 2.4, dish_k 3.0, marker_k 14, shaft 1.2e4 W + 6e6 W beam | (0.85, 0.90, 1.0) | 2.502 / 1.440 | 0.130 / 0.128 | 0.366 / 0.392 | 0.0078 / 0.0159 | 3.842 / 3.500 |
+| Rebel Cell | cell red (0.80,0.007,0.013), red hot (1.0,0.05,0.07), sodium (1.0,0.45,0.10) | MAINFRAME `mf_k` 0.62 (red neon), `sign_k` 2.0, mf_spill 1100 W | (0.95, 0.85, 0.90) | 3.059 / 2.068 | 0.140 / 0.162 | 0.375 / 0.341 | 0.0183 / 0.0194 | 1.816 / 1.958 |
+| Solace | leaf (0.30,1.0,0.06), clinic (0.85,0.97,1.0), pink (1.0,0.06,0.28) | rim_k 0.32, porthole_k 0.45, glass_k 2.4, imap_k 0.55 | (0.86, 0.95, 0.90) | 2.600 / 1.768 | 0.127 / 0.121 | 0.374 / 0.349 | 0.0073 / 0.0205 | 2.555 / 2.573 |
+
+R-FOCUS-1 (landmark / ring mean luma): Aurelian 1.90 / 2.26, Halcyon 2.63 / 1.70, Meridian 1.63 / 2.70, Orbital 2.19 / 1.54, Rebel Cell n/a (box fills the frame), Solace 1.55 / 1.76 (`GP/*_values.json` `composition.R-FOCUS-1`). `ratio_mean` and `ratio_peak` are also in the values files (e.g. Meridian decision 2.42 / 8.27).
+
+---
+
+## A.NOT FOUND (what I searched)
+
+- Exposure solver for the HQ plates: searched `solve|secant|target` in V3/*.py, HA/hq_*.py, RC/hq_*.py; only measuring tools (`hq_values.py`, `target_values.py`, `hq_tune.py` which prints stats for trial post keys).
+- Halcyon eye azimuth sweep / blade height per plate: `ov_stills.json` stores `eye_az` 45.0 for both plates; the blade `sweep` z comes from `HA/hq_jobs.py:55-63` at job time and is not stored (the surviving job dump holds only `H_hover_S`).
+- `World` "Generated" coordinate semantics (ray direction in a world shader): assumed, not checked in Blender (Blender not run).
+- Bokeh / DoF, glare, LUT, compositor: none (searched hq_post, hq_compose, hq_scene).
+- Per-frame job JSONs for all final frames: only the last chunk is kept in the repo scratch; values were taken from presets and confirmed by the bit-exact re-post.
