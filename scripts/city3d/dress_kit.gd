@@ -126,7 +126,7 @@ static func group_nodes(group: String, mesh: Mesh, mat: Material, items: Array) 
 			by_cell[k] = []
 		(by_cell[k] as Array).append(it)
 	var keys: Array = by_cell.keys()
-	keys.sort()
+	IdSort.sort_ids(keys)
 	var out: Array[MultiMeshInstance3D] = []
 	for k: Vector2i in keys:
 		var list: Array = by_cell[k]
