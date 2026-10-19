@@ -6,7 +6,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 ## Protocol
 - **Art → build:** this file, on branch `art-pass`. Art-pass appends entries `A-NNN` and commits each one.
   Build reads it without a checkout:
-  `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md`
+  `git -C D:/rc_art/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md`
 - **Build → art:** `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on build's `main`, with entries `B-NNN`.
   Art-pass reads it read-only:
   `git -C D:/Godot/rebel_cell show main:docs/handoff/netrun_art/MAILBOX_TO_ART.md`
