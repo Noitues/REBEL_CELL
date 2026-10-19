@@ -139,3 +139,15 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    2. The "HQ side: night switch" panel is a flat navy frame. If it's a true hold in motion, it is a dark frame, which contradicts "0 dark frames". Either it lasts 1 frame or less (then say so) or crossfade through it. Re-send the 3 frames around it.
    3. Reveal dissolve: it's too subtle to read mid-frame. Make the Bayer cell at least 2 px at 1080p (4x4 matrix) so the grain reads as a dissolve and not as noise, and capture one mid frame on a seed with 5 or more rooms in frame.
    - Q, Grid/Route zoom: use the short zoom-only beat set, about 1.2 s. A toggle the player uses often shouldn't replay 4.5 s. The full dive plays only on entry (jack in) and on the jack-out reverse. Space still skips both.
+
+17. **W1_NA12 (@c32775a3): FIX LIST.** Good: the seeds give distinct cities, seed 7 stays fixed, the NA-11 rules and the async build run unchanged, there are no HQ overlaps, and the 15° site rotation works. The coast doesn't read yet:
+   1. **Answer to the Q: flat dark sea isn't enough before W2.** In the whole-city views the sea can't be told apart from the off-map void, so all three seeds read as a slab on black. W2's HQ work needs a visible coast: the Tethys WATER LEVEL is campaign-wide (designer ruling), and Orbital and Meridian sit on the shore in A2. The minimum water look:
+      - a water material distinct from the void: deep blue-black, a slow normal ripple, and smeared neon/sodium reflections from the shore lights;
+      - a lit shoreline band, i.e. a sea-wall line in the street colour plus a thin bright edge 1-2 px at the Grid zoom;
+      - piers where a road meets the water;
+      - the off-map void darker than the sea, or fogged, so the edge of the land reads.
+      No terrain or hills before W2.
+   2. **A2 is a bay, not a straight sea side.** In design_A2_horseshoe_bay.md the Cell sits at the bay head and the city wraps a concave bay. "One side is sea" with a straight shoreline loses the A2 silhouette that the designer picked. Give the shoreline a concave bay toward the Cell, plus some per-seed noise. The rules for HQ placement on the coast belong to the design/build sessions, not art-pass, but the Tethys HQ has to touch the water.
+   3. **Contract:** add the coast to city.json as an optional additive key, so it stays v1-compatible and the Blender city plates can render the same coast. Shape: `coast: {"sea_side": "N|E|S|W", "shoreline": [[i, j], ...] (cell coords, the land side on the left), "sea_cells": <count>}`. Readers ignore unknown keys. Log it in DECISIONS (schema-minimal). Leave seed 7 without the key, so the fixtures don't change.
+   4. **Art list (mine, not blocking):** in the whole-city zoom the HQs don't read as landmarks. Same family as the city R-FOCUS-1 1.05 on the NA-ID frames.
+   - Re-send: the whole-city view for seeds 1 and 2 with the water look, plus one Grid-page crop at the shoreline.
