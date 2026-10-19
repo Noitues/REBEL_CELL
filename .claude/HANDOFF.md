@@ -43,8 +43,12 @@
   city sheet = golden plate + Godot at the same camera AND the §12 numbers. Queue (serial on city_building.gdshader):
   - P0 parity harness (READY): tools/netrun_art/parity_sheet.py, plate via git show to %TEMP%, Godot at plate camera
     (plate cams: art-pass golden_plates/street_*_capture.json, 1920x1080); publish our cameras in B-003.
-  - P1+P5 material + air: keep 3 toon bands / ink / facet grit at look_blend 1 (NA-22 blended them to smooth); sky, haze,
-    fog band, silhouette layers. Needs MATERIAL_SPEC.md (art-pass HANDOFF_PACKAGE/street_kit/, announced by A-NNN).
+  - P1+P5 (A-022 CORRECTION): netrun street = AAA-2 realistic night (PBR, volumetric fog + FogVolumes, emissive-lit), NOT
+    toon/ink; keep the smooth look_blend 1. Port art-pass HANDOFF_PACKAGE/street_kit/MATERIAL_SPEC.md (read §0 and "What
+    makes the look" first): exposure solve to median 0.14 FIRST; layered colored volume fog (0.152/BU cores, aniso 0.45,
+    ground band 0-2.2 BU 0.12/BU); wet street rough 0.03-0.30, spec IOR level 0.7, SSR; emissive hierarchy (hero 4.0 ...
+    lamp heads 8.0), 3-radius bloom, ACES hue-preserving + teal shadow / warm-pink highlight grade, vignette 0.38, CA, grain.
+    Facet grit is geometry (fgrid, cell 1.7 BU). No sky gradient, no bokeh pass (P6 bokeh = rough reflections).
   - P2+P3+P4: PORT art-pass street_r2/scripts r2_config (-> .tres), r2_facade, r2_kits (code), r2_rules plan_pass /
     layout_pass / checks, r2_signs as Python twin + GDScript at the same art_seed (fnv64). Props glb + roles.json from
     street_kit/ (A-NNN). Cut the ~8 tall yellow-green/teal glow bars -> blade signs + lit_atrium slots. Words = r2_config
