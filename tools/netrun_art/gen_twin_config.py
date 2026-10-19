@@ -43,6 +43,7 @@ def val(v: Any) -> str:
 
 
 def main() -> None:
+    """Write content/config/netrun_art.tres from the Python reference constants (the NA-21 twin config)."""
     hq_rig = {k: v for k, v in orbit.HQ_RIG.items() if k != "dmin"}
     hq_rig["dmin_kit"] = 135.0
     assert orbit.HQ_RIG["dmin"] == units.kit(135.0)
