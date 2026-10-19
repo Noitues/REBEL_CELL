@@ -11,15 +11,18 @@ Two runs of the same seed and pose give byte-identical `id.png` and `depth.png` 
 ## Classes (R of `id.png`)
 | R | Class | Where it comes from |
 |---|---|---|
-| 0 | sky / background | nothing drawn (black clear; the ground layer is hidden in the id pass, so there is no class 4) |
-| 1 | landmark compound | every mesh under the CityView3D `landmarks` layer (landmarks, staged HQ compounds); light cones (`lm_beam`) are hidden |
+| 0 | sky / background | nothing drawn (black clear: sky, fog, the outer plane when the view hides it) |
+| 1 | landmark compound | every mesh under the CityView3D `landmarks` layer (landmarks, staged HQ compounds), except the parts at grade (class 4); light cones (`lm_beam`) are hidden |
 | 2 | city | building prisms (`city_building` `id_mode`), and every other visible mesh outside rooms (roof props, dressing) |
 | 3 | link structure | meshes under a node in group `id_link` (none shipped yet: the network is a ground decal) |
+| 4 | ground | the ground: the outer plane and every chunk's ground and lane mesh (NA-ID-b); and the parts of a compound that lie on it: meshes under an `id_ground` node, and any class 1 fragment with world y <= `IdCaptureClasses.GROUND_MAX_Y` (0.8 BU: plaza carpet, apron trims, rails at grade; the glb compounds merge parts per material, so the shader cuts by height). The MAINFRAME sign stays class 1 |
 | 5 | rooms | `route_room` meshes of the street rig |
 | 6 | landmark movers | meshes under a node in group `id_mover` (none shipped yet: the compounds are static) |
-Class 4 is reserved and never written. Every pixel R is in {0, 1, 2, 3, 5, 6}.
+The ground is drawn, never hidden: a hidden ground would be class 0 and join the {0, 2} background mask of 12.2 / R-FOCUS-1. A ground
+the view itself hides (the outer plane on a street close-up) stays class 0. The network decal layer stays hidden. Every pixel R is in
+{0, 1, 2, 3, 4, 5, 6}. The depth pass sees the ground too.
 
-Group names (`IdCaptureClasses.GROUP_LINK` = `id_link`, `GROUP_MOVER` = `id_mover`): a builder adds the group to a node; the pass
+Group names (`IdCaptureClasses.GROUP_LINK` = `id_link`, `GROUP_MOVER` = `id_mover`, `GROUP_GROUND` = `id_ground`): a builder adds the group to a node; the pass
 paints every mesh under it. A mover under a landmark stays 6.
 
 ## G and B (NA02_FIELDS "id.png encoding"; supersedes the brief's "G = room index")
@@ -29,12 +32,12 @@ paints every mesh under it. A mover under a landmark stays 6.
 - G and B are 0 everywhere else. Bytes are written as exact sRGB values (the unshaded shaders convert them to linear).
 
 ## capture.json
-Sorted keys, floats rounded to 1e-4, tab-indented. Fields: `version` (1), `resolution` [w, h], `layout_seed` (decimal u64 string),
+Sorted keys, floats rounded to 1e-4, one-space indent, LF line ends. Fields: `version` (1), `time` ("night" or "day"), `resolution` [w, h], `layout_seed` (decimal u64 string),
 `run` (run id), `anim_t` (the clock the frame was frozen at, then restored), `camera` (the street rig's `NetrunPose.to_json()`, or for
 other frames `position`, `rotation_deg`, `projection`, `size` / `fov`, `near`, `far`), and when given `kind` (street / hq / city),
 `view`, `look`, `look_blend`, `corp`, `exempt` {hover_cut, red_seq, flash}.
 
 ## Read-only
-The pass swaps `material_override` on meshes, hides the ground / network / sky / traffic layers, the fog and the post, and the rig's
+The pass swaps `material_override` on meshes, hides the network / sky / traffic layers (the ground is drawn as class 4), the fog and the post, and the rig's
 extras, and freezes the rig clock; every swap is restored (`tests/unit/test_id_capture.gd` hashes the view before and after). No RNG, save or
 world state is read or written.
