@@ -83,9 +83,9 @@ func _na12_city_gen() -> int:
 	var fails := 0
 	var d := CampaignConfigData.new()
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
-	print("NA-12 city gen (expect 26 26 2 2 Vector2(30, 40)): ", d.city_gen_hq_gap, " ", cfg.city_gen_hq_gap, " ", d.city_gen_budget_s, " ",
+	print("NA-12 city gen (expect 26 26 2 2 Vector2(34, 42)): ", d.city_gen_hq_gap, " ", cfg.city_gen_hq_gap, " ", d.city_gen_budget_s, " ",
 		cfg.city_gen_budget_s, " ", cfg.city_gen_ring_lots)
-	if d.city_gen_hq_gap != cfg.city_gen_hq_gap or d.city_gen_budget_s != cfg.city_gen_budget_s or cfg.city_gen_ring_lots != Vector2(30, 40): fails += 1
+	if d.city_gen_hq_gap != cfg.city_gen_hq_gap or d.city_gen_budget_s != cfg.city_gen_budget_s or cfg.city_gen_ring_lots != Vector2(34, 42): fails += 1
 	if ",".join(cfg.validate()).contains("city_gen"): fails += 1
 	var bad: CampaignConfigData = cfg.duplicate()
 	bad.city_gen_ring_lots = Vector2(40, 30)
@@ -93,6 +93,14 @@ func _na12_city_gen() -> int:
 	var codes := ",".join(bad.validate())
 	print("NA-12 bad city gen: ", codes.contains("city_gen range"), " ", codes.contains("city_gen_hq_gap"))
 	if not (codes.contains("city_gen range") and codes.contains("city_gen_hq_gap")): fails += 1
+	# NA-12 r2: the A2 bay, shore corporations and hills.
+	print("NA-12 r2 bay (expect [&\"tethys\"] (18, 30) 220): ", cfg.city_gen_shore_corps, " ", cfg.city_gen_bay_depth, " ", cfg.city_gen_ring_arc_deg)
+	if cfg.city_gen_shore_corps != d.city_gen_shore_corps or cfg.city_gen_bay_depth != d.city_gen_bay_depth or cfg.city_gen_hill_count != d.city_gen_hill_count: fails += 1
+	var bad_bay: CampaignConfigData = cfg.duplicate()
+	bad_bay.city_gen_bay_shift = 0.6
+	bad_bay.city_gen_hill_count = Vector2i(3, 1)
+	var bay_codes := ",".join(bad_bay.validate())
+	if not (bay_codes.contains("city_gen_bay_shift") and bay_codes.contains("city_gen_hill_count")): fails += 1
 	var c := CampaignState.new()
 	c.city_seed = -2
 	var back := CampaignState.from_dict(c.to_dict())

@@ -1,15 +1,13 @@
-"""NA-12 capture sheet: the per-seed city on the City Grid page, one column per campaign seed (rows: the Grid as fitted, the
-whole city zoomed out), one JPEG.
-Usage: python tools/city/na12_sheet.py --shots <dir with grid_<seed>.png, city_<seed>.png> --seeds 1,2,3 --out <jpg>
-       [--labels "<text>;<text>;<text>"]
-Inputs come from tools/city/na12_capture.gd."""
+"""NA-12 capture sheet: the per-seed city on the City Grid page, one JPEG of labelled panels (two per row).
+Usage: python tools/city/na12_sheet.py --shots <dir> --out <jpg> --panels "file.png=Label;file2.png=Label 2;..."
+Inputs come from tools/city/na12_capture.gd (grid_<seed>, city_<seed>, shore_<seed>, look_<seed>, day_<seed>)."""
 import argparse
 import os
 
 from PIL import Image, ImageDraw, ImageFont
 
-CELL = (640, 360)
-ROWS = [("Grid page (as fitted)", "grid"), ("Whole city (zoomed out)", "city")]
+CELL = (800, 450)
+COLS = 2
 
 
 def font(size: int) -> ImageFont.ImageFont:
@@ -24,24 +22,22 @@ def font(size: int) -> ImageFont.ImageFont:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--shots", required=True)
-    ap.add_argument("--seeds", default="1,2,3")
-    ap.add_argument("--labels", default="")
+    ap.add_argument("--panels", required=True)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    seeds = a.seeds.split(",")
-    labels = a.labels.split(";") if a.labels else ["campaign seed %s" % s for s in seeds]
+    panels = [p.split("=", 1) for p in a.panels.split(";") if p]
     head = 30
     gap = 10
-    sheet = Image.new("RGB", (CELL[0] * len(seeds) + gap * (len(seeds) - 1), (CELL[1] + head) * len(ROWS) + 6), (12, 12, 16))
+    rows = (len(panels) + COLS - 1) // COLS
+    sheet = Image.new("RGB", (CELL[0] * COLS + gap * (COLS - 1), (CELL[1] + head) * rows + 6), (12, 12, 16))
     d = ImageDraw.Draw(sheet)
-    f = font(15)
-    for r, (title, prefix) in enumerate(ROWS):
-        y = r * (CELL[1] + head) + 3
-        for c, s in enumerate(seeds):
-            x = c * (CELL[0] + gap)
-            d.text((x + 6, y + 6), "%s  |  %s" % (title, labels[c]), fill=(230, 230, 235), font=f)
-            img = Image.open(os.path.join(a.shots, "%s_%s.png" % (prefix, s))).convert("RGB").resize(CELL, Image.LANCZOS)
-            sheet.paste(img, (x, y + head))
+    f = font(16)
+    for k, (name, label) in enumerate(panels):
+        x = (k % COLS) * (CELL[0] + gap)
+        y = (k // COLS) * (CELL[1] + head) + 3
+        d.text((x + 6, y + 6), label, fill=(230, 230, 235), font=f)
+        img = Image.open(os.path.join(a.shots, name)).convert("RGB").resize(CELL, Image.LANCZOS)
+        sheet.paste(img, (x, y + head))
     sheet.save(a.out, quality=88)
     print("wrote", a.out, sheet.size)
 

@@ -20,13 +20,19 @@ var fixed: bool = false
 var fallback: bool = false
 ## Generator attempts used (1 = the first layout passed).
 var attempts: int = 0
+## Why the generator's last attempt failed ("" when it passed; a diagnostic, not saved).
+var failure: String = ""
 ## The heading (degrees) each corporation's Site layout is turned round its HQ, and whether it
 ## is mirrored (CityLayout.site_points_aimed).
 var site_aim: Dictionary = {}
 var site_mirror: Dictionary = {}
 ## The coast, or {} (no sea): {"side": 0 west (low i) / 1 east / 2 north (low j) / 3 south,
-## "depth", "amp", "wavelength", "phase"} in lots from `rect`'s edge.
+## "depth", "amp", "wavelength", "phase", "amp2", "wavelength2", "phase2" (two waves), "bay_at", "bay_depth",
+## "bay_width" (the A2 bay: a Gaussian bump of the shore into the land)} in lots from `rect`'s edge (`shore_at`).
 var coast: Dictionary = {}
+## NA-12 r2: terrain hills (data only until NA-12c renders them), city_A2.json's Gaussian form in lots and BU:
+## {"centre": Vector2 (lots), "sigma_x", "sigma_y" (lots), "height" (BU), "rotation" (radians)}.
+var hills: Array[Dictionary] = []
 ## The city rect the coast is measured from (lots).
 var rect: Rect2i = Rect2i()
 
@@ -35,6 +41,9 @@ const FIXED_CONFIG_PATH := "res://content/config/campaign_config.tres"
 static var _cache: Dictionary = {}
 static var _mutex: Mutex = Mutex.new()
 static var _gen_config: CampaignConfigData = null
+## The corporations' Site layouts (corp id -> PackedVector2Array of uv), read once from CORP_DIR.
+static var _uvs: Dictionary = {}
+const CORP_DIR := "res://content/corporations"
 
 
 ## The HQ rect's top-left of territory `id` (lots), or the city centre (Vector2.ZERO) when it
@@ -66,13 +75,39 @@ func hq_rects(hq_lots: int) -> Dictionary:
 	return out
 
 
+## The shore's distance (lots) from `rect`'s sea edge at `along` (the coordinate along that edge: j for a west / east
+## sea, i for a north / south one): the base depth, two waves, and the bay (a Gaussian bump into the land at "bay_at").
+func shore_at(along: float) -> float:
+	var s := float(coast["depth"]) + float(coast["amp"]) * sin(TAU * along / float(coast["wavelength"]) + float(coast["phase"]))
+	s += float(coast.get("amp2", 0.0)) * sin(TAU * along / float(coast.get("wavelength2", 1.0)) + float(coast.get("phase2", 0.0)))
+	var u := (along - float(coast.get("bay_at", 0.0))) / maxf(float(coast.get("bay_width", 1.0)), 0.001)
+	return s + float(coast.get("bay_depth", 0.0)) * exp(-u * u)
+
+
+## The inland unit vector (lots) of the sea side.
+func inland() -> Vector2:
+	return [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)][int(coast["side"])]
+
+
+## The lot point `d` lots inland of the sea edge at `along`.
+func edge_point(along: float, d: float) -> Vector2:
+	match int(coast["side"]):
+		0:
+			return Vector2(float(rect.position.x) + d, along)
+		1:
+			return Vector2(float(rect.end.x) - d, along)
+		2:
+			return Vector2(along, float(rect.position.y) + d)
+	return Vector2(along, float(rect.end.y) - d)
+
+
 ## How far point (x, y) (lots) lies inland of the coast (negative: in the sea); INF without one.
 func land_depth(x: float, y: float) -> float:
 	if coast.is_empty():
 		return INF
 	var side := int(coast["side"])
 	var along := y if side < 2 else x
-	var shore := float(coast["depth"]) + float(coast["amp"]) * sin(TAU * along / float(coast["wavelength"]) + float(coast["phase"]))
+	var shore := shore_at(along)
 	match side:
 		0:
 			return x - float(rect.position.x) - shore
@@ -88,6 +123,58 @@ func is_water(i: int, j: int) -> bool:
 	return not coast.is_empty() and land_depth(i + 0.5, j + 0.5) < 0.0
 
 
+## The sea lots inside `rect`, row by row (j, then i).
+func sea_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if coast.is_empty():
+		return out
+	for j in range(rect.position.y, rect.end.y):
+		for i in range(rect.position.x, rect.end.x):
+			if is_water(i, j):
+				out.append(Vector2i(i, j))
+	return out
+
+
+## The land lots inside `rect` with a sea lot as a 4-neighbour (the sea wall's lots), row by row.
+func shoreline() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if coast.is_empty():
+		return out
+	for j in range(rect.position.y, rect.end.y):
+		for i in range(rect.position.x, rect.end.x):
+			if is_water(i, j):
+				continue
+			for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if is_water(i + d.x, j + d.y):
+					out.append(Vector2i(i, j))
+					break
+	return out
+
+
+## The compass word of the sea side in plan coordinates (x east = +i, y north = -j).
+func sea_side() -> String:
+	return ["W", "E", "N", "S"][int(coast["side"])] if not coast.is_empty() else ""
+
+
+## NA-12 r2: the optional additive `city.json` v1 sections of this city (NA02_FIELDS 2, "Optional sections"):
+## `coast {sea_side, shoreline [[i, j]...], sea_cells [[i, j]...]}` (lots, row order) and `terrain {hills [{centre [x, y],
+## sigma_x, sigma_y, height, rotation}]}` (plan BU, city_A2.json's Gaussian form). {} for the fixed city (no key).
+func city_sections(lot_bu: float, origin: Vector2) -> Dictionary:
+	if fixed or coast.is_empty():
+		return {}
+	var shore := []
+	for c in shoreline():
+		shore.append([c.x, c.y])
+	var sea := []
+	for c in sea_cells():
+		sea.append([c.x, c.y])
+	var hl := []
+	for h in hills:
+		hl.append({"centre": NetrunArtExport.plan_point(h["centre"], lot_bu, origin), "sigma_x": float(h["sigma_x"]) * lot_bu,
+			"sigma_y": float(h["sigma_y"]) * lot_bu, "height": float(h["height"]), "rotation": -float(h["rotation"])})  # plan y = -j
+	return {"coast": {"sea_side": sea_side(), "shoreline": shore, "sea_cells": sea}, "terrain": {"hills": hl}}
+
+
 ## The plan as plain data (ints, floats, strings; sorted keys when made canonical), for
 ## byte-identity checks and the save-and-resume test.
 func to_dict() -> Dictionary:
@@ -101,8 +188,12 @@ func to_dict() -> Dictionary:
 	var mirrors := {}
 	for k: StringName in site_mirror:
 		mirrors[String(k)] = bool(site_mirror[k])
+	var hl := []
+	for h in hills:
+		var c: Vector2 = h["centre"]
+		hl.append({"centre": [c.x, c.y], "sigma_x": h["sigma_x"], "sigma_y": h["sigma_y"], "height": h["height"], "rotation": h["rotation"]})
 	return {"layout_seed": ArtSeed.u64_str(city_seed), "fixed": fixed, "fallback": fallback, "territories": terr,
-		"site_aim": aims, "site_mirror": mirrors, "coast": coast.duplicate(),
+		"site_aim": aims, "site_mirror": mirrors, "coast": coast.duplicate(), "hills": hl,
 		"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y]}
 
 
@@ -155,6 +246,7 @@ static func generate(p_seed: int, cfg: CampaignConfigData) -> CityPlan:
 		var f := make_fixed()
 		f.fallback = true
 		f.attempts = p.attempts
+		f.failure = p.failure
 		p = f
 	p.city_seed = p_seed
 	return p
@@ -174,9 +266,18 @@ static func make_fixed() -> CityPlan:
 
 
 ## The Site layout's frame (CityLayout.site_points_aimed's numbers) for the generator.
+## NA-12 r2: with each corporation's Site layout (`uvs`, CityLayout.site_uvs, read from the content folder so any
+## process mode gives the same city), so its Sites, not its whole layout box, keep off the other HQs.
 static func site_frame() -> Dictionary:
+	if _uvs.is_empty():
+		for f in ResourceLoader.list_directory(CORP_DIR):
+			if f.ends_with(".tres"):
+				var c := load(CORP_DIR.path_join(f)) as CorporationData
+				if c != null and c.city_grid != null:
+					_uvs[c.id] = CityLayout.site_uvs(c)
 	return {"right": CityLayout.RIGHT, "down": CityLayout.DOWN, "run_half": CityLayout.RUN_HALF, "cross_half": CityLayout.CROSS_HALF,
-		"boss_gap": CityLayout.BOSS_GAP, "cross_offset": CityLayout.CROSS_OFFSET, "spread": maxf(CityView3D.CONFIG.site_spread, 0.1)}
+		"boss_gap": CityLayout.BOSS_GAP, "cross_offset": CityLayout.CROSS_OFFSET, "spread": maxf(CityView3D.CONFIG.site_spread, 0.1),
+		"uvs": _uvs}
 
 
 static func _config() -> CampaignConfigData:

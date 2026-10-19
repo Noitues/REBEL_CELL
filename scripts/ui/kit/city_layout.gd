@@ -115,6 +115,23 @@ static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: boo
 	return out
 
 
+## NA-12 r2: the Site layout of `corp` in unit form (each Site's `uv` in [-1, 1]^2, as site_points_aimed spreads it),
+## in its Grid's Site order, for the city generator's Site heading check (CityGenerator.site_points_at).
+static func site_uvs(corp: CorporationData) -> PackedVector2Array:
+	var min_p := Vector2(1e9, 1e9)
+	var max_p := Vector2(-1e9, -1e9)
+	for sd in corp.city_grid.sites:
+		if sd != null:
+			min_p = min_p.min(sd.map_position)
+			max_p = max_p.max(sd.map_position)
+	var span := (max_p - min_p).max(Vector2(1, 1))
+	var out := PackedVector2Array()
+	for sd in corp.city_grid.sites:
+		if sd != null:
+			out.append((sd.map_position - min_p) / span * 2.0 - Vector2.ONE)
+	return out
+
+
 ## ART-5 5e (the spread sweep): of layout `points` of `corp`, how many Sites stand in its own
 ## territory (`city.territory_at` of the Site's lot), which territories the others fall in,
 ## how many sit on an HQ plaza or off the city, and how many share a lot with another Site.

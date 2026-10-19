@@ -262,8 +262,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## `city_gen_candidates` best-candidate draws per Sprawl centre; `city_gen_attempts` whole
 ## layouts before the fixed city is the fallback.
 @export var city_gen_cell_jitter: float = 10.0
-@export var city_gen_ring_lots: Vector2 = Vector2(30.0, 40.0)
-@export var city_gen_angle_jitter: float = 0.3
+@export var city_gen_ring_lots: Vector2 = Vector2(34.0, 42.0)
+@export var city_gen_angle_jitter: float = 0.2
 @export var city_gen_hq_gap: float = 26.0
 @export var city_gen_edge_lots: int = 6
 @export var city_gen_coast_clear: int = 4
@@ -274,9 +274,28 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_gen_attempts: int = 16
 ## The coast (one side of the city is sea): depth from the city's edge, wave amplitude and
 ## wavelength (lots, min / max).
-@export var city_gen_coast_depth: Vector2 = Vector2(10.0, 26.0)
+@export var city_gen_coast_depth: Vector2 = Vector2(8.0, 18.0)
 @export var city_gen_coast_wave: Vector2 = Vector2(2.0, 5.0)
 @export var city_gen_coast_wavelength: Vector2 = Vector2(40.0, 80.0)
+## NA-12 r2 (art-pass item 17, the A2 bay): a second, shorter shore wave (amplitude, wavelength); the bay (a
+## Gaussian bump of the shore into the land: depth, width (sigma), and how far its middle may sit off the sea edge's
+## middle, as a share of that edge); the Cell's HQ centre this many lots inland of the bay head; the arc (degrees,
+## centred on the inland direction) the ring's corporations share; corporations whose HQ stands on the shore (its
+## rect within `city_gen_shore_touch` lots of the water, on a bay flank `city_gen_shore_flank` bay widths off its middle).
+@export var city_gen_coast_wave2: Vector2 = Vector2(1.0, 3.0)
+@export var city_gen_coast_wavelength2: Vector2 = Vector2(15.0, 30.0)
+@export var city_gen_bay_depth: Vector2 = Vector2(18.0, 30.0)
+@export var city_gen_bay_width: Vector2 = Vector2(16.0, 26.0)
+@export var city_gen_bay_shift: float = 0.15
+@export var city_gen_cell_inland: float = 10.0
+@export var city_gen_ring_arc_deg: float = 220.0
+@export var city_gen_shore_corps: Array[StringName] = [&"tethys"]
+@export var city_gen_shore_touch: float = 2.0
+@export var city_gen_shore_flank: Vector2 = Vector2(1.2, 2.0)
+## Terrain hills (data only until NA-12c): count, sigma (lots) and height (BU) ranges, on land.
+@export var city_gen_hill_count: Vector2i = Vector2i(2, 4)
+@export var city_gen_hill_sigma: Vector2 = Vector2(8.0, 20.0)
+@export var city_gen_hill_height: Vector2 = Vector2(6.0, 24.0)
 ## Site layout headings tried round each HQ (degrees apart).
 @export var city_gen_aim_step_deg: float = 15.0
 ## The most one seed's generation may take (seconds, this machine; the 1,000-seed sweep asserts it).
@@ -555,7 +574,8 @@ func enrage_for(data: EnemyData) -> EnrageData:
 ## NA-12: the city generator's numbers (ranges min <= max, counts and gaps positive).
 func _validate_city_gen(errors: PackedStringArray) -> void:
 	for r: Vector2 in [city_gen_ring_lots, city_gen_pull_range, city_gen_neutral_pull_range, city_gen_coast_depth,
-			city_gen_coast_wave, city_gen_coast_wavelength]:
+			city_gen_coast_wave, city_gen_coast_wavelength, city_gen_coast_wave2, city_gen_coast_wavelength2, city_gen_bay_depth,
+			city_gen_bay_width, city_gen_shore_flank, city_gen_hill_sigma, city_gen_hill_height]:
 		if r.x > r.y or r.x < 0.0:
 			errors.append("city_gen range %s must be 0 <= min <= max." % r)
 	if city_gen_pull_range.x <= 0.0 or city_gen_neutral_pull_range.x <= 0.0 or city_gen_coast_wavelength.x <= 0.0:
@@ -564,6 +584,12 @@ func _validate_city_gen(errors: PackedStringArray) -> void:
 		errors.append("city_gen_hq_gap, city_gen_candidates and city_gen_attempts must be > 0, city_gen_neutral_count >= 0.")
 	if city_gen_edge_lots < 0 or city_gen_coast_clear < 0 or city_gen_cell_jitter < 0.0 or city_gen_angle_jitter < 0.0:
 		errors.append("city_gen_edge_lots, city_gen_coast_clear, city_gen_cell_jitter and city_gen_angle_jitter must be >= 0.")
+	if city_gen_coast_wavelength2.x <= 0.0 or city_gen_bay_width.x <= 0.0 or city_gen_hill_sigma.x <= 0.0:
+		errors.append("city_gen_coast_wavelength2, city_gen_bay_width and city_gen_hill_sigma must be > 0.")
+	if city_gen_ring_arc_deg <= 0.0 or city_gen_ring_arc_deg > 360.0 or city_gen_bay_shift < 0.0 or city_gen_bay_shift >= 0.5:
+		errors.append("city_gen_ring_arc_deg must be in (0, 360] and city_gen_bay_shift in [0, 0.5).")
+	if city_gen_hill_count.x < 0 or city_gen_hill_count.x > city_gen_hill_count.y or city_gen_shore_touch < 0.0 or city_gen_cell_inland < 0.0:
+		errors.append("city_gen_hill_count must be 0 <= min <= max; city_gen_shore_touch and city_gen_cell_inland >= 0.")
 	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0 or city_gen_budget_s <= 0.0:
 		errors.append("city_gen_aim_step_deg must be in (0, 360] and city_gen_budget_s > 0.")
 

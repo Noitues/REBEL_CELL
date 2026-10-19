@@ -262,8 +262,12 @@ func host_paused() -> bool:
 ## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
+	if water != null:
+		water.set_night(night_share)
 	if _building_mat == null or day.is_empty():
 		return
+	_last_day = day
+	_ramp_water(day)
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
@@ -304,6 +308,8 @@ var _netrun_setup: bool = false
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
 	look_blend = clampf(lb, 0.0, 1.0)
+	if water != null:
+		water.set_look_blend(look_blend)
 	if _building_mat == null:
 		return
 	if not _netrun_setup:
@@ -396,6 +402,8 @@ func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
 
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
+## NA-12 r2: the last day look set_night_share was given (the sea wall built later takes its ramp).
+var _last_day: Dictionary = {}
 var _landmarks_night: bool = true
 var _env: Environment
 
@@ -549,6 +557,8 @@ func _sync_ambient() -> void:
 		_post.set_shader_parameter("time_scale", s)
 		_net_mat.set_shader_parameter("time_scale", s)
 		_net_xray_mat.set_shader_parameter("time_scale", s)
+	if water != null:
+		water.set_time_scale(s)
 	if not is_equal_approx(s, ambient_scale):
 		ambient_scale = s
 		ambient_changed.emit(s)
@@ -829,6 +839,7 @@ func _on_model(m: CityModel) -> void:
 		set_iso(iso)
 	if can_render():
 		place_landmarks()
+	_build_water(m)
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -843,6 +854,39 @@ func _on_model(m: CityModel) -> void:
 		model_ready.emit()
 		return
 	set_process(true)
+
+
+## NA-12 r2: the sea of a generated city (CityWater: sea, void, sea wall, piers) for model `m`; none for the fixed city
+## (no coast) or headless.
+var water: CityWater = null
+
+
+func _build_water(m: CityModel) -> void:
+	if water != null:
+		water.queue_free()
+		water = null
+	var plan := CityPlan.for_seed(m.city_seed)
+	if plan.coast.is_empty() or not can_render():
+		return
+	water = CityWater.make(cfg, plan, m, OUTER_GROUND_BU)
+	add_to_layer(&"ground", water, true)
+	water.set_night(night_share)
+	water.set_look_blend(look_blend)
+	water.set_time_scale(ambient_scale)
+	if not _last_day.is_empty():
+		_ramp_water(_last_day)
+
+
+## The day ramp on the sea wall and pier decks (as on the ground).
+func _ramp_water(day: Dictionary) -> void:
+	if water == null:
+		return
+	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
+	var day_ramp: Array = day["ramp"]
+	for k in 3:
+		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		for mat in water.lit_materials():
+			mat.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 
 
 func _chunk_centre(key: Vector2i) -> Vector2:
