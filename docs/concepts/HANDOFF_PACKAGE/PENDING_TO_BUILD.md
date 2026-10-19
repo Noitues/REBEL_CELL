@@ -124,3 +124,11 @@ The app paused session-to-session messages after 10 sends. Send these on the des
       - Target: in the canyon camera, visible sky ≥ 15 % of the frame, and R-HOR-1 / R-SIL-1 passing.
    2. **The HQ page landmark gets crowded.** A cluster of new tall black towers next to the Halcyon HQ competes with it. Spec 8.8 says landmarks lead and the city stays subordinate. Fix: within 2 lots of an HQ lot, no building may be taller than 0.6× the HQ landmark's top, and those buildings are exempt from spikes.
    - Re-send both rows after the fixes, together with NA-11b's r2 diff.
+
+## Held 2026-10-19 (messaging pause after 10 sends)
+
+15. **NA-ID: three contract fixes come first** (art-pass 3c3f9106, 12.0, AD 2026-10-19). Part of the low 12.2 / R-FOCUS-1 comes from the id pass, not the art.
+   1. Ground is class 4, not hidden. A hidden ground turns into class 0 and enters the 12.2 background mask {0, 2}. On Meridian, that puts the bright gold road grid into the background median. Draw the ground layer as class 4.
+   2. Ground-lying compound parts go to class 4, not class 1: the plaza carpet, the apron trims, the rails at grade (the yellow on the HQ sheet), via an `id_ground` group or by glb mesh role. This is likely most of Meridian's 1.01 at a 0.48 landmark share. Rebel Cell's MAINFRAME sign stays class 1.
+   3. capture.json: 1-space indent, sorted keys, LF (NA-02 JSON), not tabs. Add `time` ("night" by default, "day" for day frames).
+   - Then re-run hq_meridian, landmark_solace and city_grid; whatever still fails goes on the art list. City R-FOCUS-1 at 1.05 is probably real. Class 3 / 6 at 0 px and no class 5 on HQ frames: fine.
