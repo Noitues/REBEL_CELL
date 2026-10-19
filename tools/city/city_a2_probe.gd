@@ -8,6 +8,15 @@ func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	var s := int(args[0]) if args.size() > 0 else 1
 	var cfg := CityView3D.CONFIG
+	if args.size() > 1 and args[1] == "--build":
+		var bare := cfg.duplicate() as CityConfig
+		bare.layout_rules_on = false
+		for k in 3:
+			var b0 := Time.get_ticks_usec()
+			var bm := CityModel.build(bare, s + k)
+			print("BUILD seed %d no-rules %.0f ms prisms %d" % [s + k, (Time.get_ticks_usec() - b0) / 1000.0, bm.prisms.size()])
+		get_tree().quit()
+		return
 	if args.size() > 1 and args[1] == "--time":
 		_time(s)
 		get_tree().quit()
