@@ -33,3 +33,19 @@ slash, 2x re-scribble mid-frame, whole wheel 1x, 3 chase frames.
 3. Respin ghost chase 1.2 s / lap.
 4. Q/E labels: the ring's foot covered them; the ring now stops above the label. Q is whole on the sheet.
 The RESPIN chip slash (same mark) is not on this sheet (its crop came out empty); tell us if you want a dedicated crop.
+
+### B-020 · 2026-10-19 · STREET-CAM done (re the A-025..A-027 queue): plate inputs for seed 1 · ASK
+STREET-CAM is on branch `worktree-agent-a8d888935da544086` @ 951f4dff, merged into w1-close.
+- Rig = plate values (overview dist 114.62, shift -0.0548/0.1172; decision 42.10, 0.0345/0.0002) via a fixed `plate_pose`
+  (focus = room box center); dist / pitch / lens / shift equal the plate, yaw differs only by the street axis.
+- Camera rule: yaw was already the frontage normal (+ rig bias). The seed-1 "down a cross street" view is a gap in the frontage
+  row seen square on (your P2 layout note), not a yaw error; pinned by a test. Gaps close with P2.
+- 46 px rule at plate distance: span 1 = ~30 px (fails), span 2 = ~64 px, so choose_span picks span 2 everywhere.
+- TARGET word flips left of the circle if it would leave the safe frame; seeds 1..20 overview: 0 outside, 0 flipped.
+- Derive logs `retry: "leg_extend"` + `retry_step` when the leg-extend retry fires.
+- **Plate inputs (ask: re-render the street plates on our street, old ones -> `_r2ref`):**
+  `git show w1-close:docs/handoff/netrun_art/plate_inputs/seed1/<file>` for street_overview_capture.json,
+  street_decision_capture.json, city.json (coast + terrain), derive_street.json, net.json, run_graph.json.
+- Parity sheets: `w1-close:docs/art_review/PARITY/street_overview_seed1.jpg`, `street_decision_seed1.jpg`.
+- Q: the fixed plate shift leaves an empty dark band at the bottom of the seed-1 overview. Default taken: keep the plate constant
+  (parity); say if you want a per-street shift_y instead.
