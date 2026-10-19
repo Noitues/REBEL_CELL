@@ -158,3 +158,70 @@ func test_districts_show_distinct_palettes_and_hq_bands_vary() -> void:
 	assert_ne(float(near["emit_mul"]), float(far["emit_mul"]))
 	assert_eq(DressDistricts.hash01("sign", "10:13"), DressDistricts.hash01("sign", "10:13"))
 	assert_ne(DressDistricts.hash01("sign", "10:13"), DressDistricts.hash01("sign", "10:14"))
+
+
+func test_district_palettes_come_from_the_art_pass_table() -> void:
+	var pal: Dictionary = DressingConfigData.shipped().palettes
+	var d: Dictionary = DressingConfigData.shipped().districts
+	assert_eq(pal["solace_mint"]["district_a"], [0.239, 1.0, 0.545])
+	assert_eq(pal["solace_mint"]["district_b"], [0.85, 1.0, 0.9])
+	assert_eq([pal["solace_mint"]["win_0"], pal["solace_mint"]["win_1"], pal["solace_mint"]["win_2"]], [[0.75, 1.0, 0.82], [0.45, 1.0, 0.62], [0.95, 1.0, 0.95]])
+	assert_eq(pal["orbital_ice"]["district_a"], [0.498, 0.659, 1.0])
+	assert_eq(pal["orbital_ice"]["district_b"], [0.92, 0.96, 1.0])
+	assert_eq([pal["orbital_ice"]["win_0"], pal["orbital_ice"]["win_1"], pal["orbital_ice"]["win_2"]], [[0.70, 0.84, 1.0], [0.92, 0.95, 1.0], [0.55, 0.75, 1.0]])
+	assert_eq(String(d["solace"]["palette"]), "solace_mint")
+	assert_eq(String(d["orbital"]["palette"]), "orbital_ice")
+	assert_eq(pal["halcyon_dusk"]["district_a"], [0.549, 0.482, 1.0])
+	assert_eq(pal["meridian_forge"]["district_a"], [1.0, 0.549, 0.102])
+	assert_eq(pal["rebel_cell_ember"]["district_a"], [0.91, 0.078, 0.118])
+	assert_eq(DressDistricts.color_in("district_a", "solace_mint"), Color(0.239, 1.0, 0.545))
+	for t: String in ["halcyon", "meridian", "rebel_cell"]:
+		assert_ne(String(d[t]["palette"]), "neon_bay", "%s uses its art-pass set" % t)
+
+
+func test_hero_signs_are_blades_with_varied_panels_and_sign_pieces_use_the_sign_shader() -> void:
+	var sd: StreetDressing = _street("101")["dressing"]
+	var pr: Array = DressingConfigData.shipped().sign["hero_panels"]
+	var hero_n: int = int(sd.dress["signs"].size())
+	assert_true(hero_n > 0)
+	var n_full: int = int(sd.counts["hero_full"])
+	assert_true(n_full >= hero_n * (int(pr[0]) + 1) and n_full <= hero_n * (int(pr[1]) + 2), "hero_full %d for %d signs" % [n_full, hero_n])
+	var cols: Dictionary = {}
+	var gains: Dictionary = {}
+	for it: Dictionary in sd.items["hero_full"]:
+		cols[(it["col"] as Color).to_html()] = true
+		gains[snappedf((it["custom"] as Color).b, 0.001)] = true
+	assert_true(cols.size() >= 2, "hue plus accent panels: %d" % cols.size())
+	assert_true(gains.size() >= 3, "per-panel brightness: %d" % gains.size())
+	var secs: Dictionary = {}
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id != "common":
+			secs[DressDistricts.color_in("district_b", set_id).to_html()] = true
+	for g: String in ["hero_neon", "hero_full", "sign_neon", "sign_full"]:
+		for it: Dictionary in sd.items[g]:
+			assert_false(secs.has((it["col"] as Color).to_html()), "%s: sec is trim only, never a panel fill" % g)
+		var m := (sd.nodes[g][0] as MultiMeshInstance3D).material_override as ShaderMaterial
+		assert_eq(m.shader, DressKit.SIGN, g)
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id == "common":
+			continue
+		var a: Color = DressDistricts.color_in("district_a", set_id)
+		var c: Color = DressDistricts.color_in("accent", set_id)
+		var dh: float = absf(a.h - c.h)
+		assert_true(minf(dh, 1.0 - dh) > 0.12, "%s: accent contrasts with the district hue" % set_id)
+	for n in range(3, 7):
+		for b in 40:
+			var acc: Array = sd._accent_panels("b%d" % b, n)
+			assert_true(acc.size() >= 1 and acc.size() <= 2, "1-2 accent panels")
+			assert_false(acc.has(n - 1), "never the top panel (n %d)" % n)
+			if acc.size() == 2:
+				assert_true(absi(int(acc[0]) - int(acc[1])) >= 2, "never adjacent panels (n %d)" % n)
+	var yr: Vector2 = ((sd.nodes["sign_neon"][0] as MultiMeshInstance3D).material_override as ShaderMaterial).get_shader_parameter(&"yield_range")
+	assert_eq(yr.x, float(DressReveal.range_of("sign_full")["end"]), "the far block yields to the tier that covers it")
+
+
+func test_sign_levels_keep_the_core_above_the_panel_and_under_the_clamp() -> void:
+	var sg: Dictionary = DressingConfigData.shipped().sign
+	assert_true(float(sg["panel_level"]) >= 0.35 and float(sg["panel_level"]) <= 0.55, "panel 0.35-0.55")
+	assert_true(float(sg["core_level"]) >= 0.85 and float(sg["core_level"]) <= float(sg["core_max"]), "core about 0.9")
+	assert_true(float(sg["core_max"]) <= 1.0)

@@ -1,0 +1,53 @@
+// NA-24c: a street sign piece (a unit box on a MultiMesh): an OPAQUE emissive panel (luma `panel_level` at full district chroma, no
+// blend over the facade) with saturated core strokes (text-block rows, luma `core_level`, clamp `core_max`) and a frame trim in the
+// district's second light. Colour = the instance colour (the panel's hue); INSTANCE_CUSTOM.x = glyph seed, .z = the gain (HQ band
+// emit and per-panel brightness), .w = the second light packed 0xRRGGBB (0 = a lightened panel hue). A far tier block yields to the
+// tier that covers it (`yield_range`, alpha). Back faces are not drawn; side faces dim by `side_dim`. Static: no clock.
+shader_type spatial;
+render_mode unshaded, blend_mix, cull_back, depth_draw_opaque, specular_disabled, fog_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://shaders/city/dress_sign.gdshaderinc"
+
+uniform float emission_multiplier = 1.0;
+uniform float look_blend = 1.0;
+// (end, near) of the tier that covers this one; end 0 = no yield.
+uniform vec2 yield_range = vec2(0.0, 0.0);
+
+varying flat vec4 cust;
+varying vec3 lpos;
+varying vec3 lnrm;
+varying vec3 lscale;
+
+void vertex() {
+	cust = INSTANCE_CUSTOM;
+	lpos = VERTEX;
+	lnrm = NORMAL;
+	lscale = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
+}
+
+void fragment() {
+	float yw = 1.0;
+	if (yield_range.x > 0.0) {
+		float d = length(VERTEX);
+		float k = clamp((yield_range.x - d) / max(yield_range.x - yield_range.y, 0.001), 0.0, 1.0);
+		yw = 1.0 - k * k * (3.0 - 2.0 * k);
+	}
+	vec3 sc = max(lscale, vec3(0.0001));
+	float front = step(0.5, abs(lnrm.z));
+	vec2 p = lpos.xy * sc.xy;
+	vec2 fw = vec2(fwidth(p.x), fwidth(p.y));
+	vec2 m = sg_core(p, sc.xy, cust.x, fw) * front;
+	float gain = cust.z;
+	float lp = panel_level * (1.0 - bright_var * sg_hash(vec2(3.0, 5.0), cust.x)) * gain * mix(side_dim, 1.0, front);
+	float lc = min(core_level * gain, core_max);
+	vec3 panel = sg_at_luma(COLOR.rgb, lp);
+	vec3 sec = COLOR.rgb * 0.5 + vec3(0.5);
+	int pk = int(cust.w);
+	if (pk > 0) {
+		sec = vec3(float((pk >> 16) & 255), float((pk >> 8) & 255), float(pk & 255)) / 255.0;
+	}
+	vec3 rgb = mix(panel, sg_at_luma(COLOR.rgb, lc), m.y);
+	rgb = mix(rgb, sg_at_luma(sec, lc), m.x);
+	ALBEDO = rgb * emission_multiplier * look_blend;
+	ALPHA = yw;
+}
