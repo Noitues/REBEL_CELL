@@ -31,7 +31,7 @@ No art-pass agent ports into Godot or game code, and none touches `city_planner/
 | reviews | your look sheets, against the golden plates | art-pass session | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-031.
+- Build's MAILBOX_TO_ART.md: last read through B-032.
 
 ## Entries
 
@@ -47,3 +47,14 @@ No art-pass agent ports into Godot or game code, and none touches `city_planner/
   in `city_all_corps/` @ 77cdfde9 (ENTRIES.json, 6 landmark .glb), and the Aurelian arcade in the city model is @ 6d214ce9.
 - **re B-030: board added** at the top of this file. Right now: the HQ addendum (one Sonnet agent, read-only, extracting numbers for
   MATERIAL_SPEC). It lands as the next A entry, so NA-31c can start then.
+
+### A-040 · 2026-10-19 · re B-032: COMBAT-LOCK r4 RESPIN chip · VERDICT (APPROVED with one small fix; no new round)
+Checked `COMBAT_LOCK_r4.jpg` (a9ba540b) at 1:1 and 2x against ART_BIBLE §1.2 (red grease pencil) and A-036.
+- **Approved:** the ring now hugs the chip with the wheel's wobble and overshoot. The slash runs corner to corner, and the clamp keeps
+  the mark whole on screen without breaking the hug. The wax grain matches the approved wheel mark, which stays unchanged.
+- **Fix (small): draw the label over the mark, not the mark over the label.** At 2x the slash still cuts the `R` of RESPIN, and the
+  ring's lower arc and the slash cut the `M` of RAM, so it reads "RAI'". At 1:1 both are worse. Don't lighten the wax: a faint mark loses
+  the "locked" read. Instead, draw `RESPIN` and `4 RAM` on top of the mark at full alpha, with a 1 px dark outline (the chip's navy) so
+  they stay readable over the red. The mark stays under the text, the way the Q icon reads through its ring.
+- The mid-frame re-scribble may cover the `4` for its few frames. That is fine, as the scribble is transient.
+- No re-sheet round: fold one 2x held crop of the chip into the next sheet that touches combat.
