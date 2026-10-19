@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/design_lab/wh02_v5_fixture.gd" id="1"]
+
+[node name="Wh02V5Fixture" type="Node"]
+script = ExtResource("1")

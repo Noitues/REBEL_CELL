@@ -7,7 +7,30 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
+		+ _wh02_corp_theme_config()
+
+
+## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
+## (one key per corporation spot-checked, the shipped config reading them) and a save keeps a
+## changed key.
+func _wh02_corp_theme_config() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	print("WH-02 corp theme defaults (expect 3000 45 3 1 5 [ROOF, STREET, SEWER]): ", d.bloom_hq_start_gap_milli, " ", d.eye_step_deg,
+		" ", d.hq_lanes_required, " ", d.street_dark_nodes, " ", d.meridian_capacity_base, " ", d.hq_lane_ids)
+	if d.bloom_hq_start_gap_milli != 3000 or d.eye_step_deg != 45 or d.hq_lanes_required != 3 or d.street_dark_nodes != 1 or d.meridian_capacity_base != 5: fails += 1
+	if d.hq_lane_ids != ([&"ROOF", &"STREET", &"SEWER"] as Array[StringName]) or d.lane_tag_default != &"STREET": fails += 1
+	if d.raid_infection_lost_bp != 10000 or d.meridian_weigh_station_layers != PackedInt32Array([4, 7, 10]): fails += 1
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	if shipped == null or shipped.bloom_max_gap_milli != d.bloom_max_gap_milli or shipped.hq_lead_limit != d.hq_lead_limit: fails += 1
+	d.bloom_dose_price = 21
+	d.blade_classes_l1 = [&"ELITE"] as Array[StringName]
+	var err := ResourceSaver.save(d, "user://smoke_wh02_config.tres")
+	var back: CampaignConfigData = ResourceLoader.load("user://smoke_wh02_config.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	print("WH-02 corp theme save=", err, " dose price ", back.bloom_dose_price if back != null else -1)
+	if err != OK or back == null or back.bloom_dose_price != 21 or back.blade_classes_l1 != ([&"ELITE"] as Array[StringName]): fails += 1
+	return fails
 
 
 ## Plan 2 N6: ListenerData defaults (ON_PERFECT, unauthored caps, WEAK), the two appended

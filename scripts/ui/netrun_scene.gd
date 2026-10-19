@@ -6153,6 +6153,19 @@ func _refresh_status() -> void:
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
 		hud.set_daemons(s.run.operative.daemon_ids)
+	_show_theme_chip(s)
+
+
+## Plan 2 WH-02: the HUD theme chip from the run's theme rule (NetrunSession.theme_chip);
+## hidden when no rule fills it or the run is over.
+func _show_theme_chip(s: NetrunSession) -> void:
+	var chip := s.theme_chip() if s != null and not s.run.is_over() else {}
+	if chip.is_empty():
+		hud.set_theme_chip("", RunThemeState.ChipKind.INFO)
+		return
+	var args: Array = chip.get("args", [])
+	var words := tr(String(chip.get("key", "")))
+	hud.set_theme_chip(words % args if not args.is_empty() else words, int(chip.get("kind", RunThemeState.ChipKind.INFO)))
 
 
 ## B5 (review section f): the bar's tags a netrun page shows (keys; BAR_ALL: the full bar): the route and transit
