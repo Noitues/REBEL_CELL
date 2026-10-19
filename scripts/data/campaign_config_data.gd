@@ -107,6 +107,9 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## and at PERFECT. Each charge negates one incoming hit whole; charges add up.
 @export var sandbox_charges: int = 1
 @export var sandbox_charges_perfect: int = 2
+## Plan 2 N6 (designer 2026-10-18, answer 1; ruling Q8 a): how often an enemy listener with no
+## authored `max_per_turn` may fire each turn. At least 1.
+@export var listener_max_per_turn_default: int = 1
 ## N9 (ruling Q36): while a needle of the operative's wheel touches a CORRUPTED slice, every RAM
 ## cost is multiplied by this (a cost of 0 stays 0; no cap). At least 1.
 @export var corrupted_ram_cost_multiplier: int = 2
@@ -431,6 +434,8 @@ func validate() -> PackedStringArray:
 				errors.append("Resistance range for class %d must be 0 <= min <= max." % k)
 	if sandbox_charges < 1 or sandbox_charges_perfect < sandbox_charges:
 		errors.append("sandbox_charges must be >= 1 and sandbox_charges_perfect >= sandbox_charges.")
+	if listener_max_per_turn_default < 1:
+		errors.append("listener_max_per_turn_default must be >= 1.")
 	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

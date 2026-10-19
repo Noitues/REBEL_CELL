@@ -1316,6 +1316,38 @@
 		"res://tests/unit/test_na23_route_view.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_enemy_listeners.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_preview.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_undo.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_determinism.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_content.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_save.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_listener_flow.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_listener_sweep.gd": {
+			"seconds": 5.0,
+			"tier": "full"
 		}
 	}
 }

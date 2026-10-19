@@ -36,6 +36,9 @@ const HP_BAND_EPSILON := 0.0001
 ## Plan 2 N22 (ruling Q12): EASY or HARD normal-fight pool. Only normals may be EASY; the
 ## default HARD is what every non-normal carries.
 @export var normal_pool: RC.NormalPool = RC.NormalPool.HARD
+## Plan 2 N6: reactions to the player's actions (ListenerData), fired in index order and kept
+## through every phase. Hub listeners sit on the Hub (HubCoreData.listeners).
+@export var listeners: Array[ListenerData] = []
 
 
 ## N2: true when starting HP comes from hp_by_tier / hp_bands, not the legacy multiplier.
@@ -109,6 +112,28 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 			errors.append("%s (enemy %s)" % [problem, id])
 	if normal_pool == RC.NormalPool.EASY and enemy_class() != RC.EnemyClass.NORMAL:
 		errors.append("pool_on_non_normal: Enemy %s is not a normal; only normals may be in the EASY pool." % id)
+	errors.append_array(listener_errors())
+	return errors
+
+
+## N6: every listener's problems (its own, its base Hub's and each phase override's Hub),
+## each tagged with this enemy's id.
+func listener_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	var all: Array[ListenerData] = listeners.duplicate()
+	if wheel != null and wheel.hub != null:
+		all.append_array(wheel.hub.listeners)
+	for p in phases:
+		if p != null and p.hub_override != null:
+			all.append_array(p.hub_override.listeners)
+		if p != null and p.wheel_override != null and p.wheel_override.hub != null:
+			all.append_array(p.wheel_override.hub.listeners)
+	for l in all:
+		if l == null:
+			errors.append("empty_effect: Enemy %s has an empty listener entry." % id)
+			continue
+		for problem in l.validate():
+			errors.append("%s (enemy %s)" % [problem, id])
 	return errors
 
 
