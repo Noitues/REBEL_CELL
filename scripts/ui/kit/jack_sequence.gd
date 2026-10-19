@@ -1,6 +1,6 @@
 class_name JackSequence
 extends Control
-## ART-7 3B (ART_BIBLE v2 §4.6 transition, LOCKED ~4.4 s, skippable; round 36 "A wheel lens" +
+## ART-7 3B (ART_BIBLE v2 Â§4.6 transition, LOCKED ~4.4 s, skippable; round 36 "A wheel lens" +
 ## round 37 `transition_mix`): the netrun jack along the chosen link, over the City Grid:
 ## 1. the Cell's terminal types `jack --from <A> --to <B>`, routing, handshake, CONNECTED
 ##    (`jack_terminal_type`); 2. binary rain falls along the chosen link only
@@ -28,11 +28,15 @@ const RAIN_DROP := 120.0
 const RAIN_HOT := 0.2
 ## The share of the typing (from its end) the rain overlaps.
 const RAIN_LEAD := 0.35
-## The wheel at rest on the link (px radius at text scale 1.0), its hub's share of the radius,
-## the ring's ink keyline (px).
-const WHEEL_R := 46.0
-const HUB_SHARE := 0.55
-const WHEEL_KEYLINE := 3.0
+## The class wheel at rest on the link (px radius at text scale 1.0); its hub's share of the radius is the wheel's own
+## (`JackWheel.hub_share`).
+const WHEEL_R := 80.0
+## The hub hold's line (`%s` = the building the run builds): a CRT terminal line when the switch is slow (1.2).
+const LINE_HOLD := "routing ... building street_%s" # TR
+## The plain breathe under a short hold: the cyan lift's share of the hub (low .. high).
+const BREATHE_LOW := 0.10
+const BREATHE_HIGH := 0.20
+const BREATHE_RATE := 0.004
 ## The lens: the share of `jack_lens` spent swelling to cover (the rest opens), and how far
 ## past the screen's half-diagonal the hub swells (share).
 const LENS_COVER_SHARE := 0.45
@@ -40,8 +44,6 @@ const LENS_OVERSCAN := 1.15
 
 ## The link (screen px): from its owned end to the Site.
 var points: PackedVector2Array = PackedVector2Array()
-## The wheel's slice colours, in slot order.
-var slices: Array[Color] = []
 ## Live state the draw reads.
 var rain_t: float = -1.0
 var wheel_scale: float = 0.0
@@ -57,6 +59,13 @@ var skipping: bool = false
 var street: bool = false
 var night: bool = false
 var _rain_id: StringName = &"jack_link_rain"
+## The class wheel, its lens and its hub hold (`JackWheel`).
+var wheel_view: JackWheel = null
+var _hold_line := ""
+var _spin_rate := 0.0
+var _cover_t := 0.0
+## True while the switch loads under the covering hub (the hub's hold).
+var _holding := false
 var terminal: CrtTerminalPanel
 var _text: Label
 
@@ -76,7 +85,7 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 
 
 ## Plays the sequence for `link` ({from, to: words; points: PackedVector2Array screen px;
-## slices: Array[Color]}); Fx's `switch` coroutine (on_switch under the covering hub, the
+## operative: OperativeState; build: the Site id}); Fx's `switch` coroutine (on_switch under the covering hub, the
 ## arrival wait) runs once the lens covers the screen, or at once on a skip.
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_begin(link)
@@ -86,14 +95,9 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	await _play_link(switch)
 
 
-## The state both directions start from: the link's points and slices, the flags, the terminal.
+## The state both directions start from: the link's points, the flags, the terminal and the class wheel.
 func _begin(link: Dictionary) -> void:
 	points = link.get("points", PackedVector2Array())
-	slices.clear()
-	for c in link.get("slices", []):
-		slices.append(c)
-	if slices.is_empty():
-		slices.assign([Palette.CELL_PINK, Palette.NET_CYAN, Palette.SLICE_HOTFIX, Palette.CELL_PINK, Palette.NET_CYAN, Palette.SLICE_NULL])
 	var vp := get_viewport_rect().size
 	if points.size() < 2:
 		points = PackedVector2Array([vp * Vector2(0.35, 0.6), vp * Vector2(0.65, 0.4)])
@@ -105,8 +109,16 @@ func _begin(link: Dictionary) -> void:
 	rain_t = -1.0
 	wheel_scale = 0.0
 	open_t = -1.0
+	_cover_t = 0.0
+	_spin_rate = 0.0
 	visible = true
 	_make_terminal(lines_for(String(link.get("from", "")), String(link.get("to", ""))))
+	_hold_line = TranslationServer.translate(LINE_HOLD) % String(link.get("build", link.get("to", "")))
+	if wheel_view != null and is_instance_valid(wheel_view):
+		wheel_view.queue_free()
+	wheel_view = JackWheel.new()
+	add_child(wheel_view)
+	wheel_view.setup(link, vp)
 
 
 func _play_link(switch: Callable) -> void:
@@ -145,8 +157,10 @@ func _play_link(switch: Callable) -> void:
 	await _play_wheel(switch)
 
 
-## Beats 4-5 of the LOCKED chain (ART_BIBLE 4.6), shared by the link jack and the street entry: the operative's wheel slaps onto the
-## link's Site end and spins up, the wheel lens swells to cover (the switch runs under it), then opens onto the run.
+## Beats 4-5 of the LOCKED chain (ART_BIBLE 4.6), shared by the link jack and the street entry: the operative's class wheel (`JackWheel`,
+## the combat's own WheelView) slaps onto the link's Site end like a vinyl sticker (overshoot and settle) and spins up, the wheel lens
+## swells until its hub core covers the screen (the switch runs under it, after the covering frame has rendered), then the hub core
+## opens onto the run.
 func _play_wheel(switch: Callable) -> void:
 	var vp := get_viewport_rect().size
 	var t := 0.0
@@ -157,7 +171,8 @@ func _play_wheel(switch: Callable) -> void:
 	var slap := Motion.entry(&"jack_wheel_slap")
 	var spin_s := Motion.seconds_live(&"jack_wheel_spin")
 	# The spin keeps its rate through the lens (none when switched off).
-	var spin_rate := TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
+	var spin_rate := _spin_rate_now(spin_s)
+	_spin_rate = spin_rate
 	var turns := Motion.amplitude(&"jack_wheel_spin")
 	t = 0.0
 	while t < slap_s + spin_s and not skipping:
@@ -167,45 +182,75 @@ func _play_wheel(switch: Callable) -> void:
 		wheel_scale = lerpf(maxf(1.0, slap.amplitude if slap != null else 1.0), 1.0, e)
 		var v := clampf((t - slap_s) / maxf(spin_s, 0.001), 0.0, 1.0)
 		wheel_turn = TAU * turns * v * v
-		queue_redraw()
+		_place(CardFx.slap_scale(u) if slap_s > 0.0 and u < 1.0 else Vector2.ONE)
 		await get_tree().process_frame
 	wheel_scale = 1.0
-	# 5. The lens: swell until the hub covers the screen, switch under it, open onto the run.
+	# 5. The lens: swell until the hub core covers the screen, switch under it, open the hub onto the run.
 	var lens_s := Motion.seconds(&"jack_lens")
 	var cover_s := lens_s * LENS_COVER_SHARE
 	var start_at := wheel_at
-	var cover_r := vp.length() * 0.5 * LENS_OVERSCAN / HUB_SHARE
+	var cover_scale := cover_scale_for(vp, wheel_view.hub_share(), wheel_r)
 	t = 0.0
 	while t < cover_s and not skipping:
 		t += get_process_delta_time()
 		var u := clampf(t / maxf(cover_s, 0.001), 0.0, 1.0)
 		var e := u * u
 		wheel_at = start_at.lerp(vp * 0.5, e)
-		wheel_scale = lerpf(1.0, cover_r / maxf(wheel_r, 1.0), e)
-		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
+		wheel_scale = lerpf(1.0, cover_scale, e)
+		wheel_turn += _spin_rate * get_process_delta_time()
+		_place()
 		await get_tree().process_frame
 	wheel_at = vp * 0.5
-	wheel_scale = cover_r / maxf(wheel_r, 1.0)
-	queue_redraw()
+	wheel_scale = cover_scale
+	_place()
+	_cover_t = 0.0
+	# The switch runs under a covering frame that has been drawn (the sub-viewport lags the main one by a frame).
+	for f in 2:
+		if not skipping:
+			await get_tree().process_frame
 	switched = true
+	_holding = true
 	await switch.call()
+	_holding = false
 	if skipping:
 		_end()
 		return
-	# Open: the hub becomes a hole onto the run; the ring flies past.
+	# Open: the hub core burns through; the hole grows past the screen.
 	var open_s := lens_s - cover_s
 	open_t = 0.0
 	t = 0.0
 	while t < open_s and not skipping:
 		t += get_process_delta_time()
 		open_t = clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
-		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
+		wheel_turn += _spin_rate * get_process_delta_time()
+		_place()
 		await get_tree().process_frame
 	if not switched:
 		await switch.call()
 	_end()
+
+
+## The wheel's scale (of `WHEEL_R`, `wheel_r` px) at which its hub core covers a screen of `vp` (the lens's end of the swell).
+static func cover_scale_for(vp: Vector2, hub_share: float, base_r: float) -> float:
+	return vp.length() * 0.5 * LENS_OVERSCAN / maxf(hub_share, 0.01) / maxf(base_r, 1.0)
+
+
+## The wheel's turn rate (rad/s) while it spins up (0 when the spin does not play).
+static func _spin_rate_now(spin_s: float) -> float:
+	return TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
+
+
+## Draws the wheel for the live state (`wheel_at`, `wheel_scale`, `wheel_turn`, `open_t`): the class wheel through the lens hole.
+func _place(squash: Vector2 = Vector2.ONE) -> void:
+	if wheel_view == null or wheel_scale <= 0.0:
+		return
+	var r := wheel_r * wheel_scale
+	wheel_view.place(wheel_at, r, wheel_turn, squash)
+	var vp := get_viewport_rect().size
+	if open_t >= 0.0:
+		wheel_view.set_hole(wheel_at, JackWheel.hole_radius(open_t, r * wheel_view.hub_share(), vp))
+	else:
+		wheel_view.set_hole(wheel_at, 0.0)
 
 
 ## NA-25 (PIPELINE_SPEC 10, beats 3a-3c): the terminal types over `entry_terminal`, the rain falls over `entry_rain`, the
@@ -257,25 +302,37 @@ func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	var vp := get_viewport_rect().size
 	wheel_at = vp * 0.5
 	wheel_r = WHEEL_R * Settings.text_scale
-	var cover_r := vp.length() * 0.5 * LENS_OVERSCAN / HUB_SHARE
 	var spin_s := Motion.seconds_live(&"jack_wheel_spin")
-	var spin_rate := TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
+	var spin_rate := _spin_rate_now(spin_s)
+	_spin_rate = spin_rate
 	var lens_s := Motion.seconds_live(&"jack_lens")
 	var cover_s := lens_s * LENS_COVER_SHARE
 	var open_s := lens_s - cover_s
-	wheel_scale = cover_r / maxf(wheel_r, 1.0)
-	# 1. The lens closes over the street.
+	var cover_scale := cover_scale_for(vp, wheel_view.hub_share(), wheel_r)
+	wheel_scale = cover_scale
+	open_t = 1.0
+	_place()
+	# 1. The lens closes over the street: the hub core's hole shrinks to nothing.
 	var t := 0.0
 	while t < open_s and not skipping:
 		t += get_process_delta_time()
 		open_t = 1.0 - clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
 		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
+		_place()
 		await get_tree().process_frame
 	open_t = -1.0
+	_place()
+	_cover_t = 0.0
+	# The HQ loads under a covering frame that has been drawn (never the city showing through: `JackWheel.covers`).
+	for f in 2:
+		if not skipping:
+			await get_tree().process_frame
 	switched = true
-	queue_redraw()
+	_holding = true
 	await switch.call()
+	_holding = false
+	wheel_view.show_hold(false)
+	wheel_view.set_breathe(0.0)
 	if skipping:
 		_end()
 		return
@@ -287,11 +344,11 @@ func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 		var e := 1.0 - clampf(t / maxf(cover_s, 0.001), 0.0, 1.0)
 		e = e * e
 		wheel_at = site_at.lerp(vp * 0.5, e)
-		wheel_scale = lerpf(1.0, cover_r / maxf(wheel_r, 1.0), e)
+		wheel_scale = lerpf(1.0, cover_scale, e)
 		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
+		_place()
 		await get_tree().process_frame
-	# 3. The wheel spins down and comes off the link.
+	# 3. The wheel spins down and comes off the link (the slap backwards: it shrinks away).
 	var off_s := Motion.seconds_live(&"jack_wheel_slap") + spin_s
 	wheel_at = site_at
 	t = 0.0
@@ -299,10 +356,10 @@ func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 		t += get_process_delta_time()
 		wheel_scale = 1.0 - clampf(t / maxf(off_s, 0.001), 0.0, 1.0)
 		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
+		_place()
 		await get_tree().process_frame
 	wheel_scale = 0.0
-	queue_redraw()
+	wheel_view.clear()
 	if skipping:
 		_end()
 		return
@@ -349,6 +406,9 @@ func _end() -> void:
 	night = false
 	open_t = -1.0
 	wheel_scale = 0.0
+	_holding = false
+	if wheel_view != null and is_instance_valid(wheel_view):
+		wheel_view.clear()
 	if terminal != null and is_instance_valid(terminal):
 		terminal.queue_free()
 	terminal = null
@@ -403,9 +463,22 @@ func _make_terminal(lines: PackedStringArray) -> void:
 	terminal.position = at.clamp(Vector2.ZERO, (vp - terminal.size).max(Vector2.ZERO))
 
 
-func _process(_delta: float) -> void:
-	if covering():
-		queue_redraw()
+## While the hub core covers the screen (the switch loads): the wheel keeps turning, a short hold breathes, and a hold that passes
+## `jack_hub_crt` becomes a CRT terminal (ART_BIBLE 1.2: navy glass, scanlines, a scrolling hex dump, edge glow, a type-on line and its
+## caret). Bits only fall when real data moves, and nothing here moves any, so none do.
+func _process(delta: float) -> void:
+	if not _holding or wheel_view == null:
+		return
+	_cover_t += delta
+	wheel_turn += _spin_rate * delta
+	_place()
+	var crt_after := Motion.seconds(&"jack_hub_crt")
+	if Motion.live(&"jack_hub_crt") and _cover_t >= crt_after:
+		wheel_view.show_hold(true, _hold_line)
+		wheel_view.set_breathe(0.0)
+	else:
+		var breathe := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * BREATHE_RATE)
+		wheel_view.set_breathe(BREATHE_LOW + (BREATHE_HIGH - BREATHE_LOW) * breathe)
 
 
 func _draw() -> void:
@@ -413,8 +486,6 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Palette.NIGHT_SKY)
 	if rain_t >= 0.0:
 		_draw_rain()
-	if wheel_scale > 0.0:
-		_draw_wheel()
 
 
 ## Binary rain along the link: bits fall onto it, white-hot first, flipping 0/1.
@@ -449,34 +520,3 @@ func _along(d: float) -> Vector2:
 			return points[i].lerp(points[i + 1], d / maxf(seg, 0.001))
 		d -= seg
 	return points[points.size() - 1]
-
-
-## The operative's wheel: slices round a dark hub; while the lens opens the hub is a hole onto
-## the run and the ring flies outward past the screen.
-func _draw_wheel() -> void:
-	var r := wheel_r * wheel_scale
-	var hub := r * HUB_SHARE
-	var k := maxf(1.0, wheel_scale)
-	if open_t >= 0.0:
-		var vp := get_viewport_rect().size
-		var far := vp.length() * 0.5 * LENS_OVERSCAN
-		var e := 1.0 - pow(1.0 - open_t, 3.0)
-		hub = lerpf(0.0, far * 1.6, e)
-		r = hub / HUB_SHARE
-	var n := slices.size()
-	for i in n:
-		var a0 := wheel_turn + TAU * i / n
-		var a1 := wheel_turn + TAU * (i + 1) / n
-		var mid_r := (hub + r) * 0.5
-		var w := r - hub
-		draw_arc(wheel_at, mid_r, a0, a1, 24, slices[i], w, false)
-		var edge := Vector2.from_angle(a0)
-		draw_line(wheel_at + edge * hub, wheel_at + edge * r, Palette.INK, WHEEL_KEYLINE * k * 0.5)
-	draw_arc(wheel_at, r, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
-	draw_arc(wheel_at, hub, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
-	if open_t < 0.0:
-		# The covering hub is held while the switch loads: not one flat colour. A slow lift toward the ring's cyan breathes through it, so a
-		# held frame is never a flat navy panel (art-pass on the night switch).
-		var breathe := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * 0.004)
-		draw_circle(wheel_at, hub, Palette.NIGHT_SKY.lerp(Palette.NET_CYAN, 0.10 + 0.10 * breathe))
-		draw_arc(wheel_at, hub * 0.8, 0, TAU, 48, Color(Palette.NET_CYAN, 0.5), WHEEL_KEYLINE * k * 0.5)

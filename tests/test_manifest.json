@@ -1225,6 +1225,10 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_jack_wheel.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/netrun_art/test_na24_dress_parity.gd": {
 			"seconds": 8.0,
 			"tier": "fast"

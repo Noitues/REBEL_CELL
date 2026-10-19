@@ -722,7 +722,9 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 			var sd := lookup().get_content(id) as SliceData
 			if sd != null:
 				slices.append(Palette.slice_color(sd.slice_type))
-	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices}
+	# NA-25b r3: the operative (the jack's wheel is that class wheel) and the building the run builds (the hub hold's CRT line).
+	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices,
+		"operative": op, "build": String(site_id)}
 
 
 ## A Site as the Cell's terminal writes it ("S-07"): its node number on the corporation's grid.

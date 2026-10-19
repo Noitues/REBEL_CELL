@@ -206,7 +206,10 @@ func _shoot_chain() -> void:
 	elif j.open_t >= 0.3:
 		tag = "chain_7_lens_open"
 	elif j.covering():
+		# The hub hold: the plain breathe first, then (a slow load, past `jack_hub_crt`) the CRT terminal with its routing line typed.
 		tag = "chain_6_cover_hold"
+		if j.wheel_view != null and j.wheel_view.holding() and not j.wheel_view.hold.typing():
+			tag = "chain_6b_crt_hold"
 	elif j.wheel_scale > 3.0:
 		tag = "chain_5_lens_swell"
 	elif j.wheel_scale > 0.0 and j.wheel_scale <= 1.4:
@@ -268,6 +271,8 @@ func _track_out(delta: float) -> void:
 	if j != null and j.visible and j.street and j.terminal != null and is_instance_valid(j.terminal) and _mode == "shots":
 		if j.covering() and not _hq_out_seen.has("night"):
 			_hq_out_seen["night"] = true
+			var hub_r := j.wheel_r * j.wheel_scale * j.wheel_view.hub_share()
+			print("NA25E HQ-side switch frame: the hub covers the screen = %s (hub %.0f px)" % [str(JackWheel.covers(j.wheel_at, hub_r, 0.0, get_viewport_rect().size)), hub_r])
 			get_viewport().get_texture().get_image().save_png("%s/hq_out_cover.png" % _shots)
 		elif j.wheel_scale > 0.0 and j.wheel_scale < 1.0 and not _hq_out_seen.has("unslap"):
 			_hq_out_seen["unslap"] = true

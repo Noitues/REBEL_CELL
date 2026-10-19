@@ -48,7 +48,6 @@ const ALLOWED := {
 	"scripts/ui/kit/hud_skin.gd": [3, "CHROME, routed: TERMINAL_BG / TERMINAL_EDGE are the v2 constants HudSkin's painters re-value; PIP_ON is the RAM pip (a resource colour, kept)"],
 	"scripts/ui/kit/hud_stats.gd": [1, "CHROME, routed: EDGES is passed to HudSkin.draw_terminal_panel, which applies the skin"],
 	"scripts/ui/kit/inspect_popup.gd": [2, ROUTED_TRACK],
-	"scripts/ui/kit/jack_sequence.gd": [3, SEM_NET],
 	"scripts/ui/kit/jack_site_icon.gd": [1, SEM_NET],
 	"scripts/ui/kit/materials/system_word_sticker.gd": [2, "SEMANTIC: the SYSTEM word sticker is a sticker (stickers keep v2 on every skin, the 12s ruling)"],
 	"scripts/ui/kit/neon_city.gd": [4, SEM_WORLD],

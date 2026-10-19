@@ -280,7 +280,9 @@ void fragment() {
 		discard;
 	}
 	float g_open = ghosted ? 1.0 - v_occ.y / 16.0 : 1.0;
-	bool poche_face = !FRONT_FACING && was_cut;
+	// NA-25b r3 (art-pass A-019): a ghosted building is see-through (7.1), so its inner walls keep the facade look; the flat poche is for a
+	// cut that is not ghosted (the section, a cut at full opacity). A ghost easing in or out was a solid black windowless prism.
+	bool poche_face = !FRONT_FACING && was_cut && !ghosted;
 	float seed = v_inst.z;
 	float tone = mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13));
 	bool roof = v_c0.y > 0.5;

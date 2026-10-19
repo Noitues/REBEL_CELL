@@ -206,7 +206,7 @@ func _step_skip() -> void:
 
 
 ## NA-25b stills: the facade's bits dissolve with every room mid-way (rooms in frame are counted), the toggle's camera ease.
-const STILL_SETTLE := 8
+const STILL_SETTLE := 40
 var _still_i := 0
 var _still_f := 0
 
@@ -223,6 +223,8 @@ func _set_still(name: String) -> void:
 		var k := float(parts[2])
 		if parts[1] == "overview":
 			view.rig.set_pose(_data.overview_state()["pose"])
+			# The OVERVIEW's own occlusion (the DECISION's under this camera was a lab mismatch), given STILL_SETTLE frames to ease in.
+			view.rig.set_occlusion(_data.overview_state()["rec"])
 		for id: String in ids:
 			view.rig.set_room_dissolve(id, k)
 		var n := 0
