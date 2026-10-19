@@ -34,6 +34,8 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+- **2026-10-19 NA-26 follow-up: `route_target_pulse` stays AWAITING_FIX (overnight default, designer may revisit).** On the real Grid view overlay it still ignores its motion switch; the fix edits CityMapOverlay, so it moves to the MOTION-TIMINGS slice. NA-11c route columns stay exempt from the HQ-zone 0.6x cap (art-pass, W1_NA11 APPROVED). R-FOCUS-1 is n/a on street views (art-pass 7ad41a22, 12.7).
+
 ### 2026-10-18 — Plan 2 W1 N6: enemy listeners (Q8 a, Q19, Q39, N1b; designer answers 1-3)
 - **Schema:** `ListenerData` (trigger, effects, `max_per_turn`, `max_per_combat`, `min_tier`) on `EnemyData.listeners`
   (kept through phases) and `HubCoreData.listeners` (silent while the Hub is breached; a phase `hub_override` swaps
