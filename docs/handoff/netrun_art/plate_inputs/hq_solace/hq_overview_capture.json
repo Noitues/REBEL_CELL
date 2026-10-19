@@ -1,0 +1,46 @@
+{
+ "camera": {
+  "dist": 2600.0,
+  "fov": 0.0,
+  "lens": 0.0,
+  "loc": [
+   1078.0858,
+   2129.7954,
+   1293.6968
+  ],
+  "note": "yaw / pitch are CityIsoCamera degrees (view direction cos(yaw)cos(pitch), -sin(pitch), -sin(yaw)cos(pitch) in world); lens 0 = orthographic, shift 0 = the frame is centered on tgt",
+  "ortho_scale": 264.2929,
+  "pitch": 55.0,
+  "plan_loc": [
+   1078.0858,
+   -1293.6968,
+   2129.7954
+  ],
+  "plan_tgt": [
+   23.5783,
+   -239.1893,
+   0.0
+  ],
+  "projection": "orthogonal",
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   23.5783,
+   0.0,
+   239.1893
+  ],
+  "yaw": 135.0
+ },
+ "corp": "solace",
+ "kind": "hq",
+ "layout_seed": "13875796438772315820",
+ "look": "mainline",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "hq_solace_11",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

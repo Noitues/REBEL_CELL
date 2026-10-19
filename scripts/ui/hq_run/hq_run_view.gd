@@ -321,6 +321,16 @@ func world_of(id: StringName) -> Vector3:
 	return _points.get(id, Vector3.INF)
 
 
+## HQ-EXPORT: where the compound stands in the world (the place transform).
+func compound_at() -> Transform3D:
+	return _at
+
+
+## HQ-EXPORT: where the run enters the compound (world).
+func entry_world() -> Vector3:
+	return _entry
+
+
 ## The screen point (local) of node `id` (Vector2.INF when it has none).
 func screen_of(id: StringName) -> Vector2:
 	var w := world_of(id)
