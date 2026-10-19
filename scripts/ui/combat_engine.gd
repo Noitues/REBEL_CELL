@@ -87,6 +87,11 @@ func preview(action: CombatAction) -> CombatResult:
 	return session.preview(action) if session != null else null
 
 
+## Q19: the forecast with its random parts marked unknown (null when no fight).
+func forecast(action: CombatAction) -> PreviewResult:
+	return session.forecast(action) if session != null else null
+
+
 func preview_end_turn() -> CombatResult:
 	return session.preview_end_turn() if session != null else null
 

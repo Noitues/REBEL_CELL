@@ -139,6 +139,18 @@ func _max_diff(a: Image, b: Image) -> int:
 	return d
 
 
+## The share of pixels whose channels differ by more than 8/255.
+func _diff_share(a: Image, b: Image) -> float:
+	var n := 0
+	for y in a.get_height():
+		for x in a.get_width():
+			var p: Color = a.get_pixel(x, y)
+			var q: Color = b.get_pixel(x, y)
+			if maxf(absf(p.r - q.r), maxf(absf(p.g - q.g), absf(p.b - q.b))) * 255.0 > 8.0:
+				n += 1
+	return float(n) / float(a.get_width() * a.get_height())
+
+
 func _mean(img: Image, linear: bool = false) -> float:
 	var s := 0.0
 	for y in img.get_height():
@@ -211,9 +223,9 @@ func _lane() -> Dictionary:
 		"streaks": [{"u0": 3.0, "len": 12.0, "gap": 8.0, "bright": 1.0}, {"u0": 30.0, "len": 6.0, "gap": 20.0, "bright": 0.7}, {"u0": 55.0, "len": 15.0, "gap": 9.0, "bright": 1.2}]}
 
 
-func _streak_img(t: float, frozen: float = NAN) -> Image:
+func _streak_img(t: float, frozen: float = NAN, lane: Dictionary = {}) -> Image:
 	var root := Node3D.new()
-	var node := NetrunShaderKit.streak_node(_lane(), Color(1.0, 0.8, 0.5))
+	var node := NetrunShaderKit.streak_node(_lane() if lane.is_empty() else lane, Color(1.0, 0.8, 0.5))
 	NetrunShaderKit.set_clock([node.material_override], t, frozen)
 	root.add_child(node)
 	return await _shot(root, 90.0, Vector3(40.0, 20.0, 0.0), true, null, Vector2i(512, 64))
@@ -228,6 +240,22 @@ func test_a_streak_lane_loops_seamlessly_on_four_seconds() -> void:
 	assert_gt(_mean(t0), 0.001, "the lane draws")
 	assert_lte(_max_diff(t0, t4), 1, "t = 4.0 s equals t = 0 (<= 1/255)")
 	assert_gt(_max_diff(t0, t1), 8, "and it moves in between")
+
+
+## NA-24b: a k = 2 lane (80 BU at speed 10, T = 4 s) loops on k * T = 8 s, with no jump at T.
+func test_a_streak_lane_with_k_2_loops_seamlessly_on_k_times_t() -> void:
+	if _headless():
+		return
+	var lane := _lane()
+	lane["speed"] = 10.0
+	assert_eq(int(NetrunShaderKit.quantize_speed(80.0, 10.0, 4.0)["k"]), 2, "the lane is a k = 2 lane")
+	var t0: Image = await _streak_img(0.0, NAN, lane)
+	var t4: Image = await _streak_img(4.0, NAN, lane)
+	var t8: Image = await _streak_img(8.0, NAN, lane)
+	var t_just_before: Image = await _streak_img(3.99, NAN, lane)
+	assert_lte(_max_diff(t0, t8), 1, "t = k*T equals t = 0 (<= 1/255)")
+	assert_gt(_max_diff(t0, t4), 8, "t = T is half a lane on, not a restart")
+	assert_lt(_diff_share(t_just_before, t4), 0.1 * _diff_share(t0, t4), "no jump at T: 3.99 s and 4.0 s differ far less than 0 and T")
 
 
 func test_reduce_effects_freezes_streaks_and_the_beam_sweep_at_the_plate_anim_t() -> void:

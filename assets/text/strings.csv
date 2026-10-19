@@ -131,7 +131,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s on a random slice,%s on a random slice
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
-%s rolls,%s rolls
 %s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.,%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
 "%s turns it back, %s forward.","%s turns it back, %s forward."
@@ -206,6 +205,11 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > focus an item: what it does shows here.,> focus an item: what it does shows here.
 > jack --from %s --to %s,> jack --from %s --to %s
 > point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.,> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.
+? %s %s,? %s %s
+? DRAW,? DRAW
+? LANDING,? LANDING
+? SLICE,? SLICE
+? STATUS,? STATUS
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
@@ -215,8 +219,7 @@ A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no s
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).,A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).
 A raid's route toward your HOME SERVER.,A raid's route toward your HOME SERVER.
-A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
-A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
+A random result: shown as ? until you play it,A random result: shown as ? until you play it
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 "A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
 ABANDON CAMPAIGN,ABANDON CAMPAIGN
@@ -1994,7 +1997,6 @@ RAM 0,RAM 0
 RAM FORECAST,RAM FORECAST
 RAM%s,RAM%s
 RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
-RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RARE,RARE
 "RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
@@ -2028,7 +2030,7 @@ RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN LOCKED,RESPIN LOCKED
-RESPIN: ODDS,RESPIN: ODDS
+RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 RETALIATION,RETALIATION
 REWARDS,REWARDS
@@ -2158,7 +2160,7 @@ Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed aft
 Respin,Respin
 Respin for %d RAM,Respin for %d RAM
 Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
-Respin your wheel for %d RAM: a random result (UNDO stops here). %s,Respin your wheel for %d RAM: a random result (UNDO stops here). %s
+Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).,Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game

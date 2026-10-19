@@ -166,23 +166,12 @@ func _shoot() -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	var rig := view.rig
 	get_viewport().get_texture().get_image().save_png("%s/ui.png" % dir)
-	var beauty := rig.view.get_texture().get_image()
-	beauty.save_png("%s/beauty.png" % dir)
-	rig.set_id_pass(true)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var idimg := rig.view.get_texture().get_image()
-	idimg.save_png("%s/id.png" % dir)
-	# depth.png (12.0): 16-bit linear camera depth, BU x 100, nearest-sampled (the view's own pixels), no UI.
-	rig.set_depth_pass(true)
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var dimg := rig.view.get_texture().get_image()
-	Png16.save_gray16("%s/depth.png" % dir, dimg.get_width(), dimg.get_height(), Png16.samples_from_rg(dimg))
-	rig.set_depth_pass(false)
-	rig.set_id_pass(false)
+	# NA-ID: beauty.png, id.png, depth.png and capture.json come from the general id capture (the same contract as HQ / city frames).
+	var meta := {"kind": "street", "view": "hover" if _states[_i] == "hover" else _states[_i], "look": "aaa2", "look_blend": 1.0, "corp": "",
+		"run": String(_data.derive["run"]), "camera": rig.pose.to_json(), "exempt": {"hover_cut": _states[_i] == "hover", "red_seq": false, "flash": false}}
+	var res: Dictionary = await IdCapture.new(get_tree(), rig.view, rig).write(dir, meta)
+	var beauty: Image = res["beauty"]
+	print("NA23 id classes ", res["counts"])
 	var cam := rig.view.camera
 	print("NA23 cam proj=", cam.projection, " size=", cam.size, " off=", cam.frustum_offset, " near=", cam.near, " pos=", cam.global_position, " keep=", cam.keep_aspect, " pose loc=", rig.pose.loc(), " lens=", rig.pose.lens, " expect size=", NetrunFrustum.frustum_size(rig.pose, 0.5))
 	var rid0: String = rig.room_ids()[0]
@@ -190,10 +179,6 @@ func _shoot() -> void:
 	for q: Array in fr:
 		var w3 := NetrunFrustum.to_world([q[0], q[1], q[2]])
 		print("NA23 corner ", q, " unproject ", cam.unproject_position(w3), " pose.proj ", rig.pose.proj(q), " vp ", rig.view.size, " vpsize ", rig.view.get_visible_rect())
-	var cap := {"version": 1, "kind": "street", "view": "hover" if _states[_i] == "hover" else _states[_i], "look": "aaa2", "look_blend": 1.0, "corp": "",
-		"resolution": [beauty.get_width(), beauty.get_height()], "layout_seed": str(CityView3D.CONFIG.city_seed), "run": String(_data.derive["run"]), "anim_t": 0.0,
-		"camera": rig.pose.to_json(), "exempt": {"hover_cut": _states[_i] == "hover", "red_seq": false, "flash": false}}
-	FileAccess.open("%s/capture.json" % dir, FileAccess.WRITE).store_string(JSON.stringify(cap, "\t"))
 	print("NA23 shot %s %dx%d share=%.2f arrow=%s" % [dir, beauty.get_width(), beauty.get_height(), view.overlay.last_share(), str(view.overlay.arrow_showing())])
 	_phase = ""
 	await get_tree().process_frame
