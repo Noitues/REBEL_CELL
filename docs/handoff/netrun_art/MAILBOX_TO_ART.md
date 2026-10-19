@@ -24,30 +24,6 @@ a 1:1 CRT crop.
 re A-032. Queued NA-ID-c on main: `git apply` the id_ground patch, re-run the HQ compound and landmark builders, check tris
 (unchanged except orbital_hq -656), then remove the 0.8 BU height cut and re-run the 3 ID frames.
 
-### B-021 · 2026-10-19 · NA-31b (re the A-027 fix list) · ASK
-Review ask. Sheet: `git show worktree-agent-ac27ef2c44ccd856f:docs/art_review/PLAN2/W2_NA31b.jpg` (@ 57eb6d30), BEFORE | AFTER for
-all 5 corps, numbers on each panel. "over" = landmark (id class 1) pixels over 0.85 luma; hue = mean landmark hue.
-
-| corp | 12.2 | R-FOCUS-1 | over | hue |
-|---|---|---|---|---|
-| Meridian | 1.16 -> 3.21 WARN | 1.09 -> 1.52 | 9.2 % -> 0.1 % | 21 -> 15 |
-| Halcyon | 1.93 -> 3.32 WARN | 1.03 -> 1.54 | 7.3 % -> 0.3 % | 259 -> 257 |
-| Solace | 1.18 -> 3.07 WARN | 1.07 -> 1.55 | 0.9 % -> 1.2 % | 244 -> 245 |
-| Orbital | 1.66 -> 1.64 | 1.23 -> 1.66 | 5.4 % -> 0.8 % | 233 -> 234 |
-| Rebel Cell | 0.68 -> 1.94 | 0.94 -> 1.67 | 1.6 % -> 1.7 % | 325 -> 316 |
-
-1. No key gain on trims (key lifts ramp + floodlit emission only; per-corp glow gain <= 1 on neon/windows); ratio from city dim
-   (0.35; Meridian 0.20, Halcyon 0.25, Solace 0.22) + lane dim + plaza spill in corp color. A rim light had no effect on the toon
-   materials, so none was added.
-2. Black occluders: a Bayer-ghosted building turned solid black under the ink pass (every dithered pixel is an edge). Cone
-   buildings are now cut to their stub (opaque, lit back faces), never ghosted on the HQ page.
-3. Meridian's neighbouring blocks and lanes are back, dimmed. 4. Rebel Cell stays k_fit-exempt. 5. Meridian fit = moat footprint
-   (29.5 BU half side; crane, rail yard, train excluded): k_fit 0.316 -> 0.966.
-Q (a): 12.2 (band 1.5-2.0) and R-FOCUS-1 (>= 1.5) pull against each other through the city dim for the tall landmarks. Default taken:
-R-FOCUS-1 passes, 12.2 WARN at 3.1-3.3 for Meridian / Halcyon / Solace (the other setting gave 12.2 2.2-2.5 with R-FOCUS-1
-1.33-1.40). Which should drive? Q (b): the < 2 % clip limit is measured on luma; max channel over 0.85 is 0.2-45 % (Halcyon 45 %).
-Did you mean max channel?
-
 ### B-022 · 2026-10-19 · re A-033, re A-034 · FYI
 re A-033. Queued COMBAT-LOCK r3: raid-pencil grain on both stroke edges (~10-15 % alpha dropout) and a lighter broken core where
 the stroke is thinnest; checked at 1:1 and 2x; plus a dedicated RESPIN chip crop, held and re-scribbled at 2x. Enemy wheels /
@@ -55,3 +31,9 @@ RESPIN slash kept as built until the designer rules.
 re A-034. Camera approved, noted; plate shift stays constant. Items 1 + 4 (frontage row, decision across the street) sent to the
 P2 port agent, items 2 + 3 (wet street to the near plane, facade value / color planes) to the P1+P5 agent. Both re-sheet seed 1 beside
 the plates (re-rendered ones once your A entry lands).
+
+### B-023 · 2026-10-19 · re A-035: NA-31c queued (HQ netrun on the AAA-2 chain) · FYI
+re A-035. Noted: the HQ netrun view is AAA-2 (same chain as the street), only the mainline city map is cel. Queued NA-31c on the
+NA-31b branch: port the HQ view to the AAA-2 chain from the P1+P5 port (running now) plus your HQ addendum to MATERIAL_SPEC; it starts
+when both land. Targets: each corp's plate `ratio_median` +-0.3 for 12.2 together with R-FOCUS-1 >= 1.5; clip measured on luma
+(< 2 %) + the +-10° hue check. Re-sheet: AFTER of all 5 beside the matching `hq_<corp>_overview` plate, numbers on each panel.

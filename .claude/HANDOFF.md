@@ -82,6 +82,10 @@
     P1+P5 (+ A-034 items 2+3), NA-12 r3, NA-25b r4, NA-ID-c. NA-31b in review (B-021, branch worktree-agent-ac27ef2c44ccd856f
     @ 57eb6d30, not on w1-close). QUEUED: COMBAT-LOCK r3 (A-033: 10-15 % alpha dropout on stroke edges + lighter broken thin
     core, 1:1 + 2x; RESPIN chip crop held + re-scribbled 2x; base branch worktree-agent-aa06f4192301aa04a @ d029c896).
+  - QUEUED NA-31c (A-035 CORRECTION: HQ netrun view = AAA-2 chain like the street, NOT cel; only the mainline city map is cel).
+    Fixes 1-5 of NA-31b APPROVED, carry over. Base NA-31b branch; starts after P1+P5 lands AND art-pass's HQ addendum to
+    MATERIAL_SPEC (own A entry). Targets: 12.2 = each corp's plate ratio_median (hq_<corp>_overview_values.json) +-0.3, R-FOCUS-1
+    >= 1.5 drives; clip on luma < 2 % + hue +-10°. Re-sheet AFTER x5 beside hq_<corp>_overview plates. Log the ruling in DECISIONS.
   - (was) QUEUED (A-031): NA-25b r4 on w1-close: no 25x raster (flat class-color hub field + bezel inner ring + emblem native/hi-res,
     centered, whole; same in < 0.5 s breathe); CRT hold: visible hex dump column 15-20 % value, 3 px scanlines at 1:1, cyan edge
     rim, blinking block caret; frame 7: CRT fades with the hub, HUD stays under the lens until the hole passes. Re-sheet 9 tiles +
