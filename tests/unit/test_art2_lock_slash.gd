@@ -75,7 +75,12 @@ func test_the_slash_shape_is_a_circle_then_a_diagonal_and_is_deterministic() -> 
 	assert_eq(a[1], b[1])
 	var slash: PackedVector2Array = a[1]
 	var reach := 17.0 * NudgeLockPencil.CIRCLE_SHARE
-	assert_almost_eq(slash[0].distance_to(Vector2(100, 100)), reach, 0.01)
+	assert_gt(slash[0].distance_to(Vector2(100, 100)), reach, "the slash runs past the ring")
+	assert_gt(a[0].size(), 100, "the ring is one long hand stroke")
+	assert_gt(a[0][0].distance_to(a[0][a[0].size() - 1]), 0.0, "the ring does not close on itself")
+	var low := NudgeLockPencil.shapes(Vector2(100, 100), Vector2(17, 17), 7, 100.0 + 17.0 + 3.0)
+	for p in low[0]:
+		assert_lt(p.y, 100.0 + 17.0 + 3.0, "the ring's foot stays above the key label")
 	assert_lt(slash[0].x, 100.0, "starts upper left")
 	assert_lt(slash[0].y, 100.0)
 	assert_gt(slash[slash.size() - 1].x, 100.0, "ends lower right")

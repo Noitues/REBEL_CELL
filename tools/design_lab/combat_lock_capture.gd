@@ -9,6 +9,8 @@ const COMBAT := "res://scenes/combat/combat_scene.tscn"
 const LK = preload("res://tests/helpers/lock_fixture.gd")
 ## Half the crop's side (px) round the player wheel's centre.
 const HALF := 300
+## Half the side (px) of a 2x zoom crop (shown at 600 px on the sheet).
+const ZOOM_HALF := 150
 
 var _out := ""
 var _holder: Control = null
@@ -49,6 +51,15 @@ func _shot(scene: Control, name: String) -> void:
 	print("shot ", name, " ", r)
 
 
+## A ZOOM_HALF square round global point `c`, saved as `name` (the sheet shows it at 2x).
+func _zoom(name: String, c: Vector2) -> void:
+	await get_tree().process_frame
+	var img := get_viewport().get_texture().get_image()
+	var r := Rect2i(Vector2i(c) - Vector2i(ZOOM_HALF, ZOOM_HALF), Vector2i(ZOOM_HALF * 2, ZOOM_HALF * 2)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	img.get_region(r).save_png("%s/%s.png" % [_out, name])
+	print("zoom ", name, " ", r)
+
+
 func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
@@ -69,9 +80,13 @@ func _ready() -> void:
 	await _shot(scene, "lock_1_write")
 	await _wait(1.0)
 	await _shot(scene, "lock_2_held")
+	var q: Dictionary = scene.hud_layer.buttons()[0]
+	var qc: Vector2 = q["center"]
+	await _zoom("zoom_held", qc + Vector2(0.0, 12.0))
 	scene._on_action_refused(CombatResolver.NUDGE_LOCKED)
 	await _wait(0.1)
 	await _shot(scene, "lock_3_scribble")
+	await _zoom("zoom_scribble", qc + Vector2(0.0, 12.0))
 	await _wait(0.8)
 	wheel.clear_locks()
 	await _wait(0.2)

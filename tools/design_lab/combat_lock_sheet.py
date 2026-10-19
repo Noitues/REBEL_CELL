@@ -1,4 +1,4 @@
-"""Stitches the combat_lock_capture crops into COMBAT_LOCK.jpg: row 1 = CAP_W1 panel 3 (the lock slash),
+"""Stitches the combat_lock_capture crops into COMBAT_LOCK_r2.jpg: row 1 = CAP_W1 panel 3 (the lock slash),
 row 2 = Q19 panel 2 (the chevron chase), 4 columns of 600x600 crops.
 
     python tools/design_lab/combat_lock_sheet.py <capture dir> <out jpg>
@@ -11,13 +11,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROWS = [
     [
-        ("CAP_W1 3  lock slash: writing on", "lock_1_write"),
-        ("held (nudges + RESPIN chip)", "lock_2_held"),
-        ("refused click: re-scribble", "lock_3_scribble"),
-        ("lock ends: cloth wipe off", "lock_4_wipe"),
+        ("r2  held slash, 2x (ring + slash, Q label whole)", "zoom_held"),
+        ("refused click: re-scribble mid-frame, 2x", "zoom_scribble"),
+        ("held, whole wheel 1x", "lock_2_held"),
     ],
     [
-        ("Q19 2  respin ghost: chase frame 1 of 3", "chase_1"),
+        ("Q19 chase at 1.2 s a lap: frame 1 of 3", "chase_1"),
         ("frame 2 of 3", "chase_2"),
         ("frame 3 of 3", "chase_3"),
     ],
@@ -45,6 +44,8 @@ def main() -> None:
             x, y = c * S, r * (S + HEAD)
             d.text((x + 10, y + 6), label, fill=(240, 240, 240), font=f)
             shot = Image.open(src / (stem + ".png")).convert("RGB")
+            if stem.startswith("zoom_"):
+                shot = shot.resize((S, S), Image.LANCZOS)
             sheet.paste(shot.crop((0, 0, min(S, shot.width), min(S, shot.height))), (x, y + HEAD))
     out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out, quality=88)

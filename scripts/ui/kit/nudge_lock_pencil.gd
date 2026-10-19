@@ -20,6 +20,23 @@ const CIRCLE_SHARE := 1.3
 ## The slash runs from the circle's upper left to its lower right, this far round it (degrees off
 ## the circle's top-left diagonal either way: 0 is the true diagonal).
 const SLASH_DEG := 45.0
+## The ring runs this many degrees past its start; its radius wobbles by WOBBLE (share) every
+## WOBBLE_KNOT_PTS points; it is tilted up to TILT_DEG; the slash reaches SLASH_REACH of the
+## ring's radius (past it), is off the diagonal up to SLASH_TILT_DEG and bows by SLASH_BOW.
+const OVERSHOOT_DEG := 40.0
+const WOBBLE := 0.06
+const WOBBLE_KNOT_PTS := 14.0
+const TILT_DEG := 12.0
+const SLASH_REACH := 1.25
+const SLASH_TILT_DEG := 6.0
+const SLASH_BOW := 0.08
+## The ring's foot keeps this far above a label under the button (px: wax half width and shadow).
+const FOOT_CLEAR := 7.0
+## The wax pressure share (width varies along each stroke) of the lock marks.
+const PRESSURE := 0.35
+## The re-scribble's zig-zags and how far each swings off the slash (share of the ring radius).
+const SCRIBBLE_PASSES := 3
+const SCRIBBLE_WIDTH := 0.55
 ## The slash's points are resampled this far apart (px) so its write-on trims smoothly.
 const SLASH_STEP := 3.0
 const WRITE_MOTION := GreasePencilMark.WRITE
@@ -51,16 +68,45 @@ func _exit_tree() -> void:
 	_pool = null
 
 
-## The circle-slash for a button at `center` with `radii` (global px): the hand circle, then the
-## slash across it (writing order). Pure (tests read it).
-static func shapes(center: Vector2, radii: Vector2, seed: int) -> Array[PackedVector2Array]:
+## The circle-slash for a button at `center` with `radii` (global px): ONE hand-drawn ring stroke
+## that overshoots its start, then the slash across it (writing order), top-left to bottom-right,
+## past the ring at both ends. `keep_above` (a global y; INF = none) is the top of what sits under
+## the button (its key label): the ring's foot, its stroke and shadow stay above it. Pure (tests
+## read it).
+static func shapes(center: Vector2, radii: Vector2, seed: int, keep_above: float = INF) -> Array[PackedVector2Array]:
 	var rr := radii * CIRCLE_SHARE
-	var circle := PencilShapes.hand_circle(center, rr, seed)
+	if keep_above < INF:
+		rr.y = minf(rr.y, maxf(radii.y, keep_above - center.y - FOOT_CLEAR))
+	var tilt := KitNoise.h11(seed, 3) * TILT_DEG
+	var ring := PencilShapes.hand_circle(center, rr, seed, 1.0 + OVERSHOOT_DEG / 360.0, deg_to_rad(tilt))
+	for i in ring.size():
+		var w := 1.0 + WOBBLE * (KitNoise.smooth(seed + 5, float(i) / WOBBLE_KNOT_PTS) * 2.0 - 1.0)
+		ring[i] = center + (ring[i] - center) * w
+	ring = PencilShapes.chaikin(ring)
+	var reach := rr.length() * SLASH_REACH
+	var d := Vector2.from_angle(deg_to_rad(SLASH_DEG + 180.0 + KitNoise.h11(seed, 4) * SLASH_TILT_DEG))
+	var a := center + d * reach
+	var b := center - d * reach * (1.0 + 0.08 * KitNoise.h11(seed, 6))
+	var bow := (b - a).orthogonal().normalized() * (reach * SLASH_BOW * KitNoise.h11(seed, 8))
+	var slash := PencilShapes.resample(PencilShapes.chaikin(PackedVector2Array([a, a.lerp(b, 0.35) + bow, a.lerp(b, 0.7) + bow * 0.5, b])), SLASH_STEP)
+	return [ring, slash] as Array[PackedVector2Array]
+
+
+## The re-scribble of a refused click: one back-and-forth stroke of SCRIBBLE_PASSES zig-zags down
+## the slash's line, over the held mark (which stays whole). Pure.
+static func scribble(center: Vector2, radii: Vector2, seed: int) -> PackedVector2Array:
+	var rr := radii * CIRCLE_SHARE
 	var d := Vector2.from_angle(deg_to_rad(SLASH_DEG + 180.0))
-	var a := center + d * rr
-	var b := center - d * rr
-	var slash := PencilShapes.resample(PackedVector2Array([a, b]), SLASH_STEP)
-	return [circle, slash] as Array[PackedVector2Array]
+	var n := d.orthogonal()
+	var reach := rr.length() * SLASH_REACH
+	var pts := PackedVector2Array()
+	var count := SCRIBBLE_PASSES * 2 + 1
+	for i in count:
+		var u := float(i) / float(count - 1)
+		var side := (1.0 if i % 2 == 0 else -1.0) * rr.length() * SCRIBBLE_WIDTH
+		side *= 1.0 + 0.2 * KitNoise.h11(seed, i, 9)
+		pts.append(center + d * reach * (1.0 - 2.0 * u) + n * side)
+	return PencilShapes.resample(pts, SLASH_STEP)
 
 
 ## The keys of the marks showing now (written or writing; not the ones wiping off).
@@ -77,7 +123,7 @@ func motion_running() -> bool:
 	if not _wipes.is_empty():
 		return true
 	for k: String in _live:
-		if float(_live[k]["t"]) < 1.0:
+		if float(_live[k]["t"]) < 1.0 or float(_live[k].get("scr", 1.0)) < 1.0:
 			return true
 	return false
 
@@ -86,6 +132,7 @@ func motion_running() -> bool:
 func complete_motion() -> void:
 	for k: String in _live:
 		_live[k]["t"] = 1.0
+		_live[k]["scr"] = 1.0
 	_wipes.clear()
 	_lay()
 
@@ -95,8 +142,8 @@ func complete_motion() -> void:
 func rescribble(group: String) -> void:
 	for k: String in _live:
 		if String(_live[k]["group"]) == group:
-			_live[k]["t"] = 0.0 if Motion.live(SCRIBBLE_MOTION) else 1.0
-			_live[k]["dur"] = Motion.seconds(SCRIBBLE_MOTION)
+			_live[k]["scr"] = 0.0 if Motion.live(SCRIBBLE_MOTION) else 1.0
+			_live[k]["scr_dur"] = Motion.seconds(SCRIBBLE_MOTION)
 
 
 func _marks() -> Array:
@@ -117,14 +164,18 @@ func _process(delta: float) -> void:
 	for key: String in want:
 		var m: Dictionary = want[key]
 		var seed := key.hash()
-		var strokes := shapes(m["center"], m["radii"], seed)
+		var strokes := shapes(m["center"], m["radii"], seed, float(m.get("keep_above", INF)))
 		if not _live.has(key):
 			_live[key] = {"group": String(m["group"]), "t": 0.0 if Motion.live(WRITE_MOTION) else 1.0, "dur": Motion.seconds(WRITE_MOTION)}
 		var st: Dictionary = _live[key]
 		st["strokes"] = strokes
+		st["center"] = m["center"]
+		st["radii"] = m["radii"]
 		st["seed"] = seed
 		if float(st["t"]) < 1.0:
 			st["t"] = minf(1.0, float(st["t"]) + delta / maxf(float(st["dur"]), 0.001))
+		if float(st.get("scr", 1.0)) < 1.0:
+			st["scr"] = minf(1.0, float(st["scr"]) + delta / maxf(float(st["scr_dur"]), 0.001))
 	for w in _wipes:
 		w["t"] = minf(1.0, float(w["t"]) + delta / maxf(Motion.seconds(WIPE_MOTION), 0.001))
 	_wipes = _wipes.filter(func(w: Dictionary) -> bool: return float(w["t"]) < 1.0)
@@ -147,7 +198,17 @@ func _lay() -> void:
 	_pool.begin()
 	for key: String in _live:
 		var st: Dictionary = _live[key]
-		_pool.stroke(key, st["strokes"], GreasePencilMark.Ink.THREAT, float(st["t"]), 0.0, false, int(st["seed"]))
+		var scr := float(st.get("scr", 1.0))
+		if scr < 1.0:
+			var sp: Array[PackedVector2Array] = [scribble(st["center"], st["radii"], int(st["seed"]))]
+			_flat(_pool.stroke(key + "|scr", sp, GreasePencilMark.Ink.THREAT, scr, 0.0, false, int(st["seed"]) + 1))
+		_flat(_pool.stroke(key, st["strokes"], GreasePencilMark.Ink.THREAT, float(st["t"]), 0.0, false, int(st["seed"])))
 	for w in _wipes:
-		_pool.stroke(String(w["key"]), w["strokes"], GreasePencilMark.Ink.THREAT, 1.0, float(w["t"]), false, int(w["seed"]))
+		_flat(_pool.stroke(String(w["key"]), w["strokes"], GreasePencilMark.Ink.THREAT, 1.0, float(w["t"]), false, int(w["seed"])))
 	_pool.end()
+
+
+## Hand pressure along the stroke, no lit side: a flat wax stroke.
+func _flat(m: GreasePencilMark) -> void:
+	m.wobble = PRESSURE
+	m.highlight = false

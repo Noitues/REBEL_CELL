@@ -3071,7 +3071,7 @@ tier = 1
 [sub_resource type="Resource" id="m_respin_ghost_chase"]
 script = ExtResource("1_entry")
 id = &"respin_ghost_chase"
-duration = 1.8
+duration = 1.2
 delay = 0.0
 ease = 2
 trans = 0

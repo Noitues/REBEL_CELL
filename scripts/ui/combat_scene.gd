@@ -697,8 +697,13 @@ func nudge_lock_marks() -> Array:
 			if wv.combatant == null or wv.combatant.wheel == null or not wv.combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
 				continue
 			var r: float = b["radius"]
-			out.append({"key": "nudge|%s|%d|%d" % [wv.combatant.id, int(b["ring"]), int(b["direction"])],
-				"group": String(wv.combatant.id), "center": b["center"], "radii": Vector2(r, r)})
+			var mark := {"key": "nudge|%s|%d|%d" % [wv.combatant.id, int(b["ring"]), int(b["direction"])],
+				"group": String(wv.combatant.id), "center": b["center"], "radii": Vector2(r, r)}
+			# the key letter under the button stays whole: the ring's foot stops above it
+			var hint := wv.arrow_hint_rect(int(b["ring"]), int(b["direction"]))
+			if hint.has_area():
+				mark["keep_above"] = wv.global_position.y + hint.position.y
+			out.append(mark)
 	if _respin_button != null and engine.has_fight() and engine.state().player.wheel.is_locked(WheelState.LOCK_RESPIN):
 		var box := _respin_button.get_global_rect()
 		out.append({"key": "respin", "group": NUDGE_LOCK_RESPIN_GROUP, "center": box.get_center(), "radii": box.size * 0.5})
