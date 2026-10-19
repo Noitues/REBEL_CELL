@@ -1,6 +1,6 @@
 """Image checks: 12.1 value band, 12.2 landmark ratio, 12.7 composition rules, renderer comparison.
 
-Input is a capture folder holding `beauty.png`, `id.png` (R = class byte) and `capture.json` (CHECKS_SPEC 1.1; the
+Input is a capture folder holding `beauty.png`, `id.png` (R = class byte), optional `depth.png` (16-bit, BU x 100) and `capture.json` (CHECKS_SPEC 1.1; the
 optional scope keys `kind, view, look, look_blend, corp, exempt{}` of NA03_NA04_ANSWERS O-1). Any PNG size is
 accepted. Every threshold and tolerance comes from `composition.json`. PNG in, records out; no Blender or Godot.
 """
@@ -117,16 +117,33 @@ def _pre_accepted_note(ratio: float, capture: Dict[str, Any], c: Dict[str, Any],
 
 
 # ---------------------------------------------------------------- 12.6 route never occluded
-def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -> Record:
-    """12.6 "Route never occluded". `ids_rgb` is the id.png as (h, w, 3) float (R class, G room index, B layer).
+def _erode(m: np.ndarray, r: int) -> np.ndarray:
+    """Binary erosion by a (2r+1) square (art-pass `r2_occlusion.erode`): wipes out lamp posts, cables, antialiased edges."""
+    out = m.copy()
+    for k in range(1, r + 1):
+        out[:, k:] &= m[:, :-k]
+        out[:, :-k] &= m[:, k:]
+    o2 = out.copy()
+    for k in range(1, r + 1):
+        o2[k:, :] &= out[:-k, :]
+        o2[:-k, :] &= out[k:, :]
+    return o2
 
-    Per visible route room (class 5 pixels with G > 0) the screen box is grown by `grow_px`. A pixel of an
-    occluder class (city, class 2) inside any grown box is an occlusion, except the cut surfaces of room columns
-    (class 2 with B >= `cut_layer_min`) and the occlusion stubs of cut or ghosted buildings (class 2 with
-    G == `stub_room` and B == 0). Fails when the count exceeds `max_px`.
+
+def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any],
+                           depth_bu: Optional[np.ndarray] = None) -> Record:
+    """12.6 "Route never occluded", counted by depth (PIPELINE_SPEC 12.0 / 12.6, art-pass `r2_occlusion.py`).
+
+    `ids_rgb` is the id.png as (h, w, 3) float (R class, G room index, B layer); `depth_bu` is depth.png in BU (already
+    divided by `depth_scale`), same size. Per visible route room (class 5 pixels with G > 0) the screen box is grown by
+    `grow_px`. A pixel counts when it is an occluder class (city, class 2), inside the grown box, more than `near_bu`
+    NEARER than the room front (median depth of the room's own pixels), not a route-column cut surface (class 2 with
+    B >= `cut_layer_min`) and not an occlusion stub (G == `stub_room`, B == 0), and it survives an `erode_px` erosion
+    of the mask. A neighbour beside the column is not nearer than the front, so it is not counted. Fails when the
+    count exceeds `max_px`. n/a without id.png or depth.png.
     """
     c = cfg["route_occlusion"]
-    th = {"max_px": c["max_px"], "grow_px": c["grow_px"]}
+    th = {"max_px": c["max_px"], "grow_px": c["grow_px"], "near_bu": c["near_bu"], "erode_px": c["erode_px"]}
     if ids_rgb is None:
         return record("12.6.route", NA, None, th, "no id.png")
     cls = np.round(ids_rgb[..., 0])
@@ -137,19 +154,26 @@ def route_occlusion_record(ids_rgb: Optional[np.ndarray], cfg: Dict[str, Any]) -
         return record("12.6.route", NA, None, th, "no visible route room")
     if not (rooms & (room > 0)).any():
         return record("12.6.route", NA, None, th, "id.png carries no room indices (G = 0)")
+    if depth_bu is None:
+        return record("12.6.route", NA, None, th, "no depth.png")
     h, w = cls.shape
     g = int(c["grow_px"])
     occ = np.isin(cls, c["occluder_classes"]) & (layer < c["cut_layer_min"]) & ~((room == c["stub_room"]) & (layer == 0))
     hit = np.zeros((h, w), bool)
     hit_rooms: List[int] = []
     for rid in sorted(int(v) for v in np.unique(room[rooms & (room > 0)])):
-        ys, xs = np.nonzero(rooms & (room == rid))
+        mine = rooms & (room == rid)
+        ys, xs = np.nonzero(mine)
         y0, y1 = max(0, ys.min() - g), min(h, ys.max() + 1 + g)
         x0, x1 = max(0, xs.min() - g), min(w, xs.max() + 1 + g)
-        part = occ[y0:y1, x0:x1]
-        if part.any():
+        front = float(np.median(depth_bu[mine]))
+        sub = occ[y0:y1, x0:x1] & (depth_bu[y0:y1, x0:x1] < front - c["near_bu"])
+        full = np.zeros((h, w), bool)
+        full[y0:y1, x0:x1] = sub
+        full = _erode(full, int(c["erode_px"]))
+        if full.any():
             hit_rooms.append(rid)
-            hit[y0:y1, x0:x1] |= part
+            hit |= full
     n = int(hit.sum())
     note = "no occluder in any room box" if n == 0 else "occluded rooms " + ",".join(str(r) for r in hit_rooms[:8])
     return record("12.6.route", FAIL if n > c["max_px"] else PASS, n, th, note)
@@ -192,7 +216,7 @@ def evaluate_rules(metric_values: Dict[str, float], applies: Applies, cfg: Dict[
 
 
 def default_ranges(capture: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Optional[List[float]], List[float]]:
-    """Default skyline range and facade band for a capture kind and view (NA03_NA04_ANSWERS O-7)."""
+    """Default skyline range and facade band (NA03_NA04_ANSWERS O-7; 12.7: street views measure R-REP-1 in the facade band only)."""
     comp = cfg["composition"]
     kind, view = capture.get("kind"), capture.get("view")
     sky = None
@@ -200,7 +224,7 @@ def default_ranges(capture: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Option
         sky = comp["skyline"]["street"]
     elif kind == "city":
         sky = comp["skyline"]["city"]
-    facade = comp["facade"]["street_overview"] if (kind == "street" and view == "overview") else comp["facade"]["default"]
+    facade = comp["facade"]["street_overview"] if kind == "street" else comp["facade"]["default"]
     return sky, facade
 
 
@@ -213,7 +237,7 @@ def read_capture(folder: str) -> Dict[str, Any]:
 
 def check_capture_folder(folder: str, cfg: Optional[Dict[str, Any]] = None,
                          thumb_path: Optional[str] = None) -> Tuple[List[Record], Dict[str, float]]:
-    """Run 12.1, 12.2 and 12.7 on one capture folder. Returns `(records, measured values)`.
+    """Run 12.1, 12.2, 12.6 route and 12.7 on one capture folder. Returns `(records, measured values)`.
 
     The measured values (`median`, `under_010`, `over_085`, `ratio`, and the 12.7 metrics) feed `compare_renderers`.
     """
@@ -234,8 +258,15 @@ def check_capture_folder(folder: str, cfg: Optional[Dict[str, Any]] = None,
         raw = np.asarray(Image.open(ip).convert("RGB")).astype(np.float32)
         ids_rgb = np.stack([M.resize_ids(raw[..., i], im.size) for i in range(3)], axis=-1)
         idx = ids_rgb[..., 0]
+    depth_bu = None
+    dp = os.path.join(folder, "depth.png")
+    if os.path.exists(dp):
+        raw_d = np.asarray(Image.open(dp)).astype(np.float32)
+        if raw_d.ndim == 3:
+            raw_d = raw_d[..., 0]
+        depth_bu = M.resize_ids(raw_d, im.size) / float(cfg["route_occlusion"]["depth_scale"])
     recs.append(landmark_ratio_record(L, idx, capture, cfg))
-    recs.append(route_occlusion_record(ids_rgb, cfg))
+    recs.append(route_occlusion_record(ids_rgb, cfg, depth_bu))
     lm_stats = M.landmark_stats(L, idx, cfg["landmark_ratio"]) if idx is not None else {"ratio": None}
     box = M.box_from_mask(M.class_mask(idx, cfg["landmark_ratio"]["classes_landmark"])) if idx is not None else None
     sky, facade = default_ranges(capture, cfg)

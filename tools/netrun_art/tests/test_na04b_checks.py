@@ -69,9 +69,14 @@ def test_tethys_overview_ratio_passes_with_id_mask(tmp_path):
     assert _ratio(tmp_path, "t_over", 1.81, cap)["status"] == "pass"
 
 
-def _route_folder(tmp_path, name, ids):
+FRONT_BU = 40.0
+
+
+def _route_folder(tmp_path, name, ids, depth=None):
     folder = F.make_capture(tmp_path / name, capture={"kind": "street", "view": "decision", "look": "aaa2"})
     Image.fromarray(ids).save(os.path.join(folder, "id.png"))
+    if depth is not None:
+        Image.fromarray(np.round(depth * 100.0).astype(np.uint16)).save(os.path.join(folder, "depth.png"))
     return by_id(IC.check_capture_folder(folder, CFG)[0])["12.6.route"]
 
 
@@ -83,34 +88,58 @@ def _room_ids(bg=0):
     return ids
 
 
-def test_route_never_occluded_fixtures(tmp_path):
-    assert _route_folder(tmp_path, "clean", _room_ids(0))["status"] == "pass"
-    near = _route_folder(tmp_path, "near", _room_ids(2))  # city all around: inside the 12 px margin
-    assert near["status"] == "fail" and near["value"] > 0
-    far = _room_ids(0)
-    far[40:60, 93:100, 0] = 2  # room box grown 12 px ends at x 91; x 93 is clear
-    assert _route_folder(tmp_path, "far", far)["status"] == "pass"
-    far[40:60, 91:100, 0] = 2  # column 91 is the last inside the margin
-    rec = _route_folder(tmp_path, "touch", far)
-    assert rec["status"] == "fail" and rec["value"] == 20 and "rooms 1" in rec["note"]
+def _depth(near_box=None, near_bu=FRONT_BU - 5.0):
+    d = np.full((100, 160), FRONT_BU + 20.0, np.float32)
+    d[40:60, 60:80] = FRONT_BU
+    if near_box is not None:
+        y0, y1, x0, x1 = near_box
+        d[y0:y1, x0:x1] = near_bu
+    return d
+
+
+def test_route_never_occluded_by_depth(tmp_path):
+    # city all around, but the neighbours are behind the room front: not counted
+    assert _route_folder(tmp_path, "beside", _room_ids(2), _depth())["status"] == "pass"
+    # level with the front (beside the column, within 1 BU) is not counted either
+    assert _route_folder(tmp_path, "level", _room_ids(2), np.full((100, 160), FRONT_BU - 0.5, np.float32))["status"] == "pass"
+    # a building in front: class 2, 5 BU nearer, inside the 12 px margin
+    ids = _room_ids(0)
+    ids[30:70, 83:92, 0] = 2
+    rec = _route_folder(tmp_path, "front", ids, _depth((30, 70, 83, 92)))
+    assert rec["status"] == "fail" and rec["value"] == 32 and "rooms 1" in rec["note"]
+    # the same blob outside the 12 px margin (box ends at x 91; x 93 is clear)
+    ids = _room_ids(0)
+    ids[40:60, 93:100, 0] = 2
+    assert _route_folder(tmp_path, "far", ids, _depth((40, 60, 93, 100)))["status"] == "pass"
+    # exactly 1 BU nearer is not "more than 1 BU"
+    ids = _room_ids(0)
+    ids[30:70, 83:92, 0] = 2
+    assert _route_folder(tmp_path, "onebu", ids, _depth((30, 70, 83, 92), FRONT_BU - 1.0))["status"] == "pass"
+    # thinner than the 4 px erosion (a lamp post or cable) is wiped out
+    ids = _room_ids(0)
+    ids[30:70, 85:88, 0] = 2
+    assert _route_folder(tmp_path, "thin", ids, _depth((30, 70, 85, 88)))["status"] == "pass"
+    # no depth.png: n/a
+    assert _route_folder(tmp_path, "nodepth", _room_ids(2))["status"] == "n/a"
 
 
 def test_route_occlusion_ignores_cut_surfaces_and_na_cases():
+    d = _depth((40, 60, 80, 90))
     ids = _room_ids(0)
     ids[40:60, 80:90, 0] = 2  # cut surface of a room column: class 2 with B > 0
     ids[40:60, 80:90, 2] = 1
-    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "pass"
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG, d)["status"] == "pass"
     ids[40:60, 80:90, 2] = 0  # a cut or ghosted building stub: class 2, G = 255, B = 0
     ids[40:60, 80:90, 1] = 255
-    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "pass"
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG, d)["status"] == "pass"
     ids[40:60, 80:90, 1] = 7  # same pixels without the stub encoding occlude
-    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "fail"
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG, d)["status"] == "fail"
     ids[40:60, 80:90, 0] = 0
     ids[40:60, 80:90, 1] = 0
-    assert IC.route_occlusion_record(np.zeros((100, 160, 3), np.float32), CFG)["status"] == "n/a"
+    assert IC.route_occlusion_record(np.zeros((100, 160, 3), np.float32), CFG, d)["status"] == "n/a"
     ids[..., 1] = 0
-    assert IC.route_occlusion_record(ids.astype(np.float32), CFG)["status"] == "n/a"
-    assert IC.route_occlusion_record(None, CFG)["status"] == "n/a"
+    assert IC.route_occlusion_record(ids.astype(np.float32), CFG, d)["status"] == "n/a"
+    assert IC.route_occlusion_record(None, CFG, d)["status"] == "n/a"
 
 
 def _plate(folder, stem, lum, capture, values=None):
@@ -144,3 +173,10 @@ def test_drift_compare_flags_only_beyond_tolerance(tmp_path):
     assert verdict["R-VAL-1"] == "ok" and verdict["12.2 ratio"].startswith("DRIFT")
     md = D.to_markdown(rows)
     assert "| p_same | 12.2 ratio |" in md
+
+
+def test_street_rep_uses_facade_band_on_both_views():
+    band = [0.0, 0.1, 1.0, 0.8]
+    for view in ("overview", "decision", "hover"):
+        assert IC.default_ranges({"kind": "street", "view": view}, CFG)[1] == band
+    assert IC.default_ranges({"kind": "hq", "view": "decision"}, CFG)[1] == [0.0, 0.0, 1.0, 1.0]

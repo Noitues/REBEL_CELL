@@ -254,8 +254,11 @@
   },
   "route_occlusion": {
    "cut_layer_min": 1,
+   "depth_scale": 100,
+   "erode_px": 4,
    "grow_px": 12,
    "max_px": 0,
+   "near_bu": 1.0,
    "occluder_classes": [
     2
    ],
