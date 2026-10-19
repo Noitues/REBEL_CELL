@@ -107,7 +107,7 @@ func _apply() -> void:
 	var ft := EntryBeats.forward_time(_total, _t, reverse)
 	var st := EntryBeats.at(_fwd, ft)
 	var u := float(st["u"])
-	var ui_s := Motion.seconds(&"entry_ui_in")
+	var ui_s := Motion.seconds_live(&"entry_ui_in")
 	ui_changed.emit(clampf((ft - _mark_start) / maxf(ui_s, 0.0001), 0.0, 1.0))
 	match StringName(st["beat"]):
 		&"dive":

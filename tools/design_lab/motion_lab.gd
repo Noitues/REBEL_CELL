@@ -196,7 +196,7 @@ const DEMOS := {
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
 	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
-	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["screen", "entry"], &"entry_reveal": ["screen", "entry"], &"entry_reveal_lead": ["screen", "entry"], &"entry_reveal_write": ["screen", "entry"], &"entry_reveal_dissolve": ["screen", "entry"], &"entry_mark": ["screen", "entry"], &"entry_mark_hold": ["screen", "entry"], &"entry_mark_slap": ["screen", "entry"], &"entry_mark_stagger": ["screen", "entry"], &"entry_mark_rings": ["screen", "entry"], &"entry_mark_numbers": ["screen", "entry"], &"entry_mark_target": ["screen", "entry"], &"entry_ui_in": ["screen", "entry"], &"entry_zoom": ["screen", "entry"], &"entry_zoom_settle": ["screen", "entry"], &"entry_select_hold": ["screen", "entry"],
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["netrun", "entry"], &"entry_reveal": ["netrun", "entry"], &"entry_reveal_lead": ["netrun", "entry"], &"entry_reveal_write": ["netrun", "entry"], &"entry_reveal_dissolve": ["netrun", "entry"], &"entry_mark": ["netrun", "entry"], &"entry_mark_hold": ["netrun", "entry"], &"entry_mark_slap": ["netrun", "entry"], &"entry_mark_stagger": ["netrun", "entry"], &"entry_mark_rings": ["netrun", "entry"], &"entry_mark_numbers": ["netrun", "entry"], &"entry_mark_target": ["netrun", "entry"], &"entry_ui_in": ["netrun", "entry"], &"entry_zoom": ["netrun", "entry"], &"entry_zoom_settle": ["netrun", "entry"], &"entry_select_hold": ["netrun", "entry_out"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
@@ -533,6 +533,8 @@ func _clear_context() -> void:
 	if _context_host != null and is_instance_valid(_context_host):
 		_context_host.queue_free()
 	_context_host = null
+	if _context != null and is_instance_valid(_context) and _context.scene_file_path == NETRUN_SCENE:
+		_context.street_route = false
 	_context = null
 	if RunManager.save_slot == LAB_SLOT:
 		RunManager.delete_save()
@@ -1261,6 +1263,8 @@ func _play_context(scene: String, what: String) -> void:
 	var host := _context_host
 	if scene == "netrun":
 		_context = load(NETRUN_SCENE).instantiate()
+		# NA-25: the entry demos play on the street route (the real EntryCover over the real StreetRouteView).
+		_context.street_route = what.begins_with("entry")
 		host.add_child(_context)
 		_context.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_context.new_campaign(DEMO_CAMPAIGN_SEED)
@@ -1302,6 +1306,10 @@ func _play_context(scene: String, what: String) -> void:
 			# Plan 1 ANIM-FLOW: won, then the first reward is picked (a list opens its first row first).
 			hq._demo_combat_end("win")
 			_pick_first_reward(hq)
+		"entry", "entry_out":
+			# NA-25: the street entry on the street route, forward (the jack in) or backwards (the jack-out).
+			if hq.street_view != null and is_instance_valid(hq.street_view):
+				hq.play_entry(what == "entry_out")
 		"route_hover":
 			# Plan 1 W3-ROUTE R5: the pointer lights the first open node: its sticker reaches out to its building.
 			var ov := hq.city_overlay as RouteOverlay

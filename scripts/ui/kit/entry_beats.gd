@@ -68,9 +68,9 @@ static func forward_time(total_s: float, t: float, reverse: bool) -> float:
 ## Layer `layer` (1..`layers`) of the REVEAL over `reveal_s`: `{write_start, write_end, up_start, up_end}` (s into the beat).
 ## The first wall comes after `entry_reveal_lead`; the layers follow evenly so the last one ends with the beat.
 static func layer_times(layer: int, layers: int, reveal_s: float) -> Dictionary:
-	var lead := Motion.seconds(&"entry_reveal_lead")
-	var write := Motion.seconds(&"entry_reveal_write")
-	var up := Motion.seconds(&"entry_reveal_dissolve")
+	var lead := Motion.seconds_live(&"entry_reveal_lead")
+	var write := Motion.seconds_live(&"entry_reveal_write")
+	var up := Motion.seconds_live(&"entry_reveal_dissolve")
 	var step := 0.0
 	if layers > 1:
 		step = maxf(0.0, (reveal_s - lead - write - up) / float(layers - 1))
@@ -95,26 +95,26 @@ static func up_k(layer: int, layers: int, reveal_s: float, s: float) -> float:
 ## The scale of the `index`-th sticker (layer order, then id) `s` seconds into MARK: 0 before its slap, then the slap's start
 ## scale easing to 1.
 static func slap_scale(index: int, s: float) -> float:
-	var start := float(index) * Motion.seconds(&"entry_mark_stagger")
+	var start := float(index) * Motion.seconds_live(&"entry_mark_stagger")
 	if s < start:
 		return 0.0
-	var k := _span_k(s, start, start + Motion.seconds(&"entry_mark_slap"))
+	var k := _span_k(s, start, start + Motion.seconds_live(&"entry_mark_slap"))
 	return lerpf(Motion.amplitude(&"entry_mark_slap"), 1.0, NetrunCameraRig.ease(k))
 
 
 ## True once the rings and room frames show at `s` seconds into MARK.
 static func rings_on(s: float) -> bool:
-	return s >= Motion.delay_of(&"entry_mark_rings")
+	return s >= (Motion.delay_of(&"entry_mark_rings") if Motion.live(&"entry_mark_rings") else 0.0)
 
 
 ## True once the option numbers and the token show.
 static func numbers_on(s: float) -> bool:
-	return s >= Motion.delay_of(&"entry_mark_numbers")
+	return s >= (Motion.delay_of(&"entry_mark_numbers") if Motion.live(&"entry_mark_numbers") else 0.0)
 
 
 ## True once the red TARGET circle and word show (last).
 static func target_on(s: float) -> bool:
-	return s >= Motion.delay_of(&"entry_mark_target")
+	return s >= (Motion.delay_of(&"entry_mark_target") if Motion.live(&"entry_mark_target") else 0.0)
 
 
 static func _span_k(s: float, a: float, b: float) -> float:
