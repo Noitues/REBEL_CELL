@@ -29,8 +29,8 @@ RIG: Dict[str, Any] = dict(
     t_step=0.9, t_hover_in=0.30, t_hover_out=0.35, t_zoom=1.0,
     sensor_mm=SENSOR, ref_w=REF_W, ref_h=REF_H, use=list(USE),
     solver_iters=SOLVER_ITERS, solver_bracket=list(SOLVER_BRACKET))
-# TODO(art-pass): the DECISION look-bias sign. The one-city derive (this value, +1) moves the framed set toward the look
-# direction; V3D/cam_rig.py (-1) moves it away. Art-pass checks one DECISION still before NA-21 freezes (review Q2.1.4).
+# The DECISION look-bias sign: +1 moves the framed set toward the look direction (the one-city derive), confirmed by
+# art-pass 2026-10-18 (golden_plates/look_bias_check.jpg: 173 px from the usable-area center vs 493 px with -1; spec 6.2).
 LOOK_BIAS_SIGN = 1.0
 
 # Dive path (spec 6.3; SB/sb_ocjobs.py:70-91)
