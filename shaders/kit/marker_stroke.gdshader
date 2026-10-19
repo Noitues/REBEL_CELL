@@ -57,6 +57,14 @@ uniform float seg_from_px = 0.0;
 uniform float seg_to_px = 1.0;
 uniform float word_cap_px = 20.0;
 
+// Wax grain for hand marks (COMBAT-LOCK r3): `edge_grain` is the share of the stroke's two edges
+// whose wax drops out (pixel grain, alpha down to `edge_grain_alpha`); `core_break` lightens and
+// breaks the core in streaks. Both 0 = the raid pencil, unchanged.
+uniform float edge_grain = 0.0;
+uniform float edge_grain_alpha = 0.3;
+uniform float core_break = 0.0;
+uniform float grain_scale = 0.8;
+
 varying vec2 local_px;
 
 void vertex() {
@@ -194,7 +202,22 @@ void fragment() {
 			a = clamp(a * 1.08, 0.0, 1.0);
 			// the dropouts: a ragged nibble from one edge where the wax thins to ~0.35
 			a = mix(a, min(a, dropout_alpha / alpha_max), bite_at(dropout_hit(along_px * dropout_scale, 0.0), across, grain));
-			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle);
+			if (edge_grain > 0.0) {
+				float eg = smoothstep(0.45, 0.95, edge_d);
+				float n = hsh(floor(vec2(along_px, UV.y * width_px) * grain_scale) + vec2(seed, 3.0));
+				float n2 = vnoise(vec2(along_px * 0.9, UV.y * width_px * 1.3) + seed);
+				float hole = step(n * 0.7 + n2 * 0.3, edge_grain * (0.4 + 1.6 * eg));
+				a = mix(a, a * edge_grain_alpha, hole * eg);
+			}
+			float lighten = 0.0;
+			if (core_break > 0.0) {
+				float thin = smoothstep(0.35, 0.75, vnoise(vec2(along_px * 0.07, seed * 1.7)));
+				float streak = step(0.45, vnoise(vec2(along_px * 0.5, UV.y * 7.0 + seed * 5.0)));
+				float brk = core_break * thin * streak * (1.0 - smoothstep(0.55, 0.9, edge_d));
+				a = mix(a, a * 0.45, brk);
+				lighten = brk * 0.25;
+			}
+			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle) + vec3(lighten);
 			// the wax's round body: lit along one side, shaded along the other, a sheen line
 			c *= 1.0 + 0.18 * (-across) - 0.06;
 			// the sheen: a line about 1 px wide at 35 % white along the lit side

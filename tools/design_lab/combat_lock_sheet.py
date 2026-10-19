@@ -1,4 +1,4 @@
-"""Stitches the combat_lock_capture crops into COMBAT_LOCK_r2.jpg: row 1 = CAP_W1 panel 3 (the lock slash),
+"""Stitches the combat_lock_capture crops into COMBAT_LOCK_r3.jpg: row 1 = CAP_W1 panel 3 (the lock slash),
 row 2 = Q19 panel 2 (the chevron chase), 4 columns of 600x600 crops.
 
     python tools/design_lab/combat_lock_sheet.py <capture dir> <out jpg>
@@ -11,14 +11,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROWS = [
     [
-        ("r2  held slash, 2x (ring + slash, Q label whole)", "zoom_held"),
+        ("r3  held, whole wheel 1x", "lock_2_held"),
+        ("held slash 2x (ring + slash, Q label whole)", "zoom_held"),
         ("refused click: re-scribble mid-frame, 2x", "zoom_scribble"),
-        ("held, whole wheel 1x", "lock_2_held"),
     ],
     [
-        ("Q19 chase at 1.2 s a lap: frame 1 of 3", "chase_1"),
-        ("frame 2 of 3", "chase_2"),
-        ("frame 3 of 3", "chase_3"),
+        ("RESPIN chip held, 2x", "zoom_respin_held"),
+        ("RESPIN chip re-scribbled, 2x", "zoom_respin_scribble"),
+        ("Q19 chase at 1.2 s a lap, frame 2 of 3", "chase_2"),
     ],
 ]
 S = 600
@@ -36,7 +36,7 @@ def font(size: int) -> ImageFont.ImageFont:
 
 def main() -> None:
     src, out = Path(sys.argv[1]), Path(sys.argv[2])
-    sheet = Image.new("RGB", (4 * S, len(ROWS) * (S + HEAD)), (18, 18, 22))
+    sheet = Image.new("RGB", (3 * S, len(ROWS) * (S + HEAD)), (18, 18, 22))
     d = ImageDraw.Draw(sheet)
     f = font(18)
     for r, row in enumerate(ROWS):

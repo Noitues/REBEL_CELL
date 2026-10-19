@@ -34,6 +34,9 @@ const SLASH_BOW := 0.08
 const FOOT_CLEAR := 7.0
 ## The wax pressure share (width varies along each stroke) of the lock marks.
 const PRESSURE := 0.35
+## Wax grain (r3): the share of both edges that drops out, and the core's streaky break.
+const EDGE_GRAIN := 0.14
+const CORE_BREAK := 0.7
 ## The re-scribble's zig-zags and how far each swings off the slash (share of the ring radius).
 const SCRIBBLE_PASSES := 3
 const SCRIBBLE_WIDTH := 0.55
@@ -212,3 +215,5 @@ func _lay() -> void:
 func _flat(m: GreasePencilMark) -> void:
 	m.wobble = PRESSURE
 	m.highlight = false
+	m.edge_grain = EDGE_GRAIN
+	m.core_break = CORE_BREAK

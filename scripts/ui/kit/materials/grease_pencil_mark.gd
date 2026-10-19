@@ -121,6 +121,21 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 		highlight = v
 		_sync()
 
+## Hand-mark wax grain (COMBAT-LOCK r3): the share of both edges whose wax drops out, and how
+## much the core breaks into lighter streaks. 0 = the raid pencil, unchanged.
+@export_range(0.0, 1.0) var edge_grain: float = 0.0:
+	set(v):
+		if v == edge_grain:
+			return
+		edge_grain = v
+		_sync()
+@export_range(0.0, 1.0) var core_break: float = 0.0:
+	set(v):
+		if v == core_break:
+			return
+		core_break = v
+		_sync()
+
 ## Written share 0..1 (by length, in writing order) and the wiped share from the start.
 var progress: float = 1.0:
 	set(v):
@@ -413,6 +428,8 @@ func _sync() -> void:
 	_set_param(false, &"smear", smear)
 	_set_param(false, &"alpha_max", WAX_ALPHA)
 	_set_param(false, &"sheen", SHEEN if highlight else 0.0)
+	_set_param(false, &"edge_grain", edge_grain)
+	_set_param(false, &"core_break", core_break)
 	for sh in [false, true]:
 		for m in _mats(sh):
 			set_dropouts(m, DROPOUT_GAP)
