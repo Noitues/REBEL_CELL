@@ -51,3 +51,7 @@ The RESULT envelope from `docs/process/agent_rules/common.md`.
 
 Q: Which node group names mark link structure (class 3) and landmark movers (class 6) in the NA-04 scene?
 Q: Is `anim_t` frozen by the capture driver, or read from the scene clock?
+
+## Ruling 2026-10-18 (art-pass, spec b7a4bf33 §12.0)
+- A cut or ghosted building writes class 2 with G = 255 and B = 0 in id.png (excluded by the route-never-occluded check). B stays the layer on route-column cut surfaces.
+- capture.json carries `time`: "night" (default) or "day"; "day" makes the value band, landmark ratio and R-FOCUS-1 report-only.
