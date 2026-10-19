@@ -97,6 +97,10 @@ func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restore
 	var prop := _mesh(v.layer(&"props"))
 	var floor_part := _mesh(lm)
 	floor_part.add_to_group(IdCaptureClasses.GROUP_GROUND)
+	var gnode := Node3D.new()
+	gnode.name = IdCaptureClasses.GROUND_NODE_NAME
+	lm.add_child(gnode)
+	var node_part := _mesh(gnode)
 	var before := _state(v)
 	var cap := IdCapture.new(get_tree(), v)
 	cap.begin_id()
@@ -111,8 +115,8 @@ func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restore
 		if cls[gm] == IdCaptureClasses.GROUND:
 			ground_meshes += 1
 	assert_gt(ground_meshes, 1, "the ground itself is drawn as class 4")
-	var lmat := tower.material_override as ShaderMaterial
-	assert_eq(lmat.get_shader_parameter(&"ground_max_y"), IdCaptureClasses.GROUND_MAX_Y, "class 1 draws its parts at grade as 4")
+	assert_eq(cls[node_part], IdCaptureClasses.GROUND, "a mesh under a node named id_ground (the glb's ground node) is class 4")
+	assert_eq(cls[tower], IdCaptureClasses.LANDMARK, "a vertical body beside it stays class 1")
 	var mat := tower.material_override as ShaderMaterial
 	assert_not_null(mat, "the override is in place during the pass")
 	assert_eq((mat.get_shader_parameter(&"id_rgb") as Vector3).x, 1.0)

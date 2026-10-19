@@ -110,14 +110,17 @@ func end_id() -> void:
 	_end_id()
 
 
-## The class of every mesh the pass overrides: {GeometryInstance3D: class} (landmark layer meshes 1, the parts of them at grade 4 by the
-## shader; the ground meshes and `id_ground` groups 4; `id_link` groups 3; `id_mover` groups 6, a mover under a landmark staying 6; with no rig every other visible mesh outside the buildings is class 2).
+## The class of every mesh the pass overrides: {GeometryInstance3D: class} (landmark layer meshes 1, the `id_ground` node of a glb compound 4; the ground meshes and `id_ground` groups 4; `id_link` groups 3; `id_mover` groups 6, a mover under a landmark staying 6; with no rig every other visible mesh outside the buildings is class 2).
 func classify() -> Dictionary:
 	var out: Dictionary = {}
 	var lm := view.layer(&"landmarks")
 	if lm != null:
 		for m in _meshes(lm):
 			out[m] = IdCaptureClasses.LANDMARK
+	# The builder's `id_ground` node (root of a landmark / compound glb, one material slot per role) is class 4 whole, even under the landmarks layer.
+	for n in view.find_children(IdCaptureClasses.GROUND_NODE_NAME, "Node3D", true, false):
+		for m in _meshes(n):
+			out[m] = IdCaptureClasses.GROUND
 	for g in _ground_shown:
 		for m in _meshes(g):
 			out[m] = IdCaptureClasses.GROUND
@@ -162,9 +165,6 @@ func _class_material(cls: int) -> ShaderMaterial:
 		var m := ShaderMaterial.new()
 		m.shader = FLAT
 		m.set_shader_parameter(&"id_rgb", Vector3(cls, 0, 0))
-		if cls == IdCaptureClasses.LANDMARK:
-			m.set_shader_parameter(&"ground_rgb", Vector3(IdCaptureClasses.GROUND, 0, 0))
-			m.set_shader_parameter(&"ground_max_y", IdCaptureClasses.GROUND_MAX_Y)
 		_mats[cls] = m
 	return _mats[cls]
 
