@@ -29,6 +29,7 @@ uniform float stroke_h = 0.09;
 uniform float fill = 0.65;
 uniform float cell_gap = 0.22;
 uniform float bright_var = 0.2;
+uniform float side_dim = 0.6;
 // (end, near) of the tier that covers this one; end 0 = no yield.
 uniform vec2 yield_range = vec2(0.0, 0.0);
 
@@ -109,7 +110,7 @@ void fragment() {
 		vec2 fw = vec2(fwidth(p.x), fwidth(p.y));
 		float core = front * sg_core(p, sc.xy, cust.x, fw);
 		if (shape == 3) {
-			float panel = panel_level * (1.0 - bright_var * sg_hash(vec2(3.0, 5.0), cust.x));
+			float panel = panel_level * (1.0 - bright_var * sg_hash(vec2(3.0, 5.0), cust.x)) * mix(side_dim, 1.0, front);
 			float lvl = min(max(panel, core * core_level) * cust.z, core_max);
 			rgb = COLOR.rgb * lvl * yw;
 		} else {

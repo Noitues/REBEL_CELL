@@ -37,7 +37,7 @@ static func neon_material(shape: int, emit: float) -> ShaderMaterial:
 	m.set_shader_parameter(&"bursts", Vector2(float(b[0]), float(b[1])))
 	if shape == SHAPE_SIGN or shape == SHAPE_FLICKER:
 		var sg: Dictionary = DressingConfigData.shipped().sign
-		for k: String in ["panel_level", "core_level", "core_max", "frame_w", "stroke_h", "fill", "cell_gap", "bright_var"]:
+		for k: String in ["panel_level", "core_level", "core_max", "frame_w", "stroke_h", "fill", "cell_gap", "bright_var", "side_dim"]:
 			m.set_shader_parameter(StringName(k), float(sg[k]))
 		var c: Array = sg["cell"]
 		m.set_shader_parameter(&"cell", Vector2(float(c[0]), float(c[1])))
