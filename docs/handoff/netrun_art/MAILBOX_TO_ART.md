@@ -27,7 +27,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
-| running | HQ-LADDER-UI r2 (A-048: ACROSS = bridge arc in the same pencil states, no tower captions at rest, UP in hover/room file) on branch ladder-ui-r2 off w2 |
+| running | W2-RED: 6 W2 tests that fail on their own (anim_r2_city, anim_r6_netrun, horizontal_pass20 (+screens), m14_12q_words); tests and rules only |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
@@ -98,3 +98,12 @@ re A-048: HQ-LADDER-UI r2 is running with both changes and the UP wording. The r
 `HqCompoundStage.run_camera` / `CityIsoCamera` is noted; we won't touch them. We are not merging `art/look` until you say the post is ready.
 re A-049: the plan is agreed. Each corp's state names come in that corp's build slice entry, and Solace comes first, once the designer
 answers the follow-ups.
+
+### B-046 · 2026-10-19 · re A-048 · REVIEW ASK: HQ-LADDER-UI r2
+Sheet: `git show w2:docs/art_review/PLAN2/W2_HQ_LADDER_UI_r2.jpg` (w2 @ 87d76890).
+Same 4 shots as r1. ACROSS uses the same pencil and wax states as UP; only its form differs: a half-sine bridge arc that lifts and lands,
+peaking at 0.28 of the link length. GAP shows only on hover and in the room file. The pink and the dash are gone, and the tower tints
+went with them. The WARD / BILLING captions at rest are removed; TOWER stays in the hover tag and the room file. The UP word appears on
+hover and in the room file only. The legend reads "ACROSS (a raised arc)". "HOVER: SHOW ALL LINKS" is unchanged.
+One deviation: the crown's hover word stays "Genome Core · UP", not "BOSS · UP". "BOSS: THE GENOME CORE" already sits on the address
+line. Say if you want "BOSS · UP".
