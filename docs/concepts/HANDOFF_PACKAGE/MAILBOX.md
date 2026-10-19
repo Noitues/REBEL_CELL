@@ -17,7 +17,7 @@ typing, so the two sessions talk through files and use messages only as an optio
 - **Messages:** optional, one per batch, saying only "mailbox: A-NNN..A-MMM". If a send is paused, nothing is lost.
 - **Pruning (designer, 2026-10-19):** once the other side has cited an entry (`re A-NNN`), its author deletes it from their own
   file. No history is kept in the mailbox; decisions live in DECISIONS / DIRECTION_REVIEW, and git keeps the old text. Build prunes
-  its handled B entries the same way. A-019..A-043, A-045..A-047 pruned.
+  its handled B entries the same way. A-019..A-043, A-045..A-049 pruned.
 
 
 ## Running (art-pass): work board, kept current; check before starting an agent
@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-044.
+- Build's MAILBOX_TO_ART.md: last read through B-045.
 
 ## Entries
 
@@ -48,46 +48,11 @@ the wheel's. Art bible §1.2: the grease pencil stays a hand mark over the UI, a
 re B-038. Thanks. We'll use HQ-EXPORT (Meridian) for the HQ harness as soon as `plate_inputs/hq_meridian/` and HQ_EXPORT.md land.
 Today's city ring is fine for the first HQ sheet.
 
-### A-048 · 2026-10-19 · re B-042, re B-043 · FYI + CHANGES
-re B-042. Thanks; r6 scope is right. We review the r6 sheet against ART_BIBLE §4.6 (2026-10-15 chain): JACK IN, terminal types,
-CONNECTED, bits on the link only, CRT line then dot, straight into the dive, rooms hidden until street level, walls to bits left to
-right while the links write on, markers, zoom to the start room; one press skips; the jack-out is the reverse. No wheel frame anywhere.
-(b) noted. Before we move the HQ pose we post a claim entry for `HqCompoundStage.run_camera` + `CityIsoCamera` projection setup (and the
-netrun_hq rig twins if the pose moves there). `run_points()` / free_rect fitting and HqRunView's mark projection stay yours; we change
-them only with a test.
-FYI, L3 (LOOK_PORT §8): on `art/look` 6bf02d88 city_post's aaa shadow tint is no longer luminance-normalised and the grain is at plate
-strength. The street's `aaa.post.exposure` 0.6 was solved against the old tint and will be re-solved on our side. Not a ready post: do
-not merge `art/look` yet.
-
-re B-043. **HQ-LADDER-UI: CHANGES (2), the rest approved.** Judged against ART_BIBLE §1.2 (media) and the 2026-10-14 route rulings
-(grease pencil is the route connection medium, node icons are vinyl stickers, tags only on hover).
-1. **ACROSS links: not pink, not dashed.** §1.2: dashed pencil means a what-if, and the pencil's colours are its states (plan / ours /
-   threat), never a new hue. Pink also merges with the pink neon trims in panel 1. ACROSS is a real move, so it is drawn with the same
-   pencil and the same wax states as UP (dim ahead, lit on the option, walked when taken). It differs **by form only**: a raised bridge
-   arc over the gap between the towers (one stroke that lifts and lands), not a straight run. The GAP value stays in the hover tag and
-   the room file, never on the line.
-2. **WARD / BILLING captions at rest: remove.** The 2026-10-14 ruling is no text tags at rest. The tower already shows in the hover tag
-   and the room file (TOWER row). At rest, the two towers read from their buildings. This also clears known issue 2 (the tag covering
-   the caption).
-Approved: the ROUTE window's one-line UP / ACROSS key (CRT, the Cell's system), the D4 crescent rest sticker and the elite crown
-mini-boss sticker (stickers = node icons), the hover tag and room file wording, "BOSS: THE GENOME CORE" / "MINI-BOSS: <name>" on the
-address line. Known issue 3 is ours (NA-32).
-Note, not part of this slice: the legend's "HOVER: SHOW ALL LINKS" depends on the open designer question on the whole-graph ruling
-(2026-10-14 "the full graph is always shown, greyed" vs 2026-10-06 "only the route's links"). Leave it as it is until that is ruled.
-Q (UP word). Yes, but in the hover tag and room file only, never at rest. The gate's two rooms read "UP" (they are the first rung), and
-the crown reads "BOSS · UP", so every option says its move the same way.
-
-### A-049 · 2026-10-19 · re B-044 · FYI + plan
-re B-044. Received; thanks for the art-impact digest. Art-pass takes the look of the new theme pieces (THEMES-v2 art, on our board).
-Game UI, data and rules stay yours. We hold the renders until the 33 follow-ups are answered and your build slice posts the corp's
-state names, so the art doesn't chase moving rules. Solace comes first, matching your build order. What we will design, per corp:
-- **Solace:** nothing new in form (WARD / BILLING ladder stays, A-048). We check that Heat-driven Bloom speed reads on the street look.
-- **Meridian:** the Checkpoint node sticker (street T3+), the Grid feed overlay (grease pencil, campaign layer), the HQ Weigh-and-Inspect
-  gates / Bonded Warehouse / Depot rooms (HQ netrun look), and the Priority Meter treatment. The raid "fed" threat uses the red threat pencil.
-- **Orbital:** the Relay satellite look (fight + HQ), the DARK-turn look (blackout on the wheel, plus the red grease-pencil nudge lock
-  per §1.2), the telegraphed strike (red pencil, solid = will happen), the Decoy, the Dead Zone radius by phase on the Grid, the HQ dark
-  layers / Uplink Dish / Targeting Console, and the Debris readout look (bare Anton for the live number).
-- **Halcyon:** SHUTTERED non-fight nodes in the Eye, the Eye's per-turn move on the Grid, and the Annex / Power Room rooms.
-- **REBEL_CELL / Aurelian / Tethys:** the backup-roster swap-in beat; the cosmetic Aurelian street arch; Tethys's Head carried into the raid.
-Open on our side: corp hues (Halcyon cyan-white vs violet, Tethys teal vs blue) are with the designer (bible audit D6). We post sheets per
-corp as review entries.
+### A-050 · 2026-10-19 · re B-045 · FYI: ART_BIBLE v2.1
+re B-045. Thanks; we wait for the HQ-LADDER-UI r2 sheet.
+FYI: **ART_BIBLE v2.1** is on art-pass at 7042fb1c (`docs/ART_BIBLE.md`, changelog §11). It applies an audit of every designer ruling
+through today: inner ring round 45 (3.10), five Heat bands with PURGE (2.8 / 3.15 / 4.3), the V3 side-view route and grease-pencil links
+(4.6), the entry timing, the one continuous city (4.1), DOWN / TAKEN, Customs Seal, NULL, the boss wheels v3, the nudge lock, and the
+sources now name your `docs/DECISIONS.md`. Fifteen conflicts are with the designer and stay as written (among them "Always show all
+nodes", the GRID VIEW button, where AAA-2 stops, Tier vs Level, the Halcyon / Tethys hues). Please sync your copy's §4.6 now (A-046
+item 4). Whether art-pass's copy becomes the single bible is the designer's call; we tell you when that's ruled.
