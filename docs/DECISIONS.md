@@ -34,6 +34,21 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — PT-004 gate (automated) passed; main pushed
+Full suite once: 2826 tests, 0 failing, 108 pending; smoke 0, validate 0, fast 0; sha b98e1def pushed (tag
+`gate/PT-004`). The first full run found 2 reds, both fixed before the push: an untranslated HQ jack line (Sites are now
+node numbers, "S-07") and a real determinism bug (StringName `.sort()` orders by interned address; fixed in rules code,
+then swept repo-wide with `IdSort` and a scan test). Playtest skipped by designer ruling. W0 / plan 2 closed.
+
+### 2026-10-18 — Designer ruling (relayed by the art-pass session; to confirm): exploit-building netruns
+Quoted from the designer via art-pass: "These all work as directions. Rule exploit-building netruns in, and develop
+each with the corp's other two buildings later." Every corp's Intel / Breach / Virus building gets a unique netrun that
+culminates at the exploit target inside, with >= 3 inside node layers. First picks (art-pass ca2e3707): Aurelian
+leaning campanile (Intel), Meridian departures tower (Intel), Orbital spectrum radome (Virus), REBEL_CELL dossier house
+(Intel), Solace culture garden (Virus), Tethys harbourmaster's gauge (Intel), Halcyon the open leak (Virus). Rules
+(run-graph shape outside + inside, slot hooks per spec 8.8, a per-lot special-building hook, lot size and clearance,
+outside starts, occlusion host exemption) are Batch-drafted in the replan; build with NA-41 and B2 / D5.
+
 ### 2026-10-18 — Designer: PT-004 runs the automated gate only; proceed to W1
 The PT-004 gate keeps its automated part (full suite once, smoke, validate, push gate) and **skips the playtest** (human
 list, scripted-steps run, Claude playtesters): W0 balance is re-tuned later anyway (sim bots are not a tuning reference),
