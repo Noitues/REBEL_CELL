@@ -135,6 +135,28 @@ static func _record(cx: Dictionary, pose: NetrunPose, ids: Array, decision: bool
 	return rec
 
 
+## NA-23: the runtime context of a derive (rooms, the occluder boxes, the anchors), for `decision_pose`, `hover_pose` and
+## `state_record`. `{"error": ...}` when an HQ compound cannot be planned. Same data `build_poses` works from.
+static func make_ctx(derive: Dictionary, city: Dictionary, run_graph: Dictionary, net: Dictionary = {}) -> Dictionary:
+	return _make_ctx(derive, city, run_graph, net)
+
+
+## NA-23: the DECISION pose standing on `current` ("" = none yet) with `options` ahead.
+static func decision_pose(cx: Dictionary, current: String, options: Array) -> NetrunPose:
+	return _decision(cx, current, options)
+
+
+## NA-23: the HOVER pose on room `node` from the DECISION pose `dec`.
+static func hover_pose(cx: Dictionary, dec: NetrunPose, node: String) -> NetrunPose:
+	return _hover(cx, dec, node)
+
+
+## NA-23: the pose record (`occlusion`, `zoom_detail`, `lod_weights`) of `pose` on the rooms `ids`; `decision` adds every
+## route room in frame and the face band (a DECISION / HOVER cone).
+static func state_record(cx: Dictionary, pose: NetrunPose, ids: Array, decision: bool = false) -> Dictionary:
+	return _record(cx, pose, ids, decision)
+
+
 ## `poses_<run>.json` v1 for a street or HQ derive; `net` ({} = none) feeds the street dive's HQ page camera.
 ## Returns `{"error": ...}` if the HQ compound cannot be planned.
 static func build_poses(derive: Dictionary, city: Dictionary, run_graph: Dictionary, net: Dictionary = {}) -> Dictionary:

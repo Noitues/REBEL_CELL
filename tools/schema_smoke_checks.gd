@@ -7,7 +7,22 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _na23_street_route_config()
+
+
+## NA-23: StreetRouteConfigData (the street netrun view's tuning numbers): the shipped one validates, an empty one reports its
+## gaps, a bad hover level is refused by name.
+func _na23_street_route_config() -> int:
+	var fails := 0
+	var cfg: StreetRouteConfigData = load(StreetRouteConfigData.CONFIG_PATH)
+	var errs := cfg.validate() if cfg != null else PackedStringArray(["missing"])
+	print("NA-23 shipped street route config errors (expect 0): ", errs)
+	if errs.size() != 0 or cfg == null: return fails + 1
+	if StreetRouteConfigData.new().validate().size() <= 20: fails += 1
+	var bad: StreetRouteConfigData = cfg.duplicate(true)
+	bad.hover["cut_level"] = 2.0
+	if not ",".join(bad.validate()).contains("hover.cut_level"): fails += 1
+	return fails
 
 
 ## NA-22: CityShaderConfigData (the netrun city shaders' tuning numbers): the shipped one validates, an empty one reports

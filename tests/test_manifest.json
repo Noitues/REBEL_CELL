@@ -1268,6 +1268,14 @@
 		"res://tests/unit/test_city_shaders_render.gd": {
 			"seconds": 2.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_na23_route_flow.gd": {
+			"seconds": 45.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na23_route_view.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
 		}
 	}
 }

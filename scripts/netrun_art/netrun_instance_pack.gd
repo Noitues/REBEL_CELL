@@ -5,7 +5,7 @@ extends RefCounted
 ## below 2^23, so the float is exact (a float32 holds integers to 2^24). All four fields are stored so that 0 means "nothing
 ## happens": a building that was never touched keeps the old `w` (0 or the crest flag) and draws as before.
 ##
-## bits (low to high): cut 9, opacity 5, edge 3, dissolve 5 = 22 bits.
+## bits (low to high): cut 9, opacity 5, edge 3, dissolve 5, route 1 = 23 bits (NA-23 added `route`; still below 2^23 + 1).
 ##   cut      0..511  share of the building's height removed from the top (`cut_h = h * (1 - code / 511)`); 0 = no cut
 ##   ghost    0..16   `16 - round(opacity * 16)`: Bayer 4 x 4 coverage 16 - code of 16 pixels; 0 = opaque
 ##   edge     0..7    ghost edge-line strength `code / 7`; 0 = no edge lines
@@ -23,12 +23,14 @@ const DISSOLVE_LEVELS := 16
 const GHOST_SHIFT := CUT_BITS
 const EDGE_SHIFT := CUT_BITS + GHOST_BITS
 const DISSOLVE_SHIFT := CUT_BITS + GHOST_BITS + EDGE_BITS
+const ROUTE_SHIFT := CUT_BITS + GHOST_BITS + EDGE_BITS + DISSOLVE_BITS
 
 
 ## The `w` value for a building of height `top` (BU) cut at `cut_height` (BU above its base; >= top = no cut) drawn at
 ## `opacity` (0..1; 1 = opaque) with `edge` (0..1) ghost edge lines and `dissolve` (0..1) route-wall dissolve. `crest`
-## keeps the red-window flag the old `w` carried.
-static func pack(top: float, cut_height: float, opacity: float, edge: float, dissolve: float, crest: bool = false) -> float:
+## keeps the red-window flag the old `w` carried; `route` marks a route building (NA-23: the shader cuts the room windows
+## out of its walls).
+static func pack(top: float, cut_height: float, opacity: float, edge: float, dissolve: float, crest: bool = false, route: bool = false) -> float:
 	var cut_code: int = 0
 	if top > 0.0 and cut_height < top:
 		cut_code = clampi(roundi((1.0 - maxf(cut_height, 0.0) / top) * float(CUT_MAX)), 0, CUT_MAX)
@@ -36,6 +38,8 @@ static func pack(top: float, cut_height: float, opacity: float, edge: float, dis
 	var edge_code: int = clampi(roundi(clampf(edge, 0.0, 1.0) * float(EDGE_MAX)), 0, EDGE_MAX)
 	var dis_code: int = clampi(roundi(clampf(dissolve, 0.0, 1.0) * float(DISSOLVE_LEVELS)), 0, DISSOLVE_LEVELS)
 	var bits: int = cut_code | (ghost_code << GHOST_SHIFT) | (edge_code << EDGE_SHIFT) | (dis_code << DISSOLVE_SHIFT)
+	if route:
+		bits |= 1 << ROUTE_SHIFT
 	return float(bits * 2 + (1 if crest else 0))
 
 
@@ -49,6 +53,7 @@ static func unpack(w: float) -> Dictionary:
 		"opacity": 1.0 - float((bits >> GHOST_SHIFT) & 31) / float(GHOST_LEVELS),
 		"edge": float((bits >> EDGE_SHIFT) & 7) / float(EDGE_MAX),
 		"dissolve": float((bits >> DISSOLVE_SHIFT) & 31) / float(DISSOLVE_LEVELS),
+		"route": ((bits >> ROUTE_SHIFT) & 1) == 1,
 	}
 
 

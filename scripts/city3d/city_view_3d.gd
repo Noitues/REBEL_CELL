@@ -324,6 +324,61 @@ func set_look_blend(lb: float) -> void:
 func building_material() -> ShaderMaterial:
 	return _building_mat
 
+
+## The scene's Environment (the netrun views set its volumetric fog through `NetrunShaderKit.configure_environment`).
+func environment() -> Environment:
+	return _env
+
+
+const ID_ENV_PROPS: Array[StringName] = [&"background_mode", &"background_color", &"tonemap_mode", &"tonemap_exposure", &"glow_enabled",
+	&"volumetric_fog_enabled", &"fog_enabled", &"ambient_light_source", &"adjustment_enabled", &"ssao_enabled", &"ssil_enabled"]
+var _id_saved: Dictionary = {}
+var _id_hidden: Array[Node] = []
+
+
+## NA-23: the id pass of PIPELINE_SPEC 12.0 (PNG capture only): flat unlit class colours (the building material's `id_mode`, the
+## rooms'), black sky, no fog, glow, tonemap, ink post, veil or ground. `on` false puts everything back. Callers capture between.
+func set_id_pass(on: bool) -> void:
+	if on == not _id_saved.is_empty():
+		return
+	if on:
+		for p in ID_ENV_PROPS:
+			_id_saved[p] = _env.get(p)
+		_env.background_mode = Environment.BG_COLOR
+		_env.background_color = Color.BLACK
+		_env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		_env.tonemap_exposure = 1.0
+		_env.glow_enabled = false
+		_env.volumetric_fog_enabled = false
+		_env.fog_enabled = false
+		_env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+		_env.adjustment_enabled = false
+		_env.ssao_enabled = false
+		_env.ssil_enabled = false
+		_building_mat.set_shader_parameter(&"id_mode", true)
+		_building_mat.set_shader_parameter(&"id_class", 2.0)
+		var hide: Array[Node] = []
+		for n in [camera.get_node_or_null("Post"), camera.get_node_or_null("MapVeil"), layer(&"ground"), layer(&"network"), layer(&"landmarks"), layer(&"traffic"), layer(&"sky")]:
+			if n != null:
+				hide.append(n)
+		for key: Vector2i in _chunks:
+			for c: Node in (_chunks[key]["node"] as Node).get_children():
+				if c is MeshInstance3D and ((c as MeshInstance3D).material_override == _ground_mat or (c as MeshInstance3D).material_override == _lane_mat):
+					hide.append(c)
+		for n in hide:
+			if (n as Node3D).visible:
+				(n as Node3D).visible = false
+				_id_hidden.append(n)
+	else:
+		for p: StringName in _id_saved:
+			_env.set(p, _id_saved[p])
+		_id_saved.clear()
+		_building_mat.set_shader_parameter(&"id_mode", false)
+		for n in _id_hidden:
+			if is_instance_valid(n):
+				(n as Node3D).visible = true
+		_id_hidden.clear()
+
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
 var _landmarks_night: bool = true
@@ -802,6 +857,40 @@ func _build_chunk(key: Vector2i) -> void:
 	_chunks[key] = entry
 
 
+## NA-23: prism index -> [MultiMesh, instance index] of its building instance, and the packed INSTANCE_CUSTOM.w the street
+## netrun view wrote for it (`NetrunInstancePack`), kept across chunk rebuilds.
+var _inst_of: Dictionary = {}
+var _w_over: Dictionary = {}
+
+
+## NA-23: writes the packed per-instance state `w` (`NetrunInstancePack.pack`) of prism `prism` (an index into `model.prisms`).
+## View state only; 0 restores the building as the page draws it. Survives a chunk rebuild.
+func set_prism_w(prism: int, w: float) -> void:
+	if w == 0.0:
+		_w_over.erase(prism)
+	else:
+		_w_over[prism] = w
+	_write_prism_w(prism, w)
+
+
+## The packed `w` last written for prism `prism` (0 when none).
+func prism_w(prism: int) -> float:
+	return float(_w_over.get(prism, 0.0))
+
+
+func _write_prism_w(prism: int, w: float) -> void:
+	var at: Array = _inst_of.get(prism, [])
+	if at.is_empty() or not is_instance_valid(at[0]):
+		return
+	var mm: MultiMesh = at[0]
+	var i: int = at[1]
+	if i >= mm.instance_count:
+		return
+	var c: Color = mm.get_instance_custom_data(i)
+	c.a = w
+	mm.set_instance_custom_data(i, c)
+
+
 func _free_chunk(key: Vector2i) -> void:
 	var e: Dictionary = _chunks.get(key, {})
 	if e.is_empty():
@@ -832,6 +921,10 @@ func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: 
 		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
 		# (its prisms) is the cull box.
 		mm.custom_aabb = model.chunk_aabb(key)
+		for i in ids.size():
+			_inst_of[ids[i]] = [mm, i]
+			if _w_over.has(ids[i]):
+				_write_prism_w(ids[i], float(_w_over[ids[i]]))
 		var mi := MultiMeshInstance3D.new()
 		mi.name = ("Far_%d" if far else "Fam_%d") % fk
 		mi.multimesh = mm
