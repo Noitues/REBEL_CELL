@@ -8966,3 +8966,12 @@ Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checke
 
 ### 2026-10-18 — W1 NA-22d: edge-trim blend, recalibration on the true framing (apply_render)
 - `building.edge_blend` [0.3, 0.8] (config): trims fade in with smoothstep over look_blend, clean below 0.3. na22_lab now uses `NetrunFrustum.apply_render`. On the true framing the old values read darker than the plate (median 0.109, under-0.10 41.6 %, over-0.85 1.78 %), so the trim went UP, not down: look.exposure 0.95 -> 1.2, building.win_emit 0.8 -> 0.45, beam.emit 1.5 -> 1.3 (over-0.85 back inside tolerance). Canyon lb1 vs re-baked street_overview: median 0.126 (0.130), under-0.10 26.8 % (29.9 %), over-0.85 1.34 % (0.49 %, tol 1 pp), p99 0.927 (min 0.70). Tolerances untouched. Windowed render test 7/7.
+
+## 2026-10-18 - W1 N7: block nudge / respin locks
+
+Rulings applied: Q9 (locks refuse every nudge, free ones included; only player-initiated respins count; start-of-turn respin never blocked), Q31 (all locks removed at end of turn; Freeze alone persists and is spent at the next start-of-turn spin).
+- Lock = per-wheel `WheelState.locks` {kind: {turns_left >= 1, sources sorted by id}}; merge = larger turns_left, never the sum. Saved only when non-empty, so old hashes and saves are unchanged.
+- Answer 1: a lock an enemy places during RESOLVE is queued in `CombatState.pending_locks` (plain saved data, sorted by wheel, kind, source) and applies at the start of the next turn after the start-of-turn spin; it clears at that turn end.
+- Answer 2: locks placed in the player turn (cards on enemy wheels, listeners) apply at once for the rest of the turn and clear at its end.
+- New EffectType LOCK_NUDGE, LOCK_RESPIN (append-only, `amount` = turns, validation code lock_turns_lt_1). Refusal strings CombatResolver.NUDGE_LOCKED / RESPIN_LOCKED; `lock_refusal()` returns code + source ids.
+- Not built: the full-tier overlay flow test (view glue is two wheel chips and the existing refusal toast); the Linked Bus Daemon mirrored nudge is not refused (not player-initiated).

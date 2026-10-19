@@ -1712,6 +1712,7 @@ NODE BUILT,NODE BUILT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
+NUDGE LOCKED,NUDGE LOCKED
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 "NULL: the needle sits on a NULL slice, so nothing happens.","NULL: the needle sits on a NULL slice, so nothing happens."
@@ -2025,6 +2026,7 @@ RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
+RESPIN LOCKED,RESPIN LOCKED
 RESPIN: ODDS,RESPIN: ODDS
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 RETALIATION,RETALIATION
@@ -3223,6 +3225,8 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
+That wheel's nudges are locked this turn.,That wheel's nudges are locked this turn.
+That wheel's respins are locked this turn.,That wheel's respins are locked this turn.
 "The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."

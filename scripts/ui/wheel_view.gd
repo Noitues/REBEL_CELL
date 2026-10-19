@@ -451,6 +451,10 @@ func _get_tooltip(at_position: Vector2) -> String:
 				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
 			if combatant.wheel.frozen:
 				lines.append(tr("FROZEN"))
+			if combatant.wheel.is_locked(WheelState.LOCK_NUDGE):
+				lines.append(tr("NUDGE LOCKED"))
+			if combatant.wheel.is_locked(WheelState.LOCK_RESPIN):
+				lines.append(tr("RESPIN LOCKED"))
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
 			# B2 (D2): the upcoming phases a reveal shows were hub lines; they are the tooltip's.
@@ -4296,6 +4300,11 @@ func standing_chips() -> Array[Dictionary]:
 		out.append({"text": tr("+%d") % c.resistance_gain, "color": Palette.PENCIL_THREAT, "pencil": true})
 	if c.wheel.frozen:
 		out.append({"text": tr("FROZEN"), "color": Palette.NET_CYAN})
+	# N7: the lock overlay, a chip per lock on this wheel.
+	if c.wheel.is_locked(WheelState.LOCK_NUDGE):
+		out.append({"text": tr("NUDGE LOCKED"), "color": Palette.PENCIL_THREAT})
+	if c.wheel.is_locked(WheelState.LOCK_RESPIN):
+		out.append({"text": tr("RESPIN LOCKED"), "color": Palette.PENCIL_THREAT})
 	# The passive itself is the hub's emblem (its core's glyph) and its tooltip line; only its
 	# being switched off is a chip.
 	if c.wheel.hub_id != &"" and c.is_hub_breached():

@@ -21,6 +21,13 @@ var frozen: bool = false
 ## The wheel skipped its respin this turn (it was frozen). It cannot be frozen again until
 ## it has respun (decision 2026-09-24: closes the Anchor / Freeze perpetual lock).
 var respin_skipped: bool = false
+## Plan 2 N7: the player-turn locks on this wheel, {kind: {"turns_left": int >= 1, "sources":
+## Array[String] sorted by content id}}, kind LOCK_NUDGE or LOCK_RESPIN. A kind with no lock is
+## absent. Every lock is removed at end of turn (ruling Q31); place them only through add_lock.
+var locks: Dictionary = {}
+## The kinds of lock (a definition, not a tuning number).
+const LOCK_NUDGE: StringName = &"nudge"
+const LOCK_RESPIN: StringName = &"respin"
 ## The temporary statuses of each slot (permanent ones come from Firmware), plan 2 N8:
 ## one Dictionary per slot, {RC.Status int: stacks >= 1}. A status with no stacks is never
 ## stored (its key is absent). Read them in RC.Status order through statuses_at(), never
@@ -273,6 +280,45 @@ static func covering_slot(tick: int, count: int) -> int:
 	return best
 
 
+## Locks `kind` with `turns` turns left, named for `source`. Two locks merge: the larger
+## turns_left wins (never the sum) and the sources are kept sorted by content id. Returns
+## false (no lock) for turns < 1.
+func add_lock(kind: StringName, source: StringName, turns: int) -> bool:
+	if turns < 1:
+		return false
+	var entry: Dictionary = locks.get(String(kind), {"turns_left": 0, "sources": []})
+	var sources: Array = entry["sources"]
+	if source != &"" and not sources.has(String(source)):
+		sources.append(String(source))
+		IdSort.sort_ids(sources)
+	entry["turns_left"] = maxi(int(entry["turns_left"]), turns)
+	entry["sources"] = sources
+	locks[String(kind)] = entry
+	return true
+
+
+## Whether `kind` is locked on this wheel.
+func is_locked(kind: StringName) -> bool:
+	return locks.has(String(kind))
+
+
+## The sources of `kind`'s lock, sorted by content id (empty when not locked).
+func lock_sources(kind: StringName) -> Array:
+	if not locks.has(String(kind)):
+		return []
+	return (locks[String(kind)]["sources"] as Array).duplicate()
+
+
+## The turns left on `kind`'s lock (0 when not locked).
+func lock_turns(kind: StringName) -> int:
+	return int(locks[String(kind)]["turns_left"]) if locks.has(String(kind)) else 0
+
+
+## Removes every lock (end of turn, combat end).
+func clear_locks() -> void:
+	locks.clear()
+
+
 func duplicate_state() -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = slice_count
@@ -285,6 +331,7 @@ func duplicate_state() -> WheelState:
 	w.pointer_ticks = pointer_ticks.duplicate()
 	w.frozen = frozen
 	w.respin_skipped = respin_skipped
+	w.locks = locks.duplicate(true)
 	w.slice_stacks = copy_stacks()
 	w.passive_resistance = passive_resistance
 	w.pointer_orbit = pointer_orbit
@@ -321,7 +368,7 @@ func to_dict() -> Dictionary:
 	var stacks := []
 	for d in slice_stacks:
 		stacks.append(stacks_to_json(d))
-	return {
+	var d := {
 		"slice_count": slice_count,
 		"slot_slice_ids": _names_to_strings(slot_slice_ids),
 		"slot_firmware_ids": _names_to_strings(slot_firmware_ids),
@@ -337,6 +384,13 @@ func to_dict() -> Dictionary:
 		"pointer_orbit": pointer_orbit,
 		"pending_pointer_ticks": Array(pending_pointer_ticks),
 	}
+	if not locks.is_empty():  # absent when empty: wheels without a lock hash as before N7
+		var out := {}
+		for kind in [String(LOCK_NUDGE), String(LOCK_RESPIN)]:
+			if locks.has(kind):
+				out[kind] = {"turns_left": int(locks[kind]["turns_left"]), "sources": (locks[kind]["sources"] as Array).duplicate()}
+		d["locks"] = out
+	return d
 
 
 static func from_dict(d: Dictionary) -> WheelState:
@@ -353,6 +407,14 @@ static func from_dict(d: Dictionary) -> WheelState:
 		w.pointer_ticks.append(int(t))
 	w.frozen = bool(d.get("frozen", false))
 	w.respin_skipped = bool(d.get("respin_skipped", false))
+	var saved_locks: Dictionary = d.get("locks", {})
+	for kind in [String(LOCK_NUDGE), String(LOCK_RESPIN)]:
+		var entry: Variant = saved_locks.get(kind)
+		if entry is Dictionary and int(entry.get("turns_left", 0)) >= 1:
+			var srcs: Array = []
+			for x in entry.get("sources", []):
+				srcs.append(String(x))
+			w.locks[kind] = {"turns_left": int(entry["turns_left"]), "sources": srcs}
 	w.slice_stacks = []
 	for s in d.get("slice_stacks", []):
 		w.slice_stacks.append(stacks_from_json(s) if s is Dictionary else {})

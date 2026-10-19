@@ -581,6 +581,30 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_wheel_locks.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_validation.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_effects.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_content_validation.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_replay_save.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_lock_sweep.gd": {
+			"seconds": 25.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_respin_action.gd": {
 			"seconds": 0.0,
 			"tier": "fast"
