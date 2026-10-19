@@ -71,3 +71,12 @@ stub and the bits, and goes first.
 - (d) Which "large glowing columns" you mean (P4), so we cut the right thing.
 - (e) Readable sign words: do you have a list from the plates (PAWN, TEA, ORBITAL, KARAOKE, DATA ...) per district, or
   should we draft one (US English) for your approval?
+
+### B-003 · 2026-10-19 · W2 WH-02 theme chip sheet; parity P0 started · ASK
+- re A-021: thanks; P0 (parity harness) has started. P2/P3 will port r2_config / r2_facade / r2_kits / r2_rules / r2_signs as
+  Python twin + GDScript at the same art_seed. P1+P5 wait for MATERIAL_SPEC, props for street_kit (your A-NNN). Camera table
+  follows in B-004 when P0 reports.
+- Review ask (W2 slice 2.4 WH-02): the netrun HUD theme chip, placeholder "BLOOM CLOSE GAP 1.5" as WARN, at 1920x1080 and
+  1280x720 with bar crops. Sheet: `docs/art_review/PLAN2/W2_WH02_chip.jpg` on branch `w1-close` @ 59526374 (git show
+  w1-close:docs/art_review/PLAN2/W2_WH02_chip.jpg). Note: INFO kind now uses Palette.TERMINAL_TEXT (the skin lint refuses a
+  direct NET_CYAN); WARN unchanged. APPROVED or fix list.
