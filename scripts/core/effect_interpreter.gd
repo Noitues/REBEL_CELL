@@ -20,11 +20,28 @@ var config: CampaignConfigData
 var lookup: ContentLookup
 ## See CombatResolver.quiet.
 var quiet: bool = false
+## Plan 2 Q19: non-null while CombatResolver.forecast runs. Every random part then marks itself
+## here ({kind, target, listener}) and is left undecided instead of rolled: a respin does not
+## turn the wheel, a random slice pick picks nothing, a reshuffle stops the draw.
+var forecast_marks: Variant = null
+## True while a listener's reaction runs (a mark made then says so).
+var forecast_in_listener: bool = false
 
 
 func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 	config = p_config
 	lookup = p_lookup
+
+
+## Q19: true while a forecast runs.
+func forecasting() -> bool:
+	return forecast_marks != null
+
+
+## Q19: records a random part left undecided (forecast only).
+func mark_unknown(kind: StringName, target_id: StringName) -> void:
+	if forecast_marks != null:
+		(forecast_marks as Array).append({"kind": kind, "target": target_id, "listener": forecast_in_listener})
 
 
 # --- Content helpers -------------------------------------------------------------
@@ -223,6 +240,8 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
 					break
 				var slot := pick_slot(state, owner, e.slice_pick, ctx, rng)
+				if forecasting() and slot < 0 and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+					break  # Q19: the slice is undecided, so no drone is docked in the forecast
 				if at_cap and state.satellite_at(owner.id, maxi(0, slot)) == null:
 					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
 					break
@@ -467,6 +486,9 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 					candidates.append(i)
 			if candidates.is_empty():
 				return -1
+			if forecasting():
+				mark_unknown(PreviewResult.RANDOM_SLICE, c.id)
+				return -1
 			return candidates[rng.randi_range(0, candidates.size() - 1)]
 		_:
 			var action: CombatAction = ctx.get("action")
@@ -563,6 +585,11 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	if not force and c.resistance > 0:
 		events.append({"type": "respin_blocked", "target": c.id, "text": "%s resists the RESPIN (resistance %d)." % [c.display_name, c.resistance]})
 		return false
+	if forecasting():
+		mark_unknown(PreviewResult.RESPIN, c.id)
+		events.append({"type": "respin", "target": c.id, "unknown": true,
+			"text": "%s respins (the landing is a random event)." % c.display_name})
+		return true
 	var wheel := c.wheel
 	wheel.rotation += 2 * RC.TICKS + rng.randi_range(0, RC.TICKS - 1)
 	if wheel.has_inner_ring():
@@ -646,6 +673,9 @@ func draw_cards(state: CombatState, count: int, rng: RandomNumberGenerator, even
 	for i in count:
 		if state.draw_pile.is_empty():
 			if state.discard_pile.is_empty():
+				break
+			if forecasting():
+				mark_unknown(PreviewResult.RESHUFFLE, state.player.id)
 				break
 			state.draw_pile = state.discard_pile.duplicate()
 			state.discard_pile.clear()

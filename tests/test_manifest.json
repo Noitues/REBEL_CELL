@@ -1393,6 +1393,10 @@
 			"seconds": 1.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_preview_unknown.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_listener_preview.gd": {
 			"seconds": 0.5,
 			"tier": "fast"
