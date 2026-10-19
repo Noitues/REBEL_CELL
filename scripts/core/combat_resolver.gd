@@ -527,7 +527,8 @@ func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
 ## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
 func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
 	for c in s.combatants_in_order():
-		c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)
+		if c.wheel != null:
+			c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)
 		if c.is_player:
 			continue
 		c.resistance = 0
@@ -1351,7 +1352,8 @@ func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dic
 func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:
 	if s.player.hp <= 0 or s.living_enemies(false).is_empty():
 		for c in s.combatants_in_order():
-			c.wheel.clear_locks()  # N7: nothing leaks past the combat
+			if c.wheel != null:
+				c.wheel.clear_locks()  # N7: nothing leaks past the combat
 		s.pending_locks.clear()
 	if s.player.hp <= 0:
 		s.outcome = CombatState.Outcome.DEFEAT
