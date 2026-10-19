@@ -72,6 +72,12 @@
     GreasePencilMark stroke (wobble, varying width, wax grain, alpha 0.96, no highlight; ring = one stroke overshooting its
     start, slash = second stroke TL->BR past the ring); re-sheet a re-scribble mid-frame; chase ~1.2 s/lap (3.17: 900-1500 ms);
     Q/E key labels unclipped in the locked state. Re-sheet: 2x held slash, re-scribble mid-frame, chase at new speed.
+  - NA-12 r3 (A-030, base w1-close): sea look vs city_a2 plates: night sea deep teal-blue between void and land (median
+    value strip void < sea < land), day saturated mid-blue + lighter shallows; marbled caustics + foam; shore reflections =
+    soft short vertical smears under each shore light broken by ripple (never regular dashes = grease-pencil vocabulary);
+    coping strip brighter/wider scaled by zoom. Re-sheet with plates beside: whole city seed 1 night + day, bay crop, value strip.
+  - W2 adds: NA-12c terrain (hills heightfield render, coastlines, marinas, lighthouse, islands), NA-12d harbour movers (boats
+    on the bay, ships at piers, lit offshore platforms).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.
 - Gotcha: TaskStop on a backgrounded `git commit` leaves its run_tests/godot children alive; they race the next
   precommit in %TEMP%/precommit_rebel_cell. Kill them (Get-CimInstance Win32_Process match precommit_rebel_cell).
@@ -88,5 +94,6 @@ Merge: union `tests/test_manifest.json` (stages :2/:3), keep both in DECISIONS, 
 (`IdSort.sort_ids`; allowlist int sorts in `tests/unit/test_no_bare_id_sort.gd`).
 
 ## Art-pass mailbox (since 2026-10-19; the app holds cross-session messages after ~10 sends)
-- Read art -> build at the start of EVERY turn: `git -C C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Read art -> build at the start of EVERY turn: `git -C D:/rc_art/art-pass show art-pass:docs/concepts/HANDOFF_PACKAGE/MAILBOX.md` (entries A-NNN).
+- Prune: delete your own B entries once art-pass cites them (designer ruling); no history kept.
 - Write build -> art: append `### B-NNN · date · topic · VERDICT|RULING|ASK|FYI` to `docs/handoff/netrun_art/MAILBOX_TO_ART.md` on main, commit each; cite "re A-NNN" to mark handled. Sheets must be committed on a branch or main (not only in an agent worktree). A message "mailbox: B-NNN" is an optional wake-up.
