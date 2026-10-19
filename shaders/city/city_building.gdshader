@@ -96,6 +96,14 @@ uniform float edge_emit = 0.0;
 uniform float edge_bu = 0.16;
 // NA-22d: the trims fade in over smoothstep(edge_blend.x, edge_blend.y, look_blend), so frames below x stay clean.
 uniform vec2 edge_blend = vec2(0.3, 0.8);
+// NA-23c floor-band trims (the street netrun): a thin emissive band on the walls every `band_every` BU (first at `band_first` plus a
+// per-building phase of up to one `band_every`),
+// `band_bu` thick, on `band_share` of the buildings (by seed), in the edge hues; `band_emit` 0 = none (the default).
+uniform float band_emit = 0.0;
+uniform float band_every = 11.4;
+uniform float band_first = 7.6;
+uniform float band_bu = 0.2;
+uniform float band_share = 0.5;
 // Depth haze (spec 4.1 cityglow, perspective views only): colour, density per BU of view distance, height e-fold (BU above the
 // local ground) and the share of the haze the highest parts keep.
 uniform vec3 haze_col = vec3(0.0);
@@ -247,15 +255,35 @@ void fragment() {
 			vec3 t = v_edge / L;
 			float along = dot(v_world - v_corner, t);
 			float nx = floor((L - 0.6) / window_pitch.x);
+			if (look_blend > 0.0 && L > 1.55) {
+				// NA-23c: a narrow face still carries one column of the carpet (the netrun look; the page at 0 is unchanged).
+				nx = max(nx, 1.0);
+			}
 			float nz = floor((v_h - window_first) / window_pitch.y);
 			float ui = floor((along - 0.7) / window_pitch.x);
 			float lu = along - 0.7 - ui * window_pitch.x;
 			float vi = floor((z - window_first) / window_pitch.y);
 			float lv = z - window_first - vi * window_pitch.y;
-			if (ui >= 0.0 && ui < nx && vi >= 0.0 && vi < nz && lu < window_size.x && lv < window_size.y) {
+			if (look_blend > 0.0) {
+				// NA-23c bay rhythm: each window sits at its own offset inside its cell (per column and 3-floor band), the same size.
+				float bnd = floor((vi + floor(hash1(vec3(seed * 8.3, 4.0, 2.0)) * 3.0)) / 3.0);
+				lu -= hash1(vec3(ui, bnd, seed * 2.1)) * (window_pitch.x - window_size.x);
+				lv -= hash1(vec3(vi, seed * 6.7, 3.0)) * (window_pitch.y - window_size.y);
+			}
+			if (ui >= 0.0 && ui < nx && vi >= 0.0 && vi < nz && lu >= 0.0 && lv >= 0.0 && lu < window_size.x && lv < window_size.y) {
 				vec3 key = vec3(ui + floor(v_corner.x * 3.0), vi + floor(v_corner.z * 3.0), seed * 977.0);
 				float r = hash1(key);
 				float share = v_crest > 0.5 ? 0.6 : mix(window_share, win_share, look_blend);
+				if (look_blend > 0.0 && v_crest < 0.5) {
+					// NA-23c (art-pass r2_facade.py, repetition.guard): a lit fraction per building, floor bands of 3 floors that are dark
+					// or fully lit, and skipped columns on wide faces. Same window size; the page at 0 keeps its grid.
+					float lit = mix(0.55, 1.0, hash1(vec3(seed * 5.7, 1.0, 3.0)));
+					float band = floor((vi + floor(hash1(vec3(seed * 8.3, 4.0, 2.0)) * 3.0)) / 3.0);
+					float bh = hash1(vec3(band, seed * 13.1, 7.0));
+					float bm = bh < 0.22 ? 0.12 : (bh > 0.8 ? 2.0 : 1.0);
+					float skip = (L > 5.0 && hash1(vec3(ui, band * 0.37, seed * 3.3)) < 0.2) ? 0.0 : 1.0;
+					share = mix(share, min(lit * bm, 1.0) * skip, look_blend);
+				}
 				if (r < share) {
 					int ci = int(hash1(key + 17.0) * 6.0) % 6;
 					vec3 wc = v_crest > 0.5 && hash1(key + 5.0) < 0.8 ? vec3(0.95, 0.24, 0.22) : window_colors[ci];
@@ -312,6 +340,16 @@ void fragment() {
 				em += ec * edge_emit * eb;
 				base = mix(base, ec * 0.3, eb);
 			}
+		}
+	}
+	if (look_blend > 0.0 && band_emit > 0.0 && !roof && hash1(vec3(seed * 53.7, 1.0, 6.0)) < band_share) {
+		float b0 = band_first + hash1(vec3(seed * 19.3, 2.0, 5.0)) * band_every;
+		float bz = mod(zl - b0, band_every);
+		if (zl >= b0 && bz < band_bu && zl < v_h - 0.5) {
+			vec3 bc = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
+			float bb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
+			em += bc * band_emit * bb;
+			base = mix(base, bc * 0.3, bb);
 		}
 	}
 	if (plinth_w > 0.0) {

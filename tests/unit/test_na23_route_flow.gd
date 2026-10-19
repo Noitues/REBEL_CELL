@@ -241,3 +241,39 @@ func test_layout_at_1280_by_720() -> void:
 		var floor_px := 46.0 if int(v.data.rooms()[id]["layer"]) == 1 else 40.0
 		assert_gte(h, floor_px, "%s is tall enough at OVERVIEW, 1080p" % id)
 	assert_gt(opts.size(), 0)
+
+
+func _open_window_count(v: StreetRouteView) -> int:
+	var boxes: PackedVector4Array = v.rig.view.building_material().get_shader_parameter(&"room_box")
+	var n := 0
+	for b in boxes:
+		if b != Vector4():
+			n += 1
+	return n
+
+
+func test_an_unrevealed_room_keeps_the_closed_facade() -> void:
+	var v := _view()
+	var ids: Array = v.rig.room_ids()
+	assert_gt(ids.size(), 0)
+	for id: String in ids:
+		assert_true(v.rig.room_is_open(id), "at rest every room is open: %s" % id)
+	assert_eq(_open_window_count(v), ids.size(), "each open room has its window cut in the wall")
+	v.entry_begin()
+	for id: String in ids:
+		assert_false(v.rig.room_is_open(id), "the dive starts on closed rooms: %s" % id)
+	assert_eq(_open_window_count(v), 0, "no wall is cut: the building keeps its windows and wash, never a black box")
+	v.entry_end()
+	assert_eq(_open_window_count(v), ids.size(), "the end state of the entry opens every room again")
+
+
+func test_the_street_look_is_set_on_the_route_street_only() -> void:
+	var v := _view()
+	var look: Dictionary = StreetRouteConfigData.shipped().look
+	var bm := v.rig.view.building_material()
+	assert_almost_eq(float(bm.get_shader_parameter(&"look_blend")), 1.0, 0.0001, "the street runs the netrun look in full")
+	for k: String in look["building"]:
+		assert_almost_eq(float(bm.get_shader_parameter(StringName(k))), float(look["building"][k]), 0.0001, "building.%s" % k)
+	var lane := v.rig.view.lane_material()
+	assert_true(lane.shader.resource_path.ends_with("route_lane.gdshader"), "the lane lines are the quiet route lane")
+	assert_almost_eq(float(lane.get_shader_parameter(&"lane_sat")), float(look["lane"]["sat"]), 0.0001, "desaturated lane lines")

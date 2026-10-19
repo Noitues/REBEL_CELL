@@ -327,6 +327,11 @@ func building_material() -> ShaderMaterial:
 	return _building_mat
 
 
+## The lane lines' material (the street netrun swaps its shader for the quiet `route_lane`).
+func lane_material() -> ShaderMaterial:
+	return _lane_mat
+
+
 ## The scene's Environment (the netrun views set its volumetric fog through `NetrunShaderKit.configure_environment`).
 func environment() -> Environment:
 	return _env

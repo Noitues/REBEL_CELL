@@ -2215,7 +2215,6 @@ SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle
 SLICES (on the wheels),SLICES (on the wheels)
-SLOT %d  %s,SLOT %d  %s
 SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
@@ -2240,6 +2239,7 @@ STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
 STOPPED %d/%d,STOPPED %d/%d
 STRENGTH,STRENGTH
 STRENGTH %s%%,STRENGTH %s%%
+SUB-TICK MAP  //  W weak  G good  P perfect,SUB-TICK MAP  //  W weak  G good  P perfect
 SUBJECT,SUBJECT
 SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)

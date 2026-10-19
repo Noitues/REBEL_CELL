@@ -8,6 +8,8 @@ extends RefCounted
 ## data: the rig puts the meshes in the scene.
 
 ## The room kinds (DressReader.ROOM_KINDS).
+## Vertex alpha of the frame bars (a marker; every other surface is 1).
+const FRAME_ALPHA := 0.5
 const KINDS: Array[String] = ["router", "terminal", "mainframe", "server_rack", "rest", "workshop", "cache"]
 
 ## Prop boxes per kind in the room's unit frame: [s0, s1, v0, v1, t0, t1, lit]. `s` -0.5..0.5 across the width, `v` 0..1 up
@@ -164,7 +166,7 @@ static func build_mesh(room: Dictionary, kind: String, elite: bool, col: Color, 
 	side_c.a = 1.0
 	var prop := _rgb(cfg["prop"])
 	var frame_c := _rgb(cfg["frame"]) * float(cfg["frame_gain"])
-	frame_c.a = 1.0
+	frame_c.a = FRAME_ALPHA  # the marker the room shader scales with the zoom (`frame_k`)
 	var at := func(ss: float, tt: float, vv: float) -> Vector3:
 		var q: Vector2 = o + s * (ss * w) + t * (tt * d)
 		return Vector3(q.x, z0 + vv * h, -q.y)
