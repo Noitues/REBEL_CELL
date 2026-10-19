@@ -276,7 +276,7 @@ func bloom_preview() -> Dictionary:
 		IdSort.sort_ids(ids)
 	for id in ids:
 		var node := run.map.get_node(id)
-		var across := bool(node.get("across", false))
+		var across := entered_across(node, run.current_node_id)
 		var steps := 1
 		if b.key_intel:
 			steps = maxi(1, int(node["layer"]) - b.layer_milli / 1000)
@@ -370,22 +370,36 @@ func available_nodes() -> Array[StringName]:
 	return out
 
 
+## WH-10: whether entering `node` from `from_id` is an HQ ACROSS move: the node is flagged
+## `across`, or `from_id` is one of its `across_from` sources (the ladder's bridge edges).
+static func entered_across(node: Dictionary, from_id: StringName) -> bool:
+	if bool(node.get("across", false)):
+		return true
+	return from_id != &"" and (node.get("across_from", []) as Array).has(from_id)
+
+
 ## Moves to `node_id` and opens whatever it holds. Returns the events.
 func enter_node(node_id: StringName) -> Array[Dictionary]:
 	last_events = []
 	if not available_nodes().has(node_id):
 		return _refuse("Node %s is not reachable from here." % node_id)
 	var node := run.map.get_node(node_id)
+	var across := entered_across(node, run.current_node_id)
 	run.current_node_id = node_id
 	run.visited.append(node_id)
 	var bloom := run.corp_theme.solace
-	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), bool(node.get("across", false))):
+	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), across):
 		_bloom_caught()
 		return last_events
 	last_events.append({"type": "enter_node", "node": node_id, "node_type": node["type"],
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
 		_add_heat(node["heat"], "elite node")
+	if bool(node.get("rest", false)):
+		# WH-10: the Solace HQ rest room is the ward rest (the front goes back by dose_push).
+		bloom_ward_rest()
+		last_events.append({"type": "ward_rest", "gap_milli": BloomRules.gap_milli(bloom), "text": "Ward rest: the front falls back."})
+		return last_events
 	match int(node["type"]):
 		RC.InfilNodeType.ROUTER:
 			_start_combat(node["elite"])
@@ -436,7 +450,7 @@ func combat_rewind() -> CombatResult:
 ## Picks the enemy: the final Rack gets a mini-boss (designer ruling 2026-09-24), other
 ## elite nodes an elite, Routers a normal enemy; special runs force theirs.
 func _start_combat(elite: bool) -> void:
-	var final_rack := run.kind == "netrun" and run.current_node_id == run.map.final_node_id()
+	var final_rack := (run.kind == "netrun" and run.current_node_id == run.map.final_node_id()) or bool(run.current_node().get("mini_boss", false))
 	var setup := _combat_setup(elite, final_rack, streams.get_stream(&"combat"))
 	var enemy_id: StringName = setup["enemy_id"]
 	if not elite and not final_rack:
@@ -459,6 +473,8 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	var enemy_id: StringName = pool[combat_rng.randi_range(0, pool.size() - 1)]
 	if run.forced_enemy_id != &"":
 		enemy_id = run.forced_enemy_id
+	elif bool(run.current_node().get("boss", false)) and corporation != null and corporation.final_boss != null:
+		enemy_id = corporation.final_boss.id  # WH-10: the HQ ladder's crown is the final boss
 	var seed := combat_rng.randi()
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData

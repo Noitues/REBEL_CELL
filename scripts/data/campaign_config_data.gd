@@ -281,6 +281,15 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var bloom_exempt_boss_turn_cost: bool = true
 ## Heat never changes street pace.
 @export var bloom_heat_affects_street: bool = false
+## Solace HQ ladder (WH-10, drafts/hq/solace.md): rungs between the Clinic Gate and the Genome
+## Core crown (D10: more than 7 layers), the rung whose rooms hold the Account Manager, the
+## Ward-tower rungs that are guaranteed ward rests, and each tower's room-kind weights in the
+## order fight, rest, event, elite, shop (stream `hq_graph`, drawn once at generation).
+@export var solace_hq_rungs: int = 9
+@export var solace_hq_mini_boss_rung: int = 9
+@export var solace_hq_ward_rest_rungs: PackedInt32Array = PackedInt32Array([5, 8])
+@export var solace_hq_ward_weights: PackedInt32Array = PackedInt32Array([45, 20, 15, 15, 5])
+@export var solace_hq_billing_weights: PackedInt32Array = PackedInt32Array([30, 5, 20, 20, 25])
 ## Solace raid infection, basis points: start per Heat band (COOL, NOTICED, FLAGGED, HUNTED,
 ## PURGE), per step base, per living threat per step, the CITY LOST threshold.
 @export var raid_infection_start_bp_by_band: PackedInt32Array = PackedInt32Array([0, 500, 1000, 1500, 2000])

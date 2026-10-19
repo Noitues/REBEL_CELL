@@ -12,6 +12,8 @@ const STREAM_NAMES: Array[StringName] = [&"map", &"combat", &"rewards", &"events
 ## seed (`CITY_SEED_STREAM`), and a city's layout from its city seed (`CITY_LAYOUT_STREAM`).
 const CITY_SEED_STREAM: StringName = &"city_seed"
 const CITY_LAYOUT_STREAM: StringName = &"city_layout"
+## Plan 2 WH-10: the Solace HQ ladder's room kinds, made on demand from the run seed.
+const HQ_GRAPH_STREAM: StringName = &"hq_graph"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}
