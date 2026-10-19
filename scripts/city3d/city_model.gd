@@ -77,7 +77,6 @@ static func build(p_cfg: CityConfig, p_seed: int, rect: Rect2i = Rect2i()) -> Ci
 		var rec := recorder(p_seed)
 		rec.record(r)
 		m.add_recording(key, r, rec)
-		rec.free()
 	m.finish()
 	return m
 

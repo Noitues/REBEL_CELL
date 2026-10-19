@@ -870,7 +870,6 @@ func _poll_model() -> void:
 	var rects: Array[Rect2i] = job["rects"]
 	for i in keys.size():
 		m.add_recording(keys[i], rects[i], recs[i])
-		recs[i].free()
 	m.finish(true)
 	var rules := m.layout_rules_job()
 	if rules.is_empty():

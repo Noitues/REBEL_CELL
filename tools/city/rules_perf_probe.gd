@@ -63,7 +63,6 @@ func _stages() -> void:
 		var rec := CityModel.recorder(m.city_seed)
 		rec.record(r)
 		m.add_recording(key, r, rec)
-		rec.free()
 	var t := Time.get_ticks_msec()
 	m.finish(true)
 	print("RULESPERF finish(defer) ms=%d" % (Time.get_ticks_msec() - t))
