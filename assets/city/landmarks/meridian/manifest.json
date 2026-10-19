@@ -16,6 +16,7 @@
    "tools/art_pipeline/city/landmark_post_v1.py",
    "tools/art_pipeline/city/gltf_anim_v1.py",
    "tools/art_pipeline/city/build_landmarks_v1.py",
+   "tools/art_pipeline/city/id_ground.py",
    "tools/art_pipeline/city/concept_r31/target_corps.py",
    "tools/art_pipeline/city/concept_r31/heroes24.py",
    "tools/art_pipeline/city/concept_r31/heroes25.py",
@@ -26,8 +27,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "012dc6813e2f2ab261197c905fad0c3bdc7788e3",
-  "scripts_sha256": "c0b99454bfc673b57ca229540c34e63bd6ebaa284009441d21a44a1b1bc24390"
+  "commit": "b98e1def9a96560315d609ec7003b42ea1daa4b2",
+  "scripts_sha256": "cfa6ae39c43b6893e237c6302427c849147b71e45ea6429849c12b04e1c134f4"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -164,8 +165,8 @@
   {
    "path": "meridian_hq.glb",
    "kind": "gltf",
-   "bytes": 1303996,
-   "sha256": "68026e2e84c1ecbce2f6276edaa957c6fb50f607ecf413e34779db1972be743a"
+   "bytes": 1304932,
+   "sha256": "0fc3f4dddf9c416b03f30f930df8de4c21ff1f96d8ad2b9f29e06b4b7dc3bbb8"
   }
  ],
  "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"

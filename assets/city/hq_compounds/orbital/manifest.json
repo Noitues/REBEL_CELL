@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
-  "commit": "582d1842746f8f9e750b30f20a45e0c49d2ac31a",
-  "scripts_sha256": "4f5e8031fca43afccea4f1efe9b6a57341ca5852d40641848e15a69d87465a9e"
+  "commit": "87824756b67c4af1e2d0770ceae2e25c5bc1bca0",
+  "scripts_sha256": "06575b4b8bda9a5e20d2c3394cc63048bc1e3caa28df4e6aba89f278b6dc9c18"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -60,8 +60,8 @@
   {
    "path": "orbital_compound.glb",
    "kind": "gltf",
-   "bytes": 449604,
-   "sha256": "b01bcde6560fd540b4581e6da85f1c948a92b7ef8472ae019ca071c5c307a905"
+   "bytes": 450844,
+   "sha256": "c8c0b6123097c2c853367ac050a9ad37f4aeec54798df2d725872bfe77a5e708"
   }
  ],
  "triangles": {
