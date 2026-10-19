@@ -167,7 +167,7 @@ func test_a_resumed_netrun_keeps_its_theme_block() -> void:
 	assert_eq(RunManager.campaign.corp_theme.halcyon.eye_fixed_left, 1)
 	assert_eq(RunManager.netrun.state_hash(), run_hash)
 	assert_eq(RunManager.campaign.state_hash(), camp_hash)
-	assert_eq(RunManager.netrun.theme_chip(), {}, "no theme rule fills the chip yet")
+	assert_eq(RunManager.netrun.theme_chip()["key"], "FRONT", "WH-11: the Solace Bloom fills the chip (this campaign is Solace)")
 	RunManager.delete_save()
 	RunManager.reset()
 	RunManager.save_slot = RunManager.DEFAULT_SLOT

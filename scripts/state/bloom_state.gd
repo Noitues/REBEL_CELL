@@ -12,3 +12,8 @@ var caught: bool = false
 var enabled: bool = false
 ## Free and bought doses not yet used.
 var doses_held: int = 0
+## WH-11: an HQ run (HQ numbers; one front shared by both towers).
+var hq: bool = false
+## WH-11: Exploit keys held for this run (Intel reveals the whole ladder gap, Virus scales pace).
+var key_intel: bool = false
+var key_virus: bool = false

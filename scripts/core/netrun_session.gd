@@ -64,6 +64,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.combat_overrides["shop_stock_delta"] = shop_delta
 	p_campaign.pending_complications.clear()
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -174,6 +175,8 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.SERVER_RACK,
 		"elite": true, "next": [] as Array[StringName], "heat": 0}])
 	s.run.map = graph
+	if kind == "boss":
+		BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
 	s.last_events.append_array(left_post)
@@ -224,7 +227,120 @@ func state_hash() -> int:
 ## RunThemeState.ChipKind}; {} hides the chip. No theme rule fills it yet (WH-11 and the
 ## later corp slices add theirs here); like every preview it reads state and changes nothing.
 func theme_chip() -> Dictionary:
-	return {}
+	var b := run.corp_theme.solace
+	if not b.enabled or run.is_over():
+		return {}
+	var band := bloom_band()
+	var kind := RunThemeState.ChipKind.INFO
+	if band == BloomRules.Band.CLOSE:
+		kind = RunThemeState.ChipKind.WARN
+	elif band >= BloomRules.Band.CATCHING:
+		kind = RunThemeState.ChipKind.DANGER
+	return {"key": TextDb.mark("FRONT"), "args": [], "value": bloom_gap_text(BloomRules.gap_milli(b)), "kind": kind}
+
+
+## WH-11: a gap in thousandths as "n.n" layers (truncated toward zero to the shown tenth).
+static func bloom_gap_text(gap_milli: int) -> String:
+	var tenths: int = absi(gap_milli) / 100
+	return "%s%d.%d" % ["-" if gap_milli < 0 and tenths > 0 else "", tenths / 10, tenths % 10]
+
+
+## WH-11: the Bloom's band now (DORMANT before the first node is entered).
+func bloom_band() -> BloomRules.Band:
+	return BloomRules.band(run.corp_theme.solace, config, run.current_node_id != &"")
+
+
+## WH-11: Exploit keys held this run (EX-03 sets them): Intel, Virus.
+func bloom_set_keys(intel: bool, virus: bool) -> void:
+	run.corp_theme.solace.key_intel = intel
+	run.corp_theme.solace.key_virus = virus
+	_sync()
+
+
+## WH-11 preview, nothing random: for each node `available_nodes()` offers (every unvisited
+## node of the ladder with the Intel key), {node: {"gap_milli": exact gap after entering,
+## "caught": bool, "fight": bool, "turn_cost_milli": front cost per fight turn}}. A node
+## entered by ACROSS (node["across"]) includes `pace_cross`. The gap equals the real
+## `enter_node` result (fight turns come after the fight, at `turn_cost_milli` each).
+func bloom_preview() -> Dictionary:
+	var b := run.corp_theme.solace
+	var out := {}
+	if not b.enabled or run.map == null or run.phase != RunState.Phase.MAP:
+		return out
+	var ids: Array = available_nodes()
+	if b.key_intel:
+		ids = []
+		for n in run.map.all_nodes():
+			if int(n["layer"]) > b.layer_milli / 1000:
+				ids.append(n["id"])
+		IdSort.sort_ids(ids)
+	for id in ids:
+		var node := run.map.get_node(id)
+		var across := bool(node.get("across", false))
+		var steps := 1
+		if b.key_intel:
+			steps = maxi(1, int(node["layer"]) - b.layer_milli / 1000)
+		var gap := int(node["layer"]) * 1000 - (b.front_milli + (steps - 1) * BloomRules.entry_pace(b, config, run.tier) + BloomRules.entry_pace(b, config, run.tier, across))
+		var fight := int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK
+		out[id] = {"gap_milli": gap, "caught": gap <= 0, "fight": fight,
+			"turn_cost_milli": BloomRules.fight_pace(b, config, 1, _bloom_boss_node(node)) if fight else 0}
+	return out
+
+
+## Bosses and mini-bosses: the HQ boss run's node and the final Server Rack of a netrun.
+func _bloom_boss_node(node: Dictionary) -> bool:
+	return run.kind == "boss" or bool(node.get("boss", false)) or (run.kind == "netrun" and run.map != null and node.get("id", &"") == run.map.final_node_id())
+
+
+## CAUGHT's consequence: the operative is lost and the netrun abandoned (Q24.1), the same
+## path as 0 HP. The raid is untouched.
+func _bloom_caught() -> void:
+	combat = null
+	last_events.append({"type": "bloom_caught", "text": "THE BLOOM CAUGHT %s." % run.operative.name})
+	_die()
+	_sync()
+
+
+## Buys a dose at a Mainframe (price from config); it is held until used.
+func buy_dose() -> Array[Dictionary]:
+	last_events = []
+	var b := run.corp_theme.solace
+	if not b.enabled or run.phase != RunState.Phase.SHOP:
+		return _refuse("No antiviral for sale here.")
+	if run.cycles < config.bloom_dose_price:
+		return _refuse("Not enough Cycles for a dose (%d)." % config.bloom_dose_price)
+	run.cycles -= config.bloom_dose_price
+	b.doses_held += 1
+	last_events.append({"type": "purchase", "kind": "dose", "price": config.bloom_dose_price, "text": "Bought an antiviral dose."})
+	_sync()
+	return last_events
+
+
+## Uses a held dose: the front goes back by dose_push, the gap clamped to max_gap.
+func use_dose() -> Array[Dictionary]:
+	last_events = []
+	var b := run.corp_theme.solace
+	if run.is_over() or in_combat() or not BloomRules.use_dose(b, config):
+		return _refuse("No dose to use.")
+	last_events.append({"type": "dose", "gap_milli": BloomRules.gap_milli(b), "text": "Antiviral dose taken."})
+	_sync()
+	return last_events
+
+
+## The gap after using a dose now (exact); -1 with none to use.
+func dose_preview() -> int:
+	var b := run.corp_theme.solace
+	if not b.enabled or b.caught or b.doses_held <= 0:
+		return -1
+	var c := b.copy() as BloomState
+	BloomRules.push(c, config)
+	return BloomRules.gap_milli(c)
+
+
+## HQ ward rest (the existing HQ rest node binds here): pushes the front back by dose_push.
+func bloom_ward_rest() -> void:
+	BloomRules.ward_rest(run.corp_theme.solace, config)
+	_sync()
 
 
 func _bind(p_resolver: CombatResolver, p_campaign: CampaignState) -> void:
@@ -262,6 +378,10 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 	var node := run.map.get_node(node_id)
 	run.current_node_id = node_id
 	run.visited.append(node_id)
+	var bloom := run.corp_theme.solace
+	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), bool(node.get("across", false))):
+		_bloom_caught()
+		return last_events
 	last_events.append({"type": "enter_node", "node": node_id, "node_type": node["type"],
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
@@ -438,6 +558,9 @@ func _finish_combat() -> void:
 		_die()
 		return
 	run.operative.hp = cs.player.hp
+	if run.corp_theme.solace.enabled and BloomRules.end_fight(run.corp_theme.solace, config, cs.turn, _bloom_boss_node(node)):
+		_bloom_caught()
+		return
 	run.null_resolved = run.null_resolved or cs.null_resolved
 	# Daemons with ON_COMBAT_END effects (salvage, field repairs) after a won fight.
 	_apply_hook_effects(_run_daemon_hooks(RC.Trigger.ON_COMBAT_END))
