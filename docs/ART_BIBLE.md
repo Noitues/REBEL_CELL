@@ -1,6 +1,9 @@
 # REBEL_CELL — Art Bible v2
 
-**Status:** v2.0 (2026-10-05), rewritten from the concept-art direction pass (rounds 1–43).
+**Status:** v2.1 (2026-10-19). v2.0 (2026-10-05) was rewritten from the concept-art direction pass
+(rounds 1–43). v2.1 applies an audit against the designer rulings of 2026-10-05 to 2026-10-19
+(rounds 44–45, the netrun route view and entry flow, the new corps, the build's relayed rulings).
+Items that clash between rulings, or need a designer call, were left as they were, not guessed.
 **Supersedes:** `docs/ART_BIBLE_v1.md` (v1.0, 2026-09-28). v1 stays as the record; where this
 document is silent, v1 still applies (layout grid, component states, input widgets, definition
 of done). Section 10 lists what changed; Appendix C lists contradictions between rounds.
@@ -14,6 +17,11 @@ of done). Section 10 lists what changed; Appendix C lists contradictions between
    rule that does not exist yet, it is listed in Appendix B and must go through `DECISIONS.md`.
 4. `docs/STYLE_GUIDE.md` §5.1–5.5: the motion and interaction rulings (ANIM-*) stay binding.
    Its icon tables (§4.1) stay binding until the glyph atlas (§3.6 below) replaces them.
+5. The build's `main:docs/DECISIONS.md`: the designer-ruling entries relayed by the orchestrator.
+   Since 2026-10-05 most art and visual rulings are recorded there, not in this branch's
+   `DECISIONS.md`. Where it is newer than DIRECTION_REVIEW, it wins; clashes go to the designer.
+6. `docs/concepts/route_map_graph/PIPELINE_SPEC.md` (netrun views) and
+   `docs/concepts/golden_plates/INDEX.md` (golden plates).
 
 **Words:** MUST / NEVER are hard rules. SHOULD is the default; deviate only with a reason logged in
 `DECISIONS.md`. "Proposal" marks art that shows a mechanic the game does not have yet.
@@ -22,7 +30,8 @@ of done). Section 10 lists what changed; Appendix C lists contradictions between
 the net and "Punk Zine (paper, tape, marker, spray paint)" for the Cell's voice, and GDD §9.4
 describes corporate wireframe creeping over the zine layer. The direction pass replaced both (spray,
 marker and wireframe are rejected). A `DECISIONS.md` entry and a GDD §9 update are needed before
-reintegration (see `GDD_ART_COVERAGE.md` §3).
+reintegration (see `GDD_ART_COVERAGE.md` §3). *Resolved: GDD §9.1 was rewritten around this
+bible (DECISIONS 2026-10-05, "Designer rulings: art reintegration, pause point 0", ruling 4).*
 
 ---
 
@@ -37,7 +46,8 @@ reintegration (see `GDD_ART_COVERAGE.md` §3).
 2. **Every medium has one job.** The material tells the player *what kind of information* it is
    before they read it (1.2).
 3. **The city is alive and reacts.** Traffic, sky lanes, signs and Heat lights move; territory and
-   Heat change the city, not a HUD tint.
+   Heat change the city, not a HUD tint. It runs in every beat and on every screen; only the level
+   of detail changes with zoom (standing rule, 2026-10-15).
 4. **True to the rules.** Plans, previews, forecasts and pencil marks show only what the rules
    will do. Preview equals result.
 
@@ -48,14 +58,17 @@ graffiti chaos, cute.
 
 | Medium | Job | Look | Never |
 |---|---|---|---|
-| **World** | The city, HQs, Sites, combat backdrops, event CAM feeds, busts | **Cv2** gritty triangulated low-poly (variable facet sizes, tone jitter per triangle) + **E** cel shading: 3 hard toon bands, wobbly ink lines from id/normal/depth edges, grime, bloom and **light spill** from glowing elements onto walls and streets, depth haze, rain at night | Flat blocks or placeholders; wireframe; painterly; labels baked into the world (only diegetic signage) |
+| **World** | The city, HQs, Sites, combat backdrops, event CAM feeds, busts | **Cv2** gritty triangulated low-poly (variable facet sizes, tone jitter per triangle) + **E** cel shading: 3 hard toon bands, wobbly ink lines from id/normal/depth edges, grime, bloom and **light spill** from glowing elements onto walls and streets, depth haze, rain at night. **Exception (designer call, 2026-10-14):** the netrun street, the route page, HQ netruns and the city night views use **AAA-2 "Realistic night"** (PBR materials, one real light rig, volumetric fog and soft beams, wet ground, light-streak traffic, no toon bands or ink) instead of Cv2 + E; stickers, wax pencil and CRT are drawn the same on both. The entry dive blends one look into the other on shared geometry (4.6) | Flat blocks or placeholders; wireframe; painterly; labels baked into the world (only diegetic signage) |
 | **Vinyl sticker** | Things that **never change**: cards, node-type and route-node stickers, buttons and verbs (SEND IT, JACK IN, START DEFENSE, CONTINUE), screen titles, name plates, the result stamp (CELL HOLDS), firmware drop, Exploit keycards, temporary effect words | Anton lettering, ink keyline, extrude, white die-cut border, gloss 0.22 at rest with one slow sweep on one sticker at a time; peel, slap and dissolve motion | A value that changes (HP, Heat, resources, live forecasts); portraits (they change state) |
-| **Grease pencil** | **Plans and annotations that are true to the rules** | Opaque wax (alpha 0.96), thick, rough edge with dropouts and a sheen line, dark under-shadow so it reads day and night. Yellow `#FFE200` = our plan / valid; red `#FF1C2C` = threat / invalid / loss. Solid = what will happen; dashed = what-if. Writes on, wipes off with a cloth wipe (never fades alpha) | Jokes or claims that misstate the game state ("THEY WANT THE VAULT" unless true for that threat); live numbers; body text. **No UI ever covers grease pencil** (standing rule, round 40) |
+| **Grease pencil** | **Plans and annotations that are true to the rules** | Opaque wax (alpha 0.96), thick, rough edge with dropouts and a sheen line, dark under-shadow so it reads day and night. Yellow `#FFE200` = our plan / valid in combat and raid (card aim, placement); **orange (`RING_AVAILABLE`) = the netrun plan** (the circle round the chosen Site and the plan along its border link on the HQ page; 2026-10-15); red `#FF1C2C` = threat / invalid / loss (also the nudge-lock slash, 3.1). Solid = what will happen; dashed = what-if. Writes on, wipes off with a cloth wipe (never fades alpha) | Jokes or claims that misstate the game state ("THEY WANT THE VAULT" unless true for that threat); live numbers; body text. **No UI ever covers grease pencil** (standing rule, round 40) |
 | **CRT terminal** ("Screens & Data") | **The Cell's own systems**: slices, menus, resources, Heat strip, crew roster, YOUR NETWORK, tooltips, toggles, toasts, forecasts (IF CLEARED, IF PLACED), Speed/Skip, Daemon tiles, dialogue feed | Navy glass, cyan edge, Share Tech Mono, 3 px scanlines, faint scrolling hex-dump, edge glow, type-on text, `>` caret; accent per use (cyan Cell, lime firmware, gold Schematics, corp colour inside corp Terminals, red DISPATCH) | Paper, corp intel, sticker gloss |
 | **Corp paper** | **Intercepted corp documents**: raid work order, after-action raid report, campaign audit dossier, seizure notices, operative dossier on the map, event memos from corp speakers | Courier Prime (fields, titles), IBM Plex Sans Condensed Medium letterheads, Anton stamps (CLASSIFIED, CASE CLOSED, PROCESSED), corp seal and letterhead per corp, redactions, paper clips, polaroids, auditor's blue ballpoint post-its | The Cell's own UI |
 | **Decrypted holo** | **Hacked corp intel**: the selected Site file, THREAT INTEL, intercepted corp news toasts | Corp tint at about 78 %, 4 px scanlines, 3–4 slow bands, ±2 px RGB split on the edge only, near-opaque scrim (0.88) behind it, the corp seal cracked with a red fracture and a DECRYPTED stamp | Anything the Cell owns |
 | **Binary bits** | **Digital transitions, dissolves and damage**: card dissolve, damage shards, heal inflow, status apply/tick, temporary-label dissolve, drone and enemy destruction, player defeat, jack-in rain | `0`/`1` glyphs (Share Tech Mono atlas with a same-colour outline) in the colour of the source; white-hot for the first 60–100 ms, flipping 0↔1, tumbling, then sucked along a curve into their target | Decoration with no cause; travelling across a wheel face (bits go round the rim) |
 | **Bare Anton** | Live big numbers: HP, Heat value, damage numbers | Anton, 2 px dark rim, glow in its own colour | Sticker backing |
+
+Every review of a build sheet checks this table (which medium carries which information, its
+look and its Never list) as well as the numbers (designer, 2026-10-19).
 
 **The fiction behind it.** The world is the city. Stickers are the Cell's fixed objects. Pencil is
 the Cell thinking. Terminals are the Cell's computers. Paper and holo are what the Cell stole from
@@ -63,7 +76,8 @@ the corps (paper = printed, holo = scanned and decrypted). Bits are data moving.
 
 **Rejected (do not reintroduce):** spray paint and stencils, the dripping marker, ransom collage,
 ink brush, light pen as an overlay, the wireframe net, painterly or neon-painting cities, the
-round-1 directions A–E, round-2 A/B/D, Cv3, illustrated identity icons on slices (rounds 8–9).
+round-1 directions A–E, round-2 A/B/D, Cv3, illustrated identity icons on slices (rounds 8–9),
+X1–X3 cyberspace for the route view (no wireframe city; 2026-10-14).
 
 ### 1.3 Word over a system word
 A verb sticker sits over a washed-out system word in the terminal font: SEND IT over `EXECUTE`
@@ -121,11 +135,18 @@ Every corp owns **hue + material + crest + landmark**, never hue alone.
 
 | Corp | Primary | Secondary (tier II) | Material | Crest | HQ landmark |
 |---|---|---|---|---|---|
-| Meridian Freight | orange #FF8C1A | red (hot #FF2E28) | container steel + barcodes, hazard rim | crane-A (castle crest to follow, Appendix B) | Container-wall fortress with moat and gantry-crane keep, rail yard |
+| Meridian Freight | orange #FF8C1A | red (hot #FF2E28) | container steel + barcodes, hazard rim | crane-A (castle crest to follow, Appendix B) | THE GATEHOUSE GANTRY (2026-10-16): a goliath gantry crane built as a castle gatehouse over a walled container yard; the keep (the crane's trolley) is the target; trucks work three sides, a high-speed train borders the fourth; the freight line runs alongside to the port, never ending at the HQ |
 | Solace Biosystems | lime / leaf green #96FF46 | pink #FF4696 | leaf-green glass, cells, bubbles | porcelain roundel / helix | Lit DNA double helix (no centre tower) |
 | Halcyon Civic | violet #B06EFF | amber #FFAA28 | violet blueprint with amber notes | the **EYE** | Seven-tier Civic Core with scanning eye |
 | Orbital Commons | ice white #CDF0FF | white | near-black space, white stars, steel-blue nebula, pale steel bezel | ringed planet | Silo crescent: dishes round an in-ground missile silo |
 | REBEL_CELL (DISPATCH) | red #E8141E | pale pink | corrupted Cell PCB, broken black-red rim | raised **FIST** (thumb tucked on the map) | No tower: red-window fist district, Tokyo canyon backdrop |
+| Aurelian Concord (2026-10-15 identity accepted; playable per 2026-10-16) | verdigris #29DBA6 | travertine #E9D5AA | marble, travertine, porphyry #3A1426 pads; gilt #C9A35A is world signage only | crest per `new_corps/roman/crest_icons.png` | THE CIRCUS AURELIUS: a colosseum of turning seating rings, columns as the outer wall, stepped inner tiers; Central Server THE CONCORDAT VAULT |
+| Tethys Deep (2026-10-15 identity accepted; playable per 2026-10-16) | hue held for the designer | held with the hue | wet hull, glass, trench #06112A pads; photophore #7CF2E4 and dive-light #FFE9B8 are world light only | TIDE WHIRL | floating pier city (Kamino-inspired) on stilts, main HQ obvious, small copies branching off; Central Server THE BLACK SMOKER |
+
+New corps (designer, `new_corps/roman/identity.md`, `new_corps/atlantis/identity.md`): the identities, crests and icons are
+accepted; the game goes from five to seven corporations (2026-10-16). Aurelian verdigris MUST NOT sit on a Terminal edge
+(NET_CYAN ΔE 48). Campaign-lost verbs: PACIFIED (Aurelian), SUBMERGED (Tethys), see 4.8. Vehicle families, Heat flavour, kit and
+boss wheels follow the identity files.
 
 Rules:
 - Squint test: blurred, the five read as orange, lime, violet, pale white-grey and red
@@ -159,7 +180,7 @@ core glow, the station beacon and dossier stripes, never on UI roles.
 | Family | Colour | Fires |
 |---|---|---|
 | PERFECT | yellow | on a Perfect |
-| MISS | deep red #EC303A | on the Miss slice |
+| NULL | deep red #EC303A | on the NULL slice (was the MISS family; 2026-10-05) |
 | TURN | cyan | combat/turn start, always-on |
 | ACTION | lavender #BA92FF | on your nudge or card |
 | RUN | lime | after a won fight / Server Rack capture |
@@ -172,14 +193,16 @@ Common = cool white LED / gunmetal, 1 pip. Uncommon = cyan, 2 pips. Rare = gold,
 firmware chips and Daemon tiles. Cards: rarity on the card is still undesigned (Appendix B).
 
 ### 2.8 Heat colours
-Band words are always printed (never colour alone). COOL 0–24, NOTICED 25+ `WARN`, FLAGGED 50+
-#FF7A1A, HUNTED 75+ `HARM`. Heat is never green. On maps the world Heat tint is `HEAT_B` #CE5412.
+Band words are always printed (never colour alone). **Five bands** (designer, 2026-10-05, DECISIONS
+"SANDBOX / TROJAN / NULL and five Heat bands"): COOL 0–24, NOTICED 25–49 `WARN`, FLAGGED 50–74
+#FF7A1A, HUNTED 75–99 `HARM`, PURGE 100 (HUNTED's colour and look until it is designed, with its own
+word). Heat is never green. On maps the world Heat tint is `HEAT_B` #CE5412.
 
 ### 2.9 Typography
 
 | Role | Face | Sizes (1080p px; ÷1.5 for the 720p `UiTheme` steps) | Floor | Licence |
 |---|---|---|---|---|
-| Sticker / display | **Anton** Regular, ink keyline 5 px, extrude 7 px, die-cut 12 px | 144 verbs, 96 titles, 66 stamps, 45 values | 36 sticker word, 30 bare number | SIL OFL 1.1, in repo |
+| Sticker / display | **Anton** Regular, ink keyline 5 px, extrude 7 px, die-cut border 0.14 × the lettering size and never above 12 px (thinner edge, designer 2026-10-05) | 144 verbs, 96 titles, 66 stamps, 45 values | 36 sticker word, 30 bare number | SIL OFL 1.1, in repo |
 | Terminal | **Share Tech Mono**; CAPS +8 % tracking | 33 / 27 / 22 / 18 | 18 | SIL OFL 1.1, in repo |
 | Grease pencil | **Permanent Marker** rendered as wax, tracking 0.45 | 48 / 34 / 28 | 26 | Apache 2.0, in repo |
 | Body / tooltip | **IBM Plex Sans Condensed** Regular + Medium (keywords in Medium, in their colour) | 22 body, 20 small, line 1.4, 36–60 chars a line | 20 | SIL OFL 1.1, in repo |
@@ -188,18 +211,24 @@ Band words are always printed (never colour alone). COOL 0–24, NOTICED 25+ `WA
 - Every face imports as MSDF. Sizes come from `UiTheme` × `Settings.text_scale`; stickers scale as
   whole baked objects.
 - Nothing the player reads is below the 720p caption floor (12 px), v1 §4.3 still applies.
+  Exception (designer, 2026-10-05): the rules text on a resting hand card may go down to 10 px; the
+  grown (hovered) card keeps the 12 px floor.
 - Bits use Share Tech Mono (its 0 and 1 stay distinct when rotated). Consolas and Courier New are
   concept-only and MUST NOT ship.
-- DISPATCH text stays Share Tech Mono on clean surfaces.
+- DISPATCH text stays Share Tech Mono on clean surfaces: a clean red-accent CRT terminal feed,
+  never paper, sticker or pencil (designer, 2026-10-05/06).
 
 ### 2.10 Focus and state colours in chrome
 - **Focus:** lime #D4FF00 corner brackets, 3 px thick, 7 px outside the element
-  (`StyleBoxBrackets`). A focused sticker gets a lime die-cut halo instead. A focused menu line also
-  gets a `>` caret. Lime is therefore never ON or selected; ON/selected are cyan fills plus a word.
+  (`StyleBoxBrackets`). A focused sticker shows only the **peel-back corner curl** (a fixed fold,
+  about 34 px at 1080p, 24 px on short words) and no lime halo (designer, 2026-10-06); terminal rows
+  keep the lime brackets. A focused menu line also gets a `>` caret. Lime is therefore never ON or selected; ON/selected are cyan fills plus a word.
 - **Two-sticker choice:** yellow (#FFEE60 → #FFB60E) = the safe or back-out choice (CANCEL,
   default focus); pink = the committing verb. Grey vinyl is only the disabled state.
 - **One sticker verb per screen.** Screen titles are yellow stickers so they never compete with
-  the pink verb.
+  the pink verb. Exceptions by designer ruling: the pause menu (all stickers; RESUME yellow,
+  ABANDON pink, the rest neutral white vinyl) and the campaign slots (LOAD and DELETE on every
+  folder; 2026-10-05/06).
 
 ---
 
@@ -211,12 +240,18 @@ Reference: `round41_wheel_stack/combat_typical_v4.png`, `combat_worst_case_v4.pn
 - **Backdrop** (3.14) fills the screen; each wheel's area is softened and darkened about 55 %, with
   darker bands under the hand and the top bar.
 - **Nudge buttons** sit **above** each wheel on one line (y ≈ 216): CCW on the left, CW on the
-  right. Player keys [Q] / [E]; boss keys [A] / [D] (proposal, check bindings).
+  right. Player keys [Q] / [E]; boss keys [A] / [D] (LOCKED, round 43 HUD v4).
+  **Nudge lock (designer, 2026-10-19):** a locked nudge shows a red `#FF1C2C` solid grease-pencil
+  circle with a slash over the button (the wax of 1.2). It writes on when the lock applies and wipes
+  off with a cloth wipe (never an alpha fade); a refused click re-scribbles it once (T1, 0.25 s).
+  No NUDGE LOCKED words and no refusal toast. UNDO keeps its grey lock tick. No UI covers the slash.
 - The **CELL-9 // CLASS** name sticker sits just above the RAM readout, bottom left.
 - **No forecast tags, no NEXT plates.** Beside each HP value sits this turn's result if SEND IT is
   pressed now, in this order:
   `[final damage]` (red, boxed) `(N shield)` (blue, absorbed, no box) `+N shield` (green)
   `−N <icon>` (other losses, e.g. RAM) `<status icons ×N>`.
+  While aiming, the HP result chips of each affected wheel are underlined in yellow pencil, with
+  ghost landings and no plate on the hub (designer, 2026-10-06).
   Example: `−6 (4 shield) +4 shield −1 RAM`. Hovering the final-damage chip shows the breakdown
   tooltip (each wheel's slice, landing tier, guard and hub passive). Chips update when the wheel
   settles.
@@ -225,6 +260,9 @@ Reference: `round41_wheel_stack/combat_typical_v4.png`, `combat_worst_case_v4.pn
   word.
 - **Daemon rack:** a narrow CRT plate on the left edge beside the player wheel (3.13).
 - **RAM:** terminal pips; gain comes from the TURN banner (3.12).
+- **Sync Strike fight (DISPATCH, designer 2026-10-18):** three operative wheels orbit the DISPATCH
+  wheel; the camera frames one operative and DISPATCH; a focus swap rotates the orbit to the next
+  operative.
 
 ### 3.2 Wheel frame: D4 "Lens & rail" (LOCKED for every wheel)
 Reference: `round13_wheel_details/d4.png`, `combat_d4.png`.
@@ -241,8 +279,11 @@ Reference: `round13_wheel_details/d4.png`, `combat_d4.png`.
   not.
 - **At r = 60:** the rail becomes a solid colour arc over the pointer, the blade is scaled ×1.6,
   the hub shows the HP number. All values move to the HP chips.
-- **HP arc:** thick, segmented, under each wheel; HP number below. Boss phase pips sit on the HP
-  arc (66 %, 33 %).
+- **HP arc:** thick, segmented, under each wheel; HP number below. Phase pips sit on the HP
+  arc at each phase threshold (elite 1 pip, mini-boss 1–2, HQ boss 3–4; 66 % and 33 % were the
+  three-phase case). Damage cannot cross a threshold: HP parks on the pip, the excess is lost, and
+  the phase change (3.16) plays from there (designer, 2026-10-16). The phase counts are rules; the
+  pips are what is drawn.
 - **Boss extras:** nameplate banner as the blade mount with a crowned blade in the corp colour, a
   counter-rotating threat ring with crest lugs, phase pips. **No standing NEXT arrows** (they became
   the card-play preview).
@@ -270,7 +311,7 @@ Reference: `round40_hub_inner_ring/hub_cores_v3.png`, `round39_hub_inner_ring/hu
 - **Mk2** (Rank 2 "Upgraded Hub Core"): same emblem + a second notched rim + an `MK2` tab on the
   bottom rim.
 - **Enemy hubs (LOCKED):** no inner ring; the hub fills the centre with a slow corp-colour chevron
-  sweep. Compliance Lock = rubber stamp; Priority Routing = express arrow overtaking two lanes;
+  sweep. Compliance Lock = rubber stamp; Customs Seal (was Priority Routing; 2026-10-05) = express arrow overtaking two lanes;
   Emergency Powers = siren dome; Station Keeping = satellite; Auto-Renew = renew loop round a plus;
   Root Access = terminal with `#_`.
 - **Hub Breach = LOCKDOWN (LOCKED, round 40):** a **waterline of encrypted bits** (cyan hex and
@@ -290,7 +331,7 @@ Reference: `round34_slice_names/slice_system_final_v3.png`, `glyph_set_v3.png`;
   (counter-rotated) at every angle. Corp animations are also composited upright (round 16).
 - **Program names (LOCKED, round 34):**
 
-  | Type | Program | Glyph | Screen |
+  | Was (GDD) | Program | Glyph | Screen |
   |---|---|---|---|
   | ATTACK | **SHIM** | dagger | (EXPLOIT screen) |
   | CRIT | **OVERFLOW** | 12-point burst | (ZERO-DAY screen) |
@@ -302,10 +343,14 @@ Reference: `round34_slice_names/slice_system_final_v3.png`, `glyph_set_v3.png`;
   | DEPLOY | **TROJAN** | horse on a wheeled platform | |
   | MISS | **NULL** | "1/0" | static |
 
-  The renames are a game to-do (strings and content); until then the code keeps the GDD type
-  names. Corp specials: DOSE (capsule), CITATION (receipt), SOLAR FLARE (sun on the horizon line
+  The renames are done in code, content and strings (designer rulings of 2026-10-05, "names for
+  M14" and "SANDBOX / TROJAN / NULL and five Heat bands"): internal names follow the display names;
+  the first column is the GDD type they replace. Corp specials: DOSE (capsule), CITATION (receipt), SOLAR FLARE (sun on the horizon line
   only), WEIGHT (anvil, was INERTIA), PRIORITY (rotating alarm beacon, Meridian RAM drain, was
-  TARIFF / JUDGEMENT), GROWTH (Solace heal, true mitosis, pending rename), DRONE (quad-rotor).
+  TARIFF / JUDGEMENT; JUDGEMENT retired), GROWTH (Solace heal, true mitosis), AIRMAIL (Meridian
+  OVERFLOW), DRONE (quad-rotor).
+- Slices may be any size from 0 to 30 ticks; a 0-size slice is an empty arc that draws nothing (not
+  NULL). The loadout shows each sub-tick's quality (e.g. WEAK, GOOD, GOOD, WEAK; designer 2026-10-18).
 - **Defend rule everywhere:** attacks come from the outer arc; the wall stands on the inner (hub)
   side of what it protects. Applies to card art, chips and hit FX.
 - Drain variants (`atk_7_drain`) keep their type glyph plus a "−n RAM" chip.
@@ -395,24 +440,29 @@ Reference: `round34_firmware_daemons/firmware_socket.png`, `firmware_set.png`, `
 - **Word:** "Firmware" everywhere (shop label too); "Microchip" is retired.
 
 ### 3.10 Inner ring
-Reference: `round39_hub_inner_ring/inner_ring_v2.png`, `round40_hub_inner_ring/inner_ring_v3.png`.
-- **Ring (LOCKED v2):** a machined annulus between hub and slices (master 100–127 on the D4 hub):
-  outer and inner lips with accent hairlines, recessed gunmetal band, grooves with two bolts between
-  three 120° segments, glass sheen; each segment has 10 ticks and its glyph on a small plate;
-  the segment under the pointer gets an accent edge glow, others dim to 72 %.
-- **Textures that extend into the outer slices (LOCKED):** each segment carries a texture across its
-  band; when aligned under the pointer the texture extends into the outer slice it modifies, fading
-  toward the rim and thinning under the read block. ×2 doubled gold hairlines; Pierce white chevrons
-  streaming outward; Corrupt pink/green dead blocks climbing; Anchor steel chain links; Accelerator
-  amber speed streaks; Echo cyan ripples; blank brushed steel (none). Under tier III the extension
-  draws at reduced alpha under the inset line (tier wins at the screen edge).
-- **Segment glyphs:** ×2, Pierce (arrow through a brick slab), Corrupt (glitched block), Anchor
-  (anchor), Accelerator (gear + speed lines), Echo (block + two arcs), blank (dash).
-- **Sub-needle (LOCKED as a direction; proposal mechanic):** the D4 cream blade at about 60 %,
-  rooted on the ring's outer lip, pointing outward, turning with the inner ring; tip stops at the
-  slice lip (r 152), clear of the firmware socket.
-- **Hangar (LOCKED as a direction; proposal mechanic):** up to two drone pods dock on the slice rim
-  side by side; beyond two show "+n".
+Reference: `round45_inner_ring/busy_ring.png`, `quiet_ring.png`, `pattern_sheet.png`, `in_combat.png`
+(round 45, 2026-10-13; supersedes the round 39/40 standing ring plates, DIRECTION_REVIEW "Inner ring").
+- **Ring (LOCKED v2, read as round 45):** a machined annulus between hub and slices (master 100–127
+  on the D4 hub): outer and inner lips with accent hairlines, recessed gunmetal band, grooves with two
+  bolts between segments, glass sheen. Inactive segments show their texture at 42 % and a tint
+  **notch** on the outer lip (blank segments have none); **no glyph plates**. The segment under the
+  needle is the **active segment**: a raised, lighter plate (r 97–131), texture at 100 %, tint lips,
+  tint end caps (the caps show partial cover), a tint glow, and a cream **notch tick** on the needle
+  line running into the slice's hub edge, under the firmware socket. A blank active segment uses cream.
+- **Modifier on the slice (LOCKED, replaces the texture extension):** a **ghost wedge** on the outer
+  slice under the needle only (r 133–353): ink shade 25 %, tint wash 10 %, the modifier's mark tiled
+  inside it at **38 %** with a 40 % halo, marks about 1.3× larger (PIERCE and OVERCLOCKED 1.4× with a
+  2 px ink keyline), a tint edge line and glow. The read block is re-stamped on top at full strength;
+  the 45 % wash cap of 3.8 still applies. **One modifier per slice.**
+- **Words on demand:** the word plate ("x2 DOUBLE", glyph + word) and the terminal tooltip show only
+  on hover of the wedge or while aiming at that wheel.
+- **Marks:** x2 DOUBLE gold #FFD24D "x2"; PIERCE white outward chevrons streaming at 2 rows/s;
+  CORRUPT green #3CFF8C dead blocks with pink #FF3DA8 flecks and 3 scan tears, re-rolled 12×/s;
+  OVERCLOCKED #FF7A1A, ENCRYPTED #5CE1FF, PARASITE #C85AFF reuse their ST_* glyphs. Reduce motion: one
+  static frame. Each Twin Pointer lights the segment it reads.
+- **Sub-needle:** dropped; the notch tick does its job (2026-10-13).
+- **Hangar (LOCKED as a direction):** a **wheel-wide passive** (all slices of its wheel), not a
+  per-slice placement (designer, 2026-10-18).
 - **At r = 60** the ring is lit/unlit colour bands only.
 
 ### 3.11 Satellites and drones
@@ -422,9 +472,9 @@ Reference: `round40_satellites/satellites_v3.png`, `replace.gif`; `round41_wheel
   values upright and large (glyph before centre, value after).
 - **Dock (LOCKED):** centred on its slice's midline, outside the blade and HP arc. The slice's own
   outline swells out of the host rim in one smooth lobe (metaball of rim arc, waisted neck, collar).
-  Two drones on one slice sit at ±14° so the blade passes between them.
-- **Collapsed band (LOCKED, round 42):** by default each slice's drones collapse into one thin band
-  (34 units deep), one tile per drone showing its current effect (glyph + value) and HP pips. No stem
+  One drone or satellite per slice (designer, 2026-10-18).
+- **Collapsed band (LOCKED, round 42):** by default each slice's drone collapses into one thin band
+  (34 units deep), one tile per slice showing its current effect (glyph + value) and HP pips. No stem
   when a parasite is present, a short stem otherwise. **Hover bloom:** hovering the slice or aiming
   a card at a drone blooms the band into full mini-wheels with their needles. Bloom away from HUD
   controls.
@@ -434,7 +484,8 @@ Reference: `round40_satellites/satellites_v3.png`, `replace.gif`; `round41_wheel
   impact star, HP pips turn red. Pierce does not bypass.
 - **Replace (LOCKED):** the new satellite hovers outside with a dashed amber "waiting" ring; the old
   one breaks into blocks and streams back to the host core as **green** bits; the core pulses green;
-  the new one glides in. Red bits are kept for destruction only.
+  the new one glides in. Red bits are kept for destruction only. A replaced or cleared satellite
+  counts as destroyed (designer, 2026-10-18).
 - **Destroyed (LOCKED, drone destroyed v3):** a shot bends to the drone; its own HP plate counts to
   0 (plate turns red, flashes); the hex splits with a shock ring and a binary-bit explosion; pieces
   pixelate and fall; no "DESTROYED" label.
@@ -477,6 +528,9 @@ Reference: `round34_firmware_daemons/daemon_set.png`, `daemon_row.png`, `daemon_
   road layout. A building that blocks the camera is removed from both the close-up and the map.
 - **Framing:** zoomed in; the HQ fills the gap between the wheels and the wheels may overlap it.
   Blocks behind a wheel are kept low, dark and sparsely lit.
+- **Camera:** a perspective close-up for every fight, never the map iso (designer, 2026-10-06).
+  Non-HQ Site fights use the Site's own lot; unique per-fight buildings are deferred (the Solace and
+  Orbital Site subjects are interim through M14).
 - **Per corp:**
 
   | Corp | Boss backdrop (HQ close-up) | Regular Site |
@@ -490,17 +544,21 @@ Reference: `round34_firmware_daemons/daemon_set.png`, `daemon_row.png`, `daemon_
 - **HQ-run nodes:** regular nodes (combat, event, shop) use their **dressed room backdrop**; the
   boss fight at the Central Server uses the HQ close-up.
 - **Fight won:** the target building's lights recolour to the Cell (lime outlines, pink hazard
-  stripes) while the district dims to about 62 %; a yellow pencil "OURS NOW" (round 32
-  `reward_screen_v2.png`).
+  stripes) while the district dims to about 62 %; a yellow pencil "OURS NOW" and a CONTINUE sticker
+  (round 32 `reward_screen_v2.png`; CONTINUE added 2026-10-06).
 
 ### 3.15 Heat on combat: H1 "the city reacts" (LOCKED, round 22)
 Backdrop only, behind the wheels' darkened pools; never on the HUD or wheels.
 
 | Band | Shows |
 |---|---|
+| COOL 0–24 | Nothing |
 | NOTICED 25–49 | Three slowly turning red/amber alarm beacons on **side** buildings; nothing on the target |
 | FLAGGED 50–74 | Two rooftop searchlights at the screen sides sweeping the sky **away** from the target, plus two alarm beacons **on** the target |
-| HUNTED 75+ | Police light clusters (13) and two searchlights on the target. No helicopters, no siren wash |
+| HUNTED 75–99 | Police light clusters (13) and two searchlights on the target. No helicopters, no siren wash |
+| PURGE 100 | Not designed yet: uses the HUNTED look until a concept exists |
+
+Five bands per the 2026-10-05 designer ruling (2.8).
 
 - The full-screen **heat glitch** shader is an **Options extra only** (Settings › Accessibility
   `HEAT GLITCH`, off by default), with a protect mask so wheel discs get ≤ 35 % and the HUD is
@@ -509,7 +567,7 @@ Backdrop only, behind the wheels' darkened pools; never on the HUD or wheels.
 
 ### 3.16 Bosses and phases
 - Boss = tier III corp wheel + banner-mounted crowned blade + threat ring + crest lugs + phase pips
-  on the HP arc.
+  on the HP arc, one per phase threshold.
 - **Phase change v3 (LOCKED):** HP crosses the pip → 120 ms hit-stop, white flash, the pip rings;
   the banner flips (scale-y through 0) to PHASE 2; orange bits stream **from the crossed phase pip**
   along under the arc to the bezel, and a crowned second needle extrudes with its value chip;
@@ -517,6 +575,14 @@ Backdrop only, behind the wheels' darkened pools; never on the HUD or wheels.
 - Phase 2/3 corp treatments (round 14): P2 re-skin and a hot threat ring; P3 armour plates bolt on,
   screens overdrive, drones dock. The designer has not picked every corp's phase-2 treatment; keep
   the round 14/17 kits until told otherwise.
+- **Boss wheels v3 (designer, 2026-10-15):** Aurelian THE PANTHEON (fresco gods, Ascendant plus
+  Omens) and Tethys THE TANK (migrating predators, 2 to 8 arm pointers, kraken reveal; 8 slots, 40
+  ticks). Approved exceptions: RESIST as a boss slice effect; a slice may change type mid-fight (wrath;
+  the preview recomputes and rewind never crosses a crack); Pluto reads NULL for card effects until
+  wrathful. Visual polish is far from target: one polish session per wheel
+  (`boss_wheel_v2/POLISH_SESSION_PROMPT.md`).
+- **Enrage (designer, 2026-10-18):** never a countdown; it shows only as a buff on the enemy and in
+  tooltips.
 - Not drawn yet: Migrate flicker and Orbit trail on D4 (GDD 9.2), enemy entering.
 
 ### 3.17 Card-play preview (LOCKED, animated, round 17)
@@ -532,13 +598,19 @@ Reference: `round17_corp_wheels/preview.gif`, `preview_storyboard.png`; in the s
   through peel, drag and slap. No white trace lines, no aim pips, no arrowheads, no gates.
 - On commit the ghost is re-parented to the rotating slices, so it meets the blade exactly as the
   wheel lands (**LANDED = PREVIEW**).
+- Random outcomes show as "?" (a respin shows its direction and a "?" over a ghosted needle); a
+  compound play shows every known result exactly and only the unknown part as "?" (designer,
+  2026-10-18).
+- Each pointer carries a live PERFECT / GOOD / WEAK tag, in the preview too, updated as cards and
+  nudges are queued; no tick marks or reticles (designer, 2026-10-12).
 
 ### 3.18 Sticker cards (LOCKED)
 - **Frame:** C-C sticker card: white die-cut, gloss band, yellow cost dot, holo border for Rare,
   peel curl on hover. A thinner border (~5 px) at hand size. Can't afford greys the dot and adds a
   NEED tag. (The WHEEL / HACK / SYSTEM type band is not in the GDD; Appendix B.)
 - **Play lifecycle (LOCKED, rounds 18–19):**
-  1. Idle bob 2 px; corner curl breathes.
+  1. Idle bob 2 px; corner curl breathes. Resting hand cards do not grow; only the hovered card
+     shows its full face (designer, 2026-10-13).
   2. **Hover:** lift, scale ~1.36, straighten, peel corner lifts, shadow grows; neighbours shift;
      the RAM meter hatches the cost; the preview plays.
   3. **Peel:** on press the fold sweeps, the sticker pops free; a faint liner outline stays in the
@@ -570,7 +642,7 @@ Reference: `round39_landing_exploits/landing_perfect.gif`, `landing_good.gif`, `
 | Word | gold `PERFECT` vinyl, 650 ms, then bits | small white `GOOD`, then bits | amber `WEAK` + `x0.5`, then bits |
 | Sound | latch clunk, 2-frame silence, bright chime | one clean ratchet click | stuttered 3-click ratchet, low |
 
-The OVERFLOW banner sits off the needle. The Miss slice is a slice, not a tier: static burst.
+The OVERFLOW banner sits off the needle. The NULL slice is a slice, not a tier: static burst.
 Reduce effects: no freeze, inversion or particles; rail recolour only. The inversion counts as a
 flash.
 
@@ -609,13 +681,13 @@ light spill, and are held to their VfxTier (5.3). Every effect has a reduce-effe
   motion ideas in `round19_combat_fx/effects_list.md` and is **not designed yet**.
 
 ### 3.21 Worst-case clutter rules (LOCKED stack, round 41)
-Per-slice z-order, bottom to top: 1 slice screen · 2 ring texture extension · 3 tier inset · 4 state
-overlay wash · 5 firmware socket · 6 sub-needle · **7 read block** · 8 state badge + ×N tab +
+Per-slice z-order, bottom to top: 1 slice screen · 2 ring modifier wedge · 3 tier inset · 4 state
+overlay wash · 5 firmware socket · 6 notch tick · **7 read block** · 8 state badge + ×N tab +
 multiplier tag · 9 frame + telemetry · 10 dock lobes · 11 parasite · 12 drones · 13 needle blades ·
 14 card-preview ghosts.
 
-Radial zones (master units, player wheel): hub + inner ring < 127; sub-needle 122–152; ring
-extension 132–182; firmware 142–194; read block 230–306; badge 300–352; frame 360–414; needle
+Radial zones (master units, player wheel): hub + inner ring < 127; notch tick on the needle line; modifier wedge 133–353;
+firmware 142–194; read block 230–306; badge 300–352; frame 360–414; needle
 336–510; parasite attached 420–462, popped 526–616; drones beyond.
 
 Rules:
@@ -627,7 +699,8 @@ Rules:
 5. Values that do not fit at r ≤ 90 move to the HP result chips.
 6. HUD controls (nudges, HP chips, sticker) stay clear of wheel extras; bloomed drones mirror away
    from HUD controls; forecast space above the top slice may need 30 px more margin.
-7. Hard limits (proposal): ≤ 2 drones per slice, ≤ 6 drones and ≤ 2 parasites per wheel.
+7. Hard limits: **1 drone or satellite per slice** (installing on an occupied slice destroys the
+   old one; designer 2026-10-18); ≤ 6 drones and ≤ 2 parasites per wheel (proposal).
 
 The worst case (2 drones + parasite + status on every slice of both wheels, inner ring populated)
 fits at 0 % off-screen with no HUD covered (`combat_worst_case_v4.png`).
@@ -640,23 +713,29 @@ fits at 0 % off-screen with no HUD covered (`combat_worst_case_v4.png`).
 Reference: `round39_city_unified/city_grid.png`, `round40_city_unified/raid_view_v3.png`,
 `three_views_v3.png`, `round38_city_unified/zoom_through.gif` (scale proof only, not a gameplay
 transition).
-- **One model, one camera.** The City Grid, the raid view and the netrun transit are cameras on
-  **one** city model built from the game's own layout (every street tile and lane colour, about
-  14 100 individual building extrusions, plazas, the five locked HQs, the Cell district). Buildings
-  are individual, never merged blocks. One orthographic iso camera (yaw 135°, pitch 40°); only
-  target and zoom change.
+- **One model, one camera path.** The City Grid, the raid view and the netrun street are views of
+  **one** city, generated per game seed from the planner layout (Horseshoe Bay A2: bay, coast,
+  terrain, districts; it differs every game) with the seven corp HQs and the Cell district.
+  Buildings are individual, never merged blocks. The mainline pages use the orthographic iso camera
+  (yaw 135°, pitch 40°); the netrun street adds a near-level street camera on the **same geometry**:
+  one camera path from the HQ down to the street (3.0 s), a look blend (4.6) and a section cut that
+  lowers with the zoom. The street is derived from the real lots along the selected Site's border
+  link (designer, 2026-10-15; the planner city and the seven corps, 2026-10-16).
 - **Zooms:** City Grid ≈ ortho 440 with panning (edge chevrons, minimap terminal, DRAG / WASD, a red
   pencil edge marker for an off-screen TARGET); raid **fitted to the network** (owned nodes + entry
-  Sites + panel margin), clamped (Appendix C #13); netrun transit fitted to the run map (≈ 130–190).
+  Sites + panel margin), clamped (Appendix C #13); netrun street framed by the route rig: OVERVIEW (whole run) and
+  DECISION (current room and options), 1.0 s between.
 - **The City Grid shows all city life:** sky lanes, holo billboards, fog patches, rain, blinking red
   aircraft lights, full-strength street lanes, at round 39 brightness (the global lightening was
   reverted).
-- **Translucency rule (raid and netrun views):** buildings go see-through by **view band** (ramp
+- **Translucency rule (raid view and mainline map):** buildings go see-through by **view band** (ramp
   over lod 1.45–1.75): opacity 0.68, darkened ×0.86, chroma ×1.35, window glow +15 %; a thin
   outline. Ground, lanes and cars render under them. The network (nodes, links, threat lanes,
   units) draws at full strength through buildings; street lane glow drops to 28 %; sky lanes to
   35 %. Cars and defences are excluded from the see-through material. At the City Grid zoom
-  buildings are solid and a hidden link shows through as a solid x-ray.
+  buildings are solid and a hidden link shows through as a solid x-ray. The netrun street does not
+  use view-band translucency: its buildings are solid and the route stays visible by the occlusion
+  rule below.
 - **Building LOD:** always mass, taper, roof neon trim, window grid, territory tint, red crest
   windows, HQ heroes; from raid zoom the facet grid (~1.7 m), ledges, blade signs, pipes, AC, tanks,
   antennas, roof billboards, uplink pads and risers; transit-only shopfront glow and awnings.
@@ -666,12 +745,32 @@ transition).
 - **Car LOD (LOCKED):** FAR (ortho > 400) head dot + lane-colour line; MEDIUM (150–400) a small box
   filled in its lane colour, ~35 % translucent, same colour outline and line; CLOSE (< 150) the
   low-poly flying-car model (wedge body, dark cabin, lane-colour stripes, under-glow, head/tail
-  lights) + a thick speed line. In the netrun transit the sky-lane car layer is off.
+  lights) + a thick speed line. In the netrun street, traffic is light streaks only (head and tail,
+  long exposure), never car models, and it runs in every beat (designer, 2026-10-14/15).
 - Label avoidance is required at the grid zoom (tags collide with pins).
+- **Layout rules for the one city (designer, 2026-10-15):** frontage buildings on border-link
+  streets are at least 6 floors (about 11.5 BU), those streets are 8 BU wide, and every route column
+  carries hero signage placed by rule; frontage heights and the horizon vary (no solid wall), and
+  every building has a unique id (2026-10-16).
+- **City plan (designer, 2026-10-16): Horseshoe Bay A2**, generated per game seed: a concave bay toward
+  the Cell, natural coastline, a terrain heightfield with foothills and mountains inland, marinas,
+  ships, a lighthouse, barrier lights, islands, highways as lit decks with on/off ramps and a perimeter
+  ring, a railway to a port at the water outside Tethys territory, organic sprawl edges with traffic
+  trails fading slowly. Building colours mix, denser toward the nearest HQ. By day the sea is blue.
+  Tethys is a flooded district with its WATER LEVEL (4.7b). The city and the route differ every game.
+- **Detail by distance (designer, 2026-10-16):** every detail always exists and is hidden when zoomed
+  out; a sign shows as a neon shape first, then the full sign at street view.
+- **Occlusion rule (every netrun view: street, HQ, exploit building; confirmed 2026-10-18):** any
+  building inside the camera-to-HQ (and route) sight cone is section-cut to a 1–2 floor lit stub; if
+  it still blocks it ghosts to about 15–20 % opacity with its edges kept; it eases in and out with the
+  orbit camera (0.35 s, an art-direction value inside the designer's 0.3–0.5 s, PIPELINE_SPEC) and
+  is never fully hidden (designer, 2026-10-15).
 
 ### 4.2 City motion (LOCKED, rounds 24–26)
 Reference: `round26_city_motion/city_ambient_night_v4.gif`, `city_ambient_day_v4.gif`,
 `round24_city_motion/motion_layers.png`.
+The city never freezes, in any beat of the entry flow or on any page (standing rule, 2026-10-15;
+reduce motion still applies, 5.4).
 Layers bottom to top: baked city → occlusion mask → street traffic (night head/tail streaks, day
 small coloured cars) → **sky lanes** → holo billboards (illegible panels cycling with a wipe,
 dropout, jitter) → aviation lights → fog banks (patchy, drifting, thin round labels and HQs) → rain
@@ -694,15 +793,18 @@ and steam (night rain only) → Heat props → tilt-shift → UI (never blurred)
 - **Raid:** the band's rigs (choppers on circular orbits with wobbling spotlights, drones with mini
   spots, strobes) are set at raid start and **padlocked**; nothing escalates mid-raid. EXPOSED (a
   spotlit node takes extra damage) is a locked visual for a proposed rule.
+- The bands are the five of 2.8 (COOL / NOTICED / FLAGGED / HUNTED / PURGE); PURGE reuses the HUNTED
+  look until designed (2026-10-05).
 - Round 24's map Heat (alarms → searchlights → police, choppers, drones) remains the language for
   the HUNTED city if the campaign map shows bands.
 
 ### 4.4 HQs and the REBEL_CELL district (LOCKED)
 Reference: `round26_hq_targets/hq_*_close_*.jpg`, `round27_hq_targets/hq_meridian_*`,
 `round31_meridian_combat/combat_meridian.jpg`, `round34_rebel_cell/*`.
-- HQ landmarks per 2.4 and 3.14. Meridian keeps texture A (raw corrugated steel, Meridian orange),
-  lower walls, a faceted moat, the gantry crane keep with the boom, rail yard and freight train;
-  angular, no round shapes.
+- HQ landmarks per 2.4 and 3.14. **Meridian (2026-10-16)** is the Gatehouse Gantry (no fortress,
+  moat or gate): texture A (raw corrugated steel, Meridian orange) stays on the yard and trucks;
+  angular, no round shapes; truck roads ring the yard and lead to elevated highways; the freight line
+  climbs to a viaduct and ends at the port outside Tethys territory.
 - **REBEL_CELL district (LOCKED, round 34):** a normal street grid; no fist roads, no painted roofs,
   no holograms on the map. The fist is drawn in **red windows**: a tucked-thumb fist (finger splits,
   thumb upper edge, thumb tip, a half palm line on the right, the vertical tucked-thumb line),
@@ -711,7 +813,14 @@ Reference: `round26_hq_targets/hq_*_close_*.jpg`, `round27_hq_targets/hq_meridia
 - **Blackout reveal:** the sector starts fully lit and washed out; then the blackout ring and the
   hand's lines go dark and the fist appears (`map_fist_reveal.gif`).
 - **Home vs DISPATCH:** two versions of the district and the canyon (3.14). The Cell's HQ room is
-  **dropped**; HQ actions need another representation (Appendix B).
+  **dropped**; the HQ is the City Grid page itself (**direction B**, designer 2026-10-05): the live
+  city at the raid band with a hand of cards along its foot behind three terminal tabs (CREW /
+  MARKET / DEFENCE), the selected thing's card (a terminal for the Cell's own node, holo for a Site)
+  at the right, and one pink sticker slot at the bottom right holding the selected thing's verb (JACK
+  IN, CLAIM, REPAIR, UPGRADE, PATCH; a price is a gold tag under the sticker, never on it). The page
+  frames the Cell's network; an off-screen corp HQ gets the red pencil edge arrow (about 16 pinned
+  markers is acceptable, 2026-10-06). The Heat gauge is the first slot of the top bar on every
+  screen. No page title sticker on the HQ page.
 
 ### 4.5 Site markers v4 (City Grid)
 Reference: `round42_site_markers/site_markers_v4.png`, `site_markers_on_map_v4.png`. One marker,
@@ -725,43 +834,64 @@ five layers:
 | Pips (1–3 squares) | tier | gold on Exploit Sites; the boss (T4) has none |
 | Corner badge | status | CLEARED grey check (PATROL on hover) |
 
-- **DISABLED:** a white lightning bolt across the whole marker, everything greyed.
-- **SEIZED:** an intercepted corp **SEIZURE NOTICE** slip (pale paper, violet hatch, violet
-  letterhead with the corp mark, red SEIZED bar) replaces the node circle; tier pips stay, in violet.
+- **DOWN** (was DISABLED): a white lightning bolt across the whole marker, everything greyed. The
+  raid view uses the same look (designer, 2026-10-05).
+- **TAKEN** (was SEIZED): an intercepted corp **SEIZURE NOTICE** slip (pale paper, violet hatch,
+  violet letterhead with the corp mark, red TAKEN bar) replaces the node circle; tier pips stay, in violet.
   An orange ring shows while a Reclaim run is possible.
-- **De-powered links:** every link to a seized or disabled node is a dim grey double trace with a
+- **De-powered links:** every link to a TAKEN or DOWN node is a dim grey double trace with a
   break in the middle.
 - **Locked cross-link:** grey dashes + a padlock disc at the midpoint.
 - **Boss:** the HQ landmark with the red pencil **TARGET** circle and the
   `CENTRAL SERVER // EXPLOITS n/3` chip, placed clear of the pencil.
+- **Site labels (designer, 2026-10-16):** a Site's label is its **type** (Event, Normal Fight, Elite
+  Fight, Mini-Boss Fight, Boss Fight ...), never a name; only corps, HQ buildings and bosses are named;
+  a tag shows only on hover. REST, WORKSHOP and CACHE are netrun node kinds (sticker shapes in
+  PIPELINE_SPEC 9.3). The map carries a Heat chip and a red pencil tick "RAID AT n" (designer D9,
+  2026-10-16).
 - **Pinned (always shown):** Exploit and Heat-objective Sites (at 90 %, white rings), your nodes,
   cleared and seized Sites, the boss. A plain-language legend says what each icon means.
 
 ### 4.6 Netrun (LOCKED hybrid D)
-Reference: `round37_netrun/*`, `round38_netrun_transit/transit_v3.png`, `transit_step_v3.gif`.
-- **Structure:** Site runs are a **transit** along the border link from an owned node; the HQ boss
-  run is the overhead **compound** (4.7); raids stay on the city map. A run goes from any owned node
+Reference: `route_map_graph/side_view/v3_aaa/r3/`, `route_map_graph/storyboard/` (the entry flow),
+`golden_plates/INDEX.md`. `round37_netrun/*` and `round38_netrun_transit/*` are the mechanic
+reference only (node states, option numbering), no longer the look.
+- **Structure:** Site runs are the **route view** along the border link from an owned node (below);
+  the HQ boss run uses the same rig around the corp's landmark (4.7); raids stay on the city map. A run goes from any owned node
   to any unowned node across a border link; no planning UI; no cap on choices; nodes are never
   revisited.
 - **Node states (option A, LOCKED):** node-type stickers keep full colour; one outline ring carries
   the state: **white** not yet available, **orange** selectable, **lime** visited/walked, dim grey
   cut off. On the transit, the next options are numbered.
-- **Hidden nodes (LOCKED):** by default only owned/visited, selectable and the TARGET are drawn
-  (plus the pinned Sites of 4.5); hovering the legend strip ("HOVER HERE: SHOW ALL NODES") shows all;
-  hovering empty map reveals the node under the cursor (~40 px, 0.15 s fade); Options › Map "Always
-  show all nodes".
-- **Transit paths v3 (LOCKED):** network cable runs between the buildings of the adjacent blocks:
-  straight segments with 45° or 90° turns only, crossing streets rather than riding them; the walked
-  path is a **solid** lime line; available (orange) and not-yet (white) paths are dashed; crossings
-  avoided, the rest bridged with a hop; ~7 layers, 15–20 nodes; the lighter city grade.
+- **Whole graph shown (LOCKED, designer 2026-10-14; D7 2026-10-16):** the full run graph is always
+  drawn in a less intrusive look: past and non-reachable nodes and links are heavily greyed and
+  translucent; the current node and the reachable nodes are full colour (ring states above).
+  Hovering the legend strip brings the whole graph to full opacity with every piece of information.
+  A name tag shows **only on hover** of that node, never at rest, on any node; the node's type reads
+  from its own sticker or icon, never a corner badge. There is no fog that hides nodes beyond the next
+  layer.
+- **Route view (LOCKED direction, designer 2026-10-14): the V3 side view ("dollhouse").** The run
+  is a walk along one street seen side-on: route rooms are cutaways in the real buildings of the
+  selected Site's border link (one continuous city, 4.1). The camera pans along the run with
+  parallax; **DECISION** is the default zoom (the current room and every available room fill the
+  frame), **OVERVIEW** (key Z, scroll out) shows the whole run; the toggle takes 1.0 s. **Connections
+  are grease pencil** in the wax states above; **node icons are vinyl stickers**; hovering an option
+  cuts the power to everything outside its branch. Traffic is **light streaks only**, no car models.
+  Building shapes include round, fat, stepped and adjoining forms. The look is AAA-2 (1.2).
+  Rejected: X1–X3 cyberspace (no wireframe city).
+- **Hover power cut (designer 2026-10-16):** everything outside the hovered branch and the current
+  room goes to ×0.20 and 70 % desaturated, the branch rooms ×1.35 with a type glow of 1.0; one 2D grade
+  for the street and the HQ; it eases in 0.30 s and out 0.35 s (PIPELINE_SPEC).
+- **Off-screen TARGET (designer 2026-10-16):** a red pencil edge arrow with its chip; once more than
+  50 % of the TARGET is visible the arrow goes and only the partial grease circle shows.
 - **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name; no Heat stamp,
   Heat is in the top strip, 4.3); the node info window shows only tier, type and rewards, and only
   when decrypted; the TARGET keeps its red pencil circle; the ROUTE terminal holds only GRID VIEW
   and Save & quit.
 - **Route page (LOCKED round 44, `round44_undesigned/A_map/route_page*.png`):** zoomed so the run
   fills most of the frame; no text tags on nodes and no YOU ARE HERE words (the lime token is the
-  position; option numbers stay); only the links the route uses are drawn, and hovering shows every
-  run link as a 25 % white hairline; top strip = Heat, HP, Cycles.
+  position; option numbers stay); the links follow the whole-graph rule above (round 44's "only the
+  route's links" is superseded by the 2026-10-14 ruling); top strip = Heat, HP, Cycles.
 - **Transition (LOCKED, netrun entry flow 2026-10-15; one press skips the whole entry):** JACK IN →
   the Cell's terminal types `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED,
   binary rain along the chosen link only → the terminal window despawns as a CRT collapse (line,
@@ -771,14 +901,35 @@ Reference: `round37_netrun/*`, `round38_netrun_transit/transit_v3.png`, `transit
   write on → the markers draw → zoom to the start room. **No wheel slap, no wheel lens, no hub or
   class field** (dropped 2026-10-15, DIRECTION_REVIEW "Netrun entry flow"; storyboard
   `route_map_graph/storyboard/NOTES.md` beat 3; PIPELINE_SPEC 3c). Jack-out is the same chain
-  reversed. Beats 1–3 can shorten after the first runs (setting).
+  reversed. The plan pencil on the HQ page is orange (2026-10-15). **Timing (LOCKED, designer
+  2026-10-16, Q7 "approved as in the video"):** the storyboard times are the game times: terminal
+  1.40 s, binary rain 1.25 s, CRT collapse 0.45 s, dive 3.0 s, REVEAL 3.64 s, MARK 1.0 s + 0.8 s
+  hold, ZOOM 1.0 s + 0.5 s settle (about 13 s from the press to CHOOSE; PIPELINE_SPEC 10). One
+  press skips the whole entry. There is no shortened setting.
 - **Node backdrops:** a dressed room per HQ node (desk/screen-wall Terminal room etc.).
 
 ### 4.7 HQ runs: the compound and unique mechanics (LOCKED "good for now", round 43)
 Reference: `round43_hq_mechanics/hq_<corp>_compound.png`, `hq_<corp>_mechanic.gif`.
-- Overhead compound at the city azimuth, 55°; nodes sit on real buildings and moving parts; the
-  Central Server is a real place (THE MASTER MANIFEST, THE GENOME CORE, THE PANOPTICON, LAUNCH
-  CONTROL; DISPATCH CORE). Red ring = danger/locked.
+- HQ netruns use the **route-view rig** (4.6: side view, DECISION and OVERVIEW, grease-pencil
+  links, vinyl-sticker nodes, AAA-2 look) around each corp's canonical landmark; the full-city
+  landmark is the source of truth for silhouette and identity (designer, 2026-10-14/16). The overhead
+  compound stills of round 43 are the mechanic reference only. Nodes sit on real parts of the
+  landmark; an HQ fills its map lot with dense city to its walls (no open perimeter); the orbit
+  camera keeps the active room front and centre; the occlusion rule (4.1) applies. Runs may exceed 7
+  layers; every HQ netrun is unique (2026-10-16). The Central Server is a real place (THE MASTER
+  MANIFEST, THE GENOME CORE, THE PANOPTICON, LAUNCH CONTROL, THE CONCORDAT VAULT, THE BLACK SMOKER;
+  DISPATCH CORE; names accepted 2026-10-18). Red ring = danger/locked.
+- **Per-HQ route notes (designer, 2026-10-16/18):** Solace has 2 oval windows per floor, each
+  spanning about 140° of its half; the windows are the nodes (oval grease-pencil outline, truly
+  horizontal and vertical, not warped); tall enough for a full 360° per helix; built office floors on
+  route-node and decision-framed floors, parallax interior mapping on every other window; no people
+  anywhere. REBEL_CELL takes its identity from the mainline Tokyo alley HQ, with the red MAINFRAME
+  sign at the target (toned down), underground sewers with a slight green light, running water and
+  pipe tunnels, buildings that touch so the top lane is a rooftop approach (water towers, dishes,
+  roof doors) and varied canyon signs with holograms at roof and street level. Aurelian: the route
+  goes up the outer colonnade, round the rim walk and down the four seating rings to THE CONCORDAT
+  VAULT, with a true arcade of arches on the outer wall; the gilt neon is dimmed beside the orange
+  option links.
 - **Link change grammar:** links that change **de-power** (dark red with sparks, 2 frames) and are
   **re-made** (drawn on from their source with a bright head, 2 frames), even when they reconnect
   to the same place.
@@ -791,11 +942,27 @@ Reference: `round43_hq_mechanics/hq_<corp>_compound.png`, `hq_<corp>_mechanic.gi
 - **Halcyon:** switchback pyramid (6, 5, 4, 3, 2, 1); gold shortcuts 4>9, 9>13, 13>17, 17>20, at most
   2 used; the eye watches one half plus the centre column each step; entering a watched node =
   SPOTTED.
-- **Orbital:** a repeating loop cleared every lap; the missile bay prep bar fills; sabotage 3
-  missiles (red X tally); lap 4 bypasses the platform and the 4th launch destroys the base.
+- **Orbital (designer, 2026-10-15):** several circuits round the launch complex, the camera orbiting
+  to keep the active room front and centre; the antenna tower is a real structure with elite rooms
+  on every circuit; each circuit sabotages the rocket, which then strikes Orbital facilities in the
+  city or in space; the last circuit is a shortcut that fires the rocket early into the closed bay
+  doors and destroys the HQ. The rocket and silo must read at the platform centre. Planned later: a
+  city-wide zoom out to launch, strike and explosion after each circuit, and an HQ explosion
+  cutscene.
 - **DISPATCH:** **Sync Strike** finale (3 runners hit 3 locks on the same step) and **mirror
   combats** (your own slices and firmware) through that chapter.
 - All mechanic rules are proposals for the GDD (Appendix B).
+
+### 4.7b Corporation-wide themes (designer, 2026-10-18; art draws only the settled ones)
+Each corp has one campaign theme: a light form in street netruns, the full form at the HQ, one hook
+in raids. **Solace:** a virus spreads behind the operative and kills them if it catches up; in raids
+a rising population-infection %. **Halcyon:** the Eye scans the city; spotted territory gets harder;
+after an Exploit it fixes on that area for 2 netruns. **Aurelian:** the raid view is a colosseum of
+rings, with keys and gates leading inward to the HQ. **REBEL_CELL (DISPATCH):** a simultaneous
+rooftop, street and sewer infiltration that converges on the mainframe. **Tethys:** THE WATER LEVEL
+(the Head): art draws the Head states as a water plane, drowned LOWER rooms and a tide gauge in the
+HQ, a flooded Tethys street netrun and a Tethys raid view; the rules go to the design session. **Meridian, Orbital:** still open (Orbital
+leans toward comms blackouts). Art keeps game values as read-only inputs.
 
 ### 4.8 Raid (LOCKED, rounds 19–23, re-run on the unified city in round 40)
 Reference: `round39_city_unified/raid_view.png`, `round40_city_unified/raid_view_v3.png`,
@@ -805,12 +972,13 @@ Reference: `round39_city_unified/raid_view.png`, `round40_city_unified/raid_view
   into the node's building and up the facade to a **B uplink pad** on the roof (the pad face is the
   socket's twin; a lime beacon mast at its corner).
 - **No node tags.** Type = socket glyph (Relay all-targets arrows, Firewall, Vault safe door,
-  Proxy fingerprint, Safehouse key, CORE pink hex; seized = the corp citation glyph). Status = frame
-  colour + pattern: holds solid green (owned sockets shift from map lime to "holds" green), disabled
-  dashed amber with dark pins, seized violet hatch, TAKEN burnt. Forecast = a dashed outer ring in
+  Proxy fingerprint, Safehouse key, CORE pink hex; TAKEN = the corp citation glyph). Status = frame
+  colour + pattern: holds solid green (owned sockets shift from map lime to "holds" green), DOWN a
+  white bolt over a greyed socket (no amber dashed socket; designer 2026-10-05), TAKEN violet hatch
+  (burnt as the raid takes it). Forecast = a dashed outer ring in
   the projected outcome colour.
 - **Node health v2:** the outline and icon stay lit; only the inner lit fill drains **north to
-  south** with a faint hatch and a bright drain line; at 0 it switches to disabled amber dashed.
+  south** with a faint hatch and a bright drain line; at 0 the node is DOWN: the white bolt over a greyed socket.
   Numbers float above the north point on hover (or Options "Always show node health"): numeral +
   10-segment bar, lime/amber/red. Repair raises the fill south to north with a count-up and rising
   "+" sparks.
@@ -849,12 +1017,16 @@ Reference: `round39_city_unified/raid_view.png`, `round40_city_unified/raid_view
   field drawn **under** the units (dashed rings drifting inward; levelled = ice crystals), Rigger
   repair; alternates are proposals.
 - **Raid report:** the raiding corp's own **after-action report** (paper, CLASSIFIED stamp) with
-  the Cell's pencil on it (circles, RIP, ticks) and CELL HOLDS slapped on top; Heat settles here.
-- **Campaign lost (option A, ransomware lock):** the winning corp's house style and verb
-  (PROCESSED, RECLAIMED, TREATED, DE-ORBITED, OVERWRITTEN), every node padlocked, a countdown to the
+  the Cell's pencil on it (circles, RIP, ticks) and CELL HOLDS slapped on top (a raid with losses
+  lists them, e.g. 1 DOWN / 1 TAKEN); Heat settles here.
+- **BREACHED / campaign lost (BREACHED = the home server falls; option A, ransomware lock):** the
+  winning corp's house style and verb (PROCESSED, RECLAIMED, TREATED, DE-ORBITED, OVERWRITTEN, and
+  for the new corps PACIFIED (Aurelian) and SUBMERGED (Tethys)), every node padlocked, a countdown to the
   wipe; the Cell's stickers curl and drop off. **Campaign summary** = the corp's audit dossier
   (manila folder, typed AUDIT REPORT, CASE CLOSED, personnel sheet with DECEASED / AT LARGE,
   polaroids, auditor post-its in blue ballpoint); NEW CAMPAIGN / MAIN MENU are stickers.
+- **Campaign won (designer, 2026-10-05):** the audit dossier with the corporation's own notice in its
+  house style (the Cell's CORP DOWN poster), struck out by the Cell's red grease-pencil X.
 
 ### 4.9 Exploits and the Central Server breach
 Reference: `round38_landing_exploits/exploit_items.png`, `central_server_gate.png`,
@@ -873,6 +1045,10 @@ Reference: `round38_landing_exploits/exploit_items.png`, `central_server_gate.pn
   SCRAMBLE). Exploits sit on **T2** Sites.
 - **On the map:** each T2 Exploit Site shows only a small badge (category icon on a gold-ringed node,
   T2 tab); the full tag is a hover tooltip; nothing covers pencil.
+- **Exploit buildings (designer, 2026-10-18):** every corp's three exploit buildings (Intel, Breach,
+  Virus) get a unique netrun that ends at the exploit target inside the building, with several node
+  layers inside; the picks of `exploit_buildings/stills/sheet.jpg` are approved as directions; the
+  occlusion rule (4.1) applies.
 
 ### 4.10 MAINFRAME shop
 Reference: `round33_mainframe_sign/mainframe_blue_v4.png`, `mainframe_red_v4.png`,
@@ -915,7 +1091,8 @@ Reference: `round33_mainframe_sign/mainframe_blue_v4.png`, `mainframe_red_v4.png
   stamp. At most one pencil slogan. Full design pass later.
 - **Dialogue (LOCKED A):** a low-poly cel **bust on a CRT comm feed**; the speaker is live, the
   listener dimmed. **DISPATCH never gets a face:** a red voice trace on black, "VOICE ONLY // NO
-  FEED".
+  FEED". Its words are captioned on a clean red CRT terminal feed, never paper, sticker or pencil
+  (designer, 2026-10-05/06).
 
 ### 4.12 Portraits (LOCKED v2)
 Reference: `round39_portraits/portraits_classes_v2.png`, `round38_portraits/portrait_states.png`,
@@ -948,23 +1125,40 @@ Reference: `round33_ui_chrome/ui_kit.png`, `typography.png`, `title_screen.png`/
   (pad hold-to-confirm 0.8 s is a proposal).
 - **Components:** terminal panel (chamfered corner, `> TITLE` header), terminal buttons (`>` caret
   on hover, no colour-only cue), holo panel, paper panel (9-patch), vinyl sticker buttons (baked per
-  locale at 2×; hover scale 1.05 + gloss sweep, pressed squash, disabled greyscale 80 %, focus lime
-  halo), 9-slice name plates. Tooltips: terminal header (name, value, type tag), glyph-tile rows
+  locale at 2×; hover scale 1.05 + peel-back curl (the rainbow gloss sweep runs on a scheduler, one sticker per
+  screen), pressed squash, disabled greyscale 80 %, focus = curl only), 9-slice name plates. Tooltips: terminal header (name, value, type tag), glyph-tile rows
   (26 px) and Plex text, a key-hint row, 350 ms delay. Toasts: plain cyan terminal; refusal `HARM`
   edge + no-entry mark; corp news = holo strip; 2.4 s at the foot.
 - **Settings:** terminal; every switch from `settings_panel.gd`, plus HEAT GLITCH (preview + LIMITED
   chip while flash limiter or reduce effects is on) and Map › "Always show all nodes"; text-scale
   slider with a live sample; colour-blind tiles; resolve-speed tiles.
-- **City Grid HUD (in progress):** THE GRID title sticker, terminal resource strip, Heat, crew,
+- **Pause (designer, 2026-10-06):** an all-sticker menu in two columns (RESUME yellow, default focus;
+  ABANDON pink; OPTIONS, CODEX, QUITs neutral white vinyl), each option's consequence a mono line
+  under it; the abandon dialog as above.
+- **Campaign slots:** three manila case files (the Cell's own, terminal tab-clip labels, printed in
+  Share Tech Mono), LOAD (pink) and DELETE (neutral white vinyl) on every folder, DELETE carrying the
+  red pencil CAN'T UNDO.
+- **New campaign, codex, stats, deck viewer:** `round44_undesigned/B_menus/` (tiles with a 3 px cyan
+  edge and a SELECTED tab, never filled; glyph-tile codex rows with a holo card; terminal stat tiles
+  with sticker achievement badges).
+- **Settings extras:** RESET ALL TABS is a terminal button that resets every tab, never a sticker.
+  **Skins** change accent tokens only; they never re-render the city, paper or pencil. **Neutral white
+  vinyl** (white lettering, ink keyline) is the third sticker fill for non-verb stickers; grey stays
+  disabled.
+- **City Grid HUD (in progress; the HQ page, direction B, 4.4):** no page title sticker, terminal resource strip, Heat, crew,
   map key, selected Site as holo, IF CLEARED terminal, RAID PENDING + RAID SETUP, JACK IN sticker.
 
 ### 4.14 Not designed yet (do not improvise; Appendix B)
 Card illustrations (71), rarity on cards, event illustrations (124), enemy busts and mini-bosses,
-new-campaign page, campaign slots, codex, stats/achievements, pause, run end (JACKED OUT /
-FLATLINED / HOME FELL screens), campaign WON, tutorial overlay, HQ actions, home-server variants,
+run end (JACKED OUT / FLATLINED / HOME FELL screens), tutorial overlay, home-server variants,
 built-in defences, Tar Pit/Honeypot structures, node upgrade levels, RAID INCOMING warning, Armory,
-netrun complications, Flip/Freeze/three-pass resolution FX, Bug card. Until designed, keep the
-current game look and log the gap; never mix in rejected media.
+netrun complications, Flip/Freeze/three-pass resolution FX, Bug card, enemy entering, PURGE (Heat
+100). Until designed, keep the current game look and log the gap; never mix in rejected media.
+Now designed or ruled (v2.1): the new-campaign page, campaign slots, codex, stats, pause and deck
+viewer (4.13), HQ actions (4.4), campaign WON (4.8).
+Art owed (2026-10-18): the Tethys decision/hover finals, the Aurelian HQ design pass, an Orbital
+city-wide launch/strike zoom and HQ explosion cutscene (planned), the Halcyon "Eye fixes on an area
+for 2 netruns" view.
 
 ---
 
@@ -979,6 +1173,8 @@ current game look and log the gap; never mix in rejected media.
   ΔE for any pair that carries meaning. Known close pairs: Daemon PERFECT/RUN and RUN/HEAT (shape cue
   per family is the next step if needed); Phantom/Botnet resolved by lilac vs indigo.
 - `Settings.colorblind_mode` applies a daltonize correction (v1 §16 item 5 still open).
+- The raid hostile-cue ticks and reticles are off by default, only behind the colour-blind setting,
+  and are to be removed; hostile units are told apart by icon shape (designer, 2026-10-12).
 
 ### 5.2 The 16 px glyph rule
 Any glyph, sigil, emblem or icon MUST identify by outer silhouette at 16 px with soft IoU < ~0.68
@@ -994,15 +1190,15 @@ icon/CITATION 0.69 (animated hub unaffected), Corrupt segment/Ghost core 0.66.
 | T1 feedback | hover, nudge, RAM gain, number bump | element + 16 px | 0.25 s | +20 % glow | none |
 | T2 outcome | hit, block, heal, evade, status apply/tick, drone, respin, card play | element + 25 % region | 0.6 s | 60 % local | 2 px, 2 frames |
 | T3 moment | crit, Perfect, phase change, enemy defeated, player defeat | region | 1.2 s | 70 % local, never full screen | 4 px, 3 frames |
-| T4 cinematic | jack-in transition, Central Server breach, campaign end | full screen | 2.5 s (skippable) | 40 % white once | camera move |
+| T4 cinematic | netrun entry (13 s, any press skips it whole; see below), Central Server breach, campaign end | full screen | 2.5 s (skippable) | 40 % white once | camera move |
 
 - No full-screen colour flash below T4. Flash limiter ≤ 3 flashes/s globally; a denied flash skips
   the flash and keeps the particles. Batch per-frame segment flashes.
 - The Perfect inversion, MAINFRAME stutters and title drops count as flashes.
 - The heat glitch is full-screen but adds no light: register it as an exempt post layer, gated by
   its own setting (Appendix B).
-- The netrun transition (~4.4 s) exceeds T4's 2.5 s: it is skippable by any press and its first
-  beats shorten by setting (open question: exempt it or split it into beats).
+- The netrun entry (about 13 s to CHOOSE, 6.1 s of it before the street) exceeds T4's 2.5 s: it is
+  one cinematic that any press skips as a whole; its beats are timed individually (PIPELINE_SPEC 10).
 
 ### 5.4 Reduce effects and reduce motion
 - **Reduce effects** (`Settings.reduce_effects`): no particles, streams, bursts, flashes, shake,
@@ -1039,7 +1235,14 @@ burst per 3 s. Flash limiter on: the COOL luminance dip is skipped.
 ## 6. Asset production notes (Godot 4.7)
 
 ### 6.1 World and city
-- **Blender pipeline (offline):** Blender 5.2 headless, Eevee; triangulated facets with tone jitter;
+- **Who owns what (designer, 2026-10-19):** art-pass owns the 3D look inside Godot (materials,
+  shaders, light rigs, fog, post, the view cameras' look) for the netrun street, route, HQ netrun and
+  city views, in `D:/rc_art/godot_look` (branch `art/look`); build owns systems, data and game UI.
+  Blender plates are rendered from Godot's scene export. The golden plates are Cycles renders; each has
+  a Godot-reachable twin and a parity sheet (`docs/concepts/LOOK_PORT.md`); a look change needs its
+  parity sheet.
+- **Blender pipeline (offline):** Blender 5.2 headless (Cycles for golden plates, Eevee for twins and
+  previews); triangulated facets with tone jitter;
   3-band toon ramp (separate day-cool and night palettes); post pass in the round scripts for ink
   (from id/normal/depth), grime, bloom, light spill, haze, rain. Bake HQ close-ups and Site
   backdrops per corp, day and night, plus loops (Meridian crane/train, Solace chaser, Halcyon eye,
@@ -1103,7 +1306,7 @@ burst per 3 s. Flash limiter on: the COOL luminance dip is skipped.
 - Card: one CanvasItem shader for peel and gloss (`fold`, `corner`, `gloss_t`, `backing_color`,
   `scan_y`); shadow child with blur; one `Tween` chain; follow phase per frame in `_process`.
 - Grease pencil: `Line2D` round caps, width 8–10, wax-grain texture + `marker_stroke.gdshader`, a
-  duplicate offset (2, 3) under-shadow; write-on/wipe by trimming points (never alpha); dashed =
+  duplicate offset (2, 3) under-shadow; dropouts are a smear texture with alpha (designer, 2026-10-13); write-on/wipe by trimming points (never alpha); dashed =
   tiled dash texture; snapping to real edge polylines so marks stay true.
 - Heat H1: a backdrop `HeatCity` `Node2D` (additive spill sprites, searchlight cones, beacons); band
   counts and periods in `campaign_config.tres`.
@@ -1127,6 +1330,10 @@ burst per 3 s. Flash limiter on: the COOL luminance dip is skipped.
   numbers → grease pencil → cursor. Pencil is above all UI.
 
 ### 6.5 Data and determinism
+- **Procedural look (standing rule, designer 2026-10-14):** every look element of the netrun views
+  (fog, beams, plumes, sky and street streaks, flicker, billboards, silhouettes) is a seeded rule
+  driven by the layout data and one shared look preset, and rebuilds on any layout with no hand
+  edits. A concept must prove it on a second layout.
 - Every random look (city props, car colours, rookie busts, sign phases, corridor dressing) comes
   from a seeded `RngService` stream; tie-breaks by content id then node id.
 - Every tuning number in the round NOTES (shard counts, Heat band counts, lane speeds, socket
@@ -1163,7 +1370,7 @@ Paths are relative to `docs/concepts/`. "v" = the latest locked version.
 | Heat on combat (H1) | `round22_combat_fx/heat_city_v4.gif`, `heat_city_v4_strip.png` |
 | Precision landings | `round39_landing_exploits/landing_{perfect,good,weak}.gif` |
 | Hub cores, lockdown, defeat | `round40_hub_inner_ring/hub_cores_v3.png`, `lockdown.gif`, `player_defeat_v2.gif`; `round39_hub_inner_ring/hub_cores_v2.png` (Rigger, Overclocker); `round38_hub_inner_ring/hub_cores.png` (Ghost, Swarm, Hive, enemy hubs) |
-| Inner ring | `round39_hub_inner_ring/inner_ring_v2.png`, `round40_hub_inner_ring/inner_ring_v3.png` |
+| Inner ring | `round45_inner_ring/busy_ring.png`, `quiet_ring.png`, `pattern_sheet.png`, `in_combat.png` (round 39/40 plates superseded) |
 | Status stacks | `round40_hub_inner_ring/status_stacks.png` (style B) |
 | Satellites, replace | `round40_satellites/satellites_v3.png`, `replace.gif` |
 | Parasite ring | `round40_satellites/parasite_needle_options.png` (A), `round41_wheel_stack/parasite_popup.gif` |
@@ -1171,21 +1378,29 @@ Paths are relative to `docs/concepts/`. "v" = the latest locked version.
 | Firmware | `round34_firmware_daemons/firmware_socket.png`, `firmware_set.png`, `firmware_trigger.gif` |
 | Daemons | `round34_firmware_daemons/daemon_set.png`, `daemon_row.png`, `daemon_trigger.gif`, `daemon_colours.png` |
 | City motion | `round26_city_motion/city_ambient_{night,day}_v4.gif`, `round24_city_motion/motion_layers.png` |
-| HQs + Sites | `round26_hq_targets/hq_{solace,halcyon,orbital}_close_*.jpg`, `site_{solace,orbital}_night.jpg`; `round27_hq_targets/site_halcyon_court_night.jpg`; `round31_meridian_combat/combat_meridian.jpg`, `combat_meridian_motion.gif`; `round11_combat_target/combat_regular_night.png` (Meridian depot) |
+| HQs + Sites | `round26_hq_targets/hq_{solace,halcyon,orbital}_close_*.jpg`, `site_{solace,orbital}_night.jpg`; `round27_hq_targets/site_halcyon_court_night.jpg`; `round11_combat_target/combat_regular_night.png` (Meridian depot); Meridian HQ: `route_map_graph/hq_meridian_v3/` (the fortress HQ is superseded); `round31_meridian_combat/combat_meridian.jpg`, `combat_meridian_motion.gif` stay as the Meridian combat backdrop until the designer rules on a new one |
 | Orbital silo open | `round26_hq_targets/hq_orbital_close_night_open.jpg` |
 | REBEL_CELL map + canyon | `round34_rebel_cell/map_A_{home,dispatch}.jpg`, `map_fist_reveal.gif`, `canyon_dispatch.jpg`, `combat_rebel_cell_motion.gif` |
 | MAINFRAME sign | `round33_mainframe_sign/mainframe_{blue,red}_v4.png`, `mainframe_sequence_v4.gif`, `iamai_sequence_v4.gif`, `iamnoman_sequence_v4.gif` |
 | Shop facade | `round12_modem_facade/f1b_{night,day,rain}.png` |
 | Shop interior, wheel, bin | `round34_firmware_daemons/shop_v5.png`, `round33_shop/slice_wheel_offscreen.gif`, `recycle_bin.gif` |
-| Unified city | `round39_city_unified/city_grid.png`, `round40_city_unified/raid_view_v3.png`, `three_views_v3.png`, `cars_lod.png` |
+| Unified city | `round39_city_unified/city_grid.png`, `round40_city_unified/raid_view_v3.png`, `three_views_v3.png`, `cars_lod.png`; A2 city `city_all_corps/city_all_corps_{night,day}.png`, `route_map_graph/street_r2/` |
 | Raid UI and interactions | `round39_city_unified/raid_view.png`, `round40_city_unified/raid_gifs/index.md`; `round21_raid_ui/path_rules.png`, `node_health.png`, `raid_report.png`; `round22_raid_ui/node_status_key.png`; `round23_raid_ui/interactions_gifs/` |
 | Raid world | `round20_raid_world/building_nodes_v2.png` (B), `round21_raid_world/operators_r3.png`, `round22_raid_world/vehicle_icons_v4.png`, `unit_health.gif`, `operator_rigger.gif`, `class_colours_v2.png`; `round23_raid_world/bonus_slow_v3.gif`, `bonus_repair_v3.gif` |
 | Campaign lost / dossier | `round20_raid_world/campaign_lost.png` (A), `round21_raid_world/campaign_dossier.png` |
-| Netrun | `round37_netrun/city_default.png`, `city_legend_hover.png`, `city_heat_calm.gif`, `transition_mix.gif`; `round36_netrun/city_states_a.png`, `node_backdrop.png`; `round38_netrun_transit/transit_v3.png`, `transit_step_v3.gif` |
-| HQ compound + mechanics | `round35_netrun/hq_compound.png`; `round43_hq_mechanics/hq_*_compound.png`, `hq_*_mechanic.gif`, `dispatch_sync_strike.gif` |
+| Netrun (mechanic reference only) | `round37_netrun/city_default.png`, `city_legend_hover.png`, `city_heat_calm.gif`, `transition_mix.gif`; `round36_netrun/city_states_a.png`, `node_backdrop.png`; `round38_netrun_transit/transit_v3.png`, `transit_step_v3.gif` |
+| HQ compound + mechanics (mechanic reference) | `round35_netrun/hq_compound.png`; `round43_hq_mechanics/hq_*_compound.png`, `hq_*_mechanic.gif`, `dispatch_sync_strike.gif`; route-view finals `route_map_graph/hq_*/H_*_v3.png`, `H_*_v4.png`, `golden_plates/INDEX.md` |
 | Site markers | `round42_site_markers/site_markers_v4.png`, `site_markers_on_map_v4.png` |
 | Exploits + gate | `round38_landing_exploits/central_server_gate.png`, `central_server_breach.gif`; `round39_landing_exploits/exploits_v2.png`, `exploit_on_map_v3.png` |
 | Reward, events, dialogue | `round31_reward_event/reward_screen.png`, `reward_reveal.gif`, `event_screen.png`, `event_screen_memo.png`, `dialogue.png`; `round32_shop_reward/reward_screen_v2.png` |
+| Route view (side view) | `route_map_graph/side_view/v3_aaa/r3/` |
+| Netrun entry storyboard | `route_map_graph/storyboard/storyboard.mp4` |
+| Golden plates | `golden_plates/INDEX.md` |
+| HQ page, route page | `round44_undesigned/A_map/*` |
+| Menus (pause, slots, new campaign, codex, stats, deck viewer, options) | `round44_undesigned/B_menus/*` |
+| New corps | `new_corps/roman/`, `new_corps/atlantis/` |
+| Boss wheels v3 | `boss_wheel_v2/` |
+| Exploit buildings | `exploit_buildings/stills/sheet.jpg` |
 | Portraits | `round39_portraits/portraits_classes_v2.png`, `round38_portraits/portrait_states.png`, `portrait_contexts.png` |
 | UI kit, type, title | `round33_ui_chrome/ui_kit.png`, `typography.png`, `title_screen.png`, `title_screen_alt_simulate.png`, `abandon_dialog.png`; `round31_ui_chrome/settings_menu.png` |
 
@@ -1194,76 +1409,94 @@ Paths are relative to `docs/concepts/`. "v" = the latest locked version.
 The authoritative list is DIRECTION_REVIEW's "Game to-do list for reintegration" and the "Game
 to-do" blocks under each round. These block or shape art reintegration:
 
-1. **GDD §9.1 / §9.4 baseline** replaced by this bible (DECISIONS entry + GDD update).
-2. **Renames:** slice programs (SHIM, OVERFLOW, DEFRAG, SANDBOX, DETOUR, HOTFIX, INFECT, TROJAN,
-   NULL); WEIGHT, PRIORITY (still collides with Priority Routing), GROWTH, AIRMAIL; "Mainframe Gate"
-   → **Central Server**; Microchip → **Firmware** (`strings.csv`); PARTIAL → **WEAK**; raid words
-   TAKEN / CELL HOLDS vs GDD Seized / Holds.
+1. **GDD §9.1 / §9.4 baseline:** done (GDD §9 rewritten around this bible, DECISIONS 2026-10-05).
+2. **Renames:** done in code and strings (designer rulings 2026-10-05, "names for M14"): slice
+   programs, WEIGHT, PRIORITY (collision resolved: the Manifest's hub is Customs Seal), GROWTH,
+   AIRMAIL; "Mainframe Gate" → **Central Server**; Microchip → **Firmware**; PARTIAL → **WEAK**;
+   raid words TAKEN / DOWN / CELL HOLDS / BREACHED.
 3. **New data:** SliceData tier I–III; placeholder slice types and states (PHISHING, SHIELD,
    ENCRYPT, RECON, BURN/TORCH/DISSOLVE, FROZEN/LOCKED/BURNING/EMPOWERED, KILL PROCESS); status stack
-   counts; MOMENTUM runtime picto; card type band (WHEEL/HACK/SYSTEM) or drop it; card rarity look.
+   counts; MOMENTUM runtime picto; card rarity look. (The card type band is built; the designer
+   closed "no design needs card type now", DECISIONS 2026-10-16.)
 4. **Settings:** `heat_glitch: bool = false` + VfxTier exemption; `always_show_nodes: bool = false`;
-   "Always show node health"; optional "hub shows slice value"; netrun transition shortening.
-5. **Combat proposals:** inner-ring sub-needle, hangar (damage with several drones), double status,
-   splash/broadcast, blank start; parasite ring (either wheel, cleanse, aim conflict); satellite
-   overwrite and no-nudge; drone/parasite hard limits; one-pointer boss and CUT A HEAD ("boss starts
-   stunned"); Virus random picks; expanded Exploit set (ROOTKIT, HIJACK, CIPHER) and seeding; gates;
-   Perfect latch release timing; boss nudge keys A/D.
-6. **Firmware/Daemons:** replace-and-destroy on an occupied socket; Zero Day, Stolen Intent, Linked
-   Bus and Mirror-elite hub visuals.
-7. **Shop:** top slice cheaper (80 vs GDD flat 100); nudges on the shop wheel; recycle-bin undo until
-   LEAVE.
+   "Always show node health"; optional "hub shows slice value". (The netrun entry has no shortening
+   setting, 2026-10-16.)
+5. **Combat proposals:** double status, splash/broadcast, blank start; parasite ring (either wheel,
+   cleanse, aim conflict); satellite overwrite and no-nudge; parasite hard limits; one-pointer boss
+   and CUT A HEAD ("boss starts stunned"); Virus random picks; expanded Exploit set (ROOTKIT, HIJACK,
+   CIPHER) and seeding; gates; Perfect latch release timing. (Ruled since v2.0: the inner-ring
+   sub-needle is dropped, the hangar is wheel-wide, one drone per slice, boss nudge keys A/D locked.)
+6. **Firmware/Daemons:** Zero Day, Stolen Intent, Linked Bus and Mirror-elite hub visuals.
+   (Replace-and-destroy on an occupied socket is a game rule now; the confirm shows both chips.)
+7. **Shop:** nudges on the shop wheel; recycle-bin undo until LEAVE. (The shop wheel's three slices
+   cost 100 / 80 / 100, designer 2026-10-16.)
 8. **Campaign/raid:** EXPOSED rule; Heat raises waves/routes; intel NOT-decrypted at high Heat;
    decoy destruction; alternate-class station bonuses and levelling; raid zoom fitted to network
    size + sector split; Exploit Site pinning before decryption; claimed-Site icon losing its kind.
 9. **Netrun/HQ:** start-node choice; long-link layer fit (pan vs spacing); HQ mechanic rules (WAIT
    cost, riding the train, SPOTTED cost, sabotage cost, Sync Strike decks); DISPATCH finale.
-10. **HQ actions** without an HQ room (Heat, patching, repairs, recruiting, Black Market).
+10. **HQ actions:** resolved by direction B (the HQ page, 4.4; designer 2026-10-05).
 11. **Meridian follow-ups:** castle crest replacing crane-A on wheels, raid frames and threat
-    stickers; re-run the city map for the round 31 boom-facing view corridor.
+    stickers (crest, not HQ, is still open).
 12. **Undesigned content** listed in 4.14 and `GDD_ART_COVERAGE.md` §2.
 
 ## 9. Appendix C: contradictions between rounds and how this bible resolves them
 
 | # | Contradiction | Resolution here |
 |---|---|---|
-| 1 | Round 23 locks "statuses are only their overlay: no badge, no rule chip"; round 34 locks multiplier tags under the status badge and round 40 locks ×N tabs on badges; round 41's stack draws badge + tab + rule tag | Overlay is the status; a small flat corner badge appears only to carry a ×N tab (stacks > 1) and the ×1.5/×0.5 tag. **Designer to confirm.** |
+| 1 | Round 23 locks "statuses are only their overlay: no badge, no rule chip"; round 34 locks multiplier tags under the status badge and round 40 locks ×N tabs on badges; round 41's stack draws badge + tab + rule tag | Overlay is the status; a small flat corner badge appears only to carry a ×N tab (stacks > 1) and the ×1.5/×0.5 tag (confirmed by the designer, 2026-10-05). |
 | 2 | DIRECTION_REVIEW round 31: MAINFRAME "NO = N + top of the R"; round 33 v4 (locked) uses the second A's top | Round 33 v4: `N3 A6(o)` |
-| 3 | Shop centre slice premium 120 (rounds 32–33) vs top slice cheapest 80 (round 34); GDD flat 100 | Round 34 (later); still a DECISIONS item |
+| 3 | Shop centre slice premium 120 (rounds 32–33) vs top slice cheapest 80 (round 34); GDD flat 100 | Round 34 (later); confirmed: 100 / 80 / 100 (designer G14, 2026-10-16) |
 | 4 | Class accents: v1 §7.1 / `Palette` (Rigger gold, Botnet green, Overclocker magenta, Ghost #9FE8FF…) vs round 22 `class_colours_v2` and round 38 portraits | Round 22 / 38 values (2.5); Palette debt |
 | 5 | Corp hues: v1 / `Palette` (Solace #3DFF8B, Halcyon #8C7BFF, Orbital #7FA8FF) vs round 18 kits (#96FF46, #B06EFF, #CDF0FF); round 17 NOTES say #CDF0FF but its patch script used #AACDFF | Round 18 values; Orbital re-approaches UI-text white and Solace approaches Cell lime (2.4 risks) |
 | 6 | Exploit kind icons: keycards use binoculars / key / CORRUPTED mark (round 38) vs Site sub-badges magnifier / sledgehammer / INFECT glyph (round 42 v4), where the key now means only "Exploit Site" | Unify on the round 42 icons for both; keycards need a re-render |
 | 7 | Exploits on T3 key Sites (rounds 35–36 stills, round 36–38 unified NOTES text) vs T2 (GDD, round 36 decision, round 37) | T2 |
-| 8 | HQ boss run as building climb (rounds 32–34, "locked D") vs overhead compound (round 35 lock) | Compound; climb rooms survive as node backdrops |
-| 9 | Netrun paths: thin double dashes along streets (round 38 decision, round 39) vs single dashed meander (round 40) vs straight cable runs with solid walked path (round 41 lock) | Cable runs v3 |
+| 8 | HQ boss run as building climb (rounds 32–34, "locked D") vs overhead compound (round 35 lock) | Compound, then superseded again: HQ netruns use the route-view side view (4.6, 4.7; 2026-10-14); climb rooms survive as node backdrops |
+| 9 | Netrun paths: thin double dashes along streets (round 38 decision, round 39) vs single dashed meander (round 40) vs straight cable runs with solid walked path (round 41 lock) | Superseded: grease-pencil links on the side-view route (4.6; 2026-10-14) |
 | 10 | HQ mechanics round 42 (Solace rotates; Halcyon beam LOCKS nodes) vs round 43 (Solace no spinning; Halcyon SPOTTED) | Round 43 |
 | 11 | Hub Breach: round 38–39 cracked-glass BREACHED (and "Breached stays as an enemy state") vs round 40 LOCKDOWN waterline | Lockdown waterline |
-| 12 | Disabled: raid sockets dashed amber (rounds 19–21) vs Site markers "amber gone", white bolt over a greyed marker (round 42 v3) | Each view keeps its locked look; the semantic differs by zoom. Designer to confirm |
-| 13 | Raid camera clamp: 140–320 (round 37), 150–320 / 150–420 (round 38), 220–380 (round 39) | Config value; dedicated pass owed |
+| 12 | Disabled: raid sockets dashed amber (rounds 19–21) vs Site markers "amber gone", white bolt over a greyed marker (round 42 v3) | DOWN is the white bolt over a greyed socket at every zoom (designer, 2026-10-05) |
+| 13 | Raid camera clamp: 140–320 (round 37), 150–320 / 150–420 (round 38), 220–380 (round 39) | Config value; the HQ wheel may zoom past `raid_fit_max` into the GRID band (designer, 2026-10-05); dedicated pass owed |
 | 14 | Heat glitch "on by default" (round 18) vs "Options extra, off by default" (round 19 lock) | Off by default |
 | 15 | Focus brackets 2 px at 4 px offset (v1) vs 3 px at 7 px (round 31) | Round 31 |
 | 16 | Respin label CHECKPOINT (rounds 19–20) vs RESPIN (round 23) | RESPIN |
-| 17 | Forecast tags above wheels (v1, STYLE_GUIDE, rounds 10–31; GDD 9.2 "per-pointer intent labels") vs HP result chips, no forecast tags (round 43) | HP result chips; GDD 9.2 wording needs updating |
+| 17 | Forecast tags above wheels (v1, STYLE_GUIDE, rounds 10–31; GDD 9.2 "per-pointer intent labels") vs HP result chips, no forecast tags (round 43) | HP result chips; GDD 9.2 wording updated (designer D15, 2026-10-05) |
 | 18 | Firmware socket at ρ 160 (round 34) vs "r = 168" / zone 142–194 in round 41's stack | ρ ≈ 160–168, config value |
 | 19 | Station beacon: R1 rooftop figure recommended (round 20) vs R3 class beacon (round 21 lock) | R3 |
 | 20 | Combat HUNTED: helicopters (round 19 H1) vs no helicopters (rounds 21–22) | No helicopters on combat; the city map keeps choppers at HUNTED (round 24) |
 | 21 | Shop removal: PURGE rm -rf key (round 32 recommendation) vs recycle bin (round 33 lock); sign MARKET NEON (round 27–28 lock) vs MAINFRAME (round 31) | Recycle bin; MAINFRAME |
 | 22 | Netrun "available" colour: corp-colour pads (round 34) vs fixed orange "run colour" (rounds 35–42); all drawn on Meridian, whose hue is orange | Orange until the designer says otherwise |
+| 23 | Route page links: round 44 (only the route's links) vs the 2026-10-14 full-graph ruling | Whole graph, greyed and translucent where past or unreachable (4.6) |
+| 24 | Inner ring: round 39/40 plates and texture extension vs the round 45 ghost wedge | Round 45 (3.10; 2026-10-13) |
+| 25 | Sticker focus: lime halo (v2.0) vs peel-back curl only | Peel-back curl only (2.10; 2026-10-06) |
 
 ## 10. Changes from v1 (summary)
 
 | Topic | v1 | v2 |
 |---|---|---|
 | Materials | CITY / GLASS / PAPER (Cell's zine voice: tape, marker, spray, drips) / DECK | World, vinyl sticker, grease pencil, CRT terminal, corp paper, decrypted holo, binary bits, bare Anton. Spray, drips and marker graffiti are gone; paper is now corp paper; DECK has no current use (HQ room dropped) |
-| City | isometric neon slate city, marker-stroke streets, raised-fist roads | Cv2 + E low-poly city, one model at three zooms, sky lanes, red-window fist |
+| City | isometric neon slate city, marker-stroke streets, raised-fist roads | Cv2 + E low-poly city, one model at three zooms, sky lanes, red-window fist; v2.1: the planner city (Horseshoe Bay A2) for seven corps, one model per game seed |
 | Wheels | paper-stickered player bezel, gauge needle | D4 Lens & rail, C slices, V2 tiers, overlays, firmware, inner-ring textures, collapsed drones |
 | Cards | paper stock by rarity, risograph illustrations | vinyl sticker cards, peel/slap/dissolve A; illustration style undecided |
 | VFX | per-type hit shapes (slash, hex, smear…) | binary bits for all digital FX, temporary labels dissolve to bits; VfxTier table kept |
-| Heat | posters, glitch, searchlights, grade shift | H1 city reacts on combat, calm Heat B on maps; glitch is an option |
+| Heat | posters, glitch, searchlights, grade shift | H1 city reacts on combat, calm Heat B on maps; glitch is an option; v2.1: five bands, COOL to PURGE |
 | Forecast | paper tags above wheels | HP result chips |
 | Corp and class colours | v1 table | 2.4 and 2.5 |
 | Fonts | Anton, Share Tech Mono, Permanent Marker, Plex | + Courier Prime for corp paper |
 | Focus | 2 px brackets | 3 px lime brackets at 7 px |
+| Netrun (v2.1) | transit along an iso city | side-view route with the AAA-2 look, grease-pencil links and vinyl-sticker nodes on one continuous city |
+| HQ (v2.1) | Cell HQ room | direction B: the HQ is the City Grid page |
 
 Still valid from v1 and not repeated here: the 8 px grid and spacing tokens (§5), the six component
 states (§6), input widgets (§6.5), resolution and aspect rules (§5.4), the definition of done (§14).
+
+## 11. Changelog
+
+- **v2.1 (2026-10-19):** audit against the designer rulings of 2026-10-05 to 2026-10-19. Applied: the
+  build's DECISIONS as a source of truth; five Heat bands; the inner ring of round 45; the netrun
+  route view, entry flow timing, orange plan pencil and AAA-2 exception; one continuous city, planner
+  city and occlusion rule; the new corps (Aurelian, Tethys) and corp-wide themes; Meridian's Gatehouse
+  Gantry; Orbital circuits; direction B HQ page; raid words DOWN / TAKEN; slice and hub renames;
+  sticker focus as peel-back curl; nudge lock slash; one drone per slice; phase pips; menus; the
+  Godot look ownership. Held for the designer and left as written: see the audit report.
+- **v2.0 (2026-10-05):** rewritten from the concept-art direction pass (rounds 1–43).
