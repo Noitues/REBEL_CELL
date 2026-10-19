@@ -87,7 +87,7 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 	var gain: float = float(s.get("emit_mul", 1.0))
 	var seed01: float = float(s.get("seed", DressDistricts.hash01("sign_s", String(s["bid"]))))
 	var phase: float = float(s.get("phase", DressDistricts.hash01("sign_p", String(s["bid"]))))
-	var base: Color = _col(_fill_pal(String(s["pal"])), p)
+	var base: Color = _col(_fill_pal(String(s["bid"]), prefix == "sign"), p)
 	var sec: float = DressKit.pack_rgb(_col("district_b", p))
 	var depth: float = float(sg["depth"])
 	_add(prefix + "_neon", DressKit.item(DressKit.piece(p, eu, ev, 0.0, w, 0.0, depth, 0.0, h), base, seed01, phase, gain, sec))
@@ -123,9 +123,12 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 	_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, w * 0.5 - pole * 0.5, w * 0.5 + pole * 0.5, 0.0, depth, 0.0, h), base, seed01, phase, gain * float(sg["pole_gain"]), sec))
 
 
-## The palette id of a sign panel fill: the district hue, or the contrasting accent; never the second light (sec is trim only).
-func _fill_pal(pal: String) -> String:
-	return "district_a" if pal == "district_a" else "accent"
+## The palette id of a sign fill: the district hue, or for a city sign (`city`) the contrasting accent on `sign.city_accent_share` of
+## the buildings (a pure hash of the building id); never the second light (sec is trim only).
+func _fill_pal(bid: String, city: bool) -> String:
+	if city and DressDistricts.hash01("city_acc", bid) < float(_cfg.sign["city_accent_share"]):
+		return "accent"
+	return "district_a"
 
 
 ## Indices of the hero panels that take the accent: `sign.hero_accent` counts (one below `hero_accent_from` panels, else two).
@@ -158,7 +161,7 @@ func _hero_signs(list: Array, col_by_bid: Dictionary) -> void:
 		var u0: float = float(ci["u0"]) + float(pre["band_inset"])
 		var u1: float = float(ci["u1"]) - float(pre["band_inset"])
 		var bp: Array = NetrunArtDress.world(_f, u0, float(ci["face"]) - 0.05 * float(_f["ncross"]), float(ci["top"]) - float(pre["band_drop"]))
-		var c: Color = _col(_fill_pal(String(s["band_pal"])), bp)
+		var c: Color = _col(_fill_pal(String(s["bid"]), false), bp)
 		_add("hero_full", DressKit.item(DressKit.piece(bp, eu, ev, 0.0, u1 - u0, 0.0, 0.12, 0.0, float(pre["band_h"])), c, 0.5, 0.0, float(_cfg.sign["band_emit"]) / float(_cfg.sign["panel_emit"]), DressKit.pack_rgb(_col("district_b", bp))))
 
 
