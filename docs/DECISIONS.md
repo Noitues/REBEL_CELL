@@ -34,6 +34,16 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Designer ruling (relayed by the art-pass session): Tethys THE WATER LEVEL
+Quoted from the designer via art-pass: "Adopt THE WATER LEVEL (Head) as the Tethys mechanic and carry it into Tethys
+street netruns and raids. Route it to the design session." There is no separate design session, so the build session
+takes it: the rules are drafted on the Batch API in the post-PT-004 replan from `docs/handoff/plan2/drafts/hq/tethys.md`
+§1-3 (Head LOW / RISING / HIGH / FALLING tick, UPPER / LOWER node Levels, sluices, Lock Cycle, Pressure Stair), extended
+to Tethys street netruns (what floods in a street building, the water line per Head step) and raids (which defense
+nodes go under at HIGH). Draft numbers become config; open points go to the designer. Art-pass needs: each node's
+Level, which node kinds are sluices, the street water line per Head step, and the flooding raid nodes; until then it
+uses the draft's assumptions, flagged.
+
 ### 2026-10-18 — Designer rulings: decision sheet follow-ups (`FOLLOWUP_2026-10-18.md`)
 "Default for all except" the items below: every other follow-up item takes its RECOMMENDED option (Q8 a, Q10.1-10.4 a,
 Q11 a, Q14 a, Q19.1-19.2 a, Q21 a, Q22 a, Q27.1-27.2 a, Q30.1-30.2 a, Q31: hub breach turns kept, next-turn bonuses kept,
