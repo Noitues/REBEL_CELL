@@ -110,7 +110,9 @@ def build_hq(K, rooms=True, rail=True):
         col = K.attr(nt, "col")
         g, ps, ns = K.pos_sep(nt)
         u_ = K.mth(nt, "ADD", ps.outputs["X"], ps.outputs["Y"])
-        rib = K.mth(nt, "SINE", K.mth(nt, "MULTIPLY", u_, 4.2))
+        nph = K.nn(nt, "ShaderNodeTexNoise", Scale=0.11, Detail=2.0)          # v4 (R-REP-1): the corrugation's phase wanders, no pure lattice
+        nt.links.new(g.outputs["Position"], nph.inputs["Vector"])
+        rib = K.mth(nt, "SINE", K.mth(nt, "MULTIPLY", K.mth(nt, "ADD", u_, K.mth(nt, "MULTIPLY", nph.outputs["Fac"], 4.0)), 4.2))
         n1 = K.nn(nt, "ShaderNodeTexNoise", Scale=0.18, Detail=6.0, Roughness=0.62)
         nt.links.new(g.outputs["Position"], n1.inputs["Vector"])
         rust = K.smooth(nt, n1.outputs["Fac"], 0.48, 0.70)
@@ -125,7 +127,7 @@ def build_hq(K, rooms=True, rail=True):
         b.inputs["Metallic"].default_value = 0.35
         b.inputs["Coat Weight"].default_value = 0.3
         b.inputs["Coat Roughness"].default_value = 0.1
-        bump = K.nn(nt, "ShaderNodeBump", Strength=0.35, Distance=0.08)
+        bump = K.nn(nt, "ShaderNodeBump", Strength=0.10, Distance=0.08)       # v4: 0.35 -> 0.10 (R-REP-1: the ribs under the new key)
         nt.links.new(rib, bump.inputs["Height"])
         nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
         nt.links.new(b.outputs[0], out.inputs[0])
@@ -299,6 +301,20 @@ def build_hq(K, rooms=True, rail=True):
         return False
 
     SLOTW = 6.6
+
+    def runs(a, b):
+        """v4 (R-REP-1): the wall-top lit edge as seeded runs with short dark gaps and a varying level (the one-city module keeps the
+        unbroken line)."""
+        if getattr(K, "CITY", False):
+            return [(a, b, 1.0)]
+        out_, u_ = [], a
+        while u_ < b - 0.01:
+            u2_ = min(u_ + 2.0 + 4.5 * RW_.random(), b)
+            out_.append((u_, u2_, 0.4 + 0.8 * RW_.random()))
+            u_ = u2_ + (1.5 + 3.5 * RW_.random() if RW_.random() < 0.9 else 0.0)
+        return out_
+    RW_ = random.Random(7707)               # v4 (R-REP-1): container widths vary (0.78-1.22 x), from their own stream
+    WJ = (lambda: 1.0) if getattr(K, "CITY", False) else (lambda: 0.78 + 0.44 * RW_.random())      # the one-city module keeps its 1:1 layout
     for sx in (-1, 1):                                                  # the E / W walls (runways)
         xo, xi = sx * L, sx * (L - WT)
         ya, yb = -L + 2 * CH, RG["y0"]
@@ -307,7 +323,7 @@ def build_hq(K, rooms=True, rail=True):
             z0, z1 = c * CRS, c * CRS + CRS - 0.4
             y = ya
             while y < yb - 1.0:
-                y1 = min(y + SLOTW, yb)
+                y1 = min(y + SLOTW * WJ(), yb)
                 if not (gy0 - 0.5 < (y + y1) / 2 < gy1 + 0.5) and not in_room(min(xo, xi), y, max(xo, xi), y1, z0, z1):
                     container_x(min(xo, xi), max(xo, xi), y, y1, z0, z1, STEEL[rr.randrange(len(STEEL))],
                                 "W" if sx < 0 else "E")
@@ -323,8 +339,10 @@ def build_hq(K, rooms=True, rail=True):
         box(A["rough"], min(xo, xi), -L + WT, WTOP - 0.4, max(xo, xi), L, WTOP, (0.10, 0.10, 0.11))
         for o_ in (-4.0, 4.0):
             box(A["metal"], sx * LEGX + o_ - 0.35, -L + WT, WTOP, sx * LEGX + o_ + 0.35, L, WTOP + 0.7, (0.35, 0.35, 0.37))
-        box(SEAM, xo - 0.2, ya, WTOP - 1.2, xo + 0.2, yb, WTOP - 0.8, EDGE, LH["seam_k"])
-        box(SEAM, xi - 0.15, ya, WTOP - 1.2, xi + 0.15, yb, WTOP - 0.8, SOD, LH["seam_k"] * 0.6)
+        for (a_, b_, g_) in runs(ya, yb):
+            box(SEAM, xo - 0.2, a_, WTOP - 1.2, xo + 0.2, b_, WTOP - 0.8, EDGE, LH["seam_k"] * g_)
+        for (a_, b_, g_) in runs(ya, yb):
+            box(SEAM, xi - 0.15, a_, WTOP - 1.2, xi + 0.15, b_, WTOP - 0.8, SOD, LH["seam_k"] * 0.6 * g_)
     yo, yi = -L, -L + WT
     xa, xb = -L + 2 * CH, L - 2 * CH
     gx0, gx1 = CP["gate"]["s_x"] - gate_gap, CP["gate"]["s_x"] + gate_gap
@@ -332,7 +350,7 @@ def build_hq(K, rooms=True, rail=True):
         z0, z1 = c * CRS, c * CRS + CRS - 0.4
         x = xa
         while x < xb - 1.0:
-            x1 = min(x + SLOTW, xb)
+            x1 = min(x + SLOTW * WJ(), xb)
             if not (gx0 - 0.5 < (x + x1) / 2 < gx1 + 0.5) and not in_room(x, yo, x1, yi, z0, z1):
                 container_y(x, x1, yo, yi, z0, z1, STEEL[rr.randrange(len(STEEL))], "S")
             x = x1
@@ -344,7 +362,8 @@ def build_hq(K, rooms=True, rail=True):
         x += SLOTW
         k += 1
     box(A["rough"], xa, yo, WTOP - 0.4, xb, yi, WTOP, (0.10, 0.10, 0.11))
-    box(SEAM, xa, yo - 0.2, WTOP - 1.2, xb, yo + 0.05, WTOP - 0.8, EDGE, LH["seam_k"])
+    for (a_, b_, g_) in runs(xa, xb):
+        box(SEAM, a_, yo - 0.2, WTOP - 1.2, b_, yo + 0.05, WTOP - 0.8, EDGE, LH["seam_k"] * g_)
     # wall washers: street-level spots grazing up the outer container faces
     for k in range(-3, 4):
         u = k * 28.0 + 14.0
@@ -390,8 +409,9 @@ def build_hq(K, rooms=True, rail=True):
             box(SEAM, xo_ - 0.15, a0 + 2.5, AH - 2.9, xo_ + 0.15, a0 + 6.5, AH - 2.5, TLIGHT, LH["seam_k"])
             box(SEAM, xo_ - 0.15, a1 - 6.5, AH - 2.9, xo_ + 0.15, a1 - 2.5, AH - 2.5, TLIGHT, LH["seam_k"])
             box(SEAM, xo_ - 0.15, a0 + 6.5, AH - 0.4, xo_ + 0.15, a1 - 6.5, AH, TLIGHT, LH["seam_k"])
-        box(SEAM, (rx0 if sx < 0 else rx1) - 0.2, ry0, WTOP - 1.2, (rx0 if sx < 0 else rx1) + 0.2, ry1, WTOP - 0.8, EDGE,
-            LH["seam_k"])
+        for (a_, b_, g_) in runs(ry0, ry1):
+            box(SEAM, (rx0 if sx < 0 else rx1) - 0.2, a_, WTOP - 1.2, (rx0 if sx < 0 else rx1) + 0.2, b_, WTOP - 0.8, EDGE,
+                LH["seam_k"] * g_)
         r_ = RG["drum_r"]
         for ty in (ry0 - r_ + 1.0, L - r_):
             dx_ = sx * (L - WT - r_ + 0.5)

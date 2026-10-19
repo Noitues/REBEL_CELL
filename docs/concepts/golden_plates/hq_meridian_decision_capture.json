@@ -41,9 +41,9 @@
  ],
  "run": null,
  "source": {
-  "commit": "5c97940f",
-  "final": "route_map_graph/hq_meridian_v3/plates/H_decision_v3_plate.png",
-  "index_pass": "meridian_v3/bl_stills/H_decision_index.npy",
+  "commit": "untracked",
+  "final": "route_map_graph/hq_meridian_v3/plates/H_decision_v4_plate.png",
+  "index_pass": "hq_fix/meridian_v3/bl_stills/H_decision_index.npy",
   "index_pass_indices": [
    0,
    1,

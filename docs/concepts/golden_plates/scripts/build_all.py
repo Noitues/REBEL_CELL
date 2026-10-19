@@ -91,11 +91,11 @@ def entries():
                       "hq_fix/orbital/bl_stills/H_overview"))
     E.append(hq_entry("orbital", "decision", "hq_orbital/plates/H_decision_v3_plate.png", "hq_orbital", "H_decision",
                       "hq_fix/orbital/bl_stills/H_decision"))
-    # Meridian v3 (Gatehouse Gantry)
-    E.append(hq_entry("meridian", "overview", "hq_meridian_v3/plates/H_overview_v3_plate.png", "hq_meridian_v3", "H_overview",
-                      "meridian_v3/bl_stills/H_overview"))
-    E.append(hq_entry("meridian", "decision", "hq_meridian_v3/plates/H_decision_v3_plate.png", "hq_meridian_v3", "H_decision",
-                      "meridian_v3/bl_stills/H_decision"))
+    # Meridian v4 decision (light, R-REP-1; landmark ratio) and overview (occlusion rule 7.1 rules 0-1), handoff queue 5
+    E.append(hq_entry("meridian", "overview", "hq_meridian_v3/plates/H_overview_v4_plate.png", "hq_meridian_v3", "H_overview",
+                      "hq_fix/meridian_v3/bl_stills/H_overview"))
+    E.append(hq_entry("meridian", "decision", "hq_meridian_v3/plates/H_decision_v4_plate.png", "hq_meridian_v3", "H_decision",
+                      "hq_fix/meridian_v3/bl_stills/H_decision"))
     # Rebel Cell v3
     E.append(hq_entry("rebel_cell", "overview", "hq_rebel_cell/plates/H_overview_v3_plate.png", "hq_rebel_cell", "H_overview",
                       ob + "rebel_cell/v3/bl_stills/H_overview"))

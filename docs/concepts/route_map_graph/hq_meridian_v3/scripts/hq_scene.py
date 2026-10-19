@@ -279,7 +279,10 @@ def mat_plain(name, rough=0.55, spec=0.5, metal=0.0, coat=0.0):
     g, ps, ns = pos_sep(nt)
     n1 = nn(nt, "ShaderNodeTexNoise", Scale=0.4, Detail=5.0, Roughness=0.6)
     nt.links.new(g.outputs["Position"], n1.inputs["Vector"])
-    nt.links.new(vsc(nt, col.outputs["Color"], mth(nt, "ADD", 0.8, mth(nt, "MULTIPLY", n1.outputs["Fac"], 0.4))),
+    n2 = nn(nt, "ShaderNodeTexNoise", Scale=3.5, Detail=5.0, Roughness=0.7)           # v4 (R-REP-1): a mid-scale surface texture, so a flat lit
+    nt.links.new(g.outputs["Position"], n2.inputs["Vector"])                       # face is not only its edges and seams
+    nt.links.new(vsc(nt, col.outputs["Color"], mth(nt, "MULTIPLY", mth(nt, "ADD", 0.8, mth(nt, "MULTIPLY", n1.outputs["Fac"], 0.4)),
+                                                   mth(nt, "ADD", 1.0, mth(nt, "MULTIPLY", mth(nt, "SUBTRACT", n2.outputs["Fac"], 0.5), 2.6)))),
                  b.inputs["Base Color"])
     b.inputs["Roughness"].default_value = rough
     b.inputs["Specular IOR Level"].default_value = spec
@@ -614,6 +617,7 @@ def lock_plane(i, rec, col, accs=None, name="lock"):
 
 # ================================================================== lights
 LIGHTS = []
+EXTRA_LIGHTS = {}
 
 
 def add_light(name, kind, loc, energy, col, aim=None, size=0.5, size_y=None, spot=None, blend=0.3, group="",
@@ -1021,6 +1025,21 @@ def apply_frame(fr):
         _st = [KDT.occlusion_state(_oc, b_) for b_ in BLD]
         log("occlusion %s: flattened %d ghosted %d of %d" % (fr.get("name"), sum(1 for (z_, a_), b_ in zip(_st, BLD)
             if z_ < b_[2] - 0.5), sum(1 for (z_, a_) in _st if a_ < 0.6), len(BLD)))
+    if _oc and "occ_on" in _oc and BLD and hasattr(G, "band_points"):   # PIPELINE_SPEC 7.1: the python twin counts occluders of the in-frame rooms + the band
+        import hq_cam as CR_
+        import occ_check as OC_
+        _pose = CR_.pose_of(fr["pose"])
+        _mt = int(fr.get("mt", 0))
+        _ids = [i for i in G.NODES if i != "start" and i not in getattr(G, "OCC_HIDDEN", ())] if float(fr.get("zoom", 0.0)) < 0.5             else OC_.in_frame_rooms(G, CR_, _pose, mt=_mt)
+        _res = OC_.count(BLD, _oc, _pose, G, _ids, mt=_mt)
+        _res.update(frame=fr.get("name"), n_buildings=len(BLD))
+        if fr.get("band_pts"):
+            _res["band_occluders"] = OC_.count_band(BLD, _oc, _pose, [tuple(b_) for b_ in fr["band_pts"]])
+        _od = JOB.get("occ_dir") or "D:/rc_scratch/hq_fix/meridian_v3"
+        os.makedirs(_od, exist_ok=True)
+        json.dump(_res, open(os.path.join(_od, "occ_%s.json" % fr.get("name")), "w"), indent=1)
+        log("OCC %s rooms %d hit %d occluders %d band %s" % (fr.get("name"), _res["rooms"], _res["rooms_hit"], _res["buildings"],
+                                                          _res.get("band_occluders")))
     zoom = float(fr.get("zoom", 0.0))
     FOG_ZOOM.outputs[0].default_value = zoom
     FOG.update_tag()
@@ -1076,6 +1095,26 @@ def apply_frame(fr):
             lob.data.energy = e0
     if "apply" in HOOKS:
         HOOKS["apply"](fr, dict(OBJ=OBJ, LIGHTS=LIGHTS, set_pwo=set_pwo, cut=cut if pw else 1.0, keep=keep, zoom=zoom))
+    for _ob in EXTRA_LIGHTS.values():                         # v4: per-frame key lights (PIPELINE_SPEC 8.3 item 4), off unless this frame asks
+        _ob.data.energy = 0.0
+    for _kl in (fr.get("extra_lights") or []):
+        _ob = EXTRA_LIGHTS.get(_kl["name"])
+        if _ob is None:
+            _ob = add_light(_kl["name"], _kl.get("kind", "SPOT"), tuple(_kl["loc"]), 1.0, tuple(_kl["col"]), aim=tuple(_kl["aim"]),
+                            size=_kl.get("size", 4.0), spot=_kl.get("spot", 50.0), blend=_kl.get("blend", 0.7), group="extra", shadow=_kl.get("shadow", False),
+                            receivers=bpy.data.collections.get("rim_rx"))
+            EXTRA_LIGHTS[_kl["name"]] = _ob
+            try:
+                _ob.visible_volume_scatter = False                 # the key lights the landmark, not the fog in front of it
+            except AttributeError:
+                pass
+        _ob.location = tuple(_kl["loc"])
+        _ob.rotation_euler = (Vector(_kl["aim"]) - Vector(_kl["loc"])).to_track_quat("-Z", "Y").to_euler()
+        _ob.data.energy = float(_kl["w"])
+    for _pfx, _g in (fr.get("light_gain") or {}).items():      # v4: per-frame light gains by light-name prefix (PIPELINE_SPEC 8.3: light, not exposure)
+        for (lob, e0, grp) in LIGHTS:
+            if lob.name.startswith(_pfx):
+                lob.data.energy *= float(_g)
 
 
 # ================================================================== render

@@ -31,6 +31,7 @@ QUAL = {
     "final": dict(res=[2560, 1440], samples=64, threshold=0.015, step_rate=1.2),
     "sheet": dict(res=[1280, 720], samples=48, threshold=0.02, step_rate=1.5),
     "video": dict(res=[960, 540], samples=12, threshold=0.06, step_rate=3.0),   # upscaled to 1280 x 720 by the encoder
+    "t2k": dict(res=[2560, 1440], samples=24, threshold=0.03, step_rate=2.0),
     "test": dict(res=[1280, 720], samples=32, threshold=0.04, step_rate=2.0),
     "mini": dict(res=[640, 360], samples=16, threshold=0.06, step_rate=3.0),
     "eevee": dict(res=[960, 540], samples=24, engine="EEVEE"),
@@ -58,13 +59,35 @@ def frame(name, pose, walked, zoom, hover=None, hover_k=0.0, mt=None, extra=None
         from hq_kit import downtown as KDT
         # v3: the OCCLUSION rule (flatten, then ghost): the cone from the camera to the target volume = the active
         # room + the visible route nodes (overview: every route node)
+        # PIPELINE_SPEC 7.1 rules 0-1 (v4): every route room in frame that faces the camera, the current room + options, and
+        # (DECISION / HOVER) the face band of the current level
         if zoom < 0.5 or (extra or {}).get("section_keep"):
             ids = [i for i in G.NODES if i != "start" and i not in getattr(G, "OCC_HIDDEN", ())]
         else:
             ids = [i for i in [walked[-1]] + list(opts) if i != "start"]
+            if hasattr(G, "band_points"):
+                import occ_check as OC
+                for i in OC.in_frame_rooms(G, CR, pose, mt=int(mt)):
+                    if i not in ids:
+                        ids.append(i)
         pts = [c for i in ids for c in G.room_front(i, mt)]
+        if zoom >= 0.5 and not (extra or {}).get("section_keep") and hasattr(G, "band_points"):
+            band = G.band_points(walked, int(mt), pose)
+            fr["band_pts"] = [list(b) for b in band]
+            pts = pts + band
         if pts:
             fr["section"] = KDT.occlusion_params(pose.loc(), pts, dtc)
+    if HP.PRESET["hq"].get("frame_keys", {}).get(name):
+        c_ = pose.loc()
+        fr["extra_lights"] = []
+        for k_ in HP.PRESET["hq"]["frame_keys"][name]:
+            aim_ = G.room_center(k_["aim_room"], mt) if k_.get("aim_room") else k_["aim"]
+            off_ = k_.get("rel", (0.0, 0.0, 0.0))
+            fr["extra_lights"].append(dict(name=k_["name"], kind=k_.get("kind", "SPOT"), loc=[c_[0] + off_[0], c_[1] + off_[1], c_[2] + off_[2]],
+                                           aim=list(aim_), w=k_["w"], col=list(k_["col"]), size=k_.get("size", 4.0), spot=k_.get("spot", 50.0),
+                                           blend=k_.get("blend", 0.7), shadow=k_.get("shadow", False)))
+    if HP.PRESET["hq"].get("frame_light", {}).get(name):
+        fr["light_gain"] = dict(HP.PRESET["hq"]["frame_light"][name])
     ov = dict(walked=walked, hover=hover, hover_k=hover_k, zoom=zoom, mt=mt, pose=pose.to_json(), extra=extra or {})
     return fr, ov
 
@@ -95,7 +118,7 @@ def reveal():
 def have_lock():
     if not os.path.exists(LOCK):
         return False
-    return open(LOCK, errors="replace").read().startswith("meridian_v3")
+    return "meridian_v3" in open(LOCK, errors="replace").read()
 
 
 def run(kind, frames, quality, out_dir, chunk=None, extra=None):

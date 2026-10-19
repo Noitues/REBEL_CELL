@@ -185,3 +185,45 @@ if __name__ == "__main__":
     st, opts = states(WALK_OV)  # noqa: F821
     print("layers", LAYER)
     print("at", WALK_OV[-1], "options", opts)
+
+
+BAND_STEP_BU = 3.0
+
+
+def band_points(walked, mt=None, pose=None, w=2560):
+    """PIPELINE_SPEC 7.1 rule 1 (extended): the FACE BAND of the current level. For the current room and its options that sit on a
+    curtain wall or a corner tower (SLOT wall_outer / wall_inner / corner_tower) the band is the wall's face (the landmark's
+    FACE_OUTLINE is the lot's curtain wall, |x|, |y| <= lot) at the room's floor and top, a point every 3 BU along the face, kept when
+    it looks at the camera and projects inside the frame."""
+    import math
+    cur = walked[-1]
+    st, opts = states(walked, mt)  # noqa: F821
+    pts = []
+    seen = set()
+    for i in [cur] + list(opts):
+        if i not in ROOM or SLOT.get(i) not in ("wall_outer", "wall_inner", "corner_tower"):
+            continue
+        r = ROOM[i]
+        n = r["n"]
+        key = (round(n[0]), round(n[1]), round(r["o"][2]))
+        if key in seen:
+            continue
+        seen.add(key)
+        t = (n[1], -n[0])
+        ox, oy, z0 = r["o"]
+        for k in range(-int(2 * L / BAND_STEP_BU), int(2 * L / BAND_STEP_BU) + 1):
+            x, y = ox + t[0] * k * BAND_STEP_BU, oy + t[1] * k * BAND_STEP_BU
+            if abs(x) > L + 0.5 or abs(y) > L + 0.5:
+                continue
+            for z in (z0, z0 + RH):
+                p_ = (x, y, z)
+                if pose is not None:
+                    c = pose.loc()
+                    d = (c[0] - x, c[1] - y)
+                    if (n[0] * d[0] + n[1] * d[1]) / max(math.hypot(*d), 1e-6) <= 0.12:
+                        continue
+                    q = pose.proj(p_, w=w)
+                    if q is None or not (0 <= q[0] <= w and 0 <= q[1] <= w * 9 / 16):
+                        continue
+                pts.append(p_)
+    return pts

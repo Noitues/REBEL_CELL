@@ -54,8 +54,8 @@ PRESET["hq"] = {
     "corp": "meridian", "corp_name": "MERIDIAN FREIGHT",
     "dossier": ("MERIDIAN", "FREIGHT SECURITY", (255, 140, 26)),
     "target_name": "THE MASTER MANIFEST", "target_place": "THE KEEP",
-    "out_big": r"D:\rc_scratch\meridian_v3",
-    "suffix": "_v3", "reveal_name": "H_reveal",
+    "out_big": r"D:/rc_scratch/hq_fix/meridian_v3",
+    "suffix": "_v4", "reveal_name": "H_reveal",
     # ------------------------------------------------------------ palette (linear RGB)
     "palette": {
         "steel": (0.075, 0.037, 0.024),
@@ -120,6 +120,15 @@ PRESET["hq"] = {
     "post": {"black": 0.04, "exposure_zoom_k": 0.55},
 }
 
+PRESET["hq"]["frame_stops"] = {"H_decision": -1.25}                  # v4: per-frame exposure trims (stops), read by hq_compose.stills / fix_post
+PRESET["hq"]["frame_light"] = {                   # v4: per-frame light gains by light-name prefix (applied in hq_scene.apply_frame)
+    "H_decision": {"wash_": 3.0, "legup_": 2.0, "span_down_": 2.0, "keep_wash": 2.0, "keep_key": 2.0},
+}
+PRESET["hq"]["frame_keys"] = {                    # v4: per-frame key lights placed relative to the camera, aimed at a room (PIPELINE_SPEC 8.3 item 4)
+    "H_decision": [dict(name="lmkey_0", rel=(0.0, 0.0, 30.0), aim_room="o2", w=1.8e6, col=(1.0, 0.80, 0.55), size=6.0, spot=55.0, blend=0.8),
+                   dict(name="lmkey_1", rel=(-40.0, 40.0, 30.0), aim=(40.0, -100.0, 10.0), w=3.5e6, col=(1.0, 0.78, 0.5), size=6.0, spot=60.0, blend=0.8),
+                   dict(name="lmkey_2", rel=(-60.0, 60.0, 40.0), aim=(-30.0, -40.0, 14.0), w=3.0e6, col=(1.0, 0.82, 0.58), size=6.0, spot=75.0, blend=0.8)],
+}
 PRESET["hq_fog"] = {
     "peak": 0.0065, "base": 0.10, "height_scale": 60.0, "floor": 10.0,
     "box": (-1100.0, -1100.0, 0.0, 1100.0, 1100.0, 300.0),
