@@ -75,12 +75,11 @@ def tethys_extra(png_name):
 def entries():
     E = []
     ob = "hq_rev/"
-    # Halcyon v2 (decision = variant E)
-    E.append(hq_entry("halcyon", "overview", "hq_halcyon/plates/H_overview_v2_plate.png", "hq_halcyon", "H_overview",
-                      ob + "halcyon/bl_stills/H_overview",
-                      accepted=[{"check": "R-VAL-1", "note": "approved HQ overview plate median 0.109, pre-accepted 2026-10-18 (12.8)"}]))
-    E.append(hq_entry("halcyon", "decision", "hq_halcyon/plates/H_decision_E_v2_plate.png", "hq_halcyon", "H_decision_E",
-                      ob + "halcyon/bl_stills/H_decision_E"))
+    # Halcyon v3 (occlusion rule 7.1 rules 0-1, handoff queue 5; decision = variant E)
+    E.append(hq_entry("halcyon", "overview", "hq_halcyon/plates/H_overview_v3_plate.png", "hq_halcyon", "H_overview",
+                      "hq_fix/halcyon/bl_stills/H_overview"))
+    E.append(hq_entry("halcyon", "decision", "hq_halcyon/plates/H_decision_E_v3_plate.png", "hq_halcyon", "H_decision_E",
+                      "hq_fix/halcyon/bl_stills/H_decision_E"))
     # Solace v4
     sol = [{"check": "landmark_ratio", "note": "2.56x above 2.0 pre-accepted (Solace 2.8x accepted 2026-10-16, Q5; 12.8)"}]
     E.append(hq_entry("solace", "overview", "hq_solace/plates/H_overview_v4_plate.png", "hq_solace", "H_overview",

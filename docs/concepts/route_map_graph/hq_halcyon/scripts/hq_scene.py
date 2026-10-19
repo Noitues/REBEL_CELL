@@ -254,7 +254,17 @@ def mat_civic():
     k = mth(nt, "MULTIPLY", mth(nt, "ADD", 0.88, mth(nt, "MULTIPLY", gm, 0.16)),
             mth(nt, "SUBTRACT", 1.0, mth(nt, "MULTIPLY", streak, 0.22)))
     seam = smooth(nt, br.outputs["Fac"], 0.0, 1.0)
-    base = vsc(nt, col.outputs["Color"], mth(nt, "MULTIPLY", k, mth(nt, "ADD", 0.78, mth(nt, "MULTIPLY", 0.22, seam))))
+    # v3 (R-REP-1): a per-panel tone (the brick texture's own random colour) so the panel grid is not a pure lattice
+    br.inputs["Color1"].default_value = (0.25, 0.25, 0.25, 1.0)
+    br.inputs["Color2"].default_value = (1.0, 1.0, 1.0, 1.0)
+    bsep = nt.nodes.new("ShaderNodeSeparateColor")
+    nt.links.new(br.outputs["Color"], bsep.inputs[0])
+    n3 = nn(nt, "ShaderNodeTexNoise", Scale=2.6, Detail=8.0, Roughness=0.7)
+    nt.links.new(g.outputs["Position"], n3.inputs["Vector"])
+    ptone = mth(nt, "MULTIPLY", mth(nt, "ADD", 0.80, mth(nt, "MULTIPLY", bsep.outputs[0], 0.20)),
+                mth(nt, "ADD", 0.55, mth(nt, "MULTIPLY", n3.outputs["Fac"], 0.9)))
+    base = vsc(nt, col.outputs["Color"], mth(nt, "MULTIPLY", mth(nt, "MULTIPLY", k, ptone),
+                                             mth(nt, "ADD", 0.78, mth(nt, "MULTIPLY", 0.22, seam))))
     nt.links.new(base, b.inputs["Base Color"])
     nt.links.new(mth(nt, "ADD", 0.16, mth(nt, "MULTIPLY", streak, 0.22)), b.inputs["Roughness"])
     b.inputs["Coat Weight"].default_value = 0.35
@@ -388,8 +398,23 @@ def mat_city(name, win_k, p_lit):
     cv = mth(nt, "FLOOR", mth(nt, "DIVIDE", ps.outputs["Z"], sv))
     fu = mth(nt, "FRACT", mth(nt, "DIVIDE", u, su))
     fv = mth(nt, "FRACT", mth(nt, "DIVIDE", ps.outputs["Z"], sv))
-    wm = mth(nt, "MULTIPLY", mth(nt, "MULTIPLY", mth(nt, "GREATER_THAN", fu, 0.28), mth(nt, "LESS_THAN", fu, 0.72)),
-             mth(nt, "MULTIPLY", mth(nt, "GREATER_THAN", fv, 0.32), mth(nt, "LESS_THAN", fv, 0.68)))
+    # v3 (R-REP-1): per-cell jitter of the window's edges (the grid pitch stays, the lattice no longer autocorrelates)
+    jid = nt.nodes.new("ShaderNodeCombineXYZ")
+    nt.links.new(mth(nt, "ADD", cu, 13.7), jid.inputs[0])
+    nt.links.new(mth(nt, "ADD", cv, 7.1), jid.inputs[1])
+    jid.inputs[2].default_value = 5.5
+    jn = nt.nodes.new("ShaderNodeTexWhiteNoise")
+    jn.noise_dimensions = "3D"
+    nt.links.new(jid.outputs[0], jn.inputs["Vector"])
+    jsep = nt.nodes.new("ShaderNodeSeparateColor")
+    nt.links.new(jn.outputs["Color"], jsep.inputs[0])
+    JA = HZ.get("win_jitter", 0.16)
+    u0 = mth(nt, "ADD", 0.22, mth(nt, "MULTIPLY", jsep.outputs[0], JA))
+    u1 = mth(nt, "SUBTRACT", 0.78, mth(nt, "MULTIPLY", jsep.outputs[1], JA))
+    v0 = mth(nt, "ADD", 0.26, mth(nt, "MULTIPLY", jsep.outputs[2], JA))
+    v1 = mth(nt, "SUBTRACT", 0.74, mth(nt, "MULTIPLY", jn.outputs["Value"], JA))
+    wm = mth(nt, "MULTIPLY", mth(nt, "MULTIPLY", mth(nt, "GREATER_THAN", fu, u0), mth(nt, "LESS_THAN", fu, u1)),
+             mth(nt, "MULTIPLY", mth(nt, "GREATER_THAN", fv, v0), mth(nt, "LESS_THAN", fv, v1)))
     vert = mth(nt, "LESS_THAN", mth(nt, "ABSOLUTE", ns.outputs["Z"]), 0.3)
     cid = nt.nodes.new("ShaderNodeCombineXYZ")
     nt.links.new(cu, cid.inputs[0])
@@ -518,10 +543,16 @@ for t in TIERS:
             # office slits between the fins (big layer: building lights)
             n_sl = int(2 * core / 2.4)
             rr_ = random.Random(1000 * r + f)
+            u_s = -core + 1.2
             for s in range(n_sl):
-                u = -core + 1.2 + s * 2.4
+                u = u_s
+                u_s += 1.0 + 2.8 * rr_.random()                # v3 (R-REP-1): irregular gaps (mean 2.4 BU as before)
+                if u > core - 0.5:
+                    break
                 if rr_.random() < 0.55:
-                    fquad(A["trim"], f, hs + 0.02, u - 0.35, zr0 + 1.2, u + 0.35, zr1 - 1.0, (0.75, 0.88, 1.0),
+                    # v3 (R-REP-1): seeded jitter of each slit's position, width and height (the 2.4 BU rhythm stays)
+                    uj, wj, hj = (rr_.random() - 0.5) * 0.8, 0.25 + 0.2 * rr_.random(), rr_.random() * 1.6
+                    fquad(A["trim"], f, hs + 0.02, u + uj - wj, zr0 + 1.2 + hj * 0.5, u + uj + wj, zr1 - 1.0 - hj * 0.5, (0.75, 0.88, 1.0),
                           (0.35 + 0.5 * rr_.random()) * LH["slit_k"])
         else:
             rooms = sorted((i for i, n in NODES.items() if n["tier"] == r and n["face"] == f and i != "srv"),
@@ -533,18 +564,50 @@ for t in TIERS:
                 if b_ - a_ > 0.05:
                     fbox(A["civic"], f, core, hs, a_, b_, zr0, zr1, WHITE, top=False)
         # the colonnade fins (every face), cornice ring, teal cove, glass parapet
-        nfin = int(2 * hs / 1.6)
-        for s in range(nfin + 1):
-            u = -hs + 0.4 + (2 * hs - 0.8) * s / nfin
+        # v3 (R-REP-1): the colonnade fins stand at seeded irregular gaps (mean 1.6 BU as before: 0.7-2.5) and widths, in
+        # place of the even 1.6 BU pitch that autocorrelated across the facade
+        rf_ = random.Random(7000 + 10 * r + f)
+        fin_us_, u_f = [], -hs + 0.4
+        while u_f <= hs - 0.4:
+            fin_us_.append(u_f)
+            u_f += 0.7 + 1.8 * rf_.random()
+        for u in fin_us_:
+            fw_ = 0.10 + 0.14 * rf_.random()
             if f == route_f and any(abs(u - NODES[i]["u"]) < RW / 2 + 0.3 for i in NODES
                                     if NODES[i]["tier"] == r and NODES[i]["face"] == f and i != "srv"):
                 continue
-            fbox(A["civic"], f, hs, hs + 0.55, u - 0.16, u + 0.16, zr0 + 0.2, zr1 - 0.2, WHITE)
-        fbox(A["civic"], f, hs - 2.5, hs + 1.3, -hs - 1.3, hs + 1.3, z1 - 1.1, z1, WHITE)
-        fquad(A["trim"], f, hs + 1.25, -hs - 1.1, z1 - 1.2, hs + 1.1, z1 - 1.12, TEAL, LH["teal_k"])
-        fquad(A["trim"], f, hs + 1.32, -hs - 1.1, z1 - 0.62, hs + 1.1, z1 - 0.5, CWHITE, LH["cove_k"] * 0.6)
-        fbox(A["glass"], f, hs + 1.05, hs + 1.2, -hs - 1.2, hs + 1.2, z1, z1 + 1.1, (0.05, 0.08, 0.09))
-        fbox(A["small"], f, hs + 1.0, hs + 1.22, -hs - 1.2, hs + 1.2, z1 + 1.05, z1 + 1.15, TEAL, LH["teal_k"] * 0.5)
+            fbox(A["civic"], f, hs, hs + 0.55, u - fw_, u + fw_, zr0 + 0.2, zr1 - 0.2, WHITE)
+        rl_ = random.Random(8000 + 10 * r + f)
+        u_ = -hs - 1.3                                  # v3 (R-REP-1): the cornice band in runs of differing depth and tone
+        while u_ < hs + 1.3:
+            u2_ = min(u_ + 4.0 + 9.0 * rl_.random(), hs + 1.3)
+            tn_ = 0.45 + 0.55 * rl_.random()
+            fbox(A["civic"], f, hs - 2.5, hs + 0.8 + 0.6 * rl_.random(), u_, u2_, z1 - 1.1 - 0.5 * rl_.random(), z1,
+                 (WHITE[0] * tn_, WHITE[1] * tn_, WHITE[2] * tn_))
+            u_ = u2_
+        # v3 (R-REP-1): the cornice's lit lines run in seeded segments of varying length and level (the tiers no longer
+        # stack identical full-width lines)
+        u_ = -hs - 1.1
+        while u_ < hs + 1.1:
+            ln_ = 2.5 + 5.5 * rl_.random()
+            u2_ = min(u_ + ln_, hs + 1.1)
+            lvl_ = 0.5 + 0.9 * rl_.random()
+            fquad(A["trim"], f, hs + 1.25, u_, z1 - 1.2, u2_, z1 - 1.12, TEAL, LH["teal_k"] * lvl_)
+            lv2_ = 0.5 + 0.9 * rl_.random()
+            fquad(A["trim"], f, hs + 1.32, u_, z1 - 0.62, u2_, z1 - 0.5, CWHITE, LH["cove_k"] * 0.6 * lv2_)
+            u_ = u2_ + (1.2 + 3.5 * rl_.random() if rl_.random() < 0.65 else 0.0)       # dark gaps between the lit runs
+        u_ = -hs - 1.2                                  # v3 (R-REP-1): the glass parapet in runs of differing height
+        while u_ < hs + 1.2:
+            u2_ = min(u_ + 4.0 + 10.0 * rl_.random(), hs + 1.2)
+            fbox(A["glass"], f, hs + 1.05, hs + 1.2, u_, u2_, z1, z1 + 0.55 + 0.55 * rl_.random(), (0.05, 0.08, 0.09))
+            u_ = u2_
+        u_ = -hs - 1.2                                  # v3 (R-REP-1): the parapet's teal strip in seeded lit runs, not one long line
+        while u_ < hs + 1.2:
+            u2_ = min(u_ + 3.0 + 9.0 * rl_.random(), hs + 1.2)
+            if rl_.random() < 0.65:
+                fbox(A["small"], f, hs + 1.0, hs + 1.22, u_, u2_, z1 + 1.05, z1 + 1.15, TEAL,
+                     LH["teal_k"] * 0.5 * (0.5 + 0.9 * rl_.random()))
+            u_ = u2_
     for sx in (-1, 1):                                # teal corner reveals
         for sy in (-1, 1):
             box(A["trim"], sx * hs - 0.12, sy * hs - 0.12, z0 + 0.6, sx * hs + 0.12, sy * hs + 0.12, z1 - 1.3, TEAL,
@@ -735,9 +798,11 @@ for e in LY["all_edges"]:
         fbox(A["glass"], f, hs + 0.15, hs + 2.6, ua, ub, zz, zz + 3.4, (0.03, 0.05, 0.06))
         fbox(A["metal"], f, hs + 0.1, hs + 2.7, ua, ub, zz - 0.25, zz, (0.6, 0.62, 0.66))
         fquad(A["small"], f, hs + 2.72, ua, zz - 0.05, ub, zz + 0.05, TEAL, 4.0)
-        for s in range(int((ub - ua) / 1.8) + 1):
-            mu = ua + s * (ub - ua) / max(1, int((ub - ua) / 1.8))
+        rg_ = random.Random(9000 + int(ua * 10) + 100 * f)     # v3 (R-REP-1): mullions at seeded irregular gaps (mean 1.8 BU)
+        mu = ua
+        while mu <= ub + 0.01:
             fbox(A["metal"], f, hs + 2.58, hs + 2.68, mu - 0.06, mu + 0.06, zz, zz + 3.4, (0.7, 0.72, 0.75))
+            mu += 0.9 + 1.8 * rg_.random()
     elif t == "corner_stair":
         fa = NODES[a_id]["face"]
         fb = NODES[e["b"]]["face"]
@@ -1346,6 +1411,21 @@ def apply_frame(fr):
         _st = [KDT.occlusion_state(_oc, b_) for b_ in BLD]
         log("occlusion %s: flattened %d ghosted %d of %d" % (fr.get("name"), sum(1 for (z_, a_), b_ in zip(_st, BLD)
             if z_ < b_[2] - 0.5), sum(1 for (z_, a_) in _st if a_ < 0.6), len(BLD)))
+    if _oc and "occ_on" in _oc and BLD:           # PIPELINE_SPEC 7.1: the python twin counts occluders of the in-frame rooms + the band
+        import hq_cam as CR_
+        import hq_graph as G_
+        import occ_check as OC_
+        _pose = CR_.Pose.from_json(fr["pose"])
+        _ids = OC_.in_frame_rooms(G_, CR_, _pose)
+        _res = OC_.count(BLD, _oc, _pose, G_, _ids)
+        _res.update(frame=fr.get("name"), n_buildings=len(BLD))
+        if fr.get("band_pts"):
+            _res["band_occluders"] = OC_.count_band(BLD, _oc, _pose, [tuple(b_) for b_ in fr["band_pts"]])
+        _od = JOB.get("occ_dir") or "D:/rc_scratch/hq_fix/halcyon"
+        os.makedirs(_od, exist_ok=True)
+        json.dump(_res, open(os.path.join(_od, "occ_%s.json" % fr.get("name")), "w"), indent=1)
+        log("OCC %s rooms %d hit %d occluders %d band %s" % (fr.get("name"), _res["rooms"], _res["rooms_hit"], _res["buildings"],
+                                                          _res.get("band_occluders")))
     zoom = float(fr.get("zoom", 0.0))
     FOG_ZOOM.outputs[0].default_value = zoom
     FOG.update_tag()

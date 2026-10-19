@@ -18,10 +18,11 @@ from PIL import Image  # noqa: E402
 import hq_graph as G  # noqa: E402
 import hq_overlay as O  # noqa: E402
 import hq_post as PO  # noqa: E402
+import halcyon_preset as HP  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 SCR = os.path.join(ROOT, "scratch")
-BIG = r"D:\rc_scratch\halcyon"          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
+BIG = r"D:/rc_scratch/hq_fix/halcyon"          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
 os.makedirs(BIG, exist_ok=True)
 W0, H0 = 1920, 1080
 FLAT = 0.5
@@ -67,8 +68,13 @@ def stills(names=None, bl="bl_stills"):
         if not os.path.exists(stem + "_combined.npy"):
             print("missing", stem)
             continue
-        plate = PO.finish(stem, ov["zoom"], t=2.0)
-        sfx = "_v2"
+        e0 = PO.P["exposure"]
+        PO.P["exposure"] = e0 * 2.0 ** HP.PRESET["halcyon"].get("frame_stops", {}).get(name, 0.0)
+        try:
+            plate = PO.finish(stem, ov["zoom"], t=2.0)
+        finally:
+            PO.P["exposure"] = e0
+        sfx = "_v3"
         plate.save(os.path.join(ROOT, "plates", name + sfx + "_plate.png"))
         img = compose(plate, ov)
         img.save(os.path.join(ROOT, name + sfx + ".png"))

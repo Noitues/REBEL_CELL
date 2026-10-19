@@ -23,12 +23,13 @@ import halcyon_preset as HP  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 SCR = os.path.join(ROOT, "scratch")
-BIG = r"D:\rc_scratch\hq_rev\halcyon"   # HQ_REV_V2 (v1 passes: D:\rc_scratch\halcyon)          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
+BIG = r"D:/rc_scratch/hq_fix/halcyon"   # HQ_REV_V2 (v1 passes: D:\rc_scratch\halcyon)          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
 os.makedirs(BIG, exist_ok=True)
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 QUAL = {
     "final": dict(res=[2560, 1440], samples=128, threshold=0.01, step_rate=1.0),
     "video": dict(res=[1280, 720], samples=24, threshold=0.04, step_rate=2.0),
+    "t2k": dict(res=[2560, 1440], samples=24, threshold=0.03, step_rate=2.0),     # geometry iteration at the finals' resolution
     "test": dict(res=[1280, 720], samples=32, threshold=0.04, step_rate=2.0),
     "mini": dict(res=[640, 360], samples=16, threshold=0.06, step_rate=3.0),
     "eevee": dict(res=[960, 540], samples=24, engine="EEVEE"),       # HQ_REV_V2 layout preview
@@ -65,10 +66,21 @@ def frame(name, pose, walked, zoom, hover=None, hover_k=0.0, eye=None, step=None
         from hq_kit import downtown as KDT
         # v3: the OCCLUSION rule (flatten, then ghost): the cone from the camera to the active room + the visible
         # route nodes (overview: every route node)
+        # PIPELINE_SPEC 7.1 rules 0-1 (v3): every route room in frame that faces the camera, plus the current room + options, plus
+        # (DECISION / HOVER) the face band of the current level
+        import occ_check as OC
         ids = [i for i in [walked[-1]] + list(opts) if i != "start"]
         if zoom < 0.5:
             ids = [i for i in G.NODES if i != "start"]
+        else:
+            for i in OC.in_frame_rooms(G, CR, pose):
+                if i not in ids:
+                    ids.append(i)
         pts = [c for i in ids for c in G.room_front(i)]
+        if zoom >= 0.5:
+            band = G.band_points(walked, pose)
+            fr["band_pts"] = [list(b) for b in band]
+            pts = pts + band
         if pts:
             fr["section"] = KDT.occlusion_params(pose.loc(), pts, dtc)
     if hover and hover_k > 0.5:

@@ -1,0 +1,13 @@
+{
+ "median": 0.0700894147157669,
+ "under_010": 0.5732321506076389,
+ "over_085": 0.002328559027777778,
+ "occluders": {
+  "rooms_in_frame": 7,
+  "rooms_hit": 0,
+  "buildings_above_stub": 0,
+  "band_occluders": 0,
+  "pad_px": 12,
+  "per_room": {}
+ }
+}

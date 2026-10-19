@@ -63,8 +63,10 @@ PRESET["halcyon"] = {
     # ------------------------------------------------------------ corporate searchlights ("civic order")
     "civic_beams": {"tiers": [0, 3], "podium": True, "cone": 1.1, "power": 3.0e7, "lean": (0.10, 0.34),
                     "lean_y": 0.12, "twin": 0.25},
+    # v3 (handoff queue 5): per-frame exposure trims in stops, read by hq_compose.stills / fix_post (OVERVIEW: under 0.10 46 % -> <= 40 %)
+    "frame_stops": {"H_overview": 0.2},
     # ------------------------------------------------------------ the compound's own lighting
-    "light": {"uplight_w": 320.0, "uplight_cone": 70.0, "cove_k": 2.2, "teal_k": 2.6, "room_k": 1.0, "room_w": 3200.0,
+    "light": {"uplight_w": 320.0, "uplight_cone": 70.0, "cove_k": 1.4, "teal_k": 1.6, "room_k": 1.0, "room_w": 3200.0,
               "lockdown_k": 2.2, "plinth_wash": 400.0, "slit_k": 0.2, "sign_k": 0.12,
               "cityglow_k": 0.15, "city_beam_k": 0.8, "bank_glow": 4000.0, "shop_w": 900.0},
     # ------------------------------------------------------------ the Cell's city: a procedural 360 degree ring

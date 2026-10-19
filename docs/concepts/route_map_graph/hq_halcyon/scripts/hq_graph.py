@@ -8,6 +8,7 @@ Halcyon config: rows 6-5-4-3-2-1 (round 43), path "spiral" from the south face, 
 max 2; the scan rule is the LIGHTHOUSE (a 90 degree sector turning 45 degrees a step, clockwise: watch type
 "lighthouse", phase 0). Consequence word: preset halcyon.eye.consequence ("spotted" | "blocked").
 """
+import math
 import os
 import sys
 
@@ -88,3 +89,43 @@ if __name__ == "__main__":
         print(name, "current", w[-1], "options", opts, "eye az", f, "scanned", sc, "shortcuts used",
               shortcuts_used(w), "grey", [n for n in NODES if st[n] == "grey"])
     print("eye", eye_pos(), "start", start_pos())
+
+
+BAND_STEP_DEG = 3.0
+
+
+def band_points(walked, pose=None, w=2560):
+    """PIPELINE_SPEC 7.1 rule 1 (extended): the FACE BAND of the current level. Points on the face of the tier holding the
+    current room and its options (the landmark's face outline at that tier: the square of half_size), at room floor and
+    room-top height, every 3 degrees seen from the centre, on faces that look at the camera, kept when they project in frame."""
+    import math
+    cur = walked[-1]
+    st, opts = states(walked)
+    ids = [i for i in [cur] + list(opts) if i != "start" and i in ROW]
+    tiers_ = sorted({C.tier_of(i) for i in ids})
+    pts = []
+    for r in tiers_:
+        hs = half_size(r)
+        z0 = room_z(next(i for i in ids if C.tier_of(i) == r))[0]
+        for k in range(int(360.0 / BAND_STEP_DEG)):
+            a = math.radians(k * BAND_STEP_DEG)
+            dx, dy = math.sin(a), math.cos(a)
+            m = max(abs(dx), abs(dy))
+            x, y = dx / m * hs, dy / m * hs
+            for z in (z0, z0 + RH):
+                p_ = (x, y, z)
+                if pose is not None:
+                    face = max(range(4), key=lambda f_: N[f_][0] * x + N[f_][1] * y)
+                    if not pose_visible(face, pose):
+                        continue
+                    q = pose.proj(p_, w=w)
+                    if q is None or not (0 <= q[0] <= w and 0 <= q[1] <= w * 9 / 16):
+                        continue
+                pts.append(p_)
+    return pts
+
+
+def pose_visible(face, pose):
+    c = pose.loc()
+    n = N[face]
+    return (n[0] * c[0] + n[1] * c[1]) / max(math.hypot(c[0], c[1]), 1e-6) > 0.12

@@ -1,23 +1,16 @@
 {
  "checks": {
-  "baseline": [
-   "R-VAL-2"
-  ],
+  "baseline": [],
   "exempt": {
    "flash": false,
    "hover_cut": false,
    "red_seq": false
   },
   "notes": {
-   "id_alignment": "class-variance share / shifted-class share = 1.2267 (above 1 = the index pass matches this beauty plate)",
-   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [947, 238, 2094, 1290]"
+   "id_alignment": "class-variance share / shifted-class share = 1.1649 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [947, 238, 2094, 1280]"
   },
-  "pre_accepted": [
-   {
-    "check": "R-VAL-1",
-    "note": "approved HQ overview plate median 0.109, pre-accepted 2026-10-18 (12.8)"
-   }
-  ],
+  "pre_accepted": [],
   "report_only": [
    "R-CALM-1",
    "R-CALM-2"
@@ -34,22 +27,22 @@
    "R-REP-1": "pass",
    "R-SIL-1": "n/a",
    "R-SIL-2": "n/a",
-   "R-VAL-1": "warn",
-   "R-VAL-2": "fail",
+   "R-VAL-1": "pass",
+   "R-VAL-2": "pass",
    "R-VAL-3": "pass",
    "landmark_ratio": "warn"
   }
  },
  "composition": {
-  "R-CALM-1": 0.2884,
-  "R-CALM-2": 0.0364,
+  "R-CALM-1": 0.3089,
+  "R-CALM-2": 0.0636,
   "R-DET-1": null,
   "R-DET-2": null,
-  "R-FOCUS-1": 2.4473,
+  "R-FOCUS-1": 2.6317,
   "R-HOR-1": null,
   "R-HUE-1": null,
   "R-HUE-2": null,
-  "R-REP-1": 0.3708,
+  "R-REP-1": 0.2763,
   "R-SIL-1": null,
   "R-SIL-2": null
  },
@@ -60,10 +53,10 @@
   "run_graph.json": null,
   "zoned.json": null
  },
- "median": 0.1087,
- "over_085": 0.0023,
- "ratio_mean": 3.9967,
- "ratio_median": 3.1907,
- "ratio_peak": 7.2358,
- "under_010": 0.4635
+ "median": 0.1271,
+ "over_085": 0.0022,
+ "ratio_mean": 3.3719,
+ "ratio_median": 2.6221,
+ "ratio_peak": 6.2132,
+ "under_010": 0.3883
 }

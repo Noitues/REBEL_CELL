@@ -41,9 +41,9 @@
  ],
  "run": null,
  "source": {
-  "commit": "46d161ce",
-  "final": "route_map_graph/hq_halcyon/plates/H_overview_v2_plate.png",
-  "index_pass": "hq_rev/halcyon/bl_stills/H_overview_index.npy",
+  "commit": "untracked",
+  "final": "route_map_graph/hq_halcyon/plates/H_overview_v3_plate.png",
+  "index_pass": "hq_fix/halcyon/bl_stills/H_overview_index.npy",
   "index_pass_indices": [
    0,
    1,
