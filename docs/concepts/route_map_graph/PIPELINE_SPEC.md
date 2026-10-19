@@ -801,7 +801,7 @@ spike from a tier swap.
 | `YAW_MAX` | 24 deg; `yaw(u) = 24 (1 - 2u)`, `u = layer / (TARGET layer - 1)` | `V3D/cam_rig.py:30, 146-147` |
 | `PITCH_D`, `LENS_D` | 9 deg, 30 mm | `:31-32` |
 | `FILL_W`, `FILL_H` | 0.66, 0.70 | `:33` |
-| `LOOK_BIAS` | 0.10; bias = -0.10 yaw / 24 | `:34` |
+| `LOOK_BIAS` | 0.10; bias = +sgn x 0.10 (the derive sign; verified by `golden_plates/look_bias_check.jpg`, AD 2026-10-18; the old `-0.10 yaw / 24` of `cam_rig.py` is withdrawn) | `:34` |
 | `HOVER_PULL`, `HOVER_YAW`, `HOVER_DOLLY` | 0.22, 3 deg, 0.96 | `:35` |
 | `OV_YAW_K`, `PITCH_O`, `LENS_O`, `FILL_OW`, `FILL_OH` | 0.3, 6 deg, 40 mm, 0.95, 0.90 | `:36` |
 | `T_STEP`, `T_HOVER_IN`, `T_HOVER_OUT` | 0.9 s, 0.30 s (ease-out cubic), 0.35 s (smoothstep) | `:37` |
@@ -1522,13 +1522,15 @@ Plates with no landmark in frame (street) report `ratio_median`, `ratio_mean` an
 | Over 0.85 (R-VAL-3) | <= 2.5 % | - | above |
 | Landmark ratio (12.2) | 1.5-2.0 | above 2.0 | below 1.5 |
 
-The city day plate is not held to the 0.14 band. Its median target is 0.25 (3.7). Its values are recorded and compared with the capture, and reported only until the AD sets a day band. Exempt frames (12.1) are recorded and not failed.
+The city day plate is not held to the 0.14 band. Its median target is 0.25 (3.7). Its values are recorded and compared with the capture, and reported only until the AD sets a day band. This covers the landmark ratio too: by day it is reported, never a fail or a baseline item (AD 2026-10-18). Exempt frames (12.1) are recorded and not failed.
 
 **Pre-accepted warns.** These stay warns on the plate and on captures of it. They are reported, and they do not block or raise a new item:
 
 | Plate | Warn | Accepted |
 |---|---|---|
-| `hq_tethys_overview` | landmark ratio peak 3.7x (above 2.0) | 2026-10-18 |
+| `hq_tethys_overview` | none any more: with the id.png mask the ratio is 1.81 (pass); the old disc-mask peak 3.7x is superseded | 2026-10-18 |
+| `hq_tethys_decision` | landmark ratio 2.02 (above 2.0) | 2026-10-18 |
+| `city_a2_night` | landmark ratio 2.80 (above 2.0; key art) | 2026-10-18 |
 | `hq_solace_overview`, `hq_solace_decision` | landmark ratio 2.56x (above 2.0) | pre-accepted (Solace 2.8x accepted 2026-10-16, Q5) |
 | the approved HQ overview plate (`decisions/DECISIONS.md` Q4) | median 0.109 (warn band 0.09-0.11) | pre-accepted |
 
