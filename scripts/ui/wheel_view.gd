@@ -2288,6 +2288,7 @@ func _draw_view() -> void:
 	if not replaying and attachments == null:
 		_draw_ghost(center, radius, wheel)
 		_draw_inner_ghost(center, radius, wheel)
+	if not replaying:
 		_draw_unknown_ghost(center, radius, wheel)
 	if flip_squash < 1.0:
 		draw_set_transform(Vector2.ZERO)
