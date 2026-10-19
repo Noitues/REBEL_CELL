@@ -34,7 +34,6 @@
  "layout_seed": null,
  "look": null,
  "pending": [
-  "id.png: the city render writes rgb/emit/z passes only, no Object Index (landmark classes 1/6, city 2, sky 0); re-render with the pass",
   "camera.ortho: 12.8 asks yaw 135 / pitch 40 ortho; the plate is the perspective hero frame, AD to confirm which the build session should match",
   "layout_seed, run id, anim_t, inputs hashes: city A2 predates derive v2"
  ],
@@ -46,8 +45,13 @@
  "source": {
   "commit": "199a450e",
   "final": "city_all_corps/city_all_corps_day.png",
-  "index_pass": null,
-  "index_pass_indices": null,
+  "index_pass": "city_all_corps/idpass/hero_day_index.npy (ID re-render 2026-10-18: city_render.py + city_idpass.py, same cameras, 80 spp)",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4
+  ],
   "pose": "D:/rc_scratch/city_all_corps/a2final/hero_day.log (CAM line) + city_preset.CAMS['hero']",
   "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
  },

@@ -1,0 +1,61 @@
+{
+ "anim_t": null,
+ "art_seeds": null,
+ "camera": {
+  "dist": 464.6456,
+  "lens": 36.0,
+  "loc": [
+   -128.5675,
+   -347.2363,
+   303.1118
+  ],
+  "ortho": false,
+  "pitch": 36.0,
+  "shift_x": -0.0768,
+  "shift_y": -0.0046,
+  "tgt": [
+   0.0,
+   6.0,
+   30.0
+  ],
+  "yaw": 20.0,
+  "zoom_detail": null,
+  "zoom_dive": null,
+  "zoom_job": 0.0
+ },
+ "corp": "aurelian",
+ "exempt": {
+  "flash": false,
+  "hover_cut": false,
+  "red_seq": false
+ },
+ "kind": "hq",
+ "layout_seed": null,
+ "look": "aaa2",
+ "pending": [
+  "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
+ ],
+ "resolution": [
+  2560,
+  1440
+ ],
+ "run": null,
+ "source": {
+  "commit": "c8f41aa6",
+  "final": "route_map_graph/hq_aurelian/plates/H_overview_v1_plate.png",
+  "index_pass": "aurelian/big/bl_stills/H_overview_index.npy",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   7
+  ],
+  "pose": "route_map_graph/hq_aurelian/scratch/ov_stills.json[H_overview] (job_stills_final_0.json holds the same pose)",
+  "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
+ },
+ "stem": "hq_aurelian_overview",
+ "version": 1,
+ "view": "overview"
+}

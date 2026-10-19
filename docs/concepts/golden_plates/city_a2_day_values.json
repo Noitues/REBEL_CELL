@@ -2,7 +2,8 @@
  "checks": {
   "baseline": [
    "R-HUE-1",
-   "R-HUE-2"
+   "R-HUE-2",
+   "landmark_ratio"
   ],
   "exempt": {
    "flash": false,
@@ -11,7 +12,8 @@
   },
   "notes": {
    "R-VAL-1": "day plate: median target 0.25 (3.7); recorded and reported only until the AD sets a day band",
-   "landmark_ratio": "no id pass: ratio_median is null"
+   "id_alignment": "class-variance share / shifted-class share = 0.1494 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [834, 500, 3236, 1754]"
   },
   "pre_accepted": [],
   "report_only": [],
@@ -30,7 +32,7 @@
    "R-VAL-1": "n/a",
    "R-VAL-2": "n/a",
    "R-VAL-3": "n/a",
-   "landmark_ratio": "n/a"
+   "landmark_ratio": "fail"
   }
  },
  "composition": {
@@ -55,8 +57,8 @@
  },
  "median": 0.2501,
  "over_085": 0.0006,
- "ratio_mean": null,
- "ratio_median": null,
- "ratio_peak": null,
+ "ratio_mean": 1.3395,
+ "ratio_median": 1.1977,
+ "ratio_peak": 3.8151,
  "under_010": 0.0834
 }

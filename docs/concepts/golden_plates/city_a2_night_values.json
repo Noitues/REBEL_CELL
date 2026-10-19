@@ -10,7 +10,8 @@
    "red_seq": false
   },
   "notes": {
-   "landmark_ratio": "no id pass: ratio_median is null"
+   "id_alignment": "class-variance share / shifted-class share = 1.9492 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [834, 500, 3236, 1813]"
   },
   "pre_accepted": [],
   "report_only": [],
@@ -29,7 +30,7 @@
    "R-VAL-1": "pass",
    "R-VAL-2": "pass",
    "R-VAL-3": "pass",
-   "landmark_ratio": "n/a"
+   "landmark_ratio": "warn"
   }
  },
  "composition": {
@@ -54,8 +55,8 @@
  },
  "median": 0.155,
  "over_085": 0.0091,
- "ratio_mean": null,
- "ratio_median": null,
- "ratio_peak": null,
+ "ratio_mean": 2.9542,
+ "ratio_median": 2.799,
+ "ratio_peak": 5.9297,
  "under_010": 0.2757
 }

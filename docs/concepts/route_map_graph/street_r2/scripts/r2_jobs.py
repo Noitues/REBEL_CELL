@@ -42,7 +42,7 @@ LOOK.update(haze=A_["sky_haze"], back_haze=A_["back_haze"], back_haze_band=list(
 
 
 def out_dir(seed):
-    return os.path.join(SCR, "render_s%s" % seed)
+    return os.environ.get("R2_OUT") or os.path.join(SCR, "render_s%s" % seed)      # R2_OUT: keep the finals, e.g. an index-only re-render
 
 
 def job_block(seed, frames, spp):

@@ -543,9 +543,10 @@ LIT_RAMP = next(n_ for n_ in _nt.nodes if n_.type == "VALTORGB")
 lito = LIT.obj(LITM)
 BEAM.bm.free()                                   # translucent light cones: off in this all-city still
 EYE_SOLIDS = []
+EYE_NEON_OBJS = []
 for _s, _n in EYE_STATIC:
     EYE_SOLIDS.append(_s.obj(TOON))
-    _n.obj(NEONM)
+    EYE_NEON_OBJS.append(_n.obj(NEONM))
 anim_objs = [a.obj(NEONM) for a in ANIM_ACCS]
 move_objs = [dict(solid=g["solid"].obj(TOON), lit=g["lit"].obj(LITM), neon=g["neon"].obj(NEONM)) for g in MOVE_FRAMES]
 eye_objs = [EYE_ACC["solid"].obj(TOON), EYE_ACC["neon"].obj(NEONM)] if EYE_ACC else []
@@ -751,6 +752,34 @@ def override_pos(kind):  # noqa: F811
     m = _ovp0(kind)
     section(m)
     return m
+
+
+# ------------------------------------------------------------------ ID pass (golden plates 12.8): Object Index by class
+# 0 sky (the world), 1 landmark compound (the five HQs, the Cell's base, the megastructure), 2 city, 4 ground, 5 rooms,
+# 6 movers, 7 light streaks; same numbers as hq_scene.py, make_plate.py maps 7 to 4. r2_cycles.py exports the pass.
+def _idpass():
+    cls = {}
+
+    def put(c, objs):
+        for o in objs:
+            if o is not None:
+                cls[o] = c
+    put(1, [solid, neon, win, lito] + eye_objs + EYE_SOLIDS + EYE_NEON_OBJS + list(MEGA_OBJS))
+    put(2, [cityo, cneono, cwino, cglasso, cpanelo] + list(LAMP_OBJS))
+    for so in SIGN_OBJS:
+        for t_ in ("t1", "t2", "t3"):
+            put(2, so[t_])
+    put(4, [groundo])
+    put(7, [glaneo])
+    put(5, [RB_OBJ, RBW_OBJ, RBN_OBJ, RBG_OBJ, RBP_OBJ, CROWN_OBJ, RINT_OBJ, RPAN_OBJ])
+    for tup in WALL_OBJS.values():
+        put(5, tup)
+    put(6, list(anim_objs) + [o for g in move_objs for o in g.values()])
+    for o, c in cls.items():
+        o.pass_index = c
+
+
+_idpass()
 
 
 if JOB_OC.get("mode") == "cycles":

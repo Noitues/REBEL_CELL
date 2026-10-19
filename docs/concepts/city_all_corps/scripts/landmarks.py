@@ -571,6 +571,9 @@ def landmark_from_module(corp, path):
     return tuple(r_["label"]), (tuple(r_["crown"]) if r_.get("crown") else None), tuple(r_["hue"])
 
 
+sys.path.insert(0, HERE)
+import city_idpass as _IDP  # noqa: E402  (ID pass: the faces added from here on are the landmark compound)
+LMK_MARK = _IDP.face_counts(globals())
 BUILTIN_LM = (("halcyon", halcyon), ("meridian", meridian), ("solace", solace), ("orbital", orbital),
               ("aurelian", aurelian), ("tethys", tethys), ("rebel_cell", rebel_cell))
 for _k, _fn in BUILTIN_LM:

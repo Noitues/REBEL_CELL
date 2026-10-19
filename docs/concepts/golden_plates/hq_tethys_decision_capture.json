@@ -33,7 +33,6 @@
  "layout_seed": null,
  "look": "aaa2",
  "pending": [
-  "id.png: the Tethys pipeline writes rgb/emit/z passes only, no Object Index; re-render with the pass",
   "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"
  ],
  "resolution": [
@@ -44,8 +43,14 @@
  "source": {
   "commit": "fd462c07",
   "final": "route_map_graph/hq_tethys/H_decision_v2_plate.png",
-  "index_pass": null,
-  "index_pass_indices": null,
+  "index_pass": "tethys/idpass/t_dec_aaa_index.npy (ID re-render 2026-10-18: tethys_build.py + city_idpass.py, same cameras, spp 40, beauty median unchanged)",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   6
+  ],
   "pose": "tethys_preset.CAMS t_over / t_dec (layout yaw converted to rig: rig = 90 - layout)",
   "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
  },

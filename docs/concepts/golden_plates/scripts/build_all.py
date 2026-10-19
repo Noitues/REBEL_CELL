@@ -125,16 +125,22 @@ def entries():
                loc_note="exact from tethys_preset.CAMS['t_dec'] (target_xy, layout yaw 118 -> rig -28); render log: loc (-289,192,91) tgt (-340,288,0)")
     for view, pngn, cam in (("overview", "H_overview_v2_plate.png", ov), ("decision", "H_decision_v2_plate.png", dec)):
         png = os.path.join(RMG, "hq_tethys", pngn)
+        tcam = "t_over" if view == "overview" else "t_dec"
         e = dict(stem="hq_tethys_" + view, kind="hq", view=view, corp="tethys", beauty=png, look="aaa2", exempt=NO_FLASH, camera=cam,
-                 index=None, accepted=t_acc if view == "overview" else [],
+                 index=SCR + "tethys/idpass/%s_aaa_index.npy" % tcam, accepted=t_acc if view == "overview" else [],
                  source=dict(final="route_map_graph/hq_tethys/" + pngn, commit=git_commit(png),
                              pose="tethys_preset.CAMS t_over / t_dec (layout yaw converted to rig: rig = 90 - layout)",
-                             index_pass=None, yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
-                 pending=["id.png: the Tethys pipeline writes rgb/emit/z passes only, no Object Index; re-render with the pass",
-                          "layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"])
-        e.update(tethys_extra(pngn))
+                             index_pass="tethys/idpass/%s_aaa_index.npy (ID re-render 2026-10-18: tethys_build.py + city_idpass.py, same cameras, spp 40, beauty median unchanged)" % tcam,
+                             yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
+                 pending=["layout_seed, run id, anim_t, fixture run_graph and inputs hashes: no derive run exists for this render"])
+        e["extra_values_note"] = "ratio_peak 3.72 / 3.10 and ratio_mean 1.88 / 1.57 of the 2026-10-17 post_tethys disc mask are superseded by the id-class ratios"
         E.append(e)
-    # Aurelian: pending (no _v1 finals; only Eevee/Cycles test rounds)
+    # Aurelian v1 finals (2560 x 1440, Cycles 64 spp); index passes from the same final run
+    aur = [{"check": "landmark_ratio", "note": "Aurelian ratios 2.2-2.5 above 2.0 are warns, accepted like Solace (AD 2026-10-18)"}]
+    E.append(hq_entry("aurelian", "overview", "hq_aurelian/plates/H_overview_v1_plate.png", "hq_aurelian", "H_overview",
+                      "aurelian/big/bl_stills/H_overview", accepted=aur))
+    E.append(hq_entry("aurelian", "decision", "hq_aurelian/plates/H_decision_v1_plate.png", "hq_aurelian", "H_decision",
+                      "aurelian/big/bl_stills/H_decision", accepted=aur))
     # Street (rule-based street_r2, 1920 x 1080): poses from the render job; no Object Index pass was written
     sj = json.load(open(SCR + "street_r2/job_finals_s1_ov_closed_dec_closed.json"))
     sp = {f["name"]: f for f in sj["frames"]}
@@ -145,12 +151,12 @@ def entries():
         cam["yaw_note"] = "yaw / pitch / dist derived from loc and tgt (the job stores loc, tgt, lens, sx, sy only)"
         png = os.path.join(RMG, "street_r2", "plates", pngn)
         E.append(dict(stem="street_" + view, kind="street", view=view, corp="", beauty=png, look="aaa2", exempt=NO_FLASH, camera=cam,
-                      index=None, accepted=[],
+                      index=SCR + "idpass/street/%s_index.npy" % fr, accepted=[],
                       source=dict(final="route_map_graph/street_r2/plates/" + pngn, commit=git_commit(png),
                                   pose="D:/rc_scratch/street_r2/job_finals_s1_ov_closed_dec_closed.json frame %s (art seed 1, walls closed); storyboard t %s" % (fr, sp[fr].get("t")),
-                                  index_pass=None, yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
-                      pending=["id.png: street_r2 writes albedo/emit/z/combined only, no Object Index; re-render with the pass",
-                               "layout_seed (art seed 1 is recorded in source, the 12.8 decimal u64 is not), run id, anim_t, run_graph, inputs hashes: street_r2 predates derive v2"]))
+                                  index_pass="idpass/street/%s_index.npy (ID re-render 2026-10-18: r2_scene.py _idpass, same seed 1, cameras and 40 spp)" % fr,
+                                  yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
+                      pending=["layout_seed (art seed 1 is recorded in source, the 12.8 decimal u64 is not), run id, anim_t, run_graph, inputs hashes: street_r2 predates derive v2"]))
     # City A2 hero frames (3840 x 2160): camera from the render log + CAMS['hero'] of city_preset.py (A2 mode)
     cam = dict(loc=[12.0, -960.0, 615.0], tgt=[12.0, -12.0, 0.0], yaw=0.0, pitch=33.0, dist=1130.0, lens=28.0, shift_x=0.0, shift_y=0.0,
                loc_note="loc / tgt are the render log's CAM line (rounded to 1 BU); lens, pitch, dist, shift from CAMS['hero'] (A2 mode: layout yaw 90 -> rig 0, target_ab (2,-2))",
@@ -158,11 +164,12 @@ def entries():
     for view, pngn, logn, look in (("night", "city_all_corps_night.png", "hero_aaa.log", "aaa2"), ("day", "city_all_corps_day.png", "hero_day.log", None)):
         png = os.path.join(C, "city_all_corps", pngn)
         E.append(dict(stem="city_a2_" + view, kind="city", view="city", corp="", beauty=png, look=look, exempt=NO_FLASH, camera=cam,
-                      index=None, accepted=[], day=(view == "day"),
+                      index=SCR + "city_all_corps/idpass/hero_%s_index.npy" % ("aaa" if view == "night" else "day"), accepted=[], day=(view == "day"),
                       source=dict(final="city_all_corps/" + pngn, commit=git_commit(png),
                                   pose="D:/rc_scratch/city_all_corps/a2final/%s (CAM line) + city_preset.CAMS['hero']" % logn,
-                                  index_pass=None, yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
-                      pending=["id.png: the city render writes rgb/emit/z passes only, no Object Index (landmark classes 1/6, city 2, sky 0); re-render with the pass",
+                                  index_pass="city_all_corps/idpass/hero_%s_index.npy (ID re-render 2026-10-18: city_render.py + city_idpass.py, same cameras, 80 spp)" % ("aaa" if view == "night" else "day"),
+                                  yaw_convention="rig: 0 = north, clockwise; Blender world BU"),
+                      pending=[
                                "camera.ortho: 12.8 asks yaw 135 / pitch 40 ortho; the plate is the perspective hero frame, AD to confirm which the build session should match",
                                "layout_seed, run id, anim_t, inputs hashes: city A2 predates derive v2"]))
     return E

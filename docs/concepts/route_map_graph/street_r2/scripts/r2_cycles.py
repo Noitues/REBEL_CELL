@@ -714,6 +714,7 @@ scene.view_settings.view_transform = "Standard"
 vl = bpy.context.view_layer
 vl.use_pass_z = True
 vl.use_pass_emit = True
+vl.use_pass_object_index = True
 vl.cycles.denoising_store_passes = True
 im = scene.render.image_settings
 im.media_type = "MULTI_LAYER_IMAGE"
@@ -724,7 +725,7 @@ scene.render.resolution_percentage = 100
 
 def _exr_npy(path, stem):
     import OpenImageIO as oiio
-    want = {"Combined": "combined", "Emission": "emit", "Denoising Albedo": "albedo", "Depth": "z"}
+    want = {"Combined": "combined", "Emission": "emit", "Denoising Albedo": "albedo", "Depth": "z", "Object Index": "index"}
     inp = oiio.ImageInput.open(path)
     k = 0
     while inp.seek_subimage(k, 0):
@@ -735,6 +736,8 @@ def _exr_npy(path, stem):
             px = _np.asarray(inp.read_image(k, 0, 0, spec.nchannels, "float")).reshape(spec.height, spec.width, spec.nchannels)
             if pas == "Depth":
                 _np.save(stem + "_z.npy", px[..., :1].astype(_np.float32))
+            elif pas == "Object Index":
+                _np.save(stem + "_index.npy", px[..., :1].astype(_np.float32))
             else:
                 _np.save(stem + "_" + want[pas] + ".npy", px[..., :3].astype(_np.float16))
         k += 1
@@ -900,6 +903,12 @@ for o in scene.objects:
     if o.type == "LIGHT" and not o.name.startswith("oc_"):
         o["oc_off"] = True
 
+# ID pass: what r2_scene._idpass did not classify and is a surface (traffic lanes, beam shafts, steam plumes) is a light streak (7);
+# the fog and haze volumes keep 0 (no surface hit)
+for _o in scene.objects:
+    if _o.type == "MESH" and _o.pass_index == 0 and not _o.name.startswith(("oc_fog", "oc_haze", "r2_haze")):
+        _o.pass_index = 7
+print("R2 ID classes", {c_: sorted(o.name for o in scene.objects if o.type == "MESH" and o.pass_index == c_)[:40] for c_ in (0, 1, 2, 4, 5, 6, 7)}, flush=True)
 for fr in OCJ["frames"]:
     t0 = _tm.time()
     pz = fr["persp"]

@@ -694,10 +694,22 @@ else:
               glass=mat_transp_main("glass_main", (0.45, 0.7, 0.95), 0.35), ground=mat_toon_main("ground_main", False, True),
               seabed=mat_toon_main("seabed_main", False, True), water=mat_transp_main("water_main", (0.05, 0.16, 0.36), 0.42))
     MS["bill"] = MS["neon"]
+# ID pass (golden plates 12.8): carve the landmark faces (marked in landmarks.py) out of the merged accumulators so that
+# every object has one class; the geometry and the materials are unchanged, so the beauty is too
+sys.path.insert(0, HERE)
+import city_idpass as IDP  # noqa: E402
+ID_SPLIT = IDP.carve_all(globals(), LMK_MARK) if "LMK_MARK" in globals() else {}
 OBJ = dict(surf=SURF.obj(MS["surf"]), smooth=SMOOTH.obj(MS["surf"]), neon=NEON.obj(MS["neon"]), streak=STREAK.obj(MS["streak"]),
            glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), terrain=TERR.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]),
            bill=BILL.obj(MS["bill"]))
 OBJ["water"].visible_shadow = False
+_ID_MAT = dict(smooth="surf", terrain="ground")
+ID_OBJ = {g_: {k_: a_.obj(MS[_ID_MAT.get(k_, k_)]) for k_, a_ in d_.items()} for g_, d_ in ID_SPLIT.items()}
+for _d in ID_OBJ.values():
+    for _k, _o in _d.items():
+        if _k in ("glass", "water"):
+            _o.visible_shadow = False
+IDP.set_classes(OBJ, ID_OBJ)
 if os.environ.get("CITY_DBG_RED"):
     for _acc in (SURF, SMOOTH, GLASS, GROUND, SEABED, NEON, WATER, STREAK, BILL):
         for _i, _f in enumerate(_acc.F):
@@ -729,6 +741,7 @@ for si, (corners, img_path) in enumerate(SIGNS):
     me_s.materials.append(ms)
     ob_s = bpy.data.objects.new("sign_%d" % si, me_s)
     scene.collection.objects.link(ob_s)
+    ob_s.pass_index = IDP.LANDMARK          # the MAINFRAME blade sign belongs to the landmark compound
 OBJ["glass"].visible_shadow = False
 if os.environ.get("CITY_NOWATER"):          # debug: the drowned quarter without its water surface
     OBJ["water"].hide_render = True
@@ -1071,6 +1084,9 @@ if CYC:
                   rot=Vector((tl, -tl * 0.5, -1.0)).normalized().to_track_quat("-Z", "Y").to_euler(), spot=SH["cone"], blend=0.4, shadow=False)
         o.light_linking.receiver_collection = rx_w
     rx_w.objects.link(OBJ["seabed"])
+    for _d in ID_OBJ.values():
+        if "seabed" in _d:
+            rx_w.objects.link(_d["seabed"])
     # the media are lit by their own lights only (r3: city glow and beams light the fog; the shafts light the water):
     # the moon and the sky skip both volumes, so the water is not a moonlit milk
     ex = bpy.data.collections.new("moon_excl")
@@ -1172,6 +1188,7 @@ if CYC:
     vl = bpy.context.view_layer
     vl.use_pass_z = True
     vl.use_pass_emit = True
+    vl.use_pass_object_index = True
     im = scene.render.image_settings
     im.media_type = "MULTI_LAYER_IMAGE"
     im.file_format = "OPEN_EXR_MULTILAYER"
@@ -1217,8 +1234,9 @@ def exr_npy(path, stem, want):
             groups.setdefault(pas, []).append(ci)
         for pas, idx in groups.items():
             if pas in want:
-                arr = px[..., idx[:3]] if pas != "Depth" else px[..., idx[:1]]
-                _np.save(stem + "_" + want[pas] + ".npy", arr.astype(_np.float32 if pas == "Depth" else _np.float16))
+                one = pas in ("Depth", "Object Index")
+                arr = px[..., idx[:1]] if one else px[..., idx[:3]]
+                _np.save(stem + "_" + want[pas] + ".npy", arr.astype(_np.float32 if one else _np.float16))
                 got.append(pas)
         k += 1
     inp.close()
@@ -1248,7 +1266,7 @@ t1 = time.time()
 scene.render.filepath = stem + ".exr"
 bpy.ops.render.render(write_still=True)
 print("TIME render %s %.1f s (build %.1f s)" % (stem, time.time() - t1, t1 - T0), flush=True)
-exr_npy(stem + ".exr", stem, {"Combined": "rgb", "Emit": "emit", "Emission": "emit", "Depth": "z"})
+exr_npy(stem + ".exr", stem, {"Combined": "rgb", "Emit": "emit", "Emission": "emit", "Depth": "z", "Object Index": "index"})
 if MODE == "main":
     # ink passes: normals and building ids as flat emission (material override), PNG
     def ov(kind):

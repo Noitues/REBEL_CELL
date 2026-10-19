@@ -31,6 +31,11 @@ import occlusion as OC  # noqa: E402
 import tethys_quarter as TQ  # noqa: E402
 import tethys_landmark as TL  # noqa: E402
 
+# ID pass (golden plates 12.8): Object Index pass by class, same mapping and export as hq_scene.py. The helper lives with the
+# city scripts (city_all_corps/scripts/city_idpass.py); city_base is still never edited, the render source is patched at run time.
+sys.path.insert(2, os.path.normpath(os.path.join(HERE, "..", "..", "..", "city_all_corps", "scripts")))
+import city_idpass as IDP  # noqa: E402
+
 T0 = time.time()
 _argv = sys.argv[sys.argv.index("--") + 1:]
 MODE, CAMK, OUTDIR = _argv[0], _argv[1], _argv[2]
@@ -117,9 +122,12 @@ QD = TQ.build_dam(ns)
 print("DAM built %.1fs" % (time.time() - T0), flush=True)
 QC = TQ.build_clutter(ns)
 print("CLUTTER built %.1fs" % (time.time() - T0), flush=True)
+ns["IDP"] = IDP
+ns["LMK_MARK"] = IDP.face_counts(ns)              # faces from here on are the landmark compound (class 1)
 ns["tethys"] = lambda: TL.landmark(ns)            # ATLANTIS STATION round 2: the floating pier city
 exec(compile(lsrc[lsrc.index(LMARK):], LMF, "exec"), ns)
 print("LANDMARKS built %.1fs" % (time.time() - T0), flush=True)
+ns["LMK_MV"] = IDP.face_counts(ns)                # faces from here on are the wildlife (movers, class 6)
 if not os.environ.get("TETHYS_NOWILD"):          # the wildlife (designer note 2026-10-16): fish shoals and the whale pod
     TQ.build_street_shoals(ns)
     TQ.build_open_water_shoals(ns)
@@ -174,6 +182,39 @@ rsrc = rsrc.replace(_tg, 'tgt = Vector((*C["target_xy"], 0.0)) if "target_xy" in
 _sh = 'cam_d.shift_y = C.get("sy", 0.0)'
 assert _sh in rsrc
 rsrc = rsrc.replace(_sh, _sh + "\ncam_d.shift_x = C.get('sx', 0.0)")
+# ID pass (golden plates 12.8): patch the render source at run time (city_base stays untouched): carve the landmark and wildlife
+# faces into their own objects, set pass_index by class, enable the Object Index pass and export it as <stem>_index.npy
+_o = 'OBJ = dict(surf=SURF.obj(MS["surf"])'
+assert _o in rsrc
+rsrc = rsrc.replace(_o, "ID_SPLIT = IDP.carve_all(globals(), LMK_MARK, LMK_MV)\n" + _o)
+_o = 'OBJ["water"].visible_shadow = False\n'
+assert _o in rsrc
+rsrc = rsrc.replace(_o, _o + """_ID_MAT = dict(smooth="surf", terrain="ground")
+ID_OBJ = {g_: {k_: a_.obj(MS[_ID_MAT.get(k_, k_)]) for k_, a_ in d_.items()} for g_, d_ in ID_SPLIT.items()}
+for _d in ID_OBJ.values():
+    for _k, _o in _d.items():
+        if _k in ("glass", "water"):
+            _o.visible_shadow = False
+IDP.set_classes(OBJ, ID_OBJ)
+""")
+_o = "    scene.collection.objects.link(ob_s)\n"
+assert _o in rsrc
+rsrc = rsrc.replace(_o, _o + "    ob_s.pass_index = IDP.LANDMARK\n")
+_o = '    rx_w.objects.link(OBJ["seabed"])\n'
+assert _o in rsrc
+rsrc = rsrc.replace(_o, _o + '    for _d in ID_OBJ.values():\n        if "seabed" in _d:\n            rx_w.objects.link(_d["seabed"])\n')
+_o = "    vl.use_pass_emit = True\n"
+assert rsrc.count(_o) == 1
+rsrc = rsrc.replace(_o, _o + "    vl.use_pass_object_index = True\n")
+_o = '''                arr = px[..., idx[:3]] if pas != "Depth" else px[..., idx[:1]]
+                _np.save(stem + "_" + want[pas] + ".npy", arr.astype(_np.float32 if pas == "Depth" else _np.float16))'''
+assert _o in rsrc
+rsrc = rsrc.replace(_o, '''                one = pas in ("Depth", "Object Index")
+                arr = px[..., idx[:1]] if one else px[..., idx[:3]]
+                _np.save(stem + "_" + want[pas] + ".npy", arr.astype(_np.float32 if one else _np.float16))''')
+_o = '{"Combined": "rgb", "Emit": "emit", "Emission": "emit", "Depth": "z"})'
+assert _o in rsrc
+rsrc = rsrc.replace(_o, '{"Combined": "rgb", "Emit": "emit", "Emission": "emit", "Depth": "z", "Object Index": "index"})')
 exec(compile(rsrc[:rsrc.index(RMARK)], CR, "exec"), ns)       # materials, lights, camera (no render yet)
 
 

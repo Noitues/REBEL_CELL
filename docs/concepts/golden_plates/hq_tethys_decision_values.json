@@ -1,14 +1,16 @@
 {
  "checks": {
-  "baseline": [],
+  "baseline": [
+   "R-FOCUS-1"
+  ],
   "exempt": {
    "flash": false,
    "hover_cut": false,
    "red_seq": false
   },
   "notes": {
-   "R-FOCUS-1": "no id pass: landmark box unavailable",
-   "landmark_ratio": "no id pass: ratio_median is null; ratio_mean / ratio_peak copied from H_decision_v2_plate_values.json (post_tethys disc mask round the station, not id.png classes); ratio_median stays null until an id pass exists"
+   "id_alignment": "class-variance share / shifted-class share = 1.756 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [643, 0, 2273, 1397]; ratio_peak 3.72 / 3.10 and ratio_mean 1.88 / 1.57 of the 2026-10-17 post_tethys disc mask are superseded by the id-class ratios"
   },
   "pre_accepted": [],
   "report_only": [
@@ -20,7 +22,7 @@
    "R-CALM-2": "pass",
    "R-DET-1": "n/a",
    "R-DET-2": "n/a",
-   "R-FOCUS-1": "n/a",
+   "R-FOCUS-1": "fail",
    "R-HOR-1": "n/a",
    "R-HUE-1": "n/a",
    "R-HUE-2": "n/a",
@@ -30,7 +32,7 @@
    "R-VAL-1": "pass",
    "R-VAL-2": "pass",
    "R-VAL-3": "pass",
-   "landmark_ratio": "n/a"
+   "landmark_ratio": "warn"
   }
  },
  "composition": {
@@ -38,7 +40,7 @@
   "R-CALM-2": 0.1227,
   "R-DET-1": null,
   "R-DET-2": null,
-  "R-FOCUS-1": null,
+  "R-FOCUS-1": 0.9965,
   "R-HOR-1": null,
   "R-HUE-1": null,
   "R-HUE-2": null,
@@ -55,8 +57,8 @@
  },
  "median": 0.14,
  "over_085": 0.0023,
- "ratio_mean": 1.57,
- "ratio_median": null,
- "ratio_peak": 3.1,
+ "ratio_mean": 2.1735,
+ "ratio_median": 2.0242,
+ "ratio_peak": 6.5553,
  "under_010": 0.2929
 }

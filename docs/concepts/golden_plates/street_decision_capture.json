@@ -33,7 +33,6 @@
  "layout_seed": null,
  "look": "aaa2",
  "pending": [
-  "id.png: street_r2 writes albedo/emit/z/combined only, no Object Index; re-render with the pass",
   "layout_seed (art seed 1 is recorded in source, the 12.8 decimal u64 is not), run id, anim_t, run_graph, inputs hashes: street_r2 predates derive v2"
  ],
  "resolution": [
@@ -44,8 +43,15 @@
  "source": {
   "commit": "ded90765",
   "final": "route_map_graph/street_r2/plates/02_DECISION_closed_s1_plate.png",
-  "index_pass": null,
-  "index_pass_indices": null,
+  "index_pass": "idpass/street/F_dec_closed_index.npy (ID re-render 2026-10-18: r2_scene.py _idpass, same seed 1, cameras and 40 spp)",
+  "index_pass_indices": [
+   0,
+   1,
+   2,
+   4,
+   5,
+   7
+  ],
   "pose": "D:/rc_scratch/street_r2/job_finals_s1_ov_closed_dec_closed.json frame F_dec_closed (art seed 1, walls closed); storyboard t 13.45",
   "yaw_convention": "rig: 0 = north, clockwise; Blender world BU"
  },
