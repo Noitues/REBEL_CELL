@@ -34,6 +34,8 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+- **2026-10-19 W1 RULE5-CMO: literals shared with `wheel_view` / `combat_fx_layer` (keyline alpha 0.85 and the like) stay local consts in `scripts/ui/kit/city_map_overlay.gd` with a `##` note naming the twin; no new `ui_motion` ids (overnight default, designer may revisit).** Values unchanged; no timing literals were moved.
+
 - **2026-10-19 NA-26 follow-up: `route_target_pulse` stays AWAITING_FIX (overnight default, designer may revisit).** On the real Grid view overlay it still ignores its motion switch; the fix edits CityMapOverlay, so it moves to the MOTION-TIMINGS slice. NA-11c route columns stay exempt from the HQ-zone 0.6x cap (art-pass, W1_NA11 APPROVED). R-FOCUS-1 is n/a on street views (art-pass 7ad41a22, 12.7).
 
 ### 2026-10-18 — Plan 2 W1 N6: enemy listeners (Q8 a, Q19, Q39, N1b; designer answers 1-3)
