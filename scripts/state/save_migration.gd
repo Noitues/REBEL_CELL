@@ -15,6 +15,11 @@ const ERR_NO_STEP := "no_migration_step"
 const ERR_SLOT_SIZES := "invalid_slot_sizes"
 ## Plan 2 N12: the v4 wheel key (absent for an equal layout).
 const V4_SIZES_KEY := "slot_sizes"
+## Plan 2 NA-12 (save v5, D3): a campaign save without its city seed (made before the per-seed
+## city) is dropped, not migrated: its Grid was laid on the old city.
+const ERR_NO_CITY_SEED := "campaign_without_city_seed"
+## The v5 campaign key.
+const V5_CITY_KEY := "city_seed"
 ## The v2 and v3 wheel keys.
 const V2_KEY := "slice_statuses"
 const V3_KEY := "slice_stacks"
@@ -63,6 +68,26 @@ static func _slot_v3(status: int, parasite_stacks: int) -> Dictionary:
 ## nothing. Pure: returns a copy.
 static func v3_to_v4(data: Dictionary) -> Dictionary:
 	return data.duplicate(true)
+
+
+## v4 -> v5 (plan 2 NA-12): nothing changes; a v4 profile or replay reads as v5, and a v4
+## campaign (no "city_seed") is refused by validate_v5 (D3: old campaign saves are dropped).
+## Pure: returns a copy.
+static func v4_to_v5(data: Dictionary) -> Dictionary:
+	return data.duplicate(true)
+
+
+## Checks v5 `data`: validate_v4, then a campaign save ("campaign") must carry its
+## "city_seed" (a decimal string; ERR_NO_CITY_SEED).
+static func validate_v5(data: Variant) -> String:
+	var err := validate_v4(data)
+	if err != "":
+		return err
+	if data is Dictionary and (data as Dictionary).has("campaign"):
+		var c: Variant = data["campaign"]
+		if not (c is Dictionary) or not (c as Dictionary).has(V5_CITY_KEY) or not (c[V5_CITY_KEY] is String):
+			return ERR_NO_CITY_SEED
+	return ""
 
 
 ## Checks v4 `data`: validate_v3's stack checks, then every wheel's "slot_sizes" (an Array of

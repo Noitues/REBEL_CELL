@@ -68,7 +68,8 @@ func on_blurred_city() -> bool:
 
 
 var floor_offset: float = 0.0
-var skyline_seed: int = 7
+## NA-12: the running campaign's city (CityPlan.current_seed; the fixed city without one).
+var skyline_seed: int = CityPlan.current_seed()
 var city: NeonCity
 var _grid: Control
 ## ANIM-5 camera ease (4.14): the city hangs from this rig. The camera itself (the city's

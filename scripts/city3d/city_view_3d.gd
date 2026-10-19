@@ -53,8 +53,8 @@ const OUTER_GROUND_BU := 8000.0
 const NET_MARGIN_BU := 60.0
 
 var cfg: CityConfig = CONFIG
-## The layout's look seed (NeonCity.city_seed: the game's city is seed 7 everywhere).
-var city_seed: int = 7
+## The city seed (NeonCity.city_seed; NA-12: the running campaign's city, CityPlan.current_seed).
+var city_seed: int = CityPlan.current_seed()
 var model: CityModel = null
 var iso: CityIsoCamera = null
 var camera: Camera3D
@@ -1099,7 +1099,7 @@ func place_landmarks() -> void:
 		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
 		if _place_landmark(corp, path, landmark_slot(corp), look):
 			hide_stand_in(corp)
-	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
 	_place_site_landmark()
 

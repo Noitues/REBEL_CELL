@@ -96,6 +96,8 @@ const INKS: Array[Color] = [Color("#FFB000"), Color("#B04DFF"), Color("#FF3DA8")
 const FILLS: Array[Color] = [Color("#06070B"), Color("#141B2C"), Color("#1D2027")]
 const GROUND := Color("#0A0C14")
 const STREET := Color("#050609")
+## NA-12: a generated city's sea lots (a flat placeholder until the terrain art; no streets, no buildings).
+const WATER := STREET
 const FACE_LIGHT := Color("#2A3350")
 
 ## District profiles: building mix weights [box, stepped, cylinder, hex, taper, needle,
@@ -122,6 +124,8 @@ const CULTURES := {
 
 ## Territory centres (grid lots) and their pull (bigger = larger territory). The
 ## corporations' HQs stand on their centres; &"" entries are the neutral Sprawl.
+## NA-12: the FIXED city's (CityPlan.make_fixed, seed CityConfig.city_seed); every other seed's
+## territories come from CityGenerator. Read a city's through `plan()` / CityPlan, not here.
 const TERRITORIES: Array[Dictionary] = [
 	{"id": &"", "at": Vector2(0, 0), "pull": 1.0},
 	{"id": &"solace", "at": Vector2(-34, -4), "pull": 1.15},
@@ -187,8 +191,9 @@ const SLATE_LIGHT := Color("#B8C4DE")
 ## Pan margin (px beyond the screen on every side) and speed.
 const PAN_MARGIN := 360.0
 
-## Decoration seed (a view hash, not game randomness).
-var city_seed: int = 7
+## The city's seed: its layout (NA-12: CityPlan.for_seed, the fixed city at CityConfig.city_seed)
+## and its decoration hash (not game randomness). Starts as the running campaign's city.
+var city_seed: int = CityPlan.current_seed()
 ## 0 = full brightness, 1 = black. Keeps panels readable over the city.
 var dim: float = 0.25
 ## The territory the camera looks at (&"" = the whole city from the Sprawl).
@@ -292,6 +297,7 @@ var _terr_col: Color = Palette.NO_TINT
 var _terr_next: StringName = &""
 var _border: float = 0.0
 var _hq_rects: Dictionary = {}  # corp id -> Rect2i
+var _plan: CityPlan = null
 var _pan_t: float = 0.0
 var _inks: Array[Color] = []
 ## Roof outline (screen points, local) of the building on each lot: Vector2i -> Dictionary
@@ -562,8 +568,26 @@ func is_baked() -> bool:
 
 ## Re-reads the followed campaign's influence (re-bakes only if it changed).
 func sync_influence() -> void:
+	follow_city_seed()
 	if follow_campaign or _campaign != null:
 		set_influence(_followed_influence())
+
+
+## NA-12: a city that follows the campaign takes its city seed (a campaign started or resumed
+## under a live page); the 3D city is made again for the new seed's model.
+func follow_city_seed() -> void:
+	if not follow_campaign:
+		return
+	var want := CityPlan.current_seed()
+	if want == city_seed:
+		return
+	city_seed = want
+	if view3d != null:
+		view3d.queue_free()
+		view3d = null
+		city_motion = null
+	_sync_city3d()
+	refresh()
 
 
 ## Holds the city on `inf` (a CityInfluence.of dictionary) whatever the followed campaign
@@ -1167,7 +1191,7 @@ func _territory_pair(i: int, j: int) -> Array:
 	var best_d := INF
 	var second: StringName = &""
 	var second_d := INF
-	for t in TERRITORIES:
+	for t in plan().territories:
 		var d: float = p.distance_to(t["at"]) / float(t["pull"])
 		if d < best_d:
 			second = best
@@ -1182,12 +1206,22 @@ func _territory_pair(i: int, j: int) -> Array:
 	return [best, second, border]
 
 
-## Where a corporation's HQ stands (grid), or the city centre.
+## Where a corporation's HQ stands (grid; its HQ rect's top-left) in the running campaign's city
+## (NA-12: CityPlan.current), or the city centre.
 static func hq_of(corporation_id: StringName) -> Vector2:
-	for t in TERRITORIES:
-		if t["id"] == corporation_id:
-			return t["at"]
-	return Vector2.ZERO
+	return CityPlan.current().hq_of(corporation_id)
+
+
+## NA-12: the layout plan of this city's seed (territories, HQ lots, coast).
+func plan() -> CityPlan:
+	if _plan == null or _plan.city_seed != city_seed:
+		_plan = CityPlan.for_seed(city_seed)
+	return _plan
+
+
+## NA-12: true when lot (i, j) is sea (no street, no building).
+func _is_water(i: int, j: int) -> bool:
+	return plan().is_water(i, j)
 
 
 func _set_lot_context(i: int, j: int) -> void:
@@ -1278,7 +1312,7 @@ func _camera() -> void:
 		_ox = 0.0
 		_oy = 0.0
 		return
-	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2(0, 0)
+	var focus := plan().hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2(0, 0)
 	var anchor := Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y) if district != &"" else size * 0.5
 	if pan:
 		anchor = size * 0.5
@@ -2392,7 +2426,7 @@ static func snap_region(region: Rect2) -> Rect2:
 ## ANIM-R2 R1: the bake region the default frame (the district's HQ at `hq_anchor`, no zoom,
 ## no pan) shows at `view_size` (the Mainframe, event and loot backdrops, a fight's arena).
 func frame_region(view_size: Vector2) -> Rect2:
-	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2.ZERO
+	var focus := plan().hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2.ZERO
 	var anchor := Vector2(view_size.x * hq_anchor.x, view_size.y * hq_anchor.y) if district != &"" else view_size * 0.5
 	var ox := anchor.x - (focus.x - focus.y) * TILE_A
 	var oy := anchor.y - (focus.x + focus.y) * TILE_B
@@ -2470,11 +2504,7 @@ func _prepare_build() -> void:
 	_roofs = {}
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
-	_hq_rects = {}
-	for t in TERRITORIES:
-		if t["id"] != &"":
-			var at: Vector2 = t["at"]
-			_hq_rects[t["id"]] = Rect2i(int(at.x), int(at.y), HQ_LOTS, HQ_LOTS)
+	_hq_rects = plan().hq_rects(HQ_LOTS)
 	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
 	_build_fist()
@@ -2514,6 +2544,9 @@ func _pass_ground(from: int, to: int) -> void:
 		_infl = _lot_infl[n]
 		if _hq_at(l.x, l.y) != &"":
 			_plaza(l.x, l.y)
+		elif _is_water(l.x, l.y):
+			var w := _rect_pts(l.x, l.y, l.x + 1, l.y + 1)
+			_quad(w[0], w[1], w[2], w[3], WATER, WATER, WATER, WATER)
 		elif _is_street_lot(l.x, l.y):
 			_street(l.x, l.y, _street_i.has(l.x), _street_j.has(l.y))
 		else:
@@ -2599,7 +2632,7 @@ func _front_of(l: Vector2i) -> Vector2i:
 
 ## True when the build draws a building from lot `f` (as `_pass_standing` / `_lot` decide).
 func _builds_at(f: Vector2i) -> bool:
-	if _hq_at(f.x, f.y) != &"" or _is_street_lot(f.x, f.y) or _fist_dist(f.x, f.y) < FIST_CLEAR:
+	if _hq_at(f.x, f.y) != &"" or _is_street_lot(f.x, f.y) or _fist_dist(f.x, f.y) < FIST_CLEAR or _is_water(f.x, f.y):
 		return false
 	return f == _cell_of(f.x, f.y).end - Vector2i.ONE
 
@@ -2821,7 +2854,7 @@ func _in_fist(i: int, j: int) -> bool:
 
 ## True for an ordinary street lot (streets stop at the fist's outline).
 func _is_street_lot(i: int, j: int) -> bool:
-	return (_street_i.has(i) or _street_j.has(j)) and not _in_fist(i, j)
+	return (_street_i.has(i) or _street_j.has(j)) and not _in_fist(i, j) and not _is_water(i, j)
 
 
 ## The fist roads: like the busiest streets (many skinny marker strokes side by side),
@@ -3311,10 +3344,22 @@ func _cell_of(i: int, j: int) -> Rect2i:
 		merged = Rect2i(qi, j, 2, 1)
 	elif mode == 2 and deep:
 		merged = Rect2i(i, qj, 1, 2)
-	# An HQ rect is exclusive: a merged cell reaching into one falls back to 1x1.
-	if merged.size != Vector2i.ONE and _hits_hq(merged):
+	# An HQ rect is exclusive: a merged cell reaching into one falls back to 1x1 (NA-12: so does
+	# one reaching into the sea).
+	if merged.size != Vector2i.ONE and (_hits_hq(merged) or _hits_water(merged)):
 		return Rect2i(i, j, 1, 1)
 	return merged
+
+
+## NA-12: true when any lot of `r` is sea.
+func _hits_water(r: Rect2i) -> bool:
+	if plan().coast.is_empty():
+		return false
+	for di in r.size.x:
+		for dj in r.size.y:
+			if _is_water(r.position.x + di, r.position.y + dj):
+				return true
+	return false
 
 
 ## True when `r` intersects any corporation's HQ rect (the fist territory is not an HQ).
@@ -3326,8 +3371,8 @@ func _hits_hq(r: Rect2i) -> bool:
 
 
 func _lot(i: int, j: int) -> void:
-	if _fist_dist(i, j) < FIST_CLEAR:
-		return  # a fist road runs here
+	if _fist_dist(i, j) < FIST_CLEAR or _is_water(i, j):
+		return  # a fist road runs here, or the sea
 	var cell := _cell_of(i, j)
 	# A merged building is drawn once, from its front lot (correct depth order).
 	if i != cell.end.x - 1 or j != cell.end.y - 1:
@@ -3996,7 +4041,7 @@ func _draw_fx() -> void:
 		return
 	if territory_labels:
 		var inv := 1.0 / maxf(0.01, scale.x)
-		for t in TERRITORIES:
+		for t in plan().territories:
 			var name := "THE SPRAWL" if t["id"] == &"" else String(t["id"]).to_upper()
 			var at: Vector2 = t["at"]
 			var k := territory_label_px / 30.0 * inv

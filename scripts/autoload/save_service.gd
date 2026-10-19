@@ -19,7 +19,8 @@ extends Node
 ## ART-0 S0: bumped from 1 (names follow the display words; old saves are not read).
 ## Plan 2 N8: 3, slot statuses carry stacks (v2 saves migrate).
 ## Plan 2 N12: 4, wheels may carry uneven "slot_sizes" (v3 saves read as equal slots).
-const SAVE_VERSION: int = 4
+## Plan 2 NA-12: 5, a campaign carries its "city_seed" (v4 profiles and replays read on; v4 campaigns are dropped, D3).
+const SAVE_VERSION: int = 5
 const PROFILE_FILE := "profile.json"
 const CAMPAIGN_FILE_FORMAT := "campaign_%s.json"
 ## A replay's file name: the wall-clock time it was written (ms, zero-padded so the names
@@ -42,7 +43,8 @@ var config: CampaignConfigData = load(CONFIG_PATH)
 ## from_version (int) -> Callable(data: Dictionary) -> Dictionary at from_version + 1.
 ## Nothing before v2 (ruling 5); v2 -> v3 is N8's stack migration.
 var _migrations: Dictionary = {2: func(d: Dictionary) -> Dictionary: return SaveMigration.v2_to_v3(d, config.parasite_output_down_stacks),
-	3: func(d: Dictionary) -> Dictionary: return SaveMigration.v3_to_v4(d)}
+	3: func(d: Dictionary) -> Dictionary: return SaveMigration.v3_to_v4(d),
+	4: func(d: Dictionary) -> Dictionary: return SaveMigration.v4_to_v5(d)}
 ## Why the last load or migrate returned {} (a SaveMigration.ERR_* code), or "".
 var last_error: String = ""
 ## The folder this process saves under: the source folder or the export folder.
@@ -186,10 +188,13 @@ func migrate(data: Dictionary) -> Dictionary:
 		version += 1
 		current["version"] = version
 	current["version"] = SAVE_VERSION
-	var bad := SaveMigration.validate_v4(current)
+	var bad := SaveMigration.validate_v5(current)
 	if bad != "":
 		last_error = bad
-		push_error("SaveService: %s: the save's wheels are broken; refused." % bad)
+		if bad == SaveMigration.ERR_NO_CITY_SEED:
+			push_error("SaveService: %s: a campaign from before the per-seed city (D3); refused." % bad)
+		else:
+			push_error("SaveService: %s: the save's wheels are broken; refused." % bad)
 		return {}
 	return current
 

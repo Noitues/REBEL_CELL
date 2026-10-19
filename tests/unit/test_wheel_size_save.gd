@@ -18,8 +18,8 @@ func _fixture() -> Dictionary:
 	return JSON.parse_string(FileAccess.get_file_as_string(V3_FIXTURE))
 
 
-func test_save_version_is_4() -> void:
-	assert_eq(SaveServiceScript.SAVE_VERSION, 4)
+func test_save_version_is_5() -> void:
+	assert_eq(SaveServiceScript.SAVE_VERSION, 5, "NA-12 bumped N12's 4 (a campaign's city_seed)")
 
 
 func test_legacy_save_without_size_ticks_loads_as_5() -> void:

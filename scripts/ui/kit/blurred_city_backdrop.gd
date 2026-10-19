@@ -105,9 +105,8 @@ static func takes(p_look: CityBackdropLook, city_quality: int, can_render: bool)
 ## target), else the look's default.
 static func frame_corp(p_look: CityBackdropLook, wanted: StringName) -> StringName:
 	if wanted != &"" and wanted != CityView3D.CELL:
-		for t: Dictionary in NeonCity.TERRITORIES:
-			if t["id"] == wanted:
-				return wanted
+		if CityPlan.current().has_territory(wanted):
+			return wanted
 	return p_look.default_corp
 
 

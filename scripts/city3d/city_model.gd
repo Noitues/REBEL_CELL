@@ -179,7 +179,8 @@ func layout_rules_job() -> Dictionary:
 		var c := reg.call("get_content", cid) as CorporationData
 		if c != null and c.city_grid != null:
 			corps.append(c)
-	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points(c))
+	var plan := CityPlan.for_seed(city_seed)  # NA-12: this model's city, not the running campaign's
+	return CityLayoutRuler.make_job(self, corps, func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan))
 
 
 ## One recorded extrusion (lots, height px) as a world prism.

@@ -54,7 +54,7 @@ func _wheels(v: Variant, out: Array = []) -> Array:
 
 func test_v2_save_with_no_statuses_migrates_to_v3() -> void:
 	var d := _migrated("v2_empty")
-	assert_eq(int(d["version"]), SaveServiceScript.SAVE_VERSION, "v2 -> v3 -> v4 (N12 adds no v3 change)")
+	assert_eq(int(d["version"]), SaveServiceScript.SAVE_VERSION, "v2 -> v3 -> v4 -> v5 (N12 and NA-12 add no wheel change)")
 	for w in _wheels(d):
 		assert_false(w.has("slice_statuses"))
 		for slot in w["slice_stacks"]:
@@ -151,8 +151,8 @@ func test_v3_json_keys_are_strings_and_reload_as_ints() -> void:
 	assert_true(back.slice_stacks[2].keys()[0] is int, "int keys at run time")
 
 
-func test_future_version_5_is_rejected_with_named_reason() -> void:
-	assert_eq(_saves.migrate({"version": 5}), {})
+func test_future_version_6_is_rejected_with_named_reason() -> void:
+	assert_eq(_saves.migrate({"version": 6}), {})
 	assert_eq(_saves.last_error, "save_version_too_new")
 	assert_push_error("save_version_too_new")
 
