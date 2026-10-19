@@ -16,6 +16,7 @@
    "tools/art_pipeline/city/landmark_post_v1.py",
    "tools/art_pipeline/city/gltf_anim_v1.py",
    "tools/art_pipeline/city/build_landmarks_v1.py",
+   "tools/art_pipeline/city/id_ground.py",
    "tools/art_pipeline/city/concept_r31/target_corps.py",
    "tools/art_pipeline/city/concept_r31/heroes24.py",
    "tools/art_pipeline/city/concept_r31/heroes25.py",
@@ -26,8 +27,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "012dc6813e2f2ab261197c905fad0c3bdc7788e3",
-  "scripts_sha256": "c0b99454bfc673b57ca229540c34e63bd6ebaa284009441d21a44a1b1bc24390"
+  "commit": "b98e1def9a96560315d609ec7003b42ea1daa4b2",
+  "scripts_sha256": "cfa6ae39c43b6893e237c6302427c849147b71e45ea6429849c12b04e1c134f4"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -231,8 +232,8 @@
   {
    "path": "halcyon_hq.glb",
    "kind": "gltf",
-   "bytes": 282152,
-   "sha256": "16404ef4b38c9ca2807d23f3fa5e9c9c2b424013382579728e4325969e555830"
+   "bytes": 282980,
+   "sha256": "b2bf8b82456ec7baae4ac06b6250eeee6649ff779675f7e456b7563d1a4bc031"
   },
   {
    "path": "halcyon_site.glb",

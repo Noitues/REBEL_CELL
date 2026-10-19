@@ -26,6 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 V = os.path.join(HERE, "vendor_r43")
 sys.path.insert(0, HERE)
 import hq_compound_spec as SPEC  # noqa: E402
+import id_ground as IDG  # noqa: E402
 
 _args = sys.argv[sys.argv.index("--") + 1:]
 CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
@@ -66,6 +67,7 @@ if "MOVE_FRAMES" not in globals():
     MOVE_FRAMES = []
 exec(open(os.path.join(V, "heroes42.py"), encoding="utf-8-sig").read())
 exec(open(os.path.join(V, "heroes43.py"), encoding="utf-8-sig").read())
+IDG.install(Acc)  # faces laid on the ground by an IDG.SITES statement are tagged; acc_object splits them into id_ground
 
 
 def build_at(fn, dx=0.0, dy=0.0, s=1.0, rot=0.0):
@@ -178,9 +180,13 @@ for o in list(bpy.data.objects):
         o.name = "hq_%s_sign_%s" % (CORP, o.name)
 
 objs = []
+ground_objs = []
 for acc, role, toned in ((SOLID, "toon", True), (LIT, "lit", True), (NEON, "neon", False), (WIN, "win", False),
                          (BEAM, "beam", False)):
+    g = IDG.split_ground(acc)  # the grade-level faces of this role (None when there are none)
     objs.append(acc_object(acc, role, "hq_%s_%s" % (CORP, role), toned))
+    if g is not None:
+        ground_objs.append(acc_object(IDG.holder(Acc, "id_ground_" + role, g), role, "id_ground_" + role, toned))
 if EYE_ACC:  # Halcyon's eye: its own nodes (pivot = the pylon axis) so G12 can turn it; the searchlight cone stays out
     EYE_ACC.pop("beam").bm.free()
     eye_objs = [acc_object(EYE_ACC["solid"], "toon", "hq_%s_eye_toon" % CORP, True),
@@ -197,6 +203,7 @@ for g in MOVE_FRAMES:  # unused per-frame accumulators of the vendored rounds
 for o in list(bpy.data.objects):  # nothing else: no lights, cameras or stray empties in the export
     if o.type not in ("MESH",):
         bpy.data.objects.remove(o, do_unlink=True)
+IDG.join_ground(ground_objs)  # one mesh, node "id_ground", a material slot per role, at the scene root like every part
 bpy.context.view_layer.update()
 
 # ------------------------------------------------------------------ anchors: every slot must sit on a surface
@@ -239,8 +246,11 @@ tris = {}
 for o in bpy.data.objects:
     me = o.data
     me.calc_loop_triangles()
-    role = me.materials[0].get("hq_role", "?") if me.materials else "?"
-    tris[role] = tris.get(role, 0) + len(me.loop_triangles)
+    for k, m in enumerate(me.materials or [None]):  # id_ground has one slot per role: count each slot's triangles
+        n = len(me.loop_triangles) if len(me.materials) <= 1 else sum(
+            len(p.vertices) - 2 for p in me.polygons if p.material_index == k)
+        role = m.get("hq_role", "?") if m else "?"
+        tris[role] = tris.get(role, 0) + n
     mw = o.matrix_world
     for v in me.vertices:
         w = mw @ v.co
