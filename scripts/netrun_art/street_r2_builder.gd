@@ -79,6 +79,15 @@ func _build(city: Dictionary, derive: Dictionary, layout_seed: Variant, measure_
 	summary["digest"] = StreetR2Util.digest({"f": _faces, "t": _tris, "s": summary.get("signs"), "p": summary.get("props"), "c": summary.get("crowns")})
 
 
+## The kerb lamps of the plan as light sources `[{pos, col}]` (world position at lamp head height `height`), for the street light rig.
+func lamp_lights(height: float) -> Array:
+	var out: Array = []
+	for l: Dictionary in plan["lamps"]:
+		var p: Array = l["pos"]
+		out.append({"pos": Vector3(float(p[0]), height, -float(p[1])), "col": Color(float(l["col"][0]), float(l["col"][1]), float(l["col"][2]))})
+	return out
+
+
 ## The facade push (BU) of building `uid`: kit facades stand this far out of the city's own wall.
 func push_of(uid: String) -> float:
 	return float(_push.get(uid, 0.0))
