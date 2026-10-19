@@ -14,6 +14,10 @@ static func _v3(a: Array) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 
+static func _v4(a: Array) -> Vector4:
+	return Vector4(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+
+
 ## The post exposure at `look_blend` (1 at 0: the page as before; `aaa.post.exposure` at 1).
 static func exposure_at(look_blend: float) -> float:
 	return lerpf(1.0, float(cfg()["post"]["exposure"]), clampf(look_blend, 0.0, 1.0))
@@ -52,6 +56,14 @@ static func setup_post(m: ShaderMaterial, on: bool, exposure: float) -> void:
 		var l: Array = r[i]
 		m.set_shader_parameter(StringName("aaa_rain%d" % i), Vector3(float(l[0]), float(l[1]), float(l[2])))
 		m.set_shader_parameter(StringName("aaa_rain%db" % i), Vector3(float(l[3]), float(l[4]), float(l[5])))
+	var wr: Dictionary = cfg()["wet_refl"]
+	m.set_shader_parameter(&"aaa_wr_on", on and bool(wr["enabled"]))
+	m.set_shader_parameter(&"aaa_wr_steps", int(wr["steps"]))
+	m.set_shader_parameter(&"aaa_wr_march", _v4(wr["march"]))
+	m.set_shader_parameter(&"aaa_wr_shape", _v4(wr["shape"]))
+	m.set_shader_parameter(&"aaa_wr_rough", _v4(wr["rough"]))
+	m.set_shader_parameter(&"aaa_wr_bokeh", _v4(wr["bokeh"]))
+	m.set_shader_parameter(&"aaa_wr_sky", float(wr["sky"]))
 	m.set_shader_parameter(&"aaa_rain_fall", Vector2(float(p["rain_fall_px"]), float(p["rain_slant"])))
 
 

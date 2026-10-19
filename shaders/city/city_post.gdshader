@@ -140,6 +140,23 @@ uniform vec3 aaa_rain2 = vec3(60.0, 60.0, 95.0);
 uniform vec3 aaa_rain2b = vec3(0.25, 3.0, 1.6);
 uniform vec2 aaa_rain_fall = vec2(1400.0, 0.2);
 uniform float aaa_rain_on = 1.0;
+// AAA-2 P6 (A-034 items 1-2): the wet street's reflections in screen space. For a ground pixel the march climbs the screen to the
+// base of the first thing standing on the street (or the horizon), and the picture mirrored about that contact row is added: long
+// colored smears under signs and lamp heads (the plate's wet asphalt), blurred along the column in step with the distance below
+// the contact. Where the ground is rough (nr_tex roughness) the same mirrored spot is read through a wide ring of taps that keep
+// only the highlights: soft colored discs, the foreground bokeh (rough reflections; no separate bokeh pass, MATERIAL_SPEC 7 / 10).
+uniform bool aaa_wr_on = false;
+uniform int aaa_wr_steps = 40;
+// x: first step (screen fraction), y: growth per step, z: the farthest the march climbs (screen fraction), w: strength.
+uniform vec4 aaa_wr_march = vec4(0.004, 1.12, 0.7, 0.9);
+// x: ground height tolerance factor of the plane depth, y: tolerance in BU, z: fade per screen fraction below the contact, w: smear length per distance below the contact.
+uniform vec4 aaa_wr_shape = vec4(0.03, 0.3, 3.0, 0.35);
+// x, y: roughness range (sharp .. rough), z: strength kept on rough ground, w: blur lod gain.
+uniform vec4 aaa_wr_rough = vec4(0.03, 0.3, 0.5, 1.0);
+// x: bokeh ring radius at 1920 px, y: bokeh threshold (scene units), z: bokeh gain, w: smear column jitter (px at 1920).
+uniform vec4 aaa_wr_bokeh = vec4(60.0, 0.8, 0.5, 6.0);
+// Share of the reflection kept where the march meets the horizon (the haze band, not a thing standing on the street).
+uniform float aaa_wr_sky = 0.3;
 
 vec3 aaa_aces(vec3 x) {
 	return clamp((x * (aaa_aces_abc.x * x + aaa_aces_abc.y)) / (x * (aaa_aces_abc.z * x + aaa_aces_de.x) + aaa_aces_de.y), 0.0, 1.0);
@@ -207,7 +224,91 @@ float aaa_rain_layer(vec2 p, vec3 a, vec3 b, float tt, float seed) {
 	return hit * b.x;
 }
 
-vec3 aaa_fragment(vec2 uv, vec2 vps, float tt) {
+// The ground plane (world y = 0) depth along the view axis at `uv`, or -1 above the horizon.
+float aaa_plane_depth(vec2 uv, mat4 ip, mat4 iv) {
+	vec4 p = ip * vec4(uv * 2.0 - 1.0, 0.5, 1.0);
+	vec3 dv = normalize(p.xyz / p.w);
+	vec3 dw = (iv * vec4(dv, 0.0)).xyz;
+	if (dw.y > -0.0005) {
+		return -1.0;
+	}
+	return (iv[3].y / -dw.y) * -dv.z;
+}
+
+// The wet street's reflected light at a ground pixel (scene-linear, added before exposure), 0 elsewhere.
+vec3 aaa_wet_reflection(vec2 uv, vec2 vps, mat4 ip, mat4 iv) {
+	float zp0 = aaa_plane_depth(uv, ip, iv);
+	if (zp0 < 0.0) {
+		return vec3(0.0);
+	}
+	float zs0 = -view_pos(uv, ip).z;
+	if (abs(zs0 - zp0) > max(aaa_wr_shape.y, aaa_wr_shape.x * zp0)) {
+		return vec3(0.0);
+	}
+	float yb = -1.0;
+	float horizon = 1.0;
+	float st = aaa_wr_march.x;
+	for (int i = 0; i < 64; i++) {
+		if (i >= aaa_wr_steps || st > aaa_wr_march.z) {
+			break;
+		}
+		float y = uv.y - st;
+		if (y < 0.0) {
+			break;
+		}
+		vec2 uk = vec2(uv.x, y);
+		float zpk = aaa_plane_depth(uk, ip, iv);
+		if (zpk < 0.0) {
+			yb = y;
+			horizon = aaa_wr_sky;
+			break;
+		}
+		float zsk = min(-view_pos(uk, ip).z, 100000.0);
+		if (zsk < zpk - max(aaa_wr_shape.y, aaa_wr_shape.x * zpk)) {
+			yb = y;
+			break;
+		}
+		st *= aaa_wr_march.y;
+	}
+	if (yb < 0.0) {
+		return vec3(0.0);
+	}
+	float d = uv.y - yb;
+	float yr = yb - d;
+	if (yr < 0.0) {
+		return vec3(0.0);
+	}
+	float sc = vps.x / aaa_ref_w;
+	float rough = nr(uv).w;
+	float rk = smoothstep(aaa_wr_rough.x, aaa_wr_rough.y, rough);
+	float fade = exp(-d * aaa_wr_shape.z) * aaa_wr_march.w * mix(1.0, aaa_wr_rough.z, rk) * horizon;
+	float len = d * aaa_wr_shape.w;
+	float lod = max(log2(max(len * vps.y / 8.0 * aaa_wr_rough.w, 1.0)), 0.0);
+	vec3 acc = vec3(0.0);
+	for (int j = 0; j < 8; j++) {
+		float o = (float(j) + 0.5) / 8.0 - 0.5;
+		float jx = (hash12(vec2(float(j), floor(uv.x * vps.x * 0.25))) - 0.5) * aaa_wr_bokeh.w * sc / vps.x;
+		acc += textureLod(screen_tex, vec2(uv.x + jx, yr + o * len), lod).rgb;
+	}
+	vec3 smear = acc / 8.0 * fade * (1.0 - rk);
+	// Bokeh: a ring of taps around the mirrored spot keeps only the highlights, so a lamp or a sign reads as a soft disc.
+	vec3 bk = vec3(0.0);
+	if (rk > 0.01) {
+		float rad = aaa_wr_bokeh.x * sc * rk;
+		float blod = max(log2(max(rad * 0.5, 1.0)), 0.0);
+		for (int k = 0; k < 12; k++) {
+			float a = float(k) * 2.399963;
+			float rr = sqrt((float(k) + 0.5) / 12.0) * rad;
+			vec2 o = vec2(cos(a), sin(a)) * rr / vps;
+			vec3 c = textureLod(screen_tex, vec2(uv.x, yr) + o, blod).rgb * aaa_exposure;
+			bk += max(c - vec3(aaa_wr_bokeh.y), vec3(0.0));
+		}
+		bk = bk / 12.0 / max(aaa_exposure, 0.0001) * aaa_wr_bokeh.z * rk * fade * 8.0;
+	}
+	return smear + bk;
+}
+
+vec3 aaa_fragment(vec2 uv, vec2 vps, float tt, mat4 ip, mat4 iv) {
 	vec2 px = 1.0 / vps;
 	float sc = vps.x / aaa_ref_w;
 	vec2 cq = (uv - 0.5) * 2.0;
@@ -216,6 +317,9 @@ vec3 aaa_fragment(vec2 uv, vec2 vps, float tt) {
 	float cam = aaa_ca.x * sc * pow(clamp(r - aaa_ca.y, 0.0, 1.0), aaa_ca.z);
 	vec2 dir = length(cq) > 0.0001 ? normalize(cq * vps) : vec2(0.0);
 	vec3 lin = vec3(textureLod(screen_tex, uv + dir * cam * px, 0.0).r, textureLod(screen_tex, uv, 0.0).g, textureLod(screen_tex, uv - dir * cam * px, 0.0).b) * aaa_exposure;
+	if (aaa_wr_on) {
+		lin += aaa_wet_reflection(uv, vps, ip, iv) * aaa_exposure;
+	}
 	vec3 b1 = aaa_bloom_at(uv, aaa_bloom_sigma.x, sc, vps);
 	vec3 b2 = aaa_bloom_at(uv, aaa_bloom_sigma.y, sc, vps);
 	vec3 b3 = aaa_bloom_at(uv, aaa_bloom_sigma.z, sc, vps);
@@ -254,7 +358,7 @@ vec3 aaa_fragment(vec2 uv, vec2 vps, float tt) {
 void fragment() {
 	vec2 uv = SCREEN_UV;
 	if (aaa_on) {
-		ALBEDO = aaa_fragment(uv, VIEWPORT_SIZE, rc_time(TIME) * time_scale);
+		ALBEDO = aaa_fragment(uv, VIEWPORT_SIZE, rc_time(TIME) * time_scale, INV_PROJECTION_MATRIX, INV_VIEW_MATRIX);
 	} else {
 		vec2 px = 1.0 / VIEWPORT_SIZE;
 		float t = rc_time(TIME) * time_scale;
