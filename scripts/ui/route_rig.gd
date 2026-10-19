@@ -14,6 +14,8 @@ signal pose_changed
 
 const NEAR := 0.5
 const FAR := 3000.0
+## NA-25: the far plane is at least this many camera distances (the dive's start is beyond FAR).
+const FAR_PAD := 1.5
 ## The Environment tonemap and the look this rig holds on the city (the netrun look in full).
 const LOOK_BLEND := 1.0
 const ROOM_MAX := 32
@@ -283,7 +285,8 @@ func _build_dressing() -> void:
 # --- Camera -----------------------------------------------------------------------------------
 
 func _apply_pose() -> void:
-	NetrunFrustum.apply_render(view.camera, pose, NEAR, FAR)
+	# NA-25: the dive starts on the HQ page pose, farther than FAR (3833 BU): the far plane follows the camera.
+	NetrunFrustum.apply_render(view.camera, pose, NEAR, maxf(FAR, pose.dist * FAR_PAD))
 	_apply_fog_density()
 	pose_changed.emit()
 

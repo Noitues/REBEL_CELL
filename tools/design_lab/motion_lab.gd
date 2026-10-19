@@ -195,6 +195,8 @@ const DEMOS := {
 	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_select_hold": ["entry", "out"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
@@ -273,6 +275,10 @@ const LOOT_DEMO_WAIT := 900
 const LOOT_DEMO_BEAT := 30
 const CONTEXT_BAKE_FRAMES := 240
 const CONTEXT_LOOP := 6.0
+## NA-25: the entry demo's replay gap (s) and the step its timeline is driven with (s of game time per call).
+const ENTRY_LOOP := 4.0
+const ENTRY_STEP := 0.25
+const ENTRY_MAX_STEPS := 400
 const DEMO_CAMPAIGN_SEED := 1
 ## The jack demos' destination line and the raid interlude's stamp (translated).
 const JACK_DESTINATION := "SOLACE // THE RACK"
@@ -349,6 +355,10 @@ var _scene: Control = null
 ## ANIM-R5: the HQ or netrun scene a context demo plays in (and its host).
 var _context: Control = null
 var _context_host: Control = null
+## NA-25: the street route the entry demos play on, built once and kept across the 16 entry demos.
+var _entry_host: Control = null
+var _entry_view: StreetRouteView = null
+var _entry_cover: EntryCover = null
 var _scene_host: Control = null
 var _screen_host: Control = null
 var _hud: HudStats = null
@@ -548,6 +558,8 @@ func _clear_screen() -> void:
 
 func _reset_stage() -> void:
 	_clear_screen()
+	if _entry_host != null and is_instance_valid(_entry_host):
+		_entry_host.visible = false
 	_clear_context()
 	for key in _pieces:
 		var c: Control = _pieces[key]
@@ -667,6 +679,9 @@ func _play() -> void:
 		"hq", "netrun":
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
+		"entry":
+			await _play_entry(demo[1] == "out")
+			length = ENTRY_LOOP
 		"kit":
 			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
 	_show_values()
@@ -701,6 +716,49 @@ func _play_kit(id: StringName) -> float:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_screen_host.add_child(bg)
 	return KitDemo.play(id, _screen_host)
+
+
+## NA-25: the street entry (`reverse`: the jack-out) on the real StreetRouteView, driven by its own timeline: one view is
+## built for all the entry demos, a fresh EntryCover is stepped (ENTRY_STEP s of game time per call, no wall-clock wait)
+## until it ends.
+func _play_entry(reverse: bool) -> void:
+	var gen := _generation
+	_show_scene(false)
+	_clear_screen()
+	if _entry_view == null or not is_instance_valid(_entry_view):
+		RunManager.scene_switching_enabled = false
+		RunManager.save_slot = LAB_SLOT
+		RunManager.delete_save()
+		RunManager.new_campaign(DEMO_CAMPAIGN_SEED)
+		var s := RunManager.start_run()
+		if s == null:
+			return
+		var data := StreetRouteView.build_data(s, RunManager.corporation)
+		if data.error != "":
+			push_warning("motion_lab: the street entry cannot be built (%s)" % data.error)
+			return
+		_entry_host = Control.new()
+		_entry_host.name = "EntryDemo"
+		_entry_host.position = Vector2(PANEL_W, 0)
+		_entry_host.size = Vector2(1280 - PANEL_W, 720)
+		add_child(_entry_host)
+		var cfg := CityView3D.CONFIG
+		_entry_view = StreetRouteView.new()
+		_entry_view.size = _entry_host.size
+		_entry_host.add_child(_entry_view)
+		_entry_view.setup(data, CityModel.shared(cfg, cfg.city_seed), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
+	_entry_host.visible = true
+	if _entry_cover != null and is_instance_valid(_entry_cover):
+		_entry_cover.free()
+	_entry_cover = EntryCover.new()
+	_entry_view.add_child(_entry_cover)
+	_entry_cover.set_process(false)  # stepped below, not by wall-clock frames
+	_entry_cover.start(_entry_view, reverse)
+	var n := 0
+	while is_instance_valid(_entry_cover) and _entry_cover.playing and n < ENTRY_MAX_STEPS and gen == _generation:
+		_entry_cover._process(ENTRY_STEP)
+		await get_tree().process_frame  # the overlay draws its beats on a rendered frame
+		n += 1
 
 
 ## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
@@ -1106,6 +1164,11 @@ func _play_screen(what: String) -> void:
 			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			_screen_host.add_child(dossier)
 			length = dossier.motion_end()
+		"entry":
+			# NA-25: the street entry's beats at their real times, one playhead.
+			var strip := EntryTimelineDemo.new()
+			_screen_host.add_child(strip)
+			length = strip.length()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

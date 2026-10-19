@@ -140,6 +140,10 @@ var hq_run_view: HqRunView = null
 ## tests and the NA-23 lab set it. A run whose street cannot be derived (`StreetRouteData.error`) keeps the old page.
 static var street_route: bool = false
 var street_view: StreetRouteView = null
+## NA-25: the street entry. `_entry_wanted` is set when the jack that brought this scene in was a street entry (the first street
+## page then plays the dive); `entry_cover` is the player while it runs (the jack-out plays it backwards).
+var entry_cover: EntryCover = null
+var _entry_wanted := false
 var _keep_street := false
 var _street_error := ""
 var gate: CentralServerGate = null
@@ -160,6 +164,7 @@ const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_fa
 
 
 func _ready() -> void:
+	_entry_wanted = RunManager.take_street_entry()
 	UiTheme.apply(self)
 	MotionSkip.register(self)  # ANIM-R5: the route move completes with every other motion
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
@@ -975,6 +980,9 @@ func prebake_run_end() -> String:
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
+	# NA-25: the dive starts on a drawn street, so a street entry waits for its city.
+	if street_view != null and is_instance_valid(street_view) and street_view.rig != null and not street_view.rig.is_prepared():
+		return false
 	var city: NeonCity = background.city if background != null else null
 	if city != null and city.is_visible_in_tree():
 		if not city.camera_settled():
@@ -1008,8 +1016,39 @@ func save_and_quit() -> void:
 		return
 	RunManager.autosave()
 	_log.append_text(tr("Saved.") + "\n")
+	# NA-25: leaving from the street page plays the entry backwards (the dive back to the HQ page), then the HQ.
+	if street_view != null and is_instance_valid(street_view) and not (entry_cover != null and entry_cover.playing):
+		await play_entry(true)
+		if not is_inside_tree():
+			return
 	RunManager.go_to_hq()
 	_show_start()
+
+
+## NA-25 (PIPELINE_SPEC 10): plays the street entry over the street view (`reverse`: the jack-out) and returns when it has ended
+## (played or skipped; at once when no beat animates). The route UI comes in with the markers.
+func play_entry(reverse: bool) -> void:
+	if street_view == null or not is_instance_valid(street_view):
+		return
+	if entry_cover != null and is_instance_valid(entry_cover):
+		entry_cover.queue_free()
+	var cover := EntryCover.new()
+	entry_cover = cover
+	street_view.add_child(cover)
+	cover.ui_changed.connect(_set_entry_ui)
+	cover.start(street_view, reverse)
+	if cover.playing:
+		await cover.entry_finished
+	if entry_cover == cover:
+		entry_cover = null
+	if is_instance_valid(cover):
+		cover.queue_free()
+
+
+## The route window's and node file's share shown while the entry plays (1 = whole).
+func _set_entry_ui(k: float) -> void:
+	if _panel_host != null and is_instance_valid(_panel_host):
+		_panel_host.modulate.a = k
 
 
 # --- Panels --------------------------------------------------------------------------
@@ -1756,6 +1795,9 @@ func _show_street_map(s: NetrunSession) -> void:
 		street_view.node_confirmed.connect(func(id: String) -> void:
 			_route_selected = StringName(id)
 			confirm_route_node())
+		if _entry_wanted:
+			_entry_wanted = false
+			play_entry(false)
 	else:
 		street_view.set_run_state(current, visited, options)
 	route_legend.show_links_hovered.connect(func(on: bool) -> void:

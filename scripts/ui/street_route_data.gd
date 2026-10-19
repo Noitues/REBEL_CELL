@@ -138,3 +138,9 @@ func hover_state(dec: Dictionary, node: String) -> Dictionary:
 		var pose := NetrunPoseBuilder.hover_pose(ctx, dec["pose"], node)
 		_states[key] = {"pose": pose, "rec": NetrunPoseBuilder.state_record(ctx, pose, dec["ids"], true)}
 	return _states[key]
+
+
+## NA-25: the HQ page's camera as a perspective pose, the dive's first frame (PIPELINE_SPEC 6.3); null when the run has none
+## (an HQ run enters through its compound, not the street dive).
+func hq_pose() -> NetrunPose:
+	return ctx.get("hq") as NetrunPose

@@ -34,6 +34,7 @@ var tag_text: Callable = Callable()
 var _state: Dictionary = {"current": "", "visited": [], "options": []}
 var _hit: Control = null
 var _toggle_dec: Button = null
+var _toggle_box: Control = null
 var _toggle_ov: Button = null
 var _mask_img: Image = null
 var _mask_tex: ImageTexture = null
@@ -46,6 +47,9 @@ var _branch: Array = []
 var _last_focus := ""
 var _dec_state: Dictionary = {}
 var _lit_all := false
+## NA-25: true while the entry sequence (`EntryCover`) drives the camera and the overlay; the view takes no input then.
+var entry_active := false
+var _entry_occ_on := true
 
 
 ## The data of the run `session` on the game's city, or a data object with `error` set. The city model is the shared one (built on
@@ -98,6 +102,7 @@ func _instant() -> bool:
 func _build_toggle() -> void:
 	var box := HBoxContainer.new()
 	box.name = "ViewToggle"
+	_toggle_box = box
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	box.offset_left = -300.0
@@ -264,13 +269,16 @@ func _refresh(animate: bool, seconds: float) -> void:
 
 
 func _sync_energies() -> void:
-	var rc: Dictionary = _cfg().rooms
-	var idle := float(rc["energy_idle"])
-	var lit := float(rc["energy_lit"]) * float(_cfg().hover["type_glow"])
-	var options: Array = _state["options"]
 	for id: String in rig.room_ids():
-		var on: bool = options.has(id) or _branch.has(id) or id == String(_state["current"])
-		rig.set_room_energy(id, lit if on else idle)
+		rig.set_room_energy(id, _room_energy(id))
+
+
+## The energy room `id` rests at: lit for the options, the hovered branch and the current room, else idle.
+func _room_energy(id: String) -> float:
+	var rc: Dictionary = _cfg().rooms
+	var options: Array = _state["options"]
+	var on: bool = options.has(id) or _branch.has(id) or id == String(_state["current"])
+	return float(rc["energy_lit"]) * float(_cfg().hover["type_glow"]) if on else float(rc["energy_idle"])
 
 
 func _set_hover_target(to: float) -> void:
@@ -324,6 +332,8 @@ func _update_mask() -> void:
 # --- Input ------------------------------------------------------------------------------------
 
 func _on_hit_input(ev: InputEvent) -> void:
+	if entry_active:
+		return
 	if ev is InputEventMouseMotion:
 		var id := overlay.node_at((ev as InputEventMouseMotion).position)
 		_set_hover(id)
@@ -349,7 +359,7 @@ func _set_hover(id: String) -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or not (event is InputEventKey):
+	if entry_active or not is_visible_in_tree() or not (event is InputEventKey):
 		return
 	var k := event as InputEventKey
 	if not k.pressed or k.echo:
@@ -392,3 +402,116 @@ func _escape(consume: bool = false) -> int:
 ## Test and host entry: the Esc rule without a key event.
 func press_escape() -> int:
 	return _escape(false)
+
+
+# --- Entry sequence (NA-25) -------------------------------------------------------------------
+
+## Starts the entry: the view locks its input, shows the OVERVIEW toggle state, and the rooms and overlay go dark (the dive's
+## first frame is the HQ page). `EntryCover` drives the `entry_*` calls below and ends with `entry_end`.
+func entry_begin() -> void:
+	entry_active = true
+	if _toggle_box != null:
+		_toggle_box.visible = false
+	if _hit != null:
+		_hit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_id = ""
+	selected_id = ""
+	base_view = StreetRouteRules.View.OVERVIEW
+	_sync_toggle()
+	overlay.intro = true
+	overlay.reveal_s = -1.0
+	overlay.mark_s = -1.0
+	overlay.reveal_total = Motion.seconds(&"entry_reveal")
+	overlay.focus = ""
+	overlay.branch = []
+	overlay.selected = ""
+	_entry_occlusion(false)
+	_entry_rooms(func(_layer: int) -> float: return 0.0)
+	overlay.mark_dirty()
+
+
+## The dive at `u` (0 = the HQ page, 1 = the street OVERVIEW; PIPELINE_SPEC 6.3). Without an HQ pose the camera holds the OVERVIEW.
+func entry_dive(u: float) -> void:
+	overlay.intro = true
+	var ov: NetrunPose = data.overview_state()["pose"]
+	var hq := data.hq_pose()
+	rig.set_pose(NetrunCameraRig.dive_pose(u, hq, ov) if hq != null else ov)
+	overlay.reveal_s = -1.0
+	overlay.mark_s = -1.0
+	_entry_occlusion(false)
+	_entry_rooms(func(_layer: int) -> float: return 0.0)
+	overlay.mark_dirty()
+
+
+## REVEAL, `s` seconds in (of `total`): links write on and the rooms come up layer by layer.
+func entry_reveal(s: float, total: float) -> void:
+	overlay.intro = true
+	rig.set_pose(data.overview_state()["pose"])
+	_entry_occlusion(true)
+	overlay.reveal_s = s
+	overlay.reveal_total = total
+	overlay.mark_s = -1.0
+	var layers := int(data.run_graph["layers"])
+	_entry_rooms(func(layer: int) -> float: return EntryBeats.up_k(layer, layers, total, s))
+	overlay.mark_dirty()
+
+
+## MARK, `s` seconds in: the route is drawn whole, the markers come in.
+func entry_mark(s: float) -> void:
+	overlay.intro = true
+	rig.set_pose(data.overview_state()["pose"])
+	_entry_occlusion(true)
+	overlay.reveal_s = overlay.reveal_total
+	overlay.mark_s = s
+	_entry_rooms(func(_layer: int) -> float: return 1.0)
+	overlay.mark_dirty()
+
+
+## ZOOM at `u` (0 = OVERVIEW, 1 = DECISION): the camera eases between the two; the toggle flips at the midpoint.
+func entry_zoom(u: float) -> void:
+	var ov: NetrunPose = data.overview_state()["pose"]
+	var dec: Dictionary = _dec_state
+	overlay.intro = false
+	overlay.reveal_s = overlay.reveal_total
+	overlay.mark_s = Motion.seconds(&"entry_mark")
+	rig.set_pose(ov.mix(dec["pose"], NetrunCameraRig.ease(u)))
+	var to_dec := u >= 0.5
+	var want := StreetRouteRules.View.DECISION if to_dec else StreetRouteRules.View.OVERVIEW
+	if want != base_view:
+		base_view = want
+		_sync_toggle()
+		rig.set_occlusion(dec["rec"] if to_dec else data.overview_state()["rec"])
+	_entry_rooms(func(_layer: int) -> float: return 1.0)
+	overlay.mark_dirty()
+
+
+## The end state of beat 7 (CHOOSE): DECISION on the current room, input back, the overlay whole. The same whether the beats played
+## or were skipped.
+func entry_end() -> void:
+	entry_active = false
+	if _toggle_box != null:
+		_toggle_box.visible = true
+	if _hit != null:
+		_hit.mouse_filter = Control.MOUSE_FILTER_STOP
+	_entry_occ_on = true
+	overlay.intro = false
+	overlay.reveal_s = -1.0
+	overlay.mark_s = -1.0
+	base_view = StreetRouteRules.View.DECISION
+	_sync_toggle()
+	_refresh(false, 0.0)
+	overlay.mark_dirty()
+
+
+## The street's occlusion on (the OVERVIEW's cones, from REVEAL on) or off (the HQ page's full-height city, during the dive).
+func _entry_occlusion(on: bool) -> void:
+	if on == _entry_occ_on:
+		return
+	_entry_occ_on = on
+	rig.set_occlusion(data.overview_state()["rec"] if on else {"occlusion": {"buildings": []}})
+
+
+## Rooms at `up_of(layer)` of their resting energy (0 = dark, 1 = at rest).
+func _entry_rooms(up_of: Callable) -> void:
+	for id: String in rig.room_ids():
+		rig.set_room_energy(id, _room_energy(id) * float(up_of.call(StreetRouteRules.layer_of(data.run_graph, id))))

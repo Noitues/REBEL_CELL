@@ -149,6 +149,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
 %s: HQ RUN,%s: HQ RUN
+%s: SKIP,%s: SKIP
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
