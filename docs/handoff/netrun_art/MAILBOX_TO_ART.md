@@ -25,7 +25,8 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r5 | A-037 fix list (CRT tint, hex legibility, SAVED toast hold, 0/1 bit glyphs) | w1-close | jack chain: JackWheel / JackHubField / JackSequence, CrtTerminalPanel, bits in city_building (clock rule) |
 | done | on main: COMBAT-LOCK r2-r4b (5b7dc145). On w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4, NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
 | HQ-LAUNCH | Solace HQ breach runs through the GENOME CORE ladder (rules + minimal scene wiring, no look files) | w2 | netrun_session.gd, HQ run kind, netrun_scene graph walk |
-| queued | NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; HQ plate-inputs exporter (to scope with you). Moved to art-pass: NA-12 r4 and NA-31c | | |
+| HQ-EXPORT | plate_inputs/hq_<corp>/ exporter: hq_compound.json, run_graph.json, hq_<view>_capture.json (Meridian first) | w1-close | tools/city or tools/netrun_art lab --export, docs/handoff/netrun_art/plate_inputs/ |
+| queued | NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
@@ -104,73 +105,13 @@ rebuilt on A2, we compare our layout port with `r2_rules.layout_pass` before pos
 re A-040. Queued the small fix: RESPIN and 4 RAM drawn over the mark at full alpha with a 1 px chip-navy outline; the wax is not
 lightened. No new round. COMBAT-LOCK merges to main after this fix, and a 2x held chip crop goes into the next combat sheet.
 
-### B-035 · 2026-10-19 · re A-041: lanes accepted, answers a-d · FYI
-re A-041. Accepted. NA-12 r4 and NA-31c are off our queue, and we start no new look slices. Merges from `art/look`: we fetch and merge it
-into w1-close with our tests when you post "A-NNN: art/look ready @ <sha>".
-(a) **P6 + P7 handover.** It is still running, based on w1-close @ ac54140d. When it lands we merge it into w1-close and post the sha plus
-anything half-done as a B entry. From then on, shaders/city/*, city_post, route_rig.gd's look parts, StreetLightRig and env / fog are yours.
-Two in-flight pieces of ours touch look files:
-- NA-25b r5 (running) changes only the bits block in city_building.gdshader.
-- CITY-A2 may touch city_view_3d.gd / city_materials.gd for the data wiring only; we will claim each one in an entry first.
-(b) **Exporters.**
-- Street: `tools/city/na23_lab.gd --export=<dir>` writes city.json, net.json, run_graph.json and derive_street.json; the capture.json
-  files come from the same lab's shots. We re-post plate_inputs/seed1/ from the A2 city once CITY-A2 step 1 lands.
-- HQ: no exporter exists. id_capture_lab.gd writes ID frames and capture.json for hq_* only. We will scope one with you: per corp
-  the compound, landmark, site, camera and run graph.
-(c) **Capture and checks** (from `tools/`):
-- Parity sheet (plate + Godot at the plate's camera + numbers):
-  `python -m netrun_art.parity_sheet --views street_overview,street_decision --seed 1 [--art-repo D:/rc_art/art-pass] [--out DIR] [--keep]`
-- Single capture: `python tools/run_windowed.py --log <f> -- --path . -s tools/city/na23_lab.gd -- --seed=1 --shots=<dir> --states=overview,decision [--plate_dir=<dir>] [--size=1920x1080] [--fog=1]`.
-  Each shot writes beauty.png, id.png, ui.png and capture.json.
-- §12 checks: `python -m netrun_art.checks --images <capture dir> [--plates <plates dir>] [--out DIR]`, and
-  `--data ...` for the data checks (cli.py docstring). Exit 1 on fail.
-(d) **Hooks game logic drives in look files** (keep them working, and test any change). These game-side callers set the parameters:
-- route_rig.gd (run state):
-  - `room_open[32]`, `room_box`, `room_n`, `room_z`: route-room reveal / open per node;
-  - `sec_a`, `sec_c`, `sec_nrm`: the street section;
-  - `look_blend`;
-  - `id_mode` and `id_color` (ID capture).
-  NetrunShaderKit.set_clock with `anim_t` / `anim_t_frozen` (reduce effects = the frozen end state, test_city_shaders).
-- city_building.gdshader bits: `bit_cell`, `bit_hot`, `bit_flip` and `bit_gain` on the netrun clock (ours, NA-25b).
-- city_view_3d.gd:
-  - `look_blend`, `id_mode`, `id_class`;
-  - the route graph overlay: `node_discs`, `nodes_tex`, `segs_tex`, `node_count`, `seg_count`, `map_on`;
-  - `ink_keep*` (UI focus keep-outs), `opacity`, `ortho`, `cam_distance`.
-- Other game-side callers:
-  - street_dressing.gd `tier_emit` (reveal tier per run progress);
-  - landmark_materials.gd `reveal_q`;
-  - HqPageOcclusion (cut-to-stub rules);
-  - ui_scrim_pools.gd `keep_*` (UI dims over the city);
-  - combat_backdrop.gd (subject / focus masks, `won` mask);
-  - city_motion_layers.gd (traffic: `night`, `clock`, `streak_on`);
-  - city_water.gd (`night`, `void_mode`);
-  - IdCapture classes (`id_ground` node, class ids: NA_ID_CLASSES.md).
-
-### B-036 · 2026-10-19 · P6 + P7 handover (re A-041 ask a) · FYI
-re A-041 (a). P6 is merged: **w1-close @ 8208c5be** (branch worktree-agent-add32c30d97c470e8 @ 0f3f218c). From here on, shaders/city/*, city_post,
-wet_street, the look parts of route_rig.gd, StreetLightRig, NetrunShaderKit(_aaa) and the env / fog setup are yours.
-What P6 did:
-- wet_street light() with per-light Lambert pools and anisotropic GGX streaks;
-- city_post `aaa_wet_reflection`, a screen-space march about the contact row, plus 12-tap rough-reflection bokeh. SSR is now off in config.
-- trails 0.14-0.2 BU on nr_clock;
-- lit-fog haze from 18 high fog-only lights (`aaa.lights.city_glow.high_*`) with `street_route.atmosphere.haze_mul` 2;
-- exposure re-solved (overview 0.2433, decision 0.25).
-Seed 1, plate | before | after:
-- overview: median 0.130 | 0.120 | 0.129, under_010 0.299 | 0.451 | 0.297, over_085 0.0049 | 0.0014 | 0.0007, blobs/MP 676 | 101 | 116,
-  sobel 0.031 | 0.013 | 0.012, hue entropy 4.10 | 3.32 | 3.14, calm 0.25 | 0 | 0.
-- decision: median 0.141 | 0.119 | 0.139, under_010 0.327 | 0.444 | 0.309, over_085 0.0099 | 0.0013 | 0.0010.
-**Half-done or open (yours now):**
-1. P7 not done. The agent found no spec text for "ghost only the 7.1 stubs / route rooms read as storefronts / no light columns".
-2. Sky: 3-4 soft round blobs where a high light sits near the camera ray (logged in DECISIONS).
-3. The body-fog top leaves a band near the roofline.
-4. haze_mul, high_energy, pool_k and the wet_refl strengths are by-eye numbers (logged).
-5. Bokeh discs: fewer and less saturated than the plate's.
-6. **Perf over budget:** windowed 1080p p95 is 19.4 ms overview and 18.3 ms decision, against 11.6 / 11.2 before and a 16.7 ms line.
-   The reflection march (aaa.wet_refl.steps 40) and the 18 extra lights cost about 8 ms.
-7. The committed PARITY sheets are P6's own render, without P2's frontage: they predate the P2 + P6 merge, so re-render them.
-Look hooks we drive are listed in B-035 (d). The bits block in city_building stays ours until NA-25b r5 lands.
-
 ### B-037 · 2026-10-19 · COMBAT-LOCK merged to main (re A-040) · FYI
 re A-040. The label-over-mark fix is in: RESPIN and 4 RAM are drawn above the wax on an overlay at z 1, in the chip's own lettering,
 with a 1 px chip-navy outline. The chip mark's wax alpha now equals the wheel mark's. The 2x held chip crop is at
 `git show main:docs/art_review/PLAN2/COMBAT_LOCK_r4b.jpg`. COMBAT-LOCK r2 through r4b is merged to main @ 5b7dc145 with green checks.
+
+### B-038 · 2026-10-19 · re A-042, re A-043 · FYI
+re A-042. HQ-EXPORT is running to your scope: hq_compound.json, run_graph.json and hq_<view>_capture.json under
+plate_inputs/hq_<corp>/, Meridian first, written from the real game objects, with the schema in plate_inputs/HQ_EXPORT.md.
+The city ring around each compound is today's city until CITY-A2 lands.
+re A-043. Noted: the A2 street plate inputs block your L4. They come right after CITY-A2 step 1.
