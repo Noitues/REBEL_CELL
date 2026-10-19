@@ -14,8 +14,8 @@ var parts: Dictionary = {}
 var hidden: int = 0
 var gates: int = 0
 
-const ORDER: Array[String] = ["roads", "road_glow", "ramps", "rails", "rail_glow", "stations", "walls", "checkpoints",
-	"port", "piers", "entrances", "drowned"]
+const ORDER: Array[String] = ["roads", "road_glow", "ramps", "pillars", "rails", "rail_glow", "stations", "walls",
+	"checkpoints", "port", "piers", "entrances", "drowned"]
 
 
 ## The feature node of `plan` (its A2 raster and terrain) for config `cfg`: `ground_mat` for the solid parts, `lane_mat`
@@ -136,19 +136,23 @@ static func _in_tunnel(a: Vector2, b: Vector2, tunnels: Array[PackedVector2Array
 
 
 ## A deck along polyline `pl` (metres): `half` BU each side, `lift` BU over the ground, colour `col`; side faces down to the
-## ground when `lift` reaches `cfg.a2_deck_skirt_from`; a glow line (`glow_half` BU, colour `glow`) into `glow_acc`
-## (skipped when null). Segments in `tunnels` are not drawn (counted in ctx.hidden).
-static func _deck(ctx: _Ctx, acc: _Acc, glow_acc: _Acc, pl: PackedVector2Array, half: float, lift: float, col: Color,
-		glow: Color, glow_half: float, tunnels: Array[PackedVector2Array]) -> void:
+## ground from `cfg.a2_deck_skirt_from` BU, pillars into `pillar_acc` (when not null) from `cfg.a2_pillar_from` BU; a glow
+## line (`glow_half` BU, colour `glow`) into `glow_acc` (skipped when null). Segments in `tunnels` are not drawn (counted
+## in ctx.hidden).
+static func _deck(ctx: _Ctx, acc: _Acc, glow_acc: _Acc, pillar_acc: _Acc, pl: PackedVector2Array, half: float, lift: float,
+		col: Color, glow: Color, glow_half: float, tunnels: Array[PackedVector2Array]) -> void:
+	var cfg := ctx.cfg
 	var hm := ctx.metres(half)
 	var gm := ctx.metres(glow_half)
-	var skirt := lift >= ctx.cfg.a2_deck_skirt_from
+	var pillars := pillar_acc != null and lift >= cfg.a2_pillar_from
+	var skirt := lift >= cfg.a2_deck_skirt_from and not pillars
+	var run := 0.0
 	for k in pl.size() - 1:
 		var a := pl[k]
 		var b := pl[k + 1]
 		if a.is_equal_approx(b):
 			continue
-		if not tunnels.is_empty() and _in_tunnel(a, b, tunnels, ctx.cfg.a2_tunnel_tol_m):
+		if not tunnels.is_empty() and _in_tunnel(a, b, tunnels, cfg.a2_tunnel_tol_m):
 			ctx.hidden += 1
 			continue
 		var d := (b - a).normalized()
@@ -159,9 +163,24 @@ static func _deck(ctx: _Ctx, acc: _Acc, glow_acc: _Acc, pl: PackedVector2Array, 
 		if skirt:
 			for s: float in [1.0, -1.0]:
 				acc.quad(ctx.at(ea + n * hm * s, lift), ctx.at(eb + n * hm * s, lift), ctx.ground(eb + n * hm * s), ctx.ground(ea + n * hm * s), col)
+		if pillars:
+			var seg := ctx.bu(a.distance_to(b))
+			while run <= seg:
+				var m := a + d * ctx.metres(run)
+				_box(ctx, pillar_acc, m, d, Vector3(cfg.a2_pillar_bu, cfg.a2_pillar_bu, lift), 0.0, col)
+				run += cfg.a2_pillar_every_bu
+			run -= seg
 		if glow_acc != null:
-			var gl := lift + ctx.cfg.lane_stroke_bu
+			var gl := lift + cfg.lane_stroke_bu
 			glow_acc.quad(ctx.at(a + n * gm, gl), ctx.at(b + n * gm, gl), ctx.at(b - n * gm, gl), ctx.at(a - n * gm, gl), glow)
+
+
+## The lift (BU) of road / rail number `k` of class `cls` in `table` (a float, or a Vector2 alternating by `k`).
+static func _lift_of(table: Dictionary, cls: StringName, k: int) -> float:
+	var v: Variant = table.get(cls, 0.0)
+	if v is Vector2:
+		return (v as Vector2).x if k % 2 == 0 else (v as Vector2).y
+	return float(v)
 
 
 ## A box centred on A2 point `m` (metres) on the ground: `size` (x along `dir`, y across, z high; BU).
@@ -189,16 +208,23 @@ static func _box(ctx: _Ctx, acc: _Acc, m: Vector2, dir: Vector2, size: Vector3, 
 
 static func _roads(ctx: _Ctx, acc: Dictionary) -> void:
 	var cfg := ctx.cfg
+	var seen := {}
 	for r: Dictionary in ctx.a2.roads:
 		var cls: StringName = r["class"]
-		var half := maxf(ctx.bu(float(r["width"])) * 0.5, cfg.a2_road_min_half_bu)
+		var id: StringName = r["id"]
+		var k: int = seen.get(cls, 0)
+		seen[cls] = k + 1
+		var w: float = float(cfg.a2_road_width_ids.get(id, cfg.a2_road_width.get(cls, ctx.bu(float(r["width"])))))
+		var half := maxf(w * 0.5, cfg.a2_road_min_half_bu)
+		var lift: float = float(cfg.a2_road_lift_ids[id]) if cfg.a2_road_lift_ids.has(id) else _lift_of(cfg.a2_road_lift, cls, k)
 		var glow: Color = cfg.a2_road_glow.get(cls, cfg.street)
-		_deck(ctx, acc["roads"], acc["road_glow"], r["polyline"], half, float(cfg.a2_road_lift.get(cls, 0.0)), cfg.street, glow,
+		_deck(ctx, acc["roads"], acc["road_glow"], acc["pillars"], r["polyline"], half, lift, cfg.street, glow,
 			half * cfg.a2_road_glow_share, r["tunnels"])
-	var ramp_lift := float(cfg.a2_road_lift.get(&"truck", 0.0))
+	var ramp_lift := _lift_of(cfg.a2_road_lift, &"arterial", 0)
 	for ix: Dictionary in ctx.a2.interchanges:
 		for pl: PackedVector2Array in ix["ramps"]:
-			_deck(ctx, acc["ramps"], null, pl, cfg.a2_road_min_half_bu, ramp_lift, cfg.street, Color.BLACK, 0.0, [] as Array[PackedVector2Array])
+			_deck(ctx, acc["ramps"], null, null, pl, cfg.a2_road_min_half_bu, ramp_lift, cfg.street, Color.BLACK, 0.0,
+				[] as Array[PackedVector2Array])
 
 
 static func _rails(ctx: _Ctx, acc: Dictionary) -> void:
@@ -207,11 +233,12 @@ static func _rails(ctx: _Ctx, acc: Dictionary) -> void:
 		var kind: StringName = r["kind"]
 		var half := maxf(ctx.bu(float(r["gauge"])) * 0.5, cfg.a2_rail_min_half_bu)
 		var glow: Color = cfg.a2_rail_glow.get(kind, cfg.a2_rail_color)
-		_deck(ctx, acc["rails"], acc["rail_glow"], r["polyline"], half, float(cfg.a2_rail_lift.get(kind, 0.0)), cfg.a2_rail_color, glow,
-			half * cfg.a2_road_glow_share, r["tunnels"])
+		_deck(ctx, acc["rails"], acc["rail_glow"], acc["pillars"], r["polyline"], half, _lift_of(cfg.a2_rail_lift, kind, 0),
+			cfg.a2_rail_color, glow, half * cfg.a2_road_glow_share, r["tunnels"])
 	for s: Dictionary in ctx.a2.stations:
 		var box: Vector3 = cfg.a2_station_box.get(s["kind"], cfg.a2_station_box[&"rail"])
-		_box(ctx, acc["stations"], s["position"], Vector2.RIGHT, box, 0.0, cfg.plaza)
+		var line: StringName = cfg.a2_station_line.get(s["kind"], &"commuter")
+		_box(ctx, acc["stations"], s["position"], Vector2.RIGHT, box, _lift_of(cfg.a2_rail_lift, line, 0), cfg.plaza)
 
 
 static func _walls(ctx: _Ctx, acc: Dictionary) -> void:
@@ -234,7 +261,7 @@ static func _walls(ctx: _Ctx, acc: Dictionary) -> void:
 			if open:
 				ctx.gates += 1
 				continue
-			_deck(ctx, acc["walls"], null, PackedVector2Array([a, b]), cfg.a2_wall_half_bu, cfg.a2_wall_h_bu, cfg.a2_wall_color,
+			_deck(ctx, acc["walls"], null, null, PackedVector2Array([a, b]), cfg.a2_wall_half_bu, cfg.a2_wall_h_bu, cfg.a2_wall_color,
 				Color.BLACK, 0.0, [] as Array[PackedVector2Array])
 	for c: Dictionary in ctx.a2.checkpoints:
 		var col := cfg.plaza.lerp(Palette.corp_color(c["district"]), cfg.territory_tint)
