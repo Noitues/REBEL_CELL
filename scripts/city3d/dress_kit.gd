@@ -9,6 +9,8 @@ const PLUME := preload("res://shaders/city/dress_plume.gdshader")
 const SHAPE_SOLID := 0
 const SHAPE_DISC := 1
 const SHAPE_FLICKER := 2
+## A sign piece: soft panel + bright core strokes by max (NA-24c).
+const SHAPE_SIGN := 3
 
 static var _box: BoxMesh = null
 static var _quad: QuadMesh = null
@@ -33,7 +35,20 @@ static func neon_material(shape: int, emit: float) -> ShaderMaterial:
 	m.set_shader_parameter(&"loop_s", float(CityShaderConfigData.shipped().streak["loop_s"]))
 	var b: Array = DressingConfigData.shipped().sign["flicker_bursts"]
 	m.set_shader_parameter(&"bursts", Vector2(float(b[0]), float(b[1])))
+	if shape == SHAPE_SIGN or shape == SHAPE_FLICKER:
+		var sg: Dictionary = DressingConfigData.shipped().sign
+		for k: String in ["panel_level", "core_level", "core_max", "frame_w", "stroke_h", "fill", "cell_gap", "bright_var"]:
+			m.set_shader_parameter(StringName(k), float(sg[k]))
+		var c: Array = sg["cell"]
+		m.set_shader_parameter(&"cell", Vector2(float(c[0]), float(c[1])))
 	return m
+
+
+## Tells a sign tier material which tier covers it (`DressReveal.range_of` of `cover_group`), so the far block fades out as the
+## covering tier fades in and the two never sum.
+static func set_yield(m: ShaderMaterial, cover_group: String) -> void:
+	var r: Dictionary = DressReveal.range_of(cover_group)
+	m.set_shader_parameter(&"yield_range", Vector2(float(r["end"]), float(r["near"])))
 
 
 ## The plume material from the config.

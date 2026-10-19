@@ -18,7 +18,8 @@ var plan: Dictionary = {}
 var districts: DressDistricts = null
 var _f: Dictionary = {}
 var _cfg: DressingConfigData = null
-var _items: Dictionary = {}
+## Group id -> the instance dicts (`DressKit.item`) of the group (the MultiMesh data read back is empty headless).
+var items: Dictionary = {}
 var _mats: Dictionary = {}
 
 
@@ -67,9 +68,9 @@ func _out() -> Array:
 
 
 func _add(group: String, it: Dictionary) -> void:
-	if not _items.has(group):
-		_items[group] = []
-	(_items[group] as Array).append(it)
+	if not items.has(group):
+		items[group] = []
+	(items[group] as Array).append(it)
 
 
 func _col(id: String, p: Array) -> Color:
@@ -93,15 +94,40 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 	if not full:
 		return
 	var n: int = int(s["panels"])
+	var hero: bool = prefix == "hero"
+	var bid: String = String(s["bid"])
+	if hero:
+		var pr: Array = sg["hero_panels"]
+		n = clampi(n, int(pr[0]), int(pr[1]))
 	var gap: float = float(sg["gap"])
 	var ph: float = (h - float(n - 1) * gap) / float(n)
+	var bv: Array = sg["hero_panel_bright"]
+	var wv: Array = sg["hero_panel_w"]
 	for i in n:
 		var z0: float = float(i) * (ph + gap)
 		var out: float = depth + 0.8 * fposmod(float(i) * 0.37, 1.0)
-		var c: Color = DressKit.lighten(base) if i % 3 == 2 else base
-		_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, 0.0, w, 0.0, out, z0, z0 + ph), c, seed01, phase, gain))
+		var key: String = "%s|%d" % [bid, i]
+		var c: Color = base
+		var g: float = gain
+		var pw: float = w
+		if hero:
+			c = _col(_hero_pal(DressDistricts.hash01("hero_hue", key)), p)
+			g = gain * lerpf(float(bv[0]), float(bv[1]), DressDistricts.hash01("hero_br", key))
+			pw = w * lerpf(float(wv[0]), float(wv[1]), DressDistricts.hash01("hero_w", key))
+		var a0: float = (w - pw) * 0.5
+		var pseed: float = DressDistricts.hash01("panel_s", key)
+		_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, a0, a0 + pw, 0.0, out, z0, z0 + ph), c, pseed, phase, g))
 	var pole: float = float(sg["pole"])
-	_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, w * 0.5 - pole * 0.5, w * 0.5 + pole * 0.5, 0.0, depth, 0.0, h), base * 0.6, seed01, phase, gain))
+	_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, w * 0.5 - pole * 0.5, w * 0.5 + pole * 0.5, 0.0, depth, 0.0, h), base, seed01, phase, gain * float(sg["pole_gain"])))
+
+
+## The palette id of a hero panel for a 0..1 hash: the district hue, its second light, or the one accent (`sign.hero_mix`, `hero_mix_cut`).
+func _hero_pal(r: float) -> String:
+	var mix: Array = _cfg.sign["hero_mix"]
+	var cut: Array = _cfg.sign["hero_mix_cut"]
+	if r < float(cut[0]):
+		return String(mix[0])
+	return String(mix[1]) if r < float(cut[1]) else String(mix[2])
 
 
 func _hero_signs(list: Array, col_by_bid: Dictionary) -> void:
@@ -200,9 +226,15 @@ func _material(group: String) -> Material:
 	var sg: Dictionary = _cfg.sign
 	var shape: int = DressKit.SHAPE_SOLID
 	var emit: float = float(sg["panel_emit"])
+	var sign_tier: bool = group.begins_with("hero_") or group.begins_with("sign_")
 	if group.ends_with("_flicker"):
 		shape = DressKit.SHAPE_FLICKER
 		emit = float(sg["flicker_emit"])
+	elif sign_tier:
+		var m: ShaderMaterial = DressKit.neon_material(DressKit.SHAPE_SIGN, 1.0)
+		if group.ends_with("_neon"):
+			DressKit.set_yield(m, group.trim_suffix("_neon") + "_full")
+		return m
 	elif group.ends_with("_neon") or group == "shop_strip" or group == "billboard_panel":
 		emit = float(sg["neon_emit"])
 	elif group == "lamp_spill" or group == "glow" or group == "wash":
@@ -222,10 +254,10 @@ func _mesh_of(group: String) -> Mesh:
 
 
 func _flush() -> void:
-	var names: Array = _items.keys()
+	var names: Array = items.keys()
 	IdSort.sort_ids(names)
 	for g: String in names:
-		var list: Array = _items[g]
+		var list: Array = items[g]
 		var mat := _material(g)
 		clock_mats.append(mat)
 		var ns: Array[MultiMeshInstance3D] = DressKit.group_nodes(g, _mesh_of(g), mat, list)

@@ -15,8 +15,8 @@ static var _shipped: DressingConfigData = null
 @export var fade: Dictionary = {}
 ## Caps: `glow_lights`, `beam_spots`, `city_signs`, `shopfronts`, `billboards`, `plumes`, and `chunk_bu` (the MultiMesh cell along the street).
 @export var caps: Dictionary = {}
-## Palette sets: set id -> {palette id: [r, g, b]}; `common` holds the ids every district shares (lamps, lanes). Sets named
-## `placeholder_*` are stand-ins until the art-pass district assets land.
+## Palette sets: set id -> {palette id: [r, g, b]}; `common` holds the ids every district shares (lamps, lanes). Per-district sets
+## `win_N` ids are the art-pass window colours (city_preset.py DISTRICTS); sets are the art-pass district hue (district_a) and second light (district_b).
 @export var palettes: Dictionary = {}
 ## District languages: territory id (`sprawl` for the neutral city) -> `{palette}`.
 @export var districts: Dictionary = {}
@@ -38,7 +38,9 @@ const REQUIRED: Dictionary = {
 	"caps": ["glow_lights", "beam_spots", "city_signs", "shopfronts", "billboards", "plumes", "chunk_bu"],
 	"frontage": ["along_pad", "depth_max", "min_top", "sign_share", "shop_share", "billboard_share", "plume_share", "sign_w", "sign_h_min",
 		"sign_h_max", "shop_h", "shop_z", "billboard_w", "billboard_h", "billboard_up"],
-	"sign": ["neon_emit", "panel_emit", "band_emit", "flicker_emit", "depth", "pole", "gap", "flicker_bursts"],
+	"sign": ["neon_emit", "panel_emit", "band_emit", "flicker_emit", "depth", "pole", "gap", "flicker_bursts",
+		"panel_level", "core_level", "core_max", "frame_w", "cell", "stroke_h", "fill", "cell_gap", "bright_var", "hero_panels", "hero_mix", "hero_mix_cut",
+		"hero_panel_bright", "hero_panel_w", "pole_gain"],
 	"lamp": ["dot", "spill_radius", "spill_gain", "dot_gain"],
 	"glow": ["radius", "gain", "wash_radius", "wash_gain"],
 	"plume": ["puffs", "rise", "size0", "size1", "alpha", "emit", "col", "loop_s", "ground_clear"],
