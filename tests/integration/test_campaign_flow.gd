@@ -30,6 +30,8 @@ func _finish_run() -> void:
 		steps += 1
 		match s.run.phase:
 			RunState.Phase.MAP:
+				if s.run.corp_theme.solace.enabled:
+					s.run.corp_theme.solace.front_milli = -999999  # the Bloom is not what this flow tests
 				s.enter_node(s.available_nodes()[0])
 			RunState.Phase.COMBAT:
 				# Invincible test operative: tier-scaled bosses hit far harder than 60 HP.
@@ -79,10 +81,13 @@ func test_winning_the_breach_with_three_exploits_wins_the_campaign_and_records_i
 	assert_true(RunManager.launch_error(c.living_operatives()[0].id, &"the_genome_core") == "", "breach open")
 	var op := c.living_operatives()[0]
 	assert_true(_hq.launch(&"the_genome_core", op.id))
-	assert_eq(RunManager.netrun.run.kind, "boss")
-	assert_eq(RunManager.netrun.run.combat_overrides["remove_boss_pointers"], 1)
-	RunManager.netrun.enter_node(RunManager.netrun.available_nodes()[0])
-	assert_eq(RunManager.netrun.combat.state.get_combatant(&"enemy_0").source_id, &"renewal_engine")
+	var ladder := RunManager.netrun
+	assert_eq(ladder.run.kind, "hq", "W2 HQ-LAUNCH: the Solace breach is the GENOME CORE ladder")
+	# The Exploits bite the crown fight only: stand at the last rung and breach the crown.
+	ladder.run.corp_theme.solace.front_milli = -999999
+	ladder.run.current_node_id = ladder.run.map.layers[ladder.run.map.layer_count() - 2][0]["id"]
+	ladder.enter_node(ladder.run.map.final_node_id())
+	assert_eq(ladder.combat.state.get_combatant(&"enemy_0").source_id, &"renewal_engine")
 	assert_eq(RunManager.netrun.combat.state.get_combatant(&"enemy_0").wheel.count_status(RC.Status.CORRUPTED), 2, "Virus")
 	_finish_run()
 	assert_eq(c.outcome, CampaignState.Outcome.WON)

@@ -13,6 +13,8 @@ extends RefCounted
 
 const CYCLES_PER_SCHEMATIC_FALLBACK := 10
 const BUG_CARD_ID := &"bug"
+## RunState.kind of the Solace HQ ladder run.
+const HQ_LADDER_KIND := "hq"
 
 var config: CampaignConfigData
 var lookup: ContentLookup
@@ -186,6 +188,43 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	return s
 
 
+## WH-HQ-LAUNCH: the Solace HQ breach as the GENOME CORE ladder (run kind "hq"): a map from
+## SolaceHqGraph.generate (stream `hq_graph` of the run seed), the crown fight is the final boss,
+## winning it completes the HQ run (campaign WON). A mid-ladder won fight continues the run.
+static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, site_id: StringName, tier: int, run_seed: int, corp: CorporationData) -> NetrunSession:
+	var s := NetrunSession.new()
+	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
+	s._build_pools()
+	var op := p_campaign.get_operative(operative_id)
+	if op == null or not op.alive:
+		push_error("NetrunSession: no living operative '%s'." % operative_id)
+		return null
+	s.run = RunState.new()
+	s.run.run_seed = run_seed
+	s.run.tier = tier
+	s.run.site_id = site_id
+	s.run.kind = HQ_LADDER_KIND
+	s.run.operative = op.duplicate_state()
+	s.streams = RngStreams.seeded(run_seed)
+	var left_post := s._leave_post(operative_id)
+	s.run.map = SolaceHqGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM))
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+	p_campaign.runs_started += 1
+	s.last_events = [{"type": "run_start", "text": "HQ ladder started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
+	s.last_events.append_array(left_post)
+	s._apply_bug_cards()
+	s._apply_boosts()
+	s._sync()
+	return s
+
+
+## Whether the HQ breach of `corp` runs through the ladder (only Solace so far; the other
+## corporations keep the single-node "boss" run until their HQ slices).
+static func uses_hq_ladder(corp: CorporationData) -> bool:
+	return corp != null and corp.id == BloomRules.SOLACE_ID
+
+
 static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary, corp: CorporationData = null) -> NetrunSession:
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
@@ -289,7 +328,7 @@ func bloom_preview() -> Dictionary:
 
 ## Bosses and mini-bosses: the HQ boss run's node and the final Server Rack of a netrun.
 func _bloom_boss_node(node: Dictionary) -> bool:
-	return run.kind == "boss" or bool(node.get("boss", false)) or (run.kind == "netrun" and run.map != null and node.get("id", &"") == run.map.final_node_id())
+	return run.kind == "boss" or bool(node.get("boss", false)) or bool(node.get("mini_boss", false)) or (run.kind == "netrun" and run.map != null and node.get("id", &"") == run.map.final_node_id())
 
 
 ## CAUGHT's consequence: the operative is lost and the netrun abandoned (Q24.1), the same
@@ -465,6 +504,7 @@ func _start_combat(elite: bool) -> void:
 ## The fight a node would start: the foe and the fight seed drawn from `combat_rng` (the
 ## run's combat stream, or a copy of it for a preview), and the operative's overrides.
 func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator) -> Dictionary:
+	var boss_exploits := {}
 	var pool: Array = _pools["elites"] if elite else normal_pool()
 	if final_rack and not _pools["mini_bosses"].is_empty():
 		pool = _pools["mini_bosses"]
@@ -475,15 +515,18 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 		enemy_id = run.forced_enemy_id
 	elif bool(run.current_node().get("boss", false)) and corporation != null and corporation.final_boss != null:
 		enemy_id = corporation.final_boss.id  # WH-10: the HQ ladder's crown is the final boss
+		if run.kind == HQ_LADDER_KIND:
+			boss_exploits = CampaignRules.boss_overrides(campaign, corporation)  # the Exploits bite the crown only
 	var seed := combat_rng.randi()
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
-	var overrides := {
+	var overrides := boss_exploits.duplicate(true)
+	overrides.merge({
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
 		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "enemy_output_scale": enemy_output_scale(), "tier": run.tier, "hub_id": String(op.hub_id(cls)),
-	}
+	}, true)
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
 	if campaign.is_assisted():
@@ -588,7 +631,8 @@ func _finish_combat() -> void:
 			run.drones.append({"source_id": String(d.source_id), "hp": d.hp, "dock_slot": d.dock_slot})
 	run.combats_won += 1
 	var elite: bool = node["elite"]
-	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK
+	var ladder := run.kind == HQ_LADDER_KIND
+	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
 	if elite:
 		run.elites_defeated += 1
 	var rewards := streams.get_stream(&"rewards")
@@ -602,8 +646,12 @@ func _finish_combat() -> void:
 		var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
 		run.unbanked_assets.append(asset)
 		last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
-	if run.kind != "netrun":
+	if run.kind != "netrun" and not ladder:
 		combat = null
+		_complete_run()
+		return
+	if ladder and bool(node.get("boss", false)):
+		combat = null  # the crown is down: the HQ run completes (campaign WON)
 		_complete_run()
 		return
 	_offer(&"card", _card_pool(), config.card_reward_choices, rewards)

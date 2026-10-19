@@ -293,7 +293,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 	var site := site_data(corp, run.site_id)
 	if site == null:
 		return events
-	if run.kind == "boss":
+	if run.kind == "boss" or run.kind == NetrunSession.HQ_LADDER_KIND:
 		campaign.outcome = CampaignState.Outcome.WON
 		var p := story_path(campaign, corp)
 		var boss_name := corp.final_boss.display_name if corp != null and corp.final_boss != null else "The final server"

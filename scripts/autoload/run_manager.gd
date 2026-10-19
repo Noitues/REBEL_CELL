@@ -258,8 +258,11 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 	var run_seed := seed_rng.randi()
 	match CampaignRules.run_kind_for(campaign, site):
 		"boss":
-			netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
-				corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
+			if NetrunSession.uses_hq_ladder(corporation):
+				netrun = NetrunSession.start_hq_ladder(resolver, campaign, operative_id, site_id, site.tier, run_seed, corporation)
+			else:
+				netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
+					corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
 			if has_node("/root/Dialogue"):
 				get_node("/root/Dialogue").speak("boss", RC.Voice.DISPATCH, corporation.id, &"", campaign.campaign_seed)
 		"reclaim":

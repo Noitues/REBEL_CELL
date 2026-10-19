@@ -244,7 +244,7 @@ static func run_id(run: RunState) -> String:
 
 ## "street" for a netrun, "hq" for an HQ breach (a "boss" run).
 static func run_kind(run: RunState) -> String:
-	return "hq" if run.kind == "boss" else "street"
+	return "hq" if run.kind == "boss" or run.kind == NetrunSession.HQ_LADDER_KIND else "street"
 
 
 ## Collisions `city_json` would merge silently: a bid reached by two different cells, or a
