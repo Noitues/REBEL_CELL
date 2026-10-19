@@ -98,6 +98,9 @@ void fragment() {
 	}
 	vec3 rgb = COLOR.rgb * emit * g * cust.z;
 	if (shape == 3 || shape == 2) {
+		if (!FRONT_FACING) {
+			discard;
+		}
 		float yw = 1.0;
 		if (yield_range.x > 0.0) {
 			float d = length(VERTEX);
