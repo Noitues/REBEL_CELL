@@ -344,7 +344,7 @@ func _lanes(list: Array) -> void:
 ## Ordered by the dress lists (deterministic); the caps are applied by the rig.
 func light_sources(derive: Dictionary) -> Dictionary:
 	var lc: Dictionary = CityShaderConfigData.shipped().aaa["lights"]
-	var out := {"lamps": [], "glows": [], "washes": [], "facades": [], "beams": [], "city_glow": []}
+	var out := {"lamps": [], "glows": [], "washes": [], "facades": [], "beams": [], "city_glow": [], "city_glow_high": []}
 	for l: Dictionary in dress["lamps"]:
 		var p: Array = l["pos"]
 		(out["lamps"] as Array).append({"pos": DressKit.pos_w([p[0], p[1], float(lc["lamp"]["height"])]), "col": _col(String(l["pal"]), p)})
@@ -388,4 +388,10 @@ func light_sources(derive: Dictionary) -> Dictionary:
 		var off: float = offs[(i / 6) % 3]
 		var p: Array = NetrunArtDress.world(_f, u, float(_f["cline"]) + off * float(_f["ncross"]), float(cg["height"]))
 		(out["city_glow"] as Array).append({"pos": DressKit.pos_w(p), "col": cc[i % 3]})
+	# P6 (A-036): the lit haze of the plate's sky is the fog volumes lit by fog-only lights; the high ones sit above the skyline.
+	for i in int(cg["high_count"]):
+		var u2: float = lerpf(-120.0, float(_f["length"]) + 120.0, float(i % 6) / 5.0)
+		var off2: float = float(cg["side"]) * float(3 + 2 * ((i / 6) % 3))
+		var p2: Array = NetrunArtDress.world(_f, u2, float(_f["cline"]) + off2 * float(_f["ncross"]), float(cg["high_height"]))
+		(out["city_glow_high"] as Array).append({"pos": DressKit.pos_w(p2), "col": cc[(i + 1) % 3]})
 	return out

@@ -47,6 +47,11 @@ func _build(src: Dictionary) -> void:
 		l.omni_range = float(cg["range"])
 		l.light_volumetric_fog_energy = FOG_ENERGY_CAP
 		l.light_energy = float(cg["energy"]) / FOG_ENERGY_CAP
+	for s: Dictionary in src["city_glow_high"]:
+		var l := _omni("haze", s["pos"], s["col"], float(cg["watts"]), lc)
+		l.omni_range = float(cg["high_range"])
+		l.light_volumetric_fog_energy = FOG_ENERGY_CAP
+		l.light_energy = float(cg["high_energy"]) / FOG_ENERGY_CAP
 	var bm: Dictionary = lc["beam"]
 	for i: int in mini(src["beams"].size(), int(bm["cap"])):
 		var s: Dictionary = src["beams"][i]

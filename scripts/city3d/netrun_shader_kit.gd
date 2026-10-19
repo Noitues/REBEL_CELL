@@ -127,6 +127,10 @@ static func setup_wet(m: ShaderMaterial) -> void:
 	m.set_shader_parameter(&"rough_wet", _v2(w["rough_wet"]))
 	m.set_shader_parameter(&"wet_specular", float(w["specular"]))
 	m.set_shader_parameter(&"albedo_mul", float(w["albedo_mul"]))
+	m.set_shader_parameter(&"streak_k", float(w["streak_k"]))
+	m.set_shader_parameter(&"spec_max", float(w["spec_max"]))
+	m.set_shader_parameter(&"pool_k", float(w["pool_k"]))
+	m.set_shader_parameter(&"spill_k", float(w["spill_k"]))
 
 
 ## The speed quantized so the lane length is a whole number of loops: `L = k * speed * T`, `k = max(1, round(L / (speed T)))`

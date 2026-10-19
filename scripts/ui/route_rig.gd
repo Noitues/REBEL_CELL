@@ -412,6 +412,7 @@ func _apply_fog_density() -> void:
 	view.environment().volumetric_fog_length = NetrunShaderKit.fog_length_for(pose.dist)
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
+	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).
 	var hz: Array = StreetRouteConfigData.shipped().look["haze"]
 	var haze := lerpf(float(hz[0]), float(hz[1]), zd)
