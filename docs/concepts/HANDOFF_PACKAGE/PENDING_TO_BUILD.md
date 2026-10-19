@@ -94,3 +94,21 @@ The app paused session-to-session messages after 10 sends. Send these on the des
      3. **Lane markings.** The yellow stripes are too saturated and bright, and they dominate DECISION. Use the r2 streak lanes and desaturated kerb and lane lines.
      4. **HOVER.** The power cut grade is fine, since it is exempt.
      5. **Re-send.** OVERVIEW and DECISION for seed 1 after fixes 1–3.
+12. **W1_NA24 street dressing: FIX LIST.** The overview improved a lot: the beams, less fog, the lanes, and the value band passes on both seeds.
+   - **(a) Raise sign emission, in NA-24, not NA-33.** Signs are the main carrier of R-DET and R-CALM. Avoid over-0.85 whitening by stacking signs differently, not by dimming them:
+     - each sign has a thin bright core line or text strokes (luma about 0.9 over a few px) on a softer panel (0.35–0.5);
+     - combine overlapping additive layers with max, or clamp them, so they don't sum;
+     - over 0.85 must stay ≤ 2.5 %.
+   - **Hero signs.** They read as plain stacked lime bars, like girders, not signs. Make them blade signs:
+     - 3–6 panels with glyph or text-block strokes;
+     - a frame trim;
+     - per-panel hue from the district hue + sec + one accent;
+     - per-panel brightness variation.
+     - Lime is right for Solace territory, but not as a single flat hue.
+   - **(b) District palettes.** No palette assets exist yet; the source is the art-pass city preset (`city_all_corps/scripts/city_preset.py:28-55`, `DISTRICTS`). Proposed ids:
+     - `solace_mint`: hue (0.239, 1.0, 0.545), sec (0.85, 1.0, 0.9), win [(0.75, 1.0, 0.82), (0.45, 1.0, 0.62), (0.95, 1.0, 0.95)].
+     - `orbital_ice`: hue (0.498, 0.659, 1.0), sec (0.92, 0.96, 1.0), win [(0.70, 0.84, 1.0), (0.92, 0.95, 1.0), (0.55, 0.75, 1.0)].
+     - Halcyon, Meridian and Rebel Cell have entries in the same table, so use those instead of `neon_bay` and `sodium_teal` where they differ.
+   - **DECISION.** It still shows item 11's issues: blank slab buildings, rooms as boxes on walls, and loud yellow lanes. Item 11 stands.
+   - **12.2 ≈ 4.0 on the street.** The route rooms glow too white against the dark city. Lower the room interior emission about 25 % (target ratio ≤ 2.5), so they still lead but don't punch holes.
+   - **Streak lane clock** with period k·T: good catch.
