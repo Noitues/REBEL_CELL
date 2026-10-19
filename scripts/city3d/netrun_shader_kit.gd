@@ -57,8 +57,13 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"plinth_albedo", float(b["plinth_albedo"]))
 	m.set_shader_parameter(&"plinth_blue", float(b["plinth_blue"]))
 	for k: String in ["facade_albedo", "facade_light", "win_share", "win_floor", "win_pow", "win_emit", "trim_emit", "haze_k", "haze_h",
-			"haze_hi"]:
+			"haze_hi", "wash_gain", "edge_share", "edge_emit", "edge_bu"]:
 		m.set_shader_parameter(StringName(k), float(b[k]))
+	m.set_shader_parameter(&"wash_floors", _v2(b["wash_floors"]))
+	m.set_shader_parameter(&"wash_a", _v3(b["wash_a"]))
+	m.set_shader_parameter(&"wash_b", _v3(b["wash_b"]))
+	m.set_shader_parameter(&"edge_a", _v3(b["edge_a"]))
+	m.set_shader_parameter(&"edge_b", _v3(b["edge_b"]))
 	m.set_shader_parameter(&"haze_col", _v3(b["haze_col"]))
 
 
@@ -337,8 +342,28 @@ static func dim_landmarks(mats: Dictionary, look_blend: float) -> void:
 			continue
 		for m: Variant in (group as Dictionary).values():
 			var sm := m as ShaderMaterial
-			if sm == null or not sm.shader.resource_path.ends_with("landmark_toon.gdshader"):
+			if sm == null or sm.shader == null:
 				continue
+			if sm.shader.resource_path.ends_with("landmark_beam.gdshader"):
+				# The mainline light cone (a flat tan shape over the sky in the canyon frame) fades out as the netrun beam shafts
+				# take over: `building.beam_fade` = [look_blend where it starts to fade, look_blend where it is gone].
+				if not sm.has_meta(&"nr_base_alpha"):
+					var a: Variant = sm.get_shader_parameter(&"beam_alpha")
+					if a == null:
+						continue
+					sm.set_meta(&"nr_base_alpha", a)
+				var bf: Array = _cfg().building["beam_fade"]
+				var keep: float = 1.0 - smoothstep(float(bf[0]), float(bf[1]), clampf(look_blend, 0.0, 1.0))
+				sm.set_shader_parameter(&"beam_alpha", float(sm.get_meta(&"nr_base_alpha")) * keep)
+				continue
+			if not sm.shader.resource_path.ends_with("landmark_toon.gdshader"):
+				continue
+			var b: Dictionary = _cfg().building
+			var fl: Vector2 = _v2(b["wash_floors"]) * float(b["wash_floor_bu"])
+			sm.set_shader_parameter(&"wash_k", clampf(look_blend, 0.0, 1.0))
+			sm.set_shader_parameter(&"wash_col", _v3(b["wash_a"]).lerp(_v3(b["wash_b"]), 0.5))
+			sm.set_shader_parameter(&"wash_gain", float(b["landmark_wash_gain"]))
+			sm.set_shader_parameter(&"wash_h", fl)
 			if not sm.has_meta(&"nr_base"):
 				sm.set_meta(&"nr_base", {"ramp_shadow": sm.get_shader_parameter(&"ramp_shadow"), "ramp_mid": sm.get_shader_parameter(&"ramp_mid"),
 					"ramp_lit": sm.get_shader_parameter(&"ramp_lit"), "lit_emission": sm.get_shader_parameter(&"lit_emission")})

@@ -42,7 +42,7 @@ def main() -> None:
     gold = Image.open(a.golden).convert("RGB").resize((960, 540), Image.LANCZOS)
     sheet.paste(big, (0, y0 + 20))
     sheet.paste(gold, (960, y0 + 20))
-    d.text((6, y0 + 3), "Street canyon, Godot, look_blend 1 (lights-out facades, window carpet, sky glow, depth haze, beams, lanes)", font=f, fill=(235, 235, 235))
+    d.text((6, y0 + 3), "Street canyon, Godot, look_blend 1 (street wash, edge trims, lights-out facades, carpet, sky glow, haze; tan cone gone)", font=f, fill=(235, 235, 235))
     d.text((966, y0 + 3), "GOLDEN street_overview (Blender)", font=f, fill=(235, 235, 235))
     ys = y0 + 20 + 540
     s_g = na22_stats.stats(a.golden)
