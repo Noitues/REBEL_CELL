@@ -183,6 +183,43 @@ static func _score_gt(s: Array, t: Array) -> bool:
 	return false
 
 
+## `legs` with every slanted leg replaced by an L (dominant axis first); axis-aligned legs are kept (Python `square_legs`).
+static func square_legs(legs: Array) -> Array:
+	var tol: float = float(NetrunArtConfigData.shipped().layout["axis_tol"])
+	var out: Array = [(legs[0] as Array).duplicate()]
+	for i in range(legs.size() - 1):
+		var p: Array = legs[i]
+		var q: Array = legs[i + 1]
+		var dx: float = absf(float(q[0]) - float(p[0]))
+		var dy: float = absf(float(q[1]) - float(p[1]))
+		if dx >= tol and dy >= tol:
+			if dx >= dy:
+				out.append([q[0], p[1]])
+			else:
+				out.append([p[0], q[1]])
+		out.append(q.duplicate())
+	return out
+
+
+static func _fits(best: Dictionary) -> bool:
+	return not best.is_empty() and not (best["front"] as Array).is_empty() and bool(best["ok"])
+
+
+## `[best, step]`: `choose_street`, then, only when it does not fit every layer, the same on the squared legs (step 1).
+## A street that fits at step 0 is never changed. When neither fits the step 0 result is returned with step 0.
+static func choose_street_fitting(B: Array, legs: Array, layers: Array, rules_over: Dictionary = {}) -> Array:
+	var r: Dictionary = _rl(rules_over)
+	var first: Dictionary = choose_street(B, legs, layers, r)
+	if _fits(first):
+		return [first, 0]
+	var sq: Array = square_legs(legs)
+	if sq != legs:
+		var best: Dictionary = choose_street(B, sq, layers, r)
+		if _fits(best):
+			return [best, 1]
+	return [first, 0]
+
+
 static func _link_less(p: Dictionary, q: Dictionary) -> bool:
 	if String(p["a"]) != String(q["a"]):
 		return String(p["a"]) < String(q["a"])
@@ -331,6 +368,64 @@ static func _span_poses(rooms: Dictionary, layers: Array, nrm: Array, start_left
 	return [ov, dec]
 
 
+## Projected height in px (1920 x 1080 frame) of a room's front edge in pose `ov`; -1.0 when the edge is not visible.
+static func room_px(ov: NetrunPose, room: Dictionary) -> float:
+	var c: Array = NetrunCameraRig.room_corners(room)
+	var p0: Array = ov.proj(c[0])
+	var p3: Array = ov.proj(c[3])
+	if p0.is_empty() or p3.is_empty():
+		return -1.0
+	var rg: Dictionary = NetrunArtConfigData.shipped().rig
+	var ref_w: float = rg["ref_w"]
+	var ref_h: float = rg["ref_h"]
+	for p: Array in [p0, p3]:
+		if float(p[0]) < 0.0 or float(p[0]) > ref_w or float(p[1]) < 0.0 or float(p[1]) > ref_h:
+			return -1.0
+	return absf(float(p0[1]) - float(p3[1]))
+
+
+## One row per candidate span 1..span_max: `{span, min_px, fallback}` (Python `span_scan`). `min_px` is the smallest visible
+## route-room height in the OVERVIEW pose over the rooms that hold the span (0.0 with none); `fallback` the layers whose
+## building cannot fit the span (sorted).
+static func span_scan(asg: Array, layers: Array, nrm: Array, start_left: bool, rules_over: Dictionary,
+		rig_over: Dictionary = {}) -> Array:
+	var rows: Array = []
+	for span in range(1, int(rules_over["span_max"]) + 1):
+		var rooms: Dictionary = room_boxes(asg, layers, span, rules_over)
+		var ov: NetrunPose = NetrunCameraRig.street_overview(rooms, nrm, start_left, rig_over)
+		var min_px := -1.0
+		var fb: Array = []
+		var ids: Array = rooms.keys()
+		IdSort.sort_ids(ids)
+		for rid: String in ids:
+			var rm: Dictionary = rooms[rid]
+			if int(rm["span"]) == span:
+				var q: float = room_px(ov, rm)
+				if q >= 0.0 and (min_px < 0.0 or q < min_px):
+					min_px = q
+			elif not fb.has(int(rm["layer"])):
+				fb.append(int(rm["layer"]))
+		fb.sort()
+		rows.append({"span": span, "min_px": maxf(min_px, 0.0), "fallback": fb})
+	return rows
+
+
+## The smallest span whose smallest visible route room in the OVERVIEW pose reaches `room_px_target` (NA-23b); when none up to
+## `span_max` does, the span with the largest smallest room (the lower span on a tie).
+static func choose_span(asg: Array, layers: Array, nrm: Array, start_left: bool, rules_over: Dictionary = {},
+		rig_over: Dictionary = {}) -> int:
+	var r: Dictionary = _rl(rules_over)
+	var rows: Array = span_scan(asg, layers, nrm, start_left, r, rig_over)
+	for row: Dictionary in rows:
+		if float(row["min_px"]) >= float(r["room_px_target"]):
+			return int(row["span"])
+	var best: Dictionary = rows[0]
+	for row: Dictionary in rows:
+		if float(row["min_px"]) > float(best["min_px"]):
+			best = row
+	return int(best["span"])
+
+
 ## The whole street derivation: a derive v2 dict (`kind: "street"`). Returns `{"error": msg}` when the frontage runs out.
 static func derive_street(city: Dictionary, net: Dictionary, run_graph: Dictionary, site: String, partial: Dictionary = {},
 		rules_over: Dictionary = {}, rig_over: Dictionary = {}) -> Dictionary:
@@ -341,7 +436,7 @@ static func derive_street(city: Dictionary, net: Dictionary, run_graph: Dictiona
 		return sl
 	var legs: Array = NetrunArtLayout.link_legs(city, sl["pts"])
 	var B: Array = NetrunArtLayout.merged_buildings(city)
-	var best: Dictionary = choose_street(B, legs, layers, r)
+	var best: Dictionary = (choose_street_fitting(B, legs, layers, r) as Array)[0]
 	if best.is_empty() or (best["front"] as Array).is_empty():
 		return {"error": "no frontage along the link of " + site}
 	var li: int = best["li"]
@@ -354,20 +449,10 @@ static func derive_street(city: Dictionary, net: Dictionary, run_graph: Dictiona
 	if not bool(best["ok"]):
 		return {"error": "frontage runs out: %d of %d layers assigned on leg %d side %d" % [asg.size(), layers.size(), li, side]}
 	var nrm: Array = fr[0]["nrm"]
-	var rooms: Dictionary = room_boxes(asg, layers, 1, r)
-	var poses: Array = _span_poses(rooms, layers, nrm, start_left, rig_over)
+	var span: int = choose_span(asg, layers, nrm, start_left, r, rig_over)
+	var rooms: Dictionary = room_boxes(asg, layers, span, r)
+	var poses: Array = _span_poses(rooms, layers, nrm, start_left, rig_over, [a[0], a[1], 0.0])
 	var ov: NetrunPose = poses[0]
-	var first: String = String(layers[0][1][0]["id"])
-	var corners: Array = NetrunCameraRig.room_corners(rooms[first])
-	var p0: Array = ov.proj(corners[0])
-	var p3: Array = ov.proj(corners[3])
-	var fpx: float = 0.0
-	if not p0.is_empty() and not p3.is_empty():
-		fpx = absf(float(p0[1]) - float(p3[1]))
-	var span: int = 2 if fpx < float(r["room_px_target"]) else 1
-	rooms = room_boxes(asg, layers, span, r)
-	poses = _span_poses(rooms, layers, nrm, start_left, rig_over, [a[0], a[1], 0.0])
-	ov = poses[0]
 	var dec: NetrunPose = poses[1]
 	var edges: Array = link_paths(rooms, run_graph["edges"], r)
 	var ax: int = NetrunArtLayout.leg_axis(a, c)

@@ -45,6 +45,7 @@ Dispositions: PORTED (to a named test), RULE-MOVED (the rule lives elsewhere and
 | test_horizontal_pass21_city | route node tooltips; you-are-here / dimmed | 2D overlay tips | PORTED (street tag + file; street run_state current / options) |
 | test_anim_r5_netrun | press during a route move | 2D travel pulse | DROPPED: the street page has no travel pulse (entry opens the screen at once) |
 | test_motion_lab_demos | route motion demos | retired ids | route_node_reveal / route_heat_orbit / route_searchlight / route_hover_out retired; route_pulse, node_pop, visited_dim, route_target_pulse demos now run on the Grid view overlay |
+| test_city_map_sweeps | the route for every corporation: no overlap, no YOU ARE HERE words, on screen at every text scale | 2D route overlay + RouteNodes window | DROPPED (2026-10-19, found by the full-tier sweep): the street has no 2D overlay; test_na23_route_view / test_na23_route_flow / test_na23b_street (every corp derives) |
 | (new) test_na26_route_port | zoom out and back; fallback page; default on | | NEW |
 
 ## Symbols retired

@@ -86,6 +86,9 @@ func _na24_dressing_config() -> int:
 	var bad: DressingConfigData = cfg.duplicate(true)
 	bad.districts["halcyon"] = {"palette": "no_such_set"}
 	if not ",".join(bad.validate()).contains("districts.halcyon"): fails += 1
+	var no_acc: DressingConfigData = cfg.duplicate(true)
+	(no_acc.palettes["solace_mint"] as Dictionary).erase("accent")
+	if not ",".join(no_acc.validate()).contains("palettes.solace_mint.accent"): fails += 1
 	return fails
 
 

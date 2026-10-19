@@ -311,8 +311,8 @@ func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
 ## another.
 func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
 	var rects := overlay.label_rects()
-	if overlay.tag_rule == CityMapOverlay.TagRule.ALL and not overlay is RouteOverlay:
-		# B3 (the clutter rule): the route tags no node (the TARGET is pencil).
+	if overlay.tag_rule == CityMapOverlay.TagRule.ALL:
+		# B3 (the clutter rule). NA-26 retired the 2D route page; RouteOverlay is now a draw kit, not a map.
 		assert_gt(rects.size(), 0, "%s draws labels" % what)
 	else:
 		# B3 / B4 b (2026-10-06, approved "one tag"): under FOCUS / LIT only the selected, lit or
@@ -436,31 +436,6 @@ func _check_live_text_size(hq: Control, what: String) -> void:
 
 # --- The route -----------------------------------------------------------------------------
 
-func test_the_route_for_every_corporation() -> void:
-	for corp in CORPS:
-		RunManager.reset()
-		_open_all()
-		RunManager.new_campaign(1, corp)
-		var scene := _scene(NETRUN)
-		scene.start_run(1)
-		await _frames()
-		_assert_no_overlap(scene.city_overlay, "route %s" % corp)
-		var s := RunManager.netrun
-		s.run.current_node_id = s.run.map.first_layer_ids()[0]
-		scene._show_map()
-		await _frames()
-		_assert_no_overlap(scene.city_overlay, "route %s under way" % corp)
-		var win := (scene.find_child("RouteNodes", true, false) as Control)
-		while win != null and not (win is TerminalWindow):
-			win = win.get_parent() as Control
-		assert_not_null(win, "the route window")
-		for scale in SELECT_SCALES:
-			Settings.set_text_scale(scale)
-			var overlay: CityMapOverlay = scene.city_overlay
-			overlay.avoid_controls([win])
-			var here := overlay.here_id()
-			# B3 (round 44): no YOU ARE HERE words; the token marks the position.
-			assert_false(overlay.label_rects().has(String(here)), "%s x%.1f: no YOU ARE HERE words" % [corp, scale])
-			_assert_on_screen(overlay, "route %s x%.1f" % [corp, scale])
-		Settings.set_text_scale(1.0)
-		await _close(scene)
+## NA-26: the route-for-every-corporation sweep ran on the retired 2D route page (city_overlay labels, the RouteNodes
+## window, YOU ARE HERE). The street page has no 2D overlay or labels: overlap / readability is test_na23_route_view and
+## test_na23_route_flow (every option has a room), and the street derives for every corp (test_na23b_street). See NA26_PORT_MAP.md.

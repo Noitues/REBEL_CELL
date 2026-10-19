@@ -49,3 +49,24 @@ func test_wedge_angles_match_wheelmath_boundaries() -> void:
 				assert_almost_eq(arc.y, WheelView.slot_arc_ticks(w, i + 1).x, 0.001, "seed %d: arcs %d and %d meet" % [seed, i, i + 1])
 			covered += arc.y - arc.x
 		assert_almost_eq(covered, 30.0, 0.001, "seed %d: the arcs cover the wheel once" % seed)
+
+
+func test_disc_shader_spans_equal_wheelmath_boundaries() -> void:
+	var uneven := PackedInt32Array([6, 0, 4, 4, 6, 10])
+	var spans := WheelDisc.slot_spans(uneven, WheelView.DEG_PER_TICK)
+	assert_eq(spans.size(), WheelDisc.MAX_SLICES)
+	var starts := WheelMath.slot_starts(uneven)
+	for i in uneven.size():
+		var next := starts[i + 1] if i + 1 < uneven.size() else starts[0] + RC.TICKS
+		assert_almost_eq(spans[i], float(posmod(next - starts[i], RC.TICKS)) * WheelView.DEG_PER_TICK, 0.001, "slot %d span = boundary gap" % i)
+		assert_almost_eq(spans[i], float(uneven[i]) * WheelView.DEG_PER_TICK, 0.001, "slot %d span = its size" % i)
+	assert_eq(spans[1], 0.0, "an empty arc draws no span")
+	assert_eq(spans[6], 0.0, "unused shader slots are 0")
+	for seed in 50:
+		var sizes := WheelFixtures.random_sizes(seed)
+		if sizes.size() > WheelDisc.MAX_SLICES:
+			continue
+		var total := 0.0
+		for v in WheelDisc.slot_spans(sizes, WheelView.DEG_PER_TICK):
+			total += v
+		assert_almost_eq(total, 360.0, 0.01, "seed %d: the spans fill the disc" % seed)
