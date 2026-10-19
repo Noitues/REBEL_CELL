@@ -22,14 +22,14 @@ static func links_of(net: Dictionary, border_mode: String = "state") -> Array:
 	return links
 
 
-## The whole pipeline in spec order: frontage minimum + border width, silhouette, horizon. `route_tops` bid -> top room floor.
+## The whole pipeline in spec order: frontage minimum + border width, silhouette, HQ zone cap, horizon. `route_tops` bid -> top room floor.
 ## `stats` (optional) receives frontage / raised / moved / silhouette_* / spikes counts.
 static func apply_rules(city: Dictionary, net: Dictionary, route_tops: Dictionary = {}, border_mode: String = "state",
 		stats: Dictionary = {}) -> Dictionary:
 	var ctx: Dictionary = {}
 	var c1: Dictionary = apply_layout_rules(city, net, border_mode, stats, ctx)
 	var c2: Dictionary = frontage_silhouette(c1, net, route_tops, border_mode, stats, ctx)
-	return horizon_break(c2, net, route_tops.keys(), border_mode, stats, ctx)
+	return horizon_break(hq_cap(c2, route_tops.keys(), stats), net, route_tops.keys(), border_mode, stats, ctx)
 
 
 ## `layout.rules` (spec 3.2): the street-front band raised to its minimum and border streets widened.
@@ -150,14 +150,20 @@ static func frontage_silhouette(city: Dictionary, net: Dictionary, route_tops: D
 						var hi3: int = maxi(maxi(h1, h2), f)
 						if hi3 - lo3 < span:
 							var mean2: float = float(h1 + h2) / 2.0
-							if float(f) >= mean2 or mini(h1, h2) + span <= int((p["floors_tall"] as Array)[1]):
-								f = maxi(f, mini(h1, h2) + span)
-							if float(f) < mean2 and maxi(h1, h2) - span >= floor_min:
-								f = maxi(h1, h2) - span
+							var lift: int = mini(h1, h2) + span
+							var drop: int = maxi(h1, h2) - span
+							var ceil_f: int = int((p["floors_tall"] as Array)[1])
+							if float(f) >= mean2 and lift <= ceil_f:
+								f = lift
+							elif drop >= floor_min:
+								f = drop
+							elif lift <= ceil_f:
+								f = lift
 					var step: int = int(p["height_step_min"])
 					if have_prev and absi(f - prev_f) < step:
 						var down: int = prev_f - step
-						f = down if (f < prev_f and down >= floor_min) else prev_f + step
+						var go_down: bool = down >= floor_min and (f < prev_f or prev_f + step > int((p["floors_tall"] as Array)[1]))
+						f = down if go_down else prev_f + step
 					var want: float = float(f) * fl + 0.1
 					var got: int = f0 if stacked else f
 					if not stacked and absf(top0 - want) > float(p["base_h_eps"]):
@@ -172,6 +178,70 @@ static func frontage_silhouette(city: Dictionary, net: Dictionary, route_tops: D
 					prev_cls = cls
 	stats["silhouette_buildings"] = done.size()
 	stats["silhouette_set"] = n_set
+	return out
+
+
+## `[x0, x1, y0, y1, top]` of every HQ stand-in (plan bbox of all parts, top of the highest part), by bid.
+static func hq_rects(city: Dictionary) -> Array:
+	var hqs: Array = []
+	for b: Dictionary in city["buildings"]:
+		if bool(b["hq"]) and not (b["parts"] as Array).is_empty():
+			hqs.append(b)
+	hqs.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return IdSort.less(x["bid"], y["bid"]))
+	var out: Array = []
+	for b: Dictionary in hqs:
+		var x0: float = INF
+		var x1: float = -INF
+		var y0: float = INF
+		var y1: float = -INF
+		var top: float = -INF
+		for part: Dictionary in b["parts"]:
+			var bb: Array = NetrunArtLayout.poly_bbox(part["poly"])
+			x0 = minf(x0, bb[0])
+			x1 = maxf(x1, bb[1])
+			y0 = minf(y0, bb[2])
+			y1 = maxf(y1, bb[3])
+			top = maxf(top, float(part["z0"]) + float(part["h"]))
+		out.append([x0, x1, y0, y1, top])
+	return out
+
+
+## The top (BU) of the tallest HQ within `reach` BU (plan gap) of building info `bi`, NAN when none is that near.
+static func hq_zone_top(hq_list: Array, reach: float, bi: Dictionary) -> float:
+	var best: float = NAN
+	for r: Array in hq_list:
+		var gap: float = maxf(maxf(float(r[0]) - float(bi["x1"]), float(bi["x0"]) - float(r[1])),
+			maxf(float(r[2]) - float(bi["y1"]), float(bi["y0"]) - float(r[3])))
+		gap = maxf(gap, 0.0)
+		if gap <= reach and (is_nan(best) or float(r[4]) > best):
+			best = float(r[4])
+	return best
+
+
+## `hq.cap` (see `layout.hq_cap`): no building within `zone_lots` lots of an HQ lot is taller than `cap_k` x the HQ top
+## (route columns exempt).
+static func hq_cap(city: Dictionary, route_bids: Array = [], stats: Dictionary = {}) -> Dictionary:
+	var hp: Dictionary = _rules()["hq"]
+	var out: Dictionary = _cow(city)
+	var cow: Dictionary = _cow_index(out)
+	var hq_list: Array = hq_rects(city)
+	var n: int = 0
+	if not hq_list.is_empty():
+		var reach: float = float(hp["zone_lots"]) * float(city["lot_bu"])
+		for bi: Dictionary in NetrunArtLayout.merged_buildings(city):
+			var top: float = hq_zone_top(hq_list, reach, bi)
+			if is_nan(top) or route_bids.has(bi["bid"]):
+				continue
+			var cap: float = float(hp["cap_k"]) * top
+			if float(bi["h"]) <= cap + 1e-9:
+				continue
+			n += 1
+			var parts: Array = _own(out, cow, bi["bid"])["parts"]
+			for j: int in bi["parts"]:
+				var part: Dictionary = parts[j]
+				part["z0"] = minf(float(part["z0"]), cap - float(hp["clamp_eps"]))
+				part["h"] = minf(float(part["h"]), cap - float(part["z0"]))
+	stats["hq_capped"] = n
 	return out
 
 
@@ -195,8 +265,11 @@ static func horizon_break(city: Dictionary, net: Dictionary, route_bids: Array =
 	var cow: Dictionary = _cow_index(out)
 	var band: Array = h["backdrop_band"]
 	var cand: Array = []
+	var hq_list: Array = hq_rects(city)
+	var reach_hq: float = float(_rules()["hq"]["zone_lots"]) * float(city["lot_bu"])
 	for bi: Dictionary in NetrunArtLayout.merged_buildings(city):
-		if route_bids.has(bi["bid"]) or is_stacked((out["buildings"] as Array)[cow["pos"][bi["bid"]]], bi):
+		if route_bids.has(bi["bid"]) or is_stacked((out["buildings"] as Array)[cow["pos"][bi["bid"]]], bi) \
+				or not is_nan(hq_zone_top(hq_list, reach_hq, bi)):
 			continue
 		var along: float
 		var far: float
@@ -241,7 +314,7 @@ static func horizon_break(city: Dictionary, net: Dictionary, route_bids: Array =
 			picked.append(e["along"])
 			var bi: Dictionary = e["bi"]
 			var base: Dictionary = _own(out, cow, bi["bid"])["parts"][bi["base"]]
-			base["h"] = maxf(float(h["spike_k"]) * med, float(e["top"])) - float(base["z0"])
+			base["h"] = float(h["spike_k"]) * med - float(base["z0"])
 	stats["spikes"] = picked.size()
 	return out
 

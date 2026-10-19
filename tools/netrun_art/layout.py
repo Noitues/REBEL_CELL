@@ -270,11 +270,14 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
 # ---------------------------------------------------------------------------------------------------------------------
 R2_RULES: Dict[str, Any] = dict(
     # r2_config.py RULES_R2["frontage.silhouette"]
-    silhouette=dict(floors_low=[6, 8], floors_mid=[9, 13], floors_tall=[14, 21], rhythm_p=[0.34, 0.33, 0.33],
-                    height_step_min=2, triple_span_min=6, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
+    silhouette=dict(floors_low=[6, 7], floors_mid=[8, 9], floors_tall=[9, 10], rhythm_p=[0.34, 0.33, 0.33],
+                    height_step_min=2, triple_span_min=3, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
     # RULES_R2["horizon.break"]; spike_spacing_bu replaces the 1/6-frame spacing (no camera at layout time)
-    horizon=dict(spikes_min=3, spikes_max=5, spike_k=2.0, backdrop_band=[24.0, 170.0], spike_min_w=4.0,
+    horizon=dict(spikes_min=3, spikes_max=5, spike_k=1.6, backdrop_band=[24.0, 170.0], spike_min_w=4.0,
                  spike_spacing_bu=30.0, pick_jitter=25.0, default_median=15.0),
+    # NA-11c (art-pass W1_NA11 fix 2): within `zone_lots` lots of an HQ lot no building is taller than `cap_k` x the HQ
+    # stand-in top (the landmark top; landmarks lead), and those buildings are exempt from spikes. Route columns keep their height.
+    hq=dict(zone_lots=2.0, cap_k=0.6, clamp_eps=0.1),
 )
 RHYTHM = ("low", "mid", "tall")
 
@@ -389,14 +392,19 @@ def frontage_silhouette(city: Dict[str, Any], net: Dict[str, Any], rules: Option
                         lo3, hi3 = min(hist[-2:] + [f]), max(hist[-2:] + [f])
                         if hi3 - lo3 < span:
                             mean2 = sum(hist[-2:]) / 2.0
-                            if f >= mean2 or min(hist[-2:]) + span <= P["floors_tall"][1]:
-                                f = max(f, min(hist[-2:]) + span)
-                            if f < mean2 and max(hist[-2:]) - span >= floor_min:
-                                f = max(hist[-2:]) - span
+                            lift, drop = min(hist[-2:]) + span, max(hist[-2:]) - span
+                            ceil_f = P["floors_tall"][1]
+                            if f >= mean2 and lift <= ceil_f:
+                                f = lift
+                            elif drop >= floor_min:
+                                f = drop
+                            elif lift <= ceil_f:
+                                f = lift
                     step = P["height_step_min"]
                     if prev_f is not None and abs(f - prev_f) < step:
                         down = prev_f - step
-                        f = down if (f < prev_f and down >= floor_min) else prev_f + step
+                        go_down = down >= floor_min and (f < prev_f or prev_f + step > P["floors_tall"][1])
+                        f = down if go_down else prev_f + step
                     want = f * FLOOR_BU + 0.1
                     got = f0 if stacked else f
                     if not stacked and abs(top0 - want) > P["base_h_eps"]:
@@ -413,9 +421,60 @@ def frontage_silhouette(city: Dict[str, Any], net: Dict[str, Any], rules: Option
     return out
 
 
+def hq_rects(city: Dict[str, Any]) -> List[Tuple[float, float, float, float, float]]:
+    """`(x0, x1, y0, y1, top)` of every HQ stand-in (plan bbox of all its parts, top of the highest part), by `bid`."""
+    out = []
+    for b in sorted(city["buildings"], key=lambda q: q["bid"]):
+        if not b["hq"] or not b["parts"]:
+            continue
+        bb = [poly_bbox(p["poly"]) for p in b["parts"]]
+        out.append((min(q[0] for q in bb), max(q[1] for q in bb), min(q[2] for q in bb), max(q[3] for q in bb),
+                    max(p["z0"] + p["h"] for p in b["parts"])))
+    return out
+
+
+def hq_zone_top(city: Dict[str, Any], bi: Dict[str, Any]) -> Optional[float]:
+    """The HQ top (BU) of the tallest HQ lot within `zone_lots` lots of building `bi` (plan gap, both axes), else None."""
+    reach = R2_RULES["hq"]["zone_lots"] * city["lot_bu"]
+    best = None
+    for x0, x1, y0, y1, top in hq_rects(city):
+        gap = max(x0 - bi["x1"], bi["x0"] - x1, y0 - bi["y1"], bi["y0"] - y1, 0.0)
+        if gap <= reach and (best is None or top > best):
+            best = top
+    return best
+
+
+def hq_cap(city: Dict[str, Any], route_bids: Sequence[str] = (), stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+    """Within `zone_lots` lots of an HQ lot no building is taller than `cap_k` x the HQ stand-in top (route columns exempt).
+
+    Every part of a too-tall building is clamped: `h <= cap - z0`; a stacked part that would start at or above the cap
+    drops to `cap - clamp_eps`, so the building top is the cap.
+    """
+    P = R2_RULES["hq"]
+    out = copy.deepcopy(city)
+    byid = {b["bid"]: b for b in out["buildings"]}
+    route = set(route_bids)
+    n = 0
+    for bi in merged_buildings(city):
+        top = hq_zone_top(city, bi)
+        if top is None or bi["bid"] in route:
+            continue
+        cap = P["cap_k"] * top
+        if bi["h"] <= cap + 1e-9:
+            continue
+        n += 1
+        for j in bi["parts"]:
+            part = byid[bi["bid"]]["parts"][j]
+            part["z0"] = min(part["z0"], cap - P["clamp_eps"])
+            part["h"] = min(part["h"], cap - part["z0"])
+    if stats is not None:
+        stats.update(hq_capped=n)
+    return out
+
+
 def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequence[str] = (), border_mode: str = "state",
                   stats: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
-    """`horizon.break` (r2_rules.py:216-251): `spikes_min..spikes_max` backdrop towers reach `spike_k` x the median roof.
+    """`horizon.break` (r2_rules.py:216-251): `spikes_min..spikes_max` backdrop towers reach `spike_k` x the median roof (the cap; NA-11c 1.6).
 
     The reference street is the first leg of the first border link. Candidates: street-level, unstacked, non-route
     buildings centred `backdrop_band` BU behind the street line (either side) along the extended leg, with a footprint
@@ -438,7 +497,7 @@ def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequenc
     route = set(route_bids)
     cand = []
     for bi in merged_buildings(city):
-        if bi["bid"] in route or is_stacked(byid[bi["bid"]], bi):
+        if bi["bid"] in route or is_stacked(byid[bi["bid"]], bi) or hq_zone_top(city, bi) is not None:
             continue
         if ax == 0:
             along, far = (bi["x0"] + bi["x1"]) / 2.0, abs((bi["y0"] + bi["y1"]) / 2.0 - a[1])
@@ -461,7 +520,7 @@ def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequenc
         if all(abs(al - p) >= H["spike_spacing_bu"] for p in picked):
             picked.append(al)
             base = byid[bid]["parts"][bi["base"]]
-            base["h"] = max(H["spike_k"] * med, t) - base["z0"]
+            base["h"] = H["spike_k"] * med - base["z0"]
     if stats is not None:
         stats.update(spikes=len(picked))
     return out
@@ -477,4 +536,5 @@ def apply_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optional[Dict[
     st = stats if stats is not None else {}
     c1 = apply_layout_rules(city, net, rules, st, border_mode)
     c2 = frontage_silhouette(c1, net, rules, route_tops, border_mode, st)
-    return horizon_break(c2, net, list((route_tops or {}).keys()), border_mode, st)
+    routes = list((route_tops or {}).keys())
+    return horizon_break(hq_cap(c2, routes, st), net, routes, border_mode, st)
