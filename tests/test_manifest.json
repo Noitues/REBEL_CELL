@@ -1473,6 +1473,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_solace_hq_graph.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_corp_theme_state.gd": {
 			"seconds": 4.0,
 			"tier": "fast"

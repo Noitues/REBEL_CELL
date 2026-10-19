@@ -6,6 +6,11 @@ extends RefCounted
 ## Node dictionary keys: id (StringName), layer (1-based), index (0-based within the
 ## layer), type (RC.InfilNodeType), elite (bool), next (Array[StringName]), heat (int).
 
+## Plan 2 WH-10: extra node keys the Solace HQ ladder sets (across, rest, boss, mini_boss, tower;
+## `across_from` is the id list of the ACROSS sources). Saved only when present, so a street
+## map's dictionary and hash are unchanged.
+const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower"]
+
 var layers: Array = []  # Array of Array[Dictionary], layer 1 first
 
 
@@ -163,8 +168,17 @@ func to_dict() -> Dictionary:
 			var nxt := []
 			for n in node["next"]:
 				nxt.append(String(n))
-			l.append({"id": String(node["id"]), "layer": node["layer"], "index": node["index"], "type": node["type"],
-				"elite": node["elite"], "next": nxt, "heat": node["heat"]})
+			var d := {"id": String(node["id"]), "layer": node["layer"], "index": node["index"], "type": node["type"],
+				"elite": node["elite"], "next": nxt, "heat": node["heat"]}
+			for k in OPTIONAL_KEYS:
+				if node.has(k):
+					d[k] = node[k]
+			if node.has("across_from"):
+				var af := []
+				for a in node["across_from"]:
+					af.append(String(a))
+				d["across_from"] = af
+			l.append(d)
 		out.append(l)
 	return {"layers": out}
 
@@ -177,8 +191,17 @@ static func from_dict(d: Dictionary) -> MapGraph:
 			var nxt: Array[StringName] = []
 			for n in node.get("next", []):
 				nxt.append(StringName(String(n)))
-			l.append({"id": StringName(String(node["id"])), "layer": int(node["layer"]), "index": int(node["index"]),
-				"type": int(node["type"]), "elite": bool(node["elite"]), "next": nxt, "heat": int(node.get("heat", 0))})
+			var nd := {"id": StringName(String(node["id"])), "layer": int(node["layer"]), "index": int(node["index"]),
+				"type": int(node["type"]), "elite": bool(node["elite"]), "next": nxt, "heat": int(node.get("heat", 0))}
+			for k in OPTIONAL_KEYS:
+				if node.has(k):
+					nd[k] = node[k]
+			if node.has("across_from"):
+				var af: Array[StringName] = []
+				for a in node["across_from"]:
+					af.append(StringName(String(a)))
+				nd["across_from"] = af
+			l.append(nd)
 		g.layers.append(l)
 	return g
 

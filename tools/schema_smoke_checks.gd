@@ -24,6 +24,8 @@ func _wh02_corp_theme_config() -> int:
 	if d.raid_infection_lost_bp != 10000 or d.meridian_weigh_station_layers != PackedInt32Array([4, 7, 10]): fails += 1
 	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	if shipped == null or shipped.bloom_max_gap_milli != d.bloom_max_gap_milli or shipped.hq_lead_limit != d.hq_lead_limit: fails += 1
+	# WH-10: the Solace HQ ladder keys.
+	if d.solace_hq_rungs != 9 or d.solace_hq_mini_boss_rung != 9 or d.solace_hq_ward_rest_rungs != PackedInt32Array([5, 8]) or d.solace_hq_ward_weights.size() != 5 or d.solace_hq_billing_weights.size() != 5: fails += 1
 	d.bloom_dose_price = 21
 	d.blade_classes_l1 = [&"ELITE"] as Array[StringName]
 	var err := ResourceSaver.save(d, "user://smoke_wh02_config.tres")
