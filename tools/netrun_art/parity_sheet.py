@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .checks import image_checks as IC
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DEFAULT_ART_REPO = "C:/Users/noitu/Documents/Godot/rebel_cell/.claude/worktrees/art-pass"
+DEFAULT_ART_REPO = "D:/rc_art/art-pass"
 PLATE_DIR = "docs/concepts/golden_plates"
 STATE_OF = {"street_overview": "overview", "street_decision": "decision"}
 CAM_LABEL = {
