@@ -34,6 +34,7 @@ var tag_text: Callable = Callable()
 var _state: Dictionary = {"current": "", "visited": [], "options": []}
 var _hit: Control = null
 var _toggle_dec: Button = null
+var _toggle_box: Control = null
 var _toggle_ov: Button = null
 var _mask_img: Image = null
 var _mask_tex: ImageTexture = null
@@ -101,6 +102,7 @@ func _instant() -> bool:
 func _build_toggle() -> void:
 	var box := HBoxContainer.new()
 	box.name = "ViewToggle"
+	_toggle_box = box
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	box.offset_left = -300.0
@@ -408,6 +410,8 @@ func press_escape() -> int:
 ## first frame is the HQ page). `EntryCover` drives the `entry_*` calls below and ends with `entry_end`.
 func entry_begin() -> void:
 	entry_active = true
+	if _toggle_box != null:
+		_toggle_box.visible = false
 	if _hit != null:
 		_hit.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hover_id = ""
@@ -485,6 +489,8 @@ func entry_zoom(u: float) -> void:
 ## or were skipped.
 func entry_end() -> void:
 	entry_active = false
+	if _toggle_box != null:
+		_toggle_box.visible = true
 	if _hit != null:
 		_hit.mouse_filter = Control.MOUSE_FILTER_STOP
 	_entry_occ_on = true
