@@ -87,9 +87,10 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 	var gain: float = float(s.get("emit_mul", 1.0))
 	var seed01: float = float(s.get("seed", DressDistricts.hash01("sign_s", String(s["bid"]))))
 	var phase: float = float(s.get("phase", DressDistricts.hash01("sign_p", String(s["bid"]))))
-	var base: Color = _col(String(s["pal"]), p)
+	var base: Color = _col(_fill_pal(String(s["pal"])), p)
+	var sec: float = DressKit.pack_rgb(_col("district_b", p))
 	var depth: float = float(sg["depth"])
-	_add(prefix + "_neon", DressKit.item(DressKit.piece(p, eu, ev, 0.0, w, 0.0, depth, 0.0, h), base, seed01, phase, gain))
+	_add(prefix + "_neon", DressKit.item(DressKit.piece(p, eu, ev, 0.0, w, 0.0, depth, 0.0, h), base, seed01, phase, gain, sec))
 	_add(prefix + "_flicker", DressKit.item(DressKit.piece(p, eu, ev, 0.0, w, 0.0, depth * 1.2, 0.0, h), base, seed01, phase, gain))
 	if not full:
 		return
@@ -103,6 +104,7 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 	var ph: float = (h - float(n - 1) * gap) / float(n)
 	var bv: Array = sg["hero_panel_bright"]
 	var wv: Array = sg["hero_panel_w"]
+	var acc: Array = _accent_panels(bid, n) if hero else []
 	for i in n:
 		var z0: float = float(i) * (ph + gap)
 		var out: float = depth + 0.8 * fposmod(float(i) * 0.37, 1.0)
@@ -111,23 +113,30 @@ func _sign_pieces(prefix: String, s: Dictionary, full: bool) -> void:
 		var g: float = gain
 		var pw: float = w
 		if hero:
-			c = _col(_hero_pal(DressDistricts.hash01("hero_hue", key)), p)
+			c = _col("accent" if acc.has(i) else "district_a", p)
 			g = gain * lerpf(float(bv[0]), float(bv[1]), DressDistricts.hash01("hero_br", key))
 			pw = w * lerpf(float(wv[0]), float(wv[1]), DressDistricts.hash01("hero_w", key))
 		var a0: float = (w - pw) * 0.5
 		var pseed: float = DressDistricts.hash01("panel_s", key)
-		_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, a0, a0 + pw, 0.0, out, z0, z0 + ph), c, pseed, phase, g))
+		_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, a0, a0 + pw, 0.0, out, z0, z0 + ph), c, pseed, phase, g, sec))
 	var pole: float = float(sg["pole"])
-	_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, w * 0.5 - pole * 0.5, w * 0.5 + pole * 0.5, 0.0, depth, 0.0, h), base, seed01, phase, gain * float(sg["pole_gain"])))
+	_add(prefix + "_full", DressKit.item(DressKit.piece(p, eu, ev, w * 0.5 - pole * 0.5, w * 0.5 + pole * 0.5, 0.0, depth, 0.0, h), base, seed01, phase, gain * float(sg["pole_gain"]), sec))
 
 
-## The palette id of a hero panel for a 0..1 hash: the district hue, its second light, or the one accent (`sign.hero_mix`, `hero_mix_cut`).
-func _hero_pal(r: float) -> String:
-	var mix: Array = _cfg.sign["hero_mix"]
-	var cut: Array = _cfg.sign["hero_mix_cut"]
-	if r < float(cut[0]):
-		return String(mix[0])
-	return String(mix[1]) if r < float(cut[1]) else String(mix[2])
+## The palette id of a sign panel fill: the district hue, or the contrasting accent; never the second light (sec is trim only).
+func _fill_pal(pal: String) -> String:
+	return "district_a" if pal == "district_a" else "accent"
+
+
+## Indices of the hero panels that take the accent: `sign.hero_accent` counts (one below `hero_accent_from` panels, else two).
+func _accent_panels(bid: String, n: int) -> Array:
+	var cnt: Array = _cfg.sign["hero_accent"]
+	var k: int = int(cnt[1]) if n >= int(_cfg.sign["hero_accent_from"]) else int(cnt[0])
+	var first: int = mini(int(DressDistricts.hash01("hero_acc", bid) * float(n)), n - 1)
+	var out: Array = [first]
+	if k > 1:
+		out.append((first + n / 2) % n)
+	return out
 
 
 func _hero_signs(list: Array, col_by_bid: Dictionary) -> void:
@@ -145,8 +154,8 @@ func _hero_signs(list: Array, col_by_bid: Dictionary) -> void:
 		var u0: float = float(ci["u0"]) + float(pre["band_inset"])
 		var u1: float = float(ci["u1"]) - float(pre["band_inset"])
 		var bp: Array = NetrunArtDress.world(_f, u0, float(ci["face"]) - 0.05 * float(_f["ncross"]), float(ci["top"]) - float(pre["band_drop"]))
-		var c: Color = _col(String(s["band_pal"]), bp)
-		_add("hero_full", DressKit.item(DressKit.piece(bp, eu, ev, 0.0, u1 - u0, 0.0, 0.12, 0.0, float(pre["band_h"])), c, 0.5, 0.0, float(_cfg.sign["band_emit"]) / float(_cfg.sign["panel_emit"])))
+		var c: Color = _col(_fill_pal(String(s["band_pal"])), bp)
+		_add("hero_full", DressKit.item(DressKit.piece(bp, eu, ev, 0.0, u1 - u0, 0.0, 0.12, 0.0, float(pre["band_h"])), c, 0.5, 0.0, float(_cfg.sign["band_emit"]) / float(_cfg.sign["panel_emit"]), DressKit.pack_rgb(_col("district_b", bp))))
 
 
 func _city_signs(list: Array) -> void:
@@ -231,7 +240,7 @@ func _material(group: String) -> Material:
 		shape = DressKit.SHAPE_FLICKER
 		emit = float(sg["flicker_emit"])
 	elif sign_tier:
-		var m: ShaderMaterial = DressKit.neon_material(DressKit.SHAPE_SIGN, 1.0)
+		var m: ShaderMaterial = DressKit.sign_material()
 		if group.ends_with("_neon"):
 			DressKit.set_yield(m, group.trim_suffix("_neon") + "_full")
 		return m

@@ -191,11 +191,29 @@ func test_hero_signs_are_blades_with_varied_panels_and_sign_pieces_use_the_sign_
 	for it: Dictionary in sd.items["hero_full"]:
 		cols[(it["col"] as Color).to_html()] = true
 		gains[snappedf((it["custom"] as Color).b, 0.001)] = true
-	assert_true(cols.size() >= 3, "per-panel hues: %d" % cols.size())
+	assert_true(cols.size() >= 2, "hue plus accent panels: %d" % cols.size())
 	assert_true(gains.size() >= 3, "per-panel brightness: %d" % gains.size())
+	var secs: Dictionary = {}
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id != "common":
+			secs[DressDistricts.color_in("district_b", set_id).to_html()] = true
 	for g: String in ["hero_neon", "hero_full", "sign_neon", "sign_full"]:
+		for it: Dictionary in sd.items[g]:
+			assert_false(secs.has((it["col"] as Color).to_html()), "%s: sec is trim only, never a panel fill" % g)
 		var m := (sd.nodes[g][0] as MultiMeshInstance3D).material_override as ShaderMaterial
-		assert_eq(int(m.get_shader_parameter(&"shape")), DressKit.SHAPE_SIGN, g)
+		assert_eq(m.shader, DressKit.SIGN, g)
+	for set_id: String in DressingConfigData.shipped().palettes:
+		if set_id == "common":
+			continue
+		var a: Color = DressDistricts.color_in("district_a", set_id)
+		var c: Color = DressDistricts.color_in("accent", set_id)
+		var dh: float = absf(a.h - c.h)
+		assert_true(minf(dh, 1.0 - dh) > 0.12, "%s: accent contrasts with the district hue" % set_id)
+	var acc: int = 0
+	for it: Dictionary in sd.items["hero_full"]:
+		if (it["col"] as Color).is_equal_approx(DressDistricts.color_in("accent", "neon_bay")):
+			acc += 1
+	assert_true(acc <= 2 * hero_n + hero_n, "at most two accent panels per blade (plus bands)")
 	var yr: Vector2 = ((sd.nodes["sign_neon"][0] as MultiMeshInstance3D).material_override as ShaderMaterial).get_shader_parameter(&"yield_range")
 	assert_eq(yr.x, float(DressReveal.range_of("sign_full")["end"]), "the far block yields to the tier that covers it")
 

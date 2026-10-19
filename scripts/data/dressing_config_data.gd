@@ -39,7 +39,7 @@ const REQUIRED: Dictionary = {
 	"frontage": ["along_pad", "depth_max", "min_top", "sign_share", "shop_share", "billboard_share", "plume_share", "sign_w", "sign_h_min",
 		"sign_h_max", "shop_h", "shop_z", "billboard_w", "billboard_h", "billboard_up"],
 	"sign": ["neon_emit", "panel_emit", "band_emit", "flicker_emit", "depth", "pole", "gap", "flicker_bursts",
-		"panel_level", "core_level", "core_max", "frame_w", "cell", "stroke_h", "fill", "cell_gap", "bright_var", "side_dim", "hero_panels", "hero_mix", "hero_mix_cut",
+		"panel_level", "core_level", "core_max", "frame_w", "cell", "stroke_h", "fill", "cell_gap", "bright_var", "side_dim", "hero_panels", "hero_accent", "hero_accent_from", "core_px",
 		"hero_panel_bright", "hero_panel_w", "pole_gain"],
 	"lamp": ["dot", "spill_radius", "spill_gain", "dot_gain"],
 	"glow": ["radius", "gain", "wash_radius", "wash_gain"],
@@ -73,7 +73,7 @@ func validate() -> PackedStringArray:
 		for s: String in palettes:
 			if s == "common":
 				continue
-			for id: String in ["district_a", "district_b", "accent_warm", "accent_cool"]:
+			for id: String in ["district_a", "district_b", "accent", "accent_warm", "accent_cool"]:
 				if not (palettes[s] as Dictionary).has(id):
 					errs.append("palettes.%s.%s missing" % [s, id])
 	return errs

@@ -5,11 +5,12 @@ extends RefCounted
 ## (x, height, -y), as everywhere in the netrun view.
 
 const NEON := preload("res://shaders/city/dress_neon.gdshader")
+const SIGN := preload("res://shaders/city/dress_sign.gdshader")
 const PLUME := preload("res://shaders/city/dress_plume.gdshader")
 const SHAPE_SOLID := 0
 const SHAPE_DISC := 1
 const SHAPE_FLICKER := 2
-## A sign piece: soft panel + bright core strokes by max (NA-24c).
+## A sign piece (the `dress_sign` material; NA-24c).
 const SHAPE_SIGN := 3
 
 static var _box: BoxMesh = null
@@ -35,13 +36,30 @@ static func neon_material(shape: int, emit: float) -> ShaderMaterial:
 	m.set_shader_parameter(&"loop_s", float(CityShaderConfigData.shipped().streak["loop_s"]))
 	var b: Array = DressingConfigData.shipped().sign["flicker_bursts"]
 	m.set_shader_parameter(&"bursts", Vector2(float(b[0]), float(b[1])))
-	if shape == SHAPE_SIGN or shape == SHAPE_FLICKER:
-		var sg: Dictionary = DressingConfigData.shipped().sign
-		for k: String in ["panel_level", "core_level", "core_max", "frame_w", "stroke_h", "fill", "cell_gap", "bright_var", "side_dim"]:
-			m.set_shader_parameter(StringName(k), float(sg[k]))
-		var c: Array = sg["cell"]
-		m.set_shader_parameter(&"cell", Vector2(float(c[0]), float(c[1])))
+	if shape == SHAPE_FLICKER:
+		_sign_params(m)
 	return m
+
+
+## The opaque sign panel material (`dress_sign`, NA-24c) with the sign numbers from the config.
+static func sign_material() -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = SIGN
+	_sign_params(m)
+	return m
+
+
+static func _sign_params(m: ShaderMaterial) -> void:
+	var sg: Dictionary = DressingConfigData.shipped().sign
+	for k: String in ["panel_level", "core_level", "core_max", "frame_w", "stroke_h", "fill", "cell_gap", "bright_var", "side_dim", "core_px"]:
+		m.set_shader_parameter(StringName(k), float(sg[k]))
+	var c: Array = sg["cell"]
+	m.set_shader_parameter(&"cell", Vector2(float(c[0]), float(c[1])))
+
+
+## `c` packed 0xRRGGBB as an exact float (24 bits), for `item`'s `sec`.
+static func pack_rgb(c: Color) -> float:
+	return float((int(round(c.r * 255.0)) << 16) | (int(round(c.g * 255.0)) << 8) | int(round(c.b * 255.0)))
 
 
 ## Tells a sign tier material which tier covers it (`DressReveal.range_of` of `cover_group`), so the far block fades out as the
@@ -125,8 +143,8 @@ static func ground_disc(p: Array, r: float) -> Transform3D:
 
 
 ## One instance of a group: transform, colour, and `custom` (seed, phase, gain).
-static func item(xf: Transform3D, col: Color, seed01: float = 0.0, phase: float = 0.0, gain: float = 1.0) -> Dictionary:
-	return {"xf": xf, "col": col, "custom": Color(seed01, phase, gain, 0.0)}
+static func item(xf: Transform3D, col: Color, seed01: float = 0.0, phase: float = 0.0, gain: float = 1.0, sec: float = 0.0) -> Dictionary:
+	return {"xf": xf, "col": col, "custom": Color(seed01, phase, gain, sec)}
 
 
 ## The chunked MultiMesh nodes of reveal group `group` (one per `caps.chunk_bu` world cell, sorted by cell), each with the group's
