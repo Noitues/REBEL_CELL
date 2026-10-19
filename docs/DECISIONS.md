@@ -61,6 +61,27 @@ Each is a default the designer may revisit; work proceeds on it.
 - **N3:** the boss phase minimum stays 3 until boss content is authored to R1's 4-5.
 - **Small:** kit_demo offsets stay as consts; the neon_city bake constants stay in code; `POINTER_ALPHA_SHOWN` keeps its
   name; a sim "boss from saved campaign state" source is added (tool-only) when the boss tuning pass needs it.
+### 2026-10-18 — Plan 2 W1 N20: slice riders (hits, hits_per_target_status, perfect_multiplier, pierce; Q39, Q40)
+- **Schema (SliceData, all optional):** `hits` (1), `hits_per_target_status` (RC.Status, NONE) with
+  `hits_per_status_slice` (0 = unset), `perfect_multiplier` (1.0), `pierce` (false). All defaults resolve exactly as
+  before (the default-slice tests and the unchanged suite). `validate()` codes: `hits_lt_1`, `hits_per_status_lt_1`,
+  `hits_per_status_without_status`, `perfect_multiplier_not_positive`, `riders_on_non_damage` (riders only on SHIM /
+  OVERFLOW). Schema smoke check `_n20_slice_riders`. Save format unchanged (riders are content, not state).
+- **Order (`CombatResolver._resolve_pointer` doc):** tier output (tier damage factor, WEAK factor) -> `perfect_multiplier`
+  (PERFECT only) -> Firmware / OVERCLOCKED / OUTPUT_DOWN / segment, one product and one rounding -> the hit list ->
+  each hit runs `deal_hit` on its own (enrage, SANDBOX charge, bodyguard, BLOCK, SHIELD, HP with the phase floor).
+  Enemy flat rider damage carries the tier factor (R2); a hit's BLOCK use is per hit from one pool (BLOCK 7 vs 3 x 5:
+  5 + 2 absorbed, 8 HP lost — the brief's "12" was an arithmetic slip). Hits go hit by hit, each on every target
+  needle in pointer order. The operative's `damage_bonus` adds to every hit. Riders draw no RNG.
+- **Orchestrator answers (brief Q lines):** (1) `hits_per_target_status` counts the target wheel's **non-NULL slices**
+  carrying the status (temporary stacks, as RamCost reads CORRUPTED), one per slice whatever its stacks, times
+  `hits_per_status_slice`; `hits` is then the minimum (1 by default: "min 1"; a Booster-style "minimum 2" is
+  `hits = 2`). (2) A retrigger (Breaker PERFECT "resolves twice") repeats the **whole** resolution, hit list included:
+  hits x 2. (3) **No MAX_HITS** (designer Q40): no cap and no guard — the hit count is bounded by content and the
+  target's slice count, so there is no runaway loop to guard; `validate()` only refuses hits < 1.
+- **Pierce:** `slice.pierce` OR the ring segment's pierce; skips BLOCK and SHIELD only — a SANDBOX charge negates one
+  pierce hit and a bodyguard still takes it (Q39).
+- **Not in scope:** rider text in tooltips / Codex and rider chips (Q19 follow-up, view area), `gc_*` content.
 
 ### 2026-10-18 — Plan 2 W1 N8: ×N status stacks, save v3 (R8, Q35 b, Q36, Q40)
 - **Storage:** `WheelState.slice_stacks: Array[Dictionary]`, one `{RC.Status int: stacks >= 1}` per slot on every

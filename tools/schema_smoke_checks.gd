@@ -7,7 +7,30 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders()
+
+
+## Plan 2 N20: SliceData riders default to a plain slice; a bad one is refused by code; a
+## save keeps all four; riders on a non-damage slice are refused.
+func _n20_slice_riders() -> int:
+	var fails := 0
+	var s := SliceData.new(); s.id = &"smoke_rider"; s.slice_type = RC.SliceType.SHIM; s.base_output = 2
+	print("N20 rider defaults (expect 1 0 0 1 false false): ", s.hits, " ", s.hits_per_target_status, " ", s.hits_per_status_slice, " ", s.perfect_multiplier, " ", s.pierce, " ", s.has_riders())
+	if s.hits != 1 or s.hits_per_target_status != RC.Status.NONE or s.hits_per_status_slice != 0 or s.perfect_multiplier != 1.0 or s.pierce or s.has_riders(): fails += 1
+	s.hits = 0; s.perfect_multiplier = 0.0
+	var codes := ",".join(s.validate())
+	print("N20 bad riders: ", codes)
+	if not (codes.contains("hits_lt_1") and codes.contains("perfect_multiplier_not_positive")): fails += 1
+	s.hits = 3; s.perfect_multiplier = 4.0; s.pierce = true
+	s.hits_per_target_status = RC.Status.CORRUPTED; s.hits_per_status_slice = 1
+	var err := ResourceSaver.save(s, "user://smoke_riders.tres")
+	var back: SliceData = ResourceLoader.load("user://smoke_riders.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	print("N20 rider save=", err, " back ", [back.hits, back.hits_per_target_status, back.hits_per_status_slice, back.perfect_multiplier, back.pierce] if back != null else [])
+	if err != OK or back == null or back.hits != 3 or back.hits_per_target_status != RC.Status.CORRUPTED or back.hits_per_status_slice != 1 \
+			or back.perfect_multiplier != 4.0 or not back.pierce or back.validate().size() != 0: fails += 1
+	s.slice_type = RC.SliceType.DEFRAG
+	if not ",".join(s.validate()).contains("riders_on_non_damage"): fails += 1
+	return fails
 
 
 ## NA-22: CityShaderConfigData (the netrun city shaders' tuning numbers): the shipped one validates, an empty one reports

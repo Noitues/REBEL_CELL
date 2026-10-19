@@ -796,6 +796,12 @@ func _heat_listeners(s: CombatState, owner: CombatantState, slice: SliceData = n
 
 ## Resolves one pointer: computes multipliers and extra resolutions, runs the base
 ## slice action per instance, then the slice's own listeners.
+## Plan 2 N20 rider order: tier output (tier factor, WEAK factor) -> `perfect_multiplier`
+## (PERFECT only) -> the other multipliers (Firmware, OVERCLOCKED, OUTPUT_DOWN, segment),
+## one product and one rounding per instance -> the hit list (`hit_count` hits of that
+## amount, each per target needle) -> per-hit absorption in `deal_hit` (enrage, SANDBOX
+## charge, bodyguard, BLOCK and SHIELD unless pierce, then HP). A retrigger (a Breaker
+## Perfect "resolves twice") repeats the whole hit list. Riders draw no RNG.
 func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	# No liveness check: resolution is simultaneous, so a combatant that dropped to 0 HP
 	# earlier in this resolve still fires everything it landed on. Deaths apply at the end.
@@ -813,6 +819,8 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var mult: float = tier_factor * float(r.get("extra_multiplier", 1.0))
 	if r["tier"] == RC.PrecisionTier.WEAK:
 		mult *= config.weak_multiplier
+	elif r["tier"] == RC.PrecisionTier.PERFECT:
+		mult *= slice.perfect_multiplier  # N20 rider (Medicine); 1.0 by default
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
 		mult *= fw.output_multiplier
@@ -821,11 +829,11 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	if overclocked:
 		mult *= config.overclock_multiplier
 	mult *= output_down_factor(stacks_in(r, RC.Status.OUTPUT_DOWN), config)
-	var pierce := false
+	var pierce := slice.pierce  # N20 rider (Adrenaline)
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:
 		mult *= seg.output_multiplier
-		pierce = seg.pierce
+		pierce = pierce or seg.pierce
 	var instances: Array[float] = [mult]
 	for extra in fx.retrigger_multipliers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners):
 		instances.append(mult * extra)
@@ -896,6 +904,21 @@ static func is_landing(r: Dictionary) -> bool:
 	return not r.get("derived", false) or r.get("landing", false)
 
 
+## Plan 2 N20: how many hits one resolution of attack `slice` deals to `target` (per target
+## needle). `slice.hits`, or with `hits_per_target_status` set, the target wheel's non-NULL
+## slices carrying that status (one per slice, not per stack) times `hits_per_status_slice`,
+## never below `slice.hits` (the minimum, 1 by default). No cap (ruling Q40). Pure.
+func hit_count(slice: SliceData, target: CombatantState) -> int:
+	var n := maxi(1, slice.hits)
+	if slice.hits_per_target_status == RC.Status.NONE or target == null:
+		return n
+	var carrying := 0
+	for i in target.wheel.slot_slice_ids.size():
+		if target.wheel.has_status(i, slice.hits_per_target_status) and fx.slice_of(target.wheel, i).slice_type != RC.SliceType.NULL:
+			carrying += 1
+	return maxi(n, carrying * slice.hits_per_status_slice)
+
+
 ## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_NULL_SLICE on the NULL, for `listeners`.
 func _landing_triggers(s: CombatState, r: Dictionary, slice: SliceData, ctx: Dictionary, listeners: Array, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	if listeners.is_empty():
@@ -913,22 +936,27 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			var target: CombatantState = ctx["target"]
 			if target == null or not target.is_alive():
 				return
+			# N20: the hit list is fixed when the slice resolves (the target's statuses now).
+			var hits := hit_count(slice, target)
 			# N4: the attack line reports the hit as it lands (deal_hit applies the enrage).
-			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce,
-				"text": "" if quiet else "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
-			for q in target.wheel.pointer_ticks.size():
-				# N14: the target's SANDBOX charge comes before its bodyguard (Pierce too).
-				if fx.sandboxed(owner, target, output, events, slice.id):
-					continue
-				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
-				# and shield only). The operative's drones guard the operative the same way.
-				var victim := target
-				var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
-				if guard != null:
-					victim = guard
-					events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
-						"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
-				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
+			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce, "hits": hits,
+				"text": "" if quiet else "%s %s for %s at %s." % [owner.display_name, _slice_name(slice), ("%d x %d" % [hits, output]) if hits > 1 else str(output), target.display_name]})
+			# N20: every hit runs the whole damage path on its own, hit by hit, each on
+			# every needle of the target (pointer index order).
+			for h in hits:
+				for q in target.wheel.pointer_ticks.size():
+					# N14: the target's SANDBOX charge comes before its bodyguard (Pierce too).
+					if fx.sandboxed(owner, target, output, events, slice.id):
+						continue
+					# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
+					# and shield only). The operative's drones guard the operative the same way.
+					var victim := target
+					var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
+					if guard != null:
+						victim = guard
+						events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
+							"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
+					fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
 		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
 		RC.SliceType.SANDBOX:
