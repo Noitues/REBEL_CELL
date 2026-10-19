@@ -3342,7 +3342,7 @@ UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
 UP,UP
-"UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace.","UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace."
+"UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace.","UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace."
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s

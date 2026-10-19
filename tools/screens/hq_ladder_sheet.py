@@ -6,7 +6,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 TILES = [
-    ("overview", "1  Ladder overview: two towers, ACROSS bridges as pink dashes, rest / mini-boss stickers, FRONT chip"),
+    ("overview", "1  Ladder overview: two towers, ACROSS bridges as raised arcs, rest / mini-boss stickers, FRONT chip"),
     ("across", "2  ACROSS option hovered: tag + room file show tower, move and the exact Bloom gap"),
     ("minimb", "3  Mini-boss room hovered (UP): its own name, sticker and gap"),
     ("crown", "4  The crown fight: address line reads BOSS: THE GENOME CORE"),

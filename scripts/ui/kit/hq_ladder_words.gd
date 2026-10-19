@@ -2,7 +2,7 @@ class_name HqLadderWords
 extends RefCounted
 ## Plan 2 W2 HQ-LADDER-UI: the words and marks the Solace HQ ladder (run kind "hq", SolaceHqGraph) shows in
 ## the netrun scene: a room's name (Clinic Gate, Rest, Mini-boss, Genome Core), its tower (WARD / BILLING),
-## how it is entered (UP or ACROSS), the exact Bloom gap entering it leaves (NetrunSession.bloom_preview,
+## how it is entered (UP or ACROSS, in the hover tag and room file only), the exact Bloom gap entering it leaves (NetrunSession.bloom_preview,
 ## no "?"), and which links of the graph are ACROSS bridges. Read-only: every value comes from the session's
 ## rules, nothing is decided here.
 
@@ -76,12 +76,11 @@ static func tower_word(node: Dictionary) -> String:
 	return ""
 
 
-## How entering `node` from `from_id` is worded: ACROSS, UP, or "" (the gate's two rooms and the crown are neither).
+## How entering `node` from `from_id` is worded: ACROSS, UP, or "" (no room to enter from).
 static func move_word(map: MapGraph, node: Dictionary, from_id: StringName) -> String:
 	if NetrunSession.entered_across(node, from_id):
 		return TranslationServer.translate(MOVE_ACROSS)
-	var from := map.get_node(from_id) if from_id != &"" else {}
-	if from.is_empty() or not from.has("tower") or not node.has("tower") or room_kind(node) == &"crown":
+	if from_id == &"":
 		return ""
 	return TranslationServer.translate(MOVE_UP)
 
@@ -96,7 +95,7 @@ static func gap_of(preview: Dictionary, id: StringName) -> Dictionary:
 		"turn": NetrunSession.bloom_gap_text(int(p["turn_cost_milli"])) if int(p["turn_cost_milli"]) > 0 else ""}
 
 
-## The hover tag of room `id`: "WARD · Rest · ACROSS · GAP 1.2" (parts that do not apply are left out).
+## The hover tag of room `id`: "WARD · Rest · ACROSS · GAP 1.2", the crown "Genome Core · UP" (parts that do not apply are left out).
 static func tag(s: NetrunSession, id: StringName, base_word: String) -> String:
 	var node := s.run.map.get_node(id)
 	var parts := PackedStringArray()
@@ -139,16 +138,6 @@ static func across_keys(map: MapGraph) -> Dictionary:
 	for n in map.all_nodes():
 		for from_id in n.get("across_from", []):
 			out[KEY_FORMAT % [from_id, n["id"]]] = true
-	return out
-
-
-## id -> the tower's name for every room that stands on a tower (the overlay captions the ones in play).
-static func tower_names(map: MapGraph) -> Dictionary:
-	var out := {}
-	for n in map.all_nodes():
-		var w := tower_word(n)
-		if w != "":
-			out[String(n["id"])] = w
 	return out
 
 

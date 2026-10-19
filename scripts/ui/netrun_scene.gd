@@ -1745,7 +1745,7 @@ func _show_street_map(s: NetrunSession) -> void:
 		ladder_key.custom_minimum_size.x = 260.0
 		ladder_key.add_theme_font_override("font", Palette.mono())
 		ladder_key.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-		ladder_key.add_theme_color_override("font_color", Palette.CELL_PINK)
+		ladder_key.add_theme_color_override("font_color", Palette.TEXT_HI)
 		ladder_key.tooltip_text = UiTip.fold(tr(LADDER_KEY_TIP))
 		ladder_key.mouse_filter = Control.MOUSE_FILTER_PASS
 		win.body.add_child(ladder_key)
@@ -1820,18 +1820,16 @@ func _show_street_map(s: NetrunSession) -> void:
 	_prebake_backdrops.call_deferred()
 
 
-const LADDER_KEY := "UP: same tower, next rung.  ACROSS (pink dashes): the other tower's next rung, at extra Bloom pace." # TR
+const LADDER_KEY := "UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace." # TR
 const LADDER_KEY_TIP := "WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves." # TR
 
 
-## HQ-LADDER-UI: the Solace ladder's marks on the street overlay: ACROSS bridges as pink dashes, the towers' names over the
-## rooms in play, and the rest / mini-boss stickers. View state only; nothing for any other run.
+## HQ-LADDER-UI: the Solace ladder's marks on the street overlay: ACROSS bridges as raised arcs in the UP pencil, and the rest / mini-boss stickers. View state only; nothing for any other run.
 func _apply_ladder_marks(s: NetrunSession) -> void:
 	if not HqLadderWords.is_ladder(s) or street_view == null or not is_instance_valid(street_view) or street_view.overlay == null:
 		return
 	var ov := street_view.overlay
 	ov.across_keys = HqLadderWords.across_keys(s.run.map)
-	ov.tower_names = HqLadderWords.tower_names(s.run.map)
 	ov.kind_overrides = HqLadderWords.kind_overrides(s.run.map)
 	ov.mark_dirty()
 

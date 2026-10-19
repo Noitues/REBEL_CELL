@@ -95,12 +95,16 @@ func test_the_gate_page_labels_the_towers_and_marks_the_bridges() -> void:
 		var b := g.get_node(StringName(e["b"]))
 		var is_bridge := NetrunSession.entered_across(b, StringName(e["a"]))
 		assert_eq(ov.across_keys.has(key), is_bridge, "link %s" % key)
-	# The two towers are named, on the rooms that stand on one.
-	var names: Array = ov.tower_names.values()
-	assert_true(names.has("WARD"))
-	assert_true(names.has("BILLING"))
-	assert_eq(ov.tower_names.size(), _s.run.map.all_nodes().size() - 2, "everything but the gate and the crown")
-	# The gate's two rooms are a tower pick, not UP or ACROSS; the gate itself is named.
+	# No tower caption at rest: the overlay holds no tower names (the tower stays in the hover tag and the room file).
+	assert_false("tower_names" in ov, "no tower captions on the overlay")
+	assert_false("ACROSS_DASH" in ov.get_script().get_script_constant_map(), "bridges are not dashed")
+	# A bridge is a raised arc: its stroke lifts above the straight link between the same rooms and lands on both ends.
+	var flat := PackedVector2Array([Vector2(0, 100), Vector2(50, 100), Vector2(100, 100), Vector2(150, 100), Vector2(200, 100)])
+	var arc := StreetRouteOverlay._arched(flat)
+	assert_eq(arc[0], flat[0], "lifts from the first room")
+	assert_eq(arc[arc.size() - 1], flat[flat.size() - 1], "lands on the second")
+	assert_lt(arc[2].y, flat[2].y, "peaks above the gap")
+	# The gate itself is named.
 	var gate := g.first_layer_ids()[0]
 	assert_eq(_word(g.get_node(gate)), "Clinic Gate")
 	var ids := _s.available_nodes()
@@ -120,7 +124,7 @@ func test_the_ladder_walk_shows_what_the_session_says() -> void:
 	var ward1 := MapGraph.make_id(2, 0)
 	var bill1 := MapGraph.make_id(2, 1)
 	assert_eq(_s.available_nodes(), [ward1, bill1] as Array[StringName], "pick a tower")
-	assert_false(_tag(ward1).contains("UP"), "the gate's rooms are a tower pick")
+	assert_true(_tag(ward1).contains("UP") and _tag(bill1).contains("UP"), "the gate's two rooms read UP")
 	assert_true(_tag(ward1).begins_with("WARD"))
 	assert_true(_tag(bill1).begins_with("BILLING"))
 	# UP: Ward rung 1 -> Ward rung 2. ACROSS: -> Billing rung 3.
@@ -179,7 +183,7 @@ func test_the_ladder_walk_shows_what_the_session_says() -> void:
 	await get_tree().process_frame
 	assert_eq(_scene.node_word(crown), "Genome Core")
 	assert_true(_tag(crown["id"]).contains("Genome Core"), _tag(crown["id"]))
-	assert_false(_tag(crown["id"]).contains("UP") or _tag(crown["id"]).contains("ACROSS"), "the crown is neither")
+	assert_true(_tag(crown["id"]).contains("UP") and not _tag(crown["id"]).contains("ACROSS"), "the crown reads UP")
 	_scene.enter_node(crown["id"])
 	await get_tree().process_frame
 	assert_true(_s.in_combat())
