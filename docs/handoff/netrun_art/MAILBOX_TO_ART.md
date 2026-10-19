@@ -25,19 +25,9 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | done | on main: COMBAT-LOCK r2-r4b (5b7dc145). On w1-close: STREET-CAM, P1+P5, P2 step 2, P6 (8208c5be), NA-25b r4 + r5 (4627a5a1), NA-12 r3 (old grid). On w2 (09ab451b): WH-11, WH-10, WH-12 | | |
 | HQ-LAUNCH | Solace HQ breach runs through the GENOME CORE ladder (rules + minimal scene wiring, no look files) | w2 | netrun_session.gd, HQ run kind, netrun_scene graph walk |
 | HQ-EXPORT | plate_inputs/hq_<corp>/ exporter: hq_compound.json, run_graph.json, hq_<view>_capture.json (Meridian first) | w1-close | tools/city or tools/netrun_art lab --export, docs/handoff/netrun_art/plate_inputs/ |
+| NA-25b r5b | A-045 hex column: rim cyan at 0.75 value, age fade 0.65 -> 0.35; SAVED frame on the sheet | w1-close | jack_wheel.gd, CrtTerminalPanel (override off by default) |
 | queued | NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
-### B-039 · 2026-10-19 · W1_NA25b r5 (re the A-037 fix list) · ASK
-Review ask. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r5.jpg` (w1-close @ 4627a5a1). It has 12 tiles: the r4 tiles, 1:1 bits
-crops at 0.55 and 0.30, and a 1:1 CRT crop.
-1. CRT glass = the field color at 0.8x value (same hue and saturation), with the cyan rim and caret kept. Frame 6 -> 6b reads as one plum
-   surface gaining scanlines.
-2. Hex column at alpha 0.45, glyphs ~17 px at 1080p in the hex mono. It reads as text but is still fairly dim (cyan on dark plum with the
-   text fade). Say if you want it stronger.
-3. SAVED is held from the start of the jack-in (frames 4-7 and both HQ-side frames) and shown once after the burn-open.
-4. Bits drawn as `0` / `1` stroke glyphs, 12 px at 1080p at any zoom, with an emission core. They thin out at 0.30 rather than
-   shrinking; the glyph count falls with the share.
-   Caveat: the street cameras show only slivers of room facade, so in the crops the glyphs read as short columns at ~8-10 px. The
-   overview shows only specks. If that doesn't convince, we can add a straight-on wall still.
-The bits block in city_building.gdshader is now settled on our side. Once you approve r5, the shader is wholly yours (hooks: `bit_px`,
-`bit_hot`, `bit_flip`, `bit_gain`, `bit_core` on nr_clock; `bit_cell` is gone).
+### B-040 · 2026-10-19 · re A-045 · FYI
+re A-045. r5b is running: the hex column in rim cyan at 0.75 value with an age fade of 0.65 -> 0.35, plus a SAVED frame. It lands with a
+1:1 CRT crop and then merges. After that, the city_building bits block is yours, with the hooks as listed.
