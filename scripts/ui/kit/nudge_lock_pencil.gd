@@ -32,13 +32,16 @@ const SLASH_TILT_DEG := 6.0
 const SLASH_BOW := 0.08
 ## A wide chip (RESPIN): the ring is an oval hugging the chip's outline, this share of its half
 ## sizes past it (r4), tilted at most FIT_TILT_DEG so the ends stay by the chip; the slash runs
-## the chip's own corner to corner, FIT_SLASH_REACH of the ring's reach along it. The wax is
-## lowered to FIT_ALPHA so `RESPIN` and the RAM cost read through it. The whole mark is kept
-## FIT_SAFE_MARGIN px inside the screen.
+## the chip's own corner to corner, FIT_SLASH_REACH of the ring's reach along it. The wax keeps the
+## wheel mark's alpha; the chip's label (`label` in the spec: [verb, cost]) is drawn OVER the mark
+## (r4b), a LABEL_OUTLINE px outline in the chip's navy. The whole mark is kept FIT_SAFE_MARGIN px
+## inside the screen.
 const FIT_MARGIN := 0.1
 const FIT_TILT_DEG := 3.0
 const FIT_SLASH_REACH := 1.25
-const FIT_ALPHA := 0.55
+const LABEL_OUTLINE := 1
+## The label overlay's z over the wax (z 0).
+const LABEL_Z := 1
 const FIT_SAFE_MARGIN := 12.0
 ## The ring's foot keeps this far above a label under the button (px: wax half width and shadow).
 const FOOT_CLEAR := 7.0
@@ -65,6 +68,10 @@ var _live: Dictionary = {}
 ## Marks wiping off: [{key, strokes, seed, t}].
 var _wipes: Array[Dictionary] = []
 var _wipe_count: int = 0
+## The chip labels drawn over the wax: a Control beside the pool on the pencil layer.
+var _label_ci: Control = null
+## [{rect (global), parts (verb, cost)}] for the overlay's draw.
+var _labels: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -79,6 +86,9 @@ func _exit_tree() -> void:
 	if _pool != null and is_instance_valid(_pool):
 		_pool.release()
 	_pool = null
+	if _label_ci != null and is_instance_valid(_label_ci):
+		_label_ci.queue_free()
+	_label_ci = null
 
 
 ## The circle-slash for a button at `center` with `radii` (global px): ONE hand-drawn ring stroke
@@ -260,6 +270,8 @@ func _process(delta: float) -> void:
 		st["radii"] = m["radii"]
 		st["seed"] = seed
 		st["fit"] = fit
+		st["label"] = m.get("label", PackedStringArray())
+		st["rect"] = Rect2(Vector2(m["center"]) - Vector2(m["radii"]), Vector2(m["radii"]) * 2.0)
 		if float(st["t"]) < 1.0:
 			st["t"] = minf(1.0, float(st["t"]) + delta / maxf(float(st["dur"]), 0.001))
 		if float(st.get("scr", 1.0)) < 1.0:
@@ -302,11 +314,52 @@ func _lay() -> void:
 	for w in _wipes:
 		_flat(_pool.stroke(String(w["key"]), w["strokes"], GreasePencilMark.Ink.THREAT, 1.0, float(w["t"]), false, int(w["seed"])), bool(w.get("fit", false)))
 	_pool.end()
+	_lay_labels()
+
+
+## The chips' words over their marks: the overlay sits after the pool on the pencil layer and
+## above its wax (LABEL_Z).
+func _lay_labels() -> void:
+	_labels.clear()
+	for key: String in _live:
+		var lab: PackedStringArray = _live[key].get("label", PackedStringArray())
+		if lab.size() == 2:
+			_labels.append({"rect": _live[key]["rect"], "parts": lab})
+	if _labels.is_empty() and _label_ci == null:
+		return
+	if _label_ci == null or not is_instance_valid(_label_ci):
+		_label_ci = Control.new()
+		_label_ci.name = "NudgeLockLabels"
+		_label_ci.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_label_ci.z_index = LABEL_Z
+		_label_ci.draw.connect(_draw_labels)
+		_pool.get_parent().add_child(_label_ci)
+	_label_ci.visible = not _labels.is_empty()
+	_label_ci.queue_redraw()
+
+
+## Pure-view draw of each chip's verb and cost, the chip's own lettering, outlined in its navy.
+func _draw_labels() -> void:
+	var s := Settings.text_scale
+	var f := HudSkin.mono()
+	var wf := roundi(TerminalChip.WORD_FONT * s)
+	var sf := roundi(TerminalChip.SUB_FONT * s)
+	for l in _labels:
+		var r: Rect2 = l["rect"]
+		var p: PackedStringArray = l["parts"]
+		var x := r.position.x + (TerminalChip.CHIP_PAD + TerminalChip.CARET_ROOM) * s
+		var wp := Vector2(x, r.position.y + TerminalChip.CHIP_PAD * 0.4 * s + f.get_ascent(wf))
+		_label_ci.draw_string_outline(f, wp, p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, wf, LABEL_OUTLINE, PaletteSkins.chrome(HudSkin.TERMINAL_BG))
+		_label_ci.draw_string(f, wp, p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, wf, HudSkin.TERMINAL_HI)
+		if p[1] != "":
+			var sp := Vector2(x, r.end.y - TerminalChip.CHIP_PAD * 0.5 * s)
+			_label_ci.draw_string_outline(f, sp, p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, sf, LABEL_OUTLINE, PaletteSkins.chrome(HudSkin.TERMINAL_BG))
+			_label_ci.draw_string(f, sp, p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, sf, PaletteSkins.chrome(HudSkin.PIP_ON))
 
 
 ## Hand pressure along the stroke, no lit side: a flat wax stroke.
-func _flat(m: GreasePencilMark, fit: bool = false) -> void:
-	m.wax_alpha = FIT_ALPHA if fit else GreasePencilMark.WAX_ALPHA
+func _flat(m: GreasePencilMark, _fit: bool = false) -> void:
+	m.wax_alpha = GreasePencilMark.WAX_ALPHA
 	m.wobble = PRESSURE
 	m.highlight = false
 	m.edge_grain = EDGE_GRAIN

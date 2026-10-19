@@ -131,3 +131,28 @@ func test_the_chip_mark_hugs_the_chip_and_stays_inside_the_safe_frame() -> void:
 	var a := NudgeLockPencil.shapes(Vector2(100, 100), Vector2(17, 17), 7)
 	var b := NudgeLockPencil.shapes(Vector2(100, 100), Vector2(17, 17), 7, INF, false)
 	assert_eq(a[0], b[0], "the wheel mark is unchanged")
+
+
+func test_the_chip_label_is_drawn_over_the_mark_and_the_wax_alpha_matches_the_wheel() -> void:
+	var player: CombatantState = _scene.engine.state().player
+	player.wheel.add_lock(WheelState.LOCK_RESPIN, &"lk_enemy", 1)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var pencil: NudgeLockPencil = _scene.nudge_lock_pencil
+	var labels := pencil._label_ci as Control
+	assert_not_null(labels, "the chip's label overlay exists")
+	assert_true(labels.visible)
+	assert_eq(pencil._labels.size(), 1)
+	var marks: Array = pencil._pool.get_children()
+	for m in marks:
+		if m is CanvasItem:
+			assert_lt((m as CanvasItem).z_index, labels.z_index, "the label draws above the wax")
+	assert_eq(labels.get_parent(), pencil._pool.get_parent(), "same layer")
+	assert_gt(labels.get_index(), pencil._pool.get_index(), "after the pool")
+	var chip := GreasePencilMark.new()
+	var wheel := GreasePencilMark.new()
+	pencil._flat(chip, true)
+	pencil._flat(wheel, false)
+	assert_eq(chip.wax_alpha, wheel.wax_alpha, "the chip mark's wax is as strong as the wheel's")
+	chip.free()
+	wheel.free()
