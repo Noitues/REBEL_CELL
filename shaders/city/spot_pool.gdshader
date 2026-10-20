@@ -4,6 +4,8 @@
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, depth_test_disabled, shadows_disabled;
 
+#include "res://shaders/lib/rc_common.gdshaderinc"
+
 uniform float gain = 1.2;
 uniform float soft = 1.5;
 uniform float on = 1.0;
