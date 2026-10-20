@@ -93,10 +93,13 @@ extends Resource
 ## HQ lot, start radius (BU), spread half-angle, emission, lean (degrees, alternating per HQ) and the night share they
 ## show above.
 @export var whole_beam_len_bu: float = 340.0
-@export var whole_beam_base_bu: float = 30.0
-@export var whole_beam_start_r_bu: float = 9.0
-@export var whole_beam_half_deg: float = 5.0
-@export var whole_beam_emit: float = 1.4
+@export var whole_beam_base_bu: float = -0.5
+@export var whole_beam_start_r_bu: float = 2.5
+@export var whole_beam_half_deg: float = 2.2
+@export var whole_beam_emit: float = 0.6
+## LOOK L5 (designer 2026-10-20): the beams start on the HQ's roof (its landmark's top + whole_beam_base_bu); these HQs
+## have none (Halcyon keeps only its eye's beam).
+@export var whole_beam_skip: Array[StringName] = [&"halcyon"]
 @export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
@@ -842,7 +845,7 @@ extends Resource
 @export var sea_field_cap_lots: float = 60.0
 ## LOOK L5 (A2 plate): the bay islands (CityWater.islands_of): how many, the least lots to land, radius share of that and
 ## cap (lots), the spacing in radii, the crown height (BU) and the rim wobble.
-@export var island_count: int = 3
+@export var island_count: int = 2
 ## LOOK L5: light vegetation on the green land (CityVegetationKit, whole-city pose): a sample every `veg_step` lots, the
 ## kept share from meadow to forest, the least ground height (BU) and the steepest slope, the share of the city's bare lots
 ## with a tree, and the tree radius range (lots of BU; park_tree_w / park_tree_h shape them).

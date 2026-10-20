@@ -213,6 +213,30 @@ static func set_ground_pass(node: Node, on: bool) -> void:
 
 ## Where corporation `corp`'s landmark stands: its HQ lot's centre on the ground, facing
 ## the camera's yaw (Transform3D() when the city has no such HQ).
+## LOOK L5: the world height of the top of `corp`'s landmark (its meshes' boxes), `fallback` when it has none.
+func _landmark_top(corp: StringName, fallback: float) -> float:
+	var node: Node3D = landmarks.get(corp)
+	if node == null:
+		return fallback
+	var top := -INF
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null or not m.visible:
+			continue
+		var xf := m.global_transform if m.is_inside_tree() else node.transform * m.transform
+		# Light cones (lm_beam surfaces) are no roof.
+		for s in m.mesh.get_surface_count():
+			var mat := m.get_surface_override_material(s)
+			if mat == null:
+				mat = m.mesh.surface_get_material(s)
+			if mat != null and (mat.resource_name == "lm_beam" or (mat is ShaderMaterial and (mat as ShaderMaterial).shader == LandmarkMaterials.BEAM_SHADER)):
+				continue
+			var verts: PackedVector3Array = m.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for v in verts:
+				top = maxf(top, (xf * v).y)
+	return top if top > -INF else fallback
+
+
 func landmark_slot(corp: StringName) -> Transform3D:
 	if model == null or not model.hqs.has(corp):
 		return Transform3D()
@@ -824,8 +848,11 @@ func _sync_hq_beams() -> void:
 		var front_h: float = cfg.whole_beam_len_bu / float(CityShaderConfigData.shipped().beam["length_front"])
 		for i in corps.size():
 			var corp: StringName = corps[i]
+			if cfg.whole_beam_skip.has(corp):
+				continue
 			var s: float = 1.0 if i % 2 == 0 else -1.0
-			var o := landmark_slot(corp).origin + Vector3(0.0, cfg.whole_beam_base_bu, 0.0)
+			var o := landmark_slot(corp).origin
+			o.y = _landmark_top(corp, o.y) + cfg.whole_beam_base_bu
 			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
 			var node := NetrunShaderKit.beam_node(beam, Palette.corp_color(corp), front_h)
 			var m := node.material_override as ShaderMaterial
