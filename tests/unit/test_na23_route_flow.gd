@@ -18,7 +18,7 @@ func before_each() -> void:
 	RunManager.delete_save()
 	RunManager.reset()
 	CityBakeCache.shutdown()
-	SCRIPT.street_route = true
+	SCRIPT.force_street_error = ""
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = Vector2(1280, 720)
 	_scene = load(NETRUN).instantiate()
@@ -31,7 +31,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	SCRIPT.street_route = true
+	SCRIPT.force_street_error = ""
 	CityBakeCache.shutdown()
 	AudioDirector.muted = false
 	RunManager.delete_save()

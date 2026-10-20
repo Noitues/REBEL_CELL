@@ -122,10 +122,10 @@ var node_panel: RouteNodePanel = null
 var node_backdrop: NodeBackdrop = null
 ## ART-8 8w: the HQ run's page on the compound (boss runs) and the Central Server's gate.
 var hq_run_view: HqRunView = null
-## NA-23: the run's route drawn at street level (StreetRouteView: the netrun camera, the rooms, the occlusion and the grease-pencil
-## overlay) instead of the transit map. Off until the entry sequence (NA-25) and the old page's retirement (NA-26) turn it on;
-## tests and the NA-23 lab set it. A run whose street cannot be derived (`StreetRouteData.error`) keeps the old page.
-static var street_route: bool = true
+## NA-23: the run's route is drawn at street level (StreetRouteView: the netrun camera, the rooms, the occlusion and the grease-pencil
+## overlay). A run whose street cannot be derived (`StreetRouteData.error`) keeps the fallback ROUTE window (list rows over the city).
+## Test seam: a non-empty value makes every run's street fail to derive with this error, so the fallback page (below) shows.
+static var force_street_error: String = ""
 var street_view: StreetRouteView = null
 ## NA-25: the street entry. `_entry_wanted` is set when the jack that brought this scene in was a street entry (the first street
 ## page then plays the dive); `entry_cover` is the player while it runs (the jack-out plays it backwards).
@@ -1002,7 +1002,7 @@ func save_and_quit() -> void:
 ## NA-25b: true when a jack-out from a page without a street view (the end-of-run pages) can still play the dive backwards: the run's
 ## street was derived this session, the entry animates (not headless, reduce effects or switched off) and a run is there to leave.
 func _street_reverse_possible() -> bool:
-	return street_route and _street_data != null and _street_data.error == "" and RunManager.netrun != null 			and (street_view == null or not is_instance_valid(street_view)) and not Settings.reduce_effects 			and DisplayServer.get_name() != "headless" and Motion.live(&"entry_dive") and CityView3D.can_render()
+	return _street_data != null and _street_data.error == "" and force_street_error == "" and RunManager.netrun != null 			and (street_view == null or not is_instance_valid(street_view)) and not Settings.reduce_effects 			and DisplayServer.get_name() != "headless" and Motion.live(&"entry_dive") and CityView3D.can_render()
 
 
 ## NA-25b: the street view rebuilt behind an end-of-run page (the run's last room, no options), then the entry played backwards over it.
@@ -1565,7 +1565,7 @@ func _show_start() -> void:
 ## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
-	if street_route and s != null and _street_map_ok(s):
+	if s != null and _street_map_ok(s):
 		_show_street_map(s)
 		return
 	_entry_wanted = false  # no street to dive into: the ROUTE window page
@@ -1616,7 +1616,7 @@ func _show_map() -> void:
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
 		# NA-25b: the way back down to the street plays the dive (the street page's view is built anew and plays it once drawn).
-		_zoom_in_wanted = not _grid_zoomed and street_route and _street_data != null and _street_data.error == ""
+		_zoom_in_wanted = not _grid_zoomed and _street_data != null and _street_data.error == "" and force_street_error == ""
 		_show_map())
 	zoom_btn.name = "GridZoom"
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
@@ -1698,7 +1698,7 @@ func _street_map_ok(s: NetrunSession) -> bool:
 	if _street_data == null or _street_key != key:
 		_street_data = StreetRouteView.build_data(s, RunManager.corporation)
 		_street_key = key
-	_street_error = _street_data.error
+	_street_error = force_street_error if force_street_error != "" else _street_data.error
 	if _street_error != "":
 		push_warning("NetrunScene: the street route cannot be derived (%s); the transit page stays." % _street_error)
 		return false
