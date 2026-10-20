@@ -272,6 +272,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if whole_look:
 		day = _whole_day(day)
 		set_look_blend(night_share * cfg.whole_night_look)
+	_sync_hq_beams()
 	_ramp_water(day)
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
@@ -478,6 +479,33 @@ func _whole_day(day: Dictionary) -> Dictionary:
 	d["haze"] = cfg.whole_day_haze
 	d["haze_k"] = cfg.whole_day_haze_k
 	return d
+
+
+## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.
+var _hq_beams: Array[MeshInstance3D] = []
+
+
+func _sync_hq_beams() -> void:
+	var show := whole_look and night_share >= cfg.whole_beam_night_from and model != null
+	if show and _hq_beams.is_empty():
+		var corps: Array = model.hqs.keys()
+		IdSort.sort_ids(corps)
+		var front_h: float = cfg.whole_beam_len_bu / float(CityShaderConfigData.shipped().beam["length_front"])
+		for i in corps.size():
+			var corp: StringName = corps[i]
+			var s: float = 1.0 if i % 2 == 0 else -1.0
+			var o := landmark_slot(corp).origin + Vector3(0.0, cfg.whole_beam_base_bu, 0.0)
+			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
+			var node := NetrunShaderKit.beam_node(beam, Palette.corp_color(corp), front_h)
+			var m := node.material_override as ShaderMaterial
+			m.set_shader_parameter(&"start_radius", cfg.whole_beam_start_r_bu)
+			m.set_shader_parameter(&"end_radius", cfg.whole_beam_len_bu * tan(deg_to_rad(cfg.whole_beam_half_deg)))
+			m.set_shader_parameter(&"emit", cfg.whole_beam_emit)
+			node.name = "hq_beam_%s" % corp
+			add_to_layer(&"sky", node)
+			_hq_beams.append(node)
+	for n in _hq_beams:
+		n.visible = show
 var _env: Environment
 
 

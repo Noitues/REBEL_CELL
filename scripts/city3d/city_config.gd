@@ -57,6 +57,16 @@ extends Resource
 @export var whole_day_haze_k: float = 0.12
 ## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
 @export var whole_haze_start: float = 0.85
+## The corp HQ sky beams of the whole-city night (the A2 plate's six searchlight shafts): length, base height above the
+## HQ lot, start radius (BU), spread half-angle, emission, lean (degrees, alternating per HQ) and the night share they
+## show above.
+@export var whole_beam_len_bu: float = 340.0
+@export var whole_beam_base_bu: float = 30.0
+@export var whole_beam_start_r_bu: float = 3.0
+@export var whole_beam_half_deg: float = 2.6
+@export var whole_beam_emit: float = 1.6
+@export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
+@export var whole_beam_night_from: float = 0.5
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread
