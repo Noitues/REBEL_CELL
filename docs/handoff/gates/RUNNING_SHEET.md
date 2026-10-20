@@ -13,6 +13,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D11 | 10-19 | EV-01 events. Map-edit picks are deterministic (fewest inbound links, then node id), not random or player-picked. Combat modifiers from events apply to the next fight and end with the netrun. Event fights don't count as normal fights. Two broken draft details were dropped: the escort's +1 Block (it never took effect) and the R11 quality tiers. The event wheel has no Undo. | Let the player pick map-edit targets (draft 08) |
 | D10 | 10-19 | Stopping point for the Solace vertical: Halcyon's rules are finished and merged into w2, gated by corp, with no further work on them. RD-02 and the other corps' rules, exploit buildings and events are on hold. The shared run-graph v2 work merges. | Merge Halcyon now |
 | D9 | 10-19 | Events (W3 3.17): none of the 30 drafted events fits today's event schema. They need these fields: start-a-combat, next-combat modifiers, next-raid modifiers, map edits and an event wheel. **Call:** a minimal schema slice, EV-01, adds them (logged under rule 8), queued after Halcyon and the RG-05 map edits. Then the Batch lane authors all 30 as they were drafted. Aurelian and Tethys events wait for the corp wave. | Ship only the choices that fit today's schema |
 | D8 | 10-19 | ST-02, status audit: no new status ships. Only "vulnerable" (more damage taken) has no existing equivalent; it is noted, not built. | Rule "vulnerable" in, which means a new combat rule and a save change |
@@ -27,6 +28,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Open questions (a default is taken; answer to change it)
 | Code | Date | Question | Default taken |
 |---|---|---|---|
+| Q6 | 10-19 | Events: how should the raid-win host trigger (every win, or by chance)? Draft 27 is authored but dormant. Draft 29 needs an HQ-view event host that runs a fight outside a netrun; not built. | Rumor fires on every raid win; the HQ-view host is deferred |
 | Q5 | 10-19 | RD-01, raid operative roles: 30 questions across 8 classes (`plan2/drafts/raid_operatives/QUESTIONS.md`). Ghost's step table (1/1/2/2) doesn't match its multipliers. | Every question at its recommended default; Ghost follows the multipliers |
 | Q1 | 10-19 | Solace v2: infection decay after a held raid: partial (flat amount plus kills), or a full reset to 0? | Partial decay |
 | Q2 | 10-19 | Solace v2: do Heat objective Sites and Proxy Relay completions also cure infection? | Yes, both cure |
