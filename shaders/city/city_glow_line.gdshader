@@ -3,6 +3,8 @@
 shader_type spatial;
 render_mode unshaded, cull_disabled, shadows_disabled;
 
+#include "res://shaders/lib/rc_common.gdshaderinc"
+
 uniform float gain = 1.0;
 uniform vec3 tint = vec3(1.0);
 
