@@ -62,14 +62,17 @@ extends Resource
 ## show above.
 @export var whole_beam_len_bu: float = 340.0
 @export var whole_beam_base_bu: float = 30.0
-@export var whole_beam_start_r_bu: float = 5.0
-@export var whole_beam_half_deg: float = 5.0
-@export var whole_beam_emit: float = 1.6
+@export var whole_beam_start_r_bu: float = 9.0
+@export var whole_beam_half_deg: float = 8.0
+@export var whole_beam_emit: float = 2.2
 @export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 1.5, "trim_emit": 0.15, "haze_k": 0.0}
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 1.5, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
+	"trim_px_min": 0.0}
+## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
+@export var whole_building_base: Dictionary = {"trim_px_min": 1.5}
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
 @export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.93, 0.8),
 	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]

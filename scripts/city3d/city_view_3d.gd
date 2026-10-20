@@ -496,7 +496,7 @@ func _whole_water(day: Dictionary) -> Dictionary:
 func _whole_building() -> void:
 	var b: Dictionary = CityShaderConfigData.shipped().building
 	for k: String in cfg.whole_building:
-		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b[k]))
+		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b.get(k, cfg.whole_building_base.get(k, 0.0))))
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
@@ -528,6 +528,10 @@ func _sync_hq_beams() -> void:
 			_hq_beams.append(node)
 	for n in _hq_beams:
 		n.visible = show
+	# The netrun network decal (site rings, route lines) is a play overlay; the plate shows the city alone.
+	var nl := layer(&"network")
+	if nl != null:
+		nl.visible = not whole_look
 	var bl := layer(&"buildings")
 	if bl != null:
 		for ch in bl.get_children():

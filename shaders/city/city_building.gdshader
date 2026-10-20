@@ -30,6 +30,9 @@ uniform float window_dim_min = 0.5;
 uniform float window_gain = 1.0;
 uniform vec3 ink_colors[16];
 uniform float trim_bu = 0.22;
+// LOOK L5: the roof trim's least width in pixels (1.5 keeps it a line at any zoom; 0 lets it fall under a pixel at the
+// whole-city pose, where it otherwise paints whole small roofs in the ink).
+uniform float trim_px_min = 1.5;
 uniform float neon_gain = 1.0;
 uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
@@ -427,7 +430,7 @@ void fragment() {
 		// Neon roof trim in the building's ink: the rim of the roof fan.
 		float dist = (1.0 - v_rim) * v_half * v_inst.x;
 		float px = fwidth(v_rim) * v_half * v_inst.x;
-		if (dist < max(trim_bu, px * 1.5)) {
+		if (dist < max(trim_bu, px * trim_px_min)) {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
 			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
