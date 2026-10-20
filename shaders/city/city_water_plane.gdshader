@@ -122,16 +122,8 @@ void fragment() {
 		vec3 nb = night_body + marble_col * (marble_floor + m * km * (1.0 - marble_floor)) * mix(1.0, 1.0 + marble_shore, shallow);
 		body = mix(body, nb, night);
 	}
-	// Surf: bands rolling in on the first shelf, broken by the waves.
-	float sb = (1.0 - smoothstep(surf_lots.x, surf_lots.y, bed.g)) * step(0.001, bed.r);
-	float roll = 0.5 + 0.5 * sin((bed.g * surf_period - rc_time(TIME) * time_scale * 0.8) * 6.2831853);
-	float surf = sb * smoothstep(0.45, 0.85, roll * 0.6 + h0 * 0.6) * surf_gain;
-	float a = fr + (1.0 - fr) * ab;
-	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
-	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
-	ALBEDO = col * grade;
-	// No water over dry ground (the bake's depth is 0 there); bilinear, so the coast softens over half a lot.
-	// Eight more taps of the mask a ring `coast_blur_lots` round: the bake's blur alone still follows the lot grid.
+	// No water over dry ground (the bake's depth is 0 there): the bake's blurred mask plus eight taps a ring
+	// `coast_blur_lots` round (the bake's blur alone still follows the lot grid), cut at `coast_cut`.
 	float mb = bed.b;
 	if (inside) {
 		vec2 tx = coast_blur_lots / vec2(textureSize(bed_tex, 0));
@@ -142,5 +134,13 @@ void fragment() {
 		mb /= 9.0;
 	}
 	float wetk = smoothstep(coast_cut.x, coast_cut.y, mb);
+	// Surf: bands rolling in just inside that smooth coast (`surf_lots` is the mask's range), broken by the waves.
+	float sb = 1.0 - smoothstep(surf_lots.x, surf_lots.y, mb);
+	float roll = 0.5 + 0.5 * sin((mb * surf_period - rc_time(TIME) * time_scale * 0.8) * 6.2831853);
+	float surf = sb * smoothstep(0.45, 0.85, roll * 0.6 + h0 * 0.6) * surf_gain;
+	float a = fr + (1.0 - fr) * ab;
+	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
+	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
+	ALBEDO = col * grade;
 	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
 }
