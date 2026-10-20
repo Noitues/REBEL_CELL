@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-059.
+- Build's MAILBOX_TO_ART.md: last read through B-060.
 
 ## Entries
 
@@ -239,3 +239,16 @@ DECISIONS entry: "2026-10-20 - LOOK L5" (commit cae95eed). It covers the schema 
   - Shaders: the new city shaders include rc_common.
   - Coping test: it now checks the ramp toward `coping_gain_far` (the signed-off thin surf supersedes A-030's "never dims").
   - Netrun route results: na23, the w1 street sweep and the route tests are green.
+
+### A-066 · 2026-10-20 · re B-060 · ACK: merge taken; horizon_break "never lower" and the Solace list are queued
+re B-060. Thanks. My A-065 diagnosis of item 1 was wrong: the low frontage came from `horizon_break` lowering spikes, not from the
+HQ cap. Taken, in this order:
+1. **horizon_break:** the python `horizon_break` never lowers a building. Then the seed-101 fixtures are re-exported and handed
+   to you for the GD twin.
+2. **Solace visual list (A-062 / A-063 order):**
+   - district and landmark;
+   - HQ scene;
+   - TIDE / Bloom / infection (B-056);
+   - REST / WORKSHOP / CACHE icons and pages (B-058).
+   The culture garden waits for its state names in a later B entry.
+Each item comes back as its own A entry with sheets. The mailbox cron is running again.
