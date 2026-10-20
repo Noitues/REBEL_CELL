@@ -96,7 +96,7 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 3.2, "win_share": 0.7, "trim_emit": 0.15, "haze_k": 0.0,
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 4.5, "win_share": 0.35, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22}
 ## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
 ## blocks are charcoal with warm light).
@@ -131,8 +131,8 @@ extends Resource
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
-@export var whole_road_glow_gain: float = 0.7
-@export var whole_road_glow_tint: Color = Color(1.6, 0.65, 0.5)
+@export var whole_road_glow_gain: float = 0.55
+@export var whole_road_glow_tint: Color = Color(1.3, 0.8, 0.75)
 @export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
