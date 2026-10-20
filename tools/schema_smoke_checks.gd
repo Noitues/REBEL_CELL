@@ -121,7 +121,7 @@ func _city_a2_config() -> int:
 	if not codes.contains("city_a2_block_lots"): fails += 1
 	print("CITY-A2 step 2 terrain (expect road_001 1.5 3 120 5101): ", cfg.city_a2_outer_ring, " ", cfg.city_a2_hill_exag, " ",
 		cfg.city_a2_land_step, " ", cfg.city_a2_land_margin, " ", cfg.city_a2_terrain_seed)
-	if d.city_a2_outer_ring != cfg.city_a2_outer_ring or d.city_a2_mountain_h != cfg.city_a2_mountain_h or d.city_a2_beach != cfg.city_a2_beach \
+	if d.city_a2_outer_ring != cfg.city_a2_outer_ring or d.city_a2_beach != cfg.city_a2_beach \
 			or d.city_a2_land_step != cfg.city_a2_land_step or d.city_a2_noise_cells != cfg.city_a2_noise_cells: fails += 1
 	var bad_t: CampaignConfigData = cfg.duplicate()
 	bad_t.city_a2_beach = Vector2(3, 1)
@@ -130,12 +130,12 @@ func _city_a2_config() -> int:
 	print("CITY-A2 step 2 bad terrain: ", t_codes.contains("city_a2_beach"), " ", t_codes.contains("city_a2_land_step"))
 	if not (t_codes.contains("city_a2_beach") and t_codes.contains("city_a2_land_step")): fails += 1
 	# CITY-A2 r2: one land surface, open land, corridors.
-	print("CITY-A2 r2 (expect 12 42 0.3 (0.5, 6.0) 1): ", cfg.city_a2_land_blend, " ", cfg.city_a2_max_build_h, " ",
+	print("CITY-A2 r2 (expect 12 42 0.3 (4.0, 22.0) 1): ", cfg.city_a2_land_blend, " ", cfg.city_a2_max_build_h, " ",
 		cfg.city_a2_max_build_slope, " ", cfg.city_a2_sprawl_fade, " ", cfg.city_a2_corridor.get(&"ring", 0))
 	if d.city_a2_land_blend != cfg.city_a2_land_blend or d.city_a2_max_build_h != cfg.city_a2_max_build_h \
-			or d.city_a2_sprawl_fade != cfg.city_a2_sprawl_fade or d.city_a2_mountain_edge != cfg.city_a2_mountain_edge \
+			or d.city_a2_mountain_edge != cfg.city_a2_mountain_edge \
 			or int(cfg.city_a2_corridor.get(&"ring", 0)) != 1 or d.city_a2_land_margin != cfg.city_a2_land_margin \
-			or d.city_a2_hill_exag != cfg.city_a2_hill_exag or d.city_a2_mountain != cfg.city_a2_mountain: fails += 1
+			or d.city_a2_hill_exag != cfg.city_a2_hill_exag: fails += 1
 	var bad_r2: CampaignConfigData = cfg.duplicate()
 	bad_r2.city_a2_sprawl_fade = Vector2(6, 1)
 	print("CITY-A2 r2 bad: ", ",".join(bad_r2.validate()).contains("city_a2_sprawl_fade"))
@@ -149,6 +149,19 @@ func _city_a2_config() -> int:
 		if gone in d:
 			print("CITY-A2 step 2: removed field still there: ", gone)
 			fails += 1
+	# LOOK L5 (whole-city plate parity, designer 2026-10-20): the cliff, dwindle, height spread, drowned sink, coast setback,
+	# street prune and coast smoothing default off (the old city), and the shipped config turns them on.
+	print("CITY-A2 LOOK L5 (expect 14 0.7 2 1 2 (0.45, 0.5, 14) (0.06, 1.9)): ", cfg.city_a2_cliff, " ", cfg.city_a2_sink_share, " ",
+		cfg.city_a2_coast_setback, " ", cfg.city_a2_prune_streets, " ", cfg.city_a2_coast_smooth, " ", cfg.city_a2_dwindle, " ",
+		cfg.city_a2_height_spike)
+	if d.city_a2_cliff != 0.0 or d.city_a2_sink_share != 0.0 or d.city_a2_coast_setback != 0 or d.city_a2_prune_streets != 0 \
+			or d.city_a2_coast_smooth != 0.0 or d.city_a2_dwindle.z != 0.0 or d.city_a2_height_spike.x != 0.0: fails += 1
+	if cfg.city_a2_cliff != 14.0 or cfg.city_a2_coast_setback != 2 or cfg.city_a2_prune_streets != 1 or cfg.city_a2_coast_smooth != 2.0: fails += 1
+	# ... and its shipped terrain numbers differ from the step 2 defaults: taller mountains nearer the ring, the sprawl fading
+	# over 4..22 lots past it.
+	print("CITY-A2 LOOK L5 terrain (expect 125 (24, 78) (4, 22)): ", cfg.city_a2_mountain_h, " ", cfg.city_a2_mountain, " ",
+		cfg.city_a2_sprawl_fade)
+	if cfg.city_a2_mountain_h != 125.0 or cfg.city_a2_mountain != Vector2(24, 78) or cfg.city_a2_sprawl_fade != Vector2(4, 22): fails += 1
 	return fails
 
 

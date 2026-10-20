@@ -277,7 +277,7 @@ class _Build:
 	func commit() -> ArrayMesh:
 		var mesh := ArrayMesh.new()
 		var names: Array = tools.keys()
-		names.sort()
+		IdSort.sort_ids(names)
 		for nm: String in names:
 			var st: SurfaceTool = tools[nm]
 			st.generate_normals()

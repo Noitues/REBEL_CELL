@@ -22,7 +22,7 @@ void fragment() {
 	float a = beam_alpha;
 	if (beam_soft > 0.0) {
 		a *= pow(clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0), beam_soft);
-		a *= 1.0 - beam_shimmer * (0.5 + 0.5 * sin(dot(v_local, vec3(0.7, 1.9, 0.4)) * 0.8 - TIME * 0.6));
+		a *= 1.0 - beam_shimmer * (0.5 + 0.5 * sin(dot(v_local, vec3(0.7, 1.9, 0.4)) * 0.8 - rc_time(TIME) * 0.6));
 	}
 	ALPHA = a;
 }

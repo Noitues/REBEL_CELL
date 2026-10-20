@@ -864,7 +864,7 @@ func _sync_hq_beams() -> void:
 			_hq_beams.append(node)
 		# LOOK L5: the A2 HQs that are no corporation's beam too (the plate's seven).
 		var styles: Array = _a2_hqs.keys()
-		styles.sort()
+		IdSort.sort_ids(styles)
 		for i in styles.size():
 			var st: String = styles[i]
 			var hq: Dictionary = _a2_hqs[st]
