@@ -203,3 +203,114 @@ func test_features_are_deterministic_and_complete() -> void:
 func _export(m: CityModel) -> String:
 	return JSON.stringify(NetrunArtExport.city_json(m.city_seed, CITY_CONFIG.lot_bu, CITY_CONFIG.district_centre, m.prisms, m.streets,
 		m.plazas, m.hqs, m.city_sections()), "", true)
+
+
+## CITY-A2 r2: the land is one surface: no step where the raster's fine heights meet the coarse land, the land mesh and
+## the chunks' ground share the city edge's corners, and the land mesh leaves the city rect to the chunks.
+func test_the_land_is_one_surface_with_the_city() -> void:
+	var cc: CityConfig = CITY_CONFIG
+	var t := CityPlan.for_seed(SEED).terrain
+	var fr := t.fine_rect
+	var step := 0.0
+	for i in range(fr.position.x, fr.end.x + 1):
+		for y: int in [fr.position.y, fr.end.y]:
+			step = maxf(step, absf(t.height_at(i, y - 0.001) - t.height_at(i, y + 0.001)))
+	for j in range(fr.position.y, fr.end.y + 1):
+		for x: int in [fr.position.x, fr.end.x]:
+			step = maxf(step, absf(t.height_at(x - 0.001, j) - t.height_at(x + 0.001, j)))
+	assert_lt(step, 0.05, "no step at the raster's edge (largest %.3f BU over 0.002 lots)" % step)
+	var mesh := CityMeshKit.land_mesh(cc, t, cc.city_rect)
+	assert_not_null(mesh, "land past the city")
+	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var inside := 0
+	var edge := 0
+	var off_edge := 0
+	var r := cc.city_rect
+	for v in verts:
+		var l := CityIsoCamera.world_to_lot(cc, v)
+		if l.x > r.position.x + 0.01 and l.x < r.end.x - 0.01 and l.y > r.position.y + 0.01 and l.y < r.end.y - 0.01:
+			inside += 1
+		elif (is_equal_approx(l.x, r.position.x) or is_equal_approx(l.y, r.position.y)) and r.grow(1).has_point(Vector2i(l.round())):
+			edge += 1
+			if absf(v.y - (t.height_at(roundf(l.x), roundf(l.y)) - 0.02)) > 0.0005:
+				off_edge += 1
+	assert_eq(inside, 0, "the chunks draw the city rect's ground")
+	assert_gt(edge, 0, "the land meets the city edge")
+	assert_eq(off_edge, 0, "on the chunks' own corners (the ground's height there)")
+
+
+## CITY-A2 r2: the sea follows A2's coast out to the land's extent: the terrain's water inside the raster is the raster's,
+## and past it the coarse grid's (A2's ocean polygon, its edge carried on), so the sea mesh covers the whole extent.
+func test_the_sea_follows_the_coast_to_the_extent() -> void:
+	var p := CityPlan.for_seed(SEED)
+	var t := p.terrain
+	for j in range(t.fine_rect.position.y, t.fine_rect.end.y, 7):
+		for i in range(t.fine_rect.position.x, t.fine_rect.end.x, 7):
+			assert_eq(t.is_water_at(i + 0.5, j + 0.5), p.a2.is_water(i, j), "lot %d,%d" % [i, j])
+	var past_wet := 0
+	var past_dry := 0
+	for j in range(t.coarse_rect.position.y, t.coarse_rect.end.y, 9):
+		for i in range(t.coarse_rect.position.x, t.coarse_rect.end.x, 9):
+			if t.fine_rect.has_point(Vector2i(i, j)):
+				continue
+			if t.is_water_at(i + 0.5, j + 0.5):
+				past_wet += 1
+			else:
+				past_dry += 1
+	assert_gt(past_wet, 0, "sea past the raster")
+	assert_gt(past_dry, 0, "land wraps round past the raster")
+	var sea := CityWater._sea_mesh(CITY_CONFIG, p)
+	assert_gte(sea.get_aabb().size.x, float(t.coarse_rect.size.x - 2 * t.step) * CITY_CONFIG.lot_bu, "the sea spans the land's extent")
+
+
+## CITY-A2 r2 (art-pass zoning): no building on ground over the build height or slope, none in an elevated road's
+## corridor, the sprawl thins past the outer ring, and every Site keeps its buildings; deterministic.
+func test_open_land_corridors_and_sprawl() -> void:
+	var p := CityPlan.for_seed(SEED)
+	var t := p.terrain
+	var lots := CityA2Builder.lots_for(p, _cfg, NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0)
+	var R: Rect2i = lots["rect"]
+	var kind: PackedByteArray = lots["kind"]
+	var zone := CityA2Builder._site_zone(p, _cfg.city_a2_sprawl_site_keep)
+	var bad := 0
+	var bare := 0
+	var past_built := 0
+	var past := 0
+	for k in kind.size():
+		var l := Vector2i(R.position.x + k % R.size.x, R.position.y + k / R.size.x)
+		var c := Vector2(l) + Vector2(0.5, 0.5)
+		if kind[k] == CityA2Builder.K_BARE:
+			bare += 1
+		if kind[k] != CityA2Builder.K_BUILDING:
+			continue
+		var steep := t.height_at(c.x, c.y) > _cfg.city_a2_max_build_h or t.slope_at(c.x, c.y) > _cfg.city_a2_max_build_slope
+		if steep and not CityA2Builder._near_site(p, l):
+			bad += 1
+		if t.outside_ring(c.x, c.y) > _cfg.city_a2_sprawl_fade.y + _cfg.city_a2_edge_noise:
+			past += 1
+			if not zone.has(l):
+				past_built += 1
+	assert_eq(bad, 0, "no building on high or steep ground")
+	assert_gt(bare, 0, "open land")
+	assert_eq(past_built, 0, "no sprawl far past the outer ring")
+	var ring_lots: Array = p.a2.road_lots.get(&"road_000", p.a2.road_lots.get("road_000", []))
+	assert_gt(ring_lots.size(), 0, "R1's lots")
+	var in_corridor := 0
+	for l: Vector2i in ring_lots:
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]:
+			var q := l + d
+			if R.has_point(q) and kind[(q.y - R.position.y) * R.size.x + (q.x - R.position.x)] == CityA2Builder.K_BUILDING \
+					and not CityA2Builder._near_site(p, q):
+				in_corridor += 1
+	assert_eq(in_corridor, 0, "the ring's deck runs over open ground")
+	for l: Vector2i in p.a2_sites:
+		var built := false
+		var reach: int = CITY_CONFIG.art_site_bid_reach_lots
+		for dj in range(-reach, reach + 1):
+			for di in range(-reach, reach + 1):
+				var q := l + Vector2i(di, dj)
+				built = built or (R.has_point(q) and kind[(q.y - R.position.y) * R.size.x + (q.x - R.position.x)] == CityA2Builder.K_BUILDING)
+		assert_true(built, "Site %s keeps a building" % l)
+	CityA2Builder.forget()
+	var again := CityA2Builder.lots_for(p, _cfg, NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0)
+	assert_eq(again["kind"], kind, "the same lots again")

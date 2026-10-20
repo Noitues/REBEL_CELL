@@ -214,32 +214,47 @@ static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: A
 	return st.commit()
 
 
-## CITY-A2 step 2: the land past the city: one quad per `terrain` coarse cell outside `hole` (lots; the chunks draw their
-## own ground there) with a land corner, at its corners' heights (the sea mesh covers the water corners at sea level).
+## CITY-A2 step 2 / r2: the land past the city, one surface with the chunks' ground: a quad per lot over the raster
+## (snapped out to the coarse grid's lines) outside `hole` (lots; the chunks draw their own ground there, on the same
+## corners), a quad per coarse cell past it; a quad with a land corner only, at its corners' heights (the sea mesh covers
+## the water corners at sea level). The fine / coarse boundary lies where the heights are the coarse grid's own, so the
+## two meet without a crack.
 static func land_mesh(cfg: CityConfig, terrain: CityA2Terrain, hole: Rect2i) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var s := terrain.step
 	var cr := terrain.coarse_rect
+	var fr := terrain.fine_rect
+	var p0 := cr.position + ((fr.position - cr.position) / s) * s
+	var p1 := cr.position + ((fr.end - cr.position + Vector2i(s - 1, s - 1)) / s) * s
+	var fine := Rect2i(p0, p1 - p0).intersection(cr)
 	var any := false
 	for j in range(cr.position.y, cr.end.y, s):
 		for i in range(cr.position.x, cr.end.x, s):
 			var cell := Rect2i(i, j, s, s)
-			if hole.encloses(cell):
-				continue
-			var q: Array[Vector3] = []
-			var land := false
-			for c: Vector2i in [cell.position, Vector2i(cell.end.x, j), cell.end, Vector2i(i, cell.end.y)]:
-				var h := terrain.height_at(c.x, c.y)
-				land = land or h > 0.0
-				q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
-			if land:
-				_quad(st, q[0], q[1], q[2], q[3], cfg.ground)
-				any = true
+			if fine.encloses(cell):
+				for jj in range(j, j + s):
+					for ii in range(i, i + s):
+						if not hole.has_point(Vector2i(ii, jj)):
+							any = _land_quad(st, cfg, terrain, Rect2i(ii, jj, 1, 1)) or any
+			else:
+				any = _land_quad(st, cfg, terrain, cell) or any
 	if not any:
 		return null
 	st.generate_normals()
 	return st.commit()
+
+
+static func _land_quad(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i) -> bool:
+	var q: Array[Vector3] = []
+	var land := false
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		var h := terrain.height_at(c.x, c.y)
+		land = land or h > 0.0
+		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
+	if land:
+		_quad(st, q[0], q[1], q[2], q[3], cfg.ground)
+	return land
 
 
 ## CITY-A2 step 2: a flat-topology grid over world rect `area` (X/Z) every `step_bu`, lifted `lift` BU over `terrain`

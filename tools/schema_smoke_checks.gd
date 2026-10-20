@@ -119,7 +119,7 @@ func _city_a2_config() -> int:
 	var codes := ",".join(bad.validate())
 	print("CITY-A2 bad: ", codes.contains("city_a2_block_lots"))
 	if not codes.contains("city_a2_block_lots"): fails += 1
-	print("CITY-A2 step 2 terrain (expect road_001 1 2 80 5101): ", cfg.city_a2_outer_ring, " ", cfg.city_a2_hill_exag, " ",
+	print("CITY-A2 step 2 terrain (expect road_001 1.5 3 120 5101): ", cfg.city_a2_outer_ring, " ", cfg.city_a2_hill_exag, " ",
 		cfg.city_a2_land_step, " ", cfg.city_a2_land_margin, " ", cfg.city_a2_terrain_seed)
 	if d.city_a2_outer_ring != cfg.city_a2_outer_ring or d.city_a2_mountain_h != cfg.city_a2_mountain_h or d.city_a2_beach != cfg.city_a2_beach \
 			or d.city_a2_land_step != cfg.city_a2_land_step or d.city_a2_noise_cells != cfg.city_a2_noise_cells: fails += 1
@@ -129,6 +129,17 @@ func _city_a2_config() -> int:
 	var t_codes := ",".join(bad_t.validate())
 	print("CITY-A2 step 2 bad terrain: ", t_codes.contains("city_a2_beach"), " ", t_codes.contains("city_a2_land_step"))
 	if not (t_codes.contains("city_a2_beach") and t_codes.contains("city_a2_land_step")): fails += 1
+	# CITY-A2 r2: one land surface, open land, corridors.
+	print("CITY-A2 r2 (expect 12 42 0.3 (0.5, 6.0) 1): ", cfg.city_a2_land_blend, " ", cfg.city_a2_max_build_h, " ",
+		cfg.city_a2_max_build_slope, " ", cfg.city_a2_sprawl_fade, " ", cfg.city_a2_corridor.get(&"ring", 0))
+	if d.city_a2_land_blend != cfg.city_a2_land_blend or d.city_a2_max_build_h != cfg.city_a2_max_build_h \
+			or d.city_a2_sprawl_fade != cfg.city_a2_sprawl_fade or d.city_a2_mountain_edge != cfg.city_a2_mountain_edge \
+			or int(cfg.city_a2_corridor.get(&"ring", 0)) != 1 or d.city_a2_land_margin != cfg.city_a2_land_margin \
+			or d.city_a2_hill_exag != cfg.city_a2_hill_exag or d.city_a2_mountain != cfg.city_a2_mountain: fails += 1
+	var bad_r2: CampaignConfigData = cfg.duplicate()
+	bad_r2.city_a2_sprawl_fade = Vector2(6, 1)
+	print("CITY-A2 r2 bad: ", ",".join(bad_r2.validate()).contains("city_a2_sprawl_fade"))
+	if not ",".join(bad_r2.validate()).contains("city_a2_sprawl_fade"): fails += 1
 	print("CITY-A2 step 2 sections (expect 12 45 40 21 6 24 true true 5): ", a2.rails.size(), " ", a2.stations.size(), " ", a2.landmarks.size(),
 		" ", a2.interchanges.size(), " ", a2.walls.size(), " ", a2.checkpoints.size(), " ", not a2.drowned.is_empty(), " ",
 		not a2.port.is_empty(), " ", a2.undercity_tunnels.size())

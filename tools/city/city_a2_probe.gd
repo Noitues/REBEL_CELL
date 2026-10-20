@@ -53,7 +53,7 @@ func _ready() -> void:
 	var R: Rect2i = lots["rect"]
 	var kind: PackedByteArray = lots["kind"]
 	var chars := {CityA2Builder.K_GROUND: ".", CityA2Builder.K_STREET: "=", CityA2Builder.K_PLAZA: "H", CityA2Builder.K_BUILDING: "#",
-		CityA2Builder.K_WATER: "~", CityA2Builder.K_PARK: ","}
+		CityA2Builder.K_WATER: "~", CityA2Builder.K_PARK: ",", CityA2Builder.K_BARE: " "}
 	for j in range(R.position.y, R.end.y, 2):
 		var row := ""
 		for i in range(R.position.x, R.end.x, 2):
@@ -145,6 +145,25 @@ func _terrain() -> void:
 	for k in t.coarse.size():
 		mx = maxf(mx, t.coarse[k])
 	print("TERRAIN city_max=%.2f at %s halcyon_hill=%.2f beyond_max=%.2f" % [hi, at, t.height_at(hal.x, hal.y), mx])
+	# Seams: the largest step between the two grids just inside / outside the fine rect's edge.
+	var fr := t.fine_rect
+	var seam := 0.0
+	for i in range(fr.position.x, fr.end.x + 1):
+		for y: int in [fr.position.y, fr.end.y]:
+			var o := 1 if y == fr.end.y else -1
+			seam = maxf(seam, absf(t.height_at(i, y) - t.height_at(i, y + o * 0.01)))
+	for j in range(fr.position.y, fr.end.y + 1):
+		for x: int in [fr.position.x, fr.end.x]:
+			var o := 1 if x == fr.end.x else -1
+			seam = maxf(seam, absf(t.height_at(x, j) - t.height_at(x + o * 0.01, j)))
+	var ring: PackedVector2Array = ras.a2.road(cfg.city_a2_outer_ring)["polyline"]
+	var rb := Rect2(ras.lot_of(ring[0]), Vector2.ZERO)
+	for q in ring:
+		rb = rb.expand(ras.lot_of(q))
+	var ob := Rect2(ras.lot_of(ras.a2.ocean[0]), Vector2.ZERO)
+	for q in ras.a2.ocean:
+		ob = ob.expand(ras.lot_of(q))
+	print("TERRAIN city_rect=%s ring_lots=%s ocean_lots=%s fine_edge_seam=%.3f mpl=%.2f" % [cc.city_rect, rb, ob, seam, ras.metres_per_lot])
 	var w := t.coarse_rect.size.x / t.step + 1
 	for j in range(0, t.coarse.size() / w, 3):
 		var line := ""

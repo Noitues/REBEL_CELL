@@ -9241,3 +9241,41 @@ Answers applied (orchestrator): HQ stand-ins are exempt from the 6-floor frontag
   3 BU stand on pillars (1.2 BU every 18 BU); stations stand at their line's lift. All in city_config "A2 features".
 - docs/handoff/netrun_art/plate_inputs/seed1/ re-exported from the A2 city (city, derive_street, net, run_graph, both street
   captures) with `na23_lab --export` / `--shots`.
+
+### 2026-10-19 - CITY-A2 step 2 r2: the silhouette reads as the plate (one land surface, coast to the extent, open land)
+- One land surface: the raster's fine heights blend into the coarse land over `city_a2_land_blend` (12) lots inside the
+  raster's edge (the 2.9 BU step there was the "second slab"); the land mesh is per lot over the raster (snapped out to the
+  coarse lines, so the fine / coarse seam lies where the heights are the coarse grid's own: no crack) and shares the city
+  edge's corners with the chunks' ground. The flat OuterGround plane hides once the land exists. The land, the A2 decks
+  and the chunks now share one ground material (`_ground_mat`): the land's own material missed the day ramp, which read
+  as a different-coloured slab round the city.
+- Coast: with terrain the sea mesh covers the terrain's whole extent, wet where the terrain says (the raster's water inside
+  it, A2's ocean polygon past it, its edge carried on as art-pass's `np.pad(mode="edge")` does), instead of the city rect
+  grown by `water_extend_lots` read from the clamped raster.
+- Terrain numbers from art-pass city_preset TERRAIN, scaled to our lot (121.2 m, art 100 m): hills x1.5 (`hill_exag`), the
+  horizon ridge (`city_a2_mountain_edge` 0.45 over 78..124 lots). Mountains are lower than art's 125 BU (`mountain_h` 60
+  over 28..80 lots, `foot_h` 12): measured against the plates through the plate camera, art's numbers made a wall over a
+  quarter of the frame. Land margin 120 lots at step 3 (terrain build 720 ms, was 956 ms).
+- Open land (art-pass zoning_a2.py): no building on ground over `city_a2_max_build_h` 42 BU or steeper than
+  `city_a2_max_build_slope` 0.3; past the outer ring the chance of a building falls over `city_a2_sprawl_fade` (0.5..6 lots,
+  the ring distance moved by the broad noise x `city_a2_edge_noise` 5), drawn from a per-lot jitter lattice (a 4th
+  lattice of the terrain stream); Sprawl open land also loses its local streets (the grid no longer runs to the rect's
+  edge); corp territories keep theirs (the Sites' routes). Elevated roads keep a corridor (`city_a2_corridor`: 1 lot each
+  side of ring / motorway / truck lots) without buildings, so R1's ellipse and R2 read. Lots within 2 of a Site keep
+  their buildings. New lot kind K_BARE.
+- HQ fit (test_anim5_map_motion "the camera holds"): the HQ page now makes the city follow the campaign's city seed before
+  it lays out; the city switched from the default seed a poll later, moving every Site's lot under a fit that should hold.
+  The test is unchanged (its number does not encode flat ground).
+- test_city3d_spike samples every 31st prism (was 41st): the corridors leave fewer prisms in the district.
+- Landmarks: placement already follows ENTRIES.json @ 77cdfde9's frame (origin at the HQ lot centre, on the ground, +Z
+  south = the entries' south face); the mismatch is the glbs: assets/city/landmarks/*_hq.glb are 5b's, not the 77cdfde9
+  `<corp>_landmark.glb` set, and halcyon_hq.glb is off its origin. Listed for art-pass.
+- Open question (look, art-pass): terrain shading (the ground material is flat-ramped, so the relief only reads under a lit
+  material), the white shore coping on the river and coast, the deck / glow colours in city_config "A2 features".
+- r2 follow-ups: open Sprawl land keeps its local streets within `city_a2_sprawl_streets` (16) lots of the outer ring
+  (seed 7919's Orbital Sites route through it), and the sprawl does not thin within `city_a2_sprawl_site_keep` (8) lots of
+  a Site (seed 1's run street kept its frontage: median 21.0 BU, as at step 2). CityModel.chunk_aabb kept only the last
+  prism's top (the y reset per footprint vertex): a pick could miss a taller roof once the hills raised them; fixed.
+  Seed-1 plate inputs re-exported (city, derive_street, both street captures; net and run_graph unchanged). Sheet:
+  docs/art_review/PLAN2/CITY_A2_step2_r2.jpg (plate camera from city_a2_night_capture.json, `na12_capture --plate=1`;
+  a third row shows the same frame under a plain lit material, diagnosis only, for the relief).
