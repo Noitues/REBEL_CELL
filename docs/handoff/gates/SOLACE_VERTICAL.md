@@ -6,7 +6,7 @@ carrying the same bugs seven times.
 
 ## Stopping point (now)
 - **Finish what is in flight:**
-  - Halcyon rules (branch `halcyon-v2`): finish, then **park on its branch**, unmerged. It returns at Halcyon's turn and is rebased then.
+  - Halcyon rules (`halcyon-v2`): merged into w2 (gated by corp; the designer said not to leave work unmerged). Not developed further until Halcyon's turn.
   - Run graph v2 / REST / WORKSHOP / CACHE (`rg-v2`): shared plumbing Solace uses, so it merges.
 - **Start nothing new for other corps.** On hold until Solace is done:
   - REBEL_CELL, Orbital, Meridian, Tethys and Aurelian rules;

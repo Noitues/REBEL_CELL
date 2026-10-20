@@ -13,7 +13,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
-| D10 | 10-19 | Stopping point for the Solace vertical: Halcyon's rules finish and stay parked on `halcyon-v2`, unmerged. RD-02 and the other corps' rules, exploit buildings and events are on hold. The shared run-graph v2 work merges. | Merge Halcyon now |
+| D10 | 10-19 | Stopping point for the Solace vertical: Halcyon's rules are finished and merged into w2, gated by corp, with no further work on them. RD-02 and the other corps' rules, exploit buildings and events are on hold. The shared run-graph v2 work merges. | Merge Halcyon now |
 | D9 | 10-19 | Events (W3 3.17): none of the 30 drafted events fits today's event schema. They need these fields: start-a-combat, next-combat modifiers, next-raid modifiers, map edits and an event wheel. **Call:** a minimal schema slice, EV-01, adds them (logged under rule 8), queued after Halcyon and the RG-05 map edits. Then the Batch lane authors all 30 as they were drafted. Aurelian and Tethys events wait for the corp wave. | Ship only the choices that fit today's schema |
 | D8 | 10-19 | ST-02, status audit: no new status ships. Only "vulnerable" (more damage taken) has no existing equivalent; it is noted, not built. | Rule "vulnerable" in, which means a new combat rule and a save change |
 | D7 | 10-19 | The canonical status list is the code's five (CORRUPTED, OVERCLOCKED, ENCRYPTED, OUTPUT_DOWN, TIER_DOWN). GDD 2.9 is stale, to be fixed in a docs pass logged in DECISIONS. | Keep the three in GDD 2.9 |
