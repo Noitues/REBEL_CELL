@@ -13,6 +13,8 @@ Standing directive (designer, 2026-10-19):
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D8 | 10-19 | ST-02, status audit: no new status ships. Only "vulnerable" (more damage taken) has no existing equivalent; it is noted, not built. | Rule "vulnerable" in, which means a new combat rule and a save change |
+| D7 | 10-19 | The canonical status list is the code's five (CORRUPTED, OVERCLOCKED, ENCRYPTED, OUTPUT_DOWN, TIER_DOWN). GDD 2.9 is stale, to be fixed in a docs pass logged in DECISIONS. | Keep the three in GDD 2.9 |
 | D6 | 10-19 | Solace v2: an ACROSS move costs a flat amount, and the Breach key makes it free. Decay applies after the raid's rise; a CITY LOST raid gets no decay. Heat is read on entering a node, before that node's own Heat is added. | Ask to change any of these |
 | D5 | 10-19 | Solace v2: the Breach setback is not capped, so the first entry at T1 can show a gap above 5.0. | Cap the setback at the maximum gap |
 | D4 | 10-19 | Old route window: a test that went red with CITY-A2 step 2 (`test_anim_r2_city` placement, "the baked city knows its streets") is marked pending until art/look's city work lands (A-059). | none |
@@ -23,6 +25,7 @@ Standing directive (designer, 2026-10-19):
 ## Open questions (a default is taken; answer to change it)
 | Code | Date | Question | Default taken |
 |---|---|---|---|
+| Q5 | 10-19 | RD-01, raid operative roles: 30 questions across 8 classes (`plan2/drafts/raid_operatives/QUESTIONS.md`). Ghost's step table (1/1/2/2) doesn't match its multipliers. | Every question at its recommended default; Ghost follows the multipliers |
 | Q1 | 10-19 | Solace v2: infection decay after a held raid: partial (flat amount plus kills), or a full reset to 0? | Partial decay |
 | Q2 | 10-19 | Solace v2: do Heat objective Sites and Proxy Relay completions also cure infection? | Yes, both cure |
 | Q3 | 10-19 | Solace v2: cap the combined Exploit slowdown when all three are stacked? | No cap; tune after the sim |
