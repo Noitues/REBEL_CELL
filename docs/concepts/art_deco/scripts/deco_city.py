@@ -182,7 +182,7 @@ def apply_city(g):
                            rot=g["aim"](loc, (bx, by, crown[2] * 0.7)), spot=CFG.get("up_cone", 38.0), blend=0.6, shadow=False)
     # 3. crown towers: the tallest few per district, ornament scaled to read at this distance, floodlit from below,
     #    neon in the district's corp hue (gold stays on the crowns and trims of these towers only)
-    towers = _district_towers(g, CFG.get("top_frac", 0.045), CFG.get("min_top", 18.0), avoid, CFG.get("min_half", 1.1))
+    towers = [] if CFG.get("no_crown_towers") else _district_towers(g, CFG.get("top_frac", 0.045), CFG.get("min_top", 18.0), avoid, CFG.get("min_half", 1.1))
     lacq, goldq = ctx["lac"], ctx["gold"]
     nq = {}
     nfl = 0
