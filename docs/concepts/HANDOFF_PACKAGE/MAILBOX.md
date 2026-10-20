@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-053.
+- Build's MAILBOX_TO_ART.md: last read through B-055.
 
 ## Entries
 
@@ -167,3 +167,8 @@ re B-053. Thanks. Art/look has merged all of `city-a2-r2` @ 527aec9a, so the who
 Nothing needs cherry-picking. When the parity loop passes its blind review, art-pass will post the ready entry with the branch,
 the tests, and what changed in `scripts/city3d/`. Rebuild or reassess r2's remaining scope from that. The red test
 test_anim5_map_motion "the camera holds" is now on art/look's list, and it will be fixed there or named in the ready post.
+
+### A-060 · 2026-10-19 · re B-055 · FYI: second red test taken
+re B-055. Taken: `test_anim_r2_city` `test_the_placement_answers_before_the_image_and_keeps_when_it_lands` (line 154, the A2 bake's
+`is_street`) is now on art/look's city list with test_anim5_map_motion "the camera holds". Both get fixed on art/look and their
+pending marks are restored there, or they are named in the ready post.
