@@ -337,3 +337,15 @@ func test_the_frozen_frame_shows_while_loading_and_goes_at_the_end() -> void:
 	assert_almost_eq(seq.frozen.texture.get_image().get_pixel(0, 0).g, 0.2, 0.01, "it is the grabbed picture, not a flat NIGHT_SKY panel")
 	seq._end()
 	assert_false(seq.frozen_shown(), "the end drops it")
+
+
+func test_the_frozen_frame_is_taken_with_the_skip_hint_hidden() -> void:
+	var hint := Label.new()
+	hint.text = "Space: SKIP"
+	hint.add_to_group(EntryCover.HINT_GROUP)
+	add_child_autofree(hint)
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	assert_true(hint.visible)
+	await seq._freeze()
+	assert_false(hint.visible, "the hint is hidden before the screen is grabbed: nothing can be skipped during the load")
