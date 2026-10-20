@@ -14,6 +14,8 @@ const CITY_SEED_STREAM: StringName = &"city_seed"
 const CITY_LAYOUT_STREAM: StringName = &"city_layout"
 ## Plan 2 WH-10: the Solace HQ ladder's room kinds, made on demand from the run seed.
 const HQ_GRAPH_STREAM: StringName = &"hq_graph"
+## Halcyon v2: the Eye's first octant, drawn once at campaign start and stored.
+const EYE_START_STREAM: StringName = &"eye_start"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

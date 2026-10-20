@@ -210,7 +210,11 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
-	s.run.map = SolaceHqGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM))
+	var graph_stream := RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM)
+	if EyeRules.applies(corp):
+		s._halcyon_begin_hq(corp, site_id, graph_stream)
+	else:
+		s.run.map = SolaceHqGraph.generate(s.config, graph_stream)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
 	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
@@ -222,10 +226,49 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	return s
 
 
-## Whether the HQ breach of `corp` runs through the ladder (only Solace so far; the other
+## Halcyon v2 (WH-20 / WH-22): the HQ run's Eye state and graph. The launch snapshot (`spotted_level`)
+## is taken once from the campaign's Eye and the HQ site's bearing; Alert starts at it; the graph is
+## rebuilt from stream `hq_graph` until it is reachable for the launch phase.
+func _halcyon_begin_hq(corp: CorporationData, site_id: StringName, graph_stream: RandomNumberGenerator) -> void:
+	var h := run.corp_theme.halcyon
+	h.hq = true
+	h.eye_phase = campaign.corp_theme.halcyon.eye_index
+	h.eye_step = 0
+	h.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+	h.hq_alert = h.spotted_level
+	run.map = HalcyonHqGraph.generate(config, graph_stream, h.eye_phase)
+
+
+## Halcyon HQ non-fight rooms: a rest bay heals, an Evidence Locker offers a Daemon, the Power Room
+## waits for Cut the Power. Returns the events, or [] when `node` is a fight / event / shop.
+func _halcyon_room(node: Dictionary) -> Array[Dictionary]:
+	if bool(node.get("rest", false)):
+		var healed := mini(run.operative.max_hp - run.operative.hp, run.operative.max_hp * config.halcyon_hq_rest_heal_pct / 100)
+		run.operative.hp += healed
+		last_events.append({"type": "hq_rest", "amount": healed, "text": "Maintenance Bay: +%d HP (%d/%d)." % [healed, run.operative.hp, run.operative.max_hp]})
+		_sync()
+		return last_events
+	if bool(node.get("cache", false)):
+		var daemons: Array = []
+		for d in _pools["daemons"]:
+			if not run.operative.daemon_ids.has(d):
+				daemons.append(d)
+		_offer(&"daemon", daemons, config.halcyon_hq_cache_choices, streams.get_stream(&"rewards"))
+		if not run.pending_rewards.is_empty():
+			run.phase = RunState.Phase.REWARD
+		_sync()
+		return last_events
+	if bool(node.get("power", false)):
+		last_events.append({"type": "power_room", "text": "The Power Room: the Eye's feed can be cut once."})
+		_sync()
+		return last_events
+	return [] as Array[Dictionary]
+
+
+## Whether the HQ breach of `corp` runs through the ladder (Solace and Halcyon so far; the other
 ## corporations keep the single-node "boss" run until their HQ slices).
 static func uses_hq_ladder(corp: CorporationData) -> bool:
-	return corp != null and corp.id == BloomRules.SOLACE_ID
+	return corp != null and (corp.id == BloomRules.SOLACE_ID or corp.id == EyeRules.HALCYON_ID)
 
 
 static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary, corp: CorporationData = null) -> NetrunSession:
@@ -458,7 +501,11 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
 		_add_heat(node["heat"], "elite node")
-	if bool(node.get("rest", false)):
+	if run.corp_theme.halcyon.hq:
+		var room := _halcyon_room(node)
+		if not room.is_empty():
+			return room
+	elif bool(node.get("rest", false)):
 		# WH-10: the Solace HQ rest room is the ward rest (the front goes back by dose_push).
 		bloom_ward_rest()
 		last_events.append({"type": "ward_rest", "gap_milli": BloomRules.gap_milli(bloom), "text": "Ward rest: the front falls back."})
