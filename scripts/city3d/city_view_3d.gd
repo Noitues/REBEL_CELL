@@ -606,6 +606,10 @@ func _whole_building() -> void:
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
 	_building_mat.set_shader_parameter(&"window_colors", wc)
+	var sc: Array[Vector3] = []
+	for c: Color in cfg.whole_sign_colors:
+		sc.append(Vector3(c.r, c.g, c.b))
+	_building_mat.set_shader_parameter(&"sign_colors", sc)
 	# The plate's districts pool their windows into a soft glow: a lower AAA bloom threshold, more bloom, more exposure.
 	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure * (cfg.whole_exposure_k if whole_look else 1.0))
 	if whole_look and look_blend > 0.0:

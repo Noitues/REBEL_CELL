@@ -96,8 +96,9 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 4.5, "win_share": 0.35, "trim_emit": 0.15, "haze_k": 0.0,
-	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22}
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 3.6, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
+	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22,
+	"sign_share": 0.22, "sign_emit": 3.5, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
 ## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
 ## blocks are charcoal with warm light).
 @export var whole_building_colors: Dictionary = {"edge_a": Color(1.0, 0.78, 0.5), "edge_b": Color(1.0, 0.9, 0.75),
@@ -118,12 +119,16 @@ extends Resource
 @export var whole_terr_albedo_k: float = 0.3
 @export var whole_terr_wall_emit: float = 0.012
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
-@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2, "facade_albedo": 0.85}
+@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2, "facade_albedo": 0.85,
+	"sign_share": 0.0, "sign_emit": 3.0, "sign_w": 1.0, "sign_z0": 0.3, "sign_z1": 0.85}
 ## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
 @export var whole_night_ramp: Array[Color] = [Color(0.07, 0.08, 0.10), Color(0.15, 0.16, 0.19), Color(0.27, 0.28, 0.31)]
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
 @export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.45, 0.85),
 	Color(1.0, 0.7, 0.35), Color(0.45, 0.95, 1.0), Color(1.0, 0.82, 0.55)]
+## LOOK L5: the whole-city neon sign colours (city_building sign_colors; the plate's pink / cyan / gold / magenta signage).
+@export var whole_sign_colors: Array[Color] = [Color(1.0, 0.35, 0.75), Color(0.3, 0.9, 1.0), Color(1.0, 0.8, 0.3),
+	Color(0.85, 0.4, 1.0)]
 @export var whole_day_water_gain: float = 0.6
 ## Water children hidden under the whole-city pose (CityWater node names).
 @export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWall", "SeaWallLight"])

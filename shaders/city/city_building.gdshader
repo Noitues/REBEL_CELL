@@ -113,6 +113,14 @@ uniform float win_share = 0.3;
 uniform float win_floor = 0.5;
 uniform float win_pow = 1.0;
 uniform float win_emit = 1.0;
+// LOOK L5 (whole city, the plate's neon signage): above 0 this share of the off-territory facade faces carries one vertical
+// sign strip, sign_w BU wide from sign_z0 to sign_z1 of the height, in one of sign_colors, lit at sign_emit (x look_blend).
+uniform float sign_share = 0.0;
+uniform float sign_emit = 3.0;
+uniform float sign_w = 1.0;
+uniform float sign_z0 = 0.3;
+uniform float sign_z1 = 0.85;
+uniform vec3 sign_colors[4];
 uniform float trim_emit = 1.0;
 // NA-22c (the street-level wash, art-pass ruling on W1 NA-22): the lowest floors take the street's sign hues so the facade luma
 // rises toward the street. `wash_floors` = floors (window_pitch.y BU each) kept at full strength and floors where it reaches 0
@@ -431,6 +439,18 @@ void fragment() {
 					}
 					em = wc * s * window_gain * mix(1.0, win_emit, look_blend);
 					base = wc * s * 0.25;
+				}
+			}
+		}
+		if (sign_share > 0.0 && look_blend > 0.0 && terr_i == 0 && L > sign_w + 0.4 && v_h > 3.0) {
+			float hs = hash1(vec3(floor(v_corner.x * 3.0), floor(v_corner.z * 3.0), seed * 53.0));
+			if (hs < sign_share) {
+				float sa = dot(v_world - v_corner, v_edge / L);
+				float a0 = 0.2 + hash1(vec3(hs * 71.0, seed, 2.0)) * (L - sign_w - 0.4);
+				if (sa > a0 && sa < a0 + sign_w && z > sign_z0 * v_h && z < sign_z1 * v_h) {
+					vec3 sgc = sign_colors[int(hash1(vec3(hs * 13.0, seed * 7.0, 9.0)) * 4.0) % 4];
+					em = sgc * sign_emit * look_blend;
+					base = sgc * 0.2;
 				}
 			}
 		}
