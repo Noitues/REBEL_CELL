@@ -56,6 +56,8 @@ extends Resource
 @export var whole_far_shadows: bool = true
 ## ... and the land's ramp softness there (city_ground band_soft; 0 = the Grid's hard bands).
 @export var whole_ground_band_soft: float = 0.3
+## ... and the share of its street spill it keeps there (the spill lights every face as flat ground).
+@export var whole_ground_spill_k: float = 0.2
 @export var whole_shadow_dist_bu: float = 2200.0
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
