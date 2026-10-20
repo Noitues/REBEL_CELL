@@ -789,30 +789,59 @@ five layers:
   cleared and seized Sites, the boss. A plain-language legend says what each icon means.
 
 ### 4.6 Netrun (LOCKED hybrid D)
-Reference: `round37_netrun/*`, `round38_netrun_transit/transit_v3.png`, `transit_step_v3.gif`.
-- **Structure:** Site runs are a **transit** along the border link from an owned node; the HQ boss
-  run is the overhead **compound** (4.7); raids stay on the city map. A run goes from any owned node
+Reference: `route_map_graph/side_view/v3_aaa/r3/`, `route_map_graph/storyboard/` (the entry flow),
+`golden_plates/INDEX.md`. `round37_netrun/*` and `round38_netrun_transit/*` are the mechanic
+reference only (node states, option numbering), no longer the look.
+- **Structure:** Site runs are the **route view** along the border link from an owned node (below);
+  the HQ boss run uses the same rig around the corp's landmark (4.7); raids stay on the city map. A run goes from any owned node
   to any unowned node across a border link; no planning UI; no cap on choices; nodes are never
   revisited.
 - **Node states (option A, LOCKED):** node-type stickers keep full colour; one outline ring carries
   the state: **white** not yet available, **orange** selectable, **lime** visited/walked, dim grey
   cut off. On the transit, the next options are numbered.
-- **Hidden nodes (LOCKED):** by default only owned/visited, selectable and the TARGET are drawn
-  (plus the pinned Sites of 4.5); hovering the legend strip ("HOVER HERE: SHOW ALL NODES") shows all;
-  hovering empty map reveals the node under the cursor (~40 px, 0.15 s fade); Options › Map "Always
-  show all nodes".
-- **Transit paths v3 (LOCKED):** network cable runs between the buildings of the adjacent blocks:
-  straight segments with 45° or 90° turns only, crossing streets rather than riding them; the walked
-  path is a **solid** lime line; available (orange) and not-yet (white) paths are dashed; crossings
-  avoided, the rest bridged with a hop; ~7 layers, 15–20 nodes; the lighter city grade.
-- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name, Heat stamp); the
-  node info window shows only tier, type and rewards, and only when decrypted; the TARGET keeps its
-  red pencil circle; DECK and MENU.
-- **Transition (LOCKED, ~4.4 s, skippable):** JACK IN → the Cell's terminal types
-  `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED, binary rain along the chosen
-  link only → the terminal window despawns as a CRT collapse (line, then dot) → the operative's wheel
-  slaps onto the link and spins up → **wheel lens**: the hub opens onto the transit view and the ring
-  flies past the camera. Beats 1–3 can shorten after the first runs (setting).
+- **Whole graph shown (LOCKED, designer 2026-10-14; D7 2026-10-16):** the full run graph is always
+  drawn in a less intrusive look: past and non-reachable nodes and links are heavily greyed and
+  translucent; the current node and the reachable nodes are full colour (ring states above).
+  Hovering the legend strip brings the whole graph to full opacity with every piece of information.
+  A name tag shows **only on hover** of that node, never at rest, on any node; the node's type reads
+  from its own sticker or icon, never a corner badge. There is no fog that hides nodes beyond the next
+  layer.
+- **Route view (LOCKED direction, designer 2026-10-14): the V3 side view ("dollhouse").** The run
+  is a walk along one street seen side-on: route rooms are cutaways in the real buildings of the
+  selected Site's border link (one continuous city, 4.1). The camera pans along the run with
+  parallax; **DECISION** is the default zoom (the current room and every available room fill the
+  frame), **OVERVIEW** (key Z, scroll out) shows the whole run; the toggle takes 1.0 s. **Connections
+  are grease pencil** in the wax states above; **node icons are vinyl stickers**; hovering an option
+  cuts the power to everything outside its branch. Traffic is **light streaks only**, no car models.
+  Building shapes include round, fat, stepped and adjoining forms. The look is AAA-2 (1.2).
+  Rejected: X1–X3 cyberspace (no wireframe city).
+- **Hover power cut (designer 2026-10-16):** everything outside the hovered branch and the current
+  room goes to ×0.20 and 70 % desaturated, the branch rooms ×1.35 with a type glow of 1.0; one 2D grade
+  for the street and the HQ; it eases in 0.30 s and out 0.35 s (PIPELINE_SPEC).
+- **Off-screen TARGET (designer 2026-10-16):** a red pencil edge arrow with its chip; once more than
+  50 % of the TARGET is visible the arrow goes and only the partial grease circle shows.
+- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name; no Heat stamp,
+  Heat is in the top strip, 4.3); the node info window shows only tier, type and rewards, and only
+  when decrypted; the TARGET keeps its red pencil circle; the ROUTE terminal holds only GRID VIEW
+  and Save & quit.
+- **Route page (LOCKED round 44, `round44_undesigned/A_map/route_page*.png`):** zoomed so the run
+  fills most of the frame; no text tags on nodes and no YOU ARE HERE words (the lime token is the
+  position; option numbers stay); the links follow the whole-graph rule above (round 44's "only the
+  route's links" is superseded by the 2026-10-14 ruling); top strip = Heat, HP, Cycles.
+- **Transition (LOCKED, netrun entry flow 2026-10-15; one press skips the whole entry):** JACK IN →
+  the Cell's terminal types `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED,
+  binary rain along the chosen link only → the terminal window despawns as a CRT collapse (line,
+  then dot) → **straight into the dive**: one camera path in the mainline world from the HQ camera
+  down to the street OVERVIEW (about 3.0 s, walls closed, no route, no room light) → route rooms
+  stay hidden until street level, then the walls dissolve to bits left to right while the links
+  write on → the markers draw → zoom to the start room. **No wheel slap, no wheel lens, no hub or
+  class field** (dropped 2026-10-15, DIRECTION_REVIEW "Netrun entry flow"; storyboard
+  `route_map_graph/storyboard/NOTES.md` beat 3; PIPELINE_SPEC 3c). Jack-out is the same chain
+  reversed. The plan pencil on the HQ page is orange (2026-10-15). **Timing (LOCKED, designer
+  2026-10-16, Q7 "approved as in the video"):** the storyboard times are the game times: terminal
+  1.40 s, binary rain 1.25 s, CRT collapse 0.45 s, dive 3.0 s, REVEAL 3.64 s, MARK 1.0 s + 0.8 s
+  hold, ZOOM 1.0 s + 0.5 s settle (about 13 s from the press to CHOOSE; PIPELINE_SPEC 10). One
+  press skips the whole entry. There is no shortened setting.
 - **Node backdrops:** a dressed room per HQ node (desk/screen-wall Terminal room etc.).
 
 ### 4.7 HQ runs: the compound and unique mechanics (LOCKED "good for now", round 43)

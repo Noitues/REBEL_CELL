@@ -241,7 +241,7 @@ func test_one_press_skips_the_link_jack() -> void:
 	assert_false(Fx.transitioning(), "one press ends the jack")
 	assert_eq(switched[0], 1, "the switch ran once")
 	assert_false(Fx.jack_link.visible, "the end state: the run, nothing over it")
-	assert_lt(t, Motion.seconds(&"jack_lens") + Motion.seconds(&"jack_wheel_spin") + limit, "well before the sequence's own end")
+	assert_lt(t, Motion.seconds(&"jack_crt_collapse") + limit, "well before the sequence's own end")
 
 
 func test_reduce_effects_keeps_the_plain_fade() -> void:

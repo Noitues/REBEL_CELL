@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _p2_street_r2_render_config()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -99,37 +99,66 @@ func _n20_slice_riders() -> int:
 
 ## NA-24: DressingConfigData (the street dressing's reveal groups, palettes, districts, bands): the shipped one validates, an
 ## empty one reports its gaps, a district naming an unknown palette set is refused by name.
-## NA-12: CampaignConfigData's city generator numbers: the shipped ones match the defaults and
-## validate, a bad range and a zero gap are refused by name; CampaignState keeps its city seed
-## through to_dict / from_dict as a u64 decimal string.
-func _na12_city_gen() -> int:
+## CITY-A2 step 1: CampaignConfigData's planner-city fields (`city_a2_*`): the shipped ones match the defaults and
+## validate, the vendored city_A2.json loads clean, a bad block range is refused. Step 2: the terrain numbers (shipped =
+## defaults, a bad beach range and land step refused by name), the step 2 sections of city_A2.json (rails, stations,
+## landmarks, interchanges, walls, checkpoints, the drowned quarter, the port, undercity tunnels) and the removed grid
+## generator's fields gone.
+func _city_a2_config() -> int:
 	var fails := 0
 	var d := CampaignConfigData.new()
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
-	print("NA-12 city gen (expect 26 26 2 2 Vector2(34, 42)): ", d.city_gen_hq_gap, " ", cfg.city_gen_hq_gap, " ", d.city_gen_budget_s, " ",
-		cfg.city_gen_budget_s, " ", cfg.city_gen_ring_lots)
-	if d.city_gen_hq_gap != cfg.city_gen_hq_gap or d.city_gen_budget_s != cfg.city_gen_budget_s or cfg.city_gen_ring_lots != Vector2(34, 42): fails += 1
+	print("CITY-A2 config (expect Vector2i(4, 7) 121.212): ", cfg.city_a2_block_lots, " ", cfg.city_a2_metres_per_lot)
+	if d.city_a2_block_lots != cfg.city_a2_block_lots or d.city_a2_path != cfg.city_a2_path or d.city_a2_budget_s != cfg.city_a2_budget_s: fails += 1
+	if ",".join(cfg.validate()).contains("city_a2"): fails += 1
+	var a2 := CityPlanA2.load_path(cfg.city_a2_path)
+	print("CITY-A2 file (expect 0 7 53): ", a2.errors.size(), " ", a2.districts.size(), " ", a2.roads.size())
+	if not a2.errors.is_empty() or a2.districts.size() != 7: fails += 1
+	var bad: CampaignConfigData = cfg.duplicate()
+	bad.city_a2_block_lots = Vector2i(5, 3)
+	var codes := ",".join(bad.validate())
+	print("CITY-A2 bad: ", codes.contains("city_a2_block_lots"))
+	if not codes.contains("city_a2_block_lots"): fails += 1
+	print("CITY-A2 step 2 terrain (expect road_001 1 2 80 5101): ", cfg.city_a2_outer_ring, " ", cfg.city_a2_hill_exag, " ",
+		cfg.city_a2_land_step, " ", cfg.city_a2_land_margin, " ", cfg.city_a2_terrain_seed)
+	if d.city_a2_outer_ring != cfg.city_a2_outer_ring or d.city_a2_mountain_h != cfg.city_a2_mountain_h or d.city_a2_beach != cfg.city_a2_beach \
+			or d.city_a2_land_step != cfg.city_a2_land_step or d.city_a2_noise_cells != cfg.city_a2_noise_cells: fails += 1
+	var bad_t: CampaignConfigData = cfg.duplicate()
+	bad_t.city_a2_beach = Vector2(3, 1)
+	bad_t.city_a2_land_step = 0
+	var t_codes := ",".join(bad_t.validate())
+	print("CITY-A2 step 2 bad terrain: ", t_codes.contains("city_a2_beach"), " ", t_codes.contains("city_a2_land_step"))
+	if not (t_codes.contains("city_a2_beach") and t_codes.contains("city_a2_land_step")): fails += 1
+	print("CITY-A2 step 2 sections (expect 12 45 40 21 6 24 true true 5): ", a2.rails.size(), " ", a2.stations.size(), " ", a2.landmarks.size(),
+		" ", a2.interchanges.size(), " ", a2.walls.size(), " ", a2.checkpoints.size(), " ", not a2.drowned.is_empty(), " ",
+		not a2.port.is_empty(), " ", a2.undercity_tunnels.size())
+	if a2.rails.size() != 12 or a2.stations.size() != 45 or a2.landmarks.size() != 40 or a2.interchanges.size() != 21 or a2.walls.size() != 6 \
+			or a2.checkpoints.size() != 24 or a2.drowned.is_empty() or a2.port.is_empty() or a2.undercity_tunnels.size() != 5: fails += 1
+	for gone: String in ["city_layout_source", "city_gen_ring_lots", "city_gen_bay_depth", "city_gen_budget_s"]:
+		if gone in d:
+			print("CITY-A2 step 2: removed field still there: ", gone)
+			fails += 1
+	return fails
+
+
+## NA-12: CampaignState keeps its city seed through to_dict / from_dict as a u64 decimal string (CITY-A2 step 2: the
+## grid generator's numbers are gone; the three the planner city keeps validate).
+func _na12_city_gen() -> int:
+	var fails := 0
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	if ",".join(cfg.validate()).contains("city_gen"): fails += 1
 	var bad: CampaignConfigData = cfg.duplicate()
-	bad.city_gen_ring_lots = Vector2(40, 30)
-	bad.city_gen_hq_gap = 0.0
+	bad.city_gen_aim_step_deg = 0.0
 	var codes := ",".join(bad.validate())
-	print("NA-12 bad city gen: ", codes.contains("city_gen range"), " ", codes.contains("city_gen_hq_gap"))
-	if not (codes.contains("city_gen range") and codes.contains("city_gen_hq_gap")): fails += 1
-	# NA-12 r2: the A2 bay, shore corporations and hills.
-	print("NA-12 r2 bay (expect [&\"tethys\"] (18, 30) 220): ", cfg.city_gen_shore_corps, " ", cfg.city_gen_bay_depth, " ", cfg.city_gen_ring_arc_deg)
-	if cfg.city_gen_shore_corps != d.city_gen_shore_corps or cfg.city_gen_bay_depth != d.city_gen_bay_depth or cfg.city_gen_hill_count != d.city_gen_hill_count: fails += 1
-	var bad_bay: CampaignConfigData = cfg.duplicate()
-	bad_bay.city_gen_bay_shift = 0.6
-	bad_bay.city_gen_hill_count = Vector2i(3, 1)
-	var bay_codes := ",".join(bad_bay.validate())
-	if not (bay_codes.contains("city_gen_bay_shift") and bay_codes.contains("city_gen_hill_count")): fails += 1
+	print("NA-12 bad city gen: ", codes.contains("city_gen_aim_step_deg"))
+	if not codes.contains("city_gen_aim_step_deg"): fails += 1
 	var c := CampaignState.new()
 	c.city_seed = -2
 	var back := CampaignState.from_dict(c.to_dict())
 	print("NA-12 city_seed save (expect 18446744073709551614 -2): ", c.to_dict()["city_seed"], " ", back.city_seed)
 	if c.to_dict()["city_seed"] != "18446744073709551614" or back.city_seed != -2: fails += 1
 	return fails
+
 
 
 func _na24_dressing_config() -> int:

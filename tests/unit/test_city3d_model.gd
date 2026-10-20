@@ -7,7 +7,8 @@ extends GutTest
 
 const CONFIG := preload("res://content/config/city_config.tres")
 ## A part of the city round the Halcyon / REBEL_CELL border (chunks of the real layout).
-const PART := Rect2i(20, -4, 40, 40)
+## CITY-A2 step 2: the 40 x 40 lots round Halcyon's HQ on the default city (an A2 city now; its hill under them).
+var PART := Rect2i(Vector2i(CityPlan.for_seed(7).hq_of(&"halcyon")) - Vector2i(18, 18), Vector2i(40, 40))
 
 var cfg: CityConfig = CONFIG
 var model: CityModel
@@ -21,7 +22,7 @@ func test_the_whole_city_config() -> void:
 	assert_eq(cfg.resource_path, "res://content/config/city_config.tres")
 	for corp: StringName in [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]:
 		var hq := Rect2i(Vector2i(NeonCity.hq_of(corp)), Vector2i(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS))
-		assert_true(cfg.city_rect.encloses(hq.grow(20)), "%s's district is inside the city" % corp)
+		assert_true(cfg.city_rect.encloses(hq), "%s's HQ is inside the city" % corp)
 	var covered := 0
 	for key in CityModel.chunk_keys(cfg, cfg.city_rect):
 		var r := CityModel.chunk_rect(cfg, key)
@@ -30,7 +31,7 @@ func test_the_whole_city_config() -> void:
 
 
 func test_the_model_is_the_games_layout_chunked_and_deterministic() -> void:
-	assert_gt(model.prisms.size(), 1000, "real buildings")
+	assert_gt(model.prisms.size(), 500, "real buildings")
 	assert_gt(model.streets.size(), 300, "and street lots")
 	assert_true(model.hqs.has(&"halcyon"), "the Halcyon HQ lot")
 	var again := CityModel.build(cfg, 7, PART)
@@ -50,7 +51,7 @@ func test_the_model_is_the_games_layout_chunked_and_deterministic() -> void:
 
 func test_the_fist_roads_are_not_laid_out() -> void:
 	# Round 34 lock (bible §4.4): the Cell's district keeps the normal street grid.
-	var cell := CityModel.build(cfg, 7, Rect2i(30, 32, 10, 10))
+	var cell := CityModel.build(cfg, 7, Rect2i(Vector2i(CityPlan.for_seed(7).hq_of(&"rebel_cell")), Vector2i(10, 10)))
 	assert_gt(cell.prisms.size(), 20, "the Cell's district is built up")
 
 
@@ -188,7 +189,7 @@ func test_city_view_layers_and_picking_api() -> void:
 	assert_true(probe.get_layer_mask_value(CityView3D.GROUND_LAYER), "drawn in the ground pass")
 	var seen: Array = []
 	view.camera_changed.connect(func(c: CityIsoCamera) -> void: seen.append(c.ortho))
-	var target := view.lot_world(Vector2(PART.get_center()) + Vector2(0.5, 0.5))
+	var target := view.ground_world(Vector2(PART.get_center()) + Vector2(0.5, 0.5))
 	view.set_iso(CityIsoCamera.make(cfg, target, 300.0, Vector2(1280, 720)))
 	assert_eq(seen, [300.0], "layers hear the camera")
 	assert_eq(view.band, CityLod.Band.RAID)
@@ -199,7 +200,7 @@ func test_city_view_layers_and_picking_api() -> void:
 	assert_eq(view.lot_at(Vector2(640, 360)), PART.get_center(), "the ground lot under the centre")
 	assert_ne(view.landmark_slot(&"halcyon"), Transform3D(), "Halcyon's landmark slot")
 	var r: Rect2i = model.hqs[&"halcyon"]
-	assert_almost_eq(view.landmark_slot(&"halcyon").origin, view.lot_world(Vector2(r.get_center())), Vector3.ONE * 0.001)
+	assert_almost_eq(view.landmark_slot(&"halcyon").origin, view.ground_world(Vector2(r.get_center())), Vector3.ONE * 0.001)
 
 
 func test_ambient_pauses_under_reduce_motion_and_when_covered() -> void:

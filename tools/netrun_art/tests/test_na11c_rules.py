@@ -66,4 +66,5 @@ def test_spikes_capped_and_frontage_band(seed):
     for bid in sorted(_frontage_bids(w["city"], w["net"])):
         if bid in routes or bid in zone or bid in stacked or bid in {s["bid"] for s in spikes}:
             continue
-        assert 6 <= fl[bid] <= 10, (bid, fl[bid])
+        sil = layout.R2_RULES["silhouette"]  # CITY-A2 step 2: the r2 floors band (6 .. 21)
+        assert sil["floors_low"][0] <= fl[bid] <= sil["floors_tall"][1], (bid, fl[bid])

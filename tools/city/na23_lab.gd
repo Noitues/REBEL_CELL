@@ -11,6 +11,8 @@ extends Control
 ##   --perf=<frames>      after the shots, time this many frames of the overview and print the GPU / CPU frame ms
 ##   --fog=0|1            fog volume on (default 1)
 ##   --export=<dir>       writes city.json, net.json, run_graph.json and derive_street.json of the street (STREET-CAM, plate inputs)
+##                        and prints the street's frontage tops (NA23 frontage: count, median, min, max BU)
+##   --export_only=1      quit after the export (CITY-A2 step 2: runs headless too)
 ##   --plate_dir=<dir>    parity harness (tools/netrun_art/parity_sheet.py): the camera of the overview / decision shot is replaced
 ##                        by the plate's pose in <dir>/street_<state>_capture.json: our focus and yaw (street frame) with the plate's
 ##                        pitch, dist, lens and shift; --plate_abs=1 uses the plate's world pose as is (Blender world, not this city)
@@ -67,6 +69,9 @@ func _ready() -> void:
 		return
 	if _args.has("export"):
 		_export_contract(String(_args["export"]))
+		if String(_args.get("export_only", "0")) == "1":
+			get_tree().quit()
+			return
 	var walks := NetrunPoseBuilder.fixture_walks(_data.run_graph)
 	var w := String(_args.get("walk", "none"))
 	if w != "none" and walks.has(w) and not (walks[w] as Array).is_empty():
@@ -111,6 +116,15 @@ func _export_contract(dir: String) -> void:
 		f.store_string(NetrunArtExport.canonical(files[fn]))
 		f.close()
 	print("NA23 exported ", dir)
+	# CITY-A2 step 2 (A-039): the netrun street's frontage tops on both sides (r2 layout_pass: median about 24 BU).
+	var bases := NetrunArtLayout.merged_buildings(_data.city)
+	var tops: Array = []
+	for side: int in [1, -1]:
+		for b: Dictionary in NetrunStreetDeriver.frontage(bases, _data.derive["street"]["a"], _data.derive["street"]["c"], side):
+			tops.append(float(b["h"]))
+	tops.sort()
+	if not tops.is_empty():
+		print("NA23 frontage n=%d median=%.1f min=%.1f max=%.1f" % [tops.size(), tops[tops.size() / 2], tops[0], tops[-1]])
 
 
 func _on_ready() -> void:

@@ -76,7 +76,8 @@ def test_silhouette_rhythm_and_horizon():
     assert st["silhouette_set"] > 0 and 3 <= st["spikes"] <= 5
     before = {b["bid"]: b["h"] for b in layout.merged_buildings(mid)}
     raised = [b for b in layout.merged_buildings(out) if b["h"] > before[b["bid"]] + 1e-9]
-    assert len(raised) <= st["spikes"] and raised
+    # CITY-A2 step 2: with the r2 floors (14-21 tall) a picked spike may already clear spike_k x the median: none raised then
+    assert len(raised) <= st["spikes"]
 
 
 def test_route_column_rises_over_top_room():

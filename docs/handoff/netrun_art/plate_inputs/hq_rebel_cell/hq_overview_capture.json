@@ -1,0 +1,46 @@
+{
+ "camera": {
+  "dist": 152.8661,
+  "fov": 36.9,
+  "lens": 0.0,
+  "loc": [
+   384.626,
+   53.7683,
+   204.0
+  ],
+  "note": "yaw / pitch are CityIsoCamera degrees (view direction cos(yaw)cos(pitch), -sin(pitch), -sin(yaw)cos(pitch) in world); lens 0 = orthographic, shift 0 = the frame is centered on tgt",
+  "ortho_scale": 102.0,
+  "pitch": 19.0,
+  "plan_loc": [
+   384.626,
+   -204.0,
+   53.7683
+  ],
+  "plan_tgt": [
+   240.0882,
+   -204.0,
+   4.0
+  ],
+  "projection": "perspective",
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   240.0882,
+   4.0,
+   204.0
+  ],
+  "yaw": 180.0
+ },
+ "corp": "rebel_cell",
+ "kind": "hq",
+ "layout_seed": "13875796438772315820",
+ "look": "mainline",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "hq_rebel_cell_11",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

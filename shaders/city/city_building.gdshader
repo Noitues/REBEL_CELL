@@ -143,10 +143,16 @@ uniform vec4 room_box[32];
 uniform vec2 room_z[32];
 // NA-25b: how far each room's window has dissolved open, 0 = the closed facade, 1 = the window cut. Between, the facade breaks into
 // binary bits (ART_BIBLE 1.2: 0 / 1 glyphs in the window colour, white-hot for the first `bit_hot` share of a cell's life, flipping 0 <-> 1
-// at `bit_flip` Hz, then shrinking and pulled toward the room); cells of `bit_cell` BU go in a staggered order, the glyph's pixels stay
+// at `bit_flip` Hz, pulled toward the room, never shrunk: they thin out as cells finish); cells (a 5 x 7 glyph, `bit_px` tall on screen) go in a staggered order, the glyph's pixels stay
 // and the rest of the cell is cut, so the room shows through. The room mesh behind comes up with the same share.
 uniform float room_open[32];
-uniform float bit_cell = 0.9;
+// NA-25b r5: the glyph height (render px at 1080p), its box (half width / cell size as shares of that height), the stroke share, and the
+// white share of the stroke's core. The 0 / 1 are drawn analytically (bit_glyph), so they stay crisp at any size.
+uniform float bit_px = 12.0;
+uniform float bit_core = 0.7;
+const vec2 BIT_CELL = vec2(1.0, 1.4);
+const float BIT_HALF_W = 0.3;
+const float BIT_STROKE = 0.17;
 uniform float bit_hot = 0.3;
 uniform float bit_flip = 14.0;
 uniform float bit_gain = 2.4;
@@ -198,6 +204,25 @@ void vertex() {
 	v_half = 0.5 * length(MODEL_MATRIX[0].xyz);
 }
 
+// NA-25b r5: how deep inside a 0 / 1 stroke the point `q` (px from the glyph's centre, up positive) is; <= 0 is outside. `hb` the half box.
+float bit_seg(vec2 p, vec2 a, vec2 b) {
+	vec2 pa = p - a;
+	vec2 ba = b - a;
+	return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+}
+
+float bit_glyph(vec2 q, vec2 hb, float sw, bool one) {
+	float half_s = sw * 0.5;
+	if (!one) {
+		float e = (length(q / hb) - 1.0) * min(hb.x, hb.y);
+		return half_s - abs(e + half_s);
+	}
+	float stem = (abs(q.y) < hb.y) ? half_s - abs(q.x) : -1.0;
+	float flag = half_s - bit_seg(q, vec2(0.0, hb.y), vec2(-hb.x, hb.y * 0.45));
+	float foot = (abs(q.x) < hb.x * 0.9) ? half_s * 0.8 - abs(q.y + hb.y - half_s * 0.8) : -1.0;
+	return max(stem, max(flag, foot));
+}
+
 void fragment() {
 	// The facet normal first: its derivatives must run before any discard or early return.
 	vec3 n = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
@@ -245,7 +270,11 @@ void fragment() {
 		if (bit_k > 0.0) {
 			float tl = max(length(v_edge), 0.0001);
 			vec3 tt = v_edge / tl;
-			vec2 cell = vec2(dot(v_world - v_corner, tt), v_world.y) / bit_cell;
+			// NA-25b r5: a cell holds one glyph `bit_px` tall on screen at 1080p, at any zoom (px_per_bu: render px per BU on this wall).
+			float gh = bit_px * VIEWPORT_SIZE.y / 1080.0;
+			float ppb = max(abs(PROJECTION_MATRIX[1][1]) * VIEWPORT_SIZE.y * 0.5 / (persp ? view_d : 1.0), 0.001);
+			vec2 cell_px = gh * BIT_CELL;
+			vec2 cell = vec2(dot(v_world - v_corner, tt), v_world.y) * ppb / cell_px;
 			vec2 ci = floor(cell);
 			float h = hash1(vec3(ci, v_inst.z * 13.0));
 			float tc = clamp((bit_k - h * 0.6) / 0.4, 0.0, 1.0);
@@ -254,25 +283,21 @@ void fragment() {
 			}
 			if (tc > 0.0) {
 				vec3 cw = vec3(bit_ctr.x, bit_ctr.z, -bit_ctr.y);
-				vec2 cc = (ci + 0.5) * bit_cell;
+				vec2 cc = (ci + 0.5) * cell_px / ppb;
 				vec2 to_room = vec2(dot(cw - v_corner, tt), cw.y) - cc;
 				vec2 off = normalize(to_room + vec2(0.0001)) * 0.35 * tc * tc;
-				vec2 g = (fract(cell) - 0.5 - off) / (1.0 - 0.8 * tc) + 0.5;
-				if (g.x < 0.0 || g.x > 1.0 || g.y < 0.0 || g.y > 1.0) {
-					discard;
-				}
+				// The glyphs keep their size and thin out (cells finish and are cut), they never shrink into dots.
+				vec2 q = (fract(cell) - 0.5 - off) * cell_px;
 				bool one = (int(floor(nr_clock(anim_t, anim_t_frozen) * bit_flip * (0.6 + h) + h * 7.0)) & 1) == 1;
-				bool ink;
-				if (one) {
-					ink = (g.x > 0.42 && g.x < 0.58) || (g.x > 0.24 && g.x < 0.42 && g.y > 0.74 && g.y < 0.9);
-				} else {
-					ink = g.x > 0.2 && g.x < 0.8 && g.y > 0.1 && g.y < 0.9 && !(g.x > 0.38 && g.x < 0.62 && g.y > 0.3 && g.y < 0.7);
-				}
-				if (!ink) {
+				float sw = max(gh * BIT_STROKE, 1.0);
+				float depth = bit_glyph(q, vec2(gh * BIT_HALF_W, gh * 0.5), sw, one);
+				if (depth <= 0.0) {
 					discard;
 				}
+				// Emission core: the middle of the stroke burns whiter than its edge.
+				float core = smoothstep(0.0, sw * 0.5, depth);
 				bit_on = true;
-				bit_em = (tc < bit_hot ? vec3(1.0) : window_colors[int(h * 6.0) % 6]) * bit_gain;
+				bit_em = mix(tc < bit_hot ? vec3(1.0) : window_colors[int(h * 6.0) % 6], vec3(1.0), core * bit_core) * bit_gain;
 			}
 		}
 	}

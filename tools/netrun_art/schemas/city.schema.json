@@ -24,6 +24,7 @@
      "terr": {"type": "string"},
      "hq": {"type": "boolean"},
      "key": {"type": "integer"},
+     "ground": {"type": "number", "description": "CITY-A2 step 2 (optional): the ground (BU) the building stands on; its parts' z0 are above it"},
      "parts": {
       "type": "array",
       "minItems": 1,
@@ -109,6 +110,18 @@
        "height": {"type": "number"},
        "rotation": {"type": "number"}
       }
+     }
+    },
+    "heights": {
+     "description": "CITY-A2 step 2 (optional): the ground (BU) at every lot corner of the city rect; rows[r][c] at plan point origin + (c, -r) x step",
+     "type": "object",
+     "required": ["origin", "step", "size", "rows"],
+     "additionalProperties": false,
+     "properties": {
+      "origin": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+      "step": {"type": "number"},
+      "size": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}},
+      "rows": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}
      }
     }
    }

@@ -379,3 +379,20 @@ func test_a_street_jack_out_ends_on_the_hq_through_the_street_link() -> void:
 	RunManager.street_link = {"street": true}
 	RunManager.reset()
 	assert_true(RunManager.street_link.is_empty(), "a new campaign forgets the last jack's link")
+
+
+func test_the_operative_token_has_a_loaded_texture_and_sits_on_the_current_room() -> void:
+	var v := _view()
+	var o := v.overlay
+	assert_false(is_finite(o.token_center().x), "no current room, no token")
+	var opts: Array = v.run_state()["options"]
+	assert_gt(opts.size(), 0, "the street offers rooms")
+	v.set_run_state(String(opts[0]), [], [], false)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var tex := o.token_texture()
+	assert_not_null(tex, "the token texture loads")
+	assert_gt(tex.get_width(), 0, "the token texture has pixels")
+	assert_same(tex, o.token_texture(), "the token holds one cached texture (a fresh load() per draw drew white)")
+	var want := o.sticker_pos(String(opts[0])) + StreetRouteOverlay.TOKEN_OFFSET_R * o.sticker_radius()
+	assert_lt(o.token_center().distance_to(want), 3.0, "the token stands at the current room's marker, by its pin offset")

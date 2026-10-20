@@ -1,0 +1,46 @@
+{
+ "camera": {
+  "dist": 2600.0,
+  "fov": 0.0,
+  "lens": 0.0,
+  "loc": [
+   1251.775,
+   2129.7954,
+   1400.275
+  ],
+  "note": "yaw / pitch are CityIsoCamera degrees (view direction cos(yaw)cos(pitch), -sin(pitch), -sin(yaw)cos(pitch) in world); lens 0 = orthographic, shift 0 = the frame is centered on tgt",
+  "ortho_scale": 165.1473,
+  "pitch": 55.0,
+  "plan_loc": [
+   1251.775,
+   -1400.275,
+   2129.7954
+  ],
+  "plan_tgt": [
+   197.2675,
+   -345.7675,
+   0.0
+  ],
+  "projection": "orthogonal",
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   197.2675,
+   0.0,
+   345.7675
+  ],
+  "yaw": 135.0
+ },
+ "corp": "halcyon",
+ "kind": "hq",
+ "layout_seed": "13875796438772315820",
+ "look": "mainline",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "hq_halcyon_11",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

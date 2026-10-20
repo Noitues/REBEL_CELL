@@ -77,25 +77,25 @@ func _seed(campaign_seed: int, extras: bool) -> void:
 	for t in plan.territories:
 		if t["id"] != &"":
 			hqs.append("%s@%s" % [t["id"], t["at"]])
-	print("NA12 campaign=%d city=%s view_seed=%s model_seed=%s sea=%s attempts=%d piers=%d wall=%d smears=%d hqs=%s" % [campaign_seed,
+	print("NA12 campaign=%d city=%s view_seed=%s model_seed=%s sea=%s piers=%d wall=%d smears=%d hqs=%s" % [campaign_seed,
 		ArtSeed.u64_str(RunManager.campaign.city_seed), ArtSeed.u64_str(view.city_seed), ArtSeed.u64_str(view.model.city_seed),
-		plan.sea_side(), plan.attempts, view.water.piers if view.water != null else -1, view.water.wall_edges if view.water != null else -1, view.water.smears if view.water != null else -1,
+		plan.sea_side(), view.water.piers if view.water != null else -1, view.water.wall_edges if view.water != null else -1, view.water.smears if view.water != null else -1,
 		" ".join(hqs)])
 	if view.water != null:
-		print("NA12 smear_lots %s bay_at=%s" % [str(view.water.smear_lots), str(plan.coast["bay_at"])])
+		print("NA12 smear_lots %s" % str(view.water.smear_lots))
 	await _shot("grid_%d" % campaign_seed)
 	hq._frame_city(float(hq.size.x) / (WHOLE_ORTHO * NeonCity.px_per_bu()), Vector2(plan.rect.get_center()), Vector2(0.5, 0.5))
 	await _settle()
 	await _shot("city_%d" % campaign_seed)
 	await _view_shot(view, "v_city_%d" % campaign_seed)
 	_values(view, plan, "night")
-	if extras:
-		var head := float(plan.coast["bay_at"])
-		var shore := plan.edge_point(head, plan.shore_at(head) - SHORE_SEA_LOTS)
+	if extras and plan.a2 != null:  # CITY-A2 step 2: the bay head is A2's Old City shore, the bay due south of it
+		var head := plan.a2.lot_of(plan.a2.a2.old_city_centre)
+		var shore := head + Vector2(0.0, SHORE_SEA_LOTS)
 		hq._frame_city(float(hq.size.x) / (SHORE_ORTHO * NeonCity.px_per_bu()), shore, Vector2(0.5, 0.5))
 		await _settle()
 		await _shot("shore_%d" % campaign_seed)
-		var bay := plan.edge_point(head, plan.shore_at(head) - BAY_LOTS)
+		var bay := head + Vector2(0.0, BAY_LOTS)
 		hq._frame_city(float(hq.size.x) / (BAY_ORTHO * NeonCity.px_per_bu()), bay, Vector2(0.5, 0.5))
 		await _settle()
 		await _view_shot(view, "v_bay_%d" % campaign_seed)
