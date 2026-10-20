@@ -61,6 +61,15 @@ var streams: Dictionary = {}
 ## only when a field is not default, so older saves load it as defaults and a run without
 ## theme data hashes as before.
 var corp_theme: RunThemeState = RunThemeState.new()
+## Plan 2 EV-01: pending next_combat_overrides entries (EventRules.mods_entry), spent one per completed fight.
+var combat_mods: Array[Dictionary] = []
+## EV-01: the open event fight ({} when none): the EventFightData's numbers as the run keeps them.
+var event_fight: Dictionary = {}
+## EV-01: the open event wheel ({} when none): EventRules.wheel_open plus the nudges taken.
+var event_wheel: Dictionary = {}
+## EV-01: nodes an event closed (not enterable) and nodes whose type an event revealed.
+var closed_nodes: Array[StringName] = []
+var revealed_nodes: Array[StringName] = []
 
 
 func current_node() -> Dictionary:
@@ -99,6 +108,17 @@ func _raw_dict() -> Dictionary:
 	var theme := corp_theme.to_dict()
 	if not theme.is_empty():  # absent at defaults: runs without theme data hash as before WH-02
 		out["corp_theme"] = theme
+	# EV-01: additive, absent at defaults so older saves and runs without events hash as before.
+	if not combat_mods.is_empty():
+		out["combat_mods"] = combat_mods.duplicate(true)
+	if not event_fight.is_empty():
+		out["event_fight"] = event_fight.duplicate(true)
+	if not event_wheel.is_empty():
+		out["event_wheel"] = event_wheel.duplicate(true)
+	if not closed_nodes.is_empty():
+		out["closed_nodes"] = _strings(closed_nodes)
+	if not revealed_nodes.is_empty():
+		out["revealed_nodes"] = _strings(revealed_nodes)
 	return out
 
 
@@ -142,6 +162,12 @@ static func from_dict(d: Dictionary) -> RunState:
 	var theme: Variant = d.get("corp_theme", {})
 	if theme is Dictionary:
 		r.corp_theme.load_dict(theme)
+	for m in d.get("combat_mods", []):
+		r.combat_mods.append(m.duplicate(true))
+	r.event_fight = d.get("event_fight", {}).duplicate(true)
+	r.event_wheel = d.get("event_wheel", {}).duplicate(true)
+	r.closed_nodes = _names(d.get("closed_nodes", []))
+	r.revealed_nodes = _names(d.get("revealed_nodes", []))
 	return r
 
 

@@ -964,6 +964,7 @@ static func move_asset(campaign: CampaignState, config: CampaignConfigData, look
 
 static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigData, pending: Dictionary = {}, corp: CorporationData = null) -> float:
 	var pct := campaign.rule_modifier(config, RC.RuleModifierType.RAID_STRENGTH_PCT)
+	pct += float(campaign.next_raid_mods.get("strength_pct", 0))  # EV-01: a Terminal event's next-raid modifier
 	# TAKEN_RAID_STRENGTH_PCT (ICE 14): raids entering from a TAKEN Site hit harder.
 	if corp != null and not pending.is_empty():
 		for entry in raid_entries(campaign, corp, pending):
@@ -974,7 +975,7 @@ static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigDat
 
 
 static func raid_extra_waves(campaign: CampaignState, config: CampaignConfigData) -> int:
-	return int(campaign.rule_modifier(config, RC.RuleModifierType.RAID_EXTRA_WAVE))
+	return int(campaign.rule_modifier(config, RC.RuleModifierType.RAID_EXTRA_WAVE)) + int(campaign.next_raid_mods.get("extra_waves", 0))
 
 
 static func pending_raid(campaign: CampaignState) -> Dictionary:
@@ -1040,6 +1041,7 @@ static func fight_raid(campaign: CampaignState, corp: CorporationData, config: C
 	var raid := raid_data(pending, lookup)
 	var result := project_raid(campaign, corp, config, lookup, pending)
 	campaign.pending_raids.erase(pending)
+	campaign.next_raid_mods = {}  # EV-01: the event modifier is spent by this raid
 	var events: Array[Dictionary] = result.events.duplicate()
 	events.append_array(RaidResolver.apply(campaign, result, raid, config))
 	name_pending_raids(campaign, lookup, events)  # a lost raid's Heat can queue the next one
