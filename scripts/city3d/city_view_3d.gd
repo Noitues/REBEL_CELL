@@ -538,6 +538,11 @@ func _sync_hq_beams() -> void:
 				w.visible = not whole_look
 		# The tiled caustic net reads as a pool at the whole-city zoom.
 		water.water_mat.set_shader_parameter(&"caustic_gain", cfg.water_caustic_gain * (cfg.whole_caustic_k if whole_look else 1.0))
+		# ... and its day colours toward the plate's deep blue.
+		var dd: Color = cfg.whole_water_deep_day if whole_look else cfg.water_deep_day
+		var sd: Color = cfg.whole_water_shore_day if whole_look else cfg.water_shore_day
+		water.water_mat.set_shader_parameter(&"deep_day", Vector3(dd.r, dd.g, dd.b))
+		water.water_mat.set_shader_parameter(&"shore_day", Vector3(sd.r, sd.g, sd.b))
 
 
 var _env: Environment

@@ -218,7 +218,7 @@ static func _roads(ctx: _Ctx, acc: Dictionary) -> void:
 		var half := maxf(w * 0.5, cfg.a2_road_min_half_bu)
 		var lift: float = float(cfg.a2_road_lift_ids[id]) if cfg.a2_road_lift_ids.has(id) else _lift_of(cfg.a2_road_lift, cls, k)
 		var glow: Color = cfg.a2_road_glow.get(cls, cfg.street)
-		_deck(ctx, acc["roads"], acc["road_glow"], acc["pillars"], r["polyline"], half, lift, cfg.street, glow,
+		_deck(ctx, acc["roads"], acc["road_glow"], acc["pillars"], r["polyline"], half, lift, cfg.a2_deck_color.get(cls, cfg.street), glow,
 			half * cfg.a2_road_glow_share, r["tunnels"])
 	var ramp_lift := _lift_of(cfg.a2_road_lift, &"arterial", 0)
 	for ix: Dictionary in ctx.a2.interchanges:

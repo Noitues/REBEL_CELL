@@ -69,12 +69,15 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.2, "win_emit": 0.75, "haze_k": 0.0}
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.2, "win_emit": 0.9, "trim_emit": 0.15, "haze_k": 0.0}
 @export var whole_day_water_gain: float = 0.6
 ## Water children hidden under the whole-city pose (CityWater node names).
 @export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections"])
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.35
+## The sea's day colours under the whole-city pose (the plate's deep blue bay and open sea).
+@export var whole_water_deep_day: Color = Color(0.012, 0.07, 0.2)
+@export var whole_water_shore_day: Color = Color(0.04, 0.18, 0.34)
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread
@@ -643,6 +646,9 @@ extends Resource
 @export var a2_pillar_every_bu: float = 18.0
 @export var a2_road_glow: Dictionary = {&"ring": Color(1.0, 0.62, 0.32), &"motorway": Color(0.95, 0.55, 0.30),
 	&"truck": Color(0.85, 0.48, 0.25), &"arterial": Color(0.55, 0.45, 0.40), &"collector": Color(0.40, 0.36, 0.34)}
+## LOOK L5 (whole-city plate parity): the deck colour by road class (the plate's light concrete ring and motorways); others
+## keep `street`.
+@export var a2_deck_color: Dictionary = {&"ring": Color(0.40, 0.39, 0.38), &"motorway": Color(0.36, 0.35, 0.34), &"truck": Color(0.30, 0.29, 0.28)}
 @export var a2_road_glow_share: float = 0.5
 @export var a2_road_min_half_bu: float = 0.6
 @export var a2_deck_skirt_from: float = 0.3
