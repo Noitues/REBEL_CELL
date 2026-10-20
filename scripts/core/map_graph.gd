@@ -11,7 +11,8 @@ extends RefCounted
 ## map's dictionary and hash are unchanged.
 ## Halcyon HQ: cache, power and annex flags (`az`, the gaze azimuth in degrees, and `climb_from`, the
 ## climb source ids, are saved the same way).
-const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower", "cache", "power", "annex", "unique_kind", "unique_id"]
+const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower", "cache", "power", "annex", "unique_kind", "unique_id",
+		"start", "target", "exploit", "ward_dose", "frame", "level", "slot"]
 ## RG-06: node kinds a normal run never holds (a unique node names one in `unique_kind` and must be on the allow-list).
 const FORBIDDEN_KINDS: Array[String] = ["intel", "relay", "ambush"]
 ## RG-01: the node types only a v2 graph may hold.
@@ -235,6 +236,8 @@ static func from_dict(d: Dictionary) -> MapGraph:
 			for k in OPTIONAL_KEYS:
 				if node.has(k):
 					nd[k] = node[k]
+			if nd.has("level"):
+				nd["level"] = int(nd["level"])  # EX-03: JSON hands integers back as floats
 			if node.has("across_from"):
 				var af: Array[StringName] = []
 				for a in node["across_from"]:

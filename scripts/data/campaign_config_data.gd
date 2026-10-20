@@ -945,7 +945,7 @@ func _validate_exploit_building(errors: PackedStringArray) -> void:
 		errors.append("exploit_building_reach_lots and exploit_building_start_reach_lots must be >= 0.")
 	if exploit_building_lot_w_bu <= 0.0 or exploit_building_lot_d_bu <= 0.0 or exploit_building_clearance_bu < 0.0:
 		errors.append("exploit_building_lot_w_bu and exploit_building_lot_d_bu must be > 0, exploit_building_clearance_bu >= 0.")
-	if exploit_building_outside_layers < 1 or exploit_building_inside_layers < 3 or exploit_building_max_width < 1:
-		errors.append("exploit_building_outside_layers must be >= 1, exploit_building_inside_layers >= 3, exploit_building_max_width >= 1.")
+	if exploit_building_outside_layers < 1 or exploit_building_inside_layers < 3 or exploit_building_max_width < 3:
+		errors.append("exploit_building_outside_layers must be >= 1, exploit_building_inside_layers >= 3, exploit_building_max_width >= 3.")
 	if solace_garden_tier < 1 or solace_garden_tier > 4:
 		errors.append("solace_garden_tier must be in 1..4.")
