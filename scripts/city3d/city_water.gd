@@ -19,6 +19,7 @@ const COPING_STEP := 0.25
 ## Heights (BU) of the void and the sea above the ground plane (the void under the city's ground, the sea over it).
 const VOID_Y := -0.04
 const SEA_Y := 0.03
+const DIAG := 1.41421356
 
 var water_mat: ShaderMaterial
 var void_mat: ShaderMaterial

@@ -547,10 +547,10 @@ func _sync_hq_beams() -> void:
 		var sd: Color = cfg.whole_water_shore_day if whole_look else cfg.water_shore_day
 		water.water_mat.set_shader_parameter(&"deep_day", Vector3(dd.r, dd.g, dd.b))
 		water.water_mat.set_shader_parameter(&"shore_day", Vector3(sd.r, sd.g, sd.b))
-			# The void past the terrain reads as a square slab of sea; the plate's sea runs on to the horizon.
-			var vd := water.get_node_or_null(^"Void") as MeshInstance3D
-			if vd != null:
-				vd.material_override = water.water_mat if whole_look else water.void_mat
+		# The void past the terrain reads as a square slab of sea; the plate's sea runs on to the horizon.
+		var vd := water.get_node_or_null(^"Void") as MeshInstance3D
+		if vd != null:
+			vd.material_override = water.water_mat if whole_look else water.void_mat
 
 
 var _env: Environment
