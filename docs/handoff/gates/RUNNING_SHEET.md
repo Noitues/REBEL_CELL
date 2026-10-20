@@ -13,6 +13,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D15 | 10-20 | City rules after the LOOK L5 merge: inside an HQ zone the HQ height cap (NA-11c) wins over the 6-floor frontage minimum (NA-11), so the HQ reads as the tallest mass. Outside HQ zones the frontage minimum holds. | The frontage minimum wins and the HQ cap gives way |
 | D14 | 10-20 | Solace balance r1: Genome Core HP 360 → 400 (the reference policy wins 52 %), Claims Adjuster 112 → 96, Account Manager 150 → 128. Tuned by HP only; enrage and phases unchanged. The class bands in `docs/balance/TARGETS.md` were set after measuring. | Tune enrage instead of HP; set the bands yourself |
 | D13 | 10-19 | Two more city tests went red with CITY-A2 step 2 (`test_city_geometry_memo` roofs, `test_city_map_sweeps` Site fit) and are pending until art/look's city work lands. Bisected to 606de8db and 964949bb. | none |
 | D12 | 10-19 | Run graph v2 is on by default, so REST / WORKSHOP / CACHE show up in normal runs. WORKSHOP is the existing slice refit at its own price; neither N18 slice levels nor card upgrades exist yet. The CACHE puzzle is off. REST is guaranteed in layers 4-5, and the draft's "no REST before a Mainframe" exclusion is not built. The Solace ladder keeps its own ward rest (not the REST page). | Turn v2 off (`map_v2_enabled`); give the ward rest heal or swap |
