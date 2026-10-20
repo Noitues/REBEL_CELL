@@ -12,6 +12,7 @@ const WIN := CityA2Hqs.WIN
 const NEON := CityA2Hqs.NEON
 const POLICE_SHADER := preload("res://shaders/city/police_light.gdshader")
 const SPOT_SHADER := preload("res://shaders/city/spot_light.gdshader")
+const POOL_SHADER := preload("res://shaders/city/spot_pool.gdshader")
 const SALT_PORT := 811
 const SALT_SHIP := 823
 const SALT_ISLE := 827
@@ -26,6 +27,7 @@ var islands: Array[Dictionary] = []
 var b := CityA2Hqs._Build.new()
 var blink := SurfaceTool.new()
 var spot := SurfaceTool.new()
+var pool := SurfaceTool.new()
 var _blinks: int = 0
 var _spots: int = 0
 ## The lots the port's yard covers (its buildings give way): Vector2i -> true.
@@ -45,6 +47,7 @@ static func make(p_cfg: CityConfig, plan: CityPlan, p_islands: Array[Dictionary]
 	d.islands = p_islands
 	d.blink.begin(Mesh.PRIMITIVE_TRIANGLES)
 	d.spot.begin(Mesh.PRIMITIVE_TRIANGLES)
+	d.pool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	d._port()
 	d._ships()
 	d._islands()
@@ -61,6 +64,7 @@ static func make(p_cfg: CityConfig, plan: CityPlan, p_islands: Array[Dictionary]
 		fx.append(d._fx_node(root, "Blinks", d.blink, POLICE_SHADER, d.look.get("police", {})))
 	if d._spots > 0:
 		fx.append(d._fx_node(root, "Spots", d.spot, SPOT_SHADER, d.look.get("spot", {})))
+		fx.append(d._fx_node(root, "Pools", d.pool, POOL_SHADER, d.look.get("pool", {})))
 	return {"node": root, "fx": fx, "mask": d.mask}
 
 
@@ -277,11 +281,12 @@ func _ship(c: Vector2, dir: Vector2, len_m: float, cargo: bool, idx: int, wake: 
 	light(house + Vector3(0, fb + hh + 0.4, 0), f, 0.4, 0.4, 0.4, Color(1.0, 0.95, 0.75), _h(idx, SALT_SHIP + 2))
 	if wake:
 		var wl := L * float(look.get("wake_k", 1.6))
+		var ww := float(look.get("wake_w_k", 1.4))
 		var foam := _col("wake", Color(0.80, 0.90, 0.92))
 		var y := 0.06
 		var tail := stern - f * wl
-		b.tri(TOON, stern - s * W * 0.45 + Vector3(0, y, 0), stern + s * W * 0.45 + Vector3(0, y, 0), tail + s * W * 1.4 + Vector3(0, y, 0), foam)
-		b.tri(TOON, stern - s * W * 0.45 + Vector3(0, y, 0), tail + s * W * 1.4 + Vector3(0, y, 0), tail - s * W * 1.4 + Vector3(0, y, 0), foam * 0.9)
+		b.tri(TOON, stern - s * W * 0.45 + Vector3(0, y, 0), stern + s * W * 0.45 + Vector3(0, y, 0), tail + s * W * ww + Vector3(0, y, 0), foam)
+		b.tri(TOON, stern - s * W * 0.45 + Vector3(0, y, 0), tail + s * W * ww + Vector3(0, y, 0), tail - s * W * ww + Vector3(0, y, 0), foam * 0.9)
 
 
 ## True when A2 point `m` is open water: in the ocean, deep enough, off the islands and the port.
@@ -463,8 +468,8 @@ func _pool(c: Vector3, r: float, col: Color) -> void:
 		var t0 := TAU * k / n
 		var t1 := TAU * (k + 1) / n
 		for e: Array in [[c, a], [c + Vector3(cos(t0), 0, sin(t0)) * r, 0.0], [c + Vector3(cos(t1), 0, sin(t1)) * r, 0.0]]:
-			spot.set_color(Color(col.r, col.g, col.b, e[1]))
-			spot.add_vertex(e[0])
+			pool.set_color(Color(col.r, col.g, col.b, e[1]))
+			pool.add_vertex(e[0])
 
 
 # --- Police on the highways ----------------------------------------------------------------------------------------------

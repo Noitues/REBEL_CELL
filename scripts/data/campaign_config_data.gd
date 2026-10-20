@@ -486,8 +486,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_sink_bu: Vector2 = Vector2(3.0, 7.0)
 ## Past the outer ring by more than this (lots), open Sprawl land has no local streets either.
 @export var city_a2_sprawl_streets: float = 16.0
-## LOOK L5 (designer 2026-10-20): past the outer ring, a local street lot with no building lot within this many lots
-## (Chebyshev) is open land (0 = keep every street).
+## LOOK L5 (designer 2026-10-20): a local street lot with no building lot within this many lots (Chebyshev) is open land
+## (0 = keep every street; a Site's streets always stay).
 @export var city_a2_prune_streets: int = 0
 ## Within this many lots of a Site the sprawl does not thin (the run's street keeps its frontage).
 @export var city_a2_sprawl_site_keep: int = 8

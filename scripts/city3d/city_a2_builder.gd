@@ -399,8 +399,8 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 						var kq := (q.y - R.position.y) * w + (q.x - R.position.x)
 						if kind[kq] == K_GROUND and not _near_site(plan, q):
 							kind[kq] = K_BARE
-	# LOOK L5 (designer 2026-10-20): past the outer ring a local street with no building lot within
-	# `city_a2_prune_streets` lots is open land too (no empty street blocks at the city's edge; a Site's streets stay).
+	# LOOK L5 (designer 2026-10-20): a local street with no building lot within `city_a2_prune_streets` lots is open land
+	# too (no empty street blocks round parks and the city's edge; a Site's streets stay).
 	var pr := cfg.city_a2_prune_streets
 	if pr > 0 and plan.terrain != null:
 		var drop: Array[int] = []
@@ -408,7 +408,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			if kind[k] != K_STREET or rank[k] != 0:
 				continue
 			var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
-			if plan.terrain.outside_ring(l.x + 0.5, l.y + 0.5) <= 0.0 or zone.has(l) or _near_site(plan, l):
+			if zone.has(l) or _near_site(plan, l):
 				continue
 			var built := false
 			for dj in range(-pr, pr + 1):

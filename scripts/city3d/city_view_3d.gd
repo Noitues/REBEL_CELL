@@ -588,7 +588,7 @@ func _whole_landmarks() -> void:
 func _dress_fx() -> void:
 	var dd: Dictionary = _a2_hqs.get("~dress", {})
 	for m: ShaderMaterial in dd.get("fx", []):
-		if m.shader == CityA2Dress.SPOT_SHADER:
+		if m.shader == CityA2Dress.SPOT_SHADER or m.shader == CityA2Dress.POOL_SHADER:
 			m.set_shader_parameter(&"on", night_share)
 		else:
 			m.set_shader_parameter(&"on", lerpf(float(cfg.a2_dress.get("police_day_on", 0.5)), 1.0, night_share))

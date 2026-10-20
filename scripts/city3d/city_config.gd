@@ -449,16 +449,16 @@ extends Resource
 	"container_cols": [Color(0.42, 0.17, 0.13), Color(0.15, 0.24, 0.36), Color(0.20, 0.32, 0.24), Color(0.50, 0.40, 0.18),
 		Color(0.52, 0.52, 0.50), Color(0.33, 0.22, 0.20), Color(0.30, 0.30, 0.32)],
 	"ships": 16, "ship_len_m": Vector2(120.0, 320.0), "ship_beam_k": 0.16, "ship_freeboard_bu": 0.6, "house_h_bu": 1.4,
-	"ship_depth_bu": 3.0, "ship_isle_rho": 2.4, "ship_gap_m": 900.0, "wake_k": 1.6,
+	"ship_isle_rho": 2.4, "ship_gap_m": 900.0, "wake_k": 0.9, "wake_w_k": 0.7,
 	"hull_cols": [Color(0.18, 0.20, 0.24), Color(0.45, 0.14, 0.12), Color(0.20, 0.30, 0.38), Color(0.85, 0.85, 0.82)],
-	"house": Color(0.90, 0.90, 0.88), "ship_win": Color(1.0, 0.85, 0.55), "wake": Color(0.80, 0.90, 0.92),
+	"house": Color(0.90, 0.90, 0.88), "ship_win": Color(1.0, 0.85, 0.55), "wake": Color(0.42, 0.55, 0.60),
 	"isle_stone": Color(0.66, 0.62, 0.55), "isle_roof": Color(0.55, 0.30, 0.22), "isle_win": Color(1.0, 0.82, 0.5),
 	"helis": 6, "heli_alt_bu": 38.0, "heli_reach_m": 900.0, "heli_body": Color(0.12, 0.13, 0.16), "heli_scale": 1.8,
-	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 9.0, "spot_cone_a": Vector2(0.9, 0.25),
+	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 9.0, "spot_cone_a": Vector2(0.45, 0.08),
 	"pool_a": 0.8,
 	"cops_per_road": 3, "cop_classes": [&"ring", &"motorway"], "cop_bar_bu": Vector3(2.2, 0.9, 0.5),
 	"police": {"gain": 5.0, "rate": 1.6}, "police_day_on": 0.5,
-	"spot": {"gain": 1.1, "soft": 1.2},
+	"spot": {"gain": 0.6, "soft": 2.5}, "pool": {"gain": 0.7, "soft": 0.0},
 }
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
@@ -890,13 +890,13 @@ extends Resource
 @export var whole_drowned_depth_bu: float = 3.0
 @export var whole_drowned_shore_lots: float = 2.0
 ## Its shader parameters (Colors go in as vec3).
-@export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.35,
-	"sky_horizon_day": Color(0.36, 0.52, 0.74), "sky_zenith_day": Color(0.10, 0.22, 0.42),
+@export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.2,
+	"sky_horizon_day": Color(0.34, 0.46, 0.60), "sky_zenith_day": Color(0.10, 0.22, 0.42),
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.4, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
-	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.12,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(3.0, 40.0), "caustic_deep_k": 0.12,
 	"night_alpha_deep": 0.4, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
