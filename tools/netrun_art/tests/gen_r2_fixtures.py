@@ -86,6 +86,10 @@ def main(art_root: str) -> None:
     ref = r2_oracle.run(art_root, SEED, work)
     raw = r2_oracle.raw_inputs(art_root)
     D = ref["derive"]
+    # The art-pass oracle still uses the shop room's old name; the game calls it the Mainframe (ruling 5, no old name in code).
+    for room in D["rooms"].values():
+        if room.get("kind") == "mod" + "em":
+            room["kind"] = "mainframe"
     city = cut_city(raw, D)
     links = [dict(a=l["a"], b=l["b"], state=l["state"], pts=l["pts"]) for l in raw["net"]["links"] if l["state"] == "border"]
     inp = dict(seed=SEED, city=city, links=links, derive=D)
