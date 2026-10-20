@@ -47,21 +47,21 @@ static func mesh(cfg: CityConfig, parks: Array[Vector2i], terrain: CityA2Terrain
 	for l in parks:
 		# Designer 2026-10-20: no hard lawn squares: each lot's lawn in nd x nd cells, its colour from the park field
 		# (bilinear over the lot centres, broken by noise) fading to park_edge where the park ends, and two lawn tones.
-		var g: Array[Vector3] = []
-		var c: Array[Color] = []
+		var lg: Array[Vector3] = []
+		var lc: Array[Color] = []
 		for vj in nd + 1:
 			for vi in nd + 1:
 				var at := Vector2(l) + Vector2(vi, vj) / float(nd)
-				g.append(CityIsoCamera.lot_to_world(cfg, at, terrain.height_at(at.x, at.y) + cfg.park_lawn_lift))
-				c.append(_lawn(cfg, is_park, terrain, at))
+				lg.append(CityIsoCamera.lot_to_world(cfg, at, terrain.height_at(at.x, at.y) + cfg.park_lawn_lift))
+				lc.append(_lawn(cfg, is_park, terrain, at))
 		for vj in nd:
 			for vi in nd:
 				var k := vj * (nd + 1) + vi
 				var ks: Array[int] = [k, k + 1, k + nd + 2, k + nd + 1]
-				for t: Array in [[0, 1, 2], [0, 2, 3]]:
-					for e: int in t:
-						st.set_color(c[ks[e]])
-						st.add_vertex(g[ks[e]])
+				for tri: Array in [[0, 1, 2], [0, 2, 3]]:
+					for e: int in tri:
+						st.set_color(lc[ks[e]])
+						st.add_vertex(lg[ks[e]])
 		if CityMeshKit.hash01(SEED_PICK, l.x, l.y) >= cfg.park_tree_share:
 			continue
 		var n := 0
