@@ -44,7 +44,7 @@ extends Resource
 @export var whole_pose_yaw_deg: float = 90.0
 @export var whole_pose_pitch_deg: float = 33.0
 @export var whole_pose_fov_deg: float = 65.47
-@export var whole_pose_dist_bu: float = 1130.0
+@export var whole_pose_dist_bu: float = 920.0
 @export var whole_pose_target_lots: Vector2 = Vector2(2.0, 2.0)
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
@@ -69,7 +69,7 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 1.5, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 2.4, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0}
 ## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
 @export var whole_bloom_thr: float = 0.55
@@ -82,9 +82,12 @@ extends Resource
 	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]
 @export var whole_day_water_gain: float = 0.6
 ## Water children hidden under the whole-city pose (CityWater node names).
-@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections"])
+@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWallLight"])
+## LOOK L5: the A2 feature parts hidden at the whole-city pose (the rail glow dashes read as a wireframe overlay, the
+## port piers as black bars on the bay rim).
+@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## The sea's caustic gain share under the whole-city pose.
-@export var whole_caustic_k: float = 0.35
+@export var whole_caustic_k: float = 0.12
 ## The sea's day colours under the whole-city pose (the plate's deep blue bay and open sea).
 @export var whole_water_deep_day: Color = Color(0.012, 0.07, 0.2)
 @export var whole_water_shore_day: Color = Color(0.04, 0.18, 0.34)

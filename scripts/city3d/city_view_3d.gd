@@ -479,6 +479,7 @@ func _whole_day(day: Dictionary) -> Dictionary:
 	d["sky"] = cfg.whole_day_sky
 	d["haze"] = cfg.whole_day_haze
 	d["haze_k"] = cfg.whole_day_haze_k
+	d["rain_alpha"] = 0.0  # the plate has no rain
 	return d
 
 
@@ -537,6 +538,11 @@ func _sync_hq_beams() -> void:
 	var nl := layer(&"network")
 	if nl != null:
 		nl.visible = not whole_look
+	if features != null:
+		for nm: String in cfg.whole_hide_features:
+			var fp := features.get_node_or_null(NodePath(nm)) as Node3D
+			if fp != null:
+				fp.visible = not whole_look
 	var bl := layer(&"buildings")
 	if bl != null:
 		for ch in bl.get_children():
