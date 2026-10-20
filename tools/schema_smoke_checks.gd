@@ -43,6 +43,8 @@ func _wh02_corp_theme_config() -> int:
 	if shipped == null or shipped.node_weight_cache != 60 or shipped.cache_layers != Vector2i(2, 6) or shipped.cache_cycles_range != Vector2i(30, 60) or shipped.cache_card_choices != 3 or shipped.cache_puzzle_enabled: fails += 1
 	# WH-10: the Solace HQ ladder keys.
 	if d.solace_hq_rungs != 9 or d.solace_hq_mini_boss_rung != 9 or d.solace_hq_ward_rest_rungs != PackedInt32Array([5, 8]) or d.solace_hq_ward_weights.size() != 5 or d.solace_hq_billing_weights.size() != 5: fails += 1
+	# EX-02 / EX-03: the exploit building keys.
+	if d.exploit_building_kinds != {"solace/virus": "culture_garden"} or d.exploit_building_clearance_bu != 8.0 or d.exploit_building_lot_w_bu != 48.0 or d.exploit_building_lot_d_bu != 36.0 or d.exploit_building_outside_layers != 4 or d.exploit_building_inside_layers != 5 or d.exploit_building_max_width != 3: fails += 1
 	d.bloom_dose_price = 21
 	d.blade_classes_l1 = [&"ELITE"] as Array[StringName]
 	var err := ResourceSaver.save(d, "user://smoke_wh02_config.tres")
