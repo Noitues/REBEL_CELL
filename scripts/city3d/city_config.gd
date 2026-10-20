@@ -788,7 +788,7 @@ extends Resource
 @export var island_spread: float = 1.6
 ## The seabed shader (city_seabed.gdshader): the plate's clear-water fade and caustics (Colors go in as vec3).
 @export var seabed_water: Dictionary = {"sigma": Color(0.090, 0.034, 0.016), "inscatter": Color(0.003, 0.018, 0.055),
-	"inscatter_gain": 2.0, "inscatter_day_gain": 5.0, "path_cap": 600.0, "caustic_k": 1.1, "caustic_scale": 0.05, "caustic_width": 0.22,
+	"inscatter_gain": 2.0, "inscatter_day_gain": 12.0, "path_cap": 600.0, "caustic_k": 1.1, "caustic_scale": 0.05, "caustic_width": 0.22,
 	"caustic_distort": 0.9, "caustic_floor": 0.12, "caustic_patch": 0.05, "caustic_patch_scale": 0.025,
 	"caustic_depth_bu": 70.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
@@ -803,8 +803,8 @@ extends Resource
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.02, 0.17, 0.28),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
-	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.05, 0.20, 0.24), "marble_scale": 0.05,
-	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
+	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.03, 0.11, 0.13), "marble_scale": 0.05,
+	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.3, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.3, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
