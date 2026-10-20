@@ -124,6 +124,17 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		if extra_resistance > 0:
 			e.wheel.passive_resistance += extra_resistance
 			e.resistance = e.full_resistance()
+		# Plan 2 EV-01: Terminal event modifiers (static values, no RNG).
+		var event_res := int(overrides.get("event_resistance_delta", 0))
+		if event_res != 0:
+			e.wheel.passive_resistance = maxi(0, e.wheel.passive_resistance + event_res)
+			e.resistance = e.full_resistance()
+		var event_hp_pct := int(overrides.get("event_hp_pct", 0))
+		if event_hp_pct != 0:
+			e.max_hp = maxi(1, roundi(e.max_hp * (100 + event_hp_pct) / 100.0))
+			e.hp = e.max_hp
+		if bool(overrides.get("event_enemy_frozen", false)):
+			e.wheel.frozen = true
 		if enemy_datas[i].is_boss:
 			_add_pointers(e, int(overrides.get("boss_extra_pointer", 0)))
 			_trim_pointers(e, int(s.flags["boss_pointer_removal"]))

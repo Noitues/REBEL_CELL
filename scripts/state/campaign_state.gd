@@ -58,6 +58,8 @@ var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
 var last_raid: Dictionary = {}
 var outcome: int = Outcome.NONE
+## Plan 2 EV-01: the pending raid modifier a Terminal event left (EventRules.raid_entry), spent by the next raid.
+var next_raid_mods: Dictionary = {}
 ## Plan 2 WH-02: the corporation themes' campaign and raid fields (CampaignThemeState). Saved
 ## as "corp_theme" only when a field is not default, so older saves load it as defaults and a
 ## campaign without theme data hashes as before.
@@ -189,6 +191,8 @@ func _raw_dict() -> Dictionary:
 	var theme := corp_theme.to_dict()
 	if not theme.is_empty():  # absent at defaults: campaigns without theme data hash as before WH-02
 		out["corp_theme"] = theme
+	if not next_raid_mods.is_empty():  # EV-01: additive, absent at default
+		out["next_raid_mods"] = next_raid_mods.duplicate()
 	return out
 
 
@@ -236,6 +240,11 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	var theme: Variant = d.get("corp_theme", {})
 	if theme is Dictionary:
 		c.corp_theme.load_dict(theme)
+	var raid_mods: Variant = d.get("next_raid_mods", {})
+	if raid_mods is Dictionary:
+		c.next_raid_mods = {}
+		for k in raid_mods:
+			c.next_raid_mods[String(k)] = raid_mods[k] if raid_mods[k] is bool else int(raid_mods[k])
 	return c
 
 

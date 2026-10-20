@@ -159,6 +159,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## (EnemyData.normal_pool), later ones from HARD. An old save without the counter counts as
 ## N once its current node lies past layer N, else 0 (NetrunSession.from_dict).
 @export var easy_normal_fights: int = 2
+## Plan 2 EV-01: the highest tier an event fight's tier_delta can raise the enemy tables to.
+@export var event_fight_tier_cap: int = 4
 @export var map_layers: int = 7
 @export var map_nodes_min: int = 2
 @export var map_nodes_max: int = 4
@@ -665,6 +667,8 @@ func validate() -> PackedStringArray:
 	_validate_enrage(errors)
 	if easy_normal_fights < 0:
 		errors.append("easy_normal_fights must be >= 0.")
+	if event_fight_tier_cap < 1 or event_fight_tier_cap > enemy_hp_scale_by_tier.size():
+		errors.append("event_fight_tier_cap must be 1..%d (the tiers the enemy tables cover)." % enemy_hp_scale_by_tier.size())
 	if resistance_min_by_class.size() != RC.EnemyClass.size() or resistance_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Resistance ranges need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

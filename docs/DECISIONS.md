@@ -9322,3 +9322,43 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/halcyon.md`, `drafts/hq/halcyon.md`. 
 6. The reachability solver checks a climb-free open path and, per climb, one open node in every layer from the target on; Alert 0 and the normal beam.
 7. The launch card / chip text uses TextDb keys; the view for Stall, Cut the Power, the eye dial and the node-state badges is a data hook only (`hq_option_states`, `hq_dial`, `hq_edge_preview`, `stall_preview`, `cut_power_preview`, `EyeRules.launch_preview`), left to the art / UI pass.
 8. `eye_shuttered_cost_heat` (v1 draft) is now unused; left in config.
+### 2026-10-19 - EV-01: the minimal event-schema extension (Solace vertical; schema change, rule 8)
+- Designer 2026-10-19: one corp at a time, Solace first. Built only what the Solace drafts (01, 08, 14, 20) and the generic
+  ones Solace can draw (26, 30, 27) need. New data Resources (`scripts/data/`): `EventCombatModsData` (enemy_wheel_frozen,
+  enemy_resistance_delta, enemy_hp_pct, player_extra_free_nudges, reveal_phases, tier_delta, extra_enemy_id,
+  extra_enemy_random_normal, duration_combats), `EventFightData` (enemy_id, combat_overrides, normal_rewards, entry_heat,
+  stake_min_hp_pct, win_cycles, win_heat, win_common_firmware), `EventRaidModsData` (strength_pct, extra_waves,
+  extra_waves_chance_pct, scout_bonus), `MapEditData` (op ADD_LINK / CLOSE_NODE / CONVERT_NODE / REVEAL_TYPE / SKIP_LAYER,
+  layer_offset, layer_count, convert_from / convert_to, use_previous_target), `EventWheelData` + `EventWheelSliceData`.
+  New fields, all defaulting to none: `EventChoiceData.starts_combat`, `next_combat_overrides`, `next_raid_overrides`,
+  `event_wheel`, `map_edits`, `common_firmware`; `TerminalEventData.venue` (TERMINAL / RAID_WIN / HQ_VIEW; the Terminal pool
+  draws TERMINAL only); `CampaignConfigData.event_fight_tier_cap` = 4 (config). Both events and choices now have `validate()`.
+- Rules in `scripts/core/` (`EventRules`, `MapEditRules`) and `NetrunSession` (`choose_event_option`, `event_wheel_*`,
+  `map_edits_preview`, `_start_event_fight`). Additive state, absent from the save at defaults: `RunState.combat_mods`,
+  `event_fight`, `event_wheel`, `closed_nodes`, `revealed_nodes`; `CampaignState.next_raid_mods`. No new RNG stream: the wheel
+  start tick, the "rumor" roll, the random common Firmware and the random escort all read the existing `events` stream, once,
+  when the choice is taken (kept in the run, so a reload cannot reroll). Map edits and wheel nudges draw nothing. Preview ==
+  result: `map_edits_preview` is `MapEditRules.apply` on copies; `event_wheel_preview` names the slice after a nudge; the
+  button text shows "?" only where the stream is read (wheel start, Firmware, the rumor wave).
+- Tests: tests/unit/test_event_schema_ev01.gd (fast); smoke check `_ev01_event_schema`.
+- DEFAULTS TAKEN (drafts silent or in conflict):
+  - Map picks are deterministic (fewest inbound links, then node id), not random and not a player pick: 08's "random closed
+    node" and "player picks the link target" become the same rule as 30's. CLOSE_NODE never closes a Rack, the last open node
+    of a layer, or the only route to the final node. CONVERT_NODE converts Routers only (never a Mainframe or Rack).
+    SKIP_LAYER is refused when any open next node is a Rack (Q on 26: Racks exempt).
+  - A pending modifier counts completed fights (a skipped node burns no charge) and ends with the netrun (RunState). It applies
+    to whichever fight comes next. 30's `debt_due` is "the next fight gains one random normal enemy of the corporation's pool".
+  - `enemy_hp_pct` scales each starting enemy (and the escort), floor 1 HP; boss phase HP is untouched. The tier delta clamps to
+    `event_fight_tier_cap` (Q on 14: an ambush may not exceed the run's ceiling).
+  - Event fights: not a node fight (the EASY-pool counter is untouched). `normal_rewards` true (20 Referral) pays the Router
+    rewards and the payload; false (14, 26) pays the payload only. A lost stake (14) is a won fight that pays nothing.
+  - 20 "+1 Block on the added Collections Agent" is dropped: Block expires at turn start, so it would do nothing.
+  - 14 choice 3 costs 6 HP as its fields say (its label's "-1 HP scuffle" is a typo).
+  - Wheel: pointer wraps (Q on 20); no R11 sub-tick quality tiers (20's WEAK-pays-12 is dropped; every slice pays in full);
+    no Undo (a nudge is reversed by nudging back, which costs again); a slice may kill (previewed, nudge away or pay).
+  - RAID_WIN / HQ_VIEW venues exist as data only: 27 is authored (RAID_WIN) and dormant until a raid-win host opens it; its
+    next-raid modifier is stored on the campaign and spent by `CampaignRules.fight_raid` (the raid-setup scout bonus has no
+    view yet). 29 (HQ_VIEW crate) is not authored: it needs an out-of-run fight host and a Daemon rarity pool.
+- Open questions for the designer: (1) should a raid-win event host (27) open after every won raid, or with a chance? (2) 29
+  needs an HQ-view event host and an out-of-run fight; build it with the HQ events slice? (3) Should 08's link target be a
+  player pick (a map-view interaction) instead of the deterministic pick?

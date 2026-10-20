@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/map_edit_data.gd" id="edit"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_combat_mods_data.gd" id="mods"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/30_paths_any.md.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("edit")
+op = 0
+layer_offset = 2
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("edit")
+op = 3
+use_previous_target = true
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("mods")
+extra_enemy_random_normal = true
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("ch")
+label = "Borrow the shortcut (no cost now; the next fight gains an extra enemy)"
+result_text = "The map redraws itself. A lane you couldn't see is suddenly open, stamped with a due date. The kiosk logs your handle."
+map_edits = Array[ExtResource("edit")]([SubResource("s1"), SubResource("s2")])
+next_combat_overrides = SubResource("s3")
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("edit")
+op = 0
+layer_offset = 2
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("edit")
+op = 3
+use_previous_target = true
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("edit")
+op = 2
+use_previous_target = true
+convert_from = 0
+convert_to = 1
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("ch")
+label = "Pay 40 Cycles for the clean lane"
+result_text = "You feed the kiosk. The ledger scrubs your name, and the toll road swings open with no strings. Cheap it isn't."
+cycle_cost = 40
+map_edits = Array[ExtResource("edit")]([SubResource("s5"), SubResource("s6"), SubResource("s7")])
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="s10"]
+script = ExtResource("edit")
+op = 1
+layer_offset = 1
+
+[sub_resource type="Resource" id="s11"]
+script = ExtResource("ch")
+label = "Burn the ledger (-1 Heat, cut a lane)"
+result_text = "You overload the kiosk and the names turn to static. The debt is wiped, but so is the road: a layer ahead loses an option when the ledger's host node goes dark."
+map_edits = Array[ExtResource("edit")]([SubResource("s10")])
+effects = Array[ExtResource("fx")]([SubResource("s9")])
+
+[sub_resource type="Resource" id="s12"]
+script = ExtResource("ch")
+label = "Walk on"
+result_text = "You leave the kiosk to its names. It will keep asking."
+
+[resource]
+script = ExtResource("main")
+id = &"ev_toll_ledger_debt"
+title = "The Toll Ledger"
+speaker = 1
+text = "A gutted payphone kiosk sits between two server stacks, its screen scrolling a ledger of names. Every name is a runner who bought a shortcut on credit and never closed the account. The kiosk's last line is blinking: YOUR LINE OF CREDIT IS APPROVED. Somebody built a toll road through this net and still collects on it. Everything here has a price, and the bill is always sent late."
+choices = Array[ExtResource("ch")]([SubResource("s4"), SubResource("s8"), SubResource("s11"), SubResource("s12")])
+corporation_id = &""
+min_tier = 1
+weight = 0.8

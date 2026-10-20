@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/event_fight_data.gd" id="fight"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_combat_mods_data.gd" id="mods"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/14_ambush_solace.md.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("mods")
+tier_delta = 1
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("fight")
+enemy_id = &"collections_agent"
+combat_overrides = SubResource("s1")
+normal_rewards = false
+stake_min_hp_pct = 40
+win_cycles = 35
+win_heat = -2
+win_common_firmware = true
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("ch")
+label = "Hold the door while she uploads (fight; win her statement: +35 Cycles, -2 Heat, a Firmware chip; finish above 40% HP)"
+result_text = "The sweep kicks in right on schedule. She types through the whole thing, lips moving, saying names."
+starts_combat = SubResource("s2")
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 45
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 4
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("mods")
+extra_enemy_id = &"collections_agent"
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("ch")
+label = "Sell her location to the sweep (+45 Cycles, +4 Heat; the next fight gains an escort)"
+result_text = "The collectors pay by the head. She doesn't scream. She just looks at you, and the badge goes dark."
+next_combat_overrides = SubResource("s6")
+effects = Array[ExtResource("fx")]([SubResource("s4"), SubResource("s5")])
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = -3
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("ch")
+label = "Pay for a quiet exit (-30 Cycles, -6 HP, -3 Heat)"
+result_text = "You burn credits on a service hatch and a fake reassignment. She leaves, and the statement leaves with her. A small piece of the sweep still catches you on the way."
+cycle_cost = 30
+hp_cost = 6
+effects = Array[ExtResource("fx")]([SubResource("s8")])
+
+[sub_resource type="Resource" id="s10"]
+script = ExtResource("ch")
+label = "Walk on"
+result_text = "You leave her under the desk. Behind you the handset pings again, then stops."
+
+[resource]
+script = ExtResource("main")
+id = &"ev_witness_statement"
+title = "Witness Statement"
+speaker = 1
+text = "A claims clerk sits curled under the Terminal desk, her badge still blinking green. She watched Solace sign off on a recall that bricked a whole block, and she wants it on record before they find her. Her handset pings every ten seconds; a Collections sweep is two corridors out. She says her statement is worth more than anything in this building, if she's still breathing when it uploads."
+choices = Array[ExtResource("ch")]([SubResource("s3"), SubResource("s7"), SubResource("s9"), SubResource("s10")])
+corporation_id = &"solace"
+min_tier = 2
+weight = 0.8

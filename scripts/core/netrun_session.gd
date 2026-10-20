@@ -659,11 +659,11 @@ func _sync() -> void:
 func available_nodes() -> Array[StringName]:
 	if run.phase != RunState.Phase.MAP or run.is_over():
 		return []
-	if run.current_node_id == &"":
-		return run.map.first_layer_ids()
 	var out: Array[StringName] = []
-	for n in run.current_node().get("next", []):
-		out.append(n)
+	var from: Array = run.map.first_layer_ids() if run.current_node_id == &"" else run.current_node().get("next", [])
+	for n in from:
+		if not run.closed_nodes.has(n):  # EV-01: a node an event closed cannot be entered
+			out.append(n)
 	return out
 
 
@@ -777,7 +777,7 @@ func _start_combat(elite: bool) -> void:
 
 ## The fight a node would start: the foe and the fight seed drawn from `combat_rng` (the
 ## run's combat stream, or a copy of it for a preview), and the operative's overrides.
-func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator) -> Dictionary:
+func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator, fight: EventFightData = null) -> Dictionary:
 	var boss_exploits := {}
 	var pool: Array = _pools["elites"] if elite else normal_pool()
 	if final_rack and not _pools["mini_bosses"].is_empty():
@@ -785,7 +785,9 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	if pool.is_empty():
 		pool = _pools["enemies"] if elite else _pools["elites"]
 	var enemy_id: StringName = pool[combat_rng.randi_range(0, pool.size() - 1)]
-	if run.forced_enemy_id != &"":
+	if fight != null:
+		enemy_id = fight.enemy_id  # EV-01: the fight an event opens (the pool draw above is still made)
+	elif run.forced_enemy_id != &"":
 		enemy_id = run.forced_enemy_id
 	elif bool(run.current_node().get("boss", false)) and corporation != null and corporation.final_boss != null:
 		enemy_id = corporation.final_boss.id  # WH-10: the HQ ladder's crown is the final boss
@@ -811,11 +813,23 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
-	return {"enemy_id": enemy_id, "seed": seed, "overrides": overrides, "class_id": op.class_id, "ring_id": op.ring_id(cls)}
+	# EV-01: pending next_combat_overrides and the opened fight's own modifiers.
+	var folded := EventRules.fold(run.combat_mods, fight.combat_overrides if fight != null else null)
+	if not EventRules.fold_is_empty(folded):
+		var event_overrides := EventRules.combat_overrides(folded, run.tier, config.event_fight_tier_cap)
+		for k in event_overrides:
+			overrides[k] = event_overrides[k]
+		if int(folded["nudges"]) != 0:
+			overrides["extra_free_nudges"] = int(overrides.get("extra_free_nudges", 0)) + int(folded["nudges"])
+	return {"enemy_id": enemy_id, "seed": seed, "overrides": overrides, "class_id": op.class_id, "ring_id": op.ring_id(cls),
+		"extra_enemy_ids": _strings(folded["extras"])}
 
 
 func _combat_from(setup: Dictionary) -> CombatSession:
-	return CombatSession.start(resolver, setup["class_id"], [setup["enemy_id"]], int(setup["seed"]), setup["ring_id"],
+	var enemy_ids: Array[StringName] = [setup["enemy_id"]]
+	for extra in setup.get("extra_enemy_ids", []):
+		enemy_ids.append(StringName(String(extra)))
+	return CombatSession.start(resolver, setup["class_id"], enemy_ids, int(setup["seed"]), setup["ring_id"],
 		campaign.heat_majors_crossed(config), setup["overrides"])
 
 
@@ -889,6 +903,7 @@ func _finish_combat() -> void:
 	var node := run.current_node()
 	if cs.outcome == CombatState.Outcome.DEFEAT:
 		combat = null
+		run.event_fight = {}
 		_die()
 		return
 	run.operative.hp = cs.player.hp
@@ -908,22 +923,27 @@ func _finish_combat() -> void:
 	run.combats_won += 1
 	if run.corp_theme.halcyon.hq and run.corp_theme.halcyon.entered_state == EyeRules.NodeState.SPOTTED:
 		run.corp_theme.halcyon.hq_alert += config.hq_alert_gain_eye_fight  # rule 16: a fight completed IN THE EYE
+	run.combat_mods = EventRules.spend(run.combat_mods)  # EV-01: a completed fight spends one charge
 	var elite: bool = node["elite"]
 	var ladder := run.kind == HQ_LADDER_KIND
 	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
 	if elite:
 		run.elites_defeated += 1
 	var rewards := streams.get_stream(&"rewards")
-	var range_: Vector2i = config.cycles_elite_range if elite else config.cycles_router_range
-	if run.kind == "reclaim":
-		range_ = config.cycles_combat_range  # tiny rewards (GDD 3.3)
-	var cycles := roundi(rewards.randi_range(range_.x, range_.y) * reward_scale())
-	run.cycles += cycles
-	last_events.append({"type": "cycles", "amount": cycles, "text": "Won the fight: +%d Cycles (%d)." % [cycles, run.cycles]})
-	if rewards.randf() < config.asset_drop_chance and not _pools["assets"].is_empty():
-		var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
-		run.unbanked_assets.append(asset)
-		last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
+	# EV-01: an event fight with normal_rewards false pays only its own payload.
+	var normal := run.event_fight.is_empty() or bool(run.event_fight.get("normal", true))
+	if normal:
+		var range_: Vector2i = config.cycles_elite_range if elite else config.cycles_router_range
+		if run.kind == "reclaim":
+			range_ = config.cycles_combat_range  # tiny rewards (GDD 3.3)
+		var cycles := roundi(rewards.randi_range(range_.x, range_.y) * reward_scale())
+		run.cycles += cycles
+		last_events.append({"type": "cycles", "amount": cycles, "text": "Won the fight: +%d Cycles (%d)." % [cycles, run.cycles]})
+		if rewards.randf() < config.asset_drop_chance and not _pools["assets"].is_empty():
+			var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
+			run.unbanked_assets.append(asset)
+			last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
+	_event_fight_payout()
 	if run.kind != "netrun" and not ladder:
 		combat = null
 		_complete_run()
@@ -932,11 +952,12 @@ func _finish_combat() -> void:
 		combat = null  # the crown is down: the HQ run completes (campaign WON)
 		_complete_run()
 		return
-	_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
-	if elite and not is_rack:
-		_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
-	elif not elite and rewards.randf() < config.router_firmware_chance:
-		_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
+	if normal:
+		_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
+		if elite and not is_rack:
+			_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
+		elif not elite and rewards.randf() < config.router_firmware_chance:
+			_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
 	if is_rack:
 		_capture_rack()
 		# The layer-4 Rack offers a Daemon; the final Rack's prize is the Site's objective
@@ -1131,6 +1152,8 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 	var ev := current_event()
 	if run.phase != RunState.Phase.EVENT or ev == null:
 		return _refuse("No event open.")
+	if not run.event_wheel.is_empty():
+		return _refuse("Resolve the wheel first.")
 	if index < 0 or index >= ev.choices.size():
 		return _refuse("No such choice.")
 	var choice := ev.choices[index]
@@ -1145,14 +1168,203 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 			_apply_run_effect(e)
 	if choice.reward != null:
 		_grant_resource(choice.reward)
+	_apply_map_edits(choice.map_edits)
+	if choice.common_firmware:
+		_offer_common_firmware()
+	if choice.next_combat_overrides != null:
+		_queue_combat_mods(choice.next_combat_overrides)
+	if choice.next_raid_overrides != null:
+		_store_raid_mods(choice.next_raid_overrides)
+	if choice.event_wheel != null and run.operative.hp > 0:
+		# EV-01: the start tick is drawn once, now, and kept in the run (a reload cannot reroll it).
+		run.event_wheel = EventRules.wheel_open(index, streams.get_stream(EventRules.STREAM).randi_range(0, RC.TICKS - 1))
+		last_events.append({"type": "event_wheel", "tick": run.event_wheel["tick"], "text": "The wheel starts at tick %d." % run.event_wheel["tick"]})
+		_sync()
+		return last_events
+	_end_event(choice.starts_combat)
+	return last_events
+
+
+## Closes the open event after its choice (or wheel slice) resolved: death, then the fight the
+## choice opens, else back to the map (or the rewards the choice queued).
+func _end_event(fight: EventFightData) -> void:
 	run.event_id = &""
+	run.event_wheel = {}
 	if run.operative.hp <= 0:
 		_die()
 		_sync()
-		return last_events
+		return
+	if fight != null:
+		_start_event_fight(fight)
+		_sync()
+		return
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
 	_maybe_raid_interlude()
 	_sync()
+
+
+## EV-01: the fight an event opens. It is a combat of the run against `fight.enemy_id`, not a
+## node fight: the normal-fight counter is untouched.
+func _start_event_fight(fight: EventFightData) -> void:
+	_add_heat(fight.entry_heat, "event fight")
+	run.event_fight = {"normal": fight.normal_rewards, "stake": fight.stake_min_hp_pct, "win_cycles": fight.win_cycles,
+		"win_heat": fight.win_heat, "win_firmware": fight.win_common_firmware}
+	var setup := _combat_setup(false, false, streams.get_stream(&"combat"), fight)
+	combat = _combat_from(setup)
+	run.phase = RunState.Phase.COMBAT
+	last_events.append({"type": "combat_start", "enemy_id": fight.enemy_id, "elite": false, "mini_boss": false, "event_fight": true,
+		"text": "Combat: %s." % fight.enemy_id})
+	_apply_campaign_effects(combat.last_events)
+
+
+## EV-01: the win payload of an event fight (a won fight only), stake permitting.
+func _event_fight_payout() -> void:
+	var f := run.event_fight
+	run.event_fight = {}
+	if f.is_empty():
+		return
+	var op := run.operative
+	if not EventRules.stake_held(op.hp, op.max_hp, int(f.get("stake", 0))):
+		last_events.append({"type": "event_stake_lost", "text": "Stake lost: %s ended below %d%% HP. The payout is withheld." % [op.name, int(f.get("stake", 0))]})
+		return
+	var cycles := int(f.get("win_cycles", 0))
+	if cycles != 0:
+		run.cycles = maxi(0, run.cycles + cycles)
+		last_events.append({"type": "cycles", "amount": cycles, "text": "Cycles %+d (%d)." % [cycles, run.cycles]})
+	_add_heat(int(f.get("win_heat", 0)), "event fight")
+	if bool(f.get("win_firmware", false)):
+		_offer_common_firmware()
+
+
+## EV-01: stores a next_combat_overrides entry; a random-normal escort is drawn now from the
+## `events` stream (the corporation's normal pool, ids in pool order).
+func _queue_combat_mods(mods: EventCombatModsData) -> void:
+	var drawn: StringName = &""
+	if mods.extra_enemy_random_normal:
+		var pool: Array = normal_pool()
+		if not pool.is_empty():
+			drawn = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
+	run.combat_mods.append(EventRules.mods_entry(mods, drawn))
+
+
+## EV-01: one common Firmware from the `events` stream, queued as a pick (socket it or skip).
+func _offer_common_firmware() -> void:
+	var pool: Array = _pools["common_firmware"]
+	if pool.is_empty():
+		return
+	var id: StringName = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
+	run.pending_rewards.append({"kind": "firmware", "options": [String(id)]})
+	last_events.append({"type": "event_firmware", "firmware": id, "text": "A Firmware chip is on offer: %s." % id})
+
+
+## EV-01: stores a Terminal event's next-raid modifier on the campaign. A chance below 100 rolls
+## the `events` stream once, here.
+func _store_raid_mods(mods: EventRaidModsData) -> void:
+	var hit := true
+	if mods.extra_waves > 0 and mods.extra_waves_chance_pct < 100:
+		hit = streams.get_stream(EventRules.STREAM).randi_range(1, 100) <= mods.extra_waves_chance_pct
+	campaign.next_raid_mods = EventRules.raid_merge(campaign.next_raid_mods, EventRules.raid_entry(mods, hit))
+	last_events.append({"type": "next_raid", "extra_waves": hit and mods.extra_waves > 0, "text": "The next raid is marked."})
+
+
+## EV-01: applies map edits to the run (MapEditRules; `map_edits_preview` is the same call on copies).
+func _apply_map_edits(edits: Array[MapEditData]) -> void:
+	if edits.is_empty():
+		return
+	for r in MapEditRules.apply(run.map, run.current_node_id, run.closed_nodes, run.revealed_nodes, edits):
+		last_events.append({"type": "map_edit", "ok": r["ok"], "to": r["to"], "text": r["text"]})
+
+
+## What `edits` would change on the map now, exactly (nothing changes): one entry per edit as
+## MapEditRules.apply reports it.
+func map_edits_preview(edits: Array[MapEditData]) -> Array[Dictionary]:
+	if run.map == null:
+		return []
+	return MapEditRules.preview(run.map, run.current_node_id, run.closed_nodes, run.revealed_nodes, edits)
+
+
+## Whether an event closed `node_id`.
+func node_closed(node_id: StringName) -> bool:
+	return run.closed_nodes.has(node_id)
+
+
+## Whether an event revealed the type of `node_id`.
+func node_revealed(node_id: StringName) -> bool:
+	return run.revealed_nodes.has(node_id)
+
+
+# --- Event wheel (EV-01) -------------------------------------------------------------------
+
+## The wheel the open event is spinning, or null.
+func current_event_wheel() -> EventWheelData:
+	var ev := current_event()
+	if run.event_wheel.is_empty() or ev == null:
+		return null
+	return ev.choices[int(run.event_wheel["choice"])].event_wheel
+
+
+## The slice under the pointer now (null with no wheel open).
+func event_wheel_slice() -> EventWheelSliceData:
+	var w := current_event_wheel()
+	return w.slices[EventRules.slice_index(w, int(run.event_wheel["tick"]))] if w != null else null
+
+
+## What nudging by `dir` (-1 or +1) does now, without doing it (EventRules.nudge_preview).
+func event_wheel_preview(dir: int) -> Dictionary:
+	var w := current_event_wheel()
+	return EventRules.nudge_preview(w, run.event_wheel, dir) if w != null else {"ok": false, "why": "No wheel open."}
+
+
+## Nudges the pointer one tick. Past the free nudges `pay` names the currency: &"hp", &"heat" or &"cycles".
+func event_wheel_nudge(dir: int, pay: StringName = &"") -> Array[Dictionary]:
+	last_events = []
+	var w := current_event_wheel()
+	if w == null:
+		return _refuse("No wheel open.")
+	var p := EventRules.nudge_preview(w, run.event_wheel, dir)
+	if not p["ok"]:
+		return _refuse(String(p["why"]))
+	if p["free"]:
+		run.event_wheel["free_used"] = int(run.event_wheel["free_used"]) + 1
+	else:
+		var price: Dictionary = p["pay"]
+		if not price.has(String(pay)):
+			return _refuse("Choose how to pay for the nudge.")
+		var amount: int = price[String(pay)]
+		match String(pay):
+			"hp":
+				if amount >= run.operative.hp:
+					return _refuse("That would flatline %s (%d HP left)." % [run.operative.name, run.operative.hp])
+				run.operative.hp -= amount
+			"cycles":
+				if amount > run.cycles:
+					return _refuse("Not enough Cycles (%d needed)." % amount)
+				run.cycles -= amount
+			"heat":
+				_add_heat(amount, "event wheel")
+		run.event_wheel["extra_used"] = int(run.event_wheel["extra_used"]) + 1
+	run.event_wheel["tick"] = p["tick"]
+	last_events.append({"type": "event_wheel_nudge", "tick": p["tick"], "slice": p["slice"], "text": "Pointer at tick %d: %s." % [p["tick"], w.slices[p["slice"]].label]})
+	_sync()
+	return last_events
+
+
+## Commits the wheel: the slice under the pointer resolves.
+func event_wheel_commit() -> Array[Dictionary]:
+	last_events = []
+	var slice := event_wheel_slice()
+	if slice == null:
+		return _refuse("No wheel open.")
+	last_events.append({"type": "event_wheel_result", "label": slice.label, "text": "The wheel settles on %s." % slice.label})
+	for e in slice.effects:
+		if e != null:
+			_apply_run_effect(e)
+	_apply_map_edits(slice.map_edits)
+	if slice.common_firmware:
+		_offer_common_firmware()
+	if slice.next_combat_overrides != null:
+		_queue_combat_mods(slice.next_combat_overrides)
+	_end_event(slice.starts_combat)
 	return last_events
 
 
@@ -1234,6 +1446,22 @@ func choice_costs(choice: EventChoiceData) -> String:
 				parts.append("+%d HP" % e.amount)
 			RC.EffectType.GAIN_SCHEMATICS:
 				parts.append("%+d Schematics" % e.amount)
+	for r in map_edits_preview(choice.map_edits):
+		parts.append(String(r["text"]))
+	if choice.starts_combat != null:
+		parts.append("fight: %s" % choice.starts_combat.enemy_id)
+	if choice.common_firmware:
+		parts.append("Firmware: ?")
+	if choice.event_wheel != null:
+		parts.append("wheel (start ?)")
+	if choice.next_raid_overrides != null:
+		var rm := choice.next_raid_overrides
+		if rm.strength_pct != 0:
+			parts.append("next raid %+d%%" % rm.strength_pct)
+		if rm.extra_waves > 0:
+			parts.append("next raid +%d wave%s" % [rm.extra_waves, " ?" if rm.extra_waves_chance_pct < 100 else ""])
+		if rm.scout_bonus:
+			parts.append("next raid scouted")
 	if choice.reward != null:
 		var kind := "Card" if choice.reward is CardData else ("Firmware" if choice.reward is FirmwareData else ("Daemon" if choice.reward is DaemonData else ("Asset" if choice.reward is DefenseAssetData else "Operative")))
 		if kind == "Operative":
@@ -1760,7 +1988,7 @@ func _build_pools() -> void:
 	var events: Array = []
 	for id in lookup.ids_of_class(&"TerminalEventData"):
 		var ev := lookup.get_content(id) as TerminalEventData
-		if (ev.corporation_id == &"" or ev.corporation_id == campaign.corporation_id):
+		if ev.venue == TerminalEventData.Venue.TERMINAL and (ev.corporation_id == &"" or ev.corporation_id == campaign.corporation_id):
 			events.append(id)
 	# Built-in node defenses (Firewall turret) are not loot.
 	var built_in := {}

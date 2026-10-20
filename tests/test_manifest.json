@@ -9,6 +9,10 @@
 			"seconds": 360.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_event_schema_ev01.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_wheel_sizes.gd": {
 			"seconds": 1.0,
 			"tier": "fast"
