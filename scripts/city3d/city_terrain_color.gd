@@ -24,7 +24,9 @@ static func at(cfg: CityConfig, terrain: CityA2Terrain, l: Vector2i) -> Color:
 	var c := base.lerp(tc["rock"], clampf(rock, 0.0, 1.0))
 	if h > float(r["snow_h"]) * k:
 		c = c.lerp(tc["snow"], clampf((h - float(r["snow_h"]) * k) / (float(r["snow_span"]) * k) + (n - 0.5) * 0.5, 0.0, 1.0))
-	if h < float(r["beach_h"]) and h > 0.0:
+	# Designer 2026-10-20 (the stepped coast): the shore corners at sea level take the beach too, else they read as dark
+	# lot steps between the sand ones.
+	if h < float(r["beach_h"]) and h >= 0.0:
 		c = c.lerp(tc["beach"], float(r["beach_k"]))
 	var g: float = float(r["noise_lo"]) + float(r["noise_span"]) * n
 	# LOOK L5 (designer 2026-10-20, mountain character): ridges lighter and bare, gullies darker and greener, by the ground's
