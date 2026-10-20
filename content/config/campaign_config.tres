@@ -521,12 +521,12 @@ city_a2_heights = {
 &"corp_meridian": Vector2(5, 14),
 &"corp_orbital": Vector2(16, 42),
 &"corp_solace": Vector2(12, 34),
-&"industrial": Vector2(4, 10),
-&"informal": Vector2(2, 6),
-&"old_core": Vector2(4, 13),
-&"rail_grid": Vector2(4, 11),
-&"sprawl": Vector2(3, 10),
-&"suburb": Vector2(3, 8)
+&"industrial": Vector2(3, 7),
+&"informal": Vector2(1.5, 4),
+&"old_core": Vector2(3, 8.5),
+&"rail_grid": Vector2(3, 7),
+&"sprawl": Vector2(2, 6.5),
+&"suburb": Vector2(2, 5)
 }
 city_a2_hq_rise = 1.2
 city_a2_hq_rise_lots = 18.0
