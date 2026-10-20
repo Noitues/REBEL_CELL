@@ -27,6 +27,19 @@ static func at(cfg: CityConfig, terrain: CityA2Terrain, l: Vector2i) -> Color:
 	if h < float(r["beach_h"]) and h > 0.0:
 		c = c.lerp(tc["beach"], float(r["beach_k"]))
 	var g: float = float(r["noise_lo"]) + float(r["noise_span"]) * n
+	# LOOK L5 (designer 2026-10-20, mountain character): ridges lighter and bare, gullies darker and greener, by the ground's
+	# curvature over `curv_lots` lots (BU of rise against the mean of four neighbours, x `curv_k`).
+	var ck: float = float(r.get("curv_k", 0.0))
+	if ck > 0.0 and h > 0.0:
+		var s := int(r.get("curv_lots", 3))
+		var cv := h - 0.25 * (terrain.height_at(l.x + s, l.y) + terrain.height_at(l.x - s, l.y)
+				+ terrain.height_at(l.x, l.y + s) + terrain.height_at(l.x, l.y - s))
+		var q := clampf(cv * ck, -1.0, 1.0)
+		if q > 0.0:
+			c = c.lerp(tc["rock"], q * 0.6)
+		else:
+			c = c.lerp(tc["forest"], -q * 0.5)
+		g *= 1.0 + 0.35 * q
 	return Color(c.r * g, c.g * g, c.b * g)
 
 

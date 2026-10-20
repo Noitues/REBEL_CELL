@@ -51,6 +51,14 @@ uniform float marble_width = 0.22;
 uniform float marble_distort = 0.9;
 uniform float marble_floor = 0.15;
 uniform float marble_shore = 0.6;
+// LOOK L5 (designer 2026-10-20): the caustics fade out (go clearer) with the depth under them, not darker: their share
+// falls from 1 at `caustic_depth.x` BU to `caustic_deep_k` at `.y`, and the night sheet's own opacity with them
+// (`night_alpha_deep` x at depth). By day the same caustics, at `marble_day_k` of the night's, in `marble_col_day`.
+uniform vec2 caustic_depth = vec2(4.0, 90.0);
+uniform float caustic_deep_k = 0.35;
+uniform float night_alpha_deep = 0.6;
+uniform float marble_day_k = 0.0;
+uniform vec3 marble_col_day = vec3(0.30, 0.62, 0.66);
 // The blurred water mask's cut: below .x dry, above .y water (low, so the sheet reaches over the lot corners).
 uniform vec2 coast_cut = vec2(0.22, 0.42);
 uniform float coast_blur_lots = 1.5;
@@ -115,12 +123,16 @@ void fragment() {
 	// By day a diffuse body (Blender's day water); by night the sheet is clear and the seabed's fade carries it.
 	float ab = mix(body_alpha + body_alpha_shallow * shallow, night_alpha, night);
 	vec3 body = mix(deep_day, shallow_day, min(shallow * 0.9 + h0 * 0.12, 1.0)) + body_emit_day;
-	if (night > 0.001) {
+	float kd = 1.0 - smoothstep(caustic_depth.x, caustic_depth.y, bed.r);
+	if (night > 0.001 || marble_day_k > 0.0) {
 		float mt = rc_time(TIME) * time_scale * 0.02;
 		float m = (marble(p * marble_scale, mt) + marble(p * marble_scale * 1.6 + 3.3, -mt * 0.7)) * 0.5;
 		float km = 1.0 - smoothstep(0.4, 1.2, px * marble_scale);
-		vec3 nb = night_body + marble_col * (marble_floor + m * km * (1.0 - marble_floor)) * mix(1.0, 1.0 + marble_shore, shallow);
+		float cm = m * km * mix(caustic_deep_k, 1.0, kd);
+		vec3 nb = night_body + marble_col * (marble_floor + cm * (1.0 - marble_floor)) * mix(1.0, 1.0 + marble_shore, shallow);
+		body += marble_col_day * cm * marble_day_k * (1.0 - night);
 		body = mix(body, nb, night);
+		ab *= mix(1.0, mix(night_alpha_deep, 1.0, kd), night);
 	}
 	// No water over dry ground (the bake's depth is 0 there): the bake's blurred mask plus eight taps a ring
 	// `coast_blur_lots` round (the bake's blur alone still follows the lot grid), cut at `coast_cut`.

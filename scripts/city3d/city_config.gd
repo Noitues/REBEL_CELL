@@ -402,6 +402,9 @@ extends Resource
 @export var ramp_edges: Vector2 = Vector2(0.118, 0.363)
 ## Direction toward the key light (Godot world; target_corps sun 48/-28/-38).
 @export var to_light: Vector3 = Vector3(-0.705, 0.591, 0.392)
+## LOOK L5 (designer 2026-10-20): the whole-city pose's sun, the plate's (city_preset A2: elevation 14 deg, azimuth 35 deg
+## from east toward north = far right of the view, low): the direction toward it (world), blended in by the look.
+@export var whole_to_light: Vector3 = Vector3(0.795, 0.242, -0.557)
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
 @export var ground: Color = Color(0.20, 0.20, 0.25)
@@ -413,7 +416,7 @@ extends Resource
 	"rock": Color(0.84, 0.81, 0.79), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
-	"beach_k": 0.7, "noise_lo": 0.92, "noise_span": 0.16}
+	"beach_k": 0.7, "noise_lo": 0.92, "noise_span": 0.16, "curv_k": 0.06, "curv_lots": 3}
 @export var terrain_h_scale: float = 0.3
 ## LOOK L5 (hybrid port, Blender city_preset DISTRICTS `mat` + DAY_MATS): the facade albedo per territory ("" the sprawl),
 ## the facade families ([weight, Color]; city for the corps, sprawl off-territory) and how far a family pulls the district
@@ -800,6 +803,8 @@ extends Resource
 @export var island_gap_k: float = 1.8
 @export var island_h_bu: float = 5.0
 @export var island_wobble: float = 0.35
+## ... the aspect range (long / short axis) the islands draw from (1 = round).
+@export var island_aspect: Vector2 = Vector2(1.7, 2.6)
 ## LOOK L5 (the designer's water ruling: real ground under the sea, one transparent water plane over it), ported from the
 ## Blender plate (city_world_a2.sea_depth / isl_bed, city_render.water_fade): the seabed (CitySeabedKit) is a grid every
 ## `seabed_step` lots, a `seabed_shelf_bu` shelf at the shore falling on a smoothstep over `seabed_reach` lots of the shore
@@ -836,7 +841,8 @@ extends Resource
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
-	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.05, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.35,
+	"night_alpha_deep": 0.6, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground

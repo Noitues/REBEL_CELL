@@ -454,6 +454,15 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## 0.3), rising over `city_a2_relief_from` lots past the outer ring (no stream draw; 0 BU = none).
 @export var city_a2_relief: Vector3 = Vector3(0.0, 17.0, 7.0)
 @export var city_a2_relief_from: Vector2 = Vector2(10.0, 40.0)
+## LOOK L5 (designer 2026-10-20: "more character"): the relief's domain warp, x lots on value noise of y lots (0 = none),
+## and a third, finer ridged octave of z x the relief on cells of half its fine cell.
+@export var city_a2_relief_warp: Vector3 = Vector3(0.0, 30.0, 0.0)
+## LOOK L5 (designer 2026-10-20, the plate's west cliffs; art-pass terrain_a2.py cliff): x BU of sea cliff on the coast
+## past the outer ring (rising over 1..6 lots past it), west of A2 x metres `city_a2_cliff_x` (full at .x, none at .y);
+## its face rises over shore lots `city_a2_cliff_shore` .x..y and its back falls over .z..w (0 BU = none).
+@export var city_a2_cliff: float = 0.0
+@export var city_a2_cliff_x: Vector2 = Vector2(-7000.0, -5500.0)
+@export var city_a2_cliff_shore: Vector4 = Vector4(0.4, 1.6, 4.0, 14.0)
 @export var city_a2_land_blend: float = 12.0
 ## CITY-A2 r2 (art-pass zoning_a2.py): no building on ground over `city_a2_max_build_h` BU or steeper than
 ## `city_a2_max_build_slope` (BU per BU); past the outer ring (lots, moved by the terrain's broad noise x

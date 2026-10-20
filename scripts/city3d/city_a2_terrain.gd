@@ -158,12 +158,29 @@ static func _relief(cfg: CampaignConfigData, x: float, y: float) -> float:
 	if rl.x <= 0.0:
 		return 0.0
 	var r := 0.0
-	var cl: Array[float] = [rl.y, rl.z]
-	var ws: Array[float] = [0.7, 0.3]
-	for o in 2:
+	var wp := cfg.city_a2_relief_warp
+	if wp.x > 0.0:
+		# The domain warp bends the ridges into spurs and gullies instead of a regular egg-crate.
+		x += (_hnoise(RELIEF_SALT + 7, x / wp.y, y / wp.y) * 2.0 - 1.0) * wp.x
+		y += (_hnoise(RELIEF_SALT + 8, x / wp.y + 4.3, y / wp.y - 2.1) * 2.0 - 1.0) * wp.x
+	var cl: Array[float] = [rl.y, rl.z, rl.z * 0.5]
+	var ws: Array[float] = [0.7, 0.3, wp.z]
+	for o in 3:
+		if ws[o] <= 0.0:
+			continue
 		var n := _hnoise(RELIEF_SALT + o, x / cl[o], y / cl[o])
-		r += (1.0 - absf(2.0 * n - 1.0)) * ws[o]
+		var rd := 1.0 - absf(2.0 * n - 1.0)
+		r += rd * rd * ws[o] if o > 0 else rd * ws[o]
 	return r * rl.x
+
+
+## LOOK L5: the sea cliff (BU) at A2 point `m` (metres), `dw` lots from the water and `dout` lots past the outer ring.
+static func _cliff(cfg: CampaignConfigData, m: Vector2, dw: float, dout: float) -> float:
+	if cfg.city_a2_cliff <= 0.0:
+		return 0.0
+	var cs := cfg.city_a2_cliff_shore
+	var west := 1.0 - _smooth(m.x, cfg.city_a2_cliff_x.x, cfg.city_a2_cliff_x.y)
+	return cfg.city_a2_cliff * west * _smooth(dout, 1.0, 6.0) * _smooth(dw, cs.x, cs.y) * (1.0 - 0.6 * _smooth(dw, cs.z, cs.w))
 
 
 static func _hash(s: int, i: int, j: int) -> float:
@@ -331,7 +348,7 @@ func _coarse(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 				coarse[k] = 0.0
 			else:
 				var p := Vector2(coarse_rect.position) + Vector2(i, j) * step
-				coarse[k] = (_hills(ras, p, k_bu) + mt) * _smooth(d_w[k] * step, cfg.city_a2_beach.x, cfg.city_a2_beach.y)
+				coarse[k] = (_hills(ras, p, k_bu) + mt) * _smooth(d_w[k] * step, cfg.city_a2_beach.x, cfg.city_a2_beach.y) 					+ _cliff(cfg, ras.metres_of(p), d_w[k] * step, d_out[k] * step)
 
 
 func _fine(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
@@ -351,4 +368,4 @@ func _fine(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 				continue
 			var pf := Vector2(p)
 			var mt := _bilerp(_mount, _cw, coarse_rect.position, step, pf.x, pf.y)
-			fine[j * _fw + i] = (_hills(ras, pf, k_bu) + mt) * _smooth(near, cfg.city_a2_beach.x, cfg.city_a2_beach.y)
+			fine[j * _fw + i] = (_hills(ras, pf, k_bu) + mt) * _smooth(near, cfg.city_a2_beach.x, cfg.city_a2_beach.y) 				+ _cliff(cfg, ras.metres_of(pf), near, _bilerp(_dout, _cw, coarse_rect.position, step, pf.x, pf.y))

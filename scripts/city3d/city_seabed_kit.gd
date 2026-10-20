@@ -104,10 +104,10 @@ static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: floa
 		z = minf(terrain.height_at(at.x, at.y), 0.0)
 	for it: Dictionary in islands:
 		# The plate's isl_bed: each island stands on a shoal bank, not on a pillar.
-		var dl := at.distance_to(it["c"])
 		var r := float(it["r"])
-		z = maxf(z, -cfg.island_shoal_bu - maxf(0.0, dl - r * cfg.island_shoal_k) * cfg.lot_bu * cfg.island_shoal_slope)
-		var rho := dl / (r * cfg.island_spread)
+		var rq := CityWater.island_rho(cfg, it, at)
+		z = maxf(z, -cfg.island_shoal_bu - maxf(0.0, (rq - cfg.island_shoal_k) * r) * cfg.lot_bu * cfg.island_shoal_slope)
+		var rho := rq / cfg.island_spread
 		if rho < 1.0:
 			z = lerpf(z, cfg.island_h_bu, pow(1.0 - rho * rho, 1.5))
 	return z

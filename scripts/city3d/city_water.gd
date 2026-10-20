@@ -22,6 +22,7 @@ const COPING_STEP := 0.25
 const VOID_Y := -0.04
 const SEA_Y := 0.03
 const DIAG := 1.41421356
+const ISLAND_SALT := 6127
 ## LOOK L5: the share of an island's radius taken out of the sea (the hill's rim, at least the radius, covers it).
 const ISLAND_CORE := 0.75
 
@@ -388,10 +389,11 @@ static func _sea_terrain(cfg: CityConfig, plan: CityPlan, r: Rect2i, wet: Packed
 	for it: Dictionary in isl:
 		var c: Vector2 = it["c"]
 		var rr: float = it["r"]
-		for j in range(floori(c.y - rr), ceili(c.y + rr) + 1):
-			for i in range(floori(c.x - rr), ceili(c.x + rr) + 1):
+		var ext := rr * sqrt(float(it["a"])) * (1.0 + cfg.island_wobble)
+		for j in range(floori(c.y - ext), ceili(c.y + ext) + 1):
+			for i in range(floori(c.x - ext), ceili(c.x + ext) + 1):
 				var k := Vector2i(i - r.position.x, j - r.position.y)
-				if k.x >= 0 and k.x < r.size.x and k.y >= 0 and k.y < r.size.y and Vector2(i + 0.5, j + 0.5).distance_to(c) < rr * ISLAND_CORE:
+				if k.x >= 0 and k.x < r.size.x and k.y >= 0 and k.y < r.size.y and island_rho(cfg, it, Vector2(i + 0.5, j + 0.5)) < ISLAND_CORE:
 					dry[k.y * r.size.x + k.x] = 0
 	return {"mesh": _sea_field_mesh(cfg, r, dry), "islands": isl, "field": field}
 
@@ -428,8 +430,25 @@ static func islands_of(cfg: CityConfig, plan: CityPlan, r: Rect2i, wet: PackedBy
 				ok = false
 				break
 		if ok:
-			out.append({"c": c, "r": rr})
+			# Designer 2026-10-20: oblong, natural islands: an aspect in island_aspect, a heading and a rim phase per island.
+			var n := out.size()
+			var asp := lerpf(cfg.island_aspect.x, cfg.island_aspect.y, CityMeshKit.hash01(ISLAND_SALT, n, 1))
+			out.append({"c": c, "r": rr, "a": asp, "rot": CityMeshKit.hash01(ISLAND_SALT, n, 2) * PI,
+				"ph": CityMeshKit.hash01(ISLAND_SALT, n, 3) * TAU})
 	return out
+
+
+## LOOK L5: lot point `at`'s distance from island `it` in radii (1 = its rim): an ellipse of aspect "a" (same area as the
+## circle) turned by "rot", its rim wobbled by `island_wobble` (two lobes and three, phase "ph").
+static func island_rho(cfg: CityConfig, it: Dictionary, at: Vector2) -> float:
+	var d: Vector2 = at - (it["c"] as Vector2)
+	var r: float = it["r"]
+	var asp: float = it.get("a", 1.0)
+	var u := d.rotated(-float(it.get("rot", 0.0)))
+	var e := Vector2(u.x / sqrt(asp), u.y * sqrt(asp))
+	var th := atan2(e.y, e.x) + float(it.get("ph", 0.0))
+	var wob := 1.0 + cfg.island_wobble * (0.6 * sin(2.0 * th + 1.3) * 0.5 + 0.4 * sin(3.0 * th) * 0.5 + 0.25 * sin(5.0 * th + 2.0) * 0.5)
+	return e.length() / (r * wob)
 
 
 ## The chamfer distance (lots, capped at sea_field_cap_lots) from each lot of a w x h `wet` grid to the nearest dry lot.

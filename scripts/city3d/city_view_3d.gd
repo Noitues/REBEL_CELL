@@ -351,12 +351,19 @@ func _whole_shadows() -> void:
 	if _sun == null or quality.is_empty():
 		return
 	var on: bool = whole_look and cfg.whole_far_shadows and bool(quality["shadows"])
+	# The plate's sun (designer 2026-10-20: ours stood on the other side of the sky).
+	_sun.look_at_from_position(Vector3.ZERO, -sun_dir(), Vector3.UP)
 	_sun.directional_shadow_max_distance = cfg.whole_shadow_dist_bu if whole_look else cfg.camera_far * 0.5
 	if land != null:
 		land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for n: Node in find_children("Far_*", "MultiMeshInstance3D", true, false):
 		var far_on: bool = on or (bool(quality["shadows"]) and cfg.far_lod_shadows)
 		(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if far_on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## The direction toward the sun (world): the plate's under the whole-city pose, cfg.to_light otherwise.
+func sun_dir() -> Vector3:
+	return cfg.whole_to_light.normalized() if whole_look else cfg.to_light
 
 
 ## LOOK L5: the whole-city pose's atmosphere: depth fog from near the target out past the land, in a haze colour (day to
@@ -710,7 +717,7 @@ func _sync_hq_beams() -> void:
 				var sn := water.get_node_or_null(nm) as Node3D
 				if sn != null:
 					sn.visible = not whole_look
-			water.plane_mat.set_shader_parameter(&"sun_dir", cfg.to_light)
+			water.plane_mat.set_shader_parameter(&"sun_dir", sun_dir())
 			# The drowned quarter is water like the sea: the plane's bake covers it, so its own sheet goes.
 			var dq := features.get_node_or_null(^"Drowned") as Node3D if features != null else null
 			if dq != null:
