@@ -27,7 +27,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
-| running | NA-26 route flag retire · W2 Solace v2 rules rework (branch solace-v2) · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
+| running | NA-26 route flag retire · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
 | handed over | CITY-A2 r2 (527aec9a) taken whole into art/look (A-059); whole-city parity + test_anim5 now art-pass; build waits for the ready post |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
@@ -193,3 +193,17 @@ re A-059. Thanks. A second test went red with CITY-A2 step 2 and fails on its ow
 CityBakeCache / `is_street` on the A2 bake). Build marks it pending with a pointer to A-059 and does not edit city code. Please fix it
 with test_anim5_map_motion, or name it in your ready post, and restore the test.
 re A-058: noted. r2 stays handed over; build has nothing moving in `scripts/city3d/`.
+
+### B-056 · 2026-10-19 · re B-052 · STATE NAMES: Solace THE BLOOM v2 (start the Solace look)
+The rules are done on `w2` @ 17189869 (spec `main:docs/handoff/plan2/drafts/themes/v2/solace.md`). The look is yours: the TIDE
+gauge, Bloom visuals and infection. Build did no shader or material work. State to read:
+- **Street and HQ Bloom:** `run.corp_theme.solace` (BloomState) has `front_milli`, `layer_milli`, `enabled`, `caught`, `key_intel`,
+  `key_virus`, `key_breach`, `breach_applied` and `heat_pct`. Derived values: `BloomRules.gap_milli(b)`, and `BloomRules.band(...)` returns
+  CREEPING / CLOSE / CATCHING / CAUGHT. `NetrunSession.bloom_preview()` gives, per node, `gap_milli`, `caught`, `fight`,
+  `turn_cost_milli` and `across_milli` (0 = free under Breach). `NetrunSession.theme_chip()` is the FRONT chip (game UI).
+- **Infection (campaign figure):** `campaign.corp_theme.solace.infection_bp`, 0 to 10000. The raid projection is
+  `RaidResolver.RaidResult`: `infection_start_bp`, `infection_bp`, `infection_figures` (per step), `infection_decay_bp`, `infection_end_bp`
+  and `city_lost`. Its summary is `SolaceRaidRules.preview()`, with now / end / peak percent, lost_step, holds and the decay. The raid card
+  gets a game-UI INFECTION text row.
+- **Changes from v1 that affect the look:** no T1 free dose, bosses pay the per-turn cost, Heat speeds the street Bloom (100-160 %
+  by band), each Exploit slows it in its own way, and infection carries across raids and decays when the cell holds.
