@@ -42,6 +42,16 @@ uniform vec2 surf_lots = vec2(0.2, 1.6);
 uniform float surf_gain = 0.5;
 uniform vec3 surf_col = vec3(0.85, 0.93, 1.0);
 uniform float surf_period = 6.0;
+// By night the plate's sea glows teal with caustic marbling over all of it (Cycles carries the seabed's caustics through
+// the whole water column); here the sheet carries them: a dark teal body and two ridge-noise layers, brighter inshore.
+uniform vec3 night_body = vec3(0.012, 0.035, 0.065);
+uniform float night_alpha = 0.82;
+uniform vec3 marble_col = vec3(0.05, 0.20, 0.24);
+uniform float marble_scale = 0.05;
+uniform float marble_width = 0.22;
+uniform float marble_distort = 0.9;
+uniform float marble_floor = 0.15;
+uniform float marble_shore = 0.6;
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
@@ -70,6 +80,12 @@ float height(vec2 p, float t, float px) {
 		+ fbm(p * ripple_scale * vec2(1.0, 1.7) + vec2(t * 1.7, -t)) * wave_w.z * kr;
 }
 
+float marble(vec2 p, float t) {
+	vec2 dq = vec2(vnoise(p + vec2(5.2, 1.3 + t)), vnoise(p + vec2(-3.1, 7.7 - t))) * 2.0 - 1.0;
+	float n = fbm(p + dq * marble_distort);
+	return 1.0 - smoothstep(0.0, marble_width, abs(2.0 * n - 1.0));
+}
+
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
@@ -95,8 +111,15 @@ void fragment() {
 	vec2 bed = inside ? texture(bed_tex, buv).rg : vec2(1e3, far_shore_lots);
 	float shallow = 1.0 - smoothstep(shallow_lots.x, shallow_lots.y, bed.g);
 	// By day a diffuse body (Blender's day water); by night the sheet is clear and the seabed's fade carries it.
-	float ab = (body_alpha + body_alpha_shallow * shallow) * (1.0 - night);
+	float ab = mix(body_alpha + body_alpha_shallow * shallow, night_alpha, night);
 	vec3 body = mix(deep_day, shallow_day, min(shallow * 0.9 + h0 * 0.12, 1.0)) + body_emit_day;
+	if (night > 0.001) {
+		float mt = rc_time(TIME) * time_scale * 0.02;
+		float m = (marble(p * marble_scale, mt) + marble(p * marble_scale * 1.6 + 3.3, -mt * 0.7)) * 0.5;
+		float km = 1.0 - smoothstep(0.4, 1.2, px * marble_scale);
+		vec3 nb = night_body + marble_col * (marble_floor + m * km * (1.0 - marble_floor)) * mix(1.0, 1.0 + marble_shore, shallow);
+		body = mix(body, nb, night);
+	}
 	// Surf: bands rolling in on the first shelf, broken by the waves.
 	float sb = (1.0 - smoothstep(surf_lots.x, surf_lots.y, bed.g)) * step(0.001, bed.r + depth_add);
 	float roll = 0.5 + 0.5 * sin((bed.g * surf_period - rc_time(TIME) * time_scale * 0.8) * 6.2831853);

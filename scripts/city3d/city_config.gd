@@ -787,8 +787,10 @@ extends Resource
 @export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.35,
 	"sky_horizon_day": Color(0.62, 0.66, 0.70), "sky_zenith_day": Color(0.30, 0.45, 0.65),
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
-	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.022, 0.15, 0.31), "shallow_day": Color(0.09, 0.46, 0.50),
-	"body_emit_day": Color(0.01, 0.07, 0.14), "body_alpha": 0.40, "body_alpha_shallow": 0.52, "shallow_lots": Vector2(20.0, 34.0),
+	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.010, 0.060, 0.150), "shallow_day": Color(0.04, 0.20, 0.26),
+	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.55, "body_alpha_shallow": 0.30, "shallow_lots": Vector2(0.5, 9.0),
+	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.82, "marble_col": Color(0.05, 0.20, 0.24), "marble_scale": 0.05,
+	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.2, 1.6), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 6.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
