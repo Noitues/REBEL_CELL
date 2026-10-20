@@ -19,6 +19,12 @@ const K_PLAZA := 2
 const K_BUILDING := 3
 const K_WATER := 4
 const K_PARK := 5
+## CITY-A2 r2: open land, no building and no local street (steep or high ground, or the sprawl thinning past the ring).
+const K_BARE := 6
+## Lots round a Site's lot kept built whatever the open-land and corridor rules say (its marker needs a roof).
+const SITE_KEEP := 2
+## LOOK L5: the hash salt of the height spikes and the drowned quarter's sunk blocks.
+const SPIKE_SALT := 7310
 
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 ## A Site heading score below any real one (a rejected heading).
@@ -301,6 +307,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				var k := (j - R.position.y) * w + (i - R.position.x)
 				kind[k] = K_PLAZA
 				plazas[k] = id
+	var zone := _site_zone(plan, cfg.city_a2_sprawl_site_keep)
 	for k in n:
 		if kind[k] != K_GROUND:
 			continue
@@ -313,6 +320,11 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			kind[k] = K_WATER
 		elif ras.is_park(l.x, l.y):
 			kind[k] = K_PARK
+		elif plan.terrain != null and ras.territory(l.x, l.y) == &"" and _bare(plan.terrain, cfg, l, zone) and not _near_site(plan, l) \
+				and plan.terrain.outside_ring(l.x + 0.5, l.y + 0.5) > cfg.city_a2_sprawl_streets:
+			# CITY-A2 r2: open Sprawl land past the suburbs gets no local streets either (no street grid to the rect's edge;
+			# within `city_a2_sprawl_streets` lots of the ring the streets stay, the Sites' routes run on them).
+			kind[k] = K_BARE
 	var rng := RngStreams.make_stream(plan.city_seed, RngStreams.CITY_BLOCKS_STREAM)
 	# Local streets: a seeded spacing and phase per A2 district (index 0 = outside every district).
 	var grid: Array[Vector4i] = []
@@ -365,6 +377,80 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			rec["col"] = ink
 			rec["traffic"] = traffic_of[int(rank[k])]
 		streets[k] = rec
+	# CITY-A2 r2: open land (no building; the streets stay, the Sites' routes need them): high or steep ground, the sprawl
+	# thinning past the outer ring.
+	if plan.terrain != null:
+		for k in n:
+			if kind[k] == K_GROUND:
+				var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
+				if _bare(plan.terrain, cfg, l, zone) and not _near_site(plan, l):
+					kind[k] = K_BARE
+	# CITY-A2 r2: the elevated roads' corridors (art-pass zoning `clear`): no building within `city_a2_corridor` lots of a
+	# ring / motorway / truck road's lots (streets still cross under the decks).
+	for rd: Dictionary in ras.a2.roads:
+		var reach: int = int(cfg.city_a2_corridor.get(rd["class"], 0))
+		if reach <= 0 or not ras.road_lots.has(rd["id"]):
+			continue
+		for l: Vector2i in ras.road_lots[rd["id"]]:
+			for dj in range(-reach, reach + 1):
+				for di in range(-reach, reach + 1):
+					var q := l + Vector2i(di, dj)
+					if R.has_point(q):
+						var kq := (q.y - R.position.y) * w + (q.x - R.position.x)
+						if kind[kq] == K_GROUND and not _near_site(plan, q):
+							kind[kq] = K_BARE
+	# LOOK L5 (designer 2026-10-20): the buildings back off the sea: no building within `city_a2_coast_setback` lots of a
+	# sea lot (rivers keep their frontage; a Site keeps its building).
+	var sb := cfg.city_a2_coast_setback
+	if sb > 0:
+		var setback: Array[int] = []
+		for k in n:
+			if kind[k] != K_GROUND:
+				continue
+			var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
+			if plan.a2_sites.has(l):
+				continue
+			# A street's frontage stays: the netrun's street route needs its buildings (NA-23 frontage layers).
+			if _street(kind, R, l + Vector2i(1, 0)) or _street(kind, R, l + Vector2i(-1, 0)) \
+					or _street(kind, R, l + Vector2i(0, 1)) or _street(kind, R, l + Vector2i(0, -1)):
+				continue
+			var near_sea := false
+			for dj in range(-sb, sb + 1):
+				for di in range(-sb, sb + 1):
+					if ras.is_water(l.x + di, l.y + dj) and not ras.is_river(l.x + di, l.y + dj):
+						near_sea = true
+						break
+				if near_sea:
+					break
+			if near_sea:
+				setback.append(k)
+		for k in setback:
+			kind[k] = K_BARE
+	# LOOK L5 (designer 2026-10-20): a local street with no building lot within `city_a2_prune_streets` lots is open land
+	# too (no empty street blocks round parks and the city's edge; a Site's streets stay).
+	var pr := cfg.city_a2_prune_streets
+	if pr > 0 and plan.terrain != null:
+		var drop: Array[int] = []
+		for k in n:
+			if kind[k] != K_STREET or rank[k] != 0:
+				continue
+			var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
+			if zone.has(l) or _near_site(plan, l):
+				continue
+			var built := false
+			for dj in range(-pr, pr + 1):
+				for di in range(-pr, pr + 1):
+					var q := l + Vector2i(di, dj)
+					if R.has_point(q) and kind[(q.y - R.position.y) * w + (q.x - R.position.x)] == K_GROUND:
+						built = true
+						break
+				if built:
+					break
+			if not built:
+				drop.append(k)
+		for k in drop:
+			kind[k] = K_BARE
+			streets.erase(k)
 	# Buildings: row order; a lot may merge with its east or south neighbour.
 	var cells: Array = []
 	var front := {}
@@ -396,8 +482,81 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				kind[kk] = K_BUILDING
 		var f := cell.end - Vector2i.ONE
 		front[(f.y - R.position.y) * w + (f.x - R.position.x)] = ci
-		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng)})
+		var on_street := _street(kind, R, l + Vector2i(1, 0)) or _street(kind, R, l + Vector2i(-1, 0)) \
+				or _street(kind, R, l + Vector2i(0, 1)) or _street(kind, R, l + Vector2i(0, -1))
+		var near_hq := false
+		for id: StringName in rects:
+			if (rects[id] as Rect2i).grow(cfg.city_a2_spike_hq_clear).intersects(cell):
+				near_hq = true
+				break
+		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites,
+			on_street, near_hq)})
 	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
+
+
+## CITY-A2 r2 (art-pass zoning_a2.py): lot `l` stays open land: its ground is over `city_a2_max_build_h` or steeper than
+## `city_a2_max_build_slope`, or past the outer ring (by the terrain's broad noise x `city_a2_edge_noise`) its jitter is
+## over the chance of a building there (1 at the ring, 0 past `city_a2_sprawl_fade`).
+## `zone`: the lots within `city_a2_sprawl_site_keep` of a Site, where the sprawl does not thin (their run streets keep
+## their frontage).
+static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i, zone: Dictionary) -> bool:
+	var c := Vector2(l) + Vector2(0.5, 0.5)
+	if t.height_at(c.x, c.y) > cfg.city_a2_max_build_h or t.slope_at(c.x, c.y) > cfg.city_a2_max_build_slope:
+		return true
+	var d := t.outside_ring(c.x, c.y)
+	if d <= 0.0 or zone.has(l):
+		return false
+	return t.jitter(l.x, l.y) >= _keep(t, cfg, l)
+
+
+## LOOK L5: the chance (0..1) lot `l` past the outer ring keeps its building: the sprawl's fade past the ring (moved by the
+## broad noise), x the dwindle toward the highest / steepest buildable ground and the plan rect's edge (1 inside the ring).
+static func _keep(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i) -> float:
+	var c := Vector2(l) + Vector2(0.5, 0.5)
+	var d := t.outside_ring(c.x, c.y)
+	if d <= 0.0:
+		return 1.0
+	d = maxf(d + (t.noise_at(c.x, c.y) * 2.0 - 1.0) * cfg.city_a2_edge_noise, 0.0)
+	var p := 1.0 - _smooth01(d, cfg.city_a2_sprawl_fade)
+	var dw := cfg.city_a2_dwindle
+	if dw.x < 1.0:
+		p *= 1.0 - _smooth01(t.height_at(c.x, c.y), Vector2(cfg.city_a2_max_build_h * dw.x, cfg.city_a2_max_build_h))
+	if dw.y < 1.0:
+		p *= 1.0 - _smooth01(t.slope_at(c.x, c.y), Vector2(cfg.city_a2_max_build_slope * dw.y, cfg.city_a2_max_build_slope))
+	if dw.z > 0.0:
+		var fr := t.fine_rect
+		var e := minf(minf(c.x - fr.position.x, fr.end.x - c.x), minf(c.y - fr.position.y, fr.end.y - c.y))
+		p *= _smooth01(e, Vector2(0.0, dw.z))
+	return p
+
+
+## A height in `hr` at curve point `u` (0..1) bent by exponent `p` (1 = even).
+static func _curve(u: float, hr: Vector2, p: float) -> float:
+	return lerpf(hr.x, hr.y, pow(u, p))
+
+
+static func _smooth01(x: float, r: Vector2) -> float:
+	var t := clampf((x - r.x) / (r.y - r.x), 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+
+## The lots within `reach` of any Site's lot (a set).
+static func _site_zone(plan: CityPlan, reach: int) -> Dictionary:
+	var out := {}
+	for s: Vector2i in plan.a2_sites:
+		for dj in range(-reach, reach + 1):
+			for di in range(-reach, reach + 1):
+				out[s + Vector2i(di, dj)] = true
+	return out
+
+
+## True when lot `l` is within SITE_KEEP lots of a Site's lot (its buildings stay).
+static func _near_site(plan: CityPlan, l: Vector2i) -> bool:
+	for dj in range(-SITE_KEEP, SITE_KEEP + 1):
+		for di in range(-SITE_KEEP, SITE_KEEP + 1):
+			if plan.a2_sites.has(l + Vector2i(di, dj)):
+				return true
+	return false
 
 
 static func _street(kind: PackedByteArray, R: Rect2i, l: Vector2i) -> bool:
@@ -407,6 +566,17 @@ static func _street(kind: PackedByteArray, R: Rect2i, l: Vector2i) -> bool:
 ## The height kind of a building at lot `l`: its A2 neighbourhood's kind (CityA2Raster.neighbourhood_kind) when that
 ## kind has heights, else corp / old_core (the Cell's territory) / sprawl.
 static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i, terr: StringName, cell_id: StringName) -> StringName:
+	# LOOK L5 (whole-city plate parity): a corporation's own height range (`corp_<id>`) wins over the A2 neighbourhood kind,
+	# so each corp district keeps the plate's massing (Orbital's glass spires, Meridian's low port blocks).
+	var ck := StringName("corp_%s" % terr)
+	if terr != &"" and terr != cell_id and cfg.city_a2_heights.has(ck):
+		return ck
+	# ... then an A2 district's own (`a2_<id>`: Tethys, which is no game territory, has its drowned spires).
+	var di := int(ras.district[ras.index(l.x, l.y)])
+	if di > 0:
+		var dk := StringName("a2_%s" % String(ras.a2.districts[di - 1]["id"]))
+		if cfg.city_a2_heights.has(dk):
+			return dk
 	var nk := ras.neighbourhood_kind(l.x, l.y)
 	if nk != &"" and cfg.city_a2_heights.has(nk):
 		return nk
@@ -417,23 +587,63 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 
 ## A building cell's extrusions (lots, height px): one prism, or a base and a setback tower over `city_a2_setback_from`.
 static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i, cell_id: StringName, hq_centres: Array[Vector2],
-		px_per_bu: float, rng: RandomNumberGenerator) -> Array:
+		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false, near_hq: bool = false) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
-	var hr: Vector2 = cfg.city_a2_heights[_height_kind(ras, cfg, f, terr, cell_id)]
-	var h := rng.randf_range(hr.x, hr.y)
+	var hk := _height_kind(ras, cfg, f, terr, cell_id)
+	var hr: Vector2 = cfg.city_a2_heights[hk]
+	var hp := float(cfg.city_a2_height_pow.get(hk, 1.0))
+	var h := _curve(rng.randf(), hr, hp)
+	# LOOK L5: a few lots stand out of the roofline (a hash of the lot: no extra draw from the layout stream); none within
+	# `city_a2_spike_hq_clear` lots of an HQ (the NA-11c HQ zone: no spike there, nothing over its cap).
+	var spike := 1.0
+	if not near_hq and CityMeshKit.hash01(SPIKE_SALT, cell.position.x, cell.position.y) < cfg.city_a2_height_spike.x:
+		spike = cfg.city_a2_height_spike.y
+	h *= spike
+	if t != null:
+		h *= lerpf(cfg.city_a2_dwindle_h_min, 1.0, _keep(t, cfg, f))
+	# LOOK L5: the drowned quarter's sunk blocks: base under the ground, top under the water (Sites' buildings stand).
+	var z_sink := 0.0
+	if cfg.city_a2_sink_share > 0.0 and not sites.has(f) and not ras.a2.drowned.is_empty() 			and CityMeshKit.hash01(SPIKE_SALT + 1, cell.position.x, cell.position.y) < cfg.city_a2_sink_share 			and Geometry2D.is_point_in_polygon(ras.metres_of(Vector2(cell.get_center())), ras.a2.drowned):
+		var sk := lerpf(cfg.city_a2_sink_bu.x, cfg.city_a2_sink_bu.y, CityMeshKit.hash01(SPIKE_SALT + 2, cell.position.x, cell.position.y))
+		z_sink = sk
+		h = minf(h, sk * 0.9)
 	var c := Vector2(cell.get_center())
 	var near := INF
 	for q in hq_centres:
 		near = minf(near, c.distance_to(q))
-	h *= 1.0 + cfg.city_a2_hq_rise * maxf(0.0, 1.0 - near / cfg.city_a2_hq_rise_lots)
+	var rise := 1.0 + cfg.city_a2_hq_rise * maxf(0.0, 1.0 - near / cfg.city_a2_hq_rise_lots)
+	h *= rise
 	var taper := rng.randf_range(cfg.city_a2_taper.x, cfg.city_a2_taper.y)
 	var corp := terr != &"" and terr != cell_id and rng.randf() < cfg.city_a2_corp_ink_share
 	var ink := Palette.corp_color(terr) if corp else NeonCity.INKS[rng.randi() % NeonCity.INKS.size()]
 	var key := rng.randi() & 0x7fffffff
 	var ins := cfg.city_a2_inset
 	var out: Array = []
-	if h >= cfg.city_a2_setback_from:
+	# LOOK L5: the plate's finer grain: four quarter-lot buildings on one lot, inside the blocks only: a street-front lot
+	# keeps one building (the netrun's street frontage and the NA-11 floor rule work on whole lots).
+	if cfg.city_a2_sub_share > 0.0 and not on_street and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
+		var si := cfg.city_a2_sub_inset
+		# A thin whole-lot plinth under the four, as wide as they stand (inset `si`): the lot's base part (the largest at
+		# street level), so the NA-11 layout rules raise and move one part per lot, as on an unsplit lot, and the four
+		# stay over it when a border street moves its face in.
+		var z_pl := -z_sink * px_per_bu
+		var pl := cfg.city_a2_sub_plinth_bu
+		if pl > 0.0:
+			out.append(_extrusion(cell, si, z_pl, pl * px_per_bu, 1.0, ink, terr, key + 1))
+		for q in 4:
+			var lo := Vector2(cell.position) + Vector2(0.5 * (q % 2), 0.5 * (q / 2)) + Vector2(si, si)
+			var hi := lo + Vector2(0.5 - 2.0 * si, 0.5 - 2.0 * si)
+			var hq := _curve(rng.randf(), hr, hp) * cfg.city_a2_sub_h_k * rise * spike
+			if t != null:
+				hq *= lerpf(cfg.city_a2_dwindle_h_min, 1.0, _keep(t, cfg, f))
+			if z_sink > 0.0:
+				hq = minf(hq, z_sink * 0.9)
+			out.append(_extrusion_q(cell, lo, hi, z_pl + pl * px_per_bu, hq * px_per_bu, taper, ink, terr, key + 2 + q))
+		return out
+	if z_sink > 0.0:
+		out.append(_extrusion(cell, ins, -z_sink * px_per_bu, h * px_per_bu, taper, ink, terr, key))
+	elif h >= cfg.city_a2_setback_from:
 		var h0 := h * cfg.city_a2_setback.y
 		out.append(_extrusion(cell, ins, 0.0, h0 * px_per_bu, 1.0, ink, terr, key))
 		var ins2 := minf(ins + cfg.city_a2_setback.x, 0.45)
@@ -444,7 +654,11 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 
 
 static func _extrusion(cell: Rect2i, ins: float, z0: float, h: float, taper: float, ink: Color, terr: StringName, key: int) -> Dictionary:
-	var lo := Vector2(cell.position) + Vector2(ins, ins)
-	var hi := Vector2(cell.end) - Vector2(ins, ins)
+	return _extrusion_q(cell, Vector2(cell.position) + Vector2(ins, ins), Vector2(cell.end) - Vector2(ins, ins), z0, h, taper, ink, terr, key)
+
+
+## An extrusion over the lot rect lo..hi (lots) of building cell `cell`.
+static func _extrusion_q(cell: Rect2i, lo: Vector2, hi: Vector2, z0: float, h: float, taper: float, ink: Color, terr: StringName,
+		key: int) -> Dictionary:
 	return {"base": PackedVector2Array([lo, Vector2(hi.x, lo.y), hi, Vector2(lo.x, hi.y)]), "z0": z0, "h": h, "taper": taper,
 		"ink": ink, "terr": terr, "key": key, "cell": cell}

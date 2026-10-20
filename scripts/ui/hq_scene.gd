@@ -1748,6 +1748,10 @@ func show_hq() -> void:
 ## HQ-B: builds the HQ page as `page_name`: "hq" (the CREW / MARKET / DEFENCE hands) or "raid"
 ## (the DEFENCE hand as the raid setup, in place: the same city, camera, card row and slot).
 func _build_hq_page(page_name: String) -> void:
+	# CITY-A2 r2: the city takes the campaign's city seed before the page lays out and fits on it (the poll would switch
+	# it a moment later: the Sites' lots, and so the fit, moved under a framing that should hold).
+	if wireframe != null and wireframe.city != null:
+		wireframe.city.follow_city_seed()
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()

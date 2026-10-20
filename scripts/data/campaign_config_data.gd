@@ -458,6 +458,15 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_taper: Vector2 = Vector2(0.85, 1.0)
 ## Street look: share of a territory's street lots in its corporation's color; traffic by A2 road class (local: &"local").
 @export var city_a2_corp_ink_share: float = 0.35
+## LOOK L5 (whole-city plate parity, art-pass city_world_a2 "four sub-lots: denser, finer grain"): a single lot of a kind in
+## `city_a2_sub_kinds` under the setback height splits with `city_a2_sub_share` into four quarter-lot buildings, inset
+## `city_a2_sub_inset` lots, each its own height in the kind's range x `city_a2_sub_h_k`.
+@export var city_a2_sub_kinds: Array[StringName] = []
+@export var city_a2_sub_share: float = 0.0
+@export var city_a2_sub_inset: float = 0.05
+@export var city_a2_sub_h_k: float = 0.8
+## LOOK L5 suite: a split lot's four stand on a whole-lot plinth this tall (bu; 0 = none), its base part for the NA-11 rules.
+@export var city_a2_sub_plinth_bu: float = 0.0
 @export var city_a2_traffic: Dictionary = {&"ring": 1.0, &"motorway": 1.0, &"truck": 0.8, &"arterial": 0.6,
 	&"collector": 0.45, &"local": 0.2}
 ## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
@@ -469,18 +478,73 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## from stream `city_terrain` of `city_a2_terrain_seed`; no mountain within `city_a2_mountain_shore` lots of the water; the
 ## land falls to the sea over `city_a2_beach` lots. The land runs `city_a2_land_margin` lots past the city rect, sampled
 ## every `city_a2_land_step` lots past the raster.
-@export var city_a2_hill_exag: float = 1.0
+@export var city_a2_hill_exag: float = 1.5
 @export var city_a2_outer_ring: StringName = &"road_001"
 @export var city_a2_foot: Vector2 = Vector2(2.5, 25.0)
 @export var city_a2_foot_h: float = 12.0
-@export var city_a2_mountain: Vector2 = Vector2(20.0, 64.0)
+@export var city_a2_mountain: Vector2 = Vector2(28.0, 80.0)
 @export var city_a2_mountain_h: float = 60.0
 @export var city_a2_noise_cells: Vector3 = Vector3(33.0, 13.0, 40.0)
 @export var city_a2_terrain_seed: int = 5101
 @export var city_a2_mountain_shore: Vector2 = Vector2(1.2, 7.5)
 @export var city_a2_beach: Vector2 = Vector2(0.5, 2.5)
-@export var city_a2_land_margin: int = 80
-@export var city_a2_land_step: int = 2
+## LOOK L5 (designer 2026-10-20): the shore's blur radius (lots) on the fine ground: the coast runs as a smooth line, not
+## lot steps (0 = the lot-grid shore).
+@export var city_a2_coast_smooth: float = 0.0
+@export var city_a2_land_margin: int = 120
+@export var city_a2_land_step: int = 3
+## CITY-A2 r2 (art-pass terrain_a2.py): the far horizon ridge, the mountains x(1 + x) rising over y..z lots past the outer
+## ring; the raster's fine heights blend into the coarse land over `city_a2_land_blend` lots inside the raster's edge (one
+## surface, no step); per-lot jitter lattice (a 4th lattice of the terrain stream, 1 lot cells).
+@export var city_a2_mountain_edge: Vector3 = Vector3(0.45, 78.0, 124.0)
+## LOOK L5 (whole-city plate parity): the mountains' ridged relief, x BU on hashed value noise of y and z lots (weights 0.7,
+## 0.3), rising over `city_a2_relief_from` lots past the outer ring (no stream draw; 0 BU = none).
+@export var city_a2_relief: Vector3 = Vector3(0.0, 17.0, 7.0)
+@export var city_a2_relief_from: Vector2 = Vector2(10.0, 40.0)
+## LOOK L5 (designer 2026-10-20: "more character"): the relief's domain warp, x lots on value noise of y lots (0 = none),
+## and a third, finer ridged octave of z x the relief on cells of half its fine cell.
+@export var city_a2_relief_warp: Vector3 = Vector3(0.0, 30.0, 0.0)
+## LOOK L5 (designer 2026-10-20, the plate's west cliffs; art-pass terrain_a2.py cliff): x BU of sea cliff on the coast
+## past the outer ring (rising over 1..6 lots past it), west of A2 x metres `city_a2_cliff_x` (full at .x, none at .y);
+## its face rises over shore lots `city_a2_cliff_shore` .x..y and its back falls over .z..w (0 BU = none).
+@export var city_a2_cliff: float = 0.0
+@export var city_a2_cliff_x: Vector2 = Vector2(-7000.0, -5500.0)
+@export var city_a2_cliff_shore: Vector4 = Vector4(0.4, 1.6, 4.0, 14.0)
+@export var city_a2_land_blend: float = 12.0
+## CITY-A2 r2 (art-pass zoning_a2.py): no building on ground over `city_a2_max_build_h` BU or steeper than
+## `city_a2_max_build_slope` (BU per BU); past the outer ring (lots, moved by the terrain's broad noise x
+## `city_a2_edge_noise` lots) a lot keeps its building with the chance falling over `city_a2_sprawl_fade` (from, to).
+@export var city_a2_max_build_h: float = 42.0
+@export var city_a2_max_build_slope: float = 0.3
+@export var city_a2_edge_noise: float = 5.0
+@export var city_a2_sprawl_fade: Vector2 = Vector2(0.5, 6.0)
+## LOOK L5 (designer 2026-10-20): the city's edge dwindles, not stops: past the outer ring a lot's building chance also
+## falls as its ground nears `city_a2_max_build_h` (from x of it) and its slope `city_a2_max_build_slope` (from y of it),
+## and within z lots of the plan rect's edge; the building's height shrinks with that chance to `city_a2_dwindle_h_min`.
+@export var city_a2_dwindle: Vector3 = Vector3(1.0, 1.0, 0.0)
+@export var city_a2_dwindle_h_min: float = 1.0
+## LOOK L5 (designer 2026-10-20, height variety): per height kind, the height range's curve exponent (1 = even; over 1:
+## mostly low with a few tall) and a share of buildings `city_a2_height_spike` x taller (by a hash of the lot, no draw).
+@export var city_a2_height_pow: Dictionary = {}
+@export var city_a2_height_spike: Vector2 = Vector2(0.0, 1.0)
+## LOOK L5 suite: no spike on a lot within this many lots of an HQ rect (NA-11c HQ zone; 0 = spikes anywhere).
+@export var city_a2_spike_hq_clear: int = 0
+## LOOK L5 (designer 2026-10-20, the drowned quarter): there `city_a2_sink_share` of the buildings (no Site's) stand
+## sunk, their base `city_a2_sink_bu` (from, to) BU under the ground and their top under the water.
+@export var city_a2_sink_share: float = 0.0
+@export var city_a2_sink_bu: Vector2 = Vector2(3.0, 7.0)
+## Past the outer ring by more than this (lots), open Sprawl land has no local streets either.
+@export var city_a2_sprawl_streets: float = 16.0
+## LOOK L5 (designer 2026-10-20): no building within this many lots (Chebyshev) of a sea lot (0 = build to the shore;
+## rivers keep their frontage, a Site its building).
+@export var city_a2_coast_setback: int = 0
+## LOOK L5 (designer 2026-10-20): a local street lot with no building lot within this many lots (Chebyshev) is open land
+## (0 = keep every street; a Site's streets always stay).
+@export var city_a2_prune_streets: int = 0
+## Within this many lots of a Site the sprawl does not thin (the run's street keeps its frontage).
+@export var city_a2_sprawl_site_keep: int = 8
+## CITY-A2 r2 (art-pass zoning `clear`): lots each side of an A2 road of the class kept open under its elevated deck.
+@export var city_a2_corridor: Dictionary = {&"ring": 1, &"motorway": 1, &"truck": 1}
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -773,6 +837,8 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 		errors.append("city_a2_block_lots must be 2 <= min <= max.")
 	if city_a2_merge_share < 0.0 or city_a2_merge_share > 1.0 or city_a2_corp_ink_share < 0.0 or city_a2_corp_ink_share > 1.0:
 		errors.append("city_a2_merge_share and city_a2_corp_ink_share must be in [0, 1].")
+	if city_a2_sub_share < 0.0 or city_a2_sub_share > 1.0 or city_a2_sub_inset < 0.0 or city_a2_sub_inset >= 0.25 or city_a2_sub_h_k <= 0.0:
+		errors.append("city_a2_sub_share must be in [0, 1], city_a2_sub_inset in [0, 0.25), city_a2_sub_h_k > 0.")
 	if city_a2_inset < 0.0 or city_a2_inset >= 0.5 or city_a2_setback.x < 0.0 or city_a2_setback.y <= 0.0 or city_a2_setback.y >= 1.0:
 		errors.append("city_a2_inset must be in [0, 0.5), city_a2_setback x >= 0 and y in (0, 1).")
 	if city_a2_taper.x <= 0.0 or city_a2_taper.x > city_a2_taper.y or city_a2_hq_rise < 0.0 or city_a2_hq_rise_lots <= 0.0:
@@ -783,6 +849,9 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 			errors.append("city_a2_heights %s must be a Vector2 0 < min <= max." % k)
 	if not city_a2_traffic.has(&"local"):
 		errors.append("city_a2_traffic needs a local entry.")
+	if city_a2_land_blend < 0.0 or city_a2_land_blend > float(city_a2_raster_margin) or city_a2_max_build_h <= 0.0 \
+			or city_a2_max_build_slope <= 0.0 or city_a2_sprawl_fade.x >= city_a2_sprawl_fade.y or city_a2_mountain_edge.y >= city_a2_mountain_edge.z:
+		errors.append("city_a2_land_blend must be 0..city_a2_raster_margin, city_a2_max_build_h / _slope > 0, city_a2_sprawl_fade and city_a2_mountain_edge from < to.")
 	if city_a2_hill_exag < 0.0 or city_a2_foot_h < 0.0 or city_a2_mountain_h < 0.0 or city_a2_land_margin < 0 or city_a2_land_step < 1:
 		errors.append("city_a2_hill_exag, city_a2_foot_h, city_a2_mountain_h, city_a2_land_margin must be >= 0, city_a2_land_step >= 1.")
 	for v: Vector2 in [city_a2_foot, city_a2_mountain, city_a2_mountain_shore, city_a2_beach]:

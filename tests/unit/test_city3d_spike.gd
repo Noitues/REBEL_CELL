@@ -120,7 +120,7 @@ func test_quality_tiers_and_the_deck() -> void:
 
 func test_instances_map_the_unit_footprint_onto_the_layout() -> void:
 	var checked := 0
-	for n in range(0, district.prisms.size(), 41):
+	for n in range(0, district.prisms.size(), 31):  # CITY-A2 r2: fewer prisms (the deck corridors), the same coverage
 		var pr: Dictionary = district.prisms[n]
 		var poly: PackedVector2Array = pr["poly"]
 		var xf := CityMeshKit.instance_transform(poly, pr["y0"], pr["h"])

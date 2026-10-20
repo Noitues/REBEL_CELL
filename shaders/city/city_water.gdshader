@@ -31,6 +31,21 @@ uniform float foam_gain = 0.7;
 uniform float look_blend = 0.0;
 uniform float look_gain = 1.6;
 uniform float time_scale = 1.0;
+// LOOK L5 (A2 plate): foam on the caustic's strongest veins (the white swirl lines at the whole-city zoom when high).
+uniform float vein_foam = 0.25;
+// LOOK L5: the water read as translucent over a seabed (`bed_k` 0 = off): the bed falls `bed_slope` BU per lot from the shore
+// (UV.x) to `bed_max_bu`, its shape broken by a broad noise (`bed_noise_bu` cells, `bed_noise_k`) into shelves and trenches;
+// the bed's tone (sand by the shore to dark rock deep, by day / night) shows through the water by exp(-depth / `bed_clear_bu`).
+uniform float bed_k = 0.0;
+uniform float bed_slope = 0.35;
+uniform float bed_max_bu = 24.0;
+uniform float bed_noise_bu = 160.0;
+uniform float bed_noise_k = 0.8;
+uniform float bed_clear_bu = 5.0;
+uniform vec3 bed_shallow_day = vec3(0.20, 0.42, 0.46);
+uniform vec3 bed_deep_day = vec3(0.04, 0.12, 0.26);
+uniform vec3 bed_shallow_night = vec3(0.05, 0.16, 0.16);
+uniform vec3 bed_deep_night = vec3(0.01, 0.03, 0.05);
 varying vec3 v_world;
 
 float h2(vec2 p) {
@@ -64,6 +79,15 @@ void fragment() {
 		vec3 deep = mix(deep_day, deep_night, night);
 		vec3 shore = mix(shore_day, shore_night, night);
 		vec3 col = mix(deep, shore, shallow) * (1.0 + (rip - 0.5) * ripple_gain);
+		if (bed_k > 0.0) {
+			vec2 bp = v_world.xz / max(bed_noise_bu, 0.001);
+			float bn = vnoise(bp) * 0.6 + vnoise(bp * 2.7 + 7.3) * 0.4;
+			float bdepth = min(d * bed_slope * (1.0 + (bn - 0.5) * 2.0 * bed_noise_k), bed_max_bu);
+			float seen = exp(-max(bdepth, 0.0) / max(bed_clear_bu, 0.001));
+			vec3 bed = mix(mix(bed_deep_day, bed_deep_night, night), mix(bed_shallow_day, bed_shallow_night, night), seen)
+				* (0.75 + 0.5 * vnoise(bp * 9.0));
+			col = mix(col, mix(col, bed, seen), bed_k);
+		}
 		// Marbled caustic: ridges of a warped noise (veins) over broad lighter blotches, drifting slowly.
 		float tc = tt * caustic_speed;
 		vec2 p = v_world.xz / max(caustic_bu, 0.001);
@@ -76,7 +100,7 @@ void fragment() {
 		col += ctone * (veins * 0.85 + blotch * 0.3) * caustic_gain * (0.55 + 0.45 * shallow);
 		// Foam: a broken white line hugging the shore, and foam on the strongest veins.
 		float broken = smoothstep(0.3, 0.7, vnoise(w * 3.0 + vec2(t * 3.0, 0.0)));
-		float foam = exp(-d / max(foam_lots, 0.001)) * (0.35 + 0.65 * broken) + veins * veins * 0.25;
+		float foam = exp(-d / max(foam_lots, 0.001)) * (0.35 + 0.65 * broken) + veins * veins * vein_foam;
 		col += mix(vec3(0.95, 0.98, 1.0), vec3(0.6, 0.9, 1.0), night) * foam * foam_gain * mix(1.0, 0.7, night);
 		EMISSION = col * gain;
 	}

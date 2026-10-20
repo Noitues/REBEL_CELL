@@ -143,6 +143,20 @@ static func make(cfg: CityConfig, p_target: Vector3, p_ortho: float, size: Vecto
 	return c
 
 
+## The whole-city pose (CityConfig `whole_pose_*`): a perspective camera on the city centre `centre_lot` plus the
+## pose's target offset, `size` px. Its ortho is the width the field of view spans at the target.
+static func whole_pose(cfg: CityConfig, centre_lot: Vector2, size: Vector2) -> CityIsoCamera:
+	var c := CityIsoCamera.new()
+	c.yaw_deg = cfg.whole_pose_yaw_deg
+	c.pitch_deg = cfg.whole_pose_pitch_deg
+	c.fov_deg = cfg.whole_pose_fov_deg
+	c.distance = cfg.camera_distance
+	c.viewport = size
+	c.target = lot_to_world(cfg, centre_lot + cfg.whole_pose_target_lots)
+	c.ortho = 2.0 * cfg.whole_pose_dist_bu * tan(deg_to_rad(cfg.whole_pose_fov_deg) * 0.5)
+	return c
+
+
 ## A copy of this camera.
 func copy() -> CityIsoCamera:
 	var c := CityIsoCamera.new()

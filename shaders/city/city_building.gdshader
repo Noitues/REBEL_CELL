@@ -22,6 +22,13 @@ uniform float tone_min = 0.86;
 uniform float tone_max = 1.12;
 uniform float roof_gain = 1.08;
 uniform vec3 window_colors[6];
+// LOOK L5 (whole-city night): the territory's corporation, carried in COLOR.a as 1 - index / 8 (1 = none; CityMeshKit
+// instance_buffer): its colour pulls the lit windows (terr_win_k) and lights the facades faintly (terr_wall_emit).
+uniform vec3 terr_colors[5];
+uniform float terr_win_k = 0.0;
+uniform float terr_wall_emit = 0.0;
+// ... and tints the facades toward it at the same brightness (the plate's districts read by colour by day too).
+uniform float terr_albedo_k = 0.0;
 uniform vec2 window_pitch = vec2(1.6, 1.9);
 uniform vec2 window_size = vec2(0.8, 0.7);
 uniform float window_first = 1.6;
@@ -30,6 +37,13 @@ uniform float window_dim_min = 0.5;
 uniform float window_gain = 1.0;
 uniform vec3 ink_colors[16];
 uniform float trim_bu = 0.22;
+// LOOK L5: the roof trim's least width in pixels (1.5 keeps it a line at any zoom; 0 lets it fall under a pixel at the
+// whole-city pose, where it otherwise paints whole small roofs in the ink).
+uniform float trim_px_min = 1.5;
+// LOOK L5: the facade's foot darkened to `foot_dark` of its albedo, rising to full over `foot_h_bu` (the plate's deep street
+// canyons; 1.0 = off).
+uniform float foot_dark = 1.0;
+uniform float foot_h_bu = 12.0;
 uniform float neon_gain = 1.0;
 uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
@@ -99,6 +113,14 @@ uniform float win_share = 0.3;
 uniform float win_floor = 0.5;
 uniform float win_pow = 1.0;
 uniform float win_emit = 1.0;
+// LOOK L5 (whole city, the plate's neon signage): above 0 this share of the off-territory facade faces carries one vertical
+// sign strip, sign_w BU wide from sign_z0 to sign_z1 of the height, in one of sign_colors, lit at sign_emit (x look_blend).
+uniform float sign_share = 0.0;
+uniform float sign_emit = 3.0;
+uniform float sign_w = 1.0;
+uniform float sign_z0 = 0.3;
+uniform float sign_z1 = 0.85;
+uniform vec3 sign_colors[4];
 uniform float trim_emit = 1.0;
 // NA-22c (the street-level wash, art-pass ruling on W1 NA-22): the lowest floors take the street's sign hues so the facade luma
 // rises toward the street. `wash_floors` = floors (window_pitch.y BU each) kept at full strength and floors where it reaches 0
@@ -131,6 +153,8 @@ uniform vec3 haze_col = vec3(0.0);
 uniform float haze_k = 0.0;
 uniform float haze_h = 30.0;
 uniform float haze_hi = 0.15;
+// LOOK L5 (whole city): the view distance (BU) the haze starts at (0 = at the eye); the whole-city pose sets its target's.
+uniform float haze_d0 = 0.0;
 // The id pass (PIPELINE_SPEC 12.0): unlit class colour in R, G = 255 and B = 0 for a cut / ghosted / dissolved building.
 uniform bool id_mode = false;
 uniform float id_class = 2.0;
@@ -341,6 +365,12 @@ void fragment() {
 		body = mix(body, concrete_fam[int(floor(fract(seed * 17.31) * 6.0)) % 6], look_blend);
 	}
 	vec3 base = body * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
+	int terr_i = int(floor((1.0 - COLOR.a) * 8.0 + 0.5));
+	vec3 terr_c = terr_i > 0 ? terr_colors[min(terr_i - 1, 4)] : vec3(0.0);
+	if (terr_i > 0 && terr_albedo_k > 0.0) {
+		vec3 lw = vec3(0.2126, 0.7152, 0.0722);
+		base = mix(base, terr_c * dot(base, lw) / max(dot(terr_c, lw), 1e-3), terr_albedo_k);
+	}
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
@@ -404,8 +434,23 @@ void fragment() {
 					float s = window_dim_min + (1.0 - window_dim_min) * hash1(key + 9.0);
 					float s_nr = win_floor + (1.0 - win_floor) * pow(hash1(key + 9.0), win_pow);
 					s = mix(s, s_nr, look_blend);
+					if (terr_i > 0) {
+						wc = mix(wc, terr_c * max(max(wc.r, wc.g), wc.b) / max(max(max(terr_c.r, terr_c.g), terr_c.b), 1e-3), terr_win_k);
+					}
 					em = wc * s * window_gain * mix(1.0, win_emit, look_blend);
 					base = wc * s * 0.25;
+				}
+			}
+		}
+		if (sign_share > 0.0 && look_blend > 0.0 && terr_i == 0 && L > sign_w + 0.4 && v_h > 3.0) {
+			float hs = hash1(vec3(floor(v_corner.x * 3.0), floor(v_corner.z * 3.0), seed * 53.0));
+			if (hs < sign_share) {
+				float sa = dot(v_world - v_corner, v_edge / L);
+				float a0 = 0.2 + hash1(vec3(hs * 71.0, seed, 2.0)) * (L - sign_w - 0.4);
+				if (sa > a0 && sa < a0 + sign_w && z > sign_z0 * v_h && z < sign_z1 * v_h) {
+					vec3 sgc = sign_colors[int(hash1(vec3(hs * 13.0, seed * 7.0, 9.0)) * 4.0) % 4];
+					em = sgc * sign_emit * look_blend;
+					base = sgc * 0.2;
 				}
 			}
 		}
@@ -425,7 +470,7 @@ void fragment() {
 		// Neon roof trim in the building's ink: the rim of the roof fan.
 		float dist = (1.0 - v_rim) * v_half * v_inst.x;
 		float px = fwidth(v_rim) * v_half * v_inst.x;
-		if (dist < max(trim_bu, px * 1.5)) {
+		if (dist < max(trim_bu, px * trim_px_min)) {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
 			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
@@ -485,14 +530,17 @@ void fragment() {
 	}
 	if (persp && look_blend > 0.0 && haze_k > 0.0) {
 		// Depth haze: far blocks lose contrast into the glow colour, low parts more than high ones; layers separate by distance.
-		float hz = (1.0 - exp(-view_d * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
+		float hz = (1.0 - exp(-max(view_d - haze_d0, 0.0) * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
 		base *= 1.0 - hz;
 		em = em * (1.0 - hz) + haze_col * hz;
+	}
+	if (!roof && foot_dark < 1.0) {
+		base *= mix(foot_dark, 1.0, smoothstep(0.0, foot_h_bu, zl));
 	}
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	vec3 spill = toon_spill(v_world, nw, ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
-	EMISSION = (em + base * spill * spill_gain) * emission_multiplier;
+	EMISSION = (em + base * spill * spill_gain + terr_c * terr_wall_emit) * emission_multiplier;
 	if (poche_face) {
 		// The open top of a cut building: its back faces show the near-black poche.
 		ALBEDO = poche;
