@@ -21,6 +21,7 @@ const ALLOWED: Array[String] = [
 	"visual_lint_static.gd:out", "visual_lint_static.gd:sorted",
 	"na25_e2e_lab.gd:sorted",   # frame times (floats)
 	"wheel_state.gd:status_ints", "result_chip_model.gd:seen_statuses",
+	"halcyon_hq_graph.gd:picks",   # Halcyon v2: next-layer column indices (ints)
 ]
 
 
