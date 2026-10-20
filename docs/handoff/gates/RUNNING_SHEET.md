@@ -13,6 +13,9 @@ Standing directive (designer, 2026-10-19):
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D6 | 10-19 | Solace v2: an ACROSS move costs a flat amount, and the Breach key makes it free. Decay applies after the raid's rise; a CITY LOST raid gets no decay. Heat is read on entering a node, before that node's own Heat is added. | Ask to change any of these |
+| D5 | 10-19 | Solace v2: the Breach setback is not capped, so the first entry at T1 can show a gap above 5.0. | Cap the setback at the maximum gap |
+| D4 | 10-19 | Old route window: a test that went red with CITY-A2 step 2 (`test_anim_r2_city` placement, "the baked city knows its streets") is marked pending until art/look's city work lands (A-059). | none |
 | D3 | 10-19 | Every THEMES2 follow-up (ME1-5, OR1-6, SO1-4, HA1-6, RC1-5, AU1-3, TE1-4) took its recommended default, so W2 builds from the v2 drafts. The list is in `THEMES2_FOLLOWUP_2026-10-19.md`. | Answer any code to change it |
 | D2 | 10-19 | Old route window: the fallback page stays (a street that can't be derived still gets a route page; GRID VIEW and boss runs use the same code). Only the test-only `street_route` flag is removed. | B: drop the fallback and show an error page, removing about 200 lines |
 | D1 | 10-19 | PT gates are skipped per wave. Before every push of main, the user-ready gate still runs the full suite once, plus smoke and validate (CLAUDE.md). | none |
