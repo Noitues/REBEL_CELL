@@ -899,7 +899,7 @@ extends Resource
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.4, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
-	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(3.0, 40.0), "caustic_deep_k": 0.12,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.12,
 	"night_alpha_deep": 0.4, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
