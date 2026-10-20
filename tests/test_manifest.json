@@ -1580,6 +1580,10 @@
 		"res://tests/unit/test_exploit_building_graph.gd": {
 			"seconds": 15.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_exploit_building_run.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
 		}
 	}
 }

@@ -311,8 +311,6 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var exploit_building_outside_layers: int = 4
 @export var exploit_building_inside_layers: int = 5
 @export var exploit_building_max_width: int = 3
-## EX-11 Solace culture garden (Virus): the tier its fights run at.
-@export var solace_garden_tier: int = 2
 ## Solace campaign infection, basis points: per step base, per living threat per step, the CITY
 ## LOST threshold, and the decays (raid held, per threat destroyed, per cure: Heat objective Site
 ## or Proxy Relay completion).
@@ -947,5 +945,3 @@ func _validate_exploit_building(errors: PackedStringArray) -> void:
 		errors.append("exploit_building_lot_w_bu and exploit_building_lot_d_bu must be > 0, exploit_building_clearance_bu >= 0.")
 	if exploit_building_outside_layers < 1 or exploit_building_inside_layers < 3 or exploit_building_max_width < 3:
 		errors.append("exploit_building_outside_layers must be >= 1, exploit_building_inside_layers >= 3, exploit_building_max_width >= 3.")
-	if solace_garden_tier < 1 or solace_garden_tier > 4:
-		errors.append("solace_garden_tier must be in 1..4.")

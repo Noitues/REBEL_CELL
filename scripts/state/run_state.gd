@@ -48,6 +48,8 @@ var racks_captured: int = 0
 ## Launched as a patrol of an already cleared or claimed Site: completion changes nothing,
 ## even if a raid Takes the Site mid-run.
 var patrol: bool = false
+## EX-11: the exploit building this run plays through ("culture_garden"), or &"" for a street netrun. Saved only when set.
+var exploit_building: StringName = &""
 var elites_defeated: int = 0
 ## Cold Exit: did the operative's NULL slice resolve at any point this run?
 var null_resolved: bool = false
@@ -125,6 +127,8 @@ func _raw_dict() -> Dictionary:
 		out["revealed_nodes"] = _strings(revealed_nodes)
 	if not node_state.is_empty():  # RG-02: absent when no node page is open
 		out["node_state"] = node_state.duplicate(true)
+	if exploit_building != &"":  # EX-11: absent for a street netrun
+		out["exploit_building"] = String(exploit_building)
 	return out
 
 
@@ -157,6 +161,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.normal_fights_started = int(d.get("normal_fights_started", -1))
 	r.racks_captured = int(d.get("racks_captured", 0))
 	r.patrol = bool(d.get("patrol", false))
+	r.exploit_building = StringName(String(d.get("exploit_building", "")))
 	r.elites_defeated = int(d.get("elites_defeated", 0))
 	r.null_resolved = bool(d.get("null_resolved", false))
 	r.card_removals = int(d.get("card_removals", 0))

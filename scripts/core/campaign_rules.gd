@@ -269,6 +269,18 @@ static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:
 	return "netrun"
 
 
+## EX-11: the exploit building (its kind) a netrun at `site` of `corp` plays through, or &"" for a street netrun: an Exploit
+## Site whose "<corp>/<exploit>" is in `config.exploit_building_kinds` and has a built shape (ExploitBuildingGraph.KINDS).
+static func exploit_building_for(corp: CorporationData, site: SiteData, config: CampaignConfigData) -> StringName:
+	if corp == null or site == null or site.objective != RC.SiteObjective.EXPLOIT:
+		return &""
+	var key := "%s/%s" % [corp.id, KeyLots.NAMES.get(site.exploit_type, "")]
+	if not config.exploit_building_kinds.has(key):
+		return &""
+	var kind := StringName(String(config.exploit_building_kinds[key]))
+	return kind if ExploitBuildingGraph.KINDS.has(kind) else &""
+
+
 ## Exploit effects on the final breach (GDD 11.7) as CombatSession overrides.
 static func boss_overrides(campaign: CampaignState, corp: CorporationData) -> Dictionary:
 	var out := {"remove_boss_pointers": 0, "boss_corrupt_slices": 0, "reveal_phases": false}

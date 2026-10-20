@@ -201,8 +201,9 @@ func _start(c: CampaignState, op: OperativeState, site: SiteData, run_seed: int)
 			if NetrunSession.uses_hq_ladder(corp):
 				return NetrunSession.start_hq_ladder(resolver, c, op.id, site.id, site.tier, run_seed, corp)
 			return NetrunSession.start_special(resolver, c, op.id, "boss", site.id, site.tier, run_seed, corp.final_boss.id, CampaignRules.boss_overrides(c, corp), corp)
-		_:
-			return NetrunSession.start(resolver, c, op.id, site.tier, site.id, run_seed, corp)
+		var kind_now:
+			var building := CampaignRules.exploit_building_for(corp, site, config) if kind_now == "netrun" else &""
+			return NetrunSession.start(resolver, c, op.id, site.tier, site.id, run_seed, corp, building)
 
 
 # --- Run policies ---------------------------------------------------------------------------------

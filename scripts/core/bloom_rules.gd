@@ -53,6 +53,11 @@ static func band_for_gap(gap: int, cfg: CampaignConfigData) -> Band:
 	return Band.CREEPING
 
 
+## The base node pace at `tier` (before any multiplier; the HQ number in an HQ run).
+static func base_pace_node(b: BloomState, cfg: CampaignConfigData, tier: int) -> int:
+	return _pace_node(b, cfg, tier)
+
+
 static func _pace_node(b: BloomState, cfg: CampaignConfigData, tier: int) -> int:
 	if b.hq:
 		return cfg.bloom_hq_pace_node_milli
@@ -77,17 +82,33 @@ static func set_heat_band(b: BloomState, cfg: CampaignConfigData, band_idx: int)
 ## Effective pace of `base` (S2/S6): floor(base x heat% x virus% [x intel% when `turn`] /
 ## 100^n), minimum 1, computed in one step. A base of 0 or less stays as it is.
 static func scaled(b: BloomState, cfg: CampaignConfigData, base: int, turn: bool = false) -> int:
+	return _scaled(b, cfg, base, turn, b.key_virus)
+
+
+## EX-11: the pace `scaled` gives for `base` with the Virus key held (`virus`) or not, whatever `b` holds now (the
+## key preview: what the next netrun applies once the Exploit is taken).
+static func scaled_with_virus(b: BloomState, cfg: CampaignConfigData, base: int, turn: bool, virus: bool) -> int:
+	return _scaled(b, cfg, base, turn, virus)
+
+
+static func _scaled(b: BloomState, cfg: CampaignConfigData, base: int, turn: bool, virus: bool) -> int:
 	if base <= 0:
 		return base
 	var num := base * b.heat_pct
 	var den := 100
-	if b.key_virus:
+	if virus:
 		num *= cfg.bloom_virus_pace_pct
 		den *= 100
 	if turn and b.key_intel:
 		num *= cfg.bloom_intel_turn_pct
 		den *= 100
 	return maxi(1, num / den)
+
+
+## EX-11: the free start of an exploit building (O0): the operative stands on `layer` and the front does not move.
+static func enter_free(b: BloomState, layer: int) -> void:
+	if b.enabled and not b.caught:
+		b.layer_milli = layer * 1000
 
 
 ## Front advance for entering a node at `tier`; `across` adds the HQ ACROSS cost (free with
