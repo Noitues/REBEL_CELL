@@ -382,6 +382,8 @@ func _whole_fog() -> void:
 			_whole_fog_on = false
 			_env.fog_enabled = false
 			_env.adjustment_enabled = false
+			if _we != null:
+				_we.camera_attributes = null
 		return
 	_whole_fog_on = true
 	# The plate's saturated colour (Cycles' Filmic look) over the toon city's greyed grade.
@@ -399,6 +401,15 @@ func _whole_fog() -> void:
 	_env.fog_depth_end = cfg.whole_pose_dist_bu * cfg.whole_fog_depth.y
 	_env.fog_depth_curve = cfg.whole_fog_curve
 	_env.background_color = c
+	if _we != null and cfg.whole_dof_far.z > 0.0:
+		var ca := _we.camera_attributes as CameraAttributesPractical
+		if ca == null:
+			ca = CameraAttributesPractical.new()
+			_we.camera_attributes = ca
+		ca.dof_blur_far_enabled = true
+		ca.dof_blur_far_distance = cfg.whole_pose_dist_bu * cfg.whole_dof_far.x
+		ca.dof_blur_far_transition = cfg.whole_pose_dist_bu * cfg.whole_dof_far.y
+		ca.dof_blur_amount = cfg.whole_dof_far.z
 
 
 
@@ -496,12 +507,30 @@ func _sync_a2_hqs() -> void:
 			for mi in node.find_children("*", "MeshInstance3D", true, false):
 				top = maxf(top, (mi as MeshInstance3D).mesh.get_aabb().end.y)
 			_a2_hqs[st] = {"node": node, "mats": mats, "rect": rect, "mask": mask, "top": top, "key": key, "on": false}
+		# LOOK L5: the port, ships, island buildings, helicopters and police lights (CityA2Dress); no sky beam.
+		var dd := CityA2Dress.make(cfg, plan, water.islands if water != null else ([] as Array[Dictionary]))
+		if not dd.is_empty():
+			var node: Node3D = dd["node"]
+			add_to_layer(&"landmarks", node)
+			var dm: Dictionary = dd["mask"]
+			var rect := Rect2()
+			var first := true
+			for l: Vector2i in dm:
+				var c0 := lot_world(Vector2(l))
+				var c1 := lot_world(Vector2(l) + Vector2.ONE)
+				var lr := Rect2(Vector2(minf(c0.x, c1.x), minf(c0.z, c1.z)), Vector2(absf(c1.x - c0.x), absf(c1.z - c0.z)))
+				rect = lr if first else rect.merge(lr)
+				first = false
+			_a2_hqs["~dress"] = {"node": node, "mats": LandmarkMaterials.apply(node, look, &"dress", not _landmarks_night),
+				"rect": rect, "mask": dm, "top": 0.0, "key": &"dress", "on": false, "beam": false, "fx": dd["fx"]}
 	for st: String in _a2_hqs:
 		var hq: Dictionary = _a2_hqs[st]
 		(hq["node"] as Node3D).visible = whole_look
 		if whole_look != bool(hq["on"]):
 			hq["on"] = whole_look
 			var r: Rect2 = hq["rect"]
+			if (hq["mask"] as Dictionary).is_empty():
+				continue
 			if whole_look:
 				_cleared.append(r)
 				_clear_masks[r] = hq["mask"]
@@ -522,6 +551,10 @@ func _whole_landmarks() -> void:
 		if not group is Dictionary:
 			continue
 		var g: float = float(cfg.whole_landmark_gain.get(StringName(String(key)), 1.0)) if whole_look else 1.0
+		var tone: Vector3 = cfg.whole_landmark_tone.get(StringName(String(key)), Vector3.ONE) if whole_look else Vector3.ONE
+		var tv := lerpf(tone.y, tone.z, night_share)
+		if String(key) == "dress":
+			_dress_fx()
 		for m: Variant in (group as Dictionary).values():
 			var sm := m as ShaderMaterial
 			if sm == null or sm.shader == null:
@@ -543,6 +576,35 @@ func _whole_landmarks() -> void:
 						continue
 					sm.set_meta(mk, v)
 				sm.set_shader_parameter(k, float(sm.get_meta(mk)) * g)
+			for k: StringName in [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]:
+				_tone_ramp(sm, k, tone.x, tv)
+
+
+## LOOK L5: the dressing's lights by the night: the searchlights at night only, the police bars dimmer by day.
+func _dress_fx() -> void:
+	var dd: Dictionary = _a2_hqs.get("~dress", {})
+	for m: ShaderMaterial in dd.get("fx", []):
+		if m.shader == CityA2Dress.SPOT_SHADER:
+			m.set_shader_parameter(&"on", night_share)
+		else:
+			m.set_shader_parameter(&"on", lerpf(float(cfg.a2_dress.get("police_day_on", 0.5)), 1.0, night_share))
+
+
+## LOOK L5: ramp uniform `k` of `sm` desaturated to `sat` and scaled by `val` from its restyled base (kept in metadata; a
+## value other than the last one written here is a new base from a restyle).
+func _tone_ramp(sm: ShaderMaterial, k: StringName, sat: float, val: float) -> void:
+	var cur: Variant = sm.get_shader_parameter(k)
+	if not cur is Vector3:
+		return
+	var bk := StringName("lm_tone_base_%s" % k)
+	var wk := StringName("lm_tone_out_%s" % k)
+	if not sm.has_meta(bk) or not sm.has_meta(wk) or (sm.get_meta(wk) as Vector3) != (cur as Vector3):
+		sm.set_meta(bk, cur)
+	var base: Vector3 = sm.get_meta(bk)
+	var lum := base.dot(Vector3(0.2126, 0.7152, 0.0722))
+	var out := (Vector3(lum, lum, lum).lerp(base, sat)) * val
+	sm.set_shader_parameter(k, out)
+	sm.set_meta(wk, out)
 
 
 ## AAA-2: the exposure the post chain multiplies the linear picture by (the solved value of the framing, `look.exposure` of the
@@ -723,6 +785,7 @@ func _whole_building() -> void:
 			_whole_wet(m)
 		elif m != null and m.shader == CityMaterials.WET_STREET:
 			NetrunShaderKit.setup_wet(m)
+			m.set_shader_parameter(&"slope_spec", 0.0)
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
@@ -774,6 +837,8 @@ func _sync_hq_beams() -> void:
 		for i in styles.size():
 			var st: String = styles[i]
 			var hq: Dictionary = _a2_hqs[st]
+			if not bool(hq.get("beam", true)):
+				continue
 			var s: float = 1.0 if (corps.size() + i) % 2 == 0 else -1.0
 			var o: Vector3 = (hq["node"] as Node3D).position + Vector3(0.0, float(hq["top"]) + cfg.whole_beam_base_bu, 0.0)
 			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
@@ -842,6 +907,7 @@ func _sync_hq_beams() -> void:
 
 
 var _env: Environment
+var _we: WorldEnvironment
 
 
 # --- Picking API ------------------------------------------------------------------------------
@@ -1038,6 +1104,7 @@ func _build_scene() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+	_we = we
 	_sun = DirectionalLight3D.new()
 	add_child(_sun)
 	_sun.look_at_from_position(Vector3.ZERO, -cfg.to_light, Vector3.UP)

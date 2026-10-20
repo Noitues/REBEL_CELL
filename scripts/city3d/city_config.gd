@@ -59,7 +59,7 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
-@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 0.0, "spec_max": 3.5}
+@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 0.0, "spec_max": 3.5, "slope_spec": 1.0}
 @export var whole_cloud_k: float = 0.75
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
@@ -76,6 +76,9 @@ extends Resource
 @export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
 @export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
+## LOOK L5 (designer 2026-10-20): the far side of the city blurred under the whole-city pose (CameraAttributesPractical on
+## the WorldEnvironment): the far blur starts at x whole_pose_dist_bu, ramps over x whole_pose_dist_bu, amount.
+@export var whole_dof_far: Vector3 = Vector3(1.1, 0.7, 0.08)
 ## ... and the colour saturation there (Environment adjustment; day, night).
 @export var whole_saturation: Vector2 = Vector2(1.35, 1.15)
 @export var whole_fog_sun_scatter: float = 0.25
@@ -409,6 +412,14 @@ extends Resource
 ## kept by night) and the HQs' glow gain there by landmark key (Meridian's gold read too loud).
 @export var whole_lm_beam: Dictionary = {"beam_alpha": 0.30, "beam_soft": 2.2, "beam_shimmer": 0.35, "beam_gain": 1.3}
 @export var whole_landmark_gain: Dictionary = {&"meridian": 0.45}
+## LOOK L5 (designer 2026-10-20): the HQs' toon ramp toned under the whole-city pose, by landmark key: Vector3(saturation k,
+## value k by day, value k by night) on ramp_shadow / ramp_mid / ramp_lit (Meridian's gold day, the A2 HQs' lilac night).
+@export var whole_landmark_tone: Dictionary = {
+	&"meridian": Vector3(0.45, 0.78, 1.0),
+	&"aurelian": Vector3(0.25, 1.0, 0.7),
+	&"tethys": Vector3(0.2, 1.0, 0.75),
+	&"dress": Vector3(0.35, 1.0, 0.75),
+}
 ## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs), by A2 landmark style: size
 ## (radius_k x the A2 radius), their parts' colours, whether it floats ("on_water", "y" BU), the cleared lots (clear_k x
 ## its radius) and its sky beam's colour.
@@ -420,6 +431,32 @@ extends Resource
 		"satellites": 6, "piers": 8, "pier_k": 0.42, "pier_w": 2.0, "mast_h": 2.6, "white": Color(0.92, 0.94, 0.96),
 		"deck": Color(0.70, 0.72, 0.74), "neon": Color(0.35, 0.9, 1.0), "win": Color(0.75, 0.95, 1.0), "clear_k": 0.3,
 		"beam": Color(0.45, 0.75, 1.0)}}
+## LOOK L5 (designer 2026-10-20): the whole-city pose's dressing (CityA2Dress): the port (pier deck lift BU, crane gap /
+## span / reach m and height BU, the moored share, the yard's rows / bays m, fill share, container height BU and colours),
+## ships (count, length m, beam share, freeboard and house BU, least depth BU, island clearance rho, spacing m, wake share
+## of the length), the helicopters (count, altitude BU, reach from the district centre m, searchlight lead m, pool radius
+## BU, the cone's strength top / bottom, the pool's), the police bars (per road, classes, bar size BU) and the lights'
+## shader uniforms ("police": police_light.gdshader, "spot": spot_light.gdshader; their `on` follows the night).
+@export var a2_dress: Dictionary = {
+	"pier_lift_bu": 0.8, "concrete": Color(0.62, 0.62, 0.60), "lamp": Color(1.0, 0.8, 0.5),
+	"crane_cols": [Color(0.85, 0.30, 0.18), Color(0.95, 0.70, 0.20), Color(0.25, 0.55, 0.75)], "crane_gap_m": 260.0,
+	"crane_h_bu": 4.5, "crane_span_m": 50.0, "crane_reach_m": 70.0, "tip_light": Color(1.0, 0.15, 0.1),
+	"moored_share": 0.8, "moor_gap_m": 40.0, "yard_row_m": 70.0, "yard_bay_m": 140.0, "yard_fill": 0.85,
+	"container_h_bu": 0.45,
+	"container_cols": [Color(0.70, 0.20, 0.14), Color(0.16, 0.35, 0.62), Color(0.20, 0.50, 0.30), Color(0.85, 0.65, 0.20),
+		Color(0.85, 0.85, 0.82), Color(0.55, 0.30, 0.55)],
+	"ships": 16, "ship_len_m": Vector2(120.0, 320.0), "ship_beam_k": 0.16, "ship_freeboard_bu": 0.6, "house_h_bu": 1.4,
+	"ship_depth_bu": 3.0, "ship_isle_rho": 2.4, "ship_gap_m": 900.0, "wake_k": 1.6,
+	"hull_cols": [Color(0.18, 0.20, 0.24), Color(0.45, 0.14, 0.12), Color(0.20, 0.30, 0.38), Color(0.85, 0.85, 0.82)],
+	"house": Color(0.90, 0.90, 0.88), "ship_win": Color(1.0, 0.85, 0.55), "wake": Color(0.80, 0.90, 0.92),
+	"isle_stone": Color(0.66, 0.62, 0.55), "isle_roof": Color(0.55, 0.30, 0.22), "isle_win": Color(1.0, 0.82, 0.5),
+	"helis": 6, "heli_alt_bu": 38.0, "heli_reach_m": 900.0, "heli_body": Color(0.12, 0.13, 0.16),
+	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 5.0, "spot_cone_a": Vector2(0.9, 0.25),
+	"pool_a": 0.8,
+	"cops_per_road": 3, "cop_classes": [&"ring", &"motorway"], "cop_bar_bu": Vector3(2.2, 0.9, 0.5),
+	"police": {"gain": 5.0, "rate": 1.6}, "police_day_on": 0.5,
+	"spot": {"gain": 0.9, "soft": 1.5},
+}
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
 @export var ground: Color = Color(0.20, 0.20, 0.25)
