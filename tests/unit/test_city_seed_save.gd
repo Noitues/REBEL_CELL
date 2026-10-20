@@ -45,7 +45,7 @@ func test_a_new_campaign_stores_its_city_seed_and_advances_no_stream() -> void:
 	assert_eq(c.city_seed, CampaignRules.city_seed_for(4401))
 	assert_eq(JSON.stringify(RngService.to_dict(), "", true), fresh, "the saved streams are as freshly seeded")
 	assert_eq(CityPlan.current_seed(), c.city_seed, "the maps read the campaign's city")
-	assert_false(CityPlan.current().fixed, "a generated city")
+	assert_eq(CityPlan.current().city_seed, c.city_seed, "the campaign's own city")
 	assert_eq(NeonCity.hq_of(&"halcyon"), CityPlan.current().hq_of(&"halcyon"), "HQs come from the campaign's city")
 
 
@@ -68,7 +68,7 @@ func test_a_resumed_campaign_regenerates_the_identical_city() -> void:
 	var key := city.look_key()
 	assert_eq(RunManager.autosave(), OK)
 	RunManager.reset()
-	assert_eq(CityPlan.current_seed(), CityPlan.fixed_seed(), "no campaign: the fixed city")
+	assert_eq(CityPlan.current_seed(), CityPlan.default_seed(), "no campaign: the default city")
 	assert_true(RunManager.resume(), "resumed")
 	assert_eq(RunManager.campaign.city_seed, seed_v)
 	assert_eq(JSON.stringify(CityPlan.current().to_dict(), "", true), plan, "the same city")

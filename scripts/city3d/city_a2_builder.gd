@@ -25,6 +25,7 @@ const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), 
 const INF_SCORE := 1 << 20
 
 static var _rasters: Dictionary = {}
+static var _terrains: Dictionary = {}
 static var _lots: Dictionary = {}
 static var _mutex: Mutex = Mutex.new()
 
@@ -44,6 +45,22 @@ static func raster(cfg: CampaignConfigData, city_rect: Rect2i, blend: float) -> 
 	return r
 
 
+## CITY-A2 step 2: the terrain of `cfg`'s A2 plan (CityA2Terrain, heights in BU of `lot_bu`), built once per config and
+## rect; null when the A2 file does not load.
+static func terrain(cfg: CampaignConfigData, city_rect: Rect2i, blend: float, lot_bu: float) -> CityA2Terrain:
+	var ras := raster(cfg, city_rect, blend)
+	if ras == null:
+		return null
+	var k := "%s|%s|%s|%s" % [cfg.city_a2_path, city_rect, cfg.resource_path, lot_bu]
+	_mutex.lock()
+	var t: CityA2Terrain = _terrains.get(k)
+	if t == null:
+		t = CityA2Terrain.make(ras, cfg, city_rect, lot_bu)
+		_terrains[k] = t
+	_mutex.unlock()
+	return t
+
+
 ## Forgets the cached lots (tests: a rebuild from scratch).
 static func forget() -> void:
 	_mutex.lock()
@@ -59,13 +76,13 @@ static func make_plan(p_seed: int, cfg: CampaignConfigData, city_rect: Rect2i, c
 	var p := CityPlan.new()
 	p.city_seed = p_seed
 	p.rect = city_rect
-	p.attempts = 1
 	var ras := raster(cfg, city_rect, blend)
 	if ras == null:
 		p.fallback = true
 		p.failure = ",".join(CityPlanA2.shared(cfg.city_a2_path).errors)
 		return p
 	p.a2 = ras
+	p.terrain = terrain(cfg, city_rect, blend, lot_bu)
 	var rng := RngStreams.make_stream(p_seed, RngStreams.CITY_LAYOUT_STREAM)
 	var ids: Array = corp_ids.duplicate()
 	IdSort.sort_ids(ids)
@@ -103,7 +120,7 @@ static func make_plan(p_seed: int, cfg: CampaignConfigData, city_rect: Rect2i, c
 			return p
 		p.site_aim[id] = aim[0]
 		p.site_mirror[id] = aim[1]
-		for q: Vector2 in CityGenerator.site_points_at(_centre(rects[id], hq_lots), aim[0], aim[1], frame, uvs[id]):
+		for q: Vector2 in site_points_at(_centre(rects[id], hq_lots), aim[0], aim[1], frame, uvs[id]):
 			p.a2_sites[Vector2i(q.floor())] = true
 	return p
 
@@ -199,7 +216,7 @@ static func _aim(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, 
 	var best_score := -INF_SCORE
 	for c: Array in cands:
 		var score := 0
-		for q: Vector2 in CityGenerator.site_points_at(centre, c[0], c[1], frame, uv):
+		for q: Vector2 in site_points_at(centre, c[0], c[1], frame, uv):
 			var l := Vector2i(q.floor())
 			if not inner.has_point(l) or ras.depth_at(q.x, q.y) < float(cfg.city_gen_coast_clear) or _on_hq(l, rects, id):
 				score = -INF_SCORE
@@ -212,6 +229,21 @@ static func _aim(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, 
 			best_score = score
 			best = c
 	return best
+
+
+## The Site points (lots) of a layout `uvs` (each in [-1, 1]^2, CityLayout.site_uvs) round HQ centre `centre`,
+## turned `deg`, mirrored when `mirror` (CityLayout.site_points_aimed's formula; `frame`: CityPlan.site_frame).
+static func site_points_at(centre: Vector2, deg: float, mirror: bool, frame: Dictionary, uvs: PackedVector2Array) -> PackedVector2Array:
+	var a: Vector2 = (frame["right"] as Vector2).rotated(deg_to_rad(deg))
+	var b: Vector2 = (frame["down"] as Vector2).rotated(deg_to_rad(deg)) * (-1.0 if mirror else 1.0)
+	var spread: float = frame["spread"]
+	var run: float = float(frame["run_half"]) * spread
+	var cross: float = float(frame["cross_half"]) * spread
+	var origin := centre - a * (float(frame["boss_gap"]) + run) + b * float(frame["cross_offset"])
+	var out := PackedVector2Array()
+	for uv in uvs:
+		out.append(origin + a * uv.x * run + b * uv.y * cross)
+	return out
 
 
 ## True when lot `l` is on `own`'s HQ rect or on another corporation's grown by 1 (the Cell's rect holds buildings,

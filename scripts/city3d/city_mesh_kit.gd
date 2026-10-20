@@ -198,6 +198,77 @@ static func ground_mesh_of(cfg: CityConfig, area: Rect2, plazas: Array, streets:
 	return st.commit()
 
 
+## CITY-A2 step 2: the ground of lots `r` on `terrain`: one asphalt quad per lot at its corners' heights (so the ground,
+## the streets and the plazas follow the hills and stay one surface), then plazas and street lots over them.
+static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: Array, terrain: CityA2Terrain) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in range(r.position.y, r.end.y):
+		for i in range(r.position.x, r.end.x):
+			_lot_quad_on(st, cfg, terrain, Vector2i(i, j), -0.02, cfg.ground)
+	for p: Dictionary in plazas:
+		_lot_quad_on(st, cfg, terrain, p["lot"], 0.005, cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12))
+	for s: Dictionary in streets:
+		_lot_quad_on(st, cfg, terrain, s["lot"], 0.01, cfg.street)
+	st.generate_normals()
+	return st.commit()
+
+
+## CITY-A2 step 2: the land past the city: one quad per `terrain` coarse cell outside `hole` (lots; the chunks draw their
+## own ground there) with a land corner, at its corners' heights (the sea mesh covers the water corners at sea level).
+static func land_mesh(cfg: CityConfig, terrain: CityA2Terrain, hole: Rect2i) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var s := terrain.step
+	var cr := terrain.coarse_rect
+	var any := false
+	for j in range(cr.position.y, cr.end.y, s):
+		for i in range(cr.position.x, cr.end.x, s):
+			var cell := Rect2i(i, j, s, s)
+			if hole.encloses(cell):
+				continue
+			var q: Array[Vector3] = []
+			var land := false
+			for c: Vector2i in [cell.position, Vector2i(cell.end.x, j), cell.end, Vector2i(i, cell.end.y)]:
+				var h := terrain.height_at(c.x, c.y)
+				land = land or h > 0.0
+				q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
+			if land:
+				_quad(st, q[0], q[1], q[2], q[3], cfg.ground)
+				any = true
+	if not any:
+		return null
+	st.generate_normals()
+	return st.commit()
+
+
+## CITY-A2 step 2: a flat-topology grid over world rect `area` (X/Z) every `step_bu`, lifted `lift` BU over `terrain`
+## (the network decal follows the hills; its shader reads world X/Z).
+static func terrain_plane(cfg: CityConfig, area: Rect2, terrain: CityA2Terrain, lift: float, step_bu: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var nx := maxi(ceili(area.size.x / step_bu), 1)
+	var nz := maxi(ceili(area.size.y / step_bu), 1)
+	var dx := area.size.x / nx
+	var dz := area.size.y / nz
+	for z in nz:
+		for x in nx:
+			var q: Array[Vector3] = []
+			for c: Vector2 in [Vector2(x, z), Vector2(x + 1, z), Vector2(x + 1, z + 1), Vector2(x, z + 1)]:
+				var w := Vector2(area.position.x + c.x * dx, area.position.y + c.y * dz)
+				var l := CityIsoCamera.world_to_lot(cfg, Vector3(w.x, 0.0, w.y))
+				q.append(Vector3(w.x, terrain.height_at(l.x, l.y) + lift, w.y))
+			_quad(st, q[0], q[1], q[2], q[3], Color.WHITE)
+	return st.commit()
+
+
+static func _lot_quad_on(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, l: Vector2i, y: float, col: Color) -> void:
+	var q: Array[Vector3] = []
+	for c: Vector2i in [l, l + Vector2i(1, 0), l + Vector2i(1, 1), l + Vector2i(0, 1)]:
+		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), terrain.height_at(c.x, c.y) + y))
+	_quad(st, q[0], q[1], q[2], q[3], col)
+
+
 ## Lane glow strips (unified40 GLANE): a soft bed and 3-12 bright strokes per street lot
 ## in its lane colour (vertex colour = emission).
 static func lane_mesh(cfg: CityConfig, d: CityDistrict) -> ArrayMesh:
@@ -205,7 +276,8 @@ static func lane_mesh(cfg: CityConfig, d: CityDistrict) -> ArrayMesh:
 
 
 ## ART-5 5a: lane glow strips of street lots `streets` (one chunk's).
-static func lane_mesh_of(cfg: CityConfig, streets: Array) -> ArrayMesh:
+## CITY-A2 step 2: with `terrain`, each strip's corners stand on the ground under them.
+static func lane_mesh_of(cfg: CityConfig, streets: Array, terrain: CityA2Terrain = null) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var u := cfg.lot_bu
@@ -226,7 +298,7 @@ static func lane_mesh_of(cfg: CityConfig, streets: Array) -> ArrayMesh:
 		var dir := (wb - wa).normalized()
 		var nrm := Vector3(-dir.z, 0, dir.x)
 		var bed := col * (cfg.lane_glow_base + tr * cfg.lane_glow_traffic)
-		_strip(st, wa - dir * 0.3, wb + dir * 0.3, nrm, half + 0.5, 0.02, bed)
+		_strip_on(st, cfg, terrain, wa - dir * 0.3, wb + dir * 0.3, nrm, half + 0.5, 0.02, bed)
 		any = true
 		var nl := mini(strokes, 3 + int(tr * 9.0))
 		for k in nl:
@@ -234,7 +306,7 @@ static func lane_mesh_of(cfg: CityConfig, streets: Array) -> ArrayMesh:
 			var lane := t * half * 0.8 + (hash01(l.x * 7919 + l.y, k, 3) - 0.5) * 0.25
 			var al := 0.55 + 0.35 * hash01(l.x, l.y * 31 + k, 4) + tr * 0.15
 			var c2 := Color(minf(1.0, col.r * al), minf(1.0, col.g * al), minf(1.0, col.b * al))
-			_strip(st, wa + nrm * lane - dir * 0.35, wb + nrm * lane + dir * 0.35, nrm, cfg.lane_stroke_bu * 0.5, 0.04, c2)
+			_strip_on(st, cfg, terrain, wa + nrm * lane - dir * 0.35, wb + nrm * lane + dir * 0.35, nrm, cfg.lane_stroke_bu * 0.5, 0.04, c2)
 	return st.commit() if any else null
 
 
@@ -285,6 +357,19 @@ static func _box(v: PackedVector3Array, c: PackedFloat32Array, lo: Vector3, hi: 
 		for k in [0, 1, 2, 0, 2, 3]:
 			v.append(p[f[k]])
 			c.append_array([float(part), 0.0, 0.0, 0.0])
+
+
+## `_strip` on the ground of `terrain` (null: flat at 0).
+static func _strip_on(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, a: Vector3, b: Vector3, nrm: Vector3, half: float, y: float,
+		col: Color) -> void:
+	if terrain == null:
+		_strip(st, a, b, nrm, half, y, col)
+		return
+	var q: Array[Vector3] = []
+	for p: Vector3 in [a + nrm * half, b + nrm * half, b - nrm * half, a - nrm * half]:
+		var l := CityIsoCamera.world_to_lot(cfg, p)
+		q.append(Vector3(p.x, terrain.height_at(l.x, l.y) + y, p.z))
+	_quad(st, q[0], q[1], q[2], q[3], col)
 
 
 static func _strip(st: SurfaceTool, a: Vector3, b: Vector3, nrm: Vector3, half: float, y: float, col: Color) -> void:
