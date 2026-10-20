@@ -267,6 +267,9 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if _building_mat == null or day.is_empty():
 		return
 	_last_day = day
+	if whole_look:
+		day = _whole_day(day)
+		set_look_blend(night_share * cfg.whole_night_look)
 	_ramp_water(day)
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
@@ -447,6 +450,28 @@ var night_share: float = 1.0
 ## NA-12 r2: the last day look set_night_share was given (the sea wall built later takes its ramp).
 var _last_day: Dictionary = {}
 var _landmarks_night: bool = true
+## LOOK L5 (designer 2026-10-19): the whole-city pose's look (on while NeonCity.whole_pose_centre is set): the AAA-2
+## night look by the night share (cfg.whole_night_look) and the day look's ramp and grade toward the A2 day plate.
+var whole_look: bool = false:
+	set(v):
+		if v == whole_look:
+			return
+		whole_look = v
+		if not v:
+			set_look_blend(0.0)
+		if not _last_day.is_empty():
+			set_night_share(night_share, _last_day)
+
+
+## The day look under the whole-city pose: the ramp scaled by cfg.whole_day_ramp_gain, the grade cfg.whole_day_grade.
+func _whole_day(day: Dictionary) -> Dictionary:
+	var d := day.duplicate()
+	var ramp: Array = []
+	for c: Color in day["ramp"]:
+		ramp.append(Color(c.r * cfg.whole_day_ramp_gain, c.g * cfg.whole_day_ramp_gain, c.b * cfg.whole_day_ramp_gain))
+	d["ramp"] = ramp
+	d["grade"] = cfg.whole_day_grade
+	return d
 var _env: Environment
 
 

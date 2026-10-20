@@ -70,7 +70,7 @@ func _capture(campaign_seed: int) -> void:
 	await _view_shot(view, "city_a2_night")
 	var lay := city.city_motion.layers if city.city_motion != null else null
 	if lay != null:
-		view.set_look_blend(0.0)  # AAA-2 is the night look; the day keeps the city look
+		pass  # whole_look: the look blend follows the night share
 		lay.set_light(CityMotionLayers.Daylight.DAY, false)
 		await _settle(roundi(Motion.seconds(CityMotionLayers.LIGHT_FADE) * 60.0) + SETTLE_FRAMES)
 		await _view_shot(view, "city_a2_day")

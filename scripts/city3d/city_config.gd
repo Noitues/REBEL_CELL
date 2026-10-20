@@ -46,6 +46,11 @@ extends Resource
 @export var whole_pose_fov_deg: float = 65.47
 @export var whole_pose_dist_bu: float = 1130.0
 @export var whole_pose_target_lots: Vector2 = Vector2(2.0, 2.0)
+## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
+## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
+@export var whole_night_look: float = 1.0
+@export var whole_day_ramp_gain: float = 0.5
+@export var whole_day_grade: Color = Color(1.0, 0.96, 0.9)
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread

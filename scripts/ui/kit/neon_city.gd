@@ -1534,6 +1534,7 @@ func _draw_view_3d() -> void:
 		var stretch := get_viewport().get_final_transform().get_scale().x if is_inside_tree() else 1.0
 		view3d.band_lock = band_lock
 		view3d.ring_halos = ring_halos
+		view3d.whole_look = whole_pose_centre != Vector2.INF
 		var cover := cover_rect()
 		view3d.set_view_size(Vector2i((cover.size * scale.x * stretch).round()))
 		view3d.set_iso(iso_camera(cover))
