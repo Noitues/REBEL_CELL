@@ -544,7 +544,8 @@ static func ink_slot(inks: Array[Color], c: Color) -> int:
 	return best
 
 ## LOOK L5: the territory corps in COLOR.a's order (index + 1; 0 for any other territory), as city_building's terr_colors.
-const TERR_CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
+# LOOK L5: the Cell's own blocks are the city's ordinary mix (the designer): no territory tint for rebel_cell.
+const TERR_CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital"]
 
 
 ## The MultiMesh buffer of prisms `idx` (TRANSFORM_3D + colours + custom data):

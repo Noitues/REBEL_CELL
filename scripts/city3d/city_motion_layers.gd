@@ -89,11 +89,14 @@ var ground_pass_layer: int = 0
 ## The groups' nodes (GROUPS), children of this node until a host moves them to its layers.
 var groups: Dictionary = {}
 ## LOOK L5: at the whole-city pose the sky lanes (guide dots and cars) hide; from there they read as coloured dashes.
+const WHOLE_HIDE: Array[StringName] = [&"sky", &"traffic"]
 var whole_pose: bool = false:
 	set(v):
 		whole_pose = v
-		if groups.has(&"sky"):
-			(groups[&"sky"] as Node3D).visible = not v
+		# LOOK L5: the sky lanes and the street cars (dashes on the drowned streets) are not in the whole-city plate.
+		for gn: StringName in WHOLE_HIDE:
+			if groups.has(gn):
+				(groups[gn] as Node3D).visible = not v
 var view: int = View.GRID
 var daylight: int = Daylight.NIGHT
 var suspicion: bool = false
@@ -153,7 +156,7 @@ func setup(p_cfg: CityMotionConfigData, p_site: CityMotionSite, seed: int) -> vo
 	for name_ in GROUPS:
 		var g := Node3D.new()
 		g.name = String(name_).capitalize()
-		g.visible = not (whole_pose and name_ == &"sky")
+		g.visible = not (whole_pose and name_ in WHOLE_HIDE)
 		add_child(g)
 		groups[name_] = g
 	_car_mmis.clear()
