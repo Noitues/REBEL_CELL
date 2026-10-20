@@ -444,9 +444,105 @@ func set_look_blend(lb: float) -> void:
 	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure)
 	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+	_whole_landmarks()
 
 
 var _aaa_exposure: float = 0.0
+
+
+## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs: Aurelian's colosseum, Tethys's
+## pier city), shown under the whole-city pose only: style -> {"node", "mats", "rect", "mask", "top"}. The procedural
+## buildings under them give way while they show.
+var _a2_hqs: Dictionary = {}
+
+
+func _sync_a2_hqs() -> void:
+	if model == null:
+		return
+	if whole_look and _a2_hqs.is_empty():
+		var plan := CityPlan.for_seed(city_seed)
+		if plan.a2 == null:
+			return
+		var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+		for lm: Dictionary in plan.a2.a2.landmarks:
+			var st := String(lm.get("style", ""))
+			if lm["kind"] != &"hq" or not cfg.a2_hq_look.has(st):
+				continue
+			var hl: Dictionary = cfg.a2_hq_look[st]
+			var r_bu := float(lm.get("radius", 0.0)) / plan.a2.metres_per_lot * cfg.lot_bu * float(hl.get("radius_k", 1.0))
+			var node := CityA2Hqs.make(cfg, st, r_bu)
+			if node == null:
+				continue
+			var lot := plan.a2.lot_of(lm["pos"])
+			var at := lot_world(lot, float(hl.get("y", 0.0))) if hl.get("on_water", false) else ground_world(lot)
+			node.position = at
+			node.rotation.y = float(hl.get("yaw_deg", 0.0)) * PI / 180.0
+			node.name = "A2Hq_%s" % st
+			add_to_layer(&"landmarks", node)
+			var key := StringName(String(lm.get("district", st)))
+			var mats := LandmarkMaterials.apply(node, look, key, not _landmarks_night)
+			var mask := {}
+			var rl := r_bu / cfg.lot_bu * float(hl.get("clear_k", 1.05))
+			var e := float(hl.get("aspect", 1.0))
+			for j in range(floori(lot.y - rl), ceili(lot.y + rl) + 1):
+				for i in range(floori(lot.x - rl), ceili(lot.x + rl) + 1):
+					var d := Vector2(i + 0.5, j + 0.5) - lot
+					if Vector2(d.x, d.y / e).length() <= rl:
+						mask[Vector2i(i, j)] = true
+			var c0 := lot_world(lot - Vector2(rl, rl))
+			var c1 := lot_world(lot + Vector2(rl, rl))
+			var rect := Rect2(Vector2(minf(c0.x, c1.x), minf(c0.z, c1.z)), Vector2(absf(c1.x - c0.x), absf(c1.z - c0.z)))
+			var top := 0.0
+			for mi in node.find_children("*", "MeshInstance3D", true, false):
+				top = maxf(top, (mi as MeshInstance3D).mesh.get_aabb().end.y)
+			_a2_hqs[st] = {"node": node, "mats": mats, "rect": rect, "mask": mask, "top": top, "key": key, "on": false}
+	for st: String in _a2_hqs:
+		var hq: Dictionary = _a2_hqs[st]
+		(hq["node"] as Node3D).visible = whole_look
+		if whole_look != bool(hq["on"]):
+			hq["on"] = whole_look
+			var r: Rect2 = hq["rect"]
+			if whole_look:
+				_cleared.append(r)
+				_clear_masks[r] = hq["mask"]
+			else:
+				_cleared.erase(r)
+				_clear_masks.erase(r)
+			_rebuild_under(r)
+
+
+## LOOK L5 (designer 2026-10-20): under the whole-city pose the landmarks' light cones stay (by night too), soft and
+## see-through (cfg.whole_lm_beam), and the HQs in cfg.whole_landmark_gain glow that much less; off the pose as shipped.
+func _whole_landmarks() -> void:
+	var all := landmark_mats.duplicate()
+	for st: String in _a2_hqs:
+		all[_a2_hqs[st]["key"]] = _a2_hqs[st]["mats"]
+	for key: Variant in all:
+		var group: Variant = all[key]
+		if not group is Dictionary:
+			continue
+		var g: float = float(cfg.whole_landmark_gain.get(StringName(String(key)), 1.0)) if whole_look else 1.0
+		for m: Variant in (group as Dictionary).values():
+			var sm := m as ShaderMaterial
+			if sm == null or sm.shader == null:
+				continue
+			if sm.shader == LandmarkMaterials.BEAM_SHADER:
+				if whole_look:
+					for k: String in cfg.whole_lm_beam:
+						sm.set_shader_parameter(StringName(k), float(cfg.whole_lm_beam[k]))
+				else:
+					sm.set_shader_parameter(&"beam_soft", 0.0)
+				continue
+			if sm.shader != LandmarkMaterials.TOON_SHADER:
+				continue
+			for k: StringName in [&"lit_emission", &"neon_gain", &"window_gain"]:
+				var mk := StringName("lm_base_%s" % k)
+				if not sm.has_meta(mk):
+					var v: Variant = sm.get_shader_parameter(k)
+					if v == null:
+						continue
+					sm.set_meta(mk, v)
+				sm.set_shader_parameter(k, float(sm.get_meta(mk)) * g)
 
 
 ## AAA-2: the exposure the post chain multiplies the linear picture by (the solved value of the framing, `look.exposure` of the
@@ -653,6 +749,7 @@ var _hq_beams: Array[MeshInstance3D] = []
 
 
 func _sync_hq_beams() -> void:
+	_sync_a2_hqs()
 	var show := whole_look and night_share >= cfg.whole_beam_night_from and model != null
 	if show and _hq_beams.is_empty():
 		var corps: Array = model.hqs.keys()
@@ -669,6 +766,23 @@ func _sync_hq_beams() -> void:
 			m.set_shader_parameter(&"end_radius", cfg.whole_beam_len_bu * tan(deg_to_rad(cfg.whole_beam_half_deg)))
 			m.set_shader_parameter(&"emit", cfg.whole_beam_emit)
 			node.name = "hq_beam_%s" % corp
+			add_to_layer(&"sky", node)
+			_hq_beams.append(node)
+		# LOOK L5: the A2 HQs that are no corporation's beam too (the plate's seven).
+		var styles: Array = _a2_hqs.keys()
+		styles.sort()
+		for i in styles.size():
+			var st: String = styles[i]
+			var hq: Dictionary = _a2_hqs[st]
+			var s: float = 1.0 if (corps.size() + i) % 2 == 0 else -1.0
+			var o: Vector3 = (hq["node"] as Node3D).position + Vector3(0.0, float(hq["top"]) + cfg.whole_beam_base_bu, 0.0)
+			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
+			var node := NetrunShaderKit.beam_node(beam, cfg.a2_hq_look[st].get("beam", Color.WHITE), front_h)
+			var m := node.material_override as ShaderMaterial
+			m.set_shader_parameter(&"start_radius", cfg.whole_beam_start_r_bu)
+			m.set_shader_parameter(&"end_radius", cfg.whole_beam_len_bu * tan(deg_to_rad(cfg.whole_beam_half_deg)))
+			m.set_shader_parameter(&"emit", cfg.whole_beam_emit)
+			node.name = "hq_beam_a2_%s" % st
 			add_to_layer(&"sky", node)
 			_hq_beams.append(node)
 	for n in _hq_beams:
@@ -1806,11 +1920,15 @@ func _restyle_landmarks() -> void:
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	for key: StringName in landmarks:
 		landmark_mats[key] = LandmarkMaterials.apply(landmarks[key], look, _landmark_corp(key), not _landmarks_night)
+	for st: String in _a2_hqs:
+		var hq: Dictionary = _a2_hqs[st]
+		hq["mats"] = LandmarkMaterials.apply(hq["node"], look, hq["key"], not _landmarks_night)
 	_prop_mats.clear()
 	for nm: StringName in _prop_meshes:
 		_style_prop_mesh(nm)
 	if look_blend > 0.0:
 		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+	_whole_landmarks()
 	# ART-3 6w: the uplink pads take the new look too.
 	_uplink_meshes.clear()
 	if not uplink_pads.is_empty():

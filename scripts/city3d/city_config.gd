@@ -59,7 +59,7 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
-@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5, "spec_max": 3.5}
+@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 0.0, "spec_max": 3.5}
 @export var whole_cloud_k: float = 0.75
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
@@ -405,6 +405,21 @@ extends Resource
 ## LOOK L5 (designer 2026-10-20): the whole-city pose's sun, the plate's (city_preset A2: elevation 14 deg, azimuth 35 deg
 ## from east toward north = far right of the view, low): the direction toward it (world), blended in by the look.
 @export var whole_to_light: Vector3 = Vector3(0.795, 0.242, -0.557)
+## LOOK L5 (designer 2026-10-20): the landmarks' light cones under the whole-city pose (landmark_beam.gdshader uniforms;
+## kept by night) and the HQs' glow gain there by landmark key (Meridian's gold read too loud).
+@export var whole_lm_beam: Dictionary = {"beam_alpha": 0.30, "beam_soft": 2.2, "beam_shimmer": 0.35, "beam_gain": 1.3}
+@export var whole_landmark_gain: Dictionary = {&"meridian": 0.45}
+## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs), by A2 landmark style: size
+## (radius_k x the A2 radius), their parts' colours, whether it floats ("on_water", "y" BU), the cleared lots (clear_k x
+## its radius) and its sky beam's colour.
+@export var a2_hq_look: Dictionary = {
+	"colosseum_circus": {"radius_k": 0.62, "aspect": 0.8, "tiers": 3, "tier_h": 2.4, "bays": 56, "steps": 7, "arena": 0.42,
+		"wall": 0.09, "stone": Color(0.86, 0.80, 0.68), "stone_dark": Color(0.60, 0.54, 0.46), "arch": Color(1.0, 0.80, 0.50),
+		"rim": Color(1.0, 0.84, 0.55), "sand": Color(0.80, 0.70, 0.52), "clear_k": 1.08, "beam": Color(1.0, 0.86, 0.62)},
+	"pier_city": {"radius_k": 1.0, "on_water": true, "y": 0.0, "deck_k": 0.26, "deck_h": 1.2, "dome_k": 0.14, "dome_h": 0.85,
+		"satellites": 6, "piers": 8, "pier_k": 0.42, "pier_w": 2.0, "mast_h": 2.6, "white": Color(0.92, 0.94, 0.96),
+		"deck": Color(0.70, 0.72, 0.74), "neon": Color(0.35, 0.9, 1.0), "win": Color(0.75, 0.95, 1.0), "clear_k": 0.3,
+		"beam": Color(0.45, 0.75, 1.0)}}
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
 @export var ground: Color = Color(0.20, 0.20, 0.25)
