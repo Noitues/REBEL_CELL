@@ -58,7 +58,7 @@ extends Resource
 ## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
 @export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
 @export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
-@export var whole_fog_density: Vector2 = Vector2(0.7, 0.45)
+@export var whole_fog_density: Vector2 = Vector2(0.45, 0.45)
 @export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
 @export var whole_fog_sun_scatter: float = 0.25
@@ -78,13 +78,13 @@ extends Resource
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 2.4, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
-	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0}
+	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0}
 ## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
 @export var whole_bloom_thr: float = 0.55
 @export var whole_bloom_w: Vector3 = Vector3(0.22, 0.2, 0.16)
 @export var whole_exposure_k: float = 1.25
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
-@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0}
+@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22}
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
 @export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.93, 0.8),
 	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]
@@ -98,7 +98,7 @@ extends Resource
 @export var whole_caustic_k: float = 0.12
 ## LOOK L5: the vein foam at the whole-city pose, and the seabed under the translucent water there (city_water bed_*).
 @export var whole_vein_foam: float = 0.0
-@export var whole_bed: Dictionary = {"bed_k": 0.85, "bed_slope": 0.35, "bed_max_bu": 24.0, "bed_noise_bu": 160.0,
+@export var whole_bed: Dictionary = {"bed_k": 0.6, "bed_slope": 0.35, "bed_max_bu": 24.0, "bed_noise_bu": 160.0,
 	"bed_noise_k": 0.8, "bed_clear_bu": 5.0}
 ## The sea's day colours under the whole-city pose (the plate's deep blue bay and open sea).
 @export var whole_water_deep_day: Color = Color(0.012, 0.07, 0.2)
@@ -743,15 +743,15 @@ extends Resource
 ## kept share from meadow to forest, the least ground height (BU) and the steepest slope, the share of the city's bare lots
 ## with a tree, and the tree radius range (lots of BU; park_tree_w / park_tree_h shape them).
 @export var veg_step: int = 2
-@export var veg_density: Vector2 = Vector2(0.18, 0.7)
+@export var veg_density: Vector2 = Vector2(0.25, 0.85)
 @export var veg_min_h: float = 0.4
 @export var veg_max_slope: float = 0.25
 @export var veg_bare_share: float = 0.35
 @export var veg_r: Vector2 = Vector2(0.7, 1.5)
 @export var island_min_d: float = 10.0
-@export var island_r_k: float = 0.3
+@export var island_r_k: float = 0.25
 @export var island_r_max: float = 8.0
-@export var island_gap_k: float = 2.5
+@export var island_gap_k: float = 1.8
 @export var island_h_bu: float = 5.0
 @export var island_wobble: float = 0.35
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground

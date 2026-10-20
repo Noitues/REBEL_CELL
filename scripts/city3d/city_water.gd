@@ -20,6 +20,8 @@ const COPING_STEP := 0.25
 const VOID_Y := -0.04
 const SEA_Y := 0.03
 const DIAG := 1.41421356
+## LOOK L5: the share of an island's radius taken out of the sea (the hill's rim, at least the radius, covers it).
+const ISLAND_CORE := 0.75
 
 var water_mat: ShaderMaterial
 var void_mat: ShaderMaterial
@@ -340,7 +342,7 @@ static func _sea_terrain(cfg: CityConfig, plan: CityPlan, r: Rect2i, wet: Packed
 		for j in range(floori(c.y - rr), ceili(c.y + rr) + 1):
 			for i in range(floori(c.x - rr), ceili(c.x + rr) + 1):
 				var k := Vector2i(i - r.position.x, j - r.position.y)
-				if k.x >= 0 and k.x < r.size.x and k.y >= 0 and k.y < r.size.y and Vector2(i + 0.5, j + 0.5).distance_to(c) < rr:
+				if k.x >= 0 and k.x < r.size.x and k.y >= 0 and k.y < r.size.y and Vector2(i + 0.5, j + 0.5).distance_to(c) < rr * ISLAND_CORE:
 					dry[k.y * r.size.x + k.x] = 0
 	return {"mesh": _sea_field_mesh(cfg, r, dry), "islands": isl}
 
@@ -397,7 +399,7 @@ static func _island_mesh(cfg: CityConfig, islands: Array[Dictionary]) -> ArrayMe
 		var pt := func(ring: int, side: int) -> Vector3:
 			var f := float(ring) / float(RINGS)
 			var a := TAU * float(side % SIDES) / float(SIDES)
-			var wob := 1.0 + cfg.island_wobble * (CityMeshKit.hash01(7760 + n, side % SIDES, 0) - 0.5)
+			var wob := 1.0 + cfg.island_wobble * CityMeshKit.hash01(7760 + n, side % SIDES, 0)  # >= 1: the rim covers the dry core
 			var hgt := cfg.island_h_bu * pow(1.0 - f * f, 1.5) * (1.0 + 0.3 * (CityMeshKit.hash01(7761 + n, side % SIDES, ring) - 0.5))
 			var p := c + Vector2(cos(a), sin(a)) * rr * f * wob
 			return CityIsoCamera.lot_to_world(cfg, p, SEA_Y + hgt - (0.6 if ring == RINGS else 0.0))
@@ -407,10 +409,9 @@ static func _island_mesh(cfg: CityConfig, islands: Array[Dictionary]) -> ArrayMe
 		for ring in RINGS:
 			for s in SIDES:
 				var q := [pt.call(ring, s), pt.call(ring, s + 1), pt.call(ring + 1, s + 1), pt.call(ring + 1, s)]
-				var cs := [colr.call(ring), colr.call(ring), colr.call(ring + 1), colr.call(ring + 1)]
-				for k: int in [0, 2, 1, 0, 3, 2]:
-					st.set_color(cs[k])
-					st.add_vertex(q[k])
+				var cs: Array[Color] = [colr.call(ring), colr.call(ring), colr.call(ring + 1), colr.call(ring + 1)]
+				var qv: Array[Vector3] = [q[0], q[1], q[2], q[3]]
+				CityMeshKit._quad_c(st, qv, cs)
 	st.generate_normals()
 	return st.commit()
 
