@@ -178,7 +178,13 @@ static func base_color(cfg: CityConfig, pr: Dictionary) -> Color:
 		if not mats.is_empty():
 			var dm: Color = mats[key % mats.size()]
 			var fams: Array = cfg.day_mats.get("sprawl" if terr == &"" else "city", [])
-			return dm.lerp(_weighted(fams, hash01(key, DAY_MAT_SEED)), cfg.day_mats_k) if not fams.is_empty() else dm
+			var c := dm
+			if not fams.is_empty():
+				# Some buildings take their family colour whole (the plate's white concrete, dark glass, rust), the rest blend.
+				var k := 1.0 if hash01(key, DAY_MAT_SEED + 1) < cfg.day_mats_pure_share else cfg.day_mats_k
+				c = dm.lerp(_weighted(fams, hash01(key, DAY_MAT_SEED)), k)
+			var g := 1.0 + cfg.facade_value_jitter * (hash01(key, DAY_MAT_SEED + 2) * 2.0 - 1.0)
+			return Color(c.r * g, c.g * g, c.b * g)
 	var fam := cfg.families[key % cfg.families.size()]
 	if terr == &"":
 		return fam

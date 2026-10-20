@@ -33,6 +33,10 @@ uniform float trim_bu = 0.22;
 // LOOK L5: the roof trim's least width in pixels (1.5 keeps it a line at any zoom; 0 lets it fall under a pixel at the
 // whole-city pose, where it otherwise paints whole small roofs in the ink).
 uniform float trim_px_min = 1.5;
+// LOOK L5: the facade's foot darkened to `foot_dark` of its albedo, rising to full over `foot_h_bu` (the plate's deep street
+// canyons; 1.0 = off).
+uniform float foot_dark = 1.0;
+uniform float foot_h_bu = 12.0;
 uniform float neon_gain = 1.0;
 uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
@@ -493,6 +497,9 @@ void fragment() {
 		float hz = (1.0 - exp(-max(view_d - haze_d0, 0.0) * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
 		base *= 1.0 - hz;
 		em = em * (1.0 - hz) + haze_col * hz;
+	}
+	if (!roof && foot_dark < 1.0) {
+		base *= mix(foot_dark, 1.0, smoothstep(0.0, foot_h_bu, zl));
 	}
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);

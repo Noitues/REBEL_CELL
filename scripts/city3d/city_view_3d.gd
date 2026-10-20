@@ -304,6 +304,35 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if lm_night != _landmarks_night:
 		_landmarks_night = lm_night
 		_restyle_landmarks()
+	_whole_fog()
+
+
+## LOOK L5: the whole-city pose's atmosphere: depth fog from near the target out past the land, in a haze colour (day to
+## night) the sky takes too, so the land, sea and horizon fade into air instead of ending on a hard edge.
+var _whole_fog_on: bool = false
+
+
+func _whole_fog() -> void:
+	if _env == null:
+		return
+	if not whole_look:
+		if _whole_fog_on:
+			_whole_fog_on = false
+			_env.fog_enabled = false
+		return
+	_whole_fog_on = true
+	var c := cfg.whole_fog_day.lerp(cfg.whole_fog_night, night_share)
+	_env.fog_enabled = true
+	_env.fog_mode = Environment.FOG_MODE_DEPTH
+	_env.fog_light_color = c
+	_env.fog_light_energy = 1.0
+	_env.fog_sun_scatter = cfg.whole_fog_sun_scatter * (1.0 - night_share)
+	_env.fog_density = lerpf(cfg.whole_fog_density.x, cfg.whole_fog_density.y, night_share)
+	_env.fog_sky_affect = 1.0
+	_env.fog_depth_begin = cfg.whole_pose_dist_bu * cfg.whole_fog_depth.x
+	_env.fog_depth_end = cfg.whole_pose_dist_bu * cfg.whole_fog_depth.y
+	_env.fog_depth_curve = cfg.whole_fog_curve
+	_env.background_color = c
 
 
 

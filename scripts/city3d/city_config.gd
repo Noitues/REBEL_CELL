@@ -54,6 +54,14 @@ extends Resource
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
 @export var whole_day_sky: Color = Color(0.30, 0.32, 0.38)
 @export var whole_day_haze: Color = Color(0.36, 0.38, 0.44)
+## LOOK L5: the whole-city atmosphere (CityView3D._whole_fog): the fog / sky colour by day and night, density (day, night),
+## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
+@export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
+@export var whole_fog_night: Color = Color(0.035, 0.06, 0.085)
+@export var whole_fog_density: Vector2 = Vector2(0.85, 0.8)
+@export var whole_fog_depth: Vector2 = Vector2(0.75, 2.2)
+@export var whole_fog_curve: float = 1.6
+@export var whole_fog_sun_scatter: float = 0.25
 @export var whole_day_haze_k: float = 0.12
 ## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
 @export var whole_haze_start: float = 0.85
@@ -70,19 +78,19 @@ extends Resource
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 2.4, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
-	"trim_px_min": 0.0}
+	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0}
 ## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
 @export var whole_bloom_thr: float = 0.55
 @export var whole_bloom_w: Vector3 = Vector3(0.22, 0.2, 0.16)
 @export var whole_exposure_k: float = 1.25
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
-@export var whole_building_base: Dictionary = {"trim_px_min": 1.5}
+@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0}
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
 @export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.93, 0.8),
 	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]
 @export var whole_day_water_gain: float = 0.6
 ## Water children hidden under the whole-city pose (CityWater node names).
-@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWallLight"])
+@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWall", "SeaWallLight"])
 ## LOOK L5: the A2 feature parts hidden at the whole-city pose (the rail glow dashes read as a wireframe overlay, the
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
@@ -354,7 +362,7 @@ extends Resource
 	"rock": Color(0.30, 0.28, 0.26), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
-	"beach_k": 0.8, "noise_lo": 0.92, "noise_span": 0.16}
+	"beach_k": 0.0, "noise_lo": 0.92, "noise_span": 0.16}
 @export var terrain_h_scale: float = 0.3
 ## LOOK L5 (hybrid port, Blender city_preset DISTRICTS `mat` + DAY_MATS): the facade albedo per territory ("" the sprawl),
 ## the facade families ([weight, Color]; city for the corps, sprawl off-territory) and how far a family pulls the district
@@ -373,7 +381,10 @@ extends Resource
 		[0.12, Color(0.40, 0.25, 0.15)], [0.16, Color(0.62, 0.60, 0.56)]],
 	"sprawl": [[0.22, Color(0.42, 0.40, 0.37)], [0.32, Color(0.44, 0.24, 0.17)], [0.30, Color(0.42, 0.26, 0.14)],
 		[0.16, Color(0.30, 0.28, 0.27)]]}
-@export var day_mats_k: float = 0.6
+@export var day_mats_k: float = 0.35
+## LOOK L5: the share of buildings that take their day family colour whole, and the per-building value jitter (+/-).
+@export var day_mats_pure_share: float = 0.3
+@export var facade_value_jitter: float = 0.3
 ## LOOK L5 (hybrid port, Blender city_preset PARKS + city_world_a2 park_trees): park lawn colour and lift (BU), the share
 ## of park lots with trees, clumps per lot, trees per clump, clump spread (lots), tree radius range (BU), dome width and
 ## height factors, and the tree colours.
