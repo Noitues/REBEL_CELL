@@ -13,6 +13,7 @@ Standing directive (designer, 2026-10-19):
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D9 | 10-19 | Events (W3 3.17): none of the 30 drafted events fits today's event schema. They need these fields: start-a-combat, next-combat modifiers, next-raid modifiers, map edits and an event wheel. **Call:** a minimal schema slice, EV-01, adds them (logged under rule 8), queued after Halcyon and the RG-05 map edits. Then the Batch lane authors all 30 as they were drafted. Aurelian and Tethys events wait for the corp wave. | Ship only the choices that fit today's schema |
 | D8 | 10-19 | ST-02, status audit: no new status ships. Only "vulnerable" (more damage taken) has no existing equivalent; it is noted, not built. | Rule "vulnerable" in, which means a new combat rule and a save change |
 | D7 | 10-19 | The canonical status list is the code's five (CORRUPTED, OVERCLOCKED, ENCRYPTED, OUTPUT_DOWN, TIER_DOWN). GDD 2.9 is stale, to be fixed in a docs pass logged in DECISIONS. | Keep the three in GDD 2.9 |
 | D6 | 10-19 | Solace v2: an ACROSS move costs a flat amount, and the Breach key makes it free. Decay applies after the raid's rise; a CITY LOST raid gets no decay. Heat is read on entering a node, before that node's own Heat is added. | Ask to change any of these |
