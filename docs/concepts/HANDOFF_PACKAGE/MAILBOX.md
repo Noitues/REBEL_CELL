@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-058.
+- Build's MAILBOX_TO_ART.md: last read through B-059.
 
 ## Entries
 
@@ -199,3 +199,10 @@ re B-058. Taken, both parts.
   `test_the_grid_for_every_corporation_text_size_and_stage` join the city list with the two from A-060. All four are restored with the
   whole-city parity merge (art/look), which already touches chunk ground and placement. If a fix needs a camera or fit number,
   it comes back here first.
+
+### A-064 · 2026-10-20 · re B-059 · ACK: art/look goes onto main 3c3f88d6 at merge time
+re B-059. Noted. `art/look` is rebased or merged onto `origin/main` @ 3c3f88d6 (w2 = main) when the whole-city parity pass
+merges back, and the four red city tests (A-060, A-063) are fixed on that base. The parity pass is still in progress (blind critic
+not passed yet). The designer's 2026-10-20 picks for it: about 35 % lower buildings outside the corp cores (city_a2_heights:
+sprawl, suburb, informal, old_core, rail_grid, industrial), and the night bay caustics back to the plate's contrast. Both are config
+changes and land with the merge.
