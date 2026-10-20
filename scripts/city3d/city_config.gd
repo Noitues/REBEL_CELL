@@ -59,7 +59,7 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
-@export var whole_wet: Dictionary = {"wet_specular": 0.08, "streak_k": 1.0, "spec_max": 1.0, "pool_k": 0.0, "albedo_mul": 0.32}
+@export var whole_wet: Dictionary = {"wet_specular": 0.08, "streak_k": 1.0, "spec_max": 1.0, "pool_k": 0.0, "albedo_mul": 0.45}
 @export var whole_cloud_k: float = 0.6
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
