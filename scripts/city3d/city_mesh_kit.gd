@@ -446,7 +446,9 @@ static func _lot_quad(st: SurfaceTool, cfg: CityConfig, l: Vector2i, y: float, c
 ## `_quad` with a colour per corner (q and cols in a, b, c, d order).
 static func _quad_c(st: SurfaceTool, q: Array[Vector3], cols: Array[Color]) -> void:
 	var up := (q[1] - q[0]).cross(q[3] - q[0]).y > 0.0
-	var order: Array[int] = [0, 1, 2, 0, 2, 3] if not up else [0, 2, 1, 0, 3, 2]
+	var order: Array[int] = [0, 1, 2, 0, 2, 3]
+	if up:
+		order = [0, 2, 1, 0, 3, 2]
 	for k in order:
 		st.set_color(cols[k])
 		st.set_normal(Vector3.UP)
