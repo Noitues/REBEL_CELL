@@ -541,6 +541,7 @@ var whole_look: bool = false:
 		if not v:
 			set_look_blend(0.0)
 		_whole_shadows()
+		_whole_cell_district()
 		if not _last_day.is_empty():
 			set_night_share(night_share, _last_day)
 
@@ -1580,6 +1581,29 @@ func place_landmarks() -> void:
 	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), ground_world(centre)), look)
 	_place_site_landmark()
+	_whole_cell_district()
+
+
+## LOOK L5 (the designer): under the whole-city pose the Cell's blocks are the city's ordinary mix: the Cell's district
+## glTF hides and the procedural buildings under it come back; off the pose the district returns.
+var _cell_clear_held: Rect2 = Rect2()
+
+
+func _whole_cell_district() -> void:
+	if not landmarks.has(CELL):
+		return
+	var node := landmarks[CELL] as Node3D
+	if whole_look and _cleared_by.has(CELL) and not _cell_clear_held.has_area():
+		_cell_clear_held = _cleared_by[CELL]
+		_cleared.erase(_cell_clear_held)
+		node.visible = false
+		_rebuild_under(_cell_clear_held)
+	elif not whole_look and _cell_clear_held.has_area():
+		_cleared.append(_cell_clear_held)
+		var r := _cell_clear_held
+		_cell_clear_held = Rect2()
+		node.visible = true
+		_rebuild_under(r)
 
 
 func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
