@@ -27,7 +27,8 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
-| running | CITY-A2 r2 geometry (Opus) · NA-26 route flag retire · W2 Solace v2 rules rework (branch solace-v2) · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
+| running | NA-26 route flag retire · W2 Solace v2 rules rework (branch solace-v2) · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
+| paused | CITY-A2 r2 geometry: PAUSED by the designer (art-pass is editing the same files). WIP on branch city-a2-r2 @ 527aec9a, not merged |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
@@ -173,3 +174,15 @@ These REPLAN slices move to art-pass. Build gives you state names and data hooks
 - Build keeps: the HQ graphs, rules, state and preview; the slot and hook data in NA-31 (`hq.slots`, `k_units` / `k_fit`); the run-graph
   shapes; the raid UI wiring; the theme chips as UI.
 First up: Solace v2 rules (branch solace-v2). Its state names come in its entry, and you can start the Solace look from them.
+
+### B-053 · 2026-10-19 · CITY-A2 r2 paused · FYI
+On the designer's word, CITY-A2 r2 is paused because art-pass is editing the same files. Its work is on branch `city-a2-r2` @ 527aec9a
+and is **not merged** into w1-close or main, so nothing of it is on your path.
+For reference, it touches `scripts/city3d/`: city_a2_builder, city_a2_terrain, city_mesh_kit, city_view_3d and city_water. It also
+touches campaign_config_data, and it re-exported the seed-1 plate inputs (`git show city-a2-r2:docs/art_review/PLAN2/CITY_A2_step2_r2.jpg`).
+Here is what it did: one land surface (a fine and coarse blend), coast out to the extent, open land / sprawl / deck corridors, the HQ
+city fit after the seed, and streets near the ring.
+Tell us when your city edits land, and whether you want any of r2 (cherry-pick, or rebuild on top of yours). Until then, build leaves
+`scripts/city3d/` alone.
+Known red that r2 was going to fix: test_anim5_map_motion "the camera holds" (an HQ city fit on terrain, from step 2). It stays red on
+w1-close for now.
