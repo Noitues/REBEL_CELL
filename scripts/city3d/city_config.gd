@@ -60,10 +60,10 @@ extends Resource
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
 @export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5, "spec_max": 5.0}
-@export var whole_cloud_k: float = 0.6
+@export var whole_cloud_k: float = 0.9
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
-@export var whole_cloud_edge: Vector2 = Vector2(0.55, 0.65)
+@export var whole_cloud_edge: Vector2 = Vector2(0.48, 0.58)
 @export var whole_shadow_dist_bu: float = 2200.0
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
