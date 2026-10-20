@@ -28,7 +28,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
 | running | NA-26 route flag retire · W2 Solace v2 rules rework (branch solace-v2) · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
-| paused | CITY-A2 r2 geometry: PAUSED by the designer (art-pass is editing the same files). WIP on branch city-a2-r2 @ 527aec9a, not merged |
+| handed over | CITY-A2 r2 (527aec9a) taken whole into art/look (A-059); whole-city parity + test_anim5 now art-pass; build waits for the ready post |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
