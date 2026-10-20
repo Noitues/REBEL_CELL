@@ -476,6 +476,8 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 			_open_rest()
 		RC.InfilNodeType.WORKSHOP:
 			_open_workshop()
+		RC.InfilNodeType.CACHE:
+			_open_cache()
 	_sync()
 	return last_events
 
@@ -1386,6 +1388,22 @@ func leave_workshop() -> Array[Dictionary]:
 	_maybe_raid_interlude()
 	_sync()
 	return last_events
+
+
+# --- CACHE node (RG-04, drafts/nodes/cache.md) -----------------------------------------------
+
+## A plain reward: Cycles (config range, tier reward scale) from the `rewards` stream, then a card offer. The
+## mini-puzzle is off by config (and none is vetted), so nothing else happens.
+func _open_cache() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var cycles := roundi(rng.randi_range(config.cache_cycles_range.x, config.cache_cycles_range.y) * reward_scale())
+	run.cycles += cycles
+	last_events.append({"type": "cache", "amount": cycles, "puzzle": CacheRules.puzzle_active(config),
+		"text": "Cache: +%d Cycles (%d)." % [cycles, run.cycles]})
+	_offer(&"card", _card_pool(), config.cache_card_choices, rng)
+	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
+	if run.phase == RunState.Phase.MAP:
+		_maybe_raid_interlude()
 
 
 # --- Mid-run raid interlude (GDD 4.4, 7.3) ---------------------------------------------------

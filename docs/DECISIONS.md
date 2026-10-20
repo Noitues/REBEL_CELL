@@ -9349,3 +9349,15 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v
   `workshop_layers` 3-6, never in a layer that holds a Mainframe; none in v1 graphs.
 - UI: `NodePage` workshop form (offer, then slot, then BUY; keys 1-9 and Enter). Tests: tests/unit/test_rg03_workshop.gd and the
   Workshop case of tests/unit/test_rg_node_pages_ui.gd.
+
+### 2026-10-19 - W3 RG-04: the CACHE node (plain reward, puzzle off)
+- Entering a Cache pays `cache_cycles_range` (30-60) Cycles times the tier reward scale and queues one card offer of
+  `cache_card_choices` (3), both from the `rewards` stream (no new stream); the existing REWARD page takes the pick. No new
+  phase, no node page. Same seed pays the same.
+- The mini-puzzle is off: `cache_puzzle_enabled = false`, and `CacheRules.puzzle_active` also needs an entry in
+  `CacheRules.VETTED_PUZZLES` (empty until BATCH vetting passes the rubric), so the config switch alone cannot turn one on. The
+  puzzle's design (the draft's slice wheel) is not built.
+- Placement (`MapV2`, `map` stream): a roll against `node_weight_cache` (60 percent), one Terminal in `cache_layers` 2-6; at most
+  one per run; none in v1 graphs. The draft's "no Cache on Reclaim or Patrol netruns" is not applied (the generator does not
+  see the run kind; Reclaim has no map, and a Patrol's Cache pays like any other).
+- Tests: tests/unit/test_rg04_cache.gd and the Cache case of tests/unit/test_rg_node_pages_ui.gd.

@@ -11,6 +11,7 @@ extends RefCounted
 static func place(graph: MapGraph, tier: int, config: CampaignConfigData, rng: RandomNumberGenerator) -> void:
 	_place_rest(graph, tier, config, rng)
 	_place_workshop(graph, tier, config, rng)
+	_place_cache(graph, config, rng)
 
 
 ## RG-02: the guaranteed REST (layers `rest_guaranteed_layers`, chance `node_weight_rest`), then an
@@ -35,6 +36,14 @@ static func _place_workshop(graph: MapGraph, tier: int, config: CampaignConfigDa
 	var roll := rng.randi_range(1, 100)
 	if tier >= config.workshop_min_tier and roll <= config.node_weight_workshop:
 		_convert(graph, RC.InfilNodeType.WORKSHOP, config.workshop_layers, rng, false, RC.InfilNodeType.MAINFRAME)
+
+
+## RG-04: one CACHE (chance `node_weight_cache` percent) on a Terminal in `cache_layers`.
+## Draws: roll, pick (if rolled and a candidate exists).
+static func _place_cache(graph: MapGraph, config: CampaignConfigData, rng: RandomNumberGenerator) -> void:
+	var roll := rng.randi_range(1, 100)
+	if roll <= config.node_weight_cache:
+		_convert(graph, RC.InfilNodeType.CACHE, config.cache_layers, rng, false)
 
 
 ## Turns one candidate in layers `span` into `type`: a free Terminal, else (when `router_fallback`) a plain

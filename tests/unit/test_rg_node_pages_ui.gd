@@ -85,3 +85,12 @@ func test_the_workshop_page_buys_a_refit_and_leaves() -> void:
 	assert_true(await _wait_btn("WorkshopBuy", true), "one buy per visit")
 	_btn("WorkshopLeave").pressed.emit()
 	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return _s.run.phase == RunState.Phase.MAP, 5.0), "LEAVE returns to the route")
+
+
+func test_a_cache_pays_and_shows_the_existing_reward_page() -> void:
+	var first := _s.available_nodes()[0]
+	_s.run.map.get_node(first)["type"] = RC.InfilNodeType.CACHE
+	var cycles := _s.run.cycles
+	_scene.enter_node(first)
+	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return _s.run.phase == RunState.Phase.REWARD, 5.0), "the card offer opens")
+	assert_gt(_s.run.cycles, cycles, "the Cycles were paid on entry")

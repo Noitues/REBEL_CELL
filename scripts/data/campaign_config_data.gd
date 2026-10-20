@@ -806,3 +806,13 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 @export var node_weight_workshop: int = 90
 @export var workshop_min_tier: int = 2
 @export var workshop_layers: Vector2i = Vector2i(3, 6)
+
+## RG-04 CACHE (drafts/nodes/cache.md). A plain reward: Cycles in `cache_cycles_range` (scaled by the tier's reward
+## scale) and a card offer of `cache_card_choices`. The mini-puzzle stays off (`cache_puzzle_enabled`) until a puzzle
+## passes the vetting rubric (CacheRules.VETTED_PUZZLES is empty). Placement: percent chance of one per run,
+## on a Terminal in `cache_layers`.
+@export var node_weight_cache: int = 60
+@export var cache_layers: Vector2i = Vector2i(2, 6)
+@export var cache_cycles_range: Vector2i = Vector2i(30, 60)
+@export var cache_card_choices: int = 3
+@export var cache_puzzle_enabled: bool = false
