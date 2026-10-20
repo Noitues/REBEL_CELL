@@ -42,6 +42,8 @@ var piers: int = 0
 var islands: Array[Dictionary] = []
 ## LOOK L5: the whole-city water plane's material (city_water_plane.gdshader; null without terrain).
 var plane_mat: ShaderMaterial = null
+## The drowned quarter's copy of it at the whole pose (CityView3D makes it).
+var drowned_mat: ShaderMaterial = null
 var wall_edges: int = 0
 
 
@@ -98,7 +100,7 @@ func lit_materials() -> Array[ShaderMaterial]:
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
 func set_night(n: float) -> void:
-	for m in [water_mat, void_mat, smear_mat, plane_mat]:
+	for m in [water_mat, void_mat, smear_mat, plane_mat, drowned_mat]:
 		if m != null:
 			m.set_shader_parameter(&"night", n)
 

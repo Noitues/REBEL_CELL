@@ -762,19 +762,21 @@ extends Resource
 @export var seabed_max_bu: float = 24.0
 @export var seabed_reach_lots: float = 14.0
 @export var seabed_noise_k: float = 0.6
-@export var seabed_shore_bu: float = 0.1
-@export var seabed_sand: Color = Color(0.45, 0.42, 0.33)
+@export var seabed_shore_bu: float = 0.6
+@export var seabed_sand: Color = Color(0.32, 0.36, 0.30)
 @export var seabed_deep: Color = Color(0.06, 0.09, 0.12)
 @export var seabed_tone_bu: float = 6.0
 @export var island_spread: float = 1.6
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
 @export var water_plane_priority: int = -50
+## The drowned quarter's sheet at the whole pose: the water plane's look, this much deeper than the bed under it.
+@export var whole_drowned_depth_bu: float = 3.0
 ## Its shader parameters (Colors go in as vec3).
 @export var water_plane: Dictionary = {"deep_day": Color(0.03, 0.16, 0.30), "deep_night": Color(0.01, 0.07, 0.10),
 	"shallow_day": Color(0.10, 0.45, 0.55), "shallow_night": Color(0.04, 0.30, 0.32), "absorb": Color(0.30, 0.10, 0.07),
 	"alpha_min": 0.15, "sky_day": Color(0.55, 0.62, 0.70), "sky_night": Color(0.04, 0.08, 0.10), "fresnel_gain": 0.6,
 	"glint_pow": 180.0, "glint_gain": 0.5, "ripple_bu": 14.0, "ripple_k": 0.35, "caustic_bu": 22.0, "caustic_gain": 0.25,
-	"foam_bu": 0.6, "foam_gain": 0.55, "far_bu": 60.0}
+	"foam_bu": 0.25, "foam_gain": 0.35, "far_bu": 60.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14

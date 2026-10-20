@@ -12,6 +12,8 @@ uniform sampler2D bed_tex : filter_linear, repeat_disable;
 uniform vec2 bed_origin = vec2(0.0);
 uniform vec2 bed_size = vec2(1.0);
 uniform float far_bu = 60.0;
+// Added to the bed's depth (the drowned quarter's sheet lies over flooded streets, not over the bed).
+uniform float depth_add = 0.0;
 uniform float night = 1.0;
 uniform vec3 deep_day = vec3(0.03, 0.16, 0.30);
 uniform vec3 deep_night = vec3(0.01, 0.07, 0.10);
@@ -65,7 +67,7 @@ void fragment() {
 	vec2 buv = (v_world.xz - bed_origin) / bed_size;
 	bool inside = all(greaterThanEqual(buv, vec2(0.0))) && all(lessThanEqual(buv, vec2(1.0)));
 	float depth = inside ? texture(bed_tex, buv).r : far_bu;
-	float path = depth / max(V.y, 0.05);
+	float path = (depth + depth_add) / max(V.y, 0.05);
 	vec3 trans = exp(-absorb * path);
 	float tm = (trans.r + trans.g + trans.b) / 3.0;
 	// Ripple normal from the wave height's gradient.
