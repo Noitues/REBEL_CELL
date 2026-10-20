@@ -62,6 +62,12 @@ uniform vec3 marble_col_day = vec3(0.30, 0.62, 0.66);
 // The blurred water mask's cut: below .x dry, above .y water (low, so the sheet reaches over the lot corners).
 uniform vec2 coast_cut = vec2(0.22, 0.42);
 uniform float coast_blur_lots = 1.5;
+// LOOK L5 (designer 2026-10-20, "the jagged coastline is back"): a sand / foam strip just inside the smooth coast cut
+// (`beach_band`: the blurred mask's range, full at .x, gone by .y), so the shore reads as one smooth line over the lot
+// grid. `beach_k` its strength (day, night).
+uniform vec3 beach_col = vec3(0.78, 0.74, 0.62);
+uniform vec2 beach_band = vec2(0.3, 0.62);
+uniform vec2 beach_k = vec2(0.0, 0.0);
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
@@ -153,6 +159,8 @@ void fragment() {
 	float a = fr + (1.0 - fr) * ab;
 	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
+	float bk = (1.0 - smoothstep(beach_band.x, beach_band.y, mb)) * mix(beach_k.x, beach_k.y, night);
+	col = mix(col, beach_col * mix(1.0, 0.3, night), bk);
 	ALBEDO = col * grade;
-	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
+	ALPHA = clamp(max(max(a, surf), bk), 0.0, 1.0) * wetk;
 }
