@@ -78,7 +78,7 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 			for p: Vector2 in plan.a2.a2.drowned:
 				flood.append(plan.a2.lot_of(p))
 		w.plane_mat.set_shader_parameter(&"bed_tex", ImageTexture.create_from_image(
-				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands, flood)))
+				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands, flood, plan.a2)))
 		w.plane_mat.set_shader_parameter(&"bed_origin", Vector2(o.x, o.z))
 		w.plane_mat.set_shader_parameter(&"bed_size", Vector2(tr.size) * cfg.lot_bu)
 		var pl := w._add(CitySeabedKit.plane_mesh(outer_bu, SEA_Y), w.plane_mat, "WaterPlane")

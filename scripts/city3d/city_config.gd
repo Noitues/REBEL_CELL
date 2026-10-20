@@ -501,6 +501,12 @@ extends Resource
 ## height factors, and the tree colours.
 @export var park_lawn: Color = Color(0.16, 0.25, 0.10)
 @export var park_lawn_lift: float = 0.004
+## Designer 2026-10-20 (no hard lawn squares): the lawn's cells per lot side, its second tone, the colour it fades to
+## where the park ends, and its noise (x the scale on lot points, y how far a cell's hash breaks the park's edge).
+@export var park_lawn_div: int = 4
+@export var park_lawn_b: Color = Color(0.24, 0.31, 0.13)
+@export var park_edge: Color = Color(0.15, 0.16, 0.14)
+@export var park_lawn_noise: Vector2 = Vector2(1.0, 0.45)
 @export var park_tree_share: float = 0.55
 @export var park_clumps: int = 2
 @export var park_trees: Vector2i = Vector2i(3, 5)

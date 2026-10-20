@@ -118,7 +118,7 @@ static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: floa
 ## `flood` (lots): the drowned quarter's polygon, baked as water `whole_drowned_depth_bu` deep over its ground, so the
 ## one plane covers it like the sea.
 static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: PackedByteArray, d: PackedFloat32Array,
-		islands: Array[Dictionary], flood: PackedVector2Array = PackedVector2Array()) -> Image:
+		islands: Array[Dictionary], flood: PackedVector2Array = PackedVector2Array(), ras: CityA2Raster = null) -> Image:
 	var w := r.size.x
 	var h := r.size.y
 	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBF)
@@ -141,6 +141,10 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 				dep[j * w + i] = cfg.whole_drowned_depth_bu
 				sea[j * w + i] = 1.0
 				shore[j * w + i] = maxf(d[j * w + i], cfg.whole_drowned_shore_lots)
+			# LOOK L5 (designer 2026-10-20): a river's texel carries its shore distance negated (-(d + 1)), so the plane
+			# keeps the sea's beach strip off the rivers.
+			if wt and ras != null and ras.is_river(r.position.x + i, r.position.y + j):
+				shore[j * w + i] = -(d[j * w + i] + 1.0)
 	# Blue: the water mask blurred (binomial 5 x 5), so the plane's edge cuts a smooth coast across the lot staircase.
 	for j in h:
 		for i in w:

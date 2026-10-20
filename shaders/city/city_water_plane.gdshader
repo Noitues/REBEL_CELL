@@ -125,7 +125,7 @@ void fragment() {
 	vec2 buv = (p - bed_origin) / bed_size;
 	bool inside = all(greaterThanEqual(buv, vec2(0.0))) && all(lessThanEqual(buv, vec2(1.0)));
 	vec3 bed = inside ? texture(bed_tex, buv).rgb : vec3(1e3, far_shore_lots, 1.0);
-	float shallow = 1.0 - smoothstep(shallow_lots.x, shallow_lots.y, bed.g);
+	float shallow = 1.0 - smoothstep(shallow_lots.x, shallow_lots.y, abs(bed.g));
 	// By day a diffuse body (Blender's day water); by night the sheet is clear and the seabed's fade carries it.
 	float ab = mix(body_alpha + body_alpha_shallow * shallow, night_alpha, night);
 	vec3 body = mix(deep_day, shallow_day, min(shallow * 0.9 + h0 * 0.12, 1.0)) + body_emit_day;
@@ -159,7 +159,8 @@ void fragment() {
 	float a = fr + (1.0 - fr) * ab;
 	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
-	float bk = (1.0 - smoothstep(beach_band.x, beach_band.y, mb)) * mix(beach_k.x, beach_k.y, night);
+	// Rivers' texels carry a negative shore distance: no beach strip there.
+	float bk = (1.0 - smoothstep(beach_band.x, beach_band.y, mb)) * mix(beach_k.x, beach_k.y, night) * smoothstep(-1.0, -0.2, bed.g);
 	col = mix(col, beach_col * mix(1.0, 0.3, night), bk);
 	ALBEDO = col * grade;
 	ALPHA = clamp(max(max(a, surf), bk), 0.0, 1.0) * wetk;

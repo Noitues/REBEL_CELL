@@ -399,6 +399,29 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 						var kq := (q.y - R.position.y) * w + (q.x - R.position.x)
 						if kind[kq] == K_GROUND and not _near_site(plan, q):
 							kind[kq] = K_BARE
+	# LOOK L5 (designer 2026-10-20): the buildings back off the sea: no building within `city_a2_coast_setback` lots of a
+	# sea lot (rivers keep their frontage; a Site keeps its building).
+	var sb := cfg.city_a2_coast_setback
+	if sb > 0:
+		var setback: Array[int] = []
+		for k in n:
+			if kind[k] != K_GROUND:
+				continue
+			var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
+			if plan.a2_sites.has(l):
+				continue
+			var near_sea := false
+			for dj in range(-sb, sb + 1):
+				for di in range(-sb, sb + 1):
+					if ras.is_water(l.x + di, l.y + dj) and not ras.is_river(l.x + di, l.y + dj):
+						near_sea = true
+						break
+				if near_sea:
+					break
+			if near_sea:
+				setback.append(k)
+		for k in setback:
+			kind[k] = K_BARE
 	# LOOK L5 (designer 2026-10-20): a local street with no building lot within `city_a2_prune_streets` lots is open land
 	# too (no empty street blocks round parks and the city's edge; a Site's streets stay).
 	var pr := cfg.city_a2_prune_streets
