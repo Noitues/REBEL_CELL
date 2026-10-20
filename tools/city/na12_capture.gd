@@ -26,7 +26,21 @@ const BAY_LOTS := 18.0
 ## Value strip: lots sampled on a grid this many lots apart over the view.
 const SAMPLE_STEP := 3
 
+## CITY-A2 r2: the art-pass golden plate camera (docs/concepts/golden_plates/city_a2_night_capture.json, Blender BU of
+## art-pass's A2 scale, PLATE_M_PER_BU metres each): eye and target, lens (mm on a 36 mm wide sensor).
+const PLATE_EYE := Vector3(12.0, -960.0, 615.0)
+const PLATE_TGT := Vector3(12.0, -12.0, 0.0)
+const PLATE_LENS_MM := 28.0
+const PLATE_SENSOR_MM := 36.0
+const PLATE_M_PER_BU := 100.0 / 6.0
+
 var _out := ""
+## --plate=1: the whole-city shots (v_city / v_day) through the plate camera (perspective) instead of the map framing.
+var _plate := false
+## --lit=1 (diagnosis only): the ground layer under a plain lit vertex-colour material, so the relief reads.
+var _lit := false
+## --top=1 (diagnosis only): art-pass's dbg_top camera instead (pitch 70, 900 BU over A2's origin).
+var _top := false
 
 
 func _ready() -> void:
@@ -34,6 +48,12 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			_out = a.trim_prefix("--out=")
+		elif a.begins_with("--plate="):
+			_plate = a.trim_prefix("--plate=") == "1"
+		elif a.begins_with("--top="):
+			_top = a.trim_prefix("--top=") == "1"
+		elif a.begins_with("--lit="):
+			_lit = a.trim_prefix("--lit=") == "1"
 		elif a.begins_with("--seeds="):
 			seeds.clear()
 			for s in a.trim_prefix("--seeds=").split(",", false):
@@ -87,6 +107,9 @@ func _seed(campaign_seed: int, extras: bool) -> void:
 	hq._frame_city(float(hq.size.x) / (WHOLE_ORTHO * NeonCity.px_per_bu()), Vector2(plan.rect.get_center()), Vector2(0.5, 0.5))
 	await _settle()
 	await _shot("city_%d" % campaign_seed)
+	if _plate and plan.a2 != null:
+		_plate_cam(view, plan)
+		await _settle()
 	await _view_shot(view, "v_city_%d" % campaign_seed)
 	_values(view, plan, "night")
 	if extras and plan.a2 != null:  # CITY-A2 step 2: the bay head is A2's Old City shore, the bay due south of it
@@ -110,6 +133,9 @@ func _seed(campaign_seed: int, extras: bool) -> void:
 			await _settle(roundi(Motion.seconds(CityMotionLayers.LIGHT_FADE) * 60.0) + SETTLE_FRAMES)
 			print("NA12 day share=%.2f" % view.night_share)
 			await _shot("day_%d" % campaign_seed)
+			if _plate:
+				_plate_cam(view, plan)
+				await _settle()
 			await _view_shot(view, "v_day_%d" % campaign_seed)
 			_values(view, plan, "day")
 			hq._frame_city(float(hq.size.x) / (BAY_ORTHO * NeonCity.px_per_bu()), bay, Vector2(0.5, 0.5))
@@ -119,6 +145,42 @@ func _seed(campaign_seed: int, extras: bool) -> void:
 	RunManager.reset()
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+## Points `view` through the art-pass plate camera: Blender BU -> A2 metres -> lots -> world, heights by the game's BU.
+func _plate_cam(view: CityView3D, plan: CityPlan) -> void:
+	var cfg := view.cfg
+	var to_world := func(b: Vector3) -> Vector3:
+		var lot: Vector2 = plan.a2.lot_of(Vector2(b.x, b.y) * PLATE_M_PER_BU)
+		return CityIsoCamera.lot_to_world(cfg, lot, b.z * PLATE_M_PER_BU / plan.a2.metres_per_lot * cfg.lot_bu)
+	var eye: Vector3 = to_world.call(PLATE_EYE)
+	var tgt: Vector3 = to_world.call(PLATE_TGT)
+	if _top:
+		eye = to_world.call(Vector3(0.0, -900.0 * cos(deg_to_rad(70.0)), 900.0 * sin(deg_to_rad(70.0))))
+		tgt = to_world.call(Vector3.ZERO)
+	var d := eye - tgt
+	var cam := view.iso.copy()
+	cam.target = tgt
+	cam.yaw_deg = rad_to_deg(atan2(d.z, -d.x))  # forward = -d: (cos yaw, -, -sin yaw)
+	cam.pitch_deg = rad_to_deg(atan2(d.y, Vector2(d.x, d.z).length()))
+	cam.fov_deg = rad_to_deg(2.0 * atan(PLATE_SENSOR_MM * 0.5 / PLATE_LENS_MM))
+	cam.ortho = 2.0 * d.length() * tan(deg_to_rad(cam.fov_deg) * 0.5)
+	view.set_iso(cam)
+	print("NA12 plate eye=%s tgt=%s yaw=%.1f pitch=%.1f fov=%.1f" % [eye, tgt, cam.yaw_deg, cam.pitch_deg, cam.fov_deg])
+	if _lit:
+		view.layer(&"network").visible = false
+		var m := StandardMaterial3D.new()
+		m.vertex_color_use_as_albedo = true
+		m.albedo_color = Color(0.6, 0.6, 0.6)
+		for n in view.layer(&"ground").find_children("*", "MeshInstance3D", true, false):
+			var gm := n as MeshInstance3D
+			if not gm.name.begins_with("Ground") and gm.mesh != null:
+				print("NA12 mesh %s visible=%s aabb=%s" % [gm.get_path(), gm.is_visible_in_tree(), gm.global_transform * gm.get_aabb()])
+			gm.material_override = m
+		for n in view.find_children("*", "MeshInstance3D", true, false):
+			var mi := n as MeshInstance3D
+			if mi.material_override == view._ground_mat or mi.name == "OuterLand":
+				mi.material_override = m
 
 
 func _settle(n: int = SETTLE_FRAMES) -> void:

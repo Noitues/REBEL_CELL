@@ -37,6 +37,125 @@ extends Resource
 	"netrun": [30.0, 27.0, 190.0],
 	"close": [27.0, 27.0, 60.0],
 }
+## Whole-city pose (designer 2026-10-19: the zoomed-out views match the A2 golden plate's hero camera; the playable
+## City Grid keeps yaw/pitch above). Perspective from the south over the bay looking north: yaw, pitch, horizontal
+## field of view (the plate's 28 mm lens on a 36 mm sensor), eye distance from the target (BU) and the target's offset
+## from the city's centre (lots, +x east, +y south).
+@export var whole_pose_yaw_deg: float = 90.0
+@export var whole_pose_pitch_deg: float = 33.0
+@export var whole_pose_fov_deg: float = 65.47
+@export var whole_pose_dist_bu: float = 920.0
+@export var whole_pose_target_lots: Vector2 = Vector2(2.0, 2.0)
+## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
+## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
+@export var whole_night_look: float = 1.0
+@export var whole_day_ramp_gain: float = 0.25
+## ... tinted per band (shadow, mid, lit): the plate's low sun lights faces warm and leaves the shade cool.
+@export var whole_day_ramp_tint: Array[Color] = [Color(0.94, 0.92, 1.0), Color(1.0, 0.97, 0.94), Color(1.10, 1.0, 0.90)]
+## ... and its long shadows: the far-LOD blocks cast under the whole-city pose, the sun's shadow out to this many BU.
+@export var whole_far_shadows: bool = true
+## ... and the land's ramp softness there (city_ground band_soft; 0 = the Grid's hard bands).
+@export var whole_ground_band_soft: float = 0.3
+## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
+## field offset and the noise edges (city_ground cloud_*).
+## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
+@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 0.0, "spec_max": 3.5, "slope_spec": 1.0}
+@export var whole_cloud_k: float = 0.75
+@export var whole_cloud_scale: float = 85.0
+@export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
+@export var whole_cloud_edge: Vector2 = Vector2(0.48, 0.58)
+@export var whole_shadow_dist_bu: float = 2200.0
+@export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
+## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
+@export var whole_day_sky: Color = Color(0.30, 0.32, 0.38)
+@export var whole_day_haze: Color = Color(0.36, 0.38, 0.44)
+## LOOK L5: the whole-city atmosphere (CityView3D._whole_fog): the fog / sky colour by day and night, density (day, night),
+## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
+@export var whole_fog_day: Color = Color(0.58, 0.58, 0.66)
+@export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
+@export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
+@export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
+@export var whole_fog_curve: float = 1.6
+## LOOK L5 (designer 2026-10-20): the far side of the city blurred under the whole-city pose (CameraAttributesPractical on
+## the WorldEnvironment): the far blur starts at x whole_pose_dist_bu, ramps over x whole_pose_dist_bu, amount.
+@export var whole_dof_far: Vector3 = Vector3(1.1, 0.7, 0.08)
+## ... and the colour saturation there (Environment adjustment; day, night).
+@export var whole_saturation: Vector2 = Vector2(1.35, 1.15)
+@export var whole_fog_sun_scatter: float = 0.25
+@export var whole_day_haze_k: float = 0.12
+## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
+@export var whole_haze_start: float = 0.85
+## LOOK L5: the whole-city night's haze colour and strength and its grade (the plate's neutral charcoal, no violet).
+@export var whole_night_haze: Color = Color(0.05, 0.07, 0.09)
+@export var whole_night_haze_k: float = 0.22
+@export var whole_night_grade: Color = Color(1.0, 1.0, 1.0)
+## The corp HQ sky beams of the whole-city night (the A2 plate's six searchlight shafts): length, base height above the
+## HQ lot, start radius (BU), spread half-angle, emission, lean (degrees, alternating per HQ) and the night share they
+## show above.
+@export var whole_beam_len_bu: float = 340.0
+@export var whole_beam_base_bu: float = -0.5
+@export var whole_beam_start_r_bu: float = 2.5
+@export var whole_beam_half_deg: float = 2.2
+@export var whole_beam_emit: float = 0.6
+## LOOK L5 (designer 2026-10-20): the beams start on the HQ's roof (its landmark's top + whole_beam_base_bu); these HQs
+## have none (Halcyon keeps only its eye's beam).
+@export var whole_beam_skip: Array[StringName] = [&"halcyon"]
+@export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
+@export var whole_beam_night_from: float = 0.5
+## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
+## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 3.6, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
+	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22,
+	"sign_share": 0.1, "sign_emit": 2.8, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
+## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
+## blocks are charcoal with warm light).
+@export var whole_building_colors: Dictionary = {"edge_a": Color(1.0, 0.78, 0.5), "edge_b": Color(1.0, 0.9, 0.75),
+	"haze_col": Color(0.04, 0.05, 0.06)}
+## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
+@export var whole_bloom_thr: float = 0.55
+@export var whole_bloom_w: Vector3 = Vector3(0.34, 0.34, 0.3)
+@export var whole_exposure_k: float = 1.6
+## ... its post overrides (AAA uniforms: no chromatic fringe, the three rain layers' alpha 0) and the moon's colour.
+@export var whole_aaa_post: Dictionary = {"aaa_ca": Vector3(0.0, 0.3, 1.5), "aaa_rain0b": Vector3(0.0, 1.0, 0.6),
+	"aaa_rain1b": Vector3(0.0, 1.0, 1.0), "aaa_rain2b": Vector3(0.0, 3.0, 1.6)}
+@export var whole_moon_color: Color = Color(0.78, 0.8, 0.86)
+## ... and its energy (the plate's night land and mountains read dark blue-grey, not black).
+@export var whole_moon_energy: float = 0.15
+## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
+## windows pulled this far toward it, and the facades lit faintly in it.
+@export var whole_terr_win_k: float = 0.85
+@export var whole_terr_albedo_k: float = 0.3
+@export var whole_terr_wall_emit: float = 0.012
+## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
+@export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2, "facade_albedo": 0.85,
+	"sign_share": 0.0, "sign_emit": 3.0, "sign_w": 1.0, "sign_z0": 0.3, "sign_z1": 0.85}
+## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
+@export var whole_night_ramp: Array[Color] = [Color(0.07, 0.08, 0.10), Color(0.15, 0.16, 0.19), Color(0.27, 0.28, 0.31)]
+## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
+@export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.45, 0.85),
+	Color(1.0, 0.7, 0.35), Color(0.45, 0.95, 1.0), Color(1.0, 0.82, 0.55)]
+## LOOK L5: the whole-city neon sign colours (city_building sign_colors; the plate's pink / cyan / gold / magenta signage).
+@export var whole_sign_colors: Array[Color] = [Color(1.0, 0.35, 0.75), Color(0.3, 0.9, 1.0), Color(1.0, 0.8, 0.3),
+	Color(0.85, 0.4, 1.0)]
+@export var whole_day_water_gain: float = 0.6
+## Water children hidden under the whole-city pose (CityWater node names).
+@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWall", "SeaWallLight"])
+## LOOK L5: the A2 feature parts hidden at the whole-city pose (the rail glow dashes read as a wireframe overlay, the
+## port piers as black bars on the bay rim).
+@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
+## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
+@export var whole_road_glow_gain: float = 0.32
+@export var whole_road_glow_tint: Color = Color(1.2, 1.05, 1.15)
+@export var whole_road_glow_from: float = 0.5
+## The sea's caustic gain share under the whole-city pose.
+@export var whole_caustic_k: float = 0.12
+## LOOK L5: the vein foam at the whole-city pose, and the seabed under the translucent water there (city_water bed_*).
+@export var whole_vein_foam: float = 0.0
+@export var whole_bed: Dictionary = {"bed_k": 0.0, "bed_slope": 0.35, "bed_max_bu": 24.0, "bed_noise_bu": 160.0,
+	"bed_noise_k": 0.8, "bed_clear_bu": 5.0}
+## The sea's day colours under the whole-city pose (the plate's deep blue bay and open sea).
+@export var whole_water_deep_day: Color = Color(0.012, 0.07, 0.2)
+@export var whole_water_shore_day: Color = Color(0.04, 0.18, 0.34)
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread
@@ -289,11 +408,115 @@ extends Resource
 @export var ramp_edges: Vector2 = Vector2(0.118, 0.363)
 ## Direction toward the key light (Godot world; target_corps sun 48/-28/-38).
 @export var to_light: Vector3 = Vector3(-0.705, 0.591, 0.392)
+## LOOK L5 (designer 2026-10-20): the whole-city pose's sun, the plate's (city_preset A2: elevation 14 deg, azimuth 35 deg
+## from east toward north = far right of the view, low): the direction toward it (world), blended in by the look.
+@export var whole_to_light: Vector3 = Vector3(0.795, 0.242, -0.557)
+## LOOK L5 (designer 2026-10-20): the landmarks' light cones under the whole-city pose (landmark_beam.gdshader uniforms;
+## kept by night) and the HQs' glow gain there by landmark key (Meridian's gold read too loud).
+@export var whole_lm_beam: Dictionary = {"beam_alpha": 0.30, "beam_soft": 2.2, "beam_shimmer": 0.35, "beam_gain": 1.3}
+@export var whole_landmark_gain: Dictionary = {&"meridian": 0.45}
+## LOOK L5 (designer 2026-10-20): the HQs' toon ramp toned under the whole-city pose, by landmark key: Vector3(saturation k,
+## value k by day, value k by night) on ramp_shadow / ramp_mid / ramp_lit (Meridian's gold day, the A2 HQs' lilac night).
+@export var whole_landmark_tone: Dictionary = {
+	&"meridian": Vector3(0.45, 0.78, 1.0),
+	&"aurelian": Vector3(0.25, 1.0, 0.7),
+	&"tethys": Vector3(0.0, 1.0, 0.55),
+	&"dress": Vector3(0.3, 0.85, 0.32),
+}
+## ... and their body colour there by landmark key: Vector2(saturation k, value k) (landmark_toon albedo_sat / albedo_k).
+@export var whole_landmark_albedo: Dictionary = {&"meridian": Vector2(0.5, 0.72), &"dress": Vector2(0.75, 0.8)}
+## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs), by A2 landmark style: size
+## (radius_k x the A2 radius), their parts' colours, whether it floats ("on_water", "y" BU), the cleared lots (clear_k x
+## its radius) and its sky beam's colour.
+@export var a2_hq_look: Dictionary = {
+	"colosseum_circus": {"radius_k": 0.62, "aspect": 0.8, "tiers": 3, "tier_h": 2.4, "bays": 56, "steps": 7, "arena": 0.42,
+		"wall": 0.09, "stone": Color(0.86, 0.80, 0.68), "stone_dark": Color(0.60, 0.54, 0.46), "arch": Color(1.0, 0.80, 0.50),
+		"rim": Color(1.0, 0.84, 0.55), "sand": Color(0.80, 0.70, 0.52), "clear_k": 1.08, "beam": Color(1.0, 0.86, 0.62)},
+	"pier_city": {"radius_k": 1.0, "on_water": true, "y": 0.0, "deck_k": 0.26, "deck_h": 1.2, "dome_k": 0.14, "dome_h": 0.85,
+		"satellites": 6, "piers": 8, "pier_k": 0.42, "pier_w": 2.0, "mast_h": 2.6,
+		"towers": 6, "tower_h_k": 2.6, "tower_w_k": 0.22, "floor_bu": 0.9, "dome_tall": 1.5, "glass": Color(0.55, 0.66, 0.74), "white": Color(0.92, 0.94, 0.96),
+		"deck": Color(0.70, 0.72, 0.74), "neon": Color(0.35, 0.9, 1.0), "win": Color(0.75, 0.95, 1.0), "clear_k": 0.3,
+		"beam": Color(0.45, 0.75, 1.0)}}
+## LOOK L5 (designer 2026-10-20): the whole-city pose's dressing (CityA2Dress): the port (pier deck lift BU, crane gap /
+## span / reach m and height BU, the moored share, the yard's rows / bays m, fill share, container height BU and colours),
+## ships (count, length m, beam share, freeboard and house BU, least depth BU, island clearance rho, spacing m, wake share
+## of the length), the helicopters (count, altitude BU, reach from the district centre m, searchlight lead m, pool radius
+## BU, the cone's strength top / bottom, the pool's), the police bars (per road, classes, bar size BU) and the lights'
+## shader uniforms ("police": police_light.gdshader, "spot": spot_light.gdshader; their `on` follows the night).
+@export var a2_dress: Dictionary = {
+	"pier_lift_bu": 0.8, "concrete": Color(0.62, 0.62, 0.60), "lamp": Color(1.0, 0.8, 0.5),
+	"crane_cols": [Color(0.85, 0.30, 0.18), Color(0.95, 0.70, 0.20), Color(0.25, 0.55, 0.75)], "crane_gap_m": 260.0,
+	"crane_h_bu": 6.0, "crane_span_m": 70.0, "crane_reach_m": 110.0, "tip_light": Color(1.0, 0.15, 0.1),
+	"moored_share": 0.8, "moor_gap_m": 40.0, "yard_row_m": 48.0, "yard_bay_m": 95.0, "yard_fill": 0.8,
+	"container_h_bu": 0.6,
+	"container_cols": [Color(0.42, 0.17, 0.13), Color(0.15, 0.24, 0.36), Color(0.20, 0.32, 0.24), Color(0.50, 0.40, 0.18),
+		Color(0.52, 0.52, 0.50), Color(0.33, 0.22, 0.20), Color(0.30, 0.30, 0.32)],
+	"ships": 16, "ship_len_m": Vector2(120.0, 320.0), "ship_beam_k": 0.16, "ship_freeboard_bu": 0.6, "house_h_bu": 1.4,
+	"ship_isle_rho": 2.4, "ship_gap_m": 900.0, "wake_k": 0.9, "wake_w_k": 0.7,
+	"hull_cols": [Color(0.18, 0.20, 0.24), Color(0.45, 0.14, 0.12), Color(0.20, 0.30, 0.38), Color(0.85, 0.85, 0.82)],
+	"house": Color(0.90, 0.90, 0.88), "ship_win": Color(1.0, 0.85, 0.55), "wake": Color(0.42, 0.55, 0.60),
+	"isle_stone": Color(0.66, 0.62, 0.55), "isle_roof": Color(0.55, 0.30, 0.22), "isle_win": Color(1.0, 0.82, 0.5),
+	"helis": 6, "heli_alt_bu": 38.0, "heli_reach_m": 900.0, "heli_body": Color(0.12, 0.13, 0.16), "heli_scale": 1.8,
+	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 9.0, "spot_cone_a": Vector2(0.45, 0.08),
+	"pool_a": 0.8,
+	"cops_per_road": 3, "cop_classes": [&"ring", &"motorway"], "cop_bar_bu": Vector3(2.2, 0.9, 0.5),
+	"police": {"gain": 5.0, "rate": 1.6}, "police_day_on": 0.5,
+	"spot": {"gain": 0.6, "soft": 2.5}, "pool": {"gain": 0.7, "soft": 0.0},
+}
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
 @export var ground: Color = Color(0.20, 0.20, 0.25)
 @export var street: Color = Color(0.13, 0.13, 0.16)
 @export var plaza: Color = Color(0.26, 0.25, 0.30)
+## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
+## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
+@export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.25, 0.33, 0.13),
+	"rock": Color(0.84, 0.81, 0.79), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+@export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
+	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
+	"beach_k": 0.7, "noise_lo": 0.92, "noise_span": 0.16, "curv_k": 0.06, "curv_lots": 3}
+@export var terrain_h_scale: float = 0.3
+## LOOK L5 (hybrid port, Blender city_preset DISTRICTS `mat` + DAY_MATS): the facade albedo per territory ("" the sprawl),
+## the facade families ([weight, Color]; city for the corps, sprawl off-territory) and how far a family pulls the district
+## colour. Empty district_mats keeps the old `families` + `territory_tint`.
+@export var district_mats: Dictionary = {
+	"meridian": [Color(0.30, 0.20, 0.14), Color(0.26, 0.22, 0.20), Color(0.34, 0.24, 0.16)],
+	"solace": [Color(0.40, 0.46, 0.43), Color(0.34, 0.40, 0.38), Color(0.46, 0.50, 0.47)],
+	"halcyon": [Color(0.36, 0.34, 0.46), Color(0.32, 0.30, 0.42), Color(0.40, 0.38, 0.50)],
+	"orbital": [Color(0.30, 0.34, 0.42), Color(0.26, 0.30, 0.38), Color(0.36, 0.40, 0.48)],
+	"aurelian": [Color(0.86, 0.78, 0.62), Color(0.80, 0.72, 0.56), Color(0.91, 0.84, 0.67)],
+	"tethys": [Color(0.16, 0.20, 0.26), Color(0.14, 0.18, 0.24), Color(0.20, 0.24, 0.30)],
+	"": [Color(0.32, 0.30, 0.36), Color(0.28, 0.27, 0.32), Color(0.36, 0.33, 0.38)]}
+@export var day_mats: Dictionary = {
+	"city": [[0.36, Color(0.52, 0.50, 0.47)], [0.20, Color(0.14, 0.20, 0.24)], [0.16, Color(0.46, 0.26, 0.19)],
+		[0.12, Color(0.40, 0.25, 0.15)], [0.16, Color(0.62, 0.60, 0.56)]],
+	"sprawl": [[0.22, Color(0.52, 0.50, 0.47)], [0.22, Color(0.48, 0.30, 0.24)], [0.20, Color(0.46, 0.32, 0.20)],
+		[0.14, Color(0.62, 0.58, 0.56)], [0.12, Color(0.24, 0.32, 0.36)], [0.10, Color(0.58, 0.40, 0.42)]]}
+@export var day_mats_k: float = 0.35
+## LOOK L5: the share of buildings that take their day family colour whole, and the per-building value jitter (+/-).
+@export var day_mats_pure_share: float = 0.3
+@export var facade_value_jitter: float = 0.3
+## LOOK L5 (hybrid port, Blender city_preset PARKS + city_world_a2 park_trees): park lawn colour and lift (BU), the share
+## of park lots with trees, clumps per lot, trees per clump, clump spread (lots), tree radius range (BU), dome width and
+## height factors, and the tree colours.
+@export var park_lawn: Color = Color(0.16, 0.25, 0.10)
+@export var park_lawn_lift: float = 0.004
+## Designer 2026-10-20 (no hard lawn squares): the lawn's cells per lot side, its second tone, the colour it fades to
+## where the park ends, and its noise (x the scale on lot points, y how far a cell's hash breaks the park's edge).
+@export var park_lawn_div: int = 4
+@export var park_lawn_b: Color = Color(0.24, 0.31, 0.13)
+@export var park_edge: Color = Color(0.15, 0.16, 0.14)
+@export var park_lawn_noise: Vector2 = Vector2(1.0, 0.45)
+@export var park_tree_share: float = 0.55
+@export var park_clumps: int = 2
+@export var park_trees: Vector2i = Vector2i(3, 5)
+@export var park_clump_spread: float = 0.67
+@export var park_tree_r: Vector2 = Vector2(0.63, 1.32)
+@export var park_tree_w: float = 1.6
+@export var park_tree_h: float = 2.1
+@export var park_tree_colors: Array[Color] = [Color(0.12, 0.22, 0.07), Color(0.16, 0.26, 0.09), Color(0.10, 0.18, 0.08),
+	Color(0.20, 0.27, 0.10)]
+@export var terrain_ground_mix: float = 0.0
 
 @export_group("Streets")
 ## Lane glow strip (unified40 GLANE): base glow, traffic gain, stroke count.
@@ -564,7 +787,10 @@ extends Resource
 @export var a2_pillar_every_bu: float = 18.0
 @export var a2_road_glow: Dictionary = {&"ring": Color(1.0, 0.62, 0.32), &"motorway": Color(0.95, 0.55, 0.30),
 	&"truck": Color(0.85, 0.48, 0.25), &"arterial": Color(0.55, 0.45, 0.40), &"collector": Color(0.40, 0.36, 0.34)}
-@export var a2_road_glow_share: float = 0.3
+## LOOK L5 (whole-city plate parity): the deck colour by road class (the plate's light concrete ring and motorways); others
+## keep `street`.
+@export var a2_deck_color: Dictionary = {&"ring": Color(0.40, 0.39, 0.38), &"motorway": Color(0.36, 0.35, 0.34), &"truck": Color(0.30, 0.29, 0.28)}
+@export var a2_road_glow_share: float = 0.5
 @export var a2_road_min_half_bu: float = 0.6
 @export var a2_deck_skirt_from: float = 0.3
 ## Rails by kind (lift BU, glow colour), at least `a2_rail_min_half_bu` half wide; their colour; tunnels are not drawn.
@@ -615,12 +841,86 @@ extends Resource
 @export var water_reflect_share: float = 0.8
 ## NA-12 r3: the sea's marbled caustic and foam (readable at whole-city zoom): cell size (BU), speed, gain, the
 ## caustic tones by night / day, the shallows' reach from the shore (lots) and the foam line's width (lots) and gain.
-@export var water_caustic_bu: float = 45.0
+@export var water_caustic_bu: float = 100.0
 @export var water_caustic_speed: float = 0.04
-@export var water_caustic_gain: float = 0.35
+@export var water_caustic_gain: float = 0.25
 @export var water_caustic_night: Color = Color(0.06, 0.3, 0.36)
 @export var water_caustic_day: Color = Color(0.4, 0.7, 0.9)
 @export var water_shallow_lots: float = 14.0
+## LOOK L5 (A2 plate): the cap (lots) of the sea's distance-to-land field (UV.x past it is deep water; runs merge).
+@export var sea_field_cap_lots: float = 60.0
+## LOOK L5 (A2 plate): the bay islands (CityWater.islands_of): how many, the least lots to land, radius share of that and
+## cap (lots), the spacing in radii, the crown height (BU) and the rim wobble.
+@export var island_count: int = 2
+## LOOK L5: light vegetation on the green land (CityVegetationKit, whole-city pose): a sample every `veg_step` lots, the
+## kept share from meadow to forest, the least ground height (BU) and the steepest slope, the share of the city's bare lots
+## with a tree, and the tree radius range (lots of BU; park_tree_w / park_tree_h shape them).
+@export var veg_step: int = 2
+@export var veg_density: Vector2 = Vector2(0.15, 0.6)
+@export var veg_min_h: float = 0.4
+@export var veg_max_slope: float = 0.25
+@export var veg_bare_share: float = 0.8
+@export var veg_r: Vector2 = Vector2(0.9, 1.8)
+## Designer 2026-10-20 (the coast's dark tree dots): no tree within this many lots (Chebyshev) of a sea lot.
+@export var veg_coast_clear: int = 3
+## Designer 2026-10-20 (the stepped coast): weld the ground / land meshes' shared corners so slopes shade smooth.
+@export var ground_smooth_normals: bool = true
+## Designer 2026-10-20: the A2 road classes on raised decks, whose lots draw ground rather than a street square.
+@export var ground_deck_classes: Array[StringName] = [&"ring", &"motorway", &"truck"]
+@export var island_min_d: float = 10.0
+@export var island_r_k: float = 0.25
+@export var island_r_max: float = 8.0
+@export var island_gap_k: float = 1.8
+@export var island_h_bu: float = 5.0
+@export var island_wobble: float = 0.35
+## ... the aspect range (long / short axis) the islands draw from (1 = round).
+@export var island_aspect: Vector2 = Vector2(1.7, 2.6)
+## LOOK L5 (the designer's water ruling: real ground under the sea, one transparent water plane over it), ported from the
+## Blender plate (city_world_a2.sea_depth / isl_bed, city_render.water_fade): the seabed (CitySeabedKit) is a grid every
+## `seabed_step` lots, a `seabed_shelf_bu` shelf at the shore falling on a smoothstep over `seabed_reach` lots of the shore
+## field to `seabed_max_bu`, broken by the terrain noise (`seabed_noise_k`); sand to rock over `seabed_tone` lots. Each island
+## stands on a shoal `island_shoal_bu` deep out to `island_shoal_k` x its radius, falling `island_shoal_slope` BU per BU past it;
+## its hill reaches `island_spread` x the radius.
+@export var seabed_step: int = 2
+@export var seabed_shelf_bu: float = 3.0
+## Designer 2026-10-20: how far (BU) a dry seabed vertex sits under the ground, so the bed never shows through the shore.
+@export var seabed_under_bu: float = 0.15
+@export var seabed_max_bu: float = 170.0
+@export var seabed_reach: Vector2 = Vector2(2.0, 30.0)
+@export var seabed_noise_k: float = 0.15
+@export var seabed_sand: Color = Color(0.34, 0.31, 0.24)
+@export var seabed_deep: Color = Color(0.17, 0.19, 0.20)
+@export var seabed_tone: Vector2 = Vector2(1.0, 13.0)
+@export var island_shoal_bu: float = 7.0
+@export var island_shoal_k: float = 1.3
+@export var island_shoal_slope: float = 0.55
+@export var island_spread: float = 1.6
+## The seabed shader (city_seabed.gdshader): the plate's clear-water fade and caustics (Colors go in as vec3).
+@export var seabed_water: Dictionary = {"sigma": Color(0.090, 0.034, 0.016), "inscatter": Color(0.003, 0.018, 0.055),
+	"inscatter_gain": 2.0, "inscatter_day_gain": 5.0, "caustic_day_k": 0.25, "path_cap": 600.0, "caustic_k": 0.6, "caustic_scale": 0.05, "caustic_width": 0.22,
+	"caustic_distort": 0.9, "caustic_floor": 0.12, "caustic_patch": 0.05, "caustic_patch_scale": 0.025,
+	"caustic_depth_bu": 70.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
+## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
+@export var water_plane_priority: int = -50
+## The drowned quarter at the whole pose: water this deep over its ground in the plane's bake, and at least this far
+## (lots) from the shore there, so the surf band stays on the sea's coast.
+@export var whole_drowned_depth_bu: float = 3.0
+@export var whole_drowned_shore_lots: float = 2.0
+## Its shader parameters (Colors go in as vec3).
+@export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.2,
+	"sky_horizon_day": Color(0.34, 0.46, 0.60), "sky_zenith_day": Color(0.10, 0.22, 0.42),
+	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
+	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
+	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.4, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
+	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.12,
+	"night_alpha_deep": 0.4, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
+	"beach_col": Color(0.80, 0.77, 0.66), "beach_band": Vector2(0.3, 0.62), "beach_k": Vector2(0.75, 0.45),
+	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
+	"surf_period": 2.0}
+## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
+## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
+@export var outer_land_band_soft: float = 0.14
 @export var water_foam_lots: float = 1.5
 @export var water_foam_gain: float = 0.3
 @export var water_reflect_colors: PackedColorArray = PackedColorArray([Color(1.0, 0.69, 0.0), Color(1.0, 0.24, 0.66),
@@ -641,8 +941,8 @@ extends Resource
 ## emission gain rising to `coping_gain_far` times at that most-zoomed-out width.
 @export var seawall_coping_bu: float = 0.9
 @export var coping_ref_ortho: float = 240.0
-@export var coping_zoom_max: float = 6.0
-@export var coping_gain_far: float = 2.0
+@export var coping_zoom_max: float = 2.5
+@export var coping_gain_far: float = 0.6
 ## Piers where a street meets the water: length and width (lots), deck height (BU), deck colour, and the lamp at the
 ## end (size BU, emission colour).
 @export var pier_len_lots: float = 3.0

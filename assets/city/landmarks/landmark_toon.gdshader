@@ -38,6 +38,10 @@ uniform float wash_k = 0.0;
 uniform vec3 wash_col = vec3(0.0);
 uniform float wash_gain = 0.0;
 uniform vec2 wash_h = vec2(4.0, 12.0);
+// LOOK L5 (designer 2026-10-20): the body colour (roles 0-2) desaturated to `albedo_sat` and scaled by `albedo_k`
+// (Meridian's gold under the whole-city pose); 1 / 1 = as authored.
+uniform float albedo_sat = 1.0;
+uniform float albedo_k = 1.0;
 
 varying vec3 v_world;
 
@@ -60,6 +64,7 @@ void fragment() {
 	vec3 c = COLOR.rgb;
 	ROUGHNESS = COLOR.a;
 	if (role <= 2) {
+		c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, albedo_sat) * albedo_k;
 		ALBEDO = c;
 		if (role == 1) {
 			ALBEDO = mix(c, lines_dark, lines_dark_k * reveal_q);

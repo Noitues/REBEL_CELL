@@ -37,10 +37,16 @@ uniform float streak_k = 7.0;
 uniform float spec_max = 8.0;
 uniform float pool_k = 1.0;
 uniform float spill_k = 0.25;
+// LOOK L5 (designer 2026-10-20): `slope_spec` 0..1 keeps the lobe to flat ground only (world normal y over `slope_flat`), so the
+// moon no longer flecks the whole-city mountains white. 0 = the old lobe everywhere.
+uniform float slope_spec = 0.0;
+uniform vec2 slope_flat = vec2(0.97, 0.995);
 varying vec3 v_world;
+varying float v_ny;
 
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	v_ny = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz).y;
 }
 
 float puddle_noise(vec3 p) {
@@ -108,6 +114,7 @@ void light() {
 		float fr = f0 + (1.0 - f0) * pow(1.0 - vh, 5.0);
 		float nv = max(dot(NORMAL, VIEW), 0.02);
 		vec3 spec = lc * min(dd * fr * nl / (4.0 * nv), spec_max) * look_blend * clamp(puddles_sharp, 0.0, 1.0);
+		spec *= mix(1.0, smoothstep(slope_flat.x, slope_flat.y, v_ny), slope_spec);
 		vec3 pool = lc * nl * pool_k;
 		SPECULAR_LIGHT += spec;
 		int b0 = toon_band_index(ndl, ramp_edges.x, ramp_edges.y);

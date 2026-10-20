@@ -514,23 +514,47 @@ city_a2_hq_tries = 24
 city_a2_hq_gap = 1
 city_a2_hq_search = 12
 city_a2_block_lots = Vector2i(4, 7)
-city_a2_merge_share = 0.35
+city_a2_merge_share = 0.1
 city_a2_inset = 0.12
 city_a2_heights = {
 &"corp": Vector2(10, 34),
-&"industrial": Vector2(4, 10),
-&"informal": Vector2(2, 6),
-&"old_core": Vector2(5, 16),
-&"rail_grid": Vector2(5, 14),
-&"sprawl": Vector2(4, 14),
-&"suburb": Vector2(3, 8)
+&"corp_halcyon": Vector2(10, 28),
+&"corp_meridian": Vector2(5, 14),
+&"corp_orbital": Vector2(16, 42),
+&"corp_solace": Vector2(12, 34),
+&"a2_tethys": Vector2(4, 44),
+&"industrial": Vector2(3, 8.5),
+&"informal": Vector2(1.5, 5),
+&"old_core": Vector2(3.5, 11),
+&"rail_grid": Vector2(3, 9),
+&"sprawl": Vector2(2.2, 9),
+&"suburb": Vector2(2, 6)
 }
+city_a2_height_pow = {
+&"a2_tethys": 2.6,
+&"old_core": 1.5,
+&"sprawl": 1.6,
+&"rail_grid": 1.4,
+&"industrial": 1.3,
+&"suburb": 1.3
+}
+city_a2_height_spike = Vector2(0.06, 1.9)
+city_a2_spike_hq_clear = 3
+city_a2_sink_share = 0.7
+city_a2_sink_bu = Vector2(3, 7)
+city_a2_dwindle = Vector3(0.45, 0.5, 14)
+city_a2_dwindle_h_min = 0.35
 city_a2_hq_rise = 1.2
 city_a2_hq_rise_lots = 18.0
 city_a2_setback_from = 18.0
 city_a2_setback = Vector2(0.18, 0.6)
 city_a2_taper = Vector2(0.85, 1)
 city_a2_corp_ink_share = 0.35
+city_a2_sub_kinds = Array[StringName]([&"a2_tethys", &"sprawl", &"suburb", &"informal", &"old_core", &"rail_grid", &"corp", &"corp_meridian", &"corp_halcyon", &"corp_solace", &"corp_orbital"])
+city_a2_sub_share = 0.85
+city_a2_sub_inset = 0.05
+city_a2_sub_h_k = 0.8
+city_a2_sub_plinth_bu = 0.15
 city_a2_traffic = {
 &"arterial": 0.6,
 &"collector": 0.45,
@@ -540,18 +564,40 @@ city_a2_traffic = {
 &"truck": 0.8
 }
 city_a2_budget_s = 2.0
-city_a2_hill_exag = 1.0
+city_a2_hill_exag = 1.5
 city_a2_outer_ring = &"road_001"
-city_a2_foot = Vector2(2.5, 25)
-city_a2_foot_h = 12.0
-city_a2_mountain = Vector2(20, 64)
-city_a2_mountain_h = 60.0
+city_a2_foot = Vector2(3, 30)
+city_a2_foot_h = 20.0
+city_a2_mountain = Vector2(24, 78)
+city_a2_mountain_h = 125.0
 city_a2_noise_cells = Vector3(33, 13, 40)
 city_a2_terrain_seed = 5101
 city_a2_mountain_shore = Vector2(1.2, 7.5)
 city_a2_beach = Vector2(0.5, 2.5)
-city_a2_land_margin = 80
-city_a2_land_step = 2
+city_a2_land_margin = 120
+city_a2_land_step = 3
+city_a2_mountain_edge = Vector3(0.45, 78, 124)
+city_a2_relief = Vector3(70, 17, 7)
+city_a2_relief_from = Vector2(10, 40)
+city_a2_relief_warp = Vector3(9, 30, 0.22)
+city_a2_cliff = 14.0
+city_a2_cliff_x = Vector2(-7000, -5500)
+city_a2_cliff_shore = Vector4(0.5, 3, 5, 14)
+city_a2_land_blend = 12.0
+city_a2_max_build_h = 42.0
+city_a2_max_build_slope = 0.3
+city_a2_edge_noise = 5.0
+city_a2_sprawl_fade = Vector2(4, 22)
+city_a2_sprawl_streets = 16.0
+city_a2_prune_streets = 1
+city_a2_coast_setback = 2
+city_a2_coast_smooth = 2.0
+city_a2_sprawl_site_keep = 8
+city_a2_corridor = {
+&"motorway": 1,
+&"ring": 1,
+&"truck": 1
+}
 map_v2_enabled = true
 map_unique_allow = PackedStringArray("orbital_uplink_dish")
 rest_heal_pct = 35

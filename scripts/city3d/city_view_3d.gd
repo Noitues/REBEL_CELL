@@ -38,6 +38,7 @@ signal host_pause_changed(paused: bool)
 ## The model is built and its chunks are placed (layers can read `model`).
 signal model_ready
 
+const GLOW_LINE := preload("res://shaders/city/city_glow_line.gdshader")
 const CONFIG := preload("res://content/config/city_config.tres")
 ## Render layers (bit numbers): 1 the world, 2 the ground-only pass under see-through.
 const WORLD_LAYER := 1
@@ -212,6 +213,30 @@ static func set_ground_pass(node: Node, on: bool) -> void:
 
 ## Where corporation `corp`'s landmark stands: its HQ lot's centre on the ground, facing
 ## the camera's yaw (Transform3D() when the city has no such HQ).
+## LOOK L5: the world height of the top of `corp`'s landmark (its meshes' boxes), `fallback` when it has none.
+func _landmark_top(corp: StringName, fallback: float) -> float:
+	var node: Node3D = landmarks.get(corp)
+	if node == null:
+		return fallback
+	var top := -INF
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null or not m.visible:
+			continue
+		var xf := m.global_transform if m.is_inside_tree() else node.transform * m.transform
+		# Light cones (lm_beam surfaces) are no roof.
+		for s in m.mesh.get_surface_count():
+			var mat := m.get_surface_override_material(s)
+			if mat == null:
+				mat = m.mesh.surface_get_material(s)
+			if mat != null and (mat.resource_name == "lm_beam" or (mat is ShaderMaterial and (mat as ShaderMaterial).shader == LandmarkMaterials.BEAM_SHADER)):
+				continue
+			var verts: PackedVector3Array = m.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for v in verts:
+				top = maxf(top, (xf * v).y)
+	return top if top > -INF else fallback
+
+
 func landmark_slot(corp: StringName) -> Transform3D:
 	if model == null or not model.hqs.has(corp):
 		return Transform3D()
@@ -267,34 +292,148 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if _building_mat == null or day.is_empty():
 		return
 	_last_day = day
-	_ramp_water(day)
+	if _sun != null:
+		_sun.look_at_from_position(Vector3.ZERO, -sun_dir(), Vector3.UP)
+	# LOOK L5: the whole-city pose starts the buildings' depth haze near its target (at ~1130 BU it saturated every block).
+	_building_mat.set_shader_parameter(&"haze_d0", cfg.whole_pose_dist_bu * cfg.whole_haze_start if whole_look else 0.0)
+	if whole_look:
+		day = _whole_day(day)
+		set_look_blend(night_share * cfg.whole_night_look)
+	_sync_hq_beams()
+	_ramp_water(_whole_water(day) if whole_look else day)
+	_whole_building()
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
-		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
-		for m in [_building_mat, _ground_mat, _lane_mat]:
-			(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+		var col := (day_ramp[k] as Color).lerp(_night_ramp(k), night_share)
+		# LOOK L5: the outer land, plane and A2 decks (_outer_mat) take the day ramp too (they stayed on the night ramp).
+		for m in [_building_mat, _ground_mat, _lane_mat, _outer_mat]:
+			if m != null:
+				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+	# LOOK L5: the whole-city land shades smoothly (the plate's Cycles slopes), not in the Grid's hard toon bands.
+	if _ground_mat != null:
+		_ground_mat.set_shader_parameter(&"band_soft", cfg.whole_ground_band_soft if whole_look else 0.0)
+		_ground_mat.set_shader_parameter(&"cloud_k", cfg.whole_cloud_k * (1.0 - night_share) if whole_look else 0.0)
+		_ground_mat.set_shader_parameter(&"cloud_scale", cfg.whole_cloud_scale)
+		_ground_mat.set_shader_parameter(&"cloud_off", cfg.whole_cloud_off)
+		_ground_mat.set_shader_parameter(&"cloud_edge", cfg.whole_cloud_edge)
 	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
-	var hz := (day["haze"] as Color).lerp(cfg.haze, night_share)
+	# LOOK L5: the whole-city night keeps the plate's neutral charcoal air, not the map's violet haze and grade.
+	var n_haze: Color = cfg.whole_night_haze if whole_look else cfg.haze
+	var n_haze_k: float = cfg.whole_night_haze_k if whole_look else cfg.haze_k
+	var n_grade: Color = cfg.whole_night_grade if whole_look else cfg.grade
+	var hz := (day["haze"] as Color).lerp(n_haze, night_share)
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
 	# B2 (review D1): a look may set its own haze strength (the combat close-up's 15-20 %).
-	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), cfg.haze_k, night_share))
+	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), n_haze_k, night_share))
 	# B2 (art director): a look may set its rain's strength and keep its blacks (the combat close-up).
 	_post.set_shader_parameter(&"rain_alpha", float(day.get("rain_alpha", cfg.rain_alpha)))
 	_post.set_shader_parameter(&"rain_keep_blacks", float(day.get("rain_keep_blacks", 0.0)))
-	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
+	var gr := (day["grade"] as Color).lerp(n_grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
+	if water != null and water.plane_mat != null:
+		water.plane_mat.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
 	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
 	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
-	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
+	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night and not whole_look)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
-	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
+	_env.background_color = (day["sky"] as Color).lerp(cfg.whole_fog_night if whole_look else cfg.sky, night_share)
 	var lm_night := bool(day.get("landmarks_night", night))
 	if lm_night != _landmarks_night:
 		_landmarks_night = lm_night
 		_restyle_landmarks()
+	_whole_fog()
+
+
+## LOOK L5: the A2 road glow lines at the whole-city night: their own unshaded line material (the lane material turns into
+## the wet street there), at cfg.whole_road_glow_gain x the night share, shown from cfg.whole_road_glow_from; by day hidden.
+var _glow_line_mat: ShaderMaterial = null
+
+
+func _whole_road_glow() -> void:
+	if features == null:
+		return
+	var rg := features.get_node_or_null(^"RoadGlow") as GeometryInstance3D
+	if rg == null:
+		return
+	if not whole_look:
+		rg.material_override = _lane_mat
+		rg.visible = true
+		return
+	if _glow_line_mat == null:
+		_glow_line_mat = ShaderMaterial.new()
+		_glow_line_mat.shader = GLOW_LINE
+	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share)
+	_glow_line_mat.set_shader_parameter(&"tint", Vector3(cfg.whole_road_glow_tint.r, cfg.whole_road_glow_tint.g, cfg.whole_road_glow_tint.b))
+	rg.material_override = _glow_line_mat
+	rg.visible = night_share >= cfg.whole_road_glow_from
+
+
+## LOOK L5: the whole-city pose's low sun casts the plate's long shadows: the far-LOD blocks cast too (cfg.whole_far_shadows)
+## and the sun's shadow reaches cfg.whole_shadow_dist_bu.
+func _whole_shadows() -> void:
+	if _sun == null or quality.is_empty():
+		return
+	var on: bool = whole_look and cfg.whole_far_shadows and bool(quality["shadows"])
+	# The plate's sun (designer 2026-10-20: ours stood on the other side of the sky).
+	_sun.look_at_from_position(Vector3.ZERO, -sun_dir(), Vector3.UP)
+	_sun.directional_shadow_max_distance = cfg.whole_shadow_dist_bu if whole_look else cfg.camera_far * 0.5
+	if land != null:
+		land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for n: Node in find_children("Far_*", "MultiMeshInstance3D", true, false):
+		var far_on: bool = on or (bool(quality["shadows"]) and cfg.far_lod_shadows)
+		(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if far_on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+## The direction toward the sun (world): the plate's under the whole-city pose, cfg.to_light otherwise.
+func sun_dir() -> Vector3:
+	# By night the moon keeps the old key: the plate's low sun skimmed the relief into white glints.
+	return cfg.whole_to_light.normalized() if whole_look and night_share < 0.5 else cfg.to_light
+
+
+## LOOK L5: the whole-city pose's atmosphere: depth fog from near the target out past the land, in a haze colour (day to
+## night) the sky takes too, so the land, sea and horizon fade into air instead of ending on a hard edge.
+var _whole_fog_on: bool = false
+
+
+func _whole_fog() -> void:
+	if _env == null:
+		return
+	if not whole_look:
+		if _whole_fog_on:
+			_whole_fog_on = false
+			_env.fog_enabled = false
+			_env.adjustment_enabled = false
+			if _we != null:
+				_we.camera_attributes = null
+		return
+	_whole_fog_on = true
+	# The plate's saturated colour (Cycles' Filmic look) over the toon city's greyed grade.
+	_env.adjustment_enabled = true
+	_env.adjustment_saturation = lerpf(cfg.whole_saturation.x, cfg.whole_saturation.y, night_share)
+	var c := cfg.whole_fog_day.lerp(cfg.whole_fog_night, night_share)
+	_env.fog_enabled = true
+	_env.fog_mode = Environment.FOG_MODE_DEPTH
+	_env.fog_light_color = c
+	_env.fog_light_energy = 1.0
+	_env.fog_sun_scatter = cfg.whole_fog_sun_scatter * (1.0 - night_share)
+	_env.fog_density = lerpf(cfg.whole_fog_density.x, cfg.whole_fog_density.y, night_share)
+	_env.fog_sky_affect = 1.0
+	_env.fog_depth_begin = cfg.whole_pose_dist_bu * cfg.whole_fog_depth.x
+	_env.fog_depth_end = cfg.whole_pose_dist_bu * cfg.whole_fog_depth.y
+	_env.fog_depth_curve = cfg.whole_fog_curve
+	_env.background_color = c
+	if _we != null and cfg.whole_dof_far.z > 0.0:
+		var ca := _we.camera_attributes as CameraAttributesPractical
+		if ca == null:
+			ca = CameraAttributesPractical.new()
+			_we.camera_attributes = ca
+		ca.dof_blur_far_enabled = true
+		ca.dof_blur_far_distance = cfg.whole_pose_dist_bu * cfg.whole_dof_far.x
+		ca.dof_blur_far_transition = cfg.whole_pose_dist_bu * cfg.whole_dof_far.y
+		ca.dof_blur_amount = cfg.whole_dof_far.z
 
 
 
@@ -325,6 +464,8 @@ func set_look_blend(lb: float) -> void:
 			m.shader = want
 			if wet:
 				NetrunShaderKit.setup_wet(m)
+				if whole_look:
+					_whole_wet(m)
 		if wet:
 			m.set_shader_parameter(&"look_blend", look_blend)
 	var look: Dictionary = CityShaderConfigData.shipped().look
@@ -338,9 +479,160 @@ func set_look_blend(lb: float) -> void:
 	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure)
 	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+	_whole_landmarks()
 
 
 var _aaa_exposure: float = 0.0
+
+
+## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs: Aurelian's colosseum, Tethys's
+## pier city), shown under the whole-city pose only: style -> {"node", "mats", "rect", "mask", "top"}. The procedural
+## buildings under them give way while they show.
+var _a2_hqs: Dictionary = {}
+
+
+func _sync_a2_hqs() -> void:
+	if model == null:
+		return
+	if whole_look and _a2_hqs.is_empty():
+		var plan := CityPlan.for_seed(city_seed)
+		if plan.a2 == null:
+			return
+		var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+		for lm: Dictionary in plan.a2.a2.landmarks:
+			var st := String(lm.get("style", ""))
+			if lm["kind"] != &"hq" or not cfg.a2_hq_look.has(st):
+				continue
+			var hl: Dictionary = cfg.a2_hq_look[st]
+			var r_bu := float(lm.get("radius", 0.0)) / plan.a2.metres_per_lot * cfg.lot_bu * float(hl.get("radius_k", 1.0))
+			var node := CityA2Hqs.make(cfg, st, r_bu)
+			if node == null:
+				continue
+			var lot := plan.a2.lot_of(lm["pos"])
+			var at := lot_world(lot, float(hl.get("y", 0.0))) if hl.get("on_water", false) else ground_world(lot)
+			node.position = at
+			node.rotation.y = float(hl.get("yaw_deg", 0.0)) * PI / 180.0
+			node.name = "A2Hq_%s" % st
+			add_to_layer(&"landmarks", node)
+			var key := StringName(String(lm.get("district", st)))
+			var mats := LandmarkMaterials.apply(node, look, key, not _landmarks_night)
+			var mask := {}
+			var rl := r_bu / cfg.lot_bu * float(hl.get("clear_k", 1.05))
+			var e := float(hl.get("aspect", 1.0))
+			for j in range(floori(lot.y - rl), ceili(lot.y + rl) + 1):
+				for i in range(floori(lot.x - rl), ceili(lot.x + rl) + 1):
+					var d := Vector2(i + 0.5, j + 0.5) - lot
+					if Vector2(d.x, d.y / e).length() <= rl:
+						mask[Vector2i(i, j)] = true
+			var c0 := lot_world(lot - Vector2(rl, rl))
+			var c1 := lot_world(lot + Vector2(rl, rl))
+			var rect := Rect2(Vector2(minf(c0.x, c1.x), minf(c0.z, c1.z)), Vector2(absf(c1.x - c0.x), absf(c1.z - c0.z)))
+			var top := 0.0
+			for mi in node.find_children("*", "MeshInstance3D", true, false):
+				top = maxf(top, (mi as MeshInstance3D).mesh.get_aabb().end.y)
+			_a2_hqs[st] = {"node": node, "mats": mats, "rect": rect, "mask": mask, "top": top, "key": key, "on": false}
+		# LOOK L5: the port, ships, island buildings, helicopters and police lights (CityA2Dress); no sky beam.
+		var dd := CityA2Dress.make(cfg, plan, water.islands if water != null else ([] as Array[Dictionary]))
+		if not dd.is_empty():
+			var node: Node3D = dd["node"]
+			add_to_layer(&"landmarks", node)
+			var dm: Dictionary = dd["mask"]
+			var rect := Rect2()
+			var first := true
+			for l: Vector2i in dm:
+				var c0 := lot_world(Vector2(l))
+				var c1 := lot_world(Vector2(l) + Vector2.ONE)
+				var lr := Rect2(Vector2(minf(c0.x, c1.x), minf(c0.z, c1.z)), Vector2(absf(c1.x - c0.x), absf(c1.z - c0.z)))
+				rect = lr if first else rect.merge(lr)
+				first = false
+			_a2_hqs["~dress"] = {"node": node, "mats": LandmarkMaterials.apply(node, look, &"dress", not _landmarks_night),
+				"rect": rect, "mask": dm, "top": 0.0, "key": &"dress", "on": false, "beam": false, "fx": dd["fx"]}
+		_whole_landmarks()
+	for st: String in _a2_hqs:
+		var hq: Dictionary = _a2_hqs[st]
+		(hq["node"] as Node3D).visible = whole_look
+		if whole_look != bool(hq["on"]):
+			hq["on"] = whole_look
+			var r: Rect2 = hq["rect"]
+			if (hq["mask"] as Dictionary).is_empty():
+				continue
+			if whole_look:
+				_cleared.append(r)
+				_clear_masks[r] = hq["mask"]
+			else:
+				_cleared.erase(r)
+				_clear_masks.erase(r)
+			_rebuild_under(r)
+
+
+## LOOK L5 (designer 2026-10-20): under the whole-city pose the landmarks' light cones stay (by night too), soft and
+## see-through (cfg.whole_lm_beam), and the HQs in cfg.whole_landmark_gain glow that much less; off the pose as shipped.
+func _whole_landmarks() -> void:
+	var all := landmark_mats.duplicate()
+	for st: String in _a2_hqs:
+		all[_a2_hqs[st]["key"]] = _a2_hqs[st]["mats"]
+	for key: Variant in all:
+		var group: Variant = all[key]
+		if not group is Dictionary:
+			continue
+		var g: float = float(cfg.whole_landmark_gain.get(StringName(String(key)), 1.0)) if whole_look else 1.0
+		var tone: Vector3 = cfg.whole_landmark_tone.get(StringName(String(key)), Vector3.ONE) if whole_look else Vector3.ONE
+		var tv := lerpf(tone.y, tone.z, night_share)
+		if String(key) == "dress":
+			_dress_fx()
+		for m: Variant in (group as Dictionary).values():
+			var sm := m as ShaderMaterial
+			if sm == null or sm.shader == null:
+				continue
+			if sm.shader == LandmarkMaterials.BEAM_SHADER:
+				if whole_look:
+					for k: String in cfg.whole_lm_beam:
+						sm.set_shader_parameter(StringName(k), float(cfg.whole_lm_beam[k]))
+				else:
+					sm.set_shader_parameter(&"beam_soft", 0.0)
+				continue
+			if sm.shader != LandmarkMaterials.TOON_SHADER:
+				continue
+			for k: StringName in [&"lit_emission", &"neon_gain", &"window_gain"]:
+				var mk := StringName("lm_base_%s" % k)
+				if not sm.has_meta(mk):
+					var v: Variant = sm.get_shader_parameter(k)
+					if v == null:
+						continue
+					sm.set_meta(mk, v)
+				sm.set_shader_parameter(k, float(sm.get_meta(mk)) * g)
+			for k: StringName in [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]:
+				_tone_ramp(sm, k, tone.x, tv)
+			var alb: Vector2 = cfg.whole_landmark_albedo.get(StringName(String(key)), Vector2.ONE) if whole_look else Vector2.ONE
+			sm.set_shader_parameter(&"albedo_sat", alb.x)
+			sm.set_shader_parameter(&"albedo_k", alb.y)
+
+
+## LOOK L5: the dressing's lights by the night: the searchlights at night only, the police bars dimmer by day.
+func _dress_fx() -> void:
+	var dd: Dictionary = _a2_hqs.get("~dress", {})
+	for m: ShaderMaterial in dd.get("fx", []):
+		if m.shader == CityA2Dress.SPOT_SHADER or m.shader == CityA2Dress.POOL_SHADER:
+			m.set_shader_parameter(&"on", night_share)
+		else:
+			m.set_shader_parameter(&"on", lerpf(float(cfg.a2_dress.get("police_day_on", 0.5)), 1.0, night_share))
+
+
+## LOOK L5: ramp uniform `k` of `sm` desaturated to `sat` and scaled by `val` from its restyled base (kept in metadata; a
+## value other than the last one written here is a new base from a restyle).
+func _tone_ramp(sm: ShaderMaterial, k: StringName, sat: float, val: float) -> void:
+	var cur: Variant = sm.get_shader_parameter(k)
+	if not cur is Vector3:
+		return
+	var bk := StringName("lm_tone_base_%s" % k)
+	var wk := StringName("lm_tone_out_%s" % k)
+	if not sm.has_meta(bk) or not sm.has_meta(wk) or (sm.get_meta(wk) as Vector3) != (cur as Vector3):
+		sm.set_meta(bk, cur)
+	var base: Vector3 = sm.get_meta(bk)
+	var lum := base.dot(Vector3(0.2126, 0.7152, 0.0722))
+	var out := (Vector3(lum, lum, lum).lerp(base, sat)) * val
+	sm.set_shader_parameter(k, out)
+	sm.set_meta(wk, out)
 
 
 ## AAA-2: the exposure the post chain multiplies the linear picture by (the solved value of the framing, `look.exposure` of the
@@ -445,7 +737,208 @@ var night_share: float = 1.0
 ## NA-12 r2: the last day look set_night_share was given (the sea wall built later takes its ramp).
 var _last_day: Dictionary = {}
 var _landmarks_night: bool = true
+## LOOK L5 (designer 2026-10-19): the whole-city pose's look (on while NeonCity.whole_pose_centre is set): the AAA-2
+## night look by the night share (cfg.whole_night_look) and the day look's ramp and grade toward the A2 day plate.
+var whole_look: bool = false:
+	set(v):
+		if v == whole_look:
+			return
+		whole_look = v
+		if not v:
+			set_look_blend(0.0)
+		_whole_shadows()
+		_whole_cell_district()
+		if not _last_day.is_empty():
+			set_night_share(night_share, _last_day)
+
+
+## The day look under the whole-city pose: the ramp scaled by cfg.whole_day_ramp_gain, and the grade, sky and haze
+## from cfg.whole_day_*.
+func _whole_day(day: Dictionary) -> Dictionary:
+	var d := day.duplicate()
+	var ramp: Array = []
+	var dr: Array = day["ramp"]
+	for k in dr.size():
+		var c: Color = dr[k]
+		var tn: Color = cfg.whole_day_ramp_tint[mini(k, cfg.whole_day_ramp_tint.size() - 1)]
+		var g := cfg.whole_day_ramp_gain
+		ramp.append(Color(c.r * g * tn.r, c.g * g * tn.g, c.b * g * tn.b))
+	d["ramp"] = ramp
+	d["grade"] = cfg.whole_day_grade
+	d["sky"] = cfg.whole_day_sky
+	d["haze"] = cfg.whole_day_haze
+	d["haze_k"] = cfg.whole_day_haze_k
+	d["rain_alpha"] = 0.0  # the plate has no rain
+	return d
+
+
+## The whole-city day ramp for the water (cfg.whole_day_water_gain of the day ramp).
+func _whole_water(day: Dictionary) -> Dictionary:
+	var d := day.duplicate()
+	var ramp: Array = []
+	for c: Color in day["ramp"]:
+		ramp.append(Color(c.r * cfg.whole_day_water_gain, c.g * cfg.whole_day_water_gain, c.b * cfg.whole_day_water_gain))
+	d["ramp"] = ramp
+	return d
+
+
+## Sets cfg.whole_building's building uniforms under the whole-city pose, the shipped city_shaders values otherwise.
+## LOOK L5: the whole-city wet-street overrides on `m` (only when it runs the wet shader).
+func _whole_wet(m: ShaderMaterial) -> void:
+	if m == null or m.shader != CityMaterials.WET_STREET:
+		return
+	for k: String in cfg.whole_wet:
+		m.set_shader_parameter(StringName(k), float(cfg.whole_wet[k]))
+
+
+func _whole_building() -> void:
+	var b: Dictionary = CityShaderConfigData.shipped().building
+	for k: String in cfg.whole_building:
+		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b.get(k, cfg.whole_building_base.get(k, 0.0))))
+	for k: String in cfg.whole_building_colors:
+		var c: Color = cfg.whole_building_colors[k]
+		var sv: Array = b.get(k, [c.r, c.g, c.b])
+		_building_mat.set_shader_parameter(StringName(k), Vector3(c.r, c.g, c.b) if whole_look else Vector3(float(sv[0]), float(sv[1]), float(sv[2])))
+	var tc: Array[Vector3] = []
+	for corp: StringName in CityMeshKit.TERR_CORPS:
+		var pc := Palette.corp_color(corp)
+		tc.append(Vector3(pc.r, pc.g, pc.b))
+	_building_mat.set_shader_parameter(&"terr_colors", tc)
+	_building_mat.set_shader_parameter(&"terr_win_k", cfg.whole_terr_win_k * night_share if whole_look else 0.0)
+	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
+	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k * (1.0 - night_share) if whole_look else 0.0)
+	_whole_road_glow()
+	for m: ShaderMaterial in [_ground_mat, _outer_mat]:
+		if whole_look:
+			_whole_wet(m)
+		elif m != null and m.shader == CityMaterials.WET_STREET:
+			NetrunShaderKit.setup_wet(m)
+			m.set_shader_parameter(&"slope_spec", 0.0)
+	var wc: Array[Vector3] = []
+	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
+		wc.append(Vector3(c.r, c.g, c.b))
+	_building_mat.set_shader_parameter(&"window_colors", wc)
+	var sc: Array[Vector3] = []
+	for c: Color in cfg.whole_sign_colors:
+		sc.append(Vector3(c.r, c.g, c.b))
+	_building_mat.set_shader_parameter(&"sign_colors", sc)
+	# The plate's districts pool their windows into a soft glow: a lower AAA bloom threshold, more bloom, more exposure.
+	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure * (cfg.whole_exposure_k if whole_look else 1.0))
+	if whole_look and look_blend > 0.0:
+		_post.set_shader_parameter(&"aaa_bloom_thr", cfg.whole_bloom_thr)
+		_post.set_shader_parameter(&"aaa_bloom_w", cfg.whole_bloom_w)
+		# No colour fringe (it rings every window pink at this zoom) and no rain; a grey moon, not a blue one.
+		for k: String in cfg.whole_aaa_post:
+			_post.set_shader_parameter(StringName(k), cfg.whole_aaa_post[k])
+		if _sun != null:
+			_sun.light_color = cfg.whole_moon_color
+			_sun.light_energy = cfg.whole_moon_energy
+
+
+## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.
+var _hq_beams: Array[MeshInstance3D] = []
+
+
+func _sync_hq_beams() -> void:
+	_sync_a2_hqs()
+	var show := whole_look and night_share >= cfg.whole_beam_night_from and model != null
+	if show and _hq_beams.is_empty():
+		var corps: Array = model.hqs.keys()
+		IdSort.sort_ids(corps)
+		var front_h: float = cfg.whole_beam_len_bu / float(CityShaderConfigData.shipped().beam["length_front"])
+		for i in corps.size():
+			var corp: StringName = corps[i]
+			if cfg.whole_beam_skip.has(corp):
+				continue
+			var s: float = 1.0 if i % 2 == 0 else -1.0
+			var o := landmark_slot(corp).origin
+			o.y = _landmark_top(corp, o.y) + cfg.whole_beam_base_bu
+			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
+			var node := NetrunShaderKit.beam_node(beam, Palette.corp_color(corp), front_h)
+			var m := node.material_override as ShaderMaterial
+			m.set_shader_parameter(&"start_radius", cfg.whole_beam_start_r_bu)
+			m.set_shader_parameter(&"end_radius", cfg.whole_beam_len_bu * tan(deg_to_rad(cfg.whole_beam_half_deg)))
+			m.set_shader_parameter(&"emit", cfg.whole_beam_emit)
+			node.name = "hq_beam_%s" % corp
+			add_to_layer(&"sky", node)
+			_hq_beams.append(node)
+		# LOOK L5: the A2 HQs that are no corporation's beam too (the plate's seven).
+		var styles: Array = _a2_hqs.keys()
+		IdSort.sort_ids(styles)
+		for i in styles.size():
+			var st: String = styles[i]
+			var hq: Dictionary = _a2_hqs[st]
+			if not bool(hq.get("beam", true)):
+				continue
+			var s: float = 1.0 if (corps.size() + i) % 2 == 0 else -1.0
+			var o: Vector3 = (hq["node"] as Node3D).position + Vector3(0.0, float(hq["top"]) + cfg.whole_beam_base_bu, 0.0)
+			var beam := {"pos": [o.x, -o.z, o.y], "lean": [cfg.whole_beam_lean_deg.x * s, cfg.whole_beam_lean_deg.y]}
+			var node := NetrunShaderKit.beam_node(beam, cfg.a2_hq_look[st].get("beam", Color.WHITE), front_h)
+			var m := node.material_override as ShaderMaterial
+			m.set_shader_parameter(&"start_radius", cfg.whole_beam_start_r_bu)
+			m.set_shader_parameter(&"end_radius", cfg.whole_beam_len_bu * tan(deg_to_rad(cfg.whole_beam_half_deg)))
+			m.set_shader_parameter(&"emit", cfg.whole_beam_emit)
+			node.name = "hq_beam_a2_%s" % st
+			add_to_layer(&"sky", node)
+			_hq_beams.append(node)
+	for n in _hq_beams:
+		n.visible = show
+	# The netrun network decal (site rings, route lines) is a play overlay; the plate shows the city alone.
+	var nl := layer(&"network")
+	if nl != null:
+		nl.visible = not whole_look
+	if land != null:
+		var vg := land.get_node_or_null(^"Vegetation") as Node3D
+		if vg != null:
+			vg.visible = whole_look
+	if features != null:
+		for nm: String in cfg.whole_hide_features:
+			var fp := features.get_node_or_null(NodePath(nm)) as Node3D
+			if fp != null:
+				fp.visible = not whole_look
+	var bl := layer(&"buildings")
+	if bl != null:
+		for ch in bl.get_children():
+			var ln := ch.get_node_or_null(^"Lanes") as Node3D
+			if ln != null:
+				ln.visible = not whole_look
+	# The street-lot piers, their lamp cubes and smears read as a comb of pins round the coast at the whole-city zoom.
+	if water != null:
+		for nm: String in cfg.whole_hide_water:
+			var w := water.get_node_or_null(NodePath(nm)) as Node3D
+			if w != null:
+				w.visible = not whole_look
+		# The tiled caustic net reads as a pool at the whole-city zoom.
+		water.water_mat.set_shader_parameter(&"caustic_gain", cfg.water_caustic_gain * (cfg.whole_caustic_k if whole_look else 1.0))
+		# ... and its day colours toward the plate's deep blue.
+		var dd: Color = cfg.whole_water_deep_day if whole_look else cfg.water_deep_day
+		var sd: Color = cfg.whole_water_shore_day if whole_look else cfg.water_shore_day
+		water.water_mat.set_shader_parameter(&"deep_day", Vector3(dd.r, dd.g, dd.b))
+		water.water_mat.set_shader_parameter(&"shore_day", Vector3(sd.r, sd.g, sd.b))
+		# The void past the terrain reads as a square slab of sea; the plate's sea runs on to the horizon.
+		water.water_mat.set_shader_parameter(&"vein_foam", cfg.whole_vein_foam if whole_look else 0.25)
+		for k: String in cfg.whole_bed:
+			water.water_mat.set_shader_parameter(StringName(k), cfg.whole_bed[k] if whole_look else (0.0 if k == "bed_k" else cfg.whole_bed[k]))
+		var vd := water.get_node_or_null(^"Void") as MeshInstance3D
+		if vd != null:
+			vd.material_override = water.water_mat if whole_look else water.void_mat
+		# The designer's water ruling: at the whole-city pose the sea is the seabed under one transparent plane.
+		var pl := water.get_node_or_null(^"WaterPlane") as Node3D
+		if pl != null:
+			pl.visible = whole_look
+			for nm: NodePath in [^"Sea", ^"Void"]:
+				var sn := water.get_node_or_null(nm) as Node3D
+				if sn != null:
+					sn.visible = not whole_look
+			water.plane_mat.set_shader_parameter(&"sun_dir", sun_dir())
+			# The drowned quarter is water like the sea: the plane's bake covers it, so its own sheet goes.
+			var dq := features.get_node_or_null(^"Drowned") as Node3D if features != null else null
+			if dq != null:
+				dq.visible = not whole_look
+
+
 var _env: Environment
+var _we: WorldEnvironment
 
 
 # --- Picking API ------------------------------------------------------------------------------
@@ -642,6 +1135,7 @@ func _build_scene() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+	_we = we
 	_sun = DirectionalLight3D.new()
 	add_child(_sun)
 	_sun.look_at_from_position(Vector3.ZERO, -cfg.to_light, Vector3.UP)
@@ -687,6 +1181,7 @@ func _build_scene() -> void:
 	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
+	om.set_shader_parameter(&"band_soft", cfg.outer_land_band_soft)
 	_outer_mat = om
 	outer.material_override = om
 	outer.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
@@ -936,7 +1431,7 @@ func _build_water(m: CityModel) -> void:
 		_ramp_water(_last_day)
 
 
-## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the ground material;
+## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the chunks' ground material;
 ## none without terrain or headless. It shows and hides with the outer ground plane (`show_outer_ground`).
 var land: MeshInstance3D = null
 
@@ -945,6 +1440,9 @@ func _build_land(m: CityModel) -> void:
 	if land != null:
 		land.queue_free()
 		land = null
+		var o := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
+		if o != null:
+			o.visible = _outer_ground_on
 	if m.terrain == null or not can_render():
 		return
 	var mesh := CityMeshKit.land_mesh(cfg, m.terrain, cfg.city_rect)
@@ -953,11 +1451,26 @@ func _build_land(m: CityModel) -> void:
 	land = MeshInstance3D.new()
 	land.name = "OuterLand"
 	land.mesh = mesh
-	land.material_override = _outer_mat
+	land.material_override = _ground_mat  # CITY-A2 r2: the city's own ground material (day ramp, spill): one surface, one tone
 	land.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	land.visible = _outer_ground_on
 	layer(&"ground").add_child(land)
+	_whole_shadows()
+	var outer := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
+	if outer != null:
+		outer.visible = false  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
+	# LOOK L5: light vegetation on the green land, shown at the whole-city pose.
+	var vm := CityVegetationKit.multimesh(cfg, m.terrain, m.city_seed, cfg.city_rect)
+	if vm != null:
+		var vg := MultiMeshInstance3D.new()
+		vg.name = "Vegetation"
+		vg.multimesh = vm
+		vg.material_override = _ground_mat
+		vg.layers = 1 << (WORLD_LAYER - 1)
+		vg.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		vg.visible = whole_look
+		land.add_child(vg)
 
 
 ## CITY-A2 step 2: A2's roads by class, rails and stations, walls and checkpoints, the port, the drowned quarter and the
@@ -972,19 +1485,24 @@ func _build_features(m: CityModel) -> void:
 	var plan := CityPlan.for_seed(m.city_seed)
 	if plan.a2 == null or plan.terrain == null or not can_render():
 		return
-	var wm: Material = water.water_mat if water != null else _outer_mat
-	features = CityA2Features.make(cfg, plan, _outer_mat, _lane_mat, wm)
+	var wm: Material = water.water_mat if water != null else _ground_mat
+	features = CityA2Features.make(cfg, plan, _ground_mat, _lane_mat, wm)  # CITY-A2 r2: the day ramp reaches the decks
 	add_to_layer(&"ground", features)
 
 
 ## The day ramp on the sea wall and pier decks (as on the ground).
+## LOOK L5: the night ramp's band `k`; the whole-city pose takes the plate's neutral blue-grey night (cfg.whole_night_ramp).
+func _night_ramp(k: int) -> Color:
+	return cfg.whole_night_ramp[k] if whole_look else cfg.ramp[k]
+
+
 func _ramp_water(day: Dictionary) -> void:
 	if water == null:
 		return
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
-		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		var col := (day_ramp[k] as Color).lerp(_night_ramp(k), night_share)
 		for mat in water.lit_materials():
 			mat.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 
@@ -1033,9 +1551,21 @@ func _build_chunk(key: Vector2i) -> void:
 	g.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(g)
+	# LOOK L5: the chunk's park lots as lawn and tree clumps (CityParkKit, the Blender plate's parks).
+	var pm := CityParkKit.mesh(cfg, CityParkKit.parks_in(model.city_seed, r), model.terrain)
+	if pm != null:
+		var pk := MeshInstance3D.new()
+		pk.name = "Parks"
+		pk.mesh = pm
+		pk.material_override = _ground_mat
+		pk.layers = 1 << (WORLD_LAYER - 1)
+		pk.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.add_child(pk)
 	var lm := CityMeshKit.lane_mesh_of(cfg, streets, model.terrain)
 	if lm != null:
 		var l := MeshInstance3D.new()
+		l.name = "Lanes"
+		l.visible = not whole_look  # LOOK L5: the street lane strips read as coloured dashes at the whole-city zoom
 		l.mesh = lm
 		l.material_override = _lane_mat
 		l.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
@@ -1130,7 +1660,7 @@ func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: 
 	var keys: Array = fams.keys()
 	IdSort.sort_ids(keys)
 	var lod := CityLod.far_level(cfg, building_lod) if far else maxi(0, building_lod)
-	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows)
+	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows or (whole_look and cfg.whole_far_shadows))
 	for fk: int in keys:
 		var ids: PackedInt32Array = fams[fk]
 		var mm := MultiMesh.new()
@@ -1300,6 +1830,29 @@ func place_landmarks() -> void:
 	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), ground_world(centre)), look)
 	_place_site_landmark()
+	_whole_cell_district()
+
+
+## LOOK L5 (the designer): under the whole-city pose the Cell's blocks are the city's ordinary mix: the Cell's district
+## glTF hides and the procedural buildings under it come back; off the pose the district returns.
+var _cell_clear_held: Rect2 = Rect2()
+
+
+func _whole_cell_district() -> void:
+	if not landmarks.has(CELL):
+		return
+	var node := landmarks[CELL] as Node3D
+	if whole_look and _cleared_by.has(CELL) and not _cell_clear_held.has_area():
+		_cell_clear_held = _cleared_by[CELL]
+		_cleared.erase(_cell_clear_held)
+		node.visible = false
+		_rebuild_under(_cell_clear_held)
+	elif not whole_look and _cell_clear_held.has_area():
+		_cleared.append(_cell_clear_held)
+		var r := _cell_clear_held
+		_cell_clear_held = Rect2()
+		node.visible = true
+		_rebuild_under(r)
 
 
 func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
@@ -1465,11 +2018,15 @@ func _restyle_landmarks() -> void:
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	for key: StringName in landmarks:
 		landmark_mats[key] = LandmarkMaterials.apply(landmarks[key], look, _landmark_corp(key), not _landmarks_night)
+	for st: String in _a2_hqs:
+		var hq: Dictionary = _a2_hqs[st]
+		hq["mats"] = LandmarkMaterials.apply(hq["node"], look, hq["key"], not _landmarks_night)
 	_prop_mats.clear()
 	for nm: StringName in _prop_meshes:
 		_style_prop_mesh(nm)
 	if look_blend > 0.0:
 		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+	_whole_landmarks()
 	# ART-3 6w: the uplink pads take the new look too.
 	_uplink_meshes.clear()
 	if not uplink_pads.is_empty():
@@ -1659,7 +2216,7 @@ func show_outer_ground(on: bool) -> void:
 	var g := layer(&"ground")
 	var outer := g.get_node_or_null(^"OuterGround") as Node3D if g != null else null
 	if outer != null:
-		outer.visible = on
+		outer.visible = on and land == null  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
 	if land != null:
 		land.visible = on
 

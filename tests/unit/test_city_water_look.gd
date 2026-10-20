@@ -19,15 +19,19 @@ func test_coping_scale_is_one_up_close_and_clamped_far() -> void:
 	assert_eq(CityWater.coping_scale_at(_cfg, _cfg.coping_ref_ortho * 1000.0), _cfg.coping_zoom_max, "clamped at the max")
 
 
+## LOOK L5 (designer sign-off 2026-10-20): the gain ramps toward `coping_gain_far` (under 1 at the whole city: the plate's
+## thin surf), so it moves one way only, never back.
 func test_coping_width_and_gain_grow_with_the_zoom_out() -> void:
 	var last_w := 0.0
-	var last_g := 0.0
+	var last_g := NAN
+	var dir := signf(_cfg.coping_gain_far - 1.0)
 	for ortho: float in [60.0, 240.0, 480.0, 900.0, 1400.0, 2400.0]:
 		var sc := CityWater.coping_scale_at(_cfg, ortho)
 		var w := CityWater.coping_width_bu(_cfg, sc)
 		var g := CityWater.coping_gain(_cfg, sc)
 		assert_gte(w, last_w, "width never narrows as the camera zooms out (ortho %s)" % ortho)
-		assert_gte(g, last_g, "gain never dims as the camera zooms out (ortho %s)" % ortho)
+		if not is_nan(last_g):
+			assert_gte((g - last_g) * dir, -0.0001, "gain moves toward coping_gain_far, never back (ortho %s)" % ortho)
 		last_w = w
 		last_g = g
 	assert_eq(CityWater.coping_width_bu(_cfg, 1.0), _cfg.seawall_coping_bu, "up close: the configured width")

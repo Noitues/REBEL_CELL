@@ -3097,7 +3097,7 @@ func unplaced_with_room() -> Array[StringName]:
 		if lines.is_empty() or got.has(String(n["id"])) or _roof(n["id"]).is_empty():
 			continue
 		var t := {"at": icon_pos(n), "r": icon_radius(n)}
-		if not _visible_at(t["at"], obstacles["area"], obstacles["blocks"]):
+		if not _visible_at(t["at"], obstacles["area"], obstacles["blocks"], t["r"]):
 			continue
 		for v: PackedStringArray in [lines, wrap_lines(lines)]:
 			if _free_spot(t, _label_box(v, f, fs, pad, line_h), obstacles).size != Vector2.ZERO:
@@ -3289,7 +3289,7 @@ func _place_labels() -> Array[Dictionary]:
 	for t in todo:
 		# H23 #2: a node off the visible map (outside it, or under a panel) has no label: a
 		# label moved in for it would float with nothing to point at.
-		if not _visible_at(t["at"], area, blocks):
+		if not _visible_at(t["at"], area, blocks, t["r"]):
 			continue
 		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r + RING_TAG_CLEAR * k, "hov_c": hover_centre(), "hov_r": hover_ring_radius() + (HOVER_TICK + RING_TAG_CLEAR) * k, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k, "pencil": pencil}
 		# H24 K1: a long name with no room on one line tries two (narrower) lines.
@@ -3535,15 +3535,21 @@ static func reach_of(rect: Rect2, at: Vector2) -> float:
 	return q.distance_to(at)
 
 
-## True when node point `at` shows on the map: inside the label area and under no
-## blocked screen area.
-static func _visible_at(at: Vector2, area: Rect2, blocks: Array[Rect2]) -> bool:
-	if not area.has_point(at):
+## True when node point `at` shows on the map: its icon (radius `pad`) lies inside the label area and its centre under no
+## blocked screen area. An icon cut by the map's edge has no room for a label (CITY-A2 terrain lifts or drops a Site's icon
+## past the fit's frame): the Site is then off the map like one outside it, its edge arrow shows it.
+static func _visible_at(at: Vector2, area: Rect2, blocks: Array[Rect2], pad: float = 0.0) -> bool:
+	if not area.grow(-pad).has_point(at):
 		return false
 	for b in blocks:
 		if b.has_point(at):
 			return false
 	return true
+
+
+## True when node `n` shows on the map (`_visible_at` with its icon's radius).
+func node_shown(n: Dictionary) -> bool:
+	return _visible_at(icon_pos(n), label_area(), label_blocks(), icon_radius(n))
 
 
 ## True when `rect` overlaps a label placed before it.

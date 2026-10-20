@@ -129,8 +129,6 @@ func test_the_route_and_the_raid_setup_draw_their_nodes_before_any_bake() -> voi
 
 
 func test_the_placement_answers_before_the_image_and_keeps_when_it_lands() -> void:
-	pending("red since CITY-A2 step 2 (is_street on the A2 bake); owned by art/look whole-city work, A-059; restore when it lands")
-	return
 	CityBakeCache.simulate = true
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
@@ -150,9 +148,11 @@ func test_the_placement_answers_before_the_image_and_keeps_when_it_lands() -> vo
 	assert_eq(city.bake_fade, 0.0, "the sky shows (nothing fades yet)")
 	# Streets come from the placement too (the baked city had none: routes cut blocks).
 	var streets := 0
-	for i in range(-6, 6):
-		if city.is_street(i, 0):
-			streets += 1
+	# CITY-A2: a window over the city, not one row (the A2 plan's streets are not on the row j = 0)
+	for i in range(-30, 30):
+		for j in range(-30, 30):
+			if city.is_street(i, j):
+				streets += 1
 	assert_gt(streets, 0, "the baked city knows its streets")
 	# The image lands.
 	var look := city.look_key()

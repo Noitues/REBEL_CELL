@@ -147,8 +147,6 @@ func _assert_apart(rects: Dictionary, what: String) -> void:
 # --- The Grid ------------------------------------------------------------------------------
 
 func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
-	pending("red since CITY-A2 step 2 (decks, 964949bb): solace late fit is wider (0.285 vs 0.2496); art/look whole-city work A-059; restore when it lands")
-	return
 	Settings.set_map_legend(true)
 	var reaches := {}
 	var zooms := PackedStringArray()
@@ -378,7 +376,7 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 		var sel := "%s selected %s" % [what, id]
 		var rects := overlay.label_rects()
 		# HQ-B (Q5): a Site off the HQ's map (outside its fit) shows no label.
-		var shown := CityMapOverlay._visible_at(overlay.icon_pos(overlay._node_dict(id)), overlay.label_area(), overlay.label_blocks())
+		var shown := overlay.node_shown(overlay._node_dict(id))
 		# At big text the HQ's map is the room the hand and the card leave: a selected Site
 		# with no spot within reach is left unlabelled (the overlay's last resort: its card
 		# names it); at 1.0 it always has one.
@@ -401,7 +399,7 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 	overlay.set_graph(g0["nodes"], g0["edges"])
 	overlay.selected_id = c.grid.home_site_id
 	for n in overlay.nodes:
-		if n.get("big", false) and CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
+		if n.get("big", false) and overlay.node_shown(n):
 			# H22's landmark tags hold on an ALL map; the HQ idle is B3's TagRule.FOCUS (B4 b,
 			# approved "one tag": the selection's), so with home selected a landmark carries
 			# none (selected, it is labelled: the loop above).

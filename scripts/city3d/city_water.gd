@@ -11,6 +11,8 @@ extends Node3D
 
 const SHADER := preload("res://shaders/city/city_water.gdshader")
 const SMEAR_SHADER := preload("res://shaders/city/city_water_smear.gdshader")
+const PLANE_SHADER := preload("res://shaders/city/city_water_plane.gdshader")
+const BED_SHADER := preload("res://shaders/city/city_seabed.gdshader")
 ## Smear sampling step along its path (BU) and the shortest smear kept (BU).
 const SMEAR_STEP_BU := 0.5
 const SMEAR_MIN_BU := 2.0
@@ -19,6 +21,10 @@ const COPING_STEP := 0.25
 ## Heights (BU) of the void and the sea above the ground plane (the void under the city's ground, the sea over it).
 const VOID_Y := -0.04
 const SEA_Y := 0.03
+const DIAG := 1.41421356
+const ISLAND_SALT := 6127
+## LOOK L5: the share of an island's radius taken out of the sea (the hill's rim, at least the radius, covers it).
+const ISLAND_CORE := 0.75
 
 var water_mat: ShaderMaterial
 var void_mat: ShaderMaterial
@@ -34,6 +40,12 @@ var _cfg: CityConfig
 var _plan: CityPlan
 var _light_mi: MeshInstance3D
 var piers: int = 0
+## LOOK L5: the bay islands (islands_of: {"c": lot point, "r": lots}).
+var islands: Array[Dictionary] = []
+## LOOK L5: the whole-city water plane's material (city_water_plane.gdshader; null without terrain).
+var plane_mat: ShaderMaterial = null
+## LOOK L5: the seabed's material (city_seabed.gdshader: the plate's clear-water fade and caustics; null without terrain).
+var bed_mat: ShaderMaterial = null
 var wall_edges: int = 0
 
 
@@ -50,7 +62,29 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 	w.light_mat.set_shader_parameter(&"lane_gain", cfg.seawall_light_gain)
 	w.smear_mat = _smear_material(cfg)
 	w._add(_void_mesh(outer_bu), w.void_mat, "Void")
-	w._add(_sea_mesh(cfg, plan), w.water_mat, "Sea")
+	if plan.terrain != null:
+		var tr := plan.terrain.coarse_rect
+		w.bed_mat = _bed_material(cfg)
+		var wet := _wet_of(plan.terrain, tr)
+		var sp := _sea_terrain(cfg, plan, tr, wet)
+		w.islands = sp["islands"]
+		w._add(sp["mesh"], w.water_mat, "Sea")
+		# LOOK L5: the land under the sea (islands included) and, for the whole-city pose, one transparent water plane over it.
+		w._add(CitySeabedKit.mesh(cfg, plan.terrain, tr, wet, sp["field"], w.islands), w.bed_mat, "Seabed")
+		w.plane_mat = _plane_material(cfg)
+		var o := CityIsoCamera.lot_to_world(cfg, Vector2(tr.position))
+		var flood := PackedVector2Array()
+		if plan.a2 != null:
+			for p: Vector2 in plan.a2.a2.drowned:
+				flood.append(plan.a2.lot_of(p))
+		w.plane_mat.set_shader_parameter(&"bed_tex", ImageTexture.create_from_image(
+				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands, flood, plan.a2)))
+		w.plane_mat.set_shader_parameter(&"bed_origin", Vector2(o.x, o.z))
+		w.plane_mat.set_shader_parameter(&"bed_size", Vector2(tr.size) * cfg.lot_bu)
+		var pl := w._add(CitySeabedKit.plane_mesh(outer_bu, SEA_Y), w.plane_mat, "WaterPlane")
+		pl.visible = false
+	else:
+		w._add(_sea_mesh(cfg, plan), w.water_mat, "Sea")
 	var wall := _wall_meshes(cfg, plan, 1.0)
 	w.wall_edges = int(wall["edges"])
 	w._add(wall["face"], w.wall_mat, "SeaWall")
@@ -68,13 +102,14 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 
 ## The materials CityView3D's day ramp updates with the ground's (the sea wall and pier decks).
 func lit_materials() -> Array[ShaderMaterial]:
-	return [wall_mat]
+	return [wall_mat] if bed_mat == null else [wall_mat, bed_mat]
 
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
 func set_night(n: float) -> void:
-	for m in [water_mat, void_mat, smear_mat]:
-		m.set_shader_parameter(&"night", n)
+	for m in [water_mat, void_mat, smear_mat, plane_mat, bed_mat]:
+		if m != null:
+			m.set_shader_parameter(&"night", n)
 
 
 ## The netrun look's blend (NA-22): the sea and the void lifted by `water_look_gain` at 1.
@@ -87,6 +122,9 @@ func set_look_blend(lb: float) -> void:
 func set_time_scale(s: float) -> void:
 	water_mat.set_shader_parameter(&"time_scale", s)
 	smear_mat.set_shader_parameter(&"time_scale", s)
+	for m in [plane_mat, bed_mat]:
+		if m != null:
+			m.set_shader_parameter(&"time_scale", s)
 
 
 ## The coping's zoom scale at camera size `ortho` (BU): 1 at and nearer than `coping_ref_ortho`, growing in step with the
@@ -152,6 +190,28 @@ static func _water_material(cfg: CityConfig, is_void: bool) -> ShaderMaterial:
 	m.set_shader_parameter(&"foam_lots", cfg.water_foam_lots)
 	m.set_shader_parameter(&"foam_gain", cfg.water_foam_gain)
 	m.set_shader_parameter(&"look_gain", cfg.water_look_gain)
+	return m
+
+
+## LOOK L5: the seabed's material, its numbers from cfg.seabed_water.
+static func _bed_material(cfg: CityConfig) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = BED_SHADER
+	m.set_shader_parameter(&"sea_y", SEA_Y)
+	for k: String in cfg.seabed_water:
+		var v: Variant = cfg.seabed_water[k]
+		m.set_shader_parameter(StringName(k), Vector3(v.r, v.g, v.b) if v is Color else v)
+	return m
+
+
+## LOOK L5: the whole-city water plane's material, its numbers from cfg.water_plane; drawn after the city post.
+static func _plane_material(cfg: CityConfig) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = PLANE_SHADER
+	m.render_priority = cfg.water_plane_priority
+	for k: String in cfg.water_plane:
+		var v: Variant = cfg.water_plane[k]
+		m.set_shader_parameter(StringName(k), Vector3(v.r, v.g, v.b) if v is Color else v)
 	return m
 
 
@@ -238,16 +298,30 @@ static func _add_smear(a: MeshArrays, cfg: CityConfig, plan: CityPlan, start: Ve
 static func _void_mesh(outer_bu: float) -> ArrayMesh:
 	var a := MeshArrays.new()
 	var h := outer_bu * 0.5
-	a.quad([Vector3(-h, VOID_Y, -h), Vector3(h, VOID_Y, -h), Vector3(h, VOID_Y, h), Vector3(-h, VOID_Y, h)], Vector3.UP, Color.BLACK)
+	var far := Vector2(1000.0, 0.0)  # deep water when the whole-city look draws the void as sea
+	a.quad([Vector3(-h, VOID_Y, -h), Vector3(h, VOID_Y, -h), Vector3(h, VOID_Y, h), Vector3(-h, VOID_Y, h)], Vector3.UP, Color.BLACK,
+			[far, far, far, far])
 	return a.mesh()
 
 
 ## The sea lots of the city rect grown by `water_extend_lots`, as runs along the inland axis (rows for a west / east sea,
 ## columns for a north / south one): UV.x the lots from the shore (exact: the shore distance is linear along a run),
-## UV.y the lots along the shore.
+## UV.y the lots along the shore. CITY-A2 r2: with terrain, over the terrain's whole land (its coarse rect), wet where the
+## terrain says (A2's coastline out to the extent, the land wrapping round it).
 static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 	var a := MeshArrays.new()
-	var r := plan.rect.grow(cfg.water_extend_lots)
+	var t := plan.terrain
+	var r := t.coarse_rect if t != null else plan.rect.grow(cfg.water_extend_lots)
+	var wet := PackedByteArray()
+	wet.resize(r.size.x * r.size.y)
+	for j in r.size.y:
+		for i in r.size.x:
+			var l := r.position + Vector2i(i, j)
+			var w := t.is_water_at(l.x + 0.5, l.y + 0.5) if t != null else plan.is_water(l.x, l.y)
+			wet[j * r.size.x + i] = 1 if w else 0
+	var is_wet := func(l: Vector2i) -> bool: return wet[(l.y - r.position.y) * r.size.x + (l.x - r.position.x)] != 0
+	if t != null:
+		return _sea_terrain(cfg, plan, r, wet)["mesh"]
 	var side := int(plan.coast["side"])
 	var rows := side < 2  # runs along i, one per j
 	var outer_n := r.size.y if rows else r.size.x
@@ -256,11 +330,11 @@ static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 		var k := 0
 		while k < inner_n:
 			var lot := _lot_of(r, rows, o, k)
-			if not plan.is_water(lot.x, lot.y):
+			if not is_wet.call(lot):
 				k += 1
 				continue
 			var start := k
-			while k < inner_n and plan.is_water(_lot_of(r, rows, o, k).x, _lot_of(r, rows, o, k).y):
+			while k < inner_n and is_wet.call(_lot_of(r, rows, o, k)):
 				k += 1
 			var p0 := Vector2(_lot_of(r, rows, o, start))
 			var p1 := Vector2(_lot_of(r, rows, o, k - 1)) + Vector2.ONE
@@ -271,6 +345,167 @@ static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 				vs.append(CityIsoCamera.lot_to_world(cfg, c, SEA_Y))
 				uvs.append(Vector2(maxf(-plan.land_depth(c.x, c.y), 0.0), c.y if side < 2 else c.x))
 			a.quad(vs, Vector3.UP, Color.BLACK, uvs)
+	return a.mesh()
+
+
+## LOOK L5 (A2 plate): the sea over the terrain's wet lots `wet` (row order over `r`) with UV.x the lots to the nearest
+## land (a chamfer distance field, capped at `sea_field_cap_lots`), so the shallows and foam hug every shore (the bay,
+## the lagoon, the coast past the raster), not the old straight coast. Lots whose corners all sit at the cap merge into
+## runs; the rest are one quad each. UV.y = lot row.
+static func _sea_field_mesh(cfg: CityConfig, r: Rect2i, wet: PackedByteArray) -> ArrayMesh:
+	var a := MeshArrays.new()
+	var w := r.size.x
+	var h := r.size.y
+	var cap := cfg.sea_field_cap_lots
+	var d := shore_field(cfg, w, h, wet)
+	# Corner value: the least of its (up to) four lots, land lots 0, so a corner on the shore is 0.
+	var cd := func(ci: int, cj: int) -> float:
+		var m := cap
+		for o: Vector2i in [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 0)]:
+			var ii := ci + o.x
+			var jj := cj + o.y
+			if ii >= 0 and ii < w and jj >= 0 and jj < h:
+				m = minf(m, d[jj * w + ii])
+		return m
+	return _field_quads(cfg, a, r, wet, cd, cap)
+
+
+## The terrain's wet lots over `r` (row order, 1 = sea or lake).
+static func _wet_of(t: CityA2Terrain, r: Rect2i) -> PackedByteArray:
+	var wet := PackedByteArray()
+	wet.resize(r.size.x * r.size.y)
+	for j in r.size.y:
+		for i in r.size.x:
+			wet[j * r.size.x + i] = 1 if t.is_water_at(r.position.x + i + 0.5, r.position.y + j + 0.5) else 0
+	return wet
+
+
+## LOOK L5 (A2 plate): the sea of a terrain plan with its bay islands: {"mesh", "islands"}. The islands (islands_of, picked
+## on the open field) count as land in the field the sea's shallows and foam read, so each one gets its own shelf and foam.
+static func _sea_terrain(cfg: CityConfig, plan: CityPlan, r: Rect2i, wet: PackedByteArray) -> Dictionary:
+	var field := shore_field(cfg, r.size.x, r.size.y, wet)
+	var isl := islands_of(cfg, plan, r, wet, field)
+	var dry := wet.duplicate()
+	for it: Dictionary in isl:
+		var c: Vector2 = it["c"]
+		var rr: float = it["r"]
+		var ext := rr * sqrt(float(it["a"])) * (1.0 + cfg.island_wobble)
+		for j in range(floori(c.y - ext), ceili(c.y + ext) + 1):
+			for i in range(floori(c.x - ext), ceili(c.x + ext) + 1):
+				var k := Vector2i(i - r.position.x, j - r.position.y)
+				if k.x >= 0 and k.x < r.size.x and k.y >= 0 and k.y < r.size.y and island_rho(cfg, it, Vector2(i + 0.5, j + 0.5)) < ISLAND_CORE:
+					dry[k.y * r.size.x + k.x] = 0
+	return {"mesh": _sea_field_mesh(cfg, r, dry), "islands": isl, "field": field}
+
+
+## LOOK L5: up to `island_count` islands in the open water inside the A2 ring (the plate's bay islands): the field's deepest
+## lots (`d`, lots to land; ties by lot), each at least `island_min_d` from land, radius `island_r_k` of that (at most
+## `island_r_max`), none within `island_gap_k` radii of another. [{"c": Vector2 lot point, "r": lots}]. Pure.
+static func islands_of(cfg: CityConfig, plan: CityPlan, r: Rect2i, wet: PackedByteArray, d: PackedFloat32Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var t := plan.terrain
+	if t == null or cfg.island_count <= 0:
+		return out
+	var cand: Array[Vector3] = []
+	var fr := t.fine_rect
+	for j in range(maxi(fr.position.y, r.position.y), mini(fr.end.y, r.end.y)):
+		for i in range(maxi(fr.position.x, r.position.x), mini(fr.end.x, r.end.x)):
+			var k := (j - r.position.y) * r.size.x + (i - r.position.x)
+			if wet[k] != 0 and d[k] >= cfg.island_min_d and t.outside_ring(i + 0.5, j + 0.5) <= 0.0:
+				cand.append(Vector3(d[k], i, j))
+	cand.sort_custom(func(a: Vector3, b: Vector3) -> bool:
+		if a.x != b.x:
+			return a.x > b.x
+		if a.z != b.z:
+			return a.z < b.z
+		return a.y < b.y)
+	for cv in cand:
+		if out.size() >= cfg.island_count:
+			break
+		var c := Vector2(cv.y + 0.5, cv.z + 0.5)
+		var rr := minf(cv.x * cfg.island_r_k, cfg.island_r_max)
+		var ok := true
+		for o: Dictionary in out:
+			if c.distance_to(o["c"]) < (rr + float(o["r"])) * cfg.island_gap_k:
+				ok = false
+				break
+		if ok:
+			# Designer 2026-10-20: oblong, natural islands: an aspect in island_aspect, a heading and a rim phase per island.
+			var n := out.size()
+			var asp := lerpf(cfg.island_aspect.x, cfg.island_aspect.y, CityMeshKit.hash01(ISLAND_SALT, n, 1))
+			out.append({"c": c, "r": rr, "a": asp, "rot": CityMeshKit.hash01(ISLAND_SALT, n, 2) * PI,
+				"ph": CityMeshKit.hash01(ISLAND_SALT, n, 3) * TAU})
+	return out
+
+
+## LOOK L5: lot point `at`'s distance from island `it` in radii (1 = its rim): an ellipse of aspect "a" (same area as the
+## circle) turned by "rot", its rim wobbled by `island_wobble` (two lobes and three, phase "ph").
+static func island_rho(cfg: CityConfig, it: Dictionary, at: Vector2) -> float:
+	var d: Vector2 = at - (it["c"] as Vector2)
+	var r: float = it["r"]
+	var asp: float = it.get("a", 1.0)
+	var u := d.rotated(-float(it.get("rot", 0.0)))
+	var e := Vector2(u.x / sqrt(asp), u.y * sqrt(asp))
+	var th := atan2(e.y, e.x) + float(it.get("ph", 0.0))
+	var wob := 1.0 + cfg.island_wobble * (0.6 * sin(2.0 * th + 1.3) * 0.5 + 0.4 * sin(3.0 * th) * 0.5 + 0.25 * sin(5.0 * th + 2.0) * 0.5)
+	return e.length() / (r * wob)
+
+
+## The chamfer distance (lots, capped at sea_field_cap_lots) from each lot of a w x h `wet` grid to the nearest dry lot.
+static func shore_field(cfg: CityConfig, w: int, h: int, wet: PackedByteArray) -> PackedFloat32Array:
+	var cap := cfg.sea_field_cap_lots
+	var d := PackedFloat32Array()
+	d.resize(w * h)
+	for k in w * h:
+		d[k] = cap if wet[k] != 0 else 0.0
+	for pass_ in 2:
+		var j0 := 0 if pass_ == 0 else h - 1
+		var j1 := h if pass_ == 0 else -1
+		var sj := 1 if pass_ == 0 else -1
+		var j := j0
+		while j != j1:
+			var i := 0 if pass_ == 0 else w - 1
+			while i >= 0 and i < w:
+				var k := j * w + i
+				if d[k] > 0.0:
+					var best := d[k]
+					for o: Vector3 in [Vector3(-sj, 0, 1.0), Vector3(0, -sj, 1.0), Vector3(-sj, -sj, DIAG), Vector3(sj, -sj, DIAG)]:
+						var ii := i + int(o.x)
+						var jj := j + int(o.y)
+						if ii >= 0 and ii < w and jj >= 0 and jj < h:
+							best = minf(best, d[jj * w + ii] + o.z)
+					d[k] = best
+				i += sj
+			j += sj
+	return d
+
+
+## The sea quads over `r` (wet lots of `wet`), UV.x the corner field `cd` (merged runs at `cap`).
+static func _field_quads(cfg: CityConfig, a: MeshArrays, r: Rect2i, wet: PackedByteArray, cd: Callable, cap: float) -> ArrayMesh:
+	var w := r.size.x
+	var h := r.size.y
+	for j in h:
+		var i := 0
+		while i < w:
+			if wet[j * w + i] == 0:
+				i += 1
+				continue
+			var e := [cd.call(i, j), cd.call(i + 1, j), cd.call(i + 1, j + 1), cd.call(i, j + 1)]
+			var i1 := i + 1
+			if e[0] >= cap and e[1] >= cap and e[2] >= cap and e[3] >= cap:
+				while i1 < w and wet[j * w + i1] != 0 and cd.call(i1 + 1, j) >= cap and cd.call(i1 + 1, j + 1) >= cap:
+					i1 += 1
+			var p0 := Vector2(r.position.x + i, r.position.y + j)
+			var p1 := Vector2(r.position.x + i1, r.position.y + j + 1)
+			var corners := [p0, Vector2(p1.x, p0.y), p1, Vector2(p0.x, p1.y)]
+			var ev := [e[0], cd.call(i1, j), cd.call(i1, j + 1), e[3]]
+			var vs: Array[Vector3] = []
+			var uvs: Array[Vector2] = []
+			for c in 4:
+				vs.append(CityIsoCamera.lot_to_world(cfg, corners[c], SEA_Y))
+				uvs.append(Vector2(ev[c], corners[c].y))
+			a.quad(vs, Vector3.UP, Color.BLACK, uvs)
+			i = i1
 	return a.mesh()
 
 

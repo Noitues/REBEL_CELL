@@ -166,13 +166,45 @@ static func families(cfg: CityConfig, d: CityDistrict) -> Dictionary:
 	return out
 
 
-## The base colour of a building (family mix + territory tint, unified40.city_building).
+## The base colour of a building. LOOK L5 (hybrid port of the Blender plate build, city_preset DISTRICTS `mat` and
+## DAY_MATS): the territory's district material (per building key) pulled `day_mats_k` toward a weighted facade family
+## (concrete, glass, brick, rust, pale stone; the sprawl's own mix off-territory). Without district_mats: the old
+## family mix + territory tint (unified40.city_building).
 static func base_color(cfg: CityConfig, pr: Dictionary) -> Color:
-	var fam := cfg.families[absi(int(pr["key"])) % cfg.families.size()]
+	var key := absi(int(pr["key"]))
 	var terr: StringName = pr["terr"]
+	if not cfg.district_mats.is_empty():
+		var mats: Array = cfg.district_mats.get(String(terr), cfg.district_mats.get("", []))
+		if not mats.is_empty():
+			var dm: Color = mats[key % mats.size()]
+			var fams: Array = cfg.day_mats.get("sprawl" if terr == &"" else "city", [])
+			var c := dm
+			if not fams.is_empty():
+				# Some buildings take their family colour whole (the plate's white concrete, dark glass, rust), the rest blend.
+				var k := 1.0 if hash01(key, DAY_MAT_SEED + 1) < cfg.day_mats_pure_share else cfg.day_mats_k
+				c = dm.lerp(_weighted(fams, hash01(key, DAY_MAT_SEED)), k)
+			var g := 1.0 + cfg.facade_value_jitter * (hash01(key, DAY_MAT_SEED + 2) * 2.0 - 1.0)
+			return Color(c.r * g, c.g * g, c.b * g)
+	var fam := cfg.families[key % cfg.families.size()]
 	if terr == &"":
 		return fam
 	return fam.lerp(Palette.corp_color(terr), cfg.territory_tint)
+
+
+const DAY_MAT_SEED := 9001
+
+
+## The colour of weighted list `fams` ([weight, Color] pairs) at `u` in [0, 1].
+static func _weighted(fams: Array, u: float) -> Color:
+	var total := 0.0
+	for f: Array in fams:
+		total += float(f[0])
+	var t := u * total
+	for f: Array in fams:
+		t -= float(f[0])
+		if t <= 0.0:
+			return f[1]
+	return (fams[fams.size() - 1] as Array)[1]
 
 
 ## The ground mesh: asphalt, plazas, street lots (lot quads at height 0).
@@ -205,41 +237,86 @@ static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: A
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for j in range(r.position.y, r.end.y):
 		for i in range(r.position.x, r.end.x):
-			_lot_quad_on(st, cfg, terrain, Vector2i(i, j), -0.02, cfg.ground)
+			# LOOK L5: no floor over a lot under the sea (all corners at or below 0): the seabed shows through the water.
+			if terrain.height_at(i, j) <= 0.0 and terrain.height_at(i + 1, j) <= 0.0 and terrain.height_at(i + 1, j + 1) <= 0.0 					and terrain.height_at(i, j + 1) <= 0.0:
+				continue
+			_lot_quad_land(st, cfg, terrain, Rect2i(i, j, 1, 1), -0.02)
 	for p: Dictionary in plazas:
 		_lot_quad_on(st, cfg, terrain, p["lot"], 0.005, cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12))
 	for s: Dictionary in streets:
-		_lot_quad_on(st, cfg, terrain, s["lot"], 0.01, cfg.street)
+		# Designer 2026-10-20 (the dark steps along the ring road): a lot under a raised deck (CityA2Features) keeps its
+		# ground, not a street square, so the deck's smooth line is the road.
+		var sl: Vector2i = s["lot"]
+		if cfg.ground_deck_classes.has(terrain.road_class(sl.x, sl.y)):
+			continue
+		_lot_quad_on(st, cfg, terrain, sl, 0.01, cfg.street)
+	# LOOK L5 (designer 2026-10-20, "the stepped ground edge"): shared corners weld, so the slope shades smooth rather
+	# than as each lot's two flat triangles (the shore's sawtooth).
+	if cfg.ground_smooth_normals:
+		st.index()
 	st.generate_normals()
 	return st.commit()
 
 
-## CITY-A2 step 2: the land past the city: one quad per `terrain` coarse cell outside `hole` (lots; the chunks draw their
-## own ground there) with a land corner, at its corners' heights (the sea mesh covers the water corners at sea level).
+## CITY-A2 step 2 / r2: the land past the city, one surface with the chunks' ground: a quad per lot over the raster
+## (snapped out to the coarse grid's lines) outside `hole` (lots; the chunks draw their own ground there, on the same
+## corners), a quad per coarse cell past it; a quad with a land corner only, at its corners' heights (the sea mesh covers
+## the water corners at sea level). The fine / coarse boundary lies where the heights are the coarse grid's own, so the
+## two meet without a crack.
 static func land_mesh(cfg: CityConfig, terrain: CityA2Terrain, hole: Rect2i) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var s := terrain.step
 	var cr := terrain.coarse_rect
+	var fr := terrain.fine_rect
+	var p0 := cr.position + ((fr.position - cr.position) / s) * s
+	var p1 := cr.position + ((fr.end - cr.position + Vector2i(s - 1, s - 1)) / s) * s
+	var fine := Rect2i(p0, p1 - p0).intersection(cr)
 	var any := false
 	for j in range(cr.position.y, cr.end.y, s):
 		for i in range(cr.position.x, cr.end.x, s):
 			var cell := Rect2i(i, j, s, s)
-			if hole.encloses(cell):
-				continue
-			var q: Array[Vector3] = []
-			var land := false
-			for c: Vector2i in [cell.position, Vector2i(cell.end.x, j), cell.end, Vector2i(i, cell.end.y)]:
-				var h := terrain.height_at(c.x, c.y)
-				land = land or h > 0.0
-				q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
-			if land:
-				_quad(st, q[0], q[1], q[2], q[3], cfg.ground)
-				any = true
+			if fine.encloses(cell):
+				for jj in range(j, j + s):
+					for ii in range(i, i + s):
+						if not hole.has_point(Vector2i(ii, jj)):
+							any = _land_quad(st, cfg, terrain, Rect2i(ii, jj, 1, 1)) or any
+			else:
+				any = _land_quad(st, cfg, terrain, cell) or any
 	if not any:
 		return null
+	if cfg.ground_smooth_normals:
+		st.index()
 	st.generate_normals()
 	return st.commit()
+
+
+static func _land_quad(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i) -> bool:
+	var q: Array[Vector3] = []
+	var land := false
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		var h := terrain.height_at(c.x, c.y)
+		land = land or h > 0.0
+		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
+	if land:
+		_quad_c(st, q, _land_cols(cfg, terrain, cell))
+	return land
+
+
+## LOOK L5: a ground lot `cell` at its corners' heights + `y`, coloured per corner by CityTerrainColor.
+static func _lot_quad_land(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i, y: float) -> void:
+	var q: Array[Vector3] = []
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), terrain.height_at(c.x, c.y) + y))
+	_quad_c(st, q, _land_cols(cfg, terrain, cell))
+
+
+## The four corner colours of land cell `cell`: the terrain rule (CityTerrainColor) toward cfg.ground by cfg.terrain_ground_mix.
+static func _land_cols(cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i) -> Array[Color]:
+	var out: Array[Color] = []
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		out.append(CityTerrainColor.at(cfg, terrain, c).lerp(cfg.ground, cfg.terrain_ground_mix))
+	return out
 
 
 ## CITY-A2 step 2: a flat-topology grid over world rect `area` (X/Z) every `step_bu`, lifted `lift` BU over `terrain`
@@ -386,6 +463,18 @@ static func _lot_quad(st: SurfaceTool, cfg: CityConfig, l: Vector2i, y: float, c
 
 
 ## Quad a-b-c-d, wound to face up (+Y).
+## `_quad` with a colour per corner (q and cols in a, b, c, d order).
+static func _quad_c(st: SurfaceTool, q: Array[Vector3], cols: Array[Color]) -> void:
+	var up := (q[1] - q[0]).cross(q[3] - q[0]).y > 0.0
+	var order: Array[int] = [0, 1, 2, 0, 2, 3]
+	if up:
+		order = [0, 2, 1, 0, 3, 2]
+	for k in order:
+		st.set_color(cols[k])
+		st.set_normal(Vector3.UP)
+		st.add_vertex(q[k])
+
+
 static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
 	var up := (b - a).cross(d - a).y > 0.0
 	var order := PackedVector3Array([a, b, c, a, c, d]) if not up else PackedVector3Array([a, c, b, a, d, c])
@@ -465,6 +554,10 @@ static func ink_slot(inks: Array[Color], c: Color) -> int:
 			best = k + 1
 	return best
 
+## LOOK L5: the territory corps in COLOR.a's order (index + 1; 0 for any other territory), as city_building's terr_colors.
+# LOOK L5: the Cell's own blocks are the city's ordinary mix (the designer): no territory tint for rebel_cell.
+const TERR_CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital"]
+
 
 ## The MultiMesh buffer of prisms `idx` (TRANSFORM_3D + colours + custom data):
 ## transform rows, COLOR = base colour, INSTANCE_CUSTOM = (taper, trim ink slot or 0,
@@ -485,7 +578,7 @@ static func instance_buffer(cfg: CityConfig, prisms: Array[Dictionary], idx: Pac
 		buf[o] = col.r
 		buf[o + 1] = col.g
 		buf[o + 2] = col.b
-		buf[o + 3] = 1.0
+		buf[o + 3] = 1.0 - float(TERR_CORPS.find(StringName(pr.get("terr", &""))) + 1) / 8.0
 		o += 4
 		var key_i := int(pr["key"])
 		var trim := 0.0

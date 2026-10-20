@@ -385,6 +385,18 @@ var _fronts: Dictionary = {}
 var _covers: Dictionary = {}
 var _want: Dictionary = {}
 var _sky_shown: bool = false
+## Whole-city pose (designer 2026-10-19): when set (a city-centre lot point), the 3D camera is the A2 plate's hero
+## pose (CityIsoCamera.whole_pose) instead of this map's iso frame. For zoomed-out views with no map marks (design
+## review, parity captures); the 2D overlays keep the iso projection, so they hide meanwhile.
+var whole_pose_centre: Vector2 = Vector2.INF:
+	set(v):
+		if v != whole_pose_centre:
+			whole_pose_centre = v
+			for c: Control in [_lights_layer, _beacons_layer, _marks_layer, _fx]:
+				if c != null:
+					c.visible = v == Vector2.INF
+			if is_inside_tree():
+				refresh()
 ## ANIM-R6 A14 (combat, a minimal change here): while true, a bake that would land over the
 ## silhouette waits (the silhouette stays); set back to false, it lands and fades in. The
 ## fight holds it while a SEND IT replays, so the city never switches in mid-turn.
@@ -1222,6 +1234,12 @@ func plan() -> CityPlan:
 	return _plan
 
 
+## Shows the whole city under the A2 plate's hero pose (whole_pose_centre at the A2 plan centre, else the plan's).
+func frame_whole_city() -> void:
+	var p := plan()
+	whole_pose_centre = p.a2.lot_of(Vector2.ZERO) if p.a2 != null else Vector2(p.rect.get_center())
+
+
 ## NA-12: true when lot (i, j) is sea (no street, no building).
 func _is_water(i: int, j: int) -> bool:
 	return plan().is_water(i, j)
@@ -1364,6 +1382,8 @@ func iso_camera(rect: Rect2 = Rect2()) -> CityIsoCamera:
 	var cfg: CityConfig = CityView3D.CONFIG
 	_camera()
 	var r := rect if rect.has_area() else Rect2(Vector2.ZERO, size)
+	if whole_pose_centre != Vector2.INF:
+		return CityIsoCamera.whole_pose(cfg, whole_pose_centre, r.size.max(Vector2.ONE))
 	var g := _grid_of(r.get_center())
 	var ortho := maxf(r.size.x, 1.0) / px_per_bu()
 	return CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, g), ortho, r.size.max(Vector2.ONE))
@@ -1523,6 +1543,9 @@ func _draw_view_3d() -> void:
 		var stretch := get_viewport().get_final_transform().get_scale().x if is_inside_tree() else 1.0
 		view3d.band_lock = band_lock
 		view3d.ring_halos = ring_halos
+		view3d.whole_look = whole_pose_centre != Vector2.INF
+		if city_motion != null and city_motion.layers != null:
+			city_motion.layers.whole_pose = view3d.whole_look
 		var cover := cover_rect()
 		view3d.set_view_size(Vector2i((cover.size * scale.x * stretch).round()))
 		view3d.set_iso(iso_camera(cover))
@@ -2765,7 +2788,7 @@ func frame_stamp() -> Array:
 
 ## The camera's inputs (what `_camera` reads).
 func _camera_key() -> Array:
-	return [focus_grid, focus_anchor, size, district, pan, hq_anchor]
+	return [focus_grid, focus_anchor, size, district, pan, hq_anchor, whole_pose_centre]
 
 
 ## True when the city was last drawn (and its roofs placed) under the current camera:

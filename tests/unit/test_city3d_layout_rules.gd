@@ -59,11 +59,43 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 		var tops := {}
 		for bi: Dictionary in NetrunArtLayout.merged_buildings(after):
 			tops[bi["bid"]] = bi["h"]
+		# NA-11 x NA-11c: inside an HQ zone the HQ cap wins over the frontage minimum (the HQ reads as the tallest mass)
+		var hp: Dictionary = NetrunArtConfigData.shipped().layout_rules["hq"]
+		var hq_list := NetrunArtLayoutRules.hq_rects(after)
+		var reach: float = float(hp["zone_lots"]) * _cfg.lot_bu
+		var zone_top := {}
+		for bi: Dictionary in NetrunArtLayout.merged_buildings(after):
+			var zt := NetrunArtLayoutRules.hq_zone_top(hq_list, reach, bi)
+			if not is_nan(zt):
+				zone_top[bi["bid"]] = zt
+		# The horizon pass sets its 3-5 spikes to spike_k x the backdrop median (the pinned python twin: it may sit under a
+		# tall frontage building and under the 6 floors); a spike is exempt, the pass before it is not.
+		var stats := {}
+		var ctx := {}
+		var c1 := NetrunArtLayoutRules.apply_layout_rules(city, net, "all", stats, ctx)
+		var c2 := NetrunArtLayoutRules.frontage_silhouette(c1, net, {}, "all", stats, ctx)
+		var pre := NetrunArtLayoutRules.hq_cap(c2, [], stats)
+		var pre_tops := {}
+		for bi: Dictionary in NetrunArtLayout.merged_buildings(pre):
+			pre_tops[bi["bid"]] = bi["h"]
+		var spiked := {}
+		for bid: String in tops:
+			if absf(float(tops[bid]) - float(pre_tops[bid])) > 1.0e-6:
+				spiked[bid] = true
+		var spikes_max: int = int(NetrunArtConfigData.shipped().layout_rules["horizon"]["spikes_max"])
+		assert_lte(spiked.size(), spikes_max, "seed %d: only the horizon spikes change after the frontage passes" % s)
 		var low: Array = []
+		var capped_over: Array = []
 		for bid: String in front:
-			if int(float(tops[bid]) / fl + 1.0e-9) < 6:
+			if spiked.has(bid):
+				continue
+			if zone_top.has(bid):
+				if float(tops[bid]) > float(hp["cap_k"]) * float(zone_top[bid]) + 1.0e-6:
+					capped_over.append(bid)
+			elif int(float(tops[bid]) / fl + 1.0e-9) < 6:
 				low.append(bid)
-		assert_eq(low, [], "seed %d: frontage buildings under 6 floors" % s)
+		assert_eq(low, [], "seed %d: frontage buildings outside HQ zones under 6 floors" % s)
+		assert_eq(capped_over, [], "seed %d: HQ-zone frontage above the HQ cap" % s)
 		# ids unique, HQ rects exclusive
 		assert_eq(NetrunArtExport.bid_conflicts(ruled.prisms).size(), 0, "seed %d: ids unique" % s)
 		assert_eq((after["hq_overlaps"] as Array).size(), 0, "seed %d: HQ rects hold no city building" % s)
