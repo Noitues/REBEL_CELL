@@ -54,6 +54,8 @@ extends Resource
 @export var whole_day_ramp_tint: Array[Color] = [Color(0.80, 0.90, 1.12), Color(1.0, 0.97, 0.94), Color(1.14, 1.0, 0.80)]
 ## ... and its long shadows: the far-LOD blocks cast under the whole-city pose, the sun's shadow out to this many BU.
 @export var whole_far_shadows: bool = true
+## ... and the land's ramp softness there (city_ground band_soft; 0 = the Grid's hard bands).
+@export var whole_ground_band_soft: float = 0.3
 @export var whole_shadow_dist_bu: float = 2200.0
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
