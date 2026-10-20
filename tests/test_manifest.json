@@ -1121,6 +1121,10 @@
 			"seconds": 30.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_balance_reference_policy.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_balance_sim.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
