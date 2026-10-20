@@ -182,3 +182,14 @@ Open (L3b):
    by a unit direction * k with bilinear taps. Edge-only, max 159/255 on thin lit edges near the frame border. Low priority.
 5. Not testable on a still with this harness: emit term in the bloom (`emit * exposure * 0.04`), volume glow, background
    dim/desat (sem pass), rain (procedural in Godot, PIL lines in the plate). They move to L4 with the scene twin.
+
+## 9. L2, the reachable twin: designer ruling (2026-10-19)
+
+Twin sheets and numbers: `look_parity/L2_twin/` on branch `claude/loving-rhodes-0be732` @ f82a09cb (not yet on art-pass).
+At the Cycles exposure the twin is darker (median luma 0.069 against 0.132), mostly from the missing path-traced bounce, the
+thinner reflection field on the wet street and flatter fog.
+
+**Ruling (designer, 2026-10-19):** "just a little dark, but not terribly so". The gap is **accepted**. No SDFGI, VoxelGI or
+fill-light work is added to close it, and the twin as rendered becomes the L4/L5 parity target (section 3 rules). The street's
+`aaa.post.exposure` re-solve, already due after the L3 shadow-tint fix, may lift the value a little, but only while R-VAL-3
+(highlight share) still passes. A full re-solve to the Cycles median (×1.8) clips the decision view, so it is not the target.
