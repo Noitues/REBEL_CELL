@@ -85,6 +85,8 @@ extends Resource
 @export var whole_exposure_k: float = 1.25
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22}
+## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
+@export var whole_night_ramp: Array[Color] = [Color(0.07, 0.08, 0.10), Color(0.15, 0.16, 0.19), Color(0.27, 0.28, 0.31)]
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
 @export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.93, 0.8),
 	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]

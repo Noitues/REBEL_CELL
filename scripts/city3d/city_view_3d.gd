@@ -278,7 +278,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
-		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		var col := (day_ramp[k] as Color).lerp(_night_ramp(k), night_share)
 		# LOOK L5: the outer land, plane and A2 decks (_outer_mat) take the day ramp too (they stayed on the night ramp).
 		for m in [_building_mat, _ground_mat, _lane_mat, _outer_mat]:
 			if m != null:
@@ -1175,13 +1175,18 @@ func _build_features(m: CityModel) -> void:
 
 
 ## The day ramp on the sea wall and pier decks (as on the ground).
+## LOOK L5: the night ramp's band `k`; the whole-city pose takes the plate's neutral blue-grey night (cfg.whole_night_ramp).
+func _night_ramp(k: int) -> Color:
+	return cfg.whole_night_ramp[k] if whole_look else cfg.ramp[k]
+
+
 func _ramp_water(day: Dictionary) -> void:
 	if water == null:
 		return
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
-		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		var col := (day_ramp[k] as Color).lerp(_night_ramp(k), night_share)
 		for mat in water.lit_materials():
 			mat.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 
