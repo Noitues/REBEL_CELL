@@ -49,8 +49,14 @@ extends Resource
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
 @export var whole_night_look: float = 1.0
-@export var whole_day_ramp_gain: float = 0.5
-@export var whole_day_grade: Color = Color(1.0, 0.96, 0.9)
+@export var whole_day_ramp_gain: float = 0.36
+@export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
+## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
+@export var whole_day_sky: Color = Color(0.30, 0.32, 0.38)
+@export var whole_day_haze: Color = Color(0.36, 0.38, 0.44)
+@export var whole_day_haze_k: float = 0.12
+## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
+@export var whole_haze_start: float = 0.85
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread

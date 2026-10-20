@@ -267,6 +267,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if _building_mat == null or day.is_empty():
 		return
 	_last_day = day
+	# LOOK L5: the whole-city pose starts the buildings' depth haze near its target (at ~1130 BU it saturated every block).
+	_building_mat.set_shader_parameter(&"haze_d0", cfg.whole_pose_dist_bu * cfg.whole_haze_start if whole_look else 0.0)
 	if whole_look:
 		day = _whole_day(day)
 		set_look_blend(night_share * cfg.whole_night_look)
@@ -463,7 +465,8 @@ var whole_look: bool = false:
 			set_night_share(night_share, _last_day)
 
 
-## The day look under the whole-city pose: the ramp scaled by cfg.whole_day_ramp_gain, the grade cfg.whole_day_grade.
+## The day look under the whole-city pose: the ramp scaled by cfg.whole_day_ramp_gain, and the grade, sky and haze
+## from cfg.whole_day_*.
 func _whole_day(day: Dictionary) -> Dictionary:
 	var d := day.duplicate()
 	var ramp: Array = []
@@ -471,6 +474,9 @@ func _whole_day(day: Dictionary) -> Dictionary:
 		ramp.append(Color(c.r * cfg.whole_day_ramp_gain, c.g * cfg.whole_day_ramp_gain, c.b * cfg.whole_day_ramp_gain))
 	d["ramp"] = ramp
 	d["grade"] = cfg.whole_day_grade
+	d["sky"] = cfg.whole_day_sky
+	d["haze"] = cfg.whole_day_haze
+	d["haze_k"] = cfg.whole_day_haze_k
 	return d
 var _env: Environment
 

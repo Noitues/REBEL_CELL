@@ -131,6 +131,8 @@ uniform vec3 haze_col = vec3(0.0);
 uniform float haze_k = 0.0;
 uniform float haze_h = 30.0;
 uniform float haze_hi = 0.15;
+// LOOK L5 (whole city): the view distance (BU) the haze starts at (0 = at the eye); the whole-city pose sets its target's.
+uniform float haze_d0 = 0.0;
 // The id pass (PIPELINE_SPEC 12.0): unlit class colour in R, G = 255 and B = 0 for a cut / ghosted / dissolved building.
 uniform bool id_mode = false;
 uniform float id_class = 2.0;
@@ -485,7 +487,7 @@ void fragment() {
 	}
 	if (persp && look_blend > 0.0 && haze_k > 0.0) {
 		// Depth haze: far blocks lose contrast into the glow colour, low parts more than high ones; layers separate by distance.
-		float hz = (1.0 - exp(-view_d * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
+		float hz = (1.0 - exp(-max(view_d - haze_d0, 0.0) * haze_k)) * mix(1.0, haze_hi, 1.0 - exp(-max(zl, 0.0) / haze_h)) * look_blend;
 		base *= 1.0 - hz;
 		em = em * (1.0 - hz) + haze_col * hz;
 	}
