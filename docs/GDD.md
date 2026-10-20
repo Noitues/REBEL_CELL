@@ -720,6 +720,9 @@ HOTFIX as **GROWTH** (DECISIONS 2026-10-05, names for M14, D4).
 Unit 106, Account Manager 150) and the Genome Core 360 HP; enemy damage scales 1.3 per
 tier. The table keeps the original values for reference.
 
+*Solace balance r1 (2026-10-20, DECISIONS "SOLACE_BAL_r1"):* Claims Adjuster 96, Account Manager 128, Genome Core
+400 HP (the reference policy wins the boss about 52 % at ICE 0). Phases and enrage are unchanged.
+
 ### A.4 Slice Firmware & Daemons
 Firmware: Patch+, Hardened, Burner, Leech, Mirror, Shunt.
 Daemons: Clean Signal, Cold Exit, Scrubber, Fault Tolerance, Kernel Sync, Zero Day.
