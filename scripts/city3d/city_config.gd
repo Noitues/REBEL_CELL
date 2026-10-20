@@ -49,7 +49,7 @@ extends Resource
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
 @export var whole_night_look: float = 1.0
-@export var whole_day_ramp_gain: float = 0.31
+@export var whole_day_ramp_gain: float = 0.28
 ## ... tinted per band (shadow, mid, lit): the plate's low sun lights faces warm and leaves the shade cool.
 @export var whole_day_ramp_tint: Array[Color] = [Color(0.80, 0.90, 1.12), Color(1.0, 0.97, 0.94), Color(1.14, 1.0, 0.80)]
 ## ... and its long shadows: the far-LOD blocks cast under the whole-city pose, the sun's shadow out to this many BU.
@@ -65,7 +65,7 @@ extends Resource
 ## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
 @export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
 @export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
-@export var whole_fog_density: Vector2 = Vector2(0.45, 0.45)
+@export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
 @export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
 @export var whole_fog_sun_scatter: float = 0.25
@@ -123,7 +123,8 @@ extends Resource
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
-@export var whole_road_glow_gain: float = 2.2
+@export var whole_road_glow_gain: float = 0.9
+@export var whole_road_glow_tint: Color = Color(0.95, 1.2, 1.7)
 @export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
@@ -820,7 +821,7 @@ extends Resource
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.02, 0.17, 0.28),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
-	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.72, "marble_col": Color(0.02, 0.07, 0.08), "marble_scale": 0.05,
+	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.02, 0.07, 0.08), "marble_scale": 0.05,
 	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.3, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.3, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}

@@ -336,6 +336,7 @@ func _whole_road_glow() -> void:
 		_glow_line_mat = ShaderMaterial.new()
 		_glow_line_mat.shader = GLOW_LINE
 	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share)
+	_glow_line_mat.set_shader_parameter(&"tint", Vector3(cfg.whole_road_glow_tint.r, cfg.whole_road_glow_tint.g, cfg.whole_road_glow_tint.b))
 	rg.material_override = _glow_line_mat
 	rg.visible = night_share >= cfg.whole_road_glow_from
 
