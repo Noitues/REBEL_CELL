@@ -781,3 +781,17 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 ## RG-06 lint: unique node ids (MapGraph node key `unique_id`) allowed to be an Intel, Relay or
 ## Ambush node in a netrun map. Normal runs have none of these kinds.
 @export var map_unique_allow: PackedStringArray = PackedStringArray(["orbital_uplink_dish"])
+
+## RG-02 REST node (drafts/nodes/rest.md). PATCH heals this percent of the operative's max HP
+## (round half up, clamped to max HP); REWIRE swaps Firmware between two wheel slots, this many
+## swaps per visit (one mode per visit).
+@export var rest_heal_pct: int = 35
+@export var rest_rewire_swaps: int = 1
+## Placement: the guaranteed REST sits in these layers (inclusive); `node_weight_rest` is the
+## percent chance a run gets it (100 = always). An extra REST is rolled with the tier's percent
+## (index tier - 1) in `rest_extra_layers`, at most `rest_max_per_run` in all, never two in a layer.
+@export var node_weight_rest: int = 100
+@export var rest_guaranteed_layers: Vector2i = Vector2i(4, 5)
+@export var rest_extra_layers: Vector2i = Vector2i(3, 6)
+@export var rest_extra_chance_pct_by_tier: PackedInt32Array = PackedInt32Array([0, 15, 35, 35])
+@export var rest_max_per_run: int = 2

@@ -255,6 +255,9 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				if bug >= 0 and s.run.cycles >= s.card_removal_price():
 					s.remove_card(bug)
 				s.leave_shop()
+			RunState.Phase.REST:
+				s.rest_patch()
+				s.leave_rest()
 			RunState.Phase.RAID:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)
@@ -280,6 +283,12 @@ func _pick_node(s: NetrunSession) -> StringName:
 				key = 60 if s.run.cycles >= 75 else 10
 			RC.InfilNodeType.TERMINAL:
 				key = 30 if hp_low else 20
+			RC.InfilNodeType.REST:
+				key = 55 if hp_low else 5
+			RC.InfilNodeType.WORKSHOP:
+				key = 6
+			RC.InfilNodeType.CACHE:
+				key = 35
 			_:
 				key = (0 if hp_low else 25) if node["elite"] else 40
 		if key > best_key or (key == best_key and String(id) < String(best)):

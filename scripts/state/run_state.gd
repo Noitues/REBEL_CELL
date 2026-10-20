@@ -4,7 +4,8 @@ extends RefCounted
 ## current node and whatever sub-screen is open (combat, reward, event, shop).
 
 ## RAID = a mid-run raid interlude between map nodes (GDD 4.4, designer ruling 2026-09-24).
-enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED, RAID }
+## RG-02/03: REST and WORKSHOP are the node pages of those kinds (appended, saved ints survive).
+enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED, RAID, REST, WORKSHOP }
 ## ABORTED = the campaign ended (home server lost) during the run.
 enum Outcome { NONE, COMPLETED, DIED, ABORTED }
 
@@ -61,6 +62,9 @@ var streams: Dictionary = {}
 ## only when a field is not default, so older saves load it as defaults and a run without
 ## theme data hashes as before.
 var corp_theme: RunThemeState = RunThemeState.new()
+## RG-02/03: the open REST or WORKSHOP page ({} when none): REST {"kind": "rest", "done", "mode", "swaps",
+## "undo_hp", "undo_fw"}; WORKSHOP {"kind": "workshop", "offers", "bought"}. Saved only when not empty.
+var node_state: Dictionary = {}
 
 
 func current_node() -> Dictionary:
@@ -99,6 +103,8 @@ func _raw_dict() -> Dictionary:
 	var theme := corp_theme.to_dict()
 	if not theme.is_empty():  # absent at defaults: runs without theme data hash as before WH-02
 		out["corp_theme"] = theme
+	if not node_state.is_empty():  # RG-02: absent when no node page is open
+		out["node_state"] = node_state.duplicate(true)
 	return out
 
 
@@ -139,6 +145,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.temp_cards = _names(d.get("temp_cards", []))
 	for dd in d.get("drones", []):
 		r.drones.append({"source_id": String(dd.get("source_id", "")), "hp": int(dd.get("hp", 1)), "dock_slot": int(dd.get("dock_slot", 0))})
+	r.node_state = d.get("node_state", {}).duplicate(true)
 	var theme: Variant = d.get("corp_theme", {})
 	if theme is Dictionary:
 		r.corp_theme.load_dict(theme)

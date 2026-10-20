@@ -9316,3 +9316,20 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v
 - RG-06 lint: `MapGraph.lint(allow)` (run inside `validate`) rejects Intel, Relay and Ambush nodes (`unique_kind`, saved as an
   optional key) unless `unique_id` is in `config.map_unique_allow` (default `orbital_uplink_dish`).
 - Tests: tests/unit/test_rg01_run_graph_v2.gd.
+
+### 2026-10-19 - W3 RG-02: the REST node
+- Phase `REST` (appended to `RunState.Phase`) holds `run.node_state` ({kind: rest, done, mode, swaps, undo_hp, undo_fw});
+  saved as `node_state` only when not empty. PATCH heals `rest_heal_pct` (35) of max HP, round half up, clamped; the preview
+  (`rest_patch_preview`) is the result. REWIRE (`rest_rewire(a, b)`) swaps the Firmware of two outer-ring wheel slots (an
+  empty socket is a legal partner); each moving chip must pass `firmware_slot_error` for its new slot, so no chip is ever
+  dropped or placed where it does not fit. One mode per visit (`rest_rewire_swaps` swaps, then spent); UNDO restores HP and
+  layout until LEAVE. REST adds 0 Heat, draws no stream.
+- Placement (`MapV2`, same `map` stream): a roll against `node_weight_rest` (percent; 100 = always), one pick among free
+  Terminals (else plain Routers) in `rest_guaranteed_layers` 4-5, widened to 3-6 when none is free; then an extra REST at the
+  tier's percent (`rest_extra_chance_pct_by_tier`), Terminals only, never a layer that holds a REST, at most `rest_max_per_run`.
+- Calls where the draft was silent: the draft's "no REST right before a Mainframe" and "not after the layer-6 Elite cluster"
+  exclusions are not built (the validator guarantees every node is on a start-to-end path, so a path through each REST
+  exists); the Inner Ring is not rewirable (outer-ring slots only); no "fixed" Firmware flag exists, so none is checked.
+- The Solace HQ ladder's rest room stays the ward rest (`bloom_ward_rest`, WH-10): it does not open the REST page.
+- UI: `NodePage` (scripts/ui/kit/node_page.gd), placeholder buttons; mouse, or keys 1-9 / Enter / Esc. Tests:
+  tests/unit/test_rg02_rest.gd, tests/unit/test_rg_node_pages_ui.gd.

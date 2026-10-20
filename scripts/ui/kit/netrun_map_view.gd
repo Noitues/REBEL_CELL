@@ -10,7 +10,8 @@ signal node_clicked(node_id: StringName)
 
 const NODE_RADIUS := 18.0
 const TYPE_NAMES := {RC.InfilNodeType.ROUTER: "Router", RC.InfilNodeType.TERMINAL: "Terminal",
-	RC.InfilNodeType.MAINFRAME: "Mainframe", RC.InfilNodeType.SERVER_RACK: "Server Rack"}
+	RC.InfilNodeType.MAINFRAME: "Mainframe", RC.InfilNodeType.SERVER_RACK: "Server Rack",
+	RC.InfilNodeType.REST: "Rest", RC.InfilNodeType.WORKSHOP: "Workshop", RC.InfilNodeType.CACHE: "Cache"}
 
 var map: MapGraph = null
 var current_id: StringName = &""
@@ -127,6 +128,12 @@ func _draw() -> void:
 				glyph = "◇"
 			RC.InfilNodeType.SERVER_RACK:
 				glyph = "⬢"
+			RC.InfilNodeType.REST:
+				glyph = "☾"
+			RC.InfilNodeType.WORKSHOP:
+				glyph = "⬡"
+			RC.InfilNodeType.CACHE:
+				glyph = "▣"
 		HighContrast.draw_text(self, Palette.display(), p + Vector2(-7, 7), glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
 		var label: String = TYPE_NAMES.get(int(node["type"]), "?")
 		if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER:
