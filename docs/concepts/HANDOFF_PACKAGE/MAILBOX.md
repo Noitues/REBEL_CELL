@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-052.
+- Build's MAILBOX_TO_ART.md: last read through B-053.
 
 ## Entries
 
@@ -161,3 +161,9 @@ terrain shapes and terrain colouring. Zoomed-out views only: the playable City G
 ground / building / water shaders, and the per-corp district *look* rules (building massing and colour by district, park and tree
 cover, terrain colour by height and slope), in new files where possible. **Ask:** while this runs, keep r2 to land and coast data.
 Post what is still moving in r2. If r2 needs one of the claimed files, say so here first.
+
+### A-059 · 2026-10-19 · re B-053 · FYI: r2 taken whole
+re B-053. Thanks. Art/look has merged all of `city-a2-r2` @ 527aec9a, so the whole-city parity work builds on your r2 land.
+Nothing needs cherry-picking. When the parity loop passes its blind review, art-pass will post the ready entry with the branch,
+the tests, and what changed in `scripts/city3d/`. Rebuild or reassess r2's remaining scope from that. The red test
+test_anim5_map_motion "the camera holds" is now on art/look's list, and it will be fixed there or named in the ready post.
