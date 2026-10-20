@@ -13,6 +13,9 @@ extends RefCounted
 const ROOF := 1.0
 
 
+const SEED_RELIEF := 7790
+
+
 ## Integer hash to 0-1 (the city's view hash; NeonCity._h style).
 static func hash01(a: int, b: int, c: int = 0) -> float:
 	var n := (a * 73856093) ^ (b * 19349663) ^ (c * 83492791)
@@ -286,10 +289,40 @@ static func _land_quad(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain,
 	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
 		var h := terrain.height_at(c.x, c.y)
 		land = land or h > 0.0
+		if h > 0.0:
+			h += land_relief(cfg, terrain, c.x, c.y)
 		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
 	if land:
 		_quad_c(st, q, _land_cols(cfg, terrain, cell))
 	return land
+
+
+## LOOK L5 (whole-city plate parity): the drawn mountains' own relief (BU) at lot point (x, y), on top of the terrain's
+## height: ridged value noise (cfg.land_relief_cells lots, weights cfg.land_relief_w) of cfg.land_relief_bu, rising over
+## cfg.land_relief_from lots past the outer ring. A view term: the terrain (and every rule on it) keeps its own heights.
+static func land_relief(cfg: CityConfig, terrain: CityA2Terrain, x: int, y: int) -> float:
+	if cfg.land_relief_bu <= 0.0:
+		return 0.0
+	var k := smoothstep(cfg.land_relief_from.x, cfg.land_relief_from.y, terrain.outside_ring(x, y))
+	if k <= 0.0:
+		return 0.0
+	var r := 0.0
+	var cells: Array[float] = [cfg.land_relief_cells.x, cfg.land_relief_cells.y]
+	var ws: Array[float] = [cfg.land_relief_w.x, cfg.land_relief_w.y]
+	for o in 2:
+		var n := _vnoise_hash(SEED_RELIEF + o, float(x) / cells[o], float(y) / cells[o])
+		r += (1.0 - absf(2.0 * n - 1.0)) * ws[o]
+	return r * cfg.land_relief_bu * k
+
+
+static func _vnoise_hash(sd: int, x: float, y: float) -> float:
+	var i := floori(x)
+	var j := floori(y)
+	var fx := x - i
+	var fy := y - j
+	var ux := fx * fx * (3.0 - 2.0 * fx)
+	var uy := fy * fy * (3.0 - 2.0 * fy)
+	return lerpf(lerpf(hash01(sd, i, j), hash01(sd, i + 1, j), ux), lerpf(hash01(sd, i, j + 1), hash01(sd, i + 1, j + 1), ux), uy)
 
 
 ## LOOK L5: a ground lot `cell` at its corners' heights + `y`, coloured per corner by CityTerrainColor.
