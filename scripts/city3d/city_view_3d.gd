@@ -320,6 +320,8 @@ func _whole_shadows() -> void:
 		return
 	var on: bool = whole_look and cfg.whole_far_shadows and bool(quality["shadows"])
 	_sun.directional_shadow_max_distance = cfg.whole_shadow_dist_bu if whole_look else cfg.camera_far * 0.5
+	if land != null:
+		land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for n: Node in find_children("Far_*", "MultiMeshInstance3D", true, false):
 		var far_on: bool = on or (bool(quality["shadows"]) and cfg.far_lod_shadows)
 		(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if far_on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1175,6 +1177,7 @@ func _build_land(m: CityModel) -> void:
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	land.visible = _outer_ground_on
 	layer(&"ground").add_child(land)
+	_whole_shadows()
 	var outer := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
 	if outer != null:
 		outer.visible = false  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
