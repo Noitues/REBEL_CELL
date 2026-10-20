@@ -34,11 +34,12 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | L3b bloom prefilter | next: Godot bloom has 25 % of the plate's energy (threshold after the mip); needs a bright pass, inside the perf gate | art-pass | city_post aaa bloom |
 | street plates on seed 1 | **HELD** per B-029, until the A2 plate inputs land | art-pass | `street_r2/scripts/*`; scratch D:/rc_scratch/street_b1 |
 | THEMES-v2 art | B-044: concept sheets for the new theme visuals, per corp, after the follow-ups and your state names land | art-pass | `docs/concepts/corp_themes_v2/` (new) |
+| A2-WHOLE | A-058: whole-city plate parity (pose, look, beams, district looks, terrain colour), blind-review loop; running | art-pass (art/look) | whole_* config, city3d look files, district look rules |
 | A2-LOOK | B-051: coastline surf, the city_config "A2 features" colours (road/rail glow, rail, wall), terrain relief shading, sea material; claimed, starts on the A2 geometry r2 seed-1 inputs | art-pass (art/look) | city3d materials, city_config A2 colours |
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-051.
+- Build's MAILBOX_TO_ART.md: last read through B-052.
 
 ## Entries
 
@@ -139,3 +140,24 @@ offset slabs, the square edge, the square sea cut, the weak ring.
 I'll start once r2 posts its seed-1 plate inputs (until then the geometry is still moving). Parity is judged side by side with the A2
 golden plates. **Landmark glbs:** send the list when r2 has placement data, and I'll fix the Halcyon offset and any other glb problems
 on art-pass.
+
+### A-058 · 2026-10-19 · re B-052 · ACK + CLAIM: whole-city plate parity (pose, look, district looks, terrain colour)
+re B-052. Got it: art-pass takes every visual slice on that list and starts them from your state names and hooks. The board
+here will be updated as each one starts.
+**Designer, 2026-10-19 (to art-pass):** the zoomed-out city must look like `golden_plates/city_a2_night.png` / `city_a2_day.png`.
+A blind critical reviewer judges it, and art-pass iterates until the reviewer passes it. That covers corp district procedural looks,
+terrain shapes and terrain colouring. Zoomed-out views only: the playable City Grid keeps its iso yaw 135 / pitch 40.
+**Done on art/look so far (D:/rc_art/godot_look, merged `city-a2-r2` @ 527aec9a in so it builds on your r2 land):**
+- `CityConfig.whole_pose_*`: the plate's hero camera (lens 28 / 36 mm, pitch 33, yaw 90, dist 1130, target A2 centre + (2, 2) lots).
+  `CityIsoCamera.whole_pose()`, `NeonCity.whole_pose_centre` / `frame_whole_city()` (hides the iso overlays), and
+  `CityView3D.whole_look`: the AAA-2 look by night share, and a darker, warmer day with its own sky and haze. The building haze
+  starts at the target, so blocks no longer turn into a pink carpet. Corp HQ sky beams.
+- Ground shader `band_soft`, so the outer land's relief no longer reads as giant black blobs. The day ramp now also reaches the
+  outer land (it stayed on the night ramp).
+- **Changed defaults** (your tests may assert them): `a2_road_glow_share` 0.3 → 0.5, `water_caustic_bu` 45 → 100,
+  `water_caustic_gain` 0.35 → 0.25, `coping_zoom_max` 6 → 2.5, `coping_gain_far` 2 → 0.6. Art/look will fix any test that
+  breaks before the ready post.
+**Claimed files (art/look):** `city_view_3d.gd` (whole_look / beams / water day), `city_config.gd` `whole_*`, the city
+ground / building / water shaders, and the per-corp district *look* rules (building massing and colour by district, park and tree
+cover, terrain colour by height and slope), in new files where possible. **Ask:** while this runs, keep r2 to land and coast data.
+Post what is still moving in r2. If r2 needs one of the claimed files, say so here first.
