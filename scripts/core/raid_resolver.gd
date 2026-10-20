@@ -39,6 +39,9 @@ class RaidResult:
 	var infection_end_bp: int = 0
 	## True when the infection reached the threshold: the city is infected and Solace wins.
 	var city_lost: bool = false
+	## Halcyon v2 (rule 21): site id (String) -> the percent extra damage a threat there deals (the
+	## Eye's wedge; empty outside Halcyon). Its keys are the SEEN defense nodes.
+	var eye_wedge: Dictionary = {}
 
 	## The raid HUD's whole-percent infection after `step` (0 = the start), clamped to the run.
 	func infection_pct_at(step: int) -> int:
@@ -47,6 +50,12 @@ class RaidResult:
 		return infection_figures[clampi(step, 0, infection_figures.size() - 1)] / 100
 
 	func to_dict() -> Dictionary:
+		var d := _base_dict()
+		if not eye_wedge.is_empty():
+			d["eye_wedge"] = eye_wedge.duplicate()
+		return d
+
+	func _base_dict() -> Dictionary:
 		return {"raid_id": String(raid_id), "steps_run": steps_run, "won": won, "campaign_lost": campaign_lost,
 			"home_before": home_before, "home_after": home_after, "threats_destroyed": threats_destroyed,
 			"threats_reached_home": threats_reached_home, "nodes": nodes.duplicate(true),
@@ -84,6 +93,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		result.infection_start_bp = SolaceRaidRules.start_bp(campaign, config)
 		result.infection_bp = result.infection_start_bp
 		result.infection_figures = [result.infection_bp]
+	result.eye_wedge = EyeRules.raid_wedge(campaign, grid_data, config)
 	var step := 0
 	while step < config.raid_step_cap:
 		step += 1
@@ -596,7 +606,7 @@ static func _key_less(a: Array, b: Array) -> bool:
 static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, config: CampaignConfigData, step: int, result: RaidResult, taken_now: Array[String], down_now: Array[String]) -> void:
 	for t in _active(threats):
 		var site: StringName = t["site"]
-		var damage := int(t["damage"])
+		var damage := EyeRules.wedge_damage(int(t["damage"]), int(result.eye_wedge.get(String(site), 0)))
 		if site == grid.home_site_id and int(t["hold"]) > 0:
 			continue  # held at the door (a home ICE Lock): the home defences keep shooting
 		if site == grid.home_site_id:

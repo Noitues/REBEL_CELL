@@ -9,7 +9,9 @@ extends RefCounted
 ## Plan 2 WH-10: extra node keys the Solace HQ ladder sets (across, rest, boss, mini_boss, tower;
 ## `across_from` is the id list of the ACROSS sources). Saved only when present, so a street
 ## map's dictionary and hash are unchanged.
-const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower"]
+## Halcyon HQ: cache, power and annex flags (`az`, the gaze azimuth in degrees, and `climb_from`, the
+## climb source ids, are saved the same way).
+const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower", "cache", "power", "annex"]
 
 var layers: Array = []  # Array of Array[Dictionary], layer 1 first
 
@@ -178,6 +180,13 @@ func to_dict() -> Dictionary:
 				for a in node["across_from"]:
 					af.append(String(a))
 				d["across_from"] = af
+			if node.has("az"):
+				d["az"] = int(node["az"])
+			if node.has("climb_from"):
+				var cf := []
+				for a in node["climb_from"]:
+					cf.append(String(a))
+				d["climb_from"] = cf
 			l.append(d)
 		out.append(l)
 	return {"layers": out}
@@ -201,6 +210,13 @@ static func from_dict(d: Dictionary) -> MapGraph:
 				for a in node["across_from"]:
 					af.append(StringName(String(a)))
 				nd["across_from"] = af
+			if node.has("az"):
+				nd["az"] = int(node["az"])
+			if node.has("climb_from"):
+				var cf: Array[StringName] = []
+				for a in node["climb_from"]:
+					cf.append(StringName(String(a)))
+				nd["climb_from"] = cf
 			l.append(nd)
 		g.layers.append(l)
 	return g

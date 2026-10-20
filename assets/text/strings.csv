@@ -215,6 +215,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
+A failed run still moves the Eye.,A failed run still moves the Eye.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
 A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.,A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.
 A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
@@ -789,6 +790,7 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
+EYE ALERT,EYE ALERT
 "Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied","Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied"
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
@@ -2247,6 +2249,8 @@ SPIN,SPIN
 SPIN %d+,SPIN %d+
 SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
+SPOTTED,SPOTTED
+SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
@@ -2993,6 +2997,7 @@ Taken Raid Strength,Taken Raid Strength
 "Taken: %s, installed.","Taken: %s, installed."
 "Taken: %s, socketed in slot %d.","Taken: %s, socketed in slot %d."
 Taken: %s.,Taken: %s.
+Taking this Exploit fixes the Eye here for %d turns.,Taking this Exploit fixes the Eye here for %d turns.
 Target,Target
 Target:,Target:
 Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
@@ -3256,6 +3261,8 @@ The Armory is empty: runs bank defense assets from their drops.,The Armory is em
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
+The Eye moves to octant %d after this turn.,The Eye moves to octant %d after this turn.
+The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.

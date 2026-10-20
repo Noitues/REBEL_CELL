@@ -300,12 +300,12 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var raid_infection_decay_hold_bp: int = 1000
 @export var raid_infection_decay_per_kill_bp: int = 100
 @export var raid_infection_decay_cure_bp: int = 1500
-## Halcyon THE EYE: sector width and step (degrees), octants moved per counted netrun, netruns
+## Halcyon THE EYE: sector width and step (degrees), octants moved per campaign turn (one ended netrun), turns
 ## fixed after an Exploit.
 @export var eye_sector_deg: int = 90
 @export var eye_step_deg: int = 45
-@export var eye_move_per_netrun: int = 1
-@export var eye_fix_netruns: int = 2
+@export var eye_move_per_turn: int = 1
+@export var eye_fix_turns: int = 2
 ## TIER_DOWN stacks on the scanned slice; Blade classes per level (EnemyClass names plus RACK).
 @export var blade_tier_drop: int = 1
 @export var blade_classes_l1: Array[StringName] = [&"ELITE", &"MINI_BOSS", &"RACK"]
@@ -319,8 +319,35 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var hq_dial_steps: int = 3
 ## Threat damage bonus inside the sector (percent).
 @export var raid_eye_damage_pct: int = 25
-## Heat charged to use a non-fight HQ node in the eye.
+## Unused since v2 (a shuttered node cannot be entered).
 @export var eye_shuttered_cost_heat: int = 1
+## Halcyon v2: the Blade's top level, the HQ gaze step per Stall, Alert gains (eye fight, Stall,
+## Power cut), the Lockdown threshold, beam multiplier and Blade bonus, Cut the Power's asleep steps.
+@export var blade_level_max: int = 2
+@export var hq_gaze_step_per_stall: int = 1
+@export var hq_alert_gain_eye_fight: int = 1
+@export var hq_alert_gain_stall: int = 1
+@export var hq_alert_gain_power_cut: int = 2
+@export var hq_lockdown_alert: int = 4
+@export var hq_lockdown_beam_mult: int = 2
+@export var hq_lockdown_blade_bonus: int = 1
+@export var hq_power_cut_steps: int = 2
+## Halcyon HQ graph (WH-20, drafts/hq/halcyon.md): layer kinds (comma lists of R router, E elite,
+## T terminal, M mainframe, B bay/rest, C cache, K rack, X mini-boss, V vault boss), each layer's
+## face azimuth, the azimuth jitter per layer and the spread between a layer's nodes (degrees),
+## the Annex layers and their kinds (rest, cache, power), the climbs (origin and target layers),
+## the rest heal percent, cache choices and rebuild attempts.
+@export var halcyon_hq_layer_kinds: PackedStringArray = PackedStringArray(["R,R,R", "R,T", "R,T,M", "R,E", "B,R,C", "K,R,E", "E,R", "R,T,M", "B,R", "R,E,R", "K,B", "X", "V"])
+@export var halcyon_hq_layer_face_deg: PackedInt32Array = PackedInt32Array([180, 180, 180, 90, 90, 0, 0, 270, 270, 180, 180, 90, 0])
+@export var halcyon_hq_face_jitter_deg: int = 20
+@export var halcyon_hq_node_spread_deg: int = 24
+@export var halcyon_hq_annex_layers: PackedInt32Array = PackedInt32Array([3, 7, 9])
+@export var halcyon_hq_annex_kinds: PackedStringArray = PackedStringArray(["cache", "power", "rest"])
+@export var halcyon_hq_climb_origins: PackedInt32Array = PackedInt32Array([3, 5])
+@export var halcyon_hq_climb_targets: PackedInt32Array = PackedInt32Array([10, 12])
+@export var halcyon_hq_rest_heal_pct: int = 35
+@export var halcyon_hq_cache_choices: int = 3
+@export var halcyon_hq_max_attempts: int = 300
 ## REBEL_CELL DISPATCH: operatives (one per lane), layers per lane graph, lead limit (layers).
 @export var hq_lanes_required: int = 3
 @export var hq_lane_layers: int = 7

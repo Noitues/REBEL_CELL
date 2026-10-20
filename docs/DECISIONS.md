@@ -9302,3 +9302,23 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v
 - balance.py reports print the policy label on every report header ("reference (heuristic, lookahead 2)"), and the fight
   report has a table of damage dealt per turn and the both-wheels share by tier labelled with the policy.
 - Test: tests/unit/test_balance_reference_policy.gd (fast tier).
+
+## 2026-10-19 - Halcyon THE EYE v2 (WH-20, WH-21, WH-22; designer rulings H1-H5, HA1-HA6 at defaults applied)
+
+Spec: `docs/handoff/plan2/drafts/themes/v2/halcyon.md`, `drafts/hq/halcyon.md`. Built on branch `halcyon-v2`. Code: `EyeRules` (pure), `HalcyonHqGraph`, theme fields in `corp_theme.halcyon` (campaign: `eye_index`, `eye_fixed_left`; run: `spotted_level`, `eye_phase`, `eye_step`, `hq`, `hq_alert`, `hq_asleep_left`, `power_cut_used`, `stalled_this_layer`, `entered_state`). Streams: `eye_start` (one draw at campaign start, stored in `eye_index`, never redrawn on load) and `hq_graph`. Save: additive fields only, no version bump (a field at its default is not written).
+
+- **Campaign turn (H2, HA1).** One ended netrun (won, died or abandoned) ticks the Eye (`NetrunSession._eye_turn_end`, called from `_complete_run` and `_die`); an Exploit extracted that run then re-aims it and sets `eye_fix_turns`. Raids and patrols that are not netruns do not tick. Config renamed `eye_move_per_netrun` to `eye_move_per_turn`, `eye_fix_netruns` to `eye_fix_turns`.
+- **Bearing.** Derived, not saved: the angle of the site's `map_position` from the home server's, 0 = up, clockwise. The home server has no bearing and is never inside a wedge.
+- **Blade (H3).** Combat override `blade`; `CombatResolver._blade_scan` applies TIER_DOWN x `blade_tier_drop` to the slot `(turn-1) mod n` over non-empty slots at turn start (a temporary ENCRYPTED stack absorbs it), `_blade_clear` removes it after the resolve. Level 1 = Elite, Rack, mini-boss; level 2 = every fight; Elite +`spotted_elite_heat` at level 2.
+- **Raid wedge (H5, HA6).** `RaidResult.eye_wedge` {site: pct}; the same `raid_eye_damage_pct` whether the Eye moves or is FIXED; preview == result because the projection runs the same resolver.
+- **HQ.** 13 layers (12 route + vault), kinds and azimuths from config tables, Annex rooms (cache, Power Room, rest) are extra non-fight nodes in their layer, two climb edges (`climb_from` on the target). Non-fight nodes in the eye are SHUTTERED and refused by `enter_node` (H4, HA4); the beam blocks any kind. Gaze step: +1 per node entered, +2 per climb edge (arrival is shown at +1 extra), +1 per Stall. Alert, Lockdown (beam x2, Blade +1 capped at 2, HA2), Stall (HA3: no Heat), Cut the Power once per run in the Power Room (HA5).
+
+**Open questions for the designer** (defaults built):
+1. Stall is once per layer, but if every option is closed a second Stall is allowed (otherwise Lockdown can soft-lock a layer; the spec's "at most 7 Stalls open a node" needs more than one).
+2. The Alert gain for a fight in the eye is paid when the fight is won ("completed"); the Blade level at the fight's start reads the Alert before it.
+3. HQ Elite Heat (+1) uses the effective Blade level (launch level plus Lockdown bonus), not only the launch level.
+4. Annex rooms are always present (cache at L3, Power Room at L7, rest at L9 by config); the v1 draft's Exploit-owned Annexes (Archive, Panel, Leak) are replaced by the v2 rest / cache / Power Room set.
+5. Mid-ladder Racks (K) are elite fights without a Rack capture, as on the Solace ladder; the Antechamber at L12 uses the mini-boss pool.
+6. The reachability solver checks a climb-free open path and, per climb, one open node in every layer from the target on; Alert 0 and the normal beam.
+7. The launch card / chip text uses TextDb keys; the view for Stall, Cut the Power, the eye dial and the node-state badges is a data hook only (`hq_option_states`, `hq_dial`, `hq_edge_preview`, `stall_preview`, `cut_power_preview`, `EyeRules.launch_preview`), left to the art / UI pass.
+8. `eye_shuttered_cost_heat` (v1 draft) is now unused; left in config.

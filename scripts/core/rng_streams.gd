@@ -18,6 +18,8 @@ const HQ_GRAPH_STREAM: StringName = &"hq_graph"
 const CITY_BLOCKS_STREAM: StringName = &"city_blocks"
 ## CITY-A2 step 2: the A2 terrain's noise lattice (CityA2Terrain), from the config's fixed terrain seed (no campaign seed).
 const CITY_TERRAIN_STREAM: StringName = &"city_terrain"
+## Halcyon v2: the Eye's first octant, drawn once at campaign start and stored.
+const EYE_START_STREAM: StringName = &"eye_start"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

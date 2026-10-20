@@ -1509,6 +1509,18 @@
 			"seconds": 70.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_halcyon_hq_graph.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_halcyon_eye_rules.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_halcyon_hq_eye.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_solace_hq_graph.gd": {
 			"seconds": 6.0,
 			"tier": "fast"

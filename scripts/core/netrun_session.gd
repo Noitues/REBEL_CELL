@@ -68,6 +68,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	s._bloom_load_keys(corp)
+	s._halcyon_begin_street(corp, site_id)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -210,7 +211,11 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
-	s.run.map = SolaceHqGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM))
+	var graph_stream := RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM)
+	if EyeRules.applies(corp):
+		s._halcyon_begin_hq(corp, site_id, graph_stream)
+	else:
+		s.run.map = SolaceHqGraph.generate(s.config, graph_stream)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
 	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
@@ -222,10 +227,232 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	return s
 
 
-## Whether the HQ breach of `corp` runs through the ladder (only Solace so far; the other
+## Halcyon v2 (WH-21): the street launch snapshot (rule 6): Spotted level 0 / 1 / 2, taken once and
+## never changed mid-run.
+func _halcyon_begin_street(corp: CorporationData, site_id: StringName) -> void:
+	if not EyeRules.applies(corp):
+		return
+	run.corp_theme.halcyon.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+
+
+# --- Halcyon HQ: the gaze (WH-22) ------------------------------------------------------------
+
+## The extra gaze steps a climb edge `from_id` -> `node` takes over a normal one.
+func hq_climb_extra(node: Dictionary, from_id: StringName) -> int:
+	return config.hq_gaze_step_per_climb - config.hq_gaze_step_per_node if HalcyonHqGraph.is_climb(node, from_id) else 0
+
+
+## Whether the Eye is asleep now (Cut the Power).
+func hq_asleep() -> bool:
+	return run.corp_theme.halcyon.hq_asleep_left > 0
+
+
+## The state of option `node_id` as it would be on arrival: the gaze at (eye_step + the climb
+## extra) for this run's launch phase, with the beam at the current Alert. Pure; nothing changes.
+func hq_option_state(node_id: StringName) -> EyeRules.NodeState:
+	var h := run.corp_theme.halcyon
+	var node := run.map.get_node(node_id)
+	var step := h.eye_step + hq_climb_extra(node, run.current_node_id)
+	return EyeRules.node_state(node, h.eye_phase, step, h.hq_alert, hq_asleep(), config)
+
+
+## Every option's state: {node id: EyeRules.NodeState} over `available_nodes()` (also the closed ones).
+func hq_option_states() -> Dictionary:
+	var out := {}
+	if not run.corp_theme.halcyon.hq:
+		return out
+	for id in available_nodes():
+		out[id] = hq_option_state(id)
+	return out
+
+
+## The options that can be entered now (OPEN or SPOTTED).
+func hq_enterable_nodes() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id in available_nodes():
+		if not run.corp_theme.halcyon.hq or EyeRules.enterable(hq_option_state(id)):
+			out.append(id)
+	return out
+
+
+## The eye dial: the gaze centre now and for the next `hq_dial_steps - 1` steps, [{step, centre, asleep}].
+func hq_dial() -> Array[Dictionary]:
+	var h := run.corp_theme.halcyon
+	var out: Array[Dictionary] = []
+	for i in config.hq_dial_steps:
+		out.append({"step": h.eye_step + i, "centre": EyeRules.gaze_centre(h.eye_phase, h.eye_step + i, config), "asleep": i < h.hq_asleep_left})
+	return out
+
+
+## Hover on an edge: the gaze at arrival, {state, centre, step}.
+func hq_edge_preview(node_id: StringName) -> Dictionary:
+	var h := run.corp_theme.halcyon
+	var step := h.eye_step + hq_climb_extra(run.map.get_node(node_id), run.current_node_id)
+	return {"state": hq_option_state(node_id), "centre": EyeRules.gaze_centre(h.eye_phase, step, config), "step": step}
+
+
+## Entering a node takes a gaze step (a climb takes more), spends one asleep step and clears the
+## Stall mark; the entered state is kept for the fight's Blade.
+func _hq_after_enter(state: EyeRules.NodeState, extra: int) -> void:
+	var h := run.corp_theme.halcyon
+	h.entered_state = state
+	_hq_step(config.hq_gaze_step_per_node + extra)
+	h.stalled_this_layer = false
+
+
+func _hq_step(steps: int) -> void:
+	var h := run.corp_theme.halcyon
+	h.eye_step += steps
+	h.hq_asleep_left = maxi(0, h.hq_asleep_left - steps)
+
+
+## Whether Stall is allowed: one per layer, unless every option is closed (then the Eye must pass).
+func can_stall() -> bool:
+	var h := run.corp_theme.halcyon
+	if not h.hq or run.phase != RunState.Phase.MAP or run.is_over():
+		return false
+	return not h.stalled_this_layer or hq_enterable_nodes().is_empty()
+
+
+## Stall (rule 18): advance the gaze one step, complete nothing, add Alert.
+func stall() -> Array[Dictionary]:
+	last_events = []
+	if not can_stall():
+		return _refuse("Stall is not available here.")
+	var h := run.corp_theme.halcyon
+	_hq_step(config.hq_gaze_step_per_stall)
+	h.hq_alert += config.hq_alert_gain_stall
+	h.stalled_this_layer = true
+	last_events.append({"type": "stall", "step": h.eye_step, "alert": h.hq_alert, "text": "Stall: the Eye passes (step %d, Alert %d)." % [h.eye_step, h.hq_alert]})
+	_sync()
+	return last_events
+
+
+## What Stall would do: {step, alert, centre, states} (the options as they would read after it).
+func stall_preview() -> Dictionary:
+	if not can_stall():
+		return {}
+	var copy := NetrunSession.from_dict(resolver, campaign.duplicate_state(), to_dict(), corporation)
+	copy.stall()
+	var h := copy.run.corp_theme.halcyon
+	return {"step": h.eye_step, "alert": h.hq_alert, "centre": EyeRules.gaze_centre(h.eye_phase, h.eye_step, config), "states": copy.hq_option_states()}
+
+
+## Whether the operative stands in the Power Room with the action unused.
+func can_cut_power() -> bool:
+	var h := run.corp_theme.halcyon
+	if not h.hq or h.power_cut_used or run.phase != RunState.Phase.MAP or run.is_over() or run.current_node_id == &"":
+		return false
+	return bool(run.current_node().get("power", false))
+
+
+## Cut the Power (rule 20): once per run, in the Power Room. The Eye sleeps for N gaze steps.
+func cut_the_power() -> Array[Dictionary]:
+	last_events = []
+	if not can_cut_power():
+		return _refuse("The Power Room action is not available.")
+	var h := run.corp_theme.halcyon
+	h.power_cut_used = true
+	h.hq_asleep_left = config.hq_power_cut_steps
+	h.hq_alert += config.hq_alert_gain_power_cut
+	last_events.append({"type": "power_cut", "asleep": h.hq_asleep_left, "alert": h.hq_alert, "text": "The Eye sleeps for %d steps (Alert %d)." % [h.hq_asleep_left, h.hq_alert]})
+	_sync()
+	return last_events
+
+
+## Cut the Power's preview: {asleep, alert}, or {} when it isn't available.
+func cut_power_preview() -> Dictionary:
+	if not can_cut_power():
+		return {}
+	return {"asleep": config.hq_power_cut_steps, "alert": run.corp_theme.halcyon.hq_alert + config.hq_alert_gain_power_cut}
+
+
+## Halcyon v2 (rules 7-9): the Blade level on the fight at the current node: the launch level on the
+## street; in the HQ, 0 off the Eye, else the launch level raised by Lockdown (capped).
+func eye_blade_level() -> int:
+	var h := run.corp_theme.halcyon
+	if h.hq:
+		if h.entered_state != EyeRules.NodeState.SPOTTED:
+			return 0
+		return EyeRules.hq_blade_level(h.spotted_level, h.hq_alert, config)
+	return h.spotted_level
+
+
+func _eye_fight_class(final_rack: bool) -> StringName:
+	return EyeRules.fight_class(run.current_node(), final_rack and run.kind == "netrun")
+
+
+## The combat override the Blade adds to the fight at the current node ({} when it is off).
+func _blade_overrides(final_rack: bool) -> Dictionary:
+	if run.map == null or run.current_node_id == &"":
+		return {}
+	var h := run.corp_theme.halcyon
+	if not h.hq and h.spotted_level <= 0:
+		return {}
+	return {"blade": true} if EyeRules.blade_applies(eye_blade_level(), _eye_fight_class(final_rack), config) else {}
+
+
+## Halcyon v2 (rule 3-4): a campaign turn ends with the run (won, died or abandoned). The Eye
+## ticks, then an Exploit extracted this turn (`events` holds an "exploit" event) fixes it on that
+## Site's octant. Logs the move.
+func _eye_turn_end(events: Array[Dictionary]) -> void:
+	if not EyeRules.applies(corporation):
+		return
+	var fix_bearing := -1
+	for e in events:
+		if e.get("type", "") == "exploit":
+			fix_bearing = EyeRules.bearing_deg(corporation.city_grid, run.site_id)
+	var h := campaign.corp_theme.halcyon
+	var r := EyeRules.campaign_turn(h, config, fix_bearing)
+	var text := "The Eye moves to octant %d." % h.eye_index if r["moved"] else "The Eye holds (%d turn(s) left fixed)." % h.eye_fixed_left
+	if r["fixed"]:
+		text = "The Eye is FIXED on octant %d for %d turns." % [h.eye_index, h.eye_fixed_left]
+	last_events.append({"type": "eye_turn", "index": h.eye_index, "fixed_left": h.eye_fixed_left, "moved": r["moved"], "fixed": r["fixed"], "text": text})
+
+
+## Halcyon v2 (WH-22): the HQ run's Eye state and graph. The launch snapshot (`spotted_level`)
+## is taken once from the campaign's Eye and the HQ site's bearing; Alert starts at it; the graph is
+## rebuilt from stream `hq_graph` until it is reachable for the launch phase.
+func _halcyon_begin_hq(corp: CorporationData, site_id: StringName, graph_stream: RandomNumberGenerator) -> void:
+	var h := run.corp_theme.halcyon
+	h.hq = true
+	h.eye_phase = campaign.corp_theme.halcyon.eye_index
+	h.eye_step = 0
+	h.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+	h.hq_alert = h.spotted_level
+	run.map = HalcyonHqGraph.generate(config, graph_stream, h.eye_phase)
+
+
+## Halcyon HQ non-fight rooms: a rest bay heals, an Evidence Locker offers a Daemon, the Power Room
+## waits for Cut the Power. Returns the events, or [] when `node` is a fight / event / shop.
+func _halcyon_room(node: Dictionary) -> Array[Dictionary]:
+	if bool(node.get("rest", false)):
+		var healed := mini(run.operative.max_hp - run.operative.hp, run.operative.max_hp * config.halcyon_hq_rest_heal_pct / 100)
+		run.operative.hp += healed
+		last_events.append({"type": "hq_rest", "amount": healed, "text": "Maintenance Bay: +%d HP (%d/%d)." % [healed, run.operative.hp, run.operative.max_hp]})
+		_sync()
+		return last_events
+	if bool(node.get("cache", false)):
+		var daemons: Array = []
+		for d in _pools["daemons"]:
+			if not run.operative.daemon_ids.has(d):
+				daemons.append(d)
+		_offer(&"daemon", daemons, config.halcyon_hq_cache_choices, streams.get_stream(&"rewards"))
+		if not run.pending_rewards.is_empty():
+			run.phase = RunState.Phase.REWARD
+		_sync()
+		return last_events
+	if bool(node.get("power", false)):
+		last_events.append({"type": "power_room", "text": "The Power Room: the Eye's feed can be cut once."})
+		_sync()
+		return last_events
+	return [] as Array[Dictionary]
+
+
+## Whether the HQ breach of `corp` runs through the ladder (Solace and Halcyon so far; the other
 ## corporations keep the single-node "boss" run until their HQ slices).
 static func uses_hq_ladder(corp: CorporationData) -> bool:
-	return corp != null and corp.id == BloomRules.SOLACE_ID
+	return corp != null and (corp.id == BloomRules.SOLACE_ID or corp.id == EyeRules.HALCYON_ID)
 
 
 static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary, corp: CorporationData = null) -> NetrunSession:
@@ -269,6 +496,14 @@ func state_hash() -> int:
 ## RunThemeState.ChipKind}; {} hides the chip. No theme rule fills it yet (WH-11 and the
 ## later corp slices add theirs here); like every preview it reads state and changes nothing.
 func theme_chip() -> Dictionary:
+	var h := run.corp_theme.halcyon
+	if not run.is_over() and (h.hq or h.spotted_level > 0):
+		if h.hq:
+			var warn := EyeRules.lockdown(h.hq_alert, config)
+			return {"key": TextDb.mark("EYE ALERT"), "args": [], "value": "%d/%d" % [h.hq_alert, config.hq_lockdown_alert],
+				"kind": RunThemeState.ChipKind.DANGER if warn else (RunThemeState.ChipKind.WARN if h.spotted_level > 0 else RunThemeState.ChipKind.INFO)}
+		return {"key": TextDb.mark("SPOTTED"), "args": [], "value": "%d/2" % h.spotted_level,
+			"kind": RunThemeState.ChipKind.DANGER if h.spotted_level >= 2 else RunThemeState.ChipKind.WARN}
 	var b := run.corp_theme.solace
 	if not b.enabled or run.is_over():
 		return {}
@@ -447,7 +682,16 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 		return _refuse("Node %s is not reachable from here." % node_id)
 	var node := run.map.get_node(node_id)
 	var across := entered_across(node, run.current_node_id)
+	var eye_state := EyeRules.NodeState.OPEN
+	var eye_extra := 0
+	if run.corp_theme.halcyon.hq:
+		eye_state = hq_option_state(node_id)
+		if not EyeRules.enterable(eye_state):
+			return _refuse("%s is %s: it can't be entered." % [node_id, EyeRules.NodeState.keys()[eye_state]])
+		eye_extra = hq_climb_extra(node, run.current_node_id)
 	run.current_node_id = node_id
+	if run.corp_theme.halcyon.hq:
+		_hq_after_enter(eye_state, eye_extra)
 	run.visited.append(node_id)
 	var bloom := run.corp_theme.solace
 	_bloom_refresh_heat()
@@ -458,7 +702,11 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
 		_add_heat(node["heat"], "elite node")
-	if bool(node.get("rest", false)):
+	if run.corp_theme.halcyon.hq:
+		var room := _halcyon_room(node)
+		if not room.is_empty():
+			return room
+	elif bool(node.get("rest", false)):
 		# WH-10: the Solace HQ rest room is the ward rest (the front goes back by dose_push).
 		bloom_ward_rest()
 		last_events.append({"type": "ward_rest", "gap_milli": BloomRules.gap_milli(bloom), "text": "Ward rest: the front falls back."})
@@ -520,6 +768,8 @@ func _start_combat(elite: bool) -> void:
 		run.normal_fights_started += 1
 	combat = _combat_from(setup)
 	run.phase = RunState.Phase.COMBAT
+	if run.corp_theme.halcyon.hq or run.corp_theme.halcyon.spotted_level > 0:
+		_add_heat(EyeRules.spotted_heat(eye_blade_level(), _eye_fight_class(final_rack), config), "the Eye's Blade")
 	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
 		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
 	_apply_campaign_effects(combat.last_events)
@@ -545,6 +795,7 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
 	var overrides := boss_exploits.duplicate(true)
+	overrides.merge(_blade_overrides(final_rack))
 	overrides.merge({
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
@@ -655,6 +906,8 @@ func _finish_combat() -> void:
 		for d in cs.living_drones():
 			run.drones.append({"source_id": String(d.source_id), "hp": d.hp, "dock_slot": d.dock_slot})
 	run.combats_won += 1
+	if run.corp_theme.halcyon.hq and run.corp_theme.halcyon.entered_state == EyeRules.NodeState.SPOTTED:
+		run.corp_theme.halcyon.hq_alert += config.hq_alert_gain_eye_fight  # rule 16: a fight completed IN THE EYE
 	var elite: bool = node["elite"]
 	var ladder := run.kind == HQ_LADDER_KIND
 	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
@@ -1297,6 +1550,7 @@ func _complete_run() -> void:
 		var done := CampaignRules.on_run_completed(campaign, corporation, config, run, lookup)
 		CampaignRules.name_pending_raids(campaign, lookup, done)
 		last_events.append_array(done)
+		_eye_turn_end(done)
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -1315,6 +1569,7 @@ func _die() -> void:
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
 	_add_heat(HeatRules.death_heat(campaign, config, run.tier), "operative death")
+	_eye_turn_end([] as Array[Dictionary])
 
 
 ## Abandon run (designer ruling 2026-10-05, GDD 4.5): the operative is killed on the run, so

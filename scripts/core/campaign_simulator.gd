@@ -215,6 +215,9 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 			RunState.Phase.MAP:
 				var next := _pick_node(s)
 				if next == &"":
+					if s.can_stall():
+						s.stall()  # Halcyon HQ: every option is closed, let the Eye pass
+						continue
 					break
 				if probe != null:
 					probe.on_node(s)
@@ -270,7 +273,7 @@ func _pick_node(s: NetrunSession) -> StringName:
 	var hp_low := s.run.operative.hp * 2 < s.run.operative.max_hp
 	var best: StringName = &""
 	var best_key := -1000000000
-	for id in s.available_nodes():
+	for id in s.hq_enterable_nodes():
 		var node := s.run.map.get_node(id)
 		var key := 0
 		match int(node["type"]):
