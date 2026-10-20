@@ -865,6 +865,8 @@ extends Resource
 @export var veg_coast_clear: int = 3
 ## Designer 2026-10-20 (the stepped coast): weld the ground / land meshes' shared corners so slopes shade smooth.
 @export var ground_smooth_normals: bool = true
+## Designer 2026-10-20: the A2 road classes on raised decks, whose lots draw ground rather than a street square.
+@export var ground_deck_classes: Array[StringName] = [&"ring", &"motorway", &"truck"]
 @export var island_min_d: float = 10.0
 @export var island_r_k: float = 0.25
 @export var island_r_max: float = 8.0

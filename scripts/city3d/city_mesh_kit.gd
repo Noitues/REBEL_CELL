@@ -244,7 +244,12 @@ static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: A
 	for p: Dictionary in plazas:
 		_lot_quad_on(st, cfg, terrain, p["lot"], 0.005, cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12))
 	for s: Dictionary in streets:
-		_lot_quad_on(st, cfg, terrain, s["lot"], 0.01, cfg.street)
+		# Designer 2026-10-20 (the dark steps along the ring road): a lot under a raised deck (CityA2Features) keeps its
+		# ground, not a street square, so the deck's smooth line is the road.
+		var sl: Vector2i = s["lot"]
+		if cfg.ground_deck_classes.has(terrain.road_class(sl.x, sl.y)):
+			continue
+		_lot_quad_on(st, cfg, terrain, sl, 0.01, cfg.street)
 	# LOOK L5 (designer 2026-10-20, "the stepped ground edge"): shared corners weld, so the slope shades smooth rather
 	# than as each lot's two flat triangles (the shore's sawtooth).
 	if cfg.ground_smooth_normals:

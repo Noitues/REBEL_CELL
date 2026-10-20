@@ -114,6 +114,14 @@ func is_water_at(x: float, y: float) -> bool:
 	return coarse_water[j * _cw + i] != 0
 
 
+## The A2 road class over lot (i, j) (&"" = none / a local street).
+func road_class(i: int, j: int) -> StringName:
+	if _ras == null:
+		return &""
+	var rr := _ras.road_rank(i, j)
+	return CityPlanA2.ROAD_CLASSES[rr - 1] if rr > 0 and rr <= CityPlanA2.ROAD_CLASSES.size() else &""
+
+
 ## The ground (BU) at the centre of lot (i, j) (streets, plazas, lot markers).
 func lot_height(i: int, j: int) -> float:
 	return height_at(i + 0.5, j + 0.5)
