@@ -105,7 +105,7 @@ extends Resource
 	"aaa_rain1b": Vector3(0.0, 1.0, 1.0), "aaa_rain2b": Vector3(0.0, 3.0, 1.6)}
 @export var whole_moon_color: Color = Color(0.78, 0.8, 0.86)
 ## ... and its energy (the plate's night land and mountains read dark blue-grey, not black).
-@export var whole_moon_energy: float = 0.12
+@export var whole_moon_energy: float = 0.15
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
@@ -396,8 +396,8 @@ extends Resource
 @export var plaza: Color = Color(0.26, 0.25, 0.30)
 ## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
 ## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
-@export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.20, 0.26, 0.11),
-	"rock": Color(0.46, 0.42, 0.35), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+@export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.25, 0.33, 0.13),
+	"rock": Color(0.60, 0.56, 0.50), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
 	"beach_k": 0.0, "noise_lo": 0.92, "noise_span": 0.16}
