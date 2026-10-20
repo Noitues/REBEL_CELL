@@ -1,0 +1,132 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=26 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/map_edit_data.gd" id="edit"]
+[ext_resource type="Script" path="res://scripts/data/event_fight_data.gd" id="fight"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_wheel_slice_data.gd" id="slice"]
+[ext_resource type="Script" path="res://scripts/data/event_wheel_data.gd" id="wheel"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/26_wheel_any.md.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("fight")
+enemy_id = &"patrol_unit"
+normal_rewards = false
+win_cycles = 20
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("fx")
+type = 0
+target = 0
+amount = 6
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("slice")
+label = "Dead end (-6 HP, +2 Heat)"
+size_ticks = 4
+effects = Array[ExtResource("fx")]([SubResource("s2"), SubResource("s3")])
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("fx")
+type = 14
+target = 0
+amount = 8
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("slice")
+label = "Crawlspace (+8 HP)"
+size_ticks = 7
+effects = Array[ExtResource("fx")]([SubResource("s5")])
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("edit")
+op = 4
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("slice")
+label = "Skip (bypass the next layer)"
+size_ticks = 5
+map_edits = Array[ExtResource("edit")]([SubResource("s7")])
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 30
+
+[sub_resource type="Resource" id="s10"]
+script = ExtResource("slice")
+label = "Stash (+30 Cycles)"
+size_ticks = 4
+effects = Array[ExtResource("fx")]([SubResource("s9")])
+
+[sub_resource type="Resource" id="s11"]
+script = ExtResource("slice")
+label = "Guard post (fight a Patrol Unit; win +20 Cycles)"
+size_ticks = 6
+starts_combat = SubResource("s1")
+
+[sub_resource type="Resource" id="s12"]
+script = ExtResource("slice")
+label = "Loose cable (a Firmware chip)"
+size_ticks = 4
+common_firmware = true
+
+[sub_resource type="Resource" id="s13"]
+script = ExtResource("wheel")
+id = &"wheel_hatch"
+slices = Array[ExtResource("slice")]([SubResource("s4"), SubResource("s6"), SubResource("s8"), SubResource("s10"), SubResource("s11"), SubResource("s12")])
+free_nudges = 2
+extra_nudge_hp = 2
+extra_nudge_heat = 1
+extra_nudge_cycles = 8
+max_extra_nudges = 6
+
+[sub_resource type="Resource" id="s14"]
+script = ExtResource("ch")
+label = "Crank the dial (event wheel; 2 free nudges, more cost 2 HP, 1 Heat or 8 Cycles)"
+result_text = "The crawlspace swallows you. Wherever it spits you out, that's where you are now."
+event_wheel = SubResource("s13")
+
+[sub_resource type="Resource" id="s15"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 15
+
+[sub_resource type="Resource" id="s16"]
+script = ExtResource("ch")
+label = "Salvage the dial mechanism (+15 Cycles)"
+result_text = "Brass and a little gold. The shortcut is gone, but the scrap isn't."
+effects = Array[ExtResource("fx")]([SubResource("s15")])
+
+[sub_resource type="Resource" id="s17"]
+script = ExtResource("fx")
+type = 14
+target = 0
+amount = 4
+
+[sub_resource type="Resource" id="s18"]
+script = ExtResource("ch")
+label = "Walk on (heal 4 HP)"
+result_text = "You take the stairs like a civilian and catch your breath."
+effects = Array[ExtResource("fx")]([SubResource("s17")])
+
+[resource]
+script = ExtResource("main")
+id = &"ev_service_hatch"
+title = "Service Hatch"
+speaker = 1
+text = "Maintenance hatch behind the rack, stenciled with a route number that doesn't exist on any map. Somebody scratched a dial into the lid, six notches, each marked in grease pencil. Old runner trick: crank it and see where the crawlspace dumps you. The dial sticks, though. You can lean on it, but it costs."
+choices = Array[ExtResource("ch")]([SubResource("s14"), SubResource("s16"), SubResource("s18")])
+corporation_id = &""
+min_tier = 2
+weight = 0.8

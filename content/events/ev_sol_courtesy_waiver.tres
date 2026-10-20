@@ -1,0 +1,73 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_combat_mods_data.gd" id="mods"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/01_future_solace.md.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("mods")
+enemy_wheel_frozen = true
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("ch")
+label = "Waive the next dispatch (next fight: enemy starts Frozen)"
+result_text = "Odile flags a scheduling conflict. Somewhere down the line, a unit sits idle waiting for an authorization that never comes."
+next_combat_overrides = SubResource("s1")
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("mods")
+enemy_resistance_delta = -1
+enemy_hp_pct = -15
+duration_combats = 3
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("ch")
+label = "Rewrite the route file (next 3 fights: enemy -1 resistance, enemy HP -15%; -6 HP, +2 Heat)"
+result_text = "Odile types for ninety seconds without blinking. The clerk's work holds, but the audit flag she trips follows you out the door."
+hp_cost = 6
+next_combat_overrides = SubResource("s4")
+effects = Array[ExtResource("fx")]([SubResource("s3")])
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("mods")
+player_extra_free_nudges = 1
+reveal_phases = true
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("ch")
+label = "Ask for a pre-authorized exit (next fight: one free nudge, enemy phase layout revealed; pay 15 Cycles)"
+result_text = "Courtesy adjustments come with a processing fee, Odile says, almost apologizing. Policy. You pay. She slides you the unit's service chart."
+cycle_cost = 15
+next_combat_overrides = SubResource("s6")
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("ch")
+label = "Tell her to keep her badge clean (-1 Heat)"
+result_text = "Odile exhales. Then you owe me nothing, and I owe you everything. She logs out. You can't tell whether that is mercy or a debt you'll regret."
+effects = Array[ExtResource("fx")]([SubResource("s8")])
+
+[resource]
+script = ExtResource("main")
+id = &"ev_sol_courtesy_waiver"
+title = "Courtesy Waiver"
+speaker = 1
+text = "The Terminal is a Continuum claims window, still logged in. A clerk named Odile sits behind it, three weeks from a performance review she won't survive. Last spring you got her mother's leash reinstated, and she hasn't forgotten. I can waive something on their side, she whispers. Courtesy adjustment. Just don't make me pick what. Her badge light is already blinking. Someone is watching her queue."
+choices = Array[ExtResource("ch")]([SubResource("s2"), SubResource("s5"), SubResource("s7"), SubResource("s9")])
+corporation_id = &"solace"
+min_tier = 1
+weight = 1.0

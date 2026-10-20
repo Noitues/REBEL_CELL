@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/map_edit_data.gd" id="edit"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/08_paths_solace.md.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("edit")
+op = 0
+layer_offset = 2
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("edit")
+op = 1
+layer_offset = 1
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("ch")
+label = "Spring him (-8 HP, +2 Heat)"
+result_text = "The lock gives. He hands you a route sheet, shaking: the Collections lift he was wheeled in on. You open it. Down the hall a shutter drops, welded from the other side."
+hp_cost = 8
+map_edits = Array[ExtResource("edit")]([SubResource("s2"), SubResource("s3")])
+effects = Array[ExtResource("fx")]([SubResource("s1")])
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("edit")
+op = 3
+layer_offset = 1
+layer_count = 2
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("ch")
+label = "Sell the complaint (free)"
+result_text = "You log his complaint as a formal Grievance Packet. The Terminal pays in the only currency it has: a full node readout for the layers ahead. The man is moved to Ward 9. The door closes."
+map_edits = Array[ExtResource("edit")]([SubResource("s5")])
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("edit")
+op = 2
+layer_offset = 1
+convert_from = 0
+convert_to = 1
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("edit")
+op = 0
+use_previous_target = true
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("ch")
+label = "Pay the arrears (-45 Cycles)"
+result_text = "Forty-five Cycles clears his balance. The implant lights. He doesn't thank you; he walks you to a maintenance hatch, and you walk out of Solace's well-lit route entirely."
+cycle_cost = 45
+map_edits = Array[ExtResource("edit")]([SubResource("s7"), SubResource("s8")])
+
+[sub_resource type="Resource" id="s10"]
+script = ExtResource("ch")
+label = "Walk on"
+result_text = "You don't look at door 6. The glass fogs, then clears."
+
+[resource]
+script = ExtResource("main")
+id = &"ev_solace_wellness_hold"
+title = "Wellness Hold"
+speaker = 1
+text = "The Terminal sits in a corridor of frosted doors, each one stenciled WELLNESS HOLD, VOLUNTARY. Behind the glass of door 6 a man in a Solace gown is pressing his dead implant against the pane, mouthing a number: his arrears. The door log says he agreed to the stay. The signature is a thumbprint taken while he was sedated. He knows which service corridors Collections uses, and which ones they'll weld shut the moment this door opens."
+choices = Array[ExtResource("ch")]([SubResource("s4"), SubResource("s6"), SubResource("s9"), SubResource("s10")])
+corporation_id = &"solace"
+min_tier = 2
+weight = 0.8
