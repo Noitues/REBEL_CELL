@@ -37,6 +37,15 @@ extends Resource
 	"netrun": [30.0, 27.0, 190.0],
 	"close": [27.0, 27.0, 60.0],
 }
+## Whole-city pose (designer 2026-10-19: the zoomed-out views match the A2 golden plate's hero camera; the playable
+## City Grid keeps yaw/pitch above). Perspective from the south over the bay looking north: yaw, pitch, horizontal
+## field of view (the plate's 28 mm lens on a 36 mm sensor), eye distance from the target (BU) and the target's offset
+## from the city's centre (lots, +x east, +y south).
+@export var whole_pose_yaw_deg: float = 90.0
+@export var whole_pose_pitch_deg: float = 33.0
+@export var whole_pose_fov_deg: float = 65.47
+@export var whole_pose_dist_bu: float = 1130.0
+@export var whole_pose_target_lots: Vector2 = Vector2(2.0, 2.0)
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread

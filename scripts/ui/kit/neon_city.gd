@@ -388,6 +388,15 @@ var _sky_shown: bool = false
 ## ANIM-R6 A14 (combat, a minimal change here): while true, a bake that would land over the
 ## silhouette waits (the silhouette stays); set back to false, it lands and fades in. The
 ## fight holds it while a SEND IT replays, so the city never switches in mid-turn.
+## Whole-city pose (designer 2026-10-19): when set (a city-centre lot point), the 3D camera is the A2 plate's hero
+## pose (CityIsoCamera.whole_pose) instead of this map's iso frame. For zoomed-out views with no map marks (title
+## drift, design review, parity captures); the 2D overlay keeps the iso projection, so hosts hide it meanwhile.
+var whole_pose_centre: Vector2 = Vector2.INF:
+	set(v):
+		if v != whole_pose_centre:
+			whole_pose_centre = v
+			if is_inside_tree():
+				refresh()
 var hold_landing: bool = false:
 	set(v):
 		if v == hold_landing:
@@ -1364,6 +1373,8 @@ func iso_camera(rect: Rect2 = Rect2()) -> CityIsoCamera:
 	var cfg: CityConfig = CityView3D.CONFIG
 	_camera()
 	var r := rect if rect.has_area() else Rect2(Vector2.ZERO, size)
+	if whole_pose_centre != Vector2.INF:
+		return CityIsoCamera.whole_pose(cfg, whole_pose_centre, r.size.max(Vector2.ONE))
 	var g := _grid_of(r.get_center())
 	var ortho := maxf(r.size.x, 1.0) / px_per_bu()
 	return CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, g), ortho, r.size.max(Vector2.ONE))
@@ -2765,7 +2776,7 @@ func frame_stamp() -> Array:
 
 ## The camera's inputs (what `_camera` reads).
 func _camera_key() -> Array:
-	return [focus_grid, focus_anchor, size, district, pan, hq_anchor]
+	return [focus_grid, focus_anchor, size, district, pan, hq_anchor, whole_pose_centre]
 
 
 ## True when the city was last drawn (and its roofs placed) under the current camera:
