@@ -3103,6 +3103,8 @@ TerminalEventData.ev_hal_zoning_map.text,A zoning map shows your block rezoned a
 TerminalEventData.ev_hal_zoning_map.title,Zoning Map
 TerminalEventData.ev_honeypot.text,"A Solace vault sits open on the Terminal, credentials in the clear, 80 Cycles on the table. It is exactly as easy as it looks."
 TerminalEventData.ev_honeypot.title,Open Vault
+TerminalEventData.ev_hq_dead_letter_crate.text,"A courier bike idles at the loading door and leaves before anyone signs. It leaves behind a steel crate with no label, no manifest and a faint hum from the seams. The Cell hasn't ordered anything in weeks. Everyone at the door agrees it could be a gift, a trap, or someone else's problem that just became yours."
+TerminalEventData.ev_hq_dead_letter_crate.title,Unmarked Crate at the Loading Door
 TerminalEventData.ev_insurance_claim.text,"A Solace claims form, pre-filled, for an injury you haven't had yet."
 TerminalEventData.ev_insurance_claim.title,Insurance Claim
 TerminalEventData.ev_leash_on_the_floor.text,"A bricked implant lies in the maintenance corridor, still warm, still logging. A subbie ran out of renewals here. The log wants a signature before it will let go."

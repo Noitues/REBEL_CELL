@@ -161,6 +161,10 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var easy_normal_fights: int = 2
 ## Plan 2 EV-01: the highest tier an event fight's tier_delta can raise the enemy tables to.
 @export var event_fight_tier_cap: int = 4
+## Plan 2 EV-02 hosts: a won raid offers one RAID_WIN event (designer call, Q6: every win). false = none.
+@export var raid_win_event_enabled: bool = true
+## Plan 2 EV-02 hosts: after every Nth completed netrun the HQ offers one HQ_VIEW event. 0 = never.
+@export var hq_event_every_runs: int = 3
 @export var map_layers: int = 7
 @export var map_nodes_min: int = 2
 @export var map_nodes_max: int = 4
@@ -733,6 +737,8 @@ func validate() -> PackedStringArray:
 		errors.append("easy_normal_fights must be >= 0.")
 	if event_fight_tier_cap < 1 or event_fight_tier_cap > enemy_hp_scale_by_tier.size():
 		errors.append("event_fight_tier_cap must be 1..%d (the tiers the enemy tables cover)." % enemy_hp_scale_by_tier.size())
+	if hq_event_every_runs < 0:
+		errors.append("hq_event_every_runs must be >= 0 (0 = no HQ events).")
 	if resistance_min_by_class.size() != RC.EnemyClass.size() or resistance_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Resistance ranges need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

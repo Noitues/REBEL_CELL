@@ -1102,6 +1102,10 @@ func _show_current() -> void:
 	if s == null:
 		_show_start()
 		return
+	if s.is_event_session() and s.run.is_over():
+		# EV-02 hosts: a hub event (after a raid win, or at the HQ) has no run-end page; it ends back at the HQ.
+		RunManager.go_to_hq()
+		return
 	# ART-0 F (ported from art-pass W8c, ART_BIBLE v1 §10 rule 6): a modal never outlives a
 	# page change: the page changes once the open viewers have closed (a rebuild of the same
 	# page under a viewer, the Mainframe after a shred, goes on at once).

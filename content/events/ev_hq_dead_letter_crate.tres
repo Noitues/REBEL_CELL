@@ -1,0 +1,127 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=26 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/event_fight_data.gd" id="fight"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_combat_mods_data.gd" id="mods"]
+[ext_resource type="Script" path="res://scripts/data/event_wheel_slice_data.gd" id="slice"]
+[ext_resource type="Script" path="res://scripts/data/event_wheel_data.gd" id="wheel"]
+
+; HQ event (EV-02 hosts, Solace vertical, designer 2026-10-20): drafted in docs/handoff/plan2/drafts/events/29_hqview_any.md.
+; Venue HQ_VIEW: the hub opens it after every hq_event_every_runs-th completed netrun, as a hub event session. There
+; Cycles are bought from Schematics (10:1) and the Cycles left convert back, so a Cycle price is a Schematic price.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("fx")
+type = 23
+target = 6
+amount = 10
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 4
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 30
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("slice")
+label = "Salvage (+30 Cycles)"
+size_ticks = 10
+effects = Array[ExtResource("fx")]([SubResource("s3")])
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("slice")
+label = "Dud (the foam was all junk)"
+size_ticks = 12
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 4
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("mods")
+enemy_resistance_delta = 1
+duration_combats = 1
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("slice")
+label = "Live tracker (+4 Heat; the next netrun's first fight: enemy resistance +1)"
+size_ticks = 8
+effects = Array[ExtResource("fx")]([SubResource("s6")])
+next_combat_overrides = SubResource("s7")
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("wheel")
+id = &"wheel_dead_letter_crate"
+slices = Array[ExtResource("slice")]([SubResource("s4"), SubResource("s5"), SubResource("s8")])
+free_nudges = 1
+extra_nudge_cycles = 5
+max_extra_nudges = 3
+
+[sub_resource type="Resource" id="s10"]
+script = ExtResource("ch")
+label = "Pry it open (+10 Schematics, +4 Heat; then spin the contents wheel)"
+result_text = "The lid comes up on foam, wiring and one sealed pouch. Half the contents are junk. The other half is not."
+effects = Array[ExtResource("fx")]([SubResource("s1"), SubResource("s2")])
+event_wheel = SubResource("s9")
+
+[sub_resource type="Resource" id="s11"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 20
+
+[sub_resource type="Resource" id="s12"]
+script = ExtResource("ch")
+label = "Have a stationed operative inspect it (-6 HP, +20 Cycles, a common Firmware)"
+result_text = "She reads the seams like a ledger, defuses the tamper wire and hands you the clean half of the haul. The wire bit her anyway."
+hp_cost = 6
+effects = Array[ExtResource("fx")]([SubResource("s11")])
+common_firmware = true
+
+[sub_resource type="Resource" id="s13"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="s14"]
+script = ExtResource("ch")
+label = "Leave it on the loading dock (-1 Heat)"
+result_text = "You log it as unclaimed and walk away. By morning the crate is gone. So is the hum, and so is the itch in the back of your neck."
+effects = Array[ExtResource("fx")]([SubResource("s13")])
+
+[sub_resource type="Resource" id="s15"]
+script = ExtResource("fight")
+enemy_id = &"tariff_collector"
+normal_rewards = false
+win_heat = -2
+win_daemon = true
+
+[sub_resource type="Resource" id="s16"]
+script = ExtResource("ch")
+label = "Trace the sender (-15 Cycles; fight an enforcer: win a Daemon and -2 Heat)"
+result_text = "The trace bounces twice and lands on a corporate collections desk. An enforcer is already on the way to retrieve their property."
+cycle_cost = 15
+starts_combat = SubResource("s15")
+
+[resource]
+script = ExtResource("main")
+id = &"ev_hq_dead_letter_crate"
+title = "Unmarked Crate at the Loading Door"
+speaker = 0
+text = "A courier bike idles at the loading door and leaves before anyone signs. It leaves behind a steel crate with no label, no manifest and a faint hum from the seams. The Cell hasn't ordered anything in weeks. Everyone at the door agrees it could be a gift, a trap, or someone else's problem that just became yours."
+choices = Array[ExtResource("ch")]([SubResource("s10"), SubResource("s12"), SubResource("s14"), SubResource("s16")])
+corporation_id = &""
+min_tier = 1
+weight = 0.8
+venue = 2

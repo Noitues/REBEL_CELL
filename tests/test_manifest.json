@@ -33,6 +33,14 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_ev02_event_hosts.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_ev02_event_hosts_flow.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_wheel_sizes.gd": {
 			"seconds": 1.0,
 			"tier": "fast"

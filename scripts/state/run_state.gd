@@ -74,6 +74,9 @@ var revealed_nodes: Array[StringName] = []
 ## RG-02/03: the open REST or WORKSHOP page ({} when none): REST {"kind": "rest", "done", "mode", "swaps",
 ## "undo_hp", "undo_fw"}; WORKSHOP {"kind": "workshop", "offers", "bought"}. Saved only when not empty.
 var node_state: Dictionary = {}
+## EV-02 hosts: a hub event session (kind "event") starts with Cycles bought from Schematics at the
+## config ratio; this is that purse (the Cycles it opened with). 0 on every other run.
+var purse_cycles: int = 0
 
 
 func current_node() -> Dictionary:
@@ -125,6 +128,8 @@ func _raw_dict() -> Dictionary:
 		out["revealed_nodes"] = _strings(revealed_nodes)
 	if not node_state.is_empty():  # RG-02: absent when no node page is open
 		out["node_state"] = node_state.duplicate(true)
+	if purse_cycles != 0:  # EV-02 hosts: only a hub event session carries a purse
+		out["purse_cycles"] = purse_cycles
 	return out
 
 
@@ -166,6 +171,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	for dd in d.get("drones", []):
 		r.drones.append({"source_id": String(dd.get("source_id", "")), "hp": int(dd.get("hp", 1)), "dock_slot": int(dd.get("dock_slot", 0))})
 	r.node_state = d.get("node_state", {}).duplicate(true)
+	r.purse_cycles = int(d.get("purse_cycles", 0))
 	var theme: Variant = d.get("corp_theme", {})
 	if theme is Dictionary:
 		r.corp_theme.load_dict(theme)

@@ -15,6 +15,9 @@ const CYCLES_PER_SCHEMATIC_FALLBACK := 10
 const BUG_CARD_ID := &"bug"
 ## RunState.kind of the Solace HQ ladder run.
 const HQ_LADDER_KIND := "hq"
+## RunState.kind of a hub event session (EV-02 hosts): one event of a venue (RAID_WIN after a raid fought
+## at HQ, HQ_VIEW), played out of a netrun. No map, no Rank, no netrun count; Cycles are bought from Schematics.
+const EVENT_KIND := "event"
 
 var config: CampaignConfigData
 var lookup: ContentLookup
@@ -52,6 +55,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
+	s._take_carried_mods()
 	if corp != null and corp.city_grid != null and p_campaign.grid != null:
 		var site := CampaignRules.site_data(corp, site_id)
 		s.run.patrol = site != null and CampaignRules.is_patrol(p_campaign, site)
@@ -175,6 +179,7 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
+	s._take_carried_mods()
 	var graph := MapGraph.new()
 	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.SERVER_RACK,
 		"elite": true, "next": [] as Array[StringName], "heat": 0}])
@@ -189,6 +194,58 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s._apply_boosts()  # HQ boosts apply to the final breach and Reclaim runs too
 	s._sync()
 	return s
+
+
+## EV-02 hosts: the hub event session for the living operative `operative_id`: draws one event of
+## `venue` (RAID_WIN / HQ_VIEW) from the `events` stream of `run_seed`, opens it, and clears the campaign's
+## `venue_event_due`. The session starts with Cycles bought from Schematics at the config ratio (its purse);
+## the Cycles left at the end convert back (whole Schematics, rounded down). Null (and the due mark cleared)
+## when no event of the venue can be drawn.
+static func start_venue_event(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, venue: int, tier: int, run_seed: int, corp: CorporationData = null) -> NetrunSession:
+	var s := NetrunSession.new()
+	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
+	s._build_pools()
+	var op := p_campaign.get_operative(operative_id)
+	if op == null or not op.alive:
+		push_error("NetrunSession: no living operative '%s'." % operative_id)
+		return null
+	p_campaign.venue_event_due = -1
+	s.run = RunState.new()
+	s.run.run_seed = run_seed
+	s.run.tier = tier
+	s.run.kind = EVENT_KIND
+	s.run.operative = op.duplicate_state()
+	s.streams = RngStreams.seeded(run_seed)
+	var pool := EventRules.venue_pool(s.lookup, venue, p_campaign.corporation_id, tier)
+	var chosen := EventRules.venue_pick(s.lookup, pool, s.streams.get_stream(EventRules.STREAM))
+	if chosen == &"":
+		return null
+	var graph := MapGraph.new()
+	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.TERMINAL,
+		"elite": false, "next": [] as Array[StringName], "heat": 0}])
+	s.run.map = graph
+	s.run.purse_cycles = EventRules.purse_for(p_campaign.schematics, s.config.cycles_per_schematic)
+	s.run.cycles = s.run.purse_cycles
+	s._take_carried_mods()
+	s.run.event_id = chosen
+	s.run.phase = RunState.Phase.EVENT
+	var ev := s.lookup.get_content(chosen) as TerminalEventData
+	s.last_events = [{"type": "event", "event_id": chosen, "venue": venue, "text": "%s: %s" % [TerminalEventData.Venue.keys()[venue], ev.title]}]
+	s._sync()
+	return s
+
+
+## EV-02 hosts: a hub event session (kind "event")?
+func is_event_session() -> bool:
+	return run != null and run.kind == EVENT_KIND
+
+
+## EV-02 hosts: next_combat_overrides an HQ event left on the campaign join this run's pending modifiers.
+func _take_carried_mods() -> void:
+	for m in campaign.carried_combat_mods:
+		run.combat_mods.append(m.duplicate(true))
+	campaign.carried_combat_mods.clear()
 
 
 ## WH-HQ-LAUNCH: the Solace HQ breach as the GENOME CORE ladder (run kind "hq"): a map from
@@ -211,6 +268,7 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
+	s._take_carried_mods()
 	var graph_stream := RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM)
 	if EyeRules.applies(corp):
 		s._halcyon_begin_hq(corp, site_id, graph_stream)
@@ -910,6 +968,12 @@ func _finish_combat() -> void:
 	if cs.outcome == CombatState.Outcome.DEFEAT:
 		combat = null
 		run.event_fight = {}
+		if run.kind == EVENT_KIND:
+			# EV-02 hosts: a hub fight is never lethal; the operative walks away at 1 HP and the payout is lost.
+			run.operative.hp = 1
+			last_events.append({"type": "event_fight_lost", "text": "%s loses the fight and walks away at 1 HP." % run.operative.name})
+			_after_event_step()
+			return
 		_die()
 		return
 	run.operative.hp = cs.player.hp
@@ -930,9 +994,9 @@ func _finish_combat() -> void:
 	if run.corp_theme.halcyon.hq and run.corp_theme.halcyon.entered_state == EyeRules.NodeState.SPOTTED:
 		run.corp_theme.halcyon.hq_alert += config.hq_alert_gain_eye_fight  # rule 16: a fight completed IN THE EYE
 	run.combat_mods = EventRules.spend(run.combat_mods)  # EV-01: a completed fight spends one charge
-	var elite: bool = node["elite"]
+	var elite: bool = node.get("elite", false)  # a hub event session stands on no node
 	var ladder := run.kind == HQ_LADDER_KIND
-	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
+	var is_rack: bool = node.get("type", -1) == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
 	if elite:
 		run.elites_defeated += 1
 	var rewards := streams.get_stream(&"rewards")
@@ -950,6 +1014,10 @@ func _finish_combat() -> void:
 			run.unbanked_assets.append(asset)
 			last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
 	_event_fight_payout()
+	if run.kind == EVENT_KIND:
+		combat = null  # EV-02 hosts: no card offers or Rack rules at HQ; only what the fight's payload queued
+		_after_event_step()
+		return
 	if run.kind != "netrun" and not ladder:
 		combat = null
 		_complete_run()
@@ -1087,6 +1155,9 @@ func proceed_rewards() -> Array[Dictionary]:
 
 func _after_reward() -> void:
 	if run.pending_rewards.is_empty():
+		if run.kind == EVENT_KIND:
+			_complete_event_run()  # EV-02 hosts: the picks were the last of the hub event
+			return
 		if _at_final_rack():
 			_complete_run()
 			return
@@ -1197,11 +1268,18 @@ func _end_event(fight: EventFightData) -> void:
 	run.event_id = &""
 	run.event_wheel = {}
 	if run.operative.hp <= 0:
-		_die()
-		_sync()
-		return
+		if run.kind == EVENT_KIND:
+			run.operative.hp = 1  # EV-02 hosts: a hub event never kills
+		else:
+			_die()
+			_sync()
+			return
 	if fight != null:
 		_start_event_fight(fight)
+		_sync()
+		return
+	if run.kind == EVENT_KIND:
+		_after_event_step()
 		_sync()
 		return
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
@@ -1215,6 +1293,8 @@ func _start_event_fight(fight: EventFightData) -> void:
 	_add_heat(fight.entry_heat, "event fight")
 	run.event_fight = {"normal": fight.normal_rewards, "stake": fight.stake_min_hp_pct, "win_cycles": fight.win_cycles,
 		"win_heat": fight.win_heat, "win_firmware": fight.win_common_firmware}
+	if fight.win_daemon:  # additive: absent unless the fight pays a Daemon
+		run.event_fight["win_daemon"] = true
 	var setup := _combat_setup(false, false, streams.get_stream(&"combat"), fight)
 	combat = _combat_from(setup)
 	run.phase = RunState.Phase.COMBAT
@@ -1240,6 +1320,8 @@ func _event_fight_payout() -> void:
 	_add_heat(int(f.get("win_heat", 0)), "event fight")
 	if bool(f.get("win_firmware", false)):
 		_offer_common_firmware()
+	if bool(f.get("win_daemon", false)):
+		_offer_event_daemon()
 
 
 ## EV-01: stores a next_combat_overrides entry; a random-normal escort is drawn now from the
@@ -1261,6 +1343,66 @@ func _offer_common_firmware() -> void:
 	var id: StringName = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
 	run.pending_rewards.append({"kind": "firmware", "options": [String(id)]})
 	last_events.append({"type": "event_firmware", "firmware": id, "text": "A Firmware chip is on offer: %s." % id})
+
+
+## EV-02 hosts: one Daemon from the `events` stream, queued as a pick: a COMMON Daemon the operative lacks (the
+## Daemon rarity pool), else any Daemon of the reward pool it lacks, else nothing.
+func _offer_event_daemon() -> void:
+	var pool: Array = []
+	for id in _pools["common_daemons"]:
+		if not run.operative.daemon_ids.has(id):
+			pool.append(id)
+	if pool.is_empty():
+		for id in _pools["daemons"]:
+			if not run.operative.daemon_ids.has(id):
+				pool.append(id)
+	if pool.is_empty():
+		return
+	var id: StringName = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
+	run.pending_rewards.append({"kind": "daemon", "options": [String(id)]})
+	last_events.append({"type": "event_daemon", "daemon": id, "text": "A Daemon is on offer: %s." % id})
+
+
+## EV-02 hosts: a hub event session after its choice, fight or pick resolved: the picks the event queued
+## first, then the session closes.
+func _after_event_step() -> void:
+	if not run.pending_rewards.is_empty():
+		run.phase = RunState.Phase.REWARD
+		return
+	_complete_event_run()
+
+
+## EV-02 hosts: closes a hub event session. The Cycles it ended with convert back to Schematics against the purse
+## it opened with (whole Schematics, rounded down), banked Schematics are added, the operative keeps its HP (no
+## heal, no Rank, no netrun counted) and whatever it gained, and pending combat modifiers pass to the next run.
+func _complete_event_run() -> void:
+	run.outcome = RunState.Outcome.COMPLETED
+	run.phase = RunState.Phase.ENDED
+	var delta := EventRules.purse_schematics_delta(run.cycles, run.purse_cycles, config.cycles_per_schematic)
+	campaign.schematics = maxi(0, campaign.schematics + run.banked_schematics + delta)
+	_replace_in_roster(run.operative.duplicate_state())
+	for m in run.combat_mods:
+		campaign.carried_combat_mods.append(m.duplicate(true))
+	run.combat_mods = []
+	last_events.append({"type": "event_closed", "schematics": run.banked_schematics + delta,
+		"text": "The event is closed (%+d Schematics)." % (run.banked_schematics + delta)})
+
+
+## EV-02 hosts: a won raid offers one RAID_WIN event in the middle of a netrun (the run's Heat, Cycles and HP
+## are the event's). Draws the pool and the pick from the run's `events` stream; nothing when the config turns
+## it off or no event of the venue can be drawn at this tier. The event is open when this returns true.
+func _offer_raid_win_event() -> bool:
+	if not config.raid_win_event_enabled or run.kind == EVENT_KIND:
+		return false
+	var pool := EventRules.venue_pool(lookup, TerminalEventData.Venue.RAID_WIN, campaign.corporation_id, run.tier)
+	var chosen := EventRules.venue_pick(lookup, pool, streams.get_stream(EventRules.STREAM))
+	if chosen == &"":
+		return false
+	run.event_id = chosen
+	run.phase = RunState.Phase.EVENT
+	last_events.append({"type": "event", "event_id": chosen, "venue": TerminalEventData.Venue.RAID_WIN,
+		"text": "After the raid: %s" % (lookup.get_content(chosen) as TerminalEventData).title})
+	return true
 
 
 ## EV-01: stores a Terminal event's next-raid modifier on the campaign. A chance below 100 rolls
@@ -1456,6 +1598,8 @@ func choice_costs(choice: EventChoiceData) -> String:
 		parts.append(String(r["text"]))
 	if choice.starts_combat != null:
 		parts.append("fight: %s" % choice.starts_combat.enemy_id)
+		if choice.starts_combat.win_daemon:
+			parts.append("win: Daemon ?")  # EV-02 hosts: the pick is drawn from the `events` stream after the win
 	if choice.common_firmware:
 		parts.append("Firmware: ?")
 	if choice.event_wheel != null:
@@ -1968,6 +2112,7 @@ func raid_fight() -> Array[Dictionary]:
 	last_events = []
 	if not in_raid():
 		return _refuse("No raid in progress.")
+	var won_before := campaign.raids_won
 	last_events.append_array(CampaignRules.fight_raid(campaign, corporation, config, lookup, raid_pending()))
 	if campaign.is_over():
 		run.outcome = RunState.Outcome.ABORTED
@@ -1975,6 +2120,10 @@ func raid_fight() -> Array[Dictionary]:
 		last_events.append({"type": "run_aborted", "text": "The run is over: the home server is gone."})
 	else:
 		run.phase = RunState.Phase.MAP
+		# EV-02 hosts (designer call, Q6): a raid win offers one RAID_WIN event; the next raid waits for its end.
+		if campaign.raids_won > won_before and _offer_raid_win_event():
+			_sync()
+			return last_events
 		_maybe_raid_interlude()
 	_sync()
 	return last_events
@@ -2001,6 +2150,8 @@ func _complete_run() -> void:
 	_replace_in_roster(op)
 	_bank_assets_to_armory()
 	campaign.runs_completed += 1
+	if run.kind == "netrun":
+		_mark_hq_event_due()
 	last_events.append({"type": "run_complete", "schematics": run.banked_schematics + converted, "rank": op.rank,
 		"text": "Netrun complete. %d Cycles -> %d Schematics; +%d banked; %s is now Rank %d." % [run.cycles, converted, run.banked_schematics, op.name, op.rank]})
 	for e in _run_daemon_hooks(RC.Trigger.ON_NETRUN_COMPLETE):
@@ -2011,6 +2162,16 @@ func _complete_run() -> void:
 		CampaignRules.name_pending_raids(campaign, lookup, done)
 		last_events.append_array(done)
 		_eye_turn_end(done)
+
+
+## EV-02 hosts: every `hq_event_every_runs`-th completed netrun owes the HQ one HQ_VIEW event (kept until
+## the hub opens it; a RAID_WIN event already owed is not replaced; nothing owed when no event can be drawn).
+func _mark_hq_event_due() -> void:
+	if campaign.venue_event_due >= 0 or not EventRules.hq_event_due(config, campaign.runs_completed):
+		return
+	if EventRules.venue_pool(lookup, TerminalEventData.Venue.HQ_VIEW, campaign.corporation_id, run.tier).is_empty():
+		return
+	campaign.venue_event_due = TerminalEventData.Venue.HQ_VIEW
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -2039,6 +2200,8 @@ func abandon() -> Array[Dictionary]:
 	last_events = []
 	if run.is_over():
 		return _refuse("The run is already over.")
+	if run.kind == EVENT_KIND:
+		return _refuse("There is nothing to abandon at HQ: pick a choice.")
 	last_events.append({"type": "run_abandoned", "operative": String(run.operative.id),
 		"text": "%s abandons the run." % run.operative.name})
 	combat = null
@@ -2236,7 +2399,12 @@ func _build_pools() -> void:
 	for id in lookup.ids_of_class(&"FirmwareData"):
 		if (lookup.get_content(id) as FirmwareData).rarity == RC.Rarity.COMMON:
 			common_firmware.append(id)
+	var common_daemons: Array = []
+	for id in lookup.ids_of_class(&"DaemonData"):
+		if (lookup.get_content(id) as DaemonData).rarity == RC.Rarity.COMMON:
+			common_daemons.append(id)
 	_pools = {
+		"common_daemons": common_daemons,
 		"enemies": enemies, "easy_enemies": easy_enemies, "hard_enemies": hard_enemies, "elites": elites, "mini_bosses": mini_bosses, "shared_cards": shared_cards, "class_cards": class_cards,
 		"firmware": lookup.ids_of_class(&"FirmwareData"), "common_firmware": common_firmware,
 		"daemons": lookup.ids_of_class(&"DaemonData"), "assets": assets, "events": events,
