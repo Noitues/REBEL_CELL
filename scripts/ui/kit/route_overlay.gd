@@ -123,6 +123,13 @@ static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2A
 			pts = PackedVector2Array([c + Vector2(-w, rr), c + Vector2(-w, -rr * 0.35), c + Vector2(-w * 0.45, -rr * 0.35),
 				c + Vector2(-w * 0.45, -rr), c + Vector2(w * 0.45, -rr), c + Vector2(w * 0.45, -rr * 0.35),
 				c + Vector2(w, -rr * 0.35), c + Vector2(w, rr)])
+		"diamond":
+			pts = PackedVector2Array([c + Vector2(0.0, -rr), c + Vector2(rr * 0.8, 0.0), c + Vector2(0.0, rr), c + Vector2(-rr * 0.8, 0.0)])
+		"hexagon":
+			for i in 6:
+				pts.append(c + Vector2.from_angle(TAU * i / 6.0) * rr)
+		"house":
+			pts = PackedVector2Array([c + Vector2(0.0, -rr), c + Vector2(rr, -rr * 0.2), c + Vector2(rr, rr), c + Vector2(-rr, rr), c + Vector2(-rr, -rr * 0.2)])
 		_:
 			for i in BADGE_ROUND_SEGMENTS:
 				pts.append(c + Vector2.from_angle(TAU * i / BADGE_ROUND_SEGMENTS) * rr)

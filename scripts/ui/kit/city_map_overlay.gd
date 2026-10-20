@@ -129,10 +129,12 @@ const TIP_THREATS := "Threats here: %s." # TR
 ## and the tag for the same thing match (the Exploit's diamond, the shop's bag).
 const KIND_SHAPES := {KIND_FIGHT: "circle", KIND_ELITE: "star8", KIND_SHOP: "tag", KIND_EVENT: "square",
 	KIND_RACK: "tower", KIND_CENTRAL_SERVER: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
-	KIND_TIER: "hexagon"}
+	KIND_TIER: "hexagon",
+	KIND_REST: "house", KIND_WORKSHOP: "hexagon", KIND_CACHE: "diamond"}
 const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades", KIND_SHOP: "shop",
 	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_CENTRAL_SERVER: "star", KIND_EXPLOIT: "exploits",
-	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
+	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number",
+	KIND_REST: "cooling", KIND_WORKSHOP: "tier_number", KIND_CACHE: "exploits"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
 const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Mainframe", KIND_EVENT: "Terminal", # TR
 	KIND_RACK: "Server Rack", KIND_CENTRAL_SERVER: "Central Server", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
