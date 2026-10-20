@@ -59,7 +59,7 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
-@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5}
+@export var whole_wet: Dictionary = {"wet_specular": 0.08, "streak_k": 1.0, "spec_max": 1.0, "pool_k": 0.0, "albedo_mul": 0.32}
 @export var whole_cloud_k: float = 0.6
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
@@ -789,7 +789,7 @@ extends Resource
 ## kept share from meadow to forest, the least ground height (BU) and the steepest slope, the share of the city's bare lots
 ## with a tree, and the tree radius range (lots of BU; park_tree_w / park_tree_h shape them).
 @export var veg_step: int = 2
-@export var veg_density: Vector2 = Vector2(0.25, 0.85)
+@export var veg_density: Vector2 = Vector2(0.15, 0.6)
 @export var veg_min_h: float = 0.4
 @export var veg_max_slope: float = 0.25
 @export var veg_bare_share: float = 0.8
