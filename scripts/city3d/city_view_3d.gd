@@ -285,14 +285,18 @@ func set_night_share(n: float, day: Dictionary) -> void:
 				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
-	var hz := (day["haze"] as Color).lerp(cfg.haze, night_share)
+	# LOOK L5: the whole-city night keeps the plate's neutral charcoal air, not the map's violet haze and grade.
+	var n_haze: Color = cfg.whole_night_haze if whole_look else cfg.haze
+	var n_haze_k: float = cfg.whole_night_haze_k if whole_look else cfg.haze_k
+	var n_grade: Color = cfg.whole_night_grade if whole_look else cfg.grade
+	var hz := (day["haze"] as Color).lerp(n_haze, night_share)
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
 	# B2 (review D1): a look may set its own haze strength (the combat close-up's 15-20 %).
-	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), cfg.haze_k, night_share))
+	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), n_haze_k, night_share))
 	# B2 (art director): a look may set its rain's strength and keep its blacks (the combat close-up).
 	_post.set_shader_parameter(&"rain_alpha", float(day.get("rain_alpha", cfg.rain_alpha)))
 	_post.set_shader_parameter(&"rain_keep_blacks", float(day.get("rain_keep_blacks", 0.0)))
-	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
+	var gr := (day["grade"] as Color).lerp(n_grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	if water != null and water.plane_mat != null:
 		water.plane_mat.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))

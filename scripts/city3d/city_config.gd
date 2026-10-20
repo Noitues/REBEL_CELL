@@ -65,6 +65,10 @@ extends Resource
 @export var whole_day_haze_k: float = 0.12
 ## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
 @export var whole_haze_start: float = 0.85
+## LOOK L5: the whole-city night's haze colour and strength and its grade (the plate's neutral charcoal, no violet).
+@export var whole_night_haze: Color = Color(0.05, 0.07, 0.09)
+@export var whole_night_haze_k: float = 0.22
+@export var whole_night_grade: Color = Color(1.0, 1.0, 1.0)
 ## The corp HQ sky beams of the whole-city night (the A2 plate's six searchlight shafts): length, base height above the
 ## HQ lot, start radius (BU), spread half-angle, emission, lean (degrees, alternating per HQ) and the night share they
 ## show above.
