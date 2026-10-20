@@ -501,6 +501,11 @@ func _whole_building() -> void:
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
 	_building_mat.set_shader_parameter(&"window_colors", wc)
+	# The plate's districts pool their windows into a soft glow: a lower AAA bloom threshold, more bloom, more exposure.
+	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure * (cfg.whole_exposure_k if whole_look else 1.0))
+	if whole_look and look_blend > 0.0:
+		_post.set_shader_parameter(&"aaa_bloom_thr", cfg.whole_bloom_thr)
+		_post.set_shader_parameter(&"aaa_bloom_w", cfg.whole_bloom_w)
 
 
 ## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.

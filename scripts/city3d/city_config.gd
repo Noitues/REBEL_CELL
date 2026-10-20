@@ -49,7 +49,7 @@ extends Resource
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
 @export var whole_night_look: float = 1.0
-@export var whole_day_ramp_gain: float = 0.42
+@export var whole_day_ramp_gain: float = 0.36
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
 @export var whole_day_sky: Color = Color(0.30, 0.32, 0.38)
@@ -71,6 +71,10 @@ extends Resource
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 1.5, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0}
+## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
+@export var whole_bloom_thr: float = 0.55
+@export var whole_bloom_w: Vector3 = Vector3(0.22, 0.2, 0.16)
+@export var whole_exposure_k: float = 1.25
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5}
 ## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
