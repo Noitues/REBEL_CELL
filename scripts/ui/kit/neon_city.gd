@@ -1544,6 +1544,8 @@ func _draw_view_3d() -> void:
 		view3d.band_lock = band_lock
 		view3d.ring_halos = ring_halos
 		view3d.whole_look = whole_pose_centre != Vector2.INF
+		if city_motion != null and city_motion.layers != null:
+			city_motion.layers.whole_pose = view3d.whole_look
 		var cover := cover_rect()
 		view3d.set_view_size(Vector2i((cover.size * scale.x * stretch).round()))
 		view3d.set_iso(iso_camera(cover))

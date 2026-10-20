@@ -37,7 +37,6 @@ uniform float body_alpha = 0.40;
 uniform float body_alpha_shallow = 0.52;
 uniform vec2 shallow_lots = vec2(20.0, 34.0);
 uniform float far_shore_lots = 60.0;
-uniform float depth_add = 0.0;
 uniform vec2 surf_lots = vec2(0.2, 1.6);
 uniform float surf_gain = 0.5;
 uniform vec3 surf_col = vec3(0.85, 0.93, 1.0);
@@ -123,7 +122,7 @@ void fragment() {
 		body = mix(body, nb, night);
 	}
 	// Surf: bands rolling in on the first shelf, broken by the waves.
-	float sb = (1.0 - smoothstep(surf_lots.x, surf_lots.y, bed.g)) * step(0.001, bed.r + depth_add);
+	float sb = (1.0 - smoothstep(surf_lots.x, surf_lots.y, bed.g)) * step(0.001, bed.r);
 	float roll = 0.5 + 0.5 * sin((bed.g * surf_period - rc_time(TIME) * time_scale * 0.8) * 6.2831853);
 	float surf = sb * smoothstep(0.45, 0.85, roll * 0.6 + h0 * 0.6) * surf_gain;
 	float a = fr + (1.0 - fr) * ab;
@@ -131,6 +130,6 @@ void fragment() {
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
 	ALBEDO = col * grade;
 	// No water over dry ground (the bake's depth is 0 there); bilinear, so the coast softens over half a lot.
-	float wetk = max(smoothstep(coast_cut.x, coast_cut.y, bed.b), step(0.001, depth_add));
+	float wetk = smoothstep(coast_cut.x, coast_cut.y, bed.b);
 	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
 }

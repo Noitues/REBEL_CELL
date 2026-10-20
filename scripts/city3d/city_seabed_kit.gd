@@ -115,8 +115,10 @@ static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: floa
 
 ## The water's depth over `r` (a texel a lot, BU below sea level, 0 above it) for the water plane: the same bed as `mesh`,
 ## so the plane's thickness follows the ground under it without the depth buffer.
+## `flood` (lots): the drowned quarter's polygon, baked as water `whole_drowned_depth_bu` deep over its ground, so the
+## one plane covers it like the sea.
 static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: PackedByteArray, d: PackedFloat32Array,
-		islands: Array[Dictionary]) -> Image:
+		islands: Array[Dictionary], flood: PackedVector2Array = PackedVector2Array()) -> Image:
 	var w := r.size.x
 	var h := r.size.y
 	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBF)
@@ -124,6 +126,8 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 	dep.resize(w * h)
 	var sea := PackedFloat32Array()
 	sea.resize(w * h)
+	var shore := PackedFloat32Array()
+	shore.resize(w * h)
 	for j in h:
 		for i in w:
 			var at := Vector2(r.position.x + i + 0.5, r.position.y + j + 0.5)
@@ -132,6 +136,11 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 			var z := bed_z(cfg, terrain, at, d[j * w + i], wt, islands) if wt else 0.0
 			dep[j * w + i] = maxf(-z, 0.0)
 			sea[j * w + i] = 1.0 if z < 0.0 else 0.0
+			shore[j * w + i] = d[j * w + i]
+			if not wt and flood.size() >= 3 and Geometry2D.is_point_in_polygon(at, flood):
+				dep[j * w + i] = cfg.whole_drowned_depth_bu
+				sea[j * w + i] = 1.0
+				shore[j * w + i] = maxf(d[j * w + i], cfg.whole_drowned_shore_lots)
 	# Blue: the water mask blurred (binomial 5 x 5), so the plane's edge cuts a smooth coast across the lot staircase.
 	for j in h:
 		for i in w:
@@ -144,7 +153,7 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 					var k := float(COAST_KERNEL[ox + 2] * COAST_KERNEL[oy + 2])
 					s += sea[jj * w + ii] * k
 					n += k
-			img.set_pixel(i, j, Color(dep[j * w + i], d[j * w + i], s / n))
+			img.set_pixel(i, j, Color(dep[j * w + i], shore[j * w + i], s / n))
 	return img
 
 

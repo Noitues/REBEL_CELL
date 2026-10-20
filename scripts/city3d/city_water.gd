@@ -43,8 +43,6 @@ var piers: int = 0
 var islands: Array[Dictionary] = []
 ## LOOK L5: the whole-city water plane's material (city_water_plane.gdshader; null without terrain).
 var plane_mat: ShaderMaterial = null
-## The drowned quarter's copy of it at the whole pose (CityView3D makes it).
-var drowned_mat: ShaderMaterial = null
 ## LOOK L5: the seabed's material (city_seabed.gdshader: the plate's clear-water fade and caustics; null without terrain).
 var bed_mat: ShaderMaterial = null
 var wall_edges: int = 0
@@ -74,8 +72,12 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 		w._add(CitySeabedKit.mesh(cfg, plan.terrain, tr, wet, sp["field"], w.islands), w.bed_mat, "Seabed")
 		w.plane_mat = _plane_material(cfg)
 		var o := CityIsoCamera.lot_to_world(cfg, Vector2(tr.position))
+		var flood := PackedVector2Array()
+		if plan.a2 != null:
+			for p: Vector2 in plan.a2.a2.drowned:
+				flood.append(plan.a2.lot_of(p))
 		w.plane_mat.set_shader_parameter(&"bed_tex", ImageTexture.create_from_image(
-				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands)))
+				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands, flood)))
 		w.plane_mat.set_shader_parameter(&"bed_origin", Vector2(o.x, o.z))
 		w.plane_mat.set_shader_parameter(&"bed_size", Vector2(tr.size) * cfg.lot_bu)
 		var pl := w._add(CitySeabedKit.plane_mesh(outer_bu, SEA_Y), w.plane_mat, "WaterPlane")
@@ -104,7 +106,7 @@ func lit_materials() -> Array[ShaderMaterial]:
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
 func set_night(n: float) -> void:
-	for m in [water_mat, void_mat, smear_mat, plane_mat, drowned_mat]:
+	for m in [water_mat, void_mat, smear_mat, plane_mat]:
 		if m != null:
 			m.set_shader_parameter(&"night", n)
 
@@ -119,7 +121,7 @@ func set_look_blend(lb: float) -> void:
 func set_time_scale(s: float) -> void:
 	water_mat.set_shader_parameter(&"time_scale", s)
 	smear_mat.set_shader_parameter(&"time_scale", s)
-	for m in [plane_mat, drowned_mat, bed_mat]:
+	for m in [plane_mat, bed_mat]:
 		if m != null:
 			m.set_shader_parameter(&"time_scale", s)
 

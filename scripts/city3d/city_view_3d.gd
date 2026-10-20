@@ -613,15 +613,10 @@ func _sync_hq_beams() -> void:
 				if sn != null:
 					sn.visible = not whole_look
 			water.plane_mat.set_shader_parameter(&"sun_dir", cfg.to_light)
-			# The drowned quarter's sheet takes the plane's water (the old sea shader read as a white checker there).
-			var dq := features.get_node_or_null(^"Drowned") as MeshInstance3D if features != null else null
+			# The drowned quarter is water like the sea: the plane's bake covers it, so its own sheet goes.
+			var dq := features.get_node_or_null(^"Drowned") as Node3D if features != null else null
 			if dq != null:
-				if water.drowned_mat == null:
-					water.drowned_mat = water.plane_mat.duplicate() as ShaderMaterial
-					water.drowned_mat.set_shader_parameter(&"depth_add", cfg.whole_drowned_depth_bu)
-				if not dq.has_meta(&"base_mat"):
-					dq.set_meta(&"base_mat", dq.material_override)
-				dq.material_override = water.drowned_mat if whole_look else dq.get_meta(&"base_mat")
+				dq.visible = not whole_look
 
 
 var _env: Environment

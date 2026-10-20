@@ -781,8 +781,10 @@ extends Resource
 	"caustic_depth_bu": 30.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
 @export var water_plane_priority: int = -50
-## The drowned quarter's sheet at the whole pose: the water plane's look, this much deeper than the bed under it.
+## The drowned quarter at the whole pose: water this deep over its ground in the plane's bake, and at least this far
+## (lots) from the shore there, so the surf band stays on the sea's coast.
 @export var whole_drowned_depth_bu: float = 3.0
+@export var whole_drowned_shore_lots: float = 2.0
 ## Its shader parameters (Colors go in as vec3).
 @export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.35,
 	"sky_horizon_day": Color(0.36, 0.52, 0.74), "sky_zenith_day": Color(0.10, 0.28, 0.60),
@@ -791,8 +793,8 @@ extends Resource
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.55, "body_alpha_shallow": 0.30, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.82, "marble_col": Color(0.05, 0.20, 0.24), "marble_scale": 0.05,
 	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42),
-	"far_shore_lots": 60.0, "surf_lots": Vector2(0.2, 1.6), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
-	"surf_period": 6.0}
+	"far_shore_lots": 60.0, "surf_lots": Vector2(0.2, 1.4), "surf_gain": 0.35, "surf_col": Color(0.85, 0.93, 1.0),
+	"surf_period": 1.2}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14
