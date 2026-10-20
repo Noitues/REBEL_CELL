@@ -507,7 +507,7 @@ def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequenc
     The reference street is the first leg of the first border link. Candidates: street-level, unstacked, non-route
     buildings centred `backdrop_band` BU behind the street line (either side) along the extended leg, with a footprint
     of at least `spike_min_w`. Picks by `(-(top + jitter), bid)`, jitter a `spike_pick` draw x `pick_jitter`, at least
-    `spike_spacing_bu` apart along the street. Raised to `max(spike_k * median, top)`. No border link: unchanged.
+    `spike_spacing_bu` apart along the street. Raised to `max(spike_k * median, top)`, never lowered. No border link: unchanged.
     """
     H = R2_RULES["horizon"]
     out = copy.deepcopy(city)
@@ -548,7 +548,7 @@ def horizon_break(city: Dict[str, Any], net: Dict[str, Any], route_bids: Sequenc
         if all(abs(al - p) >= H["spike_spacing_bu"] for p in picked):
             picked.append(al)
             base = byid[bid]["parts"][bi["base"]]
-            base["h"] = H["spike_k"] * med - base["z0"]
+            base["h"] = max(H["spike_k"] * med - base["z0"], base["h"])  # never lower (B-060): a spike keeps its own top
     if stats is not None:
         stats.update(spikes=len(picked))
     return out

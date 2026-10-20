@@ -48,6 +48,7 @@ def probe(state: str, seed: int, exposure: float, work: str, extra: List[str], t
 
 
 def solve(state: str, seed: int, start: float, work: str, extra: List[str], timeout: int) -> Dict[str, object]:
+    """The plate solve of framing `state` from `start` (module doc): the chosen exposure, its stats and every probe run."""
     runs: List[Tuple[float, Dict[str, float]]] = []
 
     def run(x: float) -> Dict[str, float]:
@@ -86,6 +87,7 @@ def solve(state: str, seed: int, start: float, work: str, extra: List[str], time
 
 
 def main() -> None:
+    """CLI: solve the exposure of each `--views` framing and print one JSON line per view."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--views", default="overview,decision")
     ap.add_argument("--seed", type=int, default=1)

@@ -78,14 +78,17 @@ def plate_chain(A, comb, look, bloom=True, ca=False, gmath=False):
 
 
 def q8(a):
+    """Float image (0..1) to uint8, rounded."""
     return (np.clip(a, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 
 def load8(p):
+    """The RGB uint8 array of image file `p`."""
     return np.asarray(Image.open(p).convert("RGB"), np.uint8)
 
 
 def stats(a8, b8, masks):
+    """Per-pixel max-channel diff stats (0..255) of two uint8 frames, overall and per boolean mask."""
     d = np.abs(a8.astype(np.int16) - b8.astype(np.int16)).max(axis=-1)
     o = {"mean_255": round(float(d.mean()), 3), "p99_255": int(np.percentile(d, 99)), "max_255": int(d.max()),
          "over_2": round(float((d > 2).mean()), 4)}
@@ -102,6 +105,7 @@ def bloom_energy(full8, nob8):
 
 
 def cmd_prep(a):
+    """`prep`: write the linear HDR frame of `--npy` as raw f32 + its json for the Godot lab."""
     comb = np.load(a.npy).astype(np.float32)
     os.makedirs(a.out, exist_ok=True)
     np.ascontiguousarray(comb[..., :3]).astype("<f4").tofile(os.path.join(a.out, "frame.f32"))
@@ -112,6 +116,7 @@ def cmd_prep(a):
 
 
 def cmd_compare(a):
+    """`compare`: the python plate chain vs the Godot captures; writes report.json, the plates and sheet.jpg."""
     A = _post_aaa(a.post_aaa)
     comb = np.load(a.npy).astype(np.float32)[..., :3]
     g = os.path.join(a.out, "godot")
@@ -158,6 +163,7 @@ def cmd_compare(a):
 
 
 def main():
+    """CLI: `prep` or `compare`."""
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["prep", "compare"])
     ap.add_argument("--npy", required=True)
