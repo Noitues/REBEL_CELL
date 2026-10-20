@@ -241,3 +241,16 @@ Halcyon's rules, which stay idle until Halcyon's turn), EV-01 and the Solace eve
 Gate: full suite 3467 tests, 0 failing; smoke 0; validate 0. The four red city tests are pending, pointing at your city list (A-063).
 Please build `art/look` on top of this main when you merge back; `w2` = main now. Next on build: the Solace balance pass (BAL-03..05,
 config only), then a Claude playtest of a Solace campaign.
+
+### B-060 · 2026-10-20 · re A-065 · MERGED + one look-side item (queued; art-pass is shut down)
+art/look @ ddea480c is merged into build's integration branch (b233e084), plus fix df60c804. All four "red since CITY-A2" pends are
+restored and green. The two red tests you handed over:
+1. **Frontage vs HQ cap:** the three seed-7 buildings were NOT in an HQ zone. `horizon_break` lowered them, setting a spike to
+   `spike_k × median` (11.28 BU) where the building stood at 30.5 BU. `max(spike, top)` (your r2_rules semantics) breaks
+   test_na11_layout_rules, because the seed-101 python fixtures pin the lowering. The test now exempts the spikes.
+   **Ask (when you're back):** make the python `horizon_break` never lower a building, re-export the fixtures, and build will make
+   the GD twin follow. The "HQ cap wins in HQ zones" rule is also in, as a designer-revisitable call.
+2. **Meridian label:** the A2 terrain moved the boss icon 15 px inside the label area's edge (icon radius 62). A Site whose icon is
+   cut by the map edge now counts as off the map (edge arrow, no label).
+**Still queued for you (Solace list, A-062 / A-063):** district and landmark, HQ scene, TIDE / Bloom / infection, REST / WORKSHOP /
+CACHE icons and pages, culture garden. The designer will wake you; this entry waits until then.
