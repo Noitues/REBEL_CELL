@@ -497,19 +497,30 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 		px_per_bu: float, rng: RandomNumberGenerator) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
-	var hr: Vector2 = cfg.city_a2_heights[_height_kind(ras, cfg, f, terr, cell_id)]
+	var hk := _height_kind(ras, cfg, f, terr, cell_id)
+	var hr: Vector2 = cfg.city_a2_heights[hk]
 	var h := rng.randf_range(hr.x, hr.y)
 	var c := Vector2(cell.get_center())
 	var near := INF
 	for q in hq_centres:
 		near = minf(near, c.distance_to(q))
-	h *= 1.0 + cfg.city_a2_hq_rise * maxf(0.0, 1.0 - near / cfg.city_a2_hq_rise_lots)
+	var rise := 1.0 + cfg.city_a2_hq_rise * maxf(0.0, 1.0 - near / cfg.city_a2_hq_rise_lots)
+	h *= rise
 	var taper := rng.randf_range(cfg.city_a2_taper.x, cfg.city_a2_taper.y)
 	var corp := terr != &"" and terr != cell_id and rng.randf() < cfg.city_a2_corp_ink_share
 	var ink := Palette.corp_color(terr) if corp else NeonCity.INKS[rng.randi() % NeonCity.INKS.size()]
 	var key := rng.randi() & 0x7fffffff
 	var ins := cfg.city_a2_inset
 	var out: Array = []
+	# LOOK L5: the plate's finer grain: four quarter-lot buildings on one lot.
+	if cfg.city_a2_sub_share > 0.0 and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
+		var si := cfg.city_a2_sub_inset
+		for q in 4:
+			var lo := Vector2(cell.position) + Vector2(0.5 * (q % 2), 0.5 * (q / 2)) + Vector2(si, si)
+			var hi := lo + Vector2(0.5 - 2.0 * si, 0.5 - 2.0 * si)
+			var hq := rng.randf_range(hr.x, hr.y) * cfg.city_a2_sub_h_k * rise
+			out.append(_extrusion_q(cell, lo, hi, 0.0, hq * px_per_bu, taper, ink, terr, key + 2 + q))
+		return out
 	if h >= cfg.city_a2_setback_from:
 		var h0 := h * cfg.city_a2_setback.y
 		out.append(_extrusion(cell, ins, 0.0, h0 * px_per_bu, 1.0, ink, terr, key))
@@ -521,7 +532,11 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 
 
 static func _extrusion(cell: Rect2i, ins: float, z0: float, h: float, taper: float, ink: Color, terr: StringName, key: int) -> Dictionary:
-	var lo := Vector2(cell.position) + Vector2(ins, ins)
-	var hi := Vector2(cell.end) - Vector2(ins, ins)
+	return _extrusion_q(cell, Vector2(cell.position) + Vector2(ins, ins), Vector2(cell.end) - Vector2(ins, ins), z0, h, taper, ink, terr, key)
+
+
+## An extrusion over the lot rect lo..hi (lots) of building cell `cell`.
+static func _extrusion_q(cell: Rect2i, lo: Vector2, hi: Vector2, z0: float, h: float, taper: float, ink: Color, terr: StringName,
+		key: int) -> Dictionary:
 	return {"base": PackedVector2Array([lo, Vector2(hi.x, lo.y), hi, Vector2(lo.x, hi.y)]), "z0": z0, "h": h, "taper": taper,
 		"ink": ink, "terr": terr, "key": key, "cell": cell}

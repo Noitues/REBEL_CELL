@@ -534,6 +534,10 @@ city_a2_setback_from = 18.0
 city_a2_setback = Vector2(0.18, 0.6)
 city_a2_taper = Vector2(0.85, 1)
 city_a2_corp_ink_share = 0.35
+city_a2_sub_kinds = Array[StringName]([&"sprawl", &"suburb", &"informal", &"old_core", &"rail_grid", &"corp", &"corp_meridian"])
+city_a2_sub_share = 0.55
+city_a2_sub_inset = 0.05
+city_a2_sub_h_k = 0.8
 city_a2_traffic = {
 &"arterial": 0.6,
 &"collector": 0.45,

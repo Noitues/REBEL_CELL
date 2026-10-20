@@ -416,6 +416,13 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_taper: Vector2 = Vector2(0.85, 1.0)
 ## Street look: share of a territory's street lots in its corporation's color; traffic by A2 road class (local: &"local").
 @export var city_a2_corp_ink_share: float = 0.35
+## LOOK L5 (whole-city plate parity, art-pass city_world_a2 "four sub-lots: denser, finer grain"): a single lot of a kind in
+## `city_a2_sub_kinds` under the setback height splits with `city_a2_sub_share` into four quarter-lot buildings, inset
+## `city_a2_sub_inset` lots, each its own height in the kind's range x `city_a2_sub_h_k`.
+@export var city_a2_sub_kinds: Array[StringName] = []
+@export var city_a2_sub_share: float = 0.0
+@export var city_a2_sub_inset: float = 0.05
+@export var city_a2_sub_h_k: float = 0.8
 @export var city_a2_traffic: Dictionary = {&"ring": 1.0, &"motorway": 1.0, &"truck": 0.8, &"arterial": 0.6,
 	&"collector": 0.45, &"local": 0.2}
 ## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
@@ -751,6 +758,8 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 		errors.append("city_a2_block_lots must be 2 <= min <= max.")
 	if city_a2_merge_share < 0.0 or city_a2_merge_share > 1.0 or city_a2_corp_ink_share < 0.0 or city_a2_corp_ink_share > 1.0:
 		errors.append("city_a2_merge_share and city_a2_corp_ink_share must be in [0, 1].")
+	if city_a2_sub_share < 0.0 or city_a2_sub_share > 1.0 or city_a2_sub_inset < 0.0 or city_a2_sub_inset >= 0.25 or city_a2_sub_h_k <= 0.0:
+		errors.append("city_a2_sub_share must be in [0, 1], city_a2_sub_inset in [0, 0.25), city_a2_sub_h_k > 0.")
 	if city_a2_inset < 0.0 or city_a2_inset >= 0.5 or city_a2_setback.x < 0.0 or city_a2_setback.y <= 0.0 or city_a2_setback.y >= 1.0:
 		errors.append("city_a2_inset must be in [0, 0.5), city_a2_setback x >= 0 and y in (0, 1).")
 	if city_a2_taper.x <= 0.0 or city_a2_taper.x > city_a2_taper.y or city_a2_hq_rise < 0.0 or city_a2_hq_rise_lots <= 0.0:
