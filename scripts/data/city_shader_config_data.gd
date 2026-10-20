@@ -30,6 +30,11 @@ static var _shipped: CityShaderConfigData = null
 ## The night sky at look_blend 1 (NA-22b, `city_sky`): zenith, horizon (the warm city glow) and ground colours (linear) and
 ## `glow_k`, the falloff of the glow band with sin(elevation); mixed from the mainline `sky` colour as look_blend rises.
 @export var sky: Dictionary = {}
+## The street look of the golden plates (AAA-2 "Realistic night", A-022 / MATERIAL_SPEC): `pbr` (glass, panel, concrete, lit window,
+## neon surface numbers), `emit` (the emissive hierarchy), `world` (the flat world colour, the moon), `lights` (the colored local
+## lights and their Godot unit factors), `post` (the post chain), `grit` (the fgrid facet geometry), `ssr`, `exposure_solve`. Only the
+## netrun views read it (look_blend above 0); the mainline city keeps the cel look.
+@export var aaa: Dictionary = {}
 
 ## Keys each Dictionary field must hold (what the shaders and the kit read).
 const REQUIRED: Dictionary = {
@@ -40,13 +45,14 @@ const REQUIRED: Dictionary = {
 		"trim_emit", "landmark_dim", "haze_col", "haze_k", "haze_h", "haze_hi", "wash_floors", "wash_a", "wash_b", "wash_gain",
 		"edge_share", "edge_a", "edge_b", "edge_emit", "edge_bu", "edge_blend", "beam_fade", "wash_floor_bu", "landmark_wash_gain"],
 	"sky": ["top", "horizon", "ground", "glow_k"],
-	"wet": ["noise_scale", "noise_octaves", "rough_noise", "rough_wet", "specular", "albedo_mul", "pbr_fade"],
+	"aaa": ["pbr", "emit", "world", "lights", "post", "grit", "ssr", "wet_refl", "exposure_solve"],
+	"wet": ["noise_scale", "noise_octaves", "rough_noise", "rough_wet", "specular", "albedo_mul", "pbr_fade", "streak_k", "spec_max", "pool_k", "spill_k"],
 	"beam": ["core_sigma", "core_w", "skirt_sigma", "skirt_w", "efold", "fade", "fade_from", "fade_in", "noise_scale",
 		"noise_lo", "noise_hi", "hot", "emit", "period_s", "pitch_share", "start_radius", "length_front", "half_deg"],
 	"streak": ["loop_s", "emit", "floor", "power", "width", "max_streaks", "z_lo", "z_hi"],
 	"fog": ["peak", "h_front", "h_sky_k", "strata_k", "warp_k", "tilt", "bank_freq", "wisp_freq", "bank_mix", "remap_oct",
 		"clump_freq", "remap_clump", "wisp_at", "wisp_half", "wisp_k", "front", "floor", "gb_off", "gb_top", "ground_bank",
-		"mid_range", "mid_remap", "mid_bank", "haze", "haze_efold", "scatter", "anisotropy", "underlight_k", "ground_glow",
+		"mid_range", "mid_remap", "mid_bank", "haze", "haze_efold", "back_haze", "back_depth", "back_h_k", "scatter", "anisotropy", "underlight_k", "ground_glow",
 		"mid_glow", "emit_gain", "wind", "box", "length", "tint_a", "tint_b", "tint_c"],
 }
 

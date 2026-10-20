@@ -12,6 +12,7 @@ shader_type spatial;
 render_mode cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
+#include "res://shaders/lib/netrun_clock.gdshaderinc"
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -38,6 +39,26 @@ uniform int detail = 0;
 uniform float spill_mid = 0.62;
 uniform float spill_low = 0.32;
 uniform float spill_gain = 1.9;
+
+// AAA-2 PBR (A-022 / MATERIAL_SPEC 4; values from `CityShaderConfigData.aaa.pbr`, used above look_blend 0 only): concrete
+// (rough, spec IOR level, metal), the glass of the unlit window panes (colour, rough, metal, spec, tone range) and the gains on
+// the diffuse and specular of every light (the moon, the street's coloured local lights).
+uniform vec3 pbr_concrete = vec3(0.55, 0.0, 0.5);
+uniform vec3 pbr_glass = vec3(0.12, 0.2, 1.0);
+uniform vec3 glass_col = vec3(0.22, 0.26, 0.34);
+uniform vec2 glass_tone = vec2(0.8, 1.2);
+// The six concrete colour families of the plates (MATERIAL_SPEC 3), picked per building by its seed; blended in by look_blend.
+uniform vec3 concrete_fam[6];
+uniform float pbr_diffuse_k = 1.0;
+uniform float pbr_spec_k = 1.0;
+// The wet top of a cut near-side block (MATERIAL_SPEC 7: the plinth tops take the street's wet recipe): value-noise roughness
+// `wet_rough_noise` -> `wet_rough` at `wet_noise_scale`, spec `wet_spec`; the base colour is (plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue).
+uniform float wet_noise_scale = 0.09;
+uniform vec2 wet_rough_noise = vec2(0.45, 0.6);
+uniform vec2 wet_rough = vec2(0.32, 0.03);
+uniform float wet_spec = 0.7;
+// (rough, metal, spec) of this fragment for light().
+varying vec3 v_pbr;
 
 // NA-22. 0 = the mainline page, 1 = the netrun (AAA-2) look. The per-instance cut / ghost / dissolve start above 0.
 uniform float look_blend = 0.0;
@@ -120,6 +141,24 @@ const int ROOM_MAX = 32;
 uniform int room_n = 0;
 uniform vec4 room_box[32];
 uniform vec2 room_z[32];
+// NA-25b: how far each room's window has dissolved open, 0 = the closed facade, 1 = the window cut. Between, the facade breaks into
+// binary bits (ART_BIBLE 1.2: 0 / 1 glyphs in the window colour, white-hot for the first `bit_hot` share of a cell's life, flipping 0 <-> 1
+// at `bit_flip` Hz, pulled toward the room, never shrunk: they thin out as cells finish); cells (a 5 x 7 glyph, `bit_px` tall on screen) go in a staggered order, the glyph's pixels stay
+// and the rest of the cell is cut, so the room shows through. The room mesh behind comes up with the same share.
+uniform float room_open[32];
+// NA-25b r5: the glyph height (render px at 1080p), its box (half width / cell size as shares of that height), the stroke share, and the
+// white share of the stroke's core. The 0 / 1 are drawn analytically (bit_glyph), so they stay crisp at any size.
+uniform float bit_px = 12.0;
+uniform float bit_core = 0.7;
+const vec2 BIT_CELL = vec2(1.0, 1.4);
+const float BIT_HALF_W = 0.3;
+const float BIT_STROKE = 0.17;
+uniform float bit_hot = 0.3;
+uniform float bit_flip = 14.0;
+uniform float bit_gain = 2.4;
+// the netrun clock (NetrunShaderKit.set_clock via RouteRig): the bits flip on anim_t, held at anim_t_frozen under reduce effects
+uniform float anim_t = 0.0;
+uniform float anim_t_frozen = 0.0;
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -165,6 +204,25 @@ void vertex() {
 	v_half = 0.5 * length(MODEL_MATRIX[0].xyz);
 }
 
+// NA-25b r5: how deep inside a 0 / 1 stroke the point `q` (px from the glyph's centre, up positive) is; <= 0 is outside. `hb` the half box.
+float bit_seg(vec2 p, vec2 a, vec2 b) {
+	vec2 pa = p - a;
+	vec2 ba = b - a;
+	return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+}
+
+float bit_glyph(vec2 q, vec2 hb, float sw, bool one) {
+	float half_s = sw * 0.5;
+	if (!one) {
+		float e = (length(q / hb) - 1.0) * min(hb.x, hb.y);
+		return half_s - abs(e + half_s);
+	}
+	float stem = (abs(q.y) < hb.y) ? half_s - abs(q.x) : -1.0;
+	float flag = half_s - bit_seg(q, vec2(0.0, hb.y), vec2(-hb.x, hb.y * 0.45));
+	float foot = (abs(q.x) < hb.x * 0.9) ? half_s * 0.8 - abs(q.y + hb.y - half_s * 0.8) : -1.0;
+	return max(stem, max(flag, foot));
+}
+
 void fragment() {
 	// The facet normal first: its derivatives must run before any discard or early return.
 	vec3 n = normalize(cross(dFdx(VERTEX), dFdy(VERTEX)));
@@ -187,6 +245,10 @@ void fragment() {
 	bool ghosted = v_occ.y > 0.0;
 	bool dissolved = v_occ.w > 0.0;
 	bool route_bld = look_blend > 0.0 && ((bits >> 22) & 1) == 1;
+	float bit_k = 0.0;
+	vec3 bit_ctr = vec3(0.0);
+	bool bit_on = false;
+	vec3 bit_em = vec3(0.0);
 	if (route_bld && room_n > 0) {
 		vec3 pw = vec3(v_world.x, -v_world.z, v_world.y);
 		for (int i = 0; i < ROOM_MAX; i++) {
@@ -196,7 +258,46 @@ void fragment() {
 			vec4 bx = room_box[i];
 			vec2 zr = room_z[i];
 			if (pw.x > bx.x && pw.x < bx.z && pw.y > bx.y && pw.y < bx.w && pw.z > zr.x && pw.z < zr.y) {
+				if (room_open[i] >= 0.999) {
+					discard;
+				}
+				if (room_open[i] > 0.0) {
+					bit_k = room_open[i];
+					bit_ctr = vec3((bx.x + bx.z) * 0.5, (bx.y + bx.w) * 0.5, (zr.x + zr.y) * 0.5);
+				}
+			}
+		}
+		if (bit_k > 0.0) {
+			float tl = max(length(v_edge), 0.0001);
+			vec3 tt = v_edge / tl;
+			// NA-25b r5: a cell holds one glyph `bit_px` tall on screen at 1080p, at any zoom (px_per_bu: render px per BU on this wall).
+			float gh = bit_px * VIEWPORT_SIZE.y / 1080.0;
+			float ppb = max(abs(PROJECTION_MATRIX[1][1]) * VIEWPORT_SIZE.y * 0.5 / (persp ? view_d : 1.0), 0.001);
+			vec2 cell_px = gh * BIT_CELL;
+			vec2 cell = vec2(dot(v_world - v_corner, tt), v_world.y) * ppb / cell_px;
+			vec2 ci = floor(cell);
+			float h = hash1(vec3(ci, v_inst.z * 13.0));
+			float tc = clamp((bit_k - h * 0.6) / 0.4, 0.0, 1.0);
+			if (tc >= 1.0) {
 				discard;
+			}
+			if (tc > 0.0) {
+				vec3 cw = vec3(bit_ctr.x, bit_ctr.z, -bit_ctr.y);
+				vec2 cc = (ci + 0.5) * cell_px / ppb;
+				vec2 to_room = vec2(dot(cw - v_corner, tt), cw.y) - cc;
+				vec2 off = normalize(to_room + vec2(0.0001)) * 0.35 * tc * tc;
+				// The glyphs keep their size and thin out (cells finish and are cut), they never shrink into dots.
+				vec2 q = (fract(cell) - 0.5 - off) * cell_px;
+				bool one = (int(floor(nr_clock(anim_t, anim_t_frozen) * bit_flip * (0.6 + h) + h * 7.0)) & 1) == 1;
+				float sw = max(gh * BIT_STROKE, 1.0);
+				float depth = bit_glyph(q, vec2(gh * BIT_HALF_W, gh * 0.5), sw, one);
+				if (depth <= 0.0) {
+					discard;
+				}
+				// Emission core: the middle of the stroke burns whiter than its edge.
+				float core = smoothstep(0.0, sw * 0.5, depth);
+				bit_on = true;
+				bit_em = mix(tc < bit_hot ? vec3(1.0) : window_colors[int(h * 6.0) % 6], vec3(1.0), core * bit_core) * bit_gain;
 			}
 		}
 	}
@@ -228,14 +329,22 @@ void fragment() {
 		discard;
 	}
 	float g_open = ghosted ? 1.0 - v_occ.y / 16.0 : 1.0;
-	bool poche_face = !FRONT_FACING && was_cut;
+	// NA-25b r3 (art-pass A-019): a ghosted building is see-through (7.1), so its inner walls keep the facade look; the flat poche is for a
+	// cut that is not ghosted (the section, a cut at full opacity). A ghost easing in or out was a solid black windowless prism.
+	bool poche_face = !FRONT_FACING && was_cut && !ghosted;
 	float seed = v_inst.z;
-	float tone = mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13));
+	// AAA-2: the per-triangle tone jitter is Eevee-only in the plates (Cycles ignores it): the facets show by their own light.
+	float tone = mix(mix(tone_min, tone_max, fract(v_c0.x + seed * 7.13)), 1.0, look_blend);
 	bool roof = v_c0.y > 0.5;
-	vec3 base = COLOR.rgb * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
+	vec3 body = COLOR.rgb;
+	if (look_blend > 0.0) {
+		body = mix(body, concrete_fam[int(floor(fract(seed * 17.31) * 6.0)) % 6], look_blend);
+	}
+	vec3 base = body * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
+	v_pbr = pbr_concrete;
 	if (!roof) {
 		if (ghosted && v_occ.z > 0.0) {
 			float eL = length(v_edge);
@@ -273,6 +382,11 @@ void fragment() {
 			if (ui >= 0.0 && ui < nx && vi >= 0.0 && vi < nz && lu >= 0.0 && lv >= 0.0 && lu < window_size.x && lv < window_size.y) {
 				vec3 key = vec3(ui + floor(v_corner.x * 3.0), vi + floor(v_corner.z * 3.0), seed * 977.0);
 				float r = hash1(key);
+				if (look_blend > 0.0) {
+					// An unlit pane is glass (AAA-2: its own colour, tone, rough, metal); a lit one below overwrites it with light.
+					base = mix(base, glass_col * mix(glass_tone.x, glass_tone.y, hash1(key + 3.0)), look_blend);
+					v_pbr = mix(pbr_concrete, vec3(pbr_glass.x, pbr_glass.y, pbr_glass.z), look_blend);
+				}
 				float share = v_crest > 0.5 ? 0.6 : mix(window_share, win_share, look_blend);
 				if (look_blend > 0.0 && v_crest < 0.5) {
 					// NA-23c (art-pass r2_facade.py, repetition.guard): a lit fraction per building, floor bands of 3 floors that are dark
@@ -383,6 +497,29 @@ void fragment() {
 		// The open top of a cut building: its back faces show the near-black poche.
 		ALBEDO = poche;
 		EMISSION = vec3(0.0);
+		if (look_blend > 0.0) {
+			// AAA-2: the cut top is a wet plinth top: (a, a, 1.2 a), a puddle roughness by noise, spec 0.7, an up normal: it takes the
+			// lamps' pools and the SSR reflections of the street like the ground does.
+			float wn = 0.0;
+			float wa = 0.5;
+			vec3 wp = vec3(v_world.x, 0.0, v_world.z) * wet_noise_scale;
+			for (int i = 0; i < 5; i++) {
+				wn += wa * nr_noise3(wp);
+				wp *= 2.0;
+				wa *= 0.5;
+			}
+			wn /= 0.96875;
+			float wr = mix(wet_rough.x, wet_rough.y, smoothstep(wet_rough_noise.x, wet_rough_noise.y, wn));
+			ALBEDO = mix(poche, vec3(plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue), look_blend);
+			NORMAL = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+			ROUGHNESS = wr;
+			SPECULAR = wet_spec;
+			v_pbr = vec3(wr, 0.0, wet_spec);
+		}
+	}
+	if (bit_on) {
+		ALBEDO = vec3(0.0);
+		EMISSION = bit_em;
 	}
 	if (id_mode) {
 		ALBEDO = vec3(0.0);
@@ -399,5 +536,30 @@ void light() {
 		// Toon ramp -> a smooth lambert ramp over the same colours (the AAA-2 PBR diffuse stand-in).
 		band = mix(band, mix(ramp_shadow, ramp_lit, clamp(ndl, 0.0, 1.0)), look_blend);
 	}
-	DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band * mix(1.0, facade_light, look_blend);
+	if (look_blend <= 0.0) {
+		DIFFUSE_LIGHT = id_mode ? vec3(0.0) : band;
+	} else if (id_mode) {
+		DIFFUSE_LIGHT = vec3(0.0);
+	} else {
+		// AAA-2: a Lambert diffuse and a GGX specular (rough / metal / spec of the fragment) of the light's own colour, added per light
+	// (the moon, the street's coloured local lights). At look_blend 1 the toon ramp is gone; between, the ramp fades out.
+	vec3 lc = LIGHT_COLOR * ATTENUATION;
+	float nl = max(dot(NORMAL, LIGHT), 0.0);
+	float rough = max(v_pbr.x, 0.04);
+	float metal = v_pbr.y;
+	float a = rough * rough;
+	vec3 h = normalize(LIGHT + VIEW);
+	float nh = max(dot(NORMAL, h), 0.0);
+	float vh = max(dot(VIEW, h), 0.0);
+	float nv = max(dot(NORMAL, VIEW), 0.001);
+	float dd = a * a / (3.14159265 * pow(nh * nh * (a * a - 1.0) + 1.0, 2.0));
+	float k = (rough + 1.0) * (rough + 1.0) / 8.0;
+	float gg = (nl / (nl * (1.0 - k) + k)) * (nv / (nv * (1.0 - k) + k));
+	vec3 f0 = mix(vec3(0.08 * v_pbr.z), ALBEDO, metal);
+	vec3 fr = f0 + (vec3(1.0) - f0) * pow(1.0 - vh, 5.0);
+	vec3 spec = dd * gg * fr / max(4.0 * nl * nv, 0.001) * nl;
+	vec3 pbr_d = lc * nl * (1.0 - metal) * pbr_diffuse_k;
+	DIFFUSE_LIGHT += mix(band * mix(1.0, facade_light, look_blend), pbr_d, look_blend);
+	SPECULAR_LIGHT += lc * spec * pbr_spec_k * look_blend;
+	}
 }

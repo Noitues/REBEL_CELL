@@ -17,4 +17,4 @@ static func arrival(s: NetrunSession) -> Dictionary:
 ## True when node type `node_type` (RC.InfilNodeType) can heal the operative: Terminal events
 ## offer healing choices (e.g. the medbay).
 static func heals_at(node_type: int) -> bool:
-	return node_type == RC.InfilNodeType.TERMINAL
+	return node_type == RC.InfilNodeType.TERMINAL or node_type == RC.InfilNodeType.REST

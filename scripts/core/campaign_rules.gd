@@ -22,6 +22,7 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 	c.corporation_id = corp.id
 	c.start_class_id = class_data.id
 	c.campaign_seed = campaign_seed
+	c.city_seed = city_seed_for(campaign_seed)
 	c.ice_level = ice_level
 	c.schematics = config.starting_schematics
 	for i in config.starting_rookies:
@@ -42,6 +43,8 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 		c.grid.sites[c.grid.home_site_id]["integrity"] = c.grid.home_max_integrity
 		c.grid.sites[c.grid.home_site_id]["max_integrity"] = c.grid.home_max_integrity
 	c.story_path_id = pick_story_path(corp, campaign_seed)
+	if EyeRules.applies(corp):
+		c.corp_theme.halcyon.eye_index = EyeRules.draw_start(campaign_seed, config)  # stored, never redrawn
 	var fewer := -int(c.rule_modifier(config, RC.RuleModifierType.HEAT_OBJECTIVE_SITES))
 	if fewer > 0:
 		var objectives: Array[StringName] = []
@@ -61,6 +64,17 @@ static func site_objective(campaign: CampaignState, site: SiteData) -> int:
 	if campaign.disabled_objectives.has(site.id):
 		return RC.SiteObjective.NONE
 	return site.objective
+
+
+## Plan 2 NA-12: the campaign's city seed, 64 bits drawn from the campaign seed's own named
+## stream (RngStreams.CITY_SEED_STREAM, made here: no saved stream advances); never 0 (0 = the
+## fixed city).
+static func city_seed_for(campaign_seed: int) -> int:
+	var rng := RngStreams.make_stream(campaign_seed, RngStreams.CITY_SEED_STREAM)
+	var hi := rng.randi()
+	var lo := rng.randi()
+	var s := (hi << 32) | lo
+	return s if s != 0 else 1
 
 
 static func pick_story_path(corp: CorporationData, campaign_seed: int) -> StringName:
@@ -281,7 +295,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 	var site := site_data(corp, run.site_id)
 	if site == null:
 		return events
-	if run.kind == "boss":
+	if run.kind == "boss" or run.kind == NetrunSession.HQ_LADDER_KIND:
 		campaign.outcome = CampaignState.Outcome.WON
 		var p := story_path(campaign, corp)
 		var boss_name := corp.final_boss.display_name if corp != null and corp.final_boss != null else "The final server"
@@ -326,6 +340,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 				events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s under Heat %d" % [site.id, campaign.heat]))
 		RC.SiteObjective.HEAT_REDUCTION:
 			events.append_array(HeatRules.add_heat(campaign, site.heat_change, config, "Heat objective %s" % site.id))
+			events.append_array(_infection_cure_events(campaign, config, "Heat objective %s" % site.id))
 	if lookup != null:
 		events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 	return events
@@ -421,6 +436,17 @@ static func _node_passives_on_completion(campaign: CampaignState, corp: Corporat
 						events.append({"type": "node_passive", "site": site_id, "effect": e.type, "amount": e.amount,
 							"text": "%s (%s): Heat %+d." % [node.display_name, site_id, e.amount]})
 						events.append_array(HeatRules.add_heat(campaign, e.amount, config, node.display_name))
+						if node.node_type == RC.NetworkNodeType.PROXY_RELAY:
+							events.append_array(_infection_cure_events(campaign, config, node.display_name))
+	return events
+
+
+## Solace v2: a cure (Heat objective Site, Proxy Relay completion) lowers the campaign infection.
+static func _infection_cure_events(campaign: CampaignState, config: CampaignConfigData, why: String) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var cured := SolaceRaidRules.cure(campaign, config)
+	if cured > 0:
+		events.append({"type": "infection_cure", "amount_bp": cured, "text": "%s: population infection -%d%% (%d%%)." % [why, SolaceRaidRules.pct(cured), SolaceRaidRules.pct(campaign.corp_theme.solace.infection_bp)]})
 	return events
 
 
@@ -940,6 +966,7 @@ static func move_asset(campaign: CampaignState, config: CampaignConfigData, look
 
 static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigData, pending: Dictionary = {}, corp: CorporationData = null) -> float:
 	var pct := campaign.rule_modifier(config, RC.RuleModifierType.RAID_STRENGTH_PCT)
+	pct += float(campaign.next_raid_mods.get("strength_pct", 0))  # EV-01: a Terminal event's next-raid modifier
 	# TAKEN_RAID_STRENGTH_PCT (ICE 14): raids entering from a TAKEN Site hit harder.
 	if corp != null and not pending.is_empty():
 		for entry in raid_entries(campaign, corp, pending):
@@ -950,7 +977,7 @@ static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigDat
 
 
 static func raid_extra_waves(campaign: CampaignState, config: CampaignConfigData) -> int:
-	return int(campaign.rule_modifier(config, RC.RuleModifierType.RAID_EXTRA_WAVE))
+	return int(campaign.rule_modifier(config, RC.RuleModifierType.RAID_EXTRA_WAVE)) + int(campaign.next_raid_mods.get("extra_waves", 0))
 
 
 static func pending_raid(campaign: CampaignState) -> Dictionary:
@@ -1016,6 +1043,7 @@ static func fight_raid(campaign: CampaignState, corp: CorporationData, config: C
 	var raid := raid_data(pending, lookup)
 	var result := project_raid(campaign, corp, config, lookup, pending)
 	campaign.pending_raids.erase(pending)
+	campaign.next_raid_mods = {}  # EV-01: the event modifier is spent by this raid
 	var events: Array[Dictionary] = result.events.duplicate()
 	events.append_array(RaidResolver.apply(campaign, result, raid, config))
 	name_pending_raids(campaign, lookup, events)  # a lost raid's Heat can queue the next one

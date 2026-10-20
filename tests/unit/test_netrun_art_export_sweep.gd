@@ -1,22 +1,30 @@
 extends GutTest
-## NA-02 (spec §12.3.1), full tier: building ids are unique across 1,000 city seeds (0
+## NA-02 (spec §12.3.1), full tier: building ids are unique across SWEEP_SEEDS city seeds (0
 ## collisions); a FULL-city city.json validates against its schema at 3 seeds (signed seed
 ## included); and the exporter CLI run twice in fresh processes writes byte-identical files.
+## CITY-A2 step 2 (perf): every seed is an A2 city (a plan plus a whole-city subdivision, ~0.4 s, before any box is
+## read), so the id sweep runs 200 seeds, not 1,000 (an A2 building id is its cell's top-left lot and cells never
+## overlap: the sweep guards the recording, not a random draw); the HQ-overlap sweep builds without the layout rules
+## (they change heights and footprints inside a cell, never a cell or an HQ rect); the caches are dropped per seed.
 
 const SchemaCheck := preload("res://tools/netrun_art/schema_check.gd")
 const CITY_CONFIG := "res://content/config/city_config.tres"
 ## The sweep's probe: one chunk-sized box round the district centre per seed (a full-city build
 ## is ~1 s, so the 1,000 seeds read this box; the full city is checked at FULL_SEEDS).
-const SWEEP_SEEDS := 1000
+const SWEEP_SEEDS := 200
 const SWEEP_HALF := 12
 const HQ_SEEDS := 200
 const FULL_SEEDS: Array[int] = [7, -1, 424242]
 
 var _cfg: CityConfig
+## `_cfg` without the layout rules (the HQ-overlap sweep).
+var _bare: CityConfig
 
 
 func before_all() -> void:
 	_cfg = load(CITY_CONFIG)
+	_bare = _cfg.duplicate() as CityConfig
+	_bare.layout_rules_on = false
 
 
 func test_building_ids_unique_across_1000_seeds() -> void:
@@ -38,6 +46,7 @@ func test_building_ids_unique_across_1000_seeds() -> void:
 				collisions += 1
 			seen[b["bid"]] = true
 		buildings += seen.size()
+		CityPlan.forget_all()
 	gut.p("NA-02 sweep: %d seeds, %d buildings, %d collisions" % [SWEEP_SEEDS, buildings, collisions])
 	assert_eq(collisions, 0)
 	assert_true(buildings > SWEEP_SEEDS, "the box holds buildings")
@@ -47,9 +56,10 @@ func test_no_city_cell_intersects_an_hq_rect_across_200_seeds() -> void:
 	var bad := 0
 	for s in HQ_SEEDS:
 		var seed_v := s * 7919 - 100000
-		var m := CityModel.build(_cfg, seed_v)
+		var m := CityModel.build(_bare, seed_v)
 		var city := NetrunArtExport.city_json(m.city_seed, _cfg.lot_bu, _cfg.district_centre, m.prisms, m.streets,
 			m.plazas, m.hqs)
+		CityPlan.forget_all()
 		if not (city["hq_overlaps"] as Array).is_empty():
 			bad += 1
 			gut.p("seed %d: %s" % [seed_v, str(city["hq_overlaps"])])

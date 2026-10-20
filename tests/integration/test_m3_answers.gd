@@ -67,6 +67,10 @@ func _settle(s: NetrunSession) -> void:
 				s.choose_event_option(s.current_event().choices.size() - 1)
 			RunState.Phase.SHOP:
 				s.leave_shop()
+			RunState.Phase.REST:
+				s.leave_rest()
+			RunState.Phase.WORKSHOP:
+				s.leave_workshop()
 			RunState.Phase.RAID:
 				s.raid_fight()
 
@@ -106,9 +110,11 @@ func test_the_final_boss_is_tier_scaled_too() -> void:
 	var op := c.living_operatives()[0]
 	op.rank = 3
 	var s := RunManager.start_run(op.id, &"the_genome_core")
-	assert_eq(s.run.kind, "boss")
+	assert_eq(s.run.kind, "hq", "W2 HQ-LAUNCH: the Solace breach is the ladder")
 	assert_almost_eq(s.enemy_scale(), pow(1.6, 3), 0.0001)
-	s.enter_node(s.available_nodes()[0])
+	s.run.corp_theme.solace.front_milli = -999999
+	s.run.current_node_id = s.run.map.layers[s.run.map.layer_count() - 2][0]["id"]
+	s.enter_node(s.run.map.final_node_id())
 	var boss := s.combat.state.get_combatant(&"enemy_0")
 	assert_eq(boss.max_hp, roundi(360 * pow(1.6, 3)), "1475 HP at T4")
 	assert_almost_eq(boss.output_scale, _cfg.enemy_damage_factor(4), 0.0001, "damage scales with its own factor (N2 table)")

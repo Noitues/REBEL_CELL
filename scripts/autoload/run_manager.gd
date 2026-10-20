@@ -86,6 +86,7 @@ func has_save() -> bool:
 func reset() -> void:
 	campaign = null
 	netrun = null
+	street_link = {}
 	_restore_lookup()
 	load_profile()
 
@@ -257,8 +258,11 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 	var run_seed := seed_rng.randi()
 	match CampaignRules.run_kind_for(campaign, site):
 		"boss":
-			netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
-				corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
+			if NetrunSession.uses_hq_ladder(corporation):
+				netrun = NetrunSession.start_hq_ladder(resolver, campaign, operative_id, site_id, site.tier, run_seed, corporation)
+			else:
+				netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
+					corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
 			if has_node("/root/Dialogue"):
 				get_node("/root/Dialogue").speak("boss", RC.Voice.DISPATCH, corporation.id, &"", campaign.campaign_seed)
 		"reclaim":
@@ -626,12 +630,16 @@ func go_to_title() -> void:
 	change_scene(TITLE_SCENE)
 
 
-## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT.
-func go_to_hq() -> void:
+## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT. NA-25b: `street` (the street dive has just played backwards to the
+## HQ page) ends with the HQ side of the entry in reverse, the CRT coming back on over the jack-in's link.
+func go_to_hq(street: bool = false) -> void:
 	if scene_change_pending():
 		return
 	if scene_switching_enabled:
-		Fx.jack_out(func() -> void: change_scene(HQ_SCENE), -1.0, tr("HQ"))
+		if street and not street_link.is_empty():
+			Fx.jack_out_link(func() -> void: change_scene(HQ_SCENE), street_link, tr("HQ"))
+		else:
+			Fx.jack_out(func() -> void: change_scene(HQ_SCENE), -1.0, tr("HQ"))
 	else:
 		change_scene(HQ_SCENE)
 
@@ -645,25 +653,24 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 	AudioDirector.play_sfx("jack_in")
 	_before_switch = before_switch
 	if scene_switching_enabled:
-		# ART-7 3B: along the link on the City Grid when the jack starts from one (4.6). NA-25: with the street route on, the
+		# ART-7 3B: along the link on the City Grid when the jack starts from one (4.6). NA-25: the
 		# jack ends at the CRT collapse and the netrun scene plays the dive (`take_street_entry`).
 		var link := jack_link(site_id)
-		street_entry = street_route_on()
-		if street_entry and not link.is_empty():
+		street_entry = true
+		if not link.is_empty():
 			link["street"] = true
+			street_link = link.duplicate()
 		Fx.jack_in_link(_switch_to_netrun, link, jack_destination(site_id), jack_note(), jack_tier(site_id))
 	else:
 		street_entry = false
 		_switch_to_netrun()
 
 
-## NA-25: true from a jack in with the street route on until the netrun scene takes it (it then plays the entry's dive).
+## NA-25b: the street jack-in's link (screen px of the HQ's map), kept for the jack-out's CRT (`go_to_hq(true)`).
+var street_link: Dictionary = {}
+
+## NA-25: true from a jack in until the netrun scene takes it (it then plays the entry's dive).
 var street_entry: bool = false
-
-
-## NA-25: true when netruns draw their route at street level (`NetrunScene.street_route`).
-func street_route_on() -> bool:
-	return bool((load("res://scripts/ui/netrun_scene.gd") as GDScript).get(&"street_route"))
 
 
 ## NA-25: whether the jack that brought the netrun scene in was a street entry; clears it (the scene calls this once, on load).
@@ -713,7 +720,9 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 			var sd := lookup().get_content(id) as SliceData
 			if sd != null:
 				slices.append(Palette.slice_color(sd.slice_type))
-	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices}
+	# NA-25b r3: the operative (the jack's wheel is that class wheel) and the building the run builds (the hub hold's CRT line).
+	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices,
+		"operative": op, "build": String(site_id)}
 
 
 ## A Site as the Cell's terminal writes it ("S-07"): its node number on the corporation's grid.

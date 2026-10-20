@@ -26,6 +26,19 @@ static func _v3(a: Array) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 
+## NA-25b r5: the dissolve's stagger and a glyph cell's life (city_building.gdshader: `tc = (open - h * 0.6) / 0.4`).
+const BIT_STAGGER := 0.6
+const BIT_LIFE := 0.4
+
+
+## The share of a wall's bit cells that show a glyph at room-open share `open` (the cells' hashes spread evenly over 0..1): a cell shows
+## its glyph from `h * BIT_STAGGER` for BIT_LIFE of the open share, then is cut. The glyphs keep their size, so the count is what thins out.
+static func bit_glyph_share(open: float) -> float:
+	if open <= 0.0 or open >= BIT_STAGGER + BIT_LIFE:
+		return 0.0
+	return clampf(open / BIT_STAGGER, 0.0, 1.0) - clampf((open - BIT_LIFE) / BIT_STAGGER, 0.0, 1.0)
+
+
 ## The clock for `mats` (materials on the netrun shaders): `anim_t` seconds (the 4.0 s loop) and, under reduce effects, the
 ## `frozen_t` value they stop at (the plate's recorded `anim_t`; `NAN` = the config `reduce.anim_t_default`).
 static func set_clock(mats: Array, anim_t: float, frozen_t: float = NAN) -> void:
@@ -66,6 +79,25 @@ static func setup_building(m: ShaderMaterial, look_blend: float = 0.0) -> void:
 	m.set_shader_parameter(&"edge_a", _v3(b["edge_a"]))
 	m.set_shader_parameter(&"edge_b", _v3(b["edge_b"]))
 	m.set_shader_parameter(&"haze_col", _v3(b["haze_col"]))
+	var wet: Dictionary = _cfg().wet
+	m.set_shader_parameter(&"wet_noise_scale", float(wet["noise_scale"]))
+	m.set_shader_parameter(&"wet_rough_noise", _v2(wet["rough_noise"]))
+	m.set_shader_parameter(&"wet_rough", _v2(wet["rough_wet"]))
+	m.set_shader_parameter(&"wet_spec", float(wet["specular"]))
+	# AAA-2 PBR (MATERIAL_SPEC 4): concrete (rough, metal, spec), the glass panes, the light gains.
+	var pbr: Dictionary = _cfg().aaa["pbr"]
+	var cc: Dictionary = pbr["concrete"]
+	var gl: Dictionary = pbr["glass"]
+	m.set_shader_parameter(&"pbr_concrete", Vector3(float(cc["rough"]), float(cc["metal"]), float(cc["spec"])))
+	m.set_shader_parameter(&"pbr_glass", Vector3(float(gl["rough"]), float(gl["metal"]), float(gl["spec"])))
+	m.set_shader_parameter(&"glass_col", _v3(gl["col"]))
+	m.set_shader_parameter(&"glass_tone", _v2(gl["tone"]))
+	var fam := PackedVector3Array()
+	for c: Array in cc["families"]:
+		fam.append(_v3(c))
+	m.set_shader_parameter(&"concrete_fam", fam)
+	m.set_shader_parameter(&"pbr_diffuse_k", float(pbr["diffuse_k"]))
+	m.set_shader_parameter(&"pbr_spec_k", float(pbr["spec_k"]))
 
 
 ## Switches the street section on: corridor beside the plan segment `a` -> `c` (plan x, y), camera-side normal `nrm`, local
@@ -108,6 +140,10 @@ static func setup_wet(m: ShaderMaterial) -> void:
 	m.set_shader_parameter(&"rough_wet", _v2(w["rough_wet"]))
 	m.set_shader_parameter(&"wet_specular", float(w["specular"]))
 	m.set_shader_parameter(&"albedo_mul", float(w["albedo_mul"]))
+	m.set_shader_parameter(&"streak_k", float(w["streak_k"]))
+	m.set_shader_parameter(&"spec_max", float(w["spec_max"]))
+	m.set_shader_parameter(&"pool_k", float(w["pool_k"]))
+	m.set_shader_parameter(&"spill_k", float(w["spill_k"]))
 
 
 ## The speed quantized so the lane length is a whole number of loops: `L = k * speed * T`, `k = max(1, round(L / (speed T)))`
@@ -268,13 +304,14 @@ static func fog_material(h_front: float = -1.0, octave_w: Vector3 = Vector3.ONE)
 	m.set_shader_parameter(&"h_front", h)
 	m.set_shader_parameter(&"h_sky", h * float(f["h_sky_k"]))
 	for k: String in ["strata_k", "warp_k", "tilt", "wisp_at", "wisp_half", "wisp_k", "gb_top", "ground_bank", "mid_bank", "haze",
-			"haze_efold", "underlight_k", "ground_glow", "mid_glow", "emit_gain"]:
+			"haze_efold", "underlight_k", "ground_glow", "mid_glow", "emit_gain", "back_haze", "back_h_k"]:
 		m.set_shader_parameter(StringName(k), float(f[k]))
 	for k: String in ["bank_freq", "wisp_freq", "clump_freq", "scatter", "wind", "tint_a", "tint_b", "tint_c"]:
 		m.set_shader_parameter(StringName(k), _v3(f[k]))
 	for k: String in ["bank_mix", "remap_oct", "remap_clump", "front", "gb_off", "mid_range", "mid_remap"]:
 		m.set_shader_parameter(StringName(k), _v2(f[k]))
 	m.set_shader_parameter(&"floor_range", _v2(f["floor"]))
+	m.set_shader_parameter(&"back_depth", _v2(f["back_depth"]))
 	m.set_shader_parameter(&"octave_w", octave_w)
 	return m
 
@@ -386,4 +423,14 @@ static func configure_environment(env: Environment) -> void:
 	env.volumetric_fog_albedo = Color(sc.x, sc.y, sc.z)
 	env.volumetric_fog_anisotropy = float(f["anisotropy"])
 	env.volumetric_fog_length = float(f["length"])
+	# AAA-2: the fog is a real volume to the far skyline (the froxels past `length` repeat the last slice, which turned every far
+	# building to fog at the plate's density): finer froxels, the length follows the camera (`fog_length_for`).
+	env.volumetric_fog_detail_spread = float(f["detail_spread"])
+	var fx: Array = f["froxel"]
+	RenderingServer.environment_set_volumetric_fog_volume_size(int(fx[0]), int(fx[1]))
 	env.volumetric_fog_temporal_reprojection_enabled = false
+
+
+## The volumetric fog length (BU) for a camera `dist` BU from its target: the target plus `fog.length` beyond it.
+static func fog_length_for(dist: float) -> float:
+	return minf(dist + float(_cfg().fog["length"]), float(_cfg().fog["length_max"]))

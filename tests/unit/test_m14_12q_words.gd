@@ -214,7 +214,8 @@ func test_the_route_key_follows_the_text_size_and_wraps_instead_of_scaling() -> 
 		for l in legend.find_children("*", "Label", true, false):
 			if (l as Label).text != "":
 				assert_eq((l as Label).get_theme_font_size(&"font_size"), roundi(RouteLegend.FONT * scale), "x%.1f: '%s' at the text size" % [scale, (l as Label).text])
-		assert_gte(row.custom_minimum_size.y, legend.size.y - 0.5, "x%.1f: the row holds every line of the key" % scale)
+		# W1 NA-26: on the street page the key sits in a container that grows with it (no fixed row height).
+		assert_gte(maxf(row.custom_minimum_size.y, row.get_combined_minimum_size().y), legend.size.y - 0.5, "x%.1f: the row holds every line of the key" % scale)
 		_holder.queue_free()
 		await _frames(2)
 

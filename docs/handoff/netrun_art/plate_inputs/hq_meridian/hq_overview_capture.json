@@ -1,0 +1,46 @@
+{
+ "camera": {
+  "dist": 2600.0,
+  "fov": 0.0,
+  "lens": 0.0,
+  "loc": [
+   1308.4497,
+   2129.7954,
+   946.4497
+  ],
+  "note": "yaw / pitch are CityIsoCamera degrees (view direction cos(yaw)cos(pitch), -sin(pitch), -sin(yaw)cos(pitch) in world); lens 0 = orthographic, shift 0 = the frame is centered on tgt",
+  "ortho_scale": 107.7374,
+  "pitch": 55.0,
+  "plan_loc": [
+   1308.4497,
+   -946.4497,
+   2129.7954
+  ],
+  "plan_tgt": [
+   253.9423,
+   108.0577,
+   0.0
+  ],
+  "projection": "orthogonal",
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   253.9423,
+   0.0,
+   -108.0577
+  ],
+  "yaw": 135.0
+ },
+ "corp": "meridian",
+ "kind": "hq",
+ "layout_seed": "13875796438772315820",
+ "look": "mainline",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "hq_meridian_11",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

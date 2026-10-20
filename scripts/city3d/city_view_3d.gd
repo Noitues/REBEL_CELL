@@ -53,8 +53,8 @@ const OUTER_GROUND_BU := 8000.0
 const NET_MARGIN_BU := 60.0
 
 var cfg: CityConfig = CONFIG
-## The layout's look seed (NeonCity.city_seed: the game's city is seed 7 everywhere).
-var city_seed: int = 7
+## The city seed (NeonCity.city_seed; NA-12: the running campaign's city, CityPlan.current_seed).
+var city_seed: int = CityPlan.current_seed()
 var model: CityModel = null
 var iso: CityIsoCamera = null
 var camera: Camera3D
@@ -166,6 +166,13 @@ func _ready() -> void:
 	if model != null:
 		_on_model(model)
 	else:
+		# NA-12: deferred, so a host that hands its model right after add_child (RouteRig.setup) starts no build of the
+		# running campaign's city it never uses (an orphan worker job at exit).
+		_start_model_unless_given.call_deferred()
+
+
+func _start_model_unless_given() -> void:
+	if model == null and is_inside_tree():
 		_start_model()
 
 
@@ -209,7 +216,7 @@ func landmark_slot(corp: StringName) -> Transform3D:
 	if model == null or not model.hqs.has(corp):
 		return Transform3D()
 	var r: Rect2i = model.hqs[corp]
-	return Transform3D(Basis(), lot_world(Vector2(r.get_center())))
+	return Transform3D(Basis(), ground_world(Vector2(r.get_center())))
 
 
 ## Hides (or shows again) the stepped stand-in tower on `corp`'s HQ lot (a landmark took
@@ -255,8 +262,12 @@ func host_paused() -> bool:
 ## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
+	if water != null:
+		water.set_night(night_share)
 	if _building_mat == null or day.is_empty():
 		return
+	_last_day = day
+	_ramp_water(day)
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
@@ -297,6 +308,8 @@ var _netrun_setup: bool = false
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
 	look_blend = clampf(lb, 0.0, 1.0)
+	if water != null:
+		water.set_look_blend(look_blend)
 	if _building_mat == null:
 		return
 	if not _netrun_setup:
@@ -317,14 +330,43 @@ func set_look_blend(lb: float) -> void:
 	var look: Dictionary = CityShaderConfigData.shipped().look
 	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
-	_env.tonemap_exposure = NetrunShaderKit.exposure_at(look_blend)
-	NetrunShaderKit.apply_sky(_env, look_blend, cfg.sky)
+	# AAA-2 (A-022): above 0 the post runs the plate's chain and holds the exposure (solved per framing by the street rig); the
+	# Environment tonemap stays linear at 1. The world is the flat colour, the key light the moon.
+	if look_blend > 0.0 and _aaa_exposure <= 0.0:
+		_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0)
+	_env.tonemap_exposure = 1.0
+	NetrunShaderKitAaa.setup_post(_post, look_blend > 0.0, _aaa_exposure)
+	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
+
+
+var _aaa_exposure: float = 0.0
+
+
+## AAA-2: the exposure the post chain multiplies the linear picture by (the solved value of the framing, `look.exposure` of the
+## street config). Above look_blend 0 only; the mainline page has no exposure.
+func set_aaa_exposure(e: float) -> void:
+	_aaa_exposure = e
+	if look_blend > 0.0 and _post != null:
+		_post.set_shader_parameter(&"aaa_exposure", e)
+
+
+## The post exposure now (0 until the AAA chain has been switched on).
+func aaa_exposure() -> float:
+	return _aaa_exposure
 
 
 ## The buildings' material (the netrun views drive its section and clock uniforms through `NetrunShaderKit`).
 func building_material() -> ShaderMaterial:
 	return _building_mat
+
+
+## NA-25b: the wet ground's `puddles_sharp` weight (0 .. 1; spec 5.2 band by camera distance, `RevealTiers.band(d, "puddles_sharp")`).
+## Far from the street the puddles go to their blurry mean, so the ground never shows flat mirror patches (the dive).
+func set_puddles_sharp(k: float) -> void:
+	for m: ShaderMaterial in [_ground_mat, _outer_mat]:
+		if m != null:
+			m.set_shader_parameter(&"puddles_sharp", clampf(k, 0.0, 1.0))
 
 
 ## The lane lines' material (the street netrun swaps its shader for the quiet `route_lane`).
@@ -400,6 +442,8 @@ func set_id_pass(on: bool, keep_landmarks: bool = false) -> void:
 
 ## The share of the night look the city shows (1 night .. 0 day; set_night_share).
 var night_share: float = 1.0
+## NA-12 r2: the last day look set_night_share was given (the sea wall built later takes its ramp).
+var _last_day: Dictionary = {}
 var _landmarks_night: bool = true
 var _env: Environment
 
@@ -413,9 +457,9 @@ func pick(p: Vector2) -> Dictionary:
 	return model.pick_info(iso, p)
 
 
-## The ground lot under pixel `p`.
+## The ground lot under pixel `p` (CITY-A2 step 2: on the model's terrain once it is built).
 func lot_at(p: Vector2) -> Vector2i:
-	var l := CityIsoCamera.world_to_lot(cfg, iso.unproject(p, 0.0))
+	var l := CityIsoCamera.world_to_lot(cfg, model.ground_point(iso, p) if model != null else iso.unproject(p, 0.0))
 	return Vector2i(floori(l.x), floori(l.y))
 
 
@@ -432,6 +476,11 @@ func unproject(p: Vector2, height: float = 0.0) -> Vector3:
 ## The world point of lot point `lot` (lots, not lot centres) at `height` BU.
 func lot_world(lot: Vector2, height: float = 0.0) -> Vector3:
 	return CityIsoCamera.lot_to_world(cfg, lot, height)
+
+
+## CITY-A2 step 2: the world point of lot point `lot` on the ground (the model's terrain; sea level before the model).
+func ground_world(lot: Vector2) -> Vector3:
+	return lot_world(lot, model.ground_at(lot) if model != null else 0.0)
 
 
 ## The tallest roof (BU) over lot `lot` (0 before the model is built).
@@ -452,6 +501,8 @@ func set_iso(cam: CityIsoCamera) -> void:
 	camera.size = iso.ortho
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
+	if water != null:
+		water.set_zoom(iso.ortho)  # NA-12 r3: the sea wall's coping widens with the zoom-out
 	# Parity S-HQRUN: the DISPATCH canyon's HQ-run page looks down the street in perspective.
 	for c: Camera3D in [camera, _ground_cam]:
 		c.projection = Camera3D.PROJECTION_PERSPECTIVE if iso.perspective() else Camera3D.PROJECTION_ORTHOGONAL
@@ -535,11 +586,18 @@ func set_network(d: CityNetworkData) -> void:
 		sm.set_shader_parameter("node_count", mini(d.nodes.size(), cfg.net_nodes_max))
 		sm.set_shader_parameter("seg_count", mini(d.segments.size(), cfg.net_points_max))
 	var b := d.bounds().grow(NET_MARGIN_BU)
-	var pm := PlaneMesh.new()
-	pm.size = b.size
+	var pm: Mesh = null
+	var at := Vector3(b.get_center().x, cfg.lane_stroke_bu, b.get_center().y)
+	if model != null and model.terrain != null:
+		# CITY-A2 step 2: the decal follows the hills (its shader reads world X/Z).
+		pm = CityMeshKit.terrain_plane(cfg, b, model.terrain, cfg.lane_stroke_bu + cfg.net_terrain_lift_bu, cfg.lot_bu)
+		at = Vector3.ZERO
+	else:
+		var plane := PlaneMesh.new()
+		plane.size = b.size
+		pm = plane
 	_net_mi.mesh = pm
 	_net_xray_mi.mesh = pm
-	var at := Vector3(b.get_center().x, cfg.lane_stroke_bu, b.get_center().y)
 	_net_mi.position = at
 	_net_xray_mi.position = at
 
@@ -553,6 +611,8 @@ func _sync_ambient() -> void:
 		_post.set_shader_parameter("time_scale", s)
 		_net_mat.set_shader_parameter("time_scale", s)
 		_net_xray_mat.set_shader_parameter("time_scale", s)
+	if water != null:
+		water.set_time_scale(s)
 	if not is_equal_approx(s, ambient_scale):
 		ambient_scale = s
 		ambient_changed.emit(s)
@@ -810,7 +870,6 @@ func _poll_model() -> void:
 	var rects: Array[Rect2i] = job["rects"]
 	for i in keys.size():
 		m.add_recording(keys[i], rects[i], recs[i])
-		recs[i].free()
 	m.finish(true)
 	var rules := m.layout_rules_job()
 	if rules.is_empty():
@@ -833,6 +892,11 @@ func _on_model(m: CityModel) -> void:
 		set_iso(iso)
 	if can_render():
 		place_landmarks()
+	_build_water(m)
+	_build_land(m)
+	_build_features(m)
+	if network != null and m.terrain != null:
+		set_network(network)  # CITY-A2 step 2: the decal now follows the model's terrain
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -849,6 +913,82 @@ func _on_model(m: CityModel) -> void:
 	set_process(true)
 
 
+## NA-12 r2: the sea of a generated city (CityWater: sea, void, sea wall, piers) for model `m`; none for the fixed city
+## (no coast) or headless.
+var water: CityWater = null
+
+
+func _build_water(m: CityModel) -> void:
+	if water != null:
+		water.queue_free()
+		water = null
+	var plan := CityPlan.for_seed(m.city_seed)
+	if plan.coast.is_empty() or not can_render():
+		return
+	water = CityWater.make(cfg, plan, m, OUTER_GROUND_BU)
+	add_to_layer(&"ground", water, true)
+	water.set_night(night_share)
+	water.set_look_blend(look_blend)
+	water.set_time_scale(ambient_scale)
+	if iso != null:
+		water.set_zoom(iso.ortho)
+	if not _last_day.is_empty():
+		_ramp_water(_last_day)
+
+
+## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the ground material;
+## none without terrain or headless. It shows and hides with the outer ground plane (`show_outer_ground`).
+var land: MeshInstance3D = null
+
+
+func _build_land(m: CityModel) -> void:
+	if land != null:
+		land.queue_free()
+		land = null
+	if m.terrain == null or not can_render():
+		return
+	var mesh := CityMeshKit.land_mesh(cfg, m.terrain, cfg.city_rect)
+	if mesh == null:
+		return
+	land = MeshInstance3D.new()
+	land.name = "OuterLand"
+	land.mesh = mesh
+	land.material_override = _outer_mat
+	land.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
+	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	land.visible = _outer_ground_on
+	layer(&"ground").add_child(land)
+
+
+## CITY-A2 step 2: A2's roads by class, rails and stations, walls and checkpoints, the port, the drowned quarter and the
+## undercity entrances (CityA2Features), on the ground layer; none without terrain or headless.
+var features: CityA2Features = null
+
+
+func _build_features(m: CityModel) -> void:
+	if features != null:
+		features.queue_free()
+		features = null
+	var plan := CityPlan.for_seed(m.city_seed)
+	if plan.a2 == null or plan.terrain == null or not can_render():
+		return
+	var wm: Material = water.water_mat if water != null else _outer_mat
+	features = CityA2Features.make(cfg, plan, _outer_mat, _lane_mat, wm)
+	add_to_layer(&"ground", features)
+
+
+## The day ramp on the sea wall and pier decks (as on the ground).
+func _ramp_water(day: Dictionary) -> void:
+	if water == null:
+		return
+	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
+	var day_ramp: Array = day["ramp"]
+	for k in 3:
+		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		for mat in water.lit_materials():
+			mat.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+
+
 func _chunk_centre(key: Vector2i) -> Vector2:
 	var r: Rect2i = model.chunks[key]["rect"]
 	var w := lot_world(Vector2(r.get_center()))
@@ -862,8 +1002,18 @@ func _build_chunk(key: Vector2i) -> void:
 	var split := CityLod.split_far(cfg, model.prisms, idx, far_keep, far_lean)
 	var node := Node3D.new()
 	node.name = "Chunk_%d_%d" % [key.x, key.y]
-	var entry := {"node": node, "families": {}, "far_families": {}, "far_sig": far_signature(split["far"])}
-	_add_families(key, node, split["near"], entry["families"], false)
+	var entry := {"node": node, "families": {}, "far_families": {}, "far_sig": far_signature(split["far"]), "grit": []}
+	var near_ids: PackedInt32Array = split["near"]
+	if grit_filter.is_valid() and not near_ids.is_empty():
+		# AAA-2 facet grit: the prisms the filter names get their own fgrid mesh (a building each); the rest the family meshes.
+		var rest := PackedInt32Array()
+		for n: int in near_ids:
+			if bool(grit_filter.call(model.prisms[n], n)):
+				_add_grit(node, n, entry["grit"])
+			else:
+				rest.append(n)
+		near_ids = rest
+	_add_families(key, node, near_ids, entry["families"], false)
 	_add_families(key, node, split["far"], entry["far_families"], true)
 	layer(&"buildings").add_child(node)
 	entry["props"] = _add_roof_props(node, split["near"])
@@ -878,12 +1028,12 @@ func _build_chunk(key: Vector2i) -> void:
 	for n: int in ch["streets"]:
 		streets.append(model.streets[n])
 	var g := MeshInstance3D.new()
-	g.mesh = CityMeshKit.ground_mesh_of(cfg, area, plazas, streets)
+	g.mesh = CityMeshKit.ground_mesh_on(cfg, r, plazas, streets, model.terrain) if model.terrain != null 		else CityMeshKit.ground_mesh_of(cfg, area, plazas, streets)
 	g.material_override = _ground_mat
 	g.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(g)
-	var lm := CityMeshKit.lane_mesh_of(cfg, streets)
+	var lm := CityMeshKit.lane_mesh_of(cfg, streets, model.terrain)
 	if lm != null:
 		var l := MeshInstance3D.new()
 		l.mesh = lm
@@ -934,6 +1084,41 @@ func _free_chunk(key: Vector2i) -> void:
 		return
 	(e["node"] as Node).queue_free()
 	_chunks.erase(key)
+
+
+## AAA-2 (MATERIAL_SPEC 3): selects the prisms that draw with their own fgrid facet geometry (`NetrunFgrid`: flat triangles of
+## `aaa.grit.cell` BU, jittered along the wall and its normal from the building's seed). A Callable(prism: Dictionary, index: int) -> bool; an
+## invalid one (the default) draws every building from the family meshes as the page does. Set before the model is given.
+var grit_filter: Callable = Callable()
+## prism key + height -> its fgrid mesh (kept across chunk rebuilds).
+var _grit_meshes: Dictionary = {}
+
+
+## One building (prism `n`) as its own one-instance MultiMesh with the fgrid mesh of its footprint and seed; appended to `out`.
+func _add_grit(node: Node3D, n: int, out: Array) -> void:
+	var pr: Dictionary = model.prisms[n]
+	var mk := "%d|%.3f|%.3f" % [int(pr["key"]), float(pr["y0"]), float(pr["h"])]
+	if not _grit_meshes.has(mk):
+		_grit_meshes[mk] = NetrunFgrid.mesh_of(pr["poly"], float(pr["y0"]), float(pr["h"]), int(pr["key"]))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.use_custom_data = true
+	mm.mesh = _grit_meshes[mk]
+	mm.instance_count = 1
+	mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, PackedInt32Array([n]), _inks)
+	mm.custom_aabb = model.chunk_aabb(pr["chunk"])
+	_inst_of[n] = [mm, 0]
+	if _w_over.has(n):
+		_write_prism_w(n, float(_w_over[n]))
+	var mi := MultiMeshInstance3D.new()
+	mi.name = "Grit_%d" % n
+	mi.multimesh = mm
+	mi.material_override = _building_mat
+	mi.layers = 1 << (WORLD_LAYER - 1)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_child(mi)
+	out.append(mi)
 
 
 ## One MultiMesh per building family of prisms `ids` under `node` into `out` (family key ->
@@ -1062,6 +1247,7 @@ func far_lod_counts() -> Dictionary:
 	for key: Vector2i in _chunks:
 		for mi: MultiMeshInstance3D in (_chunks[key]["families"] as Dictionary).values():
 			near += mi.multimesh.instance_count
+		near += (_chunks[key]["grit"] as Array).size()
 		for mi: MultiMeshInstance3D in (_chunks[key].get("far_families", {}) as Dictionary).values():
 			far += mi.multimesh.instance_count
 	return {"near": near, "far": far}
@@ -1111,8 +1297,8 @@ func place_landmarks() -> void:
 		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
 		if _place_landmark(corp, path, landmark_slot(corp), look):
 			hide_stand_in(corp)
-	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
-	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
+	var centre := CityPlan.for_seed(city_seed).hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), ground_world(centre)), look)
 	_place_site_landmark()
 
 
@@ -1238,7 +1424,7 @@ func _place_site_landmark() -> bool:
 		return false
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	var before := _cleared.size()
-	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(site_landmark["lot"])), look):
+	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), ground_world(site_landmark["lot"])), look):
 		return false
 	_rebuild_under(_cleared[before] if _cleared.size() > before else Rect2())
 	if _under_compound(_ground_box(landmarks[SITE_KEY])):
@@ -1474,6 +1660,8 @@ func show_outer_ground(on: bool) -> void:
 	var outer := g.get_node_or_null(^"OuterGround") as Node3D if g != null else null
 	if outer != null:
 		outer.visible = on
+	if land != null:
+		land.visible = on
 
 
 ## Whether the asphalt plane round the city shows (tests).

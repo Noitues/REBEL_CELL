@@ -21,11 +21,15 @@ var _cfg: DressingConfigData = null
 ## Group id -> the instance dicts (`DressKit.item`) of the group (the MultiMesh data read back is empty headless).
 var items: Dictionary = {}
 var _mats: Dictionary = {}
+var _r2_frontage: bool = false
 
 
 ## Builds the dressing of the street `derive` over `city`. `dress_in` is the dress v1 dict (empty: `NetrunArtDress.dress_street`).
-static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}) -> StreetDressing:
+## `r2_frontage` leaves out the signs, shops, billboards and lamps (the hero blade bars and the rest of the old frontage dressing): the
+## street r2 frontage (`StreetR2Builder`) draws them instead; glows, washes, plumes, beams and lanes stay.
+static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}, r2_frontage: bool = false) -> StreetDressing:
 	var s := StreetDressing.new()
+	s._r2_frontage = r2_frontage
 	s._build(derive, city, dress_in)
 	return s
 
@@ -41,11 +45,12 @@ func _build(derive: Dictionary, city: Dictionary, dress_in: Dictionary) -> void:
 	var col_by_bid: Dictionary = {}
 	for ci: Dictionary in derive["col_info"]:
 		col_by_bid[String(ci["bid"])] = ci
-	_hero_signs(dress["signs"], col_by_bid)
-	_city_signs(plan["signs"])
-	_shops(plan["shops"])
-	_billboards(plan["billboards"])
-	_lamps(dress["lamps"])
+	if not _r2_frontage:
+		_hero_signs(dress["signs"], col_by_bid)
+		_city_signs(plan["signs"])
+		_shops(plan["shops"])
+		_billboards(plan["billboards"])
+		_lamps(dress["lamps"])
 	_discs("glow", dress["glows"], false)
 	_discs("wash", dress["washes"], true)
 	_plumes(plan["plumes"])
@@ -248,6 +253,8 @@ func _material(group: String) -> Material:
 		emit = float(sg["flicker_emit"])
 	elif sign_tier:
 		var m: ShaderMaterial = DressKit.sign_material()
+		# AAA-2 emissive hierarchy (MATERIAL_SPEC 8): hero signs 4.0, the secondary (city) signs 2.6.
+		m.set_shader_parameter(&"tier_emit", _tier("hero" if group.begins_with("hero_") else "secondary"))
 		if group.ends_with("_neon"):
 			DressKit.set_yield(m, group.trim_suffix("_neon") + "_full")
 		return m
@@ -258,7 +265,19 @@ func _material(group: String) -> Material:
 		emit = 1.0
 	elif group == "lamp_dot":
 		emit = 1.0
+	# The emissive hierarchy on the plain pieces: shopfronts 1.5, billboards (the backdrop tier) 2.4, lamp heads 8.0.
+	if group.begins_with("shop_"):
+		emit = _tier("shop")
+	elif group.begins_with("billboard_"):
+		emit = _tier("backdrop")
+	elif group == "lamp_dot":
+		emit = _tier("lamp_head")
 	return DressKit.neon_material(shape, emit)
+
+
+## One radiance of the emissive hierarchy (`CityShaderConfigData.aaa.emit`).
+func _tier(key: String) -> float:
+	return float(CityShaderConfigData.shipped().aaa["emit"][key])
 
 
 func _mesh_of(group: String) -> Mesh:
@@ -314,3 +333,65 @@ func _lanes(list: Array) -> void:
 		ns.append(node)
 	nodes["lane"] = ns
 	counts["lane"] = ns.size()
+
+
+# --- Light sources (AAA-2 coloured local lights, MATERIAL_SPEC 9) ---------------------------------
+
+## The placements of the street's real lights, world space, from the dress lists and the frontage columns (pure data; the nodes are
+## built by `StreetLightRig`): `lamps` {pos, col} (kerb lamps, warm / cool by the dress palette), `glows` {pos, col, k} (street-level
+## glows, `k` the dress power), `washes` {pos, dir, col} (route column washes), `facades` {pos, dir, col} (one wash per frontage
+## column face in the district colour), `beams` {pos, dir, col} (fog-only spots), `city_glow` {pos, col} (fog-only city glow).
+## Ordered by the dress lists (deterministic); the caps are applied by the rig.
+func light_sources(derive: Dictionary) -> Dictionary:
+	var lc: Dictionary = CityShaderConfigData.shipped().aaa["lights"]
+	var out := {"lamps": [], "glows": [], "washes": [], "facades": [], "beams": [], "city_glow": [], "city_glow_high": []}
+	for l: Dictionary in dress["lamps"]:
+		var p: Array = l["pos"]
+		(out["lamps"] as Array).append({"pos": DressKit.pos_w([p[0], p[1], float(lc["lamp"]["height"])]), "col": _col(String(l["pal"]), p)})
+	for g: Dictionary in dress["glows"]:
+		var p: Array = g["pos"]
+		(out["glows"] as Array).append({"pos": DressKit.pos_w([p[0], p[1], float(lc["glow"]["z"])]), "col": _col(String(g["pal"]), p), "k": float(g["power"])})
+	for w: Dictionary in dress["washes"]:
+		var p: Array = w["pos"]
+		var d: Array = w["dir"]
+		var dw := Vector3(-float(d[0]), float(d[2]), float(d[1])).normalized()
+		(out["washes"] as Array).append({"pos": DressKit.pos_w(p), "dir": dw, "col": _col(String(w["pal"]), p)})
+	var ev: Array = _out()
+	var rise: float = float(NetrunArtDress.PRESET["wash_rise"])
+	var wash_us: Array = []
+	for w: Dictionary in dress["washes"]:
+		wash_us.append(float(w["u"]))
+	for ci: Dictionary in derive["col_info"]:
+		var u0: float = float(ci["u0"])
+		var u1: float = float(ci["u1"])
+		var routed := false
+		for u: float in wash_us:
+			if u >= u0 and u <= u1:
+				routed = true
+		if routed or u1 - u0 < 2.0:
+			continue
+		var cross: float = float(ci["face"]) - float(lc["wash"]["out"]) * float(_f["ncross"])
+		var p: Array = NetrunArtDress.world(_f, (u0 + u1) * 0.5, cross, float(lc["wash"]["z"]))
+		var dirw := Vector3(-float(ev[0]), rise, float(ev[1])).normalized()
+		var pal: String = "district_a" if DressDistricts.hash01("fac_pal", String(ci["bid"])) < 0.5 else "district_b"
+		(out["facades"] as Array).append({"pos": DressKit.pos_w(p), "dir": dirw, "col": _col(pal, p)})
+	for b: Dictionary in dress["beams"]:
+		var p: Array = b["pos"]
+		var ln: Array = b["lean"]
+		var dp := Vector3(tan(deg_to_rad(float(ln[0]))), tan(deg_to_rad(float(ln[1]))), 1.0).normalized()
+		(out["beams"] as Array).append({"pos": DressKit.pos_w(p), "dir": Vector3(dp.x, dp.z, -dp.y), "col": _col(String(b["pal"]), p)})
+	var cg: Dictionary = lc["city_glow"]
+	var cc: Array = [Color(1.0, 0.3, 0.7), Color(0.62, 0.38, 1.0), Color(0.25, 0.75, 1.0)]
+	var offs: Array = [float(cg["side"]), float(cg["side"]) * 3.0, -float(cg["side"]) * 1.5]
+	for i in int(cg["count"]):
+		var u: float = lerpf(-120.0, float(_f["length"]) + 120.0, float(i % 6) / 5.0)
+		var off: float = offs[(i / 6) % 3]
+		var p: Array = NetrunArtDress.world(_f, u, float(_f["cline"]) + off * float(_f["ncross"]), float(cg["height"]))
+		(out["city_glow"] as Array).append({"pos": DressKit.pos_w(p), "col": cc[i % 3]})
+	# P6 (A-036): the lit haze of the plate's sky is the fog volumes lit by fog-only lights; the high ones sit above the skyline.
+	for i in int(cg["high_count"]):
+		var u2: float = lerpf(-120.0, float(_f["length"]) + 120.0, float(i % 6) / 5.0)
+		var off2: float = float(cg["side"]) * float(3 + 2 * ((i / 6) % 3))
+		var p2: Array = NetrunArtDress.world(_f, u2, float(_f["cline"]) + off2 * float(_f["ncross"]), float(cg["high_height"]))
+		(out["city_glow_high"] as Array).append({"pos": DressKit.pos_w(p2), "col": cc[(i + 1) % 3]})
+	return out

@@ -1,0 +1,46 @@
+{
+ "camera": {
+  "dist": 2600.0,
+  "fov": 0.0,
+  "lens": 0.0,
+  "loc": [
+   1141.5074,
+   2143.7954,
+   1027.5074
+  ],
+  "note": "yaw / pitch are CityIsoCamera degrees (view direction cos(yaw)cos(pitch), -sin(pitch), -sin(yaw)cos(pitch) in world); lens 0 = orthographic, shift 0 = the frame is centered on tgt",
+  "ortho_scale": 125.0,
+  "pitch": 55.0,
+  "plan_loc": [
+   1141.5074,
+   -1027.5074,
+   2143.7954
+  ],
+  "plan_tgt": [
+   87.0,
+   27.0,
+   14.0
+  ],
+  "projection": "orthogonal",
+  "shift_x": 0.0,
+  "shift_y": 0.0,
+  "tgt": [
+   87.0,
+   14.0,
+   -27.0
+  ],
+  "yaw": 135.0
+ },
+ "corp": "orbital",
+ "kind": "hq",
+ "layout_seed": "13875796438772315820",
+ "look": "mainline",
+ "resolution": [
+  1920,
+  1080
+ ],
+ "run": "hq_orbital_11",
+ "time": "night",
+ "version": 1,
+ "view": "overview"
+}

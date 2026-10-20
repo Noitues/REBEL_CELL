@@ -1,17 +1,12 @@
 class_name JackSequence
 extends Control
-## ART-7 3B (ART_BIBLE v2 §4.6 transition, LOCKED ~4.4 s, skippable; round 36 "A wheel lens" +
-## round 37 `transition_mix`): the netrun jack along the chosen link, over the City Grid:
-## 1. the Cell's terminal types `jack --from <A> --to <B>`, routing, handshake, CONNECTED
-##    (`jack_terminal_type`); 2. binary rain falls along the chosen link only
-##    (`jack_link_rain`); 3. the terminal despawns as a CRT collapse, a line then a dot
-##    (`jack_crt_collapse`); 4. the operative's wheel slaps onto the link and spins up
-##    (`jack_wheel_slap`, `jack_wheel_spin`); 5. the wheel lens: the wheel swells until its hub
-##    fills the screen (the switch happens under it, with the CONNECTING line), then the hub
-##    opens onto the run and the ring flies past the camera (`jack_lens`).
-## One press skips to the end state (STYLE 5.1): the switch, then the run at once. Fx owns the
-## gate, the switch and the arrival wait (`play` takes Fx); headless and reduce effects never
-## reach here (Fx takes its own paths). View only: no game state.
+## ART-7 3B / NA-25b r6 (ART_BIBLE 4.6, netrun entry flow ruled 2026-10-15; art-pass A-046: NO wheel, no lens, no hub): the netrun jack along
+## the chosen link, over the City Grid:
+## 1. the Cell's terminal types `jack --from <A> --to <B>`, routing, handshake, CONNECTED; 2. binary rain falls along the chosen link only;
+## 3. the terminal despawns as a CRT collapse, a line then a dot; 4. the dot hands straight to the dive (the switch runs under the frozen
+## frame of the screen, as a CRT terminal when the load is slow; the street scene's own dive follows). Jack-out is the same chain reversed
+## (`play_out`: the dive back ends on the CRT dot opening). One press skips the whole entry (STYLE 5.1). Fx owns the gate, the switch and
+## the arrival wait (`play` takes Fx); headless and reduce effects never reach here (Fx takes its own paths). View only: no game state.
 
 ## The terminal's lines (keys; %s = the two ends' names).
 const LINE_JACK := "> jack --from %s --to %s" # TR
@@ -28,35 +23,38 @@ const RAIN_DROP := 120.0
 const RAIN_HOT := 0.2
 ## The share of the typing (from its end) the rain overlaps.
 const RAIN_LEAD := 0.35
-## The wheel at rest on the link (px radius at text scale 1.0), its hub's share of the radius,
-## the ring's ink keyline (px).
-const WHEEL_R := 46.0
-const HUB_SHARE := 0.55
-const WHEEL_KEYLINE := 3.0
-## The lens: the share of `jack_lens` spent swelling to cover (the rest opens), and how far
-## past the screen's half-diagonal the hub swells (share).
-const LENS_COVER_SHARE := 0.45
-const LENS_OVERSCAN := 1.15
+## The hold's line (`%s` = the building the run builds): a CRT terminal line when the switch is slow (1.2).
+const LINE_HOLD := "routing ... building street_%s" # TR
+## The CRT hold's look (A-031 item 2, A-037, A-045): the hex dump a column of text that reads at 1:1 (glyphs >= 11 px at 1080p), its alpha
+## the newest rows' HOLD_HEX_ALPHA fading to HOLD_HEX_OLDEST_ALPHA at the top, in the rim (accent) cyan at HOLD_HEX_VALUE of its value;
+## 3 px scanlines, a clear rim. The glass is the terminal panel's own (NA-25b r6: no hub field to key it to).
+const HOLD_HEX_ALPHA := 0.65
+const HOLD_HEX_OLDEST_ALPHA := 0.35
+const HOLD_HEX_VALUE := 0.75
+const HOLD_HEX_SCALE := 1.6
+const HOLD_HEX_COLUMN_MARGIN := 48.0
+const HOLD_SCAN_STRENGTH := 0.42
+const HOLD_EDGE_PX := 4.0
+const HOLD_INNER_GLOW := 0.7
 
 ## The link (screen px): from its owned end to the Site.
 var points: PackedVector2Array = PackedVector2Array()
-## The wheel's slice colours, in slot order.
-var slices: Array[Color] = []
 ## Live state the draw reads.
 var rain_t: float = -1.0
-var wheel_scale: float = 0.0
-var wheel_turn: float = 0.0
-var wheel_at: Vector2 = Vector2.ZERO
-var wheel_r: float = 0.0
-## The lens opening (0 closed .. 1 open past the screen); < 0 before it opens.
-var open_t: float = -1.0
 var switched: bool = false
 var skipping: bool = false
-## NA-25: the street entry's variant (`link["street"]`): the beats take the `entry_*` times, there is no wheel or lens, and the
-## switch happens under the night sky (`night`) so no frame is black.
+## NA-25: the street entry's variant (`link["street"]`): the beats take the `entry_*` times.
 var street: bool = false
-var night: bool = false
+## NA-25b r6c (A-055): the last frame the player saw, frozen as an image over the screen while the switch loads (never a flat panel, never the
+## loading scene's own look: the HQ builds under a blueprint wireframe city before its page).
+var frozen: TextureRect = null
 var _rain_id: StringName = &"jack_link_rain"
+var _hold_line := ""
+var _cover_t := 0.0
+## True while the switch loads (the CRT hold shows once it passes `jack_hold_crt`).
+var _holding := false
+## The slow-load CRT hold: a screen of the terminal panel's own glass with its type-on routing line.
+var hold: CrtTerminalPanel = null
 var terminal: CrtTerminalPanel
 var _text: Label
 
@@ -75,32 +73,38 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 		TranslationServer.translate(LINE_HANDSHAKE), TranslationServer.translate(LINE_CONNECTED)])
 
 
-## Plays the sequence for `link` ({from, to: words; points: PackedVector2Array screen px;
-## slices: Array[Color]}); Fx's `switch` coroutine (on_switch under the covering hub, the
-## arrival wait) runs once the lens covers the screen, or at once on a skip.
+## Plays the sequence for `link` ({from, to: words; points: PackedVector2Array screen px; build: the Site id}); Fx's `switch`
+## coroutine (on_switch under the frozen frame, the arrival wait) runs once the terminal has collapsed to its dot, or at once on a skip.
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_hold_saved(fx, true)
+	_begin(link)
+	_reverse = false
+	if street:
+		await _play_street(switch)
+		return
+	await _play_link(switch)
+
+
+## The state both directions start from: the link's points, the flags, the terminal and the slow-load hold.
+func _begin(link: Dictionary) -> void:
 	points = link.get("points", PackedVector2Array())
-	slices.clear()
-	for c in link.get("slices", []):
-		slices.append(c)
-	if slices.is_empty():
-		slices.assign([Palette.CELL_PINK, Palette.NET_CYAN, Palette.SLICE_HOTFIX, Palette.CELL_PINK, Palette.NET_CYAN, Palette.SLICE_NULL])
 	var vp := get_viewport_rect().size
 	if points.size() < 2:
 		points = PackedVector2Array([vp * Vector2(0.35, 0.6), vp * Vector2(0.65, 0.4)])
 	switched = false
 	skipping = false
-	night = false
 	street = bool(link.get("street", false))
 	_rain_id = &"entry_rain" if street else &"jack_link_rain"
 	rain_t = -1.0
-	wheel_scale = 0.0
-	open_t = -1.0
+	_cover_t = 0.0
 	visible = true
 	_make_terminal(lines_for(String(link.get("from", "")), String(link.get("to", ""))))
-	if street:
-		await _play_street(switch)
-		return
+	_hold_line = TranslationServer.translate(LINE_HOLD) % String(link.get("build", link.get("to", "")))
+	_build_hold(vp)
+
+
+func _play_link(switch: Callable) -> void:
+	var vp := get_viewport_rect().size
 	# 1-2. Typing, the rain joining over its last lines.
 	var lines: PackedStringArray = _text.get_meta(&"lines")
 	var per_char := Motion.seconds_live(&"jack_terminal_type")
@@ -132,67 +136,31 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
 		await get_tree().process_frame
 	terminal.visible = false
-	# 4. The wheel slaps onto the link's Site end and spins up.
-	wheel_at = points[points.size() - 1]
-	wheel_r = WHEEL_R * Settings.text_scale
-	var slap_s := Motion.seconds_live(&"jack_wheel_slap")
-	var slap := Motion.entry(&"jack_wheel_slap")
-	var spin_s := Motion.seconds_live(&"jack_wheel_spin")
-	# The spin keeps its rate through the lens (none when switched off).
-	var spin_rate := TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
-	var turns := Motion.amplitude(&"jack_wheel_spin")
-	t = 0.0
-	while t < slap_s + spin_s and not skipping:
-		t += get_process_delta_time()
-		var u := clampf(t / maxf(slap_s, 0.001), 0.0, 1.0)
-		var e := float(Tween.interpolate_value(0.0, 1.0, u, 1.0, slap.trans, slap.ease)) if slap != null else u
-		wheel_scale = lerpf(maxf(1.0, slap.amplitude if slap != null else 1.0), 1.0, e)
-		var v := clampf((t - slap_s) / maxf(spin_s, 0.001), 0.0, 1.0)
-		wheel_turn = TAU * turns * v * v
-		queue_redraw()
-		await get_tree().process_frame
-	wheel_scale = 1.0
-	# 5. The lens: swell until the hub covers the screen, switch under it, open onto the run.
-	var lens_s := Motion.seconds(&"jack_lens")
-	var cover_s := lens_s * LENS_COVER_SHARE
-	var start_at := wheel_at
-	var cover_r := vp.length() * 0.5 * LENS_OVERSCAN / HUB_SHARE
-	t = 0.0
-	while t < cover_s and not skipping:
-		t += get_process_delta_time()
-		var u := clampf(t / maxf(cover_s, 0.001), 0.0, 1.0)
-		var e := u * u
-		wheel_at = start_at.lerp(vp * 0.5, e)
-		wheel_scale = lerpf(1.0, cover_r / maxf(wheel_r, 1.0), e)
-		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
-		await get_tree().process_frame
-	wheel_at = vp * 0.5
-	wheel_scale = cover_r / maxf(wheel_r, 1.0)
+	await _switch_phase(switch)
+
+
+## Beat 4 of the chain, shared by the link jack and the street entry: the CRT dot hands straight to the dive. The HQ map frame is frozen
+## under the dot (no flat panel) while the switch loads, so the dot collapses over the city and the dive starts from the same picture; a
+## slow load becomes a CRT hold (`_process`). No wheel, no lens, no hub (A-046).
+func _switch_phase(switch: Callable) -> void:
+	if terminal != null:
+		terminal.visible = false
+	rain_t = -1.0
 	queue_redraw()
+	await get_tree().process_frame  # the frame without the terminal, then freeze it
+	await _freeze()
+	for f in 2:
+		if not skipping:
+			await get_tree().process_frame
 	switched = true
+	_holding = true
 	await switch.call()
-	if skipping:
-		_end()
-		return
-	# Open: the hub becomes a hole onto the run; the ring flies past.
-	var open_s := lens_s - cover_s
-	open_t = 0.0
-	t = 0.0
-	while t < open_s and not skipping:
-		t += get_process_delta_time()
-		open_t = clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
-		wheel_turn += spin_rate * get_process_delta_time()
-		queue_redraw()
-		await get_tree().process_frame
-	if not switched:
-		await switch.call()
+	_holding = false
 	_end()
 
 
 ## NA-25 (PIPELINE_SPEC 10, beats 3a-3c): the terminal types over `entry_terminal`, the rain falls over `entry_rain`, the
-## terminal collapses over `entry_collapse`; the switch then happens under the night sky (the dive covers the load). No wheel,
-## no lens.
+## terminal collapses over `entry_collapse`; then the dot hands straight to the dive (`_switch_phase`).
 func _play_street(switch: Callable) -> void:
 	var lines: PackedStringArray = _text.get_meta(&"lines")
 	var type_s := Motion.seconds_live(&"entry_terminal")
@@ -224,10 +192,63 @@ func _play_street(switch: Callable) -> void:
 			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
 		await get_tree().process_frame
 	terminal.visible = false
-	night = true
+	await _switch_phase(switch)
+
+
+## NA-25b r6 (the HQ side of the jack-out, ART_BIBLE 4.6 reversed): the dive has played back to the HQ pose; the switch loads the HQ under
+## the dive's last frame, then the CRT comes back on (the collapse reversed: a dot opening to a line, then the glass), the rain rises and the
+## lines untype. One press skips to the end (the HQ, no terminal).
+func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
+	_hold_saved(fx, true)
+	await _freeze()  # the reversed dive's last rendered frame (hint hidden), before anything else draws
+	_begin(link)
+	_reverse = true
+	street = true
+	visible = true
+	terminal.visible = false
+	_text.visible_characters = -1
+	# A-055: the reversed dive's last frame (the HQ pose, frozen) stays up while the HQ loads; then it goes and the CRT opens from the dot.
+	for f in 2:
+		await get_tree().process_frame
 	switched = true
-	queue_redraw()
+	_holding = true
 	await switch.call()
+	_holding = false
+	hold.visible = false
+	_unfreeze()
+	if skipping:
+		_end()
+		return
+	# The CRT comes back on, the rain rises, the lines untype.
+	var col_s := Motion.seconds_live(&"entry_collapse")
+	var line_share := clampf(Motion.amplitude(&"entry_collapse"), 0.05, 0.95)
+	terminal.pivot_offset = terminal.size * 0.5
+	terminal.visible = true
+	var t := 0.0
+	while t < col_s and not skipping:
+		t += get_process_delta_time()
+		var u := 1.0 - clampf(t / maxf(col_s, 0.001), 0.0, 1.0)
+		if u < line_share:
+			terminal.scale = Vector2(1.0, lerpf(1.0, 0.02, u / line_share))
+		else:
+			terminal.scale = Vector2(lerpf(1.0, 0.0, (u - line_share) / (1.0 - line_share)), 0.02)
+		await get_tree().process_frame
+	terminal.scale = Vector2.ONE
+	var rain_s := Motion.seconds_live(&"entry_rain")
+	t = 0.0
+	while t < rain_s and not skipping:
+		t += get_process_delta_time()
+		rain_t = 1.0 - clampf(t / maxf(rain_s, 0.001), 0.0, 1.0)
+		queue_redraw()
+		await get_tree().process_frame
+	rain_t = -1.0
+	var type_s := Motion.seconds_live(&"entry_terminal")
+	var chars := _text.text.length()
+	t = 0.0
+	while t < type_s and not skipping:
+		t += get_process_delta_time()
+		_text.visible_characters = int(float(chars) * (1.0 - clampf(t / maxf(type_s, 0.001), 0.0, 1.0)))
+		await get_tree().process_frame
 	_end()
 
 
@@ -236,20 +257,85 @@ func skip() -> void:
 	skipping = true
 
 
+## NA-25b r5: the SAVED stamp waits out the transition (frames 4-7 and both HQ-side frames) and shows once the entry ends.
+func _hold_saved(fx: Node, on: bool) -> void:
+	if on:
+		_fx = fx
+	if _fx != null and is_instance_valid(_fx) and _fx.has_method(&"hold_saved"):
+		_fx.hold_saved(on)
+	if not on:
+		_fx = null
+
+
+var _fx: Node = null
+## True while `play_out` runs (the jack-out).
+var _reverse := false
+
+
 func _end() -> void:
+	# NA-25b r6 (A-054): a street jack-in keeps SAVED held past this sequence: the street scene releases it once the entry's zoom has
+	# settled (`Fx.hold_saved(false)`); every other end (the jack-out, a link jack) shows it now.
+	if not (street and not _reverse):
+		_hold_saved(null, false)
 	visible = false
-	night = false
-	open_t = -1.0
-	wheel_scale = 0.0
+	_unfreeze()
+	_holding = false
+	if hold != null and is_instance_valid(hold):
+		hold.visible = false
 	if terminal != null and is_instance_valid(terminal):
 		terminal.queue_free()
 	terminal = null
 	queue_redraw()
 
 
-## True while the lens covers the whole screen (before it opens).
+## True while the switch loads under the frozen frame.
 func covering() -> bool:
-	return visible and switched and open_t < 0.0
+	return visible and switched
+
+
+## Freezes the screen into a full-screen image under the terminal and the hold. A-056: the dive's "Space: SKIP" hint is hidden first and the
+## frame drawn without it, so the frozen picture never carries a hint (nothing can be skipped during the load).
+func _freeze() -> void:
+	_hide_hints()
+	if DisplayServer.get_name() == "headless":  # no renderer to read back (the sequence never plays headless in the game)
+		return
+	await RenderingServer.frame_post_draw
+	show_frozen(get_viewport().get_texture().get_image())
+
+
+## Hides every skip hint on screen (`EntryCover.HINT_GROUP`).
+func _hide_hints() -> void:
+	for n in get_tree().get_nodes_in_group(EntryCover.HINT_GROUP):
+		if n is CanvasItem:
+			(n as CanvasItem).visible = false
+
+
+## Shows `img` (a grab of the screen; none under a headless renderer) full screen as the frozen frame.
+func show_frozen(img: Image) -> void:
+	_unfreeze()
+	if img == null or img.is_empty():
+		return
+	frozen = TextureRect.new()
+	frozen.name = "FrozenFrame"
+	frozen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frozen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frozen.stretch_mode = TextureRect.STRETCH_SCALE
+	frozen.texture = ImageTexture.create_from_image(img)
+	frozen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(frozen)
+	move_child(frozen, 0)
+	visible = true
+
+
+## True while a frozen frame shows.
+func frozen_shown() -> bool:
+	return frozen != null and is_instance_valid(frozen)
+
+
+func _unfreeze() -> void:
+	if frozen != null and is_instance_valid(frozen):
+		frozen.queue_free()
+	frozen = null
 
 
 func _typed_at(t: float, lines: PackedStringArray, per_char: float, pause: float) -> int:
@@ -295,13 +381,52 @@ func _make_terminal(lines: PackedStringArray) -> void:
 	terminal.position = at.clamp(Vector2.ZERO, (vp - terminal.size).max(Vector2.ZERO))
 
 
+## The CRT hold's panel: the terminal panel's own glass over the screen, the dump a column on the right, hidden until the load runs long.
+func _build_hold(vp: Vector2) -> void:
+	if hold != null and is_instance_valid(hold):
+		hold.queue_free()
+	hold = CrtTerminalPanel.new()
+	hold.name = "HoldTerminal"
+	hold.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hold.size = vp
+	hold.visible = false
+	hold.text_step = UiTheme.TITLE  # a boot-log line over a whole screen of glass
+	hold.caret_block = true
+	var cell := CrtTerminalPanel.hex_cell()
+	hold.hex_alpha_value = HOLD_HEX_ALPHA
+	hold.hex_columns = 1
+	hold.hex_scale = HOLD_HEX_SCALE
+	hold.hex_origin_x = vp.x - cell.x * HOLD_HEX_SCALE * CrtTerminalPanel.HEX_COLUMN_CELLS - HOLD_HEX_COLUMN_MARGIN
+	hold.shader_overrides = {&"hex_tint": hex_color(hold.accent()), &"hex_text_fade": 1.0, &"hex_age_height": vp.y,
+		&"hex_age_oldest": HOLD_HEX_OLDEST_ALPHA / HOLD_HEX_ALPHA, &"scan_strength": HOLD_SCAN_STRENGTH, &"edge_px": HOLD_EDGE_PX,
+		&"inner_glow": HOLD_INNER_GLOW}
+	add_child(hold)
+
+
+## The hold's dump glyph colour for the rim colour `rim`: its hue and saturation at HOLD_HEX_VALUE of its value.
+static func hex_color(rim: Color) -> Color:
+	return Color.from_hsv(rim.h, rim.s, rim.v * HOLD_HEX_VALUE)
+
+
+## True while the CRT hold shows.
+func holding() -> bool:
+	return hold != null and is_instance_valid(hold) and hold.visible
+
+
+## While the switch loads: a load that passes `jack_hold_crt` becomes a CRT terminal (ART_BIBLE 1.2: glass, scanlines,
+## a scrolling hex dump, edge glow, a type-on line and its caret). Bits only fall when real data moves, and nothing here moves any.
+func _process(delta: float) -> void:
+	if not _holding or hold == null:
+		return
+	_cover_t += delta
+	if Motion.live(&"jack_hold_crt") and _cover_t >= Motion.seconds(&"jack_hold_crt") and not hold.visible:
+		hold.visible = true
+		hold.type_on(_hold_line)
+
+
 func _draw() -> void:
-	if night:
-		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Palette.NIGHT_SKY)
 	if rain_t >= 0.0:
 		_draw_rain()
-	if wheel_scale > 0.0:
-		_draw_wheel()
 
 
 ## Binary rain along the link: bits fall onto it, white-hot first, flipping 0/1.
@@ -336,31 +461,3 @@ func _along(d: float) -> Vector2:
 			return points[i].lerp(points[i + 1], d / maxf(seg, 0.001))
 		d -= seg
 	return points[points.size() - 1]
-
-
-## The operative's wheel: slices round a dark hub; while the lens opens the hub is a hole onto
-## the run and the ring flies outward past the screen.
-func _draw_wheel() -> void:
-	var r := wheel_r * wheel_scale
-	var hub := r * HUB_SHARE
-	var k := maxf(1.0, wheel_scale)
-	if open_t >= 0.0:
-		var vp := get_viewport_rect().size
-		var far := vp.length() * 0.5 * LENS_OVERSCAN
-		var e := 1.0 - pow(1.0 - open_t, 3.0)
-		hub = lerpf(0.0, far * 1.6, e)
-		r = hub / HUB_SHARE
-	var n := slices.size()
-	for i in n:
-		var a0 := wheel_turn + TAU * i / n
-		var a1 := wheel_turn + TAU * (i + 1) / n
-		var mid_r := (hub + r) * 0.5
-		var w := r - hub
-		draw_arc(wheel_at, mid_r, a0, a1, 24, slices[i], w, false)
-		var edge := Vector2.from_angle(a0)
-		draw_line(wheel_at + edge * hub, wheel_at + edge * r, Palette.INK, WHEEL_KEYLINE * k * 0.5)
-	draw_arc(wheel_at, r, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
-	draw_arc(wheel_at, hub, 0, TAU, 64, Palette.INK, WHEEL_KEYLINE * k)
-	if open_t < 0.0:
-		draw_circle(wheel_at, hub, Palette.NIGHT_SKY)
-		draw_arc(wheel_at, hub * 0.8, 0, TAU, 48, Color(Palette.NET_CYAN, 0.5), WHEEL_KEYLINE * k * 0.5)

@@ -24,9 +24,7 @@ static func from_layout(p_cfg: CityConfig) -> CityDistrict:
 	var r := int(ceil(p_cfg.district_radius))
 	var c := Vector2i(roundi(p_cfg.district_centre.x), roundi(p_cfg.district_centre.y))
 	rec.record(Rect2i(c - Vector2i(r, r), Vector2i(r * 2 + 1, r * 2 + 1)))
-	var d := from_recording(p_cfg, rec.extrusions, rec.streets, rec.plazas, rec.hqs)
-	rec.free()
-	return d
+	return from_recording(p_cfg, rec.extrusions, rec.streets, rec.plazas, rec.hqs)
 
 
 ## Builds the district from recorded layout data (lots, height px), keeping what lies

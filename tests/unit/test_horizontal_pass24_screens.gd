@@ -56,7 +56,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	NetrunScript.street_route = true
+	NetrunScript.force_street_error = ""
 	if _translation != null:
 		TranslationServer.remove_translation(_translation)
 		_translation = null
@@ -878,7 +878,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 # --- S12 the route ----------------------------------------------------------------------------------
 
 func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void:
-	NetrunScript.street_route = false
+	NetrunScript.force_street_error = "test seam: no street"
 	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)

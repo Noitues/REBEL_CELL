@@ -125,6 +125,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
+%s layers after entering,%s layers after entering
+%s layers: the Bloom has you,%s layers: the Bloom has you
 %s moves from %s to %s.,%s moves from %s to %s.
 %s on %d slice(s),%s on %d slice(s)
 %s on %s hits %s for %d.,%s on %s hits %s for %d.
@@ -213,6 +215,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
+A failed run still moves the Eye.,A failed run still moves the Eye.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
 A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.,A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.
 A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
@@ -227,6 +230,7 @@ ABANDON RUN,ABANDON RUN
 ABANDONED,ABANDONED
 ACCEL,ACCEL
 ACHIEVEMENTS  %d / %d  //  stickers you keep,ACHIEVEMENTS  %d / %d  //  stickers you keep
+ACROSS,ACROSS
 ACTIVE,ACTIVE
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
@@ -274,11 +278,13 @@ BACK TO THE GRID,BACK TO THE GRID
 BADGES,BADGES
 BANKED,BANKED
 BEST ICE,BEST ICE
+BILLING,BILLING
 BIN,BIN
 BIN IT,BIN IT
 BLCK,BLCK
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
+BLOOM GAP,BLOOM GAP
 BOSS,BOSS
 BOSS: %s,BOSS: %s
 BOSSES ON FILE,BOSSES ON FILE
@@ -289,6 +295,7 @@ BREACHED,BREACHED
 BREACHED: your home server fell. The campaign is lost.,BREACHED: your home server fell. The campaign is lost.
 BURN IT,BURN IT
 BUY,BUY
+BUY  %d Cycles (%d left),BUY  %d Cycles (%d left)
 Back,Back
 Back to HQ,Back to HQ
 "Back to HQ: the campaign, the City Grid and the crew.","Back to HQ: the campaign, the City Grid and the crew."
@@ -316,10 +323,13 @@ Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Strength,Boss Strength
 Breach,Breach
+Bridge: the other tower's next rung; free with the Breach key.,Bridge: the other tower's next rung; free with the Breach key.
+Bridge: the other tower's next rung; the front gains extra pace.,Bridge: the other tower's next rung; the front gains extra pace.
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
 Buy,Buy
 Buy it at the HQ Black Market with campaign Schematics (%d).,Buy it at the HQ Black Market with campaign Schematics (%d).
+CACHE,CACHE
 CAM %02d  %s,CAM %02d  %s
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
@@ -344,6 +354,7 @@ CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CHOSEN,CHOSEN
+CITY LOST at step %d.,CITY LOST at step %d.
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
 CLAIM,CLAIM
 CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.,CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.
@@ -366,6 +377,7 @@ COMPLETED,COMPLETED
 COMPLIANCE DIVISION,COMPLIANCE DIVISION
 CONFIRM,CONFIRM
 CONFIRM (pick a node first),CONFIRM (pick a node first)
+CONFIRM REWIRE,CONFIRM REWIRE
 CONFIRM: %s (Enter),CONFIRM: %s (Enter)
 CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
@@ -383,6 +395,8 @@ CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
 CYCLES,CYCLES
 CYCLES %s,CYCLES %s
+Cache: a stash of Cycles and a card.,Cache: a stash of Cycles and a card.
+Cache: placeholder text,Cache: placeholder text
 Campaign code (share it: it starts this campaign),Campaign code (share it: it starts this campaign)
 Campaign code (share it: it starts this campaign): %s%s,Campaign code (share it: it starts this campaign): %s%s
 Campaign seed:,Campaign seed:
@@ -590,6 +604,7 @@ Click,Click
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
 "Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange.","Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange."
 Click to play.,Click to play.
+Clinic Gate,Clinic Gate
 Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
@@ -631,6 +646,7 @@ Cycles,Cycles
 Cycles earned,Cycles earned
 Cycles in hand when the run ended.,Cycles in hand when the run ended.
 Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.
+Cycles: %d,Cycles: %d
 "Cycles: this run's money, spent in the Mainframe.","Cycles: this run's money, spent in the Mainframe."
 DAEMON,DAEMON
 DAEMONS,DAEMONS
@@ -780,6 +796,8 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
+EYE ALERT,EYE ALERT
+"Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied","Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied"
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -942,6 +960,7 @@ FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
 FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
 FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS,FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS
+FRONT,FRONT
 FROZEN,FROZEN
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 Fight,Fight
@@ -997,6 +1016,8 @@ Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
 G,G
+GAP %s,GAP %s
+GAP %s CAUGHT,GAP %s CAUGHT
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
@@ -1006,6 +1027,7 @@ GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING,GROUND SEGMENT  //  DEBRIS CON
 GROWTH,GROWTH
 GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
+Genome Core,Genome Core
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.,Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.
@@ -1076,6 +1098,7 @@ HQ: %s,HQ: %s
 HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
+Heal %d%% of max HP. One mode per visit.,Heal %d%% of max HP. One mode per visit.
 Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.,Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.
 Heat,Heat
 Heat %d,Heat %d
@@ -1200,6 +1223,7 @@ IN FORCE,IN FORCE
 INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
+INFECTION,INFECTION
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 INNER RING: %s,INNER RING: %s
@@ -1658,12 +1682,14 @@ MARKET,MARKET
 "MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics.","MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics."
 MENU,MENU
 MINI BOSS,MINI BOSS
+MINI-BOSS: %s,MINI-BOSS: %s
 MINIMAP,MINIMAP
 "MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold.","MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold."
 MORE,MORE
 MORE ABOVE,MORE ABOVE
 MORE BELOW,MORE BELOW
 MOST TROUBLESOME -> %s,MOST TROUBLESOME -> %s
+MOVE,MOVE
 Main menu,Main menu
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
@@ -1671,6 +1697,7 @@ Mainframe: the cyber shop,Mainframe: the cyber shop
 Manifest closed: every node repossessed under freight lien.,Manifest closed: every node repossessed under freight lien.
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
+Mini-boss,Mini-boss
 More on the next page: press NEXT.,More on the next page: press NEXT.
 More sections this way: the tabs scroll to them.,More sections this way: the tabs scroll to them.
 Move it to %s.,Move it to %s.
@@ -1859,6 +1886,7 @@ PARKED,PARKED
 PARKED −%d,PARKED −%d
 PASSED,PASSED
 PATCH,PATCH
+PATCH  +%d HP -> %d/%d,PATCH  +%d HP -> %d/%d
 PATCH HOME SERVER: +%d integrity (%d Schematics).,PATCH HOME SERVER: +%d integrity (%d Schematics).
 PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
 PATROL IT INSTEAD,PATROL IT INSTEAD
@@ -1880,6 +1908,7 @@ PIRATE RADIO 88.1,PIRATE RADIO 88.1
 SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
+POPULATION INFECTED %d%% > %d%%,POPULATION INFECTED %d%% > %d%%
 PRECISION TAG: how well this needle lands on its slice.,PRECISION TAG: how well this needle lands on its slice.
 PROCEED,PROCEED
 PROCESSED,PROCESSED
@@ -1899,6 +1928,7 @@ Pick a card from your deck to remove.,Pick a card from your deck to remove.
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
 "Pick a defense card, then one of your nodes: the forecast's change shows here.","Pick a defense card, then one of your nodes: the forecast's change shows here."
+"Pick a slice, then the wheel slot it replaces.","Pick a slice, then the wheel slot it replaces."
 "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
 "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
 Pick up,Pick up
@@ -2030,8 +2060,10 @@ RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
+REST,REST
 RETALIATION,RETALIATION
 REWARDS,REWARDS
+"REWIRE: pick a wheel slot, then the slot to swap its Firmware with.","REWIRE: pick a wheel slot, then the slot to swap its Firmware with."
 RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
 ROUTE,ROUTE
@@ -2159,6 +2191,15 @@ Respin,Respin
 Respin for %d RAM,Respin for %d RAM
 Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
 Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).,Respin your wheel for %d RAM: where it lands is a random event (UNDO stops here).
+Rest,Rest
+"Rest: patch some HP, or rewire a Firmware chip to another slot.","Rest: patch some HP, or rewire a Firmware chip to another slot."
+Rest: placeholder text,Rest: placeholder text
+RestConfirm,RestConfirm
+RestHint,RestHint
+RestHp,RestHp
+RestLeave,RestLeave
+RestPatch,RestPatch
+RestUndo,RestUndo
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -2225,6 +2266,8 @@ SPIN,SPIN
 SPIN %d+,SPIN %d+
 SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
+SPOTTED,SPOTTED
+SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
@@ -2247,6 +2290,7 @@ SWITCHES,SWITCHES
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
+"Same tower, next rung.","Same tower, next rung."
 Satellites are fixed to their slice: only Undock moves them.,Satellites are fixed to their slice: only Undock moves them.
 Save & quit,Save & quit
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
@@ -2949,6 +2993,7 @@ TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s  
 TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG,TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG
 TODAY'S RUN,TODAY'S RUN
 TOP %d ONLY,TOP %d ONLY
+TOWER,TOWER
 TRAFFIC CONTROL,TRAFFIC CONTROL
 TRAINING SIM,TRAINING SIM
 TRANSCRIPT // DISPATCH // VOICE LOG,TRANSCRIPT // DISPATCH // VOICE LOG
@@ -2969,6 +3014,7 @@ Taken Raid Strength,Taken Raid Strength
 "Taken: %s, installed.","Taken: %s, installed."
 "Taken: %s, socketed in slot %d.","Taken: %s, socketed in slot %d."
 Taken: %s.,Taken: %s.
+Taking this Exploit fixes the Eye here for %d turns.,Taking this Exploit fixes the Eye here for %d turns.
 Target,Target
 Target:,Target:
 Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
@@ -3209,6 +3255,10 @@ TerminalEventData.ev_rescue_operative.text,Behind the Terminal a maintenance war
 TerminalEventData.ev_rescue_operative.title,Locked Ward
 TerminalEventData.ev_rival_crew.text,Another crew is looting the same node. Their leader grins. 'Split it?'
 TerminalEventData.ev_rival_crew.title,Rival Crew
+TerminalEventData.ev_rw_second_hand_rumor.text,"Smoke's still coming off the relay when a noodle-stall runner finds you at the loot table. He heard from a cousin, who heard from a night-shift tech, that the corps already priced your next hit. Three days, maybe four, he says, and they're bringing something nasty. Could be real, could be a kid selling air. The spoils are laid out between you, and he's looking at them, not at you."
+TerminalEventData.ev_rw_second_hand_rumor.title,Second-Hand Rumor
+TerminalEventData.ev_service_hatch.text,"Maintenance hatch behind the rack, stenciled with a route number that doesn't exist on any map. Somebody scratched a dial into the lid, six notches, each marked in grease pencil. Old runner trick: crank it and see where the crawlspace dumps you. The dial sticks, though. You can lean on it, but it costs."
+TerminalEventData.ev_service_hatch.title,Service Hatch
 TerminalEventData.ev_shutdown_notice.text,Solace is shutting down a clinic tomorrow. The staff are allowed to take nothing.
 TerminalEventData.ev_shutdown_notice.title,Shutdown Notice
 TerminalEventData.ev_side_effects.text,A courier drone drops a parcel of experimental firmware marked TRIAL COHORT B.
@@ -3217,12 +3267,22 @@ TerminalEventData.ev_signal_booster.text,A rooftop booster relays Solace telemet
 TerminalEventData.ev_signal_booster.title,Signal Booster
 TerminalEventData.ev_silent_recall.text,"Recall notice, draft 7, never sent: batch 22 implants fail after 900 days. Observe the edit history: the failure was reclassified as a renewal opportunity."
 TerminalEventData.ev_silent_recall.title,Silent Recall
+TerminalEventData.ev_sol_courtesy_waiver.text,"The Terminal is a Continuum claims window, still logged in. A clerk named Odile sits behind it, three weeks from a performance review she won't survive. Last spring you got her mother's leash reinstated, and she hasn't forgotten. I can waive something on their side, she whispers. Courtesy adjustment. Just don't make me pick what. Her badge light is already blinking. Someone is watching her queue."
+TerminalEventData.ev_sol_courtesy_waiver.title,Courtesy Waiver
+TerminalEventData.ev_sol_payment_plan.text,"Your Continuum account is 41 days past due, and Solace Collections would like to help. Select a Hardship Option by spinning the Compassion Wheel. Outcomes are final, except where nudged. A balance of 180 credits was inherited from the previous holder of this terminal, a Mr. Okafor, who is no longer reachable. Terms apply. Smile, subbie."
+TerminalEventData.ev_sol_payment_plan.title,Payment Plan Roulette
+TerminalEventData.ev_solace_wellness_hold.text,"The Terminal sits in a corridor of frosted doors, each one stenciled WELLNESS HOLD, VOLUNTARY. Behind the glass of door 6 a man in a Solace gown is pressing his dead implant against the pane, mouthing a number: his arrears. The door log says he agreed to the stay. The signature is a thumbprint taken while he was sedated. He knows which service corridors Collections uses, and which ones they'll weld shut the moment this door opens."
+TerminalEventData.ev_solace_wellness_hold.title,Wellness Hold
 TerminalEventData.ev_stray_daemon.text,"Something in the Terminal is asking, politely, to ride along in your deck."
 TerminalEventData.ev_stray_daemon.title,Stray Daemon
 TerminalEventData.ev_supply_closet.text,A maintenance closet behind the clinic. Somebody left the good tools.
 TerminalEventData.ev_supply_closet.title,Supply Closet
+TerminalEventData.ev_toll_ledger_debt.text,"A gutted payphone kiosk sits between two server stacks, its screen scrolling a ledger of names. Every name is a runner who bought a shortcut on credit and never closed the account. The kiosk's last line is blinking: YOUR LINE OF CREDIT IS APPROVED. Somebody built a toll road through this net and still collects on it. Everything here has a price, and the bill is always sent late."
+TerminalEventData.ev_toll_ledger_debt.title,The Toll Ledger
 TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness scan. The fine print is longer than the kiosk.
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
+TerminalEventData.ev_witness_statement.text,"A claims clerk sits curled under the Terminal desk, her badge still blinking green. She watched Solace sign off on a recall that bricked a whole block, and she wants it on record before they find her. Her handset pings every ten seconds; a Collections sweep is two corridors out. She says her statement is worth more than anything in this building, if she's still breathing when it uploads."
+TerminalEventData.ev_witness_statement.title,Witness Statement
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
 That wheel's nudges are locked this turn.,That wheel's nudges are locked this turn.
@@ -3232,6 +3292,8 @@ The Armory is empty: runs bank defense assets from their drops.,The Armory is em
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
+The Eye moves to octant %d after this turn.,The Eye moves to octant %d after this turn.
+The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
@@ -3239,6 +3301,7 @@ The boosts bought for the next run. Pick a boost up and move it here to buy it.,
 "The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The card's next page: the rest of its rows and actions.,The card's next page: the rest of its rows and actions.
+The city holds.,The city holds.
 "The city: click a Site to select it; the wheel zooms, a drag pans.","The city: click a Site to select it; the wheel zooms, a drag pans."
 The city: left and right step through the Sites; down to the hand.,The city: left and right step through the Sites; down to the hand.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
@@ -3249,6 +3312,7 @@ The hand's next page: the rest of the cards and offers.,The hand's next page: th
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
+The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.,The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
@@ -3266,7 +3330,9 @@ The white needle points at a slice. That slice is what the wheel does when you S
 Then you can go to: %s.,Then you can go to: %s.
 "There is more further down this page: scroll, or press this.","There is more further down this page: scroll, or press this."
 "There is more further up this page: scroll, or press this.","There is more further up this page: scroll, or press this."
+This REST is spent.,This REST is spent.
 This Site's Heat objective is switched off at this ICE level.,This Site's Heat objective is switched off at this ICE level.
+This Workshop is spent.,This Workshop is spent.
 This is your HOME SERVER: you defend it in raids; you never run it.,This is your HOME SERVER: you defend it in raids; you never run it.
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."
 This tag shows where the needle lands after this play.,This tag shows where the needle lands after this play.
@@ -3321,6 +3387,8 @@ UNFINISHED,UNFINISHED
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
+UP,UP
+"UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key).","UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key)."
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
@@ -3336,6 +3404,8 @@ VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
 W,W
 WANTED,WANTED
+WARD,WARD
+"WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves.","WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves."
 WAS,WAS
 WEAK,WEAK
 WEAK x0.5,WEAK x0.5
@@ -3345,6 +3415,7 @@ WHEEL,WHEEL
 WIN,WIN
 WIPE IN,WIPE IN
 WON,WON
+WORKSHOP,WORKSHOP
 Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.,Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.
 "What every symbol, chip and status in a fight means.","What every symbol, chip and status in a fight means."
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
@@ -3358,6 +3429,12 @@ Window mode,Window mode
 Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
+Workshop: placeholder text,Workshop: placeholder text
+Workshop: refit a wheel slice for Cycles.,Workshop: refit a wheel slice for Cycles.
+WorkshopBuy,WorkshopBuy
+WorkshopCycles,WorkshopCycles
+WorkshopHint,WorkshopHint
+WorkshopLeave,WorkshopLeave
 Xbox,Xbox
 YES,YES
 YOU,YOU
@@ -3423,6 +3500,7 @@ cool,cool
 core,core
 corporate,corporate
 cut off,cut off
+cycles_after,cycles_after
 daemon,daemon
 decryption is not offered.  your station is no longer yours.,decryption is not offered.  your station is no longer yours.
 delete,delete
@@ -3449,12 +3527,14 @@ half power,half power
 handshake ... ok,handshake ... ok
 harder rules,harder rules
 hardest hitter,hardest hitter
+heal,heal
 heat,heat
 heat obj.,heat obj.
 heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
 held %d   down %d   taken %d,held %d   down %d   taken %d
 highest-value node,highest-value node
 home server  %d / %d,home server  %d / %d
+hp_after,hp_after
 hunted,hunted
 in a run,in a run
 inner ring,inner ring
@@ -3471,6 +3551,7 @@ locked,locked
 locked link,locked link
 loot_socket,loot_socket
 lost,lost
+max_hp,max_hp
 maybe a Firmware chip,maybe a Firmware chip
 mini,mini
 minimum to breach,minimum to breach
@@ -3501,6 +3582,7 @@ perfect aim,perfect aim
 pick a corporation to bring down,pick a corporation to bring down
 pips,pips
 press a key...,press a key...
+price,price
 purge,purge
 queued: %s,queued: %s
 raid incoming mid-run,raid incoming mid-run
@@ -3509,6 +3591,7 @@ reclaim,reclaim
 rescue an operative,rescue an operative
 reset all,reset all
 ring_lock_handler,ring_lock_handler
+routing ... building street_%s,routing ... building street_%s
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d
 run: %s,run: %s
@@ -3531,6 +3614,7 @@ system,system
 taken,taken
 target,target
 the %s Exploit,the %s Exploit
+the Bloom front goes back %s layers,the Bloom front goes back %s layers
 the Site's objective,the Site's objective
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net

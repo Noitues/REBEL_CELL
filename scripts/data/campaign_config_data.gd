@@ -159,6 +159,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## (EnemyData.normal_pool), later ones from HARD. An old save without the counter counts as
 ## N once its current node lies past layer N, else 0 (NetrunSession.from_dict).
 @export var easy_normal_fights: int = 2
+## Plan 2 EV-01: the highest tier an event fight's tier_delta can raise the enemy tables to.
+@export var event_fight_tier_cap: int = 4
 @export var map_layers: int = 7
 @export var map_nodes_min: int = 2
 @export var map_nodes_max: int = 4
@@ -252,6 +254,233 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## ART-0 audit B4: the most replay files the replay folder keeps; writing one more deletes
 ## the oldest (storyboard, demo and harness runs would pile them up). 0 = no cap.
 @export var max_replays: int = 50
+@export_group("Corp theme")
+## Plan 2 WH-02 (REPLAN 2026-10-19 A 2.4): the W2 corporation themes' numbers, one section,
+## keys and defaults from the WH-01 tables (docs/handoff/plan2/drafts/themes/tables/). WH-02
+## adds them unread; each corp slice (WH-11, WH-21, WH-30, WH-41, WH-51) reads its own.
+## Solace THE BLOOM: thousandths of a layer (milli); per-tier arrays are T1..T4.
+@export var bloom_start_gap_milli_by_tier: PackedInt32Array = PackedInt32Array([4000, 3500, 3000, 2500])
+@export var bloom_hq_start_gap_milli: int = 3000
+@export var bloom_pace_node_milli_by_tier: PackedInt32Array = PackedInt32Array([500, 600, 650, 700])
+@export var bloom_hq_pace_node_milli: int = 700
+## Front advance per combat turn, applied at fight end.
+@export var bloom_pace_turn_milli: int = 100
+## Extra front advance for an HQ ACROSS move.
+@export var bloom_pace_cross_milli: int = 500
+@export var bloom_dose_push_milli: int = 1000
+## Cycles per dose (Mainframe, Terminal option).
+@export var bloom_dose_price: int = 15
+## Gap clamp after a dose.
+@export var bloom_max_gap_milli: int = 5000
+## Band ceilings (gap <=): CLOSE, CATCHING.
+@export var bloom_close_gap_milli: int = 2000
+@export var bloom_catch_gap_milli: int = 1000
+## Percent multiplier on node and turn pace with the Virus key (floor division, minimum 1).
+@export var bloom_virus_pace_pct: int = 75
+## Heat pace multiplier by band (COOL, NOTICED, FLAGGED, HUNTED, PURGE), percent; applies to
+## node and turn pace on the street and in the HQ.
+@export var bloom_pace_heat_pct_by_band: PackedInt32Array = PackedInt32Array([100, 110, 125, 140, 160])
+## Breach key: one-time setback of the front on the first node entry of a netrun.
+@export var bloom_breach_setback_milli: int = 1000
+## Intel key: percent multiplier on the per-turn fight cost.
+@export var bloom_intel_turn_pct: int = 50
+## Solace HQ ladder (WH-10, drafts/hq/solace.md): rungs between the Clinic Gate and the Genome
+## Core crown (D10: more than 7 layers), the rung whose rooms hold the Account Manager, the
+## Ward-tower rungs that are guaranteed ward rests, and each tower's room-kind weights in the
+## order fight, rest, event, elite, shop (stream `hq_graph`, drawn once at generation).
+@export var solace_hq_rungs: int = 9
+@export var solace_hq_mini_boss_rung: int = 9
+@export var solace_hq_ward_rest_rungs: PackedInt32Array = PackedInt32Array([5, 8])
+@export var solace_hq_ward_weights: PackedInt32Array = PackedInt32Array([45, 20, 15, 15, 5])
+@export var solace_hq_billing_weights: PackedInt32Array = PackedInt32Array([30, 5, 20, 20, 25])
+## Solace campaign infection, basis points: per step base, per living threat per step, the CITY
+## LOST threshold, and the decays (raid held, per threat destroyed, per cure: Heat objective Site
+## or Proxy Relay completion).
+@export var raid_infection_bp_base: int = 50
+@export var raid_infection_bp_per_threat: int = 100
+@export var raid_infection_lost_bp: int = 10000
+@export var raid_infection_decay_hold_bp: int = 1000
+@export var raid_infection_decay_per_kill_bp: int = 100
+@export var raid_infection_decay_cure_bp: int = 1500
+## Halcyon THE EYE: sector width and step (degrees), octants moved per campaign turn (one ended netrun), turns
+## fixed after an Exploit.
+@export var eye_sector_deg: int = 90
+@export var eye_step_deg: int = 45
+@export var eye_move_per_turn: int = 1
+@export var eye_fix_turns: int = 2
+## TIER_DOWN stacks on the scanned slice; Blade classes per level (EnemyClass names plus RACK).
+@export var blade_tier_drop: int = 1
+@export var blade_classes_l1: Array[StringName] = [&"ELITE", &"MINI_BOSS", &"RACK"]
+@export var blade_classes_l2: Array[StringName] = [&"NORMAL", &"ELITE", &"MINI_BOSS", &"BOSS", &"RACK"]
+## Heat added per Elite fight at Spotted level 2.
+@export var spotted_elite_heat: int = 1
+## HQ gaze steps per completed node and per climb; BLOCKED half width (degrees); dial centres.
+@export var hq_gaze_step_per_node: int = 1
+@export var hq_gaze_step_per_climb: int = 2
+@export var hq_beam_half_width_deg: int = 4
+@export var hq_dial_steps: int = 3
+## Threat damage bonus inside the sector (percent).
+@export var raid_eye_damage_pct: int = 25
+## Unused since v2 (a shuttered node cannot be entered).
+@export var eye_shuttered_cost_heat: int = 1
+## Halcyon v2: the Blade's top level, the HQ gaze step per Stall, Alert gains (eye fight, Stall,
+## Power cut), the Lockdown threshold, beam multiplier and Blade bonus, Cut the Power's asleep steps.
+@export var blade_level_max: int = 2
+@export var hq_gaze_step_per_stall: int = 1
+@export var hq_alert_gain_eye_fight: int = 1
+@export var hq_alert_gain_stall: int = 1
+@export var hq_alert_gain_power_cut: int = 2
+@export var hq_lockdown_alert: int = 4
+@export var hq_lockdown_beam_mult: int = 2
+@export var hq_lockdown_blade_bonus: int = 1
+@export var hq_power_cut_steps: int = 2
+## Halcyon HQ graph (WH-20, drafts/hq/halcyon.md): layer kinds (comma lists of R router, E elite,
+## T terminal, M mainframe, B bay/rest, C cache, K rack, X mini-boss, V vault boss), each layer's
+## face azimuth, the azimuth jitter per layer and the spread between a layer's nodes (degrees),
+## the Annex layers and their kinds (rest, cache, power), the climbs (origin and target layers),
+## the rest heal percent, cache choices and rebuild attempts.
+@export var halcyon_hq_layer_kinds: PackedStringArray = PackedStringArray(["R,R,R", "R,T", "R,T,M", "R,E", "B,R,C", "K,R,E", "E,R", "R,T,M", "B,R", "R,E,R", "K,B", "X", "V"])
+@export var halcyon_hq_layer_face_deg: PackedInt32Array = PackedInt32Array([180, 180, 180, 90, 90, 0, 0, 270, 270, 180, 180, 90, 0])
+@export var halcyon_hq_face_jitter_deg: int = 20
+@export var halcyon_hq_node_spread_deg: int = 24
+@export var halcyon_hq_annex_layers: PackedInt32Array = PackedInt32Array([3, 7, 9])
+@export var halcyon_hq_annex_kinds: PackedStringArray = PackedStringArray(["cache", "power", "rest"])
+@export var halcyon_hq_climb_origins: PackedInt32Array = PackedInt32Array([3, 5])
+@export var halcyon_hq_climb_targets: PackedInt32Array = PackedInt32Array([10, 12])
+@export var halcyon_hq_rest_heal_pct: int = 35
+@export var halcyon_hq_cache_choices: int = 3
+@export var halcyon_hq_max_attempts: int = 300
+## REBEL_CELL DISPATCH: operatives (one per lane), layers per lane graph, lead limit (layers).
+@export var hq_lanes_required: int = 3
+@export var hq_lane_layers: int = 7
+@export var hq_lead_limit: int = 2
+## Heal percent of max HP per Rest node and at THROW.
+@export var hq_rest_heal_pct: int = 30
+@export var hq_throw_heal_pct: int = 20
+## Extra starting RAM in a scouted lane's first fight.
+@export var lane_scout_ram: int = 2
+## Step thresholds for seq 1 and seq 2 (seq 3 on THROW).
+@export var hq_seq_steps: PackedInt32Array = PackedInt32Array([3, 5])
+## Percent node weights per lane (the rest goes as the generator allocates).
+@export var hq_lane_node_weights: Dictionary = {
+	&"ROOF": {&"elite": 30, &"event": 15, &"shop": 10},
+	&"STREET": {&"elite": 20, &"event": 25, &"shop": 15},
+	&"SEWER": {&"elite": 15, &"event": 40, &"shop": 15},
+}
+## Percent of the HQ tilt away from neutral STREET weights in a street netrun.
+@export var street_lane_tilt_pct: int = 50
+## Start-of-fight modifiers on dispatch_core, one per ARMED lane.
+@export var hq_lane_effects: Dictionary = {
+	&"ROOF": {&"enemy_resistance_delta": -2, &"enemy_resistance_floor": 0},
+	&"STREET": {&"first_phase_hub_heal": false},
+	&"SEWER": {&"operative_ram_bonus": 2},
+}
+## First-wave threat count for REBEL_CELL raids (the table's raid_config key; no raid config
+## resource exists, so it lives here).
+@export var rebel_raid_first_wave: int = 3
+## Fixed lane order, also the finale resolve order (Q34); a Site without a lane tag reads
+## `lane_tag_default` (RebelCellCampaignTheme).
+@export var hq_lane_ids: Array[StringName] = [&"ROOF", &"STREET", &"SEWER"]
+@export var lane_tag_default: StringName = &"STREET"
+## Orbital BLACKOUT: dark fight nodes per street netrun and their layer range, DARK turn
+## cadence (street, HQ) and first DARK turn; the HQ dark residues of `layer mod modulus`.
+@export var street_dark_nodes: int = 1
+@export var dark_layer_min: int = 3
+@export var dark_layer_max: int = 6
+@export var street_dark_every: int = 3
+@export var hq_dark_every: int = 2
+@export var dark_turn_first: int = 1
+@export var hq_dark_pattern: PackedInt32Array = PackedInt32Array([0, 1])
+@export var dark_pattern_modulus: int = 4
+## Layers lit after an Uplink Dish clear; Uplink Dish nodes per HQ run; Dead Zone hops.
+@export var uplink_lit_layers: int = 2
+@export var hq_uplink_count: int = 3
+@export var raid_dark_radius: int = 1
+## Meridian A PAYLOAD (the table's `meridian.` keys): Load weights, Capacity (base, per Rank,
+## per target tier T1..T4), Over resistance cap, Jettison refund percent and Cycles values,
+## Weigh Stations (capacity penalty, HQ layers), boss hub divisor, raid node capacity and delay.
+@export var meridian_weight_firmware: int = 1
+@export var meridian_weight_daemon: int = 2
+@export var meridian_weight_asset: int = 2
+@export var meridian_capacity_base: int = 5
+@export var meridian_capacity_per_rank: int = 1
+@export var meridian_capacity_tier_bonus: PackedInt32Array = PackedInt32Array([2, 1, 1, 0])
+@export var meridian_over_resistance_cap: int = 3
+@export var meridian_jettison_refund_pct: int = 50
+@export var meridian_station_capacity_penalty: int = 2
+@export var meridian_weigh_station_layers: PackedInt32Array = PackedInt32Array([4, 7, 10])
+@export var meridian_hub_load_divisor: int = 3
+@export var meridian_raid_node_capacity: int = 2
+@export var meridian_raid_overcap_delay_steps: int = 1
+@export var meridian_jettison_value_firmware: int = 30
+@export var meridian_jettison_value_daemon: int = 60
+@export var meridian_jettison_value_asset: int = 40
+@export_group("City generator")
+## Plan 2 NA-12 (D3), kept by the planner city A2 (CITY-A2 step 2 removed the grid generator and its other numbers):
+## HQ rects and Site layouts stay `city_gen_edge_lots` inside the city and Sites `city_gen_coast_clear` lots from the
+## water; Site layout headings are tried `city_gen_aim_step_deg` degrees apart round each HQ.
+@export var city_gen_edge_lots: int = 6
+@export var city_gen_coast_clear: int = 4
+@export var city_gen_aim_step_deg: float = 15.0
+@export_group("City plan A2")
+## CITY-A2 (D3, 2026-10-19): every city seed is the art-pass planner city `city_a2_path` (CityPlanA2; step 2: the
+## default seed too). A2 metres per lot (20 km over the 165-lot city), the lots rasterised past the city rect, the river
+## kinds that are water, the least road half width (lots), and A2 district id -> game territory id (others: Sprawl).
+@export var city_a2_path: String = "res://content/city/city_A2.json"
+@export var city_a2_metres_per_lot: float = 121.212
+@export var city_a2_raster_margin: int = 16
+@export var city_a2_river_kinds: PackedStringArray = PackedStringArray(["river"])
+@export var city_a2_road_half_min: float = 0.5
+@export var city_a2_territories: Dictionary = {"centre": "rebel_cell", "halcyon": "halcyon", "solace": "solace",
+	"orbital": "orbital", "meridian": "meridian"}
+## Per seed: an HQ centre within `city_a2_hq_jitter` lots of its A2 HQ (draws, then the A2 spot, then the nearest fit),
+## the whole rect on land in its own district, `city_gen_edge_lots` inside the city, `city_a2_hq_gap` lots off any other.
+@export var city_a2_hq_jitter: float = 4.0
+@export var city_a2_hq_tries: int = 24
+@export var city_a2_hq_gap: int = 1
+@export var city_a2_hq_search: int = 12
+## Local streets: per A2 district a seeded spacing (lots, min / max, both axes) and phase; a building cell spans two
+## lots with `city_a2_merge_share`; footprints inset `city_a2_inset` lots.
+@export var city_a2_block_lots: Vector2i = Vector2i(4, 7)
+@export var city_a2_merge_share: float = 0.35
+@export var city_a2_inset: float = 0.12
+## Building height (BU, min / max) by neighbourhood kind (A2 `neighbourhoods[].kind`, a lot inside its radius), else
+## &"corp" (a corporation's district), &"old_core" (the Old City), &"sprawl"; within `city_a2_hq_rise_lots` of a
+## corporation's HQ heights grow up to x(1 + `city_a2_hq_rise`). Towers over `city_a2_setback_from` BU get a setback
+## tier (`city_a2_setback`: x inset lots, y share of the height below it); taper range on the top tier.
+@export var city_a2_heights: Dictionary = {&"corp": Vector2(10.0, 34.0), &"old_core": Vector2(5.0, 16.0),
+	&"sprawl": Vector2(4.0, 14.0), &"industrial": Vector2(4.0, 10.0), &"informal": Vector2(2.0, 6.0),
+	&"rail_grid": Vector2(5.0, 14.0), &"suburb": Vector2(3.0, 8.0)}
+@export var city_a2_hq_rise: float = 1.2
+@export var city_a2_hq_rise_lots: float = 18.0
+@export var city_a2_setback_from: float = 18.0
+@export var city_a2_setback: Vector2 = Vector2(0.18, 0.6)
+@export var city_a2_taper: Vector2 = Vector2(0.85, 1.0)
+## Street look: share of a territory's street lots in its corporation's color; traffic by A2 road class (local: &"local").
+@export var city_a2_corp_ink_share: float = 0.35
+@export var city_a2_traffic: Dictionary = {&"ring": 1.0, &"motorway": 1.0, &"truck": 0.8, &"arterial": 0.6,
+	&"collector": 0.45, &"local": 0.2}
+## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
+@export var city_a2_budget_s: float = 2.0
+## CITY-A2 step 2: the terrain (CityA2Terrain). A2's hills (height_m x lot_bu / metres per lot x `city_a2_hill_exag`);
+## outside the outer ring road `city_a2_outer_ring` (a closed A2 road id) foothills and mountains rising with the distance
+## d (lots) past it: over `city_a2_foot` (d from / to) up to `city_a2_foot_h` BU, over `city_a2_mountain` up to
+## `city_a2_mountain_h` BU, shaped by value noise on lattices of `city_a2_noise_cells` lots (broad, fine, ridge) drawn
+## from stream `city_terrain` of `city_a2_terrain_seed`; no mountain within `city_a2_mountain_shore` lots of the water; the
+## land falls to the sea over `city_a2_beach` lots. The land runs `city_a2_land_margin` lots past the city rect, sampled
+## every `city_a2_land_step` lots past the raster.
+@export var city_a2_hill_exag: float = 1.0
+@export var city_a2_outer_ring: StringName = &"road_001"
+@export var city_a2_foot: Vector2 = Vector2(2.5, 25.0)
+@export var city_a2_foot_h: float = 12.0
+@export var city_a2_mountain: Vector2 = Vector2(20.0, 64.0)
+@export var city_a2_mountain_h: float = 60.0
+@export var city_a2_noise_cells: Vector3 = Vector3(33.0, 13.0, 40.0)
+@export var city_a2_terrain_seed: int = 5101
+@export var city_a2_mountain_shore: Vector2 = Vector2(1.2, 7.5)
+@export var city_a2_beach: Vector2 = Vector2(0.5, 2.5)
+@export var city_a2_land_margin: int = 80
+@export var city_a2_land_step: int = 2
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -431,12 +660,15 @@ func validate() -> PackedStringArray:
 	errors.append_array(config_errors())  # N9
 	if max_replays < 0:
 		errors.append("max_replays must be >= 0 (0 = no cap).")
+	_validate_city_gen(errors)
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
 	_validate_enrage(errors)
 	if easy_normal_fights < 0:
 		errors.append("easy_normal_fights must be >= 0.")
+	if event_fight_tier_cap < 1 or event_fight_tier_cap > enemy_hp_scale_by_tier.size():
+		errors.append("event_fight_tier_cap must be 1..%d (the tiers the enemy tables cover)." % enemy_hp_scale_by_tier.size())
 	if resistance_min_by_class.size() != RC.EnemyClass.size() or resistance_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Resistance ranges need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:
@@ -522,6 +754,45 @@ func enrage_for(data: EnemyData) -> EnrageData:
 	return enrage_default(data.enemy_class())
 
 
+## NA-12: the numbers the planner city keeps from the grid generator.
+func _validate_city_gen(errors: PackedStringArray) -> void:
+	if city_gen_edge_lots < 0 or city_gen_coast_clear < 0:
+		errors.append("city_gen_edge_lots and city_gen_coast_clear must be >= 0.")
+	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0:
+		errors.append("city_gen_aim_step_deg must be in (0, 360].")
+	_validate_city_a2(errors)
+
+
+## CITY-A2: the planner city's numbers.
+func _validate_city_a2(errors: PackedStringArray) -> void:
+	if city_a2_metres_per_lot <= 0.0 or city_a2_raster_margin < 0 or city_a2_road_half_min <= 0.0 or city_a2_budget_s <= 0.0:
+		errors.append("city_a2_metres_per_lot, city_a2_road_half_min and city_a2_budget_s must be > 0, city_a2_raster_margin >= 0.")
+	if city_a2_hq_jitter < 0.0 or city_a2_hq_tries < 0 or city_a2_hq_gap < 0 or city_a2_hq_search < 0:
+		errors.append("city_a2_hq_jitter, city_a2_hq_tries, city_a2_hq_gap and city_a2_hq_search must be >= 0.")
+	if city_a2_block_lots.x < 2 or city_a2_block_lots.x > city_a2_block_lots.y:
+		errors.append("city_a2_block_lots must be 2 <= min <= max.")
+	if city_a2_merge_share < 0.0 or city_a2_merge_share > 1.0 or city_a2_corp_ink_share < 0.0 or city_a2_corp_ink_share > 1.0:
+		errors.append("city_a2_merge_share and city_a2_corp_ink_share must be in [0, 1].")
+	if city_a2_inset < 0.0 or city_a2_inset >= 0.5 or city_a2_setback.x < 0.0 or city_a2_setback.y <= 0.0 or city_a2_setback.y >= 1.0:
+		errors.append("city_a2_inset must be in [0, 0.5), city_a2_setback x >= 0 and y in (0, 1).")
+	if city_a2_taper.x <= 0.0 or city_a2_taper.x > city_a2_taper.y or city_a2_hq_rise < 0.0 or city_a2_hq_rise_lots <= 0.0:
+		errors.append("city_a2_taper must be 0 < min <= max, city_a2_hq_rise >= 0, city_a2_hq_rise_lots > 0.")
+	for k: StringName in [&"corp", &"old_core", &"sprawl"]:
+		var h: Variant = city_a2_heights.get(k)
+		if not (h is Vector2 and (h as Vector2).x > 0.0 and (h as Vector2).x <= (h as Vector2).y):
+			errors.append("city_a2_heights %s must be a Vector2 0 < min <= max." % k)
+	if not city_a2_traffic.has(&"local"):
+		errors.append("city_a2_traffic needs a local entry.")
+	if city_a2_hill_exag < 0.0 or city_a2_foot_h < 0.0 or city_a2_mountain_h < 0.0 or city_a2_land_margin < 0 or city_a2_land_step < 1:
+		errors.append("city_a2_hill_exag, city_a2_foot_h, city_a2_mountain_h, city_a2_land_margin must be >= 0, city_a2_land_step >= 1.")
+	for v: Vector2 in [city_a2_foot, city_a2_mountain, city_a2_mountain_shore, city_a2_beach]:
+		if v.x < 0.0 or v.x >= v.y:
+			errors.append("city_a2_foot, city_a2_mountain, city_a2_mountain_shore and city_a2_beach must be 0 <= from < to.")
+			break
+	if city_a2_noise_cells.x <= 0.0 or city_a2_noise_cells.y <= 0.0 or city_a2_noise_cells.z <= 0.0:
+		errors.append("city_a2_noise_cells must be > 0.")
+
+
 func _validate_enrage(errors: PackedStringArray) -> void:
 	var n := RC.EnemyClass.size()
 	if enrage_start_turn_by_class.size() != n or enrage_every_n_turns_by_class.size() != n or enrage_damage_pct_step_by_class.size() != n:
@@ -534,3 +805,45 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 		if d != null:
 			for problem in d.validate():
 				errors.append("%s (class %d default)" % [problem, k])
+
+## RG-01 (run_graph v2): new netruns generate v2 graphs (REST, WORKSHOP, CACHE nodes may appear).
+## False keeps v1 maps (no new node kinds).
+@export var map_v2_enabled: bool = true
+## RG-06 lint: unique node ids (MapGraph node key `unique_id`) allowed to be an Intel, Relay or
+## Ambush node in a netrun map. Normal runs have none of these kinds.
+@export var map_unique_allow: PackedStringArray = PackedStringArray(["orbital_uplink_dish"])
+
+## RG-02 REST node (drafts/nodes/rest.md). PATCH heals this percent of the operative's max HP
+## (round half up, clamped to max HP); REWIRE swaps Firmware between two wheel slots, this many
+## swaps per visit (one mode per visit).
+@export var rest_heal_pct: int = 35
+@export var rest_rewire_swaps: int = 1
+## Placement: the guaranteed REST sits in these layers (inclusive); `node_weight_rest` is the
+## percent chance a run gets it (100 = always). An extra REST is rolled with the tier's percent
+## (index tier - 1) in `rest_extra_layers`, at most `rest_max_per_run` in all, never two in a layer.
+@export var node_weight_rest: int = 100
+@export var rest_guaranteed_layers: Vector2i = Vector2i(4, 5)
+@export var rest_extra_layers: Vector2i = Vector2i(3, 6)
+@export var rest_extra_chance_pct_by_tier: PackedInt32Array = PackedInt32Array([0, 15, 35, 35])
+@export var rest_max_per_run: int = 2
+
+## RG-03 WORKSHOP (drafts/nodes/workshop.md; the slice-refit form while N18 slice upgrades are not built).
+## Offers drawn per visit, purchases per visit, the refit price (the NULL slot costs more), the
+## percent chance of one per run from `workshop_min_tier` up, and its layers (never in a layer that holds a Mainframe).
+@export var workshop_offers_per_visit: int = 3
+@export var workshop_buys_per_visit: int = 1
+@export var workshop_slice_price: int = 60
+@export var workshop_null_slice_price: int = 90
+@export var node_weight_workshop: int = 90
+@export var workshop_min_tier: int = 2
+@export var workshop_layers: Vector2i = Vector2i(3, 6)
+
+## RG-04 CACHE (drafts/nodes/cache.md). A plain reward: Cycles in `cache_cycles_range` (scaled by the tier's reward
+## scale) and a card offer of `cache_card_choices`. The mini-puzzle stays off (`cache_puzzle_enabled`) until a puzzle
+## passes the vetting rubric (CacheRules.VETTED_PUZZLES is empty). Placement: percent chance of one per run,
+## on a Terminal in `cache_layers`.
+@export var node_weight_cache: int = 60
+@export var cache_layers: Vector2i = Vector2i(2, 6)
+@export var cache_cycles_range: Vector2i = Vector2i(30, 60)
+@export var cache_card_choices: int = 3
+@export var cache_puzzle_enabled: bool = false

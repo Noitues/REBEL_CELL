@@ -7,6 +7,19 @@ extends RefCounted
 ## 64-bit seeds and states are serialised as decimal strings (JSON keeps only 2^53).
 
 const STREAM_NAMES: Array[StringName] = [&"map", &"combat", &"rewards", &"events", &"raids"]
+## Plan 2 NA-12: named streams made on demand by `make_stream`, never part of the saved set
+## (so a city never advances a gameplay stream): the campaign's city seed from its campaign
+## seed (`CITY_SEED_STREAM`), and a city's layout from its city seed (`CITY_LAYOUT_STREAM`).
+const CITY_SEED_STREAM: StringName = &"city_seed"
+const CITY_LAYOUT_STREAM: StringName = &"city_layout"
+## Plan 2 WH-10: the Solace HQ ladder's room kinds, made on demand from the run seed.
+const HQ_GRAPH_STREAM: StringName = &"hq_graph"
+## CITY-A2: a city's blocks, lots and buildings inside the A2 plan (CityA2Builder.lots_for), from its city seed.
+const CITY_BLOCKS_STREAM: StringName = &"city_blocks"
+## CITY-A2 step 2: the A2 terrain's noise lattice (CityA2Terrain), from the config's fixed terrain seed (no campaign seed).
+const CITY_TERRAIN_STREAM: StringName = &"city_terrain"
+## Halcyon v2: the Eye's first octant, drawn once at campaign start and stored.
+const EYE_START_STREAM: StringName = &"eye_start"
 
 var root_seed: int = 0
 var _streams: Dictionary = {}

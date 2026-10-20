@@ -106,7 +106,7 @@ const BADGE_ROUND_SEGMENTS := 16
 ## Every kind has its own silhouette, so node types differ by shape and not by colour only.
 static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	match String(CityMapOverlay.KIND_SHAPES.get(kind, "circle")):
+	match String(CityMapOverlay.KIND_SHAPES.get(kind, ROUTE_SHAPES.get(kind, "circle"))):
 		"star8":
 			for i in BADGE_STAR_POINTS * 2:
 				var ang := TAU * i / (BADGE_STAR_POINTS * 2) - PI * 0.5
@@ -123,16 +123,28 @@ static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2A
 			pts = PackedVector2Array([c + Vector2(-w, rr), c + Vector2(-w, -rr * 0.35), c + Vector2(-w * 0.45, -rr * 0.35),
 				c + Vector2(-w * 0.45, -rr), c + Vector2(w * 0.45, -rr), c + Vector2(w * 0.45, -rr * 0.35),
 				c + Vector2(w, -rr * 0.35), c + Vector2(w, rr)])
+		"diamond":
+			pts = PackedVector2Array([c + Vector2(0.0, -rr), c + Vector2(rr * 0.8, 0.0), c + Vector2(0.0, rr), c + Vector2(-rr * 0.8, 0.0)])
+		"hexagon":
+			for i in 6:
+				pts.append(c + Vector2.from_angle(TAU * i / 6.0) * rr)
+		"house":
+			pts = PackedVector2Array([c + Vector2(0.0, -rr), c + Vector2(rr, -rr * 0.2), c + Vector2(rr, rr), c + Vector2(-rr, rr), c + Vector2(-rr, -rr * 0.2)])
 		_:
 			for i in BADGE_ROUND_SEGMENTS:
 				pts.append(c + Vector2.from_angle(TAU * i / BADGE_ROUND_SEGMENTS) * rr)
 	return pts
 
 
+## Route-only badge silhouettes (placeholders for the REST, WORKSHOP and CACHE kinds, which have no
+## city icon; art-pass owns the final icons). Kept out of CityMapOverlay.KIND_SHAPES, whose icons must stay unique.
+const ROUTE_SHAPES := {"rest": "house", "workshop": "hexagon", "cache": "diamond"}
+
+
 ## W3-ROUTE (C7): the shape badge of `kind` at the sticker's lower right: ink keyline, paper
 ## rim, the kind's colour inside.
 static func draw_shape_badge(ci: CanvasItem, kind: String, p: Vector2, r: float, k: float, a: float = 1.0) -> void:
-	if not CityMapOverlay.KIND_SHAPES.has(kind):
+	if not (CityMapOverlay.KIND_SHAPES.has(kind) or ROUTE_SHAPES.has(kind)):
 		return
 	var c := p + BADGE_AT * r
 	var rr := r * BADGE_SHARE

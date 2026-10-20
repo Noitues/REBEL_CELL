@@ -10,6 +10,9 @@ extends Control
 ##   --settle=<frames>    frames to wait after a state change (default 90)
 ##   --perf=<frames>      after the shots, time this many frames of the overview and print the GPU / CPU frame ms
 ##   --fog=0|1            fog volume on (default 1)
+##   --export=<dir>       writes city.json, net.json, run_graph.json and derive_street.json of the street (STREET-CAM, plate inputs)
+##                        and prints the street's frontage tops (NA23 frontage: count, median, min, max BU)
+##   --export_only=1      quit after the export (CITY-A2 step 2: runs headless too)
 ##   --plate_dir=<dir>    parity harness (tools/netrun_art/parity_sheet.py): the camera of the overview / decision shot is replaced
 ##                        by the plate's pose in <dir>/street_<state>_capture.json: our focus and yaw (street frame) with the plate's
 ##                        pitch, dist, lens and shift; --plate_abs=1 uses the plate's world pose as is (Blender world, not this city)
@@ -32,6 +35,20 @@ func _ready() -> void:
 		if a.begins_with("--") and a.contains("="):
 			var kv := a.trim_prefix("--").split("=", true, 1)
 			_args[kv[0]] = kv[1]
+	# --cfg.<field>.<key>[.<key>...]=<json>: a tuning override of the shipped shader config (CityShaderConfigData field) for this run only.
+	for k: String in _args:
+		if k.begins_with("cfg."):
+			var parts := k.split(".")
+			var node: Variant = CityShaderConfigData.shipped().get(parts[1])
+			for i in range(2, parts.size() - 1):
+				node = (node as Dictionary)[parts[i]]
+			(node as Dictionary)[parts[parts.size() - 1]] = JSON.parse_string(String(_args[k]))
+		elif k.begins_with("street."):
+			var parts := k.split(".")
+			var node: Variant = StreetRouteConfigData.shipped().get(parts[1])
+			for i in range(2, parts.size() - 1):
+				node = (node as Dictionary)[parts[i]]
+			(node as Dictionary)[parts[parts.size() - 1]] = JSON.parse_string(String(_args[k]))
 	var wh := String(_args.get("size", "1920x1080")).split("x")
 	DisplayServer.window_set_size(Vector2i(int(wh[0]), int(wh[1])))
 	get_window().size = Vector2i(int(wh[0]), int(wh[1]))
@@ -50,6 +67,11 @@ func _ready() -> void:
 	if _data.error != "":
 		get_tree().quit(1)
 		return
+	if _args.has("export"):
+		_export_contract(String(_args["export"]))
+		if String(_args.get("export_only", "0")) == "1":
+			get_tree().quit()
+			return
 	var walks := NetrunPoseBuilder.fixture_walks(_data.run_graph)
 	var w := String(_args.get("walk", "none"))
 	if w != "none" and walks.has(w) and not (walks[w] as Array).is_empty():
@@ -61,7 +83,7 @@ func _ready() -> void:
 	view = StreetRouteView.new()
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
-	view.setup(_data, CityModel.shared(cfg, cfg.city_seed), String(_walk["current"]), _walk["visited"], _walk["options"])
+	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), String(_walk["current"]), _walk["visited"], _walk["options"])
 	if String(_args.get("fog", "1")) == "0":
 		for n in view.rig._extras:
 			n.visible = false
@@ -79,8 +101,30 @@ func _ready() -> void:
 		view.rig.view.building_material().set_shader_parameter(&"window_pitch", Vector2(wp, 1.9))
 		view.rig.view.building_material().set_shader_parameter(&"window_size", Vector2(wp * 0.5, 0.7))
 	if _args.has("exposure"):
-		view.rig.view.environment().tonemap_exposure = float(_args["exposure"])
+		view.rig.exposure_override = float(_args["exposure"])
+		view.rig.view.set_aaa_exposure(float(_args["exposure"]))
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
+
+
+## STREET-CAM: writes the street derive's inputs and output as contract text into `dir` (city.json, net.json, run_graph.json,
+## derive_street.json), the files art-pass re-renders the plates from.
+func _export_contract(dir: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	var files := {"city.json": _data.city, "net.json": _data.net, "run_graph.json": _data.run_graph, "derive_street.json": _data.derive}
+	for fn: String in files:
+		var f := FileAccess.open("%s/%s" % [dir, fn], FileAccess.WRITE)
+		f.store_string(NetrunArtExport.canonical(files[fn]))
+		f.close()
+	print("NA23 exported ", dir)
+	# CITY-A2 step 2 (A-039): the netrun street's frontage tops on both sides (r2 layout_pass: median about 24 BU).
+	var bases := NetrunArtLayout.merged_buildings(_data.city)
+	var tops: Array = []
+	for side: int in [1, -1]:
+		for b: Dictionary in NetrunStreetDeriver.frontage(bases, _data.derive["street"]["a"], _data.derive["street"]["c"], side):
+			tops.append(float(b["h"]))
+	tops.sort()
+	if not tops.is_empty():
+		print("NA23 frontage n=%d median=%.1f min=%.1f max=%.1f" % [tops.size(), tops[tops.size() / 2], tops[0], tops[-1]])
 
 
 func _on_ready() -> void:

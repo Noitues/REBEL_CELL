@@ -110,6 +110,8 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	if bool(overrides.get("no_first_turn_free_nudge", false)):
 		s.flags["no_first_turn_free_nudge"] = 1
 	s.flags["extra_free_nudges"] = int(overrides.get("extra_free_nudges", 0))
+	if bool(overrides.get("blade", false)):
+		s.flags["blade"] = 1  # Halcyon v2: the Blade scans one slice a turn
 	# ICE extras that boss phases must keep (H14): the extra pointer and bonus resistance.
 	s.flags["boss_extra_pointer"] = int(overrides.get("boss_extra_pointer", 0))
 	s.flags["enemy_resistance"] = int(overrides.get("enemy_resistance", 0))
@@ -122,6 +124,17 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		if extra_resistance > 0:
 			e.wheel.passive_resistance += extra_resistance
 			e.resistance = e.full_resistance()
+		# Plan 2 EV-01: Terminal event modifiers (static values, no RNG).
+		var event_res := int(overrides.get("event_resistance_delta", 0))
+		if event_res != 0:
+			e.wheel.passive_resistance = maxi(0, e.wheel.passive_resistance + event_res)
+			e.resistance = e.full_resistance()
+		var event_hp_pct := int(overrides.get("event_hp_pct", 0))
+		if event_hp_pct != 0:
+			e.max_hp = maxi(1, roundi(e.max_hp * (100 + event_hp_pct) / 100.0))
+			e.hp = e.max_hp
+		if bool(overrides.get("event_enemy_frozen", false)):
+			e.wheel.frozen = true
 		if enemy_datas[i].is_boss:
 			_add_pointers(e, int(overrides.get("boss_extra_pointer", 0)))
 			_trim_pointers(e, int(s.flags["boss_pointer_removal"]))
@@ -494,6 +507,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 			refresh_enrage(s, c, events)
 			_refresh_resistance(c, events)
 	_apply_pending_locks(s, events)
+	_blade_scan(s, events)
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -516,6 +530,37 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	_settle_deaths(s, rng, events)
 	if not s.is_over():
 		s.phase = CombatState.Phase.PLAYER_PHASE
+
+
+## Halcyon v2 (rule 7): at the start of a turn the Blade's scan line marks slot `(turn - 1) mod n`
+## over the operative's non-empty slots: that slice reads TIER_DOWN for this turn's resolve. A temporary
+## ENCRYPTED stack absorbs it. Flags: "blade_slot" (slot + 1, 0 = none) and "blade_stacks" (what landed).
+func _blade_scan(s: CombatState, events: Array[Dictionary]) -> void:
+	s.flags.erase("blade_slot")
+	s.flags.erase("blade_stacks")
+	if int(s.flags.get("blade", 0)) <= 0 or s.player == null:
+		return
+	var slot := EyeRules.blade_slot(s.player.wheel.layout(), s.turn)
+	if slot < 0:
+		return
+	s.flags["blade_slot"] = slot + 1
+	var before := s.player.wheel.stacks_of(slot, RC.Status.TIER_DOWN)
+	fx.apply_status(s.player, slot, RC.Status.TIER_DOWN, events, config.blade_tier_drop)
+	var landed := s.player.wheel.stacks_of(slot, RC.Status.TIER_DOWN) - before
+	if landed > 0:
+		s.flags["blade_stacks"] = landed
+	events.append({"type": "blade_scan", "slot": slot, "absorbed": landed <= 0,
+		"text": "" if quiet else "The Blade scans slot %d%s." % [slot, " (absorbed)" if landed <= 0 else ""]})
+
+
+## The Blade's mark lasts the one resolve: its stacks leave at the end of the turn.
+func _blade_clear(s: CombatState) -> void:
+	var landed := int(s.flags.get("blade_stacks", 0))
+	var slot := int(s.flags.get("blade_slot", 0)) - 1
+	if landed > 0 and slot >= 0 and s.player != null:
+		s.player.wheel.remove_stacks(slot, RC.Status.TIER_DOWN, mini(landed, s.player.wheel.stacks_of(slot, RC.Status.TIER_DOWN)))
+	s.flags.erase("blade_slot")
+	s.flags.erase("blade_stacks")
 
 
 ## N7 (Q31 answer 1): the locks queued at RESOLVE take hold of their wheels, after the
@@ -547,6 +592,7 @@ func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
 ## resistance goes to 0 (a change RESOLVE made still waits in `resistance_carry` for the
 ## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
 func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
+	_blade_clear(s)
 	for c in s.combatants_in_order():
 		if c.wheel != null:
 			c.wheel.clear_locks()  # N7 (Q31): every lock goes; Freeze alone persists (start_turn consumes it)

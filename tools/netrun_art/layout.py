@@ -108,6 +108,33 @@ def border_links(net: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
+def coast_of(city: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """NA-12 r2: a generated city's optional `coast` section as {"sea_side", "shoreline" set, "sea_cells" set} of `(i, j)`
+    lots, or None (the fixed city has no sea)."""
+    c = city.get("coast")
+    if c is None:
+        return None
+    return {"sea_side": c["sea_side"], "shoreline": {(int(p[0]), int(p[1])) for p in c["shoreline"]},
+            "sea_cells": {(int(p[0]), int(p[1])) for p in c["sea_cells"]}}
+
+
+def hills_of(city: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """NA-12 r2: the optional `terrain.hills` (plan BU, city_A2.json's Gaussian form), [] when absent."""
+    return list(city.get("terrain", {}).get("hills", []))
+
+
+def hill_height(hills: Sequence[Dict[str, Any]], x: float, y: float) -> float:
+    """Ground height (BU) at plan point (x, y): the sum of the rotated Gaussians (data only until NA-12c renders it)."""
+    z = 0.0
+    for h in hills:
+        dx, dy = x - float(h["centre"][0]), y - float(h["centre"][1])
+        r = float(h["rotation"])
+        u = dx * math.cos(r) + dy * math.sin(r)
+        v = -dx * math.sin(r) + dy * math.cos(r)
+        z += float(h["height"]) * math.exp(-0.5 * ((u / float(h["sigma_x"])) ** 2 + (v / float(h["sigma_y"])) ** 2))
+    return z
+
+
 def street_cells(city: Dict[str, Any]) -> set:
     """Set of `(i, j)` street lot cells."""
     return {(int(s["lot"][0]), int(s["lot"][1])) for s in city["streets"]}
@@ -270,8 +297,9 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
 # ---------------------------------------------------------------------------------------------------------------------
 R2_RULES: Dict[str, Any] = dict(
     # r2_config.py RULES_R2["frontage.silhouette"]
-    silhouette=dict(floors_low=[6, 7], floors_mid=[8, 9], floors_tall=[9, 10], rhythm_p=[0.34, 0.33, 0.33],
-                    height_step_min=2, triple_span_min=3, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
+    # CITY-A2 step 2 (A-039): the floors of art-pass r2_config.py RULES_R2 as the street r2 renders them (ded90765 had 6-7 / 8-9 / 9-10)
+    silhouette=dict(floors_low=[6, 8], floors_mid=[9, 13], floors_tall=[14, 21], rhythm_p=[0.34, 0.33, 0.33],
+                    height_step_min=2, triple_span_min=6, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
     # RULES_R2["horizon.break"]; spike_spacing_bu replaces the 1/6-frame spacing (no camera at layout time)
     horizon=dict(spikes_min=3, spikes_max=5, spike_k=1.6, backdrop_band=[24.0, 170.0], spike_min_w=4.0,
                  spike_spacing_bu=30.0, pick_jitter=25.0, default_median=15.0),

@@ -12,6 +12,8 @@ const WORD_TARGET := "TARGET"
 const TARGET_SHARE := 1.75
 const TARGET_SQUASH := 0.86
 const TARGET_FONT := 20
+## Share of the TARGET word's width kept free round it by the safe-frame test (its -0.12 rad tilt, the pencil wobble).
+const TARGET_WORD_PAD := 0.15
 const HEAD_PX := 20.0
 const SHAFT_PX := 64.0
 const WORD_BACK := 30.0
@@ -41,6 +43,16 @@ var usable: Rect2 = Rect2()
 var avoid: Array[Rect2] = []
 ## The branch the hover lights (ids), set by the view.
 var branch: Array = []
+## HQ-LADDER-UI (the Solace ladder): id -> overlay kind for rooms with their own sticker (rest, mini-boss), and the
+## "<from>><to>" keys of the ACROSS bridge links. A bridge is the same grease pencil and wax state as an UP link, told apart
+## by form only: one stroke that lifts into a raised arc over the gap between the towers and lands.
+var kind_overrides: Dictionary = {}
+var across_keys: Dictionary = {}
+## The bridge arc's lift at its middle, as a share of the link's drawn length (px follow the link, so it scales with the view).
+const ACROSS_LIFT := 0.28
+## The bridge stroke's density: one point per this many px of link length, never fewer than the minimum.
+const ACROSS_STEP_PX := 6.0
+const ACROSS_MIN_POINTS := 24
 
 var _clip: Control = null
 var _pencil: PencilSet = null
@@ -183,6 +195,8 @@ func _elite(id: String) -> bool:
 
 ## The overlay kind of node `id` (CityMapOverlay.KIND_* for the four types, the D4 names otherwise).
 func kind_name(id: String) -> String:
+	if kind_overrides.has(id):
+		return String(kind_overrides[id])
 	match _kind_of(id):
 		"router":
 			return CityMapOverlay.KIND_ELITE if _elite(id) else CityMapOverlay.KIND_FIGHT
@@ -356,6 +370,8 @@ func _collect_links(kk: float, r: float) -> Array:
 			dim = 1.0 if lit else DIM_IDLE
 		var col := _color(style["color"], float(style["alpha"]) * dim)
 		var rs := PencilShapes.resample(pts, SAMPLE_PX)
+		if across_keys.has(row[1]):
+			rs = _arched(rs)
 		if intro:
 			var wk := EntryBeats.write_k(StreetRouteRules.layer_of(data.run_graph, String(e["b"])), int(data.run_graph["layers"]), reveal_total, reveal_s) 					if reveal_s >= 0.0 else 0.0
 			if wk <= 0.0:
@@ -366,6 +382,30 @@ func _collect_links(kk: float, r: float) -> Array:
 			var j := _wobble(String(row[1]), i) * wob
 			wobbled.append(rs[i] + Vector2(j, -j * 0.6))
 		out.append({"key": row[1], "state": st, "style": style, "color": col, "runs": _runs_clear(wobbled, r + pad, blocks)})
+	return out
+
+
+## `pts` as a bridge arc: the chord between the link's two ends (the street path's own bends are dropped), sampled densely (one point per ACROSS_STEP_PX, at least
+## ACROSS_MIN_POINTS) and lifted by a half sine to the chord's upward side, so it leaves the first room, peaks over the gap
+## and lands on the second as one smooth curve with no visible corners.
+static func _arched(pts: PackedVector2Array) -> PackedVector2Array:
+	var n0 := pts.size()
+	if n0 < 2:
+		return pts
+	var from := pts[0]
+	var chord := pts[n0 - 1] - from
+	var total := chord.length()
+	if total <= 0.0:
+		return pts
+	var norm := Vector2(chord.y, -chord.x) / total
+	if norm.y > 0.0 or (is_zero_approx(norm.y) and norm.x > 0.0):
+		norm = -norm
+	var lift := total * ACROSS_LIFT
+	var n := maxi(ACROSS_MIN_POINTS, ceili(total / ACROSS_STEP_PX) + 1)
+	var out := PackedVector2Array()
+	for i in n:
+		var t := float(i) / float(n - 1)
+		out.append(from + chord * t + norm * lift * sin(PI * t))
 	return out
 
 
@@ -492,12 +532,9 @@ func _draw_d4(kind_id: String, p: Vector2, rr: float, dim: float, kk: float) -> 
 	var inner := rr - 5.0 * kk
 	match kind_id:
 		"rest":
-			var pts := PackedVector2Array()
-			for i in 17:
-				pts.append(p + Vector2.from_angle(-PI * 0.5 + PI * float(i) / 16.0 + PI * 0.0) * inner)
-			for i in 17:
-				pts.append(p + Vector2(inner * 0.35, 0.0) + Vector2.from_angle(PI * 0.5 - PI * float(i) / 16.0) * inner * 0.82)
-			draw_colored_polygon(pts, fill)
+			# A crescent: the disc with a die-cut disc bitten out of its right side (the polygon form did not triangulate).
+			draw_circle(p, inner, fill)
+			draw_circle(p + Vector2(inner * 0.42, -inner * 0.1), inner * 0.8, Color(RouteInk.DIE_CUT, dim))
 		"workshop":
 			var pts2 := PackedVector2Array()
 			for i in 6:
@@ -548,17 +585,35 @@ func _draw_chip(box: Rect2, n: int, kk: float) -> void:
 	draw_string(f, Vector2(box.position.x, y), str(n), HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, RouteInk.KEYLINE)
 
 
-func _draw_token(r: float, kk: float) -> void:
+## Where the operative token's centre sits, in sticker radii from the current room's sticker (up and to the right, the pin look).
+const TOKEN_OFFSET_R := Vector2(0.75, -1.45)
+
+
+## The operative token's texture (the cached RouteOverlay copy; null if the art is missing).
+func token_texture() -> Texture2D:
+	return RouteOverlay.token_art()
+
+
+## The operative token's centre in px (INF when there is no current room): the current room's sticker plus `TOKEN_OFFSET_R` radii.
+func token_center() -> Vector2:
 	var cur := String(state["current"])
 	if cur == "" or not _stick_px.has(cur):
+		return Vector2(INF, INF)
+	return (_stick_px[cur] as Vector2) + TOKEN_OFFSET_R * sticker_radius()
+
+
+func _draw_token(r: float, kk: float) -> void:
+	var at := token_center()
+	if not is_finite(at.x):
 		return
-	var tex := load(ART_DIR + "token_operative.png") as Texture2D
+	# The cached texture (RouteOverlay keeps the reference): a bare load() per draw was freed before the frame
+	# rendered, so the token drew as a flat white quad (TOKEN-FIX).
+	var tex := token_texture()
 	if tex == null:
 		return
-	var p: Vector2 = _stick_px[cur]
 	var side := r * 1.05 * 2.0
 	var sz := Vector2(tex.get_width(), tex.get_height()) * (side / maxf(1.0, float(tex.get_width())))
-	draw_texture_rect(tex, Rect2(p + Vector2(r * 0.75, -r * 1.45) - sz * 0.5, sz), false)
+	draw_texture_rect(tex, Rect2(at - sz * 0.5, sz), false)
 
 
 ## The hover tag (9.3 rule 3: tags show only on hover; the legend lights them all).
@@ -627,7 +682,9 @@ func _lay_target() -> void:
 		var rr := sticker_radius() * TARGET_SHARE
 		_pencil.circle("target_loop", c, Vector2(rr, rr * TARGET_SQUASH), GreasePencilMark.Ink.THREAT, LOOP_SEED)
 		var wk := maxf(kk, 0.5)
-		var base := c + Vector2(rr * 0.7, -rr * 0.95) - Vector2(0.0, 0.0)
+		var wsz := PencilSet.word_size(tword, TARGET_FONT) * wk
+		var place := StreetRouteRules.target_word_place(c, rr, wsz, wsz.x * TARGET_WORD_PAD, Rect2(Vector2.ZERO, usable.size))
+		var base: Vector2 = place["baseline"]
 		var wc := PencilSet.centre_of(base, tword, TARGET_FONT, wk, -0.12)
 		_pencil.word("target_word", tword, wc, TARGET_FONT, GreasePencilMark.Ink.THREAT, wk, PencilSet.AUTO, 0.0, -0.12)
 	_pencil.end()

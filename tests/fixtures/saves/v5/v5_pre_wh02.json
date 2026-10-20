@@ -1,0 +1,826 @@
+{
+	"campaign": {
+		"armory": [],
+		"assist": {},
+		"campaign_seed": "7702",
+		"city_seed": "16680262550676698624",
+		"corporation_id": "solace",
+		"deaths": 0.0,
+		"disabled_objectives": [],
+		"exploits": [],
+		"generated": {},
+		"grid": {
+			"frozen_links": [],
+			"home_asset_slots": 2.0,
+			"home_built_in": [],
+			"home_integrity": 50.0,
+			"home_max_integrity": 50.0,
+			"home_site_id": "home",
+			"opened_links": [],
+			"sites": {
+				"burn_the_ledger": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"home": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 50.0,
+					"max_integrity": 50.0,
+					"node_type": "home_server",
+					"stationed": "",
+					"status": 2.0,
+					"upgrade_level": 0.0
+				},
+				"purge_camera_logs": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"scrub_records": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_a": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_b": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_c": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_d": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_e": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_f": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_g": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_h": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_i": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t1_j": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_breach": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_d": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_e": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_f": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_g": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_h": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_intel": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t2_virus": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_b": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_c": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_core": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_d": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_e": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_f": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_g": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"t3_h": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"the_genome_core": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				},
+				"wipe_biometrics": {
+					"assets": [],
+					"condition": 0.0,
+					"integrity": 0.0,
+					"max_integrity": 0.0,
+					"node_type": "",
+					"stationed": "",
+					"status": 0.0,
+					"upgrade_level": 0.0
+				}
+			}
+		},
+		"heat": 0.0,
+		"heat_purchases": 0.0,
+		"home_variant_id": "home_standard",
+		"ice_level": 0.0,
+		"last_raid": {},
+		"next_operative_number": 3.0,
+		"outcome": 0.0,
+		"pending_boosts": [],
+		"pending_complications": [],
+		"pending_raids": [],
+		"raids_lost": 0.0,
+		"raids_won": 0.0,
+		"roster": [
+			{
+				"alive": true,
+				"class_id": "breaker",
+				"daemon_ids": [],
+				"deck": [
+					"jolt",
+					"jolt",
+					"jolt",
+					"jolt",
+					"brute_spin",
+					"brute_spin",
+					"fine_tune",
+					"fine_tune",
+					"mirror_flip",
+					"overdrive"
+				],
+				"hp": 60.0,
+				"id": "op_1",
+				"max_hp": 60.0,
+				"name": "Breaker 1",
+				"rank": 0.0,
+				"ring_segment_ids": [],
+				"runs_completed": 0.0,
+				"slot_firmware_ids": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"slot_slice_ids": [
+					"overflow_12",
+					"shim_6",
+					"shim_6",
+					"shim_6",
+					"defrag_5",
+					"null"
+				]
+			},
+			{
+				"alive": true,
+				"class_id": "breaker",
+				"daemon_ids": [],
+				"deck": [
+					"jolt",
+					"jolt",
+					"jolt",
+					"jolt",
+					"brute_spin",
+					"brute_spin",
+					"fine_tune",
+					"fine_tune",
+					"mirror_flip",
+					"overdrive"
+				],
+				"hp": 60.0,
+				"id": "op_2",
+				"max_hp": 60.0,
+				"name": "Breaker 2",
+				"rank": 0.0,
+				"ring_segment_ids": [],
+				"runs_completed": 0.0,
+				"slot_firmware_ids": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"slot_slice_ids": [
+					"overflow_12",
+					"shim_6",
+					"shim_6",
+					"shim_6",
+					"defrag_5",
+					"null"
+				]
+			}
+		],
+		"runs_completed": 0.0,
+		"runs_started": 1.0,
+		"schematics": 20.0,
+		"start_class_id": "breaker",
+		"story_beats_revealed": 0.0,
+		"story_path_id": "sp_ghost_patient",
+		"thresholds_fired": []
+	},
+	"corporation_id": "solace",
+	"rng": {
+		"campaign_seed": "7702",
+		"root_seed": "7702",
+		"streams": {
+			"combat": {
+				"seed": "1810992034",
+				"state": "-4792812466535972084"
+			},
+			"events": {
+				"seed": "3185286195",
+				"state": "7624016692360846217"
+			},
+			"map": {
+				"seed": "1419598304",
+				"state": "5346467159815838761"
+			},
+			"raids": {
+				"seed": "2748616058",
+				"state": "-3155408310210347516"
+			},
+			"rewards": {
+				"seed": "3255524637",
+				"state": "2692170785813699243"
+			}
+		}
+	},
+	"run": {
+		"run": {
+			"banked_assets": [],
+			"banked_schematics": 0.0,
+			"card_removals": 0.0,
+			"combat": {},
+			"combat_overrides": {
+				"shop_stock_delta": 0.0
+			},
+			"combats_won": 0.0,
+			"current_node_id": "",
+			"cycles": 0.0,
+			"drones": [],
+			"elites_defeated": 0.0,
+			"event_id": "",
+			"forced_enemy_id": "",
+			"heat_gained": 0.0,
+			"kind": "netrun",
+			"map": {
+				"layers": [
+					[
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L1N0",
+							"index": 0.0,
+							"layer": 1.0,
+							"next": [
+								"L2N0"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L1N1",
+							"index": 1.0,
+							"layer": 1.0,
+							"next": [
+								"L2N1"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L1N2",
+							"index": 2.0,
+							"layer": 1.0,
+							"next": [
+								"L2N1"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L1N3",
+							"index": 3.0,
+							"layer": 1.0,
+							"next": [
+								"L2N2",
+								"L2N3"
+							],
+							"type": 0.0
+						}
+					],
+					[
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L2N0",
+							"index": 0.0,
+							"layer": 2.0,
+							"next": [
+								"L3N0"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L2N1",
+							"index": 1.0,
+							"layer": 2.0,
+							"next": [
+								"L3N0",
+								"L3N1"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L2N2",
+							"index": 2.0,
+							"layer": 2.0,
+							"next": [
+								"L3N1"
+							],
+							"type": 1.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L2N3",
+							"index": 3.0,
+							"layer": 2.0,
+							"next": [
+								"L3N1"
+							],
+							"type": 0.0
+						}
+					],
+					[
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L3N0",
+							"index": 0.0,
+							"layer": 3.0,
+							"next": [
+								"L4N0"
+							],
+							"type": 2.0
+						},
+						{
+							"elite": true,
+							"heat": 1.0,
+							"id": "L3N1",
+							"index": 1.0,
+							"layer": 3.0,
+							"next": [
+								"L4N1",
+								"L4N2"
+							],
+							"type": 0.0
+						}
+					],
+					[
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L4N0",
+							"index": 0.0,
+							"layer": 4.0,
+							"next": [
+								"L5N0",
+								"L5N1"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": true,
+							"heat": 2.0,
+							"id": "L4N1",
+							"index": 1.0,
+							"layer": 4.0,
+							"next": [
+								"L5N2",
+								"L5N3"
+							],
+							"type": 3.0
+						},
+						{
+							"elite": true,
+							"heat": 1.0,
+							"id": "L4N2",
+							"index": 2.0,
+							"layer": 4.0,
+							"next": [
+								"L5N3"
+							],
+							"type": 0.0
+						}
+					],
+					[
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L5N0",
+							"index": 0.0,
+							"layer": 5.0,
+							"next": [
+								"L6N0"
+							],
+							"type": 1.0
+						},
+						{
+							"elite": true,
+							"heat": 1.0,
+							"id": "L5N1",
+							"index": 1.0,
+							"layer": 5.0,
+							"next": [
+								"L6N1",
+								"L6N2"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L5N2",
+							"index": 2.0,
+							"layer": 5.0,
+							"next": [
+								"L6N2"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L5N3",
+							"index": 3.0,
+							"layer": 5.0,
+							"next": [
+								"L6N2"
+							],
+							"type": 0.0
+						}
+					],
+					[
+						{
+							"elite": true,
+							"heat": 1.0,
+							"id": "L6N0",
+							"index": 0.0,
+							"layer": 6.0,
+							"next": [
+								"L7N0"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L6N1",
+							"index": 1.0,
+							"layer": 6.0,
+							"next": [
+								"L7N0"
+							],
+							"type": 0.0
+						},
+						{
+							"elite": false,
+							"heat": 0.0,
+							"id": "L6N2",
+							"index": 2.0,
+							"layer": 6.0,
+							"next": [
+								"L7N0"
+							],
+							"type": 1.0
+						}
+					],
+					[
+						{
+							"elite": true,
+							"heat": 2.0,
+							"id": "L7N0",
+							"index": 0.0,
+							"layer": 7.0,
+							"next": [],
+							"type": 3.0
+						}
+					]
+				]
+			},
+			"normal_fights_started": 0.0,
+			"null_resolved": false,
+			"operative": {
+				"alive": true,
+				"class_id": "breaker",
+				"daemon_ids": [],
+				"deck": [
+					"jolt",
+					"jolt",
+					"jolt",
+					"jolt",
+					"brute_spin",
+					"brute_spin",
+					"fine_tune",
+					"fine_tune",
+					"mirror_flip",
+					"overdrive"
+				],
+				"hp": 60.0,
+				"id": "op_1",
+				"max_hp": 60.0,
+				"name": "Breaker 1",
+				"rank": 0.0,
+				"ring_segment_ids": [],
+				"runs_completed": 0.0,
+				"slot_firmware_ids": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"slot_slice_ids": [
+					"overflow_12",
+					"shim_6",
+					"shim_6",
+					"shim_6",
+					"defrag_5",
+					"null"
+				]
+			},
+			"outcome": 0.0,
+			"patrol": false,
+			"pending_rewards": [],
+			"phase": 0.0,
+			"racks_captured": 0.0,
+			"run_seed": "3859235998",
+			"shop": {},
+			"site_id": "t1_a",
+			"streams": {
+				"root_seed": "3859235998",
+				"streams": {
+					"combat": {
+						"seed": "2026863654",
+						"state": "530018072824120896"
+					},
+					"events": {
+						"seed": "2178429794",
+						"state": "-8559017276721659956"
+					},
+					"map": {
+						"seed": "1595607066",
+						"state": "5084343583627602393"
+					},
+					"raids": {
+						"seed": "1460245937",
+						"state": "5389261393478383791"
+					},
+					"rewards": {
+						"seed": "3650817685",
+						"state": "-5996120488521182013"
+					}
+				}
+			},
+			"temp_cards": [],
+			"tier": 1.0,
+			"unbanked_assets": [],
+			"visited": []
+		}
+	},
+	"saved_at": 1792416470.388,
+	"version": 5
+}

@@ -34,7 +34,7 @@ func _ready() -> void:
 					print("NA23B %s %s %s no run" % [corp, s, sid])
 					continue
 				var cfg := CityView3D.CONFIG
-				var cseed := int(args.get("city", str(cfg.city_seed)))
+				var cseed := int(args.get("city", str(CityPlan.current_seed())))
 				var data: StreetRouteData = StreetRouteData.build(session, CityModel.shared(cfg, cseed), cfg, CityLayout.site_points(rm.corporation))
 				var layers := 0
 				for n: Dictionary in data.run_graph.get("nodes", []):

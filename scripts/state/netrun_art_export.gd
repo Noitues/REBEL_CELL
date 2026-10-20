@@ -14,13 +14,16 @@ extends RefCounted
 
 ## Contract version written in every file.
 const VERSION: int = 1
+## RG-01: `run_graph.json` is contract v2 (node types add rest, workshop, cache; schemas/run_graph.schema.json).
+const RUN_GRAPH_VERSION: int = 2
 ## JSON ints stay within +-2^53 (u64 values are decimal strings).
 const INT_LIMIT: int = 9007199254740992
 ## Grid status -> net.json node state (the home Site is "core").
 const SITE_STATES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared",
 	GridState.SiteStatus.CLAIMED: "owned", GridState.SiteStatus.TAKEN: "taken"}
 const NODE_TYPES := {RC.InfilNodeType.ROUTER: "router", RC.InfilNodeType.TERMINAL: "terminal",
-	RC.InfilNodeType.MAINFRAME: "mainframe", RC.InfilNodeType.SERVER_RACK: "server_rack"}
+	RC.InfilNodeType.MAINFRAME: "mainframe", RC.InfilNodeType.SERVER_RACK: "server_rack",
+	RC.InfilNodeType.REST: "rest", RC.InfilNodeType.WORKSHOP: "workshop", RC.InfilNodeType.CACHE: "cache"}
 const EXPLOITS := {RC.ExploitType.INTEL: "intel", RC.ExploitType.BREACH: "breach", RC.ExploitType.VIRUS: "virus"}
 ## Scene-level art streams (no per-object keys; section 7 with the O6 city.* names).
 const SCENE_STREAMS: Array[String] = ["beams", "cars", "city.beams", "city.build", "city.landmark", "city.post",
@@ -75,19 +78,23 @@ static func export_run(session: NetrunSession, city: Dictionary, index: Dictiona
 ## origin lot (CityConfig.district_centre), the world prisms, street and plaza lots and the
 ## HQ rects. One building per cell (`bid` "i:j" of the cell's origin lot; HQ stand-ins
 ## "hq:<corp>"), parts sorted by (z0, recorded order).
-static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Array, streets: Array, plazas: Array, hqs: Dictionary) -> Dictionary:
+## NA-12 r2: `sections` adds the optional v1 sections of a generated city (CityPlan.city_sections: `coast`, `terrain`;
+## {} for the fixed city, so its file is unchanged).
+static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Array, streets: Array, plazas: Array, hqs: Dictionary,
+		sections: Dictionary = {}) -> Dictionary:
 	var by_bid := {}
 	for pr: Dictionary in prisms:
 		var cell: Rect2i = pr["cell"]
 		var hq := bool(pr.get("hq", false))
 		var bid := "hq:%s" % pr["terr"] if hq else "%d:%d" % [cell.position.x, cell.position.y]
 		if not by_bid.has(bid):
-			by_bid[bid] = {"bid": bid, "cell": _rect(cell), "terr": String(pr["terr"]), "hq": hq, "parts": []}
+			by_bid[bid] = {"bid": bid, "cell": _rect(cell), "terr": String(pr["terr"]), "hq": hq, "parts": [],
+				"ground": float(pr.get("ground", 0.0))}
 		var poly := []
 		for q: Vector2 in pr["poly"]:
 			poly.append([q.x, -q.y])
 		var parts: Array = by_bid[bid]["parts"]
-		parts.append({"poly": poly, "z0": float(pr["y0"]), "h": float(pr["h"]), "taper": float(pr["taper"]),
+		parts.append({"poly": poly, "z0": float(pr["y0"]) - float(pr.get("ground", 0.0)), "h": float(pr["h"]), "taper": float(pr["taper"]),
 			"_ord": parts.size(), "_key": int(pr["key"])})
 	var bids: Array = by_bid.keys()
 	bids.sort()
@@ -114,9 +121,12 @@ static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Ar
 	var hq_out := {}
 	for cid: Variant in hqs:
 		hq_out[String(cid)] = _rect(hqs[cid])
-	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "units": "BU", "lot_bu": lot_bu,
+	var out := {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "units": "BU", "lot_bu": lot_bu,
 		"origin_lot": [origin.x, origin.y], "buildings": buildings, "streets": st, "plazas": pl, "hqs": hq_out,
 		"hq_overlaps": hq_overlaps(buildings, hqs)}
+	for k: String in sections:
+		out[k] = sections[k]
+	return out
 
 
 ## Diagnostic: every non-HQ building whose cell intersects an HQ rect, as {bid, corp}, sorted
@@ -177,7 +187,7 @@ static func net_json(city_seed: int, lot_bu: float, origin: Vector2, corp: Corpo
 	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "nodes": nodes, "links": links}
 
 
-## `run_graph.json` v1: the run's MapGraph 1:1 (nodes by layer then index, forward edges).
+## `run_graph.json` v2 (RG-01): the run's MapGraph 1:1 (nodes by layer then index, forward edges).
 static func run_graph_json(map: MapGraph, run_id: String) -> Dictionary:
 	var nodes := []
 	var edges := []
@@ -191,7 +201,7 @@ static func run_graph_json(map: MapGraph, run_id: String) -> Dictionary:
 				edges.append({"a": String(n["id"]), "b": String(nx)})
 	edges.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
 		return x["a"] < y["a"] if x["a"] != y["a"] else x["b"] < y["b"])
-	return {"version": VERSION, "run": run_id, "layers": map.layer_count(), "nodes": nodes, "edges": edges}
+	return {"version": RUN_GRAPH_VERSION, "run": run_id, "layers": map.layer_count(), "nodes": nodes, "edges": edges}
 
 
 ## `key_locations.json` v1: every Exploit Site (exploit_type != NONE, ruling O8) of `corp`
@@ -238,7 +248,7 @@ static func run_id(run: RunState) -> String:
 
 ## "street" for a netrun, "hq" for an HQ breach (a "boss" run).
 static func run_kind(run: RunState) -> String:
-	return "hq" if run.kind == "boss" else "street"
+	return "hq" if run.kind == "boss" or run.kind == NetrunSession.HQ_LADDER_KIND else "street"
 
 
 ## Collisions `city_json` would merge silently: a bid reached by two different cells, or a

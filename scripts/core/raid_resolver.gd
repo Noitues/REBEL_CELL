@@ -28,12 +28,40 @@ class RaidResult:
 	var down: Array[String] = []
 	var events: Array[Dictionary] = []
 	var grid_after: GridState = null
+	## WH-12 Solace raid infection (basis points, 0..10000; empty figures = not a Solace raid).
+	## infection_figures[0] is the start, [i] the figure after step i (the raid HUD reads it).
+	var infection_applies: bool = false
+	var infection_start_bp: int = 0
+	var infection_bp: int = 0
+	var infection_figures: Array[int] = []
+	## Solace v2: the decay a held raid gives, and the campaign figure after it (what apply() stores).
+	var infection_decay_bp: int = 0
+	var infection_end_bp: int = 0
+	## True when the infection reached the threshold: the city is infected and Solace wins.
+	var city_lost: bool = false
+	## Halcyon v2 (rule 21): site id (String) -> the percent extra damage a threat there deals (the
+	## Eye's wedge; empty outside Halcyon). Its keys are the SEEN defense nodes.
+	var eye_wedge: Dictionary = {}
+
+	## The raid HUD's whole-percent infection after `step` (0 = the start), clamped to the run.
+	func infection_pct_at(step: int) -> int:
+		if infection_figures.is_empty():
+			return 0
+		return infection_figures[clampi(step, 0, infection_figures.size() - 1)] / 100
 
 	func to_dict() -> Dictionary:
+		var d := _base_dict()
+		if not eye_wedge.is_empty():
+			d["eye_wedge"] = eye_wedge.duplicate()
+		return d
+
+	func _base_dict() -> Dictionary:
 		return {"raid_id": String(raid_id), "steps_run": steps_run, "won": won, "campaign_lost": campaign_lost,
 			"home_before": home_before, "home_after": home_after, "threats_destroyed": threats_destroyed,
 			"threats_reached_home": threats_reached_home, "nodes": nodes.duplicate(true),
-			"taken": taken.duplicate(), "down": down.duplicate()}
+			"taken": taken.duplicate(), "down": down.duplicate(),
+			"infection_bp": infection_bp, "infection_decay_bp": infection_decay_bp, "infection_end_bp": infection_end_bp,
+			"city_lost": city_lost}
 
 	func summary_hash() -> int:
 		return hash(JSON.stringify(to_dict()))
@@ -59,6 +87,13 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		before[String(id)] = int(grid.site(id)["integrity"]) if id != grid.home_site_id else grid.home_integrity
 	var taken_now: Array[String] = []
 	var down_now: Array[String] = []
+	var infected := SolaceRaidRules.applies(campaign)
+	if infected:
+		result.infection_applies = true
+		result.infection_start_bp = SolaceRaidRules.start_bp(campaign, config)
+		result.infection_bp = result.infection_start_bp
+		result.infection_figures = [result.infection_bp]
+	result.eye_wedge = EyeRules.raid_wedge(campaign, grid_data, config)
 	var step := 0
 	while step < config.raid_step_cap:
 		step += 1
@@ -82,6 +117,16 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 			result.campaign_lost = true
 			result.events.append({"type": "home_lost", "step": step, "text": "Step %d: HOME SERVER integrity 0. Campaign lost." % step})
 			break
+		if infected:
+			var living := _active(threats).size()
+			result.infection_bp = SolaceRaidRules.advance(result.infection_bp, living, config)
+			result.infection_figures.append(result.infection_bp)
+			if SolaceRaidRules.is_lost(result.infection_bp, config):
+				result.city_lost = true
+				result.campaign_lost = true
+				result.events.append({"type": "city_lost", "step": step, "infection_bp": result.infection_bp,
+					"text": "Step %d: infection %d%%. The city is infected; only Solace has the cure." % [step, SolaceRaidRules.pct(result.infection_bp)]})
+				break
 		if _active(threats).is_empty() and step >= _last_wave_step(waves):
 			break
 	result.steps_run = step
@@ -111,6 +156,10 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		result.nodes[id] = {"before": before[id], "after": after, "outcome": outcome}
 	result.taken = taken_now
 	result.down = down_now
+	if result.infection_applies:
+		var holds := SolaceRaidRules.cell_holds(result.campaign_lost, taken_now.size())
+		result.infection_decay_bp = SolaceRaidRules.hold_decay_bp(result.threats_destroyed, config) if holds else 0
+		result.infection_end_bp = SolaceRaidRules.after_decay(result.infection_bp, result.infection_decay_bp)
 	result.events.append({"type": "raid_end", "won": result.won, "steps": result.steps_run,
 		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d DOWN, %d TAKEN." % [
 			"REPELLED" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
@@ -124,6 +173,8 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	campaign.grid = result.grid_after.duplicate_state()
 	campaign.grid.frozen_links.clear()  # freezes last one raid; opened links stay open
 	campaign.last_raid = result.to_dict()
+	if result.infection_applies:
+		campaign.corp_theme.solace.infection_bp = result.infection_end_bp
 	for sid in result.taken:
 		var s := campaign.grid.site(StringName(sid))
 		if s.get("stationed", "") != "":
@@ -131,6 +182,9 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	if result.campaign_lost:
 		campaign.outcome = CampaignState.Outcome.LOST
 		campaign.raids_lost += 1
+		if result.city_lost:
+			events.append({"type": "city_lost", "text": "CITY LOST: the population is infected and only Solace has the cure. Campaign lost."})
+			return events
 		events.append({"type": "campaign_lost", "text": "The home server is BREACHED. Campaign lost."})
 		return events
 	if result.won:
@@ -552,7 +606,7 @@ static func _key_less(a: Array, b: Array) -> bool:
 static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, config: CampaignConfigData, step: int, result: RaidResult, taken_now: Array[String], down_now: Array[String]) -> void:
 	for t in _active(threats):
 		var site: StringName = t["site"]
-		var damage := int(t["damage"])
+		var damage := EyeRules.wedge_damage(int(t["damage"]), int(result.eye_wedge.get(String(site), 0)))
 		if site == grid.home_site_id and int(t["hold"]) > 0:
 			continue  # held at the door (a home ICE Lock): the home defences keep shooting
 		if site == grid.home_site_id:

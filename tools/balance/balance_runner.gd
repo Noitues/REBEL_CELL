@@ -45,11 +45,19 @@ func _init(registry: Object, p_opts: Dictionary = {}, specs: Array = []) -> void
 			for i in opts[k].size():
 				if opts[k][i] is float:
 					opts[k][i] = int(opts[k][i])
+	if is_reference():  # BAL-01: the named reference policy = the heuristic bot at the configured lookahead
+		opts["lookahead"] = int(opts["reference_lookahead"])
 	content = BalanceContent.new(registry)
 	errors = content.apply_all(specs)
 	resolver = CombatResolver.new(content.config, content.lookup)
 	resolver.quiet = bool(opts["quiet"])
 	_skill = BalanceSkill.new(float(opts["skill"]), int(opts["novice_max_actions"]))
+
+
+## BAL-01: true for the named reference policy (`--policy reference`): HeuristicStrategist at `reference_lookahead`
+## (default 2), deterministic. Its report equals `--policy heuristic --lookahead 2` except for the policy name.
+func is_reference() -> bool:
+	return String(opts["policy"]) == "reference"
 
 
 static func defaults() -> Dictionary:
@@ -252,12 +260,12 @@ func run_boss(campaign_seed: int) -> Dictionary:
 
 # --- Shared ----------------------------------------------------------------------------------
 
-## Builds the simulator for the policy: builtin = CombatBot, heuristic = the HeuristicStrategist (lookahead N).
+## Builds the simulator for the policy: builtin = CombatBot, heuristic = the HeuristicStrategist (lookahead N), reference = heuristic at reference_lookahead.
 func _make_sim(probe: Object, boss_stop: bool = false) -> CampaignSimulator:
 	var corp := StringName(String(opts["corp"]))
 	var cls := StringName(String(opts["class"]))
 	var sim: CampaignSimulator
-	if String(opts["policy"]) == "heuristic":
+	if String(opts["policy"]) == "heuristic" or is_reference():
 		sim = (BossStopSimulator if boss_stop else AgentSimulator).new(resolver, "", [], corp, cls)
 		var h := HeuristicStrategist.new(HeuristicStrategistConfigData.shipped(), sim.lookup)
 		h.lookahead_turns = int(opts["lookahead"])

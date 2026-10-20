@@ -63,6 +63,24 @@ def validate_derive(obj: Any) -> List[str]:
     return errs
 
 
+def validate_city(obj: Any) -> List[str]:
+    """Problems of a city.json v1 object: the schema (with NA-12's optional `coast` and `terrain` sections), then the
+    coast's own rules: every shoreline lot is land (not a sea cell) and 4-neighbours a sea cell."""
+    if not isinstance(obj, dict) or obj.get("version") != 1:
+        return ["version: want 1"]
+    errs = io.validate(obj, load_schema("city"))
+    if errs or "coast" not in obj:
+        return errs
+    sea = {(int(c[0]), int(c[1])) for c in obj["coast"]["sea_cells"]}
+    for c in obj["coast"]["shoreline"]:
+        i, j = int(c[0]), int(c[1])
+        if (i, j) in sea:
+            errs.append(f"shoreline lot {i},{j} is a sea cell")
+        elif not any((i + di, j + dj) in sea for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            errs.append(f"shoreline lot {i},{j} touches no sea cell")
+    return errs
+
+
 def validate_poses(obj: Any) -> List[str]:
     """Problems of a poses v1 object."""
     errs = _version(obj, VERSIONS["poses"])

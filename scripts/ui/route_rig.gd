@@ -36,6 +36,10 @@ var _extras: Array[Node3D] = []
 var _clock_mats: Array = []
 ## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
 var dressing: StreetDressing = null
+## The street r2 frontage (P2 step 2).
+var frontage: StreetR2Builder = null
+## The street's real coloured local lights (AAA-2, `StreetLightRig`).
+var lights: StreetLightRig = null
 var _anim_t := 0.0
 var _anim_frozen := false
 # The camera move.
@@ -54,7 +58,11 @@ var _room_slot: Dictionary = {}  # node id -> slot
 var _room_vol: Dictionary = {}  # node id -> {"box": Vector4, "z": Vector2}
 var _win_boxes := PackedVector4Array()
 var _win_zs := PackedVector2Array()
+var _win_open := PackedFloat32Array()
 var _haze_cur := -1.0
+## Tools: a fixed post exposure (the exposure solve); 0 = the framing's solved value.
+var exposure_override := 0.0
+var _grit_skip: Dictionary = {}
 var _depth_quad: MeshInstance3D = null
 
 
@@ -77,6 +85,7 @@ func setup(p_data: StreetRouteData, model: CityModel) -> void:
 	_grade.shader = load("res://shaders/city/route_grade.gdshader")
 	_tex.material = _grade
 	add_child(_tex)
+	view.grit_filter = _grit_near
 	view.use_model(model)
 	view.set_look_blend(LOOK_BLEND)
 	_index_buildings(model)
@@ -92,6 +101,27 @@ func setup(p_data: StreetRouteData, model: CityModel) -> void:
 	if not CityView3D.can_render():
 		_on_model_ready.call_deferred()
 	set_process(true)
+
+
+## AAA-2 facet grit (`CityView3D.grit_filter`): the buildings within `aaa.grit.reach` BU of the street segment draw with their own fgrid mesh.
+func _grit_near(pr: Dictionary, n: int) -> bool:
+	if _grit_skip.is_empty():
+		for bid: String in data.route_bids():
+			for k: int in data.bid_prisms[bid]:
+				_grit_skip[k] = true
+	if _grit_skip.has(n):
+		return false  # a route building keeps its plane: the room windows are cut from a thin box of it
+	var reach: float = float(CityShaderConfigData.shipped().aaa["grit"]["reach"])
+	var poly: PackedVector2Array = pr["poly"]
+	var c := Vector2.ZERO
+	for p: Vector2 in poly:
+		c += p
+	c /= float(poly.size())
+	var st: Dictionary = data.derive["street"]
+	var a := Vector2(float(st["a"][0]), float(st["a"][1]))
+	var b := Vector2(float(st["c"][0]), float(st["c"][1]))
+	var plan := Vector2(c.x, -c.y)
+	return Geometry2D.get_closest_point_to_segment(plan, a, b).distance_to(plan) <= reach
 
 
 ## Camera move seconds (config `rig`): a step to the next decision, the OVERVIEW <-> DECISION zoom, a hover in and out.
@@ -184,6 +214,7 @@ func _mount_rooms() -> void:
 	var zs := PackedVector2Array()
 	boxes.resize(ROOM_MAX)
 	zs.resize(ROOM_MAX)
+	_win_open.resize(ROOM_MAX)
 	var n_win := 0
 	for id: String in ids:
 		var room: Dictionary = rooms[id]
@@ -216,6 +247,7 @@ func _mount_rooms() -> void:
 			zs[n_win] = vol["z"]
 			_room_slot[id] = n_win
 			_room_vol[id] = vol
+			_win_open[n_win] = 1.0
 			n_win += 1
 	_win_boxes = boxes
 	_win_zs = zs
@@ -223,6 +255,7 @@ func _mount_rooms() -> void:
 	bm.set_shader_parameter(&"room_n", n_win)
 	bm.set_shader_parameter(&"room_box", boxes)
 	bm.set_shader_parameter(&"room_z", zs)
+	bm.set_shader_parameter(&"room_open", _win_open)
 
 
 ## The route buildings carry the `route` bit: the shader cuts the room windows out of their walls.
@@ -249,25 +282,42 @@ func _apply_street_look() -> void:
 		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
 
 
-## Opens or closes room `id`: closed, the building keeps its facade over the room (no window cut into the wall, the room mesh
-## hidden), so an unrevealed room never reads as a black box (the jack-in dive, the REVEAL and the reverse). No dissolve (NA-25b).
+## Opens or closes room `id` at once (`set_room_dissolve` at 1 or 0): closed, the building keeps its facade over the room (no window
+## cut into the wall, the room mesh hidden), so an unrevealed room never reads as a black box.
 func set_room_open(id: String, open: bool) -> void:
+	set_room_dissolve(id, 1.0 if open else 0.0)
+
+
+## NA-25b: the facade of room `id` dissolved into its cutaway room by `k` (0 = the closed facade, 1 = the window cut and the room
+## whole). The REVEAL drives `k` by its timeline (`EntryBeats.up_k`, `entry_reveal_dissolve` seconds), so scrubbing, the jack-out reverse
+## and a skip all land on the same end state; under reduce effects the view passes 0 or 1 only. A share of the window's pixels is cut
+## by a Bayer order (`city_building` `room_open`).
+func set_room_dissolve(id: String, k: float) -> void:
+	k = clampf(k, 0.0, 1.0)
 	var m: MeshInstance3D = _rooms.get(id)
 	if m != null:
-		m.visible = open
+		m.visible = k > 0.0
 	if not _room_slot.has(id):
 		return
 	var slot: int = _room_slot[id]
 	var vol: Dictionary = _room_vol[id]
+	var open: bool = k > 0.0
 	var want_box: Vector4 = vol["box"] if open else Vector4()
 	var want_z: Vector2 = vol["z"] if open else Vector2()
-	if _win_boxes[slot] == want_box and _win_zs[slot] == want_z:
+	if _win_boxes[slot] == want_box and _win_zs[slot] == want_z and is_equal_approx(_win_open[slot], k):
 		return
 	_win_boxes[slot] = want_box
 	_win_zs[slot] = want_z
+	_win_open[slot] = k
 	var bm := view.building_material()
 	bm.set_shader_parameter(&"room_box", _win_boxes)
 	bm.set_shader_parameter(&"room_z", _win_zs)
+	bm.set_shader_parameter(&"room_open", _win_open)
+
+
+## How far room `id`'s facade has dissolved open (0 closed .. 1 whole).
+func room_dissolve_of(id: String) -> float:
+	return _win_open[_room_slot[id]] if _room_slot.has(id) else (1.0 if room_is_open(id) else 0.0)
 
 
 ## True when room `id` is open (drawn, its window cut).
@@ -306,37 +356,38 @@ func _build_atmosphere() -> void:
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	fm.set_shader_parameter(&"front_sym", float(atm["front_sym"]))
 	# The street's value-band solve (12.1, both seeds' OVERVIEW) with the dressing on: the exposure of this view.
-	env.tonemap_exposure = float(atm["exposure"])
+	view.set_aaa_exposure(float(atm["exposure"]))
 	view.add_to_layer(&"props", fv)
 	_extras.append(fv)
 	_clock_mats.append(fm)
-	# Fog-only lights along the street (energy 0, volumetric energy only): the city's glow in the haze.
-	var glow_n := int(atm["glow_count"])
-	for k in glow_n:
-		var l := OmniLight3D.new()
-		l.light_energy = 0.0
-		l.light_volumetric_fog_energy = float(atm["glow_energy"])
-		l.omni_range = float(atm["glow_range"])
-		var tint: Array = CityShaderConfigData.shipped().fog["tint_a" if k % 2 == 0 else "tint_b"]
-		l.light_color = Color(float(tint[0]), float(tint[1]), float(tint[2]))
-		var u := (float(k) + 0.5) / float(glow_n)
-		var p := a.lerp(c, u)
-		var side := 1.0 if k % 2 == 0 else -1.0
-		var off := float(atm["glow_side"])
-		l.position = Vector3(p.x + float(nrm[0]) * side * off, float(atm["glow_height"]), -(p.y + float(nrm[1]) * side * off))
-		view.add_to_layer(&"props", l)
-		_extras.append(l)
+	# The fog-only lights (the 18 city-glow lights and the beam spots) are part of the street's light rig (`_build_dressing`).
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
 
 
 ## The street dressing of NA-24 (signs, lamps, glows, washes, beams, lanes, plumes): placed from the derive and the city only, one
 ## group per reveal tier. Held in `_extras`, so the id pass hides it; its materials join the netrun clock after the fog's.
 func _build_dressing() -> void:
-	dressing = StreetDressing.build(data.derive, data.city)
+	dressing = StreetDressing.build(data.derive, data.city, {}, true)
 	view.add_to_layer(&"props", dressing.root)
 	_extras.append(dressing.root)
 	_clock_mats.append_array(dressing.clock_mats)
+	# P2 step 2: the plate's street frontage (facade kits, planned signs, kit props, lamps, crowns) replaces the old signs and shops.
+	frontage = StreetR2Builder.build(data.city, data.derive, data.city["layout_seed"])
+	view.add_to_layer(&"props", frontage.root)
+	_extras.append(frontage.root)
+	# the building's binary bits (the dissolve) run on the same clock
+	_clock_mats.append(view.building_material())
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
+	# AAA-2: the street's real coloured local lights (A-022); the emissive ground / wall discs that stood in for them are hidden.
+	var sources := dressing.light_sources(data.derive)
+	sources["lamps"] = frontage.lamp_lights(float(CityShaderConfigData.shipped().aaa["lights"]["lamp"]["height"]))
+	lights = StreetLightRig.build(sources)
+	view.add_to_layer(&"props", lights.root)
+	_extras.append(lights.root)
+	if bool(CityShaderConfigData.shipped().aaa["lights"]["hide_discs"]):
+		for g: String in ["lamp_spill", "glow", "wash"]:
+			for n: Variant in dressing.nodes.get(g, []):
+				(n as Node3D).visible = false
 
 
 # --- Camera -----------------------------------------------------------------------------------
@@ -357,8 +408,11 @@ func _apply_fog_density() -> void:
 	var d_ov: float = NetrunPose.from_json(data.derive["overview"]).dist
 	var d_dec: float = NetrunPose.from_json(z).dist
 	var zd := RevealTiers.zoom_detail(pose.dist, d_ov, d_dec)
+	view.set_puddles_sharp(RevealTiers.band(pose.dist, "puddles_sharp"))
+	view.environment().volumetric_fog_length = NetrunShaderKit.fog_length_for(pose.dist)
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
+	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).
 	var hz: Array = StreetRouteConfigData.shipped().look["haze"]
 	var haze := lerpf(float(hz[0]), float(hz[1]), zd)
@@ -370,7 +424,23 @@ func _apply_fog_density() -> void:
 	for rid: String in _room_mats:
 		(_room_mats[rid] as ShaderMaterial).set_shader_parameter(&"frame_k", lerpf(float(fk[0]), float(fk[1]), zd))
 	var ex: Array = StreetRouteConfigData.shipped().look["exposure"]
-	view.environment().tonemap_exposure = lerpf(float(ex[0]), float(ex[1]), zd)
+	var expo: float = exposure_override if exposure_override > 0.0 else lerpf(float(ex[0]), float(ex[1]), zd)
+	view.set_aaa_exposure(expo)
+	_scale_transparent_emitters(expo)
+
+
+## AAA-2: the transparent emitters (beam shafts, plumes, sign flickers: drawn after the post's screen copy, so the chain does not
+## see them) take the exposure themselves, as the Environment tonemap exposure used to scale them.
+func _scale_transparent_emitters(expo: float) -> void:
+	for m: Variant in _clock_mats:
+		var sm := m as ShaderMaterial
+		if sm == null or sm.shader == null:
+			continue
+		var path: String = sm.shader.resource_path
+		if path.ends_with("dress_neon.gdshader") or path.ends_with("beam_shaft.gdshader"):
+			sm.set_shader_parameter(&"emission_multiplier", expo)
+		elif path.ends_with("dress_plume.gdshader"):
+			sm.set_shader_parameter(&"emit", float(DressingConfigData.shipped().plume["emit"]) * expo)
 
 
 ## Puts the camera on `p` at once (no move).

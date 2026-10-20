@@ -2887,7 +2887,11 @@ func address_line() -> String:
 			names.append(_name_of(e))
 	if not names.is_empty():
 		var who := " + ".join(names)
-		parts.append(tr("BOSS: %s") % who if run != null and run.kind == "boss" else who)
+		var ladder_fmt := HqLadderWords.fight_label(run)  # the HQ ladder's crown / mini-boss rooms
+		if ladder_fmt != "":
+			parts.append(ladder_fmt % who)
+		else:
+			parts.append(tr("BOSS: %s") % who if run != null and run.kind == "boss" else who)
 	return " // ".join(parts).to_upper()
 
 

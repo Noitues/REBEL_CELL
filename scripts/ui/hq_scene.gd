@@ -5098,6 +5098,13 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	_tip_label(home, tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
 	var stopped := card.add_row(tr("THREATS STOPPED"), tr("%d / %d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
 	_tip_label(stopped, tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
+	var infection := SolaceRaidRules.preview(projection, cfg)
+	if bool(infection["applies"]):
+		var inf_text := tr("POPULATION INFECTED %d%% > %d%%") % [int(infection["now_pct"]), int(infection["end_pct"])]
+		var lost_at := int(infection["lost_step"])
+		var inf_row := card.add_row(tr("INFECTION"), inf_text, Palette.HARM_INK if lost_at >= 0 else Palette.INK, "InfectionForecast")
+		_tip_label(inf_row, (tr("CITY LOST at step %d.") % lost_at if lost_at >= 0 else tr("The city holds.")) + " "
+			+ tr("The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.") % [int(infection["rate_pct"]), int(infection["decay_pct"])])
 	var l := RaidVerdict.losses(_raid_dict(projection))
 	if int(l["down"]) + int(l["taken"]) > 0:
 		card.add_row(tr("DOWN / TAKEN"), "%d / %d" % [int(l["down"]), int(l["taken"])], Palette.HARM_INK, "RaidLosses")

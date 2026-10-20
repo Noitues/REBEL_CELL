@@ -13,6 +13,8 @@ extends RefCounted
 
 const CYCLES_PER_SCHEMATIC_FALLBACK := 10
 const BUG_CARD_ID := &"bug"
+## RunState.kind of the Solace HQ ladder run.
+const HQ_LADDER_KIND := "hq"
 
 var config: CampaignConfigData
 var lookup: ContentLookup
@@ -63,7 +65,10 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 				shop_delta += int(m["value"])
 	s.run.combat_overrides["shop_stock_delta"] = shop_delta
 	p_campaign.pending_complications.clear()
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
+	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
+	s._bloom_load_keys(corp)
+	s._halcyon_begin_street(corp, site_id)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -174,6 +179,9 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.SERVER_RACK,
 		"elite": true, "next": [] as Array[StringName], "heat": 0}])
 	s.run.map = graph
+	if kind == "boss":
+		BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+		s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
 	s.last_events.append_array(left_post)
@@ -181,6 +189,270 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s._apply_boosts()  # HQ boosts apply to the final breach and Reclaim runs too
 	s._sync()
 	return s
+
+
+## WH-HQ-LAUNCH: the Solace HQ breach as the GENOME CORE ladder (run kind "hq"): a map from
+## SolaceHqGraph.generate (stream `hq_graph` of the run seed), the crown fight is the final boss,
+## winning it completes the HQ run (campaign WON). A mid-ladder won fight continues the run.
+static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, site_id: StringName, tier: int, run_seed: int, corp: CorporationData) -> NetrunSession:
+	var s := NetrunSession.new()
+	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
+	s._build_pools()
+	var op := p_campaign.get_operative(operative_id)
+	if op == null or not op.alive:
+		push_error("NetrunSession: no living operative '%s'." % operative_id)
+		return null
+	s.run = RunState.new()
+	s.run.run_seed = run_seed
+	s.run.tier = tier
+	s.run.site_id = site_id
+	s.run.kind = HQ_LADDER_KIND
+	s.run.operative = op.duplicate_state()
+	s.streams = RngStreams.seeded(run_seed)
+	var left_post := s._leave_post(operative_id)
+	var graph_stream := RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM)
+	if EyeRules.applies(corp):
+		s._halcyon_begin_hq(corp, site_id, graph_stream)
+	else:
+		s.run.map = SolaceHqGraph.generate(s.config, graph_stream)
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+	s._bloom_load_keys(corp)
+	p_campaign.runs_started += 1
+	s.last_events = [{"type": "run_start", "text": "HQ ladder started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
+	s.last_events.append_array(left_post)
+	s._apply_bug_cards()
+	s._apply_boosts()
+	s._sync()
+	return s
+
+
+## Halcyon v2 (WH-21): the street launch snapshot (rule 6): Spotted level 0 / 1 / 2, taken once and
+## never changed mid-run.
+func _halcyon_begin_street(corp: CorporationData, site_id: StringName) -> void:
+	if not EyeRules.applies(corp):
+		return
+	run.corp_theme.halcyon.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+
+
+# --- Halcyon HQ: the gaze (WH-22) ------------------------------------------------------------
+
+## The extra gaze steps a climb edge `from_id` -> `node` takes over a normal one.
+func hq_climb_extra(node: Dictionary, from_id: StringName) -> int:
+	return config.hq_gaze_step_per_climb - config.hq_gaze_step_per_node if HalcyonHqGraph.is_climb(node, from_id) else 0
+
+
+## Whether the Eye is asleep now (Cut the Power).
+func hq_asleep() -> bool:
+	return run.corp_theme.halcyon.hq_asleep_left > 0
+
+
+## The state of option `node_id` as it would be on arrival: the gaze at (eye_step + the climb
+## extra) for this run's launch phase, with the beam at the current Alert. Pure; nothing changes.
+func hq_option_state(node_id: StringName) -> EyeRules.NodeState:
+	var h := run.corp_theme.halcyon
+	var node := run.map.get_node(node_id)
+	var step := h.eye_step + hq_climb_extra(node, run.current_node_id)
+	return EyeRules.node_state(node, h.eye_phase, step, h.hq_alert, hq_asleep(), config)
+
+
+## Every option's state: {node id: EyeRules.NodeState} over `available_nodes()` (also the closed ones).
+func hq_option_states() -> Dictionary:
+	var out := {}
+	if not run.corp_theme.halcyon.hq:
+		return out
+	for id in available_nodes():
+		out[id] = hq_option_state(id)
+	return out
+
+
+## The options that can be entered now (OPEN or SPOTTED).
+func hq_enterable_nodes() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id in available_nodes():
+		if not run.corp_theme.halcyon.hq or EyeRules.enterable(hq_option_state(id)):
+			out.append(id)
+	return out
+
+
+## The eye dial: the gaze centre now and for the next `hq_dial_steps - 1` steps, [{step, centre, asleep}].
+func hq_dial() -> Array[Dictionary]:
+	var h := run.corp_theme.halcyon
+	var out: Array[Dictionary] = []
+	for i in config.hq_dial_steps:
+		out.append({"step": h.eye_step + i, "centre": EyeRules.gaze_centre(h.eye_phase, h.eye_step + i, config), "asleep": i < h.hq_asleep_left})
+	return out
+
+
+## Hover on an edge: the gaze at arrival, {state, centre, step}.
+func hq_edge_preview(node_id: StringName) -> Dictionary:
+	var h := run.corp_theme.halcyon
+	var step := h.eye_step + hq_climb_extra(run.map.get_node(node_id), run.current_node_id)
+	return {"state": hq_option_state(node_id), "centre": EyeRules.gaze_centre(h.eye_phase, step, config), "step": step}
+
+
+## Entering a node takes a gaze step (a climb takes more), spends one asleep step and clears the
+## Stall mark; the entered state is kept for the fight's Blade.
+func _hq_after_enter(state: EyeRules.NodeState, extra: int) -> void:
+	var h := run.corp_theme.halcyon
+	h.entered_state = state
+	_hq_step(config.hq_gaze_step_per_node + extra)
+	h.stalled_this_layer = false
+
+
+func _hq_step(steps: int) -> void:
+	var h := run.corp_theme.halcyon
+	h.eye_step += steps
+	h.hq_asleep_left = maxi(0, h.hq_asleep_left - steps)
+
+
+## Whether Stall is allowed: one per layer, unless every option is closed (then the Eye must pass).
+func can_stall() -> bool:
+	var h := run.corp_theme.halcyon
+	if not h.hq or run.phase != RunState.Phase.MAP or run.is_over():
+		return false
+	return not h.stalled_this_layer or hq_enterable_nodes().is_empty()
+
+
+## Stall (rule 18): advance the gaze one step, complete nothing, add Alert.
+func stall() -> Array[Dictionary]:
+	last_events = []
+	if not can_stall():
+		return _refuse("Stall is not available here.")
+	var h := run.corp_theme.halcyon
+	_hq_step(config.hq_gaze_step_per_stall)
+	h.hq_alert += config.hq_alert_gain_stall
+	h.stalled_this_layer = true
+	last_events.append({"type": "stall", "step": h.eye_step, "alert": h.hq_alert, "text": "Stall: the Eye passes (step %d, Alert %d)." % [h.eye_step, h.hq_alert]})
+	_sync()
+	return last_events
+
+
+## What Stall would do: {step, alert, centre, states} (the options as they would read after it).
+func stall_preview() -> Dictionary:
+	if not can_stall():
+		return {}
+	var copy := NetrunSession.from_dict(resolver, campaign.duplicate_state(), to_dict(), corporation)
+	copy.stall()
+	var h := copy.run.corp_theme.halcyon
+	return {"step": h.eye_step, "alert": h.hq_alert, "centre": EyeRules.gaze_centre(h.eye_phase, h.eye_step, config), "states": copy.hq_option_states()}
+
+
+## Whether the operative stands in the Power Room with the action unused.
+func can_cut_power() -> bool:
+	var h := run.corp_theme.halcyon
+	if not h.hq or h.power_cut_used or run.phase != RunState.Phase.MAP or run.is_over() or run.current_node_id == &"":
+		return false
+	return bool(run.current_node().get("power", false))
+
+
+## Cut the Power (rule 20): once per run, in the Power Room. The Eye sleeps for N gaze steps.
+func cut_the_power() -> Array[Dictionary]:
+	last_events = []
+	if not can_cut_power():
+		return _refuse("The Power Room action is not available.")
+	var h := run.corp_theme.halcyon
+	h.power_cut_used = true
+	h.hq_asleep_left = config.hq_power_cut_steps
+	h.hq_alert += config.hq_alert_gain_power_cut
+	last_events.append({"type": "power_cut", "asleep": h.hq_asleep_left, "alert": h.hq_alert, "text": "The Eye sleeps for %d steps (Alert %d)." % [h.hq_asleep_left, h.hq_alert]})
+	_sync()
+	return last_events
+
+
+## Cut the Power's preview: {asleep, alert}, or {} when it isn't available.
+func cut_power_preview() -> Dictionary:
+	if not can_cut_power():
+		return {}
+	return {"asleep": config.hq_power_cut_steps, "alert": run.corp_theme.halcyon.hq_alert + config.hq_alert_gain_power_cut}
+
+
+## Halcyon v2 (rules 7-9): the Blade level on the fight at the current node: the launch level on the
+## street; in the HQ, 0 off the Eye, else the launch level raised by Lockdown (capped).
+func eye_blade_level() -> int:
+	var h := run.corp_theme.halcyon
+	if h.hq:
+		if h.entered_state != EyeRules.NodeState.SPOTTED:
+			return 0
+		return EyeRules.hq_blade_level(h.spotted_level, h.hq_alert, config)
+	return h.spotted_level
+
+
+func _eye_fight_class(final_rack: bool) -> StringName:
+	return EyeRules.fight_class(run.current_node(), final_rack and run.kind == "netrun")
+
+
+## The combat override the Blade adds to the fight at the current node ({} when it is off).
+func _blade_overrides(final_rack: bool) -> Dictionary:
+	if run.map == null or run.current_node_id == &"":
+		return {}
+	var h := run.corp_theme.halcyon
+	if not h.hq and h.spotted_level <= 0:
+		return {}
+	return {"blade": true} if EyeRules.blade_applies(eye_blade_level(), _eye_fight_class(final_rack), config) else {}
+
+
+## Halcyon v2 (rule 3-4): a campaign turn ends with the run (won, died or abandoned). The Eye
+## ticks, then an Exploit extracted this turn (`events` holds an "exploit" event) fixes it on that
+## Site's octant. Logs the move.
+func _eye_turn_end(events: Array[Dictionary]) -> void:
+	if not EyeRules.applies(corporation):
+		return
+	var fix_bearing := -1
+	for e in events:
+		if e.get("type", "") == "exploit":
+			fix_bearing = EyeRules.bearing_deg(corporation.city_grid, run.site_id)
+	var h := campaign.corp_theme.halcyon
+	var r := EyeRules.campaign_turn(h, config, fix_bearing)
+	var text := "The Eye moves to octant %d." % h.eye_index if r["moved"] else "The Eye holds (%d turn(s) left fixed)." % h.eye_fixed_left
+	if r["fixed"]:
+		text = "The Eye is FIXED on octant %d for %d turns." % [h.eye_index, h.eye_fixed_left]
+	last_events.append({"type": "eye_turn", "index": h.eye_index, "fixed_left": h.eye_fixed_left, "moved": r["moved"], "fixed": r["fixed"], "text": text})
+
+
+## Halcyon v2 (WH-22): the HQ run's Eye state and graph. The launch snapshot (`spotted_level`)
+## is taken once from the campaign's Eye and the HQ site's bearing; Alert starts at it; the graph is
+## rebuilt from stream `hq_graph` until it is reachable for the launch phase.
+func _halcyon_begin_hq(corp: CorporationData, site_id: StringName, graph_stream: RandomNumberGenerator) -> void:
+	var h := run.corp_theme.halcyon
+	h.hq = true
+	h.eye_phase = campaign.corp_theme.halcyon.eye_index
+	h.eye_step = 0
+	h.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+	h.hq_alert = h.spotted_level
+	run.map = HalcyonHqGraph.generate(config, graph_stream, h.eye_phase)
+
+
+## Halcyon HQ non-fight rooms: a rest bay heals, an Evidence Locker offers a Daemon, the Power Room
+## waits for Cut the Power. Returns the events, or [] when `node` is a fight / event / shop.
+func _halcyon_room(node: Dictionary) -> Array[Dictionary]:
+	if bool(node.get("rest", false)):
+		var healed := mini(run.operative.max_hp - run.operative.hp, run.operative.max_hp * config.halcyon_hq_rest_heal_pct / 100)
+		run.operative.hp += healed
+		last_events.append({"type": "hq_rest", "amount": healed, "text": "Maintenance Bay: +%d HP (%d/%d)." % [healed, run.operative.hp, run.operative.max_hp]})
+		_sync()
+		return last_events
+	if bool(node.get("cache", false)):
+		var daemons: Array = []
+		for d in _pools["daemons"]:
+			if not run.operative.daemon_ids.has(d):
+				daemons.append(d)
+		_offer(&"daemon", daemons, config.halcyon_hq_cache_choices, streams.get_stream(&"rewards"))
+		if not run.pending_rewards.is_empty():
+			run.phase = RunState.Phase.REWARD
+		_sync()
+		return last_events
+	if bool(node.get("power", false)):
+		last_events.append({"type": "power_room", "text": "The Power Room: the Eye's feed can be cut once."})
+		_sync()
+		return last_events
+	return [] as Array[Dictionary]
+
+
+## Whether the HQ breach of `corp` runs through the ladder (Solace and Halcyon so far; the other
+## corporations keep the single-node "boss" run until their HQ slices).
+static func uses_hq_ladder(corp: CorporationData) -> bool:
+	return corp != null and (corp.id == BloomRules.SOLACE_ID or corp.id == EyeRules.HALCYON_ID)
 
 
 static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary, corp: CorporationData = null) -> NetrunSession:
@@ -218,6 +490,156 @@ func state_hash() -> int:
 	return run.state_hash()
 
 
+## Plan 2 WH-02: the HUD theme chip a corporation theme rule fills from the run's corp_theme
+## block: {"key": text key for the words (tr, may hold % placeholders), "args": Array for them,
+## "value": the live number as a String (drawn in Anton apart from the words; optional), "kind":
+## RunThemeState.ChipKind}; {} hides the chip. No theme rule fills it yet (WH-11 and the
+## later corp slices add theirs here); like every preview it reads state and changes nothing.
+func theme_chip() -> Dictionary:
+	var h := run.corp_theme.halcyon
+	if not run.is_over() and (h.hq or h.spotted_level > 0):
+		if h.hq:
+			var warn := EyeRules.lockdown(h.hq_alert, config)
+			return {"key": TextDb.mark("EYE ALERT"), "args": [], "value": "%d/%d" % [h.hq_alert, config.hq_lockdown_alert],
+				"kind": RunThemeState.ChipKind.DANGER if warn else (RunThemeState.ChipKind.WARN if h.spotted_level > 0 else RunThemeState.ChipKind.INFO)}
+		return {"key": TextDb.mark("SPOTTED"), "args": [], "value": "%d/2" % h.spotted_level,
+			"kind": RunThemeState.ChipKind.DANGER if h.spotted_level >= 2 else RunThemeState.ChipKind.WARN}
+	var b := run.corp_theme.solace
+	if not b.enabled or run.is_over():
+		return {}
+	var band := bloom_band()
+	var kind := RunThemeState.ChipKind.INFO
+	if band == BloomRules.Band.CLOSE:
+		kind = RunThemeState.ChipKind.WARN
+	elif band >= BloomRules.Band.CATCHING:
+		kind = RunThemeState.ChipKind.DANGER
+	return {"key": TextDb.mark("FRONT"), "args": [], "value": bloom_gap_text(BloomRules.gap_milli(b)), "kind": kind}
+
+
+## WH-11: a gap in thousandths as "n.n" layers (truncated toward zero to the shown tenth).
+static func bloom_gap_text(gap_milli: int) -> String:
+	var tenths: int = absi(gap_milli) / 100
+	return "%s%d.%d" % ["-" if gap_milli < 0 and tenths > 0 else "", tenths / 10, tenths % 10]
+
+
+## WH-11: the Bloom's band now (DORMANT before the first node is entered).
+func bloom_band() -> BloomRules.Band:
+	return BloomRules.band(run.corp_theme.solace, config, run.current_node_id != &"")
+
+
+## WH-11: Exploit keys held this run (EX-03 sets them): Intel, Virus.
+func bloom_set_keys(intel: bool, virus: bool, breach: bool = false) -> void:
+	run.corp_theme.solace.key_intel = intel
+	run.corp_theme.solace.key_virus = virus
+	run.corp_theme.solace.key_breach = breach
+	_sync()
+
+
+## Solace v2: the Exploits held this campaign (and in the corporation's ExploitData) set the
+## Bloom keys at netrun start: each flag on the ExploitData is one form of slowdown.
+func _bloom_load_keys(corp: CorporationData) -> void:
+	var b := run.corp_theme.solace
+	if not b.enabled or corp == null:
+		return
+	for ex in corp.exploits:
+		if ex == null or not campaign.has_exploit(ex.exploit_type):
+			continue
+		b.key_virus = b.key_virus or ex.bloom_pace_cut
+		b.key_breach = b.key_breach or ex.bloom_setback
+		b.key_intel = b.key_intel or ex.bloom_turn_cut
+
+
+## Reads the campaign's Heat band into the Bloom's pace multiplier (before each entry, fight end
+## and preview, so the preview and the result read the same Heat).
+func _bloom_refresh_heat() -> void:
+	var b := run.corp_theme.solace
+	if b.enabled:
+		BloomRules.set_heat_band(b, config, SolaceRaidRules.heat_band_index(campaign, config))
+
+
+## WH-11 preview, nothing random: for each node `available_nodes()` offers (every unvisited
+## node of the ladder with the Intel key), {node: {"gap_milli": exact gap after entering,
+## "caught": bool, "fight": bool, "turn_cost_milli": front cost per fight turn}}. A node
+## entered by ACROSS (node["across"]) includes `pace_cross`. The gap equals the real
+## `enter_node` result (fight turns come after the fight, at `turn_cost_milli` each).
+func bloom_preview() -> Dictionary:
+	var b := run.corp_theme.solace
+	var out := {}
+	if not b.enabled or run.map == null or run.phase != RunState.Phase.MAP:
+		return out
+	_bloom_refresh_heat()
+	var ids: Array = available_nodes()
+	if b.key_intel:
+		ids = []
+		for n in run.map.all_nodes():
+			if int(n["layer"]) > b.layer_milli / 1000:
+				ids.append(n["id"])
+		IdSort.sort_ids(ids)
+	for id in ids:
+		var node := run.map.get_node(id)
+		var across := entered_across(node, run.current_node_id)
+		var steps := 1
+		if b.key_intel:
+			steps = maxi(1, int(node["layer"]) - b.layer_milli / 1000)
+		var gap := int(node["layer"]) * 1000 - (b.front_milli + (steps - 1) * BloomRules.entry_pace(b, config, run.tier) + BloomRules.entry_pace(b, config, run.tier, across) - BloomRules.pending_setback(b, config))
+		var fight := int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK
+		out[id] = {"gap_milli": gap, "caught": gap <= 0, "fight": fight,
+			"turn_cost_milli": BloomRules.fight_pace(b, config, 1) if fight else 0,
+			"across_milli": BloomRules.entry_pace(b, config, run.tier, true) - BloomRules.entry_pace(b, config, run.tier) if across else 0}
+	return out
+
+
+## CAUGHT's consequence: the operative is lost and the netrun abandoned (Q24.1), the same
+## path as 0 HP. The raid is untouched.
+func _bloom_caught() -> void:
+	combat = null
+	last_events.append({"type": "bloom_caught", "text": "THE BLOOM CAUGHT %s." % run.operative.name})
+	_die()
+	_sync()
+
+
+## Buys a dose at a Mainframe (price from config); it is held until used.
+func buy_dose() -> Array[Dictionary]:
+	last_events = []
+	var b := run.corp_theme.solace
+	if not b.enabled or run.phase != RunState.Phase.SHOP:
+		return _refuse("No antiviral for sale here.")
+	if run.cycles < config.bloom_dose_price:
+		return _refuse("Not enough Cycles for a dose (%d)." % config.bloom_dose_price)
+	run.cycles -= config.bloom_dose_price
+	b.doses_held += 1
+	last_events.append({"type": "purchase", "kind": "dose", "price": config.bloom_dose_price, "text": "Bought an antiviral dose."})
+	_sync()
+	return last_events
+
+
+## Uses a held dose: the front goes back by dose_push, the gap clamped to max_gap.
+func use_dose() -> Array[Dictionary]:
+	last_events = []
+	var b := run.corp_theme.solace
+	if run.is_over() or in_combat() or not BloomRules.use_dose(b, config):
+		return _refuse("No dose to use.")
+	last_events.append({"type": "dose", "gap_milli": BloomRules.gap_milli(b), "text": "Antiviral dose taken."})
+	_sync()
+	return last_events
+
+
+## The gap after using a dose now (exact); -1 with none to use.
+func dose_preview() -> int:
+	var b := run.corp_theme.solace
+	if not b.enabled or b.caught or b.doses_held <= 0:
+		return -1
+	var c := b.copy() as BloomState
+	BloomRules.push(c, config)
+	return BloomRules.gap_milli(c)
+
+
+## HQ ward rest (the existing HQ rest node binds here): pushes the front back by dose_push.
+func bloom_ward_rest() -> void:
+	BloomRules.ward_rest(run.corp_theme.solace, config)
+	_sync()
+
+
 func _bind(p_resolver: CombatResolver, p_campaign: CampaignState) -> void:
 	resolver = p_resolver
 	lookup = p_resolver.lookup
@@ -237,12 +659,20 @@ func _sync() -> void:
 func available_nodes() -> Array[StringName]:
 	if run.phase != RunState.Phase.MAP or run.is_over():
 		return []
-	if run.current_node_id == &"":
-		return run.map.first_layer_ids()
 	var out: Array[StringName] = []
-	for n in run.current_node().get("next", []):
-		out.append(n)
+	var from: Array = run.map.first_layer_ids() if run.current_node_id == &"" else run.current_node().get("next", [])
+	for n in from:
+		if not run.closed_nodes.has(n):  # EV-01: a node an event closed cannot be entered
+			out.append(n)
 	return out
+
+
+## WH-10: whether entering `node` from `from_id` is an HQ ACROSS move: the node is flagged
+## `across`, or `from_id` is one of its `across_from` sources (the ladder's bridge edges).
+static func entered_across(node: Dictionary, from_id: StringName) -> bool:
+	if bool(node.get("across", false)):
+		return true
+	return from_id != &"" and (node.get("across_from", []) as Array).has(from_id)
 
 
 ## Moves to `node_id` and opens whatever it holds. Returns the events.
@@ -251,12 +681,36 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 	if not available_nodes().has(node_id):
 		return _refuse("Node %s is not reachable from here." % node_id)
 	var node := run.map.get_node(node_id)
+	var across := entered_across(node, run.current_node_id)
+	var eye_state := EyeRules.NodeState.OPEN
+	var eye_extra := 0
+	if run.corp_theme.halcyon.hq:
+		eye_state = hq_option_state(node_id)
+		if not EyeRules.enterable(eye_state):
+			return _refuse("%s is %s: it can't be entered." % [node_id, EyeRules.NodeState.keys()[eye_state]])
+		eye_extra = hq_climb_extra(node, run.current_node_id)
 	run.current_node_id = node_id
+	if run.corp_theme.halcyon.hq:
+		_hq_after_enter(eye_state, eye_extra)
 	run.visited.append(node_id)
+	var bloom := run.corp_theme.solace
+	_bloom_refresh_heat()
+	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), across):
+		_bloom_caught()
+		return last_events
 	last_events.append({"type": "enter_node", "node": node_id, "node_type": node["type"],
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
 		_add_heat(node["heat"], "elite node")
+	if run.corp_theme.halcyon.hq:
+		var room := _halcyon_room(node)
+		if not room.is_empty():
+			return room
+	elif bool(node.get("rest", false)):
+		# WH-10: the Solace HQ rest room is the ward rest (the front goes back by dose_push).
+		bloom_ward_rest()
+		last_events.append({"type": "ward_rest", "gap_milli": BloomRules.gap_milli(bloom), "text": "Ward rest: the front falls back."})
+		return last_events
 	match int(node["type"]):
 		RC.InfilNodeType.ROUTER:
 			_start_combat(node["elite"])
@@ -266,6 +720,12 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 			_open_event()
 		RC.InfilNodeType.MAINFRAME:
 			_open_shop()
+		RC.InfilNodeType.REST:
+			_open_rest()
+		RC.InfilNodeType.WORKSHOP:
+			_open_workshop()
+		RC.InfilNodeType.CACHE:
+			_open_cache()
 	_sync()
 	return last_events
 
@@ -307,13 +767,15 @@ func combat_rewind() -> CombatResult:
 ## Picks the enemy: the final Rack gets a mini-boss (designer ruling 2026-09-24), other
 ## elite nodes an elite, Routers a normal enemy; special runs force theirs.
 func _start_combat(elite: bool) -> void:
-	var final_rack := run.kind == "netrun" and run.current_node_id == run.map.final_node_id()
+	var final_rack := (run.kind == "netrun" and run.current_node_id == run.map.final_node_id()) or bool(run.current_node().get("mini_boss", false))
 	var setup := _combat_setup(elite, final_rack, streams.get_stream(&"combat"))
 	var enemy_id: StringName = setup["enemy_id"]
 	if not elite and not final_rack:
 		run.normal_fights_started += 1
 	combat = _combat_from(setup)
 	run.phase = RunState.Phase.COMBAT
+	if run.corp_theme.halcyon.hq or run.corp_theme.halcyon.spotted_level > 0:
+		_add_heat(EyeRules.spotted_heat(eye_blade_level(), _eye_fight_class(final_rack), config), "the Eye's Blade")
 	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
 		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
 	_apply_campaign_effects(combat.last_events)
@@ -321,24 +783,33 @@ func _start_combat(elite: bool) -> void:
 
 ## The fight a node would start: the foe and the fight seed drawn from `combat_rng` (the
 ## run's combat stream, or a copy of it for a preview), and the operative's overrides.
-func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator) -> Dictionary:
+func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator, fight: EventFightData = null) -> Dictionary:
+	var boss_exploits := {}
 	var pool: Array = _pools["elites"] if elite else normal_pool()
 	if final_rack and not _pools["mini_bosses"].is_empty():
 		pool = _pools["mini_bosses"]
 	if pool.is_empty():
 		pool = _pools["enemies"] if elite else _pools["elites"]
 	var enemy_id: StringName = pool[combat_rng.randi_range(0, pool.size() - 1)]
-	if run.forced_enemy_id != &"":
+	if fight != null:
+		enemy_id = fight.enemy_id  # EV-01: the fight an event opens (the pool draw above is still made)
+	elif run.forced_enemy_id != &"":
 		enemy_id = run.forced_enemy_id
+	elif bool(run.current_node().get("boss", false)) and corporation != null and corporation.final_boss != null:
+		enemy_id = corporation.final_boss.id  # WH-10: the HQ ladder's crown is the final boss
+		if run.kind == HQ_LADDER_KIND:
+			boss_exploits = CampaignRules.boss_overrides(campaign, corporation)  # the Exploits bite the crown only
 	var seed := combat_rng.randi()
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
-	var overrides := {
+	var overrides := boss_exploits.duplicate(true)
+	overrides.merge(_blade_overrides(final_rack))
+	overrides.merge({
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
 		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "enemy_output_scale": enemy_output_scale(), "tier": run.tier, "hub_id": String(op.hub_id(cls)),
-	}
+	}, true)
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
 	if campaign.is_assisted():
@@ -348,11 +819,23 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
-	return {"enemy_id": enemy_id, "seed": seed, "overrides": overrides, "class_id": op.class_id, "ring_id": op.ring_id(cls)}
+	# EV-01: pending next_combat_overrides and the opened fight's own modifiers.
+	var folded := EventRules.fold(run.combat_mods, fight.combat_overrides if fight != null else null)
+	if not EventRules.fold_is_empty(folded):
+		var event_overrides := EventRules.combat_overrides(folded, run.tier, config.event_fight_tier_cap)
+		for k in event_overrides:
+			overrides[k] = event_overrides[k]
+		if int(folded["nudges"]) != 0:
+			overrides["extra_free_nudges"] = int(overrides.get("extra_free_nudges", 0)) + int(folded["nudges"])
+	return {"enemy_id": enemy_id, "seed": seed, "overrides": overrides, "class_id": op.class_id, "ring_id": op.ring_id(cls),
+		"extra_enemy_ids": _strings(folded["extras"])}
 
 
 func _combat_from(setup: Dictionary) -> CombatSession:
-	return CombatSession.start(resolver, setup["class_id"], [setup["enemy_id"]], int(setup["seed"]), setup["ring_id"],
+	var enemy_ids: Array[StringName] = [setup["enemy_id"]]
+	for extra in setup.get("extra_enemy_ids", []):
+		enemy_ids.append(StringName(String(extra)))
+	return CombatSession.start(resolver, setup["class_id"], enemy_ids, int(setup["seed"]), setup["ring_id"],
 		campaign.heat_majors_crossed(config), setup["overrides"])
 
 
@@ -426,9 +909,14 @@ func _finish_combat() -> void:
 	var node := run.current_node()
 	if cs.outcome == CombatState.Outcome.DEFEAT:
 		combat = null
+		run.event_fight = {}
 		_die()
 		return
 	run.operative.hp = cs.player.hp
+	_bloom_refresh_heat()
+	if run.corp_theme.solace.enabled and BloomRules.end_fight(run.corp_theme.solace, config, cs.turn):
+		_bloom_caught()
+		return
 	run.null_resolved = run.null_resolved or cs.null_resolved
 	# Daemons with ON_COMBAT_END effects (salvage, field repairs) after a won fight.
 	_apply_hook_effects(_run_daemon_hooks(RC.Trigger.ON_COMBAT_END))
@@ -439,30 +927,43 @@ func _finish_combat() -> void:
 		for d in cs.living_drones():
 			run.drones.append({"source_id": String(d.source_id), "hp": d.hp, "dock_slot": d.dock_slot})
 	run.combats_won += 1
+	if run.corp_theme.halcyon.hq and run.corp_theme.halcyon.entered_state == EyeRules.NodeState.SPOTTED:
+		run.corp_theme.halcyon.hq_alert += config.hq_alert_gain_eye_fight  # rule 16: a fight completed IN THE EYE
+	run.combat_mods = EventRules.spend(run.combat_mods)  # EV-01: a completed fight spends one charge
 	var elite: bool = node["elite"]
-	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK
+	var ladder := run.kind == HQ_LADDER_KIND
+	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK and not ladder  # the ladder has no Rack captures
 	if elite:
 		run.elites_defeated += 1
 	var rewards := streams.get_stream(&"rewards")
-	var range_: Vector2i = config.cycles_elite_range if elite else config.cycles_router_range
-	if run.kind == "reclaim":
-		range_ = config.cycles_combat_range  # tiny rewards (GDD 3.3)
-	var cycles := roundi(rewards.randi_range(range_.x, range_.y) * reward_scale())
-	run.cycles += cycles
-	last_events.append({"type": "cycles", "amount": cycles, "text": "Won the fight: +%d Cycles (%d)." % [cycles, run.cycles]})
-	if rewards.randf() < config.asset_drop_chance and not _pools["assets"].is_empty():
-		var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
-		run.unbanked_assets.append(asset)
-		last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
-	if run.kind != "netrun":
+	# EV-01: an event fight with normal_rewards false pays only its own payload.
+	var normal := run.event_fight.is_empty() or bool(run.event_fight.get("normal", true))
+	if normal:
+		var range_: Vector2i = config.cycles_elite_range if elite else config.cycles_router_range
+		if run.kind == "reclaim":
+			range_ = config.cycles_combat_range  # tiny rewards (GDD 3.3)
+		var cycles := roundi(rewards.randi_range(range_.x, range_.y) * reward_scale())
+		run.cycles += cycles
+		last_events.append({"type": "cycles", "amount": cycles, "text": "Won the fight: +%d Cycles (%d)." % [cycles, run.cycles]})
+		if rewards.randf() < config.asset_drop_chance and not _pools["assets"].is_empty():
+			var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
+			run.unbanked_assets.append(asset)
+			last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
+	_event_fight_payout()
+	if run.kind != "netrun" and not ladder:
 		combat = null
 		_complete_run()
 		return
-	_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
-	if elite and not is_rack:
-		_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
-	elif not elite and rewards.randf() < config.router_firmware_chance:
-		_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
+	if ladder and bool(node.get("boss", false)):
+		combat = null  # the crown is down: the HQ run completes (campaign WON)
+		_complete_run()
+		return
+	if normal:
+		_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
+		if elite and not is_rack:
+			_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
+		elif not elite and rewards.randf() < config.router_firmware_chance:
+			_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
 	if is_rack:
 		_capture_rack()
 		# The layer-4 Rack offers a Daemon; the final Rack's prize is the Site's objective
@@ -657,6 +1158,8 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 	var ev := current_event()
 	if run.phase != RunState.Phase.EVENT or ev == null:
 		return _refuse("No event open.")
+	if not run.event_wheel.is_empty():
+		return _refuse("Resolve the wheel first.")
 	if index < 0 or index >= ev.choices.size():
 		return _refuse("No such choice.")
 	var choice := ev.choices[index]
@@ -671,14 +1174,203 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 			_apply_run_effect(e)
 	if choice.reward != null:
 		_grant_resource(choice.reward)
+	_apply_map_edits(choice.map_edits)
+	if choice.common_firmware:
+		_offer_common_firmware()
+	if choice.next_combat_overrides != null:
+		_queue_combat_mods(choice.next_combat_overrides)
+	if choice.next_raid_overrides != null:
+		_store_raid_mods(choice.next_raid_overrides)
+	if choice.event_wheel != null and run.operative.hp > 0:
+		# EV-01: the start tick is drawn once, now, and kept in the run (a reload cannot reroll it).
+		run.event_wheel = EventRules.wheel_open(index, streams.get_stream(EventRules.STREAM).randi_range(0, RC.TICKS - 1))
+		last_events.append({"type": "event_wheel", "tick": run.event_wheel["tick"], "text": "The wheel starts at tick %d." % run.event_wheel["tick"]})
+		_sync()
+		return last_events
+	_end_event(choice.starts_combat)
+	return last_events
+
+
+## Closes the open event after its choice (or wheel slice) resolved: death, then the fight the
+## choice opens, else back to the map (or the rewards the choice queued).
+func _end_event(fight: EventFightData) -> void:
 	run.event_id = &""
+	run.event_wheel = {}
 	if run.operative.hp <= 0:
 		_die()
 		_sync()
-		return last_events
+		return
+	if fight != null:
+		_start_event_fight(fight)
+		_sync()
+		return
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
 	_maybe_raid_interlude()
 	_sync()
+
+
+## EV-01: the fight an event opens. It is a combat of the run against `fight.enemy_id`, not a
+## node fight: the normal-fight counter is untouched.
+func _start_event_fight(fight: EventFightData) -> void:
+	_add_heat(fight.entry_heat, "event fight")
+	run.event_fight = {"normal": fight.normal_rewards, "stake": fight.stake_min_hp_pct, "win_cycles": fight.win_cycles,
+		"win_heat": fight.win_heat, "win_firmware": fight.win_common_firmware}
+	var setup := _combat_setup(false, false, streams.get_stream(&"combat"), fight)
+	combat = _combat_from(setup)
+	run.phase = RunState.Phase.COMBAT
+	last_events.append({"type": "combat_start", "enemy_id": fight.enemy_id, "elite": false, "mini_boss": false, "event_fight": true,
+		"text": "Combat: %s." % fight.enemy_id})
+	_apply_campaign_effects(combat.last_events)
+
+
+## EV-01: the win payload of an event fight (a won fight only), stake permitting.
+func _event_fight_payout() -> void:
+	var f := run.event_fight
+	run.event_fight = {}
+	if f.is_empty():
+		return
+	var op := run.operative
+	if not EventRules.stake_held(op.hp, op.max_hp, int(f.get("stake", 0))):
+		last_events.append({"type": "event_stake_lost", "text": "Stake lost: %s ended below %d%% HP. The payout is withheld." % [op.name, int(f.get("stake", 0))]})
+		return
+	var cycles := int(f.get("win_cycles", 0))
+	if cycles != 0:
+		run.cycles = maxi(0, run.cycles + cycles)
+		last_events.append({"type": "cycles", "amount": cycles, "text": "Cycles %+d (%d)." % [cycles, run.cycles]})
+	_add_heat(int(f.get("win_heat", 0)), "event fight")
+	if bool(f.get("win_firmware", false)):
+		_offer_common_firmware()
+
+
+## EV-01: stores a next_combat_overrides entry; a random-normal escort is drawn now from the
+## `events` stream (the corporation's normal pool, ids in pool order).
+func _queue_combat_mods(mods: EventCombatModsData) -> void:
+	var drawn: StringName = &""
+	if mods.extra_enemy_random_normal:
+		var pool: Array = normal_pool()
+		if not pool.is_empty():
+			drawn = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
+	run.combat_mods.append(EventRules.mods_entry(mods, drawn))
+
+
+## EV-01: one common Firmware from the `events` stream, queued as a pick (socket it or skip).
+func _offer_common_firmware() -> void:
+	var pool: Array = _pools["common_firmware"]
+	if pool.is_empty():
+		return
+	var id: StringName = pool[streams.get_stream(EventRules.STREAM).randi_range(0, pool.size() - 1)]
+	run.pending_rewards.append({"kind": "firmware", "options": [String(id)]})
+	last_events.append({"type": "event_firmware", "firmware": id, "text": "A Firmware chip is on offer: %s." % id})
+
+
+## EV-01: stores a Terminal event's next-raid modifier on the campaign. A chance below 100 rolls
+## the `events` stream once, here.
+func _store_raid_mods(mods: EventRaidModsData) -> void:
+	var hit := true
+	if mods.extra_waves > 0 and mods.extra_waves_chance_pct < 100:
+		hit = streams.get_stream(EventRules.STREAM).randi_range(1, 100) <= mods.extra_waves_chance_pct
+	campaign.next_raid_mods = EventRules.raid_merge(campaign.next_raid_mods, EventRules.raid_entry(mods, hit))
+	last_events.append({"type": "next_raid", "extra_waves": hit and mods.extra_waves > 0, "text": "The next raid is marked."})
+
+
+## EV-01: applies map edits to the run (MapEditRules; `map_edits_preview` is the same call on copies).
+func _apply_map_edits(edits: Array[MapEditData]) -> void:
+	if edits.is_empty():
+		return
+	for r in MapEditRules.apply(run.map, run.current_node_id, run.closed_nodes, run.revealed_nodes, edits):
+		last_events.append({"type": "map_edit", "ok": r["ok"], "to": r["to"], "text": r["text"]})
+
+
+## What `edits` would change on the map now, exactly (nothing changes): one entry per edit as
+## MapEditRules.apply reports it.
+func map_edits_preview(edits: Array[MapEditData]) -> Array[Dictionary]:
+	if run.map == null:
+		return []
+	return MapEditRules.preview(run.map, run.current_node_id, run.closed_nodes, run.revealed_nodes, edits)
+
+
+## Whether an event closed `node_id`.
+func node_closed(node_id: StringName) -> bool:
+	return run.closed_nodes.has(node_id)
+
+
+## Whether an event revealed the type of `node_id`.
+func node_revealed(node_id: StringName) -> bool:
+	return run.revealed_nodes.has(node_id)
+
+
+# --- Event wheel (EV-01) -------------------------------------------------------------------
+
+## The wheel the open event is spinning, or null.
+func current_event_wheel() -> EventWheelData:
+	var ev := current_event()
+	if run.event_wheel.is_empty() or ev == null:
+		return null
+	return ev.choices[int(run.event_wheel["choice"])].event_wheel
+
+
+## The slice under the pointer now (null with no wheel open).
+func event_wheel_slice() -> EventWheelSliceData:
+	var w := current_event_wheel()
+	return w.slices[EventRules.slice_index(w, int(run.event_wheel["tick"]))] if w != null else null
+
+
+## What nudging by `dir` (-1 or +1) does now, without doing it (EventRules.nudge_preview).
+func event_wheel_preview(dir: int) -> Dictionary:
+	var w := current_event_wheel()
+	return EventRules.nudge_preview(w, run.event_wheel, dir) if w != null else {"ok": false, "why": "No wheel open."}
+
+
+## Nudges the pointer one tick. Past the free nudges `pay` names the currency: &"hp", &"heat" or &"cycles".
+func event_wheel_nudge(dir: int, pay: StringName = &"") -> Array[Dictionary]:
+	last_events = []
+	var w := current_event_wheel()
+	if w == null:
+		return _refuse("No wheel open.")
+	var p := EventRules.nudge_preview(w, run.event_wheel, dir)
+	if not p["ok"]:
+		return _refuse(String(p["why"]))
+	if p["free"]:
+		run.event_wheel["free_used"] = int(run.event_wheel["free_used"]) + 1
+	else:
+		var price: Dictionary = p["pay"]
+		if not price.has(String(pay)):
+			return _refuse("Choose how to pay for the nudge.")
+		var amount: int = price[String(pay)]
+		match String(pay):
+			"hp":
+				if amount >= run.operative.hp:
+					return _refuse("That would flatline %s (%d HP left)." % [run.operative.name, run.operative.hp])
+				run.operative.hp -= amount
+			"cycles":
+				if amount > run.cycles:
+					return _refuse("Not enough Cycles (%d needed)." % amount)
+				run.cycles -= amount
+			"heat":
+				_add_heat(amount, "event wheel")
+		run.event_wheel["extra_used"] = int(run.event_wheel["extra_used"]) + 1
+	run.event_wheel["tick"] = p["tick"]
+	last_events.append({"type": "event_wheel_nudge", "tick": p["tick"], "slice": p["slice"], "text": "Pointer at tick %d: %s." % [p["tick"], w.slices[p["slice"]].label]})
+	_sync()
+	return last_events
+
+
+## Commits the wheel: the slice under the pointer resolves.
+func event_wheel_commit() -> Array[Dictionary]:
+	last_events = []
+	var slice := event_wheel_slice()
+	if slice == null:
+		return _refuse("No wheel open.")
+	last_events.append({"type": "event_wheel_result", "label": slice.label, "text": "The wheel settles on %s." % slice.label})
+	for e in slice.effects:
+		if e != null:
+			_apply_run_effect(e)
+	_apply_map_edits(slice.map_edits)
+	if slice.common_firmware:
+		_offer_common_firmware()
+	if slice.next_combat_overrides != null:
+		_queue_combat_mods(slice.next_combat_overrides)
+	_end_event(slice.starts_combat)
 	return last_events
 
 
@@ -760,6 +1452,22 @@ func choice_costs(choice: EventChoiceData) -> String:
 				parts.append("+%d HP" % e.amount)
 			RC.EffectType.GAIN_SCHEMATICS:
 				parts.append("%+d Schematics" % e.amount)
+	for r in map_edits_preview(choice.map_edits):
+		parts.append(String(r["text"]))
+	if choice.starts_combat != null:
+		parts.append("fight: %s" % choice.starts_combat.enemy_id)
+	if choice.common_firmware:
+		parts.append("Firmware: ?")
+	if choice.event_wheel != null:
+		parts.append("wheel (start ?)")
+	if choice.next_raid_overrides != null:
+		var rm := choice.next_raid_overrides
+		if rm.strength_pct != 0:
+			parts.append("next raid %+d%%" % rm.strength_pct)
+		if rm.extra_waves > 0:
+			parts.append("next raid +%d wave%s" % [rm.extra_waves, " ?" if rm.extra_waves_chance_pct < 100 else ""])
+		if rm.scout_bonus:
+			parts.append("next raid scouted")
 	if choice.reward != null:
 		var kind := "Card" if choice.reward is CardData else ("Firmware" if choice.reward is FirmwareData else ("Daemon" if choice.reward is DaemonData else ("Asset" if choice.reward is DefenseAssetData else "Operative")))
 		if kind == "Operative":
@@ -953,6 +1661,232 @@ func leave_shop() -> Array[Dictionary]:
 	return last_events
 
 
+# --- REST node (RG-02, drafts/nodes/rest.md) -------------------------------------------------
+
+func _open_rest() -> void:
+	run.node_state = {"kind": "rest", "done": false, "mode": "", "swaps": 0, "undo_hp": 0, "undo_fw": []}
+	run.phase = RunState.Phase.REST
+	last_events.append({"type": "rest_open", "text": "REST: patch %d%% of max HP, or rewire one Firmware." % config.rest_heal_pct})
+
+
+## Whether the open REST page has been used (PATCH or REWIRE; UNDO clears it).
+func rest_done() -> bool:
+	return run.phase == RunState.Phase.REST and bool(run.node_state.get("done", false))
+
+
+## PATCH, exactly as it will apply: {"heal": HP restored (clamped to max HP), "hp_after", "max_hp"}.
+func rest_patch_preview() -> Dictionary:
+	var op := run.operative
+	var heal := clampi((op.max_hp * config.rest_heal_pct + 50) / 100, 0, op.max_hp - op.hp)
+	return {"heal": heal, "hp_after": op.hp + heal, "max_hp": op.max_hp}
+
+
+## Why PATCH / REWIRE cannot be used now ("" when it can): not on a REST page, or the visit's one mode is spent.
+func rest_error() -> String:
+	if run.phase != RunState.Phase.REST:
+		return "No REST open."
+	if bool(run.node_state.get("done", false)):
+		return "This REST is spent."
+	return ""
+
+
+## PATCH: heals `rest_heal_pct` of max HP (round half up, clamped). Spends the visit's mode.
+func rest_patch() -> Array[Dictionary]:
+	last_events = []
+	var why := rest_error()
+	if why != "":
+		return _refuse(why)
+	var pv := rest_patch_preview()
+	run.node_state["undo_hp"] = run.operative.hp
+	run.node_state["undo_fw"] = _strings(run.operative.slot_firmware_ids)
+	run.operative.hp = int(pv["hp_after"])
+	run.node_state["done"] = true
+	run.node_state["mode"] = "patch"
+	last_events.append({"type": "rest_patch", "heal": pv["heal"], "text": "Patched +%d HP (%d/%d)." % [pv["heal"], pv["hp_after"], pv["max_hp"]]})
+	_sync()
+	return last_events
+
+
+## Why moving the Firmware of slot `a` and slot `b` (swapping them; an empty socket is a legal partner) is not
+## allowed ("" when it is): the same socket rule as a new chip (`firmware_slot_error`) for each chip that moves.
+func rest_rewire_error(a: int, b: int) -> String:
+	var why := rest_error()
+	if why != "":
+		return why
+	var fw := run.operative.slot_firmware_ids
+	if a < 0 or b < 0 or a >= fw.size() or b >= fw.size() or a == b:
+		return "Choose two different wheel slots."
+	if fw[a] == &"" and fw[b] == &"":
+		return "Neither slot holds Firmware."
+	if fw[a] != &"":
+		why = firmware_slot_error(fw[a], b)
+		if why != "":
+			return why
+	if fw[b] != &"":
+		why = firmware_slot_error(fw[b], a)
+		if why != "":
+			return why
+	return ""
+
+
+## The Firmware ids per slot after swapping `a` and `b` (the wheel as it will be); the current ones when illegal.
+func rest_rewire_preview(a: int, b: int) -> Array[StringName]:
+	var out: Array[StringName] = run.operative.slot_firmware_ids.duplicate()
+	if rest_rewire_error(a, b) == "":
+		var t := out[a]
+		out[a] = out[b]
+		out[b] = t
+	return out
+
+
+## REWIRE: swaps the Firmware of two slots. Only Firmware moves; slices stay. Spends the visit's mode.
+func rest_rewire(a: int, b: int) -> Array[Dictionary]:
+	last_events = []
+	var why := rest_rewire_error(a, b)
+	if why != "":
+		return _refuse(why)
+	run.node_state["undo_hp"] = run.operative.hp
+	run.node_state["undo_fw"] = _strings(run.operative.slot_firmware_ids)
+	var after := rest_rewire_preview(a, b)
+	run.operative.slot_firmware_ids = after
+	run.node_state["swaps"] = int(run.node_state.get("swaps", 0)) + 1
+	run.node_state["done"] = int(run.node_state["swaps"]) >= config.rest_rewire_swaps
+	run.node_state["mode"] = "rewire"
+	last_events.append({"type": "rest_rewire", "a": a, "b": b, "text": "Rewired slots %d and %d." % [a, b]})
+	_sync()
+	return last_events
+
+
+## UNDO (the one step back while the page is open): restores the HP and the Firmware layout from before the use.
+func rest_undo() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.REST or String(run.node_state.get("mode", "")) == "":
+		return _refuse("Nothing to undo.")
+	run.operative.hp = int(run.node_state["undo_hp"])
+	run.operative.slot_firmware_ids = RunState._names(run.node_state["undo_fw"])
+	run.node_state["done"] = false
+	run.node_state["mode"] = ""
+	run.node_state["swaps"] = 0
+	last_events.append({"type": "rest_undo", "text": "Undone."})
+	_sync()
+	return last_events
+
+
+## LEAVE: commits the page and returns to the map (a queued raid is fought first).
+func leave_rest() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.REST:
+		return _refuse("No REST open.")
+	run.node_state = {}
+	run.phase = RunState.Phase.MAP
+	last_events.append({"type": "rest_left", "text": "Left the REST."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- WORKSHOP node (RG-03, drafts/nodes/workshop.md) -----------------------------------------
+# N18 slice upgrades (Levels) and card upgrades do not exist on this branch, so the Workshop is the
+# existing slice-overwrite interface (the Mainframe's slice refit: `overwrite_slice`'s socket rule)
+# at the Workshop's own price, with the draft's shape: `workshop_offers_per_visit` offers drawn at
+# entry from the `rewards` stream (no new stream), `workshop_buys_per_visit` purchase(s), a two-step pick.
+
+func _open_workshop() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var catalogue: Array = []
+	for slice in config.shop_slices:
+		if slice != null:
+			catalogue.append(slice.id)
+	var offers := []
+	for i in mini(config.workshop_offers_per_visit, catalogue.size()):
+		var idx := rng.randi_range(0, catalogue.size() - 1)
+		offers.append(String(catalogue[idx]))
+		catalogue.remove_at(idx)
+	run.node_state = {"kind": "workshop", "offers": offers, "bought": 0}
+	run.phase = RunState.Phase.WORKSHOP
+	last_events.append({"type": "workshop_open", "text": "Workshop: refit a wheel slice (%d offers)." % offers.size()})
+
+
+## Cycles the Workshop charges to refit wheel slot `slot` (the NULL slot costs more; CYCLE_PRICE_PCT applies).
+func workshop_price(slot: int) -> int:
+	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
+	var base := config.workshop_null_slice_price if slice.slice_type == RC.SliceType.NULL else config.workshop_slice_price
+	return roundi(base * _price_scale())
+
+
+## Why offer `offer` cannot refit wheel slot `slot` now ("" when it can): no page, the visit's buy is spent, a bad
+## index, too few Cycles, or a socketed Firmware that would not fit the new slice.
+func workshop_error(offer: int, slot: int) -> String:
+	if run.phase != RunState.Phase.WORKSHOP:
+		return "No Workshop open."
+	var offers: Array = run.node_state.get("offers", [])
+	if int(run.node_state.get("bought", 0)) >= config.workshop_buys_per_visit:
+		return "This Workshop is spent."
+	if offer < 0 or offer >= offers.size() or slot < 0 or slot >= run.operative.slot_slice_ids.size():
+		return "No such slot or slice."
+	var price := workshop_price(slot)
+	if run.cycles < price:
+		return "Not enough Cycles (%d needed)." % price
+	var fw_id := run.operative.slot_firmware_ids[slot]
+	if fw_id != &"":
+		var fw := lookup.get_content(fw_id) as FirmwareData
+		var slice := lookup.get_content(StringName(String(offers[offer]))) as SliceData
+		if not fw.allowed_slice_types.is_empty() and not (slice.slice_type in fw.allowed_slice_types):
+			return "Socketed %s would not fit the new slice." % fw_id
+	return ""
+
+
+## The refit as it will apply: {"price", "cycles_after", "slice"}.
+func workshop_preview(offer: int, slot: int) -> Dictionary:
+	var offers: Array = run.node_state.get("offers", [])
+	var price := workshop_price(slot)
+	return {"price": price, "cycles_after": run.cycles - price, "slice": StringName(String(offers[offer]))}
+
+
+## Refits wheel slot `slot` with offer `offer`, for the Workshop price.
+func workshop_buy(offer: int, slot: int) -> Array[Dictionary]:
+	last_events = []
+	var why := workshop_error(offer, slot)
+	if why != "":
+		return _refuse(why)
+	var pv := workshop_preview(offer, slot)
+	run.operative.slot_slice_ids[slot] = pv["slice"]
+	run.cycles -= int(pv["price"])
+	run.node_state["bought"] = int(run.node_state.get("bought", 0)) + 1
+	last_events.append({"type": "slice_overwritten", "slot": slot, "slice": pv["slice"], "price": pv["price"],
+		"text": "Slot %d is now %s (%d Cycles)." % [slot, pv["slice"], pv["price"]]})
+	_sync()
+	return last_events
+
+
+func leave_workshop() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.WORKSHOP:
+		return _refuse("No Workshop open.")
+	run.node_state = {}
+	run.phase = RunState.Phase.MAP
+	last_events.append({"type": "workshop_left", "text": "Left the Workshop."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- CACHE node (RG-04, drafts/nodes/cache.md) -----------------------------------------------
+
+## A plain reward: Cycles (config range, tier reward scale) from the `rewards` stream, then a card offer. The
+## mini-puzzle is off by config (and none is vetted), so nothing else happens.
+func _open_cache() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var cycles := roundi(rng.randi_range(config.cache_cycles_range.x, config.cache_cycles_range.y) * reward_scale())
+	run.cycles += cycles
+	last_events.append({"type": "cache", "amount": cycles, "puzzle": CacheRules.puzzle_active(config),
+		"text": "Cache: +%d Cycles (%d)." % [cycles, run.cycles]})
+	_offer(&"card", _card_pool(), config.cache_card_choices, rng)
+	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
+	if run.phase == RunState.Phase.MAP:
+		_maybe_raid_interlude()
+
+
 # --- Mid-run raid interlude (GDD 4.4, 7.3) ---------------------------------------------------
 
 ## Whenever the run would return to the map with a raid queued on the campaign, the raid
@@ -1076,6 +2010,7 @@ func _complete_run() -> void:
 		var done := CampaignRules.on_run_completed(campaign, corporation, config, run, lookup)
 		CampaignRules.name_pending_raids(campaign, lookup, done)
 		last_events.append_array(done)
+		_eye_turn_end(done)
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -1094,6 +2029,7 @@ func _die() -> void:
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
 	_add_heat(HeatRules.death_heat(campaign, config, run.tier), "operative death")
+	_eye_turn_end([] as Array[Dictionary])
 
 
 ## Abandon run (designer ruling 2026-10-05, GDD 4.5): the operative is killed on the run, so
@@ -1284,7 +2220,7 @@ func _build_pools() -> void:
 	var events: Array = []
 	for id in lookup.ids_of_class(&"TerminalEventData"):
 		var ev := lookup.get_content(id) as TerminalEventData
-		if (ev.corporation_id == &"" or ev.corporation_id == campaign.corporation_id):
+		if ev.venue == TerminalEventData.Venue.TERMINAL and (ev.corporation_id == &"" or ev.corporation_id == campaign.corporation_id):
 			events.append(id)
 	# Built-in node defenses (Firewall turret) are not loot.
 	var built_in := {}

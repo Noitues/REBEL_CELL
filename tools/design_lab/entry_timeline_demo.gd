@@ -15,7 +15,7 @@ var _t := 0.0
 func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var beats: Array = EntryBeats.HQ_BEATS + EntryBeats.STREET_BEATS
+	var beats: Array = EntryBeats.HQ_BEATS + EntryBeats.STREET_BEATS + EntryBeats.ZOOM_BEATS
 	_rows = EntryBeats.table(beats, false, false)
 	_total = EntryBeats.total(_rows)
 

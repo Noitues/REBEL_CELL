@@ -64,10 +64,16 @@ static func home_label() -> String:
 ## ~440 as round 39) and aimed into the corporation's own territory (site_aim_deg turns
 ## the layout round its HQ, site_mirror flips it across its run axis), the boss end staying
 ## next to the HQ. Presentation only: the Grid's rules never read it.
+## NA-12: the heading and mirror come from the running campaign's city plan (CityPlan.current:
+## the A2 plan's heading for its seed, CityA2Builder).
 static func site_points(corp: CorporationData) -> Dictionary:
-	var cfg: CityConfig = CityView3D.CONFIG
-	return site_points_aimed(corp, float(cfg.site_aim_deg.get(corp.id, 0.0)), bool(cfg.site_mirror.get(corp.id, false)),
-		spread_of(corp.id))
+	return site_points_in(corp, CityPlan.current())
+
+
+## NA-12: the Site layout of `corp` on the city of `plan` (its HQ, heading and mirror).
+static func site_points_in(corp: CorporationData, plan: CityPlan) -> Dictionary:
+	return site_points_aimed(corp, float(plan.site_aim.get(corp.id, 0.0)), bool(plan.site_mirror.get(corp.id, false)),
+		spread_of(corp.id), plan)
 
 
 ## Lots per unit of the layout's run (the Grid's left-right) and cross (up-down) axes at
@@ -86,7 +92,8 @@ static func spread_of(_id: StringName) -> float:
 ## ART-5 5e: the Site layout of `corp` turned `aim_deg` round its HQ (0: the boss end to the
 ## right of the Grid, as 5a laid it), mirrored across the run axis when `mirror`, spread by
 ## `spread`; the boss end (the Grid data's right edge) stays BOSS_GAP from the HQ's centre.
-static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: bool, spread: float) -> Dictionary:
+## `plan`: the city (null = the running campaign's, CityPlan.current).
+static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: bool, spread: float, plan: CityPlan = null) -> Dictionary:
 	var out := {}
 	var min_p := Vector2(1e9, 1e9)
 	var max_p := Vector2(-1e9, -1e9)
@@ -97,13 +104,31 @@ static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: boo
 	var span := (max_p - min_p).max(Vector2(1, 1))
 	var a := RIGHT.rotated(deg_to_rad(aim_deg))
 	var b := DOWN.rotated(deg_to_rad(aim_deg)) * (-1.0 if mirror else 1.0)
-	var centre := NeonCity.hq_of(corp.id) + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5)
+	var hq := plan.hq_of(corp.id) if plan != null else NeonCity.hq_of(corp.id)
+	var centre := hq + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5)
 	var origin := centre - a * (BOSS_GAP + RUN_HALF * spread) + b * CROSS_OFFSET
 	for sd in corp.city_grid.sites:
 		if sd == null:
 			continue
 		var uv := (sd.map_position - min_p) / span * 2.0 - Vector2.ONE
 		out[sd.id] = origin + a * uv.x * RUN_HALF * spread + b * uv.y * CROSS_HALF * spread
+	return out
+
+
+## NA-12 r2: the Site layout of `corp` in unit form (each Site's `uv` in [-1, 1]^2, as site_points_aimed spreads it),
+## in its Grid's Site order, for the A2 Site heading check (CityA2Builder.site_points_at).
+static func site_uvs(corp: CorporationData) -> PackedVector2Array:
+	var min_p := Vector2(1e9, 1e9)
+	var max_p := Vector2(-1e9, -1e9)
+	for sd in corp.city_grid.sites:
+		if sd != null:
+			min_p = min_p.min(sd.map_position)
+			max_p = max_p.max(sd.map_position)
+	var span := (max_p - min_p).max(Vector2(1, 1))
+	var out := PackedVector2Array()
+	for sd in corp.city_grid.sites:
+		if sd != null:
+			out.append((sd.map_position - min_p) / span * 2.0 - Vector2.ONE)
 	return out
 
 
@@ -126,7 +151,7 @@ static func spread_report(city: NeonCity, corp: CorporationData, points: Diction
 		else:
 			var off: Dictionary = r["off"]
 			off[t] = int(off.get(t, 0)) + 1
-		for tr in NeonCity.TERRITORIES:
+		for tr in city.plan().territories:
 			if tr["id"] != &"" and Rect2(tr["at"], Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS)).has_point(Vector2(l) + Vector2(0.5, 0.5)):
 				r["hq"] = int(r["hq"]) + 1
 		if not Rect2(cfg.city_rect).has_point(Vector2(l)):

@@ -10,7 +10,10 @@ const COMBAT_SCENE := preload("res://scenes/combat/combat_scene.tscn")
 const NODE_TIPS := {RC.InfilNodeType.ROUTER: "Router: a fight. Win it for Cycles and loot.", # TR
 	RC.InfilNodeType.TERMINAL: "Terminal: an event with choices.", # TR
 	RC.InfilNodeType.MAINFRAME: "Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).", # TR
-	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run."} # TR
+	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run.", # TR
+	RC.InfilNodeType.REST: "Rest: patch some HP, or rewire a Firmware chip to another slot.", # TR
+	RC.InfilNodeType.WORKSHOP: "Workshop: refit a wheel slice for Cycles.", # TR
+	RC.InfilNodeType.CACHE: "Cache: a stash of Cycles and a card."} # TR
 
 ## What each route node is, in a word (H21 #14: two "Router" buttons looked the same) and
 ## as an icon; an elite Router is an "Elite fight" with the crown.
@@ -122,10 +125,10 @@ var node_panel: RouteNodePanel = null
 var node_backdrop: NodeBackdrop = null
 ## ART-8 8w: the HQ run's page on the compound (boss runs) and the Central Server's gate.
 var hq_run_view: HqRunView = null
-## NA-23: the run's route drawn at street level (StreetRouteView: the netrun camera, the rooms, the occlusion and the grease-pencil
-## overlay) instead of the transit map. Off until the entry sequence (NA-25) and the old page's retirement (NA-26) turn it on;
-## tests and the NA-23 lab set it. A run whose street cannot be derived (`StreetRouteData.error`) keeps the old page.
-static var street_route: bool = true
+## NA-23: the run's route is drawn at street level (StreetRouteView: the netrun camera, the rooms, the occlusion and the grease-pencil
+## overlay). A run whose street cannot be derived (`StreetRouteData.error`) keeps the fallback ROUTE window (list rows over the city).
+## Test seam: a non-empty value makes every run's street fail to derive with this error, so the fallback page (below) shows.
+static var force_street_error: String = ""
 var street_view: StreetRouteView = null
 ## NA-25: the street entry. `_entry_wanted` is set when the jack that brought this scene in was a street entry (the first street
 ## page then plays the dive); `entry_cover` is the player while it runs (the jack-out plays it backwards).
@@ -848,6 +851,24 @@ func leave_shop() -> void:
 	_show_current()
 
 
+## RG-02/03: the REST and WORKSHOP node pages (NodePage); every verb is a session call, then the page redraws.
+func _show_node_page() -> void:
+	var page := NodePage.new()
+	page.setup(RunManager.netrun)
+	page.patch_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_patch()))
+	page.rewire_confirmed.connect(func(a: int, b: int) -> void: _node_step(RunManager.netrun.rest_rewire(a, b)))
+	page.undo_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_undo()))
+	page.leave_pressed.connect(func() -> void: _node_step(RunManager.netrun.leave_rest() if RunManager.netrun.run.phase == RunState.Phase.REST else RunManager.netrun.leave_workshop()))
+	page.buy_confirmed.connect(func(offer: int, slot: int) -> void: _node_step(RunManager.netrun.workshop_buy(offer, slot)))
+	_set_panel(page)
+
+
+func _node_step(events: Array[Dictionary]) -> void:
+	_report(events)
+	RunManager.after_step()
+	_show_current()
+
+
 func raid_deploy_run_asset(index: int, site_id: StringName) -> void:
 	_report(RunManager.netrun.raid_deploy_run_asset(index, site_id))
 	RunManager.after_step()
@@ -942,7 +963,10 @@ func prebake_run_end() -> String:
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
-	# NA-25: the dive starts on a drawn street, so a street entry waits for its city.
+	# NA-25: the dive starts on a drawn street, so a street entry waits for its city. NA-25b: that includes the street page not being up yet
+	# (the city's chunks only start to build with it: the dive used to start with 64 of them pending, 12 frames of 125 ms).
+	if _entry_wanted and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP and RunManager.netrun.run.kind != "boss" 			and not _grid_zoomed:
+		return false
 	if street_view != null and is_instance_valid(street_view) and street_view.rig != null and not street_view.rig.is_prepared():
 		return false
 	var city: NeonCity = background.city if background != null else null
@@ -958,8 +982,15 @@ func finish_run() -> void:
 	# ANIM-R1 M1: a second press during the jack out asks nothing again.
 	if RunManager.scene_change_pending():
 		return
+	# NA-25b: the jack-out reverses from the end-of-run pages too (the street dive backwards, then the HQ side's CRT).
+	var street_back := false
+	if _street_reverse_possible():
+		await _street_reverse_from_page()
+		street_back = true
+		if not is_inside_tree():
+			return
 	RunManager.clear_run()
-	RunManager.go_to_hq()
+	RunManager.go_to_hq(street_back)
 	_show_start()
 
 
@@ -979,17 +1010,57 @@ func save_and_quit() -> void:
 	RunManager.autosave()
 	_log.append_text(tr("Saved.") + "\n")
 	# NA-25: leaving from the street page plays the entry backwards (the dive back to the HQ page), then the HQ.
+	var street_back := false
 	if street_view != null and is_instance_valid(street_view) and not (entry_cover != null and entry_cover.playing):
 		await play_entry(true)
+		street_back = true
 		if not is_inside_tree():
 			return
-	RunManager.go_to_hq()
+	RunManager.go_to_hq(street_back)
 	_show_start()
+
+
+## NA-25b: true when a jack-out from a page without a street view (the end-of-run pages) can still play the dive backwards: the run's
+## street was derived this session, the entry animates (not headless, reduce effects or switched off) and a run is there to leave.
+func _street_reverse_possible() -> bool:
+	return _street_data != null and _street_data.error == "" and force_street_error == "" and RunManager.netrun != null 			and (street_view == null or not is_instance_valid(street_view)) and not Settings.reduce_effects 			and DisplayServer.get_name() != "headless" and Motion.live(&"entry_dive") and CityView3D.can_render()
+
+
+## NA-25b: the street view rebuilt behind an end-of-run page (the run's last room, no options), then the entry played backwards over it.
+## The page fades out with the markers (`_set_entry_ui`). A view that never prepares (bounded wait) is dropped and the jack-out goes on.
+func _street_reverse_from_page() -> void:
+	var s := RunManager.netrun
+	var visited: Array = []
+	for id in s.run.visited:
+		visited.append(String(id))
+	var cfg := CityView3D.CONFIG
+	street_view = StreetRouteView.new()
+	street_view.name = "StreetRoute"
+	street_view.visible = false
+	background.add_child(street_view)
+	street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), String(s.run.current_node_id), visited, [])
+	await _wait_street_ready()
+	if street_view == null or not is_instance_valid(street_view):
+		return
+	street_view.visible = true
+	await play_entry(true)
+
+
+## Waits (bounded, a frame at a time) until the street view's city is drawn.
+func _wait_street_ready() -> void:
+	var left := STREET_READY_FRAMES
+	while left > 0 and street_view != null and is_instance_valid(street_view) and street_view.rig != null and not street_view.rig.is_prepared():
+		left -= 1
+		await get_tree().process_frame
+
+
+## The most frames a street view's city is waited for before the zoom or the jack-out goes on without it.
+const STREET_READY_FRAMES := 600
 
 
 ## NA-25 (PIPELINE_SPEC 10): plays the street entry over the street view (`reverse`: the jack-out) and returns when it has ended
 ## (played or skipped; at once when no beat animates). The route UI comes in with the markers.
-func play_entry(reverse: bool) -> void:
+func play_entry(reverse: bool, beats: Array = EntryBeats.STREET_BEATS) -> void:
 	if street_view == null or not is_instance_valid(street_view):
 		return
 	if entry_cover != null and is_instance_valid(entry_cover):
@@ -998,7 +1069,7 @@ func play_entry(reverse: bool) -> void:
 	entry_cover = cover
 	street_view.add_child(cover)
 	cover.ui_changed.connect(_set_entry_ui)
-	cover.start(street_view, reverse)
+	cover.start(street_view, reverse, beats)
 	if cover.playing:
 		await cover.entry_finished
 	if entry_cover == cover:
@@ -1011,6 +1082,10 @@ func play_entry(reverse: bool) -> void:
 func _set_entry_ui(k: float) -> void:
 	if _panel_host != null and is_instance_valid(_panel_host):
 		_panel_host.modulate.a = k
+	# The page's darkening pools and shadows (UiScrimPools) belong to the page: they go with it (a soft dark rectangle stayed over the
+	# dive back from an end page).
+	if scrim != null and is_instance_valid(scrim):
+		scrim.visible = k > 0.0
 
 
 # --- Panels --------------------------------------------------------------------------
@@ -1048,6 +1123,8 @@ func _show_current() -> void:
 			_show_shop()
 		RunState.Phase.RAID:
 			_show_raid()
+		RunState.Phase.REST, RunState.Phase.WORKSHOP:
+			_show_node_page()
 		_:
 			_show_end()
 	_update_node_backdrop()  # ART-7 3B: the node's dressed room behind its screen
@@ -1427,6 +1504,10 @@ static func screen_name(s: NetrunSession) -> String:
 			return "shop"
 		RunState.Phase.RAID:
 			return "netrun_raid"
+		RunState.Phase.REST:
+			return "rest"
+		RunState.Phase.WORKSHOP:
+			return "workshop"
 	return "run_end"
 
 
@@ -1471,6 +1552,10 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 			hud.set_screen("04", tr("TERMINAL EVENT"))
 		RunState.Phase.SHOP:
 			hud.set_screen("05", tr("MAINFRAME SHOP"))
+		RunState.Phase.REST:
+			hud.set_screen("", tr("REST")) # TR
+		RunState.Phase.WORKSHOP:
+			hud.set_screen("", tr("WORKSHOP")) # TR
 		RunState.Phase.RAID:
 			hud.set_screen("", tr("NETRUN // RAID"))
 		_:
@@ -1511,9 +1596,11 @@ func _show_start() -> void:
 ## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
-	if street_route and s != null and _street_map_ok(s):
+	if s != null and _street_map_ok(s):
 		_show_street_map(s)
 		return
+	_entry_wanted = false  # no street to dive into: the ROUTE window page
+	Fx.hold_saved(false)  # nothing plays: a SAVED held by the jack shows now
 	# The route on the city in blueprint, zoomed into the target Site's neighbourhood;
 	# GRID VIEW zooms out to the whole campaign Grid (greyed city). `map_view` stays as the
 	# route model (hidden): pad keys and clicks go through it as before.
@@ -1559,6 +1646,8 @@ func _show_map() -> void:
 	_route_confirm = null
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
+		# NA-25b: the way back down to the street plays the dive (the street page's view is built anew and plays it once drawn).
+		_zoom_in_wanted = not _grid_zoomed and _street_data != null and _street_data.error == "" and force_street_error == ""
 		_show_map())
 	zoom_btn.name = "GridZoom"
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
@@ -1596,6 +1685,37 @@ func _show_map() -> void:
 
 var _street_data: StreetRouteData = null
 var _street_key := ""
+## NA-25b: the next street page plays the zoom's dive (the way down from the City Grid).
+var _zoom_in_wanted := false
+
+
+## NA-25b (D6): the street's GRID VIEW zooms out by playing the dive backwards to the Grid's framing, then shows the Grid page.
+func _zoom_out_to_grid() -> void:
+	if street_view != null and is_instance_valid(street_view) and not (entry_cover != null and entry_cover.playing):
+		await play_entry(true, EntryBeats.ZOOM_BEATS)
+		_set_entry_ui(1.0)
+		if not is_inside_tree():
+			return
+	_grid_zoomed = true
+	_show_map()
+
+
+## NA-25: the first entry plays once the street's city is drawn (the jack's cover waits for it: `arrival_ready`), so no beat of the dive
+## is spent under the cover or on a city that is still building.
+func _play_entry_when_ready() -> void:
+	await _wait_street_ready()
+	_entry_wanted = false
+	if street_view != null and is_instance_valid(street_view):
+		await play_entry(false)
+	# NA-25b r6 (A-054): the SAVED toast waits for the end of the entry (the zoom has settled at street level), never over the dive.
+	Fx.hold_saved(false)
+
+
+## NA-25b (D6): the way back down plays the dive forward over the street, once its city is drawn.
+func _zoom_in_from_grid() -> void:
+	await _wait_street_ready()
+	if street_view != null and is_instance_valid(street_view):
+		await play_entry(false, EntryBeats.ZOOM_BEATS)
 
 const STREET_PROMPT := "PICK A ROOM: click a numbered room or press its number, then confirm. Z flips OVERVIEW." # TR
 const STREET_PROMPT_TIP := "Hover a room to read it and cut the power to the rest. Click or press 1-9 to select a numbered room, then confirm with the button or Enter. Z flips OVERVIEW and DECISION; Esc lets go of a room, then leaves OVERVIEW. The red TARGET is the Site this run ends at; walked links are lime, the next choices orange." # TR
@@ -1609,7 +1729,7 @@ func _street_map_ok(s: NetrunSession) -> bool:
 	if _street_data == null or _street_key != key:
 		_street_data = StreetRouteView.build_data(s, RunManager.corporation)
 		_street_key = key
-	_street_error = _street_data.error
+	_street_error = force_street_error if force_street_error != "" else _street_data.error
 	if _street_error != "":
 		push_warning("NetrunScene: the street route cannot be derived (%s); the transit page stays." % _street_error)
 		return false
@@ -1651,13 +1771,23 @@ func _show_street_map(s: NetrunSession) -> void:
 	_route_prompt.mouse_filter = Control.MOUSE_FILTER_PASS
 	_route_prompt.tooltip_text = UiTip.fold(tr(STREET_PROMPT_TIP))
 	win.body.add_child(_route_prompt)
+	if HqLadderWords.is_ladder(s):
+		var ladder_key := Label.new()
+		ladder_key.name = "LadderKey"
+		ladder_key.text = tr(LADDER_KEY)
+		ladder_key.autowrap_mode = TextServer.AUTOWRAP_WORD
+		ladder_key.custom_minimum_size.x = 260.0
+		ladder_key.add_theme_font_override("font", Palette.mono())
+		ladder_key.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		ladder_key.add_theme_color_override("font_color", Palette.TEXT_HI)
+		ladder_key.tooltip_text = UiTip.fold(tr(LADDER_KEY_TIP))
+		ladder_key.mouse_filter = Control.MOUSE_FILTER_PASS
+		win.body.add_child(ladder_key)
 	_route_confirm = _button(tr(ROUTE_CONFIRM_NONE), confirm_route_node)
 	_route_confirm.name = "RouteConfirm"
 	_route_confirm.disabled = true
 	win.body.add_child(_route_confirm)
-	var zoom_btn := _button(tr("GRID VIEW"), func() -> void:
-		_grid_zoomed = true
-		_show_map())
+	var zoom_btn := _button(tr("GRID VIEW"), _zoom_out_to_grid)
 	zoom_btn.name = "GridZoom"
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid."))
 	IconMark.attach(zoom_btn, StatIcon.MAP)
@@ -1698,7 +1828,7 @@ func _show_street_map(s: NetrunSession) -> void:
 		street_view.name = "StreetRoute"
 		background.add_child(street_view)
 		street_view.tag_text = _street_tag
-		street_view.setup(_street_data, CityModel.shared(cfg, cfg.city_seed), current, visited, options)
+		street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), current, visited, options)
 		street_view.node_hovered.connect(func(id: String) -> void:
 			if id != "":
 				show_node_panel(StringName(id)))
@@ -1707,10 +1837,13 @@ func _show_street_map(s: NetrunSession) -> void:
 			_route_selected = StringName(id)
 			confirm_route_node())
 		if _entry_wanted:
-			_entry_wanted = false
-			play_entry(false)
+			_play_entry_when_ready()
+		elif _zoom_in_wanted:
+			_zoom_in_wanted = false
+			_zoom_in_from_grid()
 	else:
 		street_view.set_run_state(current, visited, options)
+	_apply_ladder_marks(s)
 	route_legend.show_links_hovered.connect(func(on: bool) -> void:
 		if street_view != null and is_instance_valid(street_view):
 			street_view.set_lit_all(on)
@@ -1719,6 +1852,20 @@ func _show_street_map(s: NetrunSession) -> void:
 	show_node_panel(StringName(options[0]) if not options.is_empty() else &"")
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
 	_prebake_backdrops.call_deferred()
+
+
+const LADDER_KEY := "UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key)." # TR
+const LADDER_KEY_TIP := "WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves." # TR
+
+
+## HQ-LADDER-UI: the Solace ladder's marks on the street overlay: ACROSS bridges as raised arcs in the UP pencil, and the rest / mini-boss stickers. View state only; nothing for any other run.
+func _apply_ladder_marks(s: NetrunSession) -> void:
+	if not HqLadderWords.is_ladder(s) or street_view == null or not is_instance_valid(street_view) or street_view.overlay == null:
+		return
+	var ov := street_view.overlay
+	ov.across_keys = HqLadderWords.across_keys(s.run.map)
+	ov.kind_overrides = HqLadderWords.kind_overrides(s.run.map)
+	ov.mark_dirty()
 
 
 ## NA-23: the tag a hovered room shows: its kind word and the Heat entering it changes.
@@ -1730,6 +1877,8 @@ func _street_tag(id: String) -> String:
 	if node.is_empty():
 		return ""
 	var text := node_word(node)
+	if HqLadderWords.is_ladder(s):
+		text = HqLadderWords.tag(s, StringName(id), text)
 	var heat := s.node_heat(StringName(id))
 	if heat != 0:
 		text += tr(" %s Heat") % TextDb.signed(heat)
@@ -1921,6 +2070,9 @@ func _prebake_backdrops() -> void:
 
 ## A route node in a word: Fight, Elite fight, Event, Shop, Rack (translated).
 static func node_word(node: Dictionary) -> String:
+	var ladder := HqLadderWords.special_word(node)
+	if ladder != "":
+		return ladder  # the HQ ladder's gate, rest, mini-boss and crown rooms
 	return TranslationServer.translate(ELITE_WORD if _is_elite(node) else String(NODE_WORDS.get(node["type"], "?")))
 
 
@@ -1958,6 +2110,11 @@ static func route_tip(s: NetrunSession, node: Dictionary, heat: int) -> String:
 
 ## A route node's icon: crosshair, crown (elite), terminal, bag (shop), server rack.
 static func node_icon(node: Dictionary) -> StringName:
+	match HqLadderWords.room_kind(node):
+		&"rest":
+			return StatIcon.HP
+		&"mini_boss":
+			return StatIcon.ELITE
 	return StatIcon.ELITE if _is_elite(node) else StringName(NODE_ICONS.get(node["type"], &""))
 
 
@@ -2202,6 +2359,7 @@ const REWARD_DAEMON := "a Daemon to pick" # TR
 const REWARD_OBJECTIVE := "the Site's objective" # TR
 const REWARD_SHOP := "spend Cycles: cards, Firmware, slices" # TR
 const REWARD_EVENT := "a choice, and its price" # TR
+const REWARD_WARD_REST := "the Bloom front goes back %s layers" # TR
 const PANEL_HEAT := "%s Heat on entry" # TR
 ## W3-ROUTE (7A): the HP the operative arrives with, and where the route heals.
 const PANEL_HP := "%d / %d on arrival" # TR
@@ -2323,6 +2481,11 @@ func node_panel_data(id: StringName) -> Dictionary:
 			rewards.append(tr(REWARD_SHOP))
 		RC.InfilNodeType.TERMINAL:
 			rewards.append(tr(REWARD_EVENT))
+	var extra: Array = []
+	if HqLadderWords.is_ladder(s):
+		if HqLadderWords.room_kind(node) == &"rest":
+			rewards = [tr(REWARD_WARD_REST) % NetrunSession.bloom_gap_text(cfg.bloom_dose_push_milli)]
+		extra = HqLadderWords.panel_rows(s, id)
 	var heat := s.node_heat(id)
 	var heat_words := tr(PANEL_HEAT) % TextDb.signed(heat) if heat != 0 else ""
 	var mark := String(route_heat_marks(s).get(int(node["type"]), ""))
@@ -2333,7 +2496,7 @@ func node_panel_data(id: StringName) -> Dictionary:
 		"hp": tr(PANEL_HP) % [int(arrive["hp"]), int(arrive["max_hp"])],
 		"heals": tr(PANEL_HEALS_EVENT) if RouteHp.heals_at(int(node["type"])) else tr(PANEL_HEALS_NONE),
 		"type": tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), node_word(node)))),
-		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
+		"rewards": rewards, "heat": heat_words, "extra": extra, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
 
 
 func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2, raid_view: bool = false) -> void:
@@ -6067,6 +6230,20 @@ func _refresh_status() -> void:
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
 		hud.set_daemons(s.run.operative.daemon_ids)
+	_show_theme_chip(s)
+
+
+## Plan 2 WH-02: the HUD theme chip from the run's theme rule (NetrunSession.theme_chip);
+## hidden when no rule fills it or the run is over.
+func _show_theme_chip(s: NetrunSession) -> void:
+	var chip := s.theme_chip() if s != null and not s.run.is_over() else {}
+	if chip.is_empty():
+		hud.set_theme_chip("", "", RunThemeState.ChipKind.INFO)
+		return
+	var args: Array = chip.get("args", [])
+	var words := tr(String(chip.get("key", "")))
+	hud.set_theme_chip(words % args if not args.is_empty() else words, String(chip.get("value", "")),
+			int(chip.get("kind", RunThemeState.ChipKind.INFO)))
 
 
 ## B5 (review section f): the bar's tags a netrun page shows (keys; BAR_ALL: the full bar): the route and transit
@@ -6078,8 +6255,10 @@ static func bar_keys(s: NetrunSession) -> Array:
 	match s.run.phase:
 		RunState.Phase.MAP:
 			return ["HP", "CYCLES"]
-		RunState.Phase.SHOP:
+		RunState.Phase.SHOP, RunState.Phase.WORKSHOP:
 			return ["CYCLES"]
+		RunState.Phase.REST:
+			return ["HP"]
 		RunState.Phase.REWARD:
 			return ["CARDS"] if String(s.reward_at(_offer_index()).get("kind", "")) == "card" else []
 		RunState.Phase.EVENT:

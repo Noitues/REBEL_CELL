@@ -198,6 +198,8 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 func _start(c: CampaignState, op: OperativeState, site: SiteData, run_seed: int) -> NetrunSession:
 	match CampaignRules.run_kind_for(c, site):
 		"boss":
+			if NetrunSession.uses_hq_ladder(corp):
+				return NetrunSession.start_hq_ladder(resolver, c, op.id, site.id, site.tier, run_seed, corp)
 			return NetrunSession.start_special(resolver, c, op.id, "boss", site.id, site.tier, run_seed, corp.final_boss.id, CampaignRules.boss_overrides(c, corp), corp)
 		_:
 			return NetrunSession.start(resolver, c, op.id, site.tier, site.id, run_seed, corp)
@@ -213,6 +215,9 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 			RunState.Phase.MAP:
 				var next := _pick_node(s)
 				if next == &"":
+					if s.can_stall():
+						s.stall()  # Halcyon HQ: every option is closed, let the Eye pass
+						continue
 					break
 				if probe != null:
 					probe.on_node(s)
@@ -253,6 +258,11 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				if bug >= 0 and s.run.cycles >= s.card_removal_price():
 					s.remove_card(bug)
 				s.leave_shop()
+			RunState.Phase.REST:
+				s.rest_patch()
+				s.leave_rest()
+			RunState.Phase.WORKSHOP:
+				s.leave_workshop()
 			RunState.Phase.RAID:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)
@@ -268,7 +278,7 @@ func _pick_node(s: NetrunSession) -> StringName:
 	var hp_low := s.run.operative.hp * 2 < s.run.operative.max_hp
 	var best: StringName = &""
 	var best_key := -1000000000
-	for id in s.available_nodes():
+	for id in s.hq_enterable_nodes():
 		var node := s.run.map.get_node(id)
 		var key := 0
 		match int(node["type"]):
@@ -278,6 +288,12 @@ func _pick_node(s: NetrunSession) -> StringName:
 				key = 60 if s.run.cycles >= 75 else 10
 			RC.InfilNodeType.TERMINAL:
 				key = 30 if hp_low else 20
+			RC.InfilNodeType.REST:
+				key = 55 if hp_low else 5
+			RC.InfilNodeType.WORKSHOP:
+				key = 6
+			RC.InfilNodeType.CACHE:
+				key = 35
 			_:
 				key = (0 if hp_low else 25) if node["elite"] else 40
 		if key > best_key or (key == best_key and String(id) < String(best)):

@@ -470,12 +470,8 @@ func _poll_extension() -> void:
 	_ext_job = {}
 	var recs: Array[CityLayoutRecorder] = job["recs"]
 	if city == null:
-		for r in recs:
-			r.free()
-		return
+		return  # CITY-A2 step 2: the recorders are RefCounted
 	city.use_model(extended_model(job["base"], job["keys"], job["rects"], recs))
-	for r in recs:
-		r.free()
 	_attach_city(size if size.x >= 2.0 and size.y >= 2.0 else Vector2(1280, 720))
 
 

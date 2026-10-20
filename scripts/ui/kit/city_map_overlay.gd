@@ -96,6 +96,9 @@ const KIND_ELITE := "elite"
 const KIND_SHOP := "shop"
 const KIND_EVENT := "event"
 const KIND_RACK := "rack"
+const KIND_REST := "rest"
+const KIND_WORKSHOP := "workshop"
+const KIND_CACHE := "cache"
 const KIND_CENTRAL_SERVER := "central_server"
 const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
@@ -559,6 +562,12 @@ static func route_kind(node_type: int, elite: bool) -> String:
 			return KIND_SHOP
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK
+		RC.InfilNodeType.REST:
+			return KIND_REST
+		RC.InfilNodeType.WORKSHOP:
+			return KIND_WORKSHOP
+		RC.InfilNodeType.CACHE:
+			return KIND_CACHE
 	return ""
 
 
@@ -2025,6 +2034,10 @@ const BOSS_CHIP_GAP := 10.0
 const BOSS_CHIP_SLIDES: Array[float] = [0.0, -0.5, 0.5, -1.0, 1.0]
 ## ... and the rows it may step out (one chip height and gap each) over or under the circle.
 const BOSS_CHIP_ROWS := 3
+## NA-12 r2: then rings further out (how many) in these directions, in turn.
+const BOSS_CHIP_RINGS := 4
+const BOSS_CHIP_RING_DIRS: Array[Vector2] = [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(-1, -1),
+	Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
 ## Parity fix (GRID-13): the hand circle's widest reach as a share of its radii
 ## (PencilShapes.hand_circle: 1 + its wobble 0.035 + its drift 0.05).
 const TARGET_REACH := 1.085
@@ -2067,7 +2080,9 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	closed.append(roof[0])
 	if spec.get("status") == SiteMarker.ST_DOWN:
 		col = SiteMarker.greyed(col)
-	_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA))
+	# NA-12 r2: a roof seen from far out (the whole-city zoom) can fold to a sliver the renderer cannot fill.
+	if not Geometry2D.triangulate_polygon(roof).is_empty():
+		_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA))
 	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, KEYLINE_ALPHA), MARK_KEY_WIDTH, true)
 	_c.draw_polyline(closed, Color(col, MARK_LINE_ALPHA), MARK_LINE_WIDTH, true)
 	if bool(spec.get("won", false)):
@@ -2176,13 +2191,24 @@ func _boss_chip_box(at: Vector2, others: Array[Rect2] = []) -> Rect2:
 				spots.append(Vector2(at.x - box.x * 0.5 + s * slide, y))
 	spots.append(Vector2(circle.position.x - gap - box.x, at.y - box.y * 0.5))
 	spots.append(Vector2(circle.end.x + gap, at.y - box.y * 0.5))
+	# NA-12 r2 (art-pass 4.1 / 4.5): a dense Grid (a zoomed-out city) may hide all of those; then further out, ring
+	# by ring (left, right, up, down and the diagonals), so the chip still finds open map before it settles on a cover.
+	var first_ring := spots.size()
+	for ring in range(1, BOSS_CHIP_RINGS + 1):
+		var dx := (circle.size.x * 0.5 + gap + box.x * 0.5) + ring * (box.x * 0.5 + gap)
+		var dy := (circle.size.y * 0.5 + gap + box.y * 0.5) + ring * (box.y + gap)
+		for d: Vector2 in BOSS_CHIP_RING_DIRS:
+			spots.append(at + Vector2(d.x * dx, d.y * dy) - box * 0.5)
 	var best := Rect2()
 	var best_cover := INF
-	for p in spots:
+	for n in spots.size():
+		var p := spots[n]
 		var r := Rect2(p, box)
 		r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
 		if r.intersects(circle):
 			continue  # clamped back onto its own pencil
+		if n >= first_ring and (not area.encloses(r) or _hits_any(r, label_blocks())):
+			continue  # a far ring spot only on the map's open part
 		var cover := 0.0
 		for o in others:
 			if r.intersects(o):

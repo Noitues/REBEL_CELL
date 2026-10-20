@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="ch"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/data/event_raid_mods_data.gd" id="raid"]
+
+; Terminal event (EV-01, Solace vertical, designer 2026-10-19): drafted in docs/handoff/plan2/drafts/events/27_raidwin_any.md. Venue RAID_WIN: no host opens it yet.
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("raid")
+scout_bonus = true
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("ch")
+label = "Pay for the details (-20 Cycles, the next raid is scouted)"
+result_text = "He talks for ten minutes. Entry link, timing, the lot. You scribble it on your sleeve and he vanishes with your cash."
+cycle_cost = 20
+next_raid_overrides = SubResource("s1")
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 10
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("fx")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="s5"]
+script = ExtResource("raid")
+strength_pct = 10
+
+[sub_resource type="Resource" id="s6"]
+script = ExtResource("ch")
+label = "Take the spoils, hear him out (+10 Cycles, +2 Heat, the next raid hits 10% harder)"
+result_text = "You nod along while pocketing the haul. He's vague about the date and certain about the something nasty. You'll watch the sky."
+next_raid_overrides = SubResource("s5")
+effects = Array[ExtResource("fx")]([SubResource("s3"), SubResource("s4")])
+
+[sub_resource type="Resource" id="s7"]
+script = ExtResource("fx")
+type = 22
+target = 6
+amount = 25
+
+[sub_resource type="Resource" id="s8"]
+script = ExtResource("raid")
+extra_waves = 1
+extra_waves_chance_pct = 30
+
+[sub_resource type="Resource" id="s9"]
+script = ExtResource("ch")
+label = "Wave him off (+25 Cycles; 30% the rumor was true: the next raid gains a wave)"
+result_text = "Air, you say. He shrugs and melts into the crowd. The salvage is real, anyway."
+next_raid_overrides = SubResource("s8")
+effects = Array[ExtResource("fx")]([SubResource("s7")])
+
+[resource]
+script = ExtResource("main")
+id = &"ev_rw_second_hand_rumor"
+title = "Second-Hand Rumor"
+speaker = 1
+text = "Smoke's still coming off the relay when a noodle-stall runner finds you at the loot table. He heard from a cousin, who heard from a night-shift tech, that the corps already priced your next hit. Three days, maybe four, he says, and they're bringing something nasty. Could be real, could be a kid selling air. The spoils are laid out between you, and he's looking at them, not at you."
+choices = Array[ExtResource("ch")]([SubResource("s2"), SubResource("s6"), SubResource("s9")])
+corporation_id = &""
+min_tier = 1
+weight = 0.8
+venue = 1

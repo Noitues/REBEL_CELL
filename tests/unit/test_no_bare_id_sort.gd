@@ -7,7 +7,8 @@ const ROOTS: Array[String] = ["res://scripts", "res://tools"]
 
 ## "file name:variable" pairs proven to hold ints, floats, Vector2i, paths or Strings only.
 const ALLOWED: Array[String] = [
-	"na22_lab.gd:keys", "netrun_art_layout.gd:members", "netrun_hq_orbit.gd:faces", "netrun_street_deriver.gd:keys", "netrun_street_deriver.gd:fb",  # NA-21 / NA-23b: int part / face / layer indices
+	"city_a2_raster.gd:xs", "city_a2_probe.gd:tp", "city_a2_probe.gd:ts", "na23_lab.gd:tops",  # CITY-A2: scanline x / timings / frontage heights (floats)
+	"na22_lab.gd:keys","netrun_art_layout.gd:members", "netrun_hq_orbit.gd:faces", "netrun_street_deriver.gd:keys", "netrun_street_deriver.gd:fb",  # NA-21 / NA-23b: int part / face / layer indices
 	"content_registry.gd:paths", "save_service.gd:out", "city_mesh_kit.gd:keys",
 	"city_motion_site.gd:keys", "city_layout_ruler.gd:keys", "city_view_3d.gd:keys", "campaign_rules.gd:crosses",
 	"heat_rules.gd:out", "map_graph.gd:targets", "netrun_session.gd:ids",
@@ -15,10 +16,12 @@ const ALLOWED: Array[String] = [
 	"netrun_art_export.gd:corps", "netrun_art_export.gd:sorted_keys", "dossier_facts.gd:heat_marks",
 	"bit_path.gd:out", "flash_limiter.gd:sorted", "hq_scene.gd:from", "city_layout.gd:key",
 	"combat_fx_layer.gd:out", "mainframe_sign.gd:names", "bits_path.gd:out", "motion.gd:out",
-	"text_db.gd:out", "netrun_scene.gd:kids", "city_perf_probe.gd:sorted", "profile_frames.gd:_times",
+	"text_db.gd:out", "netrun_scene.gd:kids", "city_perf_probe.gd:sorted", "na25_e2e_lab.gd:sorted", "profile_frames.gd:_times",
 	"schema_check.gd:keys", "lint_static_cli.gd:keys", "perf_pack.gd:sorted", "perf_pack.gd:names",
 	"visual_lint_static.gd:out", "visual_lint_static.gd:sorted",
+	"na25_e2e_lab.gd:sorted",   # frame times (floats)
 	"wheel_state.gd:status_ints", "result_chip_model.gd:seen_statuses",
+	"halcyon_hq_graph.gd:picks",   # Halcyon v2: next-layer column indices (ints)
 ]
 
 

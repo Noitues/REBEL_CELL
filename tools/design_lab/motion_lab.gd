@@ -214,9 +214,9 @@ const DEMOS := {
 	&"on_air_ticker": ["screen", "ticker"],
 	# ART-7 3B: the jack-in transition along a link (Fx.jack_in_link).
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
-	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	&"jack_hold_crt": ["jack_link", "stage"],
 	# NA-25: the street entry's beats on one strip (EntryTimelineDemo).
-	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_select_hold": ["entry", "out"],
+	&"entry_terminal": ["screen", "entry"], &"entry_rain": ["screen", "entry"], &"entry_collapse": ["screen", "entry"], &"entry_dive": ["entry", "in"], &"entry_reveal": ["entry", "in"], &"entry_reveal_lead": ["entry", "in"], &"entry_reveal_write": ["entry", "in"], &"entry_reveal_dissolve": ["entry", "in"], &"entry_mark": ["entry", "in"], &"entry_mark_hold": ["entry", "in"], &"entry_mark_slap": ["entry", "in"], &"entry_mark_stagger": ["entry", "in"], &"entry_mark_rings": ["entry", "in"], &"entry_mark_numbers": ["entry", "in"], &"entry_mark_target": ["entry", "in"], &"entry_ui_in": ["entry", "in"], &"entry_zoom": ["entry", "in"], &"entry_zoom_settle": ["entry", "in"], &"entry_toggle": ["entry", "toggle"], &"entry_select_hold": ["entry", "out"],
 	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
 	# loot sheet's peel and the event's CAM feed, on the real pieces.
 	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
@@ -699,7 +699,7 @@ func _play() -> void:
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
 		"entry":
-			await _play_entry(demo[1] == "out")
+			await _play_entry(demo[1] == "out", demo[1] == "toggle")
 			length = ENTRY_LOOP
 		"kit":
 			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
@@ -739,8 +739,8 @@ func _play_kit(id: StringName) -> float:
 
 ## NA-25: the street entry (`reverse`: the jack-out) on the real StreetRouteView, driven by its own timeline: one view is
 ## built for all the entry demos, a fresh EntryCover is stepped (ENTRY_STEP s of game time per call, no wall-clock wait)
-## until it ends.
-func _play_entry(reverse: bool) -> void:
+## until it ends. `zoom`: the Grid / Route toggle's timeline (NA-25b) instead of the street entry's.
+func _play_entry(reverse: bool, zoom: bool = false) -> void:
 	var gen := _generation
 	_show_scene(false)
 	_clear_screen()
@@ -765,14 +765,14 @@ func _play_entry(reverse: bool) -> void:
 		_entry_view = StreetRouteView.new()
 		_entry_view.size = _entry_host.size
 		_entry_host.add_child(_entry_view)
-		_entry_view.setup(data, CityModel.shared(cfg, cfg.city_seed), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
+		_entry_view.setup(data, CityModel.shared(cfg, CityPlan.current_seed()), "", [], NetrunPoseBuilder.successors(data.run_graph, ""))
 	_entry_host.visible = true
 	if _entry_cover != null and is_instance_valid(_entry_cover):
 		_entry_cover.free()
 	_entry_cover = EntryCover.new()
 	_entry_view.add_child(_entry_cover)
 	_entry_cover.set_process(false)  # stepped below, not by wall-clock frames
-	_entry_cover.start(_entry_view, reverse)
+	_entry_cover.start(_entry_view, reverse, EntryBeats.ZOOM_BEATS if zoom else EntryBeats.STREET_BEATS)
 	var n := 0
 	while is_instance_valid(_entry_cover) and _entry_cover.playing and n < ENTRY_MAX_STEPS and gen == _generation:
 		_entry_cover._process(ENTRY_STEP)

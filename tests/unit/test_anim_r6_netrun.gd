@@ -28,7 +28,11 @@ func before_all() -> void:
 	_typing = Settings.subtitle_typing
 
 
+const NetrunRouteScript := preload("res://scripts/ui/netrun_scene.gd")
+
 func before_each() -> void:
+	# The street cannot be derived here (test seam): this test reads the fallback route-window page.
+	NetrunRouteScript.force_street_error = "test seam: no street"
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_anim_r6"
 	RunManager.scene_switching_enabled = false
@@ -43,6 +47,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	NetrunRouteScript.force_street_error = ""
 	Motion.force_live = false
 	Motion.set_speed(1.0)
 	Motion.use_config(null)

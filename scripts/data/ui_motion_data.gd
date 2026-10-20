@@ -127,12 +127,12 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
 	# sign loops, the ON AIR ticker.
 	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
-	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
-	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
+	# ART-7 3B (ART_BIBLE v2 4.6): the jack-in transition's beats (terminal, link rain, CRT collapse, the slow-load hold).
+	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_hold_crt",
 	# NA-25 (PIPELINE_SPEC 10): the street entry sequence (terminal, rain, collapse, dive, reveal, mark, zoom) and its jack-out hold.
 	&"entry_terminal", &"entry_rain", &"entry_collapse", &"entry_dive", &"entry_reveal", &"entry_reveal_lead", &"entry_reveal_write", &"entry_reveal_dissolve",
 	&"entry_mark", &"entry_mark_hold", &"entry_mark_slap", &"entry_mark_stagger", &"entry_mark_rings", &"entry_mark_numbers", &"entry_mark_target", &"entry_ui_in",
-	&"entry_zoom", &"entry_zoom_settle", &"entry_select_hold",
+	&"entry_zoom", &"entry_zoom_settle", &"entry_toggle", &"entry_select_hold",
 	&"mainframe_takeover", &"mainframe_rain", &"shop_wheel_spin", &"loot_peel", &"event_cam_noise",  # ART-9 4A
 	# ART-6 3A (raid presentation): pencil marks, routes, panels, stickers and the drag.
 	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_dock_circle", &"raid_drag_arrow", &"raid_beacon_idle",

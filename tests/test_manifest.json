@@ -1,6 +1,38 @@
 {
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite, deferred = text scale > 1.0 / high contrast / gamepad / colour-blind scripts, skipped by every default run (run_tests.py --tier deferred runs only them). Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
+		"res://tests/unit/test_rg04_cache.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_rg03_workshop.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_rg_node_pages_ui.gd": {
+			"seconds": 25.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_rg02_rest.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_rg01_run_graph_v2.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_street_cam_target.gd": {
+			"seconds": 60.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_w1_street_gen_sweep.gd": {
+			"seconds": 360.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_event_schema_ev01.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_wheel_sizes.gd": {
 			"seconds": 1.0,
 			"tier": "fast"
@@ -1117,6 +1149,10 @@
 			"seconds": 30.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_balance_reference_policy.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_balance_sim.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
@@ -1229,8 +1265,16 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/netrun_art/test_street_r2_builder.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/netrun_art/test_street_r2_parity.gd": {
 			"seconds": 14.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_na25b_r5.gd": {
+			"seconds": 3.0,
 			"tier": "fast"
 		},
 		"res://tests/netrun_art/test_na24_dress_parity.gd": {
@@ -1246,7 +1290,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_netrun_art_export_sweep.gd": {
-			"seconds": 63.5,
+			"seconds": 725.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_enrage_data.gd": {
@@ -1385,6 +1429,10 @@
 			"seconds": 40.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_aaa_street_look.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_city_shaders.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
@@ -1399,6 +1447,10 @@
 		},
 		"res://tests/unit/test_na26_route_port.gd": {
 			"seconds": 25.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_hq_plate_export.gd": {
+			"seconds": 15.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_id_capture.gd": {
@@ -1453,8 +1505,64 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_city_water_look.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_city3d_layout_rules.gd": {
 			"seconds": 110.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_city_generator.gd": {
+			"seconds": 14.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_seed_save.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_bloom_rules.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_solace_raid_infection.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_hq_ladder_run.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_hq_ladder_ui.gd": {
+			"seconds": 70.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_halcyon_hq_graph.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_halcyon_eye_rules.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_halcyon_hq_eye.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_solace_hq_graph.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_corp_theme_state.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_a2.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_a2_sweep.gd": {
+			"seconds": 150.0,
 			"tier": "full"
 		}
 	}

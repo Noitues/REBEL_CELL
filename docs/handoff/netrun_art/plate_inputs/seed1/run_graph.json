@@ -1,0 +1,186 @@
+{
+ "edges": [
+  {
+   "a": "L1N0",
+   "b": "L2N0"
+  },
+  {
+   "a": "L1N1",
+   "b": "L2N0"
+  },
+  {
+   "a": "L1N2",
+   "b": "L2N0"
+  },
+  {
+   "a": "L1N2",
+   "b": "L2N1"
+  },
+  {
+   "a": "L2N0",
+   "b": "L3N0"
+  },
+  {
+   "a": "L2N1",
+   "b": "L3N1"
+  },
+  {
+   "a": "L2N1",
+   "b": "L3N2"
+  },
+  {
+   "a": "L3N0",
+   "b": "L4N0"
+  },
+  {
+   "a": "L3N1",
+   "b": "L4N0"
+  },
+  {
+   "a": "L3N1",
+   "b": "L4N1"
+  },
+  {
+   "a": "L3N2",
+   "b": "L4N1"
+  },
+  {
+   "a": "L4N0",
+   "b": "L5N0"
+  },
+  {
+   "a": "L4N0",
+   "b": "L5N1"
+  },
+  {
+   "a": "L4N1",
+   "b": "L5N1"
+  },
+  {
+   "a": "L5N0",
+   "b": "L6N0"
+  },
+  {
+   "a": "L5N1",
+   "b": "L6N1"
+  },
+  {
+   "a": "L6N0",
+   "b": "L7N0"
+  },
+  {
+   "a": "L6N1",
+   "b": "L7N0"
+  }
+ ],
+ "layers": 7.0,
+ "nodes": [
+  {
+   "elite": false,
+   "id": "L1N0",
+   "index": 0.0,
+   "layer": 1.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L1N1",
+   "index": 1.0,
+   "layer": 1.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L1N2",
+   "index": 2.0,
+   "layer": 1.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L2N0",
+   "index": 0.0,
+   "layer": 2.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L2N1",
+   "index": 1.0,
+   "layer": 2.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L3N0",
+   "index": 0.0,
+   "layer": 3.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L3N1",
+   "index": 1.0,
+   "layer": 3.0,
+   "type": "mainframe"
+  },
+  {
+   "elite": true,
+   "id": "L3N2",
+   "index": 2.0,
+   "layer": 3.0,
+   "type": "router"
+  },
+  {
+   "elite": true,
+   "id": "L4N0",
+   "index": 0.0,
+   "layer": 4.0,
+   "type": "server_rack"
+  },
+  {
+   "elite": true,
+   "id": "L4N1",
+   "index": 1.0,
+   "layer": 4.0,
+   "type": "router"
+  },
+  {
+   "elite": true,
+   "id": "L5N0",
+   "index": 0.0,
+   "layer": 5.0,
+   "type": "router"
+  },
+  {
+   "elite": false,
+   "id": "L5N1",
+   "index": 1.0,
+   "layer": 5.0,
+   "type": "terminal"
+  },
+  {
+   "elite": false,
+   "id": "L6N0",
+   "index": 0.0,
+   "layer": 6.0,
+   "type": "router"
+  },
+  {
+   "elite": true,
+   "id": "L6N1",
+   "index": 1.0,
+   "layer": 6.0,
+   "type": "router"
+  },
+  {
+   "elite": true,
+   "id": "L7N0",
+   "index": 0.0,
+   "layer": 7.0,
+   "type": "server_rack"
+  }
+ ],
+ "run": "t1_a-642657411",
+ "version": 1.0
+}

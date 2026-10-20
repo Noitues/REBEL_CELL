@@ -81,6 +81,10 @@ func _settle(s: NetrunSession) -> void:
 		_settle(s)
 	if s.run.phase == RunState.Phase.SHOP:
 		s.leave_shop()
+	if s.run.phase == RunState.Phase.REST:
+		s.leave_rest()
+	if s.run.phase == RunState.Phase.WORKSHOP:
+		s.leave_workshop()
 
 
 func _walk(s: NetrunSession, path: Array[StringName], invincible: bool = true) -> void:

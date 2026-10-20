@@ -103,6 +103,11 @@ Terrain, water, rails and other planner layers: **absent** for today's fixed cit
 `city_A2.json` converted to BU. Adding them is a v2 data change only; the v1 fields above do not move (C1). The
 per-seed generator NA-12 fills this same file.
 
+NA-12 r2 (2026-10-19, additive, v1-compatible; absent for the fixed city): `coast {sea_side "N"|"E"|"S"|"W",
+shoreline [[i, j]...], sea_cells [[i, j]...]}` (lots, row order j then i) and `terrain {hills [{centre [x, y], sigma_x,
+sigma_y, height, rotation}]}` (plan BU, radians; z = height * exp(-((u/sigma_x)^2 + (v/sigma_y)^2) / 2)). See DECISIONS
+"W1 NA-12 r2".
+
 ## 3. `net.json` v1
 
 The city network (Sites and their links) for `derive.street`. Spec 2.2 `layout.import_net` describes the shape; the

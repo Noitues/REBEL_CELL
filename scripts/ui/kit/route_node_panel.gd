@@ -86,6 +86,9 @@ func _rows() -> Array:
 		return out
 	out.append([tr(F_TIER), "T%d" % int(data.get("tier", 1))])
 	out.append([tr(F_TYPE), String(data.get("type", ""))])
+	# HQ-LADDER-UI: the ladder's tower, move and exact Bloom gap rows ([[label, value], ...], already translated).
+	for row in data.get("extra", []):
+		out.append(row)
 	var rewards: Array = data.get("rewards", [])
 	for i in rewards.size():
 		out.append([tr(F_REWARDS) if i == 0 else "", String(rewards[i])])

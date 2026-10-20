@@ -4,7 +4,8 @@ extends RefCounted
 ## current node and whatever sub-screen is open (combat, reward, event, shop).
 
 ## RAID = a mid-run raid interlude between map nodes (GDD 4.4, designer ruling 2026-09-24).
-enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED, RAID }
+## RG-02/03: REST and WORKSHOP are the node pages of those kinds (appended, saved ints survive).
+enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED, RAID, REST, WORKSHOP }
 ## ABORTED = the campaign ended (home server lost) during the run.
 enum Outcome { NONE, COMPLETED, DIED, ABORTED }
 
@@ -57,6 +58,22 @@ var temp_cards: Array[StringName] = []
 ## Botnet drones carried between fights: {"source_id", "hp", "dock_slot"}.
 var drones: Array[Dictionary] = []
 var streams: Dictionary = {}
+## Plan 2 WH-02: the corporation themes' netrun fields (RunThemeState). Saved as "corp_theme"
+## only when a field is not default, so older saves load it as defaults and a run without
+## theme data hashes as before.
+var corp_theme: RunThemeState = RunThemeState.new()
+## Plan 2 EV-01: pending next_combat_overrides entries (EventRules.mods_entry), spent one per completed fight.
+var combat_mods: Array[Dictionary] = []
+## EV-01: the open event fight ({} when none): the EventFightData's numbers as the run keeps them.
+var event_fight: Dictionary = {}
+## EV-01: the open event wheel ({} when none): EventRules.wheel_open plus the nudges taken.
+var event_wheel: Dictionary = {}
+## EV-01: nodes an event closed (not enterable) and nodes whose type an event revealed.
+var closed_nodes: Array[StringName] = []
+var revealed_nodes: Array[StringName] = []
+## RG-02/03: the open REST or WORKSHOP page ({} when none): REST {"kind": "rest", "done", "mode", "swaps",
+## "undo_hp", "undo_fw"}; WORKSHOP {"kind": "workshop", "offers", "bought"}. Saved only when not empty.
+var node_state: Dictionary = {}
 
 
 func current_node() -> Dictionary:
@@ -76,7 +93,7 @@ func _raw_dict() -> Dictionary:
 	var rewards := []
 	for r in pending_rewards:
 		rewards.append(r.duplicate(true))
-	return {
+	var out := {
 		"run_seed": str(run_seed), "tier": tier, "site_id": String(site_id),
 		"kind": kind, "forced_enemy_id": String(forced_enemy_id), "combat_overrides": combat_overrides.duplicate(true),
 		"operative": operative.to_dict() if operative != null else {},
@@ -92,6 +109,23 @@ func _raw_dict() -> Dictionary:
 		"temp_cards": _strings(temp_cards),
 		"drones": drones.duplicate(true),
 	}
+	var theme := corp_theme.to_dict()
+	if not theme.is_empty():  # absent at defaults: runs without theme data hash as before WH-02
+		out["corp_theme"] = theme
+	# EV-01: additive, absent at defaults so older saves and runs without events hash as before.
+	if not combat_mods.is_empty():
+		out["combat_mods"] = combat_mods.duplicate(true)
+	if not event_fight.is_empty():
+		out["event_fight"] = event_fight.duplicate(true)
+	if not event_wheel.is_empty():
+		out["event_wheel"] = event_wheel.duplicate(true)
+	if not closed_nodes.is_empty():
+		out["closed_nodes"] = _strings(closed_nodes)
+	if not revealed_nodes.is_empty():
+		out["revealed_nodes"] = _strings(revealed_nodes)
+	if not node_state.is_empty():  # RG-02: absent when no node page is open
+		out["node_state"] = node_state.duplicate(true)
+	return out
 
 
 static func from_dict(d: Dictionary) -> RunState:
@@ -131,6 +165,16 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.temp_cards = _names(d.get("temp_cards", []))
 	for dd in d.get("drones", []):
 		r.drones.append({"source_id": String(dd.get("source_id", "")), "hp": int(dd.get("hp", 1)), "dock_slot": int(dd.get("dock_slot", 0))})
+	r.node_state = d.get("node_state", {}).duplicate(true)
+	var theme: Variant = d.get("corp_theme", {})
+	if theme is Dictionary:
+		r.corp_theme.load_dict(theme)
+	for m in d.get("combat_mods", []):
+		r.combat_mods.append(m.duplicate(true))
+	r.event_fight = d.get("event_fight", {}).duplicate(true)
+	r.event_wheel = d.get("event_wheel", {}).duplicate(true)
+	r.closed_nodes = _names(d.get("closed_nodes", []))
+	r.revealed_nodes = _names(d.get("revealed_nodes", []))
 	return r
 
 

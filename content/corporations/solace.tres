@@ -349,6 +349,7 @@ description = "Reveals the boss phases and pointer moves; opens locked Grid link
 heat_cost = 10
 reveals_boss_phases = true
 opens_locked_links = true
+bloom_turn_cut = true
 
 [sub_resource type="Resource" id="ex_breach"]
 script = ExtResource("4")
@@ -357,6 +358,7 @@ display_name = "Breach: Kill-Switch"
 description = "The boss starts with one fewer pointer."
 heat_cost = 10
 removes_boss_pointers = 1
+bloom_setback = true
 
 [sub_resource type="Resource" id="fx_virus"]
 script = ExtResource("8")
@@ -378,6 +380,7 @@ display_name = "Virus: Open-Source Patch"
 description = "The boss starts with CORRUPTED slices."
 heat_cost = 10
 breach_effects = Array[ExtResource("7")]([SubResource("te_virus")])
+bloom_pace_cut = true
 
 ; ---- Story paths (GDD 8.4): six written paths, one picked per campaign. Beats reveal in
 ; Exploit order; bonus beats need extra Exploits; the finale plays on the win. Voices:

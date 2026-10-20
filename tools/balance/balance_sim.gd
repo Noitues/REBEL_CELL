@@ -4,7 +4,8 @@ extends SceneTree
 ## modes: campaign | fight | boss | netrun
 ## options (all optional):
 ##   --seeds 1000:1019 | 1000,1004      seeds (inclusive range or list)           [1000:1004]
-##   --policy builtin|heuristic         --lookahead 1|2 (heuristic)               [builtin]
+##   --policy builtin|heuristic|reference   --lookahead 1|2 (heuristic)           [builtin]
+##                                      reference = heuristic at reference_lookahead (BAL-01, default 2)
 ##   --skill 0..1                       share of combat turns played well         [1.0]
 ##   --ice N   --corp ID   --class ID   --max-runs N                              [0 solace breaker 60]
 ##   --set <id>.<prop>=<json>           data override on a COPY (repeatable); also  *=  and  +=
