@@ -294,6 +294,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"rain_keep_blacks", float(day.get("rain_keep_blacks", 0.0)))
 	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
+	if water != null and water.plane_mat != null:
+		water.plane_mat.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
 	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
 	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
@@ -602,6 +604,15 @@ func _sync_hq_beams() -> void:
 		var vd := water.get_node_or_null(^"Void") as MeshInstance3D
 		if vd != null:
 			vd.material_override = water.water_mat if whole_look else water.void_mat
+		# The designer's water ruling: at the whole-city pose the sea is the seabed under one transparent plane.
+		var pl := water.get_node_or_null(^"WaterPlane") as Node3D
+		if pl != null:
+			pl.visible = whole_look
+			for nm: NodePath in [^"Sea", ^"Void"]:
+				var sn := water.get_node_or_null(nm) as Node3D
+				if sn != null:
+					sn.visible = not whole_look
+			water.plane_mat.set_shader_parameter(&"sun_dir", cfg.to_light)
 
 
 var _env: Environment
