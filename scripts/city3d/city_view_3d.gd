@@ -272,8 +272,10 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
 		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
-		for m in [_building_mat, _ground_mat, _lane_mat]:
-			(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+		# LOOK L5: the outer land, plane and A2 decks (_outer_mat) take the day ramp too (they stayed on the night ramp).
+		for m in [_building_mat, _ground_mat, _lane_mat, _outer_mat]:
+			if m != null:
+				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
 	var hz := (day["haze"] as Color).lerp(cfg.haze, night_share)
@@ -687,6 +689,7 @@ func _build_scene() -> void:
 	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
+	om.set_shader_parameter(&"band_soft", cfg.outer_land_band_soft)
 	_outer_mat = om
 	outer.material_override = om
 	outer.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))

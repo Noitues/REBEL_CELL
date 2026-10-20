@@ -12,7 +12,7 @@ const MODEL_WAIT_FRAMES := 2400
 const SETTLE_FRAMES := 90
 
 var _out := ""
-## --look=<0..1>: the view's look blend (0 the city look, 1 the AAA-2 netrun look).
+## --look=<0..1>: the night shot's look blend (0 the city look, 1 the AAA-2 netrun look); the day shot is always 0.
 var _look := 0.0
 
 
@@ -70,6 +70,7 @@ func _capture(campaign_seed: int) -> void:
 	await _view_shot(view, "city_a2_night")
 	var lay := city.city_motion.layers if city.city_motion != null else null
 	if lay != null:
+		view.set_look_blend(0.0)  # AAA-2 is the night look; the day keeps the city look
 		lay.set_light(CityMotionLayers.Daylight.DAY, false)
 		await _settle(roundi(Motion.seconds(CityMotionLayers.LIGHT_FADE) * 60.0) + SETTLE_FRAMES)
 		await _view_shot(view, "city_a2_day")

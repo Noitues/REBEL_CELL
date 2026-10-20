@@ -11,6 +11,9 @@ uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
 uniform vec3 ramp_lit;
 uniform vec2 ramp_edges = vec2(0.147, 0.393);
+// LOOK L5 (whole city): above 0 the bands blend over +/- band_soft of N.L (the outer land's relief reads as shading,
+// not as hard dark blobs); 0 keeps the hard toon bands.
+uniform float band_soft = 0.0;
 uniform bool lane = false;
 uniform float lane_gain = 1.0;
 uniform float spill_gain = 1.9;
@@ -37,7 +40,13 @@ void fragment() {
 
 void light() {
 	float ndl = dot(NORMAL, LIGHT) * ATTENUATION;
-	int b = toon_band_index(ndl, ramp_edges.x, ramp_edges.y);
-	vec3 band = b == 0 ? ramp_shadow : (b == 1 ? ramp_mid : ramp_lit);
-	DIFFUSE_LIGHT = band;
+	if (band_soft > 0.0) {
+		float t1 = smoothstep(ramp_edges.x - band_soft, ramp_edges.x + band_soft, ndl);
+		float t2 = smoothstep(ramp_edges.y - band_soft, ramp_edges.y + band_soft, ndl);
+		DIFFUSE_LIGHT = mix(mix(ramp_shadow, ramp_mid, t1), ramp_lit, t2);
+	} else {
+		int b = toon_band_index(ndl, ramp_edges.x, ramp_edges.y);
+		vec3 band = b == 0 ? ramp_shadow : (b == 1 ? ramp_mid : ramp_lit);
+		DIFFUSE_LIGHT = band;
+	}
 }

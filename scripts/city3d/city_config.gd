@@ -573,7 +573,7 @@ extends Resource
 @export var a2_pillar_every_bu: float = 18.0
 @export var a2_road_glow: Dictionary = {&"ring": Color(1.0, 0.62, 0.32), &"motorway": Color(0.95, 0.55, 0.30),
 	&"truck": Color(0.85, 0.48, 0.25), &"arterial": Color(0.55, 0.45, 0.40), &"collector": Color(0.40, 0.36, 0.34)}
-@export var a2_road_glow_share: float = 0.3
+@export var a2_road_glow_share: float = 0.5
 @export var a2_road_min_half_bu: float = 0.6
 @export var a2_deck_skirt_from: float = 0.3
 ## Rails by kind (lift BU, glow colour), at least `a2_rail_min_half_bu` half wide; their colour; tunnels are not drawn.
@@ -624,12 +624,15 @@ extends Resource
 @export var water_reflect_share: float = 0.8
 ## NA-12 r3: the sea's marbled caustic and foam (readable at whole-city zoom): cell size (BU), speed, gain, the
 ## caustic tones by night / day, the shallows' reach from the shore (lots) and the foam line's width (lots) and gain.
-@export var water_caustic_bu: float = 45.0
+@export var water_caustic_bu: float = 100.0
 @export var water_caustic_speed: float = 0.04
-@export var water_caustic_gain: float = 0.35
+@export var water_caustic_gain: float = 0.25
 @export var water_caustic_night: Color = Color(0.06, 0.3, 0.36)
 @export var water_caustic_day: Color = Color(0.4, 0.7, 0.9)
 @export var water_shallow_lots: float = 14.0
+## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
+## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
+@export var outer_land_band_soft: float = 0.14
 @export var water_foam_lots: float = 1.5
 @export var water_foam_gain: float = 0.3
 @export var water_reflect_colors: PackedColorArray = PackedColorArray([Color(1.0, 0.69, 0.0), Color(1.0, 0.24, 0.66),
@@ -650,8 +653,8 @@ extends Resource
 ## emission gain rising to `coping_gain_far` times at that most-zoomed-out width.
 @export var seawall_coping_bu: float = 0.9
 @export var coping_ref_ortho: float = 240.0
-@export var coping_zoom_max: float = 6.0
-@export var coping_gain_far: float = 2.0
+@export var coping_zoom_max: float = 2.5
+@export var coping_gain_far: float = 0.6
 ## Piers where a street meets the water: length and width (lots), deck height (BU), deck colour, and the lamp at the
 ## end (size BU, emission colour).
 @export var pier_len_lots: float = 3.0
