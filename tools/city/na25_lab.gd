@@ -302,7 +302,7 @@ var _hq_i := 0
 ## The HQ side's key frames by the sequence's own state (not wall time: a PNG save takes many frames).
 func _step_hq() -> void:
 	var j := Fx.jack_link
-	if j.night and _hq_i < 4:
+	if j.covering() and _hq_i < 4:
 		_grab("hq_4")
 		_hq_i = 4
 		return

@@ -144,7 +144,7 @@ func _track_jack(delta: float) -> void:
 		return
 	_all.append(delta)
 	var sc := _scene_now()
-	var night: bool = Fx.jack_link != null and Fx.jack_link.visible and Fx.jack_link.covering()
+	var night := false  # A-055: no flat night panel any more, so no night-colour flicker check
 	if night:
 		_night_seen = true
 		_night_frames += 1
@@ -278,7 +278,7 @@ func _track_out(delta: float) -> void:
 	if j != null and j.visible and j.street and j.terminal != null and is_instance_valid(j.terminal) and _mode == "shots":
 		if j.covering() and not _hq_out_seen.has("night"):
 			_hq_out_seen["night"] = true
-			print("NA25E HQ-side switch frame: under the night sky = %s" % str(j.night))
+			print("NA25E HQ-side switch frame: frozen frame shown = %s" % str(j.frozen_shown()))
 			get_viewport().get_texture().get_image().save_png("%s/hq_out_cover.png" % _shots)
 		elif j.terminal.visible:
 			if j.terminal.scale.x > 0.3 and j.terminal.scale.x < 0.9 and j.terminal.scale.y < 0.3 and not _hq_out_seen.has("line"):

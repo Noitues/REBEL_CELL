@@ -3,8 +3,8 @@ extends Control
 ## ART-7 3B / NA-25b r6 (ART_BIBLE 4.6, netrun entry flow ruled 2026-10-15; art-pass A-046: NO wheel, no lens, no hub): the netrun jack along
 ## the chosen link, over the City Grid:
 ## 1. the Cell's terminal types `jack --from <A> --to <B>`, routing, handshake, CONNECTED; 2. binary rain falls along the chosen link only;
-## 3. the terminal despawns as a CRT collapse, a line then a dot; 4. the dot hands straight to the dive (the switch runs under the night
-## sky, holding as a CRT terminal when the load is slow; the street scene's own dive follows). Jack-out is the same chain reversed
+## 3. the terminal despawns as a CRT collapse, a line then a dot; 4. the dot hands straight to the dive (the switch runs under the frozen
+## frame of the screen, as a CRT terminal when the load is slow; the street scene's own dive follows). Jack-out is the same chain reversed
 ## (`play_out`: the dive back ends on the CRT dot opening). One press skips the whole entry (STYLE 5.1). Fx owns the gate, the switch and
 ## the arrival wait (`play` takes Fx); headless and reduce effects never reach here (Fx takes its own paths). View only: no game state.
 
@@ -43,10 +43,11 @@ var points: PackedVector2Array = PackedVector2Array()
 var rain_t: float = -1.0
 var switched: bool = false
 var skipping: bool = false
-## NA-25: the street entry's variant (`link["street"]`): the beats take the `entry_*` times. `night`: the switch happens under the night
-## sky so no frame is black.
+## NA-25: the street entry's variant (`link["street"]`): the beats take the `entry_*` times.
 var street: bool = false
-var night: bool = false
+## NA-25b r6c (A-055): the last frame the player saw, frozen as an image over the screen while the switch loads (never a flat panel, never the
+## loading scene's own look: the HQ builds under a blueprint wireframe city before its page).
+var frozen: TextureRect = null
 var _rain_id: StringName = &"jack_link_rain"
 var _hold_line := ""
 var _cover_t := 0.0
@@ -73,7 +74,7 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 
 
 ## Plays the sequence for `link` ({from, to: words; points: PackedVector2Array screen px; build: the Site id}); Fx's `switch`
-## coroutine (on_switch under the night sky, the arrival wait) runs once the terminal has collapsed to its dot, or at once on a skip.
+## coroutine (on_switch under the frozen frame, the arrival wait) runs once the terminal has collapsed to its dot, or at once on a skip.
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_hold_saved(fx, true)
 	_begin(link)
@@ -92,7 +93,6 @@ func _begin(link: Dictionary) -> void:
 		points = PackedVector2Array([vp * Vector2(0.35, 0.6), vp * Vector2(0.65, 0.4)])
 	switched = false
 	skipping = false
-	night = false
 	street = bool(link.get("street", false))
 	_rain_id = &"entry_rain" if street else &"jack_link_rain"
 	rain_t = -1.0
@@ -139,12 +139,16 @@ func _play_link(switch: Callable) -> void:
 	await _switch_phase(switch)
 
 
-## Beat 4 of the chain, shared by the link jack and the street entry: the CRT dot hands straight to the dive. The switch runs under the
-## night sky after a frame has drawn it (never the HQ page torn away to black); a slow load becomes a CRT hold (`_process`). No wheel,
-## no lens, no hub (A-046).
+## Beat 4 of the chain, shared by the link jack and the street entry: the CRT dot hands straight to the dive. The HQ map frame is frozen
+## under the dot (no flat panel) while the switch loads, so the dot collapses over the city and the dive starts from the same picture; a
+## slow load becomes a CRT hold (`_process`). No wheel, no lens, no hub (A-046).
 func _switch_phase(switch: Callable) -> void:
-	night = true
+	if terminal != null:
+		terminal.visible = false
+	rain_t = -1.0
 	queue_redraw()
+	await get_tree().process_frame  # the frame without the terminal, then freeze it
+	_freeze()
 	for f in 2:
 		if not skipping:
 			await get_tree().process_frame
@@ -196,14 +200,14 @@ func _play_street(switch: Callable) -> void:
 ## lines untype. One press skips to the end (the HQ, no terminal).
 func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_hold_saved(fx, true)
+	_freeze()  # the reversed dive's last rendered frame, before anything else draws
 	_begin(link)
 	_reverse = true
 	street = true
 	visible = true
 	terminal.visible = false
 	_text.visible_characters = -1
-	# A-054: no flat night-sky panel on the way back: the reversed dive's last frame (the HQ pose) stays up while the HQ loads, then the CRT
-	# opens from the dot over the HQ.
+	# A-055: the reversed dive's last frame (the HQ pose, frozen) stays up while the HQ loads; then it goes and the CRT opens from the dot.
 	for f in 2:
 		await get_tree().process_frame
 	switched = true
@@ -211,6 +215,7 @@ func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	await switch.call()
 	_holding = false
 	hold.visible = false
+	_unfreeze()
 	if skipping:
 		_end()
 		return
@@ -273,7 +278,7 @@ func _end() -> void:
 	if not (street and not _reverse):
 		_hold_saved(null, false)
 	visible = false
-	night = false
+	_unfreeze()
 	_holding = false
 	if hold != null and is_instance_valid(hold):
 		hold.visible = false
@@ -283,9 +288,44 @@ func _end() -> void:
 	queue_redraw()
 
 
-## True while the switch loads under the night sky.
+## True while the switch loads under the frozen frame.
 func covering() -> bool:
 	return visible and switched
+
+
+## Freezes the screen as it is now (the viewport's last rendered frame) into a full-screen image under the terminal and the hold.
+func _freeze() -> void:
+	if DisplayServer.get_name() == "headless":  # no renderer to read back (the sequence never plays headless in the game)
+		return
+	show_frozen(get_viewport().get_texture().get_image())
+
+
+## Shows `img` (a grab of the screen; none under a headless renderer) full screen as the frozen frame.
+func show_frozen(img: Image) -> void:
+	_unfreeze()
+	if img == null or img.is_empty():
+		return
+	frozen = TextureRect.new()
+	frozen.name = "FrozenFrame"
+	frozen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frozen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frozen.stretch_mode = TextureRect.STRETCH_SCALE
+	frozen.texture = ImageTexture.create_from_image(img)
+	frozen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(frozen)
+	move_child(frozen, 0)
+	visible = true
+
+
+## True while a frozen frame shows.
+func frozen_shown() -> bool:
+	return frozen != null and is_instance_valid(frozen)
+
+
+func _unfreeze() -> void:
+	if frozen != null and is_instance_valid(frozen):
+		frozen.queue_free()
+	frozen = null
 
 
 func _typed_at(t: float, lines: PackedStringArray, per_char: float, pause: float) -> int:
@@ -363,7 +403,7 @@ func holding() -> bool:
 	return hold != null and is_instance_valid(hold) and hold.visible
 
 
-## While the switch loads under the night sky: a load that passes `jack_hold_crt` becomes a CRT terminal (ART_BIBLE 1.2: glass, scanlines,
+## While the switch loads: a load that passes `jack_hold_crt` becomes a CRT terminal (ART_BIBLE 1.2: glass, scanlines,
 ## a scrolling hex dump, edge glow, a type-on line and its caret). Bits only fall when real data moves, and nothing here moves any.
 func _process(delta: float) -> void:
 	if not _holding or hold == null:
@@ -375,8 +415,6 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	if night:
-		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Palette.NIGHT_SKY)
 	if rain_t >= 0.0:
 		_draw_rain()
 
