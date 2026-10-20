@@ -106,7 +106,7 @@ func lit_materials() -> Array[ShaderMaterial]:
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
 func set_night(n: float) -> void:
-	for m in [water_mat, void_mat, smear_mat, plane_mat]:
+	for m in [water_mat, void_mat, smear_mat, plane_mat, bed_mat]:
 		if m != null:
 			m.set_shader_parameter(&"night", n)
 

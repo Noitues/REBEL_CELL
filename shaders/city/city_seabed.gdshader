@@ -18,6 +18,9 @@ uniform float sea_y = 0.0;
 uniform vec3 sigma = vec3(0.090, 0.034, 0.016);
 uniform vec3 inscatter = vec3(0.003, 0.018, 0.055);
 uniform float inscatter_gain = 1.0;
+// By day the sky lights the water column: the in-scatter this many times stronger at night 0.
+uniform float inscatter_day_gain = 1.0;
+uniform float night = 1.0;
 uniform float path_cap = 600.0;
 uniform float caustic_k = 1.1;
 uniform float caustic_scale = 0.05;
@@ -71,7 +74,7 @@ void fragment() {
 	float path = min(d / max(abs(V.y), 0.12) + d, path_cap);
 	vec3 T = exp(-sigma * path);
 	ALBEDO = COLOR.rgb * T;
-	vec3 e = (1.0 - T) * inscatter * inscatter_gain;
+	vec3 e = (1.0 - T) * inscatter * inscatter_gain * mix(inscatter_day_gain, 1.0, night);
 	if (d > 0.05) {
 		float t = rc_time(TIME) * time_scale * caustic_speed;
 		vec2 p = v_world.xz;
