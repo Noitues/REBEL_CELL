@@ -358,6 +358,20 @@ extends Resource
 	"sprawl": [[0.22, Color(0.42, 0.40, 0.37)], [0.32, Color(0.44, 0.24, 0.17)], [0.30, Color(0.42, 0.26, 0.14)],
 		[0.16, Color(0.30, 0.28, 0.27)]]}
 @export var day_mats_k: float = 0.6
+## LOOK L5 (hybrid port, Blender city_preset PARKS + city_world_a2 park_trees): park lawn colour and lift (BU), the share
+## of park lots with trees, clumps per lot, trees per clump, clump spread (lots), tree radius range (BU), dome width and
+## height factors, and the tree colours.
+@export var park_lawn: Color = Color(0.16, 0.25, 0.10)
+@export var park_lawn_lift: float = 0.004
+@export var park_tree_share: float = 0.55
+@export var park_clumps: int = 2
+@export var park_trees: Vector2i = Vector2i(3, 5)
+@export var park_clump_spread: float = 0.67
+@export var park_tree_r: Vector2 = Vector2(0.63, 1.32)
+@export var park_tree_w: float = 1.6
+@export var park_tree_h: float = 2.1
+@export var park_tree_colors: Array[Color] = [Color(0.12, 0.22, 0.07), Color(0.16, 0.26, 0.09), Color(0.10, 0.18, 0.08),
+	Color(0.20, 0.27, 0.10)]
 @export var terrain_ground_mix: float = 0.0
 
 @export_group("Streets")

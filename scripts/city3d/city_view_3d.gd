@@ -1129,6 +1129,16 @@ func _build_chunk(key: Vector2i) -> void:
 	g.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(g)
+	# LOOK L5: the chunk's park lots as lawn and tree clumps (CityParkKit, the Blender plate's parks).
+	var pm := CityParkKit.mesh(cfg, CityParkKit.parks_in(model.city_seed, r), model.terrain)
+	if pm != null:
+		var pk := MeshInstance3D.new()
+		pk.name = "Parks"
+		pk.mesh = pm
+		pk.material_override = _ground_mat
+		pk.layers = 1 << (WORLD_LAYER - 1)
+		pk.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.add_child(pk)
 	var lm := CityMeshKit.lane_mesh_of(cfg, streets, model.terrain)
 	if lm != null:
 		var l := MeshInstance3D.new()
