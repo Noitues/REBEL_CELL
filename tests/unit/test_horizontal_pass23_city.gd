@@ -163,7 +163,7 @@ func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:
 	assert_false(n.is_empty(), "the boss Site")
 	# HQ-B (Q5): the boss may lie outside the HQ's fit (its edge arrow shows it): then the
 	# selected Site is the node checked.
-	if not CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
+	if not overlay.node_shown(n):
 		n = overlay._node_dict(hq.selected_site)
 	overlay.selected_id = n["id"]
 	overlay.hover_id = n["id"]  # ruling 1a (2026-10-14): a tag shows while its node is lit, never at rest

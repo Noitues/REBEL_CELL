@@ -210,8 +210,6 @@ func test_a_sliced_build_equals_one_build() -> void:
 ## a full build places on every lot inside the view (the camera's shift apart), and no roof
 ## where the build has none.
 func test_the_placement_places_the_roofs_a_build_does() -> void:
-	pending("red since CITY-A2 step 2: the A2 terrain changes the view's lots (solace 0, halcyon 391 of >500 compared); art/look whole-city work A-059; restore when it lands")
-	return
 	NeonCity.geometry_memo_enabled = false
 	NeonCity.emit_triangles = false
 	for district in DISTRICTS:
@@ -224,11 +222,11 @@ func test_the_placement_places_the_roofs_a_build_does() -> void:
 		var inner := Rect2(Vector2.ZERO, city.size).grow(-60.0)
 		var checked := 0
 		var missing := 0
-		for s in range(-60, 160):
-			for d in range(-80, 80):
-				if posmod(s + d, 2) != 0:
-					continue
-				var l := Vector2i((s + d) / 2, (s - d) / 2)
+		# CITY-A2: the lots round the camera's focus (the A2 plan puts the view away from the old origin)
+		var centre := Vector2i(city._grid_of(city.size * 0.5).round())
+		for di in range(-90, 91):
+			for dj in range(-90, 91):
+				var l := centre + Vector2i(di, dj)
 				if not inner.has_point(city.grid_to_local(l.x + 0.5, l.y + 0.5)):
 					continue
 				var built: Dictionary = city._roofs.get(l, {})
