@@ -1264,4 +1264,13 @@ func _ev01_event_schema() -> int:
 	if bc.map_edits.size() != 1 or bc.map_edits[0].op != MapEditData.Op.CLOSE_NODE: fails += 1
 	var fc := EventChoiceData.new(); fc.label = "fight"; fc.starts_combat = fight
 	if not fc.validate().is_empty(): fails += 1
+	# EV-02 hosts: win_daemon defaults off and counts as a payload; the host keys ship (RAID_WIN on every win, HQ every 3rd run).
+	var dfight := EventFightData.new(); dfight.enemy_id = &"tariff_collector"; dfight.stake_min_hp_pct = 50
+	var no_payload := dfight.validate().size()
+	dfight.win_daemon = true
+	var shipped_cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("EV-02 hosts (expect 1 0 true 3 -1): ", no_payload, " ", dfight.validate().size(), " ", shipped_cfg.raid_win_event_enabled, " ", shipped_cfg.hq_event_every_runs, " ", CampaignState.new().venue_event_due)
+	if EventFightData.new().win_daemon or no_payload != 1 or not dfight.validate().is_empty(): fails += 1
+	if not shipped_cfg.raid_win_event_enabled or shipped_cfg.hq_event_every_runs != 3 or CampaignState.new().venue_event_due != -1: fails += 1
+	if CampaignState.new().to_dict().has("venue_event_due") or CampaignState.new().to_dict().has("carried_combat_mods") or RunState.new().to_dict().has("purse_cycles"): fails += 1
 	return fails

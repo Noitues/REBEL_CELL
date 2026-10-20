@@ -19,6 +19,9 @@ extends Resource
 @export var win_heat: int = 0
 ## One common Firmware drawn from the `events` stream, offered as a pick.
 @export var win_common_firmware: bool = false
+## EV-02 hosts: one Daemon drawn from the `events` stream, offered as a pick (a COMMON Daemon the
+## operative lacks; the whole Daemon reward pool when none is left).
+@export var win_daemon: bool = false
 
 
 func validate() -> PackedStringArray:
@@ -29,6 +32,6 @@ func validate() -> PackedStringArray:
 		errors.append_array(combat_overrides.validate())
 	if stake_min_hp_pct < 0 or stake_min_hp_pct > 100:
 		errors.append("event_fight_stake_range: stake_min_hp_pct %d is outside 0..100." % stake_min_hp_pct)
-	if stake_min_hp_pct > 0 and win_cycles == 0 and win_heat == 0 and not win_common_firmware:
+	if stake_min_hp_pct > 0 and win_cycles == 0 and win_heat == 0 and not win_common_firmware and not win_daemon:
 		errors.append("event_fight_stake_empty: a stake guards nothing (no win payload).")
 	return errors

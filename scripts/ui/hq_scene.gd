@@ -220,7 +220,7 @@ func _ready() -> void:
 		show_start()
 	elif RunManager.campaign.is_over():
 		show_end()
-	else:
+	elif not RunManager.open_due_venue_event():  # EV-02 hosts: an HQ_VIEW event owed after a netrun waits here
 		show_hq()
 
 
@@ -5963,6 +5963,13 @@ func _home_number_landed(damage: int) -> void:
 const HOME_NUMBER_FONT := 30
 
 
+## EV-02 hosts: leaving the raid report. A won raid owes the hub one RAID_WIN event (designer call, Q6):
+## it opens on the event page, else the HQ shows.
+func _leave_raid_report() -> void:
+	if not RunManager.open_due_venue_event():
+		show_hq()
+
+
 func _after_playout() -> void:
 	_playout_stamp = null
 	hud_home_shown = -1
@@ -6118,7 +6125,7 @@ func show_raid_summary() -> void:
 		box.add_child(node_row)
 	var back := RaidSticker.new(tr(REPORT_BACK), START_STICKER_STEP, RaidSticker.PINK)
 	back.name = "ReportBack"
-	back.pressed.connect(show_hq)
+	back.pressed.connect(_leave_raid_report)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_add_tip(side, back, tr("Back to the HQ."))
 	# M14 12Q-RAID: the war table is the page's visible height (below), not the column's: MAP KEY,

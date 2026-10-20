@@ -311,6 +311,9 @@ func after_step() -> void:
 
 func _record_run_outcome() -> void:
 	var r := netrun.run
+	if r.kind == NetrunSession.EVENT_KIND:
+		sync_profile_with_campaign()  # EV-02 hosts: a hub event is no netrun: no run stats, no history
+		return
 	if r.outcome == RunState.Outcome.COMPLETED:
 		profile.runs_completed += 1
 	elif r.outcome == RunState.Outcome.DIED:
@@ -412,13 +415,51 @@ func fight_raid() -> Array[Dictionary]:
 	var pending := pending_raid()
 	if pending.is_empty():
 		return []
+	var won_before := campaign.raids_won
 	var events := CampaignRules.fight_raid(campaign, corporation, config(), lookup(), pending)
+	if campaign.raids_won > won_before and config().raid_win_event_enabled and campaign.venue_event_due < 0 and not campaign.is_over():
+		campaign.venue_event_due = TerminalEventData.Venue.RAID_WIN  # EV-02 hosts (Q6): the hub opens the event after the result
 	sync_profile_with_campaign()
 	if campaign.outcome == CampaignState.Outcome.LOST:
 		campaign_ended.emit(campaign)
 	autosave()
 	campaign_changed.emit(campaign)
 	return events
+
+
+# --- Hub events (EV-02 hosts: RAID_WIN after a raid fought at HQ, HQ_VIEW) ----------------------
+
+## The venue whose event the hub owes the player now (-1 = none, or a run is under way).
+func venue_event_due() -> int:
+	return campaign.venue_event_due if campaign != null and not campaign.is_over() and not has_active_run() else -1
+
+
+## Opens the owed hub event as a session (the netrun scene shows its page) and saves. The tier is the first
+## launchable Site's (the one a plain run would take), else 1. Null when nothing is owed or no event can be drawn.
+func start_venue_event() -> NetrunSession:
+	var venue := venue_event_due()
+	if venue < 0:
+		return null
+	_ensure_resolver()
+	var living := campaign.living_operatives()
+	if living.is_empty():
+		campaign.venue_event_due = -1
+		return null
+	var sites := launchable_sites()
+	var seed_rng := RngService.get_stream(&"map") if RngService.is_seeded() else RngStreams.make_stream(campaign.campaign_seed, &"map")
+	netrun = NetrunSession.start_venue_event(resolver, campaign, living[0].id, venue, sites[0].tier if not sites.is_empty() else 1, seed_rng.randi(), corporation)
+	run_changed.emit(netrun)
+	autosave()
+	return netrun
+
+
+## The hub's call when it shows: opens the owed event (and goes to its page), else nothing. True when it did.
+## Does nothing where scene switching is off (the tests call `start_venue_event` themselves).
+func open_due_venue_event() -> bool:
+	if not scene_switching_enabled or venue_event_due() < 0 or start_venue_event() == null:
+		return false
+	change_scene(NETRUN_SCENE)
+	return true
 
 
 # --- Save / load ------------------------------------------------------------------------------

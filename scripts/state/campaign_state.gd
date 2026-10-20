@@ -60,6 +60,12 @@ var last_raid: Dictionary = {}
 var outcome: int = Outcome.NONE
 ## Plan 2 EV-01: the pending raid modifier a Terminal event left (EventRules.raid_entry), spent by the next raid.
 var next_raid_mods: Dictionary = {}
+## Plan 2 EV-02 hosts: the venue (TerminalEventData.Venue) whose event the hub owes the player, -1 = none.
+## Set by a won raid fought at HQ (RAID_WIN) or a completed netrun (HQ_VIEW, every hq_event_every_runs-th);
+## cleared when the hub's event session opens (NetrunSession.start_venue_event).
+var venue_event_due: int = -1
+## EV-02 hosts: next_combat_overrides entries (EventRules.mods_entry) an HQ event left, given to the next run.
+var carried_combat_mods: Array[Dictionary] = []
 ## Plan 2 WH-02: the corporation themes' campaign and raid fields (CampaignThemeState). Saved
 ## as "corp_theme" only when a field is not default, so older saves load it as defaults and a
 ## campaign without theme data hashes as before.
@@ -193,6 +199,10 @@ func _raw_dict() -> Dictionary:
 		out["corp_theme"] = theme
 	if not next_raid_mods.is_empty():  # EV-01: additive, absent at default
 		out["next_raid_mods"] = next_raid_mods.duplicate()
+	if venue_event_due >= 0:  # EV-02 hosts: additive, absent at default
+		out["venue_event_due"] = venue_event_due
+	if not carried_combat_mods.is_empty():
+		out["carried_combat_mods"] = carried_combat_mods.duplicate(true)
 	return out
 
 
@@ -240,6 +250,9 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	var theme: Variant = d.get("corp_theme", {})
 	if theme is Dictionary:
 		c.corp_theme.load_dict(theme)
+	c.venue_event_due = int(d.get("venue_event_due", -1))
+	for m in d.get("carried_combat_mods", []):
+		c.carried_combat_mods.append(m.duplicate(true))
 	var raid_mods: Variant = d.get("next_raid_mods", {})
 	if raid_mods is Dictionary:
 		c.next_raid_mods = {}

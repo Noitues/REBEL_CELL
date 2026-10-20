@@ -148,3 +148,48 @@ static func raid_merge(into: Dictionary, entry: Dictionary) -> Dictionary:
 	return {"strength_pct": int(into.get("strength_pct", 0)) + int(entry.get("strength_pct", 0)),
 		"extra_waves": int(into.get("extra_waves", 0)) + int(entry.get("extra_waves", 0)),
 		"scout": bool(into.get("scout", false)) or bool(entry.get("scout", false))}
+
+
+# --- Venue hosts (RAID_WIN after a won raid, HQ_VIEW at the hub) -------------------------
+
+## Ids of the events of `venue` that corporation `corporation_id` can draw at `tier`, sorted by id.
+## An event with no corporation is open to all.
+static func venue_pool(lookup: ContentLookup, venue: int, corporation_id: StringName, tier: int) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id in lookup.ids_of_class(&"TerminalEventData"):
+		var ev := lookup.get_content(id) as TerminalEventData
+		if ev.venue == venue and ev.min_tier <= tier and (ev.corporation_id == &"" or ev.corporation_id == corporation_id):
+			out.append(id)
+	return out
+
+
+## The weighted draw over `pool` (id order): one `randf` of `rng` (the `events` stream), the same
+## arithmetic as the Terminal draw. Empty when the pool is empty (nothing drawn).
+static func venue_pick(lookup: ContentLookup, pool: Array[StringName], rng: RandomNumberGenerator) -> StringName:
+	if pool.is_empty():
+		return &""
+	var total := 0.0
+	for id in pool:
+		total += (lookup.get_content(id) as TerminalEventData).weight
+	var roll := rng.randf() * total
+	for id in pool:
+		roll -= (lookup.get_content(id) as TerminalEventData).weight
+		if roll <= 0.0:
+			return id
+	return pool[pool.size() - 1]
+
+
+## Whether completing netrun number `runs_completed` owes the HQ an event (every `hq_event_every_runs`-th).
+static func hq_event_due(config: CampaignConfigData, runs_completed: int) -> bool:
+	return config.hq_event_every_runs > 0 and runs_completed > 0 and runs_completed % config.hq_event_every_runs == 0
+
+
+## The Cycles a hub event opens with: the campaign's Schematics at the config ratio.
+static func purse_for(schematics: int, cycles_per_schematic: int) -> int:
+	return maxi(0, schematics) * cycles_per_schematic
+
+
+## The Schematics a hub event nets from the Cycles it ended with against its purse (whole
+## Schematics, rounded down: spending 15 Cycles costs 2, gaining 25 pays 2).
+static func purse_schematics_delta(cycles_left: int, purse: int, cycles_per_schematic: int) -> int:
+	return floori(float(cycles_left - purse) / float(cycles_per_schematic))
