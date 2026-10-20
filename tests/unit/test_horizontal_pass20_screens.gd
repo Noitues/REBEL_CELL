@@ -28,8 +28,8 @@ func before_all() -> void:
 const NetrunRouteScript := preload("res://scripts/ui/netrun_scene.gd")
 
 func before_each() -> void:
-	# W1 NA-26 made the street view the default route page; this test reads the route-window page (Node buttons, map overlay).
-	NetrunRouteScript.street_route = false
+	# The street cannot be derived here (test seam): this test reads the fallback route-window page.
+	NetrunRouteScript.force_street_error = "test seam: no street"
 	AudioDirector.muted = true
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
@@ -39,7 +39,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	NetrunRouteScript.street_route = true
+	NetrunRouteScript.force_street_error = ""
 	if not is_equal_approx(Settings.text_scale, _text_scale_before):
 		Settings.set_text_scale(_text_scale_before)
 	if Settings.map_legend != _legend_before:

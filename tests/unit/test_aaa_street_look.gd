@@ -186,14 +186,15 @@ func test_the_light_rig_obeys_its_caps_its_fog_only_mask_and_the_watt_to_energy_
 	assert_lte(int(rig.counts.get("glow", 0)), int(lc["glow"]["cap"]))
 	assert_lte(int(rig.counts.get("facade", 0)), int(lc["wash"]["cap"]))
 	assert_eq(int(rig.counts.get("fog", 0)), int(lc["city_glow"]["count"]), "18 city-glow lights")
+	assert_eq(int(rig.counts.get("haze", 0)), int(lc["city_glow"]["high_count"]), "the lit-haze lights above the skyline (P6, A-036)")
 	assert_lte(int(rig.counts.get("beam", 0)), int(lc["beam"]["cap"]))
-	assert_lte(total, 160, "the whole rig is within the light budget: %d" % total)
+	assert_lte(total, 180, "the whole rig is within the light budget: %d" % total)
 	var lamps := 0
 	for n: Node in rig.root.get_children():
 		var l := n as Light3D
-		if n.name.begins_with("fog_") or n.name.begins_with("beam_"):
+		if n.name.begins_with("fog_") or n.name.begins_with("beam_") or n.name.begins_with("haze_"):
 			assert_eq(l.light_volumetric_fog_energy, StreetLightRig.FOG_ENERGY_CAP, "%s: fog energy at the cap" % n.name)
-			var want: float = float(lc["city_glow" if n.name.begins_with("fog_") else "beam"]["energy"])
+			var want: float = float(lc["city_glow"]["high_energy"] if n.name.begins_with("haze_") else lc["city_glow" if n.name.begins_with("fog_") else "beam"]["energy"])
 			assert_almost_eq(l.light_energy * l.light_volumetric_fog_energy, want, 0.0001, "%s: the fog gets the configured energy, surfaces 1/16 of it" % n.name)
 			assert_false(l.shadow_enabled)
 		else:

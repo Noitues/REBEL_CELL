@@ -124,8 +124,8 @@ const CULTURES := {
 
 ## Territory centres (grid lots) and their pull (bigger = larger territory). The
 ## corporations' HQs stand on their centres; &"" entries are the neutral Sprawl.
-## NA-12: the FIXED city's (CityPlan.make_fixed, seed CityConfig.city_seed); every other seed's
-## territories come from CityGenerator. Read a city's through `plan()` / CityPlan, not here.
+## CITY-A2 step 2: only a fallback plan (A2 could not be made) uses these; every city seed's
+## territories come from A2 (CityA2Builder). Read a city's through `plan()` / CityPlan, not here.
 const TERRITORIES: Array[Dictionary] = [
 	{"id": &"", "at": Vector2(0, 0), "pull": 1.0},
 	{"id": &"solace", "at": Vector2(-34, -4), "pull": 1.15},
@@ -1184,7 +1184,10 @@ func territory_at(i: int, j: int) -> StringName:
 
 ## [owner, runner-up, border 0-1]: border is 1 on the dividing line, 0 deep inside.
 func _territory_pair(i: int, j: int) -> Array:
-	var w := Vector2(_vnoise(i * 0.07, j * 0.07, 70) - 0.5, _vnoise(i * 0.07, j * 0.07, 71) - 0.5) * BORDER_WARP * 2.0
+	var a2 := plan().territory_pair(i, j)  # CITY-A2: the planner city's districts
+	if not a2.is_empty():
+		return a2
+	var w :=Vector2(_vnoise(i * 0.07, j * 0.07, 70) - 0.5, _vnoise(i * 0.07, j * 0.07, 71) - 0.5) * BORDER_WARP * 2.0
 	w += Vector2(_vnoise(i * 0.2, j * 0.2, 72) - 0.5, _vnoise(i * 0.2, j * 0.2, 73) - 0.5) * BORDER_WARP * 0.6
 	var p := Vector2(i, j) + w
 	var best: StringName = &""

@@ -36,6 +36,8 @@ const CARET_GLYPH := "_"
 ## shader's HEX_BYTES / HEX_ROWS).
 const HEX_BYTES := 12
 const HEX_ROWS := 48
+## NA-25b r4: the cells across one dump column (the shader's HEX_COLS).
+const HEX_COLUMN_CELLS := 41.0
 ## The hex dump's default seed (the shared terminal material uses it too).
 const HEX_SEED := 7
 ## B1c: the hex dump's glyphs (Share Tech Mono 0-F; tools/design_lab/hex_atlas_bake.py).
@@ -76,6 +78,17 @@ const HEX_MEASURE_PX := 64
 		hex_dump = v
 		_sync()
 @export var text_step: int = UiTheme.BODY
+## NA-25b r4 (the jack's hub hold): the caret a blinking block (the glyph's width and the line's height) instead of the underscore.
+var caret_block: bool = false
+## The hex dump's alpha when it is not the default (< 0 keeps HEX_ALPHA), how many dump columns it draws (0 = fill the panel), and where
+## its first column starts (panel-local x; < 0 keeps the default margin).
+var hex_alpha_value: float = -1.0
+var hex_columns: int = 0
+var hex_origin_x: float = -1.0
+## The dump's glyph size as a multiple of the default (HEX_GLYPH_PX).
+var hex_scale: float = 1.0
+## Shader parameters to hold over the sync (glass, scanlines and edge looks a host needs): {param name: value}, both layers.
+var shader_overrides: Dictionary = {}
 ## Seed of the hex dump's bytes (the shader's hash; HEX_SEED by default).
 @export var seed: int = HEX_SEED
 ## B1c-b: where the words over this glass live (their rects fade the dump). Default: the
@@ -190,6 +203,18 @@ func _sync() -> void:
 				sm.set_shader_parameter(p, null)  # the shader's own default
 		sm.set_shader_parameter(&"edge_px", HighContrast.edge(EDGE_PX))
 	sync_hex(_glass_mat, c, hex_dump and not hc, seed)
+	if hex_dump and not hc:
+		if hex_alpha_value >= 0.0:
+			_glass_mat.set_shader_parameter(&"hexdump", hex_alpha_value)
+		if hex_origin_x >= 0.0:
+			_glass_mat.set_shader_parameter(&"hex_origin", Vector2(hex_origin_x, 0.0))
+	_glass_mat.set_shader_parameter(&"hex_blocks", hex_columns)
+	if hex_scale != 1.0:
+		_glass_mat.set_shader_parameter(&"hex_cell", hex_cell() * hex_scale)
+	if not hc:
+		for key: StringName in shader_overrides:
+			_glass_mat.set_shader_parameter(key, shader_overrides[key])
+			_over_mat.set_shader_parameter(key, shader_overrides[key])
 	refresh_text_mask()
 	_over_mat.set_shader_parameter(&"hexdump", 0.0)  # the dump sits under the text only
 	if label != null:
@@ -214,6 +239,11 @@ func _draw_caret() -> void:
 	if caret and _caret_on and not typing():
 		var at := caret_position()
 		var px := UiTheme.font_px(text_step)
+		if caret_block:
+			var font := Palette.mono()
+			var block := Vector2(font.get_char_size(ord("0"), px).x, font.get_height(px))
+			content.draw_rect(Rect2(at - Vector2(0.0, font.get_ascent(px)), block), accent())
+			return
 		HighContrast.draw_text(content, Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
 
 

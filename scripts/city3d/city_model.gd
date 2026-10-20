@@ -11,7 +11,9 @@ extends RefCounted
 ##
 ## Prisms: {"poly": PackedVector2Array (world X/Z), "y0", "h", "taper", "ink": Color,
 ## "terr": StringName, "key": int, "building": int, "cell": Rect2i (lots; HQ: its rect),
-## "centre": Vector2 (world X/Z), "chunk": Vector2i, "hq": bool}.
+## "centre": Vector2 (world X/Z), "chunk": Vector2i, "hq": bool, "ground": float}.
+## CITY-A2 step 2: "y0" is in the world (it includes the ground the building stands on, "ground": BU, the lowest corner
+## of its cell on the city's terrain, CityPlan.cell_ground); city.json keeps parts relative to their building's ground.
 
 var cfg: CityConfig
 var city_seed: int = 0
@@ -28,6 +30,8 @@ var chunks: Dictionary = {}
 var buildings: int = 0
 ## Prisms the layout rules changed in `finish` (0 when they did not run).
 var ruled_parts: int = 0
+## CITY-A2 step 2: the city's ground (CityPlan.terrain of this seed), or null (flat at 0).
+var terrain: CityA2Terrain = null
 
 ## Built models, by config path and seed (a view cache: the layout is a pure function of
 ## the seed; the game's city is built once per process).
@@ -64,6 +68,7 @@ static func build(p_cfg: CityConfig, p_seed: int, rect: Rect2i = Rect2i()) -> Ci
 	var m := CityModel.new()
 	m.cfg = p_cfg
 	m.city_seed = p_seed
+	m.terrain = CityPlan.for_seed(p_seed).terrain
 	var box := p_cfg.city_rect if rect.size == Vector2i.ZERO else rect.intersection(p_cfg.city_rect)
 	for key in chunk_keys(p_cfg, box):
 		var r := chunk_rect(p_cfg, key).intersection(box)
@@ -72,7 +77,6 @@ static func build(p_cfg: CityConfig, p_seed: int, rect: Rect2i = Rect2i()) -> Ci
 		var rec := recorder(p_seed)
 		rec.record(r)
 		m.add_recording(key, r, rec)
-		rec.free()
 	m.finish()
 	return m
 
@@ -97,6 +101,8 @@ static func keep_shared(m: CityModel) -> void:
 
 ## Adds chunk `key` (lots `r`) from a finished recording. Call in chunk order.
 func add_recording(key: Vector2i, r: Rect2i, rec: CityLayoutRecorder) -> void:
+	if terrain == null:
+		terrain = CityPlan.for_seed(city_seed).terrain
 	var ch := {"rect": r, "prisms": PackedInt32Array(), "streets": PackedInt32Array(), "plazas": PackedInt32Array(),
 		"top": 0.0}
 	var ids := {}
@@ -105,6 +111,9 @@ func add_recording(key: Vector2i, r: Rect2i, rec: CityLayoutRecorder) -> void:
 		if not ids.has(cell):
 			ids[cell] = buildings + ids.size()
 		var pr := prism_of(cfg, e)
+		var g := terrain.cell_ground(cell) if terrain != null else 0.0
+		pr["ground"] = g
+		pr["y0"] = float(pr["y0"]) + g
 		pr["building"] = ids[cell]
 		pr["chunk"] = key
 		ch["prisms"].append(prisms.size())
@@ -137,6 +146,7 @@ func finish(defer_rules: bool = false) -> void:
 			continue
 		var ch: Dictionary = chunks[key]
 		var wc := CityIsoCamera.lot_to_world(cfg, c)
+		var g := terrain.cell_ground(r) if terrain != null else 0.0
 		for k in cfg.hq_tiers:
 			var ins := cfg.hq_inset + k * cfg.hq_tier_inset
 			var lo := Vector2(r.position) + Vector2(ins, ins)
@@ -146,10 +156,10 @@ func finish(defer_rules: bool = false) -> void:
 				var w := CityIsoCamera.lot_to_world(cfg, q)
 				poly.append(Vector2(w.x, w.z))
 			ch["prisms"].append(prisms.size())
-			ch["top"] = maxf(float(ch["top"]), (k + 1) * cfg.hq_tier_bu)
-			prisms.append({"poly": poly, "y0": k * cfg.hq_tier_bu, "h": cfg.hq_tier_bu, "taper": 1.0,
+			ch["top"] = maxf(float(ch["top"]), g + (k + 1) * cfg.hq_tier_bu)
+			prisms.append({"poly": poly, "y0": g + k * cfg.hq_tier_bu, "h": cfg.hq_tier_bu, "taper": 1.0,
 				"ink": Palette.corp_color(cid), "terr": cid, "key": 7919 + k, "building": buildings, "cell": r,
-				"centre": Vector2(wc.x, wc.z), "chunk": key, "hq": true})
+				"centre": Vector2(wc.x, wc.z), "chunk": key, "hq": true, "ground": g})
 		buildings += 1
 	if not defer_rules:
 		_apply_layout_rules()
@@ -260,7 +270,7 @@ func pick(cam: CityIsoCamera, p: Vector2) -> int:
 ## "lot": Vector2i (the ground lot when no building is hit), "terr": StringName,
 ## "world": Vector3 (the ground point under the pixel)}.
 func pick_info(cam: CityIsoCamera, p: Vector2) -> Dictionary:
-	var g := cam.unproject(p, 0.0)
+	var g := ground_point(cam, p)
 	var lot := CityIsoCamera.world_to_lot(cfg, g)
 	var out := {"prism": -1, "building": -1, "cell": Rect2i(), "lot": Vector2i(floori(lot.x), floori(lot.y)),
 		"terr": &"", "world": g}
@@ -284,8 +294,24 @@ func pick_building(cam: CityIsoCamera, p: Vector2) -> int:
 
 ## The ground lot under screen pixel `p` (buildings ignored).
 func lot_at(cam: CityIsoCamera, p: Vector2) -> Vector2i:
-	var l := CityIsoCamera.world_to_lot(cfg, cam.unproject(p, 0.0))
+	var l := CityIsoCamera.world_to_lot(cfg, ground_point(cam, p))
 	return Vector2i(floori(l.x), floori(l.y))
+
+
+## CITY-A2 step 2: the ground (BU) at lot point `lot` (0 without terrain).
+func ground_at(lot: Vector2) -> float:
+	return terrain.height_at(lot.x, lot.y) if terrain != null else 0.0
+
+
+## CITY-A2 step 2: the world point on the ground (the terrain) under screen pixel `p`: the ray's crossing of the ground's
+## height found by `cfg.ground_pick_steps` fixed-point steps from sea level (exact on flat ground).
+func ground_point(cam: CityIsoCamera, p: Vector2) -> Vector3:
+	var g := cam.unproject(p, 0.0)
+	if terrain == null:
+		return g
+	for k in cfg.ground_pick_steps:
+		g = cam.unproject(p, ground_at(CityIsoCamera.world_to_lot(cfg, g)))
+	return g
 
 
 ## The tallest top (BU) over lot `lot` (0 = no building), for markers floating over roofs.

@@ -26,7 +26,7 @@ func before_each() -> void:
 func after_each() -> void:
 	CityBakeCache.shutdown()
 	Motion.force_live = false
-	NetrunScript.street_route = true
+	NetrunScript.force_street_error = ""
 	AudioDirector.muted = false
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
@@ -85,7 +85,7 @@ func test_a_selection_waits_for_the_confirm_which_travels() -> void:
 
 func test_a_run_whose_street_cannot_be_derived_keeps_the_transit_page_and_a_press_travels() -> void:
 	# NA-26: the fallback page (no 2D map): the ROUTE window lists the choices; the number key / a press travels directly.
-	NetrunScript.street_route = false
+	NetrunScript.force_street_error = "test seam: no street"
 	var scene := _netrun()
 	await _frames(4)
 	var s := RunManager.netrun

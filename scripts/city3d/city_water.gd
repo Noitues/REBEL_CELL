@@ -10,6 +10,12 @@ extends Node3D
 ## netrun look and reduce motion.
 
 const SHADER := preload("res://shaders/city/city_water.gdshader")
+const SMEAR_SHADER := preload("res://shaders/city/city_water_smear.gdshader")
+## Smear sampling step along its path (BU) and the shortest smear kept (BU).
+const SMEAR_STEP_BU := 0.5
+const SMEAR_MIN_BU := 2.0
+## Coping zoom scale is quantised to this step so the strip is rebuilt only when it visibly changes.
+const COPING_STEP := 0.25
 ## Heights (BU) of the void and the sea above the ground plane (the void under the city's ground, the sea over it).
 const VOID_Y := -0.04
 const SEA_Y := 0.03
@@ -19,6 +25,14 @@ var void_mat: ShaderMaterial
 ## The sea wall's face and the piers' decks (toon-lit; CityView3D's day ramp reaches them) and their lights (emission).
 var wall_mat: ShaderMaterial
 var light_mat: ShaderMaterial
+var smear_mat: ShaderMaterial
+var smears: int = 0
+## The lot of each smear's light (probe / capture aid), in build order.
+var smear_lots: Array[Vector2i] = []
+var coping_scale: float = 1.0
+var _cfg: CityConfig
+var _plan: CityPlan
+var _light_mi: MeshInstance3D
 var piers: int = 0
 var wall_edges: int = 0
 
@@ -27,21 +41,28 @@ var wall_edges: int = 0
 static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: float) -> CityWater:
 	var w := CityWater.new()
 	w.name = "Water"
+	w._cfg = cfg
+	w._plan = plan
 	w.water_mat = _water_material(cfg, false)
 	w.void_mat = _water_material(cfg, true)
 	w.wall_mat = CityMaterials.ground(cfg, false)
 	w.light_mat = CityMaterials.ground(cfg, true)
 	w.light_mat.set_shader_parameter(&"lane_gain", cfg.seawall_light_gain)
+	w.smear_mat = _smear_material(cfg)
 	w._add(_void_mesh(outer_bu), w.void_mat, "Void")
 	w._add(_sea_mesh(cfg, plan), w.water_mat, "Sea")
-	var wall := _wall_meshes(cfg, plan)
+	var wall := _wall_meshes(cfg, plan, 1.0)
 	w.wall_edges = int(wall["edges"])
 	w._add(wall["face"], w.wall_mat, "SeaWall")
-	w._add(wall["light"], w.light_mat, "SeaWallLight")
+	w._light_mi = w._add(wall["light"], w.light_mat, "SeaWallLight")
 	var pier := _pier_meshes(cfg, plan, model)
 	w.piers = int(pier["count"])
 	w._add(pier["deck"], w.wall_mat, "Piers")
 	w._add(pier["lamp"], w.light_mat, "PierLamps")
+	var sm := _smear_mesh(cfg, plan, pier["lamp_lots"])
+	w.smears = int(sm["count"])
+	w.smear_lots = sm["lots"]
+	w._add(sm["mesh"], w.smear_mat, "ShoreReflections")
 	return w
 
 
@@ -52,30 +73,62 @@ func lit_materials() -> Array[ShaderMaterial]:
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
 func set_night(n: float) -> void:
-	for m in [water_mat, void_mat]:
+	for m in [water_mat, void_mat, smear_mat]:
 		m.set_shader_parameter(&"night", n)
 
 
 ## The netrun look's blend (NA-22): the sea and the void lifted by `water_look_gain` at 1.
 func set_look_blend(lb: float) -> void:
-	for m in [water_mat, void_mat]:
+	for m in [water_mat, void_mat, smear_mat]:
 		m.set_shader_parameter(&"look_blend", lb)
 
 
 ## 0 freezes the ripple (reduce motion), 1 runs it.
 func set_time_scale(s: float) -> void:
 	water_mat.set_shader_parameter(&"time_scale", s)
+	smear_mat.set_shader_parameter(&"time_scale", s)
 
 
-func _add(mesh: Mesh, mat: Material, node_name: String) -> void:
-	if mesh == null:
+## The coping's zoom scale at camera size `ortho` (BU): 1 at and nearer than `coping_ref_ortho`, growing in step with the
+## zoom-out up to `coping_zoom_max`, quantised to COPING_STEP.
+static func coping_scale_at(cfg: CityConfig, ortho: float) -> float:
+	var raw := clampf(ortho / maxf(cfg.coping_ref_ortho, 0.001), 1.0, maxf(cfg.coping_zoom_max, 1.0))
+	return snappedf(raw, COPING_STEP)
+
+
+## The coping's top-strip width (BU) at `scale` (coping_scale_at).
+static func coping_width_bu(cfg: CityConfig, scale: float) -> float:
+	return cfg.seawall_coping_bu * scale
+
+
+## The coping's emission gain at `scale`: seawall_light_gain at 1, `coping_gain_far` times that at coping_zoom_max.
+static func coping_gain(cfg: CityConfig, scale: float) -> float:
+	var span := maxf(cfg.coping_zoom_max - 1.0, 0.001)
+	var k := clampf((scale - 1.0) / span, 0.0, 1.0)
+	return cfg.seawall_light_gain * lerpf(1.0, cfg.coping_gain_far, k)
+
+
+## The camera size changed: the coping strip is rebuilt wider (and brighter) when the zoom-out scale moved a step.
+func set_zoom(ortho: float) -> void:
+	var sc := coping_scale_at(_cfg, ortho)
+	if is_equal_approx(sc, coping_scale) and _light_mi != null:
 		return
+	coping_scale = sc
+	light_mat.set_shader_parameter(&"lane_gain", coping_gain(_cfg, sc))
+	if _light_mi != null:
+		_light_mi.mesh = _wall_meshes(_cfg, _plan, sc)["light"]
+
+
+func _add(mesh: Mesh, mat: Material, node_name: String) -> MeshInstance3D:
+	if mesh == null:
+		return null
 	var mi := MeshInstance3D.new()
 	mi.name = node_name
 	mi.mesh = mesh
 	mi.material_override = mat
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
+	return mi
 
 
 static func _water_material(cfg: CityConfig, is_void: bool) -> ShaderMaterial:
@@ -90,17 +143,96 @@ static func _water_material(cfg: CityConfig, is_void: bool) -> ShaderMaterial:
 	m.set_shader_parameter(&"ripple_bu", cfg.water_ripple_bu)
 	m.set_shader_parameter(&"ripple_speed", cfg.water_ripple_speed)
 	m.set_shader_parameter(&"ripple_gain", cfg.water_ripple_gain)
-	m.set_shader_parameter(&"reflect_reach", cfg.water_reflect_reach_lots)
-	m.set_shader_parameter(&"reflect_gain", cfg.water_reflect_gain)
-	m.set_shader_parameter(&"reflect_streak", cfg.water_reflect_streak_lots)
-	m.set_shader_parameter(&"reflect_width", cfg.water_reflect_width)
-	m.set_shader_parameter(&"reflect_share", cfg.water_reflect_share)
-	var names: Array[StringName] = [&"reflect_a", &"reflect_b", &"reflect_c", &"reflect_d"]
-	for k in names.size():
-		var rc: Color = cfg.water_reflect_colors[k % cfg.water_reflect_colors.size()] if not cfg.water_reflect_colors.is_empty() else Color.BLACK
-		m.set_shader_parameter(names[k], Vector3(rc.r, rc.g, rc.b))
+	m.set_shader_parameter(&"shallow_lots", cfg.water_shallow_lots)
+	m.set_shader_parameter(&"caustic_bu", cfg.water_caustic_bu)
+	m.set_shader_parameter(&"caustic_speed", cfg.water_caustic_speed)
+	m.set_shader_parameter(&"caustic_gain", cfg.water_caustic_gain)
+	m.set_shader_parameter(&"caustic_night", Vector3(cfg.water_caustic_night.r, cfg.water_caustic_night.g, cfg.water_caustic_night.b))
+	m.set_shader_parameter(&"caustic_day", Vector3(cfg.water_caustic_day.r, cfg.water_caustic_day.g, cfg.water_caustic_day.b))
+	m.set_shader_parameter(&"foam_lots", cfg.water_foam_lots)
+	m.set_shader_parameter(&"foam_gain", cfg.water_foam_gain)
 	m.set_shader_parameter(&"look_gain", cfg.water_look_gain)
 	return m
+
+
+static func _smear_material(cfg: CityConfig) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = SMEAR_SHADER
+	m.set_shader_parameter(&"gain", cfg.water_reflect_gain)
+	m.set_shader_parameter(&"length_bu", cfg.water_reflect_reach_lots * cfg.lot_bu)
+	m.set_shader_parameter(&"ripple_bu", cfg.water_ripple_bu)
+	m.set_shader_parameter(&"ripple_speed", cfg.water_ripple_speed)
+	m.set_shader_parameter(&"look_gain", cfg.water_look_gain)
+	return m
+
+
+## Screen-down on the ground (the horizontal direction toward the camera, world XZ) for the config's yaw.
+static func screen_down(cfg: CityConfig) -> Vector2:
+	var yw := deg_to_rad(cfg.yaw_deg)
+	return Vector2(-cos(yw), sin(yw))
+
+
+## A stable 0..1 hash of a shore edge (lot, direction) and a salt, no randomness service needed (pure function of the plan).
+static func edge_hash(l: Vector2i, d: Vector2i, salt: int) -> float:
+	var h: int = (l.x * 73856093) ^ (l.y * 19349663) ^ (d.x * 83492791) ^ (d.y * 2654435761) ^ (salt * 40503)
+	h = (h ^ (h >> 13)) * 1274126177
+	h = h ^ (h >> 16)
+	return float(h & 0xFFFF) / 65535.0
+
+
+## The shore lights' reflections: on `water_reflect_share` of the sea-wall edges a light sits at a hashed point along the
+## edge, and a smear hangs straight down the screen from its foot, as long as it stays over water, at most
+## `water_reflect_reach_lots`. Edges whose sea lies up the screen (the near shore) get none: the wall hides it.
+static func _smear_mesh(cfg: CityConfig, plan: CityPlan, lamps: Array[Vector2]) -> Dictionary:
+	var a := MeshArrays.new()
+	var count := 0
+	var lots: Array[Vector2i] = []
+	for l in plan.shoreline():
+		for d in DIRS:
+			if not plan.is_water(l.x + d.x, l.y + d.y):
+				continue
+			if edge_hash(l, d, 1) >= cfg.water_reflect_share:
+				continue
+			var e := _edge(l, d)
+			var f := 0.15 + 0.7 * edge_hash(l, d, 2)
+			var start := CityIsoCamera.lot_to_world(cfg, e[0].lerp(e[1], f), SEA_Y + 0.02)
+			start += Vector3(d.x, 0.0, d.y) * 0.15
+			if _add_smear(a, cfg, plan, start, edge_hash(l, d, 3), edge_hash(l, d, 4)):
+				count += 1
+				lots.append(l)
+	# Each pier's end lamp stands over the water: its reflection hangs right under it.
+	for lc: Vector2 in lamps:
+		var start := CityIsoCamera.lot_to_world(cfg, lc, SEA_Y + 0.02)
+		var pick := edge_hash(Vector2i(lc.floor()), Vector2i.ZERO, 5)
+		if _add_smear(a, cfg, plan, start, pick, edge_hash(Vector2i(lc.floor()), Vector2i.ZERO, 6)):
+			count += 1
+	return {"mesh": a.mesh(), "count": count, "lots": lots}
+
+
+## One smear quad from world point `start` straight down the screen, clipped where the water ends; false when it would
+## be shorter than SMEAR_MIN_BU.
+static func _add_smear(a: MeshArrays, cfg: CityConfig, plan: CityPlan, start: Vector3, pick: float, seed_: float) -> bool:
+	var down := screen_down(cfg)
+	var reach := cfg.water_reflect_reach_lots * cfg.lot_bu
+	var dir := Vector3(down.x, 0.0, down.y)
+	var length := 0.0
+	while length < reach:
+		var lot := CityIsoCamera.world_to_lot(cfg, start + dir * (length + SMEAR_STEP_BU))
+		if not plan.is_water(floori(lot.x), floori(lot.y)):
+			break
+		length += SMEAR_STEP_BU
+	if length < SMEAR_MIN_BU:
+		return false
+	var palette := cfg.water_reflect_colors
+	var col := Color.BLACK
+	if not palette.is_empty():
+		col = palette[int(pick * 0.999 * palette.size())]
+	col.a = seed_
+	var side := Vector3(-down.y, 0.0, down.x) * cfg.water_smear_w_bu * 0.5
+	var end := start + dir * length
+	a.quad([start - side, start + side, end + side, end - side], Vector3.UP, col,
+		[Vector2(0, -1), Vector2(0, 1), Vector2(length / reach, 1), Vector2(length / reach, -1)])
+	return true
 
 
 static func _void_mesh(outer_bu: float) -> ArrayMesh:
@@ -151,7 +283,7 @@ const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), 
 
 ## The sea wall: on each shoreline lot (CityPlan.shoreline) a face on every edge that meets a sea lot, from
 ## `seawall_drop` under the water to `seawall_h` over it, and a lit coping strip (`seawall_light_h`) on its sea side.
-static func _wall_meshes(cfg: CityConfig, plan: CityPlan) -> Dictionary:
+static func _wall_meshes(cfg: CityConfig, plan: CityPlan, scale: float) -> Dictionary:
 	var face := MeshArrays.new()
 	var light := MeshArrays.new()
 	var edges := 0
@@ -169,6 +301,11 @@ static func _wall_meshes(cfg: CityConfig, plan: CityPlan) -> Dictionary:
 			var o := n * 0.02
 			light.quad([a + o + Vector3(0, cfg.seawall_h - cfg.seawall_light_h, 0), b + o + Vector3(0, cfg.seawall_h - cfg.seawall_light_h, 0),
 				b + o + Vector3(0, cfg.seawall_h + 0.01, 0), a + o + Vector3(0, cfg.seawall_h + 0.01, 0)], n, cfg.seawall_light_color)
+			# The coping's top strip, reaching out over the water by its zoom-scaled width.
+			var wd := coping_width_bu(cfg, scale)
+			var top := cfg.seawall_h + 0.02
+			light.quad([a + n * -wd * 0.25 + Vector3(0, top, 0), b + n * -wd * 0.25 + Vector3(0, top, 0),
+				b + n * wd * 0.75 + Vector3(0, top, 0), a + n * wd * 0.75 + Vector3(0, top, 0)], Vector3.UP, cfg.seawall_light_color)
 	return {"face": face.mesh(), "light": light.mesh(), "edges": edges}
 
 
@@ -190,6 +327,7 @@ static func _pier_meshes(cfg: CityConfig, plan: CityPlan, model: CityModel) -> D
 	var deck := MeshArrays.new()
 	var lamp := MeshArrays.new()
 	var count := 0
+	var lamp_lots: Array[Vector2] = []
 	var lots: Array = []
 	for s: Dictionary in model.streets:
 		var ai := bool(s["along_i"])
@@ -219,8 +357,9 @@ static func _pier_meshes(cfg: CityConfig, plan: CityPlan, model: CityModel) -> D
 		var lc := tip - Vector2(d) * lh * 2.0
 		_box(lamp, cfg, [lc + Vector2(-lh, -lh), lc + Vector2(lh, -lh), lc + Vector2(lh, lh), lc + Vector2(-lh, lh)], cfg.pier_h,
 			cfg.pier_h + cfg.pier_lamp_bu, cfg.pier_lamp_color)
+		lamp_lots.append(lc)
 		count += 1
-	return {"deck": deck.mesh(), "lamp": lamp.mesh(), "count": count}
+	return {"deck": deck.mesh(), "lamp": lamp.mesh(), "count": count, "lamp_lots": lamp_lots}
 
 
 ## A prism on lot-space quad `q` (4 corners) from y0 to y1 (BU): its top and four sides.

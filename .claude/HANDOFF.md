@@ -76,6 +76,13 @@
     value strip void < sea < land), day saturated mid-blue + lighter shallows; marbled caustics + foam; shore reflections =
     soft short vertical smears under each shore light broken by ripple (never regular dashes = grease-pencil vocabulary);
     coping strip brighter/wider scaled by zoom. Re-sheet with plates beside: whole city seed 1 night + day, bay crop, value strip.
+  - NA-12 r3 RUNNING (on w1-close). COMBAT-LOCK r2 DONE (branch worktree-agent-aa06f4192301aa04a @ d029c896, review B-019).
+  - QUEUED (A-031): NA-25b r4 on w1-close: no 25x raster (flat class-color hub field + bezel inner ring + emblem native/hi-res,
+    centered, whole; same in < 0.5 s breathe); CRT hold: visible hex dump column 15-20 % value, 3 px scanlines at 1:1, cyan edge
+    rim, blinking block caret; frame 7: CRT fades with the hub, HUD stays under the lens until the hole passes. Re-sheet 9 tiles +
+    2 bits crops (1:1 at 0.55 / 0.30) + 1:1 CRT crop.
+  - QUEUED (A-032): NA-ID-c on main: `git apply` art-pass HANDOFF_PACKAGE/id_ground/id_ground.patch, re-run the hq compound +
+    landmark builders, tris unchanged except orbital_hq -656, remove the 0.8 BU height cut, re-run the 3 ID frames.
   - W2 adds: NA-12c terrain (hills heightfield render, coastlines, marinas, lighthouse, islands), NA-12d harbour movers (boats
     on the bay, ships at piers, lit offshore platforms).
 - PT-005 waits for: w1-close merged, 15, 18.1-18.3 merged.

@@ -21,11 +21,15 @@ var _cfg: DressingConfigData = null
 ## Group id -> the instance dicts (`DressKit.item`) of the group (the MultiMesh data read back is empty headless).
 var items: Dictionary = {}
 var _mats: Dictionary = {}
+var _r2_frontage: bool = false
 
 
 ## Builds the dressing of the street `derive` over `city`. `dress_in` is the dress v1 dict (empty: `NetrunArtDress.dress_street`).
-static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}) -> StreetDressing:
+## `r2_frontage` leaves out the signs, shops, billboards and lamps (the hero blade bars and the rest of the old frontage dressing): the
+## street r2 frontage (`StreetR2Builder`) draws them instead; glows, washes, plumes, beams and lanes stay.
+static func build(derive: Dictionary, city: Dictionary, dress_in: Dictionary = {}, r2_frontage: bool = false) -> StreetDressing:
 	var s := StreetDressing.new()
+	s._r2_frontage = r2_frontage
 	s._build(derive, city, dress_in)
 	return s
 
@@ -41,11 +45,12 @@ func _build(derive: Dictionary, city: Dictionary, dress_in: Dictionary) -> void:
 	var col_by_bid: Dictionary = {}
 	for ci: Dictionary in derive["col_info"]:
 		col_by_bid[String(ci["bid"])] = ci
-	_hero_signs(dress["signs"], col_by_bid)
-	_city_signs(plan["signs"])
-	_shops(plan["shops"])
-	_billboards(plan["billboards"])
-	_lamps(dress["lamps"])
+	if not _r2_frontage:
+		_hero_signs(dress["signs"], col_by_bid)
+		_city_signs(plan["signs"])
+		_shops(plan["shops"])
+		_billboards(plan["billboards"])
+		_lamps(dress["lamps"])
 	_discs("glow", dress["glows"], false)
 	_discs("wash", dress["washes"], true)
 	_plumes(plan["plumes"])
@@ -339,7 +344,7 @@ func _lanes(list: Array) -> void:
 ## Ordered by the dress lists (deterministic); the caps are applied by the rig.
 func light_sources(derive: Dictionary) -> Dictionary:
 	var lc: Dictionary = CityShaderConfigData.shipped().aaa["lights"]
-	var out := {"lamps": [], "glows": [], "washes": [], "facades": [], "beams": [], "city_glow": []}
+	var out := {"lamps": [], "glows": [], "washes": [], "facades": [], "beams": [], "city_glow": [], "city_glow_high": []}
 	for l: Dictionary in dress["lamps"]:
 		var p: Array = l["pos"]
 		(out["lamps"] as Array).append({"pos": DressKit.pos_w([p[0], p[1], float(lc["lamp"]["height"])]), "col": _col(String(l["pal"]), p)})
@@ -383,4 +388,10 @@ func light_sources(derive: Dictionary) -> Dictionary:
 		var off: float = offs[(i / 6) % 3]
 		var p: Array = NetrunArtDress.world(_f, u, float(_f["cline"]) + off * float(_f["ncross"]), float(cg["height"]))
 		(out["city_glow"] as Array).append({"pos": DressKit.pos_w(p), "col": cc[i % 3]})
+	# P6 (A-036): the lit haze of the plate's sky is the fog volumes lit by fog-only lights; the high ones sit above the skyline.
+	for i in int(cg["high_count"]):
+		var u2: float = lerpf(-120.0, float(_f["length"]) + 120.0, float(i % 6) / 5.0)
+		var off2: float = float(cg["side"]) * float(3 + 2 * ((i / 6) % 3))
+		var p2: Array = NetrunArtDress.world(_f, u2, float(_f["cline"]) + off2 * float(_f["ncross"]), float(cg["high_height"]))
+		(out["city_glow_high"] as Array).append({"pos": DressKit.pos_w(p2), "col": cc[(i + 1) % 3]})
 	return out

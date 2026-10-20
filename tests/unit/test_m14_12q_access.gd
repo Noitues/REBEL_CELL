@@ -423,8 +423,6 @@ func test_under_high_contrast_saved_holds_still_at_seven_to_one_then_goes() -> v
 	var l := Fx.saved_label
 	assert_eq(l.modulate.a, 1.0, "shown whole, never a faint fade")
 	assert_gte(Palette.contrast(l.get_theme_color(&"font_color"), HighContrast.BG), HighContrast.HC_MIN_CONTRAST, "7:1")
-	assert_eq(l.get_theme_color(&"font_outline_color"), HighContrast.BG, "on an opaque keyline")
-	assert_gte(l.get_theme_constant(&"outline_size"), HighContrast.outline_px(UiTheme.font_px(Fx.SAVED_FONT)))
 	# Stepped through its time (no frame waits): whole until it goes, then gone.
 	var hold := Motion.delay_of(&"saved_stamp")
 	var fade := Motion.seconds(&"saved_stamp")

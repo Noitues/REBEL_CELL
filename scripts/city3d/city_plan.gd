@@ -2,40 +2,45 @@ class_name CityPlan
 extends RefCounted
 ## Plan 2 NA-12 (D3): where a city seed's territories, HQ lots, Site layouts and coast lie, in
 ## lots. NeonCity (and so CityLayoutRecorder, CityModel, city.json and every map) reads its city
-## through the plan of its `city_seed`: the fixed seed (`CityConfig.city_seed`) is today's fixed
-## city (NeonCity.TERRITORIES, the config's Site headings, no coast), the fallback that goldens
-## and fixtures pin; every other seed is CityGenerator's. Pure data plus pure lookups; the
-## plans are cached by seed (a plan is a pure function of its seed and the configs).
+## through the plan of its `city_seed`. CITY-A2 step 2: every seed's city is the planner city A2
+## (CityA2Builder.make_plan), the default seed (`CityConfig.city_seed`, no campaign) included; the
+## old grid generator and the fixed city are gone. Pure data plus pure lookups; the plans are
+## cached by seed (a plan is a pure function of its seed and the configs).
 ##
-## The campaign's city is `current()`: the running campaign's `city_seed`, else the fixed one.
+## The campaign's city is `current()`: the running campaign's `city_seed`, else the default one.
 
 ## Territories: {"id": StringName (&"" = neutral Sprawl), "at": Vector2 (lots; a corporation's
 ## HQ rect's top-left), "pull": float}, the corporations sorted by id, then the Sprawl centres.
 var territories: Array[Dictionary] = []
 var city_seed: int = 0
-## True for the fixed city (no generator run).
-var fixed: bool = false
-## True when the generator found no layout in `city_gen_attempts` and fell back to the fixed
-## territories (never seen in the 1,000-seed sweep; kept so a bad config never breaks a city).
+## True when the A2 plan could not be made (the file does not load, or a corporation found no HQ spot or Site heading;
+## never seen in the seed sweeps): the plan then holds NeonCity.TERRITORIES, no coast and no terrain, so a bad file or
+## config never breaks a city.
 var fallback: bool = false
-## Generator attempts used (1 = the first layout passed).
-var attempts: int = 0
-## Why the generator's last attempt failed ("" when it passed; a diagnostic, not saved).
+## Why the plan failed ("" when it passed; a diagnostic, not saved).
 var failure: String = ""
 ## The heading (degrees) each corporation's Site layout is turned round its HQ, and whether it
 ## is mirrored (CityLayout.site_points_aimed).
 var site_aim: Dictionary = {}
 var site_mirror: Dictionary = {}
-## The coast, or {} (no sea): {"side": 0 west (low i) / 1 east / 2 north (low j) / 3 south,
-## "depth", "amp", "wavelength", "phase", "amp2", "wavelength2", "phase2" (two waves), "bay_at", "bay_depth",
-## "bay_width" (the A2 bay: a Gaussian bump of the shore into the land)} in lots from `rect`'s edge (`shore_at`).
+## The coast, or {} (no sea): {"side": the city rect's side with the most sea lots (0 west (low i) / 1 east / 2 north
+## (low j) / 3 south; CityWater's run axis), "a2": true}.
 var coast: Dictionary = {}
 ## NA-12 r2: terrain hills (data only until NA-12c renders them), city_A2.json's Gaussian form in lots and BU:
 ## {"centre": Vector2 (lots), "sigma_x", "sigma_y" (lots), "height" (BU), "rotation" (radians)}.
 var hills: Array[Dictionary] = []
 ## The city rect the coast is measured from (lots).
 var rect: Rect2i = Rect2i()
+## CITY-A2: the planner city A2 on the lot grid (CityA2Builder), or null for a fallback plan.
+## When set it answers water, land depth and territories.
+var a2: CityA2Raster = null
+## CITY-A2 step 2: the ground the city stands on (seed-independent, shared by every A2 plan), or null (flat at 0).
+var terrain: CityA2Terrain = null
+## CITY-A2: the lots the Site layouts stand on (Vector2i -> true; a building there stays one lot, never merged).
+var a2_sites: Dictionary = {}
 
+## city.json's terrain heights are rounded to this many decimals (BU).
+const HEIGHT_DECIMALS := 3
 const FIXED_CONFIG_PATH := "res://content/config/campaign_config.tres"
 
 static var _cache: Dictionary = {}
@@ -75,52 +80,30 @@ func hq_rects(hq_lots: int) -> Dictionary:
 	return out
 
 
-## The shore's distance (lots) from `rect`'s sea edge at `along` (the coordinate along that edge: j for a west / east
-## sea, i for a north / south one): the base depth, two waves, and the bay (a Gaussian bump into the land at "bay_at").
-func shore_at(along: float) -> float:
-	var s := float(coast["depth"]) + float(coast["amp"]) * sin(TAU * along / float(coast["wavelength"]) + float(coast["phase"]))
-	s += float(coast.get("amp2", 0.0)) * sin(TAU * along / float(coast.get("wavelength2", 1.0)) + float(coast.get("phase2", 0.0)))
-	var u := (along - float(coast.get("bay_at", 0.0))) / maxf(float(coast.get("bay_width", 1.0)), 0.001)
-	return s + float(coast.get("bay_depth", 0.0)) * exp(-u * u)
-
-
-## The inland unit vector (lots) of the sea side.
-func inland() -> Vector2:
-	return [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)][int(coast["side"])]
-
-
-## The lot point `d` lots inland of the sea edge at `along`.
-func edge_point(along: float, d: float) -> Vector2:
-	match int(coast["side"]):
-		0:
-			return Vector2(float(rect.position.x) + d, along)
-		1:
-			return Vector2(float(rect.end.x) - d, along)
-		2:
-			return Vector2(along, float(rect.position.y) + d)
-	return Vector2(along, float(rect.end.y) - d)
-
-
-## How far point (x, y) (lots) lies inland of the coast (negative: in the sea); INF without one.
+## How far point (x, y) (lots) lies inland of the coast (negative: in the water); INF without A2.
 func land_depth(x: float, y: float) -> float:
-	if coast.is_empty():
-		return INF
-	var side := int(coast["side"])
-	var along := y if side < 2 else x
-	var shore := shore_at(along)
-	match side:
-		0:
-			return x - float(rect.position.x) - shore
-		1:
-			return float(rect.end.x) - x - shore
-		2:
-			return y - float(rect.position.y) - shore
-	return float(rect.end.y) - y - shore
+	return a2.depth_at(x, y) if a2 != null else INF
 
 
-## True when lot (i, j)'s centre is in the sea.
+## CITY-A2 step 2: the ground (BU above sea level) at lot point (x, y); 0 without terrain.
+func ground_at(x: float, y: float) -> float:
+	return terrain.height_at(x, y) if terrain != null else 0.0
+
+
+## The ground (BU) a building on lots `cell` stands on (its lowest corner); 0 without terrain.
+func cell_ground(cell: Rect2i) -> float:
+	return terrain.cell_ground(cell) if terrain != null else 0.0
+
+
+## True when lot (i, j)'s centre is in the water.
 func is_water(i: int, j: int) -> bool:
-	return not coast.is_empty() and land_depth(i + 0.5, j + 0.5) < 0.0
+	return a2 != null and a2.is_water(i, j)
+
+
+## CITY-A2: [owner, runner-up, border 0-1] of lot (i, j) from the A2 districts (NeonCity's `_territory_pair` form),
+## or [] for a city without A2 (NeonCity then uses its nearest-centre territories).
+func territory_pair(i: int, j: int) -> Array:
+	return a2.territory_pair(i, j) if a2 != null else []
 
 
 ## The sea lots inside `rect`, row by row (j, then i).
@@ -158,9 +141,9 @@ func sea_side() -> String:
 
 ## NA-12 r2: the optional additive `city.json` v1 sections of this city (NA02_FIELDS 2, "Optional sections"):
 ## `coast {sea_side, shoreline [[i, j]...], sea_cells [[i, j]...]}` (lots, row order) and `terrain {hills [{centre [x, y],
-## sigma_x, sigma_y, height, rotation}]}` (plan BU, city_A2.json's Gaussian form). {} for the fixed city (no key).
+## sigma_x, sigma_y, height, rotation}]}` (plan BU, city_A2.json's Gaussian form). {} without A2 (a fallback plan: no key).
 func city_sections(lot_bu: float, origin: Vector2) -> Dictionary:
-	if fixed or coast.is_empty():
+	if coast.is_empty():
 		return {}
 	var shore := []
 	for c in shoreline():
@@ -172,7 +155,13 @@ func city_sections(lot_bu: float, origin: Vector2) -> Dictionary:
 	for h in hills:
 		hl.append({"centre": NetrunArtExport.plan_point(h["centre"], lot_bu, origin), "sigma_x": float(h["sigma_x"]) * lot_bu,
 			"sigma_y": float(h["sigma_y"]) * lot_bu, "height": float(h["height"]), "rotation": -float(h["rotation"])})  # plan y = -j
-	return {"coast": {"sea_side": sea_side(), "shoreline": shore, "sea_cells": sea}, "terrain": {"hills": hl}}
+	var terr := {"hills": hl}
+	if terrain != null:
+		# CITY-A2 step 2: the ground at every lot corner of the city rect (BU), so Blender renders the same ground:
+		# rows[r][c] is the corner of lot (rect.x + c, rect.y + r), plan point origin + (c, -r) x step.
+		terr["heights"] = {"origin": NetrunArtExport.plan_point(Vector2(rect.position), lot_bu, origin), "step": lot_bu,
+			"size": [rect.size.x + 1, rect.size.y + 1], "rows": terrain.corner_grid(rect, HEIGHT_DECIMALS)}
+	return {"coast": {"sea_side": sea_side(), "shoreline": shore, "sea_cells": sea}, "terrain": terr}
 
 
 ## The plan as plain data (ints, floats, strings; sorted keys when made canonical), for
@@ -192,19 +181,31 @@ func to_dict() -> Dictionary:
 	for h in hills:
 		var c: Vector2 = h["centre"]
 		hl.append({"centre": [c.x, c.y], "sigma_x": h["sigma_x"], "sigma_y": h["sigma_y"], "height": h["height"], "rotation": h["rotation"]})
-	return {"layout_seed": ArtSeed.u64_str(city_seed), "fixed": fixed, "fallback": fallback, "territories": terr,
+	var sites: Array = []
+	for l: Vector2i in a2_sites:
+		sites.append(l)
+	sites.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y if a.y != b.y else a.x < b.x)
+	var site_list: Array = []
+	for l: Vector2i in sites:
+		site_list.append([l.x, l.y])
+	return {"layout_seed": ArtSeed.u64_str(city_seed), "fallback": fallback, "territories": terr,
 		"site_aim": aims, "site_mirror": mirrors, "coast": coast.duplicate(), "hills": hl,
-		"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y]}
+		"rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y], "source": source(), "a2_sites": site_list}
+
+
+## Where this plan's city comes from: "a2" (the planner city) or "fallback" (A2 could not be made).
+func source() -> String:
+	return "a2" if a2 != null else "fallback"
 
 
 # --- The game's plans ---------------------------------------------------------------------------
 
-## The fixed city's seed (CityConfig.city_seed: the layout every golden and fixture pins).
-static func fixed_seed() -> int:
+## The default city seed (CityConfig.city_seed: the city with no campaign running, the one goldens and fixtures pin).
+static func default_seed() -> int:
 	return CityView3D.CONFIG.city_seed
 
 
-## The city seed of the running campaign (its `city_seed`; 0 = the fixed city), else the fixed seed.
+## The city seed of the running campaign (its `city_seed`; 0 = the default city), else the default seed.
 static func current_seed() -> int:
 	var loop := Engine.get_main_loop() as SceneTree
 	var rm: Node = loop.root.get_node_or_null("RunManager") if loop != null else null
@@ -212,7 +213,7 @@ static func current_seed() -> int:
 		var c: Variant = rm.get("campaign")
 		if c is CampaignState and (c as CampaignState).city_seed != 0:
 			return (c as CampaignState).city_seed
-	return fixed_seed()
+	return default_seed()
 
 
 ## The plan of the running campaign's city.
@@ -225,37 +226,46 @@ static func for_seed(p_seed: int) -> CityPlan:
 	_mutex.lock()
 	var p: CityPlan = _cache.get(p_seed)
 	if p == null:
-		p = make_fixed() if p_seed == fixed_seed() else generate(p_seed, _config())
-		p.city_seed = p_seed
+		p = generate(p_seed, _config())
 		_cache[p_seed] = p
 	_mutex.unlock()
 	return p
 
 
-## A fresh generator run for `p_seed` with config `cfg` (not cached): the RNG is the seed's own
-## named stream (RngStreams.make_stream(p_seed, CITY_LAYOUT_STREAM)), never a campaign stream.
+## A fresh plan for `p_seed` with config `cfg` (not cached): the planner city A2 (CityA2Builder.make_plan). Its RNG is the
+## seed's own named streams, never a campaign stream. A failed plan comes back as `fallback`: NeonCity.TERRITORIES, the
+## config's Site headings, no coast and no terrain.
 static func generate(p_seed: int, cfg: CampaignConfigData) -> CityPlan:
-	var frame := site_frame()
-	var corp_ids: Array = []
-	for t in NeonCity.TERRITORIES:
-		if t["id"] != &"":
-			corp_ids.append(t["id"])
-	var p := CityGenerator.generate(RngStreams.make_stream(p_seed, RngStreams.CITY_LAYOUT_STREAM), cfg, CityView3D.CONFIG.city_rect,
-		corp_ids, NeonCity.FIST_TERRITORY, NeonCity.HQ_LOTS, frame)
+	var p := CityA2Builder.make_plan(p_seed, cfg, CityView3D.CONFIG.city_rect, _corp_ids(), NeonCity.FIST_TERRITORY, NeonCity.HQ_LOTS,
+		site_frame(), NeonCity.BORDER_BLEND, CityView3D.CONFIG.lot_bu)
 	if p.fallback:
-		var f := make_fixed()
-		f.fallback = true
-		f.attempts = p.attempts
+		var f := _make_fallback()
 		f.failure = p.failure
 		p = f
 	p.city_seed = p_seed
 	return p
 
 
-## Today's fixed city: NeonCity.TERRITORIES, the config's Site headings, no coast.
-static func make_fixed() -> CityPlan:
+## Forgets every cached plan and A2 subdivision (tests: a rebuild from scratch).
+static func forget_all() -> void:
+	_mutex.lock()
+	_cache.clear()
+	_mutex.unlock()
+	CityA2Builder.forget()
+
+
+static func _corp_ids() -> Array:
+	var out: Array = []
+	for t in NeonCity.TERRITORIES:
+		if t["id"] != &"":
+			out.append(t["id"])
+	return out
+
+
+## The plan a failed A2 plan falls back to: NeonCity.TERRITORIES, the config's Site headings, no coast, no terrain.
+static func _make_fallback() -> CityPlan:
 	var p := CityPlan.new()
-	p.fixed = true
+	p.fallback = true
 	p.rect = CityView3D.CONFIG.city_rect
 	for t in NeonCity.TERRITORIES:
 		p.territories.append({"id": t["id"], "at": t["at"], "pull": t["pull"]})
@@ -265,7 +275,7 @@ static func make_fixed() -> CityPlan:
 	return p
 
 
-## The Site layout's frame (CityLayout.site_points_aimed's numbers) for the generator.
+## The Site layout's frame (CityLayout.site_points_aimed's numbers) for the A2 Site headings.
 ## NA-12 r2: with each corporation's Site layout (`uvs`, CityLayout.site_uvs, read from the content folder so any
 ## process mode gives the same city), so its Sites, not its whole layout box, keep off the other HQs.
 static func site_frame() -> Dictionary:
@@ -278,6 +288,11 @@ static func site_frame() -> Dictionary:
 	return {"right": CityLayout.RIGHT, "down": CityLayout.DOWN, "run_half": CityLayout.RUN_HALF, "cross_half": CityLayout.CROSS_HALF,
 		"boss_gap": CityLayout.BOSS_GAP, "cross_offset": CityLayout.CROSS_OFFSET, "spread": maxf(CityView3D.CONFIG.site_spread, 0.1),
 		"uvs": _uvs}
+
+
+## The campaign config the game's plans are made with (A2's numbers).
+static func plan_config() -> CampaignConfigData:
+	return _config()
 
 
 static func _config() -> CampaignConfigData:

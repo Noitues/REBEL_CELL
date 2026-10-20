@@ -85,12 +85,13 @@ static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Ar
 		var hq := bool(pr.get("hq", false))
 		var bid := "hq:%s" % pr["terr"] if hq else "%d:%d" % [cell.position.x, cell.position.y]
 		if not by_bid.has(bid):
-			by_bid[bid] = {"bid": bid, "cell": _rect(cell), "terr": String(pr["terr"]), "hq": hq, "parts": []}
+			by_bid[bid] = {"bid": bid, "cell": _rect(cell), "terr": String(pr["terr"]), "hq": hq, "parts": [],
+				"ground": float(pr.get("ground", 0.0))}
 		var poly := []
 		for q: Vector2 in pr["poly"]:
 			poly.append([q.x, -q.y])
 		var parts: Array = by_bid[bid]["parts"]
-		parts.append({"poly": poly, "z0": float(pr["y0"]), "h": float(pr["h"]), "taper": float(pr["taper"]),
+		parts.append({"poly": poly, "z0": float(pr["y0"]) - float(pr.get("ground", 0.0)), "h": float(pr["h"]), "taper": float(pr["taper"]),
 			"_ord": parts.size(), "_key": int(pr["key"])})
 	var bids: Array = by_bid.keys()
 	bids.sort()

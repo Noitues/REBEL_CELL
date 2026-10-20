@@ -38,7 +38,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	NetrunScript.street_route = true
+	NetrunScript.force_street_error = ""
 	if _translation != null:
 		TranslationServer.set_locale(_locale_before)
 		TranslationServer.remove_translation(_translation)
@@ -464,7 +464,7 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 		pending(TestScope.REASON)
 		return
 	# NA-26: the list rows are the transit page (a street that cannot be derived); the street page has no list.
-	NetrunScript.street_route = false
+	NetrunScript.force_street_error = "test seam: no street"
 	var scene := _netrun()
 	await _frames()
 	var s := RunManager.netrun

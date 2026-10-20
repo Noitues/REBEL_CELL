@@ -653,11 +653,11 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 	AudioDirector.play_sfx("jack_in")
 	_before_switch = before_switch
 	if scene_switching_enabled:
-		# ART-7 3B: along the link on the City Grid when the jack starts from one (4.6). NA-25: with the street route on, the
+		# ART-7 3B: along the link on the City Grid when the jack starts from one (4.6). NA-25: the
 		# jack ends at the CRT collapse and the netrun scene plays the dive (`take_street_entry`).
 		var link := jack_link(site_id)
-		street_entry = street_route_on()
-		if street_entry and not link.is_empty():
+		street_entry = true
+		if not link.is_empty():
 			link["street"] = true
 			street_link = link.duplicate()
 		Fx.jack_in_link(_switch_to_netrun, link, jack_destination(site_id), jack_note(), jack_tier(site_id))
@@ -669,13 +669,8 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 ## NA-25b: the street jack-in's link (screen px of the HQ's map), kept for the jack-out's CRT (`go_to_hq(true)`).
 var street_link: Dictionary = {}
 
-## NA-25: true from a jack in with the street route on until the netrun scene takes it (it then plays the entry's dive).
+## NA-25: true from a jack in until the netrun scene takes it (it then plays the entry's dive).
 var street_entry: bool = false
-
-
-## NA-25: true when netruns draw their route at street level (`NetrunScene.street_route`).
-func street_route_on() -> bool:
-	return bool((load("res://scripts/ui/netrun_scene.gd") as GDScript).get(&"street_route"))
 
 
 ## NA-25: whether the jack that brought the netrun scene in was a street entry; clears it (the scene calls this once, on load).

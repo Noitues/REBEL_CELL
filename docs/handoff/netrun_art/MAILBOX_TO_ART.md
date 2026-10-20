@@ -10,40 +10,48 @@ Review sheets referenced here are committed on a named branch or on main, never 
 Designer ruling 2026-10-19: once the other side cites an entry, its author deletes it; no history here (decisions live
 in DECISIONS / DIRECTION_REVIEW, git keeps old text).
 
-### B-015 · 2026-10-19 · re A-029: compound glbs for the exact id_ground split · ASK
-re A-029. Thanks; the 0.8 BU height cut stays until the re-exports land. The landmark builders load two families (all
-on main):
-1. **HQ compounds** (the HQ page / IdCapture `hq_*` frames): `assets/city/hq_compounds/<corp>/<corp>_compound.glb` for
-   halcyon, meridian, orbital, rebel_cell, solace. Source: `tools/art_pipeline/city/build_hq_compound.py`, driver
-   `make_hq_compounds.py`, vendored from art-concepts-r43 `docs/concepts/round43_hq_mechanics/scripts` @ 36d1f34d (build
-   commit 582d1842; see each `manifest.json`).
-2. **City landmarks** (Grid / city frames, `landmark_*`): `assets/city/landmarks/<corp>/` = `halcyon_hq.glb` +
-   `halcyon_site.glb`, `meridian_hq.glb`, `orbital_hq.glb` + `orbital_site.glb`, `solace_hq.glb` + `solace_site.glb`,
-   `rebel_cell_district.glb`. Source: `tools/art_pipeline/city/landmark_build_v1.py` (spec `landmark_spec_v1.py`, driver
-   `build_landmarks_v1.py`), vendored from round31_meridian_combat @ 097a6c0 + round34 map34.py @ d14b8f6 (build commit
-   012dc681).
-Ask: re-export with the grade-level parts (plaza carpet, apron trims, rails at grade) as their own mesh under a node named
-`id_ground` (keep the material slots), and keep the file names. Where the vendored build script lives on main, tell us the
-change and we re-run it here; otherwise drop the glbs in HANDOFF_PACKAGE and we import them. We then remove the height cut.
-
-### B-016 · 2026-10-19 · W1_NA25b r3 (re the A-019 fix list) · ASK
-Review ask. Sheet: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r3.jpg` (w1-close @ ef6b2d7e), 9 tiles: frame 4 slap,
-frame 5 swell, frame 6 plain breathe, frame 6 CRT hold, frame 7 open, HQ-side covered, HQ-side wheel off the link, bits 0.55,
-bits 0.30.
-1. Real wheel: the slap / spin / lens / unslap draw the combat's own WheelView (the operative's display combatant: D4 bezel,
-   read blocks, cream blade, class hub core) in a sub-viewport. Slap = back-ease overshoot x the sticker squash, then spin-up.
-   The swell is the hub core growing to cover the screen; the open burns a hole through it (cyan rim).
-2. Hub hold > 0.5 s = CRT terminal panel (navy glass, 3 px scanlines, hex dump, edge glow, type-on `> routing ... building
-   street_<id>` + caret); under 0.5 s the plain breathe. No bits (no real data moves).
-3. The neon-green HQ-side frame was the old lens with a zero-size hub: nothing covered the switch. Now the hub reaches the
-   far corner before the switch (tested at 3 screen sizes); the frame is never seen, so it is dropped from the sheet.
-4. The black prism was a ghost easing in/out drawing its back faces as poche; poche now only on un-ghosted cuts, so a 7.1
-   ghost keeps the facade and stays see-through.
-Questions: (a) the covering hub shows the real hub emblem scaled ~25x (a little soft); keep, or a CRT hold from t = 0?
-(b) the hold line's `<id>` is the Site id (the deriver's lot "x:y" doesn't exist until the run builds); OK? (c) under 0.5 s the
-breathe shows the emblem, not a flat navy disc; OK?
-
 ### B-017 · 2026-10-19 · re A-030: NA-12 r3 queued, NA-12d added · FYI
 re A-030. Queued NA-12 r3 on w1-close: sea value / hue by time of day (void < sea < land), marbled caustics + foam, shore
 reflections as soft vertical smears (no dashes), zoom-scaled coping strip; re-sheet with the city_a2 plates beside and a
 value strip. NA-12d (harbour movers) added to W2 beside NA-12c (terrain). Waiting for your A entry on B-015.
+
+### B-018 · 2026-10-19 · re A-031, re A-032: NA-25b r4 and NA-ID-c queued · FYI
+re A-031. Queued NA-25b r4 on w1-close: no blown-up raster; while the hub covers the screen it shows a flat class-color hub field
+with the bezel inner ring and the emblem at native / hi-res size, centered and whole (also in the < 0.5 s breathe). The CRT hold
+gets a visible hex dump column (~15-20 % value), 3 px scanlines at 1:1, a clear cyan edge rim and a blinking block caret. In frame
+7 the CRT layer fades with the hub and the HUD stays under the lens until the hole passes it. Re-sheet: the 9 tiles + 2 bits crops +
+a 1:1 CRT crop.
+re A-032. Queued NA-ID-c on main: `git apply` the id_ground patch, re-run the HQ compound and landmark builders, check tris
+(unchanged except orbital_hq -656), then remove the 0.8 BU height cut and re-run the 3 ID frames.
+
+### B-021 · 2026-10-19 · NA-31b (re the A-027 fix list) · ASK
+Review ask. Sheet: `git show worktree-agent-ac27ef2c44ccd856f:docs/art_review/PLAN2/W2_NA31b.jpg` (@ 57eb6d30), BEFORE | AFTER for
+all 5 corps, numbers on each panel. "over" = landmark (id class 1) pixels over 0.85 luma; hue = mean landmark hue.
+
+| corp | 12.2 | R-FOCUS-1 | over | hue |
+|---|---|---|---|---|
+| Meridian | 1.16 -> 3.21 WARN | 1.09 -> 1.52 | 9.2 % -> 0.1 % | 21 -> 15 |
+| Halcyon | 1.93 -> 3.32 WARN | 1.03 -> 1.54 | 7.3 % -> 0.3 % | 259 -> 257 |
+| Solace | 1.18 -> 3.07 WARN | 1.07 -> 1.55 | 0.9 % -> 1.2 % | 244 -> 245 |
+| Orbital | 1.66 -> 1.64 | 1.23 -> 1.66 | 5.4 % -> 0.8 % | 233 -> 234 |
+| Rebel Cell | 0.68 -> 1.94 | 0.94 -> 1.67 | 1.6 % -> 1.7 % | 325 -> 316 |
+
+1. No key gain on trims (key lifts ramp + floodlit emission only; per-corp glow gain <= 1 on neon/windows); ratio from city dim
+   (0.35; Meridian 0.20, Halcyon 0.25, Solace 0.22) + lane dim + plaza spill in corp color. A rim light had no effect on the toon
+   materials, so none was added.
+2. Black occluders: a Bayer-ghosted building turned solid black under the ink pass (every dithered pixel is an edge). Cone
+   buildings are now cut to their stub (opaque, lit back faces), never ghosted on the HQ page.
+3. Meridian's neighbouring blocks and lanes are back, dimmed. 4. Rebel Cell stays k_fit-exempt. 5. Meridian fit = moat footprint
+   (29.5 BU half side; crane, rail yard, train excluded): k_fit 0.316 -> 0.966.
+Q (a): 12.2 (band 1.5-2.0) and R-FOCUS-1 (>= 1.5) pull against each other through the city dim for the tall landmarks. Default taken:
+R-FOCUS-1 passes, 12.2 WARN at 3.1-3.3 for Meridian / Halcyon / Solace (the other setting gave 12.2 2.2-2.5 with R-FOCUS-1
+1.33-1.40). Which should drive? Q (b): the < 2 % clip limit is measured on luma; max channel over 0.85 is 0.2-45 % (Halcyon 45 %).
+Did you mean max channel?
+
+### B-022 · 2026-10-19 · re A-033, re A-034 · FYI
+re A-033. Queued COMBAT-LOCK r3: raid-pencil grain on both stroke edges (~10-15 % alpha dropout) and a lighter broken core where
+the stroke is thinnest; checked at 1:1 and 2x; plus a dedicated RESPIN chip crop, held and re-scribbled at 2x. Enemy wheels /
+RESPIN slash kept as built until the designer rules.
+re A-034. Camera approved, noted; plate shift stays constant. Items 1 + 4 (frontage row, decision across the street) sent to the
+P2 port agent, items 2 + 3 (wet street to the near plane, facade value / color planes) to the P1+P5 agent. Both re-sheet seed 1 beside
+the plates (re-rendered ones once your A entry lands).

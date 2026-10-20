@@ -297,8 +297,9 @@ def apply_layout_rules(city: Dict[str, Any], net: Dict[str, Any], rules: Optiona
 # ---------------------------------------------------------------------------------------------------------------------
 R2_RULES: Dict[str, Any] = dict(
     # r2_config.py RULES_R2["frontage.silhouette"]
-    silhouette=dict(floors_low=[6, 7], floors_mid=[8, 9], floors_tall=[9, 10], rhythm_p=[0.34, 0.33, 0.33],
-                    height_step_min=2, triple_span_min=3, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
+    # CITY-A2 step 2 (A-039): the floors of art-pass r2_config.py RULES_R2 as the street r2 renders them (ded90765 had 6-7 / 8-9 / 9-10)
+    silhouette=dict(floors_low=[6, 8], floors_mid=[9, 13], floors_tall=[14, 21], rhythm_p=[0.34, 0.33, 0.33],
+                    height_step_min=2, triple_span_min=6, route_sign_floors=3, rotate_run=2, base_h_eps=0.05),
     # RULES_R2["horizon.break"]; spike_spacing_bu replaces the 1/6-frame spacing (no camera at layout time)
     horizon=dict(spikes_min=3, spikes_max=5, spike_k=1.6, backdrop_band=[24.0, 170.0], spike_min_w=4.0,
                  spike_spacing_bu=30.0, pick_jitter=25.0, default_median=15.0),

@@ -26,7 +26,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	SCRIPT.street_route = true
+	SCRIPT.force_street_error = ""
 	CityBakeCache.shutdown()
 	AudioDirector.muted = false
 	RunManager.delete_save()
@@ -34,10 +34,6 @@ func after_each() -> void:
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.reset()
 	RunManager.scene_switching_enabled = true
-
-
-func test_the_street_route_is_on_by_default() -> void:
-	assert_true(SCRIPT.street_route, "NA-26: the street netrun is the default route page")
 
 
 func test_zoom_out_to_the_grid_and_back_changes_no_state() -> void:
@@ -66,7 +62,7 @@ func test_zoom_out_to_the_grid_and_back_changes_no_state() -> void:
 
 
 func test_without_a_street_the_transit_page_lists_the_choices_and_zooms_too() -> void:
-	SCRIPT.street_route = false
+	SCRIPT.force_street_error = "test seam: no street"
 	_scene.start_run(1)
 	await get_tree().process_frame
 	assert_null(_scene.street_view)

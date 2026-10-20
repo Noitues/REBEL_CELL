@@ -585,17 +585,35 @@ func _draw_chip(box: Rect2, n: int, kk: float) -> void:
 	draw_string(f, Vector2(box.position.x, y), str(n), HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, RouteInk.KEYLINE)
 
 
-func _draw_token(r: float, kk: float) -> void:
+## Where the operative token's centre sits, in sticker radii from the current room's sticker (up and to the right, the pin look).
+const TOKEN_OFFSET_R := Vector2(0.75, -1.45)
+
+
+## The operative token's texture (the cached RouteOverlay copy; null if the art is missing).
+func token_texture() -> Texture2D:
+	return RouteOverlay.token_art()
+
+
+## The operative token's centre in px (INF when there is no current room): the current room's sticker plus `TOKEN_OFFSET_R` radii.
+func token_center() -> Vector2:
 	var cur := String(state["current"])
 	if cur == "" or not _stick_px.has(cur):
+		return Vector2(INF, INF)
+	return (_stick_px[cur] as Vector2) + TOKEN_OFFSET_R * sticker_radius()
+
+
+func _draw_token(r: float, kk: float) -> void:
+	var at := token_center()
+	if not is_finite(at.x):
 		return
-	var tex := load(ART_DIR + "token_operative.png") as Texture2D
+	# The cached texture (RouteOverlay keeps the reference): a bare load() per draw was freed before the frame
+	# rendered, so the token drew as a flat white quad (TOKEN-FIX).
+	var tex := token_texture()
 	if tex == null:
 		return
-	var p: Vector2 = _stick_px[cur]
 	var side := r * 1.05 * 2.0
 	var sz := Vector2(tex.get_width(), tex.get_height()) * (side / maxf(1.0, float(tex.get_width())))
-	draw_texture_rect(tex, Rect2(p + Vector2(r * 0.75, -r * 1.45) - sz * 0.5, sz), false)
+	draw_texture_rect(tex, Rect2(at - sz * 0.5, sz), false)
 
 
 ## The hover tag (9.3 rule 3: tags show only on hover; the legend lights them all).
