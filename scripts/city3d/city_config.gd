@@ -59,8 +59,8 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 ## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
-@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5, "spec_max": 5.0}
-@export var whole_cloud_k: float = 0.9
+@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5, "spec_max": 3.5}
+@export var whole_cloud_k: float = 0.75
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
 @export var whole_cloud_edge: Vector2 = Vector2(0.48, 0.58)
@@ -74,7 +74,7 @@ extends Resource
 @export var whole_fog_day: Color = Color(0.58, 0.58, 0.66)
 @export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
 @export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
-@export var whole_fog_depth: Vector2 = Vector2(0.85, 2.4)
+@export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
 ## ... and the colour saturation there (Environment adjustment; day, night).
 @export var whole_saturation: Vector2 = Vector2(1.35, 1.15)
@@ -138,8 +138,8 @@ extends Resource
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
-@export var whole_road_glow_gain: float = 0.45
-@export var whole_road_glow_tint: Color = Color(1.25, 1.0, 1.05)
+@export var whole_road_glow_gain: float = 0.32
+@export var whole_road_glow_tint: Color = Color(1.2, 1.05, 1.15)
 @export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
@@ -836,7 +836,7 @@ extends Resource
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
-	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.05, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
