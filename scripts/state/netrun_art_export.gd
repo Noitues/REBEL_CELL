@@ -51,7 +51,7 @@ static func on_run_start(session: RefCounted) -> void:
 ## The run-level files of a started netrun `session` against the exported `city` (a
 ## `city_json` dict; `index` its `lot_index`) and the corporation's Site layout points:
 ## {"files": {file name: canonical text}, "error": ""}. Reads the session, never changes it.
-static func export_run(session: NetrunSession, city: Dictionary, index: Dictionary, site_points: Dictionary, reach_lots: int) -> Dictionary:
+static func export_run(session: NetrunSession, city: Dictionary, index: Dictionary, site_points: Dictionary, reach_lots: int, keys: Dictionary = {}) -> Dictionary:
 	var corp := session.corporation
 	if corp == null or corp.city_grid == null or session.campaign.grid == null:
 		return {"files": {}, "error": "export_run: the run has no corporation Grid"}
@@ -60,8 +60,8 @@ static func export_run(session: NetrunSession, city: Dictionary, index: Dictiona
 	var lot_bu: float = city["lot_bu"]
 	var rid := run_id(session.run)
 	var net := net_json(seed, lot_bu, origin, corp, session.campaign.grid, site_points)
-	var keys := key_locations_json(seed, corp, site_points, index, reach_lots)
-	for d: Dictionary in [net, keys]:
+	var key_doc := key_locations_json(seed, corp, site_points, index, reach_lots, keys)
+	for d: Dictionary in [net, key_doc]:
 		if d.has("error"):
 			return {"files": {}, "error": d["error"]}
 	var corps: Array = (city["hqs"] as Dictionary).keys()
@@ -69,7 +69,7 @@ static func export_run(session: NetrunSession, city: Dictionary, index: Dictiona
 	return {"error": "", "files": {
 		"net.json": canonical(net),
 		"run_graph.json": canonical(run_graph_json(session.run.map, rid)),
-		"key_locations.json": canonical(keys),
+		"key_locations.json": canonical(key_doc),
 		"derive_%s.json" % rid: canonical(derive_json(run_kind(session.run), seed, rid, corps)),
 	}}
 
@@ -207,15 +207,22 @@ static func run_graph_json(map: MapGraph, run_id: String) -> Dictionary:
 ## `key_locations.json` v1: every Exploit Site (exploit_type != NONE, ruling O8) of `corp`
 ## with the building under it (`site_bid`, ruling O7). `index` is `lot_index` of the city's
 ## buildings. Returns {"error": ...} naming a Site with no building within `reach_lots`.
-static func key_locations_json(city_seed: int, corp: CorporationData, site_points: Dictionary, index: Dictionary, reach_lots: int) -> Dictionary:
+## EX-02: `keys` (KeyLots.export_keys of the corporation) moves each Exploit's `bid` to its key building and adds the
+## building kind (`building`) and the run's start street lot (`start`); empty = the Site's own building as before.
+static func key_locations_json(city_seed: int, corp: CorporationData, site_points: Dictionary, index: Dictionary, reach_lots: int, keys: Dictionary = {}) -> Dictionary:
 	var locs := []
 	for sd in _sites(corp):
 		if sd.exploit_type == RC.ExploitType.NONE:
 			continue
+		var name: String = EXPLOITS[sd.exploit_type]
+		if keys.has(name):
+			var k: Dictionary = keys[name]
+			locs.append({"site": String(sd.id), "corp": String(corp.id), "bid": k["bid"], "exploit": name, "building": k["building"], "start": k["start"]})
+			continue
 		var bid := site_bid(site_points.get(sd.id, Vector2.INF), index, reach_lots)
 		if bid == "":
 			return {"error": "key_locations.json: Exploit Site %s has no building within %d lots" % [sd.id, reach_lots]}
-		locs.append({"site": String(sd.id), "corp": String(corp.id), "bid": bid, "exploit": EXPLOITS[sd.exploit_type]})
+		locs.append({"site": String(sd.id), "corp": String(corp.id), "bid": bid, "exploit": name})
 	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "locations": locs}
 
 

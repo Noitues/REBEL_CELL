@@ -297,6 +297,24 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var solace_hq_ward_rest_rungs: PackedInt32Array = PackedInt32Array([5, 8])
 @export var solace_hq_ward_weights: PackedInt32Array = PackedInt32Array([45, 20, 15, 15, 5])
 @export var solace_hq_billing_weights: PackedInt32Array = PackedInt32Array([30, 5, 20, 20, 25])
+## Plan 2 EX-02 / EX-03 (REPLAN 2.3, 2.10; drafts/exploit_buildings/solace.md): the exploit buildings. Each corporation's
+## three Exploit types (intel, breach, virus) are a special building each, placed on a city lot (KeyLots).
+## `exploit_building_kinds`: "<corp>/<exploit>" -> the building's kind; an absent entry is "key_<exploit>" (an unbuilt key lot).
+@export var exploit_building_kinds: Dictionary = {"solace/virus": "culture_garden"}
+## How far (lots, Chebyshev) from its Exploit Site's lot a key's building may stand.
+@export var exploit_building_reach_lots: int = 24
+## The footprint (BU, width along lot i, depth along lot j) and height class of an exploit building, and the clearance
+## round it (BU, the border-street width) that the run's start stands outside of. Art-pass may overrule.
+@export var exploit_building_lot_w_bu: float = 48.0
+@export var exploit_building_lot_d_bu: float = 36.0
+@export var exploit_building_height_class: int = 2
+@export var exploit_building_clearance_bu: float = 8.0
+## How far (lots) beyond the clearance the border street's start lot is looked for.
+@export var exploit_building_start_reach_lots: int = 4
+## The run shape: outside layers (O0 start through the gate), inside layers, and the per-layer width cap.
+@export var exploit_building_outside_layers: int = 4
+@export var exploit_building_inside_layers: int = 5
+@export var exploit_building_max_width: int = 3
 ## Solace campaign infection, basis points: per step base, per living threat per step, the CITY
 ## LOST threshold, and the decays (raid held, per threat destroyed, per cure: Heat objective Site
 ## or Proxy Relay completion).
@@ -831,6 +849,7 @@ func _validate_city_gen(errors: PackedStringArray) -> void:
 	if city_gen_aim_step_deg <= 0.0 or city_gen_aim_step_deg > 360.0:
 		errors.append("city_gen_aim_step_deg must be in (0, 360].")
 	_validate_city_a2(errors)
+	_validate_exploit_building(errors)
 
 
 ## CITY-A2: the planner city's numbers.
@@ -922,3 +941,13 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 @export var cache_cycles_range: Vector2i = Vector2i(30, 60)
 @export var cache_card_choices: int = 3
 @export var cache_puzzle_enabled: bool = false
+
+
+## EX-02 / EX-03: the exploit building numbers.
+func _validate_exploit_building(errors: PackedStringArray) -> void:
+	if exploit_building_reach_lots < 0 or exploit_building_start_reach_lots < 0:
+		errors.append("exploit_building_reach_lots and exploit_building_start_reach_lots must be >= 0.")
+	if exploit_building_lot_w_bu <= 0.0 or exploit_building_lot_d_bu <= 0.0 or exploit_building_clearance_bu < 0.0:
+		errors.append("exploit_building_lot_w_bu and exploit_building_lot_d_bu must be > 0, exploit_building_clearance_bu >= 0.")
+	if exploit_building_outside_layers < 1 or exploit_building_inside_layers < 3 or exploit_building_max_width < 3:
+		errors.append("exploit_building_outside_layers must be >= 1, exploit_building_inside_layers >= 3, exploit_building_max_width >= 3.")

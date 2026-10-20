@@ -1576,6 +1576,22 @@
 		"res://tests/unit/test_city_a2_sweep.gd": {
 			"seconds": 150.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_key_lots.gd": {
+			"seconds": 90.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_key_lots_sweep.gd": {
+			"seconds": 120.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_exploit_building_graph.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_exploit_building_run.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
 		}
 	}
 }

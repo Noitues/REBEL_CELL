@@ -46,6 +46,13 @@ func _run() -> int:
 		return 1
 	var points := CityLayout.site_points(corp)
 	var cc: CampaignConfigData = load(CAMPAIGN_CONFIG)
+	# EX-02: the key buildings of every corporation on this city seed (derived data, no stream).
+	var all_corps: Array = []
+	for cid: Variant in ContentRegistry.all_ids():
+		var oc := ContentRegistry.get_content(cid) as CorporationData
+		if oc != null and oc.city_grid != null:
+			all_corps.append(oc)
+	var key_export := KeyLots.export_keys(KeyLots.for_seed(city_seed, all_corps, cfg.lot_bu), corp.id)
 	var lookup := ContentLookup.new().add_registry(ContentRegistry)
 	var home := (ContentRegistry.get_content(&"home_standard") as HomeServerVariantData).core
 	var campaign := CampaignRules.new_campaign(corp, cc, lookup, 3, ContentRegistry.get_content(&"breaker") as ClassData, home)
@@ -54,7 +61,7 @@ func _run() -> int:
 	var run_us := [0]
 	NetrunArtExport.sink = func(s: NetrunSession) -> void:
 		var a := Time.get_ticks_usec()
-		result.merge(NetrunArtExport.export_run(s, city, index, points, cfg.art_site_bid_reach_lots))
+		result.merge(NetrunArtExport.export_run(s, city, index, points, cfg.art_site_bid_reach_lots, key_export))
 		run_us[0] = Time.get_ticks_usec() - a
 	NetrunSession.start(CombatResolver.new(cc, lookup), campaign, campaign.roster[0].id, int(_arg("tier", "1")), site_id,
 		int(_arg("run-seed", "5")), corp)

@@ -39,7 +39,9 @@ var _pools: Dictionary = {}
 
 ## Launches a netrun for the roster operative `operative_id` at `tier`. MINOR Heat
 ## complications queued on the campaign are consumed here (shop stock, elite frequency).
-static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, tier: int, site_id: StringName, run_seed: int, corp: CorporationData = null) -> NetrunSession:
+## EX-11: `building` (a kind from `CampaignRules.exploit_building_for`) plays the exploit building's graph instead of the
+## generated map (stream `exploit_graph`; the `map` stream is not drawn).
+static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, tier: int, site_id: StringName, run_seed: int, corp: CorporationData = null, building: StringName = &"") -> NetrunSession:
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
 	s.corporation = corp
@@ -69,7 +71,13 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 				shop_delta += int(m["value"])
 	s.run.combat_overrides["shop_stock_delta"] = shop_delta
 	p_campaign.pending_complications.clear()
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
+	if building != &"":
+		var bsite := CampaignRules.site_data(corp, site_id) if corp != null else null
+		var exploit: String = KeyLots.NAMES.get(bsite.exploit_type, "") if bsite != null else ""
+		s.run.exploit_building = building
+		s.run.map = ExploitBuildingGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.EXPLOIT_GRAPH_STREAM), exploit, tier)
+	else:
+		s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	s._bloom_load_keys(corp)
 	s._halcyon_begin_street(corp, site_id)
@@ -582,7 +590,7 @@ static func bloom_gap_text(gap_milli: int) -> String:
 
 ## WH-11: the Bloom's band now (DORMANT before the first node is entered).
 func bloom_band() -> BloomRules.Band:
-	return BloomRules.band(run.corp_theme.solace, config, run.current_node_id != &"")
+	return BloomRules.band(run.corp_theme.solace, config, run.current_node_id != &"" and not bool(run.current_node().get("start", false)))
 
 
 ## WH-11: Exploit keys held this run (EX-03 sets them): Intel, Virus.
@@ -640,11 +648,42 @@ func bloom_preview() -> Dictionary:
 		if b.key_intel:
 			steps = maxi(1, int(node["layer"]) - b.layer_milli / 1000)
 		var gap := int(node["layer"]) * 1000 - (b.front_milli + (steps - 1) * BloomRules.entry_pace(b, config, run.tier) + BloomRules.entry_pace(b, config, run.tier, across) - BloomRules.pending_setback(b, config))
-		var fight := int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK
+		if bool(node.get("start", false)):
+			gap = int(node["layer"]) * 1000 - b.front_milli  # EX-11: the free start moves no front
+		var fight := (int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK) and not bool(node.get("start", false))
 		out[id] = {"gap_milli": gap, "caught": gap <= 0, "fight": fight,
 			"turn_cost_milli": BloomRules.fight_pace(b, config, 1) if fight else 0,
 			"across_milli": BloomRules.entry_pace(b, config, run.tier, true) - BloomRules.entry_pace(b, config, run.tier) if across else 0}
+		if bool(node.get("ward_dose", false)):  # EX-11: the gap after the rest's dose (none held: the gap stays)
+			out[id]["ward_gap_milli"] = mini(gap + config.bloom_dose_push_milli, config.bloom_max_gap_milli) if b.doses_held > 0 and gap > 0 else gap
 	return out
+
+
+## EX-11: the exploit key an exploit-building run is for, previewed (the Virus key: Bloom pace). {} outside such a run.
+## {"exploit": name, "held": the Exploit is held now, "pct": the pace percent the key gives, "pace_node_now" /
+## "pace_node_after" (front per node entry) and "pace_turn_now" / "pace_turn_after" (per fight turn), thousandths of a
+## layer}. "after" is exactly what the next Solace netrun applies once the Exploit is taken, and equals "now" when held.
+func exploit_key_preview() -> Dictionary:
+	var b := run.corp_theme.solace
+	if run.exploit_building == &"" or not b.enabled:
+		return {}
+	var site := CampaignRules.site_data(corporation, run.site_id) if corporation != null else null
+	if site == null or site.exploit_type != RC.ExploitType.VIRUS:
+		return {}
+	_bloom_refresh_heat()
+	var base_node := BloomRules.base_pace_node(b, config, run.tier)
+	return {"exploit": "virus", "held": campaign.has_exploit(site.exploit_type), "pct": config.bloom_virus_pace_pct,
+		"pace_node_now": BloomRules.scaled(b, config, base_node), "pace_turn_now": BloomRules.scaled(b, config, config.bloom_pace_turn_milli, true),
+		"pace_node_after": BloomRules.scaled_with_virus(b, config, base_node, false, true),
+		"pace_turn_after": BloomRules.scaled_with_virus(b, config, config.bloom_pace_turn_milli, true, true)}
+
+
+## EX-11: the key chip of an exploit-building run (shaped as `theme_chip`): "VIRUS KEY" and the pace percent it gives.
+func exploit_key_chip() -> Dictionary:
+	var p := exploit_key_preview()
+	if p.is_empty() or run.is_over():
+		return {}
+	return {"key": TextDb.mark("VIRUS KEY"), "args": [], "value": "%d%%" % int(p["pct"]), "kind": RunThemeState.ChipKind.INFO}
 
 
 ## CAUGHT's consequence: the operative is lost and the netrun abandoned (Q24.1), the same
@@ -753,11 +792,19 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 	run.visited.append(node_id)
 	var bloom := run.corp_theme.solace
 	_bloom_refresh_heat()
-	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), across):
+	var free_start := bool(node.get("start", false))  # EX-11: O0 of an exploit building, entered free (no fight, the front stays)
+	if free_start:
+		BloomRules.enter_free(bloom, int(node["layer"]))
+	elif bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), across):
 		_bloom_caught()
 		return last_events
 	last_events.append({"type": "enter_node", "node": node_id, "node_type": node["type"],
 		"text": "Entered %s (%s%s)." % [node_id, RC.InfilNodeType.keys()[node["type"]], ", elite" if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK else ""]})
+	if free_start:
+		_sync()
+		return last_events
+	if bool(node.get("ward_dose", false)) and BloomRules.use_dose(bloom, config):  # EX-11: the garden's ward rest takes a dose
+		last_events.append({"type": "ward_dose", "gap_milli": BloomRules.gap_milli(bloom), "text": "Ward rest: a dose pushes the front back."})
 	if node["elite"] and node["type"] != RC.InfilNodeType.SERVER_RACK and node["heat"] != 0:
 		_add_heat(node["heat"], "elite node")
 	if run.corp_theme.halcyon.hq:

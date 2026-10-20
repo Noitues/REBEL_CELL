@@ -272,8 +272,10 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 					pool.append(e.id)
 			var enemy: StringName = pool[seed_rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else &""
 			netrun = NetrunSession.start_special(resolver, campaign, operative_id, "reclaim", site_id, site.tier, run_seed, enemy, {}, corporation)
-		_:
-			netrun = NetrunSession.start(resolver, campaign, operative_id, site.tier, site_id, run_seed, corporation)
+		var kind_now:
+			# EX-11: a netrun at an Exploit Site with a built exploit building plays that building's run.
+			var building := CampaignRules.exploit_building_for(corporation, site, config()) if kind_now == "netrun" else &""
+			netrun = NetrunSession.start(resolver, campaign, operative_id, site.tier, site_id, run_seed, corporation, building)
 	_history_recorded = false
 	run_changed.emit(netrun)
 	autosave()
