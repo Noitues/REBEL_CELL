@@ -70,6 +70,8 @@ func _run() -> void:
 				opts["categories"] = Array(val.split(",", false))
 			"--source":
 				opts["source"] = val
+			"--trace":
+				opts["trace"] = val
 			"--state":
 				opts["state"] = val
 			"--dump-state":

@@ -9450,3 +9450,28 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/halcyon.md`, `drafts/hq/halcyon.md`. 
   one per run; none in v1 graphs. The draft's "no Cache on Reclaim or Patrol netruns" is not applied (the generator does not
   see the run kind; Reclaim has no map, and a Patrol's Cache pays like any other).
 - Tests: tests/unit/test_rg04_cache.gd and the Cache case of tests/unit/test_rg_node_pages_ui.gd.
+
+### 2026-10-20 - SOLACE_BAL_r1: BAL-03/04/05 for Solace (reference policy)
+- **BAL-03 (tool-only).** `balance.py run boss --source save --state FILE|DIR` fights the Genome Core from a saved campaign state
+  (a bare CampaignState dict or a game save with a `campaign` key). `--source campaign --dump-state DIR` writes the breach states
+  (`boss_<seed>.json`) while it plays. A seed with no file reuses `boss_<1000 + seed % 1000>.json` with the new combat seed.
+  Proof: the saved-state fight of seed 1001 equals its campaign-source fight (same turns, same HP curve). No game code changed.
+  `--trace FILE` (campaign mode) appends a timestamped line per run, fight and combat action.
+- **BAL-04.** New `docs/balance/TARGETS.md`: every number names its policy; builtin-bot numbers are floors (no regress against
+  the 2026-10-18 measurements), the 50 percent boss win (Q29) is measured on the reference policy, class bands for normals,
+  elites and mini-bosses are written down per class and tier (no sibling threshold rule, Q46.3).
+- **BAL-05 numbers (content .tres only).** (1) Genome Core HP 360 -> 400: reference boss win 56 % (n=25) at 360, 52 % (n=25) at
+  x1.1, 52 % (n=25) at x1.2, 52 % (n=50) at the shipped 400. Phases (3), thresholds (66 / 33 %) and enrage (additive) unchanged and
+  pinned by `test_solace_boss_pins.gd`. (2) Claims Adjuster 112 -> 96 HP and Account Manager 150 -> 128 HP (x0.85): T4 win 53 -> 67 % and 67 -> 80 % (15 fights each).
+  (3) Care Swarm NOT changed: 20 HP / 2 satellites measured well (T4 win 20 -> 100 %, HP lost 59 -> 33), but any change that
+  makes the swarm die sooner fails `test_anim_r2_combat.test_hits_fly_one_at_a_time_and_the_result_holds_before_the_respin`
+  (care_swarm: result_at before every HP roll has finished; passes on the shipped numbers, fails alone with hp 20, 22 or 20 / 2
+  satellites). That is a view-timing invariant for the animation owner; the tune waits for it. The GDD A.3 table now lags the two HP numbers: follow-up for the
+  designer.
+- **Solace theme numbers unchanged** (Bloom pace, turn cost, infection). The reference policy dies 0-2 times per campaign, so the
+  Bloom is not what stretches the campaign; the length is the run count (45 runs at 15 minutes each vs the GDD 24). That is the
+  site / exploit graph and rank gating, which are shared rules, not Solace theme numbers. Open question below.
+- **Open questions for the designer.** (a) The reference campaign takes 24-60 runs (mean 45, about 700 minutes) against GDD 11.8's
+  about 24 runs / 395 minutes: which shared lever moves it (min_exploits_for_breach, rank per tier, exploit site count)? (b) 24 % of
+  reference boss fights end on the 60-turn cap, not in a win or a death: should the cap be a loss, or lifted? Default built: the
+  cap counts as a non-win.

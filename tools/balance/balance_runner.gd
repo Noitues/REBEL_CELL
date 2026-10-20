@@ -93,6 +93,7 @@ func run(mode: String, seeds: Array) -> Dictionary:
 ## One whole campaign; the record carries the Heat curve, raid causes, economy and attrition.
 func run_campaign(campaign_seed: int) -> Dictionary:
 	var probe := BalanceProbe.new(content.lookup, content.config)
+	probe.trace_path = String(opts["trace"])
 	var sim := _make_sim(probe)
 	_skill.reseed(campaign_seed)
 	var rep: Dictionary = sim.run_campaign(campaign_seed, int(opts["ice"]), int(opts["max_runs"]))
@@ -272,6 +273,8 @@ static func load_saved_state(path: String, campaign_seed: int) -> CampaignState:
 	var file := path
 	if DirAccess.dir_exists_absolute(path):
 		file = path.path_join("boss_%d.json" % campaign_seed)
+		if not FileAccess.file_exists(file):  # a seed beyond the dump reuses a dumped state with a new combat seed
+			file = path.path_join("boss_%d.json" % (1000 + campaign_seed % 1000))
 	if not FileAccess.file_exists(file):
 		return null
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(file))
