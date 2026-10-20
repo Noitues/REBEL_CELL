@@ -269,7 +269,7 @@ func test_a_full_entry_builds_the_rooms_up_a_zoom_does_not() -> void:
 
 # --- The HQ side backwards (NA-25b) --------------------------------------------------------------------------
 
-func test_the_hq_side_switches_under_the_night_sky_and_a_press_ends_it_on_the_hq() -> void:
+func test_the_hq_side_switches_without_a_night_panel_and_a_press_ends_it_on_the_hq() -> void:
 	var seq := JackSequence.new()
 	add_child_autofree(seq)
 	var seen := {"covering": false, "calls": 0, "night": false}
@@ -284,7 +284,7 @@ func test_the_hq_side_switches_under_the_night_sky_and_a_press_ends_it_on_the_hq
 		await get_tree().process_frame
 	assert_eq(seen["calls"], 1, "the switch ran once")
 	assert_true(seen["covering"])
-	assert_true(seen["night"], "the HQ loads under the night sky")
+	assert_false(seen["night"], "no flat night-sky panel: the reversed dive's last frame stays up while the HQ loads")
 	assert_false(seq.visible, "a press ends it on the HQ with no terminal left")
 	assert_null(seq.terminal)
 	assert_false(seq.holding())

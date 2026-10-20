@@ -1569,6 +1569,7 @@ func _show_map() -> void:
 		_show_street_map(s)
 		return
 	_entry_wanted = false  # no street to dive into: the ROUTE window page
+	Fx.hold_saved(false)  # nothing plays: a SAVED held by the jack shows now
 	# The route on the city in blueprint, zoomed into the target Site's neighbourhood;
 	# GRID VIEW zooms out to the whole campaign Grid (greyed city). `map_view` stays as the
 	# route model (hidden): pad keys and clicks go through it as before.
@@ -1674,7 +1675,9 @@ func _play_entry_when_ready() -> void:
 	await _wait_street_ready()
 	_entry_wanted = false
 	if street_view != null and is_instance_valid(street_view):
-		play_entry(false)
+		await play_entry(false)
+	# NA-25b r6 (A-054): the SAVED toast waits for the end of the entry (the zoom has settled at street level), never over the dive.
+	Fx.hold_saved(false)
 
 
 ## NA-25b (D6): the way back down plays the dive forward over the street, once its city is drawn.

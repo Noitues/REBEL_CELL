@@ -174,13 +174,20 @@ func _ready() -> void:
 	fps_label.visible = false
 	add_child(fps_label)
 	saved_label = Label.new()
-	saved_label.add_theme_font_override("font", Palette.marker())
+	saved_label.add_theme_font_override("font", HudSkin.mono())
 	saved_label.add_theme_font_size_override("font_size", SAVED_FONT)
-	# ART-6 3A (M14 audit P3: "nearly invisible" on the raid setup, in grey): a dark keyline
-	# so the pink lettering reads over any page and in greyscale.
-	saved_label.add_theme_color_override("font_outline_color", SAVED_KEYLINE)
-	saved_label.add_theme_constant_override("outline_size", SAVED_OUTLINE)
-	saved_label.add_theme_color_override("font_color", Palette.CELL_PINK)
+	# NA-25b r6 (art-pass A-054): SAVED is a system toast in the Cell's CRT medium (navy glass, cyan edge, Share Tech Mono, typed on),
+	# never a bare pink word on the world.
+	var glass := StyleBoxFlat.new()
+	glass.bg_color = PaletteSkins.chrome(HudSkin.TERMINAL_BG)
+	glass.border_color = PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
+	glass.set_border_width_all(2)
+	glass.content_margin_left = 14.0
+	glass.content_margin_right = 14.0
+	glass.content_margin_top = 6.0
+	glass.content_margin_bottom = 6.0
+	saved_label.add_theme_stylebox_override("normal", glass)
+	saved_label.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
 	# H24 S4: translated when shown (show_saved), shown as given.
 	saved_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	saved_label.text = tr("SAVED")
@@ -267,7 +274,8 @@ func show_saved() -> void:
 	if saved_held:
 		saved_queued = true  # NA-25b r5: the jack-in transition owns the screen; the stamp waits for the hub to burn open
 		return
-	saved_label.text = tr("SAVED")
+	saved_label.text = SAVED_PROMPT + tr("SAVED")
+	saved_label.visible_characters = -1
 	saved_label.modulate.a = 0.0
 	_saved_look()
 	if _saved_tween != null and _saved_tween.is_valid():
@@ -289,6 +297,10 @@ func show_saved() -> void:
 	saved_label.scale = Vector2.ONE * (Motion.amplitude(&"saved_stamp_in") if Motion.live(&"saved_stamp_in") else 1.0)
 	Motion.run(&"saved_stamp_in", saved_label, ^"scale", Vector2.ONE)
 	_saved_live = true
+	if Motion.live(&"crt_type_on"):  # typed on like every system line
+		saved_label.visible_characters = 0
+		var type_s := Motion.seconds(&"crt_type_on") * float(saved_label.text.length())
+		create_tween().tween_property(saved_label, "visible_characters", saved_label.text.length(), type_s)
 	var e := Motion.entry(&"saved_stamp")
 	_saved_tween = create_tween()
 	if Motion.live(&"saved_stamp") and not HighContrast.on():
@@ -306,10 +318,7 @@ func show_saved() -> void:
 ## least HighContrast.outline_px thick (the pink, lifted to 7:1 on black, read 4.3:1 on the city).
 func _saved_look() -> void:
 	var hc := HighContrast.on()
-	saved_label.add_theme_color_override("font_color", HighContrast.TEXT if hc else Palette.CELL_PINK)
-	saved_label.add_theme_color_override("font_outline_color", HighContrast.BG if hc else SAVED_KEYLINE)
-	var outline := maxi(SAVED_OUTLINE, HighContrast.outline_px(UiTheme.font_px(SAVED_FONT))) if hc else SAVED_OUTLINE
-	saved_label.add_theme_constant_override("outline_size", outline)
+	saved_label.add_theme_color_override("font_color", HighContrast.TEXT if hc else HudSkin.TERMINAL_TEXT)
 
 
 ## The stamp is up and follows the layout (H24 S7), and its fade.
@@ -351,9 +360,8 @@ func saved_showing() -> bool:
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
 ## M14 12Q-WORDS (lint L65): on the type scale (title step; it was 20, off the scale).
 const SAVED_FONT := UiTheme.TITLE
-## ART-6 3A: its dark keyline (px) and colour, so it reads over any page and in greyscale.
-const SAVED_OUTLINE := 6
-const SAVED_KEYLINE := Color(Palette.NIGHT_SKY, 0.9)
+## NA-25b r6: the CRT toast's prompt (the system lines carry ">" prompts).
+const SAVED_PROMPT := "> "
 const SAVED_MARGIN := 8.0
 ## Step between the spots tried along the screen's edges (px).
 const SAVED_STEP := 24.0

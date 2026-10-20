@@ -73,3 +73,29 @@ func test_the_hold_hex_is_the_rim_hue_with_an_age_fade() -> void:
 	assert_eq(ov[&"hex_tint"], JackSequence.hex_color(seq.hold.accent()))
 	assert_almost_eq(float(ov[&"hex_age_oldest"]) * JackSequence.HOLD_HEX_ALPHA, JackSequence.HOLD_HEX_OLDEST_ALPHA, 0.001)
 	assert_false(ov.has(&"glass_top") or ov.has(&"glass_bottom"), "the glass is the terminal panel's own, not a field colour")
+
+
+func test_saved_waits_for_the_end_of_the_street_entry_and_the_jack_out_releases_it() -> void:
+	# A-054: the jack-in's sequence ends at the dot, but SAVED stays held through the dive until the scene releases it (the zoom has settled).
+	Fx.saved_label.modulate.a = 0.0
+	var seq := JackSequence.new()
+	add_child_autofree(seq)
+	seq._begin({"street": true, "from": "A", "to": "B"})
+	seq._reverse = false
+	Fx.hold_saved(true)
+	seq._end()
+	Fx.show_saved()
+	await wait_process_frames(3)
+	assert_true(Fx.saved_held, "still held after the sequence ends: the dive is playing")
+	assert_false(Fx.saved_showing(), "no SAVED before the settle")
+	Fx.hold_saved(false)  # the street scene's release after the entry's zoom settled
+	await wait_process_frames(3)
+	assert_true(Fx.saved_showing(), "shown once the entry has settled")
+	assert_true(Fx.saved_label.get_theme_stylebox(&"normal") is StyleBoxFlat, "a CRT glass toast, not a bare word")
+	Fx.saved_label.modulate.a = 0.0
+	seq._begin({"street": true, "from": "A", "to": "B"})
+	seq._reverse = true
+	Fx.hold_saved(true)
+	seq._fx = Fx
+	seq._end()
+	assert_false(Fx.saved_held, "the jack-out's own end releases it")

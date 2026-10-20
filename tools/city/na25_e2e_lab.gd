@@ -86,7 +86,13 @@ func _process(delta: float) -> void:
 			_track_jack(delta)
 		"choose":
 			_frames += 1
-			if _frames > 30:
+			# A-054: SAVED shows only now (the entry's zoom has settled), as the CRT toast; take its frame once it has typed on.
+			if Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
+				_saved_frames += 1
+				if _saved_frames >= SAVED_SETTLE_FRAMES and _mode == "shots":
+					_shot_done["chain_8_saved"] = true
+					get_viewport().get_texture().get_image().save_png("%s/chain_8_saved.png" % _shots)
+			if _frames > 30 and (_shot_done.has("chain_8_saved") or _frames > 150):
 				_end_run_and_leave()
 		"out":
 			_track_out(delta)
@@ -153,6 +159,8 @@ func _track_jack(delta: float) -> void:
 	var in_dive := false
 	if cover != null and is_instance_valid(cover) and cover.playing:
 		_scene = sc
+		if Fx.saved_showing():
+			print("NA25E FAIL SAVED showing during the entry (cover %.2f s)" % cover.elapsed())
 		var e := cover.elapsed()
 		if e <= 3.0:
 			in_dive = true
@@ -174,11 +182,6 @@ func _track_jack(delta: float) -> void:
 			_shoot_fwd(e)
 	if _mode == "shots":
 		_shoot_chain()
-		if _shot_done.has("chain_4_dot_to_dive") and Fx.saved_showing() and not _shot_done.has("chain_8_saved"):
-			_saved_frames += 1  # let the stamp land (it stamps down first), then take the frame
-			if _saved_frames >= SAVED_SETTLE_FRAMES:
-				_shot_done["chain_8_saved"] = true
-				get_viewport().get_texture().get_image().save_png("%s/chain_8_saved.png" % _shots)
 	if _mode == "shots" and _frames > 1:
 		var img := get_viewport().get_texture().get_image()
 		if not _luma_ok(img):

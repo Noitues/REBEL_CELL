@@ -77,6 +77,7 @@ static func lines_for(from_word: String, to_word: String) -> PackedStringArray:
 func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_hold_saved(fx, true)
 	_begin(link)
+	_reverse = false
 	if street:
 		await _play_street(switch)
 		return
@@ -191,17 +192,18 @@ func _play_street(switch: Callable) -> void:
 
 
 ## NA-25b r6 (the HQ side of the jack-out, ART_BIBLE 4.6 reversed): the dive has played back to the HQ pose; the switch loads the HQ under
-## the night sky, then the CRT comes back on (the collapse reversed: a dot opening to a line, then the glass), the rain rises and the
+## the dive's last frame, then the CRT comes back on (the collapse reversed: a dot opening to a line, then the glass), the rain rises and the
 ## lines untype. One press skips to the end (the HQ, no terminal).
 func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_hold_saved(fx, true)
 	_begin(link)
+	_reverse = true
 	street = true
 	visible = true
 	terminal.visible = false
 	_text.visible_characters = -1
-	night = true
-	queue_redraw()
+	# A-054: no flat night-sky panel on the way back: the reversed dive's last frame (the HQ pose) stays up while the HQ loads, then the CRT
+	# opens from the dot over the HQ.
 	for f in 2:
 		await get_tree().process_frame
 	switched = true
@@ -209,8 +211,6 @@ func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	await switch.call()
 	_holding = false
 	hold.visible = false
-	night = false
-	queue_redraw()
 	if skipping:
 		_end()
 		return
@@ -263,10 +263,15 @@ func _hold_saved(fx: Node, on: bool) -> void:
 
 
 var _fx: Node = null
+## True while `play_out` runs (the jack-out).
+var _reverse := false
 
 
 func _end() -> void:
-	_hold_saved(null, false)
+	# NA-25b r6 (A-054): a street jack-in keeps SAVED held past this sequence: the street scene releases it once the entry's zoom has
+	# settled (`Fx.hold_saved(false)`); every other end (the jack-out, a link jack) shows it now.
+	if not (street and not _reverse):
+		_hold_saved(null, false)
 	visible = false
 	night = false
 	_holding = false
