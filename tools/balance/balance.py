@@ -130,10 +130,10 @@ def run_chunk(task):
     return idx, out, rc
 
 
-def chunk_size(mode, n_seeds, jobs):
+def chunk_size(mode, n_seeds, jobs, from_save=False):
     """Seeds per Godot process. Small chunks let idle workers steal work (campaigns vary 17-96 s); big ones
     amortise the ~4 s engine start-up for the quick modes."""
-    if mode in ("campaign", "boss"):
+    if mode == "campaign" or (mode == "boss" and not from_save):  # boss from a saved state (BAL-03) is a quick mode
         return 1
     return max(1, math.ceil(n_seeds / (jobs * 2)))
 
@@ -147,7 +147,7 @@ def cmd_run(args, passthrough):
     out_dir.mkdir(parents=True, exist_ok=True)
     work = out_dir / ("_" + args.name)
     work.mkdir(parents=True, exist_ok=True)
-    size = args.chunk or chunk_size(mode, len(seeds), jobs)
+    size = args.chunk or chunk_size(mode, len(seeds), jobs, "save" in passthrough)
     tasks = [(i, seeds[k:k + size], mode, passthrough, args.godot, work) for i, k in enumerate(range(0, len(seeds), size))]
     t0 = time.time()
     # dynamic scheduling: `jobs` workers pull the next chunk as soon as they are free (work stealing)

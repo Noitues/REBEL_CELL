@@ -13,6 +13,9 @@
   "enemy": ["all"],
   "categories": ["enemy", "elite", "mini_boss"],
   "source": "campaign",
+  "state": "",
+  "trace": "",
+  "dump_state": "",
   "quiet": true,
   "fast": false
 }

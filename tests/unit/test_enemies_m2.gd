@@ -24,7 +24,7 @@ func test_stats_match_a3() -> void:
 	assert_eq(_enemy(&"care_drone").hp, 4)
 	assert_eq(_slice_ids(_enemy(&"care_drone").wheel), [&"shim_3", &"shim_3", &"defrag_2"])
 	var adjuster := _enemy(&"claims_adjuster")
-	assert_eq(adjuster.hp, 112, "A.3 lists 90; +25% in the M7 balance pass")
+	assert_eq(adjuster.hp, 96, "A.3 lists 90; 112 in the M7 pass, 96 by SOLACE_BAL_r1")
 	assert_true(adjuster.is_elite)
 	assert_eq(adjuster.wheel.pointer_ticks, PackedInt32Array([0, 15]))
 	assert_eq(_slice_ids(adjuster.wheel), [&"shim_10", &"defrag_8", &"overflow_16", &"shim_10", &"dose", &"null"])

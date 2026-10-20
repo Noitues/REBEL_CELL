@@ -27,6 +27,8 @@ var metrics_enabled: bool = true  # N19: off only in the purity test
 var _metrics: SimMetrics = null  # N19: observational per-phase metrics of the fight in progress
 var _run: Dictionary = {}
 var _sch_mark: int = -1
+## Diagnostic: a file the probe appends a timestamped line to at every run start, fight start and combat action (tool-only).
+var trace_path: String = ""
 
 
 func _init(p_lookup: ContentLookup, p_config: CampaignConfigData) -> void:
@@ -45,7 +47,19 @@ func on_maintain(c: CampaignState, schematics_before: int) -> void:
 	_sch_mark = c.schematics
 
 
+## Appends one line to `trace_path` (no-op when unset).
+func trace(msg: String) -> void:
+	if trace_path == "":
+		return
+	var f := FileAccess.open(trace_path, FileAccess.READ_WRITE if FileAccess.file_exists(trace_path) else FileAccess.WRITE)
+	if f != null:
+		f.seek_end()
+		f.store_line("%d %s" % [Time.get_ticks_msec(), msg])
+		f.close()
+
+
 func on_run_start(c: CampaignState, op: OperativeState, _site: SiteData, s: NetrunSession) -> void:
+	trace("run_start site=%s rank=%d" % [_site.id if _site != null else "-", op.rank])
 	attach(s)
 	begin_run(c, op, s)
 
@@ -78,6 +92,7 @@ func on_node(s: NetrunSession) -> void:
 
 
 func on_fight_begin(s: NetrunSession) -> void:
+	trace("fight_begin tier=%d kind=%s" % [s.run.tier, s.run.kind])
 	begin_fight(s.combat.state, s.run.tier, s.run.kind, s.run.visited.size())
 	_run["fights"] = int(_run.get("fights", 0)) + 1
 
@@ -106,6 +121,7 @@ func begin_fight(state: CombatState, tier: int, kind: String, layer: int) -> voi
 
 ## One accepted combat action: (action, result, state after it).
 func observe(action: CombatAction, result: CombatResult, state: CombatState) -> void:
+	trace("action turn=%d" % state.turn)
 	if _fight.is_empty() or bool(_fight["done"]):
 		return
 	if _metrics != null:
