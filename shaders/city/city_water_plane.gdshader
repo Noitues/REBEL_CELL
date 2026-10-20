@@ -52,6 +52,8 @@ uniform float marble_width = 0.22;
 uniform float marble_distort = 0.9;
 uniform float marble_floor = 0.15;
 uniform float marble_shore = 0.6;
+// The blurred water mask's cut: below .x dry, above .y water (low, so the sheet reaches over the lot corners).
+uniform vec2 coast_cut = vec2(0.22, 0.42);
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
@@ -108,7 +110,7 @@ void fragment() {
 	// The shore distance (lots) under this point: open sea past the bake.
 	vec2 buv = (p - bed_origin) / bed_size;
 	bool inside = all(greaterThanEqual(buv, vec2(0.0))) && all(lessThanEqual(buv, vec2(1.0)));
-	vec2 bed = inside ? texture(bed_tex, buv).rg : vec2(1e3, far_shore_lots);
+	vec3 bed = inside ? texture(bed_tex, buv).rgb : vec3(1e3, far_shore_lots, 1.0);
 	float shallow = 1.0 - smoothstep(shallow_lots.x, shallow_lots.y, bed.g);
 	// By day a diffuse body (Blender's day water); by night the sheet is clear and the seabed's fade carries it.
 	float ab = mix(body_alpha + body_alpha_shallow * shallow, night_alpha, night);
@@ -129,6 +131,6 @@ void fragment() {
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
 	ALBEDO = col * grade;
 	// No water over dry ground (the bake's depth is 0 there); bilinear, so the coast softens over half a lot.
-	float wetk = inside ? smoothstep(0.0, 0.6, bed.r + depth_add) : 1.0;
+	float wetk = max(smoothstep(coast_cut.x, coast_cut.y, bed.b), step(0.001, depth_add));
 	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
 }

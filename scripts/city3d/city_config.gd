@@ -790,7 +790,7 @@ extends Resource
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.02, 0.17, 0.28),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.55, "body_alpha_shallow": 0.30, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.82, "marble_col": Color(0.05, 0.20, 0.24), "marble_scale": 0.05,
-	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6,
+	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "coast_cut": Vector2(0.22, 0.42),
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.2, 1.6), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 6.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground

@@ -8,6 +8,7 @@ extends RefCounted
 ## same bed as a depth texture (`depth_image`) for the water plane. Pure.
 
 const SEED_TONE := 7780
+const COAST_KERNEL: Array[int] = [1, 4, 6, 4, 1]
 
 
 ## The seabed over `r` (lots) of `terrain`: `wet` and the shore field `d` (CityWater.shore_field) in row order over `r`,
@@ -118,15 +119,32 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 		islands: Array[Dictionary]) -> Image:
 	var w := r.size.x
 	var h := r.size.y
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGF)
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBF)
+	var dep := PackedFloat32Array()
+	dep.resize(w * h)
+	var sea := PackedFloat32Array()
+	sea.resize(w * h)
 	for j in h:
 		for i in w:
 			var at := Vector2(r.position.x + i + 0.5, r.position.y + j + 0.5)
-			var dc := d[j * w + i]
 			var wt := wet[j * w + i] != 0
 			# Dry land below sea level stays dry: the plane draws nothing where the bake holds no depth.
-			var z := bed_z(cfg, terrain, at, dc, wt, islands) if wt else 0.0
-			img.set_pixel(i, j, Color(maxf(-z, 0.0), dc, 0.0))
+			var z := bed_z(cfg, terrain, at, d[j * w + i], wt, islands) if wt else 0.0
+			dep[j * w + i] = maxf(-z, 0.0)
+			sea[j * w + i] = 1.0 if z < 0.0 else 0.0
+	# Blue: the water mask blurred (binomial 5 x 5), so the plane's edge cuts a smooth coast across the lot staircase.
+	for j in h:
+		for i in w:
+			var s := 0.0
+			var n := 0.0
+			for oy in range(-2, 3):
+				for ox in range(-2, 3):
+					var ii := clampi(i + ox, 0, w - 1)
+					var jj := clampi(j + oy, 0, h - 1)
+					var k := float(COAST_KERNEL[ox + 2] * COAST_KERNEL[oy + 2])
+					s += sea[jj * w + ii] * k
+					n += k
+			img.set_pixel(i, j, Color(dep[j * w + i], d[j * w + i], s / n))
 	return img
 
 
