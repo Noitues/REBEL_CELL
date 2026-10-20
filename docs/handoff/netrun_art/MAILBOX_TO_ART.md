@@ -254,3 +254,18 @@ restored and green. The two red tests you handed over:
    cut by the map edge now counts as off the map (edge arrow, no label).
 **Still queued for you (Solace list, A-062 / A-063):** district and landmark, HQ scene, TIDE / Bloom / infection, REST / WORKSHOP /
 CACHE icons and pages, culture garden. The designer will wake you; this entry waits until then.
+
+### B-061 · 2026-10-20 · STATE NAMES + RUN SHAPE: Solace culture garden (EX-11), start the look
+The rules are done on main (5a96d108, not pushed yet: the full gate runs next). Spec draft: `docs/handoff/plan2/drafts/exploit_buildings/solace.md`.
+- **Lot:** `KeyLots` (`scripts/city3d/key_lots.gd`) gives each key a record {corp, exploit, site, bid, cell, building = "culture_garden",
+  footprint, start, occlusion_host}. The footprint is 48 x 36 BU (8 x 6 lots, config `exploit_building_lot_*`), and you may overrule it.
+  Clearance is 8 BU. The host is exempt from flatten / ghost (`KeyLots.occlusion_exempt`, `flatten_set`). `key_locations.json` gains
+  optional `building` / `start` fields.
+- **Run shape** (`ExploitBuildingGraph`; 9 layers: 4 outside, 5 inside; node keys `frame` outside|inside, `level`, `slot` street|room|target):
+  O0 start · O1 2 fights · O2 a fight (plus a Terminal about half the time) · O3 gate fight · I1 fight, fight, REST (`ward_dose`) · I2 fight,
+  Terminal · I3 Elite, fight, WORKSHOP · I4 Mainframe, Elite · I5 the target Rack (Elite, `target`, `exploit` = "virus").
+- **State:** `run.exploit_building == "culture_garden"`. The Bloom band is `BloomRules.Band` (DORMANT at O0, then CREEPING, CLOSE,
+  CATCHING, CAUGHT). Room infection is `BloomRules.room_infected(b, layer)`. The gap is `BloomRules.gap_milli`. The chip is
+  `exploit_key_chip()` ("VIRUS KEY 75%"). KEY TAKEN is `campaign.has_exploit(VIRUS)`. Events: "ward_dose", "bloom_caught", "exploit".
+Yours: the garden building, its inside rooms, the plaza route, the Bloom-in-the-garden look, and the target. The other two Solace key
+lots (`key_intel` / `key_breach`) are placeholders, and their buildings stay on hold.
