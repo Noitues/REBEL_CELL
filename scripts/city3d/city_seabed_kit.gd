@@ -1,10 +1,10 @@
 class_name CitySeabedKit
 extends RefCounted
 ## LOOK L5 (whole-city plate parity, the designer's ruling: terrain first, then one textured water plane over it): the land
-## under the sea as real ground. The bed falls from the shore (0 at the coast) toward `seabed_max_bu` over
-## `seabed_reach_lots` lots of the shore field, its depth broken by the terrain's broad noise (`seabed_noise_k`) into shelves
-## and trenches; the bay islands (CityWater.islands_of) rise out of it as hills. Coloured sand in the shallows to dark rock
-## deep, the islands sand / meadow / forest by height. One indexed grid every `seabed_step` lots over the wet cells; the
+## under the sea as real ground, as the Blender plate builds it (city_world_a2.sea_depth / isl_bed): a `seabed_shelf_bu`
+## shelf at the shore falling on a smoothstep over `seabed_reach` lots of the shore field to `seabed_max_bu`, broken by the
+## terrain's broad noise (`seabed_noise_k`); the bay islands (CityWater.islands_of) stand on shoal banks and rise out of it
+## as hills. Sand to rock over `seabed_tone` lots from the land, the islands sand / meadow / forest by height. One indexed grid every `seabed_step` lots over the wet cells; the
 ## same bed as a depth texture (`depth_image`) for the water plane. Pure.
 
 const SEED_TONE := 7780
@@ -41,7 +41,8 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 					n += 1
 					wt = wt or wet[jj * w + ii] != 0
 			var at := Vector2(r.position.x + li, r.position.y + lj)
-			var z := bed_z(cfg, terrain, at, s / float(maxi(n, 1)), wt, islands)
+			var dc := s / float(maxi(n, 1))
+			var z := bed_z(cfg, terrain, at, dc, wt, islands)
 			var k := cj * nx + ci
 			touch[k] = 1 if wt else 0
 			verts[k] = CityIsoCamera.lot_to_world(cfg, at, z)
@@ -51,7 +52,7 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 				var f := clampf(z / maxf(cfg.island_h_bu, 0.001), 0.0, 1.0)
 				c = (tc["beach"] as Color).lerp(tc["meadow"], smoothstep(0.0, 0.35, f)).lerp(tc["forest"], smoothstep(0.4, 0.9, f))
 			else:
-				c = cfg.seabed_sand.lerp(cfg.seabed_deep, 1.0 - exp(z / cfg.seabed_tone_bu))
+				c = cfg.seabed_sand.lerp(cfg.seabed_deep, clampf((dc - cfg.seabed_tone.x) / (cfg.seabed_tone.y - cfg.seabed_tone.x), 0.0, 1.0))
 			cols[k] = Color(c.r * tone, c.g * tone, c.b * tone)
 	var idx := PackedInt32Array()
 	# Godot's front faces wind clockwise seen from the front: the up-facing order is the one whose cross product points down.
@@ -94,11 +95,18 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 ## The bed's height (BU, below 0 under water) at lot point `at`: shore field `dc` lots, `wt` when it touches water.
 static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: float, wt: bool,
 		islands: Array[Dictionary]) -> float:
-	var z := -cfg.seabed_max_bu * (1.0 - exp(-dc / cfg.seabed_reach_lots)) \
+	# The plate's sea_depth: a shelf at the shore, falling on a smoothstep over seabed_reach lots to seabed_max_bu.
+	var t := smoothstep(cfg.seabed_reach.x, cfg.seabed_reach.y, dc)
+	var z := -(cfg.seabed_shelf_bu + (cfg.seabed_max_bu - cfg.seabed_shelf_bu) * t) \
 			* (1.0 + cfg.seabed_noise_k * (terrain.noise_at(at.x, at.y) * 2.0 - 1.0))
-	z = minf(z, -cfg.seabed_shore_bu) if wt else minf(terrain.height_at(at.x, at.y), 0.0) - cfg.seabed_shore_bu
+	if not wt:
+		z = minf(terrain.height_at(at.x, at.y), 0.0)
 	for it: Dictionary in islands:
-		var rho := at.distance_to(it["c"]) / (float(it["r"]) * cfg.island_spread)
+		# The plate's isl_bed: each island stands on a shoal bank, not on a pillar.
+		var dl := at.distance_to(it["c"])
+		var r := float(it["r"])
+		z = maxf(z, -cfg.island_shoal_bu - maxf(0.0, dl - r * cfg.island_shoal_k) * cfg.lot_bu * cfg.island_shoal_slope)
+		var rho := dl / (r * cfg.island_spread)
 		if rho < 1.0:
 			z = lerpf(z, cfg.island_h_bu, pow(1.0 - rho * rho, 1.5))
 	return z
@@ -110,12 +118,13 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 		islands: Array[Dictionary]) -> Image:
 	var w := r.size.x
 	var h := r.size.y
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RF)
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RGF)
 	for j in h:
 		for i in w:
 			var at := Vector2(r.position.x + i + 0.5, r.position.y + j + 0.5)
-			var z := bed_z(cfg, terrain, at, d[j * w + i], wet[j * w + i] != 0, islands)
-			img.set_pixel(i, j, Color(maxf(-z, 0.0), 0.0, 0.0))
+			var dc := d[j * w + i]
+			var z := bed_z(cfg, terrain, at, dc, wet[j * w + i] != 0, islands)
+			img.set_pixel(i, j, Color(maxf(-z, 0.0), dc, 0.0))
 	return img
 
 

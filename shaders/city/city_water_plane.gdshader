@@ -1,9 +1,10 @@
-// LOOK L5 (whole-city plate parity; the designer's ruling: terrain, then one textured water plane over it). A transparent
-// sheet at sea level over the real seabed (CitySeabedKit): the water's thickness along the view ray comes from the bed's
-// depth texture (CitySeabedKit.depth_image, the same bed as the mesh; open sea past it is `far_bu` deep), so the bed shows through the shallows (absorbed per channel, red first) and the deep water and open sea go
-// opaque. On top: a slow two-scale ripple normal with a sky fresnel and a sun glint, light caustic ribbons in the shallows
-// and a foam rim where the water thins to nothing on the shore. Drawn after the city post (render_priority above the
-// post's), so it takes the night / day grade itself; unshaded, the scene fog still lays the haze on it.
+// LOOK L5 (whole-city plate parity; the designer's ruling: terrain, then one textured water plane over it), ported from the
+// Blender plate's water (city_render.mat_water_aaa). The depth feel is the seabed's own (city_seabed.gdshader fades it
+// through the water); this sheet adds what the surface does: a Fresnel mirror of the sky (IOR 1.33, a little more at
+// grazing angles) on a broad swell plus a fine ripple, a sun glint, and by day a diffuse body from deep to shallow blue
+// whose opacity rises toward the shore (0.40 + 0.52 x shallow; `shallow` from the shore distance the seabed bake carries in
+// its green channel). A surf band breaks on the first shelf. Drawn after the city post (render_priority above it), so it
+// takes the grade itself; unshaded, the scene fog still lays the haze on it.
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
@@ -11,32 +12,36 @@ render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, specular_disab
 uniform sampler2D bed_tex : filter_linear, repeat_disable;
 uniform vec2 bed_origin = vec2(0.0);
 uniform vec2 bed_size = vec2(1.0);
-uniform float far_bu = 60.0;
-// Added to the bed's depth (the drowned quarter's sheet lies over flooded streets, not over the bed).
-uniform float depth_add = 0.0;
 uniform float night = 1.0;
-uniform vec3 deep_day = vec3(0.03, 0.16, 0.30);
-uniform vec3 deep_night = vec3(0.01, 0.07, 0.10);
-uniform vec3 shallow_day = vec3(0.10, 0.45, 0.55);
-uniform vec3 shallow_night = vec3(0.04, 0.30, 0.32);
-uniform vec3 absorb = vec3(0.30, 0.10, 0.07);
-uniform float alpha_min = 0.15;
-uniform vec3 sky_day = vec3(0.55, 0.62, 0.70);
-uniform vec3 sky_night = vec3(0.04, 0.08, 0.10);
-uniform float fresnel_f0 = 0.04;
-uniform float fresnel_gain = 0.6;
+// Blender: the swell (noise 0.07 over (0.22, 0.34) of the position), the base noise (0.35) and a fine ripple (1.1).
+uniform vec2 swell_scale = vec2(0.0154, 0.0238);
+uniform float base_scale = 0.35;
+uniform float ripple_scale = 1.1;
+uniform vec3 wave_w = vec3(0.8, 0.65, 0.22);
+uniform float wave_k = 0.35;
+uniform float wave_speed = 0.05;
+uniform float ior = 1.33;
+uniform float fresnel_boost = 0.35;
+uniform vec3 sky_horizon_day = vec3(0.62, 0.66, 0.70);
+uniform vec3 sky_zenith_day = vec3(0.30, 0.45, 0.65);
+uniform vec3 sky_horizon_night = vec3(0.10, 0.08, 0.16);
+uniform vec3 sky_zenith_night = vec3(0.01, 0.02, 0.05);
 uniform vec3 sun_dir = vec3(0.4, 0.6, 0.3);
-uniform float glint_pow = 180.0;
-uniform float glint_gain = 0.5;
-uniform float ripple_bu = 14.0;
-uniform float ripple_speed = 0.05;
-uniform float ripple_k = 0.35;
-uniform float caustic_bu = 22.0;
-uniform float caustic_gain = 0.25;
-uniform vec3 caustic_day = vec3(0.6, 0.9, 1.0);
-uniform vec3 caustic_night = vec3(0.2, 0.7, 0.7);
-uniform float foam_bu = 0.6;
-uniform float foam_gain = 0.55;
+uniform vec3 sun_col = vec3(1.0, 0.92, 0.80);
+uniform float glint_pow = 220.0;
+uniform float glint_gain = 0.6;
+uniform vec3 deep_day = vec3(0.022, 0.15, 0.31);
+uniform vec3 shallow_day = vec3(0.09, 0.46, 0.50);
+uniform vec3 body_emit_day = vec3(0.01, 0.07, 0.14);
+uniform float body_alpha = 0.40;
+uniform float body_alpha_shallow = 0.52;
+uniform vec2 shallow_lots = vec2(20.0, 34.0);
+uniform float far_shore_lots = 60.0;
+uniform float depth_add = 0.0;
+uniform vec2 surf_lots = vec2(0.2, 1.6);
+uniform float surf_gain = 0.5;
+uniform vec3 surf_col = vec3(0.85, 0.93, 1.0);
+uniform float surf_period = 6.0;
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
@@ -52,8 +57,17 @@ float vnoise(vec2 p) {
 	return mix(mix(h2(i), h2(i + vec2(1.0, 0.0)), u.x), mix(h2(i + vec2(0.0, 1.0)), h2(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
-float waves(vec2 p, float t) {
-	return vnoise(p + vec2(t, t * 0.6)) * 0.6 + vnoise(p * 2.7 - vec2(t * 1.4, -t * 0.8)) * 0.4;
+float fbm(vec2 p) {
+	return vnoise(p) * 0.55 + vnoise(p * 2.03 + 3.1) * 0.3 + vnoise(p * 4.1 - 1.7) * 0.15;
+}
+
+// The finer layers fade out where a pixel spans more than their wavelength (Cycles averages them; here they would alias).
+float height(vec2 p, float t, float px) {
+	float kb = 1.0 - smoothstep(0.25, 0.8, px * base_scale * 2.4);
+	float kr = 1.0 - smoothstep(0.25, 0.8, px * ripple_scale * 1.7);
+	return fbm(p * swell_scale + vec2(t * 0.3, t * 0.2)) * wave_w.x
+		+ fbm(p * base_scale * vec2(1.0, 2.4) + vec2(-t, t * 0.6)) * wave_w.y * kb
+		+ fbm(p * ripple_scale * vec2(1.0, 1.7) + vec2(t * 1.7, -t)) * wave_w.z * kr;
 }
 
 void vertex() {
@@ -61,35 +75,35 @@ void vertex() {
 }
 
 void fragment() {
-	float t = rc_time(TIME) * time_scale * ripple_speed;
-	// Thickness along the view ray: the bed's depth under this point over the ray's sine.
+	float t = rc_time(TIME) * time_scale * wave_speed;
+	vec2 p = v_world.xz;
+	float px = length(fwidth(p));
+	float e = max(px, 0.3);
+	float h0 = height(p, t, px);
+	vec3 nw = normalize(vec3(-(height(p + vec2(e, 0.0), t, px) - h0) / e * wave_k, 1.0, -(height(p + vec2(0.0, e), t, px) - h0) / e * wave_k));
 	vec3 V = normalize(CAMERA_POSITION_WORLD - v_world);
-	vec2 buv = (v_world.xz - bed_origin) / bed_size;
+	float f0 = pow((ior - 1.0) / (ior + 1.0), 2.0);
+	float fr = f0 + (1.0 - f0) * pow(1.0 - clamp(dot(nw, V), 0.0, 1.0), 5.0);
+	fr = min(fr * (1.0 + fresnel_boost), 1.0);
+	vec3 R = reflect(-V, nw);
+	float up = clamp(R.y, 0.0, 1.0);
+	vec3 sky = mix(mix(sky_horizon_day, sky_zenith_day, sqrt(up)), mix(sky_horizon_night, sky_zenith_night, sqrt(up)), night);
+	vec3 refl = sky + sun_col * pow(max(dot(R, normalize(sun_dir)), 0.0), glint_pow) * glint_gain * (1.0 - night);
+	// The shore distance (lots) under this point: open sea past the bake.
+	vec2 buv = (p - bed_origin) / bed_size;
 	bool inside = all(greaterThanEqual(buv, vec2(0.0))) && all(lessThanEqual(buv, vec2(1.0)));
-	float depth = inside ? texture(bed_tex, buv).r : far_bu;
-	float path = (depth + depth_add) / max(V.y, 0.05);
-	vec3 trans = exp(-absorb * path);
-	float tm = (trans.r + trans.g + trans.b) / 3.0;
-	// Ripple normal from the wave height's gradient.
-	vec2 p = v_world.xz / max(ripple_bu, 0.001);
-	float e = 0.15;
-	float h0 = waves(p, t);
-	vec3 nw = normalize(vec3(-(waves(p + vec2(e, 0.0), t) - h0) / e * ripple_k, 1.0, -(waves(p + vec2(0.0, e), t) - h0) / e * ripple_k));
-	float fr = fresnel_f0 + (1.0 - fresnel_f0) * pow(1.0 - clamp(dot(nw, V), 0.0, 1.0), 5.0);
-	vec3 deep = mix(deep_day, deep_night, night);
-	vec3 shallow = mix(shallow_day, shallow_night, night);
-	vec3 body = mix(deep, shallow, tm);
-	vec3 col = body + mix(sky_day, sky_night, night) * fr * fresnel_gain;
-	vec3 H = normalize(normalize(sun_dir) + V);
-	col += vec3(1.0, 0.95, 0.85) * pow(max(dot(nw, H), 0.0), glint_pow) * glint_gain * (1.0 - night);
-	// Caustic ribbons over the shallows.
-	vec2 cp = v_world.xz / max(caustic_bu, 0.001);
-	float cn = vnoise(cp + vec2(t * 0.7, -t * 0.4)) * 0.6 + vnoise(cp * 2.1 + vec2(-t, t * 0.5)) * 0.4;
-	float rib = smoothstep(0.82, 0.96, 1.0 - abs(2.0 * cn - 1.0));
-	col += mix(caustic_day, caustic_night, night) * rib * caustic_gain * tm;
-	// Foam where the sheet thins out on the shore, broken by the waves.
-	float foam = (1.0 - smoothstep(0.0, foam_bu, path)) * smoothstep(0.25, 0.65, h0);
-	col = mix(col, vec3(0.92, 0.96, 1.0) * mix(1.0, 0.6, night), foam * foam_gain);
+	vec2 bed = inside ? texture(bed_tex, buv).rg : vec2(1e3, far_shore_lots);
+	float shallow = 1.0 - smoothstep(shallow_lots.x, shallow_lots.y, bed.g);
+	// By day a diffuse body (Blender's day water); by night the sheet is clear and the seabed's fade carries it.
+	float ab = (body_alpha + body_alpha_shallow * shallow) * (1.0 - night);
+	vec3 body = mix(deep_day, shallow_day, min(shallow * 0.9 + h0 * 0.12, 1.0)) + body_emit_day;
+	// Surf: bands rolling in on the first shelf, broken by the waves.
+	float sb = (1.0 - smoothstep(surf_lots.x, surf_lots.y, bed.g)) * step(0.001, bed.r + depth_add);
+	float roll = 0.5 + 0.5 * sin((bed.g * surf_period - rc_time(TIME) * time_scale * 0.8) * 6.2831853);
+	float surf = sb * smoothstep(0.45, 0.85, roll * 0.6 + h0 * 0.6) * surf_gain;
+	float a = fr + (1.0 - fr) * ab;
+	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
+	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
 	ALBEDO = col * grade;
-	ALPHA = clamp(max(1.0 - tm, alpha_min) + foam * foam_gain, 0.0, 1.0);
+	ALPHA = clamp(max(a, surf), 0.0, 1.0);
 }

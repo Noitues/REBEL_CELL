@@ -756,29 +756,41 @@ extends Resource
 @export var island_gap_k: float = 1.8
 @export var island_h_bu: float = 5.0
 @export var island_wobble: float = 0.35
-## LOOK L5 (the designer's water ruling: real ground under the sea, one textured transparent water plane over it): the
-## seabed (CitySeabedKit) is a grid every `seabed_step` lots falling from `seabed_shore_bu` under the coast toward
-## `seabed_max_bu` over `seabed_reach_lots` lots of the shore field, its depth broken by the terrain noise (`seabed_noise_k`);
-## sand to deep rock by 1 - exp(z / `seabed_tone_bu`); the islands' hills reach `island_spread` x their radius.
+## LOOK L5 (the designer's water ruling: real ground under the sea, one transparent water plane over it), ported from the
+## Blender plate (city_world_a2.sea_depth / isl_bed, city_render.water_fade): the seabed (CitySeabedKit) is a grid every
+## `seabed_step` lots, a `seabed_shelf_bu` shelf at the shore falling on a smoothstep over `seabed_reach` lots of the shore
+## field to `seabed_max_bu`, broken by the terrain noise (`seabed_noise_k`); sand to rock over `seabed_tone` lots. Each island
+## stands on a shoal `island_shoal_bu` deep out to `island_shoal_k` x its radius, falling `island_shoal_slope` BU per BU past it;
+## its hill reaches `island_spread` x the radius.
 @export var seabed_step: int = 2
-@export var seabed_max_bu: float = 24.0
-@export var seabed_reach_lots: float = 14.0
-@export var seabed_noise_k: float = 0.6
-@export var seabed_shore_bu: float = 0.6
-@export var seabed_sand: Color = Color(0.32, 0.36, 0.30)
-@export var seabed_deep: Color = Color(0.06, 0.09, 0.12)
-@export var seabed_tone_bu: float = 6.0
+@export var seabed_shelf_bu: float = 3.0
+@export var seabed_max_bu: float = 170.0
+@export var seabed_reach: Vector2 = Vector2(2.0, 30.0)
+@export var seabed_noise_k: float = 0.15
+@export var seabed_sand: Color = Color(0.34, 0.31, 0.24)
+@export var seabed_deep: Color = Color(0.17, 0.19, 0.20)
+@export var seabed_tone: Vector2 = Vector2(1.0, 13.0)
+@export var island_shoal_bu: float = 7.0
+@export var island_shoal_k: float = 1.3
+@export var island_shoal_slope: float = 0.55
 @export var island_spread: float = 1.6
+## The seabed shader (city_seabed.gdshader): the plate's clear-water fade and caustics (Colors go in as vec3).
+@export var seabed_water: Dictionary = {"sigma": Color(0.090, 0.034, 0.016), "inscatter": Color(0.003, 0.018, 0.055),
+	"inscatter_gain": 1.0, "path_cap": 600.0, "caustic_k": 1.1, "caustic_scale": 0.05, "caustic_width": 0.22,
+	"caustic_distort": 0.9, "caustic_floor": 0.12, "caustic_patch": 0.05, "caustic_patch_scale": 0.025,
+	"caustic_depth_bu": 30.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
 @export var water_plane_priority: int = -50
 ## The drowned quarter's sheet at the whole pose: the water plane's look, this much deeper than the bed under it.
 @export var whole_drowned_depth_bu: float = 3.0
 ## Its shader parameters (Colors go in as vec3).
-@export var water_plane: Dictionary = {"deep_day": Color(0.03, 0.16, 0.30), "deep_night": Color(0.01, 0.07, 0.10),
-	"shallow_day": Color(0.10, 0.45, 0.55), "shallow_night": Color(0.04, 0.30, 0.32), "absorb": Color(0.30, 0.10, 0.07),
-	"alpha_min": 0.15, "sky_day": Color(0.55, 0.62, 0.70), "sky_night": Color(0.04, 0.08, 0.10), "fresnel_gain": 0.6,
-	"glint_pow": 180.0, "glint_gain": 0.5, "ripple_bu": 14.0, "ripple_k": 0.35, "caustic_bu": 22.0, "caustic_gain": 0.25,
-	"foam_bu": 0.25, "foam_gain": 0.35, "far_bu": 60.0}
+@export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.35,
+	"sky_horizon_day": Color(0.62, 0.66, 0.70), "sky_zenith_day": Color(0.30, 0.45, 0.65),
+	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
+	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.022, 0.15, 0.31), "shallow_day": Color(0.09, 0.46, 0.50),
+	"body_emit_day": Color(0.01, 0.07, 0.14), "body_alpha": 0.40, "body_alpha_shallow": 0.52, "shallow_lots": Vector2(20.0, 34.0),
+	"far_shore_lots": 60.0, "surf_lots": Vector2(0.2, 1.6), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
+	"surf_period": 6.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14

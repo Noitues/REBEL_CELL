@@ -12,6 +12,7 @@ extends Node3D
 const SHADER := preload("res://shaders/city/city_water.gdshader")
 const SMEAR_SHADER := preload("res://shaders/city/city_water_smear.gdshader")
 const PLANE_SHADER := preload("res://shaders/city/city_water_plane.gdshader")
+const BED_SHADER := preload("res://shaders/city/city_seabed.gdshader")
 ## Smear sampling step along its path (BU) and the shortest smear kept (BU).
 const SMEAR_STEP_BU := 0.5
 const SMEAR_MIN_BU := 2.0
@@ -44,6 +45,8 @@ var islands: Array[Dictionary] = []
 var plane_mat: ShaderMaterial = null
 ## The drowned quarter's copy of it at the whole pose (CityView3D makes it).
 var drowned_mat: ShaderMaterial = null
+## LOOK L5: the seabed's material (city_seabed.gdshader: the plate's clear-water fade and caustics; null without terrain).
+var bed_mat: ShaderMaterial = null
 var wall_edges: int = 0
 
 
@@ -62,12 +65,13 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 	w._add(_void_mesh(outer_bu), w.void_mat, "Void")
 	if plan.terrain != null:
 		var tr := plan.terrain.coarse_rect
+		w.bed_mat = _bed_material(cfg)
 		var wet := _wet_of(plan.terrain, tr)
 		var sp := _sea_terrain(cfg, plan, tr, wet)
 		w.islands = sp["islands"]
 		w._add(sp["mesh"], w.water_mat, "Sea")
 		# LOOK L5: the land under the sea (islands included) and, for the whole-city pose, one transparent water plane over it.
-		w._add(CitySeabedKit.mesh(cfg, plan.terrain, tr, wet, sp["field"], w.islands), w.wall_mat, "Seabed")
+		w._add(CitySeabedKit.mesh(cfg, plan.terrain, tr, wet, sp["field"], w.islands), w.bed_mat, "Seabed")
 		w.plane_mat = _plane_material(cfg)
 		var o := CityIsoCamera.lot_to_world(cfg, Vector2(tr.position))
 		w.plane_mat.set_shader_parameter(&"bed_tex", ImageTexture.create_from_image(
@@ -95,7 +99,7 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 
 ## The materials CityView3D's day ramp updates with the ground's (the sea wall and pier decks).
 func lit_materials() -> Array[ShaderMaterial]:
-	return [wall_mat]
+	return [wall_mat] if bed_mat == null else [wall_mat, bed_mat]
 
 
 ## 1 = night tones .. 0 = day (the sea turns blue, its shore-light reflections go out).
@@ -115,8 +119,9 @@ func set_look_blend(lb: float) -> void:
 func set_time_scale(s: float) -> void:
 	water_mat.set_shader_parameter(&"time_scale", s)
 	smear_mat.set_shader_parameter(&"time_scale", s)
-	if plane_mat != null:
-		plane_mat.set_shader_parameter(&"time_scale", s)
+	for m in [plane_mat, drowned_mat, bed_mat]:
+		if m != null:
+			m.set_shader_parameter(&"time_scale", s)
 
 
 ## The coping's zoom scale at camera size `ortho` (BU): 1 at and nearer than `coping_ref_ortho`, growing in step with the
@@ -182,6 +187,17 @@ static func _water_material(cfg: CityConfig, is_void: bool) -> ShaderMaterial:
 	m.set_shader_parameter(&"foam_lots", cfg.water_foam_lots)
 	m.set_shader_parameter(&"foam_gain", cfg.water_foam_gain)
 	m.set_shader_parameter(&"look_gain", cfg.water_look_gain)
+	return m
+
+
+## LOOK L5: the seabed's material, its numbers from cfg.seabed_water.
+static func _bed_material(cfg: CityConfig) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = BED_SHADER
+	m.set_shader_parameter(&"sea_y", SEA_Y)
+	for k: String in cfg.seabed_water:
+		var v: Variant = cfg.seabed_water[k]
+		m.set_shader_parameter(StringName(k), Vector3(v.r, v.g, v.b) if v is Color else v)
 	return m
 
 
