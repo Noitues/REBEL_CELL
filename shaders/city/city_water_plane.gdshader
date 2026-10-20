@@ -53,6 +53,7 @@ uniform float marble_floor = 0.15;
 uniform float marble_shore = 0.6;
 // The blurred water mask's cut: below .x dry, above .y water (low, so the sheet reaches over the lot corners).
 uniform vec2 coast_cut = vec2(0.22, 0.42);
+uniform float coast_blur_lots = 1.5;
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
@@ -130,6 +131,16 @@ void fragment() {
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
 	ALBEDO = col * grade;
 	// No water over dry ground (the bake's depth is 0 there); bilinear, so the coast softens over half a lot.
-	float wetk = smoothstep(coast_cut.x, coast_cut.y, bed.b);
+	// Eight more taps of the mask a ring `coast_blur_lots` round: the bake's blur alone still follows the lot grid.
+	float mb = bed.b;
+	if (inside) {
+		vec2 tx = coast_blur_lots / vec2(textureSize(bed_tex, 0));
+		for (int k = 0; k < 8; k++) {
+			float an = float(k) * 0.7853982;
+			mb += texture(bed_tex, buv + vec2(cos(an), sin(an)) * tx).b;
+		}
+		mb /= 9.0;
+	}
+	float wetk = smoothstep(coast_cut.x, coast_cut.y, mb);
 	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
 }
