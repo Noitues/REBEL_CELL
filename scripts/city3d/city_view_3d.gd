@@ -367,8 +367,12 @@ func _whole_fog() -> void:
 		if _whole_fog_on:
 			_whole_fog_on = false
 			_env.fog_enabled = false
+			_env.adjustment_enabled = false
 		return
 	_whole_fog_on = true
+	# The plate's saturated colour (Cycles' Filmic look) over the toon city's greyed grade.
+	_env.adjustment_enabled = true
+	_env.adjustment_saturation = lerpf(cfg.whole_saturation.x, cfg.whole_saturation.y, night_share)
 	var c := cfg.whole_fog_day.lerp(cfg.whole_fog_night, night_share)
 	_env.fog_enabled = true
 	_env.fog_mode = Environment.FOG_MODE_DEPTH
@@ -592,7 +596,7 @@ func _whole_building() -> void:
 	_building_mat.set_shader_parameter(&"terr_colors", tc)
 	_building_mat.set_shader_parameter(&"terr_win_k", cfg.whole_terr_win_k * night_share if whole_look else 0.0)
 	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
-	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k if whole_look else 0.0)
+	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k * (1.0 - night_share) if whole_look else 0.0)
 	_whole_road_glow()
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):

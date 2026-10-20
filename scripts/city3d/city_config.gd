@@ -68,6 +68,8 @@ extends Resource
 @export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
 @export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
+## ... and the colour saturation there (Environment adjustment; day, night).
+@export var whole_saturation: Vector2 = Vector2(1.35, 1.15)
 @export var whole_fog_sun_scatter: float = 0.25
 @export var whole_day_haze_k: float = 0.12
 ## The share of whole_pose_dist_bu the buildings' depth haze starts at under the whole-city pose.
@@ -108,7 +110,7 @@ extends Resource
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
 @export var whole_terr_albedo_k: float = 0.3
-@export var whole_terr_wall_emit: float = 0.04
+@export var whole_terr_wall_emit: float = 0.012
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2, "facade_albedo": 0.85}
 ## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
@@ -123,7 +125,7 @@ extends Resource
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
-@export var whole_road_glow_gain: float = 0.9
+@export var whole_road_glow_gain: float = 0.7
 @export var whole_road_glow_tint: Color = Color(0.95, 1.2, 1.7)
 @export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
