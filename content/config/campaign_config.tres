@@ -517,6 +517,10 @@ city_a2_merge_share = 0.35
 city_a2_inset = 0.12
 city_a2_heights = {
 &"corp": Vector2(10, 34),
+&"corp_halcyon": Vector2(10, 28),
+&"corp_meridian": Vector2(5, 14),
+&"corp_orbital": Vector2(16, 42),
+&"corp_solace": Vector2(12, 34),
 &"industrial": Vector2(4, 10),
 &"informal": Vector2(2, 6),
 &"old_core": Vector2(5, 16),

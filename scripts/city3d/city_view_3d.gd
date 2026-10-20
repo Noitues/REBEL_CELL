@@ -524,6 +524,12 @@ func _sync_hq_beams() -> void:
 			_hq_beams.append(node)
 	for n in _hq_beams:
 		n.visible = show
+	var bl := layer(&"buildings")
+	if bl != null:
+		for ch in bl.get_children():
+			var ln := ch.get_node_or_null(^"Lanes") as Node3D
+			if ln != null:
+				ln.visible = not whole_look
 	# The street-lot piers, their lamp cubes and smears read as a comb of pins round the coast at the whole-city zoom.
 	if water != null:
 		for nm: String in cfg.whole_hide_water:
@@ -1142,6 +1148,8 @@ func _build_chunk(key: Vector2i) -> void:
 	var lm := CityMeshKit.lane_mesh_of(cfg, streets, model.terrain)
 	if lm != null:
 		var l := MeshInstance3D.new()
+		l.name = "Lanes"
+		l.visible = not whole_look  # LOOK L5: the street lane strips read as coloured dashes at the whole-city zoom
 		l.mesh = lm
 		l.material_override = _lane_mat
 		l.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))

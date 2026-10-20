@@ -479,6 +479,11 @@ static func _street(kind: PackedByteArray, R: Rect2i, l: Vector2i) -> bool:
 ## The height kind of a building at lot `l`: its A2 neighbourhood's kind (CityA2Raster.neighbourhood_kind) when that
 ## kind has heights, else corp / old_core (the Cell's territory) / sprawl.
 static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i, terr: StringName, cell_id: StringName) -> StringName:
+	# LOOK L5 (whole-city plate parity): a corporation's own height range (`corp_<id>`) wins over the A2 neighbourhood kind,
+	# so each corp district keeps the plate's massing (Orbital's glass spires, Meridian's low port blocks).
+	var ck := StringName("corp_%s" % terr)
+	if terr != &"" and terr != cell_id and cfg.city_a2_heights.has(ck):
+		return ck
 	var nk := ras.neighbourhood_kind(l.x, l.y)
 	if nk != &"" and cfg.city_a2_heights.has(nk):
 		return nk
