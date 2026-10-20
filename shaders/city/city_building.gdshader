@@ -27,6 +27,8 @@ uniform vec3 window_colors[6];
 uniform vec3 terr_colors[5];
 uniform float terr_win_k = 0.0;
 uniform float terr_wall_emit = 0.0;
+// ... and tints the facades toward it at the same brightness (the plate's districts read by colour by day too).
+uniform float terr_albedo_k = 0.0;
 uniform vec2 window_pitch = vec2(1.6, 1.9);
 uniform vec2 window_size = vec2(0.8, 0.7);
 uniform float window_first = 1.6;
@@ -357,6 +359,10 @@ void fragment() {
 	vec3 base = body * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
 	int terr_i = int(floor((1.0 - COLOR.a) * 8.0 + 0.5));
 	vec3 terr_c = terr_i > 0 ? terr_colors[min(terr_i - 1, 4)] : vec3(0.0);
+	if (terr_i > 0 && terr_albedo_k > 0.0) {
+		vec3 lw = vec3(0.2126, 0.7152, 0.0722);
+		base = mix(base, terr_c * dot(base, lw) / max(dot(terr_c, lw), 1e-3), terr_albedo_k);
+	}
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;

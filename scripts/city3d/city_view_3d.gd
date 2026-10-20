@@ -561,6 +561,7 @@ func _whole_building() -> void:
 	_building_mat.set_shader_parameter(&"terr_colors", tc)
 	_building_mat.set_shader_parameter(&"terr_win_k", cfg.whole_terr_win_k * night_share if whole_look else 0.0)
 	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
+	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k if whole_look else 0.0)
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))

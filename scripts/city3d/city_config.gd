@@ -105,6 +105,7 @@ extends Resource
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
+@export var whole_terr_albedo_k: float = 0.3
 @export var whole_terr_wall_emit: float = 0.04
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2, "facade_albedo": 0.85}
