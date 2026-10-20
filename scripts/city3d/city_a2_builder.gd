@@ -19,6 +19,10 @@ const K_PLAZA := 2
 const K_BUILDING := 3
 const K_WATER := 4
 const K_PARK := 5
+## CITY-A2 r2: open land, no building and no local street (steep or high ground, or the sprawl thinning past the ring).
+const K_BARE := 6
+## Lots round a Site's lot kept built whatever the open-land and corridor rules say (its marker needs a roof).
+const SITE_KEEP := 2
 
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 ## A Site heading score below any real one (a rejected heading).
@@ -313,6 +317,11 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			kind[k] = K_WATER
 		elif ras.is_park(l.x, l.y):
 			kind[k] = K_PARK
+		elif plan.terrain != null and ras.territory(l.x, l.y) == &"" and _bare(plan.terrain, cfg, l) and not _near_site(plan, l) \
+				and plan.terrain.outside_ring(l.x + 0.5, l.y + 0.5) > cfg.city_a2_sprawl_streets:
+			# CITY-A2 r2: open Sprawl land past the suburbs gets no local streets either (no street grid to the rect's edge;
+			# within `city_a2_sprawl_streets` lots of the ring the streets stay, the Sites' routes run on them).
+			kind[k] = K_BARE
 	var rng := RngStreams.make_stream(plan.city_seed, RngStreams.CITY_BLOCKS_STREAM)
 	# Local streets: a seeded spacing and phase per A2 district (index 0 = outside every district).
 	var grid: Array[Vector4i] = []
@@ -365,6 +374,28 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			rec["col"] = ink
 			rec["traffic"] = traffic_of[int(rank[k])]
 		streets[k] = rec
+	# CITY-A2 r2: open land (no building; the streets stay, the Sites' routes need them): high or steep ground, the sprawl
+	# thinning past the outer ring.
+	if plan.terrain != null:
+		for k in n:
+			if kind[k] == K_GROUND:
+				var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
+				if _bare(plan.terrain, cfg, l) and not _near_site(plan, l):
+					kind[k] = K_BARE
+	# CITY-A2 r2: the elevated roads' corridors (art-pass zoning `clear`): no building within `city_a2_corridor` lots of a
+	# ring / motorway / truck road's lots (streets still cross under the decks).
+	for rd: Dictionary in ras.a2.roads:
+		var reach: int = int(cfg.city_a2_corridor.get(rd["class"], 0))
+		if reach <= 0 or not ras.road_lots.has(rd["id"]):
+			continue
+		for l: Vector2i in ras.road_lots[rd["id"]]:
+			for dj in range(-reach, reach + 1):
+				for di in range(-reach, reach + 1):
+					var q := l + Vector2i(di, dj)
+					if R.has_point(q):
+						var kq := (q.y - R.position.y) * w + (q.x - R.position.x)
+						if kind[kq] == K_GROUND and not _near_site(plan, q):
+							kind[kq] = K_BARE
 	# Buildings: row order; a lot may merge with its east or south neighbour.
 	var cells: Array = []
 	var front := {}
@@ -398,6 +429,34 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 		front[(f.y - R.position.y) * w + (f.x - R.position.x)] = ci
 		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng)})
 	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
+
+
+## CITY-A2 r2 (art-pass zoning_a2.py): lot `l` stays open land: its ground is over `city_a2_max_build_h` or steeper than
+## `city_a2_max_build_slope`, or past the outer ring (by the terrain's broad noise x `city_a2_edge_noise`) its jitter is
+## over the chance of a building there (1 at the ring, 0 past `city_a2_sprawl_fade`).
+static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i) -> bool:
+	var c := Vector2(l) + Vector2(0.5, 0.5)
+	if t.height_at(c.x, c.y) > cfg.city_a2_max_build_h or t.slope_at(c.x, c.y) > cfg.city_a2_max_build_slope:
+		return true
+	var d := t.outside_ring(c.x, c.y)
+	if d <= 0.0:
+		return false
+	d = maxf(d + (t.noise_at(c.x, c.y) * 2.0 - 1.0) * cfg.city_a2_edge_noise, 0.0)
+	return t.jitter(l.x, l.y) >= 1.0 - _smooth01(d, cfg.city_a2_sprawl_fade)
+
+
+static func _smooth01(x: float, r: Vector2) -> float:
+	var t := clampf((x - r.x) / (r.y - r.x), 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+
+## True when lot `l` is within SITE_KEEP lots of a Site's lot (its buildings stay).
+static func _near_site(plan: CityPlan, l: Vector2i) -> bool:
+	for dj in range(-SITE_KEEP, SITE_KEEP + 1):
+		for di in range(-SITE_KEEP, SITE_KEEP + 1):
+			if plan.a2_sites.has(l + Vector2i(di, dj)):
+				return true
+	return false
 
 
 static func _street(kind: PackedByteArray, R: Rect2i, l: Vector2i) -> bool:

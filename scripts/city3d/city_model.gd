@@ -230,7 +230,7 @@ func chunk_aabb(key: Vector2i) -> AABB:
 		var pr := prisms[n]
 		for q: Vector2 in pr["poly"]:
 			lo = Vector3(minf(lo.x, q.x), 0.0, minf(lo.z, q.y))
-			hi = Vector3(maxf(hi.x, q.x), 0.0, maxf(hi.z, q.y))
+			hi = Vector3(maxf(hi.x, q.x), hi.y, maxf(hi.z, q.y))  # CITY-A2 r2: keep the tallest top so far (was reset to 0)
 		hi.y = maxf(hi.y, float(pr["y0"]) + float(pr["h"]))
 	var box := AABB(lo, hi - lo)
 	ch["box"] = box

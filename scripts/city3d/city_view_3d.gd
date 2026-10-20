@@ -936,7 +936,7 @@ func _build_water(m: CityModel) -> void:
 		_ramp_water(_last_day)
 
 
-## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the ground material;
+## CITY-A2 step 2: the land past the city (CityMeshKit.land_mesh over the terrain's coarse grid), in the chunks' ground material;
 ## none without terrain or headless. It shows and hides with the outer ground plane (`show_outer_ground`).
 var land: MeshInstance3D = null
 
@@ -945,6 +945,9 @@ func _build_land(m: CityModel) -> void:
 	if land != null:
 		land.queue_free()
 		land = null
+		var o := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
+		if o != null:
+			o.visible = _outer_ground_on
 	if m.terrain == null or not can_render():
 		return
 	var mesh := CityMeshKit.land_mesh(cfg, m.terrain, cfg.city_rect)
@@ -953,11 +956,14 @@ func _build_land(m: CityModel) -> void:
 	land = MeshInstance3D.new()
 	land.name = "OuterLand"
 	land.mesh = mesh
-	land.material_override = _outer_mat
+	land.material_override = _ground_mat  # CITY-A2 r2: the city's own ground material (day ramp, spill): one surface, one tone
 	land.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	land.visible = _outer_ground_on
 	layer(&"ground").add_child(land)
+	var outer := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
+	if outer != null:
+		outer.visible = false  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
 
 
 ## CITY-A2 step 2: A2's roads by class, rails and stations, walls and checkpoints, the port, the drowned quarter and the
@@ -972,8 +978,8 @@ func _build_features(m: CityModel) -> void:
 	var plan := CityPlan.for_seed(m.city_seed)
 	if plan.a2 == null or plan.terrain == null or not can_render():
 		return
-	var wm: Material = water.water_mat if water != null else _outer_mat
-	features = CityA2Features.make(cfg, plan, _outer_mat, _lane_mat, wm)
+	var wm: Material = water.water_mat if water != null else _ground_mat
+	features = CityA2Features.make(cfg, plan, _ground_mat, _lane_mat, wm)  # CITY-A2 r2: the day ramp reaches the decks
 	add_to_layer(&"ground", features)
 
 
@@ -1659,7 +1665,7 @@ func show_outer_ground(on: bool) -> void:
 	var g := layer(&"ground")
 	var outer := g.get_node_or_null(^"OuterGround") as Node3D if g != null else null
 	if outer != null:
-		outer.visible = on
+		outer.visible = on and land == null  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
 	if land != null:
 		land.visible = on
 

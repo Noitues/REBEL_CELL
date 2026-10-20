@@ -427,18 +427,34 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## from stream `city_terrain` of `city_a2_terrain_seed`; no mountain within `city_a2_mountain_shore` lots of the water; the
 ## land falls to the sea over `city_a2_beach` lots. The land runs `city_a2_land_margin` lots past the city rect, sampled
 ## every `city_a2_land_step` lots past the raster.
-@export var city_a2_hill_exag: float = 1.0
+@export var city_a2_hill_exag: float = 1.5
 @export var city_a2_outer_ring: StringName = &"road_001"
 @export var city_a2_foot: Vector2 = Vector2(2.5, 25.0)
 @export var city_a2_foot_h: float = 12.0
-@export var city_a2_mountain: Vector2 = Vector2(20.0, 64.0)
+@export var city_a2_mountain: Vector2 = Vector2(28.0, 80.0)
 @export var city_a2_mountain_h: float = 60.0
 @export var city_a2_noise_cells: Vector3 = Vector3(33.0, 13.0, 40.0)
 @export var city_a2_terrain_seed: int = 5101
 @export var city_a2_mountain_shore: Vector2 = Vector2(1.2, 7.5)
 @export var city_a2_beach: Vector2 = Vector2(0.5, 2.5)
-@export var city_a2_land_margin: int = 80
-@export var city_a2_land_step: int = 2
+@export var city_a2_land_margin: int = 120
+@export var city_a2_land_step: int = 3
+## CITY-A2 r2 (art-pass terrain_a2.py): the far horizon ridge, the mountains x(1 + x) rising over y..z lots past the outer
+## ring; the raster's fine heights blend into the coarse land over `city_a2_land_blend` lots inside the raster's edge (one
+## surface, no step); per-lot jitter lattice (a 4th lattice of the terrain stream, 1 lot cells).
+@export var city_a2_mountain_edge: Vector3 = Vector3(0.45, 78.0, 124.0)
+@export var city_a2_land_blend: float = 12.0
+## CITY-A2 r2 (art-pass zoning_a2.py): no building on ground over `city_a2_max_build_h` BU or steeper than
+## `city_a2_max_build_slope` (BU per BU); past the outer ring (lots, moved by the terrain's broad noise x
+## `city_a2_edge_noise` lots) a lot keeps its building with the chance falling over `city_a2_sprawl_fade` (from, to).
+@export var city_a2_max_build_h: float = 42.0
+@export var city_a2_max_build_slope: float = 0.3
+@export var city_a2_edge_noise: float = 5.0
+@export var city_a2_sprawl_fade: Vector2 = Vector2(0.5, 6.0)
+## Past the outer ring by more than this (lots), open Sprawl land has no local streets either.
+@export var city_a2_sprawl_streets: float = 16.0
+## CITY-A2 r2 (art-pass zoning `clear`): lots each side of an A2 road of the class kept open under its elevated deck.
+@export var city_a2_corridor: Dictionary = {&"ring": 1, &"motorway": 1, &"truck": 1}
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -739,6 +755,9 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 			errors.append("city_a2_heights %s must be a Vector2 0 < min <= max." % k)
 	if not city_a2_traffic.has(&"local"):
 		errors.append("city_a2_traffic needs a local entry.")
+	if city_a2_land_blend < 0.0 or city_a2_land_blend > float(city_a2_raster_margin) or city_a2_max_build_h <= 0.0 \
+			or city_a2_max_build_slope <= 0.0 or city_a2_sprawl_fade.x >= city_a2_sprawl_fade.y or city_a2_mountain_edge.y >= city_a2_mountain_edge.z:
+		errors.append("city_a2_land_blend must be 0..city_a2_raster_margin, city_a2_max_build_h / _slope > 0, city_a2_sprawl_fade and city_a2_mountain_edge from < to.")
 	if city_a2_hill_exag < 0.0 or city_a2_foot_h < 0.0 or city_a2_mountain_h < 0.0 or city_a2_land_margin < 0 or city_a2_land_step < 1:
 		errors.append("city_a2_hill_exag, city_a2_foot_h, city_a2_mountain_h, city_a2_land_margin must be >= 0, city_a2_land_step >= 1.")
 	for v: Vector2 in [city_a2_foot, city_a2_mountain, city_a2_mountain_shore, city_a2_beach]:

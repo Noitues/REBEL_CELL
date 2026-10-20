@@ -244,10 +244,20 @@ static func _void_mesh(outer_bu: float) -> ArrayMesh:
 
 ## The sea lots of the city rect grown by `water_extend_lots`, as runs along the inland axis (rows for a west / east sea,
 ## columns for a north / south one): UV.x the lots from the shore (exact: the shore distance is linear along a run),
-## UV.y the lots along the shore.
+## UV.y the lots along the shore. CITY-A2 r2: with terrain, over the terrain's whole land (its coarse rect), wet where the
+## terrain says (A2's coastline out to the extent, the land wrapping round it).
 static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 	var a := MeshArrays.new()
-	var r := plan.rect.grow(cfg.water_extend_lots)
+	var t := plan.terrain
+	var r := t.coarse_rect if t != null else plan.rect.grow(cfg.water_extend_lots)
+	var wet := PackedByteArray()
+	wet.resize(r.size.x * r.size.y)
+	for j in r.size.y:
+		for i in r.size.x:
+			var l := r.position + Vector2i(i, j)
+			var w := t.is_water_at(l.x + 0.5, l.y + 0.5) if t != null else plan.is_water(l.x, l.y)
+			wet[j * r.size.x + i] = 1 if w else 0
+	var is_wet := func(l: Vector2i) -> bool: return wet[(l.y - r.position.y) * r.size.x + (l.x - r.position.x)] != 0
 	var side := int(plan.coast["side"])
 	var rows := side < 2  # runs along i, one per j
 	var outer_n := r.size.y if rows else r.size.x
@@ -256,11 +266,11 @@ static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 		var k := 0
 		while k < inner_n:
 			var lot := _lot_of(r, rows, o, k)
-			if not plan.is_water(lot.x, lot.y):
+			if not is_wet.call(lot):
 				k += 1
 				continue
 			var start := k
-			while k < inner_n and plan.is_water(_lot_of(r, rows, o, k).x, _lot_of(r, rows, o, k).y):
+			while k < inner_n and is_wet.call(_lot_of(r, rows, o, k)):
 				k += 1
 			var p0 := Vector2(_lot_of(r, rows, o, start))
 			var p1 := Vector2(_lot_of(r, rows, o, k - 1)) + Vector2.ONE

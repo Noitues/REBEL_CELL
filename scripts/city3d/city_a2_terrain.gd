@@ -13,7 +13,11 @@ extends RefCounted
 ## Two grids of corner samples (lot points): `fine` every lot over the raster (the city rect grown by the raster margin;
 ## water from the raster), `coarse` every `city_a2_land_step` lots over the city rect grown by `city_a2_land_margin`
 ## (water from A2's ocean polygon and lakes; past the polygon's box the sea or land of its nearest edge goes on).
-## `height_at` reads the fine grid inside it, else the coarse one (bilinear). Pure: no Node; one named RNG stream.
+## `height_at` reads the fine grid inside it, else the coarse one (bilinear); r2: within `city_a2_land_blend` lots of the
+## fine grid's edge it blends into the coarse one, so the two are one surface (no step at the raster's edge).
+## r2 also: the far horizon ridge (`city_a2_mountain_edge`), `outside_ring` (lots past the outer ring), `noise_at` (the
+## broad noise), `jitter` (a per-lot value in [0, 1) from a 4th lattice of the stream), `slope_at` and `is_water_at`.
+## Pure: no Node; one named RNG stream.
 
 const DIAG := 1.41421356
 
@@ -28,6 +32,15 @@ var coarse: PackedFloat32Array = PackedFloat32Array()
 var coarse_water: PackedByteArray = PackedByteArray()
 ## The mountain term (BU, before the beach) on the coarse grid: the fine grid reads it bilinearly.
 var _mount: PackedFloat32Array = PackedFloat32Array()
+## Lots past the outer ring (0 inside) on the coarse grid; the broad noise lattices; the per-lot jitter over `fine_rect`.
+var _dout: PackedFloat32Array = PackedFloat32Array()
+var _lat: Array[PackedFloat32Array] = []
+var _lw: Array[int] = []
+var _cells: Array[float] = []
+var _jit: PackedFloat32Array = PackedFloat32Array()
+var _blend: float = 0.0
+var _lot_bu: float = 1.0
+var _ras: CityA2Raster = null
 var _cw: int = 0
 var _ch: int = 0
 var _fw: int = 0
@@ -37,6 +50,9 @@ var _fw: int = 0
 static func make(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, lot_bu: float) -> CityA2Terrain:
 	var t := CityA2Terrain.new()
 	t.step = maxi(cfg.city_a2_land_step, 1)
+	t._blend = cfg.city_a2_land_blend
+	t._lot_bu = lot_bu
+	t._ras = ras
 	var outer := city_rect.grow(cfg.city_a2_land_margin)
 	var cw := ceili(float(outer.size.x) / t.step)
 	var ch := ceili(float(outer.size.y) / t.step)
@@ -51,9 +67,50 @@ static func make(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, 
 
 ## The ground (BU) at lot point (x, y).
 func height_at(x: float, y: float) -> float:
-	if x >= fine_rect.position.x and y >= fine_rect.position.y and x <= fine_rect.end.x and y <= fine_rect.end.y:
-		return _bilerp(fine, _fw, fine_rect.position, 1, x, y)
-	return _bilerp(coarse, _cw, coarse_rect.position, step, x, y)
+	var c := _bilerp(coarse, _cw, coarse_rect.position, step, x, y)
+	if x < fine_rect.position.x or y < fine_rect.position.y or x > fine_rect.end.x or y > fine_rect.end.y:
+		return c
+	var f := _bilerp(fine, _fw, fine_rect.position, 1, x, y)
+	var e := minf(minf(x - fine_rect.position.x, fine_rect.end.x - x), minf(y - fine_rect.position.y, fine_rect.end.y - y))
+	if e >= _blend:
+		return f
+	return lerpf(c, f, _smooth(e, 0.0, _blend))
+
+
+## The ground's slope (BU per BU) at lot point (x, y): central differences half a lot apart.
+func slope_at(x: float, y: float) -> float:
+	var gx := height_at(x + 0.5, y) - height_at(x - 0.5, y)
+	var gy := height_at(x, y + 0.5) - height_at(x, y - 0.5)
+	return Vector2(gx, gy).length() / _lot_bu
+
+
+## Lots past the outer ring (0 inside it) at lot point (x, y).
+func outside_ring(x: float, y: float) -> float:
+	return _bilerp(_dout, _cw, coarse_rect.position, step, x, y)
+
+
+## The broad noise (0..1, the mountains' own) at lot point (x, y).
+func noise_at(x: float, y: float) -> float:
+	var u := clampf(x - coarse_rect.position.x, 0.0, coarse_rect.size.x)
+	var v := clampf(y - coarse_rect.position.y, 0.0, coarse_rect.size.y)
+	return _vnoise(_lat[0], _lw[0], u / _cells[0], v / _cells[0]) * 0.65 + _vnoise(_lat[1], _lw[1], u / _cells[1], v / _cells[1]) * 0.35
+
+
+## A per-lot value in [0, 1) for lot (i, j) of the raster (the terrain stream's jitter lattice); 0.5 past it.
+func jitter(i: int, j: int) -> float:
+	if not fine_rect.has_point(Vector2i(i, j)):
+		return 0.5
+	return _jit[(j - fine_rect.position.y) * fine_rect.size.x + (i - fine_rect.position.x)]
+
+
+## True when lot point (x, y) is water: the raster's lot inside it, else the coarse grid's nearest corner.
+func is_water_at(x: float, y: float) -> bool:
+	var l := Vector2i(floori(x), floori(y))
+	if fine_rect.has_point(l):
+		return _ras.is_water(l.x, l.y)
+	var i := clampi(roundi((x - coarse_rect.position.x) / step), 0, _cw - 1)
+	var j := clampi(roundi((y - coarse_rect.position.y) / step), 0, _ch - 1)
+	return coarse_water[j * _cw + i] != 0
 
 
 ## The ground (BU) at the centre of lot (i, j) (streets, plazas, lot markers).
@@ -199,7 +256,7 @@ func _coarse(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 	var d_w := _chamfer(coarse_water, _cw, _ch)
 	# The noise lattices (broad, fine, ridge), drawn in that order from the terrain stream.
 	var rng := RngStreams.make_stream(cfg.city_a2_terrain_seed, RngStreams.CITY_TERRAIN_STREAM)
-	var cells := [cfg.city_a2_noise_cells.x, cfg.city_a2_noise_cells.y, cfg.city_a2_noise_cells.z]
+	var cells: Array[float] = [cfg.city_a2_noise_cells.x, cfg.city_a2_noise_cells.y, cfg.city_a2_noise_cells.z]
 	var lat: Array[PackedFloat32Array] = []
 	var lw: Array[int] = []
 	for c: float in cells:
@@ -211,6 +268,18 @@ func _coarse(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 			g[k] = rng.randf()
 		lat.append(g)
 		lw.append(gw)
+	_lat = lat
+	_lw = lw
+	_cells = cells
+	# r2: the per-lot jitter over the raster, drawn after the three lattices (they keep their values).
+	var rr := ras.rect
+	_jit.resize(rr.size.x * rr.size.y)
+	for k in _jit.size():
+		_jit[k] = rng.randf()
+	_dout.resize(n)
+	for k in n:
+		_dout[k] = d_out[k] * step
+	var edge := cfg.city_a2_mountain_edge
 	_mount.resize(n)
 	coarse.resize(n)
 	var k_bu := lot_bu / ras.metres_per_lot * cfg.city_a2_hill_exag
@@ -224,6 +293,7 @@ func _coarse(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 			var d := d_out[k] * step
 			var mt := cfg.city_a2_foot_h * _smooth(d, cfg.city_a2_foot.x, cfg.city_a2_foot.y) * (0.35 + na) \
 				+ cfg.city_a2_mountain_h * pow(_smooth(d, cfg.city_a2_mountain.x, cfg.city_a2_mountain.y), 1.35) * (0.4 + 0.85 * rid + 0.35 * na)
+			mt *= 1.0 + edge.x * _smooth(d, edge.y, edge.z)  # the far horizon ridge
 			mt *= _smooth(d_w[k] * step, cfg.city_a2_mountain_shore.x, cfg.city_a2_mountain_shore.y)
 			_mount[k] = mt
 			if coarse_water[k] != 0:

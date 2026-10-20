@@ -539,15 +539,27 @@ city_a2_traffic = {
 &"truck": 0.8
 }
 city_a2_budget_s = 2.0
-city_a2_hill_exag = 1.0
+city_a2_hill_exag = 1.5
 city_a2_outer_ring = &"road_001"
 city_a2_foot = Vector2(2.5, 25)
 city_a2_foot_h = 12.0
-city_a2_mountain = Vector2(20, 64)
+city_a2_mountain = Vector2(28, 80)
 city_a2_mountain_h = 60.0
 city_a2_noise_cells = Vector3(33, 13, 40)
 city_a2_terrain_seed = 5101
 city_a2_mountain_shore = Vector2(1.2, 7.5)
 city_a2_beach = Vector2(0.5, 2.5)
-city_a2_land_margin = 80
-city_a2_land_step = 2
+city_a2_land_margin = 120
+city_a2_land_step = 3
+city_a2_mountain_edge = Vector3(0.45, 78, 124)
+city_a2_land_blend = 12.0
+city_a2_max_build_h = 42.0
+city_a2_max_build_slope = 0.3
+city_a2_edge_noise = 5.0
+city_a2_sprawl_fade = Vector2(0.5, 6)
+city_a2_sprawl_streets = 16.0
+city_a2_corridor = {
+&"motorway": 1,
+&"ring": 1,
+&"truck": 1
+}
