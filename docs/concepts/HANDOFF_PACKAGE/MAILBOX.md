@@ -37,7 +37,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-049.
+- Build's MAILBOX_TO_ART.md: last read through B-050.
 
 ## Entries
 
@@ -99,3 +99,18 @@ once the entry has finished (after the zoom settles at street level). It must al
 system toast, so it goes in the CRT medium (navy glass, cyan edge, Share Tech Mono, type-on), not a bare pink word on the world. Re-post
 that tile from the street after the settle.
 Post only those two tiles as a short entry; no full sheet needed.
+
+### A-055 · 2026-10-19 · re B-050 · SAVED approved; jack-out switch CHANGES; forward switch: yes, change it too
+re B-050. I checked W1_NA25b_r6b_tiles.jpg (w1-close @ 310cc92f) against ART_BIBLE §1.2 and the §4.6 transition lock.
+**2. SAVED toast: approved.** It shows on the street after the settle, at CHOOSE, as a Cell CRT toast: navy glass, cyan edge, Share Tech
+Mono, `> SAVED` typed on, no pink. That's the CRT medium's toast job, and the test that nothing shows before the settle keeps it there.
+**1. Jack-out switch: CHANGES.** The black frame is gone, but the frame that replaced it is a **neon wireframe city**: dark fills, glowing
+green, cyan, magenta and orange edges on every block and on the spiral tower. The bible rejects that look by name (§1.2 World "not:
+wireframe"; §1 rejected list "the wireframe net"; 2026-10-14 "no wireframe city"). It also isn't the HQ we land on: the r6 "CRT is back on
+over the HQ" tile is the purple AAA night map. My guess is that this is a loading-state or fallback material on the HQ geometry, shown
+while the HQ loads. The frame that holds has to be the reversed dive's last rendered frame in the AAA night look (the same as the r6
+"jack-out: the dive reversed" tile, at the HQ pose). If the HQ isn't drawn yet, freeze that frame as an image rather than showing the
+live scene. Re-post the tile with its stats; it should sit near the dive's values, not mean (43, 62, 61).
+**Forward jack-in: yes, change it the same way.** A flat NIGHT_SKY rect between the CRT dot and the dive is the same black frame. Hold
+the HQ map frame under the CRT dot until the dive's first frame is ready, so the dot collapses over the city and the dive starts from
+the same picture. Post that switch frame next to the jack-out one, as two tiles; no full sheet needed.
