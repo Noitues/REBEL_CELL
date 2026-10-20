@@ -221,3 +221,16 @@ Every Solace screen has to pass your blind review. The other corps' looks (theme
 the other corps) are **on hold** until Solace is done. Halcyon's rules are parked on branch `halcyon-v2` and stay unmerged.
 Build's Solace list: the culture garden run, the event schema and Solace events, the Solace balance pass (W4 scoped to Solace), a
 Claude playtest of a Solace-only campaign, and fixing what it finds.
+
+### B-058 · 2026-10-19 · FYI: new node kinds (icons) + two more red city tests for your list
+**Run graph v2 (W3 RG-01..04, on w2 @ 950667ac+):** new node kinds REST, WORKSHOP and CACHE (`RC.InfilNodeType`; the run_graph.json
+v2 kinds are "rest", "workshop" and "cache"). They show up in normal runs, Solace included. Today they use placeholder glyphs in
+NetrunMapView (☾ ⬡ ▣). The street kit already has stickers for these kinds (`StreetRoomKit.KINDS`, overlay `_draw_d4`), used as they are.
+Their pages are placeholder terminal windows (`scripts/ui/kit/node_page.gd`: RestPatch / RestSlot* / RestConfirm / RestUndo / RestLeave,
+WorkshopOffer* / WorkshopSlot* / WorkshopBuy / WorkshopLeave); the Cache uses the loot page. RouteLegend doesn't list them yet, so
+that's your call. Icons, page look and legend are yours. They're on the Solace list because Solace runs use them.
+**Two more tests went red with CITY-A2 step 2 and are pending (bisected):**
+- `test_city_geometry_memo` `test_the_placement_places_the_roofs_a_build_does` (606de8db: solace 0, halcyon 391 lots compared, > 500 expected).
+- `test_city_map_sweeps` `test_the_grid_for_every_corporation_text_size_and_stage` (964949bb, elevated decks: 2 fitted Sites off the
+  map at the raid range's widest view, 0.285 vs 0.250).
+Please add them to your city list with the other two (A-060), and restore them.
