@@ -95,10 +95,34 @@ static func _pier_city(b: _Build, look: Dictionary, radius: float) -> void:
 	# The main dome (ribbed: lit meridians by night) and a ring of windows at its foot.
 	var rd := float(look.get("dome_k", 0.14)) * radius
 	var hd := rd * float(look.get("dome_h", 0.85))
-	b.dome(Vector3(0.0, dh, 0.0), rd, hd, 40, 10, TOON, white)
-	b.band(rd * 1.01, 1.0, dh, dh + hd * 0.12, 40, WIN, lamp, 1.0)
+	# Designer 2026-10-20: a taller, textured centre: the dome stands on a drum of window floors, ringed by glass towers.
+	var fl := float(look.get("floor_bu", 0.9))
+	var glass := _col(look, "glass", Color(0.55, 0.66, 0.74))
+	var drum := hd * (float(look.get("dome_tall", 1.0)) - 1.0)
+	var nf := maxi(int(drum / fl), 0)
+	for f in nf:
+		var y0 := dh + f * fl
+		b.band(rd, 1.0, y0, y0 + fl * 0.62, 40, TOON, white * (0.94 if f % 2 == 0 else 0.9), 1.0)
+		b.band(rd * 1.004, 1.0, y0 + fl * 0.62, y0 + fl, 40, WIN, lamp, 1.0)
+	var db := dh + nf * fl
+	b.dome(Vector3(0.0, db, 0.0), rd, hd, 40, 10, TOON, white)
+	b.band(rd * 1.01, 1.0, db, db + hd * 0.12, 40, WIN, lamp, 1.0)
 	for k in 12:
-		b.rib(Vector3(0.0, dh, 0.0), rd * 1.008, hd * 1.008, TAU * k / 12.0, 10, 0.012 * TAU, NEON, cyan)
+		b.rib(Vector3(0.0, db, 0.0), rd * 1.008, hd * 1.008, TAU * k / 12.0, 10, 0.012 * TAU, NEON, cyan)
+	var towers := int(look.get("towers", 0))
+	var tw := float(look.get("tower_w_k", 0.22)) * rd
+	for k in towers:
+		var an := TAU * k / towers
+		var c := Vector3(cos(an), 0.0, sin(an)) * (rd + tw * 1.4)
+		var th := (db + hd) * float(look.get("tower_h_k", 2.0)) * (0.75 + 0.25 * float((k * 5) % towers) / towers)
+		var nt := maxi(int((th - dh) / fl), 1)
+		var side := Vector3(-sin(an), 0.0, cos(an))
+		for f in nt:
+			var y0 := dh + f * fl
+			b.box_between(c - side * tw * 0.5, c + side * tw * 0.5, Vector3(cos(an), 0.0, sin(an)), tw, y0, y0 + fl * 0.6, TOON, glass)
+			b.box_between(c - side * tw * 0.505, c + side * tw * 0.505, Vector3(cos(an), 0.0, sin(an)), tw * 1.01, y0 + fl * 0.6, y0 + fl, WIN, lamp)
+		b.box_between(c + Vector3(0.0, dh + nt * fl, 0.0), c + Vector3(0.0, dh + nt * fl + fl * 2.0, 0.0), side, tw * 0.3, 0.0, 0.0, NEON, cyan, true)
+	hd += db - dh
 	# Satellites round it.
 	var sat := int(look.get("satellites", 6))
 	var rs := rd * 0.38

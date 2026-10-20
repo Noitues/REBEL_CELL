@@ -215,7 +215,7 @@ func _yard(poly: PackedVector2Array) -> void:
 				var c := w(m, 0.0)
 				var ax := w(m + Vector2(1.0, 0.0), 0.0) - c
 				if _h(i, SALT_PORT + 3) < float(look.get("yard_fill", 0.85)):
-					var stack := 1 + int(_h(i, SALT_PORT + 4) * 4.0)
+					var stack := 1 + int(_h(i, SALT_PORT + 4) * 3.0)
 					var col: Color = cols[int(_h(i, SALT_PORT + 5) * cols.size()) % cols.size()]
 					box(TOON, c, ax, bu(bay_m * 0.86), bu(row_m * 0.7), g, g + unit * stack, col)
 				elif _h(i, SALT_PORT + 6) < 0.35:
@@ -288,9 +288,9 @@ func _ship(c: Vector2, dir: Vector2, len_m: float, cargo: bool, idx: int, wake: 
 func _open(m: Vector2, poly: PackedVector2Array) -> bool:
 	if not Geometry2D.is_point_in_polygon(m, poly):
 		return false
-	if ground_y(m) > -float(look.get("ship_depth_bu", 3.0)):
-		return false
 	var l := ras.lot_of(m)
+	if not ras.is_water(floori(l.x), floori(l.y)):
+		return false
 	for it: Dictionary in islands:
 		if CityWater.island_rho(cfg, it, l) < float(look.get("ship_isle_rho", 2.4)):
 			return false
@@ -418,15 +418,16 @@ func _helis(a2: CityPlanA2) -> void:
 		var hm := c + Vector2(cos(an), sin(an)) * reach * (0.4 + 0.6 * _h(i, SALT_HELI + 1))
 		var gy := maxf(ground_y(hm), 0.0)
 		var hp := w(hm, gy + alt + _h(i, SALT_HELI + 2) * 8.0)
+		var sc := float(look.get("heli_scale", 1.0))
 		var head := w(hm + Vector2(cos(an + 1.3), sin(an + 1.3)), 0.0) - w(hm, 0.0)
 		# The body, its tail boom and the rotor's blur.
-		box(TOON, hp, head, 2.4, 1.0, -0.5, 0.5, body)
+		box(TOON, hp, head, 2.4 * sc, 1.0 * sc, -0.5 * sc, 0.5 * sc, body)
 		var hf := Vector3(head.x, 0.0, head.z).normalized()
-		b.box_between(hp - hf * 1.2, hp - hf * 3.4, Vector3(-hf.z, 0.0, hf.x), 0.3, 0.0, 0.3, TOON, body)
-		box(TOON, hp + Vector3(0, 0.7, 0), head, 4.6, 0.25, 0.0, 0.05, body * 1.4)
-		box(TOON, hp + Vector3(0, 0.7, 0), Vector3(-hf.z, 0.0, hf.x), 4.6, 0.25, 0.0, 0.05, body * 1.4)
-		light(hp - hf * 3.4 + Vector3(0, 0.3, 0), hf, 0.45, 0.45, 0.45, Color(1.0, 0.12, 0.1), _h(i, SALT_HELI + 3))
-		light(hp + Vector3(0, -0.6, 0), hf, 0.7, 0.4, 0.25, Color(1.0, 1.0, 1.0), _h(i, SALT_HELI + 4))
+		b.box_between(hp - hf * 1.2 * sc, hp - hf * 3.4 * sc, Vector3(-hf.z, 0.0, hf.x), 0.3 * sc, 0.0, 0.3 * sc, TOON, body)
+		box(TOON, hp + Vector3(0, 0.7 * sc, 0), head, 4.6 * sc, 0.25 * sc, 0.0, 0.05 * sc, body * 1.4)
+		box(TOON, hp + Vector3(0, 0.7 * sc, 0), Vector3(-hf.z, 0.0, hf.x), 4.6 * sc, 0.25 * sc, 0.0, 0.05 * sc, body * 1.4)
+		light(hp - hf * 3.4 * sc + Vector3(0, 0.3 * sc, 0), hf, 0.45 * sc, 0.45 * sc, 0.45 * sc, Color(1.0, 0.12, 0.1), _h(i, SALT_HELI + 3))
+		light(hp + Vector3(0, -0.6 * sc, 0), hf, 0.7 * sc, 0.4 * sc, 0.25 * sc, Color(1.0, 1.0, 1.0), _h(i, SALT_HELI + 4))
 		# The searchlight: a soft cone to a pool on the city, a little ahead.
 		var tm := hm + Vector2(cos(an + 2.4), sin(an + 2.4)) * float(look.get("spot_lead_m", 220.0))
 		var ty := maxf(ground_y(tm), 0.0) + 0.4

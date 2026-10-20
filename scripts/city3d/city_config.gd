@@ -417,9 +417,11 @@ extends Resource
 @export var whole_landmark_tone: Dictionary = {
 	&"meridian": Vector3(0.45, 0.78, 1.0),
 	&"aurelian": Vector3(0.25, 1.0, 0.7),
-	&"tethys": Vector3(0.2, 1.0, 0.75),
-	&"dress": Vector3(0.35, 1.0, 0.75),
+	&"tethys": Vector3(0.0, 1.0, 0.55),
+	&"dress": Vector3(0.3, 0.85, 0.32),
 }
+## ... and their body colour there by landmark key: Vector2(saturation k, value k) (landmark_toon albedo_sat / albedo_k).
+@export var whole_landmark_albedo: Dictionary = {&"meridian": Vector2(0.5, 0.72), &"dress": Vector2(0.75, 0.8)}
 ## LOOK L5 (designer 2026-10-20): the A2 HQs that are no game corporation's (CityA2Hqs), by A2 landmark style: size
 ## (radius_k x the A2 radius), their parts' colours, whether it floats ("on_water", "y" BU), the cleared lots (clear_k x
 ## its radius) and its sky beam's colour.
@@ -428,7 +430,8 @@ extends Resource
 		"wall": 0.09, "stone": Color(0.86, 0.80, 0.68), "stone_dark": Color(0.60, 0.54, 0.46), "arch": Color(1.0, 0.80, 0.50),
 		"rim": Color(1.0, 0.84, 0.55), "sand": Color(0.80, 0.70, 0.52), "clear_k": 1.08, "beam": Color(1.0, 0.86, 0.62)},
 	"pier_city": {"radius_k": 1.0, "on_water": true, "y": 0.0, "deck_k": 0.26, "deck_h": 1.2, "dome_k": 0.14, "dome_h": 0.85,
-		"satellites": 6, "piers": 8, "pier_k": 0.42, "pier_w": 2.0, "mast_h": 2.6, "white": Color(0.92, 0.94, 0.96),
+		"satellites": 6, "piers": 8, "pier_k": 0.42, "pier_w": 2.0, "mast_h": 2.6,
+		"towers": 6, "tower_h_k": 2.6, "tower_w_k": 0.22, "floor_bu": 0.9, "dome_tall": 1.5, "glass": Color(0.55, 0.66, 0.74), "white": Color(0.92, 0.94, 0.96),
 		"deck": Color(0.70, 0.72, 0.74), "neon": Color(0.35, 0.9, 1.0), "win": Color(0.75, 0.95, 1.0), "clear_k": 0.3,
 		"beam": Color(0.45, 0.75, 1.0)}}
 ## LOOK L5 (designer 2026-10-20): the whole-city pose's dressing (CityA2Dress): the port (pier deck lift BU, crane gap /
@@ -440,22 +443,22 @@ extends Resource
 @export var a2_dress: Dictionary = {
 	"pier_lift_bu": 0.8, "concrete": Color(0.62, 0.62, 0.60), "lamp": Color(1.0, 0.8, 0.5),
 	"crane_cols": [Color(0.85, 0.30, 0.18), Color(0.95, 0.70, 0.20), Color(0.25, 0.55, 0.75)], "crane_gap_m": 260.0,
-	"crane_h_bu": 4.5, "crane_span_m": 50.0, "crane_reach_m": 70.0, "tip_light": Color(1.0, 0.15, 0.1),
-	"moored_share": 0.8, "moor_gap_m": 40.0, "yard_row_m": 70.0, "yard_bay_m": 140.0, "yard_fill": 0.85,
-	"container_h_bu": 0.45,
-	"container_cols": [Color(0.70, 0.20, 0.14), Color(0.16, 0.35, 0.62), Color(0.20, 0.50, 0.30), Color(0.85, 0.65, 0.20),
-		Color(0.85, 0.85, 0.82), Color(0.55, 0.30, 0.55)],
+	"crane_h_bu": 6.0, "crane_span_m": 70.0, "crane_reach_m": 110.0, "tip_light": Color(1.0, 0.15, 0.1),
+	"moored_share": 0.8, "moor_gap_m": 40.0, "yard_row_m": 48.0, "yard_bay_m": 95.0, "yard_fill": 0.8,
+	"container_h_bu": 0.6,
+	"container_cols": [Color(0.42, 0.17, 0.13), Color(0.15, 0.24, 0.36), Color(0.20, 0.32, 0.24), Color(0.50, 0.40, 0.18),
+		Color(0.52, 0.52, 0.50), Color(0.33, 0.22, 0.20), Color(0.30, 0.30, 0.32)],
 	"ships": 16, "ship_len_m": Vector2(120.0, 320.0), "ship_beam_k": 0.16, "ship_freeboard_bu": 0.6, "house_h_bu": 1.4,
 	"ship_depth_bu": 3.0, "ship_isle_rho": 2.4, "ship_gap_m": 900.0, "wake_k": 1.6,
 	"hull_cols": [Color(0.18, 0.20, 0.24), Color(0.45, 0.14, 0.12), Color(0.20, 0.30, 0.38), Color(0.85, 0.85, 0.82)],
 	"house": Color(0.90, 0.90, 0.88), "ship_win": Color(1.0, 0.85, 0.55), "wake": Color(0.80, 0.90, 0.92),
 	"isle_stone": Color(0.66, 0.62, 0.55), "isle_roof": Color(0.55, 0.30, 0.22), "isle_win": Color(1.0, 0.82, 0.5),
-	"helis": 6, "heli_alt_bu": 38.0, "heli_reach_m": 900.0, "heli_body": Color(0.12, 0.13, 0.16),
-	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 5.0, "spot_cone_a": Vector2(0.9, 0.25),
+	"helis": 6, "heli_alt_bu": 38.0, "heli_reach_m": 900.0, "heli_body": Color(0.12, 0.13, 0.16), "heli_scale": 1.8,
+	"spot_col": Color(0.85, 0.92, 1.0), "spot_lead_m": 220.0, "pool_r_bu": 9.0, "spot_cone_a": Vector2(0.9, 0.25),
 	"pool_a": 0.8,
 	"cops_per_road": 3, "cop_classes": [&"ring", &"motorway"], "cop_bar_bu": Vector3(2.2, 0.9, 0.5),
 	"police": {"gain": 5.0, "rate": 1.6}, "police_day_on": 0.5,
-	"spot": {"gain": 0.9, "soft": 1.5},
+	"spot": {"gain": 1.1, "soft": 1.2},
 }
 @export var sky: Color = Color(0.03, 0.025, 0.06)
 @export var neon_gain: float = 1.2
@@ -888,13 +891,13 @@ extends Resource
 @export var whole_drowned_shore_lots: float = 2.0
 ## Its shader parameters (Colors go in as vec3).
 @export var water_plane: Dictionary = {"wave_k": 0.35, "wave_speed": 0.05, "ior": 1.33, "fresnel_boost": 0.35,
-	"sky_horizon_day": Color(0.36, 0.52, 0.74), "sky_zenith_day": Color(0.10, 0.28, 0.60),
+	"sky_horizon_day": Color(0.36, 0.52, 0.74), "sky_zenith_day": Color(0.10, 0.22, 0.42),
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.05, 0.30, 0.38),
-	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
+	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.4, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
 	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.09, 0.36, 0.40), "marble_scale": 0.05,
-	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.35,
-	"night_alpha_deep": 0.6, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
+	"marble_width": 0.18, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.6, "caustic_depth": Vector2(4.0, 90.0), "caustic_deep_k": 0.12,
+	"night_alpha_deep": 0.4, "marble_day_k": 0.45, "marble_col_day": Color(0.30, 0.62, 0.66), "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.5, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground

@@ -523,6 +523,7 @@ func _sync_a2_hqs() -> void:
 				first = false
 			_a2_hqs["~dress"] = {"node": node, "mats": LandmarkMaterials.apply(node, look, &"dress", not _landmarks_night),
 				"rect": rect, "mask": dm, "top": 0.0, "key": &"dress", "on": false, "beam": false, "fx": dd["fx"]}
+		_whole_landmarks()
 	for st: String in _a2_hqs:
 		var hq: Dictionary = _a2_hqs[st]
 		(hq["node"] as Node3D).visible = whole_look
@@ -578,6 +579,9 @@ func _whole_landmarks() -> void:
 				sm.set_shader_parameter(k, float(sm.get_meta(mk)) * g)
 			for k: StringName in [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]:
 				_tone_ramp(sm, k, tone.x, tv)
+			var alb: Vector2 = cfg.whole_landmark_albedo.get(StringName(String(key)), Vector2.ONE) if whole_look else Vector2.ONE
+			sm.set_shader_parameter(&"albedo_sat", alb.x)
+			sm.set_shader_parameter(&"albedo_k", alb.y)
 
 
 ## LOOK L5: the dressing's lights by the night: the searchlights at night only, the police bars dimmer by day.
