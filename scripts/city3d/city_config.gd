@@ -56,6 +56,12 @@ extends Resource
 @export var whole_far_shadows: bool = true
 ## ... and the land's ramp softness there (city_ground band_soft; 0 = the Grid's hard bands).
 @export var whole_ground_band_soft: float = 0.3
+## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
+## field offset and the noise edges (city_ground cloud_*).
+@export var whole_cloud_k: float = 0.85
+@export var whole_cloud_scale: float = 45.0
+@export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
+@export var whole_cloud_edge: Vector2 = Vector2(0.5, 0.6)
 @export var whole_shadow_dist_bu: float = 2200.0
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
@@ -397,7 +403,7 @@ extends Resource
 ## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
 ## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
 @export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.25, 0.33, 0.13),
-	"rock": Color(0.60, 0.56, 0.50), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+	"rock": Color(0.60, 0.58, 0.57), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
 	"beach_k": 0.0, "noise_lo": 0.92, "noise_span": 0.16}

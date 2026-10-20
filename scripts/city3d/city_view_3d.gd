@@ -287,6 +287,10 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	# LOOK L5: the whole-city land shades smoothly (the plate's Cycles slopes), not in the Grid's hard toon bands.
 	if _ground_mat != null:
 		_ground_mat.set_shader_parameter(&"band_soft", cfg.whole_ground_band_soft if whole_look else 0.0)
+		_ground_mat.set_shader_parameter(&"cloud_k", cfg.whole_cloud_k * (1.0 - night_share) if whole_look else 0.0)
+		_ground_mat.set_shader_parameter(&"cloud_scale", cfg.whole_cloud_scale)
+		_ground_mat.set_shader_parameter(&"cloud_off", cfg.whole_cloud_off)
+		_ground_mat.set_shader_parameter(&"cloud_edge", cfg.whole_cloud_edge)
 	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
 	# LOOK L5: the whole-city night keeps the plate's neutral charcoal air, not the map's violet haze and grade.
