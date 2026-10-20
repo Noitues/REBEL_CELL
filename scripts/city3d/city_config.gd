@@ -881,6 +881,8 @@ extends Resource
 ## its hill reaches `island_spread` x the radius.
 @export var seabed_step: int = 2
 @export var seabed_shelf_bu: float = 3.0
+## Designer 2026-10-20: how far (BU) a dry seabed vertex sits under the ground, so the bed never shows through the shore.
+@export var seabed_under_bu: float = 0.15
 @export var seabed_max_bu: float = 170.0
 @export var seabed_reach: Vector2 = Vector2(2.0, 30.0)
 @export var seabed_noise_k: float = 0.15

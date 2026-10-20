@@ -101,7 +101,9 @@ static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: floa
 	var z := -(cfg.seabed_shelf_bu + (cfg.seabed_max_bu - cfg.seabed_shelf_bu) * t) \
 			* (1.0 + cfg.seabed_noise_k * (terrain.noise_at(at.x, at.y) * 2.0 - 1.0))
 	if not wt:
-		z = minf(terrain.height_at(at.x, at.y), 0.0)
+		# Designer 2026-10-20 (the stepped coast): a dry vertex sinks `seabed_under_bu` below the ground (drawn 0.02 under
+		# its heights), so the bed's 2-lot triangles never poke through the low shore as dark wedges.
+		z = minf(terrain.height_at(at.x, at.y), 0.0) - cfg.seabed_under_bu
 	for it: Dictionary in islands:
 		# The plate's isl_bed: each island stands on a shoal bank, not on a pillar.
 		var r := float(it["r"])
