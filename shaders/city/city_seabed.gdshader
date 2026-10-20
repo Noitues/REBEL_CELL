@@ -21,6 +21,8 @@ uniform float inscatter_gain = 1.0;
 // By day the sky lights the water column: the in-scatter this many times stronger at night 0.
 uniform float inscatter_day_gain = 1.0;
 uniform float night = 1.0;
+// The caustics by day, as a share of their night strength (the sun washes the plate's day bay smooth).
+uniform float caustic_day_k = 1.0;
 uniform float path_cap = 600.0;
 uniform float caustic_k = 1.1;
 uniform float caustic_scale = 0.05;
@@ -83,7 +85,7 @@ void fragment() {
 		float pm = smoothstep(0.42, 0.68, vnoise3(vec3(p * caustic_patch_scale, t * 0.3)));
 		cnet *= caustic_patch + pm * (1.0 - caustic_patch);
 		float up = v_nw.y * v_nw.y;
-		e += caustic_col * cnet * up * exp(-d / caustic_depth_bu) * caustic_k;
+		e += caustic_col * cnet * up * exp(-d / caustic_depth_bu) * caustic_k * mix(caustic_day_k, 1.0, night);
 	}
 	EMISSION = e;
 }
