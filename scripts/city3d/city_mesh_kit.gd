@@ -166,13 +166,39 @@ static func families(cfg: CityConfig, d: CityDistrict) -> Dictionary:
 	return out
 
 
-## The base colour of a building (family mix + territory tint, unified40.city_building).
+## The base colour of a building. LOOK L5 (hybrid port of the Blender plate build, city_preset DISTRICTS `mat` and
+## DAY_MATS): the territory's district material (per building key) pulled `day_mats_k` toward a weighted facade family
+## (concrete, glass, brick, rust, pale stone; the sprawl's own mix off-territory). Without district_mats: the old
+## family mix + territory tint (unified40.city_building).
 static func base_color(cfg: CityConfig, pr: Dictionary) -> Color:
-	var fam := cfg.families[absi(int(pr["key"])) % cfg.families.size()]
+	var key := absi(int(pr["key"]))
 	var terr: StringName = pr["terr"]
+	if not cfg.district_mats.is_empty():
+		var mats: Array = cfg.district_mats.get(String(terr), cfg.district_mats.get("", []))
+		if not mats.is_empty():
+			var dm: Color = mats[key % mats.size()]
+			var fams: Array = cfg.day_mats.get("sprawl" if terr == &"" else "city", [])
+			return dm.lerp(_weighted(fams, hash01(key, DAY_MAT_SEED)), cfg.day_mats_k) if not fams.is_empty() else dm
+	var fam := cfg.families[key % cfg.families.size()]
 	if terr == &"":
 		return fam
 	return fam.lerp(Palette.corp_color(terr), cfg.territory_tint)
+
+
+const DAY_MAT_SEED := 9001
+
+
+## The colour of weighted list `fams` ([weight, Color] pairs) at `u` in [0, 1].
+static func _weighted(fams: Array, u: float) -> Color:
+	var total := 0.0
+	for f: Array in fams:
+		total += float(f[0])
+	var t := u * total
+	for f: Array in fams:
+		t -= float(f[0])
+		if t <= 0.0:
+			return f[1]
+	return (fams[fams.size() - 1] as Array)[1]
 
 
 ## The ground mesh: asphalt, plazas, street lots (lot quads at height 0).
@@ -205,7 +231,7 @@ static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: A
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for j in range(r.position.y, r.end.y):
 		for i in range(r.position.x, r.end.x):
-			_lot_quad_on(st, cfg, terrain, Vector2i(i, j), -0.02, cfg.ground)
+			_lot_quad_land(st, cfg, terrain, Rect2i(i, j, 1, 1), -0.02)
 	for p: Dictionary in plazas:
 		_lot_quad_on(st, cfg, terrain, p["lot"], 0.005, cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12))
 	for s: Dictionary in streets:
@@ -253,8 +279,24 @@ static func _land_quad(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain,
 		land = land or h > 0.0
 		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), h - 0.02))
 	if land:
-		_quad(st, q[0], q[1], q[2], q[3], cfg.ground)
+		_quad_c(st, q, _land_cols(cfg, terrain, cell))
 	return land
+
+
+## LOOK L5: a ground lot `cell` at its corners' heights + `y`, coloured per corner by CityTerrainColor.
+static func _lot_quad_land(st: SurfaceTool, cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i, y: float) -> void:
+	var q: Array[Vector3] = []
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		q.append(CityIsoCamera.lot_to_world(cfg, Vector2(c), terrain.height_at(c.x, c.y) + y))
+	_quad_c(st, q, _land_cols(cfg, terrain, cell))
+
+
+## The four corner colours of land cell `cell`: the terrain rule (CityTerrainColor) toward cfg.ground by cfg.terrain_ground_mix.
+static func _land_cols(cfg: CityConfig, terrain: CityA2Terrain, cell: Rect2i) -> Array[Color]:
+	var out: Array[Color] = []
+	for c: Vector2i in [cell.position, Vector2i(cell.end.x, cell.position.y), cell.end, Vector2i(cell.position.x, cell.end.y)]:
+		out.append(CityTerrainColor.at(cfg, terrain, c).lerp(cfg.ground, cfg.terrain_ground_mix))
+	return out
 
 
 ## CITY-A2 step 2: a flat-topology grid over world rect `area` (X/Z) every `step_bu`, lifted `lift` BU over `terrain`
@@ -401,6 +443,16 @@ static func _lot_quad(st: SurfaceTool, cfg: CityConfig, l: Vector2i, y: float, c
 
 
 ## Quad a-b-c-d, wound to face up (+Y).
+## `_quad` with a colour per corner (q and cols in a, b, c, d order).
+static func _quad_c(st: SurfaceTool, q: Array[Vector3], cols: Array[Color]) -> void:
+	var up := (q[1] - q[0]).cross(q[3] - q[0]).y > 0.0
+	var order: Array[int] = [0, 1, 2, 0, 2, 3] if not up else [0, 2, 1, 0, 3, 2]
+	for k in order:
+		st.set_color(cols[k])
+		st.set_normal(Vector3.UP)
+		st.add_vertex(q[k])
+
+
 static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
 	var up := (b - a).cross(d - a).y > 0.0
 	var order := PackedVector3Array([a, b, c, a, c, d]) if not up else PackedVector3Array([a, c, b, a, d, c])

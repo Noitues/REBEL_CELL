@@ -524,6 +524,16 @@ func _sync_hq_beams() -> void:
 			_hq_beams.append(node)
 	for n in _hq_beams:
 		n.visible = show
+	# The street-lot piers, their lamp cubes and smears read as a comb of pins round the coast at the whole-city zoom.
+	if water != null:
+		for nm: String in cfg.whole_hide_water:
+			var w := water.get_node_or_null(NodePath(nm)) as Node3D
+			if w != null:
+				w.visible = not whole_look
+		# The tiled caustic net reads as a pool at the whole-city zoom.
+		water.water_mat.set_shader_parameter(&"caustic_gain", cfg.water_caustic_gain * (cfg.whole_caustic_k if whole_look else 1.0))
+
+
 var _env: Environment
 
 

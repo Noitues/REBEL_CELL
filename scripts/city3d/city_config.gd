@@ -49,7 +49,7 @@ extends Resource
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
 @export var whole_night_look: float = 1.0
-@export var whole_day_ramp_gain: float = 0.28
+@export var whole_day_ramp_gain: float = 0.42
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
 @export var whole_day_sky: Color = Color(0.30, 0.32, 0.38)
@@ -62,8 +62,8 @@ extends Resource
 ## show above.
 @export var whole_beam_len_bu: float = 340.0
 @export var whole_beam_base_bu: float = 30.0
-@export var whole_beam_start_r_bu: float = 3.0
-@export var whole_beam_half_deg: float = 2.6
+@export var whole_beam_start_r_bu: float = 5.0
+@export var whole_beam_half_deg: float = 5.0
 @export var whole_beam_emit: float = 1.6
 @export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
 @export var whole_beam_night_from: float = 0.5
@@ -71,6 +71,10 @@ extends Resource
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.2, "win_emit": 0.75, "haze_k": 0.0}
 @export var whole_day_water_gain: float = 0.6
+## Water children hidden under the whole-city pose (CityWater node names).
+@export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections"])
+## The sea's caustic gain share under the whole-city pose.
+@export var whole_caustic_k: float = 0.35
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
 ## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread
@@ -328,6 +332,33 @@ extends Resource
 @export var ground: Color = Color(0.20, 0.20, 0.25)
 @export var street: Color = Color(0.13, 0.13, 0.16)
 @export var plaza: Color = Color(0.26, 0.25, 0.30)
+## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
+## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
+@export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.20, 0.26, 0.11),
+	"rock": Color(0.30, 0.28, 0.26), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+@export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
+	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
+	"beach_k": 0.8, "noise_lo": 0.92, "noise_span": 0.16}
+@export var terrain_h_scale: float = 0.3
+## LOOK L5 (hybrid port, Blender city_preset DISTRICTS `mat` + DAY_MATS): the facade albedo per territory ("" the sprawl),
+## the facade families ([weight, Color]; city for the corps, sprawl off-territory) and how far a family pulls the district
+## colour. Empty district_mats keeps the old `families` + `territory_tint`.
+@export var district_mats: Dictionary = {
+	"meridian": [Color(0.30, 0.20, 0.14), Color(0.26, 0.22, 0.20), Color(0.34, 0.24, 0.16)],
+	"solace": [Color(0.40, 0.46, 0.43), Color(0.34, 0.40, 0.38), Color(0.46, 0.50, 0.47)],
+	"halcyon": [Color(0.36, 0.34, 0.46), Color(0.32, 0.30, 0.42), Color(0.40, 0.38, 0.50)],
+	"orbital": [Color(0.30, 0.34, 0.42), Color(0.26, 0.30, 0.38), Color(0.36, 0.40, 0.48)],
+	"rebel_cell": [Color(0.30, 0.22, 0.22), Color(0.26, 0.21, 0.22), Color(0.33, 0.26, 0.24)],
+	"aurelian": [Color(0.86, 0.78, 0.62), Color(0.80, 0.72, 0.56), Color(0.91, 0.84, 0.67)],
+	"tethys": [Color(0.16, 0.20, 0.26), Color(0.14, 0.18, 0.24), Color(0.20, 0.24, 0.30)],
+	"": [Color(0.32, 0.30, 0.36), Color(0.28, 0.27, 0.32), Color(0.36, 0.33, 0.38)]}
+@export var day_mats: Dictionary = {
+	"city": [[0.36, Color(0.52, 0.50, 0.47)], [0.20, Color(0.14, 0.20, 0.24)], [0.16, Color(0.46, 0.26, 0.19)],
+		[0.12, Color(0.40, 0.25, 0.15)], [0.16, Color(0.62, 0.60, 0.56)]],
+	"sprawl": [[0.22, Color(0.42, 0.40, 0.37)], [0.32, Color(0.44, 0.24, 0.17)], [0.30, Color(0.42, 0.26, 0.14)],
+		[0.16, Color(0.30, 0.28, 0.27)]]}
+@export var day_mats_k: float = 0.6
+@export var terrain_ground_mix: float = 0.0
 
 @export_group("Streets")
 ## Lane glow strip (unified40 GLANE): base glow, traffic gain, stroke count.
