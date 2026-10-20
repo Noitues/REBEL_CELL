@@ -273,7 +273,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		day = _whole_day(day)
 		set_look_blend(night_share * cfg.whole_night_look)
 	_sync_hq_beams()
-	_ramp_water(day)
+	_ramp_water(_whole_water(day) if whole_look else day)
+	_whole_building()
 	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
 	var day_ramp: Array = day["ramp"]
 	for k in 3:
@@ -479,6 +480,23 @@ func _whole_day(day: Dictionary) -> Dictionary:
 	d["haze"] = cfg.whole_day_haze
 	d["haze_k"] = cfg.whole_day_haze_k
 	return d
+
+
+## The whole-city day ramp for the water (cfg.whole_day_water_gain of the day ramp).
+func _whole_water(day: Dictionary) -> Dictionary:
+	var d := day.duplicate()
+	var ramp: Array = []
+	for c: Color in day["ramp"]:
+		ramp.append(Color(c.r * cfg.whole_day_water_gain, c.g * cfg.whole_day_water_gain, c.b * cfg.whole_day_water_gain))
+	d["ramp"] = ramp
+	return d
+
+
+## Sets cfg.whole_building's building uniforms under the whole-city pose, the shipped city_shaders values otherwise.
+func _whole_building() -> void:
+	var b: Dictionary = CityShaderConfigData.shipped().building
+	for k: String in cfg.whole_building:
+		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b[k]))
 
 
 ## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.
