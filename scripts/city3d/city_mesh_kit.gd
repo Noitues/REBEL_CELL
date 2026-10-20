@@ -543,6 +543,9 @@ static func ink_slot(inks: Array[Color], c: Color) -> int:
 			best = k + 1
 	return best
 
+## LOOK L5: the territory corps in COLOR.a's order (index + 1; 0 for any other territory), as city_building's terr_colors.
+const TERR_CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
+
 
 ## The MultiMesh buffer of prisms `idx` (TRANSFORM_3D + colours + custom data):
 ## transform rows, COLOR = base colour, INSTANCE_CUSTOM = (taper, trim ink slot or 0,
@@ -563,7 +566,7 @@ static func instance_buffer(cfg: CityConfig, prisms: Array[Dictionary], idx: Pac
 		buf[o] = col.r
 		buf[o + 1] = col.g
 		buf[o + 2] = col.b
-		buf[o + 3] = 1.0
+		buf[o + 3] = 1.0 - float(TERR_CORPS.find(StringName(pr.get("terr", &""))) + 1) / 8.0
 		o += 4
 		var key_i := int(pr["key"])
 		var trim := 0.0

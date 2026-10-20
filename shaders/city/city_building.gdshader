@@ -22,6 +22,11 @@ uniform float tone_min = 0.86;
 uniform float tone_max = 1.12;
 uniform float roof_gain = 1.08;
 uniform vec3 window_colors[6];
+// LOOK L5 (whole-city night): the territory's corporation, carried in COLOR.a as 1 - index / 8 (1 = none; CityMeshKit
+// instance_buffer): its colour pulls the lit windows (terr_win_k) and lights the facades faintly (terr_wall_emit).
+uniform vec3 terr_colors[5];
+uniform float terr_win_k = 0.0;
+uniform float terr_wall_emit = 0.0;
 uniform vec2 window_pitch = vec2(1.6, 1.9);
 uniform vec2 window_size = vec2(0.8, 0.7);
 uniform float window_first = 1.6;
@@ -350,6 +355,8 @@ void fragment() {
 		body = mix(body, concrete_fam[int(floor(fract(seed * 17.31) * 6.0)) % 6], look_blend);
 	}
 	vec3 base = body * tone * (roof ? roof_gain : 1.0) * mix(1.0, facade_albedo, look_blend);
+	int terr_i = int(floor((1.0 - COLOR.a) * 8.0 + 0.5));
+	vec3 terr_c = terr_i > 0 ? terr_colors[min(terr_i - 1, 4)] : vec3(0.0);
 	vec3 em = vec3(0.0);
 	float z = zl;
 	bool edge_px = false;
@@ -413,6 +420,9 @@ void fragment() {
 					float s = window_dim_min + (1.0 - window_dim_min) * hash1(key + 9.0);
 					float s_nr = win_floor + (1.0 - win_floor) * pow(hash1(key + 9.0), win_pow);
 					s = mix(s, s_nr, look_blend);
+					if (terr_i > 0) {
+						wc = mix(wc, terr_c * max(max(wc.r, wc.g), wc.b) / max(max(max(terr_c.r, terr_c.g), terr_c.b), 1e-3), terr_win_k);
+					}
 					em = wc * s * window_gain * mix(1.0, win_emit, look_blend);
 					base = wc * s * 0.25;
 				}
@@ -504,7 +514,7 @@ void fragment() {
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	vec3 spill = toon_spill(v_world, nw, ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
-	EMISSION = (em + base * spill * spill_gain) * emission_multiplier;
+	EMISSION = (em + base * spill * spill_gain + terr_c * terr_wall_emit) * emission_multiplier;
 	if (poche_face) {
 		// The open top of a cut building: its back faces show the near-black poche.
 		ALBEDO = poche;

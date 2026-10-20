@@ -537,6 +537,13 @@ func _whole_building() -> void:
 		var c: Color = cfg.whole_building_colors[k]
 		var sv: Array = b.get(k, [c.r, c.g, c.b])
 		_building_mat.set_shader_parameter(StringName(k), Vector3(c.r, c.g, c.b) if whole_look else Vector3(float(sv[0]), float(sv[1]), float(sv[2])))
+	var tc: Array[Vector3] = []
+	for corp: StringName in CityMeshKit.TERR_CORPS:
+		var pc := Palette.corp_color(corp)
+		tc.append(Vector3(pc.r, pc.g, pc.b))
+	_building_mat.set_shader_parameter(&"terr_colors", tc)
+	_building_mat.set_shader_parameter(&"terr_win_k", cfg.whole_terr_win_k * night_share if whole_look else 0.0)
+	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
