@@ -423,6 +423,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_sub_share: float = 0.0
 @export var city_a2_sub_inset: float = 0.05
 @export var city_a2_sub_h_k: float = 0.8
+## LOOK L5 suite: a split lot's four stand on a whole-lot plinth this tall (bu; 0 = none), its base part for the NA-11 rules.
+@export var city_a2_sub_plinth_bu: float = 0.0
 @export var city_a2_traffic: Dictionary = {&"ring": 1.0, &"motorway": 1.0, &"truck": 0.8, &"arterial": 0.6,
 	&"collector": 0.45, &"local": 0.2}
 ## The most one seed's A2 plan and subdivision may take (seconds, this machine; the 200-seed sweep asserts it).
@@ -483,6 +485,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## mostly low with a few tall) and a share of buildings `city_a2_height_spike` x taller (by a hash of the lot, no draw).
 @export var city_a2_height_pow: Dictionary = {}
 @export var city_a2_height_spike: Vector2 = Vector2(0.0, 1.0)
+## LOOK L5 suite: no spike on a lot within this many lots of an HQ rect (NA-11c HQ zone; 0 = spikes anywhere).
+@export var city_a2_spike_hq_clear: int = 0
 ## LOOK L5 (designer 2026-10-20, the drowned quarter): there `city_a2_sink_share` of the buildings (no Site's) stand
 ## sunk, their base `city_a2_sink_bu` (from, to) BU under the ground and their top under the water.
 @export var city_a2_sink_share: float = 0.0

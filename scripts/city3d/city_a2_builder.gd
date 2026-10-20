@@ -484,8 +484,13 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 		front[(f.y - R.position.y) * w + (f.x - R.position.x)] = ci
 		var on_street := _street(kind, R, l + Vector2i(1, 0)) or _street(kind, R, l + Vector2i(-1, 0)) \
 				or _street(kind, R, l + Vector2i(0, 1)) or _street(kind, R, l + Vector2i(0, -1))
+		var near_hq := false
+		for id: StringName in rects:
+			if (rects[id] as Rect2i).grow(cfg.city_a2_spike_hq_clear).intersects(cell):
+				near_hq = true
+				break
 		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites,
-			on_street)})
+			on_street, near_hq)})
 	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
 
 
@@ -582,16 +587,17 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 
 ## A building cell's extrusions (lots, height px): one prism, or a base and a setback tower over `city_a2_setback_from`.
 static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i, cell_id: StringName, hq_centres: Array[Vector2],
-		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false) -> Array:
+		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false, near_hq: bool = false) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
 	var hk := _height_kind(ras, cfg, f, terr, cell_id)
 	var hr: Vector2 = cfg.city_a2_heights[hk]
 	var hp := float(cfg.city_a2_height_pow.get(hk, 1.0))
 	var h := _curve(rng.randf(), hr, hp)
-	# LOOK L5: a few lots stand out of the roofline (a hash of the lot: no extra draw from the layout stream).
+	# LOOK L5: a few lots stand out of the roofline (a hash of the lot: no extra draw from the layout stream); none within
+	# `city_a2_spike_hq_clear` lots of an HQ (the NA-11c HQ zone: no spike there, nothing over its cap).
 	var spike := 1.0
-	if CityMeshKit.hash01(SPIKE_SALT, cell.position.x, cell.position.y) < cfg.city_a2_height_spike.x:
+	if not near_hq and CityMeshKit.hash01(SPIKE_SALT, cell.position.x, cell.position.y) < cfg.city_a2_height_spike.x:
 		spike = cfg.city_a2_height_spike.y
 	h *= spike
 	if t != null:
@@ -618,6 +624,13 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 	# keeps one building (the netrun's street frontage and the NA-11 floor rule work on whole lots).
 	if cfg.city_a2_sub_share > 0.0 and not on_street and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
 		var si := cfg.city_a2_sub_inset
+		# A thin whole-lot plinth under the four, as wide as they stand (inset `si`): the lot's base part (the largest at
+		# street level), so the NA-11 layout rules raise and move one part per lot, as on an unsplit lot, and the four
+		# stay over it when a border street moves its face in.
+		var z_pl := -z_sink * px_per_bu
+		var pl := cfg.city_a2_sub_plinth_bu
+		if pl > 0.0:
+			out.append(_extrusion(cell, si, z_pl, pl * px_per_bu, 1.0, ink, terr, key + 1))
 		for q in 4:
 			var lo := Vector2(cell.position) + Vector2(0.5 * (q % 2), 0.5 * (q / 2)) + Vector2(si, si)
 			var hi := lo + Vector2(0.5 - 2.0 * si, 0.5 - 2.0 * si)
@@ -626,7 +639,7 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 				hq *= lerpf(cfg.city_a2_dwindle_h_min, 1.0, _keep(t, cfg, f))
 			if z_sink > 0.0:
 				hq = minf(hq, z_sink * 0.9)
-			out.append(_extrusion_q(cell, lo, hi, -z_sink * px_per_bu, hq * px_per_bu, taper, ink, terr, key + 2 + q))
+			out.append(_extrusion_q(cell, lo, hi, z_pl + pl * px_per_bu, hq * px_per_bu, taper, ink, terr, key + 2 + q))
 		return out
 	if z_sink > 0.0:
 		out.append(_extrusion(cell, ins, -z_sink * px_per_bu, h * px_per_bu, taper, ink, terr, key))

@@ -538,6 +538,7 @@ city_a2_height_pow = {
 &"suburb": 1.3
 }
 city_a2_height_spike = Vector2(0.06, 1.9)
+city_a2_spike_hq_clear = 3
 city_a2_sink_share = 0.7
 city_a2_sink_bu = Vector2(3, 7)
 city_a2_dwindle = Vector3(0.45, 0.5, 14)
@@ -552,6 +553,7 @@ city_a2_sub_kinds = Array[StringName]([&"a2_tethys", &"sprawl", &"suburb", &"inf
 city_a2_sub_share = 0.85
 city_a2_sub_inset = 0.05
 city_a2_sub_h_k = 0.8
+city_a2_sub_plinth_bu = 0.15
 city_a2_traffic = {
 &"arterial": 0.6,
 &"collector": 0.45,
