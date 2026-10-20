@@ -12,6 +12,8 @@ const MODEL_WAIT_FRAMES := 2400
 const SETTLE_FRAMES := 90
 
 var _out := ""
+## --look=<0..1>: the view's look blend (0 the city look, 1 the AAA-2 netrun look).
+var _look := 0.0
 
 
 func _ready() -> void:
@@ -21,6 +23,8 @@ func _ready() -> void:
 			_out = a.trim_prefix("--out=")
 		elif a.begins_with("--seed="):
 			seed_ = int(a.trim_prefix("--seed="))
+		elif a.begins_with("--look="):
+			_look = float(a.trim_prefix("--look="))
 	DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://city_a2_parity_settings.json"
 	SaveService.save_dir = "user://saves/city_a2_parity"
@@ -56,10 +60,13 @@ func _capture(campaign_seed: int) -> void:
 	var centre := plan.a2.lot_of(Vector2.ZERO) if plan.a2 != null else Vector2(plan.rect.get_center())
 	hq._frame_city(1.0, centre, Vector2(0.5, 0.5))
 	city.whole_pose_centre = centre
+	if _look > 0.0:
+		view.set_look_blend(_look)
 	await _settle()
 	var cfg := view.cfg
-	print("PARITY seed=%d centre=%s yaw=%.1f pitch=%.1f fov=%.2f dist=%.0f eye=%s view=%s" % [campaign_seed, centre,
-		cfg.whole_pose_yaw_deg, cfg.whole_pose_pitch_deg, cfg.whole_pose_fov_deg, cfg.whole_pose_dist_bu, view.iso.eye(), view.size])
+	print("PARITY seed=%d centre=%s yaw=%.1f pitch=%.1f fov=%.2f dist=%.0f eye=%s view=%s band_lock=%d look=%.2f" % [campaign_seed,
+		centre, cfg.whole_pose_yaw_deg, cfg.whole_pose_pitch_deg, cfg.whole_pose_fov_deg, cfg.whole_pose_dist_bu, view.iso.eye(),
+		view.size, view.band_lock, view.look_blend])
 	await _view_shot(view, "city_a2_night")
 	var lay := city.city_motion.layers if city.city_motion != null else null
 	if lay != null:
