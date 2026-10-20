@@ -13,7 +13,7 @@ CON = os.path.normpath(os.path.join(OUT, ".."))
 GP = os.path.join(CON, "golden_plates")
 SC = "D:/rc_scratch/art_deco"
 PANELS = [
-    ("01", "whole_city", SC + "/city/g1/plate.png", GP + "/city_a2_night.png", "1. Whole city, A2 hero camera"),
+    ("01", "whole_city", SC + "/city/v2/plate.png", GP + "/city_a2_night.png", "1. Whole city, A2 hero camera"),
     ("02", "halcyon", SC + "/halcyon/g3/plate.png", GP + "/hq_halcyon_overview.png", "2. Halcyon HQ: the ziggurat and its sunburst Eye"),
     ("03", "meridian", SC + "/meridian/g3/plate.png", GP + "/hq_meridian_overview.png", "3. Meridian HQ: the Gatehouse Gantry in brass"),
     ("04", "orbital", SC + "/orbital/g3/plate.png", GP + "/hq_orbital_overview.png", "4. Orbital HQ: sunburst pad, ringed silo"),
@@ -53,6 +53,16 @@ def main():
     ch = int(cw * 720 / 2568) + 34
     ch7 = int(2560 * 540 / (3 * 960 + 16)) + 34
     rows = 4
+    v1 = Image.open(SC + "/city/prev_v1.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
+    v2 = Image.open(SC + "/city/v2/plate.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
+    cmp_ = Image.new("RGB", (2568, 720), (12, 12, 12))
+    cmp_.paste(v1, (0, 0))
+    cmp_.paste(v2, (1288, 0))
+    dd = ImageDraw.Draw(cmp_)
+    ff = ImageFont.truetype(FONT, 26)
+    dd.text((10, 6), "DECO v1", font=ff, fill=(255, 200, 90))
+    dd.text((1298, 6), "DECO v2", font=ff, fill=(255, 200, 90))
+    cmp_.save(os.path.join(OUT, "01_whole_city_v1_v2.jpg"), quality=90)
     # panel 7: variant A (frame only) and B (full wheel), one sbs: current | A | B
     cur = Image.open(CON + "/round41_wheel_stack/combat_typical_v4.png").convert("RGB")
     A = Image.open(SC + "/panel7_A.png").convert("RGB")

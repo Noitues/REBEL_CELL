@@ -41,7 +41,7 @@ def patch_src(fname, src):
         # fog colour: neutral warm charcoal (the volume scatter colour in mat_fog)
         k2 = 'vs.inputs["Color"].default_value = (0.85, 0.80, 1.0, 1)'
         assert k2 in src
-        c = CFG.get("fog_col", (0.62, 0.56, 0.50))
+        c = CFG.get("fog_col", (0.40, 0.47, 0.62))
         src = src.replace(k2, 'vs.inputs["Color"].default_value = (%f, %f, %f, 1)' % tuple(c), 1)
     return src
 
@@ -52,6 +52,26 @@ def _prep_preset():
     for k, v in CFG.get("aaa", {}).items():
         A[k] = v
     return CP
+
+
+def _district_towers(g, frac, min_top, avoid, min_half):
+    """The tallest `frac` of the towers of each district (nearest landmark), inside the frame."""
+    LM = g["LM"]
+    allt = _towers(g, 100000, min_top, avoid, min_half)
+    by = {}
+    for t in allt:
+        best, bd = None, 1e18
+        for corp, v in LM.items():
+            d = math.hypot(t[0] - v[0][0], t[1] - v[0][1])
+            if corp != "rebel_cell" and d < bd:
+                best, bd = corp, d
+        by.setdefault(best, []).append(t)
+    out = []
+    for corp, lst in sorted(by.items(), key=lambda kv: str(kv[0])):
+        lst.sort(key=lambda t: -t[4])
+        n = max(CFG.get("per_district_min", 3), int(round(len(lst) * frac)))
+        out += [t + (corp,) for t in lst[:n]]
+    return out
 
 
 def _towers(g, n, min_top, avoid, min_half=2.0):
@@ -95,7 +115,7 @@ def apply_city(g):
     for k in ("surf", "smooth"):
         m = MS.get(k)
         if m is not None and not m.get("deco_done"):
-            D.lacquer_facade(m, dark=CFG.get("dark", 0.22), window_tint=tuple(CFG.get("win_tint", (1.0, 0.82, 0.55))),
+            D.lacquer_facade(m, dark=CFG.get("dark", 0.14), gold=tuple(CFG.get("grid_col", (0.22, 0.28, 0.42))), band_emit=CFG.get("band_emit", 0.05), win_boost=CFG.get("win_boost", 2.2), window_tint=tuple(CFG.get("win_tint", (0.80, 0.90, 1.0))),
                              fade0=CFG.get("fade0", 400.0), fade1=CFG.get("fade1", 900.0), band_w=CFG.get("band_w", 0.05))
             m["deco_done"] = 1
     if OBJ.get("bill") is not None:
@@ -160,28 +180,39 @@ def apply_city(g):
                 loc = (bx + (r + 9.0) * math.cos(a), by + (r + 9.0) * math.sin(a), z0 + 1.5)
                 g["light"]("deco_up_%s_%d" % (corp, k), "SPOT", loc, CFG.get("up_w", 2.0e6), (1.0, 0.66, 0.30),
                            rot=g["aim"](loc, (bx, by, crown[2] * 0.7)), spot=CFG.get("up_cone", 38.0), blend=0.6, shadow=False)
-    # 3. towers: stepped crowns, piers, parallel neon in the district's corp hue, fans on the tallest few
-    zs = sorted(r[5] - r[4] for r in REC)
-    zt = sorted(r[5] for r in REC)
-    print("[deco] REC height p50/p90/p99/max", zs[len(zs)//2], zs[int(len(zs)*0.9)], zs[int(len(zs)*0.99)], zs[-1], "top p50/p90/max", zt[len(zt)//2], zt[int(len(zt)*0.9)], zt[-1], flush=True)
-    towers = _towers(g, CFG.get("n_towers", 160), CFG.get("min_top", 38.0), avoid, CFG.get("min_half", 2.0))
-    nfan = CFG.get("n_fans", 14)
+    # 3. crown towers: the tallest few per district, ornament scaled to read at this distance, floodlit from below,
+    #    neon in the district's corp hue (gold stays on the crowns and trims of these towers only)
+    towers = _district_towers(g, CFG.get("top_frac", 0.045), CFG.get("min_top", 18.0), avoid, CFG.get("min_half", 1.1))
     lacq, goldq = ctx["lac"], ctx["gold"]
     nq = {}
-    for k, (cx, cy, hx, hy, z1) in enumerate(towers):
+    nfl = 0
+    for k, (cx, cy, hx, hy, z1, corp) in enumerate(towers):
         rr = random.Random(7000 + k)
-        # the corp hue by the nearest landmark
-        best, bd = None, 1e18
-        for corp, v in LM.items():
-            d = math.hypot(cx - v[0][0], cy - v[0][1])
-            if d < bd and corp != "rebel_cell":
-                best, bd = corp, d
-        h1 = hues.get(best, ((1, 0.6, 0.2), None))[0] if best else (1, 0.6, 0.2)
+        h1 = hues.get(corp, ((1, 0.6, 0.2), None))[0]
         key = tuple(round(x, 2) for x in h1)
         if key not in nq:
-            nq[key] = D.DAcc("deco_tw_neon_%d" % len(nq), M.neon(h1, nk), coll)
+            nq[key] = D.DAcc("deco_tw_neon_%d" % len(nq), M.neon(h1, nk * CFG.get("tw_neon_k", 1.6)), coll)
         t_ctx = dict(lac=lacq, gold=goldq, neon=nq[key], neon2=ctx["neon2"])
-        D.tower_deco(t_ctx, cx, cy, z1, min(hx, 9.0), min(hy, 9.0), rr, 3 + (1 if z1 > 70 else 0) + (1 if k < 12 else 0), k < nfan, k, th_k=CFG.get("th_k", 2.2), ln_k=CFG.get("ln_k", 2.0))
+        # Ferriss massing: a stout stepped lacquer shaft round the old tower (3 setbacks at ~80 %), gold cornices, hue neon
+        w0 = max(hx, hy, CFG.get("tw_half", 4.5)) * CFG.get("shaft_k", 1.7)
+        zg = terr_h(cx, cy)
+        zt = z1
+        for i, (f, zf) in enumerate(((1.0, 0.50), (0.8, 0.76), (0.64, 1.0))):
+            w = w0 * f
+            zlo = zg if i == 0 else zg + (zt - zg) * (0.50 if i == 1 else 0.76)
+            zhi = zg + (zt - zg) * zf
+            lacq.box(cx - w, cy - w, zlo, cx + w, cy + w, zhi)
+            goldq.box(cx - w - 0.6, cy - w - 0.6, zhi - 1.2, cx + w + 0.6, cy + w + 0.6, zhi + 0.3)
+            D.neon_lines(nq[key], cx, cy, w, w, zhi - 4.0, n=3, gap=1.1, th=0.45, out=0.35)
+            for sx_ in (-1, 1):
+                for sy_ in (-1, 1):
+                    goldq.box(cx + sx_ * w - 0.5, cy + sy_ * w - 0.5, zlo, cx + sx_ * w + 0.5, cy + sy_ * w + 0.5, zhi + 3.0)
+        D.tower_deco(t_ctx, cx, cy, z1, w0 * 0.64, w0 * 0.64, rr, 4 if z1 > 40 else 3, True, k,
+                     th_k=CFG.get("th_k", 3.2), ln_k=CFG.get("ln_k", 3.0), crown_k=CFG.get("crown_k", 3.0))
+        loc = (cx + 9.0, cy - 9.0, terr_h(cx, cy) + 1.0)
+        g["light"]("deco_tw_%d" % k, "SPOT", loc, CFG.get("tw_w", 4.0e5), (1.0, 0.72, 0.4),
+                   rot=g["aim"](loc, (cx, cy, z1 + 10.0)), spot=CFG.get("tw_cone", 18.0), blend=0.5, shadow=False)
+        nfl += 1
     # 4. fan searchlights: gold shafts spreading from each crown (camera-only cones like the pipeline's own beams)
     if g.get("beam_shaft") and g.get("beam_mat") and not CFG.get("no_fans", False):
         BM = CP.AAA["beam"]
@@ -205,4 +236,4 @@ def apply_city(g):
         b.build()
     for a in nq.values():
         a.build()
-    print("[deco] city: towers", len(towers), "recorded", len(REC), "landmarks", [e[0] for e in extra], flush=True)
+    print("[deco] city: crown towers", len(towers), "floods", nfl, "recorded", len(REC), "landmarks", [e[0] for e in extra], flush=True)

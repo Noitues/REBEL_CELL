@@ -412,7 +412,7 @@ def spire(gold, neon, cx, cy, z, h, w, n_lines=2):
 
 
 # ----------------------------------------------------------------------------------------------- towers
-def tower_deco(ctx, x, y, top, hx, hy, rng, tiers, fan, rank, th_k=1.0, ln_k=1.0):
+def tower_deco(ctx, x, y, top, hx, hy, rng, tiers, fan, rank, th_k=1.0, ln_k=1.0, crown_k=1.0):
     """Setback the tower into `tiers` stepped lacquer tiers (each ~80 % of the one below), gold cornices, corner piers
     that run past the roofline, parallel neon on every setback edge, chevron band, optional fan crown."""
     L, G, N, NG = ctx["lac"], ctx["gold"], ctx["neon"], ctx["neon2"]
@@ -459,11 +459,11 @@ def tower_deco(ctx, x, y, top, hx, hy, rng, tiers, fan, rank, th_k=1.0, ln_k=1.0
         sy *= 0.8
     # crown
     if fan:
-        R = max(hx, hy) * 1.15
+        R = max(hx, hy) * 1.15 * crown_k
         fan_crown(G, L, N, x, y, z, "x" if hx >= hy else "y", R, rng, nray=9 + 2 * int(rng.random() * 3), t=0.7)
-        spire(G, N, x, y, z + R * 0.3, R * 1.5, 0.35)
+        spire(G, N, x, y, z + R * 0.3, R * 1.5, 0.35 * min(crown_k, 3.0))
     else:
-        spire(G, N, x, y, z, th * (1.4 + 0.6 * rng.random()), 0.45 + 0.1 * min(sx, 3))
+        spire(G, N, x, y, z, th * (1.4 + 0.6 * rng.random()) * crown_k, (0.45 + 0.1 * min(sx, 3)) * min(crown_k, 2.5))
     return z
 
 

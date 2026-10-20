@@ -17,6 +17,7 @@ SRC = os.path.join(CITY, "city_build.py")
 sys.path.insert(0, CITY)
 import deco_city as DC  # noqa: E402
 
+DC._prep_preset()
 text = open(SRC, encoding="utf-8").read()
 A = "def building(b):\n"
 assert A in text

@@ -6,9 +6,12 @@ ground, light streaks) except panel 7 (PIL over panel 6). Nothing in the base pi
 scene sources in memory at run time and send every output to `D:/rc_scratch/art_deco/`.
 
 ## What deco changes, per panel
-1. **Whole city** (A2 hero camera, `deco_city.py`): facades become black lacquer with gold floor bands; the tallest towers in frame
-   gain 3-5 setbacks, gold piers past the roofline and parallel neon in the nearest corp hue; each landmark gets a stepped gold
-   plinth, a ground sunburst (48 ray pairs), a crossed open fan crown with a spire, and a gold fan of searchlights. Signs-as-light off.
+1. **Whole city** (A2 hero camera, `deco_city.py`; v2 after the AD notes, v1 kept in `01_whole_city_v1_v2.jpg`): the city fill is
+   near-black cool lacquer (grid and windows blue-grey, no gold on ordinary towers) in a blue-charcoal fog with a thicker low layer
+   (fog_peak 0.16, fog_base 0.10, fog_h 40). The tallest 4.5 % of towers per district (at least 6 each, 32 in frame) are rebuilt as
+   Ferriss shafts: a stout lacquer body with three setbacks (about 80 %), gold cornices and corner piers, parallel neon in the
+   district's corp hue, a crown scaled 2.2x (fan arcs and spire), and a warm floodlight from below. Landmarks keep their stepped
+   gold plinths, ground sunbursts, crossed fan crowns and searchlights; beams, traffic, water and camera unchanged. Median 0.160.
 2. **Halcyon** (`deco_corp_halcyon.py`): the seven tiers keep the pyramid, now with a gold cornice, stepped merlons, chevron band and
    corner piers per tier, triple violet lines on each setback edge, amber double lines above; the Eye is a sunburst fan crown.
 3. **Meridian** (`deco_corp_meridian.py`): the gantry (legs, span, keep, corner towers) in gold fluted piers with chevron hazard bands,
@@ -47,7 +50,7 @@ Look-dev previews: `prev.sh <corp> <tag>` (CPU, 960 x 540, 8 spp, no lock); `dec
 ## Values and timings (RX 6700 XT, HIP, OIDN, 1920 x 1080)
 | Panel | spp | render + build | frame median (luma) |
 |---|---|---|---|
-| 1 city | 64 | 80 s + 23 s build (117 s wall) | 0.161 |
+| 1 city (v2) | 64 | 119 s wall | 0.160 |
 | 2 Halcyon | 56 | 88 s wall | 0.169 |
 | 3 Meridian | 56 | 90 s | 0.169 |
 | 4 Orbital | 56 | 85 s | 0.169 |
