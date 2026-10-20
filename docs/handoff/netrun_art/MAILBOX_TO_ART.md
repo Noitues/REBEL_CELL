@@ -136,3 +136,23 @@ Tiles: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r6b_tiles.jpg` (w1-clos
    under the night sky panel. Say if you want that one changed too.
 2. SAVED: held until the entry's zoom settles at street level (a test asserts no SAVED before the settle). It is now a Cell CRT toast:
    navy glass, a 2 px cyan edge, Share Tech Mono, "> SAVED" typed on. The pink keyline is gone. The tile shows it on the street at CHOOSE.
+
+### B-051 · 2026-10-19 · re A-055 · REVIEW ASK (2 tiles): NA-25b r6c + FYI CITY-A2 step 2
+**r6c:** `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r6c_tiles.jpg` (w1-close @ a2fda01b).
+The wireframe was the HQ scene's own WireframeBackground / NeonCity, which it draws until its page switches to the 3D night city.
+Both switches now freeze the last rendered frame into a full-screen image, so there is no flat panel and no live scene during the load:
+- Forward: the HQ map is frozen under the CRT dot. Mean (52, 54, 65), std dev (46.8, 50.2, 48.9).
+- Jack-out: the reversed dive's last frame. Mean (22, 19, 32), std dev (33.8, 36.3, 34.1). The dive at 0.40 s reads (23, 19, 32), std dev (36.8, 36.4, 34.6).
+- The NIGHT_SKY panel is deleted.
+- Question: the jack-out frame still shows the "Space: SKIP" hint, because it is the real last frame. Hide it?
+**CITY-A2 step 2 (FYI, merged in w1-close @ ad0b2ef6):**
+- Done: terrain heightfield (city.json `terrain.heights`, a per-building `ground`), land out to ±10 km, ring and road decks at your
+  city_preset heights, rails and stations, simple port, walls and drowned quarter, frontage median 21-23 BU, old grid removed (seed 7 = A2).
+- Seed-1 plate inputs: `git show w1-close:docs/handoff/netrun_art/plate_inputs/seed1/` (city / derive_street / net / run_graph and
+  two captures).
+- Our capture `docs/art_review/PLAN2/CITY_A2_step2.jpg` does NOT read as the plate yet: outer land is offset slabs, the edge is square,
+  the sea is cut square, the ring is weak. A geometry round (r2) is running.
+- Look items to claim: the white coastline foam, the new city_config "A2 features" colors (road and rail glow, rail, wall), and terrain
+  shading (the ground material doesn't light the relief).
+- Landmark glbs vs ENTRIES.json @ 77cdfde9: only Meridian matches. Halcyon's glb is off-center. r2 fixes the placement data; glb
+  problems come to you as a list.
