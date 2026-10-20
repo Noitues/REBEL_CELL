@@ -88,13 +88,15 @@ extends Resource
 @export var whole_building_colors: Dictionary = {"edge_a": Color(1.0, 0.78, 0.5), "edge_b": Color(1.0, 0.9, 0.75),
 	"haze_col": Color(0.04, 0.05, 0.06)}
 ## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
-@export var whole_bloom_thr: float = 0.55
-@export var whole_bloom_w: Vector3 = Vector3(0.22, 0.2, 0.16)
+@export var whole_bloom_thr: float = 0.35
+@export var whole_bloom_w: Vector3 = Vector3(0.34, 0.34, 0.3)
 @export var whole_exposure_k: float = 1.6
 ## ... its post overrides (AAA uniforms: no chromatic fringe, the three rain layers' alpha 0) and the moon's colour.
 @export var whole_aaa_post: Dictionary = {"aaa_ca": Vector3(0.0, 0.3, 1.5), "aaa_rain0b": Vector3(0.0, 1.0, 0.6),
 	"aaa_rain1b": Vector3(0.0, 1.0, 1.0), "aaa_rain2b": Vector3(0.0, 3.0, 1.6)}
 @export var whole_moon_color: Color = Color(0.78, 0.8, 0.86)
+## ... and its energy (the plate's night land and mountains read dark blue-grey, not black).
+@export var whole_moon_energy: float = 0.22
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
@@ -111,7 +113,7 @@ extends Resource
 @export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWall", "SeaWallLight"])
 ## LOOK L5: the A2 feature parts hidden at the whole-city pose (the rail glow dashes read as a wireframe overlay, the
 ## port piers as black bars on the bay rim).
-@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
+@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers", "RoadGlow"])
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
 ## LOOK L5: the vein foam at the whole-city pose, and the seabed under the translucent water there (city_water bed_*).

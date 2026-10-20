@@ -305,7 +305,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
 	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night and not whole_look)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
-	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
+	_env.background_color = (day["sky"] as Color).lerp(cfg.whole_fog_night if whole_look else cfg.sky, night_share)
 	var lm_night := bool(day.get("landmarks_night", night))
 	if lm_night != _landmarks_night:
 		_landmarks_night = lm_night
@@ -558,6 +558,7 @@ func _whole_building() -> void:
 			_post.set_shader_parameter(StringName(k), cfg.whole_aaa_post[k])
 		if _sun != null:
 			_sun.light_color = cfg.whole_moon_color
+			_sun.light_energy = cfg.whole_moon_energy
 
 
 ## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.
