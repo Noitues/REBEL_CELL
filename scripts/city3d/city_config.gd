@@ -49,7 +49,7 @@ extends Resource
 ## Whole-city look (CityView3D.whole_look): the AAA-2 look blend at full night (it follows the night share), and the
 ## day look's ramp gain and grade (the A2 day plate is about half as bright as the Grid's day and warmer).
 @export var whole_night_look: float = 1.0
-@export var whole_day_ramp_gain: float = 0.28
+@export var whole_day_ramp_gain: float = 0.25
 ## ... tinted per band (shadow, mid, lit): the plate's low sun lights faces warm and leaves the shade cool.
 @export var whole_day_ramp_tint: Array[Color] = [Color(0.80, 0.90, 1.12), Color(1.0, 0.97, 0.94), Color(1.14, 1.0, 0.80)]
 ## ... and its long shadows: the far-LOD blocks cast under the whole-city pose, the sun's shadow out to this many BU.

@@ -523,9 +523,9 @@ city_a2_heights = {
 &"corp_solace": Vector2(12, 34),
 &"industrial": Vector2(4, 10),
 &"informal": Vector2(2, 6),
-&"old_core": Vector2(5, 16),
-&"rail_grid": Vector2(5, 14),
-&"sprawl": Vector2(4, 14),
+&"old_core": Vector2(4, 13),
+&"rail_grid": Vector2(4, 11),
+&"sprawl": Vector2(3, 10),
 &"suburb": Vector2(3, 8)
 }
 city_a2_hq_rise = 1.2
