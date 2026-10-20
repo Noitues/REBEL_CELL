@@ -319,7 +319,7 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var hq_dial_steps: int = 3
 ## Threat damage bonus inside the sector (percent).
 @export var raid_eye_damage_pct: int = 25
-## Heat charged to use a non-fight HQ node in the eye.
+## Unused since v2 (a shuttered node cannot be entered).
 @export var eye_shuttered_cost_heat: int = 1
 ## Halcyon v2: the Blade's top level, the HQ gaze step per Stall, Alert gains (eye fight, Stall,
 ## Power cut), the Lockdown threshold, beam multiplier and Blade bonus, Cut the Power's asleep steps.

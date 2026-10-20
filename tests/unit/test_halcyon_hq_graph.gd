@@ -27,6 +27,8 @@ func test_graph_is_valid_deterministic_and_has_13_layers() -> void:
 		assert_eq(HalcyonHqGraph.validate(g, _cfg, phase), PackedStringArray(), "seed %d" % seed)
 		assert_eq(g.layer_count(), 13)
 		assert_eq(g.graph_hash(), _graph(seed, phase).graph_hash(), "same stream, same graph")
+		var back := MapGraph.from_dict(JSON.parse_string(JSON.stringify(g.to_dict())))
+		assert_eq(back.graph_hash(), g.graph_hash(), "azimuths, climbs and rooms survive a save")
 
 
 func test_mini_boss_gate_vault_power_room_and_climbs() -> void:
@@ -85,11 +87,14 @@ func test_rest_and_cache_rooms_work_and_mini_boss_is_a_fight() -> void:
 	s.run.current_node_id = &""
 	s.run.map.layers[0][0]["next"] = [rest["id"]] as Array[StringName]
 	s.run.current_node_id = s.run.map.layers[0][0]["id"]
+	var h := s.run.corp_theme.halcyon
+	rest["az"] = (EyeRules.gaze_centre(h.eye_phase, h.eye_step, _cfg) + 180) % 360  # the dark side: not shuttered
 	s.enter_node(rest["id"])
 	assert_gt(s.run.operative.hp, 1, "the bay heals")
 	assert_eq(s.run.phase, RunState.Phase.MAP)
 	s.run.current_node_id = s.run.map.layers[0][0]["id"]
 	s.run.map.layers[0][0]["next"] = [cache["id"]] as Array[StringName]
+	cache["az"] = (EyeRules.gaze_centre(h.eye_phase, h.eye_step, _cfg) + 180) % 360
 	s.enter_node(cache["id"])
 	assert_eq(s.run.phase, RunState.Phase.REWARD, "the Evidence Locker offers a pick")
 	assert_eq(s.run.pending_rewards[0]["kind"], "daemon")
