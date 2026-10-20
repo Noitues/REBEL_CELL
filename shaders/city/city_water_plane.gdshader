@@ -1,6 +1,6 @@
 // LOOK L5 (whole-city plate parity; the designer's ruling: terrain, then one textured water plane over it). A transparent
-// sheet at sea level over the real seabed (CitySeabedKit): the water's thickness along the view ray comes from the depth
-// buffer, so the bed shows through the shallows (absorbed per channel, red first) and the deep water and open sea go
+// sheet at sea level over the real seabed (CitySeabedKit): the water's thickness along the view ray comes from the bed's
+// depth texture (CitySeabedKit.depth_image, the same bed as the mesh; open sea past it is `far_bu` deep), so the bed shows through the shallows (absorbed per channel, red first) and the deep water and open sea go
 // opaque. On top: a slow two-scale ripple normal with a sky fresnel and a sun glint, light caustic ribbons in the shallows
 // and a foam rim where the water thins to nothing on the shore. Drawn after the city post (render_priority above the
 // post's), so it takes the night / day grade itself; unshaded, the scene fog still lays the haze on it.
@@ -8,7 +8,10 @@ shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 
-uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
+uniform sampler2D bed_tex : filter_linear, repeat_disable;
+uniform vec2 bed_origin = vec2(0.0);
+uniform vec2 bed_size = vec2(1.0);
+uniform float far_bu = 60.0;
 uniform float night = 1.0;
 uniform vec3 deep_day = vec3(0.03, 0.16, 0.30);
 uniform vec3 deep_night = vec3(0.01, 0.07, 0.10);
@@ -57,11 +60,12 @@ void vertex() {
 
 void fragment() {
 	float t = rc_time(TIME) * time_scale * ripple_speed;
-	// Thickness along the view ray: the opaque scene behind (seabed, shore, far = open sea) minus this sheet.
-	float dz = texture(depth_tex, SCREEN_UV).r;
-	vec4 vp = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, dz, 1.0);
-	float behind = -vp.z / vp.w;
-	float path = dz <= 0.0 ? 1e6 : max(behind + VERTEX.z, 0.0);
+	// Thickness along the view ray: the bed's depth under this point over the ray's sine.
+	vec3 V = normalize(CAMERA_POSITION_WORLD - v_world);
+	vec2 buv = (v_world.xz - bed_origin) / bed_size;
+	bool inside = all(greaterThanEqual(buv, vec2(0.0))) && all(lessThanEqual(buv, vec2(1.0)));
+	float depth = inside ? texture(bed_tex, buv).r : far_bu;
+	float path = depth / max(V.y, 0.05);
 	vec3 trans = exp(-absorb * path);
 	float tm = (trans.r + trans.g + trans.b) / 3.0;
 	// Ripple normal from the wave height's gradient.
@@ -69,7 +73,6 @@ void fragment() {
 	float e = 0.15;
 	float h0 = waves(p, t);
 	vec3 nw = normalize(vec3(-(waves(p + vec2(e, 0.0), t) - h0) / e * ripple_k, 1.0, -(waves(p + vec2(0.0, e), t) - h0) / e * ripple_k));
-	vec3 V = normalize(CAMERA_POSITION_WORLD - v_world);
 	float fr = fresnel_f0 + (1.0 - fresnel_f0) * pow(1.0 - clamp(dot(nw, V), 0.0, 1.0), 5.0);
 	vec3 deep = mix(deep_day, deep_night, night);
 	vec3 shallow = mix(shallow_day, shallow_night, night);

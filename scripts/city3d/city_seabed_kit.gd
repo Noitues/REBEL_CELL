@@ -4,7 +4,8 @@ extends RefCounted
 ## under the sea as real ground. The bed falls from the shore (0 at the coast) toward `seabed_max_bu` over
 ## `seabed_reach_lots` lots of the shore field, its depth broken by the terrain's broad noise (`seabed_noise_k`) into shelves
 ## and trenches; the bay islands (CityWater.islands_of) rise out of it as hills. Coloured sand in the shallows to dark rock
-## deep, the islands sand / meadow / forest by height. One indexed grid every `seabed_step` lots over the wet cells. Pure.
+## deep, the islands sand / meadow / forest by height. One indexed grid every `seabed_step` lots over the wet cells; the
+## same bed as a depth texture (`depth_image`) for the water plane. Pure.
 
 const SEED_TONE := 7780
 
@@ -40,14 +41,7 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 					n += 1
 					wt = wt or wet[jj * w + ii] != 0
 			var at := Vector2(r.position.x + li, r.position.y + lj)
-			var dc := s / float(maxi(n, 1))
-			var z := -cfg.seabed_max_bu * (1.0 - exp(-dc / cfg.seabed_reach_lots)) \
-					* (1.0 + cfg.seabed_noise_k * (terrain.noise_at(at.x, at.y) * 2.0 - 1.0))
-			z = minf(z, -cfg.seabed_shore_bu) if wt else minf(terrain.height_at(at.x, at.y), 0.0) - cfg.seabed_shore_bu
-			for it: Dictionary in islands:
-				var rho := at.distance_to(it["c"]) / (float(it["r"]) * cfg.island_spread)
-				if rho < 1.0:
-					z = lerpf(z, cfg.island_h_bu, pow(1.0 - rho * rho, 1.5))
+			var z := bed_z(cfg, terrain, at, s / float(maxi(n, 1)), wt, islands)
 			var k := cj * nx + ci
 			touch[k] = 1 if wt else 0
 			verts[k] = CityIsoCamera.lot_to_world(cfg, at, z)
@@ -60,7 +54,8 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 				c = cfg.seabed_sand.lerp(cfg.seabed_deep, 1.0 - exp(z / cfg.seabed_tone_bu))
 			cols[k] = Color(c.r * tone, c.g * tone, c.b * tone)
 	var idx := PackedInt32Array()
-	var up := (verts[1] - verts[0]).cross(verts[nx] - verts[0]).y > 0.0
+	# Godot's front faces wind clockwise seen from the front: the up-facing order is the one whose cross product points down.
+	var down := (verts[1] - verts[0]).cross(verts[nx] - verts[0]).y < 0.0
 	for cj in ny - 1:
 		for ci in nx - 1:
 			var a := cj * nx + ci
@@ -69,7 +64,7 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 			var e := a + nx
 			if touch[a] == 0 and touch[b] == 0 and touch[c2] == 0 and touch[e] == 0:
 				continue
-			if up:
+			if down:
 				idx.append_array([a, b, c2, a, c2, e])
 			else:
 				idx.append_array([a, c2, b, a, e, c2])
@@ -94,6 +89,34 @@ static func mesh(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: Packed
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
 	return m
+
+
+## The bed's height (BU, below 0 under water) at lot point `at`: shore field `dc` lots, `wt` when it touches water.
+static func bed_z(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, dc: float, wt: bool,
+		islands: Array[Dictionary]) -> float:
+	var z := -cfg.seabed_max_bu * (1.0 - exp(-dc / cfg.seabed_reach_lots)) \
+			* (1.0 + cfg.seabed_noise_k * (terrain.noise_at(at.x, at.y) * 2.0 - 1.0))
+	z = minf(z, -cfg.seabed_shore_bu) if wt else minf(terrain.height_at(at.x, at.y), 0.0) - cfg.seabed_shore_bu
+	for it: Dictionary in islands:
+		var rho := at.distance_to(it["c"]) / (float(it["r"]) * cfg.island_spread)
+		if rho < 1.0:
+			z = lerpf(z, cfg.island_h_bu, pow(1.0 - rho * rho, 1.5))
+	return z
+
+
+## The water's depth over `r` (a texel a lot, BU below sea level, 0 above it) for the water plane: the same bed as `mesh`,
+## so the plane's thickness follows the ground under it without the depth buffer.
+static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet: PackedByteArray, d: PackedFloat32Array,
+		islands: Array[Dictionary]) -> Image:
+	var w := r.size.x
+	var h := r.size.y
+	var img := Image.create_empty(w, h, false, Image.FORMAT_RF)
+	for j in h:
+		for i in w:
+			var at := Vector2(r.position.x + i + 0.5, r.position.y + j + 0.5)
+			var z := bed_z(cfg, terrain, at, d[j * w + i], wet[j * w + i] != 0, islands)
+			img.set_pixel(i, j, Color(maxf(-z, 0.0), 0.0, 0.0))
+	return img
 
 
 ## The water plane: one quad `outer_bu` wide at `y`, round the origin.

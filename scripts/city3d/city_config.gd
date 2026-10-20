@@ -774,7 +774,7 @@ extends Resource
 	"shallow_day": Color(0.10, 0.45, 0.55), "shallow_night": Color(0.04, 0.30, 0.32), "absorb": Color(0.30, 0.10, 0.07),
 	"alpha_min": 0.15, "sky_day": Color(0.55, 0.62, 0.70), "sky_night": Color(0.04, 0.08, 0.10), "fresnel_gain": 0.6,
 	"glint_pow": 180.0, "glint_gain": 0.5, "ripple_bu": 14.0, "ripple_k": 0.35, "caustic_bu": 22.0, "caustic_gain": 0.25,
-	"foam_bu": 0.6, "foam_gain": 0.55}
+	"foam_bu": 0.6, "foam_gain": 0.55, "far_bu": 60.0}
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14

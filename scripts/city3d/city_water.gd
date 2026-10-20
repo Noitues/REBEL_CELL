@@ -67,6 +67,11 @@ static func make(cfg: CityConfig, plan: CityPlan, model: CityModel, outer_bu: fl
 		# LOOK L5: the land under the sea (islands included) and, for the whole-city pose, one transparent water plane over it.
 		w._add(CitySeabedKit.mesh(cfg, plan.terrain, tr, wet, sp["field"], w.islands), w.wall_mat, "Seabed")
 		w.plane_mat = _plane_material(cfg)
+		var o := CityIsoCamera.lot_to_world(cfg, Vector2(tr.position))
+		w.plane_mat.set_shader_parameter(&"bed_tex", ImageTexture.create_from_image(
+				CitySeabedKit.depth_image(cfg, plan.terrain, tr, wet, sp["field"], w.islands)))
+		w.plane_mat.set_shader_parameter(&"bed_origin", Vector2(o.x, o.z))
+		w.plane_mat.set_shader_parameter(&"bed_size", Vector2(tr.size) * cfg.lot_bu)
 		var pl := w._add(CitySeabedKit.plane_mesh(outer_bu, SEA_Y), w.plane_mat, "WaterPlane")
 		pl.visible = false
 	else:
