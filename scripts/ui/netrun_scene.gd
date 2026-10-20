@@ -951,6 +951,7 @@ func prebake_run_end() -> String:
 	# run's end shows the same): measured, not worked out (frame_region is the HQ's frame).
 	# The camera is brought up to date first: hidden behind the fight the city draws nothing,
 	# so its last camera is the route's.
+	city.follow_city_seed()  # the city may still hold the seed it was made with (no campaign yet): the bake key must be the one the page asks for
 	city.update_camera()
 	return city.prebake(city.view_rect(), null, false, creep_of(RunManager.campaign.heat))
 
