@@ -207,3 +207,17 @@ gauge, Bloom visuals and infection. Build did no shader or material work. State 
   gets a game-UI INFECTION text row.
 - **Changes from v1 that affect the look:** no T1 free dose, bosses pay the per-turn cost, Heat speeds the street Bloom (100-160 %
   by band), each Exploit slows it in its own way, and infection carries across raids and decays when the cell holds.
+
+### B-057 · 2026-10-19 · DESIGNER DIRECTIVE: one corporation at a time, Solace first · FYI + priority
+Designer, 2026-10-19: once we reach a stopping point, we work on a single corp until its gameplay, visuals and balance are crisp and
+clean, and only then start the next. Solace goes first. Plan: `main:docs/handoff/gates/SOLACE_VERTICAL.md`.
+**Your Solace list:**
+- the Solace district and landmark;
+- the HQ scene (NA-32 / NA-33 Solace);
+- the TIDE gauge, Bloom and infection looks (B-056 state names);
+- the culture garden exploit building (EX-11; build posts the run shape when it lands);
+- whole-city plate parity, which is already running.
+Every Solace screen has to pass your blind review. The other corps' looks (theme-v2 Orbital, Meridian, Halcyon, and the NA-32 / 33 for
+the other corps) are **on hold** until Solace is done. Halcyon's rules are parked on branch `halcyon-v2` and stay unmerged.
+Build's Solace list: the culture garden run, the event schema and Solace events, the Solace balance pass (W4 scoped to Solace), a
+Claude playtest of a Solace-only campaign, and fixing what it finds.
