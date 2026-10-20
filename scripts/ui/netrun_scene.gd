@@ -858,7 +858,8 @@ func _show_node_page() -> void:
 	page.patch_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_patch()))
 	page.rewire_confirmed.connect(func(a: int, b: int) -> void: _node_step(RunManager.netrun.rest_rewire(a, b)))
 	page.undo_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_undo()))
-	page.leave_pressed.connect(func() -> void: _node_step(RunManager.netrun.leave_rest()))
+	page.leave_pressed.connect(func() -> void: _node_step(RunManager.netrun.leave_rest() if RunManager.netrun.run.phase == RunState.Phase.REST else RunManager.netrun.leave_workshop()))
+	page.buy_confirmed.connect(func(offer: int, slot: int) -> void: _node_step(RunManager.netrun.workshop_buy(offer, slot)))
 	_set_panel(page)
 
 

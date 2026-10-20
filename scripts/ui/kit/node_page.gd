@@ -108,10 +108,6 @@ func _build_rest() -> void:
 
 
 func _pick_slot(i: int) -> void:
-	if _s.run.phase == RunState.Phase.WORKSHOP:
-		_second = i
-		setup(_s)
-		return
 	if _first < 0 or i == _first:
 		_first = -1 if i == _first else i
 		_second = -1
@@ -120,10 +116,65 @@ func _pick_slot(i: int) -> void:
 	setup(_s)
 
 
-# --- WORKSHOP (filled in by RG-03) -----------------------------------------------------------
+# --- WORKSHOP --------------------------------------------------------------------------------
 
+## The picked offer is `_first`, the wheel slot it replaces `_second`.
 func _build_workshop() -> void:
-	pass
+	var win := TerminalWindow.new(tr("WORKSHOP"), Palette.CELL_ACID) # TR
+	win.name = "WorkshopWindow"
+	add_child(win)
+	var offers: Array = _s.run.node_state.get("offers", [])
+	var spent := int(_s.run.node_state.get("bought", 0)) >= _s.config.workshop_buys_per_visit
+	win.body.add_child(_label(tr("Cycles: %d") % _s.run.cycles, "WorkshopCycles")) # TR
+	win.body.add_child(_label(tr("This Workshop is spent.") if spent else tr("Pick a slice, then the wheel slot it replaces."), "WorkshopHint")) # TR
+	var offer_box := VBoxContainer.new()
+	offer_box.name = "WorkshopOffers"
+	win.body.add_child(offer_box)
+	for i in offers.size():
+		var b := _button("%d  %s" % [i + 1, _name_of(StringName(String(offers[i])))], "WorkshopOffer%d" % i)
+		b.toggle_mode = true
+		b.button_pressed = i == _first
+		b.disabled = spent
+		var idx := i
+		b.pressed.connect(func() -> void: _pick_offer(idx))
+		offer_box.add_child(b)
+	var slot_box := VBoxContainer.new()
+	slot_box.name = "WorkshopSlots"
+	win.body.add_child(slot_box)
+	var op := _s.run.operative
+	for i in op.slot_slice_ids.size():
+		var why := _s.workshop_error(_first, i) if _first >= 0 else ""
+		var b := _button("%d  %s  (%d)" % [i + 1, _name_of(op.slot_slice_ids[i]), _s.workshop_price(i)], "WorkshopSlot%d" % i, why)
+		b.toggle_mode = true
+		b.button_pressed = i == _second
+		b.disabled = spent or _first < 0 or why != ""
+		var idx := i
+		b.pressed.connect(func() -> void: _pick_target(idx))
+		slot_box.add_child(b)
+	var foot := HBoxContainer.new()
+	win.body.add_child(foot)
+	var buy := _button(tr("BUY"), "WorkshopBuy") # TR
+	var ready := not spent and _first >= 0 and _second >= 0 and _s.workshop_error(_first, _second) == ""
+	if ready:
+		var pv := _s.workshop_preview(_first, _second)
+		buy.text = tr("BUY  %d Cycles (%d left)") % [pv["price"], pv["cycles_after"]] # TR
+	buy.disabled = not ready
+	buy.pressed.connect(func() -> void: buy_confirmed.emit(_first, _second))
+	foot.add_child(buy)
+	var leave := _button(tr("LEAVE"), "WorkshopLeave") # TR
+	leave.pressed.connect(func() -> void: leave_pressed.emit())
+	foot.add_child(leave)
+
+
+func _pick_offer(i: int) -> void:
+	_first = -1 if i == _first else i
+	_second = -1
+	setup(_s)
+
+
+func _pick_target(i: int) -> void:
+	_second = -1 if i == _second else i
+	setup(_s)
 
 
 ## Keys 1-9 pick the n-th slot, Enter confirms, Esc steps back or leaves.
@@ -136,8 +187,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if i < _s.run.operative.slot_slice_ids.size() and not (_first >= 0 and i != _first and _s.rest_rewire_error(_first, i) != ""):
 			_pick_slot(i)
 			get_viewport().set_input_as_handled()
+	elif k.keycode >= KEY_1 and k.keycode <= KEY_9 and _s.run.phase == RunState.Phase.WORKSHOP:
+		var wi := k.keycode - KEY_1
+		if _first < 0 and wi < _s.run.node_state.get("offers", []).size():
+			_pick_offer(wi)
+			get_viewport().set_input_as_handled()
+		elif _first >= 0 and wi < _s.run.operative.slot_slice_ids.size() and _s.workshop_error(_first, wi) == "":
+			_pick_target(wi)
+			get_viewport().set_input_as_handled()
 	elif k.keycode == KEY_ENTER or k.keycode == KEY_KP_ENTER:
-		if _s.run.phase == RunState.Phase.REST and _first >= 0 and _second >= 0 and _s.rest_rewire_error(_first, _second) == "":
+		if _s.run.phase == RunState.Phase.WORKSHOP and _first >= 0 and _second >= 0 and _s.workshop_error(_first, _second) == "":
+			buy_confirmed.emit(_first, _second)
+			get_viewport().set_input_as_handled()
+		elif _s.run.phase == RunState.Phase.REST and _first >= 0 and _second >= 0 and _s.rest_rewire_error(_first, _second) == "":
 			rewire_confirmed.emit(_first, _second)
 			get_viewport().set_input_as_handled()
 	elif k.keycode == KEY_ESCAPE:

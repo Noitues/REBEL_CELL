@@ -66,7 +66,7 @@ func test_the_v2_pass_leaves_the_v1_map_alone() -> void:
 			var m := b.get_node(node["id"])
 			assert_eq(m["next"], node["next"])
 			assert_eq(m["elite"], node["elite"])
-			if int(m["type"]) != RC.InfilNodeType.REST:
+			if not (int(m["type"]) in MapGraph.V2_TYPES):
 				assert_eq(m["type"], node["type"])
 
 

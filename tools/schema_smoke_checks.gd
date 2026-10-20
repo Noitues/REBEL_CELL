@@ -33,6 +33,8 @@ func _wh02_corp_theme_config() -> int:
 	if shipped == null or not shipped.map_v2_enabled or shipped.map_unique_allow != PackedStringArray(["orbital_uplink_dish"]): fails += 1
 	# RG-02: the REST keys (shipped = default).
 	if shipped == null or shipped.rest_heal_pct != 35 or shipped.rest_rewire_swaps != 1 or shipped.node_weight_rest != 100 or shipped.rest_guaranteed_layers != Vector2i(4, 5) or shipped.rest_extra_chance_pct_by_tier != PackedInt32Array([0, 15, 35, 35]) or shipped.rest_max_per_run != 2: fails += 1
+	# RG-03: the Workshop keys (shipped = default).
+	if shipped == null or shipped.workshop_offers_per_visit != 3 or shipped.workshop_buys_per_visit != 1 or shipped.workshop_slice_price != 60 or shipped.workshop_null_slice_price != 90 or shipped.node_weight_workshop != 90 or shipped.workshop_min_tier != 2 or shipped.workshop_layers != Vector2i(3, 6): fails += 1
 	# WH-10: the Solace HQ ladder keys.
 	if d.solace_hq_rungs != 9 or d.solace_hq_mini_boss_rung != 9 or d.solace_hq_ward_rest_rungs != PackedInt32Array([5, 8]) or d.solace_hq_ward_weights.size() != 5 or d.solace_hq_billing_weights.size() != 5: fails += 1
 	d.bloom_dose_price = 21

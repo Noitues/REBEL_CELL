@@ -10,6 +10,7 @@ extends RefCounted
 ## Places the v2 node kinds on `graph` (already version 2) for `tier`.
 static func place(graph: MapGraph, tier: int, config: CampaignConfigData, rng: RandomNumberGenerator) -> void:
 	_place_rest(graph, tier, config, rng)
+	_place_workshop(graph, tier, config, rng)
 
 
 ## RG-02: the guaranteed REST (layers `rest_guaranteed_layers`, chance `node_weight_rest`), then an
@@ -28,12 +29,21 @@ static func _place_rest(graph: MapGraph, tier: int, config: CampaignConfigData, 
 		_convert(graph, RC.InfilNodeType.REST, config.rest_extra_layers, rng, false)
 
 
+## RG-03: one WORKSHOP from `workshop_min_tier` up (chance `node_weight_workshop` percent), on a Terminal in
+## `workshop_layers`, never in a layer that holds a Mainframe. Draws: roll, pick (if rolled and a candidate exists).
+static func _place_workshop(graph: MapGraph, tier: int, config: CampaignConfigData, rng: RandomNumberGenerator) -> void:
+	var roll := rng.randi_range(1, 100)
+	if tier >= config.workshop_min_tier and roll <= config.node_weight_workshop:
+		_convert(graph, RC.InfilNodeType.WORKSHOP, config.workshop_layers, rng, false, RC.InfilNodeType.MAINFRAME)
+
+
 ## Turns one candidate in layers `span` into `type`: a free Terminal, else (when `router_fallback`) a plain
-## Router, in a layer that holds none of `type` yet. Draws one pick when a candidate exists. True when placed.
-static func _convert(graph: MapGraph, type: int, span: Vector2i, rng: RandomNumberGenerator, router_fallback: bool) -> bool:
+## Router, in a layer that holds none of `type` yet (and none of `avoid_type` when given). Draws one pick when a
+## candidate exists. True when placed.
+static func _convert(graph: MapGraph, type: int, span: Vector2i, rng: RandomNumberGenerator, router_fallback: bool, avoid_type: int = -1) -> bool:
 	var taken_layers := {}
 	for n in graph.all_nodes():
-		if int(n["type"]) == type:
+		if int(n["type"]) == type or (avoid_type >= 0 and int(n["type"]) == avoid_type):
 			taken_layers[int(n["layer"])] = true
 	var cands := terminals(graph, span.x, span.y)
 	if cands.is_empty() and router_fallback:

@@ -795,3 +795,14 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 @export var rest_extra_layers: Vector2i = Vector2i(3, 6)
 @export var rest_extra_chance_pct_by_tier: PackedInt32Array = PackedInt32Array([0, 15, 35, 35])
 @export var rest_max_per_run: int = 2
+
+## RG-03 WORKSHOP (drafts/nodes/workshop.md; the slice-refit form while N18 slice upgrades are not built).
+## Offers drawn per visit, purchases per visit, the refit price (the NULL slot costs more), the
+## percent chance of one per run from `workshop_min_tier` up, and its layers (never in a layer that holds a Mainframe).
+@export var workshop_offers_per_visit: int = 3
+@export var workshop_buys_per_visit: int = 1
+@export var workshop_slice_price: int = 60
+@export var workshop_null_slice_price: int = 90
+@export var node_weight_workshop: int = 90
+@export var workshop_min_tier: int = 2
+@export var workshop_layers: Vector2i = Vector2i(3, 6)

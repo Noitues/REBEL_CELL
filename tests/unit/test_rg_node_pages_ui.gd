@@ -65,3 +65,23 @@ func test_the_rest_page_patches_undoes_rewires_and_leaves() -> void:
 	assert_eq(_s.run.operative.hp, 1, "UNDO")
 	_btn("RestLeave").pressed.emit()
 	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return _s.run.phase == RunState.Phase.MAP, 5.0), "LEAVE returns to the route")
+
+
+func test_the_workshop_page_buys_a_refit_and_leaves() -> void:
+	var first := _s.available_nodes()[0]
+	_s.run.map.get_node(first)["type"] = RC.InfilNodeType.WORKSHOP
+	_s.run.cycles = 500
+	_scene.enter_node(first)
+	assert_true(await _wait_btn("WorkshopBuy", true), "the Workshop page shows with BUY disabled")
+	assert_eq(_s.run.phase, RunState.Phase.WORKSHOP)
+	_btn("WorkshopOffer0").pressed.emit()
+	assert_true(await _wait_btn("WorkshopSlot0", false), "a slot opens once an offer is picked")
+	_btn("WorkshopSlot0").pressed.emit()
+	assert_true(await _wait_btn("WorkshopBuy", false), "BUY enables with an offer and a slot")
+	var offer := StringName(String(_s.run.node_state["offers"][0]))
+	_btn("WorkshopBuy").pressed.emit()
+	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return _s.run.operative.slot_slice_ids[0] == offer, 5.0), "the refit applied")
+	assert_lt(_s.run.cycles, 500)
+	assert_true(await _wait_btn("WorkshopBuy", true), "one buy per visit")
+	_btn("WorkshopLeave").pressed.emit()
+	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return _s.run.phase == RunState.Phase.MAP, 5.0), "LEAVE returns to the route")

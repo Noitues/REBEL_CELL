@@ -9333,3 +9333,19 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v
 - The Solace HQ ladder's rest room stays the ward rest (`bloom_ward_rest`, WH-10): it does not open the REST page.
 - UI: `NodePage` (scripts/ui/kit/node_page.gd), placeholder buttons; mouse, or keys 1-9 / Enter / Esc. Tests:
   tests/unit/test_rg02_rest.gd, tests/unit/test_rg_node_pages_ui.gd.
+
+### 2026-10-19 - W3 RG-03: the WORKSHOP node
+- **Call (logged, Open question for the designer):** neither N18 slice upgrades (Levels) nor a card-upgrade interface exists on
+  this branch (grep: no Level, no upgraded cards). The brief's fallback names the card-upgrade interface, which is also absent,
+  so the Workshop is the **existing slice-overwrite interface** (the Mainframe's slice refit, same socket rule: a socketed
+  Firmware must fit the new slice) at its own price. When N18 / N12 land, only `_open_workshop` / `workshop_buy` swap their
+  offer source; the page, phase and placement stay.
+- Phase `WORKSHOP`; `node_state` {kind: workshop, offers, bought}. Entering draws `workshop_offers_per_visit` (3) distinct
+  slices from `config.shop_slices` on the `rewards` stream (no new stream), so a reload cannot reroll them; one buy per visit
+  (`workshop_buys_per_visit`); price `workshop_slice_price` (60) or `workshop_null_slice_price` (90) for the NULL slot, scaled by
+  CYCLE_PRICE_PCT. Preview (`workshop_preview`) is the result. Left out: the draft's per-level cost table, layer-gated max Level,
+  per-run upgrade cap, card slot and corp `workshop_weight` (they need Levels).
+- Placement (`MapV2`, `map` stream): from `workshop_min_tier` (2) a roll against `node_weight_workshop` (90 percent), one Terminal in
+  `workshop_layers` 3-6, never in a layer that holds a Mainframe; none in v1 graphs.
+- UI: `NodePage` workshop form (offer, then slot, then BUY; keys 1-9 and Enter). Tests: tests/unit/test_rg03_workshop.gd and the
+  Workshop case of tests/unit/test_rg_node_pages_ui.gd.

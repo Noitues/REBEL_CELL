@@ -474,6 +474,8 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 			_open_shop()
 		RC.InfilNodeType.REST:
 			_open_rest()
+		RC.InfilNodeType.WORKSHOP:
+			_open_workshop()
 	_sync()
 	return last_events
 
@@ -1295,6 +1297,92 @@ func leave_rest() -> Array[Dictionary]:
 	run.node_state = {}
 	run.phase = RunState.Phase.MAP
 	last_events.append({"type": "rest_left", "text": "Left the REST."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- WORKSHOP node (RG-03, drafts/nodes/workshop.md) -----------------------------------------
+# N18 slice upgrades (Levels) and card upgrades do not exist on this branch, so the Workshop is the
+# existing slice-overwrite interface (the Mainframe's slice refit: `overwrite_slice`'s socket rule)
+# at the Workshop's own price, with the draft's shape: `workshop_offers_per_visit` offers drawn at
+# entry from the `rewards` stream (no new stream), `workshop_buys_per_visit` purchase(s), a two-step pick.
+
+func _open_workshop() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var catalogue: Array = []
+	for slice in config.shop_slices:
+		if slice != null:
+			catalogue.append(slice.id)
+	var offers := []
+	for i in mini(config.workshop_offers_per_visit, catalogue.size()):
+		var idx := rng.randi_range(0, catalogue.size() - 1)
+		offers.append(String(catalogue[idx]))
+		catalogue.remove_at(idx)
+	run.node_state = {"kind": "workshop", "offers": offers, "bought": 0}
+	run.phase = RunState.Phase.WORKSHOP
+	last_events.append({"type": "workshop_open", "text": "Workshop: refit a wheel slice (%d offers)." % offers.size()})
+
+
+## Cycles the Workshop charges to refit wheel slot `slot` (the NULL slot costs more; CYCLE_PRICE_PCT applies).
+func workshop_price(slot: int) -> int:
+	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
+	var base := config.workshop_null_slice_price if slice.slice_type == RC.SliceType.NULL else config.workshop_slice_price
+	return roundi(base * _price_scale())
+
+
+## Why offer `offer` cannot refit wheel slot `slot` now ("" when it can): no page, the visit's buy is spent, a bad
+## index, too few Cycles, or a socketed Firmware that would not fit the new slice.
+func workshop_error(offer: int, slot: int) -> String:
+	if run.phase != RunState.Phase.WORKSHOP:
+		return "No Workshop open."
+	var offers: Array = run.node_state.get("offers", [])
+	if int(run.node_state.get("bought", 0)) >= config.workshop_buys_per_visit:
+		return "This Workshop is spent."
+	if offer < 0 or offer >= offers.size() or slot < 0 or slot >= run.operative.slot_slice_ids.size():
+		return "No such slot or slice."
+	var price := workshop_price(slot)
+	if run.cycles < price:
+		return "Not enough Cycles (%d needed)." % price
+	var fw_id := run.operative.slot_firmware_ids[slot]
+	if fw_id != &"":
+		var fw := lookup.get_content(fw_id) as FirmwareData
+		var slice := lookup.get_content(StringName(String(offers[offer]))) as SliceData
+		if not fw.allowed_slice_types.is_empty() and not (slice.slice_type in fw.allowed_slice_types):
+			return "Socketed %s would not fit the new slice." % fw_id
+	return ""
+
+
+## The refit as it will apply: {"price", "cycles_after", "slice"}.
+func workshop_preview(offer: int, slot: int) -> Dictionary:
+	var offers: Array = run.node_state.get("offers", [])
+	var price := workshop_price(slot)
+	return {"price": price, "cycles_after": run.cycles - price, "slice": StringName(String(offers[offer]))}
+
+
+## Refits wheel slot `slot` with offer `offer`, for the Workshop price.
+func workshop_buy(offer: int, slot: int) -> Array[Dictionary]:
+	last_events = []
+	var why := workshop_error(offer, slot)
+	if why != "":
+		return _refuse(why)
+	var pv := workshop_preview(offer, slot)
+	run.operative.slot_slice_ids[slot] = pv["slice"]
+	run.cycles -= int(pv["price"])
+	run.node_state["bought"] = int(run.node_state.get("bought", 0)) + 1
+	last_events.append({"type": "slice_overwritten", "slot": slot, "slice": pv["slice"], "price": pv["price"],
+		"text": "Slot %d is now %s (%d Cycles)." % [slot, pv["slice"], pv["price"]]})
+	_sync()
+	return last_events
+
+
+func leave_workshop() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.WORKSHOP:
+		return _refuse("No Workshop open.")
+	run.node_state = {}
+	run.phase = RunState.Phase.MAP
+	last_events.append({"type": "workshop_left", "text": "Left the Workshop."})
 	_maybe_raid_interlude()
 	_sync()
 	return last_events
