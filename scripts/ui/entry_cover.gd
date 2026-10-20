@@ -17,6 +17,8 @@ signal ui_changed(k: float)
 
 ## The key hint under the page while the entry plays (`%s` = the key's name).
 const HINT := "%s: SKIP" # TR
+## The node group the skip hint is in (the jack's frozen frame hides it before its grab).
+const HINT_GROUP := &"entry_skip_hint"
 const HINT_FONT := 16
 const HINT_BOTTOM := 28.0
 
@@ -148,6 +150,7 @@ func _finish(skipped: bool) -> void:
 func _show_hint() -> void:
 	_hint = Label.new()
 	_hint.name = "SkipHint"
+	_hint.add_to_group(HINT_GROUP)
 	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hint.text = TranslationServer.translate(HINT) % Settings.key_name(Settings.key_for(&"route_skip"))
 	_hint.add_theme_font_override(&"font", Palette.mono())

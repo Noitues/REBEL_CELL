@@ -148,7 +148,7 @@ func _switch_phase(switch: Callable) -> void:
 	rain_t = -1.0
 	queue_redraw()
 	await get_tree().process_frame  # the frame without the terminal, then freeze it
-	_freeze()
+	await _freeze()
 	for f in 2:
 		if not skipping:
 			await get_tree().process_frame
@@ -200,7 +200,7 @@ func _play_street(switch: Callable) -> void:
 ## lines untype. One press skips to the end (the HQ, no terminal).
 func play_out(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_hold_saved(fx, true)
-	_freeze()  # the reversed dive's last rendered frame, before anything else draws
+	await _freeze()  # the reversed dive's last rendered frame (hint hidden), before anything else draws
 	_begin(link)
 	_reverse = true
 	street = true
@@ -293,11 +293,21 @@ func covering() -> bool:
 	return visible and switched
 
 
-## Freezes the screen as it is now (the viewport's last rendered frame) into a full-screen image under the terminal and the hold.
+## Freezes the screen into a full-screen image under the terminal and the hold. A-056: the dive's "Space: SKIP" hint is hidden first and the
+## frame drawn without it, so the frozen picture never carries a hint (nothing can be skipped during the load).
 func _freeze() -> void:
+	_hide_hints()
 	if DisplayServer.get_name() == "headless":  # no renderer to read back (the sequence never plays headless in the game)
 		return
+	await RenderingServer.frame_post_draw
 	show_frozen(get_viewport().get_texture().get_image())
+
+
+## Hides every skip hint on screen (`EntryCover.HINT_GROUP`).
+func _hide_hints() -> void:
+	for n in get_tree().get_nodes_in_group(EntryCover.HINT_GROUP):
+		if n is CanvasItem:
+			(n as CanvasItem).visible = false
 
 
 ## Shows `img` (a grab of the screen; none under a headless renderer) full screen as the frozen frame.
