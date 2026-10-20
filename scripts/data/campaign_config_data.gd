@@ -443,6 +443,10 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## ring; the raster's fine heights blend into the coarse land over `city_a2_land_blend` lots inside the raster's edge (one
 ## surface, no step); per-lot jitter lattice (a 4th lattice of the terrain stream, 1 lot cells).
 @export var city_a2_mountain_edge: Vector3 = Vector3(0.45, 78.0, 124.0)
+## LOOK L5 (whole-city plate parity): the mountains' ridged relief, x BU on hashed value noise of y and z lots (weights 0.7,
+## 0.3), rising over `city_a2_relief_from` lots past the outer ring (no stream draw; 0 BU = none).
+@export var city_a2_relief: Vector3 = Vector3(0.0, 17.0, 7.0)
+@export var city_a2_relief_from: Vector2 = Vector2(10.0, 40.0)
 @export var city_a2_land_blend: float = 12.0
 ## CITY-A2 r2 (art-pass zoning_a2.py): no building on ground over `city_a2_max_build_h` BU or steeper than
 ## `city_a2_max_build_slope` (BU per BU); past the outer ring (lots, moved by the terrain's broad noise x

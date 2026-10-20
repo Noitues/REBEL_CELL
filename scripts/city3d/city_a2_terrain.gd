@@ -19,6 +19,7 @@ extends RefCounted
 ## broad noise), `jitter` (a per-lot value in [0, 1) from a 4th lattice of the stream), `slope_at` and `is_water_at`.
 ## Pure: no Node; one named RNG stream.
 
+const RELIEF_SALT := 5190  # LOOK L5: the relief noise hash salt
 const DIAG := 1.41421356
 
 var fine_rect: Rect2i = Rect2i()
@@ -149,6 +150,35 @@ static func _bilerp(g: PackedFloat32Array, w: int, at: Vector2i, s: int, x: floa
 	var a := g[j0 * w + i0] * (1.0 - fu) + g[j0 * w + i0 + 1] * fu
 	var b := g[(j0 + 1) * w + i0] * (1.0 - fu) + g[(j0 + 1) * w + i0 + 1] * fu
 	return a * (1.0 - fv) + b * fv
+
+
+## LOOK L5: the ridged relief (BU) at coarse point (x, y) lots: hashed value noise, so it draws nothing from the stream.
+static func _relief(cfg: CampaignConfigData, x: float, y: float) -> float:
+	var rl := cfg.city_a2_relief
+	if rl.x <= 0.0:
+		return 0.0
+	var r := 0.0
+	var cl: Array[float] = [rl.y, rl.z]
+	var ws: Array[float] = [0.7, 0.3]
+	for o in 2:
+		var n := _hnoise(RELIEF_SALT + o, x / cl[o], y / cl[o])
+		r += (1.0 - absf(2.0 * n - 1.0)) * ws[o]
+	return r * rl.x
+
+
+static func _hash(s: int, i: int, j: int) -> float:
+	var n := (s * 73856093) ^ (i * 19349663) ^ (j * 83492791)
+	n = (n ^ (n >> 13)) * 1274126177
+	n = n ^ (n >> 16)
+	return float(n & 0xFFFF) / 65535.0
+
+
+static func _hnoise(s: int, x: float, y: float) -> float:
+	var i := floori(x)
+	var j := floori(y)
+	var ux := _smooth(x - i, 0.0, 1.0)
+	var uy := _smooth(y - j, 0.0, 1.0)
+	return lerpf(lerpf(_hash(s, i, j), _hash(s, i + 1, j), ux), lerpf(_hash(s, i, j + 1), _hash(s, i + 1, j + 1), ux), uy)
 
 
 static func _smooth(x: float, a: float, b: float) -> float:
@@ -293,6 +323,7 @@ func _coarse(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 			var d := d_out[k] * step
 			var mt := cfg.city_a2_foot_h * _smooth(d, cfg.city_a2_foot.x, cfg.city_a2_foot.y) * (0.35 + na) \
 				+ cfg.city_a2_mountain_h * pow(_smooth(d, cfg.city_a2_mountain.x, cfg.city_a2_mountain.y), 1.35) * (0.4 + 0.85 * rid + 0.35 * na)
+			mt += _relief(cfg, x, y) * _smooth(d, cfg.city_a2_relief_from.x, cfg.city_a2_relief_from.y)
 			mt *= 1.0 + edge.x * _smooth(d, edge.y, edge.z)  # the far horizon ridge
 			mt *= _smooth(d_w[k] * step, cfg.city_a2_mountain_shore.x, cfg.city_a2_mountain_shore.y)
 			_mount[k] = mt
