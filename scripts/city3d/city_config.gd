@@ -788,7 +788,7 @@ extends Resource
 @export var island_spread: float = 1.6
 ## The seabed shader (city_seabed.gdshader): the plate's clear-water fade and caustics (Colors go in as vec3).
 @export var seabed_water: Dictionary = {"sigma": Color(0.090, 0.034, 0.016), "inscatter": Color(0.003, 0.018, 0.055),
-	"inscatter_gain": 2.0, "inscatter_day_gain": 300.0, "path_cap": 600.0, "caustic_k": 1.1, "caustic_scale": 0.05, "caustic_width": 0.22,
+	"inscatter_gain": 2.0, "inscatter_day_gain": 12.0, "path_cap": 600.0, "caustic_k": 1.1, "caustic_scale": 0.05, "caustic_width": 0.22,
 	"caustic_distort": 0.9, "caustic_floor": 0.12, "caustic_patch": 0.05, "caustic_patch_scale": 0.025,
 	"caustic_depth_bu": 70.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).

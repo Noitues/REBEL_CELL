@@ -237,6 +237,9 @@ static func ground_mesh_on(cfg: CityConfig, r: Rect2i, plazas: Array, streets: A
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for j in range(r.position.y, r.end.y):
 		for i in range(r.position.x, r.end.x):
+			# LOOK L5: no floor over a lot under the sea (all corners at or below 0): the seabed shows through the water.
+			if terrain.height_at(i, j) <= 0.0 and terrain.height_at(i + 1, j) <= 0.0 and terrain.height_at(i + 1, j + 1) <= 0.0 					and terrain.height_at(i, j + 1) <= 0.0:
+				continue
 			_lot_quad_land(st, cfg, terrain, Rect2i(i, j, 1, 1), -0.02)
 	for p: Dictionary in plazas:
 		_lot_quad_on(st, cfg, terrain, p["lot"], 0.005, cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12))
