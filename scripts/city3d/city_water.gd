@@ -238,7 +238,9 @@ static func _add_smear(a: MeshArrays, cfg: CityConfig, plan: CityPlan, start: Ve
 static func _void_mesh(outer_bu: float) -> ArrayMesh:
 	var a := MeshArrays.new()
 	var h := outer_bu * 0.5
-	a.quad([Vector3(-h, VOID_Y, -h), Vector3(h, VOID_Y, -h), Vector3(h, VOID_Y, h), Vector3(-h, VOID_Y, h)], Vector3.UP, Color.BLACK)
+	var far := Vector2(1000.0, 0.0)  # deep water when the whole-city look draws the void as sea
+	a.quad([Vector3(-h, VOID_Y, -h), Vector3(h, VOID_Y, -h), Vector3(h, VOID_Y, h), Vector3(-h, VOID_Y, h)], Vector3.UP, Color.BLACK,
+			[far, far, far, far])
 	return a.mesh()
 
 
@@ -258,6 +260,8 @@ static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 			var w := t.is_water_at(l.x + 0.5, l.y + 0.5) if t != null else plan.is_water(l.x, l.y)
 			wet[j * r.size.x + i] = 1 if w else 0
 	var is_wet := func(l: Vector2i) -> bool: return wet[(l.y - r.position.y) * r.size.x + (l.x - r.position.x)] != 0
+	if t != null:
+		return _sea_field_mesh(cfg, r, wet)
 	var side := int(plan.coast["side"])
 	var rows := side < 2  # runs along i, one per j
 	var outer_n := r.size.y if rows else r.size.x
@@ -281,6 +285,72 @@ static func _sea_mesh(cfg: CityConfig, plan: CityPlan) -> ArrayMesh:
 				vs.append(CityIsoCamera.lot_to_world(cfg, c, SEA_Y))
 				uvs.append(Vector2(maxf(-plan.land_depth(c.x, c.y), 0.0), c.y if side < 2 else c.x))
 			a.quad(vs, Vector3.UP, Color.BLACK, uvs)
+	return a.mesh()
+
+
+## LOOK L5 (A2 plate): the sea over the terrain's wet lots `wet` (row order over `r`) with UV.x the lots to the nearest
+## land (a chamfer distance field, capped at `sea_field_cap_lots`), so the shallows and foam hug every shore (the bay,
+## the lagoon, the coast past the raster), not the old straight coast. Lots whose corners all sit at the cap merge into
+## runs; the rest are one quad each. UV.y = lot row.
+static func _sea_field_mesh(cfg: CityConfig, r: Rect2i, wet: PackedByteArray) -> ArrayMesh:
+	var a := MeshArrays.new()
+	var w := r.size.x
+	var h := r.size.y
+	var cap := cfg.sea_field_cap_lots
+	var d := PackedFloat32Array()
+	d.resize(w * h)
+	for k in w * h:
+		d[k] = cap if wet[k] != 0 else 0.0
+	for pass_ in 2:
+		var j0 := 0 if pass_ == 0 else h - 1
+		var j1 := h if pass_ == 0 else -1
+		var sj := 1 if pass_ == 0 else -1
+		var j := j0
+		while j != j1:
+			var i := 0 if pass_ == 0 else w - 1
+			while i >= 0 and i < w:
+				var k := j * w + i
+				if d[k] > 0.0:
+					var best := d[k]
+					for o: Vector3 in [Vector3(-sj, 0, 1.0), Vector3(0, -sj, 1.0), Vector3(-sj, -sj, DIAG), Vector3(sj, -sj, DIAG)]:
+						var ii := i + int(o.x)
+						var jj := j + int(o.y)
+						if ii >= 0 and ii < w and jj >= 0 and jj < h:
+							best = minf(best, d[jj * w + ii] + o.z)
+					d[k] = best
+				i += sj
+			j += sj
+	# Corner value: the least of its (up to) four lots, land lots 0, so a corner on the shore is 0.
+	var cd := func(ci: int, cj: int) -> float:
+		var m := cap
+		for o: Vector2i in [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 0)]:
+			var ii := ci + o.x
+			var jj := cj + o.y
+			if ii >= 0 and ii < w and jj >= 0 and jj < h:
+				m = minf(m, d[jj * w + ii])
+		return m
+	for j in h:
+		var i := 0
+		while i < w:
+			if wet[j * w + i] == 0:
+				i += 1
+				continue
+			var e := [cd.call(i, j), cd.call(i + 1, j), cd.call(i + 1, j + 1), cd.call(i, j + 1)]
+			var i1 := i + 1
+			if e[0] >= cap and e[1] >= cap and e[2] >= cap and e[3] >= cap:
+				while i1 < w and wet[j * w + i1] != 0 and cd.call(i1 + 1, j) >= cap and cd.call(i1 + 1, j + 1) >= cap:
+					i1 += 1
+			var p0 := Vector2(r.position.x + i, r.position.y + j)
+			var p1 := Vector2(r.position.x + i1, r.position.y + j + 1)
+			var corners := [p0, Vector2(p1.x, p0.y), p1, Vector2(p0.x, p1.y)]
+			var ev := [e[0], cd.call(i1, j), cd.call(i1, j + 1), e[3]]
+			var vs: Array[Vector3] = []
+			var uvs: Array[Vector2] = []
+			for c in 4:
+				vs.append(CityIsoCamera.lot_to_world(cfg, corners[c], SEA_Y))
+				uvs.append(Vector2(ev[c], corners[c].y))
+			a.quad(vs, Vector3.UP, Color.BLACK, uvs)
+			i = i1
 	return a.mesh()
 
 

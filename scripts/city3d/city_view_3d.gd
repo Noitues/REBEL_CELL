@@ -497,6 +497,10 @@ func _whole_building() -> void:
 	var b: Dictionary = CityShaderConfigData.shipped().building
 	for k: String in cfg.whole_building:
 		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b[k]))
+	var wc: Array[Vector3] = []
+	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
+		wc.append(Vector3(c.r, c.g, c.b))
+	_building_mat.set_shader_parameter(&"window_colors", wc)
 
 
 ## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.
@@ -543,6 +547,10 @@ func _sync_hq_beams() -> void:
 		var sd: Color = cfg.whole_water_shore_day if whole_look else cfg.water_shore_day
 		water.water_mat.set_shader_parameter(&"deep_day", Vector3(dd.r, dd.g, dd.b))
 		water.water_mat.set_shader_parameter(&"shore_day", Vector3(sd.r, sd.g, sd.b))
+			# The void past the terrain reads as a square slab of sea; the plate's sea runs on to the horizon.
+			var vd := water.get_node_or_null(^"Void") as MeshInstance3D
+			if vd != null:
+				vd.material_override = water.water_mat if whole_look else water.void_mat
 
 
 var _env: Environment

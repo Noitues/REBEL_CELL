@@ -69,7 +69,10 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.2, "win_emit": 0.9, "trim_emit": 0.15, "haze_k": 0.0}
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 1.5, "trim_emit": 0.15, "haze_k": 0.0}
+## LOOK L5: the window colours at the whole-city pose (the plate's warm white / gold speckle; six, as window_colors).
+@export var whole_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(1.0, 0.93, 0.8),
+	Color(1.0, 0.7, 0.35), Color(0.85, 0.9, 1.0), Color(1.0, 0.82, 0.55)]
 @export var whole_day_water_gain: float = 0.6
 ## Water children hidden under the whole-city pose (CityWater node names).
 @export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections"])
@@ -706,6 +709,8 @@ extends Resource
 @export var water_caustic_night: Color = Color(0.06, 0.3, 0.36)
 @export var water_caustic_day: Color = Color(0.4, 0.7, 0.9)
 @export var water_shallow_lots: float = 14.0
+## LOOK L5 (A2 plate): the cap (lots) of the sea's distance-to-land field (UV.x past it is deep water; runs merge).
+@export var sea_field_cap_lots: float = 60.0
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14
