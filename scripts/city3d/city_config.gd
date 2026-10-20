@@ -81,7 +81,7 @@ extends Resource
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
-@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 2.4, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
+@export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 2.4, "win_share": 0.7, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0}
 ## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
 ## blocks are charcoal with warm light).
@@ -97,8 +97,8 @@ extends Resource
 @export var whole_moon_color: Color = Color(0.78, 0.8, 0.86)
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
-@export var whole_terr_win_k: float = 0.65
-@export var whole_terr_wall_emit: float = 0.02
+@export var whole_terr_win_k: float = 0.85
+@export var whole_terr_wall_emit: float = 0.04
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2}
 ## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
