@@ -533,6 +533,10 @@ func _whole_building() -> void:
 	var b: Dictionary = CityShaderConfigData.shipped().building
 	for k: String in cfg.whole_building:
 		_building_mat.set_shader_parameter(StringName(k), float(cfg.whole_building[k] if whole_look else b.get(k, cfg.whole_building_base.get(k, 0.0))))
+	for k: String in cfg.whole_building_colors:
+		var c: Color = cfg.whole_building_colors[k]
+		var sv: Array = b.get(k, [c.r, c.g, c.b])
+		_building_mat.set_shader_parameter(StringName(k), Vector3(c.r, c.g, c.b) if whole_look else Vector3(float(sv[0]), float(sv[1]), float(sv[2])))
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
