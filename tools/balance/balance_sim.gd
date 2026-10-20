@@ -13,7 +13,7 @@ extends SceneTree
 ##   --fast                             metrics only: no per-fight pools (smaller reports, less work)
 ##   --no-quiet                         keep event texts (default: skipped, results identical)
 ##   fight:  --enemy ID[,ID]|all  --tiers 1,2,3,4  --categories enemy,elite,mini_boss
-##   netrun: --tier N              boss: --source campaign|fresh
+##   netrun: --tier N              boss: --source campaign|fresh|save  [--state FILE|DIR] [--dump-state DIR]
 ## The driver tools/balance/balance.py shards seeds, merges and writes the markdown report.
 
 const BalanceRunner := preload("res://tools/balance/balance_runner.gd")
@@ -70,6 +70,10 @@ func _run() -> void:
 				opts["categories"] = Array(val.split(",", false))
 			"--source":
 				opts["source"] = val
+			"--state":
+				opts["state"] = val
+			"--dump-state":
+				opts["dump_state"] = val
 			"--set":
 				specs.append(val)
 			"--variant":

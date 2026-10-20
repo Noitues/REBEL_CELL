@@ -217,12 +217,19 @@ func run_boss(campaign_seed: int) -> Dictionary:
 	var c: CampaignState
 	if String(opts["source"]) == "fresh":
 		c = _fresh_campaign(sim, campaign_seed)
+	elif String(opts["source"]) == "save":  # BAL-03: the boss from a saved campaign state (tool-only)
+		c = load_saved_state(String(opts["state"]), campaign_seed)
+		if c == null:
+			rec["scalars"]["no_state"] = 1
+			return rec
 	else:
 		sim.run_campaign(campaign_seed, int(opts["ice"]), int(opts["max_runs"]))
 		if not sim.reached_breach:
 			rec["scalars"]["no_breach"] = 1
 			return rec
 		c = sim.final_campaign
+		if String(opts["dump_state"]) != "":
+			dump_state(String(opts["dump_state"]), campaign_seed, c)
 	var site: SiteData = null
 	for sd in sim.corp.city_grid.sites:
 		if sd != null and sd.objective == RC.SiteObjective.CENTRAL_SERVER:
@@ -256,6 +263,31 @@ func run_boss(campaign_seed: int) -> Dictionary:
 		rec["series"]["player_hp"] = f["player_hp"]
 		rec["series"]["boss_hp_frac"] = f["enemy_frac"]
 	return rec
+
+
+## BAL-03: a campaign state from `path` for `campaign_seed`. `path` is a state file, or a directory holding
+## `boss_<seed>.json` (as `--dump-state` writes). A file is either a bare CampaignState dict or a game save
+## ({"campaign": {...}}). Returns null when the file is missing or unreadable.
+static func load_saved_state(path: String, campaign_seed: int) -> CampaignState:
+	var file := path
+	if DirAccess.dir_exists_absolute(path):
+		file = path.path_join("boss_%d.json" % campaign_seed)
+	if not FileAccess.file_exists(file):
+		return null
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(file))
+	if not (parsed is Dictionary):
+		return null
+	var d: Dictionary = parsed.get("campaign", parsed)
+	return CampaignState.from_dict(d)
+
+
+## BAL-03: writes the breach campaign state of `campaign_seed` to `dir/boss_<seed>.json` (a bare CampaignState dict).
+static func dump_state(dir: String, campaign_seed: int, c: CampaignState) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	var f := FileAccess.open(dir.path_join("boss_%d.json" % campaign_seed), FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(c.to_dict()))
+		f.close()
 
 
 # --- Shared ----------------------------------------------------------------------------------
