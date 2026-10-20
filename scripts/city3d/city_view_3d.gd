@@ -38,6 +38,7 @@ signal host_pause_changed(paused: bool)
 ## The model is built and its chunks are placed (layers can read `model`).
 signal model_ready
 
+const GLOW_LINE := preload("res://shaders/city/city_glow_line.gdshader")
 const CONFIG := preload("res://content/config/city_config.tres")
 ## Render layers (bit numbers): 1 the world, 2 the ground-only pass under see-through.
 const WORLD_LAYER := 1
@@ -316,6 +317,29 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_whole_fog()
 
 
+## LOOK L5: the A2 road glow lines at the whole-city night: their own unshaded line material (the lane material turns into
+## the wet street there), at cfg.whole_road_glow_gain x the night share, shown from cfg.whole_road_glow_from; by day hidden.
+var _glow_line_mat: ShaderMaterial = null
+
+
+func _whole_road_glow() -> void:
+	if features == null:
+		return
+	var rg := features.get_node_or_null(^"RoadGlow") as GeometryInstance3D
+	if rg == null:
+		return
+	if not whole_look:
+		rg.material_override = _lane_mat
+		rg.visible = true
+		return
+	if _glow_line_mat == null:
+		_glow_line_mat = ShaderMaterial.new()
+		_glow_line_mat.shader = GLOW_LINE
+	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share)
+	rg.material_override = _glow_line_mat
+	rg.visible = night_share >= cfg.whole_road_glow_from
+
+
 ## LOOK L5: the whole-city pose's low sun casts the plate's long shadows: the far-LOD blocks cast too (cfg.whole_far_shadows)
 ## and the sun's shadow reaches cfg.whole_shadow_dist_bu.
 func _whole_shadows() -> void:
@@ -567,6 +591,7 @@ func _whole_building() -> void:
 	_building_mat.set_shader_parameter(&"terr_win_k", cfg.whole_terr_win_k * night_share if whole_look else 0.0)
 	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
 	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k if whole_look else 0.0)
+	_whole_road_glow()
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))

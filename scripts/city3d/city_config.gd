@@ -121,7 +121,10 @@ extends Resource
 @export var whole_hide_water: PackedStringArray = PackedStringArray(["Piers", "PierLamps", "ShoreReflections", "SeaWall", "SeaWallLight"])
 ## LOOK L5: the A2 feature parts hidden at the whole-city pose (the rail glow dashes read as a wireframe overlay, the
 ## port piers as black bars on the bay rim).
-@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers", "RoadGlow"])
+@export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
+## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
+@export var whole_road_glow_gain: float = 2.2
+@export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
 ## LOOK L5: the vein foam at the whole-city pose, and the seabed under the translucent water there (city_water bed_*).
@@ -817,7 +820,7 @@ extends Resource
 	"sky_horizon_night": Color(0.10, 0.08, 0.16), "sky_zenith_night": Color(0.01, 0.02, 0.05), "sun_col": Color(1.0, 0.92, 0.80),
 	"glint_pow": 220.0, "glint_gain": 0.6, "deep_day": Color(0.0, 0.050, 0.170), "shallow_day": Color(0.02, 0.17, 0.28),
 	"body_emit_day": Color(0.0, 0.01, 0.025), "body_alpha": 0.28, "body_alpha_shallow": 0.12, "shallow_lots": Vector2(0.5, 9.0),
-	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.55, "marble_col": Color(0.02, 0.07, 0.08), "marble_scale": 0.05,
+	"night_body": Color(0.012, 0.035, 0.065), "night_alpha": 0.72, "marble_col": Color(0.02, 0.07, 0.08), "marble_scale": 0.05,
 	"marble_width": 0.22, "marble_distort": 0.9, "marble_floor": 0.15, "marble_shore": 0.3, "coast_cut": Vector2(0.22, 0.42), "coast_blur_lots": 1.5,
 	"far_shore_lots": 60.0, "surf_lots": Vector2(0.45, 0.8), "surf_gain": 0.3, "surf_col": Color(0.85, 0.93, 1.0),
 	"surf_period": 2.0}
