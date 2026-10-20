@@ -27,7 +27,7 @@ If a slice overlaps, don't start it: claim it in an entry, or ask. Lanes (A-041,
 | NA-25b r6 | A-046: remove the wheel from the jack-in (slap, lens, hub field, burn-open, HQ-side wheel frames); CRT dot -> dive | na25b-r6 (from w1-close) | JackSequence / JackWheel / JackHubField, EntryBeats, ui_motion entry_* |
 | CITY-A2 step 2 | terrain heightfield + land beyond the city edge, ring and road classes, rails, landmarks (ENTRIES.json), port / walls / tunnels, old grid removed, frontage heights vs r2 layout_pass, A2 street plate inputs | city-a2-s2 (from w1-close) | scripts/city3d/city_* generator / model, terrain geometry (no look files), plate_inputs/seed1 |
 | TOKEN-FIX | the operative token renders as a white square offset from the current room on the street page | token-fix (from w1-close) | street page token (game UI) |
-| running | W2-RED: 6 W2 tests that fail on their own (anim_r2_city, anim_r6_netrun, horizontal_pass20 (+screens), m14_12q_words); tests and rules only |
+| running | CITY-A2 r2 geometry (Opus) · NA-26 route flag retire · W2 Solace v2 rules rework (branch solace-v2) · BAL-01 reference policy (tools) · W3 Batch drafts RD-01 raid operatives + ST-01 status audit |
 | queued | Solace rework to the 2026-10-19 theme rulings (w2), then the other corps from themes/v2 once the designer answers the follow-ups; walked-ladder run_graph variant for HQ-EXPORT (Solace first, after W2 merges); NA-12c/d data on A2; A2 plate-inputs export after CITY-A2 step 1; Moved to art-pass: NA-12 r4 and NA-31c | | |
 
 ### B-042 · 2026-10-19 · re A-046, re A-047 · FYI + answer
@@ -156,3 +156,20 @@ Both switches now freeze the last rendered frame into a full-screen image, so th
   shading (the ground material doesn't light the relief).
 - Landmark glbs vs ENTRIES.json @ 77cdfde9: only Meridian matches. Halcyon's glb is off-center. r2 fixes the placement data; glb
   problems come to you as a list.
+
+### B-052 · 2026-10-19 · DESIGNER DIRECTIVE: lanes and pace · FYI + hand-over
+Designer, 2026-10-19:
+- Skip the PT gates. Work through every wave until all content is in.
+- Use the Batch API and cheaper models.
+- **Art-pass does the visual work. The build session keeps only game code** (rules, state, save, game UI wiring, tests, merges,
+  data exporters).
+- The build session makes the calls on open questions and logs them (`docs/handoff/gates/RUNNING_SHEET.md`).
+All 33 theme follow-ups took their recommended defaults (RUNNING_SHEET D3), so the v2 drafts are final until the designer says otherwise.
+These REPLAN slices move to art-pass. Build gives you state names and data hooks in its slice entries and never starts the look:
+- NA-32 per corp (the HQ netrun scenes: Solace BLOOM visuals and Window interior, Halcyon scan sector / beam / SHUTTERED, REBEL_CELL
+  three lane views and the THROW beat, Orbital dark layers / dishes / lit window, Meridian weigh stations and Customs Seal), NA-33 landmarks,
+  the visual half of NA-31 (orbit camera, landmark lighting), NA-41 key-landmark building types, NA-42's districts and landmarks
+  (Tethys, Aurelian), and the look of the EX-1x exploit buildings and of the THEMES-v2 pieces (A-049).
+- Build keeps: the HQ graphs, rules, state and preview; the slot and hook data in NA-31 (`hq.slots`, `k_units` / `k_fit`); the run-graph
+  shapes; the raid UI wiring; the theme chips as UI.
+First up: Solace v2 rules (branch solace-v2). Its state names come in its entry, and you can start the Solace look from them.
