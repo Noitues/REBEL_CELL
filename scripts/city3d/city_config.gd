@@ -71,10 +71,10 @@ extends Resource
 @export var whole_day_haze: Color = Color(0.36, 0.38, 0.44)
 ## LOOK L5: the whole-city atmosphere (CityView3D._whole_fog): the fog / sky colour by day and night, density (day, night),
 ## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
-@export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
+@export var whole_fog_day: Color = Color(0.58, 0.58, 0.66)
 @export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
 @export var whole_fog_density: Vector2 = Vector2(0.45, 0.85)
-@export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
+@export var whole_fog_depth: Vector2 = Vector2(0.85, 2.4)
 @export var whole_fog_curve: float = 1.6
 ## ... and the colour saturation there (Environment adjustment; day, night).
 @export var whole_saturation: Vector2 = Vector2(1.35, 1.15)
