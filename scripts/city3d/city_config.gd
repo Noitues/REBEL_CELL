@@ -863,6 +863,8 @@ extends Resource
 @export var veg_r: Vector2 = Vector2(0.9, 1.8)
 ## Designer 2026-10-20 (the coast's dark tree dots): no tree within this many lots (Chebyshev) of a sea lot.
 @export var veg_coast_clear: int = 3
+## Designer 2026-10-20 (the stepped coast): weld the ground / land meshes' shared corners so slopes shade smooth.
+@export var ground_smooth_normals: bool = true
 @export var island_min_d: float = 10.0
 @export var island_r_k: float = 0.25
 @export var island_r_max: float = 8.0
