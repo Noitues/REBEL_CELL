@@ -268,6 +268,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	if _building_mat == null or day.is_empty():
 		return
 	_last_day = day
+	if _sun != null:
+		_sun.look_at_from_position(Vector3.ZERO, -sun_dir(), Vector3.UP)
 	# LOOK L5: the whole-city pose starts the buildings' depth haze near its target (at ~1130 BU it saturated every block).
 	_building_mat.set_shader_parameter(&"haze_d0", cfg.whole_pose_dist_bu * cfg.whole_haze_start if whole_look else 0.0)
 	if whole_look:
@@ -363,7 +365,8 @@ func _whole_shadows() -> void:
 
 ## The direction toward the sun (world): the plate's under the whole-city pose, cfg.to_light otherwise.
 func sun_dir() -> Vector3:
-	return cfg.whole_to_light.normalized() if whole_look else cfg.to_light
+	# By night the moon keeps the old key: the plate's low sun skimmed the relief into white glints.
+	return cfg.whole_to_light.normalized() if whole_look and night_share < 0.5 else cfg.to_light
 
 
 ## LOOK L5: the whole-city pose's atmosphere: depth fog from near the target out past the land, in a haze colour (day to

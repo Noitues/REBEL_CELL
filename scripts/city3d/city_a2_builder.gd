@@ -23,6 +23,8 @@ const K_PARK := 5
 const K_BARE := 6
 ## Lots round a Site's lot kept built whatever the open-land and corridor rules say (its marker needs a roof).
 const SITE_KEEP := 2
+## LOOK L5: the hash salt of the height spikes and the drowned quarter's sunk blocks.
+const SPIKE_SALT := 7310
 
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 ## A Site heading score below any real one (a rejected heading).
@@ -428,7 +430,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				kind[kk] = K_BUILDING
 		var f := cell.end - Vector2i.ONE
 		front[(f.y - R.position.y) * w + (f.x - R.position.x)] = ci
-		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng)})
+		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites)})
 	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
 
 
@@ -444,8 +446,33 @@ static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i, zone: 
 	var d := t.outside_ring(c.x, c.y)
 	if d <= 0.0 or zone.has(l):
 		return false
+	return t.jitter(l.x, l.y) >= _keep(t, cfg, l)
+
+
+## LOOK L5: the chance (0..1) lot `l` past the outer ring keeps its building: the sprawl's fade past the ring (moved by the
+## broad noise), x the dwindle toward the highest / steepest buildable ground and the plan rect's edge (1 inside the ring).
+static func _keep(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i) -> float:
+	var c := Vector2(l) + Vector2(0.5, 0.5)
+	var d := t.outside_ring(c.x, c.y)
+	if d <= 0.0:
+		return 1.0
 	d = maxf(d + (t.noise_at(c.x, c.y) * 2.0 - 1.0) * cfg.city_a2_edge_noise, 0.0)
-	return t.jitter(l.x, l.y) >= 1.0 - _smooth01(d, cfg.city_a2_sprawl_fade)
+	var p := 1.0 - _smooth01(d, cfg.city_a2_sprawl_fade)
+	var dw := cfg.city_a2_dwindle
+	if dw.x < 1.0:
+		p *= 1.0 - _smooth01(t.height_at(c.x, c.y), Vector2(cfg.city_a2_max_build_h * dw.x, cfg.city_a2_max_build_h))
+	if dw.y < 1.0:
+		p *= 1.0 - _smooth01(t.slope_at(c.x, c.y), Vector2(cfg.city_a2_max_build_slope * dw.y, cfg.city_a2_max_build_slope))
+	if dw.z > 0.0:
+		var fr := t.fine_rect
+		var e := minf(minf(c.x - fr.position.x, fr.end.x - c.x), minf(c.y - fr.position.y, fr.end.y - c.y))
+		p *= _smooth01(e, Vector2(0.0, dw.z))
+	return p
+
+
+## A height in `hr` at curve point `u` (0..1) bent by exponent `p` (1 = even).
+static func _curve(u: float, hr: Vector2, p: float) -> float:
+	return lerpf(hr.x, hr.y, pow(u, p))
 
 
 static func _smooth01(x: float, r: Vector2) -> float:
@@ -484,6 +511,12 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 	var ck := StringName("corp_%s" % terr)
 	if terr != &"" and terr != cell_id and cfg.city_a2_heights.has(ck):
 		return ck
+	# ... then an A2 district's own (`a2_<id>`: Tethys, which is no game territory, has its drowned spires).
+	var di := int(ras.district[ras.index(l.x, l.y)])
+	if di > 0:
+		var dk := StringName("a2_%s" % String(ras.a2.districts[di - 1]["id"]))
+		if cfg.city_a2_heights.has(dk):
+			return dk
 	var nk := ras.neighbourhood_kind(l.x, l.y)
 	if nk != &"" and cfg.city_a2_heights.has(nk):
 		return nk
@@ -494,12 +527,26 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 
 ## A building cell's extrusions (lots, height px): one prism, or a base and a setback tower over `city_a2_setback_from`.
 static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i, cell_id: StringName, hq_centres: Array[Vector2],
-		px_per_bu: float, rng: RandomNumberGenerator) -> Array:
+		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
 	var hk := _height_kind(ras, cfg, f, terr, cell_id)
 	var hr: Vector2 = cfg.city_a2_heights[hk]
-	var h := rng.randf_range(hr.x, hr.y)
+	var hp := float(cfg.city_a2_height_pow.get(hk, 1.0))
+	var h := _curve(rng.randf(), hr, hp)
+	# LOOK L5: a few lots stand out of the roofline (a hash of the lot: no extra draw from the layout stream).
+	var spike := 1.0
+	if CityMeshKit.hash01(SPIKE_SALT, cell.position.x, cell.position.y) < cfg.city_a2_height_spike.x:
+		spike = cfg.city_a2_height_spike.y
+	h *= spike
+	if t != null:
+		h *= lerpf(cfg.city_a2_dwindle_h_min, 1.0, _keep(t, cfg, f))
+	# LOOK L5: the drowned quarter's sunk blocks: base under the ground, top under the water (Sites' buildings stand).
+	var z_sink := 0.0
+	if cfg.city_a2_sink_share > 0.0 and not sites.has(f) and not ras.a2.drowned.is_empty() 			and CityMeshKit.hash01(SPIKE_SALT + 1, cell.position.x, cell.position.y) < cfg.city_a2_sink_share 			and Geometry2D.is_point_in_polygon(ras.metres_of(Vector2(cell.get_center())), ras.a2.drowned):
+		var sk := lerpf(cfg.city_a2_sink_bu.x, cfg.city_a2_sink_bu.y, CityMeshKit.hash01(SPIKE_SALT + 2, cell.position.x, cell.position.y))
+		z_sink = sk
+		h = minf(h, sk * 0.9)
 	var c := Vector2(cell.get_center())
 	var near := INF
 	for q in hq_centres:
@@ -518,10 +565,16 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 		for q in 4:
 			var lo := Vector2(cell.position) + Vector2(0.5 * (q % 2), 0.5 * (q / 2)) + Vector2(si, si)
 			var hi := lo + Vector2(0.5 - 2.0 * si, 0.5 - 2.0 * si)
-			var hq := rng.randf_range(hr.x, hr.y) * cfg.city_a2_sub_h_k * rise
-			out.append(_extrusion_q(cell, lo, hi, 0.0, hq * px_per_bu, taper, ink, terr, key + 2 + q))
+			var hq := _curve(rng.randf(), hr, hp) * cfg.city_a2_sub_h_k * rise * spike
+			if t != null:
+				hq *= lerpf(cfg.city_a2_dwindle_h_min, 1.0, _keep(t, cfg, f))
+			if z_sink > 0.0:
+				hq = minf(hq, z_sink * 0.9)
+			out.append(_extrusion_q(cell, lo, hi, -z_sink * px_per_bu, hq * px_per_bu, taper, ink, terr, key + 2 + q))
 		return out
-	if h >= cfg.city_a2_setback_from:
+	if z_sink > 0.0:
+		out.append(_extrusion(cell, ins, -z_sink * px_per_bu, h * px_per_bu, taper, ink, terr, key))
+	elif h >= cfg.city_a2_setback_from:
 		var h0 := h * cfg.city_a2_setback.y
 		out.append(_extrusion(cell, ins, 0.0, h0 * px_per_bu, 1.0, ink, terr, key))
 		var ins2 := minf(ins + cfg.city_a2_setback.x, 0.45)

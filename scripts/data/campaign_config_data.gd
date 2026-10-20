@@ -471,6 +471,19 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_max_build_slope: float = 0.3
 @export var city_a2_edge_noise: float = 5.0
 @export var city_a2_sprawl_fade: Vector2 = Vector2(0.5, 6.0)
+## LOOK L5 (designer 2026-10-20): the city's edge dwindles, not stops: past the outer ring a lot's building chance also
+## falls as its ground nears `city_a2_max_build_h` (from x of it) and its slope `city_a2_max_build_slope` (from y of it),
+## and within z lots of the plan rect's edge; the building's height shrinks with that chance to `city_a2_dwindle_h_min`.
+@export var city_a2_dwindle: Vector3 = Vector3(1.0, 1.0, 0.0)
+@export var city_a2_dwindle_h_min: float = 1.0
+## LOOK L5 (designer 2026-10-20, height variety): per height kind, the height range's curve exponent (1 = even; over 1:
+## mostly low with a few tall) and a share of buildings `city_a2_height_spike` x taller (by a hash of the lot, no draw).
+@export var city_a2_height_pow: Dictionary = {}
+@export var city_a2_height_spike: Vector2 = Vector2(0.0, 1.0)
+## LOOK L5 (designer 2026-10-20, the drowned quarter): there `city_a2_sink_share` of the buildings (no Site's) stand
+## sunk, their base `city_a2_sink_bu` (from, to) BU under the ground and their top under the water.
+@export var city_a2_sink_share: float = 0.0
+@export var city_a2_sink_bu: Vector2 = Vector2(3.0, 7.0)
 ## Past the outer ring by more than this (lots), open Sprawl land has no local streets either.
 @export var city_a2_sprawl_streets: float = 16.0
 ## Within this many lots of a Site the sprawl does not thin (the run's street keeps its frontage).

@@ -521,20 +521,34 @@ city_a2_heights = {
 &"corp_meridian": Vector2(5, 14),
 &"corp_orbital": Vector2(16, 42),
 &"corp_solace": Vector2(12, 34),
-&"industrial": Vector2(3, 7),
-&"informal": Vector2(1.5, 4),
-&"old_core": Vector2(3, 8.5),
-&"rail_grid": Vector2(3, 7),
-&"sprawl": Vector2(2, 6.5),
-&"suburb": Vector2(2, 5)
+&"a2_tethys": Vector2(4, 44),
+&"industrial": Vector2(3, 8.5),
+&"informal": Vector2(1.5, 5),
+&"old_core": Vector2(3.5, 11),
+&"rail_grid": Vector2(3, 9),
+&"sprawl": Vector2(2.2, 9),
+&"suburb": Vector2(2, 6)
 }
+city_a2_height_pow = {
+&"a2_tethys": 2.6,
+&"old_core": 1.5,
+&"sprawl": 1.6,
+&"rail_grid": 1.4,
+&"industrial": 1.3,
+&"suburb": 1.3
+}
+city_a2_height_spike = Vector2(0.06, 1.9)
+city_a2_sink_share = 0.7
+city_a2_sink_bu = Vector2(3, 7)
+city_a2_dwindle = Vector3(0.45, 0.5, 14)
+city_a2_dwindle_h_min = 0.35
 city_a2_hq_rise = 1.2
 city_a2_hq_rise_lots = 18.0
 city_a2_setback_from = 18.0
 city_a2_setback = Vector2(0.18, 0.6)
 city_a2_taper = Vector2(0.85, 1)
 city_a2_corp_ink_share = 0.35
-city_a2_sub_kinds = Array[StringName]([&"sprawl", &"suburb", &"informal", &"old_core", &"rail_grid", &"corp", &"corp_meridian", &"corp_halcyon", &"corp_solace", &"corp_orbital"])
+city_a2_sub_kinds = Array[StringName]([&"a2_tethys", &"sprawl", &"suburb", &"informal", &"old_core", &"rail_grid", &"corp", &"corp_meridian", &"corp_halcyon", &"corp_solace", &"corp_orbital"])
 city_a2_sub_share = 0.85
 city_a2_sub_inset = 0.05
 city_a2_sub_h_k = 0.8
