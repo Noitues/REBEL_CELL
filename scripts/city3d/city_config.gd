@@ -861,6 +861,8 @@ extends Resource
 @export var veg_max_slope: float = 0.25
 @export var veg_bare_share: float = 0.8
 @export var veg_r: Vector2 = Vector2(0.9, 1.8)
+## Designer 2026-10-20 (the coast's dark tree dots): no tree within this many lots (Chebyshev) of a sea lot.
+@export var veg_coast_clear: int = 3
 @export var island_min_d: float = 10.0
 @export var island_r_k: float = 0.25
 @export var island_r_max: float = 8.0

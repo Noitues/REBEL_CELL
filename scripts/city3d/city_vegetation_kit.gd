@@ -21,6 +21,7 @@ static func multimesh(cfg: CityConfig, terrain: CityA2Terrain, city_seed: int, h
 	var s := maxi(cfg.veg_step, 1)
 	var r: Dictionary = cfg.terrain_rule
 	var k: float = cfg.terrain_h_scale
+	var ras := CityPlan.for_seed(city_seed).a2
 	for j in range(cr.position.y, cr.end.y, s):
 		for i in range(cr.position.x, cr.end.x, s):
 			if hole.has_point(Vector2i(i, j)):
@@ -31,11 +32,15 @@ static func multimesh(cfg: CityConfig, terrain: CityA2Terrain, city_seed: int, h
 				continue
 			if CityTerrainColor.slope_at(cfg, terrain, Vector2i(at)) > cfg.veg_max_slope:
 				continue
+			if _near_sea(ras, Vector2i(at), cfg.veg_coast_clear):
+				continue
 			var f := clampf(float(r["forest_from"]) + h / (float(r["forest_h"]) * k), 0.0, 1.0)
 			if CityMeshKit.hash01(SEED_PICK, i, j) >= lerpf(cfg.veg_density.x, cfg.veg_density.y, f):
 				continue
 			_add(cfg, terrain, at, i, j, xfs, cols)
 	for l in CityParkKit.lots_of(city_seed, hole, CityA2Builder.K_BARE):
+		if _near_sea(ras, l, cfg.veg_coast_clear):
+			continue
 		if CityMeshKit.hash01(SEED_PICK + 1, l.x, l.y) < cfg.veg_bare_share:
 			_add(cfg, terrain, Vector2(l) + Vector2(0.5, 0.5), l.x, l.y, xfs, cols)
 	if xfs.is_empty():
@@ -49,6 +54,17 @@ static func multimesh(cfg: CityConfig, terrain: CityA2Terrain, city_seed: int, h
 		mm.set_instance_transform(n, xfs[n])
 		mm.set_instance_color(n, cols[n])
 	return mm
+
+
+## Whether a sea lot (water, not river) of `ras` lies within `n` lots (Chebyshev) of lot `l` (false off the raster).
+static func _near_sea(ras: CityA2Raster, l: Vector2i, n: int) -> bool:
+	if ras == null or n <= 0 or not ras.rect.has_point(l):
+		return false
+	for dj in range(-n, n + 1):
+		for di in range(-n, n + 1):
+			if ras.is_water(l.x + di, l.y + dj) and not ras.is_river(l.x + di, l.y + dj):
+				return true
+	return false
 
 
 static func _add(cfg: CityConfig, terrain: CityA2Terrain, at: Vector2, i: int, j: int, xfs: Array[Transform3D],
