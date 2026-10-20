@@ -56,12 +56,6 @@ extends Resource
 @export var whole_far_shadows: bool = true
 ## ... and the land's ramp softness there (city_ground band_soft; 0 = the Grid's hard bands).
 @export var whole_ground_band_soft: float = 0.3
-## LOOK L5: the drawn mountains' relief (CityMeshKit.land_relief): height BU, noise cells (lots), octave weights, and the
-## lots past the outer ring it rises over. 0 BU = the terrain as is.
-@export var land_relief_bu: float = 70.0
-@export var land_relief_cells: Vector2 = Vector2(17.0, 7.0)
-@export var land_relief_w: Vector2 = Vector2(0.7, 0.3)
-@export var land_relief_from: Vector2 = Vector2(10.0, 40.0)
 @export var whole_shadow_dist_bu: float = 2200.0
 @export var whole_day_grade: Color = Color(1.0, 0.95, 0.88)
 ## ... and its sky, haze colour and haze strength (the plate's grey-blue sky; its haze only greys the far land).
