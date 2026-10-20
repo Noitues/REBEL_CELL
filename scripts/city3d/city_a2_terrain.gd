@@ -139,6 +139,48 @@ func corner_grid(r: Rect2i, decimals: int) -> Array:
 	return out
 
 
+## LOOK L5: the signed lot depth of `ras` (clamped to +-(r + 1) lots) blurred at each fine-grid corner by a separable
+## tent of radius `r` lots, less a half lot so 0 falls on the shore line (empty when r <= 0).
+static func _shore_field(ras: CityA2Raster, r: float) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	if r <= 0.0:
+		return out
+	var rr := ras.rect
+	var w := rr.size.x
+	var h := rr.size.y
+	var lim := r + 1.0
+	var reach := ceili(r)
+	# Rows: each lot row's value at each corner column.
+	var row := PackedFloat32Array()
+	row.resize((w + 1) * h)
+	for j in h:
+		for i in w + 1:
+			var s := 0.0
+			var sw := 0.0
+			for qx in range(i - reach - 1, i + reach + 1):
+				var wt := maxf(0.0, 1.0 - absf(float(qx) + 0.5 - float(i)) / r)
+				if wt <= 0.0:
+					continue
+				var x := clampi(qx, 0, w - 1)
+				s += wt * clampf(ras.depth[j * w + x], -lim, lim)
+				sw += wt
+			row[j * (w + 1) + i] = s / sw if sw > 0.0 else 0.0
+	out.resize((w + 1) * (h + 1))
+	for j in h + 1:
+		for i in w + 1:
+			var s := 0.0
+			var sw := 0.0
+			for qy in range(j - reach - 1, j + reach + 1):
+				var wt := maxf(0.0, 1.0 - absf(float(qy) + 0.5 - float(j)) / r)
+				if wt <= 0.0:
+					continue
+				var y := clampi(qy, 0, h - 1)
+				s += wt * row[y * (w + 1) + i]
+				sw += wt
+			out[j * (w + 1) + i] = (s / sw if sw > 0.0 else 0.0) - 0.5
+	return out
+
+
 static func _bilerp(g: PackedFloat32Array, w: int, at: Vector2i, s: int, x: float, y: float) -> float:
 	var h := g.size() / w
 	var u := clampf((x - at.x) / s, 0.0, w - 1.0)
@@ -356,13 +398,19 @@ func _fine(ras: CityA2Raster, cfg: CampaignConfigData, lot_bu: float) -> void:
 	var fh := fine_rect.size.y + 1
 	fine.resize(_fw * fh)
 	var k_bu := lot_bu / ras.metres_per_lot * cfg.city_a2_hill_exag
+	var sm := _shore_field(ras, cfg.city_a2_coast_smooth)
 	for j in fh:
 		for i in _fw:
 			var p := Vector2i(fine_rect.position.x + i, fine_rect.position.y + j)
 			# The four lots round the corner: a water lot keeps the corner at sea level; else the nearest shore.
+			# LOOK L5 (designer 2026-10-20, "smooth the stepped ground edge"): with `city_a2_coast_smooth` the corner's
+			# shore distance is the blurred signed depth instead, so the shore runs as a smooth line, not lot steps.
 			var near := INF
-			for q: Vector2i in [p, p - Vector2i(1, 0), p - Vector2i(0, 1), p - Vector2i(1, 1)]:
-				near = minf(near, float(ras.depth[ras.index(q.x, q.y)]))
+			if not sm.is_empty():
+				near = sm[j * _fw + i]
+			else:
+				for q: Vector2i in [p, p - Vector2i(1, 0), p - Vector2i(0, 1), p - Vector2i(1, 1)]:
+					near = minf(near, float(ras.depth[ras.index(q.x, q.y)]))
 			if near <= 0.0:
 				fine[j * _fw + i] = 0.0
 				continue

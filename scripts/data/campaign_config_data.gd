@@ -444,6 +444,9 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_terrain_seed: int = 5101
 @export var city_a2_mountain_shore: Vector2 = Vector2(1.2, 7.5)
 @export var city_a2_beach: Vector2 = Vector2(0.5, 2.5)
+## LOOK L5 (designer 2026-10-20): the shore's blur radius (lots) on the fine ground: the coast runs as a smooth line, not
+## lot steps (0 = the lot-grid shore).
+@export var city_a2_coast_smooth: float = 0.0
 @export var city_a2_land_margin: int = 120
 @export var city_a2_land_step: int = 3
 ## CITY-A2 r2 (art-pass terrain_a2.py): the far horizon ridge, the mountains x(1 + x) rising over y..z lots past the outer

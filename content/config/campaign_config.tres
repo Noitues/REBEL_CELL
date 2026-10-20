@@ -588,6 +588,7 @@ city_a2_sprawl_fade = Vector2(4, 22)
 city_a2_sprawl_streets = 16.0
 city_a2_prune_streets = 1
 city_a2_coast_setback = 2
+city_a2_coast_smooth = 2.0
 city_a2_sprawl_site_keep = 8
 city_a2_corridor = {
 &"motorway": 1,
