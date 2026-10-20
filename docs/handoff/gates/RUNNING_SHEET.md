@@ -34,7 +34,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 | Q10 | 10-20 | A boss fight that reaches the 60-turn cap counts as a loss (24 % of reference fights end there). Is that right? | Yes, a loss |
 | Q9 | 10-20 | The builtin bot wins 25 % of campaigns, below the 50 % floor (already on main before this pass). | Investigate in the next balance round |
 | Q8 | 10-20 | The campaign is too long: the reference policy takes about 45 runs and 700 min against the GDD's ~395. The cause is the shared exploit and rank gating, not Solace. Shorten the gating, or change the target? | Shorten the gating in the next balance round |
-| Q7 | 10-20 | The Care Swarm tune (20 HP, 2 satellites: T4 win 20 → 100 %) is held back because it trips an animation test, a view-timing bug when a fight ends mid-turn. | Fix the timing bug, then ship the tune |
+| Q7 | 10-20 | RESOLVED: the Care Swarm tune (20 HP, 2 satellites) shipped. The animation test assumed a fight never ends mid-turn; the view was right. Normal fights at T4 are now in band (100 % win). | — |
 | Q6 | 10-19 | Events: how should the raid-win host trigger (every win, or by chance)? Draft 27 is authored but dormant. Draft 29 needs an HQ-view event host that runs a fight outside a netrun; not built. | Rumor fires on every raid win; the HQ-view host is deferred |
 | Q5 | 10-19 | RD-01, raid operative roles: 30 questions across 8 classes (`plan2/drafts/raid_operatives/QUESTIONS.md`). Ghost's step table (1/1/2/2) doesn't match its multipliers. | Every question at its recommended default; Ghost follows the multipliers |
 | Q1 | 10-19 | Solace v2: infection decay after a held raid: partial (flat amount plus kills), or a full reset to 0? | Partial decay |
