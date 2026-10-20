@@ -9,7 +9,14 @@ extends RefCounted
 ## Plan 2 WH-10: extra node keys the Solace HQ ladder sets (across, rest, boss, mini_boss, tower;
 ## `across_from` is the id list of the ACROSS sources). Saved only when present, so a street
 ## map's dictionary and hash are unchanged.
-const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower"]
+const OPTIONAL_KEYS: Array[String] = ["across", "rest", "boss", "mini_boss", "tower", "unique_kind", "unique_id"]
+## RG-06: node kinds a normal run never holds (a unique node names one in `unique_kind` and must be on the allow-list).
+const FORBIDDEN_KINDS: Array[String] = ["intel", "relay", "ambush"]
+## RG-01: the node types only a v2 graph may hold.
+const V2_TYPES: Array[int] = [RC.InfilNodeType.REST, RC.InfilNodeType.WORKSHOP, RC.InfilNodeType.CACHE]
+## Graph version: 1 (Router, Terminal, Mainframe, Server Rack) or 2 (adds REST, WORKSHOP, CACHE).
+## Saved as "version" only for v2, so a v1 map hashes as before.
+var version: int = 1
 
 var layers: Array = []  # Array of Array[Dictionary], layer 1 first
 
@@ -104,6 +111,12 @@ func validate(config: CampaignConfigData) -> PackedStringArray:
 				errors.append("Edges cross between layers %d and %d at %s." % [number, number + 1, node["id"]])
 			if not targets.is_empty():
 				last_target = targets[targets.size() - 1]
+	errors.append_array(lint(config.map_unique_allow))
+	for node in all_nodes():
+		if version < 2 and int(node["type"]) in V2_TYPES:
+			errors.append("%s is a v2 node kind in a v1 graph." % node["id"])
+		if int(node["type"]) in V2_TYPES and (node["elite"] or int(node["layer"]) == 1 or int(node["layer"]) == layers.size()):
+			errors.append("%s: REST, Workshop and Cache are never elite, in layer 1 or in the final layer." % node["id"])
 	# Reachability both ways.
 	var forward := _reachable_from(first_layer_ids())
 	var backward := _can_reach_final()
@@ -127,6 +140,19 @@ func validate(config: CampaignConfigData) -> PackedStringArray:
 				mainframes += 1
 	if mainframes < 1:
 		errors.append("No Mainframe in layers %d-%d." % [config.map_mainframe_layers.x, config.map_mainframe_layers.y])
+	return errors
+
+
+## RG-06 generator lint: problems for any Intel, Relay or Ambush node (`unique_kind`, or a type
+## named so) whose `unique_id` is not in `allow`. Normal runs hold none.
+func lint(allow: PackedStringArray) -> PackedStringArray:
+	var errors := PackedStringArray()
+	for node in all_nodes():
+		var kind := String(node.get("unique_kind", "")).to_lower()
+		if kind == "" and int(node["type"]) >= 0 and int(node["type"]) < RC.InfilNodeType.keys().size():
+			kind = String(RC.InfilNodeType.keys()[int(node["type"])]).to_lower()
+		if kind in FORBIDDEN_KINDS and not allow.has(String(node.get("unique_id", ""))):
+			errors.append("%s is a %s node, which normal runs do not hold." % [node["id"], kind])
 	return errors
 
 
@@ -180,11 +206,15 @@ func to_dict() -> Dictionary:
 				d["across_from"] = af
 			l.append(d)
 		out.append(l)
-	return {"layers": out}
+	var d := {"layers": out}
+	if version != 1:
+		d["version"] = version
+	return d
 
 
 static func from_dict(d: Dictionary) -> MapGraph:
 	var g := MapGraph.new()
+	g.version = int(d.get("version", 1))
 	for layer in d.get("layers", []):
 		var l := []
 		for node in layer:

@@ -551,3 +551,5 @@ city_a2_mountain_shore = Vector2(1.2, 7.5)
 city_a2_beach = Vector2(0.5, 2.5)
 city_a2_land_margin = 80
 city_a2_land_step = 2
+map_v2_enabled = true
+map_unique_allow = PackedStringArray("orbital_uplink_dish")

@@ -774,3 +774,10 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 		if d != null:
 			for problem in d.validate():
 				errors.append("%s (class %d default)" % [problem, k])
+
+## RG-01 (run_graph v2): new netruns generate v2 graphs (REST, WORKSHOP, CACHE nodes may appear).
+## False keeps v1 maps (no new node kinds).
+@export var map_v2_enabled: bool = true
+## RG-06 lint: unique node ids (MapGraph node key `unique_id`) allowed to be an Intel, Relay or
+## Ambush node in a netrun map. Normal runs have none of these kinds.
+@export var map_unique_allow: PackedStringArray = PackedStringArray(["orbital_uplink_dish"])

@@ -65,7 +65,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 				shop_delta += int(m["value"])
 	s.run.combat_overrides["shop_stock_delta"] = shop_delta
 	p_campaign.pending_complications.clear()
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
+	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1

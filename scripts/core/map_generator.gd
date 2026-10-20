@@ -11,13 +11,24 @@ const MAX_ATTEMPTS := 50
 ## layer of the elite band; whenever the fraction accumulates to a whole node, one more
 ## normal Router in that layer becomes elite. Node types are fixed before the player
 ## sees the map (designer ruling 2026-09-24: never surprise-elites).
-static func generate(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, elite_frequency_pct: float = 0.0) -> MapGraph:
+##
+## RG-01: `v2` makes a v2 graph: the v1 map is built with exactly the draws it always used, then
+## MapV2.place adds REST, WORKSHOP and CACHE nodes with further draws from the same `map` stream
+## (no new stream). A v1 call (the default) is unchanged.
+static func generate(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, elite_frequency_pct: float = 0.0, v2: bool = false) -> MapGraph:
 	for attempt in MAX_ATTEMPTS:
 		var graph := _build(tier, config, rng, elite_frequency_pct)
 		if graph.validate(config).is_empty():
-			return graph
+			return _finish(graph, tier, config, rng, v2)
 	push_error("MapGenerator: no valid map after %d attempts." % MAX_ATTEMPTS)
-	return _build(tier, config, rng, elite_frequency_pct)
+	return _finish(_build(tier, config, rng, elite_frequency_pct), tier, config, rng, v2)
+
+
+static func _finish(graph: MapGraph, tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, v2: bool) -> MapGraph:
+	if v2:
+		graph.version = 2
+		MapV2.place(graph, tier, config, rng)
+	return graph
 
 
 static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, elite_frequency_pct: float = 0.0) -> MapGraph:

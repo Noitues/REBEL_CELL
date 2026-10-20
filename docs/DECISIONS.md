@@ -9302,3 +9302,17 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v
 - balance.py reports print the policy label on every report header ("reference (heuristic, lookahead 2)"), and the fight
   report has a table of damage dealt per turn and the both-wheels share by tier labelled with the policy.
 - Test: tests/unit/test_balance_reference_policy.gd (fast tier).
+
+### 2026-10-19 - W3 RG-01: run_graph v2 (REST, WORKSHOP, CACHE)
+- `RC.InfilNodeType` appends REST, WORKSHOP, CACHE (saved ints survive). `MapGraph.version` is 1 or 2; `to_dict` writes
+  `version` only for v2, so a v1 map hashes as before. A v1 graph holding a v2 kind fails `validate`; the new kinds are never
+  elite, never in layer 1 or the final layer.
+- `run_graph.json` is contract v2 (`NetrunArtExport.RUN_GRAPH_VERSION`; the other four files stay v1). Schema
+  `tools/netrun_art/schemas/run_graph.schema.json` is v2 with the three new type names; the Python twin reads node `type`
+  as the room kind and already lists rest / workshop / cache in `ROOM_KINDS`.
+- `MapGenerator.generate(..., v2)`: the v1 map is built with the v1 draws, then `MapV2.place` adds the new kinds from the
+  same `map` stream (no new stream; the golden combat replays do not read it). `config.map_v2_enabled` (default true)
+  makes new netruns v2.
+- RG-06 lint: `MapGraph.lint(allow)` (run inside `validate`) rejects Intel, Relay and Ambush nodes (`unique_kind`, saved as an
+  optional key) unless `unique_id` is in `config.map_unique_allow` (default `orbital_uplink_dish`).
+- Tests: tests/unit/test_rg01_run_graph_v2.gd.

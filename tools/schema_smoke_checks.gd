@@ -29,6 +29,8 @@ func _wh02_corp_theme_config() -> int:
 	if ex_flags.bloom_pace_cut or ex_flags.bloom_setback or ex_flags.bloom_turn_cut: fails += 1
 	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	if shipped == null or shipped.bloom_max_gap_milli != d.bloom_max_gap_milli or shipped.hq_lead_limit != d.hq_lead_limit: fails += 1
+	# RG-01: the run_graph v2 keys (shipped = default).
+	if shipped == null or not shipped.map_v2_enabled or shipped.map_unique_allow != PackedStringArray(["orbital_uplink_dish"]): fails += 1
 	# WH-10: the Solace HQ ladder keys.
 	if d.solace_hq_rungs != 9 or d.solace_hq_mini_boss_rung != 9 or d.solace_hq_ward_rest_rungs != PackedInt32Array([5, 8]) or d.solace_hq_ward_weights.size() != 5 or d.solace_hq_billing_weights.size() != 5: fails += 1
 	d.bloom_dose_price = 21

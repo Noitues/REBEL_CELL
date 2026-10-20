@@ -119,7 +119,8 @@ enum AmountMode { FLAT, PERCENT }
 const PERCENT_MAX: int = 100
 
 # --- Netrun map ---
-enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK }
+## RG-01: REST, WORKSHOP and CACHE are appended (saved ints survive); they appear only in v2 graphs (MapGraph.version).
+enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK, REST, WORKSHOP, CACHE }
 
 # --- City Grid & network ---
 enum SiteObjective { NONE, EXPLOIT, HEAT_REDUCTION, RECLAIM, CENTRAL_SERVER }
