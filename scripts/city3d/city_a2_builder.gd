@@ -410,6 +410,10 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
 			if plan.a2_sites.has(l):
 				continue
+			# A street's frontage stays: the netrun's street route needs its buildings (NA-23 frontage layers).
+			if _street(kind, R, l + Vector2i(1, 0)) or _street(kind, R, l + Vector2i(-1, 0)) \
+					or _street(kind, R, l + Vector2i(0, 1)) or _street(kind, R, l + Vector2i(0, -1)):
+				continue
 			var near_sea := false
 			for dj in range(-sb, sb + 1):
 				for di in range(-sb, sb + 1):
@@ -478,7 +482,10 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				kind[kk] = K_BUILDING
 		var f := cell.end - Vector2i.ONE
 		front[(f.y - R.position.y) * w + (f.x - R.position.x)] = ci
-		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites)})
+		var on_street := _street(kind, R, l + Vector2i(1, 0)) or _street(kind, R, l + Vector2i(-1, 0)) \
+				or _street(kind, R, l + Vector2i(0, 1)) or _street(kind, R, l + Vector2i(0, -1))
+		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites,
+			on_street)})
 	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
 
 
@@ -575,7 +582,7 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 
 ## A building cell's extrusions (lots, height px): one prism, or a base and a setback tower over `city_a2_setback_from`.
 static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i, cell_id: StringName, hq_centres: Array[Vector2],
-		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}) -> Array:
+		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
 	var hk := _height_kind(ras, cfg, f, terr, cell_id)
@@ -607,8 +614,9 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 	var key := rng.randi() & 0x7fffffff
 	var ins := cfg.city_a2_inset
 	var out: Array = []
-	# LOOK L5: the plate's finer grain: four quarter-lot buildings on one lot.
-	if cfg.city_a2_sub_share > 0.0 and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
+	# LOOK L5: the plate's finer grain: four quarter-lot buildings on one lot, inside the blocks only: a street-front lot
+	# keeps one building (the netrun's street frontage and the NA-11 floor rule work on whole lots).
+	if cfg.city_a2_sub_share > 0.0 and not on_street and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
 		var si := cfg.city_a2_sub_inset
 		for q in 4:
 			var lo := Vector2(cell.position) + Vector2(0.5 * (q % 2), 0.5 * (q / 2)) + Vector2(si, si)

@@ -150,9 +150,18 @@ func test_buildings_and_picks_follow_the_ground() -> void:
 	var t := CityPlan.for_seed(SEED).terrain
 	var off := 0
 	var raised := 0
+	# LOOK L5 (designer 2026-10-20): in the drowned quarter `city_a2_sink_share` of the buildings stand sunk, their base
+	# up to `city_a2_sink_bu`.y under the ground.
+	var ras := CityPlan.for_seed(SEED).a2
+	var sink_max: float = _cfg.city_a2_sink_bu.y if _cfg.city_a2_sink_share > 0.0 else 0.0
 	for pr: Dictionary in _model.prisms:
 		var g := t.cell_ground(pr["cell"])
-		if absf(float(pr["ground"]) - g) > 0.0001 or float(pr["y0"]) < g - 0.0001:
+		var floor_y := g - 0.0001
+		var c: Rect2i = pr["cell"]
+		if sink_max > 0.0 and not ras.a2.drowned.is_empty() \
+				and Geometry2D.is_point_in_polygon(ras.metres_of(Vector2(c.get_center())), ras.a2.drowned):
+			floor_y -= sink_max
+		if absf(float(pr["ground"]) - g) > 0.0001 or float(pr["y0"]) < floor_y:
 			off += 1
 		if g > 1.0:
 			raised += 1
