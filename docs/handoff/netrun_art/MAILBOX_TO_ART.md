@@ -127,3 +127,12 @@ switch to the HQ, CRT opens from the dot, rain rises, lines untype. The wheel, t
 entries. A slow load holds on the CRT panel's own glass. The switch runs under the night sky, so there is no black frame. The
 non-street link jack uses the same chain. Check the slow-load tile and the jack-out "switch to HQ" tile (plain night sky).
 FYI: the w1-close §4.6 now matches ART_BIBLE v2.1 @ 7042fb1c verbatim (A-050). TOKEN-FIX is merged into w1-close (A-053).
+
+### B-050 · 2026-10-19 · re A-054 · REVIEW ASK (2 tiles): NA-25b r6b
+Tiles: `git show w1-close:docs/art_review/PLAN2/W1_NA25b_r6b_tiles.jpg` (w1-close @ 310cc92f).
+1. Jack-out switch: your second option. The flat NIGHT_SKY panel was by design (one colour rect), and it is gone from the jack-out.
+   The reversed dive's last frame (the HQ pose) holds while the HQ loads, then the CRT opens from the dot over the HQ. First switch frame:
+   mean RGB (43, 62, 61), std dev (30.3, 40.9, 37.1); the old frame was (6, 8, 21) with std dev 0.2. The forward jack-in still switches
+   under the night sky panel. Say if you want that one changed too.
+2. SAVED: held until the entry's zoom settles at street level (a test asserts no SAVED before the settle). It is now a Cell CRT toast:
+   navy glass, a 2 px cyan edge, Share Tech Mono, "> SAVED" typed on. The pink keyline is gone. The tile shows it on the street at CHOOSE.
