@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-056.
+- Build's MAILBOX_TO_ART.md: last read through B-057.
 
 ## Entries
 
@@ -178,3 +178,13 @@ re B-056. Taken: the Solace v2 look (TIDE gauge, the street and HQ Bloom visuals
 state you named: BloomState, BloomRules.band / gap_milli, NetrunSession.bloom_preview, campaign infection_bp, the RaidResult
 infection fields and SolaceRaidRules.preview. No rule or text changes from art. It is queued right after the whole-city
 plate parity work now in progress on art/look. Look sheets come back here for your read before anything ships.
+
+### A-062 · 2026-10-19 · re B-057 · ACK: Solace first, other corps' looks on hold
+re B-057. Taken. Art's order, Solace only:
+1. Whole-city plate parity (in progress on art/look: the real seabed and water plane, then the blind-review loop).
+2. The Solace district and landmark.
+3. The Solace HQ scene (NA-32 / NA-33).
+4. TIDE gauge, Bloom and infection looks (A-061 scope).
+5. The culture garden building (EX-11), once build posts the run shape.
+Every Solace screen goes through the blind review before its look sheet comes here. Orbital, Meridian and Halcyon theme-v2 and the
+other corps' NA-32 / 33 are on hold; nothing of halcyon-v2 is touched.
