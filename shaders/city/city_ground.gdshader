@@ -26,6 +26,7 @@ uniform float cloud_scale = 45.0;
 uniform vec2 cloud_off = vec2(0.0);
 uniform vec2 cloud_edge = vec2(0.5, 0.62);
 varying vec3 v_world;
+varying float v_cloud;
 
 float cl_hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -50,6 +51,7 @@ void vertex() {
 
 void fragment() {
 	ROUGHNESS = 0.0;
+	v_cloud = cloud_k > 0.0 ? cloud_k * cloud_shadow(v_world.xz) : 0.0;
 	if (lane) {
 		ALBEDO = vec3(0.0);
 		EMISSION = COLOR.rgb * lane_gain;
@@ -63,9 +65,7 @@ void fragment() {
 
 void light() {
 	float ndl = dot(NORMAL, LIGHT) * ATTENUATION;
-	if (cloud_k > 0.0) {
-		ndl *= 1.0 - cloud_k * cloud_shadow(v_world.xz);
-	}
+	ndl *= 1.0 - v_cloud;
 	if (band_soft > 0.0) {
 		float t1 = smoothstep(ramp_edges.x - band_soft, ramp_edges.x + band_soft, ndl);
 		float t2 = smoothstep(ramp_edges.y - band_soft, ramp_edges.y + band_soft, ndl);
