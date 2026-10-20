@@ -297,7 +297,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
 	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
 	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
-	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
+	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night and not whole_look)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
 	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
 	var lm_night := bool(day.get("landmarks_night", night))
@@ -567,6 +567,10 @@ func _sync_hq_beams() -> void:
 	var nl := layer(&"network")
 	if nl != null:
 		nl.visible = not whole_look
+	if land != null:
+		var vg := land.get_node_or_null(^"Vegetation") as Node3D
+		if vg != null:
+			vg.visible = whole_look
 	if features != null:
 		for nm: String in cfg.whole_hide_features:
 			var fp := features.get_node_or_null(NodePath(nm)) as Node3D
@@ -592,6 +596,9 @@ func _sync_hq_beams() -> void:
 		water.water_mat.set_shader_parameter(&"deep_day", Vector3(dd.r, dd.g, dd.b))
 		water.water_mat.set_shader_parameter(&"shore_day", Vector3(sd.r, sd.g, sd.b))
 		# The void past the terrain reads as a square slab of sea; the plate's sea runs on to the horizon.
+		water.water_mat.set_shader_parameter(&"vein_foam", cfg.whole_vein_foam if whole_look else 0.25)
+		for k: String in cfg.whole_bed:
+			water.water_mat.set_shader_parameter(StringName(k), cfg.whole_bed[k] if whole_look else (0.0 if k == "bed_k" else cfg.whole_bed[k]))
 		var vd := water.get_node_or_null(^"Void") as MeshInstance3D
 		if vd != null:
 			vd.material_override = water.water_mat if whole_look else water.void_mat
@@ -1117,6 +1124,17 @@ func _build_land(m: CityModel) -> void:
 	var outer := layer(&"ground").get_node_or_null(^"OuterGround") as Node3D
 	if outer != null:
 		outer.visible = false  # CITY-A2 r2: the land replaces the flat plane (no second slab under it)
+	# LOOK L5: light vegetation on the green land, shown at the whole-city pose.
+	var vm := CityVegetationKit.multimesh(cfg, m.terrain, m.city_seed, cfg.city_rect)
+	if vm != null:
+		var vg := MultiMeshInstance3D.new()
+		vg.name = "Vegetation"
+		vg.multimesh = vm
+		vg.material_override = _ground_mat
+		vg.layers = 1 << (WORLD_LAYER - 1)
+		vg.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		vg.visible = whole_look
+		land.add_child(vg)
 
 
 ## CITY-A2 step 2: A2's roads by class, rails and stations, walls and checkpoints, the port, the drowned quarter and the

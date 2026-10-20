@@ -57,9 +57,9 @@ extends Resource
 ## LOOK L5: the whole-city atmosphere (CityView3D._whole_fog): the fog / sky colour by day and night, density (day, night),
 ## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
 @export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
-@export var whole_fog_night: Color = Color(0.035, 0.06, 0.085)
-@export var whole_fog_density: Vector2 = Vector2(0.85, 0.8)
-@export var whole_fog_depth: Vector2 = Vector2(0.75, 2.2)
+@export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
+@export var whole_fog_density: Vector2 = Vector2(0.7, 0.45)
+@export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
 @export var whole_fog_sun_scatter: float = 0.25
 @export var whole_day_haze_k: float = 0.12
@@ -96,6 +96,10 @@ extends Resource
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
+## LOOK L5: the vein foam at the whole-city pose, and the seabed under the translucent water there (city_water bed_*).
+@export var whole_vein_foam: float = 0.0
+@export var whole_bed: Dictionary = {"bed_k": 0.85, "bed_slope": 0.35, "bed_max_bu": 24.0, "bed_noise_bu": 160.0,
+	"bed_noise_k": 0.8, "bed_clear_bu": 5.0}
 ## The sea's day colours under the whole-city pose (the plate's deep blue bay and open sea).
 @export var whole_water_deep_day: Color = Color(0.012, 0.07, 0.2)
 @export var whole_water_shore_day: Color = Color(0.04, 0.18, 0.34)
@@ -732,6 +736,24 @@ extends Resource
 @export var water_shallow_lots: float = 14.0
 ## LOOK L5 (A2 plate): the cap (lots) of the sea's distance-to-land field (UV.x past it is deep water; runs merge).
 @export var sea_field_cap_lots: float = 60.0
+## LOOK L5 (A2 plate): the bay islands (CityWater.islands_of): how many, the least lots to land, radius share of that and
+## cap (lots), the spacing in radii, the crown height (BU) and the rim wobble.
+@export var island_count: int = 3
+## LOOK L5: light vegetation on the green land (CityVegetationKit, whole-city pose): a sample every `veg_step` lots, the
+## kept share from meadow to forest, the least ground height (BU) and the steepest slope, the share of the city's bare lots
+## with a tree, and the tree radius range (lots of BU; park_tree_w / park_tree_h shape them).
+@export var veg_step: int = 2
+@export var veg_density: Vector2 = Vector2(0.18, 0.7)
+@export var veg_min_h: float = 0.4
+@export var veg_max_slope: float = 0.25
+@export var veg_bare_share: float = 0.35
+@export var veg_r: Vector2 = Vector2(0.7, 1.5)
+@export var island_min_d: float = 10.0
+@export var island_r_k: float = 0.3
+@export var island_r_max: float = 8.0
+@export var island_gap_k: float = 2.5
+@export var island_h_bu: float = 5.0
+@export var island_wobble: float = 0.35
 ## LOOK L5 (whole city, A2 plate): the outer land and A2 decks blend their toon bands over +/- this much N.L (city_ground
 ## band_soft), so the terrain relief reads as shading, not as hard dark blobs (the "giant shadow").
 @export var outer_land_band_soft: float = 0.14

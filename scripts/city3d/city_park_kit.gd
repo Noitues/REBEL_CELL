@@ -12,6 +12,11 @@ const DOME_SIDES := 6
 
 ## The park lots (CityA2Builder K_PARK) of seed `city_seed` inside `r` (lots).
 static func parks_in(city_seed: int, r: Rect2i) -> Array[Vector2i]:
+	return lots_of(city_seed, r, CityA2Builder.K_PARK)
+
+
+## The lots of kind `kind` (CityA2Builder K_*) of seed `city_seed` inside `r` (lots), row order.
+static func lots_of(city_seed: int, r: Rect2i, kind_id: int) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	var p := CityPlan.for_seed(city_seed)
 	if p.a2 == null:
@@ -23,7 +28,7 @@ static func parks_in(city_seed: int, r: Rect2i) -> Array[Vector2i]:
 	var b := r.intersection(R)
 	for j in range(b.position.y, b.end.y):
 		for i in range(b.position.x, b.end.x):
-			if kind[(j - R.position.y) * R.size.x + (i - R.position.x)] == CityA2Builder.K_PARK:
+			if kind[(j - R.position.y) * R.size.x + (i - R.position.x)] == kind_id:
 				out.append(Vector2i(i, j))
 	return out
 
