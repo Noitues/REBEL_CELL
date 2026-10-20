@@ -42,7 +42,7 @@ satellite = ExtResource("drone")
 trigger = 1
 every_n = 1
 dock_slot = -1
-max_active = 3
+max_active = 2
 
 [resource]
 script = ExtResource("1")
@@ -50,7 +50,7 @@ id = &"care_swarm"
 display_name = "Care Swarm"
 description = "A cloud of care drones around a fragile core."
 corporation_id = &"solace"
-hp = 25
+hp = 20
 wheel = SubResource("wheel")
 cycle_reward = 15
 spawns = Array[ExtResource("4")]([SubResource("spawn")])
