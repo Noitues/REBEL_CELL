@@ -98,7 +98,7 @@ Solace theme number was changed** (no evidence they bind; moving shared pace lev
 6. Theme numbers unchanged; the campaign pace gap is reported as an open question.
 
 ## Still open
-- Care Swarm at T4 on the starter operative (20 % win, 59 HP lost): tuned in the sim, held back by finding 1.
+- Care Swarm at T4: shipped 20 HP / 2 satellites (see the addendum).
 - Campaign length (45 runs vs 24) and the builtin campaign win (25 % vs the 50 % floor).
 - Boss: 24 % of reference boss fights end on the 60-turn cap; is a cap a loss? Tester data (BAL-02) was not available here, so
   "inside the tester band" is unchecked. Sample size is 25 crews x 2 seeds; a second sample from other seeds would tighten the
@@ -106,3 +106,23 @@ Solace theme number was changed** (no evidence they bind; moving shared pace lev
 - N1b tier damage factor and EASY / HARD pools (BAL-06 rows) not touched.
 - Golden replays: no replay fixture referenced the changed enemies; none regenerated. Tests with old HP pins updated:
   test_boss, test_m3_answers, test_ice_combat, test_enemies_m2.
+
+## Addendum: Care Swarm 20 HP / 2 satellites shipped (Q7)
+Cause of the held-back test: not a view bug. `test_hits_fly_one_at_a_time_and_the_result_holds_before_the_respin` took "every
+HP roll has finished" as the latest `time + settle_after` over ALL beats, but `settle_after` is 0 for `died` / `end`, so their
+bare beat times counted. When a fight ends this turn, `ResolveBeats.schedule` deliberately reads the result just before the
+last wheel falls (`result_at = max(kill_settled, kill_at - break_delay)`, ANIM-R5), so the satellite's `died`, the swarm's
+`died` and the `end` beat (care_swarm seed 5: result 2.556 s, end 2.775 s, the last HP roll settled at 2.556 s) come after it.
+The old 25 HP swarm never died inside the turns the test visits. Fix: the test now counts only beats that change HP (the
+HP rolls the label is about); no view or schedule code changed. Ended turns still check one projectile at a time.
+Shipped: `care_swarm.tres` hp 25 -> 20, `max_active` 3 -> 2; GDD A.3 row and `test_enemies_m2.gd` pins updated.
+
+Re-measure (reference policy, starter operative, T4, seeds 1000-1004, `--categories enemy`, content as committed):
+
+| enemy | win % | turns | HP lost |
+|---|---|---|---|
+| care_swarm | 100 | 4.2 | 34.4 |
+| other five normals | 100 each | 7.0-10.4 | 0-28.8 |
+| normal T4 pooled (30 fights) | 100 | 7.6 | 15.6 |
+
+Band normal T4 (win >= 90, turns 6-10, HP lost <= 35): in. Care Swarm per enemy (>= 60 win): in. Q7 closed.

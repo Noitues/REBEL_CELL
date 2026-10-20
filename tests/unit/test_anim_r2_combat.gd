@@ -403,7 +403,10 @@ func test_hits_fly_one_at_a_time_and_the_result_holds_before_the_respin() -> voi
 						assert_true(times[k] - last_fly >= Motion.seconds(&"hit_line") - 0.0001,
 							"%s seed %d: one projectile at a time (%.2f after the last)" % [enemy, combat_seed, times[k] - last_fly])
 						last_fly = times[k]
-					settled = maxf(settled, times[k] + ResolveBeats.settle_after(b, timing))
+					# Only beats that roll an HP counter count: a fight that ends this turn reads the result just
+					# before the wheel falls (ResolveBeats.schedule), so its died / end beats come after it.
+					if ResolveBeats.changes_hp(b):
+						settled = maxf(settled, times[k] + ResolveBeats.settle_after(b, timing))
 				assert_true(float(sch["result_at"]) >= settled - 0.0001, "%s: THIS TURN once every HP roll has finished" % enemy)
 				if float(sch["spin_at"]) >= 0.0:
 					assert_true(float(sch["spin_at"]) - float(sch["result_at"]) >= Motion.seconds(&"resolve_result_hold") - 0.0001,

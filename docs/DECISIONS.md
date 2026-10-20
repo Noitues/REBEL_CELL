@@ -9475,3 +9475,8 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/halcyon.md`, `drafts/hq/halcyon.md`. 
   about 24 runs / 395 minutes: which shared lever moves it (min_exploits_for_breach, rank per tier, exploit site count)? (b) 24 % of
   reference boss fights end on the 60-turn cap, not in a win or a death: should the cap be a loss, or lifted? Default built: the
   cap counts as a non-win.
+- **Care Swarm 25 HP / 3 satellites -> 20 HP / 2 satellites (2026-10-20, Q7 closed).** Content only (`care_swarm.tres` hp, spawn
+  `max_active`); GDD A.3 row updated. T4 reference win 20 -> 100 %, normal T4 pooled 100 % (n=30). The blocking
+  `test_anim_r2_combat` failure was the test's assumption, not the view: its "every HP roll finished" bound counted the `died` /
+  `end` beats of a fight that ends inside the turn, which by design (ANIM-R5) come after the result. The test now counts only
+  HP-changing beats.

@@ -708,7 +708,7 @@ Breaker Rank 1 ring: ×2 / Pierce / —.
 | Compliance Officer | 50 | Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Null | Hub: Compliance Lock, resistance 3 |
 | Dosage Dispenser | 38 | Dose, Shim 6, Dose, Defrag 5, Shim 6, Null | — |
 | Billing Daemon | 42 | Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Null | Attacks drain 1 RAM (Overflow drains 2) |
-| Care Swarm | 25 | Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Null | 3 satellites (4 HP; Shim 3, Shim 3, Defrag 2) |
+| Care Swarm | 20 | Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Null | 2 satellites (4 HP; Shim 3, Shim 3, Defrag 2) |
 | **Elite:** Claims Adjuster | 90 | Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Null | 2 pointers (ticks 0, 15) |
 | **Elite:** Recall Unit | 85 | Shim 9, Shim 9, Defrag 8, Overflow 15, Sandbox 5, Null | Pointer orbits +2 ticks/turn; passive resistance 1 |
 | **Boss:** The Genome Core | 300 | Shim 14, Shim 14, Defrag 12, Dose, Overflow 24, Null | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |

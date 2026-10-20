@@ -18,9 +18,9 @@ func test_stats_match_a3() -> void:
 	assert_eq(_slice_ids(_enemy(&"triage_unit").wheel), [&"defrag_8", &"hotfix_6", &"shim_6", &"hotfix_6", &"defrag_8", &"null"])
 	assert_eq(_enemy(&"billing_daemon").hp, 42)
 	assert_eq(_slice_ids(_enemy(&"billing_daemon").wheel), [&"shim_7_drain", &"shim_7_drain", &"defrag_6", &"overflow_12_drain", &"shim_7_drain", &"null"])
-	assert_eq(_enemy(&"care_swarm").hp, 25)
+	assert_eq(_enemy(&"care_swarm").hp, 20)
 	assert_eq(_slice_ids(_enemy(&"care_swarm").wheel), [&"defrag_4", &"hotfix_4", &"defrag_4", &"hotfix_4", &"shim_4", &"null"])
-	assert_eq(_enemy(&"care_swarm").spawns[0].max_active, 3)
+	assert_eq(_enemy(&"care_swarm").spawns[0].max_active, 2)
 	assert_eq(_enemy(&"care_drone").hp, 4)
 	assert_eq(_slice_ids(_enemy(&"care_drone").wheel), [&"shim_3", &"shim_3", &"defrag_2"])
 	var adjuster := _enemy(&"claims_adjuster")
@@ -60,15 +60,15 @@ func test_recall_unit_pointer_orbits_2_per_turn() -> void:
 	assert_eq(s.state.get_combatant(&"enemy_0").wheel.pointer_ticks[0], 4)
 
 
-func test_care_swarm_spawns_three_drones_on_distinct_slots() -> void:
+func test_care_swarm_spawns_two_drones_on_distinct_slots() -> void:
 	var s := CombatSession.start(CombatFixture.resolver(), &"breaker", [&"care_swarm"], 4)
 	var sats := s.state.satellites_of(&"enemy_0")
-	assert_eq(sats.size(), 3)
+	assert_eq(sats.size(), 2)
 	var slots := {}
 	for sat in sats:
 		slots[sat.dock_slot] = true
 		assert_eq(sat.hp, 4)
-	assert_eq(slots.size(), 3, "no two drones share a slot")
+	assert_eq(slots.size(), 2, "no two drones share a slot")
 
 
 func test_triage_unit_heals_itself() -> void:
