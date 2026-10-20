@@ -14,13 +14,16 @@ extends RefCounted
 
 ## Contract version written in every file.
 const VERSION: int = 1
+## RG-01: `run_graph.json` is contract v2 (node types add rest, workshop, cache; schemas/run_graph.schema.json).
+const RUN_GRAPH_VERSION: int = 2
 ## JSON ints stay within +-2^53 (u64 values are decimal strings).
 const INT_LIMIT: int = 9007199254740992
 ## Grid status -> net.json node state (the home Site is "core").
 const SITE_STATES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared",
 	GridState.SiteStatus.CLAIMED: "owned", GridState.SiteStatus.TAKEN: "taken"}
 const NODE_TYPES := {RC.InfilNodeType.ROUTER: "router", RC.InfilNodeType.TERMINAL: "terminal",
-	RC.InfilNodeType.MAINFRAME: "mainframe", RC.InfilNodeType.SERVER_RACK: "server_rack"}
+	RC.InfilNodeType.MAINFRAME: "mainframe", RC.InfilNodeType.SERVER_RACK: "server_rack",
+	RC.InfilNodeType.REST: "rest", RC.InfilNodeType.WORKSHOP: "workshop", RC.InfilNodeType.CACHE: "cache"}
 const EXPLOITS := {RC.ExploitType.INTEL: "intel", RC.ExploitType.BREACH: "breach", RC.ExploitType.VIRUS: "virus"}
 ## Scene-level art streams (no per-object keys; section 7 with the O6 city.* names).
 const SCENE_STREAMS: Array[String] = ["beams", "cars", "city.beams", "city.build", "city.landmark", "city.post",
@@ -184,7 +187,7 @@ static func net_json(city_seed: int, lot_bu: float, origin: Vector2, corp: Corpo
 	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "nodes": nodes, "links": links}
 
 
-## `run_graph.json` v1: the run's MapGraph 1:1 (nodes by layer then index, forward edges).
+## `run_graph.json` v2 (RG-01): the run's MapGraph 1:1 (nodes by layer then index, forward edges).
 static func run_graph_json(map: MapGraph, run_id: String) -> Dictionary:
 	var nodes := []
 	var edges := []
@@ -198,7 +201,7 @@ static func run_graph_json(map: MapGraph, run_id: String) -> Dictionary:
 				edges.append({"a": String(n["id"]), "b": String(nx)})
 	edges.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
 		return x["a"] < y["a"] if x["a"] != y["a"] else x["b"] < y["b"])
-	return {"version": VERSION, "run": run_id, "layers": map.layer_count(), "nodes": nodes, "edges": edges}
+	return {"version": RUN_GRAPH_VERSION, "run": run_id, "layers": map.layer_count(), "nodes": nodes, "edges": edges}
 
 
 ## `key_locations.json` v1: every Exploit Site (exploit_type != NONE, ruling O8) of `corp`

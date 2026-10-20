@@ -559,6 +559,12 @@ static func route_kind(node_type: int, elite: bool) -> String:
 			return KIND_SHOP
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK
+		RC.InfilNodeType.REST:
+			return "rest"
+		RC.InfilNodeType.WORKSHOP:
+			return "workshop"
+		RC.InfilNodeType.CACHE:
+			return "cache"
 	return ""
 
 

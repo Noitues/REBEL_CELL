@@ -227,6 +227,11 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				_choose_event(s)
 			RunState.Phase.SHOP:
 				_shop(s)
+			RunState.Phase.REST:
+				s.rest_patch()
+				s.leave_rest()
+			RunState.Phase.WORKSHOP:
+				s.leave_workshop()
 			RunState.Phase.RAID:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)

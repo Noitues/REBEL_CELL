@@ -9362,3 +9362,61 @@ Spec: `docs/handoff/plan2/drafts/themes/v2/halcyon.md`, `drafts/hq/halcyon.md`. 
 - Open questions for the designer: (1) should a raid-win event host (27) open after every won raid, or with a chance? (2) 29
   needs an HQ-view event host and an out-of-run fight; build it with the HQ events slice? (3) Should 08's link target be a
   player pick (a map-view interaction) instead of the deterministic pick?
+### 2026-10-19 - W3 RG-01: run_graph v2 (REST, WORKSHOP, CACHE)
+- `RC.InfilNodeType` appends REST, WORKSHOP, CACHE (saved ints survive). `MapGraph.version` is 1 or 2; `to_dict` writes
+  `version` only for v2, so a v1 map hashes as before. A v1 graph holding a v2 kind fails `validate`; the new kinds are never
+  elite, never in layer 1 or the final layer.
+- `run_graph.json` is contract v2 (`NetrunArtExport.RUN_GRAPH_VERSION`; the other four files stay v1). Schema
+  `tools/netrun_art/schemas/run_graph.schema.json` is v2 with the three new type names; the Python twin reads node `type`
+  as the room kind and already lists rest / workshop / cache in `ROOM_KINDS`.
+- `MapGenerator.generate(..., v2)`: the v1 map is built with the v1 draws, then `MapV2.place` adds the new kinds from the
+  same `map` stream (no new stream; the golden combat replays do not read it). `config.map_v2_enabled` (default true)
+  makes new netruns v2.
+- RG-06 lint: `MapGraph.lint(allow)` (run inside `validate`) rejects Intel, Relay and Ambush nodes (`unique_kind`, saved as an
+  optional key) unless `unique_id` is in `config.map_unique_allow` (default `orbital_uplink_dish`).
+- Tests: tests/unit/test_rg01_run_graph_v2.gd.
+
+### 2026-10-19 - W3 RG-02: the REST node
+- Phase `REST` (appended to `RunState.Phase`) holds `run.node_state` ({kind: rest, done, mode, swaps, undo_hp, undo_fw});
+  saved as `node_state` only when not empty. PATCH heals `rest_heal_pct` (35) of max HP, round half up, clamped; the preview
+  (`rest_patch_preview`) is the result. REWIRE (`rest_rewire(a, b)`) swaps the Firmware of two outer-ring wheel slots (an
+  empty socket is a legal partner); each moving chip must pass `firmware_slot_error` for its new slot, so no chip is ever
+  dropped or placed where it does not fit. One mode per visit (`rest_rewire_swaps` swaps, then spent); UNDO restores HP and
+  layout until LEAVE. REST adds 0 Heat, draws no stream.
+- Placement (`MapV2`, same `map` stream): a roll against `node_weight_rest` (percent; 100 = always), one pick among free
+  Terminals (else plain Routers) in `rest_guaranteed_layers` 4-5, widened to 3-6 when none is free; then an extra REST at the
+  tier's percent (`rest_extra_chance_pct_by_tier`), Terminals only, never a layer that holds a REST, at most `rest_max_per_run`.
+- Calls where the draft was silent: the draft's "no REST right before a Mainframe" and "not after the layer-6 Elite cluster"
+  exclusions are not built (the validator guarantees every node is on a start-to-end path, so a path through each REST
+  exists); the Inner Ring is not rewirable (outer-ring slots only); no "fixed" Firmware flag exists, so none is checked.
+- The Solace HQ ladder's rest room stays the ward rest (`bloom_ward_rest`, WH-10): it does not open the REST page.
+- UI: `NodePage` (scripts/ui/kit/node_page.gd), placeholder buttons; mouse, or keys 1-9 / Enter / Esc. Tests:
+  tests/unit/test_rg02_rest.gd, tests/unit/test_rg_node_pages_ui.gd.
+
+### 2026-10-19 - W3 RG-03: the WORKSHOP node
+- **Call (logged, Open question for the designer):** neither N18 slice upgrades (Levels) nor a card-upgrade interface exists on
+  this branch (grep: no Level, no upgraded cards). The brief's fallback names the card-upgrade interface, which is also absent,
+  so the Workshop is the **existing slice-overwrite interface** (the Mainframe's slice refit, same socket rule: a socketed
+  Firmware must fit the new slice) at its own price. When N18 / N12 land, only `_open_workshop` / `workshop_buy` swap their
+  offer source; the page, phase and placement stay.
+- Phase `WORKSHOP`; `node_state` {kind: workshop, offers, bought}. Entering draws `workshop_offers_per_visit` (3) distinct
+  slices from `config.shop_slices` on the `rewards` stream (no new stream), so a reload cannot reroll them; one buy per visit
+  (`workshop_buys_per_visit`); price `workshop_slice_price` (60) or `workshop_null_slice_price` (90) for the NULL slot, scaled by
+  CYCLE_PRICE_PCT. Preview (`workshop_preview`) is the result. Left out: the draft's per-level cost table, layer-gated max Level,
+  per-run upgrade cap, card slot and corp `workshop_weight` (they need Levels).
+- Placement (`MapV2`, `map` stream): from `workshop_min_tier` (2) a roll against `node_weight_workshop` (90 percent), one Terminal in
+  `workshop_layers` 3-6, never in a layer that holds a Mainframe; none in v1 graphs.
+- UI: `NodePage` workshop form (offer, then slot, then BUY; keys 1-9 and Enter). Tests: tests/unit/test_rg03_workshop.gd and the
+  Workshop case of tests/unit/test_rg_node_pages_ui.gd.
+
+### 2026-10-19 - W3 RG-04: the CACHE node (plain reward, puzzle off)
+- Entering a Cache pays `cache_cycles_range` (30-60) Cycles times the tier reward scale and queues one card offer of
+  `cache_card_choices` (3), both from the `rewards` stream (no new stream); the existing REWARD page takes the pick. No new
+  phase, no node page. Same seed pays the same.
+- The mini-puzzle is off: `cache_puzzle_enabled = false`, and `CacheRules.puzzle_active` also needs an entry in
+  `CacheRules.VETTED_PUZZLES` (empty until BATCH vetting passes the rubric), so the config switch alone cannot turn one on. The
+  puzzle's design (the draft's slice wheel) is not built.
+- Placement (`MapV2`, `map` stream): a roll against `node_weight_cache` (60 percent), one Terminal in `cache_layers` 2-6; at most
+  one per run; none in v1 graphs. The draft's "no Cache on Reclaim or Patrol netruns" is not applied (the generator does not
+  see the run kind; Reclaim has no map, and a Patrol's Cache pays like any other).
+- Tests: tests/unit/test_rg04_cache.gd and the Cache case of tests/unit/test_rg_node_pages_ui.gd.

@@ -65,7 +65,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 				shop_delta += int(m["value"])
 	s.run.combat_overrides["shop_stock_delta"] = shop_delta
 	p_campaign.pending_complications.clear()
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
+	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	s._bloom_load_keys(corp)
 	s._halcyon_begin_street(corp, site_id)
@@ -720,6 +720,12 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 			_open_event()
 		RC.InfilNodeType.MAINFRAME:
 			_open_shop()
+		RC.InfilNodeType.REST:
+			_open_rest()
+		RC.InfilNodeType.WORKSHOP:
+			_open_workshop()
+		RC.InfilNodeType.CACHE:
+			_open_cache()
 	_sync()
 	return last_events
 
@@ -1653,6 +1659,232 @@ func leave_shop() -> Array[Dictionary]:
 	_maybe_raid_interlude()
 	_sync()
 	return last_events
+
+
+# --- REST node (RG-02, drafts/nodes/rest.md) -------------------------------------------------
+
+func _open_rest() -> void:
+	run.node_state = {"kind": "rest", "done": false, "mode": "", "swaps": 0, "undo_hp": 0, "undo_fw": []}
+	run.phase = RunState.Phase.REST
+	last_events.append({"type": "rest_open", "text": "REST: patch %d%% of max HP, or rewire one Firmware." % config.rest_heal_pct})
+
+
+## Whether the open REST page has been used (PATCH or REWIRE; UNDO clears it).
+func rest_done() -> bool:
+	return run.phase == RunState.Phase.REST and bool(run.node_state.get("done", false))
+
+
+## PATCH, exactly as it will apply: {"heal": HP restored (clamped to max HP), "hp_after", "max_hp"}.
+func rest_patch_preview() -> Dictionary:
+	var op := run.operative
+	var heal := clampi((op.max_hp * config.rest_heal_pct + 50) / 100, 0, op.max_hp - op.hp)
+	return {"heal": heal, "hp_after": op.hp + heal, "max_hp": op.max_hp}
+
+
+## Why PATCH / REWIRE cannot be used now ("" when it can): not on a REST page, or the visit's one mode is spent.
+func rest_error() -> String:
+	if run.phase != RunState.Phase.REST:
+		return "No REST open."
+	if bool(run.node_state.get("done", false)):
+		return "This REST is spent."
+	return ""
+
+
+## PATCH: heals `rest_heal_pct` of max HP (round half up, clamped). Spends the visit's mode.
+func rest_patch() -> Array[Dictionary]:
+	last_events = []
+	var why := rest_error()
+	if why != "":
+		return _refuse(why)
+	var pv := rest_patch_preview()
+	run.node_state["undo_hp"] = run.operative.hp
+	run.node_state["undo_fw"] = _strings(run.operative.slot_firmware_ids)
+	run.operative.hp = int(pv["hp_after"])
+	run.node_state["done"] = true
+	run.node_state["mode"] = "patch"
+	last_events.append({"type": "rest_patch", "heal": pv["heal"], "text": "Patched +%d HP (%d/%d)." % [pv["heal"], pv["hp_after"], pv["max_hp"]]})
+	_sync()
+	return last_events
+
+
+## Why moving the Firmware of slot `a` and slot `b` (swapping them; an empty socket is a legal partner) is not
+## allowed ("" when it is): the same socket rule as a new chip (`firmware_slot_error`) for each chip that moves.
+func rest_rewire_error(a: int, b: int) -> String:
+	var why := rest_error()
+	if why != "":
+		return why
+	var fw := run.operative.slot_firmware_ids
+	if a < 0 or b < 0 or a >= fw.size() or b >= fw.size() or a == b:
+		return "Choose two different wheel slots."
+	if fw[a] == &"" and fw[b] == &"":
+		return "Neither slot holds Firmware."
+	if fw[a] != &"":
+		why = firmware_slot_error(fw[a], b)
+		if why != "":
+			return why
+	if fw[b] != &"":
+		why = firmware_slot_error(fw[b], a)
+		if why != "":
+			return why
+	return ""
+
+
+## The Firmware ids per slot after swapping `a` and `b` (the wheel as it will be); the current ones when illegal.
+func rest_rewire_preview(a: int, b: int) -> Array[StringName]:
+	var out: Array[StringName] = run.operative.slot_firmware_ids.duplicate()
+	if rest_rewire_error(a, b) == "":
+		var t := out[a]
+		out[a] = out[b]
+		out[b] = t
+	return out
+
+
+## REWIRE: swaps the Firmware of two slots. Only Firmware moves; slices stay. Spends the visit's mode.
+func rest_rewire(a: int, b: int) -> Array[Dictionary]:
+	last_events = []
+	var why := rest_rewire_error(a, b)
+	if why != "":
+		return _refuse(why)
+	run.node_state["undo_hp"] = run.operative.hp
+	run.node_state["undo_fw"] = _strings(run.operative.slot_firmware_ids)
+	var after := rest_rewire_preview(a, b)
+	run.operative.slot_firmware_ids = after
+	run.node_state["swaps"] = int(run.node_state.get("swaps", 0)) + 1
+	run.node_state["done"] = int(run.node_state["swaps"]) >= config.rest_rewire_swaps
+	run.node_state["mode"] = "rewire"
+	last_events.append({"type": "rest_rewire", "a": a, "b": b, "text": "Rewired slots %d and %d." % [a, b]})
+	_sync()
+	return last_events
+
+
+## UNDO (the one step back while the page is open): restores the HP and the Firmware layout from before the use.
+func rest_undo() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.REST or String(run.node_state.get("mode", "")) == "":
+		return _refuse("Nothing to undo.")
+	run.operative.hp = int(run.node_state["undo_hp"])
+	run.operative.slot_firmware_ids = RunState._names(run.node_state["undo_fw"])
+	run.node_state["done"] = false
+	run.node_state["mode"] = ""
+	run.node_state["swaps"] = 0
+	last_events.append({"type": "rest_undo", "text": "Undone."})
+	_sync()
+	return last_events
+
+
+## LEAVE: commits the page and returns to the map (a queued raid is fought first).
+func leave_rest() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.REST:
+		return _refuse("No REST open.")
+	run.node_state = {}
+	run.phase = RunState.Phase.MAP
+	last_events.append({"type": "rest_left", "text": "Left the REST."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- WORKSHOP node (RG-03, drafts/nodes/workshop.md) -----------------------------------------
+# N18 slice upgrades (Levels) and card upgrades do not exist on this branch, so the Workshop is the
+# existing slice-overwrite interface (the Mainframe's slice refit: `overwrite_slice`'s socket rule)
+# at the Workshop's own price, with the draft's shape: `workshop_offers_per_visit` offers drawn at
+# entry from the `rewards` stream (no new stream), `workshop_buys_per_visit` purchase(s), a two-step pick.
+
+func _open_workshop() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var catalogue: Array = []
+	for slice in config.shop_slices:
+		if slice != null:
+			catalogue.append(slice.id)
+	var offers := []
+	for i in mini(config.workshop_offers_per_visit, catalogue.size()):
+		var idx := rng.randi_range(0, catalogue.size() - 1)
+		offers.append(String(catalogue[idx]))
+		catalogue.remove_at(idx)
+	run.node_state = {"kind": "workshop", "offers": offers, "bought": 0}
+	run.phase = RunState.Phase.WORKSHOP
+	last_events.append({"type": "workshop_open", "text": "Workshop: refit a wheel slice (%d offers)." % offers.size()})
+
+
+## Cycles the Workshop charges to refit wheel slot `slot` (the NULL slot costs more; CYCLE_PRICE_PCT applies).
+func workshop_price(slot: int) -> int:
+	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
+	var base := config.workshop_null_slice_price if slice.slice_type == RC.SliceType.NULL else config.workshop_slice_price
+	return roundi(base * _price_scale())
+
+
+## Why offer `offer` cannot refit wheel slot `slot` now ("" when it can): no page, the visit's buy is spent, a bad
+## index, too few Cycles, or a socketed Firmware that would not fit the new slice.
+func workshop_error(offer: int, slot: int) -> String:
+	if run.phase != RunState.Phase.WORKSHOP:
+		return "No Workshop open."
+	var offers: Array = run.node_state.get("offers", [])
+	if int(run.node_state.get("bought", 0)) >= config.workshop_buys_per_visit:
+		return "This Workshop is spent."
+	if offer < 0 or offer >= offers.size() or slot < 0 or slot >= run.operative.slot_slice_ids.size():
+		return "No such slot or slice."
+	var price := workshop_price(slot)
+	if run.cycles < price:
+		return "Not enough Cycles (%d needed)." % price
+	var fw_id := run.operative.slot_firmware_ids[slot]
+	if fw_id != &"":
+		var fw := lookup.get_content(fw_id) as FirmwareData
+		var slice := lookup.get_content(StringName(String(offers[offer]))) as SliceData
+		if not fw.allowed_slice_types.is_empty() and not (slice.slice_type in fw.allowed_slice_types):
+			return "Socketed %s would not fit the new slice." % fw_id
+	return ""
+
+
+## The refit as it will apply: {"price", "cycles_after", "slice"}.
+func workshop_preview(offer: int, slot: int) -> Dictionary:
+	var offers: Array = run.node_state.get("offers", [])
+	var price := workshop_price(slot)
+	return {"price": price, "cycles_after": run.cycles - price, "slice": StringName(String(offers[offer]))}
+
+
+## Refits wheel slot `slot` with offer `offer`, for the Workshop price.
+func workshop_buy(offer: int, slot: int) -> Array[Dictionary]:
+	last_events = []
+	var why := workshop_error(offer, slot)
+	if why != "":
+		return _refuse(why)
+	var pv := workshop_preview(offer, slot)
+	run.operative.slot_slice_ids[slot] = pv["slice"]
+	run.cycles -= int(pv["price"])
+	run.node_state["bought"] = int(run.node_state.get("bought", 0)) + 1
+	last_events.append({"type": "slice_overwritten", "slot": slot, "slice": pv["slice"], "price": pv["price"],
+		"text": "Slot %d is now %s (%d Cycles)." % [slot, pv["slice"], pv["price"]]})
+	_sync()
+	return last_events
+
+
+func leave_workshop() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.WORKSHOP:
+		return _refuse("No Workshop open.")
+	run.node_state = {}
+	run.phase = RunState.Phase.MAP
+	last_events.append({"type": "workshop_left", "text": "Left the Workshop."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- CACHE node (RG-04, drafts/nodes/cache.md) -----------------------------------------------
+
+## A plain reward: Cycles (config range, tier reward scale) from the `rewards` stream, then a card offer. The
+## mini-puzzle is off by config (and none is vetted), so nothing else happens.
+func _open_cache() -> void:
+	var rng := streams.get_stream(&"rewards")
+	var cycles := roundi(rng.randi_range(config.cache_cycles_range.x, config.cache_cycles_range.y) * reward_scale())
+	run.cycles += cycles
+	last_events.append({"type": "cache", "amount": cycles, "puzzle": CacheRules.puzzle_active(config),
+		"text": "Cache: +%d Cycles (%d)." % [cycles, run.cycles]})
+	_offer(&"card", _card_pool(), config.cache_card_choices, rng)
+	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
+	if run.phase == RunState.Phase.MAP:
+		_maybe_raid_interlude()
 
 
 # --- Mid-run raid interlude (GDD 4.4, 7.3) ---------------------------------------------------

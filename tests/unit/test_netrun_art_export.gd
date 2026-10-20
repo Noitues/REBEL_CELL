@@ -94,7 +94,7 @@ func test_every_file_validates_against_its_schema() -> void:
 	for name in ["city", "net", "run_graph", "key_locations", "derive"]:
 		var sch := SchemaCheck.schema(name)
 		assert_false(sch.is_empty(), "%s schema loads" % name)
-		assert_eq(int(sch.get("version", 0)), 1, "%s schema carries version 1" % name)
+		assert_eq(int(sch.get("version", 0)), 2 if name == "run_graph" else 1, "%s schema carries its contract version" % name)
 		assert_eq(SchemaCheck.validate(docs[name], sch), PackedStringArray(), name)
 
 
@@ -113,10 +113,10 @@ func test_mutated_files_are_rejected() -> void:
 	net["nodes"][1]["id"] = net["nodes"][0]["id"]
 	assert_false(SchemaCheck.validate(net, SchemaCheck.schema("net")).is_empty(), "duplicate Site id")
 	var rg: Dictionary = docs["run_graph"].duplicate(true)
-	rg["nodes"][0]["type"] = "rest"
+	rg["nodes"][0]["type"] = "relay"
 	assert_false(SchemaCheck.validate(rg, SchemaCheck.schema("run_graph")).is_empty(), "unknown node type")
 	rg = docs["run_graph"].duplicate(true)
-	rg["version"] = 2
+	rg["version"] = 1
 	assert_false(SchemaCheck.validate(rg, SchemaCheck.schema("run_graph")).is_empty(), "wrong version")
 	var kl: Dictionary = docs["key_locations"].duplicate(true)
 	kl["locations"][0].erase("bid")

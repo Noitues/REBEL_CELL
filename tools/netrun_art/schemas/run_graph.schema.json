@@ -1,12 +1,12 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "title": "run_graph.json v1 (NA02_FIELDS.md section 4, rulings O5, O13)",
- "version": 1,
+ "title": "run_graph.json v2 (NA02_FIELDS.md section 4, rulings O5, O13; RG-01 adds rest, workshop, cache)",
+ "version": 2,
  "type": "object",
  "required": ["version", "run", "layers", "nodes", "edges"],
  "additionalProperties": false,
  "properties": {
-  "version": {"const": 1},
+  "version": {"const": 2},
   "run": {"type": "string"},
   "layers": {"type": "integer"},
   "nodes": {
@@ -21,7 +21,7 @@
      "id": {"type": "string", "pattern": "^L[0-9]+N[0-9]+$"},
      "layer": {"type": "integer"},
      "index": {"type": "integer"},
-     "type": {"enum": ["router", "terminal", "mainframe", "server_rack"]},
+     "type": {"enum": ["router", "terminal", "mainframe", "server_rack", "rest", "workshop", "cache"]},
      "elite": {"type": "boolean"}
     }
    }

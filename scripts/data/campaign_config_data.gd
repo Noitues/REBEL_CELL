@@ -805,3 +805,45 @@ func _validate_enrage(errors: PackedStringArray) -> void:
 		if d != null:
 			for problem in d.validate():
 				errors.append("%s (class %d default)" % [problem, k])
+
+## RG-01 (run_graph v2): new netruns generate v2 graphs (REST, WORKSHOP, CACHE nodes may appear).
+## False keeps v1 maps (no new node kinds).
+@export var map_v2_enabled: bool = true
+## RG-06 lint: unique node ids (MapGraph node key `unique_id`) allowed to be an Intel, Relay or
+## Ambush node in a netrun map. Normal runs have none of these kinds.
+@export var map_unique_allow: PackedStringArray = PackedStringArray(["orbital_uplink_dish"])
+
+## RG-02 REST node (drafts/nodes/rest.md). PATCH heals this percent of the operative's max HP
+## (round half up, clamped to max HP); REWIRE swaps Firmware between two wheel slots, this many
+## swaps per visit (one mode per visit).
+@export var rest_heal_pct: int = 35
+@export var rest_rewire_swaps: int = 1
+## Placement: the guaranteed REST sits in these layers (inclusive); `node_weight_rest` is the
+## percent chance a run gets it (100 = always). An extra REST is rolled with the tier's percent
+## (index tier - 1) in `rest_extra_layers`, at most `rest_max_per_run` in all, never two in a layer.
+@export var node_weight_rest: int = 100
+@export var rest_guaranteed_layers: Vector2i = Vector2i(4, 5)
+@export var rest_extra_layers: Vector2i = Vector2i(3, 6)
+@export var rest_extra_chance_pct_by_tier: PackedInt32Array = PackedInt32Array([0, 15, 35, 35])
+@export var rest_max_per_run: int = 2
+
+## RG-03 WORKSHOP (drafts/nodes/workshop.md; the slice-refit form while N18 slice upgrades are not built).
+## Offers drawn per visit, purchases per visit, the refit price (the NULL slot costs more), the
+## percent chance of one per run from `workshop_min_tier` up, and its layers (never in a layer that holds a Mainframe).
+@export var workshop_offers_per_visit: int = 3
+@export var workshop_buys_per_visit: int = 1
+@export var workshop_slice_price: int = 60
+@export var workshop_null_slice_price: int = 90
+@export var node_weight_workshop: int = 90
+@export var workshop_min_tier: int = 2
+@export var workshop_layers: Vector2i = Vector2i(3, 6)
+
+## RG-04 CACHE (drafts/nodes/cache.md). A plain reward: Cycles in `cache_cycles_range` (scaled by the tier's reward
+## scale) and a card offer of `cache_card_choices`. The mini-puzzle stays off (`cache_puzzle_enabled`) until a puzzle
+## passes the vetting rubric (CacheRules.VETTED_PUZZLES is empty). Placement: percent chance of one per run,
+## on a Terminal in `cache_layers`.
+@export var node_weight_cache: int = 60
+@export var cache_layers: Vector2i = Vector2i(2, 6)
+@export var cache_cycles_range: Vector2i = Vector2i(30, 60)
+@export var cache_card_choices: int = 3
+@export var cache_puzzle_enabled: bool = false

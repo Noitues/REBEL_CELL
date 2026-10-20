@@ -10,7 +10,10 @@ const COMBAT_SCENE := preload("res://scenes/combat/combat_scene.tscn")
 const NODE_TIPS := {RC.InfilNodeType.ROUTER: "Router: a fight. Win it for Cycles and loot.", # TR
 	RC.InfilNodeType.TERMINAL: "Terminal: an event with choices.", # TR
 	RC.InfilNodeType.MAINFRAME: "Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).", # TR
-	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run."} # TR
+	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run.", # TR
+	RC.InfilNodeType.REST: "Rest: patch some HP, or rewire a Firmware chip to another slot.", # TR
+	RC.InfilNodeType.WORKSHOP: "Workshop: refit a wheel slice for Cycles.", # TR
+	RC.InfilNodeType.CACHE: "Cache: a stash of Cycles and a card."} # TR
 
 ## What each route node is, in a word (H21 #14: two "Router" buttons looked the same) and
 ## as an icon; an elite Router is an "Elite fight" with the crown.
@@ -848,6 +851,24 @@ func leave_shop() -> void:
 	_show_current()
 
 
+## RG-02/03: the REST and WORKSHOP node pages (NodePage); every verb is a session call, then the page redraws.
+func _show_node_page() -> void:
+	var page := NodePage.new()
+	page.setup(RunManager.netrun)
+	page.patch_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_patch()))
+	page.rewire_confirmed.connect(func(a: int, b: int) -> void: _node_step(RunManager.netrun.rest_rewire(a, b)))
+	page.undo_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_undo()))
+	page.leave_pressed.connect(func() -> void: _node_step(RunManager.netrun.leave_rest() if RunManager.netrun.run.phase == RunState.Phase.REST else RunManager.netrun.leave_workshop()))
+	page.buy_confirmed.connect(func(offer: int, slot: int) -> void: _node_step(RunManager.netrun.workshop_buy(offer, slot)))
+	_set_panel(page)
+
+
+func _node_step(events: Array[Dictionary]) -> void:
+	_report(events)
+	RunManager.after_step()
+	_show_current()
+
+
 func raid_deploy_run_asset(index: int, site_id: StringName) -> void:
 	_report(RunManager.netrun.raid_deploy_run_asset(index, site_id))
 	RunManager.after_step()
@@ -1102,6 +1123,8 @@ func _show_current() -> void:
 			_show_shop()
 		RunState.Phase.RAID:
 			_show_raid()
+		RunState.Phase.REST, RunState.Phase.WORKSHOP:
+			_show_node_page()
 		_:
 			_show_end()
 	_update_node_backdrop()  # ART-7 3B: the node's dressed room behind its screen
@@ -1481,6 +1504,10 @@ static func screen_name(s: NetrunSession) -> String:
 			return "shop"
 		RunState.Phase.RAID:
 			return "netrun_raid"
+		RunState.Phase.REST:
+			return "rest"
+		RunState.Phase.WORKSHOP:
+			return "workshop"
 	return "run_end"
 
 
@@ -1525,6 +1552,10 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 			hud.set_screen("04", tr("TERMINAL EVENT"))
 		RunState.Phase.SHOP:
 			hud.set_screen("05", tr("MAINFRAME SHOP"))
+		RunState.Phase.REST:
+			hud.set_screen("", tr("REST")) # TR
+		RunState.Phase.WORKSHOP:
+			hud.set_screen("", tr("WORKSHOP")) # TR
 		RunState.Phase.RAID:
 			hud.set_screen("", tr("NETRUN // RAID"))
 		_:
@@ -6224,8 +6255,10 @@ static func bar_keys(s: NetrunSession) -> Array:
 	match s.run.phase:
 		RunState.Phase.MAP:
 			return ["HP", "CYCLES"]
-		RunState.Phase.SHOP:
+		RunState.Phase.SHOP, RunState.Phase.WORKSHOP:
 			return ["CYCLES"]
+		RunState.Phase.REST:
+			return ["HP"]
 		RunState.Phase.REWARD:
 			return ["CARDS"] if String(s.reward_at(_offer_index()).get("kind", "")) == "card" else []
 		RunState.Phase.EVENT:

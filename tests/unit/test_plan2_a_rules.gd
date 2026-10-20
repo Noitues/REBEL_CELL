@@ -365,6 +365,10 @@ func _netrun_fight(campaign_seed: int) -> NetrunSession:
 				s.choose_event_option(s.current_event().choices.size() - 1)
 			RunState.Phase.SHOP:
 				s.leave_shop()
+			RunState.Phase.REST:
+				s.leave_rest()
+			RunState.Phase.WORKSHOP:
+				s.leave_workshop()
 			_:
 				return null
 	return null
