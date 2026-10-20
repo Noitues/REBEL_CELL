@@ -13,6 +13,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D14 | 10-20 | Solace balance r1: Genome Core HP 360 → 400 (the reference policy wins 52 %), Claims Adjuster 112 → 96, Account Manager 150 → 128. Tuned by HP only; enrage and phases unchanged. The class bands in `docs/balance/TARGETS.md` were set after measuring. | Tune enrage instead of HP; set the bands yourself |
 | D13 | 10-19 | Two more city tests went red with CITY-A2 step 2 (`test_city_geometry_memo` roofs, `test_city_map_sweeps` Site fit) and are pending until art/look's city work lands. Bisected to 606de8db and 964949bb. | none |
 | D12 | 10-19 | Run graph v2 is on by default, so REST / WORKSHOP / CACHE show up in normal runs. WORKSHOP is the existing slice refit at its own price; neither N18 slice levels nor card upgrades exist yet. The CACHE puzzle is off. REST is guaranteed in layers 4-5, and the draft's "no REST before a Mainframe" exclusion is not built. The Solace ladder keeps its own ward rest (not the REST page). | Turn v2 off (`map_v2_enabled`); give the ward rest heal or swap |
 | D11 | 10-19 | EV-01 events. Map-edit picks are deterministic (fewest inbound links, then node id), not random or player-picked. Combat modifiers from events apply to the next fight and end with the netrun. Event fights don't count as normal fights. Two broken draft details were dropped: the escort's +1 Block (it never took effect) and the R11 quality tiers. The event wheel has no Undo. | Let the player pick map-edit targets (draft 08) |
@@ -30,6 +31,10 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Open questions (a default is taken; answer to change it)
 | Code | Date | Question | Default taken |
 |---|---|---|---|
+| Q10 | 10-20 | A boss fight that reaches the 60-turn cap counts as a loss (24 % of reference fights end there). Is that right? | Yes, a loss |
+| Q9 | 10-20 | The builtin bot wins 25 % of campaigns, below the 50 % floor (already on main before this pass). | Investigate in the next balance round |
+| Q8 | 10-20 | The campaign is too long: the reference policy takes about 45 runs and 700 min against the GDD's ~395. The cause is the shared exploit and rank gating, not Solace. Shorten the gating, or change the target? | Shorten the gating in the next balance round |
+| Q7 | 10-20 | The Care Swarm tune (20 HP, 2 satellites: T4 win 20 → 100 %) is held back because it trips an animation test, a view-timing bug when a fight ends mid-turn. | Fix the timing bug, then ship the tune |
 | Q6 | 10-19 | Events: how should the raid-win host trigger (every win, or by chance)? Draft 27 is authored but dormant. Draft 29 needs an HQ-view event host that runs a fight outside a netrun; not built. | Rumor fires on every raid win; the HQ-view host is deferred |
 | Q5 | 10-19 | RD-01, raid operative roles: 30 questions across 8 classes (`plan2/drafts/raid_operatives/QUESTIONS.md`). Ghost's step table (1/1/2/2) doesn't match its multipliers. | Every question at its recommended default; Ghost follows the multipliers |
 | Q1 | 10-19 | Solace v2: infection decay after a held raid: partial (flat amount plus kills), or a full reset to 0? | Partial decay |
