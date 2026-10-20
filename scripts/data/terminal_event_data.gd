@@ -14,3 +14,18 @@ extends Resource
 ## Corporation id this event hints at. Empty = none.
 @export var foreshadows: StringName = &""
 @export var weight: float = 1.0
+## Plan 2 EV-01: where the event is drawn. TERMINAL = a netrun Terminal node (the only venue
+## with a host today). RAID_WIN (after a raid is won) and HQ_VIEW (at the HQ) are authored
+## ahead of their hosts; the Terminal pool never draws them.
+enum Venue { TERMINAL, RAID_WIN, HQ_VIEW }
+@export var venue: Venue = Venue.TERMINAL
+
+
+func validate() -> PackedStringArray:
+	var errors := PackedStringArray()
+	if choices.is_empty():
+		errors.append("event_no_choices: an event needs at least one choice.")
+	for c in choices:
+		if c != null:
+			errors.append_array(c.validate())
+	return errors

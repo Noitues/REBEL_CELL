@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _ev01_event_schema()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -1189,4 +1189,43 @@ func _p2_street_r2_render_config() -> int:
 	var bad: StreetR2RenderConfigData = cfg.duplicate(true)
 	(bad.materials as Dictionary).erase("neon")
 	if not ",".join(bad.validate()).contains("materials.neon"): fails += 1
+	return fails
+
+
+## Plan 2 EV-01: the event schema extension (rule 8). Every new field has its default (an old event
+## loads unchanged), the authored wheels fill 30 ticks, a bad wheel / mod / fight / edit is reported,
+## and a save round trip keeps an event wheel, a map edit and a fight.
+func _ev01_event_schema() -> int:
+	var fails := 0
+	var old := EventChoiceData.new()
+	old.label = "x"
+	if old.starts_combat != null or old.next_combat_overrides != null or old.next_raid_overrides != null or old.event_wheel != null \
+			or not old.map_edits.is_empty() or old.common_firmware or not old.validate().is_empty():
+		fails += 1
+	var ev := TerminalEventData.new()
+	if ev.venue != TerminalEventData.Venue.TERMINAL: fails += 1
+	var a := EventWheelSliceData.new(); a.label = "a"; a.size_ticks = 12
+	var b := EventWheelSliceData.new(); b.label = "b"; b.size_ticks = 12
+	var wheel := EventWheelData.new(); wheel.slices = [a, b]
+	print("EV-01 wheel of 24 ticks (expect 1): ", wheel.validate())
+	if wheel.validate().size() != 1: fails += 1
+	b.size_ticks = 18
+	if not wheel.validate().is_empty(): fails += 1
+	print("EV-01 empty mods / raid mods / fight / link to the next layer (expect 1 each): ", EventCombatModsData.new().validate().size(), " ",
+		EventRaidModsData.new().validate().size(), " ", EventFightData.new().validate().size(), " ", MapEditData.new().validate().size())
+	if EventCombatModsData.new().validate().size() != 1 or EventRaidModsData.new().validate().size() != 1 \
+			or EventFightData.new().validate().size() != 1 or MapEditData.new().validate().size() != 1: fails += 1
+	var fight := EventFightData.new(); fight.enemy_id = &"collections_agent"; fight.stake_min_hp_pct = 40; fight.win_cycles = 35
+	var edit := MapEditData.new(); edit.op = MapEditData.Op.CLOSE_NODE
+	var choice := EventChoiceData.new(); choice.label = "go"; choice.event_wheel = wheel; choice.map_edits = [edit]
+	var out := TerminalEventData.new(); out.id = &"smoke_ev01"; out.venue = TerminalEventData.Venue.RAID_WIN; out.choices = [choice]
+	var err := ResourceSaver.save(out, "user://smoke_ev01.tres")
+	var back: TerminalEventData = load("user://smoke_ev01.tres")
+	print("EV-01 save=", err, " venue=", back.venue if back != null else -1)
+	if err != OK or back == null or back.venue != TerminalEventData.Venue.RAID_WIN: return fails + 1
+	var bc := back.choices[0]
+	if bc.event_wheel == null or bc.event_wheel.slices.size() != 2 or bc.event_wheel.slices[1].size_ticks != 18: fails += 1
+	if bc.map_edits.size() != 1 or bc.map_edits[0].op != MapEditData.Op.CLOSE_NODE: fails += 1
+	var fc := EventChoiceData.new(); fc.label = "fight"; fc.starts_combat = fight
+	if not fc.validate().is_empty(): fails += 1
 	return fails
