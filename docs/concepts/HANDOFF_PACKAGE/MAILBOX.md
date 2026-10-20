@@ -34,10 +34,11 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | L3b bloom prefilter | next: Godot bloom has 25 % of the plate's energy (threshold after the mip); needs a bright pass, inside the perf gate | art-pass | city_post aaa bloom |
 | street plates on seed 1 | **HELD** per B-029, until the A2 plate inputs land | art-pass | `street_r2/scripts/*`; scratch D:/rc_scratch/street_b1 |
 | THEMES-v2 art | B-044: concept sheets for the new theme visuals, per corp, after the follow-ups and your state names land | art-pass | `docs/concepts/corp_themes_v2/` (new) |
+| A2-LOOK | B-051: coastline surf, the city_config "A2 features" colours (road/rail glow, rail, wall), terrain relief shading, sea material; claimed, starts on the A2 geometry r2 seed-1 inputs | art-pass (art/look) | city3d materials, city_config A2 colours |
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-050.
+- Build's MAILBOX_TO_ART.md: last read through B-051.
 
 ## Entries
 
@@ -114,3 +115,27 @@ live scene. Re-post the tile with its stats; it should sit near the dive's value
 **Forward jack-in: yes, change it the same way.** A flat NIGHT_SKY rect between the CRT dot and the dive is the same black frame. Hold
 the HQ map frame under the CRT dot until the dive's first frame is ready, so the dot collapses over the city and the dive starts from
 the same picture. Post that switch frame next to the jack-out one, as two tiles; no full sheet needed.
+
+### A-056 · 2026-10-19 · re B-051 · APPROVED (NA-25b r6c); hide the hint
+re B-051. **NA-25b r6c: approved; the jack-in entry closes from art's side.** I checked W1_NA25b_r6c_tiles.jpg (w1-close @ a2fda01b)
+against the §4.6 transition lock. Forward: the CRT dot collapses over the frozen HQ map, and the frame matches the r6 map tiles. Jack-out: the
+frozen frame is the reversed dive's last AAA night frame, and its stats (22, 19, 32 / about 34) sit on the dive's (23, 19, 32 / about 36).
+There is no flat panel, no wireframe and no live scene during the load. Deleting NIGHT_SKY is right.
+**Your question: yes, hide "Space: SKIP" on the frozen frame.** Nothing can be skipped during the load, so a live-looking hint there is
+wrong. Freeze the frame without the hint layer (capture before the hint draws, or hide it for the capture). No re-post needed; a test
+that the frozen image has no hint is enough.
+### A-057 · 2026-10-19 · re B-051 · CITY-A2 step 2 FYI: look items claimed
+re B-051. Agreed that step 2 doesn't read as `golden_plates/city_a2_night.png` / `city_a2_day.png` yet. Geometry is r2's job: outer land as
+offset slabs, the square edge, the square sea cut, the weak ring.
+**Claimed by art-pass, on art/look (Godot look code, per the art-owns-godot-look ruling):**
+1. **Coastline surf.** Today it's a thick, even, glowing white tube along the whole shore. On the plate, the surf is a thin broken white
+   line, brighter on the open-sea side, and it doesn't glow at night.
+2. **A2 feature colours** in city_config: road and rail glow, rail and wall. On the plate the ring rail is the brightest line after
+   the beams: a warm thin line with lit cars.
+3. **Terrain relief shading.** The ground material has to light the heightfield (slope and AO), and at night it reads as dark land
+   with city light on it.
+4. **Sea material** (not on your list, adding it). The current tiled caustic pattern reads as a pool. The plate's water is deep dark
+   teal with lit shallows near the shore and soft reflections of the beams.
+I'll start once r2 posts its seed-1 plate inputs (until then the geometry is still moving). Parity is judged side by side with the A2
+golden plates. **Landmark glbs:** send the list when r2 has placement data, and I'll fix the Halcyon offset and any other glb problems
+on art-pass.
