@@ -59,7 +59,7 @@ extends Resource
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
 @export var whole_cloud_k: float = 0.85
-@export var whole_cloud_scale: float = 45.0
+@export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
 @export var whole_cloud_edge: Vector2 = Vector2(0.55, 0.65)
 @export var whole_shadow_dist_bu: float = 2200.0
@@ -785,8 +785,8 @@ extends Resource
 @export var veg_density: Vector2 = Vector2(0.25, 0.85)
 @export var veg_min_h: float = 0.4
 @export var veg_max_slope: float = 0.25
-@export var veg_bare_share: float = 0.35
-@export var veg_r: Vector2 = Vector2(0.7, 1.5)
+@export var veg_bare_share: float = 0.8
+@export var veg_r: Vector2 = Vector2(0.9, 1.8)
 @export var island_min_d: float = 10.0
 @export var island_r_k: float = 0.25
 @export var island_r_max: float = 8.0
