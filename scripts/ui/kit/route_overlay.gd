@@ -106,7 +106,7 @@ const BADGE_ROUND_SEGMENTS := 16
 ## Every kind has its own silhouette, so node types differ by shape and not by colour only.
 static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	match String(CityMapOverlay.KIND_SHAPES.get(kind, "circle")):
+	match String(CityMapOverlay.KIND_SHAPES.get(kind, ROUTE_SHAPES.get(kind, "circle"))):
 		"star8":
 			for i in BADGE_STAR_POINTS * 2:
 				var ang := TAU * i / (BADGE_STAR_POINTS * 2) - PI * 0.5
@@ -136,10 +136,15 @@ static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2A
 	return pts
 
 
+## Route-only badge silhouettes (placeholders for the REST, WORKSHOP and CACHE kinds, which have no
+## city icon; art-pass owns the final icons). Kept out of CityMapOverlay.KIND_SHAPES, whose icons must stay unique.
+const ROUTE_SHAPES := {"rest": "house", "workshop": "hexagon", "cache": "diamond"}
+
+
 ## W3-ROUTE (C7): the shape badge of `kind` at the sticker's lower right: ink keyline, paper
 ## rim, the kind's colour inside.
 static func draw_shape_badge(ci: CanvasItem, kind: String, p: Vector2, r: float, k: float, a: float = 1.0) -> void:
-	if not CityMapOverlay.KIND_SHAPES.has(kind):
+	if not (CityMapOverlay.KIND_SHAPES.has(kind) or ROUTE_SHAPES.has(kind)):
 		return
 	var c := p + BADGE_AT * r
 	var rr := r * BADGE_SHARE
