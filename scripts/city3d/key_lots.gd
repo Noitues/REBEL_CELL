@@ -89,12 +89,12 @@ static func special_building_at(placement: Dictionary, bid: String) -> StringNam
 
 ## Building ids excluded from the view's flatten / ghost set (the hosts), sorted.
 static func occlusion_exempt(placement: Dictionary) -> PackedStringArray:
-	var out := PackedStringArray()
+	var ids: Array = []
 	for r: Dictionary in placement["keys"]:
 		if bool(r["occlusion_host"]):
-			out.append(String(r["bid"]))
-	out.sort()
-	return out
+			ids.append(String(r["bid"]))
+	IdSort.sort_ids(ids)
+	return PackedStringArray(ids)
 
 
 ## `all_bids` less the hosts: the buildings the view still flattens or ghosts (order kept).
