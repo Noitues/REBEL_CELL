@@ -385,18 +385,21 @@ var _fronts: Dictionary = {}
 var _covers: Dictionary = {}
 var _want: Dictionary = {}
 var _sky_shown: bool = false
-## ANIM-R6 A14 (combat, a minimal change here): while true, a bake that would land over the
-## silhouette waits (the silhouette stays); set back to false, it lands and fades in. The
-## fight holds it while a SEND IT replays, so the city never switches in mid-turn.
 ## Whole-city pose (designer 2026-10-19): when set (a city-centre lot point), the 3D camera is the A2 plate's hero
-## pose (CityIsoCamera.whole_pose) instead of this map's iso frame. For zoomed-out views with no map marks (title
-## drift, design review, parity captures); the 2D overlay keeps the iso projection, so hosts hide it meanwhile.
+## pose (CityIsoCamera.whole_pose) instead of this map's iso frame. For zoomed-out views with no map marks (design
+## review, parity captures); the 2D overlays keep the iso projection, so they hide meanwhile.
 var whole_pose_centre: Vector2 = Vector2.INF:
 	set(v):
 		if v != whole_pose_centre:
 			whole_pose_centre = v
+			for c: Control in [_lights_layer, _beacons_layer, _marks_layer, _fx]:
+				if c != null:
+					c.visible = v == Vector2.INF
 			if is_inside_tree():
 				refresh()
+## ANIM-R6 A14 (combat, a minimal change here): while true, a bake that would land over the
+## silhouette waits (the silhouette stays); set back to false, it lands and fades in. The
+## fight holds it while a SEND IT replays, so the city never switches in mid-turn.
 var hold_landing: bool = false:
 	set(v):
 		if v == hold_landing:
@@ -1229,6 +1232,12 @@ func plan() -> CityPlan:
 	if _plan == null or _plan.city_seed != city_seed:
 		_plan = CityPlan.for_seed(city_seed)
 	return _plan
+
+
+## Shows the whole city under the A2 plate's hero pose (whole_pose_centre at the A2 plan centre, else the plan's).
+func frame_whole_city() -> void:
+	var p := plan()
+	whole_pose_centre = p.a2.lot_of(Vector2.ZERO) if p.a2 != null else Vector2(p.rect.get_center())
 
 
 ## NA-12: true when lot (i, j) is sea (no street, no building).
