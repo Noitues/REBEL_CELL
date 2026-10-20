@@ -419,6 +419,8 @@ func set_look_blend(lb: float) -> void:
 			m.shader = want
 			if wet:
 				NetrunShaderKit.setup_wet(m)
+				if whole_look:
+					_whole_wet(m)
 		if wet:
 			m.set_shader_parameter(&"look_blend", look_blend)
 	var look: Dictionary = CityShaderConfigData.shipped().look
@@ -585,6 +587,14 @@ func _whole_water(day: Dictionary) -> Dictionary:
 
 
 ## Sets cfg.whole_building's building uniforms under the whole-city pose, the shipped city_shaders values otherwise.
+## LOOK L5: the whole-city wet-street overrides on `m` (only when it runs the wet shader).
+func _whole_wet(m: ShaderMaterial) -> void:
+	if m == null or m.shader != CityMaterials.WET_STREET:
+		return
+	for k: String in cfg.whole_wet:
+		m.set_shader_parameter(StringName(k), float(cfg.whole_wet[k]))
+
+
 func _whole_building() -> void:
 	var b: Dictionary = CityShaderConfigData.shipped().building
 	for k: String in cfg.whole_building:
@@ -602,6 +612,11 @@ func _whole_building() -> void:
 	_building_mat.set_shader_parameter(&"terr_wall_emit", cfg.whole_terr_wall_emit * night_share if whole_look else 0.0)
 	_building_mat.set_shader_parameter(&"terr_albedo_k", cfg.whole_terr_albedo_k * (1.0 - night_share) if whole_look else 0.0)
 	_whole_road_glow()
+	for m: ShaderMaterial in [_ground_mat, _outer_mat]:
+		if whole_look:
+			_whole_wet(m)
+		elif m != null and m.shader == CityMaterials.WET_STREET:
+			NetrunShaderKit.setup_wet(m)
 	var wc: Array[Vector3] = []
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))

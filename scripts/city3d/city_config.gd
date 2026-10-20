@@ -58,7 +58,9 @@ extends Resource
 @export var whole_ground_band_soft: float = 0.3
 ## LOOK L5 (the plate's cloud shadows on the land, by day): how deep (0 off; x day share), blob size (world units), the
 ## field offset and the noise edges (city_ground cloud_*).
-@export var whole_cloud_k: float = 0.85
+## LOOK L5 (critic r7): the whole-city night land's wet-street overrides (the moon's streaks lit the mountains white).
+@export var whole_wet: Dictionary = {"wet_specular": 0.12, "streak_k": 1.5}
+@export var whole_cloud_k: float = 0.6
 @export var whole_cloud_scale: float = 85.0
 @export var whole_cloud_off: Vector2 = Vector2(3.1, 7.4)
 @export var whole_cloud_edge: Vector2 = Vector2(0.55, 0.65)
@@ -90,15 +92,15 @@ extends Resource
 @export var whole_beam_len_bu: float = 340.0
 @export var whole_beam_base_bu: float = 30.0
 @export var whole_beam_start_r_bu: float = 9.0
-@export var whole_beam_half_deg: float = 8.0
-@export var whole_beam_emit: float = 2.2
+@export var whole_beam_half_deg: float = 5.0
+@export var whole_beam_emit: float = 1.4
 @export var whole_beam_lean_deg: Vector2 = Vector2(9.0, 4.0)
 @export var whole_beam_night_from: float = 0.5
 ## Building uniforms the whole-city pose overrides (keys of city_shaders building; the facade wash and edge neon
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 3.6, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22,
-	"sign_share": 0.2, "sign_emit": 2.8, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
+	"sign_share": 0.1, "sign_emit": 2.8, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
 ## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
 ## blocks are charcoal with warm light).
 @export var whole_building_colors: Dictionary = {"edge_a": Color(1.0, 0.78, 0.5), "edge_b": Color(1.0, 0.9, 0.75),
@@ -136,8 +138,8 @@ extends Resource
 ## port piers as black bars on the bay rim).
 @export var whole_hide_features: PackedStringArray = PackedStringArray(["RailGlow", "Piers"])
 ## ... and the road glow lines there by night (CityView3D._whole_road_glow): their gain and the night share they show from.
-@export var whole_road_glow_gain: float = 0.55
-@export var whole_road_glow_tint: Color = Color(1.3, 0.8, 0.75)
+@export var whole_road_glow_gain: float = 0.45
+@export var whole_road_glow_tint: Color = Color(1.25, 1.0, 1.05)
 @export var whole_road_glow_from: float = 0.5
 ## The sea's caustic gain share under the whole-city pose.
 @export var whole_caustic_k: float = 0.12
@@ -408,10 +410,10 @@ extends Resource
 ## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
 ## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
 @export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.25, 0.33, 0.13),
-	"rock": Color(0.74, 0.73, 0.78), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+	"rock": Color(0.84, 0.81, 0.79), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
-	"beach_k": 0.0, "noise_lo": 0.92, "noise_span": 0.16}
+	"beach_k": 0.7, "noise_lo": 0.92, "noise_span": 0.16}
 @export var terrain_h_scale: float = 0.3
 ## LOOK L5 (hybrid port, Blender city_preset DISTRICTS `mat` + DAY_MATS): the facade albedo per territory ("" the sprawl),
 ## the facade families ([weight, Color]; city for the corps, sprawl off-territory) and how far a family pulls the district
@@ -427,8 +429,8 @@ extends Resource
 @export var day_mats: Dictionary = {
 	"city": [[0.36, Color(0.52, 0.50, 0.47)], [0.20, Color(0.14, 0.20, 0.24)], [0.16, Color(0.46, 0.26, 0.19)],
 		[0.12, Color(0.40, 0.25, 0.15)], [0.16, Color(0.62, 0.60, 0.56)]],
-	"sprawl": [[0.22, Color(0.42, 0.40, 0.37)], [0.32, Color(0.44, 0.24, 0.17)], [0.30, Color(0.42, 0.26, 0.14)],
-		[0.16, Color(0.30, 0.28, 0.27)]]}
+	"sprawl": [[0.22, Color(0.52, 0.50, 0.47)], [0.22, Color(0.48, 0.30, 0.24)], [0.20, Color(0.46, 0.32, 0.20)],
+		[0.14, Color(0.62, 0.58, 0.56)], [0.12, Color(0.24, 0.32, 0.36)], [0.10, Color(0.58, 0.40, 0.42)]]}
 @export var day_mats_k: float = 0.35
 ## LOOK L5: the share of buildings that take their day family colour whole, and the per-building value jitter (+/-).
 @export var day_mats_pure_share: float = 0.3
