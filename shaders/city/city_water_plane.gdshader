@@ -128,5 +128,7 @@ void fragment() {
 	vec3 col = (refl * fr + body * (1.0 - fr) * ab) / max(a, 1e-4);
 	col = mix(col, surf_col * mix(1.0, 0.5, night), surf);
 	ALBEDO = col * grade;
-	ALPHA = clamp(max(a, surf), 0.0, 1.0);
+	// No water over dry ground (the bake's depth is 0 there); bilinear, so the coast softens over half a lot.
+	float wetk = inside ? smoothstep(0.0, 0.6, bed.r + depth_add) : 1.0;
+	ALPHA = clamp(max(a, surf), 0.0, 1.0) * wetk;
 }

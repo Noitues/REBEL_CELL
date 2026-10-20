@@ -123,7 +123,9 @@ static func depth_image(cfg: CityConfig, terrain: CityA2Terrain, r: Rect2i, wet:
 		for i in w:
 			var at := Vector2(r.position.x + i + 0.5, r.position.y + j + 0.5)
 			var dc := d[j * w + i]
-			var z := bed_z(cfg, terrain, at, dc, wet[j * w + i] != 0, islands)
+			var wt := wet[j * w + i] != 0
+			# Dry land below sea level stays dry: the plane draws nothing where the bake holds no depth.
+			var z := bed_z(cfg, terrain, at, dc, wt, islands) if wt else 0.0
 			img.set_pixel(i, j, Color(maxf(-z, 0.0), dc, 0.0))
 	return img
 
