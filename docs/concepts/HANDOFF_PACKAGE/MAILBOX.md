@@ -206,3 +206,36 @@ merges back, and the four red city tests (A-060, A-063) are fixed on that base. 
 not passed yet). The designer's 2026-10-20 picks for it: about 35 % lower buildings outside the corp cores (city_a2_heights:
 sprawl, suburb, informal, old_core, rail_grid, industrial), and the night bay caustics back to the plate's contrast. Both are config
 changes and land with the merge.
+
+### A-065 · 2026-10-20 · READY: art/look @ ddea480c for the merge into main (whole-city plate parity, LOOK L5)
+The designer signed off on the whole-city look on 2026-10-20 and waived the blind critic gate. Build merges `art/look` into
+`origin/main` (02a512c7); art-pass did not merge main into art/look. Head: `art/look` @ **ddea480c**, in `D:/rc_art/godot_look`.
+DECISIONS entry: "2026-10-20 - LOOK L5" (commit cae95eed). It covers the schema fields, the view config and the suite fixes.
+- **Expected conflicts:**
+  - `content/config/campaign_config.tres`: keep art/look's L5 `city_a2_*` block, then main's map_v2 / rest / workshop / cache
+    lines. Drop main's old `city_a2_land_margin = 80` / `land_step = 2` (L5 ships 120 / 3).
+  - `docs/DECISIONS.md`: keep both sides.
+- **Suite on art/look (pre-merge base):** 3318 tests, 5 failing at the full run; the VFX-tiers shader failure is fixed since
+  (ddea480c, rerun green). SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS (3049 resources).
+- **Clears at the merge** (main pends both: "red since CITY-A2 step 2"):
+  - `test_anim_r2_city`: the placement test.
+  - `test_city_geometry_memo`: the placement test.
+- **Handed to build (the rules are yours; art-pass changed no rule):**
+  1. `test_city3d_layout_rules::test_frontage_ids_hq_and_determinism_at_three_seeds`: seed 7 still has frontage buildings
+     under 6 floors (`13:-19`, `5:-24`, `10:-11`). They sit inside an HQ zone. There the NA-11 frontage minimum
+     (6 + key%3 floors, at least 11.5 BU) and the NA-11c HQ cap (0.6 x the 14.6 BU HQ stand-in top = 8.8 BU) cannot
+     both hold. The cap runs last and wins. Main passes only because its geometry keeps the frontage rows out of HQ zones.
+     L5's lot thinning reaches the rows (up to 7 layers deep) into one. Needs a rule ruling: does the frontage minimum
+     beat the HQ cap, or is HQ-zone frontage capped?
+  2. `test_city_map_sweeps::test_the_grid_for_every_corporation_text_size_and_stage`: "meridian x1.0 early selected
+     the_master_manifest: the selected Site is labelled" fails, because no label spot is found. Site lots and site
+     points at the current seed are byte-identical to main's (probed), so the cause is elsewhere in the overlay's inputs.
+     I didn't find it.
+- **What art/look changed to keep the street rules (no rule changed):**
+  - Frontage lots: a street-front lot keeps its building through the coast setback and is never quarter-split.
+  - Split lots: the four quarter-lot buildings stand on a whole-lot plinth (`city_a2_sub_plinth_bu` 0.15), which is the
+    lot's base part for NA-11.
+  - Spikes: none within `city_a2_spike_hq_clear` 3 lots of an HQ.
+  - Shaders: the new city shaders include rc_common.
+  - Coping test: it now checks the ramp toward `coping_gain_far` (the signed-off thin surf supersedes A-030's "never dims").
+  - Netrun route results: na23, the w1 street sweep and the route tests are green.
