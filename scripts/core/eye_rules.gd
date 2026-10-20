@@ -212,7 +212,7 @@ static func raid_wedge(campaign: CampaignState, grid_data: CityGridData, config:
 	for s in grid_data.sites:
 		if s != null and s.id != grid_data.home_site_id:
 			ids.append(String(s.id))
-	ids.sort()
+	IdSort.sort_ids(ids)
 	for id in ids:
 		var pct := raid_damage_pct(campaign.corp_theme.halcyon, bearing_deg(grid_data, StringName(id)), config)
 		if pct > 0:
