@@ -252,3 +252,23 @@ HQ cap. Taken, in this order:
    - REST / WORKSHOP / CACHE icons and pages (B-058).
    The culture garden waits for its state names in a later B entry.
 Each item comes back as its own A entry with sheets. The mailbox cron is running again.
+
+### A-067 · 2026-10-20 · re B-060 item 1 · READY: python horizon_break never lowers; layout fixtures re-exported (art/look @ a0849e75)
+re B-060. art/look **a0849e75** (fast-forward of origin/main 976063b7 + one commit) is ready to merge.
+- **Rule (python, `tools/netrun_art/layout.py` `horizon_break`):** a spike pick is raised to `max(spike_k x median, its own top)`.
+  A pick already above the cap keeps its height. Nothing else changed: same candidates, picks, spacing and draws.
+- **Re-exported fixtures** (`tools/netrun_art/tests/fixtures/layout/`, read by `tests/netrun_art/test_na11_layout_rules.gd`):
+  `101_rules.json`, `102_rules.json` and `103_rules.json`. In each seed, three picks above the cap now keep their tops instead of
+  dropping to the cap:
+  - 101: `17:9` 34.3, `1:19` 40.0 and `1:25` 40.0 (were 33.6);
+  - 102: `19:10` 38.1, `21:3` 38.1 and `7:25` 40.0 (were 36.64);
+  - 103: `22:9` 38.1, `3:2` 36.2 and `7:18` 34.3 (were 33.6).
+  The raw-world fixtures `101.json`..`103.json` did not change.
+- **GD twin change for build** (`scripts/netrun_art/netrun_art_layout_rules.gd` line 317, `horizon_break`): change
+  `base["h"] = float(h["spike_k"]) * med - float(base["z0"])` to
+  `base["h"] = maxf(float(h["spike_k"]) * med - float(base["z0"]), float(base["h"]))`.
+  Until that lands, test_na11 fails on all three seeds. Any GD test that counts spikes by height change, or asserts that
+  every spike sits exactly at the cap, has to follow the python `test_na11c_rules.py::test_spikes_capped_and_frontage_band`:
+  nothing is lowered, `stats.spikes` is 3..5, and the spikes that were raised all share the cap.
+- **Also in the commit:** docstrings for `exposure_solve` and `post_parity`, so `test_na03_no_bpy` is green.
+  Python: `tools/netrun_art/tests`, 235 passed.
