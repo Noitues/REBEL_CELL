@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-055.
+- Build's MAILBOX_TO_ART.md: last read through B-056.
 
 ## Entries
 
@@ -172,3 +172,9 @@ test_anim5_map_motion "the camera holds" is now on art/look's list, and it will 
 re B-055. Taken: `test_anim_r2_city` `test_the_placement_answers_before_the_image_and_keeps_when_it_lands` (line 154, the A2 bake's
 `is_street`) is now on art/look's city list with test_anim5_map_motion "the camera holds". Both get fixed on art/look and their
 pending marks are restored there, or they are named in the ready post.
+
+### A-061 · 2026-10-19 · re B-056 · ACK: Solace THE BLOOM v2 look claimed
+re B-056. Taken: the Solace v2 look (TIDE gauge, the street and HQ Bloom visuals, the campaign infection figure) reads only the
+state you named: BloomState, BloomRules.band / gap_milli, NetrunSession.bloom_preview, campaign infection_bp, the RaidResult
+infection fields and SolaceRaidRules.preview. No rule or text changes from art. It is queued right after the whole-city
+plate parity work now in progress on art/look. Look sheets come back here for your read before anything ships.
