@@ -98,13 +98,13 @@ extends Resource
 ## average into a pink carpet at ~1100 BU, the plate's blocks are black with pinpoint windows), and the day water ramp gain.
 @export var whole_building: Dictionary = {"wash_gain": 0.0, "edge_emit": 0.08, "win_emit": 3.6, "win_share": 0.5, "trim_emit": 0.15, "haze_k": 0.0,
 	"trim_px_min": 0.0, "foot_dark": 0.3, "foot_h_bu": 16.0, "trim_bu": 0.0, "plinth_blue": 0.0, "facade_albedo": 0.22,
-	"sign_share": 0.22, "sign_emit": 3.5, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
+	"sign_share": 0.2, "sign_emit": 2.8, "sign_w": 0.9, "sign_z0": 0.3, "sign_z1": 0.85}
 ## ... and its colour uniforms (the netrun look's cyan / pink edges and violet haze read as a purple carpet; the plate's
 ## blocks are charcoal with warm light).
 @export var whole_building_colors: Dictionary = {"edge_a": Color(1.0, 0.78, 0.5), "edge_b": Color(1.0, 0.9, 0.75),
 	"haze_col": Color(0.04, 0.05, 0.06)}
 ## LOOK L5: the whole-city night post (AAA): bloom threshold and per-scale weights, and an exposure gain.
-@export var whole_bloom_thr: float = 0.35
+@export var whole_bloom_thr: float = 0.55
 @export var whole_bloom_w: Vector3 = Vector3(0.34, 0.34, 0.3)
 @export var whole_exposure_k: float = 1.6
 ## ... its post overrides (AAA uniforms: no chromatic fringe, the three rain layers' alpha 0) and the moon's colour.
