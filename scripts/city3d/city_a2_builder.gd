@@ -305,6 +305,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				var k := (j - R.position.y) * w + (i - R.position.x)
 				kind[k] = K_PLAZA
 				plazas[k] = id
+	var zone := _site_zone(plan, cfg.city_a2_sprawl_site_keep)
 	for k in n:
 		if kind[k] != K_GROUND:
 			continue
@@ -317,7 +318,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 			kind[k] = K_WATER
 		elif ras.is_park(l.x, l.y):
 			kind[k] = K_PARK
-		elif plan.terrain != null and ras.territory(l.x, l.y) == &"" and _bare(plan.terrain, cfg, l) and not _near_site(plan, l) \
+		elif plan.terrain != null and ras.territory(l.x, l.y) == &"" and _bare(plan.terrain, cfg, l, zone) and not _near_site(plan, l) \
 				and plan.terrain.outside_ring(l.x + 0.5, l.y + 0.5) > cfg.city_a2_sprawl_streets:
 			# CITY-A2 r2: open Sprawl land past the suburbs gets no local streets either (no street grid to the rect's edge;
 			# within `city_a2_sprawl_streets` lots of the ring the streets stay, the Sites' routes run on them).
@@ -380,7 +381,7 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 		for k in n:
 			if kind[k] == K_GROUND:
 				var l := Vector2i(R.position.x + k % w, R.position.y + k / w)
-				if _bare(plan.terrain, cfg, l) and not _near_site(plan, l):
+				if _bare(plan.terrain, cfg, l, zone) and not _near_site(plan, l):
 					kind[k] = K_BARE
 	# CITY-A2 r2: the elevated roads' corridors (art-pass zoning `clear`): no building within `city_a2_corridor` lots of a
 	# ring / motorway / truck road's lots (streets still cross under the decks).
@@ -434,12 +435,14 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 ## CITY-A2 r2 (art-pass zoning_a2.py): lot `l` stays open land: its ground is over `city_a2_max_build_h` or steeper than
 ## `city_a2_max_build_slope`, or past the outer ring (by the terrain's broad noise x `city_a2_edge_noise`) its jitter is
 ## over the chance of a building there (1 at the ring, 0 past `city_a2_sprawl_fade`).
-static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i) -> bool:
+## `zone`: the lots within `city_a2_sprawl_site_keep` of a Site, where the sprawl does not thin (their run streets keep
+## their frontage).
+static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i, zone: Dictionary) -> bool:
 	var c := Vector2(l) + Vector2(0.5, 0.5)
 	if t.height_at(c.x, c.y) > cfg.city_a2_max_build_h or t.slope_at(c.x, c.y) > cfg.city_a2_max_build_slope:
 		return true
 	var d := t.outside_ring(c.x, c.y)
-	if d <= 0.0:
+	if d <= 0.0 or zone.has(l):
 		return false
 	d = maxf(d + (t.noise_at(c.x, c.y) * 2.0 - 1.0) * cfg.city_a2_edge_noise, 0.0)
 	return t.jitter(l.x, l.y) >= 1.0 - _smooth01(d, cfg.city_a2_sprawl_fade)
@@ -448,6 +451,16 @@ static func _bare(t: CityA2Terrain, cfg: CampaignConfigData, l: Vector2i) -> boo
 static func _smooth01(x: float, r: Vector2) -> float:
 	var t := clampf((x - r.x) / (r.y - r.x), 0.0, 1.0)
 	return t * t * (3.0 - 2.0 * t)
+
+
+## The lots within `reach` of any Site's lot (a set).
+static func _site_zone(plan: CityPlan, reach: int) -> Dictionary:
+	var out := {}
+	for s: Vector2i in plan.a2_sites:
+		for dj in range(-reach, reach + 1):
+			for di in range(-reach, reach + 1):
+				out[s + Vector2i(di, dj)] = true
+	return out
 
 
 ## True when lot `l` is within SITE_KEEP lots of a Site's lot (its buildings stay).

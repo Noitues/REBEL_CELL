@@ -453,6 +453,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_sprawl_fade: Vector2 = Vector2(0.5, 6.0)
 ## Past the outer ring by more than this (lots), open Sprawl land has no local streets either.
 @export var city_a2_sprawl_streets: float = 16.0
+## Within this many lots of a Site the sprawl does not thin (the run's street keeps its frontage).
+@export var city_a2_sprawl_site_keep: int = 8
 ## CITY-A2 r2 (art-pass zoning `clear`): lots each side of an A2 road of the class kept open under its elevated deck.
 @export var city_a2_corridor: Dictionary = {&"ring": 1, &"motorway": 1, &"truck": 1}
 @export_group("Combat FX")

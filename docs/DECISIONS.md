@@ -9272,3 +9272,10 @@ Answers applied (orchestrator): HQ stand-ins are exempt from the 6-floor frontag
   `<corp>_landmark.glb` set, and halcyon_hq.glb is off its origin. Listed for art-pass.
 - Open question (look, art-pass): terrain shading (the ground material is flat-ramped, so the relief only reads under a lit
   material), the white shore coping on the river and coast, the deck / glow colours in city_config "A2 features".
+- r2 follow-ups: open Sprawl land keeps its local streets within `city_a2_sprawl_streets` (16) lots of the outer ring
+  (seed 7919's Orbital Sites route through it), and the sprawl does not thin within `city_a2_sprawl_site_keep` (8) lots of
+  a Site (seed 1's run street kept its frontage: median 21.0 BU, as at step 2). CityModel.chunk_aabb kept only the last
+  prism's top (the y reset per footprint vertex): a pick could miss a taller roof once the hills raised them; fixed.
+  Seed-1 plate inputs re-exported (city, derive_street, both street captures; net and run_graph unchanged). Sheet:
+  docs/art_review/PLAN2/CITY_A2_step2_r2.jpg (plate camera from city_a2_night_capture.json, `na12_capture --plate=1`;
+  a third row shows the same frame under a plain lit material, diagnosis only, for the relief).

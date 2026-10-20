@@ -271,6 +271,7 @@ func test_open_land_corridors_and_sprawl() -> void:
 	var lots := CityA2Builder.lots_for(p, _cfg, NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0)
 	var R: Rect2i = lots["rect"]
 	var kind: PackedByteArray = lots["kind"]
+	var zone := CityA2Builder._site_zone(p, _cfg.city_a2_sprawl_site_keep)
 	var bad := 0
 	var bare := 0
 	var past_built := 0
@@ -287,7 +288,7 @@ func test_open_land_corridors_and_sprawl() -> void:
 			bad += 1
 		if t.outside_ring(c.x, c.y) > _cfg.city_a2_sprawl_fade.y + _cfg.city_a2_edge_noise:
 			past += 1
-			if not CityA2Builder._near_site(p, l):
+			if not zone.has(l):
 				past_built += 1
 	assert_eq(bad, 0, "no building on high or steep ground")
 	assert_gt(bare, 0, "open land")
