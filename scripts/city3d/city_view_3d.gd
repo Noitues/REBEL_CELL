@@ -546,6 +546,11 @@ func _whole_building() -> void:
 	if whole_look and look_blend > 0.0:
 		_post.set_shader_parameter(&"aaa_bloom_thr", cfg.whole_bloom_thr)
 		_post.set_shader_parameter(&"aaa_bloom_w", cfg.whole_bloom_w)
+		# No colour fringe (it rings every window pink at this zoom) and no rain; a grey moon, not a blue one.
+		for k: String in cfg.whole_aaa_post:
+			_post.set_shader_parameter(StringName(k), cfg.whole_aaa_post[k])
+		if _sun != null:
+			_sun.light_color = cfg.whole_moon_color
 
 
 ## LOOK L5: the corp HQ sky beams (whole-city pose, night only): one beam_shaft per HQ lot in its corporation's colour.

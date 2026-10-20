@@ -91,6 +91,10 @@ extends Resource
 @export var whole_bloom_thr: float = 0.55
 @export var whole_bloom_w: Vector3 = Vector3(0.22, 0.2, 0.16)
 @export var whole_exposure_k: float = 1.25
+## ... its post overrides (AAA uniforms: no chromatic fringe, the three rain layers' alpha 0) and the moon's colour.
+@export var whole_aaa_post: Dictionary = {"aaa_ca": Vector3(0.0, 0.3, 1.5), "aaa_rain0b": Vector3(0.0, 1.0, 0.6),
+	"aaa_rain1b": Vector3(0.0, 1.0, 1.0), "aaa_rain2b": Vector3(0.0, 3.0, 1.6)}
+@export var whole_moon_color: Color = Color(0.78, 0.8, 0.86)
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
 @export var whole_building_base: Dictionary = {"trim_px_min": 1.5, "foot_dark": 1.0, "foot_h_bu": 12.0, "trim_bu": 0.22, "plinth_blue": 1.2}
 ## LOOK L5: the night toon ramp at the whole-city pose (the plate's charcoal blue-grey blocks, not the map's violet night).
