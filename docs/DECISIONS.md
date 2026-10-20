@@ -9279,3 +9279,41 @@ Answers applied (orchestrator): HQ stand-ins are exempt from the 6-floor frontag
   Seed-1 plate inputs re-exported (city, derive_street, both street captures; net and run_graph unchanged). Sheet:
   docs/art_review/PLAN2/CITY_A2_step2_r2.jpg (plate camera from city_a2_night_capture.json, `na12_capture --plate=1`;
   a third row shows the same frame under a plain lit material, diagnosis only, for the relief).
+
+### 2026-10-20 - LOOK L5: the whole-city view matches the Blender plate (art-pass, art/look; designer sign-off 2026-10-20)
+- Scope: the whole-city pose only (CityView3D's plate camera), art-pass owned (art-owns-godot-look). No rule, save or
+  content-id change. The designer reviewed every capture (p77..p94 at D:/rc_scratch/a2_cam) and signed off on the look;
+  the blind plate critic stayed at night 3 / day 4 of 10, its main asks (pinpoint night lights, low uniform buildings, pale
+  dune mountains) being against the designer's own rulings, so the critic gate was waived by the designer.
+- Schema (CampaignConfigData, all default off = the old city; shipped values in campaign_config.tres; smoke
+  `_city_a2_config` checks both): `city_a2_relief` / `_relief_from` / `_relief_warp` (mountain character), `city_a2_cliff`
+  / `_cliff_x` / `_cliff_shore` (the west sea cliff, 14 BU), `city_a2_edge_noise`, `city_a2_dwindle` / `_dwindle_h_min`
+  (the city edge thins out instead of stopping), `city_a2_height_pow` / `_height_spike` (height variety by district and
+  outside the cores), `city_a2_sink_share` / `_sink_bu` (most of Tethys's drowned quarter sunk below the waterline),
+  `city_a2_coast_setback` 2 (no building within 2 lots of the sea; rivers keep their frontage, Sites their building),
+  `city_a2_prune_streets` 1 (a local street with no building within a lot is open land: no empty street blocks at the edge),
+  `city_a2_coast_smooth` 2 (the fine ground's shore distance is a blurred signed depth, not lot steps),
+  `city_a2_sprawl_site_keep` 8 (the lots round a Site the thinning and pruning leave alone).
+- View config (CityConfig, art-pass look numbers): water (day caustics as at night but weaker, transparency with depth, a
+  beach strip on the sea coast only, `whole_wet` slope spec off the mountains), the port / ships / island structures /
+  helicopters with spot pools / police bars (`a2_dress`, CityA2Dress), landmark tone and albedo per corp (Meridian's gold
+  toned down, Tethys less pink with taller textured centre towers, Aurelian's colosseum lit at night), corp beams narrower
+  and on the HQ roof (`whole_beam_*`; Halcyon keeps only its eye beam, now transparent and shown at night), far-side depth
+  of field (`whole_dof_far`), two oblong bay islands (`island_count` 2), blended park lawns (`park_lawn_*`), no trees within
+  `veg_coast_clear` 3 lots of the sea, smooth-shaded ground (`ground_smooth_normals`), dry seabed vertices
+  `seabed_under_bu` under the ground (its triangles showed through the low shore as dark wedges), and no street square
+  under a raised deck (`ground_deck_classes` ring / motorway / truck).
+- Suite fixes (the L5 geometry against the NA-11 / NA-23 street rules; no rule changed): a street-front lot keeps its
+  building through the coast setback and is never quarter-split (the netrun frontage layers need whole lots); a split
+  lot's four stand on a whole-lot plinth `city_a2_sub_plinth_bu` 0.15 (its base part, so the layout rules raise and move
+  one part per lot); no height spike within `city_a2_spike_hq_clear` 3 lots of an HQ (NA-11c); the road glow shader
+  includes rc_common; the drowned quarter's sunk prisms may start below the ground (test_city_a2); the coping gain test
+  reads the ramp toward `coping_gain_far` (0.6: the plate's thin surf at whole zoom) instead of "never dims" (A-030,
+  superseded by the L5 sign-off).
+- Handed to build (A-065), not fixed in art-pass: test_city3d_layout_rules seed 7 still has frontage buildings inside an
+  HQ zone, where the NA-11 frontage minimum (6+ floors) and the NA-11c HQ cap (0.6 x a 14.6 BU HQ top = 8.8) cannot both
+  hold (main passes only because its geometry keeps frontage out of HQ zones); test_city_map_sweeps meridian x1.0 early
+  the_master_manifest finds no label spot (Site and HQ positions are identical to main's).
+- Open questions for the designer: (1) the west cliff still shows a faint lot-scale sawtooth at the waterline; a finer
+  cliff mesh would remove it (deferred by the designer, "good enough"). (2) A few south-east street blocks next to Sites
+  keep their streets (the Site zone protects them).
