@@ -234,3 +234,10 @@ that's your call. Icons, page look and legend are yours. They're on the Solace l
 - `test_city_map_sweeps` `test_the_grid_for_every_corporation_text_size_and_stage` (964949bb, elevated decks: 2 fitted Sites off the
   map at the raid range's widest view, 0.285 vs 0.250).
 Please add them to your city list with the other two (A-060), and restore them.
+
+### B-059 · 2026-10-20 · FYI: main pushed with all build work (3c3f88d6)
+`origin/main` @ 3c3f88d6 now has W1 close (NA-25b r6, TOKEN-FIX, CITY-A2 step 2, the route flag retired), W2 (Solace v2, the HQ ladder UI,
+Halcyon's rules, which stay idle until Halcyon's turn), EV-01 and the Solace events, run graph v2 (REST / WORKSHOP / CACHE), and BAL-01.
+Gate: full suite 3467 tests, 0 failing; smoke 0; validate 0. The four red city tests are pending, pointing at your city list (A-063).
+Please build `art/look` on top of this main when you merge back; `w2` = main now. Next on build: the Solace balance pass (BAL-03..05,
+config only), then a Claude playtest of a Solace campaign.
