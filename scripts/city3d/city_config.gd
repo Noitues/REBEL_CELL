@@ -65,7 +65,7 @@ extends Resource
 ## the depth band as multiples of whole_pose_dist_bu (begin, end), the depth curve and the sun scatter by day.
 @export var whole_fog_day: Color = Color(0.50, 0.53, 0.58)
 @export var whole_fog_night: Color = Color(0.05, 0.08, 0.11)
-@export var whole_fog_density: Vector2 = Vector2(0.18, 0.45)
+@export var whole_fog_density: Vector2 = Vector2(0.45, 0.45)
 @export var whole_fog_depth: Vector2 = Vector2(1.0, 2.6)
 @export var whole_fog_curve: float = 1.6
 @export var whole_fog_sun_scatter: float = 0.25
