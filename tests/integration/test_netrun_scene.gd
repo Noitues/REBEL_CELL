@@ -52,6 +52,10 @@ func _step() -> void:
 			_scene.choose_event(s.current_event().choices.size() - 1)
 		RunState.Phase.SHOP:
 			_scene.leave_shop()
+		RunState.Phase.REST:
+			_scene._node_step(s.leave_rest())
+		RunState.Phase.WORKSHOP:
+			_scene._node_step(s.leave_workshop())
 
 
 func test_new_campaign_and_run_start_from_the_scene() -> void:

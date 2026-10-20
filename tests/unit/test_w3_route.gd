@@ -138,6 +138,10 @@ func _walk_hp(seed: int) -> void:
 			s.choose_event_option(s.current_event().choices.size() - 1)
 		if s.run.phase == RunState.Phase.SHOP:
 			s.leave_shop()
+		if s.run.phase == RunState.Phase.REST:
+			s.leave_rest()
+		if s.run.phase == RunState.Phase.WORKSHOP:
+			s.leave_workshop()
 		if s.run.phase == RunState.Phase.MAP:
 			assert_eq(int(RouteHp.arrival(s)["hp"]), s.run.operative.hp, "after the node the carry-over is the run's HP")
 

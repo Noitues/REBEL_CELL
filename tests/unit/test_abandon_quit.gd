@@ -279,6 +279,10 @@ func test_quit_mid_run_saves_exactly_the_live_state_at_every_page() -> void:
 				s.choose_event_option(s.current_event().choices.size() - 1)
 			RunState.Phase.SHOP:
 				s.leave_shop()
+			RunState.Phase.REST:
+				s.leave_rest()
+			RunState.Phase.WORKSHOP:
+				s.leave_workshop()
 			RunState.Phase.RAID:
 				s.raid_fight()
 		RunManager.after_step()
