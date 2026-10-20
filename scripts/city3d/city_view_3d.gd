@@ -313,6 +313,18 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_whole_fog()
 
 
+## LOOK L5: the whole-city pose's low sun casts the plate's long shadows: the far-LOD blocks cast too (cfg.whole_far_shadows)
+## and the sun's shadow reaches cfg.whole_shadow_dist_bu.
+func _whole_shadows() -> void:
+	if _sun == null or quality.is_empty():
+		return
+	var on: bool = whole_look and cfg.whole_far_shadows and bool(quality["shadows"])
+	_sun.directional_shadow_max_distance = cfg.whole_shadow_dist_bu if whole_look else cfg.camera_far * 0.5
+	for n: Node in find_children("Far_*", "MultiMeshInstance3D", true, false):
+		var far_on: bool = on or (bool(quality["shadows"]) and cfg.far_lod_shadows)
+		(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if far_on else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
 ## LOOK L5: the whole-city pose's atmosphere: depth fog from near the target out past the land, in a haze colour (day to
 ## night) the sky takes too, so the land, sea and horizon fade into air instead of ending on a hard edge.
 var _whole_fog_on: bool = false
@@ -498,6 +510,7 @@ var whole_look: bool = false:
 		whole_look = v
 		if not v:
 			set_look_blend(0.0)
+		_whole_shadows()
 		if not _last_day.is_empty():
 			set_night_share(night_share, _last_day)
 
@@ -507,8 +520,12 @@ var whole_look: bool = false:
 func _whole_day(day: Dictionary) -> Dictionary:
 	var d := day.duplicate()
 	var ramp: Array = []
-	for c: Color in day["ramp"]:
-		ramp.append(Color(c.r * cfg.whole_day_ramp_gain, c.g * cfg.whole_day_ramp_gain, c.b * cfg.whole_day_ramp_gain))
+	var dr: Array = day["ramp"]
+	for k in dr.size():
+		var c: Color = dr[k]
+		var tn: Color = cfg.whole_day_ramp_tint[mini(k, cfg.whole_day_ramp_tint.size() - 1)]
+		var g := cfg.whole_day_ramp_gain
+		ramp.append(Color(c.r * g * tn.r, c.g * g * tn.g, c.b * g * tn.b))
 	d["ramp"] = ramp
 	d["grade"] = cfg.whole_day_grade
 	d["sky"] = cfg.whole_day_sky
@@ -1360,7 +1377,7 @@ func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: 
 	var keys: Array = fams.keys()
 	IdSort.sort_ids(keys)
 	var lod := CityLod.far_level(cfg, building_lod) if far else maxi(0, building_lod)
-	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows)
+	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows or (whole_look and cfg.whole_far_shadows))
 	for fk: int in keys:
 		var ids: PackedInt32Array = fams[fk]
 		var mm := MultiMesh.new()
