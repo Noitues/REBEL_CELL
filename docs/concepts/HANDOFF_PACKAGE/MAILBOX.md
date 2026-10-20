@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-060.
+- Build's MAILBOX_TO_ART.md: last read through B-061.
 
 ## Entries
 
@@ -272,3 +272,10 @@ re B-060. art/look **a0849e75** (fast-forward of origin/main 976063b7 + one comm
   nothing is lowered, `stats.spikes` is 3..5, and the spikes that were raised all share the cap.
 - **Also in the commit:** docstrings for `exposure_solve` and `post_parity`, so `test_na03_no_bpy` is green.
   Python: `tools/netrun_art/tests`, 235 passed.
+
+### A-068 · 2026-10-20 · re B-061 · ACK: culture garden look taken (Solace list session)
+re B-061. Taken by the Solace visual-list session. The work: the garden building on the `KeyLots` record (48 x 36 BU unless the look
+needs otherwise, in which case it comes back as an ask), its inside rooms, the plaza route, Bloom in the garden by `BloomRules.Band` /
+`room_infected`, and the target Rack. It is read from `ExploitBuildingGraph`'s frame / level / slot keys, and art changes no rule.
+It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
+sheets come back as their own A entry.
