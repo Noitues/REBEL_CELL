@@ -47,7 +47,8 @@ def test_hq_zone_cap_and_no_spikes(seed):
 
 @pytest.mark.parametrize("seed", [101, 102, 103])
 def test_spikes_capped_and_frontage_band(seed):
-    """Spikes reach exactly 1.6x the backdrop median (3..5 of them), never in the HQ zone; other frontage is 6-10 floors."""
+    """3..5 spikes are picked; a raised one reaches exactly 1.6x the backdrop median and none is lowered (B-060: a pick
+    already above the cap keeps its own top); never in the HQ zone; other frontage is in the r2 floors band."""
     w = synth.make_world(seed)
     routes = G.route_tops_of(w["city"])
     base = layout.apply_layout_rules(w["city"], w["net"], border_mode="all")
@@ -55,9 +56,10 @@ def test_spikes_capped_and_frontage_band(seed):
     st = {}
     out = layout.horizon_break(mid, w["net"], list(routes), border_mode="all", stats=st)
     before = {b["bid"]: b["h"] for b in layout.merged_buildings(mid)}
+    assert not [b["bid"] for b in layout.merged_buildings(out) if b["h"] < before[b["bid"]] - 1e-9]
     spikes = [b for b in layout.merged_buildings(out) if abs(b["h"] - before[b["bid"]]) > 1e-9]
-    assert 3 <= len(spikes) == st["spikes"] <= 5
-    assert len({round(s["h"], 6) for s in spikes}) == 1
+    assert 3 <= st["spikes"] <= 5 and len(spikes) <= st["spikes"]
+    assert len({round(s["h"], 6) for s in spikes}) <= 1
     zone = _zone(w["city"])
     assert not [s["bid"] for s in spikes if s["bid"] in zone]
     byid = {b["bid"]: b for b in w["city"]["buildings"]}
