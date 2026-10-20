@@ -25,6 +25,10 @@ func _wh02_corp_theme_config() -> int:
 	# Solace v2: Heat pace table, Exploit forms, decay keys; ExploitData flags default off.
 	if d.bloom_pace_heat_pct_by_band != PackedInt32Array([100, 110, 125, 140, 160]) or d.bloom_breach_setback_milli != 1000 or d.bloom_intel_turn_pct != 50: fails += 1
 	if d.raid_infection_decay_hold_bp != 1000 or d.raid_infection_decay_per_kill_bp != 100 or d.raid_infection_decay_cure_bp != 1500: fails += 1
+	# Halcyon v2: the Eye keys, Blade level, Alert and Lockdown, HQ graph tables.
+	if d.eye_move_per_turn != 1 or d.eye_fix_turns != 2 or d.blade_level_max != 2 or d.hq_lockdown_alert != 4 or d.hq_power_cut_steps != 2: fails += 1
+	if d.hq_alert_gain_eye_fight != 1 or d.hq_alert_gain_stall != 1 or d.hq_alert_gain_power_cut != 2 or d.hq_gaze_step_per_stall != 1: fails += 1
+	if d.halcyon_hq_layer_kinds.size() != 13 or d.halcyon_hq_layer_face_deg.size() != 13 or d.halcyon_hq_rest_heal_pct != 35: fails += 1
 	var ex_flags := ExploitData.new()
 	if ex_flags.bloom_pace_cut or ex_flags.bloom_setback or ex_flags.bloom_turn_cut: fails += 1
 	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")

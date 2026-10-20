@@ -16,3 +16,5 @@ var hq_alert: int = 0
 var hq_asleep_left: int = 0
 var power_cut_used: bool = false
 var stalled_this_layer: bool = false
+## HQ: the EyeRules.NodeState of the node being visited, taken when it was entered (0 OPEN, 1 SPOTTED).
+var entered_state: int = 0

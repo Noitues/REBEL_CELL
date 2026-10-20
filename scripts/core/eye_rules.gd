@@ -199,3 +199,64 @@ static func raid_damage_pct(theme: HalcyonCampaignTheme, bearing: int, config: C
 	if bearing < 0:
 		return 0
 	return config.raid_eye_damage_pct if in_sector(bearing, centre_deg(theme.eye_index, config), config) else 0
+
+
+## The wedge of a raid: {site id (String): raid_damage_pct} for every Grid site inside the Eye's
+## sector (the home server, the Eye marker itself, has no bearing and is never inside). Empty
+## outside Halcyon. Sorted by site id so iteration is stable.
+static func raid_wedge(campaign: CampaignState, grid_data: CityGridData, config: CampaignConfigData) -> Dictionary:
+	var out := {}
+	if campaign == null or grid_data == null or campaign.corporation_id != HALCYON_ID:
+		return out
+	var ids: Array[String] = []
+	for s in grid_data.sites:
+		if s != null and s.id != grid_data.home_site_id:
+			ids.append(String(s.id))
+	ids.sort()
+	for id in ids:
+		var pct := raid_damage_pct(campaign.corp_theme.halcyon, bearing_deg(grid_data, StringName(id)), config)
+		if pct > 0:
+			out[id] = pct
+	return out
+
+
+## `base` damage with the wedge's percent added (rounded to nearest).
+static func wedge_damage(base: int, pct: int) -> int:
+	return (base * (100 + pct) + 50) / 100
+
+
+# --- Previews (nothing random: `eye_start` resolved at campaign start) ----------------------------
+
+## The Grid / launch card figures for a launch at `site_id`: {"applies", "bearing", "level" (the
+## Spotted pips 0-2), "next_index" / "next_fixed_left" (the Eye after this campaign turn), "fixes"
+## (taking this Site's Exploit fixes the Eye on its octant), "fix_turns", "failed_moves" (a failed
+## run still moves the Eye)}.
+static func launch_preview(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, site_id: StringName) -> Dictionary:
+	if campaign == null or not applies(corp):
+		return {"applies": false}
+	var h := campaign.corp_theme.halcyon
+	var bearing := bearing_deg(corp.city_grid, site_id)
+	var nxt := next_turn_preview(h, config)
+	var fixes := false
+	var site := CampaignRules.site_data(corp, site_id)
+	if site != null:
+		fixes = CampaignRules.site_objective(campaign, site) == RC.SiteObjective.EXPLOIT and not campaign.has_exploit(site.exploit_type)
+	return {"applies": true, "bearing": bearing, "level": spotted_level(h, bearing, config),
+		"next_index": nxt["index"], "next_fixed_left": nxt["fixed_left"], "fixes": fixes,
+		"fix_turns": config.eye_fix_turns, "failed_moves": true}
+
+
+## The launch card's text lines as TextDb keys with args: [{"key", "args"}].
+static func launch_lines(p: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not bool(p.get("applies", false)):
+		return out
+	out.append({"key": TextDb.mark("SPOTTED %d/2"), "args": [int(p["level"])]})
+	if int(p["next_fixed_left"]) > 0:
+		out.append({"key": TextDb.mark("The Eye stays FIXED after this turn: %d left."), "args": [int(p["next_fixed_left"])]})
+	else:
+		out.append({"key": TextDb.mark("The Eye moves to octant %d after this turn."), "args": [int(p["next_index"])]})
+	if bool(p["fixes"]):
+		out.append({"key": TextDb.mark("Taking this Exploit fixes the Eye here for %d turns."), "args": [int(p["fix_turns"])]})
+	out.append({"key": TextDb.mark("A failed run still moves the Eye."), "args": []})
+	return out

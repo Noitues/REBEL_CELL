@@ -68,6 +68,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
 	s._bloom_load_keys(corp)
+	s._halcyon_begin_street(corp, site_id)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -226,7 +227,58 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	return s
 
 
-## Halcyon v2 (WH-20 / WH-22): the HQ run's Eye state and graph. The launch snapshot (`spotted_level`)
+## Halcyon v2 (WH-21): the street launch snapshot (rule 6): Spotted level 0 / 1 / 2, taken once and
+## never changed mid-run.
+func _halcyon_begin_street(corp: CorporationData, site_id: StringName) -> void:
+	if not EyeRules.applies(corp):
+		return
+	run.corp_theme.halcyon.spotted_level = EyeRules.spotted_level(campaign.corp_theme.halcyon, EyeRules.bearing_deg(corp.city_grid, site_id), config)
+
+
+## Halcyon v2 (rules 7-9): the Blade level on the fight at the current node: the launch level on the
+## street; in the HQ, 0 off the Eye, else the launch level raised by Lockdown (capped).
+func eye_blade_level() -> int:
+	var h := run.corp_theme.halcyon
+	if h.hq:
+		if h.entered_state != EyeRules.NodeState.SPOTTED:
+			return 0
+		return EyeRules.hq_blade_level(h.spotted_level, h.hq_alert, config)
+	return h.spotted_level
+
+
+func _eye_fight_class(final_rack: bool) -> StringName:
+	return EyeRules.fight_class(run.current_node(), final_rack and run.kind == "netrun")
+
+
+## The combat override the Blade adds to the fight at the current node ({} when it is off).
+func _blade_overrides(final_rack: bool) -> Dictionary:
+	if run.map == null or run.current_node_id == &"":
+		return {}
+	var h := run.corp_theme.halcyon
+	if not h.hq and h.spotted_level <= 0:
+		return {}
+	return {"blade": true} if EyeRules.blade_applies(eye_blade_level(), _eye_fight_class(final_rack), config) else {}
+
+
+## Halcyon v2 (rule 3-4): a campaign turn ends with the run (won, died or abandoned). The Eye
+## ticks, then an Exploit extracted this turn (`events` holds an "exploit" event) fixes it on that
+## Site's octant. Logs the move.
+func _eye_turn_end(events: Array[Dictionary]) -> void:
+	if not EyeRules.applies(corporation):
+		return
+	var fix_bearing := -1
+	for e in events:
+		if e.get("type", "") == "exploit":
+			fix_bearing = EyeRules.bearing_deg(corporation.city_grid, run.site_id)
+	var h := campaign.corp_theme.halcyon
+	var r := EyeRules.campaign_turn(h, config, fix_bearing)
+	var text := "The Eye moves to octant %d." % h.eye_index if r["moved"] else "The Eye holds (%d turn(s) left fixed)." % h.eye_fixed_left
+	if r["fixed"]:
+		text = "The Eye is FIXED on octant %d for %d turns." % [h.eye_index, h.eye_fixed_left]
+	last_events.append({"type": "eye_turn", "index": h.eye_index, "fixed_left": h.eye_fixed_left, "moved": r["moved"], "fixed": r["fixed"], "text": text})
+
+
+## Halcyon v2 (WH-22): the HQ run's Eye state and graph. The launch snapshot (`spotted_level`)
 ## is taken once from the campaign's Eye and the HQ site's bearing; Alert starts at it; the graph is
 ## rebuilt from stream `hq_graph` until it is reachable for the launch phase.
 func _halcyon_begin_hq(corp: CorporationData, site_id: StringName, graph_stream: RandomNumberGenerator) -> void:
@@ -312,6 +364,14 @@ func state_hash() -> int:
 ## RunThemeState.ChipKind}; {} hides the chip. No theme rule fills it yet (WH-11 and the
 ## later corp slices add theirs here); like every preview it reads state and changes nothing.
 func theme_chip() -> Dictionary:
+	var h := run.corp_theme.halcyon
+	if not run.is_over() and (h.hq or h.spotted_level > 0):
+		if h.hq:
+			var warn := EyeRules.lockdown(h.hq_alert, config)
+			return {"key": TextDb.mark("EYE ALERT"), "args": [], "value": "%d/%d" % [h.hq_alert, config.hq_lockdown_alert],
+				"kind": RunThemeState.ChipKind.DANGER if warn else (RunThemeState.ChipKind.WARN if h.spotted_level > 0 else RunThemeState.ChipKind.INFO)}
+		return {"key": TextDb.mark("SPOTTED"), "args": [], "value": "%d/2" % h.spotted_level,
+			"kind": RunThemeState.ChipKind.DANGER if h.spotted_level >= 2 else RunThemeState.ChipKind.WARN}
 	var b := run.corp_theme.solace
 	if not b.enabled or run.is_over():
 		return {}
@@ -567,6 +627,8 @@ func _start_combat(elite: bool) -> void:
 		run.normal_fights_started += 1
 	combat = _combat_from(setup)
 	run.phase = RunState.Phase.COMBAT
+	if run.corp_theme.halcyon.hq or run.corp_theme.halcyon.spotted_level > 0:
+		_add_heat(EyeRules.spotted_heat(eye_blade_level(), _eye_fight_class(final_rack), config), "the Eye's Blade")
 	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
 		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
 	_apply_campaign_effects(combat.last_events)
@@ -592,6 +654,7 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
 	var overrides := boss_exploits.duplicate(true)
+	overrides.merge(_blade_overrides(final_rack))
 	overrides.merge({
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
@@ -1344,6 +1407,7 @@ func _complete_run() -> void:
 		var done := CampaignRules.on_run_completed(campaign, corporation, config, run, lookup)
 		CampaignRules.name_pending_raids(campaign, lookup, done)
 		last_events.append_array(done)
+		_eye_turn_end(done)
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -1362,6 +1426,7 @@ func _die() -> void:
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
 	_add_heat(HeatRules.death_heat(campaign, config, run.tier), "operative death")
+	_eye_turn_end([] as Array[Dictionary])
 
 
 ## Abandon run (designer ruling 2026-10-05, GDD 4.5): the operative is killed on the run, so

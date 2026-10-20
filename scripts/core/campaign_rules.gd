@@ -43,6 +43,8 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 		c.grid.sites[c.grid.home_site_id]["integrity"] = c.grid.home_max_integrity
 		c.grid.sites[c.grid.home_site_id]["max_integrity"] = c.grid.home_max_integrity
 	c.story_path_id = pick_story_path(corp, campaign_seed)
+	if EyeRules.applies(corp):
+		c.corp_theme.halcyon.eye_index = EyeRules.draw_start(campaign_seed, config)  # stored, never redrawn
 	var fewer := -int(c.rule_modifier(config, RC.RuleModifierType.HEAT_OBJECTIVE_SITES))
 	if fewer > 0:
 		var objectives: Array[StringName] = []
