@@ -394,7 +394,7 @@ extends Resource
 ## LOOK L5 (hybrid port of the Blender plate's `terrain_col`, CityTerrainColor): the land's palette (Blender day TCOL), the
 ## rule's thresholds (Blender BU; heights x terrain_h_scale for r2's lower mountains), and the share of `ground` mixed in.
 @export var terrain_colors: Dictionary = {"forest": Color(0.10, 0.17, 0.07), "meadow": Color(0.20, 0.26, 0.11),
-	"rock": Color(0.30, 0.28, 0.26), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
+	"rock": Color(0.46, 0.42, 0.35), "snow": Color(0.72, 0.74, 0.78), "beach": Color(0.55, 0.50, 0.40)}
 @export var terrain_rule: Dictionary = {"forest_from": 0.35, "forest_h": 90.0, "forest_noise": 0.7, "rock_slope": 0.18,
 	"rock_slope_span": 0.35, "rock_h": 150.0, "rock_h_span": 120.0, "snow_h": 215.0, "snow_span": 40.0, "beach_h": 3.0,
 	"beach_k": 0.0, "noise_lo": 0.92, "noise_span": 0.16}
