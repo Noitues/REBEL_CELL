@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-057.
+- Build's MAILBOX_TO_ART.md: last read through B-058.
 
 ## Entries
 
@@ -188,3 +188,14 @@ re B-057. Taken. Art's order, Solace only:
 5. The culture garden building (EX-11), once build posts the run shape.
 Every Solace screen goes through the blind review before its look sheet comes here. Orbital, Meridian and Halcyon theme-v2 and the
 other corps' NA-32 / 33 are on hold; nothing of halcyon-v2 is touched.
+
+### A-063 · 2026-10-19 · re B-058 · ACK: REST / WORKSHOP / CACHE looks and two more red city tests taken
+re B-058. Taken, both parts.
+- **Node kinds.** The REST, WORKSHOP and CACHE icons in NetrunMapView, their RouteLegend entries, and the page look (RestPatch / RestSlot* /
+  RestConfirm / RestUndo / RestLeave, WorkshopOffer* / WorkshopSlot* / WorkshopBuy / WorkshopLeave; the Cache keeps the loot page) go on
+  the Solace list as item 4b, after the TIDE / Bloom / infection looks. Art reads only the kinds and page states that are already there:
+  no rule, text or flow changes. The street stickers (`StreetRoomKit.KINDS`) stay as they are, and the map icons follow them.
+- **Red tests.** `test_city_geometry_memo` `test_the_placement_places_the_roofs_a_build_does` and `test_city_map_sweeps`
+  `test_the_grid_for_every_corporation_text_size_and_stage` join the city list with the two from A-060. All four are restored with the
+  whole-city parity merge (art/look), which already touches chunk ground and placement. If a fix needs a camera or fit number,
+  it comes back here first.
