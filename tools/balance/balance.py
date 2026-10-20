@@ -197,6 +197,16 @@ def table(header, rows):
     return "\n".join(out) + "\n"
 
 
+def policy_label(o):
+    """BAL-01: every number names its policy ('reference (heuristic, lookahead 2)', 'builtin', ...)."""
+    pol = o.get("policy")
+    if pol == "reference":
+        return "reference (heuristic, lookahead %s)" % o.get("lookahead")
+    if pol == "heuristic":
+        return "heuristic, lookahead %s" % o.get("lookahead")
+    return str(pol)
+
+
 def render_report(m):
     mode = m["mode"]
     meta = m.get("meta", {})
@@ -204,8 +214,8 @@ def render_report(m):
     stats = group_stats(m["records"])
     n_seeds = len({r["seed"] for r in m["records"]})
     lines = ["# Balance report: %s (%s)\n" % (meta.get("name", "?"), mode)]
-    lines.append("- policy: %s%s, skill %s, ICE %s, corp %s, class %s" % (
-        o.get("policy"), (" lookahead " + str(o.get("lookahead"))) if o.get("policy") == "heuristic" else "", o.get("skill"),
+    lines.append("- policy: %s, skill %s, ICE %s, corp %s, class %s" % (
+        policy_label(o), o.get("skill"),
         o.get("ice"), o.get("corp"), o.get("class")))
     lines.append("- seeds: %d (%s..%s), records: %d" % (n_seeds, min((r["seed"] for r in m["records"]), default="-"),
                                                        max((r["seed"] for r in m["records"]), default="-"), len(m["records"])))
@@ -346,12 +356,14 @@ def report_fight(m, stats):
         out.append(table(["enemy", "category", "n", "win %", "turns mean", "median", "p90", "HP lost mean", "p90", "dealt/turn", "taken/turn", "Perfect %", "heal turns"], rows))
     # by category and tier, pooled over enemies
     pooled = {}
+    by_tier = {}
     for r in m["records"]:
         sc = r["scalars"]
         if "turns" not in sc:
             continue
         t = int(r["group"].split("@t")[1])
         pooled.setdefault((r.get("category", ""), t), []).append(sc)
+        by_tier.setdefault(t, []).append(sc)
     rows = []
     for (c, t), scs in sorted(pooled.items()):
         tv = sorted(s["turns"] for s in scs)
@@ -359,6 +371,14 @@ def report_fight(m, stats):
                      f(sum(s["hp_lost"] for s in scs) / len(scs)), f(100 * sum(s["won"] for s in scs) / len(scs), 0)])
     out.append("## By enemy category and tier (pooled over enemies and seeds)\n\n" + table(
         ["category", "tier", "fights", "turns mean", "median", "p90", "HP lost mean", "win %"], rows))
+    # BAL-01: damage dealt per turn and the both-wheels share by tier, labelled with the policy
+    rows = []
+    for t, scs in sorted(by_tier.items()):
+        dpt = [s["dealt_per_turn"] for s in scs if "dealt_per_turn" in s]
+        both = [s["turns_both_share"] for s in scs if "turns_both_share" in s]
+        rows.append([t, len(scs), f(sum(dpt) / len(dpt), 2) if dpt else "-", f(sum(both) / len(both), 3) if both else "-"])
+    out.append("## Damage dealt per turn and both-wheels share by tier (policy: %s)\n\n" % policy_label(m["opts"]) + table(
+        ["tier", "fights", "dealt/turn mean", "both-wheels share"], rows))
     return "\n".join(out)
 
 

@@ -9241,3 +9241,12 @@ Answers applied (orchestrator): HQ stand-ins are exempt from the 6-floor frontag
   3 BU stand on pillars (1.2 BU every 18 BU); stations stand at their line's lift. All in city_config "A2 features".
 - docs/handoff/netrun_art/plate_inputs/seed1/ re-exported from the A2 city (city, derive_street, net, run_graph, both street
   captures) with `na23_lab --export` / `--shots`.
+
+### 2026-10-19 - BAL-01: the reference policy (tool-side only)
+- `--policy reference` (balance_sim.gd / balance.py) is the named reference policy: the HeuristicStrategist at
+  `reference_lookahead` (tools/balance/balance_defaults.json, default 2). Deterministic; its JSON equals
+  `--policy heuristic --lookahead 2` except for the policy name (and, from balance.py, the meta name / wall time).
+  `builtin` and `heuristic` are unchanged. No game rule or tuning change.
+- balance.py reports print the policy label on every report header ("reference (heuristic, lookahead 2)"), and the fight
+  report has a table of damage dealt per turn and the both-wheels share by tier labelled with the policy.
+- Test: tests/unit/test_balance_reference_policy.gd (fast tier).
