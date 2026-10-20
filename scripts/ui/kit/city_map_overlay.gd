@@ -96,6 +96,9 @@ const KIND_ELITE := "elite"
 const KIND_SHOP := "shop"
 const KIND_EVENT := "event"
 const KIND_RACK := "rack"
+const KIND_REST := "rest"
+const KIND_WORKSHOP := "workshop"
+const KIND_CACHE := "cache"
 const KIND_CENTRAL_SERVER := "central_server"
 const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
@@ -560,11 +563,11 @@ static func route_kind(node_type: int, elite: bool) -> String:
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK
 		RC.InfilNodeType.REST:
-			return "rest"
+			return KIND_REST
 		RC.InfilNodeType.WORKSHOP:
-			return "workshop"
+			return KIND_WORKSHOP
 		RC.InfilNodeType.CACHE:
-			return "cache"
+			return KIND_CACHE
 	return ""
 
 

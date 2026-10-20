@@ -20,10 +20,14 @@ const MEANINGS := {CityMapOverlay.KIND_FIGHT: "Fight: win it for Cycles and loot
 	CityMapOverlay.KIND_ELITE: "Elite fight: harder, better loot", # TR
 	CityMapOverlay.KIND_EVENT: "Event: a choice, and its price", # TR
 	CityMapOverlay.KIND_SHOP: "Shop: spend Cycles (Mainframe)", # TR
-	CityMapOverlay.KIND_RACK: "Rack: fight, then bank Schematics and assets"} # TR
+	CityMapOverlay.KIND_RACK: "Rack: fight, then bank Schematics and assets", # TR
+	CityMapOverlay.KIND_REST: "Rest: placeholder text", # TR
+	CityMapOverlay.KIND_WORKSHOP: "Workshop: placeholder text", # TR
+	CityMapOverlay.KIND_CACHE: "Cache: placeholder text"} # TR
 ## The strip's word for each kind (round 44 `route_page.png`: FIGHT, ELITE, EVENT, SHOP, RACK).
 const SHORT := {CityMapOverlay.KIND_FIGHT: "FIGHT", CityMapOverlay.KIND_ELITE: "ELITE", # TR
-	CityMapOverlay.KIND_EVENT: "EVENT", CityMapOverlay.KIND_SHOP: "SHOP", CityMapOverlay.KIND_RACK: "RACK"} # TR
+	CityMapOverlay.KIND_EVENT: "EVENT", CityMapOverlay.KIND_SHOP: "SHOP", CityMapOverlay.KIND_RACK: "RACK", # TR
+	CityMapOverlay.KIND_REST: "REST", CityMapOverlay.KIND_WORKSHOP: "WORKSHOP", CityMapOverlay.KIND_CACHE: "CACHE"} # TR
 ## ART-7 3B: the state rings the key names (option A), and their words. B3 (round 44): only the
 ## rings the map draws by default (walked, next).
 const COLOR_KEYS: Array[String] = ["walked", "next"]
@@ -37,7 +41,8 @@ const PAD_WORDS := "HOVER: SHOW ALL LINKS" # TR
 const LINKS_WORDS := "SHOWING ALL LINKS" # TR
 ## Entry order (the kinds a route can have).
 const ORDER: Array[String] = [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_EVENT,
-	CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_RACK]
+	CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_RACK,
+	CityMapOverlay.KIND_REST, CityMapOverlay.KIND_WORKSHOP, CityMapOverlay.KIND_CACHE]
 ## Lettering and swatch at text scale 1.0 (px), the swatch's sticker share, the gaps.
 const FONT := 12
 const TITLE_FONT := 15
