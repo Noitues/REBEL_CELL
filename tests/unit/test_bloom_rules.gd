@@ -51,13 +51,13 @@ func _win_fight(s: NetrunSession) -> int:
 
 # --- Start, bands, entry ------------------------------------------------------------
 
-func test_start_values_come_from_config_per_tier_and_t1_has_a_free_dose() -> void:
+func test_start_values_come_from_config_per_tier_and_no_tier_gets_a_free_dose() -> void:
 	for tier in [1, 2, 3, 4]:
 		var s := _session(tier)
 		var b := _bloom(s)
 		assert_true(b.enabled)
 		assert_eq(b.front_milli, -int(_cfg.bloom_start_gap_milli_by_tier[tier - 1]), "tier %d" % tier)
-		assert_eq(b.doses_held, _cfg.bloom_free_doses_t1 if tier == 1 else 0)
+		assert_eq(b.doses_held, 0, "S5: no free dose at any tier")
 		assert_eq(s.bloom_band(), BloomRules.Band.DORMANT, "DORMANT until a node is entered")
 
 
@@ -117,12 +117,11 @@ func test_front_is_frozen_in_a_fight_and_advances_turns_times_pace_at_its_end() 
 	assert_eq((b.front_milli - at_entry) % _cfg.bloom_pace_turn_milli, 0, "whole turns of pace_turn")
 
 
-func test_end_fight_pace_is_turns_times_config_and_bosses_are_exempt() -> void:
+func test_end_fight_pace_is_turns_times_config() -> void:
 	var b := BloomState.new()
 	b.enabled = true
-	assert_eq(BloomRules.fight_pace(b, _cfg, 7, false), 7 * _cfg.bloom_pace_turn_milli)
-	assert_eq(BloomRules.fight_pace(b, _cfg, 7, true), 0, "S3: bosses and mini-bosses are exempt")
-	BloomRules.end_fight(b, _cfg, 3, false)
+	assert_eq(BloomRules.fight_pace(b, _cfg, 7), 7 * _cfg.bloom_pace_turn_milli)
+	BloomRules.end_fight(b, _cfg, 3)
 	assert_eq(b.front_milli, 3 * _cfg.bloom_pace_turn_milli)
 
 
@@ -183,9 +182,12 @@ func test_dose_pushes_the_front_back_and_clamps_the_gap_at_max() -> void:
 	assert_eq(BloomRules.gap_milli(b), _cfg.bloom_max_gap_milli, "clamped at max_gap")
 
 
-func test_t1_free_dose_is_used_and_counted_and_buying_costs_config_price() -> void:
+func test_t1_starts_with_zero_doses_and_a_bought_dose_is_used_and_counted() -> void:
 	var s := _session(1)
 	var b := _bloom(s)
+	assert_eq(b.doses_held, 0)
+	assert_eq(b.front_milli, -int(_cfg.bloom_start_gap_milli_by_tier[0]), "the wide T1 gap")
+	b.doses_held = 1
 	s.enter_node(s.available_nodes()[0])
 	if s.run.phase != RunState.Phase.MAP:
 		s.run.phase = RunState.Phase.MAP
@@ -316,3 +318,136 @@ func test_bloom_code_has_no_inline_pace_numbers() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/core/bloom_rules.gd")
 	for bad in ["650", "500", "700", "1000 *", "75", "5000", "2000"]:
 		assert_false(src.contains(bad), "bloom_rules.gd holds only config reads (found %s)" % bad)
+
+
+# --- Solace v2: Heat pace, Exploit forms ---------------------------------------------
+
+func _heat_to_band(s: NetrunSession, band: int) -> void:
+	var levels := HeatRules.band_levels(s.campaign, _cfg)
+	s.campaign.heat = 0 if band == 0 else int(levels[band - 1])
+
+
+func test_every_fight_class_pays_the_turn_cost_bosses_included() -> void:
+	# S3: there is no class exemption. The same fight (4 turns) costs the same front for a normal,
+	# an elite, a mini-boss and a boss node.
+	var cost := {}
+	for cls in ["normal", "elite", "mini_boss", "boss"]:
+		var s := _session(3)
+		var router := _first_of_type(s, RC.InfilNodeType.ROUTER)
+		if router == &"":
+			pending("no Router on the first layer for this seed")
+			return
+		s.enter_node(router)
+		var node := s.run.map.get_node(router)
+		node["elite"] = cls == "elite"
+		node["mini_boss"] = cls == "mini_boss"
+		node["boss"] = cls == "boss"
+		var b := _bloom(s)
+		var at := b.front_milli
+		s.combat.state.turn = 4
+		_win_fight(s)
+		cost[cls] = b.front_milli - at
+	for cls in cost:
+		assert_eq(cost[cls], cost["normal"], "%s pays like a normal fight" % cls)
+	assert_gt(int(cost["normal"]), 0)
+
+
+func test_heat_band_speeds_the_pace_floored_minimum_one() -> void:
+	for band in 5:
+		var s := _session(3)
+		_heat_to_band(s, band)
+		assert_eq(SolaceRaidRules.heat_band_index(s.campaign, _cfg), band)
+		var id := s.available_nodes()[0]
+		var predicted := int(s.bloom_preview()[id]["gap_milli"])
+		var b := _bloom(s)
+		var before := b.front_milli
+		s.enter_node(id)
+		var pct := int(_cfg.bloom_pace_heat_pct_by_band[band])
+		assert_eq(b.front_milli - before, maxi(1, int(_cfg.bloom_pace_node_milli_by_tier[2]) * pct / 100), "band %d" % band)
+		assert_eq(BloomRules.gap_milli(b), predicted, "preview == result at band %d" % band)
+	var tiny := BloomState.new()
+	assert_eq(BloomRules.scaled(tiny, _cfg, 1), 1)
+	assert_eq(_cfg.bloom_pace_heat_pct_by_band[4], 160, "SO4: 160 percent at PURGE")
+
+
+func test_heat_also_scales_the_turn_cost() -> void:
+	var b := BloomState.new()
+	b.heat_pct = 160
+	assert_eq(BloomRules.fight_pace(b, _cfg, 3), 3 * (_cfg.bloom_pace_turn_milli * 160 / 100))
+
+
+func test_virus_scales_pace_once_with_heat_no_drift() -> void:
+	var b := BloomState.new()
+	b.key_virus = true
+	b.heat_pct = 110
+	var one := BloomRules.scaled(b, _cfg, 650)
+	assert_eq(one, 650 * 110 * 75 / 10000, "one floor over the product")
+	assert_eq(BloomRules.scaled(b, _cfg, 650), one, "the same every call")
+
+
+func test_breach_setback_fires_once_and_across_is_free() -> void:
+	var b := BloomState.new()
+	BloomRules.begin(b, _cfg, _solace, 3, true)
+	b.key_breach = true
+	var gap_breach := BloomRules.gap_after_entry(b, _cfg, 3, 2, true)
+	var no_key := b.copy() as BloomState
+	no_key.key_breach = false
+	assert_eq(gap_breach - BloomRules.gap_after_entry(no_key, _cfg, 3, 2, true), _cfg.bloom_breach_setback_milli + _cfg.bloom_pace_cross_milli, "setback plus the free ACROSS")
+	var front0 := b.front_milli
+	BloomRules.enter(b, _cfg, 3, 2, true)
+	assert_eq(BloomRules.gap_milli(b), gap_breach, "preview == result")
+	assert_true(b.breach_applied)
+	assert_eq(b.front_milli, front0 + _cfg.bloom_hq_pace_node_milli - _cfg.bloom_breach_setback_milli, "no ACROSS toll")
+	var front1 := b.front_milli
+	BloomRules.enter(b, _cfg, 3, 3, true)
+	assert_eq(b.front_milli, front1 + _cfg.bloom_hq_pace_node_milli, "the second entry has no setback")
+
+
+func test_intel_cuts_the_turn_cost() -> void:
+	var b := BloomState.new()
+	b.key_intel = true
+	assert_eq(BloomRules.fight_pace(b, _cfg, 4), 4 * (_cfg.bloom_pace_turn_milli * _cfg.bloom_intel_turn_pct / 100))
+	assert_eq(BloomRules.scaled(b, _cfg, 650), 650, "Intel does not slow node pace")
+
+
+func test_all_three_exploits_stack_to_the_product_formula() -> void:
+	var b := BloomState.new()
+	BloomRules.begin(b, _cfg, _solace, 3, true)
+	b.key_intel = true
+	b.key_virus = true
+	b.key_breach = true
+	b.heat_pct = 110
+	var node := _cfg.bloom_hq_pace_node_milli * 110 * 75 / 10000
+	var turn := _cfg.bloom_pace_turn_milli * 110 * 75 * _cfg.bloom_intel_turn_pct / 1000000
+	assert_eq(BloomRules.entry_pace(b, _cfg, 3, true), node, "ACROSS is free")
+	assert_eq(BloomRules.fight_pace(b, _cfg, 4), 4 * turn)
+	var front0 := b.front_milli
+	BloomRules.enter(b, _cfg, 3, 1)
+	assert_eq(b.front_milli, front0 + node - _cfg.bloom_breach_setback_milli)
+	BloomRules.end_fight(b, _cfg, 4)
+	assert_eq(b.front_milli, front0 + node - _cfg.bloom_breach_setback_milli + 4 * turn, "no cap on the stack (SO3)")
+
+
+func test_a_session_loads_its_keys_from_the_exploits_held() -> void:
+	var c := CampaignRules.new_campaign(_solace, _cfg, _lookup, 1, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())
+	var none := NetrunSession.start(_resolver, c, c.roster[0].id, 3, &"t1_a", 5, _solace)
+	assert_false(_bloom(none).key_virus or _bloom(none).key_breach or _bloom(none).key_intel)
+	var c2 := CampaignRules.new_campaign(_solace, _cfg, _lookup, 1, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())
+	c2.exploits.assign([RC.ExploitType.INTEL, RC.ExploitType.BREACH, RC.ExploitType.VIRUS])
+	var all := NetrunSession.start(_resolver, c2, c2.roster[0].id, 3, &"t1_a", 5, _solace)
+	assert_true(_bloom(all).key_virus and _bloom(all).key_breach and _bloom(all).key_intel)
+
+
+func test_the_breach_fields_round_trip_and_an_old_save_loads_them_off() -> void:
+	var b := BloomState.new()
+	b.enabled = true
+	b.key_breach = true
+	b.breach_applied = true
+	b.heat_pct = 125
+	var back := BloomState.new()
+	back.load_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
+	assert_eq(back.to_dict(), b.to_dict())
+	var old := BloomState.new()
+	old.load_dict({"front_milli": -3000, "enabled": true})
+	assert_false(old.breach_applied)
+	assert_eq(old.heat_pct, 100)

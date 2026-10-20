@@ -24,8 +24,9 @@ const PANEL_MOVE := "MOVE" # TR
 const PANEL_GAP := "BLOOM GAP" # TR
 const PANEL_GAP_VALUE := "%s layers after entering" # TR
 const PANEL_GAP_CAUGHT := "%s layers: the Bloom has you" # TR
-const PANEL_TURN_COST := "Each fight turn there: front +%s" # TR
+const PANEL_TURN_COST := "Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied" # TR
 const MOVE_ACROSS_TIP := "Bridge: the other tower's next rung; the front gains extra pace." # TR
+const MOVE_ACROSS_FREE_TIP := "Bridge: the other tower's next rung; free with the Breach key." # TR
 const MOVE_UP_TIP := "Same tower, next rung." # TR
 ## The link key the overlay and `across_keys` share: "<from>><to>".
 const KEY_FORMAT := "%s>%s"
@@ -91,7 +92,7 @@ static func gap_of(preview: Dictionary, id: StringName) -> Dictionary:
 	if not preview.has(id):
 		return {}
 	var p: Dictionary = preview[id]
-	return {"text": NetrunSession.bloom_gap_text(int(p["gap_milli"])), "caught": bool(p["caught"]),
+	return {"text": NetrunSession.bloom_gap_text(int(p["gap_milli"])), "caught": bool(p["caught"]), "across_milli": int(p.get("across_milli", 0)),
 		"turn": NetrunSession.bloom_gap_text(int(p["turn_cost_milli"])) if int(p["turn_cost_milli"]) > 0 else ""}
 
 
@@ -121,7 +122,9 @@ static func panel_rows(s: NetrunSession, id: StringName) -> Array:
 		rows.append([TranslationServer.translate(PANEL_TOWER), tw])
 	var mv := move_word(s.run.map, node, s.run.current_node_id)
 	if mv != "" and s.available_nodes().has(id):
-		var tip := MOVE_ACROSS_TIP if NetrunSession.entered_across(node, s.run.current_node_id) else MOVE_UP_TIP
+		var tip := MOVE_UP_TIP
+		if NetrunSession.entered_across(node, s.run.current_node_id):
+			tip = MOVE_ACROSS_TIP if int(gap_of(s.bloom_preview(), id).get("across_milli", 1)) > 0 else MOVE_ACROSS_FREE_TIP
 		rows.append([TranslationServer.translate(PANEL_MOVE), "%s: %s" % [mv, TranslationServer.translate(tip)]])
 	var gap := gap_of(s.bloom_preview(), id)
 	if not gap.is_empty():

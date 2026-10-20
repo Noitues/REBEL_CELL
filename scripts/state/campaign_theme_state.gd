@@ -6,4 +6,5 @@ extends CorpThemeBlock
 
 var halcyon: HalcyonCampaignTheme = HalcyonCampaignTheme.new()
 var rebel_cell: RebelCellCampaignTheme = RebelCellCampaignTheme.new()
+var solace: SolaceCampaignTheme = SolaceCampaignTheme.new()
 var raid: RaidThemeState = RaidThemeState.new()

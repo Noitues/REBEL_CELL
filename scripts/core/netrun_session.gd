@@ -67,6 +67,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	p_campaign.pending_complications.clear()
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
+	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -179,6 +180,7 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s.run.map = graph
 	if kind == "boss":
 		BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+		s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
 	s.last_events.append_array(left_post)
@@ -210,6 +212,7 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 	var left_post := s._leave_post(operative_id)
 	s.run.map = SolaceHqGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.HQ_GRAPH_STREAM))
 	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "HQ ladder started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s.last_events.append_array(left_post)
@@ -290,10 +293,33 @@ func bloom_band() -> BloomRules.Band:
 
 
 ## WH-11: Exploit keys held this run (EX-03 sets them): Intel, Virus.
-func bloom_set_keys(intel: bool, virus: bool) -> void:
+func bloom_set_keys(intel: bool, virus: bool, breach: bool = false) -> void:
 	run.corp_theme.solace.key_intel = intel
 	run.corp_theme.solace.key_virus = virus
+	run.corp_theme.solace.key_breach = breach
 	_sync()
+
+
+## Solace v2: the Exploits held this campaign (and in the corporation's ExploitData) set the
+## Bloom keys at netrun start: each flag on the ExploitData is one form of slowdown.
+func _bloom_load_keys(corp: CorporationData) -> void:
+	var b := run.corp_theme.solace
+	if not b.enabled or corp == null:
+		return
+	for ex in corp.exploits:
+		if ex == null or not campaign.has_exploit(ex.exploit_type):
+			continue
+		b.key_virus = b.key_virus or ex.bloom_pace_cut
+		b.key_breach = b.key_breach or ex.bloom_setback
+		b.key_intel = b.key_intel or ex.bloom_turn_cut
+
+
+## Reads the campaign's Heat band into the Bloom's pace multiplier (before each entry, fight end
+## and preview, so the preview and the result read the same Heat).
+func _bloom_refresh_heat() -> void:
+	var b := run.corp_theme.solace
+	if b.enabled:
+		BloomRules.set_heat_band(b, config, SolaceRaidRules.heat_band_index(campaign, config))
 
 
 ## WH-11 preview, nothing random: for each node `available_nodes()` offers (every unvisited
@@ -306,6 +332,7 @@ func bloom_preview() -> Dictionary:
 	var out := {}
 	if not b.enabled or run.map == null or run.phase != RunState.Phase.MAP:
 		return out
+	_bloom_refresh_heat()
 	var ids: Array = available_nodes()
 	if b.key_intel:
 		ids = []
@@ -319,16 +346,12 @@ func bloom_preview() -> Dictionary:
 		var steps := 1
 		if b.key_intel:
 			steps = maxi(1, int(node["layer"]) - b.layer_milli / 1000)
-		var gap := int(node["layer"]) * 1000 - (b.front_milli + (steps - 1) * BloomRules.entry_pace(b, config, run.tier) + BloomRules.entry_pace(b, config, run.tier, across))
+		var gap := int(node["layer"]) * 1000 - (b.front_milli + (steps - 1) * BloomRules.entry_pace(b, config, run.tier) + BloomRules.entry_pace(b, config, run.tier, across) - BloomRules.pending_setback(b, config))
 		var fight := int(node["type"]) == RC.InfilNodeType.ROUTER or int(node["type"]) == RC.InfilNodeType.SERVER_RACK
 		out[id] = {"gap_milli": gap, "caught": gap <= 0, "fight": fight,
-			"turn_cost_milli": BloomRules.fight_pace(b, config, 1, _bloom_boss_node(node)) if fight else 0}
+			"turn_cost_milli": BloomRules.fight_pace(b, config, 1) if fight else 0,
+			"across_milli": BloomRules.entry_pace(b, config, run.tier, true) - BloomRules.entry_pace(b, config, run.tier) if across else 0}
 	return out
-
-
-## Bosses and mini-bosses: the HQ boss run's node and the final Server Rack of a netrun.
-func _bloom_boss_node(node: Dictionary) -> bool:
-	return run.kind == "boss" or bool(node.get("boss", false)) or bool(node.get("mini_boss", false)) or (run.kind == "netrun" and run.map != null and node.get("id", &"") == run.map.final_node_id())
 
 
 ## CAUGHT's consequence: the operative is lost and the netrun abandoned (Q24.1), the same
@@ -427,6 +450,7 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 	run.current_node_id = node_id
 	run.visited.append(node_id)
 	var bloom := run.corp_theme.solace
+	_bloom_refresh_heat()
 	if bloom.enabled and BloomRules.enter(bloom, config, run.tier, int(node["layer"]), across):
 		_bloom_caught()
 		return last_events
@@ -617,7 +641,8 @@ func _finish_combat() -> void:
 		_die()
 		return
 	run.operative.hp = cs.player.hp
-	if run.corp_theme.solace.enabled and BloomRules.end_fight(run.corp_theme.solace, config, cs.turn, _bloom_boss_node(node)):
+	_bloom_refresh_heat()
+	if run.corp_theme.solace.enabled and BloomRules.end_fight(run.corp_theme.solace, config, cs.turn):
 		_bloom_caught()
 		return
 	run.null_resolved = run.null_resolved or cs.null_resolved

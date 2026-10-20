@@ -9224,3 +9224,20 @@ Answers applied (orchestrator): HQ stand-ins are exempt from the 6-floor frontag
 - **Outcomes.** A won fight on any non-crown room continues the run (rewards as a netrun: card offer, elite Firmware). The crown (`boss` node, fights `final_boss`; Exploit boss overrides apply to the crown fight only) completes the run through `_complete_run`, and `on_run_completed` treats `hq` like `boss` (campaign WON, no Rank). CAUGHT and 0 HP use the existing Q24.1 / death path.
 - **No Rack capture on the ladder (default taken).** The mini-boss rooms and crown are SERVER_RACK typed for the Bloom/UI, but `hq` runs skip `_capture_rack` (no banked Schematics / Rack Heat / Daemon offer); the mini-boss gets the elite Firmware offer. Mini-boss rooms are exempt from the Bloom's per-turn fight pace (S3).
 - **Save.** No version bump: `run.kind` is an existing string and the map is saved (OPTIONAL_KEYS + `across_from`); v5 stands. Tests: `test_hq_ladder_run` (fast).
+
+## 2026-10-19 - Solace THE BLOOM v2 (designer rulings applied)
+
+Spec: `docs/handoff/plan2/drafts/themes/v2/solace.md`. Built on branch `solace-v2`.
+
+- **S5/S3.** `bloom_free_doses_t1`, `bloom_exempt_boss_turn_cost`, `bloom_heat_affects_street` and `raid_infection_start_bp_by_band` are deleted. Every fight class pays turns x `pace_turn_eff`.
+- **S2.** `bloom_pace_heat_pct_by_band` (100/110/125/140/160). `BloomState.heat_pct` is refreshed from the campaign Heat before each node entry, fight end and preview (one floor over `base x heat x virus [x intel] / 100^n`, minimum 1).
+- **S6.** `ExploitData.bloom_pace_cut` (Virus), `bloom_setback` (Breach), `bloom_turn_cut` (Intel); magnitudes in `bloom_virus_pace_pct`, `bloom_breach_setback_milli`, `bloom_intel_turn_pct`. Keys load at netrun start from the campaign's held Exploits. No cap on the stack (SO3).
+- **S1.** `campaign.corp_theme.solace.infection_bp` (new `SolaceCampaignTheme`) replaces the per-raid field; `SolaceRaidTheme` is deleted (an old save's `raid.solace` key is ignored on load). Decay: CELL HOLDS (no campaign loss, no TAKEN node) `raid_infection_decay_hold_bp` + `raid_infection_decay_per_kill_bp` x threats destroyed (SO1 partial); cures `raid_infection_decay_cure_bp` on Heat objective Site completion and Proxy Relay passive (SO2).
+- **S4.** No debt-pip code existed on this base; nothing to delete.
+
+**Open questions for the designer** (defaults built):
+1. The Breach setback is not clamped to `bloom_max_gap_milli` (a T1 first entry can show a gap above 5.0); simplest, matches the "+1000" arithmetic.
+2. Decay on CELL HOLDS applies to the figure at the end of the raid (after the rise), and a CITY LOST raid applies none.
+3. Heat is read at the moment of each node entry / fight end, before that node's own Heat is added.
+4. The ACROSS toll is flat (not scaled by Heat or Virus); Breach makes it free.
+5. The raid setup shows the figures as an INFECTION row on the work order card; the TIDE gauge look stays with the art pass.

@@ -14,6 +14,12 @@ var enabled: bool = false
 var doses_held: int = 0
 ## WH-11: an HQ run (HQ numbers; one front shared by both towers).
 var hq: bool = false
-## WH-11: Exploit keys held for this run (Intel reveals the whole ladder gap, Virus scales pace).
+## WH-11: Exploit keys held for this run (Intel reveals the whole ladder gap and halves turn cost, Virus scales pace).
 var key_intel: bool = false
 var key_virus: bool = false
+## Solace v2: the Breach key (one-time setback on the first node entry, ACROSS is free).
+var key_breach: bool = false
+## Solace v2: the setback has fired this netrun.
+var breach_applied: bool = false
+## Solace v2: the Heat band's pace percent, refreshed by the session before each entry / fight end.
+var heat_pct: int = 100

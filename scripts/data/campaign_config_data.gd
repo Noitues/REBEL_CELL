@@ -270,17 +270,18 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var bloom_dose_price: int = 15
 ## Gap clamp after a dose.
 @export var bloom_max_gap_milli: int = 5000
-## Doses granted at T1 netrun start.
-@export var bloom_free_doses_t1: int = 1
 ## Band ceilings (gap <=): CLOSE, CATCHING.
 @export var bloom_close_gap_milli: int = 2000
 @export var bloom_catch_gap_milli: int = 1000
 ## Percent multiplier on node and turn pace with the Virus key (floor division, minimum 1).
 @export var bloom_virus_pace_pct: int = 75
-## Mini-boss and boss fights add no turn pace (node entry still applies).
-@export var bloom_exempt_boss_turn_cost: bool = true
-## Heat never changes street pace.
-@export var bloom_heat_affects_street: bool = false
+## Heat pace multiplier by band (COOL, NOTICED, FLAGGED, HUNTED, PURGE), percent; applies to
+## node and turn pace on the street and in the HQ.
+@export var bloom_pace_heat_pct_by_band: PackedInt32Array = PackedInt32Array([100, 110, 125, 140, 160])
+## Breach key: one-time setback of the front on the first node entry of a netrun.
+@export var bloom_breach_setback_milli: int = 1000
+## Intel key: percent multiplier on the per-turn fight cost.
+@export var bloom_intel_turn_pct: int = 50
 ## Solace HQ ladder (WH-10, drafts/hq/solace.md): rungs between the Clinic Gate and the Genome
 ## Core crown (D10: more than 7 layers), the rung whose rooms hold the Account Manager, the
 ## Ward-tower rungs that are guaranteed ward rests, and each tower's room-kind weights in the
@@ -290,12 +291,15 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var solace_hq_ward_rest_rungs: PackedInt32Array = PackedInt32Array([5, 8])
 @export var solace_hq_ward_weights: PackedInt32Array = PackedInt32Array([45, 20, 15, 15, 5])
 @export var solace_hq_billing_weights: PackedInt32Array = PackedInt32Array([30, 5, 20, 20, 25])
-## Solace raid infection, basis points: start per Heat band (COOL, NOTICED, FLAGGED, HUNTED,
-## PURGE), per step base, per living threat per step, the CITY LOST threshold.
-@export var raid_infection_start_bp_by_band: PackedInt32Array = PackedInt32Array([0, 500, 1000, 1500, 2000])
+## Solace campaign infection, basis points: per step base, per living threat per step, the CITY
+## LOST threshold, and the decays (raid held, per threat destroyed, per cure: Heat objective Site
+## or Proxy Relay completion).
 @export var raid_infection_bp_base: int = 50
 @export var raid_infection_bp_per_threat: int = 100
 @export var raid_infection_lost_bp: int = 10000
+@export var raid_infection_decay_hold_bp: int = 1000
+@export var raid_infection_decay_per_kill_bp: int = 100
+@export var raid_infection_decay_cure_bp: int = 1500
 ## Halcyon THE EYE: sector width and step (degrees), octants moved per counted netrun, netruns
 ## fixed after an Exploit.
 @export var eye_sector_deg: int = 90

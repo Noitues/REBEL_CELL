@@ -34,6 +34,9 @@ class RaidResult:
 	var infection_start_bp: int = 0
 	var infection_bp: int = 0
 	var infection_figures: Array[int] = []
+	## Solace v2: the decay a held raid gives, and the campaign figure after it (what apply() stores).
+	var infection_decay_bp: int = 0
+	var infection_end_bp: int = 0
 	## True when the infection reached the threshold: the city is infected and Solace wins.
 	var city_lost: bool = false
 
@@ -48,7 +51,8 @@ class RaidResult:
 			"home_before": home_before, "home_after": home_after, "threats_destroyed": threats_destroyed,
 			"threats_reached_home": threats_reached_home, "nodes": nodes.duplicate(true),
 			"taken": taken.duplicate(), "down": down.duplicate(),
-			"infection_bp": infection_bp, "city_lost": city_lost}
+			"infection_bp": infection_bp, "infection_decay_bp": infection_decay_bp, "infection_end_bp": infection_end_bp,
+			"city_lost": city_lost}
 
 	func summary_hash() -> int:
 		return hash(JSON.stringify(to_dict()))
@@ -142,6 +146,10 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		result.nodes[id] = {"before": before[id], "after": after, "outcome": outcome}
 	result.taken = taken_now
 	result.down = down_now
+	if result.infection_applies:
+		var holds := SolaceRaidRules.cell_holds(result.campaign_lost, taken_now.size())
+		result.infection_decay_bp = SolaceRaidRules.hold_decay_bp(result.threats_destroyed, config) if holds else 0
+		result.infection_end_bp = SolaceRaidRules.after_decay(result.infection_bp, result.infection_decay_bp)
 	result.events.append({"type": "raid_end", "won": result.won, "steps": result.steps_run,
 		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d DOWN, %d TAKEN." % [
 			"REPELLED" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
@@ -156,7 +164,7 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	campaign.grid.frozen_links.clear()  # freezes last one raid; opened links stay open
 	campaign.last_raid = result.to_dict()
 	if result.infection_applies:
-		campaign.corp_theme.raid.solace.infection_bp = result.infection_bp
+		campaign.corp_theme.solace.infection_bp = result.infection_end_bp
 	for sid in result.taken:
 		var s := campaign.grid.site(StringName(sid))
 		if s.get("stationed", "") != "":

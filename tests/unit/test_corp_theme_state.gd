@@ -40,7 +40,7 @@ func test_an_old_v5_save_loads_every_theme_field_as_default() -> void:
 	assert_false(r.corp_theme.solace.enabled, "an old save loads the Bloom disabled (DORMANT)")
 	assert_null(r.corp_theme.rebel_cell.hq_strike, "no HQ strike outside an HQ run")
 	assert_eq(c.corp_theme.halcyon.eye_index, 0)
-	assert_eq(c.corp_theme.raid.solace.infection_bp, 0)
+	assert_eq(c.corp_theme.solace.infection_bp, 0)
 	assert_eq(c.corp_theme.rebel_cell.lane_tag(&"any_site", &"STREET"), &"STREET")
 	assert_eq(r.corp_theme.meridian.weigh_stations_passed.size(), 0)
 
@@ -61,7 +61,7 @@ func test_a_non_default_field_changes_the_hash_and_joins_the_save() -> void:
 	var cases: Array[Callable] = [
 		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.halcyon.eye_index = 3,
 		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.rebel_cell.lanes_scouted.append(&"ROOF"),
-		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.raid.solace.infection_bp = 500,
+		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.solace.infection_bp = 500,
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.solace.front_milli = 1500,
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.orbital.lit_until_layer = 2,
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.meridian.capacity_bonus = -2,
@@ -91,7 +91,7 @@ func test_every_theme_field_round_trips_the_save() -> void:
 	c.corp_theme.halcyon.eye_fixed_left = 2
 	c.corp_theme.rebel_cell.lane_tags[&"site_b"] = &"SEWER"
 	c.corp_theme.rebel_cell.lanes_scouted.assign([&"ROOF", &"SEWER"])
-	c.corp_theme.raid.solace.infection_bp = 1250
+	c.corp_theme.solace.infection_bp = 1250
 	c.corp_theme.raid.rebel_cell.raid_arrival_step = 4
 	c.corp_theme.raid.orbital.dark_nodes.assign([&"home", &"site_a"])
 	var r := RunState.new()

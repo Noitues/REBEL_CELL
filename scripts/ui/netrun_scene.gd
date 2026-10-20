@@ -1820,7 +1820,7 @@ func _show_street_map(s: NetrunSession) -> void:
 	_prebake_backdrops.call_deferred()
 
 
-const LADDER_KEY := "UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace." # TR
+const LADDER_KEY := "UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key)." # TR
 const LADDER_KEY_TIP := "WARD and BILLING are the two towers. Hover or select a room to read its tower, how you enter it and the exact Bloom gap entering it leaves." # TR
 
 

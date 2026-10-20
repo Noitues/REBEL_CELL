@@ -321,6 +321,7 @@ Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Strength,Boss Strength
 Breach,Breach
+Bridge: the other tower's next rung; free with the Breach key.,Bridge: the other tower's next rung; free with the Breach key.
 Bridge: the other tower's next rung; the front gains extra pace.,Bridge: the other tower's next rung; the front gains extra pace.
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
@@ -350,6 +351,7 @@ CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CHOSEN,CHOSEN
+CITY LOST at step %d.,CITY LOST at step %d.
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
 CLAIM,CLAIM
 CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.,CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.
@@ -787,7 +789,7 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
-Each fight turn there: front +%s,Each fight turn there: front +%s
+"Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied","Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied"
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -1212,6 +1214,7 @@ IN FORCE,IN FORCE
 INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
+INFECTION,INFECTION
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 INNER RING: %s,INNER RING: %s
@@ -1896,6 +1899,7 @@ PIRATE RADIO 88.1,PIRATE RADIO 88.1
 SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
+POPULATION INFECTED %d%% > %d%%,POPULATION INFECTED %d%% > %d%%
 PRECISION TAG: how well this needle lands on its slice.,PRECISION TAG: how well this needle lands on its slice.
 PROCEED,PROCEED
 PROCESSED,PROCESSED
@@ -3259,6 +3263,7 @@ The boosts bought for the next run. Pick a boost up and move it here to buy it.,
 "The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The card's next page: the rest of its rows and actions.,The card's next page: the rest of its rows and actions.
+The city holds.,The city holds.
 "The city: click a Site to select it; the wheel zooms, a drag pans.","The city: click a Site to select it; the wheel zooms, a drag pans."
 The city: left and right step through the Sites; down to the hand.,The city: left and right step through the Sites; down to the hand.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
@@ -3269,6 +3274,7 @@ The hand's next page: the rest of the cards and offers.,The hand's next page: th
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
+The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.,The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
@@ -3342,7 +3348,7 @@ UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
 UP,UP
-"UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace.","UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace."
+"UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key).","UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key)."
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s

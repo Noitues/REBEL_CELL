@@ -22,6 +22,11 @@ func _wh02_corp_theme_config() -> int:
 	if d.bloom_hq_start_gap_milli != 3000 or d.eye_step_deg != 45 or d.hq_lanes_required != 3 or d.street_dark_nodes != 1 or d.meridian_capacity_base != 5: fails += 1
 	if d.hq_lane_ids != ([&"ROOF", &"STREET", &"SEWER"] as Array[StringName]) or d.lane_tag_default != &"STREET": fails += 1
 	if d.raid_infection_lost_bp != 10000 or d.meridian_weigh_station_layers != PackedInt32Array([4, 7, 10]): fails += 1
+	# Solace v2: Heat pace table, Exploit forms, decay keys; ExploitData flags default off.
+	if d.bloom_pace_heat_pct_by_band != PackedInt32Array([100, 110, 125, 140, 160]) or d.bloom_breach_setback_milli != 1000 or d.bloom_intel_turn_pct != 50: fails += 1
+	if d.raid_infection_decay_hold_bp != 1000 or d.raid_infection_decay_per_kill_bp != 100 or d.raid_infection_decay_cure_bp != 1500: fails += 1
+	var ex_flags := ExploitData.new()
+	if ex_flags.bloom_pace_cut or ex_flags.bloom_setback or ex_flags.bloom_turn_cut: fails += 1
 	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	if shipped == null or shipped.bloom_max_gap_milli != d.bloom_max_gap_milli or shipped.hq_lead_limit != d.hq_lead_limit: fails += 1
 	# WH-10: the Solace HQ ladder keys.

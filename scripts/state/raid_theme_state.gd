@@ -4,6 +4,5 @@ extends CorpThemeBlock
 ## one call (RaidResolver), so the raid's saved state is the campaign's: this block lives at
 ## CampaignThemeState.raid. One typed sub-object per corporation with raid fields.
 
-var solace: SolaceRaidTheme = SolaceRaidTheme.new()
 var rebel_cell: RebelCellRaidTheme = RebelCellRaidTheme.new()
 var orbital: OrbitalRaidTheme = OrbitalRaidTheme.new()

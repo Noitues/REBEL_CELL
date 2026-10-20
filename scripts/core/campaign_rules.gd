@@ -338,6 +338,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 				events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s under Heat %d" % [site.id, campaign.heat]))
 		RC.SiteObjective.HEAT_REDUCTION:
 			events.append_array(HeatRules.add_heat(campaign, site.heat_change, config, "Heat objective %s" % site.id))
+			events.append_array(_infection_cure_events(campaign, config, "Heat objective %s" % site.id))
 	if lookup != null:
 		events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 	return events
@@ -433,6 +434,17 @@ static func _node_passives_on_completion(campaign: CampaignState, corp: Corporat
 						events.append({"type": "node_passive", "site": site_id, "effect": e.type, "amount": e.amount,
 							"text": "%s (%s): Heat %+d." % [node.display_name, site_id, e.amount]})
 						events.append_array(HeatRules.add_heat(campaign, e.amount, config, node.display_name))
+						if node.node_type == RC.NetworkNodeType.PROXY_RELAY:
+							events.append_array(_infection_cure_events(campaign, config, node.display_name))
+	return events
+
+
+## Solace v2: a cure (Heat objective Site, Proxy Relay completion) lowers the campaign infection.
+static func _infection_cure_events(campaign: CampaignState, config: CampaignConfigData, why: String) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var cured := SolaceRaidRules.cure(campaign, config)
+	if cured > 0:
+		events.append({"type": "infection_cure", "amount_bp": cured, "text": "%s: population infection -%d%% (%d%%)." % [why, SolaceRaidRules.pct(cured), SolaceRaidRules.pct(campaign.corp_theme.solace.infection_bp)]})
 	return events
 
 
