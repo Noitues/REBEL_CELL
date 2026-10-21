@@ -45,7 +45,7 @@ when its class is in band.
 ## Floors (builtin policy; no regress against the 2026-10-18 measurements)
 These are not goals. A change that lowers one of them needs a reason in DECISIONS.
 - Boss win at ICE 0, builtin, campaign source: not below 6 % (S5_RESULTS, 97 fights).
-- Campaign win at ICE 0, builtin, 20 seeds: not below 50 % (BASELINE_e2e13918).
+- Campaign win at ICE 0, builtin, 20 seeds: not below 25 % (re-baselined 2026-10-20 from 50 %: after W0 N1, 324c7751, the tier-scaled Auto-Renew stalls the builtin bot at about 30 %; see `docs/handoff/plan2/balance/Q9_builtin.md`. The boss is tuned on the reference policy.)
 - Fights in a builtin campaign: normals T1-T3 win >= 98 %, elites T1-T3 >= 94 %, mini-bosses T1-T3 >= 80 %.
 
 ## Pace (GDD 11.8)

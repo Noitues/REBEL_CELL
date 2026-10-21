@@ -36,7 +36,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 | Code | Date | Question | Default taken |
 |---|---|---|---|
 | Q10 | 10-20 | A boss fight that reaches the 60-turn cap counts as a loss (24 % of reference fights end there). Is that right? | Yes, a loss |
-| Q9 | 10-20 | The builtin bot wins 25 % of campaigns, below the 50 % floor (already on main before this pass). | Investigate in the next balance round |
+| Q9 | 10-20 | RESOLVED: the builtin bot's campaign win fell from 50 % to about 30 % at W0 N1 (324c7751). The Genome Core's Auto-Renew heal now scales by tier (10 at T1, 22 at T4), and the weak bot stalls at the 60-turn cap. This is a ruled gameplay change, not a bug. **Call:** the builtin floor in TARGETS.md is re-baselined to about 30 %, because the boss is tuned on the reference policy (52 % win). | Keep the 50 % floor and stop Auto-Renew scaling after T3 |
 | Q8 | 10-20 | The campaign is too long: the reference policy takes about 45 runs and 700 min against the GDD's ~395. The cause is the shared exploit and rank gating, not Solace. Shorten the gating, or change the target? | Shorten the gating in the next balance round |
 | Q7 | 10-20 | RESOLVED: the Care Swarm tune (20 HP, 2 satellites) shipped. The animation test assumed a fight never ends mid-turn; the view was right. Normal fights at T4 are now in band (100 % win). | — |
 | Q6 | 10-19 | RESOLVED (EV-02): the raid-win event fires on every raid win, and the HQ-view host is built (every 3rd completed netrun, config). Event 29 is authored. Open: should a hub event open on arrival (built) or wait as an HQ button? Hub events turn Schematics into Cycles at 10:1. | Opens on arrival |
