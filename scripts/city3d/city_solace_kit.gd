@@ -118,6 +118,7 @@ static func apply_material(m: ShaderMaterial, cfg: CityConfig, night: float) -> 
 	m.set_shader_parameter(&"kit_glass_emit", cfg.solace_glass_emit)
 	m.set_shader_parameter(&"kit_nucleus_emit", cfg.solace_nucleus_emit)
 	m.set_shader_parameter(&"kit_clinic_emit", cfg.solace_clinic_emit)
+	m.set_shader_parameter(&"kit_porcelain_glow", cfg.solace_porcelain_glow)
 
 
 static func _v3(c: Color) -> Vector3:

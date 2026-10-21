@@ -201,6 +201,7 @@ uniform float kit_emit = 1.0;
 uniform float kit_glass_emit = 0.5;
 uniform float kit_nucleus_emit = 1.1;
 uniform float kit_clinic_emit = 0.6;
+uniform float kit_porcelain_glow = 0.12;
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -424,6 +425,7 @@ void fragment() {
 			em = kit_pink * kit_emit * kit_nucleus_emit;
 		} else if (kit == 4) {
 			base = kit_porcelain * tone;
+			em = kit_porcelain * kit_porcelain_glow * kit_emit;
 		} else if (kit == 5) {
 			float cp = max(kit_clinic_band.x, 0.1);
 			float cf = fract(zl / cp + seed * 5.0);
@@ -432,6 +434,7 @@ void fragment() {
 				em = kit_leaf * kit_emit * kit_clinic_emit;
 			} else {
 				base = kit_porcelain * tone;
+				em = kit_porcelain * kit_porcelain_glow * kit_emit;
 			}
 		} else if (kit == 6) {
 			base = kit_dome * tone;

@@ -981,7 +981,7 @@ extends Resource
 @export var solace_b_core_r: float = 0.11
 @export var solace_b_core_share: float = 0.92
 @export var solace_b_cells: Vector2i = Vector2i(5, 8)
-@export var solace_b_cell_r: Vector2 = Vector2(0.17, 0.27)
+@export var solace_b_cell_r: Vector2 = Vector2(0.2, 0.31)
 @export var solace_b_nucleus_share: float = 0.5
 @export var solace_b_patch_cos: float = 0.55
 ## C: tier half widths (the lot's shorter side), tier tops (share of the height), setback slab thickness, crown slab count,
@@ -1010,6 +1010,8 @@ extends Resource
 @export var solace_glass_emit: float = 0.5
 @export var solace_nucleus_emit: float = 1.1
 @export var solace_clinic_emit: float = 0.6
+## The faint light the clinic's porcelain carries (share of its colour at full emission): it reads against the dark city.
+@export var solace_porcelain_glow: float = 0.12
 
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
