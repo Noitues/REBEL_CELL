@@ -80,7 +80,85 @@ from the captures. Score = views × gap.
 No global `randf`/`randi`/`randomize` in look code. Look code uses seeded instances only (city_a2_builder, terrain,
 traffic, sky traffic, ambient props, paper_staging) plus hashes (`kit_noise`, `marker_stroke`).
 
-## Proposed order (for the designer's pick)
+## Critical pass (designer ask 2026-10-21: "very harsh, ready to ship")
+
+Standard: ship quality means it would pass next to the concept or plate in a trailer frame, not "reads". Close-ups,
+1:1 or 1.5x, at `D:/rc_scratch/rc_look/audit/crit_{pencil,media,world}.jpg` (`tools/crop_sheet.py`). Every item
+below fails that bar unless marked **ok**. This pass raises several gap scores from the first table.
+
+### World (3D)
+- **Combat backdrop: fail, the worst on the most-seen screen** (`crit_world.jpg` row 1, Solace site). The ink
+  crawls as doubled, stair-stepped outlines on every edge. The surfaces are posterised with green ghosting and vertical
+  striping. A black ink line cuts across the frame at mid-height. The helix is a smeared green blob. Nothing reads as a
+  plane. The concept (r11 / r41) has clean planar facets, a crisp 2 px ink, warm key against cool shadow, and readable
+  lane signage. Gap **5**.
+- **Raid / grid map (cel): fail.** Every tower is the same grey-violet prism with no window light, no tone jitter per
+  facet, and faint, broken ink. The concept's (r40 raid_view_v3) value range, lit windows, violet trim on the landmark
+  and its hierarchy are all missing. Gap **4**.
+- **Street (AAA-2): fail.** The facades are flat unlit rectangles with decal windows. That is the §1.2 "never" (flat
+  blocks or placeholders). No panel relief, AO or light gradient; signs are small and few, with no spill; the foreground
+  towers are black voids. Gap **5**.
+- **HQ run: fail.** It's on the cel spike shader against AAA-2 plates: the same flat ochre with heavy ink, and no lit
+  stone, containers or street streaks. Gap **5**.
+- **City night: fail.** Cartoon ripple water, the bay holes, a purple painted terrain, and a single flat corp beam
+  against the plate's six volumetric beams. Gap **5**.
+
+### Grease pencil: fail (gap 2 → **4**)
+The engine is right; the look isn't. Against r11 `combat_boss_night` and the r3 overlay kit (`crit_pencil.jpg`):
+1. **It reads as a vector line, not wax.** The width is uniform end to end, with no pressure swell or taper and no
+   lift-off flick. The concept stroke swells and thins, and shows grain and clumps.
+2. **Too thin for its job.** 9 px at 1080p against the concept's ~14-18 px at hero marks (aim arc, target ring).
+3. **Geometry is machine-perfect.** The aim arc is an exact quadratic; underlines are ruler-straight; the threat route
+   has polyline corners; rings are perfect ellipses, doubled. The concept underline overshoots and ends in a hooked
+   downstroke; the rings overlap at their closure, as a hand draws them.
+4. **A soft coloured halo** surrounds yellow and red strokes in combat, raid and grid. Wax on glass casts a crisp dark
+   shadow; it doesn't glow. Source not found in the pencil code (no glow in `marker_stroke` or `GreasePencilMark`):
+   to trace in the lab.
+5. **The TARGET word looks like neon marker**: gradient fill, inner highlight, pink outer glow. Concept words
+   ("HIT IT") are chunky wax with a cast shadow. On the grid the word also sits over its own target ring.
+6. The bristle, dropout and sheen detail is invisible at play size: it's tuned below the screen's resolution.
+
+### Decrypted holo: fail (gap 3 → **4**)
+THREAT INTEL in Godot is an opaque, flat green box. Against r40 and ui_kit:
+- no translucency (the city should show through at 78 % tint);
+- no scan bands and no visible 4 px scanlines;
+- no hologram content (the concept projects the unit models);
+- no corp seal, cracked or otherwise;
+- a cyan/green terminal-style edge, where the concept has RGB split on the edge only.
+With Solace's lime it reads as the Cell's own terminal: a §1.2 fail.
+
+### Corp paper: mostly ok (gap **2**)
+Stamp, clips and redactions are **ok**. Faults:
+- The stock is flat grey-white with faint fibres; the concept is warm cream with ageing and edge vignetting.
+- The letterhead is a weak grey-green, not in the corp colour.
+- **§1.2 media mix:** a pink dashed CRT-style forecast disc ("IF THE RAID RUNS NOW / HOME −10") sits on the paper.
+  Forecasts are terminal. That is a layout call for build, so it goes to art-pass as an item, not toolbox work.
+
+### CRT terminal: near ok (gap **2**)
+Navy glass, cyan edge and type are **ok**. The hex dump and scanlines are invisible at 1080p (the concept shows both);
+the corner notch is missing; and the panels are flatter than ui_kit's (no inner edge glow).
+
+### Vinyl sticker: ok (gap **1.5**)
+SEND IT, START DEFENSE and RAID SETUP read well. Faults: the extrude is shallower and the rest gloss weaker than the
+concept's (ui_kit JACK IN, r41 SEND IT); the keyline is thin on the small stickers.
+
+### Binary bits: unscored
+No capture exists yet: the lab comes first.
+
+### Revised scores (views × gap)
+| Area | Before | After |
+|---|---|---|
+| 4 Toon | 20 | **25** (5 × 5) |
+| 5 Ink | 15 | **25** (5 × 5: the combat backdrop crawl) |
+| 12 Pencil | 16 | **32** (8 × 4) |
+| 15 Paper + holo | 15 | **20** (5 × 4, holo) |
+| 14 CRT | 12 | 16 |
+
+So by score the pencil is the single biggest item, and toon + ink tie with light. The order below stays as approved
+(foundation, then light), because the world modules share the post chain and Foundation's lab. **Recommendation:** run
+pencil polish as a 2D track right after Foundation, in parallel with the world modules. It shares no files with them.
+
+## Order (approved by the designer 2026-10-21)
 
 Foundation is fixed first, as the brief says. After it, the order is by score, with paired areas done together:
 
@@ -110,3 +188,13 @@ Foundation is fixed first, as the brief says. After it, the order is by score, w
    netrun plan only, through a token.
 5. **Sticker shaders:** keep both designs (baked-art cards vs vector verbs) under one include, rather than force one
    shader?
+
+## Rulings received (2026-10-21)
+- Designer: the order above is approved; the review standard is "very harsh, ready to ship".
+- Art-pass (b): the toolbox builds modules and migrates call sites; art-pass tunes the per-view `.tres` values. One
+  writer per file: the toolbox announces before editing `city_post`, `netrun_shader_kit*`, `street_light_rig`,
+  `route_rig` or `city_view_3d`.
+- (c) Both looks: every world module ships a cel preset and an AAA-2 preset on one API.
+- (d) The netrun plan pencil is orange through the token `pencil_plan_netrun`; yellow everywhere else.
+- (e) Both sticker shaders stay, under one include, named by design (kit vs chrome).
+- First, ahead of Foundation: fix the city-night bay black holes (an L5 regression), with a before/after sheet.
