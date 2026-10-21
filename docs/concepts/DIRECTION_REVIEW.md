@@ -1548,3 +1548,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   (A-069); street netruns in Solace are build's call.
 - **Looks:** the city map keeps cel + ink at the raid zoom (ART_BIBLE 1.2). The AAA-2 night was re-lit so forms read (emission about
   1/3, moon key; median 0.14-0.16, under 1 % clipped). The AAA-2 day uses the approved city-day level (median about 0.46).
+- **Solace HQ scene (designer, 2026-10-21):** "The HQ scene follows the new lime district helix (canonical landmark rule). Re-render
+  the HQ plates with it, park and plinth setting, then port." The v4 HQ plates (white tubes, lime edges) are superseded once v5 is
+  approved. v5 keeps the v4 structure and rulings (two sideways-oval windows per floor, cutaway windows with the hybrid interiors,
+  flush walkways, full 360° per strand, no people), re-skinned to the district helix and set in the Solace park on the three-tier
+  plinth with cardinal stairs.
