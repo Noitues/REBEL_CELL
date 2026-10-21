@@ -201,6 +201,10 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var starting_schematics: int = 20
 @export var starting_rookies: int = 2
 @export var min_exploits_for_breach: int = 3
+## Solace vertical (SOLACE_VERTICAL steps 3-4): when non-empty, every place a campaign picks its corporation
+## (new campaign, the picker, CampaignSimulator) uses this corporation, so a playtest is one corp end to end.
+## "" = all corporations (shipped). Other corporations' content stays in the game.
+@export var campaign_focus_corp: StringName = &""
 ## Extracting an Exploit at or above this Heat provokes a RETALIATION raid (GDD 4.4;
 ## Heat objectives never do: they are sinks).
 @export var retaliation_min_heat: int = 50

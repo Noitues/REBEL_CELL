@@ -41,6 +41,8 @@ func _wh02_corp_theme_config() -> int:
 	if shipped == null or shipped.workshop_offers_per_visit != 3 or shipped.workshop_buys_per_visit != 1 or shipped.workshop_slice_price != 60 or shipped.workshop_null_slice_price != 90 or shipped.node_weight_workshop != 90 or shipped.workshop_min_tier != 2 or shipped.workshop_layers != Vector2i(3, 6): fails += 1
 	# RG-04: the Cache keys (shipped = default; the puzzle is off).
 	if shipped == null or shipped.node_weight_cache != 60 or shipped.cache_layers != Vector2i(2, 6) or shipped.cache_cycles_range != Vector2i(30, 60) or shipped.cache_card_choices != 3 or shipped.cache_puzzle_enabled: fails += 1
+	# Solace vertical: campaign_focus_corp ships off ("" = all corporations).
+	if shipped == null or shipped.campaign_focus_corp != &"" or d.campaign_focus_corp != &"": fails += 1
 	# WH-10: the Solace HQ ladder keys.
 	if d.solace_hq_rungs != 9 or d.solace_hq_mini_boss_rung != 9 or d.solace_hq_ward_rest_rungs != PackedInt32Array([5, 8]) or d.solace_hq_ward_weights.size() != 5 or d.solace_hq_billing_weights.size() != 5: fails += 1
 	# EX-02 / EX-03: the exploit building keys.

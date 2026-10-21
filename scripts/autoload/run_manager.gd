@@ -155,7 +155,7 @@ func build_generated(corporation_id: StringName, snap: Dictionary) -> Corporatio
 
 ## Corporations the profile may start a campaign against (GDD 3.4).
 func available_corporations() -> Array[CorporationData]:
-	return CampaignRules.available_corporations(profile, lookup())
+	return CampaignRules.available_corporations(profile, lookup(), config())
 
 
 func available_classes() -> Array[ClassData]:
@@ -178,6 +178,7 @@ func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPO
 		get_node("/root/Dialogue").clear()
 	_ensure_resolver()
 	_restore_lookup()
+	corporation_id = CampaignRules.focused_corporation_id(config(), lookup(), corporation_id)
 	corporation = lookup().get_content(corporation_id) as CorporationData
 	if not CampaignRules.corporation_available(profile, lookup(), corporation):
 		corporation = lookup().get_content(DEFAULT_CORPORATION) as CorporationData
