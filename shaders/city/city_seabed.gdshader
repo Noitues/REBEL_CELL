@@ -35,6 +35,9 @@ uniform float caustic_depth_bu = 30.0;
 uniform vec3 caustic_col = vec3(0.22, 0.72, 0.78);
 uniform float caustic_speed = 0.02;
 uniform float time_scale = 1.0;
+// Land above the sea (the bay islands) at night: its own colour as emission x this x night, so a dark island lifts like the
+// inland land around the city instead of clipping to black under the map grade.
+uniform float land_night_lift = 0.0;
 varying vec3 v_world;
 varying vec3 v_nw;
 
@@ -86,6 +89,9 @@ void fragment() {
 		cnet *= caustic_patch + pm * (1.0 - caustic_patch);
 		float up = v_nw.y * v_nw.y;
 		e += caustic_col * cnet * up * exp(-d / caustic_depth_bu) * caustic_k * mix(caustic_day_k, 1.0, night);
+	}
+	if (d <= 0.0) {
+		e += COLOR.rgb * land_night_lift * night;
 	}
 	EMISSION = e;
 }
