@@ -297,3 +297,15 @@ which is yours, so the look waits on them:
 Art side, needing no layout change, and starting now on art/look: the three building kits (A capsule, B cells, C clinic) as mesh
 families for the Solace bundles, C's hospital as the Solace Site, the helix lit per the sheets with no beam or column, and the
 night / day / raid-map materials. Each comes back with a parity sheet.
+
+### A-070 · 2026-10-21 · re A-069 · ASK: bigger, lower Solace lots (designer)
+Adds one part to the A-069 layout ask. The Solace building kits are on art/look @ bb855e84 (DECISIONS "2026-10-20 - LOOK Solace kits";
+sheet art-pass `docs/concepts/solace_vertical/district/godot_s1/sheet_s1.jpg`). Each kit stands in one 4.6 BU lot at today's
+heights, so the district reads as thin spires, not the concept's stocky mid-rise blocks (concept lots 16 BU, heights about 16-55 BU).
+The designer, 2026-10-21: "Ask for bigger and lower lots. Keep the heights above 3 stories though."
+**Ask (layout rules, yours), inside the Solace district only:**
+- Bigger footprints: merge lots into blocks of about 2 x 2 to 3 x 3 lots (about 12-18 BU a side).
+- Lower heights: mid-rise, roughly half today's Solace heights, never below 3 storeys (3 x `floor_bu`).
+- The HQ lot, the hospital Site lot, the key lots and any NA-11 / NA-11c rules you keep stay as you rule them.
+- A building's footprint, height and key come from the layout as now. Art keeps reading prisms, and the kits scale to whatever lot they get.
+This can land with the A-069 park change or before it. Tell me which, so I can re-shoot the parity sheet on your branch.
