@@ -96,7 +96,7 @@ func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:
 	CampaignRules.on_run_completed(c16, _corp, _cfg, _run(&"t1_a"))
 	var before := c16.heat
 	CampaignRules.on_run_completed(c16, _corp, _cfg, _run(&"t2_intel"))
-	assert_eq(c16.heat - before, roundi(15 * 1.1), "Exploit: (10 + ICE 16) x ICE 1 gain")
+	assert_eq(c16.heat - before, roundi((_cfg.exploit_heat + 5) * 1.1), "Exploit: (10 + ICE 16) x ICE 1 gain")
 
 
 func test_ice_4_raises_every_mainframe_price_by_10_percent() -> void:
