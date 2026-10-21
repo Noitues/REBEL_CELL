@@ -125,6 +125,9 @@ def write_manifest(corp, build_dir):
     bmin, bmax = info["bounds_blender"]["min"], info["bounds_blender"]["max"]
     gmin = [bmin[0], bmin[2], -bmax[1]]
     gmax = [bmax[0], bmax[2], -bmin[1]]
+    if info.get("footprint_radius"):  # a circle (Solace v5): the city clears the lots under it; min / max is its bounding square
+        rad = float(info["footprint_radius"])
+        gmin, gmax = [-rad, gmin[1], -rad], [rad, gmax[1], rad]
     cam_t, cam_o = L["camera"]
     man = {
         "schema": MANIFEST_SCHEMA,
@@ -141,7 +144,7 @@ def write_manifest(corp, build_dir):
         "origin": L.get("origin", "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre"),
         "place_lot": list(L["lot_centre"]) if "lot_centre" in L else None,
         "footprint": {"min": [round(v, 3) for v in gmin], "max": [round(v, 3) for v in gmax],
-                      "size": [round(gmax[k] - gmin[k], 3) for k in range(3)]},
+                      "size": [round(gmax[k] - gmin[k], 3) for k in range(3)], **({"radius": info["footprint_radius"]} if info.get("footprint_radius") else {})},
         "files": [{"path": info["glb"], "kind": "gltf", "bytes": os.path.getsize(glb), "sha256": sha256(glb)}] + extra_files(corp, dst),
         "triangles": info["triangles"],
         "materials": {k: v for k, v in MATERIALS.items() if k[3:] in info["triangles"]},

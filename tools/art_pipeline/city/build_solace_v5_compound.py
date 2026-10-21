@@ -34,7 +34,9 @@ import hq_compound_spec as SPEC  # noqa: E402
 _args = sys.argv[sys.argv.index("--") + 1:]
 CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
 os.makedirs(OUT_ARG, exist_ok=True)
-os.environ.setdefault("HQ_RB0", "120")  # the immediate park ring (the plates' park is 195: out to ~290 BU)
+os.environ.setdefault("HQ_RB0", "108")      # the park ring ends about where the city's Solace kits start (plates: PARK_R 118 units = 177 BU)
+os.environ.setdefault("HQ_RB_AMP", "0.3")
+PARK_CLIP = 180.0  # BU: nothing of the park beyond this radius (paths run on past the lawn); the footprint is this circle
 import hq_graph as G  # noqa: E402
 import sd_kit as SD  # noqa: E402
 
@@ -445,13 +447,20 @@ def park():
     for (scope, key, smooth), b in sorted(SD.BUILD.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2])):
         r = tgt[key]
         s = sc_of[scope]
-        base = len(r.V)
-        for p, c, prm in zip(b.V, b.C, b.P):
-            col = (c[0], c[1], c[2], (prm[0] if key == "neon" else 1.0))
-            r.v((p[0] * s, p[1] * s, p[2] * s), col)
+        remap = {}
+        kept = 0
         for fc in b.F:
-            r.f(*[base + i for i in fc])
-        stats["%s_%s" % (scope, key)] = len(b.F)
+            if max(math.hypot(b.V[i][0] * s, b.V[i][1] * s) for i in fc) > PARK_CLIP:
+                continue                                   # the park stops at the footprint circle
+            ids = []
+            for i in fc:
+                if i not in remap:
+                    p, c, prm = b.V[i], b.C[i], b.P[i]
+                    remap[i] = r.v((p[0] * s, p[1] * s, p[2] * s), (c[0], c[1], c[2], (prm[0] if key == "neon" else 1.0)))
+                ids.append(remap[i])
+            r.f(*ids)
+            kept += 1
+        stats["%s_%s" % (scope, key)] = kept
     return stats
 
 
@@ -563,7 +572,7 @@ bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", export_yup=True, us
                           export_texcoords=True, export_normals=True, export_vertex_color="ACTIVE",
                           export_all_vertex_colors=False, export_materials="EXPORT", export_extras=True,
                           export_cameras=False, export_lights=False, export_animations=False)
-info = dict(corp=CORP_ARG, glb=os.path.basename(glb),
+info = dict(footprint_radius=PARK_CLIP, corp=CORP_ARG, glb=os.path.basename(glb),
             bounds_blender=dict(min=[round(x, 3) for x in mins], max=[round(x, 3) for x in maxs]),
             triangles=tris, slot_surfaces=checks, server_surface=srv_surface, state="static", park=pstats,
             anchors_blender=dict(rows=anchors, server=srv_anchor, entry=entry_anchor, lift=LIFT), blender=bpy.app.version_string)

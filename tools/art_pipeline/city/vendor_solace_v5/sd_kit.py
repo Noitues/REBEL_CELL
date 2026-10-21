@@ -23,6 +23,7 @@ from sd_lib import MB, box, cyl, dome, lathe, sphere, torus, prism, rect, sweep,
 SL = 1.5                 # lawn / kit / hospital / tree scale (district unit -> HQ BU)
 SPL = 3.0                # plinth scale (district plinth r 35 / 29.5 / 24 -> 105 / 88.5 / 72 BU)
 HK = 1.8                 # extra height on the bundle towers
+RB_AMP = float(os.environ.get("HQ_RB_AMP", 1.0))  # HQ port: scales the boundary wobble
 RB0 = float(os.environ.get("HQ_RB0", 195.0))              # park boundary radius (district units; x SL = BU), +-25 / 15 wobble
 HOSP_CELL = (0, -7)      # the hospital's lower-left lot (i, j); its centre is (i + 1, j + 1) * PITCH
 CROSS_ANG = -33.0        # degrees: the standing cross faces the overview camera (yaw 110 looks along +x, -y)
@@ -151,7 +152,7 @@ def sd(n):
 # ------------------------------------------------------------------ the lot plan (lawn units)
 def Rb(th):
     """The park's organic boundary radius at angle th."""
-    return RB0 + 25.0 * math.sin(2 * th + 0.7) + 15.0 * math.sin(5 * th + 2.1)
+    return RB0 + RB_AMP * (25.0 * math.sin(2 * th + 0.7) + 15.0 * math.sin(5 * th + 2.1))
 
 
 def inside_blob(x, y, margin=6.0):

@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
-  "commit": "7ecf49f065ca638f62438faadefebffe8c580f71",
-  "scripts_sha256": "6147877cc43d5c9b6a697120408fff048c8c2dc2422f00ca70f4ecb6064d2a7c"
+  "commit": "d7277bec0e2781619224ec6aca86c5c9c14e9c98",
+  "scripts_sha256": "4fe34abbb5d879fa9706892604c7b1d3148590fa6a3e050521e92b7563143fa8"
  },
  "settings": {
   "blender": "5.2.2 LTS",

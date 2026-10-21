@@ -2139,6 +2139,9 @@ func stage_compound(corp: StringName) -> Node3D:
 	_cleared.append(fp)
 	_cleared_by[compound_key(corp)] = fp
 	dirty.append(fp)
+	var fr := float((m.get("footprint", {}) as Dictionary).get("radius", 0.0))
+	if fr > 0.0:  # LOOK Solace HQ: a round footprint (plinth + park ring): only the lots under the circle give way
+		_clear_masks[fp] = _circle_lots(at, fr)
 	# ART-5 5e's Site landmark (and its cleared block) gives way inside the compound too; the
 	# roof props follow the cleared prisms (they ride the rebuilt chunks).
 	if landmarks.has(SITE_KEY) and fp.intersects(_ground_box(landmarks[SITE_KEY])):
@@ -2160,6 +2163,21 @@ func stage_compound(corp: StringName) -> Node3D:
 	return node
 
 
+## The lots (world lot grid, Vector2i -> true) whose centre lies within `radius` BU of the placed compound's origin.
+func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
+	var out := {}
+	var o := Vector2(at.origin.x, at.origin.z)
+	var span := Rect2(o - Vector2.ONE * radius, Vector2.ONE * radius * 2.0)
+	var lo := _lot_of(cfg, span.position)
+	var hi := _lot_of(cfg, span.end)
+	for y in range(mini(lo.y, hi.y) - 1, maxi(lo.y, hi.y) + 2):
+		for x in range(mini(lo.x, hi.x) - 1, maxi(lo.x, hi.x) + 2):
+			var w := CityIsoCamera.lot_to_world(cfg, Vector2(x + 0.5, y + 0.5))
+			if Vector2(w.x, w.z).distance_to(o) <= radius:
+				out[Vector2i(x, y)] = true
+	return out
+
+
 ## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
 func unstage_compound(corp: StringName) -> void:
 	if not compounds.has(corp):
@@ -2173,6 +2191,7 @@ func unstage_compound(corp: StringName) -> void:
 	if _cleared_by.has(key):
 		var fp: Rect2 = _cleared_by[key]
 		_cleared.erase(fp)
+		_clear_masks.erase(fp)
 		_cleared_by.erase(key)
 		dirty.append(fp)
 	if landmarks.has(corp):
