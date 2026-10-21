@@ -186,11 +186,11 @@ func test_recruit_station_and_heat_purchase() -> void:
 	assert_eq(CampaignRules.station(c, _lookup, c.roster[0].id, &"t1_a")[0]["type"], "refused", "one slot")
 	c.heat = 30
 	c.schematics = 100
-	assert_eq(CampaignRules.heat_purchase_price(c, _cfg), 25)
+	assert_eq(CampaignRules.heat_purchase_price(c, _cfg), _cfg.heat_purchase_cost)
 	CampaignRules.buy_heat_reduction(c, _cfg)
-	assert_eq(c.heat, 25)
-	assert_eq(c.schematics, 75)
-	assert_eq(CampaignRules.heat_purchase_price(c, _cfg), 35, "+10 per purchase")
+	assert_eq(c.heat, 30 - _cfg.heat_purchase_amount)
+	assert_eq(c.schematics, 100 - _cfg.heat_purchase_cost)
+	assert_eq(CampaignRules.heat_purchase_price(c, _cfg), _cfg.heat_purchase_cost + _cfg.heat_purchase_increment, "+increment per purchase")
 
 
 func test_deployed_assets_persist_can_be_repositioned_and_the_armory_is_capped() -> void:

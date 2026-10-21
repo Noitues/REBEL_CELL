@@ -28,6 +28,7 @@ var errors: PackedStringArray = PackedStringArray()
 ## The combat of the last fight-mode fight (the determinism test replays it).
 var last_combat: CombatSession = null
 var _skill: BalanceSkill
+var _strategist_specs: Array = []
 ## N19: false switches the per-phase metrics off (the purity test compares both).
 var collect_metrics: bool = true
 
@@ -48,7 +49,13 @@ func _init(registry: Object, p_opts: Dictionary = {}, specs: Array = []) -> void
 	if is_reference():  # BAL-01: the named reference policy = the heuristic bot at the configured lookahead
 		opts["lookahead"] = int(opts["reference_lookahead"])
 	content = BalanceContent.new(registry)
-	errors = content.apply_all(specs)
+	var content_specs: Array = []
+	for sp in specs:  # `strategist.<prop>=<json>` edits a COPY of the heuristic policy's own config (Q8), not game content
+		if String(sp).begins_with("strategist."):
+			_strategist_specs.append(String(sp))
+		else:
+			content_specs.append(sp)
+	errors = content.apply_all(content_specs)
 	resolver = CombatResolver.new(content.config, content.lookup)
 	resolver.quiet = bool(opts["quiet"])
 	_skill = BalanceSkill.new(float(opts["skill"]), int(opts["novice_max_actions"]))
@@ -224,10 +231,14 @@ func run_boss(campaign_seed: int) -> Dictionary:
 			rec["scalars"]["no_state"] = 1
 			return rec
 	else:
-		sim.run_campaign(campaign_seed, int(opts["ice"]), int(opts["max_runs"]))
+		var to_breach: Dictionary = sim.run_campaign(campaign_seed, int(opts["ice"]), int(opts["max_runs"]))
 		if not sim.reached_breach:
 			rec["scalars"]["no_breach"] = 1
 			return rec
+		# Q8 pacing: what the campaign cost up to the first breach launch (the boss attempts come on top).
+		for k in ["runs", "deaths", "raids", "exploits", "heat_peak", "stuck"]:
+			rec["scalars"][k + "_to_breach"] = to_breach[k]
+		rec["scalars"]["minutes_to_breach"] = snappedf(float(to_breach["est_hours"]) * 60.0, 0.1)
 		c = sim.final_campaign
 		if String(opts["dump_state"]) != "":
 			dump_state(String(opts["dump_state"]), campaign_seed, c)
@@ -302,7 +313,15 @@ func _make_sim(probe: Object, boss_stop: bool = false) -> CampaignSimulator:
 	var sim: CampaignSimulator
 	if String(opts["policy"]) == "heuristic" or is_reference():
 		sim = (BossStopSimulator if boss_stop else AgentSimulator).new(resolver, "", [], corp, cls)
-		var h := HeuristicStrategist.new(HeuristicStrategistConfigData.shipped(), sim.lookup)
+		var scfg := HeuristicStrategistConfigData.shipped().duplicate() as HeuristicStrategistConfigData
+		for sp in _strategist_specs:
+			var kv := String(sp).trim_prefix("strategist.").split("=", true, 1)
+			var parsed: Variant = JSON.parse_string(kv[1]) if kv.size() == 2 else null
+			if kv.size() == 2 and parsed != null and kv[0] in scfg:
+				scfg.set(kv[0], parsed)
+			else:
+				errors.append("override '%s': bad strategist property" % sp)
+		var h := HeuristicStrategist.new(scfg, sim.lookup)
 		h.lookahead_turns = int(opts["lookahead"])
 		sim.set("strategist", h)
 	elif boss_stop:

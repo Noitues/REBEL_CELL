@@ -45,6 +45,7 @@ func on_maintain(c: CampaignState, schematics_before: int) -> void:
 		schematics_income += schematics_before - _sch_mark
 	schematics_spent += maxi(0, schematics_before - c.schematics)
 	_sch_mark = c.schematics
+	trace("maintain heat=%d schematics=%d->%d heat_purchases=%d" % [c.heat, schematics_before, c.schematics, c.heat_purchases])
 
 
 ## Appends one line to `trace_path` (no-op when unset).

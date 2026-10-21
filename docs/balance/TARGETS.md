@@ -49,5 +49,6 @@ These are not goals. A change that lowers one of them needs a reason in DECISION
 - Fights in a builtin campaign: normals T1-T3 win >= 98 %, elites T1-T3 >= 94 %, mini-bosses T1-T3 >= 80 %.
 
 ## Pace (GDD 11.8)
-Average campaign about 24 runs, about 395 minutes at 15 min per run and 5 per raid. Measured on the reference policy; see
-SOLACE_BAL_r1 for where the Solace campaign stands. Raids: about 3 (fast) to 7 (average) per campaign.
+Average campaign about 24 runs, about 395 minutes at 15 min per run and 5 per raid. Measured on `--policy heuristic --lookahead 1`
+(12 seeds: 29 runs, 454 min after SOLACE_BAL_r2; 49 runs, 751 min before). The reference policy (lookahead 2) is an expert and plays
+the GDD fast campaign (9 to 11 runs, 135 to 180 min); see SOLACE_BAL_r2. Raids: about 3 (fast) to 7 (average) per campaign.
