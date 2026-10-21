@@ -17,7 +17,7 @@ import sd_lib as L  # noqa: E402
 from sd_lib import MB, box, cyl, dome, lathe, sphere, torus, prism, rect, sweep, seg_tube, strip, disc, flat_poly, cross_shape  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-A = {"dir": "A", "mode": "night", "size": "1920x1080", "spp": "64", "out": "out/test.png", "cam": "", "scale": "300", "post": "1", "seed": "7", "device": "GPU", "tod": "night", "view": "", "park": "0"}
+A = {"dir": "A", "mode": "night", "size": "1920x1080", "spp": "64", "out": "out/test.png", "cam": "", "scale": "300", "post": "1", "seed": "7", "device": "GPU", "tod": "night", "view": "", "park": "0", "plinth": "0", "bdk": "1.0"}
 for i in range(0, len(argv), 2):
     A[argv[i].lstrip("-")] = argv[i + 1]
 DIR, MODE = A["dir"], A["mode"]
@@ -28,6 +28,7 @@ SEED = int(A["seed"])
 DAYV = A["tod"] == "day"
 RAID = A["view"] == "raid"
 PARK = A["park"] == "1"
+PLINTH = PARK and A["plinth"] == "1"
 N2 = (DIR == "D" and MODE == "night" and not DAYV and A.get("n2", "1") == "1")      # round-2 night fix: darker, shaded, readable forms
 L.DAY = DAYV
 L.CEL_S = 0.8 if (RAID and MODE != "night" and not DAYV) else 1.0
@@ -75,7 +76,8 @@ def mats():
     if CEL and RAID and not DAYV:
         bands = (0.14, 0.30, 0.56, 0.20, 0.50)
     if CEL and DAYV:
-        bands = ((0.52, 0.58, 0.90), (0.88, 0.82, 0.70), (1.12, 1.05, 0.92), 0.22, 0.55)
+        _k = float(A["bdk"])
+        bands = (tuple(c * _k for c in (0.52, 0.58, 0.90)), tuple(c * _k for c in (0.88, 0.82, 0.70)), tuple(c * _k for c in (1.12, 1.05, 0.92)), 0.22, 0.55)
     s = 6.0 if not CEL else 1.0
     if DIR in ("A", "D"):
         M["tw"] = L.make_material("tw", "win", MODE, cw=7.0, ch=2.6, win=(0.0, 1.0, 0.30, 0.66), strength=2.4, rough=0.22, metal=0.25, bands=bands, coat=0.5)
@@ -99,6 +101,7 @@ def mats():
     M["neon_p"] = L.make_material("neon_p", "neon", MODE, strength=34.0 if not CEL else 1.0, **ekw(0.07))
     M["neon_x"] = L.make_material("neon_x", "neon", MODE, strength=14.0 if not CEL else 1.0, **({"ek": 0.4} if (DAYV and MODE == "night") else ekw(0.3)))
     M["water"] = L.make_material("water", "water", MODE, bands=bands)
+    M["stone"] = L.make_material("stone", "win", MODE, plain=True, rough=0.62, metal=0.0, bands=bands, coat=0.0)
     M["neon_l"] = L.make_material("neon_l", "neon", MODE, strength=5.0 if not CEL else 1.0, **ekw(0.16))
     M["neon_s"] = L.make_material("neon_s", "neon", MODE, strength=9.0 if not CEL else 1.0, **ekw(0.3))
     M["ground"] = L.make_material("ground", "ground", MODE, bands=bands)
@@ -1102,6 +1105,46 @@ def _tree_ok(x, y, pathgrid, extra=0.0):
     return True
 
 
+SR = 36.0       # round 5: the stair feet sit on the old N-S / E-W corridors at 36 BU
+TIERS = ((35.0, 1.1), (29.5, 2.2), (24.0, 3.3))
+
+
+def plinth_build():
+    """Round 5: the helix stands on a raised circular plinth of three low tiers, with four stair flights at N, E, S, W."""
+    col = _pc((0.42, 0.46, 0.43), (0.66, 0.74, 0.70), (0.66, 0.65, 0.60), (0.62, 0.66, 0.64))
+    scol = tuple(min(1.0, c * 1.25) for c in col)
+    base = 0.2
+    n = 72 if not CEL else 40
+    for (r, h) in TIERS:
+        cyl(mb("stone"), 0, 0, base, base + h, r, n, col, (0, 0, 0, 0.2))
+        if not (CEL and DAYV):
+            torus(mb("neon"), 0, 0, base + h + 0.02, r - 0.1, 0.22, n, 4, LIME, (1.0 if not CEL else 1, 0, 0, 1))
+    top = base + TIERS[-1][1]
+    torus(mb("neon"), 0, 0, top + 0.03, 17.0, 0.2, n, 4, PINKC, (0.9 if not CEL else 1, 0, 0, 1))
+    torus(mb("neon"), 0, 0, top + 0.03, 12.05, 0.28, n, 4, LIME, (1.3 if not CEL else 1, 0, 0, 1))
+    r0, r1 = TIERS[-1][0] - 0.2, SR
+    ns = 16
+    run = (r1 - r0) / ns
+    rise = (top - 0.24) / ns
+    hw = 5.2
+    for q in range(4):
+        ang = q * math.pi / 2
+        c_, s_ = round(math.cos(ang)), round(math.sin(ang))
+        for k in range(ns):
+            a, b = r0 + k * run, r0 + (k + 1) * run
+            z1 = top - k * rise
+            if c_ != 0:
+                x0, x1 = sorted((a * c_, b * c_))
+                box(mb("stone"), x0, -hw, base, x1, hw, z1, scol, (0, 0, 0, 0.2))
+            else:
+                y0, y1 = sorted((a * s_, b * s_))
+                box(mb("stone"), -hw, y0, base, hw, y1, z1, scol, (0, 0, 0, 0.2))
+        for sg in (-1, 1):
+            pa = (r0 * c_ - s_ * hw * sg, r0 * s_ + c_ * hw * sg, top + 0.1)
+            pb = (r1 * c_ - s_ * hw * sg, r1 * s_ + c_ * hw * sg, 0.45)
+            seg_tube(mb("neon"), pa, pb, 0.13, 4, LIME, (0.9 if not CEL else 1, 0, 0, 1))
+
+
 def park_world():
     """One continuous park: rolling lawn, organic clearings, curving footpaths and service lanes, ponds, tree clumps, a tree line."""
     g = mb("ground", True)
@@ -1132,7 +1175,7 @@ def park_world():
         for k in range(len(idx)):
             g.f(c0, idx[k], idx[(k + 1) % len(idx)])
     # lit loop paths in the clearings (wobbly rings)
-    for (cx, cy, R, ph, col) in ((0.0, 0.0, 19.0, 0.4, PINKC), (0.0, 0.0, 27.5, 0.9, LIME), (0.0, 0.0, 35.0, 1.4, LIME), (HX, HY, 31.0, 1.9, LIME)):
+    for (cx, cy, R, ph, col) in (((HX, HY, 31.0, 1.9, LIME),) if PLINTH else ((0.0, 0.0, 19.0, 0.4, PINKC), (0.0, 0.0, 27.5, 0.9, LIME), (0.0, 0.0, 35.0, 1.4, LIME), (HX, HY, 31.0, 1.9, LIME))):
         poly = _blob_poly(cx, cy, R, 0.045, ph, 64)
         _ribbon(mb("neon"), poly + [poly[0]], 0.42, 0.16, col, (0.8 if not CEL else 1, 0, 0, 1))
     # ---- footpaths and service lanes: curving routes along the old corridors, meandering, running out into the city streets
@@ -1146,8 +1189,16 @@ def park_world():
         ox, oy = math.cos(th0), math.sin(th0)
         head = max(((1, 0), (0, 1), (-1, 0), (0, -1)), key=lambda d: d[0] * ox + d[1] * oy)
         routes.append((_nodes_route(start, head, True, random.Random(SEED + 500 + k)), "lane" if k in (1, 4, 7) else "foot"))
+    if PLINTH:
+        drop = (0, 2, 4, 7)
+        routes = [r for k, r in enumerate(routes) if k not in drop]
+        routes = [(n_, "lane" if (k_ in (1, 2)) else "foot") for k_, (n_, kd) in enumerate(routes)] if False else routes
+        for q, (st_, hd_) in enumerate((((SR, 0.0), (0, 1)), ((0.0, SR), (1, 0)), ((-SR, 0.0), (0, -1)), ((0.0, -SR), (-1, 0)))):
+            routes.append(([st_] + _nodes_route(st_, hd_, True, random.Random(SEED + 600 + q))[1:], "foot"))
     routes.append((_nodes_route((132.0, -60.0), (1, 0), True, random.Random(SEED + 530)), "foot"))
     routes.append((_nodes_route((84.0, -60.0), (-1, 0), False, random.Random(SEED + 531)), "foot"))
+    if PLINTH:
+        plinth_build()
     pathgrid = {}
     for ri, (nodes, kind) in enumerate(routes):
         if len(nodes) < 2:
@@ -1218,6 +1269,8 @@ def park_world():
             tree(x, y, rr, h=7.0 + 5.0 * rr.random(), z=GZ(x, y))
             nt += 1
     print("PARK trees", nt, "ponds", len(ponds), "routes", [len(r[0]) for r in routes], flush=True)
+    if PLINTH:
+        return
     # ---- the plinth drum at the helix (as the plaza, minus the geometric rings)
     cyl(mb("plain"), 0, 0, 0.3, 2.5, 12.0, sd(32), (0.38, 0.44, 0.42) if not CEL else (0.7, 0.78, 0.74), (0, 0, 0, 0.2))
     torus(mb("neon"), 0, 0, 2.55, 12.05, 0.28, sd(40), 5, LIME, (1.3 if not CEL else 1, 0, 0, 1))
