@@ -19,13 +19,12 @@ scene sources in memory at run time and send every output to `D:/rc_scratch/art_
    silhouette (gold bands hugging the body, ice lines, three streamline fins).
 5. **Solace** (`deco_corp_solace.py`): the helix in brass ribs (a gold annulus on every floor, double on route floors), lime / pink
    double lines run both strands, the plaza podium steps in three gold tiers, a crossed fan crown over the Genome Core.
-6. **Netrun street** (`deco_street.py`; v2 after AD notes, `06_netrun_street_v1_v2.jpg`): every frontage (the route faces plus the old right-hand
-   blocks) gets a near-black clearcoat lacquer skin, fluted gold piers (metal, roughness 0.2-0.4 with noise) past the roofline, gold
-   spandrels with parallel neon, windows as dark glossy glass in gold frames with depth (about 50 % lit, five warm tones and
-   brightnesses, some with blinds), warm lit shop glass with a marquee canopy and a bulb row, a stepped parapet, three setbacks with
-   a fan crown or spire, deep gold-framed signs. One row of fluted kerbside lamp posts with globe lanterns and 2700 K point lights
-   replaces the old posts. Wetter asphalt (roughness 0.014-0.14), Ferriss fog veil above about the third floor, a lit crown tower
-   behind the canyon (mostly hidden by the near buildings). Median 0.149.
+6. **Netrun street** (`deco_street.py`; v3, `06_netrun_street_v2_v3.jpg`): camera widened to lens 26 with a small shift up (the route frontage and signs
+   stay the decision view). Near-black clearcoat lacquer frontages (route faces plus the old right-hand blocks) with fluted gold piers (richer
+   gold, more coat / specular), windows as dark glass in gold frames with mullions, lit ones in a six-tone amber range with capped emission
+   (nothing clipped), deco shopfronts (lacquer backing hiding the old pastel strips, gold-framed warm glass, display bits, marquee canopy
+   with bulb row), deep gold-framed signs, one row of fluted globe lamps with 2700 K lights, wet asphalt, a thicker Ferriss veil above about
+   the third floor, and a lit hero tower on the canyon axis (stepped, neon lines, fan crown and spire, floodlit from below). Median 0.149.
 7. **Combat wheel** (`deco_panel7.py`): the round-41 typical screen rebuilt over panel 6. A (`07_combat_A_deco.png`): frame only, brass
    bezel steps, 30 tick rays with chevrons, stepped hub collar. B (`07_combat_B_deco.png`): also the slices: gold inlay edges with
    neon pairs in each slice's own colour, three stepped (setback) outer arcs, a sunburst hub medallion, a spire pointer. The CRT
@@ -56,13 +55,13 @@ Look-dev previews: `prev.sh <corp> <tag>` (CPU, 960 x 540, 8 spp, no lock); `dec
 | 3 Meridian | 56 | 90 s | 0.169 |
 | 4 Orbital | 56 | 85 s | 0.169 |
 | 5 Solace | 56 | 108 s | 0.161 |
-| 6 street (v2) | 48 | 284 s | 0.149 |
+| 6 street (v3) | 48 | 1404 s (more emitters, wider lens) | 0.149 |
 | 7 panels | none (2D) | about 20 s | A 0.133, B 0.141 (a dark HUD) |
 HQ and city post: the pipelines' own finishers (`hq_post.finish`, `post_city.aaa --soft`) with the exposure solved to the target
 median; the HQs use a cooler grade (shadow tint 0.50 / 0.50 / 0.52, saturation 0.80). The street uses `r2_compose.solved`.
 
 ## Known weak points
 - Panels 3 and 5 are the least deco: the lacquer / gold city fill reads as warm mud next to the corp hue, and the landmarks sit in it.
-- Panel 6: the camera is close, so crowns and setbacks are above the frame and the focal crown tower is hidden; windows are framed, not truly recessed; the gold is still dim (little to reflect); the old shop strips below the canopies stay pastel.
+- Panel 6: the hero tower reads as a plain stepped block with the crown near the top edge, not a clear vanishing-point spire; gold is still ochre-brown rather than bright; windows are framed, not truly recessed; shopfronts are flat brown boxes with little display detail; light shafts and the fog veil are subtle. The Ferriss fog veil also looks thin because extra lights linked to the fog were removed after they hazed the frame.
 - Panel 1: tower ornament is tiny at this distance; the landmark fans and sunbursts carry the read.
 - Panel 7 B: the spire pointer overlaps the base needle slightly.

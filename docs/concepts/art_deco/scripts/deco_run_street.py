@@ -32,6 +32,8 @@ def main():
     job["frames"][0]["res"] = [rw, rw * 9 // 16]
     job["frames"][0]["name"] = "F_dec_closed"
     job["spp"] = spp
+    job["frames"][0]["persp"]["lens"] = cfg.get("cam_lens", 30.0)
+    job["frames"][0]["persp"]["sy"] = cfg.get("cam_sy", 0.0002)
     job["look"].update(extra)
     jp, cp = os.path.join(out, "job.json"), os.path.join(out, "cams.json")
     json.dump(job, open(jp, "w"))

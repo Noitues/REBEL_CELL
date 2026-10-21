@@ -102,18 +102,29 @@ def face_deco(ctx, ff, rng, hue_mode="face"):
             G.box(bay - 0.012, f0, wz, bay + 0.012, f1, wz + wh)
             bay += 1.5
         wz += fl
-    # ground floor: warm lit shop glass between the piers, gold sills, a marquee canopy with a bulb row
+    # ground floor: a deco shopfront in front of the old strips: lacquer backing, gold-framed lit glass, display detail,
+    # a marquee canopy with a bulb row
+    dp = CFG.get("shop_depth", 1.5)
+    by0, by1 = yb(0.02, dp)
+    L.box(u0, by0, 0.0, u1, by1, fz0 - 0.45)
+    gy0, gy1 = yb(dp, dp + 0.04)
+    fy0, fy1 = yb(dp, dp + 0.14)
     for i in range(n):
-        ua, ub = u0 + w * i / n + 0.35, u0 + w * (i + 1) / n - 0.35
-        y0, y1 = yb(0.04 + sk, 0.04 + sk + 0.03)
-        t = rng.choice(ctx["wtones"][:3])
-        t.box(ua, y0, 0.45, ub, y1, fz0 - 0.55)
-        f0, f1 = yb(0.04 + sk, 0.04 + sk + 0.14)
-        G.box(ua - 0.06, f0, 0.35, ub + 0.06, f1, 0.45)
-        G.box(ua - 0.06, f0, fz0 - 0.55, ub + 0.06, f1, fz0 - 0.45)
-    cy0, cy1 = yb(0.04, 1.1)
+        ua, ub = u0 + w * i / n + 0.3, u0 + w * (i + 1) / n - 0.3
+        t = rng.choice(ctx["wtones"][3:5])
+        t.box(ua, gy0, 0.5, ub, gy1, fz0 - 0.6)
+        for k in range(rng.randint(5, 9)):                           # display detail: shelves and objects
+            ix = ua + (ub - ua) * rng.random() * 0.8 + 0.1
+            iy0, iy1 = yb(dp - 0.1, dp)
+            ctx["bulb"].box(ix, iy0, 0.9 + rng.random() * 0.7, ix + 0.2 + 0.2 * rng.random(), iy1, 1.3 + rng.random() * 0.7)
+        ctx["glass"].box((ua + ub) / 2 - 0.03, gy0, 0.5, (ua + ub) / 2 + 0.03, gy1, fz0 - 0.6)
+        G.box(ua - 0.07, fy0, 0.4, ub + 0.07, fy1, 0.5)
+        G.box(ua - 0.07, fy0, fz0 - 0.6, ub + 0.07, fy1, fz0 - 0.5)
+        G.box(ua - 0.07, fy0, 0.5, ua, fy1, fz0 - 0.6)
+        G.box(ub, fy0, 0.5, ub + 0.07, fy1, fz0 - 0.6)
+    cy0, cy1 = yb(0.04, dp + 0.5)
     G.box(u0, cy0, fz0 - 0.45, u1, cy1, fz0 - 0.2)
-    b0, b1 = yb(1.0, 1.14)
+    b0, b1 = yb(dp + 0.4, dp + 0.54)
     nb = max(3, int(w / 0.55))
     for k in range(nb):
         bu = u0 + (k + 0.5) * w / nb
@@ -240,7 +251,7 @@ def apply_street(g):
     f2 = D._math(nt, "MULTIPLY", fall, D._math(nt, "ADD", 0.55, nz.outputs["Fac"]))
     bsdf.inputs["Emission Color"].default_value = tuple(CFG.get("flood_col", (1.0, 0.62, 0.30))) + (1.0,)
     nt.links.new(D._math(nt, "MULTIPLY", f2, CFG.get("flood_k", 0.05)), bsdf.inputs["Emission Strength"])
-    gold = D.principled("deco_gold_st", D.GOLD_LIN, 1.0, 0.26, emit=D.GOLD_LIN, emit_k=CFG.get("gold_emit", 0.3))
+    gold = D.principled("deco_gold_st", CFG.get("gold_col", (0.85, 0.58, 0.12)), 1.0, 0.22, coat=0.6, coat_rough=0.08, emit=(0.8, 0.5, 0.1), emit_k=CFG.get("gold_emit", 0.8))
     gn = gold.node_tree
     gb = next(n for n in gn.nodes if n.type == "BSDF_PRINCIPLED")
     gg = gn.nodes.new("ShaderNodeNewGeometry")
@@ -250,8 +261,8 @@ def apply_street(g):
     gn.links.new(gg.outputs["Position"], gno.inputs["Vector"])
     gn.links.new(D._math(gn, "ADD", 0.2, D._math(gn, "MULTIPLY", gno.outputs["Fac"], 0.22)), gb.inputs["Roughness"])
     glass = D.principled("deco_glass", (0.01, 0.012, 0.02), 0.0, 0.04, coat=1.0, coat_rough=0.02)
-    tones = [D.principled("deco_wt%d" % i, (0, 0, 0), 0.0, 0.5, emit=c, emit_k=k * 1.8) for i, (c, k) in enumerate(
-        (((1.0, 0.62, 0.28), 2.2), ((1.0, 0.5, 0.18), 1.4), ((1.0, 0.78, 0.45), 2.8), ((1.0, 0.4, 0.15), 0.9), ((0.95, 0.85, 0.6), 1.8)))]
+    tones = [D.principled("deco_wt%d" % i, (0, 0, 0), 0.0, 0.5, emit=c, emit_k=k * CFG.get("win_k", 1.0)) for i, (c, k) in enumerate(
+        (((1.0, 0.45, 0.12), 1.3), ((1.0, 0.36, 0.08), 0.8), ((1.0, 0.55, 0.18), 1.8), ((0.9, 0.28, 0.06), 0.5), ((1.0, 0.5, 0.14), 1.0), ((0.8, 0.5, 0.25), 0.7)))]
     ctx["lac"] = D.DAcc("deco_lacquer", skin, coll)
     ctx["glass"] = D.DAcc("deco_glassacc", glass, coll)
     ctx["wtones"] = [D.DAcc("deco_wtacc%d" % i, t, coll) for i, t in enumerate(tones)]
@@ -300,25 +311,39 @@ def apply_street(g):
             c = tuple(o.data.color)
             o.data.color = tuple(0.35 * a + 0.65 * b for a, b in zip(c, CFG.get("flood_col", (1.0, 0.68, 0.32))))
             o.data.energy *= CFG.get("flood_k", 1.0)
-    fx, fy_ = CFG.get("crown_xy", (116.0, 30.0))
-    zc = CFG.get("crown_z", 12.0)
-    ctx["lac"].box(fx - 5, fy_ - 5, 0, fx + 5, fy_ + 5, zc)
-    ctx["gold"].box(fx - 5.4, fy_ - 5.4, zc - 0.6, fx + 5.4, fy_ + 5.4, zc + 0.2)
-    D.neon_lines(ctx["neon"], fx, fy_, 5, 5, zc - 4, n=3, gap=0.5, th=0.14, out=0.2)
-    sx_, z_ = 4.0, zc + 0.2
+    hskin = D.principled("deco_hero_skin", (0.02, 0.02, 0.03), 0.0, 0.2, coat=1.0, coat_rough=0.05)
+    hb = next(n for n in hskin.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    hg = hskin.node_tree.nodes.new("ShaderNodeNewGeometry")
+    hs_ = hskin.node_tree.nodes.new("ShaderNodeSeparateXYZ")
+    hskin.node_tree.links.new(hg.outputs["Position"], hs_.inputs[0])
+    hb.inputs["Emission Color"].default_value = (1.0, 0.55, 0.22, 1.0)
+    hskin.node_tree.links.new(D._math(hskin.node_tree, "MULTIPLY", D._math(hskin.node_tree, "EXPONENT", D._math(hskin.node_tree, "MULTIPLY", hs_.outputs["Z"], -0.035)), 0.9), hb.inputs["Emission Strength"])
+    hero_l = D.DAcc("deco_hero_lac", hskin, coll)
+    fx, fy_ = CFG.get("crown_xy", (108.0, 40.0))
+    zc = CFG.get("crown_z", 26.0)
+    HW = CFG.get('hero_hw', 3.2)
+    hero_l.box(fx - HW, fy_ - HW, 0, fx + HW, fy_ + HW, zc)
+    ctx["gold"].box(fx - HW - 0.4, fy_ - HW - 0.4, zc - 0.6, fx + HW + 0.4, fy_ + HW + 0.4, zc + 0.2)
+    D.neon_lines(ctx["neon"], fx, fy_, HW, HW, zc - 4, n=3, gap=0.5, th=0.14, out=0.2)
+    sx_, z_ = HW * 0.75, zc + 0.2
     for i in range(3):
-        ctx["lac"].box(fx - sx_, fy_ - sx_, z_, fx + sx_, fy_ + sx_, z_ + 3.2)
-        ctx["gold"].box(fx - sx_ - 0.2, fy_ - sx_ - 0.2, z_ + 3.0, fx + sx_ + 0.2, fy_ + sx_ + 0.2, z_ + 3.25)
+        hero_l.box(fx - sx_, fy_ - sx_, z_, fx + sx_, fy_ + sx_, z_ + 2.6)
+        ctx["gold"].box(fx - sx_ - 0.2, fy_ - sx_ - 0.2, z_ + 2.4, fx + sx_ + 0.2, fy_ + sx_ + 0.2, z_ + 2.65)
         D.neon_lines(ctx["neon"], fx, fy_, sx_, sx_, z_ + 1.4, n=2, gap=0.4, th=0.1, out=0.1)
-        z_ += 3.2
+        z_ += 2.6
         sx_ *= 0.8
-    D.fan_crown(ctx["gold"], ctx["lac"], ctx["neon2"], fx, fy_ - 2.0, z_, "x", CFG.get("crown_r", 5.0), rng, nray=11, t=0.5, backing=True)
-    D.spire(ctx["gold"], ctx["neon2"], fx, fy_, z_ + 2.0, CFG.get("spire_h", 6.0), 0.3)
+    for hz in range(3, int(zc), 5):
+        D.neon_lines(ctx["neon2"], fx, fy_, HW, HW, hz, n=2, gap=0.5, th=0.22, out=0.25)
+    for sx2 in (-1, 1):
+        for sy2 in (-1, 1):
+            ctx["neon"].box(fx + sx2 * (HW + 0.3) - 0.15, fy_ + sy2 * (HW + 0.3) - 0.15, 0, fx + sx2 * (HW + 0.3) + 0.15, fy_ + sy2 * (HW + 0.3) + 0.15, zc)
+    D.fan_crown(ctx["gold"], hero_l, ctx["neon2"], fx, fy_ - 3.0, z_, "x", CFG.get("crown_r", 8.0), rng, nray=13, t=0.6, backing=True)
+    D.spire(ctx["gold"], ctx["neon2"], fx, fy_, z_ + 2.0, CFG.get("spire_h", 12.0), 0.3)
     for k_ in range(3):
         a_ = k_ * 2.1
         loc = (fx + 9 * math.cos(a_), fy_ - 12 + 4 * math.sin(a_), 0.6)
         g["_light"]("oc_deco_crownup_%d" % k_, "SPOT", loc, (Vector((fx, fy_, zc + 6)) - Vector(loc)).to_track_quat("-Z", "Y").to_euler(),
-                    60000.0, (1.0, 0.72, 0.4), spot=30.0, blend=0.5)
+                    60000.0, (1.0, 0.72, 0.4), spot=34.0, blend=0.5)
     frame_signs(ctx, g)
     lamp_globes(ctx, g)
     lg = g["_light"]
@@ -331,11 +356,12 @@ def apply_street(g):
             lg("oc_deco_up_%d_%d" % (k_, j), "SPOT", pos, (tgt - Vector(pos)).to_track_quat("-Z", "Y").to_euler(),
                CFG.get("up_w", 14000.0), CFG.get("flood_col", (1.0, 0.72, 0.38)), spot=48.0, blend=0.7)
     fog_g = dict(FOG_M=bpy.data.materials["oc_fog"])
-    D.fog_veil(fog_g, dict(veil_k=CFG.get("veil_k", 0.10), veil_z=tuple(CFG.get("veil_z", (6.0, 40.0))), veil_scale=0.02))
+    D.fog_veil(fog_g, dict(veil_k=CFG.get("veil_k", 0.26), veil_z=tuple(CFG.get("veil_z", (4.0, 34.0))), veil_scale=0.02))
     for k in ("lac", "gold", "neon", "neon2", "win", "glass", "bulb"):
         ctx[k].build()
     for t in ctx["wtones"]:
         t.build()
+    hero_l.build()
     ls = [o for o in sc.objects if o.name.startswith("oc_deco_up")]
     print("[deco] lights", len(ls), [(o.hide_render, o.get("oc_off"), o.data.energy, tuple(round(v, 1) for v in o.location), o.data.type) for o in ls[:3]], flush=True)
     print("[deco] street: faces", len(faces), {k: len(ctx[k].f) for k in ("lac", "gold", "neon", "neon2", "win")}, flush=True)
