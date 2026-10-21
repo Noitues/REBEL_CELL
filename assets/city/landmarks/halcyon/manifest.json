@@ -28,8 +28,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "4215c02523509935f49a93b38dc6db445c80b635",
-  "scripts_sha256": "a36194cdd986161f701c46f02cd2aaeb156c50c59046b3c003c689f3dd9f1021"
+  "commit": "0729d8e986296b638655156baf97b4abecf78767",
+  "scripts_sha256": "f7ac0dceaf1672be0156ecb14d1c941f268e7e33ab1e1e8226560243e0d6347b"
  },
  "settings": {
   "blender": "5.2.2 LTS",

@@ -276,7 +276,7 @@ def solace_plinth():
 
 # ------------------------------------------------------------------ the hospital (direction C: porcelain cross plan)
 HOSP_HL, HOSP_HD = 22.0, 5.6        # wing half-length / half-depth; the Site build scales x0.8 -> 17.6 BU inside the 36 BU lot block
-HOSP_H, HOSP_TOWER_H = 20.0, 32.0
+HOSP_H, HOSP_TOWER_H = 14.0, 22.0
 
 
 def _band_walls(x0, y0, x1, y1, z0, z1, skip=()):
@@ -333,7 +333,7 @@ def solace_hospital():
     # the lit cross over the roof, a slab facing the iso camera diagonal
     ang = math.radians(-45.0)
     ca, sa = math.cos(ang), math.sin(ang)
-    cz, size, th, depth = zr + 10.0, 10.5, 3.4, 0.5
+    cz, size, th, depth = zr + 7.0, 8.4, 2.8, 0.45
 
     def P(h, v, d):
         return (-sa * h + ca * d, ca * h + sa * d, cz + v)
