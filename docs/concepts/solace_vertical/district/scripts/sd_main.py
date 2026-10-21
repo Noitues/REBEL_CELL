@@ -29,6 +29,9 @@ SEED = int(A["seed"])
 LIME = (0.588, 1.0, 0.275)
 PINKC = (1.0, 0.275, 0.588)
 GL1 = (0.55, 1.0, 0.45, 1) if not CEL else (0.16, 0.66, 0.22, 1)
+TWC = "twC" if DIR == "D" else "tw"       # the clinic band material key
+BEAM = False                          # round 2: no beam / dark column over the helix (no centre tower)
+D = DIR == "D"
 PITCH = 24.0          # one lot (16 BU) + one street (8 BU)
 LOT = 16.0
 GRID = 20             # +- cells built (ordinary city beyond the 500 BU district shows at the hero horizon)
@@ -51,7 +54,7 @@ def mats():
     M = {}
     bands = (0.30, 0.58, 0.95, 0.20, 0.50)
     s = 6.0 if not CEL else 1.0
-    if DIR == "A":
+    if DIR in ("A", "D"):
         M["tw"] = L.make_material("tw", "win", MODE, cw=7.0, ch=2.6, win=(0.0, 1.0, 0.30, 0.66), strength=2.4, rough=0.22, metal=0.25, bands=bands, coat=0.5)
         M["tw2"] = L.make_material("tw2", "win", MODE, cw=3.2, ch=3.2, win=(0.22, 0.78, 0.22, 0.78), strength=2.2, rough=0.3, bands=bands)
     elif DIR == "B":
@@ -60,7 +63,9 @@ def mats():
     else:
         M["tw"] = L.make_material("tw", "win", MODE, cw=100.0, ch=3.6, win=(0.0, 1.0, 0.18, 0.58), strength=1.4, rough=0.18, metal=0.0, bands=bands, coat=0.9)
         M["tw2"] = L.make_material("tw2", "win", MODE, cw=2.6, ch=3.6, win=(0.18, 0.82, 0.2, 0.8), strength=1.3, rough=0.3, bands=bands, coat=0.7)
-    M["plain"] = L.make_material("plain", "win", MODE, plain=True, rough=0.25, metal=0.0, bands=bands, coat=0.8 if DIR == "C" else 0.2)
+    if DIR == "D":
+        M["twC"] = L.make_material("twC", "win", MODE, cw=100.0, ch=3.6, win=(0.0, 1.0, 0.18, 0.58), strength=1.4, rough=0.18, metal=0.0, bands=bands, coat=0.9)
+    M["plain"] = L.make_material("plain", "win", MODE, plain=True, rough=0.25, metal=0.0, bands=bands, coat=0.8 if DIR == "C" else (0.5 if DIR == "D" else 0.2))
     M["tube"] = L.make_material("tube", "win", MODE, plain=True, rough=0.2, coat=0.8, bands=bands, glow=((0.40, 0.95, 0.18), 0.55, 1.7))
     M["ord"] = L.make_material("ord", "win", MODE, cw=3.4, ch=3.8, win=(0.2, 0.75, 0.25, 0.7), strength=1.5, rough=0.45, bands=bands)
     M["ordr"] = L.make_material("ordr", "win", MODE, cw=2.6, ch=3.0, win=(0.22, 0.78, 0.2, 0.7), strength=1.5, rough=0.45, bands=bands)
@@ -68,6 +73,7 @@ def mats():
     M["glassB"] = L.make_material("glassB", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands, cel_strength=0.3)
     M["glassb"] = L.make_material("glassb", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands)
     M["neon"] = L.make_material("neon", "neon", MODE, strength=5.0 if not CEL else 1.0)
+    M["neon_p"] = L.make_material("neon_p", "neon", MODE, strength=34.0 if not CEL else 1.0)
     M["neon_s"] = L.make_material("neon_s", "neon", MODE, strength=9.0 if not CEL else 1.0)
     M["ground"] = L.make_material("ground", "ground", MODE, bands=bands)
     M["hwin"] = L.make_material("hwin", "hwin", MODE, strength=3.0)
@@ -149,9 +155,11 @@ def plan():
 PLAN = plan()
 
 # ------------------------------------------------------------------ ground, streets, pads
-PAD_COL = {"A": (0.03, 0.075, 0.05), "B": (0.035, 0.07, 0.07), "C": (0.50, 0.54, 0.52)}[DIR]
+PAD_COL = {"A": (0.03, 0.075, 0.05), "B": (0.035, 0.07, 0.07), "C": (0.50, 0.54, 0.52), "D": (0.03, 0.075, 0.05)}[DIR]
+PAD_C = (0.50, 0.54, 0.52)
 if CEL:
-    PAD_COL = {"A": (0.09, 0.17, 0.14), "B": (0.10, 0.17, 0.17), "C": (0.60, 0.66, 0.64)}[DIR]
+    PAD_COL = {"A": (0.09, 0.17, 0.14), "B": (0.10, 0.17, 0.17), "C": (0.60, 0.66, 0.64), "D": (0.09, 0.17, 0.14)}[DIR]
+    PAD_C = (0.60, 0.66, 0.64)
 ORD_PAD = (0.035, 0.035, 0.06) if not CEL else (0.12, 0.10, 0.22)
 PARK_COL = (0.02, 0.09, 0.03) if not CEL else (0.07, 0.22, 0.10)
 STREET_COL = (0.018, 0.018, 0.03) if not CEL else (0.06, 0.05, 0.13)
@@ -167,6 +175,8 @@ def ground():
         if k == "hosp":
             continue
         col = {"plaza": PAD_COL, "park": PARK_COL, "solace": PAD_COL, "ord": ORD_PAD}[k]
+        if D and k == "solace" and BUNDLE.get((i, j)) == "C":
+            col = PAD_C
         rough = 0.9 if k == "park" else 0.55
         z = 0.25
         box(g, cx - LOT / 2, cy - LOT / 2, 0.0, cx + LOT / 2, cy + LOT / 2, z, col, (rough, 0.0, 0, 1))
@@ -236,7 +246,7 @@ def park():
             x, y = cx + d * math.cos(ang), cy + d * math.sin(ang)
             if feat and math.hypot(x - cx, y - cy) < 5.5:
                 continue
-            tree(x, y, rr, glow=(DIR == "A" and rr.random() < 0.18))
+            tree(x, y, rr, glow=(kit_for(i, j) == "A" and rr.random() < 0.18))
         if feat:
             park_feature(cx, cy, i, j)
         # park lamp posts at the lot corners: tiny emissive beads
@@ -247,13 +257,14 @@ def park():
 
 def park_feature(cx, cy, i, j):
     n = sd(28)
-    if DIR == "A":      # a glass greenhouse dome with the grow lights on
+    kf = kit_for(i, j)
+    if kf == "A":      # a glass greenhouse dome with the grow lights on
         torus(mb("neon"), cx, cy, 0.45, 6.4, 0.22, n, 5, LIME, (0.9 if not CEL else 1, 0, 0, 1))
         dome(mb("glass", True), cx, cy, 0.3, 6.2, n, GL1, (1.0, 0, 0, 1), rings=5, squash=0.85)
         sphere(mb("neon"), cx, cy, 2.2, 1.7, 8, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
         for k in range(5):
             tree(cx + 3.0 * math.cos(k * 1.26), cy + 3.0 * math.sin(k * 1.26), random.Random(k + i), h=4.0)
-    elif DIR == "B":    # a petri dish: glass rim, agar disc, colonies, ring lights
+    elif kf == "B":    # a petri dish: glass rim, agar disc, colonies, ring lights
         torus(mb("glassb", True), cx, cy, 0.7, 6.6, 0.55, n, 6, GL1, (1.0, 0, 0, 1))
         disc(mb("neon"), cx, cy, 0.5, 6.3, n, (LIME[0] * 0.22, LIME[1] * 0.26, LIME[2] * 0.12), (0.5 if not CEL else 1, 0, 0, 1))
         torus(mb("neon"), cx, cy, 0.6, 4.4, 0.18, n, 5, LIME, (1.0 if not CEL else 1, 0, 0, 1))
@@ -390,6 +401,10 @@ def kit_B(i, j, p):
     cyl(mb("tw2"), cx, cy, 0.25, core_h, coreR, sd(10), dark, pr(0.8, 0.5, 0.3, seed))
     torus(mb("neon"), cx, cy, 0.5, 6.6, 0.2, sd(24), 5, LIME, (0.8 if not CEL else 1, 0, 0, 1))
     glc = (0.10, 0.50, 0.28, 1) if CEL else (0.5, 1.0, 0.55, 1)
+    if D:
+        glc = (0.30, 0.74, 0.12, 1) if CEL else (0.62, 1.0, 0.32, 1)
+    NU = "neon_p" if D else "neon_s"
+    NR = 0.5 if D else 0.36
     n = sd(14)
     for k in range(ncell):
         f = (k + 0.5) / ncell
@@ -401,7 +416,7 @@ def kit_B(i, j, p):
         sz = max(z, rad + 0.25)
         sphere(mb("glassB", True), sx, sy, sz, rad, n, glc, (1.0, 0, 0, 1))
         if rr.random() < 0.45:
-            sphere(mb("neon_s"), sx, sy, sz, rad * 0.36, 7, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
+            sphere(mb(NU), sx, sy, sz, rad * NR, 7, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
         elif rr.random() < 0.5:
             sphere(mb("neon"), sx, sy, sz, rad * 0.30, 7, LIME, (0.9 if not CEL else 1, 0, 0, 1))
         if rr.random() < 0.5:        # a daughter cell budding off, half the radius, just touching
@@ -412,7 +427,7 @@ def kit_B(i, j, p):
                 sphere(mb("glassB", True), sx2, sy2, max(sz + (rr.random() - 0.5) * rad, r2 + 0.25), r2, n, glc, (1.0, 0, 0, 1))
     if big:
         top = sphere(mb("glassB", True), cx, cy, core_h + 2.3, 4.0, n, glc, (1.0, 0, 0, 1))
-        sphere(mb("neon_s"), cx, cy, core_h + 2.3, 1.55, 8, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
+        sphere(mb(NU), cx, cy, core_h + 2.3, 1.55 * (1.3 if D else 1.0), 8, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
 
 
 def kit_C(i, j, p):
@@ -424,7 +439,7 @@ def kit_C(i, j, p):
     prmw = pr(0.86, 0.9, 0.04, seed)
     if p["sub"] < 0.22:            # low clinic wing: white block, one green band, roof garden
         w, d = 7.0, 5.5
-        prism(mb("tw"), rect(cx, cy, w, d, 0.0), 0.25, max(11.0, h * 0.4), glassg, prmw)
+        prism(mb(TWC), rect(cx, cy, w, d, 0.0), 0.25, max(11.0, h * 0.4), glassg, prmw)
         z = max(11.0, h * 0.4)
         box(mb("plain"), cx - w - 0.4, cy - d - 0.4, z, cx + w + 0.4, cy + d + 0.4, z + 0.5, porc, (0, 0, 0, seed))
         for k in range(6):
@@ -435,7 +450,7 @@ def kit_C(i, j, p):
     tiers = [(w, h * 0.46), (w * 0.84, h * 0.26), (w * 0.66, h * 0.16)]
     z = 0.25
     for t, (tw, th) in enumerate(tiers):
-        prism(mb("tw"), rect(cx, cy, tw, tw, 0.0), z, z + th, glassg, prmw)
+        prism(mb(TWC), rect(cx, cy, tw, tw, 0.0), z, z + th, glassg, prmw)
         # porcelain corner piers (four slim white columns) + slab edge
         for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
             box(mb("plain"), cx + sx * tw - 0.9 * (1 if sx > 0 else 0) - (0.0 if sx > 0 else 0), cy + sy * tw - 0.9 * (1 if sy > 0 else 0), z, cx + sx * tw + 0.9 * (0 if sx > 0 else 1), cy + sy * tw + 0.9 * (0 if sy > 0 else 1), z + th, porc, (0, 0, 0, seed))
@@ -469,7 +484,40 @@ def kit_C(i, j, p):
     sphere(mb("neon"), cx, cy, zt + 0.7, 0.55, 6, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
 
 
-KIT = {"A": kit_A, "B": kit_B, "C": kit_C}[DIR]
+KITS = {"A": kit_A, "B": kit_B, "C": kit_C}
+KIT = KITS.get(DIR)
+
+
+def make_bundles():
+    """Direction D: seeded Voronoi bundles (about 3-8 neighbouring lots each), kits assigned so neighbours differ and no kit dominates."""
+    sp = 2.6
+    seeds = []
+    for gj in range(-6, 7):
+        for gi in range(-6, 7):
+            x = gi * sp + (hr(gi, gj, 41) - 0.5) * 1.8
+            y = gj * sp + (hr(gi, gj, 42) - 0.5) * 1.8
+            if math.hypot(x, y) <= 11.5:
+                seeds.append((gi, gj, x, y))
+    kit_of, count = {}, {"A": 0, "B": 0, "C": 0}
+    for (gi, gj, x, y) in seeds:
+        near = [kit_of[(a, b)] for (a, b, xx, yy) in seeds if (a, b) in kit_of and math.hypot(xx - x, yy - y) < sp * 1.75]
+        ok = [k for k in "ABC" if k not in near] or list("ABC")
+        ok.sort(key=lambda k: (count[k] + hr(gi, gj, ord(k)) * 0.9, k))
+        kit_of[(gi, gj)] = ok[0]
+        count[ok[0]] += 1
+    out, sizes = {}, {}
+    for (i, j) in PLAN:
+        best = min(seeds, key=lambda t: ((t[2] - i) ** 2 + (t[3] - j) ** 2, t[0], t[1]))
+        out[(i, j)] = kit_of[(best[0], best[1])]
+        sizes[(best[0], best[1])] = sizes.get((best[0], best[1]), 0) + (1 if PLAN[(i, j)]["kind"] in ("solace", "park") else 0)
+    return out, kit_of, seeds, sizes
+
+
+BUNDLE, BUNDLE_KIT, BUNDLE_SEEDS, BUNDLE_SIZES = make_bundles() if D else ({}, {}, [], {})
+
+
+def kit_for(i, j):
+    return BUNDLE[(i, j)] if D else DIR
 
 
 # ------------------------------------------------------------------ the plaza and the helix landmark (identical in all directions)
@@ -631,7 +679,8 @@ def hospital():
     torus(mb("neon"), hx, hy, 0.4, 35.0, 0.22, sd(48), 4, LIME, (0.8 if not CEL else 1, 0, 0, 1))
     glassc = (0.04, 0.20, 0.11) if not CEL else (0.10, 0.34, 0.22)
     seed = 0.37
-    if DIR == "A":
+    HK = "C" if D else DIR
+    if HK == "A":
         lathe(mb("tw", True), hx, hy, [(0, 0.3), (14.0, 0.3), (14.0, 18.0), (0, 18.0)], n, glassc, pr(0.9, 0.55, 0.3, seed))
         torus(mb("neon"), hx, hy, 18.1, 14.05, 0.3, n, 5, LIME, (1.0, 0, 0, 1))
         dome(mb("glass", True), hx, hy, 18.0, 13.5, n, (0.55, 1.0, 0.5, 1), (1.0, 0, 0, 1), rings=5, squash=0.7)
@@ -640,7 +689,7 @@ def hospital():
             lathe(mb("tw", True), hx + ox, hy + oy, [(0, 0.3), (Rw, 0.3), (Rw, 34.0)] + [(Rw * math.cos(math.pi / 2 * q / 4), 34.0 + Rw * math.sin(math.pi / 2 * q / 4)) for q in range(1, 5)], n, glassc, pr(0.9, 0.55, 0.3, seed + k))
             seg_tube(mb("glass", True), (hx + ox * 0.45, hy + oy * 0.45, 12.0), (hx + ox * 0.8, hy + oy * 0.8, 12.0), 1.6, 10, (0.55, 1.0, 0.5, 1), (1.0, 0, 0, 1))
         cz = 18.0 + 13.5 * 0.7 + 0.5
-    elif DIR == "B":
+    elif HK == "B":
         sphere(mb("glassB", True), hx, hy, 12.0, 12.0, sd(20), GL1, (1.0, 0, 0, 1))
         sphere(mb("neon_s"), hx, hy, 12.0, 4.0, 10, PINKC, (1.2, 0, 0, 1))
         cyl(mb("tw2"), hx, hy, 0.3, 20.0, 3.0, sd(10), (0.04, 0.12, 0.10) if not CEL else (0.10, 0.26, 0.24), pr(0.8, 0.5, 0.3, seed))
@@ -656,12 +705,12 @@ def hospital():
     else:
         wing = [(30.0, 7.5, 0.0), (7.5, 30.0, 0.0)]
         for (ww, dd, _a) in wing:
-            prism(mb("tw"), rect(hx, hy, ww, dd, 0.0), 0.3, 26.0, porc, pr(0.9, 0.9, 0.04, seed))
+            prism(mb(TWC), rect(hx, hy, ww, dd, 0.0), 0.3, 26.0, porc, pr(0.9, 0.9, 0.04, seed))
             box(mb("plain"), hx - ww - 0.6, hy - dd - 0.6, 26.0, hx + ww + 0.6, hy + dd + 0.6, 27.0, porc, (0, 0, 0, seed))
         for sx, sy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
             box(mb("plain"), hx + sx * 30 - 1.2 + (1.2 if sx < 0 else 0) * 0, hy + sy * 30 - 1.2, 0.3, hx + sx * 30 + 1.2, hy + sy * 30 + 1.2, 26.0, porc, (0, 0, 0, seed)) if False else None
         box(mb("plain"), hx - 8.0, hy - 8.0, 27.0, hx + 8.0, hy + 8.0, 38.0, porc, (0, 0, 0, seed))
-        prism(mb("tw"), rect(hx, hy, 8.0, 8.0, 0.0), 27.0, 38.0, porc, pr(0.9, 0.9, 0.04, seed))
+        prism(mb(TWC), rect(hx, hy, 8.0, 8.0, 0.0), 27.0, 38.0, porc, pr(0.9, 0.9, 0.04, seed))
         box(mb("plain"), hx - 8.8, hy - 8.8, 38.0, hx + 8.8, hy + 8.8, 39.0, porc, (0, 0, 0, seed))
         helipad(hx, hy, 39.1, 6.5)
         cz = 39.0
@@ -753,6 +802,10 @@ def lights():
             a = 2 * math.pi * k / 16 + 0.1
             r = 70 + 90 * rc.random()
             add_light("POINT", (r * math.cos(a), r * math.sin(a), 38), (0.85, 1.0, 0.95), 5e4, size=4)
+    if D:
+        for (gi, gj, x, y) in BUNDLE_SEEDS:
+            if BUNDLE_KIT[(gi, gj)] == "C":
+                add_light("POINT", (x * PITCH, y * PITCH, 38), (0.85, 1.0, 0.95), 5e4, size=4)
     rr = random.Random(3)
     for k in range(14):
         a = 2 * math.pi * k / 14 + 0.2
@@ -798,14 +851,15 @@ street_lines()
 park()
 plaza()
 helix()
-helix_beam()
+if BEAM:
+    helix_beam()
 hospital()
 for (i, j), p in sorted(PLAN.items()):
     if p["kind"] == "ord":
         ord_building(i, j, p)
     elif p["kind"] == "solace":
-        KIT(i, j, p)
-if DIR == "A":
+        (KITS[kit_for(i, j)])(i, j, p)
+if DIR in ("A", "D"):
     a_bridges()
 build_all()
 world()
@@ -903,3 +957,7 @@ else:
 t0 = time.time()
 bpy.ops.render.render(write_still=True)
 print("RENDER_SECONDS %.1f" % (time.time() - t0), flush=True)
+if D:
+    import collections
+    cnt = collections.Counter(v for (k, v) in BUNDLE.items() if PLAN[k]["kind"] in ("solace", "park") and math.hypot(*[PLAN[k]["x"] - 52, PLAN[k]["y"] + 26]) < 170)
+    print("BUNDLES", len(BUNDLE_SEEDS), "sizes", sorted(BUNDLE_SIZES.values()), "kits in view", dict(cnt), flush=True)
