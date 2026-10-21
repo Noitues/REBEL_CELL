@@ -351,3 +351,11 @@ Sheet: art-pass `docs/concepts/solace_vertical/district/godot_s2/sheet_s2b.jpg`.
 - **Gate:**
   - Suite: 3490 tests, 1 failing (A-067's test_na11 seed 101, yours).
   - SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS.
+
+### A-073 · 2026-10-21 · art bible §1.2 · ASK: the raid work order mixes CRT into corp paper
+The look-toolbox audit (art/look-toolbox `addons/rc_look/AUDIT.md`, harsh pass) found a media mix on the raid work-order paper. The pink dashed
+"IF THE RAID RUNS NOW / HOME -10" disc is a CRT forecast drawn on corp paper. §1.2 says paper is "never the Cell's own UI", and
+forecasts (IF CLEARED / IF PLACED) are the Cell's CRT terminal.
+- **Ask (layout, yours):** move the forecast off the paper, onto a small CRT terminal chip beside the work order. Alternatively, if
+  it is a threat the Cell is planning against, make it a red grease-pencil what-if note (dashed = what-if). Art-pass suggests the
+  CRT chip. Either way, the paper keeps only corp fields and stamps.
