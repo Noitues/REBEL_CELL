@@ -16,6 +16,8 @@ Within a row the slots are sorted left to right on screen at the city azimuth (c
 screen right = +x +y), so the generator's non-crossing edge order (index order) stays non-crossing on screen.
 """
 import math
+import os
+import sys
 
 CORPS = ["meridian", "solace", "halcyon", "orbital", "rebel_cell"]
 LAYERS = 6           # campaign_config map_layers - 1 (the last layer is the Central Server)
@@ -66,22 +68,26 @@ def _meridian():
                 camera=((4.0, 12.0, 6.0), 150.0), server_name="THE MASTER MANIFEST")
 
 
-def _solace():
-    # heroes42 sol_strand(0): radius 13.5, z 6.5..108, 2.6 turns, 160 steps, strand A at -45 deg, B opposite.
-    R, Z0, Z1, TURNS, N = 13.5, 6.5, 108.0, 2.6, 160
+SOLACE_ROUTE_FLOORS = (3, 6, 9, 12, 18, 24)  # v5 route floors carrying the six layers (of the 8: 3, 6 .. 24); searched for the widest slot gaps
+SOLACE_BRIDGE_S = (-0.9, -0.5, 0.2, 0.7)   # slot places along the skybridge, as a share of its half run (A mouth .. B mouth)
 
-    def strand(i, b):
-        t = i / N
-        a = t * TURNS * 2 * math.pi + math.radians(-45.0) + (math.pi if b else 0.0)
-        z = Z0 + t * (Z1 - Z0)
-        return (round(R * 1.12 * math.cos(a), 3), round(R * 1.12 * math.sin(a), 3), round(z + 3.2, 3))
+
+def _solace():
+    # HQ v5 (art-pass solace_vertical/hq, DIRECTION_REVIEW 2026-10-21): the lime district helix on its 3-tier plinth. Layer k
+    # stands on route floor SOLACE_ROUTE_FLOORS[k]: its four slots run along that floor's skybridge, from A's inward node
+    # window (the route node: an opening into the lit room) to B's. Frame: the plate scene's (x east, y north, z up), origin the
+    # plinth centre. hq_graph is the plate scene's own (vendor_solace_v5/), pure python.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor_solace_v5"))
+    import hq_graph as G
     rows = []
-    for k in range(LAYERS):
-        i = 15 + 20 * k  # spacing searched for the widest gap between slots at the reference framing
-        rows.append([strand(i, False), strand(i + 9, False), strand(i, True), strand(i + 9, True)])  # both strands
-    top = strand(N, False)
-    return dict(rows=rows, server=(top[0] / 1.12, top[1] / 1.12, 111.4), entry=(16.0, -16.0, 3.7),
-                camera=((0.0, 0.0, 58.0), 190.0), server_name="THE GENOME CORE")
+    for f in SOLACE_ROUTE_FLOORS:
+        O, e, _q, half = G.bridge_frame(f)
+        zb = G.deck_z(f)
+        rows.append([(round(O[0] + e[0] * half * s, 3), round(O[1] + e[1] * half * s, 3), round(zb, 3)) for s in SOLACE_BRIDGE_S])
+    zc = G.floor_z(G.CP["floors"])
+    top = zc + G.CP["crown_h"] + 1.5          # the crown roof: the helix cap under the pink halo
+    return dict(rows=rows, server=(0.0, 0.0, round(top + 1.5, 3)), entry=(22.0, -133.0, 0.7),
+                camera=((0.0, 0.0, 175.0), 320.0), server_name="THE GENOME CORE", builder="build_solace_v5_compound.py")
 
 
 def _halcyon():
