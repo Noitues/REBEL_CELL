@@ -366,6 +366,12 @@ def report_request(session_dir: Path, extra: str = "") -> dict:
 
 # ---------------------------------------------------------------- the tester
 
+def game_args() -> list:
+    """Extra Godot arguments for every tester from REBEL_PLAYTEST_GAME_ARGS (space-separated), e.g.
+    `-- --focus-corp=solace` for a Solace-only batch (running sheet D20)."""
+    return os.environ.get("REBEL_PLAYTEST_GAME_ARGS", "").split()
+
+
 class Tester:
     def __init__(self, a):
         import anthropic
@@ -777,7 +783,7 @@ class Tester:
         if st.get("launcher_pid"):
             self.log.append("%5.1fm [system] the game was not running; restarted it (crash or closed?)" % self.elapsed_min())
         r = subprocess.run([sys.executable, str(Path(bb.__file__)), "--session", str(self.dir), "--settle", "4",
-                            "start", "--private-copy", "--project", str(BUILD)], capture_output=True, text=True)
+                            "start", "--private-copy", "--project", str(BUILD), "--"] + game_args(), capture_output=True, text=True)
         if r.returncode:
             sys.exit("harness: could not start the game: %s" % (r.stderr or r.stdout).strip())
         self.session = bb.Session(self.dir)
