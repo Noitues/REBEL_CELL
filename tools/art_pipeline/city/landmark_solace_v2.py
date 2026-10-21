@@ -10,10 +10,11 @@ import math
 
 LIME = (0.55, 1.0, 0.30)
 PINKC = (1.0, 0.30, 0.65)
-TUBE = (0.62, 0.86, 0.50)
-DECK = (0.80, 0.86, 0.82)
+TUBE = (0.27, 0.54, 0.15)
+TUBE_TONE = (0.80, 1.0)           # per-face brightness of the lit skin (baked: lm_neon has no tone ramp), the cel facets
+DECK = (0.52, 0.58, 0.55)
 PORC = (0.84, 0.82, 0.74)
-GLASS_LEAF = (0.34, 0.74, 0.30)
+GLASS_LEAF = (0.20, 0.50, 0.17)
 BID = (0.0, 0.0, 0.0)
 
 HELIX_R, HELIX_RT, HELIX_Z0, HELIX_Z1 = 7.5, 3.4, 2.5, 86.0
@@ -104,7 +105,8 @@ def _sweep(acc, pts, nrms, rt, sides, col):
     for i in range(len(pts) - 1):
         for m in range(sides):
             m2 = (m + 1) % sides
-            acc.face([rings[i][m], rings[i][m2], rings[i + 1][m2], rings[i + 1][m]], col, b)
+            k = TUBE_TONE[0] + (TUBE_TONE[1] - TUBE_TONE[0]) * rng.random()
+            acc.face([rings[i][m], rings[i][m2], rings[i + 1][m2], rings[i + 1][m]], (col[0] * k, col[1] * k, col[2] * k), b)
     # the bottom cap (up the strand's start) closed with a fan; the top is capped by the strand's own crown dome
     for m in range(1, sides - 1):
         acc.face([rings[0][0], rings[0][m + 1], rings[0][m]], col, b)
@@ -191,10 +193,10 @@ def solace_helix():
             c = _cpos(ph, z)
             pts.append(c)
             nr.append(_vunit((c[0], c[1], 0.0)))
-        _sweep(LIT, pts, nr, HELIX_RT, STRAND_SIDES, TUBE)
+        _sweep(NEON, pts, nr, HELIX_RT, STRAND_SIDES, TUBE)
         top = _cpos(ph, HELIX_Z1)
         prof = [(HELIX_RT * math.cos(math.pi / 2 * k / 3), HELIX_Z1 + HELIX_RT * math.sin(math.pi / 2 * k / 3)) for k in range(4)]
-        _lathe(LIT, prof, STRAND_SIDES, TUBE, top[0], top[1])
+        _lathe(NEON, prof, STRAND_SIDES, TUBE, top[0], top[1])
         # an own-colour lit ring round each strand top
         b = _bid()
         n = STRAND_SIDES * 2
@@ -223,14 +225,14 @@ def solace_helix():
         b = _bid()
         for i in range(6):
             p0, p1 = poly[i], poly[(i + 1) % 6]
-            SOLID.face([(cen[0], cen[1], zf), (p0[0], p0[1], zf), (p1[0], p1[1], zf)], DECK, b)
-            SOLID.face([(p0[0], p0[1], zf - 0.5), (p1[0], p1[1], zf - 0.5), (p1[0], p1[1], zf), (p0[0], p0[1], zf)], DECK, b)
+            LIT.face([(cen[0], cen[1], zf), (p0[0], p0[1], zf), (p1[0], p1[1], zf)], DECK, b)
+            LIT.face([(p0[0], p0[1], zf - 0.5), (p1[0], p1[1], zf - 0.5), (p1[0], p1[1], zf), (p0[0], p0[1], zf)], DECK, b)
         col = LIME if f % 2 == 0 else PINKC                      # base-pair rungs: lime / pink alternate
         for i in range(6):
             p0, p1 = poly[i], poly[(i + 1) % 6]
             dx, dy = p1[0] - p0[0], p1[1] - p0[1]
             L = math.hypot(dx, dy) or 1.0
-            nx, ny = -dy / L * 0.13, dx / L * 0.13
+            nx, ny = -dy / L * 0.22, dx / L * 0.22
             NEON.face([(p0[0] - nx, p0[1] - ny, zf + 0.04), (p1[0] - nx, p1[1] - ny, zf + 0.04),
                        (p1[0] + nx, p1[1] + ny, zf + 0.04), (p0[0] + nx, p0[1] + ny, zf + 0.04)][::-1], col, b)
         for ph in (0.0, math.pi):
@@ -292,7 +294,7 @@ def _band_walls(x0, y0, x1, y1, z0, z1, skip=()):
             ins = 0.8
             p0, p1 = (ax + ux * ins, ay + uy * ins), (bx - ux * ins, by - uy * ins)
             NEON.face([(p0[0], p0[1], zb), (p1[0], p1[1], zb), (p1[0], p1[1], zb + 1.3), (p0[0], p0[1], zb + 1.3)],
-                      GLASS_LEAF if (k + wi) % 3 else (0.50, 0.90, 0.36), BID)
+                      GLASS_LEAF if (k + wi) % 3 else (0.28, 0.62, 0.20), BID)
 
 
 def solace_hospital():
@@ -314,7 +316,7 @@ def solace_hospital():
     zt = HOSP_H + 0.85
     for (hw, dd) in ((hl, hd), (hd, hl)):
         for (a, b) in (((-hw, -dd), (hw, -dd)), ((hw, -dd), (hw, dd)), ((hw, dd), (-hw, dd)), ((-hw, dd), (-hw, -dd))):
-            beam((a[0], a[1], zt), (b[0], b[1], zt), 0.3, LIME, acc=NEON)
+            beam((a[0], a[1], zt), (b[0], b[1], zt), 0.3, (0.32, 0.66, 0.20), acc=NEON)
     # helipad on the tower roof and the standing cross
     zr = HOSP_TOWER_H + 0.85
     pad = [(4.6 * math.cos(2 * math.pi * k / 20), 4.6 * math.sin(2 * math.pi * k / 20), zr) for k in range(20)]
@@ -340,7 +342,7 @@ def solace_hospital():
         c8 = [P(h0, v0, -depth), P(h1, v0, -depth), P(h1, v1, -depth), P(h0, v1, -depth),
               P(h0, v0, depth), P(h1, v0, depth), P(h1, v1, depth), P(h0, v1, depth)]
         for qd in ((0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)):
-            NEON.face([c8[i] for i in qd][::-1] if qd[0] == 0 and qd[1] == 1 and qd[2] == 2 else [c8[i] for i in qd], (0.62, 1.0, 0.30), BID)
+            NEON.face([c8[i] for i in qd][::-1] if qd[0] == 0 and qd[1] == 1 and qd[2] == 2 else [c8[i] for i in qd], (0.50, 0.95, 0.25), BID)
     beam((0, 0, zr), (0, 0, cz - hs), 0.6, (0.6, 0.6, 0.6))
 
 
