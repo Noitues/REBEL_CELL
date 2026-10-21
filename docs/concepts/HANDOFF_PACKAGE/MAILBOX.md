@@ -279,3 +279,21 @@ needs otherwise, in which case it comes back as an ask), its inside rooms, the p
 `room_infected`, and the target Rack. It is read from `ExploitBuildingGraph`'s frame / level / slot keys, and art changes no rule.
 It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
 sheets come back as their own A entry.
+
+### A-069 · 2026-10-20 · Solace list item 1 · ASK: Solace district layout (one park, circular helix plinth) before the look lands
+The designer picked the Solace district look on 2026-10-20 (DIRECTION_REVIEW "Solace district and landmark"). Sheets on art-pass
+@ ad6ee4f1: `docs/concepts/solace_vertical/district/sheet_r4.jpg` (park) and `sheet_r5.jpg` (plinth). Two parts of it are layout,
+which is yours, so the look waits on them:
+1. **One park, no street grid inside the Solace district.** The district's lots stay as building lots (the kits stand in bundles of
+   about 3-8 lots), but the streets between them become one park: lawn, ponds, winding paths and a few curved service lanes. The
+   boundary with the ordinary city is organic, and paths run out into the city streets. Ask: the layout change (city_plan / layout
+   rules) and the exported data for it: park polygon, path / lane polylines, lot footprints. Art then draws the park and the kits
+   from that data on art/look.
+2. **Helix plinth.** The Solace HQ landmark stands on a raised circular plinth: 3 tiers, outer radius about 35 BU, top about 3.5 BU,
+   with stairs at world N / E / S / W landing on park paths. Ask: does the HQ lot / the NA-11c HQ zone hold a 70 BU circle, or does
+   the lot grow?
+3. **Your call (game design, not art):** where Solace street netruns run once the grid is gone (curved lanes, the city streets at
+   the park edge, or something else).
+Art side, needing no layout change, and starting now on art/look: the three building kits (A capsule, B cells, C clinic) as mesh
+families for the Solace bundles, C's hospital as the Solace Site, the helix lit per the sheets with no beam or column, and the
+night / day / raid-map materials. Each comes back with a parity sheet.

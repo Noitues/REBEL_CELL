@@ -1536,3 +1536,15 @@ The designer's ruling: "yes take over. Do whatever you think makes sense process
   numbers. No look change is approved without it.
 - **Whole frame first.** One owner per view brings in every element at rough quality, then refines it against the plate.
 - **Pilot.** The street overview on seed 1, on the A2 city, once build's CITY-A2 step 1 lands. HQ and city follow the same recipe.
+
+## Solace district and landmark (designer, 2026-10-20)
+Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2..r5.jpg`).
+- **Kit:** direction D "mixed bundles": A capsule towers, B cell clusters (lime, pink nuclei) and C clinic towers in neighbourhood
+  bundles of about 3-8 lots, one kit per bundle, neighbours differ (seeded). The hospital Site is C's porcelain cross-plan building.
+- **Helix:** no beam or column under it (ART_BIBLE 2.4 "no centre tower"). It stands on a raised three-tier circular plinth with stairs
+  at the four cardinal directions, landing on park paths.
+- **Ground:** the district is one continuous park with no street grid inside: lawn, ponds, tree clumps, winding lit paths and a few
+  curved service lanes, organic clearings, and a soft tree-line edge where it meets the gridded city. The layout change goes to build
+  (A-069); street netruns in Solace are build's call.
+- **Looks:** the city map keeps cel + ink at the raid zoom (ART_BIBLE 1.2). The AAA-2 night was re-lit so forms read (emission about
+  1/3, moon key; median 0.14-0.16, under 1 % clipped). The AAA-2 day uses the approved city-day level (median about 0.46).
