@@ -29,7 +29,8 @@ if mode == "map":
     out = out * (1 - k) + hz * k
 else:
     m = np.clip((lum - 0.65) * 3.0, 0, 1)[..., None]
-    g = blur(a * m, W / 200.0) * 0.8 + blur(a * m, W / 55.0) * 0.5
+    bk = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+    g = (blur(a * m, W / 200.0) * 0.8 + blur(a * m, W / 55.0) * 0.5) * bk
     out = 1 - (1 - a) * (1 - np.clip(g, 0, 1) * 0.6)
 yy, xx = np.mgrid[0:H, 0:W]
 d = np.sqrt(((xx - W / 2) / (W / 2)) ** 2 + ((yy - H / 2) / (H / 2)) ** 2)

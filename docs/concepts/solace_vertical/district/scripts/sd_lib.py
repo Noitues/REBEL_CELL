@@ -6,6 +6,7 @@ Geometry goes into per-material mesh builders (MB). Every vertex carries three p
 import math
 import bpy
 
+EMIT_K = 1.0          # night emission multiplier (round 2 night fix)
 Z_FLAT = False          # set by the main script: flat shading everywhere in the cel map
 
 
@@ -346,7 +347,7 @@ def make_material(name, kind, mode, **o):
         e = nb.node("ShaderNodeEmission")
         nb.link(colN.outputs["Color"], e.inputs[0])
         e.inputs[1].default_value = o.get("strength", 6.0) * (0.35 if cel and False else 1.0)
-        nb.val(e.inputs[1], nb.m("MULTIPLY", pr, o.get("strength", 6.0)))
+        nb.val(e.inputs[1], nb.m("MULTIPLY", pr, o.get("strength", 6.0) * o.get("ek", EMIT_K)))
         nb.link(e.outputs[0], out.inputs[0])
         return mat
 
@@ -397,7 +398,7 @@ def make_material(name, kind, mode, **o):
         bsdf.inputs["Transmission Weight"].default_value = o.get("trans", 0.9)
         bsdf.inputs["IOR"].default_value = 1.2
         nb.link(colN.outputs["Color"], bsdf.inputs["Emission Color"])
-        nb.val(bsdf.inputs["Emission Strength"], nb.m("MULTIPLY", pr, o.get("strength", 2.0)))
+        nb.val(bsdf.inputs["Emission Strength"], nb.m("MULTIPLY", pr, o.get("strength", 2.0) * o.get("ek", EMIT_K)))
         nb.link(bsdf.outputs[0], out.inputs[0])
         return mat
 
@@ -411,7 +412,7 @@ def make_material(name, kind, mode, **o):
         mull = nb.m("SUBTRACT", 1.0, nb.m("MULTIPLY", nb.m("LESS_THAN", nb.m("ABSOLUTE", nb.m("SUBTRACT", u, 0.5)), 0.018), 0.85))
         wcol = nb.mix(nb.mix(WARM, LIME, pg), PINK, pb)
         emc = nb.mulc(wcol, nb.comb(1.0, 1.0, 1.0))
-        strength = nb.m("MULTIPLY", nb.m("MULTIPLY", grad, mull), nb.m("MULTIPLY", pr, o.get("strength", 6.0)))
+        strength = nb.m("MULTIPLY", nb.m("MULTIPLY", grad, mull), nb.m("MULTIPLY", pr, o.get("strength", 6.0) * o.get("ek", EMIT_K)))
         if cel:
             e = nb.node("ShaderNodeEmission")
             nb.link(wcol, e.inputs[0])
@@ -453,7 +454,7 @@ def make_material(name, kind, mode, **o):
         mask = 0.0
     if o.get("dbg"):
         mask = {"inx": inx, "iny": iny, "lit": lit, "vert": vert, "n1": n1, "one": 1.0, "fy": fy, "vy": vy}[o["dbg"]]
-    S = o.get("strength", 5.0)
+    S = o.get("strength", 5.0) * o.get("ek", EMIT_K)
     glow = o.get("glow")
     if cel:
         c = _toon(nb, base, bands)
@@ -493,7 +494,7 @@ def make_material(name, kind, mode, **o):
         bsdf.inputs["Coat Roughness"].default_value = 0.05
     if glow:
         bsdf.inputs["Emission Color"].default_value = glow[0] + (1.0,)
-        bsdf.inputs["Emission Strength"].default_value = glow[2]
+        bsdf.inputs["Emission Strength"].default_value = glow[2] * o.get("ek", EMIT_K)
     else:
         nb.link(wcol, bsdf.inputs["Emission Color"])
         nb.val(bsdf.inputs["Emission Strength"], nb.m("MULTIPLY", nb.m("MULTIPLY", mask, flick), S))

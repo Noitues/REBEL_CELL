@@ -25,6 +25,17 @@ W, H = [int(x) for x in A["size"].split("x")]
 CEL = MODE in ("map", "ink")
 L.Z_FLAT = CEL
 SEED = int(A["seed"])
+N2 = (DIR == "D" and MODE == "night" and A.get("n2", "1") == "1")      # round-2 night fix: darker, shaded, readable forms
+L.EMIT_K = 0.35 if N2 else 1.0
+
+
+def ekw(v):
+    return {"ek": v} if N2 else {}
+
+
+MOON = float(A.get("moon", "1.6"))
+SKY = float(A.get("sky", "1.0"))
+EXPO = float(A.get("expo", "0.0"))
 
 LIME = (0.588, 1.0, 0.275)
 PINKC = (1.0, 0.275, 0.588)
@@ -66,18 +77,19 @@ def mats():
     if DIR == "D":
         M["twC"] = L.make_material("twC", "win", MODE, cw=100.0, ch=3.6, win=(0.0, 1.0, 0.18, 0.58), strength=1.4, rough=0.18, metal=0.0, bands=bands, coat=0.9)
     M["plain"] = L.make_material("plain", "win", MODE, plain=True, rough=0.25, metal=0.0, bands=bands, coat=0.8 if DIR == "C" else (0.5 if DIR == "D" else 0.2))
-    M["tube"] = L.make_material("tube", "win", MODE, plain=True, rough=0.2, coat=0.8, bands=bands, glow=((0.40, 0.95, 0.18), 0.55, 1.7))
-    M["ord"] = L.make_material("ord", "win", MODE, cw=3.4, ch=3.8, win=(0.2, 0.75, 0.25, 0.7), strength=1.5, rough=0.45, bands=bands)
-    M["ordr"] = L.make_material("ordr", "win", MODE, cw=2.6, ch=3.0, win=(0.22, 0.78, 0.2, 0.7), strength=1.5, rough=0.45, bands=bands)
+    M["tube"] = L.make_material("tube", "win", MODE, plain=True, rough=0.2, coat=0.8, bands=bands, glow=((0.40, 0.95, 0.18), 0.55, 1.7), **ekw(0.6))
+    M["ord"] = L.make_material("ord", "win", MODE, cw=3.4, ch=3.8, win=(0.2, 0.75, 0.25, 0.7), strength=1.5, rough=0.45, bands=bands, **ekw(0.55))
+    M["ordr"] = L.make_material("ordr", "win", MODE, cw=2.6, ch=3.0, win=(0.22, 0.78, 0.2, 0.7), strength=1.5, rough=0.45, bands=bands, **ekw(0.55))
     M["glass"] = L.make_material("glass", "glass", MODE, strength=0.9, alpha=0.74, trans=0.92, bands=bands)
     M["glassB"] = L.make_material("glassB", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands, cel_strength=0.3)
     M["glassb"] = L.make_material("glassb", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands)
     M["neon"] = L.make_material("neon", "neon", MODE, strength=5.0 if not CEL else 1.0)
-    M["neon_p"] = L.make_material("neon_p", "neon", MODE, strength=34.0 if not CEL else 1.0)
-    M["neon_s"] = L.make_material("neon_s", "neon", MODE, strength=9.0 if not CEL else 1.0)
+    M["neon_p"] = L.make_material("neon_p", "neon", MODE, strength=34.0 if not CEL else 1.0, **ekw(0.07))
+    M["neon_l"] = L.make_material("neon_l", "neon", MODE, strength=5.0 if not CEL else 1.0, **ekw(0.16))
+    M["neon_s"] = L.make_material("neon_s", "neon", MODE, strength=9.0 if not CEL else 1.0, **ekw(0.3))
     M["ground"] = L.make_material("ground", "ground", MODE, bands=bands)
-    M["hwin"] = L.make_material("hwin", "hwin", MODE, strength=3.0)
-    M["hwin_n"] = L.make_material("hwin_n", "hwin", MODE, strength=11.0)
+    M["hwin"] = L.make_material("hwin", "hwin", MODE, strength=3.0, **ekw(0.55))
+    M["hwin_n"] = L.make_material("hwin_n", "hwin", MODE, strength=11.0, **ekw(0.55))
     return M
 
 
@@ -156,7 +168,7 @@ PLAN = plan()
 
 # ------------------------------------------------------------------ ground, streets, pads
 PAD_COL = {"A": (0.03, 0.075, 0.05), "B": (0.035, 0.07, 0.07), "C": (0.50, 0.54, 0.52), "D": (0.03, 0.075, 0.05)}[DIR]
-PAD_C = (0.50, 0.54, 0.52)
+PAD_C = (0.50, 0.54, 0.52) if not N2 else (0.16, 0.15, 0.14)
 if CEL:
     PAD_COL = {"A": (0.09, 0.17, 0.14), "B": (0.10, 0.17, 0.17), "C": (0.60, 0.66, 0.64), "D": (0.09, 0.17, 0.14)}[DIR]
     PAD_C = (0.60, 0.66, 0.64)
@@ -418,7 +430,7 @@ def kit_B(i, j, p):
         if rr.random() < 0.45:
             sphere(mb(NU), sx, sy, sz, rad * NR, 7, PINKC, (1.0 if not CEL else 1, 0, 0, 1))
         elif rr.random() < 0.5:
-            sphere(mb("neon"), sx, sy, sz, rad * 0.30, 7, LIME, (0.9 if not CEL else 1, 0, 0, 1))
+            sphere(mb("neon_l" if D else "neon"), sx, sy, sz, rad * 0.30, 7, LIME, (0.9 if not CEL else 1, 0, 0, 1))
         if rr.random() < 0.5:        # a daughter cell budding off, half the radius, just touching
             a2 = ang + (rr.random() - 0.5) * 1.6
             r2 = rad * 0.55
@@ -435,6 +447,8 @@ def kit_C(i, j, p):
     cx, cy, h = p["x"], p["y"], p["h"]
     seed = rr.random()
     porc = (0.80, 0.83, 0.80) if not CEL else (0.88, 0.92, 0.90)
+    if N2:
+        porc = (0.34, 0.32, 0.29)
     glassg = porc
     prmw = pr(0.86, 0.9, 0.04, seed)
     if p["sub"] < 0.22:            # low clinic wing: white block, one green band, roof garden
@@ -669,6 +683,8 @@ def hospital():
     hx, hy = 4.5 * PITCH, -2.5 * PITCH
     n = sd(28)
     porc = (0.80, 0.84, 0.81) if not CEL else (0.88, 0.92, 0.90)
+    if N2:
+        porc = (0.34, 0.32, 0.29)
     # helipad
     def helipad(x, y, z, r):
         torus(mb("neon"), x, y, z, r, 0.2, n, 4, LIME, (1.0 if not CEL else 1, 0, 0, 1))
@@ -769,9 +785,9 @@ def world():
         ramp.color_ramp.elements[1].color = (0.02, 0.015, 0.05, 1)
         bg.inputs[1].default_value = 1.0
     else:
-        ramp.color_ramp.elements[0].color = (0.035, 0.022, 0.07, 1)
+        ramp.color_ramp.elements[0].color = ((0.035, 0.022, 0.07, 1) if not N2 else (0.07 * SKY, 0.07 * SKY, 0.16 * SKY, 1))
         ramp.color_ramp.elements[0].position = 0.0
-        ramp.color_ramp.elements[1].color = (0.002, 0.003, 0.010, 1)
+        ramp.color_ramp.elements[1].color = ((0.002, 0.003, 0.010, 1) if not N2 else (0.018 * SKY, 0.026 * SKY, 0.06 * SKY, 1))
         ramp.color_ramp.elements[1].position = 0.5
         bg.inputs[1].default_value = 1.0
     nt.links.new(ramp.outputs[0], bg.inputs[0])
@@ -779,7 +795,7 @@ def world():
     if not CEL:
         vol = nt.nodes.new("ShaderNodeVolumePrincipled")
         vol.inputs["Color"].default_value = (0.55, 0.45, 0.8, 1)
-        vol.inputs["Density"].default_value = 0.00038
+        vol.inputs["Density"].default_value = 0.00038 if not N2 else 0.00018
         vol.inputs["Anisotropy"].default_value = 0.35
         nt.links.new(vol.outputs[0], out.inputs[1])
 
@@ -789,8 +805,10 @@ def lights():
         add_light("SUN", (0, 0, 300), (0.78, 0.80, 1.0), 2.6, rot=(math.radians(52), 0, math.radians(-125)), angle=0.02)
         add_light("SUN", (0, 0, 300), (0.9, 0.4, 0.8), 0.5, rot=(math.radians(60), 0, math.radians(60)), angle=0.02)
         return
-    add_light("SUN", (0, 0, 300), (0.55, 0.6, 1.0), 0.28, rot=(math.radians(58), 0, math.radians(-125)), angle=0.04)
-    add_light("POINT", (0, 0, 40), LIME, 6e4, size=6)
+    add_light("SUN", (0, 0, 300), (0.55, 0.6, 1.0), 0.28 if not N2 else MOON, rot=(math.radians(58), 0, math.radians(-125)), angle=0.04)
+    if N2:
+        add_light("SUN", (0, 0, 300), (0.75, 0.55, 0.95), 0.35 * MOON / 1.6, rot=(math.radians(55), 0, math.radians(55)), angle=0.1)
+    add_light("POINT", (0, 0, 40), LIME, 6e4 if not N2 else 3.5e4, size=6)
     add_light("POINT", (0, 0, 70), (1.0, 0.3, 0.6), 3e4, size=6)
     add_light("POINT", (0, 0, 8), (0.9, 1.0, 0.9), 1.2e4, size=4)
     hx, hy = 4.5 * PITCH, -2.5 * PITCH
@@ -805,7 +823,7 @@ def lights():
     if D:
         for (gi, gj, x, y) in BUNDLE_SEEDS:
             if BUNDLE_KIT[(gi, gj)] == "C":
-                add_light("POINT", (x * PITCH, y * PITCH, 38), (0.85, 1.0, 0.95), 5e4, size=4)
+                add_light("POINT", (x * PITCH, y * PITCH, 38), (0.85, 1.0, 0.95), 5e4 if not N2 else 1.2e4, size=4)
     rr = random.Random(3)
     for k in range(14):
         a = 2 * math.pi * k / 14 + 0.2
@@ -874,7 +892,7 @@ scene.render.filepath = out_path
 try:
     scene.view_settings.view_transform = "Standard"
     scene.view_settings.look = "None"
-    scene.view_settings.exposure = -0.6 if not CEL else 0.0
+    scene.view_settings.exposure = (-0.6 if not N2 else EXPO) if not CEL else 0.0
 except Exception as e:
     print("view transform", e)
 

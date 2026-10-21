@@ -55,3 +55,17 @@ Files: `D_map.png`, `D_night.png` (1920x1080), `sheet_r2.jpg` (A/B/C night thumb
 - **Helix fix**: the beam mesh (`helix_beam()`) is off for every direction now (`BEAM = False`); it read as a dark solid column on the map and a solid in Cycles. No light-shaft replacement: with the current fog density a spot shaft would not read as light. Re-rendering A/B/C with the current script therefore gives them no beam either (their round-1 PNGs keep it).
 - **Rebuild**: `scripts/run_d.sh` (GPU lock; map raw, id pass, night), then `ink.py out/D_map_raw.png out/D_ink.png out/D_map_inked.png 2.6`, `post.py map ...`, `post.py night ...`, `sheet_r2.py <this folder> sheet_r2.jpg`.
 - **Times** (1920x1080): map Eevee 7.6 s + id pass 1.3 s; night Cycles 87 s (72 spp adaptive, OIDN), about 2.3 min wall for the whole batch.
+
+### Round 2b: D night fix (too bright, forms lost)
+`D_night.png` re-rendered with `--dir D --mode night` (on by default for D night; `--n2 0` reproduces the first D night, kept as `D_night_r2a_bright.png`). Same camera and layout. Changes, all gated on `N2` in `sd_main.py`:
+- Emission x0.35 everywhere (`sd_lib.EMIT_K`: windows, ribbons, clinic bands, glass, rings); ordinary-city windows and the helix windows/skin x0.55-0.6 (helix stays the brightest). Pink nuclei: `neon_p` x0.07 (they were clipping to white), lime nuclei `neon_l` x0.16, rungs/halo `neon_s` x0.3.
+- Cool moon sun 0.28 -> 1.7 plus a faint violet counter-sun 0.35, brighter blue sky (horizon 0.07/0.07/0.16, zenith 0.018/0.026/0.06), exposure -0.6 -> -1.15, fog density 0.00038 -> 0.00018, helix lime point light 6e4 -> 3.5e4, C fill lights 5e4 -> 1.2e4, post bloom x0.35 (`post.py night in out 0.35`).
+- C porcelain (towers, hospital) 0.80/0.83/0.80 -> warm grey 0.34/0.32/0.29; C pads 0.50 -> 0.16.
+| 1920x1080 final, sRGB luma | before | after |
+|---|---|---|
+| median | 0.368 | 0.141 |
+| mean | 0.469 | 0.210 |
+| > 0.95 (clipped) | 7.73 % | 0.29 % |
+| > 0.85 | 15.53 % | 0.74 % |
+| < 0.05 | 0.0 % | 5.8 % |
+Render 250 s (72 spp adaptive, OIDN; slower than before because more indirect light now matters). Tuning previews at 640x360 on CPU (`scripts/stats.py` prints the numbers).

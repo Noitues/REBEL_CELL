@@ -22,7 +22,7 @@ y = y0 + 36 + th + 20
 d.rectangle((0, y, W, y + 84), fill=(24, 20, 36))
 d.text((18, y + 4), "D  MIXED BUNDLES", font=font(32, True), fill=LIME)
 d.text((18 + 380, y + 12), "cel map view: Eevee ortho, raid zoom, 3 toon bands + ink", font=font(22), fill=(190, 190, 215))
-d.text((CW + 18, y + 12), "AAA-2 night hero: Cycles, 1920x1080, volume fog, wet ground", font=font(22), fill=(190, 190, 215))
+d.text((CW + 18, y + 12), "AAA-2 night hero (v2: emission x0.35, moon key, lighter fog): Cycles, 1920x1080", font=font(22), fill=(190, 190, 215))
 d.text((18, y + 46), "seeded Voronoi bundles of ~3-8 lots, one kit each, neighbours differ; lime-leaning B cells with bright pink nuclei; C porcelain hospital; no beam / centre column over the helix", font=font(22), fill=FG)
 for c, nm in enumerate(("map", "night")):
     im = Image.open(os.path.join(D, "D_%s.png" % nm)).convert("RGB").resize((CW, CH), Image.LANCZOS)
