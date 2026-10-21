@@ -17,7 +17,7 @@ import sd_lib as L  # noqa: E402
 from sd_lib import MB, box, cyl, dome, lathe, sphere, torus, prism, rect, sweep, seg_tube, strip, disc, flat_poly, cross_shape  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-A = {"dir": "A", "mode": "night", "size": "1920x1080", "spp": "64", "out": "out/test.png", "cam": "", "scale": "300", "post": "1", "seed": "7", "device": "GPU"}
+A = {"dir": "A", "mode": "night", "size": "1920x1080", "spp": "64", "out": "out/test.png", "cam": "", "scale": "300", "post": "1", "seed": "7", "device": "GPU", "tod": "night", "view": ""}
 for i in range(0, len(argv), 2):
     A[argv[i].lstrip("-")] = argv[i + 1]
 DIR, MODE = A["dir"], A["mode"]
@@ -25,14 +25,20 @@ W, H = [int(x) for x in A["size"].split("x")]
 CEL = MODE in ("map", "ink")
 L.Z_FLAT = CEL
 SEED = int(A["seed"])
-N2 = (DIR == "D" and MODE == "night" and A.get("n2", "1") == "1")      # round-2 night fix: darker, shaded, readable forms
-L.EMIT_K = 0.35 if N2 else 1.0
+DAYV = A["tod"] == "day"
+RAID = A["view"] == "raid"
+N2 = (DIR == "D" and MODE == "night" and not DAYV and A.get("n2", "1") == "1")      # round-2 night fix: darker, shaded, readable forms
+L.DAY = DAYV
+L.CEL_S = 0.8 if (RAID and MODE != "night" and not DAYV) else 1.0
+L.EMIT_K = 0.35 if N2 else (0.03 if (DAYV and MODE == "night") else 1.0)
 
 
 def ekw(v):
-    return {"ek": v} if N2 else {}
+    return {"ek": v} if N2 else ({"ek": v * 0.12} if (DAYV and MODE == "night") else {})
 
 
+DENS = float(A.get("dens", "0"))
+SUNK = float(A.get("sun", "3.0"))
 MOON = float(A.get("moon", "1.6"))
 SKY = float(A.get("sky", "1.0"))
 EXPO = float(A.get("expo", "0.0"))
@@ -43,6 +49,7 @@ GL1 = (0.55, 1.0, 0.45, 1) if not CEL else (0.16, 0.66, 0.22, 1)
 TWC = "twC" if DIR == "D" else "tw"       # the clinic band material key
 BEAM = False                          # round 2: no beam / dark column over the helix (no centre tower)
 D = DIR == "D"
+GLASSC = ((0.04, 0.20, 0.11) if not DAYV else (0.07, 0.34, 0.13)) if not CEL else (0.10, 0.34, 0.22)
 PITCH = 24.0          # one lot (16 BU) + one street (8 BU)
 LOT = 16.0
 GRID = 20             # +- cells built (ordinary city beyond the 500 BU district shows at the hero horizon)
@@ -64,6 +71,10 @@ NI = 2.0 if not CEL else 1.0
 def mats():
     M = {}
     bands = (0.30, 0.58, 0.95, 0.20, 0.50)
+    if CEL and RAID and not DAYV:
+        bands = (0.14, 0.30, 0.56, 0.20, 0.50)
+    if CEL and DAYV:
+        bands = ((0.52, 0.58, 0.90), (0.88, 0.82, 0.70), (1.12, 1.05, 0.92), 0.22, 0.55)
     s = 6.0 if not CEL else 1.0
     if DIR in ("A", "D"):
         M["tw"] = L.make_material("tw", "win", MODE, cw=7.0, ch=2.6, win=(0.0, 1.0, 0.30, 0.66), strength=2.4, rough=0.22, metal=0.25, bands=bands, coat=0.5)
@@ -83,8 +94,9 @@ def mats():
     M["glass"] = L.make_material("glass", "glass", MODE, strength=0.9, alpha=0.74, trans=0.92, bands=bands)
     M["glassB"] = L.make_material("glassB", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands, cel_strength=0.3)
     M["glassb"] = L.make_material("glassb", "glass", MODE, strength=0.5, alpha=0.5, trans=0.97, bands=bands)
-    M["neon"] = L.make_material("neon", "neon", MODE, strength=5.0 if not CEL else 1.0)
+    M["neon"] = L.make_material("neon", "neon", MODE, strength=5.0 if not CEL else (0.45 if DAYV else 1.0))
     M["neon_p"] = L.make_material("neon_p", "neon", MODE, strength=34.0 if not CEL else 1.0, **ekw(0.07))
+    M["neon_x"] = L.make_material("neon_x", "neon", MODE, strength=14.0 if not CEL else 1.0, **({"ek": 0.4} if (DAYV and MODE == "night") else ekw(0.3)))
     M["neon_l"] = L.make_material("neon_l", "neon", MODE, strength=5.0 if not CEL else 1.0, **ekw(0.16))
     M["neon_s"] = L.make_material("neon_s", "neon", MODE, strength=9.0 if not CEL else 1.0, **ekw(0.3))
     M["ground"] = L.make_material("ground", "ground", MODE, bands=bands)
@@ -175,6 +187,10 @@ if CEL:
 ORD_PAD = (0.035, 0.035, 0.06) if not CEL else (0.12, 0.10, 0.22)
 PARK_COL = (0.02, 0.09, 0.03) if not CEL else (0.07, 0.22, 0.10)
 STREET_COL = (0.018, 0.018, 0.03) if not CEL else (0.06, 0.05, 0.13)
+if DAYV and not CEL:
+    STREET_COL, ORD_PAD, PARK_COL, PAD_COL, PAD_C = (0.07, 0.07, 0.08), (0.11, 0.11, 0.12), (0.05, 0.17, 0.05), (0.09, 0.16, 0.09), (0.50, 0.47, 0.42)
+if DAYV and CEL:
+    STREET_COL, ORD_PAD, PARK_COL, PAD_COL, PAD_C = (0.16, 0.15, 0.20), (0.22, 0.21, 0.27), (0.10, 0.32, 0.12), (0.16, 0.30, 0.22), (0.48, 0.46, 0.42)
 
 
 def ground():
@@ -230,7 +246,8 @@ def street_lines():
 
 
 # ------------------------------------------------------------------ trees and park
-TREE_COL = [(0.02, 0.10, 0.03), (0.03, 0.14, 0.05), (0.015, 0.08, 0.05)] if not CEL else [(0.07, 0.26, 0.10), (0.10, 0.32, 0.12), (0.06, 0.22, 0.14)]
+TREE_COL_N = [(0.02, 0.10, 0.03), (0.03, 0.14, 0.05), (0.015, 0.08, 0.05)] if not CEL else [(0.07, 0.26, 0.10), (0.10, 0.32, 0.12), (0.06, 0.22, 0.14)]
+TREE_COL = TREE_COL_N if not DAYV else ([(0.05, 0.22, 0.06), (0.08, 0.28, 0.08), (0.04, 0.18, 0.07)] if not CEL else [(0.12, 0.40, 0.14), (0.16, 0.46, 0.16), (0.10, 0.34, 0.18)])
 
 
 def tree(x, y, rr, h=None, z=0.25, glow=False):
@@ -303,8 +320,12 @@ def ord_building(i, j, p):
     w = 6.0 + 2.0 * rr.random()
     d = 6.0 + 2.0 * rr.random()
     base = [(0.06, 0.06, 0.12), (0.08, 0.07, 0.15), (0.05, 0.07, 0.11), (0.09, 0.06, 0.10)]
+    if DAYV:
+        base = [(0.20, 0.20, 0.26), (0.28, 0.24, 0.22), (0.18, 0.20, 0.26), (0.30, 0.26, 0.22)]
     if CEL:
         base = [(0.20, 0.16, 0.36), (0.24, 0.17, 0.38), (0.17, 0.17, 0.34), (0.27, 0.16, 0.32)]
+        if DAYV:
+            base = [(0.40, 0.36, 0.50), (0.44, 0.36, 0.42), (0.36, 0.38, 0.46), (0.46, 0.40, 0.36)]
     col = base[int(rr.random() * 4)]
     prm = pr(0.32 + 0.3 * rr.random(), 0.05, 0.12, rr.random())
     key = "ord" if rr.random() < 0.6 else "ordr"
@@ -323,7 +344,7 @@ def ord_building(i, j, p):
 
 def a_tower(cx, cy, h, R, rr, i, j, stacked=False):
     seed = rr.random()
-    glassc = (0.04, 0.20, 0.11) if not CEL else (0.10, 0.34, 0.22)
+    glassc = GLASSC
     prm = pr(0.88, 0.62, 0.30, seed)
     n = sd(22)
     t = mb("tw", True)
@@ -352,7 +373,7 @@ def a_low_dome(cx, cy, h, R, rr, i, j):
     """Low-rise with a rooftop greenhouse dome (grow lights): a squat capsule drum + glass dome."""
     seed = rr.random()
     n = sd(22)
-    glassc = (0.04, 0.20, 0.11) if not CEL else (0.10, 0.34, 0.22)
+    glassc = GLASSC
     hh = max(10.0, h * 0.45)
     lathe(mb("tw", True), cx, cy, [(0, 0.25), (R, 0.25), (R, hh), (0, hh)], n, glassc, pr(0.85, 0.6, 0.3, seed))
     torus(mb("neon"), cx, cy, hh + 0.1, R + 0.05, 0.22, n, 5, LIME, (1.0, 0, 0, 1))
@@ -449,6 +470,10 @@ def kit_C(i, j, p):
     porc = (0.80, 0.83, 0.80) if not CEL else (0.88, 0.92, 0.90)
     if N2:
         porc = (0.34, 0.32, 0.29)
+    if RAID and CEL and not DAYV:
+        porc = (0.52, 0.54, 0.62)
+    if DAYV:
+        porc = (0.66, 0.63, 0.56) if not CEL else (0.60, 0.58, 0.54)
     glassg = porc
     prmw = pr(0.86, 0.9, 0.04, seed)
     if p["sub"] < 0.22:            # low clinic wing: white block, one green band, roof garden
@@ -685,6 +710,10 @@ def hospital():
     porc = (0.80, 0.84, 0.81) if not CEL else (0.88, 0.92, 0.90)
     if N2:
         porc = (0.34, 0.32, 0.29)
+    if RAID and CEL and not DAYV:
+        porc = (0.52, 0.54, 0.62)
+    if DAYV:
+        porc = (0.66, 0.63, 0.56) if not CEL else (0.60, 0.58, 0.54)
     # helipad
     def helipad(x, y, z, r):
         torus(mb("neon"), x, y, z, r, 0.2, n, 4, LIME, (1.0 if not CEL else 1, 0, 0, 1))
@@ -693,7 +722,7 @@ def hospital():
         box(mb("neon"), x - r * 0.32, y - 0.25, z, x + r * 0.32, y + 0.25, z + 0.1, LIME, (1.0 if not CEL else 1, 0, 0, 1))
     # the pad ring + beacons
     torus(mb("neon"), hx, hy, 0.4, 35.0, 0.22, sd(48), 4, LIME, (0.8 if not CEL else 1, 0, 0, 1))
-    glassc = (0.04, 0.20, 0.11) if not CEL else (0.10, 0.34, 0.22)
+    glassc = GLASSC
     seed = 0.37
     HK = "C" if D else DIR
     if HK == "A":
@@ -731,7 +760,7 @@ def hospital():
         helipad(hx, hy, 39.1, 6.5)
         cz = 39.0
     # the standing green cross: a beacon over the roof, double-sided, facing the camera diagonal (the Site mark)
-    cross_shape(mb("neon_s"), hx, hy, cz + 9.0, 11.0, 3.6, math.radians(45.0), LIME, (1.0 if not CEL else 1, 0, 0, 1), depth=0.5)
+    cross_shape(mb("neon_x"), hx, hy, cz + 9.0, 11.0, 3.6, math.radians(-45.0 if RAID else 45.0), LIME, (1.0 if not CEL else 1, 0, 0, 1), depth=0.5)
     cyl(mb("plain"), hx, hy, cz, cz + 3.4, 0.35, 5, (0.6, 0.6, 0.6), (0, 0, 0, 0.5), cap=False)
     # a pink beacon on the mast
     sphere(mb("neon"), hx, hy, cz + 15.4, 0.7, 6, PINKC, (1.0, 0, 0, 1))
@@ -790,18 +819,35 @@ def world():
         ramp.color_ramp.elements[1].color = ((0.002, 0.003, 0.010, 1) if not N2 else (0.018 * SKY, 0.026 * SKY, 0.06 * SKY, 1))
         ramp.color_ramp.elements[1].position = 0.5
         bg.inputs[1].default_value = 1.0
+    if DAYV:
+        ramp.color_ramp.elements[0].position = 0.0
+        ramp.color_ramp.elements[1].position = 0.6
+        ramp.color_ramp.elements[0].color = (0.74, 0.80, 0.92, 1)
+        ramp.color_ramp.elements[1].color = (0.20, 0.40, 0.85, 1) if not CEL else (0.45, 0.62, 0.95, 1)
+        bg.inputs[1].default_value = 1.0
     nt.links.new(ramp.outputs[0], bg.inputs[0])
     nt.links.new(bg.outputs[0], out.inputs[0])
-    if not CEL:
+    if not CEL and not (DAYV and DENS <= 0):
         vol = nt.nodes.new("ShaderNodeVolumePrincipled")
-        vol.inputs["Color"].default_value = (0.55, 0.45, 0.8, 1)
-        vol.inputs["Density"].default_value = 0.00038 if not N2 else 0.00018
+        vol.inputs["Color"].default_value = (0.55, 0.45, 0.8, 1) if not DAYV else (0.85, 0.90, 1.0, 1)
+        vol.inputs["Density"].default_value = (0.00038 if not N2 else 0.00018) if not DAYV else DENS
         vol.inputs["Anisotropy"].default_value = 0.35
         nt.links.new(vol.outputs[0], out.inputs[1])
 
 
 def lights():
+    if DAYV:
+        if CEL:
+            add_light("SUN", (0, 0, 300), (1.0, 0.92, 0.78), 3.2, rot=(math.radians(48), 0, math.radians(-30)), angle=0.02)
+            add_light("SUN", (0, 0, 300), (0.6, 0.7, 1.0), 0.6, rot=(math.radians(60), 0, math.radians(150)), angle=0.02)
+        else:
+            add_light("SUN", (0, 0, 300), (1.0, 0.90, 0.74), SUNK, rot=(math.radians(50), 0, math.radians(-40)), angle=0.03)
+        return
     if CEL:
+        if RAID:
+            add_light("SUN", (0, 0, 300), (0.70, 0.74, 1.0), 1.7, rot=(math.radians(52), 0, math.radians(-125)), angle=0.02)
+            add_light("SUN", (0, 0, 300), (0.9, 0.4, 0.8), 0.4, rot=(math.radians(60), 0, math.radians(60)), angle=0.02)
+            return
         add_light("SUN", (0, 0, 300), (0.78, 0.80, 1.0), 2.6, rot=(math.radians(52), 0, math.radians(-125)), angle=0.02)
         add_light("SUN", (0, 0, 300), (0.9, 0.4, 0.8), 0.5, rot=(math.radians(60), 0, math.radians(60)), angle=0.02)
         return
@@ -836,7 +882,16 @@ def camera():
     ob = bpy.data.objects.new("cam", cam)
     coll.objects.link(ob)
     scene.camera = ob
-    if CEL:
+    if CEL and RAID:
+        # the game's raid zoom (CityIsoCamera): yaw 135, pitch 40, ortho 300 BU wide
+        yw, pt = math.radians(135.0), math.radians(40.0)
+        fwd = Vector((math.cos(yw) * math.cos(pt), -math.sin(yw) * -1 * math.cos(pt), -math.sin(pt)))
+        tgt = Vector((-24.8, -10.6, 0.0))
+        ob.location = tgt - fwd * 900.0
+        cam.type = "ORTHO"
+        cam.ortho_scale = float(A.get("rscale", "300"))
+        cam.clip_start, cam.clip_end = 10, 3000
+    elif CEL:
         tgt = Vector((52.0, -26.0, 22.0))
         el = math.radians(38.0)
         az = math.radians(-135.0)
@@ -883,7 +938,7 @@ build_all()
 world()
 lights()
 camera()
-print("BUILD %.1f s, %d builders" % (time.time() - t_start, len(BUILD)), flush=True)
+print("BUILD %.1f s, %d builders DAYV=%s N2=%s EMIT_K=%s" % (time.time() - t_start, len(BUILD), DAYV, N2, L.EMIT_K), flush=True)
 
 # ------------------------------------------------------------------ render settings
 out_path = os.path.abspath(A["out"])
@@ -892,7 +947,7 @@ scene.render.filepath = out_path
 try:
     scene.view_settings.view_transform = "Standard"
     scene.view_settings.look = "None"
-    scene.view_settings.exposure = (-0.6 if not N2 else EXPO) if not CEL else 0.0
+    scene.view_settings.exposure = ((-0.6 if not N2 else EXPO) if not DAYV else EXPO) if not CEL else 0.0
 except Exception as e:
     print("view transform", e)
 

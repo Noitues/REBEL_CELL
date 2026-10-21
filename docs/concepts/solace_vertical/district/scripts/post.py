@@ -27,6 +27,24 @@ if mode == "map":
     hz = np.array([0.20, 0.13, 0.36], dtype=np.float32)[None, None, :]
     k = (np.clip(1.0 - y * 1.0, 0, 1) ** 2.0) * 0.38
     out = out * (1 - k) + hz * k
+elif mode == "mapraid":
+    m = np.clip((lum - 0.72) * 4.0, 0, 1)[..., None] * np.clip(sat * 2.5, 0, 1)[..., None]
+    g = blur(a * m, W / 240.0) * 0.9 + blur(a * m, W / 70.0) * 0.55
+    out = 1 - (1 - a) * (1 - np.clip(g, 0, 1) * 0.7)
+    y = np.linspace(1, 0, H)[:, None, None]
+    hz = np.array([0.16, 0.11, 0.32], dtype=np.float32)[None, None, :]
+    k = (np.clip(1.0 - y * 1.0, 0, 1) ** 2.0) * 0.18
+    out = out * (1 - k) + hz * k
+elif mode == "dayhaze":
+    y = np.linspace(1, 0, H)[:, None, None]
+    hz = np.array([0.74, 0.80, 0.92], dtype=np.float32)[None, None, :]
+    k = (np.clip(1.0 - y * 1.0, 0, 1) ** 1.6) * float(sys.argv[4] if len(sys.argv) > 4 else 0.22)
+    out = a * (1 - k) + hz * k
+elif mode == "mapday":
+    y = np.linspace(1, 0, H)[:, None, None]
+    hz = np.array([0.70, 0.80, 0.95], dtype=np.float32)[None, None, :]
+    k = (np.clip(1.0 - y * 1.0, 0, 1) ** 2.0) * 0.30
+    out = a * (1 - k) + hz * k
 else:
     m = np.clip((lum - 0.65) * 3.0, 0, 1)[..., None]
     bk = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0

@@ -6,6 +6,8 @@ Geometry goes into per-material mesh builders (MB). Every vertex carries three p
 import math
 import bpy
 
+CEL_S = 1.0             # cel window emission strength
+DAY = False            # daylight: windows read as dark reflective glass, not lit
 EMIT_K = 1.0          # night emission multiplier (round 2 night fix)
 Z_FLAT = False          # set by the main script: flat shading everywhere in the cel map
 
@@ -303,11 +305,12 @@ def _toon(nb, base_col, bands):
     r.color_ramp.interpolation = "CONSTANT"
     el = r.color_ramp.elements
     el[0].position = 0.0
-    el[0].color = (bands[0],) * 3 + (1,)
+    tc = lambda b: (tuple(b) if isinstance(b, tuple) else (b,) * 3) + (1,)
+    el[0].color = tc(bands[0])
     el[1].position = bands[3]
-    el[1].color = (bands[1],) * 3 + (1,)
+    el[1].color = tc(bands[1])
     e3 = el.new(bands[4])
-    e3.color = (bands[2],) * 3 + (1,)
+    e3.color = tc(bands[2])
     nb.link(bw.outputs[0], r.inputs[0])
     return nb.mulc(base_col, r.outputs[0])
 
@@ -445,6 +448,9 @@ def make_material(name, kind, mode, **o):
     isl = nb.m("LESS_THAN", n2, pg)
     isp = nb.m("MULTIPLY", nb.m("GREATER_THAN", n2, pg), nb.m("LESS_THAN", n2, nb.m("ADD", pg, pb)))
     wcol = nb.mix(nb.mix(WARM, LIME, isl), PINK, isp)
+    if o.get("day", DAY) and cel:
+        wcol = (0.30, 0.44, 0.66, 1.0)[:3]
+        wcol = nb.mix(wcol, wcol, 0.0)
     gn = nb.node("ShaderNodeNewGeometry")
     _nx, _ny, nz = nb.sep(gn.outputs["Normal"])
     vert = nb.m("LESS_THAN", nb.m("ABSOLUTE", nz), o.get("nzmax", 0.6))
@@ -464,7 +470,7 @@ def make_material(name, kind, mode, **o):
         nb.link(c, e.inputs[0])
         ew = nb.node("ShaderNodeEmission")
         nb.link(wcol, ew.inputs[0])
-        nb.val(ew.inputs[1], nb.m("MULTIPLY", mask, o.get("cel_strength", 1.0)))
+        nb.val(ew.inputs[1], nb.m("MULTIPLY", mask, o.get("cel_strength", CEL_S)))
         add = nb.node("ShaderNodeAddShader")
         nb.link(e.outputs[0], add.inputs[0])
         nb.link(ew.outputs[0], add.inputs[1])
@@ -485,9 +491,17 @@ def make_material(name, kind, mode, **o):
             mat.surface_render_method = "DITHERED"
         return mat
     bsdf = nb.node("ShaderNodeBsdfPrincipled")
-    nb.link(base, bsdf.inputs["Base Color"])
-    bsdf.inputs["Roughness"].default_value = o.get("rough", 0.35)
-    bsdf.inputs["Metallic"].default_value = o.get("metal", 0.0)
+    if DAY and not plain:
+        # daylight: the window cells are dark reflective glass (sky reflections), not lit
+        wm = nb.m("MULTIPLY", mask, 1.0)
+        base = nb.mix(base, (0.05, 0.12, 0.20), nb.m("MULTIPLY", wm, 0.85))
+        nb.link(base, bsdf.inputs["Base Color"])
+        nb.val(bsdf.inputs["Roughness"], nb.m("SUBTRACT", o.get("rough", 0.35), nb.m("MULTIPLY", wm, o.get("rough", 0.35) - 0.06)))
+        nb.val(bsdf.inputs["Metallic"], nb.m("ADD", o.get("metal", 0.0), nb.m("MULTIPLY", wm, 0.5)))
+    else:
+        nb.link(base, bsdf.inputs["Base Color"])
+        bsdf.inputs["Roughness"].default_value = o.get("rough", 0.35)
+        bsdf.inputs["Metallic"].default_value = o.get("metal", 0.0)
     bsdf.inputs["Specular IOR Level"].default_value = 0.6
     if o.get("coat"):
         bsdf.inputs["Coat Weight"].default_value = o["coat"]
