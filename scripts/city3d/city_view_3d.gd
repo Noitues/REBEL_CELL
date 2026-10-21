@@ -1865,6 +1865,9 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	var node := scene.instantiate() as Node3D
 	node.name = "Landmark_%s" % corp
 	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
+	var plinth := node.find_child("solace_hq__plinth", true, false) as Node3D
+	if plinth != null:  # LOOK Solace S2: exported switched off (scale 0); cfg.solace_plinth turns it on
+		plinth.scale = Vector3.ONE if cfg.solace_plinth else Vector3.ZERO
 	if look_blend > 0.0:
 		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	node.transform = at

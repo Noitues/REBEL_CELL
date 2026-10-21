@@ -957,6 +957,9 @@ extends Resource
 ## LOOK Solace S1 (DIRECTION_REVIEW 2026-10-20): the Solace district's buildings are three kits (A capsule tower, B cell cluster,
 ## C clinic tower) in deterministic bundles of neighbouring lots, one kit per bundle. Off: every prism draws its family mesh.
 @export var solace_kits: bool = true
+## LOOK Solace S2: the helix HQ's 3-tier plinth with cardinal stairs (the node `solace_hq__plinth` of solace_hq.glb, 70 BU across).
+## Off until build answers A-069 (the HQ lot may not hold a 70 BU circle); the HQ stands on its plain round pad.
+@export var solace_plinth: bool = false
 ## Prisms under this height (BU) keep the ordinary family mesh (a kit needs room for its cap).
 @export var solace_kit_min_h: float = 4.0
 ## Bundle seeds sit on a triangular lattice of this spacing (lots; about 4-5 Solace lots a bundle), each jittered by

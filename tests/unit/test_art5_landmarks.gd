@@ -124,3 +124,85 @@ func test_landmark_materials_cover_every_surface() -> void:
 	assert_false((rc.find_children("*__win_fist_home", "MeshInstance3D", true, false)[0] as Node3D).visible)
 	assert_true((rc.find_children("*__win_fist_dispatch", "MeshInstance3D", true, false)[0] as Node3D).visible)
 	rc.free()
+
+
+# --- LOOK Solace S2: the concept helix HQ and the C hospital Site -------------------------------------------------
+
+const SOLACE_TRIANGLE_BUDGET := 20000
+
+
+func _solace_entry(job: String) -> Dictionary:
+	for e: Dictionary in _manifest(&"solace")["landmarks"]:
+		if e["job"] == job:
+			return e
+	return {}
+
+
+## Union of the mesh boxes under `n` (model space), skipping the nodes named in `skip`.
+func _box(n: Node, skip: Array[String] = []) -> AABB:
+	var out := AABB()
+	var first := true
+	for m in _meshes(n):
+		var xf := Transform3D()
+		var cur: Node = m
+		var skipped := false
+		while cur != null and cur != n:
+			if skip.has(String(cur.name)):
+				skipped = true
+			xf = (cur as Node3D).transform * xf
+			cur = cur.get_parent()
+		if skipped:
+			continue
+		var b := xf * m.mesh.get_aabb()
+		out = b if first else out.merge(b)
+		first = false
+	return out
+
+
+func test_solace_helix_is_the_concept_helix_without_beam_or_chaser() -> void:
+	var e := _solace_entry("solace_hq")
+	assert_false(e.is_empty(), "solace_hq entry")
+	assert_null(e.get("animation"), "no LED chaser")
+	var tris: Dictionary = e["triangles"]
+	assert_false(tris.has("lm_beam"), "no light cone on the helix")
+	for role in ["lm_lit", "lm_neon", "lm_win", "lm_toon"]:
+		assert_true(tris.has(role), "role %s" % role)
+	var total := 0
+	for k in tris:
+		total += int(tris[k])
+	assert_lte(total, SOLACE_TRIANGLE_BUDGET, "triangle budget")
+	var n: Node = (load("%s/solace/solace_hq.glb" % ROOT) as PackedScene).instantiate()
+	assert_eq(n.find_children("*", "AnimationPlayer", true, false).size(), 0, "no animation player")
+	for mi in _meshes(n):
+		for s in mi.mesh.get_surface_count():
+			assert_ne(mi.mesh.surface_get_material(s).resource_name, "lm_beam", "%s: no beam surface" % mi.name)
+	# footprint inside the 10 x 10 lot rectangle (60 BU), plinth excluded (it is off by default)
+	var box := _box(n, ["solace_hq__plinth"])
+	assert_lte(maxf(absf(box.position.x), absf(box.end.x)), 30.0, "x inside the HQ lot")
+	assert_lte(maxf(absf(box.position.z), absf(box.end.z)), 30.0, "z inside the HQ lot")
+	assert_gt(box.end.y, 80.0, "the helix stands about 90 BU tall")
+	assert_eq(float(e["lot_rect"]["overhang_bu"]), 0.0)
+	# the plinth: its own node, exported switched off, 70 BU across when on
+	var pl := n.find_child("solace_hq__plinth", true, false) as Node3D
+	assert_not_null(pl, "plinth node")
+	if pl != null:
+		assert_eq(pl.scale, Vector3.ZERO, "off by default")
+	n.free()
+	assert_false(CityConfig.new().solace_plinth, "the plinth flag is off by default")
+
+
+func test_solace_hospital_fits_its_site_lot_and_carries_the_cross() -> void:
+	var e := _solace_entry("solace_site")
+	assert_false(e.is_empty(), "solace_site entry")
+	var tris: Dictionary = e["triangles"]
+	for role in ["lm_toon", "lm_neon"]:
+		assert_true(tris.has(role), "role %s" % role)
+	assert_false(tris.has("lm_sign"), "no lettering in the world")
+	assert_false(tris.has("lm_beam"))
+	var n: Node = (load("%s/solace/solace_site.glb" % ROOT) as PackedScene).instantiate()
+	var box := _box(n)
+	# the Site's 6 x 6 lot block is 36 BU across
+	assert_lte(maxf(absf(box.position.x), absf(box.end.x)), 18.0, "x inside the Site block")
+	assert_lte(maxf(absf(box.position.z), absf(box.end.z)), 18.0, "z inside the Site block")
+	assert_gt(box.end.y, 20.0, "the cross stands over the roof")
+	n.free()
