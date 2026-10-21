@@ -7,7 +7,7 @@
   "loc": [
    -100.8497,
    122.4318,
-   187.861
+   192.761
   ],
   "ortho": false,
   "pitch": 16.6667,
@@ -16,7 +16,7 @@
   "tgt": [
    0.2267,
    5.7735,
-   141.65
+   146.55
   ],
   "yaw": 139.0933,
   "zoom_detail": null,
@@ -41,9 +41,9 @@
  ],
  "run": null,
  "source": {
-  "commit": "1827e4ac",
-  "final": "route_map_graph/hq_solace/plates/H_decision_v4_plate.png",
-  "index_pass": "hq_rev/solace/v4/bl_stills/H_decision_index.npy",
+  "commit": "v5",
+  "final": "solace_vertical/hq/H_decision_v5.png",
+  "index_pass": "solace_v1/hq_v5/out/bl_stills/H_decision_index.npy (the final run's own Object Index pass; 2560 x 1440, 64 spp)",
   "index_pass_indices": [
    0,
    1,
@@ -53,7 +53,7 @@
    5,
    7
   ],
-  "pose": "route_map_graph/hq_solace/scratch/ov_stills.json[H_decision] (job_stills_final_0.json holds the same pose)",
+  "pose": "D:/rc_scratch/solace_v1/hq_v5/scratch/ov_stills.json[H_decision] (same cameras as v4; hq_cam unchanged)",
   "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
  },
  "stem": "hq_solace_decision",

@@ -7,13 +7,13 @@
    "red_seq": false
   },
   "notes": {
-   "id_alignment": "class-variance share / shifted-class share = 1.957 (above 1 = the index pass matches this beauty plate)",
-   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [963, 0, 2321, 1439]"
+   "id_alignment": "class-variance share / shifted-class share = 1.9207 (above 1 = the index pass matches this beauty plate)",
+   "landmark_ratio": "ratio_median is gated; ratio_mean = mean(lm)/median(bg), ratio_peak = p99(lm)/median(bg) (post_tethys convention); landmark bbox px [962, 0, 2321, 1439]"
   },
   "pre_accepted": [
    {
     "check": "landmark_ratio",
-    "note": "2.56x above 2.0 pre-accepted (Solace 2.8x accepted 2026-10-16, Q5; 12.8)"
+    "note": "v5 lime helix in the park: 3.20x overview / 3.21x decision above 2.0, pre-accepted (designer approved the plate as rendered, 2026-10-21)"
    }
   ],
   "report_only": [
@@ -39,15 +39,15 @@
   }
  },
  "composition": {
-  "R-CALM-1": 0.2695,
-  "R-CALM-2": 0.0273,
+  "R-CALM-1": 0.3201,
+  "R-CALM-2": 0.0727,
   "R-DET-1": null,
   "R-DET-2": null,
-  "R-FOCUS-1": 1.7604,
+  "R-FOCUS-1": 1.8692,
   "R-HOR-1": null,
   "R-HUE-1": null,
   "R-HUE-2": null,
-  "R-REP-1": 0.3596,
+  "R-REP-1": 0.4635,
   "R-SIL-1": null,
   "R-SIL-2": null
  },
@@ -58,10 +58,10 @@
   "run_graph.json": null,
   "zoned.json": null
  },
- "median": 0.1205,
- "over_085": 0.0205,
- "ratio_mean": 2.9912,
- "ratio_median": 2.5731,
- "ratio_peak": 7.5862,
- "under_010": 0.3488
+ "median": 0.1444,
+ "over_085": 0.0183,
+ "ratio_mean": 3.7628,
+ "ratio_median": 3.2057,
+ "ratio_peak": 8.0425,
+ "under_010": 0.3757
 }

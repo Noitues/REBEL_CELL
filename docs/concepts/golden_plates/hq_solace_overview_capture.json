@@ -2,17 +2,17 @@
  "anim_t": null,
  "art_seeds": null,
  "camera": {
-  "dist": 771.4563,
+  "dist": 782.176,
   "lens": 34.0,
   "loc": [
-   -645.9189,
-   235.0953,
-   525.2338
+   -654.8943,
+   238.362,
+   530.1005
   ],
   "ortho": false,
   "pitch": 27.0,
-  "shift_x": -0.0622,
-  "shift_y": 0.036,
+  "shift_x": -0.0494,
+  "shift_y": 0.0388,
   "tgt": [
    0.0,
    0.0,
@@ -41,9 +41,9 @@
  ],
  "run": null,
  "source": {
-  "commit": "1827e4ac",
-  "final": "route_map_graph/hq_solace/plates/H_overview_v4_plate.png",
-  "index_pass": "hq_rev/solace/v4/bl_stills/H_overview_index.npy",
+  "commit": "v5",
+  "final": "solace_vertical/hq/H_overview_v5.png",
+  "index_pass": "solace_v1/hq_v5/out/bl_stills/H_overview_index.npy (the final run's own Object Index pass; 2560 x 1440, 64 spp)",
   "index_pass_indices": [
    0,
    1,
@@ -53,7 +53,7 @@
    5,
    7
   ],
-  "pose": "route_map_graph/hq_solace/scratch/ov_stills.json[H_overview] (job_stills_final_0.json holds the same pose)",
+  "pose": "D:/rc_scratch/solace_v1/hq_v5/scratch/ov_stills.json[H_overview] (same cameras as v4; hq_cam unchanged)",
   "yaw_convention": "rig: 0 = north, clockwise; loc/tgt in Blender world BU (x east, y north, z up)"
  },
  "stem": "hq_solace_overview",
