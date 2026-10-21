@@ -314,7 +314,7 @@ static func horizon_break(city: Dictionary, net: Dictionary, route_bids: Array =
 			picked.append(e["along"])
 			var bi: Dictionary = e["bi"]
 			var base: Dictionary = _own(out, cow, bi["bid"])["parts"][bi["base"]]
-			base["h"] = float(h["spike_k"]) * med - float(base["z0"])
+			base["h"] = maxf(float(h["spike_k"]) * med - float(base["z0"]), float(base["h"]))
 	stats["spikes"] = picked.size()
 	return out
 

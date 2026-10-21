@@ -68,8 +68,8 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 			var zt := NetrunArtLayoutRules.hq_zone_top(hq_list, reach, bi)
 			if not is_nan(zt):
 				zone_top[bi["bid"]] = zt
-		# The horizon pass sets its 3-5 spikes to spike_k x the backdrop median (the pinned python twin: it may sit under a
-		# tall frontage building and under the 6 floors); a spike is exempt, the pass before it is not.
+		# The horizon pass raises its 3-5 spikes to max(spike_k x the backdrop median, own top) and never lowers a building
+		# (A-067), so the frontage minimum holds for every frontage building outside an HQ zone, spikes included.
 		var stats := {}
 		var ctx := {}
 		var c1 := NetrunArtLayoutRules.apply_layout_rules(city, net, "all", stats, ctx)
@@ -84,11 +84,11 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 				spiked[bid] = true
 		var spikes_max: int = int(NetrunArtConfigData.shipped().layout_rules["horizon"]["spikes_max"])
 		assert_lte(spiked.size(), spikes_max, "seed %d: only the horizon spikes change after the frontage passes" % s)
+		for bid: String in spiked:
+			assert_gte(float(tops[bid]), float(pre_tops[bid]), "seed %d: a spike never lowers a building" % s)
 		var low: Array = []
 		var capped_over: Array = []
 		for bid: String in front:
-			if spiked.has(bid):
-				continue
 			if zone_top.has(bid):
 				if float(tops[bid]) > float(hp["cap_k"]) * float(zone_top[bid]) + 1.0e-6:
 					capped_over.append(bid)
@@ -115,6 +115,7 @@ func test_frontage_ids_hq_and_determinism_at_three_seeds() -> void:
 ## full city at 3 seeds); the spikes elsewhere are at most `spikes_max`.
 func test_hq_zone_cap_and_spike_exemption_at_three_seeds() -> void:
 	var hp: Dictionary = NetrunArtConfigData.shipped().layout_rules["hq"]
+	var spikes_min: int = int(NetrunArtConfigData.shipped().layout_rules["horizon"]["spikes_min"])
 	var spikes_max: int = int(NetrunArtConfigData.shipped().layout_rules["horizon"]["spikes_max"])
 	for s in SEEDS:
 		var ruled := CityModel.build(_cfg, s)
@@ -142,7 +143,7 @@ func test_hq_zone_cap_and_spike_exemption_at_three_seeds() -> void:
 		var net := CityLayoutRuler.fixed_net(s, _cfg, _corps(), func(c: CorporationData) -> Dictionary: return CityLayout.site_points_in(c, plan_s))
 		var st := {}
 		NetrunArtLayoutRules.apply_rules(before, net, {}, "all", st)
-		assert_between(int(st.get("spikes", 0)), 0, spikes_max, "seed %d: spikes" % s)
+		assert_between(int(st.get("spikes", 0)), spikes_min, spikes_max, "seed %d: spikes" % s)
 
 ## The async path (rules deferred, run on a worker thread, landed on the main thread) gives the synchronous heights.
 func test_worker_thread_rules_match_synchronous_heights() -> void:
