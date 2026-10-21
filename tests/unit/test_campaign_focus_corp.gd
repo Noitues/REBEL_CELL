@@ -69,3 +69,20 @@ func test_simulator_with_focus_plays_solace_content() -> void:
 	assert_eq(sim.corp.id, &"solace")
 	var off := CampaignSimulator.new(CombatResolver.new(_cfg, ContentLookup.new().add_registry(ContentRegistry)), &"meridian")
 	assert_eq(off.corp.id, &"meridian")
+
+
+func test_launch_override_forces_the_focus_corp_over_shipped_off() -> void:
+	for id in [&"solace", &"meridian", &"halcyon"]:
+		assert_eq(CampaignRules.focused_corporation_id(_cfg, _lookup, id, &"solace"), &"solace")
+	var corps := CampaignRules.available_corporations(ProfileState.new(), _lookup, _cfg, &"solace")
+	assert_eq(corps.size(), 1)
+	assert_eq(corps[0].id, &"solace")
+
+
+func test_unknown_launch_override_falls_back_to_the_request() -> void:
+	assert_eq(CampaignRules.focused_corporation_id(_cfg, _lookup, &"meridian", &"nope"), &"meridian")
+
+
+func test_focus_corp_arg_reads_the_launch_argument() -> void:
+	assert_eq(RunManager.focus_corp_arg(PackedStringArray(["--quiet", "--focus-corp=solace"])), &"solace")
+	assert_eq(RunManager.focus_corp_arg(PackedStringArray(["--quiet"])), &"")

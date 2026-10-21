@@ -754,20 +754,30 @@ static func unlock_requirements_met(profile: ProfileState, lookup: ContentLookup
 
 ## Solace vertical: the corporation a new campaign is played against. `config.campaign_focus_corp` when it names a
 ## corporation in `lookup`, else `requested` (focus "" = all corporations). One place for every corp choice.
-static func focused_corporation_id(config: CampaignConfigData, lookup: ContentLookup, requested: StringName) -> StringName:
-	if config == null or config.campaign_focus_corp == &"":
+static func focused_corporation_id(config: CampaignConfigData, lookup: ContentLookup, requested: StringName, override: StringName = &"") -> StringName:
+	var focus := focus_corp(config, override)
+	if focus == &"":
 		return requested
-	if lookup != null and lookup.has(config.campaign_focus_corp) and lookup.get_content(config.campaign_focus_corp) is CorporationData:
-		return config.campaign_focus_corp
+	if lookup != null and lookup.has(focus) and lookup.get_content(focus) is CorporationData:
+		return focus
 	return requested
+
+
+## The focus corporation id: a non-empty `override` (the `--focus-corp=<id>` launch argument) wins over
+## `config.campaign_focus_corp`; "" = all corporations.
+static func focus_corp(config: CampaignConfigData, override: StringName = &"") -> StringName:
+	if override != &"":
+		return override
+	return config.campaign_focus_corp if config != null else &""
 
 
 ## Corporations a new campaign may target, by id. With `config.campaign_focus_corp` set, only that corporation
 ## (whatever the profile has unlocked).
-static func available_corporations(profile: ProfileState, lookup: ContentLookup, config: CampaignConfigData = null) -> Array[CorporationData]:
+static func available_corporations(profile: ProfileState, lookup: ContentLookup, config: CampaignConfigData = null, override: StringName = &"") -> Array[CorporationData]:
 	var out: Array[CorporationData] = []
-	if config != null and config.campaign_focus_corp != &"":
-		var focus := lookup.get_content(config.campaign_focus_corp) as CorporationData if lookup.has(config.campaign_focus_corp) else null
+	var focus_id := focus_corp(config, override)
+	if focus_id != &"":
+		var focus := lookup.get_content(focus_id) as CorporationData if lookup.has(focus_id) else null
 		if focus != null:
 			out.append(focus)
 			return out

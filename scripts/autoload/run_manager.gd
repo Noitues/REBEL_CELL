@@ -44,10 +44,24 @@ var profile_state: RefCounted:
 		return profile
 
 
+## Solace vertical: `--focus-corp=<id>` after `--` on the command line plays every new campaign against
+## that corporation (CampaignRules.focus_corp), without changing the shipped config.
+var focus_corp_override: StringName = &""
+
+
 func _ready() -> void:
+	focus_corp_override = focus_corp_arg(OS.get_cmdline_user_args())
 	if resolver == null and ContentRegistry.config != null:
 		resolver = CombatEngine.make_resolver()
 	load_profile()
+
+
+## The `--focus-corp=<id>` value in `args`, else "".
+static func focus_corp_arg(args: PackedStringArray) -> StringName:
+	for arg in args:
+		if arg.begins_with("--focus-corp="):
+			return StringName(arg.trim_prefix("--focus-corp="))
+	return &""
 
 
 func has_active_run() -> bool:
@@ -155,7 +169,7 @@ func build_generated(corporation_id: StringName, snap: Dictionary) -> Corporatio
 
 ## Corporations the profile may start a campaign against (GDD 3.4).
 func available_corporations() -> Array[CorporationData]:
-	return CampaignRules.available_corporations(profile, lookup(), config())
+	return CampaignRules.available_corporations(profile, lookup(), config(), focus_corp_override)
 
 
 func available_classes() -> Array[ClassData]:
@@ -178,7 +192,7 @@ func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPO
 		get_node("/root/Dialogue").clear()
 	_ensure_resolver()
 	_restore_lookup()
-	corporation_id = CampaignRules.focused_corporation_id(config(), lookup(), corporation_id)
+	corporation_id = CampaignRules.focused_corporation_id(config(), lookup(), corporation_id, focus_corp_override)
 	corporation = lookup().get_content(corporation_id) as CorporationData
 	if not CampaignRules.corporation_available(profile, lookup(), corporation):
 		corporation = lookup().get_content(DEFAULT_CORPORATION) as CorporationData
