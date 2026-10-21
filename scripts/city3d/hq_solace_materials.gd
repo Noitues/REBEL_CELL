@@ -12,13 +12,13 @@ const LOOK_KEY := "aaa2"
 
 ## Role -> shader parameters (hq_preset `light`: skin_k 0.012, rim_k 0.12 / pow 4, porcelain rough 0.16 / coat 0.8, office rough 0.6).
 const ROLES := {
-	"hq_sx_skin": {"roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05, "glow_k": 0.012, "rim_k": 0.12, "rim_pow": 4.0,
+	"hq_sx_skin": {"albedo_k": 0.45, "roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05, "glow_k": 0.06, "rim_k": 0.5, "rim_pow": 4.0,
 		"back_k": 0.22},
 	"hq_sx_porc": {"roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05},
-	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 1.0},
+	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 1.4},
 	"hq_sx_office": {"roughness": 0.6, "emit_gain": 1.0},
 	"hq_sx_metal": {"roughness": 0.35, "metallic": 0.6},
-	"hq_sx_stone": {"roughness": 0.62},
+	"hq_sx_stone": {"albedo_k": 0.9, "roughness": 0.62},
 	"hq_sx_ground": {"roughness": 0.85},
 	"hq_sx_plain": {"roughness": 0.8},
 	"hq_sx_water": {"roughness": 0.05, "specular": 0.9},
@@ -47,6 +47,7 @@ static func make(name: String, atlas_tex: Texture2D) -> ShaderMaterial:
 	if name == "hq_sx_win":
 		m.shader = WINDOW
 		m.set_shader_parameter(&"atlas", atlas_tex)
+		m.set_shader_parameter(&"emit_gain", 2.0)
 		return m
 	if not ROLES.has(name):
 		return null
@@ -76,3 +77,31 @@ static func apply(root: Node, corp: StringName, manifest: Dictionary) -> Diction
 			if mats[nm] != null:
 				mi.set_surface_override_material(s, mats[nm])
 	return mats
+
+
+const FOG := preload("res://shaders/city/hq_solace_fog.gdshader")
+const FOG_RADIUS := 600.0
+const FOG_HEIGHT := 420.0
+
+
+## The compound's volumetric haze: the Environment's volumetric fog on (zero global density) and a FogVolume box over the compound
+## carrying hq_solace_fog (added under `host`, returned so the page can drop it). Perspective cameras only (Godot's volumetric fog).
+static func add_fog(host: Node3D, env: Environment, at: Transform3D) -> FogVolume:
+	env.volumetric_fog_enabled = true
+	env.volumetric_fog_density = 0.0
+	env.volumetric_fog_albedo = Color(0.86, 0.95, 0.9)
+	env.volumetric_fog_anisotropy = 0.45
+	env.volumetric_fog_length = 1800.0
+	env.volumetric_fog_detail_spread = 2.0
+	env.volumetric_fog_temporal_reprojection_enabled = false
+	var fv := FogVolume.new()
+	fv.name = "HqSolaceFog"
+	fv.shape = RenderingServer.FOG_VOLUME_SHAPE_BOX
+	fv.size = Vector3(FOG_RADIUS * 2.0, FOG_HEIGHT, FOG_RADIUS * 2.0)
+	var m := ShaderMaterial.new()
+	m.shader = FOG
+	m.set_shader_parameter(&"centre", at.origin)
+	fv.material = m
+	fv.position = Vector3(0.0, FOG_HEIGHT * 0.5, 0.0)  # local to the compound node (placed at `at`)
+	host.add_child(fv)
+	return fv

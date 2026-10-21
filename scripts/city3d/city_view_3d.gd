@@ -2112,6 +2112,7 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 
 ## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
 var _compound_aaa: Dictionary = {}
+var _compound_fog: Dictionary = {}
 
 
 ## The compound key of `corp` in the cleared rects.
@@ -2160,7 +2161,10 @@ func stage_compound(corp: StringName) -> Node3D:
 			if HqSolaceMaterials.wants(m):  # LOOK Solace HQ: the plates' AAA-2 look (PBR roles, interior-mapped windows); the page goes AAA-2
 				HqSolaceMaterials.apply(node, corp, m)
 				_compound_aaa[corp] = true
-				set_look_blend(1.0)
+				if _env == null:  # staged before the scene is built (the HQ page stages before it mounts the view)
+					ready.connect(_compound_look_on.bind(corp, node, at), CONNECT_ONE_SHOT)
+				else:
+					_compound_look_on(corp, node, at)
 			else:
 				HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
 			node.transform = at
@@ -2187,6 +2191,14 @@ func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
 	return out
 
 
+## The AAA-2 look of a staged compound: the page's look blend to 1 and the compound's volumetric haze.
+func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
+	if not _compound_aaa.has(corp):
+		return
+	set_look_blend(1.0)
+	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at)
+
+
 ## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
 func unstage_compound(corp: StringName) -> void:
 	if not compounds.has(corp):
@@ -2194,6 +2206,11 @@ func unstage_compound(corp: StringName) -> void:
 	if _compound_aaa.has(corp):
 		_compound_aaa.erase(corp)
 		set_look_blend(0.0)
+		if is_instance_valid(_compound_fog.get(corp)):
+			(_compound_fog[corp] as Node).queue_free()
+		_compound_fog.erase(corp)
+		if _env != null:
+			_env.volumetric_fog_enabled = false
 	var node: Node3D = compounds[corp]
 	if node != null and is_instance_valid(node):
 		node.queue_free()
