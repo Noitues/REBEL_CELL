@@ -131,9 +131,9 @@ static func make_plan(p_seed: int, cfg: CampaignConfigData, city_rect: Rect2i, c
 	return p
 
 
-## The lots of `plan`'s city (cached per seed): `px_per_bu` turns BU heights into the recorder's height px.
+## The lots of `plan`'s city (cached per seed and px_per_bu: the recorder's and the key placement's heights differ): `px_per_bu` turns BU heights into the recorder's height px.
 static func lots_for(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, cell_id: StringName, px_per_bu: float) -> Dictionary:
-	var key := "%d|%s|%s" % [plan.city_seed, cfg.resource_path, plan.rect]
+	var key := "%d|%s|%s|%s" % [plan.city_seed, cfg.resource_path, plan.rect, px_per_bu]
 	_mutex.lock()
 	var out: Dictionary = _lots.get(key, {})
 	if out.is_empty():
