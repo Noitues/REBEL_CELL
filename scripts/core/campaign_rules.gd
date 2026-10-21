@@ -752,9 +752,25 @@ static func unlock_requirements_met(profile: ProfileState, lookup: ContentLookup
 	return true
 
 
-## Corporations a new campaign may target, by id.
-static func available_corporations(profile: ProfileState, lookup: ContentLookup) -> Array[CorporationData]:
+## Solace vertical: the corporation a new campaign is played against. `config.campaign_focus_corp` when it names a
+## corporation in `lookup`, else `requested` (focus "" = all corporations). One place for every corp choice.
+static func focused_corporation_id(config: CampaignConfigData, lookup: ContentLookup, requested: StringName) -> StringName:
+	if config == null or config.campaign_focus_corp == &"":
+		return requested
+	if lookup != null and lookup.has(config.campaign_focus_corp) and lookup.get_content(config.campaign_focus_corp) is CorporationData:
+		return config.campaign_focus_corp
+	return requested
+
+
+## Corporations a new campaign may target, by id. With `config.campaign_focus_corp` set, only that corporation
+## (whatever the profile has unlocked).
+static func available_corporations(profile: ProfileState, lookup: ContentLookup, config: CampaignConfigData = null) -> Array[CorporationData]:
 	var out: Array[CorporationData] = []
+	if config != null and config.campaign_focus_corp != &"":
+		var focus := lookup.get_content(config.campaign_focus_corp) as CorporationData if lookup.has(config.campaign_focus_corp) else null
+		if focus != null:
+			out.append(focus)
+			return out
 	for id in lookup.ids_of_class(&"CorporationData"):
 		var corp := lookup.get_content(id) as CorporationData
 		if corp != null and corporation_available(profile, lookup, corp):

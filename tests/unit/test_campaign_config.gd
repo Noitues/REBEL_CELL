@@ -22,13 +22,13 @@ func test_default_schema_values_validate() -> void:
 func test_heat_values_match_gdd_11_5() -> void:
 	assert_eq(_cfg.heat_max, 100)
 	assert_eq(_cfg.rack_heat_by_tier, PackedInt32Array([2, 3, 5, 8]))
-	assert_eq(_cfg.exploit_heat, 10)
+	assert_eq(_cfg.exploit_heat, 5)  # SOLACE_BAL_r2 (was 10)
 	assert_eq(_cfg.elite_heat, 1)
 	assert_eq(_cfg.death_heat_base, 10)
 	assert_eq(_cfg.lost_raid_heat, 5)
-	assert_eq(_cfg.heat_purchase_amount, 5)
+	assert_eq(_cfg.heat_purchase_amount, 7)  # SOLACE_BAL_r2 (was 5)
 	assert_eq(_cfg.heat_purchase_cost, 25)
-	assert_eq(_cfg.heat_purchase_increment, 10)
+	assert_eq(_cfg.heat_purchase_increment, 5)  # SOLACE_BAL_r2 (was 10)
 
 
 func test_heat_thresholds_match_gdd_4_3() -> void:

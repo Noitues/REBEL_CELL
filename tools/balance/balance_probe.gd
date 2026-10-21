@@ -45,6 +45,7 @@ func on_maintain(c: CampaignState, schematics_before: int) -> void:
 		schematics_income += schematics_before - _sch_mark
 	schematics_spent += maxi(0, schematics_before - c.schematics)
 	_sch_mark = c.schematics
+	trace("maintain heat=%d schematics=%d->%d heat_purchases=%d" % [c.heat, schematics_before, c.schematics, c.heat_purchases])
 
 
 ## Appends one line to `trace_path` (no-op when unset).
@@ -179,6 +180,7 @@ func on_fight_end(_s: NetrunSession, _turns: int) -> void:
 
 func on_run_end(c: CampaignState, s: NetrunSession, _op: OperativeState, _site: SiteData) -> void:
 	end_run(c, s)
+	trace("run_end site=%s tier=%d kind=%s outcome=%s exploits=%d heat=%d" % [_site.id if _site != null else "-", s.run.tier, s.run.kind, RunState.Outcome.keys()[s.run.outcome], c.exploits.size(), c.heat])
 	heat_curve.append(c.heat)
 	schematics_last = c.schematics
 	recruits = c.next_operative_number - 1 - config.starting_rookies

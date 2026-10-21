@@ -43,6 +43,7 @@ func _init(p_resolver: CombatResolver, corporation_id: StringName = &"solace", c
 	resolver = p_resolver
 	lookup = p_resolver.lookup
 	config = p_resolver.config
+	corporation_id = CampaignRules.focused_corporation_id(config, lookup, corporation_id)
 	corp = lookup.get_content(corporation_id) as CorporationData
 	if corp != null and corp.generated_from_profile:
 		# REBEL_CELL: a profile that has played this class with the three starter assets.

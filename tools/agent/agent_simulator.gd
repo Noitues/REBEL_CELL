@@ -99,12 +99,18 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 			options.append(_launch_text(c, picks[-1]))
 	var meta: Array = []
 	for p in picks:
-		var site: SiteData = p["site"]
-		var patrol := CampaignRules.is_patrol(c, site)
-		meta.append({"op_rank": (p["op"] as OperativeState).rank, "tier": site.tier, "heat_change": site.heat_change,
-			"objective": RC.SiteObjective.NONE if patrol else CampaignRules.site_objective(c, site), "patrol": patrol})
+		meta.append(launch_meta(c, p["site"], (p["op"] as OperativeState).rank))
 	var r := ask("launch", _campaign_state(c), options, meta, {"heat": c.heat, "exploits": c.exploits.size(), "exploits_needed": config.min_exploits_for_breach})
 	return picks[int(r["choice"])]
+
+
+## Q8: the launch menu entry the strategist reads for `site`. A patrol applies no objective (CampaignRules.on_run_completed),
+## so its Heat change is 0: a Heat sink Site is a sink once, and repeating it later only costs Heat.
+static func launch_meta(c: CampaignState, site: SiteData, op_rank: int) -> Dictionary:
+	var patrol := CampaignRules.is_patrol(c, site)
+	var objective := RC.SiteObjective.NONE if patrol else CampaignRules.site_objective(c, site)
+	return {"op_rank": op_rank, "tier": site.tier, "heat_change": site.heat_change if objective == RC.SiteObjective.HEAT_REDUCTION else 0,
+		"objective": objective, "patrol": patrol}
 
 
 ## Counts breach runs for the report (boss attempts; a completed one is the win).
@@ -133,7 +139,7 @@ func _launch_text(c: CampaignState, pick: Dictionary) -> String:
 	var objective: String = RC.SiteObjective.keys()[CampaignRules.site_objective(c, site)]
 	if CampaignRules.is_patrol(c, site):
 		objective = "PATROL (no objective)"
-	return "Send %s (R%d) to %s: tier %d, objective %s, Heat change %+d" % [op.name, op.rank, site.display_name, site.tier, objective, site.heat_change]
+	return "Send %s (R%d) to %s: tier %d, objective %s, Heat change %+d" % [op.name, op.rank, site.display_name, site.tier, objective, int(launch_meta(c, site, op.rank)["heat_change"])]
 
 
 func _fight_raids(c: CampaignState, stats: Dictionary) -> void:

@@ -601,20 +601,20 @@ Cards 0–3 · first nudge free, extras 1 · respin 4.
 | 4 | 50 | 25 |
 
 Costs: rookie 15 · basic node 20 · node upgrade 30 then 60 · repair 50% of install ·
-one-time netrun boost 10–20 · −5 Heat 25 (+10 per purchase) · class unlock 80 (profile).
+one-time netrun boost 10–20 · −7 Heat 25 (+5 per purchase) · class unlock 80 (profile).
 
 ### 11.5 Heat Sources & Sinks
 | Source | Heat |
 |---|---|
 | Server Rack capture | T1 +2, T2 +3, T3 +5, T4 +8 |
-| Exploit extracted | +10 |
+| Exploit extracted | +5 |
 | Elite node | +1 |
 | Operative death | +10 + tier |
 | Burner trigger | +1 |
 | Lost raid | +5 |
 
 Sinks: Clean Signal −2 · Cold Exit −3 · Scrubber · Heat objective Sites (≈ −5 to −8) ·
-Proxy Relay −1/run · purchase −5.
+Proxy Relay −1/run · purchase −7.
 Targets: solo 5-run speed path crosses 50 before the boss; average ICE 5 campaign peaks
 around 85–90 (current numbers need ≈ 40–45 Heat trimmed at ICE 5 — tune in playtest).
 
