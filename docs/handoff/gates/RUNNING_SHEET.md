@@ -13,7 +13,7 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
-| D16 | 10-20 | Horizon spikes (3-5 per city) may sit below the 6-floor frontage minimum: `horizon_break` lowers a spike to spike_k × median, and the Python oracle fixtures pin that. The test exempts spikes. Queued for art-pass (B-060): make the spike never lower a building, re-export the fixtures, and have the GD twin follow. | Fix the spike now so it never lowers |
+| D16 | 10-20 | RESOLVED (A-067): horizon spikes never lower a building (Python and GD twin), so the 6-floor frontage minimum holds outside HQ zones again. The exemption is removed. | — |
 | D18 | 10-20 | Culture garden (EX-02/03/11): each key's lot is the building under its Exploit Site, else the nearest free lot within 24 lots. The run is 9 layers (4 outside, 5 inside), and the target is the final-Rack mini-boss fight. The ward rest uses a held dose, and costs nothing without one. Footprint 48×36 BU. A patrol or reclaim of that Site stays a street run. The other two Solace key buildings are placeholders. | Change any of these |
 | D17 | 10-20 | A Site whose icon is cut by the map edge counts as off the map: it gets an edge arrow instead of a label. This is the Meridian label fix after the terrain moved its icon. | none |
 | D15 | 10-20 | City rules after the LOOK L5 merge (correction: the three failing buildings were outside HQ zones; horizon spikes lowered them, see D16): inside an HQ zone the HQ height cap (NA-11c) wins over the 6-floor frontage minimum (NA-11), so the HQ reads as the tallest mass. Outside HQ zones the frontage minimum holds. | The frontage minimum wins and the HQ cap gives way |
