@@ -4,6 +4,8 @@ extends Control
 ##   run_<corp>       the HQ run's page (HqRunView) on the corp's compound (today's breach run)
 ##   full_<corp>      the same page with a full run map (GDD 4.2) half walked (layout review)
 ##   gate_<corp>      the Central Server's gate over the page (all three Exploits)
+##   pov_<corp> / pod_<corp>   LOOK Solace HQ: the compound alone (no page chrome) at the golden plate's overview / decision camera,
+##                    read from `--plates=<dir holding hq_<corp>_overview_capture.json / _decision_>`
 ##   hq_<corp> / site_<corp> / won_<corp>   the combat backdrop's city close-up (D17): the boss
 ##                    fight's HQ, a regular fight's Site, the Site fight won
 ##   python tools/run_windowed.py --log <f> -- --resolution 1920x1080
@@ -127,6 +129,26 @@ func _load(state: String) -> void:
 				g.setup(corp, TextDb.t(RunManager.corporation, "display_name"),HqCompoundStage.server_name(HqCompoundStage.manifest(corp)), 4, held, 3,
 					s.breach_preview(), RunManager.lookup())
 				_host.add_child(g)
+		"pov", "pod":
+			var cj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/hq_%s_%s_capture.json" % [String(_args.get("plates", "")),
+				corp, "overview" if kind == "pov" else "decision"]))
+			var cm: Dictionary = cj["camera"]
+			var size := Vector2(get_viewport().get_visible_rect().size)
+			var m := HqCompoundStage.manifest(corp)
+			var at := HqCompoundStage.place(CityView3D.CONFIG, corp, m)
+			var iso := _plate_camera(cm, size, at)
+			var c := CityView3D.new()
+			c.band_lock = CityLod.Band.GRID
+			c.set_iso(iso)
+			c.stage_compound(corp)
+			_host.add_child(c)
+			c.set_view_size(Vector2i(size))
+			var tr := TextureRect.new()
+			tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.texture = c.get_texture()
+			_host.add_child(tr)
+			_city = c
 		"hq", "site", "won":
 			_backdrop = CombatBackdrop.new()
 			_host.add_child(_backdrop)
@@ -185,6 +207,25 @@ func _process(delta: float) -> void:
 		get_tree().quit()
 		return
 	_load(_states[_step])
+
+
+## A golden plate's Blender camera (capture.json `camera`: loc / tgt in Blender BU, lens mm on a 36 mm sensor, lens shift) as the city's
+## perspective iso camera on the compound placed at `at`: Godot yaw = 90 - the rig yaw, fov = the horizontal angle, `ortho` the width at the
+## target; the lens shift moves the aim across the target plane.
+static func _plate_camera(cm: Dictionary, size: Vector2, at: Transform3D) -> CityIsoCamera:
+	var loc: Array = cm["loc"]
+	var tgt: Array = cm["tgt"]
+	var t_g := at * Vector3(float(tgt[0]), float(tgt[2]), -float(tgt[1]))
+	var l_g := at * Vector3(float(loc[0]), float(loc[2]), -float(loc[1]))
+	var dir := (t_g - l_g)
+	var cam := CityIsoCamera.new()
+	cam.viewport = size
+	cam.fov_deg = rad_to_deg(2.0 * atan(18.0 / float(cm["lens"])))
+	cam.pitch_deg = float(cm["pitch"])
+	cam.yaw_deg = 90.0 - float(cm["yaw"])
+	cam.ortho = 2.0 * dir.length() * tan(deg_to_rad(cam.fov_deg) * 0.5)
+	cam.target = t_g + cam.right() * float(cm["shift_x"]) * cam.ortho + cam.up() * float(cm["shift_y"]) * cam.ortho
+	return cam
 
 
 static func _avg(a: Array[float]) -> float:

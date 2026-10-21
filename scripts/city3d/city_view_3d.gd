@@ -2110,6 +2110,10 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 
 # --- HQ compounds: 8p's models staged for an HQ run (ART-8 8w) --------------------------------
 
+## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
+var _compound_aaa: Dictionary = {}
+
+
 ## The compound key of `corp` in the cleared rects.
 static func compound_key(corp: StringName) -> StringName:
 	return StringName("compound_%s" % corp)
@@ -2153,7 +2157,12 @@ func stage_compound(corp: StringName) -> Node3D:
 		if scene != null:
 			node = scene.instantiate() as Node3D
 			node.name = "Compound_%s" % corp
-			HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
+			if HqSolaceMaterials.wants(m):  # LOOK Solace HQ: the plates' AAA-2 look (PBR roles, interior-mapped windows); the page goes AAA-2
+				HqSolaceMaterials.apply(node, corp, m)
+				_compound_aaa[corp] = true
+				set_look_blend(1.0)
+			else:
+				HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
 			node.transform = at
 			add_to_layer(&"landmarks", node)
 	compounds[corp] = node
@@ -2182,6 +2191,9 @@ func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
 func unstage_compound(corp: StringName) -> void:
 	if not compounds.has(corp):
 		return
+	if _compound_aaa.has(corp):
+		_compound_aaa.erase(corp)
+		set_look_blend(0.0)
 	var node: Node3D = compounds[corp]
 	if node != null and is_instance_valid(node):
 		node.queue_free()
