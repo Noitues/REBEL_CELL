@@ -184,6 +184,24 @@ uniform float bit_gain = 2.4;
 uniform float anim_t = 0.0;
 uniform float anim_t_frozen = 0.0;
 
+// LOOK Solace S1 (CitySolaceKit): the Solace building kits. A mesh vertex with CUSTOM0.w > 0 is a kit part: its height is
+// UV.y * h + UV.x * u (u = the lot's shorter side, so caps and spheres keep their shape), x / z scale by u; CUSTOM0.w is the part
+// code (1 body with ribbon bands, 2 lime glass, 3 pink nucleus, 4 porcelain, 5 clinic wall, 6 cap, 7 lime ring, 8 terrace).
+uniform vec3 kit_lime = vec3(0.588, 1.0, 0.275);
+uniform vec3 kit_pink = vec3(1.0, 0.275, 0.588);
+uniform vec3 kit_porcelain = vec3(0.74, 0.70, 0.62);
+uniform vec3 kit_leaf = vec3(0.30, 0.78, 0.30);
+uniform vec3 kit_body = vec3(0.12, 0.26, 0.22);
+uniform vec3 kit_dome = vec3(0.14, 0.34, 0.24);
+uniform vec3 kit_terrace = vec3(0.20, 0.42, 0.22);
+// Ribbon bands: pitch (BU), lit share, pink share, dark share. Clinic bands: pitch, glass share.
+uniform vec4 kit_band = vec4(2.0, 0.5, 0.16, 0.1);
+uniform vec2 kit_clinic_band = vec2(2.6, 0.55);
+uniform float kit_emit = 1.0;
+uniform float kit_glass_emit = 0.5;
+uniform float kit_nucleus_emit = 1.1;
+uniform float kit_clinic_emit = 0.6;
+
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
 varying vec3 v_world;
@@ -215,7 +233,16 @@ vec3 id_lin(vec3 c) {
 
 void vertex() {
 	float taper = INSTANCE_CUSTOM.x;
-	VERTEX.xz *= mix(1.0, taper, VERTEX.y);
+	if (CUSTOM0.w > 0.5) {
+		float kx = length(MODEL_MATRIX[0].xyz);
+		float kz = length(MODEL_MATRIX[2].xyz);
+		float ku = min(kx, kz);
+		VERTEX.x *= ku / kx;
+		VERTEX.z *= ku / kz;
+		VERTEX.y = max(UV.y + UV.x * ku / max(length(MODEL_MATRIX[1].xyz), 0.01), 0.0);
+	} else {
+		VERTEX.xz *= mix(1.0, taper, VERTEX.y);
+	}
 	v_corner = (MODEL_MATRIX * vec4(UV.x, 0.0, UV.y, 1.0)).xyz;
 	v_edge = (MODEL_MATRIX * vec4(UV2.x, 0.0, UV2.y, 0.0)).xyz;
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -375,7 +402,47 @@ void fragment() {
 	float z = zl;
 	bool edge_px = false;
 	v_pbr = pbr_concrete;
-	if (!roof) {
+	int kit = int(floor(v_c0.w + 0.5));
+	if (kit > 0) {
+		vec3 kb = kit_body;
+		if (kit == 1) {
+			float bp = max(kit_band.x, 0.1);
+			float bi = floor(zl / bp + seed * 7.0);
+			float bf = fract(zl / bp + seed * 7.0);
+			float bh = hash1(vec3(bi, seed * 31.0, 5.0));
+			if (bf < kit_band.y && bh >= kit_band.w) {
+				vec3 bc = hash1(vec3(bi, seed * 17.0, 9.0)) < kit_band.z ? kit_pink : kit_lime;
+				em = bc * kit_emit * (0.85 + 0.3 * hash1(vec3(bi, seed, 3.0)));
+				kb = bc * 0.3;
+			}
+			base = kb * tone;
+		} else if (kit == 2) {
+			base = kit_lime * 0.5 * tone;
+			em = kit_lime * kit_emit * kit_glass_emit * (0.8 + 0.4 * tone * tone);
+		} else if (kit == 3) {
+			base = kit_pink * 0.45 * tone;
+			em = kit_pink * kit_emit * kit_nucleus_emit;
+		} else if (kit == 4) {
+			base = kit_porcelain * tone;
+		} else if (kit == 5) {
+			float cp = max(kit_clinic_band.x, 0.1);
+			float cf = fract(zl / cp + seed * 5.0);
+			if (cf < kit_clinic_band.y && zl > 0.8) {
+				base = kit_leaf * 0.55 * tone;
+				em = kit_leaf * kit_emit * kit_clinic_emit;
+			} else {
+				base = kit_porcelain * tone;
+			}
+		} else if (kit == 6) {
+			base = kit_dome * tone;
+			em = kit_lime * kit_emit * 0.05;
+		} else if (kit == 7) {
+			base = kit_lime * 0.4;
+			em = kit_lime * kit_emit * 1.6;
+		} else {
+			base = kit_terrace * tone;
+		}
+	} else if (!roof) {
 		if (ghosted && v_occ.z > 0.0) {
 			float eL = length(v_edge);
 			float ea = dot(v_world - v_corner, v_edge / max(eL, 0.0001));

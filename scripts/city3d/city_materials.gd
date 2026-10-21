@@ -57,6 +57,7 @@ static func building(cfg: CityConfig, inks: Array[Color]) -> ShaderMaterial:
 	m.set_shader_parameter("neon_gain", cfg.neon_gain)
 	m.set_shader_parameter("ledge_every", cfg.ledge_every)
 	m.set_shader_parameter("ledge_bu", cfg.ledge_bu)
+	CitySolaceKit.apply_material(m, cfg, 1.0)
 	set_inks(m, inks)
 	return m
 
