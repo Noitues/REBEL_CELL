@@ -379,6 +379,9 @@ def apply_street(g):
             if CFG.get("x_lo", 100.0) < (u0_ + u1_) / 2 < CFG.get("x_hi", 230.0):
                 faces.append(dict(uid="b%s" % key_, u0=u0_, u1=u1_, face=fy_, out=-1.0, top=zt_, col=[1, 1, 1], kind="extra"))
                 seen.append((u0_, u1_))
+    if CFG.get("gap_face"):
+        gf = CFG["gap_face"]
+        faces.append(dict(uid="gap", u0=gf[0], u1=gf[1], face=gf[2], out=-1.0, top=gf[3], col=[1, 1, 1], kind="extra"))
     print("[deco] faces total", len(faces), flush=True)
     wm_ = bpy.data.materials.get("oc_wet")
     if wm_:
@@ -396,6 +399,8 @@ def apply_street(g):
             o.data.energy *= CFG.get("flood_k", 1.0)
     if CFG.get("hero", "v4") == "v4":
         build_hero(ctx, g, coll, rng)
+    elif CFG.get("hero") == "none":
+        pass
     else:
         hskin = D.principled("deco_hero_skin", (0.02, 0.02, 0.03), 0.0, 0.2, coat=1.0, coat_rough=0.05)
         hb = next(n for n in hskin.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
@@ -449,7 +454,7 @@ def apply_street(g):
         ctx[k].build()
     for t in ctx["wtones"]:
         t.build()
-    if CFG.get('hero', 'v4') != 'v4':
+    if CFG.get('hero', 'v4') not in ('v4', 'none'):
         hero_l.build()
     ls = [o for o in sc.objects if o.name.startswith("oc_deco_up")]
     print("[deco] lights", len(ls), [(o.hide_render, o.get("oc_off"), o.data.energy, tuple(round(v, 1) for v in o.location), o.data.type) for o in ls[:3]], flush=True)

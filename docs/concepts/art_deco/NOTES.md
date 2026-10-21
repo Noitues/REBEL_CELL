@@ -19,13 +19,11 @@ scene sources in memory at run time and send every output to `D:/rc_scratch/art_
    silhouette (gold bands hugging the body, ice lines, three streamline fins).
 5. **Solace** (`deco_corp_solace.py`): the helix in brass ribs (a gold annulus on every floor, double on route floors), lime / pink
    double lines run both strands, the plaza podium steps in three gold tiers, a crossed fan crown over the Genome Core.
-6. **Netrun street** (`deco_street.py`; v4 = the v2 scene plus the approved lens-26 camera with a small upward shift and the capped amber window emission;
-   `06_netrun_street_v2_v4.jpg`): near-black clearcoat frontages, fluted gold piers, framed dark-glass windows (about 50 % lit, amber, no clipping), bulb-lit
-   shopfronts under marquee canopies, deep gold-framed signs, one row of globe lamps, wet asphalt. New: (A) a Chrysler-style crown on the canyon axis
-   (tapering shaft, six shrinking sunburst tiers in champagne steel with the windows between the ribs lit from inside, needle spire, floodlit from below);
-   (B) gold and fog on separate light paths, with no light linking: glossy-only emissive cards (camera / diffuse / transmission / volume off) for the metal to
-   reflect, warm accent lights with volume-scatter visibility off, a cool fog-only light (diffuse / glossy off), and a thicker veil above about the third floor.
-   Gold is #E5B94A-ish champagne (metal 1, roughness 0.2-0.4). A-only and B-only previews: `D:/rc_scratch/art_deco/street/v4_tests/`. Median 0.157, 383 s at 48 spp.
+6. **Netrun street** (`deco_street.py`; v5, `06_netrun_street_v4_v5.jpg`): v4 without the hero crown (designer: wrong at street level). The canyon-axis gap is
+   filled with an ordinary deco frontage (same piers, spandrels, windows, shopfront as its neighbours); the lit-window share is back to about 60 %. Everything
+   else as v4: lens 26 with a small upward shift, near-black clearcoat frontages, fluted gold piers, framed dark-glass amber windows with capped emission,
+   bulb-lit shopfronts, gold-framed signs, globe lamps, wet asphalt, gold and fog on separate light paths (glossy-only cards, volume-off warm lights, a fog-only
+   cool light, no light linking). Median 0.149, 735 s at 36 spp (48 spp ran over 20 min; I stopped my own Blender and re-ran at 36).
 7. **Combat wheel** (`deco_panel7.py`): the round-41 typical screen rebuilt over panel 6. A (`07_combat_A_deco.png`): frame only, brass
    bezel steps, 30 tick rays with chevrons, stepped hub collar. B (`07_combat_B_deco.png`): also the slices: gold inlay edges with
    neon pairs in each slice's own colour, three stepped (setback) outer arcs, a sunburst hub medallion, a spire pointer. The CRT
@@ -56,13 +54,13 @@ Look-dev previews: `prev.sh <corp> <tag>` (CPU, 960 x 540, 8 spp, no lock); `dec
 | 3 Meridian | 56 | 90 s | 0.169 |
 | 4 Orbital | 56 | 85 s | 0.169 |
 | 5 Solace | 56 | 108 s | 0.161 |
-| 6 street (v4) | 48 | 383 s | 0.157 |
+| 6 street (v5) | 36 | 735 s | 0.149 |
 | 7 panels | none (2D) | about 20 s | A 0.133, B 0.141 (a dark HUD) |
 HQ and city post: the pipelines' own finishers (`hq_post.finish`, `post_city.aaa --soft`) with the exposure solved to the target
 median; the HQs use a cooler grade (shadow tint 0.50 / 0.50 / 0.52, saturation 0.80). The street uses `r2_compose.solved`.
 
 ## Known weak points
 - Panels 3 and 5 are the least deco: the lacquer / gold city fill reads as warm mud next to the corp hue, and the landmarks sit in it.
-- Panel 6: the crown reads as a deco tower but the sunburst ribs are muddy at this size and the spire is thin; gold is brighter but still saturated yellow in places; windows are framed, not recessed; the fog veil is moderate, not Ferriss-thick; no lamp light shafts.
+- Panel 6: the fog veil is moderate, not Ferriss-thick; no focal point up the canyon now; gold is still yellowish; windows are framed, not recessed.
 - Panel 1: tower ornament is tiny at this distance; the landmark fans and sunbursts carry the read.
 - Panel 7 B: the spire pointer overlaps the base needle slightly.

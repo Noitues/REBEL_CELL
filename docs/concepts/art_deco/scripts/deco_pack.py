@@ -18,7 +18,7 @@ PANELS = [
     ("03", "meridian", SC + "/meridian/g3/plate.png", GP + "/hq_meridian_overview.png", "3. Meridian HQ: the Gatehouse Gantry in brass"),
     ("04", "orbital", SC + "/orbital/g3/plate.png", GP + "/hq_orbital_overview.png", "4. Orbital HQ: sunburst pad, ringed silo"),
     ("05", "solace", SC + "/solace/g3/plate.png", GP + "/hq_solace_overview.png", "5. Solace HQ: the helix in brass ribs"),
-    ("06", "netrun_street", SC + "/street/v4/plate.png", GP + "/street_decision.png", "6. Netrun street, decision camera"),
+    ("06", "netrun_street", SC + "/street/v5/plate.png", GP + "/street_decision.png", "6. Netrun street, decision camera"),
 ]
 FONT = "C:/Windows/Fonts/arialbd.ttf"
 
@@ -63,13 +63,13 @@ def main():
     dd.text((10, 6), "DECO v2", font=ff, fill=(255, 200, 90))
     dd.text((1298, 6), "DECO v3", font=ff, fill=(255, 200, 90))
     cmp_.save(os.path.join(OUT, "01_whole_city_v2_v3.jpg"), quality=90)
-    s1 = Image.open(SC + "/street/prev_v2.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
-    s2 = Image.open(SC + "/street/v4/plate.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
+    s1 = Image.open(SC + "/street/prev_v4.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
+    s2 = Image.open(SC + "/street/v5/plate.png").convert("RGB").resize((1280, 720), Image.LANCZOS)
     c2 = Image.new("RGB", (2568, 720), (12, 12, 12))
     c2.paste(s1, (0, 0)); c2.paste(s2, (1288, 0))
     d2 = ImageDraw.Draw(c2)
-    d2.text((10, 6), "STREET v2", font=ff, fill=(255, 200, 90)); d2.text((1298, 6), "STREET v4", font=ff, fill=(255, 200, 90))
-    c2.save(os.path.join(OUT, "06_netrun_street_v2_v4.jpg"), quality=90)
+    d2.text((10, 6), "STREET v4", font=ff, fill=(255, 200, 90)); d2.text((1298, 6), "STREET v5", font=ff, fill=(255, 200, 90))
+    c2.save(os.path.join(OUT, "06_netrun_street_v4_v5.jpg"), quality=90)
     # panel 7: variant A (frame only) and B (full wheel), one sbs: current | A | B
     cur = Image.open(CON + "/round41_wheel_stack/combat_typical_v4.png").convert("RGB")
     A = Image.open(SC + "/panel7_A.png").convert("RGB")
