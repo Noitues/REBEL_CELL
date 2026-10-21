@@ -73,3 +73,22 @@ def restyle(g, cfg, ctx):
     # eye plinth: stepped gold rings
     for i, (rr, hh) in enumerate(((12.0, 1.4), (9.5, 1.4), (7.0, 1.4))):
         G.box(EX - rr, EY - rr, EZ - 24.0 + i * 1.4, EX + rr, EY + rr, EZ - 22.6 + i * 1.4)
+    if cfg.get("v2"):
+        # v2: graded Chrysler arcs on the four corners of the top four tiers (small low, large high), stainless metal,
+        # triangular windows between the arcs lit violet from inside; the Eye's gold stays the only gold focal point
+        import bpy
+        steel = D.principled("deco_steel_h", (0.80, 0.84, 0.92), 1.0, 0.14, coat=0.4, coat_rough=0.05, emit=(0.8, 0.85, 1.0), emit_k=0.25)
+        vio = D.principled("deco_vio_win", (0, 0, 0), 0.0, 0.5, emit=(0.43, 0.16, 1.0), emit_k=cfg.get("v2_win_k", 4.0))
+        ST, VI = D.DAcc("deco_h_steel", steel, ctx["coll"]), D.DAcc("deco_h_vio", vio, ctx["coll"])
+        tiers = g["TIERS"]
+        sizes = cfg.get("v2_r", (3.5, 5.0, 7.0, 9.5))
+        for k, t in enumerate(tiers[3:]):
+            hs, z1 = t["hs"], t["z1"]
+            R = sizes[k]
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+                    cx, cy = sx * (hs + 0.9), sy * (hs + 0.9)
+                    D.fan_crown(ST, VI, N, cx, cy - sy * 0.0, z1 + 0.5, "x", R, rng, nray=9, t=0.5, backing=True)
+                    D.fan_crown(ST, VI, N, cx, cy, z1 + 0.5, "y", R, rng, nray=9, t=0.5, backing=True)
+        ST.build()
+        VI.build()

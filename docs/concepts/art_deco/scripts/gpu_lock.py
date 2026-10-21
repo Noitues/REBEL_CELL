@@ -15,7 +15,15 @@ import glob
 
 
 def _earlier_waiting():
-    return [os.path.basename(p)[12:] for p in glob.glob(os.path.join(Q, "GPU_WAITING_*")) if os.path.basename(p)[12:] != ME]
+    """FIFO by waiting-file mtime: defer only to waiting files older than ours."""
+    mine = os.path.join(Q, "GPU_WAITING_" + ME)
+    t = os.path.getmtime(mine) if os.path.exists(mine) else time.time()
+    out = []
+    for p in glob.glob(os.path.join(Q, "GPU_WAITING_*")):
+        n = os.path.basename(p)[12:]
+        if n != ME and os.path.getmtime(p) < t:
+            out.append(n)
+    return out
 
 
 def acquire(what="", poll=150, log=print):
