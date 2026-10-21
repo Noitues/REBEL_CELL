@@ -959,9 +959,9 @@ extends Resource
 @export var solace_kits: bool = true
 ## Prisms under this height (BU) keep the ordinary family mesh (a kit needs room for its cap).
 @export var solace_kit_min_h: float = 4.0
-## Bundle seeds sit on a triangular lattice of this spacing (lots; about 5-6 lots a bundle), each jittered by
+## Bundle seeds sit on a triangular lattice of this spacing (lots; about 4-5 Solace lots a bundle), each jittered by
 ## `solace_bundle_jitter` of the spacing; the lattice is 3-coloured, so touching bundles always differ.
-@export var solace_bundle_pitch: float = 2.55
+@export var solace_bundle_pitch: float = 3.3
 @export var solace_bundle_jitter: float = 0.18
 ## Salt of the layout-seed hash that places the lattice, permutes the kits and picks a lot's variant.
 @export var solace_kit_salt: int = 4711
