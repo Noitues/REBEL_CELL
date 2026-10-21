@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_never, cull_disabled, specular_schlick_ggx;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // LOOK Solace HQ: clear glass of the v5 plates (transparent, a faint fresnel reflection; the bridge walls, window patches, crown).
 uniform float roughness = 0.12;
 uniform float reflect_k = 0.15;

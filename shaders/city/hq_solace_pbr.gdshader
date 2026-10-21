@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode cull_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // LOOK Solace HQ: the AAA-2 "Realistic night" PBR of the v5 plates (art-owned). One shader for every opaque role of the compound
 // (hq_sx_*): vertex colour = base colour; alpha = emission gain on the lit roles. The strand skin is a lime glossy body with a
 // uniform lime glow and a fresnel rim, its back side the warm office wall (the plates' backface mix).

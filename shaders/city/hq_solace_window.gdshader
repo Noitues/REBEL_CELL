@@ -1,5 +1,6 @@
 shader_type spatial;
 render_mode cull_back;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // LOOK Solace HQ: interior mapping of the Solace helix windows (art-pass hq NOTES v4, "Godot port"): one flat oval patch per window
 // raycast into a box room. Vertex data: NORMAL = the window's outward normal, UV = (u, dz) in the window frame (u along the level
 // axis tw = normal x up, dz up from the window's middle), UV2 = (atlas variant row, blind 0..1), COLOR = (tint rgb, lit).

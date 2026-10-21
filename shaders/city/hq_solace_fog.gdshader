@@ -1,4 +1,5 @@
 shader_type fog;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // LOOK Solace HQ: the plates' volumetric haze (hq_preset `hq_fog`): thin, exponential in height, a clumpy ground bank round the
 // park, scattering the compound's own lights. Art-owned; only the Solace HQ page carries it.
 uniform float peak = 0.0045;
