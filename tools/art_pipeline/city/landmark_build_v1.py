@@ -56,6 +56,8 @@ exec("\n".join(_SRC[504:682]))  # container(), ziggurat(), depot()
 _ex("heroes25.py")
 _ex("heroes26.py")
 _ex("heroes27.py")
+if CORP == "solace":  # LOOK S2 (2026-10-21): the concept helix and C's hospital replace heroes26's coil and clinic
+    exec(open(os.path.join(_HERE, "landmark_solace_v2.py"), encoding="utf-8").read(), globals())
 if CORP == "meridian" and KIND == "hq":
     for _h in ("heroes28.py", "heroes29.py", "heroes30.py", "heroes31.py"):  # texture A, moat, crane keep, rail yard, loop
         _ex(_h)
@@ -346,6 +348,10 @@ if CORP == "orbital" and KIND == "hq":  # two silo states, each a full node: "st
 else:
     build_hero(STATE)
     static_objects(JOB, ROOT)
+    if JOB == "solace_hq":  # the 3-tier plinth with cardinal stairs: its own node, exported switched off (scale 0)
+        PLINTH_NODE_OBJ = group_objects(group_build(solace_plinth), "%s__%s" % (JOB, PLINTH_NODE), ROOT)
+        PLINTH_NODE_OBJ.scale = (0.0, 0.0, 0.0)
+        FLIP_EXTRA = set(PLINTH_NODE_OBJ.children_recursive)
     if EYE_ACC:  # Halcyon: the eye turns about the pylon axis (origin, z): its own pivot node
         piv = empty("%s__anim_eye" % JOB, ROOT)
         for k, role in (("solid", "solid"), ("neon", "neon"), ("beam", "beam")):
@@ -362,7 +368,7 @@ else:
             objectify(a, "neon", "%s__chaser_f%02d_neon" % (JOB, f), fn)
             flips.append((fn, [k == f for k in range(len(ANIM_ACCS))]))
         ANIM = dict(name="chaser", n=len(ANIM_ACCS), still=0, flips=flips, slides=[], rots=[])
-FLIP_OBJS = set()
+FLIP_OBJS = set(globals().get("FLIP_EXTRA", ()))
 if ANIM:
     for node, _vis in ANIM["flips"]:
         FLIP_OBJS.update(node.children_recursive)
