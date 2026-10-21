@@ -354,6 +354,22 @@ def make_material(name, kind, mode, **o):
         nb.link(e.outputs[0], out.inputs[0])
         return mat
 
+    if kind == "water":
+        if cel:
+            c = _toon(nb, colN.outputs["Color"], bands)
+            e = nb.node("ShaderNodeEmission")
+            nb.link(c, e.inputs[0])
+            nb.link(e.outputs[0], out.inputs[0])
+            return mat
+        bsdf = nb.node("ShaderNodeBsdfPrincipled")
+        nb.link(colN.outputs["Color"], bsdf.inputs["Base Color"])
+        bsdf.inputs["Roughness"].default_value = 0.03
+        bsdf.inputs["Specular IOR Level"].default_value = 1.0
+        bsdf.inputs["Coat Weight"].default_value = 0.6
+        bsdf.inputs["Coat Roughness"].default_value = 0.02
+        nb.link(bsdf.outputs[0], out.inputs[0])
+        return mat
+
     if kind == "ground":
         if cel:
             c = _toon(nb, colN.outputs["Color"], bands)
