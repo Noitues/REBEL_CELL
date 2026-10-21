@@ -309,3 +309,34 @@ The designer, 2026-10-21: "Ask for bigger and lower lots. Keep the heights above
 - The HQ lot, the hospital Site lot, the key lots and any NA-11 / NA-11c rules you keep stay as you rule them.
 - A building's footprint, height and key come from the layout as now. Art keeps reading prisms, and the kits scale to whatever lot they get.
 This can land with the A-069 park change or before it. Tell me which, so I can re-shoot the parity sheet on your branch.
+
+### A-071 · 2026-10-21 · Solace list item 1 · READY: Solace building kits + helix / hospital landmarks (art/look @ fb78e03f)
+The designer approved the Godot result on 2026-10-21. `art/look` @ **fb78e03f** in `D:/rc_art/godot_look` is ready to merge. Its base
+is a0849e75 (A-067 = origin/main 976063b7 + horizon_break), with 11 commits on top. Sheets on art-pass @ 24da9e18:
+`docs/concepts/solace_vertical/district/godot_s1/sheet_s1.jpg` (kits) and `godot_s2/sheet_s2.jpg` (landmarks).
+- **Kits** (DECISIONS "2026-10-20 - LOOK Solace kits"):
+  - Solace prisms draw as kit A capsule / B cells / C clinic in seeded bundles (`scripts/city3d/city_solace_kit.gd`, kit family keys
+    from 100000).
+  - The bundle choice is a pure function of the layout seed and the lot.
+  - Footprints, heights, keys, picking, `terr` and the instance buffer are unchanged; `families_of` without a seed gives no kits.
+  - Config: `solace_*` defaults in `city_config.gd`; the .tres is untouched and no schema field was added.
+  - Test: `tests/unit/test_solace_kits.gd` (fast tier).
+- **Landmarks** (DECISIONS "2026-10-21 - LOOK Solace landmarks"):
+  - `solace_hq.glb` is the concept helix: no beam or column, about 10k triangles.
+  - `solace_site.glb` is the porcelain cross-plan hospital.
+  - Builder: `tools/art_pipeline/city/landmark_solace_v2.py`. It joined the pipeline hash, so every corp's manifest changed; the other
+    corps' glbs are byte-identical.
+  - The 70 BU plinth with cardinal stairs is in the glb but off (`CityConfig.solace_plinth = false`) until you answer A-069.
+  - Tests: the Solace assertions in `test_art5_landmarks.gd`.
+- **Tools:** `tools/city/city_lab.gd` gains `--day=1`, `--shift`, `--zoom`, `--site=dx,dy` and the `solace:site` state.
+- **One test outside art's files, please check:** `tests/unit/test_art6_acceptance.gd` (+3 lines) now waits for
+  `hq._hq_fit_pending` before framing the raid band. Before the wait, the HQ's own map fit re-framed the camera mid-test. The hospital
+  was also lowered so its roof keeps the Site marker inside the HQ fit rect (`test_hq_b_city`).
+- **Gate on art/look:**
+  - Full suite: 3490 tests, 1 failing: `test_na11_layout_rules::test_heights_and_polys_equal_python` seed 101. This is A-067's GD
+    twin, still yours.
+  - `test_city_a2_sweep::test_two_hundred_seeds` failed once on timing (p95 2.024 s against 2.0 s), order-dependent; it passes alone.
+  - SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS.
+- **Expected conflicts:** `docs/DECISIONS.md` (keep both); `assets/city/landmarks/*/manifest.json` (take art/look).
+- **Next pass, art side:** the hospital's lime cross blows to white at night, and the helix decks are pale at night. After that, the park /
+  plinth / lots once A-069 and A-070 land.
