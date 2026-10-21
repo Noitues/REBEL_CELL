@@ -162,3 +162,295 @@ reduce_effects={
 "type": "float",
 "value": 0.0
 }
+rc_cell_acid={
+"type": "color",
+"value": Color(0.83137256, 1, 0, 1)
+}
+rc_cell_pink={
+"type": "color",
+"value": Color(1, 0.23921569, 0.65882355, 1)
+}
+rc_cell_turf={
+"type": "color",
+"value": Color(0.83137256, 1, 0, 1)
+}
+rc_class_botnet={
+"type": "color",
+"value": Color(0.3764706, 0.44705883, 1, 1)
+}
+rc_class_breaker={
+"type": "color",
+"value": Color(1, 0.23921569, 0.65882355, 1)
+}
+rc_class_ghost={
+"type": "color",
+"value": Color(0.35686275, 0.8784314, 1, 1)
+}
+rc_class_hivemind={
+"type": "color",
+"value": Color(0.7764706, 0.34901962, 1, 1)
+}
+rc_class_overclocker={
+"type": "color",
+"value": Color(1, 0.6901961, 0.2509804, 1)
+}
+rc_class_phantom={
+"type": "color",
+"value": Color(0.85882354, 0.75686276, 1, 1)
+}
+rc_class_rigger={
+"type": "color",
+"value": Color(0.47843137, 0.8784314, 0.47843137, 1)
+}
+rc_class_wrecker={
+"type": "color",
+"value": Color(1, 0.43137255, 0.19607843, 1)
+}
+rc_corp_halcyon={
+"type": "color",
+"value": Color(0.6901961, 0.43137255, 1, 1)
+}
+rc_corp_halcyon_2={
+"type": "color",
+"value": Color(1, 0.6666667, 0.15686275, 1)
+}
+rc_corp_meridian={
+"type": "color",
+"value": Color(1, 0.54901963, 0.101960786, 1)
+}
+rc_corp_meridian_2={
+"type": "color",
+"value": Color(1, 0.18039216, 0.15686275, 1)
+}
+rc_corp_orbital={
+"type": "color",
+"value": Color(0.8039216, 0.9411765, 1, 1)
+}
+rc_corp_orbital_2={
+"type": "color",
+"value": Color(1, 1, 1, 1)
+}
+rc_corp_rebel_cell={
+"type": "color",
+"value": Color(0.9098039, 0.078431375, 0.11764706, 1)
+}
+rc_corp_rebel_cell_2={
+"type": "color",
+"value": Color(1, 0.6666667, 0.6745098, 1)
+}
+rc_corp_solace={
+"type": "color",
+"value": Color(0.5882353, 1, 0.27450982, 1)
+}
+rc_corp_solace_2={
+"type": "color",
+"value": Color(1, 0.27450982, 0.5882353, 1)
+}
+rc_corp_solace_vehicle={
+"type": "color",
+"value": Color(0.42, 1, 0.16, 1)
+}
+rc_crt_amber={
+"type": "color",
+"value": Color(1, 0.6901961, 0, 1)
+}
+rc_daemon_action={
+"type": "color",
+"value": Color(0.7294118, 0.57254905, 1, 1)
+}
+rc_daemon_heat={
+"type": "color",
+"value": Color(1, 0.54901963, 0.23529412, 1)
+}
+rc_daemon_null={
+"type": "color",
+"value": Color(0.9254902, 0.1882353, 0.22745098, 1)
+}
+rc_daemon_perfect={
+"type": "color",
+"value": Color(1, 0.8392157, 0.2509804, 1)
+}
+rc_daemon_run={
+"type": "color",
+"value": Color(0.5882353, 1, 0.43137255, 1)
+}
+rc_daemon_turn={
+"type": "color",
+"value": Color(0.36078432, 0.88235295, 1, 1)
+}
+rc_disabled={
+"type": "color",
+"value": Color(0.41568628, 0.4392157, 0.5019608, 1)
+}
+rc_gain={
+"type": "color",
+"value": Color(0.48235294, 0.8784314, 0.48235294, 1)
+}
+rc_gain_ink={
+"type": "color",
+"value": Color(0.22352941, 0.40392157, 0.22352941, 1)
+}
+rc_harm={
+"type": "color",
+"value": Color(1, 0.26666668, 0.2, 1)
+}
+rc_harm_ink={
+"type": "color",
+"value": Color(0.67058825, 0.18039216, 0.13333334, 1)
+}
+rc_heat_b={
+"type": "color",
+"value": Color(0.80784315, 0.32941177, 0.07058824, 1)
+}
+rc_heat_cool={
+"type": "color",
+"value": Color(0.6862745, 0.7529412, 0.8392157, 1)
+}
+rc_heat_flagged={
+"type": "color",
+"value": Color(1, 0.47843137, 0.101960786, 1)
+}
+rc_heat_hunted={
+"type": "color",
+"value": Color(1, 0.26666668, 0.2, 1)
+}
+rc_heat_noticed={
+"type": "color",
+"value": Color(1, 0.6901961, 0, 1)
+}
+rc_heat_purge={
+"type": "color",
+"value": Color(1, 0.26666668, 0.2, 1)
+}
+rc_holo_scrim={
+"type": "color",
+"value": Color(0.00784314, 0.0117647, 0.0392157, 0.88)
+}
+rc_ink={
+"type": "color",
+"value": Color(0.06666667, 0.06666667, 0.06666667, 1)
+}
+rc_neon_core={
+"type": "color",
+"value": Color(1, 0.8901961, 0.96862745, 1)
+}
+rc_neon_tube={
+"type": "color",
+"value": Color(1, 0.30980393, 0.84705883, 1)
+}
+rc_neon_violet={
+"type": "color",
+"value": Color(0.6901961, 0.3019608, 1, 1)
+}
+rc_net_cyan={
+"type": "color",
+"value": Color(0.36078432, 0.88235295, 1, 1)
+}
+rc_paper={
+"type": "color",
+"value": Color(0.9490196, 0.93333334, 0.89411765, 1)
+}
+rc_paper_alt={
+"type": "color",
+"value": Color(0.9137255, 0.89411765, 0.8392157, 1)
+}
+rc_pencil_plan={
+"type": "color",
+"value": Color(1, 0.8862745, 0, 1)
+}
+rc_pencil_plan_netrun={
+"type": "color",
+"value": Color(1, 0.54901963, 0.101960786, 1)
+}
+rc_pencil_shadow={
+"type": "color",
+"value": Color(0.023529412, 0.011764706, 0.03137255, 0.85)
+}
+rc_pencil_threat={
+"type": "color",
+"value": Color(1, 0.10980392, 0.17254902, 1)
+}
+rc_rarity_common={
+"type": "color",
+"value": Color(0.8392157, 0.87058824, 0.9254902, 1)
+}
+rc_rarity_rare={
+"type": "color",
+"value": Color(1, 0.8392157, 0.2509804, 1)
+}
+rc_rarity_uncommon={
+"type": "color",
+"value": Color(0.36078432, 0.88235295, 1, 1)
+}
+rc_resist_gold={
+"type": "color",
+"value": Color(1, 0.8235294, 0.3019608, 1)
+}
+rc_ring_available={
+"type": "color",
+"value": Color(1, 0.54901963, 0.101960786, 1)
+}
+rc_ring_cut={
+"type": "color",
+"value": Color(0.41568628, 0.41568628, 0.41568628, 1)
+}
+rc_ring_unavailable={
+"type": "color",
+"value": Color(0.9490196, 0.9647059, 1, 1)
+}
+rc_scrim={
+"type": "color",
+"value": Color(0.00784314, 0.0117647, 0.0392157, 0.55)
+}
+rc_slice_hotfix={
+"type": "color",
+"value": Color(0.48235294, 0.8784314, 0.48235294, 1)
+}
+rc_slice_infect={
+"type": "color",
+"value": Color(0.78431374, 0.3529412, 1, 1)
+}
+rc_slice_null={
+"type": "color",
+"value": Color(0.41568628, 0.41568628, 0.41568628, 1)
+}
+rc_slice_trojan={
+"type": "color",
+"value": Color(0.6901961, 0.54901963, 1, 1)
+}
+rc_sticker_die_cut={
+"type": "color",
+"value": Color(1, 1, 1, 1)
+}
+rc_terminal_bg={
+"type": "color",
+"value": Color(0.019607844, 0.050980393, 0.10980392, 0.95)
+}
+rc_terminal_edge={
+"type": "color",
+"value": Color(0.36078432, 0.88235295, 1, 0.78)
+}
+rc_terminal_text={
+"type": "color",
+"value": Color(0.8117647, 0.9647059, 1, 1)
+}
+rc_text_hi={
+"type": "color",
+"value": Color(0.9490196, 0.9647059, 1, 1)
+}
+rc_text_lo={
+"type": "color",
+"value": Color(0.47843137, 0.53333336, 0.6117647, 1)
+}
+rc_text_mid={
+"type": "color",
+"value": Color(0.6862745, 0.7529412, 0.8392157, 1)
+}
+rc_vinyl_extrude={
+"type": "color",
+"value": Color(0.03529412, 0.03137255, 0.047058824, 1)
+}
+rc_vinyl_ink={
+"type": "color",
+"value": Color(0.078431375, 0.06666667, 0.09411765, 1)
+}

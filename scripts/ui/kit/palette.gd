@@ -125,6 +125,9 @@ const HEAT_FLAGGED := Color("#FF7A1A")
 const PENCIL_PLAN := Color("#FFE200")
 const PENCIL_THREAT := Color("#FF1C2C")
 const PENCIL_SHADOW := Color(6.0 / 255.0, 3.0 / 255.0, 8.0 / 255.0, 0.85)
+## The netrun's plan pencil is orange (DIRECTION_REVIEW 2026-10-15 "netrun entry flow"; art-pass ruling 2026-10-21):
+## the run orange. Yellow PENCIL_PLAN everywhere else.
+const PENCIL_PLAN_NETRUN := Color("#FF8C1A")
 ## The world Heat tint on maps (§2.2, §2.8).
 const HEAT_B := Color("#CE5412")
 ## Netrun rings (§2.2; Appendix C #22: the run orange until the designer says otherwise).
@@ -210,6 +213,7 @@ const PAIRED_WITH := {
 	&"SELECTED": "the ON / selected word beside the fill",
 	&"PENCIL_PLAN": "solid vs dashed stroke and the written word",
 	&"PENCIL_THREAT": "solid vs dashed stroke and the written word",
+	&"PENCIL_PLAN_NETRUN": "solid vs dashed stroke and the written word (the netrun plan)",
 	&"RING_AVAILABLE": "the ring's state glyph and word",
 	&"RING_UNAVAILABLE": "the ring's state glyph and word",
 	&"RING_CUT": "the cut mark and the word CUT",

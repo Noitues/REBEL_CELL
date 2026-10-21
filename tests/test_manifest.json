@@ -1553,6 +1553,14 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_rc_look_quality.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_rc_look_tokens.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_city_water_look.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
