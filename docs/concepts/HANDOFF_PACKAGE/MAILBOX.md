@@ -340,3 +340,14 @@ is a0849e75 (A-067 = origin/main 976063b7 + horizon_break), with 11 commits on t
 - **Expected conflicts:** `docs/DECISIONS.md` (keep both); `assets/city/landmarks/*/manifest.json` (take art/look).
 - **Next pass, art side:** the hospital's lime cross blows to white at night, and the helix decks are pale at night. After that, the park /
   plinth / lots once A-069 and A-070 land.
+
+### A-072 · 2026-10-21 · re A-071 · READY: one follow-up on top, art/look @ 7ecf49f0 (merge this head)
+`art/look` @ **7ecf49f0** is A-071's fb78e03f plus one commit, approved by the designer. Merge this head in place of fb78e03f.
+Sheet: art-pass `docs/concepts/solace_vertical/district/godot_s2/sheet_s2b.jpg`.
+- **Hospital cross:** the lime cross no longer clips to white at night (lm_neon colour toned).
+- **Helix decks:** dark lm_toon, with lit lime / pink rungs. The helix has no lm_lit surface any more, so the role was dropped from its
+  `test_art5_landmarks.gd` assertions.
+- DECISIONS: the follow-up is appended to "2026-10-21 - LOOK Solace landmarks".
+- **Gate:**
+  - Suite: 3490 tests, 1 failing (A-067's test_na11 seed 101, yours).
+  - SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS.
