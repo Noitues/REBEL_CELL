@@ -28,8 +28,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "0729d8e986296b638655156baf97b4abecf78767",
-  "scripts_sha256": "f7ac0dceaf1672be0156ecb14d1c941f268e7e33ab1e1e8226560243e0d6347b"
+  "commit": "fb78e03ff7d0bdb83df7c7c815fb0633d4a878ee",
+  "scripts_sha256": "a3f2fc7033b4b2777b8340f98080a4c01ed8fa50fbf7e11d0d08874d7aa66f9f"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -124,8 +124,7 @@
    ],
    "state_nodes": [],
    "triangles": {
-    "lm_toon": 1076,
-    "lm_lit": 342,
+    "lm_toon": 1418,
     "lm_neon": 7736,
     "lm_win": 952
    },
@@ -221,14 +220,14 @@
   {
    "path": "solace_hq.glb",
    "kind": "gltf",
-   "bytes": 498948,
-   "sha256": "40935d986d29b624059bdbb41735d4bcabbdeece515b49cf1901433616d00a95"
+   "bytes": 498200,
+   "sha256": "def01cdab1c93f39e4a5616dd5b97b8ffe8bc4080946bbf7807b88b8d5106644"
   },
   {
    "path": "solace_site.glb",
    "kind": "gltf",
    "bytes": 17800,
-   "sha256": "84b293fa996125a8c1e75c1f6bbafdc051a3272391c6b7ca336cfc5010855d7e"
+   "sha256": "8ea42963f016dc89bf51a2102051d4779f9e0141c2e11ade659ebbed7e95c622"
   }
  ],
  "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"

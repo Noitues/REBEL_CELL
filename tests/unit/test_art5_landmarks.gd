@@ -165,7 +165,7 @@ func test_solace_helix_is_the_concept_helix_without_beam_or_chaser() -> void:
 	assert_null(e.get("animation"), "no LED chaser")
 	var tris: Dictionary = e["triangles"]
 	assert_false(tris.has("lm_beam"), "no light cone on the helix")
-	for role in ["lm_lit", "lm_neon", "lm_win", "lm_toon"]:
+	for role in ["lm_neon", "lm_win", "lm_toon"]:
 		assert_true(tris.has(role), "role %s" % role)
 	var total := 0
 	for k in tris:

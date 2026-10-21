@@ -12,7 +12,9 @@ LIME = (0.55, 1.0, 0.30)
 PINKC = (1.0, 0.30, 0.65)
 TUBE = (0.27, 0.54, 0.15)
 TUBE_TONE = (0.80, 1.0)           # per-face brightness of the lit skin (baked: lm_neon has no tone ramp), the cel facets
-DECK = (0.52, 0.58, 0.55)
+DECK = (0.16, 0.20, 0.18)                  # dark deck: the lit rungs carry the read
+RUNG_LIME, RUNG_PINK = (0.36, 0.76, 0.16), (0.88, 0.22, 0.52)
+CROSS = (0.30, 0.64, 0.12)                # the lit cross: below the night bloom clip, so its shape stays
 PORC = (0.84, 0.82, 0.74)
 GLASS_LEAF = (0.20, 0.50, 0.17)
 BID = (0.0, 0.0, 0.0)
@@ -225,14 +227,14 @@ def solace_helix():
         b = _bid()
         for i in range(6):
             p0, p1 = poly[i], poly[(i + 1) % 6]
-            LIT.face([(cen[0], cen[1], zf), (p0[0], p0[1], zf), (p1[0], p1[1], zf)], DECK, b)
-            LIT.face([(p0[0], p0[1], zf - 0.5), (p1[0], p1[1], zf - 0.5), (p1[0], p1[1], zf), (p0[0], p0[1], zf)], DECK, b)
-        col = LIME if f % 2 == 0 else PINKC                      # base-pair rungs: lime / pink alternate
+            SOLID.face([(cen[0], cen[1], zf), (p0[0], p0[1], zf), (p1[0], p1[1], zf)], DECK, b)
+            SOLID.face([(p0[0], p0[1], zf - 0.5), (p1[0], p1[1], zf - 0.5), (p1[0], p1[1], zf), (p0[0], p0[1], zf)], DECK, b)
+        col = RUNG_LIME if f % 2 == 0 else RUNG_PINK                      # base-pair rungs: lime / pink alternate
         for i in range(6):
             p0, p1 = poly[i], poly[(i + 1) % 6]
             dx, dy = p1[0] - p0[0], p1[1] - p0[1]
             L = math.hypot(dx, dy) or 1.0
-            nx, ny = -dy / L * 0.22, dx / L * 0.22
+            nx, ny = -dy / L * 0.40, dx / L * 0.40
             NEON.face([(p0[0] - nx, p0[1] - ny, zf + 0.04), (p1[0] - nx, p1[1] - ny, zf + 0.04),
                        (p1[0] + nx, p1[1] + ny, zf + 0.04), (p0[0] + nx, p0[1] + ny, zf + 0.04)][::-1], col, b)
         for ph in (0.0, math.pi):
@@ -342,7 +344,7 @@ def solace_hospital():
         c8 = [P(h0, v0, -depth), P(h1, v0, -depth), P(h1, v1, -depth), P(h0, v1, -depth),
               P(h0, v0, depth), P(h1, v0, depth), P(h1, v1, depth), P(h0, v1, depth)]
         for qd in ((0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)):
-            NEON.face([c8[i] for i in qd][::-1] if qd[0] == 0 and qd[1] == 1 and qd[2] == 2 else [c8[i] for i in qd], (0.50, 0.95, 0.25), BID)
+            NEON.face([c8[i] for i in qd][::-1] if qd[0] == 0 and qd[1] == 1 and qd[2] == 2 else [c8[i] for i in qd], CROSS, BID)
     beam((0, 0, zr), (0, 0, cz - hs), 0.6, (0.6, 0.6, 0.6))
 
 
