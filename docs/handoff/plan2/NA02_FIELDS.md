@@ -108,6 +108,12 @@ shoreline [[i, j]...], sea_cells [[i, j]...]}` (lots, row order j then i) and `t
 sigma_y, height, rotation}]}` (plan BU, radians; z = height * exp(-((u/sigma_x)^2 + (v/sigma_y)^2) / 2)). See DECISIONS
 "W1 NA-12 r2".
 
+Solace district layout (2026-10-21, A-069 / A-070, additive; present only for a city with a Solace territory, whatever its coast):
+`solace_park {outline [{hole, points [[x, y]...]}], paths [{id, kind "stair"|"path"|"lane", width, points [[x, y]...]}], ponds
+[{centre, points}], lots [[i, j]...], plinth {centre [x, y], radius, stairs [{dir "N"|"E"|"S"|"W", landing [x, y], path id}]}}`
+(plan BU: x east, y north = -j; widths and radius in BU; `lots` are the lawn lots, row order). The Solace buildings are
+ordinary `buildings` (blocks of 2-3 lots). Schema `city.schema.json`; DECISIONS "Solace district layout (A-069/A-070)".
+
 ## 3. `net.json` v1
 
 The city network (Sites and their links) for `derive.street`. Spec 2.2 `layout.import_net` describes the shape; the

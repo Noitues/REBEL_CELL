@@ -180,6 +180,11 @@ func _city_a2_config() -> int:
 	if d.city_a2_cliff != 0.0 or d.city_a2_sink_share != 0.0 or d.city_a2_coast_setback != 0 or d.city_a2_prune_streets != 0 \
 			or d.city_a2_coast_smooth != 0.0 or d.city_a2_dwindle.z != 0.0 or d.city_a2_height_spike.x != 0.0: fails += 1
 	if cfg.city_a2_cliff != 14.0 or cfg.city_a2_coast_setback != 2 or cfg.city_a2_prune_streets != 1 or cfg.city_a2_coast_smooth != 2.0: fails += 1
+	# Solace district layout (A-069 / A-070): off in the script default, on in the shipped config with the ruled numbers.
+	print("Solace layout (expect false true (2, 3) 0.5 3 35): ", d.city_sol_layout, " ", cfg.city_sol_layout, " ", cfg.city_sol_block_lots, " ",
+		cfg.city_sol_height_k, " ", cfg.city_sol_min_floors, " ", cfg.city_sol_plinth_r_bu)
+	if d.city_sol_layout or not cfg.city_sol_layout or cfg.city_sol_block_lots != Vector2i(2, 3) or cfg.city_sol_height_k != 0.5 \
+			or cfg.city_sol_min_floors != 3 or cfg.city_sol_plinth_r_bu != 35.0: fails += 1
 	# ... and its shipped terrain numbers differ from the step 2 defaults: taller mountains nearer the ring, the sprawl fading
 	# over 4..22 lots past it.
 	print("CITY-A2 LOOK L5 terrain (expect 125 (24, 78) (4, 22)): ", cfg.city_a2_mountain_h, " ", cfg.city_a2_mountain, " ",

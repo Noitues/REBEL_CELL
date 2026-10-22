@@ -491,7 +491,10 @@ static func _subdivide(plan: CityPlan, cfg: CampaignConfigData, hq_lots: int, ce
 				break
 		cells.append({"cell": cell, "extrusions": _extrusions(ras, cfg, cell, cell_id, hq_centres, px_per_bu, rng, plan.terrain, plan.a2_sites,
 			on_street, near_hq)})
-	return {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
+	var res := {"rect": R, "kind": kind, "streets": streets, "plazas": plazas, "cells": cells, "front": front, "sites": plan.a2_sites}
+	# Solace district layout (A-069 / A-070): the Solace territory re-laid after every other lot (and every draw) is final.
+	CitySolaceDistrict.apply(res, plan, cfg, hq_lots, cell_id, px_per_bu)
+	return res
 
 
 ## CITY-A2 r2 (art-pass zoning_a2.py): lot `l` stays open land: its ground is over `city_a2_max_build_h` or steeper than
@@ -587,7 +590,7 @@ static func _height_kind(ras: CityA2Raster, cfg: CampaignConfigData, l: Vector2i
 
 ## A building cell's extrusions (lots, height px): one prism, or a base and a setback tower over `city_a2_setback_from`.
 static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i, cell_id: StringName, hq_centres: Array[Vector2],
-		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false, near_hq: bool = false) -> Array:
+		px_per_bu: float, rng: RandomNumberGenerator, t: CityA2Terrain = null, sites: Dictionary = {}, on_street: bool = false, near_hq: bool = false, sol: bool = false) -> Array:
 	var f := cell.end - Vector2i.ONE
 	var terr := ras.territory(f.x, f.y)
 	var hk := _height_kind(ras, cfg, f, terr, cell_id)
@@ -614,6 +617,9 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 		near = minf(near, c.distance_to(q))
 	var rise := 1.0 + cfg.city_a2_hq_rise * maxf(0.0, 1.0 - near / cfg.city_a2_hq_rise_lots)
 	h *= rise
+	if sol:
+		# Solace district layout (A-070): mid-rise blocks, a fraction of the A2 Solace height, never under N storeys.
+		h = maxf(h * cfg.city_sol_height_k, float(cfg.city_sol_min_floors) * NetrunArtUnits.floor_bu())
 	var taper := rng.randf_range(cfg.city_a2_taper.x, cfg.city_a2_taper.y)
 	var corp := terr != &"" and terr != cell_id and rng.randf() < cfg.city_a2_corp_ink_share
 	var ink := Palette.corp_color(terr) if corp else NeonCity.INKS[rng.randi() % NeonCity.INKS.size()]
@@ -622,7 +628,7 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 	var out: Array = []
 	# LOOK L5: the plate's finer grain: four quarter-lot buildings on one lot, inside the blocks only: a street-front lot
 	# keeps one building (the netrun's street frontage and the NA-11 floor rule work on whole lots).
-	if cfg.city_a2_sub_share > 0.0 and not on_street and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
+	if cfg.city_a2_sub_share > 0.0 and not sol and not on_street and cell.size == Vector2i.ONE and h < cfg.city_a2_setback_from 			and cfg.city_a2_sub_kinds.has(hk) and rng.randf() < cfg.city_a2_sub_share:
 		var si := cfg.city_a2_sub_inset
 		# A thin whole-lot plinth under the four, as wide as they stand (inset `si`): the lot's base part (the largest at
 		# street level), so the NA-11 layout rules raise and move one part per lot, as on an unsplit lot, and the four
@@ -643,7 +649,7 @@ static func _extrusions(ras: CityA2Raster, cfg: CampaignConfigData, cell: Rect2i
 		return out
 	if z_sink > 0.0:
 		out.append(_extrusion(cell, ins, -z_sink * px_per_bu, h * px_per_bu, taper, ink, terr, key))
-	elif h >= cfg.city_a2_setback_from:
+	elif h >= cfg.city_a2_setback_from and not sol:
 		var h0 := h * cfg.city_a2_setback.y
 		out.append(_extrusion(cell, ins, 0.0, h0 * px_per_bu, 1.0, ink, terr, key))
 		var ins2 := minf(ins + cfg.city_a2_setback.x, 0.45)

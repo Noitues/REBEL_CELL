@@ -92,6 +92,75 @@
     "sea_cells": {"type": "array", "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}}}
    }
   },
+  "solace_park": {
+   "description": "Solace district layout (A-069 / A-070, optional): the one park that replaces the Solace street grid. Plan BU (x east, y north); lots as [i, j]. The building footprints are the district's `buildings` (blocks of 2-3 lots).",
+   "type": "object",
+   "required": ["outline", "paths", "ponds", "lots", "plinth"],
+   "additionalProperties": false,
+   "properties": {
+    "outline": {
+     "description": "The park region's organic boundary: loops of plan BU points (closed, last point not repeated); the largest is the outer boundary, `hole` loops are cut out of it. The region holds the lawn, the blocks, the Site lots and the HQ plaza; border streets and A2 roads are outside it.",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["hole", "points"],
+      "additionalProperties": false,
+      "properties": {"hole": {"type": "boolean"}, "points": {"type": "array", "minItems": 3, "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}}
+     }
+    },
+    "paths": {
+     "description": "Polylines of plan BU points. kind stair: from a plinth stair landing out to a city street; path: a winding walk from a city street to the network; lane: a curved service lane from one city street to another. `width` in BU. Both ends of a path or lane that meets the district edge stand on the centre of the street lot beside the park.",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["id", "kind", "width", "points"],
+      "additionalProperties": false,
+      "properties": {
+       "id": {"type": "string"},
+       "kind": {"enum": ["stair", "path", "lane"]},
+       "width": {"type": "number"},
+       "points": {"type": "array", "minItems": 2, "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}
+      }
+     }
+    },
+    "ponds": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["centre", "points"],
+      "additionalProperties": false,
+      "properties": {
+       "centre": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+       "points": {"type": "array", "minItems": 3, "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}
+      }
+     }
+    },
+    "lots": {"description": "The lawn lots (no building, no street), row order", "type": "array", "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}}},
+    "plinth": {
+     "description": "The HQ plinth: a circle of `radius` BU (outer radius, 35) round `centre`; stairs at world N / E / S / W land at `landing` (on the circle) on the path `path` (its id, '' when none was routable)",
+     "type": "object",
+     "required": ["centre", "radius", "stairs"],
+     "additionalProperties": false,
+     "properties": {
+      "centre": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+      "radius": {"type": "number"},
+      "stairs": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": ["dir", "landing", "path"],
+        "additionalProperties": false,
+        "properties": {
+         "dir": {"enum": ["N", "E", "S", "W"]},
+         "landing": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+         "path": {"type": "string"}
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "terrain": {
    "type": "object",
    "required": ["hills"],

@@ -571,6 +571,35 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var city_a2_sprawl_site_keep: int = 8
 ## CITY-A2 r2 (art-pass zoning `clear`): lots each side of an A2 road of the class kept open under its elevated deck.
 @export var city_a2_corridor: Dictionary = {&"ring": 1, &"motorway": 1, &"truck": 1}
+## Solace district layout (A-069 / A-070, designer 2026-10-21). Off in the script default (every other config and test keeps
+## the A2 grid); the shipped config turns it on. On: inside the Solace territory the local street grid becomes one park, the
+## buildings stand in blocks of `city_sol_block_lots` lots a side with a lawn gap of `city_sol_gap_lots` lots, heights are
+## `city_sol_height_k` of the A2 Solace heights (never under `city_sol_min_floors` storeys), and the HQ plinth circle is cleared.
+@export var city_sol_layout: bool = false
+## Block side (lots), min..max.
+@export var city_sol_block_lots: Vector2i = Vector2i(2, 3)
+## Lawn lots between two blocks (at least).
+@export var city_sol_gap_lots: int = 1
+## Share of the A2 Solace building height a block keeps.
+@export var city_sol_height_k: float = 0.5
+## Least storeys of a Solace block (x NetrunArtUnits.floor_bu).
+@export var city_sol_min_floors: int = 3
+## The HQ plinth's outer radius (BU): no block reaches into this circle round the HQ centre.
+@export var city_sol_plinth_r_bu: float = 35.0
+## Lots between two path gates along the park edge, and the service lanes (curved, gate to gate).
+@export var city_sol_gate_spacing: int = 8
+@export var city_sol_lanes: int = 3
+## Path routing: a lot's cost is 1 + wobble x its noise (more = more winding).
+@export var city_sol_path_wobble: float = 1.6
+## Path / lane widths (BU).
+@export var city_sol_path_width_bu: float = 2.4
+@export var city_sol_lane_width_bu: float = 4.0
+## Ponds: count and radius range (lots).
+@export var city_sol_ponds: int = 3
+@export var city_sol_pond_r: Vector2 = Vector2(0.9, 1.4)
+## The park outline's corner cutting passes and its wobble (lots).
+@export var city_sol_outline_passes: int = 2
+@export var city_sol_outline_wobble: float = 0.18
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -864,6 +893,10 @@ func _validate_city_a2(errors: PackedStringArray) -> void:
 		errors.append("city_a2_hq_jitter, city_a2_hq_tries, city_a2_hq_gap and city_a2_hq_search must be >= 0.")
 	if city_a2_block_lots.x < 2 or city_a2_block_lots.x > city_a2_block_lots.y:
 		errors.append("city_a2_block_lots must be 2 <= min <= max.")
+	if city_sol_block_lots.x < 1 or city_sol_block_lots.x > city_sol_block_lots.y or city_sol_gap_lots < 1 or city_sol_height_k <= 0.0 \
+			or city_sol_min_floors < 1 or city_sol_plinth_r_bu < 0.0 or city_sol_gate_spacing < 2 or city_sol_lanes < 0 \
+			or city_sol_ponds < 0 or city_sol_pond_r.x <= 0.0 or city_sol_pond_r.x > city_sol_pond_r.y or city_sol_outline_passes < 0:
+		errors.append("city_sol_*: block 1 <= min <= max, gap >= 1, height_k > 0, min_floors >= 1, plinth_r >= 0, gate_spacing >= 2, lanes / ponds >= 0, pond_r 0 < min <= max.")
 	if city_a2_merge_share < 0.0 or city_a2_merge_share > 1.0 or city_a2_corp_ink_share < 0.0 or city_a2_corp_ink_share > 1.0:
 		errors.append("city_a2_merge_share and city_a2_corp_ink_share must be in [0, 1].")
 	if city_a2_sub_share < 0.0 or city_a2_sub_share > 1.0 or city_a2_sub_inset < 0.0 or city_a2_sub_inset >= 0.25 or city_a2_sub_h_k <= 0.0:

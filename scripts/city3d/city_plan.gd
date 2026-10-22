@@ -143,8 +143,12 @@ func sea_side() -> String:
 ## `coast {sea_side, shoreline [[i, j]...], sea_cells [[i, j]...]}` (lots, row order) and `terrain {hills [{centre [x, y],
 ## sigma_x, sigma_y, height, rotation}]}` (plan BU, city_A2.json's Gaussian form). {} without A2 (a fallback plan: no key).
 func city_sections(lot_bu: float, origin: Vector2) -> Dictionary:
+	var out := {}
+	var park := solace_park_section(lot_bu, origin)
+	if not park.is_empty():
+		out["solace_park"] = park
 	if coast.is_empty():
-		return {}
+		return out
 	var shore := []
 	for c in shoreline():
 		shore.append([c.x, c.y])
@@ -161,7 +165,19 @@ func city_sections(lot_bu: float, origin: Vector2) -> Dictionary:
 		# rows[r][c] is the corner of lot (rect.x + c, rect.y + r), plan point origin + (c, -r) x step.
 		terr["heights"] = {"origin": NetrunArtExport.plan_point(Vector2(rect.position), lot_bu, origin), "step": lot_bu,
 			"size": [rect.size.x + 1, rect.size.y + 1], "rows": terrain.corner_grid(rect, HEIGHT_DECIMALS)}
-	return {"coast": {"sea_side": sea_side(), "shoreline": shore, "sea_cells": sea}, "terrain": terr}
+	out["coast"] = {"sea_side": sea_side(), "shoreline": shore, "sea_cells": sea}
+	out["terrain"] = terr
+	return out
+
+
+## Solace district layout (A-069 / A-070): the optional `city.json` section `solace_park` (CitySolacePark.section: outline
+## loops, paths and lanes, ponds, park lots, the HQ plinth with its cardinal stairs; plan BU), or {} when the plan has no
+## Solace park (a fallback plan, no Solace territory, the layout off).
+func solace_park_section(lot_bu: float, origin: Vector2) -> Dictionary:
+	if a2 == null or not has_territory(&"solace"):
+		return {}
+	var lots := CityA2Builder.lots_for(self, plan_config(), NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0 / CityView3D.CONFIG.height_px_bu)
+	return CitySolacePark.section(lots.get("solace", {}), lot_bu, origin)
 
 
 ## The plan as plain data (ints, floats, strings; sorted keys when made canonical), for

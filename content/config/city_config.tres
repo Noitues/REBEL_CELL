@@ -51,3 +51,4 @@ pier_h = 0.9
 pier_color = Color(0.2, 0.19, 0.18, 1)
 pier_lamp_bu = 0.7
 pier_lamp_color = Color(0.55, 0.95, 1, 1)
+solace_plinth = true

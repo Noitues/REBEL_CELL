@@ -6,6 +6,8 @@ extends RefCounted
 const CITY_CONFIG := preload("res://content/config/city_config.tres")
 ## A Site's street lies within this many lots of it.
 const STREET_REACH := 4.0
+## A Grid link end inside the Solace park: the district is about 30 lots across, its streets are on its border.
+const SOLACE_STREET_REACH := 16.0
 
 static func seed_of(k: int) -> int:
 	return k * 104729 - 3000017
@@ -84,14 +86,21 @@ static func full_city_problems(m: CityModel, corp_list: Array[CorporationData]) 
 		var b: Array = link["pts"][1]
 		for end: Array in [a, b]:
 			var l: Array = NetrunArtLayout.plan_to_lot(end, city["origin_lot"], float(city["lot_bu"]))
+			# Solace district layout (A-069 / A-070): the district has no street grid, its streets are the city streets at the
+			# park's edge, so an end inside the Solace territory may stand up to SOLACE_STREET_REACH lots from one.
+			var reach := STREET_REACH
+			var ends_at := Vector2i(floori(float(l[0])), floori(float(l[1])))
+			if plan.a2 != null and plan.a2.territory(ends_at.x, ends_at.y) == &"solace" and CityPlan.plan_config().city_sol_layout:
+				reach = SOLACE_STREET_REACH
 			var near := INF
-			for di in range(-4, 5):
-				for dj in range(-4, 5):
+			var rr := int(reach)
+			for di in range(-rr, rr + 1):
+				for dj in range(-rr, rr + 1):
 					var c := Vector2i(floori(float(l[0])) + di, floori(float(l[1])) + dj)
 					if cells.has(c):
 						near = minf(near, Vector2(c).distance_to(Vector2(float(l[0]), float(l[1])).floor()))
-			if near > STREET_REACH:
-				out.append("%s-%s: no street within %d lots of an end" % [link["a"], link["b"], int(STREET_REACH)])
+			if near > reach:
+				out.append("%s-%s: no street within %d lots of an end" % [link["a"], link["b"], int(reach)])
 		# Both ends on one street lot need no route; otherwise the street derive must find one (not its L fallback).
 		var r: Array = NetrunArtLayout.route_on_streets(city, a, b, ctx)
 		var ca := NetrunArtLayout._nearest_cell(NetrunArtLayout.plan_to_lot(a, city["origin_lot"], float(city["lot_bu"])), ctx["cells"])
