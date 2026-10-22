@@ -12,7 +12,8 @@ extends Control
 ##     res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_meridian,gate_solace
 ##     [--tier=1] [--settle=30] [--perf=60] [--raw=160x90 (S-ARENA: also <state>_raw.png, the
 ##     backdrop city's own render before its grade, at that size)] [--scale=2.0 (S-HQRUN: the
-##     text size)]
+##     text size)] [--reduce-effects=1 (LOOK-TOOLBOX: frozen shader time and the static look, so two
+##     captures of the same code match for a before / after; not saved, restored at quit)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -28,6 +29,7 @@ var _perf: Array[float] = []
 var _frame_ms: Array[float] = []
 var _ready_at: int = -1
 var _scale_was: float = -1.0
+var _reduce_was: int = -1
 ## B4: the HQ-run page on show (its landmark share is printed).
 var _view: HqRunView = null
 
@@ -40,6 +42,10 @@ func _ready() -> void:
 	_states = PackedStringArray(String(_args.get("states", "run_meridian")).split(","))
 	if _args.has("tier"):
 		Settings.city_quality = int(_args["tier"])
+	if _args.has("reduce-effects"):
+		_reduce_was = int(Settings.reduce_effects)
+		Settings.reduce_effects = _args["reduce-effects"] == "1"
+		RenderingServer.global_shader_parameter_set(Fx.REDUCE_GLOBAL, 1.0 if Settings.reduce_effects else 0.0)
 	if _args.has("scale"):
 		# Parity S-HQRUN: the pages and the gate at a text size (1.0 / 1.6 / 2.0); restored at quit.
 		_scale_was = Settings.text_scale
@@ -211,6 +217,8 @@ func _process(delta: float) -> void:
 	_step += 1
 	if _step >= _states.size():
 		RunManager.delete_save()
+		if _reduce_was >= 0:
+			Settings.reduce_effects = _reduce_was == 1
 		if _scale_was > 0.0:
 			Settings.text_scale = _scale_was
 		get_tree().quit()
