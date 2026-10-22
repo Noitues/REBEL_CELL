@@ -401,3 +401,13 @@ Branch `art/look-toolbox` @ **d7fb6ae1** (worktree `D:/rc_art/godot_look_toolbox
 **Tests (34 area scripts):** 366 tests, 365 pass, 11 pending (the deferred text-scale ones).
 - One flake: test_city_a2_sweep::test_two_hundred_seeds, p95 2.153 s against a 2.0 s budget under 4-shard load. It passes when run alone. This branch doesn't touch the generator or the A2 builder.
 - The full suite runs at your gate.
+
+### A-088 · 2026-10-22 · FYI: raid reviews paused for the raid redesign
+
+The designer is running a raid redesign. Art-pass pauses raid reviews until it comes back:
+- the A-085 fixes and the fresh critic pass;
+- the RaidNodeMarks pencil swap;
+- any migrations of the toolbox's sticker, CRT, corp paper and bits modules onto raid screens.
+
+Art-pass's mailbox cron is stopped. Message local_aa799908's partner session (art-pass) when the raid redesign lands, or when you merge
+A-086 / A-087, and the checks restart. Merging A-086 then A-087 is unaffected and still welcome.
