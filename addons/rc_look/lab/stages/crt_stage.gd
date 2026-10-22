@@ -4,9 +4,9 @@ extends RcLookLabStage
 ## FIXED clock (flicker at CLOCK_S, the roll band at BAND_AT), so a capture is repeatable. Under each panel three probe
 ## strips, shader over mirror chips (RcLookCrt): the scanline pattern down 24 pixel rows, the flicker over one second, the
 ## roll's profile down the panel. The reduce-effects flag (quality state) applies the config's convention (RcLookCrt.resolve).
-## A parity pair at the foot renders the game's own crt_terminal.gdshader and the lab shader with the same numbers
-## (reduce effects frozen in the global so its clock never matters, the roll off) and prints the largest
-## pixel difference. Static: the stage never reads TIME.
+## A parity check at the foot draws the game's own crt_terminal.gdshader and the lab shader with the same numbers at the same
+## spot in turn (reduce effects frozen in the global so its clock never matters, the roll off) and prints the largest pixel
+## difference per pass. Static: the stage never reads TIME.
 
 const MARGIN := Vector2(40.0, 56.0)
 const GAP := Vector2(24.0, 18.0)
@@ -21,7 +21,10 @@ const CLOCK_S := 0.37
 const BAND_AT := 0.5
 ## Parity pair: size (px) and the mixed 8-bit difference reported.
 const PARITY_SIZE := Vector2(260.0, 90.0)
-const PARITY_PAD := 14.0
+## Frames between parity steps; the passes compared (bit 0 glass, bit 1 overlay) and their names.
+const PARITY_STEP := 6
+const PARITY_SHOTS: Array[int] = [1, 2, 3]
+const PARITY_NAMES: Array[String] = ["glass", "overlay", "both"]
 const PARITY_BACKDROP := Color(0.06, 0.07, 0.1)
 
 const PANEL_CODE := """shader_type canvas_item;
@@ -136,8 +139,9 @@ var _preset_names: Array[StringName] = []
 var _probes: Array[ShaderMaterial] = []
 var _chip_rows: Array = []
 var _label_reduce: Label
-var _parity_game: ColorRect
-var _parity_lab: ColorRect
+var _parity_rects: Array = []
+var _parity_imgs: Array = [null, null, null, null, null, null]
+var _parity_origin := Vector2i.ZERO
 var _parity_label: Label
 var _parity_frames := 0
 
@@ -282,74 +286,91 @@ func _fill_chips(chips: Array, p: RcLookCrtPreset, r: Dictionary, k: int) -> voi
 		(chips[c] as ColorRect).color = Color(v, v, v)
 
 
-## The parity pair: the game's crt_terminal.gdshader (glass + over) and the lab shader, same numbers, side by side.
+## The parity check: the game's crt_terminal.gdshader and the lab shader draw the same numbers at the SAME screen position
+## on the same opaque backdrop, one after the other (the lab set and Fx's screen overlay shade the screen by x, so a pair
+## side by side would differ by that alone). Compared per pass (glass, overlay) and together.
 func _parity(at: Vector2) -> void:
-	_label("parity: crt_terminal.gdshader (left) vs lab shader (right), terminal preset, game clock frozen by reduce effects", at)
+	_label("parity: crt_terminal.gdshader vs lab shader, terminal preset, same spot in turn (max channel difference below)", at)
 	var p := RcLookCrt.preset(&"terminal")
-	var r := RcLookCrt.resolve(p, false)
-	r[&"roll_strength"] = 0.0
 	var inset := p.glow_px
+	var origin := at + Vector2(0.0, LABEL_SIZE + 6.0)
+	_parity_origin = Vector2i(origin)
+	var back := ColorRect.new()
+	back.color = PARITY_BACKDROP
+	back.position = origin
+	back.size = PARITY_SIZE
+	add_child(back)
 	for side in 2:
-		var origin := at + Vector2(0.0, LABEL_SIZE + 6.0) + Vector2(side * (PARITY_SIZE.x + PARITY_PAD), 0.0)
-		# the same opaque backdrop under both, so the pair differs only by the shader (the lab set is not flat)
-		var back := ColorRect.new()
-		back.color = PARITY_BACKDROP
-		back.position = origin
-		back.size = PARITY_SIZE
-		add_child(back)
+		var pair: Array[ColorRect] = []
 		for mode in 2:
 			var rc := ColorRect.new()
 			rc.position = origin
 			rc.size = PARITY_SIZE
+			rc.visible = false
 			var m := ShaderMaterial.new()
+			m.shader = load(GAME_SHADER) if side == 0 else _shader(PANEL_CODE)
+			m.set_shader_parameter(&"mode", mode)
+			m.set_shader_parameter(&"panel", Vector4(inset, inset, PARITY_SIZE.x - inset * 2.0, PARITY_SIZE.y - inset * 2.0))
+			m.set_shader_parameter(&"glass_top", p.glass_top)
+			m.set_shader_parameter(&"glass_bottom", p.glass_bottom)
+			m.set_shader_parameter(&"accent", p.accent)
+			m.set_shader_parameter(&"roll_strength", 0.0)
 			if side == 0:
-				m.shader = load(GAME_SHADER)
-				m.set_shader_parameter(&"mode", mode)
-				m.set_shader_parameter(&"panel", Vector4(inset, inset, PARITY_SIZE.x - inset * 2.0, PARITY_SIZE.y - inset * 2.0))
-				m.set_shader_parameter(&"glass_top", p.glass_top)
-				m.set_shader_parameter(&"glass_bottom", p.glass_bottom)
-				m.set_shader_parameter(&"accent", p.accent)
 				m.set_shader_parameter(&"hexdump", 0.0)
-				m.set_shader_parameter(&"roll_strength", 0.0)
 			else:
-				m.shader = _shader(PANEL_CODE)
-				m.set_shader_parameter(&"mode", mode)
-				m.set_shader_parameter(&"panel", Vector4(inset, inset, PARITY_SIZE.x - inset * 2.0, PARITY_SIZE.y - inset * 2.0))
-				m.set_shader_parameter(&"glass_top", p.glass_top)
-				m.set_shader_parameter(&"glass_bottom", p.glass_bottom)
-				m.set_shader_parameter(&"accent", p.accent)
-				m.set_shader_parameter(&"roll_strength", 0.0)
 				m.set_shader_parameter(&"scan_strength", p.scan_strength)
 				m.set_shader_parameter(&"scan_px", p.scan_px)
 				m.set_shader_parameter(&"scan_phase", p.scan_phase)
 			rc.material = m
 			add_child(rc)
-			if mode == 1:
-				if side == 0:
-					_parity_game = rc
-				else:
-					_parity_lab = rc
+			pair.append(rc)
+		_parity_rects.append(pair)
 	_parity_label = _label("", at + Vector2(0.0, LABEL_SIZE + 6.0 + PARITY_SIZE.y + 6.0))
 
 
 func _process(_dt: float) -> void:
-	if _parity_game == null:
+	if _parity_rects.is_empty():
 		return
 	_parity_frames += 1
-	if _parity_frames == 30:
-		var img := get_viewport().get_texture().get_image()
-		var a := Rect2i(Vector2i(_parity_game.global_position), Vector2i(PARITY_SIZE))
-		var b := Rect2i(Vector2i(_parity_lab.global_position), Vector2i(PARITY_SIZE))
+	if _parity_frames % PARITY_STEP != 0:
+		return
+	var step := _parity_frames / PARITY_STEP - 1
+	if step > 0 and step <= PARITY_SHOTS.size() * 2:
+		var s := (step - 1) / 2
+		var side := (step - 1) % 2
+		_parity_imgs[s * 2 + side] = get_viewport().get_texture().get_image()
+	if step < PARITY_SHOTS.size() * 2:
+		var s := step / 2
+		var side := step % 2
+		for k in 2:
+			for j in 2:
+				(_parity_rects[k][j] as ColorRect).visible = k == side and (PARITY_SHOTS[s] & (1 << j)) != 0
+		return
+	var out := PackedStringArray()
+	var overall := 0
+	for s in PARITY_SHOTS.size():
 		var worst := 0
 		for y in int(PARITY_SIZE.y):
 			for x in int(PARITY_SIZE.x):
-				var ca := img.get_pixel(a.position.x + x, a.position.y + y)
-				var cb := img.get_pixel(b.position.x + x, b.position.y + y)
+				var ca := (_parity_imgs[s * 2] as Image).get_pixel(_parity_origin.x + x, _parity_origin.y + y)
+				var cb := (_parity_imgs[s * 2 + 1] as Image).get_pixel(_parity_origin.x + x, _parity_origin.y + y)
 				for ch in 3:
-					var dd := absi(int(roundf(ca[ch] * 255.0)) - int(roundf(cb[ch] * 255.0)))
-					worst = maxi(worst, dd)
-		_parity_label.text = "parity max channel difference: %d / 255" % worst
-		print("crt_stage: parity max diff ", worst)
+					worst = maxi(worst, absi(int(roundf(ca[ch] * 255.0)) - int(roundf(cb[ch] * 255.0))))
+		out.append("%s %d" % [PARITY_NAMES[s], worst])
+		overall = maxi(overall, worst)
+	for rc_pair: Array in _parity_rects:
+		(rc_pair[0] as ColorRect).visible = true
+		(rc_pair[1] as ColorRect).visible = true
+	(_parity_rects[0][0] as ColorRect).visible = false
+	(_parity_rects[0][1] as ColorRect).visible = false
+	_parity_label.text = "parity max channel difference / 255: %s" % ", ".join(out)
+	print("crt_stage: parity max diff ", overall, " (", ", ".join(out), ")")
+	_parity_rects.clear()
+
+
+## The lab runs with effects on; Fx sets the global in the game.
+func _exit_tree() -> void:
+	RenderingServer.global_shader_parameter_set(&"reduce_effects", 0.0)
 
 
 func _label(text: String, at: Vector2) -> Label:
@@ -365,8 +386,3 @@ static func _shader(code: String) -> Shader:
 	var s := Shader.new()
 	s.code = code
 	return s
-
-
-## The lab runs with effects on; Fx sets the global in the game.
-func _exit_tree() -> void:
-	RenderingServer.global_shader_parameter_set(&"reduce_effects", 0.0)

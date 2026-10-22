@@ -4,8 +4,8 @@ extends Resource
 
 ## Preset name -> RcLookCrtPreset.
 @export var presets: Dictionary = {}
-## What reduce effects does to a preset (RcLookCrt.Reduce) until the designer rules: static scanlines stay (what the
-## shaders do through rc_live and what ART_BIBLE §5.4 says).
+## What reduce effects does to a preset (RcLookCrt.Reduce): KEEP_STATIC, ruled by the designer (DIRECTION_REVIEW 82c92714):
+## motion stops, the still scanlines and the vignette stay, only high contrast removes the texture.
 @export var reduce: int = 0
 
 

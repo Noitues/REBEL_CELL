@@ -163,3 +163,29 @@ func test_reduce_effects_conventions() -> void:
 	var hide := RcLookCrt.resolve(fx, true, RcLookCrt.Reduce.HIDE)
 	assert_eq([hide[&"visible"], hide[&"screen_vignette"], hide[&"scan_strength"]], [false, 0.0, 0.0])
 	assert_eq(RcLookCrt.resolve(t, true), keep, "the config default is KEEP_STATIC")
+
+
+func test_wrapper_defaults_are_what_the_game_sets() -> void:
+	# designer 2026-10-22 (art-pass): a shader's default is what its caller sets, so no pixel changes and no default lies
+	var t := RcLookCrt.preset(&"terminal")
+	var ct := (load("res://shaders/kit/crt_terminal.gdshader") as Shader).code
+	for line: String in ["uniform vec4 glass_top : source_color = vec4(%.6f, %.6f, %.6f, 1.0);" % [t.glass_top.r, t.glass_top.g, t.glass_top.b],
+			"uniform vec4 glass_bottom : source_color = vec4(%.6f, %.6f, %.6f, 1.0);" % [t.glass_bottom.r, t.glass_bottom.g, t.glass_bottom.b],
+			"uniform vec4 accent : source_color = vec4(%.6f, %.6f, 1.0, 1.0);" % [t.accent.r, t.accent.g]]:
+		assert_string_contains(ct, line)
+	var fx := RcLookCrt.preset(&"fx_overlay")
+	var sc := (load("res://shaders/scanline.gdshader") as Shader).code
+	for line: String in ["uniform float scanline_strength : hint_range(0.0, 1.0) = %s;" % _g(fx.scan_strength),
+			"uniform float flicker_strength : hint_range(0.0, 1.0) = %s;" % _g(fx.flicker),
+			"uniform float aberration : hint_range(0.0, 0.02) = 0.0;", "uniform float vignette : hint_range(0.0, 1.0) = %s;" % _g(fx.screen_vignette)]:
+		assert_string_contains(sc, line)
+
+
+func test_reduce_default_is_keep_static_for_good() -> void:
+	assert_eq(RcLookCrt.default_config().reduce, RcLookCrt.Reduce.KEEP_STATIC, "designer ruling 82c92714")
+
+
+## A float the way the shader text writes it (0.0, 0.01, 0.18).
+func _g(v: float) -> String:
+	var s := "%s" % snappedf(v, 0.0001)
+	return s if s.contains(".") else s + ".0"

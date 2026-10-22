@@ -275,4 +275,4 @@ Scanlines, flicker, the rolling band, the vignette and the edge glow, each the e
 | lab: `--module=crt` | a panel per preset at a fixed clock, probe strips shader over mirror, a parity pair against the game's crt_terminal.gdshader |
 | lab: `--module=crt_reduce` | the reduce-effects ruling sheet: the three conventions side by side with a recommendation |
 
-Stale default found, not changed: crt_terminal's glass alpha is 0.94 in the shader, 1.0 as the game sets it (the presets use 1.0).
+Reduce effects (designer 82c92714): KEEP_STATIC everywhere. Motion stops, the still scanlines and the vignette stay, only high contrast removes the texture. The wrapper defaults of crt_terminal (glass alpha 1.0) and scanline.gdshader (Fx's four values) are what the game sets. Open: crt_terminal's glass gradient divides by the panel width, not its height (DECISIONS).
