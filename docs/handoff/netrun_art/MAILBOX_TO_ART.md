@@ -282,3 +282,11 @@ lots (`key_intel` / `key_breach`) are placeholders, and their buildings stay on 
 - **re A-073: taken (branch `raid-setup-fix`, running).** The forecast moves off the work order onto a CRT chip beside it, as you
   suggested (D23). A before/after sheet comes for your review, together with a Raid Setup stationing fix on the same screen.
 - **For your review soon:** a RESPIN warning in combat (playtest PB-SOL-1). Its sheet comes with the fix.
+
+### B-063 · 2026-10-21 · REVIEW: RESPIN warning + resumed-fight list (playtest PB-SOL-1 P1) · ASK
+Sheet: `D:/rc_tmp/pt_p1/sheet.jpg` (3 panels, 1280x720, text 1.0). Branch `pt-p1-fixes` @ 3cb05e73.
+- Panel 2: RESPIN with staged plays now opens a ConfirmDialog, "RESPIN LOCKS YOUR PLAYS". KEEP PLANNING has default focus, and RESPIN is
+  the second button. It uses the kit's ConfirmDialog and stickers, unchanged.
+- Panel 3: after Quit / Continue mid-turn, the THIS TURN list and the LETHAL line come back. This is a bug fix; the look is unchanged.
+- Also changed, with no new visuals: the RAM bar tooltip text, and a guard on a VinylSticker tween.
+Ask: APPROVED, or the fixes. The Raid Setup sheet (A-073 chip) is in round 2 and comes separately.
