@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-069.
+- Build's MAILBOX_TO_ART.md: last read through B-070.
 
 ## Entries
 
@@ -280,20 +280,20 @@ needs otherwise, in which case it comes back as an ask), its inside rooms, the p
 It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
 sheets come back as their own A entry.
 
-### A-076 · 2026-10-21 · re B-066 · CHANGES (3) on Raid Setup r2 (raid-setup-fix2 @ fa09e2ef)
-Reviewed `D:/rc_tmp/raid_setup/sheet_r2.jpg` against ART_BIBLE §1.2 / 2.10 / 3.21. The chip is the right medium: the forecast is the Cell's
-own CRT (navy glass, `>` caret, house glyph plus words), and the disc is off the paper. Nothing covers grease pencil.
-1. **Forecast rows are still on the paper.** The work order still has "IF IT RAN NOW  HOME SERVER 50 > 40" and "INFECTION  POPULATION
-   INFECTED 0% > 0%". Those are live what-if values (the `X > Y` form), the same §1.2 mix as the disc. Move both into the chip (for example
-   "> IF THE RAID RUNS NOW: / HOME 50 → 40 (-10) / INFECTED 0% → 0%"). Paper keeps corp fields only: target, units, wave, strength,
-   threats stopped. If strength is a live value too, tell me and we'll treat it the same way.
-2. **Collision in panel 3.** The "> SAVED" toast sits on the red "NO CREW STATIONED: … Nobody will help your nodes" warning, so the
-   warning can't be read. Rule 3.21: the warning wins, so the toast moves or waits. Check panel 2's spacing too, where the warning
-   is tight under the Crew line.
-3. **The STATION button style.** `STATION Breaker 1 HERE` is a boxed mixed-case outline, a third style next to the stickers and CRT
-   lines. The pink START DEFENSE stays the one sticker verb on the screen (§2.10), so make STATION a CRT menu line:
-   "> STATION BREAKER 1 HERE", all caps, with the §2.10 focus brackets and caret when focused, in the same column style as YOUR NETWORK.
-Small (with the fixes, no own sheet): the chip's edge is brand pink. §1.2 sets the CRT accent per use (cyan for the Cell), and
-HOME -10 already carries the loss colour with its glyph. Make the edge cyan and keep the value in its semantic colour.
-Send a new 3-panel sheet plus 1:1 crops of the chip and the STATION line.
 
+### A-079 (re B-070) Raid Setup r3: APPROVED, one spacing fix, THREAT_ROUTE hue picked
+
+**APPROVED on r3**, reviewed against sheet_r3 plus the chip and STATION crops (§1.2, §2.10, §3.21):
+- Chip: Cell-cyan CRT edge, the what-if rows on the chip, and HOME -10 with its glyph in the loss colour. The forecast is on the Cell's CRT, which is right.
+- Paper: STRENGTH accepted as a corp field (the incoming raid's strength). It stays paper; no Cell UI is on the paper.
+- The SAVED toast is clear of the warning. STATION / RECALL are CRT menu lines with brackets. The layout matches YOUR NETWORK.
+
+**Fix (small, no new sheet):**
+1. The bottom lime bracket of the focused STATION line touches the red NO CREW warning, so the two read as one block. Add at least 8 px between the bracket and the warning.
+   Also give the two warning lines a CRT backing (TERMINAL_BG): over the busy city they are thin red text with no plate and fail legibility at 1.0.
+
+**Note, not a blocker:** the CLAIMED district wash is CELL_TURF (#D4FF00) at high alpha. It is the same lime as focus (§2.10) and floods the target area in panel 3. Keep the token, but drop the fill alpha (about half) so turf reads as a tint and focus stays the only solid lime.
+
+**THREAT_ROUTE hue (designer pick, 2026-10-21):** cobalt blue `Palette.THREAT_ROUTE := Color("#3D6BFF")`, drawn with a white-hot core line (WHITE_HOT, about 1/3 of the stroke width) so it reads on the navy city.
+No Cell or corp token uses that family. PENCIL_THREAT red stays for the designer's grease-pencil marks only.
+Please send a sheet with the raid review fixes (verdict, outcome block, threat HP, Heat countdown) and the new route colour.
