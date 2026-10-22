@@ -255,6 +255,16 @@ func _shoot() -> void:
 		print("NA23 bloom ribbons surfaces=%d verts=%d mat=%s layers=%d layer_vis=%s" % [rb.mesh.get_surface_count(), (rb.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(), rb.material_override, rb.layers, rb.visible]) if rb != null else null
 		if rb != null:
 			var cc := (rb.global_transform * rb.get_aabb()).get_center()
+			if _args.has("ribdbg") and not rig.view.has_meta(&"ribdbg"):
+				rig.view.set_meta(&"ribdbg", true)
+				var q := MeshInstance3D.new()
+				var pm := PlaneMesh.new()
+				pm.size = Vector2(10, 10)
+				q.mesh = pm
+				q.material_override = rb.material_override
+				q.position = cc + Vector3(0, 0.5, 0)
+				rig.view.add_to_layer(&"props", q)
+				print("NA23 ribdbg plane added at ", q.position)
 			var cm := rig.view.camera
 			print("NA23 bloom ribbons centre=%s in_frustum=%s cam=%s unproject=%s" % [cc, cm.is_position_in_frustum(cc), cm.global_position, cm.unproject_position(cc)])
 		print("NA23 bloom ribbons node=%s visible=%s aabb=%s parent=%s" % [rb != null, rb.is_visible_in_tree() if rb != null else false, (rb.global_transform * rb.get_aabb()) if rb != null else "", rb.get_parent().name if rb != null else ""])
