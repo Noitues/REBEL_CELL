@@ -6,8 +6,8 @@ shader_type canvas_item;
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform float strength = 1.0;
-uniform float threshold = 0.8;
-uniform float knee = 0.4;
+uniform float threshold = 0.6;
+uniform float knee = 0.3;
 uniform int key = 1;
 uniform vec3 lods = vec3(2.0, 4.0, 6.0);
 uniform vec3 weights = vec3(0.5, 0.35, 0.25);

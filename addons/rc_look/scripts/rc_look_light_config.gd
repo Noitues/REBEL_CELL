@@ -10,8 +10,8 @@ const REQUIRED: Array[StringName] = [&"glow", &"halo", &"pool", &"spill", &"spil
 ## Preset name -> RcLookLightPreset.
 @export var presets: Dictionary = {}
 ## Bloom: bright-pass threshold and knee (linear light), screen mip levels and their weights.
-@export var bloom_threshold: float = 0.8
-@export var bloom_knee: float = 0.4
+@export var bloom_threshold: float = 0.6
+@export var bloom_knee: float = 0.3
 ## The 2D bloom's key: 0 brightest channel, 1 chroma (2D layers: paper never blooms, neon does).
 @export_range(0, 1) var bloom_key: int = 1
 @export var bloom_lods: Vector3 = Vector3(2.0, 4.0, 6.0)
