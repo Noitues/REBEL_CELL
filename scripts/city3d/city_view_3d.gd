@@ -497,7 +497,7 @@ func set_look_blend(lb: float) -> void:
 	if not _compound_aaa.is_empty():  # the AAA-2 HQ page: a clean frame (no film grain over the fog and the skin)
 		_post.set_shader_parameter(&"aaa_grain", Vector2.ZERO)
 	if not _bloom.is_empty():  # the ground's shader may have swapped: the Bloom's uniforms go on again
-		BloomLook.apply(self, _bloom)
+		_bloom_apply_mats()
 
 
 var _aaa_exposure: float = 0.0
@@ -2654,6 +2654,15 @@ func bloom_look() -> Dictionary:
 	return _bloom
 
 
+## The Bloom look on every material of the view: the ones on built nodes, and the shared ones (the buildings' hangs on chunk nodes that
+## build later).
+func _bloom_apply_mats() -> void:
+	BloomLook.apply(self, _bloom)
+	for m: ShaderMaterial in [_building_mat, _ground_mat, _outer_mat]:
+		if m != null:
+			BloomLook.apply_to_material(m, _bloom)
+
+
 func _bloom_apply() -> void:
 	for n: Node in _bloom_nodes:
 		if is_instance_valid(n):
@@ -2662,7 +2671,7 @@ func _bloom_apply() -> void:
 	_bloom_nodes.clear()
 	if _bloom.is_empty():
 		return
-	BloomLook.apply(self, _bloom)
+	_bloom_apply_mats()
 	if float(_bloom.get("strength", 0.0)) <= 0.0:
 		return
 	if StringName(_bloom.get("kind", &"")) == BloomLook.KIND_STREET:
