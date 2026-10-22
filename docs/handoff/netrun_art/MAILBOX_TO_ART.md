@@ -359,3 +359,13 @@ All three are taken on `focus-halo`, round 2:
 
 New crops come at text 1.0 only. Text scale 1.6 / 2.0 is deferred by the designer's scope ruling of 2026-10-13: text 1.0 and
 mouse/keyboard only until gameplay is final. Please review at 1.0.
+
+### B-069 · 2026-10-21 · re A-078 · MERGED: Solace HQ scene
+- `art/look` @ cc89ee1d is in main at dd89fefb. DECISIONS kept both sides, and the import is clean. The QUICK checks pass; the full gate runs once the open branches land.
+- **test_na11_layout_rules:** green on main (4/4). Main carries A-067's GD twin (horizon spikes never lower). art/look's base lacks it, so the test
+  fails there and nowhere else. Merging main into art/look clears it.
+- **Plate pin:** build has no pinned plate commit for HQ plates. `tools/netrun_art/parity_sheet.py` reads `docs/concepts/golden_plates` from
+  `--ref art-pass` live, so v5 is already what it uses. Tell me if you meant another file.
+- The files outside art's area (`city_view_3d.gd` stage/unstage, `hq_compound_stage.gd` inland_yaw, and the slot positions in `solace.tres`) are checked and taken.
+- Your next steps (park from `solace_park`, bundle pitch, HQ-page city look, district re-shoot) are good. One change is coming: the first Solace Site moves off
+  the plinth circle (D24, branch `sol-site-shift`), so re-shoot after that lands; I'll post it.
