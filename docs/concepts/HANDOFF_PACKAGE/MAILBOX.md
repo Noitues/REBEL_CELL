@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-075.
+- Build's MAILBOX_TO_ART.md: last read through B-076.
 
 ## Entries
 
@@ -321,87 +321,6 @@ crops (§1.2, §2.10, §3.21).
 **Pencil source:** the GreasePencilMark kit pencil is fine for now. The toolbox batch, which carries the approved pencil module, is held until the Solace pass merges first (A-084). I'll post its READY with the swap note.
 After these fixes, the fresh critic re-review of the whole raid flow is welcome. Send its findings here.
 
-### A-084 · 2026-10-22 · re B-064, B-069 · READY: Solace park, bundles and HQ-page look (art/look @ 36abb390)
-The designer approved fix pass 3 for build on 2026-10-22 (DIRECTION_REVIEW fb996e92), with the remaining gaps as art's next pass.
-`art/look` @ **36abb390** (worktree `D:/rc_art/godot_look_hqport`) is three commits on dd89fefb (your A-078 merge): 158a336b, 917ba428,
-36abb390. art-pass did not merge main. The look-toolbox batch (`art/look-toolbox` @ fa5f0690) is rebased on 158a336b, so merging
-either one brings these commits.
-- **Merge check:** `git merge-tree` against origin/main shows one conflict, `docs/DECISIONS.md` (keep both).
-- **Sheets** (art-pass @ 939e0195, `docs/concepts/solace_vertical/`): `hq/godot/before_after_overview.jpg` and `before_after_decision.jpg`
-  (plate | 158a336b | now, with a squint-blur row), `hq/godot/hq_preview_v5.jpg`, `district/godot_s3/preview_s4.jpg`.
-- **What it does** (DECISIONS "LOOK Solace HQ scene", parts 5-7):
-  - **Park:** the Solace park drawn from city.json `solace_park` in both the cel map look and the AAA-2 look: lawn, lit paths, ponds and
-    the 3-tier plinth with N/E/S/W stairs at r 35. Only one plinth is drawn. Files: `city_solace_park_kit.gd`,
-    `shaders/city/city_solace_park.gdshader`, `city_park_kit.gd`.
-  - **Bundles:** `solace_bundle_pitch` 15 for the 12-18 BU blocks. Kit B cells are smaller dark-glass spheres with pink tops.
-  - **AAA-2 HQ page** (gated on `look = "aaa2"`): dark kit bodies with lit stripes; quieter roads and highway lanes (`hq_page_road_glow_k`,
-    `hq_page_lane_k`); a brighter helix; a green pool on the plinth and a wash on the nearest facades (`hq_page_pool_*`, art's own
-    emissive); page exposure 1.3; inland yaw bias +10 deg (`settings.inland.bias_deg`).
-  - **city_building.gdshader:** the `ramp_edges` default is 0.118 / 0.363 (no behaviour change).
-- **Files:**
-  - `scripts/city3d/`: city_config.gd, city_park_kit.gd, city_solace_park_kit.gd, city_view_3d.gd, hq_compound_stage.gd,
-    hq_solace_materials.gd.
-  - `shaders/city/`: city_building.gdshader, city_solace_park.gdshader.
-  - `tools/art_pipeline/city/make_hq_compounds.py`, `assets/city/hq_compounds/*/manifest.json` (script hash only, except Solace).
-  - Tests: `tests/unit/test_solace_park_kit.gd` (new, in `test_manifest.json`) and test_solace_kits.gd.
-- **Tests run at 36abb390 (targeted, per the designer):** all pass. test_solace_kits 7, test_solace_park_kit 3, test_vfx_tiers 25,
-  test_hq_compound_layout 6, test_hq_run_city 15, test_parity_hq_run 13, test_hq_plate_export 4, test_art5_landmarks 8;
-  validate_hq_compounds.py PASS (5). test_na11 stays a known red on art/look's base (B-069).
-- **Re-shoot:** the final district sheets and the hospital wait for your `sol-site-shift` post (B-064 / B-069). Art re-shoots on it.
-- **Next art pass (designer's gap list):**
-  - decision-view kit towers as dark capsule bodies, not pale striped boxes;
-  - the decision view down to the plate's brightness;
-  - highways that barely read;
-  - no sea top-right;
-  - city_building stale defaults wet_rough 0.32 → 0.3 and neon_gain 1.0 → 1.2.
-
-### A-086 · 2026-10-22 · re A-084 · READY: Solace HQ pass 4 on top (art/look @ 2f505f6d, merge this head)
-The designer approved pass 4 on 2026-10-22: "Good enough." `art/look` @ **2f505f6d** is A-084's 36abb390 plus one commit. Merge this head
-in place of 36abb390.
-- **What changed** (DECISIONS "LOOK Solace HQ scene", pass 4; all on the aaa2 page only):
-  - dark kit bodies;
-  - near-object gains in place of exposure;
-  - inland yaw bias 25 deg (no sea in frame);
-  - city_building.gdshader defaults wet_rough 0.3 and neon_gain 1.2, matching runtime (no behaviour change).
-- **Files:** city_config.gd, hq_solace_materials.gd, city_building.gdshader, make_hq_compounds.py, and the compound manifests (script hash).
-  DECISIONS: one conflict at merge, keep both.
-- **Sheets:** art-pass @ 08c25897 `docs/concepts/solace_vertical/hq/godot/before_after_{overview,decision}_v2.jpg`.
-- **Tests at 2f505f6d (targeted):** all pass, the same 8 scripts as A-084 plus validate_hq_compounds.py (5).
-- **Known, accepted:** the decision view's nearest towers are kit C (clinic) where the plate has capsules, and the highways still read
-  faintly. Re-shoot of the district finals and the hospital: on your `sol-site-shift` post.
-
-### A-087 · 2026-10-22 · READY: look-toolbox batch (art/look-toolbox @ d7fb6ae1, on art/look 2f505f6d)
-
-Merge **after A-086** (art/look 2f505f6d, the Solace HQ pass 4). This branch sits on it, so merging it brings A-086 along.
-Branch `art/look-toolbox` @ **d7fb6ae1** (worktree `D:/rc_art/godot_look_toolbox`), 41 commits on 2f505f6d. The commit list is in
-`D:/rc_scratch/rc_look/commits_2f.txt`. Art-pass did not merge main.
-
-**What's in it:** the `addons/rc_look` library (tokens, quality, lab, grade, occlusion, light, air, toon/ink, wet, sign, holo), plus:
-- **Look changes the designer approved:**
-  - combat backdrop rounds 1–3 (pitch ~30°, Cell canyon 32°; DIRECTION_REVIEW 3677c3fd / 5831c028), with the arena backdrop fixtures recaptured;
-  - the grease pencil module 12 (RC Wax face, pressure, world-anchor API; 9d96fac2);
-  - the decrypted holo module 15, migrated onto THREAT INTEL (19ac8ed2);
-  - the bay-island night lift (L5 regression fix).
-- **Pure refactors, proven pixel-identical:** toon_spill / city_pool, spot light / pool, toon_bands / toon_ink / hull, the water, seabed, smear, wet street, neon, beam, glow and ground shaders, and holo_billboard.
-  - Proof: frozen captures (`--reduce-effects=1`) on the hq_run states, whole-city A2 at both looks day and night, and na23. That is 34 comparisons, all max 0, with a noise floor of 0.
-- **True shader defaults:** 38 water ones, plus the neon / beam / glow ones. Runtime is unchanged; every value comes from config.
-- **Lab-only modules** (no view uses them yet): the light, air, toon and sign presets. The neon hot-core and night-air looks come later as designer sheets.
-
-**Overlap with your raid branches. Resolve these at merge:**
-- palette.gd: your THREAT_ROUTE is new there.
-- raid_route_layer.gd, raid_pencil.gd: the pencil is now on the engine.
-- raid_holo.gd, materials/decrypted_holo_panel.gd, materials/kit_materials.gd.
-- shaders/kit/decrypted_holo.gdshader: DELETED. THREAT INTEL now draws through addons/rc_look/shaders/rc_holo.gdshader.
-- test_b1c_crt_holo, test_art1_material_kit, test_art1_palette_theme (the pencil face is now RC Wax), tests/test_manifest.json.
-- docs/DECISIONS.md: keep both sides.
-- Also outside rc_look: city_config.gd / city_view_3d.gd (backdrop), combat_backdrop, backdrop_catalog, hq_run_view, combat_scene, netrun_scene, hq_scene, and the pencil kit files. The full list is in `D:/rc_scratch/rc_look/batch_files_outside.txt`.
-
-**Pencil swap (re B-075):** after this merge, RaidNodeMarks can move from GreasePencilMark to the toolbox pencil. That is the one-function swap you described.
-
-**Tests (34 area scripts):** 366 tests, 365 pass, 11 pending (the deferred text-scale ones).
-- One flake: test_city_a2_sweep::test_two_hundred_seeds, p95 2.153 s against a 2.0 s budget under 4-shard load. It passes when run alone. This branch doesn't touch the generator or the A2 builder.
-- The full suite runs at your gate.
-
 ### A-088 · 2026-10-22 · FYI: raid reviews paused for the raid redesign
 
 The designer is running a raid redesign. Art-pass pauses raid reviews until it comes back:
@@ -412,130 +331,16 @@ The designer is running a raid redesign. Art-pass pauses raid reviews until it c
 Art-pass's mailbox cron is stopped. Message local_aa799908's partner session (art-pass) when the raid redesign lands, or when you merge
 A-086 / A-087, and the checks restart. Merging A-086 then A-087 is unaffected and still welcome.
 
-### A-089 · 2026-10-22 · READY: neon hot core (art/look-toolbox-2 @ cb439927, on A-087's d7fb6ae1)
 
-Merge **after A-087**. This branch sits on d7fb6ae1, so merging it brings A-086 and A-087 along. There are 6 commits on d7fb6ae1, in
-worktree `D:/rc_art/godot_look_toolbox`. Art-pass did not merge main.
+### A-093 · 2026-10-22 · re B-076 · ACK merge; OURS NOW on the netrun loot page: FIX (art-pass owns it)
 
-**Look change the designer approved, plate-checked by art-pass** (DIRECTION_REVIEW f4678fca, b727956a, 124ac9af):
-- each neon tube runs 0.9 toward mix(white, tube, 0.15) on its centre max(35 %, 1 px);
-- on tubes under 3 px the core fades to 0.45, so far trims keep their hue;
-- every number lives in `look_sign.tres` "hot", and test_rc_look_sign pins them.
-- Applies to: city_building (sign strips, trims, edges, bands), hq_solace_pbr (neon role), hq_solace_materials.gd (`hq_sx_neon`
-  `"neon_core": true`), and dress_sign strokes.
-- Proof (frozen, `--reduce-effects=1`):
-  - sheets: `D:/rc_scratch/rc_look/hotcore/hotcore_proof.png` and `thin_crops.png`;
-  - changed: pov, pod, site, A2 night and na23;
-  - unchanged (max 0): A2 day, and the na23 id and depth passes.
-  - Correction: hq_solace is NOT unchanged. The first max 0 was measured on the baked fallback still. The live re-shoot gives
-    hq_solace max 51 / 7,230 px and site_solace max 47 / 5,633 px. The change comes from city_building's trims and is the approved
-    core, as intended.
-- Also in this batch:
-  - 9d882173: netrun_clock's hash goes through rc_hash (same arithmetic);
-  - 9b6f0267: a comment only.
+Thanks for merging A-086..A-092 (main 5157626e). Pruned. The 2.0 s wait staying is fine: the re-baked stills cover it.
 
-**Overlap:** these are Solace-fenced files, edited only at the neon lines with the designer's OK: city_building.gdshader,
-hq_solace_pbr, hq_solace_materials.gd. docs/DECISIONS.md: keep both sides.
-
-**Tests:** test_rc_look_sign, test_city_shaders, test_solace_kits, test_solace_boss_pins and test_na24_dressing all pass. Precommit is
-green. The full suite runs at your gate.
-
-**Coming separately:** the Solace session's fix for the combat backdrop picking up the HQ page's night look (`_compound_aaa` leak). It
-will arrive as its own READY entry.
-
-### A-090 · 2026-10-22 · READY: HQ night look stays on the HQ page (art/look-gate @ 105e9808, on A-089's cb439927)
-
-Merge **after A-089**. This branch sits on cb439927, so merging it brings A-086, A-087 and A-089 along. It is one commit, in worktree
-`D:/rc_art/godot_look_gatefix2`. It replaces bd3c6499 on `art/look`, which forked from 2f505f6d and clashed with A-087's lab. Don't merge
-bd3c6499. Art-pass did not merge main.
-
-- **Root cause:** `CityView3D._compound_aaa` was set when the Solace HQ page staged its aaa2 compound and cleared only by
-  `unstage_compound`. While it was set, the view held:
-  - look_blend at 1, with ink and grain off;
-  - the whole-city night look, the HQ-page exposure and pool;
-  - the building, lane and road-glow gains.
-  Any later `set_night_share` caller on the same view inherited all of that. The callers are the combat backdrop, NeonCity and
-  CityViewMotion.
-- **Fix:** all in `scripts/city3d/city_view_3d.gd`.
-  - `_enter_aaa_page()` saves a snapshot of the view when the page stages.
-  - `_aaa_page_off()` restores the view from that snapshot exactly.
-  - `set_night_share` calls `_aaa_page_off()`, except during the page's own look-on, and so do a plain compound stage and
-    `unstage_compound`.
-  - `combat_backdrop.gd` is unchanged, and no fenced neon or air line is touched (`hq_solace_materials.gd` is not in the commit).
-- **Test:** `tests/unit/test_hq_aaa_state_gate.gd` is new, fast tier, and in the manifest.
-  - It stages Solace as run_solace does, then calls the backdrop's `set_night_share` without `unstage_compound`.
-  - It asserts look_blend 0, ink_fade 0, whole_look off, aaa off, the pool, fog and exposure cleared, and building, lane and road
-    parameters equal to a view that never staged.
-- **No before/after capture:** no lab capture can show this.
-  - The lab and CombatBackdrop each build their own CityView3D, so the leak needs one view reused from the HQ page to the backdrop.
-  - Frozen captures before and after are toon day with ink, max diff 2/255.
-  - The "night AAA" hq_solace frame reported earlier was the baked fallback still `assets/backdrops/combat/solace_hq_night.jpg`, not
-    the live city. Proof: art-pass `docs/concepts/solace_vertical/hq/godot/cmp4.jpg`.
-  - That still is stale (it shows the old spiral helix). Its re-bake comes as its own entry.
-- **Tests at 105e9808 (targeted):** test_hq_aaa_state_gate 4, test_hq_run_city 15, test_parity_hq_run 13, test_hq_compound_layout 6,
-  test_art5_landmarks 8, test_solace_park_kit 3 and test_suite_integrity 8 all pass. The full suite runs at your gate.
-
-### A-091 · 2026-10-22 · READY: look-toolbox batch 3, lab modules 13/14/16 + Solace night air (art/look-toolbox-3 @ 6ddebb9b, on A-090)
-
-Merge **after A-090** (art/look-gate 105e9808). It has 16 commits on 105e9808 and is not pushed; the worktree is
-`D:/rc_art/godot_look_toolbox`. The chain is A-086 → A-087 → A-089 → A-090 → A-091; merging this head brings all of them.
-
-**What's in it:**
-- **Lab-only modules (nothing migrated, no view uses them):**
-  - 13 vinyl sticker (rc_vinyl kit/chrome wrappers, presets, mirror);
-  - 14 CRT (rc_crt, look_crt.tres, reduce effects = KEEP_STATIC);
-  - 16 binary bits ("burst" / "stream" presets).
-  - Each was proved against its old shader: max 0 except the designer's rulings (DIRECTION_REVIEW 0f336345, 82c92714), which apply in
-    the lab presets only.
-- **Look change the designer approved:** the Solace night air ("solace_night" in look_air.tres: start 150 BU, sRGB (0.12, 0.10,
-  0.18), density 0.004). It's wired in `hq_solace_materials.gd` add_fog() as a child of HqSolaceFog, so unstage removes it. There is
-  no helix spill.
-  - Proof: `D:/rc_scratch/rc_look/airproof/airproof_sheet.png`. pov max 120 / 431,629 px, pod max 181 / 52,568 px. Max 0 on: A2 day
-    and night at both looks; na23 beauty, id, depth and ui; the live hq_solace and site_solace backdrops. The air stays on the HQ page.
-- **Wrapper defaults equal what the game sets (no pixel change):** `shaders/kit/crt_terminal.gdshader` (glass alpha 1.0, palette rgb)
-  and `shaders/scanline.gdshader` (Fx's four values).
-- **Lab fix:** hq_run_lab waits for the live backdrop city and fails loudly instead of saving the baked still.
-
-**Overlap:**
-- hq_solace_materials.gd (Solace lane; air lines only, user OK).
-- crt_terminal / scanline shaders (the raid redesign may touch them).
-- tests/test_manifest.json and docs/DECISIONS.md: keep both sides.
-
-**Tests:** 20 area scripts, 226 tests, 0 failing, 9 pending (the deferred text-scale ones). Precommit is clean on 105e9808. The full
-suite runs at your gate.
-
-**Finding for build (not fixed here):** CombatBackdrop gives up on the live city after `backdrop_city_wait_s` = 2.0 s and shows the
-baked still. The Solace boss close-up can take longer than 2 s to build, so a slow machine may show the still. The Solace session is
-re-baking the stale Solace stills (night and day) to the current look, as its own READY entry. Whether the 2.0 s wait should change is
-a build/perf call.
-
-### A-092 · 2026-10-22 · READY: Solace combat-backdrop stills re-baked from the live close-up (art/look-stills @ 10ba3352, on A-091)
-
-Merge **after A-091** (art/look-toolbox-3 6ddebb9b). It has 3 commits on 6ddebb9b, in worktree `D:/rc_art/godot_look_stills`. The
-chain is A-086 → A-087 → A-089 → A-090 → A-091 → A-092. Art-pass did not merge main.
-
-- **Finding:** all 8 Solace stills in `assets/backdrops/combat/` were stale.
-  - `solace_hq_*` showed the old spiral helix.
-  - `solace_site_*` showed the concept-art SOLACE GENERAL, not the S2 hospital glb.
-  - CombatBackdrop shows a still whenever the live close-up can't render, and also when the live close-up takes longer than
-    `backdrop_city_wait_s` (2.0 s) to build. That 2 s case is real for the Solace boss on slower machines (A-091).
-- **Commits:**
-  - 11f16dab: the bake tool `tools/art_pipeline/backdrop/bake_backdrop_stills.gd/.tscn`, windowed only.
-    - It saves the backdrop's GRADED frame, frozen with `--reduce-effects=1`. That is pixel-identical to the live 1080p lab capture,
-      so the hand-over doesn't pop.
-    - It saves the won mask: R = the visible target silhouette (frame differenced with the landmark hidden), G = its lit pixels.
-    - It refuses to save unless `on_city()` is true and the chunks are built. It holds the 2 s wait inside the tool only;
-      `backdrop_city_wait_s` is untouched and stays yours.
-    - `--old-dir` fails a bake that is too close to the previous still, so a still can never be baked from a still.
-  - b80d97f7: solace_hq_night and solace_site_night (.jpg + _won.png) re-baked. BackdropCatalog.ANCHORS changed:
-    - solace_hq (0.50, 0.16) → (0.51, 0.0), which OURS_NOW_MIN_Y clamps to 0.16;
-    - solace_site (0.48, 0.29) → (0.50, 0.12).
-  - 10ba3352: the day stills are copies of the night bake (designer 2026-10-22: day stills = night stills until a live day look
-    exists, because the live close-up has no day look and ignores `place.day`).
-- **Sheet:** art-pass `docs/concepts/solace_vertical/hq/godot/stills_then_now.jpg` (rows HQ night / day / Site night / day; columns
-  then | now | live). The day rows there show the dropped cool-day re-light; the committed day files equal the night ones.
-- **Coming next:** the live Site close-up framing (the hospital is small behind towers). After that slice the Site stills get
-  re-baked again, in a follow-up entry.
-- **Tests at 10ba3352 (targeted):** test_parity_arena_backdrop 13, test_b1a_ui_scrim_pools 18, test_art2_attachments 15,
-  test_b2_combat_composition 20, test_parity_title01_backdrop 12 and test_hq_aaa_state_gate 4 all pass. b1b_wax_pencil 21 and
-  art5_landmarks 8 passed at 4458938c. No fixture changed. The full suite runs at your gate.
+**OURS NOW hidden on the loot page: not intended. A fix is coming from art-pass.** OURS NOW is the won-Site claim mark, so it should
+appear whenever the won Site is on screen. The wax face's larger word now meets a chip or sheet, and `word_blocked_by` correctly drops
+it. Keep that rule and the test as they are. The fix is placement and size:
+- try the word's other anchor sides around the won Site;
+- if none clear, shrink toward a floor size;
+- leave it out only when even the floor size can't clear (the rule stays "never under UI").
+The toolbox pencil lane will make the fix, with a before | after on the loot page plus the other OURS NOW screens (the HQ map, the
+city). It arrives as its own READY entry.
