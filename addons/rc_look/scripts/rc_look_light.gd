@@ -39,17 +39,20 @@ static func at(p: RcLookLightPreset, d: float) -> float:
 	return f * p.gain
 
 
-## Light `light_lin` (linear) added to sRGB `base` in linear light under the soft ceiling, as rcl_light_add.
+## Light `light_lin` (linear) added to sRGB `base` in linear light under the soft ceiling, as one hue-keeping scale on
+## the light (the channel that saturates first sets it), as rcl_light_add.
 static func light_add(base: Color, light_lin: Color) -> Color:
-	var b := base.srgb_to_linear()
-	var o := Color(_ceil(b.r, light_lin.r), _ceil(b.g, light_lin.g), _ceil(b.b, light_lin.b)).linear_to_srgb()
+	var lb := base.srgb_to_linear()
+	var b := [minf(lb.r, 1.0), minf(lb.g, 1.0), minf(lb.b, 1.0)]
+	var l := [maxf(light_lin.r, 0.0), maxf(light_lin.g, 0.0), maxf(light_lin.b, 0.0)]
+	var s := 1.0
+	for i in 3:
+		if l[i] >= 1e-6:
+			var room := maxf(1.0 - b[i], 1e-5)
+			s = minf(s, (room - room * exp(-l[i] / room)) / l[i])
+	s = clampf(s, 0.0, 1.0)
+	var o := Color(minf(b[0] + l[0] * s, 1.0), minf(b[1] + l[1] * s, 1.0), minf(b[2] + l[2] * s, 1.0)).linear_to_srgb()
 	return Color(o.r, o.g, o.b, base.a)
-
-
-static func _ceil(b: float, l: float) -> float:
-	var c := minf(b, 1.0)
-	var room := maxf(1.0 - c, 1e-5)
-	return maxf(1.0 - room * exp(-maxf(l, 0.0) / room), c)
 
 
 ## The soft-knee bright pass on a linear colour, as rcl_bright (`key` 0: brightest channel, 1: chroma).

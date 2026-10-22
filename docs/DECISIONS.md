@@ -9743,3 +9743,10 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
 - **Inventory (not migrated).** Depth haze in three curves (city_post, post_bake.py, landmark_post_v1.py); two haze stacks in one 3D view (per-building exp + post screen haze, not gated); two fog systems (netrun city_fog volume, engine FOG_MODE_DEPTH in _whole_fog); the night sky in three values (Palette.NIGHT_SKY, city_config.sky, city_shaders sky.top) and night air in four; stale shader defaults (city_sky, city_fog, city_map_veil, rain density) that config overrides. Each migration changes the look: sheet first, city files claimed with art-pass.
 - **Open question for the designer.** One night sky and one night air colour for every view (combat, 3D city, netrun, toon props), or a deliberate difference per view?
 - Tests: `tests/unit/test_rc_look_air.gd` (fast).
+
+## 2026-10-21 - LOOK-TOOLBOX module 6: designer rulings applied (art-pass DIRECTION_REVIEW 38ba8122)
+
+- **Spill reach: separate values.** New preset `spill_ui` (reach 0.5, half of `spill`); a test pins the ratio. The lab's sign scene (a UI layer) uses it: the panels' neon stays tight instead of washing the facade.
+- **Hue holds in overlaps.** `rcl_light_add` / `RcLookLight.light_add` now apply the per-channel soft ceiling as ONE scale on the light, set by the channel that saturates first, so added light keeps its hue and overlapping pink / cyan / lime no longer drift to grey-white (art-pass note on light_night_t2). Base unchanged at no light, never past white, a little light still adds about itself; test `test_added_light_keeps_its_hue`.
+- **Neon core: yes, thin, under the soft ceiling** ("not so intense we are blinded by it"): built in module 11 (signage), not here.
+- Lab fix: the lab shaders passed reach 1.0 instead of the preset's reach (the spill_ui strip showed it); fixed.

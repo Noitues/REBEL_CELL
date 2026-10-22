@@ -2,8 +2,8 @@ extends RcLookLabStage
 ## LOOK-TOOLBOX module 6 in the lab. Top: each light preset as a strip from its source (left) over two units of reach,
 ## pink light added in linear light to a dark wall: the shader (rcl_fall + rcl_light_add) over the GDScript mirror
 ## (RcLookLight.at + light_add) as chips; they match when the mirror is exact. Bottom: a neon sign scene: three bars
-## spill onto a dark facade (preset "spill", reach in bar heights) beside a paper card, under the 2D bloom pass
-## (rc_bloom.gdshader) at the capture's quality tier.
+## spill onto a dark facade (preset "spill_ui": a UI layer's spill, half the city's reach; in bar heights) beside a
+## paper card, under the 2D bloom pass (rc_bloom.gdshader) at the capture's quality tier.
 
 ## Layout (px): margins, strip height and gaps, chip count, the scene's height share, bar size, the card's width share.
 const MARGIN := Vector2(60.0, 60.0)
@@ -27,11 +27,12 @@ const STRIP_CODE := """shader_type canvas_item;
 uniform vec3 wall = vec3(0.1);
 uniform vec3 light = vec3(1.0);
 uniform float reach_units = 2.0;
+uniform float reach = 1.0;
 uniform float shape = 2.0;
 uniform float gain = 1.0;
 uniform int kind = 0;
 void fragment() {
-	float f = rcl_fall(UV.x * reach_units, 1.0, shape, kind) * gain;
+	float f = rcl_fall(UV.x * reach_units, reach, shape, kind) * gain;
 	COLOR = vec4(rcl_light_add(wall, rcl_to_lin(light) * f), 1.0);
 }
 """
@@ -45,6 +46,7 @@ uniform float shape = 2.0;
 uniform float gain = 1.0;
 uniform int kind = 1;
 uniform float reach_bars = 6.0;
+uniform float reach = 1.0;
 uniform vec2 size = vec2(1.0);
 void fragment() {
 	vec2 px = UV * size;
@@ -53,7 +55,7 @@ void fragment() {
 		vec2 lo = bar_rect[i].xy;
 		vec2 hi = bar_rect[i].xy + bar_rect[i].zw;
 		float d = length(max(max(lo - px, px - hi), vec2(0.0)));
-		add += rcl_to_lin(bar_color[i]) * rcl_fall(d / (bar_rect[i].w * reach_bars), 1.0, shape, kind) * gain;
+		add += rcl_to_lin(bar_color[i]) * rcl_fall(d / (bar_rect[i].w * reach_bars), reach, shape, kind) * gain;
 	}
 	COLOR = vec4(rcl_light_add(wall, add), 1.0);
 }
@@ -84,6 +86,7 @@ func _ready() -> void:
 		m.set_shader_parameter(&"light", _v3(STRIP_LIGHT))
 		m.set_shader_parameter(&"reach_units", REACH_UNITS)
 		m.set_shader_parameter(&"shape", p.shape)
+		m.set_shader_parameter(&"reach", p.reach)
 		m.set_shader_parameter(&"gain", p.gain)
 		m.set_shader_parameter(&"kind", int(p.kind))
 		r.material = m
@@ -103,7 +106,7 @@ func _ready() -> void:
 
 ## The neon sign scene in `area`, with the bloom pass over it.
 func _scene(area: Rect2) -> void:
-	var p := RcLookLight.preset(&"spill")
+	var p := RcLookLight.preset(&"spill_ui")
 	var facade_w := area.size.x * (1.0 - CARD_SHARE)
 	var facade := ColorRect.new()
 	facade.position = area.position
@@ -127,6 +130,7 @@ func _scene(area: Rect2) -> void:
 	m.set_shader_parameter(&"bar_rect", rects)
 	m.set_shader_parameter(&"bar_color", cols)
 	m.set_shader_parameter(&"shape", p.shape)
+	m.set_shader_parameter(&"reach", p.reach)
 	m.set_shader_parameter(&"gain", p.gain)
 	m.set_shader_parameter(&"kind", int(p.kind))
 	m.set_shader_parameter(&"size", facade.size)

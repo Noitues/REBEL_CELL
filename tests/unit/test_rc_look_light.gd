@@ -19,8 +19,8 @@ func test_a_bad_config_is_reported() -> void:
 	p.reach = 0.0
 	cfg.presets = {&"glow": p, &"x": 3}
 	cfg.bloom_knee = 0.0
-	# missing halo, pool, spill (3) + x not a preset + glow reach + knee
-	assert_eq(cfg.validate().size(), 6, str(cfg.validate()))
+	# missing halo, pool, spill, spill_ui (4) + x not a preset + glow reach + knee
+	assert_eq(cfg.validate().size(), 7, str(cfg.validate()))
 
 
 func test_falloffs_hit_their_marks_and_fall() -> void:
@@ -87,3 +87,17 @@ func test_the_2d_key_blooms_neon_never_paper() -> void:
 	for n: Color in [Palette.CELL_PINK, Palette.NET_CYAN, Palette.CELL_ACID]:
 		var b := RcLookLight.bright(n.srgb_to_linear(), c.bloom_threshold, c.bloom_knee, c.bloom_key)
 		assert_gt(maxf(b.r, maxf(b.g, b.b)), 0.0, "neon %s blooms" % n.to_html(false))
+
+
+func test_added_light_keeps_its_hue() -> void:
+	# Designer 2026-10-21: overlapping neon holds its colour instead of drifting to white.
+	var pink := Palette.CELL_PINK.srgb_to_linear()
+	for k: float in [0.5, 2.0, 8.0]:
+		var o := RcLookLight.light_add(Color(0, 0, 0), Color(pink.r * k, pink.g * k, pink.b * k)).srgb_to_linear()
+		assert_almost_eq(o.g / o.r, pink.g / pink.r, 1e-3, "x%.1f: pink stays pink" % k)
+		assert_almost_eq(o.b / o.r, pink.b / pink.r, 1e-3, "x%.1f" % k)
+
+
+func test_ui_spill_reaches_half_the_citys() -> void:
+	# Designer 2026-10-21: separate values; UI spill about half the city's so panels stay crisp.
+	assert_almost_eq(RcLookLight.preset(&"spill_ui").reach, RcLookLight.preset(&"spill").reach * 0.5, 1e-6)

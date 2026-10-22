@@ -5,7 +5,7 @@ extends Resource
 
 const DEFAULT_PATH := "res://addons/rc_look/config/look_light.tres"
 ## Presets every view may ask for by name.
-const REQUIRED: Array[StringName] = [&"glow", &"halo", &"pool", &"spill"]
+const REQUIRED: Array[StringName] = [&"glow", &"halo", &"pool", &"spill", &"spill_ui"]
 
 ## Preset name -> RcLookLightPreset.
 @export var presets: Dictionary = {}
