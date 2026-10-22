@@ -24,3 +24,27 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
 - **Critic's pick:** A as the base, B second. Their ideas will likely merge.
 - **Cross-cutting fault:** the hand-set mockup numbers contradicted themselves in A, C, D, E and F.
 - **Response:** in round 2, every number is computed by a rule or by the resolver-mirror sim.
+
+## Round 2: every concept reworked on R1 findings (numbers from code: sim.py or a rule function)
+
+| Concept | W | P | N | D | C | Total /50 | Δ vs R1 |
+|---|---|---|---|---|---|---|---|
+| A Telegraph | 8 | 8 | 7 | 6 | 6 | **35** | −1 |
+| B Siege Lanes | 8 | 6 | 6 | 6 | 8 | **34** | 0 |
+| D Auto-battler | 7 | 7 | 7 | 6 | 5 | 32 | +3 |
+| E Countdown | 9 | 7 | 6 | 4 | 6 | 32 | +1 |
+| F Plan Ledger | 7 | 7 | 6 | 5 | 7 | 32 | +6 |
+| C Strength Duel | 7 | 4 | 6 | 5 | 4 | 26 | −2 |
+
+- **The critic's pick:** merge A (base) and B.
+  - **From B:** the reach rings and the "next raid" frame.
+  - **From F:** the path rows on the warning card.
+  - **From E:** the countdown on the netrun map.
+  - **From D:** the per-threat strip as a hover.
+- **Its main finding:** the ceiling now sits in the **rules**, not the UI. The issues it lists:
+  - Decoy routing can pass through home, with ties broken alphabetically.
+  - "Clean" is defined three ways.
+  - SCUFFED has no price.
+  - Cascades are drawn nowhere.
+  - No clean defense exists in the scenario.
+- **Next:** round 3 merges A and B and tests those rule fixes as designer-decision options in `sim.py`.

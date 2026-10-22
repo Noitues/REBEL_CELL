@@ -20,6 +20,19 @@ INSTALL = {"FW": 16, "VAULT": 16, "SAFE": 12, "RELAY": 8, "PROXY": 10}   # repai
 PRIORITY = {"VAULT": 3, "FW": 1, "SAFE": 1, "RELAY": 1, "PROXY": 1}
 BUILT_IN = {"FW": [("FWGUN", 3, 0)]}  # name, damage, reach
 ASSET = {"TURRET": (4, 1), "ICE": 2, "DECOY": 3}
+# Gun stats from content/assets/*.tres: damage, reach (hops), shots per step, targeting (first = nearest home, high = highest damage).
+GUNS = {"TURRET": (4, 1, 1, "first"), "SENTRY": (3, 0, 2, "first"), "RAILGUN": (8, 2, 1, "high")}
+HOLDERS = {"ICE": 2, "TARPIT": 3}
+# Round-3 rule options (each a designer decision; the defaults are today's resolver):
+#   avoid_home: a threat whose target is not home never routes through home.
+#   tiebreak: "id" (today: alphabetical) or "weakest" (equal-length routes go through the lower-integrity node, then id).
+#   target_lock: a threat keeps the target it picked until that target falls (today: re-picked every step).
+#   decoy_radius: a decoy pulls only threats within `pull` hops of it (today: every threat that can reach it).
+#   ice_blocks: a held threat does not strike (today: it is held but still strikes, except at home).
+#   fixed_routes: each threat's target and whole route are set once, when the raid starts (the telegraph IS the route);
+#     it walks that route, strikes its target until it is TAKEN, then leaves. No mid-raid re-targeting.
+RULES = {"avoid_home": False, "tiebreak": "id", "target_lock": False, "decoy_radius": False, "ice_blocks": False,
+         "fixed_routes": False}
 CREW_MULT = 1.5   # Breaker: assets on its node deal x1.5
 STEP_CAP = 30
 THREAT_DEF = {  # id: hp, dmg, speed, routing, entry
@@ -48,19 +61,27 @@ def bfs(src: str, blocked=frozenset()) -> dict[str, int]:
     return dist
 
 
-def next_hop(cur: str, target: str) -> str:
-    dt = bfs(target)
-    best = None
-    for m in ADJ[cur]:
-        if m in dt and dt[m] == dt[cur] - 1 and (best is None or m < best):
-            best = m
-    return best or cur
+def next_hop(cur: str, target: str, hp: dict | None = None, rules: dict | None = None) -> str:
+    rules = rules or RULES
+    blocked = frozenset({"HOME"}) if rules.get("avoid_home") and target != "HOME" and cur != "HOME" else frozenset()
+    dt = bfs(target, blocked)
+    if cur not in dt:
+        dt = bfs(target)
+    cands = [m for m in ADJ[cur] if m in dt and dt[m] == dt[cur] - 1]
+    if not cands:
+        return cur
+    if rules.get("tiebreak") == "weakest" and hp is not None:
+        cands.sort(key=lambda m: (hp.get(m, 999), m))
+    else:
+        cands.sort()
+    return cands[0]
 
 
 @dataclass
 class Plan:
-    assets: dict[str, list[str]] = field(default_factory=dict)   # node -> ["TURRET", "ICE", "DECOY"]
+    assets: dict[str, list[str]] = field(default_factory=dict)   # node -> ["TURRET", "ICE", "DECOY", "SENTRY", ...]
     crew: str | None = "SAFE"                                     # node where the Breaker is stationed
+    rules: dict = field(default_factory=lambda: dict(RULES))
 
 
 @dataclass
@@ -96,7 +117,16 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
         return [T[t] for t in sorted(T) if T[t]["hp"] > 0 and not T[t]["home"]]
 
     def target_of(t):
+        if plan.rules.get("target_lock") and t.get("locked") and (live(t["locked"]) or t["locked"] == "HOME"):
+            return t["locked"]
+        tg = _pick(t)
+        t["locked"] = tg
+        return tg
+
+    def _pick(t):
         decoys = [n for n, a in plan.assets.items() if "DECOY" in a and live(n)]
+        if plan.rules.get("decoy_radius"):
+            decoys = [n for n in decoys if bfs(t["site"]).get(n, 99) <= ASSET["DECOY"]]
         if decoys:
             return sorted(decoys)[0]
         if t["route"] == "value":
@@ -115,7 +145,39 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             step -= 1
             break
         # move
+        if step == 1 and plan.rules.get("fixed_routes"):
+            for t in active():
+                tgt = _pick(t)
+                t["locked"] = tgt
+                route_ = [t["site"]]
+                while route_[-1] != tgt:
+                    nx = next_hop(route_[-1], tgt, hp, plan.rules)
+                    if nx == route_[-1]:
+                        break
+                    route_.append(nx)
+                t["route_fixed"] = route_
         for t in active():
+            if plan.rules.get("fixed_routes"):
+                tgt = t["locked"]
+                ev["targets"][t["id"]] = tgt
+                if t["hold"] > 0:
+                    t["hold"] -= 1
+                    ev["holds"].append((t["id"], t["site"], t["hold"]))
+                    continue
+                rf = t["route_fixed"]
+                i = rf.index(t["site"]) if t["site"] in rf else len(rf) - 1
+                frm = t["site"]
+                moved = 0
+                while moved < t["spd"] and i < len(rf) - 1:
+                    i += 1
+                    t["site"] = rf[i]
+                    t["path"].append(rf[i])
+                    moved += 1
+                    if rf[i] == "HOME" or live(rf[i]):
+                        break
+                if moved:
+                    ev["moves"].append((t["id"], frm, t["site"]))
+                continue
             tgt = target_of(t)
             ev["targets"][t["id"]] = tgt
             if t["hold"] > 0:
@@ -127,7 +189,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             frm = t["site"]
             moved = 0
             while moved < t["spd"] and t["site"] != tgt:
-                nxt = next_hop(t["site"], tgt)
+                nxt = next_hop(t["site"], tgt, hp, plan.rules)
                 if nxt == t["site"]:
                     break
                 t["site"] = nxt
@@ -142,35 +204,44 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             s = t["site"]
             if not (s in hp and (live(s) or s == "HOME")) or t["hold"] > 0:
                 continue
-            if "ICE" in plan.assets.get(s, []) and s not in held_by[t["id"]]:
-                held_by[t["id"]].add(s)
-                t["hold"] = ASSET["ICE"]
-                ev["holds"].append((t["id"], s, t["hold"]))
+            for hname, hsteps in HOLDERS.items():
+                key = s + "#" + hname
+                if hname in plan.assets.get(s, []) and key not in held_by[t["id"]]:
+                    held_by[t["id"]].add(key)
+                    t["hold"] = hsteps
+                    ev["holds"].append((t["id"], s, t["hold"]))
+                    break
         # fire
         for site in sorted(hp):
             if not (live(site) or site == "HOME"):
                 continue
-            guns = list(BUILT_IN.get(site, []))
+            guns = [(n, dm, rc, 1, "first") for n, dm, rc in BUILT_IN.get(site, [])]
             for a in plan.assets.get(site, []):
-                if a == "TURRET":
-                    guns.append(("TURRET",) + ASSET["TURRET"])
+                if a in GUNS:
+                    guns.append((a,) + GUNS[a])
             mult = CREW_MULT if plan.crew == site else 1.0
             dist = bfs(site)
-            for name, dmg, reach in guns:
-                cands = [t for t in active() if dist.get(t["site"], 99) <= reach]
-                if not cands:
-                    continue
-                dh = bfs("HOME")
-                cands.sort(key=lambda t: (dh.get(t["site"], 99), t["id"]))
-                t = cands[0]
-                d = round(dmg * mult)
-                t["hp"] -= d
-                ev["shots"].append((site, name, t["id"], d, max(0, t["hp"])))
-                if t["hp"] <= 0:
-                    ev["kills"].append((t["id"], t["site"]))
+            dh = bfs("HOME")
+            for name, dmg, reach, shots, tg in guns:
+                for _ in range(shots):
+                    cands = [t for t in active() if dist.get(t["site"], 99) <= reach]
+                    if not cands:
+                        break
+                    if tg == "high":
+                        cands.sort(key=lambda t: (-t["dmg"], dh.get(t["site"], 99), t["id"]))
+                    else:
+                        cands.sort(key=lambda t: (dh.get(t["site"], 99), t["id"]))
+                    t = cands[0]
+                    d = round(dmg * mult)
+                    t["hp"] -= d
+                    ev["shots"].append((site, name, t["id"], d, max(0, t["hp"])))
+                    if t["hp"] <= 0:
+                        ev["kills"].append((t["id"], t["site"]))
         # damage
         for t in active():
             s = t["site"]
+            if t["hold"] > 0 and plan.rules.get("ice_blocks"):
+                continue
             if s == "HOME":
                 if t["hold"] > 0:
                     continue
@@ -184,6 +255,9 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                 cond[s] = "taken"
                 taken_now.append(s)
                 ev["taken"].append(s)
+                if plan.rules.get("fixed_routes"):
+                    t["home"] = True  # done: leaves the raid
+                    t["left"] = True
                 continue
             if cond[s] == "taken":
                 continue
@@ -201,6 +275,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                     if c and n in hp and (live(n) or n == "HOME"):
                         hp[n] = max(0, hp[n] - c)
                         ev["hits"].append(("CASCADE", n, c, hp[n]))
+                        ev.setdefault("cascades", []).append((s, n, c))
         ev["threats"] = {k: (v["site"], max(0, v["hp"]), v["hp"] > 0 and not v["home"], v["hold"]) for k, v in T.items()}
         ev["hp"] = dict(hp)
         ev["cond"] = dict(cond)
@@ -222,7 +297,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
         nodes[k] = {"before": before, "after": hp[k], "outcome": out}
     clean = hp["HOME"] >= (NODE_HP["HOME"] if start_hp is None else start_hp["HOME"]) and not down_now and not taken_now
     return Result(log, {k: v["path"] for k, v in T.items()}, nodes, NODE_HP["HOME"], hp["HOME"], [t for t in T if T[t]["hp"] <= 0],
-                  [t for t in T if T[t]["home"]], clean, hp["HOME"] <= 0)
+                  [t for t in T if T[t]["home"] and not T[t].get("left")], clean, hp["HOME"] <= 0)
 
 
 def summary(r: Result) -> str:
