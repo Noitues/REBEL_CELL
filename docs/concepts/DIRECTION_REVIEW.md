@@ -1557,3 +1557,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   down into the lit street canyon as in r11 `combat_regular_night` / r26 `combat_solace`. This supersedes the D1 street-level pitch
   (6–10°, 2026-10-06) for the combat backdrop only; the city map camera is unchanged. ART_BIBLE 3.14 framing stands. The look-toolbox
   session picks the value from a 30 / 35 / 40° sheet against r11.
+- **Combat backdrop r3 and the Solace-only focus (designer, 2026-10-21):** the look-toolbox combat backdrop round 3 (art/look-toolbox
+  9674262b) is approved for now, including the REBEL_CELL canyon at 32°. The other corps' HQs will be reworked later. Until then, the
+  art work is Solace only: no further tuning on the non-Solace HQ backdrops or landmarks.
