@@ -238,7 +238,9 @@ static func _keep_target(m: Image) -> Image:
 func _check_not_old(state: String) -> void:
 	if not _args.has("old-dir"):
 		return
-	var p := "%s/%s.jpg" % [String(_args["old-dir"]), state.replace("_solace_", "_solace_")]
+	# The stills are named <corp>_<kind>_<night|day>; a state is <kind>_<corp>_<night|day> (the corp may hold an underscore).
+	var parts := state.split("_")
+	var p := "%s/%s_%s_%s.jpg" % [String(_args["old-dir"]), "_".join(parts.slice(1, parts.size() - 1)), parts[0], parts[parts.size() - 1]]
 	var old := Image.load_from_file(p)
 	if old == null or old.is_empty():
 		push_error("BAKE: no old still %s" % p)
