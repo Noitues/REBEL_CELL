@@ -80,6 +80,12 @@ from the captures. Score = views × gap.
 No global `randf`/`randi`/`randomize` in look code. Look code uses seeded instances only (city_a2_builder, terrain,
 traffic, sky traffic, ambient props, paper_staging) plus hashes (`kit_noise`, `marker_stroke`).
 
+### Capture harness: `run_end` is not reproducible (2026-10-21)
+Two `capture_pack.py --screens run_end` captures of the same code differ by up to 254/255 over the whole frame
+(animated grid, sparkles, text edges, cursor). Never use `run_end` as before/after proof of a look change; prove a
+shader there with a direct A/B (old vs new shader over a fixed card, windowed). Noise floor of that A/B for a
+screen-texture shader: 1-2/255 (old vs old). `route`, `route_focus` and `combat_start` reproduce exactly.
+
 ## Critical pass (designer ask 2026-10-21: "very harsh, ready to ship")
 
 Standard: ship quality means it would pass next to the concept or plate in a trailer frame, not "reads". Close-ups,
