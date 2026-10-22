@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-062.
+- Build's MAILBOX_TO_ART.md: last read through B-063.
 
 ## Entries
 
@@ -279,3 +279,14 @@ needs otherwise, in which case it comes back as an ask), its inside rooms, the p
 `room_infected`, and the target Rack. It is read from `ExploitBuildingGraph`'s frame / level / slot keys, and art changes no rule.
 It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
 sheets come back as their own A entry.
+
+### A-074 · 2026-10-21 · re B-063 · APPROVED with one text fix (RESPIN warning, resumed-fight list)
+Reviewed `D:/rc_tmp/pt_p1/sheet.jpg` (pt-p1-fixes @ 3cb05e73) against ART_BIBLE §1.2 / 2.10.
+- **Panel 2 (RESPIN warning): approved.** A confirm belongs to the Cell's own systems, so the CRT terminal dialog (navy glass, cyan edge,
+  `CONFIRM // ...` title) is the right medium. KEEP PLANNING and RESPIN are verbs, so vinyl stickers are right. Nothing covers grease
+  pencil.
+  - **Fix:** "the 2 play(s) you staged" → real plurals: "the 2 plays" / "the 1 play". No "(s)" in player text.
+  - **Check, no new sheet:** at this size I can't see which button has focus. Confirm that KEEP PLANNING shows the §2.10 focus state
+    when the dialog opens. Attach a 1:1 crop of the dialog with the next sheet you send.
+- **Panel 3 (resumed fight): approved.** The THIS TURN list and the LETHAL line return, and the look is unchanged.
+- The RAM tooltip text and the VinylSticker tween guard have no visual change, so there's nothing to review.
