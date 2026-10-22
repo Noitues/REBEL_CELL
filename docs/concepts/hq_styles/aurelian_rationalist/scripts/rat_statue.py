@@ -27,11 +27,17 @@ def _loft(acc, rings, cap_top=True, cap_bot=False):
         acc.face(list(rings[0]))
 
 
-def _ellipse_ring(L, z, rx, ry, cx=0.0, cy=0.0, n=12):
+SEG = 12          # ring points (v5 raises these for smooth silhouettes)
+TUBE = 8
+
+
+def _ellipse_ring(L, z, rx, ry, cx=0.0, cy=0.0, n=None):
+    n = n or SEG
     return [L(cx + rx * math.cos(2 * math.pi * j / n), cy + ry * math.sin(2 * math.pi * j / n), z) for j in range(n)]
 
 
-def _tube(acc, L, pts, radii, n=8):
+def _tube(acc, L, pts, radii, n=None):
+    n = n or TUBE
     """A round tube through local points (x, y, z) with a radius at each."""
     W = [L(*p) for p in pts]
     rings = []
@@ -86,7 +92,7 @@ def statue(acc, origin, H, facing, kind="athlete", pose=0):
     # neck and head
     cxh = -.03 * s * h
     head = [(0.82, .05, .05), (0.86, .045, .048), (0.875, .06, .07), (0.91, .075, .085), (0.955, .07, .082), (0.985, .045, .055), (1.0, .018, .02)]
-    _loft(acc, [_ellipse_ring(L, z * h, rx * h, ry * h, cxh, .01 * h, 10) for (z, rx, ry) in head])
+    _loft(acc, [_ellipse_ring(L, z * h, rx * h, ry * h, cxh, .01 * h) for (z, rx, ry) in head])
     # arms
     sh = (.17 * h * s, 0.0, .765 * h)
     sh2 = (-.17 * h * s, 0.0, .765 * h)
@@ -99,7 +105,7 @@ def statue(acc, origin, H, facing, kind="athlete", pose=0):
         _tube(acc, L, [(sh[0] + cxh, 0, sh[2]), (.27 * h * s, .09 * h, .72 * h), (.30 * h * s, .19 * h, .66 * h)], [.04 * h, .032 * h, .025 * h])
         _tube(acc, L, [(sh2[0] + cxh, 0, sh2[2]), (-.22 * h * s, .06 * h, .66 * h), (-.08 * h * s, .10 * h, .70 * h)], [.038 * h, .03 * h, .024 * h])
         # a laurel ring in the outstretched hand
-        n = 10
+        n = SEG
         c = (.30 * h * s, .19 * h, .72 * h)
         rr = .07 * h
         pts = [L(c[0] + rr * math.cos(2 * math.pi * j / n), c[1], c[2] + rr * math.sin(2 * math.pi * j / n)) for j in range(n + 1)]

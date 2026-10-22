@@ -15,7 +15,10 @@ aur_env.setup(blender=True)
 sys.path.insert(0, HERE)
 import rat_patch  # noqa: E402
 rat_patch.apply_pre(JOBD.get("rat", {}))
-if JOBD.get("rat", {}).get("v4"):
+if JOBD.get("rat", {}).get("v5"):
+    import rat_patch5
+    rat_patch5.apply_pre(JOBD.get("rat", {}))
+elif JOBD.get("rat", {}).get("v4"):
     import rat_patch4
     rat_patch4.apply_pre(JOBD.get("rat", {}))
 elif JOBD.get("rat", {}).get("v2"):

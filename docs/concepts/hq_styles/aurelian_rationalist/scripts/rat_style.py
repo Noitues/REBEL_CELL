@@ -125,6 +125,11 @@ def v2_scene(g, cfg, ST, PL, PO, VG, coll, px, py, sx, sy):
     zt = (3 * 5.0 + 3.0) * KS
     ar, br_ = (31.0 + 0.75) * KS, (31.0 * 0.8 + 0.75) * KS
     kinds = ["athlete", "draped", "athlete", "draped"]
+    FG = ST
+    if cfg.get("smooth_figs"):
+        RS.SEG, RS.TUBE = int(cfg.get("fig_seg", 22)), int(cfg.get("fig_tube", 12))
+        FG = D.DAcc("rat_figs", ST.mat, coll, 1)
+        cfg["_fig"] = FG
     # 4 on the towers: tall, facing outward
     for k_ in range(4):
         t_ = math.radians(45 + 90 * k_)
@@ -132,16 +137,16 @@ def v2_scene(g, cfg, ST, PL, PO, VG, coll, px, py, sx, sy):
         zc = 32.4 * KS
         ST.box(cx - 5.2, cy - 5.2, zc, cx + 5.2, cy + 5.2, zc + 1.2)
         ST.box(cx - 4.0, cy - 4.0, zc + 1.2, cx + 4.0, cy + 4.0, zc + 4.2)
-        RS.statue(ST, (cx, cy, zc + 4.2), cfg.get("top_h", 46.0), math.atan2(cy, cx), kinds[k_], pose=k_)
+        RS.statue(FG, (cx, cy, zc + 4.2), (cfg.get("near_h", 30.0) if (k_ == 2 and cfg.get("near_h")) else cfg.get("top_h", 46.0)), math.atan2(cy, cx), kinds[k_], pose=k_)
     # 8 figures on the attic parapet (4 front, 4 back), facing outward
-    for k_, deg in enumerate((212, 250, 290, 328, 32, 70, 110, 148)):
+    for k_, deg in enumerate(() if cfg.get("no_attic") else (212, 250, 290, 328, 32, 70, 110, 148)):
         t_ = math.radians(deg)
         ex, ey = ar * math.cos(t_), br_ * math.sin(t_)
         nx, ny = math.cos(t_), math.sin(t_) / 0.8
         f = math.atan2(ny, nx)
         ST.box(ex - 2.6, ey - 2.6, zt, ex + 2.6, ey + 2.6, zt + 0.8)
         ST.box(ex - 1.9, ey - 1.9, zt + 0.8, ex + 1.9, ey + 1.9, zt + 3.0)
-        RS.statue(ST, (ex, ey, zt + 3.0), cfg.get("attic_h", 22.0), f, kinds[k_ % 4], pose=k_ + 1)
+        RS.statue(FG, (ex, ey, zt + 3.0), cfg.get("attic_h", 22.0), f, kinds[k_ % 4], pose=k_ + 1)
     # 2 pairs on plinths in the piazza, flanking the entry axis (the Dioscuri idea)
     ppos = cfg.get("plaza_pos", ((-16.0, -26.5, -math.pi / 2), (16.0, -26.5, -math.pi / 2), (-16.0, 27.0, math.pi / 2), (16.0, 27.0, math.pi / 2)))
     if cfg.get("flank"):                         # v4: the front pair flanks the entry portal and faces outward
@@ -161,7 +166,7 @@ def v2_scene(g, cfg, ST, PL, PO, VG, coll, px, py, sx, sy):
         ST.box(cx - 4.6, cy - 4.6, 3.4, cx + 4.6, cy + 4.6, 17.0)
         ST.box(cx - 5.4, cy - 5.4, 17.0, cx + 5.4, cy + 5.4, 18.0)
         PO.box(cx - 4.7, cy - 4.7, 17.0, cx + 4.7, cy + 4.7, 17.3)
-        RS.statue(ST, (cx, cy, 18.0), cfg.get("plaza_h", 36.0), -f if False else f + math.pi, kinds[(k_ + 1) % 4], pose=k_ + 2)
+        RS.statue(FG, (cx, cy, 18.0), cfg.get("plaza_h", 36.0), -f if False else f + math.pi, kinds[(k_ + 1) % 4], pose=k_ + 2)
     # axes: two wide paired verdigris lines running from the stylobate toward the camera and away
     for sgn in (-1, 1):
         for off in (0.0, 1.4):
@@ -272,6 +277,16 @@ def apply(g, cfg):
             figure(ST, cx, cy, zc + 3.0, cfg.get("top_h", 44.0), math.atan2(cy, cx) - math.pi / 2, arm=False)
     for a in (ST, PL, PO, VG) + ((cfg["_sy"],) if cfg.get("_sy") is not None else ()):
         a.build()
+    if cfg.get("_fig") is not None:                 # v5: weld the figure meshes and shade them smooth
+        import bmesh
+        fo = cfg["_fig"].build()
+        if fo is not None:
+            bm = bmesh.new()
+            bm.from_mesh(fo.data)
+            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-3)
+            bm.to_mesh(fo.data)
+            bm.free()
+            fo.data.shade_smooth()
     # 6. the low raking moon, linked to the landmark, the piazza and the statues only (the city stays dark)
     rx = bpy.data.collections.new("rat_rx")
     for ob in list(OBJ.values()):
