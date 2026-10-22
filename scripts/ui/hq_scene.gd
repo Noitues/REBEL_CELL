@@ -3858,7 +3858,20 @@ func _mount_node_marks(marks: Dictionary) -> void:
 	var layer := RaidNodeMarkLayer.new(city_overlay)
 	city_overlay.add_child(layer)
 	layer.set_marks(marks, Palette.corp_color(c.corporation_id), RaidOutcome.entry_points(c.grid, RunManager.corporation.city_grid))
+	layer.avoid = _hud_word_rects
 	_node_marks = layer
+
+
+## A-085: the rects of the HUD's words and usable buttons (global px), which the ENTRY POINT label keeps off.
+func _hud_word_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for n in find_children("*", "Control", true, false):
+		var c := n as Control
+		if not c.is_visible_in_tree() or (city_overlay != null and city_overlay.is_ancestor_of(c)) or c.size.x <= 0.0:
+			continue
+		if (c is Label and (c as Label).text != "") or (c is BaseButton and not (c as BaseButton).disabled) or c is HudStats:
+			out.append(c.get_global_rect())
+	return out
 
 
 ## The mounted map's mark layer (null when none).
@@ -5305,6 +5318,7 @@ func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 	var cfg := RunManager.config()
 	var out := RaidOutcome.project(projection, cfg)
 	var tier_col := RaidVerdict.tier_color_projection(projection, cfg)
+	var dmg_col := RaidVerdict.damage_color_of_tier(int(RaidOutcome.project(projection, cfg)["tier"]))
 	# RAID-FIX B1: the verdict word alone heads the chip (the cost is the outcome block below, so no
 	# verdict is wider than the chip); the outcome block never folds.
 	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection).get_slice(String.chr(10), 0), tier_col, RaidVerdict.icon_of(clean))
@@ -5312,7 +5326,7 @@ func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 	# A-076 A1: the live what-if numbers (X -> Y) are the Cell's forecast, so they live on the chip, not the paper.
 	var lost_home := projection.home_after < projection.home_before
 	var home := chip.add_line("HomeForecast", tr(CHIP_HOME) % [projection.home_before, projection.home_after, TextDb.signed(projection.home_after - projection.home_before)],
-		(tier_col if int(out["tier"]) != RaidOutcome.Tier.CLEAN else Palette.WARN) if lost_home else Palette.TERMINAL_TEXT)
+		(dmg_col if int(out["tier"]) != RaidOutcome.Tier.CLEAN else Palette.WARN) if lost_home else Palette.TERMINAL_TEXT)
 	home.tooltip_text = UiTip.fold(tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
 	home.mouse_filter = Control.MOUSE_FILTER_PASS
 	# RAID-FIX B1: nodes DOWN / TAKEN, Heat and Schematics, always on the chip (the MORE fold of the
@@ -5325,11 +5339,11 @@ func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 			parts.append(tr(CHIP_TAKEN) % taken)
 		if down > 0:
 			parts.append(tr(CHIP_DOWN) % down)
-		var nodes_l := chip.add_line("NodesForecast", " / ".join(parts), tier_col)
+		var nodes_l := chip.add_line("NodesForecast", " / ".join(parts), dmg_col)
 		nodes_l.tooltip_text = UiTip.fold(tr("Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation)."))
 		nodes_l.mouse_filter = Control.MOUSE_FILTER_PASS
 	if int(out["heat_delta"]) != 0:
-		var heat_l := chip.add_line("HeatForecast", tr(CHIP_HEAT) % TextDb.signed(int(out["heat_delta"])), tier_col if int(out["heat_delta"]) > 0 else Palette.TERMINAL_TEXT)
+		var heat_l := chip.add_line("HeatForecast", tr(CHIP_HEAT) % TextDb.signed(int(out["heat_delta"])), dmg_col if int(out["heat_delta"]) > 0 else Palette.TERMINAL_TEXT)
 		heat_l.tooltip_text = UiTip.fold(tr("The Heat a lost raid adds."))
 		heat_l.mouse_filter = Control.MOUSE_FILTER_PASS
 	if int(out["schematics_delta"]) != 0:
@@ -6384,7 +6398,7 @@ func show_raid_summary() -> void:
 	report.set_sub(tr(REPORT_OPERATION) % [raid_name, report_outcome_words(r)])
 	# RAID-FIX B6: the verdict words on the paper take the raid's severity (the ink variant on paper).
 	var report_tier := RaidOutcome.tier_of_dict(r, RunManager.config())
-	report.sub_label.add_theme_color_override("font_color", Palette.GAIN_INK if report_tier == RaidOutcome.Tier.CLEAN else Palette.HARM_INK)
+	report.sub_label.add_theme_color_override("font_color", RaidVerdict.ink_of_tier(report_tier, bool(r.get("campaign_lost", false))))
 	var side := VBoxContainer.new()
 	side.name = "ReportColumn"
 	side.add_theme_constant_override("separation", 10)
@@ -6411,18 +6425,21 @@ func show_raid_summary() -> void:
 	var reclaimed := PackedStringArray()
 	for id in after["taken"]:
 		reclaimed.append(site_name(id))
+	reclaimed = dedupe_labels(reclaimed)
 	if not reclaimed.is_empty():
-		var rec := report.add_row(tr("SITES TAKEN"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.HARM_INK, "ReportReclaimed")
+		var rec := report.add_row(tr("SITES TAKEN"), "%d (%s)" % [after["taken"].size(), ", ".join(reclaimed).to_upper()], Palette.HARM_INK, "ReportReclaimed")
 		_tip_label(rec, tr("TAKEN: the corporation took the Site back."))
 	var down_names := PackedStringArray()
 	for d in after["down"]:
 		down_names.append(tr(REPORT_DOWN_COST) % [site_name(d["id"]).to_upper(), int(d["cost"])])
+	down_names = dedupe_labels(down_names)
 	if not down_names.is_empty():
 		var dn := report.add_row(tr("NODES DOWN (REPAIR)"), ", ".join(down_names), Palette.HARM_INK, "ReportDown")
 		_tip_label(dn, tr("DOWN: repair the node on the Grid. The cost is half its install cost."))
 	var entry_names := PackedStringArray()
 	for id in after["entries"]:
 		entry_names.append(site_name(id).to_upper())
+	entry_names = dedupe_labels(entry_names)
 	if not entry_names.is_empty():
 		var en := report.add_row(tr("NEW RAID ENTRY POINTS"), ", ".join(entry_names), Palette.HARM_INK, "ReportEntries")
 		_tip_label(en, tr("A TAKEN Site next to your territory: the next raid can enter from it."))
@@ -6438,6 +6455,10 @@ func show_raid_summary() -> void:
 	# Each node of the raid, by name: its integrity before and after and its outcome.
 	var ids: Array = r.get("nodes", {}).keys()
 	IdSort.sort_ids(ids)
+	var row_labels := {}
+	for id in ids:
+		var lbl := site_name(StringName(String(id))).to_upper()
+		row_labels[lbl] = int(row_labels.get(lbl, 0)) + 1
 	for id in ids:
 		var n: Dictionary = r["nodes"][id]
 		var outcome := shown_outcome(String(n["outcome"]), StringName(String(id)) == c.grid.home_site_id, int(n["after"]))
@@ -6447,6 +6468,8 @@ func show_raid_summary() -> void:
 		node_row.add_theme_constant_override("separation", 8)
 		var node_name := Label.new()
 		node_name.text = site_name(StringName(String(id))).to_upper()
+		if int(row_labels[node_name.text]) > 1 and node_type_name(StringName(String(id))) != "":
+			node_name.text += " (%s)" % node_type_name(StringName(String(id)))
 		node_name.add_theme_font_override("font", Palette.paper())
 		node_name.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		node_name.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
@@ -7373,6 +7396,31 @@ func selected_op() -> OperativeState:
 
 
 ## A Site's name as the Grid shows it (the home server is CORE); never a raw id.
+## A-085: `labels` listed once each, in order; a label that repeats reads "LABEL ×2" (two nodes share a name).
+static func dedupe_labels(labels: Array) -> PackedStringArray:
+	var order: Array[String] = []
+	var count := {}
+	for l in labels:
+		var k := String(l)
+		if not count.has(k):
+			order.append(k)
+		count[k] = int(count.get(k, 0)) + 1
+	var out := PackedStringArray()
+	for k in order:
+		out.append(k if int(count[k]) == 1 else "%s ×%d" % [k, int(count[k])])
+	return out
+
+
+## A-085: the node's own display name (its installed type), "" when it has none or it equals the Site's name.
+func node_type_name(site_id: StringName) -> String:
+	var c := RunManager.campaign
+	if c == null or c.grid == null:
+		return ""
+	var nd := RunManager.lookup().get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
+	var n := TextDb.t(nd, "display_name").to_upper() if nd != null else ""
+	return "" if n == site_name(site_id).to_upper() else n
+
+
 func site_name(site_id: StringName) -> String:
 	if site_id == &"":
 		return "-"
