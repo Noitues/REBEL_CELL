@@ -33,6 +33,15 @@ HOLDERS = {"ICE": 2, "TARPIT": 3}
 #   ice_blocks: a held threat does not strike (today: it is held but still strikes, except at home).
 #   fixed_routes: each threat's target and whole route are set once, when the raid starts (the telegraph IS the route);
 #     it walks that route, strikes its target until it is TAKEN, then leaves. No mid-raid re-targeting.
+#   jam (round 6, concept J): two or more threats that arrive on the same non-home node in one step are each held
+#     1 step (once per threat per raid); with ice_blocks a held threat does not strike.
+#   circuit (round 6, concept I): crossfire, each gun deals +2 per other gun TYPE on linked neighbour nodes (max +4);
+#     shatter, shots at a frozen (held) threat deal double.
+#   Plan.barriers (round 6, concept J): links closed at plan time (never a corp-site link); fixed routes go around them,
+#     and a threat whose target is cut off picks among the nodes it can still reach.
+#   traits (round 6, concept K): a threat item may be (id, entry, traits); traits are telegraphed on its chip:
+#     ARMORED ignores any single shot below 5; PLATED ignores any single shot of 8 or more; FROSTPROOF is never held by
+#     ICE or a jam; BLIND ignores decoys.
 #   plating (round 5, a per-raid corp trait): the Enforcer ignores any single shot of 8 or more (the Railgun's).
 #   no_cascade (round 4): a node going DOWN does not spill damage onto its neighbours.
 #   auditor_hunts (round 4): the Auditor targets the node holding the most deployed pieces (ties: value, then id),
@@ -48,6 +57,11 @@ THREAT_DEF = {  # id: hp, dmg, speed, routing, entry
     # Heat-75 roster adds the Lockdown Unit (content/threats/lockdown_unit.tres): before the raid it freezes the link
     # between home and the home neighbour holding the most deployed assets (ties by id), as RaidResolver._prepare_links.
     "LOCKDOWN": (18, 6, 1, "weakest", "C1"),
+    # Round 6 depth harness: more content threats (content/threats/*.tres), entries set per scenario.
+    "COURIER": (8, 3, 2, "value", "C2"),
+    "INSPECTOR": (10, 4, 2, "value", "C1"),
+    "BAILIFF": (30, 10, 1, "weakest", "C2"),
+    "HAULER": (28, 10, 1, "weakest", "C1"),
 }
 ROSTER_50 = ["AUDITOR", "COLLECTOR", "ENFORCER"]
 ROSTER_75 = ["AUDITOR", "COLLECTOR", "ENFORCER", "LOCKDOWN"]
@@ -96,6 +110,7 @@ class Plan:
     assets: dict[str, list[str]] = field(default_factory=dict)   # node -> ["TURRET", "ICE", "DECOY", "SENTRY", ...]
     crew: str | None = "SAFE"                                     # node where the Breaker is stationed
     rules: dict = field(default_factory=lambda: dict(RULES))
+    barriers: list = field(default_factory=list)                  # round 6: closed links [(a, b), ...]
 
 
 @dataclass
@@ -114,16 +129,23 @@ class Result:
 def run(plan: Plan, threats=None, start_hp=None) -> Result:
     threats = threats or list(ROSTER_50)
     hp = dict(NODE_HP if start_hp is None else start_hp)
-    FROZEN.clear()
-    if "LOCKDOWN" in threats:
-        nb = sorted(ADJ["HOME"], key=lambda n: (-len(plan.assets.get(n, [])), n))
-        FROZEN.add(frozenset(("HOME", nb[0])))
     cond = {k: "ok" for k in hp}
-    held_by: dict[str, set] = {t: set() for t in threats}
     T = {}
     for t in threats:
-        h, d, s, r, e = THREAT_DEF[t]
-        T[t] = {"id": t, "hp": h, "max": h, "dmg": d, "spd": s, "route": r, "site": e, "hold": 0, "home": False, "path": [e]}
+        # an item is an id, or (id, entry); a repeated id gets a "#n" suffix (its base id stays in "base")
+        tid, entry, traits = (t, None, ()) if isinstance(t, str) else (tuple(t) + ((),))[:3]
+        base = tid.split("#")[0]
+        h, d, s, r, e = THREAT_DEF[base]
+        e = entry or e
+        T[tid] = {"id": tid, "base": base, "hp": h, "max": h, "dmg": d, "spd": s, "route": r, "site": e, "hold": 0,
+                  "home": False, "path": [e], "traits": set(traits)}
+    held_by: dict[str, set] = {t: set() for t in T}
+    FROZEN.clear()
+    for bl in plan.barriers:
+        FROZEN.add(frozenset(bl))
+    if any(T[k]["base"] == "LOCKDOWN" for k in T):
+        nb = sorted(ADJ["HOME"], key=lambda n: (-len(plan.assets.get(n, [])), n))
+        FROZEN.add(frozenset(("HOME", nb[0])))
     log = []
     down_now, taken_now = [], []
     damaged = set()
@@ -142,7 +164,18 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
         return tg
 
     def _pick(t):
-        decoys = [n for n, a in plan.assets.items() if "DECOY" in a and live(n)]
+        if plan.barriers:
+            reach = bfs(t["site"])
+            c = _pick_any(t)
+            if c in reach:
+                return c
+            alts = [n for n in hp if live(n) and n in reach]
+            alts.sort(key=lambda n: (hp[n], n))
+            return alts[0] if alts else "HOME"
+        return _pick_any(t)
+
+    def _pick_any(t):
+        decoys = [n for n, a in plan.assets.items() if "DECOY" in a and live(n)] if "BLIND" not in t["traits"] else []
         if plan.rules.get("decoy_radius"):
             decoys = [n for n in decoys if bfs(t["site"]).get(n, 99) <= ASSET["DECOY"]]
         if decoys:
@@ -226,10 +259,25 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                     break
             if moved:
                 ev["moves"].append((t["id"], frm, t["site"]))
+        if plan.rules.get("jam"):
+            arrived: dict[str, list] = {}
+            for (tid, frm, to) in ev["moves"]:
+                if to in hp and to != "HOME" and live(to):
+                    arrived.setdefault(to, []).append(tid)
+            for site, ids in sorted(arrived.items()):
+                if len(ids) < 2:
+                    continue
+                for tid in sorted(ids):
+                    t = T[tid]
+                    if not t.get("jammed") and t["hold"] == 0 and "FROSTPROOF" not in t["traits"]:
+                        t["jammed"] = True
+                        t["hold"] = 1
+                        ev["holds"].append((tid, site, 1))
+                        ev.setdefault("jams", []).append((tid, site))
         # hold (ICE on a node holds an arriving threat once)
         for t in active():
             s = t["site"]
-            if not (s in hp and (live(s) or s == "HOME")) or t["hold"] > 0:
+            if not (s in hp and (live(s) or s == "HOME")) or t["hold"] > 0 or "FROSTPROOF" in t["traits"]:
                 continue
             for hname, hsteps in HOLDERS.items():
                 key = s + "#" + hname
@@ -249,7 +297,12 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             mult = CREW_MULT if plan.crew == site else 1.0
             dist = bfs(site)
             dh = bfs("HOME")
-            for name, dmg, reach, shots, tg in guns:
+            cross = 0
+            if plan.rules.get("circuit"):
+                types = {a for n in ADJ[site] if n in hp and (live(n) or n == "HOME") for a in plan.assets.get(n, []) if a in GUNS}
+                cross = 2 * min(2, len(types))
+            for name, dmg0, reach, shots, tg in guns:
+                dmg = dmg0 + (cross if name in GUNS else 0)
                 for _ in range(shots):
                     cands = [t for t in active() if dist.get(t["site"], 99) <= reach]
                     if not cands:
@@ -260,7 +313,9 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                         cands.sort(key=lambda t: (dh.get(t["site"], 99), t["id"]))
                     t = cands[0]
                     d = int(math.floor(dmg * mult + 0.5))   # GDScript roundi: halves away from zero
-                    if plan.rules.get("plating") and t["id"] == "ENFORCER" and d >= 8:
+                    if plan.rules.get("circuit") and t["hold"] > 0:
+                        d *= 2
+                    if (plan.rules.get("plating") and t["base"] == "ENFORCER" and d >= 8) or                             ("PLATED" in t["traits"] and d >= 8) or ("ARMORED" in t["traits"] and d < 5):
                         ev["shots"].append((site, name, t["id"], 0, t["hp"]))
                         continue
                     t["hp"] -= d
