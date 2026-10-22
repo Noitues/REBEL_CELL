@@ -708,6 +708,39 @@ static func dress_site(view: CityView3D, cfg: CityConfig, s: Dictionary) -> void
 			m.layers = layers
 			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			face.add_child(m)
+		# A glow halo (additive, radial) that bleeds past the panel, so the sign reads as a light at any blur (`halo` x panel; 0: none).
+		if float(d.get("halo", 0.0)) > 0.0:
+			var q := QuadMesh.new()
+			q.size = Vector2.ONE * panel * float(d["halo"])
+			var hm := StandardMaterial3D.new()
+			hm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			hm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			hm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			hm.cull_mode = BaseMaterial3D.CULL_DISABLED
+			hm.albedo_color = d["halo_color"]
+			hm.albedo_texture = _halo_texture()
+			var h := MeshInstance3D.new()
+			h.mesh = q
+			h.material_override = hm
+			h.position = Vector3(0.0, 0.0, lift * 3.0)
+			h.layers = layers
+			h.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			face.add_child(h)
+
+
+## The radial falloff of a sign's glow halo (white in the middle, clear at the rim).
+static func _halo_texture() -> GradientTexture2D:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.55), Color(1, 1, 1, 0)])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	t.width = 128
+	t.height = 128
+	return t
 
 
 ## LOOK-TOOLBOX (designer 2026-10-21: the netrun rule, "hide or flatten every obstacle between the camera and the

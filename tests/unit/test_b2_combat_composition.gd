@@ -536,5 +536,5 @@ func test_solace_generals_site_look_is_solace_only_config() -> void:
 	for d: Dictionary in [cfg.backdrop_site_cross_by_corp, cfg.backdrop_site_hide_props_by_corp, cfg.backdrop_site_away_cap_by_corp]:
 		assert_eq(d.keys(), [&"solace"], "only Solace's Site close-up changes")
 	var cross: Dictionary = cfg.backdrop_site_cross_by_corp[&"solace"]
-	assert_gt(cross["color"].get_luminance(), 0.8, "the cross is the brightest thing on the hospital")
+	assert_gt((cross["panel_color"] as Color).get_luminance(), 0.8, "the lit panel is the brightest thing on the hospital")
 	assert_lt(float(cfg.backdrop_site_away_cap_by_corp[&"solace"]), cfg.backdrop_away_cap, "the towers behind sit a tier below the subject")
