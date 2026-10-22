@@ -228,3 +228,21 @@ round:
 - The timing press against GDD pillar 4.
 - Repair = value against GDD 3.3 (50% of install cost).
 - A key in Schematics against GDD 1.3 (win = Exploits).
+
+## M10 Godot lab (playable; real captures; one fresh critic, calibrated)
+
+| Mode | W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|---|
+| Spoof = choice | 7 | 8 | 5 | 6 | 5 | **31** | 5 | 4 | 6 |
+| Spoof = press | 7 | 7 | 5 | 6 | 5 | 30 | 6 | 4 | 4 |
+
+**Placement:** level with TFT (31), 2 below Kingdom Rush. It is the best-scoring build so far; the H7 lab scored 28.
+Choice beats press, and press conflicts with pillar 4.
+
+**The critic's predicted path to 36–38 (FTL level and above):**
+1. A find lands on the Grid: DOWN persists, TAKEN, home integrity. A raid can then be lost. **Designer decision.**
+2. Heat changes the raid's strength. **Designer decision.**
+3. The forecast includes the spoof.
+4. One visual vocabulary.
+
+**Note:** the critic cites the GDD's red-pencil threats. The designer's ruling (threats are cobalt) stands.

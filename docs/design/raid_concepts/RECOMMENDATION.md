@@ -62,6 +62,16 @@
 9. **Survivor ids become unique** (Bastion only). The H7 lab found that duplicate survivor ids collapse two survivors
    into one fighter.
 
+10. **A decoy-only contact counts as EVADED** (found by the M10 lab). A sweep that touches only a decoy pays the evade
+    reward, and the decoy's cost still stands.
+11. **The spoof acts on beam 2 only, after the reveal.** The rules allow it on any beam; the lab applies it to beam 2.
+12. **A key at 0.** The key cannot go below 0, and a loss beyond it is shown as UNPAID. What an unpaid loss means is
+    open: it could carry over, or count toward a breach.
+13. **Numbers invented in the M10 lab** (all in `tools/raid_lab_m10/m10_config.gd`):
+    - between raids, a run adds +12 Heat and +12 key, less dark income;
+    - the evade reward's Heat −10 is applied on top of the ghost's +5;
+    - press timing: the window is ±0.22 s.
+
 ## Migration sketch (after the designer rules; nothing here is built)
 - **Data (`scripts/data`, `content/raids`, `content/threats`).** A corp's raid content becomes **sweep patterns**:
   - beam count;
