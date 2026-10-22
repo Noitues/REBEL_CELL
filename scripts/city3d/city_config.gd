@@ -124,6 +124,16 @@ extends Resource
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
+## LOOK Solace HQ (designer 2026-10-21: the city round the helix read flat and pink): over the whole-city look, the aaa2 HQ page's city is
+## darker facades with warm and cool lit windows, less of the territory's pink on windows and roofs, and a cool haze with depth.
+@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 1.8, "win_share": 0.4}
+@export var hq_page_ramp: Array[Color] = [Color(0.025, 0.025, 0.035), Color(0.05, 0.05, 0.07), Color(0.09, 0.09, 0.12)]
+## The six concrete families of the HQ page's buildings (the plates' charcoal facades, warm and cool).
+@export var hq_page_concrete: Array[Color] = [Color(0.035, 0.035, 0.04), Color(0.045, 0.042, 0.04), Color(0.03, 0.034, 0.042), Color(0.04, 0.04, 0.045),
+	Color(0.028, 0.03, 0.035), Color(0.05, 0.046, 0.042)]
+@export var hq_page_building_colors: Dictionary = {"haze_col": Color(0.05, 0.07, 0.1)}
+@export var hq_page_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(0.72, 0.86, 1.0), Color(1.0, 0.72, 0.4),
+	Color(0.8, 0.9, 1.0), Color(1.0, 0.92, 0.72)]
 @export var whole_terr_albedo_k: float = 0.3
 @export var whole_terr_wall_emit: float = 0.012
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
@@ -962,9 +972,9 @@ extends Resource
 @export var solace_plinth: bool = false
 ## Prisms under this height (BU) keep the ordinary family mesh (a kit needs room for its cap).
 @export var solace_kit_min_h: float = 4.0
-## Bundle seeds sit on a triangular lattice of this spacing (lots; about 4-5 Solace lots a bundle), each jittered by
+## Bundle seeds sit on a triangular lattice of this spacing (lots; 15 for the layout's 12-18 BU blocks: 3-8 blocks a bundle), each jittered by
 ## `solace_bundle_jitter` of the spacing; the lattice is 3-coloured, so touching bundles always differ.
-@export var solace_bundle_pitch: float = 3.3
+@export var solace_bundle_pitch: float = 15.0
 @export var solace_bundle_jitter: float = 0.18
 ## Salt of the layout-seed hash that places the lattice, permutes the kits and picks a lot's variant.
 @export var solace_kit_salt: int = 4711
@@ -1015,6 +1025,24 @@ extends Resource
 @export var solace_clinic_emit: float = 0.6
 ## The faint light the clinic's porcelain carries (share of its colour at full emission): it reads against the dark city.
 @export var solace_porcelain_glow: float = 0.12
+
+## LOOK Solace park (CitySolaceParkKit, from the layout's `solace_park`): the switch, the lift over the ground (BU), the lawn's two tones, the
+## gravel, lane, water and stone colours, the lit line's width (BU), the plinth's top (BU: the helix compound stands 2 BU above its origin), its
+## tier radius ratios, the pink / lime ring ratios on the top and the stair flight's (half width, foot) ratios of the plinth radius.
+@export var solace_park_draw: bool = true
+@export var solace_park_lift: float = 0.06
+@export var solace_park_lawn_a: Color = Color(0.10, 0.34, 0.13)
+@export var solace_park_lawn_b: Color = Color(0.15, 0.44, 0.17)
+@export var solace_park_gravel: Color = Color(0.46, 0.50, 0.40)
+@export var solace_park_lane: Color = Color(0.10, 0.09, 0.16)
+@export var solace_park_water: Color = Color(0.10, 0.34, 0.46)
+@export var solace_park_stone: Color = Color(0.40, 0.44, 0.42)
+@export var solace_park_line_w: float = 0.7
+@export var solace_park_tree_colors: Array[Color] = [Color(0.12, 0.40, 0.16), Color(0.17, 0.48, 0.19), Color(0.10, 0.34, 0.18)]
+@export var solace_plinth_top: float = 2.0
+@export var solace_plinth_tiers: PackedFloat32Array = PackedFloat32Array([1.0, 0.843, 0.686])
+@export var solace_plinth_rings: Vector2 = Vector2(0.486, 0.343)
+@export var solace_plinth_stair: Vector2 = Vector2(0.1486, 1.0286)
 
 
 ## The quality tier for a Settings.city_quality value (-1 = default).

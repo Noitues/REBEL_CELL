@@ -34,12 +34,11 @@ static func lots_of(city_seed: int, r: Rect2i, kind_id: int) -> Array[Vector2i]:
 
 
 ## Lawn quads and tree domes for `parks` on `terrain` (null when there are none).
-static func mesh(cfg: CityConfig, parks: Array[Vector2i], terrain: CityA2Terrain) -> ArrayMesh:
+static func mesh(cfg: CityConfig, parks: Array[Vector2i], terrain: CityA2Terrain, solace_lots: Dictionary = {}) -> ArrayMesh:
 	if parks.is_empty() or terrain == null:
 		return null
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var cols: Array = cfg.park_tree_colors
 	var is_park := {}
 	for l in parks:
 		is_park[l] = true
@@ -64,6 +63,7 @@ static func mesh(cfg: CityConfig, parks: Array[Vector2i], terrain: CityA2Terrain
 						st.add_vertex(lg[ks[e]])
 		if CityMeshKit.hash01(SEED_PICK, l.x, l.y) >= cfg.park_tree_share:
 			continue
+		var cols: Array = cfg.solace_park_tree_colors if solace_lots.has(l) and not cfg.solace_park_tree_colors.is_empty() else cfg.park_tree_colors  # LOOK Solace park: its trees are green
 		var n := 0
 		for cl in cfg.park_clumps:
 			var cu := Vector2(0.2 + 0.6 * CityMeshKit.hash01(SEED_TREE, l.x * 31 + cl, l.y), 0.2 + 0.6 * CityMeshKit.hash01(SEED_TREE + 1, l.x, l.y * 31 + cl))
