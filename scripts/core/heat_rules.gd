@@ -117,3 +117,37 @@ static func forecast(campaign: CampaignState, delta: int, config: CampaignConfig
 		elif String(e.get("type", "")) == "raid_pending":
 			raid = true
 	return {"before": campaign.heat, "after": copy.heat, "delta": copy.heat - campaign.heat, "crosses": crosses, "raid": raid}
+
+
+## RAID-FIX C4: the next raid the Heat will queue: {"at": the threshold's Heat (as it fires, effective_heat), "away":
+## Heat still to gain}, the lowest unfired raid threshold above the current Heat; {} when none is left. Ties by
+## threshold Heat, then id.
+static func next_raid(campaign: CampaignState, config: CampaignConfigData) -> Dictionary:
+	var best: HeatThresholdData = null
+	var best_at := 0
+	for t in config.heat_thresholds:
+		if t == null or t.event_raid == null or campaign.thresholds_fired.has(t.heat):
+			continue
+		var at := effective_heat(t, campaign, config)
+		if at <= campaign.heat:
+			continue
+		if best == null or at < best_at or (at == best_at and String(t.id) < String(best.id)):
+			best = t
+			best_at = at
+	if best == null:
+		return {}
+	return {"at": best_at, "away": best_at - campaign.heat}
+
+
+## RAID-FIX C4: the Heat of the last raid threshold that adding `delta` Heat now would cross (the forecast's own
+## answer, so the RAID tag on a Site card is the real result); 0 when it queues no raid.
+static func raid_crossed_by(campaign: CampaignState, delta: int, config: CampaignConfigData) -> int:
+	var f := forecast(campaign, delta, config)
+	if not bool(f["raid"]):
+		return 0
+	var raid_heat := 0
+	for h in f["crosses"] as Array:
+		for t in config.heat_thresholds:
+			if t != null and t.heat == int(h) and t.event_raid != null:
+				raid_heat = maxi(raid_heat, effective_heat(t, campaign, config))
+	return raid_heat

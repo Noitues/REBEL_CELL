@@ -1109,6 +1109,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_raid_fix_c.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_w3_polish.gd": {
 			"seconds": 20.0,
 			"tier": "fast"

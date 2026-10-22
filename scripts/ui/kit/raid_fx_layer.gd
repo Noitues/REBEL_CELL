@@ -116,6 +116,44 @@ const MARK_TILT_SIN := 0.05
 ## width x radius; the baked concept ice: folder, growth steps, the ellipse's half width in
 ## the image px, manifest.json), the slow field's radius (x the node icon) and rings.
 const VEHICLE_R := 15.0
+## RAID-FIX C3: the HP pip bar under a threat token: one pip per integrity point up to PIP_MAX (past it
+## the bar is a solid fill), pip size / gap and the bar's drop below the token (x the vehicle radius).
+const PIP_MAX := 8
+const PIP_W := 0.34
+const PIP_H := 0.22
+const PIP_GAP := 0.1
+const PIP_DROP := 1.25
+
+
+## RAID-FIX C3: how the HP bar reads: {"pips": n (0 = a solid bar), "filled": pips lit}. `hp` 0..1 of `max_hp`.
+static func pip_state(hp: float, max_hp: int) -> Dictionary:
+	var m := maxi(1, max_hp)
+	var lit := clampi(ceili(hp * float(m) - 0.0001), 0, m)
+	return {"pips": m if m <= PIP_MAX else 0, "filled": lit if m <= PIP_MAX else 0, "share": clampf(hp, 0.0, 1.0)}
+
+
+func _draw_hp_pips(p: Vector2, r: float, id: String, alpha: float) -> void:
+	var t: Dictionary = _tokens.get(id, {})
+	var st := pip_state(token_hp(id), int(t.get("max", 1)))
+	var n := int(st["pips"])
+	var w := r * PIP_W
+	var h := r * PIP_H
+	var gap := r * PIP_GAP
+	var key := Color(Palette.NIGHT_SKY, 0.85 * alpha)
+	var lit := Color(Palette.WHITE_HOT, alpha)
+	var dim := Color(Palette.THREAT_ROUTE, 0.55 * alpha)
+	if n == 0:
+		var total := r * 2.0
+		var box := Rect2(p + Vector2(-r, r * PIP_DROP), Vector2(total, h))
+		_ci.draw_rect(box.grow(1.0), key)
+		_ci.draw_rect(Rect2(box.position, Vector2(total * float(st["share"]), h)), lit)
+		return
+	var row := float(n) * w + float(n - 1) * gap
+	var x0 := p.x - row * 0.5
+	for i in n:
+		var box := Rect2(Vector2(x0 + float(i) * (w + gap), p.y + r * PIP_DROP), Vector2(w, h))
+		_ci.draw_rect(box.grow(1.0), key)
+		_ci.draw_rect(box, lit if i < int(st["filled"]) else dim)
 const ICE_BLOCK := 2.1
 const ICE_DIR := "res://assets/raid/ice/"
 const ICE_STEPS := 8
@@ -1079,6 +1117,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 		statuses.append(t["status"])
 	RaidVehicle.draw(_ci, p, r, String(t.get("type", RaidVehicle.HEAVY)), corporation_id, token_hp(id), statuses, heading,
 		fmod(anim_phase(), 1.0), alpha)
+	_draw_hp_pips(p, r, id, alpha)
 	if frozen and String(t.get("status", "")) == RaidVehicle.STATUS_FROZEN:
 		_ice_block(p, r * ICE_BLOCK, beat_u(ICE_GROW, float(t.get("status_t0", 0.0)), RaidBeats.raw_seconds(ICE_GROW)), alpha, id.hash())
 	# ANIM-R6 C11: the withdrawing threat is struck out (ART-6 3A: a red pencil X, _lay_pencil).

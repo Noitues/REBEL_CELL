@@ -27,7 +27,7 @@ extends Node2D
 signal written
 signal wiped
 
-enum Ink { PLAN, THREAT }
+enum Ink { PLAN, THREAT, THREAT_ROUTE, THREAT_CORE }
 
 const SHADER := preload("res://shaders/kit/marker_stroke.gdshader")
 ## Every mark on screen (PencilLint).
@@ -85,6 +85,9 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 			return
 		ink = v
 		_sync()
+## RAID-FIX C2: the share of the kit's one width this stroke keeps (1 = the kit's; the white-hot core of a
+## threat route is a third, laid over the cobalt stroke, with no under-shadow of its own).
+@export var width_share: float = 1.0
 @export var dashed: bool = false:
 	set(v):
 		if v == dashed:
@@ -274,12 +277,16 @@ static func set_dropouts(mat: ShaderMaterial, gap: Vector2) -> void:
 
 ## The colour of `ink`.
 static func ink_color(i: Ink) -> Color:
+	if i == Ink.THREAT_CORE:
+		return Palette.WHITE_HOT
+	if i == Ink.THREAT_ROUTE:
+		return Palette.THREAT_ROUTE
 	return Palette.PENCIL_THREAT if i == Ink.THREAT else Palette.PENCIL_PLAN
 
 
 ## The stroke's width in this mark's local px (the screen width over its global scale).
 func width() -> float:
-	return stroke_width() / _screen_k
+	return stroke_width() * width_share / _screen_k
 
 
 ## Adds a stroke (local points) after the others in writing order.
@@ -484,6 +491,7 @@ func _apply() -> void:
 		_lines[i].width = w
 		_shadows[i].points = pts
 		_shadows[i].width = w + SHADOW_GROW * ui_scale() / _screen_k
+		_shadows[i].visible = width_share >= 1.0
 		_shadows[i].position = SHADOW_OFFSET / _screen_k
 		acc += l
 
