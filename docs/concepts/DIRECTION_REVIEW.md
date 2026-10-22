@@ -1642,3 +1642,5 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     Look only (light, glow or framing options on a sheet); no layout rule changes without the designer.
   - Art-pass calls: keep both facade washes (each lights different facades, so neither doubles), and keep decision fog constant at
     0.12 by deleting the no-op lerp.
+- **Bloom reach in Godot (designer, 2026-10-22):** the tendril reach scales with the street's layer spacing, not a fixed 24 BU, so
+  CREEPING sits about one layer ahead of the front on any street, and each TIDE band reads the same everywhere.
