@@ -706,7 +706,7 @@ func _lay_pencil() -> void:
 		var rr: float = _target_spec["rr"]
 		var key := String(_target_spec["id"])
 		_pencil.stroke("loop|" + key, RouteOverlay.target_loop(at, rr, int(_target_spec["seed"])), GreasePencilMark.Ink.THREAT,
-			PencilSet.AUTO, 0.0, false, int(_target_spec["seed"]))
+			PencilSet.AUTO, 0.0, false, int(_target_spec["seed"]), true)
 		var word := tr(RouteOverlay.TARGET_WORD)
 		var wp := at + Vector2(rr * RouteOverlay.ROUTE_TARGET_WORD_AT.x, -rr * RouteOverlay.ROUTE_TARGET_WORD_AT.y * 0.2)
 		var c := PencilSet.centre_of(wp, word, RouteOverlay.TARGET_FONT, 1.0, RouteOverlay.TARGET_WORD_TILT)

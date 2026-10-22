@@ -9,9 +9,9 @@ extends GutTest
 const CRT_PANEL := "res://shaders/crt_panel.gdshader"
 const CRT_TERMINAL := "res://shaders/kit/crt_terminal.gdshader"
 const HEX_INC := "res://shaders/kit/hex_dump.gdshaderinc"
-const HOLO := "res://shaders/kit/decrypted_holo.gdshader"
+const HOLO := "res://addons/rc_look/shaders/rc_holo.gdshader"
+const HOLO_INC := "res://addons/rc_look/shaders/rc_holo.gdshaderinc"
 const CORPS: Array[StringName] = [&"halcyon", &"meridian", &"solace", &"orbital"]
-## The holo's glass grade toward its foot (decrypted_holo.gdshader: the tint share falls to 70 %).
 
 var _saved: Dictionary = {}
 
@@ -144,33 +144,32 @@ func test_the_holo_uniforms_are_the_reviews() -> void:
 	h.size = Vector2(300, 200)
 	add_child_autofree(h)
 	var mat := h.get_child(1, true).material as ShaderMaterial
-	assert_almost_eq(float(mat.get_shader_parameter(&"tint_share")), 0.78, 0.0001, "corp tint at 78 % on the words and edge")
-	assert_almost_eq(float(mat.get_shader_parameter(&"fill_share")), 0.15, 0.0001, "the body: the tint at 15 % over the dark glass (measured on round 44)")
-	assert_almost_eq(float(mat.get_shader_parameter(&"glass_alpha")), 0.88, 0.0001, "the body's dark glass at 0.88")
-	assert_string_contains(_src(HOLO), "vec3 e = vec3(er, eg, eb) * tint.rgb;", "the full tint on the edge")
+	var want := RcLookHolo.settings(RcLookQualityState.from_settings(), DecryptedHoloPanel.body_share(Palette.CORP_MERIDIAN))
+	assert_almost_eq(float(mat.get_shader_parameter(&"fill_share")), float(want[&"fill_share"]), 0.0001, "the body: the module's glass (look_quality.tres)")
+	assert_almost_eq(float(mat.get_shader_parameter(&"glass_alpha")), float(want[&"glass_alpha"]), 0.0001, "translucent: the city shows through")
+	assert_lt(float(mat.get_shader_parameter(&"glass_alpha")), 0.88, "no longer the opaque 0.88 box")
+	assert_string_contains(_src(HOLO_INC), "return vec4(vec3(er, eg, eb) * ink / max(a, 0.001), a);", "the edge's three channels, lifted ink")
 	assert_string_contains(_src(HOLO), "col = vec4(tint.rgb, scan_strength * line);", "the full tint on the scanlines")
 	assert_eq(DecryptedHoloPanel.ink(Palette.CORP_MERIDIAN), Palette.TEXT_HI.lerp(Palette.CORP_MERIDIAN, 0.78), "the words: the tint at 78 %")
 	assert_almost_eq(float(mat.get_shader_parameter(&"scan_px")), 4.0, 0.0001, "4 px scanlines")
-	assert_almost_eq(float(mat.get_shader_parameter(&"scan_strength")), 0.12, 0.0001, "at 12 %")
+	assert_almost_eq(float(mat.get_shader_parameter(&"scan_strength")), float(want[&"scan_strength"]), 0.0001, "the module's strength")
 	assert_almost_eq(float(mat.get_shader_parameter(&"band_count")), 3.0, 0.0001, "three bands")
 	assert_almost_eq(Motion.entry(DecryptedHoloPanel.BANDS).duration, 6.0, 0.0001, "one slow pass in 6 s")
 	assert_almost_eq(float(mat.get_shader_parameter(&"band_seconds")), Motion.seconds(DecryptedHoloPanel.BANDS), 0.0001)
-	assert_almost_eq(float(mat.get_shader_parameter(&"split_px")), 2.0, 0.0001, "+-2 px RGB split")
-	assert_string_contains(_src(HOLO), "// the edge in three channels, split +-split_px horizontally (edge only)", "the split is on the edge only")
+	assert_gt(float(mat.get_shader_parameter(&"split_px")), 0.0, "the RGB split on the edge")
+	assert_string_contains(_src(HOLO_INC), "// The edge in three channels", "the split is on the edge only")
 	assert_almost_eq(Palette.HOLO_SCRIM.a, 0.88, 0.0001, "the scrim at 0.88")
 	assert_true(h.backing, "the 0.88 scrim right behind the plate by default")
-	for k in ["scan_strength : hint_range(0.0, 1.0) = 0.12", "band_count = 3.0", "band_seconds = 6.0", "tint_share : hint_range(0.0, 1.0) = 0.78", "fill_share : hint_range(0.0, 1.0) = 0.15", "glass_alpha : hint_range(0.0, 1.0) = 0.88"]:
-		assert_string_contains(_src(HOLO), k, "shader default %s" % k)
 
 
-func test_the_cracked_seal_sits_under_the_decrypted_stamp() -> void:
+func test_the_cracked_seal_sits_by_the_decrypted_stamp() -> void:
 	var h := DecryptedHoloPanel.new()
 	h.size = Vector2(320, 220)
 	h.corporation = &"halcyon"
 	add_child_autofree(h)
-	assert_eq(h.seal_center(), h.stamp_slot.size * 0.5, "the seal is centred under the stamp")
+	assert_eq(h.seal_center(), Vector2(DecryptedHoloPanel.SEAL_R * DecryptedHoloPanel.SEAL_SLOT_X, h.stamp_slot.size.y * 0.5), "the seal sits at the stamp's left end, half in view")
 	assert_not_null(CorpSeal.emblem(&"halcyon"), "the corp's own emblem (art-pass export)")
-	assert_eq(DecryptedHoloPanel.FRACTURE.size(), 5, "ui21 seal_overlay's fracture")
+	assert_gte(RcLookHolo.config().crack_segments, 5, "ui21 seal_overlay's fracture (RcLookHolo)")
 	assert_eq(DecryptedHoloPanel.STAMP_COLOR, Palette.CELL_ACID, "the concepts' green DECRYPTED: the Cell's acid")
 	assert_eq(DecryptedHoloPanel.STAMP_SHADOW_OFFSET, Vector2(2, 2), "a 2 px under-shadow")
 	assert_eq(DecryptedHoloPanel.stamp_shadow_color(), Color(Palette.INK, 0.7), "dark ink at 70 %")
@@ -193,6 +192,7 @@ func test_the_holo_bands_hold_still_under_reduce_effects() -> void:
 	var mat := h.get_child(1, true).material as ShaderMaterial
 	assert_almost_eq(float(mat.get_shader_parameter(&"split_px")), 0.0, 0.0001, "no RGB split")
 	assert_string_contains(_src(HOLO), "rc_time(TIME)", "the bands roll on rc_time (frozen under reduce effects)")
+	assert_almost_eq(float(mat.get_shader_parameter(&"band_roll")), 0.0, 0.0001, "and are held still")
 
 
 # --- Contrast on both, every skin ---------------------------------------------------------------
@@ -219,12 +219,13 @@ func test_terminal_words_read_over_the_hex_dump_on_every_skin() -> void:
 		assert_gt(Palette.contrast(PaletteSkins.resolve(skin, &"TEXT_MID"), lit_old), 4.5, "%s crt_panel glass: TEXT_MID over a dump glyph" % skin)
 
 
-## The holo body's colour for `tint` with a band of strength `band` passing: the tint at
-## FILL_SHARE over the deep (its top, the brightest) at 0.88 over the 0.88 scrim over the night.
+## The holo body's colour for `tint` with a band of strength `band` passing: the module's glass (the tint at its fill
+## share over the deep, at its alpha) over the local backing over the night.
 func _holo_body(tint: Color, band: float) -> Color:
-	var g := Palette.NET_BG_OUTER.lerp(tint, DecryptedHoloPanel.FILL_SHARE)
-	var behind := Palette.over(Palette.NIGHT_SKY, Palette.HOLO_SCRIM)
-	var glass := Palette.over(behind, Color(g, DecryptedHoloPanel.GLASS_ALPHA))
+	var q := RcLookHolo.settings(RcLookQualityState.make(2), DecryptedHoloPanel.body_share(tint))
+	var g := Palette.NET_BG_OUTER.lerp(tint, float(q[&"fill_share"]))
+	var behind := Palette.over(Palette.NIGHT_SKY, Color(Palette.HOLO_SCRIM, float(q[&"backing_alpha"])))
+	var glass := Palette.over(behind, Color(g, float(q[&"glass_alpha"])))
 	return glass.lerp(tint, band)
 
 
@@ -237,7 +238,7 @@ func test_the_holo_body_is_dark_and_the_tint_is_on_the_words() -> void:
 
 
 func test_holo_words_read_on_the_holo_at_its_brightest_on_every_skin() -> void:
-	var band := Motion.entry(DecryptedHoloPanel.BANDS).amplitude
+	var band := float(RcLookHolo.settings(RcLookQualityState.make(2))[&"band_strength"])
 	for skin in PaletteSkins.IDS:
 		Settings.palette_skin = skin
 		for corp in CORPS:

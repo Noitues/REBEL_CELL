@@ -1,48 +1,50 @@
 class_name HandMarks
 extends RefCounted
-## Hand-drawn selection marks (the Cell's marker): a scrawled X (remove) and a loose,
-## dripping circle (upgrade). Drawn on any CanvasItem over the thing they mark.
+## Hand-drawn selection marks: a scrawled X (remove) and a loose loop (upgrade). LOOK-TOOLBOX 12
+## (AUDIT: "hand_marks draws raw lines"): the marks are grease pencil on the one wax engine; this
+## class only gives their strokes (PencilShapes' hand, seeded: never game RNG) and lays them
+## with PencilSet.show_on, so a remove is red (THREAT: a loss) and an upgrade yellow (PLAN), with
+## the wax's pressure, under-shadow and write-on. The pink drip-marker drawing is gone (wax
+## never drips). View only.
+
+## The X's inset (share of the rect) and how far each arm runs past its corner (widths).
+const X_INSET := 0.12
+const X_OVERSHOOT := 0.8
 
 
-## A marker X across `r`: two thick strokes, each gone over twice with a slight offset.
-static func draw_x(ci: CanvasItem, r: Rect2, col: Color) -> void:
-	var inset := r.size * 0.1
+## The X over `r`: two strokes in writing order (top-left down, then top-right down), each a
+## hand line with its overshoot.
+static func x_strokes(r: Rect2, seed: int) -> Array[PackedVector2Array]:
+	var inset := r.size * X_INSET
+	var w := GreasePencilMark.stroke_width()
 	var a := r.position + inset
 	var b := r.end - inset
 	var c := Vector2(r.end.x - inset.x, r.position.y + inset.y)
 	var d := Vector2(r.position.x + inset.x, r.end.y - inset.y)
-	for pass_i in 2:
-		var o := Vector2(2.0, -1.5) * pass_i
-		var w := 9.0 if pass_i == 0 else 4.0
-		var cc := col if pass_i == 0 else Color(col.lightened(0.3), 0.8)
-		_stroke(ci, a + o + Vector2(-4, 3), b + o + Vector2(5, -2), w, cc)
-		_stroke(ci, c + o + Vector2(3, -4), d + o + Vector2(-3, 5), w, cc)
+	var out: Array[PackedVector2Array] = []
+	for arm: Array in [[a, b], [c, d]]:
+		var from: Vector2 = arm[0]
+		var to: Vector2 = arm[1]
+		var dir := (to - from).normalized()
+		out.append(PencilShapes.hand_path(PackedVector2Array([from - dir * w * X_OVERSHOOT, to + dir * w * X_OVERSHOOT]), seed + out.size(), w))
+	return out
 
 
-## A loose marker circle around `c` (radius `r`), not quite closed, with two drips.
-static func draw_drip_circle(ci: CanvasItem, c: Vector2, r: Vector2, col: Color) -> void:
-	for pass_i in 2:
-		var pts := PackedVector2Array()
-		var start := -0.4 + pass_i * 0.15
-		for k in 41:
-			var t := start + TAU * 1.04 * k / 40.0
-			var wob := 1.0 + 0.04 * sin(t * 3.0 + pass_i)
-			pts.append(c + Vector2(cos(t) * r.x, sin(t) * r.y) * wob + Vector2(pass_i * 2.0, -pass_i * 1.5))
-		ci.draw_polyline(pts, col if pass_i == 0 else Color(col.lightened(0.3), 0.7), 8.0 if pass_i == 0 else 3.5, true)
-	for k in 2:
-		var t := PI * (0.35 + k * 0.28)
-		var p := c + Vector2(cos(t) * r.x, sin(t) * r.y)
-		DripButton._drip(ci, p, 26.0 - k * 10.0, 8.0, col)
+## A loose loop round `c` (radii `r`): one hand loop with its overlap and tail.
+static func loop_strokes(c: Vector2, r: Vector2, seed: int) -> Array[PackedVector2Array]:
+	return [PencilShapes.hand_circle(c, r, seed)] as Array[PackedVector2Array]
 
 
-static func _stroke(ci: CanvasItem, a: Vector2, b: Vector2, w: float, col: Color) -> void:
-	var n := (b - a).orthogonal().normalized()
-	var steps := 12
-	var prev := a
-	for k in range(1, steps + 1):
-		var t := float(k) / steps
-		var p := a.lerp(b, t) + n * sin(t * PI) * 4.0
-		ci.draw_line(prev, p, col, w * (0.7 + 0.3 * sin(t * PI)), true)
-		prev = p
-	ci.draw_circle(a, w * 0.35, col)
-	ci.draw_circle(b, w * 0.45, col)
+## Shows the X over `r` on `host` (a view that draws in `_draw`), in threat red.
+static func show_x(host: CanvasItem, r: Rect2, seed: int) -> void:
+	PencilSet.show_on(host, x_strokes(r, seed), GreasePencilMark.Ink.THREAT, seed)
+
+
+## Shows the loop round `c` on `host`, in plan yellow.
+static func show_loop(host: CanvasItem, c: Vector2, r: Vector2, seed: int) -> void:
+	PencilSet.show_on(host, loop_strokes(c, r, seed), GreasePencilMark.Ink.PLAN, seed)
+
+
+## Clears `host`'s hand mark (it wipes off).
+static func clear(host: CanvasItem) -> void:
+	PencilSet.show_on(host, [], GreasePencilMark.Ink.PLAN)

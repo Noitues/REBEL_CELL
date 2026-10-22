@@ -83,9 +83,10 @@ func begin() -> void:
 
 ## A mark `key` of `strokes` (local px, in writing order) in `ink`, dashed for a what-if. With
 ## `progress` AUTO it writes itself on; else it is written to `progress` and wiped from
-## `wiped` (shares of its length) as its owner drives them.
+## `wiped` (shares of its length) as its owner drives them. `hero`: the hero weight (the aim,
+## a TARGET ring; GreasePencilMark.hero).
 func stroke(key: String, strokes: Array[PackedVector2Array], ink: GreasePencilMark.Ink, progress: float = AUTO,
-		wiped: float = 0.0, dashed: bool = false, seed: int = 1) -> GreasePencilMark:
+		wiped: float = 0.0, dashed: bool = false, seed: int = 1, hero: bool = false) -> GreasePencilMark:
 	_used[key] = true
 	var m: GreasePencilMark = _marks.get(key)
 	var driven := progress >= 0.0
@@ -98,6 +99,7 @@ func stroke(key: String, strokes: Array[PackedVector2Array], ink: GreasePencilMa
 	m.ink = ink
 	m.dashed = dashed
 	m.seed = seed
+	m.hero = hero
 	var h := 0
 	for s in strokes:
 		if s.size() > 0:
@@ -117,8 +119,8 @@ func stroke(key: String, strokes: Array[PackedVector2Array], ink: GreasePencilMa
 
 ## A hand loop `key` round `centre` (radii `radii`): one ellipse with its 20 degree tail.
 func circle(key: String, centre: Vector2, radii: Vector2, ink: GreasePencilMark.Ink, seed: int = 1,
-		progress: float = AUTO) -> GreasePencilMark:
-	return stroke(key, [PencilShapes.hand_circle(centre, radii, seed)], ink, progress, 0.0, false, seed)
+		progress: float = AUTO, hero: bool = false) -> GreasePencilMark:
+	return stroke(key, [PencilShapes.hand_circle(centre, radii, seed)], ink, progress, 0.0, false, seed, hero)
 
 
 ## A cross `key` over `rect` (two strokes, the second after the first), inset `inset` px.
@@ -131,7 +133,7 @@ func cross(key: String, rect: Rect2, ink: GreasePencilMark.Ink, inset: float = 0
 ## `tilt` radians. With `shown_to` AUTO it writes itself on; else its letters show from
 ## `shown_from` to `shown_to` (shares of the word) as its owner drives them.
 func word(key: String, text: String, centre: Vector2, step: int, ink: GreasePencilMark.Ink, k: float = 1.0,
-		shown_to: float = AUTO, shown_from: float = 0.0, tilt: float = -0.04) -> GreasePencilWord:
+		shown_to: float = AUTO, shown_from: float = 0.0, tilt: float = -0.04, hero: bool = false) -> GreasePencilWord:
 	_used[key] = true
 	var w: GreasePencilWord = _words.get(key)
 	var driven := shown_to >= 0.0
@@ -144,6 +146,7 @@ func word(key: String, text: String, centre: Vector2, step: int, ink: GreasePenc
 	if w.text != text:
 		w.text = text
 	w.ink = ink
+	w.hero = hero
 	w.text_step = step
 	w.scale = Vector2.ONE * k
 	w.rotation = tilt

@@ -4,8 +4,9 @@ extends GutTest
 ## - static: no view draws pencil as vector lines or plain text (every pencil ink or the pencil
 ##   face reaches the screen only through the material: GreasePencilMark / GreasePencilWord /
 ##   GreasePencilArt, alone or through PencilSet);
-## - the look: 9 px at 1080p (8-10), the under-shadow copy at (2, 3) in #060308 at 85 %, wax at
-##   0.96, the 1 px sheen at 35 %, the 20 degree loop tail, one screen width whatever the zoom;
+## - the look: the mark and hero widths of RcPencilLook (LOOK-TOOLBOX 12: 10 / 16 px at 1080p),
+##   the under-shadow copy at (2, 3) in #060308 at 85 %, wax at 0.96, the 1 px sheen at 35 %, the
+##   loop's overlap tail, one screen width whatever the zoom;
 ## - motion: write-on and wipe take their entries' ~0.4 s, a mark writes itself on when it
 ##   shows, MotionSkip / reduce effects / headless show the end state;
 ## - the users: each converted view's pencil is the material, and the audit's removals.
@@ -126,14 +127,17 @@ func _mark(parent: Node = null) -> GreasePencilMark:
 	return m
 
 
-func test_the_stroke_is_nine_px_at_1080p_with_its_under_shadow_copy() -> void:
+func test_the_stroke_is_the_looks_width_at_1080p_with_its_under_shadow_copy() -> void:
 	Settings.text_scale = 1.0
 	var m := _mark()
 	var line := m.wax_lines()[0]
 	var shadow := m.shadow_lines()[0]
 	var at_1080 := line.width / GreasePencilMark.BOARD_TO_CANVAS
-	assert_almost_eq(at_1080, 9.0, 0.01, "9 px at 1080p")
-	assert_between(at_1080, GreasePencilMark.WIDTH_MIN_1080, GreasePencilMark.WIDTH_MAX_1080, "in the 8-10 range")
+	assert_almost_eq(at_1080, GreasePencilMark.LOOK.mark_width_1080, 0.01, "the look's mark width at 1080p")
+	assert_between(at_1080, 8.0, 10.0, "a mark keeps the bible's 8-10 px")
+	m.hero = true
+	assert_between(line.width / GreasePencilMark.BOARD_TO_CANVAS, 14.0, 18.0, "a hero mark is 14-18 px (AUDIT pencil 2)")
+	m.hero = false
 	assert_eq(line.begin_cap_mode, Line2D.LINE_CAP_ROUND, "round caps")
 	assert_almost_eq((shadow.width - line.width) / GreasePencilMark.BOARD_TO_CANVAS, GreasePencilMark.SHADOW_GROW_1080, 0.01,
 		"the shadow is a copy of the stroke, 2 px wider so it shows as a dark rim on a light street")
@@ -165,7 +169,7 @@ func test_the_width_is_one_screen_width_whatever_the_marks_zoom_and_grows_with_t
 	assert_almost_eq(line.width * 2.5, GreasePencilMark.stroke_width(), 0.01, "the zoom is undone on the line")
 	assert_almost_eq(m.shadow_lines()[0].position * 2.5, GreasePencilMark.SHADOW_OFFSET, Vector2(0.01, 0.01), "and on the shadow")
 	Settings.text_scale = 2.0
-	assert_almost_eq(GreasePencilMark.stroke_width(), GreasePencilMark.WIDTH * VerbSticker.SCALE_MAX, 0.001, "scaled with the text as the stickers are")
+	assert_almost_eq(GreasePencilMark.stroke_width(), GreasePencilMark.base_width() * VerbSticker.SCALE_MAX, 0.001, "scaled with the text as the stickers are")
 	for s in TestScope.scales([1.0, 1.3, 1.6, 2.0]):
 		Settings.text_scale = s
 		var w := GreasePencilMark.stroke_width() / GreasePencilMark.ui_scale() / GreasePencilMark.BOARD_TO_CANVAS
@@ -188,12 +192,12 @@ func _dropouts(seed: int, length: float, gap: Vector2 = GreasePencilMark.DROPOUT
 	return out
 
 
-func test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35() -> void:
+func test_wax_dropouts_every_40_to_70_px_five_to_nine_px_long_to_alpha_0_35() -> void:
 	for seed in [1, 3, 11, 351, 9001]:
 		var drops := _dropouts(seed, 1200.0)
 		assert_gt(drops.size(), 15, "seed %d: dropouts all along the stroke" % seed)
 		for i in drops.size():
-			assert_between(float(drops[i]["length"]), 1.9, 4.1, "seed %d: a 2-4 px stretch" % seed)
+			assert_between(float(drops[i]["length"]), 4.9, 9.1, "seed %d: a 5-9 px stretch (LOOK-TOOLBOX 12)" % seed)
 			if i > 0:
 				var gap := float(drops[i]["centre"]) - float(drops[i - 1]["centre"])
 				assert_between(gap, 39.9, 70.1, "seed %d: one every 40-70 px" % seed)
@@ -223,7 +227,7 @@ func test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35() -> 
 	assert_lt(words.size(), _dropouts(7, 1200.0).size(), "words take fewer")
 	var w := GreasePencilWord.new()
 	add_child_autofree(w)
-	var wm := w.wax_node().material as ShaderMaterial
+	var wm := w.wax_mark().wax_lines()[0].material as ShaderMaterial
 	assert_eq(wm.get_shader_parameter(&"dropout_gap"), GreasePencilMark.WORD_DROPOUT_GAP, "words drop out too")
 	assert_almost_eq(float(wm.get_shader_parameter(&"dropout_alpha")), 0.35, 0.001)
 
@@ -234,7 +238,7 @@ func test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge() -> void:
 	for seed in [1, 3, 11, 351]:
 		for drop in _dropouts(seed, 1200.0):
 			var b := GreasePencilMark.dropout_bite(seed, float(drop["centre"]))
-			assert_between(float(b["bite"]), 0.4, 0.7, "a bite of 40-70 % of the width, never a full-width break")
+			assert_between(float(b["bite"]), 0.25, 0.45, "a bite of 25-45 % of the width, never a full-width break (LOOK-TOOLBOX 12)")
 			sides[int(b["side"])] = true
 			n += 1
 	assert_gt(n, 50)
@@ -299,7 +303,7 @@ func test_a_hash_seed_reaches_the_shader_folded_so_the_wax_keeps_its_grain() -> 
 	assert_eq(s, GreasePencilMark.shader_seed(m.seed), "the same fold for the shadow and the wax")
 
 
-func test_a_loops_radius_jitter_is_seeded_and_about_three_percent() -> void:
+func test_a_loops_radius_jitter_is_seeded_and_the_looks_share() -> void:
 	var lo := 1.0
 	var hi := -1.0
 	for seed in [1, 5, 7, 351, 352, 9001]:
@@ -307,9 +311,10 @@ func test_a_loops_radius_jitter_is_seeded_and_about_three_percent() -> void:
 			var j := PencilShapes.jitter(seed, i / 360.0)
 			lo = minf(lo, j)
 			hi = maxf(hi, j)
-	assert_gte(lo, -PencilShapes.JITTER - 0.0001, "never more than 3 % in")
-	assert_lte(hi, PencilShapes.JITTER + 0.0001, "never more than 3 % out")
-	assert_gt(hi - lo, PencilShapes.JITTER, "it does wobble (not a perfect circle)")
+	var share := PencilShapes.jitter_share()
+	assert_gte(lo, -share - 0.0001, "never more than the share in")
+	assert_lte(hi, share + 0.0001, "never more than the share out")
+	assert_gt(hi - lo, share, "it does wobble (not a perfect circle)")
 	assert_eq(PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7), PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7),
 		"the same seed draws the same loop")
 	assert_ne(PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7), PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 8),
@@ -329,28 +334,37 @@ func test_the_loops_start_and_end_never_meet_cleanly() -> void:
 		var b := pts[pts.size() - 1]
 		assert_gt(a.distance_to(b), r * 0.08, "%s: the tail ends well clear of where the pen landed" % k)
 		assert_gt(b.length(), a.length() * 1.06, "%s: the tail runs out past the start, the start sits inside" % k)
-		# 20 degrees past the start, the line runs outside its own start (an overrun, not a join)
+		# the overlap past the start, the line runs outside its own start (an overrun, not a join)
 		var start_ang := a.angle()
 		var end_ang := b.angle()
-		assert_almost_eq(rad_to_deg(absf(wrapf(end_ang - start_ang, -PI, PI))), 20.0, 3.0, "%s: a 20 degree tail" % k)
+		assert_almost_eq(rad_to_deg(absf(wrapf(end_ang - start_ang, -PI, PI))), GreasePencilMark.LOOK.loop_overlap_deg, 4.0,
+			"%s: the look's overlap tail" % k)
 
 
-func test_a_hand_loop_is_one_ellipse_with_a_twenty_degree_tail() -> void:
-	assert_almost_eq(PencilShapes.LOOP_TURNS, 1.0 + 20.0 / 360.0, 0.0001)
+func test_a_hand_loop_is_one_pass_with_the_looks_overlap_tail() -> void:
+	var over := GreasePencilMark.LOOK.loop_overlap_deg
+	assert_almost_eq(PencilShapes.loop_turns(), 1.0 + over / 360.0, 0.0001)
 	var pts := PencilShapes.hand_circle(Vector2.ZERO, Vector2(50, 50), 9)
 	var turned := 0.0
 	for i in range(1, pts.size()):
 		turned += absf(wrapf(pts[i].angle() - pts[i - 1].angle(), -PI, PI))
-	assert_almost_eq(rad_to_deg(turned), 380.0, 4.0, "one turn and its 20 degree tail")
+	assert_almost_eq(rad_to_deg(turned), 360.0 + over, 4.0, "one turn and its overlap tail")
 
 
-func test_a_word_is_the_wax_text_over_its_shadow_copy() -> void:
+func test_a_word_is_wax_strokes_on_the_engine_over_their_shadow() -> void:
 	var w := GreasePencilWord.new()
 	add_child_autofree(w)
-	assert_eq((w.wax_node().material as ShaderMaterial).shader, GreasePencilMark.SHADER, "the wax shader")
-	assert_eq(int((w.wax_node().material as ShaderMaterial).get_shader_parameter(&"mode")), 2, "text mode")
-	assert_eq(w.shadow_node().position, GreasePencilMark.SHADOW_OFFSET, "the shared under-shadow offset")
+	var m := w.wax_mark()
+	assert_gt(m.wax_lines().size(), 4, "LOOK-TOOLBOX 12: the letters are wax strokes (RC Wax)")
+	assert_eq((m.wax_lines()[0].material as ShaderMaterial).shader, GreasePencilMark.SHADER, "the wax shader")
+	var mode: Variant = (m.wax_lines()[0].material as ShaderMaterial).get_shader_parameter(&"mode")
+	assert_true(mode == null or int(mode) == 0, "wax mode (the default), not glyph text")
+	assert_eq(m.shadow_lines()[0].position, GreasePencilMark.SHADOW_OFFSET, "the shared under-shadow offset")
+	assert_almost_eq(m.width(), float(w.font_px()) * GreasePencilMark.LOOK.word_width_em, 0.001, "the word's wax width")
+	assert_eq(int((w.wax_node().material as ShaderMaterial).get_shader_parameter(&"mode")), 2, "a missing glyph: wax text mode")
+	assert_eq(w.shadow_node().position, GreasePencilMark.SHADOW_OFFSET, "with the shared offset")
 	assert_true(w.is_in_group(GreasePencilMark.GROUP))
+	assert_false(m.is_in_group(GreasePencilMark.GROUP), "PencilLint reads the word, not its inner mark")
 
 
 # --- Motion -----------------------------------------------------------------------------------

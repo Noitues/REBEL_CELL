@@ -4,6 +4,7 @@
 // = alpha, .y = the ring's width as a share of its radius. Additive, depth-tested.
 // Shared body of city_pool.gdshader and city_pool_xray.gdshader (the x-ray one draws through buildings).
 #include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_light.gdshaderinc"
 
 uniform int mode = 0;
 uniform float gain = 1.0;
@@ -21,7 +22,7 @@ void fragment() {
 		float w = max(v_custom.y, 0.01);
 		a = smoothstep(1.0 - w * 2.0, 1.0 - w, r) * (1.0 - smoothstep(1.0 - w * 0.4, 1.0, r));
 	} else {
-		a = pow(max(0.0, 1.0 - r), 1.6);
+		a = rcl_fall_pow(r, 1.0, 1.6);  // rc_look module 6
 	}
 	ALBEDO = COLOR.rgb * gain;
 	ALPHA = clamp(a * v_custom.x, 0.0, 1.0);

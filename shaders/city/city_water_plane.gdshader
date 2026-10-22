@@ -2,12 +2,14 @@
 // Blender plate's water (city_render.mat_water_aaa). The depth feel is the seabed's own (city_seabed.gdshader fades it
 // through the water); this sheet adds what the surface does: a Fresnel mirror of the sky (IOR 1.33, a little more at
 // grazing angles) on a broad swell plus a fine ripple, a sun glint, and by day a diffuse body from deep to shallow blue
-// whose opacity rises toward the shore (0.40 + 0.52 x shallow; `shallow` from the shore distance the seabed bake carries in
+// whose opacity rises toward the shore (0.40 + 0.12 x shallow, CityConfig.water_plane; `shallow` from the shore distance the seabed bake carries in
 // its green channel). A surf band breaks on the first shelf. Drawn after the city post (render_priority above it), so it
 // takes the grade itself; unshaded, the scene fog still lays the haze on it.
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX module 8: the sin hash and 2D value noise are rc_look's (rcl_hash12_sin / rcl_vnoise2_sin).
+#include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
 
 uniform sampler2D bed_tex : filter_linear, repeat_disable;
 uniform vec2 bed_origin = vec2(0.0);
@@ -21,33 +23,33 @@ uniform vec3 wave_w = vec3(0.8, 0.65, 0.22);
 uniform float wave_k = 0.35;
 uniform float wave_speed = 0.05;
 uniform float ior = 1.33;
-uniform float fresnel_boost = 0.35;
-uniform vec3 sky_horizon_day = vec3(0.62, 0.66, 0.70);
-uniform vec3 sky_zenith_day = vec3(0.30, 0.45, 0.65);
+uniform float fresnel_boost = 0.2;
+uniform vec3 sky_horizon_day = vec3(0.34, 0.46, 0.60);
+uniform vec3 sky_zenith_day = vec3(0.10, 0.22, 0.42);
 uniform vec3 sky_horizon_night = vec3(0.10, 0.08, 0.16);
 uniform vec3 sky_zenith_night = vec3(0.01, 0.02, 0.05);
 uniform vec3 sun_dir = vec3(0.4, 0.6, 0.3);
 uniform vec3 sun_col = vec3(1.0, 0.92, 0.80);
 uniform float glint_pow = 220.0;
 uniform float glint_gain = 0.6;
-uniform vec3 deep_day = vec3(0.022, 0.15, 0.31);
-uniform vec3 shallow_day = vec3(0.09, 0.46, 0.50);
-uniform vec3 body_emit_day = vec3(0.01, 0.07, 0.14);
+uniform vec3 deep_day = vec3(0.0, 0.05, 0.17);
+uniform vec3 shallow_day = vec3(0.05, 0.30, 0.38);
+uniform vec3 body_emit_day = vec3(0.0, 0.01, 0.025);
 uniform float body_alpha = 0.40;
-uniform float body_alpha_shallow = 0.52;
-uniform vec2 shallow_lots = vec2(20.0, 34.0);
+uniform float body_alpha_shallow = 0.12;
+uniform vec2 shallow_lots = vec2(0.5, 9.0);
 uniform float far_shore_lots = 60.0;
-uniform vec2 surf_lots = vec2(0.2, 1.6);
+uniform vec2 surf_lots = vec2(0.45, 0.8);
 uniform float surf_gain = 0.5;
 uniform vec3 surf_col = vec3(0.85, 0.93, 1.0);
-uniform float surf_period = 6.0;
+uniform float surf_period = 2.0;
 // By night the plate's sea glows teal with caustic marbling over all of it (Cycles carries the seabed's caustics through
 // the whole water column); here the sheet carries them: a dark teal body and two ridge-noise layers, brighter inshore.
 uniform vec3 night_body = vec3(0.012, 0.035, 0.065);
-uniform float night_alpha = 0.82;
-uniform vec3 marble_col = vec3(0.05, 0.20, 0.24);
+uniform float night_alpha = 0.55;
+uniform vec3 marble_col = vec3(0.09, 0.36, 0.40);
 uniform float marble_scale = 0.05;
-uniform float marble_width = 0.22;
+uniform float marble_width = 0.18;
 uniform float marble_distort = 0.9;
 uniform float marble_floor = 0.15;
 uniform float marble_shore = 0.6;
@@ -55,9 +57,9 @@ uniform float marble_shore = 0.6;
 // falls from 1 at `caustic_depth.x` BU to `caustic_deep_k` at `.y`, and the night sheet's own opacity with them
 // (`night_alpha_deep` x at depth). By day the same caustics, at `marble_day_k` of the night's, in `marble_col_day`.
 uniform vec2 caustic_depth = vec2(4.0, 90.0);
-uniform float caustic_deep_k = 0.35;
-uniform float night_alpha_deep = 0.6;
-uniform float marble_day_k = 0.0;
+uniform float caustic_deep_k = 0.12;
+uniform float night_alpha_deep = 0.4;
+uniform float marble_day_k = 0.45;
 uniform vec3 marble_col_day = vec3(0.30, 0.62, 0.66);
 // The blurred water mask's cut: below .x dry, above .y water (low, so the sheet reaches over the lot corners).
 uniform vec2 coast_cut = vec2(0.22, 0.42);
@@ -65,26 +67,16 @@ uniform float coast_blur_lots = 1.5;
 // LOOK L5 (designer 2026-10-20, "the jagged coastline is back"): a sand / foam strip just inside the smooth coast cut
 // (`beach_band`: the blurred mask's range, full at .x, gone by .y), so the shore reads as one smooth line over the lot
 // grid. `beach_k` its strength (day, night).
-uniform vec3 beach_col = vec3(0.78, 0.74, 0.62);
+uniform vec3 beach_col = vec3(0.80, 0.77, 0.66);
 uniform vec2 beach_band = vec2(0.3, 0.62);
-uniform vec2 beach_k = vec2(0.0, 0.0);
+uniform vec2 beach_k = vec2(0.75, 0.45);
 uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
 
-float h2(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float vnoise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(h2(i), h2(i + vec2(1.0, 0.0)), u.x), mix(h2(i + vec2(0.0, 1.0)), h2(i + vec2(1.0, 1.0)), u.x), u.y);
-}
 
 float fbm(vec2 p) {
-	return vnoise(p) * 0.55 + vnoise(p * 2.03 + 3.1) * 0.3 + vnoise(p * 4.1 - 1.7) * 0.15;
+	return rcl_vnoise2_sin(p) * 0.55 + rcl_vnoise2_sin(p * 2.03 + 3.1) * 0.3 + rcl_vnoise2_sin(p * 4.1 - 1.7) * 0.15;
 }
 
 // The finer layers fade out where a pixel spans more than their wavelength (Cycles averages them; here they would alias).
@@ -97,7 +89,7 @@ float height(vec2 p, float t, float px) {
 }
 
 float marble(vec2 p, float t) {
-	vec2 dq = vec2(vnoise(p + vec2(5.2, 1.3 + t)), vnoise(p + vec2(-3.1, 7.7 - t))) * 2.0 - 1.0;
+	vec2 dq = vec2(rcl_vnoise2_sin(p + vec2(5.2, 1.3 + t)), rcl_vnoise2_sin(p + vec2(-3.1, 7.7 - t))) * 2.0 - 1.0;
 	float n = fbm(p + dq * marble_distort);
 	return 1.0 - smoothstep(0.0, marble_width, abs(2.0 * n - 1.0));
 }

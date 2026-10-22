@@ -36,32 +36,15 @@ uniform float haze_max = 0.6;
 varying vec3 world_pos;
 varying vec3 face_seed;
 
-float h31(vec3 p) {
-	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-}
-
-float vn3(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(h31(i), h31(i + vec3(1, 0, 0)), u.x), mix(h31(i + vec3(0, 1, 0)), h31(i + vec3(1, 1, 0)), u.x), u.y);
-	float b = mix(mix(h31(i + vec3(0, 0, 1)), h31(i + vec3(1, 0, 1)), u.x), mix(h31(i + vec3(0, 1, 1)), h31(i + vec3(1, 1, 1)), u.x), u.y);
-	return mix(a, b, u.z);
-}
-
-float band(float x) {
-	return x > band_hi ? 1.0 : (x > band_lo ? shade_mid : shade_low);
-}
-
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	face_seed = floor(world_pos * 1.7) + NORMAL * 3.1;
 }
 
 void fragment() {
-	float j = (h31(floor(face_seed * 4.0)) - 0.5) * 2.0 * tone_jitter;
+	float j = (rcl_hash13_sin(floor(face_seed * 4.0)) - 0.5) * 2.0 * tone_jitter;
 	vec3 base = albedo.rgb * (1.0 + j) * COLOR.rgb;
-	float g = vn3(world_pos * grime_scale);
+	float g = rcl_vnoise3_sin(world_pos * grime_scale);
 	float low = 1.0 - clamp(world_pos.y / 6.0, 0.0, 1.0);
 	base *= 1.0 - grime * g * (0.5 + 0.5 * low);
 	ALBEDO = base;
@@ -78,8 +61,8 @@ void fragment() {
 
 void light() {
 	float ndl = dot(NORMAL, LIGHT) * ATTENUATION;
-	float b = band(ndl);
-	vec3 lit = mix(shadow_tint.rgb, vec3(1.0), (b - shade_low) / max(1.0 - shade_low, 0.001));
+	float b = rcl_band_shade(ndl, band_lo, band_hi, shade_mid, shade_low);
+	vec3 lit = rcl_band_tint(b, shade_low, shadow_tint.rgb);
 	// the renderer multiplies DIFFUSE_LIGHT by ALBEDO
 	DIFFUSE_LIGHT += LIGHT_COLOR * b * lit;
 }

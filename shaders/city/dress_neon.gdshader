@@ -10,6 +10,8 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never, specular_disab
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
 #include "res://shaders/city/dress_sign.gdshaderinc"
+// LOOK-TOOLBOX module 11: the flicker is rc_sign's.
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
 
 uniform int shape = 0;
 uniform float emit = 1.0;
@@ -44,13 +46,11 @@ void fragment() {
 		}
 		float t = mod(nr_clock(anim_t, anim_t_frozen), loop_s) / loop_s;
 		float k = floor(mix(bursts.x, bursts.y + 1.0, clamp(cust.x, 0.0, 0.999)));
-		float u = fract(t * k + cust.y);
-		float burst = 1.0 - smoothstep(0.0, 0.14, u);
-		float hum = 0.5 + 0.5 * sin(6.2831853 * (t * 4.0 + cust.y));
-		g = burst * (0.6 + 0.4 * hum);
+		g = rcl_flicker(t, k, cust.y, 0.14, 4.0, 0.6);
 		vec3 sc = max(lscale, vec3(0.0001));
 		vec2 p = lpos.xy * sc.xy;
-		vec2 m = sg_core(p, sc.xy, cust.x, vec2(fwidth(p.x), fwidth(p.y)));
+		vec4 cd;
+		vec2 m = sg_core(p, sc.xy, cust.x, vec2(fwidth(p.x), fwidth(p.y)), cd);
 		g *= 1.0 - step(0.5, abs(lnrm.z)) * max(m.x, m.y);
 	}
 	ALBEDO = COLOR.rgb * emit * g * cust.z * emission_multiplier * look_blend;

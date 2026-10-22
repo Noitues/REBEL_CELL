@@ -3,7 +3,7 @@ extends Control
 ## Spinner viewer (modal): the wheel drawn large, each slice a pad with its icon and
 ## value. Right-click opens a slice's detail popup (type, output, firmware, stronger
 ## same-type slices from the Mainframe catalogue). With an `action` ("UPGRADE") left click
-## selects / deselects a slot, marked with a drippy circle, and the action appears in
+## selects / deselects a slot, marked with a grease-pencil loop, and the action appears in
 ## dripping marker next to Close; pressing it emits `slot_picked(index)`. Without an
 ## action, left click opens the detail. Emits `closed`. View only.
 
@@ -12,6 +12,10 @@ signal closed
 
 ## The design canvas's bottom less a margin (px): the window never runs off it.
 const CANVAS_BOTTOM := 718.0
+## The selected slot's pencil loop: its distance from the centre, its radii (px) and seed.
+const SELECT_AT := 140.0
+const SELECT_LOOP := Vector2(62, 56)
+const SELECT_SEED := 727
 
 var slices: Array[StringName] = []
 var firmware: Array[StringName] = []
@@ -695,9 +699,12 @@ func _draw_wheel() -> void:
 	if hub == null and ring.is_empty():
 		HighContrast.draw_text(_wheel, Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
 	_draw_core(c)
+	# LOOK-TOOLBOX 12: the selected slice's loop is grease pencil on the wax engine (HandMarks)
 	if selected >= 0:
 		var am := _angle(selected)
-		HandMarks.draw_drip_circle(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, Vector2(62, 56), DripButton.DRIP_PINK)
+		HandMarks.show_loop(_wheel, c + Vector2(cos(am), sin(am)) * SELECT_AT, SELECT_LOOP, SELECT_SEED + selected)
+	else:
+		HandMarks.clear(_wheel)
 
 
 ## The slice detail popup for slot `index`.

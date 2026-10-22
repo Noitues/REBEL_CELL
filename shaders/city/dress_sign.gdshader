@@ -7,6 +7,16 @@ shader_type spatial;
 render_mode unshaded, cull_back, depth_draw_opaque, specular_disabled, fog_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/city/dress_sign.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK-TOOLBOX module 11 (designer DIRECTION_REVIEW f4678fca, b727956a): each neon tube's hot core, rcl_neon_hot. Values =
+// addons/rc_look/config/look_sign.tres "hot" (pinned by test_rc_look_sign).
+uniform float neon_hot = 0.90;
+uniform float neon_core_share = 0.35;
+uniform float neon_core_min_px = 1.00;
+uniform float neon_core_tint = 0.15;
+uniform vec3 neon_core_col = vec3(1.0);
+uniform float neon_core_thin_px = 3.00;
+uniform float neon_core_thin_hot = 0.45;
 
 uniform float emission_multiplier = 1.0;
 uniform float look_blend = 1.0;
@@ -38,7 +48,8 @@ void fragment() {
 	float front = step(0.5, abs(lnrm.z));
 	vec2 p = lpos.xy * sc.xy;
 	vec2 fw = vec2(fwidth(p.x), fwidth(p.y));
-	vec2 m = sg_core(p, sc.xy, cust.x, fw) * front;
+	vec4 cd;
+	vec2 m = sg_core(p, sc.xy, cust.x, fw, cd) * front;
 	float gain = cust.z;
 	float lp = panel_level * (1.0 - bright_var * sg_hash(vec2(3.0, 5.0), cust.x)) * gain * mix(side_dim, 1.0, front);
 	float lc = min(core_level * gain, core_max);
@@ -48,8 +59,9 @@ void fragment() {
 	if (pk > 0) {
 		sec = vec3(float((pk >> 16) & 255), float((pk >> 8) & 255), float(pk & 255)) / 255.0;
 	}
-	vec3 rgb = mix(panel, sg_at_luma(COLOR.rgb, lc), m.y);
-	rgb = mix(rgb, sg_at_luma(sec, lc), m.x);
+	float fpx = max(fw.x, fw.y);
+	vec3 rgb = mix(panel, rcl_neon_hot(sg_at_luma(COLOR.rgb, lc), cd.z, cd.w, fw.y, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot), m.y);
+	rgb = mix(rgb, rcl_neon_hot(sg_at_luma(sec, lc), cd.x, cd.y, fpx, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot), m.x);
 	ALBEDO = rgb * emission_multiplier * look_blend * tier_emit;
 	// AAA-2: opaque (so the post chain tone-maps and blooms it; a transparent draw is after the screen copy): the yield is a dither.
 	if (yw < 1.0 && fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715)))) > yw) {

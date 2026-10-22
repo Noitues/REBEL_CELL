@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="RcLookAirConfig" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_air_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_air_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="night"]
+script = ExtResource("2")
+start = 0.0
+density = 0.002
+height = 30.0
+high = 0.15
+sky_top = Color(0.306, 0.286, 0.408, 1)
+sky_horizon = Color(0.275, 0.247, 0.361, 1)
+sky_ground = Color(0.071, 0.055, 0.122, 1)
+glow_k = 4.0
+ground_k = 8.0
+
+[sub_resource type="Resource" id="day"]
+script = ExtResource("2")
+start = 0.0
+density = 0.004
+height = 30.0
+high = 0.15
+sky_top = Color(0.3, 0.45, 0.65, 1)
+sky_horizon = Color(0.62, 0.66, 0.7, 1)
+sky_ground = Color(0.4, 0.42, 0.46, 1)
+glow_k = 6.0
+ground_k = 8.0
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"day": SubResource("day"),
+&"night": SubResource("night")
+}

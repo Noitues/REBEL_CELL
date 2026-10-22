@@ -114,7 +114,7 @@ func test_the_chip_mark_hugs_the_chip_and_stays_inside_the_safe_frame() -> void:
 	var half := Vector2(70.0, 26.0)
 	var chip := Rect2(center - half, half * 2.0)
 	var frame := Rect2(Vector2.ZERO, Vector2(1920.0, 1080.0))
-	var wax := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW
+	var wax := GreasePencilMark.base_width() * 0.5 + GreasePencilMark.SHADOW_GROW
 	for seed in [1, 7, 21, 99]:
 		var strokes := NudgeLockPencil.shapes(center, half, seed, INF, true)
 		var box := NudgeLockPencil.mark_bounds(strokes)

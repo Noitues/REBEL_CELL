@@ -12,6 +12,9 @@ signal inspected
 enum Variant { PAPER, BLACK, PINK }
 ## Selection marks drawn over the card.
 enum Mark { NONE, CROSS, CIRCLE }
+## The hand mark's seed and its loop's radii (shares of the card's half size).
+const MARK_SEED := 613
+const MARK_LOOP := Vector2(0.95, 0.8)
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
 ## Mainframe's Firmware and card builder) with an icon, a name and a Cycle price.
 enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
@@ -608,11 +611,14 @@ func _draw() -> void:
 		draw_rect(box, Palette.CELL_PINK, false, 3.0)
 		HighContrast.draw_text(self, Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
 		draw_set_transform(Vector2.ZERO)
+	# LOOK-TOOLBOX 12: the hand marks are grease pencil on the wax engine (HandMarks)
 	match mark:
 		Mark.CROSS:
-			HandMarks.draw_x(self, Rect2(Vector2.ZERO, size), DripButton.DRIP_PINK)
+			HandMarks.show_x(self, Rect2(Vector2.ZERO, size), MARK_SEED)
 		Mark.CIRCLE:
-			HandMarks.draw_drip_circle(self, size * 0.5, size * 0.5 * Vector2(0.95, 0.8), DripButton.DRIP_PINK)
+			HandMarks.show_loop(self, size * 0.5, size * 0.5 * MARK_LOOP, MARK_SEED)
+		_:
+			HandMarks.clear(self)
 
 
 ## ART-2 2C (ART_BIBLE v2 §3.18, round 19 card_play_v2): the C-C sticker card's drawn parts round the

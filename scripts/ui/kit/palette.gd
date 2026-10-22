@@ -132,6 +132,9 @@ const PENCIL_THREAT := Color("#FF1C2C")
 ## hue). One token: art-pass retunes it.
 const THREAT_ROUTE := Color("#3D6BFF")
 const PENCIL_SHADOW := Color(6.0 / 255.0, 3.0 / 255.0, 8.0 / 255.0, 0.85)
+## The netrun's plan pencil is orange (DIRECTION_REVIEW 2026-10-15 "netrun entry flow"; art-pass ruling 2026-10-21):
+## the run orange. Yellow PENCIL_PLAN everywhere else.
+const PENCIL_PLAN_NETRUN := Color("#FF8C1A")
 ## The world Heat tint on maps (§2.2, §2.8).
 const HEAT_B := Color("#CE5412")
 ## Netrun rings (§2.2; Appendix C #22: the run orange until the designer says otherwise).
@@ -218,6 +221,7 @@ const PAIRED_WITH := {
 	&"PENCIL_PLAN": "solid vs dashed stroke and the written word",
 	&"PENCIL_THREAT": "solid vs dashed stroke and the written word",
 	&"THREAT_ROUTE": "the arrowhead, the entry letter and the xN count tick",
+	&"PENCIL_PLAN_NETRUN": "solid vs dashed stroke and the written word (the netrun plan)",
 	&"RING_AVAILABLE": "the ring's state glyph and word",
 	&"RING_UNAVAILABLE": "the ring's state glyph and word",
 	&"RING_CUT": "the cut mark and the word CUT",
@@ -236,9 +240,12 @@ const PAIRED_WITH := {
 	&"STICKER_COMMIT": "the verb word (SEND IT, BURN IT)",
 }
 
-## ART_BIBLE v2 §2.9 grease pencil face: Permanent Marker, rendered as wax, for plans and
-## threats only (never UI chrome, body text or numbers).
-const FONT_PENCIL := "res://assets/fonts/PermanentMarker-Regular.ttf"
+## ART_BIBLE v2 §2.9 grease pencil face, rendered as wax, for plans and threats only (never UI
+## chrome, body text or numbers). LOOK-TOOLBOX 12 (designer: a new face allowed): RC Wax, the
+## pencil's own face, built with its stroke twin by addons/rc_look/tools/build_wax_font.py.
+const FONT_PENCIL := "res://assets/fonts/RcWax-Regular.ttf"
+## The one handwriting face that is not wax (the auditor's ballpoint, EndFaces): Permanent Marker.
+const FONT_HAND := "res://assets/fonts/PermanentMarker-Regular.ttf"
 
 # --- ART-1 1B material kit (ART_BIBLE v2 §1.2; round 3 combined_v2 kit palette; the pencil
 # inks and the die-cut white are 1A's PENCIL_PLAN / PENCIL_THREAT / PENCIL_SHADOW / STICKER_DIE_CUT)
@@ -280,7 +287,7 @@ const FONT_BODY_MEDIUM := "res://assets/fonts/IBMPlexSansCondensed-Medium.ttf"
 const FONT_PAPER := "res://assets/fonts/CourierPrime-Regular.ttf"
 const FONT_PAPER_BOLD := "res://assets/fonts/CourierPrime-Bold.ttf"
 ## Every face the game ships.
-const FONT_FACES: Array[String] = [FONT_PENCIL, FONT_DISPLAY, FONT_MONO, FONT_BODY, FONT_BODY_MEDIUM, FONT_PAPER, FONT_PAPER_BOLD]
+const FONT_FACES: Array[String] = [FONT_PENCIL, FONT_HAND, FONT_DISPLAY, FONT_MONO, FONT_BODY, FONT_BODY_MEDIUM, FONT_PAPER, FONT_PAPER_BOLD]
 ## The MSDF switch every face's tracked `.import` file carries (ART_BIBLE §2.9: every face
 ## imports as MSDF). On since ART-1 1A (with the layouts it moved: whole lines are measured
 ## with `UiTheme.line_px`, MSDF heights are fractional).
@@ -519,9 +526,14 @@ static func marker() -> Font:
 	return font(FONT_DISPLAY)
 
 
-## The grease pencil face (§2.9): Permanent Marker, for plans and threats drawn as wax.
+## The grease pencil face (§2.9): RC Wax, for plans and threats drawn as wax.
 static func pencil() -> Font:
 	return font(FONT_PENCIL)
+
+
+## The ballpoint hand (Permanent Marker): handwriting that is not grease pencil.
+static func hand() -> Font:
+	return font(FONT_HAND)
 
 
 ## The corp paper face (§2.9): Courier Prime Regular, typewriter fields.

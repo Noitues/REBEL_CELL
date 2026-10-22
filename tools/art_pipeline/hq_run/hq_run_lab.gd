@@ -12,7 +12,11 @@ extends Control
 ##     res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_meridian,gate_solace
 ##     [--tier=1] [--settle=30] [--perf=60] [--raw=160x90 (S-ARENA: also <state>_raw.png, the
 ##     backdrop city's own render before its grade, at that size)] [--scale=2.0 (S-HQRUN: the
-##     text size)]
+##     text size)] [--reduce-effects=1 (LOOK-TOOLBOX: frozen shader time and the static look, so two
+##     captures of the same code match for a before / after; not saved, restored at quit)]
+##     [--try=spill,air (LOOK-TOOLBOX lab only, pov / pod: the helix as a toon spill source, Solace green, at
+##     --spill-y=<BU over the plinth> with radius --spill-r=<x city_sol_plinth_r_bu> and --spill-i=<intensity>; the
+##     rc_look air pass, night preset, with --air-density / -start / -height / -high / -extinct overrides)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -28,6 +32,9 @@ var _perf: Array[float] = []
 var _frame_ms: Array[float] = []
 var _ready_at: int = -1
 var _scale_was: float = -1.0
+var _reduce_was: int = -1
+## LOOK-TOOLBOX lab only (--try=spill): the spill sources set on the city every frame.
+var _try_spill: Array = []
 ## B4: the HQ-run page on show (its landmark share is printed).
 var _view: HqRunView = null
 
@@ -40,6 +47,10 @@ func _ready() -> void:
 	_states = PackedStringArray(String(_args.get("states", "run_meridian")).split(","))
 	if _args.has("tier"):
 		Settings.city_quality = int(_args["tier"])
+	if _args.has("reduce-effects"):
+		_reduce_was = int(Settings.reduce_effects)
+		Settings.reduce_effects = _args["reduce-effects"] == "1"
+		RenderingServer.global_shader_parameter_set(Fx.REDUCE_GLOBAL, 1.0 if Settings.reduce_effects else 0.0)
 	if _args.has("scale"):
 		# Parity S-HQRUN: the pages and the gate at a text size (1.0 / 1.6 / 2.0); restored at quit.
 		_scale_was = Settings.text_scale
@@ -57,7 +68,9 @@ func _corp_of(state: String) -> StringName:
 
 
 
-func _session(corp: StringName) -> NetrunSession:
+## LOOK-TOOLBOX: every state starts the same campaign (seed 11, `corp`), so the city (CityPlan.current_seed) is the
+## same whatever ran before in this launch or what the lab's save slot last held.
+func _campaign(corp: StringName) -> void:
 	RunManager.save_slot = "lab_hq_run"
 	# Parity S-HQRUN: every corporation's own campaign (its boss on the gate), not the locked
 	# corporations' fallback to Solace: the lab's profile (its own APPDATA) holds the unlock.
@@ -68,6 +81,10 @@ func _session(corp: StringName) -> NetrunSession:
 	RunManager.new_campaign(11, corp)
 	if added:
 		RunManager.profile.unlocks.erase(u.id)
+
+
+func _session(corp: StringName) -> NetrunSession:
+	_campaign(corp)
 	var c := RunManager.campaign
 	for e in [RC.ExploitType.INTEL, RC.ExploitType.BREACH, RC.ExploitType.VIRUS]:
 		if not c.exploits.has(e):
@@ -149,11 +166,15 @@ func _load(state: String) -> void:
 			tr.texture = c.get_texture()
 			_host.add_child(tr)
 			_city = c
+			_try_look(c, at.origin)
 		"hq", "site", "won":
+			_campaign(corp)
 			_backdrop = CombatBackdrop.new()
 			_host.add_child(_backdrop)
 			var cd := RunManager.lookup().get_content(corp) as CorporationData
-			var site: StringName = &""
+			# LOOK-TOOLBOX: the Site that carries the corp's Site landmark when there is one (the statue, dishes,
+			# SOLACE GENERAL), else the first T1 Site.
+			var site: StringName = CityLandmarks.site_of(CityView3D.CONFIG, corp) if kind != "hq" else &""
 			for sd in cd.city_grid.sites:
 				if sd != null and sd.tier == 1 and site == &"":
 					site = sd.id
@@ -161,8 +182,28 @@ func _load(state: String) -> void:
 			_city = _backdrop.city
 
 
+## LOOK-TOOLBOX lab only: the --try looks on a plate view (see the header).
+func _try_look(c: CityView3D, at: Vector3) -> void:
+	var tries := String(_args.get("try", "")).split(",", false)
+	if tries.has("spill"):
+		var camp := load("res://content/config/campaign_config.tres") as CampaignConfigData
+		var r := camp.city_sol_plinth_r_bu * float(_args.get("spill-r", "1.0"))
+		_try_spill = [{"position": at + Vector3(0.0, float(_args.get("spill-y", "20.0")), 0.0), "radius": r,
+			"color": Palette.CORP_SOLACE, "intensity": float(_args.get("spill-i", "1.0"))}]
+	if tries.has("air"):
+		var o := {}
+		if _args.has("air-density"):
+			o["density"] = float(_args["air-density"])
+		for k: String in ["start", "height", "high", "extinct"]:
+			if _args.has("air-" + k):
+				o[k] = float(_args["air-" + k])
+		c.add_child(RcLookAir.pass_node(RcLookAir.preset(&"night"), at.y, o))
+
+
 func _process(delta: float) -> void:
 	_frame += 1
+	if not _try_spill.is_empty() and _city != null:
+		_city.set_spill(_try_spill)
 	if _city == null and _backdrop != null:
 		_city = _backdrop.city
 	var ready := _city == null or (_city.model != null and not _city.is_processing())
@@ -188,6 +229,9 @@ func _process(delta: float) -> void:
 	var out :=String(_args.get("out", "user://hq_run_lab"))
 	DirAccess.make_dir_recursive_absolute(out)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, state])
+	if _args.has("dump-materials"):
+		# LOOK-TOOLBOX: every set shader parameter vs its text default (true-defaults passes).
+		RcLookMaterialAudit.dump(get_tree().root, String(_args["dump-materials"]))
 	if _args.has("raw") and _backdrop != null and _backdrop.on_city():
 		# S-ARENA: the close-up's own render before the backdrop's grade (test fixtures).
 		var raw := _backdrop.city.get_texture().get_image()
@@ -202,6 +246,8 @@ func _process(delta: float) -> void:
 	_step += 1
 	if _step >= _states.size():
 		RunManager.delete_save()
+		if _reduce_was >= 0:
+			Settings.reduce_effects = _reduce_was == 1
 		if _scale_was > 0.0:
 			Settings.text_scale = _scale_was
 		get_tree().quit()

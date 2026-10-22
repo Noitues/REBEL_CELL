@@ -16,6 +16,10 @@ extends Control
 ##   --plate_dir=<dir>    parity harness (tools/netrun_art/parity_sheet.py): the camera of the overview / decision shot is replaced
 ##                        by the plate's pose in <dir>/street_<state>_capture.json: our focus and yaw (street frame) with the plate's
 ##                        pitch, dist, lens and shift; --plate_abs=1 uses the plate's world pose as is (Blender world, not this city)
+##   --reduce-effects=1   LOOK-TOOLBOX: frozen shader time and the static look (refactor proofs: two captures of the
+##                        same code match to the pixel); the lab's own settings file, so the player's is untouched
+##   --dump-materials=<file>  LOOK-TOOLBOX: append every set shader parameter vs its text default at each shot
+##                        (RcLookMaterialAudit)
 ## Prints NA23 lines.
 
 const SETTLE_DEFAULT := 90
@@ -49,6 +53,10 @@ func _ready() -> void:
 			for i in range(2, parts.size() - 1):
 				node = (node as Dictionary)[parts[i]]
 			(node as Dictionary)[parts[parts.size() - 1]] = JSON.parse_string(String(_args[k]))
+	if _args.has("reduce-effects"):
+		Settings.path = "user://na23_lab_settings.json"
+		Settings.reduce_effects = _args["reduce-effects"] == "1"
+		RenderingServer.global_shader_parameter_set(Fx.REDUCE_GLOBAL, 1.0 if Settings.reduce_effects else 0.0)
 	var wh := String(_args.get("size", "1920x1080")).split("x")
 	DisplayServer.window_set_size(Vector2i(int(wh[0]), int(wh[1])))
 	get_window().size = Vector2i(int(wh[0]), int(wh[1]))
@@ -224,6 +232,8 @@ func _shoot() -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	var rig := view.rig
 	get_viewport().get_texture().get_image().save_png("%s/ui.png" % dir)
+	if _args.has("dump-materials"):
+		RcLookMaterialAudit.dump(get_tree().root, String(_args["dump-materials"]))
 	# NA-ID: beauty.png, id.png, depth.png and capture.json come from the general id capture (the same contract as HQ / city frames).
 	var meta := {"kind": "street", "view": "hover" if _states[_i] == "hover" else _states[_i], "look": "aaa2", "look_blend": 1.0, "corp": "",
 		"run": String(_data.derive["run"]), "camera": rig.pose.to_json(), "exempt": {"hover_cut": _states[_i] == "hover", "red_seq": false, "flash": false}}

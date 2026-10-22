@@ -124,6 +124,29 @@ extends Resource
 ## LOOK L5: at the whole-city night each territory reads in its corporation's colour (the plate's districts): the lit
 ## windows pulled this far toward it, and the facades lit faintly in it.
 @export var whole_terr_win_k: float = 0.85
+## LOOK Solace HQ (designer 2026-10-21: the city round the helix read flat and pink): over the whole-city look, the aaa2 HQ page's city is
+## darker facades with warm and cool lit windows, less of the territory's pink on windows and roofs, and a cool haze with depth.
+@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 3.4, "win_share": 0.55, "pbr_spec_k": 0.15}
+## The aaa2 page: the Solace kit bodies' albedo factor (dark bodies carrying lit stripes), the road glow's factor, the helix' extra glow.
+@export var hq_page_kit_dark: float = 0.1
+@export var hq_page_road_glow_k: float = 0.2
+@export var hq_page_lane_k: float = 0.06
+## Solace HQ page: the kit bands' and the park's lit lines' emission factors (the near plinth rings and setback bands), the lawn's albedo factor.
+@export var hq_page_kit_band_k: float = 0.25
+@export var hq_page_park_lit_k: float = 0.4
+@export var hq_page_lawn_k: float = 0.6
+## The helix' soft green pool (plate hq_solace_overview): colour x gain on the plinth (radius = this share of the plinth radius) and on the nearest
+## facades (radius BU, centred at this height BU over the compound's origin).
+@export var hq_page_pool_color: Color = Color(0.35, 1.0, 0.25)
+@export var hq_page_pool_plinth: Vector2 = Vector2(0.25, 1.1)
+@export var hq_page_pool_facade: Vector3 = Vector3(0.12, 30.0, 40.0)
+@export var hq_page_ramp: Array[Color] = [Color(0.025, 0.025, 0.035), Color(0.05, 0.05, 0.07), Color(0.09, 0.09, 0.12)]
+## The six concrete families of the HQ page's buildings (the plates' charcoal facades, warm and cool).
+@export var hq_page_concrete: Array[Color] = [Color(0.035, 0.035, 0.04), Color(0.045, 0.042, 0.04), Color(0.03, 0.034, 0.042), Color(0.04, 0.04, 0.045),
+	Color(0.028, 0.03, 0.035), Color(0.05, 0.046, 0.042)]
+@export var hq_page_building_colors: Dictionary = {"haze_col": Color(0.05, 0.07, 0.1)}
+@export var hq_page_window_colors: Array[Color] = [Color(1.0, 0.78, 0.45), Color(1.0, 0.86, 0.6), Color(0.72, 0.86, 1.0), Color(1.0, 0.72, 0.4),
+	Color(0.8, 0.9, 1.0), Color(1.0, 0.92, 0.72)]
 @export var whole_terr_albedo_k: float = 0.3
 @export var whole_terr_wall_emit: float = 0.012
 ## LOOK L5: the values whole_building restores for keys the shipped building block lacks.
@@ -219,7 +242,12 @@ extends Resource
 @export var backdrop_site_ortho: float = 60.0
 @export var backdrop_site_lift: float = 8.0
 ## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
-@export var backdrop_canyon_share: float = 0.7
+@export var backdrop_canyon_share: float = 1.0
+## LOOK-TOOLBOX (art-pass 2026-10-21): the Cell canyon backdrop's pitch (the run page's is 19): an eye-level street
+## tipped down until the canyon walls reach the frame's top (no sky band).
+@export var backdrop_canyon_pitch_deg: float = 32.0
+## LOOK-TOOLBOX (art-pass 2026-10-21): the close-up hides the whole-city dressing (port cranes, ships, helicopters).
+@export var backdrop_hide_dress: bool = true
 ## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
 ## width, round the target's point.
 @export var backdrop_keep_radius: float = 0.16
@@ -227,7 +255,7 @@ extends Resource
 ## (the concept stills' blue-grey rainy city, not the Grid's dark night grade), applied once
 ## through CityView3D.set_night_share (night share 0 = this look in full; rain and fog kept,
 ## the landmarks' look per focus below). Keys as CityViewMotion.day_look.
-@export var backdrop_ramp: Array[Color] = [Color(0.30, 0.33, 0.46), Color(0.50, 0.54, 0.66), Color(0.72, 0.75, 0.84)]
+@export var backdrop_ramp: Array[Color] = [Color(0.34, 0.25, 0.38), Color(0.56, 0.43, 0.58), Color(0.92, 0.80, 0.88)]
 @export var backdrop_sky: Color = Color(0.17, 0.16, 0.27)
 @export var backdrop_window_gain: float = 1.4
 @export var backdrop_neon_gain: float = 1.2
@@ -240,14 +268,19 @@ extends Resource
 @export var backdrop_hq_landmarks_night: bool = false
 @export var backdrop_site_landmarks_night: bool = true
 ## The canvas grade over the close-up (combat_backdrop.gdshader `city_exposure` / `city_tint`,
-## city only; the stills are the concept already): each pixel's value V (its brightest
-## channel) goes to 1 - (1 - V) ^ exposure, hue kept (no neon clips to white),
-## then times the tint (the concept's cool blue-grey).
-@export var backdrop_exposure: float = 5.0
+## city only; the stills are the concept already): the sRGB close-up decoded to linear, times this exposure,
+## encoded back to sRGB (1 = identity), then times the tint (LOOK-TOOLBOX 2026-10-21; was 1 - (1 - V)^5).
+@export var backdrop_exposure: float = 8.0
+## The grade's highlight shoulder: the exposed linear light that lands on white (extended Reinhard; 0: a plain
+## clip). Keeps snow, cloud and lit roofs from blowing out at the close-up's exposure (LOOK-TOOLBOX 2026-10-21).
+@export var backdrop_white: float = 3.0
+## LOOK-TOOLBOX (2026-10-21): a Site fight's close-up exposure is backdrop_exposure times this: at the 30 degree pitch
+## its wider frame of dark tower faces sits under the concept band where the HQ shots do not.
+@export var backdrop_site_exposure_gain: float = 3.0
 @export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
 ## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
 ## concept band without a little more light).
-@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14)}
+@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14), &"meridian": Color(1.2, 1.2, 1.22), &"orbital": Color(1.08, 1.08, 1.1)}
 ## ... and its saturation toward the grey (1 = kept). B2 (art director): 1: the 0.6 cap is the wheel
 ## pools' only (UiScrimPools); between the wheels the subject and its neon keep full saturation.
 @export var backdrop_saturation: float = 1.0
@@ -280,20 +313,23 @@ extends Resource
 @export var backdrop_site_frame: Rect2 = Rect2(0.33, 0.24, 0.34, 0.56)
 @export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
 ## B2 (integration review D1, designer 2026-10-06: "a perspective close-up for every fight"): the
-## close-ups' camera is a perspective view backdrop_close_pitch_deg above the street (D1: 6 to 10),
+## close-ups' camera is a perspective view backdrop_close_pitch_deg down (designer 2026-10-21: 30 to 40, into the lit canyon of r11 / r26; supersedes D1's 6 to 10 for backdrops),
 ## looking at the facade, its horizontal field of view backdrop_close_fov_deg (D1: a 35 to 50 mm
 ## lens on a 36 mm frame = 54 to 40 degrees; 44 is a 44 mm lens), the canyon's `fov_deg` path
 ## (HQRUN-08). It replaces backdrop_hq_pitch_deg 24 / backdrop_site_pitch_deg 22 (the iso
 ## look). Depth haze past the subject toward the night sky (backdrop_sky) at backdrop_haze_k
 ## (D1: 15 to 20 %).
-@export var backdrop_close_pitch_deg: float = 8.0
+@export var backdrop_close_pitch_deg: float = 30.0
 @export var backdrop_close_fov_deg: float = 44.0
 @export var backdrop_haze_k: float = 0.18
 ## B2 (art director): the close-up's rain: thin streaks at this strength that never lift the blacks.
 @export var backdrop_rain_alpha: float = 0.15
 ## B2 (D1): the low camera's view cut (BackdropCatalog.view_cut): buildings nearer the eye than the subject's near face
 ## less this margin (BU), in the wedge to its sides widened by it, give way where they rise over the sight line.
-@export var backdrop_close_cut_margin: float = 6.0
+@export var backdrop_close_cut_margin: float = 14.0
+## LOOK-TOOLBOX (designer 2026-10-21): the view cut also clears every building nearer than the subject whose screen box
+## overlaps the subject's grown by this (px).
+@export var backdrop_close_cut_screen_pad: float = 24.0
 ## B2 (D1): the cut keeps the sight line from the eye to this share of the subject's height clear
 ## (0, B2 art director: its foot: an open street in front of the subject; lower roofs stay).
 @export var backdrop_close_sight_share: float = 0.0
@@ -302,22 +338,35 @@ extends Resource
 ## B2 (art director): a Site fight's subject building between the wheels: its middle at this
 ## share of the view, its height this share of the view's (35-45 %), its width at most this share.
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
-@export var backdrop_site_close_height: float = 0.4
+@export var backdrop_site_close_height: float = 0.55
 @export var backdrop_site_close_max_width: float = 0.6
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
-@export var backdrop_site_close_min_eye_bu: float = 180.0
+@export var backdrop_site_close_min_eye_bu: float = 60.0
 @export var backdrop_site_close_min_fov_deg: float = 10.0
 ## ... and its focus: the city outside the block dims by this share, the ellipse (the block's
 ## shape) reaching this times its half width, the block lit by this factor.
 @export var backdrop_site_focus_dim: float = 0.45
 @export var backdrop_site_focus_reach: float = 1.2
-@export var backdrop_site_focus_lift: float = 1.5
+@export var backdrop_site_focus_lift: float = 1.8
 ## B2 b (art director): the Site block lit by its own neon instead of backdrop_site_focus_lift (kept
 ## for the stills): its windows x this, a rim of the corp colour at this strength on its edges, the
 ## street in front catching it at this strength.
 @export var backdrop_site_window_gain: float = 2.0
-@export var backdrop_site_rim_gain: float = 0.9
-@export var backdrop_site_street_gain: float = 0.5
+@export var backdrop_site_rim_gain: float = 0.35
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): the Site's building is the brightest thing in frame: the
+## close-up inside its focus ellipse times this (combat_backdrop.gdshader `subject_base`; was 0.72, a dim).
+@export var backdrop_site_subject_lift: float = 1.35
+## LOOK-TOOLBOX (ART_BIBLE 3.14): the city behind each wheel (the wheel pools) dims by this share, so the blocks
+## there read low, dark and sparsely lit (shader `pool_dim`).
+@export var backdrop_pool_dim: float = 0.5
+## LOOK-TOOLBOX (art-pass 2026-10-21): outside the subject's focus ellipse, sRGB luma over this cap is squeezed
+## (shader `away_cap`; 1: off), so snow, cloud or a lit roof never outshine the subject. HQ shots only (a Site frame is
+## mostly "away": the cap would flatten its lit faces).
+@export var backdrop_away_cap: float = 0.45
+## LOOK-TOOLBOX (art-pass 2026-10-21): the CITY-A2 feature parts the close-up hides (CombatBackdrop.hide_features):
+## the raised road decks read as a brown band across the wheels' gap.
+@export var backdrop_hide_features: PackedStringArray = PackedStringArray(["Roads", "RoadGlow", "Ramps", "Pillars"])
+@export var backdrop_site_street_gain: float = 1.2
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
 ## landmark is a block of backdrop_site_hq_height over its HQ lots.
@@ -350,7 +399,16 @@ extends Resource
 ## The close-up renders at most this many px tall (0: the view's own size) and is drawn scaled
 ## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
 ## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
-@export var backdrop_render_height: int = 640
+@export var backdrop_render_height: int = 0
+## LOOK-TOOLBOX (2026-10-21): the close-up's own city_post uniforms (uniform -> value), set on the backdrop's view
+## only (CityView3D.post_material) after its look, so the whole-city and map looks never move. The concept's
+## (r11 / r26 combat) ink: one clean line on silhouettes and strong creases, no wobble doubling, no grime blots.
+## LOOK-TOOLBOX (2026-10-21): the close-up's key light comes from this direction in the camera's own frame (x right,
+## y up, z toward the viewer): from the upper left, a little in front, as the concepts light their facades (r11 / r26
+## combat). The city's world sun (to_light) lit whatever faces it met at each close-up's yaw, often only the backs.
+@export var backdrop_key_cam: Vector3 = Vector3(-0.55, 0.6, 0.55)
+@export var backdrop_post: Dictionary = {"ink_wobble_px": 0.0, "ink_normal_edge": 0.8, "ink_depth_edge": 3.0,
+	"ink_alpha": 0.9, "ink_width": 1.0, "grime": 0.0}
 ## plan1 1B-COMBAT F10 (one backdrop per fight): how long (s) a fight's backdrop waits on its
 ## night sky for the close-up; a close-up not ready by then is dropped and the still shows for
 ## the rest of the fight (the still is never swapped for the close-up mid-fight).
@@ -899,7 +957,8 @@ extends Resource
 @export var seabed_water: Dictionary = {"sigma": Color(0.090, 0.034, 0.016), "inscatter": Color(0.003, 0.018, 0.055),
 	"inscatter_gain": 2.0, "inscatter_day_gain": 5.0, "caustic_day_k": 0.25, "path_cap": 600.0, "caustic_k": 0.6, "caustic_scale": 0.05, "caustic_width": 0.22,
 	"caustic_distort": 0.9, "caustic_floor": 0.12, "caustic_patch": 0.05, "caustic_patch_scale": 0.025,
-	"caustic_depth_bu": 70.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14}
+	"caustic_depth_bu": 70.0, "caustic_col": Color(0.22, 0.72, 0.78), "caustic_speed": 0.02, "band_soft": 0.14,
+	"land_night_lift": 0.45}
 ## The water plane (city_water_plane.gdshader) draws after the city post (-100), before the beams (10).
 @export var water_plane_priority: int = -50
 ## The drowned quarter at the whole pose: water this deep over its ground in the plane's bake, and at least this far
@@ -962,9 +1021,9 @@ extends Resource
 @export var solace_plinth: bool = false
 ## Prisms under this height (BU) keep the ordinary family mesh (a kit needs room for its cap).
 @export var solace_kit_min_h: float = 4.0
-## Bundle seeds sit on a triangular lattice of this spacing (lots; about 4-5 Solace lots a bundle), each jittered by
+## Bundle seeds sit on a triangular lattice of this spacing (lots; 15 for the layout's 12-18 BU blocks: 3-8 blocks a bundle), each jittered by
 ## `solace_bundle_jitter` of the spacing; the lattice is 3-coloured, so touching bundles always differ.
-@export var solace_bundle_pitch: float = 3.3
+@export var solace_bundle_pitch: float = 15.0
 @export var solace_bundle_jitter: float = 0.18
 ## Salt of the layout-seed hash that places the lattice, permutes the kits and picks a lot's variant.
 @export var solace_kit_salt: int = 4711
@@ -981,12 +1040,12 @@ extends Resource
 @export var solace_a_mast: Vector3 = Vector3(0.9, 0.025, 0.07)
 ## B: core radius, share of the height the core reaches, cells (min, max), cell radius range, nucleus share of the cell radius,
 ## the share of the cells with a nucleus and the angular size (cos) of the nucleus patch.
-@export var solace_b_core_r: float = 0.11
+@export var solace_b_core_r: float = 0.13
 @export var solace_b_core_share: float = 0.92
 @export var solace_b_cells: Vector2i = Vector2i(5, 8)
-@export var solace_b_cell_r: Vector2 = Vector2(0.2, 0.31)
-@export var solace_b_nucleus_share: float = 0.5
-@export var solace_b_patch_cos: float = 0.55
+@export var solace_b_cell_r: Vector2 = Vector2(0.11, 0.17)
+@export var solace_b_nucleus_share: float = 0.3
+@export var solace_b_patch_cos: float = 0.8
 ## C: tier half widths (the lot's shorter side), tier tops (share of the height), setback slab thickness, crown slab count,
 ## slab thickness, twist per slab (degrees) and shrink per slab.
 @export var solace_c_tiers: PackedFloat32Array = PackedFloat32Array([0.46, 0.38, 0.30])
@@ -1005,7 +1064,7 @@ extends Resource
 @export var solace_terrace: Color = Color(0.20, 0.42, 0.22)
 ## Ribbon bands on the capsule and core (BU pitch, lit share of the pitch, share of bands in pink, share left dark) and the
 ## clinic's green glass bands (pitch, glass share).
-@export var solace_band: Vector4 = Vector4(1.7, 0.38, 0.16, 0.12)
+@export var solace_band: Vector4 = Vector4(1.7, 0.30, 0.16, 0.12)
 @export var solace_clinic_band: Vector2 = Vector2(2.2, 0.34)
 ## Emission at night and by day (the day look blends by night share), and the share of it the glass spheres, the nuclei and the
 ## clinic's green bands carry.
@@ -1015,6 +1074,29 @@ extends Resource
 @export var solace_clinic_emit: float = 0.6
 ## The faint light the clinic's porcelain carries (share of its colour at full emission): it reads against the dark city.
 @export var solace_porcelain_glow: float = 0.12
+
+## LOOK Solace park (CitySolaceParkKit, from the layout's `solace_park`): the switch, the lift over the ground (BU), the lawn's two tones, the
+## gravel, lane, water and stone colours, the lit line's width (BU), the plinth's top (BU: the helix compound stands 2 BU above its origin), its
+## tier radius ratios, the pink / lime ring ratios on the top and the stair flight's (half width, foot) ratios of the plinth radius.
+@export var solace_park_draw: bool = true
+@export var solace_park_lift: float = 0.06
+@export var solace_park_lawn_a: Color = Color(0.10, 0.34, 0.13)
+@export var solace_park_lawn_b: Color = Color(0.15, 0.44, 0.17)
+@export var solace_park_gravel: Color = Color(0.46, 0.50, 0.40)
+@export var solace_park_lane: Color = Color(0.10, 0.09, 0.16)
+@export var solace_park_water: Color = Color(0.10, 0.34, 0.46)
+@export var solace_park_stone: Color = Color(0.22, 0.25, 0.24)
+@export var solace_park_line_w: float = 0.7
+## The park's dressing (concept r5): the share of park lots with a feature (a glass dome or a petri plaza), the dome share of those,
+## the dome / plaza radius (BU) and the share of the park lots that carry tree clumps (CityParkKit).
+@export var solace_park_features: Vector2 = Vector2(0.22, 0.6)
+@export var solace_park_feature_r: Vector2 = Vector2(1.7, 2.6)
+@export var solace_park_tree_share: float = 0.95
+@export var solace_park_tree_colors: Array[Color] = [Color(0.12, 0.40, 0.16), Color(0.17, 0.48, 0.19), Color(0.10, 0.34, 0.18)]
+@export var solace_plinth_top: float = 2.0
+@export var solace_plinth_tiers: PackedFloat32Array = PackedFloat32Array([1.0, 0.843, 0.686])
+@export var solace_plinth_rings: Vector2 = Vector2(0.486, 0.343)
+@export var solace_plinth_stair: Vector2 = Vector2(0.1486, 1.0286)
 
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
