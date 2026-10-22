@@ -59,7 +59,7 @@ func _run(rb: Dictionary) -> void:
 	for i in int(rb["n_ground"]):  # on the walk / road, from just behind the front out ahead of it
 		var x0 := fx + _uni(-1.0, 6.0)
 		var y0 := _uni(float(rb["y0"]), float(rb["y1"]))
-		_walk(Vector3(x0, y0, float(rb["z_ground"])), _gauss(0.0, 0.25), _uni(6.0, float(rb["reach"])), 0, false)
+		_walk(Vector3(x0, y0, float(rb["z_ground"])), _gauss(0.0, 0.25), _uni(float(rb["len_min"]), float(rb["reach"])), 0, false)
 	for i in int(rb["n_facade"]):  # up the facade face, rooted at the kerb
 		var x0 := fx + _uni(-2.0, 8.0)
 		_walk(Vector3(x0, float(rb["facade_y"]), 0.3), _gauss(0.5, 0.3), _uni(2.0, float(rb["facade_h"])), 0, true)

@@ -10,11 +10,11 @@ const SKIN_SHADERS: Array[String] = ["res://shaders/city/city_building.gdshader"
 
 
 ## A small street derive: the street runs from (100, 0) to (0, 0) (along -x), the rooms stand on the +y side, three layers 12 BU apart.
-func _derive() -> Dictionary:
+func _derive(spacing: float = 12.0) -> Dictionary:
 	var rooms := {}
 	var cols: Array = []
 	for l in [1, 2, 3]:
-		var x1 := 100.0 - 12.0 * float(l)
+		var x1 := 100.0 - spacing * float(l)
 		var x0 := x1 - 6.0
 		rooms["L%dN0" % l] = {"layer": l, "kind": "router",
 			"front": [[x0, 3.0, 0.12], [x1, 3.0, 0.12], [x1, 3.0, 3.68], [x0, 3.0, 3.68]],
@@ -22,6 +22,19 @@ func _derive() -> Dictionary:
 		cols.append({"layer": l, "u0": 100.0 - x1, "u1": 100.0 - x0})
 	var edges: Array = [{"a": "L1N0", "b": "L2N0", "type": "facade", "path": [[78.0, 2.4, 1.9], [72.0, 2.4, 1.9], [72.0, 2.4, 1.9], [66.0, 2.4, 1.9]]}]
 	return {"street": {"a": [100.0, 0.0], "c": [0.0, 0.0]}, "nrm": [0.0, 1.0], "rooms": rooms, "col_info": cols, "edges": edges}
+
+
+func test_the_tendril_reach_is_in_layers() -> void:
+	# the same layers in give the same reach on screen on two different layer spacings: the reach scales with the spacing
+	var near := BloomLook.street_layout(_derive(6.0))
+	var far := BloomLook.street_layout(_derive(12.0))
+	assert_almost_eq(BloomLook.layer_spacing(near), 6.0, 1e-3)
+	assert_almost_eq(BloomLook.layer_spacing(far), 12.0, 1e-3)
+	var ln := BloomLook.at_front(1.0, 2, near)
+	var lf := BloomLook.at_front(1.0, 2, far)
+	assert_almost_eq(float(ln["uniforms"][&"bl_tend"]) / 6.0, float(lf["uniforms"][&"bl_tend"]) / 12.0, 1e-4, "tendrils: layers, not BU")
+	assert_almost_eq(float(ln["ribbons"]["reach"]) / 6.0, float(lf["ribbons"]["reach"]) / 12.0, 1e-4, "ribbons: layers, not BU")
+	assert_almost_eq(float(lf["ribbons"]["reach"]) / 12.0, float(BloomLook.config().ribbons["reach_layers"]), 1e-4)
 
 
 func _state(front_milli: int, layer_milli: int, enabled: bool = true) -> BloomState:

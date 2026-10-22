@@ -16,7 +16,8 @@ extends Resource
 ## columns give none).
 @export var street_frame: Dictionary = {}
 ## The vein ribbons that crawl ahead of the front on the road (bloom3d_ribbons.make): seed, n_ground, n_facade, width, strength, y0, y1,
-## z_ground, reach, fork, facade_h, step, turn, damp (per band: strength via street_bands.ribbons_strength).
+## z_ground, reach_layers (the reach in LAYERS: BloomLook turns it into BU by the layout's layer spacing), len_min_share, fork, facade_h, step
+## (per band: strength via street_bands.ribbons_strength).
 @export var ribbons: Dictionary = {}
 ## HQ helix skin / window-dim uniforms (names without the `bl_` prefix) and the plate's helix numbers (radius, floor_h, theta0, twist,
 ## tube_r, podium, stair_deg), the front's height over a route node (front_over_node), the decision's lift (decision_lift), the route-room
@@ -31,16 +32,16 @@ extends Resource
 ## Problems with the config (empty when good).
 func validate() -> PackedStringArray:
 	var errs := PackedStringArray()
-	for k: String in ["pink", "plum", "rough", "seed", "cover_k", "veins", "edge_k", "hatch_k", "vscale", "vw", "ew", "hatch_scale", "tend", "tend_h"]:
+	for k: String in ["pink", "plum", "rough", "seed", "cover_k", "veins", "edge_k", "hatch_k", "vscale", "vw", "ew", "hatch_scale", "tend_layers", "tend_h"]:
 		if not street.has(k):
 			errs.append("street.%s missing" % k)
 	for b: String in ["CREEPING", "CLOSE", "CATCHING"]:
 		if not street_bands.has(b):
 			errs.append("street_bands.%s missing" % b)
-	for k: String in ["x0", "y0", "room_mx", "room_mz", "room_y0", "room_y1", "room_z", "link_x", "link_y", "link_z", "cull_ahead", "max_boxes"]:
+	for k: String in ["x0", "y0", "room_mx", "room_mz", "room_y0", "room_y1", "room_z", "link_x", "link_y", "link_z", "cull_ahead", "max_boxes", "layer_spacing_min"]:
 		if not street_frame.has(k):
 			errs.append("street_frame.%s missing" % k)
-	for k: String in ["seed", "n_ground", "n_facade", "width", "strength", "y0", "y1", "z_ground", "reach", "fork", "facade_h", "step"]:
+	for k: String in ["seed", "n_ground", "n_facade", "width", "strength", "y0", "y1", "z_ground", "reach_layers", "len_min_share", "fork", "facade_h", "step"]:
 		if not ribbons.has(k):
 			errs.append("ribbons.%s missing" % k)
 	for k: String in ["pink", "plum", "rough", "seed", "cover_k", "veins", "edge_k", "hatch_k", "vscale", "vw", "ew", "hatch_scale", "swell", "tongue",

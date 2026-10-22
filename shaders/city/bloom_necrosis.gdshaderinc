@@ -31,7 +31,8 @@ uniform float bl_body_emit = 0.0;    // the body's own glow (share of the plum):
 uniform float bl_seed = 7.0;         // the noise seed (the Blender `W`)
 uniform float bl_vscale = 0.7;       // vein cell scale (cells per BU) and its line half width in cell units
 uniform float bl_vw = 0.045;
-uniform float bl_ew = 0.09;          // the hot edge's half width (BU)
+uniform float bl_ew = 0.09;          // the hot edge's half width (BU), at least bl_edge_px pixels
+uniform float bl_edge_px = 0.0;      // the street's hairline: its half width in pixels (the front stays a thin line at any distance)
 uniform float bl_hatch_scale = 2.5;  // hatch lines per BU along the 45 degree diagonal
 
 // Gradient noise gain: Blender's noise node is Perlin scaled to about +-1, this one's random-direction gradients are weaker.
@@ -188,9 +189,10 @@ BlField bl_street_field(vec3 wp) {
 	float diag = (P.x + P.z + P.y * 0.25) * bl_hatch_scale;
 	float fw = max(fwidth(diag), 0.002);  // (before any early out: derivatives need the whole quad)
 	float d = bl_street_depth(P);
+	float dpx = fwidth(d);  // (before any early out)
 	o.depth = d;
 	float cover = bl_smooth(d, -0.05, 0.15);
-	float edge = 1.0 - bl_smooth(abs(d - 0.03), 0.0, bl_ew);
+	float edge = 1.0 - bl_smooth(abs(d - 0.03), 0.0, max(bl_ew, bl_edge_px * dpx));
 	if (cover <= 0.0 && edge <= 0.0) {
 		return o;
 	}

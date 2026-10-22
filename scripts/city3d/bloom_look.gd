@@ -159,6 +159,16 @@ static func _box_less(p: Array, q: Array) -> bool:
 	return c.z < d.z
 
 
+## The mean distance between neighbouring layer columns (BU; the config's floor when the layout gives fewer than two).
+static func layer_spacing(layout: Dictionary) -> float:
+	var lx: Dictionary = layout["layer_x"]
+	var ids: Array = lx.keys()
+	ids.sort()
+	if ids.size() < 2:
+		return float(config().street_frame["layer_spacing_min"])
+	return maxf(absf(float(lx[ids[ids.size() - 1]]) - float(lx[ids[0]])) / float(ids[ids.size() - 1] - ids[0]), float(config().street_frame["layer_spacing_min"]))
+
+
 ## The street frame x of route layer `f` (fractional): linear between the layer columns, extended past either end at the end slope.
 static func layer_x_at(layout: Dictionary, f: float) -> float:
 	var lx: Dictionary = layout["layer_x"]
@@ -190,6 +200,7 @@ static func _street_look(front_layers: float, band: int, layout: Dictionary, str
 		if k != "ribbons_strength":
 			s[k] = tune[k]
 	var fx := layer_x_at(layout, front_layers)
+	var spacing := layer_spacing(layout)
 	var boxes: Array = []
 	var cull := float(cfg.street_frame["cull_ahead"])
 	for bx: Array in layout["boxes"]:
@@ -210,13 +221,15 @@ static func _street_look(front_layers: float, band: int, layout: Dictionary, str
 		&"bl_pink": _v3(s["pink"]), &"bl_plum": _v3(s["plum"]), &"bl_rough": float(s["rough"]), &"bl_seed": float(s["seed"]),
 		&"bl_cover_k": float(s["cover_k"]), &"bl_veins": float(s["veins"]), &"bl_edge_k": float(s["edge_k"]), &"bl_hatch_k": float(s["hatch_k"]), &"bl_body_emit": float(s.get("body_emit", 0.0)), &"bl_vein_dens": float(s.get("vein_dens", 0.0)),
 		&"bl_vscale": float(s["vscale"]), &"bl_vw": float(s["vw"]), &"bl_ew": float(s["ew"]), &"bl_hatch_scale": float(s["hatch_scale"]),
-		&"bl_tend": float(s["tend"]), &"bl_tend_h": float(s["tend_h"]),
+		&"bl_tend": float(s["tend_layers"]) * spacing, &"bl_edge_px": float(s.get("edge_px", 0.0)), &"bl_tend_h": float(s["tend_h"]),
 		&"bl_origin": layout["origin"], &"bl_dir": layout["dir"], &"bl_perp": layout["perp"],
 		&"bl_frame0": Vector2(float(layout["x0"]), float(layout["y0"])), &"bl_front": fx,
 		&"bl_box_n": boxes.size(), &"bl_box_lo": lo, &"bl_box_hi": hi,
 	}
 	var rb: Dictionary = cfg.ribbons.duplicate(true)
 	rb["strength"] = float(tune.get("ribbons_strength", rb["strength"])) * strength
+	rb["reach"] = float(rb["reach_layers"]) * spacing  # the reach is in layers: the same layers on any street
+	rb["len_min"] = float(rb["len_min_share"]) * float(rb["reach"])
 	rb["front"] = fx
 	rb["facade_y"] = float(layout["facade_y"])
 	rb["boxes"] = boxes
