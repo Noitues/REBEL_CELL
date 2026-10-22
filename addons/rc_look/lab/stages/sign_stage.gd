@@ -1,6 +1,6 @@
 extends RcLookLabStage
 ## LOOK-TOOLBOX module 11 in the lab: should neon tubes get a white-hot core (DECISIONS: the designer's open question)?
-## Three panels, one per preset ("flat" today's signs, "lighten" the tube lightened toward the NEON_CORE token, "hot" a
+## Three panels, one per preset ("flat" today's signs, "lighten" the tube lightened toward its own core (white tinted 0.15 toward the tube), "hot" a
 ## thin hot core), each the word OPEN in neon tubes (pink, cyan, lime, pink) on a dark wall: the tube by rcl_tube_cov,
 ## its centre by the preset (rcl_hot_to x rcl_tube_core), its glow by rcl_fall_exp added under rc_light's soft ceiling
 ## (rcl_light_add), the 2D bloom (rc_bloom) over all at the capture's tier. Under each panel: the tube's cross-section
@@ -42,6 +42,7 @@ uniform float half_w = 4.0;
 uniform float core_share = 0.35;
 uniform float hot = 0.0;
 uniform vec3 core_col = vec3(1.0);
+uniform float core_tint = 0.0;
 uniform vec3 glow = vec3(18.0, 1.4, 0.6);
 float seg_d(vec2 p, vec2 a, vec2 b) {
 	vec2 ab = b - a;
@@ -79,9 +80,9 @@ void fragment() {
 	vec3 lit = rcl_light_add(wall, add);
 	vec3 col = tube[ci];
 	if (treatment == 1) {
-		col = rcl_hot_to(col, core_col, hot);
+		col = rcl_hot_to(col, rcl_neon_core(col, core_col, core_tint), hot);
 	} else if (treatment == 2) {
-		col = rcl_hot_to(col, core_col, hot * rcl_tube_core(d, half_w * core_share));
+		col = rcl_hot_to(col, rcl_neon_core(col, core_col, core_tint), hot * rcl_tube_core(d, half_w * core_share));
 	}
 	COLOR = vec4(mix(lit, col, rcl_tube_cov(d, half_w, 1.0)), 1.0);
 }
@@ -95,13 +96,14 @@ uniform float half_w = 4.0;
 uniform float core_share = 0.35;
 uniform float hot = 0.0;
 uniform vec3 core_col = vec3(1.0);
+uniform float core_tint = 0.0;
 void fragment() {
 	float d = abs(UV.x * 2.0 - 1.0) * half_w;
 	vec3 col = tube;
 	if (treatment == 1) {
-		col = rcl_hot_to(col, core_col, hot);
+		col = rcl_hot_to(col, rcl_neon_core(col, core_col, core_tint), hot);
 	} else if (treatment == 2) {
-		col = rcl_hot_to(col, core_col, hot * rcl_tube_core(d, half_w * core_share));
+		col = rcl_hot_to(col, rcl_neon_core(col, core_col, core_tint), hot * rcl_tube_core(d, half_w * core_share));
 	}
 	COLOR = vec4(col, 1.0);
 }
@@ -119,7 +121,7 @@ func _ready() -> void:
 		var p := RcLookSign.preset(NAMES[c])
 		var x := MARGIN.x + c * (col_w + GAP)
 		_label("%s%s" % [NAMES[c],
-				" (today)" if p.treatment == RcLookSignPreset.Treatment.FLAT else ": %.2f toward NEON_CORE%s" % [p.hot,
+				" (today)" if p.treatment == RcLookSignPreset.Treatment.FLAT else ": %.2f toward the tube's core%s" % [p.hot,
 				", core %.0f%% of the tube" % (p.core_share * 100.0) if p.treatment == RcLookSignPreset.Treatment.HOT else ""]],
 				Vector2(x, MARGIN.y - LABEL_SIZE - 8.0))
 		var panel := ColorRect.new()
@@ -204,6 +206,7 @@ static func _set_tube(m: ShaderMaterial, p: RcLookSignPreset) -> void:
 	m.set_shader_parameter(&"core_share", p.core_share)
 	m.set_shader_parameter(&"hot", p.hot)
 	m.set_shader_parameter(&"core_col", _v3(p.core_color))
+	m.set_shader_parameter(&"core_tint", p.core_tint)
 
 
 func _label(text: String, at: Vector2) -> void:

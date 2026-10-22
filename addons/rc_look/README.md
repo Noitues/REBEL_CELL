@@ -112,11 +112,11 @@ One set of neon tube, sign stroke, glow and flicker helpers. The forms the game 
 
 | API | What |
 |---|---|
-| `shaders/rc_sign.gdshaderinc`: `rcl_gauss(r, sigma)`, `rcl_hot(col, core01, hot)`, `rcl_hot_to(col, core_col, k)` | gaussian profile; mix toward white (beam_shaft, bit glyphs) or toward a core colour (NEON_CORE) |
+| `shaders/rc_sign.gdshaderinc`: `rcl_gauss(r, sigma)`, `rcl_hot(col, core01, hot)`, `rcl_hot_to(col, core_col, k)` | gaussian profile; mix toward white (beam_shaft, bit glyphs) or toward a core colour; `rcl_neon_core(tube, core_col, tint)` the per-tube core (white tinted 0.15 toward the tube) |
 | `rcl_tube_cov(d, half_w, pix)`, `rcl_tube_core(d, core_w)` | a stroke's antialiased coverage; the thin core on its centre line |
 | `rcl_flicker(t01, bursts, seed, burst_len, hum_hz, hum_floor)`, `rcl_blink(ph, duty, off)`, `rcl_beacon(ph)` | dress_neon's flicker; city_glow's blink and beacon |
 | `RcLookSign`: `.preset(name)`, mirrors above, `.tube_color(preset, col, d)` | exact GDScript mirrors; the colour across a tube under a preset |
-| `config/look_sign.tres` (`RcLookSignConfig`, `RcLookSignPreset`) | `flat` (today), `lighten` (0.4 toward NEON_CORE), `hot` (0.9 on a core 35% of the tube); flicker / blink numbers pinned to dress_neon / city_glow |
+| `config/look_sign.tres` (`RcLookSignConfig`, `RcLookSignPreset`) | `flat` (today), `lighten` (0.4 toward the tube's core), `hot` (0.9 on a core 35% of the tube); flicker / blink numbers pinned to dress_neon / city_glow |
 | lab: `--module=sign` | the word OPEN in neon under each preset with glow (rcl_light_add) and the 2D bloom; the tube cross-section (shader over mirror) |
 
 ## Module 12: grease pencil

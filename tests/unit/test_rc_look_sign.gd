@@ -43,9 +43,23 @@ func test_treatments() -> void:
 	assert_eq(RcLookSign.tube_color(lit, pink, 0.0), RcLookSign.tube_color(lit, pink, lit.half_w_px), "even across")
 	var hot := RcLookSign.preset(&"hot")
 	var centre := RcLookSign.tube_color(hot, pink, 0.0)
-	assert_eq(centre, RcLookSign.hot_to(pink, hot.core_color, hot.hot), "the centre line reaches hot x core")
+	assert_eq(centre, RcLookSign.hot_to(pink, RcLookSign.neon_core(pink, hot.core_color, hot.core_tint), hot.hot),
+			"the centre line reaches hot x the tube's core")
 	assert_eq(RcLookSign.tube_color(hot, pink, hot.half_w_px * hot.core_share), pink, "the tube colour past the core")
 	assert_true(centre.get_luminance() > pink.get_luminance(), "the core is brighter than the tube")
+
+
+func test_core_is_white_tinted_toward_each_tube() -> void:
+	var hot := RcLookSign.preset(&"hot")
+	assert_eq(hot.core_color, Color(1, 1, 1), "the core starts from white (ruling f4678fca)")
+	assert_almost_eq(hot.core_tint, 0.15, 1e-6, "0.15 toward the tube")
+	var orange := Color(1.0, 0.55, 0.1)
+	var cyan := Color(0.16, 0.8, 1.0)
+	var co := RcLookSign.neon_core(orange, hot.core_color, hot.core_tint)
+	var cc := RcLookSign.neon_core(cyan, hot.core_color, hot.core_tint)
+	assert_true(co.b < co.r, "an orange tube's core is warm")
+	assert_true(cc.r < cc.b, "a cyan tube's core is cool")
+	assert_almost_eq(co.g, 1.0 + (0.55 - 1.0) * 0.15, 1e-6, "mix(white, tube, tint)")
 
 
 func test_hot_is_beam_shafts_mix() -> void:

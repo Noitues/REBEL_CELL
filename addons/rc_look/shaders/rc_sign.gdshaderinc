@@ -2,15 +2,17 @@
 // flicker. The forms the game already uses are kept exact, so a view moves onto them with identical pixels:
 //   - rcl_gauss(r, sigma): exp(-0.5 (r / sigma)^2) (beam_shaft's core and skirt).
 //   - rcl_hot(col, core01, hot): mix(col, white, hot x core01) (beam_shaft, city_building's bit glyphs).
-//   - rcl_hot_to(col, core_col, k): the same toward a core colour (the NEON_CORE token).
+//   - rcl_hot_to(col, core_col, k): the same toward a core colour.
+//   - rcl_neon_core(tube, core_col, tint): a tube's own core colour, core_col tinted toward the tube by tint (designer
+//     ruling DIRECTION_REVIEW f4678fca: white tinted ~0.15 toward each tube's hue, not one pink NEON_CORE).
 //   - rcl_tube_cov(d, half_w, pix): a stroke's antialiased coverage at distance d from its centre line (dress_sign's
 //     frame form).
 //   - rcl_tube_core(d, core_w): 1 on the centre line falling to 0 at core_w (the thin hot core).
 //   - rcl_flicker(t01, bursts, seed, burst_len, hum_hz, hum_floor): dress_neon's flicker (bursts per loop at t01 in
 //     0..1, a hum under them).
 //   - rcl_blink(ph, duty, off), rcl_beacon(ph): city_glow's blink and beacon.
-// Whether tubes get a white-hot core is the designer's call (DECISIONS: open question, module 11); the lab sheet
-// shows flat / lightened / hot side by side. Numbers in addons/rc_look/config/look_sign.tres; RcLookSign mirrors.
+// Tubes get a hot core (ruled: 0.9 toward the core on 35% of the tube; the core per tube, rcl_neon_core); the lab
+// sheet shows flat / lightened / hot side by side. Numbers in addons/rc_look/config/look_sign.tres; RcLookSign mirrors.
 //   #include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
 #ifndef RC_SIGN_INCLUDED
 #define RC_SIGN_INCLUDED
@@ -25,6 +27,10 @@ vec3 rcl_hot(vec3 col, float core01, float hot) {
 
 vec3 rcl_hot_to(vec3 col, vec3 core_col, float k) {
 	return mix(col, core_col, clamp(k, 0.0, 1.0));
+}
+
+vec3 rcl_neon_core(vec3 tube, vec3 core_col, float tint) {
+	return mix(core_col, tube, clamp(tint, 0.0, 1.0));
 }
 
 float rcl_tube_cov(float d, float half_w, float pix) {

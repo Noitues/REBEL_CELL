@@ -12,7 +12,10 @@ enum Treatment { FLAT, LIGHTEN, HOT }
 @export var half_w_px: float = 4.0
 @export var core_share: float = 0.35
 @export var hot: float = 0.0
-@export var core_color: Color = Color("#FFE3F7")
+@export var core_color: Color = Color(1, 1, 1)
+## How far each tube's core leans back toward the tube's own hue (0 = core_color itself, 1 = the tube); designer
+## ruling DIRECTION_REVIEW f4678fca: 0.15 off white, so an orange tube gets a warm core and a cyan one a cool core.
+@export var core_tint: float = 0.15
 ## The glow around the tube: reach (px past the tube's edge), shape (rcl_fall_exp k) and gain (linear).
 @export var glow_px: float = 18.0
 @export var glow_k: float = 1.4
@@ -26,6 +29,8 @@ func validate() -> PackedStringArray:
 		errs.append("half_w_px must be above 0 (%s)" % half_w_px)
 	if core_share <= 0.0 or core_share > 1.0:
 		errs.append("core_share must be in (0, 1] (%s)" % core_share)
+	if core_tint < 0.0 or core_tint > 1.0:
+		errs.append("core_tint must be 0..1 (%s)" % core_tint)
 	if hot < 0.0 or hot > 1.0:
 		errs.append("hot must be 0..1 (%s)" % hot)
 	if treatment == Treatment.FLAT and hot != 0.0:

@@ -38,6 +38,11 @@ static func hot_to(col: Color, core_col: Color, k: float) -> Color:
 	return Color(lerpf(col.r, core_col.r, t), lerpf(col.g, core_col.g, t), lerpf(col.b, core_col.b, t))
 
 
+## A tube's own core colour: core_col tinted toward the tube by tint, as rcl_neon_core.
+static func neon_core(tube: Color, core_col: Color, tint: float) -> Color:
+	return hot_to(core_col, tube, tint)
+
+
 ## A stroke's coverage at distance d from its centre line, as rcl_tube_cov.
 static func tube_cov(d: float, half_w: float, pix: float) -> float:
 	return clampf((half_w - d) / maxf(pix, 1e-5) + 0.5, 0.0, 1.0)
@@ -71,7 +76,7 @@ static func beacon(ph: float) -> float:
 static func tube_color(p: RcLookSignPreset, col: Color, d: float) -> Color:
 	match p.treatment:
 		RcLookSignPreset.Treatment.LIGHTEN:
-			return hot_to(col, p.core_color, p.hot)
+			return hot_to(col, neon_core(col, p.core_color, p.core_tint), p.hot)
 		RcLookSignPreset.Treatment.HOT:
-			return hot_to(col, p.core_color, p.hot * tube_core(d, p.half_w_px * p.core_share))
+			return hot_to(col, neon_core(col, p.core_color, p.core_tint), p.hot * tube_core(d, p.half_w_px * p.core_share))
 	return col
