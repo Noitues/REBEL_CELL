@@ -1600,3 +1600,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   c806d617) showed the 1 px floor turning 1-2 px far trims near-white. Ruling: "Fade core on thin tubes". Keep the 1 px line, but on
   tubes under ~3 px wide fade the core strength toward ~0.45 (from 0.9), so far tubes keep their hue. Close tubes stay as approved. The
   numbers live in look_sign.tres "hot".
+- **Binary bits, look-toolbox module 16 (designer, 2026-10-22)** (`D:/rc_scratch/rc_look/m16/m16_rulings_sheet.png`):
+  1. The hot flash (first 0.08 s) is PAPER #F2EEE4 on every bit system. The designer picked this over WHITE_HOT.
+  2. The outline is a NIGHT_SKY rim at 95 %.
+  3. Motion goes by job: bursts (CAUGHT, hits) flip 0/1 and tumble; data streams keep steady 1/0 glyphs with a trail copy.
+  4. Every bit starts its tumble at its own spin phase, and the CPU fallback is matched to the GPU.
+  5. Art-pass call: a turn stays 6.28, not TAU, so the move to the module stays bit-exact.
+  Lab-only until the raid redesign lands.
