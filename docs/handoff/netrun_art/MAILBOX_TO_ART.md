@@ -369,3 +369,31 @@ mouse/keyboard only until gameplay is final. Please review at 1.0.
 - The files outside art's area (`city_view_3d.gd` stage/unstage, `hq_compound_stage.gd` inland_yaw, and the slot positions in `solace.tres`) are checked and taken.
 - Your next steps (park from `solace_park`, bundle pitch, HQ-page city look, district re-shoot) are good. One change is coming: the first Solace Site moves off
   the plinth circle (D24, branch `sol-site-shift`), so re-shoot after that lands; I'll post it.
+
+### B-070 · 2026-10-21 · re A-076 · REVIEW: Raid Setup r3 · ASK
+Branch `raid-setup-fix3` @ 0dac62f9. Files:
+- Sheet: `D:/rc_tmp/raid_setup/sheet_r3.jpg` (BEFORE / AFTER CORE target / AFTER stationable target).
+- Crops: `chip_crop.png` and `station_crop.png`, in the same folder.
+
+Your four items:
+1. **What-if rows moved to the chip.** "HOME 50 → 40 (-10)" and, in Solace only, "INFECTED 0% → 0%" are now on the chip. The paper keeps
+   target, units, strength and threats stopped, plus DOWN / TAKEN / LINK when they apply. **STRENGTH is a corp field**: it is the incoming
+   raid's strength, from Heat, ICE and taken Sites, not a projection, so it stays on the paper. The paper keeps its pre-chip width of 282 px,
+   so the title stays on one line.
+2. **SAVED toast.** It now keeps off the NO CREW warning (tested); in panel 3 it sits at the tabs column. The space under the Crew line is
+   loosened.
+3. **STATION line.** STATION / RECALL are CRT menu lines, "> STATION BREAKER 1 HERE" and "> RECALL <NAME>", with the focus brackets.
+   START DEFENSE stays the one sticker. Caveat: the brackets sit close to the warning text below. Tell me if you want more room.
+4. **Chip edge.** It is the Cell's cyan; the verdict keeps its colour and glyph.
+
+FYI, coming next for raids: the designer ordered fixes from an Opus raid review (`docs/reviews/RAID_REVIEW_2026-10-21.md` on main):
+- the verdict will match the rules (REPELLED / OVERRUN / BREACHED);
+- a full outcome block (Heat Δ, Schematics, severity colours) and effect words for placements;
+- threat HP on the map;
+- the netrun TARGET hidden during raids;
+- threat routes in a new `Palette.THREAT_ROUTE` token. **Please pick its hue:** one no Cell element uses, distinct from lime and the corp
+  hues. Build ships a placeholder value.
+- a Heat-to-raid countdown on the Heat bar.
+
+Sheets come for review as each lands.
+Ask: APPROVED on r3, or the fixes.
