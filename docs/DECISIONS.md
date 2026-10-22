@@ -9663,3 +9663,8 @@ Port of the approved Solace HQ v5 golden plates (art-pass `docs/concepts/solace_
 - **Counters.** `raids_won` / `raids_lost` keep their names: "won" is a clean defense, "lost" is a damaged hold or a breach. Achievements and the profile read them unchanged.
 - **Verdict words (D28).** `RaidOutcome.Verdict` is CELL_HOLDS or BREACHED; REPELLED and OVERRUN are gone. `RaidOutcome.verdict_of(campaign_lost)`. Tier (CLEAN / AMBER / DOWN / TAKEN) carries the severity. `RaidVerdict.words(verdict, heat, schematics, losses)` gives the second line: "+5 HEAT · +12 SCHEMATICS" (clean) or "NO HEAT · HOME -10 · 1 TAKEN" (damaged). The CELL HOLDS sticker shows whenever Home survives.
 - **Per-node data for visuals.** `RaidOutcome.project` / `of_dict` return `"nodes"`: an Array of `{id, outcome: "holds"|"down"|"taken"|"passed", before, after}` sorted by id, and `"clean"`; `if_placed` `verdict_from/to` use the new verdict.
+
+## 2026-10-22 - CITY-A2 sweep budget asserted on the median seed
+`test_city_a2_sweep::test_two_hundred_seeds` asserts `city_a2_budget_s` (2.0 s) on the median seed instead of the 95th percentile.
+Gate evidence: on a loaded machine (4 shards plus another session's Godot runs) the median stayed at 0.82 s (0.77 s quiet), while p95
+rose to 2.42 s (0.83 s quiet) from CPU contention. The test still logs p95 and the slowest seed. The budget and the generator are unchanged.
