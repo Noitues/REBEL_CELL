@@ -15,6 +15,7 @@ import ideas as IDEAS  # noqa: E402
 
 src = open(os.path.join(AB_DIR, "abyssal_build.py"), encoding="utf-8").read()
 assert "AB.landmark_v2(ns)" in src
-src = src.replace("AB.landmark_v2(ns)", "IDEAS.landmark(ns)").replace("r=52.0, s=0.19", "r=36.0, s=0.19").replace("calm_r=50.0", "calm_r=44.0").replace("m.AB = AB", "m.AB = AB\nm.IDEAS = IDEAS")
+src = src.replace("AB.landmark_v2(ns)", "IDEAS.landmark(ns)").replace("r=52.0, s=0.19", "r=36.0, s=0.19").replace("calm_r=50.0", "calm_r=44.0").replace("m.AB = AB", "m.AB = AB\nm.IDEAS = IDEAS").replace('g = {"__name__": "__main__", "__file__": BB}', 'g = {"__name__": "__main__", "__file__": BB, "IDEAS": IDEAS}').replace(
+    'exec(compile(open(BB, encoding="utf-8").read(), BB, "exec"), g)', 'exec(compile(open(BB, encoding="utf-8").read().replace("calm_water(ns)\\nexec(", "calm_water(ns)\\nIDEAS.water_haze(ns)\\nexec(", 1), BB, "exec"), g)')
 g = {"__name__": "__main__", "__file__": os.path.join(AB_DIR, "abyssal_build.py"), "IDEAS": IDEAS}
 exec(compile(src, g["__file__"], "exec"), g)

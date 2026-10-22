@@ -61,6 +61,22 @@ def main():
         m = m * (1 - lm)
     except Exception as e:
         print("no index mask:", e)
+    # keep the decal off the dam and its causeway: everything below the projected dam crest, and a strip along the causeway
+    try:
+        O = json.load(open("D:/rc_scratch/hq_styles/tethys_abyssal/scr/zoned_t_over.json"))
+        P = O["tethys_dam"]["P"]
+        crest = sorted(project([(p[0], p[1], 13.0) for p in P], W, H))
+        ex = Image.new("L", (W, H), 0)
+        de = ImageDraw.Draw(ex)
+        poly = [(0, crest[0][1])] + crest + [(W, crest[-1][1]), (W, H), (0, H)]
+        de.polygon(poly, fill=255)
+        c0, c1 = O["tethys_causeway"]
+        cw = project([(c0[0], c0[1], 5.0), (c1[0], c1[1], 5.0)], W, H)
+        de.line(cw, fill=255, width=max(6, int(W * 0.014)))
+        ex = ex.filter(ImageFilter.GaussianBlur(W * 0.002))
+        m = m * (1 - np.asarray(ex, np.float32) / 255.0)
+    except Exception as e:
+        print("no dam mask:", e)
     a = np.asarray(im, np.float32) / 255.0
     a = a * (1 - k * m[..., None])
     Image.fromarray((np.clip(a, 0, 1) * 255 + 0.5).astype(np.uint8)).save(out)
