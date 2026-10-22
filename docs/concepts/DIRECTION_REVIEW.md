@@ -1592,3 +1592,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   veins, a hairline hot pink front edge, windows dying behind the front. Media: the Bloom is World; the TIDE gauge is CRT (bands also by
   chevron glyphs); the front forecast is red dashed grease pencil; CAUGHT is pink binary bits; the raid % is bare Anton. Next: a proper 3D
   render of A, then the Godot port.
+- **Per-hue hot core applied (designer, 2026-10-22, look-toolbox module 11):** "Approve + 1px min core" on
+  `D:/rc_scratch/rc_look/hotcore/hotcore_sheet.png`. Each tube runs 0.9 toward mix(white, tube, 0.15) on its centre 35%, with a floor of
+  1 px so far trims and bands keep a core line. This covers city_building (sign strips, trims, bands), hq_solace_pbr (neon role) and
+  dress_sign. The fence on city_building and hq_solace_pbr lifts for this change only.
