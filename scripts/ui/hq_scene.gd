@@ -1860,9 +1860,6 @@ func _build_hq_page(page_name: String) -> void:
 			paper.add_child(order_fit)
 		else:
 			paper.add_child(_raid_card(raid, pending, projection, true))
-		if raid_mode:
-			# A-073: the forecast chip stands under the paper, beside the work order (not on it).
-			order.add_child(_forecast_chip(projection))
 		var setup := MenuChip.new(tr("RAID SETUP"), "", Palette.CELL_PINK)
 		setup.name = "RaidSetup"
 		InputPrompt.inside(setup, &"toggle_ring")
@@ -1872,6 +1869,10 @@ func _build_hq_page(page_name: String) -> void:
 		setup.visible = not raid_mode
 		order.add_child(setup)
 		page.add_child(order)
+		if raid_mode:
+			# A-073: the forecast chip is the page's own child, placed beside the paper (`_place_forecast_chip`),
+			# so it takes no room from the work order (it keeps its pre-chip size, rows and stamps).
+			page.add_child(_forecast_chip(projection))
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
 	var hand := ScrollContainer.new()
@@ -2948,6 +2949,7 @@ func _place_hq() -> void:
 		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
 		order.position = o.position
 		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, order_foot - HqLayout.GAP - o.position.y)))
+	_place_forecast_chip(page, order)
 	var top := HqLayout.MARGIN
 	var bottom_now := _column_foot(verb)
 	if hq_minimap != null and is_instance_valid(hq_minimap):
@@ -5176,6 +5178,17 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 		# (the letterhead and the footer say which document).
 		card.title_label.visible = p == 1 or n < 3
 	return card
+
+
+## A-073: the forecast chip stands just right of the work order, its foot on the paper's foot (over
+## the map's left margin). The paper is not resized for it.
+func _place_forecast_chip(page: Control, order: Control) -> void:
+	var chip := page.get_node_or_null("Projection") as Control
+	if chip == null or order == null:
+		return
+	var paper_foot := order.position.y + order.size.y - order.get_theme_constant("separation")
+	chip.size = chip.get_combined_minimum_size()
+	chip.position = Vector2(order.position.x + order.size.x + HqLayout.GAP, paper_foot - chip.size.y)
 
 
 ## A-073 (art bible 1.2): the paper carries only corp fields and stamps, so the Cell's forecast

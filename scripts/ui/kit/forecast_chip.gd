@@ -9,6 +9,8 @@ extends RaidTerminal
 
 ## The verdict's icon radius share of the chip (px at text 1.0).
 const ICON_PX := 22.0
+## The chip's width (px at text 1.0): the caption wraps to two lines inside it.
+const WIDTH_PX := 150.0
 
 var caption: String = ""
 var verdict: String = ""
@@ -26,6 +28,12 @@ func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Pale
 	color = p_color
 	icon_kind = p_icon
 	tag_label.text = ""
+	# The caption wraps in the chip's width (it is narrow: it stands over the map's left margin).
+	custom_minimum_size.x = WIDTH_PX * Settings.text_scale
+	var head := find_child("TerminalTitle", true, false) as Label
+	if head != null:
+		UiWrap.whole_words(head)
+	crt.label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	mouse_filter = Control.MOUSE_FILTER_PASS  # its tooltip explains the forecast
 	focus_mode = Control.FOCUS_NONE
 	var row := HBoxContainer.new()
