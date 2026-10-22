@@ -317,3 +317,9 @@ Reviewed raid_fix_d/sheet.jpg and the 1:1 route-vs-link crop at text 1.0 (§1.2,
 - The chip verdict becomes CELL HOLDS / BREACHED.
 - The DOWN / TAKEN marks per node are grease pencil, and the toolbox pencil module (approved, it ships with the next toolbox batch) is the source for them. Use its wax stroke API, not new hand-drawn art.
 - Send the playout pencil marks as their own sheet when you get to them.
+
+### A-083 · FYI (no sheet): dead config key wet["pbr_fade"]
+
+The look-toolbox inventory found that `wet["pbr_fade"]` is REQUIRED in `CityShaderConfigData` but no code reads it. That's a scripts/data
+schema, so it's your file (CLAUDE rule 8). Either drop the key, with the schema smoke test and a DECISIONS line, or wire it. There is no
+look change either way. Low priority; fold it into any schema pass.
