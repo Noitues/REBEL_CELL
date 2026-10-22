@@ -31,7 +31,7 @@ def enc_alloc(a):
 
 def enc_leg(leg: L.Leg):
     return {"home": c2(leg.home), "values": [[*c2(c), v] for c, v in leg.values],
-            "raids": [{"b1": [c2(c) for c in r.b1], "extra": [c2(c) for c in r.extra],
+            "raids": [{"b1": [c2(c) for c in r.b1], "extra": [c2(c) for c in r.extra], "extra2": [c2(c) for c in r.extra2],
                        "cands": [[c2(c) for c in ln] for ln in r.cands], "own3": [c2(c) for c in r.own3]}
                       for r in leg.raids]}
 
@@ -80,7 +80,7 @@ def randoms(n=200):
 
 
 if __name__ == "__main__":
-    cfg = {k: getattr(L, k) for k in ("W", "H", "ASSETS", "CANDIDATES", "HOME_HP", "STRONG_AT", "START_HEAT", "RUN_HEAT",
+    cfg = {k: getattr(L, k) for k in ("W", "H", "ASSETS", "CANDIDATES", "HOME_HP", "EXTRA_AT", "MAX_DARK", "STRONG_AT", "START_HEAT", "RUN_HEAT",
                                       "GHOST_HEAT", "DECOY_COST", "EVADE_HEAT", "START_BANK", "HOME_LOSS_COST", "BREACH", "RAIDS")}
     legs = []
     for s in LEGS:

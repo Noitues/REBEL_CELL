@@ -63,7 +63,7 @@ func _init() -> void:
 		"HOME_HP": L2Config.HOME_HP, "STRONG_AT": L2Config.STRONG_AT, "START_HEAT": L2Config.START_HEAT,
 		"RUN_HEAT": L2Config.RUN_HEAT, "GHOST_HEAT": L2Config.GHOST_HEAT, "DECOY_COST": L2Config.DECOY_COST,
 		"EVADE_HEAT": L2Config.EVADE_HEAT, "START_BANK": L2Config.START_BANK, "HOME_LOSS_COST": L2Config.HOME_LOSS_COST,
-		"BREACH": L2Config.BREACH, "RAIDS": L2Config.RAIDS}
+		"BREACH": L2Config.BREACH, "RAIDS": L2Config.RAIDS, "EXTRA_AT": L2Config.EXTRA_AT, "MAX_DARK": L2Config.MAX_DARK}
 	for k in cfg:
 		_check("config " + k, mine[k], cfg[k])
 	_check("config EXTRA_AT", L2Config.EXTRA_AT, extra["extra_at"])
