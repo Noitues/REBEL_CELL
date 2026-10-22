@@ -1,7 +1,12 @@
 class_name RcLookAir
 extends RefCounted
 ## LOOK-TOOLBOX module 7: atmosphere. The shader side is rc_air.gdshaderinc (rcl_air, rcl_air_mix, rcl_sky); this is
-## its exact GDScript mirror plus the preset lookup and a material filler. Pure: no Node, no Settings.
+## its exact GDScript mirror plus the preset lookup and a material filler; `pass_node` builds the 3D air pass
+## (rc_air_pass.gdshader) a view adds under its camera. No Settings.
+
+const PASS_SHADER := "res://addons/rc_look/shaders/rc_air_pass.gdshader"
+## The pass quad's cull margin: it covers the whole screen from any camera, so it is never culled.
+const PASS_CULL_MARGIN := 16384.0
 
 static var _cfg: RcLookAirConfig
 
@@ -55,3 +60,25 @@ static func apply(mat: ShaderMaterial, p: RcLookAirPreset, prefix: String = "") 
 	mat.set_shader_parameter(prefix + "sky_ground", Vector3(p.sky_ground.r, p.sky_ground.g, p.sky_ground.b))
 	mat.set_shader_parameter(prefix + "glow_k", p.glow_k)
 	mat.set_shader_parameter(prefix + "ground_k", p.ground_k)
+
+
+## The 3D air pass for preset `p`: a full-screen quad (add it anywhere in the view's 3D scene) that lays the air over
+## every pixel by its depth and height above `ground_y`. `overrides` may replace "start", "density", "height", "high".
+static func pass_node(p: RcLookAirPreset, ground_y: float = 0.0, overrides: Dictionary = {}) -> MeshInstance3D:
+	var q := QuadMesh.new()
+	q.size = Vector2(2.0, 2.0)
+	var m := ShaderMaterial.new()
+	m.shader = load(PASS_SHADER) as Shader
+	var a := p.air_color()
+	m.set_shader_parameter(&"air", Vector3(a.r, a.g, a.b))
+	var v := p.air_vec()
+	m.set_shader_parameter(&"air_a", Vector4(float(overrides.get("start", v.x)), float(overrides.get("density", v.y)),
+			float(overrides.get("height", v.z)), float(overrides.get("high", v.w))))
+	m.set_shader_parameter(&"ground_y", ground_y)
+	var n := MeshInstance3D.new()
+	n.name = "RcLookAirPass"
+	n.mesh = q
+	n.material_override = m
+	n.extra_cull_margin = PASS_CULL_MARGIN
+	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return n

@@ -14,6 +14,9 @@ extends Control
 ##     backdrop city's own render before its grade, at that size)] [--scale=2.0 (S-HQRUN: the
 ##     text size)] [--reduce-effects=1 (LOOK-TOOLBOX: frozen shader time and the static look, so two
 ##     captures of the same code match for a before / after; not saved, restored at quit)]
+##     [--try=spill,air (LOOK-TOOLBOX lab only, pov / pod: the helix as a toon spill source, Solace green, at
+##     --spill-y=<BU over the plinth> with radius --spill-r=<x city_sol_plinth_r_bu> and --spill-i=<intensity>; the
+##     rc_look air pass, night preset, with --air-density / --air-start overrides)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -30,6 +33,8 @@ var _frame_ms: Array[float] = []
 var _ready_at: int = -1
 var _scale_was: float = -1.0
 var _reduce_was: int = -1
+## LOOK-TOOLBOX lab only (--try=spill): the spill sources set on the city every frame.
+var _try_spill: Array = []
 ## B4: the HQ-run page on show (its landmark share is printed).
 var _view: HqRunView = null
 
@@ -161,6 +166,7 @@ func _load(state: String) -> void:
 			tr.texture = c.get_texture()
 			_host.add_child(tr)
 			_city = c
+			_try_look(c, at.origin)
 		"hq", "site", "won":
 			_campaign(corp)
 			_backdrop = CombatBackdrop.new()
@@ -176,8 +182,27 @@ func _load(state: String) -> void:
 			_city = _backdrop.city
 
 
+## LOOK-TOOLBOX lab only: the --try looks on a plate view (see the header).
+func _try_look(c: CityView3D, at: Vector3) -> void:
+	var tries := String(_args.get("try", "")).split(",", false)
+	if tries.has("spill"):
+		var camp := load("res://content/config/campaign_config.tres") as CampaignConfigData
+		var r := camp.city_sol_plinth_r_bu * float(_args.get("spill-r", "1.0"))
+		_try_spill = [{"position": at + Vector3(0.0, float(_args.get("spill-y", "20.0")), 0.0), "radius": r,
+			"color": Palette.CORP_SOLACE, "intensity": float(_args.get("spill-i", "1.0"))}]
+	if tries.has("air"):
+		var o := {}
+		if _args.has("air-density"):
+			o["density"] = float(_args["air-density"])
+		if _args.has("air-start"):
+			o["start"] = float(_args["air-start"])
+		c.add_child(RcLookAir.pass_node(RcLookAir.preset(&"night"), at.y, o))
+
+
 func _process(delta: float) -> void:
 	_frame += 1
+	if not _try_spill.is_empty() and _city != null:
+		_city.set_spill(_try_spill)
 	if _city == null and _backdrop != null:
 		_city = _backdrop.city
 	var ready := _city == null or (_city.model != null and not _city.is_processing())

@@ -74,3 +74,15 @@ func test_night_air_keeps_the_skyline_dark() -> void:
 	assert_lt(RcLookAir.amount(p, 20.0, 0.0), 0.05, "the near plane (20 BU) is not lifted")
 	var far := RcLookAir.mix(Palette.DESK_DARK, p.air_color(), RcLookAir.amount(p, 480.0, 0.0))
 	assert_lt(Palette.luminance(far), Palette.luminance(RcLookAir.sky(p, 0.02)) * 0.8, "far towers darker than the sky")
+
+
+func test_the_air_pass_carries_the_preset() -> void:
+	var p := RcLookAir.preset(&"night")
+	var n := RcLookAir.pass_node(p, 2.0, {"density": 0.0008, "start": 300.0})
+	var m := n.material_override as ShaderMaterial
+	assert_not_null(m, "a shader material")
+	var a := p.air_color()
+	assert_eq(m.get_shader_parameter(&"air"), Vector3(a.r, a.g, a.b), "the horizon colour")
+	assert_eq(m.get_shader_parameter(&"air_a"), Vector4(300.0, 0.0008, p.height, p.high), "overrides applied, the rest kept")
+	assert_eq(float(m.get_shader_parameter(&"ground_y")), 2.0)
+	n.free()
