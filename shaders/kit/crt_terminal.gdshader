@@ -15,9 +15,9 @@ shader_type canvas_item;
 uniform int mode = 0;
 // The panel itself inside the drawn rect (px, local): x, y, w, h.
 uniform vec4 panel = vec4(0.0, 0.0, 100.0, 100.0);
-uniform vec4 glass_top : source_color = vec4(0.043, 0.086, 0.188, 0.94);
-uniform vec4 glass_bottom : source_color = vec4(0.020, 0.039, 0.102, 0.94);
-uniform vec4 accent : source_color = vec4(0.361, 0.882, 1.0, 1.0);
+uniform vec4 glass_top : source_color = vec4(0.043137, 0.086275, 0.188235, 1.0);
+uniform vec4 glass_bottom : source_color = vec4(0.019608, 0.039216, 0.101961, 1.0);
+uniform vec4 accent : source_color = vec4(0.360784, 0.882353, 1.0, 1.0);
 uniform float edge_px = 1.5;
 uniform float glow_px = 10.0;
 uniform float glow_strength : hint_range(0.0, 1.0) = 0.45;

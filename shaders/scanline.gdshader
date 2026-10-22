@@ -6,11 +6,11 @@ render_mode blend_mix;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
-uniform float scanline_strength : hint_range(0.0, 1.0) = 0.12;
+uniform float scanline_strength : hint_range(0.0, 1.0) = 0.0;
 uniform float scanline_density = 360.0;
-uniform float flicker_strength : hint_range(0.0, 1.0) = 0.04;
-uniform float aberration : hint_range(0.0, 0.02) = 0.0012;
-uniform float vignette : hint_range(0.0, 1.0) = 0.25;
+uniform float flicker_strength : hint_range(0.0, 1.0) = 0.01;
+uniform float aberration : hint_range(0.0, 0.02) = 0.0;
+uniform float vignette : hint_range(0.0, 1.0) = 0.18;
 
 void fragment() {
 	vec2 uv = SCREEN_UV;

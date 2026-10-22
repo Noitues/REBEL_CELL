@@ -19,6 +19,13 @@ const STAGES := {
 	"toon": "res://addons/rc_look/lab/stages/toon_stage.gd",
 	"wet": "res://addons/rc_look/lab/stages/wet_stage.gd",
 	"sign": "res://addons/rc_look/lab/stages/sign_stage.gd",
+	"vinyl": "res://addons/rc_look/lab/stages/vinyl_stage.gd",
+	"crt": "res://addons/rc_look/lab/stages/crt_stage.gd",
+	"crt_reduce": "res://addons/rc_look/lab/stages/crt_reduce_stage.gd",
+	"bits": "res://addons/rc_look/lab/stages/bits_stage.gd",
+	"bits_rulings": "res://addons/rc_look/lab/stages/bits_rulings_stage.gd",
+	"bits_ruled": "res://addons/rc_look/lab/stages/bits_ruled_stage.gd",
+	"bits_flash": "res://addons/rc_look/lab/stages/bits_flash_stage.gd",
 }
 ## The neutral set: a mid-grey ramp, darker at night (sRGB).
 const SET_DAY := [Color(0.42, 0.43, 0.46), Color(0.62, 0.63, 0.66)]

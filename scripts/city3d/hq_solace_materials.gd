@@ -115,5 +115,8 @@ static func add_fog(host: Node3D, env: Environment, at: Transform3D, k: float = 
 	m.set_shader_parameter(&"unit_k", k)
 	fv.material = m
 	fv.position = Vector3(0.0, FOG_HEIGHT * 0.5 * k, 0.0)  # local to the compound node (placed at `at`)
+	# LOOK-TOOLBOX module 7 (designer DIRECTION_REVIEW 0f336345, 82c92714): the page's night air, a dark violet from 150 BU
+	# (look_air.tres "solace_night"); under the fog volume so the page's unstage drops it with the haze.
+	fv.add_child(RcLookAir.pass_node(RcLookAir.preset(&"solace_night"), at.origin.y))
 	host.add_child(fv)
 	return fv
