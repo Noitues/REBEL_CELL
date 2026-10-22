@@ -15,7 +15,7 @@ G = sys.argv[1]
 OUT = sys.argv[2]
 DIFF = json.load(open(sys.argv[3])) if len(sys.argv) > 3 and os.path.exists(sys.argv[3]) else {}
 W, H, PAD, LAB = 640, 360, 8, 22
-cols = [("street_creeping", "STREET CREEPING gap 2.5"), ("street_close", "STREET CLOSE gap 1.25 (seed 3, op L4)"), ("street_catching", "STREET CATCHING gap 0.6 (seed 3, op L4)")]
+cols = [("street_creeping", "STREET CREEPING"), ("street_close", "STREET CLOSE"), ("street_catching", "STREET CATCHING")]
 hq = [("hq_overview", "HQ overview floor 9 of 27 (CATCHING)"), ("hq_decision", "HQ decision +2 floors (CLOSE)")]
 try:
     font = ImageFont.truetype("C:/Windows/Fonts/consola.ttf", 15)
@@ -42,7 +42,7 @@ y = 40
 for ri, (lab, base, pre, items) in enumerate(rows):
     for ci, (key, name) in enumerate(items):
         x = PAD + ci * (W + PAD)
-        d.text((x, y), "%s | %s%s" % (lab.split(" (")[0], name, " (game seed 3, op L4)" if base == G and name.startswith("STREET") else ""), fill=(200, 200, 220), font=font)
+        d.text((x, y), "%s | %s%s" % (lab.split(" (")[0], name, " (game seed 3, fronts L1.5 / L4 / L6.5)" if base == G and name.startswith("STREET") else ""), fill=(200, 200, 220), font=font)
         sheet.paste(load(os.path.join(base, pre + key + ".png")), (x, y + LAB))
     y += H + LAB + PAD
 # squint rows: all five frames at 320 px, sharp and with a 4 px Gaussian blur; target row over Godot row
