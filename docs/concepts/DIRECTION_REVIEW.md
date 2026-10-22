@@ -1666,3 +1666,9 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Keep the slot fix (headlight_emit / taillight_emit emissive, max 0 today) so the model glows if it is ever placed.
   - The moving cars' light brightness is judged inside module 19 (detail density) against the plate's light trails.
   - No parked cars are added.
+- **REST / WORKSHOP / CACHE nodes (designer, 2026-10-22, sheet `docs/concepts/solace_vertical/nodes/sheet.jpg`):**
+  - Icons use C "Slap-tag": a saturated house / wrench / brick-stack glyph with a white contour die-cut and no disc.
+  - Pages use A's event layout: the window plus the RUN column, with the icon stamped beside the title.
+  - CACHE gets a header-only loot variant: the kind stamp and CACHE in the strip. The title stays LOOT and there is no new text.
+  - The CACHE colour moves off FIGHT's cyan, checked for distance under deutan.
+  - Art-pass ruling (bible §forecast pencil): no orange pencil plan arrows on the node pages. Forecasts are red dashed what-ifs only.
