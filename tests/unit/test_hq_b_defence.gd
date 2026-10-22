@@ -225,7 +225,8 @@ func test_round_44_your_network_under_threat_intel_if_placed_on_hover_and_its_pr
 	assert_false(page.get_node("WorkOrder").is_ancestor_of(network), "not over the work order")
 	var if_placed := page.find_child("IfPlaced", true, false) as Control
 	assert_not_null(if_placed, "the IF PLACED terminal")
-	assert_true(column.is_ancestor_of(if_placed), "on the right, in the card column")
+	assert_false(column.is_ancestor_of(if_placed), "RAID-FIX D6: not in the card column (it would be clipped by the Crew block)")
+	assert_lte(if_placed.get_global_rect().end.x, column.get_global_rect().position.x + 0.5, "over the map, left of the card column")
 	assert_false(if_placed.visible, "the clutter rule: no IF PLACED until a card is pointed at")
 	assert_null(page.find_child("DeploySteps", true, false), "RAID-01: no steps panel")
 	# Its lines are the rules' own preview: what the first defence would change on the target.
