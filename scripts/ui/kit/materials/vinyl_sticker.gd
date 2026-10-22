@@ -89,7 +89,7 @@ const PRESS_X := 1.04
 ## The keyboard-focus halo (ART_BIBLE §2.10, A-075): a lime border this wide (art px) just outside the die-cut's
 ## outline, drawn whenever the owning control has focus (motion or none), gone on focus loss. The colour is
 ## `Palette.FOCUS`.
-const FOCUS_HALO_PX := 8.0
+const FOCUS_HALO_PX := 14.0
 const DISABLED_ALPHA := 0.8
 
 const SLAP := &"sticker_slap"
@@ -677,6 +677,7 @@ func _sync() -> void:
 	_mat.set_shader_parameter(&"peel_px", peel_px())
 	_mat.set_shader_parameter(&"halo_px", FOCUS_HALO_PX if focus_halo else 0.0)
 	_mat.set_shader_parameter(&"halo_color", Palette.FOCUS)
+	_mat.set_shader_parameter(&"halo_ink", Palette.VINYL_INK)
 	_mat.set_shader_parameter(&"band_t", band_t)
 	_mat.set_shader_parameter(&"band_width", band_share())
 	_mat.set_shader_parameter(&"band_alpha", Motion.amplitude(SWEEP) * rainbow)

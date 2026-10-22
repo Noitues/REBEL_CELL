@@ -49,8 +49,11 @@ uniform float peel_back : hint_range(0.0, 1.0) = 0.0;
 uniform float peel_px = 34.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 // The keyboard-focus halo (ART_BIBLE §2.10, A-075): a border of halo_px in halo_color just outside the die-cut's
-// outline (the folded outline when peeled). 0 = none.
+// outline (the folded outline when peeled): halo_px of lime, with a HALO_KEY_PX ink keyline against the white. 0 = none.
 uniform float halo_px = 0.0;
+// The ink keyline's reach between the die-cut and the lime ring (art px).
+const float HALO_KEY_PX = 1.5;
+uniform vec4 halo_ink : source_color = vec4(0.078, 0.067, 0.094, 1.0);
 uniform vec4 halo_color : source_color = vec4(0.831, 1.0, 0.0, 1.0);
 
 float h21(vec2 p) {
@@ -111,6 +114,7 @@ float blurred(vec2 px, vec2 tps, float radius, vec2 P, vec2 u, float depth) {
 }
 
 void fragment() {
+	float halo_mask = 0.0;
 	vec2 tps = TEXTURE_PIXEL_SIZE;
 	vec2 px = UV / tps;
 	vec2 P; vec2 u; float depth;
@@ -198,21 +202,25 @@ void fragment() {
 		}
 	}
 
-	// ---- the keyboard-focus halo: a ring just outside the die-cut body (the opaque part: a baked sticker's own
-	// soft shadow in its alpha is not the body), drawn over that shadow
+	// ---- the keyboard-focus halo: a solid ring round the die-cut body (the opaque part: a baked sticker's own
+	// soft shadow in its alpha is not the body), a HALO_KEY_PX ink keyline against the white, then halo_px of lime,
+	// all at full alpha, even round corners. Drawn outside the sticker art's own alpha, so the final alpha keeps halo_mask (not only COLOR.a).
 	if (halo_px > 0.0 && dissolve <= 0.0) {
-		const int HN = 24;
-		float reach = 0.0;
-		for (int i = 0; i < HN; i++) {
-			float ang = 6.2831853 * float(i) / float(HN);
+		// 16 directions x 3 probes, plus the keyline's probe: the ring and the ink band share one accumulator
+		float score = 0.0;
+		for (int i = 0; i < 16; i++) {
+			float ang = 6.2831853 * float(i) / 16.0;
 			vec2 dir = vec2(cos(ang), sin(ang));
-			reach = max(reach, smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px, tps, P, u, depth)));
-			reach = max(reach, smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px * 0.5, tps, P, u, depth)));
+			score = max(score, 0.5 * smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px, tps, P, u, depth)));
+			score = max(score, 0.5 * smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px * 0.66, tps, P, u, depth)));
+			score = max(score, 0.5 * smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px * 0.33, tps, P, u, depth)));
+			score = max(score, smoothstep(0.8, 0.95, folded_alpha(px + dir * HALO_KEY_PX, tps, P, u, depth)));
 		}
 		float own = smoothstep(0.8, 0.95, a);
-		float halo_a = clamp(reach, 0.0, 1.0) * (1.0 - own);
-		rgb = mix(rgb, halo_color.rgb, halo_a);
-		a = max(a, halo_a);
+		float ring = step(0.25, score) * (1.0 - own);
+		rgb = mix(rgb, mix(halo_color.rgb, halo_ink.rgb, step(0.75, score)), ring);
+		a = max(a, ring);
+		halo_mask = ring;
 	}
 
 	// ---- dissolve: cells drop out left to right with a white-hot rim
@@ -246,5 +254,5 @@ void fragment() {
 	vec4 under = vec4(shadow_color.rgb, shadow);
 	float out_a = top.a + under.a * (1.0 - top.a);
 	vec3 out_rgb = (top.rgb * top.a + under.rgb * under.a * (1.0 - top.a)) / max(out_a, 0.0001);
-	COLOR = vec4(out_rgb, out_a * opacity) * vec4(1.0, 1.0, 1.0, COLOR.a);
+	COLOR = vec4(out_rgb, out_a * opacity) * vec4(1.0, 1.0, 1.0, max(COLOR.a, halo_mask));
 }

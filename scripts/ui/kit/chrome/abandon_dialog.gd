@@ -45,7 +45,7 @@ var kept_label: Label = null
 func _init(question: String, yes_text: String, title: String, body: String = "", costs: Array = [], heat: String = "",
 		kept: String = "", yes_note: String = "", no_note: String = "") -> void:
 	super(question, yes_text, "CANCEL", title, body, true, yes_note, no_note) # TR
-	var box := panel.body.get_child(0) as VBoxContainer
+	var box := _box
 	var rule_at := box.get_child_count() - 2  # the rule over the stickers' row
 	var body_label := box.find_child("Body", false, false) as Label
 	if body_label != null:

@@ -66,3 +66,29 @@ func test_the_halo_follows_focus_between_the_two_buttons_of_a_confirm_dialog() -
 	await _frames()
 	assert_eq(_halo_px(no.art), 0.0)
 	assert_eq(_halo_px(yes.art), VinylSticker.FOCUS_HALO_PX)
+
+
+## The rect a focused sticker's drawn die-cut covers, halo included (its body through the art's grown, tilted transform).
+func _focused_rect(b: SendItSticker) -> Rect2:
+	var t := b.art.get_global_transform()
+	var r := b.art.body_rect
+	var pts := [t * r.position, t * Vector2(r.end.x, r.position.y), t * r.end, t * Vector2(r.position.x, r.end.y)]
+	var box := Rect2(pts[0], Vector2.ZERO)
+	for p in pts:
+		box = box.expand(p)
+	return box.grow(VinylSticker.FOCUS_HALO_PX)
+
+
+func test_both_focused_stickers_and_the_words_sit_inside_the_dialogs_inner_frame() -> void:
+	var h := _holder()
+	var d := ConfirmDialog.new("Respin?", "RESPIN", "KEEP PLANNING", "RESPIN", "A body line that is long enough to show where the words start.")
+	h.add_child(d)
+	await _frames(6)
+	var frame := d.panel.body.get_global_rect()
+	for b in [d.no_button, d.yes_button]:
+		b.grab_focus()
+		await _frames(3)
+		var r := _focused_rect(b as SendItSticker)
+		assert_true(frame.encloses(r), "%s focused %s inside the frame %s" % [b.name, r, frame])
+	var q := d.find_child("Question", true, false) as Label
+	assert_gte(q.get_global_rect().position.x - frame.position.x, HudDialogPanel.PAD * 0.5 - 1.0, "the words sit in from the frame by the title's inset")

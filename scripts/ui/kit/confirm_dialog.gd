@@ -20,6 +20,7 @@ var no_button: Button
 ## The terminal panel (the glass that drops in).
 var panel: HudDialogPanel
 var _box: VBoxContainer
+var _room: MarginContainer
 
 ## The dialog's width and the question's width at text scale 1.0 (px).
 const DIALOG_W := 560.0
@@ -29,6 +30,14 @@ const STICKER_FONT := 40
 const MAX_SCALE := 1.4
 const TEXT_INSET := 60.0
 const BUTTON_GAP := 48
+## A-077: the dialog's words sit in from the frame by the title line's inset (`HudDialogPanel.PAD` x 0.5, px at text 1.0).
+const TEXT_PAD := HudDialogPanel.PAD * 0.5
+## A-077: room kept each side of the sticker row for a focused sticker's grow, tilt and lime halo (px at text 1.0),
+## so the focused stickers stay inside the dialog's inner frame.
+const FOCUS_ROOM := 14.0
+## Layout frames waited before the sticker room is measured (each re-measures), and the slack past the halo (px).
+const FIT_PASSES := 3
+const FIT_SLACK := 2.0
 
 
 ## `question` comes translated (H24 S4: the dialog shows its words as given); the answers,
@@ -44,15 +53,20 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 	add_child(panel)
 	panel.custom_minimum_size.x = custom_minimum_size.x  # W0 SCREENSFIX: the panel is as wide as the dialog, so centering the dialog centers the panel
 	panel.resized.connect(func() -> void: size = panel.size)  # the dialog is as big as its panel
+	var inset := MarginContainer.new()
+	inset.name = "TextInset"
+	inset.add_theme_constant_override("margin_left", roundi(TEXT_PAD * s))
+	inset.add_theme_constant_override("margin_right", roundi(TEXT_PAD * s))
+	panel.body.add_child(inset)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
-	panel.body.add_child(box)
+	inset.add_child(box)
 	_box = box
 	var l := Label.new()
 	l.name = "Question"
 	l.text = question
 	UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-	l.custom_minimum_size = Vector2(DIALOG_W * minf(s, MAX_SCALE) - TEXT_INSET, 0)
+	l.custom_minimum_size = Vector2(DIALOG_W * minf(s, MAX_SCALE) - TEXT_INSET - TEXT_PAD * 2.0 * s, 0)
 	l.add_theme_font_override("font", HudSkin.body())
 	l.add_theme_font_size_override("font_size", roundi(QUESTION_FONT * s))
 	l.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
@@ -71,10 +85,17 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 	rule.color = Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), 0.35)
 	rule.custom_minimum_size = Vector2(0, 1)
 	box.add_child(rule)
+	var room := MarginContainer.new()
+	room.name = "StickerRoom"
+	_room = room
+	var room_px := roundi((VinylSticker.FOCUS_HALO_PX + FOCUS_ROOM) * s)
+	room.add_theme_constant_override("margin_left", room_px)
+	room.add_theme_constant_override("margin_right", room_px)
+	box.add_child(room)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", BUTTON_GAP)
-	box.add_child(row)
+	room.add_child(row)
 	no_button = _sticker(row, no_text, no_note, HudSkin.VINYL_YELLOW)
 	no_button.name = "No"
 	no_button.pressed.connect(func() -> void: cancelled.emit(); _close())
@@ -238,6 +259,41 @@ func _ready() -> void:
 	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:
 		no_button.grab_focus.call_deferred()
+	# A-077: the focused (grown, tilted, haloed) stickers stay inside the inner frame: measured once the layout is in.
+	for i in FIT_PASSES:
+		await get_tree().process_frame
+		if not is_inside_tree():
+			return
+		_fit_room()
+
+
+## A-077: widens the sticker row's side room by however far a focused sticker (its die-cut grown to the hover
+## amplitude, tilted, plus the lime halo) would reach past the panel body's frame, on the side it reaches furthest
+## (the row is centred, so both sides take it). Every two-sticker dialog goes through here.
+func _fit_room() -> void:
+	if _room == null or panel == null:
+		return
+	var frame := panel.body.get_global_rect()
+	var amp := Motion.amplitude(VinylSticker.HOVER)
+	var lo := INF
+	var hi := -INF
+	for b in [no_button, yes_button]:
+		var sticker := b as SendItSticker
+		if sticker == null or sticker.art == null or sticker.art.body_rect.size.x <= 0.0:
+			continue
+		var t := sticker.art.get_global_transform()
+		var r := sticker.art.body_rect
+		var grow := r.size * maxf(amp - sticker.art.scale.x, 0.0) * 0.5 + Vector2.ONE * (VinylSticker.FOCUS_HALO_PX + FIT_SLACK)
+		for c in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
+			var g: Vector2 = t * c
+			lo = minf(lo, g.x - grow.x)
+			hi = maxf(hi, g.x + grow.x)
+	var excess := maxf(maxf(frame.position.x - lo, hi - frame.end.x), 0.0)
+	if excess < 0.5:
+		return
+	var more := ceili(excess)
+	_room.add_theme_constant_override("margin_left", _room.get_theme_constant("margin_left") + more)
+	_room.add_theme_constant_override("margin_right", _room.get_theme_constant("margin_right") + more)
 
 
 func _notification(what: int) -> void:
