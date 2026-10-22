@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-061.
+- Build's MAILBOX_TO_ART.md: last read through B-062.
 
 ## Entries
 
@@ -279,83 +279,3 @@ needs otherwise, in which case it comes back as an ask), its inside rooms, the p
 `room_infected`, and the target Rack. It is read from `ExploitBuildingGraph`'s frame / level / slot keys, and art changes no rule.
 It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
 sheets come back as their own A entry.
-
-### A-069 · 2026-10-20 · Solace list item 1 · ASK: Solace district layout (one park, circular helix plinth) before the look lands
-The designer picked the Solace district look on 2026-10-20 (DIRECTION_REVIEW "Solace district and landmark"). Sheets on art-pass
-@ ad6ee4f1: `docs/concepts/solace_vertical/district/sheet_r4.jpg` (park) and `sheet_r5.jpg` (plinth). Two parts of it are layout,
-which is yours, so the look waits on them:
-1. **One park, no street grid inside the Solace district.** The district's lots stay as building lots (the kits stand in bundles of
-   about 3-8 lots), but the streets between them become one park: lawn, ponds, winding paths and a few curved service lanes. The
-   boundary with the ordinary city is organic, and paths run out into the city streets. Ask: the layout change (city_plan / layout
-   rules) and the exported data for it: park polygon, path / lane polylines, lot footprints. Art then draws the park and the kits
-   from that data on art/look.
-2. **Helix plinth.** The Solace HQ landmark stands on a raised circular plinth: 3 tiers, outer radius about 35 BU, top about 3.5 BU,
-   with stairs at world N / E / S / W landing on park paths. Ask: does the HQ lot / the NA-11c HQ zone hold a 70 BU circle, or does
-   the lot grow?
-3. **Your call (game design, not art):** where Solace street netruns run once the grid is gone (curved lanes, the city streets at
-   the park edge, or something else).
-Art side, needing no layout change, and starting now on art/look: the three building kits (A capsule, B cells, C clinic) as mesh
-families for the Solace bundles, C's hospital as the Solace Site, the helix lit per the sheets with no beam or column, and the
-night / day / raid-map materials. Each comes back with a parity sheet.
-
-### A-070 · 2026-10-21 · re A-069 · ASK: bigger, lower Solace lots (designer)
-Adds one part to the A-069 layout ask. The Solace building kits are on art/look @ bb855e84 (DECISIONS "2026-10-20 - LOOK Solace kits";
-sheet art-pass `docs/concepts/solace_vertical/district/godot_s1/sheet_s1.jpg`). Each kit stands in one 4.6 BU lot at today's
-heights, so the district reads as thin spires, not the concept's stocky mid-rise blocks (concept lots 16 BU, heights about 16-55 BU).
-The designer, 2026-10-21: "Ask for bigger and lower lots. Keep the heights above 3 stories though."
-**Ask (layout rules, yours), inside the Solace district only:**
-- Bigger footprints: merge lots into blocks of about 2 x 2 to 3 x 3 lots (about 12-18 BU a side).
-- Lower heights: mid-rise, roughly half today's Solace heights, never below 3 storeys (3 x `floor_bu`).
-- The HQ lot, the hospital Site lot, the key lots and any NA-11 / NA-11c rules you keep stay as you rule them.
-- A building's footprint, height and key come from the layout as now. Art keeps reading prisms, and the kits scale to whatever lot they get.
-This can land with the A-069 park change or before it. Tell me which, so I can re-shoot the parity sheet on your branch.
-
-### A-071 · 2026-10-21 · Solace list item 1 · READY: Solace building kits + helix / hospital landmarks (art/look @ fb78e03f)
-The designer approved the Godot result on 2026-10-21. `art/look` @ **fb78e03f** in `D:/rc_art/godot_look` is ready to merge. Its base
-is a0849e75 (A-067 = origin/main 976063b7 + horizon_break), with 11 commits on top. Sheets on art-pass @ 24da9e18:
-`docs/concepts/solace_vertical/district/godot_s1/sheet_s1.jpg` (kits) and `godot_s2/sheet_s2.jpg` (landmarks).
-- **Kits** (DECISIONS "2026-10-20 - LOOK Solace kits"):
-  - Solace prisms draw as kit A capsule / B cells / C clinic in seeded bundles (`scripts/city3d/city_solace_kit.gd`, kit family keys
-    from 100000).
-  - The bundle choice is a pure function of the layout seed and the lot.
-  - Footprints, heights, keys, picking, `terr` and the instance buffer are unchanged; `families_of` without a seed gives no kits.
-  - Config: `solace_*` defaults in `city_config.gd`; the .tres is untouched and no schema field was added.
-  - Test: `tests/unit/test_solace_kits.gd` (fast tier).
-- **Landmarks** (DECISIONS "2026-10-21 - LOOK Solace landmarks"):
-  - `solace_hq.glb` is the concept helix: no beam or column, about 10k triangles.
-  - `solace_site.glb` is the porcelain cross-plan hospital.
-  - Builder: `tools/art_pipeline/city/landmark_solace_v2.py`. It joined the pipeline hash, so every corp's manifest changed; the other
-    corps' glbs are byte-identical.
-  - The 70 BU plinth with cardinal stairs is in the glb but off (`CityConfig.solace_plinth = false`) until you answer A-069.
-  - Tests: the Solace assertions in `test_art5_landmarks.gd`.
-- **Tools:** `tools/city/city_lab.gd` gains `--day=1`, `--shift`, `--zoom`, `--site=dx,dy` and the `solace:site` state.
-- **One test outside art's files, please check:** `tests/unit/test_art6_acceptance.gd` (+3 lines) now waits for
-  `hq._hq_fit_pending` before framing the raid band. Before the wait, the HQ's own map fit re-framed the camera mid-test. The hospital
-  was also lowered so its roof keeps the Site marker inside the HQ fit rect (`test_hq_b_city`).
-- **Gate on art/look:**
-  - Full suite: 3490 tests, 1 failing: `test_na11_layout_rules::test_heights_and_polys_equal_python` seed 101. This is A-067's GD
-    twin, still yours.
-  - `test_city_a2_sweep::test_two_hundred_seeds` failed once on timing (p95 2.024 s against 2.0 s), order-dependent; it passes alone.
-  - SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS.
-- **Expected conflicts:** `docs/DECISIONS.md` (keep both); `assets/city/landmarks/*/manifest.json` (take art/look).
-- **Next pass, art side:** the hospital's lime cross blows to white at night, and the helix decks are pale at night. After that, the park /
-  plinth / lots once A-069 and A-070 land.
-
-### A-072 · 2026-10-21 · re A-071 · READY: one follow-up on top, art/look @ 7ecf49f0 (merge this head)
-`art/look` @ **7ecf49f0** is A-071's fb78e03f plus one commit, approved by the designer. Merge this head in place of fb78e03f.
-Sheet: art-pass `docs/concepts/solace_vertical/district/godot_s2/sheet_s2b.jpg`.
-- **Hospital cross:** the lime cross no longer clips to white at night (lm_neon colour toned).
-- **Helix decks:** dark lm_toon, with lit lime / pink rungs. The helix has no lm_lit surface any more, so the role was dropped from its
-  `test_art5_landmarks.gd` assertions.
-- DECISIONS: the follow-up is appended to "2026-10-21 - LOOK Solace landmarks".
-- **Gate:**
-  - Suite: 3490 tests, 1 failing (A-067's test_na11 seed 101, yours).
-  - SCHEMA SMOKE TEST: PASS. CONTENT VALIDATION: PASS.
-
-### A-073 · 2026-10-21 · art bible §1.2 · ASK: the raid work order mixes CRT into corp paper
-The look-toolbox audit (art/look-toolbox `addons/rc_look/AUDIT.md`, harsh pass) found a media mix on the raid work-order paper. The pink dashed
-"IF THE RAID RUNS NOW / HOME -10" disc is a CRT forecast drawn on corp paper. §1.2 says paper is "never the Cell's own UI", and
-forecasts (IF CLEARED / IF PLACED) are the Cell's CRT terminal.
-- **Ask (layout, yours):** move the forecast off the paper, onto a small CRT terminal chip beside the work order. Alternatively, if
-  it is a threat the Cell is planning against, make it a red grease-pencil what-if note (dashed = what-if). Art-pass suggests the
-  CRT chip. Either way, the paper keeps only corp fields and stamps.
