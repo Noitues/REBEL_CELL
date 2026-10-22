@@ -2,7 +2,8 @@
 // banded light spill as one include, so the props / busts material (toon_ink.gdshader) and the
 // city's building and ground shaders (shaders/city/) band light and spill the same way.
 // Spill sources come from LightSpill.uniforms_3d (ToonInkMaterial.set_spill sets them on any
-// material that includes this file).
+// material that includes this file). The fall is rc_look's (LOOK-TOOLBOX module 6: rcl_fall_lin).
+#include "res://addons/rc_look/shaders/rc_light.gdshaderinc"
 
 uniform vec4 spill_lights[8];
 uniform vec4 spill_colors[8];
@@ -23,7 +24,7 @@ vec3 toon_spill(vec3 world_pos, vec3 n_world, float lo, float hi, float shade_mi
 		}
 		vec3 d = spill_lights[i].xyz - world_pos;
 		float r = max(spill_lights[i].w, 0.001);
-		float fall = clamp(1.0 - length(d) / r, 0.0, 1.0);
+		float fall = rcl_fall_lin(length(d), r);
 		float facing = clamp(dot(n_world, normalize(d)) * 0.7 + 0.3, 0.0, 1.0);
 		int b = toon_band_index(fall * fall * facing, lo, hi);
 		float s = b == 2 ? 1.0 : (b == 1 ? shade_mid : shade_low);

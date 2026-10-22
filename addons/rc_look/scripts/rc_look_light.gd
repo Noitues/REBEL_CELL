@@ -28,9 +28,14 @@ static func fall_exp(d: float, reach: float, k: float) -> float:
 	return exp(-pow(maxf(d, 0.0) / maxf(reach, 1e-5), k))
 
 
-## (1 - d / reach)^p clamped, as rcl_fall_pow.
+## clamp(1 - d / reach), as rcl_fall_lin.
+static func fall_lin(d: float, reach: float) -> float:
+	return clampf(1.0 - maxf(d, 0.0) / maxf(reach, 1e-5), 0.0, 1.0)
+
+
+## fall_lin^p, as rcl_fall_pow.
 static func fall_pow(d: float, reach: float, p: float) -> float:
-	return pow(clampf(1.0 - maxf(d, 0.0) / maxf(reach, 1e-5), 0.0, 1.0), p)
+	return pow(fall_lin(d, reach), p)
 
 
 ## A preset's linear-light intensity at distance `d` (its falloff times its gain).

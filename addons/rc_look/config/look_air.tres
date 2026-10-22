@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="night"]
 script = ExtResource("2")
 start = 0.0
-density = 0.009
+density = 0.002
 height = 30.0
 high = 0.15
 sky_top = Color(0.306, 0.286, 0.408, 1)

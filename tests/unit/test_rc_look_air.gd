@@ -65,3 +65,12 @@ func test_far_things_converge_on_the_horizon() -> void:
 		var p := RcLookAir.preset(n)
 		var far := RcLookAir.mix(Palette.DESK_METAL, p.air_color(), RcLookAir.amount(p, 1e6, 0.0))
 		assert_true(far.is_equal_approx(RcLookAir.sky(p, 0.0)), "%s: the far facade is the horizon" % n)
+
+
+func test_night_air_keeps_the_skyline_dark() -> void:
+	# Art-pass 2026-10-22 (squint test against hq_solace_overview): the air never lifts the near plane, and far towers
+	# stay clearly darker than the sky behind them; depth comes from window density and size, not a grey wash.
+	var p := RcLookAir.preset(&"night")
+	assert_lt(RcLookAir.amount(p, 20.0, 0.0), 0.05, "the near plane (20 BU) is not lifted")
+	var far := RcLookAir.mix(Palette.DESK_DARK, p.air_color(), RcLookAir.amount(p, 480.0, 0.0))
+	assert_lt(Palette.luminance(far), Palette.luminance(RcLookAir.sky(p, 0.02)) * 0.8, "far towers darker than the sky")

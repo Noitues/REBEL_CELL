@@ -1,7 +1,8 @@
 // LOOK-TOOLBOX module 6: light, spill, glow. One falloff family and one light space for every view, so a neon sign
 // reaches as far in the UI as in the 3D city:
 //   - rcl_fall_exp(d, reach, k): exp(-(d / reach)^k), unbounded (k 1: exponential, 2: gaussian); glows and halos.
-//   - rcl_fall_pow(d, reach, p): (1 - d / reach)^p, zero at reach (finite support); pools and spills on surfaces.
+//   - rcl_fall_lin(d, reach): clamp(1 - d / reach), exact (the toon spill's linear fall);
+//     rcl_fall_pow(d, reach, p): rcl_fall_lin^p, zero at reach (finite support); pools and spills on surfaces.
 //   - rcl_light_add(base_srgb, light_lin): adds light in LINEAR light under a soft ceiling, 1 - (1 - b) exp(-L / (1 - b))
 //     per channel, applied as ONE scale on the light (the channel that saturates first sets it), so the light keeps its
 //     hue and overlapping neon holds its colour instead of drifting to white (designer 2026-10-21). The base unchanged at
@@ -19,8 +20,12 @@ float rcl_fall_exp(float d, float reach, float k) {
 	return exp(-pow(max(d, 0.0) / max(reach, 1e-5), k));
 }
 
+float rcl_fall_lin(float d, float reach) {
+	return clamp(1.0 - max(d, 0.0) / max(reach, 1e-5), 0.0, 1.0);
+}
+
 float rcl_fall_pow(float d, float reach, float p) {
-	return pow(clamp(1.0 - max(d, 0.0) / max(reach, 1e-5), 0.0, 1.0), p);
+	return pow(rcl_fall_lin(d, reach), p);
 }
 
 // Preset falloff: kind 0 = exp (shape = k), 1 = pow (shape = p).
