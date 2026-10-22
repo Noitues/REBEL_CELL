@@ -5207,7 +5207,7 @@ func _place_forecast_chip(page: Control, order: Control) -> void:
 ## colour; the tooltip says it is a projection. Named "Projection".
 func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 	var clean := RaidVerdict.clean_projection(projection)
-	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection), RaidVerdict.tier_color_projection(projection, RunManager.config()), RaidVerdict.icon_of(clean))
 	chip.tooltip_text = UiTip.fold(forecast_tip(projection))
 	# A-076 A1: the live what-if numbers (X -> Y) are the Cell's forecast, so they live on the chip, not the paper.
 	var lost_home := projection.home_after < projection.home_before
@@ -5309,6 +5309,8 @@ func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
 	if not a.is_empty() and not b.is_empty():
 		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
 	lines.append(tr("HOME SERVER %d > %d") % [now.home_after, then.home_after])
+	# RAID-FIX A3: the change in words of effect (RaidOutcome.if_placed).
+	lines.append(RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word))
 	return lines
 
 
@@ -5631,7 +5633,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
 	var verdict := RaidVerdict.of_result(r)
 	var clean := RaidVerdict.clean(r)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -6105,7 +6107,7 @@ func show_raid_summary() -> void:
 	var raid_key := StringName(String(r.get("raid_id", "")))
 	var raid: RaidData = RunManager.lookup().get_content(raid_key) as RaidData if RunManager.lookup().has(raid_key) else null
 	var raid_name := TextDb.t(raid, "display_name").to_upper() if raid != null else String(r.get("raid_id", "")).to_upper()
-	var held := not bool(r.get("campaign_lost", false))
+	var held := bool(r.get("won", false))  # RAID-FIX A1: CELL HOLDS only for a REPELLED raid
 	var number := skin.order_number(StringName(String(r.get("raid_id", ""))), c.heat)
 	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
 	report.name = "RaidReport"
