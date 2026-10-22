@@ -1624,3 +1624,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **CRT reduce effects, module 14 (designer, 2026-10-22)** (`D:/rc_scratch/rc_look/m14/shots/crt_reduce_night_t2.png`): KEEP_STATIC
   everywhere. Reduce effects stops flicker, roll and scroll; the still scanlines (and the fx vignette) stay. Only high contrast removes
   the static texture. The ZERO_SCAN (ui_theme, neon_city) and HIDE (fx.gd) paths move onto this rule when migrated.
+- **Solace THE BLOOM v2, A "Necrosis" in 3D (designer, 2026-10-22)** (`solace_vertical/bloom/sheet_A3d.jpg`, b0edc525):
+  - Port A to Godot, look only, with no raid-outcome wiring while the raid redesign is paused. The decision shot's front lift (about 2
+    floors above the gap-1.25 rule, to keep it in frame) is OK'd.
+  - Push the HQ overview front: a brighter hot hairline plus a faint spore haze just above it, with the body still plum-black, so the
+    front separates from clean at thumbnail size.
+  - The raid body goes darker plum: plum-black skin with hot pink veins and front edge, as on street and HQ. The TIDE gauge and % stay
+    the loudest elements. The raid view itself waits for the redesign.
