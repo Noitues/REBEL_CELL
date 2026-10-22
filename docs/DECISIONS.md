@@ -9800,4 +9800,15 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
   `word_tail_len`, `marker_stroke` `tail_fade`); a TrueType face can't hold alpha, so the TTF keeps only the shape.
   Digits and punctuation keep their earlier source. Step 4, more width at turns and curves (the pen riding up on its
   edge), waits on the designer's look at this pass.
+- **Calligraphic, thinner, fluid, with character (designer 2026-10-21, same pass).** The face's outline is now a broad
+  nib stamped along each stroke (`build_wax_font.py` `_stroke_contours`): an ellipse held at 25 degrees with 0.7
+  contrast, scaled by the pressure (the bold start; the end tapering 45 % as the pen lifts), each two stamps hulled
+  into one smooth band. It replaces the offset outline: its corner pieces, round caps, ragged ends and capsule fallback
+  left lumps, beads and seams. The ink is thinner again (0.115 em; hero words 0.15), so W and M are no longer blocks.
+  Flourishes (an `F` stroke kind that runs on from the stroke it leaves and is left out of the advance, so it tucks
+  under the next letter): R and K tails, a Q swash, A, E, L, U and Z feet, a T crossbar hook, C and S end curls, a J
+  top bar. The engine's wax words use the same nib (`word_nib_deg` 25, `word_nib_contrast` 0.7, through
+  `RcPencilPressure.nib`), a box-cap start, a smooth end taper and fade (no raggedness). The TTF is 437 KB, up from
+  150 KB. The look lab takes `--window=1920x1080`, so its shots render the vectors at 1080p and not at the 720p
+  canvas. This supersedes the hand-built entry's chisel cut, end rag and 20 % thin end.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.

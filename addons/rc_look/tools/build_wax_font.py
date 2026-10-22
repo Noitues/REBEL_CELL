@@ -36,10 +36,10 @@ UPM = 1000
 ASCENT = 1110
 DESCENT = 317
 CAP_INK = 740
-# The wax's width (em units; designer 2026-10-21: thinner so A, R, G keep open counters) and the grid's width: the
+# The wax's width (em units; designer 2026-10-21: thinner, twice, so A, R, G and W keep open counters) and the grid's width: the
 # skeleton is laid for GRID_WIDTH (the baseline stroke's centre half of it up, the cap stroke's
 # half of it under the cap height); the bearings sit past the wax's own half width (tight, as a marker hand packs).
-WIDTH = 160
+WIDTH = 115
 GRID_WIDTH = 200
 GRID_Y0 = GRID_WIDTH / 2
 GRID_K = (CAP_INK - GRID_WIDTH) / 100.0
@@ -53,47 +53,53 @@ SMALL_CAPS = 0.8
 # to TURN radians round its centre.
 JITTER = 1.0
 TURN = 0.035
-# Sampling: points per grid unit along a curve, the centre line's step (em units), a corner sharper than CORNER_DEG
-# splits the outline (an offset round a sharp corner folds over itself), round caps' segments.
+# Sampling: points per grid unit along a curve and the centre line's step (em units).
 CURVE_SAMPLES = 0.45
-STEP = 14.0
-CORNER_DEG = 48.0
-CAP_SEGMENTS = 8
-# The pressure in the outline: the width swells by SWELL mid-stroke. The pen start (designer 2026-10-21: bolder, pen
-# shaped): START_BOLD wider, easing to the width over START_LEN, cut square by the chisel (its flat end pushed back
-# START_BACK of the half width, slanted NIB of it). The end: END_THIN thinner over END_LEN with its edges uneven by
-# END_RAG (a hash per sample and side), a ragged round cap.
+STEP = 7.0
+# The pressure: the nib swells by SWELL mid-stroke. The pen start (designer 2026-10-21: bolder, pen shaped) is
+# START_BOLD bigger, easing out over START_LEN; the end tapers by END_THIN over END_LEN as the pen lifts.
 SWELL = 0.07
 START_BOLD = 0.24
 START_LEN = 110.0
-START_BACK = 0.3
-NIB = 0.28
-END_THIN = 0.2
-END_LEN = 130.0
-END_RAG = 0.1
+END_THIN = 0.45
+END_LEN = 160.0
+# The broad nib (designer 2026-10-21: calligraphic, fluid): an ellipse held at NIB_DEG (up to the right), NIB_CONTRAST
+# thinner across its edge than along it; NIB_LONG scales it so a downstroke draws about WIDTH wide. It is stamped every
+# STAMP_STEP em units as NIB_POINTS points; consecutive stamps are hulled into one smooth band. RcPencilLook.word_nib_deg
+# / word_nib_contrast carry the same numbers for the engine's wax words.
+NIB_DEG = 25.0
+NIB_CONTRAST = 0.7
+NIB_LONG = 1.12
+NIB_POINTS = 12
+STAMP_STEP = 16.0
 
 # --- The source --------------------------------------------------------------------------------------------------
 # glyph: (width in grid units, [stroke, ...]); a stroke is "L" (a polyline: its corners stay corners) or "C" (a
-# Catmull-Rom curve through the points) and its points. A single-point "D" is a dot (a pen dab).
+# Catmull-Rom curve through the points) and its points. A single-point "D" is a dot (a pen dab). "F" is a flourish: a
+# curve like "C" that the advance leaves out, so a swash tucks under the next letter instead of pushing it away.
 GLYPHS = {
     # Marker capitals after the kit's HIT IT (designer 2026-10-21: hand-built, never a geometric face): narrow, mostly
     # straight strokes with a hand's bends, crossbars that climb and run past the stems, bowls of a few pushes.
-    "A": (56, [("L", [(-1, -3), (23, 101), (33, 102), (57, -4)]), ("L", [(9, 37), (51, 41)])]),
+    "A": (56, [("L", [(-1, -3), (23, 101), (33, 102), (57, -4)]), ("L", [(9, 37), (51, 41)]),
+               ("F", [(57, -4), (64, -10), (74, -9), (80, -1)])]),
     "B": (50, [("L", [(1, -2), (0, 103)]),
                ("C", [(0, 101), (30, 102), (44, 93), (42, 73), (26, 59), (4, 58)]),
                ("C", [(4, 58), (36, 58), (52, 44), (50, 15), (32, -1), (1, 0)])]),
-    "C": (52, [("C", [(52, 88), (40, 101), (16, 97), (2, 70), (0, 34), (10, 7), (30, -1), (54, 7)])]),
+    "C": (52, [("C", [(52, 88), (40, 101), (16, 97), (2, 70), (0, 34), (10, 7), (30, -1), (54, 7), (60, 18)])]),
     "D": (52, [("L", [(1, -3), (0, 103)]),
                ("C", [(0, 101), (30, 100), (50, 82), (54, 46), (44, 14), (24, 0), (1, 0)])]),
-    "E": (50, [("L", [(52, 102), (1, 100), (0, 1), (54, -2)]), ("L", [(0, 52), (40, 55)])]),
+    "E": (50, [("L", [(52, 102), (1, 100), (0, 1), (50, -2)]), ("L", [(0, 52), (40, 55)]),
+               ("F", [(50, -2), (62, -5), (72, -2), (76, 4)])]),
     "F": (50, [("L", [(52, 103), (1, 100), (-1, -3)]), ("L", [(0, 54), (40, 57)])]),
     "G": (56, [("C", [(52, 86), (40, 101), (16, 97), (2, 70), (0, 34), (10, 7), (30, -1), (50, 4), (57, 22),
                       (57, 46)]), ("L", [(28, 47), (62, 45)])]),
     "H": (50, [("L", [(1, 103), (0, -3)]), ("L", [(50, 104), (48, -4)]), ("L", [(-4, 46), (55, 50)])]),
     "I": (0, [("L", [(1, 103), (0, -3)])]),
-    "J": (48, [("C", [(50, 103), (50, 40), (44, 8), (26, -1), (8, 4), (0, 22)])]),
-    "K": (52, [("L", [(0, 103), (0, -3)]), ("L", [(52, 103), (6, 47), (55, -4)])]),
-    "L": (46, [("L", [(0, 104), (0, 0), (48, 2)])]),
+    "J": (48, [("L", [(22, 101), (66, 104)]), ("C", [(48, 103), (49, 40), (43, 8), (24, -2), (6, 4), (-2, 22),
+                                                         (2, 34)])]),
+    "K": (52, [("L", [(0, 103), (0, -3)]), ("L", [(52, 103), (6, 47)]),
+               ("C", [(6, 47), (30, 24), (44, 6), (54, -3)]), ("F", [(54, -3), (62, -11), (76, -13), (86, -4)])]),
+    "L": (46, [("L", [(0, 104), (0, 0), (44, 2)]), ("F", [(44, 2), (58, -1), (68, 2), (72, 8)])]),
     "M": (64, [("L", [(0, -3), (5, 102), (32, 42), (60, 103), (64, -3)])]),
     "N": (52, [("L", [(0, -3), (1, 102), (50, -1), (52, 104)])]),
     "O": (54, [("C", [(28, 100), (48, 88), (54, 52), (48, 16), (28, 0), (8, 10), (0, 46), (6, 84), (26, 100),
@@ -101,18 +107,20 @@ GLYPHS = {
     "P": (50, [("L", [(1, -3), (0, 103)]),
                ("C", [(0, 101), (34, 101), (50, 88), (48, 62), (30, 43), (2, 43)])]),
     "Q": (54, [("C", [(28, 100), (48, 88), (54, 52), (48, 16), (28, 0), (8, 10), (0, 46), (6, 84), (26, 100),
-                      (44, 96)]), ("L", [(32, 26), (60, -12)])]),
+                      (44, 96)]), ("F", [(24, 24), (40, 4), (56, -12), (76, -16), (92, -8)])]),
     "R": (52, [("L", [(1, -3), (0, 103)]),
-               ("C", [(0, 101), (34, 101), (50, 88), (48, 64), (30, 46), (2, 46)]), ("L", [(18, 46), (54, -4)])]),
+               ("C", [(0, 101), (34, 101), (50, 88), (48, 64), (30, 46), (2, 46)]),
+               ("C", [(18, 46), (32, 26), (44, 8), (54, -3)]), ("F", [(54, -3), (62, -12), (76, -16), (90, -10), (98, 4)])]),
     "S": (50, [("C", [(52, 88), (36, 100), (12, 96), (2, 78), (12, 60), (30, 52), (48, 40), (52, 16), (36, 0), (12, 0),
-                      (-2, 12)])]),
-    "T": (56, [("L", [(-6, 98), (62, 103)]), ("L", [(29, 101), (27, -3)])]),
-    "U": (50, [("C", [(0, 103), (-1, 32), (6, 6), (26, -1), (44, 6), (50, 32), (51, 103)])]),
+                      (-2, 12), (-4, 24)])]),
+    "T": (56, [("C", [(-8, 88), (-7, 97), (2, 99), (62, 103)]), ("L", [(29, 101), (27, -3)])]),
+    "U": (50, [("C", [(0, 103), (-1, 32), (6, 6), (26, -1), (44, 6), (50, 32), (51, 103)]),
+               ("L", [(51, 100), (52, -3)]), ("F", [(52, -3), (60, -10), (70, -9), (76, 0)])]),
     "V": (54, [("L", [(0, 103), (26, -3), (54, 104)])]),
     "W": (70, [("L", [(0, 103), (14, -3), (34, 70), (54, -3), (70, 104)])]),
     "X": (52, [("L", [(0, 103), (54, -4)]), ("L", [(52, 104), (2, -3)])]),
     "Y": (54, [("L", [(0, 103), (27, 52), (56, 104)]), ("L", [(27, 52), (25, -3)])]),
-    "Z": (52, [("L", [(0, 100), (54, 102), (1, 1), (56, -2)])]),
+    "Z": (52, [("L", [(0, 100), (54, 102), (1, 1), (50, -2)]), ("F", [(50, -2), (62, -5), (72, -2), (76, 4)])]),
     "0": (50, [("C", [(25, 100), (45, 88), (50, 50), (45, 12), (25, 0), (5, 12), (0, 50), (5, 88), (27, 100),
                       (42, 94)])]),
     "1": (28, [("L", [(0, 80), (26, 102), (26, -3)])]),
@@ -234,7 +242,7 @@ def glyph_strokes(ch):
             x, y = x + jx - cx, y + jy - cy
             x, y = x * cs - y * sn + cx, x * sn + y * cs + cy
             moved.append((x, y))
-        if kind == "C":
+        if kind in ("C", "F"):
             moved = _catmull(moved, CURVE_SAMPLES)
         em = []
         for (x, y) in moved:
@@ -245,108 +253,94 @@ def glyph_strokes(ch):
             # a dab: the pen down and a short push
             x, y = em[0]
             em = [(x - WIDTH * 0.08, y + WIDTH * 0.02), (x + WIDTH * 0.08, y - WIDTH * 0.02)]
-        elif kind == "C":
+        elif kind in ("C", "F"):
             em = _resample(em, STEP)
         else:
             em = _resample_keep_corners(em, STEP)
         out.append((kind, em))
     # shift so the ink starts BEARING past the origin
-    min_x = min(p[0] for _, s in out for p in s)
-    max_x = max(p[0] for _, s in out for p in s)
+    body = [s for kind, s in out if kind != "F"] or [s for _, s in out]
+    min_x = min(p[0] for s in body for p in s)
+    max_x = max(p[0] for s in body for p in s)
     dx = BEARING + WIDTH / 2 - min_x
     out = [(kind, [(x + dx, y) for (x, y) in s]) for kind, s in out]
+    # a flourish is the pen running on: it joins the stroke whose end it leaves from (one pen start, one end)
+    joined = []
+    for kind, s in out:
+        if kind == "F" and joined:
+            j = min(range(len(joined)), key=lambda q: math.dist(joined[q][1][-1], s[0]))
+            joined[j] = ("L", joined[j][1] + s[1:])
+        else:
+            joined.append((kind, s))
+    out = joined
     adv = int(round(max_x - min_x + WIDTH + 2 * BEARING))
     return out, adv
 
 
-def _split_corners(pts):
-    """Splits a polyline where it turns sharper than CORNER_DEG (the outline of each piece never folds)."""
-    pieces = [[pts[0]]]
-    for i in range(1, len(pts) - 1):
-        a, b, c = pts[i - 1], pts[i], pts[i + 1]
-        v1 = (b[0] - a[0], b[1] - a[1])
-        v2 = (c[0] - b[0], c[1] - b[1])
-        l1, l2 = math.hypot(*v1), math.hypot(*v2)
-        pieces[-1].append(b)
-        if l1 > 0 and l2 > 0:
-            cosang = (v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2)
-            if math.degrees(math.acos(max(-1.0, min(1.0, cosang)))) > CORNER_DEG:
-                pieces.append([b])
-    pieces[-1].append(pts[-1])
-    return [p for p in pieces if len(p) >= 2]
-
-
 def _half_width(along, total):
-    """The half width `along` em units into a stroke `total` long: the bold start, the swell, the thin end."""
+    """The nib's scale (half the width) `along` em units into a stroke `total` long: the bold start, the swell, the
+    tapered end (the pen lifting)."""
     w = WIDTH * (1.0 + SWELL * math.sin(math.pi * along / max(total, 1.0)))
     if along < START_LEN:
         w *= 1.0 + START_BOLD * (1.0 - along / START_LEN) ** 2
     into_end = total - along
     if into_end < END_LEN:
-        w *= 1.0 - END_THIN * (1.0 - into_end / END_LEN)
+        t = 1.0 - into_end / END_LEN
+        w *= 1.0 - END_THIN * t * t
     return w * 0.5
 
 
-def _rag(along, total, seed, i, side):
-    """The end's uneven edge: a factor on the half width (1 outside the end)."""
-    into_end = total - along
-    if into_end >= END_LEN:
-        return 1.0
-    return 1.0 + END_RAG * (1.0 - into_end / END_LEN) * _h11(seed, i, side)
+def _nib_shape(h):
+    """The broad nib at scale `h` (em units): an ellipse NIB_DEG up to the right, h * NIB_LONG along its edge and
+    h * (1 - NIB_CONTRAST) * NIB_LONG across it, so a downstroke draws about 2 h wide and a stroke along the nib thin."""
+    th = math.radians(NIB_DEG)
+    ca, sa = math.cos(th), math.sin(th)
+    a = h * NIB_LONG
+    bb = a * (1.0 - NIB_CONTRAST)
+    out = []
+    for k in range(NIB_POINTS):
+        t = math.tau * k / NIB_POINTS
+        x, y = math.cos(t) * a, math.sin(t) * bb
+        out.append((x * ca - y * sa, x * sa + y * ca))
+    return out
 
 
-def _outline(pts, seed=0, along0=0.0, total=None, first=True, last=True):
-    """A closed outline round polyline `pts`, clockwise in y-up coordinates: a piece of a stroke `total` long starting
-    `along0` into it (the whole stroke by default). The stroke's first piece starts with the chisel's square cut, its
-    last ends in a ragged round cap; a piece's inner ends (at a corner) are round."""
-    n = len(pts)
-    acc = [along0]
-    for a, b in zip(pts, pts[1:]):
-        acc.append(acc[-1] + math.dist(a, b))
-    if total is None:
-        total = acc[-1]
-    left, right = [], []
-    for i, p in enumerate(pts):
-        a = pts[max(0, i - 1)]
-        b = pts[min(n - 1, i + 1)]
-        dx, dy = b[0] - a[0], b[1] - a[1]
-        ln = math.hypot(dx, dy) or 1.0
-        nx, ny = -dy / ln, dx / ln
-        h = _half_width(acc[i], total)
-        k = int(acc[i] / STEP)
-        left.append((p[0] + nx * h * _rag(acc[i], total, seed, k, 1), p[1] + ny * h * _rag(acc[i], total, seed, k, 2)))
-        right.append((p[0] - nx * h * _rag(acc[i], total, seed, k, 3), p[1] - ny * h * _rag(acc[i], total, seed, k, 4)))
+def _hull(pts):
+    """The convex hull of `pts` (monotone chain), clockwise in y-up coordinates."""
+    p = sorted(set((round(x, 2), round(y, 2)) for x, y in pts))
+    if len(p) < 3:
+        return p
 
-    def cap(centre, frm, h, sweep_from, rag):
-        out = []
-        for k in range(1, CAP_SEGMENTS):
-            ang = sweep_from - math.pi * k / CAP_SEGMENTS
-            r = h * (1.0 + rag * _h11(seed, 700 + k, 5))
-            out.append((centre[0] + math.cos(ang) * r, centre[1] + math.sin(ang) * r))
-        return out
-
-    def ang_of(c, q):
-        return math.atan2(q[1] - c[1], q[0] - c[0])
-
-    end_h = _half_width(acc[-1], total)
-    start_h = _half_width(acc[0], total)
-    ring = list(left)
-    ring += cap(pts[-1], left[-1], end_h, ang_of(pts[-1], left[-1]), END_RAG if last else 0.0)
-    ring += list(reversed(right))
-    if first and n >= 2:
-        # the chisel's square cut: both corners pushed back along the stroke, the nib's slant between them
-        tx, ty = pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]
-        tl = math.hypot(tx, ty) or 1.0
-        tx, ty = tx / tl, ty / tl
-        br, bl = start_h * (START_BACK - NIB), start_h * (START_BACK + NIB)
-        ring += [(right[0][0] - tx * br, right[0][1] - ty * br), (left[0][0] - tx * bl, left[0][1] - ty * bl)]
-    else:
-        ring += cap(pts[0], right[0], start_h, ang_of(pts[0], right[0]), 0.0)
-    # left-then-reversed-right is counter-clockwise for a stroke going +x with the left normal up; TrueType wants
-    # clockwise outer contours
-    if _area(ring) > 0:
-        ring.reverse()
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lower, upper = [], []
+    for q in p:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], q) <= 0:
+            lower.pop()
+        lower.append(q)
+    for q in reversed(p):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], q) <= 0:
+            upper.pop()
+        upper.append(q)
+    ring = lower[:-1] + upper[:-1]  # counter-clockwise
+    ring.reverse()
     return ring
+
+
+def _stroke_contours(pts):
+    """A stroke drawn by the nib: the hull of each two consecutive stamps along it (TrueType fills their union)."""
+    total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
+    path = _resample(pts, STAMP_STEP) if len(pts) > 1 else list(pts)
+    acc = [0.0]
+    for a, b in zip(path, path[1:]):
+        acc.append(acc[-1] + math.dist(a, b))
+    stamps = []
+    for p, d in zip(path, acc):
+        h = _half_width(d, total)
+        stamps.append([(p[0] + x, p[1] + y) for x, y in _nib_shape(h)])
+    if len(stamps) == 1:
+        return [_hull(stamps[0])]
+    return [_hull(stamps[i] + stamps[i + 1]) for i in range(len(stamps) - 1)]
 
 
 def _area(ring):
@@ -356,55 +350,10 @@ def _area(ring):
     return s * 0.5
 
 
-def _segments_cross(p1, p2, p3, p4):
-    def orient(a, b, c):
-        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-    d1, d2 = orient(p3, p4, p1), orient(p3, p4, p2)
-    d3, d4 = orient(p1, p2, p3), orient(p1, p2, p4)
-    return (d1 * d2 < 0) and (d3 * d4 < 0)
-
-
-def _self_crosses(ring):
-    n = len(ring)
-    for i in range(n):
-        a, b = ring[i], ring[(i + 1) % n]
-        for j in range(i + 2, n):
-            if (j + 1) % n == i:
-                continue
-            if _segments_cross(a, b, ring[j], ring[(j + 1) % n]):
-                return True
-    return False
-
-
-def _capsules(pts, seed, along0, total, first, last):
-    """Fallback for a piece whose outline would fold: one capsule per span of a few samples (all clockwise)."""
-    out = []
-    span = 3
-    acc = along0
-    starts = list(range(0, len(pts) - 1, span))
-    for j, i in enumerate(starts):
-        seg = pts[i:i + span + 1]
-        if len(seg) >= 2:
-            out.append(_outline(seg, seed, acc, total, first and j == 0, last and j == len(starts) - 1))
-            acc += sum(math.dist(a, b) for a, b in zip(seg, seg[1:]))
-    return out
-
-
 def glyph_contours(strokes, cp=0):
     contours = []
-    for si, (kind, pts) in enumerate(strokes):
-        total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
-        pieces = _split_corners(pts)
-        acc = 0.0
-        seed = cp * 31 + si
-        for pi, piece in enumerate(pieces):
-            first, last = pi == 0, pi == len(pieces) - 1
-            ring = _outline(piece, seed, acc, total, first, last)
-            if _self_crosses(ring):
-                contours.extend(_capsules(piece, seed, acc, total, first, last))
-            else:
-                contours.append(ring)
-            acc += sum(math.dist(a, b) for a, b in zip(piece, piece[1:]))
+    for kind, pts in strokes:
+        contours.extend(c for c in _stroke_contours(pts) if len(c) >= 3)
     return contours
 
 

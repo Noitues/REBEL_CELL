@@ -50,6 +50,16 @@ func factor(d: float, length: float, width: float, seed: int) -> float:
 	return f
 
 
+## A broad nib's width factor for a stroke heading `dir` (screen px, y down) with the nib held at `deg` (up to the
+## right) and `contrast` (0 = round): thin along the nib's edge, full across it, a downstroke at 1. Pure.
+static func nib(dir: Vector2, deg: float, contrast: float) -> float:
+	if contrast <= 0.0 or dir.length_squared() <= 0.0:
+		return 1.0
+	var a := atan2(-dir.y, dir.x) - deg_to_rad(deg)
+	var down := 1.0 - contrast * (1.0 - absf(sin(PI * 0.5 - deg_to_rad(deg))))
+	return (1.0 - contrast * (1.0 - absf(sin(a)))) / down
+
+
 ## How far into a pressure gap `d` px is (0 none, 1 the gap's middle) on a stroke `length` px long and `w` px wide.
 func gap_at(d: float, length: float, w: float, seed: int) -> float:
 	var every := gap_every * w

@@ -441,10 +441,15 @@ func _pressure_curve(i: int, from_len: float, to_len: float, length: float) -> C
 	var n := clampi(ceili(absf(to_len - from_len) / maxf(w * LOOK.pressure_knot_widths, 0.001)) + 1,
 		maxi(LOOK.pressure_knots, 2), maxi(LOOK.pressure_knots_max, 2))
 	var s_i := seed * 13 + i * 101
+	var path := _paths[i]
 	for j in n:
 		var u := float(j) / float(n - 1)
 		var d := lerpf(from_len, to_len, u)
 		var y := prof.factor(d, length, w, s_i)
+		if local_width > 0.0 and path.size() > 1:
+			# a word's broad nib: thin along its edge, full across it (designer 2026-10-21)
+			var k := clampi(int(d / STEP_PX), 0, path.size() - 2)
+			y *= RcPencilPressure.nib(path[k + 1] - path[k], LOOK.word_nib_deg, LOOK.word_nib_contrast)
 		if wobble > 0.0:
 			y *= 1.0 + wobble * (KitNoise.smooth(s_i + 7, d / maxf(w * WOBBLE_KNOTS, 0.001)) * 2.0 - 1.0)
 		c.add_point(Vector2(u, clampf(y, 0.0, c.max_value)))

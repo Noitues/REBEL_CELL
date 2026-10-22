@@ -4,6 +4,7 @@ extends Control
 ## tools/run_windowed.py:
 ##   python tools/run_windowed.py --log <f> -- --resolution 1920x1080 res://addons/rc_look/lab/look_lab.tscn --
 ##       --module=<id> --shots=<dir> [--times=day,night] [--tiers=0,2] [--flags=none,re,rm,hc] [--settle=<frames>]
+##       [--window=1920x1080]
 ## Writes <dir>/<module>_<time>_<state label>.png and <dir>/<module>_perf.json ({file: gpu ms}). Without --shots it
 ## shows the first combination and stays open. View only.
 
@@ -37,6 +38,12 @@ func _ready() -> void:
 		printerr("look_lab: unknown module ", module, "; known: ", STAGES.keys())
 		get_tree().quit(2)
 		return
+	# --window=WxH: shots at that size (the canvas stays 1280 x 720 and scales, so vectors render sharp)
+	if _args.has("window"):
+		var wh := String(_args["window"]).split("x")
+		get_window().size = Vector2i(int(wh[0]), int(wh[1]))
+		get_window().content_scale_size = Vector2i(1280, 720)
+		get_window().content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_set = ColorRect.new()
 	_set.set_anchors_preset(Control.PRESET_FULL_RECT)

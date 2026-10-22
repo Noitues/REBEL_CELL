@@ -28,11 +28,10 @@ gap_width = 0.1
 script = ExtResource("2")
 land_width = 1.24
 land_len = 0.7
-lift_width = 0.8
-lift_len = 0.8
+lift_width = 0.55
+lift_len = 1.4
 swell = 0.07
 swell_wave = 3.0
-lift_rag = 0.12
 
 [resource]
 script = ExtResource("1")
@@ -61,9 +60,11 @@ loop_overlap_deg = 34.0
 loop_tail_out = 0.11
 hero_loop_tail_out = 0.2
 loop_tilt = 0.1
-word_width_em = 0.16
-word_hero_width_em = 0.21
+word_width_em = 0.115
+word_hero_width_em = 0.15
 word_core_light = 0.22
+word_nib_deg = 25.0
+word_nib_contrast = 0.7
 word_tail_fade = 0.3
 word_tail_len = 1.0
 word_letter_turn = 0.06

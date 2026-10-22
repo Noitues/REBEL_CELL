@@ -50,13 +50,17 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 @export_group("Word")
 ## A pencil word's wax width (share of its font px) and its hand: per-letter turn (radians), baseline drop (share of
 ## the font px), size jitter (share) and a sideways wobble of each stroke (share of the font px).
-@export var word_width_em: float = 0.16
+@export var word_width_em: float = 0.115
 ## A hero word's (the kit's HIT IT, a TARGET) fat wax: its width (share of the font px) and its lighter core (white
 ## added at the stroke's middle, fading out to the edges).
-@export var word_hero_width_em: float = 0.21
+@export var word_hero_width_em: float = 0.15
 @export var word_core_light: float = 0.22
 ## A word stroke's end (designer 2026-10-21: uneven, with some transparency): the wax fades by `word_tail_fade` over
-## its last `word_tail_len` widths, its edges breaking up there. Its start is cut square by the chisel (a box cap).
+## its last `word_tail_len` widths, smoothly. Its start is cut square by the chisel (a box cap).
+## A word's broad nib (designer 2026-10-21: more calligraphic; build_wax_font.py NIB_DEG / NIB_CONTRAST): held at
+## `word_nib_deg` (up to the right on screen), thin along its edge, full across it; `word_nib_contrast` 0 = round.
+@export var word_nib_deg: float = 25.0
+@export var word_nib_contrast: float = 0.7
 @export var word_tail_fade: float = 0.3
 @export var word_tail_len: float = 1.0
 @export var word_letter_turn: float = 0.06
