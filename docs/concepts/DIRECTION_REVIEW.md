@@ -1651,3 +1651,5 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - The deck is hidden from the street camera only. It stays on the city map and the HQ, and no layout rule changes.
   - Goal: an open skyline like the plate. The remaining gap in overall brightness to the plate (L ~30 vs 53) is a separate item.
   - Sheet: `docs/concepts/look_parity/slab/slab_sheet.png`.
+- **Street car lights (designer, 2026-10-22):** the street kit's headlight_emit and taillight_emit slots glow (headlights warm white,
+  taillights red, emissive) instead of falling to solid. The toolbox sends a before | after sheet with squint rows before it ships.

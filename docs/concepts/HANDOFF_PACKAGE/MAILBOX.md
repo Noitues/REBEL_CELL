@@ -432,3 +432,29 @@ not merge main.
     test_solace_kits 7, test_city_shaders 23, test_rc_look_sign 10, test_street_cam_target 2, test_suite_integrity 8,
     test_hq_aaa_state_gate 4 and test_b2_combat_composition 22;
   - test_city_shaders_render skips headless. The full suite runs at your gate.
+
+### A-096 · 2026-10-22 · READY: toolbox module 17, Blender→Godot material slot map + post-import stamp (art/look-toolbox-6 @ 7da7cd8a, on A-095's ae1bbeda)
+
+Merge it after A-095; it branches from ae1bbeda. Art-pass approved it. Nothing visible changes: 23 frozen frames are max 0.
+
+- **Slot map:** `addons/rc_look/config/look_slots.tres` (RcLookSlotsConfig) lists every material slot by family (lm_*, hq_*,
+  hq_sx_* listed only, street kit names). `RcLookSlots` reads it and assigns no material; the views still assign by role.
+- **Editor plugin, editor-only:** `addons/rc_look/plugin.cfg` is enabled in `project.godot` [editor_plugins] beside GUT. **That's
+  a project.godot change to note at merge.**
+  - It is an EditorScenePostImportPlugin that stamps `rcl_slots` meta per mesh and warns at import about any unlisted slot.
+  - It runs only on files under `post_import_dirs` (pilot: assets/raid/uplink/, assets/city/roof_props/). The game never loads
+    it.
+  - It's a plugin because `*.import` is gitignored, so a per-file import_script could not be committed.
+- **Tests:** test_rc_look_slots (fast tier) 4 pass. It checks:
+  - the map equals LandmarkMaterials.ROLES / BEAM and HqCompoundMaterials.LANDMARK_NAME;
+  - the street names match for_slot;
+  - every glb under assets/ lists every slot;
+  - the pilots carry the stamp.
+  - Precommit is clean, and the full suite runs at your gate.
+- **Proof (pilots imported with vs without the plugin, all max 0):**
+  - A2 look 0 / 1, day and night;
+  - hq_run pov / pod / run / hq / site_solace;
+  - na23 overview / decision (beauty, id, depth, ui);
+  - review_pack hq / grid / b4_idle / raid_setup / raid_playout / combat_start.
+- **Follow-up (designer pick, not in this branch):** street car headlights and taillights will glow. A separate READY will follow
+  once art-pass approves its sheet.
