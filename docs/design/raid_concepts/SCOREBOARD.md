@@ -246,3 +246,29 @@ Choice beats press, and press conflicts with pillar 4.
 4. One visual vocabulary.
 
 **Note:** the critic cites the GDD's red-pencil threats. The designer's ruling (threats are cobalt) stands.
+
+## L2 Godot lab (round-2 rules; real captures; one fresh critic, calibrated)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 9 | 5 | 5 | 7 | **33** | 4 | 4 | 7 |
+
+**Placement:** level with Kingdom Rush (33), 2 below FTL. The playable labs have risen from H7 at 28 to M10 at 31 and
+now L2 at 33.
+
+**Consequences rose to 7, from 5:** DOWN → TAKEN, home integrity, and the campaign-losing breach.
+
+**Depth fell to 5.** Levers reset each raid, the forecast names the best spoof, and repair is always right.
+
+**Next round (critic's top 5):**
+1. Levers scarce across the leg.
+2. The forecast does not name the best spoof.
+3. Repair gets a trade-off.
+4. An outcome tier between EVADED and BREACHED, plus distinct marks.
+5. Heat responds to play.
+
+**Bugs:**
+- The spoof decision appears after a breach.
+- CELL HOLDS is stamped on a raid that took home damage.
+- Red pips mark raids that lost nothing.
+- The scramble is a one-letter substitution.
