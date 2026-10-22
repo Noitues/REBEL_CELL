@@ -46,7 +46,7 @@ def wall():
     m = patch_mask(W, H, 5, cover=0.8)
     a = np.asarray(alb, np.float32)
     g = a[..., :3].mean(-1, keepdims=True)
-    a[..., :3] = a[..., :3] * 0.85 + g * 0.15
+    a[..., :3] = np.clip((a[..., :3] - 110) * 1.18 + 118, 0, 255)      # paint: more contrast, no desaturation (no self-glow in v4)
     a[..., 3] *= m
     Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA").save(OUT + "/gz_wall_albedo.png")
     Image.fromarray((np.asarray(glow, np.float32) * m).clip(0, 255).astype(np.uint8), "L").save(OUT + "/gz_wall_glow.png")
@@ -58,18 +58,18 @@ def _bomb_clean(w, h, seed, base):
     rng = random.Random(seed)
     wall = GA.Wall(w, h)
     wall.rgba.alpha_composite(Image.new("RGBA", (w, h), base + (255,)))
-    im, g = GA.piece(rng, int(h * 0.30), rng.random())
+    im, g = GA.piece(rng, int(h * 0.42), rng.random())
     k = min(1.0, w * 0.92 / im.width, h * 0.85 / im.height)
     im = im.resize((int(im.width * k), int(im.height * k)), Image.LANCZOS)
     g = g.resize(im.size, Image.LANCZOS)
     wall.put(im, g, (w - im.width) / 2 + rng.randint(-40, 40), (h - im.height) / 2 + rng.randint(-20, 20))
     for _ in range(3):
-        im, g = GA.throwup(rng, int(h * rng.uniform(0.10, 0.15)))
+        im, g = GA.throwup(rng, int(h * rng.uniform(0.16, 0.22)))
         wall.put(im, g, rng.randrange(w - 200), rng.randrange(h - 120))
-    im, g = GA.skull(rng, int(h * 0.15))
+    im, g = GA.skull(rng, int(h * 0.20))
     wall.put(im, g, rng.randrange(w - 250), rng.randrange(h - 250))
     for _ in range(9):
-        im, g = (GA.jp_tag if rng.random() < 0.35 else GA.tag)(rng, int(h * rng.uniform(0.06, 0.10)))
+        im, g = (GA.jp_tag if rng.random() < 0.35 else GA.tag)(rng, int(h * rng.uniform(0.09, 0.14)))
         wall.put(im, g, rng.randrange(w - 200), rng.randrange(h - 120))
     return wall.rgba, wall.glow
 
@@ -78,7 +78,9 @@ def shutters():
     for k in range(4):
         base = [(98, 104, 112), (70, 76, 86), (120, 114, 104), (60, 66, 74)][k % 4]
         rgba, glow = _bomb_clean(1280, 806, 400 + k, base)
-        rgba.convert("RGB").save(f"{OUT}/gz_shutter{k}_albedo.png")
+        from PIL import ImageEnhance
+        rgbi = ImageEnhance.Contrast(ImageEnhance.Color(rgba.convert("RGB")).enhance(1.35)).enhance(1.18)
+        rgbi.save(f"{OUT}/gz_shutter{k}_albedo.png")
         glow.save(f"{OUT}/gz_shutter{k}_glow.png")
     print("shutters")
 

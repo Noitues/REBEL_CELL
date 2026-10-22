@@ -74,7 +74,8 @@ rngm = random.Random(11)
 # ------------------------------------------------------------------ backdrop: the red-sign exterior + a bombed wall behind the board
 def wall_bg():
     ext = Image.open(EXT).convert("RGB").resize((1920, 1080), Image.LANCZOS)
-    ext = ext.filter(ImageFilter.GaussianBlur(2.2))
+    sharp = Image.open(EXT).convert("RGB").resize((1920, 1080), Image.LANCZOS)
+    ext = ext.filter(ImageFilter.GaussianBlur(1.8))
     a = np.asarray(ext, np.float32) / 255
     a = a * 0.62
     # the bombed wall: a crop of the graffiti atlas over concrete, dimmed, washed pink / cyan
@@ -100,12 +101,20 @@ def wall_bg():
     wallim = wallim + pink + cyan
     x0 = 1920 - W
     m = np.clip((xx - 0) / 60.0, 0, 1)[..., None]       # soft left edge into the exterior
-    a[:, x0:] = a[:, x0:] * (1 - m) + wallim * m
+    k_w = 0.6 * m
+    a[:, x0:] = a[:, x0:] * (1 - k_w) + wallim * 1.5 * k_w      # the F1b exterior shows through the bombed wall
     # steel mullion between the street view and the bombed wall, with slaps on it
     im = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
     d = ImageDraw.Draw(im)
     d.rectangle([x0 - 6, 0, x0 + 14, 1080], fill=(18, 18, 24, 255))
-    return L.vignette(im, 0.5)
+    im = L.vignette(im, 0.5)
+    box = (26, 30, 250, 735)      # the red MAINFRAME sign, kept sharp and lit (the clerk screen hangs under it)
+    crop = sharp.crop(box).convert("RGBA")
+    fm = Image.new("L", crop.size, 0)
+    ImageDraw.Draw(fm).rectangle([10, 10, crop.width - 11, crop.height - 11], fill=255)
+    crop.putalpha(fm.filter(ImageFilter.GaussianBlur(7)))
+    im.alpha_composite(crop, (box[0], box[1]))
+    return im
 
 
 def stencil_text(text, size, col, seed):
@@ -246,7 +255,16 @@ def put_slap(img, i, cx, cy, ang, scale=1.0, w=96, h=60):
     return L.place_sticker(img, _slap_cache[key], cx, cy, angle=ang, scale=scale)
 
 
+def matte(im, k):
+    """Paint, not light: darken the piece and drop its overspray halo glow."""
+    a = np.asarray(im.convert("RGBA"), np.float32).copy()
+    a[..., :3] *= k
+    a[..., 3] = np.where(a[..., 3] < 90, a[..., 3] * 0.4, a[..., 3])
+    return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
+
+
 def tag_layer(img, text, x, y, size, col, ang=0.0, seed=1):
+    col = tuple(int(c * 0.72) for c in col)
     rg = random.Random(seed)
     f = ImageFont.truetype(rg.choice(GA.F_TAG), size)
     bb = f.getbbox(text)
@@ -287,8 +305,7 @@ def bomb_clerk(img):
     # big marker tag across the lower-left corner (outside the screen) and sticker bombing along the bezel
     pass
     img = tag_layer(img, "kz", 330, 612, 56, (212, 255, 0), 8, 6)
-    spots = [(X0 + 4, Y0 + 80, -12, 0), (X0 + 6, Y1 - 60, -6, 2), (X0 + 260, Y1 - 2, -9, 4), (X1 - 2, Y0 + 200, -8, 6), (X0 - 6, Y0 - 12, 14, 9),
-             (X1 + 8, Y0 + 20, -12, 10), (X0 + 400, Y1 + 4, 7, 11)]
+    spots = [(X0 + 4, Y0 + 80, -12, 0), (X0 + 6, Y1 - 60, -6, 2), (X1 - 2, Y0 + 200, -8, 6), (X0 - 6, Y0 - 12, 14, 9)]
     for (x, y, a, i) in spots:
         img = put_slap(img, i, x, y, a, 0.5, 100, 62)
     return img
@@ -307,15 +324,16 @@ def wall_art(img):
     big, g = GA.piece(rg, 140, 0.5)
     k = 330 / big.width
     big = big.resize((330, int(big.height * k)), Image.LANCZOS)
+    big = matte(big, 0.55)
     img.alpha_composite(big, (1572, 150))
     big2, _ = GA.piece(rg, 120, 0.3)
     k = 300 / big2.width
     big2 = big2.resize((300, int(big2.height * k)), Image.LANCZOS)
-    for (t, x, y, sz, c, a) in (("rebel", 1640, 40, 54, (255, 226, 0), 4), ("ghost", 1590, 470, 44, (92, 225, 255), -5), ("oni", 40, 600, 42, (212, 255, 0), 6),
+    for (t, x, y, sz, c, a) in (("rebel", 1640, 40, 54, (255, 226, 0), 4), ("ghost", 1590, 470, 44, (92, 225, 255), -5), ("oni", 262, 470, 42, (212, 255, 0), 6),
                                 ("VEX", 1796, 880, 54, (255, 61, 168), 8)):
         img = tag_layer(img, t, x, y, sz, c, a, sz)
     tj, _ = GA.jp_tag(rg, 70)
-    img.alpha_composite(tj, (1700, 450))
+    img.alpha_composite(matte(tj, 0.6), (1700, 450))
     return img
 
 
@@ -358,10 +376,10 @@ def main():
     p = L.pen(L.GP_YELLOW, seed=88)
     p.text("pins in the foam", 1468, 128, 22, angle=-3)
     img = L.ink(img, p)
+    img = L.bloom(img, 0.2, 0.8, 8)           # bloom on the UI only; paint goes on after it (matte, no glow)
     img = wall_art(img)
     img = bomb_clerk(img)
     img = board_edge(img)
-    img = L.bloom(img, 0.2, 0.8, 8)
     img.convert("RGB").save(OUTP)
     print("wrote", OUTP)
 

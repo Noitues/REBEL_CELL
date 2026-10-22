@@ -102,3 +102,30 @@ Weak: (a) graffiti density is lower than v1 and the shutter pieces are only mode
 (side-row shopfront) is the most painted and sits on the frame edge; (c) the ramen holo is small (about 170 px) and its steam reads as a few thin lines;
 (d) Blade signs are brighter and cleaner than F1b's own glyph boxes, so they pull attention; (e) heavy rain from the original night state veils the paint at thumbnail size;
 (f) the sign-side pole's fascia overlap: the MAINFRAME fascia is half hidden by the pole; (g) the faceted toon wall at left still carries some of the F1b red wash over the paint.
+
+---
+# v3 (designer-approved base v2): `mainframe_shop_exterior_v3.png`, `mainframe_shop_exterior_v2_v3.jpg` (f1b_night | v2 | v3), `mainframe_shop_interior_v2.png`
+
+Same pipeline (Eevee, `run_v2.sh`, no GPU lock, about 2 min). Env knobs read by `gs2_scene.py`: `GS_PY0=56 GS_FRONT=600 GS_BACK=150 GS_SIDE=300 GS_FLOOR=2100`
+(sign top on screen in px; sign front / back / side-spill / street-spill light powers; F1b's own values were 26 / 3400 / 550 / 1500 / 1600).
+1. **Whole sign:** v2's plate top sat at y 26 px, only 24 px above the M; the v2 comparison label also covered the M. Sign top is now y 56 (vertical lens shift only, same lens), the M has clear headroom; labels moved to the bottom of the panels.
+2. **Red flood:** front/back/side facade lights cut to 18 / 27 / 20 %, the street spill raised a little. Windows, fire escape and paint on the left building now read; the red is strongest at the sign and on the wet pavement.
+3. **Right side:** the five side-row blades are now one (off-frame at this crop), all blades dimmed to about F1b's own glyph-box level (emission 0.55; RAMEN 0.8). RAMEN and the hologram stay.
+4. **Shutters:** pieces 40 % larger, throw-ups and the skull larger, tags larger, self-glow up; zones and coverage unchanged.
+5. **Interior v2:** built on the v3 exterior: the F1b street shows through the bombed wall (60 % blend), and the red MAINFRAME sign is pasted back sharp and unblurred behind the clerk screen; stencil labels, marker tags and slaps as before. Prices, chips, daemons, LEAVE read before the paint.
+
+**Critique (squint test against f1b_night and v2).** v3 reads as f1b_night with paint: sign whole and readable, windows and fire escape back, stair lit, shutters bold. Still weak:
+(a) the left building is still redder than f1b's pink because the sign itself is red (the Cell's colour), only less so; (b) the ramen holo is small and its steam is a few thin lines;
+(c) rain still veils the finest tags; (d) the side-row graffiti at the right frame edge is the busiest patch; (e) interior: the left of the backdrop is now the exterior and a bit busy behind the clerk screen, and the stencil
+labels (CARDS, FIRMWARE, DAEMONS) are legible but rough; the sign's bottom E is cut off by the clerk panel as in shop_v5.
+
+---
+# v4 (designer: "the graffiti is emitting light, tone it down"): `mainframe_shop_exterior_v4.png`, `mainframe_shop_exterior_v3_v4.jpg`, `mainframe_shop_interior_v3.png`
+Paint is paint. Exterior: every decal (shutters, wall pieces, pole, bin, side row) now has emission ZERO (no glow map, no base emission); it is lit only by the scene's
+lights, so pieces near the sign go red and pieces in shadow stay dim. To keep pieces readable without glow: albedo contrast +18 %, saturation +35 % on the shutters, no desaturation and more contrast on the
+wall atlas, and two small shop lamps (fixture plus warm area light) over the two shutters and one over the side-row wall, as scene lights. Nothing else changed from v3.
+Interior: bloom is applied to the UI first, then the wall pieces, tags and slaps are pasted on after it: no bloom, the overspray halo cut, "RIOT" and the other pieces darkened to about 55 % and tags to 72 %.
+Three of the small stickers round the clerk screen are gone (four remain).
+**Critique.** Squint test against f1b_night and v3: the street, sign, shopfront, stair and the left shutter's big piece still read; the paint now reads as matte and takes the colour of the light on it.
+Weak: (a) the second shutter and the side-row wall are dim, they only show in the lamp and street light, and at thumbnail size they nearly disappear; (b) the shutter lamps leave soft circular pools on the wall above the shutters that read a bit like the F1b toon banding artefact;
+(c) fewer saturated colour accents overall, so the scene is a little less lively than v3; (d) interior: the wall behind the board is still busy, and the pale stickers still pop more than the paint.

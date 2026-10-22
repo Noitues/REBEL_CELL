@@ -23,6 +23,11 @@ src = open(os.path.join(R33, "scene.py"), encoding="utf-8").read()
 key = "    sign_and_spill_geo()\n    figure()"
 assert key in src
 src = src.replace(key, "    sign_and_spill_geo()\n    GX.extras(globals())\n    figure()", 1)
-src = src.replace("    print('DONE', OUT)", "    print('DONE', OUT)", 1)
+PATCH = [("PX0, PX1, PY0 = 52, 212, 26", "PX0, PX1, PY0 = 52, 212, " + os.environ.get("GS_PY0", "26")),
+         ("pink, 3400 * k,", "pink, " + os.environ.get("GS_FRONT", "3400") + " * k,"), ("pink, 550 * k,", "pink, " + os.environ.get("GS_BACK", "550") + " * k,"),
+         ("pink, 1500 * k,", "pink, " + os.environ.get("GS_SIDE", "1500") + " * k,"), ("pink, 1600 * k,", "pink, " + os.environ.get("GS_FLOOR", "1600") + " * k,")]
+for a_, b_ in PATCH:
+    assert a_ in src, a_
+    src = src.replace(a_, b_, 1)
 g = {"__file__": os.path.join(R33, "scene.py"), "__name__": "__main__", "GX": GX}
 exec(compile(src, os.path.join(R33, "scene.py"), "exec"), g)

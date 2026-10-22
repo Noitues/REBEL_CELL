@@ -146,12 +146,27 @@ def extras(ns):
     shut = pid("fb_shutters")
     for i, x0 in enumerate((XA1 + 0.8, XA1 + 5.9)):
         z0 = 0.18 + (1.0 if i == 1 else 0.0)
-        m = toon_variant("gz_shutter%d" % i, f"{T2}/gz_shutter{i}_albedo.png", f"{T2}/gz_shutter{i}_glow.png", alpha=False, glow_k=0.4, base_emit=0.3)
+        m = toon_variant("gz_shutter%d" % i, f"{T2}/gz_shutter{i}_albedo.png", None, alpha=False)
         h = 2.9 - (1.0 if i == 1 else 0.0)
         quad("gz_shutter%d" % i, (x0, YF - 0.075, z0), (4.6, 0, 0), (0, 0, h), (0, 0 if i == 0 else 0.0), (1, 1), m, shut)
 
+    # practical lights: a small shop lamp over each shutter (paint has no glow of its own in v4)
+    for i, (x0, col) in enumerate(((XA1 + 0.8, "#ffd9a8"), (XA1 + 5.9, "#ffe0b8"))):
+        lamp = Mesh("gz_shoplamp%d" % i, "window")
+        lamp.box(x0 + 2.0, x0 + 2.6, YF - 0.7, YF - 0.3, 3.38, 3.46, cell=3, col=scl(hexl(col), 0.3), emi=scl(hexl(col), 1.1), faces="fbtdlr")
+        lamp.build()
+        a_ = F.light("AREA", (x0 + 2.3, YF - 1.1, 3.9), hexl(col), 420, size=3.2, size_y=0.8, name="gz_shoplight%d" % i)
+        a_.rotation_euler = (Vector((x0 + 2.3, YF, 1.2)) - Vector(a_.location)).to_track_quat("-Z", "Y").to_euler()
+
+    # one more shop lamp over the side-row wall pieces (right of the frame)
+    lamp = Mesh("gz_shoplamp_r", "window")
+    lamp.box(XFR + 6.3, XFR + 6.9, 30.0, 30.4, 4.48, 4.56, cell=3, col=scl(hexl("#ffd9a8"), 0.3), emi=scl(hexl("#ffd9a8"), 1.1), faces="fbtdlr")
+    lamp.build()
+    a_ = F.light("AREA", (XFR + 6.6, 29.6, 4.9), hexl("#ffd9a8"), 520, size=4.0, size_y=0.8, name="gz_shoplight_r")
+    a_.rotation_euler = (Vector((XFR + 6.6, 31.0, 1.4)) - Vector(a_.location)).to_track_quat("-Z", "Y").to_euler()
+
     # ---- 2. wall pieces (patch-masked atlas), in zones; none beside the stair, none on the sign or fire escape
-    wm = toon_variant("gz_wall", f"{T2}/gz_wall_albedo.png", f"{T2}/gz_wall_glow.png", alpha=True, base_emit=0.10)
+    wm = toon_variant("gz_wall", f"{T2}/gz_wall_albedo.png", None, alpha=True)
 
     def wall_decal(name, host, o, u, v):
         lu, lv = Vector(u).length, Vector(v).length
@@ -253,7 +268,7 @@ def extras(ns):
     # ---- 7. blade signs (multilingual, lit), on the F1b buildings; none on the hero sign
     gfr = Mesh("gz_blade_frames", "solid")
 
-    def blade(x, y, z, w, h, cell, rotz, kind="v", k=0.85):
+    def blade(x, y, z, w, h, cell, rotz, kind="v", k=0.55):
         grid = (8, 3) if kind == "v" else (2, 8)
         path = f"{T1}/signs_v.png" if kind == "v" else f"{T1}/signs_h.png"
         c = cell % (24 if kind == "v" else 16)
@@ -285,8 +300,8 @@ def extras(ns):
 
     blade(XA0 - 0.2, YS - 0.9, 6.3, 0.9, 3.4, 14, -0.45)                    # tower corner
     blade(XA1 + 0.2, YF - 0.9, 3.7, 0.9, 3.0, 1, 0.45)                       # front building, alley side
-    blade(XFR - 0.3, YF - 0.9, 3.0, 0.9, 3.9, 17, 0.45, k=1.1)             # RAMEN
-    for x, z, h, c in ((16.5, 3.3, 4.2, 3), (20.5, 4.4, 3.6, 9), (25.0, 3.0, 4.6, 22), (29.5, 5.0, 3.4, 6), (34.0, 3.4, 4.2, 0)):
+    blade(XFR - 0.3, YF - 0.9, 3.0, 0.9, 3.9, 17, 0.45, k=0.8)             # RAMEN
+    for x, z, h, c in ((21.5, 3.4, 3.6, 9),):
         blade(x, 30.3, z, 1.0, h, c, 0.35)
     for x, z, c in ((6.0, 8.8, 4), (11.5, 9.2, 19), (17.0, 8.5, 10), (23.0, 9.0, 12), (29.0, 8.7, 2)):
         blade(x, YW - 0.9, z, 1.0, 3.0, c, 0.3)
