@@ -314,6 +314,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
 	if _compound_aaa.is_empty():
 		_building_mat.set_shader_parameter(&"kit_dark", 1.0)
+		_building_mat.set_shader_parameter(&"kit_band_k", 1.0)
 		_building_mat.set_shader_parameter(&"hq_pool", Vector4())
 	if not _compound_aaa.is_empty() and cfg.hq_page_ramp.size() == 3:  # LOOK Solace HQ: charcoal facades (no mauve ramp)
 		for k in 3:
@@ -842,6 +843,7 @@ func _whole_building() -> void:
 			hw.append(Vector3(c.r, c.g, c.b))
 		_building_mat.set_shader_parameter(&"window_colors", hw)
 		_building_mat.set_shader_parameter(&"kit_dark", cfg.hq_page_kit_dark)
+		_building_mat.set_shader_parameter(&"kit_band_k", cfg.hq_page_kit_band_k)
 		var fp := cfg.hq_page_pool_facade
 		var fc := cfg.hq_page_pool_color
 		_building_mat.set_shader_parameter(&"hq_pool", Vector4(_hq_pool_at.x, _hq_pool_at.y + fp.y, _hq_pool_at.z, fp.z))
@@ -1043,7 +1045,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 	_post.set_shader_parameter("ortho", iso.ortho)
 	_post.set_shader_parameter("ink_alpha", cfg.ink_alpha_near if iso.ortho < cfg.car_far_above else cfg.ink_alpha_far)
 	_post.set_shader_parameter("fog_city", city)
-	_lane_mat.set_shader_parameter("lane_gain", lerpf(cfg.lane_glow_management, 1.0, city))
+	_lane_mat.set_shader_parameter("lane_gain", lerpf(cfg.lane_glow_management, 1.0, city) * (cfg.hq_page_lane_k if not _compound_aaa.is_empty() else 1.0))  # the aaa2 page: the highways barely read (plate)
 	_building_mat.set_shader_parameter("detail", CityLod.detail(cfg, iso.ortho))
 	for m in [_net_mat, _net_xray_mat]:
 		(m as ShaderMaterial).set_shader_parameter("bu_per_px", iso.bu_per_px())
@@ -1901,6 +1903,9 @@ func _solace_park_look() -> void:
 		return
 	_solace_park_mat.set_shader_parameter(&"look_blend", look_blend)
 	_solace_park_mat.set_shader_parameter(&"night", night_share)
+	var aaa := not _compound_aaa.is_empty()
+	_solace_park_mat.set_shader_parameter(&"lit_k", cfg.hq_page_park_lit_k if aaa else 1.0)
+	_solace_park_mat.set_shader_parameter(&"lawn_k", cfg.hq_page_lawn_k if aaa else 1.0)
 	var on := not _compound_aaa.is_empty() and _hq_pool_at != Vector3.INF
 	var pr := 35.0
 	var pk := CitySolaceParkKit.data(city_seed)

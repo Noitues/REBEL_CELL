@@ -11,6 +11,8 @@ uniform float lit_gain = 1.2;
 uniform float day_lift = 1.5;
 uniform float side_shade = 0.62;
 uniform float cel_k = 0.8;
+uniform float lit_k = 1.0;   // aaa2 page: lit lines' factor
+uniform float lawn_k = 1.0;  // aaa2 page: lawn albedo factor
 uniform vec4 pool = vec4(0.0);          // the helix' soft green pool on the plinth (aaa2 page): xyz centre (world), w radius (BU)
 uniform vec3 pool_col = vec3(0.0);
 uniform float aaa_glow = 0.05;  // the AAA-2 look: the park's own lamps and path lights lift its surfaces (the plates' lit park)
@@ -32,11 +34,11 @@ void fragment() {
 	bool stone = part > 0.9;
 	float rough = water ? 0.06 : (stone ? 0.55 : (lit ? 0.5 : 0.85));
 	vec3 cel = base * shade * (1.0 - look_blend) * cel_k;  // the cel look is self-lit flat colour (no light dependence)
-	ALBEDO = lit ? vec3(0.0) : base * mix(0.0, 1.0, look_blend);
+	ALBEDO = lit ? vec3(0.0) : base * mix(0.0, part < 0.3 ? lawn_k : 1.0, look_blend);
 	ROUGHNESS = mix(1.0, rough, look_blend);
 	SPECULAR = mix(0.0, water ? 0.9 : 0.5, look_blend);
 	METALLIC = 0.0;
-	EMISSION = lit ? COLOR.rgb * lit_gain * mix(0.35, 1.0, night) : cel + base * aaa_glow * look_blend;
+	EMISSION = lit ? COLOR.rgb * lit_gain * lit_k * mix(0.35, 1.0, night) : cel + base * aaa_glow * look_blend;
 	if (pool.w > 0.0) {
 		float pf = clamp(1.0 - length(v_world - pool.xyz) / pool.w, 0.0, 1.0);
 		EMISSION += pool_col * pf * pf * look_blend;

@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)",
-  "commit": "a6c66ff769f72e85ca578475fe32f79172cff016",
-  "scripts_sha256": "8075fa035e2dedaa82c7c7ccabeb950ffbeab4c933b20a40d0da145a8e3c2b1d"
+  "commit": "cc89ee1d9af72ec9fa87f96be6ac252dc3be75f7",
+  "scripts_sha256": "346aad7c9c6bcc6b808b97f78b3cb0ca597141e8996cc22ab0e898f26b6fbe94"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -42,7 +42,8 @@
    "r_max_lots": 150,
    "step_lots": 2,
    "cone_deg": 25,
-   "bin_deg": 5
+   "bin_deg": 5,
+   "bias_deg": 10
   },
   "unit_k": 0.2375
  },

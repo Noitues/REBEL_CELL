@@ -204,6 +204,7 @@ uniform float kit_clinic_emit = 0.6;
 uniform float kit_porcelain_glow = 0.12;
 uniform vec4 hq_pool = vec4(0.0);      // LOOK Solace HQ (aaa2 page): the helix' soft green wash on the nearest facades: xyz centre (world), w radius (BU)
 uniform vec3 hq_pool_col = vec3(0.0);   // its colour times gain (0 = off)
+uniform float kit_band_k = 1.0;  // aaa2 page: the kit bands' emission factor
 uniform float kit_dark = 1.0;  // LOOK Solace HQ (aaa2 page only): the kits' albedo factor, so dark bodies carry their lit stripes
 
 varying flat vec3 v_corner;
@@ -416,7 +417,7 @@ void fragment() {
 			float bh = hash1(vec3(bi, seed * 31.0, 5.0));
 			if (bf < kit_band.y && bh >= kit_band.w) {
 				vec3 bc = hash1(vec3(bi, seed * 17.0, 9.0)) < kit_band.z ? kit_pink : kit_lime;
-				em = bc * kit_emit * (0.85 + 0.3 * hash1(vec3(bi, seed, 3.0)));
+				em = bc * kit_emit * kit_band_k * (0.85 + 0.3 * hash1(vec3(bi, seed, 3.0)));
 				kb = bc * 0.3;
 			}
 			base = kb * tone;

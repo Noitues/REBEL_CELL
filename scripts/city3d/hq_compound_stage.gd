@@ -142,7 +142,7 @@ static func inland_yaw(cfg: CityConfig, m: Dictionary, at: Transform3D, city_see
 			best_depth = depth
 			best = yaw
 		yaw += bin
-	return wrapf(best, -180.0, 180.0)
+	return wrapf(best + float((inl as Dictionary).get("bias_deg", 0.0)), -180.0, 180.0)
 
 
 ## Parity S-HQRUN: the HQ-run page's own framing of the compound: the manifest's camera
