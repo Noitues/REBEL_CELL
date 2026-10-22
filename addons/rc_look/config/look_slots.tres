@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RcLookSlotsConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_slots_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+landmark_roles = {"lm_toon": 0, "lm_toon_lines": 1, "lm_lit": 2, "lm_neon": 3, "lm_win": 4, "lm_win_ring": 5, "lm_win_lines": 6, "lm_win_fist_home": 7, "lm_win_fist_dispatch": 7, "lm_sign": 8}
+landmark_beam = "lm_beam"
+hq_alias = {"hq_toon": "lm_toon", "hq_lit": "lm_lit", "hq_neon": "lm_neon", "hq_win": "lm_win", "hq_sign": "lm_sign", "hq_beam": "lm_beam"}
+solace_prefix = "hq_sx_"
+street_exact = {"lamp_emit": "lamp_emit", "lit_emit": "win", "panel": "panel", "conc": "conc", "glass": "glass", "awning_cloth": "solid", "bracket": "solid", "car_body": "solid", "frame": "solid", "headlight_emit": "solid", "pole": "solid", "sign_board": "solid", "taillight_emit": "solid"}
+street_prefix = {"neon_emit": "neon"}
+street_fallback = "solid"

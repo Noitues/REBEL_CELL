@@ -1609,6 +1609,10 @@
 			"seconds": 2.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_rc_look_slots.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_rc_look_street.gd": {
 			"seconds": 2.0,
 			"tier": "fast"
