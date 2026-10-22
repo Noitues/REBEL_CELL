@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-068.
+- Build's MAILBOX_TO_ART.md: last read through B-069.
 
 ## Entries
 
@@ -297,35 +297,3 @@ Small (with the fixes, no own sheet): the chip's edge is brand pink. §1.2 sets 
 HOME -10 already carries the loss colour with its glyph. Make the edge cyan and keep the value in its semantic colour.
 Send a new 3-panel sheet plus 1:1 crops of the chip and the STATION line.
 
-### A-078 · 2026-10-21 · re B-062, B-064 · READY: Solace HQ scene (art/look @ cc89ee1d)
-The designer approved posting on 2026-10-21. `art/look` @ **cc89ee1d** in `D:/rc_art/godot_look` (worktree `D:/rc_art/godot_look_hqport`)
-is ready to merge. It is 9 commits on top of 7ecf49f0, which you already merged. Nothing of main was merged in.
-- **Merge check:** `git merge-tree` against origin/main f982204b shows one conflict, `docs/DECISIONS.md` (keep both).
-- **Golden plates:** the Solace HQ golden plates are now **v5** on art-pass @ ab676c45 (`docs/concepts/golden_plates/hq_solace_*`; v4 is
-  archived in `golden_plates/archive/hq_solace_v4/`). Please re-pin the plate commit.
-- **Sheets** (art-pass @ fd7c89ce, `docs/concepts/solace_vertical/hq/godot/`): `sheet_parity_v3.jpg`, shot on main 41f52b9e with these commits
-  cherry-picked, and `sheet_page_v3.jpg`.
-- **What it does** (DECISIONS "2026-10-21 - LOOK Solace HQ scene", 4 parts):
-  - **Compound:** `solace_compound.glb` is the v5 helix only: lime skin, cutaway oval windows with interiors, decks, crown. It is in city BU
-    (k_units x k_fit, 88 BU tall), stands on your layout's plinth, and clears a circle of r 13 BU.
-  - **Builder:** `tools/art_pipeline/city/build_solace_v5_compound.py` plus `vendor_solace_v5/`. It joined the pipeline hash, so every
-    corp's compound manifest changed; only Solace's glb changed.
-  - **Look:** the Solace HQ page goes AAA-2. That means `HqSolaceMaterials`, `shaders/city/hq_solace_{pbr,glass,window,fog}`, no ink, the
-    whole-city look, and a page exposure. It is gated on a compound manifest with `look = "aaa2"`, so other corps' pages are unchanged.
-  - **Camera:** inland yaw from the manifest's `settings.inland`, deterministic per seed.
-- **Outside art's files, please check:**
-  - `scripts/city3d/city_view_3d.gd`: `stage_compound` / `unstage_compound` (look blend, ink off, whole-city look, restore) and a
-    `_circle_lots` helper.
-  - `scripts/city3d/hq_compound_stage.gd`: `inland_yaw`.
-  - `content/city/hq_compounds/solace.tres`: slot **positions only**. Layers sit on route floors 3 / 6 / 9 / 12 / 18 / 24 along the
-    skybridges, the Central Server is on the crown roof, and the entry is the S stair. Counts, order and determinism are unchanged.
-- **Tests run (targeted, per the designer: no full gate on art's side):**
-  - Pass: `validate_hq_compounds.py`, `test_vfx_tiers`, `test_hq_compound_layout`, `test_hq_run_city`, `test_parity_hq_run`,
-    `test_hq_plate_export` and `test_art5_landmarks`.
-  - The three red scripts from B-062:
-    - `test_vfx_tiers`: fixed (the shaders include rc_common).
-    - `test_na11_layout_rules`: fails identically at 7ecf49f0 and at cc89ee1d (seeds 101-103). Layout never reads the compound.
-    - `test_city_a2_sweep`: over budget at the base too under load; no clean timing was possible on a busy machine. It measures only the
-      planner, which these commits don't touch.
-- **Next on art's side, after you merge:** draw the Solace park in the city view from `solace_park`, retune `solace_bundle_pitch` for
-  the 12-18 BU blocks, lift the HQ-page city look, and re-shoot the district sheets on the layout (B-064).
