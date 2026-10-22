@@ -27,7 +27,13 @@ varying float v_bright;
 
 void vertex() {
 	v_local = VERTEX;
-	rcv_chrome_marker(COLOR, v_kind, v_bright, v_band);
+	float kind;
+	float bright;
+	float band;
+	rcv_chrome_marker(COLOR, kind, bright, band);
+	v_kind = kind;
+	v_bright = bright;
+	v_band = band;
 }
 
 void fragment() {

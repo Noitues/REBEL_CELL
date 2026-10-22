@@ -42,6 +42,8 @@ const HOLO_TIME_NOTE := "holo hue drifts with rc_time(TIME): both shaders read t
 ## Pixel-compare viewport padding and frames to wait before reading it back.
 const PROVE_FRAMES := 3
 const BYTE := 255.0
+## Mirror vs shader: gaps above this many 8-bit levels are counted.
+const MIRROR_TOL := 2
 
 var _stage_args: PackedStringArray = OS.get_cmdline_user_args()
 var _arts: Dictionary = {}
@@ -385,8 +387,26 @@ func _prove_mirror() -> void:
 			await RenderingServer.frame_post_draw
 		var gpu := vp.get_texture().get_image()
 		var cpu := mirror_image(id, pose, art)
-		print("vinyl_prove: mirror/%s/%s max %d" % [id, pose, _max_diff(gpu, cpu, true)])
+		cpu.premultiply_alpha()  # a transparent SubViewport reads back premultiplied
+		print("vinyl_prove: mirror/%s/%s max %d, pixels over %d levels: %d" % [id, pose, _max_diff(gpu, cpu, true), MIRROR_TOL, _count_over(gpu, cpu)])
 		vp.queue_free()
+
+
+## Pixels where any channel differs by more than MIRROR_TOL 8-bit levels.
+func _count_over(a: Image, b: Image) -> int:
+	var n := 0
+	for y in a.get_height():
+		for x in a.get_width():
+			var ca := a.get_pixel(x, y)
+			var cb := b.get_pixel(x, y)
+			if ca.a < 1.0 / BYTE and cb.a < 1.0 / BYTE:
+				continue
+			var d := maxf(maxf(absf(ca.r - cb.r), absf(ca.g - cb.g)), maxf(absf(ca.b - cb.b), absf(ca.a - cb.a)))
+			if roundi(d * BYTE) > MIRROR_TOL:
+				n += 1
+				if n == 1:
+					print("vinyl_prove:   first at ", x, ",", y, " gpu ", ca, " cpu ", cb)
+	return n
 
 
 func _max_diff(a: Image, b: Image, covered_only: bool = false) -> int:

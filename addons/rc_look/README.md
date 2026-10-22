@@ -229,8 +229,11 @@ nothing is migrated and no raid screen is wired. The old shaders (`kit/vinyl_sti
 **Proof.** `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://addons/rc_look/lab/look_lab.tscn --
 --module=vinyl --prove --prove-only` renders every stock x pose, the four fold corners, every chrome verb, the holo fill
 and the card through the old shader and the new wrapper into SubViewports and prints `vinyl_prove: <case> max <n>`
-(8-bit levels; 0 = identical) and, for the mirror, its gap to the shader (no shadow, no dissolve). The hash forms
-(dissolve cells, holo sparkles) run on float32 sin on the GPU, so the mirror matches their form, not their pixels.
+(8-bit levels; 0 = identical) and, for the mirror, its gap to the shader (no shadow, no dissolve). Result on this branch:
+all 62 pairs (7 stocks x 7 poses, 4 fold corners, 7 chrome cases, holo fill, card) are max 0. The mirror is within 1 level
+everywhere except the pixels exactly on the fold line (1 to 39 per pose, where `s` is 0 and float rounding picks a side).
+The hash forms (dissolve cells, holo sparkles) run on float32 sin on the GPU, so the mirror matches their form, not their
+pixels.
 
 Numbers it does not own: the motion amplitudes and durations stay in `ui_motion.tres` (`sticker_*`); the palette stays
 `palette.gd` (the test pins every preset to it).
