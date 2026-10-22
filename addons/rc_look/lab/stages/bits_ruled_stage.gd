@@ -14,13 +14,17 @@ const GAP := 6.0
 const BLOCK_GAP := 22.0
 const ROW_GAP := 36.0
 const LABEL_SIZE := 13
-## The first clock is in seconds, inside the hot phase (the first 0.08 s of a bit, where the hot colour shows); the others
+## The first block is the flash itself: every bit at the instant it spawns (0.01 s of its 0.08 s hot phase), so the hot
+## colour shows at near full strength; the others
 ## are shares of the last arrival.
-const FIRST_CLOCK_S := 0.04
+const FIRST_CLOCK_S := 0.01
 const CLOCK_SHARES: Array[float] = [0.0, 0.45, 0.8]
 const BITS := 16
 const GLYPH_PX := 22.0
 const BAR_W := 6.0
+## The crop: its size in px and the magnification.
+const CROP_PX := 32
+const ZOOM := 4
 const DIFFERS := Color(1.0, 0.55, 0.1)
 const SAME := Color(0.5, 0.5, 0.5)
 
@@ -36,7 +40,7 @@ var _views: Array[Control] = []
 
 func _ready() -> void:
 	var view := get_viewport_rect().size
-	var blocks := CLOCK_SHARES.size()
+	var blocks := CLOCK_SHARES.size() + 1  # the clocks, then the magnified crops
 	var block_w := (view.x - MARGIN.x - 30.0 - BLOCK_GAP * (blocks - 1)) / blocks
 	var panel_w := (block_w - GAP) / 2.0
 	var panel_h := (view.y - MARGIN.y - 30.0 - ROW_GAP * GROUPS.size()) / GROUPS.size()
@@ -54,16 +58,19 @@ func _ready() -> void:
 		for c in blocks:
 			var x := MARGIN.x + c * (block_w + BLOCK_GAP)
 			if g == 0:
-				_label("t = %.2f s (the hot phase)" % FIRST_CLOCK_S if c == 0 else "t = %.0f %% of the last arrival" % (CLOCK_SHARES[c] * 100.0), Vector2(x, MARGIN.y - 2.0 * LABEL_SIZE - 10.0))
+				_label("every bit at t = %.2f s (the hot flash)" % FIRST_CLOCK_S if c == 0 else "4x nearest crop of one bit, on light" if c == 3 else "t = %.0f %% of the last arrival" % (CLOCK_SHARES[c] * 100.0), Vector2(x, MARGIN.y - 2.0 * LABEL_SIZE - 10.0))
+			if c == blocks - 1:
+				_zoom_pair(grp, Vector2(x, y), panel_w, panel_h)
+				continue
 			for side in 2:
 				var v := RcLookBitsView.new()
 				v.position = Vector2(x + side * (panel_w + GAP), y)
 				v.size = Vector2(panel_w, panel_h)
 				v.preset = RcLookBits.preset(StringName(grp["old"] if side == 0 else grp["new"]))
-				v.mode = &"flight"
+				v.mode = &"grid" if c == 0 else &"flight"
 				v.clock_s = FIRST_CLOCK_S if c == 0 else -1.0
 				v.clock_share = CLOCK_SHARES[c]
-				v.age_s = -1.0
+				v.age_s = FIRST_CLOCK_S if c == 0 else -1.0
 				v.split = true
 				v.bits = BITS
 				v.glyph_px = GLYPH_PX
@@ -83,3 +90,27 @@ func _label(text: String, at: Vector2, size: int = LABEL_SIZE) -> void:
 	l.position = at
 	l.add_theme_font_size_override(&"font_size", size)
 	add_child(l)
+
+
+## The magnified crops of one group: old | new, one bit each, drawn in a small viewport and shown ZOOM x with nearest filtering.
+func _zoom_pair(grp: Dictionary, at: Vector2, panel_w: float, panel_h: float) -> void:
+	for side in 2:
+		var vp := SubViewport.new()
+		vp.size = Vector2i(CROP_PX, CROP_PX)
+		vp.transparent_bg = false
+		vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		var v := RcLookBitsView.new()
+		v.size = Vector2(CROP_PX, CROP_PX)
+		v.preset = RcLookBits.preset(StringName(grp["old"] if side == 0 else grp["new"]))
+		v.mode = &"zoom"
+		v.glyph_px = GLYPH_PX
+		vp.add_child(v)
+		add_child(vp)
+		var tr := TextureRect.new()
+		tr.texture = vp.get_texture()
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.position = at + Vector2(side * (panel_w + GAP), 0.0)
+		tr.size = Vector2(CROP_PX, CROP_PX) * ZOOM
+		add_child(tr)
+		_label("old" if side == 0 else "NEW", Vector2(tr.position.x, tr.position.y + tr.size.y + 1.0), 11)

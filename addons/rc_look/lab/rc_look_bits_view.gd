@@ -15,6 +15,9 @@ const LIGHT := Color(0.52, 0.5, 0.46)
 const FLIGHT_S := 0.55
 const SPREAD_S := 0.12
 const HOT_S := 0.08
+## The zoom crop: the bit's tilt (rad) and how far behind a trail copy sits (share of the glyph).
+const ZOOM_TILT := 0.35
+const ZOOM_TRAIL := 0.35
 
 var preset: RcLookBitsPreset
 var mode: StringName = &"grid"
@@ -31,6 +34,9 @@ var glyph_px: float = GLYPH_PX
 func _draw() -> void:
 	var cfg := RcLookBits.default_config()
 	var font := Palette.mono()
+	if mode == &"zoom":
+		_draw_zoom(font, cfg)
+		return
 	var halves := 2 if split else 1
 	for h in halves:
 		var bg := DARK if h == 0 else LIGHT
@@ -85,3 +91,17 @@ func _glyph(font: Font, at: Vector2, angle: float, glyph: String, px: int, col: 
 		draw_char_outline(font, base, glyph, px, rim_w, rim)
 	draw_char(font, base, glyph, px, col)
 	draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## One bit on the light backdrop, at rest in the pure colour: the crop the stage shows magnified (nearest) so the rim reads.
+func _draw_zoom(font: Font, cfg: RcLookBitsConfig) -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), LIGHT)
+	var px := roundi(glyph_px)
+	var col := BIT_COLORS[0]
+	var rim_w := maxi(cfg.rim_px, roundi(px * cfg.outline_share) + cfg.rim_px - 1)
+	var rim := Color(col, 1.0) if preset.outline == RcLookBitsPreset.Outline.SAME_COLOUR else Color(Palette.NIGHT_SKY, cfg.rim_alpha)
+	var centre := size * 0.5
+	var angle := ZOOM_TILT if preset.life == RcLookBitsPreset.Life.FLIP_TUMBLE else 0.0
+	if preset.life == RcLookBitsPreset.Life.TRAIL:
+		_glyph(font, centre - Vector2(px * ZOOM_TRAIL, 0.0), 0.0, "0", px, Color(col, cfg.trail_alpha), rim, 0)
+	_glyph(font, centre, angle, "0", px, col, rim, rim_w)
