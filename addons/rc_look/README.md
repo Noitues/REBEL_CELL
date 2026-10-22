@@ -106,6 +106,19 @@ One set of wet-surface and water helpers for the wet street, the wet plinth, the
 | `config/look_wet.tres` (`RcLookWetConfig`, `RcLookWetPreset`, `.f0()`) | `street` (F0 0.16 x specular), `plinth` (0.08 x specular), `water` (IOR 1.33, boost 0.2); pinned by test to CityShaderConfigData wet and CityConfig.water_plane |
 | lab: `--module=wet` | the three F0 policies: Fresnel strips (shader over mirror) and a wet street reflecting neon bars at street level and from the city camera |
 
+## Module 11: signage and neon (`RcLookSign`)
+
+One set of neon tube, sign stroke, glow and flicker helpers. The forms the game already uses are exact (beam_shaft's white-hot mix, dress_neon's flicker, city_glow's blink and beacon); the tube profile and core are new. Built in the lab first; no view migrated yet. Whether tubes get a white-hot core is the designer's call: the lab sheet shows flat / lightened / hot.
+
+| API | What |
+|---|---|
+| `shaders/rc_sign.gdshaderinc`: `rcl_gauss(r, sigma)`, `rcl_hot(col, core01, hot)`, `rcl_hot_to(col, core_col, k)` | gaussian profile; mix toward white (beam_shaft, bit glyphs) or toward a core colour (NEON_CORE) |
+| `rcl_tube_cov(d, half_w, pix)`, `rcl_tube_core(d, core_w)` | a stroke's antialiased coverage; the thin core on its centre line |
+| `rcl_flicker(t01, bursts, seed, burst_len, hum_hz, hum_floor)`, `rcl_blink(ph, duty, off)`, `rcl_beacon(ph)` | dress_neon's flicker; city_glow's blink and beacon |
+| `RcLookSign`: `.preset(name)`, mirrors above, `.tube_color(preset, col, d)` | exact GDScript mirrors; the colour across a tube under a preset |
+| `config/look_sign.tres` (`RcLookSignConfig`, `RcLookSignPreset`) | `flat` (today), `lighten` (0.4 toward NEON_CORE), `hot` (0.9 on a core 35% of the tube); flicker / blink numbers pinned to dress_neon / city_glow |
+| lab: `--module=sign` | the word OPEN in neon under each preset with glow (rcl_light_add) and the 2D bloom; the tube cross-section (shader over mirror) |
+
 ## Module 12: grease pencil
 
 Wax on glass for plans and threats (ART_BIBLE §1.2). The engine stays in `scripts/ui/kit/materials/` (36 views use
