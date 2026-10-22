@@ -19,6 +19,9 @@ extends Control
 ##   --reduce-effects=1   LOOK-TOOLBOX: frozen shader time and the static look (refactor proofs: two captures of the
 ##                        same code match to the pixel); the lab's own settings file, so the player's is untouched
 ##   --r2r.<field>.<key>=<json>  LOOK-TOOLBOX: a run-only override of the street r2 render config (e.g. --r2r.facade.wash_k=0)
+##   --slab=1|2|3         LOOK-TOOLBOX slab sheet: the A2 decks lifted + rim (1), near fade (2), both (3)
+##   --hide=a,b           LOOK-TOOLBOX: hides every 3D node of the view whose name contains a listed word
+##   --probe=x,y[;x,y]   LOOK-TOOLBOX: prints what the camera ray through each pixel hits (na23_probe.gd)
 ##   --dump-materials=<file>  LOOK-TOOLBOX: append every set shader parameter vs its text default at each shot
 ##                        (RcLookMaterialAudit)
 ## Prints NA23 lines.
@@ -99,6 +102,14 @@ func _ready() -> void:
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
 	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), String(_walk["current"]), _walk["visited"], _walk["options"])
+	if _args.has("hide"):
+		var words := String(_args["hide"]).split(",")
+		for n: Node in view.rig.view.find_children("*", "Node3D", true, false):
+			for wd: String in words:
+				if String(n.name).contains(wd):
+					(n as Node3D).visible = false
+					print("NA23 hid ", n.get_path())
+					break
 	if String(_args.get("fog", "1")) == "0":
 		for n in view.rig._extras:
 			n.visible = false
@@ -120,6 +131,30 @@ func _ready() -> void:
 		view.rig.view.set_aaa_exposure(float(_args["exposure"]))
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
 
+
+## Slab sheet (lab only): the A2 decks and pillars take tools/city/slab_lab.gdshader in mode --slab.
+func _apply_slab() -> void:
+	# Slab sheet (lab only): the A2 decks and pillars take tools/city/slab_lab.gdshader (a wet_street copy) in mode --slab=1..3.
+	var feats := view.rig.view.find_child("A2Features", true, false) as Node
+	var done := {}
+	for n: Node in (feats.get_children() if feats != null else []):
+		var mi := n as MeshInstance3D
+		if mi == null or not (mi.material_override is ShaderMaterial):
+			continue
+		var src := mi.material_override as ShaderMaterial
+		if String(src.shader.resource_path).ends_with("wet_street.gdshader") and not done.has(src):
+			var lab := ShaderMaterial.new()
+			lab.shader = load("res://tools/city/slab_lab.gdshader")
+			for u: Dictionary in src.shader.get_shader_uniform_list():
+				lab.set_shader_parameter(StringName(u["name"]), src.get_shader_parameter(StringName(u["name"])))
+			lab.set_shader_parameter(&"slab_mode", int(_args["slab"]))
+			done[src] = lab
+		if done.has(src):
+			mi.material_override = done[src]
+			print("NA23 slab ", mi.name)
+	for n: Node in (feats.get_children() if feats != null else []):
+		var m3 := n as MeshInstance3D
+		print("NA23 slab part ", n.name, " ", m3.material_override if m3 != null else null, " ", (m3.material_override as ShaderMaterial).shader.resource_path if m3 != null and m3.material_override is ShaderMaterial else "")
 
 ## STREET-CAM: writes the street derive's inputs and output as contract text into `dir` (city.json, net.json, run_graph.json,
 ## derive_street.json), the files art-pass re-renders the plates from.
@@ -144,6 +179,8 @@ func _export_contract(dir: String) -> void:
 
 func _on_ready() -> void:
 	print("NA23 city ready")
+	if _args.has("slab"):
+		_apply_slab()
 	var rig := view.rig
 	var bm := rig.view.building_material()
 	var nroute := 0
@@ -247,6 +284,16 @@ func _shoot() -> void:
 	var res: Dictionary = await IdCapture.new(get_tree(), rig.view, rig).write(dir, meta)
 	var beauty: Image = res["beauty"]
 	print("NA23 id classes ", res["counts"])
+	if _args.has("probe"):
+		var front := {}
+		for u: String in rig.frontage.plan["front"]:
+			front[u] = true
+		for xy: String in String(_args["probe"]).split(";"):
+			var v := xy.split(",")
+			var lines: Array = (load("res://tools/city/na23_probe.gd") as GDScript).call(&"probe", rig.view.camera,
+					Vector2(float(v[0]), float(v[1])), _data.city, _data.route_bids(), front, rig.view)
+			for l: String in lines:
+				print("NA23 ", _states[_i], " ", l)
 	var cam := rig.view.camera
 	print("NA23 cam proj=", cam.projection, " size=", cam.size, " off=", cam.frustum_offset, " near=", cam.near, " pos=", cam.global_position, " keep=", cam.keep_aspect, " pose loc=", rig.pose.loc(), " lens=", rig.pose.lens, " expect size=", NetrunFrustum.frustum_size(rig.pose, 0.5))
 	var rid0: String = rig.room_ids()[0]
