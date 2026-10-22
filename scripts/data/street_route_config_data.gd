@@ -44,7 +44,7 @@ const REQUIRED: Dictionary = {
 	"hover": ["cut_level", "cut_desat", "branch_boost", "type_glow", "grow_px", "blur_px", "mask_scale"],
 	"frame": ["top_px", "bottom_px", "left_px", "right_px", "ref_h"],
 	"atmosphere": ["density", "exposure", "front_sym", "glow_count", "glow_energy", "glow_range", "glow_height", "glow_side", "haze_mul"],
-	"look": ["building", "lane", "haze", "exposure", "frame"],
+	"look": ["building", "lane", "haze", "exposure", "frame", "ground", "hide_a2_features"],
 }
 
 

@@ -267,7 +267,9 @@ func _mount_route_buildings() -> void:
 
 ## The street's own look on the city (`StreetRouteConfigData.look`): the building uniforms of the route street (wash, floor bands)
 ## and the quiet lane lines (`route_lane`: desaturated, dimmed). Only this view sets them; the page and the other netrun views keep
-## the shared NA-22 numbers.
+## the shared NA-22 numbers. Slab fix (designer 2026-10-22): the ground material's structure faces as dry concrete
+## (`look.ground`, wet_street's struct_*) and, from this camera only, the A2 features hidden (`look.hide_a2_features`: the
+## elevated decks and pillars stood across the street's foreground); the city map and the HQ keep them.
 func _apply_street_look() -> void:
 	var lk: Dictionary = StreetRouteConfigData.shipped().look
 	var bm := view.building_material()
@@ -280,6 +282,26 @@ func _apply_street_look() -> void:
 		lane.shader = load("res://shaders/city/route_lane.gdshader")
 		lane.set_shader_parameter(&"street_gain", float(ln["gain"]))
 		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
+	var gm := _ground_material()
+	if gm != null:
+		var gd: Dictionary = lk["ground"]
+		for k: String in gd:
+			var v: Variant = gd[k]
+			gm.set_shader_parameter(StringName(k), Vector3(float(v[0]), float(v[1]), float(v[2])) if v is Array else float(v))
+	if view.features != null:
+		view.features.visible = not bool(lk["hide_a2_features"])
+
+
+## The view's ground material (city_ground / wet_street by look blend), as its A2 feature parts carry it (CityA2Features.make:
+## the solid parts take the view's ground material); null without features (no A2, or headless).
+func _ground_material() -> ShaderMaterial:
+	if view.features == null:
+		return null
+	for n: Node in view.features.get_children():
+		var m := (n as MeshInstance3D).material_override as ShaderMaterial if n is MeshInstance3D else null
+		if m != null and (m.shader == CityMaterials.WET_STREET or m.shader == CityMaterials.GROUND) and not bool(m.get_shader_parameter(&"lane")):
+			return m
+	return null
 
 
 ## Opens or closes room `id` at once (`set_room_dissolve` at 1 or 0): closed, the building keeps its facade over the room (no window

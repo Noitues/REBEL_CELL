@@ -47,3 +47,29 @@ func test_r2_sign_tiers_equal_the_emission_hierarchy() -> void:
 func test_route_rooms_fit_city_buildings_arrays() -> void:
 	var code := FileAccess.get_file_as_string("res://shaders/city/city_building.gdshader")
 	assert_string_contains(code, "uniform vec4 room_box[%d];" % RouteRig.ROOM_MAX, "RouteRig.ROOM_MAX = city_building's room arrays")
+
+
+## Slab fix (designer 2026-10-22): wet_street's structure lift is off by default (every other view keeps the wet ground) and its
+## numbers equal the street view's look.ground; the street camera hides the A2 features (a view flag, not a layout rule).
+func test_the_street_lifts_structure_and_hides_the_a2_deck() -> void:
+	var lk: Dictionary = StreetRouteConfigData.shipped().look
+	var gd: Dictionary = lk["ground"]
+	assert_eq(float(gd["struct_k"]), 1.0, "on in the street view")
+	assert_true(bool(lk["hide_a2_features"]), "the street camera hides the A2 decks and pillars")
+	var code := FileAccess.get_file_as_string("res://shaders/city/wet_street.gdshader")
+	var re := RegEx.create_from_string("uniform (float|vec3) (struct_\\w+) = (vec3\\(([^)]*)\\)|[-0-9.]+);")
+	var seen := {}
+	for m: RegExMatch in re.search_all(code):
+		var key := m.get_string(2)
+		seen[key] = true
+		if key == "struct_k":
+			assert_eq(float(m.get_string(3)), 0.0, "off unless a view sets it")
+			continue
+		assert_true(gd.has(key), "%s in look.ground" % key)
+		if m.get_string(1) == "vec3":
+			var parts := m.get_string(4).split(",")
+			for i in 3:
+				assert_almost_eq(float(parts[i]), float((gd[key] as Array)[i]), 1e-6, "%s[%d]" % [key, i])
+		else:
+			assert_almost_eq(float(m.get_string(3)), float(gd[key]), 1e-6, key)
+	assert_eq(seen.size(), gd.size(), "every look.ground key is a wet_street uniform")
