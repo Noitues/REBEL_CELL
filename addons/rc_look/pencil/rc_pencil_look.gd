@@ -72,6 +72,13 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 ## letter's size (designer 2026-10-21: the initial written bigger).
 @export var word_x_jitter: float = 0.03
 @export var word_initial_scale: float = 1.22
+@export_group("Word fit")
+## A-093: where a placed word (OURS NOW on the loot page) may move when its spot meets UI: offsets from its spot in word
+## widths (x) and word heights (y), tried in order (the spot itself first), at each size from 1 down to `word_fit_floor`
+## (share of the word's size) in `word_fit_steps` sizes. Only when every try meets UI is the word left out.
+@export var word_fit_sides: PackedVector2Array = PackedVector2Array([Vector2(0, 0), Vector2(-0.55, 0), Vector2(0.55, 0), Vector2(0, -1.6), Vector2(0, 1.6)])
+@export var word_fit_floor: float = 0.6
+@export var word_fit_steps: int = 3
 
 
 static var _default: RcPencilLook = null

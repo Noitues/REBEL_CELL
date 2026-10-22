@@ -76,6 +76,9 @@ var _still: Control
 var _won_still: Control
 var _ink: Control
 var _ours: GreasePencilWord = null
+## A-093: OURS NOW's fitted size (share) and side (offset in word widths / heights), from `fit_ours`; 1 / zero = its spot.
+var _ours_k: float = 1.0
+var _ours_side: Vector2 = Vector2.ZERO
 var _tex: Texture2D = null
 var _won_tex: Texture2D = null
 var _enemy_key: String = ""
@@ -360,15 +363,38 @@ func _place_ours() -> void:
 	var show := won * 2.0 - 1.0 > 0.0 and not place.is_empty()
 	if show:
 		var k := size.y / DESIGN_HEIGHT
-		var s := k / maxf(Settings.text_scale, 0.01)
+		var s := k / maxf(Settings.text_scale, 0.01) * _ours_k
 		_ours.text = tr("OURS NOW")
 		_ours.scale = Vector2(s, s)
 		_ours.rotation = OURS_NOW_TILT
 		var px := UiTheme.font_px(OURS_NOW_PX) * s
 		var w := Palette.pencil().get_string_size(_ours.text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(OURS_NOW_PX)).x * s
-		_ours.position = ours_now_spot() + Vector2(-w * 0.5, px * 0.35).rotated(OURS_NOW_TILT)
+		_ours.position = ours_now_spot() + (Vector2(-w * 0.5, px * 0.35) + _ours_side * Vector2(w / _ours_k, px / _ours_k)).rotated(OURS_NOW_TILT)
 		_clear_ours()
 	_ours.visible = show
+
+
+## A-093: fits OURS NOW where `blocked` (Callable(GreasePencilWord) -> bool: it meets UI) is false: its spot, then the
+## look's other sides round the target (`RcPencilLook.word_fit_sides`), each size from 1 down to `word_fit_floor`. Keeps the
+## first clear try and returns true; returns false (the word back on its spot) when even the floor meets UI. Deterministic:
+## the tries run in a fixed order.
+func fit_ours(blocked: Callable) -> bool:
+	if _ours == null:
+		return false
+	var look := RcPencilLook.current()
+	var steps := maxi(look.word_fit_steps, 1)
+	for i in steps:
+		var k := 1.0 if steps == 1 else lerpf(1.0, look.word_fit_floor, float(i) / float(steps - 1))
+		for side: Vector2 in look.word_fit_sides:
+			_ours_k = k
+			_ours_side = side
+			_place_ours()
+			if _ours.visible and not bool(blocked.call(_ours)):
+				return true
+	_ours_k = 1.0
+	_ours_side = Vector2.ZERO
+	_place_ours()
+	return false
 
 
 ## Places OURS NOW again (the combat scene's layout moved what it stands clear of).
