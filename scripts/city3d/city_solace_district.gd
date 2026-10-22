@@ -164,6 +164,35 @@ static func apply(lots: Dictionary, plan: CityPlan, cfg: CampaignConfigData, hq_
 	lots["solace"] = CitySolacePark.build(lots, ras, cfg, plan.city_seed, TERR, hq, r_l, lot_bu)
 
 
+## Site points (lots) moved off the plinth circle (radius `r` lots round `centre`; r <= 0 = no change). A point whose lot
+## square comes within 1 lot of the circle moves, in whole lots along the axis it lies furthest on (x on a tie, away from
+## `centre`), by the smallest count that clears the circle by 1 lot and lands on no lot an earlier point holds; the fraction
+## is kept. Points are taken in the layout's order, so the result is deterministic. Then no stair landing (on the circle) can
+## lie in a Site lot.
+static func shift_sites(points: PackedVector2Array, centre: Vector2, r: float) -> PackedVector2Array:
+	if r <= 0.0:
+		return points
+	var out := PackedVector2Array()
+	var held := {}
+	for p in points:
+		var l := Vector2i(p.floor())
+		var v := Vector2(l) + Vector2(0.5, 0.5) - centre
+		var d := Vector2i(1 if v.x >= 0.0 else -1, 0) if absf(v.x) >= absf(v.y) else Vector2i(0, 1 if v.y >= 0.0 else -1)
+		var n := 0
+		while n < 256 and (held.has(l + d * n) or _gap(l + d * n, centre) < r + 1.0):
+			n += 1
+		held[l + d * n] = true
+		out.append(p + Vector2(d * n))
+	return out
+
+
+## Distance from the lot square of `l` to `c`.
+static func _gap(l: Vector2i, c: Vector2) -> float:
+	var dx := maxf(maxf(float(l.x) - c.x, c.x - float(l.x + 1)), 0.0)
+	var dy := maxf(maxf(float(l.y) - c.y, c.y - float(l.y + 1)), 0.0)
+	return sqrt(dx * dx + dy * dy)
+
+
 ## True when lot `l` lies on the Solace territory's border: a 4-neighbour outside the city or of another territory.
 static func _border(ras: CityA2Raster, R: Rect2i, l: Vector2i) -> bool:
 	for d: Vector2i in CityA2Builder.DIRS:

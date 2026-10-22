@@ -119,14 +119,15 @@ static func make_plan(p_seed: int, cfg: CampaignConfigData, city_rect: Rect2i, c
 	for id: StringName in ids:
 		if not rects.has(id) or not uvs.has(id):
 			continue
-		var aim := _aim(ras, cfg, city_rect, id, rects, frame, uvs[id], hq_lots, rng)
+		var plinth_r := plinth_lots(cfg, id, lot_bu)
+		var aim := _aim(ras, cfg, city_rect, id, rects, frame, uvs[id], hq_lots, rng, plinth_r)
 		if aim.is_empty():
 			p.fallback = true
 			p.failure = "%s: no Site heading" % id
 			return p
 		p.site_aim[id] = aim[0]
 		p.site_mirror[id] = aim[1]
-		for q: Vector2 in site_points_at(_centre(rects[id], hq_lots), aim[0], aim[1], frame, uvs[id]):
+		for q: Vector2 in site_points_at(_centre(rects[id], hq_lots), aim[0], aim[1], frame, uvs[id], plinth_r):
 			p.a2_sites[Vector2i(q.floor())] = true
 	return p
 
@@ -205,7 +206,7 @@ static func _hq_ok(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i
 ## Site on an A2 road or park lot, whose building then stands next to it; ties: the earlier in the seeded order).
 ## [] when none fits.
 static func _aim(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, id: StringName, rects: Dictionary, frame: Dictionary,
-		uv: PackedVector2Array, hq_lots: int, rng: RandomNumberGenerator) -> Array:
+		uv: PackedVector2Array, hq_lots: int, rng: RandomNumberGenerator, plinth_r: float = 0.0) -> Array:
 	var cands: Array = []
 	var steps := maxi(roundi(360.0 / cfg.city_gen_aim_step_deg), 1)
 	for m in [false, true]:
@@ -222,7 +223,7 @@ static func _aim(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, 
 	var best_score := -INF_SCORE
 	for c: Array in cands:
 		var score := 0
-		for q: Vector2 in site_points_at(centre, c[0], c[1], frame, uv):
+		for q: Vector2 in site_points_at(centre, c[0], c[1], frame, uv, plinth_r):
 			var l := Vector2i(q.floor())
 			if not inner.has_point(l) or ras.depth_at(q.x, q.y) < float(cfg.city_gen_coast_clear) or _on_hq(l, rects, id):
 				score = -INF_SCORE
@@ -239,7 +240,8 @@ static func _aim(ras: CityA2Raster, cfg: CampaignConfigData, city_rect: Rect2i, 
 
 ## The Site points (lots) of a layout `uvs` (each in [-1, 1]^2, CityLayout.site_uvs) round HQ centre `centre`,
 ## turned `deg`, mirrored when `mirror` (CityLayout.site_points_aimed's formula; `frame`: CityPlan.site_frame).
-static func site_points_at(centre: Vector2, deg: float, mirror: bool, frame: Dictionary, uvs: PackedVector2Array) -> PackedVector2Array:
+## `plinth_r` (lots, 0 = none): Solace's plinth circle radius; Sites near it move outward (CitySolaceDistrict.shift_sites).
+static func site_points_at(centre: Vector2, deg: float, mirror: bool, frame: Dictionary, uvs: PackedVector2Array, plinth_r: float = 0.0) -> PackedVector2Array:
 	var a: Vector2 = (frame["right"] as Vector2).rotated(deg_to_rad(deg))
 	var b: Vector2 = (frame["down"] as Vector2).rotated(deg_to_rad(deg)) * (-1.0 if mirror else 1.0)
 	var spread: float = frame["spread"]
@@ -249,7 +251,13 @@ static func site_points_at(centre: Vector2, deg: float, mirror: bool, frame: Dic
 	var out := PackedVector2Array()
 	for uv in uvs:
 		out.append(origin + a * uv.x * run + b * uv.y * cross)
-	return out
+	return CitySolaceDistrict.shift_sites(out, centre, plinth_r)
+
+
+## The plinth circle radius (lots) that keeps Solace's Sites off the circle for territory `id`, or 0.0 when none applies
+## (another territory, or the Solace layout pass off).
+static func plinth_lots(cfg: CampaignConfigData, id: StringName, lot_bu: float) -> float:
+	return cfg.city_sol_plinth_r_bu / lot_bu if cfg.city_sol_layout and id == CitySolaceDistrict.TERR else 0.0
 
 
 ## True when lot `l` is on `own`'s HQ rect or on another corporation's grown by 1 (the Cell's rect holds buildings,

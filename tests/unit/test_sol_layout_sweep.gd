@@ -45,6 +45,7 @@ func test_rules_over_seeds() -> void:
 				bad.append("seed %d: block %s is %s lots" % [s, cell, cell.size])
 			if CitySolaceDistrict._in_circle_rect(cell, centre, r_l):
 				bad.append("seed %d: block %s in the plinth circle" % [s, cell])
+		bad.append_array(SolSiteCheck.problems(plan, lots, "seed %d" % s))
 		var ids := {}
 		for p: Dictionary in park["paths"]:
 			ids[p["id"]] = true

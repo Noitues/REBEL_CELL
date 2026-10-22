@@ -175,6 +175,23 @@ func test_park_data() -> void:
 				assert_eq(_kind(a, Vector2i(q.floor())), CityA2Builder.K_PARK, "seed %d: a pond is on lawn" % s)
 
 
+func test_sites_clear_the_plinth_and_stairs() -> void:
+	for s in SEEDS:
+		var plan := CityPlan.for_seed(s)
+		assert_eq(SolSiteCheck.problems(plan, _lots(s, _on), "seed %d" % s), PackedStringArray())
+
+
+func test_shift_sites_moves_the_least() -> void:
+	var c := Vector2(10, 10)
+	var r := 5.0
+	# stands 0.5 lot south of the circle: moves south by whole lots until the gap is 1 lot
+	var out := CitySolaceDistrict.shift_sites(PackedVector2Array([Vector2(11.3, 15.5), Vector2(11.3, 30.5), Vector2(11.3, 15.6)]), c, r)
+	assert_eq(out[0], Vector2(11.3, 16.5), "one lot further")
+	assert_eq(out[1], Vector2(11.3, 30.5), "a far Site stays")
+	assert_eq(out[2], Vector2(11.3, 17.6), "never onto a lot an earlier Site holds")
+	assert_eq(CitySolaceDistrict.shift_sites(PackedVector2Array([Vector2(11.3, 15.5)]), c, 0.0)[0], Vector2(11.3, 15.5), "off = unchanged")
+
+
 func test_plinth_circle_is_clear_and_stairs_land_on_paths() -> void:
 	var lot_bu := CityView3D.CONFIG.lot_bu
 	for s in SEEDS:
@@ -190,9 +207,7 @@ func test_plinth_circle_is_clear_and_stairs_land_on_paths() -> void:
 		for c: Dictionary in _sol_cells(plan, a):
 			var cell: Rect2i = c["cell"]
 			if plan.a2_sites.has(cell.position):
-				# A Site lot (its one-lot building is ruled to stay) may graze the circle: the first Site stands against the HQ rect.
-				var near := Vector2(clampf(centre.x, cell.position.x, cell.end.x), clampf(centre.y, cell.position.y, cell.end.y))
-				assert_lt(r_l - near.distance_to(centre), 1.0, "seed %d: Site %s grazes the plinth by under a lot" % [s, cell])
+				pass  # Solace's own Sites: test_sites_clear_the_plinth_and_stairs
 			else:
 				assert_true(not CitySolaceDistrict._in_circle_rect(cell, centre, r_l), "seed %d: block %s clears the plinth" % [s, cell])
 		var stairs: Array = pl["stairs"]
