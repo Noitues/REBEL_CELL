@@ -207,3 +207,24 @@ A hands-off or one-press raid is a **watched** system. The shipped watched syste
 
 All three score S 8 and V 7–8. The target is about **35/50 plus S ≥ 8 and V ≥ 7**, not 40+. 40+ is only reached by
 turn-based telegraph games (Into the Breach, Slay the Spire).
+
+## Round 10: M10 Manhunt (one fresh critic, calibrated against the six shipped systems)
+
+| W | P | N | D | C | Total | S | V (shown/layout) | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 6 | 6 | 4 | 6 | 6 | 28 | 6 | 4/5 | 6 |
+
+**Critic noise.** The same M9c rules scored 30 (R9) and 32 (calibration, as "X"), and M10 now scores 28. Rounds differ
+by about ±3, the size of every change since R3.
+
+**Each fresh critic finds a new set of hand-drawn ledger and consistency errors**, which cost 3–5 points. In this
+round:
+- Heat is not charged for the ghost.
+- The decoy cost is not taken off the key.
+- The third beam is never drawn.
+- The legend moves between frames.
+
+**Designer decisions raised:**
+- The timing press against GDD pillar 4.
+- Repair = value against GDD 3.3 (50% of install cost).
+- A key in Schematics against GDD 1.3 (win = Exploits).
