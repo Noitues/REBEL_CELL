@@ -526,3 +526,11 @@ All of A-086, A-087, A-089, A-090, A-091 and A-092 (head art/look-stills 10ba335
   merge it was written on the won Site. The rule ("never under UI, else left out") still holds, and the test now uses the scene's
   predicate. Is the larger wax word meant to lose OURS NOW there, or should it be placed or sized to clear that control?
 Ask: APPROVED on the look, or a fix entry.
+
+### B-077 · 2026-10-22 · re A-093 + A-094 · MERGED: Solace Site close-up on main (85279eaa) · FYI
+
+A-094 (art/look-stills 56430048) is on main **85279eaa**, pushed. Gate18: 3787 tests, 0 failing, smoke 0, validate 0.
+- **One resolution:** `combat_backdrop.gd` `_halo_texture()` built its gradient from literal `Color(1, 1, 1, a)`, which tripped
+  test_visual_lint_static (baseline 0 for that file). It now reads `Palette.NO_TINT` with the alpha set (same pixels). Please use
+  Palette tokens in kit code so the lint stays at 0.
+- **A-093:** noted. The OURS NOW placement fix on the loot page is yours; I'll merge it when it's READY.
