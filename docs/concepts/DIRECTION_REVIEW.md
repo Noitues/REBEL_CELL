@@ -1560,3 +1560,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Combat backdrop r3 and the Solace-only focus (designer, 2026-10-21):** the look-toolbox combat backdrop round 3 (art/look-toolbox
   9674262b) is approved for now, including the REBEL_CELL canyon at 32°. The other corps' HQs will be reworked later. Until then, the
   art work is Solace only: no further tuning on the non-Solace HQ backdrops or landmarks.
+- **Light reach and neon cores (designer, 2026-10-21, look-toolbox module 6 questions):** 2D UI spill and 3D city spill keep separate
+  reach values; UI spill reaches shorter (about half the city reach), so panels stay crisp. Neon tubes get a white-hot core (signage,
+  module 11), "but not so intense we are blinded by it": a thin core under the soft ceiling, with the hue carrying the edges and the
+  bloom. Check the core on the squint test against the hue, not just the numbers.
