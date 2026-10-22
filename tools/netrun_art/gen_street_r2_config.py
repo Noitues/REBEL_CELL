@@ -38,8 +38,8 @@ RULES_R2 = {
         opening_margin=0.15, second_row_band=40.0, lamp_shift_max=2.4),
     "dressing_signs": dict(
         hero_kinds=("blade", "wall"), hero_lum_ratio=(1.5, 2.0), hero_central_frac=2.0 / 3.0, p_secondary=0.5, p_shop_sign=0.75,
-        megastructures=1, mega_kinds=("globe", "arch", "holo"), signs_on_screen_min=6, legible_px=12.0, backdrop_sign_p=0.6,
-        p_roof_board=0.16, mega_headroom=0.03, sign_off=0.12, hero_emit=4.0, sec_emit=2.6, shop_emit=1.5, mega_emit=3.0,
+        signs_on_screen_min=6, legible_px=12.0, backdrop_sign_p=0.6,
+        p_roof_board=0.16, sign_off=0.12, hero_emit=4.0, sec_emit=2.6, shop_emit=1.5,
         backdrop_emit=2.4),
     "lod_signs": dict(t1_shape=466.0, t2_full=216.0, t3_detail=70.0, fade_margin=0.15),
     "streets_light": dict(
@@ -67,10 +67,9 @@ WORDS = {
     "": ["NOODLE", "OPEN 24", "CAPSULES", "VOLTA", "SOLACE", "ARCADE", "SUSHI", "PAWN", "BAR", "DATA"],
 }
 SUBS = ["24 H", "OPEN", "NO CREDIT", "LIVE", "B1", "2F", "ALL NIGHT", "FAST", "DOSE+", "NEW"]
-# ad plate names of the storyboard's ad library (dressing only): hero wall posters, crown / roof boards, the megastructure
+# ad plate names of the storyboard's ad library (dressing only): hero wall posters, crown / roof boards
 ADS = {"hero": {"meridian": ["meridian", "noodle", "volta"], "halcyon": ["halcyon", "orbital", "solace"], "": ["volta", "noodle", "solace"]},
-       "board": ["volta", "noodle", "solace", "orbital", "halcyon", "meridian"],
-       "mega": ["volta", "orbital", "halcyon", "solace", "meridian"]}
+       "board": ["volta", "noodle", "solace", "orbital", "halcyon", "meridian"]}
 # the one-city frame (sb_onecity.RULES / layout36 constants): lot size, model centre, the height factor KH = U / kh[0] * kh[1]
 ONECITY = dict(u=6.0, cx=6.0, cy=6.0, kh=(41.64, 1.15), floor_bu=1.9, front_band=(0.8, 6.5), min_width=2.5, extend=(12.0, 60.0),
                w=1920, h=1080, base_tol=0.05)

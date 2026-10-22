@@ -21,7 +21,7 @@ static var _shipped: StreetR2ConfigData = null
 @export var repetition_guard: Dictionary = {}
 ## Facade props (AC units, pipes, awnings, small signs, lit rooms) and their keep-clear margin for route-room openings.
 @export var props_facade: Dictionary = {}
-## Rank 2: signs by rule (hero, secondary, shop, backdrop, roof boards, megastructure) and their emission.
+## Rank 2: signs by rule (hero, secondary, shop, backdrop, roof boards) and their emission.
 @export var dressing_signs: Dictionary = {}
 ## LOD tiers of signs by camera distance (BU).
 @export var lod_signs: Dictionary = {}
@@ -39,7 +39,7 @@ static var _shipped: StreetR2ConfigData = null
 @export var words: Dictionary = {}
 ## Sub-line words of the sign library.
 @export var subs: Array = []
-## Ad plate names (`hero` per district, `board`, `mega`).
+## Ad plate names (`hero` per district, `board`).
 @export var ads: Dictionary = {}
 ## The one-city frame (lot size, model centre, `kh`, floor pitch, frontage band, extension, frame size).
 @export var onecity: Dictionary = {}
@@ -58,8 +58,8 @@ const REQUIRED: Dictionary = {
 		"ground_mult", "top_mult", "band_floors", "window_tone_pool", "window_tones", "cell_tone", "cell_relief", "p_mixed_modules", "p_setback",
 		"setback_min_floors", "setback_from", "setback_depth", "p_balcony_floor", "balcony_w", "balcony_depth"],
 	"props_facade": ["density", "p_quiet", "quiet_k", "min_per_face", "max_per_face", "kinds", "opening_margin", "second_row_band", "lamp_shift_max"],
-	"dressing_signs": ["hero_kinds", "hero_central_frac", "p_secondary", "p_shop_sign", "mega_kinds", "signs_on_screen_min", "legible_px",
-		"backdrop_sign_p", "p_roof_board", "mega_headroom", "sign_off", "hero_emit", "sec_emit", "shop_emit", "mega_emit", "backdrop_emit"],
+	"dressing_signs": ["hero_kinds", "hero_central_frac", "p_secondary", "p_shop_sign", "signs_on_screen_min", "legible_px",
+		"backdrop_sign_p", "p_roof_board", "sign_off", "hero_emit", "sec_emit", "shop_emit", "backdrop_emit"],
 	"lod_signs": ["t1_shape", "t2_full", "t3_detail", "fade_margin"],
 	"streets_light": ["lamp_step", "lamp_jit", "lamp_post_h", "kerb_off"],
 	"foreground_street": ["fg_lanes"],
@@ -68,7 +68,7 @@ const REQUIRED: Dictionary = {
 	"onecity": ["u", "cx", "cy", "kh", "floor_bu", "front_band", "min_width", "extend", "w", "h"],
 	"kits": ["kit_w", "glass_col", "metal_col", "win_cols", "red"],
 	"sign_tex": ["long_px", "long_px_big", "fit_lo", "fit_hi", "pale", "min_px"],
-	"ads": ["hero", "board", "mega"],
+	"ads": ["hero", "board"],
 }
 
 

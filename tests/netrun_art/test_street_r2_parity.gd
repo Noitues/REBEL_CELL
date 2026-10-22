@@ -77,8 +77,6 @@ func test_sign_draw_lists_reproduce_the_plate() -> void:
 	var plan: Dictionary = d["plan"]
 	for s: Dictionary in plan["signs"]:
 		s["tex"]["seed"] = StreetR2Util.u64(s["tex"]["seed"])
-	if plan["mega"] != null:
-		plan["mega"]["tex"]["seed"] = StreetR2Util.u64(plan["mega"]["tex"]["seed"])
 	var specs := StreetR2Signs.make(plan, StreetR2Signs.table_measure(d["measure"]))
 	var diff := NaFixture.first_diff(StreetR2Util.dumps(specs), _expected("s1_signs.json"))
 	assert_eq(diff, "", "signs: " + diff)

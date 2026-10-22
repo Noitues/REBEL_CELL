@@ -5,6 +5,8 @@
 shader_type spatial;
 render_mode cull_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX step 8: the desaturation is rc_look's rcl_saturate (Rec.709 luma).
+#include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
 
 uniform float street_gain = 0.45;
 uniform float lane_sat = 0.3;
@@ -14,6 +16,5 @@ void fragment() {
 	ALBEDO = vec3(0.0);
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;
-	float luma = dot(COLOR.rgb, vec3(0.2126, 0.7152, 0.0722));
-	EMISSION = mix(vec3(luma), COLOR.rgb, lane_sat) * street_gain * emission_multiplier;
+	EMISSION = rcl_saturate(COLOR.rgb, lane_sat) * street_gain * emission_multiplier;
 }

@@ -58,7 +58,7 @@ def checks(seed, plan, D, OC, B, bk):
         run = run + 1 if a == b else 1
         mx = max(mx, run)
     out["repetition.guard"] = dict(max_same_module_run=mx, ok=mx <= R["repetition.guard"]["max_same_module_adjacent"])
-    # dressing.signs: placement (on a face), hero per route column, central hero, legible count, megastructure
+    # dressing.signs: placement (on a face), hero per route column, central hero, legible count
     S = R["dressing.signs"]
     bad = []
     legible, legible_ids = 0, []
@@ -91,9 +91,7 @@ def checks(seed, plan, D, OC, B, bk):
                 legible_ids.append(s["id"])
     out["dressing.signs"] = dict(signs=len(plan["signs"]), off_face=bad, heroes=len(heroes), route_columns=len(plan["route"]),
                                  hero_central=central, legible_ov=legible, legible_ids=legible_ids,
-                                 megastructure=plan["mega"] and plan["mega"]["kind"],
-                                 ok=not bad and len(heroes) == len(plan["route"]) and central and legible >= S["signs_on_screen_min"]
-                                 and plan["mega"] is not None)
+                                 ok=not bad and len(heroes) == len(plan["route"]) and central and legible >= S["signs_on_screen_min"])
     # roof clutter kinds on the frontage (crowns + the kit roof rules) - recorded by the Blender build too
     PF = R["props.facade"]
     blocked = [p["id"] for p in plan["props"] if FC.prop_hits_opening(p, D["rooms"], plan["axis"], plan["line"], PF["opening_margin"])]

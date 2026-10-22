@@ -495,6 +495,36 @@ func test_the_backdrops_ours_now_is_a_wax_word_shown_only_once_won() -> void:
 	assert_eq(b.ours_now().modulate.a, 1.0, "never faded in")
 
 
+## A-093: OURS NOW is fitted, not dropped: its spot when clear; else the first clear side / size of RcPencilLook's tries; it
+## stays on its spot and fit_ours answers false only when even the floor size is blocked everywhere.
+func test_ours_now_fits_round_the_site_before_it_is_dropped() -> void:
+	var b := CombatBackdrop.new()
+	add_child_autofree(b)
+	b.show_place(BackdropCatalog.place_for(null, [] as Array[EnemyData], &""))
+	b.play_won(true)
+	var w := b.ours_now()
+	var spot := w.position
+	var full := w.scale
+	assert_true(b.fit_ours(func(_x: GreasePencilWord) -> bool: return false), "clear: fits")
+	assert_eq(w.position, spot, "clear: stays on its spot")
+	assert_eq(w.scale, full, "clear: full size")
+	var tries := [0]
+	assert_true(b.fit_ours(func(_x: GreasePencilWord) -> bool:
+		tries[0] += 1
+		return tries[0] == 1), "the spot blocked: the next side is clear")
+	assert_ne(w.position, spot, "moved to another side")
+	assert_eq(w.scale, full, "at full size")
+	var look := RcPencilLook.current()
+	var floor_k := look.word_fit_floor
+	assert_true(b.fit_ours(func(x: GreasePencilWord) -> bool: return x.scale.x > full.x * floor_k + 1e-4), "only the floor size is clear")
+	assert_almost_eq(w.scale.x, full.x * floor_k, 1e-4, "shrunk to the floor (RcPencilLook.word_fit_floor)")
+	assert_false(b.fit_ours(func(_x: GreasePencilWord) -> bool: return true), "blocked everywhere: not fitted")
+	assert_eq(w.position, spot, "left on its spot for the caller to drop")
+	assert_eq(w.scale, full, "at full size")
+	assert_between(floor_k, 0.3, 1.0, "the floor is a share of the word's size")
+	assert_eq(look.word_fit_sides[0], Vector2.ZERO, "the spot is the first try")
+
+
 func test_the_audit_removed_the_new_campaign_motto() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/hq_scene.gd")
 	assert_false(src.contains("PencilWords.new(tr(\"TRUST NO ONE\")"), "TRUST NO ONE is gone (a joke in pencil)")

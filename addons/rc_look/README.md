@@ -106,6 +106,21 @@ One set of wet-surface and water helpers for the wet street, the wet plinth, the
 | `config/look_wet.tres` (`RcLookWetConfig`, `RcLookWetPreset`, `.f0()`) | `street` (F0 0.16 x specular), `plinth` (0.08 x specular), `water` (IOR 1.33, boost 0.2); pinned by test to CityShaderConfigData wet and CityConfig.water_plane |
 | lab: `--module=wet` | the three F0 policies: Fresnel strips (shader over mirror) and a wet street reflecting neon bars at street level and from the city camera |
 
+## Module 10: street layers (`RcLookRamp`, `RcLookStreet`)
+
+The street netrun's look in one place, read from where it already lives (no copies). The street shaders use the shared helpers (route_depth / route_room decode their id bytes with `rcl_to_lin`, route_lane desaturates with `rcl_saturate`); the distance ramps the street code repeats have exact twins here.
+
+| API | What |
+|---|---|
+| `RcLookRamp`: `.log01(d, far, near)`, `.log_smooth(d, far, near)`, `.log_lerp(a, b, u)`, `.smooth01(t)` | where camera distance d sits between far (0) and near (1) in log space (RevealTiers band / tier_weight / zoom_dive / zoom_detail), its smoothstep (the reveal weights), log-space interpolation (NetrunSection.zcut) |
+| `RcLookStreet`: `.lane()`, `.room_energy()`, `.hover_cut()`, `.look_at(key, zd)`, `.fog_density()`, `.emit(key)`, `.emit_pairs()` | the street look numbers from StreetRouteConfigData (lane gain / saturation, room energy idle / lit, the hover power cut, the OVERVIEW -> DECISION haze / exposure / frame pairs, the one fog density) and CityShaderConfigData (`aaa.emit`) |
+
+**Layers (street, back to front).** Fog volume (`city_fog`, `atmosphere.density` 0.12 on both framings, `haze_mul` 2.0) -> city mass (`city_building` with the street look: the city wash on the route column tops) -> the r2 frontage (`StreetR2Builder`: facade kits with their own wash, planned signs, props, lamps, crowns) -> street dressing (`StreetDressing`: glows, beams, lanes, plumes; its wash / glow discs are hidden behind the real lights) -> route rooms (`route_room`, energy idle / lit) and lanes (`route_lane`) -> the grade (`route_grade`, the hover cut). The depth pass spans 655 BU (`depth_scale` 100).
+
+**Rulings (designer and art-pass, 2026-10-22).** (a) Both facade washes stay: they own different facades (the city wash only changes the DECISION frame, the r2 wash carries the OVERVIEW foreground). (b) The megastructure is dropped (designer): it was an art-direction ask (v3_aaa critique 5, PIPELINE_SPEC 13.1 `dressing.signs`), ported with the plate rules but never built in Godot, and on street seed 1 the rule found no spot. (d) The fog density is one constant.
+
+**Pins.** `tests/unit/test_rc_look_street.gd` (fast): the ramps equal RevealTiers / NetrunArtUnits, the numbers come from their configs, the r2 plan's sign tiers (the Python twin's copy in `street_r2.tres`) equal `aaa.emit`, `RouteRig.ROOM_MAX` equals city_building's room arrays.
+
 ## Module 11: signage and neon (`RcLookSign`)
 
 One set of neon tube, sign stroke, glow and flicker helpers. The forms the game already uses are exact (beam_shaft's white-hot mix, dress_neon's flicker, city_glow's blink and beacon); the tube profile and core are new. Built in the lab first; no view migrated yet. Whether tubes get a white-hot core is the designer's call: the lab sheet shows flat / lightened / hot.

@@ -43,6 +43,21 @@ uniform float spill_k = 0.25;
 // moon no longer flecks the whole-city mountains white. 0 = the old lobe everywhere.
 uniform float slope_spec = 0.0;
 uniform vec2 slope_flat = vec2(0.97, 0.995);
+// Slab fix (designer 2026-10-22): structure in the ground material (A2 decks, pillars, walls: faces above `struct_min_y`
+// whose world normal y is under `struct_flat_ny`) as dry concrete when `struct_k` is 1: albedo x `struct_lift`, roughness
+// `struct_rough` (no wet mirror), spill on its own normal, a rim (`struct_rim` x gain, view fresnel ^ pow) and the street's
+// wash on its underside. 0 (the default) is the wet ground as before; only the street view sets it (StreetRouteConfigData
+// look.ground; test_rc_look_street pins these defaults to it).
+uniform float struct_k = 0.0;
+uniform float struct_min_y = 1.0;
+uniform float struct_flat_ny = 0.9;
+uniform float struct_lift = 2.2;
+uniform float struct_rough = 0.75;
+uniform vec3 struct_rim = vec3(0.55, 0.32, 0.95);
+uniform float struct_rim_gain = 0.6;
+uniform float struct_rim_pow = 2.5;
+uniform vec3 struct_under = vec3(1.0, 0.3, 0.7);
+uniform float struct_under_gain = 0.3;
 varying vec3 v_world;
 varying float v_ny;
 
@@ -57,6 +72,15 @@ void fragment() {
 	if (lane) {
 		ALBEDO = vec3(0.0);
 		EMISSION = COLOR.rgb * lane_gain * emission_multiplier;
+	} else if (struct_k > 0.0 && v_world.y > struct_min_y && v_ny < struct_flat_ny) {
+		vec3 n_w = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+		vec3 col = COLOR.rgb * struct_lift;
+		ROUGHNESS = struct_rough;
+		ALBEDO = col;
+		vec3 spill = toon_spill(v_world, n_w, ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
+		float rim = pow(1.0 - clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0), struct_rim_pow);
+		EMISSION = (col * spill * spill_gain + struct_rim * rim * struct_rim_gain
+				+ struct_under * struct_under_gain * smoothstep(-0.3, -0.8, n_w.y)) * emission_multiplier * struct_k;
 	} else {
 		vec3 col = COLOR.rgb;
 		if (look_blend > 0.0) {

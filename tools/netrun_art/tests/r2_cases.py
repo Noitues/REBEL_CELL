@@ -63,10 +63,9 @@ def unpack(cases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def signs_min(plan: Dict[str, Any]) -> Dict[str, Any]:
-    """The part of a plan the sign textures read: each sign's id, colour, rectangle and texture request, and the megastructure's."""
+    """The part of a plan the sign textures read: each sign's id, colour, rectangle and texture request."""
     keys = ("id", "col", "u0", "u1", "z0", "z1", "tex")
-    m = plan.get("mega")
-    return dict(signs=[{k: s[k] for k in keys} for s in plan["signs"]], mega=dict(kind=m["kind"], tex=m["tex"]) if m else None)
+    return dict(signs=[{k: s[k] for k in keys} for s in plan["signs"]])
 
 
 def pack_signs(plan: Dict[str, Any]) -> Dict[str, Any]:
@@ -74,16 +73,12 @@ def pack_signs(plan: Dict[str, Any]) -> Dict[str, Any]:
     p = signs_min(plan)
     for s in p["signs"]:
         s["tex"] = dict(s["tex"], seed=str(s["tex"]["seed"]))
-    if p["mega"]:
-        p["mega"]["tex"] = dict(p["mega"]["tex"], seed=str(p["mega"]["tex"]["seed"]))
     return p
 
 
 def unpack_signs(p: Dict[str, Any]) -> Dict[str, Any]:
     """Inverse of `pack_signs`."""
-    out = dict(signs=[dict(s, tex=dict(s["tex"], seed=int(s["tex"]["seed"]))) for s in p["signs"]], mega=None)
-    if p["mega"]:
-        out["mega"] = dict(p["mega"], tex=dict(p["mega"]["tex"], seed=int(p["mega"]["tex"]["seed"])))
+    out = dict(signs=[dict(s, tex=dict(s["tex"], seed=int(s["tex"]["seed"]))) for s in p["signs"]])
     return out
 
 

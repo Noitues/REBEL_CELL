@@ -644,52 +644,6 @@ static func plan_pass(seed: Variant, D: Dictionary, merged: Array, terr: Diction
 		var scol: Array = pal[r_.randrange(pal.size())]
 		_add(ctx, "backdrop_blade", b, u0, u0 + bw, z1 - bh, z1, scol, {"style": "blade", "word": wd, "sub": "", "seed": StreetR2Rng.art_seed(seed, "tex", [key, "bd"])},
 			S["backdrop_emit"], 0.36, [wd])
-	# megastructure: on the tallest spike inside the central 2/3 of the OVERVIEW, off the DECISION frame
-	var mega: Variant = null
-	var cands: Array = []
-	var front_top := float(front[0]["h"])
-	for b: Dictionary in front:
-		front_top = maxf(front_top, float(b["h"]))
-	var loc: Array = ov["persp"]["loc"]
-	var lens := float(ov["persp"]["lens"])
-	for b: Dictionary in sorted_b:
-		if rset.has(b["uid"]) or float(b["z0"]) > NEAR_BASE:
-			continue
-		var far := _far_of(b, axis, line, nrm)
-		if not (24.0 < far and far < 170.0) or float(b["h"]) < front_top * 0.8:
-			continue
-		var cx := (float(b["x0"]) + float(b["x1"])) / 2
-		var cy := (float(b["y0"]) + float(b["y1"])) / 2
-		var p1 := StreetR2OneCity.proj(ov, [cx, cy, b["h"]])
-		var x := float(p1[0]) / W_
-		var y := float(p1[1]) / H_
-		var p2 := StreetR2OneCity.proj(dec, [cx, cy, b["h"]])
-		var xd := float(p2[0]) / W_
-		var yd := float(p2[1]) / H_
-		var in_dec := 0.0 < xd and xd < 1.0 and 0.0 < yd and yd < 1.0
-		var sz := _mega_size(loc, lens, W_, cx, cy, float(b["h"]))
-		var p3 := StreetR2OneCity.proj(ov, [cx, cy, float(b["h"]) + 1.6 + sz * 0.75])
-		var ytop := float(p3[1]) / H_          # the tallest kind (globe on its mast)
-		if 1.0 / 6.0 < x and x < 5.0 / 6.0 and not in_dec and ytop > float(S["mega_headroom"]) and y < 0.45:
-			cands.append([float(b["h"]) + (40.0 if spike_set.has(b["uid"]) else 0.0), b["uid"], b, x, y])
-	if not cands.is_empty():
-		cands = StreetR2Util.sorted_by(cands, func(x: Array, y: Array) -> bool: return StreetR2Util.tuple_less([-float(x[0]), x[1]], [-float(y[0]), y[1]]))
-		var best: Array = cands[0]
-		var key: String = best[1]
-		var b: Dictionary = best[2]
-		var r_ := StreetR2Rng.stream(seed, "mega", [key])
-		var mk: Array = S["mega_kinds"]
-		var kind: String = mk[r_.randrange(mk.size())]
-		var cx := (float(b["x0"]) + float(b["x1"])) / 2
-		var cy := (float(b["y0"]) + float(b["y1"])) / 2
-		var dis := _dist_of(terr, key)
-		var mcols: Array = [[0.35, 0.9, 1.0], [1.0, 0.25, 0.65], [1.0, 0.65, 0.2]]
-		var col: Array = (mcols[r_.randrange(3)] as Array).duplicate()
-		var h := float(b["h"])
-		var size := _mega_size(loc, lens, W_, cx, cy, h)
-		var ad: String = ads["mega"][r_.randrange((ads["mega"] as Array).size())]
-		mega = {"kind": kind, "key": key, "pos": [cx, cy, h], "size": size, "col": col, "screen": [best[3], best[4]], "district": dis,
-			"tex": {"style": "ad", "ad": ad, "word": "", "sub": "", "seed": StreetR2Rng.art_seed(seed, "tex", [key, "mega"])}, "emit": S["mega_emit"]}
 	# roof boards: every sign_frame crown on the camera row carries a lit board, and backdrop roofs over 14 BU in the OVERVIEW carry one with
 	# p_roof_board. Boards stand on legs at the roof's street edge, facing the street.
 	var kinds_cb: Array = ["wall", "ad", "holo"]
@@ -700,9 +654,8 @@ static func plan_pass(seed: Variant, D: Dictionary, merged: Array, terr: Diction
 			var w_ := minf(span, 7.0) * 0.85
 			_roof_board(ctx, seed, b, "crown_board", w_, w_ * 0.42, kinds_cb[StreetR2Rng.stream(seed, "crown_board", [b["uid"]]).randrange(3)])
 	var kinds_rb: Array = ["holo", "ad", "wall"]
-	var mega_key: Variant = (mega as Dictionary)["key"] if mega != null else null
 	for b: Dictionary in sorted_b:
-		if rset.has(b["uid"]) or spike_set.has(b["uid"]) or (mega != null and b["uid"] == mega_key) or float(b["z0"]) > NEAR_BASE or float(b["h"]) < 14.0:
+		if rset.has(b["uid"]) or spike_set.has(b["uid"]) or float(b["z0"]) > NEAR_BASE or float(b["h"]) < 14.0:
 			continue
 		var far := _far_of(b, axis, line, nrm)
 		if not (12.0 < far and far < 170.0) or StreetR2Rng.stream(seed, "p_roof_board", [b["uid"]]).random() > float(S["p_roof_board"]):
@@ -802,7 +755,7 @@ static func plan_pass(seed: Variant, D: Dictionary, merged: Array, terr: Diction
 				var b: Dictionary = bk[c_["key"]]
 				plume_src.append([(float(b["x0"]) + float(b["x1"])) / 2, (float(b["y0"]) + float(b["y1"])) / 2, b["h"], c_["key"]])
 	for key: String in spikes:
-		if bk.has(key) and (mega == null or key != mega_key):
+		if bk.has(key):
 			var b: Dictionary = bk[key]
 			plume_src.append([(float(b["x0"]) + float(b["x1"])) / 2, (float(b["y0"]) + float(b["y1"])) / 2, b["h"], key])
 	var keyed_p: Array = []
@@ -872,7 +825,7 @@ static func plan_pass(seed: Variant, D: Dictionary, merged: Array, terr: Diction
 	IdSort.sort_ids(views_k)
 	var plan := {"seed": seed, "axis": axis, "nrm": nrm, "line": line, "route": route, "front": fkeys, "front_faces": faces, "near_faces": near, "trims": trims,
 		"rhythm": rhythm, "props": props, "lamps_dropped": lamps_dropped, "underlight": ul, "kits": kits_out, "modules": modules, "crowns": crowns,
-		"signs": signs, "mega": mega, "lamps": lamps, "plumes": plumes, "bank_stops": stops, "spikes": spikes,
+		"signs": signs, "lamps": lamps, "plumes": plumes, "bank_stops": stops, "spikes": spikes,
 		"fg_lanes": (_r("foreground_street")["fg_lanes"] as Array).duplicate(), "lod": _r("lod_signs"), "districts_in_view": views_k}
 	plan["checks"] = checks(plan, D, B, bk)
 	return plan
@@ -890,13 +843,6 @@ static func _far_of(b: Dictionary, axis: int, line: float, nrm: Array) -> float:
 	var cx := (float(b["x0"]) + float(b["x1"])) / 2
 	var cy := (float(b["y0"]) + float(b["y1"])) / 2
 	return (cy - line) * float(nrm[1]) if axis == 0 else (cx - line) * float(nrm[0])
-
-
-static func _mega_size(loc: Array, lens: float, w: float, cx: float, cy: float, h: float) -> float:
-	var dx := cx - float(loc[0])
-	var dy := cy - float(loc[1])
-	var dz := h - float(loc[2])
-	return 150.0 / w * sqrt(dx * dx + dy * dy + dz * dz) * 36.0 / lens
 
 
 # ---------------------------------------------------------------- plan-level rule checks
@@ -988,10 +934,9 @@ static func checks(plan: Dictionary, D: Dictionary, B: Array, bk: Dictionary) ->
 			if cap >= float(S["legible_px"]):
 				legible += 1
 				legible_ids.append(s["id"])
-	var mega: Variant = plan["mega"]
 	out["dressing.signs"] = {"signs": (plan["signs"] as Array).size(), "off_face": bad, "heroes": heroes.size(), "route_columns": (plan["route"] as Array).size(),
-		"hero_central": central, "legible_ov": legible, "legible_ids": legible_ids, "megastructure": (mega as Dictionary)["kind"] if mega != null else null,
-		"ok": bad.is_empty() and heroes.size() == (plan["route"] as Array).size() and central and legible >= int(S["signs_on_screen_min"]) and mega != null}
+		"hero_central": central, "legible_ov": legible, "legible_ids": legible_ids,
+		"ok": bad.is_empty() and heroes.size() == (plan["route"] as Array).size() and central and legible >= int(S["signs_on_screen_min"])}
 	# roof clutter kinds on the frontage
 	var PF := _r("props_facade")
 	var blocked: Array = []

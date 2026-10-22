@@ -73,3 +73,6 @@ word_size_jitter = 0.04
 word_wobble_em = 0.012
 word_x_jitter = 0.03
 word_initial_scale = 1.22
+word_fit_sides = PackedVector2Array(0, 0, -0.55, 0, 0.55, 0, 0, -1.6, 0, 1.6)
+word_fit_floor = 0.6
+word_fit_steps = 3

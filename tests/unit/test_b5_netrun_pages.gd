@@ -97,6 +97,25 @@ func test_ours_now_is_never_under_the_loot_pages_panels() -> void:
 	await _close(scene)
 
 
+## A-093: the wax OURS NOW is not lost on the loot page: when its spot meets the page's UI it is fitted round the won Site
+## (CombatBackdrop.fit_ours) and shows clear of every panel, sticker and chip (the scene's own word_blocked_by), inside the
+## safe margin. Layout containers are not UI.
+func test_ours_now_shows_on_the_loot_page() -> void:
+	var scene := _netrun()
+	await _frames(2)
+	await _loot(scene)
+	await _frames(4)
+	var ink := scene.site_backdrop.get_node(^"OursNow") as CanvasItem
+	var word: GreasePencilWord = scene.site_backdrop.ours_now()
+	assert_true(ink.visible and word.is_visible_in_tree(), "OURS NOW written on the won Site")
+	for c in scene._panel.find_children("*", "Control", true, false):
+		var ctl := c as Control
+		if ctl.is_visible_in_tree():
+			assert_false(NetrunScript.word_blocked_by(word, ctl, scene.get_viewport_rect()), "OURS NOW under %s" % ctl.name)
+	assert_true(NetrunScript.word_in_safe_margin(word, scene.get_viewport_rect()), "inside the safe margin")
+	await _close(scene)
+
+
 func _event(scene: Control, id: StringName) -> void:
 	var run := RunManager.netrun.run
 	run.event_id = id

@@ -1361,7 +1361,8 @@ func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
 
 ## Art director (B5 fix 2): no UI may cover pencil. OURS NOW stands where the won Site's close-up puts it (its target's
 ## top); while the loot page shows, a frame that finds it under one of the page's panels or stickers (FIRMWARE DROP,
-## the sheet, CONTINUE) leaves the word out rather than tuck it under them.
+## the sheet, CONTINUE) or past the safe margin fits it elsewhere (A-093: the other sides round the won Site, then
+## smaller, `CombatBackdrop.fit_ours`) and leaves the word out only when even the smallest try is covered.
 func _process(_delta: float) -> void:
 	if not _ours_watch or site_backdrop == null or not site_backdrop.visible:
 		_ours_watch = false
@@ -1375,18 +1376,20 @@ func _process(_delta: float) -> void:
 		return
 	if PageTransition.running(_panel) or FlightFx.active_count(self) > 0:
 		return  # the page's parts are still coming in (the loot fans up through the word's place)
+	if not _ours_blocked(word) or site_backdrop.fit_ours(_ours_blocked):
+		return
+	ink.visible = false
+	_ours_watch = false
+
+
+## True when pencil word `word` meets one of the loot page's panels or stickers (`word_blocked_by`) or leaves the safe
+## margin (ART-R2 7: never off an edge).
+func _ours_blocked(word: GreasePencilWord) -> bool:
 	for c in _panel.find_children("*", "Control", true, false):
 		var ctl := c as Control
-		if not ctl.is_visible_in_tree():
-			continue
-		if word_blocked_by(word, ctl, get_viewport_rect()):
-			ink.visible = false
-			_ours_watch = false
-			return
-	# ART-R2 7: the pencil stays inside the safe margin too (never off an edge).
-	if not word_in_safe_margin(word, get_viewport_rect()):
-		ink.visible = false
-		_ours_watch = false
+		if ctl.is_visible_in_tree() and word_blocked_by(word, ctl, get_viewport_rect()):
+			return true
+	return not word_in_safe_margin(word, get_viewport_rect())
 
 
 ## True when screen rect `r` covers any of pencil word `word` (its tilted letters' box with their shadow: the two
@@ -1402,9 +1405,11 @@ static func word_covered_by(word: GreasePencilWord, r: Rect2) -> bool:
 
 ## ART-R2 7: true when control `ctl` (visible) is UI the pencil may not touch: a panel's scrim pool, a button, or
 ## any control that takes the mouse (a chip, a sheet) that is not the page's full-screen host, and the word meets it.
+## A-093: a plain layout container (a Container other than a PanelContainer: it draws nothing) is not UI; what it
+## holds is tested on its own.
 static func word_blocked_by(word: GreasePencilWord, ctl: Control, screen: Rect2) -> bool:
 	var ui := ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton
-	if not ui and ctl.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+	if not ui and ctl.mouse_filter != Control.MOUSE_FILTER_IGNORE and not (ctl is Container and not ctl is PanelContainer):
 		ui = ctl.get_global_rect().get_area() < screen.get_area() * LOOT_HOST_SHARE
 	return ui and word_covered_by(word, ctl.get_global_rect())
 

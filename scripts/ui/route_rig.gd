@@ -267,7 +267,9 @@ func _mount_route_buildings() -> void:
 
 ## The street's own look on the city (`StreetRouteConfigData.look`): the building uniforms of the route street (wash, floor bands)
 ## and the quiet lane lines (`route_lane`: desaturated, dimmed). Only this view sets them; the page and the other netrun views keep
-## the shared NA-22 numbers.
+## the shared NA-22 numbers. Slab fix (designer 2026-10-22): the ground material's structure faces as dry concrete
+## (`look.ground`, wet_street's struct_*) and, from this camera only, the A2 features hidden (`look.hide_a2_features`: the
+## elevated decks and pillars stood across the street's foreground); the city map and the HQ keep them.
 func _apply_street_look() -> void:
 	var lk: Dictionary = StreetRouteConfigData.shipped().look
 	var bm := view.building_material()
@@ -280,6 +282,26 @@ func _apply_street_look() -> void:
 		lane.shader = load("res://shaders/city/route_lane.gdshader")
 		lane.set_shader_parameter(&"street_gain", float(ln["gain"]))
 		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
+	var gm := _ground_material()
+	if gm != null:
+		var gd: Dictionary = lk["ground"]
+		for k: String in gd:
+			var v: Variant = gd[k]
+			gm.set_shader_parameter(StringName(k), Vector3(float(v[0]), float(v[1]), float(v[2])) if v is Array else float(v))
+	if view.features != null:
+		view.features.visible = not bool(lk["hide_a2_features"])
+
+
+## The view's ground material (city_ground / wet_street by look blend), as its A2 feature parts carry it (CityA2Features.make:
+## the solid parts take the view's ground material); null without features (no A2, or headless).
+func _ground_material() -> ShaderMaterial:
+	if view.features == null:
+		return null
+	for n: Node in view.features.get_children():
+		var m := (n as MeshInstance3D).material_override as ShaderMaterial if n is MeshInstance3D else null
+		if m != null and (m.shader == CityMaterials.WET_STREET or m.shader == CityMaterials.GROUND) and not bool(m.get_shader_parameter(&"lane")):
+			return m
+	return null
 
 
 ## Opens or closes room `id` at once (`set_room_dissolve` at 1 or 0): closed, the building keeps its facade over the room (no window
@@ -355,6 +377,9 @@ func _build_atmosphere() -> void:
 	fm.set_shader_parameter(&"sec_nrm", Vector2(float(nrm[0]), float(nrm[1])))
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	fm.set_shader_parameter(&"front_sym", float(atm["front_sym"]))
+	# One fog density on both framings (art-pass 2026-10-22: the OVERVIEW / DECISION pair was equal).
+	fm.set_shader_parameter(&"density_mul", float(atm["density"]))
+	fm.set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The street's value-band solve (12.1, both seeds' OVERVIEW) with the dressing on: the exposure of this view.
 	view.set_aaa_exposure(float(atm["exposure"]))
 	view.add_to_layer(&"props", fv)
@@ -395,13 +420,12 @@ func _build_dressing() -> void:
 func _apply_pose() -> void:
 	# NA-25: the dive starts on the HQ page pose, farther than FAR (3833 BU): the far plane follows the camera.
 	NetrunFrustum.apply_render(view.camera, pose, NEAR, maxf(FAR, pose.dist * FAR_PAD))
-	_apply_fog_density()
+	_apply_zoom_look()
 	pose_changed.emit()
 
 
-## The fog density multiplier eased between the OVERVIEW and the DECISION values by `zoom_detail` (0 .. 1 over the camera
-## distance), on the fog volume's material.
-func _apply_fog_density() -> void:
+## The zoom-dependent look by `zoom_detail` (0 .. 1 over the camera distance): puddles, fog length, depth haze, room frames, exposure.
+func _apply_zoom_look() -> void:
 	if _clock_mats.is_empty() or data == null:
 		return
 	var z: Dictionary = data.derive["decision"]
@@ -410,9 +434,6 @@ func _apply_fog_density() -> void:
 	var zd := RevealTiers.zoom_detail(pose.dist, d_ov, d_dec)
 	view.set_puddles_sharp(RevealTiers.band(pose.dist, "puddles_sharp"))
 	view.environment().volumetric_fog_length = NetrunShaderKit.fog_length_for(pose.dist)
-	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
-	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
-	(_clock_mats[0] as ShaderMaterial).set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).
 	var hz: Array = StreetRouteConfigData.shipped().look["haze"]
 	var haze := lerpf(float(hz[0]), float(hz[1]), zd)
