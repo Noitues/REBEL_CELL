@@ -675,6 +675,9 @@ var raid_lens: bool = false:
 		if v == raid_lens:
 			return
 		raid_lens = v
+		for mv in _marker_views.values():
+			if is_instance_valid(mv):
+				mv.lens = v
 		if _target_mark != null and is_instance_valid(_target_mark):
 			_target_mark.visible = not (v or target_hidden)
 			_target_word.visible = not (v or target_hidden)
@@ -2380,6 +2383,7 @@ func _sync_markers() -> void:
 			_marker_views[n["id"]] = v
 		elif str(v.spec) != str(spec):
 			v.set_spec(spec)
+		v.lens = raid_lens
 		v.position = icon_pos(n)
 		v.scale = Vector2(k, k)
 		v.modulate.a = DIM_ALPHA if is_dimmed(n["id"]) else 1.0

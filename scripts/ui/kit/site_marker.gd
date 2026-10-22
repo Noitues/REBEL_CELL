@@ -53,6 +53,9 @@ const RING_W_NOT_YET := 3.0
 ## backing); no ticks, no motion.
 const RING_W_NEXT := 6.0
 const RING_BACK_W := 4.0
+## A-082: the raid lens draws the orange availability ring at this alpha and this share of its width.
+const LENS_RING_ALPHA := 0.3
+const LENS_RING_W := 0.5
 ## The ring's soft glow: its width over the ring's, and its alpha by availability.
 const RING_GLOW_W := 3.0
 const RING_GLOW_NEXT := 0.5
@@ -416,7 +419,7 @@ static func draw_pad(ci: CanvasItem, spec: Dictionary, at: Vector2, k: float = 1
 
 ## Everything of the marker but its disc (the vinyl sticker), round disc centre `c`: the
 ## ring, the pips, the corner badge, and the SEIZURE NOTICE slip in the disc's place.
-static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 1.0) -> void:
+static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 1.0, lens: bool = false) -> void:
 	if spec.get("kind") == KIND_CENTRAL_SERVER:
 		return  # the boss is its HQ with the pencil TARGET (no disc, ring or pips)
 	var down: bool = spec.get("status") == ST_DOWN
@@ -428,6 +431,13 @@ static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 
 		var rc := ring_color(spec)
 		if down:
 			rc = greyed(rc)
+		# A-082 / RAID-VIS F4: under the raid lens the orange "netrun available" ring is a thin outline at about 30 %
+		# alpha (no glow, no ink back), so the threats read first.
+		if lens and spec.get("avail") == AV_NEXT:
+			var lw := ring_width(spec) * k * LENS_RING_W
+			ci.draw_arc(c, ring_radius(spec, k), 0.0, TAU, 40, Color(rc, LENS_RING_ALPHA), lw, true)
+			_draw_under_rest(ci, spec, c, k)
+			return
 		var rr := ring_radius(spec, k)
 		var w := ring_width(spec) * k
 		var glow := RING_GLOW_NEXT if spec.get("avail") == AV_NEXT else (RING_GLOW_YOURS if spec.get("avail") == AV_YOURS else 0.0)
@@ -437,6 +447,11 @@ static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 
 			ci.draw_arc(c, rr, 0.0, TAU, 40, Color(Palette.GLYPH_INK, 0.95), w + RING_BACK_W * k, true)
 		ci.draw_arc(c + Vector2(1, 2) * k, rr, 0.0, TAU, 40, Color(Palette.GLYPH_INK, 0.9), w, true)
 		ci.draw_arc(c, rr, 0.0, TAU, 40, rc, w, true)
+	_draw_under_rest(ci, spec, c, k)
+
+
+## The pips and the corner badge of `draw_under` (the part the raid lens leaves as it is).
+static func _draw_under_rest(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float) -> void:
 	var n := pip_count(spec)
 	if n > 0:
 		var pr := pips_rect(spec, c, k)

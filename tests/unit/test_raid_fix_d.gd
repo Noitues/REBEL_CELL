@@ -71,6 +71,26 @@ func test_the_banner_never_covers_the_bar_or_the_chip() -> void:
 	Motion.force_live = false
 
 
+func test_the_banner_never_covers_the_help_plate() -> void:
+	RunManager.new_campaign(1)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN
+	for kind in [true, false]:
+		for pair in [[10, 25], [60, 75], [72, 76]]:
+			var p := HeatPoster.new(kind)
+			holder.add_child(p)
+			p.size = p.custom_minimum_size if kind else Vector2(170, 134)
+			p.position = Vector2(40, 200)
+			p.heat = pair[1]
+			p._banner_at = pair[1]
+			p.banner_alpha = 1.0
+			var note := p.note_rect()
+			var banner := p.banner_global_bounds()
+			assert_false(banner.intersects(note), "poster=%s Heat %d: the banner %s is clear of the help plate %s" % [kind, pair[1], banner, note])
+			assert_true(p.note_avoid().has(banner), "the plate's search keeps off the banner")
+			p.free()
+
+
 func test_intel_pages_cover_every_route() -> void:
 	for n in range(0, 9):
 		var levels := HQ_SCRIPT.intel_levels(n)
@@ -146,11 +166,8 @@ func test_the_right_column_lies_whole_on_screen_at_each_heat() -> void:
 		assert_not_null(net, "Heat %d: YOUR NETWORK" % heat)
 		if net != null:
 			in_column.append(net)
-		var if_placed := page.find_child("IfPlaced", true, false) as Control
-		assert_not_null(if_placed, "Heat %d: IF PLACED" % heat)
-		assert_true(if_placed.visible, "Heat %d: IF PLACED shows for the pointed card" % heat)
+		assert_null(page.find_child("IfPlaced", true, false), "Heat %d: the floating IF PLACED terminal is retired (A-082)" % heat)
 		var all: Array[Control] = in_column.duplicate()
-		all.append(if_placed)
 		for ctl in all:
 			assert_true(ctl.is_visible_in_tree(), "Heat %d: %s shows" % [heat, ctl.name])
 			var r := ctl.get_global_rect()
@@ -161,9 +178,6 @@ func test_the_right_column_lies_whole_on_screen_at_each_heat() -> void:
 		for i in all.size():
 			for j in range(i + 1, all.size()):
 				assert_false(all[i].get_global_rect().grow(-0.5).intersects(all[j].get_global_rect().grow(-0.5)), "Heat %d: %s and %s do not overlap" % [heat, all[i].name, all[j].name])
-		var chip := page.get_node_or_null("Projection") as Control
-		if chip != null:
-			assert_false(if_placed.get_global_rect().intersects(chip.get_global_rect()), "Heat %d: IF PLACED clear of the forecast chip" % heat)
 		var more := page.find_child("IntelMore", true, false) as Control
 		if more != null and more.visible:
 			assert_true(screen.encloses(more.get_global_rect()), "Heat %d: the MORE tab on screen" % heat)

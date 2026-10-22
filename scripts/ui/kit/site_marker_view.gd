@@ -17,6 +17,12 @@ const BORDER_PX := 1.5
 var spec: Dictionary = {}
 ## Draws the pad under the disc (the key's swatches; on the map the pad sits on the roof).
 var with_pad: bool = false
+## A-082: the raid lens is on (the availability ring is a thin 30 % outline).
+var lens: bool = false:
+	set(v):
+		if v != lens:
+			lens = v
+			queue_redraw()
 var sticker: VinylSticker = null
 var _holder: Control = null
 var _art: Control = null
@@ -129,7 +135,7 @@ func _draw() -> void:
 		return
 	if with_pad:
 		SiteMarker.draw_pad(self, spec, Vector2(0, SiteMarker.PAD_DROP))
-	SiteMarker.draw_under(self, spec, Vector2.ZERO)
+	SiteMarker.draw_under(self, spec, Vector2.ZERO, 1.0, lens)
 
 
 func _draw_over() -> void:

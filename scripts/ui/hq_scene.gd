@@ -1957,8 +1957,6 @@ func _build_hq_page(page_name: String) -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stack.add_child(card)
 	page.add_child(column)
-	if raid_mode and _if_placed_term != null and is_instance_valid(_if_placed_term):
-		page.add_child(_if_placed_term)
 	if site != null and not raid_mode:
 		# 12Q-HQ (L31-L34): a card taller than its column pages its rows (CardPager); this tab turns
 		# it, placed with the column (`_place_card_tab`) and drawn over it.
@@ -3011,7 +3009,6 @@ func _place_hq() -> void:
 		bottom -= _page_card(column, col_w, bottom - top, col_x, bottom)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
-	_place_if_placed(page, column)
 	if panel_name != "raid":
 		_place_card_tab(column)
 	var was_free := _hq_free
@@ -4557,24 +4554,38 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 	plate.custom_minimum_size.x = HAND_EFFECT_W * Settings.text_scale
 	var box := UiTheme.box(HudSkin.TERMINAL_BG, PaletteSkins.chrome(Palette.NET_CYAN), 1, 8, 6)
 	plate.add_theme_stylebox_override("panel", box)
-	var words := Label.new()
-	words.name = "HandEffectWords"
-	words.add_theme_font_override("font", Palette.mono())
-	words.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-	words.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
-	words.autowrap_mode = TextServer.AUTOWRAP_WORD
-	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.add_child(words)
+	var lines := VBoxContainer.new()
+	lines.name = "HandEffectLines"
+	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lines.add_theme_constant_override("separation", 2)
+	plate.add_child(lines)
+	var labels: Array[Label] = []
+	for n in ["HandEffectWords", "HandEffectNode", "HandEffectHome"]:
+		var words := Label.new()
+		words.name = n
+		words.add_theme_font_override("font", Palette.mono())
+		words.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		words.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+		words.autowrap_mode = TextServer.AUTOWRAP_WORD
+		words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lines.add_child(words)
+		labels.append(words)
 	plate.visible = false
 	cards.add_child(plate)
 	_hand_effect = plate
-	_hand_effect_words = words
+	_hand_effect_words = labels[0]
+	_hand_effect_node = labels[1]
+	_hand_effect_home = labels[2]
 
 
 ## RAID-FIX B3: the hand's effect plate beside the cards, and its width (px at text 1.0).
 const HAND_EFFECT_W := 300.0
 var _hand_effect: Control = null
 var _hand_effect_words: Label = null
+var _hand_effect_node: Label = null
+var _hand_effect_home: Label = null
+## RAID-VIS F4: the last `if_placed_lines` call's parts: {effect, node, home, node_sev, home_sev} (sev: 1 better, 0 same, -1 worse).
+var if_placed_parts: Dictionary = {}
 
 
 ## HQ-B (c): the raid setup's card column: THREAT INTEL (the decrypted holo: each entry route,
@@ -4611,107 +4622,54 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
 	stack.add_child(_your_network(projection))
-	# RAID-FIX D6: IF PLACED is no part of the column (the column ends over the Crew / STATION block and clipped it):
-	# the page holds it, over the map beside the column's foot (`_place_if_placed`).
-	_if_placed_term = _if_placed_terminal()
+	# RAID-VIS F4 (A-082): no floating IF PLACED terminal; its lines fold into the hand-effect plate.
 
 
-## Parity RAID-06 (round 40): the IF PLACED terminal on the right: what the defence card hovered
-## or focused in the DEFENCE hand (else the Armory's first) would change on the target, from
-## the rules on a copy (preview equals result); a hint when nothing can be placed.
-func _if_placed_terminal() -> RaidTerminal:
-	var term := RaidTerminal.new(tr(RaidDragPencil.IF_PLACED), Palette.NET_CYAN)
-	term.name = "IfPlaced"
-	term.tag_label.text = ""
-	# B3 (the clutter rule; round 44 shows no IF PLACED until a card is picked): it shows while a
-	# defence card is pointed at, focused or carried (`show_if_placed`).
-	term.visible = false
-	_if_placed_term = term
-	term.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var lines := VBoxContainer.new()
-	lines.name = "IfPlacedLines"
-	lines.add_theme_constant_override("separation", 2)
-	term.body.add_child(lines)
-	_if_placed_terminal_box = lines
-	show_if_placed(0)
-	return term
-
-
-## The IF PLACED terminal's lines, and the Armory index they show.
-var _if_placed_terminal_box: VBoxContainer = null
+## The Armory index the hand-effect plate shows.
 var if_placed_index: int = -1
-## B3: the IF PLACED terminal (shown while a card is pointed at or focused).
-var _if_placed_term: Control = null
 
 
-## B3: a defence card at Armory `index` is pointed at or focused: the IF PLACED terminal shows
-## what it would change on the target.
+## B3: a defence card at Armory `index` is pointed at or focused: the hand-effect plate shows what it
+## would change on the target.
 func point_card(index: int) -> void:
 	show_if_placed(index)
-	if _if_placed_term != null and is_instance_valid(_if_placed_term):
-		_if_placed_term.visible = true
-		_place_if_placed(_panel, _panel.get_node("CardColumn") as Control)
 	if _hand_effect != null and is_instance_valid(_hand_effect):
 		_hand_effect.visible = _hand_effect_words.text != ""
 
 
-## RAID-FIX D6: IF PLACED's width (px at text 1.0 x the objects' scale) and its gap from the column.
-const IF_PLACED_W := 292.0
-
-
-## RAID-FIX D6: puts the IF PLACED terminal over the map, left of the column, its foot on the column's foot (so it
-## never meets the Crew / STATION block), and on screen.
-func _place_if_placed(page: Control, column: Control) -> void:
-	var term := _if_placed_term
-	if term == null or not is_instance_valid(term) or term.get_parent() != page:
-		return
-	var w := IF_PLACED_W * HqLayout.object_scale(Settings.text_scale)
-	term.size = Vector2(w, term.get_combined_minimum_size().y)
-	var x := column.position.x - HqLayout.GAP - w
-	var y := column.position.y + column.size.y - term.size.y
-	term.position = Vector2(maxf(x, 0.0), maxf(y, 0.0))
-
-
-## B3: hides the IF PLACED terminal (the card left the pointer and the focus).
+## B3: hides the hand-effect plate (the card left the pointer and the focus).
 func hide_if_placed() -> void:
-	if _if_placed_term != null and is_instance_valid(_if_placed_term):
-		_if_placed_term.visible = false
 	if _hand_effect != null and is_instance_valid(_hand_effect):
 		_hand_effect.visible = false
 
 
-## Shows in the IF PLACED terminal what placing the Armory's defence at `index` on the target
-## would change (nothing to place: how to place one).
+## RAID-VIS F4 (A-082): fills the hand-effect plate with what placing the Armory's defence at `index` on the
+## target would change: the effect sentence, the node change, the home change (at most 4 lines), the last two in
+## severity ink (lime better, red worse, plain the same). Nothing to place: the plate stays empty.
 func show_if_placed(index: int) -> void:
-	var box := _if_placed_terminal_box
-	if box == null or not is_instance_valid(box):
-		return
 	var c := RunManager.campaign
-	for k in box.get_children():
-		box.remove_child(k)
-		k.queue_free()
-	if_placed_index = index if index >= 0 and index < c.armory.size() else -1
-	var lines: Array = []
+	if_placed_index = index if c != null and index >= 0 and index < c.armory.size() else -1
+	if_placed_parts = {}
 	if if_placed_index >= 0 and selected_site != &"" and c.grid.is_active_node(selected_site):
-		lines = if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
-	# RAID-FIX B3: the same change as one line beside the cards.
-	if _hand_effect_words != null and is_instance_valid(_hand_effect_words):
-		_hand_effect_words.text = ("%s: %s" % [lines[0], lines.back()]).replace("
-", " ") if lines.size() > 1 else ""
-	if lines.is_empty():
-		lines = [tr(IF_PLACED_HINT)]
-	for i in lines.size():
-		var l := Label.new()
-		l.text = String(lines[i])
-		l.add_theme_font_override("font", Palette.mono())
-		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION if i > 0 else UiTheme.BODY))
-		l.add_theme_color_override("font_color", Palette.PAPER if i > 0 else PaletteSkins.chrome(Palette.NET_CYAN))
-		UiWrap.whole_words(l)
-		box.add_child(l)
+		if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
+	if _hand_effect_words == null or not is_instance_valid(_hand_effect_words):
+		return
+	var parts := if_placed_parts
+	var rows: Array = [[_hand_effect_words, "effect", 0], [_hand_effect_node, "node", int(parts.get("node_sev", 0))], [_hand_effect_home, "home", int(parts.get("home_sev", 0))]]
+	for r in rows:
+		var l := r[0] as Label
+		l.text = String(parts.get(r[1], ""))
+		l.visible = l.text != ""
+		l.add_theme_color_override("font_color", PaletteSkins.chrome(if_placed_ink(int(r[2]))))
 
 
-## The IF PLACED terminal's line when no defence can be placed on the target.
-const IF_PLACED_HINT := "Pick a defense card, then one of your nodes: the forecast's change shows here." # TR
+## RAID-VIS F4: the severity ink of a change: 1 better (lime), -1 worse (red), 0 the plate's plain ink.
+static func if_placed_ink(sev: int) -> Color:
+	if sev > 0:
+		return Palette.CELL_ACID
+	if sev < 0:
+		return Palette.HARM
+	return Palette.TERMINAL_TEXT
 
 
 ## Parity RAID-06 (round 40): YOUR NETWORK (each node's forecast chip; its target button makes
@@ -5518,12 +5476,32 @@ func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
 	var lines: Array = ["%s > %s" % [_display(StringName(String(payload.get("asset", "")))).to_upper(), site_name(sid).to_upper()]]
 	var a: Dictionary = now.nodes.get(String(sid), {})
 	var b: Dictionary = then.nodes.get(String(sid), {})
+	var parts := {"node": "", "node_sev": 0}
 	if not a.is_empty() and not b.is_empty():
-		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
-	lines.append(tr("HOME SERVER %d > %d") % [now.home_after, then.home_after])
+		var node_line := "%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))]
+		lines.append(node_line)
+		parts["node"] = node_line
+		parts["node_sev"] = signi(_outcome_rank(String(a["outcome"])) - _outcome_rank(String(b["outcome"])))
+	var home_line := tr("HOME SERVER %d > %d") % [now.home_after, then.home_after]
+	lines.append(home_line)
 	# RAID-FIX A3: the change in words of effect (RaidOutcome.if_placed).
-	lines.append(RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word))
+	var effect := RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word)
+	lines.append(effect)
+	parts["effect"] = effect.replace("\n", " ")
+	parts["home"] = home_line
+	parts["home_sev"] = signi(then.home_after - now.home_after)
+	if_placed_parts = parts
 	return lines
+
+
+## RAID-VIS F4: how bad a node outcome is (0 holds or passed, 1 down, 2 taken), for the severity ink.
+static func _outcome_rank(outcome: String) -> int:
+	match outcome:
+		"taken":
+			return 2
+		"down":
+			return 1
+	return 0
 
 
 ## A paper value label with a tooltip (hovered, it shows the old badge's words).
