@@ -97,3 +97,20 @@ and the outcome never varies.
 - The unknown must touch even the best plan, as the sealed beam does.
 - Round 10 keeps the M9c rules (sealed beam + reactive spoof). It changes the forecast to local (which nodes each line
   finds) and fixes the presentation.
+
+## L3: leg kit, shop, run intensity, Heat carry (`sweep_l3.py`, 20 legs)
+
+**Choices that are now real:**
+- **Intensity mix** over 40 between-raid steps: LOW 21, NORMAL 6, HOT 13. This needed a Heat carry of 1.0 per point at
+  leg end; at 0.5, HOT won every time.
+- **Kit use per raid:** ghost 0.28, spoof 0.62, decoys 0.7. Levers are spent selectively, not every raid; in L2 the
+  ghost and spoof were used in 9 of 9 raids.
+- **Near-tied first-raid plans:** 3.8, down from 18 in L2.
+- **Outcome tiers** over 60 raids: HOLDS 54, DAMAGED 4, EVADED 2. The planner sometimes accepts home damage.
+
+**The planner beats raid-by-raid greedy play by 3.6** (≥ 3 on half the legs).
+
+**Breaches:** careful play 0%, greedy 0%, careless play 40%. Careless play averages 76 points below the planner.
+
+**Weak spot:** the shop is rarely used (3 buys in 40 steps, all decoys). Kit prices are high against repairs and
+income.
