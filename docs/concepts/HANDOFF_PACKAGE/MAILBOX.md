@@ -345,40 +345,6 @@ it. Keep that rule and the test as they are. The fix is placement and size:
 The toolbox pencil lane will make the fix, with a before | after on the loot page plus the other OURS NOW screens (the HQ map, the
 city). It arrives as its own READY entry.
 
-### A-094 · 2026-10-22 · READY: Solace Site close-up reads as SOLACE GENERAL (art/look-stills @ 56430048, on main 5157626e)
-
-The branch sits directly on main 5157626e: 9 commits, rebased with no conflicts, in worktree `D:/rc_art/godot_look_stills`. Art-pass
-approved it (sheet r3c). Art-pass did not merge main.
-
-- **Finding:** in the live Site close-up of the combat backdrop, the S2 hospital was small and hidden behind towers that stood inside
-  its own footprint, because the view cut spared the whole footprint. The glb has no cross on any wall; the cross is only the
-  building's plan. A roof billboard also sat at the bottom edge of the frame.
-- **What changed (Solace only, all `*_by_corp` in CityConfig):**
-  - `backdrop_site_cut_own_by_corp`: the cut also takes towers inside the landmark footprint. The landmark's own nodes stay.
-  - `backdrop_site_close_height_by_corp` 0.78, `backdrop_site_close_max_width_by_corp` 0.62, `backdrop_site_close_centre_by_corp`
-    (0.5, 0.5). These apply only when the fought Site is the corp's landmark Site.
-  - `backdrop_site_cross_by_corp`: `CombatBackdrop.dress_site` adds a lit cream panel with a Solace-green cross,
-    Color(0.10, 0.62, 0.22), on each wing end wall facing the camera. Red on white was rejected because it is the Red Cross
-    emblem, which the Geneva Conventions protect.
-  - `backdrop_site_hide_props_by_corp` (the roof billboards), using the new `CityView3D.set_hidden_props` hook. It does nothing for
-    other corps.
-  - `backdrop_site_away_cap_by_corp` 0.18: a dimmer tier behind the subject, using the existing `away_cap`, with no shader change.
-    The street dims a little too.
-  - `BackdropCatalog.view_cut` takes an optional corp, and `combat_backdrop.gd` passes it. ANCHORS solace_site is (0.50, 0.03),
-    measured from the won mask.
-- **Bake tool:** `--old-dir` now finds `<corp>_<kind>_<tod>.jpg` (it never found a file before). The Site stills are re-baked, with
-  day = night. The old-still check gives 0.239, ready.
-- **Other Sites:** meridian, halcyon and orbital are max diff 0 in frozen captures.
-- **Sheet:** art-pass `docs/concepts/solace_vertical/hq/godot/site_framing_r3c.jpg` (then | r3a red, rejected | r3c green, each
-  with its squint, plus the other-Sites strip). The earlier rounds are in `site_framing_r2.jpg`.
-- **Tests at 56430048 (targeted):**
-  - pass: test_parity_arena_backdrop 13, test_b2_combat_composition 22, test_b1a_ui_scrim_pools 18, test_art2_attachments 15,
-    test_parity_title01_backdrop 12, test_art5_landmarks 8, test_hq_aaa_state_gate 4;
-  - test changes: test_parity_arena_backdrop gives a landmark Site its by-corp share (with a 0.01 float tolerance), and
-    test_b2_combat_composition has new tests that the footprint cut and the cross are Solace-only and that the panel is the bright
-    element;
-  - the full suite runs at your gate.
-
 ### A-095 · 2026-10-22 · READY: OURS NOW back on the netrun loot page (A-093) + toolbox module 10 closed (art/look-toolbox-5 @ 8a6953f8, on main 5157626e)
 
 The branch sits directly on main 5157626e: 9 commits, rebased with no conflicts, in worktree `D:/rc_art/godot_look_toolbox_5`. It
