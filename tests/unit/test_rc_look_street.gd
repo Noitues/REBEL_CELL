@@ -34,7 +34,7 @@ func test_street_numbers_come_from_their_configs() -> void:
 	assert_almost_eq(RcLookStreet.hover_cut().x, float(cfg.hover["cut_level"]), 1e-6, "Vector3 holds 32-bit floats")
 	assert_eq(RcLookStreet.look_at("exposure", 0.0), float(cfg.look["exposure"][0]))
 	assert_eq(RcLookStreet.look_at("frame", 1.0), float(cfg.look["frame"][1]))
-	assert_eq(RcLookStreet.fog_density(0.5), lerpf(float(cfg.atmosphere["density_overview"]), float(cfg.atmosphere["density_decision"]), 0.5))
+	assert_eq(RcLookStreet.fog_density(), float(cfg.atmosphere["density"]))
 
 
 func test_r2_sign_tiers_equal_the_emission_hierarchy() -> void:

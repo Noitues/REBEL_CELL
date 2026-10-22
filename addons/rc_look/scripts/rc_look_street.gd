@@ -1,7 +1,7 @@
 class_name RcLookStreet
 extends RefCounted
 ## LOOK-TOOLBOX module 10: the street netrun's look numbers in one place, read from where they already live (no copies):
-## StreetRouteConfigData (lane, rooms, hover cut, haze / exposure / frame pairs, fog density), CityShaderConfigData (the
+## StreetRouteConfigData (lane, rooms, hover cut, haze / exposure / frame pairs, the fog density), CityShaderConfigData (the
 ## emission hierarchy aaa.emit). StreetR2ConfigData keeps its own copy of the sign emission tiers because the r2 plan is the
 ## Python generator's twin (tools/netrun_art/gen_street_r2_config.py writes street_r2.tres); `emit_pairs` lists those
 ## pairs so a test holds them equal. Pure: no Node, no Settings.
@@ -12,7 +12,6 @@ const EMIT_PAIRS := {
 	"sec_emit": "secondary",
 	"shop_emit": "shop",
 	"backdrop_emit": "backdrop",
-	"mega_emit": "mega",
 }
 
 
@@ -45,10 +44,9 @@ static func look_at(key: String, zd: float) -> float:
 	return lerpf(float(p[0]), float(p[1]), zd)
 
 
-## The street fog's density multiplier at zoom_detail zd (atmosphere density_overview -> density_decision).
-static func fog_density(zd: float) -> float:
-	var a: Dictionary = StreetRouteConfigData.shipped().atmosphere
-	return lerpf(float(a["density_overview"]), float(a["density_decision"]), zd)
+## The street fog's density multiplier (atmosphere density; one value on both framings).
+static func fog_density() -> float:
+	return float(StreetRouteConfigData.shipped().atmosphere["density"])
 
 
 ## Every (r2 plan tier, its value, the hierarchy's value): the two copies a test holds equal.

@@ -34,8 +34,6 @@ var _route_bids: Dictionary = {}
 var _built := false
 var _extras: Array[Node3D] = []
 var _clock_mats: Array = []
-## The street fog volume's material (also the first clock material); its density and haze follow the zoom.
-var _fog_mat: ShaderMaterial
 ## The street dressing (NA-24): signs, lamps, lanes, beams, plumes by reveal tier.
 var dressing: StreetDressing = null
 ## The street r2 frontage (P2 step 2).
@@ -357,11 +355,13 @@ func _build_atmosphere() -> void:
 	fm.set_shader_parameter(&"sec_nrm", Vector2(float(nrm[0]), float(nrm[1])))
 	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
 	fm.set_shader_parameter(&"front_sym", float(atm["front_sym"]))
+	# One fog density on both framings (art-pass 2026-10-22: the OVERVIEW / DECISION pair was equal).
+	fm.set_shader_parameter(&"density_mul", float(atm["density"]))
+	fm.set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The street's value-band solve (12.1, both seeds' OVERVIEW) with the dressing on: the exposure of this view.
 	view.set_aaa_exposure(float(atm["exposure"]))
 	view.add_to_layer(&"props", fv)
 	_extras.append(fv)
-	_fog_mat = fm
 	_clock_mats.append(fm)
 	# The fog-only lights (the 18 city-glow lights and the beam spots) are part of the street's light rig (`_build_dressing`).
 	NetrunShaderKit.set_clock(_clock_mats, 0.0, 0.0)
@@ -398,13 +398,12 @@ func _build_dressing() -> void:
 func _apply_pose() -> void:
 	# NA-25: the dive starts on the HQ page pose, farther than FAR (3833 BU): the far plane follows the camera.
 	NetrunFrustum.apply_render(view.camera, pose, NEAR, maxf(FAR, pose.dist * FAR_PAD))
-	_apply_fog_density()
+	_apply_zoom_look()
 	pose_changed.emit()
 
 
-## The fog density multiplier eased between the OVERVIEW and the DECISION values by `zoom_detail` (0 .. 1 over the camera
-## distance), on the fog volume's material.
-func _apply_fog_density() -> void:
+## The zoom-dependent look by `zoom_detail` (0 .. 1 over the camera distance): puddles, fog length, depth haze, room frames, exposure.
+func _apply_zoom_look() -> void:
 	if _clock_mats.is_empty() or data == null:
 		return
 	var z: Dictionary = data.derive["decision"]
@@ -413,9 +412,6 @@ func _apply_fog_density() -> void:
 	var zd := RevealTiers.zoom_detail(pose.dist, d_ov, d_dec)
 	view.set_puddles_sharp(RevealTiers.band(pose.dist, "puddles_sharp"))
 	view.environment().volumetric_fog_length = NetrunShaderKit.fog_length_for(pose.dist)
-	var atm: Dictionary = StreetRouteConfigData.shipped().atmosphere
-	_fog_mat.set_shader_parameter(&"density_mul", lerpf(float(atm["density_overview"]), float(atm["density_decision"]), zd))
-	_fog_mat.set_shader_parameter(&"haze_mul", float(atm["haze_mul"]))
 	# The depth haze is calibrated on the far OVERVIEW; the near DECISION frame keeps its facades (`look.haze` = [OVERVIEW, DECISION]).
 	var hz: Array = StreetRouteConfigData.shipped().look["haze"]
 	var haze := lerpf(float(hz[0]), float(hz[1]), zd)

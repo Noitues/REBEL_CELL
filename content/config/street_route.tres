@@ -10,5 +10,5 @@ stickers = {"radius_px": 26.0, "anchor": [0.0, 0.38], "chip_px": 26.0, "min_px_7
 target = {"switch_share": 0.5, "hysteresis": 0.05, "fade_s": 0.15, "margin_px": 46.0, "circle_pad_px": 14.0}
 hover = {"cut_level": 0.2, "cut_desat": 0.7, "branch_boost": 1.35, "type_glow": 1.0, "grow_px": 8.0, "blur_px": 8.0, "mask_scale": 0.25}
 frame = {"top_px": 130.0, "bottom_px": 64.0, "left_px": 320.0, "right_px": 24.0, "ref_h": 1080.0}
-atmosphere = {"density_overview": 0.12, "exposure": 0.243, "density_decision": 0.12, "front_sym": 0.0, "glow_count": 6, "glow_energy": 6.0, "glow_range": 90.0, "glow_height": 12.0, "glow_side": 9.0, "haze_mul": 2.0}
+atmosphere = {"density": 0.12, "exposure": 0.243, "front_sym": 0.0, "glow_count": 6, "glow_energy": 6.0, "glow_range": 90.0, "glow_height": 12.0, "glow_side": 9.0, "haze_mul": 2.0}
 look = {"building": {"wash_gain": 0.3, "band_emit": 1.0}, "lane": {"gain": 0.45, "sat": 0.3}, "haze": [0.009, 0.004], "exposure": [0.2433, 0.25], "frame": [0.35, 0.7]}
