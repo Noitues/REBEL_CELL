@@ -1197,6 +1197,11 @@ func _s_raid_setup_station() -> void:
 	await _settle(hq)
 	hq.select_target(safe)
 	await _settle(hq)
+	# A-076 A3: the STATION line focused (its §2.10 brackets show in the capture).
+	var station_line := hq._panel.find_child("StationCrew", true, false) as Control
+	if station_line != null:
+		station_line.grab_focus()
+		await _settle(hq)
 
 
 func _s_raid_setup_meridian() -> void:

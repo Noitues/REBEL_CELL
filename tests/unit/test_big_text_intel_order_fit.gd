@@ -13,7 +13,7 @@ const SCREEN := Rect2(0, 0, 1280, 720)
 const SCALES: Array[float] = [1.0, 1.6, 2.0]
 ## A tilted sheet's corners leave its rect by a pixel or two.
 const TILT_SLACK := 6.0
-const ROWS: Array[String] = ["RaidTarget", "RaidUnits", "RaidStrength", "HomeForecast", "ThreatsStopped"]
+const ROWS: Array[String] = ["RaidTarget", "RaidUnits", "RaidStrength", "ThreatsStopped"]
 
 var _scale: float
 

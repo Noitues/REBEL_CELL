@@ -108,7 +108,7 @@ func test_a_defence_card_deploys_to_the_target_and_the_forecast_equals_the_resul
 	assert_eq(hq.panel_name, "raid", "the setup stays")
 	var projection := RunManager.project_raid()
 	var said := (hq._panel.find_child("HomeForecast", true, false) as Label).text
-	assert_string_contains(said, "%d > %d" % [projection.home_before, projection.home_after], "the order prints the forecast")
+	assert_string_contains(said, "%d → %d" % [projection.home_before, projection.home_after], "the chip prints the forecast")
 	hq.fight_raid()
 	await _frames(4)
 	assert_eq(c.grid.home_integrity, projection.home_after, "preview == result")

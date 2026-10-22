@@ -21,6 +21,8 @@ const LIFT := 14.0
 const TABS_WIDTH := 128.0
 ## The work order's width (px at 1.0; the paper grows with its words).
 const ORDER_WIDTH := 228.0
+## The work order paper's own width (px at text 1.0): the width its longest forecast row gave it before A-076 moved those rows to the chip; it overflows its 228 room as before.
+const ORDER_PAPER_W := 282.0
 ## The selected thing's card (px at 1.0).
 const CARD_COLUMN := 300.0
 ## The verb slot: the sticker, its price tag and its system word (px at 1.0).

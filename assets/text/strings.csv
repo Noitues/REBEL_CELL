@@ -201,8 +201,10 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > HQ ACTIONS,> HQ ACTIONS
 > ICE      0,> ICE      0
 > MODIFIERS,> MODIFIERS
+> RECALL %s,> RECALL %s
 > SEARCH THE CODEX,> SEARCH THE CODEX
 > SEED     %d,> SEED     %d
+> STATION %s HERE,> STATION %s HERE
 > TARGET   %s,> TARGET   %s
 > focus an item: what it does shows here.,> focus an item: what it does shows here.
 > jack --from %s --to %s,> jack --from %s --to %s
@@ -1069,6 +1071,7 @@ HOLDS %d STEPS,HOLDS %d STEPS
 HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps fighting.
 HOME,HOME
 HOME %d → %d,HOME %d → %d
+HOME %d → %d (%s),HOME %d → %d (%s)
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
@@ -1211,7 +1214,6 @@ ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
 ICE difficulty (0-%d):,ICE difficulty (0-%d):
 ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.,ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.
 IF CLEARED:,IF CLEARED:
-IF IT RAN NOW,IF IT RAN NOW
 IF PLACED,IF PLACED
 IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
@@ -1224,7 +1226,7 @@ IN FORCE,IN FORCE
 INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
-INFECTION,INFECTION
+INFECTED %d%% → %d%%,INFECTED %d%% → %d%%
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 INNER RING: %s,INNER RING: %s
@@ -1909,7 +1911,6 @@ PIRATE RADIO 88.1,PIRATE RADIO 88.1
 SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
-POPULATION INFECTED %d%% > %d%%,POPULATION INFECTED %d%% > %d%%
 PRECISION TAG: how well this needle lands on its slice.,PRECISION TAG: how well this needle lands on its slice.
 PROCEED,PROCEED
 PROCESSED,PROCESSED
@@ -2039,7 +2040,6 @@ REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL // MERIT SHEET,REBEL_CELL // MERIT SHEET
 REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
 RECALL,RECALL
-RECALL %s,RECALL %s
 RECLAIMED,RECLAIMED
 RECRUIT,RECRUIT
 RECYCLE BIN,RECYCLE BIN
@@ -2273,7 +2273,6 @@ SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
-STATION %s HERE,STATION %s HERE
 STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS

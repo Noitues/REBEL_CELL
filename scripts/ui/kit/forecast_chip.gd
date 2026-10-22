@@ -10,7 +10,7 @@ extends RaidTerminal
 ## The verdict's icon radius share of the chip (px at text 1.0).
 const ICON_PX := 22.0
 ## The chip's width (px at text 1.0): the caption wraps to two lines inside it.
-const WIDTH_PX := 150.0
+const WIDTH_PX := 184.0
 
 var caption: String = ""
 var verdict: String = ""
@@ -21,7 +21,8 @@ var _verdict_label: Label = null
 
 
 func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Palette.CELL_PINK, p_icon: StringName = &"") -> void:
-	super._init(tr(p_caption).replace("\n", " "), p_color)
+	# A-076 A4: the edge is the Cell's CRT cyan; the verdict keeps its own colour and glyph.
+	super._init(tr(p_caption).replace("\n", " "))  # the default accent: the Cell's cyan
 	name = "Projection"
 	caption = p_caption
 	verdict = p_verdict
@@ -54,6 +55,19 @@ func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Pale
 	_verdict_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(_verdict_label)
 	body.add_child(row)
+
+
+## A-076 A1: one live what-if line under the verdict (`HOME 50 → 40 (-10)`), `text` as shown, in `tint`.
+func add_line(line_name: String, text: String, tint: Color) -> Label:
+	var l := Label.new()
+	l.name = line_name
+	l.text = text
+	l.add_theme_font_override("font", Palette.mono_arrows())
+	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	l.add_theme_color_override("font_color", tint)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_child(l)
+	return l
 
 
 ## The caption as drawn: translated.
