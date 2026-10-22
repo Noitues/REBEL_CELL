@@ -426,7 +426,8 @@ worktree `D:/rc_art/godot_look_toolbox`. Art-pass did not merge main.
 - Proof (frozen, `--reduce-effects=1`):
   - sheets: `D:/rc_scratch/rc_look/hotcore/hotcore_proof.png` and `thin_crops.png`;
   - changed: pov, pod, site, A2 night and na23;
-  - unchanged (max 0): A2 day, the na23 id and depth passes, and hq_solace.
+  - unchanged (max 0): A2 day, and the na23 id and depth passes. (The hq_solace max 0 was measured on the baked fallback still, not
+    the live city. A live re-shoot is coming; until then, treat hq_solace as unverified.)
 - Also in this batch:
   - 9d882173: netrun_clock's hash goes through rc_hash (same arithmetic);
   - 9b6f0267: a comment only.
