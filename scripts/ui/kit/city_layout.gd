@@ -107,11 +107,19 @@ static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: boo
 	var hq := plan.hq_of(corp.id) if plan != null else NeonCity.hq_of(corp.id)
 	var centre := hq + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5)
 	var origin := centre - a * (BOSS_GAP + RUN_HALF * spread) + b * CROSS_OFFSET
+	var ids: Array[StringName] = []
+	var pts := PackedVector2Array()
 	for sd in corp.city_grid.sites:
 		if sd == null:
 			continue
 		var uv := (sd.map_position - min_p) / span * 2.0 - Vector2.ONE
-		out[sd.id] = origin + a * uv.x * RUN_HALF * spread + b * uv.y * CROSS_HALF * spread
+		ids.append(sd.id)
+		pts.append(origin + a * uv.x * RUN_HALF * spread + b * uv.y * CROSS_HALF * spread)
+	# The A2 plan's Solace Sites keep off the plinth circle (CitySolaceDistrict.shift_sites), as its lots were made.
+	if plan != null and plan.a2 != null:
+		pts = CitySolaceDistrict.shift_sites(pts, centre, CityA2Builder.plinth_lots(CityPlan.plan_config(), corp.id, CityView3D.CONFIG.lot_bu))
+	for i in ids.size():
+		out[ids[i]] = pts[i]
 	return out
 
 
