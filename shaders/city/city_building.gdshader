@@ -14,6 +14,9 @@ render_mode cull_disabled, specular_disabled;
 #include "res://shaders/kit/toon_bands.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
 #include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin over the street's buildings and ground (strength 0 = the shader as before).
+#define BL_STREET
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
 // LOOK-TOOLBOX module 11 (designer DIRECTION_REVIEW f4678fca, b727956a): each neon tube's hot core, rcl_neon_hot. Values =
 // addons/rc_look/config/look_sign.tres "hot" (pinned by test_rc_look_sign).
 uniform float neon_hot = 0.90;
@@ -663,6 +666,10 @@ void fragment() {
 			SPECULAR = wet_spec;
 			v_pbr = vec3(wr, 0.0, wet_spec);
 		}
+	}
+	if (bl_strength > 0.0 && !bit_on && !id_mode) {
+		float blf = bl_apply_street(v_world, ALBEDO, EMISSION);
+		v_pbr = vec3(mix(v_pbr.x, bl_rough, blf), v_pbr.y * (1.0 - blf), v_pbr.z * (1.0 - blf));
 	}
 	if (bit_on) {
 		ALBEDO = vec3(0.0);

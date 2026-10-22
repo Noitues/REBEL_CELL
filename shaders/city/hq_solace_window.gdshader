@@ -1,6 +1,10 @@
 shader_type spatial;
 render_mode cull_back;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin on the helix strands and the window light dying below the front (bl_mode 0 = the shader as before).
+#define BL_TUBE
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
+uniform int bl_mode = 0;   // 1 the strand skin, 2 window light (BloomLook.apply by the material's name)
 // LOOK Solace HQ: interior mapping of the Solace helix windows (art-pass hq NOTES v4, "Godot port"): one flat oval patch per window
 // raycast into a box room. Vertex data: NORMAL = the window's outward normal, UV = (u, dz) in the window frame (u along the level
 // axis tw = normal x up, dz up from the window's middle), UV2 = (atlas variant row, blind 0..1), COLOR = (tint rgb, lit).
@@ -84,4 +88,7 @@ void fragment() {
 	CLEARCOAT = 0.4;
 	CLEARCOAT_ROUGHNESS = 0.1;
 	EMISSION = col * (0.10 + 0.90 * lit) * imap_k * emit_gain;
+	if (bl_mode == 2) {
+		EMISSION = bl_dim_tube(w_pos, EMISSION);
+	}
 }

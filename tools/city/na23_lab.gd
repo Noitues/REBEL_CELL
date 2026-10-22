@@ -20,6 +20,9 @@ extends Control
 ##                        same code match to the pixel); the lab's own settings file, so the player's is untouched
 ##   --dump-materials=<file>  LOOK-TOOLBOX: append every set shader parameter vs its text default at each shot
 ##                        (RcLookMaterialAudit)
+##   --bloom=<front>      LOOK Solace THE BLOOM (A Necrosis): the Bloom look at a front of <front> route layers (fractional; the concept's
+##                        CREEPING / CLOSE / CATCHING are -0.5 / 0.75 / 1.4 with the operative on layer 2, gaps 2.5 / 1.25 / 0.6);
+##                        --bloom-op=<layer> (default 2) the operative's layer (the band is the gap's), --bloom-strength=<0..1> (default 1)
 ## Prints NA23 lines.
 
 const SETTLE_DEFAULT := 90
@@ -112,6 +115,19 @@ func _ready() -> void:
 		view.rig.exposure_override = float(_args["exposure"])
 		view.rig.view.set_aaa_exposure(float(_args["exposure"]))
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
+	if _args.has("bloom"):
+		_apply_bloom()
+
+
+## LOOK Solace THE BLOOM: the look at --bloom's front on the street's layout, through the same mapper the game's call uses.
+func _apply_bloom() -> void:
+	var cc := load("res://content/config/campaign_config.tres") as CampaignConfigData
+	var front := float(_args["bloom"])
+	var gap_milli := roundi((float(_args.get("bloom-op", "2")) - front) * 1000.0)
+	var band := int(BloomRules.band_for_gap(gap_milli, cc))
+	var look := BloomLook.at_front(front, band, BloomLook.street_layout(_data.derive), &"", float(_args.get("bloom-strength", "1")))
+	view.rig.view.set_bloom(look)
+	print("NA23 bloom front=%.3f band=%s frame x=%.2f boxes=%d" % [front, BloomLook.BAND_NAMES[band], float(look["front"]), int(look["uniforms"].get(&"bl_box_n", 0))])
 
 
 ## STREET-CAM: writes the street derive's inputs and output as contract text into `dir` (city.json, net.json, run_graph.json,

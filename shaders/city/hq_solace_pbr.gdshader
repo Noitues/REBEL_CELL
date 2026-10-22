@@ -2,6 +2,10 @@ shader_type spatial;
 render_mode cull_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin on the helix strands and the window light dying below the front (bl_mode 0 = the shader as before).
+#define BL_TUBE
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
+uniform int bl_mode = 0;   // 1 the strand skin, 2 window light (BloomLook.apply by the material's name)
 // LOOK Solace HQ: the AAA-2 "Realistic night" PBR of the v5 plates (art-owned). One shader for every opaque role of the compound
 // (hq_sx_*): vertex colour = base colour; alpha = emission gain on the lit roles. The strand skin is a lime glossy body with a
 // uniform lime glow and a fresnel rim, its back side the warm office wall (the plates' backface mix).
@@ -32,6 +36,12 @@ uniform vec3 neon_core_col = vec3(1.0);
 uniform float neon_core_thin_px = 3.00;
 uniform float neon_core_thin_hot = 0.45;
 
+varying vec3 bl_w;
+
+void vertex() {
+	bl_w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
 void fragment() {
 	vec4 vc = COLOR;
 	vec3 base = vc.rgb * albedo_k;
@@ -55,5 +65,14 @@ void fragment() {
 		CLEARCOAT = clearcoat;
 		CLEARCOAT_ROUGHNESS = clearcoat_roughness;
 		EMISSION = em + glow_col * (glow_k + rim_k * pow(1.0 - nv, rim_pow));
+	}
+	if (bl_mode == 1 && FRONT_FACING) {
+		// the strand skin (front face only: the back is the office wall): the plum body matte, no clearcoat
+		float blf = bl_apply_tube(bl_w, ALBEDO, EMISSION);
+		ROUGHNESS = mix(ROUGHNESS, bl_rough, blf);
+		CLEARCOAT *= 1.0 - blf;
+		SPECULAR *= 1.0 - blf;
+	} else if (bl_mode == 2) {
+		EMISSION = bl_dim_tube(bl_w, EMISSION);
 	}
 }

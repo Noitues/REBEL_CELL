@@ -14,6 +14,9 @@ extends Control
 ##     backdrop city's own render before its grade, at that size)] [--scale=2.0 (S-HQRUN: the
 ##     text size)] [--reduce-effects=1 (LOOK-TOOLBOX: frozen shader time and the static look, so two
 ##     captures of the same code match for a before / after; not saved, restored at quit)]
+##     [--bloom=<front> LOOK Solace THE BLOOM (A Necrosis), pov / pod: the Bloom look at a front of <front> route layers (3.0 = the
+##       concept's overview, floor 9 of 27, CATCHING; 1.75 = the decision's, CLOSE, lifted by the config's decision lift),
+##       --bloom-pov / --bloom-pod override it per state, --bloom-op=<layer> (default 3) the operative's layer, --bloom-strength=<0..1>]
 ##     [--try=spill,air (LOOK-TOOLBOX lab only, pov / pod: the helix as a toon spill source, Solace green, at
 ##     --spill-y=<BU over the plinth> with radius --spill-r=<x city_sol_plinth_r_bu> and --spill-i=<intensity>; the
 ##     rc_look air pass, night preset, with --air-density / -start / -height / -high / -extinct overrides)]
@@ -167,6 +170,7 @@ func _load(state: String) -> void:
 			_host.add_child(tr)
 			_city = c
 			_try_look(c, at.origin)
+			_bloom(c, corp, kind, m, at)
 		"hq", "site", "won":
 			_campaign(corp)
 			_backdrop = CombatBackdrop.new()
@@ -180,6 +184,21 @@ func _load(state: String) -> void:
 					site = sd.id
 			_backdrop.show_place(BackdropCatalog.place(corp, kind == "hq", false, site))
 			_city = _backdrop.city
+
+
+## LOOK Solace THE BLOOM: the look at the front of --bloom / --bloom-<kind> on the compound's layout (the game's mapper).
+func _bloom(c: CityView3D, corp: StringName, kind: String, m: Dictionary, at: Transform3D) -> void:
+	var key := "bloom-%s" % kind
+	if not _args.has(key) and not _args.has("bloom"):
+		return
+	var front := float(_args.get(key, _args.get("bloom", "0")))
+	var cc := load("res://content/config/campaign_config.tres") as CampaignConfigData
+	var gap_milli := roundi((float(_args.get("bloom-op", "3")) - front) * 1000.0)
+	var band := int(BloomRules.band_for_gap(gap_milli, cc))
+	var layout := BloomLook.hq_layout(m, HqCompoundStage.layout(corp), at)
+	var look := BloomLook.at_front(front, band, layout, BloomLook.VIEW_DECISION if kind == "pod" else &"", float(_args.get("bloom-strength", "1")))
+	c.set_bloom(look)
+	print("HQRUN bloom %s front=%.3f band=%s zfront(plate)=%.2f" % [kind, front, BloomLook.BAND_NAMES[band], float(look["front"])])
 
 
 ## LOOK-TOOLBOX lab only: the --try looks on a plate view (see the header).

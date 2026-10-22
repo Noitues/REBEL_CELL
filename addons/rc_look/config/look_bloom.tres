@@ -1,0 +1,110 @@
+[gd_resource type="Resource" script_class="RcLookBloomConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_bloom_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+street = {
+"cover_k": 0.89,
+"ew": 0.09,
+"edge_k": 1.4,
+"hatch_k": 0.3,
+"hatch_scale": 2.5,
+"pink": [1.0, 0.0612, 0.305],
+"plum": [0.075, 0.03, 0.058],
+"rough": 0.7,
+"seed": 7.0,
+"tend": 24.0,
+"tend_h": 6.0,
+"veins": 1.1,
+"vscale": 0.7,
+"vw": 0.045
+}
+street_bands = {
+"CATCHING": {
+"hatch_k": 0.4,
+"plum": [0.085, 0.034, 0.066],
+"ribbons_strength": 1.1,
+"veins": 1.45
+},
+"CLOSE": {
+"ribbons_strength": 1.1
+},
+"CREEPING": {
+"ribbons_strength": 0.6
+}
+}
+street_frame = {
+"cull_ahead": 30.0,
+"facade_off": -0.5,
+"link_x": 0.6,
+"link_y": 0.8,
+"link_z": 0.6,
+"max_boxes": 128,
+"room_mx": 0.1,
+"room_mz": 0.1,
+"room_y0": 0.7,
+"room_y1": 0.4,
+"room_z": 0.15,
+"x0": 135.0,
+"y0": 9.0
+}
+ribbons = {
+"facade_h": 7.0,
+"fork": 0.04,
+"n_facade": 36,
+"n_ground": 70,
+"reach": 24.0,
+"seed": 11,
+"step": 0.6,
+"strength": 1.1,
+"width": 0.09,
+"y0": -8.0,
+"y1": 11.0,
+"z_ground": 0.22
+}
+hq = {
+"ahead_k": 1.0,
+"cover_k": 0.94,
+"decision_lift": 28.0,
+"edge_k": 45.0,
+"ew": 1.1,
+"floor_h": 12.5,
+"front_over_node": 4.0,
+"hatch_k": 0.2,
+"hatch_scale": 0.12,
+"pink": [1.0, 0.0612, 0.305],
+"plum": [0.03, 0.012, 0.024],
+"podium": 9.9,
+"radius": 40.0,
+"reach": 45.0,
+"rough": 0.7,
+"roles": {
+"hq_sx_neon": 2,
+"hq_sx_office": 2,
+"hq_sx_skin": 1,
+"hq_sx_win": 2
+},
+"room_r": 9.0,
+"seed": 7.0,
+"stair_deg": 35.0,
+"stair_w": 2.3,
+"swell": 4.5,
+"theta0": 90.0,
+"tongue": 40.0,
+"tube_r": 10.0,
+"twist": 13.333333,
+"veins": 1.5,
+"vscale": 0.24,
+"vw": 0.065,
+"win_dim": 0.03,
+"win_r": 48.0
+}
+haze = {
+"below": 2.0,
+"emission": 1.4,
+"h": 45.0,
+"k": 0.02,
+"r": 34.0,
+"scale": 9.0
+}

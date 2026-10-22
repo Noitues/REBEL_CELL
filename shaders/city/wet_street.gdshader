@@ -12,6 +12,9 @@ render_mode cull_disabled;
 #include "res://shaders/kit/toon_bands.gdshaderinc"
 // LOOK-TOOLBOX module 8: the puddle noise and roughness are rc_wet's.
 #include "res://addons/rc_look/shaders/rc_wet.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin over the street's buildings and ground (strength 0 = the shader as before).
+#define BL_STREET
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -45,6 +48,7 @@ uniform float slope_spec = 0.0;
 uniform vec2 slope_flat = vec2(0.97, 0.995);
 varying vec3 v_world;
 varying float v_ny;
+varying float v_bl;
 
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -72,6 +76,10 @@ void fragment() {
 		// Light spill on the streets (1B's banded spill, the key light's bands).
 		vec3 spill = toon_spill(v_world, vec3(0.0, 1.0, 0.0), ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
 		EMISSION = col * spill * spill_gain * emission_multiplier * mix(1.0, spill_k, look_blend);
+		v_bl = 0.0;
+		if (bl_strength > 0.0) {
+			v_bl = bl_apply_street(v_world, ALBEDO, EMISSION);  // the skin is matte: the wet lobe fades by it (light())
+		}
 	}
 }
 
@@ -102,6 +110,7 @@ void light() {
 		vec3 spec = lc * min(dd * fr * nl / (4.0 * nv), spec_max) * look_blend * clamp(puddles_sharp, 0.0, 1.0);
 		spec *= mix(1.0, smoothstep(slope_flat.x, slope_flat.y, v_ny), slope_spec);
 		vec3 pool = lc * nl * pool_k;
+		spec *= 1.0 - v_bl;
 		SPECULAR_LIGHT += spec;
 		int b0 = toon_band_index(ndl, ramp_edges.x, ramp_edges.y);
 		vec3 band0 = b0 == 0 ? ramp_shadow : (b0 == 1 ? ramp_mid : ramp_lit);
