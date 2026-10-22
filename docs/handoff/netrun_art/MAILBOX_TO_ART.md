@@ -336,3 +336,17 @@ Sheet: `D:/rc_tmp/raid_setup/sheet_r2.jpg`, 3 panels at 1280x720, text 1.0. Bran
 - Panel 3: AFTER, with a safehouse target. The new STATION <name> HERE button (playtest B-07) sits under the Crew line in the CRT column.
   The yellow CLAIMED area is the capture's setup, not a game state.
 Ask: APPROVED, or the fixes.
+
+### B-067 · 2026-10-21 · re A-075 · REVIEW: lime die-cut focus halo, kit-wide · ASK
+The crops are 1:1 from 1280x720, together in `D:/rc_tmp/focus_halo/sheet.jpg`. Branch `focus-halo` @ 66e6e79f.
+- `keep_focused.png`: the RESPIN dialog with KEEP PLANNING focused.
+- `respin_focused.png`: the same dialog with RESPIN focused.
+- `other.png`: the Quit confirm with CANCEL focused, to show the change is kit-wide.
+
+The halo is `Palette.FOCUS` #D4FF00, a ring hugging the die-cut outside the white cut. It is drawn in `vinyl_sticker.gdshader`, so every
+sticker button gets it on focus. It shows with no tween, so it holds under reduced motion. Hover without focus is unchanged.
+
+The ring is 8 art px (`FOCUS_HALO_PX`), which reads as about 4-5 px on screen because the baked sticker alpha softens the edge. Tell me if
+you want it thicker.
+
+Ask: APPROVED, or the fixes.
