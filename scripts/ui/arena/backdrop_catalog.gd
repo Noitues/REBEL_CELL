@@ -22,7 +22,7 @@ const NIGHT_ONLY: Array[StringName] = [&"rebel_cell"]
 ## the fight is won; measured from the won masks (the bake's silhouette pass).
 const ANCHORS := {
 	&"meridian_hq": Vector2(0.47, 0.16), &"meridian_site": Vector2(0.50, 0.27),
-	&"solace_hq": Vector2(0.51, 0.0), &"solace_site": Vector2(0.50, 0.12),
+	&"solace_hq": Vector2(0.51, 0.0), &"solace_site": Vector2(0.50, 0.03),
 	&"halcyon_hq": Vector2(0.50, 0.16), &"halcyon_site": Vector2(0.50, 0.23),
 	&"orbital_hq": Vector2(0.50, 0.16), &"orbital_site": Vector2(0.51, 0.16),
 	&"rebel_cell_hq": Vector2(0.50, 0.16), &"rebel_cell_site": Vector2(0.50, 0.16),
@@ -255,12 +255,16 @@ static func close_site_shot(cfg: CityConfig, corp: StringName, site: StringName,
 	cam.pitch_deg = cfg.backdrop_close_pitch_deg
 	cam.fov_deg = cfg.backdrop_close_fov_deg
 	cam.yaw_deg = site_yaw(cfg, sbox.get_center(), hbox.get_center())
-	fit_height(cam, sbox, cfg.backdrop_site_close_height, cfg.backdrop_site_close_max_width, cfg.backdrop_site_close_centre, size)
+	var who: StringName = corp if own else &""  # the corp's own Site landmark only, never its other Sites
+	var close_h: float = cfg.backdrop_site_close_height_by_corp.get(who, cfg.backdrop_site_close_height)
+	var close_w: float = cfg.backdrop_site_close_max_width_by_corp.get(who, cfg.backdrop_site_close_max_width)
+	var close_c: Vector2 = cfg.backdrop_site_close_centre_by_corp.get(who, cfg.backdrop_site_close_centre)
+	fit_height(cam, sbox, close_h, close_w, close_c, size)
 	# A low building would pull the eye down onto its roof: the lens narrows instead (a telephoto
 	# from at least backdrop_site_close_min_eye_bu away, down to backdrop_site_close_min_fov_deg),
 	# so the city stands behind it as in the concepts; the framing at the target is the same.
 	telephoto(cam, cfg.backdrop_site_close_min_eye_bu, cfg.backdrop_site_close_min_fov_deg)
-	fit_height(cam, sbox, cfg.backdrop_site_close_height, cfg.backdrop_site_close_max_width, cfg.backdrop_site_close_centre, size)
+	fit_height(cam, sbox, close_h, close_w, close_c, size)
 	var out := {"focus": "site", "stage": &"", "camera": cam, "lot": at, "won_site": site, "centre": sbox.get_center(),
 		"top": Vector3(sbox.get_center().x, sbox.end.y, sbox.get_center().z), "subject": sbox, "hq_box": hbox}
 	if own:
@@ -441,11 +445,15 @@ const FIT_PASSES := 3
 ## backdrop_close_sight_share. Low roofs in front and the city to the sides stay (the concepts
 ## look over rooftops at the landmark). Anything nearer than the subject that covers it on screen goes too; its own
 ## buildings stay. The rule is rc_look's RcLookOcclusion (read the record only through `occludes`). Pure.
-static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB) -> Dictionary:
+static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB, corp: StringName = &"") -> Dictionary:
 	# LOOK-TOOLBOX: the shared sight rule (RcLookOcclusion; designer 2026-10-21, the netrun occlusion rule in combat).
 	var cam := c.copy()
 	var cut := RcLookOcclusion.sight(cam.project, cam.eye(), cam.forward(), box, cfg.backdrop_close_cut_margin,
 			cfg.backdrop_close_sight_share, cfg.backdrop_close_cut_screen_pad, cfg.lot_bu * 0.5)
+	# Per corporation (backdrop_site_cut_own_by_corp; `corp` is a Site shot's landmark corp): the towers standing inside
+	# the subject's footprint give way too (the landmark's own nodes stay: CombatBackdrop.cut_landmarks), so its front reads.
+	if corp != &"" and bool(cfg.backdrop_site_cut_own_by_corp.get(corp, false)):
+		cut["sub_xz"] = Rect2()
 	cut["cam"] = cam  # a Callable does not keep its RefCounted alive
 	return cut
 

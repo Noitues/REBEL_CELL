@@ -340,6 +340,14 @@ extends Resource
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
 @export var backdrop_site_close_height: float = 0.55
 @export var backdrop_site_close_max_width: float = 0.6
+## Per corporation (else the three above): a Site landmark that must read (Solace General's cross and helipad,
+## art-pass 2026-10-22) is fitted larger / elsewhere. Only the corporations listed change; the other Sites keep the numbers above.
+@export var backdrop_site_close_height_by_corp: Dictionary = {&"solace": 0.78}
+@export var backdrop_site_close_max_width_by_corp: Dictionary = {&"solace": 0.62}
+@export var backdrop_site_close_centre_by_corp: Dictionary = {&"solace": Vector2(0.5, 0.5)}
+## Per corporation: the view cut also takes the procedural towers inside the Site landmark's footprint (they hide its
+## front; the landmark itself stays).
+@export var backdrop_site_cut_own_by_corp: Dictionary = {&"solace": true}
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
 @export var backdrop_site_close_min_eye_bu: float = 60.0
 @export var backdrop_site_close_min_fov_deg: float = 10.0

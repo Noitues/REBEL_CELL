@@ -511,7 +511,7 @@ func _frame_city() -> void:
 	if city.camera != null:
 		city.camera.far = cam.eye_distance() + CityView3D.CONFIG.backdrop_close_far_bu if cam.perspective() else CityView3D.CONFIG.camera_far
 	if shot.has("subject") and cam.perspective():
-		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"])
+		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"], StringName(shot.get("landmark", &"")))
 		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
 		_cut = cut
 	else:

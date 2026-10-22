@@ -133,10 +133,17 @@ func test_a_site_fight_frames_its_building_centred_between_the_wheels_50_to_60_p
 				var px := BackdropCatalog.projected_box(cam, shot["subject"])
 				var h := px.size.y / size.y
 				var w := px.size.x / size.x
-				assert_true((h >= 0.5 and h <= 0.6) or (h < 0.5 and w >= cfg.backdrop_site_close_max_width - 0.02),
+				# A corp's own Site landmark may carry its own fit (by-corp keys; Solace General, art-pass 2026-10-22).
+				var who: StringName = corp if shot.has("landmark") else &""
+				var want_h: float = cfg.backdrop_site_close_height_by_corp.get(who, cfg.backdrop_site_close_height)
+				var want_w: float = cfg.backdrop_site_close_max_width_by_corp.get(who, cfg.backdrop_site_close_max_width)
+				var want_c: Vector2 = cfg.backdrop_site_close_centre_by_corp.get(who, cfg.backdrop_site_close_centre)
+				var lo := 0.5 if who == &"" else want_h - 0.05
+				var hi := 0.6 if who == &"" else want_h + 0.05
+				assert_true((h >= lo and h <= hi) or (h < lo and w >= want_w - 0.02),
 					"%s %s %s: the subject %.2f of the height (or as wide as the gap: %.2f)" % [corp, site, b, h, w])
 				assert_almost_eq(px.get_center().x / size.x, 0.5, 0.02, "%s %s: centred between the wheels" % [corp, site])
-				assert_almost_eq(px.get_center().y / size.y, cfg.backdrop_site_close_centre.y, 0.03, "%s %s: above the hand" % [corp, site])
+				assert_almost_eq(px.get_center().y / size.y, want_c.y, 0.03, "%s %s: above the hand" % [corp, site])
 				checked += 1
 	assert_gt(checked, 40)
 
@@ -509,3 +516,15 @@ func test_the_cut_never_takes_the_subjects_own_buildings() -> void:
 	var far_corner := Vector2(sub.end.x - 1.0, sub.end.z - 1.0)
 	for p: Vector2 in [near_corner, far_corner, Vector2(sub.get_center().x, sub.get_center().z)]:
 		assert_false(BackdropCatalog.occludes(p, sub.size.y, cut), "a building of the subject's own block stays (%s)" % p)
+
+
+func test_the_view_cut_spares_a_sites_footprint_unless_its_corp_clears_it() -> void:
+	var cfg := CityView3D.CONFIG
+	var cam := CityIsoCamera.make(cfg, Vector3.ZERO, 60.0, Vector2(1280, 720))
+	cam.pitch_deg = cfg.backdrop_close_pitch_deg
+	cam.fov_deg = cfg.backdrop_close_fov_deg
+	var box := AABB(Vector3(-18, 0, -18), Vector3(36, 20, 36))
+	assert_true((BackdropCatalog.view_cut(cfg, cam, box)["sub_xz"] as Rect2).has_area(), "the default cut spares the subject's own footprint")
+	assert_true(cfg.backdrop_site_cut_own_by_corp.get(&"solace", false), "Solace General's front must read (art-pass 2026-10-22)")
+	assert_false((BackdropCatalog.view_cut(cfg, cam, box, &"solace")["sub_xz"] as Rect2).has_area(), "Solace's cut clears the towers inside the footprint")
+	assert_true((BackdropCatalog.view_cut(cfg, cam, box, &"meridian")["sub_xz"] as Rect2).has_area(), "the other corps keep the shared rule")
