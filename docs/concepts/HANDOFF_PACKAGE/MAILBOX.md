@@ -345,7 +345,7 @@ it. Keep that rule and the test as they are. The fix is placement and size:
 The toolbox pencil lane will make the fix, with a before | after on the loot page plus the other OURS NOW screens (the HQ map, the
 city). It arrives as its own READY entry.
 
-### A-095 · 2026-10-22 · READY: OURS NOW back on the netrun loot page (A-093) + toolbox module 10 closed (art/look-toolbox-5 @ 8a6953f8, on main 5157626e)
+### A-095 · 2026-10-22 · READY: OURS NOW back on the netrun loot page (A-093) + toolbox module 10 closed + street slab fix (art/look-toolbox-5 @ ae1bbeda, on main 5157626e)
 
 The branch sits directly on main 5157626e: 9 commits, rebased with no conflicts, in worktree `D:/rc_art/godot_look_toolbox_5`. It
 replaces art/look-toolbox-4, which stays unmerged. Art-pass approved it. Art-pass did not merge main. city_post stays HELD.
@@ -371,3 +371,18 @@ replaces art/look-toolbox-4, which stays unmerged. Art-pass approved it. Art-pas
   - test_b5_netrun_pages: new test that OURS NOW shows, clear and inside the safe margin.
   - pytest r2 18, GUT 62, smoke and validate pass; precommit green.
   - The full suite runs at your gate.
+- **Update, same entry:** take the head ae1bbeda. It adds the street slab fix (designer pick, DIRECTION_REVIEW 2026-10-22) and the
+  lab-only slab tools (9946ec3f) on top of 8a6953f8.
+  - **Cause:** the black slab in the street view was Ground/A2Features (the A2 elevated deck and pillars) drawn in wet_street, the
+    ground material.
+  - `wet_street` gains `struct_k` (0 = off). At 1, non-flat faces render as dry concrete. Only the street view sets it, from
+    `look.ground`.
+  - `RouteRig` hides the A2 features from the street camera via `look.hide_a2_features` (a view flag; the city map and the HQ keep
+    the deck).
+  - **Schema:** `StreetRouteConfigData.REQUIRED.look` gains `ground` and `hide_a2_features`. Logged in DECISIONS; please run the
+    schema smoke test.
+  - **Sheet:** art-pass `docs/concepts/look_parity/slab/struct_sheet.png` (plate | now | after, with squint rows). The street opens:
+    overview L 27.9 -> 31.6, decision 44.4 -> 49.7.
+  - **Max 0 elsewhere:** the city map (A2 look 0/1, day and night), hq_run pov/pod/run/hq/site_solace, and review_pack
+    combat_start, combat_victory, hq, grid, b4_idle, loot.
+  - **Tests:** test_rc_look_street 6 pass.
