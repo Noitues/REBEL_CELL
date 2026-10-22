@@ -37,7 +37,7 @@ uniform float puddles_sharp = 1.0;
 // "bokeh" of the plate) as the roughness rises to `rough_wet.x`. `spec_max` caps one light's lobe; `pool_k` scales the diffuse pool.
 uniform float streak_k = 7.0;
 uniform float spec_max = 8.0;
-uniform float pool_k = 1.0;
+uniform float pool_k = 0.3;
 uniform float spill_k = 0.25;
 // LOOK L5 (designer 2026-10-20): `slope_spec` 0..1 keeps the lobe to flat ground only (world normal y over `slope_flat`), so the
 // moon no longer flecks the whole-city mountains white. 0 = the old lobe everywhere.

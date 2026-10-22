@@ -14,30 +14,30 @@ uniform vec3 ramp_mid;
 uniform vec3 ramp_lit;
 uniform vec2 ramp_edges = vec2(0.147, 0.393);
 uniform float band_soft = 0.14;
-uniform float sea_y = 0.0;
+uniform float sea_y = 0.03;
 uniform vec3 sigma = vec3(0.090, 0.034, 0.016);
 uniform vec3 inscatter = vec3(0.003, 0.018, 0.055);
-uniform float inscatter_gain = 1.0;
+uniform float inscatter_gain = 2.0;
 // By day the sky lights the water column: the in-scatter this many times stronger at night 0.
-uniform float inscatter_day_gain = 1.0;
+uniform float inscatter_day_gain = 5.0;
 uniform float night = 1.0;
 // The caustics by day, as a share of their night strength (the sun washes the plate's day bay smooth).
-uniform float caustic_day_k = 1.0;
+uniform float caustic_day_k = 0.25;
 uniform float path_cap = 600.0;
-uniform float caustic_k = 1.1;
+uniform float caustic_k = 0.6;
 uniform float caustic_scale = 0.05;
 uniform float caustic_width = 0.22;
 uniform float caustic_distort = 0.9;
 uniform float caustic_floor = 0.12;
 uniform float caustic_patch = 0.05;
 uniform float caustic_patch_scale = 0.025;
-uniform float caustic_depth_bu = 30.0;
+uniform float caustic_depth_bu = 70.0;
 uniform vec3 caustic_col = vec3(0.22, 0.72, 0.78);
 uniform float caustic_speed = 0.02;
 uniform float time_scale = 1.0;
 // Land above the sea (the bay islands) at night: its own colour as emission x this x night, so a dark island lifts like the
 // inland land around the city instead of clipping to black under the map grade.
-uniform float land_night_lift = 0.0;
+uniform float land_night_lift = 0.45;
 varying vec3 v_world;
 varying vec3 v_nw;
 

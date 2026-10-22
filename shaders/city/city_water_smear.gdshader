@@ -9,8 +9,8 @@ render_mode blend_add, cull_disabled, depth_draw_never, specular_disabled, shado
 #include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
 
 uniform float night = 1.0;
-uniform float gain = 1.3;
-uniform float length_bu = 40.0;
+uniform float gain = 5.0;
+uniform float length_bu = 24.0;
 uniform float ripple_bu = 9.0;
 uniform float ripple_speed = 0.12;
 uniform float look_blend = 0.0;

@@ -39,7 +39,7 @@ func test_presets_are_pinned_to_the_game() -> void:
 	assert_eq(props.hi, ToonInkMaterial.BAND_HI)
 	assert_eq(props.shade_mid, ToonInkMaterial.SHADE_MID)
 	assert_eq(props.shade_low, ToonInkMaterial.SHADE_LOW)
-	var city_cfg := CityConfig.new()
+	var city_cfg := load("res://content/config/city_config.tres") as CityConfig
 	var city := RcLookToon.preset(&"city")
 	assert_almost_eq(city.lo, city_cfg.ramp_edges.x, 1e-6)
 	assert_almost_eq(city.hi, city_cfg.ramp_edges.y, 1e-6)

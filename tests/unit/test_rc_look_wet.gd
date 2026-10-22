@@ -35,7 +35,7 @@ func test_presets_are_pinned_to_the_game() -> void:
 		assert_almost_eq(p.rough_wet.x, float(wet["rough_wet"][0]), 1e-6, n)
 		assert_almost_eq(p.rough_wet.y, float(wet["rough_wet"][1]), 1e-6, n)
 		assert_almost_eq(p.specular, float(wet["specular"]), 1e-6, n)
-	var plane: Dictionary = CityConfig.new().water_plane
+	var plane: Dictionary = (load("res://content/config/city_config.tres") as CityConfig).water_plane
 	var w := RcLookWet.preset(&"water")
 	assert_almost_eq(w.ior, float(plane["ior"]), 1e-6)
 	assert_almost_eq(w.fresnel_boost, float(plane["fresnel_boost"]), 1e-6)
