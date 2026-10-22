@@ -23,6 +23,8 @@ signal ready_to_show
 var rig: RouteRig = null
 var overlay: StreetRouteOverlay = null
 var data: StreetRouteData = null
+## The Bloom look last put on the street ({} before the first call; strength 0 when off).
+var bloom: Dictionary = {}
 ## OVERVIEW or DECISION (`StreetRouteRules.View`); HOVER is derived (`current_view`).
 var base_view: int = StreetRouteRules.View.DECISION
 ## The node under the pointer ("" = none) and the selected option ("" = none).
@@ -179,6 +181,15 @@ func set_run_state(current: String, visited: Array, options: Array, animate: boo
 	_dec_state = data.decision_state(current, options)
 	_refresh_tags()
 	_refresh(animate, rig.t_step_seconds())
+
+
+## LOOK Solace Bloom A (A-096; look only): the Bloom's look on the street, read from the run's `BloomState` `b` (a disabled Bloom, so any
+## other corporation, gives the off look). Called after each node entry and fight end. Returns the look it set.
+func set_bloom(b: BloomState, campaign_cfg: CampaignConfigData) -> Dictionary:
+	bloom = BloomLook.from_state(b, BloomLook.street_layout(data.derive), campaign_cfg)
+	if rig != null and rig.view != null:
+		rig.view.set_bloom(bloom)
+	return bloom
 
 
 ## The current run position `{current, visited, options}`.

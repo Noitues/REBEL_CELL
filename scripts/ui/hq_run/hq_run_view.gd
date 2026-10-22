@@ -90,6 +90,8 @@ var visited: Array[StringName] = []
 var available: Array[StringName] = []
 ## The city (null headless or before mount).
 var city: CityView3D = null
+## The Bloom look last put on the compound ({} before the first call; strength 0 when off).
+var bloom: Dictionary = {}
 ## The camera the marks are projected with (the city's own when there is one).
 var iso: CityIsoCamera = null
 var anim_t: float = 0.0
@@ -167,6 +169,16 @@ func show_run(p_corp: StringName, p_graph: MapGraph, p_current: StringName, p_vi
 		_mount_city()
 	_build_chrome()
 	_marks.queue_redraw()
+
+
+## LOOK Solace Bloom A (A-096; look only): the Bloom's look on the compound, read from the run's `BloomState` `b` (a disabled Bloom, so any
+## other corporation, gives the off look). `decision` frames the next-room choice (the front lifts by the config's decision lift);
+## the overview otherwise. Returns the look it set.
+func set_bloom(b: BloomState, campaign_cfg: CampaignConfigData, decision: bool) -> Dictionary:
+	bloom = BloomLook.from_state(b, BloomLook.hq_layout(_manifest, _layout, _at), campaign_cfg, BloomLook.VIEW_DECISION if decision else &"")
+	if city != null:
+		city.set_bloom(bloom)
+	return bloom
 
 
 ## The gate over the page opened (`on`) or closed: the chip (the gate names the server) and

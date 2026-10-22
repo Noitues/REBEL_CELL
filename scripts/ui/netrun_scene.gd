@@ -1040,6 +1040,7 @@ func _street_reverse_from_page() -> void:
 	street_view.visible = false
 	background.add_child(street_view)
 	street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), String(s.run.current_node_id), visited, [])
+	_sync_bloom()
 	await _wait_street_ready()
 	if street_view == null or not is_instance_valid(street_view):
 		return
@@ -1839,6 +1840,7 @@ func _show_street_map(s: NetrunSession) -> void:
 		background.add_child(street_view)
 		street_view.tag_text = _street_tag
 		street_view.setup(_street_data, CityModel.shared(cfg, CityPlan.current_seed()), current, visited, options)
+		_sync_bloom()
 		street_view.node_hovered.connect(func(id: String) -> void:
 			if id != "":
 				show_node_panel(StringName(id)))
@@ -1853,6 +1855,7 @@ func _show_street_map(s: NetrunSession) -> void:
 			_zoom_in_from_grid()
 	else:
 		street_view.set_run_state(current, visited, options)
+		_sync_bloom()
 	_apply_ladder_marks(s)
 	route_legend.show_links_hovered.connect(func(on: bool) -> void:
 		if street_view != null and is_instance_valid(street_view):
@@ -2619,7 +2622,22 @@ func _mount_hq_run() -> void:
 	background.add_child(hq_run_view)
 	hq_run_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hq_run_view.show_run(RunManager.campaign.corporation_id, s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), server_label())
+	_sync_bloom()
 	hq_run_view.node_pressed.connect(_request_node)
+
+
+## LOOK Solace Bloom A (A-096; look only, no raid wiring): puts the run's Bloom (`corp_theme.solace`; disabled for every other
+## corporation, which gives the off look) on the street page and on the HQ run page, after each node entry or fight end. The views only
+## read the state.
+func _sync_bloom() -> void:
+	var s := RunManager.netrun
+	if s == null:
+		return
+	var b := s.run.corp_theme.solace
+	if street_view != null and is_instance_valid(street_view):
+		street_view.set_bloom(b, s.config)
+	if hq_run_view != null and is_instance_valid(hq_run_view):
+		hq_run_view.set_bloom(b, s.config, not s.available_nodes().is_empty())
 
 
 ## ART-8 8w: the Central Server's name on the HQ run's page and gate (the Site's display
