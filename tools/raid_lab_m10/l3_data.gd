@@ -1,18 +1,21 @@
-class_name L2Data
+class_name L3Data
 extends RefCounted
-## Loads data/l2_golden.json (tools/raid_concepts/l2_golden.py) and data/l2_extra.json (data/gen_l2_extra.py: the raids'
-## second extra beam, EXTRA_AT, the naive line) into typed legs for the rules.
+## Loads data/l3_golden.json (tools/raid_concepts/l3_golden.py) into typed legs for the rules.
 
-const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l2_golden.json"
-const EXTRA_PATH := "res://tools/raid_lab_m10/data/l2_extra.json"
+const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l3_golden.json"
+static var _cache: Dictionary = {}
 
 
 static func load_json(path: String) -> Dictionary:
+	if _cache.has(path):
+		return _cache[path]
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		return {}
 	var parsed: Variant = JSON.parse_string(f.get_as_text())
-	return parsed if parsed is Dictionary else {}
+	var d: Dictionary = parsed if parsed is Dictionary else {}
+	_cache[path] = d
+	return d
 
 
 ## [x, y] -> Vector2i.
@@ -31,25 +34,22 @@ static func cells(arr: Array) -> Array:
 ## step lists)}. Empty if the seed is not in the golden.
 static func load_leg(seed_id: int) -> Dictionary:
 	var g := load_json(GOLDEN_PATH)
-	var ex := load_json(EXTRA_PATH)
 	for raw in g.get("legs", []):
 		if int(raw["seed"]) != seed_id:
 			continue
-		var extra: Dictionary = ex["legs"][str(seed_id)]
 		var lg: Dictionary = raw["leg"]
 		var values := {}
 		for v in lg["values"]:
 			values[Vector2i(int(v[0]), int(v[1]))] = int(v[2])
 		var raids: Array = []
-		for i in range(lg["raids"].size()):
-			var r: Dictionary = lg["raids"][i]
+		for r: Dictionary in lg["raids"]:
 			var cands: Array = []
 			for ln in r["cands"]:
 				cands.append(cells(ln))
-			raids.append({"b1": cells(r["b1"]), "extra": cells(r["extra"]), "extra2": cells(extra["extra2"][i]),
+			raids.append({"b1": cells(r["b1"]), "extra": cells(r["extra"]), "extra2": cells(r["extra2"]),
 				"cands": cands, "own3": cells(r["own3"])})
 		return {"seed": seed_id, "home": cell(lg["home"]), "values": values, "raids": raids,
-			"planned": raw["planned"], "greedy": raw["greedy"], "naive": extra["naive"]}
+			"planned": raw["planned"], "greedy": raw["greedy"], "naive": raw["naive"]}
 	return {}
 
 
@@ -61,5 +61,5 @@ static func alloc_of(a: Dictionary) -> Dictionary:
 ## A golden spoof ([x, y] or null) as a cell; NONE when absent.
 static func spoof_of(s: Variant) -> Vector2i:
 	if s == null:
-		return L2Rules.NONE
+		return L3Rules.NONE
 	return cell(s)

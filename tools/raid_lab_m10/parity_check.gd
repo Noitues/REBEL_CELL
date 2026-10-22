@@ -1,8 +1,9 @@
 extends SceneTree
-## Parity check of the L2 rules against data/l2_golden.json (tools/raid_concepts/l2_golden.py): every step of the
-## planned and greedy line of each of the 6 legs, the naive line (data/l2_extra.json), and all 200 random single-raid
-## resolutions. Compares touches, status, Heat, bank, home integrity and score. Also the config constants and that every
-## golden allocation passes the lab's lever validation. Exits 0 only on full parity.
+## Parity check of the L3 rules against data/l3_golden.json (tools/raid_concepts/l3_golden.py): every step of the
+## planned, greedy and naive line of each of the 6 legs (state before incl. kit, touches, tier, state after the raid, the
+## between step with repairs / intensity / buy, state after, score), all 200 random single-raid resolutions and all 200
+## random between steps. Also the config constants, that the lab's lever validation accepts every golden allocation and
+## that the lab's naive policy reproduces the naive line. Exits 0 only on full parity.
 ##   godot --headless --path . -s res://tools/raid_lab_m10/parity_check.gd
 
 var _fails: int = 0
@@ -29,6 +30,13 @@ func _norm(v: Variant) -> Variant:
 		for e in v:
 			a.append(_norm(e))
 		return a
+	if v is Dictionary:
+		var keys: Array = (v as Dictionary).keys()
+		keys.sort()
+		var d: Dictionary = {}
+		for k in keys:
+			d[k] = _norm(v[k])
+		return d
 	return v
 
 
@@ -40,8 +48,7 @@ func _touched(touches: Array) -> Array:
 
 
 func _golden_state(d: Dictionary) -> Array:
-	var st := L2State.from_golden(d)
-	return st.to_array()
+	return L3State.from_golden(d).to_array()
 
 
 func _cells(arr: Array) -> Array:
@@ -52,27 +59,18 @@ func _cells(arr: Array) -> Array:
 
 
 func _init() -> void:
-	var gold := L2Data.load_json(L2Data.GOLDEN_PATH)
-	var extra := L2Data.load_json(L2Data.EXTRA_PATH)
-	if gold.is_empty() or extra.is_empty():
-		print("FAIL golden or extra file missing")
+	var gold := L3Data.load_json(L3Data.GOLDEN_PATH)
+	if gold.is_empty():
+		print("FAIL golden file missing")
 		quit(1)
 		return
-	var cfg: Dictionary = gold["config"]
-	var mine := {"W": L2Config.W, "H": L2Config.H, "ASSETS": L2Config.ASSETS, "CANDIDATES": L2Config.CANDIDATES,
-		"HOME_HP": L2Config.HOME_HP, "STRONG_AT": L2Config.STRONG_AT, "START_HEAT": L2Config.START_HEAT,
-		"RUN_HEAT": L2Config.RUN_HEAT, "GHOST_HEAT": L2Config.GHOST_HEAT, "DECOY_COST": L2Config.DECOY_COST,
-		"EVADE_HEAT": L2Config.EVADE_HEAT, "START_BANK": L2Config.START_BANK, "HOME_LOSS_COST": L2Config.HOME_LOSS_COST,
-		"BREACH": L2Config.BREACH, "RAIDS": L2Config.RAIDS, "EXTRA_AT": L2Config.EXTRA_AT, "MAX_DARK": L2Config.MAX_DARK}
-	for k in cfg:
-		_check("config " + k, mine[k], cfg[k])
-	_check("config EXTRA_AT", L2Config.EXTRA_AT, extra["extra_at"])
-	_check("config legs", L2Config.LEGS, gold["legs"].map(func(l: Dictionary) -> int: return int(l["seed"])))
+	_config(gold["config"])
+	_check("config legs", L3Config.LEGS, gold["legs"].map(func(l: Dictionary) -> int: return int(l["seed"])))
 
 	var n_lines := 0
 	for raw in gold["legs"]:
 		var seed_id: int = int(raw["seed"])
-		var leg := L2Data.load_leg(seed_id)
+		var leg := L3Data.load_leg(seed_id)
 		for line_name in ["planned", "greedy", "naive"]:
 			_replay("leg %d %s" % [seed_id, line_name], leg, leg[line_name], line_name == "naive")
 			n_lines += 1
@@ -80,62 +78,106 @@ func _init() -> void:
 	var n_random := 0
 	for i in range(gold["random_raids"].size()):
 		var r: Dictionary = gold["random_raids"][i]
-		var leg := L2Data.load_leg(int(r["leg"]))
-		var st := L2State.from_golden(r["before"])
-		var alloc := L2Data.alloc_of(r["alloc"])
+		var leg := L3Data.load_leg(int(r["leg"]))
+		var st := L3State.from_golden(r["before"])
+		var alloc := L3Data.alloc_of(r["alloc"])
 		var b2: Array = leg["raids"][int(r["raid"])]["cands"][int(r["candidate"])]
-		var res := L2Rules.resolve(leg, int(r["raid"]), st, b2, alloc, L2Data.spoof_of(r["spoof"]))
-		var tag := "random %d (leg %d raid %d cand %d)" % [i, r["leg"], r["raid"], r["candidate"]]
+		var res := L3Rules.resolve(leg, int(r["raid"]), st, b2, alloc, L3Data.spoof_of(r["spoof"]))
+		var ns: L3State = res["state"]
+		var tag := "random raid %d (leg %d raid %d cand %d)" % [i, r["leg"], r["raid"], r["candidate"]]
 		_check(tag + " touches", _touched(res["touches"]), r["touched"])
-		_check(tag + " after", (res["state"] as L2State).to_array(), _golden_state(r["after_raid"]))
-		_check(tag + " score", L2Rules.score(leg, res["state"]), r["score"])
+		_check(tag + " tier", L3Rules.tier(st.home_hp, ns.home_hp, (res["touches"] as Array).size()), r["tier"])
+		_check(tag + " after", ns.to_array(), _golden_state(r["after_raid"]))
+		_check(tag + " score", L3Rules.score(leg, ns), r["score"])
 		_check_levers(tag, leg, st, alloc)
 		n_random += 1
-	print("%d lines, %d golden steps, %d random raids, %d checks, %d failed" % [n_lines, _steps, n_random, _checks, _fails])
+	var n_between := 0
+	for i in range(gold["random_betweens"].size()):
+		var r: Dictionary = gold["random_betweens"][i]
+		var leg := L3Data.load_leg(int(r["leg"]))
+		var st := L3State.from_golden(r["before"])
+		var dark := L3Data.cells(r["dark"])
+		var repairs := L3Data.cells(r["repairs"])
+		var buy: String = "" if r["buy"] == null else String(r["buy"])
+		var tag := "random between %d (leg %d)" % [i, r["leg"]]
+		var parts := L3Rules.between_parts(leg, st, dark, repairs, String(r["intensity"]), buy)
+		_check(tag + " after", (parts["state"] as L3State).to_array(), _golden_state(r["after"]))
+		_check(tag + " between() = parts", L3Rules.between(leg, st, dark, repairs, String(r["intensity"]), buy).to_array(), _golden_state(r["after"]))
+		var ns: L3State = parts["state"]
+		_check(tag + " ledger: bank before - repairs - buy + income = bank after",
+			st.bank - int(parts["repair_cost"]) - int(parts["buy_cost"]) + int(parts["income"]), ns.bank)
+		n_between += 1
+	print("%d lines, %d golden steps, %d random raids, %d random betweens, %d checks, %d failed" % [n_lines, _steps, n_random, n_between, _checks, _fails])
 	print("PARITY %s" % ("PASS" if _fails == 0 else "FAIL"))
 	quit(0 if _fails == 0 else 1)
 
 
+func _config(cfg: Dictionary) -> void:
+	var mine := {"W": L3Config.W, "H": L3Config.H, "ASSETS": L3Config.ASSETS, "CANDIDATES": L3Config.CANDIDATES,
+		"HOME_HP": L3Config.HOME_HP, "EXTRA_AT": L3Config.EXTRA_AT, "STRONG_AT": L3Config.STRONG_AT,
+		"MAX_DARK": L3Config.MAX_DARK, "START_HEAT": L3Config.START_HEAT, "GHOST_HEAT": L3Config.GHOST_HEAT,
+		"EVADE_HEAT": L3Config.EVADE_HEAT, "START_BANK": L3Config.START_BANK, "HOME_LOSS_COST": L3Config.HOME_LOSS_COST,
+		"BREACH": L3Config.BREACH, "RAIDS": L3Config.RAIDS, "KIT_START": L3Config.KIT_START, "PRICES": L3Config.PRICES,
+		"MAX_DECOYS": L3Config.MAX_DECOY, "HEAT_CARRY": L3Config.HEAT_CARRY}
+	for k in mine:
+		_check("config " + k, mine[k], cfg[k])
+	for k in cfg:
+		if not (mine.has(k) or k in ["INTENSITY", "income", "tiers", "decoys"]):
+			_check("config " + k + " is covered by the lab", false, true)
+	for name in L3Config.INTENSITIES:
+		var g: Array = cfg["INTENSITY"][name]
+		_check("config INTENSITY %s Heat" % name, L3Config.INTENSITY_HEAT[name], g[0])
+		_check("config INTENSITY %s income multiplier" % name, float(L3Config.INTENSITY_NUM[name]) / float(L3Config.INTENSITY_DEN), float(g[1]))
+	_check("config INTENSITY names", L3Config.INTENSITIES.size(), (cfg["INTENSITY"] as Dictionary).size())
+
+
 ## The lab's lever validation accepts a golden allocation, lever by lever, in ghost, dark, decoy order.
-func _check_levers(tag: String, leg: Dictionary, st: L2State, alloc: Dictionary) -> void:
-	var acc := L2Rules.empty_alloc()
+func _check_levers(tag: String, leg: Dictionary, st: L3State, alloc: Dictionary) -> void:
+	var acc := L3Rules.empty_alloc()
 	var ok := true
 	for lever in ["ghost", "dark", "decoys"]:
 		for c in alloc[lever]:
 			var lv: String = "decoy" if lever == "decoys" else String(lever)
-			if L2Rules.why_not(leg, st, acc, lv, c) != "":
+			if L3Rules.why_not(leg, st, acc, lv, c) != "":
 				ok = false
 			(acc[lever] as Array).append(c)
 	_check(tag + " golden allocation passes the lever validation", ok, true)
 
 
 func _replay(tag: String, leg: Dictionary, steps: Array, is_naive: bool) -> void:
-	var st := L2Rules.initial(leg)
+	var st := L3Rules.initial(leg)
 	for s: Dictionary in steps:
 		var i: int = int(s["raid"])
 		var t := "%s raid %d" % [tag, i + 1]
 		_steps += 1
 		_check(t + " before", st.to_array(), _golden_state(s["before"]))
-		var alloc := L2Data.alloc_of(s["alloc"])
-		var spoof := L2Data.spoof_of(s["spoof"])
+		var alloc := L3Data.alloc_of(s["alloc"])
+		var spoof := L3Data.spoof_of(s["spoof"])
 		if is_naive:
-			var nd := L2Rules.naive_decide(leg, i, st)
-			_check(t + " naive alloc", _cells(nd["alloc"]["ghost"]), s["alloc"]["ghost"])
-			_check(t + " naive spoof", [nd["spoof"].x, nd["spoof"].y] if nd["spoof"] != L2Rules.NONE else null, s["spoof"])
-		var res := L2Rules.resolve(leg, i, st, leg["raids"][i]["cands"][L2Config.REVEAL], alloc, spoof)
-		var ns: L2State = res["state"]
+			var nd := L3Rules.naive_decide(leg, i, st)
+			_check(t + " naive ghost", _cells(nd["alloc"]["ghost"]), s["alloc"]["ghost"])
+			_check(t + " naive spoof", [nd["spoof"].x, nd["spoof"].y] if nd["spoof"] != L3Rules.NONE else null, s["spoof"])
+		_check_levers(t, leg, st, alloc)
+		var res := L3Rules.resolve(leg, i, st, leg["raids"][i]["cands"][L3Config.REVEAL], alloc, spoof)
+		var ns: L3State = res["state"]
 		_check(t + " touches", _touched(res["touches"]), s["touched"])
+		_check(t + " tier", L3Rules.tier(st.home_hp, ns.home_hp, (res["touches"] as Array).size()), s["tier"])
 		_check(t + " after raid", ns.to_array(), _golden_state(s["after_raid"]))
-		var repairs := L2Data.cells(s["repairs"])
-		if is_naive and ns.home_hp > 0 and i < L2Config.RAIDS - 1:
-			_check(t + " naive repairs", _cells(L2Rules.naive_repairs(leg, ns)), s["repairs"])
-		var after: L2State = ns
-		if i < L2Config.RAIDS - 1 and ns.home_hp > 0:
-			after = L2Rules.between(leg, ns, alloc["dark"], repairs)
-			var parts := L2Rules.between_parts(leg, ns, alloc["dark"], repairs)
-			_check(t + " between parts equal between", (parts["state"] as L2State).to_array(), after.to_array())
+		var after: L3State = ns
+		if s["between"] == null:
+			_check(t + " no between step after a breach or the last raid", ns.home_hp <= 0 or i == L3Config.RAIDS - 1, true)
+		else:
+			var b: Dictionary = s["between"]
+			var repairs := L3Data.cells(b["repairs"])
+			var buy: String = "" if b["buy"] == null else String(b["buy"])
+			if is_naive:
+				_check(t + " naive repairs", _cells(L3Rules.naive_repairs(leg, ns)), b["repairs"])
+				_check(t + " naive intensity and buy", [b["intensity"], buy], ["NORMAL", ""])
+			var parts := L3Rules.between_parts(leg, ns, alloc["dark"], repairs, String(b["intensity"]), buy)
+			after = parts["state"]
+			_check(t + " between = between_parts", L3Rules.between(leg, ns, alloc["dark"], repairs, String(b["intensity"]), buy).to_array(), after.to_array())
 		_check(t + " after", after.to_array(), _golden_state(s["after"]))
-		_check(t + " score", L2Rules.score(leg, after), s["score_after"])
+		_check(t + " score", L3Rules.score(leg, after), s["score_after"])
 		st = after
 		if ns.home_hp <= 0:
 			break
