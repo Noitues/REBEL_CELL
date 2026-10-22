@@ -66,7 +66,7 @@ ribbons = {
 "width": 0.12,
 "y0": -8.0,
 "y1": 11.0,
-"z_ground": 0.7
+"z_ground": 0.22
 }
 hq = {
 "ahead_k": 1.0,
