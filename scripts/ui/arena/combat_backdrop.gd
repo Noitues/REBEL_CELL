@@ -85,6 +85,8 @@ var _won_tween: Tween = null
 var city: CityView3D = null
 var shot: Dictionary = {}
 var _city_ready: bool = false
+## LOOK-TOOLBOX: the close-up's view cut (BackdropCatalog.view_cut; empty: none).
+var _cut: Dictionary = {}
 var _won_lights: SiteWonLights = null
 var _site_lots: Dictionary = {}
 var _ext_job: Dictionary = {}
@@ -511,8 +513,11 @@ func _frame_city() -> void:
 	if shot.has("subject") and cam.perspective():
 		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"])
 		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
+		_cut = cut
 	else:
 		city.set_view_cut(Callable())
+		_cut = {}
+	cut_landmarks(city, _cut, _keep_landmarks())
 	city.set_far_lod(far_keep(CityView3D.CONFIG, shot), 0.0)
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
@@ -603,6 +608,8 @@ func _light_city() -> void:
 	apply_post(city.post_material(), cfg)
 	aim_key(city, cfg.backdrop_key_cam)
 	hide_features(city, cfg.backdrop_hide_features)
+	declutter(city, cfg, String(shot.get("focus", "")))
+	cut_landmarks(city, _cut, _keep_landmarks())
 	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure * (cfg.backdrop_site_exposure_gain if String(shot.get("focus", "")) == "site" else 1.0))
 	_mat.set_shader_parameter(&"city_white", cfg.backdrop_white)
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
@@ -633,6 +640,59 @@ static func hide_features(view: CityView3D, names: PackedStringArray) -> void:
 		var part := view.features.get_node_or_null(NodePath(nm)) as Node3D
 		if part != null:
 			part.visible = false
+
+
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): the close-up drops the whole-city dressing (the port's gantry
+## cranes outshone the Site) when backdrop_hide_dress.
+static func declutter(view: CityView3D, cfg: CityConfig, focus: String) -> void:
+	var dress := view.dress_node()
+	if dress != null and cfg.backdrop_hide_dress:
+		dress.visible = false
+
+
+## LOOK-TOOLBOX (designer 2026-10-21: the netrun rule, "hide or flatten every obstacle between the camera and the
+## subject", holds in combat): hides each placed landmark of `view` (corp HQs, the Site landmark, staged compounds)
+## that view cut `cut` says hides the subject (BackdropCatalog.occludes on its ground centre and roof), except the
+## keys in `keep`; shows the rest again. No cut: everything shows.
+static func cut_landmarks(view: CityView3D, cut: Dictionary, keep: Array) -> void:
+	for src: Dictionary in [view.landmarks, view.compounds]:
+		for key: Variant in src:
+			var node := src[key] as Node3D
+			if node == null:
+				continue
+			var hide := false
+			if not cut.is_empty() and not keep.has(key):
+				var b := world_box(node)
+				if b.size != Vector3.ZERO:
+					var c := b.get_center()
+					hide = BackdropCatalog.occludes(Vector2(c.x, c.z), b.end.y, cut)
+					for k in 4:
+						var p := b.get_endpoint(k * 2)
+						hide = hide or BackdropCatalog.occludes(Vector2(p.x, p.z), b.end.y, cut)
+			node.visible = not hide
+
+
+## The world box of every mesh under `node` (empty when it has none).
+static func world_box(node: Node3D) -> AABB:
+	var out := AABB()
+	var first := true
+	for n in node.find_children("*", "VisualInstance3D", true, false):
+		var vi := n as VisualInstance3D
+		var b := vi.global_transform * vi.get_aabb() if vi.is_inside_tree() else vi.get_aabb()
+		out = b if first else out.merge(b)
+		first = false
+	return out
+
+
+## The landmark keys the cut never hides: the subject's own (the staged Cell compound, the fought Site's landmark,
+## the HQ's corp on a boss fight).
+func _keep_landmarks() -> Array:
+	var keep: Array = [CityView3D.CELL] if String(shot.get("focus", "")) == "compound" else []
+	if shot.has("landmark"):
+		keep.append(CityView3D.SITE_KEY)
+	if String(shot.get("focus", "")) == "hq":
+		keep.append(place.get("corp", BackdropCatalog.DEFAULT_CORP))
+	return keep
 
 
 ## LOOK-TOOLBOX: the close-up's key light from `key_cam` (camera frame: x right, y up, z toward the viewer) on every

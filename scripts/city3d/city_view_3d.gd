@@ -1780,6 +1780,11 @@ func set_ink_keep(px_rect: Rect2) -> void:
 
 ## LOOK-TOOLBOX: this view's post material (city_post), for a caller that owns a preset of its own (the combat
 ## backdrop's ink and grime: CityConfig.backdrop_post); null before the scene is built.
+## LOOK-TOOLBOX: the whole-city dressing's node (CityA2Dress: port, cranes, ships, helicopters), or null.
+func dress_node() -> Node3D:
+	return (_a2_hqs["~dress"] as Dictionary).get("node") as Node3D if _a2_hqs.has("~dress") else null
+
+
 func post_material() -> ShaderMaterial:
 	return _post
 

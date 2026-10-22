@@ -242,7 +242,12 @@ extends Resource
 @export var backdrop_site_ortho: float = 60.0
 @export var backdrop_site_lift: float = 8.0
 ## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
-@export var backdrop_canyon_share: float = 1.15
+@export var backdrop_canyon_share: float = 1.0
+## LOOK-TOOLBOX (art-pass 2026-10-21): the Cell canyon backdrop's pitch (the run page's is 19): an eye-level street
+## tipped down until the canyon walls reach the frame's top (no sky band).
+@export var backdrop_canyon_pitch_deg: float = 32.0
+## LOOK-TOOLBOX (art-pass 2026-10-21): the close-up hides the whole-city dressing (port cranes, ships, helicopters).
+@export var backdrop_hide_dress: bool = true
 ## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
 ## width, round the target's point.
 @export var backdrop_keep_radius: float = 0.16
@@ -322,6 +327,9 @@ extends Resource
 ## B2 (D1): the low camera's view cut (BackdropCatalog.view_cut): buildings nearer the eye than the subject's near face
 ## less this margin (BU), in the wedge to its sides widened by it, give way where they rise over the sight line.
 @export var backdrop_close_cut_margin: float = 14.0
+## LOOK-TOOLBOX (designer 2026-10-21): the view cut also clears every building nearer than the subject whose screen box
+## overlaps the subject's grown by this (px).
+@export var backdrop_close_cut_screen_pad: float = 24.0
 ## B2 (D1): the cut keeps the sight line from the eye to this share of the subject's height clear
 ## (0, B2 art director: its foot: an open street in front of the subject; lower roofs stay).
 @export var backdrop_close_sight_share: float = 0.0
@@ -330,7 +338,7 @@ extends Resource
 ## B2 (art director): a Site fight's subject building between the wheels: its middle at this
 ## share of the view, its height this share of the view's (35-45 %), its width at most this share.
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
-@export var backdrop_site_close_height: float = 0.44
+@export var backdrop_site_close_height: float = 0.55
 @export var backdrop_site_close_max_width: float = 0.6
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
 @export var backdrop_site_close_min_eye_bu: float = 60.0

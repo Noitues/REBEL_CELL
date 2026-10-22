@@ -57,7 +57,9 @@ func _corp_of(state: String) -> StringName:
 
 
 
-func _session(corp: StringName) -> NetrunSession:
+## LOOK-TOOLBOX: every state starts the same campaign (seed 11, `corp`), so the city (CityPlan.current_seed) is the
+## same whatever ran before in this launch or what the lab's save slot last held.
+func _campaign(corp: StringName) -> void:
 	RunManager.save_slot = "lab_hq_run"
 	# Parity S-HQRUN: every corporation's own campaign (its boss on the gate), not the locked
 	# corporations' fallback to Solace: the lab's profile (its own APPDATA) holds the unlock.
@@ -68,6 +70,10 @@ func _session(corp: StringName) -> NetrunSession:
 	RunManager.new_campaign(11, corp)
 	if added:
 		RunManager.profile.unlocks.erase(u.id)
+
+
+func _session(corp: StringName) -> NetrunSession:
+	_campaign(corp)
 	var c := RunManager.campaign
 	for e in [RC.ExploitType.INTEL, RC.ExploitType.BREACH, RC.ExploitType.VIRUS]:
 		if not c.exploits.has(e):
@@ -150,6 +156,7 @@ func _load(state: String) -> void:
 			_host.add_child(tr)
 			_city = c
 		"hq", "site", "won":
+			_campaign(corp)
 			_backdrop = CombatBackdrop.new()
 			_host.add_child(_backdrop)
 			var cd := RunManager.lookup().get_content(corp) as CorporationData

@@ -278,8 +278,8 @@ func test_the_backdrop_takes_the_city_close_up_by_tier_and_frames_the_place() ->
 	assert_eq(canyon["focus"], "compound", "DISPATCH's fight is in the canyon")
 	assert_eq(canyon["stage"], &"rebel_cell", "the canyon is staged")
 	assert_eq((canyon["camera"] as CityIsoCamera).yaw_deg, 180.0, "looking down the street")
-	assert_almost_eq((canyon["camera"] as CityIsoCamera).pitch_deg, _city.backdrop_close_pitch_deg, 0.001,
-			"LOOK-TOOLBOX (designer 2026-10-21): the canyon backdrop looks down at the close-up pitch, not the run page's")
+	assert_almost_eq((canyon["camera"] as CityIsoCamera).pitch_deg, _city.backdrop_canyon_pitch_deg, 0.001,
+			"LOOK-TOOLBOX (art-pass 2026-10-21): the canyon backdrop keeps an eye-level street at its own pitch")
 	var lost := BackdropCatalog.city_shot(_city, BackdropCatalog.place(&"solace", false, false, &"no_such_site"), lots, VIEW)
 	assert_eq(lost["focus"], "hq", "a Site without a lot falls back to the HQ")
 

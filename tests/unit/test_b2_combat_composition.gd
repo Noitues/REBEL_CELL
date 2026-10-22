@@ -107,12 +107,12 @@ func test_every_close_up_is_an_elevated_perspective_view_with_an_open_street() -
 	assert_true(bool(look["night"]), "the lit night look keeps the round 11 rain")
 
 
-func test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_percent_tall() -> void:
+func test_a_site_fight_frames_its_building_centred_between_the_wheels_50_to_60_percent_tall() -> void:
 	# Art director (round 31 combat_meridian, round 41 typical_v4): the fought Site's own building,
 	# centred between the wheels, 35-45 % of the frame's height; a low one gets a closer dolly.
 	var cfg := CityView3D.CONFIG
 	var size := Vector2(1920, 1080)
-	assert_between(cfg.backdrop_site_close_height, 0.35, 0.45)
+	assert_between(cfg.backdrop_site_close_height, 0.5, 0.6, "art-pass 2026-10-21: 50-60 % at the 30 degree pitch (was 35-45 at 8)")
 	var checked := 0
 	for corp: StringName in [&"meridian", &"solace", &"halcyon", &"orbital"]:
 		var cd := RunManager.lookup().get_content(corp) as CorporationData
@@ -133,7 +133,7 @@ func test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_p
 				var px := BackdropCatalog.projected_box(cam, shot["subject"])
 				var h := px.size.y / size.y
 				var w := px.size.x / size.x
-				assert_true((h >= 0.35 and h <= 0.45) or (h < 0.35 and w >= cfg.backdrop_site_close_max_width - 0.02),
+				assert_true((h >= 0.5 and h <= 0.6) or (h < 0.5 and w >= cfg.backdrop_site_close_max_width - 0.02),
 					"%s %s %s: the subject %.2f of the height (or as wide as the gap: %.2f)" % [corp, site, b, h, w])
 				assert_almost_eq(px.get_center().x / size.x, 0.5, 0.02, "%s %s: centred between the wheels" % [corp, site])
 				assert_almost_eq(px.get_center().y / size.y, cfg.backdrop_site_close_centre.y, 0.03, "%s %s: above the hand" % [corp, site])
@@ -454,3 +454,32 @@ func test_the_tutorial_is_a_cyan_edged_terminal_never_a_sticker() -> void:
 	for c in tut.find_children("*", "", true, false):
 		assert_false(c is VinylSticker or c is VerbSticker or c is SendItSticker, "no sticker in it (%s)" % c.name)
 	await _close(scene)
+
+
+func test_the_close_up_cuts_whatever_stands_between_the_eye_and_the_subject() -> void:
+	# LOOK-TOOLBOX (designer 2026-10-21): the netrun rule holds in combat: anything nearer than the subject that covers
+	# it on screen gives way; what stands behind it stays.
+	var cfg := CityView3D.CONFIG
+	var size := Vector2(1920, 1080)
+	var cd := RunManager.lookup().get_content(&"orbital") as CorporationData
+	var lots := CityLayout.site_points(cd)
+	var ids: Array = lots.keys()
+	ids.sort()
+	var site: StringName = ids[0]
+	var c := CityIsoCamera.lot_to_world(cfg, lots[site])
+	var shot := BackdropCatalog.site_shot(cfg, &"orbital", site, lots, size, AABB(c - Vector3(12, 0, 9), Vector3(24, 8, 18)))
+	var cam: CityIsoCamera = shot["camera"]
+	var sub: AABB = shot["subject"]
+	var cut := BackdropCatalog.view_cut(cfg, cam, sub)
+	var eye := cam.eye()
+	var mid := sub.get_center()
+	var near := Vector2(lerpf(eye.x, mid.x, 0.85), lerpf(eye.z, mid.z, 0.85))
+	assert_true(BackdropCatalog.occludes(near, 6.0, cut), "a low block just in front of the subject gives way")
+	var behind := Vector2(mid.x + (mid.x - eye.x) * 0.5, mid.z + (mid.z - eye.z) * 0.5)
+	assert_false(BackdropCatalog.occludes(behind, 200.0, cut), "a tower behind the subject stays")
+
+
+func test_the_cell_canyon_frames_its_compound_as_the_subject() -> void:
+	var canyon := BackdropCatalog.city_shot(CityView3D.CONFIG, BackdropCatalog.place(&"rebel_cell", true, false), {}, Vector2(1920, 1080))
+	assert_true(canyon.has("subject"), "the view cut clears the street in front of the canyon")
+	assert_true((canyon["subject"] as AABB).has_volume(), "the compound's footprint box")
