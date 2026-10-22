@@ -9,33 +9,22 @@
 shader_type spatial;
 render_mode unshaded, cull_front, depth_draw_opaque;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX module 5: the hull's width and screen offset (rc_ink), its grain (rc_look's sin noise).
+#include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_ink.gdshaderinc"
 
 uniform vec4 ink : source_color = vec4(0.047, 0.039, 0.086, 1.0);
 uniform float width_px = 2.5;
 uniform float wobble : hint_range(0.0, 1.0) = 0.35;
 uniform float wobble_scale = 2.2;
 
-float h31(vec3 p) {
-	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-}
-
-float vn3(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(h31(i), h31(i + vec3(1, 0, 0)), u.x), mix(h31(i + vec3(0, 1, 0)), h31(i + vec3(1, 1, 0)), u.x), u.y);
-	float b = mix(mix(h31(i + vec3(0, 0, 1)), h31(i + vec3(1, 0, 1)), u.x), mix(h31(i + vec3(0, 1, 1)), h31(i + vec3(1, 1, 1)), u.x), u.y);
-	return mix(a, b, u.z);
-}
-
 void vertex() {
 	vec3 wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	float w = width_px * (1.0 + wobble * (vn3(wp * wobble_scale) - 0.5) * 2.0);
+	float w = rcl_hull_width(width_px, wobble, rcl_vnoise3_sin(wp * wobble_scale));
 	vec4 clip = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
 	vec3 n_view = normalize((MODELVIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vec2 n_clip = normalize((PROJECTION_MATRIX * vec4(n_view, 0.0)).xy + vec2(1e-5));
-	clip.xy += n_clip * w * 2.0 / VIEWPORT_SIZE * clip.w;
-	POSITION = clip;
+	POSITION = rcl_hull_clip(clip, n_clip, w, VIEWPORT_SIZE);
 }
 
 void fragment() {
