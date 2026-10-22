@@ -241,19 +241,45 @@ static func hq_layout(manifest: Dictionary, layout: HqCompoundLayoutData, at: Tr
 	var k := HqSolaceMaterials.unit_k(manifest)
 	var layer_z := {}
 	var rooms: Array = []
+	var h: Dictionary = config().hq
 	if layout != null:
 		var rows := layout.layer_rows()
 		for l in range(1, rows + 1):
 			var z := 0.0
 			for sl in layout.slots_per_layer:
-				var p := layout.slot_position(l, sl)
-				z += p.y
-				rooms.append(Vector3(p.x, -p.z, p.y) / k)
+				z += layout.slot_position(l, sl).y
 			layer_z[l] = z / float(layout.slots_per_layer) / k
-		rooms.append(Vector3(layout.central_server.x, -layout.central_server.z, layout.central_server.y) / k)
+			# the route node of this layer is the inward window of its floor on both strands (hq_graph.py: phi_in, win_z): its lit
+			# interior is the route room whose emission stays clean
+			var f := roundf((float(layer_z[l]) - float(h["node_over_floor"]) - float(h["podium"])) / float(h["floor_h"]))
+			for tw in 2:
+				rooms.append(_tube_pt(h, tw, float(h["podium"]) + f * float(h["floor_h"]) + float(h["win_zc"]), _phi_in(h, tw), float(h["tube_r"])))
+		var cs := layout.central_server
+		rooms.append(Vector3(cs.x, -cs.z, cs.y) / k)
 	# plate = M * (at^-1 * world): x_b = lx / k, y_b = -lz / k, z_b = ly / k
 	var m := Transform3D(Basis(Vector3(1.0, 0.0, 0.0) / k, Vector3(0.0, 0.0, 1.0) / k, Vector3(0.0, -1.0, 0.0) / k), Vector3.ZERO)
 	return {"kind": KIND_HQ, "unit_k": k, "at": at, "w2p": m * at.affine_inverse(), "layer_z": layer_z, "rooms": rooms}
+
+
+## The plate-frame point on strand `tw` (0 = A, 1 = B) at height z, angle phi round the tube from its front normal, `r` from its centre
+## line (hq_graph.tube_pt).
+static func _tube_pt(h: Dictionary, tw: int, z: float, phi: float, r: float) -> Vector3:
+	var f := (z - float(h["podium"])) / float(h["floor_h"])
+	var th := deg_to_rad(float(h["theta0"]) + float(h["twist"]) * f)
+	var rv := Vector2(sin(th), cos(th))
+	if tw == 1:
+		rv = -rv
+	var c := rv * float(h["radius"])
+	var n := Vector2(cos(th), -sin(th))
+	var tx := Vector2(n.y, -n.x)
+	var p := c + (n * cos(phi) + tx * sin(phi)) * r
+	return Vector3(p.x, p.y, z)
+
+
+## The angle round strand `tw`'s tube of its inward window (hq_graph.phi_in: toward the other strand, turned toward the floor front).
+static func _phi_in(h: Dictionary, tw: int) -> float:
+	var a := PI * 0.5 - deg_to_rad(float(h["face_front_deg"]))
+	return a if tw == 0 else -a
 
 
 ## The plate height of the node row of route layer `f` (fractional): linear between the layers, past either end at the end slope.
@@ -380,13 +406,20 @@ static func apply_to_material(m: ShaderMaterial, look: Dictionary) -> bool:
 	var names := _declared(m.shader)
 	if not names.has(&"bl_strength"):
 		return false
+	# a street look goes on the street shaders (they declare bl_front), an HQ look on the helix shaders (bl_w2p); the others stay off
+	var hq := StringName(look.get("kind", &"")) == KIND_HQ
+	if not names.has(&"bl_w2p" if hq else &"bl_front"):
+		m.set_shader_parameter(&"bl_strength", 0.0)
+		if names.has(&"bl_mode"):
+			m.set_shader_parameter(&"bl_mode", 0)
+		return true
 	var u: Dictionary = look.get("uniforms", {})
 	for k: StringName in u:
 		if names.has(k):
 			m.set_shader_parameter(k, u[k])
 	if names.has(&"bl_mode"):
 		var roles: Dictionary = look.get("roles", config().hq["roles"])
-		m.set_shader_parameter(&"bl_mode", int(roles.get(String(m.resource_name), 0)) if StringName(look.get("kind", &"")) == KIND_HQ else 0)
+		m.set_shader_parameter(&"bl_mode", int(roles.get(String(m.resource_name), 0)) if hq else 0)
 	return true
 
 

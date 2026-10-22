@@ -43,7 +43,7 @@ func validate() -> PackedStringArray:
 			errs.append("ribbons.%s missing" % k)
 	for k: String in ["pink", "plum", "rough", "seed", "cover_k", "veins", "edge_k", "hatch_k", "vscale", "vw", "ew", "hatch_scale", "swell", "tongue",
 			"reach", "ahead_k", "win_dim", "win_r", "radius", "floor_h", "theta0", "twist", "tube_r", "podium", "stair_deg", "stair_w", "front_over_node",
-			"decision_lift", "room_r", "roles"]:
+			"decision_lift", "room_r", "roles", "face_front_deg", "node_over_floor", "win_zc"]:
 		if not hq.has(k):
 			errs.append("hq.%s missing" % k)
 	for k: String in ["h", "r", "k", "emission", "scale", "below"]:

@@ -200,7 +200,7 @@ func _next() -> void:
 				# The plate's world is Blender's own street (art seed 1), not this city: keep OUR focus and yaw (the street frame)
 				# and take the plate's pitch, distance, lens and shift.
 				var ours := view.rig.pose
-				pp = NetrunPose.make(ours.F, ours.yaw, pp.pitch, pp.dist, pp.lens, pp.sx, pp.sy)
+				pp = NetrunPose.make(ours.F, ours.yaw, pp.pitch, pp.dist * float(_args.get("dist-k", "1")), pp.lens, pp.sx, pp.sy)
 			view.rig.set_pose(pp)
 	_phase = "settle"
 

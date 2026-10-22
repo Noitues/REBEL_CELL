@@ -69,12 +69,14 @@ hq = {
 "decision_lift": 28.0,
 "edge_k": 45.0,
 "ew": 1.1,
+"face_front_deg": 35.0,
 "floor_h": 12.5,
 "front_over_node": 4.0,
 "hatch_k": 0.2,
 "hatch_scale": 0.12,
 "pink": [1.0, 0.0612, 0.305],
 "plum": [0.03, 0.012, 0.024],
+"node_over_floor": 2.25,
 "podium": 9.9,
 "radius": 40.0,
 "reach": 45.0,
@@ -98,6 +100,7 @@ hq = {
 "vscale": 0.24,
 "vw": 0.065,
 "win_dim": 0.03,
+"win_zc": 5.4,
 "win_r": 48.0
 }
 haze = {
