@@ -67,6 +67,10 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 @export var word_baseline_jitter: float = 0.035
 @export var word_size_jitter: float = 0.04
 @export var word_wobble_em: float = 0.012
+## A letter's sideways slip (share of the font px; designer 2026-10-21: the hand's natural errors) and a word's first
+## letter's size (designer 2026-10-21: the initial written bigger).
+@export var word_x_jitter: float = 0.03
+@export var word_initial_scale: float = 1.22
 
 
 static var _default: RcPencilLook = null

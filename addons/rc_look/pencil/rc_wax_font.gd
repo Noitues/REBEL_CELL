@@ -4,7 +4,9 @@ extends RefCounted
 ## (assets/fonts/RcWax-Regular.ttf, Palette.FONT_PENCIL) from one stroke source by
 ## addons/rc_look/tools/build_wax_font.py, so a word laid here has the advances Font.get_string_size measures.
 ## `layout` gives a word's strokes in writing order (local px, baseline at y 0, y down) with a seeded hand on top of the
-## face's own (KitNoise hashes, never an RNG): each letter turns, drops and sizes a little, each stroke wobbles.
+## face's own (KitNoise hashes, never an RNG): each letter turns, shifts both ways and sizes a little, each stroke
+## wobbles, and each word's first letter is written bigger (designer 2026-10-21), grown up and back about its
+## baseline's right end so no advance changes (the TrueType face's measure still holds).
 ## Characters the face lacks come back as `missing` (the caller draws them in the TrueType face). Pure.
 
 const STROKES_PATH := "res://addons/rc_look/pencil/rc_wax_strokes.json"
@@ -62,21 +64,30 @@ static func layout(text: String, px: float, seed: int, look: RcPencilLook) -> Di
 		var adv := float(g["adv"]) * k
 		var turn := KitNoise.h11(seed, i, 1) * look.word_letter_turn
 		var drop := KitNoise.h11(seed, i, 2) * look.word_baseline_jitter * px
+		var nudge := KitNoise.h11(seed, i, 4) * look.word_x_jitter * px
 		var size := 1.0 + KitNoise.h11(seed, i, 3) * look.word_size_jitter
 		var pivot := Vector2(pen + adv * 0.5, -cap * 0.5)
+		if is_initial(text, i):
+			size *= look.word_initial_scale
+			pivot = Vector2(pen + adv, 0.0)
 		var s_i := 0
 		for flat: Array in g["strokes"]:
 			var pts := PackedVector2Array()
 			var n := flat.size() / 2
 			for j in n:
 				var p := Vector2(pen + float(flat[2 * j]) * k, -float(flat[2 * j + 1]) * k)
-				p = pivot + ((p - pivot) * size).rotated(turn) + Vector2(0.0, drop)
+				p = pivot + ((p - pivot) * size).rotated(turn) + Vector2(nudge, drop)
 				pts.append(p)
 			strokes.append(_wobble(pts, seed * 31 + i * 7 + s_i, look.word_wobble_em * px, px))
 			letter.append(i)
 			s_i += 1
 		pen += adv
 	return {"strokes": strokes, "letter": letter, "x": xs, "missing": missing, "width": pen}
+
+
+## True when letter `i` of `text` starts a word (the first character, or one after a space).
+static func is_initial(text: String, i: int) -> bool:
+	return i < text.length() and text[i] != " " and (i == 0 or text[i - 1] == " ")
 
 
 ## `pts` moved sideways by a smooth seeded wobble of up to `amp` px (waves about a third of `px` long).

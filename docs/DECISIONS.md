@@ -9811,4 +9811,10 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
   `RcPencilPressure.nib`), a box-cap start, a smooth end taper and fade (no raggedness). The TTF is 437 KB, up from
   150 KB. The look lab takes `--window=1920x1080`, so its shots render the vectors at 1080p and not at the 720p
   canvas. This supersedes the hand-built entry's chisel cut, end rag and 20 % thin end.
+- **The hand on each letter (designer 2026-10-21, relayed).** T's crossbar runs further behind the stem. A word's
+  first letter is written 1.22x (`word_initial_scale`), grown up and back about its baseline's right end, so no advance
+  changes and Font measuring still matches. Each letter slips sideways (`word_x_jitter` 0.03 of the font px) and
+  drops and turns a bit more (`word_baseline_jitter` 0.05, was 0.035; `word_letter_turn` 0.09, was 0.06), all from the
+  word's own hash (`RcWaxFont.layout`'s seed, the text's hash), so a word draws the same every frame. The ink of a
+  line's first initial may reach a little left of its measured box.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.

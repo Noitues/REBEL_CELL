@@ -308,3 +308,36 @@ func test_a_hero_word_is_fatter_with_a_lighter_core() -> void:
 	assert_gt(hero.wax_mark().local_width, plain.wax_mark().local_width * 1.2, "a hero word's wax is fatter")
 	assert_gt(hero.wax_mark().core_light, 0.0, "a hero word has a lighter core")
 	assert_eq(plain.wax_mark().core_light, 0.0, "a plain word has none")
+
+
+# --- The hand on each letter (designer 2026-10-21) -----------------------------------------------------------------
+
+func test_a_words_initials_are_bigger_and_its_letters_slip_by_a_seeded_hand() -> void:
+	var a := RcWaxFont.layout("HIT IT", 40.0, 3, LOOK)
+	var b := RcWaxFont.layout("HIT IT", 40.0, 3, LOOK)
+	assert_eq(a["strokes"], b["strokes"], "the same word and seed draws the same hand")
+	assert_ne(a["strokes"], RcWaxFont.layout("HIT IT", 40.0, 4, LOOK)["strokes"], "another seed, another hand")
+	assert_almost_eq(float(a["width"]), Palette.pencil().get_string_size("HIT IT", HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x, 1.0,
+		"the initials change no advance: the face's measure holds")
+	assert_true(RcWaxFont.is_initial("HIT IT", 0) and RcWaxFont.is_initial("HIT IT", 4))
+	assert_false(RcWaxFont.is_initial("HIT IT", 1) or RcWaxFont.is_initial("HIT IT", 3))
+	var plain := LOOK.duplicate() as RcPencilLook
+	plain.word_initial_scale = 1.0
+	var h_big := _letter_height(a, 0)
+	var h_plain := _letter_height(RcWaxFont.layout("HIT IT", 40.0, 3, plain), 0)
+	assert_gt(h_big, h_plain * 1.15, "the first letter is written bigger")
+	assert_almost_eq(_letter_height(a, 1), _letter_height(RcWaxFont.layout("HIT IT", 40.0, 3, plain), 1), 0.01,
+		"the others keep their size")
+
+
+func _letter_height(lay: Dictionary, i: int) -> float:
+	var lo := INF
+	var hi := -INF
+	var strokes: Array[PackedVector2Array] = lay["strokes"]
+	var letter: PackedInt32Array = lay["letter"]
+	for k in strokes.size():
+		if letter[k] == i:
+			for p in strokes[k]:
+				lo = minf(lo, p.y)
+				hi = maxf(hi, p.y)
+	return hi - lo
