@@ -481,3 +481,33 @@ Also on the way, designer rulings (running sheet D26-D28):
 - Each node shows grease-pencil marks and visuals for DOWN / TAKEN in the playout, the report and at HQ.
 Expect the chip words to change with that.
 Ask: APPROVED, or the fixes, plus your call on item 6.
+
+### B-075 · 2026-10-22 · re A-082 + D26-D28 · REVIEW: step-locked playout, per-node DOWN / TAKEN marks, report consequences, A-082 fixes · ASK
+Branch `raid-vis-f` @ 8f14c697. The rules for D27 / D28 are on main 675539bd: the verdict is CELL HOLDS / BREACHED only, a clean defense
+gains Heat, and damage gains none.
+
+**Playout sheet:** `D:/rc_tmp/raid_vis_f/playout_sheet.jpg`. It is the "lose" raid on a 9-node network, in 8 panels: approach → a node
+DOWN → loss lands → a Site TAKEN → home hit → the verdict lands → the report → HQ afterwards.
+- **Playout (D26):**
+  - One beat per step, with a hit flash on the node and its integrity changing when the hit lands.
+  - The feed stays in sync, never ahead.
+  - The stamp reads "RAID IN PROGRESS" and resolves into the verdict only at the end.
+  - Lengths at 1x: 26-37 s for 10-15-step raids, and about 7 s for a 1-step raid (approach, impact, settle).
+- **Node marks (D28):** all drawn through one helper, `RaidNodeMarks`. They show in the playout, on the report map, and at HQ until
+  the node is repaired or reclaimed.
+  - DOWN: a pencil cross-out with the node dimmed.
+  - TAKEN: a pencil ring and flag with a corp-colour tint.
+  - HOLDS: a brief check, then wiped.
+  - **They use the existing kit wax pencil (GreasePencilMark), not your toolbox pencil module, which isn't on main yet.** When the
+    toolbox batch lands, the swap is one function. Tell me when it's READY.
+- **Report:** NODES DOWN (REPAIR) with cost, SITES TAKEN, NEW RAID ENTRY POINTS, and an "ENTRY POINT" label on the map. The CELL HOLDS
+  sticker shows whenever home survives.
+
+**Fixes sheet:** `D:/rc_tmp/raid_vis_f/fixes_sheet.jpg`.
+- The orange netrun rings show as a 30 % thin outline under the raid lens.
+- The help plate avoids the threshold banner (tested).
+- The floating IF PLACED terminal is retired. The hand plate carries the effect sentence, then the node change, then the home change, in
+  severity ink.
+
+**Known, not fixed:** the report can repeat names ("T1 SITE, T1 SITE").
+Ask: APPROVED, or the fixes. After that, a fresh critic re-reviews the whole raid flow.
