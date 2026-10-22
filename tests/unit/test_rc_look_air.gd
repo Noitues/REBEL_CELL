@@ -18,8 +18,8 @@ func test_a_bad_preset_is_reported() -> void:
 	p.height = 0.0
 	p.high = 2.0
 	cfg.presets = {&"day": p}
-	# missing night + height + high
-	assert_eq(cfg.validate().size(), 3, str(cfg.validate()))
+	# missing night + solace_night + height + high
+	assert_eq(cfg.validate().size(), 4, str(cfg.validate()))
 
 
 func test_air_grows_with_distance_and_thins_with_height() -> void:
@@ -74,6 +74,18 @@ func test_night_air_keeps_the_skyline_dark() -> void:
 	assert_lt(RcLookAir.amount(p, 20.0, 0.0), 0.05, "the near plane (20 BU) is not lifted")
 	var far := RcLookAir.mix(Palette.DESK_DARK, p.air_color(), RcLookAir.amount(p, 480.0, 0.0))
 	assert_lt(Palette.luminance(far), Palette.luminance(RcLookAir.sky(p, 0.02)) * 0.8, "far towers darker than the sky")
+
+
+func test_solace_night_is_the_designers_air_b() -> void:
+	# Designer DIRECTION_REVIEW 0f336345, 82c92714: air-B on the Solace HQ page (start 150 BU, sRGB (0.12, 0.10, 0.18), density 0.004).
+	var p := RcLookAir.preset(&"solace_night")
+	assert_not_null(p, "the solace_night preset ships")
+	assert_almost_eq(p.start, 150.0, 1e-6)
+	assert_almost_eq(p.density, 0.004, 1e-9)
+	assert_true(p.air_color().is_equal_approx(Color(0.12, 0.1, 0.18)), "the dark violet air")
+	assert_eq(RcLookAir.amount(p, 150.0, 0.0), 0.0, "nothing inside 150 BU: the helix and plaza stay clear")
+	var night := RcLookAir.preset(&"night")
+	assert_lt(Palette.luminance(p.air_color()), Palette.luminance(night.air_color()), "darker than the night air: it never greys the city up")
 
 
 func test_the_air_pass_carries_the_preset() -> void:
