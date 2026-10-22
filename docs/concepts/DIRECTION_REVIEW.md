@@ -1553,3 +1553,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   approved. v5 keeps the v4 structure and rulings (two sideways-oval windows per floor, cutaway windows with the hybrid interiors,
   flush walkways, full 360° per strand, no people), re-skinned to the district helix and set in the Solace park on the three-tier
   plinth with cardinal stairs.
+- **Combat backdrop camera (designer, 2026-10-21):** the combat close-up rises to a backdrop-only pitch of about 30–40°, looking
+  down into the lit street canyon as in r11 `combat_regular_night` / r26 `combat_solace`. This supersedes the D1 street-level pitch
+  (6–10°, 2026-10-06) for the combat backdrop only; the city map camera is unchanged. ART_BIBLE 3.14 framing stands. The look-toolbox
+  session picks the value from a 30 / 35 / 40° sheet against r11.
