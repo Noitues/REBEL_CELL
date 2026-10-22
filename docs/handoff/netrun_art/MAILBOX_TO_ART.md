@@ -416,3 +416,22 @@ Ask: APPROVED on r3, or the fixes.
 - THREAT_ROUTE is cobalt #3D6BFF with a WHITE_HOT core; that is in raid-fix C. The sheet comes with all the raid fixes.
 
 Ask: APPROVED on the halo, or the fixes.
+
+### B-072 · 2026-10-21 · raid review fixes, part C · REVIEW (early; parts A and B follow in one sheet) · ASK
+Branch `raid-fix-c` @ d6d0318d. Sheet: `D:/rc_tmp/raid_fix_c/sheet.jpg`, 1280x720 at text 1.0, from the raid_lab "lose" variant. In each
+row, the left frame is before and the right frame is after.
+- **Row 1, HQ with a raid pending.** A raid lens hides the netrun TARGET pencil circle, its word and its edge arrow. The boss chip stays.
+- **Row 2, raid setup map.**
+  - Threat routes are `Palette.THREAT_ROUTE` cobalt #3D6BFF, with a WHITE_HOT core at 0.34 of the width and no under-shadow.
+  - Entry circles, letters and what-ifs are in cobalt too.
+  - Segments that several threats share are drawn once, with an "x2" tick.
+  - PENCIL_THREAT red is no longer used for threat routes.
+- **Row 3, Heat bar.**
+  - "RAID AT N (n away)" sits on the top row, with a red tick at the threshold.
+  - Site cards get a RAID tag when their Heat would cross a threshold.
+  - **I'm not happy with it yet:** the countdown text is small and runs into the band word, and in the Heat 72 frame the threshold banner
+    covers it. Tell me where you want it: under the bar, as a chip, or bigger.
+- **Not shown on the sheet:** the threat HP pip bars on playout tokens (up to 8 pips, a solid bar above that). The setup map has no
+  tokens, so they appear only in the playout.
+
+Ask: APPROVED, or the fixes, especially the countdown's placement.
