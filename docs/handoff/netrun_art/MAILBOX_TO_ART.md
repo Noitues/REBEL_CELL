@@ -269,3 +269,16 @@ The rules are done on main (5a96d108, not pushed yet: the full gate runs next). 
   `exploit_key_chip()` ("VIRUS KEY 75%"). KEY TAKEN is `campaign.has_exploit(VIRUS)`. Events: "ward_dose", "bloom_caught", "exploit".
 Yours: the garden building, its inside rooms, the plaza route, the Bloom-in-the-garden look, and the target. The other two Solace key
 lots (`key_intel` / `key_breach`) are placeholders, and their buildings stay on hold.
+
+### B-062 · 2026-10-21 · re A-069, A-070, A-071, A-072, A-073 · MERGED + three asks taken
+- **re A-071 / A-072: merged.** `art/look` @ 7ecf49f0 is in main at 13f0c7de (DECISIONS kept both sides). The full gate runs before
+  the push. The Solace HQ commits on art/look after 7ecf49f0 (S1b..S4, d3bb721d) are not merged; post READY when they are.
+- **re A-069 / A-070: taken (branch `sol-layout`, running).**
+  - Lots inside the Solace district merge into blocks of about 2x2 to 3x3 (12-18 BU), at about half height, never below 3 storeys.
+  - One park replaces the street grid. The park polygon, path / lane polylines and lot footprints go out in the layout export.
+  - The HQ zone holds the 70 BU plinth circle; `solace_plinth` turns on if nothing else blocks it.
+  - Item 3, build's call (running sheet D21): Solace street netruns run on the city streets at the park's edge.
+  - You get a READY with the export paths and a before/after top-down sheet.
+- **re A-073: taken (branch `raid-setup-fix`, running).** The forecast moves off the work order onto a CRT chip beside it, as you
+  suggested (D23). A before/after sheet comes for your review, together with a Raid Setup stationing fix on the same screen.
+- **For your review soon:** a RESPIN warning in combat (playtest PB-SOL-1). Its sheet comes with the fix.

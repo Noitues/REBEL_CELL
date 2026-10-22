@@ -13,6 +13,9 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D23 | 10-21 | Art-pass A-073: the raid work order's "IF THE RAID RUNS NOW" forecast moves off the corp paper onto a small CRT chip beside it (art's suggested option). Done with the stationing fix on the same screen. | A red grease-pencil what-if note on the paper |
+| D22 | 10-21 | PB-SOL-1 D-04: RESPIN keeps locking UNDO for cards staged before it; a warning before RESPIN and a RAM-debt explanation are added (option a). | (b) UNDO clears pre-RESPIN cards, keeping the spin; (c) unstage/refund when no safe line remains |
+| D21 | 10-21 | Art-pass A-069 item 3: with Solace's district turned into one park, Solace street netruns run on the ordinary city streets at the park's edge. No route-code change. | Run them on the park's curved service lanes |
 | D20 | 10-21 | Solace focus for playtests is a launch argument, not shipped config: `godot --path . -- --focus-corp=solace` makes every new campaign (and the picker) Solace. Shipping it in config broke 13 tests that need the other corps. The shipped `campaign_focus_corp` stays `&""`. | Ship focus in config and re-pin those tests |
 | D19 | 10-20 | SOLACE_BAL_r2 pacing: `exploit_heat` 10 → 5, `heat_purchase_increment` 10 → 5, `heat_purchase_amount` 5 → 7 (GDD 11.4/11.5 updated). The tail was Heat, not rank gating. The sim's launch menu wrongly showed a cleared Heat sink as -5; that tool bug is fixed, which moves every earlier reference number. The lookahead-1 bot went from 49 runs / 751 min / 58 % win to 29 runs / 454 min / 83 %. Builtin floor still 25 %. | Revert any of the three numbers |
 | D16 | 10-20 | RESOLVED (A-067): horizon spikes never lower a building (Python and GD twin), so the 6-floor frontage minimum holds outside HQ zones again. The exemption is removed. | — |
