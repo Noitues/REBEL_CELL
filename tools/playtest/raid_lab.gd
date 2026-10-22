@@ -154,6 +154,15 @@ func _run() -> void:
 		hq.show_raid()
 		await _until(func() -> bool: return hq.arrival_ready())
 		await _shot("setup_defended", "Raid setup after a turret is placed and an operative stationed.", 90)
+	# RAID-FIX B3: a target picked and the first defense card pointed at: its effect in words.
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id and c.grid.is_active_node(id):
+			hq.select_target(id)
+			break
+	await _until(func() -> bool: return hq.arrival_ready())
+	await _frames(30)
+	hq.point_card(0)
+	await _shot("setup_card_effect", "Raid setup: a target picked, the first defense card pointed at (effect words).", 30)
 	hq.show_if_placed(0)
 	await _shot("setup_if_placed", "Raid setup: the what-if for the first defense card.", 30)
 	hq.request_start_defense()

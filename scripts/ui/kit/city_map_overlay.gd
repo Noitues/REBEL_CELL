@@ -317,6 +317,9 @@ const MARKER_WING := 0.9
 const MARKER_EDGE_WIDTH := 1.2
 ## v4 Site roof: fill alpha, keyline width (px), outline alpha and width (px), and the boss pad scale.
 const MARK_FILL_ALPHA := 0.22
+## RAID-FIX B5 (A-079): a CLAIMED Site's roof wash (CELL_TURF), about half the fill, so turf reads as a tint and
+## the focus lime stays the only solid lime.
+const MARK_FILL_ALPHA_CLAIMED := 0.11
 const MARK_KEY_WIDTH := 5.0
 const MARK_LINE_ALPHA := 0.8
 const MARK_LINE_WIDTH := 1.8
@@ -2096,7 +2099,7 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 		col = SiteMarker.greyed(col)
 	# NA-12 r2: a roof seen from far out (the whole-city zoom) can fold to a sliver the renderer cannot fill.
 	if not Geometry2D.triangulate_polygon(roof).is_empty():
-		_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA))
+		_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA_CLAIMED if col.is_equal_approx(Palette.CELL_TURF) else MARK_FILL_ALPHA))
 	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, KEYLINE_ALPHA), MARK_KEY_WIDTH, true)
 	_c.draw_polyline(closed, Color(col, MARK_LINE_ALPHA), MARK_LINE_WIDTH, true)
 	if bool(spec.get("won", false)):

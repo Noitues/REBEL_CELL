@@ -1,6 +1,10 @@
 keys,en
+"
+","
+"
     none today,    none today
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
+  SPD %d,  SPD %d
  %s Heat, %s Heat
  (INNER RING), (INNER RING)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
@@ -1093,6 +1097,7 @@ HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
 HOVER: SHOW ALL LINKS,HOVER: SHOW ALL LINKS
 HP,HP
+HP %d  DMG %d,HP %d  DMG %d
 HP %d → %d,HP %d → %d
 HP %d → 0: the hit takes the last HP,HP %d → 0: the hit takes the last HP
 HP %d/%d,HP %d/%d
@@ -1222,6 +1227,7 @@ ICE difficulty (0-%d):,ICE difficulty (0-%d):
 ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.,ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.
 IF CLEARED:,IF CLEARED:
 IF PLACED,IF PLACED
+IF PLACED on %s: %s,IF PLACED on %s: %s
 IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
 RUNS NOW:","IF THE RAID
@@ -1819,6 +1825,7 @@ No living operative or open Site: go to HQ.,No living operative or open Site: go
 No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
+Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation).,Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation).
 Not earned yet.,Not earned yet.
 Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
@@ -2014,8 +2021,8 @@ RESULT:","RAID
 RESULT:"
 RAID %d,RAID %d
 RAID // %s,RAID // %s
-RAID AT HEAT %d,RAID AT HEAT %d
 RAID AT %d (%d away),RAID AT %d (%d away)
+RAID AT HEAT %d,RAID AT HEAT %d
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID FORECAST,RAID FORECAST
 RAID IN PROGRESS,RAID IN PROGRESS
@@ -2287,6 +2294,7 @@ SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
+STATION: %s,STATION: %s
 STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS
@@ -2552,6 +2560,7 @@ Starting Bug Card,Starting Bug Card
 Station %s,Station %s
 Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.,Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.
 Stationed on %s.,Stationed on %s.
+Stationing %s on %s would change: %s.,Stationing %s on %s would change: %s.
 Stats & achievements,Stats & achievements
 Statuses & precision,Statuses & precision
 Steam Deck,Steam Deck
@@ -3312,7 +3321,9 @@ The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every 
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The Eye moves to octant %d after this turn.,The Eye moves to octant %d after this turn.
 The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
+The Heat a lost raid adds.,The Heat a lost raid adds.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
+The Schematics a repelled raid pays.,The Schematics a repelled raid pays.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"
