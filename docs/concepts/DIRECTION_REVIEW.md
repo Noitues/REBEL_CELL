@@ -1653,3 +1653,11 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Sheet: `docs/concepts/look_parity/slab/slab_sheet.png`.
 - **Street car lights (designer, 2026-10-22):** the street kit's headlight_emit and taillight_emit slots glow (headlights warm white,
   taillights red, emissive) instead of falling to solid. The toolbox sends a before | after sheet with squint rows before it ships.
+- **Street brightness gap (art-pass, 2026-10-22, from the per-band sheet `docs/concepts/look_parity/gap/`):** the gap to the plate is
+  in small bright points, not in the median. The plate has 10-40x the bright blobs per MP and about 1 % of pixels over 0.85; ours has
+  about 0. Decision facades already match on value.
+  - The fix is detail density, with no exposure lift: lit window, sign and neon trim points on the overview facades, and wet streak
+    reflections of those lights on the floor.
+  - Overview framing moves toward the plate (facades fill most of the frame, sky about 10 %).
+  - Targets per band: R-DET-2 and over_085 toward the plate, R-HUE-1 >= 3.8.
+  - This goes before module 18, so perf measures the final load.
