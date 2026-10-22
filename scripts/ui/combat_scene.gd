@@ -630,6 +630,50 @@ func nudge_wheel(wheel_id: StringName, direction: int, ring: int = RC.RingScope.
 	_submit(CombatAction.nudge(wheel_id, direction, ring))
 
 
+## PB-SOL-1 I2 (B-06 / C-05, designer default D-04 (a)): a RESPIN is a random event, so UNDO cannot cross it
+## and it commits every play staged before it. The rule stands; the player is told first.
+const RESPIN_WARN_TITLE := "RESPIN LOCKS YOUR PLAYS" # TR
+const RESPIN_WARN_QUESTION := "RESPIN now? It locks the %d plays you staged this turn." # TR
+const RESPIN_WARN_QUESTION_ONE := "RESPIN now? It locks the 1 play you staged this turn." # TR
+const RESPIN_WARN_BODY := "A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn." # TR
+const RESPIN_WARN_YES := "RESPIN" # TR
+const RESPIN_WARN_NO := "KEEP PLANNING" # TR
+
+
+## The plays a RESPIN would commit: those staged since the last random event (UNDO's own reach), 0 when none.
+func respin_commits() -> int:
+	if engine == null or not engine.has_fight() or engine.state().is_over() or not engine.can_rewind():
+		return 0
+	return engine.session.actions_since_checkpoint.size()
+
+
+## True while the RESPIN warning is on screen.
+func respin_warning_open() -> bool:
+	return _respin_warning != null and is_instance_valid(_respin_warning) and not _respin_warning.is_queued_for_deletion()
+
+
+var _respin_warning: ConfirmDialog = null
+
+
+## What the RESPIN sticker and key do: respin at once when nothing is staged, else ask first (the dialog's
+## answers are keyboard-reachable; KEEP PLANNING is the default focus and Esc answers it).
+func request_respin() -> void:
+	cancel_selection()
+	if respin_warning_open():
+		return
+	var n := respin_commits()
+	if n <= 0:
+		respin()
+		return
+	var d := ConfirmDialog.new(tr(RESPIN_WARN_QUESTION_ONE) if n == 1 else tr(RESPIN_WARN_QUESTION) % n, RESPIN_WARN_YES, RESPIN_WARN_NO, RESPIN_WARN_TITLE, tr(RESPIN_WARN_BODY))
+	d.name = "RespinConfirm"
+	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
+	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
+	d.confirmed.connect(respin)
+	_respin_warning = d
+	add_child(d)
+
+
 ## The RAM respin of your own wheel (GDD 2.5, 11.3).
 func respin() -> void:
 	cancel_selection()
@@ -1215,6 +1259,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_legend()
 		get_viewport().set_input_as_handled()
 		return
+	# PB-SOL-1 I2: the RESPIN warning is modal; its own keys (Tab, Enter, Esc) work it.
+	if respin_warning_open():
+		return
 	# PLAN-2 A-INPUT (B2): Esc / B takes back the last staged play (UNDO's rule: never past a random event)
 	# before it opens the pause menu; with nothing to take back it pauses as before.
 	if event.is_action_pressed("ui_cancel") and not event.is_echo() and can_unstage():
@@ -1276,7 +1323,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("toggle_nudge_wheel"):
 		toggle_nudge_wheel()
 	elif event.is_action_pressed("respin"):
-		respin()
+		request_respin()
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -3693,7 +3740,15 @@ const QUEUE_MIN_W := 150.0
 func _sync_queue(state: CombatState) -> void:
 	if engine.session == null:
 		return
-	_turn_queue.sync(engine.session.get_instance_id(), engine.session.history, state, _queue_label)
+	var session := engine.session
+	if _turn_queue.is_new_session(session.get_instance_id()) and not session.actions_since_checkpoint.is_empty():
+		# A fight loaded mid-turn: the staged plays come back with it (PB-SOL-1 B-14).
+		var scratch := RandomNumberGenerator.new()
+		scratch.seed = session.combat_seed
+		scratch.state = session.checkpoint_rng_state
+		_turn_queue.seed_from_checkpoint(session.get_instance_id(), session.history, session.checkpoint_state,
+			session.actions_since_checkpoint, engine.resolver, scratch, _queue_label)
+	_turn_queue.sync(session.get_instance_id(), session.history, state, _queue_label)
 
 
 ## An action's name in the list: the card, "NUDGE +1" (with the wheel when it isn't yours), "RESPIN".
@@ -4154,7 +4209,7 @@ func banner_text() -> String:
 ## wheel; cards are aimed by dragging).
 func _build_stickers() -> void:
 	var specs := [
-		["respin", "RESPIN", respin],
+		["respin", "RESPIN", request_respin],
 		["undo", "UNDO", rewind],
 	]
 	for sp in specs:

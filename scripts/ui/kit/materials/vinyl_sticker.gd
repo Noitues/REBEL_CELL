@@ -921,9 +921,10 @@ func set_state(s: State) -> void:
 	state = s
 	var id := PRESS if s == State.PRESSED else HOVER
 	if not Motion.live(id) or s == State.DISABLED:
-		if motion_running():
+		# (motion_running() is also true for the gloss sweep alone: _tween may be null then.)
+		if _tween != null and _tween.is_valid():
 			_tween.kill()
-			_tween = null
+		_tween = null
 		_apply_state_end(s)
 		return
 	var e := Motion.entry(id)

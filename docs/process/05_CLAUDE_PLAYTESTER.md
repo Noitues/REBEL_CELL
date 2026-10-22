@@ -29,6 +29,17 @@ sessions and for comparing.
 **Input limit:** Godot's drag-and-drop does not start from posted messages, so testers play cards
 by click → target (the game supports both). Keyboard, hover, right-click, scroll and chords work.
 
+**Lost-click limit (PB-SOL-1 I1, 2026-10-21):** a posted `WM_MOUSEMOVE` while the real cursor is
+elsewhere makes Windows send `WM_MOUSELEAVE` at once; Godot then drops the hovered control, and a
+`Button` presses only on a release it still counts as inside. Testers saw JACK IN, LOOT, CONTINUE,
+Quit and the like "ignore" 1-4 clicks, with Enter or a centre click working. Real-input flow tests
+(`test_pt_p1_clicks`, `_hq_clicks`, `_loot_clicks`: move, press, release through the viewport, live
+motion on, centre and every edge) pass first time on all of them, so the game takes the click.
+`click` now re-posts the move right before the press and before the release. A control that still
+drops a click after that is a harness artifact until a flow test reproduces it; confirm on a real
+mouse before filing a game bug. Remaining known limit: dialogs over a `GlassScrim` can still lose
+posted clicks (use Esc, or the keyboard answers the dialog offers).
+
 ## 2. Tiers, personas, focuses, quirks (`tools/playtest/personas.json`)
 
 **The skill tier is the main axis**: random, blind play does not get far, so how well a tester

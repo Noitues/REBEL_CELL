@@ -248,10 +248,18 @@ def click(hwnd: int, x: int, y: int, right: bool, double: bool) -> None:
     time.sleep(0.05)
     vk = 0x02 if right else VK_LBUTTON
     for i in range(2 if double else 1):
+        # A posted WM_MOUSEMOVE while the real cursor is elsewhere makes Windows send WM_MOUSELEAVE
+        # at once; Godot then drops the hovered control, and a Button only presses on a release it
+        # still counts as inside. Re-assert the position right before the press and before the
+        # release (PB-SOL-1 I1: JACK IN, LOOT, Quit and other controls "ignored" the first clicks).
+        _post(hwnd, WM_MOUSEMOVE, 0, _lp(cx, cy))
+        time.sleep(0.01)
         # Some controls read the live button state (GetKeyState), which posted messages never set.
         with HeldKeys(hwnd, [vk]):
             _post(hwnd, WM_LBUTTONDBLCLK if (double and i == 1) else down, mk, _lp(cx, cy))
-            time.sleep(0.06)
+            time.sleep(0.03)
+            _post(hwnd, WM_MOUSEMOVE, mk, _lp(cx, cy))
+            time.sleep(0.03)
         _post(hwnd, up, 0, _lp(cx, cy))
         time.sleep(0.06)
 

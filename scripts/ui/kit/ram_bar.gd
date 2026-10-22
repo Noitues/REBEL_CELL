@@ -56,6 +56,9 @@ func set_ram(value: int, maximum: int) -> void:
 
 func _refresh_tip() -> void:
 	tooltip_text = tr("RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.") % [ram, max_ram]
+	# PB-SOL-1 C-05: what a spent cost is (it reads as "debt"): gone for this turn, owed to nothing.
+	tooltip_text += "
+" + tr("A play's RAM leaves at once and comes back with the next refill: there is no debt. A RESPIN locks the plays before it.")
 	if next_turn >= 0:
 		tooltip_text += "
 " + tr("If the turn ends as planned, the next one starts with %d RAM.") % next_turn
