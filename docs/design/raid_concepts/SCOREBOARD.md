@@ -177,3 +177,24 @@ outcome breaks predictability.
 - The record chart clamps negative values to 0.
 - A truncated "lost" column.
 - A "HOLDS" stamp over 5 TAKEN nodes.
+
+## Calibration: shipped systems on the same rubric (one fresh critic; ours as unnamed X and Y)
+
+| System | W | P | N | D | C | Total | S | V |
+|---|---|---|---|---|---|---|---|---|
+| Into the Breach: enemy turn | 10 | 10 | 8 | 9 | 8 | 45 | 5 | 8 |
+| Slay the Spire: elite intents | 9 | 8 | 8 | 9 | 8 | 42 | 6 | 7 |
+| Invisible, Inc.: guard sweep / alarm | 9 | 7 | 7 | 9 | 7 | 39 | 9 | 7 |
+| FTL: combat + rebel pursuit | 7 | 5 | 7 | 8 | 8 | 35 | 8 | 7 |
+| Kingdom Rush: one wave | 8 | 5 | 8 | 6 | 6 | 33 | 8 | 8 |
+| Teamfight Tactics: one round | 6 | 4 | 6 | 8 | 7 | 31 | 8 | 7 |
+| X = M9c (low-fi mockup) | 7 | 8 | 5 | 5 | 7 | 32 | 6 | 3 (layout 6) |
+| Y = H7 Godot lab | 7 | 9 | 4 | 5 | 5 | 30 | 3 | 5 |
+
+**Findings:**
+- **Acclaimed games score 31–45** (median about 37). Only turn-based telegraph games reach 40+.
+- **Watched systems** (Kingdom Rush, TFT, FTL) score 31–35 and are carried by S and V, which sit outside the /50.
+- **Our concepts sit in the bottom third of the shipped range,** level with Kingdom Rush and TFT on the /50 but far below them on S and V.
+- **The rubric over-rewards P:** an exact table earns it cheaply and lowers D.
+- **N tops out at 8** for every shipped game.
+- **Invisible, Inc. is the only system above 7 on both P and S.** It forecasts locally and keeps the escalation unknown.
