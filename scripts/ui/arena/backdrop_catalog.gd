@@ -134,6 +134,9 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 		var at := HqCompoundStage.place(cfg, corp, m)
 		var cam := HqCompoundStage.page_camera(cfg, m, at, size)  # B2 (D1): the canyon's own perspective street view
 		cam.ortho *= cfg.backdrop_canyon_share
+		# LOOK-TOOLBOX (designer 2026-10-21): the backdrop looks down into the canyon at the close-up pitch, not the
+		# HQ run page's (no sky band over the street, no crane boom across the frame); the page keeps its own.
+		cam.pitch_deg = cfg.backdrop_close_pitch_deg
 		return {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
 	if not boss and site_lots.has(site):
 		return site_shot(cfg, corp, site, site_lots, size)

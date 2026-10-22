@@ -315,3 +315,21 @@ func test_tier_0_keeps_the_stills_ungraded_and_headless_never_builds_the_city() 
 	bd.play_won(true)
 	assert_eq(bd.won, 1.0, "the won look lands at once (reduce effects / skip)")
 	assert_true(bool(bd._mat.get_shader_parameter(&"use_mask")), "the stills keep their won-light mask")
+
+
+func test_the_close_up_hides_the_raised_decks_and_keeps_the_rails() -> void:
+	# LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): no raised road deck cuts across the wheels' gap.
+	var v := CityView3D.new()
+	v.features = CityA2Features.new()
+	var parts := {}
+	for nm in ["Roads", "Pillars", "Rails"]:
+		var n := Node3D.new()
+		n.name = nm
+		v.features.add_child(n)
+		parts[nm] = n
+	CombatBackdrop.hide_features(v, _cfg().backdrop_hide_features)
+	assert_false((parts["Roads"] as Node3D).visible, "the decks go")
+	assert_false((parts["Pillars"] as Node3D).visible, "with their pillars")
+	assert_true((parts["Rails"] as Node3D).visible, "the rails stay")
+	v.features.free()
+	v.free()

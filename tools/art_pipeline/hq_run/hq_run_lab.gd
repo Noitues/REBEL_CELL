@@ -153,7 +153,9 @@ func _load(state: String) -> void:
 			_backdrop = CombatBackdrop.new()
 			_host.add_child(_backdrop)
 			var cd := RunManager.lookup().get_content(corp) as CorporationData
-			var site: StringName = &""
+			# LOOK-TOOLBOX: the Site that carries the corp's Site landmark when there is one (the statue, dishes,
+			# SOLACE GENERAL), else the first T1 Site.
+			var site: StringName = CityLandmarks.site_of(CityView3D.CONFIG, corp) if kind != "hq" else &""
 			for sd in cd.city_grid.sites:
 				if sd != null and sd.tier == 1 and site == &"":
 					site = sd.id

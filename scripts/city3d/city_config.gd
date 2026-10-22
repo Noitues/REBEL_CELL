@@ -242,7 +242,7 @@ extends Resource
 @export var backdrop_site_ortho: float = 60.0
 @export var backdrop_site_lift: float = 8.0
 ## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
-@export var backdrop_canyon_share: float = 0.7
+@export var backdrop_canyon_share: float = 1.15
 ## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
 ## width, round the target's point.
 @export var backdrop_keep_radius: float = 0.16
@@ -269,10 +269,13 @@ extends Resource
 ## The grade's highlight shoulder: the exposed linear light that lands on white (extended Reinhard; 0: a plain
 ## clip). Keeps snow, cloud and lit roofs from blowing out at the close-up's exposure (LOOK-TOOLBOX 2026-10-21).
 @export var backdrop_white: float = 3.0
+## LOOK-TOOLBOX (2026-10-21): a Site fight's close-up exposure is backdrop_exposure times this: at the 30 degree pitch
+## its wider frame of dark tower faces sits under the concept band where the HQ shots do not.
+@export var backdrop_site_exposure_gain: float = 3.0
 @export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
 ## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
 ## concept band without a little more light).
-@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14), &"meridian": Color(1.08, 1.08, 1.1), &"orbital": Color(1.08, 1.08, 1.1)}
+@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14), &"meridian": Color(1.2, 1.2, 1.22), &"orbital": Color(1.08, 1.08, 1.1)}
 ## ... and its saturation toward the grey (1 = kept). B2 (art director): 1: the 0.6 cap is the wheel
 ## pools' only (UiScrimPools); between the wheels the subject and its neon keep full saturation.
 @export var backdrop_saturation: float = 1.0
@@ -318,7 +321,7 @@ extends Resource
 @export var backdrop_rain_alpha: float = 0.15
 ## B2 (D1): the low camera's view cut (BackdropCatalog.view_cut): buildings nearer the eye than the subject's near face
 ## less this margin (BU), in the wedge to its sides widened by it, give way where they rise over the sight line.
-@export var backdrop_close_cut_margin: float = 6.0
+@export var backdrop_close_cut_margin: float = 14.0
 ## B2 (D1): the cut keeps the sight line from the eye to this share of the subject's height clear
 ## (0, B2 art director: its foot: an open street in front of the subject; lower roofs stay).
 @export var backdrop_close_sight_share: float = 0.0
@@ -327,21 +330,34 @@ extends Resource
 ## B2 (art director): a Site fight's subject building between the wheels: its middle at this
 ## share of the view, its height this share of the view's (35-45 %), its width at most this share.
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
-@export var backdrop_site_close_height: float = 0.9
+@export var backdrop_site_close_height: float = 0.44
 @export var backdrop_site_close_max_width: float = 0.6
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
 @export var backdrop_site_close_min_eye_bu: float = 60.0
 @export var backdrop_site_close_min_fov_deg: float = 10.0
 ## ... and its focus: the city outside the block dims by this share, the ellipse (the block's
 ## shape) reaching this times its half width, the block lit by this factor.
-@export var backdrop_site_focus_dim: float = 0.05
+@export var backdrop_site_focus_dim: float = 0.45
 @export var backdrop_site_focus_reach: float = 1.2
 @export var backdrop_site_focus_lift: float = 1.8
 ## B2 b (art director): the Site block lit by its own neon instead of backdrop_site_focus_lift (kept
 ## for the stills): its windows x this, a rim of the corp colour at this strength on its edges, the
 ## street in front catching it at this strength.
-@export var backdrop_site_window_gain: float = 2.6
-@export var backdrop_site_rim_gain: float = 0.0
+@export var backdrop_site_window_gain: float = 2.0
+@export var backdrop_site_rim_gain: float = 0.35
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): the Site's building is the brightest thing in frame: the
+## close-up inside its focus ellipse times this (combat_backdrop.gdshader `subject_base`; was 0.72, a dim).
+@export var backdrop_site_subject_lift: float = 1.35
+## LOOK-TOOLBOX (ART_BIBLE 3.14): the city behind each wheel (the wheel pools) dims by this share, so the blocks
+## there read low, dark and sparsely lit (shader `pool_dim`).
+@export var backdrop_pool_dim: float = 0.5
+## LOOK-TOOLBOX (art-pass 2026-10-21): outside the subject's focus ellipse, sRGB luma over this cap is squeezed
+## (shader `away_cap`; 1: off), so snow, cloud or a lit roof never outshine the subject. HQ shots only (a Site frame is
+## mostly "away": the cap would flatten its lit faces).
+@export var backdrop_away_cap: float = 0.45
+## LOOK-TOOLBOX (art-pass 2026-10-21): the CITY-A2 feature parts the close-up hides (CombatBackdrop.hide_features):
+## the raised road decks read as a brown band across the wheels' gap.
+@export var backdrop_hide_features: PackedStringArray = PackedStringArray(["Roads", "RoadGlow", "Ramps", "Pillars"])
 @export var backdrop_site_street_gain: float = 1.2
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no

@@ -35,6 +35,8 @@ uniform vec3 pool_d = vec3(0.0, 0.0, 0.0);
 uniform float pool_blur = 2.5;
 // Pool edge: exp(-(d / r) ^ pool_falloff).
 uniform float pool_falloff = 4.0;
+// LOOK-TOOLBOX (ART_BIBLE 3.14): the city behind a wheel stays low and dark: the pools dim it by this share.
+uniform float pool_dim : hint_range(0.0, 1.0) = 0.0;
 // The still's aspect (width / height), to keep pools round.
 uniform float aspect = 1.7777778;
 
@@ -55,6 +57,9 @@ uniform float focus_radius = 0.24;
 uniform float focus_blur = 2.0;
 uniform float focus_dim = 0.0;
 uniform float focus_lift = 1.0;
+// LOOK-TOOLBOX (art-pass 2026-10-21): away from the subject nothing outshines it: luma over this cap is squeezed
+// to a quarter (1: off).
+uniform float away_cap = 1.0;
 // B2 (art director): the focus ellipse's axes (x = 1: focus_radius across; y: its height over
 // its width), so a tall Site block is lit as itself.
 uniform vec2 focus_axes = vec2(1.0, 1.0);
@@ -121,7 +126,13 @@ void fragment() {
 		}
 		soft /= 9.0;
 		col = mix(col, soft, soften);
+		col *= 1.0 - pool_dim * pool;
 		col *= 1.0 - focus_dim * away;
+	}
+	if (away > 0.0 && away_cap < 1.0) {
+		float y = dot(col, vec3(0.2126, 0.7152, 0.0722));
+		float capped = y > away_cap ? away_cap + (y - away_cap) * 0.25 : y;
+		col *= mix(1.0, capped / max(y, 0.0001), away);
 	}
 	if (focus_dim > 0.0 && !subject_on) {
 		col = min(col * mix(focus_lift, 1.0, away), vec3(1.0));

@@ -413,6 +413,9 @@ func _use_city() -> void:
 	if city == null:
 		city = CityView3D.new()
 		city.name = "BackdropCity"
+		# LOOK-TOOLBOX (designer 2026-10-21): solid buildings at any close-up zoom; the see-through band is the
+		# raid / netrun route look only (bible 4.1), never the combat backdrop.
+		city.band_lock = CityLod.Band.GRID
 		city.set_iso(shot["camera"])
 		if shot["stage"] != &"":
 			city.stage_compound(shot["stage"])
@@ -599,7 +602,8 @@ func _light_city() -> void:
 	city.set_night_share(0.0, BackdropCatalog.city_look(cfg, String(shot.get("focus", "hq"))))
 	apply_post(city.post_material(), cfg)
 	aim_key(city, cfg.backdrop_key_cam)
-	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure)
+	hide_features(city, cfg.backdrop_hide_features)
+	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure * (cfg.backdrop_site_exposure_gain if String(shot.get("focus", "")) == "site" else 1.0))
 	_mat.set_shader_parameter(&"city_white", cfg.backdrop_white)
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
 	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
@@ -610,10 +614,25 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"neon", Palette.corp_color(place.get("corp", BackdropCatalog.DEFAULT_CORP)))
 	_mat.set_shader_parameter(&"window_gain", cfg_n.backdrop_site_window_gain)
 	_mat.set_shader_parameter(&"rim_gain", cfg_n.backdrop_site_rim_gain)
+	_mat.set_shader_parameter(&"subject_base", cfg_n.backdrop_site_subject_lift)
+	_mat.set_shader_parameter(&"pool_dim", cfg_n.backdrop_pool_dim)
+	_mat.set_shader_parameter(&"away_cap", cfg_n.backdrop_away_cap if String(shot.get("focus", "")) == "hq" else 1.0)
 	_mat.set_shader_parameter(&"street_gain", cfg_n.backdrop_site_street_gain)
 	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
 	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_site_focus_lift if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_lift)
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
+
+
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): hides the CITY-A2 feature parts named in `names` (children of
+## the view's `features`: "Roads", "Pillars" ...) in the close-up, so no raised deck cuts across the wheels' gap.
+## No-op before the features are built.
+static func hide_features(view: CityView3D, names: PackedStringArray) -> void:
+	if view.features == null:
+		return
+	for nm in names:
+		var part := view.features.get_node_or_null(NodePath(nm)) as Node3D
+		if part != null:
+			part.visible = false
 
 
 ## LOOK-TOOLBOX: the close-up's key light from `key_cam` (camera frame: x right, y up, z toward the viewer) on every
