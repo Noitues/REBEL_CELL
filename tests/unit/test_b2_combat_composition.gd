@@ -473,7 +473,13 @@ func test_the_close_up_cuts_whatever_stands_between_the_eye_and_the_subject() ->
 	var cut := BackdropCatalog.view_cut(cfg, cam, sub)
 	var eye := cam.eye()
 	var mid := sub.get_center()
-	var near := Vector2(lerpf(eye.x, mid.x, 0.85), lerpf(eye.z, mid.z, 0.85))
+	var foot := Rect2(Vector2(sub.position.x, sub.position.z), Vector2(sub.size.x, sub.size.z))
+	var t := 0.85
+	var near := Vector2(lerpf(eye.x, mid.x, t), lerpf(eye.z, mid.z, t))
+	while foot.has_point(near) and t > 0.0:  # just outside the subject's own footprint
+		t -= 0.01
+		near = Vector2(lerpf(eye.x, mid.x, t), lerpf(eye.z, mid.z, t))
+	near = near.lerp(Vector2(eye.x, eye.z), 0.02)
 	assert_true(BackdropCatalog.occludes(near, 6.0, cut), "a low block just in front of the subject gives way")
 	var behind := Vector2(mid.x + (mid.x - eye.x) * 0.5, mid.z + (mid.z - eye.z) * 0.5)
 	assert_false(BackdropCatalog.occludes(behind, 200.0, cut), "a tower behind the subject stays")
@@ -483,3 +489,20 @@ func test_the_cell_canyon_frames_its_compound_as_the_subject() -> void:
 	var canyon := BackdropCatalog.city_shot(CityView3D.CONFIG, BackdropCatalog.place(&"rebel_cell", true, false), {}, Vector2(1920, 1080))
 	assert_true(canyon.has("subject"), "the view cut clears the street in front of the canyon")
 	assert_true((canyon["subject"] as AABB).has_volume(), "the compound's footprint box")
+
+
+func test_the_cut_never_takes_the_subjects_own_buildings() -> void:
+	var cfg := CityView3D.CONFIG
+	var size := Vector2(1920, 1080)
+	var cd := RunManager.lookup().get_content(&"meridian") as CorporationData
+	var lots := CityLayout.site_points(cd)
+	var ids: Array = lots.keys()
+	ids.sort()
+	var site: StringName = ids[0]
+	var shot := BackdropCatalog.site_shot(cfg, &"meridian", site, lots, size)
+	var sub: AABB = shot["subject"]
+	var cut := BackdropCatalog.view_cut(cfg, shot["camera"], sub)
+	var near_corner := Vector2(sub.position.x + 1.0, sub.position.z + 1.0)
+	var far_corner := Vector2(sub.end.x - 1.0, sub.end.z - 1.0)
+	for p: Vector2 in [near_corner, far_corner, Vector2(sub.get_center().x, sub.get_center().z)]:
+		assert_false(BackdropCatalog.occludes(p, sub.size.y, cut), "a building of the subject's own block stays (%s)" % p)

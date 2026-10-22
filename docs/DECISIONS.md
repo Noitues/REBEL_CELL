@@ -9705,4 +9705,6 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
   - *Subject height.* Sheet at 44 / 55 / 65 %: `backdrop_site_close_height` 0.55 (b2 test pin 50-60 % at the 30 degree pitch, art-pass ruling (b)); the max-width cap keeps wide Sites from growing further.
   - *Lab.* hq_run_lab starts the same campaign (seed 11, the state's corp) for every state, so the city no longer depends on the state list or the lab slot's last save (the round-2 caveat).
   - *Meridian.* site_meridian and hq_meridian are left as they are (designer: other sessions own Meridian HQ; the DEPOT Site landmark is not built here).
-  - Tests: the cut clears a block in front of the subject and keeps a tower behind it; the canyon has a subject box (`test_b2_combat_composition.gd`); the canyon pitch (`test_hq_run_city.gd`).
+  - *The subject keeps its own buildings.* A building whose centre stands inside the subject's footprint (`view_cut`'s `sub_xz`) is never cut (site_meridian lost its own block to the screen-overlap test).
+  - *Hand-off.* The backdrop's framing (window grid, facets, street floor, roof props, the canyon's bay band) goes to art-pass from here; the toolbox stops per-view tuning and moves the general pieces (grade, occlusion) into `addons/rc_look`.
+  - Tests: the cut clears a block in front of the subject and keeps a tower behind it, and never takes the subject's own buildings; the canyon has a subject box (`test_b2_combat_composition.gd`); the canyon pitch (`test_hq_run_city.gd`).

@@ -466,6 +466,7 @@ static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB) -> Dictionary
 		"lo": lo, "hi": hi, "pad": cfg.backdrop_close_cut_margin, "base_y": box.position.y + box.size.y * cfg.backdrop_close_sight_share,
 		# LOOK-TOOLBOX (designer 2026-10-21, the netrun occlusion rule in combat): anything nearer than the subject whose
 		# screen box overlaps the subject's (grown by backdrop_close_cut_screen_pad px) gives way too.
+		"sub_xz": Rect2(Vector2(box.position.x, box.position.z), Vector2(box.size.x, box.size.z)),
 		"mid": Vector2(box.get_center().x - eye.x, box.get_center().z - eye.z).dot(fwd), "cam": c.copy(), "sub_rect": projected_box(c, box).grow(cfg.backdrop_close_cut_screen_pad), "half": cfg.lot_bu * 0.5}
 
 
@@ -477,6 +478,8 @@ static func occludes(centre: Vector2, top: float, cut: Dictionary) -> bool:
 	var d := v.dot(cut["fwd"])
 	if d <= 0.0 or d >= float(cut.get("mid", cut["sub"])):
 		return false
+	if cut.has("sub_xz") and (cut["sub_xz"] as Rect2).has_point(centre):
+		return false  # the subject's own buildings
 	var s := v.dot(cut["right"])
 	var pad := float(cut["pad"])
 	var in_wedge := d < float(cut["front"]) and s >= float(cut["lo"]) * d - pad and s <= float(cut["hi"]) * d + pad
