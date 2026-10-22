@@ -351,7 +351,7 @@ extends Resource
 ## the S2 glb has no cross, only a cross-shaped plan): `wall` (BU from the landmark's centre to the wing end), `y`, `panel`, `span`, `arm`
 ## (BU), `lift` (panel depth), `facing` (least cosine to the view), `panel_color` (the lit panel: a glowing square reads at any blur), `color` (the cross),
 ## optional `halo` (x panel) and `halo_color` (an additive glow past the panel).
-@export var backdrop_site_cross_by_corp: Dictionary = {&"solace": {"wall": 17.62, "y": 5.6, "panel": 8.2, "span": 5.8, "arm": 2.0, "lift": 0.15, "facing": 0.3, "panel_color": Color(0.9, 1.0, 0.72), "color": Color(0.85, 0.08, 0.24)}}
+@export var backdrop_site_cross_by_corp: Dictionary = {&"solace": {"wall": 17.62, "y": 5.6, "panel": 8.2, "span": 5.8, "arm": 2.0, "lift": 0.15, "facing": 0.3, "panel_color": Color(0.9, 1.0, 0.72), "color": Color(0.10, 0.62, 0.22)}}
 ## Per corporation: roof props (CityRoofProps names) the Site close-up leaves off (Solace: the billboard in the foreground).
 @export var backdrop_site_hide_props_by_corp: Dictionary = {&"solace": PackedStringArray(["billboard_0", "billboard_1", "billboard_2", "billboard_3"])}
 ## Per corporation: the away cap (see backdrop_away_cap) for that corp's own Site close-up (Solace: the pale towers behind the hospital
