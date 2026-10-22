@@ -77,3 +77,22 @@ SA_SPP=52 python $S/sa_gpu.py "art_spaceage orbital v2" <log> -- python $S/sa2_r
 python $S/sa3_pack.py D:/rc_scratch/hq_styles/orbital_spaceage/r3/final3/plate.png     # orbital_retro_v3.png + orbital_v2_v3.jpg
 python $S/sa2_pack.py D:/rc_scratch/hq_styles/orbital_spaceage/r2/final2/plate.png     # orbital_retro_v2.png + orbital_v1_v2.jpg
 ```
+
+---
+
+# v4 (designer-approved changes on v3, 2026-10-21)
+
+Files: `orbital_retro_v4.png`, `orbital_v3_v4.jpg` (v3 | v4). Scripts: `sa4_restyle.py`, `sa4_run_hq.py`, `sa4_blender_hq.py`, `sa4_pack.py` (v3 and v2 kept).
+Changes: (1) fixed fins are now tall tail fins hugging the stack (raked leading edge, short vertical trailing edge, tip above the first stage ring), white enamel with an orange leading edge, on a white foot block; (2) the atom on the bay doors has bigger orbits (minor radius 20.5 clears the fins) and a tangerine nucleus ring round the stack's base, so no line runs under the rocket; (3) mission control: wide warm-lit panoramic window wall (156 deg) with two rows of dark console / monitor silhouettes, chrome mullions and a large rooftop dish aimed at the camera; (4) fuel farm: bright white spheres with two orange bands on chrome legs, two white horizontal tanks, twin pipe runs up the podium wall to a manifold at the launch ring; (5) hangar: 64-tall high bay with a 10 x 56 door slot (chrome frame, segment lines), tangerine and ice stripes down the facade, flag mast with a striped banner; the roof dishes (they read as projector reels) are gone; (6) monorail station: platform and upswept canopy on the inner side of the beam, round sign on a pole, the three-car train stands on the beam in front of it (the canopy no longer spans the beam).
+## Critique (previews c1, c2 and the final, each viewed)
+- c1: fins, atom, hangar and tank farm worked. The canopy on the outer side hid the train and looked like a bridge or pergola, so in c2 the station moved to the inner side: the train is now visible. The canopy is still a plain grey slab from this angle.
+- Squint test against v3: the stack with its tall fins now reads as a finned rocket, the orbits ring the launch pad cleanly, the hangar reads as a tall building with a door slot rather than a projector, the tank farm reads as tanks. Value order holds: rocket, then doors, then buildings, then city.
+- Weak: mission control's silhouettes are only legible in the full-size image (a warm band at thumbnail); the pipe runs are thin dark lines that vanish at thumbnail; the monorail canopy is flat grey; the hangar banner is tiny; the fin foot blocks read as a plain white ring base; the left uplink dish still touches the ON AIR sign.
+- Timing: 40 spp, 1920x1080, render wall 271 s (412 s with the lock batch), median 0.145. A first attempt at 52 spp ran over 20 min while another agent's Blender was also on the GPU, so I killed my own PID (29828) and re-queued at 40 spp. Lock waits 2553 s and 1952 s.
+## Rebuild
+```
+S=docs/concepts/hq_styles/orbital_spaceage/scripts
+bash D:/rc_scratch/hq_styles/orbital_spaceage/prev4.sh <tag>
+SA_SPP=40 python $S/sa_gpu.py "art_spaceage orbital v4" <log> -- python $S/sa4_run_hq.py art final4
+python $S/sa4_pack.py D:/rc_scratch/hq_styles/orbital_spaceage/r4/final4/plate.png
+```
