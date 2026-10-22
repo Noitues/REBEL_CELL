@@ -1672,3 +1672,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - CACHE gets a header-only loot variant: the kind stamp and CACHE in the strip. The title stays LOOT and there is no new text.
   - The CACHE colour moves off FIGHT's cyan, checked for distance under deutan.
   - Art-pass ruling (bible §forecast pencil): no orange pencil plan arrows on the node pages. Forecasts are red dashed what-ifs only.
+- **Street skyline fill (designer, 2026-10-22):** keep the sky. No infill blocks behind the far frontage and no raised real buildings.
+  - The overview camera already matches the plate.
+  - Module 19 closes the gap with lighting only: (a) face washes plus clustered hot windows plus signs and edges, and (b) floor
+    streaks.
+  - The sky share (39 % vs the plate's 10 %) is accepted. Judge facade numbers per band, not by frame totals.
