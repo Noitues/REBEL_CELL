@@ -267,6 +267,10 @@ var home_shown: int = 0
 ## resolved raid's `before`), so the disabling hit shows the integrity it takes and every
 ## node's numbers add up to its before - after.
 var _node_left: Dictionary = {}
+## RAID-VIS F1: what each node will have left once every scheduled beat has landed (`_node_left` is what the map shows
+## now: it follows the beats on the clock, never the step's start), and the changes still to land: {t0, site, value}.
+var _node_plan: Dictionary = {}
+var _node_due: Array[Dictionary] = []
 ## ART-6 3A: the raiding corporation (vehicle icons' kit), real seconds since setup (marks
 ## run on it), the pencil marks ({kind, site, word, col, t0, real0, above}), slow fields and
 ## repair sparks ({site, t0, dur}), BREACHED's start (clock; INF none), INCOMING once per Site.
@@ -313,6 +317,8 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	_owner_done = false
 	_banner = {}
 	_node_left.clear()
+	_node_plan.clear()
+	_node_due.clear()
 	_marks.clear()
 	_fields.clear()
 	_sparks.clear()
@@ -325,6 +331,8 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	var nodes: Dictionary = results.get("nodes", {})
 	for id in nodes:
 		_node_left[String(id)] = int(nodes[id].get("before", 0))
+	_node_plan = _node_left.duplicate()
+	_node_due.clear()
 	# ANIM-R5 P8: the map's labels keep off the tokens standing on its nodes, and the moving
 	# parts (tints, traces, tokens, locks, hits) draw under the labels: a token passing a node
 	# never hides its name (CORE's label went under the token on it mid-raid).
@@ -386,6 +394,8 @@ func _process(delta: float) -> void:
 ## Every beat at its end at once (Skip, reduce effects, headless).
 func finish_all() -> void:
 	clock = maxf(clock, _last_end())
+	for d in _node_due:
+		clock = maxf(clock, float(d["t0"]))
 	_show_due_hits()
 	home_shown = home_value
 	# ART-6 3A: every pencil mark at its end (written, held, wiped; BREACHED stays).
@@ -442,8 +452,8 @@ func _start_marks() -> void:
 			m["started"] = true
 
 
-func _mark(kind: String, site: StringName, word: String, t0: float, above: bool, heavy: bool = false, stays: bool = false) -> void:
-	_marks.append({"kind": kind, "site": site, "word": word, "t0": t0, "real0": -1.0, "above": above, "heavy": heavy, "stays": stays})
+func _mark(kind: String, site: StringName, word: String, t0: float, above: bool, heavy: bool = false, stays: bool = false, glyph: bool = false) -> void:
+	_marks.append({"kind": kind, "site": site, "word": word, "t0": t0, "real0": -1.0, "above": above, "heavy": heavy, "stays": stays, "glyph": glyph})
 
 
 ## The pencil marks (tests): [{kind, site, word}].
@@ -476,8 +486,11 @@ func socket_state(site: StringName) -> Variant:
 			"taken":
 				out["state"] = RaidSocket.STATE_DOWN
 				for m in _marks:
-					if m["kind"] == "taken" and m["site"] == site and mark_progress(m).y >= 1.0:
-						out["state"] = RaidSocket.STATE_TAKEN
+					if m["kind"] == "taken" and m["site"] == site:
+						var mp := mark_progress(m)
+						# RAID-VIS F2: the TAKEN glyph stays; the node is burnt once its ring is written.
+						if mp.y >= 1.0 or (bool(m.get("glyph", false)) and mp.x >= 1.0):
+							out["state"] = RaidSocket.STATE_TAKEN
 	if _breach_t0 != INF and site == home_id and clock >= _breach_t0:
 		out["state"] = RaidSocket.STATE_DOWN
 	return out
@@ -503,6 +516,20 @@ func _show_due_hits() -> void:
 		var h: Dictionary = _home_due.pop_front()
 		home_shown = maxi(0, home_shown - int(h["damage"]))
 		home_hit_shown.emit(int(h["damage"]), StringName(h["site"]))
+	# RAID-VIS F1: a node's integrity changes on the map when its hit lands.
+	var keep: Array[Dictionary] = []
+	for d in _node_due:
+		if clock >= float(d["t0"]):
+			_node_left[String(d["site"])] = int(d["value"])
+		else:
+			keep.append(d)
+	_node_due = keep
+
+
+## RAID-VIS F1: node `site` will hold `value` integrity from clock time `t0` (its hit lands then).
+func _node_set(site: StringName, value: int, t0: float) -> void:
+	_node_plan[String(site)] = value
+	_node_due.append({"t0": t0, "site": String(site), "value": value})
 
 
 ## The playout has ended: from now on the layer runs its own clock (tint fade).
@@ -590,34 +617,36 @@ func play_beat(b: Dictionary, t0: float) -> void:
 				_number(site, -took, Palette.CELL_PINK, t0, dur)
 				_home_hit(took, t0, site)
 			else:
-				var left := int(_node_left.get(String(site), 0))
+				var left := int(_node_plan.get(String(site), 0))
 				var took := mini(int(e.get("damage", 0)), left)
-				_node_left[String(site)] = left - took
+				_node_set(site, left - took, t0)
 				_number(site, -took, Palette.CELL_PINK, t0, dur)
+				# RAID-VIS F1: the hit flashes on the node as it lands.
+				_fx.append({"kind": "flash", "site": site, "t0": t0, "dur": RaidBeats.raw_seconds(&"raid_hit_effect")})
 		"station_regen":
 			var site := StringName(e["site"])
-			_node_left[String(site)] = int(_node_left.get(String(site), 0)) + int(e.get("amount", 0))
+			_node_set(site, int(_node_plan.get(String(site), 0)) + int(e.get("amount", 0)), t0)
 			_number(site, int(e.get("amount", 0)), Palette.CELL_ACID, t0, dur)
 			_sparks.append({"site": site, "t0": t0})  # ART-6 3A: the repair rises with "+" sparks
 		"down":
 			# ANIM-R3 B5: the hit that disables takes what integrity was left (its own number).
 			var site := StringName(e["site"])
-			var left := int(_node_left.get(String(site), 0))
+			var left := int(_node_plan.get(String(site), 0))
 			if left > 0:
 				_number(site, -left, Palette.CELL_PINK, t0, dur)
-			_node_left[String(site)] = 0
+			_node_set(site, 0, t0)
 			_stamp(site, "down", Palette.CELL_PINK, t0, dur)
-			_mark("down", site, tr_outcome("down"), t0, false)
+			_mark("down", site, tr_outcome("down"), t0, false, false, true, true)
 		"taken":
 			# ANIM-R3 B5: a Site taken with integrity left (threats standing on it at the step
 			# cap) loses it all: its own number, so the numbers add up to before - after.
 			var taken_site := StringName(e["site"])
-			var taken_left := int(_node_left.get(String(taken_site), 0))
+			var taken_left := int(_node_plan.get(String(taken_site), 0))
 			if taken_left > 0:
 				_number(taken_site, -taken_left, Palette.RESIST_GOLD, t0, dur)
-			_node_left[String(taken_site)] = 0
+			_node_set(taken_site, 0, t0)
 			_stamp(taken_site, "taken", Palette.RESIST_GOLD, t0, dur)
-			_mark("taken", taken_site, tr_outcome("taken"), t0, true)
+			_mark("taken", taken_site, tr_outcome("taken"), t0, true, false, true, true)
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
 			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": Palette.CELL_PINK, "t0": t0, "breached": true}
@@ -786,6 +815,10 @@ func _draw() -> void:
 		_draw_moving(k, at)
 	for id in _stamps:
 		_draw_stamp(StringName(id), _stamps[id], k)
+	_draw_node_tints(k)
+	for f in _fx:
+		if f["kind"] == "flash":
+			_draw_flash(f, k)
 	_draw_home(k)
 	_draw_breach(k)
 	_draw_sparks(k)
@@ -1294,6 +1327,35 @@ func _stack_of(f: Dictionary) -> int:
 	return n
 
 
+## RAID-VIS F2: the node visuals under the pencil marks: a DOWN node dimmed, a TAKEN node in the corporation's colour.
+func _draw_node_tints(k: float) -> void:
+	var corp := Palette.corp_color(corporation_id)
+	for m in _marks:
+		if not bool(m.get("glyph", false)) or not bool(m.get("started", false)):
+			continue
+		var c := overlay.icon_at(StringName(m["site"]))
+		if c.x == INF:
+			continue
+		RaidNodeMarks.tint(self, String(m["kind"]), c, CityMapOverlay.ICON_RADIUS * k, corp, mark_progress(m).x)
+
+
+## RAID-VIS F1: a hit landing on a node: a pink ring and a soft fill that flare and fade (`raid_hit_effect`).
+func _draw_flash(f: Dictionary, k: float) -> void:
+	var u := _u(float(f["t0"]), float(f["dur"]))
+	if clock < float(f["t0"]) or u >= 1.0 or not Motion.live(&"raid_hit_effect"):
+		return
+	var p := overlay.icon_at(StringName(f["site"]))
+	if p.x == INF:
+		return
+	var r := CityMapOverlay.ICON_RADIUS * k * lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), _eased(&"raid_hit_effect", u))
+	_ci.draw_circle(p, r, Color(Palette.CELL_PINK, HIT_FLASH_FILL * (1.0 - u)))
+	_ci.draw_arc(p, r, 0, TAU, 24, Color(Palette.CELL_PINK, 1.0 - u), HIT_RING_W * k)
+
+
+## The share of alpha a node-hit flash fills its disc with at its start.
+const HIT_FLASH_FILL := 0.45
+
+
 func _draw_stamp(_site: StringName, _s: Dictionary, _k: float) -> void:
 	pass  # ART-6 3A: outcomes are pencil now (_lay_pencil: a HOLDS tick; DOWN / TAKEN marks)
 
@@ -1310,6 +1372,8 @@ func mark_centres() -> Dictionary:
 	var tops := {}
 	for i in _marks.size():
 		var m: Dictionary = _marks[i]
+		if bool(m.get("glyph", false)):
+			continue  # RAID-VIS F2: a node's DOWN / TAKEN mark is a pencil glyph (RaidNodeMarks), not a word
 		var pr := mark_progress(m)
 		if pr.x <= 0.0 or pr.y >= 1.0:
 			continue
@@ -1370,7 +1434,6 @@ func _lay_pencil() -> void:
 		_pool = RaidPencilPool.make(self)
 	_pool.begin()
 	var threat := GreasePencilMark.Ink.THREAT
-	var plan := GreasePencilMark.Ink.PLAN
 	var gxf := get_global_transform()
 	var zoom := RaidMapAnchor.scale(overlay)
 	var centres := mark_centres()
@@ -1389,6 +1452,20 @@ func _lay_pencil() -> void:
 			var y := c.y + size.y * UNDER_DROP
 			var line := PackedVector2Array([Vector2(c.x - size.x * UNDER_WIDTH, y), Vector2(c.x + size.x * UNDER_WIDTH, y + size.y * UNDER_SLANT)])
 			_pool.stroke("under_%d" % i, [line], threat, clampf(pr.x * HEAVY_WRITE_BOOST - UNDER_LEAD, 0.0, 1.0), 0.0, false, UNDER_SEED)
+	# RAID-VIS F2: each node's own outcome as grease pencil through the one helper (RaidNodeMarks): DOWN's cross-out
+	# and TAKEN's ring and flag stay once written (TAKEN over DOWN on one node); HOLDS' check is shown briefly.
+	var glyph_of := {}
+	for m in _marks:
+		if bool(m.get("glyph", false)) and bool(m.get("started", false)):
+			var sk := String(m["site"])
+			if not glyph_of.has(sk) or String(m["kind"]) == RaidNodeMarks.TAKEN:
+				glyph_of[sk] = m
+	var node_r := CityMapOverlay.ICON_RADIUS * zoom
+	for sk in glyph_of:
+		var gm: Dictionary = glyph_of[sk]
+		var gp := RaidMapAnchor.site(overlay, StringName(sk))
+		if gp.x != INF:
+			RaidNodeMarks.draw(_pool, sk, String(gm["kind"]), gp, node_r, mark_progress(gm).x, 0.0, sk.hash())
 	# B3 (review Q7): home's verdict is no banner over the map: the result is CELL HOLDS on the
 	# after-action paper (RaidSticker.slap_result plays `raid_result_banner`); BREACHED stays a mark.
 	# A yellow tick on each node that holds, at the verdict.
@@ -1399,10 +1476,15 @@ func _lay_pencil() -> void:
 		var p := RaidMapAnchor.site(overlay, StringName(id))
 		if p.x == INF:
 			continue
-		var r := CityMapOverlay.ICON_RADIUS * zoom
-		var tc := p + Vector2(r * RaidSocket.HALF.x * 1.1, -r * 0.9)
-		var t := PackedVector2Array([tc + Vector2(-HOLDS_TICK * 0.5, 0), tc + Vector2(-HOLDS_TICK * 0.1, HOLDS_TICK * 0.4), tc + Vector2(HOLDS_TICK * 0.6, -HOLDS_TICK * 0.55)])
-		_pool.stroke("tick_%s" % id, [t], plan, beat_u(&"raid_flip", float(s["t0"]), float(s["dur"])), 0.0, false, String(id).hash())
+		# RAID-VIS F2: written with the flip, held, then wiped (a check is shown briefly).
+		var written := beat_u(&"raid_flip", float(s["t0"]), float(s["dur"]))
+		var after := clock - float(s["t0"]) - float(s["dur"])
+		var hold := Motion.seconds(MARK_HOLD)
+		var wipe_len := Motion.seconds(MARK_WIPE)
+		var wiped := 0.0
+		if after > hold:
+			wiped = 1.0 if wipe_len <= 0.0 else clampf((after - hold) / wipe_len, 0.0, 1.0)
+		RaidNodeMarks.draw(_pool, String(id), RaidNodeMarks.HOLDS, p + Vector2(0.0, -node_r * 0.2), node_r, written, wiped, String(id).hash())
 	# A red X on a threat withdrawing at the verdict.
 	var at := _token_positions()
 	for id in _tokens:

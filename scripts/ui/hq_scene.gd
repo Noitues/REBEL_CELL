@@ -47,6 +47,8 @@ const CHIP_INFECTED := "INFECTED %d%% → %d%%" # TR
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
+const PLAYING_CAPTION := "RAID\nIN PROGRESS:" # TR
+const PLAYING_WORD := "..." # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
 ## B3 (review Q10, round 40 `raid_view_v3` / round 44 `raid_setup.png`): the raid setup's yellow
@@ -1957,8 +1959,6 @@ func _build_hq_page(page_name: String) -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stack.add_child(card)
 	page.add_child(column)
-	if raid_mode and _if_placed_term != null and is_instance_valid(_if_placed_term):
-		page.add_child(_if_placed_term)
 	if site != null and not raid_mode:
 		# 12Q-HQ (L31-L34): a card taller than its column pages its rows (CardPager); this tab turns
 		# it, placed with the column (`_place_card_tab`) and drawn over it.
@@ -2029,6 +2029,7 @@ func _build_hq_page(page_name: String) -> void:
 		city_overlay.node_clicked.connect(select_site)
 		city_overlay.node_hovered.connect(_hq_hover_tag)
 	_mount_hq_routes(projection, raid_mode)
+	_mount_node_marks(RaidNodeMarks.of_grid(c.grid))
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_mount_hq_map_tools(page, g)
 	if not raid_mode:
@@ -3011,7 +3012,6 @@ func _place_hq() -> void:
 		bottom -= _page_card(column, col_w, bottom - top, col_x, bottom)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
-	_place_if_placed(page, column)
 	if panel_name != "raid":
 		_place_card_tab(column)
 	var was_free := _hq_free
@@ -3848,6 +3848,23 @@ func _mount_city_map(nodes: Array[Dictionary], edges: Array[Dictionary], look: i
 	_frame_city(zoom, city_overlay.centre() if focus == Vector2.INF else focus, anchor)
 
 
+## RAID-VIS F2 / F3: the per-node outcome marks on the mounted map (`RaidNodeMarkLayer`): the standing DOWN / TAKEN
+## ones from the Grid (the HQ, the Grid and the raid setup, until the node is repaired or reclaimed), or the
+## raid's own, HOLDS included (the report). A TAKEN Site next to the territory is written ENTRY POINT.
+func _mount_node_marks(marks: Dictionary) -> void:
+	var c := RunManager.campaign
+	if city_overlay == null or c == null:
+		return
+	var layer := RaidNodeMarkLayer.new(city_overlay)
+	city_overlay.add_child(layer)
+	layer.set_marks(marks, Palette.corp_color(c.corporation_id), RaidOutcome.entry_points(c.grid, RunManager.corporation.city_grid))
+	_node_marks = layer
+
+
+## The mounted map's mark layer (null when none).
+var _node_marks: RaidNodeMarkLayer = null
+
+
 ## G2R-1: `_frame_city` for the HQ's own framing (once fitted, lean, follow the selection): the frame
 ## never shows past the city's edge, but only so far as the network (the fitted Sites and the
 ## selected one) stays in the map's free part; the network wins over the edge.
@@ -4557,24 +4574,38 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 	plate.custom_minimum_size.x = HAND_EFFECT_W * Settings.text_scale
 	var box := UiTheme.box(HudSkin.TERMINAL_BG, PaletteSkins.chrome(Palette.NET_CYAN), 1, 8, 6)
 	plate.add_theme_stylebox_override("panel", box)
-	var words := Label.new()
-	words.name = "HandEffectWords"
-	words.add_theme_font_override("font", Palette.mono())
-	words.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-	words.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
-	words.autowrap_mode = TextServer.AUTOWRAP_WORD
-	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.add_child(words)
+	var lines := VBoxContainer.new()
+	lines.name = "HandEffectLines"
+	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lines.add_theme_constant_override("separation", 2)
+	plate.add_child(lines)
+	var labels: Array[Label] = []
+	for n in ["HandEffectWords", "HandEffectNode", "HandEffectHome"]:
+		var words := Label.new()
+		words.name = n
+		words.add_theme_font_override("font", Palette.mono())
+		words.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		words.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+		words.autowrap_mode = TextServer.AUTOWRAP_WORD
+		words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lines.add_child(words)
+		labels.append(words)
 	plate.visible = false
 	cards.add_child(plate)
 	_hand_effect = plate
-	_hand_effect_words = words
+	_hand_effect_words = labels[0]
+	_hand_effect_node = labels[1]
+	_hand_effect_home = labels[2]
 
 
 ## RAID-FIX B3: the hand's effect plate beside the cards, and its width (px at text 1.0).
 const HAND_EFFECT_W := 300.0
 var _hand_effect: Control = null
 var _hand_effect_words: Label = null
+var _hand_effect_node: Label = null
+var _hand_effect_home: Label = null
+## RAID-VIS F4: the last `if_placed_lines` call's parts: {effect, node, home, node_sev, home_sev} (sev: 1 better, 0 same, -1 worse).
+var if_placed_parts: Dictionary = {}
 
 
 ## HQ-B (c): the raid setup's card column: THREAT INTEL (the decrypted holo: each entry route,
@@ -4611,107 +4642,54 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
 	stack.add_child(_your_network(projection))
-	# RAID-FIX D6: IF PLACED is no part of the column (the column ends over the Crew / STATION block and clipped it):
-	# the page holds it, over the map beside the column's foot (`_place_if_placed`).
-	_if_placed_term = _if_placed_terminal()
+	# RAID-VIS F4 (A-082): no floating IF PLACED terminal; its lines fold into the hand-effect plate.
 
 
-## Parity RAID-06 (round 40): the IF PLACED terminal on the right: what the defence card hovered
-## or focused in the DEFENCE hand (else the Armory's first) would change on the target, from
-## the rules on a copy (preview equals result); a hint when nothing can be placed.
-func _if_placed_terminal() -> RaidTerminal:
-	var term := RaidTerminal.new(tr(RaidDragPencil.IF_PLACED), Palette.NET_CYAN)
-	term.name = "IfPlaced"
-	term.tag_label.text = ""
-	# B3 (the clutter rule; round 44 shows no IF PLACED until a card is picked): it shows while a
-	# defence card is pointed at, focused or carried (`show_if_placed`).
-	term.visible = false
-	_if_placed_term = term
-	term.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var lines := VBoxContainer.new()
-	lines.name = "IfPlacedLines"
-	lines.add_theme_constant_override("separation", 2)
-	term.body.add_child(lines)
-	_if_placed_terminal_box = lines
-	show_if_placed(0)
-	return term
-
-
-## The IF PLACED terminal's lines, and the Armory index they show.
-var _if_placed_terminal_box: VBoxContainer = null
+## The Armory index the hand-effect plate shows.
 var if_placed_index: int = -1
-## B3: the IF PLACED terminal (shown while a card is pointed at or focused).
-var _if_placed_term: Control = null
 
 
-## B3: a defence card at Armory `index` is pointed at or focused: the IF PLACED terminal shows
-## what it would change on the target.
+## B3: a defence card at Armory `index` is pointed at or focused: the hand-effect plate shows what it
+## would change on the target.
 func point_card(index: int) -> void:
 	show_if_placed(index)
-	if _if_placed_term != null and is_instance_valid(_if_placed_term):
-		_if_placed_term.visible = true
-		_place_if_placed(_panel, _panel.get_node("CardColumn") as Control)
 	if _hand_effect != null and is_instance_valid(_hand_effect):
 		_hand_effect.visible = _hand_effect_words.text != ""
 
 
-## RAID-FIX D6: IF PLACED's width (px at text 1.0 x the objects' scale) and its gap from the column.
-const IF_PLACED_W := 292.0
-
-
-## RAID-FIX D6: puts the IF PLACED terminal over the map, left of the column, its foot on the column's foot (so it
-## never meets the Crew / STATION block), and on screen.
-func _place_if_placed(page: Control, column: Control) -> void:
-	var term := _if_placed_term
-	if term == null or not is_instance_valid(term) or term.get_parent() != page:
-		return
-	var w := IF_PLACED_W * HqLayout.object_scale(Settings.text_scale)
-	term.size = Vector2(w, term.get_combined_minimum_size().y)
-	var x := column.position.x - HqLayout.GAP - w
-	var y := column.position.y + column.size.y - term.size.y
-	term.position = Vector2(maxf(x, 0.0), maxf(y, 0.0))
-
-
-## B3: hides the IF PLACED terminal (the card left the pointer and the focus).
+## B3: hides the hand-effect plate (the card left the pointer and the focus).
 func hide_if_placed() -> void:
-	if _if_placed_term != null and is_instance_valid(_if_placed_term):
-		_if_placed_term.visible = false
 	if _hand_effect != null and is_instance_valid(_hand_effect):
 		_hand_effect.visible = false
 
 
-## Shows in the IF PLACED terminal what placing the Armory's defence at `index` on the target
-## would change (nothing to place: how to place one).
+## RAID-VIS F4 (A-082): fills the hand-effect plate with what placing the Armory's defence at `index` on the
+## target would change: the effect sentence, the node change, the home change (at most 4 lines), the last two in
+## severity ink (lime better, red worse, plain the same). Nothing to place: the plate stays empty.
 func show_if_placed(index: int) -> void:
-	var box := _if_placed_terminal_box
-	if box == null or not is_instance_valid(box):
-		return
 	var c := RunManager.campaign
-	for k in box.get_children():
-		box.remove_child(k)
-		k.queue_free()
-	if_placed_index = index if index >= 0 and index < c.armory.size() else -1
-	var lines: Array = []
+	if_placed_index = index if c != null and index >= 0 and index < c.armory.size() else -1
+	if_placed_parts = {}
 	if if_placed_index >= 0 and selected_site != &"" and c.grid.is_active_node(selected_site):
-		lines = if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
-	# RAID-FIX B3: the same change as one line beside the cards.
-	if _hand_effect_words != null and is_instance_valid(_hand_effect_words):
-		_hand_effect_words.text = ("%s: %s" % [lines[0], lines.back()]).replace("
-", " ") if lines.size() > 1 else ""
-	if lines.is_empty():
-		lines = [tr(IF_PLACED_HINT)]
-	for i in lines.size():
-		var l := Label.new()
-		l.text = String(lines[i])
-		l.add_theme_font_override("font", Palette.mono())
-		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION if i > 0 else UiTheme.BODY))
-		l.add_theme_color_override("font_color", Palette.PAPER if i > 0 else PaletteSkins.chrome(Palette.NET_CYAN))
-		UiWrap.whole_words(l)
-		box.add_child(l)
+		if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
+	if _hand_effect_words == null or not is_instance_valid(_hand_effect_words):
+		return
+	var parts := if_placed_parts
+	var rows: Array = [[_hand_effect_words, "effect", 0], [_hand_effect_node, "node", int(parts.get("node_sev", 0))], [_hand_effect_home, "home", int(parts.get("home_sev", 0))]]
+	for r in rows:
+		var l := r[0] as Label
+		l.text = String(parts.get(r[1], ""))
+		l.visible = l.text != ""
+		l.add_theme_color_override("font_color", PaletteSkins.chrome(if_placed_ink(int(r[2]))))
 
 
-## The IF PLACED terminal's line when no defence can be placed on the target.
-const IF_PLACED_HINT := "Pick a defense card, then one of your nodes: the forecast's change shows here." # TR
+## RAID-VIS F4: the severity ink of a change: 1 better (lime), -1 worse (red), 0 the plate's plain ink.
+static func if_placed_ink(sev: int) -> Color:
+	if sev > 0:
+		return Palette.CELL_ACID
+	if sev < 0:
+		return Palette.HARM
+	return Palette.TERMINAL_TEXT
 
 
 ## Parity RAID-06 (round 40): YOUR NETWORK (each node's forecast chip; its target button makes
@@ -5518,12 +5496,32 @@ func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
 	var lines: Array = ["%s > %s" % [_display(StringName(String(payload.get("asset", "")))).to_upper(), site_name(sid).to_upper()]]
 	var a: Dictionary = now.nodes.get(String(sid), {})
 	var b: Dictionary = then.nodes.get(String(sid), {})
+	var parts := {"node": "", "node_sev": 0}
 	if not a.is_empty() and not b.is_empty():
-		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
-	lines.append(tr("HOME SERVER %d > %d") % [now.home_after, then.home_after])
+		var node_line := "%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))]
+		lines.append(node_line)
+		parts["node"] = node_line
+		parts["node_sev"] = signi(_outcome_rank(String(a["outcome"])) - _outcome_rank(String(b["outcome"])))
+	var home_line := tr("HOME SERVER %d > %d") % [now.home_after, then.home_after]
+	lines.append(home_line)
 	# RAID-FIX A3: the change in words of effect (RaidOutcome.if_placed).
-	lines.append(RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word))
+	var effect := RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word)
+	lines.append(effect)
+	parts["effect"] = effect.replace("\n", " ")
+	parts["home"] = home_line
+	parts["home_sev"] = signi(then.home_after - now.home_after)
+	if_placed_parts = parts
 	return lines
+
+
+## RAID-VIS F4: how bad a node outcome is (0 holds or passed, 1 down, 2 taken), for the severity ink.
+static func _outcome_rank(outcome: String) -> int:
+	match outcome:
+		"taken":
+			return 2
+		"down":
+			return 1
+	return 0
 
 
 ## A paper value label with a tooltip (hovered, it shows the old badge's words).
@@ -5902,7 +5900,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
 	var verdict := RaidVerdict.of_result(r)
 	var clean := RaidVerdict.clean(r)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
+	# RAID-VIS F1 (D26): the verdict stays hidden while the raid plays (the forecast chip, which promises the outcome,
+	# lives on the setup page); the stamp reads IN PROGRESS and resolves into the verdict at the end.
+	var forecast := ForecastStamp.new(PLAYING_CAPTION, PLAYING_WORD, Palette.TERMINAL_TEXT, &"")
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -5985,7 +5985,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		_refresh_status()
 		if dealt:
 			hud.stats.land_pulse(StatIcon.RAIDS)
-		forecast.resolve(RESULT_CAPTION, verdict)
+		forecast.resolve(RESULT_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
 		Fx.freeze_frames()  # Plan 1 M8: the verdict lands with weight (a hit-stop, none under reduce effects)
 		# B8: the page and the top bar read the result from "Raid over" on, not RAID IN PROGRESS.
 		hud.set_screen(String(SCREEN_NUMBERS.get("raid_playout", "")), raid_result_title(verdict))
@@ -6328,6 +6328,7 @@ static func report_outcome_words(result: Dictionary) -> String:
 const REPORT_INTACT := "%d / %d INTACT" # TR
 const REPORT_DAMAGED := "%d / %d" # TR
 const REPORT_SCHEMATICS := "%d SCHEMATICS" # TR
+const REPORT_DOWN_COST := "%s (%d SCHEMATICS)" # TR
 const REPORT_HEAT := "%d > %d" # TR
 const REPORT_NO_CHANGE := "%d > %d NO CHANGE" # TR
 const REPORT_BACK := "BACK TO THE GRID" # TR
@@ -6404,20 +6405,27 @@ func show_raid_summary() -> void:
 	_tip_label(units, tr("Threats your network destroyed."))
 	if _raid_reward >= 0:
 		report.add_row(tr("EQUIPMENT LOST TO HOSTILES"), tr(REPORT_SCHEMATICS) % _raid_reward, Palette.HARM_INK, "ReportReward")
-	var taken: Array = r.get("taken", [])
-	var down_names := PackedStringArray()
-	for id in r.get("nodes", {}).keys():
-		if String(r["nodes"][id].get("outcome", "")) == "down":
-			down_names.append(site_name(StringName(String(id))))
+	# RAID-VIS F3 (GDD 7.2): the consequences the rules left: the DOWN nodes with their repair cost, the TAKEN
+	# Sites, and the new raid entry points (a TAKEN Site next to the territory). `RaidOutcome.aftermath`.
+	var after := RaidOutcome.aftermath(c, RunManager.corporation.city_grid, RunManager.config(), RunManager.lookup())
 	var reclaimed := PackedStringArray()
-	for id in taken:
-		reclaimed.append(site_name(StringName(String(id))))
+	for id in after["taken"]:
+		reclaimed.append(site_name(id))
 	if not reclaimed.is_empty():
-		var rec := report.add_row(tr("SITES RECLAIMED"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.INK, "ReportReclaimed")
+		var rec := report.add_row(tr("SITES TAKEN"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.HARM_INK, "ReportReclaimed")
 		_tip_label(rec, tr("TAKEN: the corporation took the Site back."))
+	var down_names := PackedStringArray()
+	for d in after["down"]:
+		down_names.append(tr(REPORT_DOWN_COST) % [site_name(d["id"]).to_upper(), int(d["cost"])])
 	if not down_names.is_empty():
-		var dn := report.add_row(tr("HOSTILE NODES DOWN"), ", ".join(down_names).to_upper(), Palette.INK, "ReportDown")
-		_tip_label(dn, tr("DOWN: repair the node on the Grid."))
+		var dn := report.add_row(tr("NODES DOWN (REPAIR)"), ", ".join(down_names), Palette.HARM_INK, "ReportDown")
+		_tip_label(dn, tr("DOWN: repair the node on the Grid. The cost is half its install cost."))
+	var entry_names := PackedStringArray()
+	for id in after["entries"]:
+		entry_names.append(site_name(id).to_upper())
+	if not entry_names.is_empty():
+		var en := report.add_row(tr("NEW RAID ENTRY POINTS"), ", ".join(entry_names), Palette.HARM_INK, "ReportEntries")
+		_tip_label(en, tr("A TAKEN Site next to your territory: the next raid can enter from it."))
 	var hb := int(r.get("home_before", 0))
 	var ha := int(r.get("home_after", 0))
 	var home := report.add_row(tr("HOSTILE HOME SERVER"), (tr(REPORT_INTACT) % [ha, c.grid.home_max_integrity]) if ha >= hb else (tr(REPORT_DAMAGED) % [ha, c.grid.home_max_integrity]),
@@ -6469,6 +6477,7 @@ func show_raid_summary() -> void:
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
+	_mount_node_marks(RaidNodeMarks.of_raid(r.get("nodes", {}), c.grid.home_site_id))
 	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT  # B3 (D5): the outcome is on the node and the paper
 	city_overlay.avoid_controls([side])
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)

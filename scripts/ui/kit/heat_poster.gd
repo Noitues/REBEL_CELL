@@ -567,6 +567,9 @@ func note_avoid() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	if not is_inside_tree():
 		return out
+	# A-082 / RAID-VIS F4: the note never stands on its own banner (the tilted box, as drawn).
+	if banner_alpha > 0.0:
+		out.append(banner_global_bounds())
 	for n in get_tree().root.find_children("*", "Control", true, false):
 		var c := n as Control
 		if c.get_viewport() != get_viewport() or not c.is_visible_in_tree() or is_ancestor_of(c) or c == self:
@@ -959,6 +962,18 @@ func banner_corners() -> PackedVector2Array:
 	for p in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
 		out.append(c + (p - c).rotated(deg_to_rad(BANNER_TILT)))
 	return out
+
+
+## The banner's tilted box as a rect in global px (what the note keeps off).
+func banner_global_bounds() -> Rect2:
+	var xf := get_global_transform()
+	var box := Rect2()
+	var first := true
+	for p in banner_corners():
+		var g: Vector2 = xf * p
+		box = Rect2(g, Vector2.ZERO) if first else box.expand(g)
+		first = false
+	return box
 
 
 ## The bottom of the Heat bar below the block's top (px; the small poster's banner hangs

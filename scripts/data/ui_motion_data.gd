@@ -44,7 +44,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"resolve_sequence", &"hit_line", &"victory_stamp", &"combat_end_hold", &"wheel_flip", &"dead_wheel_fade",  # ANIM-2
 	&"drag_ghost_tilt", &"card_pile", &"hand_reflow", &"ram_tick", &"ram_pending_blink",  # ANIM-3
 	# Animation pass ANIM-5 (map, raid, jack and Heat motion):
-	&"jack_scanlines", &"raid_step_gap", &"home_lag", &"minimap_pulse", &"select_ring_ease", &"legend_fold",
+	&"jack_scanlines", &"raid_step_gap", &"raid_step_beat", &"raid_phase_gap", &"raid_approach", &"raid_settle", &"home_lag", &"minimap_pulse", &"select_ring_ease", &"legend_fold",
 	# Animation pass ANIM-4 (HQ drag and drop):
 	&"drop_stamp", &"market_fly",
 	# Animation pass ANIM-6 (screens, menus and ambience): ids the screen motion added.
@@ -183,6 +183,8 @@ const OFF_PARTS: Dictionary = {
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
 	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
+	# RAID-VIS F1: the step-locked playout's minimum step, phase rest, approach and settle holds (off = no time).
+	&"raid_step_beat": 0.0, &"raid_phase_gap": 0.0, &"raid_approach": 0.0, &"raid_settle": 0.0,
 	# ART-11 4D: the lock's sticker stagger and the dossier's note stagger (off = together).
 	&"ransom_sticker_stagger": 0.0, &"dossier_note_stagger": 0.0,
 }

@@ -223,25 +223,31 @@ func test_round_44_your_network_under_threat_intel_if_placed_on_hover_and_its_pr
 	assert_true(column.is_ancestor_of(network), "Q9: YOUR NETWORK in the right column")
 	assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "under THREAT INTEL")
 	assert_false(page.get_node("WorkOrder").is_ancestor_of(network), "not over the work order")
-	var if_placed := page.find_child("IfPlaced", true, false) as Control
-	assert_not_null(if_placed, "the IF PLACED terminal")
-	assert_false(column.is_ancestor_of(if_placed), "RAID-FIX D6: not in the card column (it would be clipped by the Crew block)")
-	assert_lte(if_placed.get_global_rect().end.x, column.get_global_rect().position.x + 0.5, "over the map, left of the card column")
-	assert_false(if_placed.visible, "the clutter rule: no IF PLACED until a card is pointed at")
+	# RAID-VIS F4 (A-082): no floating IF PLACED terminal; its lines are the hand-effect plate's.
+	assert_null(page.find_child("IfPlaced", true, false), "the IF PLACED terminal is retired")
+	var plate := page.find_child("HandEffect", true, false) as Control
+	assert_not_null(plate, "the hand-effect plate")
+	assert_false(plate.visible, "the clutter rule: no plate until a card is pointed at")
 	assert_null(page.find_child("DeploySteps", true, false), "RAID-01: no steps panel")
 	# Its lines are the rules' own preview: what the first defence would change on the target.
 	var target: StringName = hq.selected_site
-	var said: Array = []
-	for l in page.find_child("IfPlacedLines", true, false).get_children():
-		said.append((l as Label).text)
+	hq.point_card(0)
 	var expect: Array = hq.if_placed_lines({"kind": "asset", "index": 0, "asset": c.armory[0]}, target)
-	assert_eq(said, expect, "IF PLACED shows the first defence's change")
+	var parts: Dictionary = hq.if_placed_parts
+	assert_eq(expect.back().replace("\n", " "), (page.find_child("HandEffectWords", true, false) as Label).text, "the effect sentence first")
+	assert_eq(String(parts.get("home", "")), (page.find_child("HandEffectHome", true, false) as Label).text, "the home change last")
+	var shown := 0
+	for n in ["HandEffectWords", "HandEffectNode", "HandEffectHome"]:
+		if (page.find_child(n, true, false) as Label).visible:
+			shown += 1
+	assert_lte(shown, 3, "at most 4 lines with the wrap")
+	hq.hide_if_placed()
 	# Hovering another card shows its change; placing it gives the forecast it showed.
 	var card := page.find_child("Asset_%s" % c.armory[1], true, false) as AssetCard
 	card.mouse_entered.emit()
 	await _frames(1)
 	assert_eq(hq.if_placed_index, 1, "the hovered card's change")
-	assert_true(if_placed.visible, "IF PLACED shows while the card is pointed at")
+	assert_true(plate.visible, "the plate shows while the card is pointed at")
 	var copy := c.duplicate_state()
 	CampaignRules.deploy_asset(copy, RunManager.config(), RunManager.lookup(), 1, target)
 	var then := CampaignRules.project_raid(copy, RunManager.corporation, RunManager.config(), RunManager.lookup(), RunManager.pending_raid())

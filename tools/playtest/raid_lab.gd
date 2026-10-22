@@ -22,11 +22,16 @@ const SLOT := "gut_raid_lab"
 const LAB_SETTINGS := "user://raid_lab_settings.json"
 const SETTLE_FRAMES := 45
 const WAIT_FRAMES := 1200
-const PLAYOUT_SHOT_STEPS: Array[int] = [1, 4, 8, 14, 22]
+const PLAYOUT_FRAME_LIMIT := 7200
+const PLAYOUT_MAX_SNAPS := 9
+const PLAYOUT_BEAT_FRAMES := 100
 
 var out_dir := "user://raid_lab"
 var variant := "hold"
 var save_default := false
+## --size=N: the network's node count (default 2 for hold, 5 otherwise). 9 gives a lose raid with a node DOWN, one
+## TAKEN and home hit.
+var size_override := 0
 var _step := 0
 var _shots: PackedStringArray = []
 
@@ -42,6 +47,8 @@ func _ready() -> void:
 			scramble = true
 		elif a == "--save-default":
 			save_default = true
+		elif a.begins_with("--size="):
+			size_override = int(a.trim_prefix("--size="))
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	if scramble:
 		ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", true)
@@ -109,7 +116,7 @@ func _run() -> void:
 	if not classes.is_empty():
 		DemoSetup.roster_of(c, classes)
 	DemoSetup.set_schematics(c, 60)
-	var size := 2 if variant == "hold" else 5
+	var size := size_override if size_override > 0 else (2 if variant == "hold" else 5)
 	var types: Array[StringName] = [&"safehouse", &"firewall_relay", &"vault_terminal", &"relay", &"proxy_relay"]
 	for i in size:
 		var open := CampaignRules.launchable_sites(c, corp, cfg)
@@ -173,17 +180,39 @@ func _run() -> void:
 		if d != null and is_instance_valid(d):
 			d.yes_button.pressed.emit()
 		await _frames(10)
-	for s in PLAYOUT_SHOT_STEPS:
-		if hq.playout == null or not is_instance_valid(hq.playout):
+	# RAID-VIS F1: the playout at 1x, timed from START DEFENSE to the end; a frame at each step that hurts (a node
+	# DOWN or TAKEN, home hit) once its beats have landed, and the first steps.
+	var flat: Array = []
+	if hq.playout != null and is_instance_valid(hq.playout):
+		for g in hq.playout._steps:
+			flat.append_array(g)
+	var planned := RaidBeats.playout_seconds(flat)
+	var started_ms := Time.get_ticks_msec()
+	var seen := 0
+	var snaps := 0
+	for i in PLAYOUT_FRAME_LIMIT:
+		if hq.playout == null or not is_instance_valid(hq.playout) or hq.playout.is_done() or snaps >= PLAYOUT_MAX_SNAPS:
 			break
-		await _until(func() -> bool: return not is_instance_valid(hq.playout) or hq.playout.current_step() >= s or hq.playout.is_done())
-		if hq.playout == null or not is_instance_valid(hq.playout):
-			break
-		await _shot("playout_step%02d" % s, "Playout at step %d of %d." % [hq.playout.current_step(), hq.playout.steps_total()], 2)
-		if not is_instance_valid(hq.playout) or hq.playout.is_done():
-			break
+		await get_tree().process_frame
+		var cur: int = hq.playout.current_step()
+		if cur <= seen:
+			continue
+		seen = cur
+		var key := false
+		for e in hq.playout._steps[cur - 1]:
+			if String(e.get("type", "")) in ["down", "taken", "home_hit"]:
+				key = true
+		if key or cur == 2 or cur == 3:
+			await _frames(PLAYOUT_BEAT_FRAMES if key else 30)
+			if hq.playout == null or not is_instance_valid(hq.playout):
+				break
+			await _shot("playout_step%02d" % cur, "Playout at step %d of %d%s." % [hq.playout.current_step(), hq.playout.steps_total(), " (a loss lands)" if key else ""], 1)
+			snaps += 1
 	if hq.playout != null and is_instance_valid(hq.playout):
 		await _until(func() -> bool: return not is_instance_valid(hq.playout) or hq.playout.is_done(), 3600)
+		var measured := float(Time.get_ticks_msec() - started_ms) / 1000.0
+		print("RAID LAB playout %s: planned %.1f s, measured %.1f s at 1x (%d steps)" % [variant, planned, measured, seen])
+		_shots.append("playout_length\t%s planned %.1f s measured %.1f s at 1x" % [variant, planned, measured])
 		await _shot("playout_end", "Playout at its end.", 30)
 		await _shot("playout_end_later", "Playout end, 4 s later.", 240)
 	if c.is_over():

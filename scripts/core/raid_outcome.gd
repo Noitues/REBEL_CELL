@@ -142,3 +142,44 @@ static func _shots(r: RaidResolver.RaidResult, site: StringName, asset_id: Strin
 		if e.get("type", "") == "shot" and StringName(e.get("site", "")) == site and StringName(e.get("asset", "")) == asset_id:
 			n += 1
 	return n
+
+
+## RAID-VIS F3 (GDD 7.2: "the summary shows DOWN/TAKEN nodes, repair costs and new entry points"): what a
+## played raid left on the Grid, read from the campaign AFTER `RaidResolver.apply`:
+## "down": [{"id", "cost"}] (nodes this raid put DOWN with their repair cost, `CampaignRules.repair_cost`),
+## "taken": [ids] (Sites this raid took), "entries": [ids] (TAKEN Sites next to the territory: each is
+## a raid entry point from now on, `RaidResolver.default_entry_sites`), all sorted by id.
+static func aftermath(campaign: CampaignState, grid_data: CityGridData, config: CampaignConfigData, lookup: ContentLookup) -> Dictionary:
+	var down: Array[Dictionary] = []
+	var taken: Array[StringName] = []
+	var entries: Array[StringName] = []
+	var grid := campaign.grid
+	for o in node_outcomes(campaign.last_raid.get("nodes", {})):
+		var id: StringName = o["id"]
+		match String(o["outcome"]):
+			"down":
+				if grid.is_claimed(id) and int(grid.site(id).get("condition", GridState.Condition.OK)) == GridState.Condition.DOWN:
+					down.append({"id": id, "cost": CampaignRules.repair_cost(campaign, config, lookup, id)})
+			"taken":
+				taken.append(id)
+	if not taken.is_empty():
+		entries = entry_points(grid, grid_data, taken)
+	return {"down": down, "taken": taken, "entries": entries}
+
+
+## RAID-VIS F3: the TAKEN Sites next to the territory (a claimed Site over a link): each is a raid entry point
+## (`RaidResolver.default_entry_sites`). `among` limits the answer to those Sites (the ones this raid took);
+## empty = every TAKEN Site. Sorted by id.
+static func entry_points(grid: GridState, grid_data: CityGridData, among: Array = []) -> Array[StringName]:
+	var out: Array[StringName] = []
+	var ids: Array = among if not among.is_empty() else grid.sites.keys()
+	for k in ids:
+		var id := StringName(k)
+		if not grid.is_taken(id):
+			continue
+		for n in grid.neighbors(id, grid_data):
+			if grid.is_claimed(n):
+				out.append(id)
+				break
+	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return out
