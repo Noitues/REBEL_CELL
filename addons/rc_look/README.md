@@ -29,8 +29,8 @@ point W lands on 1), back to sRGB, x tint (clamped), saturation around the displ
 | lab: `--module=grade` | each preset on grey and neon-token ramps, shader strip over mirror chips |
 
 Call sites: `shaders/arena/combat_backdrop.gdshader` (`graded`), `CombatBackdrop.graded` (numbers from CityConfig
-`backdrop_*`, per-corp tint). Next: the UI grades (city_tilt_shift, screen_grey, route_grade) and city_post (announced
-to art-pass first).
+`backdrop_*`, per-corp tint); `city_tilt_shift` (`rcl_saturate`), `route_grade`, `screen_grey` (`rcl_luma`). city_post is held
+until art-pass clears it (an exact-match preset or a designer sheet).
 
 ## Occlusion: the sight rule (`RcLookOcclusion`)
 

@@ -9721,3 +9721,9 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
 - **What.** `addons/rc_look/scripts/rc_look_occlusion.gd`: the combat close-up's view cut (round 3: the sight-line wedge, the screen-overlap rule, the subject's own footprint kept) as a camera-agnostic pure rule; the camera is a `project` Callable. `BackdropCatalog.view_cut / occludes / projected_box` delegate to it and their own copy (and `_screen_hides`) is deleted; same maths, so the b2 cut tests and the arena backdrop fixtures are the parity check.
 - **Netrun.** `OcclusionHelper` stays as it is: it is the spec-pinned twin of `tools/netrun_art/occlusion.py` (NA-21) and fades obstacles through a moving cone rather than cutting a still. Both now follow the same rule in words (README); folding the cone into rc_look would need the netrun spec owner and is not done here.
 - Tests: `tests/unit/test_rc_look_occlusion.gd` (fast).
+
+## 2026-10-21 - LOOK-TOOLBOX module 9: UI grades on rc_look (refactor, look unchanged)
+
+- `city_tilt_shift` (saturation step: `rcl_saturate`), `route_grade` and `screen_grey` (luma: `rcl_luma`, same mix order) include `rc_look.gdshaderinc`; their own Rec.709 copies are deleted.
+- Proof (art-pass rule: fixtures or a before/after at most 1/255): `test_parity_title01_backdrop` green (tilt_shift); `route` and `route_focus` captures before/after max difference 0; `screen_grey` A/B over a hue x value card (windowed, old vs new shader, grey 1.0 / 0.5 / 0.3): max 1-2/255, the same as old vs old in the same harness (1-2/255, the screen-texture read's own noise). run_end captures are not deterministic between runs (same code: up to 254) and do not use screen_grey, so they prove nothing here.
+- city_post is held (art-pass 2026-10-21: L5 is signed off and Solace frames are being tuned on art/look); its move needs an exact-match preset or a designer sheet.
