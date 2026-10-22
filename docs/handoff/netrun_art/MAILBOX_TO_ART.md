@@ -290,3 +290,31 @@ Sheet: `D:/rc_tmp/pt_p1/sheet.jpg` (3 panels, 1280x720, text 1.0). Branch `pt-p1
 - Panel 3: after Quit / Continue mid-turn, the THIS TURN list and the LETHAL line come back. This is a bug fix; the look is unchanged.
 - Also changed, with no new visuals: the RAM bar tooltip text, and a guard on a VinylSticker tween.
 Ask: APPROVED, or the fixes. The Raid Setup sheet (A-073 chip) is in round 2 and comes separately.
+
+### B-064 · 2026-10-21 · re A-069, A-070, A-074 · READY: Solace district layout on main; RESPIN fixes merged
+- **re A-074:** fixed and merged (pt-p1-fixes @ 05163cb2 → main). The warning says "the 1 play" / "the N plays", with no "(s)".
+  Focus check: the 1:1 crop is `D:/rc_tmp/pt_p1/dialog_crop.png` (from `D:/rc_tmp/pt_p1/shots2/warning.png`). KEEP PLANNING holds
+  keyboard focus when the dialog opens (`test_pt_p1_respin`), and in the crop it shows the larger, tilted sticker. Tell me if that
+  isn't the §2.10 focus state.
+- **re A-069 / A-070: READY on main** (sol-layout @ 641b1188, merged). Both land together, so re-shoot your parity sheet on main.
+  - Switch: `CampaignConfigData.city_sol_layout`, shipped on. Only lots in Solace territory change; other corps' lot layers are
+    byte-identical (test).
+  - **Buildings:** ordinary `buildings` in city.json. Prisms of 2-3 lots a side (12-18 BU), at about half the old height and at least
+    5.7 BU (3 storeys), so about 24 Solace buildings a district. Site lots stay one-lot buildings. `test_solace_kits` thresholds were
+    retuned for blocks (more than 15 buildings, bundle mean 1-8), and you may want to retune `solace_bundle_pitch`.
+  - **Park:** the optional city.json section `solace_park`. Schema: `tools/netrun_art/schemas/city.schema.json`. Doc:
+    `docs/handoff/plan2/NA02_FIELDS.md`. Builder: `CityPlan.solace_park_section`. Coordinates are plan BU (x east, y north = -j).
+    - `outline`: [{hole, points}], an organic boundary; the largest loop is the outer edge.
+    - `paths`: [{id, kind stair|path|lane, width, points}], smoothed; both ends stand on a street lot. Stairs are 4, other paths about
+      8-10, lanes 3 (4.0 BU wide, paths 2.4 BU).
+    - `ponds`: [{centre, points}].
+    - `lots`: the lawn lots (K_PARK). The park kit already draws these.
+    - `plinth`: {centre, radius 35.0, stairs [{dir N|E|S|W, landing, path id}]}. No block touches the circle.
+    - A lot-space copy is in `CityA2Builder.lots_for(...)["solace"]`.
+  - **Plinth:** `solace_plinth = true` in `city_config.tres`; the 60 BU HQ rect doesn't hold the circle, so the lots it reaches became
+    lawn. One known touch: the first Solace Site sits just south of the HQ and grazes the circle by under a lot, and on some seeds the S
+    stair lands on its west edge. Site lots are ruled to stay, so tell me if you want it shifted one lot.
+  - Plan sheets, top-down from the lot data: `D:/rc_tmp/sol_layout/sheet.jpg` (seed 7) and `sheet_seed1.jpg`. Left is the old grid,
+    right is the park.
+  - Netruns (D21): Solace street netruns run on the city streets at the park's edge. A 20-campaign sweep showed every launchable Site
+    derives a street.
