@@ -36,6 +36,14 @@ static func mix(c: Color, air: Color, t: float) -> Color:
 	return Color(o.r, o.g, o.b, c.a)
 
 
+## sRGB `c` through `t` of air `air` with `extinct` of it hiding `c`, as rcl_air_scatter. Alpha kept.
+static func scatter(c: Color, air: Color, t: float, extinct: float) -> Color:
+	var a := clampf(t, 0.0, 1.0)
+	var o := c.srgb_to_linear() * (1.0 - a * clampf(extinct, 0.0, 1.0)) + air.srgb_to_linear() * a
+	o = o.linear_to_srgb()
+	return Color(o.r, o.g, o.b, c.a)
+
+
 ## The sky at elevation `e` (sin of the view angle), as rcl_sky.
 static func sky(p: RcLookAirPreset, e: float) -> Color:
 	var t := p.sky_top.srgb_to_linear()
@@ -63,7 +71,8 @@ static func apply(mat: ShaderMaterial, p: RcLookAirPreset, prefix: String = "") 
 
 
 ## The 3D air pass for preset `p`: a full-screen quad (add it anywhere in the view's 3D scene) that lays the air over
-## every pixel by its depth and height above `ground_y`. `overrides` may replace "start", "density", "height", "high".
+## every pixel by its depth and height above `ground_y`. `overrides` may replace "start", "density", "height", "high",
+## "extinct".
 static func pass_node(p: RcLookAirPreset, ground_y: float = 0.0, overrides: Dictionary = {}) -> MeshInstance3D:
 	var q := QuadMesh.new()
 	q.size = Vector2(2.0, 2.0)
@@ -75,6 +84,7 @@ static func pass_node(p: RcLookAirPreset, ground_y: float = 0.0, overrides: Dict
 	m.set_shader_parameter(&"air_a", Vector4(float(overrides.get("start", v.x)), float(overrides.get("density", v.y)),
 			float(overrides.get("height", v.z)), float(overrides.get("high", v.w))))
 	m.set_shader_parameter(&"ground_y", ground_y)
+	m.set_shader_parameter(&"extinct", float(overrides.get("extinct", p.extinct)))
 	var n := MeshInstance3D.new()
 	n.name = "RcLookAirPass"
 	n.mesh = q

@@ -9,6 +9,8 @@ extends Resource
 @export var density: float = 0.01
 @export var height: float = 30.0
 @export var high: float = 0.15
+## Share of the air that hides what is behind it (1: a plain mix; lower: the air adds its colour, lit windows stay).
+@export var extinct: float = 1.0
 ## Sky (sRGB): zenith, horizon, below the horizon; the horizon glow's falloff and the ground's.
 @export var sky_top: Color = Color(0.003, 0.003, 0.01)
 @export var sky_horizon: Color = Color(0.42, 0.14, 0.09)
@@ -36,6 +38,8 @@ func validate() -> PackedStringArray:
 		errs.append("height must be > 0 (%s)" % height)
 	if high < 0.0 or high > 1.0:
 		errs.append("high must be in 0..1 (%s)" % high)
+	if extinct < 0.0 or extinct > 1.0:
+		errs.append("extinct must be in 0..1 (%s)" % extinct)
 	if glow_k < 0.0 or ground_k < 0.0:
 		errs.append("glow_k and ground_k must be >= 0")
 	return errs

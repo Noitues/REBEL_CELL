@@ -5,6 +5,9 @@
 //     a Beer-Lambert extinction (the city_building per-building haze) thinned with height down to `high`.
 //     a = vec4(start, density, height, high).
 //   - rcl_air_mix(srgb, air_srgb, amount): the point seen through that much air (linear-light mix, returns sRGB).
+//   - rcl_air_scatter(srgb, air_srgb, amount, extinct): the same with the extinction as a share: c (1 - amount extinct)
+//     + air amount. extinct 1 is rcl_air_mix; lower keeps lit windows as points while the air adds its colour
+//     (the plate's far city: violet with its windows still showing).
 //   - rcl_sky(e, top, horizon, ground, glow_k, ground_k): sky by elevation e (sin of the view angle), sRGB in and out,
 //     mixed in linear light: top + (horizon - top) exp(-glow_k e) above the horizon, to `ground` below over ground_k.
 // RcLookAir (GDScript) mirrors these exactly; numbers in addons/rc_look/config/look_air.tres.
@@ -21,6 +24,11 @@ float rcl_air(float d, float y, vec4 a) {
 
 vec3 rcl_air_mix(vec3 srgb, vec3 air_srgb, float amount) {
 	return rcl_to_srgb(mix(rcl_to_lin(srgb), rcl_to_lin(air_srgb), clamp(amount, 0.0, 1.0)));
+}
+
+vec3 rcl_air_scatter(vec3 srgb, vec3 air_srgb, float amount, float extinct) {
+	float a = clamp(amount, 0.0, 1.0);
+	return rcl_to_srgb(rcl_to_lin(srgb) * (1.0 - a * clamp(extinct, 0.0, 1.0)) + rcl_to_lin(air_srgb) * a);
 }
 
 vec3 rcl_sky(float e, vec3 top, vec3 horizon, vec3 ground, float glow_k, float ground_k) {

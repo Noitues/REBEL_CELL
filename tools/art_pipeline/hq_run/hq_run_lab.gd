@@ -16,7 +16,7 @@ extends Control
 ##     captures of the same code match for a before / after; not saved, restored at quit)]
 ##     [--try=spill,air (LOOK-TOOLBOX lab only, pov / pod: the helix as a toon spill source, Solace green, at
 ##     --spill-y=<BU over the plinth> with radius --spill-r=<x city_sol_plinth_r_bu> and --spill-i=<intensity>; the
-##     rc_look air pass, night preset, with --air-density / --air-start overrides)]
+##     rc_look air pass, night preset, with --air-density / -start / -height / -high / -extinct overrides)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -194,8 +194,9 @@ func _try_look(c: CityView3D, at: Vector3) -> void:
 		var o := {}
 		if _args.has("air-density"):
 			o["density"] = float(_args["air-density"])
-		if _args.has("air-start"):
-			o["start"] = float(_args["air-start"])
+		for k: String in ["start", "height", "high", "extinct"]:
+			if _args.has("air-" + k):
+				o[k] = float(_args["air-" + k])
 		c.add_child(RcLookAir.pass_node(RcLookAir.preset(&"night"), at.y, o))
 
 

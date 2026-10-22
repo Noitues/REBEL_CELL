@@ -86,3 +86,14 @@ func test_the_air_pass_carries_the_preset() -> void:
 	assert_eq(m.get_shader_parameter(&"air_a"), Vector4(300.0, 0.0008, p.height, p.high), "overrides applied, the rest kept")
 	assert_eq(float(m.get_shader_parameter(&"ground_y")), 2.0)
 	n.free()
+
+
+func test_scatter_keeps_lights_and_matches_mix_at_full_extinction() -> void:
+	var air := Color(0.275, 0.247, 0.361)
+	var c := Color(0.9, 0.8, 0.4)
+	assert_true(RcLookAir.scatter(c, air, 0.6, 1.0).is_equal_approx(RcLookAir.mix(c, air, 0.6)), "extinct 1 = mix")
+	assert_true(RcLookAir.scatter(c, air, 0.0, 0.3).is_equal_approx(c), "no air: unchanged")
+	var lit := RcLookAir.scatter(c, air, 0.6, 0.3)
+	assert_gt(lit.r, RcLookAir.mix(c, air, 0.6).r, "lower extinction keeps a lit window brighter")
+	var black := RcLookAir.scatter(Color(0, 0, 0), air, 0.6, 0.3)
+	assert_gt(black.b, 0.0, "black takes the air's colour")
