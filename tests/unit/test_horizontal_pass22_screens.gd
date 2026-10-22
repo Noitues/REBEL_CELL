@@ -237,12 +237,19 @@ func test_the_raid_stamp_is_a_forecast() -> void:
 	var projection := RunManager.project_raid()
 	assert_string_contains(fs.caption, "IF THE RAID")
 	assert_string_contains(fs.caption, "RUNS NOW")
-	assert_eq(fs.verdict, hq.raid_verdict(projection), "the verdict is the projection's")
+	# D28 / raid-fix-b (updated on purpose): the chip's head line is the verdict word only (the projection's first
+	# line); HOME and HEAT are the chip's own damage lines below it, not part of the verdict text.
+	assert_eq(fs.verdict, hq.raid_verdict(projection).get_slice(String.chr(10), 0), "the verdict is the projection's")
 	# ANIM-R4 H3 (updated on purpose): the verdict names the losses, never "HOME HIT".
 	assert_false(fs.verdict.contains("HOME HIT"))
 	assert_true(fs.tooltip_text.begins_with("Forecast, not a result"), "the tooltip says it is a projection")
 	if projection.home_after < projection.home_before and not projection.campaign_lost:
-		assert_string_contains(fs.verdict, "HOME -%d" % (projection.home_before - projection.home_after), "home damage reads as its number, beside rows such as 50 > 40 HOLDS")
+		var home_line := hq._panel.find_child("HomeForecast", true, false) as Label
+		assert_not_null(home_line, "the chip carries a HOME line")
+		assert_string_contains(home_line.text, "(%s)" % TextDb.signed(projection.home_after - projection.home_before), "home damage reads as its number, beside rows such as 50 > 40 HOLDS")
+	# D28: NO HEAT is the absence of the chip's HEAT line (the verdict text no longer says it).
+	var heat_shown := hq._panel.find_child("HeatForecast", true, false) != null
+	assert_eq(heat_shown, RaidOutcome.project(projection, RunManager.config())["heat_delta"] != 0, "the HEAT line shows only when the raid moves Heat")
 	for n in _all(hq._panel):
 		if n is ZineStamp:
 			assert_ne((n as ZineStamp).stamp_text, "BREACHED", "no result stamp before the raid runs")
@@ -272,8 +279,10 @@ func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
 	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var hq: Control = await _raid(scale)
 		var cards: Node = hq._panel.find_child("AssetCards", true, false)
-		assert_eq(cards.get_child_count(), 3)
-		for card in cards.get_children():
+		# raid-fix-b (updated on purpose): the row also holds the HandEffect plate; count and walk the AssetCards only.
+		var asset_cards: Array[Node] = cards.get_children().filter(func(k: Node) -> bool: return k is AssetCard)
+		assert_eq(asset_cards.size(), 3)
+		for card in asset_cards:
 			var r := _shown_rect(card as Control)
 			assert_true(r.is_equal_approx((card as Control).get_global_rect()) and Rect2(Vector2.ZERO, CANVAS).encloses(r),
 				"the %s card is whole on screen at %.1f: %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect()])
@@ -284,7 +293,7 @@ func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
 		# B3 b (art director): no instruction panel over the work order; its sentence is the paper's tooltip.
 		assert_null(hq._panel.find_child("RaidIntro", true, false), "no instruction panel")
 		assert_string_contains((hq._panel.find_child("RaidCard", true, false) as Control).tooltip_text.replace("\n", " "), TextDb.ui_text("ui.raid_intro"))
-		for card in cards.get_children():
+		for card in asset_cards:
 			assert_string_contains((card as Control).tooltip_text, hq.site_name(hq.selected_site), "the target is named")
 		hq.get_parent().queue_free()
 		await _frames(2)

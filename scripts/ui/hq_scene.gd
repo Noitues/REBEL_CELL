@@ -5469,7 +5469,7 @@ func best_station_words() -> String:
 	for id in c.grid.claimed_ids():
 		if id != c.grid.home_site_id:
 			ids.append(id)
-	ids.sort()
+	IdSort.sort_ids(ids)
 	var best_id: StringName = &""
 	var best := {"words": "", "score": -1}
 	for id in ids:
