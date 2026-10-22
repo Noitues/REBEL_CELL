@@ -25,8 +25,8 @@ RS = os.path.join(HERE, "raid_scene")
 SCR = "D:/rc_scratch/solace_v1/bloom3d/raid"
 INK = "D:/rc_scratch/solace_v1/district/out/R5_raid_ink.png"
 LOCK = "D:/rc_scratch/GPU_LOCK"
-CFG = dict(seed=3, defended=[[[0.0, 0.0], 46.0], [[108.0, -60.0], 42.0]], vscale=0.18, vw=0.045, ew=0.35, hatch_k=0.45,
-           veins=1.0, edge=2.0, hatch=0.3, plum=[0.16, 0.065, 0.12], pink=[1.0, 0.0612, 0.305])
+CFG = dict(seed=3, defended=[[[0.0, 0.0], 46.0], [[108.0, -60.0], 42.0]], vscale=0.075, vw=0.016, ew=0.35, hatch_k=0.45,
+           veins=2.2, edge=6.0, hatch=0.12, plum=[0.035, 0.014, 0.028], pink=[1.0, 0.0612, 0.305])
 
 
 def blender(cfg_path, size, out, cal=False, extra=()):

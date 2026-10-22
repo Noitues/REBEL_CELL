@@ -210,6 +210,56 @@ def _wrap_front(mat, grp):
     return False
 
 
+def haze():
+    """Faint pink spore haze just above the front: an emissive volume cylinder round the helix, a few floors tall, fading upward."""
+    h = float(BL.get("haze_h", 0)) 
+    if h <= 0:
+        return
+    import bmesh
+    m = bpy.data.materials.new("bl_haze")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    vs = nt.nodes.new("ShaderNodeVolumePrincipled")
+    vs.inputs["Density"].default_value = 0.0
+    b = _HB(nt)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sp = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Generated"], sp.inputs[0])
+    gz = sp.outputs["Z"]
+    fade = b.m("POWER", b.m("SUBTRACT", 1.0, gz), 1.6)
+    ramp_in = b.smooth(gz, 0.0, 0.08)
+    nz = b.n("ShaderNodeTexNoise", noise_dimensions="3D")
+    nz.inputs["Scale"].default_value = float(BL.get("haze_scale", 9.0))
+    nz.inputs["Detail"].default_value = 3.0
+    nt.links.new(tc.outputs["Generated"], nz.inputs["Vector"])
+    spec = b.smooth(nz.outputs["Fac"], 0.50, 0.66)
+    gx, gy = sp.outputs["X"], sp.outputs["Y"]
+    rr = b.m("SQRT", b.m("ADD", b.m("POWER", b.m("SUBTRACT", gx, 0.5), 2.0), b.m("POWER", b.m("SUBTRACT", gy, 0.5), 2.0)))
+    radial = b.m("SUBTRACT", 1.0, b.smooth(rr, 0.10, 0.48))
+    dens = b.m("MULTIPLY", b.m("MULTIPLY", b.m("MULTIPLY", fade, ramp_in), radial), b.m("ADD", 0.25, spec))
+    nt.links.new(b.m("MULTIPLY", dens, float(BL.get("haze_k", 0.02))), vs.inputs["Density"])
+    vs.inputs["Emission Color"].default_value = tuple(BL["pink"]) + (1,)
+    nt.links.new(b.m("MULTIPLY", dens, float(BL.get("haze_em", 1.2))), vs.inputs["Emission Strength"])
+    vs.inputs["Color"].default_value = tuple(BL["pink"]) + (1,)
+    nt.links.new(vs.outputs[0], out.inputs["Volume"])
+    me = bpy.data.meshes.new("bl_haze")
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    bm.to_mesh(me)
+    bm.free()
+    ob = bpy.data.objects.new("bl_haze", me)
+    R = float(BL.get("haze_r", 34.0))
+    z0 = float(BL["z_front"]) - 2.0
+    ob.location = (0.0, 0.0, z0 + h / 2)
+    ob.scale = (2 * R, 2 * R, h)
+    me.materials.append(m)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.pass_index = 1
+    ob.visible_shadow = False
+
+
 def apply():
     if not BL:
         return
@@ -230,6 +280,7 @@ def apply():
         if not mat.get("bl_on") and _wrap(mat, _HG["win"]):
             mat["bl_on"] = True
             done.append(mat.name)
+    haze()
     print("BLOOM HQ wrapped", done, flush=True)
 
 

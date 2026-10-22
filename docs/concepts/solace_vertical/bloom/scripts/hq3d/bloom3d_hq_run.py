@@ -47,8 +47,8 @@ def cfg_for(state, tune=None):
     if ff is None:
         ff = front_floor(3 - gap)
     cfg = dict(z_front=G.floor_z(ff) + 0.5 * G.FH, floor=ff, gap=gap, seed=7, tube_r=G.RT, swell=4.5, tongue=40.0, reach=45.0, ahead=1.0, stair_phi_A=G.stair_phi("A"),
-               stair_phi_B=G.stair_phi("B"), vscale=0.24, vw=0.065, ew=0.5, hatch_k=0.12, veins=1.5, edge=14.0, hatch=0.2, cover_k=0.94,
-               plum=[0.03, 0.012, 0.024], pink=[1.0, 0.0612, 0.305], podium=G.PODIUM_H, win_dim=0.03, win_r=48.0, win_bias=0.0)
+               stair_phi_B=G.stair_phi("B"), vscale=0.24, vw=0.065, ew=1.1, hatch_k=0.12, veins=1.5, edge=45.0, hatch=0.2, cover_k=0.94,
+               plum=[0.03, 0.012, 0.024], pink=[1.0, 0.0612, 0.305], podium=G.PODIUM_H, win_dim=0.03, win_r=48.0, win_bias=0.0, haze_h=38.0, haze_k=0.004, haze_em=0.07)
     if st_bias(state):
         cfg["z_front"] += st_bias(state)
     if tune:

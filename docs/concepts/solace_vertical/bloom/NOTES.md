@@ -77,3 +77,8 @@ Port notes: the field is pure position/attribute math (no textures), so it maps 
 ### HQ revision 2 (review: HQ row failed the squint test)
 Body plum-black (0.03/0.012/0.024), veins 1.5 (vw 0.065), hot front hairline edge 14 (ew 0.5), tongues 40 BU; below the front ALL helix emission dies to dim pink: the window-dim wrap now covers helix radius < 48 (frame rings, rungs, floor rings sit outside radius 30) and is fully applied (fac 1.0, strength 0.03). Decision front lifted 28 BU (about 2 floors) over the overview rule so the near strand shows it in the lower third; route-room (index 5) emission, window holes and the UP stair band stay clean.
 Medians: overview 0.1226 (clean 0.1230), decision 0.1385 (clean 0.1474, -0.0089). Finals 80 s / 135 s.
+
+### Rev 3 (designer: approved to port; HQ overview push, darker raid)
+- **HQ overview**: hot front edge 45 / width 1.1 BU (was 14 / 0.5), plus a faint pink spore haze: an emissive volume cylinder (r 34 BU, 38 BU tall = about 3 floors, radial and upward fade, noise specks) starting 2 BU under the front (`haze()` in `hq3d/bloom3d_hq.py`; haze_k 0.004, haze_em 0.07). Median 0.1241 vs clean 0.1230. Final 312 s (plus a long GPU-lock wait for solace_stills). `squint_hq_overview.jpg` = clean | Bloom at 320 px, plus 4 px blurred copies.
+- **Raid**: body plum-black (0.035/0.014/0.028), fewer thinner hot veins (vscale 0.075, vw 0.016, strength 2.2), hot edge 6, hatch 0.12. Medians below; not brightened to hit the target.
+- Raid medians (clean 0.2604): 20 % 0.2462, 60 % 0.1883, 90 % 0.1492 (outside the target, by design). Finals 17-43 s each plus a long lock wait.
