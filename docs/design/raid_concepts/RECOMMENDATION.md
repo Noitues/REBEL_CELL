@@ -111,3 +111,22 @@
   the hunter's column chosen after beam 2 resolves (R10 critic).
 - **Scarcity is the precondition** for both the reveal and the spoof mattering. Generous levers halve every effect
   (measured).
+
+## Rulings made by the lab (designer delegated, 2026-10-22: "you call on the choices that move the score most")
+Rules: `tools/raid_concepts/sweep_l2.py`.
+- **A find lands on the network.** OK → DOWN → TAKEN. A find on HOME costs integrity, and **0 = BREACHED = campaign
+  lost** (designer: the stakes should be very high).
+- **The spoof is a choice** after the reveal.
+- **Heat sets the raid's strength.** An extra beam is added at Heat 50, and another at 75. The ghost costs +5 Heat.
+- **EVADED = nothing touched** (decoys count as a touch). Reward: Heat −10. This contradicts D27.
+- **The forecast includes the spoof.** Exact per sealed line.
+- **Repair = v // 2** (GDD 3.3). **The key is dropped.**
+- **The wheel / Spinner is abandoned** (designer).
+
+**Measured over 20 three-raid legs** (round 2 tuning: 6 assets, at most 1 dark, beams by Heat band):
+
+| Play | Breach rate | Other |
+|---|---|---|
+| Careful (leg planner) | 0% | about 3.5 DOWN per leg, never TAKEN |
+| Raid-by-raid greedy | 0% | trails the planner by 3.5 |
+| Careless (ghost the biggest, nothing else) | **40%** | averages 80 points below the planner |
