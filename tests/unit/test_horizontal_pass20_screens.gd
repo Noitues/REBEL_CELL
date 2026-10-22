@@ -232,7 +232,8 @@ func test_raid_setup_shows_each_nodes_projected_outcome_without_a_text_wall() ->
 	# A-073 (updated on purpose): the forecast is a CRT terminal chip beside the work order, not a disc on the paper.
 	var stamp := hq._panel.find_child("Projection", true, false) as ForecastChip
 	# ANIM-R4 H3 (updated on purpose): CELL HOLDS only when nothing is lost; else the losses.
-	assert_eq(stamp.verdict, RaidVerdict.of_projection(projection))
+	# D28 / raid-fix-b (updated on purpose): the chip's head line is the verdict word only; HOME / NO HEAT are its own damage lines.
+	assert_eq(stamp.verdict, RaidVerdict.of_projection(projection).get_slice(String.chr(10), 0))
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE, "the projection stamp is display only")
 	# The map labels the network by name (CORE for the home server), never by id.
 	var g: Dictionary = hq.raid_graph(projection, {})
