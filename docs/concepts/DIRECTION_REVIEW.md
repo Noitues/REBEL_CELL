@@ -1569,3 +1569,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Grease pencil module (designer, 2026-10-22, relayed by the look-toolbox session):** "Grease pen looks good. Approved". The sheet is
   `D:/rc_scratch/look_parity/pencil_8d1cf095/pencil_sheet_all.jpg`, branch claude/gifted-yonath-0c2f42 @ 8d1cf095. The merge follows
   the pencil session's hand-off.
+- **Decrypted holo, module 15 (designer, 2026-10-22):** approved; the designer signed it off in the holo session. It covers
+  THREAT INTEL: translucent glass, scan bands, edge-only RGB split and a cracked seal (art/look-holo @ 585be87f). Fold it into
+  art/look-toolbox for build.
