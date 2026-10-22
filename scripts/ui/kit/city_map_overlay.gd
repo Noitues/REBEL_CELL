@@ -2246,6 +2246,71 @@ static func _hits_any(r: Rect2, rects: Array[Rect2]) -> bool:
 	return false
 
 
+## Parity fix (GRID-03, HQ-B): the TARGET word's spots in turn (baseline-left points, local px)
+## round the circle at `at` (radius `unit` px, rect `circle`) for a word `wide` px wide:
+## TARGET_WORD_SPOTS, then wholly left of the circle, wholly right of it, then a word's width
+## further out either side (the HQ's wider frame packs Sites round the boss). Pure.
+static func target_word_tries(at: Vector2, unit: float, circle: Rect2, wide: float) -> Array[Vector2]:
+	var tries: Array[Vector2] = []
+	for s: Vector2 in TARGET_WORD_SPOTS:
+		tries.append(at + s * unit)
+	for sy in TARGET_WORD_LEFT_ROWS:
+		tries.append(Vector2(circle.position.x - wide, at.y + sy * unit))
+	for sy in TARGET_WORD_LEFT_ROWS:
+		tries.append(Vector2(circle.end.x, at.y + sy * unit))
+	for step in range(1, TARGET_WORD_OUT_STEPS + 1):
+		for sy in TARGET_WORD_LEFT_ROWS:
+			tries.append(Vector2(circle.position.x - wide * (1.0 + step * TARGET_WORD_OUT_SHARE), at.y + sy * unit))
+			tries.append(Vector2(circle.end.x + wide * step * TARGET_WORD_OUT_SHARE, at.y + sy * unit))
+	return tries
+
+
+## The TARGET word's spot among `tries` for a word whose rect is `box` from its spot: the first on
+## the map's open part (`area`, clear of `blocks`) that covers none of `avoid` (markers, the chip,
+## its own ring), else the least covered there; else (HQ-B: no room on the open part) the least
+## covered anywhere. LOOK-TOOLBOX 12 (review: never cut by the frame): with `keep_in` (the ring
+## itself is on the map) the result is then moved wholly inside `area`. Pure.
+static func pick_word_spot(tries: Array[Vector2], box: Rect2, area: Rect2, blocks: Array[Rect2], avoid: Array[Rect2],
+		keep_in: bool) -> Vector2:
+	var best := Vector2.INF
+	var least := INF
+	for p in tries:
+		var w := Rect2(p + box.position, box.size)
+		if not area.encloses(w) or _hits_any(w, blocks):
+			continue
+		var cover := _cover(w, avoid)
+		if cover < least:
+			best = p
+			least = cover
+		if cover <= 0.0:
+			break
+	if best.x == INF or least > 0.0:
+		var fewest := least if best.x != INF else INF
+		for p in tries:
+			var cover := _cover(Rect2(p + box.position, box.size), avoid)
+			if cover < fewest:
+				fewest = cover
+				best = p
+			if cover <= 0.0:
+				break
+	if best.x == INF:
+		best = tries[0]
+	if keep_in:
+		var w := Rect2(best + box.position, box.size)
+		var shift := Vector2(clampf(w.position.x, area.position.x, maxf(area.position.x, area.end.x - w.size.x)),
+			clampf(w.position.y, area.position.y, maxf(area.position.y, area.end.y - w.size.y))) - w.position
+		best += shift
+	return best
+
+
+static func _cover(w: Rect2, avoid: Array[Rect2]) -> float:
+	var cover := 0.0
+	for o in avoid:
+		if w.intersects(o):
+			cover += w.intersection(o).get_area()
+	return cover
+
+
 ## Parity fix (GRID-03 / GRID-13): the boss's chip and TARGET pencil laid round its icon
 ## point, clear of the other markers where a spot is: {"chip": Rect2, "circle": Rect2,
 ## "word": Rect2, "word_at": Vector2} (local px; empty off the map). The word tries
@@ -2273,58 +2338,10 @@ func boss_layout(n: Dictionary) -> Dictionary:
 	# On the map's open part (never under the side column, the minimap or the key), then clear
 	# of the markers and the chip; else the spot on the map that covers the least, else the first.
 	var area := label_area()
-	var blocks := label_blocks()
-	var word_at := at + TARGET_WORD_SPOTS[0] * TARGET_RADIUS * k
-	var on_map := Vector2.INF
-	var tries: Array[Vector2] = []
-	for s: Vector2 in TARGET_WORD_SPOTS:
-		tries.append(at + s * TARGET_RADIUS * k)
-	# Big words: wholly left of the circle (its foot, then its middle), so a word wider than
-	# the circle never reaches past it into the side column.
-	var wide := _target_word_rect(at).size.x
 	var circle := _target_circle_rect(at)
-	for sy in TARGET_WORD_LEFT_ROWS:
-		tries.append(Vector2(circle.position.x - wide, at.y + sy * TARGET_RADIUS * k))
-	# HQ-B: then wholly right of it, then a word's width further out either side (the HQ's
-	# wider frame packs Sites round the boss).
-	for sy in TARGET_WORD_LEFT_ROWS:
-		tries.append(Vector2(circle.end.x, at.y + sy * TARGET_RADIUS * k))
-	for step in range(1, TARGET_WORD_OUT_STEPS + 1):
-		for sy in TARGET_WORD_LEFT_ROWS:
-			tries.append(Vector2(circle.position.x - wide * (1.0 + step * TARGET_WORD_OUT_SHARE), at.y + sy * TARGET_RADIUS * k))
-			tries.append(Vector2(circle.end.x + wide * step * TARGET_WORD_OUT_SHARE, at.y + sy * TARGET_RADIUS * k))
-	var least := INF
-	for p in tries:
-		var w := _target_word_rect(p)
-		if not area.encloses(w) or _hits_any(w, blocks):
-			continue
-		var cover := 0.0
-		for o in avoid:
-			if w.intersects(o):
-				cover += w.intersection(o).get_area()
-		if cover < least:
-			on_map = p
-			least = cover
-		if cover <= 0.0:
-			break
-	if on_map.x != INF:
-		word_at = on_map
-	if on_map.x == INF or least > 0.0:
-		# HQ-B: no clear spot on the map's open part (the HQ's wider frame packs Sites round the
-		# boss; or it lies beyond the fit, its edge arrow showing it): a spot clear of the markers
-		# under a panel beats one on a marker; else the least covered.
-		var fewest := least if on_map.x != INF else INF
-		for p in tries:
-			var w := _target_word_rect(p)
-			var cover := 0.0
-			for o in avoid:
-				if w.intersects(o):
-					cover += w.intersection(o).get_area()
-			if cover < fewest:
-				fewest = cover
-				word_at = p
-			if cover <= 0.0:
-				break
+	var box := _target_word_rect(Vector2.ZERO)
+	var tries := target_word_tries(at, TARGET_RADIUS * k, circle, box.size.x)
+	var word_at := pick_word_spot(tries, box, area, label_blocks(), avoid, area.has_point(at))
 	_boss_now = {"chip": chip, "circle": _target_circle_rect(at), "word": _target_word_rect(word_at), "word_at": word_at}
 	_boss_key = key
 	return _boss_now
@@ -2419,6 +2436,7 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_word.name = "TargetWord"
 		_target_word.text = tr_word("TARGET")
 		_target_word.ink = GreasePencilMark.Ink.THREAT
+		_target_word.hero = true  # LOOK-TOOLBOX 12 review: the TARGET word is fat hero wax
 		_pencil_root.add_child(_target_word)
 	_target_mark.visible = not target_hidden
 	_target_word.visible = not target_hidden

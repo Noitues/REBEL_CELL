@@ -236,3 +236,75 @@ func _gd_files(dir: String, out: Array[String]) -> void:
 			out.append(dir.path_join(f))
 	for d in DirAccess.get_directories_at(dir):
 		_gd_files(dir.path_join(d), out)
+
+
+# --- The TARGET word stays in frame (LOOK-TOOLBOX 12 review, grid_target) ------------------------
+
+func test_the_target_word_stays_inside_the_frame_for_rings_near_every_edge() -> void:
+	var area := Rect2(0, 0, 1920, 1080)
+	var unit := CityMapOverlay.TARGET_RADIUS
+	var half := Vector2(unit, unit * CityMapOverlay.TARGET_FLAT)
+	var box := Rect2(0, -40, 150, 52)
+	var blocks: Array[Rect2] = []
+	var spots: Array[Vector2] = [Vector2(20, 540), Vector2(1900, 540), Vector2(960, 15), Vector2(960, 1065),
+		Vector2(25, 20), Vector2(1895, 20), Vector2(25, 1060), Vector2(1895, 1060), Vector2(960, 540)]
+	for at in spots:
+		var circle := Rect2(at - half, half * 2.0)
+		var avoid: Array[Rect2] = [circle]
+		var tries := CityMapOverlay.target_word_tries(at, unit, circle, box.size.x)
+		var p := CityMapOverlay.pick_word_spot(tries, box, area, blocks, avoid, true)
+		var w := Rect2(p + box.position, box.size)
+		assert_true(area.encloses(w), "a ring at %s keeps its word %s inside the frame" % [at, w])
+
+
+# --- Review: HUD words, broken hero wax, fat hero words ------------------------------------------
+
+func test_the_aim_shaft_never_crosses_a_hud_word() -> void:
+	var hud: Array[Rect2] = [Rect2(180, 560, 260, 40), Rect2(450, 560, 520, 40)]
+	for to in [Vector2(900, 200), Vector2(1500, 300), Vector2(300, 150)]:
+		var aim := {"from": Vector2(390, 640), "to": to, "stop": 0.0, "loop": {}, "avoid": hud}
+		var arrow: Array[PackedVector2Array] = AimLinePencil.shapes(aim)["arrow"]
+		assert_false(arrow.is_empty(), "an arrow is drawn to %s" % to)
+		var pad := GreasePencilMark.stroke_width(true) * 0.5
+		var grown: Array[Rect2] = []
+		for r in hud:
+			grown.append(r.grow(pad))
+		assert_eq(AimLinePencil.crossing(arrow[0], grown), 0.0, "the shaft to %s clears the HUD words" % to)
+		assert_lt(arrow[0][arrow[0].size() - 1].distance_to(to), GreasePencilMark.stroke_width(true) * 2.0,
+			"the shaft still ends at its target")
+
+
+func test_a_hero_stroke_lifts_into_pressure_gaps_and_its_wax_is_dry() -> void:
+	var p := LOOK.hero_pressure
+	var w := 16.0
+	var length := 1500.0
+	var lo := INF
+	var gaps := 0
+	var was_in := false
+	for i in int(length):
+		var f := p.factor(float(i), length, w, 5)
+		lo = minf(lo, f) if float(i) > p.land_len * w and float(i) < length - p.lift_len * w else lo
+		var inside := p.gap_at(float(i), length, w, 5) > 0.9
+		if inside and not was_in:
+			gaps += 1
+		was_in = inside
+	assert_lt(lo, 0.3, "the pen nearly lifts in a pressure gap")
+	assert_between(gaps, 2, 6, "a ring has a few pressure gaps, not a dashed line")
+	var m := GreasePencilMark.new()
+	m.hero = true
+	m.add_stroke(PackedVector2Array([Vector2.ZERO, Vector2(length, 0)]))
+	add_child_autofree(m)
+	var mat := m.wax_lines()[0].material as ShaderMaterial
+	assert_gt(float(mat.get_shader_parameter("edge_grain")), 0.0, "hero wax has dry edges")
+	assert_gt(float(mat.get_shader_parameter("core_break")), 0.0, "hero wax breaks in its core")
+
+
+func test_a_hero_word_is_fatter_with_a_lighter_core() -> void:
+	var plain := GreasePencilWord.new()
+	var hero := GreasePencilWord.new()
+	hero.hero = true
+	add_child_autofree(plain)
+	add_child_autofree(hero)
+	assert_gt(hero.wax_mark().local_width, plain.wax_mark().local_width * 1.2, "a hero word's wax is fatter")
+	assert_gt(hero.wax_mark().core_light, 0.0, "a hero word has a lighter core")
+	assert_eq(plain.wax_mark().core_light, 0.0, "a plain word has none")

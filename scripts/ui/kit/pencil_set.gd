@@ -133,7 +133,7 @@ func cross(key: String, rect: Rect2, ink: GreasePencilMark.Ink, inset: float = 0
 ## `tilt` radians. With `shown_to` AUTO it writes itself on; else its letters show from
 ## `shown_from` to `shown_to` (shares of the word) as its owner drives them.
 func word(key: String, text: String, centre: Vector2, step: int, ink: GreasePencilMark.Ink, k: float = 1.0,
-		shown_to: float = AUTO, shown_from: float = 0.0, tilt: float = -0.04) -> GreasePencilWord:
+		shown_to: float = AUTO, shown_from: float = 0.0, tilt: float = -0.04, hero: bool = false) -> GreasePencilWord:
 	_used[key] = true
 	var w: GreasePencilWord = _words.get(key)
 	var driven := shown_to >= 0.0
@@ -146,6 +146,7 @@ func word(key: String, text: String, centre: Vector2, step: int, ink: GreasePenc
 	if w.text != text:
 		w.text = text
 	w.ink = ink
+	w.hero = hero
 	w.text_step = step
 	w.scale = Vector2.ONE * k
 	w.rotation = tilt

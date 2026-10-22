@@ -9778,4 +9778,15 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
 - **World anchor.** `RcPencilAnchor` (a Camera3D or Callable projector, INF behind the camera, `screen_path` runs, `px_per_unit`, `to_canvas`) and `RcPencilWorldAnchor` (a Node2D pin). The existing per-view seams (`RaidMapAnchor` through the 2D overlay, the netrun's `NetrunPose.proj`) stay and move onto it view by view (follow-up).
 - **Grid TARGET.** The word now avoids its own ring (`boss_layout` adds the circle to what it avoids; `CityMapOverlay.target_ring_reach()` from the look).
 - **Lab, tests, sheet.** Lab stage `pencil` (`addons/rc_look/lab/stages/pencil_stage.gd`), 0.3-0.5 ms GPU for the whole stage at 1080p. `tests/unit/test_look12_pencil.gd` (fast); `test_b1b_wax_pencil.gd`, `test_art1_material_kit.gd`, `test_b1a_ui_scrim_pools.gd` updated for the new widths, dropouts, loop and word. Sheet: `D:/rc_scratch/look_parity/pencil_ce318f9d/pencil_sheet_all.jpg`.
+- **Review fixes (LOOK-TOOLBOX review of the ce318f9d sheet).** (a) The grid TARGET word could leave the frame (the
+  no-room fallback ignored the map's open part): placement is now pure (`CityMapOverlay.target_word_tries`,
+  `pick_word_spot`) and the word is moved wholly inside the open part when its ring is on the map; a test puts rings at
+  every edge. (b) The combat aim's shaft crossed the HP / BLOCKED chips: the aim takes the HUD's word rects and the hand's other cards
+  (`CombatScene.hud_word_rects`) and `AimLinePencil.clear_shaft` tries six bows for one clear of them, else starts the
+  shaft past its last crossing (pencil never draws across HUD words). (c) The aim arc and loop read as a uniform tube:
+  hero marks now carry dry wax (edge grain 0.45, core breaks 0.6), a stronger swell (0.28 over 6 widths, was 0.16 over
+  8) and seeded pressure gaps (every ~26 widths, 1.4 long, down to 0.1 of the width); the width curve has a knot per
+  half width (cap 256) so a gap draws; the aim loop's tail runs out 0.20 of the radius (`hero_loop_tail_out`; other loops keep 0.11). (d) The kit's HIT IT was
+  thin and flat: hero words (`GreasePencilWord.hero`: HIT IT, the grid TARGET) are 0.27 em wax (plain words stay 0.20)
+  with a lighter core (`core_light` 0.22, a new `marker_stroke` uniform). All numbers in `pencil_look.tres`.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.

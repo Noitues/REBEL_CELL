@@ -77,7 +77,7 @@ func _lay() -> void:
 	s.stroke("aim", sh["arrow"], GreasePencilMark.Ink.PLAN, PencilSet.AUTO, 0.0, false, AimLinePencil.ARROW_SEED, true)
 	s.stroke("loop", sh["loop"], GreasePencilMark.Ink.PLAN, PencilSet.AUTO, 0.0, false, AimLinePencil.LOOP_SEED, true)
 	# the overlay kit: HIT IT, its hand arrow into a hero ring; a plan ring; a what-if arrow
-	s.word("hit", "HIT IT", KIT + Vector2(95, 45), UiTheme.DISPLAY, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0, -0.03)
+	s.word("hit", "HIT IT", KIT + Vector2(95, 45), UiTheme.DISPLAY, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0, -0.03, true)
 	var shaft := PencilShapes.hand_path(PencilShapes.bezier(KIT + Vector2(195, 62), KIT + Vector2(225, 82), KIT + Vector2(262, 62)), 9,
 		GreasePencilMark.stroke_width())
 	s.stroke("hit_arrow", PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 9), GreasePencilMark.Ink.THREAT)
@@ -89,7 +89,7 @@ func _lay() -> void:
 		PencilSet.AUTO, 0.0, true, 4)
 	# the grid TARGET (ring and word clear of it) and the route TARGET with its arrow
 	s.circle("t_ring", TARGETS + Vector2(250, 90), Vector2(70, 44), GreasePencilMark.Ink.THREAT, CityMapOverlay.TARGET_SEED, PencilSet.AUTO, true)
-	s.word("t_word", "TARGET", TARGETS + Vector2(95, 150), UiTheme.HEADING, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0, -0.06)
+	s.word("t_word", "TARGET", TARGETS + Vector2(95, 150), UiTheme.HEADING, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0, -0.06, true)
 	s.word("r_word", "TARGET", TARGETS + Vector2(120, 240), RouteOverlay.TARGET_FONT, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0, -0.12)
 	var ra := PencilShapes.hand_path(PackedVector2Array([TARGETS + Vector2(200, 285), TARGETS + Vector2(320, 278)]), 12, GreasePencilMark.stroke_width())
 	s.stroke("r_arrow", PencilShapes.arrow(ra, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 12), GreasePencilMark.Ink.THREAT)

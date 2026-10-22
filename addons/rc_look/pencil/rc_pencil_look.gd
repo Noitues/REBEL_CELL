@@ -13,8 +13,17 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 @export var mark_pressure: RcPencilPressure
 @export var hero_pressure: RcPencilPressure
 @export var word_pressure: RcPencilPressure
-## Width-curve knots per stroke (the pressure is sampled this many times along the drawn part).
+## Width-curve knots per stroke (the pressure is sampled this many times along the drawn part, at least), and at
+## most one knot per `pressure_knot_widths` widths so a pressure gap is drawn (capped at `pressure_knots_max`).
 @export var pressure_knots: int = 18
+@export var pressure_knot_widths: float = 0.5
+@export var pressure_knots_max: int = 256
+@export_group("Grain")
+## A hero mark's dry wax (LOOK-TOOLBOX 12 review: the concept's ring is broken wax, never a tube): the share of its
+## edges whose wax drops out and how much its core breaks into lighter streaks (GreasePencilMark.edge_grain /
+## core_break; a mark's own values win when higher).
+@export var hero_edge_grain: float = 0.45
+@export var hero_core_break: float = 0.6
 @export_group("Hand")
 ## A hand path's sideways wobble (share of the width) and its wave length (widths).
 @export var path_wobble: float = 0.32
@@ -35,11 +44,17 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 @export var loop_egg: float = 0.04
 @export var loop_overlap_deg: float = 34.0
 @export var loop_tail_out: float = 0.11
+## A hero loop's (the aim's loop round its target) longer tail out (share of the radius; review: an overshoot tail).
+@export var hero_loop_tail_out: float = 0.2
 @export var loop_tilt: float = 0.1
 @export_group("Word")
 ## A pencil word's wax width (share of its font px) and its hand: per-letter turn (radians), baseline drop (share of
 ## the font px), size jitter (share) and a sideways wobble of each stroke (share of the font px).
-@export var word_width_em: float = 0.2
+@export var word_width_em: float = 0.16
+## A hero word's (the kit's HIT IT, a TARGET) fat wax: its width (share of the font px) and its lighter core (white
+## added at the stroke's middle, fading out to the edges).
+@export var word_hero_width_em: float = 0.21
+@export var word_core_light: float = 0.22
 @export var word_letter_turn: float = 0.06
 @export var word_baseline_jitter: float = 0.035
 @export var word_size_jitter: float = 0.04

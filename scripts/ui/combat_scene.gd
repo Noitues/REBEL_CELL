@@ -1534,7 +1534,27 @@ func aim_spec() -> Dictionary:
 	if kind == "satellite":
 		loop = {"key": "%s|%s" % [v.combatant.id, String(zone["id"])], "center": to, "radius": v.rim_radius() * AIM_SAT_LOOP}
 	return {"from": from, "to": to, "arrow_t": _aim_draw, "stop": stop, "loop": loop, "marks": _slice_marks,
-		"lines": result_underlines()}
+		"lines": result_underlines(), "avoid": hud_word_rects()}
+
+
+## LOOK-TOOLBOX 12 (review: pencil never draws across HUD words): every wheel's HP number and
+## its result chip row now, and the hand's other cards (global px): the rects the aim's shaft keeps clear of.
+func hud_word_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if _hand_box != null:
+		for c in _hand_box.get_children():
+			if c is ZineCard and (c as ZineCard).visible and (c as ZineCard).drag_index != selecting:
+				out.append((c as Control).get_global_rect())
+	for wv in _views():
+		if wv == null or not is_instance_valid(wv) or not wv.is_visible_in_tree() or wv.combatant == null:
+			continue
+		var hp: Rect2 = wv.hp_layout()["hp"]
+		out.append(Rect2(wv.global_position + hp.position, hp.size))
+		if hud_layer != null:
+			var row := hud_layer.row_for(wv)
+			if row.visible and not row.chips.is_empty():
+				out.append(row.get_global_rect())
+	return out
 
 
 ## B2 (art director): the pad / keyboard focus is on the target wheel (cycle_target); a mouse

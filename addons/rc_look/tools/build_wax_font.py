@@ -36,11 +36,13 @@ UPM = 1000
 ASCENT = 1110
 DESCENT = 317
 CAP_INK = 740
-# The wax's width (em units) and the grid: the baseline stroke's centre sits half a width up, the cap stroke's centre
-# half a width under the cap height.
-WIDTH = 200
-GRID_Y0 = WIDTH / 2
-GRID_K = (CAP_INK - WIDTH) / 100.0
+# The wax's width (em units; designer 2026-10-21: thinner so A, R, G keep open counters) and the grid's width: the
+# skeleton, bearings and advances are laid for GRID_WIDTH (the baseline stroke's centre half of it up, the cap stroke's
+# half of it under the cap height), so a thinner wax never moves a layout.
+WIDTH = 160
+GRID_WIDTH = 200
+GRID_Y0 = GRID_WIDTH / 2
+GRID_K = (CAP_INK - GRID_WIDTH) / 100.0
 # The side bearings (em units, past the half width) and the space.
 BEARING = 34
 SPACE_ADV = 300
@@ -241,9 +243,9 @@ def glyph_strokes(ch):
     # shift so the ink starts BEARING past the origin
     min_x = min(p[0] for _, s in out for p in s)
     max_x = max(p[0] for _, s in out for p in s)
-    dx = BEARING + WIDTH / 2 - min_x
+    dx = BEARING + GRID_WIDTH / 2 - min_x
     out = [(kind, [(x + dx, y) for (x, y) in s]) for kind, s in out]
-    adv = int(round(max_x - min_x + WIDTH + 2 * BEARING))
+    adv = int(round(max_x - min_x + GRID_WIDTH + 2 * BEARING))
     return out, adv
 
 

@@ -124,6 +124,7 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 			return
 		hero = v
 		_apply()
+		_sync()
 ## A width in this mark's local px that scales with it (a word's wax, sized by its font): > 0
 ## replaces the screen width (and the word's pressure profile is used).
 var local_width: float = 0.0:
@@ -162,6 +163,14 @@ var dropout_gap: Vector2 = DROPOUT_GAP:
 		if v == core_break:
 			return
 		core_break = v
+		_sync()
+
+## White added at the stroke's middle, fading to its edges (a hero word's lighter core); 0 = none.
+var core_light: float = 0.0:
+	set(v):
+		if v == core_light:
+			return
+		core_light = v
 		_sync()
 
 ## The wax's (and its shadow's) top alpha: WAX_ALPHA, or lower where the mark runs over a label
@@ -429,7 +438,8 @@ func _pressure_curve(i: int, from_len: float, to_len: float, length: float) -> C
 	c.max_value = 2.0
 	var prof := pressure()
 	var w := width()
-	var n := maxi(LOOK.pressure_knots, 2)
+	var n := clampi(ceili(absf(to_len - from_len) / maxf(w * LOOK.pressure_knot_widths, 0.001)) + 1,
+		maxi(LOOK.pressure_knots, 2), maxi(LOOK.pressure_knots_max, 2))
 	var s_i := seed * 13 + i * 101
 	for j in n:
 		var u := float(j) / float(n - 1)
@@ -487,8 +497,9 @@ func _sync() -> void:
 	_set_param(false, &"alpha_max", wax_alpha)
 	_set_param(true, &"alpha_max", wax_alpha)
 	_set_param(false, &"sheen", SHEEN if highlight else 0.0)
-	_set_param(false, &"edge_grain", edge_grain)
-	_set_param(false, &"core_break", core_break)
+	_set_param(false, &"edge_grain", maxf(edge_grain, LOOK.hero_edge_grain if hero else 0.0))
+	_set_param(false, &"core_break", maxf(core_break, LOOK.hero_core_break if hero else 0.0))
+	_set_param(false, &"core_light", core_light)
 	for sh in [false, true]:
 		for m in _mats(sh):
 			set_dropouts(m, dropout_gap)

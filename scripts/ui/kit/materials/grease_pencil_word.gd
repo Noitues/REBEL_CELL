@@ -44,6 +44,13 @@ const WIPE := &"pencil_wipe"
 		text_step = v
 		_rebuild()
 ## Writes itself on when it first shows (and each time it shows again after being hidden).
+## A hero word (the kit's HIT IT, a TARGET): the look's fat wax (`word_hero_width_em`) with its lighter core.
+@export var hero: bool = false:
+	set(v):
+		if v == hero:
+			return
+		hero = v
+		_rebuild()
 @export var auto_write: bool = true:
 	set(v):
 		auto_write = v
@@ -141,7 +148,8 @@ func _rebuild() -> void:
 	var look := GreasePencilMark.LOOK
 	var lay := RcWaxFont.layout(text, float(px), hand_seed(), look)
 	_mark.clear()
-	_mark.local_width = float(px) * look.word_width_em
+	_mark.local_width = float(px) * (look.word_hero_width_em if hero else look.word_width_em)
+	_mark.core_light = look.word_core_light if hero else 0.0
 	var strokes: Array[PackedVector2Array] = lay["strokes"]
 	var letter: PackedInt32Array = lay["letter"]
 	var lens := PackedFloat32Array()

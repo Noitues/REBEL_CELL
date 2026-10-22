@@ -85,10 +85,10 @@ it); the module adds the face, the look numbers, the hand and the world anchor.
 
 | API | Use |
 |---|---|
-| `PencilSet.under(host)` then `begin()`, `stroke(key, strokes, ink, progress, wiped, dashed, seed, hero)`, `circle(key, centre, radii, ink, seed, progress, hero)`, `word(key, text, centre, step, ink, k, shown_to, shown_from, tilt)`, `end()` | a view's keyed pencil pass; marks not laid again wipe off |
+| `PencilSet.under(host)` then `begin()`, `stroke(key, strokes, ink, progress, wiped, dashed, seed, hero)`, `circle(key, centre, radii, ink, seed, progress, hero)`, `word(key, text, centre, step, ink, k, shown_to, shown_from, tilt, hero)`, `end()` | a view's keyed pencil pass; marks not laid again wipe off |
 | `PencilSet.show_on(host, strokes, ink, seed)` | one mark on a view that draws in `_draw` |
 | `GreasePencilMark` (`hero`, `ink`, `dashed`, `seed`, `progress`, `wiped_share`, `write_on()`, `wipe()`) | one mark, written on in writing order |
-| `GreasePencilWord` (`text`, `ink`, `text_step`, `shown_to`, `shown_from`) | **the one word path**: RC Wax letters as wax strokes on a GreasePencilMark |
+| `GreasePencilWord` (`text`, `ink`, `text_step`, `hero`, `shown_to`, `shown_from`) | **the one word path**: RC Wax letters as wax strokes on a GreasePencilMark |
 | `HandMarks.show_x / show_loop / clear`, `x_strokes`, `loop_strokes` | a remove X (red) and an upgrade loop (yellow) |
 
 **Inks.** `GreasePencilMark.Ink.PLAN` yellow (`Palette.PENCIL_PLAN`), `THREAT` red, `PLAN_NETRUN` orange
@@ -96,7 +96,14 @@ it); the module adds the face, the look numbers, the hand and the world anchor.
 light (`UiSpillShadows`): wax casts its crisp under-shadow and never glows.
 
 **Weights.** `GreasePencilMark.stroke_width(hero)`: a mark 10 px, a hero mark 16 px at 1080p (the aim arc and loop, a
-TARGET ring), scaled with the text size, one screen width whatever the map's zoom.
+TARGET ring), scaled with the text size, one screen width whatever the map's zoom. A hero mark's wax is dry (edge
+grain, core breaks) and lifts into a few seeded pressure gaps. A hero word (`GreasePencilWord.hero`: the kit's HIT IT, a
+TARGET) is fat wax (0.27 em, was 0.20) with a lighter core (`GreasePencilMark.core_light`).
+
+**Clear of the HUD.** The aim's spec takes `avoid` (the HUD's words, global px; `CombatScene.hud_word_rects()`):
+`AimLinePencil.clear_shaft` tries other bows for one that crosses none, else starts the shaft past its last crossing.
+The grid TARGET word is placed by the pure `CityMapOverlay.target_word_tries` / `pick_word_spot` and kept wholly inside
+the map's open part.
 
 **The hand** (`PencilShapes`, seeded KitNoise hashes, never `randf` / `randi`):
 `hand_path(pts, seed, w)` (sideways wobble, ends kept), `hand_line(from, to, seed, w)` (bow, overshoot, hooked
@@ -104,7 +111,8 @@ downstroke), `hand_route(pts, seed, w)` (rounded corners with a run-on), `hand_c
 jitter, seeded tilt, overlap tail), `arrow(shaft, head, seed)`, `bezier`, `trim`, `snap_to`.
 
 **Pressure.** `RcPencilPressure.factor(d, length, width, seed)`: lands light, swells, lifts off in a flick (lengths in
-stroke widths; a short flick stays pressed). Mark, hero and word profiles in the look.
+stroke widths; a short flick stays pressed; `gap_every` / `gap_len` / `gap_width`: pressure gaps, `gap_at`). Mark,
+hero and word profiles in the look.
 
 **The face.** RC Wax (`assets/fonts/RcWax-Regular.ttf`, `Palette.FONT_PENCIL`, `Palette.pencil()`) and its stroke twin
 (`pencil/rc_wax_strokes.json`, read by `RcWaxFont.layout(text, px, seed, look)`), both built from one stroke source by
@@ -117,7 +125,7 @@ a `Camera3D` or a `Callable (Vector3) -> Vector2` (a view's own projection); beh
 
 **Numbers.** `config/pencil_look.tres` (`RcPencilLook`): widths, the three pressure profiles, the hand (wobble, bow,
 overshoot, hook, corners, loop jitter / egg / overlap / tail / tilt), the word (width per em, letter turn, baseline,
-size, wobble). The engine's older locked numbers (dropouts, shadow offset, sheen, alpha) stay constants in
+size, wobble, hero width, core light), the hero grain and the knot density. The engine's older locked numbers (dropouts, shadow offset, sheen, alpha) stay constants in
 `GreasePencilMark`.
 
 **Quality.** One tier: the pencil is cheap 2D (lab: 0.3-0.5 ms GPU for the whole stage at 1080p). Reduce effects and

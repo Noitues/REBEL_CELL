@@ -64,6 +64,10 @@ uniform float edge_grain = 0.0;
 uniform float edge_grain_alpha = 0.3;
 uniform float core_break = 0.0;
 uniform float grain_scale = 0.8;
+// LOOK-TOOLBOX 12 review (the kit's HIT IT: fat wax with a lighter core): white added at the stroke's middle,
+// fading out by `core_light_edge` of the half width (grain-broken); 0 = none.
+uniform float core_light = 0.0;
+const float CORE_LIGHT_EDGE = 0.62;
 
 varying vec2 local_px;
 
@@ -218,6 +222,7 @@ void fragment() {
 				lighten = brk * 0.25;
 			}
 			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle) + vec3(lighten);
+			c += vec3(1.0, 0.97, 0.88) * core_light * (1.0 - smoothstep(0.0, CORE_LIGHT_EDGE, edge_d)) * (0.65 + 0.35 * grain);
 			// the wax's round body: lit along one side, shaded along the other, a sheen line
 			c *= 1.0 + 0.18 * (-across) - 0.06;
 			// the sheen: a line about 1 px wide at 35 % white along the lit side

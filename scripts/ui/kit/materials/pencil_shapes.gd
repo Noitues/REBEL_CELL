@@ -114,8 +114,11 @@ static func jitter(seed: int, u: float) -> float:
 ## review D3 lock; LOOK-TOOLBOX 12): one pass that goes `turns` times round (< 0: loop_turns(),
 ## it overruns its start), egg-shaped (loop_egg) and jittered (jitter_share) from `seed`
 ## (deterministic KitNoise), the pen landing START_IN inside the line and the tail running out
-## loop_tail_out past it, so the start and the end never meet cleanly.
-static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = -1.0, angle: float = 0.0) -> PackedVector2Array:
+## loop_tail_out past it (`tail` >= 0: that share instead), so the start and the end never meet cleanly.
+static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = -1.0, angle: float = 0.0,
+		tail: float = -1.0) -> PackedVector2Array:
+	if tail < 0.0:
+		tail = LOOK.loop_tail_out
 	var out := PackedVector2Array()
 	if turns < 0.0:
 		turns = loop_turns()
@@ -131,7 +134,7 @@ static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float
 		var rr := 1.0 + jitter(seed, u) + LOOK.loop_egg * cos(2.0 * a + egg_phase)
 		# the pen lands a little inside the line it will draw, and its tail runs out past it
 		rr -= START_IN * (1.0 - smoothstep(0.0, LAND_TURNS, u))
-		rr += LOOK.loop_tail_out * clampf((u - 1.0) / over, 0.0, 1.0)
+		rr += tail * clampf((u - 1.0) / over, 0.0, 1.0)
 		var p := Vector2(radii.x * rr * cos(a), radii.y * rr * sin(a)).rotated(angle)
 		out.append(centre + p)
 	return out
