@@ -117,7 +117,16 @@ hero and word profiles in the look.
 **The face.** RC Wax (`assets/fonts/RcWax-Regular.ttf`, `Palette.FONT_PENCIL`, `Palette.pencil()`) and its stroke twin
 (`pencil/rc_wax_strokes.json`, read by `RcWaxFont.layout(text, px, seed, look)`), both built from one stroke source by
 `python addons/rc_look/tools/build_wax_font.py` (`--check`: exit 1 when the committed outputs are stale). Caps, digits,
-punctuation; lowercase is small caps. Measuring with `Palette.pencil()` matches the strokes' advances.
+punctuation; lowercase is small caps. Measuring with `Palette.pencil()` matches the strokes' advances. The capitals are
+hand-built marker letters (`GLYPHS`, with `F` flourishes that run on from a stroke and stay out of the advance, and an
+optional per-glyph overhang), drawn by a broad nib (an ellipse at `NIB_DEG` 25, `NIB_CONTRAST` 0.7, stamped and hulled:
+smooth thick / thin, no caps or seams), with a bold start and a tapered end. In words (`RcWaxFont.layout`) each first
+letter is `word_initial_scale` bigger with no advance change, and each letter slips, drops and turns by the word's
+hash (`word_x_jitter`, `word_baseline_jitter`, `word_letter_turn`); the engine strokes use the nib through
+`RcPencilPressure.nib` (`word_nib_*`), a box-cap start and a smooth fade at the end (`word_tail_*`).
+
+**Lab.** `python tools/run_windowed.py --log <f> -- --resolution 1920x1080 res://addons/rc_look/lab/look_lab.tscn --
+--module=pencil --shots=<dir> --window=1920x1080` (the shots render the vectors at 1080p).
 
 **World anchor.** `RcPencilAnchor.screen_point(projector, p)`, `screen_path`, `px_per_unit`, `to_canvas`: a projector is
 a `Camera3D` or a `Callable (Vector3) -> Vector2` (a view's own projection); behind the camera is `Vector2.INF`.
