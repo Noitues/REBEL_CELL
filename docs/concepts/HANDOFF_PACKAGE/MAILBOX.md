@@ -387,7 +387,7 @@ replaces art/look-toolbox-4, which stays unmerged. Art-pass approved it. Art-pas
     combat_start, combat_victory, hq, grid, b4_idle, loot.
   - **Tests:** test_rc_look_street 6 pass.
 
-### A-096 · 2026-10-22 · READY: Solace THE BLOOM A "Necrosis" look on the street netrun and the Solace HQ page (art/look-bloom @ a91a2995, on main 85279eaa)
+### A-096 · 2026-10-22 · READY (art-pass approved round 3): Solace THE BLOOM A "Necrosis" look on the street netrun and the Solace HQ page (art/look-bloom @ a91a2995, on main 85279eaa)
 
 The branch sits directly on main 85279eaa. It has 32 commits, in worktree `D:/rc_art/godot_look_bloom`. On rebase the
 tests/test_manifest.json and docs/DECISIONS.md conflicts were resolved by keeping both sides. It is independent of A-095. Art-pass did
