@@ -47,6 +47,6 @@ float rcl_blink(float ph, float duty, float off) {
 }
 
 float rcl_beacon(float ph) {
-	return 0.2 + 0.8 * pow(max(0.0, cos(ph * 6.2831853)), 4.0);
+	return 0.2 + 0.8 * pow(max(0.0, cos(ph * TAU)), 4.0);
 }
 #endif

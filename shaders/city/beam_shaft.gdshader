@@ -11,10 +11,12 @@ shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, specular_disabled, fog_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
+// LOOK-TOOLBOX module 11: the gaussian profile and the white-hot mix are rc_sign's.
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
 
 uniform vec3 beam_col = vec3(1.0, 0.4, 0.7);
 uniform float beam_len = 50.0;
-uniform float start_radius = 0.18;
+uniform float start_radius = 2.5;
 uniform float end_radius = 5.2;
 uniform vec2 lean_deg = vec2(5.0, 8.0);
 uniform float sweep_deg = 0.0;
@@ -34,7 +36,7 @@ uniform float fade_in = 0.025;
 uniform float noise_scale = 0.09;
 uniform vec2 noise_range = vec2(0.35, 0.65);
 uniform float hot = 0.5;
-uniform float emit = 3.0;
+uniform float emit = 1.3;
 uniform float emission_multiplier = 1.0;
 uniform float look_blend = 1.0;
 
@@ -66,14 +68,14 @@ void fragment() {
 	float facing = abs(dot(normalize(v_nw), vw));
 	float r = 1.0 - clamp(facing, 0.0, 1.0);
 	float s2 = 1.0 - r * r;
-	float core = core_w * exp(-0.5 * (r / core_sigma) * (r / core_sigma));
-	float skirt = skirt_w * exp(-0.5 * (r / skirt_sigma) * (r / skirt_sigma)) * s2;
+	float core = core_w * rcl_gauss(r, core_sigma);
+	float skirt = skirt_w * rcl_gauss(r, skirt_sigma) * s2;
 	float t = UV.y;
 	float axial = exp(-t / efold) * (1.0 - smoothstep(fade_from, fade, t)) * smoothstep(0.0, fade_in, t);
 	float n = nr_noise3(v_pw * noise_scale);
 	float breakup = 0.55 + 0.45 * smoothstep(noise_range.x, noise_range.y, n);
 	float prof = (core + skirt) * axial * breakup;
-	vec3 col = mix(beam_col, vec3(1.0), hot * clamp(core / max(core_w, 0.0001), 0.0, 1.0));
+	vec3 col = rcl_hot(beam_col, core / max(core_w, 0.0001), hot);
 	ALBEDO = col * emit * prof * emission_multiplier * look_blend;
 	ALPHA = 1.0;
 }

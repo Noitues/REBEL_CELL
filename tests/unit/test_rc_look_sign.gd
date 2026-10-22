@@ -27,9 +27,8 @@ func test_a_bad_preset_is_reported() -> void:
 func test_flicker_and_blink_are_the_games() -> void:
 	var cfg := RcLookSign.default_config()
 	var neon := (load("res://shaders/city/dress_neon.gdshader") as Shader).code
-	assert_string_contains(neon, "1.0 - smoothstep(0.0, %.2f, u)" % cfg.burst_len, "burst length")
-	assert_string_contains(neon, "t * %.1f + cust.y" % cfg.hum_hz, "hum cycles per loop")
-	assert_string_contains(neon, "burst * (%.1f + %.1f * hum)" % [cfg.hum_floor, 1.0 - cfg.hum_floor], "hum floor")
+	assert_string_contains(neon, "rcl_flicker(t, k, cust.y, %.2f, %.1f, %.1f)" % [cfg.burst_len, cfg.hum_hz, cfg.hum_floor],
+			"dress_neon flickers through rc_sign with these numbers")
 	var glow_code := FileAccess.get_file_as_string("res://shaders/city/city_glow.gdshaderinc")
 	assert_string_contains(glow_code, "uniform float duty = %.2f;" % cfg.blink_duty)
 	assert_string_contains(glow_code, "uniform float off_level = %.2f;" % cfg.blink_off)

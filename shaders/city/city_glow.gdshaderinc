@@ -9,6 +9,8 @@
 // the buildings hide what is behind them.
 // Shared body of city_glow.gdshader and city_glow_xray.gdshader (the x-ray one draws through buildings).
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX module 11: blink and beacon are rc_sign's.
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
 
 uniform int mode = 0;
 uniform float clock = 0.0;
@@ -30,9 +32,9 @@ void vertex() {
 	vec3 origin = MODEL_MATRIX[3].xyz;
 	if (!steady) {
 		if (mode == 1 || mode == 2) {
-			lit = ph < duty ? 1.0 : (mode == 1 ? off_level : 0.0);
+			lit = rcl_blink(ph, duty, mode == 1 ? off_level : 0.0);
 		} else if (mode == 3) {
-			lit = 0.2 + 0.8 * pow(max(0.0, cos(ph * TAU)), 4.0);
+			lit = rcl_beacon(ph);
 		}
 	}
 	if (mode == 4) {
