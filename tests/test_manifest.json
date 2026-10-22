@@ -1145,6 +1145,26 @@
 			"seconds": 25.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_pt_p1_clicks.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_pt_p1_hq_clicks.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_pt_p1_loot_clicks.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_pt_p1_respin.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_pt_p1_resume.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_plan1_b_repro.gd": {
 			"seconds": 20.0,
 			"tier": "full"

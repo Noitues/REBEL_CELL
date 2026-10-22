@@ -26,16 +26,52 @@ func reset() -> void:
 	_session_id = 0
 
 
+## PB-SOL-1 B-14: joins a fight mid-turn from a load. `sync` alone would take the loaded state as the turn's
+## start and forget the plays already staged (the THIS TURN list, the LETHAL line, Esc to take back all went
+## with it). The session keeps the state at its last random event and the actions since (none of them random),
+## so the staged plays are replayed from there, with the same labels they would have had live.
+## `rng` is only handed to the resolver: those actions draw nothing. Does nothing for an empty `actions`.
+func seed_from_checkpoint(session_id: int, history: Array, checkpoint: CombatState, actions: Array, resolver: CombatResolver,
+		rng: RandomNumberGenerator, label_of: Callable) -> void:
+	if actions.is_empty() or checkpoint == null or actions.size() > history.size():
+		return
+	var n := history.size()
+	var base_n := n - actions.size()
+	var snaps := {base_n: {"state": checkpoint.duplicate_state(), "label": ""}}
+	var state := checkpoint.duplicate_state()
+	for i in actions.size():
+		var action: CombatAction = actions[i]
+		var label := String(label_of.call(state, action)) if label_of.is_valid() else ""
+		var r := resolver.apply(state, action, rng)
+		if not r.ok():
+			return  # cannot happen for a saved session; the plain sync takes over
+		state = r.state
+		snaps[base_n + i + 1] = {"state": state.duplicate_state(), "label": label, "action": action}
+	_session_id = session_id
+	_turn_start = turn_start_of(history)
+	_base_n = base_n
+	_snaps = snaps
+
+
+## True when the queue has not met this session yet (a new fight, or a fight loaded).
+func is_new_session(session_id: int) -> bool:
+	return session_id != _session_id
+
+
+## The history index the current turn started at: just after the last END_TURN.
+static func turn_start_of(history: Array) -> int:
+	for i in range(history.size() - 1, -1, -1):
+		if (history[i] as CombatAction).type == CombatAction.Type.END_TURN:
+			return i + 1
+	return 0
+
+
 ## Brings the queue up to `history` (the session's actions, in order) with `state` the state they
 ## left. `label_of(prev_state, action)` names an action for the list. Safe to call after every
 ## state change: a new turn starts it over, a rewind drops the undone steps.
 func sync(session_id: int, history: Array, state: CombatState, label_of: Callable) -> void:
 	var n := history.size()
-	var turn_start := 0
-	for i in range(n - 1, -1, -1):
-		if (history[i] as CombatAction).type == CombatAction.Type.END_TURN:
-			turn_start = i + 1
-			break
+	var turn_start := turn_start_of(history)
 	if session_id != _session_id or _turn_start != turn_start or not _snaps.has(_base_n):
 		_session_id = session_id
 		_turn_start = turn_start

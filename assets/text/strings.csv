@@ -214,12 +214,14 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 ? STATUS,? STATUS
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
+"A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn.","A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn."
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
 A failed run still moves the Eye.,A failed run still moves the Eye.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
 A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.,A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.
 A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
+A play's RAM leaves at once and comes back with the next refill: there is no debt. A RESPIN locks the plays before it.,A play's RAM leaves at once and comes back with the next refill: there is no debt. A RESPIN locks the plays before it.
 A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).,A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).
 A raid's route toward your HOME SERVER.,A raid's route toward your HOME SERVER.
 A random result: shown as ? until you play it,A random result: shown as ? until you play it
@@ -1259,6 +1261,7 @@ JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
 KEEP,KEEP
 KEEP GOING,KEEP GOING
+KEEP PLANNING,KEEP PLANNING
 Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
@@ -2058,6 +2061,8 @@ RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
+RESPIN LOCKS YOUR PLAYS,RESPIN LOCKS YOUR PLAYS
+RESPIN now? It locks the %d play(s) you staged this turn.,RESPIN now? It locks the %d play(s) you staged this turn.
 RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 REST,REST
