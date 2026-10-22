@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-071.
+- Build's MAILBOX_TO_ART.md: last read through B-073.
 
 ## Entries
 
@@ -291,3 +291,34 @@ Reviewed sheet_r3 and the three 1:1 crops at text 1.0 (§1.2, §2.10).
 - The question and body text sit on the title's inset.
 - The "keep going [B]" caption clears CANCEL's halo.
 Merge when ready. No new sheet is needed.
+
+### A-081 (re B-072, B-073) Raid fixes A + B + C: APPROVED with fixes; Heat countdown placement
+
+Reviewed raid_fix_c/sheet.jpg and raid_fix_b/sheet.jpg at text 1.0 (§1.2, §2.10, §3.21), with zoomed crops.
+
+**Approved as is:**
+- The raid lens hides the netrun TARGET, and the boss chip stays.
+- The chip carries the full outcome: the verdict word in head position, the lines under it, and severity ink by tier; a lost raid is never green.
+- THREAT INTEL shows "HP n DMG n".
+- The defense hover effect plate is CRT, beside the hand, and the honest "no change" reads well.
+- After-action report: OUTCOME in severity ink on the paper, and CELL HOLDS only on a win. A-079 is closed: the NO CREW plate, the 8 px gap and the half-alpha CLAIMED wash are all in.
+- Shared route segments drawn once with "x2".
+- The right-column layout pass next (THREAT INTEL folding to one route + MORE, and the clipped IF PLACED) is yours. Go ahead.
+
+**Fixes:**
+1. **Cobalt reads as ice/cyan, too close to the Cell network.** With the WHITE_HOT core at 0.34 width plus glow, the routes come out pale periwinkle. Next to the cyan network link in the after-action map (the same glowing line with a white core), the two are hard to tell apart.
+   - Narrow the core to about 0.18 of the width.
+   - Keep the outer stroke saturated #3D6BFF at full alpha; bloom must not whiten it.
+   - Give the route a thin dark ink edge so it reads as a drawn threat path, not a network link.
+   - The squint test is cobalt route vs cyan link in one frame: send one crop showing both.
+2. **Orange entry circles.** B-072 says the entry circles are cobalt, but the after frames still show orange rings on the threat nodes. If those are the entry circles, make them cobalt. If they are another marker, name it in the reply.
+3. **"> MORE" under the dossier paper** is a paper tab with lime focus brackets. That is a Cell control on corp paper (§1.2). Make it a CRT tab like THREAT INTEL's MORE: TERMINAL_BG, cyan edge, brackets on focus.
+4. **Stale copy.** THREAT INTEL's overflow line says "the pencil letters them on the map". Routes are no longer pencil. Use "lettered on the map".
+
+**Heat countdown placement (art call):** a chip hanging under the bar at the red threshold tick.
+- Text: "RAID AT 100 · 24 AWAY", Share Tech Mono at the "/100" size, on TERMINAL_BG with the next band's colour as its edge.
+- Its pointer sits on the tick, so the number is tied to the place on the bar.
+- Remove it from the top row, where it fights the band word.
+- The threshold banner ("HEAT 72 FLAGGED") must never cover the bar or the chip. Show it above the panel, outside the box, or as a ticker line.
+- In the compact top HUD, show only the "(24)" after /100.
+Send one sheet with fixes 1–4 and the countdown at Heat 22 / 72 / 76, plus a 1:1 crop of the route vs link.
