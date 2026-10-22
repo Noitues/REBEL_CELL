@@ -163,7 +163,7 @@ static func _box_less(p: Array, q: Array) -> bool:
 static func layer_spacing(layout: Dictionary) -> float:
 	var lx: Dictionary = layout["layer_x"]
 	var ids: Array = lx.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	if ids.size() < 2:
 		return float(config().street_frame["layer_spacing_min"])
 	return maxf(absf(float(lx[ids[ids.size() - 1]]) - float(lx[ids[0]])) / float(ids[ids.size() - 1] - ids[0]), float(config().street_frame["layer_spacing_min"]))
@@ -173,7 +173,7 @@ static func layer_spacing(layout: Dictionary) -> float:
 static func layer_x_at(layout: Dictionary, f: float) -> float:
 	var lx: Dictionary = layout["layer_x"]
 	var ids: Array = lx.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	if ids.is_empty():
 		return float(layout["x0"])
 	if ids.size() == 1:
@@ -321,7 +321,7 @@ static func _phi_in(h: Dictionary, tw: int) -> float:
 static func hq_layer_z(layout: Dictionary, f: float) -> float:
 	var lz: Dictionary = layout["layer_z"]
 	var ids: Array = lz.keys()
-	ids.sort()
+	IdSort.sort_ids(ids)
 	if ids.size() < 2:
 		return 0.0
 	var i0 := 0
