@@ -18,7 +18,7 @@ static func default_config() -> RcLookAirConfig:
 	return _cfg
 
 
-## A shipped preset by name (`day`, `night`; null when unknown).
+## A shipped preset by name (`day`, `night`, `solace_night`; null when unknown).
 static func preset(name: StringName) -> RcLookAirPreset:
 	return default_config().presets.get(name) as RcLookAirPreset
 

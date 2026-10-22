@@ -207,3 +207,113 @@ Rules: low tier drops the split and the screen blur; reduce motion freezes the b
 split and the roll; high contrast is opaque black glass with no effects. The game's call site is `DecryptedHoloPanel`.
 
 Lab: `--module=holo` (see `lab/look_lab.gd`). Sheet: `tools/look_sheet.py --module holo ...`.
+
+## Module 13: vinyl sticker look (`RcLookVinyl`)
+
+One include for every vinyl sticker form the game draws, each the exact arithmetic of its source shader so a later
+migration is pixel-identical (max 0). **Lab only**: the designer approved this module lab-only (raid redesign pause);
+nothing is migrated and no raid screen is wired. The old shaders (`kit/vinyl_sticker`, `kit/sticker_fill`,
+`chrome/vinyl_sticker`, `fx/card_sticker_fx`) and their builders are untouched.
+
+| API | What |
+|---|---|
+| `shaders/rc_vinyl.gdshaderinc` | `rcv_fold_frame`, `rcv_folded_alpha`, `rcv_blurred`; kit: `rcv_kit_rim`, `rcv_kit_gloss_t` / `_spec` / `_gloss`, `rcv_kit_band_dd`, `rcv_kit_flap`, `rcv_kit_dissolve`, `rcv_kit_shadow`, `rcv_kit_composite`; shared: `rcv_foil`, `rcv_band_w`, `rcv_band_mix`, `rcv_grey`; chrome: `rcv_chrome_marker`, `_marker_fill`, `_glitch_keep`, `_glitch`, `_band_dd`; fill: `rcv_holo_fill`, `rcv_gradient_fill`; card: `rcv_card_front`, `_scan_line`, `_gloss`. Every literal is a `const RCV_*` |
+| `shaders/rc_vinyl_kit / _chrome / _fill / _card.gdshader` | thin wrappers with the old shaders' uniforms (the stale colour defaults replaced by the real stock values) |
+| `RcLookVinyl.kit_material(id, art, body, overrides)`, `.chrome_material(...)`, `.fill_material(...)`, `.card_material(size)` | materials for a stock or verb colour |
+| `RcLookVinyl.kit_uniforms(id, body)`, `.chrome_uniforms(id, font_px, top, bottom)`, `.kit_pose(pose)` | what the builders set at rest, and the frozen poses (hover, fold, band, dissolve, disabled, slap) |
+| `RcLookVinyl.fold_frame / folded_alpha / kit_rim / gloss_t / spec / kit_gloss / foil / band_mix / kit_band_dd / chrome_band_dd / kit_flap / dissolve_verdict / grey / shadow_alpha / chrome_marker / chrome_marker_fill / glitch_* / holo_fill / card_*` | exact GDScript mirrors (rgb as `Vector3`) |
+| `RcLookVinyl.peel_leg`, `.edge_for` | VinylSticker's peel leg and word edge |
+| `config/look_vinyl.tres` (`RcLookVinylConfig`, `RcLookVinylPreset`) | every number: the `Shader:` groups equal the include's `RCV_*` constants by name (a test keeps them equal), the `Builder:` groups are what VinylSticker / VerbSticker / StickerSeam set from code, `presets` are `kit_pink / red / yellow / white / ink / kraft / holo` and `chrome_pink / yellow / blue / grey / glitch` |
+| lab: `--module=vinyl` | stocks at rest, pink poses on the new wrapper and the old shader, chrome verbs both ways, holo fill, card, and the GDScript mirror beside the shader |
+
+**Proof.** `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://addons/rc_look/lab/look_lab.tscn --
+--module=vinyl --prove --prove-only` renders every stock x pose, the four fold corners, every chrome verb, the holo fill
+and the card through the old shader and the new wrapper into SubViewports and prints `vinyl_prove: <case> max <n>`
+(8-bit levels; 0 = identical) and, for the mirror, its gap to the shader (no shadow, no dissolve). Result on this branch:
+all 62 pairs (before the rulings; see below) (7 stocks x 7 poses, 4 fold corners, 7 chrome cases, holo fill, card) are max 0. The mirror is within 1 level
+everywhere except the pixels exactly on the fold line (1 to 39 per pose, where `s` is 0 and float rounding picks a side).
+The hash forms (dissolve cells, holo sparkles) run on float32 sin on the GPU, so the mirror matches their form, not their
+pixels.
+
+Numbers it does not own: the motion amplitudes and durations stay in `ui_motion.tres` (`sticker_*`); the palette stays
+`palette.gd` (the test pins every preset to it).
+
+### Rulings (designer, DIRECTION_REVIEW 82c92714, applied to the lab presets and wrappers only; nothing migrated)
+
+1. **Holo band: one "\\" shape** (top-left to bottom-right) on both families, parallel to the peel from the top-right
+   corner. The kit keeps its band; the chrome wrapper takes the kit's geometry (`rcv_band_centre`, `rcv_band_dd_at`:
+   `sweep` is the band's centre along its axis, `sweep_width` its half width). The old x + y form is `rcv_chrome_band_dd`,
+   reachable with `legacy_sweep = true`.
+2. **Chrome drops the second white sweep** (`white_k` 0 in `rcv_chrome_marker_fill`; legacy_sweep keeps the old form).
+3. **Disabled is 80 % grey with alpha 0.8 on both** (`disabled_grey`, `disabled_alpha`; `legacy_*` hold the old kit's full
+   grey and the old chrome's alpha 1 for the old | new rows).
+4. **Extrude and shadow are `VINYL_EXTRUDE`** on both families (all presets' `shadow_color`).
+5. **Pink fill stays `STICKER_FILL_PINK`**; `STICKER_COMMIT` is untouched.
+6. **Chrome `sweep_width` has one source** (`run_sweep`: `band_width` of the word's width, halved):
+   `chrome_uniforms(id, font_px, top, bottom, box_w)`; the draw-time 35 % share is gone.
+7. **Missing-art verbs keep the PINK fallback** (no RED / WHITE in the chrome fills).
+8. **The card seam switches to the kit sticker** (decision recorded; lab page 2 shows `card_sticker_fx` beside the kit
+   sticker on a played card). `card_sticker_fx` and its wrapper stay until the seam migrates.
+
+Proof after the rulings: the kit pairs and every non-sweep chrome pair are still max 0 (disabled differs from the old
+look only through the uniforms, by ruling; the wrapper's `legacy_sweep` form is max 0 against the old chrome shader);
+the chrome band and disabled cells differ from the old shader by design.
+Lab: `--module=vinyl` (page 1), `--module=vinyl --page=2` (the rulings sheet).
+## Module 14: CRT / terminal glass (`RcLookCrt`)
+
+Scanlines, flicker, the rolling band, the vignette and the edge glow, each the exact form of the shader it names. Lab only
+(designer via art-pass, 2026-10-22: raid redesign pause): no call site is migrated or wired into a raid screen.
+
+| API | What |
+|---|---|
+| `shaders/rc_crt.gdshaderinc` (standalone: no rc_look / rc_common / TIME, fog-safe) | `rcl_crt_scan(y_px, period, phase)` crt_terminal's step form (phase 0.08, `y_px = p.y - panel.y`) and the FRAGCOORD form of crt_panel / city_sketch / city_live (phase 0, `y_px = FRAGCOORD.y`); `rcl_crt_scan_sine(y01, density)` scanline.gdshader |
+| `rcl_crt_flicker(t, rate_rad_s, amount)` | `1 - amount (0.5 + 0.5 sin(t rate))`; the caller passes `amount x rc_live()` and `t = rc_time(TIME)` (rates 41 / 43 / 47) |
+| `rcl_crt_roll(y01, band, width)`, `rcl_crt_vignette_sd(sd, reach, floor)`, `rcl_crt_vignette_uv(uv, amount, inner, outer)`, `rcl_crt_glow(sd, glow_px, strength)` | crt_terminal's roll gaussian, glass vignette and edge glow; scanline.gdshader's screen vignette |
+| `RcLookCrt`: `.preset(name)`, `.scan / scan_sine / flicker / roll / vignette_sd / vignette_uv / glow / band_at` | exact GDScript mirrors |
+| `RcLookCrt.resolve(preset, reduce_on, convention)` | the strengths a screen runs with under reduce effects (`Reduce.KEEP_STATIC / ZERO_SCAN / HIDE`) |
+| `config/look_crt.tres` (`RcLookCrtConfig`, `RcLookCrtPreset`) | `terminal` (CrtTerminalPanel's pinned SCAN_PX 3, SCAN_STRENGTH 0.10, HEX_ALPHA 0.06), `firmware`, `schematics`, `dispatch`, `corp` (accent only), `ui_panel` (crt_panel), `fx_overlay` (scanline.gdshader as Fx sets it), `neon_sketch` (city_sketch / city_live); `reduce` (the convention until ruled) |
+| lab: `--module=crt` | a panel per preset at a fixed clock, probe strips shader over mirror, a parity pair against the game's crt_terminal.gdshader |
+| lab: `--module=crt_reduce` | the reduce-effects ruling sheet: the three conventions side by side with a recommendation |
+
+Reduce effects (designer 82c92714): KEEP_STATIC everywhere. Motion stops, the still scanlines and the vignette stay, only high contrast removes the texture. The wrapper defaults of crt_terminal (glass alpha 1.0) and scanline.gdshader (Fx's four values) are what the game sets. Open: crt_terminal's glass gradient divides by the panel width, not its height (DECISIONS).
+## Module 16: binary bits (`RcLookBits`)
+
+LAB-ONLY (designer, via art-pass: the raid redesign is paused; nothing migrates, nothing wires into raid screens). One
+home for the bits' look. The GPU `BinaryBits` / `BitsPath` and the CPU combat `BitPath` / `BitsSeam` run on two
+different path models; this module holds the shared math and numbers and shows the differences, it does not unify them.
+
+| API | What |
+|---|---|
+| `shaders/rc_bits.gdshaderinc`: `rcl_bits_eased(t)`, `rcl_bits_at(a, c, b, t)`, `rcl_bits_scale`, `rcl_bits_flip(age, flip_s, phase, frames)`, `rcl_bits_spin(clock, speed, phase)` / `rcl_bits_spin_turn(.., turn)`, `rcl_bits_color(hot_col, col, age, hot_s)` | the exact forms of `binary_bits.gdshader` (ease :50, Bezier :30, CUSTOM.z frame, tumble, hot mix through `rcl_hot_to`); constants named (`RCL_BITS_EASE_*`, `RCL_BITS_END_SCALE`, `RCL_BITS_TURN` 6.28, `RCL_BITS_FLIP_SPREAD`) |
+| `shaders/rc_bits_particles.gdshader` | `binary_bits.gdshader` rebuilt on the include, a drop-in (same uniforms plus `hot_color`, `spin_turn`, defaults = today); proven pixel-identical in the lab (max 0 at three clocks) |
+| `RcLookBits`: `.plan`, `.control_point`, `.at`, `.eased`, `.flight_time`, `.flip_phase`, `.spin`, `.arrivals(plan, live)`, `.flip_frame`, `.spin_angle`, `.bit_color`, `.h01` | exact GDScript mirror of `BitsPath` on KitNoise's integer hash (64-bit wrap documented in the header); `arrivals(.., false)` is the reduce-effects end state (all 0) |
+| `config/look_bits.tres` (`RcLookBitsConfig`, `RcLookBitsPreset`) | every constant of BitsPath / BinaryBits / BitsSeam and the `STREAM_*` / `SHARD_*` shares of `combat_fx_layer`; presets `wheel`, `free`, `stream`, `cpu` = today's looks. Timings stay in `ui_motion.tres` (`bits_flight`, stream and shard entries), `fx_shard_*` counts in campaign config |
+| lab: `--module=bits` | one plan through today's GPU shader, the module's shader, BinaryBits' CPU fallback and BitsSeam, at three fixed clocks (shares of `burst`'s last arrival); `--bits_probe=<json>` also writes the probe below |
+| lab: `--module=bits_rulings` | the rulings sheet: five A / B rows |
+| lab: `--module=bits_ruled` | the ruled presets, old next to new, dark and light, three fixed clocks; rows that should differ carry an orange bar, the control a grey one |
+| lab: `--module=bits_flash` | the hot flash (age 0, fully hot), old next to new, with 4x nearest crops of one bit on dark and light; `--flash_report=<json>` writes lit-pixel counts of the dark crops |
+
+**Probe results (2026-10-22).** Current vs module shader: largest pixel difference 0 at the three clocks. **Risk R7
+answered: the CUSTOM.z atlas frame channel does flip 0 / 1 on the GPU** (one stationary bit: frame 0 at clock 0.01 and
+0.02 differs by 8 anti-aliased edge pixels, frame 1 at 0.07 differs by 416).
+
+**Rulings (designer, DIRECTION_REVIEW 2026-10-22; lab only, nothing migrates while the raid redesign is paused).** Ruled: (1) hot colour PAPER #F2EEE4 on every system; (2) NIGHT_SKY rim at 95 %; (3) by job: `burst` flips and tumbles, `stream` is a steady glyph with a trail copy; (4) per-bit spin phase, the CPU fallback matched to the GPU; (5) the turn stays 6.28. Presets `burst` (rim path) and `stream` (free path) are the ruled looks; `wheel`, `free`, `cpu` and `seam` (the old `stream`, renamed) stay as today's looks for the old-vs-new sheet. Each is one field of a preset in `look_bits.tres`. The questions as asked:
+1. Hot colour: WHITE_HOT (GPU bits, CPU fallback) or PAPER #F2EEE4 (BitsSeam, streams). Also stale: the hot default 0.1 s
+   in BitsSeam / CardFx vs `bits_flight`'s 0.08 s.
+2. Outline: the atlas' same-colour outline or BitsSeam's NIGHT_SKY rim at 95 %.
+3. Life in flight: flip 0 / 1 and tumble (GPU) or a steady glyph with a trail copy (BitsSeam).
+4. Spin phase: the GPU shader starts each tumble at flip phase x a turn; the CPU fallback of `BinaryBits` does not.
+5. A turn in the tumble: 6.28 (today, bit-exact) or TAU (0.18 degrees apart at most: invisible).
+Other differences, no ruling asked: BitPath hashes with Godot's `hash()` (not portable) where BitsPath uses KitNoise;
+BitPath's flight eases with a cubic and BitsPath's with the 0.35 / 0.65 blend; the raid BREACHED sprite sheet is baked.
+
+**Tests.** `tests/unit/test_rc_look_bits.gd` (fast): mirror == BitsPath for six seeds, config == the games' constants
+(including the `combat_fx_layer` shares and the shaders' literals), presets == today's looks, reduce effects gives zero
+arrivals, no global random in the module's files.
+
+**Migration notes (later; nothing migrates while the raid redesign is paused).** The ruled `burst` keeps the old bold
+stroke with the NIGHT_SKY rim outside it (`bold_stroke`). The GPU glyph atlas `shaders/kit/bits_atlas.png` bakes a
+same-colour outline, so the dark rim outside it needs an atlas rebake (`tools/design_lab/bits_atlas_bake.py`) or a
+second pass. PAPER as the hot colour on the GPU is `hot_color` in `rc_bits_particles.gdshader` (no rebake). The CPU
+fallback (`BinaryBits._draw`) also needs the spin phase and the PAPER start. `BitPath` still hashes with Godot's
+`hash()`; moving it onto `RcLookBits.h01` changes its scatter (a designer-visible change, not bit-exact).

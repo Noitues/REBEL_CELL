@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="RcLookCrtConfig" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_crt_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_crt_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="terminal"]
+script = ExtResource("2")
+accent = Color(0.3607843, 0.88235295, 1, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+
+[sub_resource type="Resource" id="firmware"]
+script = ExtResource("2")
+accent = Color(0.83137256, 1, 0, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+
+[sub_resource type="Resource" id="schematics"]
+script = ExtResource("2")
+accent = Color(1, 0.8235294, 0.3019608, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+
+[sub_resource type="Resource" id="dispatch"]
+script = ExtResource("2")
+accent = Color(1, 0.26666668, 0.2, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+
+[sub_resource type="Resource" id="corp"]
+script = ExtResource("2")
+accent = Color(0.5882353, 1, 0.27450982, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+
+[sub_resource type="Resource" id="ui_panel"]
+script = ExtResource("2")
+accent = Color(0.3607843, 0.88235295, 1, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+scan_phase = 0.0
+scan_strength = 0.12
+flicker = 0.01
+flicker_rate = 43.0
+roll_strength = 0.0
+
+[sub_resource type="Resource" id="fx_overlay"]
+script = ExtResource("2")
+accent = Color(0.3607843, 0.88235295, 1, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+scan_phase = 0.0
+scan_strength = 0.0
+scan_sine_density = 360.0
+flicker = 0.01
+flicker_rate = 47.0
+roll_strength = 0.0
+screen_vignette = 0.18
+hex_alpha = 0.0
+
+[sub_resource type="Resource" id="neon_sketch"]
+script = ExtResource("2")
+accent = Color(0.3607843, 0.88235295, 1, 1)
+glass_top = Color(0.043137256, 0.08627451, 0.1882353, 1)
+glass_bottom = Color(0.019607844, 0.039215688, 0.101960786, 1)
+scan_phase = 0.0
+scan_strength = 0.07
+flicker = 0.012
+flicker_rate = 41.0
+roll_strength = 0.0
+hex_alpha = 0.0
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"terminal": SubResource("terminal"),
+&"firmware": SubResource("firmware"),
+&"schematics": SubResource("schematics"),
+&"dispatch": SubResource("dispatch"),
+&"corp": SubResource("corp"),
+&"ui_panel": SubResource("ui_panel"),
+&"fx_overlay": SubResource("fx_overlay"),
+&"neon_sketch": SubResource("neon_sketch")
+}
+reduce = 0

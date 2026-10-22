@@ -287,6 +287,8 @@ func host_paused() -> bool:
 ## landmarks' own look, else as "night"). By day there is no rain, and no fog
 ## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
+	if not _aaa_staging:  # only the staged HQ page sees the aaa2 state: any other caller (the combat backdrop) takes the view back
+		_aaa_page_off()
 	night_share = clampf(n, 0.0, 1.0)
 	_solace_park_look()
 	if water != null:
@@ -2206,6 +2208,9 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 ## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
 var _compound_aaa: Dictionary = {}
 var _compound_fog: Dictionary = {}
+## The view before the aaa2 page took it ({"look_blend", "whole_look", "exposure"}), and the page's own look-on running.
+var _aaa_prev: Dictionary = {}
+var _aaa_staging: bool = false
 ## The aaa2 compound's origin (world; INF without one): the centre of the helix' green pool.
 var _hq_pool_at: Vector3 = Vector3.INF
 
@@ -2255,12 +2260,9 @@ func stage_compound(corp: StringName) -> Node3D:
 			node.name = "Compound_%s" % corp
 			if HqSolaceMaterials.wants(m):  # LOOK Solace HQ: the plates' AAA-2 look (PBR roles, interior-mapped windows); the page goes AAA-2
 				HqSolaceMaterials.apply(node, corp, m)
-				_compound_aaa[corp] = true
-				if _env == null:  # staged before the scene is built (the HQ page stages before it mounts the view)
-					ready.connect(_compound_look_on.bind(corp, node, at), CONNECT_ONE_SHOT)
-				else:
-					_compound_look_on(corp, node, at)
+				_enter_aaa_page(corp, node, at)
 			else:
+				_aaa_page_off()  # a plain compound is not the aaa2 page: the view goes back first
 				HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
 			node.transform = at
 			add_to_layer(&"landmarks", node)
@@ -2286,10 +2288,28 @@ func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
 	return out
 
 
+## The aaa2 HQ page takes the view for `corp`'s compound `node` at `at`: the view's own state is kept for _aaa_page_off, the
+## page's look goes on (at once, or when the scene is built).
+func _enter_aaa_page(corp: StringName, node: Node3D, at: Transform3D) -> void:
+	if _compound_aaa.is_empty():
+		_aaa_prev = {"look_blend": look_blend, "whole_look": whole_look, "exposure": _aaa_exposure}
+	_compound_aaa[corp] = true
+	if _env == null:  # staged before the scene is built (the HQ page stages before it mounts the view)
+		ready.connect(_compound_look_on.bind(corp, node, at), CONNECT_ONE_SHOT)
+	else:
+		_compound_look_on(corp, node, at)
+
+
 ## The AAA-2 look of a staged compound: the page's look blend to 1 and the compound's volumetric haze.
 func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	if not _compound_aaa.has(corp):
 		return
+	_aaa_staging = true
+	_compound_look_on_body(corp, node, at)
+	_aaa_staging = false
+
+
+func _compound_look_on_body(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
 	_hq_pool_at = at.origin
 	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
@@ -2299,20 +2319,53 @@ func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at, HqSolaceMaterials.unit_k(HqCompoundStage.manifest(corp)))
 
 
+## Gives the view back from the aaa2 HQ page: the compound's AAA-2 state goes (the page's look blend, whole-city look, exposure,
+## ink / grain, haze and gains, building overrides) and the view returns to what it was before the page staged. Runs from
+## unstage_compound and from any other caller taking the view (set_night_share: the combat backdrop). No-op without the state.
+func _aaa_page_off() -> void:
+	if _compound_aaa.is_empty():
+		return
+	_compound_aaa.clear()
+	_hq_pool_at = Vector3.INF
+	for f in _compound_fog.values():
+		if is_instance_valid(f):
+			(f as Node).queue_free()
+	_compound_fog.clear()
+	if _env != null:
+		_env.volumetric_fog_enabled = false
+	var prev := _aaa_prev
+	_aaa_prev = {}
+	_aaa_exposure = float(prev.get("exposure", 0.0))
+	whole_look = bool(prev.get("whole_look", false))
+	set_look_blend(float(prev.get("look_blend", 0.0)))
+	if _building_mat != null:
+		if _netrun_setup:
+			NetrunShaderKit.setup_building(_building_mat)  # the netrun's concrete families and PBR gains over the page's
+		_whole_building()
+		var b: Dictionary = CityShaderConfigData.shipped().building
+		for k: String in cfg.hq_page_building:
+			if not cfg.whole_building.has(k) and not (k == "pbr_spec_k" and _netrun_setup):
+				_building_mat.set_shader_parameter(StringName(k), float(b.get(k, cfg.whole_building_base.get(k, 0.0))))
+		_building_mat.set_shader_parameter(&"kit_dark", 1.0)
+		_building_mat.set_shader_parameter(&"kit_band_k", 1.0)
+		_building_mat.set_shader_parameter(&"hq_pool", Vector4())
+		_building_mat.set_shader_parameter(&"hq_pool_col", Vector3())
+		var wc: Array[Vector3] = []
+		for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
+			wc.append(Vector3(c.r, c.g, c.b))
+		_building_mat.set_shader_parameter(&"window_colors", wc)
+	_solace_park_look()
+	_whole_road_glow()
+	if not _last_day.is_empty():
+		set_night_share(night_share, _last_day)  # the day look again (ramp, haze, grade, gains) without the page's
+
+
 ## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
 func unstage_compound(corp: StringName) -> void:
 	if not compounds.has(corp):
 		return
 	if _compound_aaa.has(corp):
-		_compound_aaa.erase(corp)
-		_hq_pool_at = Vector3.INF
-		whole_look = false
-		set_look_blend(0.0)
-		if is_instance_valid(_compound_fog.get(corp)):
-			(_compound_fog[corp] as Node).queue_free()
-		_compound_fog.erase(corp)
-		if _env != null:
-			_env.volumetric_fog_enabled = false
+		_aaa_page_off()
 	var node: Node3D = compounds[corp]
 	if node != null and is_instance_valid(node):
 		node.queue_free()
