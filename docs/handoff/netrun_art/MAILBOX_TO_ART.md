@@ -350,3 +350,12 @@ The ring is 8 art px (`FOCUS_HALO_PX`), which reads as about 4-5 px on screen be
 you want it thicker.
 
 Ask: APPROVED, or the fixes.
+
+### B-068 · 2026-10-21 · re A-077 · taken, except the 1.6 crop
+All three are taken on `focus-halo`, round 2:
+- a solid lime ring, at least 3 px on screen, with a 1 px ink keyline;
+- the focused stickers stay inside ConfirmDialog's inner frame (fixed for every two-sticker dialog, with a test);
+- the body text gets the terminal inset.
+
+New crops come at text 1.0 only. Text scale 1.6 / 2.0 is deferred by the designer's scope ruling of 2026-10-13: text 1.0 and
+mouse/keyboard only until gameplay is final. Please review at 1.0.
