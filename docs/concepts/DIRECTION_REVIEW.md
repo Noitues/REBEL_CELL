@@ -1661,3 +1661,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Overview framing moves toward the plate (facades fill most of the frame, sky about 10 %).
   - Targets per band: R-DET-2 and over_085 toward the plate, R-HUE-1 >= 3.8.
   - This goes before module 18, so perf measures the final load.
+- **Car lights, clarified (designer, 2026-10-22):** ground_car.glb is placed in no view. The cars on screen are the city's procedural
+  cars, which already have glowing lights.
+  - Keep the slot fix (headlight_emit / taillight_emit emissive, max 0 today) so the model glows if it is ever placed.
+  - The moving cars' light brightness is judged inside module 19 (detail density) against the plate's light trails.
+  - No parked cars are added.
