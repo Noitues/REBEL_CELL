@@ -9,12 +9,15 @@ extends Control
 ##   --quality=0..2           Settings.city_quality for this run (-1 = default)
 ##   --size=WxH               window size; --settle=<frames>; --freeze=1 (stills)
 ##   --network=1              a sample network round each state's corp HQ (the decal)
+##   --site=dx,dy             LOOK Solace S2: the Solace Site landmark (the hospital) on the lot dx lots right, dy down of the HQ centre;
+##                            the state `solace:site` frames it (ortho 90)
+##   --day=1                  the day look (set_night_share 0); --shift=right,down moves the frame (lots along the screen axes); --zoom=<ortho BU>
 ## Prints CITYLAB lines; grep the log for ERROR.
 
 const CONFIG := preload("res://content/config/city_config.tres")
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
 ## "gridpage": the Grid page's fitted frame (ortho ~220) holding the GRID band, as the game does.
-const ZOOMS := {"grid": 440.0, "gridpage": 220.0, "raid": 300.0, "netrun": 160.0, "close": 70.0, "city": 1300.0}
+const ZOOMS := {"grid": 440.0, "gridpage": 220.0, "raid": 300.0, "netrun": 160.0, "close": 70.0, "city": 1300.0, "site": 90.0}
 const SETTLE_DEFAULT := 40
 
 var cfg: CityConfig = CONFIG
@@ -69,7 +72,18 @@ func _on_ready() -> void:
 		if mi != null:
 			print("CITYLAB chunk0 fam0 instances=%d buffer=%d surfaces=%d aabb=%s visible=%s" % [mi.multimesh.instance_count,
 				mi.multimesh.buffer.size(), mi.multimesh.mesh.get_surface_count(), str(mi.get_aabb()), str(mi.is_visible_in_tree())])
+	if _args.get("day", "0") == "1":
+		view.set_night_share(0.0, CityViewMotion.day_look(CityMotionConfigData.shipped()))
+	if _args.has("site"):
+		var so := String(_args["site"]).split(",")
+		view.set_site_landmark(&"solace", _solace_site_lot(Vector2(float(so[0]), float(so[1]))))
 	_next_state()
+
+
+## The lot point of the lab's Solace Site: the HQ centre moved `off` lots along the screen axes (RIGHT, DOWN).
+func _solace_site_lot(off: Vector2) -> Vector2:
+	var c := NeonCity.hq_of(&"solace") + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5)
+	return (c + CityLayout.RIGHT * off.x + CityLayout.DOWN * off.y).floor() + Vector2(0.5, 0.5)
 
 
 func _next_state() -> void:
@@ -85,11 +99,17 @@ func _next_state() -> void:
 	var at := NeonCity.hq_of(corp) + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5) - CityLayout.RIGHT * 11.0
 	if zoom == "city":
 		at = Vector2(cfg.city_rect.get_center())
+	if zoom == "site" and _args.has("site"):
+		var so2 := String(_args["site"]).split(",")
+		at = _solace_site_lot(Vector2(float(so2[0]), float(so2[1])))
+	if _args.has("shift"):
+		var sh := String(_args["shift"]).split(",")
+		at += CityLayout.RIGHT * float(sh[0]) + CityLayout.DOWN * float(sh[1])
 	var size := Vector2(DisplayServer.window_get_size())
 	if Vector2i(size) != view.size:
 		view.set_view_size(Vector2i(size))
 	view.band_lock = CityLod.Band.GRID if zoom == "gridpage" else -1
-	view.set_iso(CityIsoCamera.make(cfg, view.lot_world(at), float(ZOOMS.get(zoom, 440.0)), size))
+	view.set_iso(CityIsoCamera.make(cfg, view.lot_world(at), float(_args.get("zoom", ZOOMS.get(zoom, 440.0))), size))
 	if _args.get("network", "1") == "1":
 		view.set_network(_sample_network(corp))
 	else:

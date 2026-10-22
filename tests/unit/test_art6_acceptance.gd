@@ -215,6 +215,9 @@ func test_down_is_the_white_bolt_over_a_greyed_marker_at_every_raid_zoom() -> vo
 	var w: float = hq.size.x
 	# The setup's own framing done and its markers laid (they follow the node layer's draw).
 	await BoundedWait.until(get_tree(), func() -> bool: return not n.has("marker") or not ov.marker_shown(n) or ov.marker_view(down_id) != null, 10.0)
+	# The HQ's own fit (icons as drawn, a Site landmark's roof lifts the marker) settles first: it re-frames the camera
+	# for a few frames after the page opens and would take the camera back from the band below.
+	await BoundedWait.until(get_tree(), func() -> bool: return not hq._hq_fit_pending, 10.0)
 	# The band: the raid's closest fit, its middle, its widest fit, and the widest the setup
 	# frames at big text (zoom_ortho_max, HQ fit_hq_map's floor on the raid page).
 	var orthos: Array[float] = [cfg.raid_fit_min, (cfg.raid_fit_min + cfg.raid_fit_max) * 0.5, cfg.raid_fit_max, cfg.zoom_ortho_max]

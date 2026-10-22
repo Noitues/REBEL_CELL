@@ -319,6 +319,7 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		_ground_mat.set_shader_parameter(&"cloud_edge", cfg.whole_cloud_edge)
 	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
+	CitySolaceKit.apply_material(_building_mat, cfg, night_share)
 	# LOOK L5: the whole-city night keeps the plate's neutral charcoal air, not the map's violet haze and grade.
 	var n_haze: Color = cfg.whole_night_haze if whole_look else cfg.haze
 	var n_haze_k: float = cfg.whole_night_haze_k if whole_look else cfg.haze_k
@@ -1656,7 +1657,7 @@ func _add_grit(node: Node3D, n: int, out: Array) -> void:
 func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: Dictionary, far: bool) -> void:
 	if ids_all.is_empty():
 		return
-	var fams := CityMeshKit.families_of(cfg, model.prisms, ids_all)
+	var fams := CityMeshKit.families_of(cfg, model.prisms, ids_all, model.city_seed)
 	var keys: Array = fams.keys()
 	IdSort.sort_ids(keys)
 	var lod := CityLod.far_level(cfg, building_lod) if far else maxi(0, building_lod)
@@ -1864,6 +1865,9 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	var node := scene.instantiate() as Node3D
 	node.name = "Landmark_%s" % corp
 	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
+	var plinth := node.find_child("solace_hq__plinth", true, false) as Node3D
+	if plinth != null:  # LOOK Solace S2: exported switched off (scale 0); cfg.solace_plinth turns it on
+		plinth.scale = Vector3.ONE if cfg.solace_plinth else Vector3.ZERO
 	if look_blend > 0.0:
 		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	node.transform = at
