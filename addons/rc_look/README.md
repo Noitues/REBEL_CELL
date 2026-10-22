@@ -332,3 +332,31 @@ same-colour outline, so the dark rim outside it needs an atlas rebake (`tools/de
 second pass. PAPER as the hot colour on the GPU is `hot_color` in `rc_bits_particles.gdshader` (no rebake). The CPU
 fallback (`BinaryBits._draw`) also needs the spin phase and the PAPER start. `BitPath` still hashes with Godot's
 `hash()`; moving it onto `RcLookBits.h01` changes its scatter (a designer-visible change, not bit-exact).
+
+## Module 17: Blender to Godot material slots (`RcLookSlots`)
+
+One table for what a Blender export's glTF material slot name means for the look, per naming family: `lm_*` (landmark_toon
+roles), `hq_*` (aliases of the landmark slots), `hq_sx_*` (the Solace AAA-2 compound: listed, its table is fenced) and the
+street kit's plain names (StreetR2Materials surfaces, the fallback ones included). Pure lookup: no material is assigned
+here, the views keep assigning by role at runtime, so nothing draws differently.
+
+| API | What |
+|---|---|
+| `config/look_slots.tres` (`RcLookSlotsConfig`) | `landmark_roles`, `landmark_beam`, `hq_alias`, `solace_prefix`, `street_exact`, `street_prefix`, `street_fallback`, `post_import_dirs`; `.validate()` |
+| `RcLookSlots.of(slot)` | `{family, role, listed}`; an unknown name is `listed: false` and names the fallback it would get |
+| `RcLookSlots.surfaces(root)` / `.unlisted(root)` | every surface under an imported scene / the slot names no family lists |
+| `RcLookSlots.stamp(root)` | sets `rcl_slots` meta (one `family:role` per surface) on each MeshInstance3D; returns the unlisted names |
+| `RcLookSlots.wants(path)` | true for a file under a folder of `post_import_dirs` |
+| editor plugin `plugin.cfg` + `import/rc_look_import_plugin.gd` | the post-import step: every scene import gets the option `rc_look/stamp_slots` (on by default under `post_import_dirs`); stamps and warns on unlisted slots at import |
+| lab: `--module=slots` | false-colour tiles by role for the pilots, a landmark and five street kit pieces; an unlisted slot in red |
+
+**Why a plugin, not a per-file import script.** The repo ignores `*.import`, so `import_script/path` per file cannot be
+committed. The plugin is enabled in `project.godot` beside GUT; a folder joins the stamp by adding it to
+`post_import_dirs`. Pilot: `assets/raid/uplink/` and `assets/city/roof_props/`.
+
+**Tests.** `tests/unit/test_rc_look_slots.gd` (fast): the map is valid and equals LandmarkMaterials.ROLES / BEAM and
+HqCompoundMaterials.LANDMARK_NAME; the street names equal `StreetR2Materials.for_slot` by behaviour (prefix and fallback
+included); every glb under `assets/` lists every slot; the pilots carry the stamp.
+
+**Found (not changed).** The street kit's `headlight_emit` and `taillight_emit` fall to `solid` in `for_slot` (not
+emissive): the car lights do not glow from their slot. Listed as `solid` so the map equals today.

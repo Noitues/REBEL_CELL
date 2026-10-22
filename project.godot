@@ -40,7 +40,7 @@ locale/translations=PackedStringArray("res://assets/text/strings.en.translation"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+enabled=PackedStringArray("res://addons/gut/plugin.cfg", "res://addons/rc_look/plugin.cfg")
 
 [input]
 
