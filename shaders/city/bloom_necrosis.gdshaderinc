@@ -26,6 +26,7 @@ uniform float bl_cover_k = 0.89;     // the skin's share of the original surface
 uniform float bl_veins = 1.1;        // emission strength of the veins / the hot edge / the hatch
 uniform float bl_edge_k = 1.4;
 uniform float bl_hatch_k = 0.30;
+uniform float bl_vein_dens = 0.0;    // shifts the vein density gate up: fewer, sparser veins
 uniform float bl_body_emit = 0.0;    // the body's own glow (share of the plum): the street's lit plum under the signs' light
 uniform float bl_seed = 7.0;         // the noise seed (the Blender `W`)
 uniform float bl_vscale = 0.7;       // vein cell scale (cells per BU) and its line half width in cell units
@@ -205,7 +206,7 @@ BlField bl_street_field(vec3 wp) {
 		float sc = bl_vscale * (k == 0 ? 1.0 : 2.1);
 		float w = bl_vw * (k == 0 ? 1.0 : 1.7);
 		float line = 1.0 - bl_smooth(bl_vor_edge(wpos * sc), 0.0, w);
-		float dens = bl_smooth(bl_noise(P * (0.12 + 0.05 * float(k)), 2, bl_seed + 20.0 + float(k)), 0.46, 0.64);
+		float dens = bl_smooth(bl_noise(P * (0.12 + 0.05 * float(k)), 2, bl_seed + 20.0 + float(k)), 0.46 + bl_vein_dens, 0.64 + bl_vein_dens);
 		vein = max(vein, line * dens * (k == 0 ? 1.0 : 0.7));
 	}
 	vein *= 0.45 + bl_smooth(d, 0.0, 9.0) * 0.55;
@@ -226,9 +227,10 @@ float bl_apply_street(vec3 wp, inout vec3 albedo, inout vec3 emission) {
 	BlField f = bl_street_field(wp);
 	float fac = clamp(f.cover * bl_cover_k, 0.0, 1.0) * clamp(bl_strength, 0.0, 1.0);
 	// the hot edge and the veins are drawn where the mix is: at the front's hairline (edge) the fac is partial by design
-	float k = f.vein * bl_veins + f.edge * bl_edge_k + f.hatch * bl_hatch_k;
+	float k = f.vein * bl_veins + f.hatch * bl_hatch_k;
 	albedo = mix(albedo, bl_plum, fac);
-	emission = mix(emission, bl_pink * k + bl_plum * bl_body_emit, fac);
+	// the front's hairline is the hottest line of the skin: added over the mix (not weighted by the cover), so it reads at the front
+	emission = mix(emission, bl_pink * k + bl_plum * bl_body_emit, fac) + bl_pink * f.edge * bl_edge_k * clamp(bl_strength, 0.0, 1.0);
 	return fac;
 }
 
@@ -239,8 +241,8 @@ vec3 bl_unlit_street(vec3 wp, vec3 col) {
 	}
 	BlField f = bl_street_field(wp);
 	float fac = clamp(f.cover * bl_cover_k, 0.0, 1.0) * clamp(bl_strength, 0.0, 1.0);
-	float k = f.vein * bl_veins + f.edge * bl_edge_k + f.hatch * bl_hatch_k;
-	return mix(col, bl_plum * (1.0 + bl_body_emit) + bl_pink * k, fac);
+	float k = f.vein * bl_veins + f.hatch * bl_hatch_k;
+	return mix(col, bl_plum * (1.0 + bl_body_emit) + bl_pink * k, fac) + bl_pink * f.edge * bl_edge_k * clamp(bl_strength, 0.0, 1.0);
 }
 
 // The skin's cover at `wp` (0..1 times the strength): for the lights that must follow it (the specular fades on the skin).
@@ -341,7 +343,7 @@ BlField bl_tube_field(vec3 pp) {
 		float zk = k == 0 ? 0.30 : 0.4;
 		vec3 cyl = vec3(cphi * bl_tube_r + TW * (31.0 + 3.0 * float(k)), sphi * bl_tube_r, Z * zk);
 		float line = 1.0 - bl_smooth(bl_vor_edge(cyl * sc), 0.0, w);
-		float dens = bl_smooth(bl_noise(vec3(cphi * 2.0, sphi * 2.0, Z * (0.02 + 0.01 * float(k))), 2, bl_seed + 20.0 + float(k)), 0.38, 0.55);
+		float dens = bl_smooth(bl_noise(vec3(cphi * 2.0, sphi * 2.0, Z * (0.02 + 0.01 * float(k))), 2, bl_seed + 20.0 + float(k)), 0.38 + bl_vein_dens, 0.55 + bl_vein_dens);
 		float v = line * dens * (k == 0 ? 1.0 : 0.7);
 		if (k == 0) {
 			vs0 = v;

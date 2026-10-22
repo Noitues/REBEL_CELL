@@ -105,8 +105,8 @@ hq = {
 "win_r": 48.0
 }
 haze = {
-"below": 2.0,
-"decision_share": 0.25,
+"below": 0.0,
+"decision_share": 0.0,
 "emission": 25.0,
 "h": 38.0,
 "k": 0.02,
