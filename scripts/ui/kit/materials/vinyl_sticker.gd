@@ -86,6 +86,10 @@ const PEEL_BACK_BOARD_H := 1080.0
 ## The holographic sweep's band runs at this angle (a diagonal, 45 degrees).
 const SWEEP_BAND_DEG := 45.0
 const PRESS_X := 1.04
+## The keyboard-focus halo (ART_BIBLE §2.10, A-075): a lime border this wide (art px) just outside the die-cut's
+## outline, drawn whenever the owning control has focus (motion or none), gone on focus loss. The colour is
+## `Palette.FOCUS`.
+const FOCUS_HALO_PX := 8.0
 const DISABLED_ALPHA := 0.8
 
 const SLAP := &"sticker_slap"
@@ -203,6 +207,8 @@ var band_t: float = -1.0:
 		_sync()
 
 var state: State = State.REST
+## True while the owning control (the parent Control: a sticker button) has focus: the lime die-cut halo shows.
+var focus_halo: bool = false
 ## The body's rect inside this control (px): where the sticker itself is.
 var body_rect: Rect2 = Rect2()
 ## Where the content of an object sticker goes (inside the SubViewport, at the body).
@@ -272,10 +278,27 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	_watch_owner_focus()
 	MotionSkip.register_passive(self)  # ANIM-R6 D7: a slap, peel or dissolve ends with any press that ends a motion
 	_built = true
 	_rebuild()
 	_join_sweep()
+
+
+## A-075: the parent control's focus drives the halo, for every sticker button of the kit alike.
+func _watch_owner_focus() -> void:
+	var owner_ctl := get_parent() as Control
+	if owner_ctl == null or owner_ctl.focus_mode == Control.FOCUS_NONE:
+		return
+	owner_ctl.focus_entered.connect(set_focus_halo.bind(true))
+	owner_ctl.focus_exited.connect(set_focus_halo.bind(false))
+	set_focus_halo(owner_ctl.has_focus())
+
+
+## Shows or hides the lime focus halo (no motion: it is the end state at once).
+func set_focus_halo(on: bool) -> void:
+	focus_halo = on
+	_sync()
 
 
 func _exit_tree() -> void:
@@ -652,6 +675,8 @@ func _sync() -> void:
 	_mat.set_shader_parameter(&"rainbow", rainbow)
 	_mat.set_shader_parameter(&"peel_back", peel_back)
 	_mat.set_shader_parameter(&"peel_px", peel_px())
+	_mat.set_shader_parameter(&"halo_px", FOCUS_HALO_PX if focus_halo else 0.0)
+	_mat.set_shader_parameter(&"halo_color", Palette.FOCUS)
 	_mat.set_shader_parameter(&"band_t", band_t)
 	_mat.set_shader_parameter(&"band_width", band_share())
 	_mat.set_shader_parameter(&"band_alpha", Motion.amplitude(SWEEP) * rainbow)

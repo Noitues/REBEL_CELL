@@ -427,7 +427,7 @@ const PLATE_ALPHA := 0.72
 
 
 ## With 1B's sticker: the system word and the terminal line here, the sticker is `art`; focus
-## is the kit sticker's own rainbow sheen and curl (designer 2026-10-05: no halo, no brackets).
+## is the kit sticker curl plus its lime die-cut halo (A-075; VinylSticker watches this button's focus).
 func _draw_with_art() -> void:
 	_sync_art_words()
 	_sync_art_state()

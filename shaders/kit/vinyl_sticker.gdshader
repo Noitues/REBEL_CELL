@@ -48,6 +48,10 @@ uniform float band_deg = 45.0;
 uniform float peel_back : hint_range(0.0, 1.0) = 0.0;
 uniform float peel_px = 34.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
+// The keyboard-focus halo (ART_BIBLE §2.10, A-075): a border of halo_px in halo_color just outside the die-cut's
+// outline (the folded outline when peeled). 0 = none.
+uniform float halo_px = 0.0;
+uniform vec4 halo_color : source_color = vec4(0.831, 1.0, 0.0, 1.0);
 
 float h21(vec2 p) {
 	return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453);
@@ -192,6 +196,23 @@ void fragment() {
 			}
 			rgb = mix(rgb, vec3(0.0), fsh * 0.4);
 		}
+	}
+
+	// ---- the keyboard-focus halo: a ring just outside the die-cut body (the opaque part: a baked sticker's own
+	// soft shadow in its alpha is not the body), drawn over that shadow
+	if (halo_px > 0.0 && dissolve <= 0.0) {
+		const int HN = 24;
+		float reach = 0.0;
+		for (int i = 0; i < HN; i++) {
+			float ang = 6.2831853 * float(i) / float(HN);
+			vec2 dir = vec2(cos(ang), sin(ang));
+			reach = max(reach, smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px, tps, P, u, depth)));
+			reach = max(reach, smoothstep(0.8, 0.95, folded_alpha(px + dir * halo_px * 0.5, tps, P, u, depth)));
+		}
+		float own = smoothstep(0.8, 0.95, a);
+		float halo_a = clamp(reach, 0.0, 1.0) * (1.0 - own);
+		rgb = mix(rgb, halo_color.rgb, halo_a);
+		a = max(a, halo_a);
 	}
 
 	// ---- dissolve: cells drop out left to right with a white-hot rim
