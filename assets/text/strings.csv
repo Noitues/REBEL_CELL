@@ -85,6 +85,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s  HP %s → %s  %s,%s  HP %s → %s  %s
 %s %s HP,%s %s HP
 %s (%d HP): takes hits aimed at the slice it guards.,%s (%d HP): takes hits aimed at the slice it guards.
+%s (%d SCHEMATICS),%s (%d SCHEMATICS)
 %s (%s): %d/%d HP.,%s (%s): %d/%d HP.
 %s (%s): integrity (HP) now and after the raid.,%s (%s): integrity (HP) now and after the raid.
 %s (%s): make it the target for the Armory's assets.,%s (%s): make it the target for the Armory's assets.
@@ -189,6 +190,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 ", a run in progress",", a run in progress"
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
+...,...
 // %s // RANK %d,// %s // RANK %d
 1 NODE,1 NODE
 1x,1x
@@ -225,6 +227,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 "A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn.","A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn."
+A TAKEN Site next to your territory: the next raid can enter from it.,A TAKEN Site next to your territory: the next raid can enter from it.
 A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
 A failed run still moves the Eye.,A failed run still moves the Eye.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
@@ -688,7 +691,7 @@ DO NOT FORWARD,DO NOT FORWARD
 DOUBLE,DOUBLE
 DOWN,DOWN
 DOWN / TAKEN,DOWN / TAKEN
-DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
+DOWN: repair the node on the Grid. The cost is half its install cost.,DOWN: repair the node on the Grid. The cost is half its install cost.
 DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
 DRAW: cards come from your pile to your hand at once.,DRAW: cards come from your pile to your hand at once.
@@ -802,6 +805,7 @@ EMPTY SLOT,EMPTY SLOT
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
 ENRAGE %d,ENRAGE %d
+ENTRY POINT,ENTRY POINT
 ENTRY SITES,ENTRY SITES
 EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
 ESC,ESC
@@ -1094,7 +1098,6 @@ HOME SERVER %d > %d,HOME SERVER %d > %d
 HOME SERVER - %d/%d,HOME SERVER - %d/%d
 HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.,HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
-HOSTILE NODES DOWN,HOSTILE NODES DOWN
 HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
 HOVER: SHOW ALL LINKS,HOVER: SHOW ALL LINKS
@@ -1733,6 +1736,7 @@ NETWORK AT CLOSURE,NETWORK AT CLOSURE
 NEVER SLEEP,NEVER SLEEP
 NEW CAMPAIGN,NEW CAMPAIGN
 NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.,NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.
+NEW RAID ENTRY POINTS,NEW RAID ENTRY POINTS
 NEW SLICES,NEW SLICES
 NEXT,NEXT
 NEXT %d (%s),NEXT %d (%s)
@@ -1758,6 +1762,7 @@ NO SIGNAL,NO SIGNAL
 NO SLOT,NO SLOT
 NODE BUILT,NODE BUILT
 NODES AT THE END,NODES AT THE END
+NODES DOWN (REPAIR),NODES DOWN (REPAIR)
 NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
@@ -1944,7 +1949,6 @@ Perfects,Perfects
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
-"Pick a defense card, then one of your nodes: the forecast's change shows here.","Pick a defense card, then one of your nodes: the forecast's change shows here."
 "Pick a slice, then the wheel slot it replaces.","Pick a slice, then the wheel slot it replaces."
 "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
 "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
@@ -2015,6 +2019,9 @@ Quit to desktop,Quit to desktop
 RACK,RACK
 RACK BREACHED,RACK BREACHED
 RAID,RAID
+"RAID
+IN PROGRESS:","RAID
+IN PROGRESS:"
 "RAID
 RESULT:","RAID
 RESULT:"
@@ -2270,7 +2277,7 @@ SHOWING ALL LINKS,SHOWING ALL LINKS
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
 SINKS,SINKS
-SITES RECLAIMED,SITES RECLAIMED
+SITES TAKEN,SITES TAKEN
 SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle

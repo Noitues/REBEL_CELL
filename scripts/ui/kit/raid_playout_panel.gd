@@ -92,13 +92,15 @@ var results: Dictionary = {}
 ## under its id), from the resolved raid's "before": a hit's line says the HP it really took
 ## and where it left the node, the numbers the map's labels and floats show.
 var _hp: Dictionary = {}
-## ANIM-R5 P3: the threats the feed has told of, for the raid's Heat line: threat id -> its
-## name (entered), and the ids destroyed and the ids that hit CORE (with damage).
 ## B8: the step whose divider the feed has shown.
 var _prefixed_step: int = -1
-var _told_threats: Dictionary = {}
-var _told_gone: Dictionary = {}
-var _told_reached: Dictionary = {}
+## RAID-VIS F1 (D26): the events whose feed line is not told yet: {"at" (the playout clock they land on the map),
+## "e", "i" (their order)}. With the motion layer on, a line is told when its beat has landed on the map, never
+## at the step's start; instant playouts (tests, reduce effects, Skip) tell every line at once, in order.
+var _pending: Array[Dictionary] = []
+var _pending_i: int = 0
+## The index of the end group (the raid_end event) in `_steps` (-1 when there is none).
+var _end_group: int = -1
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -169,10 +171,9 @@ func play(events: Array[Dictionary], instant: bool = false, start_now: bool = tr
 	_threat_sites.clear()
 	_threat_names.clear()
 	_reset_hp()
-	_told_threats.clear()
 	_prefixed_step = -1
-	_told_gone.clear()
-	_told_reached.clear()
+	_pending.clear()
+	_pending_i = 0
 	_dead.clear()
 	_index = 0
 	_done = false
@@ -181,6 +182,13 @@ func play(events: Array[Dictionary], instant: bool = false, start_now: bool = tr
 	_next_at = 0.0
 	_steps = RaidBeats.group(events)
 	_route_ends = RaidBeats.route_ends(events)
+	_end_group = -1
+	for i in _steps.size():
+		if RaidBeats.is_end_group(_steps[i]):
+			_end_group = i
+	# RAID-VIS F1: the approach before step 1 (the camera frames CORE and the entries).
+	if not _instant and _steps.size() > 1:
+		_next_at = RaidBeats.raw_seconds(RaidBeats.APPROACH_MOTION)
 	log_note.clear()
 	if _instant:
 		skip_to_end()
@@ -239,8 +247,10 @@ func skip_to_end() -> void:
 	while _index < _steps.size():
 		var tl := RaidBeats.timeline(_steps[_index])
 		_apply_step(_steps[_index], _clock, tl)
+		_release_pending(true)
 		_clock += float(tl["seconds"])
 		_index += 1
+	_release_pending(true)
 	_next_at = _clock
 	if fx != null and is_instance_valid(fx):
 		fx.clock = _clock
@@ -255,6 +265,7 @@ func _process(delta: float) -> void:
 	_clock += delta * Motion.speed
 	if fx != null and is_instance_valid(fx):
 		fx.clock = _clock
+	_release_pending(false)
 	if _clock >= _next_at:
 		_show_step()
 
@@ -345,6 +356,9 @@ func _show_step() -> void:
 	_apply_step(_steps[_index], start, tl)
 	_index += 1
 	_next_at = start + float(tl["seconds"])
+	# RAID-VIS F1: the end state rests before the verdict (the end group follows).
+	if _index == _end_group:
+		_next_at += RaidBeats.raw_seconds(RaidBeats.SETTLE_MOTION)
 	if not is_inside_tree():
 		skip_to_end()
 
@@ -381,19 +395,12 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 				# first step only and its token stayed nameless on CORE.
 				for id in _threat_sites:
 					_dead[id] = true
-		# One muted divider line per step, fed before that step's first event line.
-		var step_no := int(e.get("step", 0))
-		var line := feed_line(e)
-		if line != "":
-			if t != "raid_end" and step_no > 0 and step_no != _prefixed_step:
-				_prefixed_step = step_no
-				_log(step_divider(step_no))
-			_log(line)
-		event_shown.emit(e)
-		if t == "raid_end":
-			step_label.text = tr("Raid over")
-		elif e.has("step"):
-			step_label.text = tr("Step %d") % int(e["step"]) if int(e["step"]) > 0 else tr("Setup")
+		# RAID-VIS F1: the feed's line (and the screen's reading of the event) comes when its beat has landed.
+		if fx != null and not _instant and is_inside_tree():
+			_pending_i += 1
+			_pending.append({"at": start + RaidBeats.landing_of(e, tl), "e": e, "i": _pending_i})
+		else:
+			_tell(e)
 	if fx != null and is_instance_valid(fx):
 		for b: Dictionary in tl.get("beats", []):
 			fx.play_beat(b, start + float(b["t0"]))
@@ -405,6 +412,37 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 			markers.get_or_add(_threat_sites[id], []).append(_threat_names.get(id, String(id)))
 		grid_view.set("threat_markers", markers)
 		grid_view.queue_redraw()
+
+
+## Tells event `e` now: its feed line (after the step's muted divider, the first time), the step readout, and
+## `event_shown` (the screens change a top-bar value only then).
+func _tell(e: Dictionary) -> void:
+	var t: String = e.get("type", "")
+	var step_no := int(e.get("step", 0))
+	var line := feed_line(e)
+	if line != "":
+		if t != "raid_end" and step_no > 0 and step_no != _prefixed_step:
+			_prefixed_step = step_no
+			_log(step_divider(step_no))
+		_log(line)
+	event_shown.emit(e)
+	if t == "raid_end":
+		step_label.text = tr("Raid over")
+	elif e.has("step"):
+		step_label.text = tr("Step %d") % int(e["step"]) if int(e["step"]) > 0 else tr("Setup")
+
+
+## Tells the pending events whose time has come on the playout clock (all of them with `all`), in landing order,
+## the resolver's order between equal times.
+func _release_pending(all: bool) -> void:
+	if _pending.is_empty():
+		return
+	_pending.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if not is_equal_approx(float(a["at"]), float(b["at"])):
+			return float(a["at"]) < float(b["at"])
+		return int(a["i"]) < int(b["i"]))
+	while not _pending.is_empty() and (all or float(_pending[0]["at"]) <= _clock):
+		_tell((_pending.pop_front() as Dictionary)["e"])
 
 
 ## The feed's divider line for step `step_no` ("— STEP 2 —"), muted terminal text.
@@ -423,7 +461,6 @@ func _log(line: String) -> void:
 func feed_line(e: Dictionary) -> String:
 	var text := ""
 	var t := String(e.get("type", ""))
-	_note_threat(t, e)
 	match t:
 		"threat_enters":
 			text = tr(FEED_ENTERS) % [threat_word(e), site_word(e.get("site", &""))]
@@ -494,38 +531,6 @@ func feed_line(e: Dictionary) -> String:
 		_:
 			return ""
 	return text
-
-
-## ANIM-R5 P3: notes a threat entering, destroyed or hitting CORE (with damage) as the feed
-## tells it (for `raid_heat_line`).
-func _note_threat(t: String, e: Dictionary) -> void:
-	if not e.has("threat"):
-		return
-	var id := String(e["threat"])
-	match t:
-		"threat_enters":
-			_told_threats[id] = threat_word(e)
-		"threat_destroyed":
-			_told_gone[id] = true
-		"home_hit":
-			_told_gone[id] = true
-			if int(e.get("damage", 0)) > 0:
-				_told_reached[id] = true
-	if not _told_threats.has(id):
-		_told_threats[id] = threat_word(e)
-
-
-## The names of threats `ids`, each once, in id order (a wave of three Collectors reads
-## "Collector" once).
-func _told_names(ids: Array) -> PackedStringArray:
-	var sorted := ids.duplicate()
-	sorted.sort_custom(func(a: Variant, b: Variant) -> bool: return String(a) < String(b))
-	var out := PackedStringArray()
-	for id in sorted:
-		var w := String(_told_threats.get(id, tr("a threat")))
-		if not out.has(w):
-			out.append(w)
-	return out
 
 
 ## ANIM-R4 H11a: the feed's HP before the raid, from the resolved raid (home under its id).
@@ -645,6 +650,7 @@ static func _count_in(e: Dictionary, after: String) -> int:
 func _finish() -> void:
 	if _done:
 		return
+	_release_pending(true)
 	_done = true
 	_restore_speed()
 	# ANIM-R6 C10: the raid is over: 1x / 2x / 4x and Skip have nothing left to drive (they

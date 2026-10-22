@@ -46,9 +46,12 @@ func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Pale
 ## ANIM-5: the forecast becomes the real verdict (the raid playout's end): new caption
 ## and verdict, a solid ring, and the stamp lands (`forecast_stamp_resolve`: a pop from
 ## its amplitude; the end state at once under reduce effects).
-func resolve(p_caption: String, p_verdict: String) -> void:
+func resolve(p_caption: String, p_verdict: String, p_color: Variant = null, p_icon: StringName = &"") -> void:
 	caption = p_caption
 	verdict = p_verdict
+	if p_color is Color:
+		color = p_color  # RAID-VIS F1: a stamp that hid its verdict takes the verdict's color and icon here
+		icon_kind = p_icon
 	resolved = true
 	queue_redraw()
 	pivot_offset = size * 0.5

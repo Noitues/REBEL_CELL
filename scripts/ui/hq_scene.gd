@@ -47,6 +47,8 @@ const CHIP_INFECTED := "INFECTED %d%% → %d%%" # TR
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
+const PLAYING_CAPTION := "RAID\nIN PROGRESS:" # TR
+const PLAYING_WORD := "..." # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
 ## B3 (review Q10, round 40 `raid_view_v3` / round 44 `raid_setup.png`): the raid setup's yellow
@@ -2027,6 +2029,7 @@ func _build_hq_page(page_name: String) -> void:
 		city_overlay.node_clicked.connect(select_site)
 		city_overlay.node_hovered.connect(_hq_hover_tag)
 	_mount_hq_routes(projection, raid_mode)
+	_mount_node_marks(RaidNodeMarks.of_grid(c.grid))
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_mount_hq_map_tools(page, g)
 	if not raid_mode:
@@ -3843,6 +3846,23 @@ func _mount_city_map(nodes: Array[Dictionary], edges: Array[Dictionary], look: i
 	city_overlay.set_look(look)
 	city_overlay.set_graph(nodes, edges)
 	_frame_city(zoom, city_overlay.centre() if focus == Vector2.INF else focus, anchor)
+
+
+## RAID-VIS F2 / F3: the per-node outcome marks on the mounted map (`RaidNodeMarkLayer`): the standing DOWN / TAKEN
+## ones from the Grid (the HQ, the Grid and the raid setup, until the node is repaired or reclaimed), or the
+## raid's own, HOLDS included (the report). A TAKEN Site next to the territory is written ENTRY POINT.
+func _mount_node_marks(marks: Dictionary) -> void:
+	var c := RunManager.campaign
+	if city_overlay == null or c == null:
+		return
+	var layer := RaidNodeMarkLayer.new(city_overlay)
+	city_overlay.add_child(layer)
+	layer.set_marks(marks, Palette.corp_color(c.corporation_id), RaidOutcome.entry_points(c.grid, RunManager.corporation.city_grid))
+	_node_marks = layer
+
+
+## The mounted map's mark layer (null when none).
+var _node_marks: RaidNodeMarkLayer = null
 
 
 ## G2R-1: `_frame_city` for the HQ's own framing (once fitted, lean, follow the selection): the frame
@@ -5880,7 +5900,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
 	var verdict := RaidVerdict.of_result(r)
 	var clean := RaidVerdict.clean(r)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
+	# RAID-VIS F1 (D26): the verdict stays hidden while the raid plays (the forecast chip, which promises the outcome,
+	# lives on the setup page); the stamp reads IN PROGRESS and resolves into the verdict at the end.
+	var forecast := ForecastStamp.new(PLAYING_CAPTION, PLAYING_WORD, Palette.TERMINAL_TEXT, &"")
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -5963,7 +5985,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		_refresh_status()
 		if dealt:
 			hud.stats.land_pulse(StatIcon.RAIDS)
-		forecast.resolve(RESULT_CAPTION, verdict)
+		forecast.resolve(RESULT_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
 		Fx.freeze_frames()  # Plan 1 M8: the verdict lands with weight (a hit-stop, none under reduce effects)
 		# B8: the page and the top bar read the result from "Raid over" on, not RAID IN PROGRESS.
 		hud.set_screen(String(SCREEN_NUMBERS.get("raid_playout", "")), raid_result_title(verdict))
@@ -6306,6 +6328,7 @@ static func report_outcome_words(result: Dictionary) -> String:
 const REPORT_INTACT := "%d / %d INTACT" # TR
 const REPORT_DAMAGED := "%d / %d" # TR
 const REPORT_SCHEMATICS := "%d SCHEMATICS" # TR
+const REPORT_DOWN_COST := "%s (%d SCHEMATICS)" # TR
 const REPORT_HEAT := "%d > %d" # TR
 const REPORT_NO_CHANGE := "%d > %d NO CHANGE" # TR
 const REPORT_BACK := "BACK TO THE GRID" # TR
@@ -6382,20 +6405,27 @@ func show_raid_summary() -> void:
 	_tip_label(units, tr("Threats your network destroyed."))
 	if _raid_reward >= 0:
 		report.add_row(tr("EQUIPMENT LOST TO HOSTILES"), tr(REPORT_SCHEMATICS) % _raid_reward, Palette.HARM_INK, "ReportReward")
-	var taken: Array = r.get("taken", [])
-	var down_names := PackedStringArray()
-	for id in r.get("nodes", {}).keys():
-		if String(r["nodes"][id].get("outcome", "")) == "down":
-			down_names.append(site_name(StringName(String(id))))
+	# RAID-VIS F3 (GDD 7.2): the consequences the rules left: the DOWN nodes with their repair cost, the TAKEN
+	# Sites, and the new raid entry points (a TAKEN Site next to the territory). `RaidOutcome.aftermath`.
+	var after := RaidOutcome.aftermath(c, RunManager.corporation.city_grid, RunManager.config(), RunManager.lookup())
 	var reclaimed := PackedStringArray()
-	for id in taken:
-		reclaimed.append(site_name(StringName(String(id))))
+	for id in after["taken"]:
+		reclaimed.append(site_name(id))
 	if not reclaimed.is_empty():
-		var rec := report.add_row(tr("SITES RECLAIMED"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.INK, "ReportReclaimed")
+		var rec := report.add_row(tr("SITES TAKEN"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.HARM_INK, "ReportReclaimed")
 		_tip_label(rec, tr("TAKEN: the corporation took the Site back."))
+	var down_names := PackedStringArray()
+	for d in after["down"]:
+		down_names.append(tr(REPORT_DOWN_COST) % [site_name(d["id"]).to_upper(), int(d["cost"])])
 	if not down_names.is_empty():
-		var dn := report.add_row(tr("HOSTILE NODES DOWN"), ", ".join(down_names).to_upper(), Palette.INK, "ReportDown")
-		_tip_label(dn, tr("DOWN: repair the node on the Grid."))
+		var dn := report.add_row(tr("NODES DOWN (REPAIR)"), ", ".join(down_names), Palette.HARM_INK, "ReportDown")
+		_tip_label(dn, tr("DOWN: repair the node on the Grid. The cost is half its install cost."))
+	var entry_names := PackedStringArray()
+	for id in after["entries"]:
+		entry_names.append(site_name(id).to_upper())
+	if not entry_names.is_empty():
+		var en := report.add_row(tr("NEW RAID ENTRY POINTS"), ", ".join(entry_names), Palette.HARM_INK, "ReportEntries")
+		_tip_label(en, tr("A TAKEN Site next to your territory: the next raid can enter from it."))
 	var hb := int(r.get("home_before", 0))
 	var ha := int(r.get("home_after", 0))
 	var home := report.add_row(tr("HOSTILE HOME SERVER"), (tr(REPORT_INTACT) % [ha, c.grid.home_max_integrity]) if ha >= hb else (tr(REPORT_DAMAGED) % [ha, c.grid.home_max_integrity]),
@@ -6447,6 +6477,7 @@ func show_raid_summary() -> void:
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
+	_mount_node_marks(RaidNodeMarks.of_raid(r.get("nodes", {}), c.grid.home_site_id))
 	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT  # B3 (D5): the outcome is on the node and the paper
 	city_overlay.avoid_controls([side])
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)

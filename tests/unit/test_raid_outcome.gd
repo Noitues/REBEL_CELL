@@ -267,3 +267,25 @@ func test_if_placed_names_the_node_and_home_change() -> void:
 	var words := RaidVerdict.if_placed_words(d, func(o: String) -> String: return o.to_upper())
 	assert_string_contains(words, "DOWN > HOLDS")
 	assert_string_contains(words, "Home +9")
+
+
+## RAID-VIS F3: the report's consequences: DOWN nodes with their repair cost (the node's share of its install
+## cost, from content), TAKEN Sites, and the TAKEN Sites next to the territory (the new entry points).
+func test_aftermath_lists_down_taken_and_new_entry_points() -> void:
+	var middle: Array[StringName] = [&"r1", &"t1", &"x", &"t2"]
+	var grid := GridFixture.chain_grid(middle)
+	var c := GridFixture.campaign(grid, {&"r1": &"relay"})
+	c.grid.site(&"r1")["condition"] = GridState.Condition.DOWN
+	c.grid.site(&"t1")["status"] = GridState.SiteStatus.TAKEN
+	c.grid.site(&"t2")["status"] = GridState.SiteStatus.TAKEN
+	c.last_raid = {"nodes": {"home": {"before": 10, "after": 10, "outcome": "holds"}, "r1": {"before": 5, "after": 0, "outcome": "down"},
+		"t1": {"before": 5, "after": 0, "outcome": "taken"}, "t2": {"before": 5, "after": 0, "outcome": "taken"}}}
+	var a := RaidOutcome.aftermath(c, grid, _cfg, _lookup)
+	var relay := ContentRegistry.get_content(&"relay") as NetworkNodeData
+	assert_eq(a["down"].size(), 1, "one node DOWN")
+	assert_eq(a["down"][0]["id"], &"r1")
+	assert_eq(a["down"][0]["cost"], CampaignRules.repair_cost(c, _cfg, _lookup, &"r1"), "the repair cost is the rules' own")
+	assert_eq(a["down"][0]["cost"], roundi(relay.install_cost * relay.repair_cost_ratio), "the node's share of its install cost")
+	assert_eq(a["taken"], [&"t1", &"t2"] as Array[StringName], "both TAKEN Sites")
+	assert_eq(a["entries"], [&"t1"] as Array[StringName], "only the TAKEN Site next to the territory is a new entry point")
+	assert_true(RaidResolver.default_entry_sites(c, grid).has(&"t1"), "and the resolver enters from it next raid")

@@ -98,7 +98,7 @@ const DEMOS := {
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 	# ANIM-5 (map, raid, jack and Heat):
-	&"jack_scanlines": ["jack_in", "stage"], &"raid_step_gap": ["hq", "raid"], &"home_lag": ["hq", "raid"],
+	&"jack_scanlines": ["jack_in", "stage"], &"raid_step_gap": ["hq", "raid"], &"raid_step_beat": ["hq", "raid"], &"raid_phase_gap": ["hq", "raid"], &"raid_approach": ["hq", "raid"], &"raid_settle": ["hq", "raid"], &"home_lag": ["hq", "raid"],
 	&"minimap_pulse": ["hq", "grid"], &"select_ring_ease": ["hq", "select"], &"legend_fold": ["hq", "legend"],
 	# ANIM-4 (HQ drag and drop; in context: hq_scene --demo-anim=drag_*):
 	&"drop_stamp": ["screen", "drop_land"], &"market_fly": ["screen", "market"],

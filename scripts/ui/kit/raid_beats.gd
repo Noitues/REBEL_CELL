@@ -36,6 +36,14 @@ const MOTION_OF := {
 ## volley reads one by one; ANIM-R6 C4: it was the inline SHOT_STAGGER 0.5). Off, together.
 const STAGGER_MOTION := &"raid_shot_stagger"
 const GAP_MOTION := &"raid_step_gap"
+## RAID-VIS F1 (D26, GDD 7.2: a readable step-locked fight, about 20-40 s): a step with beats takes at least
+## `raid_step_beat` seconds (one beat per step), the phases inside it rest `raid_phase_gap` apart (approach, impact,
+## settle read one by one), the playout waits `raid_approach` before step 1 and `raid_settle` on the end state
+## before the verdict. All parts of the table (off: no time).
+const STEP_MIN_MOTION := &"raid_step_beat"
+const PHASE_GAP_MOTION := &"raid_phase_gap"
+const APPROACH_MOTION := &"raid_approach"
+const SETTLE_MOTION := &"raid_settle"
 
 
 ## Splits `events` into playout groups: group 0 is the setup (step 0: link changes), then
@@ -64,6 +72,54 @@ static func group(events: Array) -> Array[Array]:
 	return out
 
 
+## True for a group that is one resolver step (step 1 on): not the setup (step 0) and not the end (raid_end).
+static func is_step_group(group_events: Array) -> bool:
+	for e: Dictionary in group_events:
+		if String(e.get("type", "")) == "raid_end":
+			return false
+	return not group_events.is_empty() and int((group_events[0] as Dictionary).get("step", 0)) > 0
+
+
+## True for the end group (the one holding the raid_end event).
+static func is_end_group(group_events: Array) -> bool:
+	for e: Dictionary in group_events:
+		if String(e.get("type", "")) == "raid_end":
+			return true
+	return false
+
+
+## RAID-VIS F1: the whole playout's length at 1x for `events` (seconds): the approach, every group's timeline and the
+## settle before the verdict. The panel's clock reaches the verdict at about this time (the camera's ease adds a
+## little); the tests and the lab measure against it. Pure.
+static func playout_seconds(events: Array) -> float:
+	var groups := group(events)
+	var total := raw_seconds(APPROACH_MOTION)
+	for g in groups:
+		if is_end_group(g):
+			total += raw_seconds(SETTLE_MOTION)
+		total += float(timeline(g)["seconds"])
+	return total
+
+
+## The seconds into a group's timeline at which its event `e` has landed on the map: a shot when its trace arrives, a
+## move when it finishes, any other beat when it starts; an event without a beat (a Heat line, a reward) at the end of
+## the group's beats. `tl` is `timeline(group)`. The RAID FEED tells each event's line then, never before.
+static func landing_of(e: Dictionary, tl: Dictionary) -> float:
+	var end := 0.0
+	var at := -1.0
+	for b: Dictionary in tl.get("beats", []):
+		end = maxf(end, float(b["t0"]) + float(b["dur"]))
+		if is_same(b["event"], e):
+			match String(b["type"]):
+				"shot":
+					at = float(b["t0"]) + raw_seconds(&"turret_trace")
+				"move":
+					at = float(b["t0"]) + float(b["dur"])
+				_:
+					at = float(b["t0"])
+	return at if at >= 0.0 else end
+
+
 ## The beats of one group: [{"event": Dictionary, "type", "phase", "motion", "t0", "dur"}]
 ## in event order, `t0` from the group's start (seconds at 1x), plus the group's length.
 ## Returns {"beats": Array[Dictionary], "seconds": float}.
@@ -75,9 +131,14 @@ static func timeline(group_events: Array) -> Dictionary:
 			(by_phase.get_or_add(phase, []) as Array).append(e)
 	var beats: Array[Dictionary] = []
 	var cursor := 0.0
+	var phase_gap := raw_seconds(PHASE_GAP_MOTION)
+	var played := 0
 	for phase in PHASES:
 		if not by_phase.has(phase):
 			continue
+		if played > 0:
+			cursor += phase_gap  # RAID-VIS F1: the phases of a step read one by one
+		played += 1
 		var length := 0.0
 		var shot_at := cursor
 		var trace := raw_seconds(&"turret_trace")
@@ -104,6 +165,9 @@ static func timeline(group_events: Array) -> Dictionary:
 		cursor += length
 	if not beats.is_empty():
 		cursor += raw_seconds(GAP_MOTION)
+		# One beat per step: a step (not the setup, not the end) takes its minimum.
+		if is_step_group(group_events):
+			cursor = maxf(cursor, raw_seconds(STEP_MIN_MOTION))
 	# Beats keep the events' order (the fire phase already does); sort by start, stable.
 	var order: Array[int] = []
 	for i in beats.size():
