@@ -528,3 +528,13 @@ func test_the_view_cut_spares_a_sites_footprint_unless_its_corp_clears_it() -> v
 	assert_true(cfg.backdrop_site_cut_own_by_corp.get(&"solace", false), "Solace General's front must read (art-pass 2026-10-22)")
 	assert_false((BackdropCatalog.view_cut(cfg, cam, box, &"solace")["sub_xz"] as Rect2).has_area(), "Solace's cut clears the towers inside the footprint")
 	assert_true((BackdropCatalog.view_cut(cfg, cam, box, &"meridian")["sub_xz"] as Rect2).has_area(), "the other corps keep the shared rule")
+
+
+func test_solace_generals_site_look_is_solace_only_config() -> void:
+	# Art-pass 2026-10-22: the lit cross panels, the billboard-free roofs and the dimmer towers behind are per-corp keys.
+	var cfg := CityView3D.CONFIG
+	for d: Dictionary in [cfg.backdrop_site_cross_by_corp, cfg.backdrop_site_hide_props_by_corp, cfg.backdrop_site_away_cap_by_corp]:
+		assert_eq(d.keys(), [&"solace"], "only Solace's Site close-up changes")
+	var cross: Dictionary = cfg.backdrop_site_cross_by_corp[&"solace"]
+	assert_gt(cross["color"].get_luminance(), 0.8, "the cross is the brightest thing on the hospital")
+	assert_lt(float(cfg.backdrop_site_away_cap_by_corp[&"solace"]), cfg.backdrop_away_cap, "the towers behind sit a tier below the subject")

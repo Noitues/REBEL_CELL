@@ -518,6 +518,7 @@ func _frame_city() -> void:
 		city.set_view_cut(Callable())
 		_cut = {}
 	cut_landmarks(city, _cut, _keep_landmarks())
+	dress_site(city, CityView3D.CONFIG, shot)
 	city.set_far_lod(far_keep(CityView3D.CONFIG, shot), 0.0)
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
@@ -610,6 +611,7 @@ func _light_city() -> void:
 	hide_features(city, cfg.backdrop_hide_features)
 	declutter(city, cfg, String(shot.get("focus", "")))
 	cut_landmarks(city, _cut, _keep_landmarks())
+	dress_site(city, cfg, shot)
 	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure * (cfg.backdrop_site_exposure_gain if String(shot.get("focus", "")) == "site" else 1.0))
 	_mat.set_shader_parameter(&"city_white", cfg.backdrop_white)
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
@@ -623,7 +625,10 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"rim_gain", cfg_n.backdrop_site_rim_gain)
 	_mat.set_shader_parameter(&"subject_base", cfg_n.backdrop_site_subject_lift)
 	_mat.set_shader_parameter(&"pool_dim", cfg_n.backdrop_pool_dim)
-	_mat.set_shader_parameter(&"away_cap", cfg_n.backdrop_away_cap if String(shot.get("focus", "")) == "hq" else 1.0)
+	var away := cfg_n.backdrop_away_cap if String(shot.get("focus", "")) == "hq" else 1.0
+	if shot.has("landmark"):
+		away = float(cfg_n.backdrop_site_away_cap_by_corp.get(StringName(shot["landmark"]), away))  # a corp's own Site: its by-corp tier
+	_mat.set_shader_parameter(&"away_cap", away)
 	_mat.set_shader_parameter(&"street_gain", cfg_n.backdrop_site_street_gain)
 	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
 	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_site_focus_lift if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_lift)
@@ -648,6 +653,61 @@ static func declutter(view: CityView3D, cfg: CityConfig, focus: String) -> void:
 	var dress := view.dress_node()
 	if dress != null and cfg.backdrop_hide_dress:
 		dress.visible = false
+
+
+## Art-pass 2026-10-22 (Solace General): the close-up's Site landmark of a corp listed in backdrop_site_cross_by_corp
+## carries a lit cross panel on each end wall that faces the camera (the S2 glb has none: its cross is only its plan),
+## and the roof billboards in backdrop_site_hide_props_by_corp stay off. Idempotent; other corps: no change.
+static func dress_site(view: CityView3D, cfg: CityConfig, s: Dictionary) -> void:
+	var corp := StringName(s.get("landmark", &""))
+	view.set_hidden_props(PackedStringArray(cfg.backdrop_site_hide_props_by_corp.get(corp, PackedStringArray())) if corp != &"" else PackedStringArray())
+	var node := view.landmarks.get(CityView3D.SITE_KEY) as Node3D
+	if node == null:
+		return
+	var old := node.get_node_or_null("SiteCross")
+	if old != null:
+		node.remove_child(old)
+		old.free()
+	if corp == &"" or not cfg.backdrop_site_cross_by_corp.has(corp) or not s.has("camera"):
+		return
+	var d: Dictionary = cfg.backdrop_site_cross_by_corp[corp]
+	var fwd := (s["camera"] as CityIsoCamera).forward()
+	var f2 := Vector2(fwd.x, fwd.z).normalized()
+	var layers := 1
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		layers = (mi as MeshInstance3D).layers
+		break
+	var root := Node3D.new()
+	root.name = "SiteCross"
+	node.add_child(root)
+	var panel_mat := StandardMaterial3D.new()
+	panel_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	panel_mat.albedo_color = d["panel_color"]
+	var cross_mat := StandardMaterial3D.new()
+	cross_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	cross_mat.albedo_color = d["color"]
+	var panel := float(d["panel"])
+	var span := float(d["span"])
+	var arm := float(d["arm"])
+	var lift := float(d["lift"])
+	for n: Vector3 in [Vector3.RIGHT, Vector3.LEFT, Vector3.BACK, Vector3.FORWARD]:
+		var wn := (node.global_transform.basis * n).normalized()
+		if -Vector2(wn.x, wn.z).dot(f2) < float(d["facing"]):
+			continue
+		var face := Node3D.new()
+		face.position = n * float(d["wall"]) + Vector3(0.0, float(d["y"]), 0.0)
+		face.rotation.y = atan2(n.x, n.z)
+		root.add_child(face)
+		for part: Array in [[Vector3(panel, panel, lift), 0.0, panel_mat], [Vector3(span, arm, lift), lift, cross_mat], [Vector3(arm, span, lift), lift, cross_mat]]:
+			var m := MeshInstance3D.new()
+			var bm := BoxMesh.new()
+			bm.size = part[0]
+			m.mesh = bm
+			m.material_override = part[2]
+			m.position = Vector3(0.0, 0.0, lift * 0.5 + float(part[1]))
+			m.layers = layers
+			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			face.add_child(m)
 
 
 ## LOOK-TOOLBOX (designer 2026-10-21: the netrun rule, "hide or flatten every obstacle between the camera and the
