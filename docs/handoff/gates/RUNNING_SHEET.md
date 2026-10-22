@@ -13,6 +13,9 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D28 | 10-22 | Designer R3: the raid verdict is only **CELL HOLDS** (home server survives) or **BREACHED** (campaign lost). REPELLED / OVERRUN are dropped. Each node shows its own outcome with grease-pencil marks and node visuals (DOWN, TAKEN) on the map in the playout, the report and the HQ. GDD 7.2 is aligned. | — |
+| D27 | 10-22 | Designer R2: the raid Heat consequence is inverted. A **clean defense** (no node DOWN or TAKEN, home undamaged) gains Heat; **any damage** (home hit, a node DOWN or TAKEN) gains **no Heat**. Defaults taken: clean = +5 Heat (the same number, moved in config); a clean defense keeps its Schematics reward and a damaged one gets none, as before. A player with no defense beyond HQ takes damage on the first raid and gains no Heat. | Clean defense Heat other than 5; Schematics on a damaged survival |
+| D26 | 10-22 | Designer R1: the raid playout is a readable step-locked fight. One beat per step, hits on the map, the feed in sync, the verdict hidden until the end, about 20-40 s at 1x, with skip and speed kept (GDD 7.2). | — |
 | D25 | 10-21 | Art-pass A-075: a focused sticker button gets the lime #D4FF00 die-cut halo (ART_BIBLE §2.10) kit-wide, not only in the RESPIN dialog. | Fix only the RESPIN dialog |
 | D24 | 10-21 | Art-pass A-075: in Solace, a Site lot within one lot of the HQ plinth circle moves outward by the fewest lots, so it clears the circle and no stair touches it. This overrides "Site lots stay" for that case only. | Keep the Site fixed and bend the S stair's landing |
 | D23 | 10-21 | Art-pass A-073: the raid work order's "IF THE RAID RUNS NOW" forecast moves off the corp paper onto a small CRT chip beside it (art's suggested option). Done with the stationing fix on the same screen. | A red grease-pencil what-if note on the paper |
