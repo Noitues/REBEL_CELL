@@ -9789,4 +9789,15 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
   half width (cap 256) so a gap draws; the aim loop's tail runs out 0.20 of the radius (`hero_loop_tail_out`; other loops keep 0.11). (d) The kit's HIT IT was
   thin and flat: hero words (`GreasePencilWord.hero`: HIT IT, the grid TARGET) are 0.27 em wax (plain words stay 0.20)
   with a lighter core (`core_light` 0.22, a new `marker_stroke` uniform). All numbers in `pencil_look.tres`.
+- **Hand-built letters (designer 2026-10-21: "a touch thinner", then "hand build each letter" after the reference HIT
+  IT, not a computer-generated look).** The ink is 0.16 em (was 0.20). The capitals are redrawn by hand in the stroke
+  source: narrow, mostly straight marker strokes with the hand's bends in the points, crossbars that climb and run past
+  the stems, and bowls of a few pushes. The slant is 0.16 (was 0.11); the hash jitter drops to 1.0 / 0.035 (was
+  2.4 / 0.05), so it only breathes; the bearings are tight (16, was 34). Each stroke starts bold and pen shaped:
+  24 % wider, easing out over 110 units, cut square by the chisel with a slanted nib (the TTF outline, and a box cap
+  plus a 1.24 land in the engine). Each stroke ends uneven: 20 % thinner over 130 units, its edges ragged by a hash,
+  with a ragged cap. In the engine's wax words the end also fades by 0.3 over its last width (`word_tail_fade` /
+  `word_tail_len`, `marker_stroke` `tail_fade`); a TrueType face can't hold alpha, so the TTF keeps only the shape.
+  Digits and punctuation keep their earlier source. Step 4, more width at turns and curves (the pen riding up on its
+  edge), waits on the designer's look at this pass.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.

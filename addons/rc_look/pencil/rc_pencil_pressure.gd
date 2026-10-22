@@ -6,7 +6,7 @@ extends Resource
 ## width swells by up to `swell` either way, in waves `swell_wave` long (a seeded smooth hash: never an RNG). A stroke
 ## shorter than land + lift scales both down to fit. LOOK-TOOLBOX 12 review (broken wax): every `gap_every` widths
 ## (seeded, +-half of it; 0 = none) the pen lifts for `gap_len` widths to `gap_width` of the width, never in the land
-## or the lift. Pure data; RcPencilPressure.factor is the one reader.
+## or the lift. `lift_rag`: the lift's edge goes uneven. Pure data; RcPencilPressure.factor is the one reader.
 
 @export var land_width: float = 0.55
 @export var land_len: float = 1.6
@@ -17,6 +17,8 @@ extends Resource
 @export var gap_every: float = 0.0
 @export var gap_len: float = 1.2
 @export var gap_width: float = 0.12
+## The lift's uneven edge: up to this share either way, a hash per knot, deepest at the very end (0 = smooth).
+@export var lift_rag: float = 0.0
 
 
 ## The width factor at `d` px along a stroke `length` px long and `width` px wide, for `seed`.
@@ -43,6 +45,8 @@ func factor(d: float, length: float, width: float, seed: int) -> float:
 		f *= 1.0 + swell * (KitNoise.smooth(seed + 101, d / (swell_wave * w)) * 2.0 - 1.0)
 	if gap_every > 0.0 and gap_len > 0.0:
 		f *= lerpf(1.0, gap_width, gap_at(d, length, w, seed))
+	if lift_rag > 0.0 and lift > 0.0 and length - d < lift:
+		f *= 1.0 + lift_rag * (1.0 - (length - d) / lift) * KitNoise.h11(seed + 151, floori(d / (w * 0.5)))
 	return f
 
 

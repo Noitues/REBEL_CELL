@@ -37,72 +37,82 @@ ASCENT = 1110
 DESCENT = 317
 CAP_INK = 740
 # The wax's width (em units; designer 2026-10-21: thinner so A, R, G keep open counters) and the grid's width: the
-# skeleton, bearings and advances are laid for GRID_WIDTH (the baseline stroke's centre half of it up, the cap stroke's
-# half of it under the cap height), so a thinner wax never moves a layout.
+# skeleton is laid for GRID_WIDTH (the baseline stroke's centre half of it up, the cap stroke's
+# half of it under the cap height); the bearings sit past the wax's own half width (tight, as a marker hand packs).
 WIDTH = 160
 GRID_WIDTH = 200
 GRID_Y0 = GRID_WIDTH / 2
 GRID_K = (CAP_INK - GRID_WIDTH) / 100.0
 # The side bearings (em units, past the half width) and the space.
-BEARING = 34
-SPACE_ADV = 300
+BEARING = 16
+SPACE_ADV = 260
 # The forward slant (x per y) and the small caps' share.
-SLANT = 0.11
+SLANT = 0.16
 SMALL_CAPS = 0.8
 # The hand: each source point moves up to JITTER grid units (a hash of the codepoint and the point), each glyph turns up
 # to TURN radians round its centre.
-JITTER = 2.4
-TURN = 0.05
+JITTER = 1.0
+TURN = 0.035
 # Sampling: points per grid unit along a curve, the centre line's step (em units), a corner sharper than CORNER_DEG
 # splits the outline (an offset round a sharp corner folds over itself), round caps' segments.
 CURVE_SAMPLES = 0.45
 STEP = 14.0
 CORNER_DEG = 48.0
 CAP_SEGMENTS = 8
-# The pressure in the outline: the width swells by SWELL mid-stroke and the pen lands LAND wider for its first LAND_LEN.
+# The pressure in the outline: the width swells by SWELL mid-stroke. The pen start (designer 2026-10-21: bolder, pen
+# shaped): START_BOLD wider, easing to the width over START_LEN, cut square by the chisel (its flat end pushed back
+# START_BACK of the half width, slanted NIB of it). The end: END_THIN thinner over END_LEN with its edges uneven by
+# END_RAG (a hash per sample and side), a ragged round cap.
 SWELL = 0.07
-LAND = 0.06
-LAND_LEN = 60.0
+START_BOLD = 0.24
+START_LEN = 110.0
+START_BACK = 0.3
+NIB = 0.28
+END_THIN = 0.2
+END_LEN = 130.0
+END_RAG = 0.1
 
 # --- The source --------------------------------------------------------------------------------------------------
 # glyph: (width in grid units, [stroke, ...]); a stroke is "L" (a polyline: its corners stay corners) or "C" (a
 # Catmull-Rom curve through the points) and its points. A single-point "D" is a dot (a pen dab).
 GLYPHS = {
-    "A": (60, [("L", [(0, -2), (31, 102), (62, -2)]), ("L", [(13, 36), (50, 38)])]),
-    "B": (52, [("L", [(0, -2), (0, 102)]),
-               ("C", [(0, 100), (28, 100), (46, 90), (46, 66), (28, 54), (2, 54)]),
-               ("C", [(2, 54), (34, 54), (54, 42), (54, 14), (34, 0), (0, 0)])]),
-    "C": (56, [("C", [(56, 82), (42, 98), (20, 98), (4, 78), (0, 50), (4, 20), (20, 0), (42, 0), (58, 16)])]),
-    "D": (56, [("L", [(0, -2), (0, 102)]),
-               ("C", [(0, 100), (28, 99), (50, 82), (56, 50), (50, 18), (28, 1), (0, 0)])]),
-    "E": (52, [("L", [(54, 101), (0, 100), (0, 0), (56, -1)]), ("L", [(0, 52), (42, 53)])]),
-    "F": (52, [("L", [(56, 101), (0, 100), (0, -3)]), ("L", [(0, 52), (44, 53)])]),
-    "G": (60, [("C", [(56, 84), (42, 98), (20, 98), (4, 78), (0, 50), (4, 20), (22, 0), (44, 0), (60, 14), (60, 42)]),
-               ("L", [(34, 44), (66, 45)])]),
-    "H": (56, [("L", [(0, 103), (0, -3)]), ("L", [(56, 104), (57, -3)]), ("L", [(-5, 50), (62, 53)])]),
-    "I": (0, [("L", [(0, 103), (1, -3)])]),
-    "J": (50, [("C", [(52, 102), (51, 40), (46, 10), (28, 0), (10, 4), (0, 22)])]),
-    "K": (56, [("L", [(0, 103), (0, -3)]), ("L", [(56, 102), (4, 46), (60, -3)])]),
-    "L": (50, [("L", [(0, 103), (0, 0), (54, -1)])]),
-    "M": (70, [("L", [(0, -3), (4, 101), (35, 40), (66, 102), (70, -3)])]),
-    "N": (56, [("L", [(0, -3), (0, 101), (56, -1), (57, 103)])]),
-    "O": (60, [("C", [(30, 100), (52, 88), (60, 50), (53, 13), (30, 0), (7, 12), (0, 50), (7, 87), (32, 100),
-                      (50, 92)])]),
-    "P": (52, [("L", [(0, -3), (0, 101)]),
-               ("C", [(0, 100), (32, 100), (52, 88), (52, 62), (32, 48), (2, 48)])]),
-    "Q": (60, [("C", [(30, 100), (52, 88), (60, 50), (53, 13), (30, 0), (7, 12), (0, 50), (7, 87), (32, 100),
-                      (50, 92)]), ("L", [(36, 26), (66, -10)])]),
-    "R": (54, [("L", [(0, -3), (0, 101)]),
-               ("C", [(0, 100), (32, 100), (52, 88), (52, 62), (32, 48), (2, 48)]), ("L", [(22, 48), (58, -3)])]),
-    "S": (54, [("C", [(54, 86), (38, 99), (16, 98), (2, 84), (6, 64), (28, 52), (50, 40), (56, 18), (42, 1), (18, 0),
-                      (-2, 14)])]),
-    "T": (60, [("L", [(-6, 100), (64, 103)]), ("L", [(30, 101), (30, -3)])]),
-    "U": (56, [("C", [(0, 103), (0, 30), (8, 6), (28, 0), (48, 6), (56, 30), (57, 103)])]),
-    "V": (60, [("L", [(0, 103), (30, -2), (61, 103)])]),
-    "W": (76, [("L", [(0, 103), (17, -2), (38, 66), (59, -2), (77, 103)])]),
-    "X": (58, [("L", [(0, 103), (59, -3)]), ("L", [(58, 103), (0, -3)])]),
-    "Y": (58, [("L", [(0, 103), (29, 50), (59, 103)]), ("L", [(29, 50), (29, -3)])]),
-    "Z": (56, [("L", [(0, 100), (57, 101), (0, 0), (59, -1)])]),
+    # Marker capitals after the kit's HIT IT (designer 2026-10-21: hand-built, never a geometric face): narrow, mostly
+    # straight strokes with a hand's bends, crossbars that climb and run past the stems, bowls of a few pushes.
+    "A": (56, [("L", [(-1, -3), (23, 101), (33, 102), (57, -4)]), ("L", [(9, 37), (51, 41)])]),
+    "B": (50, [("L", [(1, -2), (0, 103)]),
+               ("C", [(0, 101), (30, 102), (44, 93), (42, 73), (26, 59), (4, 58)]),
+               ("C", [(4, 58), (36, 58), (52, 44), (50, 15), (32, -1), (1, 0)])]),
+    "C": (52, [("C", [(52, 88), (40, 101), (16, 97), (2, 70), (0, 34), (10, 7), (30, -1), (54, 7)])]),
+    "D": (52, [("L", [(1, -3), (0, 103)]),
+               ("C", [(0, 101), (30, 100), (50, 82), (54, 46), (44, 14), (24, 0), (1, 0)])]),
+    "E": (50, [("L", [(52, 102), (1, 100), (0, 1), (54, -2)]), ("L", [(0, 52), (40, 55)])]),
+    "F": (50, [("L", [(52, 103), (1, 100), (-1, -3)]), ("L", [(0, 54), (40, 57)])]),
+    "G": (56, [("C", [(52, 86), (40, 101), (16, 97), (2, 70), (0, 34), (10, 7), (30, -1), (50, 4), (57, 22),
+                      (57, 46)]), ("L", [(28, 47), (62, 45)])]),
+    "H": (50, [("L", [(1, 103), (0, -3)]), ("L", [(50, 104), (48, -4)]), ("L", [(-4, 46), (55, 50)])]),
+    "I": (0, [("L", [(1, 103), (0, -3)])]),
+    "J": (48, [("C", [(50, 103), (50, 40), (44, 8), (26, -1), (8, 4), (0, 22)])]),
+    "K": (52, [("L", [(0, 103), (0, -3)]), ("L", [(52, 103), (6, 47), (55, -4)])]),
+    "L": (46, [("L", [(0, 104), (0, 0), (48, 2)])]),
+    "M": (64, [("L", [(0, -3), (5, 102), (32, 42), (60, 103), (64, -3)])]),
+    "N": (52, [("L", [(0, -3), (1, 102), (50, -1), (52, 104)])]),
+    "O": (54, [("C", [(28, 100), (48, 88), (54, 52), (48, 16), (28, 0), (8, 10), (0, 46), (6, 84), (26, 100),
+                      (44, 96)])]),
+    "P": (50, [("L", [(1, -3), (0, 103)]),
+               ("C", [(0, 101), (34, 101), (50, 88), (48, 62), (30, 43), (2, 43)])]),
+    "Q": (54, [("C", [(28, 100), (48, 88), (54, 52), (48, 16), (28, 0), (8, 10), (0, 46), (6, 84), (26, 100),
+                      (44, 96)]), ("L", [(32, 26), (60, -12)])]),
+    "R": (52, [("L", [(1, -3), (0, 103)]),
+               ("C", [(0, 101), (34, 101), (50, 88), (48, 64), (30, 46), (2, 46)]), ("L", [(18, 46), (54, -4)])]),
+    "S": (50, [("C", [(52, 88), (36, 100), (12, 96), (2, 78), (12, 60), (30, 52), (48, 40), (52, 16), (36, 0), (12, 0),
+                      (-2, 12)])]),
+    "T": (56, [("L", [(-6, 98), (62, 103)]), ("L", [(29, 101), (27, -3)])]),
+    "U": (50, [("C", [(0, 103), (-1, 32), (6, 6), (26, -1), (44, 6), (50, 32), (51, 103)])]),
+    "V": (54, [("L", [(0, 103), (26, -3), (54, 104)])]),
+    "W": (70, [("L", [(0, 103), (14, -3), (34, 70), (54, -3), (70, 104)])]),
+    "X": (52, [("L", [(0, 103), (54, -4)]), ("L", [(52, 104), (2, -3)])]),
+    "Y": (54, [("L", [(0, 103), (27, 52), (56, 104)]), ("L", [(27, 52), (25, -3)])]),
+    "Z": (52, [("L", [(0, 100), (54, 102), (1, 1), (56, -2)])]),
     "0": (50, [("C", [(25, 100), (45, 88), (50, 50), (45, 12), (25, 0), (5, 12), (0, 50), (5, 88), (27, 100),
                       (42, 94)])]),
     "1": (28, [("L", [(0, 80), (26, 102), (26, -3)])]),
@@ -243,9 +253,9 @@ def glyph_strokes(ch):
     # shift so the ink starts BEARING past the origin
     min_x = min(p[0] for _, s in out for p in s)
     max_x = max(p[0] for _, s in out for p in s)
-    dx = BEARING + GRID_WIDTH / 2 - min_x
+    dx = BEARING + WIDTH / 2 - min_x
     out = [(kind, [(x + dx, y) for (x, y) in s]) for kind, s in out]
-    adv = int(round(max_x - min_x + GRID_WIDTH + 2 * BEARING))
+    adv = int(round(max_x - min_x + WIDTH + 2 * BEARING))
     return out, adv
 
 
@@ -266,20 +276,35 @@ def _split_corners(pts):
     return [p for p in pieces if len(p) >= 2]
 
 
-def _half_width(t, along):
-    w = WIDTH * (1.0 + SWELL * math.sin(math.pi * t))
-    if along < LAND_LEN:
-        w *= 1.0 + LAND * (1.0 - along / LAND_LEN)
+def _half_width(along, total):
+    """The half width `along` em units into a stroke `total` long: the bold start, the swell, the thin end."""
+    w = WIDTH * (1.0 + SWELL * math.sin(math.pi * along / max(total, 1.0)))
+    if along < START_LEN:
+        w *= 1.0 + START_BOLD * (1.0 - along / START_LEN) ** 2
+    into_end = total - along
+    if into_end < END_LEN:
+        w *= 1.0 - END_THIN * (1.0 - into_end / END_LEN)
     return w * 0.5
 
 
-def _outline(pts):
-    """A closed outline round polyline `pts` (round caps), clockwise in y-up coordinates."""
+def _rag(along, total, seed, i, side):
+    """The end's uneven edge: a factor on the half width (1 outside the end)."""
+    into_end = total - along
+    if into_end >= END_LEN:
+        return 1.0
+    return 1.0 + END_RAG * (1.0 - into_end / END_LEN) * _h11(seed, i, side)
+
+
+def _outline(pts, seed=0, along0=0.0, total=None, first=True, last=True):
+    """A closed outline round polyline `pts`, clockwise in y-up coordinates: a piece of a stroke `total` long starting
+    `along0` into it (the whole stroke by default). The stroke's first piece starts with the chisel's square cut, its
+    last ends in a ragged round cap; a piece's inner ends (at a corner) are round."""
     n = len(pts)
-    total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:])) or 1.0
-    acc = [0.0]
+    acc = [along0]
     for a, b in zip(pts, pts[1:]):
         acc.append(acc[-1] + math.dist(a, b))
+    if total is None:
+        total = acc[-1]
     left, right = [], []
     for i, p in enumerate(pts):
         a = pts[max(0, i - 1)]
@@ -287,26 +312,36 @@ def _outline(pts):
         dx, dy = b[0] - a[0], b[1] - a[1]
         ln = math.hypot(dx, dy) or 1.0
         nx, ny = -dy / ln, dx / ln
-        h = _half_width(acc[i] / total, acc[i])
-        left.append((p[0] + nx * h, p[1] + ny * h))
-        right.append((p[0] - nx * h, p[1] - ny * h))
+        h = _half_width(acc[i], total)
+        k = int(acc[i] / STEP)
+        left.append((p[0] + nx * h * _rag(acc[i], total, seed, k, 1), p[1] + ny * h * _rag(acc[i], total, seed, k, 2)))
+        right.append((p[0] - nx * h * _rag(acc[i], total, seed, k, 3), p[1] - ny * h * _rag(acc[i], total, seed, k, 4)))
 
-    def cap(centre, frm, h, sweep_from):
+    def cap(centre, frm, h, sweep_from, rag):
         out = []
         for k in range(1, CAP_SEGMENTS):
             ang = sweep_from - math.pi * k / CAP_SEGMENTS
-            out.append((centre[0] + math.cos(ang) * h, centre[1] + math.sin(ang) * h))
+            r = h * (1.0 + rag * _h11(seed, 700 + k, 5))
+            out.append((centre[0] + math.cos(ang) * r, centre[1] + math.sin(ang) * r))
         return out
 
     def ang_of(c, q):
         return math.atan2(q[1] - c[1], q[0] - c[0])
 
-    end_h = _half_width(1.0, acc[-1])
-    start_h = _half_width(0.0, 0.0)
+    end_h = _half_width(acc[-1], total)
+    start_h = _half_width(acc[0], total)
     ring = list(left)
-    ring += cap(pts[-1], left[-1], end_h, ang_of(pts[-1], left[-1]))
+    ring += cap(pts[-1], left[-1], end_h, ang_of(pts[-1], left[-1]), END_RAG if last else 0.0)
     ring += list(reversed(right))
-    ring += cap(pts[0], right[0], start_h, ang_of(pts[0], right[0]))
+    if first and n >= 2:
+        # the chisel's square cut: both corners pushed back along the stroke, the nib's slant between them
+        tx, ty = pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]
+        tl = math.hypot(tx, ty) or 1.0
+        tx, ty = tx / tl, ty / tl
+        br, bl = start_h * (START_BACK - NIB), start_h * (START_BACK + NIB)
+        ring += [(right[0][0] - tx * br, right[0][1] - ty * br), (left[0][0] - tx * bl, left[0][1] - ty * bl)]
+    else:
+        ring += cap(pts[0], right[0], start_h, ang_of(pts[0], right[0]), 0.0)
     # left-then-reversed-right is counter-clockwise for a stroke going +x with the left normal up; TrueType wants
     # clockwise outer contours
     if _area(ring) > 0:
@@ -341,26 +376,35 @@ def _self_crosses(ring):
     return False
 
 
-def _capsules(pts):
+def _capsules(pts, seed, along0, total, first, last):
     """Fallback for a piece whose outline would fold: one capsule per span of a few samples (all clockwise)."""
     out = []
     span = 3
-    for i in range(0, len(pts) - 1, span):
+    acc = along0
+    starts = list(range(0, len(pts) - 1, span))
+    for j, i in enumerate(starts):
         seg = pts[i:i + span + 1]
         if len(seg) >= 2:
-            out.append(_outline(seg))
+            out.append(_outline(seg, seed, acc, total, first and j == 0, last and j == len(starts) - 1))
+            acc += sum(math.dist(a, b) for a, b in zip(seg, seg[1:]))
     return out
 
 
-def glyph_contours(strokes):
+def glyph_contours(strokes, cp=0):
     contours = []
-    for kind, pts in strokes:
-        for piece in _split_corners(pts):
-            ring = _outline(piece)
+    for si, (kind, pts) in enumerate(strokes):
+        total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
+        pieces = _split_corners(pts)
+        acc = 0.0
+        seed = cp * 31 + si
+        for pi, piece in enumerate(pieces):
+            first, last = pi == 0, pi == len(pieces) - 1
+            ring = _outline(piece, seed, acc, total, first, last)
             if _self_crosses(ring):
-                contours.extend(_capsules(piece))
+                contours.extend(_capsules(piece, seed, acc, total, first, last))
             else:
                 contours.append(ring)
+            acc += sum(math.dist(a, b) for a, b in zip(piece, piece[1:]))
     return contours
 
 
@@ -439,7 +483,7 @@ def build():
             stroke_json[str(ord(ch))] = {"adv": SPACE_ADV, "strokes": []}
             continue
         strokes, adv = glyph_strokes(ch)
-        glyph_data.append((ch, glyph_contours(strokes), adv))
+        glyph_data.append((ch, glyph_contours(strokes, ord(ch)), adv))
         stroke_json[str(ord(ch))] = {"adv": adv, "strokes": [[round(v, 1) for p in s for v in p] for _, s in strokes]}
     # .notdef: an open box
     nd = [[(60, 0), (60, 700), (440, 700), (440, 0)], [(110, 50), (390, 50), (390, 650), (110, 650)]]

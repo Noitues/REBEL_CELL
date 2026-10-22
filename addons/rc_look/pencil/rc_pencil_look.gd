@@ -55,6 +55,10 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 ## added at the stroke's middle, fading out to the edges).
 @export var word_hero_width_em: float = 0.21
 @export var word_core_light: float = 0.22
+## A word stroke's end (designer 2026-10-21: uneven, with some transparency): the wax fades by `word_tail_fade` over
+## its last `word_tail_len` widths, its edges breaking up there. Its start is cut square by the chisel (a box cap).
+@export var word_tail_fade: float = 0.3
+@export var word_tail_len: float = 1.0
 @export var word_letter_turn: float = 0.06
 @export var word_baseline_jitter: float = 0.035
 @export var word_size_jitter: float = 0.04

@@ -531,9 +531,15 @@ func _apply() -> void:
 		var seg_from := clampf(from - acc, 0.0, l)
 		var seg_to := clampf(to - acc, 0.0, l)
 		var pts := PencilShapes.trim(_paths[i], seg_from, seg_to)
+		var word := local_width > 0.0
 		for ln: Line2D in [_lines[i], _shadows[i]]:
 			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_from_px", seg_from)
 			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_to_px", maxf(seg_to, seg_from + 0.001))
+			# designer 2026-10-21: a word's stroke starts cut square by the chisel and ends uneven, fading
+			(ln.material as ShaderMaterial).set_shader_parameter(&"stroke_len_px", l)
+			(ln.material as ShaderMaterial).set_shader_parameter(&"tail_px", w * LOOK.word_tail_len if word else 0.0)
+			(ln.material as ShaderMaterial).set_shader_parameter(&"tail_fade", LOOK.word_tail_fade if word else 0.0)
+			ln.begin_cap_mode = Line2D.LINE_CAP_BOX if word else Line2D.LINE_CAP_ROUND
 		if smear > 0.0 and pts.size() > 1:
 			# the palm drags the trailing wax along with it
 			var drag := WIPE_DRAG * smear * Motion.amplitude(WIPE)
