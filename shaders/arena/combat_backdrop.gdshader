@@ -6,6 +6,7 @@
 // effects); rc_common is included so the convention holds if a part ever moves.
 shader_type canvas_item;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_grade.gdshaderinc"
 
 // R = the target's silhouette, G = the target's own lights (same framing as the still).
 uniform sampler2D won_mask : filter_linear, hint_default_black;
@@ -43,7 +44,7 @@ uniform float aspect = 1.7777778;
 // The city close-up's canvas grade (CityConfig backdrop_exposure / backdrop_tint), city only (the stills are the
 // concept already), before the pools. The close-up's texture holds linear light: LOOK-TOOLBOX (2026-10-21) shows it
 // with the exact sRGB transfer after a linear exposure (it was 1 - (1 - V)^5, which lifted the night sky to a
-// day-bright band and flattened the facets' tones), then the tint and the saturation. CombatBackdrop.graded mirrors it.
+// day-bright band and flattened the facets' tones), then the tint and the saturation. The curve is rc_look's (rc_grade.gdshaderinc); CombatBackdrop.graded mirrors it.
 uniform bool city_grade = false;
 uniform float city_exposure = 1.0;
 // The highlight shoulder's white point (exposed linear light that lands on 1; 0: no shoulder, a plain clip).
@@ -83,14 +84,7 @@ vec3 graded(vec3 c) {
 	if (!city_grade) {
 		return c;
 	}
-	vec3 lin = mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c));
-	vec3 l = max(lin * city_exposure, vec3(0.0));
-	if (city_white > 0.0) {
-		l = l * (1.0 + l / (city_white * city_white)) / (1.0 + l);
-	}
-	vec3 s = mix(l * 12.92, 1.055 * pow(l, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), l));
-	vec3 g = clamp(s * city_tint, 0.0, 1.0);
-	return mix(vec3(dot(g, vec3(0.2126, 0.7152, 0.0722))), g, city_saturation);
+	return rcl_grade(c, city_exposure, city_white, city_tint, city_saturation);  // LOOK-TOOLBOX module 9
 }
 
 float pool_at(vec2 uv, vec3 p) {

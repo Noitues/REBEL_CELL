@@ -10,6 +10,7 @@ extends Control
 ## Module id -> stage script. A module adds its stage here when it lands.
 const STAGES := {
 	"tokens": "res://addons/rc_look/lab/stages/tokens_stage.gd",
+	"grade": "res://addons/rc_look/lab/stages/grade_stage.gd",
 }
 ## The neutral set: a mid-grey ramp, darker at night (sRGB).
 const SET_DAY := [Color(0.42, 0.43, 0.46), Color(0.62, 0.63, 0.66)]

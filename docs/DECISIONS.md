@@ -9708,3 +9708,10 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
   - *The subject keeps its own buildings.* A building whose centre stands inside the subject's footprint (`view_cut`'s `sub_xz`) is never cut (site_meridian lost its own block to the screen-overlap test).
   - *Hand-off.* The backdrop's framing (window grid, facets, street floor, roof props, the canyon's bay band) goes to art-pass from here; the toolbox stops per-view tuning and moves the general pieces (grade, occlusion) into `addons/rc_look`.
   - Tests: the cut clears a block in front of the subject and keeps a tower behind it, and never takes the subject's own buildings; the canyon has a subject box (`test_b2_combat_composition.gd`); the canyon pitch (`test_hq_run_city.gd`).
+
+## 2026-10-21 - LOOK-TOOLBOX module 9: the grade (post chain)
+
+- **What.** `addons/rc_look/shaders/rc_grade.gdshaderinc` (`rcl_grade`, `rcl_expose`, `rcl_shoulder`) and its exact GDScript mirror `RcLookGrade`; presets in `config/look_grade.tres`: `cel` (identity: the cel views are authored in display values) and `aaa2` (the 3D city render: exposure 8, white 3, equal to CityConfig `backdrop_exposure` / `backdrop_white`, pinned by a test). The curve is the combat backdrop's round-2 grade: sRGB decode, linear exposure, extended-Reinhard shoulder, sRGB encode, tint (clamped), saturation around the display luma. The grade has no quality or accessibility rule (it is not an effect).
+- **Migrated.** `combat_backdrop.gdshader` `graded()` calls `rcl_grade`; `CombatBackdrop.graded` calls `RcLookGrade.grade`; the shader's own sRGB transfer and `CombatBackdrop._shoulder` are deleted. Same maths, so the arena backdrop fixtures are unchanged and `test_parity_arena_backdrop` is the migration's parity check.
+- **Next.** The UI grades (city_tilt_shift, screen_grey, route_grade) and the sRGB transfer copies onto `rcl_*`; city_post only after an announcement to art-pass. Disagreement to settle there: city_post multiplies display values where the combat grade decodes sRGB first.
+- Tests: `tests/unit/test_rc_look_grade.gd` (fast).

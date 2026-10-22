@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RcLookGradeConfig" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_grade_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_grade_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="cel"]
+script = ExtResource("2")
+exposure = 1.0
+white = 0.0
+tint = Color(1, 1, 1, 1)
+saturation = 1.0
+
+[sub_resource type="Resource" id="aaa2"]
+script = ExtResource("2")
+exposure = 8.0
+white = 3.0
+tint = Color(1, 1, 1, 1)
+saturation = 1.0
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"cel": SubResource("cel"),
+&"aaa2": SubResource("aaa2")
+}

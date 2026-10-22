@@ -716,25 +716,12 @@ static func apply_post(m: ShaderMaterial, cfg: CityConfig) -> void:
 		m.set_shader_parameter(StringName(k), cfg.backdrop_post[k])
 
 
-## The grade's highlight shoulder on exposed linear light `l` (extended Reinhard): `white` lands on 1, mid-tones
-## stay close to `l`; `white` 0 is no shoulder.
-static func _shoulder(l: float, white: float) -> float:
-	return l * (1.0 + l / (white * white)) / (1.0 + l) if white > 0.0 else l
-
-
 ## The shader's city grade (`graded`) on `c`, the sRGB value the shader samples, for the tests and the contrast
-## checks: decoded to linear, times backdrop_exposure, encoded back to sRGB, times the tint (`corp`'s from backdrop_tint_by_corp),
-## then the saturation.
+## checks: rc_look's RcLookGrade.grade with CityConfig's backdrop_exposure, backdrop_white, the tint (`corp`'s from
+## backdrop_tint_by_corp) and backdrop_saturation.
 static func graded(cfg: CityConfig, c: Color, corp: StringName = &"") -> Color:
-	var lc := c.srgb_to_linear()
-	var e := Color(_shoulder(maxf(lc.r * cfg.backdrop_exposure, 0.0), cfg.backdrop_white),
-			_shoulder(maxf(lc.g * cfg.backdrop_exposure, 0.0), cfg.backdrop_white),
-			_shoulder(maxf(lc.b * cfg.backdrop_exposure, 0.0), cfg.backdrop_white)).linear_to_srgb()
-	var t: Color = cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint)
-	var g := Vector3(clampf(e.r * t.r, 0.0, 1.0), clampf(e.g * t.g, 0.0, 1.0), clampf(e.b * t.b, 0.0, 1.0))
-	var grey := g.dot(Vector3(0.2126, 0.7152, 0.0722))
-	var o := Vector3(grey, grey, grey).lerp(g, cfg.backdrop_saturation)
-	return Color(o.x, o.y, o.z, c.a)
+	return RcLookGrade.grade(c, cfg.backdrop_exposure, cfg.backdrop_white, cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint),
+			cfg.backdrop_saturation)
 
 
 ## 5d's fight-won lights on the run's Site (hidden until won).
