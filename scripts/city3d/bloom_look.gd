@@ -352,7 +352,7 @@ static func _hq_look(front_layers: float, band: int, layout: Dictionary, view: S
 	var hz: Dictionary = cfg.haze.duplicate(true)
 	hz["z0"] = zf - float(hz["below"])
 	hz["unit_k"] = float(layout["unit_k"])
-	hz["strength"] = strength
+	hz["strength"] = strength * (float(hz["decision_share"]) if view == VIEW_DECISION else 1.0)
 	hz["at"] = layout["at"]
 	return {"kind": KIND_HQ, "strength": strength, "band": band, "front": zf, "uniforms": u, "haze": hz, "roles": h["roles"]}
 

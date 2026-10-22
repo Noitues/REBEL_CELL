@@ -106,9 +106,10 @@ hq = {
 }
 haze = {
 "below": 2.0,
-"emission": 0.07,
+"decision_share": 0.25,
+"emission": 25.0,
 "h": 38.0,
-"k": 0.004,
+"k": 0.02,
 "r": 34.0,
 "scale": 9.0
 }

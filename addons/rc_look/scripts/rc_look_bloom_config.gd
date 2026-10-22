@@ -22,7 +22,9 @@ extends Resource
 ## tube_r, podium, stair_deg), the front's height over a route node (front_over_node), the decision's lift (decision_lift), the route-room
 ## spheres (room_r) and the role -> mode table (roles: 1 skin, 2 window light).
 @export var hq: Dictionary = {}
-## The faint spore haze above the HQ front: h (BU tall, plate units), r, density k, emission, noise scale, below (BU under the front).
+## The faint spore haze above the HQ front: h (BU tall, plate units), r, density k, emission, noise scale, below (BU under the front),
+## decision_share (the share of it the decision shot keeps: the camera stands in it). Godot's fog emission is not Blender's volume
+## emission: k / emission are tuned to the overview's read (the concept's 0.004 / 0.07 gave no visible haze).
 @export var haze: Dictionary = {}
 
 
@@ -46,7 +48,7 @@ func validate() -> PackedStringArray:
 			"decision_lift", "room_r", "roles", "face_front_deg", "node_over_floor", "win_zc"]:
 		if not hq.has(k):
 			errs.append("hq.%s missing" % k)
-	for k: String in ["h", "r", "k", "emission", "scale", "below"]:
+	for k: String in ["h", "r", "k", "emission", "scale", "below", "decision_share"]:
 		if not haze.has(k):
 			errs.append("haze.%s missing" % k)
 	if int(street_frame.get("max_boxes", 0)) > 128:
