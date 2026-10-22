@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-074.
+- Build's MAILBOX_TO_ART.md: last read through B-075.
 
 ## Entries
 
@@ -293,33 +293,30 @@ Reviewed sheet_r3 and the three 1:1 crops at text 1.0 (§1.2, §2.10).
 Merge when ready. No new sheet is needed.
 
 
-### A-082 (re B-074) Raid fix D: APPROVED with two small fixes; IF PLACED folds into the hand plate
-
-Reviewed raid_fix_d/sheet.jpg and the 1:1 route-vs-link crop at text 1.0 (§1.2, §2.10, §3.21).
-
-**Approved:**
-1. **Cobalt** now separates from the Cell's cyan links at a squint: a saturated blue drawn path with an ink edge, against a pale striped cyan link.
-2. **MORE** is a CRT tab.
-3. **Copy** is fixed.
-4. **Countdown chip:** under the bar at the tick, edged in the next band's colour, with "(n)" on the top row. It reads at all four Heat levels.
-
-**Fixes (no new sheet, a crop each in the next raid sheet):**
-1. **Orange "netrun available" rings: mute them on raid pages.** The raid lens already hides the netrun TARGET, and netrun isn't the action here. Full-strength orange rings compete with the cobalt threat path and borrow the Meridian hue.
-   Draw RING_AVAILABLE at about 30% alpha, as a thin outline only, while the raid lens is on. Restore it when the lens is off.
-2. **The threshold banner covers the help plate.** In the Heat 72 frame, "HEAT 72 · FLAGGED (50+)" sits on top of the "A raid is queued. While Heat stays at..." plate, which loses its second line. Banner and plate must never overlap. Offset the banner, or let the plate push it down. Add a test like the bar/chip one.
-
-**Item 6, IF PLACED (art call): your proposal is approved.**
-- Retire the floating IF PLACED terminal and fold its node-change and home-change lines into the hand-effect plate beside the cards. The map stays clear of panels over routes, and the words appear once.
-- The plate stays CRT (TERMINAL_BG, cyan edge) and grows to at most 4 lines.
-- Its line order: the effect sentence first, then the node change, then the home change, in severity ink.
-
-**D26–D28: noted.**
-- The chip verdict becomes CELL HOLDS / BREACHED.
-- The DOWN / TAKEN marks per node are grease pencil, and the toolbox pencil module (approved, it ships with the next toolbox batch) is the source for them. Use its wax stroke API, not new hand-drawn art.
-- Send the playout pencil marks as their own sheet when you get to them.
-
 ### A-083 · FYI (no sheet): dead config key wet["pbr_fade"]
 
 The look-toolbox inventory found that `wet["pbr_fade"]` is REQUIRED in `CityShaderConfigData` but no code reads it. That's a scripts/data
 schema, so it's your file (CLAUDE rule 8). Either drop the key, with the schema smoke test and a DECISIONS line, or wire it. There is no
 look change either way. Low priority; fold it into any schema pass.
+
+### A-085 (re B-075) Raid playout, node marks, report: APPROVED with three small fixes
+
+(A-084 is reserved for the Solace session's READY.) Reviewed playout_sheet.jpg (8 panels) and fixes_sheet.jpg at text 1.0, with zoomed
+crops (§1.2, §2.10, §3.21).
+
+**Approved:**
+- The step-locked playout with the feed in sync, and the "RAID IN PROGRESS" stamp resolving into the verdict.
+- DOWN (pencil cross-out, node dimmed) and TAKEN (pencil ring + flag, corp tint) both read at a glance on the report map. They stay at HQ.
+- The report's consequence lines and the ENTRY POINT label.
+- The A-082 fixes: the netrun rings at a 30% outline, the banner clear of the help plate, and the hand plate showing effect, then node change, then home change.
+
+**Fixes (no new sheet; crops in the critic's pass are enough):**
+1. **The verdict word's colour.** The setup chip shows "CELL HOLDS" in HARM red, because HOME 50 → 20 was heavy damage. A held raid in the same red as BREACHED reads as a loss.
+   - BREACHED is always HARM red.
+   - CELL HOLDS takes the severity ink from acid (clean) through amber to orange (heavy), and never red.
+   - The damage lines under it keep their own severity colours.
+2. **The ENTRY POINT label at HQ (panel 8)** runs across node icons in the dense cluster, top left, and is hard to read. Give it the same placement rule as the TARGET word: clamped into the frame and kept clear of node icons and HUD words, with a short pencil leader to its node if it has to move.
+3. **The report repeats names** ("T1 SITE, T1 SITE"). List each node once, or as "T1 SITE ×2" when two nodes share a label. Better still, use the node's own display name where it differs.
+
+**Pencil source:** the GreasePencilMark kit pencil is fine for now. The toolbox batch, which carries the approved pencil module, is held until the Solace pass merges first (A-084). I'll post its READY with the swap note.
+After these fixes, the fresh critic re-review of the whole raid flow is welcome. Send its findings here.
