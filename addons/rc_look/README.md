@@ -259,3 +259,20 @@ Proof after the rulings: the kit pairs and every non-sweep chrome pair are still
 look only through the uniforms, by ruling; the wrapper's `legacy_sweep` form is max 0 against the old chrome shader);
 the chrome band and disabled cells differ from the old shader by design.
 Lab: `--module=vinyl` (page 1), `--module=vinyl --page=2` (the rulings sheet).
+## Module 14: CRT / terminal glass (`RcLookCrt`)
+
+Scanlines, flicker, the rolling band, the vignette and the edge glow, each the exact form of the shader it names. Lab only
+(designer via art-pass, 2026-10-22: raid redesign pause): no call site is migrated or wired into a raid screen.
+
+| API | What |
+|---|---|
+| `shaders/rc_crt.gdshaderinc` (standalone: no rc_look / rc_common / TIME, fog-safe) | `rcl_crt_scan(y_px, period, phase)` crt_terminal's step form (phase 0.08, `y_px = p.y - panel.y`) and the FRAGCOORD form of crt_panel / city_sketch / city_live (phase 0, `y_px = FRAGCOORD.y`); `rcl_crt_scan_sine(y01, density)` scanline.gdshader |
+| `rcl_crt_flicker(t, rate_rad_s, amount)` | `1 - amount (0.5 + 0.5 sin(t rate))`; the caller passes `amount x rc_live()` and `t = rc_time(TIME)` (rates 41 / 43 / 47) |
+| `rcl_crt_roll(y01, band, width)`, `rcl_crt_vignette_sd(sd, reach, floor)`, `rcl_crt_vignette_uv(uv, amount, inner, outer)`, `rcl_crt_glow(sd, glow_px, strength)` | crt_terminal's roll gaussian, glass vignette and edge glow; scanline.gdshader's screen vignette |
+| `RcLookCrt`: `.preset(name)`, `.scan / scan_sine / flicker / roll / vignette_sd / vignette_uv / glow / band_at` | exact GDScript mirrors |
+| `RcLookCrt.resolve(preset, reduce_on, convention)` | the strengths a screen runs with under reduce effects (`Reduce.KEEP_STATIC / ZERO_SCAN / HIDE`) |
+| `config/look_crt.tres` (`RcLookCrtConfig`, `RcLookCrtPreset`) | `terminal` (CrtTerminalPanel's pinned SCAN_PX 3, SCAN_STRENGTH 0.10, HEX_ALPHA 0.06), `firmware`, `schematics`, `dispatch`, `corp` (accent only), `ui_panel` (crt_panel), `fx_overlay` (scanline.gdshader as Fx sets it), `neon_sketch` (city_sketch / city_live); `reduce` (the convention until ruled) |
+| lab: `--module=crt` | a panel per preset at a fixed clock, probe strips shader over mirror, a parity pair against the game's crt_terminal.gdshader |
+| lab: `--module=crt_reduce` | the reduce-effects ruling sheet: the three conventions side by side with a recommendation |
+
+Stale default found, not changed: crt_terminal's glass alpha is 0.94 in the shader, 1.0 as the game sets it (the presets use 1.0).
