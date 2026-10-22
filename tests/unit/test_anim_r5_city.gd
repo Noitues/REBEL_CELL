@@ -342,7 +342,8 @@ func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 	var r := {"raid_id": "test", "steps_run": 3, "won": false, "campaign_lost": false, "home_before": 50, "home_after": 50,
 		"threats_destroyed": 0, "threats_reached_home": 0, "nodes": {String(site): {"before": 30, "after": 0, "outcome": "taken"}},
 		"down": [String(site)], "taken": [String(site)]}
-	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.TAKEN) % 1, "the verdict names the stronger loss once")
+	assert_eq(int(RaidVerdict.losses(r)["taken"]) + int(RaidVerdict.losses(r)["down"]), 1, "the loss counts the node once, as the stronger loss")
+	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.OVERRUN), "a lost raid is OVERRUN")
 	var panel := RaidPlayoutPanel.new(null)
 	add_child_autofree(panel)
 	panel.results = r

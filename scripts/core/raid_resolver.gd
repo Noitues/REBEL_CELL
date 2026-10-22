@@ -22,6 +22,11 @@ class RaidResult:
 	var home_after: int = 0
 	var threats_destroyed: int = 0
 	var threats_reached_home: int = 0
+	## RAID-FIX A: how many threats came in all, and what apply() does to Heat and Schematics
+	## (the one source of both: apply() adds exactly these).
+	var threats_total: int = 0
+	var heat_delta: int = 0
+	var schematics_delta: int = 0
 	## site_id (String) -> {"before": int, "after": int, "outcome": "holds"|"down"|"taken"|"passed"}
 	var nodes: Dictionary = {}
 	var taken: Array[String] = []
@@ -58,7 +63,8 @@ class RaidResult:
 	func _base_dict() -> Dictionary:
 		return {"raid_id": String(raid_id), "steps_run": steps_run, "won": won, "campaign_lost": campaign_lost,
 			"home_before": home_before, "home_after": home_after, "threats_destroyed": threats_destroyed,
-			"threats_reached_home": threats_reached_home, "nodes": nodes.duplicate(true),
+			"threats_reached_home": threats_reached_home, "threats_total": threats_total,
+			"heat_delta": heat_delta, "schematics_delta": schematics_delta, "nodes": nodes.duplicate(true),
 			"taken": taken.duplicate(), "down": down.duplicate(),
 			"infection_bp": infection_bp, "infection_decay_bp": infection_decay_bp, "infection_end_bp": infection_end_bp,
 			"city_lost": city_lost}
@@ -145,6 +151,12 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 			result.threats_reached_home += 1
 	result.home_after = grid.home_integrity
 	result.won = result.threats_destroyed == threats.size() and not result.campaign_lost
+	result.threats_total = threats.size()
+	if result.won:
+		result.schematics_delta = raid.schematic_reward
+	elif not result.campaign_lost:
+		var heat_copy := campaign.duplicate_state()
+		result.heat_delta = heat_copy.add_heat(HeatRules.scaled_delta(heat_copy, config.lost_raid_heat, config), config)
 	for id in before:
 		var sid := StringName(id)
 		var after: int = grid.home_integrity if sid == grid.home_site_id else int(grid.site(sid)["integrity"])

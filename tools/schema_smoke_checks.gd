@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _ev01_event_schema()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _raid_fix_a_config() + _ev01_event_schema()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -1283,3 +1283,10 @@ func _ev01_event_schema() -> int:
 	if not shipped_cfg.raid_win_event_enabled or shipped_cfg.hq_event_every_runs != 3 or CampaignState.new().venue_event_due != -1: fails += 1
 	if CampaignState.new().to_dict().has("venue_event_due") or CampaignState.new().to_dict().has("carried_combat_mods") or RunState.new().to_dict().has("purse_cycles"): fails += 1
 	return fails
+
+
+## RAID-FIX A: the amber severity line is config (default 25, shipped 25).
+func _raid_fix_a_config() -> int:
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("RAID-FIX A amber line (expect 25): ", cfg.raid_amber_home_loss_pct)
+	return 0 if cfg.raid_amber_home_loss_pct == CampaignConfigData.new().raid_amber_home_loss_pct and cfg.raid_amber_home_loss_pct > 0 else 1
