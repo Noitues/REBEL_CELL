@@ -64,7 +64,7 @@ def main():
         PO.P[k_] = v_
     stops = HP.PRESET["hq"].get("frame_stops", {}).get("H_overview", 0.0)
     e0 = PO.P["exposure"] * 2.0 ** stops
-    target = float(job.get("target", 0.16))
+    target = float(job.get("target", 0.14))
     stem = os.path.join(out, "H_overview")
     ex, plate, med = e0 * 2.0 ** float(job.get("exp_stops", 0.0)), None, 0.0
     hist = []

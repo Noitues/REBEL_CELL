@@ -9,6 +9,32 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
+import time
+
+import bpy
+
+_HB = os.path.join(os.path.dirname(os.path.abspath(sys.argv[sys.argv.index("--") + 1])), "heartbeat.txt")
+_HB_LAST = [0.0]
+
+
+@bpy.app.handlers.persistent
+def _heartbeat(*a):
+    """Render progress marker for the GPU watchdog (mg_gpu.py): touched at most every 10 s while Cycles reports stats."""
+    t = time.time()
+    if t - _HB_LAST[0] > 10.0:
+        _HB_LAST[0] = t
+        try:
+            with open(_HB, "w") as f:
+                f.write("%.0f" % t)
+        except OSError:
+            pass
+
+
+for _h in ("render_stats", "render_post", "render_init"):
+    try:
+        getattr(bpy.app.handlers, _h).append(_heartbeat)
+    except AttributeError:
+        pass
 JOBP = sys.argv[sys.argv.index("--") + 1]
 JOBD = json.load(open(JOBP))
 SRC = JOBD["scene_src"]
