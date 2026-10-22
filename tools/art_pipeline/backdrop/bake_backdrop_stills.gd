@@ -6,8 +6,9 @@ extends Control
 ##   python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/art_pipeline/backdrop/bake_backdrop_stills.tscn
 ##     -- --out=<dir> --states=hq_solace_night,hq_solace_day [--masks=1] [--reduce-effects=1] [--settle=40]
 ## State = <hq|site>_<corp>_<night|day>. The live city close-up is always the night look (CombatBackdrop has no day);
-## the `day` states re-light the same framing with the cool day look (CityMotionConfig day_*, rain off, fog kept) once the
-## city is up. Writes <out>/<state>.png (window size) and, with --masks=1, <out>/<state>_won.png (640x360: R = the
+## a `day` state bakes that same night frame (designer 2026-10-22: day stills = night stills until a live day look
+## exists, so a day run's still hands over to the city it shows).
+## Writes <out>/<state>.png (window size) and, with --masks=1, <out>/<state>_won.png (640x360: R = the
 ## target's silhouette, the HQ / Site landmark's solid meshes, G = its lit pixels), found by differencing the frame with
 ## those meshes hidden (rain, shader time and effects frozen with --reduce-effects=1).
 ## --old-dir=<dir holding the previous <state>.jpg stills>: the frame must differ clearly from the old still (mean channel
@@ -34,7 +35,6 @@ var _phase: int = 0
 var _hidden_at: int = -1
 var _frame_img: Image = null
 var _hidden: Array[MeshInstance3D] = []
-var _day: bool = false
 var _fail: bool = false
 
 
@@ -73,7 +73,6 @@ func _load(state: String) -> void:
 	var head := p[0].split("_", true, 1)
 	var kind := head[0]
 	var corp := StringName(head[1])
-	_day = p[1] == "day"
 	# The same campaign every state (seed 11), so the city is the same whatever ran before (hq_run_lab's rule).
 	RunManager.save_slot = "lab_bake_backdrop"
 	var u := CampaignRules.unlock_for(RunManager.lookup(), RunManager.lookup().get_content(corp))
@@ -94,23 +93,6 @@ func _load(state: String) -> void:
 	_backdrop.show_place(BackdropCatalog.place(corp, kind == "hq", false, site))
 
 
-## The cool day look of the close-up (CityMotionConfig day_*; rain off), keys as BackdropCatalog.city_look.
-func _day_look(focus: String) -> Dictionary:
-	var m := load("res://content/config/city_motion_config.tres") as CityMotionConfigData
-	var look := BackdropCatalog.city_look(CityView3D.CONFIG, focus)
-	look["ramp"] = m.day_ramp.duplicate()
-	look["sky"] = m.day_sky
-	look["window_gain"] = m.day_window_gain
-	look["neon_gain"] = m.day_neon_gain
-	look["haze"] = m.day_haze
-	look["grade"] = m.day_grade
-	look["bloom"] = m.day_bloom
-	look["glow_threshold"] = m.day_glow_threshold
-	look["night"] = false
-	look["rain_alpha"] = 0.0
-	return look
-
-
 func _process(_delta: float) -> void:
 	_frame += 1
 	if _ready_at < 0 and _backdrop.holding():
@@ -122,8 +104,6 @@ func _process(_delta: float) -> void:
 		_ready_at = _frame
 	if _ready_at < 0 and _frame < MAX_WAIT:
 		return
-	if _day and city != null:
-		city.set_night_share(0.0, _day_look(String(_backdrop.shot.get("focus", "hq"))))
 	var since := _frame - maxi(_ready_at, 0)
 	var settle := int(_args.get("settle", "40"))
 	var state := _states[_step]
