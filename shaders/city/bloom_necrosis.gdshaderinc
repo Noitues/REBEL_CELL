@@ -143,6 +143,11 @@ uniform vec2 bl_perp = vec2(0.0, 1.0);
 uniform float bl_front = 0.0;
 uniform float bl_tend = 24.0;        // tendril reach ahead of the front at low heights (BU) and the height it fades out at
 uniform float bl_tend_h = 6.0;
+uniform float bl_len_k = 1.0;        // the front's BU-scaled raggedness (fingers, height lean) in layers: layer spacing over the plate's
+uniform float bl_lean = 1.1;         // BU the front leans back per BU of height (before bl_len_k)
+uniform float bl_wall_vw = 1.0;      // walls: vein width x
+uniform float bl_wall_veins = 1.0;   // walls: vein emission x
+uniform float bl_wall_hatch = 1.0;   // walls: hatch emission x
 uniform int bl_box_n = 0;
 uniform vec3 bl_box_lo[BL_BOXES];
 uniform vec3 bl_box_hi[BL_BOXES];
@@ -175,15 +180,15 @@ float bl_street_depth(vec3 P) {
 	// ragged front: fingers that follow the surface (a function of height and depth), tendrils crawling ahead at low heights
 	float fn = bl_noise(vec3(P.z * 0.5, P.y * 0.08, 0.0), 3, sd);
 	float fn2 = bl_noise(vec3(P.z * 1.7, P.x * 0.05, 0.0), 2, sd + 5.0);
-	float fing = (fn - 0.35) * 7.5 + (fn2 - 0.5) * 3.5;
+	float fing = ((fn - 0.35) * 7.5 + (fn2 - 0.5) * 3.5) * bl_len_k;
 	float tn = bl_noise(vec3(P.y * 0.35, P.z * 0.9, 0.0), 3, sd + 3.0);
 	float tend = bl_smooth(tn, 0.42, 0.58) * bl_tend * (1.0 - bl_smooth(P.z, 0.4, bl_tend_h));
 	float zc = min(max(P.z, 0.0), 14.0);
-	float local = bl_front + zc * 1.1 - fing - tend;
+	float local = bl_front + zc * bl_lean * bl_len_k - fing - tend;
 	return P.x - local;
 }
 
-BlField bl_street_field(vec3 wp) {
+BlField bl_street_field(vec3 wp, float wall) {
 	BlField o = BlField(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 	vec3 P = bl_street_pos(wp);
 	float diag = (P.x + P.z + P.y * 0.25) * bl_hatch_scale;
@@ -206,7 +211,7 @@ BlField bl_street_field(vec3 wp) {
 	float vein = 0.0;
 	for (int k = 0; k < 2; k++) {
 		float sc = bl_vscale * (k == 0 ? 1.0 : 2.1);
-		float w = bl_vw * (k == 0 ? 1.0 : 1.7);
+		float w = bl_vw * (k == 0 ? 1.0 : 1.7) * mix(1.0, bl_wall_vw, wall);
 		float line = 1.0 - bl_smooth(bl_vor_edge(wpos * sc), 0.0, w);
 		float dens = bl_smooth(bl_noise(P * (0.12 + 0.05 * float(k)), 2, bl_seed + 20.0 + float(k)), 0.46 + bl_vein_dens, 0.64 + bl_vein_dens);
 		vein = max(vein, line * dens * (k == 0 ? 1.0 : 0.7));
@@ -222,18 +227,23 @@ BlField bl_street_field(vec3 wp) {
 }
 
 // The Bloom skin on a street surface: the body and the emission mixed by the cover. `wp` the world position.
-float bl_apply_street(vec3 wp, inout vec3 albedo, inout vec3 emission) {
+// `wall` 0 on a flat floor .. 1 on a vertical face (the walls take bl_wall_*).
+float bl_apply_street_w(vec3 wp, float wall, inout vec3 albedo, inout vec3 emission) {
 	if (bl_strength <= 0.0) {
 		return 0.0;
 	}
-	BlField f = bl_street_field(wp);
+	BlField f = bl_street_field(wp, wall);
 	float fac = clamp(f.cover * bl_cover_k, 0.0, 1.0) * clamp(bl_strength, 0.0, 1.0);
 	// the hot edge and the veins are drawn where the mix is: at the front's hairline (edge) the fac is partial by design
-	float k = f.vein * bl_veins + f.hatch * bl_hatch_k;
+	float k = f.vein * bl_veins * mix(1.0, bl_wall_veins, wall) + f.hatch * bl_hatch_k * mix(1.0, bl_wall_hatch, wall);
 	albedo = mix(albedo, bl_plum, fac);
 	// the front's hairline is the hottest line of the skin: added over the mix (not weighted by the cover), so it reads at the front
 	emission = mix(emission, bl_pink * k + bl_plum * bl_body_emit, fac) + bl_pink * f.edge * bl_edge_k * clamp(bl_strength, 0.0, 1.0);
 	return fac;
+}
+
+float bl_apply_street(vec3 wp, inout vec3 albedo, inout vec3 emission) {
+	return bl_apply_street_w(wp, 0.0, albedo, emission);
 }
 
 // The same for an unlit emitter (signs, strips): the colour goes to the body plus the pink emission by the cover. Returns the colour.
@@ -241,9 +251,9 @@ vec3 bl_unlit_street(vec3 wp, vec3 col) {
 	if (bl_strength <= 0.0) {
 		return col;
 	}
-	BlField f = bl_street_field(wp);
+	BlField f = bl_street_field(wp, 1.0);
 	float fac = clamp(f.cover * bl_cover_k, 0.0, 1.0) * clamp(bl_strength, 0.0, 1.0);
-	float k = f.vein * bl_veins + f.hatch * bl_hatch_k;
+	float k = f.vein * bl_veins * bl_wall_veins + f.hatch * bl_hatch_k * bl_wall_hatch;
 	return mix(col, bl_plum * (1.0 + bl_body_emit) + bl_pink * k, fac) + bl_pink * f.edge * bl_edge_k * clamp(bl_strength, 0.0, 1.0);
 }
 

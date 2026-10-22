@@ -37,6 +37,37 @@ func test_the_tendril_reach_is_in_layers() -> void:
 	assert_almost_eq(float(lf["ribbons"]["reach"]) / 12.0, float(BloomLook.config().ribbons["reach_layers"]), 1e-4)
 
 
+func test_the_front_maps_onto_the_street_in_the_right_direction() -> void:
+	# The street frame is x = x0 - along: a layer column's frame x, put through the frame -> world transform, lands on the street at that
+	# layer's along-distance (so "infected where x is larger" is BEHIND the front, toward the street start), on any street direction.
+	for deg in [0.0, 37.0, 140.0]:
+		var d := _derive()
+		var rot := Transform2D(deg_to_rad(deg), Vector2(5.0, -9.0))
+		var st: Dictionary = d["street"]
+		st["a"] = _p2(rot * Vector2(100.0, 0.0))
+		st["c"] = _p2(rot * Vector2(0.0, 0.0))
+		d["nrm"] = _p2(rot.basis_xform(Vector2(0.0, 1.0)))
+		for id: String in d["rooms"]:
+			for key: String in ["front", "back"]:
+				for p: Array in d["rooms"][id][key]:
+					var q := rot * Vector2(float(p[0]), float(p[1]))
+					p[0] = q.x
+					p[1] = q.y
+		var lay := BloomLook.street_layout(d)
+		var look := BloomLook.at_front(2.0, 2, lay)
+		var xf := BloomLook.frame_to_world(look)
+		var a := rot * Vector2(100.0, 0.0)
+		for l in [1, 2, 3]:
+			var along := 12.0 * float(l) + 3.0  # the column's centre along the street (the _derive columns)
+			var w := xf * Vector3(BloomLook.layer_x_at(lay, float(l)), float(lay["y0"]), 0.0)
+			var want := a + (lay["dir"] as Vector2) * along
+			assert_almost_eq(w.x, want.x, 1e-2, "layer %d x at %d deg" % [l, int(deg)])
+			assert_almost_eq(-w.z, want.y, 1e-2, "layer %d y at %d deg" % [l, int(deg)])
+		# behind the front (toward the start: smaller layers) is the larger frame x
+		assert_gt(BloomLook.layer_x_at(lay, 1.0), BloomLook.layer_x_at(lay, 3.0))
+		assert_lt(float(look["front"]), BloomLook.layer_x_at(lay, 1.0), "layer 1 is behind a front at layer 2")
+
+
 func _state(front_milli: int, layer_milli: int, enabled: bool = true) -> BloomState:
 	var b := BloomState.new()
 	b.enabled = enabled

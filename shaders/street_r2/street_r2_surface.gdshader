@@ -47,7 +47,7 @@ void fragment() {
 		NORMAL = -NORMAL;
 	}
 	if (bl_strength > 0.0) {
-		float blf = bl_apply_street(v_wpos, ALBEDO, EMISSION);
+		float blf = bl_apply_street_w(v_wpos, 1.0 - abs((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y), ALBEDO, EMISSION);
 		ROUGHNESS = mix(ROUGHNESS, bl_rough, blf);
 		METALLIC *= 1.0 - blf;
 	}

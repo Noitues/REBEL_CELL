@@ -13,9 +13,13 @@ street = {
 "hatch_k": 0.15,
 "hatch_scale": 3.3,
 "pink": [1.0, 0.0612, 0.305],
-"plum": [0.075, 0.03, 0.058],
+"plum": [0.17, 0.065, 0.13],
 "rough": 0.7,
 "seed": 7.0,
+"lean": 1.1,
+"wall_vw": 2.0,
+"wall_veins": 1.6,
+"wall_hatch": 4.0,
 "tend_layers": 1.2,
 "edge_px": 1.5,
 "tend_h": 6.0,
@@ -26,7 +30,7 @@ street = {
 street_bands = {
 "CATCHING": {
 "hatch_k": 0.2,
-"plum": [0.085, 0.034, 0.066],
+"plum": [0.19, 0.075, 0.145],
 "ribbons_strength": 4.4,
 "veins": 5.5
 },
@@ -43,6 +47,7 @@ street_frame = {
 "link_x": 0.6,
 "link_y": 0.8,
 "layer_spacing_min": 1.0,
+"layer_spacing_ref": 9.5,
 "link_z": 0.6,
 "max_boxes": 128,
 "room_mx": 0.1,

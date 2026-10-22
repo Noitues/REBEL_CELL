@@ -668,7 +668,7 @@ void fragment() {
 		}
 	}
 	if (bl_strength > 0.0 && !bit_on && !id_mode) {
-		float blf = bl_apply_street(v_world, ALBEDO, EMISSION);
+		float blf = bl_apply_street_w(v_world, 1.0 - abs(nw.y), ALBEDO, EMISSION);
 		v_pbr = vec3(mix(v_pbr.x, bl_rough, blf), v_pbr.y * (1.0 - blf), v_pbr.z * (1.0 - blf));
 	}
 	if (bit_on) {
