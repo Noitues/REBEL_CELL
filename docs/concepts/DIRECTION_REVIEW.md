@@ -1635,3 +1635,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   live close-up, so the hand-over has no pop. Day stills = night stills until a live day look exists, because CombatBackdrop's city path
   ignores place.day. A real day backdrop would be its own task. Art-pass call: the live Site close-up framing gets fixed (fit to the S2
   hospital, cut the towers in front of it). Today the hospital is buried and the subject doesn't read.
+- **Netrun street, look-toolbox module 10 (2026-10-22)** (`D:/rc_scratch/rc_look/sheet10/sheet10.png`):
+  - Designer: drop the megastructure from the street plan (plan_pass, the dressing.signs mega clause, and the r2 Python twin). It was
+    an AD critique item, never a designer ask, and it was never drawn.
+  - Designer: open a slice for the near-black frontage slab, the left ~45 % of every na23 overview, which fails the squint test.
+    Look only (light, glow or framing options on a sheet); no layout rule changes without the designer.
+  - Art-pass calls: keep both facade washes (each lights different facades, so neither doubles), and keep decision fog constant at
+    0.12 by deleting the no-op lerp.
