@@ -426,8 +426,10 @@ worktree `D:/rc_art/godot_look_toolbox`. Art-pass did not merge main.
 - Proof (frozen, `--reduce-effects=1`):
   - sheets: `D:/rc_scratch/rc_look/hotcore/hotcore_proof.png` and `thin_crops.png`;
   - changed: pov, pod, site, A2 night and na23;
-  - unchanged (max 0): A2 day, and the na23 id and depth passes. (The hq_solace max 0 was measured on the baked fallback still, not
-    the live city. A live re-shoot is coming; until then, treat hq_solace as unverified.)
+  - unchanged (max 0): A2 day, and the na23 id and depth passes.
+  - Correction: hq_solace is NOT unchanged. The first max 0 was measured on the baked fallback still. The live re-shoot gives
+    hq_solace max 51 / 7,230 px and site_solace max 47 / 5,633 px. The change comes from city_building's trims and is the approved
+    core, as intended.
 - Also in this batch:
   - 9d882173: netrun_clock's hash goes through rc_hash (same arithmetic);
   - 9b6f0267: a comment only.
@@ -472,3 +474,37 @@ bd3c6499. Art-pass did not merge main.
   - That still is stale (it shows the old spiral helix). Its re-bake comes as its own entry.
 - **Tests at 105e9808 (targeted):** test_hq_aaa_state_gate 4, test_hq_run_city 15, test_parity_hq_run 13, test_hq_compound_layout 6,
   test_art5_landmarks 8, test_solace_park_kit 3 and test_suite_integrity 8 all pass. The full suite runs at your gate.
+
+### A-091 · 2026-10-22 · READY: look-toolbox batch 3, lab modules 13/14/16 + Solace night air (art/look-toolbox-3 @ 6ddebb9b, on A-090)
+
+Merge **after A-090** (art/look-gate 105e9808). It has 16 commits on 105e9808 and is not pushed; the worktree is
+`D:/rc_art/godot_look_toolbox`. The chain is A-086 → A-087 → A-089 → A-090 → A-091; merging this head brings all of them.
+
+**What's in it:**
+- **Lab-only modules (nothing migrated, no view uses them):**
+  - 13 vinyl sticker (rc_vinyl kit/chrome wrappers, presets, mirror);
+  - 14 CRT (rc_crt, look_crt.tres, reduce effects = KEEP_STATIC);
+  - 16 binary bits ("burst" / "stream" presets).
+  - Each was proved against its old shader: max 0 except the designer's rulings (DIRECTION_REVIEW 0f336345, 82c92714), which apply in
+    the lab presets only.
+- **Look change the designer approved:** the Solace night air ("solace_night" in look_air.tres: start 150 BU, sRGB (0.12, 0.10,
+  0.18), density 0.004). It's wired in `hq_solace_materials.gd` add_fog() as a child of HqSolaceFog, so unstage removes it. There is
+  no helix spill.
+  - Proof: `D:/rc_scratch/rc_look/airproof/airproof_sheet.png`. pov max 120 / 431,629 px, pod max 181 / 52,568 px. Max 0 on: A2 day
+    and night at both looks; na23 beauty, id, depth and ui; the live hq_solace and site_solace backdrops. The air stays on the HQ page.
+- **Wrapper defaults equal what the game sets (no pixel change):** `shaders/kit/crt_terminal.gdshader` (glass alpha 1.0, palette rgb)
+  and `shaders/scanline.gdshader` (Fx's four values).
+- **Lab fix:** hq_run_lab waits for the live backdrop city and fails loudly instead of saving the baked still.
+
+**Overlap:**
+- hq_solace_materials.gd (Solace lane; air lines only, user OK).
+- crt_terminal / scanline shaders (the raid redesign may touch them).
+- tests/test_manifest.json and docs/DECISIONS.md: keep both sides.
+
+**Tests:** 20 area scripts, 226 tests, 0 failing, 9 pending (the deferred text-scale ones). Precommit is clean on 105e9808. The full
+suite runs at your gate.
+
+**Finding for build (not fixed here):** CombatBackdrop gives up on the live city after `backdrop_city_wait_s` = 2.0 s and shows the
+baked still. The Solace boss close-up can take longer than 2 s to build, so a slow machine may show the still. The Solace session is
+re-baking the stale Solace stills (night and day) to the current look, as its own READY entry. Whether the 2.0 s wait should change is
+a build/perf call.
