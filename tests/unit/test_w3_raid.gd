@@ -192,7 +192,7 @@ func test_the_home_server_has_one_name_on_the_raid_pages() -> void:
 	await _frames(2)
 	var home := hq._panel.find_child("HomeForecast", true, false) as Label
 	assert_not_null(home)
-	assert_string_contains(home.text, "HOME SERVER")
+	assert_string_contains(home.text, "HOME")
 	assert_false(home.text.contains("CORE"))
 	var stopped := hq._panel.find_child("ThreatsStopped", true, false) as Label
 	assert_not_null(stopped)

@@ -229,8 +229,11 @@ func _raid(scale: float) -> Control:
 func test_the_raid_stamp_is_a_forecast() -> void:
 	var hq: Control = await _raid(1.0)
 	var stamp: Node = hq._panel.find_child("Projection", true, false)
-	assert_true(stamp is ForecastStamp, "a dashed forecast, not a result stamp")
-	var fs := stamp as ForecastStamp
+	# A-073 (updated on purpose): the forecast is a CRT terminal chip beside the work order (it was a dashed disc
+	# on the paper); still a forecast, never a result stamp, with the same caption and verdict words.
+	assert_true(stamp is ForecastChip, "a forecast chip, not a result stamp")
+	var fs := stamp as ForecastChip
+	assert_null(hq._panel.find_child("RaidCard", true, false).find_child("Projection", true, false), "A-073: the paper carries no forecast")
 	var projection := RunManager.project_raid()
 	assert_string_contains(fs.caption, "IF THE RAID")
 	assert_string_contains(fs.caption, "RUNS NOW")

@@ -37,6 +37,9 @@ const PAUSE_TOP := 100.0
 ## How much of the text scale the forecast stamp's size follows.
 const PROJECTION_FOLLOW := 0.3
 ## The forecast stamp's words (H22 #9): a caption over the verdict.
+## A-076 A1: the chip's what-if lines.
+const CHIP_HOME := "HOME %d → %d (%s)" # TR
+const CHIP_INFECTED := "INFECTED %d%% → %d%%" # TR
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
@@ -381,13 +384,22 @@ func recruit(class_id: StringName = RunManager.DEFAULT_CLASS) -> void:
 func station(operative_id: StringName, site_id: StringName) -> void:
 	_report(CampaignRules.station(RunManager.campaign, RunManager.lookup(), operative_id, site_id))
 	RunManager.autosave()
-	show_hq()
+	_refresh_after_crew_move()
 
 
 func recall(operative_id: StringName) -> void:
 	CampaignRules.recall(RunManager.campaign, operative_id)
 	RunManager.autosave()
-	show_hq()
+	_refresh_after_crew_move()
+
+
+## PB-SOL-1 B-07: stationing from the raid setup stays on the setup (its forecast and crew line
+## follow); anywhere else it is the HQ page.
+func _refresh_after_crew_move() -> void:
+	if panel_name == "raid":
+		show_raid()
+	else:
+		show_hq()
 
 
 func buy_heat_reduction() -> void:
@@ -588,7 +600,7 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 const NO_CREW_WARNING := "NO CREW STATIONED: %d alive, %d stationed. Nobody will help your nodes." # TR
 const CREW_COUNT := "Crew: %d (Stationed: %d)" # TR
 const NO_CREW_ASK := "No crew is stationed. Start the defense anyway?" # TR
-const NO_CREW_BODY := "Station an operative on a node at HQ first, or the raid hits an unaided network." # TR
+const NO_CREW_BODY := "Cancel, pick one of your nodes on the map, then press STATION on this raid setup. An unstationed raid hits an unaided network." # TR
 ## The open START DEFENSE confirm (null when none).
 var _defense_confirm: ConfirmDialog = null
 
@@ -1860,6 +1872,10 @@ func _build_hq_page(page_name: String) -> void:
 		setup.visible = not raid_mode
 		order.add_child(setup)
 		page.add_child(order)
+		if raid_mode:
+			# A-073: the forecast chip is the page's own child, placed beside the paper (`_place_forecast_chip`),
+			# so it takes no room from the work order (it keeps its pre-chip size, rows and stamps).
+			page.add_child(_forecast_chip(projection))
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
 	var hand := ScrollContainer.new()
@@ -2936,6 +2952,7 @@ func _place_hq() -> void:
 		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
 		order.position = o.position
 		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, order_foot - HqLayout.GAP - o.position.y)))
+	_place_forecast_chip(page, order)
 	var top := HqLayout.MARGIN
 	var bottom_now := _column_foot(verb)
 	if hq_minimap != null and is_instance_valid(hq_minimap):
@@ -4945,6 +4962,7 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	safe.add_theme_constant_override(&"margin_right", roundi(Fx.sticker_margin()))
 	var verbs := VBoxContainer.new()
 	verbs.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	verbs.add_theme_constant_override("separation", 12)  # A-076 A2: the warning has room under the Crew line
 	safe.add_child(verbs)
 	slot.add_child(safe)
 	var crew_alive := RunManager.campaign.living_operatives().size()
@@ -4958,6 +4976,9 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	crew_line.add_theme_color_override("font_color", Palette.TEXT_MID)
 	crew_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	verbs.add_child(crew_line)
+	var post := _station_crew_button()
+	if post != null:
+		verbs.add_child(post)
 	if CampaignRules.raid_crew_warning(RunManager.campaign):
 		# C9, ruling 4: nobody stationed: the warning stands over the sticker (the press then asks first).
 		var warn := Label.new()
@@ -4968,6 +4989,7 @@ func _defence_verb(slot: VBoxContainer) -> void:
 		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		warn.add_theme_color_override("font_color", Palette.HARM_INK)
 		warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		warn.set_meta(Fx.META_SAVED_AVOID, true)  # A-076 A2: the red warning wins: the SAVED toast keeps off it
 		UiWrap.whole_words(warn)
 		verbs.add_child(warn)
 	verbs.add_child(run_btn)
@@ -4975,6 +4997,48 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	strip.name = "SpeedStrip"
 	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
 	verbs.add_child(strip)
+
+
+## PB-SOL-1 B-07 / C-10: the raid setup's own stationing: the runner (the CREW tab's pick) takes
+## the target node, or comes back from it. Null when nobody can (no living crew, no free post).
+func _station_crew_button() -> Button:
+	var c := RunManager.campaign
+	var who := selected_op()
+	if who == null or selected_site == &"" or not c.grid.is_active_node(selected_site) or selected_site == c.grid.home_site_id:
+		return null
+	var oid := who.id
+	var sid := selected_site
+	var b: Button
+	if CampaignRules.stationed_site(c, oid) == sid:
+		b = _crt_line(tr(RECALL_LINE) % who.name.to_upper(), func() -> void: recall(oid))
+		b.name = "RecallCrew"
+		b.tooltip_text = UiTip.fold(tr("Bring %s back from %s.") % [who.name, site_name(sid)])
+		return b
+	var node_data := RunManager.lookup().get_content(c.grid.node_type_of(sid)) as NetworkNodeData
+	if node_data == null or node_data.station_slots <= 0 or (c.grid.stationed_on(sid) != &"" and c.grid.stationed_on(sid) != oid):
+		return null
+	b = _crt_line(tr(STATION_LINE) % who.name.to_upper(), func() -> void: station(oid, sid))
+	b.name = "StationCrew"
+	b.tooltip_text = UiTip.fold(tr("Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.") % [who.name, site_name(sid)])
+	return b
+
+
+## A-076 A3: the raid setup's crew lines as a CRT menu line (YOUR NETWORK's column style: flat, mono,
+## terminal text; the theme's focus brackets), the words already upper-cased and translated.
+const STATION_LINE := "> STATION %s HERE" # TR
+const RECALL_LINE := "> RECALL %s" # TR
+
+
+func _crt_line(text: String, on_pressed: Callable) -> Button:
+	var b := _button(text, on_pressed)
+	b.flat = true
+	b.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	b.size_flags_horizontal = Control.SIZE_SHRINK_END
+	b.add_theme_font_override("font", Palette.mono_arrows())
+	b.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color"]:
+		b.add_theme_color_override(key, PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+	return b
 
 
 ## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.
@@ -5011,8 +5075,6 @@ const ORDER_KIND := "RAID INCOMING  //  %s" # TR
 const RAID_INTRO_KEY := "ui.raid_intro"
 const ORDER_UNITS := "%d IN %d WAVE" # TR
 const ORDER_UNITS_MANY := "%d IN %d WAVES" # TR
-## The forecast stamp's size on the work order (a share of the playout's stamp).
-const ORDER_STAMP_SHARE := 0.78
 ## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
 ## the loadout (px at 1.0).
 const START_STICKER_STEP := UiTheme.TITLE
@@ -5045,6 +5107,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	card.name = "RaidCard"
 	card.tooltip_text = UiTip.fold(TextDb.t(raid, "warning_text"))
 	if not compact:
+		card.custom_minimum_size.x = HqLayout.ORDER_PAPER_W * Settings.text_scale  # A-076: the paper keeps its pre-chip width
 		# B3 b (art director): no instruction panel over the paper (it covered the work order and
 		# said what the paper and START DEFENSE say); its sentence is the paper's tooltip.
 		card.tooltip_text = UiTip.fold(TextDb.ui_text(RAID_INTRO_KEY) + "\n" + card.tooltip_text)
@@ -5096,19 +5159,8 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var strength := card.add_row(tr("STRENGTH"), tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))),
 		Palette.INK, "RaidStrength")
 	_tip_label(strength, tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
-	var lost_home := projection.home_after < projection.home_before
-	var home := card.add_row(tr("IF IT RAN NOW"), tr("HOME SERVER %d > %d") % [projection.home_before, projection.home_after],
-		Palette.HARM_INK if lost_home else Palette.INK, "HomeForecast")
-	_tip_label(home, tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
 	var stopped := card.add_row(tr("THREATS STOPPED"), tr("%d / %d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
 	_tip_label(stopped, tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
-	var infection := SolaceRaidRules.preview(projection, cfg)
-	if bool(infection["applies"]):
-		var inf_text := tr("POPULATION INFECTED %d%% > %d%%") % [int(infection["now_pct"]), int(infection["end_pct"])]
-		var lost_at := int(infection["lost_step"])
-		var inf_row := card.add_row(tr("INFECTION"), inf_text, Palette.HARM_INK if lost_at >= 0 else Palette.INK, "InfectionForecast")
-		_tip_label(inf_row, (tr("CITY LOST at step %d.") % lost_at if lost_at >= 0 else tr("The city holds.")) + " "
-			+ tr("The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.") % [int(infection["rate_pct"]), int(infection["decay_pct"])])
 	var l := RaidVerdict.losses(_raid_dict(projection))
 	if int(l["down"]) + int(l["taken"]) > 0:
 		card.add_row(tr("DOWN / TAKEN"), "%d / %d" % [int(l["down"]), int(l["taken"])], Palette.HARM_INK, "RaidLosses")
@@ -5117,14 +5169,6 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 			var link := card.add_row(tr("LINK"), tr("FROZEN") if e["type"] == "link_frozen" else tr("ALTERED"), Palette.HARM_INK)
 			_tip_label(link, String(e["text"]))
 	card.body = paper_body
-	# The Cell's forecast stamp on the order (a dashed ring: a forecast, not a result).
-	var verdict := raid_verdict(projection)
-	var clean := RaidVerdict.clean_projection(projection)
-	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
-	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * ORDER_STAMP_SHARE * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
-	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
-	row.add_child(stamp)
 	# BIG-TEXT: a folded work order shows TARGET and UNITS on its first page and the rest after
 	# (BIG-TEXT b: over two pages, or three where two are too tall at the 1.0 size), the stamp on
 	# the last; every row is built either way (the pad and the tests find them by name).
@@ -5139,31 +5183,47 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 			var r := i / 2  # a row and its rule
 			var on := 1 if r < first else 2 + (r - first) * (n - 1) / maxi(rows - first, 1)
 			(kids[i] as Control).visible = on == p
-		stamp.visible = p == n
 		card.drop_stamp()
 		card.sub_label.visible = p == 1 and n == 2  # later pages are rows: the title says which order
 		# BIG-TEXT b: in three pages (the tightest room) the later pages leave the title to page 1
 		# (the letterhead and the footer say which document).
 		card.title_label.visible = p == 1 or n < 3
-		if p == n:
-			# The forecast stamp stands over the footer's free right side, where the INTERCEPTED
-			# stamp stood (the redactions and the meta line end at RaidPaper.REDACT_SPAN).
-			var k := Settings.text_scale
-			var hold := Control.new()
-			hold.name = "OrderStampHold"
-			hold.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			hold.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-			hold.custom_minimum_size = Vector2(stamp.custom_minimum_size.x, maxf(stamp.custom_minimum_size.y - (RaidPaper.FOOTER_H - ORDER_STAMP_FOOT_GAP) * k, 0.0))
-			row.remove_child(stamp)
-			row.add_child(hold)
-			hold.add_child(stamp)
-			stamp.position = Vector2.ZERO
-			stamp.size = stamp.custom_minimum_size
 	return card
 
 
-## BIG-TEXT b: a folded order's forecast stamp ends this far over the paper's foot (px at 1.0).
-const ORDER_STAMP_FOOT_GAP := 6.0
+## A-073: the forecast chip stands just right of the work order, its foot on the paper's foot (over
+## the map's left margin). The paper is not resized for it.
+func _place_forecast_chip(page: Control, order: Control) -> void:
+	var chip := page.get_node_or_null("Projection") as Control
+	if chip == null or order == null:
+		return
+	var paper_foot := order.position.y + order.size.y - order.get_theme_constant("separation")
+	chip.size = chip.get_combined_minimum_size()
+	chip.position = Vector2(order.position.x + order.size.x + HqLayout.GAP, paper_foot - chip.size.y)
+
+
+## A-073 (art bible 1.2): the paper carries only corp fields and stamps, so the Cell's forecast
+## is a small CRT terminal chip beside the work order, not a disc on it. Same words, same verdict
+## colour; the tooltip says it is a projection. Named "Projection".
+func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
+	var clean := RaidVerdict.clean_projection(projection)
+	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	chip.tooltip_text = UiTip.fold(forecast_tip(projection))
+	# A-076 A1: the live what-if numbers (X -> Y) are the Cell's forecast, so they live on the chip, not the paper.
+	var lost_home := projection.home_after < projection.home_before
+	var home := chip.add_line("HomeForecast", tr(CHIP_HOME) % [projection.home_before, projection.home_after, TextDb.signed(projection.home_after - projection.home_before)],
+		Palette.HARM if lost_home else Palette.TERMINAL_TEXT)
+	home.tooltip_text = UiTip.fold(tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
+	home.mouse_filter = Control.MOUSE_FILTER_PASS
+	var infection := SolaceRaidRules.preview(projection, RunManager.config())
+	if bool(infection["applies"]):
+		var lost_at := int(infection["lost_step"])
+		var inf := chip.add_line("InfectionForecast", tr(CHIP_INFECTED) % [int(infection["now_pct"]), int(infection["end_pct"])],
+			Palette.HARM if lost_at >= 0 else Palette.TERMINAL_TEXT)
+		inf.mouse_filter = Control.MOUSE_FILTER_PASS
+		inf.tooltip_text = UiTip.fold((tr("CITY LOST at step %d.") % lost_at if lost_at >= 0 else tr("The city holds.")) + " "
+			+ tr("The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.") % [int(infection["rate_pct"]), int(infection["decay_pct"])])
+	return chip
 
 
 ## ART-6 3A: the raid map's pencil routes (null off a raid page).

@@ -145,13 +145,13 @@ func test_asset_drop_on_a_node_matches_picking_the_node_then_the_card() -> void:
 	_campaign(hq)
 	hq.show_raid()
 	await _frames(4)
-	var before_verdict := (hq._panel.find_child("Projection", true, false) as ForecastStamp).verdict
+	var before_verdict := (hq._panel.find_child("Projection", true, false) as ForecastChip).verdict
 	card = hq._panel.find_child("AssetCards", true, false).get_child(0) as AssetCard
 	assert_eq(_drag(hq.drops, card, "node:%s" % home), "dropped")
 	assert_eq(_hash(), button_hash, "the drop made the button path's change")
 	assert_eq(StringName(String(hq.city_overlay._drop.get("site", ""))), home, "the ANIM-5 landing plays on the node")
-	var stamp := hq._panel.find_child("Projection", true, false) as ForecastStamp
-	assert_eq(stamp.verdict, hq.raid_verdict(RunManager.project_raid()), "the forecast stamp shows the new projection")
+	var stamp := hq._panel.find_child("Projection", true, false) as ForecastChip
+	assert_eq(stamp.verdict, hq.raid_verdict(RunManager.project_raid()), "the forecast chip shows the new projection")
 	assert_true(before_verdict != "", "a forecast before too")
 	assert_eq(hq.selected_site, home, "the node dropped on is the target now")
 	await _close(hq)

@@ -119,6 +119,7 @@ const SCREENS := [
 	["grid_orbital", "_s_grid_orbital", "City Grid against Orbital."],
 	["grid_rebel_cell", "_s_grid_rebel_cell", "City Grid against REBEL_CELL."],
 	["raid_setup", "_s_raid_setup", "Raid setup with one asset deployed."],
+	["raid_setup_station", "_s_raid_setup_station", "Raid setup with a safehouse picked as the target (STATION <name> HERE shows, B-07/C-10)."],
 	["raid_setup_meridian", "_s_raid_setup_meridian", "Raid setup against Meridian (B1c: an orange corp's THREAT INTEL holo)."],
 	["raid_setup_page2", "_s_raid_setup_page2", "Raid setup with the folded work order and a paged THREAT INTEL turned to page 2 (BIG-TEXT b: MORE)."],
 	["raid_drag_asset", "_s_raid_drag_asset", "main: an asset carried from the Armory onto the raid map."],
@@ -1174,6 +1175,33 @@ func _raid_setup(deploy: bool = true, corp_id: StringName = &"") -> Node:
 
 func _s_raid_setup() -> void:
 	await _raid_setup()
+
+
+func _s_raid_setup_station() -> void:
+	var hq: Node = await _raid_setup()
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var safe: StringName = &""
+	for sd in corp.city_grid.sites:
+		if sd == null or sd.id == corp.city_grid.home_site_id or not sd.claimable or c.grid.is_active_node(sd.id):
+			continue
+		CampaignRules.on_run_completed(c, corp, RunManager.config(), hq._demo_run(sd.id))
+		if CampaignRules.claim_error(c, corp, RunManager.config(), RunManager.lookup(), sd.id, &"safehouse", RunManager.profile) == "":
+			CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), sd.id, &"safehouse", RunManager.profile)
+			safe = sd.id
+			break
+	if safe == &"":
+		_warnings.append("no safehouse could be claimed")
+	hq.show_raid()
+	await _until(func() -> bool: return hq.arrival_ready(), "the raid camera")
+	await _settle(hq)
+	hq.select_target(safe)
+	await _settle(hq)
+	# A-076 A3: the STATION line focused (its §2.10 brackets show in the capture).
+	var station_line := hq._panel.find_child("StationCrew", true, false) as Control
+	if station_line != null:
+		station_line.grab_focus()
+		await _settle(hq)
 
 
 func _s_raid_setup_meridian() -> void:

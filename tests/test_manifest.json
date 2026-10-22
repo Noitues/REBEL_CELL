@@ -1632,6 +1632,14 @@
 		"res://tests/unit/test_exploit_building_run.gd": {
 			"seconds": 30.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_raid_setup_paper_layout.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_raid_setup_station.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
 		}
 	}
 }
