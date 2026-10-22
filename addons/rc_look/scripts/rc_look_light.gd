@@ -38,6 +38,11 @@ static func fall_pow(d: float, reach: float, p: float) -> float:
 	return pow(fall_lin(d, reach), p)
 
 
+## |n . v|^soft for unit `v`, as rcl_facing.
+static func facing(n: Vector3, v: Vector3, soft: float) -> float:
+	return pow(absf(n.normalized().dot(v)), soft)
+
+
 ## A preset's linear-light intensity at distance `d` (its falloff times its gain).
 static func at(p: RcLookLightPreset, d: float) -> float:
 	var f := fall_exp(d, p.reach, p.shape) if p.kind == RcLookLightPreset.Kind.EXP else fall_pow(d, p.reach, p.shape)

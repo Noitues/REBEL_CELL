@@ -5,12 +5,13 @@ shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled;
 
 #include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_light.gdshaderinc"
 
 uniform float gain = 1.2;
 uniform float soft = 1.5;
 uniform float on = 1.0;
 
 void fragment() {
-	float f = pow(abs(dot(normalize(NORMAL), VIEW)), soft);
+	float f = rcl_facing(NORMAL, VIEW, soft);  // rc_look module 6
 	ALBEDO = COLOR.rgb * COLOR.a * f * gain * on;
 }

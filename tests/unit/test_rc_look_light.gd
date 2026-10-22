@@ -101,3 +101,11 @@ func test_added_light_keeps_its_hue() -> void:
 func test_ui_spill_reaches_half_the_citys() -> void:
 	# Designer 2026-10-21: separate values; UI spill about half the city's so panels stay crisp.
 	assert_almost_eq(RcLookLight.preset(&"spill_ui").reach, RcLookLight.preset(&"spill").reach * 0.5, 1e-6)
+
+
+func test_facing_fades_edge_on() -> void:
+	var v := Vector3(0, 0, 1)
+	assert_almost_eq(RcLookLight.facing(Vector3(0, 0, 3), v, 1.5), 1.0, 1e-6, "face-on: full")
+	assert_almost_eq(RcLookLight.facing(Vector3(0, 0, -1), v, 1.5), 1.0, 1e-6, "either side (cull disabled)")
+	assert_almost_eq(RcLookLight.facing(Vector3(1, 0, 0), v, 1.5), 0.0, 1e-6, "edge-on: nothing")
+	assert_almost_eq(RcLookLight.facing(Vector3(1, 0, 1), v, 2.0), 0.5, 1e-6, "45 degrees, soft 2: a half")

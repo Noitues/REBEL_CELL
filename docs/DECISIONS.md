@@ -9822,3 +9822,8 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
   words' nib contrast is eased to 0.3 (the face keeps 0.7), with a shorter lift (0.72 over 0.8 widths) and fade
   (0.2 over 0.8), so a short crossbar still reads at word sizes.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.
+
+## 2026-10-22 - LOOK-TOOLBOX module 6 migration step 2: spot_light / spot_pool facing through rc_light (refactor, pixels identical)
+
+- `rcl_facing(n, v, soft)` (`|n . v|^soft`, the same expression) added to rc_light with its mirror `RcLookLight.facing`; spot_light.gdshader and spot_pool.gdshader (two identical bodies) call it, their own copy deleted. Proof: frozen captures (`hq_run_lab --reduce-effects=1`) before vs after max 0 on pov / pod / run / hq / site_solace.
+- street_light_rig.gd is not migrated: it holds no falloff maths of ours (it turns city_shaders.tres aaa.lights watts into Godot Omni / Spot lights, whose inverse-square falloff is the engine's). Moving its numbers onto look_light.tres presets would be a look change, so it goes with its own designer sheet if wanted.
