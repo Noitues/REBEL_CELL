@@ -1588,3 +1588,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Neon core tint (designer, 2026-10-22, look-toolbox module 11):** each tube's white-hot core is near-white tinted with about 15% of
   its own hue (mix(white, tube, ~0.15)), not the single pink NEON_CORE for every tube. The neon palettes stay as they are for now
   (`D:/rc_scratch/rc_look/sign/neon_palettes.png`). Any unifying of palettes needs its own sheet.
+- **Solace THE BLOOM v2 (designer, 2026-10-22):** direction **A "Necrosis"** (`solace_vertical/bloom/sheet.jpg`): plum-black skin, pink
+  veins, a hairline hot pink front edge, windows dying behind the front. Media: the Bloom is World; the TIDE gauge is CRT (bands also by
+  chevron glyphs); the front forecast is red dashed grease pencil; CAUGHT is pink binary bits; the raid % is bare Anton. Next: a proper 3D
+  render of A, then the Godot port.
