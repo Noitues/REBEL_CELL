@@ -76,6 +76,22 @@ One air term for every view, mixed in linear light, and one sky gradient. Built 
 | `RcLookAir.preset(&"day" / &"night")`, `.amount / mix / sky`, `.apply(material, preset, prefix)` | exact GDScript mirror and material filler |
 | `config/look_air.tres` (`RcLookAirConfig`, `RcLookAirPreset`) | per time of day: air colour, start, density, height, high; sky top / horizon / ground, glow_k, ground_k |
 | lab: `--module=air` | sky, five skyline rows at 20-480 BU through the air, and a facade strip (shader over mirror chips) |
+## Modules 4 / 5: toon bands and ink (`RcLookToon`, `RcLookInk`)
+
+One set of cel-band and ink helpers for the props / busts / aircraft (toon_ink, toon_ink_hull) and the city (city_building, landmark_toon, hq_compound_toon, city_post). Each helper is the exact form of the code it replaces, so a view moves onto it with identical pixels. Built in the lab first; no view migrated yet.
+
+| API | What |
+|---|---|
+| `shaders/rc_toon.gdshaderinc`: `rcl_band(x, lo, hi)` | 0 shadow, 1 mid, 2 lit (toon_band_index) |
+| `rcl_band_shade(x, lo, hi, mid, low)`, `rcl_band_tint(shade, low, shadow_tint)` | the band's share of full light, and its tint (shadow_tint in shadow to white when lit) |
+| `rcl_band_ramp(x, lo, hi, c_low, c_mid, c_lit)`, `rcl_rim(n, v, p)` | a three-colour ramp by band; the fresnel rim (1 - n . v)^p |
+| `shaders/rc_ink.gdshaderinc`: `rcl_hull_width(width_px, wobble, n01)`, `rcl_hull_clip(clip, n_clip, width_px, viewport)` | the hull's wobbling width; the vertex grown width_px px outward on screen |
+| `rcl_ink_normal_edge(c0, cn, thr)`, `rcl_ink_depth_thr(edge, ortho, ortho_ref)`, `rcl_ink_depth_edge(zc, zn, thr)` | the post pass's normal / material edge and its depth edge (threshold scaled with the ortho size) |
+| `RcLookToon` / `RcLookInk`: `.preset(name)`, `.band / band_shade / band_tint / rim`, `.hull_width / hull_clip / normal_edge / depth_thr / depth_edge` | exact GDScript mirrors |
+| `config/look_toon.tres` (`RcLookToonConfig`, `RcLookToonPreset`) | `props` (0.12 / 0.55, the kit) and `city` (0.118 / 0.363, CityConfig.ramp_edges): two named band sets, pinned by test |
+| `config/look_ink.tres` (`RcLookInkConfig`, `RcLookInkPreset`) | `hull` (2.5 px, wobble 0.35), `post` (1 px, edges 0.42 / 1.2), `post_backdrop` (edges 0.8 / 3.0, no wobble); ortho_ref 300; pinned by test |
+| lab: `--module=toon` | per band set: the band strip (shader over mirror chips) and two overlapping spheres inked by the post pass and by the hull |
+
 ## Module 12: grease pencil
 
 Wax on glass for plans and threats (ART_BIBLE §1.2). The engine stays in `scripts/ui/kit/materials/` (36 views use

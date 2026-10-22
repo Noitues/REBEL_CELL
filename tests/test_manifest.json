@@ -1577,6 +1577,10 @@
 			"seconds": 2.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_rc_look_toon_ink.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_rc_look_tokens.gd": {
 			"seconds": 2.0,
 			"tier": "fast"
