@@ -208,7 +208,7 @@ static func _street_look(front_layers: float, band: int, layout: Dictionary, str
 	var u := {
 		&"bl_strength": strength,
 		&"bl_pink": _v3(s["pink"]), &"bl_plum": _v3(s["plum"]), &"bl_rough": float(s["rough"]), &"bl_seed": float(s["seed"]),
-		&"bl_cover_k": float(s["cover_k"]), &"bl_veins": float(s["veins"]), &"bl_edge_k": float(s["edge_k"]), &"bl_hatch_k": float(s["hatch_k"]),
+		&"bl_cover_k": float(s["cover_k"]), &"bl_veins": float(s["veins"]), &"bl_edge_k": float(s["edge_k"]), &"bl_hatch_k": float(s["hatch_k"]), &"bl_body_emit": float(s.get("body_emit", 0.0)),
 		&"bl_vscale": float(s["vscale"]), &"bl_vw": float(s["vw"]), &"bl_ew": float(s["ew"]), &"bl_hatch_scale": float(s["hatch_scale"]),
 		&"bl_tend": float(s["tend"]), &"bl_tend_h": float(s["tend_h"]),
 		&"bl_origin": layout["origin"], &"bl_dir": layout["dir"], &"bl_perp": layout["perp"],

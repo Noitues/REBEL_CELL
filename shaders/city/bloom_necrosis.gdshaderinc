@@ -26,6 +26,7 @@ uniform float bl_cover_k = 0.89;     // the skin's share of the original surface
 uniform float bl_veins = 1.1;        // emission strength of the veins / the hot edge / the hatch
 uniform float bl_edge_k = 1.4;
 uniform float bl_hatch_k = 0.30;
+uniform float bl_body_emit = 0.0;    // the body's own glow (share of the plum): the street's lit plum under the signs' light
 uniform float bl_seed = 7.0;         // the noise seed (the Blender `W`)
 uniform float bl_vscale = 0.7;       // vein cell scale (cells per BU) and its line half width in cell units
 uniform float bl_vw = 0.045;
@@ -227,7 +228,7 @@ float bl_apply_street(vec3 wp, inout vec3 albedo, inout vec3 emission) {
 	// the hot edge and the veins are drawn where the mix is: at the front's hairline (edge) the fac is partial by design
 	float k = f.vein * bl_veins + f.edge * bl_edge_k + f.hatch * bl_hatch_k;
 	albedo = mix(albedo, bl_plum, fac);
-	emission = mix(emission, bl_pink * k, fac);
+	emission = mix(emission, bl_pink * k + bl_plum * bl_body_emit, fac);
 	return fac;
 }
 
@@ -239,7 +240,7 @@ vec3 bl_unlit_street(vec3 wp, vec3 col) {
 	BlField f = bl_street_field(wp);
 	float fac = clamp(f.cover * bl_cover_k, 0.0, 1.0) * clamp(bl_strength, 0.0, 1.0);
 	float k = f.vein * bl_veins + f.edge * bl_edge_k + f.hatch * bl_hatch_k;
-	return mix(col, bl_plum + bl_pink * k, fac);
+	return mix(col, bl_plum * (1.0 + bl_body_emit) + bl_pink * k, fac);
 }
 
 // The skin's cover at `wp` (0..1 times the strength): for the lights that must follow it (the specular fades on the skin).

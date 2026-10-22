@@ -197,6 +197,10 @@ func _bloom(c: CityView3D, corp: StringName, kind: String, m: Dictionary, at: Tr
 	var band := int(BloomRules.band_for_gap(gap_milli, cc))
 	var layout := BloomLook.hq_layout(m, HqCompoundStage.layout(corp), at)
 	var look := BloomLook.at_front(front, band, layout, BloomLook.VIEW_DECISION if kind == "pod" else &"", float(_args.get("bloom-strength", "1")))
+	if look.has("haze"):
+		for hk: String in ["k", "emission", "h"]:
+			if _args.has("bloom-haze-" + hk):
+				look["haze"][hk] = float(_args["bloom-haze-" + hk])  # (lab tuning of the spore haze)
 	if _args.get("bloom-haze", "1") == "0":
 		look.erase("haze")  # (lab: the skin and the window light without the spore haze)
 	if _args.has("bloom-u"):
