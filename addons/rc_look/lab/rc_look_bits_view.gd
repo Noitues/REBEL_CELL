@@ -84,10 +84,14 @@ func _draw() -> void:
 			_glyph(font, pos, angle, glyph, px, hot_col, rim, rim_w)
 	draw_set_transform(Vector2.ZERO, 0.0)
 
-func _glyph(font: Font, at: Vector2, angle: float, glyph: String, px: int, col: Color, rim: Color, rim_w: int) -> void:
+func _glyph(font: Font, at: Vector2, angle: float, glyph: String, px: int, col: Color, rim: Color, rim_w: int, bold_w: int = 0) -> void:
 	draw_set_transform(at, angle)
 	var base := Vector2(-px * 0.3, px * 0.35)
-	if rim_w > 0:
+	if bold_w > 0:
+		# the old bold stroke (a same-colour outline), with the dark rim outside it: the stroke keeps its weight
+		draw_char_outline(font, base, glyph, px, rim_w + bold_w, rim)
+		draw_char_outline(font, base, glyph, px, bold_w, col)
+	elif rim_w > 0:
 		draw_char_outline(font, base, glyph, px, rim_w, rim)
 	draw_char(font, base, glyph, px, col)
 	draw_set_transform(Vector2.ZERO, 0.0)
@@ -104,4 +108,9 @@ func _draw_zoom(font: Font, cfg: RcLookBitsConfig) -> void:
 	var angle := ZOOM_TILT if preset.life == RcLookBitsPreset.Life.FLIP_TUMBLE else 0.0
 	if preset.life == RcLookBitsPreset.Life.TRAIL:
 		_glyph(font, centre - Vector2(px * ZOOM_TRAIL, 0.0), 0.0, "0", px, Color(col, cfg.trail_alpha), rim, 0)
-	_glyph(font, centre, angle, "0", px, col, rim, rim_w)
+	_glyph(font, centre, angle, "0", px, col, rim, rim_w, _bold_w(rim_w))
+
+
+## The width of the same-colour bold stroke under a NIGHT_SKY rim (0 when the preset keeps the thin glyph).
+func _bold_w(rim_w: int) -> int:
+	return rim_w if preset.outline == RcLookBitsPreset.Outline.NIGHT_RIM and preset.bold_stroke else 0

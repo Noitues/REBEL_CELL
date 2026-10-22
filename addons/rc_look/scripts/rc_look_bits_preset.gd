@@ -13,6 +13,9 @@ enum Life { FLIP_TUMBLE, TRAIL }
 
 @export var path: Path = Path.RIM
 @export var outline: Outline = Outline.SAME_COLOUR
+## With the NIGHT_SKY rim: keep the old bold stroke (the atlas' same-colour outline) and put the rim outside it, so the stroke's weight
+## matches the old look (designer 2026-10-22); false keeps the thin glyph inside the rim (BitsSeam, streams).
+@export var bold_stroke: bool = false
 @export var life: Life = Life.FLIP_TUMBLE
 ## The colour a bit starts in (WHITE_HOT today on the GPU and the CPU fallback; BitsSeam's start is PAPER).
 @export var hot_color: Color = Color(1, 1, 1)

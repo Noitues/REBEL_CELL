@@ -192,6 +192,8 @@ func test_ruled_presets() -> void:
 		assert_almost_eq(p.spin_turn, 6.28, 1e-9, "%s keeps 6.28" % n)
 	assert_eq(RcLookBits.preset(&"burst").life, RcLookBitsPreset.Life.FLIP_TUMBLE)
 	assert_eq(RcLookBits.preset(&"burst").path, RcLookBitsPreset.Path.RIM)
+	assert_true(RcLookBits.preset(&"burst").bold_stroke, "the burst keeps the old stroke weight under the rim")
+	assert_false(RcLookBits.preset(&"stream").bold_stroke, "the stream keeps the thin glyph inside the rim")
 	assert_eq(RcLookBits.preset(&"stream").life, RcLookBitsPreset.Life.TRAIL)
 	assert_eq(RcLookBits.preset(&"stream").path, RcLookBitsPreset.Path.FREE)
 	assert_eq(RcLookBits.default_config().rim_alpha, 0.95, "the rim at 95 %")

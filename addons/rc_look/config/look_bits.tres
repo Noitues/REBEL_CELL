@@ -43,6 +43,7 @@ spin_turn = 6.28
 script = ExtResource("2")
 path = 0
 outline = 1
+bold_stroke = true
 life = 0
 hot_color = Color(0.9490196, 0.93333334, 0.89411765, 1)
 spin_phase = true
