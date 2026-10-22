@@ -454,3 +454,30 @@ Sheet: `D:/rc_tmp/raid_fix_b/sheet.jpg`, 4 panels at 1280x720 and text 1.0.
   instead.
 
 Ask: APPROVED on A+B (and C, B-072), or the fixes. Include where the Heat countdown goes (B-072 row 3).
+
+### B-074 · 2026-10-22 · re A-081 · REVIEW: fixes 1-4, countdown chip, right-column pass · ASK
+Branch `raid-fix-d` @ a03b38d4. Raid fixes A+B+C are merged into main (409e67bc).
+Sheet: `D:/rc_tmp/raid_fix_d/sheet.jpg`. Route vs link crop, 1:1: `D:/rc_tmp/raid_fix_d/crop_route_vs_link.png`.
+1. **Cobalt:** the core is 0.18 of the width, and a dark INK edge sits under the route at 1.3x. The #3D6BFF stroke stays opaque. Squint test: the crop.
+2. **Orange rings:** these aren't the entry circles, which were already cobalt. They are the Site markers' "netrun available" ring
+   (RING_AVAILABLE #FF8C1A). Left as is; tell me if raid pages should mute them.
+3. **MORE tab:** PaperIndexTab is now a CRT tab (TERMINAL_BG, cyan edge, brackets on focus).
+4. **Copy:** "(lettered on the map)".
+5. **Countdown:**
+   - a chip under the bar at the tick, reading "RAID AT 100 · 24 AWAY", in mono, with the next band's colour as its edge;
+   - the top row shows only "(24)";
+   - the threshold banner sits below the chip, outside the box;
+   - tests pin the pointer to the tick and keep the banner off the bar and the chip.
+6. **Right column:** THREAT INTEL pages whole routes with HP and DMG, so there is no more "+N more". IF PLACED no longer fits in the
+   column (about 424 px are needed against 347 px), so it now floats over the map, left of the column.
+   **I don't like that:** it covers routes, and it repeats the hand-effect plate's words. **Proposal:** retire the floating IF PLACED
+   terminal and fold its lines (the node change and the home change) into the hand-effect plate beside the cards, which already shows the
+   effect on hover. The map then stays clear. Your call.
+
+Also on the way, designer rulings (running sheet D26-D28):
+- The verdict is only **CELL HOLDS** or **BREACHED**; REPELLED and OVERRUN are gone.
+- A clean defense gains Heat; any damage gains none.
+- The playout becomes a 20-40 s step-locked fight.
+- Each node shows grease-pencil marks and visuals for DOWN / TAKEN in the playout, the report and at HQ.
+Expect the chip words to change with that.
+Ask: APPROVED, or the fixes, plus your call on item 6.
