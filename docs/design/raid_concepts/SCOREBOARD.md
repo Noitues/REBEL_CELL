@@ -89,3 +89,21 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
   - The sweep finds a single best answer per raid.
   - The real Heat-75 raid has 0.34 % clean plans, best net +2 (`r5_marginal.json`).
   - The user chose a divergent round 6: three new cores aimed at decision depth, scored next to G5 by two independent critics.
+
+## Round 6 (two independent fresh critics; G5 as the anchor; `_reviews/REVIEW_R6A.md`, `REVIEW_R6B.md`)
+
+| Concept | Critic A (W P N D C) | A total | Critic B (W P N D C) | B total | Mean |
+|---|---|---|---|---|---|
+| **H Bastion** | 7 6 6 6 7 | 32 | 8 6 6 6 7 | 33 | **32.5** |
+| G5 (anchor) | 8 8 6 4 7 | 33 | 7 8 6 4 6 | 31 | 32 |
+| HP | 7 6 5 6 8 | 32 | 8 5 5 6 7 | 31 | 31.5 |
+| P Stakes | 7 5 6 6 7 | 31 | 7 5 5 7 7 | 31 | 31 |
+
+- **Depth rose from 4 to 6–7, as measured in code.** Predictability fell to 5–6 on consistency errors:
+  - P's patch ignores DOWN/TAKEN.
+  - H's shop forecast hides the payoff: −33 vs −35 shown, against a real 34 vs −3.
+  - A CLEAN raid at net −1.
+  - The Lockdown link is drawn teal.
+- **Both critics chose H** as the base and the first prototype, with P's node jobs and the carry rule.
+- **Both say G's draft coins and its top-3 list are solver output.** G4's depth claim had already failed for related reasons.
+- **Round 7 (H7)** takes the fixes both agree on.

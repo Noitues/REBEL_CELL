@@ -42,6 +42,9 @@ HOLDERS = {"ICE": 2, "TARPIT": 3}
 #   traits (round 6, concept K): a threat item may be (id, entry, traits); traits are telegraphed on its chip:
 #     ARMORED ignores any single shot below 5; PLATED ignores any single shot of 8 or more; FROSTPROOF is never held by
 #     ICE or a jam; BLIND ignores decoys.
+#   crew_flat (round 7): the crew adds a flat +CREW_FLAT damage to each shot from its node, instead of x1.5.
+#   run(start_taken=...) (round 7): nodes already TAKEN when the raid starts (lost earlier in the leg); a threat may
+#     enter at one of them (it is a corp foothold now).
 #   plating (round 5, a per-raid corp trait): the Enforcer ignores any single shot of 8 or more (the Railgun's).
 #   no_cascade (round 4): a node going DOWN does not spill damage onto its neighbours.
 #   auditor_hunts (round 4): the Auditor targets the node holding the most deployed pieces (ties: value, then id),
@@ -49,6 +52,7 @@ HOLDERS = {"ICE": 2, "TARPIT": 3}
 RULES = {"avoid_home": False, "tiebreak": "id", "target_lock": False, "decoy_radius": False, "ice_blocks": False,
          "fixed_routes": False, "no_cascade": False, "auditor_hunts": False}
 CREW_MULT = 1.5   # Breaker: assets on its node deal x1.5
+CREW_FLAT = 2     # round 7 option: +2 per shot instead
 STEP_CAP = 30
 THREAT_DEF = {  # id: hp, dmg, speed, routing, entry
     "AUDITOR": (8, 3, 2, "value", "C2"),
@@ -126,10 +130,10 @@ class Result:
     breached: bool
 
 
-def run(plan: Plan, threats=None, start_hp=None) -> Result:
+def run(plan: Plan, threats=None, start_hp=None, start_taken=()) -> Result:
     threats = threats or list(ROSTER_50)
     hp = dict(NODE_HP if start_hp is None else start_hp)
-    cond = {k: "ok" for k in hp}
+    cond = {k: ("taken" if k in start_taken else "ok") for k in hp}
     T = {}
     for t in threats:
         # an item is an id, or (id, entry); a repeated id gets a "#n" suffix (its base id stays in "base")
@@ -294,7 +298,8 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             for a in plan.assets.get(site, []):
                 if a in GUNS:
                     guns.append((a,) + GUNS[a])
-            mult = CREW_MULT if plan.crew == site else 1.0
+            mult = CREW_MULT if plan.crew == site and not plan.rules.get("crew_flat") else 1.0
+            flat = CREW_FLAT if plan.crew == site and plan.rules.get("crew_flat") else 0
             dist = bfs(site)
             dh = bfs("HOME")
             cross = 0
@@ -302,7 +307,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                 types = {a for n in ADJ[site] if n in hp and (live(n) or n == "HOME") for a in plan.assets.get(n, []) if a in GUNS}
                 cross = 2 * min(2, len(types))
             for name, dmg0, reach, shots, tg in guns:
-                dmg = dmg0 + (cross if name in GUNS else 0)
+                dmg = dmg0 + (cross if name in GUNS else 0) + flat
                 for _ in range(shots):
                     cands = [t for t in active() if dist.get(t["site"], 99) <= reach]
                     if not cands:
