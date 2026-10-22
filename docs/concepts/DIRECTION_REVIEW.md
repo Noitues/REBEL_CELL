@@ -1564,3 +1564,5 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   reach values; UI spill reaches shorter (about half the city reach), so panels stay crisp. Neon tubes get a white-hot core (signage,
   module 11), "but not so intense we are blinded by it": a thin core under the soft ceiling, with the hue carrying the edges and the
   bloom. Check the core on the squint test against the hue, not just the numbers.
+- **Night sky and air (designer, 2026-10-22, look-toolbox module 7 question):** every view shares one night sky and one night air
+  (haze) colour. District colour comes in as a separate tint layer on top. A view that differs is a named exception, logged here first.
