@@ -250,9 +250,6 @@ func _shoot() -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	var rig := view.rig
 	get_viewport().get_texture().get_image().save_png("%s/ui.png" % dir)
-	if _args.has("bloom"):
-		var rb := rig.view.find_child(BloomRibbons.MESH_NAME, true, false) as MeshInstance3D
-		print("NA23 bloom ribbons node=%s visible=%s aabb=%s parent=%s" % [rb != null, rb.is_visible_in_tree() if rb != null else false, (rb.global_transform * rb.get_aabb()) if rb != null else "", rb.get_parent().name if rb != null else ""])
 	if _args.has("dump-materials"):
 		RcLookMaterialAudit.dump(get_tree().root, String(_args["dump-materials"]))
 	# NA-ID: beauty.png, id.png, depth.png and capture.json come from the general id capture (the same contract as HQ / city frames).
