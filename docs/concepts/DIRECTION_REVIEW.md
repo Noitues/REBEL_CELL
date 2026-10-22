@@ -1607,3 +1607,20 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   4. Every bit starts its tumble at its own spin phase, and the CPU fallback is matched to the GPU.
   5. Art-pass call: a turn stays 6.28, not TAU, so the move to the module stays bit-exact.
   Lab-only until the raid redesign lands.
+- **Solace night air (designer, 2026-10-22)** (`D:/rc_scratch/rc_look/spillair/spillair_sheet_b.png`): air-B, with no helix spill. Night
+  air starts at 150 BU, colour sRGB (0.12, 0.10, 0.18), density 0.004, as a Solace night preset in look_air.tres. The pov sky comes to
+  54 (plate 55). Spill is dropped: it lifts every city mass, towers included, and the Solace emissive fallback covers the ground.
+- **Vinyl stickers, module 13 (designer, 2026-10-22)** (`D:/rc_scratch/rc_look/m13/vinyl_sheet.png`):
+  - Designer: the holo band is one "\" shape (top-left to bottom-right) for kit and chrome. It runs parallel to the peel, which starts at
+    the top-right corner. The kit already has it, so the chrome changes.
+  - Designer: the played-card seam switches from card_sticker_fx to the kit sticker.
+  - Art-pass calls, following existing docs:
+    - Chrome drops its second white sweep (its header and DECISIONS say one band, not white).
+    - Disabled is Palette.STICKER_DISABLED_GREY 80 % grey with alpha 0.8, on both.
+    - Extrude and shadow use VINYL_EXTRUDE #09080C on both.
+    - The pink verb fill stays STICKER_FILL_PINK; STICKER_COMMIT keeps its own HUD role.
+    - Chrome sweep_width comes from a single source (run_sweep).
+    - Missing-art verbs keep the PINK fallback.
+- **CRT reduce effects, module 14 (designer, 2026-10-22)** (`D:/rc_scratch/rc_look/m14/shots/crt_reduce_night_t2.png`): KEEP_STATIC
+  everywhere. Reduce effects stops flicker, roll and scroll; the still scanlines (and the fx vignette) stay. Only high contrast removes
+  the static texture. The ZERO_SCAN (ui_theme, neon_city) and HIDE (fx.gd) paths move onto this rule when migrated.
