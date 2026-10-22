@@ -1572,3 +1572,14 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Decrypted holo, module 15 (designer, 2026-10-22):** approved; the designer signed it off in the holo session. It covers
   THREAT INTEL: translucent glass, scan bands, edge-only RGB split and a cracked seal (art/look-holo @ 585be87f). Fold it into
   art/look-toolbox for build.
+- **Solace fix pass 3 (designer, 2026-10-22):** approved for build now (art/look 36abb390, sheet
+  `D:/rc_scratch/solace_v1/hq_port/p4/sheet.jpg`), with the remaining gaps to fix next. The gaps are:
+  - the decision view's kit towers are pale striped boxes, where the plate has dark capsule bodies;
+  - the decision view is brighter than the plate;
+  - the highways still read as white bands;
+  - a little sea shows top-right.
+- **Neon core, look-toolbox module 11 (designer, 2026-10-22):** the "hot" version. The tube runs 0.9 toward NEON_CORE on a core 35% of
+  the tube's width, with the hue on the edges and in the glow (`D:/rc_scratch/rc_look/sign/sign_night_t2.png`). This settles the
+  "not blinding" white-hot core ruling.
+- **Wet F0, look-toolbox module 8 (designer, 2026-10-22):** street and plinth keep separate wet F0 values: street 0.112, plinth 0.056.
+  The water stays on IOR 1.33 (`D:/rc_scratch/rc_look/wet/wet_night_t2.png`).
