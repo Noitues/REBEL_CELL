@@ -8,6 +8,9 @@ render_mode unshaded, cull_back, depth_draw_opaque, specular_disabled, fog_disab
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/city/dress_sign.gdshaderinc"
 #include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin over the street's buildings and ground (strength 0 = the shader as before).
+#define BL_STREET
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
 // LOOK-TOOLBOX module 11 (designer DIRECTION_REVIEW f4678fca, b727956a): each neon tube's hot core, rcl_neon_hot. Values =
 // addons/rc_look/config/look_sign.tres "hot" (pinned by test_rc_look_sign).
 uniform float neon_hot = 0.90;
@@ -29,12 +32,14 @@ varying flat vec4 cust;
 varying vec3 lpos;
 varying vec3 lnrm;
 varying vec3 lscale;
+varying vec3 bl_w;
 
 void vertex() {
 	cust = INSTANCE_CUSTOM;
 	lpos = VERTEX;
 	lnrm = NORMAL;
 	lscale = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
+	bl_w = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
 void fragment() {
@@ -63,6 +68,7 @@ void fragment() {
 	vec3 rgb = mix(panel, rcl_neon_hot(sg_at_luma(COLOR.rgb, lc), cd.z, cd.w, fw.y, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot), m.y);
 	rgb = mix(rgb, rcl_neon_hot(sg_at_luma(sec, lc), cd.x, cd.y, fpx, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot), m.x);
 	ALBEDO = rgb * emission_multiplier * look_blend * tier_emit;
+	ALBEDO = bl_unlit_street(bl_w, ALBEDO);
 	// AAA-2: opaque (so the post chain tone-maps and blooms it; a transparent draw is after the screen copy): the yield is a dither.
 	if (yw < 1.0 && fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715)))) > yw) {
 		discard;

@@ -5,6 +5,9 @@
 shader_type spatial;
 render_mode cull_disabled, specular_schlick_ggx;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK Solace THE BLOOM (A Necrosis): the skin over the street's frontage (strength 0 = the shader as before).
+#define BL_STREET
+#include "res://shaders/city/bloom_necrosis.gdshaderinc"
 
 uniform float albedo_k = 0.85;
 uniform float rough = 0.55;
@@ -42,5 +45,10 @@ void fragment() {
 	}
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
+	}
+	if (bl_strength > 0.0) {
+		float blf = bl_apply_street_w(v_wpos, 1.0 - abs((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y), ALBEDO, EMISSION);
+		ROUGHNESS = mix(ROUGHNESS, bl_rough, blf);
+		METALLIC *= 1.0 - blf;
 	}
 }

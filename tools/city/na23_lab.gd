@@ -24,6 +24,9 @@ extends Control
 ##   --probe=x,y[;x,y]   LOOK-TOOLBOX: prints what the camera ray through each pixel hits (na23_probe.gd)
 ##   --dump-materials=<file>  LOOK-TOOLBOX: append every set shader parameter vs its text default at each shot
 ##                        (RcLookMaterialAudit)
+##   --bloom=<front>      LOOK Solace THE BLOOM (A Necrosis): the Bloom look at a front of <front> route layers (fractional; the concept's
+##                        CREEPING / CLOSE / CATCHING are -0.5 / 0.75 / 1.4 with the operative on layer 2, gaps 2.5 / 1.25 / 0.6);
+##                        --bloom-u=<bl_name=value,...> (lab tuning of the uniforms), --bloom-op=<layer> (default 2) the operative's layer (the band is the gap's), --bloom-strength=<0..1> (default 1)
 ## Prints NA23 lines.
 
 const SETTLE_DEFAULT := 90
@@ -130,6 +133,28 @@ func _ready() -> void:
 		view.rig.exposure_override = float(_args["exposure"])
 		view.rig.view.set_aaa_exposure(float(_args["exposure"]))
 	view.ready_to_show.connect(_on_ready, CONNECT_ONE_SHOT)
+	if _args.has("bloom"):
+		_apply_bloom()
+
+
+## LOOK Solace THE BLOOM: the look at --bloom's front on the street's layout, through the same mapper the game's call uses.
+func _apply_bloom() -> void:
+	var cc := load("res://content/config/campaign_config.tres") as CampaignConfigData
+	var front := float(_args["bloom"])
+	var gap_milli := roundi((float(_args.get("bloom-op", "2")) - front) * 1000.0)
+	var band := int(BloomRules.band_for_gap(gap_milli, cc))
+	var look := BloomLook.at_front(front, band, BloomLook.street_layout(_data.derive), &"", float(_args.get("bloom-strength", "1")))
+	if _args.has("bloom-u"):
+		look = BloomLook.with_uniforms(look, String(_args["bloom-u"]))
+	view.rig.view.set_bloom(look)
+	var lay := BloomLook.street_layout(_data.derive)
+	var po := view.rig.pose
+	var fp := Vector2(float(po.F[0]), float(po.F[1]))
+	var lp := po.loc()
+	var f_fr := Vector2(float(lay["x0"]) - (fp - (lay["origin"] as Vector2)).dot(lay["dir"]), float(lay["y0"]) + (fp - (lay["origin"] as Vector2)).dot(lay["perp"]))
+	var c_fr := Vector2(float(lay["x0"]) - (Vector2(float(lp[0]), float(lp[1])) - (lay["origin"] as Vector2)).dot(lay["dir"]), float(lay["y0"]) + (Vector2(float(lp[0]), float(lp[1])) - (lay["origin"] as Vector2)).dot(lay["perp"]))
+	print("NA23 bloom frame: pose focus x,y=%s camera x,y=%s layer_x=%s facade_y=%.2f" % [f_fr, c_fr, lay["layer_x"], float(lay["facade_y"])])
+	print("NA23 bloom front=%.3f band=%s frame x=%.2f boxes=%d" % [front, BloomLook.BAND_NAMES[band], float(look["front"]), int(look["uniforms"].get(&"bl_box_n", 0))])
 
 
 ## Slab sheet (lab only): the A2 decks and pillars take tools/city/slab_lab.gdshader in mode --slab.
@@ -228,7 +253,7 @@ func _next() -> void:
 				# The plate's world is Blender's own street (art seed 1), not this city: keep OUR focus and yaw (the street frame)
 				# and take the plate's pitch, distance, lens and shift.
 				var ours := view.rig.pose
-				pp = NetrunPose.make(ours.F, ours.yaw, pp.pitch, pp.dist, pp.lens, pp.sx, pp.sy)
+				pp = NetrunPose.make(ours.F, ours.yaw, pp.pitch, pp.dist * float(_args.get("dist-k", "1")), pp.lens, pp.sx, pp.sy)
 			view.rig.set_pose(pp)
 	_phase = "settle"
 

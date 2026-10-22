@@ -496,6 +496,8 @@ func set_look_blend(lb: float) -> void:
 	_whole_landmarks()
 	if not _compound_aaa.is_empty():  # the AAA-2 HQ page: a clean frame (no film grain over the fog and the skin)
 		_post.set_shader_parameter(&"aaa_grain", Vector2.ZERO)
+	if not _bloom.is_empty():  # the ground's shader may have swapped: the Bloom's uniforms go on again
+		_bloom_apply_mats()
 
 
 var _aaa_exposure: float = 0.0
@@ -2207,6 +2209,9 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 
 ## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
 var _compound_aaa: Dictionary = {}
+## The Bloom look on the view (set_bloom) and the nodes it added (the ribbons, the haze).
+var _bloom: Dictionary = {}
+var _bloom_nodes: Array[Node] = []
 var _compound_fog: Dictionary = {}
 ## The view before the aaa2 page took it ({"look_blend", "whole_look", "exposure"}), and the page's own look-on running.
 var _aaa_prev: Dictionary = {}
@@ -2270,6 +2275,8 @@ func stage_compound(corp: StringName) -> Node3D:
 	_stand_in_was_hidden[corp] = _hidden_hq.has(corp)
 	_hidden_hq[corp] = true
 	_rebuild_chunks_under(dirty)
+	if not _bloom.is_empty() and node != null:  # a Bloom look set before the page staged
+		_bloom_apply()
 	return node
 
 
@@ -2625,3 +2632,63 @@ func _uplink_mesh(piece: StringName) -> Mesh:
 			m.surface_set_material(k, _prop_mats[mat_name])
 		_uplink_meshes[piece] = m
 	return _uplink_meshes[piece]
+
+
+# --- THE BLOOM (A Necrosis): the look API ---------------------------------------------------------------------------------
+
+## The Bloom look on the view (LOOK Solace, designer 2026-10-22): `look` is a `BloomLook` dictionary (`from_state` / `at_front`). Look only:
+## the front, the keep-outs and the strength come in, the view draws the skin (the street's buildings, ground, frontage and signs, the
+## vein ribbons on the road; the helix strands, the dying window light and the spore haze of the staged HQ page) and keeps no state of
+## the game. A look of strength 0 (or {}) draws the view exactly as without it.
+func set_bloom(look: Dictionary) -> void:
+	_bloom = look
+	if _env == null:  # before the scene is built: it goes on when it is
+		if not ready.is_connected(_bloom_apply):
+			ready.connect(_bloom_apply, CONNECT_ONE_SHOT)
+		return
+	_bloom_apply()
+
+
+## The Bloom look now on the view ({} when none).
+func bloom_look() -> Dictionary:
+	return _bloom
+
+
+## The Bloom look on every material of the view: the ones on built nodes, and the shared ones (the buildings' hangs on chunk nodes that
+## build later).
+func _bloom_apply_mats() -> void:
+	BloomLook.apply(self, _bloom)
+	for m: ShaderMaterial in [_building_mat, _ground_mat, _outer_mat]:
+		if m != null:
+			BloomLook.apply_to_material(m, _bloom)
+
+
+func _bloom_apply() -> void:
+	for n: Node in _bloom_nodes:
+		if is_instance_valid(n):
+			n.get_parent().remove_child(n)
+			n.free()
+	_bloom_nodes.clear()
+	if _bloom.is_empty():
+		return
+	_bloom_apply_mats()
+	if float(_bloom.get("strength", 0.0)) <= 0.0:
+		return
+	if StringName(_bloom.get("kind", &"")) == BloomLook.KIND_STREET:
+		var mesh := BloomRibbons.build(_bloom["ribbons"], BloomLook.frame_to_world(_bloom))
+		if mesh != null and layer(&"props") != null:
+			var mi := MeshInstance3D.new()
+			mi.name = BloomRibbons.MESH_NAME
+			mi.mesh = mesh
+			mi.material_override = BloomRibbons.make_material(_bloom["uniforms"][&"bl_pink"], float(_bloom["ribbons"]["strength"]))
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			add_to_layer(&"props", mi)
+			_bloom_nodes.append(mi)
+	else:
+		for corp: StringName in compounds:
+			var node: Node3D = compounds[corp]
+			if node != null and is_instance_valid(node) and _compound_aaa.has(corp):
+				var fv := BloomLook.haze_volume(_bloom)
+				if fv != null:
+					node.add_child(fv)
+					_bloom_nodes.append(fv)
