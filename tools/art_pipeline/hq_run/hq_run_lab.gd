@@ -215,8 +215,9 @@ func _process(delta: float) -> void:
 static func _plate_camera(cm: Dictionary, size: Vector2, at: Transform3D, m: Dictionary) -> CityIsoCamera:
 	var loc: Array = cm["loc"]
 	var tgt: Array = cm["tgt"]
-	var t_g := at * Vector3(float(tgt[0]), float(tgt[2]), -float(tgt[1]))
-	var l_g := at * Vector3(float(loc[0]), float(loc[2]), -float(loc[1]))
+	var k := HqSolaceMaterials.unit_k(m)  # the plate's Blender BU are plate (kit) units; the compound is exported in city BU
+	var t_g := at * (Vector3(float(tgt[0]), float(tgt[2]), -float(tgt[1])) * k)
+	var l_g := at * (Vector3(float(loc[0]), float(loc[2]), -float(loc[1])) * k)
 	var dir := (t_g - l_g)
 	var cam := CityIsoCamera.new()
 	cam.viewport = size

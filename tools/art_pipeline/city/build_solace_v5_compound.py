@@ -6,8 +6,10 @@
 The geometry is the art-pass plate scene's (docs/concepts/solace_vertical/hq/scripts @ v5, vendored in vendor_solace_v5/: hq_graph,
 hq_preset, hqk_graph, look_preset, sd_kit, sd_lib): the lime double helix (two strands of one 360 degree turn, 27 floors, two
 sideways-oval cutaway windows per floor and strand), the lit window frame rings, the bow-tie skybridges on the route floors, the
-crown (pink halo + lime inner ring, the Genome Core), the 3-tier plinth with cardinal stairs and the park (lawn, paths, ponds,
-trees) of the district kit. HYBRID interiors (NOTES, hq_rev v4): built floors (route floors and floors 5..13: slab, mezzanine,
+crown (pink halo + lime inner ring, the Genome Core). The helix ONLY: the plinth and the park come from the city layout
+(city.json `solace_park`, A-069 / A-070), so the compound carries neither. The whole compound is exported in city BU (scaled by
+floor_bu / kit_storey * k_fit of content/config/netrun_art.tres); the helix stands at its plate height (PODIUM_H) over the origin, the
+layout plinth's top. HYBRID interiors (NOTES, hq_rev v4): built floors (route floors and floors 5..13: slab, mezzanine,
 ceiling disc, core, desks) as real geometry behind the cutaway; every other window one flat oval patch for the interior-mapping
 shader (per-vertex frame data: normal = window normal, UV0 = (u, dz) in the window frame, UV1 = (variant, blind), COLOR = tint, lit).
 
@@ -31,14 +33,12 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, VEND)
 import hq_compound_spec as SPEC  # noqa: E402
 
+UK = SPEC.units_k()  # plate kit units -> city BU (floor_bu / kit_storey * k_fit of netrun_art.tres): the whole compound is exported scaled
+
 _args = sys.argv[sys.argv.index("--") + 1:]
 CORP_ARG, OUT_ARG = _args[0], os.path.abspath(_args[1])
 os.makedirs(OUT_ARG, exist_ok=True)
-os.environ.setdefault("HQ_RB0", "108")      # the park ring ends about where the city's Solace kits start (plates: PARK_R 118 units = 177 BU)
-os.environ.setdefault("HQ_RB_AMP", "0.3")
-PARK_CLIP = 180.0  # BU: nothing of the park beyond this radius (paths run on past the lawn); the footprint is this circle
 import hq_graph as G  # noqa: E402
-import sd_kit as SD  # noqa: E402
 
 CP, LH = G.CP, __import__("hq_preset").PRESET["hq"]["light"]
 PAL = __import__("hq_preset").PRESET["hq"]["palette"]
@@ -51,6 +51,7 @@ WIN = CP["win"]
 WB, WAX = G.WB, G.WAX
 A_LO, A_HI = CP["office"]["a_floors"]
 NSEG, DZ, NO, JAMB = 56, 0.9, 64, 0.6
+FOOT_R = 55.0  # plate units: the helix' footprint circle (the strands' outer radius 50 + the crown halo 52.5); the cleared circle
 IM_NV = 6
 FLOOR_COL = (0.22, 0.21, 0.195)
 
@@ -438,39 +439,6 @@ def crown():
         tube(NEO, (math.sin(a0) * RLM, math.cos(a0) * RLM, zr), (math.sin(a1) * RLM, math.cos(a1) * RLM, zr), 0.6, neon(LEAF, LH["crown_k"] * 0.5), 5)
 
 
-# ------------------------------------------------------------------ the park setting (the district kit, vendored)
-def park():
-    SD.park_world()
-    sc_of = {"plinth": SD.SPL, "lawn": SD.SL}
-    tgt = {"ground": GROUND, "neon": NEO, "plain": PLAIN, "water": WATER, "stone": STONE}
-    stats = {}
-    for (scope, key, smooth), b in sorted(SD.BUILD.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2])):
-        r = tgt[key]
-        s = sc_of[scope]
-        remap = {}
-        kept = 0
-        for fc in b.F:
-            if max(math.hypot(b.V[i][0] * s, b.V[i][1] * s) for i in fc) > PARK_CLIP:
-                continue                                   # the park stops at the footprint circle
-            ids = []
-            for i in fc:
-                if i not in remap:
-                    p, c, prm = b.V[i], b.C[i], b.P[i]
-                    remap[i] = r.v((p[0] * s, p[1] * s, p[2] * s), (c[0], c[1], c[2], (prm[0] if key == "neon" else 1.0)))
-                ids.append(remap[i])
-            r.f(*ids)
-            kept += 1
-        stats["%s_%s" % (scope, key)] = kept
-    return stats
-
-
-def clinic_gate():
-    sx_, sy_ = CP["start"]
-    box(PORC, sx_ - 5, sy_ - 3, 0, sx_ + 5, sy_ + 3, 4.6, POR)
-    box(NEO, sx_ - 0.4, sy_ - 3.1, 6.0, sx_ + 0.4, sy_ - 3.0, 8.4, neon(LEAF, 4.0))
-    box(NEO, sx_ - 1.2, sy_ - 3.1, 6.8, sx_ + 1.2, sy_ - 3.0, 7.6, neon(LEAF, 4.0))
-
-
 for t in ("A", "B"):
     skin(t)
     windows_and_floors(t)
@@ -478,8 +446,6 @@ for t in ("A", "B"):
 bridges()
 stair_ribbon()
 crown()
-clinic_gate()
-pstats = park()
 
 
 # ------------------------------------------------------------------ objects, materials
@@ -503,7 +469,7 @@ for name, r in ROLES.items():
     if not r.F:
         continue
     me = bpy.data.meshes.new("hq_solace_" + name)
-    me.from_pydata(r.V, [], r.F)
+    me.from_pydata([(v[0] * UK, v[1] * UK, v[2] * UK) for v in r.V], [], r.F)
     me.validate()
     n_loops = len(me.loops)
     cols = np.array(r.C, np.float32)
@@ -516,7 +482,7 @@ for name, r in ROLES.items():
     if r.uv:
         for nm, arr in (("UV0", r.U0), ("UV1", r.U1)):
             uvl = me.uv_layers.new(name=nm)
-            u = np.array(arr, np.float32)[vi]
+            u = np.array(arr, np.float32)[vi] * (UK if nm == "UV0" else 1.0)  # (u, dz) in city BU; (variant, blind) as is
             uvl.data.foreach_set("uv", u.ravel())
     me.polygons.foreach_set("use_smooth", [bool(r.smooth)] * len(me.polygons))
     me.update()
@@ -532,7 +498,7 @@ dg = bpy.context.evaluated_depsgraph_get()
 
 
 def surface(p):
-    hit, loc, _n, _i, _o, _m = scene.ray_cast(dg, Vector((p[0], p[1], p[2] + 3.0)), Vector((0, 0, -1)), distance=60.0)
+    hit, loc, _n, _i, _o, _m = scene.ray_cast(dg, Vector((p[0], p[1], p[2] + 3.0 * UK)), Vector((0, 0, -1)), distance=60.0 * UK)
     return round(loc.z, 3) if hit else None
 
 
@@ -572,9 +538,9 @@ bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB", export_yup=True, us
                           export_texcoords=True, export_normals=True, export_vertex_color="ACTIVE",
                           export_all_vertex_colors=False, export_materials="EXPORT", export_extras=True,
                           export_cameras=False, export_lights=False, export_animations=False)
-info = dict(footprint_radius=PARK_CLIP, corp=CORP_ARG, glb=os.path.basename(glb),
+info = dict(footprint_radius=round(FOOT_R * UK, 3), unit_k=UK, corp=CORP_ARG, glb=os.path.basename(glb),
             bounds_blender=dict(min=[round(x, 3) for x in mins], max=[round(x, 3) for x in maxs]),
-            triangles=tris, slot_surfaces=checks, server_surface=srv_surface, state="static", park=pstats,
+            triangles=tris, slot_surfaces=checks, server_surface=srv_surface, state="static",
             anchors_blender=dict(rows=anchors, server=srv_anchor, entry=entry_anchor, lift=LIFT), blender=bpy.app.version_string)
 json.dump(info, open(os.path.join(OUT_ARG, "build_info.json"), "w"), indent=1)
 print("DONE", CORP_ARG, json.dumps(tris), flush=True)

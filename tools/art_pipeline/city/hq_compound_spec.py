@@ -17,6 +17,7 @@ screen right = +x +y), so the generator's non-crossing edge order (index order) 
 """
 import math
 import os
+import re
 import sys
 
 CORPS = ["meridian", "solace", "halcyon", "orbital", "rebel_cell"]
@@ -72,6 +73,15 @@ SOLACE_ROUTE_FLOORS = (3, 6, 9, 12, 18, 24)  # v5 route floors carrying the six 
 SOLACE_BRIDGE_S = (-0.9, -0.5, 0.2, 0.7)   # slot places along the skybridge, as a share of its half run (A mouth .. B mouth)
 
 
+def units_k():
+    """Plate-scene kit units -> city BU: content/config/netrun_art.tres `units` floor_bu / kit_storey * k_fit (NetrunArtUnits.k_units() * k_fit()).
+    The Solace v5 compound is built in the plate scene's units and exported scaled by this, so it stands on the city's own scale."""
+    cfg = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "content", "config", "netrun_art.tres"), encoding="utf-8").read()
+    u = re.search(r"units = \{([^}]*)\}", cfg).group(1)
+    v = {k: float(x) for k, x in re.findall(r'"(\w+)":\s*([-0-9.]+)', u)}
+    return v["floor_bu"] / v["kit_storey"] * v["k_fit"]
+
+
 def _solace():
     # HQ v5 (art-pass solace_vertical/hq, DIRECTION_REVIEW 2026-10-21): the lime district helix on its 3-tier plinth. Layer k
     # stands on route floor SOLACE_ROUTE_FLOORS[k]: its four slots run along that floor's skybridge, from A's inward node
@@ -86,8 +96,12 @@ def _solace():
         rows.append([(round(O[0] + e[0] * half * s, 3), round(O[1] + e[1] * half * s, 3), round(zb, 3)) for s in SOLACE_BRIDGE_S])
     zc = G.floor_z(G.CP["floors"])
     top = zc + G.CP["crown_h"] + 1.5          # the crown roof: the helix cap under the pink halo
-    return dict(rows=rows, server=(0.0, 0.0, round(top + 1.5, 3)), entry=(0.0, -78.0, 9.0),
-                camera=((0.0, 0.0, 175.0), 320.0), server_name="THE GENOME CORE", builder="build_solace_v5_compound.py")
+    k = units_k()
+    rows = [[tuple(round(c * k, 4) for c in p) for p in r] for r in rows]
+    sv = tuple(round(c * k, 4) for c in (0.0, 0.0, top + 1.5))
+    entry = tuple(round(c * k, 4) for c in (0.0, -64.0, 9.9))  # in front of the helix foot, at the plinth top
+    return dict(rows=rows, server=sv, entry=entry, camera=((0.0, 0.0, round(175.0 * k, 4)), round(320.0 * k, 3)),
+                server_name="THE GENOME CORE", builder="build_solace_v5_compound.py", unit_k=k)
 
 
 def _halcyon():

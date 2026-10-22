@@ -32,6 +32,11 @@ static func wants(manifest: Dictionary) -> bool:
 	return String((manifest.get("settings", {}) as Dictionary).get("look", "")) == LOOK_KEY
 
 
+## City BU per plate (kit) unit of the compound (the manifest's `settings.unit_k`: NetrunArtUnits.k_units() * k_fit(), baked at export).
+static func unit_k(manifest: Dictionary) -> float:
+	return float((manifest.get("settings", {}) as Dictionary).get("unit_k", 1.0))
+
+
 ## The atlas texture next to the glb (null when the manifest has none or it does not load).
 static func atlas(corp: StringName, manifest: Dictionary) -> Texture2D:
 	var file := String((manifest.get("settings", {}) as Dictionary).get("interior_atlas", ""))
@@ -40,7 +45,7 @@ static func atlas(corp: StringName, manifest: Dictionary) -> Texture2D:
 
 
 ## A material for compound role `name` ("" prefix `hq_sx_`), null when unknown.
-static func make(name: String, atlas_tex: Texture2D) -> ShaderMaterial:
+static func make(name: String, atlas_tex: Texture2D, k: float = 1.0) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.resource_name = name
 	if name == "hq_sx_glass":
@@ -49,14 +54,15 @@ static func make(name: String, atlas_tex: Texture2D) -> ShaderMaterial:
 	if name == "hq_sx_win":
 		m.shader = WINDOW
 		m.set_shader_parameter(&"atlas", atlas_tex)
+		m.set_shader_parameter(&"unit_k", k)
 		m.set_shader_parameter(&"emit_gain", 2.0)
 		return m
 	if not ROLES.has(name):
 		return null
 	m.shader = PBR
 	var p: Dictionary = ROLES[name]
-	for k: String in p:
-		m.set_shader_parameter(StringName(k), p[k])
+	for key: String in p:
+		m.set_shader_parameter(StringName(key), p[key])
 	return m
 
 
@@ -64,6 +70,7 @@ static func make(name: String, atlas_tex: Texture2D) -> ShaderMaterial:
 static func apply(root: Node, corp: StringName, manifest: Dictionary) -> Dictionary:
 	var mats := {}
 	var tex := atlas(corp, manifest)
+	var k := unit_k(manifest)
 	var meshes: Array[Node] = root.find_children("*", "MeshInstance3D", true, false)
 	if root is MeshInstance3D:
 		meshes.push_front(root)
@@ -75,7 +82,7 @@ static func apply(root: Node, corp: StringName, manifest: Dictionary) -> Diction
 			var src := mi.mesh.surface_get_material(s)
 			var nm := src.resource_name if src != null else ""
 			if not mats.has(nm):
-				mats[nm] = make(nm, tex)
+				mats[nm] = make(nm, tex, k)
 			if mats[nm] != null:
 				mi.set_surface_override_material(s, mats[nm])
 	return mats
@@ -89,23 +96,24 @@ const FOG_FROXEL := Vector2i(192, 96)
 
 ## The compound's volumetric haze: the Environment's volumetric fog on (zero global density) and a FogVolume box over the compound
 ## carrying hq_solace_fog (added under `host`, returned so the page can drop it). Perspective cameras only (Godot's volumetric fog).
-static func add_fog(host: Node3D, env: Environment, at: Transform3D) -> FogVolume:
+static func add_fog(host: Node3D, env: Environment, at: Transform3D, k: float = 1.0) -> FogVolume:
 	env.volumetric_fog_enabled = true
 	env.volumetric_fog_density = 0.0
 	env.volumetric_fog_albedo = Color(0.86, 0.95, 0.9)
 	env.volumetric_fog_anisotropy = 0.45
-	env.volumetric_fog_length = 1800.0
+	env.volumetric_fog_length = 1800.0 * k
 	env.volumetric_fog_detail_spread = 2.0
 	env.volumetric_fog_temporal_reprojection_enabled = false
 	RenderingServer.environment_set_volumetric_fog_volume_size(FOG_FROXEL.x, FOG_FROXEL.y)  # finer froxels: no stepping grain
 	var fv := FogVolume.new()
 	fv.name = "HqSolaceFog"
 	fv.shape = RenderingServer.FOG_VOLUME_SHAPE_BOX
-	fv.size = Vector3(FOG_RADIUS * 2.0, FOG_HEIGHT, FOG_RADIUS * 2.0)
+	fv.size = Vector3(FOG_RADIUS * 2.0, FOG_HEIGHT, FOG_RADIUS * 2.0) * k
 	var m := ShaderMaterial.new()
 	m.shader = FOG
 	m.set_shader_parameter(&"centre", at.origin)
+	m.set_shader_parameter(&"unit_k", k)
 	fv.material = m
-	fv.position = Vector3(0.0, FOG_HEIGHT * 0.5, 0.0)  # local to the compound node (placed at `at`)
+	fv.position = Vector3(0.0, FOG_HEIGHT * 0.5 * k, 0.0)  # local to the compound node (placed at `at`)
 	host.add_child(fv)
 	return fv

@@ -17,6 +17,7 @@ uniform float room_zb = -3.15;     // floor, relative to the window's middle
 uniform float room_h = 8.4;
 uniform float plane_dp = 1.45;
 uniform float frost = 0.10;
+uniform float unit_k = 1.0;        // city BU per plate (kit) unit: the patch's UV and the room constants are in plate units
 
 varying vec3 w_nrm;
 varying vec3 w_pos;
@@ -38,8 +39,8 @@ void fragment() {
 	vec3 V = ortho ? -normalize(INV_VIEW_MATRIX[2].xyz) : normalize(w_pos - cam);
 	vec3 nw = normalize(w_nrm);
 	vec3 tw = normalize(cross(nw, vec3(0.0, 1.0, 0.0)));
-	float u = UV.x;
-	float dz = UV.y;
+	float u = UV.x / unit_k;
+	float dz = UV.y / unit_k;
 	float Vu = dot(V, tw);
 	float a = max(-dot(V, nw), 0.03);
 	float Vz = V.y;

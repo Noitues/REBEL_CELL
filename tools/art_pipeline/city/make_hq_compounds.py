@@ -32,7 +32,6 @@ VENDOR_SOURCE = "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 3
 VENDOR_SOURCE_CANYON = ("art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 "
                         "(vendor_r34/) + " + VENDOR_SOURCE + " (vendor_r43/)")
 SOLACE_SETTINGS = {"build_solace_v5_compound.py": {"look": "aaa2", "interior_atlas": "imap_atlas.jpg",
-                                                  "park_radius_unit": "RB0 108 district units x 1.5, wobble x 0.3",
                                                   "inland": {"r_max_lots": 150, "step_lots": 2, "cone_deg": 25, "bin_deg": 5}}}
 VENDOR_SOURCE_SOLACE = "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)"
 MANIFEST_SCHEMA = "rebel_cell.art_export/1"
@@ -141,7 +140,7 @@ def write_manifest(corp, build_dir):
         "settings": {"blender": info["blender"], "state": info["state"], "units": "1 BU = 1 m", "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
                      "tone": list(SPEC.TONE), "ramp_tint": list(SPEC.RAMP_TINT[corp]), "pitch_deg": L["pitch"], "yaw_deg": L["yaw"],
                      "reference_camera": {"target": gd(cam_t), "ortho": cam_o}, "normals": "exported (PBR look)" if L["builder"] == "build_solace_v5_compound.py" else "none (facet normal from screen derivatives)",
-                     "layered_sprites": "dropped: 1D chose real-time Godot 3D", **SOLACE_SETTINGS.get(L["builder"], {})},
+                     "layered_sprites": "dropped: 1D chose real-time Godot 3D", **SOLACE_SETTINGS.get(L["builder"], {}), **({"unit_k": info["unit_k"]} if info.get("unit_k") else {})},
         "origin": L.get("origin", "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre"),
         "place_lot": list(L["lot_centre"]) if "lot_centre" in L else None,
         "footprint": {"min": [round(v, 3) for v in gmin], "max": [round(v, 3) for v in gmax],

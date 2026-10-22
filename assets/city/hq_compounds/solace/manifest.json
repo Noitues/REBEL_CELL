@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)",
-  "commit": "37f38376873786561078a3366a02f251341729e6",
-  "scripts_sha256": "c2910b7b133e720963934e1a1f2c1c4f3fc21d578a81856284a26017376119a8"
+  "commit": "a6c66ff769f72e85ca578475fe32f79172cff016",
+  "scripts_sha256": "8075fa035e2dedaa82c7c7ccabeb950ffbeab4c933b20a40d0da145a8e3c2b1d"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -29,49 +29,49 @@
   "reference_camera": {
    "target": [
     0.0,
-    175.0,
+    41.562,
     -0.0
    ],
-   "ortho": 320.0
+   "ortho": 76.0
   },
   "normals": "exported (PBR look)",
   "layered_sprites": "dropped: 1D chose real-time Godot 3D",
   "look": "aaa2",
   "interior_atlas": "imap_atlas.jpg",
-  "park_radius_unit": "RB0 108 district units x 1.5, wobble x 0.3",
   "inland": {
    "r_max_lots": 150,
    "step_lots": 2,
    "cone_deg": 25,
    "bin_deg": 5
-  }
+  },
+  "unit_k": 0.2375
  },
  "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
  "place_lot": null,
  "footprint": {
   "min": [
-   -180.0,
-   0.0,
-   -180.0
+   -13.062,
+   2.019,
+   -13.062
   ],
   "max": [
-   180.0,
-   372.483,
-   180.0
+   13.062,
+   88.465,
+   13.062
   ],
   "size": [
-   360.0,
-   372.483,
-   360.0
+   26.124,
+   86.446,
+   26.124
   ],
-  "radius": 180.0
+  "radius": 13.062
  },
  "files": [
   {
    "path": "solace_compound.glb",
    "kind": "gltf",
-   "bytes": 8560788,
-   "sha256": "760f90713515ad9bd6a9c1482aaaf3f1476b37f4d95b50850ab97801a0c51bb3"
+   "bytes": 5790132,
+   "sha256": "469a14b3be920773fe59654d5acbff0f83dbc8e5936c660a1f2d5a0a9512961e"
   },
   {
    "path": "imap_atlas.jpg",
@@ -82,15 +82,11 @@
  ],
  "triangles": {
   "sx_glass": 1108,
-  "sx_ground": 21280,
   "sx_metal": 6088,
-  "sx_neon": 29718,
+  "sx_neon": 26272,
   "sx_office": 17118,
-  "sx_plain": 28134,
-  "sx_porc": 14886,
+  "sx_porc": 14876,
   "sx_skin": 46560,
-  "sx_stone": 1504,
-  "sx_water": 84,
   "sx_win": 2080
  },
  "materials": {
@@ -100,11 +96,7 @@
   "hq_sx_office": "Solace v5 built-floor interiors: vertex colour, alpha = emission gain",
   "hq_sx_glass": "Solace v5 clear glass (transparent + fresnel)",
   "hq_sx_metal": "Solace v5 metal (posts, rails, stair ribbon, core)",
-  "hq_sx_win": "Solace v5 interior-mapped window patch: NORMAL = window normal, UV0 = (u, dz), UV1 = (variant, blind), COLOR = tint + lit",
-  "hq_sx_stone": "Solace v5 plinth stone",
-  "hq_sx_ground": "Solace v5 lawn / paths (vertex colour)",
-  "hq_sx_plain": "Solace v5 trees, trunks, lamp posts",
-  "hq_sx_water": "Solace v5 ponds"
+  "hq_sx_win": "Solace v5 interior-mapped window patch: NORMAL = window normal, UV0 = (u, dz), UV1 = (variant, blind), COLOR = tint + lit"
  },
  "anchors": {
   "frame": "godot",
@@ -113,292 +105,292 @@
   "layers": [
    [
     [
-     -19.255,
-     49.97,
-     -11.126
+     -4.573,
+     12.097,
+     -2.642
     ],
     [
-     -7.758,
-     49.97,
-     0.123
+     -1.843,
+     12.097,
+     0.029
     ],
     [
-     8.337,
-     49.97,
-     15.873
+     1.98,
+     12.097,
+     3.77
     ],
     [
-     17.534,
-     49.97,
-     24.873
+     4.164,
+     12.097,
+     5.907
     ]
    ],
    [
     [
-     -2.556,
-     87.47,
-     30.324
+     -0.607,
+     21.003,
+     7.202
     ],
     [
-     -3.817,
-     87.47,
-     17.518
+     -0.906,
+     21.003,
+     4.16
     ],
     [
-     -6.023,
-     87.47,
-     -4.892
+     -1.431,
+     21.003,
+     -1.162
     ],
     [
-     -7.598,
-     87.47,
-     -20.9
+     -1.804,
+     21.003,
+     -4.964
     ]
    ],
    [
     [
-     -21.45,
-     124.97,
-     21.587
+     -5.094,
+     29.909,
+     5.127
     ],
     [
-     -14.184,
-     124.97,
-     10.967
+     -3.369,
+     29.909,
+     2.605
     ],
     [
-     -1.469,
-     124.97,
-     -7.619
+     -0.349,
+     29.909,
+     -1.81
     ],
     [
-     7.614,
-     124.97,
-     -20.894
+     1.808,
+     29.909,
+     -4.962
     ]
    ],
    [
     [
-     -30.308,
-     162.47,
-     2.749
+     -7.198,
+     38.815,
+     0.653
     ],
     [
-     -17.915,
-     162.47,
-     -0.717
+     -4.255,
+     38.815,
+     -0.17
     ],
     [
-     3.772,
-     162.47,
-     -6.781
+     0.896,
+     38.815,
+     -1.611
     ],
     [
-     19.263,
-     162.47,
-     -11.112
+     4.575,
+     38.815,
+     -2.639
     ]
    ],
    [
     [
-     14.288,
-     237.47,
-     17.041
+     3.393,
+     56.628,
+     4.047
     ],
     [
-     7.333,
-     237.47,
-     2.538
+     1.742,
+     56.628,
+     0.603
     ],
     [
-     -2.405,
-     237.47,
-     -17.767
+     -0.571,
+     56.628,
+     -4.22
     ],
     [
-     -7.97,
-     237.47,
-     -29.37
+     -1.893,
+     56.628,
+     -6.975
     ]
    ],
    [
     [
-     -14.301,
-     312.47,
-     17.03
+     -3.397,
+     74.44,
+     4.045
     ],
     [
-     -1.226,
-     312.47,
-     7.662
+     -0.291,
+     74.44,
+     1.82
     ],
     [
-     17.08,
-     312.47,
-     -5.454
+     4.056,
+     74.44,
+     -1.295
     ],
     [
-     27.54,
-     312.47,
-     -12.949
+     6.541,
+     74.44,
+     -3.075
     ]
    ]
   ],
   "central_server": [
    0.0,
-   363.2,
+   86.489,
    -0.0
   ],
   "entry": [
    0.0,
-   9.0,
-   78.0
+   2.351,
+   15.2
   ]
  },
  "slot_surfaces": [
   {
    "layer": 1,
    "slot": 0,
-   "z": 49.65,
-   "surface": 49.67
+   "z": 11.7919,
+   "surface": 11.797
   },
   {
    "layer": 1,
    "slot": 1,
-   "z": 49.65,
-   "surface": 49.67
+   "z": 11.7919,
+   "surface": 11.797
   },
   {
    "layer": 1,
    "slot": 2,
-   "z": 49.65,
-   "surface": 49.67
+   "z": 11.7919,
+   "surface": 11.797
   },
   {
    "layer": 1,
    "slot": 3,
-   "z": 49.65,
-   "surface": 49.67
+   "z": 11.7919,
+   "surface": 11.797
   },
   {
    "layer": 2,
    "slot": 0,
-   "z": 87.15,
-   "surface": 87.17
+   "z": 20.6981,
+   "surface": 20.703
   },
   {
    "layer": 2,
    "slot": 1,
-   "z": 87.15,
-   "surface": 87.17
+   "z": 20.6981,
+   "surface": 20.703
   },
   {
    "layer": 2,
    "slot": 2,
-   "z": 87.15,
-   "surface": 87.17
+   "z": 20.6981,
+   "surface": 20.703
   },
   {
    "layer": 2,
    "slot": 3,
-   "z": 87.15,
-   "surface": 87.17
+   "z": 20.6981,
+   "surface": 20.703
   },
   {
    "layer": 3,
    "slot": 0,
-   "z": 124.65,
-   "surface": 124.67
+   "z": 29.6044,
+   "surface": 29.609
   },
   {
    "layer": 3,
    "slot": 1,
-   "z": 124.65,
-   "surface": 124.67
+   "z": 29.6044,
+   "surface": 29.609
   },
   {
    "layer": 3,
    "slot": 2,
-   "z": 124.65,
-   "surface": 124.67
+   "z": 29.6044,
+   "surface": 29.609
   },
   {
    "layer": 3,
    "slot": 3,
-   "z": 124.65,
-   "surface": 124.67
+   "z": 29.6044,
+   "surface": 29.609
   },
   {
    "layer": 4,
    "slot": 0,
-   "z": 162.15,
-   "surface": 162.17
+   "z": 38.5106,
+   "surface": 38.515
   },
   {
    "layer": 4,
    "slot": 1,
-   "z": 162.15,
-   "surface": 162.17
+   "z": 38.5106,
+   "surface": 38.515
   },
   {
    "layer": 4,
    "slot": 2,
-   "z": 162.15,
-   "surface": 162.17
+   "z": 38.5106,
+   "surface": 38.515
   },
   {
    "layer": 4,
    "slot": 3,
-   "z": 162.15,
-   "surface": 162.17
+   "z": 38.5106,
+   "surface": 38.515
   },
   {
    "layer": 5,
    "slot": 0,
-   "z": 237.15,
-   "surface": 237.17
+   "z": 56.3231,
+   "surface": 56.328
   },
   {
    "layer": 5,
    "slot": 1,
-   "z": 237.15,
-   "surface": 237.17
+   "z": 56.3231,
+   "surface": 56.328
   },
   {
    "layer": 5,
    "slot": 2,
-   "z": 237.15,
-   "surface": 237.17
+   "z": 56.3231,
+   "surface": 56.328
   },
   {
    "layer": 5,
    "slot": 3,
-   "z": 237.15,
-   "surface": 237.17
+   "z": 56.3231,
+   "surface": 56.328
   },
   {
    "layer": 6,
    "slot": 0,
-   "z": 312.15,
-   "surface": 312.17
+   "z": 74.1356,
+   "surface": 74.14
   },
   {
    "layer": 6,
    "slot": 1,
-   "z": 312.15,
-   "surface": 312.17
+   "z": 74.1356,
+   "surface": 74.14
   },
   {
    "layer": 6,
    "slot": 2,
-   "z": 312.15,
-   "surface": 312.17
+   "z": 74.1356,
+   "surface": 74.14
   },
   {
    "layer": 6,
    "slot": 3,
-   "z": 312.15,
-   "surface": 312.17
+   "z": 74.1356,
+   "surface": 74.14
   }
  ],
  "validator": "python tools/art_pipeline/city/validate_hq_compounds.py; tools/validate_content.gd (manifest + files)"

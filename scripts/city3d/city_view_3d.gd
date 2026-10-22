@@ -2200,7 +2200,7 @@ func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
 	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
 	set_look_blend(1.0)
-	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at)
+	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at, HqSolaceMaterials.unit_k(HqCompoundStage.manifest(corp)))
 
 
 ## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
