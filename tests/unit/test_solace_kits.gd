@@ -27,7 +27,7 @@ func _eligible() -> Array[int]:
 
 func test_only_solace_buildings_are_kits() -> void:
 	var elig := _eligible()
-	assert_gt(elig.size(), 60, "the Solace district has buildings")
+	assert_gt(elig.size(), 15, "the Solace district has buildings (A-070: blocks of 2-3 lots, about 24 a district)")
 	for n in model.prisms.size():
 		var pr := model.prisms[n]
 		var kv := CitySolaceKit.kit_of(cfg, pr, 7)
@@ -85,17 +85,26 @@ func test_bundles_are_small_and_neighbouring_bundles_differ() -> void:
 	for b: Vector2i in by_bundle:
 		total += int(by_bundle[b])
 	var mean := float(total) / by_bundle.size()
-	assert_between(mean, 3.0, 8.0, "a bundle is about 3-8 lots (mean %.2f)" % mean)
+	# A-070 (Solace district layout): blocks are 2-3 lots a side with a lawn gap, so a bundle (a lattice cell about 3 lots
+	# across) holds one to a few blocks, not 3-8 lots.
+	assert_between(mean, 1.0, 8.0, "a bundle is small (mean %.2f buildings)" % mean)
 	var checked := 0
+	var near: Array[Vector2i] = []
 	for p: Vector2i in cells:
-		for d: Vector2i in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, -1)]:
-			var q := p + d
-			if not cells.has(q) or cells[q] == cells[p]:
+		near.append(p)
+	near.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y if a.y != b.y else a.x < b.x)
+	var lattice_neighbours: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1)]
+	for p in near:
+		for q in near:
+			if q == p or maxi(absi(p.x - q.x), absi(p.y - q.y)) > 4 or cells[q] == cells[p]:
+				continue
+			# Blocks across a lawn gap whose bundles are neighbours on the lattice never share a kit.
+			if not lattice_neighbours.has((cells[q] as Vector2i) - (cells[p] as Vector2i)):
 				continue
 			checked += 1
 			assert_ne(CitySolaceKit.kit_of_bundle(cfg, cells[p], 7), CitySolaceKit.kit_of_bundle(cfg, cells[q], 7),
 				"touching bundles %s and %s differ" % [str(cells[p]), str(cells[q])])
-	assert_gt(checked, 20, "bundle borders were checked")
+	assert_gt(checked, 4, "bundle borders were checked")
 
 
 func test_other_prisms_keep_their_family_keys_and_buffers() -> void:

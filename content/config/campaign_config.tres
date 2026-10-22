@@ -600,6 +600,21 @@ city_a2_corridor = {
 &"ring": 1,
 &"truck": 1
 }
+city_sol_layout = true
+city_sol_block_lots = Vector2i(2, 3)
+city_sol_gap_lots = 1
+city_sol_height_k = 0.5
+city_sol_min_floors = 3
+city_sol_plinth_r_bu = 35.0
+city_sol_gate_spacing = 8
+city_sol_lanes = 3
+city_sol_path_wobble = 1.6
+city_sol_path_width_bu = 2.4
+city_sol_lane_width_bu = 4.0
+city_sol_ponds = 3
+city_sol_pond_r = Vector2(0.9, 1.4)
+city_sol_outline_passes = 2
+city_sol_outline_wobble = 0.18
 map_v2_enabled = true
 map_unique_allow = PackedStringArray("orbital_uplink_dish")
 rest_heal_pct = 35
