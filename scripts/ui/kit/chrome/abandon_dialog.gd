@@ -99,7 +99,7 @@ func _sticker(row: Container, word: String, note: String, paint: Color) -> Butto
 	s.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var col := VBoxContainer.new()
 	col.name = "SafeAnswer" if safe else "VerbAnswer"
-	col.add_theme_constant_override(&"separation", 2)
+	col.add_theme_constant_override(&"separation", 2 + (roundi(CAPTION_ROOM * Settings.text_scale) if note != "" else 0))
 	col.add_child(s)
 	if note != "":
 		var c := Chrome.caps_label(tr(note), UiTheme.CAPTION, Palette.TEXT_MID if safe else Palette.STICKER_PINK)

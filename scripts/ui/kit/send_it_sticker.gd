@@ -104,6 +104,8 @@ var fold_room: bool = false:
 	set(v):
 		fold_room = v
 		_sync_art_words()
+## A-077: extra height (px) between the sticker and its caption / hint line, so a focused sticker's halo never covers it.
+var caption_room: float = 0.0
 ## 1B's vinyl sticker drawing this button's lettering (null = the drawn fallback).
 var art: VinylSticker = null
 ## Draw with 1B's sticker (the kit material); off = the drawn fallback.
@@ -322,7 +324,7 @@ func _fit_size() -> void:
 		h = maxf(h, word.position.y + word.size.y * COVER_AT.y + art.body_rect.size.y)
 		w = maxf(w, word.size.x * COVER_AT.x + art.body_rect.size.x)
 	if key_hint != "" or system_line != "":
-		h += _hint_px() + HINT_ROW_PAD
+		h += _hint_px() + HINT_ROW_PAD + caption_room
 	custom_minimum_size = Vector2(w + cut, h)
 
 

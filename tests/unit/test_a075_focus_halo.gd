@@ -81,7 +81,7 @@ func _focused_rect(b: SendItSticker) -> Rect2:
 
 func test_both_focused_stickers_and_the_words_sit_inside_the_dialogs_inner_frame() -> void:
 	var h := _holder()
-	var d := ConfirmDialog.new("Respin?", "RESPIN", "KEEP PLANNING", "RESPIN", "A body line that is long enough to show where the words start.")
+	var d := ConfirmDialog.new("Respin?", "RESPIN", "KEEP PLANNING", "RESPIN", "A body line that is long enough to show where the words start.", false, "go on [A]", "keep going [B]")
 	h.add_child(d)
 	await _frames(6)
 	var frame := d.panel.body.get_global_rect()
@@ -90,5 +90,9 @@ func test_both_focused_stickers_and_the_words_sit_inside_the_dialogs_inner_frame
 		await _frames(3)
 		var r := _focused_rect(b as SendItSticker)
 		assert_true(frame.encloses(r), "%s focused %s inside the frame %s" % [b.name, r, frame])
+		var sb := b as SendItSticker
+		var hp := float(sb._hint_px())
+		var cap := Rect2(sb.get_global_position() + Vector2(SendItSticker.LINE_INSET_X, sb.size.y - SendItSticker.LINE_INSET_BOTTOM - hp), Vector2(sb._line_w(), hp))
+		assert_false(cap.intersects(r), "%s caption %s clear of the focused sticker and halo %s" % [b.name, cap, r])
 	var q := d.find_child("Question", true, false) as Label
 	assert_gte(q.get_global_rect().position.x - frame.position.x, HudDialogPanel.PAD * 0.5 - 1.0, "the words sit in from the frame by the title's inset")

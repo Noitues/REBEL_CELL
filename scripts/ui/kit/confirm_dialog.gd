@@ -35,6 +35,8 @@ const TEXT_PAD := HudDialogPanel.PAD * 0.5
 ## A-077: room kept each side of the sticker row for a focused sticker's grow, tilt and lime halo (px at text 1.0),
 ## so the focused stickers stay inside the dialog's inner frame.
 const FOCUS_ROOM := 14.0
+## A-077: room kept between a sticker and its caption for a focused sticker's grow, tilt and halo (px at text 1.0).
+const CAPTION_ROOM := VinylSticker.FOCUS_HALO_PX + 8.0
 ## Layout frames waited before the sticker room is measured (each re-measures), and the slack past the halo (px).
 const FIT_PASSES := 3
 const FIT_SLACK := 2.0
@@ -117,6 +119,7 @@ func _sticker(row: Container, word: String, note: String, paint: Color) -> Butto
 	b.system_word = ""
 	b.fold_room = true  # 1B-STICKER F2: every verb sticker keeps its fold room
 	b.system_line = note
+	b.caption_room = CAPTION_ROOM * Settings.text_scale if note != "" else 0.0
 	b.tilt = -2.0
 	b.tooltip_text = tr(note) if note != "" else ""
 	b._fit_size()
