@@ -356,6 +356,10 @@ THREATS = {
     "AUDITOR": ("AUDITOR", 8, 3, 2, "richest node", "C2", "VAULT"),
     "ENFORCER": ("ENFORCER", 25, 9, 1, "weakest node", "C2", "PROXY"),
     "LOCKDOWN": ("LOCKDOWN", 18, 6, 1, "weakest node", "C1", "PROXY"),
+    "COURIER": ("COURIER", 8, 3, 2, "richest node", "C2", "VAULT"),
+    "INSPECTOR": ("INSPECTOR", 10, 4, 2, "richest node", "C1", "VAULT"),
+    "BAILIFF": ("BAILIFF", 30, 10, 1, "weakest node", "C2", "PROXY"),
+    "HAULER": ("HAULER", 28, 10, 1, "weakest node", "C1", "PROXY"),
 }
 
 
@@ -379,6 +383,21 @@ def threat(d, c, tid: str, r: float = 20, hp: int | None = None, show_hp: bool =
         for sx in (-0.5, 0, 0.5):
             d.polygon([(x + R * sx - 5, y - R), (x + R * sx, y - R - 9), (x + R * sx + 5, y - R)], fill=edge)
         d.rectangle((x - R * 0.5, y - R * 0.15, x + R * 0.5, y + R * 0.1), fill=edge)
+    elif tid == "COURIER":
+        # Courier: a dart (fast, fragile)
+        d.polygon([(x + r * 1.2, y), (x - r, y - r * 0.8), (x - r * 0.4, y), (x - r, y + r * 0.8)], fill=fill, outline=edge, width=3)
+    elif tid == "INSPECTOR":
+        # Inspector: a magnifier
+        d.ellipse((x - r * 0.9, y - r * 0.9, x + r * 0.5, y + r * 0.5), fill=fill, outline=edge, width=3)
+        d.line([(x + r * 0.35, y + r * 0.35), (x + r * 1.05, y + r * 1.05)], fill=edge, width=5)
+    elif tid in ("BAILIFF", "HAULER"):
+        # Bailiff / Hauler: an armored truck (the bailiff with a clamp jaw)
+        d.rounded_rectangle((x - r * 1.2, y - r * 0.7, x + r * 0.6, y + r * 0.5), radius=3, fill=fill, outline=edge, width=3)
+        d.rectangle((x + r * 0.6, y - r * 0.3, x + r * 1.2, y + r * 0.5), fill=fill, outline=edge, width=3)
+        for wx in (-0.7, 0.7):
+            d.ellipse((x + r * wx - r * 0.3, y + r * 0.4, x + r * wx + r * 0.3, y + r * 1.0), fill=edge)
+        if tid == "BAILIFF":
+            d.polygon([(x + r * 1.2, y - r * 0.6), (x + r * 1.6, y - r * 0.9), (x + r * 1.6, y + r * 0.1)], fill=edge)
     elif tid == "LOCKDOWN":
         # Lockdown Unit: a padlock block (it freezes a home link)
         d.rounded_rectangle((x - r, y - r * 0.4, x + r, y + r), radius=4, fill=fill, outline=edge, width=3)

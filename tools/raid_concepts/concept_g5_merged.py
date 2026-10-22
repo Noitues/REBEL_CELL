@@ -171,8 +171,8 @@ def order_panel(d, r, x=300, y=600, maxn=8) -> None:
 def routes(d, r, faint=False, start_hp=None) -> None:
     """G4's routes, with the tie-break glyph only where a route really forked."""
     for tid, path in r.routes.items():
-        col = (44, 60, 120) if faint else SHADE[tid]
-        k = OFF[tid]
+        col = (44, 60, 120) if faint else SHADE[tid.split("#")[0]]
+        k = OFF[tid.split("#")[0]] + (12 if "#" in tid else 0)
         pts = [(XF.p(n)[0] + k, XF.p(n)[1] + k) for n in path]
         for a, b in zip(pts, pts[1:]):
             arrow(d, a, b, col, 6, 13, shorten=30)
@@ -180,7 +180,7 @@ def routes(d, r, faint=False, start_hp=None) -> None:
                 L = max(1, ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5)
                 d.line([lerp(a, b, 30 / L), lerp(b, a, 44 / L)], fill=(235, 240, 255), width=2)
         if not faint:
-            threat(d, (pts[0][0] - 26, pts[0][1] - 20), tid, 10, show_hp=False)
+            threat(d, (pts[0][0] - 26, pts[0][1] - 20), tid.split("#")[0], 10, show_hp=False)
             for ev in r.steps:
                 for kt, site in ev["kills"]:
                     if kt == tid:
@@ -189,7 +189,7 @@ def routes(d, r, faint=False, start_hp=None) -> None:
     if not faint:
         for tid, n in forks(r, start_hp):
             x, y = XF.p(n)
-            route_glyph(d, (x - 40 + OFF[tid], y + 34), "ENFORCER", 7, CELL)
+            route_glyph(d, (x - 40 + OFF[tid.split("#")[0]], y + 34), "ENFORCER", 7, CELL)
 
 
 def stamp_box(img, d, c, r, patched=None, size=60) -> None:
