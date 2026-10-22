@@ -340,6 +340,24 @@ extends Resource
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
 @export var backdrop_site_close_height: float = 0.55
 @export var backdrop_site_close_max_width: float = 0.6
+## Per corporation (else the three above): a Site landmark that must read (Solace General's cross and helipad,
+## art-pass 2026-10-22) is fitted larger / elsewhere. Only the corporations listed change; the other Sites keep the numbers above.
+@export var backdrop_site_close_height_by_corp: Dictionary = {&"solace": 0.78}
+@export var backdrop_site_close_max_width_by_corp: Dictionary = {&"solace": 0.62}
+@export var backdrop_site_close_centre_by_corp: Dictionary = {&"solace": Vector2(0.5, 0.5)}
+## Per corporation: the view cut also takes the procedural towers inside the Site landmark's footprint (they hide its
+## front; the landmark itself stays).
+## Per corporation: a lit cross panel on each end wall of the Site landmark that faces the camera (BackdropCatalog / CombatBackdrop.dress_site;
+## the S2 glb has no cross, only a cross-shaped plan): `wall` (BU from the landmark's centre to the wing end), `y`, `panel`, `span`, `arm`
+## (BU), `lift` (panel depth), `facing` (least cosine to the view), `panel_color` (the lit panel: a glowing square reads at any blur), `color` (the cross),
+## optional `halo` (x panel) and `halo_color` (an additive glow past the panel).
+@export var backdrop_site_cross_by_corp: Dictionary = {&"solace": {"wall": 17.62, "y": 5.6, "panel": 8.2, "span": 5.8, "arm": 2.0, "lift": 0.15, "facing": 0.3, "panel_color": Color(0.9, 1.0, 0.72), "color": Color(0.10, 0.62, 0.22)}}
+## Per corporation: roof props (CityRoofProps names) the Site close-up leaves off (Solace: the billboard in the foreground).
+@export var backdrop_site_hide_props_by_corp: Dictionary = {&"solace": PackedStringArray(["billboard_0", "billboard_1", "billboard_2", "billboard_3"])}
+## Per corporation: the away cap (see backdrop_away_cap) for that corp's own Site close-up (Solace: the pale towers behind the hospital
+## sit one tier below it). Only the corporations listed change.
+@export var backdrop_site_away_cap_by_corp: Dictionary = {&"solace": 0.18}
+@export var backdrop_site_cut_own_by_corp: Dictionary = {&"solace": true}
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
 @export var backdrop_site_close_min_eye_bu: float = 60.0
 @export var backdrop_site_close_min_fov_deg: float = 10.0

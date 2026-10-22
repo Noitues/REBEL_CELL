@@ -1058,7 +1058,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 		_props_on = props_on
 		for key: Vector2i in _chunks:
 			for mi: MultiMeshInstance3D in _chunks[key].get("props", []):
-				mi.visible = _props_on
+				mi.visible = _props_on and not _prop_hidden(mi)
 	var lod_now := CityLod.building_lod(cfg, iso.ortho, building_lod)
 	if lod_now != building_lod:
 		building_lod = lod_now
@@ -2507,10 +2507,27 @@ func _add_roof_props(node: Node3D, idx: PackedInt32Array) -> Array:
 		mi.multimesh = mm
 		mi.layers = 1 << (WORLD_LAYER - 1)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		mi.visible = _props_on
+		mi.visible = _props_on and not _prop_hidden(mi)
 		node.add_child(mi)
 		out.append(mi)
 	return out
+
+
+## Roof props left off (CityRoofProps names; the combat backdrop's per-corp choice), and the setter that applies it to the built chunks.
+var _hidden_props: PackedStringArray = PackedStringArray()
+
+
+func set_hidden_props(names: PackedStringArray) -> void:
+	if names == _hidden_props:
+		return
+	_hidden_props = names
+	for key: Vector2i in _chunks:
+		for mi: MultiMeshInstance3D in _chunks[key].get("props", []):
+			mi.visible = _props_on and not _prop_hidden(mi)
+
+
+func _prop_hidden(mi: MultiMeshInstance3D) -> bool:
+	return _hidden_props.has(String(mi.name).trim_prefix("Props_"))
 
 
 ## This view's copy of prop `nm`'s mesh (null when the export is missing).

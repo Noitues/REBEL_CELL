@@ -221,7 +221,8 @@ func test_the_site_building_is_the_large_subject_with_the_hq_behind() -> void:
 			var cam: CityIsoCamera = shot["camera"]
 			var on := _screen_box(cam, shot["subject"], size)
 			var share := maxf(on.size.x / size.x, on.size.y / size.y)
-			assert_between(share, cfg.backdrop_site_subject_min - 0.02, most, "%s %s at %s: the subject's share of the width (%.2f)" % [corp, site, size, share])
+			var cap := maxf(most, float(cfg.backdrop_site_close_height_by_corp.get(corp, 0.0)) + 0.01) if shot.has("landmark") else most  # a corp's own Site landmark may fit larger (by-corp)
+			assert_between(share, cfg.backdrop_site_subject_min - 0.02, cap, "%s %s at %s: the subject's share of the width (%.2f)" % [corp, site, size, share])
 			var frame := Rect2(cfg.backdrop_site_frame.position * size, cfg.backdrop_site_frame.size * size)
 			assert_true(frame.grow(size.x * 0.05).has_point(on.get_center()), "%s %s: the subject in its frame" % [corp, site])
 			# The camera looks from the Site toward its HQ (one of the city's diagonal views).
