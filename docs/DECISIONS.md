@@ -9715,3 +9715,9 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
 - **Migrated.** `combat_backdrop.gdshader` `graded()` calls `rcl_grade`; `CombatBackdrop.graded` calls `RcLookGrade.grade`; the shader's own sRGB transfer and `CombatBackdrop._shoulder` are deleted. Same maths, so the arena backdrop fixtures are unchanged and `test_parity_arena_backdrop` is the migration's parity check.
 - **Next.** The UI grades (city_tilt_shift, screen_grey, route_grade) and the sRGB transfer copies onto `rcl_*`; city_post only after an announcement to art-pass. Disagreement to settle there: city_post multiplies display values where the combat grade decodes sRGB first.
 - Tests: `tests/unit/test_rc_look_grade.gd` (fast).
+
+## 2026-10-21 - LOOK-TOOLBOX: the shared sight rule (RcLookOcclusion)
+
+- **What.** `addons/rc_look/scripts/rc_look_occlusion.gd`: the combat close-up's view cut (round 3: the sight-line wedge, the screen-overlap rule, the subject's own footprint kept) as a camera-agnostic pure rule; the camera is a `project` Callable. `BackdropCatalog.view_cut / occludes / projected_box` delegate to it and their own copy (and `_screen_hides`) is deleted; same maths, so the b2 cut tests and the arena backdrop fixtures are the parity check.
+- **Netrun.** `OcclusionHelper` stays as it is: it is the spec-pinned twin of `tools/netrun_art/occlusion.py` (NA-21) and fades obstacles through a moving cone rather than cutting a still. Both now follow the same rule in words (README); folding the cone into rc_look would need the netrun spec owner and is not done here.
+- Tests: `tests/unit/test_rc_look_occlusion.gd` (fast).

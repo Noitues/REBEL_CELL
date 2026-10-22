@@ -31,3 +31,19 @@ point W lands on 1), back to sRGB, x tint (clamped), saturation around the displ
 Call sites: `shaders/arena/combat_backdrop.gdshader` (`graded`), `CombatBackdrop.graded` (numbers from CityConfig
 `backdrop_*`, per-corp tint). Next: the UI grades (city_tilt_shift, screen_grey, route_grade) and city_post (announced
 to art-pass first).
+
+## Occlusion: the sight rule (`RcLookOcclusion`)
+
+Designer 2026-10-21: hide or flatten every obstacle between the camera and the subject, in netrun and in combat. An
+obstacle nearer than the subject's middle, outside the subject's own footprint, gives way when it rises above the
+sight line inside the wedge to the subject's sides, or when its screen box covers the subject's (grown by `pad_px`).
+
+| API | What |
+|---|---|
+| `RcLookOcclusion.sight(project, eye, forward, subject, pad_bu, sight_share, pad_px, half_bu)` | the sight record (camera as a `project` Callable; hold the camera while the record is used) |
+| `RcLookOcclusion.hides(record, centre_xz, top)` | whether an obstacle on that ground point with that roof gives way |
+| `RcLookOcclusion.screen_box(project, box)` | a world box's screen rect (empty behind the eye) |
+
+Call sites: `BackdropCatalog.view_cut / occludes / projected_box` (combat close-ups, numbers from CityConfig
+`backdrop_close_*`). Netrun's moving rig keeps its spec-pinned cone (`OcclusionHelper`, a twin of
+`tools/netrun_art/occlusion.py`), which fades the same obstacles (cut / ghost / dissolve) instead of a hard cut.

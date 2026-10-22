@@ -426,13 +426,7 @@ static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size
 ## The screen box (px) of world box `box`'s eight corners through camera `c` (Rect2() when a
 ## corner is behind the eye).
 static func projected_box(c: CityIsoCamera, box: AABB) -> Rect2:
-	var out := Rect2()
-	for k in 8:
-		var p := c.project(box.get_endpoint(k))
-		if not p.is_finite():
-			return Rect2()
-		out = Rect2(p, Vector2.ZERO) if k == 0 else out.expand(p)
-	return out
+	return RcLookOcclusion.screen_box(c.project, box)
 
 
 ## B2 (D1): refinement passes of a perspective fit.
@@ -445,59 +439,21 @@ const FIT_PASSES := 3
 ## CityConfig.backdrop_close_cut_margin), inside the wedge from the eye to the subject's sides
 ## (that margin wider), and taller than the sight line from the eye to the subject's height at
 ## backdrop_close_sight_share. Low roofs in front and the city to the sides stay (the concepts
-## look over rooftops at the landmark). {eye, fwd, right, front, lo, hi, pad, base_y} (world). Pure.
+## look over rooftops at the landmark). Anything nearer than the subject that covers it on screen goes too; its own
+## buildings stay. The rule is rc_look's RcLookOcclusion (read the record only through `occludes`). Pure.
 static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB) -> Dictionary:
-	var eye := c.eye()
-	var f := c.forward()
-	var fwd := Vector2(f.x, f.z).normalized()
-	var right := Vector2(-fwd.y, fwd.x)
-	var e2 := Vector2(eye.x, eye.z)
-	var front := INF
-	var lo := INF
-	var hi := -INF
-	for k in 8:
-		var p := box.get_endpoint(k)
-		var v := Vector2(p.x, p.z) - e2
-		var d := maxf(v.dot(fwd), 0.001)
-		front = minf(front, d)
-		lo = minf(lo, v.dot(right) / d)
-		hi = maxf(hi, v.dot(right) / d)
-	return {"eye": eye, "fwd": fwd, "right": right, "front": front - cfg.backdrop_close_cut_margin, "sub": front,
-		"lo": lo, "hi": hi, "pad": cfg.backdrop_close_cut_margin, "base_y": box.position.y + box.size.y * cfg.backdrop_close_sight_share,
-		# LOOK-TOOLBOX (designer 2026-10-21, the netrun occlusion rule in combat): anything nearer than the subject whose
-		# screen box overlaps the subject's (grown by backdrop_close_cut_screen_pad px) gives way too.
-		"sub_xz": Rect2(Vector2(box.position.x, box.position.z), Vector2(box.size.x, box.size.z)),
-		"mid": Vector2(box.get_center().x - eye.x, box.get_center().z - eye.z).dot(fwd), "cam": c.copy(), "sub_rect": projected_box(c, box).grow(cfg.backdrop_close_cut_screen_pad), "half": cfg.lot_bu * 0.5}
+	# LOOK-TOOLBOX: the shared sight rule (RcLookOcclusion; designer 2026-10-21, the netrun occlusion rule in combat).
+	var cam := c.copy()
+	var cut := RcLookOcclusion.sight(cam.project, cam.eye(), cam.forward(), box, cfg.backdrop_close_cut_margin,
+			cfg.backdrop_close_sight_share, cfg.backdrop_close_cut_screen_pad, cfg.lot_bu * 0.5)
+	cut["cam"] = cam  # a Callable does not keep its RefCounted alive
+	return cut
 
 
 ## B2 (D1): whether a building at ground point `centre` (world X/Z) with its roof at `top` (BU)
 ## hides the subject of view cut `cut` (`view_cut`). Pure.
 static func occludes(centre: Vector2, top: float, cut: Dictionary) -> bool:
-	var eye: Vector3 = cut["eye"]
-	var v := centre - Vector2(eye.x, eye.z)
-	var d := v.dot(cut["fwd"])
-	if d <= 0.0 or d >= float(cut.get("mid", cut["sub"])):
-		return false
-	if cut.has("sub_xz") and (cut["sub_xz"] as Rect2).has_point(centre):
-		return false  # the subject's own buildings
-	var s := v.dot(cut["right"])
-	var pad := float(cut["pad"])
-	var in_wedge := d < float(cut["front"]) and s >= float(cut["lo"]) * d - pad and s <= float(cut["hi"]) * d + pad
-	var line := eye.y + (float(cut["base_y"]) - eye.y) * d / maxf(float(cut["sub"]), 0.001)
-	if in_wedge and top > line:
-		return true
-	return _screen_hides(centre, top, cut)
-
-
-## LOOK-TOOLBOX: whether a building at `centre` (its footprint a lot wide) with its roof at `top` stands nearer the eye
-## than the subject's front and covers the subject's screen box. Pure.
-static func _screen_hides(centre: Vector2, top: float, cut: Dictionary) -> bool:
-	if not cut.has("cam"):
-		return false
-	var cam: CityIsoCamera = cut["cam"]
-	var h := float(cut["half"])
-	var box := AABB(Vector3(centre.x - h, 0.0, centre.y - h), Vector3(h * 2.0, maxf(top, 0.01), h * 2.0))
-	return projected_box(cam, box).intersects(cut["sub_rect"])
+	return RcLookOcclusion.hides(cut, centre, top)
 
 
 ## Moves camera `c`'s target (its ortho, yaw and pitch kept) so world box `box`'s screen middle
