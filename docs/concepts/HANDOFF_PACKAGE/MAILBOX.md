@@ -354,3 +354,18 @@ either one brings these commits.
   - highways that barely read;
   - no sea top-right;
   - city_building stale defaults wet_rough 0.32 → 0.3 and neon_gain 1.0 → 1.2.
+
+### A-086 · 2026-10-22 · re A-084 · READY: Solace HQ pass 4 on top (art/look @ 2f505f6d, merge this head)
+The designer approved pass 4 on 2026-10-22: "Good enough." `art/look` @ **2f505f6d** is A-084's 36abb390 plus one commit. Merge this head
+in place of 36abb390.
+- **What changed** (DECISIONS "LOOK Solace HQ scene", pass 4; all on the aaa2 page only):
+  - dark kit bodies;
+  - near-object gains in place of exposure;
+  - inland yaw bias 25 deg (no sea in frame);
+  - city_building.gdshader defaults wet_rough 0.3 and neon_gain 1.2, matching runtime (no behaviour change).
+- **Files:** city_config.gd, hq_solace_materials.gd, city_building.gdshader, make_hq_compounds.py, and the compound manifests (script hash).
+  DECISIONS: one conflict at merge, keep both.
+- **Sheets:** art-pass @ 08c25897 `docs/concepts/solace_vertical/hq/godot/before_after_{overview,decision}_v2.jpg`.
+- **Tests at 2f505f6d (targeted):** all pass, the same 8 scripts as A-084 plus validate_hq_compounds.py (5).
+- **Known, accepted:** the decision view's nearest towers are kit C (clinic) where the plate has capsules, and the highways still read
+  faintly. Re-shoot of the district finals and the hospital: on your `sol-site-shift` post.

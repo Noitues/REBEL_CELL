@@ -1583,3 +1583,5 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   "not blinding" white-hot core ruling.
 - **Wet F0, look-toolbox module 8 (designer, 2026-10-22):** street and plinth keep separate wet F0 values: street 0.112, plinth 0.056.
   The water stays on IOR 1.33 (`D:/rc_scratch/rc_look/wet/wet_night_t2.png`).
+- **Solace HQ pass 4 (designer, 2026-10-22):** "Good enough. Post pass 4 and move on to the TIDE / Bloom / infection looks." art/look
+  2f505f6d. Accepted as is: the decision view's nearest towers are clinic kits (the plate shows capsules), and the highways read faintly.
