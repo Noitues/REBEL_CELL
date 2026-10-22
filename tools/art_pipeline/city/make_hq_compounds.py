@@ -31,6 +31,9 @@ VENDOR_SOURCE = "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 3
 # ART-8 8w: DISPATCH's stage is round 34's Tokyo canyon (kit26 / street34 / cfg28 in vendor_r34/; the rest vendor_r43/).
 VENDOR_SOURCE_CANYON = ("art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 "
                         "(vendor_r34/) + " + VENDOR_SOURCE + " (vendor_r43/)")
+SOLACE_SETTINGS = {"build_solace_v5_compound.py": {"look": "aaa2", "interior_atlas": "imap_atlas.jpg",
+                                                  "inland": {"r_max_lots": 150, "step_lots": 2, "cone_deg": 25, "bin_deg": 5}}}
+VENDOR_SOURCE_SOLACE = "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)"
 MANIFEST_SCHEMA = "rebel_cell.art_export/1"
 MATERIALS = {
     "hq_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part bit -> ROUGHNESS (ink material edges)",
@@ -39,13 +42,24 @@ MATERIALS = {
     "hq_win": "emissive windows: vertex colour x window gain",
     "hq_sign": "emissive diegetic signage (corp sign colour)",
     "hq_beam": "translucent light cone (emissive, alpha 0.22)",
+    "hq_sx_skin": "Solace v5 PBR: lime glossy helix skin (vertex colour = base, back side = office wall)",
+    "hq_sx_porc": "Solace v5 PBR: dark porcelain (jambs, deck undersides, crown slabs)",
+    "hq_sx_neon": "Solace v5 emissive: vertex colour x alpha gain (frame rings, rungs, rings, crown halo, path lights)",
+    "hq_sx_office": "Solace v5 built-floor interiors: vertex colour, alpha = emission gain",
+    "hq_sx_glass": "Solace v5 clear glass (transparent + fresnel)",
+    "hq_sx_metal": "Solace v5 metal (posts, rails, stair ribbon, core)",
+    "hq_sx_win": "Solace v5 interior-mapped window patch: NORMAL = window normal, UV0 = (u, dz), UV1 = (variant, blind), COLOR = tint + lit",
+    "hq_sx_stone": "Solace v5 plinth stone",
+    "hq_sx_ground": "Solace v5 lawn / paths (vertex colour)",
+    "hq_sx_plain": "Solace v5 trees, trunks, lamp posts",
+    "hq_sx_water": "Solace v5 ponds",
 }
 
 
 def source_files():
-    files = ["build_hq_compound.py", "build_dispatch_canyon.py", "hq_compound_spec.py", "make_hq_compounds.py",
+    files = ["build_hq_compound.py", "build_solace_v5_compound.py", "build_dispatch_canyon.py", "hq_compound_spec.py", "make_hq_compounds.py",
              "validate_hq_compounds.py", "hq_compound_toon.gdshader", "id_ground.py"]
-    for v in ("vendor_r43", "vendor_r34"):
+    for v in ("vendor_r43", "vendor_r34", "vendor_solace_v5"):
         files += [v + "/" + f for f in sorted(os.listdir(os.path.join(HERE, v))) if f.endswith(".py")]
     return files
 
@@ -91,6 +105,15 @@ def build(corp, blender):
     return out
 
 
+def extra_files(corp, dst):
+    """Solace v5: the interior-mapping atlas (6 variants x 5 faces, 3240 x 2520) next to the glb."""
+    if corp != "solace":
+        return []
+    p = os.path.join(dst, "imap_atlas.jpg")
+    shutil.copyfile(os.path.join(HERE, "vendor_solace_v5", "imap_atlas.jpg"), p)
+    return [{"path": "imap_atlas.jpg", "kind": "texture", "bytes": os.path.getsize(p), "sha256": sha256(p)}]
+
+
 def write_manifest(corp, build_dir):
     info = json.load(open(os.path.join(build_dir, "build_info.json")))
     dst = os.path.join(ASSETS, corp)
@@ -102,6 +125,9 @@ def write_manifest(corp, build_dir):
     bmin, bmax = info["bounds_blender"]["min"], info["bounds_blender"]["max"]
     gmin = [bmin[0], bmin[2], -bmax[1]]
     gmax = [bmax[0], bmax[2], -bmin[1]]
+    if info.get("footprint_radius"):  # a circle (Solace v5): the city clears the lots under it; min / max is its bounding square
+        rad = float(info["footprint_radius"])
+        gmin, gmax = [-rad, gmin[1], -rad], [rad, gmax[1], rad]
     cam_t, cam_o = L["camera"]
     man = {
         "schema": MANIFEST_SCHEMA,
@@ -109,17 +135,17 @@ def write_manifest(corp, build_dir):
         "corp": corp,
         "source": {"script": "tools/art_pipeline/city/" + L["builder"], "spec": "tools/art_pipeline/city/hq_compound_spec.py",
                    "driver": "tools/art_pipeline/city/make_hq_compounds.py",
-                   "vendor": VENDOR_SOURCE_CANYON if L["builder"] == "build_dispatch_canyon.py" else VENDOR_SOURCE, "commit": git_commit(),
+                   "vendor": VENDOR_SOURCE_CANYON if L["builder"] == "build_dispatch_canyon.py" else (VENDOR_SOURCE_SOLACE if L["builder"] == "build_solace_v5_compound.py" else VENDOR_SOURCE), "commit": git_commit(),
                    "scripts_sha256": scripts_sha256()},
         "settings": {"blender": info["blender"], "state": info["state"], "units": "1 BU = 1 m", "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
                      "tone": list(SPEC.TONE), "ramp_tint": list(SPEC.RAMP_TINT[corp]), "pitch_deg": L["pitch"], "yaw_deg": L["yaw"],
-                     "reference_camera": {"target": gd(cam_t), "ortho": cam_o}, "normals": "none (facet normal from screen derivatives)",
-                     "layered_sprites": "dropped: 1D chose real-time Godot 3D"},
+                     "reference_camera": {"target": gd(cam_t), "ortho": cam_o}, "normals": "exported (PBR look)" if L["builder"] == "build_solace_v5_compound.py" else "none (facet normal from screen derivatives)",
+                     "layered_sprites": "dropped: 1D chose real-time Godot 3D", **SOLACE_SETTINGS.get(L["builder"], {}), **({"unit_k": info["unit_k"]} if info.get("unit_k") else {})},
         "origin": L.get("origin", "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre"),
         "place_lot": list(L["lot_centre"]) if "lot_centre" in L else None,
         "footprint": {"min": [round(v, 3) for v in gmin], "max": [round(v, 3) for v in gmax],
-                      "size": [round(gmax[k] - gmin[k], 3) for k in range(3)]},
-        "files": [{"path": info["glb"], "kind": "gltf", "bytes": os.path.getsize(glb), "sha256": sha256(glb)}],
+                      "size": [round(gmax[k] - gmin[k], 3) for k in range(3)], **({"radius": info["footprint_radius"]} if info.get("footprint_radius") else {})},
+        "files": [{"path": info["glb"], "kind": "gltf", "bytes": os.path.getsize(glb), "sha256": sha256(glb)}] + extra_files(corp, dst),
         "triangles": info["triangles"],
         "materials": {k: v for k, v in MATERIALS.items() if k[3:] in info["triangles"]},
         "anchors": {"frame": "godot", "lift": A["lift"], "server_name": L["server_name"],

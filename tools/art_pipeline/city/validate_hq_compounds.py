@@ -22,8 +22,10 @@ sys.path.insert(0, HERE)
 import hq_compound_spec as SPEC  # noqa: E402
 
 MAX_GLB_BYTES = 6 * 1024 * 1024
+MAX_GLB_BYTES_PBR = 12 * 1024 * 1024  # the Solace v5 compound (PBR: normals, UVs, the park): 170 k triangles
 FIELDS = ["schema", "asset", "corp", "source", "settings", "origin", "footprint", "files", "triangles", "materials", "anchors"]
 ROLES = {"hq_toon", "hq_lit", "hq_neon", "hq_win", "hq_sign", "hq_beam"}
+ROLES_PBR = {"hq_sx_" + r for r in ("skin", "porc", "neon", "office", "glass", "metal", "win", "stone", "ground", "plain", "water")}
 
 
 def glb_json(path):
@@ -64,8 +66,9 @@ def check(corp, errors):
         b = open(p, "rb").read()
         if len(b) != f["bytes"] or hashlib.sha256(b).hexdigest() != f["sha256"]:
             err("%s does not match its manifest entry" % f["path"])
-        if len(b) > MAX_GLB_BYTES:
-            err("%s is %d bytes (budget %d)" % (f["path"], len(b), MAX_GLB_BYTES))
+        pbr = m["settings"].get("look") == "aaa2"
+        if len(b) > (MAX_GLB_BYTES_PBR if pbr else MAX_GLB_BYTES):
+            err("%s is %d bytes (budget %d)" % (f["path"], len(b), MAX_GLB_BYTES_PBR if pbr else MAX_GLB_BYTES))
         if f["kind"] == "gltf":
             g = glb_json(p)
             if g is None or g.get("asset", {}).get("version") != "2.0":
@@ -76,11 +79,11 @@ def check(corp, errors):
                     a = prim["attributes"]
                     if "COLOR_0" not in a:
                         err("mesh %s has no COLOR_0" % mesh.get("name"))
-                    if "NORMAL" in a:
+                    if "NORMAL" in a and not pbr:
                         err("mesh %s exports normals" % mesh.get("name"))
             names = {mat.get("name") for mat in g.get("materials", [])}
-            if not names <= ROLES:
-                err("unknown materials %s" % sorted(names - ROLES))
+            if not names <= (ROLES_PBR if pbr else ROLES):
+                err("unknown materials %s" % sorted(names - (ROLES_PBR if pbr else ROLES)))
     A = m["anchors"]
     rows = A["layers"]
     if len(rows) != SPEC.LAYERS or any(len(r) != SPEC.SLOTS for r in rows):

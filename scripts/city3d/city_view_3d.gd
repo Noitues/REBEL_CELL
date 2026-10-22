@@ -447,7 +447,7 @@ var _netrun_setup: bool = false
 ## the ground (city_ground <-> wet_street, so 0 is the old shader itself), the ink (faded by `look.ink_fade`) and the
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
-	look_blend = clampf(lb, 0.0, 1.0)
+	look_blend = 1.0 if not _compound_aaa.is_empty() else clampf(lb, 0.0, 1.0)  # an AAA-2 compound's page is held at 1
 	if water != null:
 		water.set_look_blend(look_blend)
 	if _building_mat == null:
@@ -470,7 +470,7 @@ func set_look_blend(lb: float) -> void:
 		if wet:
 			m.set_shader_parameter(&"look_blend", look_blend)
 	var look: Dictionary = CityShaderConfigData.shipped().look
-	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
+	_post.set_shader_parameter(&"ink_fade", 1.0 if not _compound_aaa.is_empty() else minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
 	# AAA-2 (A-022): above 0 the post runs the plate's chain and holds the exposure (solved per framing by the street rig); the
 	# Environment tonemap stays linear at 1. The world is the flat colour, the key light the moon.
@@ -481,6 +481,8 @@ func set_look_blend(lb: float) -> void:
 	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	_whole_landmarks()
+	if not _compound_aaa.is_empty():  # the AAA-2 HQ page: a clean frame (no film grain over the fog and the skin)
+		_post.set_shader_parameter(&"aaa_grain", Vector2.ZERO)
 
 
 var _aaa_exposure: float = 0.0
@@ -2110,6 +2112,11 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 
 # --- HQ compounds: 8p's models staged for an HQ run (ART-8 8w) --------------------------------
 
+## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
+var _compound_aaa: Dictionary = {}
+var _compound_fog: Dictionary = {}
+
+
 ## The compound key of `corp` in the cleared rects.
 static func compound_key(corp: StringName) -> StringName:
 	return StringName("compound_%s" % corp)
@@ -2139,6 +2146,9 @@ func stage_compound(corp: StringName) -> Node3D:
 	_cleared.append(fp)
 	_cleared_by[compound_key(corp)] = fp
 	dirty.append(fp)
+	var fr := float((m.get("footprint", {}) as Dictionary).get("radius", 0.0))
+	if fr > 0.0:  # LOOK Solace HQ: a round footprint (plinth + park ring): only the lots under the circle give way
+		_clear_masks[fp] = _circle_lots(at, fr)
 	# ART-5 5e's Site landmark (and its cleared block) gives way inside the compound too; the
 	# roof props follow the cleared prisms (they ride the rebuilt chunks).
 	if landmarks.has(SITE_KEY) and fp.intersects(_ground_box(landmarks[SITE_KEY])):
@@ -2150,7 +2160,15 @@ func stage_compound(corp: StringName) -> Node3D:
 		if scene != null:
 			node = scene.instantiate() as Node3D
 			node.name = "Compound_%s" % corp
-			HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
+			if HqSolaceMaterials.wants(m):  # LOOK Solace HQ: the plates' AAA-2 look (PBR roles, interior-mapped windows); the page goes AAA-2
+				HqSolaceMaterials.apply(node, corp, m)
+				_compound_aaa[corp] = true
+				if _env == null:  # staged before the scene is built (the HQ page stages before it mounts the view)
+					ready.connect(_compound_look_on.bind(corp, node, at), CONNECT_ONE_SHOT)
+				else:
+					_compound_look_on(corp, node, at)
+			else:
+				HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
 			node.transform = at
 			add_to_layer(&"landmarks", node)
 	compounds[corp] = node
@@ -2160,10 +2178,44 @@ func stage_compound(corp: StringName) -> Node3D:
 	return node
 
 
+## The lots (world lot grid, Vector2i -> true) whose centre lies within `radius` BU of the placed compound's origin.
+func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
+	var out := {}
+	var o := Vector2(at.origin.x, at.origin.z)
+	var span := Rect2(o - Vector2.ONE * radius, Vector2.ONE * radius * 2.0)
+	var lo := _lot_of(cfg, span.position)
+	var hi := _lot_of(cfg, span.end)
+	for y in range(mini(lo.y, hi.y) - 1, maxi(lo.y, hi.y) + 2):
+		for x in range(mini(lo.x, hi.x) - 1, maxi(lo.x, hi.x) + 2):
+			var w := CityIsoCamera.lot_to_world(cfg, Vector2(x + 0.5, y + 0.5))
+			if Vector2(w.x, w.z).distance_to(o) <= radius:
+				out[Vector2i(x, y)] = true
+	return out
+
+
+## The AAA-2 look of a staged compound: the page's look blend to 1 and the compound's volumetric haze.
+func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
+	if not _compound_aaa.has(corp):
+		return
+	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
+	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
+	set_look_blend(1.0)
+	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at, HqSolaceMaterials.unit_k(HqCompoundStage.manifest(corp)))
+
+
 ## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
 func unstage_compound(corp: StringName) -> void:
 	if not compounds.has(corp):
 		return
+	if _compound_aaa.has(corp):
+		_compound_aaa.erase(corp)
+		whole_look = false
+		set_look_blend(0.0)
+		if is_instance_valid(_compound_fog.get(corp)):
+			(_compound_fog[corp] as Node).queue_free()
+		_compound_fog.erase(corp)
+		if _env != null:
+			_env.volumetric_fog_enabled = false
 	var node: Node3D = compounds[corp]
 	if node != null and is_instance_valid(node):
 		node.queue_free()
@@ -2173,6 +2225,7 @@ func unstage_compound(corp: StringName) -> void:
 	if _cleared_by.has(key):
 		var fp: Rect2 = _cleared_by[key]
 		_cleared.erase(fp)
+		_clear_masks.erase(fp)
 		_cleared_by.erase(key)
 		dirty.append(fp)
 	if landmarks.has(corp):
