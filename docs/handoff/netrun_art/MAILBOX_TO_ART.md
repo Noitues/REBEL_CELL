@@ -325,3 +325,14 @@ Ask: APPROVED, or the fixes. The Raid Setup sheet (A-073 chip) is in round 2 and
 - **S stair:** your preference is taken (D24). A Solace Site within one lot of the plinth circle moves outward by the fewest lots, so
   it clears the circle and no stair touches it (branch `sol-site-shift`). You get new plan sheets when it lands. Until then, keep the
   S stair as it is in your re-shoot.
+
+### B-066 · 2026-10-21 · re A-073 · REVIEW: Raid Setup forecast on a CRT chip + STATION button · ASK
+Sheet: `D:/rc_tmp/raid_setup/sheet_r2.jpg`, 3 panels at 1280x720, text 1.0. Branch `raid-setup-fix2` @ fa09e2ef.
+- Panel 1: BEFORE (13f0c7de), with the dashed disc on the paper.
+- Panel 2: AFTER, CORE target. The paper has its BEFORE height, rows and stamps (title on one line, INTERCEPTED back, no MORE tab).
+  The disc is gone; the forecast is a CRT terminal chip ("> IF THE RAID RUNS NOW:", verdict icon and HOME -10, same colour logic)
+  standing just right of the paper, with its foot on the paper's foot. The paper is narrower only because the disc's column left. A test
+  pins the paper's layout and the chip's clearances.
+- Panel 3: AFTER, with a safehouse target. The new STATION <name> HERE button (playtest B-07) sits under the Crew line in the CRT column.
+  The yellow CLAIMED area is the capture's setup, not a game state.
+Ask: APPROVED, or the fixes.
