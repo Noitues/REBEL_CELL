@@ -199,6 +199,8 @@ func _bloom(c: CityView3D, corp: StringName, kind: String, m: Dictionary, at: Tr
 	var look := BloomLook.at_front(front, band, layout, BloomLook.VIEW_DECISION if kind == "pod" else &"", float(_args.get("bloom-strength", "1")))
 	if _args.get("bloom-haze", "1") == "0":
 		look.erase("haze")  # (lab: the skin and the window light without the spore haze)
+	if _args.has("bloom-u"):
+		look = BloomLook.with_uniforms(look, String(_args["bloom-u"]))
 	c.set_bloom(look)
 	print("HQRUN bloom %s front=%.3f band=%s zfront(plate)=%.2f" % [kind, front, BloomLook.BAND_NAMES[band], float(look["front"])])
 

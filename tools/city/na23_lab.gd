@@ -22,7 +22,7 @@ extends Control
 ##                        (RcLookMaterialAudit)
 ##   --bloom=<front>      LOOK Solace THE BLOOM (A Necrosis): the Bloom look at a front of <front> route layers (fractional; the concept's
 ##                        CREEPING / CLOSE / CATCHING are -0.5 / 0.75 / 1.4 with the operative on layer 2, gaps 2.5 / 1.25 / 0.6);
-##                        --bloom-op=<layer> (default 2) the operative's layer (the band is the gap's), --bloom-strength=<0..1> (default 1)
+##                        --bloom-u=<bl_name=value,...> (lab tuning of the uniforms), --bloom-op=<layer> (default 2) the operative's layer (the band is the gap's), --bloom-strength=<0..1> (default 1)
 ## Prints NA23 lines.
 
 const SETTLE_DEFAULT := 90
@@ -126,6 +126,8 @@ func _apply_bloom() -> void:
 	var gap_milli := roundi((float(_args.get("bloom-op", "2")) - front) * 1000.0)
 	var band := int(BloomRules.band_for_gap(gap_milli, cc))
 	var look := BloomLook.at_front(front, band, BloomLook.street_layout(_data.derive), &"", float(_args.get("bloom-strength", "1")))
+	if _args.has("bloom-u"):
+		look = BloomLook.with_uniforms(look, String(_args["bloom-u"]))
 	view.rig.view.set_bloom(look)
 	print("NA23 bloom front=%.3f band=%s frame x=%.2f boxes=%d" % [front, BloomLook.BAND_NAMES[band], float(look["front"]), int(look["uniforms"].get(&"bl_box_n", 0))])
 

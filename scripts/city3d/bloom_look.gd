@@ -220,6 +220,23 @@ static func _street_look(front_layers: float, band: int, layout: Dictionary, str
 		"frame": {"origin": layout["origin"], "dir": layout["dir"], "perp": layout["perp"], "x0": layout["x0"], "y0": layout["y0"]}}
 
 
+## Lab tuning: `look` with shader uniforms overridden from `spec` ("bl_veins=2.0,bl_plum=0.3;0.12;0.23": floats, or three numbers joined by
+## ";" for a colour / vector). Returns a copy; used by the labs' `--bloom-u=` only.
+static func with_uniforms(look: Dictionary, spec: String) -> Dictionary:
+	var out := look.duplicate(true)
+	var u: Dictionary = out["uniforms"]
+	for pair in spec.split(",", false):
+		var kv := pair.split("=", true, 1)
+		if kv.size() != 2:
+			continue
+		var parts := kv[1].split(";")
+		if parts.size() == 3:
+			u[StringName(kv[0])] = Vector3(float(parts[0]), float(parts[1]), float(parts[2]))
+		else:
+			u[StringName(kv[0])] = float(kv[1])
+	return out
+
+
 ## The street frame -> world transform of a street look (the ribbons' node transform): frame (x, y, z) to the world (plan x, height,
 ## -plan y).
 static func frame_to_world(look: Dictionary) -> Transform3D:
