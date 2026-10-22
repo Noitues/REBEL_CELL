@@ -252,7 +252,7 @@ func _row(kind: String, s: float) -> HBoxContainer:
 	swatch.custom_minimum_size = Vector2(side, side)
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	swatch.draw.connect(func() -> void:
-		RouteOverlay.draw_sticker(swatch, kind, swatch.size * 0.5, side * ICON_SHARE, RouteOverlay.STATE_LATER, s * ICON_SHARE))
+		RouteOverlay.draw_sticker(swatch, kind, swatch.size * 0.5, side * ICON_SHARE, RouteOverlay.STATE_LATER, s * ICON_SHARE, 1.0, true))
 	row.add_child(swatch)
 	var l := Label.new()
 	l.text = TranslationServer.translate(String(SHORT.get(kind, kind)))

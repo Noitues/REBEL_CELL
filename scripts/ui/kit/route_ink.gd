@@ -74,6 +74,27 @@ static func sticker_of(kind: String) -> Color:
 	return STICKER_FIGHT
 
 
+## The identity hue of route kind `kind` (CityMapOverlay.KIND_*): the ring colour of round 37's stickers, the room glow of the v2 kinds.
+## Hue never carries a kind alone (each has its own silhouette); the test holds the distances.
+static func accent_of(kind: String) -> Color:
+	match kind:
+		CityMapOverlay.KIND_ELITE:
+			return Palette.ROUTE_ELITE
+		CityMapOverlay.KIND_EVENT:
+			return Palette.ROUTE_EVENT
+		CityMapOverlay.KIND_SHOP:
+			return Palette.ROUTE_SHOP
+		CityMapOverlay.KIND_RACK:
+			return Palette.ROUTE_RACK
+		CityMapOverlay.KIND_REST:
+			return Palette.ROUTE_REST
+		CityMapOverlay.KIND_WORKSHOP:
+			return Palette.ROUTE_WORKSHOP
+		CityMapOverlay.KIND_CACHE:
+			return Palette.ROUTE_CACHE
+	return Palette.ROUTE_FIGHT
+
+
 ## The state ring colour of a route node in state `state` (RouteOverlay.STATE_*).
 static func ring_of(state: String) -> Color:
 	match state:

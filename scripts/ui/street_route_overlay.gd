@@ -7,7 +7,8 @@ extends Control
 ## Wax stays clear of stickers, chips and the UI rects it is given (`avoid`): a link run that would touch them is not drawn.
 
 const ART_DIR := "res://assets/netrun/route/"
-const ART_OF := {"router": "router", "terminal": "terminal", "mainframe": "shop", "server_rack": "rack"}
+const ART_OF := {"router": "router", "terminal": "terminal", "mainframe": "shop", "server_rack": "rack",
+	"rest": "rest", "workshop": "workshop", "cache": "cache"}
 const WORD_TARGET := "TARGET"
 const TARGET_SHARE := 1.75
 const TARGET_SQUASH := 0.86
