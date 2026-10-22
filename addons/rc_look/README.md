@@ -92,6 +92,20 @@ One set of cel-band and ink helpers for the props / busts / aircraft (toon_ink, 
 | `config/look_ink.tres` (`RcLookInkConfig`, `RcLookInkPreset`) | `hull` (2.5 px, wobble 0.35), `post` (1 px, edges 0.42 / 1.2), `post_backdrop` (edges 0.8 / 3.0, no wobble); ortho_ref 300; pinned by test |
 | lab: `--module=toon` | per band set: the band strip (shader over mirror chips) and two overlapping spheres inked by the post pass and by the hull |
 
+## Module 8: wet and water (`RcLookWet`)
+
+One set of wet-surface and water helpers for the wet street, the wet plinth, the sea, its plane, the shore smears and the seabed, each the exact form of the code it replaces. Built in the lab first; no view migrated yet. The F0 policy stays per view (a designer call; the lab sheet shows the three side by side).
+
+| API | What |
+|---|---|
+| `shaders/rc_wet.gdshaderinc`: `rcl_fbm3_n(p, oct)` | the puddle noise: normalised octave sum of `rcl_vnoise3` (= netrun_clock's nr_noise3) |
+| `rcl_puddle_rough(n, rough_noise, rough_wet)` | roughness dry (`rough_wet.x`) to puddle (`.y`) across the noise range |
+| `rcl_fresnel(cos_t, f0)`, `rcl_f0_ior(ior)` | Schlick (power 5); the dielectric F0 of an IOR |
+| `rcl_ggx_d(nh, a)`, `rcl_ridge(n, width)`, `rcl_shore(d, len)` | isotropic GGX distribution; caustic / marble veins; the shore fade exp(-d / len) |
+| `RcLookWet`: `.preset(name)`, `.puddle_rough / fresnel / f0_ior / ggx_d / ridge / shore` | exact GDScript mirrors (not the noise) |
+| `config/look_wet.tres` (`RcLookWetConfig`, `RcLookWetPreset`, `.f0()`) | `street` (F0 0.16 x specular), `plinth` (0.08 x specular), `water` (IOR 1.33, boost 0.2); pinned by test to CityShaderConfigData wet and CityConfig.water_plane |
+| lab: `--module=wet` | the three F0 policies: Fresnel strips (shader over mirror) and a wet street reflecting neon bars at street level and from the city camera |
+
 ## Module 12: grease pencil
 
 Wax on glass for plans and threats (ART_BIBLE §1.2). The engine stays in `scripts/ui/kit/materials/` (36 views use

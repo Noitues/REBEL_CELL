@@ -17,6 +17,7 @@ const STAGES := {
 	"pencil": "res://addons/rc_look/lab/stages/pencil_stage.gd",
 	"holo": "res://addons/rc_look/lab/stages/holo_stage.gd",
 	"toon": "res://addons/rc_look/lab/stages/toon_stage.gd",
+	"wet": "res://addons/rc_look/lab/stages/wet_stage.gd",
 }
 ## The neutral set: a mid-grey ramp, darker at night (sRGB).
 const SET_DAY := [Color(0.42, 0.43, 0.46), Color(0.62, 0.63, 0.66)]
