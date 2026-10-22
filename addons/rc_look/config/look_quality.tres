@@ -5,6 +5,9 @@
 [resource]
 script = ExtResource("1")
 modules = {
+"light": {
+"bloom": {"base": 1.0, "tiers": [0.0, 0.6, 1.0]}
+},
 "lab": {
 "motion": {"base": 1.0, "reduce_motion": 0.0, "reduce_effects": 0.0},
 "grain": {"base": 1.0, "tiers": [0.0, 1.0, 1.0], "reduce_effects": 0.0}

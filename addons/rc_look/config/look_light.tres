@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="RcLookLightConfig" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_light_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_light_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="glow"]
+script = ExtResource("2")
+kind = 0
+reach = 1.0
+shape = 2.0
+gain = 1.0
+
+[sub_resource type="Resource" id="halo"]
+script = ExtResource("2")
+kind = 0
+reach = 1.0
+shape = 1.0
+gain = 0.6
+
+[sub_resource type="Resource" id="pool"]
+script = ExtResource("2")
+kind = 1
+reach = 1.0
+shape = 1.6
+gain = 1.0
+
+[sub_resource type="Resource" id="spill"]
+script = ExtResource("2")
+kind = 1
+reach = 1.0
+shape = 2.0
+gain = 0.6
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"glow": SubResource("glow"),
+&"halo": SubResource("halo"),
+&"pool": SubResource("pool"),
+&"spill": SubResource("spill")
+}
+bloom_threshold = 0.6
+bloom_knee = 0.3
+bloom_key = 1
+bloom_lods = Vector3(2, 4, 6)
+bloom_weights = Vector3(0.5, 0.35, 0.25)
