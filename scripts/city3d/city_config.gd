@@ -126,7 +126,15 @@ extends Resource
 @export var whole_terr_win_k: float = 0.85
 ## LOOK Solace HQ (designer 2026-10-21: the city round the helix read flat and pink): over the whole-city look, the aaa2 HQ page's city is
 ## darker facades with warm and cool lit windows, less of the territory's pink on windows and roofs, and a cool haze with depth.
-@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 1.8, "win_share": 0.4}
+@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 2.0, "win_share": 0.4, "pbr_spec_k": 0.15}
+## The aaa2 page: the Solace kit bodies' albedo factor (dark bodies carrying lit stripes), the road glow's factor, the helix' extra glow.
+@export var hq_page_kit_dark: float = 0.3
+@export var hq_page_road_glow_k: float = 0.2
+## The helix' soft green pool (plate hq_solace_overview): colour x gain on the plinth (radius = this share of the plinth radius) and on the nearest
+## facades (radius BU, centred at this height BU over the compound's origin).
+@export var hq_page_pool_color: Color = Color(0.35, 1.0, 0.25)
+@export var hq_page_pool_plinth: Vector2 = Vector2(0.5, 1.1)
+@export var hq_page_pool_facade: Vector3 = Vector3(0.12, 30.0, 40.0)
 @export var hq_page_ramp: Array[Color] = [Color(0.025, 0.025, 0.035), Color(0.05, 0.05, 0.07), Color(0.09, 0.09, 0.12)]
 ## The six concrete families of the HQ page's buildings (the plates' charcoal facades, warm and cool).
 @export var hq_page_concrete: Array[Color] = [Color(0.035, 0.035, 0.04), Color(0.045, 0.042, 0.04), Color(0.03, 0.034, 0.042), Color(0.04, 0.04, 0.045),
@@ -991,12 +999,12 @@ extends Resource
 @export var solace_a_mast: Vector3 = Vector3(0.9, 0.025, 0.07)
 ## B: core radius, share of the height the core reaches, cells (min, max), cell radius range, nucleus share of the cell radius,
 ## the share of the cells with a nucleus and the angular size (cos) of the nucleus patch.
-@export var solace_b_core_r: float = 0.11
+@export var solace_b_core_r: float = 0.13
 @export var solace_b_core_share: float = 0.92
 @export var solace_b_cells: Vector2i = Vector2i(5, 8)
-@export var solace_b_cell_r: Vector2 = Vector2(0.2, 0.31)
-@export var solace_b_nucleus_share: float = 0.5
-@export var solace_b_patch_cos: float = 0.55
+@export var solace_b_cell_r: Vector2 = Vector2(0.11, 0.17)
+@export var solace_b_nucleus_share: float = 0.3
+@export var solace_b_patch_cos: float = 0.8
 ## C: tier half widths (the lot's shorter side), tier tops (share of the height), setback slab thickness, crown slab count,
 ## slab thickness, twist per slab (degrees) and shrink per slab.
 @export var solace_c_tiers: PackedFloat32Array = PackedFloat32Array([0.46, 0.38, 0.30])
@@ -1015,7 +1023,7 @@ extends Resource
 @export var solace_terrace: Color = Color(0.20, 0.42, 0.22)
 ## Ribbon bands on the capsule and core (BU pitch, lit share of the pitch, share of bands in pink, share left dark) and the
 ## clinic's green glass bands (pitch, glass share).
-@export var solace_band: Vector4 = Vector4(1.7, 0.38, 0.16, 0.12)
+@export var solace_band: Vector4 = Vector4(1.7, 0.30, 0.16, 0.12)
 @export var solace_clinic_band: Vector2 = Vector2(2.2, 0.34)
 ## Emission at night and by day (the day look blends by night share), and the share of it the glass spheres, the nuclei and the
 ## clinic's green bands carry.
@@ -1036,8 +1044,13 @@ extends Resource
 @export var solace_park_gravel: Color = Color(0.46, 0.50, 0.40)
 @export var solace_park_lane: Color = Color(0.10, 0.09, 0.16)
 @export var solace_park_water: Color = Color(0.10, 0.34, 0.46)
-@export var solace_park_stone: Color = Color(0.40, 0.44, 0.42)
+@export var solace_park_stone: Color = Color(0.22, 0.25, 0.24)
 @export var solace_park_line_w: float = 0.7
+## The park's dressing (concept r5): the share of park lots with a feature (a glass dome or a petri plaza), the dome share of those,
+## the dome / plaza radius (BU) and the share of the park lots that carry tree clumps (CityParkKit).
+@export var solace_park_features: Vector2 = Vector2(0.22, 0.6)
+@export var solace_park_feature_r: Vector2 = Vector2(1.7, 2.6)
+@export var solace_park_tree_share: float = 0.95
 @export var solace_park_tree_colors: Array[Color] = [Color(0.12, 0.40, 0.16), Color(0.17, 0.48, 0.19), Color(0.10, 0.34, 0.18)]
 @export var solace_plinth_top: float = 2.0
 @export var solace_plinth_tiers: PackedFloat32Array = PackedFloat32Array([1.0, 0.843, 0.686])

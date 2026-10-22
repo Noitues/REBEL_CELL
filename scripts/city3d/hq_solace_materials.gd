@@ -10,14 +10,14 @@ const GLASS := preload("res://shaders/city/hq_solace_glass.gdshader")
 const WINDOW := preload("res://shaders/city/hq_solace_window.gdshader")
 const LOOK_KEY := "aaa2"
 ## The page's post exposure over the street's (the plates' HQ post runs brighter than the district's).
-const PAGE_EXPOSURE_K := 1.0
+const PAGE_EXPOSURE_K := 1.12
 
 ## Role -> shader parameters (hq_preset `light`: skin_k 0.012, rim_k 0.12 / pow 4, porcelain rough 0.16 / coat 0.8, office rough 0.6).
 const ROLES := {
-	"hq_sx_skin": {"albedo_k": 0.45, "roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05, "glow_k": 0.06, "rim_k": 0.5, "rim_pow": 4.0,
+	"hq_sx_skin": {"albedo_k": 0.35, "roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05, "glow_k": 0.05, "rim_k": 1.1, "rim_pow": 4.0,
 		"back_k": 0.22},
 	"hq_sx_porc": {"roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05},
-	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 1.4},
+	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 2.0},
 	"hq_sx_office": {"roughness": 0.6, "emit_gain": 1.0},
 	"hq_sx_metal": {"roughness": 0.35, "metallic": 0.6},
 	"hq_sx_stone": {"albedo_k": 0.9, "roughness": 0.62},

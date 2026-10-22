@@ -17,7 +17,7 @@ render_mode cull_disabled, specular_disabled;
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
 uniform vec3 ramp_lit;
-uniform vec2 ramp_edges = vec2(0.147, 0.393);
+uniform vec2 ramp_edges = vec2(0.118, 0.363);
 uniform float tone_min = 0.86;
 uniform float tone_max = 1.12;
 uniform float roof_gain = 1.08;
@@ -202,6 +202,9 @@ uniform float kit_glass_emit = 0.5;
 uniform float kit_nucleus_emit = 1.1;
 uniform float kit_clinic_emit = 0.6;
 uniform float kit_porcelain_glow = 0.12;
+uniform vec4 hq_pool = vec4(0.0);      // LOOK Solace HQ (aaa2 page): the helix' soft green wash on the nearest facades: xyz centre (world), w radius (BU)
+uniform vec3 hq_pool_col = vec3(0.0);   // its colour times gain (0 = off)
+uniform float kit_dark = 1.0;  // LOOK Solace HQ (aaa2 page only): the kits' albedo factor, so dark bodies carry their lit stripes
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -418,14 +421,16 @@ void fragment() {
 			}
 			base = kb * tone;
 		} else if (kit == 2) {
-			base = kit_lime * 0.5 * tone;
-			em = kit_lime * kit_emit * kit_glass_emit * (0.8 + 0.4 * tone * tone);
+			// LOOK Solace cells: dark green glass, shaded, a lime rim light (the concept's cells), not a flat lime blob.
+			float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 2.2);
+			base = kit_leaf * 0.2 * tone;
+			em = kit_lime * kit_emit * kit_glass_emit * (0.10 + 1.1 * rim) * (0.85 + 0.3 * tone);
 		} else if (kit == 3) {
-			base = kit_pink * 0.45 * tone;
-			em = kit_pink * kit_emit * kit_nucleus_emit;
+			base = kit_pink * 0.18 * tone;
+			em = kit_pink * kit_emit * kit_nucleus_emit * 0.7;
 		} else if (kit == 4) {
 			base = kit_porcelain * tone;
-			em = kit_porcelain * kit_porcelain_glow * kit_emit;
+			em = kit_porcelain * kit_porcelain_glow * kit_emit * kit_dark;
 		} else if (kit == 5) {
 			float cp = max(kit_clinic_band.x, 0.1);
 			float cf = fract(zl / cp + seed * 5.0);
@@ -434,7 +439,7 @@ void fragment() {
 				em = kit_leaf * kit_emit * kit_clinic_emit;
 			} else {
 				base = kit_porcelain * tone;
-				em = kit_porcelain * kit_porcelain_glow * kit_emit;
+				em = kit_porcelain * kit_porcelain_glow * kit_emit * kit_dark;
 			}
 		} else if (kit == 6) {
 			base = kit_dome * tone;
@@ -445,6 +450,7 @@ void fragment() {
 		} else {
 			base = kit_terrace * tone;
 		}
+		base *= kit_dark;
 	} else if (!roof) {
 		if (ghosted && v_occ.z > 0.0) {
 			float eL = length(v_edge);
@@ -606,6 +612,10 @@ void fragment() {
 	}
 	if (!roof && foot_dark < 1.0) {
 		base *= mix(foot_dark, 1.0, smoothstep(0.0, foot_h_bu, zl));
+	}
+	if (hq_pool.w > 0.0) {
+		float pf = clamp(1.0 - length(v_world - hq_pool.xyz) / hq_pool.w, 0.0, 1.0);
+		em += hq_pool_col * pf * pf * look_blend;
 	}
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);

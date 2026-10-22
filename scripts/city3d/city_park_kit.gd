@@ -61,7 +61,7 @@ static func mesh(cfg: CityConfig, parks: Array[Vector2i], terrain: CityA2Terrain
 					for e: int in tri:
 						st.set_color(lc[ks[e]])
 						st.add_vertex(lg[ks[e]])
-		if CityMeshKit.hash01(SEED_PICK, l.x, l.y) >= cfg.park_tree_share:
+		if CityMeshKit.hash01(SEED_PICK, l.x, l.y) >= (cfg.solace_park_tree_share if solace_lots.has(l) else cfg.park_tree_share):
 			continue
 		var cols: Array = cfg.solace_park_tree_colors if solace_lots.has(l) and not cfg.solace_park_tree_colors.is_empty() else cfg.park_tree_colors  # LOOK Solace park: its trees are green
 		var n := 0

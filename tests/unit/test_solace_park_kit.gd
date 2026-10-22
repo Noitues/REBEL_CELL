@@ -27,10 +27,13 @@ func test_the_plinth_is_the_layouts_circle() -> void:
 	var c := CityIsoCamera.lot_to_world(CONFIG, pl["centre"], 0.0)
 	var far := 0.0
 	var top := 0.0
-	for i in m.surface_get_arrays(0)[Mesh.ARRAY_VERTEX].size():
-		var v: Vector3 = m.surface_get_arrays(0)[Mesh.ARRAY_VERTEX][i]
-		var col: Color = m.surface_get_arrays(0)[Mesh.ARRAY_COLOR][i]
-		if col.a > 0.95 and v.y > 0.5:
+	var arr := m.surface_get_arrays(0)
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arr[Mesh.ARRAY_COLOR]
+	for i in verts.size():
+		var v: Vector3 = verts[i]
+		var col: Color = cols[i]
+		if col.a > 0.95 and v.y > 0.5 and Vector2(v.x - c.x, v.z - c.z).length() < float(pl["radius_bu"]) * 1.1:
 			far = maxf(far, Vector2(v.x - c.x, v.z - c.z).length())
 			top = maxf(top, v.y)
 	assert_gte(far, float(pl["radius_bu"]) - 0.01, "the lowest tier reaches the layout's radius")

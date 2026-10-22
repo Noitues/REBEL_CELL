@@ -312,6 +312,9 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		for m in [_building_mat, _ground_mat, _lane_mat, _outer_mat]:
 			if m != null:
 				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+	if _compound_aaa.is_empty():
+		_building_mat.set_shader_parameter(&"kit_dark", 1.0)
+		_building_mat.set_shader_parameter(&"hq_pool", Vector4())
 	if not _compound_aaa.is_empty() and cfg.hq_page_ramp.size() == 3:  # LOOK Solace HQ: charcoal facades (no mauve ramp)
 		for k in 3:
 			var hc: Color = cfg.hq_page_ramp[k]
@@ -372,7 +375,7 @@ func _whole_road_glow() -> void:
 	if _glow_line_mat == null:
 		_glow_line_mat = ShaderMaterial.new()
 		_glow_line_mat.shader = GLOW_LINE
-	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share)
+	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share * (cfg.hq_page_road_glow_k if not _compound_aaa.is_empty() else 1.0))
 	_glow_line_mat.set_shader_parameter(&"tint", Vector3(cfg.whole_road_glow_tint.r, cfg.whole_road_glow_tint.g, cfg.whole_road_glow_tint.b))
 	rg.material_override = _glow_line_mat
 	rg.visible = night_share >= cfg.whole_road_glow_from
@@ -838,6 +841,11 @@ func _whole_building() -> void:
 		for c: Color in cfg.hq_page_window_colors:
 			hw.append(Vector3(c.r, c.g, c.b))
 		_building_mat.set_shader_parameter(&"window_colors", hw)
+		_building_mat.set_shader_parameter(&"kit_dark", cfg.hq_page_kit_dark)
+		var fp := cfg.hq_page_pool_facade
+		var fc := cfg.hq_page_pool_color
+		_building_mat.set_shader_parameter(&"hq_pool", Vector4(_hq_pool_at.x, _hq_pool_at.y + fp.y, _hq_pool_at.z, fp.z))
+		_building_mat.set_shader_parameter(&"hq_pool_col", Vector3(fc.r, fc.g, fc.b) * fp.x)
 		var cf: Array[Vector3] = []
 		for c: Color in cfg.hq_page_concrete:
 			cf.append(Vector3(c.r, c.g, c.b))
@@ -1893,6 +1901,14 @@ func _solace_park_look() -> void:
 		return
 	_solace_park_mat.set_shader_parameter(&"look_blend", look_blend)
 	_solace_park_mat.set_shader_parameter(&"night", night_share)
+	var on := not _compound_aaa.is_empty() and _hq_pool_at != Vector3.INF
+	var pr := 35.0
+	var pk := CitySolaceParkKit.data(city_seed)
+	if not pk.is_empty():
+		pr = float((pk["plinth"] as Dictionary).get("radius_bu", pr))
+	_solace_park_mat.set_shader_parameter(&"pool", Vector4(_hq_pool_at.x, _hq_pool_at.y + cfg.solace_plinth_top, _hq_pool_at.z, pr * cfg.hq_page_pool_plinth.y) if on else Vector4())
+	var pc := cfg.hq_page_pool_color
+	_solace_park_mat.set_shader_parameter(&"pool_col", Vector3(pc.r, pc.g, pc.b) * cfg.hq_page_pool_plinth.x if on else Vector3.ZERO)
 
 
 ## LOOK L5 (the designer): under the whole-city pose the Cell's blocks are the city's ordinary mix: the Cell's district
@@ -2174,6 +2190,8 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 ## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
 var _compound_aaa: Dictionary = {}
 var _compound_fog: Dictionary = {}
+## The aaa2 compound's origin (world; INF without one): the centre of the helix' green pool.
+var _hq_pool_at: Vector3 = Vector3.INF
 
 
 ## The compound key of `corp` in the cleared rects.
@@ -2257,6 +2275,7 @@ func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	if not _compound_aaa.has(corp):
 		return
 	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
+	_hq_pool_at = at.origin
 	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
 	_whole_building()  # (after the page's own overrides are in: `_compound_aaa` holds this corp)
 	set_look_blend(1.0)
@@ -2270,6 +2289,7 @@ func unstage_compound(corp: StringName) -> void:
 		return
 	if _compound_aaa.has(corp):
 		_compound_aaa.erase(corp)
+		_hq_pool_at = Vector3.INF
 		whole_look = false
 		set_look_blend(0.0)
 		if is_instance_valid(_compound_fog.get(corp)):

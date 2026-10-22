@@ -55,6 +55,7 @@ static func mesh(cfg: CityConfig, park: Dictionary, terrain: CityA2Terrain) -> A
 	_paths(st, cfg, park, terrain)
 	_ponds(st, cfg, park, terrain)
 	_plinth(st, cfg, park, terrain)
+	_dressing(st, cfg, park, terrain)
 	st.generate_normals()
 	return st.commit()
 
@@ -203,3 +204,60 @@ static func _plinth(st: SurfaceTool, cfg: CityConfig, park: Dictionary, terrain:
 			var ea := base + d * r0 + side * hw * sg + Vector3(0, top_h + 0.05, 0)
 			var eb := base + d * r1 + side * hw * sg + Vector3(0, 0.1, 0)
 			_line(st, ea, eb, Vector3.UP, cfg.solace_park_line_w * 0.5, cfg.solace_lime)
+
+
+const SALT_FEAT := 9160
+
+
+## The park's dressing (concept r5): on a share of the park lots (not under the plinth) a glass dome with a lit ring and a pink beacon,
+## or a petri plaza (a pale disc with a lime ring, a pink ring and a few lit colonies).
+static func _dressing(st: SurfaceTool, cfg: CityConfig, park: Dictionary, terrain: CityA2Terrain) -> void:
+	var pl: Dictionary = park.get("plinth", {})
+	var pc: Vector2 = pl.get("centre", Vector2(INF, INF))
+	var clear := (float(pl.get("radius_bu", 0.0)) * cfg.solace_plinth_stair.y + 4.0) / cfg.lot_bu
+	for l: Vector2i in park["lots"]:
+		if CityMeshKit.hash01(SALT_FEAT, l.x, l.y) >= cfg.solace_park_features.x:
+			continue
+		var at := Vector2(l) + Vector2(0.3 + 0.4 * CityMeshKit.hash01(SALT_FEAT + 1, l.x, l.y), 0.3 + 0.4 * CityMeshKit.hash01(SALT_FEAT + 2, l.x, l.y))
+		if at.distance_to(pc) < clear:
+			continue
+		var r := lerpf(cfg.solace_park_feature_r.x, cfg.solace_park_feature_r.y, CityMeshKit.hash01(SALT_FEAT + 3, l.x, l.y))
+		var c := _w(cfg, at, terrain, cfg.solace_park_lift * 3.0)
+		if CityMeshKit.hash01(SALT_FEAT + 4, l.x, l.y) < cfg.solace_park_features.y:
+			_dome(st, cfg, c, r)
+		else:
+			_petri(st, cfg, c, r, l)
+
+
+static func _dome(st: SurfaceTool, cfg: CityConfig, c: Vector3, r: float) -> void:
+	var rings := 4
+	var n := 12
+	var col := cfg.solace_park_stone.lerp(cfg.solace_leaf, 0.7).darkened(0.35)
+	for j in rings:
+		var a0 := PI * 0.5 * float(j) / rings
+		var a1 := PI * 0.5 * float(j + 1) / rings
+		for k in n:
+			var t0 := TAU * float(k) / n
+			var t1 := TAU * float(k + 1) / n
+			var p00 := c + Vector3(cos(t0) * cos(a0), sin(a0) * 0.8, sin(t0) * cos(a0)) * r
+			var p01 := c + Vector3(cos(t1) * cos(a0), sin(a0) * 0.8, sin(t1) * cos(a0)) * r
+			var p10 := c + Vector3(cos(t0) * cos(a1), sin(a1) * 0.8, sin(t0) * cos(a1)) * r
+			var p11 := c + Vector3(cos(t1) * cos(a1), sin(a1) * 0.8, sin(t1) * cos(a1)) * r
+			_quad(st, p00, p01, p11, p10, col, PART_STONE)
+	_ring(st, c + Vector3(0, 0.05, 0), r * 1.02, cfg.solace_park_line_w * 0.6, cfg.solace_lime, PART_LIT)
+	_ring(st, c + Vector3(0, r * 0.8 + 0.02, 0), r * 0.18, r * 0.3, cfg.solace_pink, PART_LIT)
+
+
+static func _petri(st: SurfaceTool, cfg: CityConfig, c: Vector3, r: float, l: Vector2i) -> void:
+	var n := 20
+	for k in n:
+		var t0 := TAU * float(k) / n
+		var t1 := TAU * float(k + 1) / n
+		for v: Vector3 in [c + Vector3(0, 0.06, 0), c + Vector3(cos(t1), 0.06, sin(t1)) * r, c + Vector3(cos(t0), 0.06, sin(t0)) * r]:
+			_v(st, v, cfg.solace_park_stone.lightened(0.1), PART_STONE)
+	_ring(st, c + Vector3(0, 0.1, 0), r * 0.92, cfg.solace_park_line_w * 0.6, cfg.solace_lime, PART_LIT)
+	_ring(st, c + Vector3(0, 0.1, 0), r * 0.5, cfg.solace_park_line_w * 0.5, cfg.solace_pink, PART_LIT)
+	for k in 4:
+		var a := TAU * (float(k) + CityMeshKit.hash01(SALT_FEAT + 5, l.x, l.y)) / 4.0
+		var cc := c + Vector3(cos(a), 0.0, sin(a)) * r * 0.3
+		_ring(st, cc + Vector3(0, 0.12, 0), r * 0.08, r * 0.16, cfg.solace_pink if k % 2 == 0 else cfg.solace_lime, PART_LIT)

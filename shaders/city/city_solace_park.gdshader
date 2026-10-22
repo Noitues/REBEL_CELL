@@ -7,11 +7,19 @@ render_mode cull_disabled;
 // scales the lit lines; by day the base colours are lifted.
 uniform float look_blend : hint_range(0.0, 1.0) = 0.0;
 uniform float night : hint_range(0.0, 1.0) = 1.0;
-uniform float lit_gain = 1.6;
+uniform float lit_gain = 1.2;
 uniform float day_lift = 1.5;
 uniform float side_shade = 0.62;
 uniform float cel_k = 0.8;
-uniform float aaa_glow = 0.12;  // the AAA-2 look: the park's own lamps and path lights lift its surfaces (the plates' lit park)
+uniform vec4 pool = vec4(0.0);          // the helix' soft green pool on the plinth (aaa2 page): xyz centre (world), w radius (BU)
+uniform vec3 pool_col = vec3(0.0);
+uniform float aaa_glow = 0.05;  // the AAA-2 look: the park's own lamps and path lights lift its surfaces (the plates' lit park)
+
+varying vec3 v_world;
+
+void vertex() {
+	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
 
 void fragment() {
 	float part = COLOR.a;
@@ -29,6 +37,10 @@ void fragment() {
 	SPECULAR = mix(0.0, water ? 0.9 : 0.5, look_blend);
 	METALLIC = 0.0;
 	EMISSION = lit ? COLOR.rgb * lit_gain * mix(0.35, 1.0, night) : cel + base * aaa_glow * look_blend;
+	if (pool.w > 0.0) {
+		float pf = clamp(1.0 - length(v_world - pool.xyz) / pool.w, 0.0, 1.0);
+		EMISSION += pool_col * pf * pf * look_blend;
+	}
 	if (water) {
 		EMISSION = cel + COLOR.rgb * 0.35 * night * look_blend;
 	}
