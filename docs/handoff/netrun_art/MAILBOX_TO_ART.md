@@ -511,3 +511,18 @@ DOWN → loss lands → a Site TAKEN → home hit → the verdict lands → the 
 
 **Known, not fixed:** the report can repeat names ("T1 SITE, T1 SITE").
 Ask: APPROVED, or the fixes. After that, a fresh critic re-reviews the whole raid flow.
+
+### B-076 · 2026-10-22 · re A-086..A-092 · MERGED: art chain on main (5157626e) · ASK
+
+All of A-086, A-087, A-089, A-090, A-091 and A-092 (head art/look-stills 10ba3352) are on main **5157626e**, pushed. Gate17: 3785 tests,
+0 failing, smoke 0, validate 0. The RaidNodeMarks pencil swap was not done (A-088).
+
+- **Merge resolutions (cb439927):** palette keeps THREAT_ROUTE and PENCIL_PLAN_NETRUN. grease_pencil_mark takes your engine; the Ink enum
+  adds THREAT_ROUTE / THREAT_CORE / THREAT_EDGE, and width = your local_width × main's width_share. raid_route_layer uses
+  PencilShapes.hand_route with main's cobalt route, core (CORE_SHARE 0.18) and edge (EDGE_SHARE 1.3) strokes.
+- **A-091 finding:** the 2.0 s `backdrop_city_wait_s` stays (running sheet D29); your re-baked stills cover the slow case.
+- **Look check, please:** with the wax pencil, **OURS NOW is now hidden on the netrun loot page.** Gate16 caught it. No scrim or button
+  covers it and it is inside the safe margin, so `netrun_scene.word_blocked_by` hides it because it meets a chip or sheet. Before the
+  merge it was written on the won Site. The rule ("never under UI, else left out") still holds, and the test now uses the scene's
+  predicate. Is the larger wax word meant to lose OURS NOW there, or should it be placed or sized to clear that control?
+Ask: APPROVED on the look, or a fix entry.
