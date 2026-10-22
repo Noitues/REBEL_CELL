@@ -2,7 +2,7 @@ extends GutTest
 ## LOOK-TOOLBOX module 17 (fast tier): the glTF material-slot map. It equals the runtime tables it stands for
 ## (LandmarkMaterials, HqCompoundMaterials, StreetR2Materials.for_slot by behaviour), every surface of every Blender export
 ## under assets/ is listed (no slot reaches a renderer's silent fallback), and the post-import pilots (uplink pads, roof
-## props) carry their stamp.
+## props, the folders of post_import_dirs: the rc_look editor plugin) carry their stamp.
 
 const PILOTS: Array[String] = ["res://assets/raid/uplink/uplink_pads.glb", "res://assets/city/roof_props/roof_props.glb"]
 
@@ -54,6 +54,9 @@ func test_every_export_lists_every_slot() -> void:
 
 
 func test_the_pilots_carry_the_post_import_stamp() -> void:
+	for f: String in PILOTS:
+		assert_true(RcLookSlots.wants(f), "%s is under a post-import folder" % f)
+	assert_false(RcLookSlots.wants("res://assets/street_kit/lamp_post.glb"), "other folders are not stamped yet")
 	for f: String in PILOTS:
 		var root := (load(f) as PackedScene).instantiate()
 		var n := 0

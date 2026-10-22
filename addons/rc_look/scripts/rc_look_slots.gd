@@ -2,7 +2,7 @@ class_name RcLookSlots
 extends RefCounted
 ## LOOK-TOOLBOX module 17: what a Blender export's glTF material slot means for the look. Reads the slot map
 ## (RcLookSlotsConfig, addons/rc_look/config/look_slots.tres) and walks an imported scene's surfaces. Pure lookup: it never
-## assigns a material (the views do, by role); the post-import script (addons/rc_look/import/rc_look_post_import.gd) stamps
+## assigns a material (the views do, by role); the post-import step (the rc_look editor plugin's RcLookImportPlugin) stamps
 ## each mesh with its slots and reports the unlisted ones at import.
 
 const DEFAULT_PATH := "res://addons/rc_look/config/look_slots.tres"
@@ -47,6 +47,15 @@ static func of(slot_name: String, cfg: RcLookSlotsConfig = null) -> Dictionary:
 		if slot_name.begins_with(p):
 			return {"family": STREET, "role": String(c.street_prefix[p]), "listed": true}
 	return {"family": NONE, "role": c.street_fallback, "listed": false}
+
+
+## True when a scene imported from `path` runs the post-import stamp (under a folder of post_import_dirs).
+static func wants(path: String, cfg: RcLookSlotsConfig = null) -> bool:
+	var c := cfg if cfg != null else config()
+	for d: String in c.post_import_dirs:
+		if path.begins_with(d):
+			return true
+	return false
 
 
 ## Every surface under `root`: [{node (path from root), surface, slot, family, role, listed}], in tree order. A surface with

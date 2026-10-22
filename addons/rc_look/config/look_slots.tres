@@ -11,3 +11,4 @@ solace_prefix = "hq_sx_"
 street_exact = {"lamp_emit": "lamp_emit", "lit_emit": "win", "panel": "panel", "conc": "conc", "glass": "glass", "awning_cloth": "solid", "bracket": "solid", "car_body": "solid", "frame": "solid", "headlight_emit": "solid", "pole": "solid", "sign_board": "solid", "taillight_emit": "solid"}
 street_prefix = {"neon_emit": "neon"}
 street_fallback = "solid"
+post_import_dirs = PackedStringArray("res://assets/raid/uplink/", "res://assets/city/roof_props/")

@@ -21,6 +21,9 @@ extends Resource
 @export var street_prefix: Dictionary = {}
 ## The surface an unlisted street slot falls back to (StreetR2Materials.for_slot's last line).
 @export var street_fallback: String = "solid"
+## The folders (res://, with a trailing slash) whose glb imports run the post-import slot stamp (RcLookImportPlugin). Pilot:
+## the uplink pads and the roof props; a folder joins when its views move onto the map.
+@export var post_import_dirs: PackedStringArray = PackedStringArray()
 
 
 ## Problems with the table (empty when valid).
