@@ -7088,7 +7088,10 @@ func _demo_drag_pick(id: String) -> void:
 	var end := Vector2.INF
 	if id.begins_with("drag_asset"):
 		var cards := _panel.find_child("AssetCards", true, false)
-		src = cards.get_child(cards.get_child_count() - 1) as Control
+		# The row's last card (RAID-FIX B3 added the HandEffect plate after the cards: not a drag source).
+		for k in cards.get_children():
+			if k is AssetCard:
+				src = k as Control
 		target_id = "node:%s" % (selected_site if id == "drag_asset_refuse" else c.grid.home_site_id)
 	elif id == "drag_crew_refuse":
 		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
