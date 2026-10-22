@@ -130,3 +130,26 @@ Kept: colour, neon outline, straight-C tail, shadow and dam mask, loop, drowned 
 - The haze is soft and reads as a living glow, but it is faint and mostly a cloud left of the body; the wake swirls are hard to see.
 - The thrusters are barely visible at the tail root (the slots are hidden under the compound shadow and the haze).
 - Walkways and lanai decks are too small to read; the compound reads as nine roofs, not as a connected village.
+
+
+## E MANTA v5 (thatch, timber, warm light, designer-approved, 2026-10-21)
+`E_manta_v5.png` (1920 x 1080, Cycles GPU, 48 spp, median 0.160; Blender 271 s wall incl. build, 297 s with post; no lock wait; watchdog not triggered) and `E_manta_v4_v5.jpg`.
+Builder: `idea_Q` in `scripts/ideas.py` (`IDEA=Q`, `scripts/run_final.py`). Two GPU finals were made; the first (spot lights 1.6x stronger, yellower thatch) read gold and bleached the skin, so the second dims the spots and greens the thatch.
+What changed from v4:
+1. Roofs: pili-grass thatch in layered strips on the lower two thirds of every slope (straw green-yellow, about #9CA83C to #B8B04A in four tones with a thin layer line between strips), a glass strip with a lit amber edge near the ridge, the bronze kapa lattice over both;
+   the hip roofs use the same strips on four slopes.
+2. Walls: brown timber (about #6B4A2E to #8A6440) on all four sides with a lit doorway in each gable end and amber window slits in the long walls.
+3. Light: the compound is lit amber (about 2700 K, 1.0 / 0.64 / 0.30) instead of the pale dive light: lit door glows, amber gable ends, amber ridge strips, a downward spot above each hale for a warm pool on the deck round it
+   (hero 5.5e4, others 1.9e4) and a small spill spot at every doorway. The teal outline, kakau glow and haze stay cool.
+4. Walkways widened to 2.5 BU (was 1.3) with lit edges and a lantern every 3 BU; lanai decks 4.6 to 5 BU with a lit surface.
+5. Algae: the haze field is stronger (0.9, was 0.75) with extra sources round the body (wing roots, wing tips, tail root) and heavier along the wake.
+6. Thrusters: a brighter teal slot (2.8, was 1.6).
+Kept: everything else in v4.
+
+### Squint critique of v5
+- Manta first, lit village second: yes. The roofs now read as thatch (green-yellow) at 1920 px; at thumbnail the compound reads as a warm green-gold patch with a spire, and the cool outline is the counterpoint as asked.
+- The warm light is the weak part: most of it lands on the pale skin and bleaches it near the compound, so it reads as a pale warm halo rather than distinct lit doorways; the doors and window slits are too small to see below about 1500 px.
+- The brown walls are barely visible from this height: the eaves and glass hide them; they are felt only as the dark base under the roofs.
+- The thatch layering is visible at full size, but the hip roofs and gables are still mostly told apart by their outline, not their texture.
+- The walkways read better but the lit edges are small; the compound is still more nine roofs than a connected village.
+- The algae haze is stronger and wider, but still a cloud left of the body more than a glow round it; the thrusters' brighter slots are still hidden under the shadow and haze.

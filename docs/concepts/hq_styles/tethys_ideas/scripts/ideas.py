@@ -1256,6 +1256,407 @@ def idea_P(ns, hx, hy, rng, ang0):
     return hero_top + 3.0, c
 
 
+
+
+def idea_Q(ns, hx, hy, rng, ang0):
+    """MANTA v5 (v4 plus pili-grass thatch roofs, brown timber walls, warm 2700 K light spill, wider lit walkways, stronger algae): the same ray (flat broad wings, 10 degree bank, neon outline, straight-C tail) with rounded wing tips, head lobes that flow out of the
+    head outline, two integrated tail-root thrusters, bold white kakau fields across the whole back, a COMPOUND of nine hale-biodomes (steep hale roof
+    profiles as glass gridshells with bronze kapa-lattice frames, warm lit interiors with tropical planting, lava-stone heiau plinths, walkways and lanai
+    decks) and a soft emissive algae haze in the water surface layer with a few swirls in the wake."""
+    DIVE = (1.0, 0.64, 0.30)
+    ZW = ns["ZW"]
+    SURF, NEON, GLASS, SM = ns["SURF"], ns["NEON"], ns["GLASS"], ns["SMOOTH"]
+    from tkit import obox, frustum
+    flap = float(os.environ.get("FLAP", "0.0"))
+    bank = float(os.environ.get("BANK", "0.1736"))
+    phi = math.radians(float(os.environ.get("LOOP_PHI", "-90.0")))
+    zd = ZW + 10.0
+    SC = 1.0
+    rx, ry = 66.0, 34.0
+    cx_l, cy_l = loc(hx, hy, 0.0, 26.0)
+
+    def loop_pt(f):
+        return cx_l + U[0] * rx * math.cos(f) + V[0] * ry * math.sin(f), cy_l + U[1] * rx * math.cos(f) + V[1] * ry * math.sin(f)
+    sx0, sy0 = loop_pt(math.radians(-90.0))
+    sh = (hx - sx0 + V[0] * 4.0, hy - sy0 + V[1] * 4.0)
+    mx, my = loop_pt(phi)
+    mx, my = mx + sh[0], my + sh[1]
+    tvx, tvy = -rx * math.sin(phi), ry * math.cos(phi)
+    tl = math.hypot(tvx, tvy)
+    Fw = ((U[0] * tvx + V[0] * tvy) / tl, (U[1] * tvx + V[1] * tvy) / tl)
+    Rw = (Fw[1], -Fw[0])
+    yaw = math.atan2(Fw[1], Fw[0])
+
+    def L(x, y):
+        return mx + (Rw[0] * x + Fw[0] * y) * SC, my + (Rw[1] * x + Fw[1] * y) * SC
+
+    def zf(x):
+        return zd + flap * abs(x) * 0.30 + bank * x
+
+    HS = 52.0
+
+    def y_te(x):
+        s = max(0.0, min(1.0, (HS - 1.0 - abs(x)) / 39.0))
+        return -12.0 - 1.5 * s + 3.5 * math.sin(math.pi * s) ** 1.2
+
+    BODY = (0.40, 0.56, 0.64)
+    tones = [(0.40, 0.56, 0.64), (0.37, 0.53, 0.62), (0.43, 0.59, 0.66)]
+    WHITE = (0.92, 0.95, 0.98)
+    GLOWW = sc((0.85, 0.95, 1.0), 0.75)
+    EDGE = sc(PHOTO, 1.9)
+    # ---- planform: the head lobes are part of the outline (they flow out of the head), rounded wing tips
+    right = [(0, 22.0), (1.6, 22.5), (2.5, 24.8), (3.4, 26.8), (4.6, 28.2), (5.8, 27.2), (6.5, 25.2), (7.2, 23.2)]
+    le = []
+    for k in range(0, 15):
+        t = k / 14.0
+        le.append((9 + (HS - 1.0 - 9) * t, 21 - 28 * t ** 1.5))
+    right += le
+    for a_ in (60, 30, 0, -30, -60):                                    # the rounded tip
+        right.append((HS - 1.0 + 2.2 * math.cos(math.radians(a_)), -9.5 + 2.5 * math.sin(math.radians(a_)) * (1 if a_ >= 0 else 1)))
+    for k in range(1, 15):
+        s = k / 14.0
+        right.append((HS - 1.0 - 39 * s, y_te(HS - 1.0 - 39 * s)))
+    right += [(9, -17), (6, -21), (0, -23)]
+    left = [(-x, y) for (x, y) in reversed(right[1:-1])]
+    outline = right + left
+    n = len(outline)
+    P2 = [L(x, y) for (x, y) in outline]
+    ZZ = [zf(x) for (x, y) in outline]
+    IN = [L(0.5 * x, 0.5 * y) for (x, y) in outline]
+    IZ = [zf(0.5 * x) for (x, y) in outline]
+    for i in range(n):
+        j = (i + 1) % n
+        a, b, a2, b2 = P2[i], P2[j], IN[i], IN[j]
+        col = tones[(i // 2) % 3]
+        SURF.face([(mx, my, zd + 1.0), (a2[0], a2[1], IZ[i] + 1.0), (b2[0], b2[1], IZ[j] + 1.0)], tones[0], None)
+        SURF.face([(a2[0], a2[1], IZ[i] + 1.0), (b2[0], b2[1], IZ[j] + 1.0), (b[0], b[1], ZZ[j] + 1.0), (a[0], a[1], ZZ[i] + 1.0)], col, None)
+        SURF.face([(a[0], a[1], ZZ[i] + 1.0), (a[0], a[1], ZZ[i] - 1.0), (b[0], b[1], ZZ[j] - 1.0), (b[0], b[1], ZZ[j] + 1.0)], (0.50, 0.64, 0.70), None)
+        SURF.face([(a[0], a[1], ZZ[i] - 1.0), (b[0], b[1], ZZ[j] - 1.0), (b2[0], b2[1], IZ[j] - 1.0), (a2[0], a2[1], IZ[i] - 1.0)], (0.55, 0.68, 0.74), None)
+        SURF.face([(mx, my, zd - 1.0), (b2[0], b2[1], IZ[j] - 1.0), (a2[0], a2[1], IZ[i] - 1.0)], (0.55, 0.68, 0.74), None)
+        ns["bar"](NEON, (a[0], a[1], ZZ[i] + 1.04), (b[0], b[1], ZZ[j] + 1.04), 0.38, EDGE)
+    # ---- white kakau fields across the whole back (bold: edge teeth, three wing bands with zig-zag and lozenge fields, a dorsal chain, rear chevrons)
+    zt = 1.045
+
+    def PZ(x, y):
+        p = L(x, y)
+        return (p[0], p[1], zf(x) + zt)
+
+    def strip(a, b, w):
+        pa, pb = PZ(*a), PZ(*b)
+        dx, dy = pb[0] - pa[0], pb[1] - pa[1]
+        dl = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / dl * w / 2, dx / dl * w / 2
+        NEON.face([(pa[0] - nx, pa[1] - ny, pa[2]), (pa[0] + nx, pa[1] + ny, pa[2]), (pb[0] + nx, pb[1] + ny, pb[2]), (pb[0] - nx, pb[1] - ny, pb[2])], GLOWW, None)
+
+    def poly(pts):
+        NEON.face([PZ(*p) for p in pts], GLOWW, None)
+
+    def inw(p, k):
+        v = (0.0 - p[0], 3.0 - p[1])
+        d = math.hypot(*v) or 1.0
+        return (v[0] / d * k, v[1] / d * k)
+
+    def band(sx, k, w):
+        pts = []
+        for (x, y) in le:
+            iv = inw((x, y), k)
+            pts.append((sx * (x + iv[0]), y + iv[1]))
+        for q in range(len(pts) - 1):
+            strip(pts[q], pts[q + 1], w)
+        return pts
+    for sx in (-1, 1):
+        b1 = band(sx, 1.8, 0.8)
+        for q in range(len(le) - 1):                      # niho mano along the leading edge
+            a, b = b1[q], b1[q + 1]
+            mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            iv = inw((abs(mid[0]), mid[1]), 3.4 * (1 - 0.45 * q / 14.0))
+            poly([a, b, (mid[0] + sx * iv[0], mid[1] + iv[1])])
+        b2 = band(sx, 9.0, 1.1)
+        b3 = band(sx, 16.0, 1.1)
+        b4 = band(sx, 23.0, 1.1)
+        for q in range(0, len(le) - 1):                   # zig-zag teeth between the second and third bands
+            a, b = b2[q], b2[q + 1]
+            c = b3[q]
+            d_ = b3[q + 1]
+            if q % 2 == 0:
+                poly([a, b, ((c[0] + d_[0]) / 2, (c[1] + d_[1]) / 2)])
+            else:
+                poly([c, d_, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)])
+        for q in range(0, len(le) - 2, 2):                # lozenges between the third and fourth bands
+            a, c = b3[q + 1], b4[q + 1]
+            mid = ((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
+            poly([(mid[0] - sx * 2.4, mid[1]), (mid[0], mid[1] + 3.0), (mid[0] + sx * 2.4, mid[1]), (mid[0], mid[1] - 3.0)])
+        for j in range(3):                                # big chevrons along the trailing zone, pointing forward
+            strip((sx * (24.0 + 6.0 * j), -2.0 - 2.0 * j), (sx * (14.0 + 3.0 * j), -9.0 - 1.2 * j), 1.0)
+        poly([(sx * (HS - 3.0), -9.5), (sx * le[11][0], le[11][1] - 2.0), (sx * (HS - 10.0), y_te(HS - 10.0) + 1.5)])
+    for k in range(6):                                    # dorsal chain of lozenges down the midline
+        cyl = 17.0 - 6.0 * k
+        poly([(-2.2, cyl), (0, cyl + 3.0), (2.2, cyl), (0, cyl - 3.0)])
+    # ---- the tail: segmented mechanical root, slim whip, long and mostly straight with one gentle C, neon centre line
+    prev = L(0, -23)
+    pz = zd - 0.6
+    for k in range(1, 31):
+        u = k / 30.0
+        x, y = 5.0 * math.sin(math.pi * u), -23.0 - 2.1 * k
+        q = L(x, y)
+        z = zd - 0.6 - 0.10 * k
+        if k <= 6:
+            r = 1.6 - 0.1 * k
+            tube(SURF, (prev[0], prev[1], pz), (q[0], q[1], z), r, 8, (0.46, 0.60, 0.68) if k % 2 else (0.40, 0.54, 0.62))
+            ns["box"](NEON, q[0] - r * 0.9, q[1] - r * 0.9, z - r * 0.3, q[0] + r * 0.9, q[1] + r * 0.9, z + r * 0.3, sc(PHOTO, 1.1))
+        else:
+            r = 0.42 * (1 - (k - 6) / 26.0) + 0.1
+            tube(SURF, (prev[0], prev[1], pz), (q[0], q[1], z), r, 6, (0.44, 0.58, 0.66))
+        ns["bar"](NEON, (prev[0], prev[1], pz + 0.25), (q[0], q[1], z + 0.25), 0.10, EDGE)
+        prev, pz = q, z
+    ns["dome"](NEON, prev[0], prev[1], pz, 0.45, sc(PHOTO, 1.8), n=8, rings=3, hemi=False)
+    # ---- the compound: nine hale-biodomes on lava-stone heiau plinths, with walkways and lanai decks
+    stone = (0.09, 0.08, 0.08)
+    bronze = (0.58, 0.46, 0.27)
+    thr_rng = random.Random(12)
+    WALL = (0.24, 0.13, 0.06)
+    WALL2 = (0.28, 0.16, 0.08)
+    TH = [(0.22, 0.34, 0.05), (0.20, 0.30, 0.04), (0.27, 0.38, 0.07), (0.16, 0.26, 0.04)]
+    plr = random.Random(5)
+
+    def hale(x, y, w, d, hw, hr, yaw_off, kind, glow, tiers=1, base_dz=0.0):
+        """a futuristic hale: stone plinth, lit interior with planting, a steep glass gridshell roof on a bronze kapa-lattice frame."""
+        p = L(x, y)
+        yw = yaw + yaw_off
+        ax, ay = math.cos(yw), math.sin(yw)
+        bx, by = -ay, ax
+        zb0 = zf(x) + 1.0 - 0.6 + base_dz
+        z0 = zb0
+        for t in range(tiers):
+            ex_ = 2.2 + 2.2 * (tiers - 1 - t)
+            obox(SURF, p[0], p[1], z0, (d + ex_) * SC, (w + ex_) * SC, 1.3, yw, stone)
+            obox(NEON, p[0], p[1], z0 + 1.15, (d + ex_) * SC * 1.01, (w + ex_) * SC * 1.01, 0.18, yw, sc(DIVE, 0.9), top=False)       # lit terrace lip
+            z0 += 1.3
+
+        def C(sx, sy, e=0.0):
+            return (p[0] + bx * sx * (w / 2 + e) + ax * sy * (d / 2 + e), p[1] + by * sx * (w / 2 + e) + ay * sy * (d / 2 + e))
+        # warm interior: a floor glow and an inner roof-shaped glow volume
+        obox(NEON, p[0], p[1], z0, d * 0.94, w * 0.94, 0.18, yw, sc(DIVE, 0.6 * glow))
+        zr0, zr1 = z0 + hw, z0 + hw + hr
+        k_in = 0.86
+        if kind == "gable":
+            for sx_ in (-1, 1):
+                a0, a1, r0, r1 = C(sx_ * k_in, -k_in), C(sx_ * k_in, k_in), C(0, k_in), C(0, -k_in)
+                NEON.face([(a0[0], a0[1], z0), (a1[0], a1[1], z0), (a1[0], a1[1], zr0), (a0[0], a0[1], zr0)], sc(DIVE, 0.42 * glow), None)
+                NEON.face([(a0[0], a0[1], zr0), (a1[0], a1[1], zr0), (r1[0], r1[1], zr1 - 0.4), (r0[0], r0[1], zr1 - 0.4)], sc(DIVE, 0.30 * glow), None)
+            for sy_ in (-1, 1):
+                g0, g1, rr = C(-k_in, sy_ * k_in), C(k_in, sy_ * k_in), C(0, sy_ * k_in)
+                NEON.face([(g0[0], g0[1], z0), (g1[0], g1[1], z0), (g1[0], g1[1], zr0), (g0[0], g0[1], zr0)], sc(DIVE, 0.42 * glow), None)
+                NEON.face([(g0[0], g0[1], zr0), (g1[0], g1[1], zr0), (rr[0], rr[1], zr1 - 0.4)], sc(DIVE, 0.36 * glow), None)
+        else:                                                                                                     # hip: a short ridge
+            ridge = 0.3
+            for (sx_, sy_) in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                pass
+            q0, q1 = C(0, -ridge * k_in), C(0, ridge * k_in)
+            for sx_ in (-1, 1):
+                a0, a1 = C(sx_ * k_in, -k_in), C(sx_ * k_in, k_in)
+                NEON.face([(a0[0], a0[1], zr0), (a1[0], a1[1], zr0), (q1[0], q1[1], zr1 - 0.4), (q0[0], q0[1], zr1 - 0.4)], sc(DIVE, 0.30 * glow), None)
+            for sy_ in (-1, 1):
+                g0, g1 = C(-k_in, sy_ * k_in), C(k_in, sy_ * k_in)
+                qq = q1 if sy_ > 0 else q0
+                NEON.face([(g0[0], g0[1], zr0), (g1[0], g1[1], zr0), (qq[0], qq[1], zr1 - 0.4)], sc(DIVE, 0.36 * glow), None)
+            for sx_ in (-1, 1):
+                for sy_ in (-1, 1):
+                    c = C(sx_ * k_in, sy_ * k_in)
+                    NEON.face([(c[0], c[1], z0), (C(sx_ * k_in, 0)[0], C(sx_ * k_in, 0)[1], z0), (C(sx_ * k_in, 0)[0], C(sx_ * k_in, 0)[1], zr0), (c[0], c[1], zr0)], sc(DIVE, 0.4 * glow), None)
+        # tropical planting seen through the glass
+        for _ in range(max(4, int(w * d / 5.0))):
+            sx_, sy_ = plr.uniform(-0.7, 0.7), plr.uniform(-0.7, 0.7)
+            c = C(sx_, sy_)
+            ph = plr.uniform(0.9, min(2.6, hw + hr * 0.35))
+            ns["bar"](SM, (c[0], c[1], z0 + 0.1), (c[0], c[1], z0 + ph), 0.16, (0.20, 0.14, 0.08))
+            for q in range(5):
+                a_ = 2 * math.pi * q / 5 + plr.uniform(0, 1)
+                ns["bar"](SM, (c[0], c[1], z0 + ph), (c[0] + 0.9 * math.cos(a_), c[1] + 0.9 * math.sin(a_), z0 + ph - 0.35), 0.28, (0.10, 0.40, 0.16))
+        # timber walls (brown), a lit doorway on the gable end, amber window slits
+        tw = 0.38
+        for sx_ in (-1, 1):
+            c = C(sx_ * 0.97, 0.0)
+            obox(SURF, c[0], c[1], z0, d * 0.96, tw, hw, yw, WALL if sx_ > 0 else WALL2)
+            for kk in range(max(1, int(d / 3.2))):
+                f = -0.5 + (kk + 0.5) / max(1, int(d / 3.2))
+                cw = (c[0] + ax * f * d * 0.9, c[1] + ay * f * d * 0.9)
+                obox(NEON, cw[0] + bx * sx_ * 0.05, cw[1] + by * sx_ * 0.05, z0 + hw * 0.35, 0.9, tw * 1.05, hw * 0.4, yw, sc(DIVE, 1.5 * glow), top=False)
+        dw = 1.3 if w > 2.5 else 0.0
+        for sy_ in (-1, 1):
+            c = C(0.0, sy_ * 0.97)
+            seg = (w - dw) / 2.0
+            for sg in (-1, 1):
+                off = sg * (dw / 2 + seg / 2)
+                obox(SURF, c[0] + bx * off, c[1] + by * off, z0, seg, tw, hw, yw + math.pi / 2, WALL if sg > 0 else WALL2)
+            if dw:
+                obox(NEON, c[0], c[1], z0, dw * 0.95, tw * 0.8, hw * 0.86, yw + math.pi / 2, sc(DIVE, 3.8 * glow), top=False)           # the doorway glow
+                ns["spot_at"]((c[0] + ax * sy_ * 6.0, c[1] + ay * sy_ * 6.0, z0), (c[0], c[1], z0 + hw * 0.6), DIVE, 3.5e3 * glow, 100.0)    # spill from the door
+        # the glass gridshell: A-frame slopes (gable) or four hip slopes, a bronze kapa-style diagonal lattice, a lit ridge
+        e = 0.8
+        glass = (0.8, 0.92, 1.0)
+        def slope(E0, E1, T0, T1, zlo, zhi, split=0.72, nl=8):
+            """pili-grass thatch in layered strips on the lower part of a slope (eave E0-E1 up to top T0-T1), a glass strip above (a lit ridge band)."""
+            def pt(Ea, Ta, f, z_a, z_b):
+                return (Ea[0] + (Ta[0] - Ea[0]) * f, Ea[1] + (Ta[1] - Ea[1]) * f, z_a + (z_b - z_a) * f)
+            for l_ in range(nl):
+                f0, f1 = split * l_ / nl, split * (l_ + 1) / nl
+                col = TH[thr_rng.randrange(4)] if l_ % 2 == 0 else TH[(l_ // 2 + 1) % 2]
+                SURF.face([pt(E0, T0, f0, zlo, zhi), pt(E1, T1, f0, zlo, zhi), pt(E1, T1, f1, zlo, zhi), pt(E0, T0, f1, zlo, zhi)], col, None)
+                ns["bar"](SM, pt(E0, T0, f1, zlo, zhi), pt(E1, T1, f1, zlo, zhi), 0.07, (0.30, 0.28, 0.08))            # the layer line
+            g0, g1, g2, g3 = pt(E0, T0, split, zlo, zhi), pt(E1, T1, split, zlo, zhi), (T1[0], T1[1], zhi), (T0[0], T0[1], zhi)
+            GLASS.face([g0, g1, g2, g3], glass, None)
+            NEON.face([(g0[0], g0[1], g0[2] + 0.02), (g1[0], g1[1], g1[2] + 0.02), (g2[0], g2[1], g2[2] - 0.05), (g3[0], g3[1], g3[2] - 0.05)], sc(DIVE, 0.6 * glow), None)
+        if kind == "gable":
+            for sx_ in (-1, 1):
+                a0, a1, r0, r1 = C(sx_, -1, e), C(sx_, 1, e), C(0, 1, e), C(0, -1, e)
+                slope(a0, a1, r1, r0, zr0, zr1)
+                nst = max(4, int(d * 0.9))
+                for i in range(nst):
+                    f0, f1 = -1 + 2 * i / nst, -1 + 2 * (i + 1) / nst
+                    pa, pb = C(sx_, f0, e), C(sx_, f1, e)
+                    ra, rb = C(0, f0, e), C(0, f1, e)
+                    ns["bar"](SM, (pa[0], pa[1], zr0), (ra[0], ra[1], zr1), 0.16, bronze)                                  # rafters
+                    ns["bar"](SM, (pa[0], pa[1], zr0), (rb[0], rb[1], zr1), 0.10, bronze)                                  # lattice diagonals
+                    ns["bar"](SM, (pb[0], pb[1], zr0), (ra[0], ra[1], zr1), 0.10, bronze)
+                for lv in (0.33, 0.66):                                                                                     # purlins
+                    pa, pb = C(sx_ * (1 - lv), -1, e * (1 - lv)), C(sx_ * (1 - lv), 1, e * (1 - lv))
+                    ns["bar"](SM, (pa[0], pa[1], zr0 + hr * lv), (pb[0], pb[1], zr0 + hr * lv), 0.10, bronze)
+            for sy_ in (-1, 1):
+                g0, g1, rr = C(-1, sy_, e), C(1, sy_, e), C(0, sy_, e)
+                GLASS.face([(g0[0], g0[1], zr0), (g1[0], g1[1], zr0), (rr[0], rr[1], zr1)], glass, None)
+                ns["bar"](SM, (g0[0], g0[1], zr0), (rr[0], rr[1], zr1), 0.18, bronze)
+                ns["bar"](SM, (g1[0], g1[1], zr0), (rr[0], rr[1], zr1), 0.18, bronze)
+                ns["bar"](SM, (g0[0], g0[1], zr0), (g1[0], g1[1], zr0), 0.16, bronze)
+            r0, r1 = C(0, -1, e), C(0, 1, e)
+            ns["bar"](NEON, (r0[0], r0[1], zr1 + 0.05), (r1[0], r1[1], zr1 + 0.05), 0.24, sc(DIVE, 1.5 * glow))
+            for sx_ in (-1, 1):
+                a0, a1 = C(sx_, -1, e), C(sx_, 1, e)
+                ns["bar"](NEON, (a0[0], a0[1], zr0), (a1[0], a1[1], zr0), 0.14, sc(DIVE, 0.9))
+        else:
+            ridge = 0.3
+            q0, q1 = C(0, -ridge, e * 0.5), C(0, ridge, e * 0.5)
+            corners = [C(-1, -1, e), C(1, -1, e), C(1, 1, e), C(-1, 1, e)]
+            for i in range(4):
+                a, b = corners[i], corners[(i + 1) % 4]
+                top_a = q0 if i in (0, 1) else q1
+                top_b = q0 if (i + 1) % 4 in (0, 1) else q1
+                slope(a, b, top_a, top_b, zr0, zr1, split=0.66, nl=6)
+                ns["bar"](SM, (a[0], a[1], zr0), (b[0], b[1], zr0), 0.16, bronze)
+                ns["bar"](SM, (a[0], a[1], zr0), (top_a[0], top_a[1], zr1), 0.18, bronze)
+                m_ = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                ns["bar"](SM, (m_[0], m_[1], zr0), (top_a[0] * 0.5 + top_b[0] * 0.5, top_a[1] * 0.5 + top_b[1] * 0.5, zr1), 0.10, bronze)
+            ns["bar"](NEON, (q0[0], q0[1], zr1 + 0.05), (q1[0], q1[1], zr1 + 0.05), 0.24, sc(DIVE, 1.5 * glow))
+        return p, zr1
+    layout = [
+        # (x, y, w, d, wall, ridge, yaw offset, kind, glow, tiers)
+        (0.0, 3.0, 7.0, 12.0, 3.0, 12.5, 0.0, "gable", 1.4, 2),       # the hero: a tall hale-biodome
+        (0.0, -11.5, 4.4, 7.0, 1.8, 6.0, 0.0, "gable", 0.9, 1),
+        (-9.0, 11.0, 5.0, 5.0, 1.8, 6.5, 0.0, "hip", 0.9, 1),
+        (9.0, 11.0, 5.0, 5.0, 1.8, 6.5, 0.0, "hip", 0.9, 1),
+        (-10.0, -3.0, 3.6, 6.2, 1.6, 5.2, 0.0, "gable", 0.8, 1),
+        (10.0, -3.0, 3.6, 6.2, 1.6, 5.2, 0.0, "gable", 0.8, 1),
+        (-23.0, 3.0, 4.0, 7.0, 1.6, 5.6, math.pi / 2, "gable", 0.8, 1),
+        (23.0, 3.0, 4.0, 7.0, 1.6, 5.6, math.pi / 2, "gable", 0.8, 1),
+        (36.0, -2.5, 3.6, 3.6, 1.4, 4.6, 0.0, "hip", 0.8, 1),
+    ]
+    centres = []
+    for (x, y, w, d, hw, hr, yo, kind, gl, tiers) in layout:
+        pc_, ztop = hale(x, y, w, d, hw, hr, yo, kind, gl, tiers)
+        centres.append((x, y, ztop))
+        ns["spot_at"]((pc_[0], pc_[1], zf(x) + 1.0), (pc_[0], pc_[1], ztop + 2.0), DIVE, (5.5e4 if tiers == 2 else 1.9e4), 110.0)
+    hero_top = centres[0][2]
+    # walkways and lanai decks between the buildings
+    def walk(a, b, w=2.5):
+        pa, pb = L(a[0], a[1]), L(b[0], b[1])
+        za, zb_ = zf(a[0]) + 1.1, zf(b[0]) + 1.1
+        dx, dy = pb[0] - pa[0], pb[1] - pa[1]
+        dl = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / dl * w / 2, dx / dl * w / 2
+        SURF.face([(pa[0] - nx, pa[1] - ny, za), (pa[0] + nx, pa[1] + ny, za), (pb[0] + nx, pb[1] + ny, zb_), (pb[0] - nx, pb[1] - ny, zb_)], (0.12, 0.11, 0.11), None)
+        for sg in (-1, 1):
+            ns["bar"](NEON, (pa[0] + sg * nx, pa[1] + sg * ny, za + 0.04), (pb[0] + sg * nx, pb[1] + sg * ny, zb_ + 0.04), 0.16, sc(DIVE, 1.5))
+            for lk_ in range(1, int(dl / 3.0)):
+                f_ = lk_ * 3.0 / dl
+                ns["box"](NEON, pa[0] + dx * f_ + sg * nx - 0.18, pa[1] + dy * f_ + sg * ny - 0.18, za + 0.05, pa[0] + dx * f_ + sg * nx + 0.18, pa[1] + dy * f_ + sg * ny + 0.18, za + 0.5, sc(DIVE, 2.2))
+    for (i, j) in ((0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (2, 6), (3, 7), (7, 8)):
+        walk(layout[i][:2], layout[j][:2])
+    for (x, y) in ((4.5, 12.0), (-4.5, -6.0), (-16.0, 6.0), (16.0, 6.0), (30.0, 0.0)):             # lanai decks
+        p = L(x, y)
+        obox(NEON, p[0], p[1], zf(x) + 1.05, 4.6, 4.6, 0.15, yaw, sc(DIVE, 0.6))
+        obox(SURF, p[0], p[1], zf(x) + 1.0, 5.0, 5.0, 0.1, yaw, stone)
+    pcrown = L(0, 3.0)
+    ns["bar"](NEON, (pcrown[0], pcrown[1], hero_top), (pcrown[0], pcrown[1], hero_top + 2.6), 0.14, sc(PHOTO, 1.4))
+    # ---- two integrated thrusters at the tail root: cowls on the back, glowing slots on the trailing edge, jet columns to the water
+    thr = []
+    for sx_ in (-1, 1):
+        cx_, cy_ = sx_ * 5.8, -15.5
+        cp = L(cx_, cy_)
+        ns["dome"](SURF, cp[0], cp[1], zf(cx_) + 1.0, 3.0, (0.47, 0.62, 0.70), n=14, rings=4, zscale=0.35)
+        sp = L(sx_ * 5.4, -20.2)
+        obox(NEON, sp[0], sp[1], zf(sx_ * 5.4) - 0.3, 3.4, 3.8, 0.5, yaw, sc(PHOTO, 2.8))
+        ns["ring_line"](NEON, sp[0], sp[1], zf(sx_ * 5.4) + 0.28, 2.3, 0.14, sc(PHOTO, 1.7), n=14)
+        frustum(NEON, sp[0], sp[1], ZW + 0.4, zf(sx_ * 5.4) - 0.5, 1.8, 1.0, 12, sc(PHOTO, 0.2))
+        ns["spot_at"]((sp[0], sp[1], ZW + 0.5), (sp[0], sp[1], zd), PHOTO, 8.0e4, 70.0)
+        thr.append((sp[0], sp[1]))
+    # ---- living glow: a soft emissive teal haze in the water surface layer (one coloured grid, no discs), brighter swirls in the wake
+    ar = random.Random(91)
+    wake = []
+    for k in range(0, 40, 2):
+        f = phi - math.radians(1.6) * k
+        wx, wy = loop_pt(f)
+        wake.append((wx + sh[0], wy + sh[1], 5.0 + 0.12 * k))
+    srcs = ([(mx, my, 24.0, 1.0)] + [(tx, ty, 9.0, 0.9) for (tx, ty) in thr] + [(wx, wy, sg, 0.9) for (wx, wy, sg) in wake]
+            + [(L(a_, b_)[0], L(a_, b_)[1], 10.0, 0.6) for (a_, b_) in ((30, 0), (-30, 0), (0, 27), (16, -17), (-16, -17), (44, -6), (-44, -6))])
+    ph1, ph2, ph3 = ar.uniform(0, 6.28), ar.uniform(0, 6.28), ar.uniform(0, 6.28)
+    import numpy as np
+    WP, HP = 224, 140
+    x0, y0, wbu, hbu = mx - 68.0, my - 46.0, 136.0, 92.0
+    xs_ = x0 + (np.arange(WP) + 0.5) * wbu / WP
+    ys_ = y0 + (np.arange(HP) + 0.5) * hbu / HP
+    GX, GY = np.meshgrid(xs_, ys_)
+    g = np.zeros_like(GX)
+    for (sx_, sy_, sg, wgt) in srcs:
+        g += wgt * np.exp(-((GX - sx_) ** 2 + (GY - sy_) ** 2) / (2 * sg * sg))
+    nz = 0.5 + 0.5 * np.sin(GX * 0.21 + ph1) * np.sin(GY * 0.17 + ph2) + 0.25 * np.sin((GX + GY) * 0.43 + ph3)
+    v = g * np.clip(nz - 0.2, 0.0, None)
+    t_ = np.clip((v - 0.03) / 0.55, 0.0, 1.0)
+    ns["HAZE"] = dict(arr=(0.9 * t_ * t_ * (3 - 2 * t_)).astype(np.float32), x0=x0, y0=y0, wbu=wbu, hbu=hbu)
+    for sw in range(6):                                    # a few brighter swirls in the wake
+        wx, wy, sg = wake[min(len(wake) - 1, 2 + sw * 3)]
+        r0 = ar.uniform(2.0, 3.5)
+        ph = ar.uniform(0, 6.28)
+        prevq = None
+        for q in range(0, 20):
+            th_ = ph + q * 0.45
+            rad = r0 * (0.35 + 0.045 * q)
+            pt = (wx + rad * math.cos(th_), wy + rad * math.sin(th_), ZW + 0.12)
+            if prevq:
+                ns["bar"](NEON, prevq, pt, 0.18, sc((0.45, 1.0, 1.0), 0.5 * (1 - q / 24.0)))
+            prevq = pt
+    for _ in range(22):                                    # a few sparkles
+        wx, wy, sg = wake[ar.randrange(len(wake))]
+        px_, py_ = ar.gauss(wx, sg), ar.gauss(wy, sg)
+        ns["box"](NEON, px_ - 0.1, py_ - 0.1, ZW + 0.1, px_ + 0.1, py_ + 0.1, ZW + 0.25, sc((0.75, 1.0, 1.0), 1.4))
+    for k in range(90):
+        if k % 2:
+            continue
+        a0, a1 = loop_pt(2 * math.pi * k / 90), loop_pt(2 * math.pi * (k + 1) / 90)
+        ns["bar"](NEON, (a0[0] + sh[0], a0[1] + sh[1], ZW + 0.12), (a1[0] + sh[0], a1[1] + sh[1], ZW + 0.12), 0.30, sc(PHOTO, 0.40))
+    import json
+    sj = os.environ.get("SHADOW_JSON")
+    if sj:
+        json.dump(dict(outline=[list(p) for p in P2], zd=zd, ZW=ZW, centre=[mx, my], tail=[list(prev)], fwd=list(Fw)), open(sj, "w"))
+    ns["spot_at"]((mx, my, ZW - 6.0), (mx, my, zd - 1.2), (0.30, 0.95, 1.0), 3.0e5, 60.0)
+    landing(ns, hx, hy, ang0, 38.0, (hx + 10 * math.cos(ang0), hy + 10 * math.sin(ang0)))
+    drifters(ns, hx, hy, rng, ang0, 8, 48.0, 74.0, 6.0, 10.0)
+    c = (pcrown[0], pcrown[1], hero_top - 6.0)
+    lights(ns, hx, hy, zd + 4.0, c, 5.5e5)
+    return hero_top + 3.0, c
+
+
+
+
 def water_haze(ns):
     """a single textured emissive layer in the water surface material: the algae haze field (ns["HAZE"]) baked to an image and added as emission."""
     H = ns.get("HAZE")
@@ -1298,7 +1699,7 @@ def water_haze(ns):
     print("HAZE added to the water material", arr.shape, float(arr.max()), flush=True)
 
 
-IDEAS = dict(A=idea_A, B=idea_B, C=idea_C, D=idea_D, E=idea_E, M=idea_M, N=idea_N, P=idea_P)
+IDEAS = dict(A=idea_A, B=idea_B, C=idea_C, D=idea_D, E=idea_E, M=idea_M, N=idea_N, P=idea_P, Q=idea_Q)
 
 
 def landmark(ns):
