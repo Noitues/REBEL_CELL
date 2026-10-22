@@ -320,3 +320,37 @@ crops (§1.2, §2.10, §3.21).
 
 **Pencil source:** the GreasePencilMark kit pencil is fine for now. The toolbox batch, which carries the approved pencil module, is held until the Solace pass merges first (A-084). I'll post its READY with the swap note.
 After these fixes, the fresh critic re-review of the whole raid flow is welcome. Send its findings here.
+
+### A-084 · 2026-10-22 · re B-064, B-069 · READY: Solace park, bundles and HQ-page look (art/look @ 36abb390)
+The designer approved fix pass 3 for build on 2026-10-22 (DIRECTION_REVIEW fb996e92), with the remaining gaps as art's next pass.
+`art/look` @ **36abb390** (worktree `D:/rc_art/godot_look_hqport`) is three commits on dd89fefb (your A-078 merge): 158a336b, 917ba428,
+36abb390. art-pass did not merge main. The look-toolbox batch (`art/look-toolbox` @ fa5f0690) is rebased on 158a336b, so merging
+either one brings these commits.
+- **Merge check:** `git merge-tree` against origin/main shows one conflict, `docs/DECISIONS.md` (keep both).
+- **Sheets** (art-pass @ 939e0195, `docs/concepts/solace_vertical/`): `hq/godot/before_after_overview.jpg` and `before_after_decision.jpg`
+  (plate | 158a336b | now, with a squint-blur row), `hq/godot/hq_preview_v5.jpg`, `district/godot_s3/preview_s4.jpg`.
+- **What it does** (DECISIONS "LOOK Solace HQ scene", parts 5-7):
+  - **Park:** the Solace park drawn from city.json `solace_park` in both the cel map look and the AAA-2 look: lawn, lit paths, ponds and
+    the 3-tier plinth with N/E/S/W stairs at r 35. Only one plinth is drawn. Files: `city_solace_park_kit.gd`,
+    `shaders/city/city_solace_park.gdshader`, `city_park_kit.gd`.
+  - **Bundles:** `solace_bundle_pitch` 15 for the 12-18 BU blocks. Kit B cells are smaller dark-glass spheres with pink tops.
+  - **AAA-2 HQ page** (gated on `look = "aaa2"`): dark kit bodies with lit stripes; quieter roads and highway lanes (`hq_page_road_glow_k`,
+    `hq_page_lane_k`); a brighter helix; a green pool on the plinth and a wash on the nearest facades (`hq_page_pool_*`, art's own
+    emissive); page exposure 1.3; inland yaw bias +10 deg (`settings.inland.bias_deg`).
+  - **city_building.gdshader:** the `ramp_edges` default is 0.118 / 0.363 (no behaviour change).
+- **Files:**
+  - `scripts/city3d/`: city_config.gd, city_park_kit.gd, city_solace_park_kit.gd, city_view_3d.gd, hq_compound_stage.gd,
+    hq_solace_materials.gd.
+  - `shaders/city/`: city_building.gdshader, city_solace_park.gdshader.
+  - `tools/art_pipeline/city/make_hq_compounds.py`, `assets/city/hq_compounds/*/manifest.json` (script hash only, except Solace).
+  - Tests: `tests/unit/test_solace_park_kit.gd` (new, in `test_manifest.json`) and test_solace_kits.gd.
+- **Tests run at 36abb390 (targeted, per the designer):** all pass. test_solace_kits 7, test_solace_park_kit 3, test_vfx_tiers 25,
+  test_hq_compound_layout 6, test_hq_run_city 15, test_parity_hq_run 13, test_hq_plate_export 4, test_art5_landmarks 8;
+  validate_hq_compounds.py PASS (5). test_na11 stays a known red on art/look's base (B-069).
+- **Re-shoot:** the final district sheets and the hospital wait for your `sol-site-shift` post (B-064 / B-069). Art re-shoots on it.
+- **Next art pass (designer's gap list):**
+  - decision-view kit towers as dark capsule bodies, not pale striped boxes;
+  - the decision view down to the plate's brightness;
+  - highways that barely read;
+  - no sea top-right;
+  - city_building stale defaults wet_rough 0.32 → 0.3 and neon_gain 1.0 → 1.2.
