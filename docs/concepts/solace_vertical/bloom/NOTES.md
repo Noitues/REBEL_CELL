@@ -73,3 +73,7 @@ Render times: street finals 428 s (CREEPING), 269 s (CLOSE), 1795 s (CATCHING, G
 Rebuild: `street3d/bloom3d_street.py run finals <STATE> 1920 48` then `plate <STATE> F_dec_closed`; `hq3d/bloom3d_hq_run.py b3d overview decision clean_overview clean_decision`;
 `bloom3d_raid_run.py 20,60,90`; `bloom3d_strip.py`; `bloom3d_sheet.py`. Scratch `D:/rc_scratch/solace_v1/bloom3d/`.
 Port notes: the field is pure position/attribute math (no textures), so it maps to a Godot spatial shader on world position (street, raid) and on a (z, phi) vertex attribute or UV (helix).
+
+### HQ revision 2 (review: HQ row failed the squint test)
+Body plum-black (0.03/0.012/0.024), veins 1.5 (vw 0.065), hot front hairline edge 14 (ew 0.5), tongues 40 BU; below the front ALL helix emission dies to dim pink: the window-dim wrap now covers helix radius < 48 (frame rings, rungs, floor rings sit outside radius 30) and is fully applied (fac 1.0, strength 0.03). Decision front lifted 28 BU (about 2 floors) over the overview rule so the near strand shows it in the lower third; route-room (index 5) emission, window holes and the UP stair band stay clean.
+Medians: overview 0.1226 (clean 0.1230), decision 0.1385 (clean 0.1474, -0.0089). Finals 80 s / 135 s.

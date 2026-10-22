@@ -37,13 +37,20 @@ def front_floor(layer):
     return RF[i] + (RF[i + 1] - RF[i]) * (layer - 1 - i)
 
 
+def st_bias(state):
+    """Decision frame: the front is lifted 10 BU so the near strand shows it in the lower third (rev 2)."""
+    return 28.0 if state == "decision" else 0.0
+
+
 def cfg_for(state, tune=None):
     nm, ff, gap = STATES[state]
     if ff is None:
         ff = front_floor(3 - gap)
-    cfg = dict(z_front=G.floor_z(ff) + 0.5 * G.FH, floor=ff, gap=gap, seed=7, tube_r=G.RT, swell=4.5, tongue=26.0, reach=45.0, ahead=1.0, stair_phi_A=G.stair_phi("A"),
-               stair_phi_B=G.stair_phi("B"), vscale=0.24, vw=0.06, ew=0.22, hatch_k=0.12, veins=1.0, edge=1.2, hatch=0.15, cover_k=0.94,
-               plum=[0.05, 0.02, 0.04], pink=[1.0, 0.0612, 0.305], podium=G.PODIUM_H, win_dim=0.12, win_r=30.0, win_bias=0.0)
+    cfg = dict(z_front=G.floor_z(ff) + 0.5 * G.FH, floor=ff, gap=gap, seed=7, tube_r=G.RT, swell=4.5, tongue=40.0, reach=45.0, ahead=1.0, stair_phi_A=G.stair_phi("A"),
+               stair_phi_B=G.stair_phi("B"), vscale=0.24, vw=0.065, ew=0.5, hatch_k=0.12, veins=1.5, edge=14.0, hatch=0.2, cover_k=0.94,
+               plum=[0.03, 0.012, 0.024], pink=[1.0, 0.0612, 0.305], podium=G.PODIUM_H, win_dim=0.03, win_r=48.0, win_bias=0.0)
+    if st_bias(state):
+        cfg["z_front"] += st_bias(state)
     if tune:
         cfg.update(tune)
     return cfg

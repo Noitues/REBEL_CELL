@@ -164,7 +164,7 @@ def _win_dim():
     b.link(geo.outputs["Position"], sp.inputs[0])
     X, Y, Z = sp.outputs["X"], sp.outputs["Y"], sp.outputs["Z"]
     rad = b.m("SQRT", b.m("ADD", b.m("MULTIPLY", X, X), b.m("MULTIPLY", Y, Y)))
-    on_helix = b.m("MULTIPLY", b.m("LESS_THAN", rad, float(BL.get("win_r", 30.0))), b.m("GREATER_THAN", Z, float(BL["podium"]) + 0.3))
+    on_helix = b.m("MULTIPLY", b.m("LESS_THAN", rad, float(BL.get("win_r", 30.0))), b.m("GREATER_THAN", Z, float(BL["podium"]) + 2.0))
     oi = b.n("ShaderNodeObjectInfo")
     not_room = b.m("GREATER_THAN", b.m("ABSOLUTE", b.m("SUBTRACT", oi.outputs["Object Index"], 5.0)), 0.5)
     # azimuth-dependent front, the same swell as the skin (A and B are 180 degrees apart, so one swell serves the helix)
@@ -176,7 +176,7 @@ def _win_dim():
     em.inputs["Color"].default_value = tuple(BL["pink"]) + (1,)
     em.inputs["Strength"].default_value = float(BL.get("win_dim", 0.10))
     mix = b.n("ShaderNodeMixShader")
-    b.link(b.m("MULTIPLY", fac, 0.92), mix.inputs["Fac"])
+    b.link(fac, mix.inputs["Fac"])
     b.link(gi.outputs[0], mix.inputs[1])
     b.link(em.outputs[0], mix.inputs[2])
     b.link(mix.outputs[0], go.inputs[0])
