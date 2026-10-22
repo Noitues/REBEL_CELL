@@ -1,7 +1,9 @@
 class_name NodePage
 extends VBoxContainer
-## RG-02/03: the page of a REST or WORKSHOP node. A plain terminal window of buttons (placeholder look,
-## the art pass restyles it). Mouse and keyboard: click a button, or press 1-9 to pick a wheel slot / offer,
+## RG-02/03: the page of a REST or WORKSHOP node. Look (art, nodes round 2: the event page's layout): the window is a CRT terminal in the
+## kind's hue (`RouteInk.accent_of`), the rows are the event page's choice stickers (the number on the yellow tab), the verbs are vinyl
+## stickers; the scene stands the kind sticker, its icon and the RUN terminal beside it (`netrun_scene._show_node_page`). Every element,
+## name and string is the placeholder page's. Mouse and keyboard: click a button, or press 1-9 to pick a wheel slot / offer,
 ## Enter confirms the open pick, Esc clears an open pick. The page only reads the
 ## session and emits signals; the scene calls the session (Signal Up, Call Down).
 
@@ -18,11 +20,23 @@ var _first: int = -1
 var _second: int = -1
 var _keys: Array[Button] = []
 
+## Look (px at text scale 1): the choice stickers' width, the gaps between them, the verbs' lettering and the grid's columns.
+const ROW_W := 540.0
+const ROW_GAP := 14.0
+const BLOCK_GAP := 10.0
+const VERB_PX := 36
+const SLOT_COLUMNS := 2
+const OFFER_COLUMNS := 3
+## The verbs' tint and the dim of a spent verb.
+const SPENT_ALPHA := 0.55
+
 
 ## Builds the page for the session's open node page (`run.phase`).
 func setup(s: NetrunSession) -> void:
 	_s = s
 	name = "NodePage"
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	for c in get_children():
 		c.queue_free()
 	_keys.clear()
@@ -39,7 +53,61 @@ func _label(text: String, node_name: String = "") -> Label:
 	UiWrap.whole_words(l)
 	if node_name != "":
 		l.name = node_name
+	l.add_theme_font_override(&"font", Palette.mono())
+	l.add_theme_color_override(&"font_color", Palette.TEXT_MID)
 	return l
+
+
+## The kind's CRT window (the event page's way: a corp-style accent in the kind's hue).
+func _window(title: String, kind: String, node_name: String) -> CrtWindow:
+	var col := RouteInk.accent_of(kind)
+	var win := CrtWindow.new(title, col).with_kind(CrtWindow.kind_for(col), col)
+	win.name = node_name
+	win.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(win)
+	return win
+
+
+## A vinyl verb sticker that is the page's button (named, pressable, disabled when spent).
+func _verb(text: String, fill: int, node_name: String, tip: String = "") -> HoloSticker:
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	var b := HoloSticker.verb_word(text, fill, os, VERB_PX)
+	b.name = node_name
+	b.tooltip_text = tip
+	return b
+
+
+## A spent verb dims and shows the sticker's disabled state.
+func _spend(b: HoloSticker, spent: bool) -> void:
+	b.disabled = spent
+	if spent:
+		b.sticker.set_state(VinylSticker.State.DISABLED)
+		b.modulate.a = SPENT_ALPHA
+
+
+## A row as the event page's choice sticker: the button keeps its name and words, the plate is drawn behind it and the number
+## stands on the yellow tab (so the words no longer lead with it).
+func _choice(text: String, node_name: String, number: int, width: float, tip: String = "") -> Button:
+	var b := _button(text, node_name, tip)
+	b.theme_type_variation = ChoiceSticker.TYPE
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD
+	b.custom_minimum_size.x = width * minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	b.add_child(ChoiceSticker.new(number, Settings.text_scale))
+	return b
+
+
+## The grid a page's choice stickers stand in (their theme gives the plate its room and lettering).
+func _grid(node_name: String, columns: int) -> GridContainer:
+	var g := GridContainer.new()
+	g.name = node_name
+	g.columns = columns
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	g.add_theme_constant_override(&"h_separation", roundi(ROW_GAP * os * 2.0))
+	g.add_theme_constant_override(&"v_separation", roundi(ROW_GAP * os))
+	g.theme = ChoiceSticker.theme_for(Settings.text_scale)
+	return g
+
 
 
 func _button(text: String, node_name: String, tip: String = "") -> Button:
@@ -61,26 +129,32 @@ func _name_of(id: StringName) -> String:
 # --- REST ------------------------------------------------------------------------------------
 
 func _build_rest() -> void:
-	var win := TerminalWindow.new(tr("REST"), Palette.CELL_ACID) # TR
-	win.name = "RestWindow"
-	add_child(win)
+	var win := _window(tr("REST"), CityMapOverlay.KIND_REST, "RestWindow") # TR
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	win.body.add_theme_constant_override(&"separation", roundi(BLOCK_GAP * os))
 	var op := _s.run.operative
-	win.body.add_child(_label(tr("HP %d/%d") % [op.hp, op.max_hp], "RestHp")) # TR
 	var done := _s.rest_done()
 	var pv := _s.rest_patch_preview()
-	var patch := _button(tr("PATCH  +%d HP -> %d/%d") % [pv["heal"], pv["hp_after"], pv["max_hp"]], "RestPatch", # TR
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override(&"separation", roundi(ROW_GAP * os))
+	win.body.add_child(top)
+	var hp := _label(tr("HP %d/%d") % [op.hp, op.max_hp], "RestHp") # TR
+	hp.add_theme_color_override(&"font_color", Palette.TEXT_HI)
+	hp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(hp)
+	var patch := _verb(tr("PATCH  +%d HP -> %d/%d") % [pv["heal"], pv["hp_after"], pv["max_hp"]], VinylSticker.Fill.PINK, "RestPatch", # TR
 			tr("Heal %d%% of max HP. One mode per visit.") % _s.config.rest_heal_pct) # TR
-	patch.disabled = done
+	_spend(patch, done)
 	patch.pressed.connect(func() -> void: patch_pressed.emit())
-	win.body.add_child(patch)
+	top.add_child(patch)
 	win.body.add_child(_label(tr("REWIRE: pick a wheel slot, then the slot to swap its Firmware with.") if not done else tr("This REST is spent."), "RestHint")) # TR
-	var row := VBoxContainer.new()
-	row.name = "RestSlots"
+	var row := _grid("RestSlots", SLOT_COLUMNS)
 	win.body.add_child(row)
 	var after := _s.rest_rewire_preview(_first, _second) if _first >= 0 and _second >= 0 else op.slot_firmware_ids
 	for i in op.slot_slice_ids.size():
-		var txt := "%d  %s  [%s]" % [i + 1, _name_of(op.slot_slice_ids[i]), _name_of(after[i])]
-		var b := _button(txt, "RestSlot%d" % i)
+		var txt := "%s  [%s]" % [_name_of(op.slot_slice_ids[i]), _name_of(after[i])]
+		var b := _choice(txt, "RestSlot%d" % i, i + 1, ROW_W)
 		var why := ""
 		if _first >= 0 and i != _first:
 			why = _s.rest_rewire_error(_first, i)
@@ -93,18 +167,36 @@ func _build_rest() -> void:
 		row.add_child(b)
 		_keys.append(b)
 	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override(&"separation", roundi(ROW_GAP * os))
 	win.body.add_child(foot)
-	var confirm := _button(tr("CONFIRM REWIRE"), "RestConfirm") # TR
-	confirm.disabled = done or _first < 0 or _second < 0 or _s.rest_rewire_error(_first, _second) != ""
+	var confirm := _verb(tr("CONFIRM REWIRE"), VinylSticker.Fill.PINK, "RestConfirm") # TR
+	_spend(confirm, done or _first < 0 or _second < 0 or _s.rest_rewire_error(_first, _second) != "")
 	confirm.pressed.connect(func() -> void: rewire_confirmed.emit(_first, _second))
 	foot.add_child(confirm)
-	var undo := _button(tr("UNDO"), "RestUndo") # TR
-	undo.disabled = not done
+	var undo := _verb(tr("UNDO"), VinylSticker.Fill.WHITE, "RestUndo") # TR
+	_spend(undo, not done)
 	undo.pressed.connect(func() -> void: undo_pressed.emit())
 	foot.add_child(undo)
-	var leave := _button(tr("LEAVE"), "RestLeave") # TR
-	leave.pressed.connect(func() -> void: leave_pressed.emit())
-	foot.add_child(leave)
+	foot.add_child(_spacer())
+	foot.add_child(_leave("RestLeave"))
+
+
+## The foot's spring.
+func _spacer() -> Control:
+	var c := Control.new()
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## LEAVE: the holographic sticker (the Mainframe's), named per page.
+func _leave(node_name: String) -> HoloSticker:
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	var b := HoloSticker.new(tr("LEAVE"), "", os, VinylSticker.Fill.HOLO, VERB_PX) # TR
+	b.name = node_name
+	b.add_fold_room()
+	b.pressed.connect(func() -> void: leave_pressed.emit())
+	return b
 
 
 func _pick_slot(i: int) -> void:
@@ -120,31 +212,31 @@ func _pick_slot(i: int) -> void:
 
 ## The picked offer is `_first`, the wheel slot it replaces `_second`.
 func _build_workshop() -> void:
-	var win := TerminalWindow.new(tr("WORKSHOP"), Palette.CELL_ACID) # TR
-	win.name = "WorkshopWindow"
-	add_child(win)
+	var win := _window(tr("WORKSHOP"), CityMapOverlay.KIND_WORKSHOP, "WorkshopWindow") # TR
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	win.body.add_theme_constant_override(&"separation", roundi(BLOCK_GAP * os))
 	var offers: Array = _s.run.node_state.get("offers", [])
 	var spent := int(_s.run.node_state.get("bought", 0)) >= _s.config.workshop_buys_per_visit
-	win.body.add_child(_label(tr("Cycles: %d") % _s.run.cycles, "WorkshopCycles")) # TR
+	var cyc := _label(tr("Cycles: %d") % _s.run.cycles, "WorkshopCycles") # TR
+	cyc.add_theme_color_override(&"font_color", Palette.TEXT_HI)
+	win.body.add_child(cyc)
 	win.body.add_child(_label(tr("This Workshop is spent.") if spent else tr("Pick a slice, then the wheel slot it replaces."), "WorkshopHint")) # TR
-	var offer_box := VBoxContainer.new()
-	offer_box.name = "WorkshopOffers"
+	var offer_box := _grid("WorkshopOffers", OFFER_COLUMNS)
 	win.body.add_child(offer_box)
 	for i in offers.size():
-		var b := _button("%d  %s" % [i + 1, _name_of(StringName(String(offers[i])))], "WorkshopOffer%d" % i)
+		var b := _choice(_name_of(StringName(String(offers[i]))), "WorkshopOffer%d" % i, i + 1, ROW_W * 2.0 / float(OFFER_COLUMNS))
 		b.toggle_mode = true
 		b.button_pressed = i == _first
 		b.disabled = spent
 		var idx := i
 		b.pressed.connect(func() -> void: _pick_offer(idx))
 		offer_box.add_child(b)
-	var slot_box := VBoxContainer.new()
-	slot_box.name = "WorkshopSlots"
+	var slot_box := _grid("WorkshopSlots", SLOT_COLUMNS)
 	win.body.add_child(slot_box)
 	var op := _s.run.operative
 	for i in op.slot_slice_ids.size():
 		var why := _s.workshop_error(_first, i) if _first >= 0 else ""
-		var b := _button("%d  %s  (%d)" % [i + 1, _name_of(op.slot_slice_ids[i]), _s.workshop_price(i)], "WorkshopSlot%d" % i, why)
+		var b := _choice("%s  (%d)" % [_name_of(op.slot_slice_ids[i]), _s.workshop_price(i)], "WorkshopSlot%d" % i, i + 1, ROW_W, why)
 		b.toggle_mode = true
 		b.button_pressed = i == _second
 		b.disabled = spent or _first < 0 or why != ""
@@ -152,18 +244,19 @@ func _build_workshop() -> void:
 		b.pressed.connect(func() -> void: _pick_target(idx))
 		slot_box.add_child(b)
 	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override(&"separation", roundi(ROW_GAP * os))
 	win.body.add_child(foot)
-	var buy := _button(tr("BUY"), "WorkshopBuy") # TR
 	var ready := not spent and _first >= 0 and _second >= 0 and _s.workshop_error(_first, _second) == ""
+	var buy_text := tr("BUY") # TR
 	if ready:
 		var pv := _s.workshop_preview(_first, _second)
-		buy.text = tr("BUY  %d Cycles (%d left)") % [pv["price"], pv["cycles_after"]] # TR
-	buy.disabled = not ready
+		buy_text = tr("BUY  %d Cycles (%d left)") % [pv["price"], pv["cycles_after"]] # TR
+	var buy := _verb(buy_text, VinylSticker.Fill.PINK, "WorkshopBuy")
+	_spend(buy, not ready)
 	buy.pressed.connect(func() -> void: buy_confirmed.emit(_first, _second))
 	foot.add_child(buy)
-	var leave := _button(tr("LEAVE"), "WorkshopLeave") # TR
-	leave.pressed.connect(func() -> void: leave_pressed.emit())
-	foot.add_child(leave)
+	foot.add_child(_spacer())
+	foot.add_child(_leave("WorkshopLeave"))
 
 
 func _pick_offer(i: int) -> void:

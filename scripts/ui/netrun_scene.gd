@@ -18,7 +18,8 @@ const NODE_TIPS := {RC.InfilNodeType.ROUTER: "Router: a fight. Win it for Cycles
 ## What each route node is, in a word (H21 #14: two "Router" buttons looked the same) and
 ## as an icon; an elite Router is an "Elite fight" with the crown.
 const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL: "Event", # TR
-	RC.InfilNodeType.MAINFRAME: "Shop", RC.InfilNodeType.SERVER_RACK: "Rack"} # TR
+	RC.InfilNodeType.MAINFRAME: "Shop", RC.InfilNodeType.SERVER_RACK: "Rack", RC.InfilNodeType.REST: "Rest", # TR
+	RC.InfilNodeType.WORKSHOP: "Workshop", RC.InfilNodeType.CACHE: "Cache"} # TR
 const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
 	RC.InfilNodeType.MAINFRAME: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
 const ELITE_WORD := "Elite fight" # TR
@@ -851,6 +852,34 @@ func leave_shop() -> void:
 	_show_current()
 
 
+## The loot title's kind stamp (px at text scale 1: its side, its anchor offsets as shares of the side, its tilt in rad).
+const LOOT_STAMP_PX := 150.0
+const LOOT_STAMP_OFFSET := Vector4(-0.40, -0.34, 0.60, 0.66)
+const LOOT_STAMP_TILT := 0.14
+
+
+## The kind sticker stamped on the loot title when the node that paid is a CACHE (null for any other node).
+func _loot_kind_stamp(s: NetrunSession, os: float) -> TextureRect:
+	var node := s.run.current_node() if s.run.current_node_id != &"" else {}
+	if node.is_empty() or int(node["type"]) != RC.InfilNodeType.CACHE:
+		return null
+	var side := LOOT_STAMP_PX * os
+	var r := TextureRect.new()
+	r.name = "LootKindStamp"
+	r.texture = RouteOverlay.sticker_art(CityMapOverlay.KIND_CACHE)
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	r.offset_left = LOOT_STAMP_OFFSET.x * side
+	r.offset_top = LOOT_STAMP_OFFSET.y * side
+	r.offset_right = LOOT_STAMP_OFFSET.z * side
+	r.offset_bottom = LOOT_STAMP_OFFSET.w * side
+	r.pivot_offset = Vector2(side * 0.5, side * 0.5)
+	r.rotation = LOOT_STAMP_TILT
+	return r
+
+
 ## RG-02/03: the REST and WORKSHOP node pages (NodePage); every verb is a session call, then the page redraws.
 func _show_node_page() -> void:
 	var page := NodePage.new()
@@ -860,7 +889,54 @@ func _show_node_page() -> void:
 	page.undo_pressed.connect(func() -> void: _node_step(RunManager.netrun.rest_undo()))
 	page.leave_pressed.connect(func() -> void: _node_step(RunManager.netrun.leave_rest() if RunManager.netrun.run.phase == RunState.Phase.REST else RunManager.netrun.leave_workshop()))
 	page.buy_confirmed.connect(func(offer: int, slot: int) -> void: _node_step(RunManager.netrun.workshop_buy(offer, slot)))
-	_set_panel(page)
+	# Look (art, nodes round 2: the event page's layout): the window left, the side column right.
+	var split := HBoxContainer.new()
+	split.name = "NodePageSplit"
+	split.add_theme_constant_override(&"separation", NODE_PAGE_GAP)
+	split.add_child(page)
+	split.add_child(_node_side(RunManager.netrun))
+	_set_panel(split, false)
+
+
+## Look constants of the REST / WORKSHOP pages (px at text scale 1): the gap between window and side column, the column's width, the
+## kind icon's stamp and its tilt (rad), the gap in the column.
+const NODE_PAGE_GAP := 18
+const NODE_SIDE_W := 260.0
+const NODE_STAMP_PX := 190.0
+const NODE_STAMP_TILT := 0.10
+const NODE_SIDE_GAP := 22
+
+
+## The side column of a REST / WORKSHOP page: the RUN terminal, the node's title sticker (the event page's) and the kind's route
+## sticker stamped under it, so the page, the map sticker and the street room are one thing.
+func _node_side(s: NetrunSession) -> VBoxContainer:
+	var rest := s.run.phase == RunState.Phase.REST
+	var kind := CityMapOverlay.KIND_REST if rest else CityMapOverlay.KIND_WORKSHOP
+	var os := minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	var side := VBoxContainer.new()
+	side.name = "NodeSide"
+	side.add_theme_constant_override(&"separation", roundi(NODE_SIDE_GAP * os))
+	side.custom_minimum_size.x = NODE_SIDE_W * os
+	side.add_child(_event_run_window(s))
+	var title := HoloSticker.word(tr("REST") if rest else tr("WORKSHOP"), VinylSticker.Fill.WHITE, os, EVENT_STICKER_PX)
+	title.name = "NodeSticker"
+	title.focus_mode = Control.FOCUS_NONE
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.rotation = -0.06
+	title.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	side.add_child(title)
+	var stamp := TextureRect.new()
+	stamp.name = "NodeIcon"
+	stamp.texture = RouteOverlay.sticker_art(kind)
+	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stamp.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	stamp.custom_minimum_size = Vector2.ONE * NODE_STAMP_PX * os
+	stamp.pivot_offset = stamp.custom_minimum_size * 0.5
+	stamp.rotation = NODE_STAMP_TILT
+	stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	side.add_child(stamp)
+	return side
 
 
 func _node_step(events: Array[Dictionary]) -> void:
@@ -1464,7 +1540,7 @@ const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
 ## B1a: the page parts that are panels on the world (UiScrimPools.mark_panels_in).
 const SCRIM_PANELS: Array[String] = ["TerminalWindow", "LootSheet", "OperativeDossier", "RouteNodePanel"]
 ## B5c: the netrun pages whose stickers stand on the world, kept inside the screen's sticker safe margin.
-const SAFE_MARGIN_SCREENS: Array[String] = ["loot", "event", "shop", "run_end"]
+const SAFE_MARGIN_SCREENS: Array[String] = ["loot", "event", "shop", "rest", "workshop", "run_end"]
 const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
@@ -3297,6 +3373,10 @@ func _show_reward_page(offer_i: int) -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	head.add_child(title)
+	# A CACHE pays out under its own sticker: the kind's route sticker stamped on the title's corner (header art only; the title stays LOOT).
+	var stamp := _loot_kind_stamp(s, os)
+	if stamp != null:
+		title.add_child(stamp)
 	# big words: the title's words lead the strip instead (the sheet takes the height)
 	title.visible = not compact
 	# ANIM-R6 B10: the window names what paid out (it said RACK BREACHED after every fight).
