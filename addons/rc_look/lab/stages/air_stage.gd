@@ -17,8 +17,10 @@ const ROW_D: Array[float] = [480.0, 240.0, 120.0, 60.0, 20.0]
 const ROW_W: Array[float] = [26.0, 38.0, 56.0, 80.0, 120.0]
 const HEIGHTS: Array[float] = [0.55, 0.8, 0.4, 1.0, 0.65, 0.9, 0.5, 0.75]
 const ROW_H: Array[float] = [330.0, 270.0, 210.0, 150.0, 90.0]
-## The facade colour every block shares, the strip's reach (BU).
+## The facade colour every block shares, the neutral ground under the skyline (the sheet judges the air alone), the
+## strip's reach (BU).
 const FACADE := Palette.DESK_METAL
+const GROUND := Palette.DESK_DARK
 const MAX_D := 500.0
 
 const SKY_CODE := """shader_type canvas_item;
@@ -81,6 +83,11 @@ func apply(time: StringName, _quality: RcLookQualityState) -> void:
 		c.queue_free()
 	var view := get_viewport_rect().size
 	var ground := view.y * HORIZON
+	var floor_rect := ColorRect.new()
+	floor_rect.position = Vector2(0.0, ground)
+	floor_rect.size = Vector2(view.x, view.y - ground)
+	floor_rect.color = GROUND
+	_dyn.add_child(floor_rect)
 	for r in ROW_D.size():
 		var x := 0.0
 		var k := r * 3
@@ -89,7 +96,7 @@ func apply(time: StringName, _quality: RcLookQualityState) -> void:
 			var b := ColorRect.new()
 			b.position = Vector2(x, ground - h + r * 14.0)
 			b.size = Vector2(ROW_W[r] - 4.0, h)
-			b.color = RcLookAir.mix(FACADE, p.air, RcLookAir.amount(p, ROW_D[r], 0.0))
+			b.color = RcLookAir.mix(FACADE, p.air_color(), RcLookAir.amount(p, ROW_D[r], 0.0))
 			_dyn.add_child(b)
 			x += ROW_W[r]
 			k += 1
@@ -102,7 +109,7 @@ func apply(time: StringName, _quality: RcLookQualityState) -> void:
 		var chip := ColorRect.new()
 		chip.position = Vector2(x0, y + STRIP_H * 0.5)
 		chip.size = Vector2(roundf(MARGIN + w * float(i + 1) / CHIPS) - x0, STRIP_H * 0.5)
-		chip.color = RcLookAir.mix(FACADE, p.air, RcLookAir.amount(p, (float(i) + 0.5) / CHIPS * MAX_D, 0.0))
+		chip.color = RcLookAir.mix(FACADE, p.air_color(), RcLookAir.amount(p, (float(i) + 0.5) / CHIPS * MAX_D, 0.0))
 		_dyn.add_child(chip)
 	var l := Label.new()
 	l.text = "%s air: density %.3f / BU, facade through 0..%.0f BU (shader over mirror)" % [time, p.density, MAX_D]

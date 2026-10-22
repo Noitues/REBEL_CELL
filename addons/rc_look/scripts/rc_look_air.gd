@@ -44,10 +44,11 @@ static func sky(p: RcLookAirPreset, e: float) -> Color:
 	return Color(o.r, o.g, o.b, 1.0)
 
 
-## Writes a preset into a material's `<prefix>air` (vec3), `<prefix>air_a` (vec4), `<prefix>sky_top / sky_horizon /
+## Writes a preset into a material's `<prefix>air` (vec3, the horizon colour), `<prefix>air_a` (vec4), `<prefix>sky_top / sky_horizon /
 ## sky_ground` (vec3) and `<prefix>glow_k / ground_k`.
 static func apply(mat: ShaderMaterial, p: RcLookAirPreset, prefix: String = "") -> void:
-	mat.set_shader_parameter(prefix + "air", Vector3(p.air.r, p.air.g, p.air.b))
+	var a := p.air_color()
+	mat.set_shader_parameter(prefix + "air", Vector3(a.r, a.g, a.b))
 	mat.set_shader_parameter(prefix + "air_a", p.air_vec())
 	mat.set_shader_parameter(prefix + "sky_top", Vector3(p.sky_top.r, p.sky_top.g, p.sky_top.b))
 	mat.set_shader_parameter(prefix + "sky_horizon", Vector3(p.sky_horizon.r, p.sky_horizon.g, p.sky_horizon.b))

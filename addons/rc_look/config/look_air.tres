@@ -5,20 +5,18 @@
 
 [sub_resource type="Resource" id="night"]
 script = ExtResource("2")
-air = Color(0.08, 0.06, 0.16, 1)
 start = 0.0
 density = 0.009
 height = 30.0
 high = 0.15
-sky_top = Color(0.003, 0.003, 0.01, 1)
-sky_horizon = Color(0.42, 0.14, 0.09, 1)
-sky_ground = Color(0.01, 0.008, 0.016, 1)
-glow_k = 12.0
+sky_top = Color(0.306, 0.286, 0.408, 1)
+sky_horizon = Color(0.275, 0.247, 0.361, 1)
+sky_ground = Color(0.071, 0.055, 0.122, 1)
+glow_k = 4.0
 ground_k = 8.0
 
 [sub_resource type="Resource" id="day"]
 script = ExtResource("2")
-air = Color(0.58, 0.58, 0.66, 1)
 start = 0.0
 density = 0.004
 height = 30.0

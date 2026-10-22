@@ -9750,3 +9750,11 @@ Look only. Target: the r11 `combat_regular_night` / r26 `combat_solace` concepts
 - **Hue holds in overlaps.** `rcl_light_add` / `RcLookLight.light_add` now apply the per-channel soft ceiling as ONE scale on the light, set by the channel that saturates first, so added light keeps its hue and overlapping pink / cyan / lime no longer drift to grey-white (art-pass note on light_night_t2). Base unchanged at no light, never past white, a little light still adds about itself; test `test_added_light_keeps_its_hue`.
 - **Neon core: yes, thin, under the soft ceiling** ("not so intense we are blinded by it"): built in module 11 (signage), not here.
 - Lab fix: the lab shaders passed reach 1.0 instead of the preset's reach (the spill_ui strip showed it); fixed.
+
+## 2026-10-22 - LOOK-TOOLBOX module 7: one night sky and air (designer ruling, art-pass DIRECTION_REVIEW c5537ee3)
+
+- **Ruling.** One night sky and one night air colour for every view; a district colour is a tint layer on top; a view that differs is a named exception logged first.
+- **Canonical values** sampled from the Solace HQ golden plate `hq_solace_overview.png` (the plate the Solace HQ frames match; the L5 whole-city plate and the Godot Solace frames look down and show no sky): sky top (0.306, 0.286, 0.408), horizon (0.275, 0.247, 0.361), far ground (0.071, 0.055, 0.122), glow_k 4 (the plate's sky is nearly flat). The round-26 close-night plate has the same violet hue at about 0.4x the value; the golden plate wins as the signed-off target. Sheet: D:/rc_scratch/rc_look/air/air_vs_plate.jpg.
+- **The air is the horizon.** `RcLookAirPreset.air_color()` returns `sky_horizon` (the separate `air` field is gone), so aerial perspective converges on the sky by construction (art-pass note: the far rows went navy against a red horizon). Test `test_far_things_converge_on_the_horizon`.
+- Lab: a neutral ground under the skyline (the sheet judges the air alone).
+- **Not yet applied to any view.** The existing night skies / airs (Palette.NIGHT_SKY, city_config.sky, city_shaders sky.top, city_post haze_color, toon_ink NIGHT_BLOCK, whole_night_haze, whole_fog_night) move to these values view by view with a sheet each; city_post stays held.

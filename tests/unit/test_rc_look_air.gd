@@ -57,3 +57,11 @@ func test_sky_meets_the_horizon_and_tends_to_the_top() -> void:
 		assert_true(absf(up.r - p.sky_top.r) < 0.02 and absf(up.b - p.sky_top.b) < 0.02, "%s: near the top overhead" % n)
 		var down := RcLookAir.sky(p, -1.0)
 		assert_true(down.is_equal_approx(Color(p.sky_ground.r, p.sky_ground.g, p.sky_ground.b)), "%s: ground below" % n)
+
+
+func test_far_things_converge_on_the_horizon() -> void:
+	# Art-pass 2026-10-22: aerial perspective ends on the sky's horizon colour, or depth reads wrong.
+	for n in RcLookAirConfig.REQUIRED:
+		var p := RcLookAir.preset(n)
+		var far := RcLookAir.mix(Palette.DESK_METAL, p.air_color(), RcLookAir.amount(p, 1e6, 0.0))
+		assert_true(far.is_equal_approx(RcLookAir.sky(p, 0.0)), "%s: the far facade is the horizon" % n)
