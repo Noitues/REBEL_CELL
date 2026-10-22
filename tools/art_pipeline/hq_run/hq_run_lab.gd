@@ -136,7 +136,7 @@ func _load(state: String) -> void:
 			var size := Vector2(get_viewport().get_visible_rect().size)
 			var m := HqCompoundStage.manifest(corp)
 			var at := HqCompoundStage.place(CityView3D.CONFIG, corp, m)
-			var iso := _plate_camera(cm, size, at)
+			var iso := _plate_camera(cm, size, at, m)
 			var c := CityView3D.new()
 			c.band_lock = CityLod.Band.GRID
 			c.set_iso(iso)
@@ -212,7 +212,7 @@ func _process(delta: float) -> void:
 ## A golden plate's Blender camera (capture.json `camera`: loc / tgt in Blender BU, lens mm on a 36 mm sensor, lens shift) as the city's
 ## perspective iso camera on the compound placed at `at`: Godot yaw = 90 - the rig yaw, fov = the horizontal angle, `ortho` the width at the
 ## target; the lens shift moves the aim across the target plane.
-static func _plate_camera(cm: Dictionary, size: Vector2, at: Transform3D) -> CityIsoCamera:
+static func _plate_camera(cm: Dictionary, size: Vector2, at: Transform3D, m: Dictionary) -> CityIsoCamera:
 	var loc: Array = cm["loc"]
 	var tgt: Array = cm["tgt"]
 	var t_g := at * Vector3(float(tgt[0]), float(tgt[2]), -float(tgt[1]))
@@ -223,6 +223,23 @@ static func _plate_camera(cm: Dictionary, size: Vector2, at: Transform3D) -> Cit
 	cam.fov_deg = rad_to_deg(2.0 * atan(18.0 / float(cm["lens"])))
 	cam.pitch_deg = float(cm["pitch"])
 	cam.yaw_deg = 90.0 - float(cm["yaw"])
+	# The Godot yaw differs from the plate on purpose: it looks inland (HqCompoundStage.inland_yaw), the plate's pitch, distance and lens stay.
+	var inland := HqCompoundStage.inland_yaw(CityView3D.CONFIG, m, at, CityPlan.current_seed())
+	if not is_nan(inland):
+		cam.yaw_deg = inland
+		if OS.get_cmdline_user_args().has("--dbg_inland"):
+			var plan := CityPlan.for_seed(CityPlan.current_seed())
+			var c := CityIsoCamera.world_to_lot(CityView3D.CONFIG, at.origin)
+			var row := ""
+			for deg in range(0, 360, 30):
+				var d := Vector2(cos(deg_to_rad(deg)), -sin(deg_to_rad(deg)))
+				var land := 0
+				for r in range(10, 71, 2):
+					var q := c + d * r
+					if plan.rect.has_point(Vector2i(floori(q.x), floori(q.y))) and not plan.is_water(floori(q.x), floori(q.y)):
+						land += 1
+				row += " %d:%d" % [deg, land]
+			print("INLAND yaw=%.1f lot=%s rect=%s land/31 by yaw:%s" % [inland, c, plan.rect, row])
 	cam.ortho = 2.0 * dir.length() * tan(deg_to_rad(cam.fov_deg) * 0.5)
 	cam.target = t_g + cam.right() * float(cm["shift_x"]) * cam.ortho + cam.up() * float(cm["shift_y"]) * cam.ortho
 	return cam

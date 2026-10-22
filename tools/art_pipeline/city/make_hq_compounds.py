@@ -32,7 +32,8 @@ VENDOR_SOURCE = "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 3
 VENDOR_SOURCE_CANYON = ("art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 "
                         "(vendor_r34/) + " + VENDOR_SOURCE + " (vendor_r43/)")
 SOLACE_SETTINGS = {"build_solace_v5_compound.py": {"look": "aaa2", "interior_atlas": "imap_atlas.jpg",
-                                                  "park_radius_unit": "RB0 120 district units x 1.5"}}
+                                                  "park_radius_unit": "RB0 108 district units x 1.5, wobble x 0.3",
+                                                  "inland": {"r_max_lots": 150, "step_lots": 2, "cone_deg": 25, "bin_deg": 5}}}
 VENDOR_SOURCE_SOLACE = "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)"
 MANIFEST_SCHEMA = "rebel_cell.art_export/1"
 MATERIALS = {

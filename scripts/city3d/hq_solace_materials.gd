@@ -9,6 +9,8 @@ const PBR := preload("res://shaders/city/hq_solace_pbr.gdshader")
 const GLASS := preload("res://shaders/city/hq_solace_glass.gdshader")
 const WINDOW := preload("res://shaders/city/hq_solace_window.gdshader")
 const LOOK_KEY := "aaa2"
+## The page's post exposure over the street's (the plates' HQ post runs brighter than the district's).
+const PAGE_EXPOSURE_K := 1.6
 
 ## Role -> shader parameters (hq_preset `light`: skin_k 0.012, rim_k 0.12 / pow 4, porcelain rough 0.16 / coat 0.8, office rough 0.6).
 const ROLES := {
@@ -82,6 +84,7 @@ static func apply(root: Node, corp: StringName, manifest: Dictionary) -> Diction
 const FOG := preload("res://shaders/city/hq_solace_fog.gdshader")
 const FOG_RADIUS := 600.0
 const FOG_HEIGHT := 420.0
+const FOG_FROXEL := Vector2i(192, 96)
 
 
 ## The compound's volumetric haze: the Environment's volumetric fog on (zero global density) and a FogVolume box over the compound
@@ -94,6 +97,7 @@ static func add_fog(host: Node3D, env: Environment, at: Transform3D) -> FogVolum
 	env.volumetric_fog_length = 1800.0
 	env.volumetric_fog_detail_spread = 2.0
 	env.volumetric_fog_temporal_reprojection_enabled = false
+	RenderingServer.environment_set_volumetric_fog_volume_size(FOG_FROXEL.x, FOG_FROXEL.y)  # finer froxels: no stepping grain
 	var fv := FogVolume.new()
 	fv.name = "HqSolaceFog"
 	fv.shape = RenderingServer.FOG_VOLUME_SHAPE_BOX

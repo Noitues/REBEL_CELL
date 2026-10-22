@@ -105,11 +105,51 @@ static func camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector
 	return c
 
 
+## LOOK Solace HQ (designer 2026-10-21): the yaw (degrees, CityIsoCamera convention) that looks from the sea side as far inland as
+## the plan goes: the bearing (every `bin_deg`) whose cone (`cone_deg` either side, five rays) runs longest over land (not water, inside
+## the plan's rect) from the compound's lot, rays stepped `step_lots` out to `r_max_lots`, from the manifest's `settings.inland`.
+## Ties go to the lowest bearing. NAN without that block. Pure and deterministic per seed (no RNG).
+static func inland_yaw(cfg: CityConfig, m: Dictionary, at: Transform3D, city_seed: int) -> float:
+	var inl: Variant = (m.get("settings", {}) as Dictionary).get("inland")
+	if not inl is Dictionary:
+		return NAN
+	var plan := CityPlan.for_seed(city_seed)
+	if plan == null:
+		return NAN
+	var c := CityIsoCamera.world_to_lot(cfg, at.origin)
+	var r_max := float((inl as Dictionary).get("r_max_lots", 150.0))
+	var step := float((inl as Dictionary).get("step_lots", 2.0))
+	var cone := float((inl as Dictionary).get("cone_deg", 25.0))
+	var bin := maxf(float((inl as Dictionary).get("bin_deg", 5.0)), 1.0)
+	var best := NAN
+	var best_depth := -1.0
+	var yaw := 0.0
+	while yaw < 360.0:
+		var depth := 0.0
+		for k in range(-2, 3):
+			var a := deg_to_rad(yaw + cone * float(k) * 0.5)
+			var d := Vector2(cos(a), -sin(a))
+			var r := step
+			while r <= r_max:
+				var q := c + d * r
+				var li := floori(q.x)
+				var lj := floori(q.y)
+				if not plan.rect.has_point(Vector2i(li, lj)) or plan.is_water(li, lj):
+					break
+				r += step
+			depth += r
+		if depth > best_depth:
+			best_depth = depth
+			best = yaw
+		yaw += bin
+	return wrapf(best, -180.0, 180.0)
+
+
 ## Parity S-HQRUN: the HQ-run page's own framing of the compound: the manifest's camera
 ## (`camera`) with the page's per-corporation framing from `cfg` (the round 43 concepts'
 ## distance, aim, pitch and yaw: `hq_run_*_by_corp`). The combat backdrop keeps `camera`.
 static func page_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector2, pts: Array[Vector3] = [],
-		aim: Rect2 = Rect2()) -> CityIsoCamera:
+		aim: Rect2 = Rect2(), city_seed: int = CityPlan.current_seed()) -> CityIsoCamera:
 	var cam := camera(cfg, m, at, size)
 	var corp := StringName(String(m.get("corp", "")))
 	cam.ortho *= float(cfg.hq_run_ortho_scale_by_corp.get(corp, 1.0))
@@ -118,6 +158,9 @@ static func page_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: V
 		cam.target += at.basis * (shift as Vector3)
 	cam.pitch_deg = float(cfg.hq_run_pitch_by_corp.get(corp, cam.pitch_deg))
 	cam.yaw_deg = float(cfg.hq_run_yaw_by_corp.get(corp, cam.yaw_deg))
+	var inland := inland_yaw(cfg, m, at, city_seed)
+	if not is_nan(inland):
+		cam.yaw_deg = inland
 	cam.fov_deg = float(cfg.hq_run_fov_by_corp.get(corp, 0.0))
 	if not cam.perspective() and cfg.hq_run_landmark_share > 0.0:
 		_fill_landmark(cam, m, at, size, pts, aim, cfg.hq_run_landmark_share, cfg.hq_run_landmark_width_max)
@@ -192,9 +235,9 @@ static func landmark_share(cam: CityIsoCamera, m: Dictionary, at: Transform3D, s
 ## middle (`cfg.hq_run_fit_pans` passes) and steps back (`ortho` times `cfg.hq_run_fit_step`)
 ## until every point is in.
 static func run_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector2, pts: Array[Vector3], margin_px: float,
-		max_share: float, free_rect: Rect2 = Rect2()) -> CityIsoCamera:
+		max_share: float, free_rect: Rect2 = Rect2(), city_seed: int = CityPlan.current_seed()) -> CityIsoCamera:
 	var inner := free_rect if free_rect.has_area() else Rect2(Vector2.ZERO, size).grow(-margin_px)
-	var cam := page_camera(cfg, m, at, size, pts, inner)
+	var cam := page_camera(cfg, m, at, size, pts, inner, city_seed)
 	if pts.is_empty() or _holds(cam, pts, inner):
 		return cam
 	var ref := cam.ortho

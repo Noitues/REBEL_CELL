@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-pass:docs/concepts/solace_vertical/hq/scripts @ 73dd33c9 (v5 plates; vendor_solace_v5/)",
-  "commit": "d7277bec0e2781619224ec6aca86c5c9c14e9c98",
-  "scripts_sha256": "4fe34abbb5d879fa9706892604c7b1d3148590fa6a3e050521e92b7563143fa8"
+  "commit": "37f38376873786561078a3366a02f251341729e6",
+  "scripts_sha256": "c2910b7b133e720963934e1a1f2c1c4f3fc21d578a81856284a26017376119a8"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -38,7 +38,13 @@
   "layered_sprites": "dropped: 1D chose real-time Godot 3D",
   "look": "aaa2",
   "interior_atlas": "imap_atlas.jpg",
-  "park_radius_unit": "RB0 120 district units x 1.5"
+  "park_radius_unit": "RB0 108 district units x 1.5, wobble x 0.3",
+  "inland": {
+   "r_max_lots": 150,
+   "step_lots": 2,
+   "cone_deg": 25,
+   "bin_deg": 5
+  }
  },
  "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
  "place_lot": null,
@@ -244,9 +250,9 @@
    -0.0
   ],
   "entry": [
-   22.0,
-   0.7,
-   133.0
+   0.0,
+   9.0,
+   78.0
   ]
  },
  "slot_surfaces": [

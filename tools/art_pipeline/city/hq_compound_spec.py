@@ -86,7 +86,7 @@ def _solace():
         rows.append([(round(O[0] + e[0] * half * s, 3), round(O[1] + e[1] * half * s, 3), round(zb, 3)) for s in SOLACE_BRIDGE_S])
     zc = G.floor_z(G.CP["floors"])
     top = zc + G.CP["crown_h"] + 1.5          # the crown roof: the helix cap under the pink halo
-    return dict(rows=rows, server=(0.0, 0.0, round(top + 1.5, 3)), entry=(22.0, -133.0, 0.7),
+    return dict(rows=rows, server=(0.0, 0.0, round(top + 1.5, 3)), entry=(0.0, -78.0, 9.0),
                 camera=((0.0, 0.0, 175.0), 320.0), server_name="THE GENOME CORE", builder="build_solace_v5_compound.py")
 
 

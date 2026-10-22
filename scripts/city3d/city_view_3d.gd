@@ -447,7 +447,7 @@ var _netrun_setup: bool = false
 ## the ground (city_ground <-> wet_street, so 0 is the old shader itself), the ink (faded by `look.ink_fade`) and the
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
-	look_blend = clampf(lb, 0.0, 1.0)
+	look_blend = 1.0 if not _compound_aaa.is_empty() else clampf(lb, 0.0, 1.0)  # an AAA-2 compound's page is held at 1
 	if water != null:
 		water.set_look_blend(look_blend)
 	if _building_mat == null:
@@ -470,7 +470,7 @@ func set_look_blend(lb: float) -> void:
 		if wet:
 			m.set_shader_parameter(&"look_blend", look_blend)
 	var look: Dictionary = CityShaderConfigData.shipped().look
-	_post.set_shader_parameter(&"ink_fade", minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
+	_post.set_shader_parameter(&"ink_fade", 1.0 if not _compound_aaa.is_empty() else minf(look_blend * float(look["ink_fade"]), 1.0 - float(look["ink_floor"])))
 	_post.set_shader_parameter(&"fog_amount", cfg.fog_amount * (1.0 - look_blend))
 	# AAA-2 (A-022): above 0 the post runs the plate's chain and holds the exposure (solved per framing by the street rig); the
 	# Environment tonemap stays linear at 1. The world is the flat colour, the key light the moon.
@@ -481,6 +481,8 @@ func set_look_blend(lb: float) -> void:
 	NetrunShaderKitAaa.apply_world(_env, _sun, look_blend, cfg.sky)
 	NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	_whole_landmarks()
+	if not _compound_aaa.is_empty():  # the AAA-2 HQ page: a clean frame (no film grain over the fog and the skin)
+		_post.set_shader_parameter(&"aaa_grain", Vector2.ZERO)
 
 
 var _aaa_exposure: float = 0.0
@@ -2195,6 +2197,8 @@ func _circle_lots(at: Transform3D, radius: float) -> Dictionary:
 func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	if not _compound_aaa.has(corp):
 		return
+	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
+	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
 	set_look_blend(1.0)
 	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at)
 
@@ -2205,6 +2209,7 @@ func unstage_compound(corp: StringName) -> void:
 		return
 	if _compound_aaa.has(corp):
 		_compound_aaa.erase(corp)
+		whole_look = false
 		set_look_blend(0.0)
 		if is_instance_valid(_compound_fog.get(corp)):
 			(_compound_fog[corp] as Node).queue_free()
