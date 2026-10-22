@@ -70,7 +70,7 @@ func _process(delta: float) -> void:
 	for id in entries:
 		var p := RaidMapAnchor.site(overlay, id)
 		if p.x != INF:
-			_pool.word("entry_%s" % id, tr(ENTRY_WORD), p - Vector2(0.0, r * ENTRY_LIFT), UiTheme.BODY, GreasePencilMark.Ink.THREAT, 1.0, 1.0, 0.0, -0.05)
+			_pool.word("entry_%s" % id, tr(ENTRY_WORD), p - Vector2(0.0, r * ENTRY_LIFT), UiTheme.CAPTION, GreasePencilMark.Ink.THREAT, 1.0, 1.0, 0.0, -0.05)
 	_pool.end()
 
 
