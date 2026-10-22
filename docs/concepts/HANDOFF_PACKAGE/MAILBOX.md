@@ -508,3 +508,34 @@ suite runs at your gate.
 baked still. The Solace boss close-up can take longer than 2 s to build, so a slow machine may show the still. The Solace session is
 re-baking the stale Solace stills (night and day) to the current look, as its own READY entry. Whether the 2.0 s wait should change is
 a build/perf call.
+
+### A-092 · 2026-10-22 · READY: Solace combat-backdrop stills re-baked from the live close-up (art/look-stills @ 10ba3352, on A-091)
+
+Merge **after A-091** (art/look-toolbox-3 6ddebb9b). It has 3 commits on 6ddebb9b, in worktree `D:/rc_art/godot_look_stills`. The
+chain is A-086 → A-087 → A-089 → A-090 → A-091 → A-092. Art-pass did not merge main.
+
+- **Finding:** all 8 Solace stills in `assets/backdrops/combat/` were stale.
+  - `solace_hq_*` showed the old spiral helix.
+  - `solace_site_*` showed the concept-art SOLACE GENERAL, not the S2 hospital glb.
+  - CombatBackdrop shows a still whenever the live close-up can't render, and also when the live close-up takes longer than
+    `backdrop_city_wait_s` (2.0 s) to build. That 2 s case is real for the Solace boss on slower machines (A-091).
+- **Commits:**
+  - 11f16dab: the bake tool `tools/art_pipeline/backdrop/bake_backdrop_stills.gd/.tscn`, windowed only.
+    - It saves the backdrop's GRADED frame, frozen with `--reduce-effects=1`. That is pixel-identical to the live 1080p lab capture,
+      so the hand-over doesn't pop.
+    - It saves the won mask: R = the visible target silhouette (frame differenced with the landmark hidden), G = its lit pixels.
+    - It refuses to save unless `on_city()` is true and the chunks are built. It holds the 2 s wait inside the tool only;
+      `backdrop_city_wait_s` is untouched and stays yours.
+    - `--old-dir` fails a bake that is too close to the previous still, so a still can never be baked from a still.
+  - b80d97f7: solace_hq_night and solace_site_night (.jpg + _won.png) re-baked. BackdropCatalog.ANCHORS changed:
+    - solace_hq (0.50, 0.16) → (0.51, 0.0), which OURS_NOW_MIN_Y clamps to 0.16;
+    - solace_site (0.48, 0.29) → (0.50, 0.12).
+  - 10ba3352: the day stills are copies of the night bake (designer 2026-10-22: day stills = night stills until a live day look
+    exists, because the live close-up has no day look and ignores `place.day`).
+- **Sheet:** art-pass `docs/concepts/solace_vertical/hq/godot/stills_then_now.jpg` (rows HQ night / day / Site night / day; columns
+  then | now | live). The day rows there show the dropped cool-day re-light; the committed day files equal the night ones.
+- **Coming next:** the live Site close-up framing (the hospital is small behind towers). After that slice the Site stills get
+  re-baked again, in a follow-up entry.
+- **Tests at 10ba3352 (targeted):** test_parity_arena_backdrop 13, test_b1a_ui_scrim_pools 18, test_art2_attachments 15,
+  test_b2_combat_composition 20, test_parity_title01_backdrop 12 and test_hq_aaa_state_gate 4 all pass. b1b_wax_pencil 21 and
+  art5_landmarks 8 passed at 4458938c. No fixture changed. The full suite runs at your gate.
