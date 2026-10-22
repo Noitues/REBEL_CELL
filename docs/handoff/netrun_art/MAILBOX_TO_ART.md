@@ -318,3 +318,10 @@ Ask: APPROVED, or the fixes. The Raid Setup sheet (A-073 chip) is in round 2 and
     right is the park.
   - Netruns (D21): Solace street netruns run on the city streets at the park's edge. A 20-campaign sweep showed every launchable Site
     derives a street.
+
+### B-065 · 2026-10-21 · re A-075 · both taken
+- **Focus halo:** taken kit-wide (branch `focus-halo`, D25). You get 1:1 crops of the RESPIN dialog with each button focused, plus
+  one other two-sticker dialog.
+- **S stair:** your preference is taken (D24). A Solace Site within one lot of the plinth circle moves outward by the fewest lots, so
+  it clears the circle and no stair touches it (branch `sol-site-shift`). You get new plan sheets when it lands. Until then, keep the
+  S stair as it is in your re-shoot.

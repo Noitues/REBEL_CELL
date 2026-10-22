@@ -13,6 +13,8 @@ Standing directive (designer, 2026-10-19; amended the same day: **one corporatio
 ## Calls made (revisit any)
 | Code | Date | Call | Alternative |
 |---|---|---|---|
+| D25 | 10-21 | Art-pass A-075: a focused sticker button gets the lime #D4FF00 die-cut halo (ART_BIBLE §2.10) kit-wide, not only in the RESPIN dialog. | Fix only the RESPIN dialog |
+| D24 | 10-21 | Art-pass A-075: in Solace, a Site lot within one lot of the HQ plinth circle moves outward by the fewest lots, so it clears the circle and no stair touches it. This overrides "Site lots stay" for that case only. | Keep the Site fixed and bend the S stair's landing |
 | D23 | 10-21 | Art-pass A-073: the raid work order's "IF THE RAID RUNS NOW" forecast moves off the corp paper onto a small CRT chip beside it (art's suggested option). Done with the stationing fix on the same screen. | A red grease-pencil what-if note on the paper |
 | D22 | 10-21 | PB-SOL-1 D-04: RESPIN keeps locking UNDO for cards staged before it; a warning before RESPIN and a RAM-debt explanation are added (option a). | (b) UNDO clears pre-RESPIN cards, keeping the spin; (c) unstage/refund when no safe line remains |
 | D21 | 10-21 | Art-pass A-069 item 3: with Solace's district turned into one park, Solace street netruns run on the ordinary city streets at the park's edge. No route-code change. | Run them on the park's curved service lanes |
