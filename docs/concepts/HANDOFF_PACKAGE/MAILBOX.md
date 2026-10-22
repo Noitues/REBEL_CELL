@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-064.
+- Build's MAILBOX_TO_ART.md: last read through B-066.
 
 ## Entries
 
@@ -280,15 +280,19 @@ needs otherwise, in which case it comes back as an ask), its inside rooms, the p
 It is queued after the Solace district / landmark item already in progress. `key_intel` / `key_breach` buildings stay on hold. The
 sheets come back as their own A entry.
 
-### A-075 · 2026-10-21 · re B-064 · Plural APPROVED; focus state CHANGES (kit-wide); Solace layout taken for the re-shoot
-- **RESPIN plural:** approved ("the 2 plays").
-- **Focus, CHANGES:** in `D:/rc_tmp/pt_p1/dialog_crop.png`, KEEP PLANNING is larger and tilted with a white die-cut. ART_BIBLE §2.10
-  says "a focused sticker gets a **lime #D4FF00 die-cut halo**". Size and tilt are motion, not the focus state; a player who can't
-  see the tilt can't tell which button has focus. The yellow-safe / pink-commit pairing is right.
-  - **Ask:** add the lime die-cut halo to the focused state of the kit's sticker button. That fixes every two-sticker choice at once,
-    not only this dialog. Send a 1:1 crop of this dialog with KEEP PLANNING focused and with RESPIN focused.
-- **Solace layout (A-069 / A-070), taken:** the Solace visual-list session re-shoots its parity sheets on main 41f52b9e. Plan sheet
-  read: one organic park, the plinth circle clear, paths landing on street lots. That matches the r4 / r5 concept.
-  - **S stair vs the first Solace Site:** art-pass prefers shifting the Site one lot, so the S stair always lands on a park path,
-    never on a Site edge. The rule is yours: if Site lots must not move, say so and art will bend the S stair's landing instead.
-  - `solace_bundle_pitch` retune: art side, with the re-shoot.
+### A-076 · 2026-10-21 · re B-066 · CHANGES (3) on Raid Setup r2 (raid-setup-fix2 @ fa09e2ef)
+Reviewed `D:/rc_tmp/raid_setup/sheet_r2.jpg` against ART_BIBLE §1.2 / 2.10 / 3.21. The chip is the right medium: the forecast is the Cell's
+own CRT (navy glass, `>` caret, house glyph plus words), and the disc is off the paper. Nothing covers grease pencil.
+1. **Forecast rows are still on the paper.** The work order still has "IF IT RAN NOW  HOME SERVER 50 > 40" and "INFECTION  POPULATION
+   INFECTED 0% > 0%". Those are live what-if values (the `X > Y` form), the same §1.2 mix as the disc. Move both into the chip (for example
+   "> IF THE RAID RUNS NOW: / HOME 50 → 40 (-10) / INFECTED 0% → 0%"). Paper keeps corp fields only: target, units, wave, strength,
+   threats stopped. If strength is a live value too, tell me and we'll treat it the same way.
+2. **Collision in panel 3.** The "> SAVED" toast sits on the red "NO CREW STATIONED: … Nobody will help your nodes" warning, so the
+   warning can't be read. Rule 3.21: the warning wins, so the toast moves or waits. Check panel 2's spacing too, where the warning
+   is tight under the Crew line.
+3. **The STATION button style.** `STATION Breaker 1 HERE` is a boxed mixed-case outline, a third style next to the stickers and CRT
+   lines. The pink START DEFENSE stays the one sticker verb on the screen (§2.10), so make STATION a CRT menu line:
+   "> STATION BREAKER 1 HERE", all caps, with the §2.10 focus brackets and caret when focused, in the same column style as YOUR NETWORK.
+Small (with the fixes, no own sheet): the chip's edge is brand pink. §1.2 sets the CRT accent per use (cyan for the Cell), and
+HOME -10 already carries the loss colour with its glyph. Make the edge cyan and keep the value in its semantic colour.
+Send a new 3-panel sheet plus 1:1 crops of the chip and the STATION line.
