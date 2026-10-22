@@ -39,9 +39,19 @@ def main():
     json.dump(job, open(jp, "w"), indent=1)
     log = os.path.join(out, "blender.log")
     t0 = time.time()
+    wd = float(job.get("watchdog", 900))            # seconds without any log output before we kill OUR blender (hang guard)
     with open(log, "w") as f:
-        r = subprocess.run([BLENDER, "-b", "--factory-startup", "--python", os.path.join(HERE, "rat_blender.py"), "--", jp],
-                           stdout=f, stderr=subprocess.STDOUT)
+        pr = subprocess.Popen([BLENDER, "-b", "--factory-startup", "--python", os.path.join(HERE, "rat_blender.py"), "--", jp],
+                              stdout=f, stderr=subprocess.STDOUT)
+        while pr.poll() is None:
+            time.sleep(5)
+            if time.time() - os.path.getmtime(log) > wd:
+                print("WATCHDOG: no log output for %.0f s, killing own blender pid %d" % (wd, pr.pid), flush=True)
+                subprocess.run(["taskkill", "/PID", str(pr.pid), "/T", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                break
+    class _R:
+        returncode = pr.wait()
+    r = _R()
     wall = time.time() - t0
     bad = "Traceback" in open(log, errors="replace").read()
     print(tag, "exit", r.returncode, "TRACEBACK" if bad else "ok", "wall %.0f s" % wall, flush=True)

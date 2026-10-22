@@ -242,8 +242,8 @@ def lure(ns, base, sway_dir, h, arch, rng, big=True, hue=None):
     e = pts[-1]
     col = hue or DIVE
     r = 0.9 if big else 0.32
-    ns["dome"](NEON, e[0], e[1], e[2], r, _sc(col, 4.5 if big else 2.6), n=10, rings=4, hemi=False, zscale=1.0)
-    ns["ring_line"](NEON, e[0], e[1], e[2] - 0.2, r * 1.9, 0.05 if not big else 0.09, _sc(PHOTO, 1.2), n=18)
+    ns["dome"](NEON, e[0], e[1], e[2], r, _sc(col, 2.0 if big else 1.2), n=10, rings=4, hemi=False, zscale=1.0)
+    ns["ring_line"](NEON, e[0], e[1], e[2] - 0.2, r * 1.9, 0.05 if not big else 0.09, _sc(PHOTO, 0.6), n=18)
     return e
 
 
@@ -279,7 +279,7 @@ def radiolarian(ns, c, r, rng, spikes=26):
 
 
 # ------------------------------------------------------------------------------------------------ bell
-def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85):
+def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85, gk=1.0):
     SM, NEON, GLASS, bar = ns["SMOOTH"], ns["NEON"], ns["GLASS"], ns["bar"]
     nm = 36 if R > 3.0 else 24
     nr = 9
@@ -302,7 +302,7 @@ def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85):
             sc0 = 1 + 0.07 * math.cos(lobes * ta) * (min(1.0, t * 1.0) ** 4)
             sc1 = 1 + 0.07 * math.cos(lobes * tb) * (min(1.0, t * 1.0) ** 4)
             rib = (i % 3 == 0)
-            c_ = _sc(_mix(base, rib_col, 0.5 if rib else 0.0), glow * (2.1 if rib else 0.55) * 0.55)
+            c_ = _sc(_mix(base, rib_col, 0.5 if rib else 0.0), glow * (2.1 if rib else 0.55) * 0.55 * gk)
             pts = [(cx + r0 * sc0 * math.cos(ta), cy + r0 * sc0 * math.sin(ta), z0), (cx + r0 * sc1 * math.cos(tb), cy + r0 * sc1 * math.sin(tb), z0),
                    (cx + r1 * sc1 * math.cos(tb), cy + r1 * sc1 * math.sin(tb), z1), (cx + r1 * sc0 * math.cos(ta), cy + r1 * sc0 * math.sin(ta), z1)]
             if r0 < 1e-4:
@@ -316,9 +316,9 @@ def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85):
         tm = 0.5 * (ta + tb)
         rr0 = R * 1.07
         NEON.face([(cx + rr0 * math.cos(ta), cy + rr0 * math.sin(ta), zr - 0.10 * R), (cx + rr0 * math.cos(tb), cy + rr0 * math.sin(tb), zr - 0.10 * R),
-                   (cx + rr0 * 1.04 * math.cos(tm), cy + rr0 * 1.04 * math.sin(tm), zr - 0.10 * R - 0.28 * R)], _sc(rib_col, 0.9), None)
+                   (cx + rr0 * 1.04 * math.cos(tm), cy + rr0 * 1.04 * math.sin(tm), zr - 0.10 * R - 0.28 * R)], _sc(rib_col, 0.9 * gk), None)
     # rim ring
-    ns["ring_line"](NEON, cx, cy, zr - 0.10 * R, R * 1.07, 0.10 + 0.03 * R, _sc(rib_col, 2.0), n=nm)
+    ns["ring_line"](NEON, cx, cy, zr - 0.10 * R, R * 1.07, 0.10 + 0.03 * R, _sc(rib_col, 2.0 * gk), n=nm)
     # oral arms / manubrium: ruffled glowing tubes hanging from the underside
     for m in range(4):
         a = 2 * math.pi * m / 4 + 0.4
@@ -327,7 +327,7 @@ def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85):
             f = q / 7
             pts.append((cx + 0.22 * R * math.cos(a) + 0.35 * math.sin(f * 7 + m) * (f + 0.2), cy + 0.22 * R * math.sin(a) + 0.35 * math.cos(f * 6 + m) * (f + 0.2),
                         zr + 0.1 * R - f * 0.7 * R))
-        _chain(NEON, pts, 0.28, 0.12, _sc(_mix(base, (1, 0.7, 0.8), 0.5), 0.9), bar)
+        _chain(NEON, pts, 0.28, 0.12, _sc(_mix(base, (1, 0.7, 0.8), 0.5), 0.9 * gk), bar)
     # marginal tentacles trailing into the water, with bright bead tips
     for m in range(tents):
         a = 2 * math.pi * m / tents + rng.uniform(-0.15, 0.15)
@@ -342,11 +342,11 @@ def bell(ns, cx, cy, zr, R, rng, tents=14, tlen=9.0, hue=0, tall=0.85):
                         zr - 0.1 * R - L * f))
         col = _mix(base, (1, 1, 1), 0.25)
         for q in range(12):
-            bar(NEON, pts[q], pts[q + 1], 0.13 * (1 - 0.5 * q / 12) + 0.03, _sc(col, 0.5 + 1.6 * (q / 12) ** 2))
+            bar(NEON, pts[q], pts[q + 1], 0.13 * (1 - 0.5 * q / 12) + 0.03, _sc(col, (0.5 + 1.6 * (q / 12) ** 2) * gk))
         for q in (4, 8, 12):
             e = pts[q]
             cc_ = (1.0, 0.08, 0.06) if (m % 5 == 0 and q == 12) else col
-            ns["box"](NEON, e[0] - 0.16, e[1] - 0.16, e[2] - 0.16, e[0] + 0.16, e[1] + 0.16, e[2] + 0.16, _sc(cc_, 2.4 + 0.5 * q / 4))
+            ns["box"](NEON, e[0] - 0.16, e[1] - 0.16, e[2] - 0.16, e[0] + 0.16, e[1] + 0.16, e[2] + 0.16, _sc(cc_, (2.4 + 0.5 * q / 4) * gk))
 
 
 # ------------------------------------------------------------------------------------------------ the replaced _stack
@@ -393,6 +393,29 @@ def stack(ns, cx, cy, s, hs, zb, bed, PR, bid, full=True, main=False):
                        (cx + rr * math.cos(a1), cy + rr * math.sin(a1), zc + hh), (cx + rr * math.cos(a0), cy + rr * math.sin(a0), zc + hh)],
                       _sc(col, 0.55 + 0.5 * rng.random()), None)
     info = {}
+    if main and V2:
+        R = float(os.environ.get("ABY_R", "31.0"))
+        top, mj, rings, W, n3 = biodome(ns, cx, cy, ztop, rb, R, rng)
+        # pylons: nacre-tinted ribs from the plinth up to the shell's underside
+        low = sorted(range(len(rings)), key=lambda i: min(p[2] for p in rings[i]["ring"]))
+        picks = []
+        for i in low:
+            if all(abs(i - k) > 6 for k in picks):
+                picks.append(i)
+            if len(picks) == 8:
+                break
+        for i in picks:
+            T = min(rings[i]["ring"], key=lambda p: p[2])
+            dx_, dy_ = T[0] - cx, T[1] - cy
+            dl = math.hypot(dx_, dy_) or 1.0
+            B = (cx + dx_ / dl * rb * 0.7, cy + dy_ / dl * rb * 0.7, ztop - 0.3)
+            c1 = (B[0], B[1], B[2] + 0.5 * (T[2] - B[2]))
+            c2 = (T[0], T[1], T[2] - 0.4 * (T[2] - B[2]))
+            _chain(SM, [_bez(B, c1, c2, T, q / 10) for q in range(11)], 1.1, 0.5, (0.64, 0.58, 0.70), ns['bar'])
+        for dz_ in (-0.95, 0.95):
+            ns['ring_line'](SURF, cx, cy, zb + 2.4 + dz_, prof[2][0] + 0.12, 0.28, (0.74, 0.68, 0.76), n=40)
+        ns["spot_at"]((cx - 8.0, cy + 8.0, ztop + 10.0), mj, DIVE, 3.0e5, 60.0)
+        return top, ztop + 5.0, top + 2.0
     if main:
         R = 15.5
         zc = ztop + R * 0.80 * 0.95 + 0.8
@@ -420,7 +443,7 @@ def stack(ns, cx, cy, s, hs, zb, bed, PR, bid, full=True, main=False):
         radiolarian(ns, W(R * 0.95, -R * 0.2, 7.5), 3.9, rng)
         radiolarian(ns, W(-R * 0.55, -R * 0.82, 6.5), 2.4, rng, spikes=16)
         return top, zc, e[2]
-    if full:       # inner pods: small nautilus
+    if full and not V2:       # inner pods: small nautilus
         R = 12.0 * u + 0.5
         zc = ztop + R * 0.80 * 0.95 + 0.4
         top, ap, W, n3, e2, lat = nautilus(ns, (cx, cy, zc), R, rng.uniform(-0.45, 0.45), rng, tent=6, tent_len=7.5 + 4 * u)
@@ -519,3 +542,265 @@ def buoy(ns, x, y, k, ZW, hx, hy):
 
 def _big_lure(ns, x, y, ZW, d, h, rng):
     lure(ns, (x, y, ZW - 0.6), d, h, 2.4, rng, big=True, hue=DIVE)
+
+
+# ================================================================================================ v2: the nautilus BIODOME
+import os  # noqa: E402
+
+V2 = bool(os.environ.get("ABY_V2"))
+
+
+def biodome(ns, cx, cy, ztop, rb, R, rng, alpha=1.05, turns=1.7, aperture_deg=198.0, per_turn=48, sept=6):
+    """the whole HQ as one nautilus-shell biodome: a thin glass tube in a logarithmic spiral (Eden-style frame of mullions, nacre-tinted),
+    septa as lit ribs, tiger-stripe banding on the outer rim, a glowing siphuncle, and a jellyfish building floating in every chamber
+    (the largest, warm one in the outermost chamber: the main HQ). Returns (top z, main-jelly xyz)."""
+    SM, NEON, GLASS, bar = ns["SMOOTH"], ns["NEON"], ns["GLASS"], ns["bar"]
+    a0 = math.radians(-45.0)
+    ch = (math.cos(a0), math.sin(a0))
+    lat = (-math.sin(a0), math.cos(a0), 0.0)
+    n3 = (ch[0] * math.cos(alpha), ch[1] * math.cos(alpha), math.sin(alpha))
+    e2 = (-ch[0] * math.sin(alpha), -ch[1] * math.sin(alpha), math.cos(alpha))
+    th_end = math.radians(aperture_deg)
+    g = 3.1
+    b = math.log(g) / (2 * math.pi)
+    off = (0.14 * R * math.cos(th_end), 0.14 * R * math.sin(th_end))
+    NS_ = int(per_turn * turns)
+    NP = 20
+
+    def build(Cz):
+        def W(x, y, w):
+            x, y = x - off[0], y - off[1]
+            return (cx + lat[0] * x + e2[0] * y + n3[0] * w, cy + lat[1] * x + e2[1] * y + n3[1] * w, Cz + lat[2] * x + e2[2] * y + n3[2] * w)
+        rings = []
+        for i in range(NS_ + 1):
+            t = i / NS_
+            th = th_end - 2 * math.pi * turns * (1 - t)
+            Ro = R * math.exp(-b * 2 * math.pi * turns * (1 - t))
+            rho = 0.37 * Ro * (1.0 + 0.22 * max(0.0, (t - 0.80) / 0.20) ** 1.5)      # the body chamber flares toward the mouth
+            rc = Ro - rho
+            cxx, cyy = rc * math.cos(th), rc * math.sin(th)
+            ur, vr = math.cos(th), math.sin(th)
+            ring = []
+            for j in range(NP):
+                ps = 2 * math.pi * j / NP
+                ring.append(W(cxx + ur * rho * math.cos(ps), cyy + vr * rho * math.cos(ps), 0.88 * rho * math.sin(ps)))
+            rings.append(dict(ring=ring, th=th, Ro=Ro, rho=rho, c=W(cxx, cyy, 0.0)))
+        return W, rings
+    W, rings = build(0.0)
+    zmin = min(p[2] for r_ in rings for p in r_["ring"])
+    Cz = ztop - zmin
+    ZWv = ns['ZW']
+    W, rings = build(Cz)
+    top = max(p[2] for r_ in rings for p in r_["ring"])
+    seps = set(NS_ - sept * k for k in range(0, NS_ // sept + 1))
+    glass_c = (0.82, 0.92, 1.0)
+    # panels: glass, with opaque tiger-stripe bands on the outer rim
+    for i in range(NS_):
+        r0, r1 = rings[i]["ring"], rings[i + 1]["ring"]
+        stripe = ((NS_ - i) // 2) % 2 == 0
+        for j in range(NP):
+            j2 = (j + 1) % NP
+            ps = 2 * math.pi * (j + 0.5) / NP
+            q = [r0[j], r0[j2], r1[j2], r1[j]]
+            if math.cos(ps) > 0.62 and stripe:
+                SM.face(q, (0.30, 0.11, 0.18), None, wet=1 if max(p[2] for p in q) < ZWv else 0)
+            elif math.cos(ps) > 0.62:
+                SM.face(q, (0.62, 0.56, 0.60), None, wet=1 if max(p[2] for p in q) < ZWv else 0)
+            else:
+                GLASS.face(q, glass_c, None, wet=1 if max(p[2] for p in q) < ZWv else 0)
+    # the frame: ring mullions (every 2nd step) and rails (every 2nd line), nacre-tinted; the septa are lit ribs
+    wm = 0.16 + 0.004 * R
+    for i in range(0, NS_ + 1):
+        ring = rings[i]["ring"]
+        isep = i in seps
+        if isep or i % 3 == 0:
+            col = _pal(NACRE, i / NS_ * 7.0)
+            for j in range(NP):
+                j2 = (j + 1) % NP
+                bar(SM, ring[j], ring[j2], wm * (2.2 if isep else 1.0), _sc(col, 0.6), wet=1 if max(ring[j][2], ring[j2][2]) < ZWv else 0)
+                if isep:
+                    bar(NEON, tuple(ring[j][m] + n3[m] * 0.10 for m in range(3)), tuple(ring[j2][m] + n3[m] * 0.10 for m in range(3)), wm * 1.3,
+                        _sc(_mix(PHOTO, (1, 1, 1), 0.3), 1.5))
+        if isep and i < NS_:     # a septum plate: clear glass disc (a concave plate in the real shell)
+            c = rings[i]["c"]
+            for j in range(NP):
+                GLASS.face([ring[j], ring[(j + 1) % NP], c], glass_c, None)
+    for j in range(0, NP, 4):
+        col = _pal(NACRE, j * 0.7)
+        for i in range(NS_):
+            bar(SM, rings[i]["ring"][j], rings[i + 1]["ring"][j], wm * 0.9, _sc(col, 0.6), wet=1 if rings[i]["ring"][j][2] < ZWv else 0)
+    # edge light: the outer rim of the whole spiral as one continuous lit line (the squint-test silhouette)
+    for i in range(NS_):
+        pa, pb = rings[i]["ring"][0], rings[i + 1]["ring"][0]
+        bar(NEON, pa, pb, 0.32 + 0.012 * rings[i]["rho"], _sc(_mix(PHOTO, (1, 1, 1), 0.35), 1.7 * (0.5 + 0.5 * i / NS_)), wet=1 if pa[2] < ZWv else 0)
+    # the siphuncle: a glowing duct along the centre line through every septum
+    for i in range(NS_):
+        bar(NEON, rings[i]["c"], rings[i + 1]["c"], 0.22 + 0.012 * rings[i]["rho"], _sc(PHOTO, 0.9))
+    for i in sorted(seps):
+        if 0 < i < NS_:
+            c = rings[i]["c"]
+            h_ = 0.2 + 0.03 * rings[i]["rho"]
+            ns["box"](NEON, c[0] - h_, c[1] - h_, c[2] - h_, c[0] + h_, c[1] + h_, c[2] + h_, _sc(PHOTO, 3.0))
+    # the aperture: a bright lip ring
+    last = rings[-1]["ring"]
+    for j in range(NP):
+        bar(NEON, last[j], last[(j + 1) % NP], wm * 1.5, _sc(_mix(PHOTO, DIVE, 0.4), 1.4))
+    # the jellies: one per chamber, sized by the chamber; chamber 0 (outermost) is the main HQ
+    main_xyz = None
+    sk = sorted(seps, reverse=True)       # NS_, NS_-sept, ...
+    for c_i in range(len(sk) - 1):
+        ia, ib = sk[c_i + 1], sk[c_i]
+        im = (ia + ib) // 2
+        if c_i > 12:
+            break
+        rho = rings[im]["rho"]
+        P = rings[im]["c"]
+        if c_i == 0:
+            Rj = 0.68 * rho
+            zr = P[2] - 0.30 * Rj
+            bell(ns, P[0], P[1], zr, Rj, rng, tents=18, tlen=1.15 * Rj, hue=5, tall=0.95, gk=1.35)
+            main_xyz = (P[0], P[1], zr + 0.4 * Rj)
+        else:
+            Rj = 0.46 * rho
+            zr = P[2] - 0.30 * Rj
+            bell(ns, P[0], P[1], zr, Rj, rng, tents=max(8, int(14 - c_i * 0.5)), tlen=1.3 * Rj, hue=(0, 1, 2, 4, 1, 6)[c_i % 6], gk=0.8)
+    return top, main_xyz, rings, W, n3
+
+
+def siphon_poly(ns, pts, rng, rt=1.0, hang=True, wet_z=None, gk=0.5):
+    """a siphonophore chain along a 3D polyline: a lit spine, paired bells every ~1.9 rt, hanging zooids with filaments."""
+    NEON, bar, ZW = ns["NEON"], ns["bar"], ns["ZW"]
+    n = len(pts) - 1
+    for i in range(n):
+        col = _pal(GLOW, i * 0.31 + rng.random() * 0.1)
+        bar(NEON, pts[i], pts[i + 1], 0.24 * rt, _sc(_mix(col, (1, 1, 1), 0.2), 0.8 * gk))
+    acc = 0.0
+    m = 0
+    for i in range(n):
+        a, b_ = pts[i], pts[i + 1]
+        L = math.dist(a, b_)
+        if L < 1e-6:
+            continue
+        ux, uy = (b_[0] - a[0]) / L, (b_[1] - a[1]) / L
+        vx, vy = -uy, ux
+        t = (1.9 * rt - acc) if acc else 0.0
+        while t <= L:
+            f = t / L
+            c = tuple(a[k] + (b_[k] - a[k]) * f for k in range(3))
+            col = _pal(GLOW, m * 0.31)
+            for side in (-1, 1):
+                bx, by = c[0] + vx * side * 0.95 * rt, c[1] + vy * side * 0.95 * rt
+                r = 0.62 * rt * (1.0 if m % 2 == 0 else 0.8)
+                ns["dome"](NEON, bx, by, c[2] + 0.05, r, _sc(col, 1.1 * gk), n=8, rings=3, zscale=0.9, wet=1 if c[2] < ZW else 0)
+            if hang and m % 3 == 1:
+                prev = (c[0], c[1], c[2] - 0.3)
+                ln = rng.uniform(2.5, 5.0)
+                for q in range(1, 7):
+                    pnt = (c[0] + 0.4 * math.sin(q * 1.1 + m), c[1] + 0.4 * math.cos(q * 1.1 + m), c[2] - 0.3 - ln * q / 6)
+                    bar(NEON, prev, pnt, 0.12, _sc(col, (0.5 + 0.35 * q) * gk), wet=1 if pnt[2] < ZW else 0)
+                    prev = pnt
+                ns["box"](NEON, prev[0] - 0.2, prev[1] - 0.2, prev[2] - 0.2, prev[0] + 0.2, prev[1] + 0.2, prev[2] + 0.2, _sc(col, 3.0 * gk), wet=1 if prev[2] < ZW else 0)
+            m += 1
+            t += 1.9 * rt
+        acc = t - L
+
+
+def _arc(p0, p1, sag, f_steps=14, wob=0.25):
+    pts = []
+    for k in range(f_steps + 1):
+        f = k / f_steps
+        pts.append((p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f,
+                    p0[2] + (p1[2] - p0[2]) * f - sag * 4 * f * (1 - f) + wob * math.sin(f * 9)))
+    return pts
+
+
+def landmark_v2(ns):
+    """the whole HQ as one nautilus biodome in the water, with jelly buildings in it, on it and around it (drop-in for landmark())."""
+    PR = TP.PIER
+    ZW = ns["ZW"]
+    NEON, SM, bar = ns["NEON"], ns["SMOOTH"], ns["bar"]
+    hx, hy = ns["W"](ns["O"]["hq"]["tethys"])
+    gat = ns.get("ground_at")
+    bed = gat(hx, hy) if gat else -110.0
+    rng = random.Random(TP.SEEDS["pier"])
+    lk = ns["O"].get("tethys_lock") if isinstance(ns.get("O"), dict) else None
+    ang0 = math.atan2(lk["P"][1] - hy, lk["P"][0] - hx) if lk else math.radians(PR["arm0"])
+    R = float(os.environ.get("ABY_R", "42.0"))
+    top, mj, rings, W, n3 = biodome(ns, hx, hy, ZW - 2.5, 0.0, R, rng, alpha=float(os.environ.get("ABY_ALPHA", "1.0")))
+    NS_ = len(rings) - 1
+    cz = W(0.0, 0.0, 0.0)[2]
+    low = min((p for r_ in rings for p in r_["ring"]), key=lambda p: p[2])
+    # reef at the waterline under the shell's lowest whorl, and the glowing keel (siphuncle shaft) down the water
+    for _ in range(90):
+        a = rng.uniform(0, 2 * math.pi)
+        d = rng.uniform(0.0, 5.0)
+        z = ZW + rng.uniform(-3.5, 1.2)
+        coral_bit(ns, low[0] + d * math.cos(a), low[1] + d * math.sin(a), z, rng, 1.4, wet=1 if z < ZW else 0, glow=0.30)
+    for _ in range(14):
+        kelp(ns, low[0] + rng.uniform(-4, 4), low[1] + rng.uniform(-4, 4), ZW - rng.uniform(10, 20), rng.uniform(8, 14), rng)
+    zk = ZW - 42.0
+    from tkit import tube
+    tube(NEON, (low[0], low[1], low[2] - 0.5), (low[0], low[1], zk), 0.35, 6, _sc(PHOTO, 0.55), wet=1)
+    zz = low[2] - 3.0
+    while zz > zk:
+        ns["ring_line"](NEON, low[0], low[1], zz, 1.1, 0.14, _sc(PHOTO, 1.6), n=14, wet=1)
+        zz -= 3.5
+    # jelly buildings attached to the outer whorl: barnacle cluster on the upper rim, hung lanterns below
+    for k in range(13):
+        i = NS_ - 3 - 3 * k
+        if i < 8:
+            break
+        P = rings[i]["ring"][0]
+        Ra = max(1.2, 0.25 * rings[i]["rho"]) * rng.uniform(0.85, 1.15)
+        hue = (0, 1, 2, 4)[int(rng.random() * 4)]
+        if P[2] > cz - 2.0:
+            bell(ns, P[0], P[1], P[2] - 0.35, Ra, rng, tents=8, tlen=Ra * 1.6, hue=hue, tall=0.8, gk=0.7)
+            if rng.random() < 0.6:
+                a = rng.uniform(0, 6.28)
+                bell(ns, P[0] + 1.6 * Ra * math.cos(a), P[1] + 1.6 * Ra * math.sin(a), P[2] - 0.5, Ra * 0.6, rng, tents=6, tlen=Ra, hue=hue, tall=0.8, gk=0.7)
+        else:
+            Rh = Ra * 1.15
+            zr = P[2] - 0.85 * Rh * 1.0 - 1.0
+            bar(SM, P, (P[0], P[1], zr + 0.8 * Rh), 0.12, (0.55, 0.5, 0.6))
+            bell(ns, P[0], P[1], zr, Rh, rng, tents=10, tlen=Rh * 2.8, hue=hue, tall=0.85, gk=0.7)
+    # around the shell: bells afloat on the water, linked by siphonophore chains; the arrival bell is the causeway's landing
+    NB = 14
+    spots = []
+    for k in range(NB):
+        a = ang0 + 2 * math.pi * (k + 0.5) / NB + rng.uniform(-0.12, 0.12)
+        r = rng.uniform(50.0, 64.0)
+        da = abs((a - ang0 + math.pi) % (2 * math.pi) - math.pi)
+        if da < 0.7:
+            r = min(r, 54.0)
+        Rb = rng.uniform(1.8, 3.0)
+        spots.append((hx + r * math.cos(a), hy + r * math.sin(a), Rb, a))
+    arr = (hx + 52.0 * math.cos(ang0), hy + 52.0 * math.sin(ang0))
+    spots.append((arr[0], arr[1], 3.6, ang0))
+    for (x, y, Rb, a) in spots:
+        bell(ns, x, y, ZW + 0.9, Rb, rng, tents=14, tlen=5.0 + 2.5 * Rb, hue=(0, 1, 2, 4)[int(rng.random() * 4)], tall=0.8, gk=0.45)
+        crust_ring(ns, x, y, Rb * 0.7, ZW - 1.2, ZW + 0.4, 4, rng, 0.6)
+    ordered = sorted(spots[:NB], key=lambda s: s[3] % (2 * math.pi))
+    for k in range(NB):
+        s0, s1 = ordered[k], ordered[(k + 1) % NB]
+        siphon_poly(ns, _arc((s0[0], s0[1], ZW + 0.7), (s1[0], s1[1], ZW + 0.7), 0.0, f_steps=16, wob=0.18), rng, 0.7, hang=False, gk=0.4)
+    siphon_poly(ns, _arc((arr[0], arr[1], ZW + 0.9), (hx + 38.0 * math.cos(ang0), hy + 38.0 * math.sin(ang0), ZW + 0.9), 0.0, f_steps=10, wob=0.1), rng, 1.0, hang=False, gk=0.6)
+    # the mouth: a chain from the lip to the arrival bell
+    lip = rings[-1]["c"]
+    siphon_poly(ns, _arc(lip, (arr[0], arr[1], ZW + 3.0), 6.0, f_steps=22, wob=0.3), rng, 1.0)
+    # anglerfish lures on the water as beacons
+    for k in range(5):
+        a = ang0 + 2 * math.pi * (k + 0.25) / 5
+        d = (math.cos(a), math.sin(a))
+        lure(ns, (hx + 47.0 * d[0], hy + 47.0 * d[1], ZW - 0.6), d, 5.0, 1.8, rng, big=False, hue=GLOW[1])
+    # lights: a cool key on the glass face, an abyss fill, a warm dive light on the body-chamber jelly
+    spot = ns["spot_at"]
+    spot((hx, hy, cz), (hx + 0.7071 * 70 - 25, hy - 0.7071 * 70 - 10, ZW + 95.0), (0.70, 0.92, 1.0), 0.8e6, 34.0)
+    spot((hx, hy, cz - 4.0), (hx - 0.7071 * 60, hy + 0.7071 * 60, ZW + 60.0), TP.ABYSS, 0.45e6, 40.0)
+    spot((mj[0] + 6.0, mj[1] - 6.0, mj[2] + 14.0), mj, DIVE, 2.5e5, 40.0)
+    server = (low[0], low[1], ZW - 30.0)
+    rooms = {"main_deck": mj, "crown": (hx, hy, top + 3.0), "server": server, "collar": (lip[0], lip[1], ZW + 0.5)}
+    for k in range(5):
+        rooms["deck_%d" % (k + 1)] = (low[0], low[1], ZW - 8.0 - 5.0 * k)
+    pods = [(s[0], s[1], s[2] / 14.0) for s in spots]
+    return dict(label=(hx, hy, top + 6.0), crown=(hx, hy, top), hue=TP.ABYSS, rooms=rooms, server=server, pods=pods, footprint=PR["lot_r"],
+                centre=(hx, hy), bed=bed, top=top)

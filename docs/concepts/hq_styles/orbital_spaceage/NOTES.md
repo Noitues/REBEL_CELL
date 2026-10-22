@@ -37,3 +37,43 @@ before the render section; `sa_restyle.py` reuses helpers from `art_deco/scripts
 - White surfaces are lit mostly by self-emission and fog glow, so they read a little flat and grey; the rocket spots give the needle only a modest edge.
 - The arches are stiff and stand like tall poles from this camera; the antenna saucer is large and its red beacon light is still visible as a red dot.
 - City windows read as a field of white pin dots (star-like), which is cool but a bit busy; no TWA-style upswept wing roof or boomerang canopy was added.
+
+---
+
+# v2 and v3: 1950s pulp retro-futurism / Raygun Gothic (2026-10-21, exploratory)
+
+Files: `orbital_retro_v2.png`, `orbital_v1_v2.jpg` (v1 | v2), `orbital_retro_v3.png`, `orbital_v2_v3.jpg` (v2 | v3). v1 is kept. Scripts: `sa2_*.py` (v2), `sa3_*.py` (v3), `sa2_pack.py`, `sa3_pack.py`.
+Helpers `sa_restyle.py` (v1) and `deco_restyle.py` (art deco, read only) are imported; the base pipeline is untouched.
+
+## Research for v2 / v3 (pages read only; trait taken)
+- Raygun Gothic, https://en.wikipedia.org/wiki/Raygun_Gothic : single-support beams, acute angles, motion cutouts, brightly coloured panels; used for the bell towers on one tapering support and the swept fixed fins.
+- Moonliner (Tomorrowland 1955), https://en.wikipedia.org/wiki/Moonliner : V-2 based, portholes, red/white livery, tallest object in the park (76 ft); used for the tall rocket with a porthole ring and a red-orange / white scheme read at a glance.
+- Chesley Bonestell, https://en.wikipedia.org/wiki/Chesley_Bonestell : slim tapered body on four enlarged tail fins (Destination Moon), strong angled light from one side; used for the v2 big swept fins and the single-direction spotlights.
+- Frank R. Paul, https://en.wikipedia.org/wiki/Frank_R._Paul : huge machines dominating the frame, bright colours, concept before figures; used for scale (rocket, saucers and dishes much larger than the rooms) and one dominant hero.
+- Atomium, https://en.wikipedia.org/wiki/Atomium : spheres linked by tubes read as an atom at any distance, metal cladding, meridian lights; used for the three-orbit atom symbol and chrome tank spheres.
+- Googie (Las Vegas sign), https://en.wikipedia.org/wiki/Googie_architecture : starburst as high-energy ornament; used for the v2 starbursts (removed in v3 by the designer).
+- Disneyland Monorail, https://en.wikipedia.org/wiki/Disneyland_Monorail_System : single straddle beam, bubble-top cab, red / blue livery; used for the single-beam loop, three-car bullet train and station.
+- Forbidden Planet, https://en.wikipedia.org/wiki/Forbidden_Planet : a huge disc-shaped C-57D (170 ft) in a desert; the page gave no shape detail, used only for the saucer scale. Flash Gordon serial, The Jetsons: pages gave nothing buildable (Jetsons: buildings on tall adjustable columns, which is the saucer-on-pylon idea).
+- Saturn V (v3 stack): from general knowledge, not fetched: white stages, black roll-pattern panels, black interstages, escape tower.
+
+## v2 (retro_v2): critique
+- Reads: finned chrome / white rocket, atom tower with nucleus and orbits, three bubble domes, two saucer bell towers, monorail ring with turquoise train, three starbursts. Rocket is the brightest element and the atom emblem on the deck ties to the tower.
+- Fails: everything glowed (neon at full strength), so shapes dissolved into bloom; two atoms (deck emblem and tower) competed; the starbursts read as sparklers; the buildings had no function; the bell towers were big grey mushrooms; the monorail read as a white ring road.
+- Timing: first preview-driven GPU attempts with a transmission glass dome ran over 30 min and were killed (my own PID), so the domes became alpha glass. Final: 24 spp (the glass is slow), 801 s wall, median 0.157. Noisier than the 52 spp finals.
+
+## v3 (retro_v3): what changed and critique
+Designer notes applied: dimmer emissives (ice neon 1.6, white emit 0.08, city window boost 0.2, exposure target 0.14); the atom tower is gone and the atom symbol is the graphic on the launch bay doors (navy half-discs r 40, chrome rim, seam, nucleus plus three orbits); the rocket is a finless Saturn V style stack (white stages, black roll panels, black interstages, chrome stage rings, porthole ring, capsule, escape tower) with four large fixed fin structures on the launch ring (chrome with tangerine inset, foot block, rails to the stack); all starbursts removed; each building has a role:
+- top left: mission control (white drum, curved window wall, radome, two dishes); left: broadcast studio (ON AIR sign, three dishes, TV lattice mast); top right: vehicle assembly hangar (tall door slot, low wings, emblem, roof dishes); far right: crew tower (bell, shaft, observation saucer, beacon); near right: fuel tank farm (three chrome spheres on legs, two horizontal tanks, pipes); near left: the antenna truss as uplink mast (dish array and a large dish); behind the rocket: the orange gantry with white swing arms; front: monorail station with an upswept canopy and a round sign, three-car train.
+Preview critiques before the final (each viewed): b1 had the atom too small and hidden by the fins, the big dish covered the ON AIR sign and the tank spheres read as flat grey discs; b2 fixed the atom (doors r 40, bigger orbits and electrons), moved and shrank the dish, chrome tanks; b3 moved the sign clear of the dish, added the monorail sign and moved the train to the station.
+Final squint test (view of `orbital_retro_v3.png` at thumbnail): the rocket with fins and the atom bay doors read at once, ON AIR, the hangar door and the saucer crew tower read, the monorail loop reads as a rail, the city is darkest. Weak: mission control reads as a plain drum (the window wall is a thin bright strip); the fuel farm spheres are grey and low contrast, the monorail station canopy looks like a bridge from this angle and the train is hidden under it; the fixed fins look like tent flaps from the camera, not quite tail fins; the city windows are still a white pin-dot field; the left uplink dish overlaps the studio.
+- Timing: v3 final 52 spp, 1920x1080, 218 s render wall (345 s with the lock batch), median 0.145 (target 0.14); lock wait 3900 s.
+
+## Rebuild (v2 / v3)
+```
+S=docs/concepts/hq_styles/orbital_spaceage/scripts
+bash D:/rc_scratch/hq_styles/orbital_spaceage/prev3.sh <tag>        # CPU preview of v3 (prev2.sh for v2)
+SA_SPP=52 python $S/sa_gpu.py "art_spaceage orbital v3" <log> -- python $S/sa3_run_hq.py art final3
+SA_SPP=52 python $S/sa_gpu.py "art_spaceage orbital v2" <log> -- python $S/sa2_run_hq.py art final2 samples=24
+python $S/sa3_pack.py D:/rc_scratch/hq_styles/orbital_spaceage/r3/final3/plate.png     # orbital_retro_v3.png + orbital_v2_v3.jpg
+python $S/sa2_pack.py D:/rc_scratch/hq_styles/orbital_spaceage/r2/final2/plate.png     # orbital_retro_v2.png + orbital_v1_v2.jpg
+```

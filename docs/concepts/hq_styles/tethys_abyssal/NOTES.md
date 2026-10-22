@@ -48,3 +48,8 @@ python $S/abyssal_sbs.py tethys_abyssal.png tethys_abyssal_sbs.jpg
 - Coral, kelp and barnacle crust is small against the 1920 px frame; it reads mostly as a sparkle on the breakwater and stilts, not as a reef.
 - The siphonophore chains are thin and partly hidden under the bells; the walkway links read weaker than the original glass tubes.
 - The dam and dry city keep their warm sodium look (only dimmed); the abyssal style stops at the waterline.
+
+## v2 nautilus biodome (scrapped by the designer, 2026-10-21)
+Explored as CPU previews only (no final): one giant glass nautilus (frame mullions, lit septa, tiger-stripe outer rim, a jelly in every chamber, the main jelly amber in the body
+chamber), jelly bells around it on siphonophore chains, the dam cooled and dimmed. It read as a spoked wheel more than a shell, so it was dropped; the code stays in `scripts/abyssal.py`
+(`biodome`, `landmark_v2`, env `ABY_V2=1`) and feeds the dam cooling used by `../tethys_ideas`. No `tethys_biodome_v2.png` / `tethys_v1_v2.jpg` were made.

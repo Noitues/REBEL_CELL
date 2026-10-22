@@ -48,9 +48,18 @@ P["hull_dark"] = (0.24, 0.20, 0.30)
 P["titan"] = (0.34, 0.30, 0.44)
 P["stilt"] = (0.15, 0.12, 0.19)
 P["key"] = dict(power=0.9e6, cone=26.0, col=(0.70, 0.92, 1.0))
-TP.WET_LIT = float(os.environ.get("ABY_WET_LIT", "0.40"))      # the drowned city a little darker, so the HQ wins
+TP.WET_LIT = float(os.environ.get("ABY_WET_LIT", "0.16"))      # the drowned city a little darker, so the HQ wins
 TP.DAM["flood_power"] *= 0.5
 TP.DAM["up_power"] *= 0.45
+if os.environ.get("ABY_V2"):
+    # v2: the dam's sodium work light is cooled and dimmed so it does not pull the eye
+    TP.SODIUM = (0.50, 0.74, 1.0)
+    TP.HAZARD = (0.55, 0.75, 0.95)
+    TP.DAM["flood_power"] *= 0.6
+    TP.DAM["up_power"] *= 0.5
+    # v2: the branch pods are small jelly bells pushed out beyond the shell's footprint
+    P["outer"] = dict(r=52.0, s=0.19, hs=0.30)      # only sets where the causeway lands (r + 13.4 s - 0.6 = 54)
+    P["breakwater"] = dict(P["breakwater"], calm_r=50.0)
 
 src = open(os.path.join(BASE, "tethys_landmark.py"), encoding="utf-8").read()
 
@@ -70,6 +79,8 @@ sub('seg_box(SURF, (x0, y0), (x1, y1), BW["w"], ZW + BW["z0"], ZW + BW["z1"], PR
     'seg_box(SURF, (x0, y0), (x1, y1), BW["w"], ZW + BW["z0"], ZW + BW["z1"], PR["hull_dark"], wet=1)\n'
     '        AB.crust_breakwater(ns, x0, y0, x1, y1, random.Random(int(x0 * 7 + y0 * 3)))')
 sub("cyl(SURF, x, y, ZW - 0.6, ZW + 0.5, 0.35, 8, (0.62, 0.20, 0.22))", "AB.buoy(ns, x, y, k, ZW, hx, hy)")
+if os.environ.get("ABY_V2"):
+    sub("    info = build_ns(ns)\n    st = ns.get(\"STATION\")", "    info = AB.landmark_v2(ns)\n    st = ns.get(\"STATION\")")
 m = types.ModuleType("tethys_landmark")
 m.__file__ = os.path.join(BASE, "tethys_landmark.py")
 m.AB = AB
