@@ -4,12 +4,14 @@
 //   - rc_common (the global `reduce_effects`, rc_live(), rc_time()),
 //   - the ART_BIBLE §2 colour tokens as global uniforms (rc_tokens.gdshaderinc: rc_cell_pink, rc_pencil_plan, ...;
 //     values from Palette, written into project.godot by addons/rc_look/tools/sync_tokens.gd),
-//   - colour space, hash / noise, facet (per-triangle) ids and screen helpers below.
+//   - the hash / value noise (rc_hash.gdshaderinc),
+//   - colour space, facet (per-triangle) ids and screen helpers below.
 // Helpers are prefixed rcl_ so they never clash with a shader's own functions (rc_ belongs to rc_common).
 #ifndef RC_LOOK_INCLUDED
 #define RC_LOOK_INCLUDED
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://addons/rc_look/shaders/rc_tokens.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_hash.gdshaderinc"
 
 // ---- Colour space (exact sRGB transfer, as the Python post) ----
 
@@ -36,86 +38,6 @@ vec3 rcl_saturate(vec3 c, float s) {
 // A token (sRGB, as Palette holds it) in linear light, for lighting maths.
 vec3 rcl_token_lin(vec4 token) {
 	return rcl_to_lin(token.rgb);
-}
-
-// ---- Hash and value noise (deterministic: no time, no state) ----
-
-float rcl_hash12(vec2 p) {
-	vec3 q = fract(vec3(p.xyx) * 0.1031);
-	q += dot(q, q.yzx + 33.33);
-	return fract((q.x + q.y) * q.z);
-}
-
-float rcl_hash13(vec3 p) {
-	p = fract(p * 0.1031);
-	p += dot(p, p.zyx + 31.32);
-	return fract((p.x + p.y) * p.z);
-}
-
-vec2 rcl_hash22(vec2 p) {
-	vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
-	q += dot(q, q.yzx + 33.33);
-	return fract((q.xx + q.yz) * q.zy);
-}
-
-// The older sin hashes and their value noise (toon_ink / toon_ink_hull grain, the sea, its plane, smears and seabed),
-// kept bit-exact so those views keep their pixels; new code uses rcl_hash13 / rcl_vnoise3.
-float rcl_hash13_sin(vec3 p) {
-	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-}
-
-float rcl_hash12_sin(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float rcl_vnoise2_sin(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(rcl_hash12_sin(i), rcl_hash12_sin(i + vec2(1.0, 0.0)), u.x), mix(rcl_hash12_sin(i + vec2(0.0, 1.0)), rcl_hash12_sin(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-
-float rcl_vnoise3_sin(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(rcl_hash13_sin(i), rcl_hash13_sin(i + vec3(1, 0, 0)), u.x), mix(rcl_hash13_sin(i + vec3(0, 1, 0)), rcl_hash13_sin(i + vec3(1, 1, 0)), u.x), u.y);
-	float b = mix(mix(rcl_hash13_sin(i + vec3(0, 0, 1)), rcl_hash13_sin(i + vec3(1, 0, 1)), u.x), mix(rcl_hash13_sin(i + vec3(0, 1, 1)), rcl_hash13_sin(i + vec3(1, 1, 1)), u.x), u.y);
-	return mix(a, b, u.z);
-}
-
-float rcl_vnoise2(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(rcl_hash12(i), rcl_hash12(i + vec2(1.0, 0.0)), u.x),
-			mix(rcl_hash12(i + vec2(0.0, 1.0)), rcl_hash12(i + vec2(1.0)), u.x), u.y);
-}
-
-float rcl_vnoise3(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(rcl_hash13(i), rcl_hash13(i + vec3(1, 0, 0)), u.x), mix(rcl_hash13(i + vec3(0, 1, 0)), rcl_hash13(i + vec3(1, 1, 0)), u.x), u.y);
-	float b = mix(mix(rcl_hash13(i + vec3(0, 0, 1)), rcl_hash13(i + vec3(1, 0, 1)), u.x), mix(rcl_hash13(i + vec3(0, 1, 1)), rcl_hash13(i + vec3(1)), u.x), u.y);
-	return mix(a, b, u.z);
-}
-
-// Fractal value noise, `oct` octaves (at most 6), lacunarity 2, gain 0.5, normalised to 0..1.
-float rcl_fbm2(vec2 p, int oct) {
-	float s = 0.0;
-	float a = 0.5;
-	float n = 0.0;
-	for (int k = 0; k < 6; k++) {
-		if (k >= oct) {
-			break;
-		}
-		s += a * rcl_vnoise2(p);
-		n += a;
-		p = p * 2.0 + vec2(17.3, 9.1);
-		a *= 0.5;
-	}
-	return s / max(n, 1e-4);
 }
 
 // ---- Facets (the Cv2 low-poly look: one tone per triangle face) ----
