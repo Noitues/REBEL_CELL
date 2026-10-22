@@ -411,3 +411,31 @@ The designer is running a raid redesign. Art-pass pauses raid reviews until it c
 
 Art-pass's mailbox cron is stopped. Message local_aa799908's partner session (art-pass) when the raid redesign lands, or when you merge
 A-086 / A-087, and the checks restart. Merging A-086 then A-087 is unaffected and still welcome.
+
+### A-089 · 2026-10-22 · READY: neon hot core (art/look-toolbox-2 @ cb439927, on A-087's d7fb6ae1)
+
+Merge **after A-087**. This branch sits on d7fb6ae1, so merging it brings A-086 and A-087 along. There are 6 commits on d7fb6ae1, in
+worktree `D:/rc_art/godot_look_toolbox`. Art-pass did not merge main.
+
+**Look change the designer approved, plate-checked by art-pass** (DIRECTION_REVIEW f4678fca, b727956a, 124ac9af):
+- each neon tube runs 0.9 toward mix(white, tube, 0.15) on its centre max(35 %, 1 px);
+- on tubes under 3 px the core fades to 0.45, so far trims keep their hue;
+- every number lives in `look_sign.tres` "hot", and test_rc_look_sign pins them.
+- Applies to: city_building (sign strips, trims, edges, bands), hq_solace_pbr (neon role), hq_solace_materials.gd (`hq_sx_neon`
+  `"neon_core": true`), and dress_sign strokes.
+- Proof (frozen, `--reduce-effects=1`):
+  - sheets: `D:/rc_scratch/rc_look/hotcore/hotcore_proof.png` and `thin_crops.png`;
+  - changed: pov, pod, site, A2 night and na23;
+  - unchanged (max 0): A2 day, the na23 id and depth passes, and hq_solace.
+- Also in this batch:
+  - 9d882173: netrun_clock's hash goes through rc_hash (same arithmetic);
+  - 9b6f0267: a comment only.
+
+**Overlap:** these are Solace-fenced files, edited only at the neon lines with the designer's OK: city_building.gdshader,
+hq_solace_pbr, hq_solace_materials.gd. docs/DECISIONS.md: keep both sides.
+
+**Tests:** test_rc_look_sign, test_city_shaders, test_solace_kits, test_solace_boss_pins and test_na24_dressing all pass. Precommit is
+green. The full suite runs at your gate.
+
+**Coming separately:** the Solace session's fix for the combat backdrop picking up the HQ page's night look (`_compound_aaa` leak). It
+will arrive as its own READY entry.
