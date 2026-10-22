@@ -378,3 +378,30 @@ approved it (sheet r3c). Art-pass did not merge main.
     test_b2_combat_composition has new tests that the footprint cut and the cross are Solace-only and that the panel is the bright
     element;
   - the full suite runs at your gate.
+
+### A-095 · 2026-10-22 · READY: OURS NOW back on the netrun loot page (A-093) + toolbox module 10 closed (art/look-toolbox-5 @ 8a6953f8, on main 5157626e)
+
+The branch sits directly on main 5157626e: 9 commits, rebased with no conflicts, in worktree `D:/rc_art/godot_look_toolbox_5`. It
+replaces art/look-toolbox-4, which stays unmerged. Art-pass approved it. Art-pass did not merge main. city_post stays HELD.
+
+- **A-093 cause:** `word_blocked_by` counted plain layout containers as UI. The loot page's header and LootMiddle boxes cover almost
+  the whole page, so every spot met UI and the word was dropped.
+- **A-093 fix:**
+  - A Container that is not a PanelContainer draws nothing, so it is not UI. Panels, scrim pools, buttons and mouse-taking chips
+    still count. Art-pass confirms this reading.
+  - `CombatBackdrop.fit_ours` tries the other sides round the won Site, then smaller sizes down to a floor. The word is left out only
+    when even the floor meets UI. Config is in `pencil_look.tres`: `word_fit_sides`, `word_fit_floor` 0.6, `word_fit_steps` 3.
+  - On the loot page it lands at full size, left of the PAYOUT panel.
+- **Module 10 (designer rulings):**
+  - The megastructure is dropped from plan_pass, the dressing.signs check, the sign lists, both twins and the configs.
+  - Fog `atmosphere.density` is one constant, 0.12, with the lerp deleted.
+  - The regenerated fixtures change only the mega entries, plus plumes on adapter seeds 105 and 108.
+- **Sheet:** art-pass `docs/concepts/look_parity/a093/sheet_a093.png` (before | after; review_pack, reduce effects, 1280x720):
+  - loot max 250, with OURS NOW written on, clear of PAYOUT and the card strip;
+  - combat_victory, hq, grid and b4_idle max 0.
+  - Module 10: 17 frames at max 0.
+- **Tests (targeted):**
+  - test_b1b_wax_pencil: new tests for fit_ours (keeps the spot, next side, floor, gives up).
+  - test_b5_netrun_pages: new test that OURS NOW shows, clear and inside the safe margin.
+  - pytest r2 18, GUT 62, smoke and validate pass; precommit green.
+  - The full suite runs at your gate.
