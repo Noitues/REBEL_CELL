@@ -46,9 +46,11 @@ static func neon_core(tube: Color, core_col: Color, tint: float) -> Color:
 ## The approved hot core at distance d from a tube's centre line (half width half_w, one pixel = pix, same units), as
 ## rcl_neon_hot.
 static func neon_hot(tube: Color, d: float, half_w: float, pix: float, k_hot: float, share: float, min_px: float,
-		core_col: Color, tint: float) -> Color:
+		core_col: Color, tint: float, thin_px: float, thin_hot: float) -> Color:
 	var cw := maxf(share * half_w, min_px * pix)
-	return hot_to(tube, neon_core(tube, core_col, tint), k_hot * tube_core(d, cw))
+	var w_px := 2.0 * half_w / maxf(pix, 1e-6)
+	var k := lerpf(thin_hot, k_hot, clampf((w_px - min_px) / maxf(thin_px - min_px, 1e-5), 0.0, 1.0))
+	return hot_to(tube, neon_core(tube, core_col, tint), k * tube_core(d, cw))
 
 
 ## A stroke's coverage at distance d from its centre line, as rcl_tube_cov.
@@ -86,5 +88,6 @@ static func tube_color(p: RcLookSignPreset, col: Color, d: float) -> Color:
 		RcLookSignPreset.Treatment.LIGHTEN:
 			return hot_to(col, neon_core(col, p.core_color, p.core_tint), p.hot)
 		RcLookSignPreset.Treatment.HOT:
-			return neon_hot(col, d, p.half_w_px, 1.0, p.hot, p.core_share, p.core_min_px, p.core_color, p.core_tint)
+			return neon_hot(col, d, p.half_w_px, 1.0, p.hot, p.core_share, p.core_min_px, p.core_color, p.core_tint,
+					p.core_thin_px, p.core_thin_hot)
 	return col

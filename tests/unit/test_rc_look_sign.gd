@@ -77,17 +77,27 @@ func test_live_neon_cores_use_the_hot_preset() -> void:
 		assert_string_contains(code, "uniform float neon_core_tint = %.2f;" % hot.core_tint, path)
 		assert_eq(hot.core_color, Color(1, 1, 1), "neon_core_col defaults to white in %s" % path)
 		assert_string_contains(code, "uniform vec3 neon_core_col = vec3(1.0);", path)
+		assert_string_contains(code, "uniform float neon_core_thin_px = %.2f;" % hot.core_thin_px, path)
+		assert_string_contains(code, "uniform float neon_core_thin_hot = %.2f;" % hot.core_thin_hot, path)
 
 
 func test_neon_hot_core_width_floor() -> void:
 	var c := Color(1.0, 0.35, 0.75)
 	var hot := RcLookSign.preset(&"hot")
 	var core := RcLookSign.neon_core(c, hot.core_color, hot.core_tint)
-	var centre := RcLookSign.neon_hot(c, 0.0, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
-	assert_eq(centre, RcLookSign.hot_to(c, core, hot.hot), "the centre line reaches hot x the tube's core")
-	var thin := RcLookSign.neon_hot(c, 0.5, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
+	var thin_px := hot.core_thin_px
+	var thin_k := hot.core_thin_hot
+	assert_almost_eq(thin_px, 3.0, 1e-6, "the fade starts below 3 px (designer 124ac9af)")
+	assert_almost_eq(thin_k, 0.45, 1e-6, "down to 0.45 at the 1 px floor")
+	var centre := RcLookSign.neon_hot(c, 0.0, 2.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint, thin_px, thin_k)
+	assert_eq(centre, RcLookSign.hot_to(c, core, hot.hot), "a 4 px tube's centre line reaches the full hot x core")
+	var one := RcLookSign.neon_hot(c, 0.0, 0.5, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint, thin_px, thin_k)
+	assert_eq(one, RcLookSign.hot_to(c, core, thin_k), "a 1 px tube's core is only core_thin_hot strong")
+	var two := RcLookSign.neon_hot(c, 0.0, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint, thin_px, thin_k)
+	assert_eq(two, RcLookSign.hot_to(c, core, (thin_k + hot.hot) * 0.5), "halfway at 2 px")
+	var thin := RcLookSign.neon_hot(c, 0.5, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint, thin_px, thin_k)
 	assert_true(thin != c, "a 2 px tube still has a core half a pixel out (1 px floor, not 35 %)")
-	var wide := RcLookSign.neon_hot(c, 0.5, 10.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
+	var wide := RcLookSign.neon_hot(c, 0.5, 10.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint, thin_px, thin_k)
 	assert_true(wide.get_luminance() > c.get_luminance(), "inside 35 % of a wide tube")
 
 

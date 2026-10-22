@@ -29,6 +29,8 @@ uniform float neon_core_share = 0.35;
 uniform float neon_core_min_px = 1.00;
 uniform float neon_core_tint = 0.15;
 uniform vec3 neon_core_col = vec3(1.0);
+uniform float neon_core_thin_px = 3.00;
+uniform float neon_core_thin_hot = 0.45;
 
 void fragment() {
 	vec4 vc = COLOR;
@@ -37,7 +39,7 @@ void fragment() {
 	// The tube's centre line faces the camera: d = sin of the view angle (0 on the centre line, 1 at the silhouette).
 	float nd = sqrt(max(1.0 - nv * nv, 0.0));
 	float nd_px = fwidth(nd);
-	vec3 ec = neon_core ? rcl_neon_hot(vc.rgb, nd, 1.0, nd_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint) : vc.rgb;
+	vec3 ec = neon_core ? rcl_neon_hot(vc.rgb, nd, 1.0, nd_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot) : vc.rgb;
 	vec3 em = ec * vc.a * emit_gain + vc.rgb * emit_self;
 	if (!FRONT_FACING && back_k > 0.0) {
 		ALBEDO = back_albedo;

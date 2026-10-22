@@ -26,6 +26,8 @@ hot = 0.9
 core_color = Color(1, 1, 1, 1)
 core_tint = 0.15
 core_min_px = 1.0
+core_thin_px = 3.0
+core_thin_hot = 0.45
 
 [resource]
 script = ExtResource("1")

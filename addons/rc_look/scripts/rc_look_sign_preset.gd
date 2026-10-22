@@ -18,6 +18,10 @@ enum Treatment { FLAT, LIGHTEN, HOT }
 @export var core_tint: float = 0.15
 ## The core's least width in pixels (designer b727956a: 1 px, so a thin far trim keeps a core line).
 @export var core_min_px: float = 1.0
+## Thin tubes (designer 124ac9af): below core_thin_px pixels wide the core's strength fades from hot to
+## core_thin_hot (at core_min_px), so 1 - 2 px far trims keep their colour.
+@export var core_thin_px: float = 3.0
+@export var core_thin_hot: float = 0.45
 ## The glow around the tube: reach (px past the tube's edge), shape (rcl_fall_exp k) and gain (linear).
 @export var glow_px: float = 18.0
 @export var glow_k: float = 1.4
@@ -35,6 +39,10 @@ func validate() -> PackedStringArray:
 		errs.append("core_tint must be 0..1 (%s)" % core_tint)
 	if core_min_px < 0.0:
 		errs.append("core_min_px must be 0 or more (%s)" % core_min_px)
+	if core_thin_px <= core_min_px:
+		errs.append("core_thin_px must be above core_min_px (%s, %s)" % [core_thin_px, core_min_px])
+	if core_thin_hot < 0.0 or core_thin_hot > 1.0:
+		errs.append("core_thin_hot must be 0..1 (%s)" % core_thin_hot)
 	if hot < 0.0 or hot > 1.0:
 		errs.append("hot must be 0..1 (%s)" % hot)
 	if treatment == Treatment.FLAT and hot != 0.0:
