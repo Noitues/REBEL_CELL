@@ -1566,3 +1566,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   bloom. Check the core on the squint test against the hue, not just the numbers.
 - **Night sky and air (designer, 2026-10-22, look-toolbox module 7 question):** every view shares one night sky and one night air
   (haze) colour. District colour comes in as a separate tint layer on top. A view that differs is a named exception, logged here first.
+- **Grease pencil module (designer, 2026-10-22, relayed by the look-toolbox session):** "Grease pen looks good. Approved". The sheet is
+  `D:/rc_scratch/look_parity/pencil_8d1cf095/pencil_sheet_all.jpg`, branch claude/gifted-yonath-0c2f42 @ 8d1cf095. The merge follows
+  the pencil session's hand-off.
