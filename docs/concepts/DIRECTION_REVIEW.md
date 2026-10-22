@@ -1585,3 +1585,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   The water stays on IOR 1.33 (`D:/rc_scratch/rc_look/wet/wet_night_t2.png`).
 - **Solace HQ pass 4 (designer, 2026-10-22):** "Good enough. Post pass 4 and move on to the TIDE / Bloom / infection looks." art/look
   2f505f6d. Accepted as is: the decision view's nearest towers are clinic kits (the plate shows capsules), and the highways read faintly.
+- **Neon core tint (designer, 2026-10-22, look-toolbox module 11):** each tube's white-hot core is near-white tinted with about 15% of
+  its own hue (mix(white, tube, ~0.15)), not the single pink NEON_CORE for every tube. The neon palettes stay as they are for now
+  (`D:/rc_scratch/rc_look/sign/neon_palettes.png`). Any unifying of palettes needs its own sheet.

@@ -369,3 +369,35 @@ in place of 36abb390.
 - **Tests at 2f505f6d (targeted):** all pass, the same 8 scripts as A-084 plus validate_hq_compounds.py (5).
 - **Known, accepted:** the decision view's nearest towers are kit C (clinic) where the plate has capsules, and the highways still read
   faintly. Re-shoot of the district finals and the hospital: on your `sol-site-shift` post.
+
+### A-087 · 2026-10-22 · READY: look-toolbox batch (art/look-toolbox @ d7fb6ae1, on art/look 2f505f6d)
+
+Merge **after A-086** (art/look 2f505f6d, the Solace HQ pass 4). This branch sits on it, so merging it brings A-086 along.
+Branch `art/look-toolbox` @ **d7fb6ae1** (worktree `D:/rc_art/godot_look_toolbox`), 41 commits on 2f505f6d. The commit list is in
+`D:/rc_scratch/rc_look/commits_2f.txt`. Art-pass did not merge main.
+
+**What's in it:** the `addons/rc_look` library (tokens, quality, lab, grade, occlusion, light, air, toon/ink, wet, sign, holo), plus:
+- **Look changes the designer approved:**
+  - combat backdrop rounds 1–3 (pitch ~30°, Cell canyon 32°; DIRECTION_REVIEW 3677c3fd / 5831c028), with the arena backdrop fixtures recaptured;
+  - the grease pencil module 12 (RC Wax face, pressure, world-anchor API; 9d96fac2);
+  - the decrypted holo module 15, migrated onto THREAT INTEL (19ac8ed2);
+  - the bay-island night lift (L5 regression fix).
+- **Pure refactors, proven pixel-identical:** toon_spill / city_pool, spot light / pool, toon_bands / toon_ink / hull, the water, seabed, smear, wet street, neon, beam, glow and ground shaders, and holo_billboard.
+  - Proof: frozen captures (`--reduce-effects=1`) on the hq_run states, whole-city A2 at both looks day and night, and na23. That is 34 comparisons, all max 0, with a noise floor of 0.
+- **True shader defaults:** 38 water ones, plus the neon / beam / glow ones. Runtime is unchanged; every value comes from config.
+- **Lab-only modules** (no view uses them yet): the light, air, toon and sign presets. The neon hot-core and night-air looks come later as designer sheets.
+
+**Overlap with your raid branches. Resolve these at merge:**
+- palette.gd: your THREAT_ROUTE is new there.
+- raid_route_layer.gd, raid_pencil.gd: the pencil is now on the engine.
+- raid_holo.gd, materials/decrypted_holo_panel.gd, materials/kit_materials.gd.
+- shaders/kit/decrypted_holo.gdshader: DELETED. THREAT INTEL now draws through addons/rc_look/shaders/rc_holo.gdshader.
+- test_b1c_crt_holo, test_art1_material_kit, test_art1_palette_theme (the pencil face is now RC Wax), tests/test_manifest.json.
+- docs/DECISIONS.md: keep both sides.
+- Also outside rc_look: city_config.gd / city_view_3d.gd (backdrop), combat_backdrop, backdrop_catalog, hq_run_view, combat_scene, netrun_scene, hq_scene, and the pencil kit files. The full list is in `D:/rc_scratch/rc_look/batch_files_outside.txt`.
+
+**Pencil swap (re B-075):** after this merge, RaidNodeMarks can move from GreasePencilMark to the toolbox pencil. That is the one-function swap you described.
+
+**Tests (34 area scripts):** 366 tests, 365 pass, 11 pending (the deferred text-scale ones).
+- One flake: test_city_a2_sweep::test_two_hundred_seeds, p95 2.153 s against a 2.0 s budget under 4-shard load. It passes when run alone. This branch doesn't touch the generator or the A2 builder.
+- The full suite runs at your gate.
