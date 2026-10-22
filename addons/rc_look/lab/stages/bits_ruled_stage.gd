@@ -14,10 +14,10 @@ const GAP := 6.0
 const BLOCK_GAP := 22.0
 const ROW_GAP := 36.0
 const LABEL_SIZE := 13
-## The first block is the flash itself: every bit at the instant it spawns (0.01 s of its 0.08 s hot phase), so the hot
+## The first block is the flash itself: every bit at the instant it spawns (age 0: fully hot, no colour mixed in), so the hot
 ## colour shows at near full strength; the others
 ## are shares of the last arrival.
-const FIRST_CLOCK_S := 0.01
+const FIRST_CLOCK_S := 0.0
 const CLOCK_SHARES: Array[float] = [0.0, 0.45, 0.8]
 const BITS := 16
 const GLYPH_PX := 22.0

@@ -291,6 +291,7 @@ different path models; this module holds the shared math and numbers and shows t
 | lab: `--module=bits` | one plan through today's GPU shader, the module's shader, BinaryBits' CPU fallback and BitsSeam, at three fixed clocks (shares of `burst`'s last arrival); `--bits_probe=<json>` also writes the probe below |
 | lab: `--module=bits_rulings` | the rulings sheet: five A / B rows |
 | lab: `--module=bits_ruled` | the ruled presets, old next to new, dark and light, three fixed clocks; rows that should differ carry an orange bar, the control a grey one |
+| lab: `--module=bits_flash` | the hot flash (age 0, fully hot), old next to new, with 4x nearest crops of one bit on dark and light; `--flash_report=<json>` writes lit-pixel counts of the dark crops |
 
 **Probe results (2026-10-22).** Current vs module shader: largest pixel difference 0 at the three clocks. **Risk R7
 answered: the CUSTOM.z atlas frame channel does flip 0 / 1 on the GPU** (one stationary bit: frame 0 at clock 0.01 and

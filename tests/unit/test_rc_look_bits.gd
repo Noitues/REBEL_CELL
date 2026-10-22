@@ -8,7 +8,7 @@ extends GutTest
 const BITS_FILES: Array[String] = ["res://addons/rc_look/scripts/rc_look_bits.gd",
 	"res://addons/rc_look/scripts/rc_look_bits_config.gd", "res://addons/rc_look/scripts/rc_look_bits_preset.gd",
 	"res://addons/rc_look/shaders/rc_bits.gdshaderinc", "res://addons/rc_look/lab/stages/bits_stage.gd",
-	"res://addons/rc_look/lab/stages/bits_rulings_stage.gd", "res://addons/rc_look/lab/stages/bits_ruled_stage.gd", "res://addons/rc_look/lab/rc_look_bits_view.gd"]
+	"res://addons/rc_look/lab/stages/bits_rulings_stage.gd", "res://addons/rc_look/lab/stages/bits_ruled_stage.gd", "res://addons/rc_look/lab/stages/bits_flash_stage.gd", "res://addons/rc_look/lab/rc_look_bits_view.gd"]
 const SEEDS: Array[int] = [0, 1, 7, 1234567, -42, 9007199254740993]
 const FX_LAYER := "res://scripts/ui/kit/combat_fx_layer.gd"
 

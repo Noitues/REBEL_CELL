@@ -29,6 +29,8 @@ var split: bool = false
 ## How many bits and how big (px): the sheets with narrow panels use fewer and smaller.
 var bits: int = BITS
 var glyph_px: float = GLYPH_PX
+## The zoom crop on the dark backdrop instead of the light one.
+var zoom_dark: bool = false
 
 
 func _draw() -> void:
@@ -81,7 +83,7 @@ func _draw() -> void:
 			var rim_w := maxi(cfg.rim_px, roundi(px * cfg.outline_share) + cfg.rim_px - 1)
 			var rim := Color(hot_col, 1.0) if preset.outline == RcLookBitsPreset.Outline.SAME_COLOUR \
 					else Color(Palette.NIGHT_SKY, cfg.rim_alpha)
-			_glyph(font, pos, angle, glyph, px, hot_col, rim, rim_w)
+			_glyph(font, pos, angle, glyph, px, hot_col, rim, rim_w, _bold_w(rim_w))
 	draw_set_transform(Vector2.ZERO, 0.0)
 
 func _glyph(font: Font, at: Vector2, angle: float, glyph: String, px: int, col: Color, rim: Color, rim_w: int, bold_w: int = 0) -> void:
@@ -99,9 +101,9 @@ func _glyph(font: Font, at: Vector2, angle: float, glyph: String, px: int, col: 
 
 ## One bit on the light backdrop, at rest in the pure colour: the crop the stage shows magnified (nearest) so the rim reads.
 func _draw_zoom(font: Font, cfg: RcLookBitsConfig) -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), LIGHT)
+	draw_rect(Rect2(Vector2.ZERO, size), DARK if zoom_dark else LIGHT)
 	var px := roundi(glyph_px)
-	var col := BIT_COLORS[0]
+	var col := BIT_COLORS[0] if age_s < 0.0 else RcLookBits.bit_color(preset.hot_color, BIT_COLORS[0], age_s, HOT_S)
 	var rim_w := maxi(cfg.rim_px, roundi(px * cfg.outline_share) + cfg.rim_px - 1)
 	var rim := Color(col, 1.0) if preset.outline == RcLookBitsPreset.Outline.SAME_COLOUR else Color(Palette.NIGHT_SKY, cfg.rim_alpha)
 	var centre := size * 0.5
