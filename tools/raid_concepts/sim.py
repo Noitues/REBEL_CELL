@@ -31,8 +31,11 @@ HOLDERS = {"ICE": 2, "TARPIT": 3}
 #   ice_blocks: a held threat does not strike (today: it is held but still strikes, except at home).
 #   fixed_routes: each threat's target and whole route are set once, when the raid starts (the telegraph IS the route);
 #     it walks that route, strikes its target until it is TAKEN, then leaves. No mid-raid re-targeting.
+#   no_cascade (round 4): a node going DOWN does not spill damage onto its neighbours.
+#   auditor_hunts (round 4): the Auditor targets the node holding the most deployed pieces (ties: value, then id),
+#     so stacking draws it; with fixed_routes it is decided at plan time and drawn live.
 RULES = {"avoid_home": False, "tiebreak": "id", "target_lock": False, "decoy_radius": False, "ice_blocks": False,
-         "fixed_routes": False}
+         "fixed_routes": False, "no_cascade": False, "auditor_hunts": False}
 CREW_MULT = 1.5   # Breaker: assets on its node deal x1.5
 STEP_CAP = 30
 THREAT_DEF = {  # id: hp, dmg, speed, routing, entry
@@ -129,6 +132,11 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             decoys = [n for n in decoys if bfs(t["site"]).get(n, 99) <= ASSET["DECOY"]]
         if decoys:
             return sorted(decoys)[0]
+        if t["route"] == "value" and plan.rules.get("auditor_hunts"):
+            def _n(n):
+                return len(plan.assets.get(n, [])) + (1 if plan.crew == n else 0)
+            c = sorted([n for n in hp if live(n)], key=lambda n: (-_n(n), -PRIORITY[n] * 1000 - INSTALL[n], n))
+            return c[0] if c else "HOME"
         if t["route"] == "value":
             c = sorted([n for n in hp if live(n)], key=lambda n: (-PRIORITY[n] * 1000 - INSTALL[n], n))
             return c[0] if c else "HOME"
@@ -274,7 +282,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                 cond[s] = "down"
                 down_now.append(s)
                 ev["down"].append(s)
-                c = int(excess * 0.5)
+                c = 0 if plan.rules.get("no_cascade") else int(excess * 0.5)
                 for n in ADJ[s]:
                     if c and n in hp and (live(n) or n == "HOME"):
                         hp[n] = max(0, hp[n] - c)

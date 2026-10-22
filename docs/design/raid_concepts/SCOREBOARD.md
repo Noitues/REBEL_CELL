@@ -48,3 +48,30 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
   - Cascades are drawn nowhere.
   - No clean defense exists in the scenario.
 - **Next:** round 3 merges A and B and tests those rule fixes as designer-decision options in `sim.py`.
+
+## Round 3 (every concept under the rule package; fresh critic; `_reviews/REVIEW_R3.md`)
+
+| Concept | W | P | N | D | C | Total |
+|---|---|---|---|---|---|---|
+| **G Merged** | 8 | 7 | 6 | 6 | 8 | **35** |
+| E Countdown | 8 | 5 | 5 | 7 | 5 | 30 |
+| D Auto-battler | 6 | 7 | 6 | 4 | 5 | 28 |
+| F Plan Ledger | 6 | 7 | 6 | 5 | 4 | 28 |
+| C Strength Duel | 6 | 5 | 4 | 5 | 5 | 25 |
+
+- **The critic's pick:** take G forward, with E's two-visit countdown and its priced sacrifice. Build G as the playable
+  prototype.
+- **The ceiling has not moved (35).** The critic names 13 barriers, all designer decisions:
+  - the D27 Heat payout and its all-or-nothing reward;
+  - SCUFFED counted as clean while the patch can exceed the payout;
+  - D26 pacing with only 4 steps;
+  - D28 verdicts;
+  - cobalt contrast;
+  - undrawn cascades;
+  - the hidden crew ×1.5;
+  - icon silhouettes;
+  - content scale;
+  - a blind draft;
+  - when the raid lands.
+
+  Round 4 challenges them on G.
