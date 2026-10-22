@@ -1596,3 +1596,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   `D:/rc_scratch/rc_look/hotcore/hotcore_sheet.png`. Each tube runs 0.9 toward mix(white, tube, 0.15) on its centre 35%, with a floor of
   1 px so far trims and bands keep a core line. This covers city_building (sign strips, trims, bands), hq_solace_pbr (neon role) and
   dress_sign. The fence on city_building and hq_solace_pbr lifts for this change only.
+- **Hot core on thin tubes (designer, 2026-10-22):** the proof (`D:/rc_scratch/rc_look/hotcore/hotcore_proof.png`, art/look-toolbox-2
+  c806d617) showed the 1 px floor turning 1-2 px far trims near-white. Ruling: "Fade core on thin tubes". Keep the 1 px line, but on
+  tubes under ~3 px wide fade the core strength toward ~0.45 (from 0.9), so far tubes keep their hue. Close tubes stay as approved. The
+  numbers live in look_sign.tres "hot".
