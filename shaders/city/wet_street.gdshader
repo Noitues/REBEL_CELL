@@ -58,6 +58,7 @@ void vertex() {
 
 void fragment() {
 	ROUGHNESS = 0.0;
+	v_bl = 0.0;  // (set on every path: the lane strips share this shader and light() reads it)
 	if (lane) {
 		ALBEDO = vec3(0.0);
 		EMISSION = COLOR.rgb * lane_gain * emission_multiplier;
@@ -76,7 +77,6 @@ void fragment() {
 		// Light spill on the streets (1B's banded spill, the key light's bands).
 		vec3 spill = toon_spill(v_world, vec3(0.0, 1.0, 0.0), ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
 		EMISSION = col * spill * spill_gain * emission_multiplier * mix(1.0, spill_k, look_blend);
-		v_bl = 0.0;
 		if (bl_strength > 0.0) {
 			v_bl = bl_apply_street(v_world, ALBEDO, EMISSION);  // the skin is matte: the wet lobe fades by it (light())
 		}
