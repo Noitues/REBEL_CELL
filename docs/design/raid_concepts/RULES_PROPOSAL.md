@@ -34,10 +34,10 @@ unguessable rule set turns planning into "drag pieces until the numbers look goo
 | + target lock | 2.42 | 2.42 | 1.21 | 0.60 | 65.2 |
 | + target lock + home is not a corridor | 3.50 | 3.08 | 0.53 | 2.24 | 70.3 |
 | + target lock + home not a corridor + weakest tie | 3.27 | 3.33 | 0.53 | 2.36 | 67.7 |
-| **Fixed routes** | 2.42 | **0** | 0.24 | **0** | 63.1 |
-| Fixed routes + home not a corridor + weakest tie | 3.27 | 0 | **0** | 0 | 62.2 |
-| **Fixed routes + home not a corridor + weakest tie + ICE blocks the strike** | **4.83** | **0** | **0** | **0** | 57.3 |
-| … + decoy radius | 2.55 | 0 | 0 | 0 | 56.6 |
+| **Fixed routes** | 2.42 | **0** | 0.23 | **0** | 63.1 |
+| Fixed routes + home not a corridor + weakest tie | 3.27 | 0 | **0** | 0 | 62.0 |
+| **Fixed routes + home not a corridor + weakest tie + ICE blocks the strike** | **4.83** | **0** | **0** | **0** | 57.6 |
+| … + decoy radius | 2.55 | 0 | 0 | 0 | 56.5 |
 
 **The winning package** is the bold row. With it:
 - the warning telegraph is never wrong: 0 retargets, 0 revisits, 0 home surprises;

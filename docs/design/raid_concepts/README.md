@@ -86,3 +86,16 @@ Each concept folder has `SPEC_R2.md`, the current rules, which supersede `SPEC.m
   - loss icons inside the verdict stamp.
 - **Finding: no clean defense in this scenario.** Under today's rules, none of the 2058 placements from this Armory
   gives one. The Enforcer always reaches a node or home. See RECOMMENDATION.md.
+
+## Round 3: the rule package
+Round 3 runs every concept under the RULES_PROPOSAL package (fixed routes, home is never a corridor, weaker-node
+tie-break, ICE blocks the strike, a 3-of-5 draft, one clean definition, SCUFFED priced). It adds **G**, the merged
+design the round-2 critic recommended. Each concept folder has `SPEC_R3.md` and `r3/`. A was folded into G, and B's
+pieces went into G. Each concept's clean count under its own rule function:
+
+| Concept | Clean plans | Shown clean plan (patch) | Shown alternative |
+|---|---|---|---|
+| G / F (sim.py) | 4.83 % | 8 | clean, 38 |
+| C (c3_rules) | 127 / 12,960 | 28 | home −12, 33 |
+| D (d3_lane_sim) | 10 / 540 | 15 | home −15, 30 |
+| E (gauges) | 1,864 / 60,480 | 33 | PROXY given up, 0 |

@@ -160,6 +160,10 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             if plan.rules.get("fixed_routes"):
                 tgt = t["locked"]
                 ev["targets"][t["id"]] = tgt
+                if tgt != "HOME" and cond.get(tgt) == "taken":
+                    t["home"] = True  # its target is already TAKEN: it leaves
+                    t["left"] = True
+                    continue
                 if t["hold"] > 0:
                     t["hold"] -= 1
                     ev["holds"].append((t["id"], t["site"], t["hold"]))
@@ -296,8 +300,10 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
             out = "scuffed"
         nodes[k] = {"before": before, "after": hp[k], "outcome": out}
     clean = hp["HOME"] >= (NODE_HP["HOME"] if start_hp is None else start_hp["HOME"]) and not down_now and not taken_now
-    return Result(log, {k: v["path"] for k, v in T.items()}, nodes, NODE_HP["HOME"], hp["HOME"], [t for t in T if T[t]["hp"] <= 0],
+    res = Result(log, {k: v["path"] for k, v in T.items()}, nodes, NODE_HP["HOME"], hp["HOME"], [t for t in T if T[t]["hp"] <= 0],
                   [t for t in T if T[t]["home"] and not T[t].get("left")], clean, hp["HOME"] <= 0)
+    res.routes = {k: v.get("route_fixed", v["path"]) for k, v in T.items()}
+    return res
 
 
 def summary(r: Result) -> str:

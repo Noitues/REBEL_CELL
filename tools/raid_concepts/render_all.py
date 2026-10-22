@@ -33,6 +33,11 @@ CONCEPTS = {
     "d2": ("concept_d2_loadout", "d_autobattler_loadout"),
     "e2": ("concept_e2_countdown", "e_countdown_allocation"),
     "f2": ("concept_f2_ledger", "f_plan_ledger"),
+    "g3": ("concept_g3_merged", "g_merged_telegraph"),
+    "f3": ("concept_f3_ledger", "f_plan_ledger"),
+    "c3": ("concept_c3_duel", "c_strength_duel"),
+    "d3": ("concept_d3_loadout", "d_autobattler_loadout"),
+    "e3": ("concept_e3_countdown", "e_countdown_allocation"),
 }
 MOMENTS = ["1_warning", "2_planning", "3_forecast", "4_resolution", "5_aftermath", "6_next_raid"]
 
@@ -61,7 +66,7 @@ def main() -> None:
             mod = importlib.reload(importlib.import_module(mod_name))
             sub = "scrambled" if scr else "mockups"
             paths = []
-            for fn, m in zip(mod.FRAMES, MOMENTS):
+            for fn, m in zip(mod.FRAMES, getattr(mod, "MOMENTS", MOMENTS)):
                 p = OUT / folder / a.round / sub / f"{m}.png"
                 rc_draw.save(fn(), p)
                 paths.append(p)

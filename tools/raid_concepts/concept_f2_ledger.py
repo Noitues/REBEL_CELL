@@ -11,6 +11,10 @@ from r2_kit import RUNS as RR
 NAME = "F PLAN LEDGER r2"
 GX, GY, CW, CH = 120, 92, 82, 64
 TIDS = ["COLLECTOR", "AUDITOR", "ENFORCER"]
+# Knobs a later round overrides (concept_f3_ledger): the cards shown, the what-if piece and node, the playout step.
+CARDS = ("TURRET", "ICE", "DECOY", "CREW")
+WHATIF = ("DECOY", "FW")
+RES_STEP = 5
 
 
 def cells(r) -> dict:
@@ -89,6 +93,8 @@ def totals(d, r, x0=GX, y0=300, w=140) -> None:
         ix, iy = x + 62, y0 + 44
         if o in ("holds", "scuffed"):
             check(d, (ix, iy), 7, HOLD)
+            if o == "scuffed":
+                d.polygon([(x + w - 3, y0), (x + w - 3, y0 + 14), (x + w - 17, y0)], fill=DMG)
         elif o == "down":
             bolt(d, (ix, iy), 10)
         elif o == "taken":
@@ -126,6 +132,14 @@ def mini_map(d, r=None, plan=None, xf=MINI, big=False) -> None:
                 asset_icon(d, (ax, ay), a, 6, HOLD if a == "ICE" else CELL)
 
 
+def _card(d, x, y, a, selected=False, used=False):
+    if a in ("SENTRY", "RAILGUN"):
+        import concept_g3_merged as _g
+        _g.card(d, x, y, a, sel=selected, used=used)
+    else:
+        asset_card2(d, x, y, a, selected=selected, used=used)
+
+
 def hud(d, n=2) -> None:
     heat_bar(d, 470, 18, 340, 51)
     countdown(d, (1210, 60), n)
@@ -134,7 +148,8 @@ def hud(d, n=2) -> None:
 def guaranteed(d, r, x=990, y=400, alt=None) -> None:
     lo = losses(r)
     panel(d, (x, y, x + 278, y + 200), edge=STAMP_HOLD)
-    text(d, (x + 14, y + 10), "CELL HOLDS" if not r.breached else "BREACHED", 28, STAMP_HOLD, "stamp")
+    word = "BREACHED" if r.breached else ("CLEAN DEFENSE" if r.clean else "CELL HOLDS")
+    text(d, (x + 14, y + 10), word, 28, STAMP_CLEAN if r.clean else STAMP_HOLD, "stamp")
     node_icon(d, (x + 30, y + 74), "HOME", 30, CELL)
     hl = r.home_before - r.home_after
     text(d, (x + 50, y + 62), f"-{hl}", 22, DMG if hl else HOLD, "mono")
@@ -164,7 +179,7 @@ def f1():
     for i, t in enumerate(TIDS):
         y = 130 + i * 82
         threat_chip(d, (330, y + 24), t, scale=0.8)
-        path = r.paths[t]
+        path = getattr(r, "routes", r.paths)[t]
         for j, k in enumerate(path):
             x = 420 + j * 110
             if k.startswith("C"):
@@ -188,9 +203,9 @@ def f2():
     ledger(d, r)
     totals(d, r)
     mini_map(d, r)
-    for i, a in enumerate(("TURRET", "ICE", "DECOY", "CREW")):
-        asset_card2(d, 470 + i * 104, 420, a, selected=a == "DECOY")
-    fx, fy = MINI.p("FW")
+    for i, a in enumerate(CARDS):
+        _card(d, 470 + i * 104, 420, a, selected=a == WHATIF[0])
+    fx, fy = MINI.p(WHATIF[1])
     dashed(d, (730, 470), (fx + 20, fy), CELL, 3)
     w = RR["DECOY_ONLY"]
     tag_x, tag_y = 470, 560
@@ -201,7 +216,7 @@ def f2():
     flag(d, (tag_x + 220, tag_y + 30), 9, BG)
     lb, lw = losses(r), losses(w)
     text(d, (tag_x + 236, tag_y + 16), f"{len(lb['down']) + len(lb['taken'])} > {len(lw['down']) + len(lw['taken'])}", 22, BG, "mono")
-    text(d, (tag_x + 330, tag_y + 16), "FW", 18, BG)
+    node_icon(d, (tag_x + 350, tag_y + 30), WHATIF[1], 28, BG)
     header(d, NAME, 2, "Planning: the ledger is the raid as it stands (home -20, 3 DOWN, 1 TAKEN); dragging DECOY onto FIREWALL on the map previews home -20 > -12, lost 4 > 0")
     return img
 
@@ -213,8 +228,8 @@ def f3():
     ledger(d, r)
     totals(d, r)
     mini_map(d, r, PLANS["SHIELD"])
-    for i, a in enumerate(("TURRET", "ICE", "DECOY", "CREW")):
-        asset_card2(d, 470 + i * 104, 420, a, used=a != "CREW")
+    for i, a in enumerate(CARDS):
+        _card(d, 470 + i * 104, 420, a, used=a != "CREW")
     guaranteed(d, r, alt=RR["LURE"])
     header(d, NAME, 3, "Forecast: plan 2 (shield home) rewrites every cell: held cells hatched, skulls where threats die; totals: home 0, 2 DOWN, 2 TAKEN; plan 1 kept below")
     return img
@@ -224,7 +239,7 @@ def f4():
     img, d = new_frame(NAME, "resolution")
     heat_bar(d, 470, 18, 340, 51)
     r = RR["SHIELD"]
-    s = 5
+    s = RES_STEP
     ledger(d, r, cursor=s, gx=120, gy=70, cw=60, ch=40)
     big = MapXf(180, 230, 0.95)
     ev = r.steps[s - 1]
@@ -272,6 +287,15 @@ def f5():
         arrow(d, big.p(k), big.p("HOME"), THREAT, 4, 12, dash_line=True)
     stamp_losses(img, d, (1000, 160), r)
     panel(d, (860, 330, 1268, 650))
+    if not (lo["taken"] or lo["down"]):
+        for i, k in enumerate(lo["scuffed"]):
+            y = 350 + i * 70
+            v = r.nodes[k]
+            node_icon(d, (900, y + 24), k, 34, CELL)
+            text(d, (926, y + 12), f"-{v['before'] - v['after']}", 20, DMG, "mono")
+            arrow(d, (980, y + 24), (1020, y + 24), INK, 3, 9, shorten=0)
+            coin(d, (1040, y + 24), 11)
+            text(d, (1058, y + 12), str(v["before"] - v["after"]), 20, INK, "mono")
     for i, k in enumerate(lo["taken"] + lo["down"]):
         y = 350 + i * 70
         taken = k in lo["taken"]
