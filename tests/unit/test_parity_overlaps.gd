@@ -257,9 +257,11 @@ func test_raid_02_the_work_order_stamp_and_disc_cover_no_value_and_no_line_cover
 		# BIG-TEXT: a folded work order (its paper has no stamp) shows its short page without it.
 		if card.paper.stamp != "":
 			assert_true(card.get_global_rect().grow(1.0).encloses(stamp), "%s: the stamp stays on the paper" % what)
-		var disc := card.find_child("Projection", true, false) as Control
-		for l in _values(card):
-			assert_false(disc.get_global_rect().intersects(l.get_global_rect()), "%s: the forecast disc covers no value (%s)" % [what, l.text])
+		# A-073 (updated on purpose): the forecast is a CRT chip beside the paper, never on it.
+		var disc := hq._panel.find_child("Projection", true, false) as Control
+		assert_not_null(disc, "%s: the forecast chip shows" % what)
+		assert_null(card.find_child("Projection", true, false), "%s: the paper carries no forecast" % what)
+		assert_false(disc.get_global_rect().intersects(card.get_global_rect()), "%s: the forecast chip stands off the paper" % what)
 		# B3 b (art director): no instruction panel over the paper; the clip keeps on the page.
 		assert_null(hq._panel.find_child("RaidIntro", true, false), "%s: no instruction panel" % what)
 		assert_true(card.get_global_rect().position.y - RaidPaper.CLIP_TOP * Settings.text_scale >= hq._panel.get_global_rect().position.y - 1.0, "%s: the paper clip on the page" % what)

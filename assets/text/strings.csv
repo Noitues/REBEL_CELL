@@ -412,6 +412,7 @@ Campaigns won.,Campaigns won.
 Can't Undo,Can't Undo
 Cancel,Cancel
 Cancel this card's aim (Esc or right-click).,Cancel this card's aim (Esc or right-click).
+"Cancel, pick one of your nodes on the map, then press STATION on this raid setup. An unstationed raid hits an unaided network.","Cancel, pick one of your nodes on the map, then press STATION on this raid setup. An unstationed raid hits an unaided network."
 Card,Card
 CardData.arc_flash.description,Deal 3 damage to every enemy.
 CardData.arc_flash.display_name,Arc Flash
@@ -2038,6 +2039,7 @@ REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL // MERIT SHEET,REBEL_CELL // MERIT SHEET
 REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
 RECALL,RECALL
+RECALL %s,RECALL %s
 RECLAIMED,RECLAIMED
 RECRUIT,RECRUIT
 RECYCLE BIN,RECYCLE BIN
@@ -2271,6 +2273,7 @@ SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
+STATION %s HERE,STATION %s HERE
 STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS
@@ -2534,7 +2537,7 @@ Start from code,Start from code
 Start the defense: the raid plays out on the map; the result matches the forecast.,Start the defense: the raid plays out on the map; the result matches the forecast.
 Starting Bug Card,Starting Bug Card
 Station %s,Station %s
-"Station an operative on a node at HQ first, or the raid hits an unaided network.","Station an operative on a node at HQ first, or the raid hits an unaided network."
+Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.,Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.
 Stationed on %s.,Stationed on %s.
 Stats & achievements,Stats & achievements
 Statuses & precision,Statuses & precision

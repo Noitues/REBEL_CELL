@@ -229,7 +229,8 @@ func test_raid_setup_shows_each_nodes_projected_outcome_without_a_text_wall() ->
 		# H23 S5 (updated on purpose): the numbers say they are the node's HP.
 		assert_eq(badge_text, "HP %s → %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()], "exact projected outcome for %s (GDD 9.3)" % id)
 	# H22 #9 (updated on purpose): a dashed forecast, "IF THE RAID RUNS NOW:" + verdict.
-	var stamp := hq._panel.find_child("Projection", true, false) as ForecastStamp
+	# A-073 (updated on purpose): the forecast is a CRT terminal chip beside the work order, not a disc on the paper.
+	var stamp := hq._panel.find_child("Projection", true, false) as ForecastChip
 	# ANIM-R4 H3 (updated on purpose): CELL HOLDS only when nothing is lost; else the losses.
 	assert_eq(stamp.verdict, RaidVerdict.of_projection(projection))
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE, "the projection stamp is display only")
