@@ -18,8 +18,9 @@ var _idx := PackedInt32Array()
 var _made: int = 0
 
 
-## The ribbon mesh of a street look's `ribbons` block (null when it has none or the strength is 0).
-static func build(rb: Dictionary) -> ArrayMesh:
+## The ribbon mesh of a street look's `ribbons` block, its vertices put through `xf` (the street frame -> world; null when it has none or
+## the strength is 0).
+static func build(rb: Dictionary, xf: Transform3D = Transform3D.IDENTITY) -> ArrayMesh:
 	if rb.is_empty() or float(rb.get("strength", 0.0)) <= 0.0:
 		return null
 	var b := BloomRibbons.new()
@@ -28,7 +29,11 @@ static func build(rb: Dictionary) -> ArrayMesh:
 		return null
 	var arr: Array = []
 	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = b._verts
+	var vs := PackedVector3Array()
+	vs.resize(b._verts.size())
+	for i in b._verts.size():
+		vs[i] = xf * b._verts[i]  # baked into the world: the frame can be a mirror
+	arr[Mesh.ARRAY_VERTEX] = vs
 	arr[Mesh.ARRAY_INDEX] = b._idx
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)

@@ -2666,14 +2666,13 @@ func _bloom_apply() -> void:
 	if float(_bloom.get("strength", 0.0)) <= 0.0:
 		return
 	if StringName(_bloom.get("kind", &"")) == BloomLook.KIND_STREET:
-		var mesh := BloomRibbons.build(_bloom["ribbons"])
+		var mesh := BloomRibbons.build(_bloom["ribbons"], BloomLook.frame_to_world(_bloom))
 		if mesh != null and layer(&"props") != null:
 			var mi := MeshInstance3D.new()
 			mi.name = BloomRibbons.MESH_NAME
 			mi.mesh = mesh
 			mi.material_override = BloomRibbons.make_material(_bloom["uniforms"][&"bl_pink"], float(_bloom["ribbons"]["strength"]))
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			mi.transform = BloomLook.frame_to_world(_bloom)
 			add_to_layer(&"props", mi)
 			_bloom_nodes.append(mi)
 	else:
