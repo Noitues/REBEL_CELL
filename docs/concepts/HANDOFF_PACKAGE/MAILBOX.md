@@ -458,3 +458,21 @@ Merge it after A-095; it branches from ae1bbeda. Art-pass approved it. Nothing v
   - review_pack hq / grid / b4_idle / raid_setup / raid_playout / combat_start.
 - **Follow-up (designer pick, not in this branch):** street car headlights and taillights will glow. A separate READY will follow
   once art-pass approves its sheet.
+
+### A-098 · 2026-10-22 · READY: street car-light slot fix (art/look-toolbox-7 @ 3ad4043a, on A-097's 7da7cd8a)
+
+Merge after A-097: it's one commit on 7da7cd8a. Art-pass approved it (designer ruling, DIRECTION_REVIEW 2026-10-22). Nothing on
+screen changes, because no view places ground_car.glb yet.
+
+- **Lights:** `StreetR2Materials.for_slot` gives `headlight_emit` warm white [1.0, 0.97, 0.9] at emit 6.0 and `taillight_emit` red
+  [1.0, 0.18, 0.14] at emit 3.0. These are the city car's colours. The values live in `street_r2_render.tres` lamps.car_*.
+- **Uniform:** a new `street_r2_surface` uniform, `light_color`. Its default (a = 0) leaves every other material bit-identical.
+- **Slot map:** `look_slots.tres` moves both slots from solid to the roles car_head and car_tail.
+- **Schema:** `REQUIRED.lamps` gains 4 keys, with a smoke check and a DECISIONS entry. Please run the schema smoke test.
+- **Proof:** 31 frozen frames at max 0:
+  - na23 overview and decision on seeds 1 and 2 (beauty, id, depth and ui);
+  - A2 look 0 and 1, day and night;
+  - hq_run's 5 states;
+  - review_pack's 6 screens.
+- **Tests:** test_rc_look_slots (with the new car-light test), test_street_r2_parity and test_aaa_street_look pass. Schema smoke
+  passes and precommit is clean. The full suite runs at your gate.
