@@ -18,8 +18,8 @@ keys,en
  · %s: %s RING, · %s: %s RING
  · %s: NUDGE %s, · %s: NUDGE %s
  · REACH %d, · REACH %d
+"%d   (%d clean, %d damaged)","%d   (%d clean, %d damaged)"
 %d   (%d operatives lost),%d   (%d operatives lost)
-"%d   (%d repelled, %d lost)","%d   (%d repelled, %d lost)"
 %d / %d,%d / %d
 %d / %d INTACT,%d / %d INTACT
 %d / %d extracted,%d / %d extracted
@@ -601,6 +601,8 @@ ClassData.rigger.display_name,Rigger
 ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
 ClassData.wrecker.display_name,Wrecker
 Classes,Classes
+Clean defense after %d step(s).,Clean defense after %d step(s).
+Clean defenses.,Clean defenses.
 Clear every corporation at ICE %d to open it.,Clear every corporation at ICE %d to open it.
 Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for the %s Exploit (%d/%d for the breach).
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
@@ -1122,12 +1124,9 @@ Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard 
 Heat %s,Heat %s
 Heat %s: %d → %d.,Heat %s: %d → %d.
 "Heat %s: %s for flatlining on a run, %s from the route's nodes and events.","Heat %s: %s for flatlining on a run, %s from the route's nodes and events."
-Heat %s: %s not destroyed: %d → %d.,Heat %s: %s not destroyed: %d → %d.
-Heat %s: %s reached %s: %d → %d.,Heat %s: %s reached %s: %d → %d.
 Heat %s: flatlined on a run (and the route before it).,Heat %s: flatlined on a run (and the route before it).
 Heat %s: flatlined on a run.,Heat %s: flatlined on a run.
 Heat %s: from the route's nodes and events.,Heat %s: from the route's nodes and events.
-Heat %s: not every threat was destroyed: %d → %d.,Heat %s: not every threat was destroyed: %d → %d.
 Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
@@ -1748,6 +1747,7 @@ NO CREW,NO CREW
 NO DAMAGE,NO DAMAGE
 NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
+NO HEAT,NO HEAT
 "NO REFUNDS.
 NO NAMES.
 CYCLES ONLY.","NO REFUNDS.
@@ -1868,7 +1868,6 @@ OUTER,OUTER
 OUTPUT DOWN,OUTPUT DOWN
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
-OVERRUN,OVERRUN
 OVERTHROW,OVERTHROW
 OVERVIEW,OVERVIEW
 OVERWRITTEN,OVERWRITTEN
@@ -2066,7 +2065,6 @@ REF HC-7718/CELL,REF HC-7718/CELL
 REMOVE,REMOVE
 REPAIR,REPAIR
 REPAIR %s: bring the DOWN node back online (%d Schematics).,REPAIR %s: bring the DOWN node back online (%d Schematics).
-REPELLED,REPELLED
 RES%s,RES%s
 RESIST,RESIST
 RESIST %d,RESIST %d
@@ -2107,7 +2105,6 @@ Raid Extra Wave,Raid Extra Wave
 Raid Strength,Raid Strength
 Raid over,Raid over
 Raid over after %d step(s).,Raid over after %d step(s).
-Raid repelled after %d step(s).,Raid repelled after %d step(s).
 Raid: %s.,Raid: %s.
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
@@ -2191,7 +2188,6 @@ RaidData.raid_story.display_name,Collections: Quiet Word
 RaidData.raid_story.warning_text,"Somebody read what you read. A Lockdown Unit and an Enforcer are on their way, no notice filed."
 Raids,Raids
 Raids pending against your network. Set up the defense before the next run.,Raids pending against your network. Set up the defense before the next run.
-Raids repelled.,Raids repelled.
 Raids won / lost,Raids won / lost
 Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
@@ -3323,7 +3319,7 @@ The Eye moves to octant %d after this turn.,The Eye moves to octant %d after thi
 The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
 The Heat a lost raid adds.,The Heat a lost raid adds.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
-The Schematics a repelled raid pays.,The Schematics a repelled raid pays.
+The Schematics a clean defense pays.,The Schematics a clean defense pays.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"

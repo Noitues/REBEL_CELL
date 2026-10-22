@@ -527,7 +527,7 @@ static func profile_grid(columns: int) -> GridContainer:
 		[TranslationServer.translate("WON"), str(p.campaigns_won), TranslationServer.translate("Campaigns won.")],
 		[TranslationServer.translate("BEST ICE"), HudStats.ice_value(p.best_ice), TranslationServer.translate("The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.")],
 		[TranslationServer.translate("RUNS"), str(p.runs_completed), TranslationServer.translate("Netruns completed.")],
-		[TranslationServer.translate("RAIDS HELD"), str(p.raids_won), TranslationServer.translate("Raids repelled.")],
+		[TranslationServer.translate("RAIDS HELD"), str(p.raids_won), TranslationServer.translate("Clean defenses.")],
 		[TranslationServer.translate("BADGES"), "%d/%d" % [p.achievements.size(), Achievements.DEFS.size()], TranslationServer.translate("Achievements earned (Stats & achievements lists them).")]]
 	for it in items:
 		var cell := VBoxContainer.new()

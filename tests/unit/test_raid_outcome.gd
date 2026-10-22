@@ -1,5 +1,6 @@
 extends GutTest
-## RAID-FIX A: the verdict is the rules' (won / lost / breach), the outcome projection equals
+## RAID-RULES E (D27/D28): the verdict is CELL HOLDS or BREACHED; a clean defense gains Heat and Schematics,
+## damage gains no Heat; the outcome projection equals
 ## what RaidResolver.apply does (preview == result), the severity tiers come from config, and
 ## IF PLACED speaks in words of effect.
 
@@ -38,11 +39,10 @@ func _build(layout: Array) -> Dictionary:
 	return {"grid": grid, "campaign": c, "raid": GridFixture.raid(&"g_outcome", layout[4], int(layout[5]))}
 
 
-func test_verdict_is_won_lost_or_breach() -> void:
-	assert_eq(RaidOutcome.verdict_of(true, false), RaidOutcome.Verdict.REPELLED)
-	assert_eq(RaidOutcome.verdict_of(false, false), RaidOutcome.Verdict.OVERRUN)
-	assert_eq(RaidOutcome.verdict_of(false, true), RaidOutcome.Verdict.BREACHED)
-	assert_eq(RaidOutcome.verdict_of(true, true), RaidOutcome.Verdict.BREACHED, "a fallen Home is a breach whatever else")
+func test_verdict_is_cell_holds_or_breached() -> void:
+	assert_eq(RaidOutcome.verdict_of(false), RaidOutcome.Verdict.CELL_HOLDS)
+	assert_eq(RaidOutcome.verdict_of(true), RaidOutcome.Verdict.BREACHED)
+	assert_eq(RaidOutcome.Verdict.keys(), ["CELL_HOLDS", "BREACHED"], "the two verdicts only")
 
 
 func test_the_projection_equals_what_apply_does_for_every_layout() -> void:
@@ -64,15 +64,20 @@ func test_the_projection_equals_what_apply_does_for_every_layout() -> void:
 		assert_eq(p["threats_killed"], r.threats_destroyed)
 		assert_eq(p["threats_total"], (layout[4] as Array).size(), "%s: every threat counted" % tag)
 		match p["verdict"]:
-			RaidOutcome.Verdict.REPELLED:
-				assert_eq(c.raids_won - won_before, 1, "%s: REPELLED is a raid won" % tag)
-				assert_eq(p["schematics_delta"], int(layout[5]))
-				assert_eq(p["heat_delta"], 0)
-			RaidOutcome.Verdict.OVERRUN:
-				assert_eq(c.raids_lost - lost_before, 1, "%s: OVERRUN is a raid lost" % tag)
-				assert_gt(p["heat_delta"], 0, "%s: OVERRUN costs Heat" % tag)
-				assert_eq(p["schematics_delta"], 0)
+			RaidOutcome.Verdict.CELL_HOLDS:
 				assert_ne(c.outcome, CampaignState.Outcome.LOST)
+				if p["clean"]:
+					assert_eq(c.raids_won - won_before, 1, "%s: a clean defense is a raid won" % tag)
+					assert_eq(p["schematics_delta"], int(layout[5]))
+					assert_eq(p["heat_delta"], _cfg.clean_defense_heat, "%s: a clean defense gains Heat" % tag)
+					assert_eq(p["home_delta"], 0)
+					assert_eq(int(p["down"]) + int(p["taken"]), 0)
+					assert_eq(p["tier"], RaidOutcome.Tier.CLEAN)
+				else:
+					assert_eq(c.raids_lost - lost_before, 1, "%s: damage is a raid lost" % tag)
+					assert_eq(p["heat_delta"], 0, "%s: damage gains no Heat" % tag)
+					assert_eq(p["schematics_delta"], 0)
+					assert_ne(p["tier"], RaidOutcome.Tier.CLEAN, "%s: a damaged hold is never green" % tag)
 			RaidOutcome.Verdict.BREACHED:
 				assert_eq(c.outcome, CampaignState.Outcome.LOST, "%s: BREACHED loses the campaign" % tag)
 		# The played raid's own dictionary tells the same outcome.
@@ -107,8 +112,64 @@ func test_a_seeded_sweep_of_raids_projects_exactly() -> void:
 	assert_eq(checked, 40)
 
 
+func _clean_layout() -> Array:
+	return ["clean", [&"r1"], {&"r1": &"relay"}, {&"r1": [&"ice_lock", &"turret", &"turret", &"turret"]}, [&"collector"], 8]
+
+
+func test_clean_defense_gains_heat_and_schematics_damage_gains_no_heat() -> void:
+	var clean := _build(_clean_layout())
+	var c: CampaignState = clean["campaign"]
+	var r := _resolve(c, clean["grid"], clean["raid"])
+	var p := RaidOutcome.project(r, _cfg)
+	assert_true(p["clean"], "turrets and a lock stop the collector without a scratch")
+	assert_eq(p["heat_delta"], _cfg.clean_defense_heat)
+	assert_eq(p["schematics_delta"], 8)
+	assert_eq(p["verdict"], RaidOutcome.Verdict.CELL_HOLDS)
+	assert_eq(p["tier"], RaidOutcome.Tier.CLEAN)
+	var heat := c.heat
+	RaidResolver.apply(c, r, clean["raid"], _cfg)
+	assert_eq(c.heat - heat, _cfg.clean_defense_heat, "apply gains what the projection promised")
+	assert_eq(c.raids_won, 1)
+	# Damage: the undefended relay is hit; the Cell still holds, with no Heat and no Schematics.
+	var hit := _build(_layouts()[0])
+	var c2: CampaignState = hit["campaign"]
+	var r2 := _resolve(c2, hit["grid"], hit["raid"])
+	var p2 := RaidOutcome.project(r2, _cfg)
+	assert_false(p2["clean"])
+	assert_eq(p2["verdict"], RaidOutcome.Verdict.CELL_HOLDS)
+	assert_eq(p2["heat_delta"], 0)
+	assert_eq(p2["schematics_delta"], 0)
+	var heat2 := c2.heat
+	RaidResolver.apply(c2, r2, hit["raid"], _cfg)
+	assert_eq(c2.heat, heat2, "damage gains no Heat")
+	assert_eq(c2.raids_lost, 1)
+	# BREACHED: Home at 0 loses the campaign, no Heat.
+	var br := _build(_layouts()[3])
+	var r3 := _resolve(br["campaign"], br["grid"], br["raid"])
+	var p3 := RaidOutcome.project(r3, _cfg)
+	assert_eq(p3["verdict"], RaidOutcome.Verdict.BREACHED)
+	assert_eq(p3["heat_delta"], 0)
+	assert_false(p3["clean"])
+
+
+func test_per_node_outcome_data_is_exposed_sorted() -> void:
+	var b := _build(_layouts()[2])
+	var r := _resolve(b["campaign"], b["grid"], b["raid"])
+	var nodes: Array = RaidOutcome.project(r, _cfg)["nodes"]
+	assert_false(nodes.is_empty())
+	var ids: Array = []
+	for n in nodes:
+		assert_true(["holds", "down", "taken", "passed"].has(n["outcome"]))
+		assert_true(n.has("before") and n.has("after"))
+		ids.append(String(n["id"]))
+	var sorted := ids.duplicate()
+	sorted.sort()
+	assert_eq(ids, sorted, "ties by node id")
+	assert_eq(RaidOutcome.of_dict(r.to_dict(), _cfg)["nodes"], nodes, "the report reads the forecast")
+
+
 func test_heat_delta_is_clamped_at_the_ceiling() -> void:
-	var b := _build(_layouts()[0])
+	var b := _build(_clean_layout())
 	var c: CampaignState = b["campaign"]
 	c.heat = _cfg.heat_max - 2
 	var r := _resolve(c, b["grid"], b["raid"])
@@ -122,10 +183,7 @@ func test_heat_delta_is_clamped_at_the_ceiling() -> void:
 func test_severity_tiers_come_from_the_rules_and_the_config() -> void:
 	var relay := _build(_layouts()[0])
 	var r := _resolve(relay["campaign"], relay["grid"], relay["raid"])
-	assert_eq(RaidOutcome.project(r, _cfg)["tier"], RaidOutcome.Tier.CLEAN, "home 50 > 45 is a 10% loss: under the amber line")
-	var strict := _cfg.duplicate() as CampaignConfigData
-	strict.raid_amber_home_loss_pct = 5
-	assert_eq(RaidOutcome.project(r, strict)["tier"], RaidOutcome.Tier.AMBER, "the line is config")
+	assert_eq(RaidOutcome.project(r, _cfg)["tier"], RaidOutcome.Tier.AMBER, "any Home loss is amber, never green")
 	var down := _build(_layouts()[2])
 	assert_eq(RaidOutcome.project(_resolve(down["campaign"], down["grid"], down["raid"]), _cfg)["tier"], RaidOutcome.Tier.DOWN)
 	var breach := _build(_layouts()[3])
@@ -142,15 +200,17 @@ func test_the_verdict_words_match_the_projection() -> void:
 		var r := _resolve(b["campaign"], b["grid"], b["raid"])
 		var p := RaidOutcome.project(r, _cfg)
 		var words := RaidVerdict.of_projection(r)
-		assert_eq(words, RaidVerdict.words(p["verdict"], p["heat_delta"], p["schematics_delta"]))
+		assert_eq(words, RaidVerdict.words(p["verdict"], p["heat_delta"], p["schematics_delta"], RaidVerdict.losses(r.to_dict())))
 		RaidResolver.apply(b["campaign"], r, b["raid"], _cfg)
 		assert_eq(RaidVerdict.of_result(b["campaign"].last_raid), words, "%s: the report says the forecast's words" % layout[0])
 		match p["verdict"]:
-			RaidOutcome.Verdict.REPELLED:
-				assert_true(words.begins_with("REPELLED"))
-			RaidOutcome.Verdict.OVERRUN:
-				assert_true(words.begins_with("OVERRUN"))
-				assert_string_contains(words, "+%d HEAT" % p["heat_delta"])
+			RaidOutcome.Verdict.CELL_HOLDS:
+				assert_true(words.begins_with("CELL HOLDS"))
+				if p["clean"]:
+					assert_string_contains(words, "+%d HEAT" % p["heat_delta"])
+				else:
+					assert_string_contains(words, "NO HEAT")
+					assert_false(words.contains("+"), "no gain on a damaged hold")
 			RaidOutcome.Verdict.BREACHED:
 				assert_eq(words, "BREACHED")
 

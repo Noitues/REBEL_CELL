@@ -150,13 +150,14 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		elif t.get("reached_home", false):
 			result.threats_reached_home += 1
 	result.home_after = grid.home_integrity
-	result.won = result.threats_destroyed == threats.size() and not result.campaign_lost
 	result.threats_total = threats.size()
+	# Designer R2 (D27): a CLEAN defense (Home undamaged, no node DOWN or TAKEN) is a raid "won": it pays
+	# Schematics and gains Heat; any damage gains no Heat.
+	result.won = not result.campaign_lost and result.home_after >= result.home_before and down_now.is_empty() and taken_now.is_empty()
 	if result.won:
 		result.schematics_delta = raid.schematic_reward
-	elif not result.campaign_lost:
 		var heat_copy := campaign.duplicate_state()
-		result.heat_delta = heat_copy.add_heat(HeatRules.scaled_delta(heat_copy, config.lost_raid_heat, config), config)
+		result.heat_delta = heat_copy.add_heat(HeatRules.scaled_delta(heat_copy, config.clean_defense_heat, config), config)
 	for id in before:
 		var sid := StringName(id)
 		var after: int = grid.home_integrity if sid == grid.home_site_id else int(grid.site(sid)["integrity"])
@@ -174,7 +175,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		result.infection_end_bp = SolaceRaidRules.after_decay(result.infection_bp, result.infection_decay_bp)
 	result.events.append({"type": "raid_end", "won": result.won, "steps": result.steps_run,
 		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d DOWN, %d TAKEN." % [
-			"REPELLED" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
+			"CLEAN" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
 	return result
 
 
@@ -202,10 +203,10 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	if result.won:
 		campaign.raids_won += 1
 		campaign.schematics += raid.schematic_reward
-		events.append({"type": "raid_won", "schematics": raid.schematic_reward, "text": "Raid repelled: +%d Schematics." % raid.schematic_reward})
+		events.append({"type": "raid_won", "schematics": raid.schematic_reward, "text": "Clean defense: +%d Schematics." % raid.schematic_reward})
+		events.append_array(HeatRules.add_heat(campaign, config.clean_defense_heat, config, "clean defense"))
 	else:
-		campaign.raids_lost += 1
-		events.append_array(HeatRules.add_heat(campaign, config.lost_raid_heat, config, "lost raid"))
+		campaign.raids_lost += 1  # damaged but the Cell holds: no Heat (D27)
 	return events
 
 

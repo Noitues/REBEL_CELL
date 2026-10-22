@@ -150,8 +150,9 @@ func test_projection_equals_the_real_result_and_apply_writes_it() -> void:
 	assert_eq(c.last_raid["raid_id"], "g9")
 	if real.won:
 		assert_eq(c.schematics, 112)
+		assert_true(c.heat >= _cfg.clean_defense_heat, "a clean defense adds Heat")
 	else:
-		assert_true(c.heat >= _cfg.lost_raid_heat, "lost raid adds Heat")
+		assert_eq(real.heat_delta, 0, "damage adds no Heat")
 
 
 func test_raid_strength_scales_threats() -> void:

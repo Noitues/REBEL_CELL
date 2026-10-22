@@ -5,12 +5,13 @@ extends RefCounted
 ## the config, so the forecast chip, the playout stamp and the report all say what
 ## `RaidResolver.apply` does (preview == result). Words live in `RaidVerdict` (TextDb keys).
 
-## The raid's verdict: REPELLED (every threat destroyed: +Schematics), OVERRUN (the Cell
-## survived but the raid is lost: +Heat), BREACHED (Home fell: the campaign is lost).
-enum Verdict { REPELLED, OVERRUN, BREACHED }
+## The raid's verdict (designer R3, D28): CELL_HOLDS (Home survives) or BREACHED (Home fell: the
+## campaign is lost). How well the Cell held is the `Tier`; the consequence is the Heat and
+## Schematics delta. A CLEAN defense (`RaidResult.won`) gains Heat and Schematics; damage gains no Heat (D27).
+enum Verdict { CELL_HOLDS, BREACHED }
 
-## Severity tiers, mildest first: HOLDS clean, HOLDS with a Home loss over the config's
-## percent (amber), a node DOWN (orange), a node TAKEN or Home BREACHED (red).
+## Severity tiers, mildest first: a clean defense, any Home loss (amber), a node DOWN (orange), a
+## node TAKEN or Home BREACHED (red). A damaged CELL HOLDS is never CLEAN.
 enum Tier { CLEAN, AMBER, DOWN, TAKEN }
 
 ## Why a placed asset changes nothing (see `if_placed`).
@@ -18,21 +19,19 @@ const REASON_OUT_OF_REACH := &"out_of_reach"
 const REASON_TOO_STRONG := &"too_strong"
 const REASON_WRONG_LANE := &"wrong_lane"
 
-## The verdict of a raid with these flags (RaidResult.won / .campaign_lost).
-static func verdict_of(won: bool, campaign_lost: bool) -> Verdict:
-	if campaign_lost:
-		return Verdict.BREACHED
-	return Verdict.REPELLED if won else Verdict.OVERRUN
+## The verdict of a raid with this flag (RaidResult.campaign_lost).
+static func verdict_of(campaign_lost: bool) -> Verdict:
+	return Verdict.BREACHED if campaign_lost else Verdict.CELL_HOLDS
 
 
 ## The verdict of a `RaidResult`.
 static func verdict_of_result(r: RaidResolver.RaidResult) -> Verdict:
-	return verdict_of(r.won, r.campaign_lost)
+	return verdict_of(r.campaign_lost)
 
 
 ## The verdict of a raid dictionary (`RaidResult.to_dict`, `campaign.last_raid`).
 static func verdict_of_dict(r: Dictionary) -> Verdict:
-	return verdict_of(bool(r.get("won", false)), bool(r.get("campaign_lost", false)))
+	return verdict_of(bool(r.get("campaign_lost", false)))
 
 
 ## The nodes DOWN and TAKEN in a `nodes` map, each node once by its own outcome (a node DOWN and
@@ -49,8 +48,21 @@ static func node_losses(nodes: Dictionary) -> Dictionary:
 	return {"down": down, "taken": taken}
 
 
+## Per-node outcome data for the visuals: an Array of {"id": StringName, "outcome": "holds" | "down" | "taken",
+## "before": int, "after": int} (integrity before and after the raid), sorted by node id.
+static func node_outcomes(nodes: Dictionary) -> Array[Dictionary]:
+	var ids: Array = nodes.keys()
+	ids.sort_custom(func(a, b) -> bool: return String(a) < String(b))
+	var out: Array[Dictionary] = []
+	for id in ids:
+		var n: Dictionary = nodes[id]
+		out.append({"id": StringName(id), "outcome": String(n.get("outcome", "holds")),
+			"before": int(n.get("before", 0)), "after": int(n.get("after", 0))})
+	return out
+
+
 ## The severity tier of a raid dictionary (see `Tier`).
-static func tier_of_dict(r: Dictionary, config: CampaignConfigData) -> Tier:
+static func tier_of_dict(r: Dictionary, _config: CampaignConfigData = null) -> Tier:
 	var l := node_losses(r.get("nodes", {}))
 	if bool(r.get("campaign_lost", false)) or int(l["taken"]) > 0:
 		return Tier.TAKEN
@@ -58,7 +70,7 @@ static func tier_of_dict(r: Dictionary, config: CampaignConfigData) -> Tier:
 		return Tier.DOWN
 	var before := int(r.get("home_before", 0))
 	var lost := before - int(r.get("home_after", 0))
-	if before > 0 and lost * 100 > before * config.raid_amber_home_loss_pct:
+	if lost > 0:
 		return Tier.AMBER
 	return Tier.CLEAN
 
@@ -66,7 +78,7 @@ static func tier_of_dict(r: Dictionary, config: CampaignConfigData) -> Tier:
 ## The whole outcome of a `RaidResult` as a dictionary: "verdict" (Verdict), "tier" (Tier),
 ## "home_before", "home_after", "home_delta" (<= 0), "down", "taken" (node counts),
 ## "heat_delta", "schematics_delta" (what `RaidResolver.apply` adds), "threats_killed",
-## "threats_total". The forecast for a setup equals the result of playing it.
+## "threats_total", "nodes" (see `node_outcomes`), "clean" (a clean defense: Heat + Schematics). The forecast for a setup equals the result of playing it.
 static func project(r: RaidResolver.RaidResult, config: CampaignConfigData) -> Dictionary:
 	var d := r.to_dict()
 	var l := node_losses(r.nodes)
@@ -74,7 +86,8 @@ static func project(r: RaidResolver.RaidResult, config: CampaignConfigData) -> D
 		"home_before": r.home_before, "home_after": r.home_after, "home_delta": r.home_after - r.home_before,
 		"down": int(l["down"]), "taken": int(l["taken"]),
 		"heat_delta": r.heat_delta, "schematics_delta": r.schematics_delta,
-		"threats_killed": r.threats_destroyed, "threats_total": r.threats_total}
+		"threats_killed": r.threats_destroyed, "threats_total": r.threats_total,
+		"nodes": node_outcomes(r.nodes), "clean": r.won}
 
 
 ## The outcome of a raid dictionary already played (`campaign.last_raid`), the same keys as `project`.
@@ -86,7 +99,8 @@ static func of_dict(r: Dictionary, config: CampaignConfigData) -> Dictionary:
 		"home_before": before, "home_after": after, "home_delta": after - before,
 		"down": int(l["down"]), "taken": int(l["taken"]),
 		"heat_delta": int(r.get("heat_delta", 0)), "schematics_delta": int(r.get("schematics_delta", 0)),
-		"threats_killed": int(r.get("threats_destroyed", 0)), "threats_total": int(r.get("threats_total", 0))}
+		"threats_killed": int(r.get("threats_destroyed", 0)), "threats_total": int(r.get("threats_total", 0)),
+		"nodes": node_outcomes(r.get("nodes", {})), "clean": bool(r.get("won", false))}
 
 
 ## IF PLACED in effect: what placing `asset_id` on `site` changes, `now` being the projection

@@ -176,7 +176,7 @@ func report_lines() -> PackedStringArray:
 	out.append("")
 	out.append(tr("ACTIVITY"))
 	out.append("  " + field(tr("netruns"), tr("%d   (%d operatives lost)") % [f.runs_started, f.deaths]))
-	out.append("  " + field(tr("raids"), tr("%d   (%d repelled, %d lost)") % [f.raids_won + f.raids_lost, f.raids_won, f.raids_lost]))
+	out.append("  " + field(tr("raids"), tr("%d   (%d clean, %d damaged)") % [f.raids_won + f.raids_lost, f.raids_won, f.raids_lost]))
 	out.append("  " + field(tr("exploits"), tr("%d / %d extracted") % [f.exploits_held, f.exploits_total]))
 	out.append("  " + field(tr("schematics"), tr("%d held") % f.schematics))
 	out.append("")

@@ -3,14 +3,15 @@ extends RefCounted
 ## ANIM-R4 H3 / RAID-FIX A1: a raid's one verdict, in the same words everywhere it is shown (the
 ## raid setup's and the interlude's forecast stamps, the playout's resolved stamp, the report, the
 ## forecast's tooltip). The words come from `RaidOutcome` (won / campaign_lost / breach) and
-## match what `RaidResolver.apply` does: REPELLED (+N Schematics), OVERRUN (+N Heat: the raid
-## is lost), BREACHED (Home fell). "CELL HOLDS" (GDD 7.2) is kept only for a REPELLED raid, as the
-## report's sticker. View words only; the raid is resolved by the core and read here.
+## match what `RaidResolver.apply` does (designer R2/R3, D27/D28): CELL HOLDS (Home survives) or
+## BREACHED (Home fell). The second line is the consequence: "+5 HEAT · +12 SCHEMATICS" for a
+## clean defense, "NO HEAT · HOME -10 · 1 TAKEN" for a damaged one. View words only; the raid is
+## resolved by the core and read here.
 
 const BREACHED := "BREACHED" # TR
 const CELL_HOLDS := "CELL HOLDS" # TR
-const REPELLED := "REPELLED" # TR
-const OVERRUN := "OVERRUN" # TR
+const NO_HEAT := "NO HEAT" # TR
+const CONSEQUENCE_SEP := " · "
 const SCHEMATICS_GAIN := "%s SCHEMATICS" # TR
 const HEAT_GAIN := "%s HEAT" # TR
 const HOME_LOSS := "HOME %s" # TR
@@ -20,21 +21,34 @@ const TAKEN := "%d TAKEN" # TR
 const TIER_ORANGE_MIX := 0.5
 
 
-## The verdict words for `verdict` (RaidOutcome.Verdict): translated, the word and (REPELLED /
-## OVERRUN) a second line with what the raid pays or costs.
-static func words(verdict: int, heat_delta: int, schematics_delta: int) -> String:
-	match verdict:
-		RaidOutcome.Verdict.BREACHED:
-			return TranslationServer.translate(BREACHED)
-		RaidOutcome.Verdict.REPELLED:
-			var word := TranslationServer.translate(REPELLED)
-			if schematics_delta > 0:
-				word += "\n" + TranslationServer.translate(SCHEMATICS_GAIN) % TextDb.signed(schematics_delta)
-			return word
-	var over := TranslationServer.translate(OVERRUN)
-	if heat_delta > 0:
-		over += "\n" + TranslationServer.translate(HEAT_GAIN) % TextDb.signed(heat_delta)
-	return over
+## The verdict words for `verdict` (RaidOutcome.Verdict): translated, the word and (CELL HOLDS) a
+## second line, the consequence. `loss` is `losses()` of the raid: with any Home loss or node DOWN /
+## TAKEN the raid is damaged ("NO HEAT · HOME -10 · 1 TAKEN"); without, a clean defense
+## ("+5 HEAT · +12 SCHEMATICS").
+static func words(verdict: int, heat_delta: int, schematics_delta: int, loss: Dictionary = {}) -> String:
+	if verdict == RaidOutcome.Verdict.BREACHED:
+		return TranslationServer.translate(BREACHED)
+	var word := TranslationServer.translate(CELL_HOLDS)
+	var parts := PackedStringArray()
+	var home := int(loss.get("home", 0))
+	var down := int(loss.get("down", 0))
+	var taken := int(loss.get("taken", 0))
+	if home + down + taken > 0:
+		parts.append(TranslationServer.translate(NO_HEAT))
+		if home > 0:
+			parts.append(TranslationServer.translate(HOME_LOSS) % TextDb.signed(-home))
+		if down > 0:
+			parts.append(TranslationServer.translate(DOWN) % down)
+		if taken > 0:
+			parts.append(TranslationServer.translate(TAKEN) % taken)
+	else:
+		if heat_delta > 0:
+			parts.append(TranslationServer.translate(HEAT_GAIN) % TextDb.signed(heat_delta))
+		if schematics_delta > 0:
+			parts.append(TranslationServer.translate(SCHEMATICS_GAIN) % TextDb.signed(schematics_delta))
+	if not parts.is_empty():
+		word += "\n" + CONSEQUENCE_SEP.join(parts)
+	return word
 
 
 ## The losses of a resolved raid (`RaidResult.to_dict`, campaign.last_raid, or a projection's
@@ -59,7 +73,7 @@ static func losses(r: Dictionary) -> Dictionary:
 
 ## The verdict of a resolved raid dictionary (`RaidResult.to_dict`, `campaign.last_raid`).
 static func of_result(r: Dictionary) -> String:
-	return words(RaidOutcome.verdict_of_dict(r), int(r.get("heat_delta", 0)), int(r.get("schematics_delta", 0)))
+	return words(RaidOutcome.verdict_of_dict(r), int(r.get("heat_delta", 0)), int(r.get("schematics_delta", 0)), losses(r))
 
 
 ## The verdict a projection forecasts (RaidResolver.RaidResult).
@@ -67,9 +81,9 @@ static func of_projection(p: RaidResolver.RaidResult) -> String:
 	return of_result(p.to_dict())
 
 
-## True when the raid is REPELLED.
+## True when the raid is a clean defense (Home undamaged, no node DOWN or TAKEN: it gains Heat and Schematics).
 static func clean(r: Dictionary) -> bool:
-	return RaidOutcome.verdict_of_dict(r) == RaidOutcome.Verdict.REPELLED
+	return bool(r.get("won", false)) and not bool(r.get("campaign_lost", false))
 
 
 ## `clean` for a projection.

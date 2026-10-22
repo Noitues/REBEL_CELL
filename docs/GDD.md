@@ -410,8 +410,14 @@ Each step:
 
 The raid ends when every threat is destroyed or has reached home, or after **30 steps**.
 Threats still on a node at the end leave it **TAKEN**. Damage reaching the home server reduces
-its integrity; **0 = BREACHED, campaign lost**. A survived raid ends **CELL HOLDS**; the summary shows DOWN/TAKEN nodes, repair costs
+its integrity; **0 = BREACHED, campaign lost**. While the home server survives the raid ends **CELL HOLDS**,
+whatever else was lost; the stamp's color shows how well (never green on damage). The summary shows DOWN/TAKEN nodes, repair costs
 and new entry points.
+
+**Heat (inverted, designer R2).** A **clean defense** (home undamaged, no node DOWN or TAKEN) gains
+**+5 Heat** and pays its Schematics. **Any damage** (home hit, or any node DOWN or TAKEN) gains **no Heat**
+and pays no Schematics. The stamp's second line is the consequence: "+5 HEAT · +12 SCHEMATICS" or
+"NO HEAT · HOME -10 · 1 TAKEN".
 
 ### 7.3 Armory & Persistence (locked)
 - Assets collected during a netrun bank to the **Armory** (max 6) on Server Rack capture
@@ -611,7 +617,7 @@ one-time netrun boost 10–20 · −7 Heat 25 (+5 per purchase) · class unlock 
 | Elite node | +1 |
 | Operative death | +10 + tier |
 | Burner trigger | +1 |
-| Lost raid | +5 |
+| Clean raid defense (no damage) | +5 (damage: none) |
 
 Sinks: Clean Signal −2 · Cold Exit −3 · Scrubber · Heat objective Sites (≈ −5 to −8) ·
 Proxy Relay −1/run · purchase −7.

@@ -5327,8 +5327,6 @@ func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 	var cfg := RunManager.config()
 	var out := RaidOutcome.project(projection, cfg)
 	var tier_col := RaidVerdict.tier_color_projection(projection, cfg)
-	if int(out["verdict"]) != RaidOutcome.Verdict.REPELLED and int(out["tier"]) == RaidOutcome.Tier.CLEAN:
-		tier_col = RaidVerdict.color_of_tier(RaidOutcome.Tier.AMBER)  # a lost raid is never the green of HOLDS
 	# RAID-FIX B1: the verdict word alone heads the chip (the cost is the outcome block below, so no
 	# verdict is wider than the chip); the outcome block never folds.
 	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection).get_slice(String.chr(10), 0), tier_col, RaidVerdict.icon_of(clean))
@@ -5358,7 +5356,7 @@ func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 		heat_l.mouse_filter = Control.MOUSE_FILTER_PASS
 	if int(out["schematics_delta"]) != 0:
 		var sch_l := chip.add_line("SchematicsForecast", tr(CHIP_SCHEMATICS) % TextDb.signed(int(out["schematics_delta"])), Palette.TERMINAL_TEXT)
-		sch_l.tooltip_text = UiTip.fold(tr("The Schematics a repelled raid pays."))
+		sch_l.tooltip_text = UiTip.fold(tr("The Schematics a clean defense pays."))
 		sch_l.mouse_filter = Control.MOUSE_FILTER_PASS
 	var infection := SolaceRaidRules.preview(projection, RunManager.config())
 	if bool(infection["applies"]):
@@ -6377,7 +6375,7 @@ func show_raid_summary() -> void:
 	var raid_key := StringName(String(r.get("raid_id", "")))
 	var raid: RaidData = RunManager.lookup().get_content(raid_key) as RaidData if RunManager.lookup().has(raid_key) else null
 	var raid_name := TextDb.t(raid, "display_name").to_upper() if raid != null else String(r.get("raid_id", "")).to_upper()
-	var held := bool(r.get("won", false))  # RAID-FIX A1: CELL HOLDS only for a REPELLED raid
+	var held := not bool(r.get("campaign_lost", false))  # D28: CELL HOLDS whenever Home survives
 	var number := skin.order_number(StringName(String(r.get("raid_id", ""))), c.heat)
 	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
 	report.name = "RaidReport"
