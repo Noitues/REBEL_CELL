@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="RcLookBitsConfig" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="RcLookBitsConfig" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_bits_config.gd" id="1"]
 [ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_bits_preset.gd" id="2"]
@@ -21,7 +21,7 @@ hot_color = Color(1, 1, 1, 1)
 spin_phase = true
 spin_turn = 6.28
 
-[sub_resource type="Resource" id="stream"]
+[sub_resource type="Resource" id="seam"]
 script = ExtResource("2")
 path = 1
 outline = 1
@@ -39,11 +39,31 @@ hot_color = Color(1, 1, 1, 1)
 spin_phase = false
 spin_turn = 6.28
 
+[sub_resource type="Resource" id="burst"]
+script = ExtResource("2")
+path = 0
+outline = 1
+life = 0
+hot_color = Color(0.9490196, 0.93333334, 0.89411765, 1)
+spin_phase = true
+spin_turn = 6.28
+
+[sub_resource type="Resource" id="stream"]
+script = ExtResource("2")
+path = 1
+outline = 1
+life = 1
+hot_color = Color(0.9490196, 0.93333334, 0.89411765, 1)
+spin_phase = true
+spin_turn = 6.28
+
 [resource]
 script = ExtResource("1")
 presets = {
+&"burst": SubResource("burst"),
 &"cpu": SubResource("cpu"),
 &"free": SubResource("free"),
+&"seam": SubResource("seam"),
 &"stream": SubResource("stream"),
 &"wheel": SubResource("wheel")
 }

@@ -24,6 +24,7 @@ const STAGES := {
 	"crt_reduce": "res://addons/rc_look/lab/stages/crt_reduce_stage.gd",
 	"bits": "res://addons/rc_look/lab/stages/bits_stage.gd",
 	"bits_rulings": "res://addons/rc_look/lab/stages/bits_rulings_stage.gd",
+	"bits_ruled": "res://addons/rc_look/lab/stages/bits_ruled_stage.gd",
 }
 ## The neutral set: a mid-grey ramp, darker at night (sRGB).
 const SET_DAY := [Color(0.42, 0.43, 0.46), Color(0.62, 0.63, 0.66)]

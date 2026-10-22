@@ -290,12 +290,13 @@ different path models; this module holds the shared math and numbers and shows t
 | `config/look_bits.tres` (`RcLookBitsConfig`, `RcLookBitsPreset`) | every constant of BitsPath / BinaryBits / BitsSeam and the `STREAM_*` / `SHARD_*` shares of `combat_fx_layer`; presets `wheel`, `free`, `stream`, `cpu` = today's looks. Timings stay in `ui_motion.tres` (`bits_flight`, stream and shard entries), `fx_shard_*` counts in campaign config |
 | lab: `--module=bits` | one plan through today's GPU shader, the module's shader, BinaryBits' CPU fallback and BitsSeam, at three fixed clocks (shares of `burst`'s last arrival); `--bits_probe=<json>` also writes the probe below |
 | lab: `--module=bits_rulings` | the rulings sheet: five A / B rows |
+| lab: `--module=bits_ruled` | the ruled presets, old next to new, dark and light, three fixed clocks; rows that should differ carry an orange bar, the control a grey one |
 
 **Probe results (2026-10-22).** Current vs module shader: largest pixel difference 0 at the three clocks. **Risk R7
 answered: the CUSTOM.z atlas frame channel does flip 0 / 1 on the GPU** (one stationary bit: frame 0 at clock 0.01 and
 0.02 differs by 8 anti-aliased edge pixels, frame 1 at 0.07 differs by 416).
 
-**Open rulings (the designer decides; the sheet shows each side by side).** Each is one field of a preset in `look_bits.tres`.
+**Rulings (designer, DIRECTION_REVIEW 2026-10-22; lab only, nothing migrates while the raid redesign is paused).** Ruled: (1) hot colour PAPER #F2EEE4 on every system; (2) NIGHT_SKY rim at 95 %; (3) by job: `burst` flips and tumbles, `stream` is a steady glyph with a trail copy; (4) per-bit spin phase, the CPU fallback matched to the GPU; (5) the turn stays 6.28. Presets `burst` (rim path) and `stream` (free path) are the ruled looks; `wheel`, `free`, `cpu` and `seam` (the old `stream`, renamed) stay as today's looks for the old-vs-new sheet. Each is one field of a preset in `look_bits.tres`. The questions as asked:
 1. Hot colour: WHITE_HOT (GPU bits, CPU fallback) or PAPER #F2EEE4 (BitsSeam, streams). Also stale: the hot default 0.1 s
    in BitsSeam / CardFx vs `bits_flight`'s 0.08 s.
 2. Outline: the atlas' same-colour outline or BitsSeam's NIGHT_SKY rim at 95 %.

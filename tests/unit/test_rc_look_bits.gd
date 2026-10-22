@@ -7,7 +7,8 @@ extends GutTest
 
 const BITS_FILES: Array[String] = ["res://addons/rc_look/scripts/rc_look_bits.gd",
 	"res://addons/rc_look/scripts/rc_look_bits_config.gd", "res://addons/rc_look/scripts/rc_look_bits_preset.gd",
-	"res://addons/rc_look/shaders/rc_bits.gdshaderinc", "res://addons/rc_look/lab/stages/bits_stage.gd"]
+	"res://addons/rc_look/shaders/rc_bits.gdshaderinc", "res://addons/rc_look/lab/stages/bits_stage.gd",
+	"res://addons/rc_look/lab/stages/bits_rulings_stage.gd", "res://addons/rc_look/lab/stages/bits_ruled_stage.gd", "res://addons/rc_look/lab/rc_look_bits_view.gd"]
 const SEEDS: Array[int] = [0, 1, 7, 1234567, -42, 9007199254740993]
 const FX_LAYER := "res://scripts/ui/kit/combat_fx_layer.gd"
 
@@ -24,7 +25,7 @@ func test_a_bad_config_is_reported() -> void:
 	cfg.spin_min = 5.0
 	cfg.spin_max = 2.0
 	cfg.cpu_max = 80
-	assert_eq(cfg.validate().size(), 4 + 3, "rim, spin, cpu_max, four missing presets: %s" % str(cfg.validate()))
+	assert_eq(cfg.validate().size(), 6 + 3, "rim, spin, cpu_max, six missing presets: %s" % str(cfg.validate()))
 
 
 func test_hash_is_kit_noise() -> void:
@@ -158,7 +159,7 @@ func test_presets_are_todays_looks() -> void:
 	var cpu := RcLookBits.preset(&"cpu")
 	assert_false(cpu.spin_phase, "the CPU fallback has no spin phase offset today")
 	assert_eq(cpu.hot_color, Palette.WHITE_HOT)
-	var stream := RcLookBits.preset(&"stream")
+	var stream := RcLookBits.preset(&"seam")
 	assert_eq(stream.hot_color, Palette.PAPER, "BitsSeam starts PAPER")
 	assert_eq(stream.outline, RcLookBitsPreset.Outline.NIGHT_RIM)
 	assert_eq(stream.life, RcLookBitsPreset.Life.TRAIL)
@@ -178,3 +179,19 @@ func test_no_global_randomness() -> void:
 func _g(v: float) -> String:
 	var s := str(v)
 	return s if s.contains(".") else s + ".0"
+
+
+## The designer's rulings (DIRECTION_REVIEW 2026-10-22): PAPER hot on every system, the NIGHT_SKY rim, a bursts preset that
+## flips and tumbles with the per-bit spin phase, a stream preset with a steady glyph and a trail copy, the turn 6.28.
+func test_ruled_presets() -> void:
+	for n: StringName in [&"burst", &"stream"]:
+		var p := RcLookBits.preset(n)
+		assert_eq(p.hot_color, Palette.PAPER, "%s starts PAPER" % n)
+		assert_eq(p.outline, RcLookBitsPreset.Outline.NIGHT_RIM, "%s has the NIGHT_SKY rim" % n)
+		assert_true(p.spin_phase, "%s: per-bit spin phase" % n)
+		assert_almost_eq(p.spin_turn, 6.28, 1e-9, "%s keeps 6.28" % n)
+	assert_eq(RcLookBits.preset(&"burst").life, RcLookBitsPreset.Life.FLIP_TUMBLE)
+	assert_eq(RcLookBits.preset(&"burst").path, RcLookBitsPreset.Path.RIM)
+	assert_eq(RcLookBits.preset(&"stream").life, RcLookBitsPreset.Life.TRAIL)
+	assert_eq(RcLookBits.preset(&"stream").path, RcLookBitsPreset.Path.FREE)
+	assert_eq(RcLookBits.default_config().rim_alpha, 0.95, "the rim at 95 %")

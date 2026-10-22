@@ -2,8 +2,8 @@ class_name RcLookBits
 extends RefCounted
 ## LOOK-TOOLBOX module 16: binary bits. The shader side is rc_bits.gdshaderinc; this is the exact GDScript mirror of
 ## BitsPath (plan, control point, Bezier, ease, flight time, flip phase, spin, arrivals) plus the presets
-## (config/look_bits.tres: "wheel" the GPU bits round a rim, "free" the same bowed sideways, "stream" the combat
-## streams' look, "cpu" the CPU fallback as it is today). Pure: no Node, no Settings, no RNG.
+## (config/look_bits.tres: today: "wheel" the GPU bits round a rim, "free" the same bowed sideways, "seam" the combat
+## streams' look, "cpu" the CPU fallback as it is today; ruled by the designer (DIRECTION_REVIEW, 2026-10-22): "burst" and "stream"). Pure: no Node, no Settings, no RNG.
 ##
 ## Determinism: every per-bit number comes from `h01`, the same portable integer hash as KitNoise (three ints in,
 ## 0..1 out), never the game's RNG, a global random call or Godot's built-in hash() (not portable between builds; BitPath still uses
@@ -11,7 +11,7 @@ extends RefCounted
 ## arithmetic shift; a port to another language must wrap at 64 bits and sign-extend the shift to match.
 
 const DEFAULT_PATH := "res://addons/rc_look/config/look_bits.tres"
-const REQUIRED: Array[StringName] = [&"wheel", &"free", &"stream", &"cpu"]
+const REQUIRED: Array[StringName] = [&"wheel", &"free", &"seam", &"cpu", &"burst", &"stream"]
 ## The hash's primes and shifts (KitNoise), and the 16 bits kept.
 const PRIME_A := 73856093
 const PRIME_B := 19349663
