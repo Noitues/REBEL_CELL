@@ -128,8 +128,11 @@ func test_the_loot_page_sits_on_the_won_site_and_ends_on_continue() -> void:
 	var covered := false
 	for c in scene._panel.find_children("*", "Control", true, false):
 		var ctl := c as Control
-		if ctl.is_visible_in_tree() and (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and NetrunScript.word_covered_by(word, ctl.get_global_rect()):
+		# The scene's own watch (ART-R2 7) leaves the word out for any UI the pencil meets (scrim pools, buttons, chips,
+		# sheets) or the safe margin, so the test asks the same predicates, not only scrims and buttons.
+		if ctl.is_visible_in_tree() and NetrunScript.word_blocked_by(word, ctl, scene.get_viewport_rect()):
 			covered = true
+	covered = covered or not NetrunScript.word_in_safe_margin(word, scene.get_viewport_rect())
 	assert_true(word.is_visible_in_tree() != covered, "OURS NOW written on over the won Site unless a panel would cover it")
 	assert_false(scene.site_dim.visible, "no event dim on the loot")
 	# Art director B5 fix 2: the district at about 62 % under the page, the pencil not dimmed.
