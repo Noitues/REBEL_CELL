@@ -124,6 +124,9 @@ const HEAT_FLAGGED := Color("#FF7A1A")
 ## vs dashed (what-if) strokes and the written word.
 const PENCIL_PLAN := Color("#FFE200")
 const PENCIL_THREAT := Color("#FF1C2C")
+## RAID-FIX C2: the enemy raid routes' own pencil hue (not the player's TARGET red, the lime network, cyan, pink or a corp
+## hue). One token: art-pass retunes it.
+const THREAT_ROUTE := Color("#3D6BFF")
 const PENCIL_SHADOW := Color(6.0 / 255.0, 3.0 / 255.0, 8.0 / 255.0, 0.85)
 ## The world Heat tint on maps (§2.2, §2.8).
 const HEAT_B := Color("#CE5412")
@@ -210,6 +213,7 @@ const PAIRED_WITH := {
 	&"SELECTED": "the ON / selected word beside the fill",
 	&"PENCIL_PLAN": "solid vs dashed stroke and the written word",
 	&"PENCIL_THREAT": "solid vs dashed stroke and the written word",
+	&"THREAT_ROUTE": "the arrowhead, the entry letter and the xN count tick",
 	&"RING_AVAILABLE": "the ring's state glyph and word",
 	&"RING_UNAVAILABLE": "the ring's state glyph and word",
 	&"RING_CUT": "the cut mark and the word CUT",

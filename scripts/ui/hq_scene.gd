@@ -39,6 +39,10 @@ const PROJECTION_FOLLOW := 0.3
 ## The forecast stamp's words (H22 #9): a caption over the verdict.
 ## A-076 A1: the chip's what-if lines.
 const CHIP_HOME := "HOME %d → %d (%s)" # TR
+const CHIP_DOWN := "%d DOWN" # TR
+const CHIP_TAKEN := "%d TAKEN" # TR
+const CHIP_HEAT := "HEAT %s" # TR
+const CHIP_SCHEMATICS := "SCHEMATICS %s" # TR
 const CHIP_INFECTED := "INFECTED %d%% → %d%%" # TR
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
@@ -597,6 +601,10 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 
 
 ## C9 (W3-RAID): the NO CREW line over START DEFENSE, and the confirm's words.
+## RAID-FIX B5: the warning's backing plate padding, and the clear gap above it (px at text 1.0; the focus
+## bracket stands 10 px outside the STATION line, so the gap is that plus 8).
+const WARN_PLATE_PAD := 4.0
+const WARN_PLATE_GAP := 8.0
 const NO_CREW_WARNING := "NO CREW STATIONED: %d alive, %d stationed. Nobody will help your nodes." # TR
 const CREW_COUNT := "Crew: %d (Stationed: %d)" # TR
 const NO_CREW_ASK := "No crew is stationed. Start the defense anyway?" # TR
@@ -613,7 +621,8 @@ func request_start_defense() -> void:
 		return
 	if _defense_confirm != null and is_instance_valid(_defense_confirm):
 		return
-	var d := ConfirmDialog.new(tr(NO_CREW_ASK), "START DEFENSE", "CANCEL", "NO CREW", tr(NO_CREW_BODY), false, "", "") # TR
+	var gain := best_station_words()  # RAID-FIX B4: what stationing would gain, from this screen
+	var d := ConfirmDialog.new(tr(NO_CREW_ASK), "START DEFENSE", "CANCEL", "NO CREW", tr(NO_CREW_BODY) + ("\n" + gain if gain != "" else ""), false, "", "") # TR
 	_defense_confirm = d
 	d.confirmed.connect(fight_raid)
 	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
@@ -2774,6 +2783,7 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 	hq_legend.name = "MapLegend"
 	hq_legend.always_fold = true
 	hq_legend.use_site_markers(not c.pending_raids.is_empty())
+	city_overlay.raid_lens = panel_name == "raid" or not c.pending_raids.is_empty()  # RAID-FIX C1: no player-target red during a raid
 	if panel_name == "raid":
 		# H23 S4: the raid setup's key lists what its map shows (the major nodes).
 		hq_legend.show_only(MapLegend.keys_of(graph, c.grid))
@@ -4195,6 +4205,11 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		card.holo.stamp_slot.visible = false  # W3-GRID (C4): no DECRYPTED on a Site that is not reachable yet
 	if launchable_here and site.id != c.grid.home_site_id:
 		card.add_row("FlatlineRow", tr(ROW_FLATLINE), flatline_words(site))
+		# RAID-FIX C4: a RAID tag when a flatline or the Site's own Heat would cross the next raid threshold.
+		var raid_at := raid_tag_at(site)
+		if raid_at > 0:
+			var raid_value := card.add_row("RaidTagRow", tr("RAID"), tr(FLATLINE_RAID) % raid_at)
+			raid_value.add_theme_color_override("font_color", Palette.HARM)
 	if why != "":
 		var note := card.add_line(why, Palette.TEXT_HI, UiTheme.BODY)
 		note.name = "WhyNot"
@@ -4444,7 +4459,17 @@ func flatline_words(site: SiteData) -> String:
 	return text
 
 
-const LOCK_BREACH := "LOCKED: the breach needs %d Exploits (you hold %d)." # TR
+## RAID-FIX C4: the raid threshold's Heat that a flatline on `site` or its own Heat change would cross (0: none), by
+## HeatRules' own forecast.
+func raid_tag_at(site: SiteData) -> int:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var flat := HeatRules.raid_crossed_by(c, HeatRules.death_heat(c, cfg, site.tier), cfg)
+	var run := HeatRules.raid_crossed_by(c, site.heat_change, cfg) if site.heat_change > 0 else 0
+	return maxi(flat, run)
+
+
+const LOCK_BREACH :="LOCKED: the breach needs %d Exploits (you hold %d)." # TR
 const LOCK_FROM := "LOCKED: clear %s first (ringed on the map)." # TR
 const LOCK_FAR := "LOCKED: clear the Sites between it and your network first." # TR
 
@@ -4502,6 +4527,11 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NETWORK).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
 			+ " " + UiTip.for_input(tr("Or drag it onto any of your nodes."), tr("Or pick it up and move it onto any of your nodes.")))
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
+		# RAID-FIX B3: before placing, the card says what placing it changes (also in the IF PLACED terminal).
+		var effect := asset_effect_words(i, selected_site)
+		if effect != "":
+			card.tooltip_text = UiTip.fold(tr("IF PLACED on %s: %s") % [site_name(selected_site), effect]) + "\n" + card.tooltip_text
+			card.set_meta(&"effect_words", effect)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
 		card.mouse_entered.connect(point_card.bind(index))
@@ -4515,6 +4545,33 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 		empty.name = "ArmoryEmpty"
 		empty.custom_minimum_size.x = HqLayout.CARD.x * 2.0
 		cards.add_child(empty)
+	# RAID-FIX B3: what placing the card pointed at (hovered or focused) changes, in words, beside the
+	# cards (the right column's IF PLACED terminal can be crowded out at Heat 75).
+	var plate := PanelContainer.new()
+	plate.name = "HandEffect"
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	plate.custom_minimum_size.x = HAND_EFFECT_W * Settings.text_scale
+	var box := UiTheme.box(HudSkin.TERMINAL_BG, PaletteSkins.chrome(Palette.NET_CYAN), 1, 8, 6)
+	plate.add_theme_stylebox_override("panel", box)
+	var words := Label.new()
+	words.name = "HandEffectWords"
+	words.add_theme_font_override("font", Palette.mono())
+	words.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	words.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+	words.autowrap_mode = TextServer.AUTOWRAP_WORD
+	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.add_child(words)
+	plate.visible = false
+	cards.add_child(plate)
+	_hand_effect = plate
+	_hand_effect_words = words
+
+
+## RAID-FIX B3: the hand's effect plate beside the cards, and its width (px at text 1.0).
+const HAND_EFFECT_W := 300.0
+var _hand_effect: Control = null
+var _hand_effect_words: Label = null
 
 
 ## HQ-B (c): the raid setup's card column: THREAT INTEL (the decrypted holo: each entry route,
@@ -4590,12 +4647,16 @@ func point_card(index: int) -> void:
 	show_if_placed(index)
 	if _if_placed_term != null and is_instance_valid(_if_placed_term):
 		_if_placed_term.visible = true
+	if _hand_effect != null and is_instance_valid(_hand_effect):
+		_hand_effect.visible = _hand_effect_words.text != ""
 
 
 ## B3: hides the IF PLACED terminal (the card left the pointer and the focus).
 func hide_if_placed() -> void:
 	if _if_placed_term != null and is_instance_valid(_if_placed_term):
 		_if_placed_term.visible = false
+	if _hand_effect != null and is_instance_valid(_hand_effect):
+		_hand_effect.visible = false
 
 
 ## Shows in the IF PLACED terminal what placing the Armory's defence at `index` on the target
@@ -4611,6 +4672,10 @@ func show_if_placed(index: int) -> void:
 	var lines: Array = []
 	if if_placed_index >= 0 and selected_site != &"" and c.grid.is_active_node(selected_site):
 		lines = if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
+	# RAID-FIX B3: the same change as one line beside the cards.
+	if _hand_effect_words != null and is_instance_valid(_hand_effect_words):
+		_hand_effect_words.text = ("%s: %s" % [lines[0], lines.back()]).replace("
+", " ") if lines.size() > 1 else ""
 	if lines.is_empty():
 		lines = [tr(IF_PLACED_HINT)]
 	for i in lines.size():
@@ -4979,6 +5044,18 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	var post := _station_crew_button()
 	if post != null:
 		verbs.add_child(post)
+		# RAID-FIX B3: what stationing changes, in words, before pressing it (also on the line's focus).
+		if post.has_meta(&"effect_words"):
+			var eff := Label.new()
+			eff.name = "StationEffect"
+			eff.text = tr(STATION_EFFECT) % String(post.get_meta(&"effect_words"))
+			eff.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			eff.add_theme_font_override("font", Palette.mono())
+			eff.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+			eff.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+			eff.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			UiWrap.whole_words(eff)
+			verbs.add_child(eff)
 	if CampaignRules.raid_crew_warning(RunManager.campaign):
 		# C9, ruling 4: nobody stationed: the warning stands over the sticker (the press then asks first).
 		var warn := Label.new()
@@ -4991,7 +5068,24 @@ func _defence_verb(slot: VBoxContainer) -> void:
 		warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		warn.set_meta(Fx.META_SAVED_AVOID, true)  # A-076 A2: the red warning wins: the SAVED toast keeps off it
 		UiWrap.whole_words(warn)
-		verbs.add_child(warn)
+		# RAID-FIX B5 (A-079): a CRT backing plate (TERMINAL_BG) so the red line reads over the city, and a
+		# gap under the focused STATION line's bracket (it stands outside the line).
+		var plate := PanelContainer.new()
+		plate.name = "NoCrewPlate"
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plate.size_flags_horizontal = Control.SIZE_FILL
+		var pbox := StyleBoxFlat.new()
+		pbox.bg_color = PaletteSkins.chrome(Palette.TERMINAL_BG)
+		pbox.set_content_margin_all(WARN_PLATE_PAD * Settings.text_scale)
+		plate.add_theme_stylebox_override("panel", pbox)
+		plate.add_child(warn)
+		var gap := MarginContainer.new()
+		gap.name = "NoCrewGap"
+		gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gap.size_flags_horizontal = Control.SIZE_FILL
+		gap.add_theme_constant_override(&"margin_top", roundi(WARN_PLATE_GAP * Settings.text_scale))
+		gap.add_child(plate)
+		verbs.add_child(gap)
 	verbs.add_child(run_btn)
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
 	strip.name = "SpeedStrip"
@@ -5020,6 +5114,10 @@ func _station_crew_button() -> Button:
 	b = _crt_line(tr(STATION_LINE) % who.name.to_upper(), func() -> void: station(oid, sid))
 	b.name = "StationCrew"
 	b.tooltip_text = UiTip.fold(tr("Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.") % [who.name, site_name(sid)])
+	var fx_words := String(station_effect(oid, sid)["words"])
+	if fx_words != "":
+		b.tooltip_text = UiTip.fold(tr(STATION_EFFECT) % fx_words + "\n" + tr("Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.") % [who.name, site_name(sid)])
+		b.set_meta(&"effect_words", fx_words)
 	return b
 
 
@@ -5207,14 +5305,42 @@ func _place_forecast_chip(page: Control, order: Control) -> void:
 ## colour; the tooltip says it is a projection. Named "Projection".
 func _forecast_chip(projection: RaidResolver.RaidResult) -> ForecastChip:
 	var clean := RaidVerdict.clean_projection(projection)
-	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var cfg := RunManager.config()
+	var out := RaidOutcome.project(projection, cfg)
+	var tier_col := RaidVerdict.tier_color_projection(projection, cfg)
+	if int(out["verdict"]) != RaidOutcome.Verdict.REPELLED and int(out["tier"]) == RaidOutcome.Tier.CLEAN:
+		tier_col = RaidVerdict.color_of_tier(RaidOutcome.Tier.AMBER)  # a lost raid is never the green of HOLDS
+	# RAID-FIX B1: the verdict word alone heads the chip (the cost is the outcome block below, so no
+	# verdict is wider than the chip); the outcome block never folds.
+	var chip := ForecastChip.new(FORECAST_CAPTION, raid_verdict(projection).get_slice(String.chr(10), 0), tier_col, RaidVerdict.icon_of(clean))
 	chip.tooltip_text = UiTip.fold(forecast_tip(projection))
 	# A-076 A1: the live what-if numbers (X -> Y) are the Cell's forecast, so they live on the chip, not the paper.
 	var lost_home := projection.home_after < projection.home_before
 	var home := chip.add_line("HomeForecast", tr(CHIP_HOME) % [projection.home_before, projection.home_after, TextDb.signed(projection.home_after - projection.home_before)],
-		Palette.HARM if lost_home else Palette.TERMINAL_TEXT)
+		(tier_col if int(out["tier"]) != RaidOutcome.Tier.CLEAN else Palette.WARN) if lost_home else Palette.TERMINAL_TEXT)
 	home.tooltip_text = UiTip.fold(tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
 	home.mouse_filter = Control.MOUSE_FILTER_PASS
+	# RAID-FIX B1: nodes DOWN / TAKEN, Heat and Schematics, always on the chip (the MORE fold of the
+	# work order hides flavour rows only, never these).
+	var down := int(out["down"])
+	var taken := int(out["taken"])
+	if down + taken > 0:
+		var parts := PackedStringArray()
+		if taken > 0:
+			parts.append(tr(CHIP_TAKEN) % taken)
+		if down > 0:
+			parts.append(tr(CHIP_DOWN) % down)
+		var nodes_l := chip.add_line("NodesForecast", " / ".join(parts), tier_col)
+		nodes_l.tooltip_text = UiTip.fold(tr("Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation)."))
+		nodes_l.mouse_filter = Control.MOUSE_FILTER_PASS
+	if int(out["heat_delta"]) != 0:
+		var heat_l := chip.add_line("HeatForecast", tr(CHIP_HEAT) % TextDb.signed(int(out["heat_delta"])), tier_col if int(out["heat_delta"]) > 0 else Palette.TERMINAL_TEXT)
+		heat_l.tooltip_text = UiTip.fold(tr("The Heat a lost raid adds."))
+		heat_l.mouse_filter = Control.MOUSE_FILTER_PASS
+	if int(out["schematics_delta"]) != 0:
+		var sch_l := chip.add_line("SchematicsForecast", tr(CHIP_SCHEMATICS) % TextDb.signed(int(out["schematics_delta"])), Palette.TERMINAL_TEXT)
+		sch_l.tooltip_text = UiTip.fold(tr("The Schematics a repelled raid pays."))
+		sch_l.mouse_filter = Control.MOUSE_FILTER_PASS
 	var infection := SolaceRaidRules.preview(projection, RunManager.config())
 	if bool(infection["applies"]):
 		var lost_at := int(infection["lost_step"])
@@ -5282,6 +5408,75 @@ func _raid_page_open() -> bool:
 	return panel_name == "raid"
 
 
+## RAID-FIX B3: the effect in words of placing the Armory's asset at `index` on `site_id` ("kills 1 of 2,
+## TAKEN > HOLDS"), from the rules on a copy (exact: preview equals result). Empty when it cannot be placed.
+func asset_effect_words(index: int, site_id: StringName) -> String:
+	var c := RunManager.campaign
+	var pending := RunManager.pending_raid()
+	if c == null or pending.is_empty() or site_id == &"" or not c.grid.is_active_node(site_id) or index < 0 or index >= c.armory.size():
+		return ""
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var copy := c.duplicate_state()
+	CampaignRules.deploy_asset(copy, cfg, lookup, index, site_id)
+	var now := RunManager.project_raid()
+	var then := CampaignRules.project_raid(copy, RunManager.corporation, cfg, lookup, pending)
+	return RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, site_id, c.armory[index]), outcome_word)
+
+
+## RAID-FIX B3/B4: the effect in words of stationing operative `op_id` on `site_id` (the same words as a
+## placed asset: "TAKEN > HOLDS, Home +9"); a dictionary {"words": String, "score": int} where score ranks
+## the gain (Home kept, nodes saved). Empty words when nothing changes or the post is refused.
+func station_effect(op_id: StringName, site_id: StringName) -> Dictionary:
+	var c := RunManager.campaign
+	var pending := RunManager.pending_raid()
+	var none := {"words": "", "score": -1}
+	if c == null or pending.is_empty() or site_id == &"" or not c.grid.is_active_node(site_id):
+		return none
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var copy := c.duplicate_state()
+	var ev := CampaignRules.station(copy, lookup, op_id, site_id)
+	if ev.is_empty() or String(ev[0].get("type", "")) != "stationed":
+		return none
+	var now := RunManager.project_raid()
+	var then := CampaignRules.project_raid(copy, RunManager.corporation, cfg, lookup, pending)
+	var d := RaidOutcome.if_placed(now, then, site_id, &"")
+	if not bool(d["changed"]):
+		return none
+	return {"words": RaidVerdict.if_placed_words(d, outcome_word), "score": int(d["home_gain"]) + int(d["nodes_saved"]) * 100 + int(d["kills"])}
+
+
+## RAID-FIX B4: the NO CREW confirm's line on what stationing would gain: the best post (ties by
+## Site id) for the picked operative, else the first living one. Empty when no post helps.
+func best_station_words() -> String:
+	var c := RunManager.campaign
+	if c == null:
+		return ""
+	var who := selected_op()
+	if who == null:
+		return ""
+	var ids: Array[StringName] = []
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id:
+			ids.append(id)
+	ids.sort()
+	var best_id: StringName = &""
+	var best := {"words": "", "score": -1}
+	for id in ids:
+		var e := station_effect(who.id, id)
+		if int(e["score"]) > int(best["score"]):
+			best = e
+			best_id = id
+	if String(best["words"]) == "":
+		return ""
+	return tr(STATION_GAIN) % [who.name.to_upper(), site_name(best_id).to_upper(), String(best["words"])]
+
+
+const STATION_GAIN := "Stationing %s on %s would change: %s." # TR
+const STATION_EFFECT := "STATION: %s" # TR
+
+
 ## ART-6 3A: the IF PLACED terminal's lines for carrying `payload` onto node `site_id`: the
 ## defence and the node, then what the forecast would change (that node's outcome, home's
 ## integrity), from the rules on a copy of the campaign (exact: preview equals result).
@@ -5309,6 +5504,8 @@ func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
 	if not a.is_empty() and not b.is_empty():
 		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
 	lines.append(tr("HOME SERVER %d > %d") % [now.home_after, then.home_after])
+	# RAID-FIX A3: the change in words of effect (RaidOutcome.if_placed).
+	lines.append(RaidVerdict.if_placed_words(RaidOutcome.if_placed(now, then, sid, StringName(String(payload.get("asset", "")))), outcome_word))
 	return lines
 
 
@@ -5377,6 +5574,24 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		var sub := holo.add_line("> " + " / ".join(rules) + "  //  " + site_name(StringName(String(g["entry"]))))
 		sub.name = "Route_%s" % g["letter"]
 		sub.reparent(words)
+		# RAID-FIX B2: HP and damage (and speed when over 1 step) of each kind of threat on the route.
+		var stat_parts := PackedStringArray()
+		var stats: Dictionary = g.get("stats", {})
+		var done := {}
+		for cid: StringName in g["threats"]:
+			if done.has(cid) or not stats.has(cid):
+				continue
+			done[cid] = true
+			stat_parts.append(threat_stats_words(stats[cid]))
+		if stat_parts.size() == 1:
+			# One kind on the route: its numbers ride on the threat's own line (no extra row to crowd the column).
+			head.text += "  " + stat_parts[0]
+		else:
+			var stat_l := holo.add_line(" | ".join(stat_parts), Palette.AUTO, UiTheme.CAPTION)
+			stat_l.name = "ThreatStats_%s" % g["letter"]
+			stat_l.reparent(words)
+			words.move_child(stat_l, 1)
+			stat_l.visible = page != 2
 		head.visible = page != 2
 		sub.visible = page != 1
 	if groups.size() > rows_max:
@@ -5393,6 +5608,18 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 	return holo
 
 
+## RAID-FIX B2: a threat's numbers, compact: "HP 12  DMG 5" and "  SPD 2" when it moves more than one step.
+const THREAT_STATS := "HP %d  DMG %d" # TR
+const THREAT_SPEED := "  SPD %d" # TR
+
+
+static func threat_stats_words(st: Dictionary) -> String:
+	var out := TranslationServer.translate(THREAT_STATS) % [int(st["hp"]), int(st["damage"])]
+	if int(st.get("speed", 1)) > 1:
+		out += TranslationServer.translate(THREAT_SPEED) % int(st["speed"])
+	return out
+
+
 ## THREAT INTEL shows its scanned threats strip up to this text scale.
 const INTEL_STRIP_SCALE_MAX := 1.0
 ## THREAT INTEL lists at most this many entry routes (A, B, C); the rest are a count.
@@ -5403,6 +5630,7 @@ const INTEL_ROWS_MAX := 3
 ## [{"letter", "entry", "threats": [content ids]}]. Ties by Site id (deterministic).
 static func raid_route_groups(projection: RaidResolver.RaidResult) -> Array[Dictionary]:
 	var by_entry := {}
+	var stats_by_entry := {}
 	var order: Array[StringName] = []
 	if projection == null:
 		return []
@@ -5412,11 +5640,15 @@ static func raid_route_groups(projection: RaidResolver.RaidResult) -> Array[Dict
 		var site := StringName(String(e.get("site", "")))
 		if not by_entry.has(site):
 			by_entry[site] = []
+			stats_by_entry[site] = {}
 			order.append(site)
-		(by_entry[site] as Array).append(StringName(String(e.get("threat_content", ""))))
+		var content := StringName(String(e.get("threat_content", "")))
+		(by_entry[site] as Array).append(content)
+		# RAID-FIX B2: the threat's real numbers at this raid (scaled by strength and Heat).
+		(stats_by_entry[site] as Dictionary)[content] = {"hp": int(e.get("integrity", 0)), "damage": int(e.get("damage", 0)), "speed": int(e.get("edges_per_step", 1))}
 	var out: Array[Dictionary] = []
 	for i in order.size():
-		out.append({"letter": RaidRouteMark.letter_of(i), "entry": order[i], "threats": by_entry[order[i]]})
+		out.append({"letter": RaidRouteMark.letter_of(i), "entry": order[i], "threats": by_entry[order[i]], "stats": stats_by_entry[order[i]]})
 	return out
 
 
@@ -5631,7 +5863,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
 	var verdict := RaidVerdict.of_result(r)
 	var clean := RaidVerdict.clean(r)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.tier_color_result(r, RunManager.config()), RaidVerdict.icon_of(clean))
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -6053,8 +6285,7 @@ const REPORT_OPERATION := "OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME:
 ## C9 (W3-RAID): the report's OUTCOME is the stamp's own word (RaidVerdict: CELL HOLDS, BREACHED,
 ## "1 DOWN, 1 TAKEN"), never the corp's FAILED / SUCCESS beside a CELL HOLDS stamp.
 static func report_outcome_words(result: Dictionary) -> String:
-	return RaidVerdict.of_result(result).replace("
-", ", ")
+	return RaidVerdict.of_result(result).replace(String.chr(10), ", ")
 const REPORT_INTACT := "%d / %d INTACT" # TR
 const REPORT_DAMAGED := "%d / %d" # TR
 const REPORT_SCHEMATICS := "%d SCHEMATICS" # TR
@@ -6105,12 +6336,15 @@ func show_raid_summary() -> void:
 	var raid_key := StringName(String(r.get("raid_id", "")))
 	var raid: RaidData = RunManager.lookup().get_content(raid_key) as RaidData if RunManager.lookup().has(raid_key) else null
 	var raid_name := TextDb.t(raid, "display_name").to_upper() if raid != null else String(r.get("raid_id", "")).to_upper()
-	var held := not bool(r.get("campaign_lost", false))
+	var held := bool(r.get("won", false))  # RAID-FIX A1: CELL HOLDS only for a REPELLED raid
 	var number := skin.order_number(StringName(String(r.get("raid_id", ""))), c.heat)
 	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
 	report.name = "RaidReport"
 	report.custom_minimum_size.x = REPORT_WIDTH * Settings.text_scale
 	report.set_sub(tr(REPORT_OPERATION) % [raid_name, report_outcome_words(r)])
+	# RAID-FIX B6: the verdict words on the paper take the raid's severity (the ink variant on paper).
+	var report_tier := RaidOutcome.tier_of_dict(r, RunManager.config())
+	report.sub_label.add_theme_color_override("font_color", Palette.GAIN_INK if report_tier == RaidOutcome.Tier.CLEAN else Palette.HARM_INK)
 	var side := VBoxContainer.new()
 	side.name = "ReportColumn"
 	side.add_theme_constant_override("separation", 10)
@@ -6933,6 +7167,7 @@ func _refresh_status() -> void:
 	# HQ-B (Q1): Heat is the gauge in the bar's first slot (the HEAT stat tag gave it its place);
 	# at the HQ it opens the Heat terminal (Scrub Heat).
 	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
+	hud.heat_gauge.raid_next = HeatRules.next_raid(c, cfg) if panel_name in HEAT_BUTTON_PAGES else {}  # RAID-FIX C4
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
 	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],

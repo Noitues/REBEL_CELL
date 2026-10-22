@@ -177,7 +177,7 @@ func _place_for_raid(c: CampaignState) -> void:
 		meta.append({"won": proj.won, "campaign_lost": proj.campaign_lost, "home_after": proj.home_after,
 			"threats_destroyed": proj.threats_destroyed, "down": proj.down.size(), "taken": proj.taken.size()})
 		options.append("%s: projected %s, home %d -> %d, threats destroyed %d, reached home %d, DOWN %s, TAKEN %s" % [
-			p["name"], "CELL HOLDS" if proj.won else ("BREACHED" if proj.campaign_lost else "lost"), proj.home_before, proj.home_after,
+			p["name"], RaidOutcome.Verdict.keys()[RaidOutcome.verdict_of_result(proj)], proj.home_before, proj.home_after,
 			proj.threats_destroyed, proj.threats_reached_home, ",".join(proj.down) if not proj.down.is_empty() else "none",
 			",".join(proj.taken) if not proj.taken.is_empty() else "none"])
 	var state := _campaign_state(c)

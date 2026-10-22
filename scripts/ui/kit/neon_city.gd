@@ -809,6 +809,8 @@ const MARK_FONT := 20
 const MARK_LIFT := 26.0
 const MARK_PAD := 6.0
 const MARK_FILL := 0.2
+## RAID-FIX B5 (A-079): the CLAIMED (CELL_TURF) mark's wash, about half.
+const MARK_FILL_CLAIMED := 0.1
 const MARK_HATCH := 9.0
 const MARK_HATCH_ALPHA := 0.5
 ## ANIM-R4 H11d: what a map keeps clear for its words (its node labels and icons, this city's
@@ -916,7 +918,7 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 			var halo_cfg: CityConfig = CityView3D.CONFIG
 			_marks_layer.draw_polyline(ring, Color(col, halo_cfg.map_node_halo_alpha), halo_cfg.map_node_halo_px * k, true)
 		elif rings:
-			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL))
+			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL_CLAIMED if col.is_equal_approx(Palette.CELL_TURF) else MARK_FILL))
 			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
 			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
 			_marks_layer.draw_polyline(ring, col, 3.0 * k, true)

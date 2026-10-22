@@ -144,6 +144,9 @@ func refresh() -> void:
 	if overlay == null or not is_instance_valid(overlay) or overlay.city == null:
 		_show(false)
 		return
+	if overlay.raid_lens:
+		_show(false)  # RAID-FIX C1: no player-target red during a raid
+		return
 	_boss = {}
 	for n: Dictionary in overlay.nodes:
 		if (n.has("marker") and n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER) or bool(n.get("target", false)):

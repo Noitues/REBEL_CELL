@@ -5354,7 +5354,7 @@ func _raid_forecast(projection: RaidResolver.RaidResult) -> Control:
 	row.add_theme_constant_override("separation", 10)
 	# ANIM-R4 H3: the one verdict (RaidVerdict), as the HQ's raid setup says it.
 	var clean := RaidVerdict.clean_projection(projection)
-	var stamp := ForecastStamp.new(RAID_FORECAST_CAPTION, RaidVerdict.of_projection(projection), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var stamp := ForecastStamp.new(RAID_FORECAST_CAPTION, RaidVerdict.of_projection(projection), RaidVerdict.tier_color_projection(projection, RunManager.config()), RaidVerdict.icon_of(clean))
 	stamp.name = "InterludeForecast"
 	stamp.custom_minimum_size = Vector2(RAID_STAMP, RAID_STAMP) * (1.0 + (Settings.text_scale - 1.0) * RAID_STAMP_FOLLOW)
 	row.add_child(stamp)

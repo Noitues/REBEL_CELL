@@ -317,6 +317,9 @@ const MARKER_WING := 0.9
 const MARKER_EDGE_WIDTH := 1.2
 ## v4 Site roof: fill alpha, keyline width (px), outline alpha and width (px), and the boss pad scale.
 const MARK_FILL_ALPHA := 0.22
+## RAID-FIX B5 (A-079): a CLAIMED Site's roof wash (CELL_TURF), about half the fill, so turf reads as a tint and
+## the focus lime stays the only solid lime.
+const MARK_FILL_ALPHA_CLAIMED := 0.11
 const MARK_KEY_WIDTH := 5.0
 const MARK_LINE_ALPHA := 0.8
 const MARK_LINE_WIDTH := 1.8
@@ -659,8 +662,22 @@ var target_hidden: bool = false:
 			return
 		target_hidden = v
 		if _target_mark != null and is_instance_valid(_target_mark):
-			_target_mark.visible = not v
-			_target_word.visible = not v
+			_target_mark.visible = not (v or raid_lens)
+			_target_word.visible = not (v or raid_lens)
+		queue_redraw()
+		_queue_tags()
+
+
+## RAID-FIX C1: true on the raid pages and at the HQ while a raid is pending: the boss's TARGET pencil
+## (circle and word) and the TARGET edge arrow hide, so no player-target red shares the map with the threats.
+var raid_lens: bool = false:
+	set(v):
+		if v == raid_lens:
+			return
+		raid_lens = v
+		if _target_mark != null and is_instance_valid(_target_mark):
+			_target_mark.visible = not (v or target_hidden)
+			_target_word.visible = not (v or target_hidden)
 		queue_redraw()
 		_queue_tags()
 
@@ -2082,7 +2099,7 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 		col = SiteMarker.greyed(col)
 	# NA-12 r2: a roof seen from far out (the whole-city zoom) can fold to a sliver the renderer cannot fill.
 	if not Geometry2D.triangulate_polygon(roof).is_empty():
-		_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA))
+		_c.draw_colored_polygon(roof, Color(col, MARK_FILL_ALPHA_CLAIMED if col.is_equal_approx(Palette.CELL_TURF) else MARK_FILL_ALPHA))
 	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, KEYLINE_ALPHA), MARK_KEY_WIDTH, true)
 	_c.draw_polyline(closed, Color(col, MARK_LINE_ALPHA), MARK_LINE_WIDTH, true)
 	if bool(spec.get("won", false)):
@@ -2415,8 +2432,8 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_word.text = tr_word("TARGET")
 		_target_word.ink = GreasePencilMark.Ink.THREAT
 		_pencil_root.add_child(_target_word)
-	_target_mark.visible = not target_hidden
-	_target_word.visible = not target_hidden
+	_target_mark.visible = not (target_hidden or raid_lens)
+	_target_word.visible = not (target_hidden or raid_lens)
 	_target_mark.clear()
 	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
 	_target_mark.position = at

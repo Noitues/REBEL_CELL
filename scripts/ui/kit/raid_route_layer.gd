@@ -17,6 +17,11 @@ const ENTRY_R := Vector2(30, 20)
 const ARROW_STOP := 1.9
 const LETTER_STEP := UiTheme.TITLE
 const LETTER_OFF := Vector2(34, -22)
+## RAID-FIX C2: the white-hot core's share of the stroke width; the count tick ("x2") on a segment several threats
+## share, and where it sits off the segment's middle (px).
+const CORE_SHARE := 0.34
+const COUNT_FORMAT := "x%d"
+const COUNT_OFF := Vector2(0, -18)
 
 var overlay: CityMapOverlay
 ## Solid routes: Arrays of Site ids (entry first).
@@ -118,7 +123,7 @@ func _exit_tree() -> void:
 ## Route `path`'s points (global px, through RaidMapAnchor): node to node along the streets,
 ## ending short of the last node (its arrow stops outside the node's circle); empty when off
 ## the map.
-func path_points(path: Array) -> PackedVector2Array:
+func path_points(path: Array, stop_short: bool = true) -> PackedVector2Array:
 	var pts := PackedVector2Array()
 	if overlay == null or path.size() < 2:
 		return pts
@@ -134,12 +139,62 @@ func path_points(path: Array) -> PackedVector2Array:
 		if end.x == INF:
 			return PackedVector2Array()
 		pts.append(end)
+	if not stop_short:
+		return pts
 	# Stop short of the target's circle.
 	var stop := CityMapOverlay.ICON_RADIUS_BIG * ARROW_STOP
 	var total := PencilShapes.length_of(pts)
 	if total > stop * 1.5:
 		pts = PencilShapes.trim(pts, 0.0, total - stop)
 	return pts
+
+
+## RAID-FIX C2: the routes with their shared segments drawn once. Returns {"runs": Array of
+## {"nodes": Array (Site ids), "arrow": bool (the run ends on its route's last node: it carries
+## the head)}, "ticks": Array of {"a", "b" (the stretch's first segment), "count"}}: a stretch of
+## segments that `count` >= 2 routes share gets one "xN" tick. Pure; ties follow the routes' order.
+static func merge_routes(paths: Array) -> Dictionary:
+	var counts := {}
+	for p in paths:
+		var seen := {}
+		for i in (p as Array).size() - 1:
+			var k := _seg_key(p[i], p[i + 1])
+			if not seen.has(k):
+				seen[k] = true
+				counts[k] = int(counts.get(k, 0)) + 1
+	var drawn := {}
+	var runs: Array[Dictionary] = []
+	var ticks: Array[Dictionary] = []
+	var tick_done := {}
+	for p in paths:
+		var arr: Array = p
+		var cur: Array = []
+		var prev_n := 0
+		for i in arr.size() - 1:
+			var k := _seg_key(arr[i], arr[i + 1])
+			var n := int(counts[k])
+			if n >= 2 and n != prev_n and not tick_done.has(k):
+				tick_done[k] = true
+				ticks.append({"a": arr[i], "b": arr[i + 1], "count": n})
+			prev_n = n if n >= 2 else 0
+			if drawn.has(k):
+				if not cur.is_empty():
+					runs.append({"nodes": cur, "arrow": false})
+					cur = []
+				continue
+			drawn[k] = true
+			if cur.is_empty():
+				cur = [arr[i]]
+			cur.append(arr[i + 1])
+		if not cur.is_empty():
+			runs.append({"nodes": cur, "arrow": cur[cur.size() - 1] == arr[arr.size() - 1]})
+	return {"runs": runs, "ticks": ticks}
+
+
+static func _seg_key(a: Variant, b: Variant) -> String:
+	var x := String(a)
+	var y := String(b)
+	return "%s>%s" % [x, y] if x <= y else "%s>%s" % [y, x]
 
 
 ## Lays the routes on 1B's grease pencil (RaidPencilPool): red arrows along the streets
@@ -169,19 +224,34 @@ func _lay() -> void:
 		return
 	_laid_sig = sig
 	_pool.begin()
-	var threat := GreasePencilMark.Ink.THREAT
+	var threat := GreasePencilMark.Ink.THREAT_ROUTE
 	var cues := RaidPencil.hostile_cues()
-	for i in routes.size():
-		var street := path_points(routes[i])
+	var merged := merge_routes(routes)
+	var runs: Array = merged["runs"]
+	for i in runs.size():
+		var run: Dictionary = runs[i]
+		var arrow := bool(run["arrow"])
+		var street := path_points(run["nodes"], arrow)
 		if street.size() < 2:
 			continue
 		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, GreasePencilMark.stroke_width() * 0.4, GreasePencilMark.stroke_width() * 3.0), street)
-		var strokes := PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
+		var strokes: Array[PackedVector2Array] = [hand]
+		if arrow:
+			strokes = PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
 		_pool.stroke("route_%d" % i, strokes, threat, write_u, wipe_u, false, 31 + i)
+		# C2: the white-hot core, a third of the width, centred on the cobalt stroke.
+		var core := _pool.stroke("core_%d" % i, strokes, GreasePencilMark.Ink.THREAT_CORE, write_u, wipe_u, false, 31 + i)
+		core.width_share = CORE_SHARE
 		if cues:
 			# M14 12Q-RAID: the colour-blind setting's barbed line (hostile by shape, RaidPencil).
 			var w := GreasePencilMark.stroke_width()
 			_pool.stroke("ticks_%d" % i, RaidPencil.hazard_ticks(hand, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, write_u, wipe_u, false, 131 + i)
+	var ticks: Array = merged["ticks"]
+	for i in ticks.size():
+		var seg := path_points([ticks[i]["a"], ticks[i]["b"]], false)
+		if seg.size() < 2:
+			continue
+		_pool.word("count_%d" % i, COUNT_FORMAT % int(ticks[i]["count"]), seg[seg.size() / 2] + COUNT_OFF, LETTER_STEP, threat, 1.0, clampf(write_u * 1.5, 0.0, 1.0), wipe_u, -0.08)
 	for i in what_if.size():
 		var street := path_points(what_if[i])
 		if street.size() >= 2:

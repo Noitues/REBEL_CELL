@@ -1,6 +1,10 @@
 keys,en
+"
+","
+"
     none today,    none today
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
+  SPD %d,  SPD %d
  %s Heat, %s Heat
  (INNER RING), (INNER RING)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
@@ -42,6 +46,7 @@ keys,en
 %d absorbed by block and shield,%d absorbed by block and shield
 %d cards,%d cards
 "%d damage parked at the phase line: it is lost, and the next phase starts after this turn","%d damage parked at the phase line: it is lost, and the next phase starts after this turn"
+%d fewer nodes lost,%d fewer nodes lost
 %d fps,%d fps
 %d held,%d held
 "%d held, earned in a campaign.","%d held, earned in a campaign."
@@ -91,16 +96,19 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s // %s %d OF %d,%s // %s %d OF %d
 %s // L%d,%s // L%d
 "%s // terminal log, unsigned","%s // terminal log, unsigned"
+%s > %s,%s > %s
 %s AT TURN START,%s AT TURN START
 %s BITES IT %d,%s BITES IT %d
 %s BITES YOU %d,%s BITES YOU %d
 %s DOWN,%s DOWN
+%s HEAT,%s HEAT
 %s Heat on entry,%s Heat on entry
 %s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
 "%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.","%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d."
 %s SANDBOX,%s SANDBOX
+%s SCHEMATICS,%s SCHEMATICS
 %s SECURITY,%s SECURITY
 %s Schematics,%s Schematics
 %s Site,%s Site
@@ -1089,6 +1097,7 @@ HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
 HOVER: SHOW ALL LINKS,HOVER: SHOW ALL LINKS
 HP,HP
+HP %d  DMG %d,HP %d  DMG %d
 HP %d → %d,HP %d → %d
 HP %d → 0: the hit takes the last HP,HP %d → 0: the hit takes the last HP
 HP %d/%d,HP %d/%d
@@ -1147,6 +1156,7 @@ HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 o
 HeatThresholdData.heat_80.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 "High contrast (opaque panels, 7:1 text and thick edges)","High contrast (opaque panels, 7:1 text and thick edges)"
+Home +%d,Home +%d
 Home server,Home server
 Home server integrity before and after the raid.,Home server integrity before and after the raid.
 Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.,Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.
@@ -1217,6 +1227,7 @@ ICE difficulty (0-%d):,ICE difficulty (0-%d):
 ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.,ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.
 IF CLEARED:,IF CLEARED:
 IF PLACED,IF PLACED
+IF PLACED on %s: %s,IF PLACED on %s: %s
 IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
 RUNS NOW:","IF THE RAID
@@ -1814,6 +1825,7 @@ No living operative or open Site: go to HQ.,No living operative or open Site: go
 No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
+Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation).,Nodes of your network the raid brings DOWN (offline until repaired) or TAKES (lost to the corporation).
 Not earned yet.,Not earned yet.
 Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
@@ -1856,6 +1868,7 @@ OUTER,OUTER
 OUTPUT DOWN,OUTPUT DOWN
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
+OVERRUN,OVERRUN
 OVERTHROW,OVERTHROW
 OVERVIEW,OVERVIEW
 OVERWRITTEN,OVERWRITTEN
@@ -2008,6 +2021,7 @@ RESULT:","RAID
 RESULT:"
 RAID %d,RAID %d
 RAID // %s,RAID // %s
+RAID AT %d (%d away),RAID AT %d (%d away)
 RAID AT HEAT %d,RAID AT HEAT %d
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID FORECAST,RAID FORECAST
@@ -2052,6 +2066,7 @@ REF HC-7718/CELL,REF HC-7718/CELL
 REMOVE,REMOVE
 REPAIR,REPAIR
 REPAIR %s: bring the DOWN node back online (%d Schematics).,REPAIR %s: bring the DOWN node back online (%d Schematics).
+REPELLED,REPELLED
 RES%s,RES%s
 RESIST,RESIST
 RESIST %d,RESIST %d
@@ -2279,6 +2294,7 @@ SPOTTED %d/2,SPOTTED %d/2
 STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
+STATION: %s,STATION: %s
 STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS
@@ -2544,6 +2560,7 @@ Starting Bug Card,Starting Bug Card
 Station %s,Station %s
 Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.,Station %s on %s: the class's station bonus helps it hold in raids. Pick another node on the map to post them elsewhere.
 Stationed on %s.,Stationed on %s.
+Stationing %s on %s would change: %s.,Stationing %s on %s would change: %s.
 Stats & achievements,Stats & achievements
 Statuses & precision,Statuses & precision
 Steam Deck,Steam Deck
@@ -3304,7 +3321,9 @@ The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every 
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The Eye moves to octant %d after this turn.,The Eye moves to octant %d after this turn.
 The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
+The Heat a lost raid adds.,The Heat a lost raid adds.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
+The Schematics a repelled raid pays.,The Schematics a repelled raid pays.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"
@@ -3555,6 +3574,7 @@ jack in from the HQ: each run you finish logs a line here,jack in from the HQ: e
 keep fighting [B],keep fighting [B]
 keep going [B],keep going [B]
 keep running [B],keep running [B]
+kills %d of %d,kills %d of %d
 lime=you red=target box=view,lime=you red=target box=view
 lo-fi loop: HQ,lo-fi loop: HQ
 load,load
@@ -3572,9 +3592,11 @@ netruns,netruns
 next,next
 next: pick one (numbered),next: pick one (numbered)
 no change,no change
+no change: %s,no change: %s
 no names. who ran this cell?,no names. who ran this cell?
 no power,no power
 no saved campaign yet,no saved campaign yet
+no threat comes this way,no threat comes this way
 none,none
 none (%d needed for the breach),none (%d needed for the breach)
 none left at large.,none left at large.
@@ -3630,6 +3652,8 @@ the Site's objective,the Site's objective
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
 the next %s campaign may start up to ICE %d.,the next %s campaign may start up to ICE %d.
+the threat is out of reach,the threat is out of reach
+the threat is too strong,the threat is too strong
 the top of the scale,the top of the scale
 then:,then:
 they walked away at heat %d. nobody walks away.,they walked away at heat %d. nobody walks away.
