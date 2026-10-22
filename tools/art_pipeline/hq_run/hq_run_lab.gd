@@ -204,6 +204,10 @@ func _process(delta: float) -> void:
 	_frame += 1
 	if not _try_spill.is_empty() and _city != null:
 		_city.set_spill(_try_spill)
+	if _backdrop != null and _backdrop.holding() and _frame < MAX_WAIT:
+		# LOOK-TOOLBOX lab only: the review shoots the live close-up, so it keeps the backdrop's F10 hold open past the game's
+		# backdrop_city_wait_s (a slow windowed build would otherwise give up to the baked still).
+		_backdrop._hold_s = 0.0
 	if _city == null and _backdrop != null:
 		_city = _backdrop.city
 	var ready := _city == null or (_city.model != null and not _city.is_processing())
@@ -226,6 +230,11 @@ func _process(delta: float) -> void:
 	if since < settle + perf:
 		return
 	var state := _states[_step]
+	if _backdrop != null and not _backdrop.on_city():
+		# LOOK-TOOLBOX: never save the backdrop's baked still as if it were the live city (a before / after would compare stills).
+		printerr("HQRUN %s FAILED: the backdrop never handed over to the live city (frame %d, MAX_WAIT %d)" % [state, _frame, MAX_WAIT])
+		get_tree().quit(1)
+		return
 	var out :=String(_args.get("out", "user://hq_run_lab"))
 	DirAccess.make_dir_recursive_absolute(out)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, state])
