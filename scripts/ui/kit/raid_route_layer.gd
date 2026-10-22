@@ -237,7 +237,8 @@ func _lay() -> void:
 		var street := path_points(run["nodes"], arrow)
 		if street.size() < 2:
 			continue
-		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, GreasePencilMark.stroke_width() * 0.4, GreasePencilMark.stroke_width() * 3.0), street)
+		# LOOK-TOOLBOX 12: a hand route (rounded corners with a run-on, the wobble) along the street
+		var hand := PencilShapes.hand_route(street, 31 + i, GreasePencilMark.stroke_width())
 		var strokes: Array[PackedVector2Array] = [hand]
 		if arrow:
 			strokes = PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)

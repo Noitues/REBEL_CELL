@@ -85,6 +85,8 @@ var _won_tween: Tween = null
 var city: CityView3D = null
 var shot: Dictionary = {}
 var _city_ready: bool = false
+## LOOK-TOOLBOX: the close-up's view cut (BackdropCatalog.view_cut; empty: none).
+var _cut: Dictionary = {}
 var _won_lights: SiteWonLights = null
 var _site_lots: Dictionary = {}
 var _ext_job: Dictionary = {}
@@ -413,6 +415,9 @@ func _use_city() -> void:
 	if city == null:
 		city = CityView3D.new()
 		city.name = "BackdropCity"
+		# LOOK-TOOLBOX (designer 2026-10-21): solid buildings at any close-up zoom; the see-through band is the
+		# raid / netrun route look only (bible 4.1), never the combat backdrop.
+		city.band_lock = CityLod.Band.GRID
 		city.set_iso(shot["camera"])
 		if shot["stage"] != &"":
 			city.stage_compound(shot["stage"])
@@ -508,8 +513,11 @@ func _frame_city() -> void:
 	if shot.has("subject") and cam.perspective():
 		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"])
 		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
+		_cut = cut
 	else:
 		city.set_view_cut(Callable())
+		_cut = {}
+	cut_landmarks(city, _cut, _keep_landmarks())
 	city.set_far_lod(far_keep(CityView3D.CONFIG, shot), 0.0)
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
@@ -597,7 +605,13 @@ static func render_px(sz: Vector2) -> Vector2i:
 func _light_city() -> void:
 	var cfg := CityView3D.CONFIG
 	city.set_night_share(0.0, BackdropCatalog.city_look(cfg, String(shot.get("focus", "hq"))))
-	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure)
+	apply_post(city.post_material(), cfg)
+	aim_key(city, cfg.backdrop_key_cam)
+	hide_features(city, cfg.backdrop_hide_features)
+	declutter(city, cfg, String(shot.get("focus", "")))
+	cut_landmarks(city, _cut, _keep_landmarks())
+	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure * (cfg.backdrop_site_exposure_gain if String(shot.get("focus", "")) == "site" else 1.0))
+	_mat.set_shader_parameter(&"city_white", cfg.backdrop_white)
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
 	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
 	_mat.set_shader_parameter(&"city_grade", _city_ready)
@@ -607,23 +621,107 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"neon", Palette.corp_color(place.get("corp", BackdropCatalog.DEFAULT_CORP)))
 	_mat.set_shader_parameter(&"window_gain", cfg_n.backdrop_site_window_gain)
 	_mat.set_shader_parameter(&"rim_gain", cfg_n.backdrop_site_rim_gain)
+	_mat.set_shader_parameter(&"subject_base", cfg_n.backdrop_site_subject_lift)
+	_mat.set_shader_parameter(&"pool_dim", cfg_n.backdrop_pool_dim)
+	_mat.set_shader_parameter(&"away_cap", cfg_n.backdrop_away_cap if String(shot.get("focus", "")) == "hq" else 1.0)
 	_mat.set_shader_parameter(&"street_gain", cfg_n.backdrop_site_street_gain)
 	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
 	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_site_focus_lift if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_lift)
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
 
 
-## The shader's city grade (`graded`) on `c`, the value the shader samples, for the tests and the contrast
-## checks: value V -> 1 - (1 - V)^exposure, hue kept, times the tint (`corp`'s from
-## backdrop_tint_by_corp), then the saturation.
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): hides the CITY-A2 feature parts named in `names` (children of
+## the view's `features`: "Roads", "Pillars" ...) in the close-up, so no raised deck cuts across the wheels' gap.
+## No-op before the features are built.
+static func hide_features(view: CityView3D, names: PackedStringArray) -> void:
+	if view.features == null:
+		return
+	for nm in names:
+		var part := view.features.get_node_or_null(NodePath(nm)) as Node3D
+		if part != null:
+			part.visible = false
+
+
+## LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): the close-up drops the whole-city dressing (the port's gantry
+## cranes outshone the Site) when backdrop_hide_dress.
+static func declutter(view: CityView3D, cfg: CityConfig, focus: String) -> void:
+	var dress := view.dress_node()
+	if dress != null and cfg.backdrop_hide_dress:
+		dress.visible = false
+
+
+## LOOK-TOOLBOX (designer 2026-10-21: the netrun rule, "hide or flatten every obstacle between the camera and the
+## subject", holds in combat): hides each placed landmark of `view` (corp HQs, the Site landmark, staged compounds)
+## that view cut `cut` says hides the subject (BackdropCatalog.occludes on its ground centre and roof), except the
+## keys in `keep`; shows the rest again. No cut: everything shows.
+static func cut_landmarks(view: CityView3D, cut: Dictionary, keep: Array) -> void:
+	for src: Dictionary in [view.landmarks, view.compounds]:
+		for key: Variant in src:
+			var node := src[key] as Node3D
+			if node == null:
+				continue
+			var hide := false
+			if not cut.is_empty() and not keep.has(key):
+				var b := world_box(node)
+				if b.size != Vector3.ZERO:
+					var c := b.get_center()
+					hide = BackdropCatalog.occludes(Vector2(c.x, c.z), b.end.y, cut)
+					for k in 4:
+						var p := b.get_endpoint(k * 2)
+						hide = hide or BackdropCatalog.occludes(Vector2(p.x, p.z), b.end.y, cut)
+			node.visible = not hide
+
+
+## The world box of every mesh under `node` (empty when it has none).
+static func world_box(node: Node3D) -> AABB:
+	var out := AABB()
+	var first := true
+	for n in node.find_children("*", "VisualInstance3D", true, false):
+		var vi := n as VisualInstance3D
+		var b := vi.global_transform * vi.get_aabb() if vi.is_inside_tree() else vi.get_aabb()
+		out = b if first else out.merge(b)
+		first = false
+	return out
+
+
+## The landmark keys the cut never hides: the subject's own (the staged Cell compound, the fought Site's landmark,
+## the HQ's corp on a boss fight).
+func _keep_landmarks() -> Array:
+	var keep: Array = [CityView3D.CELL] if String(shot.get("focus", "")) == "compound" else []
+	if shot.has("landmark"):
+		keep.append(CityView3D.SITE_KEY)
+	if String(shot.get("focus", "")) == "hq":
+		keep.append(place.get("corp", BackdropCatalog.DEFAULT_CORP))
+	return keep
+
+
+## LOOK-TOOLBOX: the close-up's key light from `key_cam` (camera frame: x right, y up, z toward the viewer) on every
+## directional light of `view` (its sun). No-op before the view has a camera.
+static func aim_key(view: CityView3D, key_cam: Vector3) -> void:
+	if view.camera == null or key_cam.is_zero_approx():
+		return
+	var to_light := (view.camera.global_transform.basis * key_cam).normalized()
+	for n in view.find_children("*", "DirectionalLight3D", true, false):
+		var l := n as DirectionalLight3D
+		var up := Vector3.UP if absf(to_light.dot(Vector3.UP)) < 0.99 else Vector3.FORWARD
+		l.global_transform = Transform3D(Basis.looking_at(-to_light, up), l.global_position)
+
+
+## LOOK-TOOLBOX: the close-up's own post preset (CityConfig.backdrop_post) on its view's post material `m` (no-op
+## when null: the scene is not built yet).
+static func apply_post(m: ShaderMaterial, cfg: CityConfig) -> void:
+	if m == null:
+		return
+	for k: String in cfg.backdrop_post:
+		m.set_shader_parameter(StringName(k), cfg.backdrop_post[k])
+
+
+## The shader's city grade (`graded`) on `c`, the sRGB value the shader samples, for the tests and the contrast
+## checks: rc_look's RcLookGrade.grade with CityConfig's backdrop_exposure, backdrop_white, the tint (`corp`'s from
+## backdrop_tint_by_corp) and backdrop_saturation.
 static func graded(cfg: CityConfig, c: Color, corp: StringName = &"") -> Color:
-	var v := maxf(c.r, maxf(c.g, c.b))
-	var k := (1.0 - pow(1.0 - clampf(v, 0.0, 1.0), cfg.backdrop_exposure)) / maxf(v, 0.0001)
-	var t: Color = cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint)
-	var g := Vector3(clampf(c.r * k * t.r, 0.0, 1.0), clampf(c.g * k * t.g, 0.0, 1.0), clampf(c.b * k * t.b, 0.0, 1.0))
-	var grey := g.dot(Vector3(0.2126, 0.7152, 0.0722))
-	var o := Vector3(grey, grey, grey).lerp(g, cfg.backdrop_saturation)
-	return Color(o.x, o.y, o.z, c.a)
+	return RcLookGrade.grade(c, cfg.backdrop_exposure, cfg.backdrop_white, cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint),
+			cfg.backdrop_saturation)
 
 
 ## 5d's fight-won lights on the run's Site (hidden until won).

@@ -86,3 +86,13 @@ func test_smears_hang_down_within_reach_and_are_deterministic() -> void:
 			assert_lt(absf(rel.cross(down)), 0.01, "seed %d: straight down" % s)
 			assert_gte(uv[q * 6 + 5].x, 0.0)
 	assert_gt(total, 0, "some shore lights reflect on these seeds")
+
+
+## LOOK-TOOLBOX (bay black holes, 2026-10-21): the seabed material lifts land above the sea at night (the bay islands),
+## so a dark island never clips to black under the map grade; by day (night 0) the lift is off.
+func test_seabed_lifts_island_land_at_night() -> void:
+	var m: ShaderMaterial = CityWater._bed_material(_cfg)
+	var lift: Variant = m.get_shader_parameter(&"land_night_lift")
+	assert_not_null(lift, "the seabed material carries land_night_lift from cfg.seabed_water")
+	assert_gt(float(lift), 0.0, "island land is lifted at night")
+	assert_true(m.shader.code.contains("land_night_lift * night"), "the lift scales with the night share (off by day)")

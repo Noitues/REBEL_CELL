@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="RcLookWetConfig" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_wet_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_wet_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="street"]
+script = ExtResource("2")
+noise_scale = 0.09
+octaves = 5
+rough_noise = Vector2(0.45, 0.6)
+rough_wet = Vector2(0.3, 0.03)
+f0_policy = 0
+specular = 0.7
+
+[sub_resource type="Resource" id="plinth"]
+script = ExtResource("2")
+noise_scale = 0.09
+octaves = 5
+rough_noise = Vector2(0.45, 0.6)
+rough_wet = Vector2(0.3, 0.03)
+f0_policy = 1
+specular = 0.7
+
+[sub_resource type="Resource" id="water"]
+script = ExtResource("2")
+octaves = 3
+rough_wet = Vector2(0.03, 0.03)
+f0_policy = 2
+ior = 1.33
+fresnel_boost = 0.2
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"plinth": SubResource("plinth"),
+&"street": SubResource("street"),
+&"water": SubResource("water")
+}

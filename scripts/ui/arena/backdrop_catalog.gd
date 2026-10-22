@@ -125,6 +125,18 @@ static func city_mode(cfg: CityConfig, tier: int, can_render: bool) -> bool:
 ## the HQ run's camera, closer). A regular fight frames the fought Site's own lot, looking from
 ## it toward the corp's HQ so the HQ stands in the back of the shot (site_shot); a Site without
 ## a lot falls back to the HQ. Pure apart from reading the landmark glTFs' boxes.
+## LOOK-TOOLBOX: the world box of a staged compound (manifest `m`'s footprint placed at `at`); empty without one. Pure.
+static func compound_box(m: Dictionary, at: Transform3D) -> AABB:
+	var fp: Dictionary = m.get("footprint", {})
+	if not fp.has("min") or not fp.has("max"):
+		return AABB()
+	var lo: Array = fp["min"]
+	var hi: Array = fp["max"]
+	var a := at * Vector3(float(lo[0]), float(lo[1]), float(lo[2]))
+	var b := at * Vector3(float(hi[0]), float(hi[1]), float(hi[2]))
+	return AABB(a.min(b), (b - a).abs())
+
+
 static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, size: Vector2) -> Dictionary:
 	var corp: StringName = p.get("corp", DEFAULT_CORP)
 	var site: StringName = p.get("site", &"")
@@ -134,7 +146,16 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 		var at := HqCompoundStage.place(cfg, corp, m)
 		var cam := HqCompoundStage.page_camera(cfg, m, at, size)  # B2 (D1): the canyon's own perspective street view
 		cam.ortho *= cfg.backdrop_canyon_share
-		return {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
+		# LOOK-TOOLBOX (art-pass 2026-10-21, ART_BIBLE 3.14): the Cell's canyon stays the run page's eye-level street
+		# view (not the corps' 30 degree close-up), tipped down just enough that its walls reach the top edge (no sky band).
+		cam.pitch_deg = cfg.backdrop_canyon_pitch_deg
+		var out := {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
+		# LOOK-TOOLBOX (designer 2026-10-21): the canyon is the subject, so the view cut clears what stands between
+		# the eye and it (the netrun occlusion rule, applied to combat).
+		var box := compound_box(m, at)
+		if box.size != Vector3.ZERO:
+			out["subject"] = box
+		return out
 	if not boss and site_lots.has(site):
 		return site_shot(cfg, corp, site, site_lots, size)
 	var hq := hq_lot(corp)
@@ -405,13 +426,7 @@ static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size
 ## The screen box (px) of world box `box`'s eight corners through camera `c` (Rect2() when a
 ## corner is behind the eye).
 static func projected_box(c: CityIsoCamera, box: AABB) -> Rect2:
-	var out := Rect2()
-	for k in 8:
-		var p := c.project(box.get_endpoint(k))
-		if not p.is_finite():
-			return Rect2()
-		out = Rect2(p, Vector2.ZERO) if k == 0 else out.expand(p)
-	return out
+	return RcLookOcclusion.screen_box(c.project, box)
 
 
 ## B2 (D1): refinement passes of a perspective fit.
@@ -424,41 +439,21 @@ const FIT_PASSES := 3
 ## CityConfig.backdrop_close_cut_margin), inside the wedge from the eye to the subject's sides
 ## (that margin wider), and taller than the sight line from the eye to the subject's height at
 ## backdrop_close_sight_share. Low roofs in front and the city to the sides stay (the concepts
-## look over rooftops at the landmark). {eye, fwd, right, front, lo, hi, pad, base_y} (world). Pure.
+## look over rooftops at the landmark). Anything nearer than the subject that covers it on screen goes too; its own
+## buildings stay. The rule is rc_look's RcLookOcclusion (read the record only through `occludes`). Pure.
 static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB) -> Dictionary:
-	var eye := c.eye()
-	var f := c.forward()
-	var fwd := Vector2(f.x, f.z).normalized()
-	var right := Vector2(-fwd.y, fwd.x)
-	var e2 := Vector2(eye.x, eye.z)
-	var front := INF
-	var lo := INF
-	var hi := -INF
-	for k in 8:
-		var p := box.get_endpoint(k)
-		var v := Vector2(p.x, p.z) - e2
-		var d := maxf(v.dot(fwd), 0.001)
-		front = minf(front, d)
-		lo = minf(lo, v.dot(right) / d)
-		hi = maxf(hi, v.dot(right) / d)
-	return {"eye": eye, "fwd": fwd, "right": right, "front": front - cfg.backdrop_close_cut_margin, "sub": front,
-		"lo": lo, "hi": hi, "pad": cfg.backdrop_close_cut_margin, "base_y": box.position.y + box.size.y * cfg.backdrop_close_sight_share}
+	# LOOK-TOOLBOX: the shared sight rule (RcLookOcclusion; designer 2026-10-21, the netrun occlusion rule in combat).
+	var cam := c.copy()
+	var cut := RcLookOcclusion.sight(cam.project, cam.eye(), cam.forward(), box, cfg.backdrop_close_cut_margin,
+			cfg.backdrop_close_sight_share, cfg.backdrop_close_cut_screen_pad, cfg.lot_bu * 0.5)
+	cut["cam"] = cam  # a Callable does not keep its RefCounted alive
+	return cut
 
 
 ## B2 (D1): whether a building at ground point `centre` (world X/Z) with its roof at `top` (BU)
 ## hides the subject of view cut `cut` (`view_cut`). Pure.
 static func occludes(centre: Vector2, top: float, cut: Dictionary) -> bool:
-	var eye: Vector3 = cut["eye"]
-	var v := centre - Vector2(eye.x, eye.z)
-	var d := v.dot(cut["fwd"])
-	if d <= 0.0 or d >= float(cut["front"]):
-		return false
-	var s := v.dot(cut["right"])
-	var pad := float(cut["pad"])
-	if s < float(cut["lo"]) * d - pad or s > float(cut["hi"]) * d + pad:
-		return false
-	var line := eye.y + (float(cut["base_y"]) - eye.y) * d / maxf(float(cut["sub"]), 0.001)
-	return top > line
+	return RcLookOcclusion.hides(cut, centre, top)
 
 
 ## Moves camera `c`'s target (its ortho, yaw and pitch kept) so world box `box`'s screen middle

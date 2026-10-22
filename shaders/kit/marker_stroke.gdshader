@@ -64,6 +64,18 @@ uniform float edge_grain = 0.0;
 uniform float edge_grain_alpha = 0.3;
 uniform float core_break = 0.0;
 uniform float grain_scale = 0.8;
+// LOOK-TOOLBOX 12 review (the kit's HIT IT: fat wax with a lighter core): white added at the stroke's middle,
+// fading out by `core_light_edge` of the half width (grain-broken); 0 = none.
+uniform float core_light = 0.0;
+const float CORE_LIGHT_EDGE = 0.62;
+// A word stroke's end (designer 2026-10-21): over its last `tail_px` (local px) of `stroke_len_px` the wax fades by up
+// to `tail_fade`, smoothly (designer 2026-10-21: fluid, never ragged); 0 = none (every mark but words).
+uniform float stroke_len_px = 1.0;
+uniform float tail_px = 0.0;
+uniform float tail_fade = 0.0;
+float tail_at(float along_px) {
+	return tail_px > 0.0 ? smoothstep(stroke_len_px - tail_px, stroke_len_px, along_px) : 0.0;
+}
 
 varying vec2 local_px;
 
@@ -184,6 +196,7 @@ void fragment() {
 			vec4 hs = dropout_hit(along_px * dropout_scale, dropout_pad);
 			hs.w = min(hs.w + dropout_shadow_extra, dropout_shadow_max);
 			a = mix(a, a * dropout_alpha, bite_at(hs, across, grain));
+			a *= 1.0 - tail_fade * tail_at(along_px);
 			COLOR = vec4(ink.rgb, a);
 		} else {
 			// bristles: bands across the stroke, each with its own dropouts along it
@@ -217,7 +230,10 @@ void fragment() {
 				a = mix(a, a * 0.45, brk);
 				lighten = brk * 0.25;
 			}
+			float tl = tail_at(along_px);
+			a *= 1.0 - tail_fade * tl;
 			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle) + vec3(lighten);
+			c += vec3(1.0, 0.97, 0.88) * core_light * (1.0 - smoothstep(0.0, CORE_LIGHT_EDGE, edge_d)) * (0.65 + 0.35 * grain);
 			// the wax's round body: lit along one side, shaded along the other, a sheen line
 			c *= 1.0 + 0.18 * (-across) - 0.06;
 			// the sheen: a line about 1 px wide at 35 % white along the lit side

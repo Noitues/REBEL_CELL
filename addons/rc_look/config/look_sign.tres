@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="RcLookSignConfig" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_sign_config.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_sign_preset.gd" id="2"]
+
+[sub_resource type="Resource" id="flat"]
+script = ExtResource("2")
+treatment = 0
+half_w_px = 4.0
+hot = 0.0
+
+[sub_resource type="Resource" id="lighten"]
+script = ExtResource("2")
+treatment = 1
+half_w_px = 4.0
+hot = 0.4
+core_color = Color(1, 1, 1, 1)
+core_tint = 0.15
+
+[sub_resource type="Resource" id="hot"]
+script = ExtResource("2")
+treatment = 2
+half_w_px = 4.0
+core_share = 0.35
+hot = 0.9
+core_color = Color(1, 1, 1, 1)
+core_tint = 0.15
+core_min_px = 1.0
+core_thin_px = 3.0
+core_thin_hot = 0.45
+
+[resource]
+script = ExtResource("1")
+presets = {
+&"flat": SubResource("flat"),
+&"hot": SubResource("hot"),
+&"lighten": SubResource("lighten")
+}
+burst_len = 0.14
+hum_hz = 4.0
+hum_floor = 0.6
+blink_duty = 0.35
+blink_off = 0.25

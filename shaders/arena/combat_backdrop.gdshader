@@ -6,6 +6,7 @@
 // effects); rc_common is included so the convention holds if a part ever moves.
 shader_type canvas_item;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_grade.gdshaderinc"
 
 // R = the target's silhouette, G = the target's own lights (same framing as the still).
 uniform sampler2D won_mask : filter_linear, hint_default_black;
@@ -35,16 +36,19 @@ uniform vec3 pool_d = vec3(0.0, 0.0, 0.0);
 uniform float pool_blur = 2.5;
 // Pool edge: exp(-(d / r) ^ pool_falloff).
 uniform float pool_falloff = 4.0;
+// LOOK-TOOLBOX (ART_BIBLE 3.14): the city behind a wheel stays low and dark: the pools dim it by this share.
+uniform float pool_dim : hint_range(0.0, 1.0) = 0.0;
 // The still's aspect (width / height), to keep pools round.
 uniform float aspect = 1.7777778;
 
-// Parity fix S-ARENA: the city close-up's canvas grade (CityConfig backdrop_exposure /
-// backdrop_tint), city only (the stills are the concept already), before the pools: the
-// value V (brightest channel) goes to 1 - (1 - V)^exposure, hue kept (no neon clips), then the
-// tint and the saturation (toward its grey; the concept's calmer rainy city). CombatBackdrop.graded
-// mirrors it for the tests.
+// The city close-up's canvas grade (CityConfig backdrop_exposure / backdrop_tint), city only (the stills are the
+// concept already), before the pools. The close-up's texture holds linear light: LOOK-TOOLBOX (2026-10-21) shows it
+// with the exact sRGB transfer after a linear exposure (it was 1 - (1 - V)^5, which lifted the night sky to a
+// day-bright band and flattened the facets' tones), then the tint and the saturation. The curve is rc_look's (rc_grade.gdshaderinc); CombatBackdrop.graded mirrors it.
 uniform bool city_grade = false;
 uniform float city_exposure = 1.0;
+// The highlight shoulder's white point (exposed linear light that lands on 1; 0: no shoulder, a plain clip).
+uniform float city_white = 0.0;
 uniform vec3 city_tint = vec3(1.0);
 uniform float city_saturation = 1.0;
 // S-ARENA round 2: the subject's focus (UV), its ellipse radius (share of the width), the blur
@@ -54,6 +58,9 @@ uniform float focus_radius = 0.24;
 uniform float focus_blur = 2.0;
 uniform float focus_dim = 0.0;
 uniform float focus_lift = 1.0;
+// LOOK-TOOLBOX (art-pass 2026-10-21): away from the subject nothing outshines it: luma over this cap is squeezed
+// to a quarter (1: off).
+uniform float away_cap = 1.0;
 // B2 (art director): the focus ellipse's axes (x = 1: focus_radius across; y: its height over
 // its width), so a tall Site block is lit as itself.
 uniform vec2 focus_axes = vec2(1.0, 1.0);
@@ -77,10 +84,7 @@ vec3 graded(vec3 c) {
 	if (!city_grade) {
 		return c;
 	}
-	float v = max(max(c.r, c.g), c.b);
-	float k = (1.0 - pow(1.0 - clamp(v, 0.0, 1.0), city_exposure)) / max(v, 0.0001);
-	vec3 g = clamp(c * k * city_tint, 0.0, 1.0);
-	return mix(vec3(dot(g, vec3(0.2126, 0.7152, 0.0722))), g, city_saturation);
+	return rcl_grade(c, city_exposure, city_white, city_tint, city_saturation);  // LOOK-TOOLBOX module 9
 }
 
 float pool_at(vec2 uv, vec3 p) {
@@ -116,7 +120,13 @@ void fragment() {
 		}
 		soft /= 9.0;
 		col = mix(col, soft, soften);
+		col *= 1.0 - pool_dim * pool;
 		col *= 1.0 - focus_dim * away;
+	}
+	if (away > 0.0 && away_cap < 1.0) {
+		float y = dot(col, vec3(0.2126, 0.7152, 0.0722));
+		float capped = y > away_cap ? away_cap + (y - away_cap) * 0.25 : y;
+		col *= mix(1.0, capped / max(y, 0.0001), away);
 	}
 	if (focus_dim > 0.0 && !subject_on) {
 		col = min(col * mix(focus_lift, 1.0, away), vec3(1.0));

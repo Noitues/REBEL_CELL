@@ -5,7 +5,7 @@ extends Control
 ## news toasts; never anything the Cell owns). The corp tint at about 78 %, 4 px scanlines,
 ## 3-4 slow bands (`holo_bands`, T0), a +-2 px RGB split on the edge only, a near-opaque
 ## scrim (0.88) behind it, the corp seal cracked with a red fracture and a DECRYPTED stamp in
-## its slot. `shaders/kit/decrypted_holo.gdshader`, glass under `content`, scanlines over.
+## its slot. `addons/rc_look/shaders/rc_holo.gdshader`, glass under `content`, scanlines over.
 ## Reduce effects: the bands hold still and the RGB split is off (§5.4). A view only.
 ##
 ## M14 B1c (integration review D17; round 21 `intel_decrypt.png`, round 44 `raid_setup.png`):
@@ -16,32 +16,18 @@ extends Control
 ## offset, a red fracture down the middle) under the DECRYPTED stamp, which is in the Cell's
 ## acid like the concepts' green stamp. Skins only swap the accent tokens.
 
-const SHADER := preload("res://shaders/kit/decrypted_holo.gdshader")
 const BANDS := &"holo_bands"
-## Look (§1.2): tint share, scanline period, edge split. B1c-b (art director): TINT_SHARE is
-## the tint's strength on the words and the edge (`ink`); the body is FILL_SHARE of the tint
-## over the dark 0.88 glass (round 21 `intel_decrypt`, round 44 `raid_setup`).
+## LOOK-TOOLBOX 15: the glass, scanlines, bands, edge split and cracked seal are `RcLookHolo` (addons/rc_look; every
+## number in look_holo.tres / look_quality.tres). TINT_SHARE is the tint's strength on the words (`ink`).
 const TINT_SHARE := 0.78
-const FILL_SHARE := 0.15
-const GLASS_ALPHA := 0.88
-const SCAN_PX := 4.0
-const SPLIT_PX := 2.0
-## B1c (D17): the scanlines' strength and the number of slow bands on the plate.
-const SCAN_STRENGTH := 0.12
-const BAND_COUNT := 3.0
-## B1c (D17): the local scrim right behind the plate (px round it; HOLO_SCRIM is 0.88).
+## B1c (D17): the room (px round the plate) the local backing and its neighbours keep.
 const BACKING_OUT := 4.0
-## B1c (ui21 `seal_overlay`): the cracked crest's halves offset (px at a 40 px seal radius,
-## left half then right half) and the fracture's points (shares of the seal's box, top to
-## bottom); the fracture's width.
-const CRACK_LEFT := Vector2(-3.0, 2.0)
-const CRACK_RIGHT := Vector2(1.0, -2.0)
-const FRACTURE := [Vector2(0.52, 0.0), Vector2(0.46, 0.3), Vector2(0.56, 0.55), Vector2(0.47, 0.8), Vector2(0.53, 1.0)]
-const FRACTURE_W := 2.5
 ## The crest's half size as a share of the seal radius (CorpSeal: the emblem inside the ring).
 const CREST_SHARE := 0.62
-## The seal's radius and the fracture's kinks; the stamp's tilt (deg).
+## The seal's radius; the stamp's tilt (deg).
 const SEAL_R := 30.0
+## The seal centre's x in the stamp slot, as a share of the seal radius.
+const SEAL_SLOT_X := 0.5
 const STAMP_TILT_DEG := -8.0
 const STAMP_WORD := "DECRYPTED"
 const STAMP_SLOT := Vector2(180, 48)
@@ -49,8 +35,6 @@ const STAMP_SLOT := Vector2(180, 48)
 ## the stamp shrinks to (px) to stay in its slot.
 const STAMP_BOX_PAD := Vector2(8, 2)
 const STAMP_MIN_PX := 10
-## The holo's edge (px; the shader's edge_px), doubled in high contrast (HighContrast.edge).
-const EDGE_PX := 1.5
 ## B1c: the stamp's ink (the Cell's acid, as the route holo's DECRYPTED chip) and its alpha.
 const STAMP_COLOR := Palette.CELL_ACID
 const STAMP_ALPHA := 0.9
@@ -98,6 +82,14 @@ const SEAL_LETTER_DROP: float = 0.32
 		if stamp_slot != null:
 			stamp_slot.queue_redraw()
 
+## LOOK-TOOLBOX 15: the look state the holo draws under (null: the live Settings). Tests and the lab set it.
+var state_override: RcLookQualityState = null:
+	set(v):
+		state_override = v
+		_sync()
+		for c in get_children(true):
+			if c is CanvasItem:
+				(c as CanvasItem).queue_redraw()
 ## BIG-TEXT: the text scale the stamp is lettered at (a panel built smaller to fit sets it); 0 = the player's.
 var text_k: float = 0.0
 ## BIG-TEXT: the stamp slot and the seal in it at this share of their size (a panel built smaller to fit).
@@ -113,12 +105,8 @@ var _scrim: ColorRect = null
 
 
 func _init() -> void:
-	_glass_mat = ShaderMaterial.new()
-	_glass_mat.shader = SHADER
-	_glass_mat.set_shader_parameter(&"mode", 0)
-	_over_mat = ShaderMaterial.new()
-	_over_mat.shader = SHADER
-	_over_mat.set_shader_parameter(&"mode", 1)
+	_glass_mat = RcLookHolo.material(RcLookHolo.GLASS)
+	_over_mat = RcLookHolo.material(RcLookHolo.OVER)
 	_scrim = ColorRect.new()
 	_scrim.color = Palette.HOLO_SCRIM
 	_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -128,7 +116,7 @@ func _init() -> void:
 	glass.name = "Glass"
 	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	glass.material = _glass_mat
-	glass.draw.connect(func() -> void: glass.draw_rect(Rect2(Vector2.ZERO, size).grow(SPLIT_PX + 2.0), Palette.NO_TINT))
+	glass.draw.connect(func() -> void: glass.draw_rect(Rect2(Vector2.ZERO, size).grow(RcLookHolo.bleed_px(_state())), Palette.NO_TINT))
 	add_child(glass, false, Node.INTERNAL_MODE_FRONT)
 	glass.set_anchors_preset(Control.PRESET_FULL_RECT)
 	content = Control.new()
@@ -167,71 +155,65 @@ func _layout() -> void:
 			(c as CanvasItem).queue_redraw()
 
 
+## The player's look state this panel draws under: the live Settings, or `state_override` (tests, labs).
+func _state() -> RcLookQualityState:
+	return state_override if state_override != null else RcLookQualityState.from_settings()
+
+
 func _sync() -> void:
 	if _glass_mat == null:
 		return
-	var live := Motion.live(BANDS)
-	var k := body_share(corp_color)
+	var st := _state()
 	# M14 12Q-ACCESS (L78): high contrast: opaque black glass with no tint, scanlines, bands or
-	# split, and a thick solid edge in the corp's colour (HighContrast).
-	var hc := HighContrast.on()
+	# split, and a thick solid edge in the corp's colour (RcLookHolo's quality rules + HighContrast).
+	var hc := st.high_contrast
+	var live := Motion.live(BANDS)
+	var over := {
+		&"band_seconds": maxf(Motion.seconds(BANDS), 0.1),
+		&"edge_px": maxf(RcLookHolo.config().edge_px * HighContrast.HC_EDGE_SCALE, float(HighContrast.HC_EDGE_MIN)) if hc else RcLookHolo.config().edge_px,
+	}
+	var entry := Motion.entry(BANDS)
+	if entry != null and not entry.enabled:
+		over[&"band_strength"] = 0.0  # the entry is switched off
+	if not live:
+		over[&"band_roll"] = 0.0  # held still: reduce effects / motion, headless, or the entry off
+	var tint := HighContrast.lift(corp_color) if hc else corp_color
+	var deep := HighContrast.BG if hc else Palette.NET_BG_OUTER
 	for m in [_glass_mat, _over_mat]:
-		var sm := m as ShaderMaterial
-		sm.set_shader_parameter(&"panel", Vector4(0, 0, size.x, size.y))
-		sm.set_shader_parameter(&"tint", HighContrast.lift(corp_color) if hc else corp_color)
-		sm.set_shader_parameter(&"deep", HighContrast.BG if hc else Palette.NET_BG_OUTER)
-		sm.set_shader_parameter(&"tint_share", TINT_SHARE)
-		sm.set_shader_parameter(&"fill_share", 0.0 if hc else FILL_SHARE * k)
-		sm.set_shader_parameter(&"glass_alpha", 1.0 if hc else GLASS_ALPHA)
-		sm.set_shader_parameter(&"scan_px", SCAN_PX)
-		sm.set_shader_parameter(&"scan_strength", 0.0 if hc else SCAN_STRENGTH * k)
-		sm.set_shader_parameter(&"band_count", BAND_COUNT)
-		sm.set_shader_parameter(&"split_px", SPLIT_PX if Fx.effects_enabled() and not hc else 0.0)
-		sm.set_shader_parameter(&"edge_px", HighContrast.edge(EDGE_PX))
-		sm.set_shader_parameter(&"band_seconds", maxf(Motion.seconds(BANDS), 0.1))
-		sm.set_shader_parameter(&"band_strength", 0.0 if hc else (Motion.amplitude(BANDS) if live or not Motion.animating() else 0.0))
+		RcLookHolo.apply(m as ShaderMaterial, size, tint, deep, st, body_share(corp_color), over)
 	queue_redraw()
 	if stamp_slot != null:
 		stamp_slot.queue_redraw()
 
 
-## B1c (D17): the local 0.88 scrim right behind the plate.
+## B1c (D17): the local backing right behind the plate; LOOK-TOOLBOX 15: its alpha is the quality rule's (the blurred
+## glass carries the legibility on mid and high; the low tier, with no blur, backs it harder).
 func _draw() -> void:
 	if backing:
-		draw_rect(Rect2(Vector2.ZERO, size).grow(BACKING_OUT), HighContrast.plate(Palette.HOLO_SCRIM))
+		var a := float(RcLookHolo.settings(_state())[&"backing_alpha"])
+		draw_rect(Rect2(Vector2.ZERO, size).grow(BACKING_OUT), HighContrast.plate(Color(Palette.HOLO_SCRIM, a)))
 
 
-## The seal's centre (stamp-slot local): under the stamp, the stamp's centre.
+## The seal's centre (stamp-slot local): at the stamp's left end, so the stamp lies over half of it and the cracked half
+## shows (LOOK-TOOLBOX 15: centred under the stamp it was hidden by the lettering).
 func seal_center() -> Vector2:
-	return stamp_slot.size * 0.5
+	return Vector2(SEAL_R * slot_k * SEAL_SLOT_X, stamp_slot.size.y * 0.5)
 
 
-## The seal under the stamp: a corp ring with its emblem (or letter), the emblem's halves
-## offset and a red fracture down the middle (ui21 `seal_overlay`).
+## The cracked seal under the stamp (RcLookHolo.draw_seal): a corp ring with its emblem (or letter), the emblem's halves
+## offset and a red fracture down the middle (ui21 `seal_overlay`), the ring cut where it crosses.
 func _draw_seal() -> void:
 	var c := seal_center()
+	var r := SEAL_R * slot_k
 	var ring := corp_color
-	ring.a = 0.8
-	stamp_slot.draw_arc(c, SEAL_R * slot_k, 0.0, TAU, 48, ring, 3.0, true)
-	stamp_slot.draw_arc(c, (SEAL_R - 6.0) * slot_k, 0.0, TAU, 48, ring, 1.0, true)
-	var half := SEAL_R * slot_k * CREST_SHARE
-	var k := SEAL_R * slot_k / 40.0
+	ring.a = RcLookHolo.config().seal_ring_alpha
 	var t := CorpSeal.emblem(corporation) if corporation != &"" else null
-	if t != null:
-		var ts := t.get_size()
-		var box := Rect2(c - Vector2(half, half), Vector2(half, half) * 2.0)
-		stamp_slot.draw_texture_rect_region(t, Rect2(box.position + CRACK_LEFT * k, Vector2(box.size.x * 0.5, box.size.y)), Rect2(Vector2.ZERO, Vector2(ts.x * 0.5, ts.y)), ring)
-		stamp_slot.draw_texture_rect_region(t, Rect2(box.position + Vector2(box.size.x * 0.5, 0.0) + CRACK_RIGHT * k, Vector2(box.size.x * 0.5, box.size.y)), Rect2(Vector2(ts.x * 0.5, 0.0), Vector2(ts.x * 0.5, ts.y)), ring)
-	else:
+	RcLookHolo.draw_seal(stamp_slot, c, r, corp_color, Palette.HARM, t)
+	if t == null:
 		var font := Palette.display()
 		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 		HighContrast.draw_text(stamp_slot, font, c + Vector2(-w.x * 0.5, w.y * SEAL_LETTER_DROP), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
-	# the red fracture down the middle, across the ring
-	var pts := PackedVector2Array()
-	for f: Vector2 in FRACTURE:
-		pts.append(c + (f - Vector2(0.5, 0.5)) * SEAL_R * slot_k * 2.0)
-	stamp_slot.draw_polyline(pts, Palette.HARM, FRACTURE_W, true)
 
 
 ## The DECRYPTED stamp over the cracked seal: Anton in a ruled box, tilted (a rubber stamp's
@@ -300,3 +282,9 @@ static func stamp_shadow_color() -> Color:
 ## bright text white (the full corp colour on the words; the body stays dark).
 static func ink(tint: Color) -> Color:
 	return Palette.TEXT_HI.lerp(tint, TINT_SHARE)
+
+
+## LOOK-TOOLBOX 15: how far the cracked seal reaches left of the stamp slot (px) at slot scale `k`, for a layout that
+## keeps its words clear of it.
+static func seal_reach(k: float) -> float:
+	return maxf(SEAL_R * k * (1.0 - SEAL_SLOT_X), 0.0)

@@ -4,8 +4,8 @@ extends Control
 ## round 3 combined_v2; ART_BIBLE v2 §1.2 "World": light spill from glowing elements): the UI's
 ## light and shade on the world under it. Panels cast a soft drop shadow onto the city
 ## (`shadow_alpha` black, `shadow_soft_px` soft, dropped by `shadow_offset_px`: the concepts'
-## panels sit *on* the world), and emissive UI elements (a neon sign, the pink verb sticker, the
-## TARGET pencil) cast an additive spill of `spill_strength` of their colour on the city round
+## panels sit *on* the world), and emissive UI elements (a neon sign, the pink verb sticker)
+## cast an additive spill of `spill_strength` of their colour on the city round
 ## them, out to `spill_radius_scale` x the element's radius. Numbers: `content/config/
 ## ui_scrim_look.tres` (UiScrimLook).
 ##
@@ -15,7 +15,7 @@ extends Control
 ##   UiSpillShadows.mark_spill(sticker, Palette.CELL_PINK) # spills its colour
 ##   scrim.spill.add_spill_source(rects_fn, colour)        # () -> Array of Rect2 / polylines
 ##                                                         # in the layer's canvas global px
-##                                                         # (a pencil stroke, a drawn word)
+## Grease pencil never spills (LOOK-TOOLBOX 12: wax on glass casts a crisp shadow, never a glow).
 ## A spill's strength follows its Control's own `modulate.a` (a sticker fading in spills as it
 ## shows). Two full-screen quads (shadows in multiply, spill additive), no screen read, uniforms
 ## set only when something moves; each hidden while it has nothing. City quality tier 0 drops both

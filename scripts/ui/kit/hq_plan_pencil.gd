@@ -1,9 +1,10 @@
 class_name HqPlanPencil
 extends Control
-## B4 (round 44 `hq_idle.png`, "the one plan"): the HQ idle's one true plan in yellow wax: an
+## B4 (round 44 `hq_idle.png`, "the one plan"): the HQ idle's one true plan in wax: an
 ## arrow along the real border link the run will use, from the network's owned end to the
 ## selected Site (JACK IN's link; the RUNNER tag on the crew's polaroid says who goes). It is
-## the kit's one wax (PencilSet: 9 px at 1080p, the under-shadow), written on in 0.4 s when it
+## the kit's one wax (PencilSet: the under-shadow), in the netrun plan's orange (PLAN_NETRUN,
+## art-pass ruling d: the plan pencil on the HQ page is orange), written on in 0.4 s when it
 ## first shows and wiped with the cloth when the plan goes (D25: a pencil never fades). It
 ## follows the camera each frame (the link's street route, as the map draws it) and stops short
 ## of the Site's marker so the head points at it. Nothing shows while there is no plan (a Cell
@@ -77,5 +78,5 @@ func refresh() -> void:
 	var pts := plan_points()
 	if pts.size() >= 2:
 		var k := size.y / REFERENCE_H if size.y > 0.0 else 1.0
-		pencil.stroke("plan", PencilShapes.arrow(pts, HEAD_PX * k, SEED), GreasePencilMark.Ink.PLAN, PencilSet.AUTO, 0.0, false, SEED)
+		pencil.stroke("plan", PencilShapes.arrow(PencilShapes.hand_route(pts, SEED, GreasePencilMark.stroke_width()), HEAD_PX * k, SEED), GreasePencilMark.Ink.PLAN_NETRUN, PencilSet.AUTO, 0.0, false, SEED)
 	pencil.end()

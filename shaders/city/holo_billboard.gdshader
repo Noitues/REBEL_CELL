@@ -30,10 +30,6 @@ float h11(float p) {
 	return fract(sin(p * 127.1) * 43758.5453);
 }
 
-float h21(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
 void vertex() {
 	vec3 o = MODEL_MATRIX[3].xyz;
 	vec3 back = INV_VIEW_MATRIX[2].xyz;

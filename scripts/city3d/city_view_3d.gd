@@ -40,6 +40,7 @@ signal model_ready
 
 const GLOW_LINE := preload("res://shaders/city/city_glow_line.gdshader")
 const CONFIG := preload("res://content/config/city_config.tres")
+const SOLACE_PARK_SHADER := preload("res://shaders/city/city_solace_park.gdshader")
 ## Render layers (bit numbers): 1 the world, 2 the ground-only pass under see-through.
 const WORLD_LAYER := 1
 const GROUND_LAYER := 2
@@ -287,6 +288,7 @@ func host_paused() -> bool:
 ## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
+	_solace_park_look()
 	if water != null:
 		water.set_night(night_share)
 	if _building_mat == null or day.is_empty():
@@ -310,6 +312,14 @@ func set_night_share(n: float, day: Dictionary) -> void:
 		for m in [_building_mat, _ground_mat, _lane_mat, _outer_mat]:
 			if m != null:
 				(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+	if _compound_aaa.is_empty():
+		_building_mat.set_shader_parameter(&"kit_dark", 1.0)
+		_building_mat.set_shader_parameter(&"kit_band_k", 1.0)
+		_building_mat.set_shader_parameter(&"hq_pool", Vector4())
+	if not _compound_aaa.is_empty() and cfg.hq_page_ramp.size() == 3:  # LOOK Solace HQ: charcoal facades (no mauve ramp)
+		for k in 3:
+			var hc: Color = cfg.hq_page_ramp[k]
+			_building_mat.set_shader_parameter(names[k], Vector3(hc.r, hc.g, hc.b))
 	# LOOK L5: the whole-city land shades smoothly (the plate's Cycles slopes), not in the Grid's hard toon bands.
 	if _ground_mat != null:
 		_ground_mat.set_shader_parameter(&"band_soft", cfg.whole_ground_band_soft if whole_look else 0.0)
@@ -366,7 +376,7 @@ func _whole_road_glow() -> void:
 	if _glow_line_mat == null:
 		_glow_line_mat = ShaderMaterial.new()
 		_glow_line_mat.shader = GLOW_LINE
-	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share)
+	_glow_line_mat.set_shader_parameter(&"gain", cfg.whole_road_glow_gain * night_share * (cfg.hq_page_road_glow_k if not _compound_aaa.is_empty() else 1.0))
 	_glow_line_mat.set_shader_parameter(&"tint", Vector3(cfg.whole_road_glow_tint.r, cfg.whole_road_glow_tint.g, cfg.whole_road_glow_tint.b))
 	rg.material_override = _glow_line_mat
 	rg.visible = night_share >= cfg.whole_road_glow_from
@@ -448,6 +458,7 @@ var _netrun_setup: bool = false
 ## mainline post fog patches (faded out; the FogVolume of `NetrunShaderKit` carries the netrun's fog).
 func set_look_blend(lb: float) -> void:
 	look_blend = 1.0 if not _compound_aaa.is_empty() else clampf(lb, 0.0, 1.0)  # an AAA-2 compound's page is held at 1
+	_solace_park_look()
 	if water != null:
 		water.set_look_blend(look_blend)
 	if _building_mat == null:
@@ -821,6 +832,27 @@ func _whole_building() -> void:
 	for c: Color in (cfg.whole_window_colors if whole_look else cfg.window_colors):
 		wc.append(Vector3(c.r, c.g, c.b))
 	_building_mat.set_shader_parameter(&"window_colors", wc)
+	if not _compound_aaa.is_empty():  # LOOK Solace HQ: the aaa2 page's city (see CityConfig.hq_page_building)
+		for k: String in cfg.hq_page_building:
+			_building_mat.set_shader_parameter(StringName(k), float(cfg.hq_page_building[k]))
+		for k: String in cfg.hq_page_building_colors:
+			var hc: Color = cfg.hq_page_building_colors[k]
+			_building_mat.set_shader_parameter(StringName(k), Vector3(hc.r, hc.g, hc.b))
+		var hw: Array[Vector3] = []
+		for c: Color in cfg.hq_page_window_colors:
+			hw.append(Vector3(c.r, c.g, c.b))
+		_building_mat.set_shader_parameter(&"window_colors", hw)
+		_building_mat.set_shader_parameter(&"kit_dark", cfg.hq_page_kit_dark)
+		_building_mat.set_shader_parameter(&"kit_band_k", cfg.hq_page_kit_band_k)
+		var fp := cfg.hq_page_pool_facade
+		var fc := cfg.hq_page_pool_color
+		_building_mat.set_shader_parameter(&"hq_pool", Vector4(_hq_pool_at.x, _hq_pool_at.y + fp.y, _hq_pool_at.z, fp.z))
+		_building_mat.set_shader_parameter(&"hq_pool_col", Vector3(fc.r, fc.g, fc.b) * fp.x)
+		var cf: Array[Vector3] = []
+		for c: Color in cfg.hq_page_concrete:
+			cf.append(Vector3(c.r, c.g, c.b))
+		if cf.size() == 6:
+			_building_mat.set_shader_parameter(&"concrete_fam", cf)
 	var sc: Array[Vector3] = []
 	for c: Color in cfg.whole_sign_colors:
 		sc.append(Vector3(c.r, c.g, c.b))
@@ -1013,7 +1045,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 	_post.set_shader_parameter("ortho", iso.ortho)
 	_post.set_shader_parameter("ink_alpha", cfg.ink_alpha_near if iso.ortho < cfg.car_far_above else cfg.ink_alpha_far)
 	_post.set_shader_parameter("fog_city", city)
-	_lane_mat.set_shader_parameter("lane_gain", lerpf(cfg.lane_glow_management, 1.0, city))
+	_lane_mat.set_shader_parameter("lane_gain", lerpf(cfg.lane_glow_management, 1.0, city) * (cfg.hq_page_lane_k if not _compound_aaa.is_empty() else 1.0))  # the aaa2 page: the highways barely read (plate)
 	_building_mat.set_shader_parameter("detail", CityLod.detail(cfg, iso.ortho))
 	for m in [_net_mat, _net_xray_mat]:
 		(m as ShaderMaterial).set_shader_parameter("bu_per_px", iso.bu_per_px())
@@ -1555,7 +1587,7 @@ func _build_chunk(key: Vector2i) -> void:
 	g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(g)
 	# LOOK L5: the chunk's park lots as lawn and tree clumps (CityParkKit, the Blender plate's parks).
-	var pm := CityParkKit.mesh(cfg, CityParkKit.parks_in(model.city_seed, r), model.terrain)
+	var pm := CityParkKit.mesh(cfg, CityParkKit.parks_in(model.city_seed, r), model.terrain, CitySolaceParkKit.lot_set(model.city_seed))
 	if pm != null:
 		var pk := MeshInstance3D.new()
 		pk.name = "Parks"
@@ -1746,6 +1778,17 @@ func set_ink_keep(px_rect: Rect2) -> void:
 		_post.set_shader_parameter(&"ink_keep_feather", cfg.far_ink_feather_share * float(size.y))
 
 
+## LOOK-TOOLBOX: this view's post material (city_post), for a caller that owns a preset of its own (the combat
+## backdrop's ink and grime: CityConfig.backdrop_post); null before the scene is built.
+## LOOK-TOOLBOX: the whole-city dressing's node (CityA2Dress: port, cranes, ships, helicopters), or null.
+func dress_node() -> Node3D:
+	return (_a2_hqs["~dress"] as Dictionary).get("node") as Node3D if _a2_hqs.has("~dress") else null
+
+
+func post_material() -> ShaderMaterial:
+	return _post
+
+
 ## The ink weight (0..1) the post pass gives view pixel `p` (CPU mirror of city_post's ink box).
 func ink_weight(p: Vector2) -> float:
 	if not ink_keep.has_area():
@@ -1834,6 +1877,54 @@ func place_landmarks() -> void:
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), ground_world(centre)), look)
 	_place_site_landmark()
 	_whole_cell_district()
+	_place_solace_park()
+
+
+## LOOK Solace park: the district's park drawn from the layout (CitySolaceParkKit) over the park lots, with its 3-tier plinth. The landmark
+## glb's own plinth node is switched off when this one stands (one plinth only).
+var solace_park_node: MeshInstance3D = null
+var _solace_park_mat: ShaderMaterial = null
+
+
+func _place_solace_park() -> void:
+	if solace_park_node != null or not cfg.solace_park_draw or model == null or not can_render():
+		return
+	var park := CitySolaceParkKit.data(city_seed)
+	var m := CitySolaceParkKit.mesh(cfg, park, model.terrain)
+	if m == null:
+		return
+	_solace_park_mat = ShaderMaterial.new()
+	_solace_park_mat.shader = SOLACE_PARK_SHADER
+	solace_park_node = MeshInstance3D.new()
+	solace_park_node.name = "SolacePark"
+	solace_park_node.mesh = m
+	solace_park_node.material_override = _solace_park_mat
+	solace_park_node.layers = 1 << (WORLD_LAYER - 1)
+	solace_park_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_to_layer(&"props", solace_park_node)
+	_solace_park_look()
+	if landmarks.has(&"solace"):
+		var plinth := (landmarks[&"solace"] as Node3D).find_child("solace_hq__plinth", true, false) as Node3D
+		if plinth != null:
+			plinth.scale = Vector3.ZERO
+
+
+func _solace_park_look() -> void:
+	if _solace_park_mat == null:
+		return
+	_solace_park_mat.set_shader_parameter(&"look_blend", look_blend)
+	_solace_park_mat.set_shader_parameter(&"night", night_share)
+	var aaa := not _compound_aaa.is_empty()
+	_solace_park_mat.set_shader_parameter(&"lit_k", cfg.hq_page_park_lit_k if aaa else 1.0)
+	_solace_park_mat.set_shader_parameter(&"lawn_k", cfg.hq_page_lawn_k if aaa else 1.0)
+	var on := not _compound_aaa.is_empty() and _hq_pool_at != Vector3.INF
+	var pr := 35.0
+	var pk := CitySolaceParkKit.data(city_seed)
+	if not pk.is_empty():
+		pr = float((pk["plinth"] as Dictionary).get("radius_bu", pr))
+	_solace_park_mat.set_shader_parameter(&"pool", Vector4(_hq_pool_at.x, _hq_pool_at.y + cfg.solace_plinth_top, _hq_pool_at.z, pr * cfg.hq_page_pool_plinth.y) if on else Vector4())
+	var pc := cfg.hq_page_pool_color
+	_solace_park_mat.set_shader_parameter(&"pool_col", Vector3(pc.r, pc.g, pc.b) * cfg.hq_page_pool_plinth.x if on else Vector3.ZERO)
 
 
 ## LOOK L5 (the designer): under the whole-city pose the Cell's blocks are the city's ordinary mix: the Cell's district
@@ -1869,7 +1960,7 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
 	var plinth := node.find_child("solace_hq__plinth", true, false) as Node3D
 	if plinth != null:  # LOOK Solace S2: exported switched off (scale 0); cfg.solace_plinth turns it on
-		plinth.scale = Vector3.ONE if cfg.solace_plinth else Vector3.ZERO
+		plinth.scale = Vector3.ONE if cfg.solace_plinth and (not cfg.solace_park_draw or CitySolaceParkKit.data(city_seed).is_empty()) else Vector3.ZERO  # the park kit draws the layout's plinth
 	if look_blend > 0.0:
 		NetrunShaderKit.dim_landmarks(landmark_mats, look_blend)
 	node.transform = at
@@ -2115,6 +2206,8 @@ static func _named_any(s: String, words: PackedStringArray) -> bool:
 ## Compounds staged with the AAA-2 look (LOOK Solace HQ): the page's look blend returns to 0 when they go.
 var _compound_aaa: Dictionary = {}
 var _compound_fog: Dictionary = {}
+## The aaa2 compound's origin (world; INF without one): the centre of the helix' green pool.
+var _hq_pool_at: Vector3 = Vector3.INF
 
 
 ## The compound key of `corp` in the cleared rects.
@@ -2198,8 +2291,11 @@ func _compound_look_on(corp: StringName, node: Node3D, at: Transform3D) -> void:
 	if not _compound_aaa.has(corp):
 		return
 	_aaa_exposure = NetrunShaderKitAaa.exposure_at(1.0) * HqSolaceMaterials.PAGE_EXPOSURE_K
+	_hq_pool_at = at.origin
 	whole_look = true  # the plates' city: the whole-city AAA-2 look (lit windows, haze, grade), no toon bands
+	_whole_building()  # (after the page's own overrides are in: `_compound_aaa` holds this corp)
 	set_look_blend(1.0)
+	_whole_building()  # again: the first look blend runs the netrun building setup (its concrete families, windows) over the page's
 	_compound_fog[corp] = HqSolaceMaterials.add_fog(node, _env, at, HqSolaceMaterials.unit_k(HqCompoundStage.manifest(corp)))
 
 
@@ -2209,6 +2305,7 @@ func unstage_compound(corp: StringName) -> void:
 		return
 	if _compound_aaa.has(corp):
 		_compound_aaa.erase(corp)
+		_hq_pool_at = Vector3.INF
 		whole_look = false
 		set_look_blend(0.0)
 		if is_instance_valid(_compound_fog.get(corp)):

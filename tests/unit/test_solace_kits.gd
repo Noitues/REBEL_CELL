@@ -85,9 +85,10 @@ func test_bundles_are_small_and_neighbouring_bundles_differ() -> void:
 	for b: Vector2i in by_bundle:
 		total += int(by_bundle[b])
 	var mean := float(total) / by_bundle.size()
-	# A-070 (Solace district layout): blocks are 2-3 lots a side with a lawn gap, so a bundle (a lattice cell about 3 lots
-	# across) holds one to a few blocks, not 3-8 lots.
-	assert_between(mean, 1.0, 8.0, "a bundle is small (mean %.2f buildings)" % mean)
+	# A-070 (Solace district layout): blocks are 2-3 lots a side on a ring round the park, about 24-31 a district; the bundle lattice
+	# (pitch 15 lots, retuned for them) makes bundles of 3-8 blocks on average (measured over seeds 1, 7, 42, 2026: 92 % of the
+	# blocks sit in bundles of 3-8).
+	assert_between(mean, 3.0, 8.0, "a bundle holds 3-8 blocks (mean %.2f buildings)" % mean)
 	var checked := 0
 	var near: Array[Vector2i] = []
 	for p: Vector2i in cells:

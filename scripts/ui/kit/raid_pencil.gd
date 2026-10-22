@@ -62,14 +62,6 @@ static func noise(seed: int, i: float) -> float:
 	return (v - floorf(v)) * 2.0 - 1.0
 
 
-## A smooth wobble in [-1, 1] along a stroke (`t` in samples).
-static func wobble(seed: int, t: float) -> float:
-	var a := floorf(t / 3.0)
-	var f := t / 3.0 - a
-	f = f * f * (3.0 - 2.0 * f)
-	return lerpf(noise(seed, a), noise(seed, a + 1.0), f)
-
-
 ## The total length of polyline `pts`.
 static func length_of(pts: PackedVector2Array) -> float:
 	var total := 0.0
@@ -101,23 +93,6 @@ static func trimmed(pts: PackedVector2Array, from_u: float, to_u: float) -> Pack
 		if out.is_empty():
 			out.append(p0)
 		out.append(p1)
-	return out
-
-
-## `pts` resampled every `step` px and wobbled sideways by up to `amp` px (deterministic).
-static func roughen(pts: PackedVector2Array, seed: int, amp: float, step: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	if pts.size() < 2 or step <= 0.0:
-		return pts
-	var total := length_of(pts)
-	if total <= 0.0 or not is_finite(total):
-		return pts
-	var n := clampi(ceili(total / step), 1, 2048)
-	for k in n + 1:
-		var u := float(k) / n
-		var p := _at(pts, u * total)
-		var dir := _dir_at(pts, u * total)
-		out.append(p + dir.orthogonal() * wobble(seed, k) * amp)
 	return out
 
 

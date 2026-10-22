@@ -7,6 +7,7 @@
 // them). Static: nothing here animates (no TIME); reduce effects leaves it as it is.
 shader_type canvas_item;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
 
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap;
 // The soft copy's Gaussian sigma (px of this view).
@@ -25,9 +26,8 @@ uniform vec2 vignette_scale = vec2(1.3, 1.1);
 uniform float gain = 0.86;
 // TITLE-01b: the backdrop's own grade (CityBackdropLook.grade_*; the city's shared grade is
 // untouched): col * grade_gain + grade_lift * (1 + haze_out_of_focus * (1 - band)), before the
-// darkening, after a saturation step (mix from the Rec. 709 luma). Plain vec3 (no source_color),
+// darkening, after a saturation step (rc_look's rcl_saturate, around the Rec. 709 luma). Plain vec3 (no source_color),
 // so CityBackdropLook.shown is the same maths.
-const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 uniform float grade_saturation = 1.0;
 uniform vec3 grade_gain = vec3(1.0);
 uniform vec3 grade_lift = vec3(0.0);
@@ -73,7 +73,7 @@ void fragment() {
 	float band = pow(clamp(1.0 - abs(uv.y - focus_centre) / max(focus_half, 0.0001), 0.0, 1.0), focus_power);
 	vec3 col = mix(soft, sharp, band);
 	col += light_keep * (1.0 - band) * max(brightest - vec3(light_threshold), vec3(0.0));
-	col = mix(vec3(dot(col, LUMA)), col, grade_saturation);
+	col = rcl_saturate(col, grade_saturation);
 	col = col * grade_gain + grade_lift * (1.0 + haze_out_of_focus * (1.0 - band));
 	float side = pow(clamp(1.0 - uv.x / max(side_reach, 0.0001), 0.0, 1.0), side_power);
 	float foot = clamp((uv.y - foot_from) / max(1.0 - foot_from, 0.0001), 0.0, 1.0);

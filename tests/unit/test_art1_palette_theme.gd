@@ -193,9 +193,11 @@ func test_faces_courier_prime_ships_with_its_licence_and_marker_is_pencil_only()
 	assert_true(Palette.FONTS_MSDF, "MSDF on (§2.9)")
 	assert_ne(Palette.paper_bold(), Palette.paper())
 	assert_eq(Palette.marker(), Palette.display(), "the Cell's lettering is the sticker face, Anton")
-	assert_string_contains((Palette.pencil() as FontFile).get_font_name(), "Permanent Marker", "pencil only")
+	# LOOK-TOOLBOX 12: grease pencil is the project's own RC Wax; Permanent Marker is the auditor's hand only.
+	assert_string_contains((Palette.pencil() as FontFile).get_font_name(), "RC Wax", "pencil only")
+	assert_string_contains((Palette.hand() as FontFile).get_font_name(), "Permanent Marker", "the auditor's hand")
 	var readme := FileAccess.get_file_as_string("res://assets/fonts/README.md")
-	for word in ["Anton", "Share Tech Mono", "IBM Plex Sans Condensed", "Courier Prime", "Permanent Marker"]:
+	for word in ["Anton", "Share Tech Mono", "IBM Plex Sans Condensed", "Courier Prime", "Permanent Marker", "RC Wax"]:
 		assert_string_contains(readme, word, "README row for %s" % word)
 
 

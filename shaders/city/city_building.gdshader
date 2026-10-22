@@ -13,11 +13,21 @@ render_mode cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK-TOOLBOX module 11 (designer DIRECTION_REVIEW f4678fca, b727956a): each neon tube's hot core, rcl_neon_hot. Values =
+// addons/rc_look/config/look_sign.tres "hot" (pinned by test_rc_look_sign).
+uniform float neon_hot = 0.90;
+uniform float neon_core_share = 0.35;
+uniform float neon_core_min_px = 1.00;
+uniform float neon_core_tint = 0.15;
+uniform vec3 neon_core_col = vec3(1.0);
+uniform float neon_core_thin_px = 3.00;
+uniform float neon_core_thin_hot = 0.45;
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
 uniform vec3 ramp_lit;
-uniform vec2 ramp_edges = vec2(0.147, 0.393);
+uniform vec2 ramp_edges = vec2(0.118, 0.363);
 uniform float tone_min = 0.86;
 uniform float tone_max = 1.12;
 uniform float roof_gain = 1.08;
@@ -44,7 +54,7 @@ uniform float trim_px_min = 1.5;
 // canyons; 1.0 = off).
 uniform float foot_dark = 1.0;
 uniform float foot_h_bu = 12.0;
-uniform float neon_gain = 1.0;
+uniform float neon_gain = 1.2;
 uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
 // 0 city, 1 raid, 2 transit (CityLod.Detail).
@@ -69,7 +79,7 @@ uniform float pbr_spec_k = 1.0;
 // `wet_rough_noise` -> `wet_rough` at `wet_noise_scale`, spec `wet_spec`; the base colour is (plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue).
 uniform float wet_noise_scale = 0.09;
 uniform vec2 wet_rough_noise = vec2(0.45, 0.6);
-uniform vec2 wet_rough = vec2(0.32, 0.03);
+uniform vec2 wet_rough = vec2(0.3, 0.03);
 uniform float wet_spec = 0.7;
 // (rough, metal, spec) of this fragment for light().
 varying vec3 v_pbr;
@@ -202,6 +212,10 @@ uniform float kit_glass_emit = 0.5;
 uniform float kit_nucleus_emit = 1.1;
 uniform float kit_clinic_emit = 0.6;
 uniform float kit_porcelain_glow = 0.12;
+uniform vec4 hq_pool = vec4(0.0);      // LOOK Solace HQ (aaa2 page): the helix' soft green wash on the nearest facades: xyz centre (world), w radius (BU)
+uniform vec3 hq_pool_col = vec3(0.0);   // its colour times gain (0 = off)
+uniform float kit_band_k = 1.0;  // aaa2 page: the kit bands' emission factor
+uniform float kit_dark = 1.0;  // LOOK Solace HQ (aaa2 page only): the kits' albedo factor, so dark bodies carry their lit stripes
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -285,6 +299,7 @@ void fragment() {
 	bool persp = PROJECTION_MATRIX[3][3] < 0.5;
 	NORMAL = n;
 	ROUGHNESS = 1.0;
+	float neon_px = max(length(dFdx(v_world)), length(dFdy(v_world)));  // one pixel in BU (the neon cores)
 	// INSTANCE_CUSTOM.w = crest + 2 * bits (NetrunInstancePack): cut 9, ghost 5, edge 3, dissolve 5 bits. Decoded here, not
 	// in vertex(): touching the vertex stage moves a few ink-edge pixels of the old page (parity at look_blend 0).
 	int iw = int(floor(v_inst.w + 0.5));
@@ -413,19 +428,21 @@ void fragment() {
 			float bh = hash1(vec3(bi, seed * 31.0, 5.0));
 			if (bf < kit_band.y && bh >= kit_band.w) {
 				vec3 bc = hash1(vec3(bi, seed * 17.0, 9.0)) < kit_band.z ? kit_pink : kit_lime;
-				em = bc * kit_emit * (0.85 + 0.3 * hash1(vec3(bi, seed, 3.0)));
+				em = bc * kit_emit * kit_band_k * (0.85 + 0.3 * hash1(vec3(bi, seed, 3.0)));
 				kb = bc * 0.3;
 			}
 			base = kb * tone;
 		} else if (kit == 2) {
-			base = kit_lime * 0.5 * tone;
-			em = kit_lime * kit_emit * kit_glass_emit * (0.8 + 0.4 * tone * tone);
+			// LOOK Solace cells: dark green glass, shaded, a lime rim light (the concept's cells), not a flat lime blob.
+			float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 2.2);
+			base = kit_leaf * 0.2 * tone;
+			em = kit_lime * kit_emit * kit_glass_emit * (0.10 + 1.1 * rim) * (0.85 + 0.3 * tone);
 		} else if (kit == 3) {
-			base = kit_pink * 0.45 * tone;
-			em = kit_pink * kit_emit * kit_nucleus_emit;
+			base = kit_pink * 0.18 * tone;
+			em = kit_pink * kit_emit * kit_nucleus_emit * 0.7;
 		} else if (kit == 4) {
 			base = kit_porcelain * tone;
-			em = kit_porcelain * kit_porcelain_glow * kit_emit;
+			em = kit_porcelain * kit_porcelain_glow * kit_emit * kit_dark;
 		} else if (kit == 5) {
 			float cp = max(kit_clinic_band.x, 0.1);
 			float cf = fract(zl / cp + seed * 5.0);
@@ -434,7 +451,7 @@ void fragment() {
 				em = kit_leaf * kit_emit * kit_clinic_emit;
 			} else {
 				base = kit_porcelain * tone;
-				em = kit_porcelain * kit_porcelain_glow * kit_emit;
+				em = kit_porcelain * kit_porcelain_glow * kit_emit * kit_dark;
 			}
 		} else if (kit == 6) {
 			base = kit_dome * tone;
@@ -445,6 +462,7 @@ void fragment() {
 		} else {
 			base = kit_terrace * tone;
 		}
+		base *= kit_dark;
 	} else if (!roof) {
 		if (ghosted && v_occ.z > 0.0) {
 			float eL = length(v_edge);
@@ -519,7 +537,7 @@ void fragment() {
 				float a0 = 0.2 + hash1(vec3(hs * 71.0, seed, 2.0)) * (L - sign_w - 0.4);
 				if (sa > a0 && sa < a0 + sign_w && z > sign_z0 * v_h && z < sign_z1 * v_h) {
 					vec3 sgc = sign_colors[int(hash1(vec3(hs * 13.0, seed * 7.0, 9.0)) * 4.0) % 4];
-					em = sgc * sign_emit * look_blend;
+					em = rcl_neon_hot(sgc, abs(sa - (a0 + sign_w * 0.5)), sign_w * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot) * sign_emit * look_blend;
 					base = sgc * 0.2;
 				}
 			}
@@ -540,9 +558,10 @@ void fragment() {
 		// Neon roof trim in the building's ink: the rim of the roof fan.
 		float dist = (1.0 - v_rim) * v_half * v_inst.x;
 		float px = fwidth(v_rim) * v_half * v_inst.x;
-		if (dist < max(trim_bu, px * trim_px_min)) {
+		float tw = max(trim_bu, px * trim_px_min);
+		if (dist < tw) {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
-			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
+			em = rcl_neon_hot(ink_colors[ii], abs(dist - tw * 0.5), tw * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot) * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
 		}
 	}
@@ -557,16 +576,22 @@ void fragment() {
 		if (edge_emit > 0.0 && hash1(vec3(seed * 137.3, 9.0, 4.0)) < edge_share) {
 			vec3 ec = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
 			bool on_edge = false;
+			float ed = 0.0;
+			float eh = edge_bu * 0.5;
 			if (roof) {
 				float rd = (1.0 - v_rim) * v_half * v_inst.x;
 				float rpx = fwidth(v_rim) * v_half * v_inst.x;
-				on_edge = rd < max(edge_bu, rpx * 1.5);
+				float ew = max(edge_bu, rpx * 1.5);
+				on_edge = rd < ew;
+				eh = ew * 0.5;
+				ed = abs(rd - eh);
 			} else {
 				on_edge = (v_h - zl) < edge_bu;
+				ed = abs((v_h - zl) - eh);
 			}
 			if (on_edge) {
 				float eb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
-				em += ec * edge_emit * eb;
+				em += rcl_neon_hot(ec, ed, eh, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot) * edge_emit * eb;
 				base = mix(base, ec * 0.3, eb);
 			}
 		}
@@ -577,7 +602,7 @@ void fragment() {
 		if (zl >= b0 && bz < band_bu && zl < v_h - 0.5) {
 			vec3 bc = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
 			float bb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
-			em += bc * band_emit * bb;
+			em += rcl_neon_hot(bc, abs(bz - band_bu * 0.5), band_bu * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint, neon_core_thin_px, neon_core_thin_hot) * band_emit * bb;
 			base = mix(base, bc * 0.3, bb);
 		}
 	}
@@ -606,6 +631,10 @@ void fragment() {
 	}
 	if (!roof && foot_dark < 1.0) {
 		base *= mix(foot_dark, 1.0, smoothstep(0.0, foot_h_bu, zl));
+	}
+	if (hq_pool.w > 0.0) {
+		float pf = clamp(1.0 - length(v_world - hq_pool.xyz) / hq_pool.w, 0.0, 1.0);
+		em += hq_pool_col * pf * pf * look_blend;
 	}
 	ALBEDO = base;
 	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);

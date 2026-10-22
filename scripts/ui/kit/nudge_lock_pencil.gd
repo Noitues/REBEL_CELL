@@ -136,7 +136,7 @@ static func mark_bounds(strokes: Array[PackedVector2Array]) -> Rect2:
 				first = false
 			else:
 				box = box.expand(p)
-	return box.grow(GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW)
+	return box.grow(GreasePencilMark.base_width() * 0.5 + GreasePencilMark.SHADOW_GROW)
 
 
 ## `strokes` brought inside `frame` shrunk by FIT_SAFE_MARGIN: on each axis the overflow is taken
@@ -146,7 +146,7 @@ static func mark_bounds(strokes: Array[PackedVector2Array]) -> Rect2:
 static func clamp_into(strokes: Array[PackedVector2Array], frame: Rect2) -> Array[PackedVector2Array]:
 	if strokes.is_empty():
 		return strokes
-	var pad := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_GROW
+	var pad := GreasePencilMark.base_width() * 0.5 + GreasePencilMark.SHADOW_GROW
 	var box := mark_bounds(strokes).grow(-pad)  # the points' own bounds: the wax's width is not squashed
 	var safe := frame.grow(-(FIT_SAFE_MARGIN + pad))
 	var scale := Vector2.ONE

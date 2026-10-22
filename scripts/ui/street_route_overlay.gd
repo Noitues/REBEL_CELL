@@ -680,7 +680,7 @@ func _lay_target() -> void:
 	if _share > 0.0 and _stick_px.has(tid):
 		var c: Vector2 = _stick_px[tid] - origin
 		var rr := sticker_radius() * TARGET_SHARE
-		_pencil.circle("target_loop", c, Vector2(rr, rr * TARGET_SQUASH), GreasePencilMark.Ink.THREAT, LOOP_SEED)
+		_pencil.circle("target_loop", c, Vector2(rr, rr * TARGET_SQUASH), GreasePencilMark.Ink.THREAT, LOOP_SEED, PencilSet.AUTO, true)
 		var wk := maxf(kk, 0.5)
 		var wsz := PencilSet.word_size(tword, TARGET_FONT) * wk
 		var place := StreetRouteRules.target_word_place(c, rr, wsz, wsz.x * TARGET_WORD_PAD, Rect2(Vector2.ZERO, usable.size))

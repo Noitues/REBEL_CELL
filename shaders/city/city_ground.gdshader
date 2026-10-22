@@ -10,7 +10,7 @@ render_mode cull_disabled, specular_disabled;
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
 uniform vec3 ramp_lit;
-uniform vec2 ramp_edges = vec2(0.147, 0.393);
+uniform vec2 ramp_edges = vec2(0.118, 0.363);
 // LOOK L5 (whole city): above 0 the bands blend over +/- band_soft of N.L (the outer land's relief reads as shading,
 // not as hard dark blobs); 0 keeps the hard toon bands.
 uniform float band_soft = 0.0;
@@ -28,20 +28,10 @@ uniform vec2 cloud_edge = vec2(0.5, 0.62);
 varying vec3 v_world;
 varying float v_cloud;
 
-float cl_hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float cl_noise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(cl_hash(i), cl_hash(i + vec2(1.0, 0.0)), u.x), mix(cl_hash(i + vec2(0.0, 1.0)), cl_hash(i + vec2(1.0)), u.x), u.y);
-}
-
+// LOOK-TOOLBOX step 6: the cloud noise is rc_look's sin value noise (rcl_vnoise2_sin, via toon_bands).
 float cloud_shadow(vec2 xz) {
 	vec2 p = xz / cloud_scale + cloud_off;
-	float n = 0.6 * cl_noise(p) + 0.28 * cl_noise(p * 2.1 + 5.3) + 0.12 * cl_noise(p * 4.3 + 1.7);
+	float n = 0.6 * rcl_vnoise2_sin(p) + 0.28 * rcl_vnoise2_sin(p * 2.1 + 5.3) + 0.12 * rcl_vnoise2_sin(p * 4.3 + 1.7);
 	return smoothstep(cloud_edge.x, cloud_edge.y, n);
 }
 

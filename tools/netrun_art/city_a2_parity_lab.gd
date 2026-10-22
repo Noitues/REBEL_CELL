@@ -13,7 +13,12 @@ const SETTLE_FRAMES := 90
 
 var _out := ""
 ## --look=<0..1>: the night shot's look blend (0 the city look, 1 the AAA-2 netrun look); the day shot is always 0.
+## --reduce-effects=1 (LOOK-TOOLBOX): frozen shader time and the static look, so two captures of the same code match
+## to the pixel (refactor proofs); the lab's own settings file, so the player's is untouched.
+## --dump-materials=<file> (LOOK-TOOLBOX): append every set shader parameter vs its text default (RcLookMaterialAudit).
 var _look := 0.0
+var _reduce := false
+var _dump := ""
 
 
 func _ready() -> void:
@@ -25,8 +30,15 @@ func _ready() -> void:
 			seed_ = int(a.trim_prefix("--seed="))
 		elif a.begins_with("--look="):
 			_look = float(a.trim_prefix("--look="))
+		elif a.begins_with("--dump-materials="):
+			_dump = a.trim_prefix("--dump-materials=")
+		elif a.begins_with("--reduce-effects="):
+			_reduce = a.trim_prefix("--reduce-effects=") == "1"
 	DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://city_a2_parity_settings.json"
+	if _reduce:
+		Settings.reduce_effects = true
+		RenderingServer.global_shader_parameter_set(Fx.REDUCE_GLOBAL, 1.0)
 	SaveService.save_dir = "user://saves/city_a2_parity"
 	RunManager.save_slot = "gut_city_a2_parity"
 	RunManager.scene_switching_enabled = false
@@ -74,6 +86,8 @@ func _capture(campaign_seed: int) -> void:
 		lay.set_light(CityMotionLayers.Daylight.DAY, false)
 		await _settle(roundi(Motion.seconds(CityMotionLayers.LIGHT_FADE) * 60.0) + SETTLE_FRAMES)
 		await _view_shot(view, "city_a2_day")
+	if _dump != "":
+		RcLookMaterialAudit.dump(get_tree().root, _dump)
 	hq.queue_free()
 	RunManager.reset()
 	await get_tree().process_frame

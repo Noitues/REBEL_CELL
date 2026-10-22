@@ -243,7 +243,22 @@ func test_the_aim_arrow_ends_at_the_hub_edge_and_loops_the_target() -> void:
 	var to: Vector2 = spec["to"]
 	assert_almost_eq(shaft[shaft.size() - 1].distance_to(to), float(spec["stop"]), 1.0, "it stops that far short of its zone")
 	var card: Rect2 = scene._card_node(0).get_global_rect()
-	assert_almost_eq(shaft[0].distance_to(Vector2(card.get_center().x, card.position.y)), 0.0, 1.0, "from the card's top edge")
+	var from := Vector2(card.get_center().x, card.position.y)
+	# LOOK-TOOLBOX 12 review: from the card's top edge, or (a HUD word in the way of every bow) just past the HUD; the wax half a width off its words
+	var hud: Array[Rect2] = []
+	var padded: Array[Rect2] = []
+	for r: Rect2 in spec.get("avoid", []):
+		hud.append(r.grow(GreasePencilMark.stroke_width(true) * 0.5))
+		padded.append(r.grow(GreasePencilMark.stroke_width(true) * AimLinePencil.AVOID_PAD))
+	assert_eq(AimLinePencil.crossing(shaft, hud), 0.0, "the shaft crosses no HUD word")
+	if shaft[0].distance_to(from) > 1.0:
+		var end := to + (from - to).normalized() * float(spec["stop"])
+		for k in AimLinePencil.BOW_TRIES:
+			var mid := (from + end) * 0.5 + (end - from).orthogonal() * AimLinePencil.BOW * k
+			assert_gt(AimLinePencil.crossing(PencilShapes.bezier(from, mid, end, AimLinePencil.SHAFT_POINTS), padded), 0.0,
+				"it starts past the HUD only when every bow from the card crosses it")
+	else:
+		assert_almost_eq(shaft[0].distance_to(from), 0.0, 1.0, "from the card's top edge")
 	assert_not_null(action)
 	scene.cancel_selection()
 	assert_true(scene.aim_spec().is_empty(), "no aim once it ends")

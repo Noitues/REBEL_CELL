@@ -5,6 +5,9 @@
 #ifndef NETRUN_CLOCK_INCLUDED
 #define NETRUN_CLOCK_INCLUDED
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX step 7: the hash and value noise are rc_look's (rcl_hash13, rcl_vnoise3; the same arithmetic). rc_hash,
+// not rc_look: city_fog is a fog shader and includes this file.
+#include "res://addons/rc_look/shaders/rc_hash.gdshaderinc"
 
 // The clock: `live_t` while effects play, `frozen_t` under reduce effects.
 float nr_clock(float live_t, float frozen_t) {
@@ -13,17 +16,10 @@ float nr_clock(float live_t, float frozen_t) {
 
 // A 3D value noise in 0..1 (a hash lattice, smooth interpolation): the fog, beam breakup and puddle noise.
 float nr_hash3(vec3 p) {
-	p = fract(p * 0.1031);
-	p += dot(p, p.zyx + 31.32);
-	return fract((p.x + p.y) * p.z);
+	return rcl_hash13(p);
 }
 
 float nr_noise3(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(nr_hash3(i), nr_hash3(i + vec3(1, 0, 0)), u.x), mix(nr_hash3(i + vec3(0, 1, 0)), nr_hash3(i + vec3(1, 1, 0)), u.x), u.y);
-	float b = mix(mix(nr_hash3(i + vec3(0, 0, 1)), nr_hash3(i + vec3(1, 0, 1)), u.x), mix(nr_hash3(i + vec3(0, 1, 1)), nr_hash3(i + vec3(1, 1, 1)), u.x), u.y);
-	return mix(a, b, u.z);
+	return rcl_vnoise3(p);
 }
 #endif
