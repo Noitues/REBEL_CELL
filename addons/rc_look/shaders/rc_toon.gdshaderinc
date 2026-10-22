@@ -6,6 +6,9 @@
 //   - rcl_band_tint(shade, low, shadow_tint): the band's tint, shadow_tint in the shadow band to white when lit.
 //   - rcl_band_ramp(x, lo, hi, c_low, c_mid, c_lit): a three-colour ramp by band (city_building ramp).
 //   - rcl_rim(n, v, p): (1 - n . v)^p, the fresnel rim (hq_solace_pbr; AAA-2 shares it).
+// Edge caveat: landmark_toon / hq_compound_toon test ndl < lo / ndl < hi, so exactly on an edge they give the upper band
+// (mid at x == lo, lit at x == hi) where rcl_band gives the lower one. Identical away from the edges; a migration of those
+// two needs an edge form (or a proof that no pixel lands on an edge) first.
 // Numbers in addons/rc_look/config/look_toon.tres (presets "props", "city"); RcLookToon mirrors these exactly.
 //   #include "res://addons/rc_look/shaders/rc_toon.gdshaderinc"
 #ifndef RC_TOON_INCLUDED
