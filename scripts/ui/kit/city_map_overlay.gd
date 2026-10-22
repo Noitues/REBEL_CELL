@@ -659,8 +659,22 @@ var target_hidden: bool = false:
 			return
 		target_hidden = v
 		if _target_mark != null and is_instance_valid(_target_mark):
-			_target_mark.visible = not v
-			_target_word.visible = not v
+			_target_mark.visible = not (v or raid_lens)
+			_target_word.visible = not (v or raid_lens)
+		queue_redraw()
+		_queue_tags()
+
+
+## RAID-FIX C1: true on the raid pages and at the HQ while a raid is pending: the boss's TARGET pencil
+## (circle and word) and the TARGET edge arrow hide, so no player-target red shares the map with the threats.
+var raid_lens: bool = false:
+	set(v):
+		if v == raid_lens:
+			return
+		raid_lens = v
+		if _target_mark != null and is_instance_valid(_target_mark):
+			_target_mark.visible = not (v or target_hidden)
+			_target_word.visible = not (v or target_hidden)
 		queue_redraw()
 		_queue_tags()
 
@@ -2415,8 +2429,8 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_word.text = tr_word("TARGET")
 		_target_word.ink = GreasePencilMark.Ink.THREAT
 		_pencil_root.add_child(_target_word)
-	_target_mark.visible = not target_hidden
-	_target_word.visible = not target_hidden
+	_target_mark.visible = not (target_hidden or raid_lens)
+	_target_word.visible = not (target_hidden or raid_lens)
 	_target_mark.clear()
 	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
 	_target_mark.position = at

@@ -2758,6 +2758,7 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 	hq_legend.name = "MapLegend"
 	hq_legend.always_fold = true
 	hq_legend.use_site_markers(not c.pending_raids.is_empty())
+	city_overlay.raid_lens = panel_name == "raid" or not c.pending_raids.is_empty()  # RAID-FIX C1: no player-target red during a raid
 	if panel_name == "raid":
 		# H23 S4: the raid setup's key lists what its map shows (the major nodes).
 		hq_legend.show_only(MapLegend.keys_of(graph, c.grid))
@@ -4178,6 +4179,11 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		card.holo.stamp_slot.visible = false  # W3-GRID (C4): no DECRYPTED on a Site that is not reachable yet
 	if launchable_here and site.id != c.grid.home_site_id:
 		card.add_row("FlatlineRow", tr(ROW_FLATLINE), flatline_words(site))
+		# RAID-FIX C4: a RAID tag when a flatline or the Site's own Heat would cross the next raid threshold.
+		var raid_at := raid_tag_at(site)
+		if raid_at > 0:
+			var raid_value := card.add_row("RaidTagRow", tr("RAID"), tr(FLATLINE_RAID) % raid_at)
+			raid_value.add_theme_color_override("font_color", Palette.HARM)
 	if why != "":
 		var note := card.add_line(why, Palette.TEXT_HI, UiTheme.BODY)
 		note.name = "WhyNot"
@@ -4427,7 +4433,17 @@ func flatline_words(site: SiteData) -> String:
 	return text
 
 
-const LOCK_BREACH := "LOCKED: the breach needs %d Exploits (you hold %d)." # TR
+## RAID-FIX C4: the raid threshold's Heat that a flatline on `site` or its own Heat change would cross (0: none), by
+## HeatRules' own forecast.
+func raid_tag_at(site: SiteData) -> int:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var flat := HeatRules.raid_crossed_by(c, HeatRules.death_heat(c, cfg, site.tier), cfg)
+	var run := HeatRules.raid_crossed_by(c, site.heat_change, cfg) if site.heat_change > 0 else 0
+	return maxi(flat, run)
+
+
+const LOCK_BREACH :="LOCKED: the breach needs %d Exploits (you hold %d)." # TR
 const LOCK_FROM := "LOCKED: clear %s first (ringed on the map)." # TR
 const LOCK_FAR := "LOCKED: clear the Sites between it and your network first." # TR
 
@@ -6873,6 +6889,7 @@ func _refresh_status() -> void:
 	# HQ-B (Q1): Heat is the gauge in the bar's first slot (the HEAT stat tag gave it its place);
 	# at the HQ it opens the Heat terminal (Scrub Heat).
 	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
+	hud.heat_gauge.raid_next = HeatRules.next_raid(c, cfg) if panel_name in HEAT_BUTTON_PAGES else {}  # RAID-FIX C4
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
 	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],

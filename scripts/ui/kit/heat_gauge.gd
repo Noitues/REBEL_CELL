@@ -22,6 +22,16 @@ const LOOK := preload("res://content/config/heat_gauge_look.tres")
 const OPEN_ACTION := &"open_heat"
 ## The caption's word (a translation key, translated where drawn).
 const CAPTION := "HEAT" # TR
+## RAID-FIX C4: the countdown to the next raid threshold on the bar (a translation key: at, Heat still to gain).
+const RAID_NEXT := "RAID AT %d (%d away)" # TR
+## The countdown words' smallest lettering (px) before they give way.
+const RAID_MIN_PX := 8
+## The Heat of the next raid threshold and the Heat to gain ({"at", "away"}, HeatRules.next_raid; {} = none): the
+## countdown words and a tick on the strip. Set by the HQ (a view: it reads the rule).
+var raid_next: Dictionary = {}:
+	set(v):
+		raid_next = v
+		queue_redraw()
 
 ## True when the tag opens the Heat terminal (a caret shows, it takes focus and presses).
 var interactive: bool = false:
@@ -172,6 +182,16 @@ func _draw() -> void:
 		var mw := mono.get_string_size(max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x
 		HighContrast.draw_text(self, mono, Vector2(strip.end.x - mw, look.pad.y * g + mono.get_ascent(mpx)), max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, HudSkin.TERMINAL_TEXT)
 	_draw_strip(strip, g)
+	if not raid_next.is_empty() and mpx > 0:
+		# RAID-FIX C4: "RAID AT 25 (3 away)" on the top row between the band word and "/max", shrunk to fit.
+		var words := tr(RAID_NEXT) % [int(raid_next["at"]), int(raid_next["away"])]
+		var room_l := word_r.end.x + look.pad.x * g
+		var room_r := strip.end.x - mono.get_string_size(max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x - look.pad.x * g
+		var rpx := mpx
+		while rpx > RAID_MIN_PX and mono.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx).x > room_r - room_l:
+			rpx -= 1
+		var rw := mono.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx).x
+		HighContrast.draw_text(self, mono, Vector2(maxf(room_l, room_r - rw), look.pad.y * g + mono.get_ascent(rpx)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx, Palette.HARM)
 	if interactive:
 		var cp := look.caret_px * g
 		var tip := Vector2(size.x - look.pad.x * g * 0.5 - cp * 0.5, size.y - look.pad.y * g)
@@ -208,6 +228,12 @@ func _draw_strip(strip: Rect2, g: float) -> void:
 	for i in range(1, edges.size() - 1):
 		var x := strip_x(edges[i])
 		draw_line(Vector2(x, strip.position.y - look.tick_overhang * g * 0.5), Vector2(x, strip.end.y + look.tick_overhang * g * 0.5), Palette.PAPER, 1.5)
+	if not raid_next.is_empty():
+		# RAID-FIX C4: the next raid's tick, taller than the band ticks, with a point under the strip.
+		var rx := strip_x(float(raid_next["at"]))
+		var oh := look.tick_overhang * g
+		draw_line(Vector2(rx, strip.position.y - oh), Vector2(rx, strip.end.y + oh), Palette.HARM, 3.0)
+		draw_colored_polygon(PackedVector2Array([Vector2(rx - oh * 0.6, strip.end.y + oh * 1.6), Vector2(rx + oh * 0.6, strip.end.y + oh * 1.6), Vector2(rx, strip.end.y + oh * 0.4)]), Palette.HARM)
 	var m := look.marker_px * g
 	var mx := strip_x(at)
 	var top := strip.position.y - m * 0.15
