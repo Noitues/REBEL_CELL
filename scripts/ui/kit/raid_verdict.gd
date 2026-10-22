@@ -19,6 +19,8 @@ const DOWN := "%d DOWN" # TR
 const TAKEN := "%d TAKEN" # TR
 ## The DOWN tier's hue (between the amber WARN and the HARM red).
 const TIER_ORANGE_MIX := 0.5
+## A node TAKEN: the heaviest orange a CELL HOLDS takes (short of HARM red).
+const TIER_HEAVY_MIX := 0.7
 
 
 ## The verdict words for `verdict` (RaidOutcome.Verdict): translated, the word and (CELL HOLDS) a
@@ -91,17 +93,39 @@ static func clean_projection(p: RaidResolver.RaidResult) -> bool:
 	return clean(p.to_dict())
 
 
-## The severity tier's colour (RaidOutcome.Tier): acid clean, amber a Home loss over the config
-## percent, orange a node DOWN, red a node TAKEN or Home BREACHED.
-static func color_of_tier(tier: int) -> Color:
+## The severity tier's colour (RaidOutcome.Tier): acid clean, amber a Home loss, orange a node DOWN, deeper orange a
+## node TAKEN. A-085: BREACHED (`breached`, the campaign is lost) is the only verdict that is HARM red; CELL HOLDS is
+## never red, however heavy the damage under it.
+static func color_of_tier(tier: int, breached: bool = false) -> Color:
+	if breached:
+		return Palette.HARM
 	match tier:
 		RaidOutcome.Tier.AMBER:
 			return Palette.WARN
 		RaidOutcome.Tier.DOWN:
 			return Palette.WARN.lerp(Palette.HARM, TIER_ORANGE_MIX)
 		RaidOutcome.Tier.TAKEN:
-			return Palette.HARM
+			return Palette.WARN.lerp(Palette.HARM, TIER_HEAVY_MIX)
 	return Palette.CELL_ACID
+
+
+## A damage line's own severity colour (the lines under the verdict word): TAKEN stays red there.
+static func damage_color_of_tier(tier: int) -> Color:
+	return Palette.HARM if tier == RaidOutcome.Tier.TAKEN else color_of_tier(tier)
+
+
+## The same on paper (the report's dark inks): green clean, ambers and oranges for damage, red only BREACHED.
+static func ink_of_tier(tier: int, breached: bool = false) -> Color:
+	if breached:
+		return Palette.HARM_INK
+	match tier:
+		RaidOutcome.Tier.AMBER:
+			return Palette.VERDICT_INK_AMBER
+		RaidOutcome.Tier.DOWN:
+			return Palette.VERDICT_INK_ORANGE
+		RaidOutcome.Tier.TAKEN:
+			return Palette.VERDICT_INK_HEAVY
+	return Palette.GAIN_INK
 
 
 ## The verdict's colour: acid when all hold, pink when anything is lost.
@@ -116,12 +140,12 @@ static func icon_of(is_clean: bool) -> StringName:
 
 ## RAID-FIX A2: the stamp's colour for a projection, by severity tier (not green on 50 -> 16).
 static func tier_color_projection(p: RaidResolver.RaidResult, config: CampaignConfigData) -> Color:
-	return color_of_tier(RaidOutcome.project(p, config)["tier"])
+	return color_of_tier(RaidOutcome.project(p, config)["tier"], p.campaign_lost)
 
 
 ## RAID-FIX A2: the stamp's colour for a resolved raid dictionary, by severity tier.
 static func tier_color_result(r: Dictionary, config: CampaignConfigData) -> Color:
-	return color_of_tier(RaidOutcome.of_dict(r, config)["tier"])
+	return color_of_tier(RaidOutcome.of_dict(r, config)["tier"], bool(r.get("campaign_lost", false)))
 
 
 const IF_KILLS := "kills %d of %d" # TR

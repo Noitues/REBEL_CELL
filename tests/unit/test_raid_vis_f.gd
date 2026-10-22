@@ -281,6 +281,28 @@ func test_the_report_lists_repair_costs_and_the_new_entry_point() -> void:
 	assert_eq(hq._node_marks.marks.get(String(first)), "down", "DOWN on the map")
 	assert_eq(hq._node_marks.marks.get(String(taken_id)), "taken", "TAKEN on the map")
 	assert_true(hq._node_marks.entries.has(taken_id), "and the entry point is written on it")
+	# A-085: the ENTRY POINT label misses every node icon and HUD word, inside the frame.
+	var layer: RaidNodeMarkLayer = hq._node_marks
+	layer._process(0.016)
+	var spot := layer.entry_label(taken_id)
+	assert_false(spot.is_empty(), "the label has a spot")
+	var rect: Rect2 = spot["rect"]
+	var r := CityMapOverlay.ICON_RADIUS * RaidMapAnchor.scale(layer.overlay)
+	for n: Dictionary in layer.overlay.nodes:
+		if n["id"] == taken_id:
+			continue
+		var q := RaidMapAnchor.site(layer.overlay, n["id"])
+		if q.x != INF:
+			assert_false(rect.intersects(Rect2(q - Vector2(r, r), Vector2(r, r) * 2.0)), "the label misses node %s's icon" % n["id"])
+	for w in hq._hud_word_rects():
+		assert_false(rect.intersects(w), "the label misses the HUD word at %s" % w)
+	assert_true(get_viewport().get_visible_rect().encloses(rect), "inside the frame")
+	var rows: Array[Node] = hq._panel.find_children("ReportRow_*", "HBoxContainer", true, false)
+	var names := {}
+	for row in rows:
+		var t := ((row as Node).get_child(0) as Label).text
+		assert_false(names.has(t), "no node row repeats a name (%s)" % t)
+		names[t] = true
 
 
 func test_the_hq_marks_a_standing_loss_until_it_is_repaired() -> void:
@@ -298,6 +320,29 @@ func test_the_hq_marks_a_standing_loss_until_it_is_repaired() -> void:
 	hq.show_hq()
 	await _frames(3)
 	assert_false(hq._node_marks.marks.has(String(first)), "repaired: the mark is gone")
+
+
+# --- A-085 ------------------------------------------------------------------------------------
+
+func test_cell_holds_is_never_harm_red_and_breached_always_is() -> void:
+	for tier in [RaidOutcome.Tier.CLEAN, RaidOutcome.Tier.AMBER, RaidOutcome.Tier.DOWN, RaidOutcome.Tier.TAKEN]:
+		assert_ne(RaidVerdict.color_of_tier(tier), Palette.HARM, "CELL HOLDS at tier %d is not red" % tier)
+		assert_ne(RaidVerdict.ink_of_tier(tier), Palette.HARM_INK, "nor its paper ink")
+		assert_eq(RaidVerdict.color_of_tier(tier, true), Palette.HARM, "BREACHED is always red")
+		assert_eq(RaidVerdict.ink_of_tier(tier, true), Palette.HARM_INK)
+	assert_eq(RaidVerdict.color_of_tier(RaidOutcome.Tier.CLEAN), Palette.CELL_ACID, "clean is acid")
+	assert_eq(RaidVerdict.damage_color_of_tier(RaidOutcome.Tier.TAKEN), Palette.HARM, "a TAKEN damage line keeps its red")
+	var r := {"campaign_lost": false, "home_before": 50, "home_after": 20, "nodes": {"a": {"outcome": "taken", "before": 5, "after": 0}}}
+	assert_ne(RaidVerdict.tier_color_result(r, _cfg), Palette.HARM, "HOME 50 > 20 with a node TAKEN is still CELL HOLDS, not red")
+	r["campaign_lost"] = true
+	assert_eq(RaidVerdict.tier_color_result(r, _cfg), Palette.HARM)
+
+
+func test_a_name_two_nodes_share_is_listed_once_with_a_count() -> void:
+	var hq_script := load("res://scripts/ui/hq_scene.gd")
+	assert_eq(hq_script.dedupe_labels(["T1 SITE", "T1 SITE"]), PackedStringArray(["T1 SITE ×2"]))
+	assert_eq(hq_script.dedupe_labels(["A", "B", "A", "C"]), PackedStringArray(["A ×2", "B", "C"]), "first-seen order")
+	assert_eq(hq_script.dedupe_labels(["A"]), PackedStringArray(["A"]))
 
 
 # --- F4: the lens rings ------------------------------------------------------------------------

@@ -93,6 +93,10 @@ const GAIN := Color("#7BE07B")
 ## 4.5:1 on every PAPER_STOCKS colour.
 const HARM_INK := Color("#AB2E22")
 const GAIN_INK := Color("#396739")
+## A-085: CELL HOLDS on paper, by severity (never red: HARM_INK is BREACHED).
+const VERDICT_INK_AMBER := Color("#8A5A0E")
+const VERDICT_INK_ORANGE := Color("#A5560C")
+const VERDICT_INK_HEAVY := Color("#B5500A")
 ## The paper stocks the paper inks are checked against (4.5:1).
 const PAPER_STOCKS: Array[Color] = [PAPER, PAPER_ALT, NOTE_PAPER, NOTE_YELLOW]
 ## Protect: block, shield, evade, guards (the net's neutral cyan).
