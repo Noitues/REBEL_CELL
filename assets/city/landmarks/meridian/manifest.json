@@ -17,6 +17,7 @@
    "tools/art_pipeline/city/gltf_anim_v1.py",
    "tools/art_pipeline/city/build_landmarks_v1.py",
    "tools/art_pipeline/city/id_ground.py",
+   "tools/art_pipeline/city/landmark_solace_v2.py",
    "tools/art_pipeline/city/concept_r31/target_corps.py",
    "tools/art_pipeline/city/concept_r31/heroes24.py",
    "tools/art_pipeline/city/concept_r31/heroes25.py",
@@ -27,8 +28,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "b98e1def9a96560315d609ec7003b42ea1daa4b2",
-  "scripts_sha256": "cfa6ae39c43b6893e237c6302427c849147b71e45ea6429849c12b04e1c134f4"
+  "commit": "fb78e03ff7d0bdb83df7c7c815fb0633d4a878ee",
+  "scripts_sha256": "a3f2fc7033b4b2777b8340f98080a4c01ed8fa50fbf7e11d0d08874d7aa66f9f"
  },
  "settings": {
   "blender": "5.2.2 LTS",

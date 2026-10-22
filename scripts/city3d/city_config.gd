@@ -953,6 +953,70 @@ extends Resource
 @export var pier_lamp_color: Color = Color(0.55, 0.95, 1.0)
 
 
+@export_group("Solace kits")
+## LOOK Solace S1 (DIRECTION_REVIEW 2026-10-20): the Solace district's buildings are three kits (A capsule tower, B cell cluster,
+## C clinic tower) in deterministic bundles of neighbouring lots, one kit per bundle. Off: every prism draws its family mesh.
+@export var solace_kits: bool = true
+## LOOK Solace S2: the helix HQ's 3-tier plinth with cardinal stairs (the node `solace_hq__plinth` of solace_hq.glb, 70 BU across).
+## Off until build answers A-069 (the HQ lot may not hold a 70 BU circle); the HQ stands on its plain round pad.
+@export var solace_plinth: bool = false
+## Prisms under this height (BU) keep the ordinary family mesh (a kit needs room for its cap).
+@export var solace_kit_min_h: float = 4.0
+## Bundle seeds sit on a triangular lattice of this spacing (lots; about 4-5 Solace lots a bundle), each jittered by
+## `solace_bundle_jitter` of the spacing; the lattice is 3-coloured, so touching bundles always differ.
+@export var solace_bundle_pitch: float = 3.3
+@export var solace_bundle_jitter: float = 0.18
+## Salt of the layout-seed hash that places the lattice, permutes the kits and picks a lot's variant.
+@export var solace_kit_salt: int = 4711
+## Variants per kit (A: plain cap / cap with mast and pink beacon; B: cell layouts; C: crown twists).
+@export var solace_kit_variants: Vector3i = Vector3i(2, 3, 2)
+## Mesh segments round a kit's cylinder at building LOD 0 and at the far LOD.
+@export var solace_kit_segments: Vector2i = Vector2i(14, 8)
+## Shapes in units of the lot's shorter side (1 = the lot). A: body radius, cap rise, podium radius and rise, ring height.
+@export var solace_a_radius: float = 0.47
+@export var solace_a_cap_rise: float = 0.40
+@export var solace_a_podium: Vector2 = Vector2(0.5, 0.16)
+@export var solace_a_ring_h: float = 0.07
+## A: the mast (height, radius) and the beacon radius on the variant with one.
+@export var solace_a_mast: Vector3 = Vector3(0.9, 0.025, 0.07)
+## B: core radius, share of the height the core reaches, cells (min, max), cell radius range, nucleus share of the cell radius,
+## the share of the cells with a nucleus and the angular size (cos) of the nucleus patch.
+@export var solace_b_core_r: float = 0.11
+@export var solace_b_core_share: float = 0.92
+@export var solace_b_cells: Vector2i = Vector2i(5, 8)
+@export var solace_b_cell_r: Vector2 = Vector2(0.2, 0.31)
+@export var solace_b_nucleus_share: float = 0.5
+@export var solace_b_patch_cos: float = 0.55
+## C: tier half widths (the lot's shorter side), tier tops (share of the height), setback slab thickness, crown slab count,
+## slab thickness, twist per slab (degrees) and shrink per slab.
+@export var solace_c_tiers: PackedFloat32Array = PackedFloat32Array([0.46, 0.38, 0.30])
+@export var solace_c_tier_tops: PackedFloat32Array = PackedFloat32Array([0.50, 0.76])
+@export var solace_c_slab: float = 0.07
+@export var solace_c_crown: Vector3 = Vector3(4.0, 0.085, 11.0)
+@export var solace_c_crown_shrink: float = 0.06
+## Material: lime glass and ribbons #96FF46, pink nuclei #FF4696, warm porcelain, leaf-green glass, dark capsule glass, the cap,
+## the terraces.
+@export var solace_lime: Color = Color(0.588, 1.0, 0.275)
+@export var solace_pink: Color = Color(1.0, 0.275, 0.588)
+@export var solace_porcelain: Color = Color(0.88, 0.84, 0.76)
+@export var solace_leaf: Color = Color(0.40, 0.86, 0.30)
+@export var solace_body: Color = Color(0.12, 0.26, 0.22)
+@export var solace_dome: Color = Color(0.14, 0.34, 0.24)
+@export var solace_terrace: Color = Color(0.20, 0.42, 0.22)
+## Ribbon bands on the capsule and core (BU pitch, lit share of the pitch, share of bands in pink, share left dark) and the
+## clinic's green glass bands (pitch, glass share).
+@export var solace_band: Vector4 = Vector4(1.7, 0.38, 0.16, 0.12)
+@export var solace_clinic_band: Vector2 = Vector2(2.2, 0.34)
+## Emission at night and by day (the day look blends by night share), and the share of it the glass spheres, the nuclei and the
+## clinic's green bands carry.
+@export var solace_kit_emit: Vector2 = Vector2(0.8, 0.45)
+@export var solace_glass_emit: float = 0.5
+@export var solace_nucleus_emit: float = 1.1
+@export var solace_clinic_emit: float = 0.6
+## The faint light the clinic's porcelain carries (share of its colour at full emission): it reads against the dark city.
+@export var solace_porcelain_glow: float = 0.12
+
+
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:
 	if city_quality < 0:

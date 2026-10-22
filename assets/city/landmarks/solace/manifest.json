@@ -17,6 +17,7 @@
    "tools/art_pipeline/city/gltf_anim_v1.py",
    "tools/art_pipeline/city/build_landmarks_v1.py",
    "tools/art_pipeline/city/id_ground.py",
+   "tools/art_pipeline/city/landmark_solace_v2.py",
    "tools/art_pipeline/city/concept_r31/target_corps.py",
    "tools/art_pipeline/city/concept_r31/heroes24.py",
    "tools/art_pipeline/city/concept_r31/heroes25.py",
@@ -27,8 +28,8 @@
    "tools/art_pipeline/city/concept_r31/heroes30.py",
    "tools/art_pipeline/city/concept_r31/heroes31.py"
   ],
-  "commit": "b98e1def9a96560315d609ec7003b42ea1daa4b2",
-  "scripts_sha256": "cfa6ae39c43b6893e237c6302427c849147b71e45ea6429849c12b04e1c134f4"
+  "commit": "fb78e03ff7d0bdb83df7c7c815fb0633d4a878ee",
+  "scripts_sha256": "a3f2fc7033b4b2777b8340f98080a4c01ed8fa50fbf7e11d0d08874d7aa66f9f"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -56,17 +57,17 @@
  "footprint": {
   "min": [
    -27.5,
-   0.0,
+   0.04,
    -27.5
   ],
   "max": [
    27.5,
-   140.0,
+   90.399,
    27.5
   ],
   "size": [
    55.0,
-   140.0,
+   90.359,
    55.0
   ]
  },
@@ -88,22 +89,22 @@
    "job": "solace_hq",
    "kind": "hq",
    "file": "solace_hq.glb",
-   "what": "Lit DNA double helix: down-lights, light cones, the spotlight up the axis and the 12-frame LED chaser",
+   "what": "The concept helix (LOOK S2): two lime strands of one turn, flush bow-tie decks, oval windows, pink crown ring; plain round pad; the 3-tier plinth as the node solace_hq__plinth, off (scale 0) by default",
    "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
    "footprint": {
     "min": [
      -27.5,
-     0.0,
+     0.04,
      -27.5
     ],
     "max": [
      27.5,
-     140.0,
+     90.399,
      27.5
     ],
     "size": [
      55.0,
-     140.0,
+     90.359,
      55.0
     ]
    },
@@ -123,21 +124,11 @@
    ],
    "state_nodes": [],
    "triangles": {
-    "lm_toon": 12618,
-    "lm_neon": 14166,
-    "lm_beam": 364,
-    "lm_sign": 908
+    "lm_toon": 1418,
+    "lm_neon": 7736,
+    "lm_win": 952
    },
-   "animation": {
-    "name": "chaser",
-    "frames": 12,
-    "seconds_per_frame": 0.09,
-    "loop_seconds": 1.08,
-    "still_frame": 0,
-    "still_deg": null,
-    "tracks": 12,
-    "note": "rest pose = the concept's still; play the animation looped"
-   },
+   "animation": null,
    "seed": 3468,
    "reference_camera": {
     "kind": "perspective",
@@ -164,23 +155,23 @@
    "job": "solace_site",
    "kind": "site",
    "file": "solace_site.glb",
-   "what": "SOLACE GENERAL hospital: clinic block, wings, lime cross, ambulance bay, helipad",
+   "what": "Porcelain cross-plan hospital (direction C) with leaf-green glass bands, helipad and the lit lime cross on the roof",
    "origin": "the Site's ground centre at (0, 0, 0); place it on the centre of its 6 x 6 lot block",
    "footprint": {
     "min": [
-     -21.72,
+     -18.0,
      0.0,
-     -16.14
+     -18.0
     ],
     "max": [
-     21.72,
-     14.66,
-     14.0
+     18.0,
+     27.24,
+     18.0
     ],
     "size": [
-     43.44,
-     14.66,
-     30.14
+     36.0,
+     27.24,
+     36.0
     ]
    },
    "lot_rect": {
@@ -192,17 +183,15 @@
      36.0,
      36.0
     ],
-    "overhang_bu": 3.72
+    "overhang_bu": 0.0
    },
    "states": [
     ""
    ],
    "state_nodes": [],
    "triangles": {
-    "lm_toon": 200,
-    "lm_neon": 416,
-    "lm_win": 338,
-    "lm_sign": 1604
+    "lm_toon": 90,
+    "lm_neon": 246
    },
    "animation": null,
    "seed": 3688,
@@ -231,14 +220,14 @@
   {
    "path": "solace_hq.glb",
    "kind": "gltf",
-   "bytes": 1283772,
-   "sha256": "9c0791dff45b26a7188031c9c6dcfc129f32e3996365160a638a44d2a30e3264"
+   "bytes": 498200,
+   "sha256": "def01cdab1c93f39e4a5616dd5b97b8ffe8bc4080946bbf7807b88b8d5106644"
   },
   {
    "path": "solace_site.glb",
    "kind": "gltf",
-   "bytes": 89920,
-   "sha256": "9c53e96f3039d583003aa6f3839d15ceb71254295ac952e71cf4533874c32919"
+   "bytes": 17800,
+   "sha256": "8ea42963f016dc89bf51a2102051d4779f9e0141c2e11ade659ebbed7e95c622"
   }
  ],
  "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"

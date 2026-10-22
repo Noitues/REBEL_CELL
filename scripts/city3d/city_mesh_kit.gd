@@ -503,6 +503,8 @@ static func lod_rows(cfg: CityConfig, hc: int, lod: int) -> int:
 ## The unit prism of family `key` (sides * 16 + height class) at building LOD `lod`
 ## (cached: the same mesh for every chunk).
 static func family_mesh(cfg: CityConfig, key: int, lod: int) -> ArrayMesh:
+	if CitySolaceKit.is_kit_key(key):
+		return CitySolaceKit.mesh(cfg, key, lod)
 	var sides := key / 16
 	var hc := key % 16
 	var rows := lod_rows(cfg, hc, lod)
@@ -515,11 +517,14 @@ static func family_mesh(cfg: CityConfig, key: int, lod: int) -> ArrayMesh:
 
 
 ## Groups prisms `idx` (indices into `prisms`) by family: key -> PackedInt32Array, in
-## index order.
-static func families_of(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedInt32Array) -> Dictionary:
+## index order. With a layout seed (`city_seed` >= 0) the Solace prisms group under their kit's key (CitySolaceKit); without,
+## every prism keeps its prism family.
+static func families_of(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedInt32Array, city_seed: int = -1) -> Dictionary:
 	var out := {}
 	for n in idx:
-		var key := family_of(cfg, prisms[n])
+		var key := CitySolaceKit.family_key(cfg, prisms[n], city_seed) if city_seed >= 0 else -1
+		if key < 0:
+			key = family_of(cfg, prisms[n])
 		# Packed arrays are values: append through the dictionary, never a cast copy.
 		if not out.has(key):
 			out[key] = PackedInt32Array()
