@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="RcLookHoloConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/scripts/rc_look_holo_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+fill_foot_share = 0.7
+city_dim = 0.9
+scan_px = 4.0
+band_count = 3.0
+band_seconds = 6.0
+band_trail = 2.5
+band_pose = 0.35
+edge_px = 2.0
+edge_glow_px = 7.0
+edge_lift = 0.45
+seal_ring_px = 3.0
+seal_ring_inner_px = 1.0
+seal_inner_gap = 6.0
+seal_ring_alpha = 0.85
+seal_disc_alpha = 0.16
+crack_left = Vector2(-4, 3)
+crack_right = Vector2(2, -3)
+crack_segments = 6
+crack_jitter = 0.16
+crack_px = 2.5
+crack_glow_px = 7.0
+crack_glow_alpha = 0.35
+crack_branches = 2
+crack_branch_len = 0.34
+crest_share = 0.62
+ring_gap = 0.22
+seal_seed = 7

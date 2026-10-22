@@ -144,3 +144,23 @@ headless show every write-on and wipe at its end state and stop the glint (Motio
 --module=pencil --shots=<dir> --times=night,day --tiers=2 --flags=none,re,rm`
 
 **Tests.** `tests/unit/test_look12_pencil.gd` (fast), `test_b1b_wax_pencil.gd`, `test_art1_material_kit.gd`.
+
+## Module 15: decrypted holo (`RcLookHolo`)
+
+A translucent tinted glass over the blurred screen, 4 px scanlines, slow scan bands, an edge-only RGB split and a cracked
+corp seal (ART_BIBLE §1.2: hacked corp intel; never anything the Cell owns).
+
+| API | What |
+|---|---|
+| `RcLookHolo.material(pass)` | a `ShaderMaterial` for `GLASS` (under the words) or `OVER` (scanlines and bands above them) |
+| `RcLookHolo.apply(mat, size, tint, deep, state, body_k, overrides)` | fills a material: the config, the quality rules for `state`, the panel rect and the corp tint |
+| `RcLookHolo.settings(state, body_k)` | every value as a Dictionary (pure), plus `backing_alpha` for the panel's local backdrop |
+| `RcLookHolo.bleed_px(state)` | how far past its rect the glass control must draw (split and glow) |
+| `RcLookHolo.draw_seal(ci, centre, radius, tint, crack_color, crest, seed)` | the cracked seal on a canvas item |
+| `RcLookHolo.crack(centre, radius, seed)` | the fracture's points (deterministic: a hash of the seed, never RNG) |
+
+Numbers: `config/look_holo.tres` (`RcLookHoloConfig`) and the `holo` module in `config/look_quality.tres`.
+Rules: low tier drops the split and the screen blur; reduce motion freezes the bands (still drawn); reduce effects drops the
+split and the roll; high contrast is opaque black glass with no effects. The game's call site is `DecryptedHoloPanel`.
+
+Lab: `--module=holo` (see `lab/look_lab.gd`). Sheet: `tools/look_sheet.py --module holo ...`.

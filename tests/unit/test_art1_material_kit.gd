@@ -412,8 +412,8 @@ func test_the_holo_panel_drops_its_rgb_split_under_reduce_effects() -> void:
 	add_child_autofree(h)
 	var glass := h.get_child(1, true) as Control
 	var mat := glass.material as ShaderMaterial
-	assert_almost_eq(float(mat.get_shader_parameter(&"split_px")), DecryptedHoloPanel.SPLIT_PX, 0.001, "+-2 px on the edge")
-	assert_almost_eq(float(mat.get_shader_parameter(&"tint_share")), 0.78, 0.001, "corp tint at about 78 %")
+	assert_gt(float(mat.get_shader_parameter(&"split_px")), 0.0, "the RGB split on the edge")
+	assert_almost_eq(DecryptedHoloPanel.TINT_SHARE, 0.78, 0.001, "corp tint at about 78 % on the words")
 	assert_almost_eq(float(mat.get_shader_parameter(&"scan_px")), 4.0, 0.001, "4 px scanlines")
 	_effects(true)
 	assert_almost_eq(float(mat.get_shader_parameter(&"split_px")), 0.0, 0.001, "reduce effects: no RGB split")

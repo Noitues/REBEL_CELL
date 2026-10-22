@@ -11,5 +11,16 @@ modules = {
 "lab": {
 "motion": {"base": 1.0, "reduce_motion": 0.0, "reduce_effects": 0.0},
 "grain": {"base": 1.0, "tiers": [0.0, 1.0, 1.0], "reduce_effects": 0.0}
+},
+"holo": {
+"fill_share": {"base": 0.24, "high_contrast": 0.0},
+"glass_alpha": {"base": 0.45, "tiers": [0.8, 0.55, 0.45], "high_contrast": 1.0},
+"blur_lod": {"base": 1.2, "tiers": [0.0, 1.0, 1.2], "high_contrast": 0.0},
+"backing_alpha": {"base": 0.2, "tiers": [0.7, 0.3, 0.2], "high_contrast": 1.0},
+"scan_strength": {"base": 0.12, "high_contrast": 0.0},
+"band_strength": {"base": 0.26, "high_contrast": 0.0},
+"band_roll": {"base": 1.0, "reduce_motion": 0.0, "reduce_effects": 0.0},
+"edge_glow_strength": {"base": 0.45, "high_contrast": 0.0},
+"split_px": {"base": 2.0, "tiers": [0.0, 2.0, 2.0], "high_contrast": 0.0, "reduce_effects": 0.0}
 }
 }

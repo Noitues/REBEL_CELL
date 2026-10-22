@@ -33,7 +33,7 @@ const ALL: Dictionary = {
 		"shaders": ["res://shaders/kit/ui_panel_shadows.gdshader", "res://shaders/kit/ui_light_spill.gdshader"],
 		"motions": []},
 	&"decrypted_holo": {"component": "DecryptedHoloPanel", "tier": T0,
-		"shaders": ["res://shaders/kit/decrypted_holo.gdshader"],
+		"shaders": ["res://addons/rc_look/shaders/rc_holo.gdshader"],
 		"motions": [&"holo_bands"]},
 	&"corp_paper": {"component": "CorpPaperPanel", "tier": T0,
 		"shaders": ["res://shaders/kit/corp_paper.gdshader"],
