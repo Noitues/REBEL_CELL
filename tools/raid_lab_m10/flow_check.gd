@@ -1,12 +1,16 @@
 extends SceneTree
-## Flow check of the lab model (not the golden parity): plans, undo, the 3-raid leg played in both SPOOF_MODEs,
-## forecast = real result for the revealed candidate, ledger reconciles on every raid.
+## Flow check of the L2 lab (not the golden parity): the lever rules and undo, golden leg 0 played on its planned
+## line through the model (forecast with the chosen spoof = result, ledger reconciles, between step = golden), a naive
+## line played until it breaches on every golden leg where it does, and the scene driven through its own input path
+## (planned raid, repair step, and a breach leg).
 ##   godot --headless --path . -s res://tools/raid_lab_m10/flow_check.gd
 
 var _fails: int = 0
+var _checks: int = 0
 
 
 func _ok(label: String, cond: bool) -> void:
+	_checks += 1
 	if not cond:
 		_fails += 1
 	print("%s %s" % ["PASS" if cond else "FAIL", label])
@@ -14,175 +18,277 @@ func _ok(label: String, cond: bool) -> void:
 
 func _init() -> void:
 	_rules_flow()
-	for mode in ["choice", "press"]:
-		for repair in ["value", "half"]:
-			M10Config.reset()
-			M10Config.toggles["SPOOF_MODE"] = mode
-			M10Config.toggles["REPAIR"] = repair
-			_play_leg(mode, repair)
-	for mode in ["choice", "press"]:
-		_view_flow(mode)
-	M10Config.reset()
+	_planned_leg0()
+	_naive_legs()
+	_view_planned()
+	_view_breach()
+	L2Config.reset()
+	print("%d checks" % _checks)
 	print("FLOW %s" % ("PASS" if _fails == 0 else "FAIL"))
 	quit(0 if _fails == 0 else 1)
 
 
+func _score_of(step: Dictionary) -> int:
+	return int(step["score_after"])
+
+
 func _rules_flow() -> void:
-	M10Config.reset()
-	var m := M10Model.new()
-	_ok("leg starts on network 22, key 19, Heat 52", m.seed_id() == 22 and m.key == 19 and m.heat == 52)
-	_ok("ghost on an empty node refused", m.why_not("ghost", Vector2i(0, 1)) != "")
-	_ok("ghost on an asset node allowed", m.place("ghost", Vector2i(3, 0)))
-	_ok("a ghost charges Heat at once (52 -> 57)", m.heat_now() == 57 and m.heat == 52)
-	_ok("second ghost refused (scarce)", m.why_not("ghost", Vector2i(2, 0)) != "")
-	_ok("decoy on an asset node refused", m.why_not("decoy", Vector2i(2, 0)) != "")
-	_ok("decoy on an empty node allowed", m.place("decoy", Vector2i(3, 1)))
-	_ok("a decoy charges the key at once (19 -> 16)", m.key_now() == 16 and m.key == 19)
-	_ok("second decoy refused (scarce)", m.why_not("decoy", Vector2i(0, 1)) != "")
-	_ok("go dark on an asset node", m.place("dark", Vector2i(0, 0)))
-	_ok("dark node: income lost = v // 2 + 1 = 3", M10Rules.plan_dark_loss(m.assets, m.plan) == 3)
-	_ok("a lever node takes no second lever", m.why_not("dark", Vector2i(3, 0)) != "")
-	_ok("undo takes the last lever off", m.undo() and not m.plan["dark"].has(Vector2i(0, 0)))
+	L2Config.reset()
+	var m := L2Model.new(0)
+	_ok("leg 0 opens on raid 1 at Heat 44, bank 10, HOME 3", m.raid == 0 and m.state.heat == 44 and m.state.bank == 10 and m.state.home_hp == 3)
+	_ok("the network has 6 assets, all OK, and HOME", m.state.status.size() == 6 and m.state.count("OK") == 6 and m.home() != L2Rules.NONE)
+	_ok("heat bands: 49 none, 50 one, 74 one, 75 two", L2Rules.extra_count(49) == 0 and L2Rules.extra_count(50) == 1 and L2Rules.extra_count(74) == 1 and L2Rules.extra_count(75) == 2)
+	var cells: Array = m.values().keys()
+	var asset: Vector2i = cells[0]
+	var empty := L2Rules.NONE
+	for c in L2Rules.nodes():
+		if not m.values().has(c) and c != m.home():
+			empty = c
+			break
+	_ok("ghost on an empty node refused", m.why_not("ghost", empty) != "")
+	_ok("ghost can hide HOME", m.place("ghost", m.home()))
+	_ok("a ghost charges Heat at once (44 -> 49)", m.heat_now() == 49 and m.state.heat == 44)
+	_ok("second ghost refused (scarce)", m.why_not("ghost", asset) != "")
+	_ok("decoy on an asset refused", m.why_not("decoy", asset) != "")
+	_ok("decoy on an empty node allowed", m.place("decoy", empty))
+	_ok("a decoy charges the bank at once (10 -> 7)", m.bank_now() == 7 and m.state.bank == 10)
+	_ok("second decoy refused (scarce)", m.why_not("decoy", Vector2i(-5, 0)) != "")
+	_ok("go dark on a live asset", m.place("dark", asset))
+	_ok("second dark refused (cap 1)", m.why_not("dark", cells[1]) != "")
+	_ok("a lever node takes no second lever", m.why_not("ghost", asset) != "")
+	_ok("undo takes the last lever off", m.undo() and (m.plan["dark"] as Array).is_empty())
 	_ok("undo twice more clears the plan", m.undo() and m.undo() and not m.can_undo())
-	_ok("Heat and key back to start after undo", m.heat_now() == 52 and m.key_now() == 19)
-	m.place("ghost", Vector2i(3, 0))
-	_ok("click-remove takes a placed lever off", m.remove_at(Vector2i(3, 0)) and m.plan["ghost"].is_empty())
-	# The bracket is the min..max over the candidates, from the same forecast function.
-	m.place("decoy", Vector2i(3, 1))
-	m.place("ghost", Vector2i(3, 0))
-	m.place("dark", Vector2i(0, 0))
-	var fc := m.forecast_all()
-	var rng := m.loss_range()
-	var reps: Array = []
-	for f in fc:
-		reps.append(f["repair"])
-	_ok("loss range = min..max of the candidate repairs", rng[0] == reps.min() and rng[1] == reps.max())
+	_ok("Heat and bank back to start after undo", m.heat_now() == 44 and m.bank_now() == 10)
+	m.place("ghost", asset)
+	_ok("click-remove takes a placed lever off", m.remove_at(asset) and (m.plan["ghost"] as Array).is_empty())
+	_ok("dark refused on a TAKEN asset", _taken_refused())
+	# Strength follows the ghost: a state at Heat 47 crosses the 50 line with the ghost's +5.
+	var m2 := L2Model.new(0)
+	m2.state.heat = 47
+	_ok("at Heat 47 no extra beam", m2.extra_now() == 0)
+	m2.place("ghost", asset)
+	_ok("the ghost's +5 Heat (47 -> 52) adds a known beam", m2.extra_now() == 1)
+	var fc := m2.forecast()
 	_ok("forecast has one entry per sealed candidate", fc.size() == 3)
+	for i in range(3):
+		_ok("forecast %d best spoof is never worse than holding" % i, L2Rules.score(m2.leg, fc[i]["best_state"]) >= L2Rules.score(m2.leg, fc[i]["state"]))
 
 
-## A scripted play of the whole leg in one SPOOF_MODE / REPAIR setting.
-func _play_leg(mode: String, repair: String) -> void:
-	var m := M10Model.new()
-	var tag := "[%s/%s]" % [mode, repair]
-	_ok(tag + " leg is networks 22, 17, 25", M10Config.LEG_SEEDS == [22, 17, 25])
-	for i in range(M10Config.LEG_SEEDS.size()):
-		_ok("%s raid %d is network %d" % [tag, i + 1, M10Config.LEG_SEEDS[i]], m.seed_id() == M10Config.LEG_SEEDS[i])
-		var plan_name: String = ["best_sealed", "best_both", "ghost_biggest"][i]
-		m.plan = M10Data.plan_of(m.case_["plans"][plan_name])
-		var fc := M10Rules.forecast(m.assets, m.b1, m.cands[m.reveal], m.own3, m.plan)
-		var play := m.make_play()
-		var seen: Array = []
-		var landed := false
-		var guard := 0
-		var step_ok := true
-		while not play.is_done() and guard < 4000:
-			if not seen.has(play.state):
-				seen.append(play.state)
-			if play.state == M10Play.S.DECIDE:
-				# Raid 1: aim at the line's first node. Raid 2: hold the spoof. Raid 3: aim at the last node.
-				var line: Array = play.line2()
-				if i == 0:
-					step_ok = step_ok and not play.can_target(Vector2i(9, 9)) and play.choose_spoof(line[0])
-				elif i == 1:
-					step_ok = step_ok and play.pass_spoof()
-				else:
-					step_ok = step_ok and play.choose_spoof(line[line.size() - 1])
-			elif play.state == M10Play.S.PRESS:
-				# Raid 1 lands the press, raid 3 mistimes it.
-				if i == 0:
-					play.advance(0.0, M10Config.PRESS_PERFECT)
-					landed = play.press()
-				else:
-					play.advance(0.0, 0.05)
+func _taken_refused() -> bool:
+	var m := L2Model.new(0)
+	var c: Vector2i = m.values().keys()[0]
+	m.state.status[c] = "TAKEN"
+	return m.why_not("dark", c) != "" and m.why_not("ghost", c) != ""
+
+
+## Run one raid through the model + play with a plan and a spoof; returns the settled row.
+func _run_raid(m: L2Model, alloc: Dictionary, spoof: Vector2i) -> Dictionary:
+	for lv in [["ghost", "ghost"], ["decoys", "decoy"], ["dark", "dark"]]:
+		for c: Vector2i in alloc[lv[0]]:
+			if not m.place(lv[1], c):
+				return {}
+	var fc := m.forecast()
+	var extra := m.extra_now()
+	var play := m.make_play()
+	var seen: Array = []
+	var guard := 0
+	while not play.is_done() and guard < 4000:
+		if not seen.has(play.state):
+			seen.append(play.state)
+		if play.state == L2Play.S.DECIDE:
+			if spoof == L2Rules.NONE:
+				play.pass_spoof()
 			else:
-				play.advance(0.05, 0.05)
+				play.choose_spoof(spoof)
+		else:
+			play.advance(0.05)
+		guard += 1
+	_ok("raid %d playout finished and passed every beat" % (m.raid + 1), play.is_done() and seen.has(L2Play.S.DECIDE) and seen.has(L2Play.S.TURN) and seen.has(L2Play.S.UNSEAL))
+	var row := m.settle(play)
+	row["play"] = play
+	row["forecast"] = fc
+	row["extra_planned"] = extra
+	return row
+
+
+func _planned_leg0() -> void:
+	L2Config.reset()
+	var m := L2Model.new(0)
+	var steps: Array = m.leg["planned"]
+	var tag := "[planned leg 0]"
+	_ok(tag + " the golden planned line has 3 raids", steps.size() == 3)
+	for i in range(steps.size()):
+		var s: Dictionary = steps[i]
+		var alloc := L2Data.alloc_of(s["alloc"])
+		var spoof := L2Data.spoof_of(s["spoof"])
+		_ok("%s raid %d starts at the golden state" % [tag, i + 1], m.state.to_array() == L2State.from_golden(s["before"]).to_array())
+		var row := _run_raid(m, alloc, spoof)
+		_ok("%s raid %d levers accepted" % [tag, i + 1], not row.is_empty())
+		var fc: Array = row["forecast"]
+		var strength_before: int = row["extra_planned"]
+		_ok("%s raid %d heat band at the sweep = extra beams in the trace" % [tag, i + 1],
+			strength_before == int(row["ledger"]["extra"]) and (row["beams"] as Array).size() == 3 + strength_before)
+		var play: L2Play = row["play"]
+		var want_touches := _touched_arr(s["touched"])
+		_ok("%s raid %d touches = golden" % [tag, i + 1], _touched_arr_of(row["touches"]) == want_touches)
+		_ok("%s raid %d touches logged beat by beat = result" % [tag, i + 1], play.logged_touches() == want_touches)
+		_ok("%s raid %d after the raid = golden" % [tag, i + 1], (row["after_raid"] as L2State).to_array() == L2State.from_golden(s["after_raid"]).to_array())
+		# Forecast = result with the chosen spoof: the planner's spoof is the forecast's best for the revealed line.
+		var f: Dictionary = fc[L2Config.REVEAL]
+		if spoof == L2Rules.NONE:
+			_ok("%s raid %d forecast (no spoof) = result" % [tag, i + 1], _touched_arr_of(f["touches"]) == want_touches and not f["saves"])
+		else:
+			_ok("%s raid %d forecast (best spoof) = result with the chosen spoof" % [tag, i + 1], f["best_spoof"] == spoof and _touched_arr_of(f["best_touches"]) == want_touches)
+		_ok("%s raid %d forecast of the chosen spoof equals the real sweep" % [tag, i + 1], _touched_arr_of(play.preview(spoof)["touches"]) == _touched_arr_of(row["touches"]))
+		_ok("%s raid %d forecast summary = result summary" % [tag, i + 1], (f["best_summary"] if spoof != L2Rules.NONE else f["summary"]) == row["summary"])
+		_ok("%s raid %d ledger reconciles" % [tag, i + 1], L2Model.ledger_reconciles(row["ledger"]))
+		_ok("%s raid %d ledger starts at the contact numbers" % [tag, i + 1], int(row["ledger"]["bank_before"]) == int(s["before"]["bank"]) and int(row["ledger"]["heat_before"]) == int(s["before"]["heat"]))
+		if i < steps.size() - 1:
+			_ok("%s raid %d the between step is open" % [tag, i + 1], m.between_open())
+			var bank_raid := m.state.bank
+			var heat_raid := m.state.heat
+			for c: Vector2i in L2Data.cells(s["repairs"]):
+				m.toggle_repair(c)
+			var pv := m.between_preview()
+			_ok("%s raid %d between ledger reconciles" % [tag, i + 1], bank_raid - int(pv["repair_cost"]) + int(pv["income"]) == (pv["state"] as L2State).bank and heat_raid + L2Config.RUN_HEAT == (pv["state"] as L2State).heat)
+			_ok("%s raid %d finish_between" % [tag, i + 1], m.finish_between())
+			_ok("%s raid %d next contact = golden after" % [tag, i + 1], m.state.to_array() == L2State.from_golden(s["after"]).to_array())
+			_ok("%s raid %d the network persists (same asset cells)" % [tag, i + 1], m.state.status.size() == 6)
+		else:
+			_ok("%s the last raid has no between step" % tag, not m.between_open() and m.leg_over())
+	_ok(tag + " leg score = golden", m.final_score() == _score_of(steps.back()))
+	_ok(tag + " the planned line does not breach", not m.breached and m.history.size() == 3)
+	_ok(tag + " statuses persisted over the leg (some asset not OK or all repaired)", m.state.status.size() == 6)
+
+
+func _touched_arr(raw: Array) -> Array:
+	var out: Array = []
+	for t in raw:
+		out.append([int(t[0]), int(t[1]), String(t[2])])
+	return out
+
+
+func _touched_arr_of(touches: Array) -> Array:
+	var out: Array = []
+	for t: Dictionary in touches:
+		out.append([t["cell"].x, t["cell"].y, t["kind"]])
+	return out
+
+
+## The naive policy through the model on every golden leg; it breaches on legs 0, 5 and 8.
+func _naive_legs() -> void:
+	var breached_legs: Array = []
+	for seed_id in L2Config.LEGS:
+		L2Config.reset()
+		var m := L2Model.new(seed_id)
+		var steps: Array = m.leg["naive"]
+		var guard := 0
+		while not m.leg_over() and guard < 5:
+			var d := L2Rules.naive_decide(m.leg, m.raid, m.state)
+			var row := _run_raid(m, d["alloc"], d["spoof"])
+			_ok("[naive %d] raid %d ledger reconciles" % [seed_id, row["raid"] + 1], L2Model.ledger_reconciles(row["ledger"]))
+			if m.breached:
+				break
+			if m.between_open():
+				for c: Vector2i in L2Rules.naive_repairs(m.leg, m.state):
+					m.toggle_repair(c)
+				m.finish_between()
 			guard += 1
-		_ok("%s raid %d playout finished" % [tag, i + 1], play.is_done() and step_ok)
-		var order := [M10Play.S.B1, M10Play.S.UNSEAL, M10Play.S.DECIDE, M10Play.S.B2]
-		var in_order := true
-		for s in order:
-			in_order = in_order and seen.has(s)
-		_ok("%s raid %d beats seen: beam 1, unseal, decision, beam 2, hunter, beam 3" % [tag, i + 1],
-			in_order and seen.has(M10Play.S.HUNTER) and seen.has(M10Play.S.B3))
-		if mode == "press" and i != 1:
-			_ok("%s raid %d press window was entered" % [tag, i + 1], seen.has(M10Play.S.PRESS))
-		var spoof := m.spoof_of(play)
-		var truth := M10Rules.found_of(m.assets, m.b1, m.cands[m.reveal], m.own3, m.plan, spoof)
-		_ok("%s raid %d result = rules sweep with the spoof that landed" % [tag, i + 1], play.final["found"] == truth)
-		_ok("%s raid %d finds logged beat by beat = result" % [tag, i + 1], play.logged_found() == truth)
-		if spoof.is_empty():
-			_ok("%s raid %d no spoof landed: forecast = result" % [tag, i + 1], fc["found"] == truth)
-		if mode == "press" and i == 0:
-			_ok("%s raid 1 press landed in the window" % tag, landed and not spoof.is_empty())
-		if mode == "press" and i == 2:
-			_ok("%s raid 3 mistimed press does not land" % tag, spoof.is_empty())
-		if mode == "choice" and i == 2:
-			_ok("%s raid 3 choice spoof always lands" % tag, not spoof.is_empty())
-		var key_before := m.key
-		var heat_before := m.heat
-		var row := m.settle(play)
-		var l: Dictionary = row["ledger"]
-		_ok("%s raid %d ledger reconciles (key and Heat)" % [tag, i + 1], M10Rules.ledger_reconciles(l))
-		_ok("%s raid %d ledger starts at the key and Heat of contact" % [tag, i + 1], l["key_before"] == key_before and l["heat_before"] == heat_before)
-		_ok("%s raid %d model carries the ledger's key and Heat" % [tag, i + 1], m.key == l["key_after"] and m.heat == l["heat_after"])
-		_ok("%s raid %d repair follows REPAIR=%s" % [tag, i + 1, repair], l["repair"] == M10Rules.repair(m.assets, truth, repair))
-		_ok("%s raid %d decoy and ghost charged as the plan said" % [tag, i + 1],
-			l["decoy"] == 3 * m.plan["decoys"].size() and l["heat_ghost"] == 5 * m.plan["ghost"].size())
-		_ok("%s raid %d EVADED shows +6 key and -10 Heat, else neither" % [tag, i + 1],
-			(l["evaded"] and l["evade_gain"] == 6 and l["heat_evade"] == -10) or (not l["evaded"] and l["evade_gain"] == 0 and l["heat_evade"] == 0))
-		_ok("%s raid %d down count = found count" % [tag, i + 1], l["down"] == truth.size())
-		if i < M10Config.LEG_SEEDS.size() - 1:
-			_ok("%s raid %d next raid loads" % [tag, i + 1], m.next_raid())
-	_ok(tag + " leg over after 3 raids", m.leg_over() and m.history.size() == 3)
-	_ok(tag + " no further raid", not m.next_raid())
+		_ok("[naive %d] ends as the golden naive line (score %d)" % [seed_id, _score_of(steps.back())], m.final_score() == _score_of(steps.back()))
+		if m.breached:
+			breached_legs.append(seed_id)
+			_ok("[naive %d] BREACHED: score -100, the leg is over, no between step" % seed_id, m.final_score() == -100 and m.leg_over() and not m.between_open() and m.state.home_hp == 0)
+	_ok("naive breaches on legs 0, 5 and 8", breached_legs == [0, 5, 8])
 
 
-## The scene itself, driven by its own input path and _process in real-time steps: contact, plan, forecast, playout
-## (decision by click, press window by SPACE), aftermath, next raid. One flow test per screen.
-func _view_flow(mode: String) -> void:
-	M10Config.reset()
-	M10Config.toggles["SPOOF_MODE"] = mode
+# ---------- the scene, through its own input path ----------
+func _make_view(seed_id: int) -> Control:
+	L2Config.reset()
 	var view: Control = (load("res://tools/raid_lab_m10/raid_lab_m10.tscn") as PackedScene).instantiate()
 	root.add_child(view)
-	var tag := "[view/%s]" % mode
-	_ok(tag + " opens on the contact screen", view.phase == view.Phase.CONTACT)
+	view.model.new_leg(seed_id)
+	return view
+
+
+## One raid through the view: levers by key and click, forecast, launch, the spoof by click or hold, to the end of the
+## playout. Leaves the view on AFTER or BREACH.
+func _view_raid(view: Control, alloc: Dictionary, spoof: Vector2i) -> void:
 	view._key(KEY_ENTER)
-	_ok(tag + " Enter goes to the plan", view.phase == view.Phase.PLAN)
-	view._key(KEY_1)
-	view._act("cell:3,0")
-	view._key(KEY_2)
-	view._act("cell:3,1")
-	view._key(KEY_3)
-	view._act("cell:0,0")
-	_ok(tag + " levers placed by key and click", view.model.plan["ghost"].size() == 1 and view.model.plan["decoys"].size() == 1 and view.model.plan["dark"].size() == 1)
-	view._act("cell:1,1")
-	_ok(tag + " a second dark is allowed (cap 3)", view.model.plan["dark"].size() == 2)
-	view._key(KEY_Z)
-	_ok(tag + " Z undoes the last lever", view.model.plan["dark"].size() == 1)
+	_ok("Enter goes to the plan", view.phase == view.Phase.PLAN)
+	for pair in [["ghost", KEY_1, "ghost"], ["decoy", KEY_2, "decoys"], ["dark", KEY_3, "dark"]]:
+		for c: Vector2i in alloc[pair[2]]:
+			view._key(pair[1])
+			view._act("cell:%d,%d" % [c.x, c.y])
+	_ok("levers placed by key and click", (view.model.plan["ghost"] as Array).size() == (alloc["ghost"] as Array).size() and (view.model.plan["decoys"] as Array).size() == (alloc["decoys"] as Array).size())
 	view._key(KEY_ENTER)
-	_ok(tag + " Enter shows the forecast", view.phase == view.Phase.FORECAST)
+	_ok("Enter shows the forecast", view.phase == view.Phase.FORECAST)
 	view._key(KEY_ENTER)
-	_ok(tag + " Enter launches the sweep", view.phase == view.Phase.PLAY and view.play != null)
+	_ok("Enter launches the sweep", view.phase == view.Phase.PLAY and view.play != null)
 	var guard := 0
 	var clicked := false
-	var pressed := false
 	while view.phase == view.Phase.PLAY and guard < 4000:
-		if view.play.state == M10Play.S.DECIDE and not clicked:
-			view._act("cell:0,1")
-			_ok(tag + " a click off the lit line is refused", view.play.state == M10Play.S.DECIDE)
-			view._act("cell:2,0")
+		if view.play.state == L2Play.S.DECIDE and not clicked:
+			for off in L2Rules.nodes():
+				if not view.play.b2.has(off):
+					view._act("cell:%d,%d" % [off.x, off.y])
+					break
+			_ok("a click off the lit line is refused", view.play.state == L2Play.S.DECIDE)
+			if spoof == L2Rules.NONE:
+				view._key(KEY_H)
+			else:
+				view._act("cell:%d,%d" % [spoof.x, spoof.y])
 			clicked = true
-		elif view.play.state == M10Play.S.PRESS and not pressed:
-			view.play.press_t = M10Config.PRESS_PERFECT
-			view._key(KEY_SPACE)
-			pressed = true
 		view._process(0.05)
 		guard += 1
-	_ok(tag + " the playout ends in the aftermath by itself", view.phase == view.Phase.AFTER and not view.row.is_empty())
-	_ok(tag + " aftermath ledger reconciles", M10Rules.ledger_reconciles(view.row["ledger"]))
-	_ok(tag + " the spoof landed (choice always, press on time)", not (view.row["spoof"] as Array).is_empty())
-	var truth := M10Rules.found_of(view.model.assets, view.model.b1, view.model.cands[0], view.model.own3, view.model.plan, [1, Vector2i(2, 0)])
-	_ok(tag + " aftermath = rules sweep with that spoof", view.row["found"] == truth)
+	_ok("the playout ends by itself", view.phase in [view.Phase.AFTER, view.Phase.BREACH] and not view.row.is_empty())
+
+
+func _view_planned() -> void:
+	var view := _make_view(0)
+	var tag := "[view planned]"
+	_ok(tag + " opens on the contact screen", view.phase == view.Phase.CONTACT)
+	var steps: Array = view.model.leg["planned"]
+	var s: Dictionary = steps[0]
+	_view_raid(view, L2Data.alloc_of(s["alloc"]), L2Data.spoof_of(s["spoof"]))
+	_ok(tag + " aftermath, not a breach", view.phase == view.Phase.AFTER)
+	_ok(tag + " aftermath = golden", (view.row["after_raid"] as L2State).to_array() == L2State.from_golden(s["after_raid"]).to_array())
+	_ok(tag + " aftermath ledger reconciles", L2Model.ledger_reconciles(view.row["ledger"]))
 	view._key(KEY_ENTER)
-	_ok(tag + " Enter goes to raid 2 contact", view.phase == view.Phase.CONTACT and view.model.raid == 1)
+	_ok(tag + " Enter opens the repair step", view.phase == view.Phase.REPAIR)
+	var down: Array = []
+	for c: Vector2i in view.model.state.status:
+		if view.model.state.status[c] == "DOWN":
+			down.append(c)
+	_ok(tag + " the golden raid 1 left DOWN assets to repair", not down.is_empty())
+	view._act("cell:%d,%d" % [down[0].x, down[0].y])
+	_ok(tag + " clicking a DOWN asset picks its repair", view.model.pending_repairs.has(down[0]))
+	view._act("cell:%d,%d" % [down[0].x, down[0].y])
+	_ok(tag + " clicking again takes it back", view.model.pending_repairs.is_empty())
+	for c: Vector2i in L2Data.cells(s["repairs"]):
+		view._act("cell:%d,%d" % [c.x, c.y])
+	view._key(KEY_ENTER)
+	_ok(tag + " Enter goes to raid 2 contact with the golden state", view.phase == view.Phase.CONTACT and view.model.raid == 1 and view.model.state.to_array() == L2State.from_golden(s["after"]).to_array())
+	view.queue_free()
+
+
+func _view_breach() -> void:
+	var view := _make_view(0)
+	var tag := "[view breach]"
+	var guard := 0
+	while view.phase != view.Phase.BREACH and guard < 4:
+		var d := L2Rules.naive_decide(view.model.leg, view.model.raid, view.model.state)
+		_view_raid(view, d["alloc"], d["spoof"])
+		if view.phase == view.Phase.AFTER:
+			view._key(KEY_ENTER)
+			for c: Vector2i in L2Rules.naive_repairs(view.model.leg, view.model.state):
+				view._act("cell:%d,%d" % [c.x, c.y])
+			view._key(KEY_ENTER)
+		guard += 1
+	_ok(tag + " the naive line ends in the full-screen BREACH", view.phase == view.Phase.BREACH)
+	_ok(tag + " breach on raid 3 with HOME 0", view.model.raid == 2 and view.model.state.home_hp == 0 and view.model.breached)
+	view._key(KEY_ENTER)
+	_ok(tag + " Enter shows the leg record", view.phase == view.Phase.RECORD)
+	_ok(tag + " the record scores -100", view.model.final_score() == -100)
+	view._key(KEY_ENTER)
+	_ok(tag + " Enter starts the leg again", view.phase == view.Phase.CONTACT and view.model.raid == 0 and view.model.state.home_hp == 3)
 	view.queue_free()

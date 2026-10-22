@@ -1,6 +1,6 @@
-class_name M10Glyphs
+class_name L2Glyphs
 extends RefCounted
-## Vector placeholder glyphs and palette for the M10 lab, matching the r10 mockups and the M9 glyph language:
+## Vector placeholder glyphs and palette for the L2 lab, matching the r10 mockups and the M9 glyph language:
 ## threats cobalt, the Cell yellow, red only marks loss, teal only the Cell's holds and spoof. All UI text goes through
 ## `text()`, so `scramble` (the --scramble capture flag) replaces every letter for the no-words test.
 
@@ -159,7 +159,7 @@ static func arrow(ci: CanvasItem, a: Vector2, b: Vector2, col: Color, w: float =
 	ci.draw_colored_polygon(PackedVector2Array([b, b - d * head + n * head * 0.55, b - d * head - n * head * 0.55]), col)
 
 
-## Candidate end shapes: 0 triangle, 1 square, 2 diamond. Outline only (or filled).
+## Candidate end shapes: 0 triangle, 1 square, 2 circle. Outline only (or filled).
 static func cand_shape(ci: CanvasItem, c: Vector2, i: int, r: float, col: Color, fill: Color = Color(0, 0, 0, 0), w: float = 3.0) -> void:
 	var pts: PackedVector2Array
 	match i:
@@ -168,7 +168,9 @@ static func cand_shape(ci: CanvasItem, c: Vector2, i: int, r: float, col: Color,
 		1:
 			pts = PackedVector2Array([c + Vector2(-r, -r), c + Vector2(r, -r), c + Vector2(r, r), c + Vector2(-r, r)])
 		_:
-			pts = PackedVector2Array([c + Vector2(0, -r * 1.2), c + Vector2(r, 0), c + Vector2(0, r * 1.2), c + Vector2(-r, 0)])
+			pts = PackedVector2Array()
+			for k in range(16):
+				pts.append(c + Vector2(cos(k * TAU / 16.0), sin(k * TAU / 16.0)) * r * 1.05)
 	if fill.a > 0.0:
 		ci.draw_colored_polygon(pts, fill)
 	pts.append(pts[0])
@@ -176,10 +178,12 @@ static func cand_shape(ci: CanvasItem, c: Vector2, i: int, r: float, col: Color,
 
 
 ## Beam-order badge (1, 2, 3).
-static func badge(ci: CanvasItem, c: Vector2, n: int, col: Color = THREAT) -> void:
-	ci.draw_circle(c, 11.0, col)
-	ci.draw_arc(c, 11.0, 0.0, TAU, 20, INK, 1.5, true)
-	text_c(ci, c, str(n), 15, INK)
+static func badge(ci: CanvasItem, c: Vector2, n: Variant, col: Color = THREAT) -> void:
+	var s := str(n)
+	var r := 11.0 if s.length() < 2 else 15.0
+	ci.draw_circle(c, r, col)
+	ci.draw_arc(c, r, 0.0, TAU, 20, INK, 1.5, true)
+	text_c(ci, c, s, 15, INK)
 
 
 ## Wrench (the DOWN mark): a handle with an open jaw.
@@ -210,3 +214,50 @@ static func stamp(ci: CanvasItem, c: Vector2, word: String, col: Color, size: in
 	if sub != "":
 		text_c(ci, Vector2(0, h * 0.5 - 9.0 - size * 0.35), sub, int(size * 0.62), col)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## DOWN mark (GDD): a white lightning bolt.
+static func bolt(ci: CanvasItem, c: Vector2, r: float, col: Color = INK) -> void:
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(r * 0.35, -r), c + Vector2(-r * 0.55, r * 0.15), c + Vector2(-r * 0.02, r * 0.15),
+		c + Vector2(-r * 0.35, r), c + Vector2(r * 0.55, -r * 0.2), c + Vector2(r * 0.02, -r * 0.2)]), col)
+
+
+## TAKEN: a cobalt corp marker (hexagon with a flag).
+static func corp(ci: CanvasItem, c: Vector2, r: float) -> void:
+	hexagon(ci, c, r, Color8(30, 44, 110), THREAT_LIGHT, maxf(2.0, r * 0.14))
+	ci.draw_line(c + Vector2(-r * 0.25, r * 0.55), c + Vector2(-r * 0.25, -r * 0.55), INK, maxf(1.5, r * 0.12), true)
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 0.25, -r * 0.55), c + Vector2(r * 0.5, -r * 0.3), c + Vector2(-r * 0.25, -r * 0.05)]), INK)
+
+
+## HOME server: a rounded square with two stacked bars.
+static func home_server(ci: CanvasItem, c: Vector2, r: float, edge: Color, fill: Color = PANEL) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = fill
+	sb.set_corner_radius_all(maxi(2, int(r * 0.15)))
+	sb.border_color = edge
+	sb.set_border_width_all(maxi(2, int(r * 0.1)))
+	ci.draw_style_box(sb, Rect2(c.x - r, c.y - r, r * 2.0, r * 2.0))
+	for k in range(2):
+		var y := c.y - r * 0.38 + k * r * 0.76
+		ci.draw_rect(Rect2(c.x - r * 0.6, y - r * 0.2, r * 1.2, r * 0.4), edge, false, maxf(1.0, r * 0.08))
+		ci.draw_circle(Vector2(c.x + r * 0.35, y), r * 0.09, edge)
+
+
+## A pip: filled (integrity left), hollow red cross (lost), hatched (projected loss), saved (spoof keeps it).
+static func pip(ci: CanvasItem, c: Vector2, s: float, mode: String) -> void:
+	var r := Rect2(c.x - s * 0.5, c.y - s * 0.5, s, s)
+	match mode:
+		"full":
+			ci.draw_rect(r, CELL)
+		"lost":
+			ci.draw_rect(r, DMG, false, 2.0)
+			cross(ci, c, s * 0.28, DMG, 2.0)
+		"proj":
+			ci.draw_rect(r, Color(DMG.r, DMG.g, DMG.b, 0.3))
+			ci.draw_rect(r, DMG, false, 2.0)
+			ci.draw_line(r.position + Vector2(0, s), r.position + Vector2(s, 0), DMG, 2.0, true)
+		"saved":
+			ci.draw_rect(r, CELL)
+			ci.draw_rect(r.grow(3.0), CLEAN, false, 2.0)
+		_:
+			ci.draw_rect(r, PANEL_EDGE, false, 2.0)
