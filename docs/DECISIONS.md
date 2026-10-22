@@ -9817,4 +9817,8 @@ Quick win 2 after Foundation (AUDIT.md "Grease pencil: fail", score 32; designer
   drops and turns a bit more (`word_baseline_jitter` 0.05, was 0.035; `word_letter_turn` 0.09, was 0.06), all from the
   word's own hash (`RcWaxFont.layout`'s seed, the text's hash), so a word draws the same every frame. The ink of a
   line's first initial may reach a little left of its measured box.
+  Follow-up from the sheet: T's back arm is straight (no hook, it read as an r beside an I), with room before it and
+  a 20-unit overhang over the next letter (a per-glyph kern in the source); the bearings are 22 (were 16). The engine
+  words' nib contrast is eased to 0.3 (the face keeps 0.7), with a shorter lift (0.72 over 0.8 widths) and fade
+  (0.2 over 0.8), so a short crossbar still reads at word sizes.
 - **Open questions for the designer.** (1) RC Wax has no accented letters (English only today); a localisation pass extends the stroke source. (2) The bible's "8-10 px" for every stroke now covers marks only; hero marks are 16 px (AUDIT). (3) Hand marks moved from the pink drip marker to red / yellow wax; say if the Cell's pink marker should stay a medium of its own.

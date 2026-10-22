@@ -57,12 +57,13 @@ const DEFAULT_PATH := "res://addons/rc_look/config/pencil_look.tres"
 @export var word_core_light: float = 0.22
 ## A word stroke's end (designer 2026-10-21: uneven, with some transparency): the wax fades by `word_tail_fade` over
 ## its last `word_tail_len` widths, smoothly. Its start is cut square by the chisel (a box cap).
-## A word's broad nib (designer 2026-10-21: more calligraphic; build_wax_font.py NIB_DEG / NIB_CONTRAST): held at
+## A word's broad nib (designer 2026-10-21: more calligraphic; build_wax_font.py NIB_DEG; its contrast eased from the
+## face's 0.7 so a crossbar still reads at word sizes): held at
 ## `word_nib_deg` (up to the right on screen), thin along its edge, full across it; `word_nib_contrast` 0 = round.
 @export var word_nib_deg: float = 25.0
-@export var word_nib_contrast: float = 0.7
-@export var word_tail_fade: float = 0.3
-@export var word_tail_len: float = 1.0
+@export var word_nib_contrast: float = 0.3
+@export var word_tail_fade: float = 0.2
+@export var word_tail_len: float = 0.8
 @export var word_letter_turn: float = 0.06
 @export var word_baseline_jitter: float = 0.035
 @export var word_size_jitter: float = 0.04

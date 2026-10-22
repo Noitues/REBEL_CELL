@@ -44,7 +44,7 @@ GRID_WIDTH = 200
 GRID_Y0 = GRID_WIDTH / 2
 GRID_K = (CAP_INK - GRID_WIDTH) / 100.0
 # The side bearings (em units, past the half width) and the space.
-BEARING = 16
+BEARING = 22
 SPACE_ADV = 260
 # The forward slant (x per y) and the small caps' share.
 SLANT = 0.16
@@ -76,7 +76,9 @@ STAMP_STEP = 16.0
 # --- The source --------------------------------------------------------------------------------------------------
 # glyph: (width in grid units, [stroke, ...]); a stroke is "L" (a polyline: its corners stay corners) or "C" (a
 # Catmull-Rom curve through the points) and its points. A single-point "D" is a dot (a pen dab). "F" is a flourish: a
-# curve like "C" that the advance leaves out, so a swash tucks under the next letter instead of pushing it away.
+# curve like "C" that the advance leaves out, so a swash tucks under the next letter instead of pushing it away. An
+# optional third item (left, right) is how far (grid units) the ink may overhang its neighbours, as a hand kerns (< 0:
+# more room): T's crossbar runs over the next letter and keeps clear of the one before.
 GLYPHS = {
     # Marker capitals after the kit's HIT IT (designer 2026-10-21: hand-built, never a geometric face): narrow, mostly
     # straight strokes with a hand's bends, crossbars that climb and run past the stems, bowls of a few pushes.
@@ -113,7 +115,7 @@ GLYPHS = {
                ("C", [(18, 46), (32, 26), (44, 8), (54, -3)]), ("F", [(54, -3), (62, -12), (76, -16), (90, -10), (98, 4)])]),
     "S": (50, [("C", [(52, 88), (36, 100), (12, 96), (2, 78), (12, 60), (30, 52), (48, 40), (52, 16), (36, 0), (12, 0),
                       (-2, 12), (-4, 24)])]),
-    "T": (56, [("C", [(-24, 86), (-22, 96), (-12, 98), (62, 103)]), ("L", [(29, 101), (27, -3)])]),
+    "T": (56, [("C", [(-16, 96), (-4, 98), (30, 101), (62, 103)]), ("L", [(29, 101), (27, -3)])], (-10, 20)),
     "U": (50, [("C", [(0, 103), (-1, 32), (6, 6), (26, -1), (44, 6), (50, 32), (51, 103)]),
                ("L", [(51, 100), (52, -3)]), ("F", [(52, -3), (60, -10), (70, -9), (76, 0)])]),
     "V": (54, [("L", [(0, 103), (26, -3), (54, 104)])]),
@@ -226,7 +228,8 @@ def glyph_strokes(ch):
     """The centre lines of `ch` in em units (y up, x from the left bearing): [(kind, [(x, y), ...]), ...], adv."""
     src = SMALL.get(ch, ch)
     k = SMALL_CAPS if ch in SMALL else 1.0
-    gw, strokes = GLYPHS[src]
+    gw, strokes = GLYPHS[src][0], GLYPHS[src][1]
+    over_l, over_r = GLYPHS[src][2] if len(GLYPHS[src]) > 2 else (0, 0)
     cp = ord(ch)
     cx, cy = gw * 0.5, 50.0
     turn = _h11(cp, 991) * TURN
@@ -261,7 +264,8 @@ def glyph_strokes(ch):
     # shift so the ink starts BEARING past the origin
     body = [s for kind, s in out if kind != "F"] or [s for _, s in out]
     min_x = min(p[0] for s in body for p in s)
-    max_x = max(p[0] for s in body for p in s)
+    max_x = max(p[0] for s in body for p in s) - over_r * GRID_K * k
+    min_x += over_l * GRID_K * k
     dx = BEARING + WIDTH / 2 - min_x
     out = [(kind, [(x + dx, y) for (x, y) in s]) for kind, s in out]
     # a flourish is the pen running on: it joins the stroke whose end it leaves from (one pen start, one end)
