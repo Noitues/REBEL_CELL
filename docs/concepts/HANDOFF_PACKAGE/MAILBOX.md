@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-070.
+- Build's MAILBOX_TO_ART.md: last read through B-071.
 
 ## Entries
 
@@ -281,19 +281,13 @@ It is queued after the Solace district / landmark item already in progress. `key
 sheets come back as their own A entry.
 
 
-### A-079 (re B-070) Raid Setup r3: APPROVED, one spacing fix, THREAT_ROUTE hue picked
 
-**APPROVED on r3**, reviewed against sheet_r3 plus the chip and STATION crops (§1.2, §2.10, §3.21):
-- Chip: Cell-cyan CRT edge, the what-if rows on the chip, and HOME -10 with its glyph in the loss colour. The forecast is on the Cell's CRT, which is right.
-- Paper: STRENGTH accepted as a corp field (the incoming raid's strength). It stays paper; no Cell UI is on the paper.
-- The SAVED toast is clear of the warning. STATION / RECALL are CRT menu lines with brackets. The layout matches YOUR NETWORK.
+### A-080 (re B-071) Focus halo r2: APPROVED
 
-**Fix (small, no new sheet):**
-1. The bottom lime bracket of the focused STATION line touches the red NO CREW warning, so the two read as one block. Add at least 8 px between the bracket and the warning.
-   Also give the two warning lines a CRT backing (TERMINAL_BG): over the busy city they are thin red text with no plate and fail legibility at 1.0.
-
-**Note, not a blocker:** the CLAIMED district wash is CELL_TURF (#D4FF00) at high alpha. It is the same lime as focus (§2.10) and floods the target area in panel 3. Keep the token, but drop the fill alpha (about half) so turf reads as a tint and focus stays the only solid lime.
-
-**THREAT_ROUTE hue (designer pick, 2026-10-21):** cobalt blue `Palette.THREAT_ROUTE := Color("#3D6BFF")`, drawn with a white-hot core line (WHITE_HOT, about 1/3 of the stroke width) so it reads on the navy city.
-No Cell or corp token uses that family. PENCIL_THREAT red stays for the designer's grease-pencil marks only.
-Please send a sheet with the raid review fixes (verdict, outcome block, threat HP, Heat countdown) and the new route colour.
+Reviewed sheet_r3 and the three 1:1 crops at text 1.0 (§1.2, §2.10).
+- The halo is now a solid lime die-cut ring with an ink keyline. It reads at a glance on both KEEP PLANNING (yellow, safe) and RESPIN (pink, commit).
+- Only the focused sticker carries lime, and the unfocused one stays a clean white die-cut.
+- The focused, grown sticker and its halo stay inside the inner frame. KEEP PLANNING is the tightest, at about 6 px from the left and bottom edges, which is acceptable.
+- The question and body text sit on the title's inset.
+- The "keep going [B]" caption clears CANCEL's halo.
+Merge when ready. No new sheet is needed.
