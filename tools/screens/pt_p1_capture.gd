@@ -6,6 +6,7 @@ extends Control
 
 const SCENE := "res://scenes/netrun_map/netrun_scene.tscn"
 const SETTLE := 120
+const FOCUS_SETTLE := 30
 
 var _args: Dictionary = {}
 var _net: Control
@@ -13,6 +14,7 @@ var _shots := ""
 var _step := 0
 var _frame := 0
 var _waiting := false
+var _quit_dlg: ConfirmDialog
 
 
 func _ready() -> void:
@@ -70,6 +72,11 @@ func _process(_delta: float) -> void:
 		_step = 2
 	elif _step == 2 and _frame == SETTLE:
 		_shot("warning")
+		_combat().get_node("RespinConfirm").yes_button.grab_focus()
+		_frame = 0
+		_step = 25
+	elif _step == 25 and _frame == FOCUS_SETTLE:
+		_shot("warning_respin_focus")
 		_combat().get_node("RespinConfirm").no_button.pressed.emit()
 		RunManager.autosave()
 		_net.queue_free()
@@ -84,8 +91,15 @@ func _process(_delta: float) -> void:
 		_step = 4
 	elif _step == 4 and _frame == SETTLE:
 		_shot("resumed")
-		_waiting = false
 		RunManager.delete_save()
+		_net.queue_free()
+		_quit_dlg = ConfirmDialog.new("Quit to the main menu?", "QUIT", "CANCEL", "QUIT", "Your campaign is autosaved.", false, "", "keep going [B]")
+		add_child(_quit_dlg)
+		_frame = 0
+		_step = 5
+	elif _step == 5 and _frame == SETTLE:
+		_shot("quit_confirm")
+		_waiting = false
 		print("PTP1 done")
 		get_tree().quit()
 

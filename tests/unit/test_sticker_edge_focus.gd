@@ -3,7 +3,7 @@ extends GutTest
 ## proportional to its lettering and inside the concept's range (round 33 ui31.sticker: border 12 px on
 ## the 1920 board; edge / body height 0.08 for the title's hero verbs up to 0.27 for CANCEL at 28 px);
 ## (2) focus on EVERY sticker kind is the PEEL-BACK only (lift and corner curl), the sticker keeping its
-## fill, no lime halo or brackets and NO rainbow (designer 2026-10-06, B1d: the rainbow sweep is the one
+## fill, no brackets and NO rainbow (A-075: the lime die-cut halo of a FOCUSED sticker is test_a075_focus_halo) (designer 2026-10-06, B1d: the rainbow sweep is the one
 ## scheduled sweep, see test_sticker_sweep_scheduler); under reduce effects the curl is the end state.
 
 ## The concept's edge / body-height range for lettered stickers.
