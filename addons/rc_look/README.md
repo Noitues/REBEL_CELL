@@ -207,3 +207,51 @@ Rules: low tier drops the split and the screen blur; reduce motion freezes the b
 split and the roll; high contrast is opaque black glass with no effects. The game's call site is `DecryptedHoloPanel`.
 
 Lab: `--module=holo` (see `lab/look_lab.gd`). Sheet: `tools/look_sheet.py --module holo ...`.
+
+## Module 13: vinyl sticker look (`RcLookVinyl`)
+
+One include for every vinyl sticker form the game draws, each the exact arithmetic of its source shader so a later
+migration is pixel-identical (max 0). **Lab only**: the designer approved this module lab-only (raid redesign pause);
+nothing is migrated and no raid screen is wired. The old shaders (`kit/vinyl_sticker`, `kit/sticker_fill`,
+`chrome/vinyl_sticker`, `fx/card_sticker_fx`) and their builders are untouched.
+
+| API | What |
+|---|---|
+| `shaders/rc_vinyl.gdshaderinc` | `rcv_fold_frame`, `rcv_folded_alpha`, `rcv_blurred`; kit: `rcv_kit_rim`, `rcv_kit_gloss_t` / `_spec` / `_gloss`, `rcv_kit_band_dd`, `rcv_kit_flap`, `rcv_kit_dissolve`, `rcv_kit_shadow`, `rcv_kit_composite`; shared: `rcv_foil`, `rcv_band_w`, `rcv_band_mix`, `rcv_grey`; chrome: `rcv_chrome_marker`, `_marker_fill`, `_glitch_keep`, `_glitch`, `_band_dd`; fill: `rcv_holo_fill`, `rcv_gradient_fill`; card: `rcv_card_front`, `_scan_line`, `_gloss`. Every literal is a `const RCV_*` |
+| `shaders/rc_vinyl_kit / _chrome / _fill / _card.gdshader` | thin wrappers with the old shaders' uniforms (the stale colour defaults replaced by the real stock values) |
+| `RcLookVinyl.kit_material(id, art, body, overrides)`, `.chrome_material(...)`, `.fill_material(...)`, `.card_material(size)` | materials for a stock or verb colour |
+| `RcLookVinyl.kit_uniforms(id, body)`, `.chrome_uniforms(id, font_px, top, bottom)`, `.kit_pose(pose)` | what the builders set at rest, and the frozen poses (hover, fold, band, dissolve, disabled, slap) |
+| `RcLookVinyl.fold_frame / folded_alpha / kit_rim / gloss_t / spec / kit_gloss / foil / band_mix / kit_band_dd / chrome_band_dd / kit_flap / dissolve_verdict / grey / shadow_alpha / chrome_marker / chrome_marker_fill / glitch_* / holo_fill / card_*` | exact GDScript mirrors (rgb as `Vector3`) |
+| `RcLookVinyl.peel_leg`, `.edge_for` | VinylSticker's peel leg and word edge |
+| `config/look_vinyl.tres` (`RcLookVinylConfig`, `RcLookVinylPreset`) | every number: the `Shader:` groups equal the include's `RCV_*` constants by name (a test keeps them equal), the `Builder:` groups are what VinylSticker / VerbSticker / StickerSeam set from code, `presets` are `kit_pink / red / yellow / white / ink / kraft / holo` and `chrome_pink / yellow / blue / grey / glitch` |
+| lab: `--module=vinyl` | stocks at rest, pink poses on the new wrapper and the old shader, chrome verbs both ways, holo fill, card, and the GDScript mirror beside the shader |
+
+**Proof.** `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://addons/rc_look/lab/look_lab.tscn --
+--module=vinyl --prove --prove-only` renders every stock x pose, the four fold corners, every chrome verb, the holo fill
+and the card through the old shader and the new wrapper into SubViewports and prints `vinyl_prove: <case> max <n>`
+(8-bit levels; 0 = identical) and, for the mirror, its gap to the shader (no shadow, no dissolve). The hash forms
+(dissolve cells, holo sparkles) run on float32 sin on the GPU, so the mirror matches their form, not their pixels.
+
+Numbers it does not own: the motion amplitudes and durations stay in `ui_motion.tres` (`sticker_*`); the palette stays
+`palette.gd` (the test pins every preset to it).
+
+### Open rulings (kit vs chrome, found by the inventory; both forms are kept)
+
+1. **Band geometry.** The kit's holographic band runs along (1, 1) (lines `dot(px, n) = c`, `n = (-0.707, 0.707)`, it moves
+   down-left); the chrome band runs along x + y = sweep (the other diagonal, it moves down-right). DECISIONS calls both
+   "45 degree". `rcv_kit_band_dd` and `rcv_chrome_band_dd` keep each.
+2. **Chrome white sweep.** `rcv_chrome_marker_fill` still lays a second, white band (slant 0.45) on the same `sweep`
+   uniform as the rainbow band, contradicting the chrome header ("not white") and DECISIONS ("one narrow band").
+3. **Disabled look.** Kit: full grey (1.0) and alpha 0.8; chrome: 80 % grey, alpha 1. `Palette.STICKER_DISABLED_GREY`
+   says 80 % grey. Config: `kit_disabled_grey` / `kit_disabled_alpha` / `chrome_disabled_grey`.
+4. **Extrude and shadow colour.** Kit: `VINYL_EXTRUDE` #09080C for both; chrome: `VINYL_INK` #141118 (shadow at alpha
+   0.55). Presets carry each (`shadow_color`).
+5. **Pink verb.** The fill is `STICKER_FILL_PINK` #FF60AC to #DE1270 in both; `STICKER_COMMIT` (#FF3DA8) is a third pink
+   (HUD name sticker, hot button). The presets use the fill.
+6. **Chrome `sweep_width` is written twice** by VerbSticker (draw: 35 % of the size; `run_sweep`: the band half width),
+   so a redraw mid-sweep changes the band. The chrome uniform defaults here follow `chrome_uniforms` (the draw value).
+7. **Chrome fills have no RED or WHITE.** A verb with a missing art file falls to PINK.
+8. **Stale defaults** (replaced in the wrappers): kit `shadow_color` (now VINYL_EXTRUDE), chrome `top/bottom_color`,
+   `glitch_b`, `white_color`. Pixels in the game are unchanged: the builders always overwrote them.
+9. **Card stand-in.** `card_sticker_fx` is still the played-card seam although the kit sticker (1B) has landed; whether the
+   seam switches to the kit look is a designer call.
