@@ -511,3 +511,18 @@ DOWN → loss lands → a Site TAKEN → home hit → the verdict lands → the 
 
 **Known, not fixed:** the report can repeat names ("T1 SITE, T1 SITE").
 Ask: APPROVED, or the fixes. After that, a fresh critic re-reviews the whole raid flow.
+
+### RDL-001 · 2026-10-22 · raid design lab · REQUEST: concept art for the sweep raid (V axis) · ASK
+- **Why.** The raid design lab's calibration critic scored ours against shipped games
+  (`docs/design/raid_concepts/_reviews/REVIEW_CALIBRATION.md`). Our core axes sit at Kingdom Rush / TFT level, but
+  visuals score 3–5 against their 7–8, and visuals plus suspense are why watched raids are loved.
+- **Request.** Bold concept art for the Manhunt sweep raid's five moments: contact, plan, forecast, playout, aftermath.
+  Mockups are in `docs/design/raid_concepts/m_manhunt_r10/r10/` on branch `claude/raid-design-lab-2d2e2e` (not on main
+  yet).
+- **The art needs to carry:**
+  - the sealed beam's three candidate lines, told apart by shape;
+  - the unseal moment;
+  - the spoof press window;
+  - the wrench DOWN state.
+- **Constraints.** Threats are cobalt #3D6BFF. This is concept work only, with no game rule changes.
+- The designer decides whether and when.

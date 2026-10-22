@@ -62,3 +62,38 @@ needs a live preview.
 - **Last stand:** Ring Siege as the HQ fight when the front reaches HQ (Heat 100).
 
 The cadence rule is a **designer decision**: guaranteed catches against threshold raids.
+
+## Round 9: suspense levers (`ghost2.py`, `ring_brake.py`)
+
+**Sealed beam / spoof press / both**, 30 networks, full lever set against scarce levers (1 ghost, 1 decoy):
+
+| Measure | Full levers | Scarce |
+|---|---|---|
+| Sealed: the reveal changes the outcome | 23% | 53% |
+| Spoof: land vs miss swing | 2.1 | 5.7 |
+| Spoof: planning around the press changes the allocation | 20% | 50% |
+| Both: reacting after the reveal beats committing in advance | 37% | 60% |
+
+**Spinner (one press):**
+- A one-tick BRAKE does nothing: gain 0.1, even on 6-threat raids.
+- A one-slice SNAP with a 9-slice pool helps on 50% of raids. When it matters, there is usually exactly one right
+  moment, and the stakes are about +2.
+- Unpriced survivors made a stall-only defense optimal. Pricing survivors at 3 each is now the rule.
+
+**Finding:** a hidden element or a press adds suspense only when the plan cannot cover everything. Scarcity is the
+precondition.
+
+## Round 10: the Invisible, Inc. alarm (`ghost3.py`)
+
+**Setup:**
+- Beams known in full.
+- An alarm (found count, optionally pre-filled by Heat) trips a hidden reinforcement beam.
+
+**Result:** the best plan never trips it from 0. From a Heat pre-fill of 1, it evades completely on 83% of networks,
+and the outcome never varies.
+
+**Finding:**
+- Certain local information plus an escalation you can see coming is avoidable, so it adds no suspense.
+- The unknown must touch even the best plan, as the sealed beam does.
+- Round 10 keeps the M9c rules (sealed beam + reactive spoof). It changes the forecast to local (which nodes each line
+  finds) and fixes the presentation.

@@ -45,6 +45,7 @@ CONCEPTS = {
     "m9a": ("concept_m9a", "m_manhunt_sealed"),
     "m9b": ("concept_m9b", "m_manhunt_spoof"),
     "m9c": ("concept_m9c", "m_manhunt_both"),
+    "m10": ("concept_m10_manhunt", "m_manhunt_r10"),
     "f3": ("concept_f3_ledger", "f_plan_ledger"),
     "c3": ("concept_c3_duel", "c_strength_duel"),
     "d3": ("concept_d3_loadout", "d_autobattler_loadout"),

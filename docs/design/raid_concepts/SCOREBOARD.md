@@ -198,3 +198,12 @@ outcome breaks predictability.
 - **The rubric over-rewards P:** an exact table earns it cheaply and lowers D.
 - **N tops out at 8** for every shipped game.
 - **Invisible, Inc. is the only system above 7 on both P and S.** It forecasts locally and keeps the escalation unknown.
+
+## Target (after calibration, 2026-10-22)
+A hands-off or one-press raid is a **watched** system. The shipped watched systems score:
+- FTL: 35;
+- Kingdom Rush: 33;
+- TFT: 31.
+
+All three score S 8 and V 7–8. The target is about **35/50 plus S ≥ 8 and V ≥ 7**, not 40+. 40+ is only reached by
+turn-based telegraph games (Into the Breach, Slay the Spire).
