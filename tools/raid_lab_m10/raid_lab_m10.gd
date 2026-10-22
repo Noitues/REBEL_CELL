@@ -1,19 +1,22 @@
 extends Control
-## L2 sweep-raid lab: the playable view. Reads L2Model / L2Play and draws; the rules live in L2Rules.
-## Flow: contact (the raid's strength by Heat band), plan, forecast (outcomes per node, held spoof included),
-## hands-off playout with the spoof decision, aftermath, the between-raids repair step, leg record. A raid that touches HOME
-## to 0 integrity ends the campaign (BREACH, full screen).
+## L3 sweep-raid lab: the playable view. Reads L3Model / L3Play and draws; the rules live in L3Rules.
+## Flow: contact (the raid's strength by Heat band), plan (the leg kit tray, levers), forecast (per sealed line: the hold
+## result, the nodes a spoof could save and the range with a spoof; it never names a best spoof), hands-off playout with
+## the spoof decision, aftermath (outcome tier), the between-raids screen (repairs, one shop buy, run intensity), leg
+## record. A touch that takes HOME to 0 integrity ends the sweep and the campaign (BREACH, full screen).
 ## Capture mode: `-- --shots=<abs dir> [--leg=0] [--line=planned|naive|greedy] [--lite] [--scramble]` plays the whole leg.
 
 enum Phase { CONTACT, PLAN, FORECAST, PLAY, AFTER, REPAIR, BREACH, RECORD }
 
-const G = preload("res://tools/raid_lab_m10/l2_glyphs.gd")
+const G = preload("res://tools/raid_lab_m10/l3_glyphs.gd")
 const SPEEDS := [1.0, 2.0, 4.0]
 const NODE_R := 28.0
 const DASHES := [Vector2(18, 8), Vector2(6, 6), Vector2(14, 4)]
 const PANEL_X := 780.0
 const PANEL_W := 460.0
 const STRIP_Y := 676.0
+## Where a spoof mark sits on its node (up and right, clear of the sealed lines' caps).
+const SPOOF_OFF := Vector2(36, -34)
 const GREY := Color8(82, 86, 104)
 const GREY_EDGE := Color8(130, 136, 160)
 const LEVER_TEXT := {
@@ -22,8 +25,8 @@ const LEVER_TEXT := {
 	"dark": ["GO DARK", "Hides one asset; it earns nothing this interval.", "3"],
 }
 
-var model := L2Model.new()
-var play: L2Play = null
+var model := L3Model.new()
+var play: L3Play = null
 var row: Dictionary = {}
 var phase: int = Phase.CONTACT
 var sel_lever: String = ""
@@ -35,6 +38,7 @@ var capture_dir: String = ""
 var cap_line: String = "planned"
 var cap_lite: bool = false
 var _settled: bool = false
+var _shot_n: int = 0
 var _badges: Array = []
 
 
@@ -49,9 +53,9 @@ func _ready() -> void:
 		elif a.begins_with("--line="):
 			cap_line = a.substr(7)
 		elif a.begins_with("--spoofview="):
-			L2Config.toggles["SPOOF_VIEW"] = a.substr(12)
+			L3Config.toggles["SPOOF_VIEW"] = a.substr(12)
 		elif a.begins_with("--key="):
-			L2Config.toggles["KEY_LABEL"] = a.substr(6)
+			L3Config.toggles["KEY_LABEL"] = a.substr(6)
 		elif a == "--lite":
 			cap_lite = true
 		elif a == "--scramble":
@@ -89,6 +93,26 @@ func _input(event: InputEvent) -> void:
 
 func _key(code: int) -> void:
 	var planning: bool = phase in [Phase.PLAN, Phase.FORECAST]
+	if phase == Phase.REPAIR:
+		match code:
+			KEY_1:
+				_act("buy:ghost")
+				return
+			KEY_2:
+				_act("buy:decoy")
+				return
+			KEY_3:
+				_act("buy:spoof")
+				return
+			KEY_L:
+				_act("inten:LOW")
+				return
+			KEY_N:
+				_act("inten:NORMAL")
+				return
+			KEY_H:
+				_act("inten:HOT")
+				return
 	match code:
 		KEY_F1:
 			_act("tog:SPOOF_VIEW")
@@ -121,7 +145,7 @@ func _key(code: int) -> void:
 func _act(id: String) -> void:
 	status_msg = ""
 	if id.begins_with("tog:"):
-		L2Config.cycle(id.substr(4))
+		L3Config.cycle(id.substr(4))
 	elif id == "next":
 		_next()
 	elif id == "back":
@@ -151,6 +175,13 @@ func _act(id: String) -> void:
 	elif id == "hold":
 		if phase == Phase.PLAY and play != null:
 			play.pass_spoof()
+	elif id.begins_with("buy:"):
+		if phase == Phase.REPAIR:
+			var what := id.substr(4)
+			status_msg = model.set_buy("" if what == "none" else what)
+	elif id.begins_with("inten:"):
+		if phase == Phase.REPAIR:
+			model.set_intensity(id.substr(6))
 
 
 func _next() -> void:
@@ -198,7 +229,7 @@ func _click_cell(c: Vector2i) -> void:
 		else:
 			status_msg = "Pick a lever first (1 ghost, 2 decoy, 3 go dark)."
 	elif phase == Phase.PLAY and play != null:
-		if play.state == L2Play.S.DECIDE:
+		if play.state == L3Play.S.DECIDE:
 			if not play.choose_spoof(c):
 				status_msg = "Pick a node on the lit beam-2 line."
 	elif phase == Phase.REPAIR:
@@ -335,7 +366,7 @@ func _mid(g: Dictionary) -> Vector2:
 
 ## Hunter columns that coincide with another line shift 14 px so both stay visible.
 func _h_off(x: int) -> float:
-	var col_key := str(L2Rules.column(x))
+	var col_key := str(L3Rules.column(x))
 	for ln in _all_lines():
 		if str(ln) == col_key:
 			return 14.0
@@ -358,7 +389,7 @@ func _beam_geom(id: String, line: Array = []) -> Dictionary:
 		"extra2":
 			return _geom(rd["extra2"], offs[2])
 		"b2":
-			return _geom(rd["cands"][L2Config.REVEAL], offs[3 + L2Config.REVEAL])
+			return _geom(rd["cands"][L3Config.REVEAL], offs[3 + L3Config.REVEAL])
 	return _geom(line, _h_off((line[0] as Vector2i).x))
 
 
@@ -394,14 +425,14 @@ func _hud_values() -> Dictionary:
 	match phase:
 		Phase.PLAN, Phase.FORECAST:
 			v["heat"] = model.heat_now()
-			v["bank"] = model.bank_now()
+			v["bank"] = model.state.bank
 			v["dheat"] = int(v["heat"]) - s.heat
 			v["dbank"] = int(v["bank"]) - s.bank
 			if phase == Phase.FORECAST:
 				v["proj"] = model.worst_home_loss()
 		Phase.PLAY:
 			v["heat"] = play.run_heat
-			v["bank"] = model.bank_now()
+			v["bank"] = model.state.bank
 			v["dheat"] = play.run_heat - play.before.heat
 			v["dbank"] = int(v["bank"]) - play.before.bank
 			v["hp"] = play.status_now()["home_hp"]
@@ -409,10 +440,9 @@ func _hud_values() -> Dictionary:
 			if not row.is_empty() and phase == Phase.AFTER:
 				var l: Dictionary = row["ledger"]
 				v["dheat"] = int(l["heat_after"]) - int(l["heat_before"])
-				v["dbank"] = int(l["bank_after"]) - int(l["bank_before"])
 		Phase.REPAIR:
 			var bp: Dictionary = model.between_preview()
-			var ns: L2State = bp["state"]
+			var ns: L3State = bp["state"]
 			v["heat"] = ns.heat
 			v["bank"] = ns.bank
 			v["dheat"] = ns.heat - s.heat
@@ -430,16 +460,16 @@ func _draw_hud() -> void:
 	draw_rect(Rect2(hx, hy, hw, 20), Color8(30, 34, 56))
 	var heat: int = int(v["heat"])
 	var dh: int = int(v["dheat"])
-	var fillw := hw * clampf(float(heat) / L2Config.HEAT_MAX, 0.0, 1.0)
-	var base_w := hw * clampf(float(heat - maxi(0, dh)) / L2Config.HEAT_MAX, 0.0, 1.0)
+	var fillw := hw * clampf(float(heat) / L3Config.HEAT_MAX, 0.0, 1.0)
+	var base_w := hw * clampf(float(heat - maxi(0, dh)) / L3Config.HEAT_MAX, 0.0, 1.0)
 	draw_rect(Rect2(hx, hy, base_w, 20), G.HEAT)
 	if dh > 0:
 		draw_rect(Rect2(hx + base_w, hy, fillw - base_w, 20), G.HOLD)
 	elif dh < 0:
 		draw_rect(Rect2(hx + fillw, hy, base_w - fillw, 20), Color8(255, 110, 40, 90))
 	draw_rect(Rect2(hx, hy, hw, 20), G.PANEL_EDGE, false, 2.0)
-	for band in [[L2Config.EXTRA_AT, "+1 BEAM"], [L2Config.STRONG_AT, "+2 BEAMS"]]:
-		var bxp: float = hx + hw * float(band[0]) / L2Config.HEAT_MAX
+	for band in [[L3Config.EXTRA_AT, "+1 BEAM"], [L3Config.STRONG_AT, "+2 BEAMS"]]:
+		var bxp: float = hx + hw * float(band[0]) / L3Config.HEAT_MAX
 		var lit: bool = heat >= int(band[0])
 		G.line(self, Vector2(bxp, hy - 5), Vector2(bxp, hy + 25), G.THREAT_LIGHT if lit else G.THREAT_FADE, 3.0)
 		G.text(self, Vector2(bxp + 5, hy + 27), "%d: %s" % [band[0], band[1]], 12, G.THREAT_LIGHT if lit else G.DIM)
@@ -447,12 +477,12 @@ func _draw_hud() -> void:
 	if dh != 0:
 		G.text(self, Vector2(hx + hw + 52, hy), "%+d" % dh, 17, G.HOLD if dh > 0 else G.CLEAN)
 	# Raid pips.
-	G.text(self, Vector2(530, 12), "RAID %d/%d" % [mini(model.raid + 1, L2Config.RAIDS), L2Config.RAIDS], 13, G.DIM)
-	for j in range(L2Config.RAIDS):
+	G.text(self, Vector2(530, 12), "RAID %d/%d" % [mini(model.raid + 1, L3Config.RAIDS), L3Config.RAIDS], 13, G.DIM)
+	for j in range(L3Config.RAIDS):
 		var c := Vector2(540 + j * 24, 44)
 		if j < model.history.size():
 			var h: Dictionary = model.history[j]
-			G.disc(self, c, 7, G.CLEAN if h["evaded"] else G.DMG)
+			G.disc(self, c, 7, G.tier_color(String(h["tier"])))
 		elif j == model.raid:
 			G.circle(self, c, 7, G.CELL, 3.0)
 		else:
@@ -461,12 +491,12 @@ func _draw_hud() -> void:
 	G.text(self, Vector2(640, 12), "HOME", 13, G.DIM)
 	var hp: int = int(v["hp"])
 	var proj: Array = v["proj"]
-	for k in range(L2Config.HOME_HP):
+	for k in range(L3Config.HOME_HP):
 		var mode := "full"
 		if k >= hp:
 			mode = "lost"
 		elif phase == Phase.FORECAST and k >= hp - int(proj[0]):
-			mode = "saved" if (L2Config.spoof_view() and k < hp - int(proj[1])) else "proj"
+			mode = "saved" if (L3Config.spoof_view() and k < hp - int(proj[1])) else "proj"
 		G.pip(self, Vector2(650 + k * 28, 42), 18.0, mode)
 	# Bank.
 	var bx := 830.0
@@ -474,7 +504,7 @@ func _draw_hud() -> void:
 	G.text(self, Vector2(bx + 34, 14), str(v["bank"]), 26, G.CELL)
 	if int(v["dbank"]) != 0:
 		G.text(self, Vector2(bx + 94, 18), "%+d" % int(v["dbank"]), 18, G.DMG if int(v["dbank"]) < 0 else G.CLEAN)
-	G.text(self, Vector2(bx + 140, 20), L2Config.key_label().to_upper(), 13, G.DIM)
+	G.text(self, Vector2(bx + 140, 20), L3Config.key_label().to_upper(), 13, G.DIM)
 
 
 func _draw_strip() -> void:
@@ -484,15 +514,15 @@ func _draw_strip() -> void:
 		Phase.CONTACT:
 			hint = "Contact. Heat sets the raid's strength. Enter plans the defense."
 		Phase.PLAN:
-			hint = "Pick a lever (1 2 3), click a node to place it, click a placed lever to take it off. Z undoes. Enter shows the forecast."
+			hint = "Pick a lever (1 2 3), click a node to place it, click a placed lever to take it off. Z undoes. Enter shows the forecast. The kit lasts the whole leg."
 		Phase.FORECAST:
-			hint = "Forecast: each shape marks what that sealed line would do to the node. B edits the plan. Enter launches the sweep."
+			hint = "Forecast: each shape marks what that sealed line would do; a teal chevron marks a node a spoof could save. B edits. Enter launches."
 		Phase.PLAY:
 			hint = "Hands-off sweep. 1 / 2 / 4 speed, S skips. The spoof decision needs you."
 		Phase.AFTER:
 			hint = "Aftermath. Enter continues."
 		Phase.REPAIR:
-			hint = "Between raids: click a DOWN asset to repair it (cost shown, paid from the bank). Enter goes on."
+			hint = "Between raids: repairs (click a DOWN asset), one shop buy (1 2 3), run intensity (L N H). Enter goes on."
 		Phase.BREACH:
 			hint = "The campaign is lost. Enter shows the leg record."
 		Phase.RECORD:
@@ -501,8 +531,8 @@ func _draw_strip() -> void:
 		hint = status_msg
 	G.text(self, Vector2(10, STRIP_Y + 3), hint, 13, G.INK if status_msg != "" else G.DIM)
 	var tx := 10.0
-	var items := [["SPOOF_VIEW", "SPOOF IN FORECAST: " + L2Config.toggles["SPOOF_VIEW"].to_upper(), "F1"],
-		["KEY_LABEL", "CURRENCY: " + L2Config.key_label().to_upper(), "F2"]]
+	var items := [["SPOOF_VIEW", "SPOOF HINTS: " + L3Config.toggles["SPOOF_VIEW"].to_upper(), "F1"],
+		["KEY_LABEL", "CURRENCY: " + L3Config.key_label().to_upper(), "F2"]]
 	for it in items:
 		var label: String = "%s  [%s]" % [it[1], it[2]]
 		var w := G.text_w(label, 13) + 20.0
@@ -511,7 +541,7 @@ func _draw_strip() -> void:
 		G.text_c(self, r.get_center(), label, 13, G.CELL)
 		_add_hit(r, "tog:" + String(it[0]))
 		tx += w + 8.0
-	G.text(self, Vector2(tx + 14, STRIP_Y + 24), "L2 SWEEP lab  |  leg %d  |  designer toggles" % model.seed_id, 12, G.DIM)
+	G.text(self, Vector2(tx + 14, STRIP_Y + 24), "L3 SWEEP lab  |  leg %d  |  designer toggles" % model.seed_id, 12, G.DIM)
 
 
 # ---- the network ----
@@ -522,7 +552,7 @@ func _draw_home(p: Vector2, hp: int, pl: Dictionary, loss: int = 0) -> void:
 	if ghost:
 		G.dashed_ring(self, p, 38.0, G.CELL, 4.0)
 		G.flame(self, p + Vector2(34, -32), 7)
-	for k in range(L2Config.HOME_HP):
+	for k in range(L3Config.HOME_HP):
 		var mode := "full" if k < hp else "lost"
 		G.pip(self, p + Vector2((k - 1) * 18.0, 44.0), 12.0, mode)
 
@@ -581,7 +611,7 @@ func _draw_net(show_hit_areas: bool, status: Dictionary = {}, hp: int = -1, pl: 
 	var st: Dictionary = status if not status.is_empty() else model.state.status
 	var h: int = hp if hp >= 0 else model.state.home_hp
 	var plan: Dictionary = pl if not pl.is_empty() else model.plan
-	for c in L2Rules.nodes():
+	for c in L3Rules.nodes():
 		_draw_node(c, st, h, plan)
 		if show_hit_areas:
 			_cell_hit(c)
@@ -589,16 +619,20 @@ func _draw_net(show_hit_areas: bool, status: Dictionary = {}, hp: int = -1, pl: 
 
 func _draw_legend() -> void:
 	var y := 648.0
-	var x := 24.0
-	var items := ["decoy", "ghost", "down", "taken", "home"]
-	var names := {"decoy": "DECOY", "ghost": "GHOST", "down": "DOWN", "taken": "TAKEN", "home": "HOME"}
+	var x := 20.0
+	var items := ["decoy", "ghost", "spoof", "sealed", "down", "taken", "home"]
+	var names := {"decoy": "DECOY", "ghost": "GHOST", "spoof": "SPOOF", "sealed": "SEALED", "down": "DOWN", "taken": "TAKEN", "home": "HOME"}
 	for it in items:
 		var c := Vector2(x + 12, y)
 		match it:
 			"decoy":
-				draw_polyline(PackedVector2Array([c + Vector2(0, -11), c + Vector2(11, 0), c + Vector2(0, 11), c + Vector2(-11, 0), c + Vector2(0, -11)]), G.CELL, 3.0, true)
+				G.diamond(self, c, 11, G.CELL)
 			"ghost":
 				G.dashed_ring(self, c, 10, G.CELL, 3.0)
+			"spoof":
+				G.skip_chevron(self, c, 7.0, G.CLEAN, 2.5)
+			"sealed":
+				_sealed_chip(c + Vector2(-2, 0), G.THREAT_LIGHT)
 			"down":
 				G.disc(self, c, 11, GREY)
 				G.bolt(self, c, 9.0)
@@ -607,7 +641,7 @@ func _draw_legend() -> void:
 			"home":
 				G.home_server(self, c, 10.0, G.INK)
 		G.text(self, Vector2(x + 30, y - 8), names[it], 13, G.DIM)
-		x += 30 + G.text_w(names[it], 13) + 26
+		x += 30 + G.text_w(names[it], 13) + 18
 
 
 # ---- beams ----
@@ -657,7 +691,7 @@ func _draw_candidates(only: int = -1, fade: float = 0.0) -> void:
 
 ## Thin dashed hunter columns: the hunter turns down the column of the first touch.
 func _draw_hunter_plan(fc: Array) -> void:
-	var known_first := L2Rules.NONE
+	var known_first := L3Rules.NONE
 	for b: Dictionary in (fc[0]["beams"] as Array):
 		if b["id"] in ["b2", "hunter"]:
 			continue
@@ -665,15 +699,15 @@ func _draw_hunter_plan(fc: Array) -> void:
 			if stp["kind"] in ["asset", "home", "decoy"]:
 				known_first = stp["cell"]
 				break
-		if known_first != L2Rules.NONE:
+		if known_first != L3Rules.NONE:
 			break
-	if known_first != L2Rules.NONE:
+	if known_first != L3Rules.NONE:
 		_hunter_col(known_first.x, G.THREAT_LIGHT, 3.0, "3", Vector2(10, 6), 0.0)
 		return
 	var own_needed := false
 	for i in range(fc.size()):
 		var f: Vector2i = fc[i]["first"]
-		if f != L2Rules.NONE:
+		if f != L3Rules.NONE:
 			_hunter_col(f.x, G.THREAT_LIGHT.darkened(0.25), 2.0, "", DASHES[i], (i - 1) * 12.0, i)
 		else:
 			own_needed = true
@@ -682,7 +716,7 @@ func _draw_hunter_plan(fc: Array) -> void:
 
 
 func _hunter_col(x: int, col: Color, w: float, badge_s: String, dash: Vector2, off: float, shape_i: int = -1) -> void:
-	var g := _geom(L2Rules.column(x), off + _h_off(x))
+	var g := _geom(L3Rules.column(x), off + _h_off(x))
 	_draw_dashed_path(_path(g, float(g["pts"].size() + 1)), col, dash, w)
 	var b: Vector2 = g["b"]
 	if shape_i >= 0:
@@ -704,8 +738,7 @@ func _band_chips(origin: Vector2, extra: int, dim: bool) -> void:
 	for s: String in items:
 		var col := G.THREAT_FADE if dim else G.THREAT
 		if s == "?":
-			G.dashed_ring(self, Vector2(x, origin.y), 13.0, G.THREAT_LIGHT if not dim else G.THREAT_FADE, 3.0)
-			G.text_c(self, Vector2(x, origin.y), "?", 15, G.INK)
+			_sealed_chip(Vector2(x, origin.y), G.THREAT_LIGHT if not dim else G.THREAT_FADE)
 		else:
 			G.badge(self, Vector2(x, origin.y), s, col)
 		x += 40.0
@@ -713,14 +746,14 @@ func _band_chips(origin: Vector2, extra: int, dim: bool) -> void:
 
 func _draw_contact() -> void:
 	var s := model.state
-	var extra: int = L2Rules.extra_count(s.heat)
+	var extra: int = L3Rules.extra_count(s.heat)
 	_draw_net(false)
 	_draw_known_beams(extra, false)
 	# Raid strength by Heat band.
 	G.text(self, Vector2(PANEL_X, 80), "THE RAID'S STRENGTH, BY HEAT", 14, G.DIM)
-	var bands := [[0, "HEAT UNDER %d" % L2Config.EXTRA_AT, "Beam 1, a sealed beam, the hunter."],
-		[1, "HEAT %d AND UP" % L2Config.EXTRA_AT, "Adds a known beam after beam 1."],
-		[2, "HEAT %d AND UP" % L2Config.STRONG_AT, "Adds a second known beam."]]
+	var bands := [[0, "HEAT UNDER %d" % L3Config.EXTRA_AT, "Beam 1, a sealed beam, the hunter."],
+		[1, "HEAT %d AND UP" % L3Config.EXTRA_AT, "Adds a known beam after beam 1."],
+		[2, "HEAT %d AND UP" % L3Config.STRONG_AT, "Adds a second known beam."]]
 	var y := 104.0
 	for b in bands:
 		var now: bool = int(b[0]) == extra
@@ -736,15 +769,20 @@ func _draw_contact() -> void:
 	_draw_cause_chain(s.heat, extra)
 	if not model.run_note.is_empty():
 		var rn := model.run_note
-		G.text(self, Vector2(PANEL_X, 416), "Between raids", 14, G.DIM)
-		G.flame(self, Vector2(PANEL_X + 10, 452), 9)
-		G.text(self, Vector2(PANEL_X + 26, 441), "+%d" % L2Config.RUN_HEAT, 20, G.HEAT)
-		G.coin(self, Vector2(PANEL_X + 110, 452), 9)
-		G.text(self, Vector2(PANEL_X + 128, 441), "+%d" % int(rn["income"]), 20, G.CELL)
+		G.text(self, Vector2(PANEL_X, 414), "Between raids: run %s" % String(rn["intensity"]), 14, G.DIM)
+		G.flame(self, Vector2(PANEL_X + 10, 446), 9)
+		G.text(self, Vector2(PANEL_X + 26, 435), "+%d" % int(rn["heat_add"]), 20, G.HEAT)
+		G.coin(self, Vector2(PANEL_X + 110, 446), 9)
+		G.text(self, Vector2(PANEL_X + 128, 435), "+%d" % int(rn["income"]), 20, G.CELL)
+		var nx_s := 200.0
 		if int(rn["repair_cost"]) > 0:
-			G.text(self, Vector2(PANEL_X + 200, 444), "repair -%d" % int(rn["repair_cost"]), 14, G.DIM)
-	_draw_status_summary(Vector2(PANEL_X, 478))
-	_btn(Rect2(PANEL_X, 566, PANEL_W, 56), "PLAN THE DEFENSE  [Enter]", "next", true, 20)
+			G.text(self, Vector2(PANEL_X + nx_s, 438), "repair -%d" % int(rn["repair_cost"]), 14, G.DIM)
+			nx_s += 96.0
+		if String(rn["bought"]) != "":
+			G.text(self, Vector2(PANEL_X + nx_s, 438), "bought %s -%d" % [rn["bought"], rn["buy_cost"]], 14, G.CLEAN)
+	_draw_status_summary(Vector2(PANEL_X, 474))
+	_draw_kit_tray(Rect2(PANEL_X, 530, PANEL_W, 38))
+	_btn(Rect2(PANEL_X, 574, PANEL_W, 48), "PLAN THE DEFENSE  [Enter]", "next", true, 18)
 	_draw_legend()
 
 
@@ -767,14 +805,14 @@ func _draw_cause_chain(heat: int, extra: int) -> void:
 	G.text(self, Vector2(44, y + 20), "HEAT %d" % heat, 12, G.HEAT)
 	G.arrow(self, Vector2(90, y), Vector2(150, y), G.HEAT, 4.0)
 	for k in range(2):
-		var at: int = L2Config.EXTRA_AT if k == 0 else L2Config.STRONG_AT
+		var at: int = L3Config.EXTRA_AT if k == 0 else L3Config.STRONG_AT
 		var cx := 180.0 + k * 100.0
 		var passed: bool = heat >= at
 		G.shield(self, Vector2(cx, y - 2), 14, G.THREAT if passed else G.THREAT_FADE)
 		G.text(self, Vector2(cx - 20, y + 20), "LINE %d" % at, 12, G.THREAT_LIGHT if passed else G.DIM)
-	G.arrow(self, Vector2(400, y), Vector2(450, y), G.THREAT, 4.0)
-	_band_chips(Vector2(484, y), extra, false)
-	G.text(self, Vector2(466, y + 20), "%d KNOWN BEAM%s" % [1 + extra, "" if extra == 0 else "S"], 12, G.THREAT_LIGHT)
+	G.arrow(self, Vector2(400, y), Vector2(540, y), G.THREAT, 4.0)
+	_band_chips(Vector2(574, y), extra, false)
+	G.text(self, Vector2(556, y + 20), "%d KNOWN BEAM%s" % [1 + extra, "" if extra == 0 else "S"], 12, G.THREAT_LIGHT)
 
 
 # ---- plan / forecast ----
@@ -788,23 +826,18 @@ func _draw_plan() -> void:
 	if fc_mode:
 		_draw_forecast_marks(fc)
 	if sel_lever != "":
-		for c in L2Rules.nodes():
+		for c in L3Rules.nodes():
 			var p := nx(c)
 			if Rect2(p - Vector2(46, 46), Vector2(92, 92)).has_point(mouse):
 				var ok := model.why_not(sel_lever, c) == ""
 				G.circle(self, p, 40, G.CLEAN if ok else G.DMG, 3.0)
-	G.text(self, Vector2(PANEL_X, 78), "LEVERS", 14, G.DIM)
-	var y := 98.0
-	for lv in L2Model.LEVERS:
-		_draw_lever_card(lv, Rect2(PANEL_X, y, PANEL_W, 60))
-		y += 66.0
-	# The held spoof.
-	var sr := Rect2(PANEL_X, y, PANEL_W, 54)
-	G.panel(self, sr, G.CLEAN)
-	G.spoof_key(self, Vector2(PANEL_X + 44, y + 27), G.CLEAN)
-	G.text(self, Vector2(PANEL_X + 90, y + 6), "SPOOF  x1", 17, G.CLEAN)
-	G.text(self, Vector2(PANEL_X + 90, y + 30), "Held: after the reveal, beam 2 skips one node.", 13, G.DIM)
-	y += 62.0
+	_draw_kit_tray(Rect2(PANEL_X, 76, PANEL_W, 44), {"ghost": (model.plan["ghost"] as Array).size(), "decoy": (model.plan["decoys"] as Array).size()})
+	var y := 128.0
+	for lv in L3Model.LEVERS:
+		_draw_lever_card(lv, Rect2(PANEL_X, y, PANEL_W, 56))
+		y += 60.0
+	G.text(self, Vector2(PANEL_X + 4, y + 2), "Spoof: after the reveal, beam 2 skips one node. Spent only if used.", 12, G.DIM)
+	y += 24.0
 	if fc_mode:
 		_draw_forecast_panel(fc, y)
 	else:
@@ -819,38 +852,36 @@ func _draw_plan() -> void:
 
 
 func _draw_lever_card(lv: String, r: Rect2) -> void:
-	var used: int = (model.plan[L2Model.ALLOC_KEY[lv]] as Array).size()
-	var cap: int = {"ghost": L2Config.MAX_GHOST, "decoy": L2Config.MAX_DECOY, "dark": L2Config.MAX_DARK}[lv]
+	var used: int = (model.plan[L3Model.ALLOC_KEY[lv]] as Array).size()
+	var cap: int = {"ghost": mini(L3Config.MAX_GHOST, int(model.state.kit["ghost"])), "decoy": mini(L3Config.MAX_DECOY, int(model.state.kit["decoy"])), "dark": L3Config.MAX_DARK}[lv]
 	var sel := sel_lever == lv
 	G.panel(self, r, G.CELL if sel else G.PANEL_EDGE, Color8(60, 52, 24) if (sel or _hot(r)) else G.PANEL, 3.0 if sel else 2.0)
 	_add_hit(r, "lever:" + lv)
-	var c := Vector2(r.position.x + 38, r.position.y + 30)
+	var c := Vector2(r.position.x + 38, r.position.y + 28)
 	match lv:
 		"ghost":
 			G.dashed_ring(self, c, 18, G.CELL if used > 0 else G.DIM, 4.0)
 		"decoy":
-			var col := G.CELL if used > 0 else G.DIM
-			draw_polyline(PackedVector2Array([c + Vector2(0, -19), c + Vector2(19, 0), c + Vector2(0, 19), c + Vector2(-19, 0), c + Vector2(0, -19)]), col, 3.0, true)
+			G.diamond(self, c, 19, G.CELL if used > 0 else G.DIM)
 		"dark":
 			G.disc(self, c, 18, Color8(10, 10, 16))
 			G.circle(self, c, 18, G.DIM, 3.0)
 	var nm: Array = LEVER_TEXT[lv]
-	G.text(self, Vector2(r.position.x + 74, r.position.y + 5), "%s  [%s]" % [nm[0], nm[2]], 16, G.INK)
-	G.text(self, Vector2(r.position.x + 74, r.position.y + 24), nm[1], 12, G.DIM)
+	G.text(self, Vector2(r.position.x + 74, r.position.y + 4), "%s  [%s]" % [nm[0], nm[2]], 16, G.INK)
+	G.text(self, Vector2(r.position.x + 74, r.position.y + 22), nm[1], 12, G.DIM)
 	var cx := r.position.x + 74
-	var cy := r.position.y + 42
+	var cy := r.position.y + 38
 	match lv:
 		"ghost":
 			G.flame(self, Vector2(cx + 6, cy + 7), 7)
-			G.text(self, Vector2(cx + 20, cy), "+%d Heat now" % L2Config.GHOST_HEAT, 13, G.HEAT)
+			G.text(self, Vector2(cx + 20, cy), "+%d Heat now (%d in the kit)" % [L3Config.GHOST_HEAT, int(model.state.kit["ghost"])], 13, G.HEAT)
 		"decoy":
-			G.coin(self, Vector2(cx + 6, cy + 7), 6)
-			G.text(self, Vector2(cx + 20, cy), "-%d %s now" % [L2Config.DECOY_COST, L2Config.key_label()], 13, G.CELL)
+			G.text(self, Vector2(cx, cy), "free, from the kit (%d in it), up to %d a raid" % [int(model.state.kit["decoy"]), L3Config.MAX_DECOY], 13, G.CELL)
 		"dark":
 			var loss := 0
 			for dc: Vector2i in model.plan["dark"]:
 				if model.state.status[dc] == "OK":
-					loss += L2Rules.idiv(int(model.values()[dc]), L2Config.INCOME_DIV)
+					loss += L3Rules.idiv(int(model.values()[dc]), L3Config.INCOME_DIV)
 			G.coin(self, Vector2(cx + 6, cy + 7), 6, G.DIM)
 			G.line(self, Vector2(cx - 1, cy + 14), Vector2(cx + 13, cy), G.DMG, 3.0)
 			G.text(self, Vector2(cx + 20, cy), "income lost this interval: %d" % loss, 13, G.DIM)
@@ -869,24 +900,24 @@ func _draw_strength_panel(y: float) -> void:
 	_band_chips(Vector2(r.position.x + 36, y + 62), extra, false)
 	var line1 := "Beam 1, a sealed beam, the hunter."
 	if extra == 1:
-		line1 = "Heat %d passed %d: a known beam (+) is added." % [heat, L2Config.EXTRA_AT]
+		line1 = "Heat %d passed %d: a known beam (+) is added." % [heat, L3Config.EXTRA_AT]
 	elif extra == 2:
-		line1 = "Heat %d passed %d: two known beams (+ ++)." % [heat, L2Config.STRONG_AT]
+		line1 = "Heat %d passed %d: two known beams (+ ++)." % [heat, L3Config.STRONG_AT]
 	G.text(self, Vector2(r.position.x + 16, y + 94), line1, 13, G.INK)
 	var nxt := ""
 	if extra == 0:
-		nxt = "%d more Heat adds a known beam." % (L2Config.EXTRA_AT - heat)
+		nxt = "%d more Heat adds a known beam." % (L3Config.EXTRA_AT - heat)
 	elif extra == 1:
-		nxt = "%d more Heat adds a second known beam." % (L2Config.STRONG_AT - heat)
+		nxt = "%d more Heat adds a second known beam." % (L3Config.STRONG_AT - heat)
 	else:
 		nxt = "Already at the strongest raid."
 	G.text(self, Vector2(r.position.x + 16, y + 116), nxt, 13, G.DIM)
 	if (model.plan["ghost"] as Array).size() > 0:
-		var base_extra: int = L2Rules.extra_count(model.state.heat)
+		var base_extra: int = L3Rules.extra_count(model.state.heat)
 		if extra > base_extra:
-			G.text(self, Vector2(r.position.x + 16, y + 142), "The ghost's +%d Heat added a beam." % L2Config.GHOST_HEAT, 13, G.HOLD)
+			G.text(self, Vector2(r.position.x + 16, y + 142), "The ghost's +%d Heat added a beam." % L3Config.GHOST_HEAT, 13, G.HOLD)
 		else:
-			G.text(self, Vector2(r.position.x + 16, y + 142), "The ghost's +%d Heat adds no beam." % L2Config.GHOST_HEAT, 13, G.DIM)
+			G.text(self, Vector2(r.position.x + 16, y + 142), "The ghost's +%d Heat adds no beam." % L3Config.GHOST_HEAT, 13, G.DIM)
 	G.text(self, Vector2(r.position.x + 16, y + 164), "Beams: 1 known, + extra, ? sealed, 3 hunter.", 12, G.DIM)
 
 
@@ -911,55 +942,80 @@ func _chips(x: float, y: float, sm: Dictionary) -> float:
 		shown = true
 	if int(sm["home"]) > 0:
 		G.home_server(self, Vector2(cx + 9, y), 8.0, G.DMG)
-		G.text(self, Vector2(cx + 24, y - 8), "-%d" % int(sm["home"]), 15, G.DMG)
-		cx += 50.0
+		if bool(sm["breach"]):
+			G.text(self, Vector2(cx + 24, y - 8), "BREACH", 14, G.DMG)
+			cx += 84.0
+		else:
+			G.text(self, Vector2(cx + 24, y - 8), "-%d" % int(sm["home"]), 15, G.DMG)
+			cx += 50.0
 		shown = true
 	if not shown:
-		draw_polyline(PackedVector2Array([Vector2(cx + 9, y - 10), Vector2(cx + 19, y), Vector2(cx + 9, y + 10), Vector2(cx - 1, y), Vector2(cx + 9, y - 10)]), G.CELL, 3.0, true)
+		G.diamond(self, Vector2(cx + 9, y), 10.0, G.CELL, 3.0)
 		G.text(self, Vector2(cx + 26, y - 8), "DECOY ONLY", 12, G.DIM)
 		cx += 100.0
 	return cx
 
 
 func _draw_forecast_panel(fc: Array, y: float) -> void:
-	var r := Rect2(PANEL_X, y, PANEL_W, 188)
+	var r := Rect2(PANEL_X, y, PANEL_W, 268)
 	G.panel(self, r)
-	var sv := L2Config.spoof_view()
-	G.text(self, Vector2(r.position.x + 14, y + 8), "IF THE SEALED LINE IS", 13, G.DIM)
-	G.text(self, Vector2(r.position.x + 200, y + 8), "HOLD", 13, G.DIM)
+	var sv := L3Config.spoof_view()
+	var can: bool = int(model.state.kit["spoof"]) > 0
+	var x := r.position.x
+	G.text(self, Vector2(x + 14, y + 8), "IF YOU HOLD THE SPOOF", 12, G.DIM)
 	if sv:
-		G.spoof_key(self, Vector2(r.position.x + 330, y + 17), G.CLEAN)
-		G.text(self, Vector2(r.position.x + 362, y + 8), "BEST SPOOF", 13, G.CLEAN)
+		G.skip_chevron(self, Vector2(x + 312, y + 15), 5.0, G.CLEAN, 2.0)
+		G.text(self, Vector2(x + 330, y + 8), "SPOOF, BEST CASE", 12, G.CLEAN)
 	for i in range(fc.size()):
-		var ry := y + 34.0 + i * 44.0
+		var ry := y + 30.0 + i * 62.0
 		var f: Dictionary = fc[i]
-		G.cand_shape(self, Vector2(r.position.x + 28, ry + 17), i, 11.0, G.THREAT_LIGHT, G.BG)
-		_chips(r.position.x + 62, ry + 17, f["summary"])
-		if sv:
-			G.arrow(self, Vector2(r.position.x + 238, ry + 17), Vector2(r.position.x + 290, ry + 17), G.CLEAN, 2.0, 7.0)
-			if f["saves"]:
-				_chips(r.position.x + 306, ry + 17, f["best_summary"])
-			else:
-				G.text(self, Vector2(r.position.x + 306, ry + 9), "no spoof helps", 13, G.DIM)
+		if i > 0:
+			draw_line(Vector2(x + 12, ry - 4), Vector2(x + PANEL_W - 12, ry - 4), G.PANEL_EDGE, 1.0)
+		G.cand_shape(self, Vector2(x + 28, ry + 16), i, 11.0, G.THREAT_LIGHT, G.BG)
+		_chips(x + 62, ry + 16, f["summary"])
+		if not sv:
+			continue
+		G.arrow(self, Vector2(x + 262, ry + 16), Vector2(x + 300, ry + 16), G.DIM, 2.0, 7.0)
+		if not f["can_spoof"]:
+			G.text(self, Vector2(x + 312, ry + 8), "no spoof left", 13, G.DIM)
+		elif f["saves"]:
+			_chips(x + 312, ry + 16, f["floor_summary"])
+		else:
+			G.text(self, Vector2(x + 312, ry + 8), "no change", 12, G.DIM)
+		# Which nodes a spoof could save (no pick is made for the player).
+		G.skip_chevron(self, Vector2(x + 28, ry + 42), 5.0, G.CLEAN if (can and f["saves"]) else G.DIM, 2.0)
+		var cells_s: Array = f["save_cells"]
+		if cells_s.is_empty():
+			G.text(self, Vector2(x + 62, ry + 35), "no node to save" if can else "no spoof in the kit", 12, G.DIM)
+		else:
+			G.text(self, Vector2(x + 62, ry + 35), "could save:", 12, G.CLEAN)
+			for k in range(cells_s.size()):
+				_node_chip(Vector2(x + 168 + k * 30, ry + 42), cells_s[k], G.CLEAN)
 	var wl: Array = model.worst_home_loss()
-	var py := y + 168.0
-	G.text(self, Vector2(r.position.x + 14, py - 8), "HOME", 13, G.DIM)
+	var any_breach := false
+	for f2: Dictionary in fc:
+		if bool(f2["summary"]["breach"]):
+			any_breach = true
+	var py := y + 242.0
+	G.text(self, Vector2(x + 14, py - 8), "HOME", 13, G.DIM)
 	var hp: int = model.state.home_hp
-	for k in range(L2Config.HOME_HP):
+	for k in range(L3Config.HOME_HP):
 		var mode := "full"
 		if k >= hp - int(wl[0]):
-			mode = "saved" if (sv and k < hp - int(wl[1])) else "proj"
-		G.pip(self, Vector2(r.position.x + 78 + k * 24, py), 14.0, mode)
+			mode = "saved" if (sv and can and k < hp - int(wl[1])) else "proj"
+		G.pip(self, Vector2(x + 78 + k * 24, py), 14.0, mode)
 	var msg := "worst case: lose %d" % int(wl[0])
-	if sv:
-		msg += ", with the best spoof: lose %d" % int(wl[1])
-	G.text(self, Vector2(r.position.x + 156, py - 8), msg, 13, G.INK if int(wl[0]) > 0 else G.DIM)
+	if any_breach:
+		msg = "worst case: BREACH, the campaign is lost"
+	elif sv and can:
+		msg += ", at best with a spoof: lose %d" % int(wl[1])
+	G.text(self, Vector2(x + 156, py - 8), msg, 13, G.DMG if any_breach else (G.INK if int(wl[0]) > 0 else G.DIM))
 
 
 ## FORECAST: on each node, one slot per sealed line that touches it (shape = the line, glyph = the outcome); a teal
-## mark where that line's best spoof would skip.
+## spoof mark (the line's shape, then a skip-chevron) on every node a spoof could save for that line.
 func _draw_forecast_marks(fc: Array) -> void:
-	var sv := L2Config.spoof_view()
+	var sv := L3Config.spoof_view()
 	for i in range(fc.size()):
 		var f: Dictionary = fc[i]
 		var done: Array = []
@@ -979,13 +1035,14 @@ func _draw_forecast_marks(fc: Array) -> void:
 				"HOME":
 					G.text_c(self, p + Vector2(10, 0), "-1", 13, G.DMG)
 				_:
-					draw_polyline(PackedVector2Array([p + Vector2(9, -6), p + Vector2(15, 0), p + Vector2(9, 6), p + Vector2(3, 0), p + Vector2(9, -6)]), G.CELL, 2.0, true)
-		if sv and f["saves"]:
-			var sp: Vector2i = f["best_spoof"]
-			var q := nx(sp) + Vector2((i - 1) * 30.0, -50.0)
-			G.disc(self, q, 11, G.BG)
-			G.circle(self, q, 11, G.CLEAN, 2.5)
-			G.cand_shape(self, q, i, 5.0, G.CLEAN, Color(0, 0, 0, 0), 2.0)
+					G.diamond(self, p + Vector2(9, 0), 6.0, G.CELL, 2.0)
+		if sv and f["can_spoof"]:
+			for sc: Vector2i in f["save_cells"]:
+				var q := nx(sc) + Vector2((i - 1) * 40.0, -50.0)
+				var chip := Rect2(q - Vector2(17, 11), Vector2(34, 22))
+				G.panel(self, chip, G.CLEAN, G.BG, 2.0)
+				G.cand_shape(self, q + Vector2(-8, 0), i, 4.5, G.THREAT_LIGHT, Color(0, 0, 0, 0), 2.0)
+				G.skip_chevron(self, q + Vector2(7, 0), 4.5, G.CLEAN, 2.0)
 
 
 # ---- playout ----
@@ -1003,31 +1060,35 @@ func _draw_play() -> void:
 	_draw_net_play(sn)
 	var st: int = p.state
 	var cur: int = p.order.size()
-	if st in [L2Play.S.BEAM, L2Play.S.UNSEAL, L2Play.S.DECIDE, L2Play.S.TURN]:
+	if st in [L3Play.S.BEAM, L3Play.S.UNSEAL, L3Play.S.DECIDE, L3Play.S.TURN]:
 		cur = p.beam_idx()
 	var b2_i: int = p.order.find("b2")
 	# Sealed candidates until beam 2 unseals.
 	if cur < b2_i:
 		_draw_candidates()
-	elif st == L2Play.S.UNSEAL:
-		_draw_candidates(L2Config.REVEAL, clampf(p.t / L2Config.UNSEAL_T, 0.0, 1.0))
+	elif st == L3Play.S.UNSEAL:
+		_draw_candidates(L3Config.REVEAL, clampf(p.t / L3Config.UNSEAL_T, 0.0, 1.0))
 	else:
-		_draw_candidates(L2Config.REVEAL, 0.8)
+		_draw_candidates(L3Config.REVEAL, 0.8)
 	for k in range(p.res["beams"].size()):
 		var b: Dictionary = p.res["beams"][k]
 		var id: String = b["id"]
 		if id == "hunter" and cur < k:
 			continue
+		if p.cut and k > p.last_beam():
+			continue
 		var bs := _beam_state(k, cur)
 		var g := _beam_geom(id, b["line"])
 		var u_full := _beam_u(b, g)
+		if p.cut and k == p.last_beam():
+			u_full = float(_beam_events(id))
 		var badge_s := {"b1": "1", "extra": "+", "extra2": "++", "b2": "2", "hunter": "3"}[id] as String
 		if id == "b2":
 			if cur < b2_i:
 				continue
 			var lit := G.THREAT_LIGHT.lerp(G.THREAT, 0.5)
-			if st == L2Play.S.UNSEAL or st == L2Play.S.DECIDE:
-				var a := clampf(p.t / L2Config.UNSEAL_T, 0.0, 1.0) if st == L2Play.S.UNSEAL else 1.0
+			if st == L3Play.S.UNSEAL or st == L3Play.S.DECIDE:
+				var a := clampf(p.t / L3Config.UNSEAL_T, 0.0, 1.0) if st == L3Play.S.UNSEAL else 1.0
 				_draw_path(_path(g, float(g["pts"].size() + 1)), Color(lit.r, lit.g, lit.b, 0.35 + 0.65 * a), 5.0)
 			elif bs == "now":
 				_draw_path(_path(g, float(g["pts"].size() + 1)), G.THREAT_FADE, 4.0, false)
@@ -1035,7 +1096,7 @@ func _draw_play() -> void:
 			else:
 				_draw_path(_path(g, u_full), G.THREAT, 6.0)
 		elif id == "hunter":
-			if st == L2Play.S.TURN:
+			if st == L3Play.S.TURN:
 				_draw_hunter_turn(g, b)
 			elif bs == "now":
 				_draw_path(_path(g, float(g["pts"].size() + 1)), G.THREAT_FADE, 4.0, false)
@@ -1056,11 +1117,11 @@ func _draw_play() -> void:
 		else:
 			_start_badge(g, badge_s)
 	# The spoof decision.
-	if st == L2Play.S.DECIDE:
+	if st == L3Play.S.DECIDE:
 		for c: Vector2i in p.b2:
 			var pc := nx(c)
 			var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 220.0)
-			G.dashed_ring(self, pc, NODE_R + 12 + 3.0 * pulse, G.CLEAN, 4.0)
+			_spoof_mark(pc + SPOOF_OFF, 9.0 + 2.0 * pulse)
 			_cell_hit(c)
 	# Pulses for the steps just taken.
 	for e: Dictionary in p.events:
@@ -1092,10 +1153,10 @@ func _pulse_col(e: Dictionary) -> Color:
 
 
 func _draw_hunter_turn(g: Dictionary, b: Dictionary) -> void:
-	var a3 := clampf(play.t / L2Config.TURN_T, 0.0, 1.0)
+	var a3 := clampf(play.t / L3Config.TURN_T, 0.0, 1.0)
 	var first: Vector2i = play.hunter_from()
 	var col := Color(G.THREAT_LIGHT.r, G.THREAT_LIGHT.g, G.THREAT_LIGHT.b, a3)
-	if first != L2Rules.NONE:
+	if first != L3Rules.NONE:
 		var pf := nx(first)
 		G.circle(self, pf, NODE_R + 8 + 6.0 * sin(play.t * 8.0), G.DMG, 4.0)
 		_draw_dashed_path(_path(g, float(g["pts"].size() + 1)), col, Vector2(10, 6), 4.0)
@@ -1107,13 +1168,13 @@ func _draw_hunter_turn(g: Dictionary, b: Dictionary) -> void:
 
 ## Nodes during the sweep: the statuses as the sweep has left them; hidden near misses keep a ring.
 func _draw_net_play(sn: Dictionary) -> void:
-	for c in L2Rules.nodes():
+	for c in L3Rules.nodes():
 		_draw_node(c, sn["status"], int(sn["home_hp"]), play.alloc)
 	for e: Dictionary in play.events:
 		if e["kind"] == "hidden":
 			G.circle(self, nx(e["cell"]), NODE_R + 10, G.INK, 2.0)
-	if play.spoof_used and play.state != L2Play.S.DECIDE:
-		G.dashed_ring(self, nx(play.spoof), NODE_R + 14, G.CLEAN, 3.0)
+	if play.spoof_used and play.state != L3Play.S.DECIDE:
+		_spoof_mark(nx(play.spoof) + SPOOF_OFF, 9.0)
 
 
 func _draw_play_panel() -> void:
@@ -1121,13 +1182,15 @@ func _draw_play_panel() -> void:
 	G.text(self, Vector2(PANEL_X, 78), "SWEEP", 14, G.DIM)
 	# Beam track.
 	var cur := -1
-	if p.state in [L2Play.S.BEAM, L2Play.S.UNSEAL, L2Play.S.DECIDE, L2Play.S.TURN]:
+	if p.state in [L3Play.S.BEAM, L3Play.S.UNSEAL, L3Play.S.DECIDE, L3Play.S.TURN]:
 		cur = p.beam_idx()
+	elif p.cut:
+		cur = p.last_beam() + 1
 	var ids: Array = p.order
 	for i in range(ids.size()):
 		var c := Vector2(PANEL_X + 24 + i * 56, 114)
 		var done: bool = i < cur or cur < 0
-		var active: bool = i == cur
+		var active: bool = i == cur and not p.cut
 		var s: String = {"b1": "1", "extra": "+", "extra2": "++", "b2": "2", "hunter": "3"}[ids[i]]
 		G.disc(self, c, 17, G.THREAT if (done or active) else G.PANEL)
 		G.circle(self, c, 17, G.CELL if active else G.PANEL_EDGE, 3.0 if active else 2.0)
@@ -1152,44 +1215,45 @@ func _draw_play_panel() -> void:
 
 func _draw_spoof_box(box: Rect2) -> void:
 	var p := play
-	var waiting := p.state == L2Play.S.DECIDE
+	var waiting := p.state == L3Play.S.DECIDE
 	G.panel(self, box, G.CLEAN if waiting else G.PANEL_EDGE, G.PANEL, 3.0 if waiting else 2.0)
-	G.spoof_key(self, Vector2(box.position.x + 40, box.position.y + 24), G.CLEAN)
-	G.text(self, Vector2(box.position.x + 82, box.position.y + 6), "SPOOF", 17, G.CLEAN)
+	G.spoof_key(self, Vector2(box.position.x + 40, box.position.y + 24), G.CLEAN if p.can_spoof else G.DIM)
+	G.text(self, Vector2(box.position.x + 82, box.position.y + 6), "SPOOF", 17, G.CLEAN if p.can_spoof else G.DIM)
+	G.text_r(self, Vector2(box.end.x - 16, box.position.y + 8), "%d in the kit" % int(p.before.kit["spoof"]), 14, G.DIM)
 	var x0 := box.position.x + 16
 	var y := box.position.y
 	if waiting:
-		G.text(self, Vector2(x0, y + 46), "Beam 2 is unsealed. Click a node on the lit line:", 13, G.INK)
-		var rows: Array = [L2Rules.NONE] + p.b2
+		G.text(self, Vector2(x0, y + 46), "Click a node on the lit line:", 13, G.INK)
+		var rows: Array = [L3Rules.NONE] + p.b2
 		var ry := y + 70.0
 		for c: Vector2i in rows:
 			var pr: Dictionary = p.preview(c)
-			var sm := L2Rules.summary(p.before, pr["touches"])
-			if c == L2Rules.NONE:
+			var sm := L3Rules.summary(p.before, pr["touches"])
+			if c == L3Rules.NONE:
 				G.text(self, Vector2(x0, ry + 4), "HOLD [H]", 13, G.INK)
 			else:
-				G.circle(self, Vector2(x0 + 12, ry + 12), 11, G.CLEAN, 2.0)
-				if c == model.home():
-					G.home_server(self, Vector2(x0 + 12, ry + 12), 6.0, G.INK)
-				elif model.values().has(c):
-					G.text_c(self, Vector2(x0 + 12, ry + 12), str(model.values()[c]), 12, G.INK)
-				else:
-					G.disc(self, Vector2(x0 + 12, ry + 12), 3, G.DIM)
-				G.text(self, Vector2(x0 + 30, ry + 4), "skip", 13, G.DIM)
+				_node_chip(Vector2(x0 + 12, ry + 12), c, G.CLEAN)
+				G.skip_chevron(self, Vector2(x0 + 52, ry + 12), 5.0, G.CLEAN, 2.0)
 			G.arrow(self, Vector2(x0 + 92, ry + 12), Vector2(x0 + 130, ry + 12), G.DIM, 2.0, 6.0)
 			_chips(x0 + 142, ry + 12, sm)
 			ry += 28.0
 	elif p.spoof_used:
-		G.text(self, Vector2(x0, y + 46), "Spoof used: beam 2 skipped the ringed node.", 13, G.CLEAN)
-		var sm2 := L2Rules.summary(p.before, p.res["touches"])
+		G.text(self, Vector2(x0, y + 46), "Used: beam 2 skipped the marked node.", 13, G.CLEAN)
+		var sm2 := L3Rules.summary(p.before, p.res["touches"])
 		G.text(self, Vector2(x0, y + 72), "Result with it:", 13, G.DIM)
 		_chips(x0 + 120, y + 80, sm2)
-	elif p.state in [L2Play.S.BEAM, L2Play.S.UNSEAL] and p.order.find("b2") > maxi(p.beam_idx(), -1):
-		G.text(self, Vector2(x0, y + 46), "Held for after the reveal.", 13, G.DIM)
+	elif p.cut:
+		G.text(self, Vector2(x0, y + 46), "HOME fell before any decision. The sweep ends.", 13, G.DMG)
+		if p.can_spoof:
+			G.text(self, Vector2(x0, y + 72), "The spoof stays in the kit.", 13, G.DIM)
+	elif not p.can_spoof:
+		G.text(self, Vector2(x0, y + 46), "No spoof left in the kit.", 13, G.DIM)
+	elif p.state == L3Play.S.UNSEAL or (p.state == L3Play.S.BEAM and p.order.find("b2") > p.beam_idx()):
+		G.text(self, Vector2(x0, y + 46), "Held: decide after the reveal.", 13, G.DIM)
 	else:
-		G.text(self, Vector2(x0, y + 46), "Held, not used.", 13, G.DIM)
+		G.text(self, Vector2(x0, y + 46), "Held: not used, it stays in the kit.", 13, G.DIM)
 	if waiting:
-		_btn(Rect2(box.end.x - 150, box.position.y + 8, 136, 30), "HOLD  [H]", "hold", true, 14)
+		_btn(Rect2(box.end.x - 150, box.position.y + 30, 136, 28), "HOLD  [H]", "hold", true, 14)
 
 
 func _draw_hit_log(y: float) -> void:
@@ -1226,14 +1290,16 @@ func _draw_hit_log(y: float) -> void:
 
 
 func _beat_name() -> String:
+	if play.cut and play.state in [L3Play.S.END, L3Play.S.DONE]:
+		return "HOME BREACHED"
 	match play.state:
-		L2Play.S.BEAM:
+		L3Play.S.BEAM:
 			return {"b1": "BEAM 1", "extra": "KNOWN BEAM +", "extra2": "KNOWN BEAM ++", "b2": "BEAM 2", "hunter": "THE HUNTER"}[play.order[play.bi]]
-		L2Play.S.UNSEAL:
+		L3Play.S.UNSEAL:
 			return "BEAM 2 UNSEALS"
-		L2Play.S.DECIDE:
+		L3Play.S.DECIDE:
 			return "SPOOF DECISION"
-		L2Play.S.TURN:
+		L3Play.S.TURN:
 			return "THE HUNTER TURNS"
 	return "DONE"
 
@@ -1241,8 +1307,8 @@ func _beat_name() -> String:
 # ---- aftermath ----
 ## A tag stamped on a node: glyph + short word.
 func _node_tag(c: Vector2i, kind: String) -> void:
-	var p := nx(c) + Vector2(-37, 34)
-	var r := Rect2(p.x, p.y, 74, 22)
+	var p := nx(c) + Vector2(-46, 34)
+	var r := Rect2(p.x, p.y, 92, 22)
 	var col := G.INK
 	match kind:
 		"DOWN":
@@ -1252,24 +1318,24 @@ func _node_tag(c: Vector2i, kind: String) -> void:
 		"HOME":
 			col = G.DMG
 	G.panel(self, r, col, Color8(14, 16, 32, 230), 2.0)
-	var gc := Vector2(r.position.x + 12, r.position.y + 11)
+	var gc := Vector2(r.position.x + 13, r.position.y + 11)
 	match kind:
 		"DOWN":
 			G.bolt(self, gc, 8.0)
-			G.text(self, Vector2(r.position.x + 24, r.position.y + 3), "DOWN", 13, col)
+			G.text(self, Vector2(r.position.x + 26, r.position.y + 3), "DOWN", 13, col)
 		"TAKEN":
 			G.corp(self, gc, 8.0)
-			G.text(self, Vector2(r.position.x + 24, r.position.y + 3), "TAKEN", 13, col)
+			G.text(self, Vector2(r.position.x + 26, r.position.y + 3), "TAKEN", 13, col)
 		"HOME":
 			G.home_server(self, gc, 7.0, G.DMG)
-			G.text(self, Vector2(r.position.x + 24, r.position.y + 3), "HOME -1", 13, col)
+			G.text(self, Vector2(r.position.x + 26, r.position.y + 3), "HOME -1", 13, col)
 		_:
-			draw_polyline(PackedVector2Array([gc + Vector2(0, -8), gc + Vector2(8, 0), gc + Vector2(0, 8), gc + Vector2(-8, 0), gc + Vector2(0, -8)]), G.CELL, 2.0, true)
-			G.text(self, Vector2(r.position.x + 24, r.position.y + 3), "DECOY", 13, G.CELL)
+			G.diamond(self, gc, 8.0, G.CELL, 2.0)
+			G.text(self, Vector2(r.position.x + 26, r.position.y + 3), "DECOY", 13, G.CELL)
 
 
 func _draw_after() -> void:
-	var after: L2State = row["after_raid"]
+	var after: L3State = row["after_raid"]
 	_draw_net(false, after.status, after.home_hp, row["alloc"])
 	for b: Dictionary in row["beams"]:
 		var g := _beam_geom(b["id"], b["line"])
@@ -1284,18 +1350,25 @@ func _draw_after() -> void:
 		if not done.has(o["cell"]):
 			done.append(o["cell"])
 			_node_tag(o["cell"], o["outcome"])
+	if row["spoof"] != L3Rules.NONE:
+		_spoof_mark(nx(row["spoof"]) + SPOOF_OFF, 9.0)
 	var sm: Dictionary = row["summary"]
-	if row["evaded"]:
-		G.stamp(self, Vector2(1010, 120), "EVADED", G.CLEAN, 44, "nothing touched")
-	else:
-		var parts: Array = []
-		if int(sm["down"]) > 0:
-			parts.append("%d DOWN" % int(sm["down"]))
-		if int(sm["taken"]) > 0:
-			parts.append("%d TAKEN" % int(sm["taken"]))
-		if int(sm["home"]) > 0:
-			parts.append("HOME -1")
-		G.stamp(self, Vector2(1010, 120), "CELL HOLDS", G.HOLD, 40, "  ".join(parts) if not parts.is_empty() else "a decoy took the beam")
+	var tier: String = row["tier"]
+	var col := G.tier_color(tier)
+	var parts: Array = []
+	if int(sm["down"]) > 0:
+		parts.append("%d DOWN" % int(sm["down"]))
+	if int(sm["taken"]) > 0:
+		parts.append("%d TAKEN" % int(sm["taken"]))
+	if int(sm["home"]) > 0:
+		parts.append("HOME -%d" % int(sm["home"]))
+	match tier:
+		"EVADED":
+			G.stamp(self, Vector2(1010, 122), "EVADED", col, 44, "nothing touched")
+		"HOLDS":
+			G.stamp(self, Vector2(1010, 122), "CELL HOLDS", col, 40, "  ".join(parts) if not parts.is_empty() else "a decoy took the beam")
+		_:
+			G.stamp(self, Vector2(1010, 122), "CELL DAMAGED", col, 38, "  ".join(parts))
 	_draw_ledger(row["ledger"])
 	var last := model.leg_over()
 	_btn(Rect2(PANEL_X, 628, PANEL_W, 40), ("LEG RECORD  [Enter]" if last else "BETWEEN RAIDS  [Enter]"), "next", true, 18)
@@ -1303,8 +1376,7 @@ func _draw_after() -> void:
 
 
 func _ledger_row(y: float, label: String, amount: String, col: Color, glyph: String = "") -> void:
-	G.text(self, Vector2(PANEL_X + 20, y), label, 15, G.INK)
-	G.text_r(self, Vector2(PANEL_X + PANEL_W - 20, y), amount, 17, col)
+	_lrow(PANEL_X + 20, PANEL_X + PANEL_W - 20, y, label, amount, col)
 	match glyph:
 		"coin":
 			G.coin(self, Vector2(PANEL_X + 320, y + 9), 7, col)
@@ -1313,20 +1385,25 @@ func _ledger_row(y: float, label: String, amount: String, col: Color, glyph: Str
 
 
 func _draw_ledger(l: Dictionary) -> void:
-	G.panel(self, Rect2(PANEL_X, 190, PANEL_W, 428))
+	G.panel(self, Rect2(PANEL_X, 190, PANEL_W, 430))
 	var y := 200.0
-	G.coin(self, Vector2(PANEL_X + 28, y + 10), 10)
-	G.text(self, Vector2(PANEL_X + 50, y), L2Config.key_label().to_upper(), 15, G.DIM)
-	y += 26.0
-	_ledger_row(y, "BEFORE", str(l["bank_before"]), G.INK, "coin")
+	# The kit: before -> after, per item.
+	G.text(self, Vector2(PANEL_X + 20, y), "KIT  (the raid took from it; Schematics stay %d)" % int(l["bank"]), 13, G.DIM)
 	y += 24.0
-	if int(l["decoy"]) > 0:
-		_ledger_row(y, "DECOY", "-%d" % int(l["decoy"]), G.DMG, "coin")
-		y += 24.0
-	draw_line(Vector2(PANEL_X + 20, y + 2), Vector2(PANEL_X + PANEL_W - 20, y + 2), G.PANEL_EDGE, 2.0)
-	y += 6.0
-	_ledger_row(y, "AFTER THE RAID", str(l["bank_after"]), G.CELL, "coin")
-	y += 38.0
+	for i in range(3):
+		var kind: String = L3Config.KITS[i]
+		var x0 := PANEL_X + 20 + i * 146.0
+		var cy := y + 12
+		match kind:
+			"ghost":
+				G.dashed_ring(self, Vector2(x0 + 12, cy), 10, G.CELL, 3.0)
+			"decoy":
+				G.diamond(self, Vector2(x0 + 12, cy), 11, G.CELL)
+			_:
+				G.skip_chevron(self, Vector2(x0 + 12, cy), 7.0, G.CLEAN, 2.5)
+		var used: int = int(l["kit_used"][kind])
+		G.text(self, Vector2(x0 + 34, cy - 9), "%d -> %d" % [int(l["kit_before"][kind]), int(l["kit_after"][kind])], 17, G.INK if used == 0 else G.HOLD)
+	y += 40.0
 	G.flame(self, Vector2(PANEL_X + 28, y + 10), 10)
 	G.text(self, Vector2(PANEL_X + 50, y), "HEAT", 15, G.DIM)
 	y += 26.0
@@ -1341,27 +1418,34 @@ func _draw_ledger(l: Dictionary) -> void:
 	draw_line(Vector2(PANEL_X + 20, y + 2), Vector2(PANEL_X + PANEL_W - 20, y + 2), G.PANEL_EDGE, 2.0)
 	y += 6.0
 	_ledger_row(y, "AFTER THE RAID", str(l["heat_after"]), G.HEAT, "flame")
-	y += 30.0
+	y += 28.0
 	G.text(self, Vector2(PANEL_X + 20, y), "The sweep ran at Heat %d: %d known beam%s." % [l["run_heat"], 1 + int(l["extra"]), "" if int(l["extra"]) == 0 else "s"], 12, G.DIM)
-	y += 30.0
+	y += 28.0
 	G.home_server(self, Vector2(PANEL_X + 28, y + 12), 9.0, G.INK)
 	G.text(self, Vector2(PANEL_X + 50, y), "HOME", 15, G.DIM)
-	for k in range(L2Config.HOME_HP):
+	for k in range(L3Config.HOME_HP):
 		var mode := "full" if k < int(l["home_after"]) else "lost"
 		G.pip(self, Vector2(PANEL_X + 150 + k * 28, y + 10), 18.0, mode)
 	G.text_r(self, Vector2(PANEL_X + PANEL_W - 20, y), "%d -> %d" % [l["home_before"], l["home_after"]], 17, G.DMG if int(l["home_lost"]) > 0 else G.INK)
 	y += 36.0
-	var after: L2State = row["after_raid"]
+	var after: L3State = row["after_raid"]
 	G.text(self, Vector2(PANEL_X + 20, y), "Network: %d OK, %d DOWN, %d TAKEN" % [after.count("OK"), after.count("DOWN"), after.count("TAKEN")], 14, G.INK)
-	y += 24.0
-	G.text(self, Vector2(PANEL_X + 20, y), "Leg value now: %d" % model.final_score(), 14, G.DIM)
+	y += 26.0
+	if model.breached:
+		G.text(self, Vector2(PANEL_X + 20, y), "The campaign is lost.", 14, G.DMG)
+		return
+	G.text(self, Vector2(PANEL_X + 20, y), "Leg value now: %d" % L3Rules.score(model.leg, after), 14, G.INK)
+	y += 22.0
+	G.text(self, Vector2(PANEL_X + 20, y), _carried_s(int(l["carried"])) + "  (Heat above %d counts against the leg)" % L3Config.START_HEAT, 12, G.HEAT if int(l["carried"]) > 0 else G.DIM)
 
 
 # ---- between raids ----
 func _draw_repair() -> void:
 	var s := model.state
 	var bp: Dictionary = model.between_preview()
-	var dark: Array = row["alloc"]["dark"]
+	var ns: L3State = bp["state"]
+	var last: Dictionary = model.history.back()
+	var dark: Array = last["alloc"]["dark"]
 	var shown_status: Dictionary = s.status.duplicate()
 	for pc: Vector2i in model.pending_repairs:
 		shown_status[pc] = "OK"
@@ -1370,9 +1454,9 @@ func _draw_repair() -> void:
 	for c: Vector2i in s.status:
 		var pp := nx(c)
 		if s.status[c] == "DOWN":
-			var cost := L2Rules.idiv(int(vals[c]), L2Config.REPAIR_DIV)
+			var cost := L3Rules.idiv(int(vals[c]), L3Config.REPAIR_DIV)
 			var picked: bool = model.pending_repairs.has(c)
-			var affordable: bool = picked or cost <= model.repair_budget()
+			var affordable: bool = picked or cost <= model.budget()
 			var col := G.CLEAN if picked else (G.CELL if affordable else G.DIM)
 			G.circle(self, pp, NODE_R + 8, col, 4.0 if picked else 3.0)
 			var tag := Rect2(pp.x - 36, pp.y + 34, 72, 22)
@@ -1380,56 +1464,96 @@ func _draw_repair() -> void:
 			G.coin(self, Vector2(tag.position.x + 12, tag.position.y + 11), 6, col)
 			G.text(self, Vector2(tag.position.x + 24, tag.position.y + 3), "-%d" % cost if not picked else "FIX -%d" % cost, 13, col)
 			_cell_hit(c)
-		elif s.status[c] == "OK" and not dark.has(c) and L2Rules.idiv(int(vals[c]), L2Config.INCOME_DIV) > 0:
-			var inc := L2Rules.idiv(int(vals[c]), L2Config.INCOME_DIV)
+		elif s.status[c] == "OK" and not dark.has(c) and L3Rules.idiv(int(vals[c]), L3Config.INCOME_DIV) > 0:
+			var inc := L3Rules.idiv(int(vals[c]), L3Config.INCOME_DIV)
 			G.text_c(self, pp + Vector2(0, 46), "+%d" % inc, 14, G.CLEAN)
 		elif s.status[c] == "OK" and dark.has(c):
 			G.text_c(self, pp + Vector2(0, 46), "dark: +0", 12, G.DIM)
-	# Picked repairs show the asset back to OK.
 	for c: Vector2i in model.pending_repairs:
 		G.text_c(self, nx(c) + Vector2(0, -42), "REPAIRED", 12, G.CLEAN)
-	# Ledger.
-	G.panel(self, Rect2(PANEL_X, 80, PANEL_W, 520))
-	var ns: L2State = bp["state"]
-	var y := 92.0
-	G.text(self, Vector2(PANEL_X + 20, y), "BETWEEN RAIDS", 17, G.INK)
-	y += 34.0
-	G.coin(self, Vector2(PANEL_X + 28, y + 10), 10)
-	G.text(self, Vector2(PANEL_X + 50, y), L2Config.key_label().to_upper(), 15, G.DIM)
-	y += 26.0
-	_ledger_row(y, "AFTER THE RAID", str(s.bank), G.INK, "coin")
-	y += 24.0
+	# One screen, three choices.
+	var x0 := PANEL_X + 16
+	var wi := PANEL_W - 32.0
+	G.panel(self, Rect2(PANEL_X, 74, PANEL_W, 536))
+	G.text(self, Vector2(x0, 80), "BETWEEN RAIDS", 17, G.INK)
+	G.text_r(self, Vector2(x0 + wi, 84), "after raid %d" % (model.raid + 1), 13, G.DIM)
+	G.text(self, Vector2(x0, 108), "1  REPAIRS  (paid first)", 13, G.DIM)
 	var rc: int = int(bp["repair_cost"])
-	_ledger_row(y, "REPAIR  (%d)" % (bp["repaired"] as Array).size(), "-%d" % rc if rc > 0 else "0", G.DMG if rc > 0 else G.DIM, "coin")
-	y += 24.0
-	_ledger_row(y, "INCOME  (OK, not dark)", "+%d" % int(bp["income"]), G.CLEAN, "coin")
-	y += 24.0
-	draw_line(Vector2(PANEL_X + 20, y + 2), Vector2(PANEL_X + PANEL_W - 20, y + 2), G.PANEL_EDGE, 2.0)
-	y += 6.0
-	_ledger_row(y, "NEXT RAID", str(ns.bank), G.CELL, "coin")
-	y += 40.0
-	G.flame(self, Vector2(PANEL_X + 28, y + 10), 10)
-	G.text(self, Vector2(PANEL_X + 50, y), "HEAT", 15, G.DIM)
-	y += 26.0
-	_ledger_row(y, "AFTER THE RAID", str(s.heat), G.INK, "flame")
-	y += 24.0
-	_ledger_row(y, "THE RUN", "+%d" % L2Config.RUN_HEAT, G.HOLD, "flame")
-	y += 24.0
-	draw_line(Vector2(PANEL_X + 20, y + 2), Vector2(PANEL_X + PANEL_W - 20, y + 2), G.PANEL_EDGE, 2.0)
-	y += 6.0
-	_ledger_row(y, "NEXT RAID", str(ns.heat), G.HEAT, "flame")
-	y += 26.0
-	var nxt_extra: int = L2Rules.extra_count(ns.heat)
-	G.text(self, Vector2(PANEL_X + 20, y), "Next raid: %d known beam%s." % [1 + nxt_extra, "" if nxt_extra == 0 else "s"], 14, G.THREAT_LIGHT if nxt_extra > 0 else G.DIM)
-	y += 34.0
-	G.text(self, Vector2(PANEL_X + 20, y), "Repair costs half the asset's value; income is a third", 12, G.DIM)
-	y += 18.0
-	G.text(self, Vector2(PANEL_X + 20, y), "of the value of each OK asset. DOWN assets earn nothing.", 12, G.DIM)
-	y += 26.0
-	G.text(self, Vector2(PANEL_X + 20, y), "Network: %d OK, %d DOWN, %d TAKEN" % [s.count("OK"), s.count("DOWN"), s.count("TAKEN")], 14, G.INK)
-	y += 24.0
-	G.text(self, Vector2(PANEL_X + 20, y), "Leg value now: %d" % model.final_score(), 14, G.DIM)
-	_btn(Rect2(PANEL_X, 614, PANEL_W, 46), "NEXT RAID  [Enter]", "next", true, 18)
+	if model.pending_repairs.is_empty():
+		G.text_r(self, Vector2(x0 + wi, 108), "click a DOWN asset", 12, G.DIM)
+	else:
+		G.text_r(self, Vector2(x0 + wi, 108), "%d picked   -%d" % [model.pending_repairs.size(), rc], 13, G.DMG)
+	G.text(self, Vector2(x0, 130), "2  SHOP: ONE BUY  (after repairs)", 13, G.DIM)
+	var bw := (wi - 24.0) / 4.0
+	_shop_btn(Rect2(x0, 150, bw, 44), "")
+	var bi := 1
+	for kind in L3Config.KITS:
+		_shop_btn(Rect2(x0 + bi * (bw + 8.0), 150, bw, 44), kind)
+		bi += 1
+	G.text(self, Vector2(x0, 204), "3  RUN INTENSITY  (Heat and income)", 13, G.DIM)
+	var cw := (wi - 20.0) / 3.0
+	for i in range(3):
+		var name: String = L3Config.INTENSITIES[i]
+		var cr := Rect2(x0 + i * (cw + 10.0), 224, cw, 120)
+		var sel: bool = model.pending_intensity == name
+		G.panel(self, cr, G.CELL if sel else G.PANEL_EDGE, Color8(60, 52, 24) if (sel or _hot(cr)) else G.PANEL, 3.0 if sel else 2.0)
+		_add_hit(cr, "inten:" + name)
+		var alt := L3Rules.between_parts(model.leg, s, dark, model.pending_repairs, name, model.pending_buy)
+		var ast: L3State = alt["state"]
+		var nb: int = L3Rules.extra_count(ast.heat)
+		G.text(self, Vector2(cr.position.x + 10, cr.position.y + 6), name, 16, G.CELL if sel else G.INK)
+		G.text_r(self, Vector2(cr.end.x - 8, cr.position.y + 9), "[%s]" % name.substr(0, 1), 12, G.DIM)
+		G.flame(self, Vector2(cr.position.x + 18, cr.position.y + 44), 8)
+		G.text(self, Vector2(cr.position.x + 34, cr.position.y + 34), "+%d Heat" % int(alt["heat_add"]), 15, G.HEAT)
+		G.coin(self, Vector2(cr.position.x + 18, cr.position.y + 68), 7)
+		G.text(self, Vector2(cr.position.x + 34, cr.position.y + 58), "x%s: +%d" % [["0.5", "1", "1.5"][i], int(alt["income"])], 14, G.CELL)
+		G.text(self, Vector2(cr.position.x + 10, cr.position.y + 82), "next Heat %d" % ast.heat, 13, G.INK)
+		G.text(self, Vector2(cr.position.x + 10, cr.position.y + 100), "%d known beam%s" % [1 + nb, "" if nb == 0 else "s"], 13, G.THREAT_LIGHT if nb > 0 else G.DIM)
+	# Ledger: Schematics (left) and Heat (right).
+	var ly := 356.0
+	var xl := x0
+	var xr := x0 + 206.0
+	var xm := x0 + 222.0
+	var xe := x0 + wi
+	G.coin(self, Vector2(xl + 8, ly + 9), 8)
+	G.text(self, Vector2(xl + 24, ly), L3Config.key_label().to_upper(), 14, G.DIM)
+	var yy := ly + 24.0
+	_lrow(xl, xr, yy, "AFTER THE RAID", str(s.bank), G.INK)
+	yy += 21.0
+	_lrow(xl, xr, yy, "REPAIRS", "-%d" % rc if rc > 0 else "0", G.DMG if rc > 0 else G.DIM)
+	yy += 21.0
+	var bcost: int = int(bp["buy_cost"])
+	_lrow(xl, xr, yy, "SHOP", "-%d" % bcost if bcost > 0 else "0", G.DMG if bcost > 0 else G.DIM)
+	yy += 21.0
+	draw_line(Vector2(xl, yy + 2), Vector2(xr, yy + 2), G.PANEL_EDGE, 2.0)
+	yy += 6.0
+	_lrow(xl, xr, yy, "BANK NOW", str(s.bank - rc - bcost), G.INK)
+	yy += 21.0
+	_lrow(xl, xr, yy, "INCOME (last)", "+%d" % int(bp["income"]), G.CLEAN)
+	yy += 21.0
+	draw_line(Vector2(xl, yy + 2), Vector2(xr, yy + 2), G.PANEL_EDGE, 2.0)
+	yy += 6.0
+	_lrow(xl, xr, yy, "NEXT RAID", str(ns.bank), G.CELL)
+	G.flame(self, Vector2(xm + 8, ly + 9), 9)
+	G.text(self, Vector2(xm + 24, ly), "HEAT", 14, G.DIM)
+	yy = ly + 24.0
+	_lrow(xm, xe, yy, "AFTER THE RAID", str(s.heat), G.INK)
+	yy += 21.0
+	_lrow(xm, xe, yy, "THE RUN", "+%d" % int(bp["heat_add"]), G.HOLD)
+	yy += 21.0
+	draw_line(Vector2(xm, yy + 2), Vector2(xe, yy + 2), G.PANEL_EDGE, 2.0)
+	yy += 6.0
+	_lrow(xm, xe, yy, "NEXT RAID", str(ns.heat), G.HEAT)
+	yy += 26.0
+	var nxt_extra: int = L3Rules.extra_count(ns.heat)
+	G.text(self, Vector2(xm, yy), "Next raid: %d known beam%s." % [1 + nxt_extra, "" if nxt_extra == 0 else "s"], 13, G.THREAT_LIGHT if nxt_extra > 0 else G.DIM)
+	yy += 20.0
+	G.text(self, Vector2(xm, yy), _carried_s(L3Rules.heat_carried(ns)), 13, G.HEAT if L3Rules.heat_carried(ns) > 0 else G.DIM)
+	var ty := 542.0
+	G.text(self, Vector2(x0, ty), "Network: %d OK, %d DOWN, %d TAKEN" % [s.count("OK"), s.count("DOWN"), s.count("TAKEN")], 13, G.INK)
+	G.text(self, Vector2(x0, ty + 20), "Leg value after this step: %d  (income counted)" % L3Rules.score(model.leg, ns), 14, G.CELL)
+	G.text(self, Vector2(x0, ty + 40), "= bank + assets kept - HOME lost x %d - Heat carried" % L3Config.HOME_LOSS_COST, 12, G.DIM)
+	_btn(Rect2(PANEL_X, 616, PANEL_W, 44), "NEXT RAID  [Enter]", "next", true, 18)
 	_draw_legend()
 
 
@@ -1437,9 +1561,9 @@ func _draw_repair() -> void:
 func _draw_breach() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 720)), Color8(34, 6, 12))
 	# The dead network, dim, behind the end card.
-	var after: L2State = row["after_raid"]
+	var after: L3State = row["after_raid"]
 	var saved := Color8(34, 6, 12)
-	for c in L2Rules.nodes():
+	for c in L3Rules.nodes():
 		_draw_node(c, after.status, 0, row["alloc"])
 	draw_rect(Rect2(Vector2.ZERO, Vector2(1280, 720)), Color(saved.r, saved.g, saved.b, 0.94))
 	var cx := 640.0
@@ -1449,15 +1573,14 @@ func _draw_breach() -> void:
 	G.line(self, hc + Vector2(-40, -62), hc + Vector2(-8, -4), Color8(34, 6, 12), 8.0)
 	G.line(self, hc + Vector2(-8, -4), hc + Vector2(-34, 60), Color8(34, 6, 12), 8.0)
 	G.line(self, hc + Vector2(40, -62), hc + Vector2(14, 8), Color8(34, 6, 12), 8.0)
-	for k in range(L2Config.HOME_HP):
+	for k in range(L3Config.HOME_HP):
 		G.pip(self, Vector2(cx + (k - 1) * 34.0, 252), 22.0, "lost")
 	G.text_c(self, Vector2(cx, 330), "BREACHED", 84, G.DMG)
 	G.text_c(self, Vector2(cx, 398), "THE CAMPAIGN IS LOST", 30, G.INK)
 	G.text_c(self, Vector2(cx, 446), "Raid %d: the beams reached HOME and its last integrity went." % (int(row["raid"]) + 1), 18, G.DIM)
 	var l: Dictionary = row["ledger"]
-	G.text_c(self, Vector2(cx, 476), "HOME %d -> 0   |   Heat %d   |   %d %s left" % [l["home_before"], l["heat_after"], l["bank_after"], L2Config.key_label()], 16, G.DIM)
-	G.text_c(self, Vector2(cx, 520), "Leg score: -%d" % L2Config.BREACH, 26, G.DMG)
-	_btn(Rect2(cx - 200, 568, 400, 52), "LEG RECORD  [Enter]", "next", true, 20)
+	G.text_c(self, Vector2(cx, 480), "HOME %d -> 0   |   Heat %d" % [l["home_before"], l["heat_after"]], 16, G.DIM)
+	_btn(Rect2(cx - 200, 540, 400, 52), "LEG RECORD  [Enter]", "next", true, 20)
 
 
 # ---- leg record ----
@@ -1466,8 +1589,8 @@ func _draw_record() -> void:
 	if model.breached:
 		G.text(self, Vector2(220, 84), "BREACHED: the campaign was lost in raid %d" % model.history.size(), 17, G.DMG)
 	else:
-		G.text(self, Vector2(220, 84), "CELL HOLDS", 17, G.HOLD)
-	for j in range(L2Config.RAIDS):
+		G.text(self, Vector2(220, 84), "THE CELL SURVIVED THE LEG", 17, G.CLEAN)
+	for j in range(L3Config.RAIDS):
 		var r := Rect2(30 + j * 410, 116, 390, 440)
 		if j >= model.history.size():
 			G.panel(self, r, G.PANEL_EDGE, G.PANEL, 2.0)
@@ -1477,75 +1600,85 @@ func _draw_record() -> void:
 		var h: Dictionary = model.history[j]
 		var l: Dictionary = h["ledger"]
 		var sm: Dictionary = h["summary"]
-		var edge: Color = G.CLEAN if h["evaded"] else (G.DMG if int(l["home_after"]) <= 0 else G.HOLD)
-		G.panel(self, r, edge, G.PANEL, 3.0)
+		var tier: String = h["tier"]
+		var col := G.tier_color(tier)
+		G.panel(self, r, col, G.PANEL, 3.0)
 		G.text(self, Vector2(r.position.x + 20, r.position.y + 12), "RAID %d" % (j + 1), 20, G.DIM)
-		if int(l["home_after"]) <= 0:
-			G.text_r(self, Vector2(r.end.x - 20, r.position.y + 10), "BREACHED", 24, G.DMG)
-		elif h["evaded"]:
-			G.text_r(self, Vector2(r.end.x - 20, r.position.y + 10), "EVADED", 24, G.CLEAN)
-		else:
-			G.text_r(self, Vector2(r.end.x - 20, r.position.y + 10), "CELL HOLDS", 22, G.HOLD)
-		# Heat band of the sweep: the beams it ran with.
+		G.text_r(self, Vector2(r.end.x - 20, r.position.y + 10), {"EVADED": "EVADED", "HOLDS": "CELL HOLDS", "DAMAGED": "CELL DAMAGED", "BREACHED": "BREACHED"}[tier], 22, col)
 		G.flame(self, Vector2(r.position.x + 30, r.position.y + 62), 10)
 		G.text(self, Vector2(r.position.x + 48, r.position.y + 50), "%d -> %d" % [l["heat_before"], l["heat_after"]], 20, G.HEAT)
 		_band_chips(Vector2(r.position.x + 190, r.position.y + 62), int(l["extra"]), false)
-		# Mini map of the network after the raid.
 		_mini_map(Vector2(r.position.x + 20, r.position.y + 92), h)
-		# What changed.
+		G.text(self, Vector2(r.position.x + 20, r.position.y + 228), "ring: changed in this raid   dim: carried over", 11, G.DIM)
 		var tx := r.position.x + 214
 		var ty := r.position.y + 100.0
-		G.text(self, Vector2(tx, ty - 4), "STATUS CHANGES", 12, G.DIM)
+		G.text(self, Vector2(tx, ty - 4), "CHANGED IN THIS RAID", 11, G.DIM)
 		ty += 20.0
 		_chips(tx, ty + 10, sm)
 		ty += 34.0
-		G.coin(self, Vector2(tx + 8, ty + 10), 8)
-		G.text(self, Vector2(tx + 24, ty), "%d -> %d" % [l["bank_before"], l["bank_after"]], 17, G.INK)
-		ty += 30.0
 		G.home_server(self, Vector2(tx + 8, ty + 10), 7.0, G.INK)
-		for k in range(L2Config.HOME_HP):
+		for k in range(L3Config.HOME_HP):
 			G.pip(self, Vector2(tx + 40 + k * 22, ty + 10), 14.0, "full" if k < int(l["home_after"]) else "lost")
 		ty += 30.0
-		var plan_s := "ghost %d  decoy %d  dark %d" % [h["alloc"]["ghost"].size(), h["alloc"]["decoys"].size(), h["alloc"]["dark"].size()]
-		G.text(self, Vector2(r.position.x + 20, r.position.y + 256), plan_s, 14, G.DIM)
-		var sp: Vector2i = h["spoof"]
-		G.text(self, Vector2(r.position.x + 20, r.position.y + 280), "spoof: " + ("used" if sp != L2Rules.NONE else "held"), 14, G.DIM)
+		var used: Dictionary = l["kit_used"]
+		G.text(self, Vector2(tx, ty), "KIT USED", 11, G.DIM)
+		for ki in range(3):
+			var kx := tx + 78.0 + ki * 34.0
+			var kk: String = L3Config.KITS[ki]
+			var kc := G.CELL if kk != "spoof" else G.CLEAN
+			match kk:
+				"ghost":
+					G.dashed_ring(self, Vector2(kx, ty + 8), 6, kc, 2.0)
+				"decoy":
+					G.diamond(self, Vector2(kx, ty + 8), 7, kc, 2.0)
+				_:
+					G.skip_chevron(self, Vector2(kx, ty + 8), 4.5, kc, 2.0)
+			G.text(self, Vector2(kx + 12, ty), str(used[kk]), 14, G.INK if int(used[kk]) > 0 else G.DIM)
+		G.text(self, Vector2(r.position.x + 20, r.position.y + 252), "dark %d" % (h["alloc"]["dark"] as Array).size(), 13, G.DIM)
 		var bt: Dictionary = h["between"]
+		var ly := r.position.y + 282.0
 		if not bt.is_empty():
-			G.text(self, Vector2(r.position.x + 20, r.position.y + 310), "Between: repaired %d (-%d), income +%d" % [(bt["repaired"] as Array).size(), bt["repair_cost"], bt["income"]], 13, G.INK)
-			var nb: L2State = bt["after"]
-			G.text(self, Vector2(r.position.x + 20, r.position.y + 334), "Next raid: Heat %d, %d known beam%s" % [nb.heat, 1 + L2Rules.extra_count(nb.heat), "" if L2Rules.extra_count(nb.heat) == 0 else "s"], 13, G.DIM)
+			G.text(self, Vector2(r.position.x + 20, ly), "Run %s: Heat +%d, income +%d" % [bt["intensity"], bt["heat_add"], bt["income"]], 13, G.INK)
+			var rep := "repaired %d (-%d)" % [(bt["repaired"] as Array).size(), bt["repair_cost"]]
+			var buy_s := "bought %s (-%d)" % [bt["bought"], bt["buy_cost"]] if String(bt["bought"]) != "" else "no shop buy"
+			G.text(self, Vector2(r.position.x + 20, ly + 22), "%s   %s" % [rep, buy_s], 13, G.INK)
+			var nb: L3State = bt["after"]
+			G.text(self, Vector2(r.position.x + 20, ly + 46), "Next raid: Heat %d, %d known beam%s" % [nb.heat, 1 + L3Rules.extra_count(nb.heat), "" if L3Rules.extra_count(nb.heat) == 0 else "s"], 13, G.DIM)
+			G.text(self, Vector2(r.position.x + 20, ly + 68), _carried_s(L3Rules.heat_carried(nb), "Heat carried so far"), 13, G.HEAT if L3Rules.heat_carried(nb) > 0 else G.DIM)
+		elif tier == "BREACHED":
+			G.text(self, Vector2(r.position.x + 20, ly), "No between step: the campaign ended.", 13, G.DMG)
 		elif j == model.history.size() - 1:
-			G.text(self, Vector2(r.position.x + 20, r.position.y + 310), "The last raid: no between step.", 13, G.DIM)
+			G.text(self, Vector2(r.position.x + 20, ly), "The last raid: no between step.", 13, G.DIM)
+			G.text(self, Vector2(r.position.x + 20, ly + 22), _carried_s(int(l["carried"])), 13, G.HEAT if int(l["carried"]) > 0 else G.DIM)
 	var s := model.state
-	var vals: Dictionary = model.values()
-	var kept := 0
-	for c: Vector2i in s.status:
-		if s.status[c] != "TAKEN":
-			kept += int(vals[c]) - (L2Rules.idiv(int(vals[c]), L2Config.REPAIR_DIV) if s.status[c] == "DOWN" else 0)
-	var lost: int = L2Config.HOME_HP - s.home_hp
+	var kept := L3Rules.assets_kept(model.leg, s)
+	var lost: int = L3Config.HOME_HP - s.home_hp
 	var sc: String
 	if model.breached:
-		sc = "SCORE  -%d   (BREACHED)" % L2Config.BREACH
+		sc = "CAMPAIGN LOST: the leg has no score"
 	else:
-		sc = "SCORE  %d   =  bank %d  +  assets kept %d  -  HOME lost %d x %d" % [model.final_score(), s.bank, kept, lost, L2Config.HOME_LOSS_COST]
-	G.text(self, Vector2(40, 572), sc, 20, G.DMG if model.breached else G.CELL)
+		sc = "SCORE  %d   =  bank %d  +  assets kept %d  -  HOME lost %d x %d  -  Heat carried %d  (Heat %d, start %d)" % [model.final_score(), s.bank, kept, lost, L3Config.HOME_LOSS_COST, L3Rules.heat_carried(s), s.heat, L3Config.START_HEAT]
+	G.text(self, Vector2(40, 572), sc, 18, G.DMG if model.breached else G.CELL)
 	_btn(Rect2(40, 612, 400, 46), "PLAY THE LEG AGAIN  [Enter]", "next", true, 18)
 
 
 func _mini_map(origin: Vector2, h: Dictionary) -> void:
-	var after: L2State = h["after_raid"]
+	var after: L3State = h["after_raid"]
+	var before: L3State = h["before"]
 	var touched: Array = []
 	for o: Dictionary in h["outcomes"]:
 		touched.append(o["cell"])
-	for c in L2Rules.nodes():
+	for c in L3Rules.nodes():
 		var p := origin + Vector2(c.x * 44.0 + 20.0, c.y * 44.0 + 20.0)
 		var cell_r := Rect2(p.x - 20, p.y - 20, 40, 40)
 		draw_rect(cell_r, Color8(20, 24, 46))
 		draw_rect(cell_r, G.PANEL_EDGE, false, 1.0)
+		var changed := false
 		if c == model.home():
 			G.home_server(self, p, 12.0, G.INK)
+			changed = touched.has(c)
 		elif after.status.has(c):
+			changed = after.status[c] != before.status[c]
 			match after.status[c]:
 				"OK":
 					G.circle(self, p, 11, G.CELL, 3.0)
@@ -1554,12 +1687,125 @@ func _mini_map(origin: Vector2, h: Dictionary) -> void:
 					G.bolt(self, p, 9.0)
 				"TAKEN":
 					G.corp(self, p, 12.0)
+			if after.status[c] != "OK" and not changed:
+				draw_rect(cell_r.grow(-1.0), Color(20 / 255.0, 24 / 255.0, 46 / 255.0, 0.62))
 		elif (h["alloc"]["decoys"] as Array).has(c):
-			draw_polyline(PackedVector2Array([p + Vector2(0, -11), p + Vector2(11, 0), p + Vector2(0, 11), p + Vector2(-11, 0), p + Vector2(0, -11)]), G.CELL, 2.5, true)
+			G.diamond(self, p, 11, G.CELL, 2.5)
 		else:
 			G.disc(self, p, 3, G.EMPTY_NODE)
-		if touched.has(c):
+		if changed or (touched.has(c) and not after.status.has(c)):
 			draw_rect(cell_r.grow(-1.0), G.DMG, false, 2.0)
+
+
+## The sealed beam's own mark: a short dashed line capped by a square.
+func _sealed_chip(p: Vector2, col: Color) -> void:
+	G.dashed_line(self, p + Vector2(-17, 0), p + Vector2(-3, 0), col, 4.0, 3.0, 3.0)
+	G.cand_shape(self, p + Vector2(7, 0), 1, 8.0, col, G.BG, 2.5)
+	G.text_c(self, p + Vector2(7, 0), "?", 12, G.INK)
+
+
+## A teal skip-chevron in a round badge: "a spoof skips this node".
+func _spoof_mark(p: Vector2, r: float) -> void:
+	G.disc(self, p, r + 4.0, G.BG)
+	G.circle(self, p, r + 4.0, G.CLEAN, 2.5)
+	G.skip_chevron(self, p, r * 0.6, G.CLEAN, 2.5)
+
+
+## The leg kit tray: ghosts, decoys and spoofs left as pips; planned uses show hollow.
+func _draw_kit_tray(r: Rect2, planned: Dictionary = {}) -> void:
+	G.panel(self, r)
+	var cy := r.position.y + r.size.y * 0.5
+	G.text(self, Vector2(r.position.x + 10, cy - 8), "KIT", 14, G.DIM)
+	var tw := (r.size.x - 56.0) / 3.0
+	for i in range(3):
+		var kind: String = L3Config.KITS[i]
+		var have: int = int(model.state.kit[kind])
+		var used: int = int(planned.get(kind, 0))
+		var x0 := r.position.x + 52.0 + i * tw
+		var col := G.CELL if kind != "spoof" else G.CLEAN
+		if have <= 0:
+			col = G.DIM
+		match kind:
+			"ghost":
+				G.dashed_ring(self, Vector2(x0 + 12, cy), 10, col, 3.0)
+			"decoy":
+				G.diamond(self, Vector2(x0 + 12, cy), 11, col)
+			_:
+				G.skip_chevron(self, Vector2(x0 + 12, cy), 7.0, col, 2.5)
+		G.text(self, Vector2(x0 + 32, cy - 10), "%d" % (have - used), 19, G.INK if have - used > 0 else G.DIM)
+		for k in range(have):
+			var pr := Rect2(x0 + 54 + k * 14, cy - 6, 10, 12)
+			if k < have - used:
+				draw_rect(pr, col)
+			else:
+				draw_rect(pr, G.PANEL_EDGE, false, 2.0)
+
+
+## A node as a small round chip (its value, or the HOME server), edged teal for the spoof list.
+func _node_chip(p: Vector2, c: Vector2i, edge: Color) -> void:
+	G.circle(self, p, 11, edge, 2.0)
+	if c == model.home():
+		G.home_server(self, p, 6.0, G.INK)
+	elif (model.plan["decoys"] as Array).has(c):
+		G.diamond(self, p, 6.0, G.CELL, 2.0)
+	elif model.values().has(c):
+		G.text_c(self, p, str(model.values()[c]), 12, G.INK)
+	else:
+		G.disc(self, p, 3, G.DIM)
+
+
+## Revealed steps of one beam so far.
+func _beam_events(id: String) -> int:
+	var n := 0
+	for e: Dictionary in play.events:
+		if e["beam"] == id:
+			n += 1
+	return n
+
+
+## "Heat carried: -N" (the score charge), or 0.
+func _carried_s(n: int, label: String = "Heat carried") -> String:
+	return "%s: -%d" % [label, n] if n > 0 else "%s: 0" % label
+
+
+## A ledger row between x_l and x_r.
+func _lrow(x_l: float, x_r: float, y: float, label: String, amount: String, col: Color) -> void:
+	G.text(self, Vector2(x_l, y), label, 14, G.INK)
+	G.text_r(self, Vector2(x_r, y), amount, 16, col)
+
+
+func _shop_btn(r: Rect2, kind: String) -> void:
+	var picked: bool = model.pending_buy == kind
+	var price: int = int(L3Config.PRICES[kind]) if kind != "" else 0
+	var spent: int = model.budget() + (int(L3Config.PRICES[model.pending_buy]) if model.pending_buy != "" else 0)
+	var ok: bool = kind == "" or price <= spent
+	var col := G.CLEAN if picked else (G.CELL if ok else G.DIM)
+	if kind == "" and model.pending_buy == "":
+		col = G.CLEAN
+	G.panel(self, r, col, Color8(60, 52, 24) if (_hot(r) and ok) else G.PANEL, 3.0 if (picked or (kind == "" and model.pending_buy == "")) else 2.0)
+	_add_hit(r, "buy:" + ("none" if kind == "" else kind))
+	var cy := r.position.y + r.size.y * 0.5
+	if kind == "":
+		G.text_c(self, Vector2(r.get_center().x, cy - 8), "NO BUY", 13, col)
+		G.text_c(self, Vector2(r.get_center().x, cy + 11), "[0]", 12, G.DIM)
+		return
+	match kind:
+		"ghost":
+			G.dashed_ring(self, Vector2(r.position.x + 18, cy), 9, col, 3.0)
+		"decoy":
+			G.diamond(self, Vector2(r.position.x + 18, cy), 10, col)
+		_:
+			G.skip_chevron(self, Vector2(r.position.x + 18, cy), 6.0, col, 2.5)
+	G.coin(self, Vector2(r.position.x + 44, cy - 8), 6, col)
+	G.text(self, Vector2(r.position.x + 56, cy - 17), str(price), 16, col)
+	G.text(self, Vector2(r.position.x + 36, cy + 3), "have %d" % int(model.state.kit[kind]), 12, G.DIM)
+
+
+## A numbered shot: the number is the frame's place in the leg, so the folder sorts in play order.
+func _shot(label: String) -> void:
+	var shot_name := "%02d_%s" % [_shot_n, label]
+	_shot_n += 1
+	await _snap(shot_name)
 
 
 # ---------- capture ----------
@@ -1574,94 +1820,98 @@ func _snap(shot_name: String) -> void:
 
 
 ## Play the sweep of the current raid beat by beat, taking a picture at each, choosing the spoof from the line's step.
-func _capture_sweep(prefix: String, spoof_cell: Variant) -> void:
+func _capture_sweep(rn: int, spoof_cell: Variant) -> void:
 	var seen := {}
 	var guard := 0
 	while not play.is_done() and guard < 4000:
 		guard += 1
 		var bid: String = play.beam_id()
-		if play.state == L2Play.S.DECIDE:
+		if play.state == L3Play.S.DECIDE:
 			if not seen.has("decide"):
 				seen["decide"] = true
-				await _snap("%s_decision" % prefix)
+				await _shot("r%d_decision" % rn)
 			if spoof_cell == null:
 				_act("hold")
 			else:
 				var sc: Vector2i = spoof_cell
 				_act("cell:%d,%d" % [sc.x, sc.y])
 			if not cap_lite:
-				await _snap("%s_after_decision" % prefix)
+				await _shot("r%d_after_decision" % rn)
 			continue
 		play.advance(0.05)
-		if play.state == L2Play.S.BEAM:
+		if play.state == L3Play.S.BEAM:
 			var n: int = play.beam_steps(play.bi).size()
-			if play.t >= (n * 0.5 + 0.6) * L2Config.STEP_T and not seen.has("beam_" + bid):
+			if play.t >= (n * 0.5 + 0.6) * L3Config.STEP_T and not seen.has("beam_" + bid):
 				seen["beam_" + bid] = true
 				if not cap_lite or bid in ["b1", "hunter"]:
-					await _snap("%s_beam_%s" % [prefix, bid])
-		elif play.state == L2Play.S.UNSEAL and play.t >= 0.5 and not seen.has("unseal"):
+					await _shot("r%d_beam_%s" % [rn, bid])
+		elif play.state == L3Play.S.UNSEAL and play.t >= 0.5 and not seen.has("unseal"):
 			seen["unseal"] = true
 			if not cap_lite:
-				await _snap("%s_unseal" % prefix)
-		elif play.state == L2Play.S.TURN and play.t >= 0.45 and not seen.has("turn"):
+				await _shot("r%d_unseal" % rn)
+		elif play.state == L3Play.S.TURN and play.t >= 0.45 and not seen.has("turn"):
 			seen["turn"] = true
 			if not cap_lite:
-				await _snap("%s_hunter_turn" % prefix)
+				await _shot("r%d_hunter_turn" % rn)
+		elif play.state == L3Play.S.END and play.cut and not seen.has("cut"):
+			seen["cut"] = true
+			await _shot("r%d_breach_touch" % rn)
 	_check_done()
 
 
 func _run_capture() -> void:
 	DirAccess.make_dir_recursive_absolute(capture_dir)
 	var steps: Array = model.leg[cap_line]
-	var n := 0
+	_shot_n = 0
 	for i in range(steps.size()):
 		var s: Dictionary = steps[i]
-		var pre := "%02d_r%d" % [n, i + 1]
-		await _snap(pre + "_contact")
-		n += 1
+		var rn := i + 1
+		await _shot("r%d_contact" % rn)
 		_act("next")
 		if not cap_lite:
-			await _snap("%02d_r%d_plan_empty" % [n, i + 1])
-			n += 1
-		var al := L2Data.alloc_of(s["alloc"])
+			await _shot("r%d_plan_empty" % rn)
+		var al := L3Data.alloc_of(s["alloc"])
 		for c: Vector2i in al["ghost"]:
-			_act("lever:ghost")
+			if sel_lever != "ghost":
+				_act("lever:ghost")
 			_click_cell(c)
 		for c: Vector2i in al["decoys"]:
-			_act("lever:decoy")
+			if sel_lever != "decoy":
+				_act("lever:decoy")
 			_click_cell(c)
 		for c: Vector2i in al["dark"]:
-			_act("lever:dark")
+			if sel_lever != "dark":
+				_act("lever:dark")
 			_click_cell(c)
 		sel_lever = ""
 		if not cap_lite:
-			await _snap("%02d_r%d_plan_levers" % [n, i + 1])
-			n += 1
+			await _shot("r%d_plan_levers" % rn)
 		_act("next")
-		await _snap("%02d_r%d_forecast" % [n, i + 1])
-		n += 1
+		await _shot("r%d_forecast" % rn)
 		_act("next")
 		var spoof_cell: Variant = null
 		if s["spoof"] != null:
-			spoof_cell = L2Data.cell(s["spoof"])
-		await _capture_sweep("%02d_r%d" % [n, i + 1], spoof_cell)
-		n += 1
+			spoof_cell = L3Data.cell(s["spoof"])
+		await _capture_sweep(rn, spoof_cell)
 		if phase == Phase.AFTER:
-			await _snap("%02d_r%d_aftermath" % [n, i + 1])
-			n += 1
+			await _shot("r%d_aftermath" % rn)
 		elif phase == Phase.BREACH:
-			await _snap("%02d_r%d_breach" % [n, i + 1])
-			n += 1
+			await _shot("r%d_breach" % rn)
 			_act("next")
 			break
 		_act("next")
 		if phase == Phase.REPAIR:
-			await _snap("%02d_r%d_repair_open" % [n, i + 1])
-			n += 1
-			for c: Vector2i in L2Data.cells(s["repairs"]):
+			await _shot("r%d_between_open" % rn)
+			var b: Dictionary = s["between"]
+			for c: Vector2i in L3Data.cells(b["repairs"]):
 				_click_cell(c)
-			await _snap("%02d_r%d_repair_picked" % [n, i + 1])
-			n += 1
+			if not cap_lite:
+				await _shot("r%d_between_repairs" % rn)
+			if b["buy"] != null:
+				_act("buy:" + String(b["buy"]))
+			_act("inten:" + String(b["intensity"]))
+			await _shot("r%d_between_picked" % rn)
 			_act("next")
-	await _snap("%02d_record" % n)
+	await _shot("record")
 	get_tree().quit(0)
+

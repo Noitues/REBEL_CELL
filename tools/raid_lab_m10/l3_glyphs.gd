@@ -1,6 +1,6 @@
-class_name L2Glyphs
+class_name L3Glyphs
 extends RefCounted
-## Vector placeholder glyphs and palette for the L2 lab, matching the r10 mockups and the M9 glyph language:
+## Vector placeholder glyphs and palette for the L3 lab, matching the r10 mockups and the M9 glyph language:
 ## threats cobalt, the Cell yellow, red only marks loss, teal only the Cell's holds and spoof. All UI text goes through
 ## `text()`, so `scramble` (the --scramble capture flag) replaces every letter for the no-words test.
 
@@ -23,20 +23,56 @@ static var font: Font = ThemeDB.fallback_font
 static var scramble: bool = false
 
 
-## Replace every ASCII letter by another (bijective, keeps case); digits and punctuation stay.
+static var _word_cache: Dictionary = {}
+
+const HOLD_OK := Color8(206, 214, 236)
+
+
+## The no-words test: every word (a run of ASCII letters) becomes random letters of the same length, seeded by the
+## word itself (the same word always gives the same noise, different words do not share a letter mapping, so nothing
+## can be decoded by substitution). Case pattern, digits and punctuation stay.
 static func scr(s: String) -> String:
 	if not scramble:
 		return s
 	var out := ""
-	for i in range(s.length()):
+	var i := 0
+	while i < s.length():
 		var code := s.unicode_at(i)
-		if code >= 65 and code <= 90:
-			out += char(65 + ((code - 65) * 7 + 3) % 26)
-		elif code >= 97 and code <= 122:
-			out += char(97 + ((code - 97) * 7 + 3) % 26)
+		if (code >= 65 and code <= 90) or (code >= 97 and code <= 122):
+			var j := i
+			while j < s.length() and ((s.unicode_at(j) >= 65 and s.unicode_at(j) <= 90) or (s.unicode_at(j) >= 97 and s.unicode_at(j) <= 122)):
+				j += 1
+			out += _noise_word(s.substr(i, j - i))
+			i = j
 		else:
 			out += s[i]
+			i += 1
 	return out
+
+
+static func _noise_word(w: String) -> String:
+	if _word_cache.has(w):
+		return _word_cache[w]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = w.to_lower().hash()
+	var out := ""
+	for k in range(w.length()):
+		var base := 65 if w.unicode_at(k) <= 90 else 97
+		out += char(base + rng.randi_range(0, 25))
+	_word_cache[w] = out
+	return out
+
+
+## The color of an outcome tier: EVADED teal, HOLDS neutral, DAMAGED orange, BREACHED red.
+static func tier_color(tier: String) -> Color:
+	match tier:
+		"EVADED":
+			return CLEAN
+		"HOLDS":
+			return HOLD_OK
+		"DAMAGED":
+			return HOLD
+	return DMG
 
 
 ## Text with its top-left at `p`.
@@ -192,16 +228,29 @@ static func wrench(ci: CanvasItem, c: Vector2, r: float, col: Color = DMG) -> vo
 	ci.draw_arc(c + Vector2(-r * 0.5, -r * 0.5), r * 0.62, PI * 0.9, PI * 2.55, 14, col, 4.0, true)
 
 
-## Spoof (held press): a rounded key with a bar.
+## Spoof key: the teal skip-chevron in a rounded key (the spoof's own mark; no other thing uses a chevron).
 static func spoof_key(ci: CanvasItem, c: Vector2, col: Color) -> void:
 	panel(ci, Rect2(c.x - 26, c.y - 14, 52, 28), col, Color(0, 0, 0, 0), 3.0)
-	ci.draw_line(c + Vector2(-10, 0), c + Vector2(10, 0), col, 3.0)
+	skip_chevron(ci, c, 8.0, col, 3.0)
+
+
+## Skip-chevron: a double chevron pointing right with a bar after it ("jump over this node").
+static func skip_chevron(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 3.0) -> void:
+	for k in range(2):
+		var x := c.x + (k - 1) * r * 0.9 - r * 0.35
+		ci.draw_polyline(PackedVector2Array([Vector2(x - r * 0.45, c.y - r), Vector2(x + r * 0.45, c.y), Vector2(x - r * 0.45, c.y + r)]), col, w, true)
+	ci.draw_line(Vector2(c.x + r * 0.95, c.y - r), Vector2(c.x + r * 0.95, c.y + r), col, w, true)
+
+
+## A decoy diamond outline.
+static func diamond(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 3.0) -> void:
+	ci.draw_polyline(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0), c + Vector2(0, -r)]), col, w, true)
 
 
 ## A stamp: a bordered word, tilted.
 static func stamp(ci: CanvasItem, c: Vector2, word: String, col: Color, size: int, sub: String = "") -> void:
 	ci.draw_set_transform(c, -0.12, Vector2.ONE)
-	var w := text_w(word, size) + 36.0
+	var w := maxf(text_w(word, size), text_w(sub, int(size * 0.62)) if sub != "" else 0.0) + 36.0
 	var h := size * 1.2 + (size * 0.7 if sub != "" else 0.0) + 18.0
 	var r := Rect2(-w * 0.5, -h * 0.5, w, h)
 	var sb := StyleBoxFlat.new()

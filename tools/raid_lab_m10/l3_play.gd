@@ -1,20 +1,25 @@
-class_name L2Play
+class_name L3Play
 extends RefCounted
 ## The hands-off playout of one sweep as a small state machine. It only sequences the beats and logs which node each
-## beam touched; every decision (touch, status change, hunter column) comes from L2Rules.resolve. Beats: beam 1, the
-## known extra beams Heat brought, beam 2 unseals, the spoof decision (a click on the lit line, or hold), beam 2, the
-## hunter turns on the column of the first touch, the hunter beam, the end.
+## beam touched; every decision (touch, status change, hunter column) comes from L3Rules.resolve. Beats: beam 1, the
+## known extra beams Heat brought, beam 2 unseals, the spoof decision (a click on the lit line, or hold; skipped when
+## the kit has no spoof), beam 2, the hunter turns on the column of the first touch, the hunter beam, the end.
+## A touch that empties HOME ends the sweep at once (`cut`): the campaign is lost, so no spoof decision follows it.
 ## Time: advance(dt). dt is already scaled by the speed control.
 
 enum S { BEAM, UNSEAL, DECIDE, TURN, END, DONE }
 
 var leg: Dictionary
 var raid_i: int
-var before: L2State
+var before: L3State
 var alloc: Dictionary
 var b2: Array
-var spoof: Vector2i = L2Rules.NONE
+var spoof: Vector2i = L3Rules.NONE
 var spoof_used: bool = false
+## True when the kit holds a spoof, so the decision after the reveal is offered.
+var can_spoof: bool = false
+## True when the sweep was cut short by the breach.
+var cut: bool = false
 var state: int = S.BEAM
 var t: float = 0.0
 var clock: float = 0.0
@@ -29,23 +34,26 @@ var events: Array = []
 var _next_step: int = 0
 var _touch_i: int = 0
 var _outcomes: Array = []
+var _home_hp: int = 0
 
 
-func _init(p_leg: Dictionary, p_raid_i: int, p_before: L2State, p_alloc: Dictionary, p_b2: Array) -> void:
+func _init(p_leg: Dictionary, p_raid_i: int, p_before: L3State, p_alloc: Dictionary, p_b2: Array) -> void:
 	leg = p_leg
 	raid_i = p_raid_i
 	before = p_before
 	alloc = p_alloc
 	b2 = p_b2
-	run_heat = before.heat + L2Config.GHOST_HEAT * (alloc["ghost"] as Array).size()
+	can_spoof = int(before.kit["spoof"]) > 0
+	_home_hp = before.home_hp
+	run_heat = before.heat + L3Config.GHOST_HEAT * (alloc["ghost"] as Array).size()
 	_resolve()
 	for b: Dictionary in res["beams"]:
 		order.append(b["id"])
 
 
 func _resolve() -> void:
-	res = L2Rules.resolve(leg, raid_i, before, b2, alloc, spoof)
-	_outcomes = L2Rules.outcomes(before, res["touches"])
+	res = L3Rules.resolve(leg, raid_i, before, b2, alloc, spoof)
+	_outcomes = L3Rules.outcomes(before, res["touches"])
 
 
 func beam_steps(k: int) -> Array:
@@ -73,7 +81,7 @@ func beam_idx() -> int:
 func head() -> float:
 	if state != S.BEAM:
 		return 0.0
-	return minf(t / L2Config.STEP_T, float((beam_steps(bi)).size()))
+	return minf(t / L3Config.STEP_T, float((beam_steps(bi)).size()))
 
 
 func is_waiting() -> bool:
@@ -89,7 +97,7 @@ func can_target(c: Vector2i) -> bool:
 	return state == S.DECIDE and b2.has(c)
 
 
-## Decision: beam 2 skips this node.
+## Decision: beam 2 skips this node (spends one spoof).
 func choose_spoof(c: Vector2i) -> bool:
 	if not can_target(c):
 		return false
@@ -138,10 +146,16 @@ func _log(step: Dictionary, id: String) -> void:
 		outcome = String(_outcomes[_touch_i]["outcome"])
 		_touch_i += 1
 	events.append({"beam": id, "cell": step["cell"], "kind": step["kind"], "outcome": outcome, "at": clock})
+	if outcome == "HOME":
+		_home_hp -= 1
+		if _home_hp <= 0:
+			cut = true
+			state = S.END
+			t = 0.0
 
 
 func _beam_len(k: int) -> float:
-	return float(beam_steps(k).size()) * L2Config.STEP_T + 0.35
+	return float(beam_steps(k).size()) * L3Config.STEP_T + 0.35
 
 
 func advance(dt: float) -> void:
@@ -152,20 +166,25 @@ func advance(dt: float) -> void:
 	match state:
 		S.BEAM:
 			var steps: Array = beam_steps(bi)
-			while _next_step < steps.size() and t >= (_next_step + 1) * L2Config.STEP_T:
+			while _next_step < steps.size() and t >= (_next_step + 1) * L3Config.STEP_T:
 				_log(steps[_next_step], order[bi])
 				_next_step += 1
+				if cut:
+					return
 			if t >= _beam_len(bi):
 				_after_beam()
 		S.UNSEAL:
-			if t >= L2Config.UNSEAL_T:
-				state = S.DECIDE
-				t = 0.0
+			if t >= L3Config.UNSEAL_T:
+				if can_spoof:
+					state = S.DECIDE
+					t = 0.0
+				else:
+					_enter_beam(order.find("b2"))
 		S.TURN:
-			if t >= L2Config.TURN_T:
+			if t >= L3Config.TURN_T:
 				_enter_beam(bi)
 		S.END:
-			if t >= L2Config.END_T:
+			if t >= L3Config.END_T:
 				state = S.DONE
 
 
@@ -191,7 +210,17 @@ func status_now() -> Dictionary:
 
 ## What beam 2 would do if it skipped this node: the resolution with that spoof (NONE = hold).
 func preview(c: Vector2i) -> Dictionary:
-	return L2Rules.resolve(leg, raid_i, before, b2, alloc, c)
+	return L3Rules.resolve(leg, raid_i, before, b2, alloc, c)
+
+
+## The touches the sweep revealed, as the rules' touch list prefix (all of them unless the sweep was cut).
+func shown_touches() -> Array:
+	var all: Array = res["touches"]
+	var n := 0
+	for e: Dictionary in events:
+		if e["outcome"] != "":
+			n += 1
+	return all.slice(0, n)
 
 
 ## The touched cells logged beat by beat (checked against the result in flow_check).
@@ -206,3 +235,10 @@ func logged_touches() -> Array:
 ## The cell of the first touch the hunter turns on, or NONE.
 func hunter_from() -> Vector2i:
 	return res["first"]
+
+
+## Index of the last beam the sweep entered (a cut sweep stops there).
+func last_beam() -> int:
+	if state in [S.BEAM, S.UNSEAL, S.DECIDE, S.TURN]:
+		return beam_idx()
+	return bi
