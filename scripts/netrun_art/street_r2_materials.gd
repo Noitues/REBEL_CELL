@@ -1,7 +1,8 @@
 class_name StreetR2Materials
 extends RefCounted
 ## Street r2 renderer, material half: one `street_r2_surface` ShaderMaterial per accumulator id (numbers of `StreetR2RenderConfigData.materials`,
-## MATERIAL_SPEC section 4) and the slot-name rule for the street kit glb (`neon_emit*` neon, `lit_emit` window, `lamp_emit` lamp head).
+## MATERIAL_SPEC section 4) and the slot-name rule for the street kit glb (`neon_emit*` neon, `lit_emit` window, `lamp_emit` lamp head,
+## `headlight_emit` / `taillight_emit` the car lights).
 
 const SURFACE := preload("res://shaders/street_r2/street_r2_surface.gdshader")
 const SIGN := preload("res://shaders/street_r2/street_r2_sign.gdshader")
@@ -26,6 +27,10 @@ func for_slot(slot: String) -> ShaderMaterial:
 		return _tint("neon", "neon", -1.0)
 	if slot == "lit_emit":
 		return _tint("win", "win", -1.0)
+	if slot == "headlight_emit":
+		return _light("car_head")
+	if slot == "taillight_emit":
+		return _light("car_tail")
 	match slot:
 		"panel":
 			return surface("panel")
@@ -43,6 +48,17 @@ func sign_board(tex: Texture2D, emit: float) -> ShaderMaterial:
 	m.set_shader_parameter(&"board", tex)
 	m.set_shader_parameter(&"emit", emit)
 	return m
+
+
+## A car light (`car_head` / `car_tail`): the neon surface in the fixed colour and emission of `lamps.<key>_color` / `_emit`.
+func _light(key: String) -> ShaderMaterial:
+	if not _tinted.has(key):
+		var l: Dictionary = StreetR2RenderConfigData.shipped().lamps
+		var c: Array = l[key + "_color"]
+		var m := _make("neon", 0.0, float(l[key + "_emit"]))
+		m.set_shader_parameter(&"light_color", Vector4(float(c[0]), float(c[1]), float(c[2]), 1.0))
+		_tinted[key] = m
+	return _tinted[key]
 
 
 func _tint(key: String, mat: String, emit_override: float) -> ShaderMaterial:

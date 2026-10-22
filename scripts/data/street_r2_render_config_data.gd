@@ -17,7 +17,8 @@ static var _shipped: StreetR2RenderConfigData = null
 @export var props: Dictionary = {}
 ## Sign boards: emission gain, frame, texture cap, glyph-box height factor of the Godot fonts, font files.
 @export var signs: Dictionary = {}
-## Kerb lamps: head emission and the reference pole height of the glb.
+## Kerb lamps: head emission and the reference pole height of the glb; the street kit car lights (`headlight_emit`,
+## `taillight_emit` slots): colour (linear rgb) and emission.
 @export var lamps: Dictionary = {}
 
 ## Keys each field must hold.
@@ -28,7 +29,7 @@ const REQUIRED: Dictionary = {
 	"materials": ["conc", "glass", "panel", "solid", "win", "neon"],
 	"props": ["kits", "emit_k", "lamp", "crowns", "crown_floors_k", "tint_mix"],
 	"signs": ["emit_k", "frame_w", "frame_col", "frame_off", "measure_h_k", "font_anton", "font_mono", "ad_col_k"],
-	"lamps": ["head_emit", "pole_scale_from"],
+	"lamps": ["head_emit", "pole_scale_from", "car_head_color", "car_head_emit", "car_tail_color", "car_tail_emit"],
 }
 
 
