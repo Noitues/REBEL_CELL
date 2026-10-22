@@ -10,7 +10,7 @@ const GLASS := preload("res://shaders/city/hq_solace_glass.gdshader")
 const WINDOW := preload("res://shaders/city/hq_solace_window.gdshader")
 const LOOK_KEY := "aaa2"
 ## The page's post exposure over the street's (the plates' HQ post runs brighter than the district's).
-const PAGE_EXPOSURE_K := 1.3
+const PAGE_EXPOSURE_K := 1.0
 
 ## Role -> shader parameters (hq_preset `light`: skin_k 0.012, rim_k 0.12 / pow 4, porcelain rough 0.16 / coat 0.8, office rough 0.6).
 const ROLES := {

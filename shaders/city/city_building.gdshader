@@ -44,7 +44,7 @@ uniform float trim_px_min = 1.5;
 // canyons; 1.0 = off).
 uniform float foot_dark = 1.0;
 uniform float foot_h_bu = 12.0;
-uniform float neon_gain = 1.0;
+uniform float neon_gain = 1.2;
 uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
 // 0 city, 1 raid, 2 transit (CityLod.Detail).
@@ -69,7 +69,7 @@ uniform float pbr_spec_k = 1.0;
 // `wet_rough_noise` -> `wet_rough` at `wet_noise_scale`, spec `wet_spec`; the base colour is (plinth_albedo, plinth_albedo, plinth_albedo * plinth_blue).
 uniform float wet_noise_scale = 0.09;
 uniform vec2 wet_rough_noise = vec2(0.45, 0.6);
-uniform vec2 wet_rough = vec2(0.32, 0.03);
+uniform vec2 wet_rough = vec2(0.3, 0.03);
 uniform float wet_spec = 0.7;
 // (rough, metal, spec) of this fragment for light().
 varying vec3 v_pbr;

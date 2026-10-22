@@ -126,13 +126,13 @@ extends Resource
 @export var whole_terr_win_k: float = 0.85
 ## LOOK Solace HQ (designer 2026-10-21: the city round the helix read flat and pink): over the whole-city look, the aaa2 HQ page's city is
 ## darker facades with warm and cool lit windows, less of the territory's pink on windows and roofs, and a cool haze with depth.
-@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 1.4, "win_share": 0.4, "pbr_spec_k": 0.15}
+@export var hq_page_building: Dictionary = {"terr_win_k": 0.25, "terr_wall_emit": 0.0, "win_emit": 3.4, "win_share": 0.55, "pbr_spec_k": 0.15}
 ## The aaa2 page: the Solace kit bodies' albedo factor (dark bodies carrying lit stripes), the road glow's factor, the helix' extra glow.
-@export var hq_page_kit_dark: float = 0.3
+@export var hq_page_kit_dark: float = 0.1
 @export var hq_page_road_glow_k: float = 0.2
-@export var hq_page_lane_k: float = 0.25
+@export var hq_page_lane_k: float = 0.06
 ## Solace HQ page: the kit bands' and the park's lit lines' emission factors (the near plinth rings and setback bands), the lawn's albedo factor.
-@export var hq_page_kit_band_k: float = 0.4
+@export var hq_page_kit_band_k: float = 0.25
 @export var hq_page_park_lit_k: float = 0.4
 @export var hq_page_lawn_k: float = 0.6
 ## The helix' soft green pool (plate hq_solace_overview): colour x gain on the plinth (radius = this share of the plinth radius) and on the nearest
