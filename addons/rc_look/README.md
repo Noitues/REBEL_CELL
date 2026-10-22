@@ -310,3 +310,10 @@ BitPath's flight eases with a cubic and BitsPath's with the 0.35 / 0.65 blend; t
 **Tests.** `tests/unit/test_rc_look_bits.gd` (fast): mirror == BitsPath for six seeds, config == the games' constants
 (including the `combat_fx_layer` shares and the shaders' literals), presets == today's looks, reduce effects gives zero
 arrivals, no global random in the module's files.
+
+**Migration notes (later; nothing migrates while the raid redesign is paused).** The ruled `burst` keeps the old bold
+stroke with the NIGHT_SKY rim outside it (`bold_stroke`). The GPU glyph atlas `shaders/kit/bits_atlas.png` bakes a
+same-colour outline, so the dark rim outside it needs an atlas rebake (`tools/design_lab/bits_atlas_bake.py`) or a
+second pass. PAPER as the hot colour on the GPU is `hot_color` in `rc_bits_particles.gdshader` (no rebake). The CPU
+fallback (`BinaryBits._draw`) also needs the spin phase and the PAPER start. `BitPath` still hashes with Godot's
+`hash()`; moving it onto `RcLookBits.h01` changes its scatter (a designer-visible change, not bit-exact).
