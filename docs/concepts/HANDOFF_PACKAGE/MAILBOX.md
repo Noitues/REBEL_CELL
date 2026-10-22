@@ -386,3 +386,49 @@ replaces art/look-toolbox-4, which stays unmerged. Art-pass approved it. Art-pas
   - **Max 0 elsewhere:** the city map (A2 look 0/1, day and night), hq_run pov/pod/run/hq/site_solace, and review_pack
     combat_start, combat_victory, hq, grid, b4_idle, loot.
   - **Tests:** test_rc_look_street 6 pass.
+
+### A-096 · 2026-10-22 · READY: Solace THE BLOOM A "Necrosis" look on the street netrun and the Solace HQ page (art/look-bloom @ a91a2995, on main 85279eaa)
+
+The branch sits directly on main 85279eaa. It has 32 commits, in worktree `D:/rc_art/godot_look_bloom`. On rebase the
+tests/test_manifest.json and docs/DECISIONS.md conflicts were resolved by keeping both sides. It is independent of A-095. Art-pass did
+not merge main.
+
+- **Designer ruling (2026-10-22):** A "Necrosis" in 3D is approved for porting. It is look only, with NO raid-outcome wiring: the
+  raid view stays concept-only until the raid redesign. The decision shot's +2-floor front lift is OK'd. The tendril reach scales
+  with layer spacing.
+  - Rulings: art-pass DIRECTION_REVIEW. Concept: art-pass `docs/concepts/solace_vertical/bloom/sheet_A3d.jpg` (rev 3).
+- **What:**
+  - `shaders/city/bloom_necrosis.gdshaderinc`: a world-position front with a ragged edge and a lean that scale with the layer
+    spacing. Body: plum-black albedo with no emission. Emission: Voronoi cell-border veins, a diagonal hatch on walls and a
+    1.5 px hot hairline at the front. Window light dies below the front. Keep-out boxes: route rooms, links, the HQ UP stair band.
+  - Vein ribbons ahead of the front on the road.
+  - The HQ spore haze is its own FogVolume (`bloom_haze.gdshader`). It sits above the front only and never tints the strands.
+  - Config: `addons/rc_look/config/look_bloom.tres` (`RcLookBloomConfig`). Reach is in layers. No literal colours in GDScript
+    (visual lint 7/7).
+  - API: `CityView3D.set_bloom(look)`. It goes straight onto the shared building / ground / outer materials, so chunks built later
+    get it too. The pure read-only mapper is `BloomLook.from_state(...)`, with `street_layout` / `hq_layout`.
+  - Lab flags: `--bloom` / `--bloom-strength` / `--bloom-u` / `--bloom-haze` in `na23_lab.gd` and `hq_run_lab.gd`.
+- **What build adds (one call per view; full text in DECISIONS "2026-10-22 - LOOK Solace Bloom A (Necrosis)"):**
+  - Street, after each node entry or fight end:
+    `rig.view.set_bloom(BloomLook.from_state(session.run.corp_theme.solace, BloomLook.street_layout(data.derive), config))`.
+  - HQ page: `city.set_bloom(BloomLook.from_state(b, BloomLook.hq_layout(manifest, layout, at), config, &"decision"))`, or `&""`
+    for the overview.
+  - A disabled Bloom or another corp gives an off look, so the call is safe everywhere. Art did not touch netrun_scene,
+    hq_run_view, street_route_view or route_rig.
+- **Off = today:** strength 0 and no call are max diff 0 against the base (frozen street decision shot, seed 3; HQ overview and
+  decision). The fenced neon and hot-core lines are untouched (rc_look_sign 10/10).
+- **Parity:** art-pass `docs/concepts/solace_vertical/bloom/godot/parity_A.jpg` (plate | Godot for street ×3 and HQ ×2, plus
+  squint rows).
+  - The bands progress: CREEPING = ground plus the nearest wall, CLOSE = plus the near facades, CATCHING = most facades.
+  - The HQ reads as dark strands with a hot edge.
+  - Known: the Godot street is a darker city than the plate, so its overall pink share at 320 px is lower.
+- **Two defects found and fixed on the way:** facades never received the look (the shared material was set before the chunks
+  existed), and the front trailed about 2 layers up the walls (BU numbers sized for the plate's 9.5 BU layers).
+  - A `wet_street` varying (`v_bl`) read unset in `light()`; this port's own bug, fixed before the first sheet.
+- **Tests at a91a2995 (targeted, each alone):**
+  - test_bloom_look 17: new, fast tier, covering the mapper, strength 0, layer-spacing reach and front direction on three street
+    headings;
+  - test_aaa_street_look 8, test_parity_netrun 10, test_visual_lint_static 7, test_hq_run_city 15, test_parity_hq_run 13,
+    test_solace_kits 7, test_city_shaders 23, test_rc_look_sign 10, test_street_cam_target 2, test_suite_integrity 8,
+    test_hq_aaa_state_gate 4 and test_b2_combat_composition 22;
+  - test_city_shaders_render skips headless. The full suite runs at your gate.
