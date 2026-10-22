@@ -146,3 +146,34 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
 **The finding: the pitch scored 39, the mockup 30.** Every mocked raid since R3 has landed at 30–36. With a fully
 forecast, hands-off raid, P and D trade off against each other: a known outcome has no suspense, and a hidden
 outcome breaks predictability.
+
+## Round 9: suspense variants and the Spinner (one fresh critic)
+
+| Concept | W | P | N | D | C | Total | Fit | V | S (suspense) |
+|---|---|---|---|---|---|---|---|---|---|
+| M9a sealed beam, zero input | 6 | 8 | 5 | 5 | 6 | 30 | 6 | 5 | 5 |
+| M9b timed spoof | 6 | 7 | 6 | 4 | 6 | 29 | 6 | 5 | 6 |
+| **M9c sealed + reactive spoof** (critic's pick) | 6 | 7 | 4 | 7 | 6 | 30 | 6 | 5 | **7** |
+| S9 Spinner ring siege + snap | 7 | 6 | 6 | 6 | 5 | 30 | 7 | 6 | 6 |
+
+- **Suspense and depth rose where predicted.** M9c's reactive press got D 7 and S 7, the first 7 on suspense.
+- **The total did not move.** No-words and consequences fell on presentation errors:
+  - colliding number sets;
+  - hidden missed values;
+  - a CLEAN stamp over five survivors;
+  - one X glyph for two meanings.
+- **The Spinner** breaks GDD pillar 4 (wheel mechanics only in combat), a designer decision. Its stakes are flat.
+
+## H7 Godot lab (playable, real captures; one fresh critic)
+
+| W | P | N | D | C | Total | Fit | V | S |
+|---|---|---|---|---|---|---|---|---|
+| 6 | 9 | 4 | 4 | 5 | 28 | 4 | 2 | 2 |
+
+**The exact forecast gives P 9 but suspense 2.** The visit is a place / check / undo loop until it reads CLEAN.
+
+**Bugs to fix:**
+- The raid view shows the bank before spending.
+- The record chart clamps negative values to 0.
+- A truncated "lost" column.
+- A "HOLDS" stamp over 5 TAKEN nodes.
