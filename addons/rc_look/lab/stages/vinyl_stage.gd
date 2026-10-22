@@ -3,10 +3,12 @@ extends RcLookLabStage
 ##   1 the seven kit stocks at rest (rc_vinyl_kit);
 ##   2 pink kit poses on the rc_vinyl_kit wrapper (rest, hover peel, fold, band, dissolve, disabled, slap);
 ##   3 the same poses on the OLD shaders/kit/vinyl_sticker.gdshader (must look the same);
-##   4 chrome verbs on rc_vinyl_chrome (pink, yellow, blue, grey, glitch, glitch burst, sweep);
-##   5 the same on the OLD shaders/chrome/vinyl_sticker.gdshader;
-##   6 holo foil fill, card stand-in (scan front, gloss) as wrapper | old, and the GDScript mirror of the kit shader
+##   4 holo foil fill, card stand-in (scan front, gloss) as wrapper | old, and the GDScript mirror of the kit shader
 ##     (rim, gloss, flap, band, grey; no shadow) beside the shader.
+## Page 2 (user arg --page=2), the designer's rulings (DIRECTION_REVIEW 82c92714), old | new:
+##   chrome verbs (pink, yellow, blue, grey, glitch, glitch burst, band mid-crossing, disabled) on the OLD
+##   shaders/chrome/vinyl_sticker.gdshader above and rc_vinyl_chrome below; the mid-sweep + mid-peel frames side by side
+##   (the band is parallel to the peel); the played card: card_sticker_fx beside the kit sticker (rest, band, dissolve, peel).
 ## With the user arg --prove every pair is also rendered into a SubViewport and compared pixel for pixel: the lab prints
 ## "vinyl_prove: <case> max <n>" (0 = identical) and "vinyl_prove: total ..."; with --prove-only the lab then quits.
 ## Reduce effects (the quality state) sets the global reduce_effects: the old white sweep, the holo drift and the card
@@ -38,7 +40,11 @@ const CARD_SCAN := 0.5
 const CARD_GLOSS := 0.5
 const HOLO_SEED := 11
 const HOLO_FIELD := Vector2(260.0, 96.0)
-const HOLO_TIME_NOTE := "holo hue drifts with rc_time(TIME): both shaders read the same frame"
+## The chrome word's glyph box (px in the word control) the band crosses, and the played-card poses of page 2.
+const WORD_BOX := Rect2(10.0, 14.0, 190.0, 40.0)
+const CARD_KIT_ID := &"kit_white"
+const CARD_POSES: Array[StringName] = [&"rest", &"band", &"dissolve", &"hover"]
+const CHROME_SCALE := 0.48
 ## Pixel-compare viewport padding and frames to wait before reading it back.
 const PROVE_FRAMES := 3
 const BYTE := 255.0
@@ -48,33 +54,31 @@ const MIRROR_TOL := 2
 var _stage_args: PackedStringArray = OS.get_cmdline_user_args()
 var _arts: Dictionary = {}
 var _proved := false
+var _page := 1
 
 
 func _ready() -> void:
+	for a in _stage_args:
+		if a.begins_with("--page="):
+			_page = int(a.get_slice("=", 1))
 	for id in STOCKS:
 		_arts[id] = RcLookVinyl.lab_art(id)
+	if _page == 2:
+		_build_page_two()
+		return
 	var y := MARGIN.y
 	_label("kit stocks at rest (rc_vinyl_kit)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
 	for i in STOCKS.size():
 		add_child(_kit_cell(STOCKS[i], &"rest", false, Vector2(MARGIN.x + i * _cell_w(), y)))
 	y += ROW_H
-	_label("pink poses: rest, hover peel, fold, band, dissolve, disabled, slap shine (rc_vinyl_kit)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	_label("pink poses: rest, hover peel, fold, band, dissolve, disabled (80 % grey), slap shine (rc_vinyl_kit)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
 	for i in POSES.size():
 		add_child(_kit_cell(&"kit_pink", POSES[i], false, Vector2(MARGIN.x + i * _cell_w(), y)))
 	y += ROW_H
-	_label("same, OLD shaders/kit/vinyl_sticker.gdshader", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	_label("same, OLD shaders/kit/vinyl_sticker.gdshader (disabled: the old full grey)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
 	for i in POSES.size():
-		add_child(_kit_cell(&"kit_pink", POSES[i], true, Vector2(MARGIN.x + i * _cell_w(), y)))
+		add_child(_kit_cell(&"kit_pink", POSES[i], true, Vector2(MARGIN.x + i * _cell_w(), y), 1.0, true))
 	y += ROW_H
-	_label("chrome verbs: pink, yellow, blue, grey, glitch, glitch burst, sweep (rc_vinyl_chrome)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
-	var cases := _chrome_cases()
-	for i in cases.size():
-		add_child(_chrome_cell(cases[i], false, Vector2(MARGIN.x + i * (WORD_SIZE.x * 0.6 + 8.0), y)))
-	y += ROW_H * 0.6
-	_label("same, OLD shaders/chrome/vinyl_sticker.gdshader", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
-	for i in cases.size():
-		add_child(_chrome_cell(cases[i], true, Vector2(MARGIN.x + i * (WORD_SIZE.x * 0.6 + 8.0), y)))
-	y += ROW_H * 0.6 + LABEL_PX
 	_label("holo fill | old, card scan + gloss | old, GDScript mirror | shader (no shadow)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
 	var x := MARGIN.x
 	for old in [false, true]:
@@ -83,15 +87,49 @@ func _ready() -> void:
 	for old in [false, true]:
 		add_child(_card_cell(old, Vector2(x, y)))
 		x += CARD_SIZE.x * 0.7 + 8.0
-	var mirror := _mirror_cell(&"kit_pink", &"hover", true, Vector2(x, y))
-	add_child(mirror)
+	add_child(_mirror_cell(&"kit_pink", &"hover", true, Vector2(x, y)))
 	x += _cell_w()
 	add_child(_kit_cell(&"kit_pink", &"hover", false, Vector2(x, y), 0.0))
 	x += _cell_w()
-	var mirror2 := _mirror_cell(&"kit_kraft", &"band", true, Vector2(x, y))
-	add_child(mirror2)
+	add_child(_mirror_cell(&"kit_kraft", &"band", true, Vector2(x, y)))
 	x += _cell_w()
 	add_child(_kit_cell(&"kit_kraft", &"band", false, Vector2(x, y), 0.0))
+
+
+## Page 2: the chrome verbs old | new, the mid-sweep and mid-peel frames, the played card.
+func _build_page_two() -> void:
+	var cases := _chrome_cases()
+	var cw := WORD_SIZE.x * CHROME_SCALE + 4.0
+	var y := MARGIN.y
+	_label("chrome verbs, OLD shaders/chrome/vinyl_sticker.gdshader: pink, yellow, blue, grey, glitch, burst, sweep (white band + x + y band), disabled (alpha 1)", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	for i in cases.size():
+		add_child(_chrome_cell(cases[i], true, Vector2(MARGIN.x + i * cw, y)))
+	y += 52.0
+	_label("NEW rc_vinyl_chrome: no white sweep, the band in the kit's geometry, disabled alpha 0.8", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	for i in cases.size():
+		add_child(_chrome_cell(cases[i], false, Vector2(MARGIN.x + i * cw, y)))
+	y += 62.0
+	_label("mid-sweep + mid-peel: kit OLD | kit NEW (peel from the top-right, band parallel to it) | chrome OLD | chrome NEW", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	var x := MARGIN.x
+	add_child(_kit_cell(&"kit_pink", &"peel_band", true, Vector2(x, y)))
+	x += _cell_w() * 1.4
+	add_child(_kit_cell(&"kit_pink", &"peel_band", false, Vector2(x, y)))
+	x += _cell_w() * 1.4
+	var band_case: Dictionary = cases[6]
+	for old in [true, false]:
+		var w := _chrome_node(band_case, old)
+		w.position = Vector2(x, y + 20.0)
+		w.scale = Vector2.ONE * 0.9
+		add_child(w)
+		x += WORD_SIZE.x * 0.9 + 8.0
+	y += 125.0
+	_label("played card: card_sticker_fx (scan .5 + gloss) | kit sticker: rest, band, dissolve .5, peel", Vector2(MARGIN.x, y - LABEL_PX - 4.0))
+	x = MARGIN.x
+	add_child(_card_cell(true, Vector2(x, y + 10.0)))
+	x += CARD_SIZE.x * 0.7 + 24.0
+	for pose in CARD_POSES:
+		add_child(_kit_card_cell(pose, Vector2(x, y)))
+		x += (CARD_SIZE.x + RcLookVinyl.config().lab_pad * 2.0) * 0.7 + 4.0
 
 
 func apply(_time: StringName, quality: RcLookQualityState) -> void:
@@ -120,16 +158,23 @@ func _label(text: String, at: Vector2) -> void:
 
 # ---- cells ------------------------------------------------------------------------------------------------------
 
-## A kit sticker: the stand-in art on a white blank of the same size with the kit material (old = the old shader).
-func _kit_cell(id: StringName, pose: StringName, old: bool, at: Vector2, shadow_k: float = 1.0) -> Control:
+func _kit_cell(id: StringName, pose: StringName, old: bool, at: Vector2, shadow_k: float = 1.0, legacy_poses: bool = false) -> Control:
 	var art: Dictionary = _arts.get(id, RcLookVinyl.lab_art(id))
-	var node := _kit_node(id, pose, old, art, shadow_k)
+	var node := _kit_node(id, pose, old, art, shadow_k, legacy_poses)
 	node.position = at
 	node.scale = Vector2(CELL_SCALE, CELL_SCALE)
 	return node
 
 
-func _kit_node(id: StringName, pose: StringName, old: bool, art: Dictionary, shadow_k: float) -> TextureRect:
+## The played card as a kit sticker (DIRECTION_REVIEW 82c92714: the seam switches to the kit sticker).
+func _kit_card_cell(pose: StringName, at: Vector2) -> Control:
+	var node := _kit_node(CARD_KIT_ID, pose, false, RcLookVinyl.lab_art(CARD_KIT_ID, CARD_SIZE), 1.0, false)
+	node.position = at
+	node.scale = Vector2(0.7, 0.7)
+	return node
+
+
+func _kit_node(id: StringName, pose: StringName, old: bool, art: Dictionary, shadow_k: float, legacy_poses: bool = false) -> TextureRect:
 	var img: Image = art["image"]
 	var tex := ImageTexture.create_from_image(img)
 	var blank := Image.create(img.get_width(), img.get_height(), false, Image.FORMAT_RGBA8)
@@ -138,7 +183,7 @@ func _kit_node(id: StringName, pose: StringName, old: bool, art: Dictionary, sha
 	node.texture = ImageTexture.create_from_image(blank)
 	node.stretch_mode = TextureRect.STRETCH_SCALE
 	node.size = Vector2(img.get_width(), img.get_height())
-	var over := RcLookVinyl.kit_pose(pose)
+	var over := RcLookVinyl.kit_pose(&"disabled_legacy" if legacy_poses and pose == &"disabled" else pose)
 	over[&"shadow_k"] = shadow_k
 	var mat := RcLookVinyl.kit_material(id, tex, art["body"], over)
 	if old:
@@ -153,34 +198,47 @@ func _kit_node(id: StringName, pose: StringName, old: bool, art: Dictionary, sha
 
 
 func _chrome_cases() -> Array[Dictionary]:
+	var c := RcLookVinyl.config()
 	var out: Array[Dictionary] = []
 	for id in [&"chrome_pink", &"chrome_yellow", &"chrome_blue", &"chrome_grey", &"chrome_glitch"]:
-		out.append({"id": id, "over": {}, "burst": false})
-	out.append({"id": &"chrome_glitch", "over": {}, "burst": true})
-	out.append({"id": &"chrome_pink", "over": {&"sweep": SWEEP_AT, &"rainbow": RcLookVinyl.config().band_alpha}, "burst": false})
+		out.append({"name": String(id), "id": id, "old": {}, "new": {}, "same": true, "burst": false})
+	out.append({"name": "glitch_burst", "id": &"chrome_glitch", "old": {}, "new": {}, "same": true, "burst": true})
+	# the band mid-crossing: old = the white sweep + the x + y band at SWEEP_AT; new = the kit's band, same strength
+	var half := c.band_width * WORD_BOX.size.x * 0.5
+	out.append({"name": "band", "id": &"chrome_pink", "same": false, "burst": false,
+		"old": {&"sweep": SWEEP_AT, &"rainbow": c.band_alpha, &"sweep_width": half},
+		"new": {&"sweep": RcLookVinyl.band_centre(WORD_BOX, c.lab_band_t, half, c.band_deg), &"rainbow": c.band_alpha, &"sweep_width": half}})
+	out.append({"name": "disabled", "id": &"chrome_pink", "same": false, "burst": false,
+		"old": {&"grey": c.disabled_grey}, "new": {&"grey": c.disabled_grey}, "alpha_old": c.legacy_chrome_disabled_alpha, "alpha_new": c.disabled_alpha})
 	return out
 
 
 func _chrome_cell(case: Dictionary, old: bool, at: Vector2) -> Control:
 	var w := _chrome_node(case, old)
 	w.position = at
-	w.scale = Vector2(0.6, 0.6)
+	w.scale = Vector2(CHROME_SCALE, CHROME_SCALE)
 	return w
 
 
-func _chrome_node(case: Dictionary, old: bool) -> RcLookVinylMarkerText:
+## A chrome word for `case`: the old shader (old) or the wrapper; `legacy` runs the wrapper's old sweep form (proof only).
+func _chrome_node(case: Dictionary, old: bool, legacy: bool = false) -> RcLookVinylMarkerText:
 	var id: StringName = case["id"]
 	var w := RcLookVinylMarkerText.new()
 	w.size = WORD_SIZE
 	w.marker = RcLookVinyl.marker_color(id)
-	var over: Dictionary = (case["over"] as Dictionary).duplicate()
+	var over: Dictionary = ((case["old"] if (old or legacy) else case["new"]) as Dictionary).duplicate()
+	if legacy:
+		over[&"legacy_sweep"] = true
 	if id == &"chrome_glitch":
 		over[&"band_h"] = (FILL_BOTTOM - FILL_TOP) / float(BURST_BANDS)
 		if case["burst"]:
 			for i in BURST_BANDS:
 				w.extra.append({"marker": Color(0, 1, float(i + 1) / 8.0), "dx": BURST_SHIFT * (1.0 if i % 2 == 0 else -1.0)})
 			w.marker = Color(0, 1, 0, 0)
-	var mat := RcLookVinyl.chrome_material(id, float(RcLookVinylMarkerText.FONT_PX), FILL_TOP, FILL_BOTTOM, over)
+	var alpha_key := "alpha_old" if (old or legacy) else "alpha_new"
+	if case.has(alpha_key):
+		w.modulate.a = float(case[alpha_key])
+	var mat := RcLookVinyl.chrome_material(id, float(RcLookVinylMarkerText.FONT_PX), FILL_TOP, FILL_BOTTOM, WORD_BOX.size.x, over)
 	if old:
 		var m := ShaderMaterial.new()
 		m.shader = load(CHROME_OLD)
@@ -328,18 +386,19 @@ func _prove_cases() -> Array[Dictionary]:
 	for id in STOCKS:
 		for pose in POSES:
 			var art: Dictionary = _arts[id]
-			cases.append({"name": "kit/%s/%s" % [id, pose], "a": _kit_node(id, pose, false, art, 1.0), "b": _kit_node(id, pose, true, art, 1.0)})
+			cases.append({"name": "kit/%s/%s" % [id, pose], "a": _kit_node(id, pose, false, art, 1.0), "b": _kit_node(id, pose, true, art, 1.0), "same": true})
 	for corner in 4:
 		var art: Dictionary = _arts[&"kit_pink"]
 		var over := {&"corner": corner, &"fold": RcLookVinyl.config().lab_fold, &"lift": RcLookVinyl.config().lab_lift}
-		var a := _kit_node_with(&"kit_pink", over, false, art)
-		var b := _kit_node_with(&"kit_pink", over, true, art)
-		cases.append({"name": "kit/fold_corner_%d" % corner, "a": a, "b": b})
-	for ch in _chrome_cases().size():
-		var cs := _chrome_cases()[ch]
-		cases.append({"name": "chrome/%s/%d" % [cs["id"], ch], "a": _chrome_node(cs, false), "b": _chrome_node(cs, true)})
-	cases.append({"name": "fill/holo", "a": _holo_node(false), "b": _holo_node(true)})
-	cases.append({"name": "card/scan_gloss", "a": _card_node(false), "b": _card_node(true)})
+		cases.append({"name": "kit/fold_corner_%d" % corner, "a": _kit_node_with(&"kit_pink", over, false, art),
+			"b": _kit_node_with(&"kit_pink", over, true, art), "same": true})
+	for cs in _chrome_cases():
+		# the wrapper's old form against the old shader: identical pixels, whatever the rulings changed
+		cases.append({"name": "chrome_legacy/%s" % cs["name"], "a": _chrome_node(cs, false, true), "b": _chrome_node(cs, true), "same": true})
+		if not cs["same"]:
+			cases.append({"name": "chrome_ruled/%s" % cs["name"], "a": _chrome_node(cs, false), "b": _chrome_node(cs, true), "same": false})
+	cases.append({"name": "fill/holo", "a": _holo_node(false), "b": _holo_node(true), "same": true})
+	cases.append({"name": "card/scan_gloss", "a": _card_node(false), "b": _card_node(true), "same": true})
 	return cases
 
 
@@ -362,9 +421,13 @@ func _prove() -> void:
 		var ia := va.get_texture().get_image()
 		var ib := vb.get_texture().get_image()
 		var worst := _max_diff(ia, ib)
-		total_max = maxi(total_max, worst)
-		failures += 1 if worst > 0 else 0
-		print("vinyl_prove: ", case["name"], " max ", worst)
+		if case["same"]:
+			total_max = maxi(total_max, worst)
+			failures += 1 if worst > 0 else 0
+			print("vinyl_prove: ", case["name"], " max ", worst)
+		else:
+			print("vinyl_prove: ", case["name"], " differs by ruling: max ", worst, " (expected > 0)")
+			failures += 1 if worst == 0 else 0
 		va.queue_free()
 		vb.queue_free()
 	await _prove_mirror()

@@ -119,10 +119,12 @@ const DEFAULT_PATH := "res://addons/rc_look/config/look_vinyl.tres"
 @export var dissolve_cell: float = 4.0
 @export var holo_drift: float = 0.04
 @export var holo_sat: float = 0.55
-## Disabled: the kit's full grey and its alpha; the chrome's 80 % grey (open ruling: they differ).
-@export var kit_disabled_grey: float = 1.0
-@export var kit_disabled_alpha: float = 0.8
-@export var chrome_disabled_grey: float = 0.8
+## Disabled, both families (DIRECTION_REVIEW 82c92714): 80 % grey and alpha 0.8. The legacy_ values are what the old kit
+## (full grey) and the old chrome (alpha 1) draw, for the old | new lab rows.
+@export var disabled_grey: float = 0.8
+@export var disabled_alpha: float = 0.8
+@export var legacy_kit_disabled_grey: float = 1.0
+@export var legacy_chrome_disabled_alpha: float = 1.0
 ## Geometry of the die-cut (the shader only reads its alpha): the object border, the word edge share and its cap (px),
 ## the keyline, the extrude, the extrude's slant, the shadow padding.
 @export var border_px: float = 18.0
@@ -137,8 +139,8 @@ const DEFAULT_PATH := "res://addons/rc_look/config/look_vinyl.tres"
 @export var peel_board_h: float = 1080.0
 @export_group("Builder: chrome verb sticker")
 ## VerbSticker's draw: die-cut, keyline and extrude as shares of the font size, the shadow share and alpha, the rim
-## (px), the glitch split share, the sweep width and the scan period as shares of the font size (the scan period has a
-## floor, px), the rest gloss, and the curl's back lighten and shadow (px).
+## (px), the glitch split share, the scan period as a share of the font size (it has a
+## floor, px; the sweep width has one source, run_sweep: band_width of the word's width, halved), the rest gloss, and the curl's back lighten and shadow (px).
 @export var verb_die_cut: float = 0.17
 @export var verb_keyline: float = 0.075
 @export var verb_extrude: float = 0.1
@@ -146,7 +148,6 @@ const DEFAULT_PATH := "res://addons/rc_look/config/look_vinyl.tres"
 @export var verb_shadow_alpha: float = 0.55
 @export var verb_rim_px: float = 2.0
 @export var verb_split_share: float = 0.045
-@export var verb_sweep_width_share: float = 0.35
 @export var verb_scan_period_share: float = 0.12
 @export var verb_scan_period_min: float = 3.0
 @export var verb_gloss: float = 0.22
@@ -201,8 +202,9 @@ func validate() -> PackedStringArray:
 			errs.append("%s must be above 0 (%s)" % [n, get(n)])
 	if gloss_rest < 0.0 or gloss_rest > 1.0:
 		errs.append("gloss_rest must be 0..1 (%s)" % gloss_rest)
-	if kit_disabled_grey < 0.0 or kit_disabled_grey > 1.0 or chrome_disabled_grey < 0.0 or chrome_disabled_grey > 1.0:
-		errs.append("disabled greys must be 0..1")
+	for n: String in ["disabled_grey", "disabled_alpha", "legacy_kit_disabled_grey", "legacy_chrome_disabled_alpha"]:
+		if float(get(n)) < 0.0 or float(get(n)) > 1.0:
+			errs.append("%s must be 0..1 (%s)" % [n, get(n)])
 	if band_width <= 0.0 or band_width > 1.0:
 		errs.append("band_width must be in (0, 1] (%s)" % band_width)
 	if peel_max_share <= 0.0 or peel_max_share >= 1.0:

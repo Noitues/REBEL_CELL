@@ -1,6 +1,9 @@
 // LOOK-TOOLBOX module 13: the chrome (verb) sticker fill (shaders/chrome/vinyl_sticker.gdshader) rebuilt on
 // rc_vinyl.gdshaderinc: marker colours per vertex, gradient + rest gloss + white sweep, glitch bands, the x + y band.
 // Same uniforms; the stale colour defaults are replaced by the real stock values. Lab only.
+// DIRECTION_REVIEW 82c92714: the second white sweep is gone and the holo band takes the kit's geometry ("\", 45 degrees):
+// `sweep` is then the band's centre along its axis (RcLookVinyl.chrome_sweep_centre) and `sweep_width` its half width.
+// legacy_sweep = true is the OLD form (white band, x + y band), kept so the old pixels stay provable.
 shader_type canvas_item;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://addons/rc_look/shaders/rc_vinyl.gdshaderinc"
@@ -19,6 +22,8 @@ uniform float grey = 0.0;
 uniform float rainbow : hint_range(0.0, 1.0) = 0.0;
 uniform float scan_period = 5.0;
 uniform float band_h = 10.0;
+uniform float band_deg = 45.0;
+uniform bool legacy_sweep = false;
 
 varying vec2 v_local;
 varying float v_kind;
@@ -41,7 +46,7 @@ void fragment() {
 	if (v_kind > 0.5) {
 		vec3 rgb;
 		if (v_kind < 1.5) {
-			rgb = rcv_chrome_marker_fill(v_local, fill_top, fill_bottom, top_color.rgb, bottom_color.rgb, gloss, sweep, sweep_width, rc_live());
+			rgb = rcv_chrome_marker_fill(v_local, fill_top, fill_bottom, top_color.rgb, bottom_color.rgb, gloss, sweep, sweep_width, rc_live(), legacy_sweep ? RCV_SWEEP_WHITE_K : 0.0);
 		} else {
 			if (!rcv_chrome_glitch_keep(v_local, fill_top, v_band, band_h)) {
 				discard;
@@ -51,7 +56,7 @@ void fragment() {
 		c = vec4(rgb * v_bright, c.a);
 	}
 	if (rainbow > 0.0 && sweep > -1000.0) {
-		float dd = rcv_chrome_band_dd(v_local, sweep, sweep_width);
+		float dd = legacy_sweep ? rcv_chrome_band_dd(v_local, sweep, sweep_width) : rcv_band_dd_at(v_local, sweep, sweep_width, band_deg);
 		c.rgb = rcv_band_mix(c.rgb, rcv_foil(dd), rcv_band_w(dd), rainbow, c.a);
 	}
 	c.rgb = rcv_grey(c.rgb, grey);

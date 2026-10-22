@@ -230,7 +230,7 @@ nothing is migrated and no raid screen is wired. The old shaders (`kit/vinyl_sti
 --module=vinyl --prove --prove-only` renders every stock x pose, the four fold corners, every chrome verb, the holo fill
 and the card through the old shader and the new wrapper into SubViewports and prints `vinyl_prove: <case> max <n>`
 (8-bit levels; 0 = identical) and, for the mirror, its gap to the shader (no shadow, no dissolve). Result on this branch:
-all 62 pairs (7 stocks x 7 poses, 4 fold corners, 7 chrome cases, holo fill, card) are max 0. The mirror is within 1 level
+all 62 pairs (before the rulings; see below) (7 stocks x 7 poses, 4 fold corners, 7 chrome cases, holo fill, card) are max 0. The mirror is within 1 level
 everywhere except the pixels exactly on the fold line (1 to 39 per pose, where `s` is 0 and float rounding picks a side).
 The hash forms (dissolve cells, holo sparkles) run on float32 sin on the GPU, so the mirror matches their form, not their
 pixels.
@@ -238,23 +238,24 @@ pixels.
 Numbers it does not own: the motion amplitudes and durations stay in `ui_motion.tres` (`sticker_*`); the palette stays
 `palette.gd` (the test pins every preset to it).
 
-### Open rulings (kit vs chrome, found by the inventory; both forms are kept)
+### Rulings (designer, DIRECTION_REVIEW 82c92714, applied to the lab presets and wrappers only; nothing migrated)
 
-1. **Band geometry.** The kit's holographic band runs along (1, 1) (lines `dot(px, n) = c`, `n = (-0.707, 0.707)`, it moves
-   down-left); the chrome band runs along x + y = sweep (the other diagonal, it moves down-right). DECISIONS calls both
-   "45 degree". `rcv_kit_band_dd` and `rcv_chrome_band_dd` keep each.
-2. **Chrome white sweep.** `rcv_chrome_marker_fill` still lays a second, white band (slant 0.45) on the same `sweep`
-   uniform as the rainbow band, contradicting the chrome header ("not white") and DECISIONS ("one narrow band").
-3. **Disabled look.** Kit: full grey (1.0) and alpha 0.8; chrome: 80 % grey, alpha 1. `Palette.STICKER_DISABLED_GREY`
-   says 80 % grey. Config: `kit_disabled_grey` / `kit_disabled_alpha` / `chrome_disabled_grey`.
-4. **Extrude and shadow colour.** Kit: `VINYL_EXTRUDE` #09080C for both; chrome: `VINYL_INK` #141118 (shadow at alpha
-   0.55). Presets carry each (`shadow_color`).
-5. **Pink verb.** The fill is `STICKER_FILL_PINK` #FF60AC to #DE1270 in both; `STICKER_COMMIT` (#FF3DA8) is a third pink
-   (HUD name sticker, hot button). The presets use the fill.
-6. **Chrome `sweep_width` is written twice** by VerbSticker (draw: 35 % of the size; `run_sweep`: the band half width),
-   so a redraw mid-sweep changes the band. The chrome uniform defaults here follow `chrome_uniforms` (the draw value).
-7. **Chrome fills have no RED or WHITE.** A verb with a missing art file falls to PINK.
-8. **Stale defaults** (replaced in the wrappers): kit `shadow_color` (now VINYL_EXTRUDE), chrome `top/bottom_color`,
-   `glitch_b`, `white_color`. Pixels in the game are unchanged: the builders always overwrote them.
-9. **Card stand-in.** `card_sticker_fx` is still the played-card seam although the kit sticker (1B) has landed; whether the
-   seam switches to the kit look is a designer call.
+1. **Holo band: one "\\" shape** (top-left to bottom-right) on both families, parallel to the peel from the top-right
+   corner. The kit keeps its band; the chrome wrapper takes the kit's geometry (`rcv_band_centre`, `rcv_band_dd_at`:
+   `sweep` is the band's centre along its axis, `sweep_width` its half width). The old x + y form is `rcv_chrome_band_dd`,
+   reachable with `legacy_sweep = true`.
+2. **Chrome drops the second white sweep** (`white_k` 0 in `rcv_chrome_marker_fill`; legacy_sweep keeps the old form).
+3. **Disabled is 80 % grey with alpha 0.8 on both** (`disabled_grey`, `disabled_alpha`; `legacy_*` hold the old kit's full
+   grey and the old chrome's alpha 1 for the old | new rows).
+4. **Extrude and shadow are `VINYL_EXTRUDE`** on both families (all presets' `shadow_color`).
+5. **Pink fill stays `STICKER_FILL_PINK`**; `STICKER_COMMIT` is untouched.
+6. **Chrome `sweep_width` has one source** (`run_sweep`: `band_width` of the word's width, halved):
+   `chrome_uniforms(id, font_px, top, bottom, box_w)`; the draw-time 35 % share is gone.
+7. **Missing-art verbs keep the PINK fallback** (no RED / WHITE in the chrome fills).
+8. **The card seam switches to the kit sticker** (decision recorded; lab page 2 shows `card_sticker_fx` beside the kit
+   sticker on a played card). `card_sticker_fx` and its wrapper stay until the seam migrates.
+
+Proof after the rulings: the kit pairs and every non-sweep chrome pair are still max 0 (disabled differs from the old
+look only through the uniforms, by ruling; the wrapper's `legacy_sweep` form is max 0 against the old chrome shader);
+the chrome band and disabled cells differ from the old shader by design.
+Lab: `--module=vinyl` (page 1), `--module=vinyl --page=2` (the rulings sheet).

@@ -113,7 +113,7 @@ func test_chrome_verbs_equal_the_verb_sticker_colours() -> void:
 		assert_true(p.fill_top.is_equal_approx(cases[id][0]), "%s top" % id)
 		assert_true(p.fill_bottom.is_equal_approx(cases[id][1]), "%s bottom" % id)
 		assert_eq(p.family, RcLookVinylPreset.Family.CHROME)
-		assert_true(p.shadow_color.is_equal_approx(Palette.VINYL_INK), "%s: the chrome extrude and shadow are VINYL_INK" % id)
+		assert_true(p.shadow_color.is_equal_approx(Palette.VINYL_EXTRUDE), "%s: extrude and shadow are VINYL_EXTRUDE on both families (ruling 4)" % id)
 	assert_eq(RcLookVinyl.preset(&"chrome_glitch").marker, RcLookVinylPreset.Marker.GREEN)
 	assert_eq(RcLookVinyl.marker_color(&"chrome_glitch"), Palette.STICKER_GLITCH_MARKER)
 	assert_eq(RcLookVinyl.marker_color(&"chrome_pink"), Palette.STICKER_FILL_MARKER)
@@ -126,7 +126,9 @@ func test_tokens_and_rest_numbers_equal_the_builders() -> void:
 	assert_true(c.vinyl_extrude.is_equal_approx(Palette.VINYL_EXTRUDE))
 	assert_true(c.glitch_a.is_equal_approx(Palette.CELL_PINK), "glitch_a = CELL_PINK")
 	assert_true(c.glitch_b.is_equal_approx(Palette.CORP_SOLACE), "glitch_b = CORP_SOLACE")
-	assert_eq(c.chrome_disabled_grey, Palette.STICKER_DISABLED_GREY, "chrome grey 0.8 = the palette's value")
+	assert_eq(c.disabled_grey, Palette.STICKER_DISABLED_GREY, "disabled: 80 % grey on both families (ruling 3)")
+	assert_eq(c.disabled_alpha, VinylSticker.DISABLED_ALPHA, "and alpha 0.8")
+	assert_eq(c.legacy_kit_disabled_grey, 1.0, "the old kit drew full grey")
 	assert_eq(c.gloss_rest, VinylSticker.GLOSS_REST)
 	assert_eq(c.gloss_pos_rest, VinylSticker.GLOSS_POS_REST)
 	assert_eq(c.rim_rest, VinylSticker.RIM)
@@ -142,7 +144,6 @@ func test_tokens_and_rest_numbers_equal_the_builders() -> void:
 	assert_eq(c.verb_keyline, VerbSticker.KEYLINE)
 	assert_eq(c.verb_extrude, VerbSticker.EXTRUDE)
 	assert_eq(c.verb_shadow_alpha, VerbSticker.SHADOW_ALPHA)
-	assert_eq(c.kit_disabled_alpha, VinylSticker.DISABLED_ALPHA)
 
 
 func test_kit_uniforms_carry_the_preset() -> void:
@@ -150,10 +151,14 @@ func test_kit_uniforms_carry_the_preset() -> void:
 	assert_eq(u[&"glossy"], 0.0)
 	assert_eq(u[&"body_rect"], Vector4(0, 0, 100, 100))
 	assert_true((u[&"backing_color"] as Color).is_equal_approx(Palette.KRAFT.lightened(0.2)))
-	var ch := RcLookVinyl.chrome_uniforms(&"chrome_pink", 60.0, 10.0, 50.0)
-	assert_almost_eq(float(ch[&"sweep_width"]), 21.0, 1e-4, "35 % of the font size")
+	var ch := RcLookVinyl.chrome_uniforms(&"chrome_pink", 60.0, 10.0, 50.0, 100.0)
+	assert_almost_eq(float(ch[&"sweep_width"]), 11.0, 1e-4, "one source (run_sweep): band_width of the word's width, halved (ruling 6)")
 	assert_almost_eq(float(ch[&"scan_period"]), 7.2, 1e-4, "12 % of the font size")
-	assert_eq(float(RcLookVinyl.chrome_uniforms(&"chrome_pink", 10.0, 0.0, 10.0)[&"scan_period"]), 3.0, "the scan period floor")
+	assert_eq(float(RcLookVinyl.chrome_uniforms(&"chrome_pink", 10.0, 0.0, 10.0, 100.0)[&"scan_period"]), 3.0, "the scan period floor")
+	var d := RcLookVinyl.kit_pose(&"disabled")
+	assert_eq(d[&"grey"], 0.8)
+	assert_eq(d[&"opacity"], 0.8)
+	assert_eq(RcLookVinyl.kit_pose(&"disabled_legacy")[&"grey"], 1.0, "the old kit look stays available for the old | new rows")
 
 
 # ---- mirror == formulas -------------------------------------------------------------------------------------------
@@ -270,14 +275,17 @@ func test_chrome_markers_fills_and_glitch() -> void:
 	assert_eq(RcLookVinyl.chrome_marker(Color(0.01, 0.01, 0.01))["kind"], RcLookVinyl.KIND_NONE, "too dark to be a marker")
 	var top := Vector3(1, 0, 0)
 	var bot := Vector3(0, 0, 1)
-	var f0 := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, RcLookVinyl.SWEEP_OFF, 14.0, 1.0)
+	var wk := RcLookVinyl.config().sweep_white_k
+	var f0 := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, RcLookVinyl.SWEEP_OFF, 14.0, 1.0, wk)
 	_near(f0.x, 0.5, "the gradient's middle")
-	var glossed := RcLookVinyl.chrome_marker_fill(Vector2(0, 0), 0.0, 100.0, top, bot, 0.22, RcLookVinyl.SWEEP_OFF, 14.0, 1.0)
+	var glossed := RcLookVinyl.chrome_marker_fill(Vector2(0, 0), 0.0, 100.0, top, bot, 0.22, RcLookVinyl.SWEEP_OFF, 14.0, 1.0, wk)
 	_near(glossed.y, 0.22, "the rest gloss lightens the top of the fill")
-	var swept := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, 22.5, 14.0, 1.0)
-	var still := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, 22.5, 14.0, 0.0)
+	var swept := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, 22.5, 14.0, 1.0, wk)
+	var still := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, 22.5, 14.0, 0.0, wk)
+	var dropped := RcLookVinyl.chrome_marker_fill(Vector2(0, 50), 0.0, 100.0, top, bot, 0.0, 22.5, 14.0, 1.0, 0.0)
 	assert_gt(swept.y, f0.y, "the white sweep lightens the fill")
 	assert_eq(still, f0, "reduce effects (live 0): the white sweep never shows")
+	assert_eq(dropped, f0, "white_k 0: the second white sweep is gone (ruling 2)")
 	assert_true(RcLookVinyl.glitch_keep(Vector2(0, 5), 0.0, 0.0, 10.0), "band 0 keeps the whole word")
 	assert_true(RcLookVinyl.glitch_keep(Vector2(0, 25), 0.0, 3.0, 10.0), "band 3 spans y 20..30")
 	assert_false(RcLookVinyl.glitch_keep(Vector2(0, 31), 0.0, 3.0, 10.0))
@@ -329,3 +337,18 @@ func test_lab_art_is_a_sticker() -> void:
 	assert_gt(img.get_pixelv(Vector2i(body.get_center())).a, 0.99, "the body is solid")
 	var holo := RcLookVinyl.lab_art(&"kit_holo")["image"] as Image
 	assert_ne(holo.get_pixelv(Vector2i(body.get_center())), img.get_pixelv(Vector2i(body.get_center())), "the holo stock has its own face")
+
+
+func test_chrome_band_takes_the_kit_geometry_parallel_to_the_peel() -> void:
+	var half_w := 11.0
+	var t := 0.37
+	var kit_centre := RcLookVinyl.band_centre(BODY, t, half_w, 45.0)
+	for px in [Vector2(10, 20), Vector2(80, 33), Vector2(50, 50)]:
+		_near(RcLookVinyl.band_dd_at(px, kit_centre, half_w, 45.0), RcLookVinyl.kit_band_dd(px, BODY, t, half_w * 2.0 / BODY.size.x, 45.0), "one geometry for both families (ruling 1)", 1e-4)
+	# the band's axis n is the peel's fold direction u from the top-right corner, so its lines are parallel to the fold line
+	var fr := RcLookVinyl.fold_frame(BODY, RcLookVinyl.CORNER_TOP_RIGHT, 0.0, 1.0, 34.0)
+	var n := Vector2(-sin(deg_to_rad(45.0)), cos(deg_to_rad(45.0)))
+	_near(n.dot(fr["u"]), 1.0, "the band is parallel to the peel", 1e-5)
+	# a "\\" shape: two points along (1, 1) share a band coordinate
+	_near(RcLookVinyl.band_dd_at(Vector2(20, 20), kit_centre, half_w, 45.0), RcLookVinyl.band_dd_at(Vector2(70, 70), kit_centre, half_w, 45.0), "", 1e-4)
+	assert_lt(RcLookVinyl.band_centre(BODY, 0.0, half_w, 45.0), RcLookVinyl.band_centre(BODY, 1.0, half_w, 45.0))

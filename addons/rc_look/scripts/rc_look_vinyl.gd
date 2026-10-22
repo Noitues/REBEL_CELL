@@ -77,9 +77,10 @@ static func kit_uniforms(id: StringName, body: Rect2, cfg: RcLookVinylConfig = n
 	}
 
 
-## The chrome shader's uniforms for a verb colour of font size `font_px` (what VerbSticker._draw sets): the fill
-## gradient over [fill_top_px, fill_bottom_px], the sweep width and the scan period as shares of the size.
-static func chrome_uniforms(id: StringName, font_px: float, fill_top_px: float, fill_bottom_px: float,
+## The chrome shader's uniforms for a verb colour of font size `font_px` on a word `box_w` px wide (what VerbSticker._draw
+## and run_sweep set): the fill gradient over [fill_top_px, fill_bottom_px], the scan period as a share of the font size,
+## and the sweep's half width from ONE source (run_sweep: band_width of the word's width, halved).
+static func chrome_uniforms(id: StringName, font_px: float, fill_top_px: float, fill_bottom_px: float, box_w: float,
 		cfg: RcLookVinylConfig = null) -> Dictionary:
 	var c := cfg if cfg != null else config()
 	var p := preset(id, c)
@@ -92,7 +93,8 @@ static func chrome_uniforms(id: StringName, font_px: float, fill_top_px: float, 
 		&"fill_top": fill_top_px,
 		&"fill_bottom": fill_bottom_px,
 		&"gloss": c.verb_gloss,
-		&"sweep_width": font_px * c.verb_sweep_width_share,
+		&"sweep_width": c.band_width * box_w * 0.5,
+		&"band_deg": c.band_deg,
 		&"scan_period": maxf(c.verb_scan_period_min, font_px * c.verb_scan_period_share),
 		&"band_h": 0.0,
 	}
@@ -117,11 +119,11 @@ static func kit_material(id: StringName, art: Texture2D, body: Rect2, overrides:
 
 
 ## A chrome material for verb colour `id`.
-static func chrome_material(id: StringName, font_px: float, fill_top_px: float, fill_bottom_px: float,
+static func chrome_material(id: StringName, font_px: float, fill_top_px: float, fill_bottom_px: float, box_w: float,
 		overrides: Dictionary = {}) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = load(CHROME_SHADER_PATH)
-	var u := chrome_uniforms(id, font_px, fill_top_px, fill_bottom_px)
+	var u := chrome_uniforms(id, font_px, fill_top_px, fill_bottom_px, box_w)
 	u.merge(overrides, true)
 	for k: StringName in u:
 		m.set_shader_parameter(k, u[k])
@@ -307,7 +309,25 @@ static func kit_band_dd(px: Vector2, body: Rect2, band_t: float, band_width: flo
 	return (px.dot(n) - centre) / maxf(half_w, 1.0)
 
 
-## rcv_chrome_band_dd: the chrome band coordinate (the band lines are x + y = sweep, so they run "/").
+## rcv_band_centre: the centre of a band at share t across `body` along its axis, half width half_w (the kit's band and,
+## since the designer's ruling, the chrome's).
+static func band_centre(body: Rect2, t: float, half_w: float, deg: float) -> float:
+	var bd := deg_to_rad(deg)
+	var n := Vector2(-sin(bd), cos(bd))
+	var n0 := body.position.dot(n)
+	var n1 := (body.position + Vector2(body.size.x, 0.0)).dot(n)
+	var n2 := (body.position + Vector2(0.0, body.size.y)).dot(n)
+	var n3 := (body.position + body.size).dot(n)
+	return lerpf(minf(minf(n0, n1), minf(n2, n3)) - half_w, maxf(maxf(n0, n1), maxf(n2, n3)) + half_w, t)
+
+
+## rcv_band_dd_at: the band coordinate of px for a band centred at `centre` along its axis.
+static func band_dd_at(px: Vector2, centre: float, half_w: float, deg: float) -> float:
+	var bd := deg_to_rad(deg)
+	return (px.dot(Vector2(-sin(bd), cos(bd))) - centre) / maxf(half_w, 1.0)
+
+
+## rcv_chrome_band_dd: the OLD chrome band coordinate (the band lines are x + y = sweep, so they run "/").
 static func chrome_band_dd(local: Vector2, sweep: float, sweep_width: float, cfg: RcLookVinylConfig = null) -> float:
 	var c := cfg if cfg != null else config()
 	return (local.x + local.y - sweep) * c.diag / maxf(sweep_width, 1.0)
@@ -347,7 +367,8 @@ static func kit_flap(alpha_at: Callable, px: Vector2, fr: Dictionary, backing: V
 
 ## The uniform overrides of a named lab pose of a kit sticker (the frozen frames of the motions): rest, hover (lifted
 ## with the corner peeled back), fold (the exit peel), band (the scheduled holographic sweep mid-crossing), dissolve,
-## disabled, slap (the shine peak).
+## disabled (80 % grey, alpha 0.8; disabled_legacy is the old kit's full grey), slap (the shine peak), peel_band (the peel
+## with the band mid-crossing: the band is parallel to the fold).
 static func kit_pose(pose: StringName, cfg: RcLookVinylConfig = null) -> Dictionary:
 	var c := cfg if cfg != null else config()
 	match pose:
@@ -357,10 +378,14 @@ static func kit_pose(pose: StringName, cfg: RcLookVinylConfig = null) -> Diction
 			return {&"fold": c.lab_fold, &"lift": c.lab_lift}
 		&"band":
 			return {&"rainbow": 1.0, &"band_t": c.lab_band_t}
+		&"peel_band":
+			return {&"lift": c.lab_lift, &"peel_back": c.lab_peel_back, &"rainbow": 1.0, &"band_t": c.lab_band_t}
 		&"dissolve":
 			return {&"dissolve": c.lab_dissolve}
 		&"disabled":
-			return {&"grey": c.kit_disabled_grey, &"opacity": c.kit_disabled_alpha}
+			return {&"grey": c.disabled_grey, &"opacity": c.disabled_alpha}
+		&"disabled_legacy":
+			return {&"grey": c.legacy_kit_disabled_grey, &"opacity": c.disabled_alpha}
 		&"slap":
 			return {&"gloss_k": c.lab_gloss_k, &"gloss_pos": c.lab_gloss_pos}
 	return {}
@@ -447,13 +472,13 @@ static func chrome_marker(col: Color, cfg: RcLookVinylConfig = null) -> Dictiona
 
 ## rcv_chrome_marker_fill: the magenta fill at local (gradient, rest gloss, white sweep). live = 1 unless reduce effects.
 static func chrome_marker_fill(local: Vector2, fill_top: float, fill_bottom: float, top_c: Vector3, bottom_c: Vector3,
-		gloss: float, sweep: float, sweep_width: float, live: float, cfg: RcLookVinylConfig = null) -> Vector3:
+		gloss: float, sweep: float, sweep_width: float, live: float, white_k: float, cfg: RcLookVinylConfig = null) -> Vector3:
 	var c := cfg if cfg != null else config()
 	var t := clampf((local.y - fill_top) / maxf(1.0, fill_bottom - fill_top), 0.0, 1.0)
 	var rgb := top_c.lerp(bottom_c, t)
 	rgb = rgb.lerp(Vector3.ONE, gloss * (1.0 - smoothstep(0.0, c.fill_gloss_end, t)))
 	var d := absf((local.x - sweep) + (local.y - fill_top) * c.sweep_slant)
-	return rgb.lerp(Vector3.ONE, c.sweep_white_k * live * (1.0 - smoothstep(0.0, sweep_width, d)))
+	return rgb.lerp(Vector3.ONE, white_k * live * (1.0 - smoothstep(0.0, sweep_width, d)))
 
 
 ## rcv_chrome_glitch_keep: false when the burst's band cut removes this pixel.
@@ -541,13 +566,14 @@ static func card_gloss_share(uv: Vector2, gloss_t_v: float, gloss_width: float, 
 ## A stand-in die-cut sticker image for kit stock `id` (the game bakes the real one in a SubViewport): the extrude
 ## offset down-right, the white die-cut body, the fill gradient inset by the die-cut edge. Returns the image padded
 ## by config.lab_pad on every side; `body` (the die-cut box inside it) is the Rect2 the shader wants.
-static func lab_art(id: StringName, cfg: RcLookVinylConfig = null) -> Dictionary:
+static func lab_art(id: StringName, body_size: Vector2 = Vector2.ZERO, cfg: RcLookVinylConfig = null) -> Dictionary:
 	var c := cfg if cfg != null else config()
 	var p := preset(id, c)
 	var pad := int(c.lab_pad)
-	var sz := Vector2i(int(c.lab_body.x) + pad * 2, int(c.lab_body.y) + pad * 2)
+	var bsize := body_size if body_size != Vector2.ZERO else c.lab_body
+	var sz := Vector2i(int(bsize.x) + pad * 2, int(bsize.y) + pad * 2)
 	var img := Image.create(sz.x, sz.y, false, Image.FORMAT_RGBA8)
-	var body := Rect2(Vector2(pad, pad), c.lab_body)
+	var body := Rect2(Vector2(pad, pad), bsize)
 	var ext := Vector2(c.extrude_px * c.extrude_slant, c.extrude_px)
 	var edge := c.keyline_px
 	var die_top := c.die_cut

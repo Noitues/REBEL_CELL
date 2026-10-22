@@ -358,13 +358,14 @@ void rcv_chrome_marker(vec4 col, out float kind, out float bright, out float ban
 	}
 }
 
-// The magenta fill: vertical gradient, the rest gloss at the top of the fill, then the WHITE sweep band (live = rc_live()).
-vec3 rcv_chrome_marker_fill(vec2 local, float fill_top, float fill_bottom, vec3 top_c, vec3 bottom_c, float gloss, float sweep, float sweep_width, float live) {
+// The magenta fill: vertical gradient, the rest gloss at the top of the fill, then the WHITE sweep band (live = rc_live();
+// white_k = RCV_SWEEP_WHITE_K for the old form, 0.0 once the designer dropped the second white sweep, DIRECTION_REVIEW 82c92714).
+vec3 rcv_chrome_marker_fill(vec2 local, float fill_top, float fill_bottom, vec3 top_c, vec3 bottom_c, float gloss, float sweep, float sweep_width, float live, float white_k) {
 	float t = clamp((local.y - fill_top) / max(1.0, fill_bottom - fill_top), 0.0, 1.0);
 	vec3 rgb = mix(top_c, bottom_c, t);
 	rgb = mix(rgb, vec3(1.0), gloss * (1.0 - smoothstep(0.0, RCV_FILL_GLOSS_END, t)));
 	float d = abs((local.x - sweep) + (local.y - fill_top) * RCV_SWEEP_SLANT);
-	rgb = mix(rgb, vec3(1.0), RCV_SWEEP_WHITE_K * live * (1.0 - smoothstep(0.0, sweep_width, d)));
+	rgb = mix(rgb, vec3(1.0), white_k * live * (1.0 - smoothstep(0.0, sweep_width, d)));
 	return rgb;
 }
 
@@ -389,7 +390,32 @@ vec3 rcv_chrome_glitch(vec2 local, float fill_top, float scan_period, vec3 white
 	return rgb;
 }
 
-// The chrome band coordinate dd: the band lines are x + y = sweep.
+// The band centre along the band's axis n = (-sin, cos)(deg) for a band at share t (0..1) across `body`, half width
+// half_w (px): what rcv_kit_band_dd computes inline. The kit's band and, since DIRECTION_REVIEW 82c92714, the chrome
+// sticker's: one "\" shape (top-left to bottom-right) at 45 degrees, parallel to the peel from the top-right corner.
+float rcv_band_centre(vec4 body, float t, float half_w, float deg) {
+	float bd = radians(deg);
+	vec2 bdir = vec2(cos(bd), sin(bd));
+	vec2 n = vec2(-bdir.y, bdir.x);
+	float n0 = dot(body.xy, n);
+	float n1 = dot(body.xy + vec2(body.z, 0.0), n);
+	float n2 = dot(body.xy + vec2(0.0, body.w), n);
+	float n3 = dot(body.xy + body.zw, n);
+	float lo = min(min(n0, n1), min(n2, n3)) - half_w;
+	float hi = max(max(n0, n1), max(n2, n3)) + half_w;
+	return mix(lo, hi, t);
+}
+
+// The band coordinate dd of px for a band centred at `centre` along its axis, half width half_w.
+float rcv_band_dd_at(vec2 px, float centre, float half_w, float deg) {
+	float bd = radians(deg);
+	vec2 bdir = vec2(cos(bd), sin(bd));
+	vec2 n = vec2(-bdir.y, bdir.x);
+	return (dot(px, n) - centre) / max(half_w, 1.0);
+}
+
+// The OLD chrome band coordinate dd: the band lines are x + y = sweep (the other diagonal, "/").
+
 float rcv_chrome_band_dd(vec2 local, float sweep, float sweep_width) {
 	return (local.x + local.y - sweep) * RCV_DIAG / max(sweep_width, 1.0);
 }
