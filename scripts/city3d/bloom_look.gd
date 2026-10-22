@@ -74,7 +74,11 @@ static func street_layout(derive: Dictionary) -> Dictionary:
 	var st: Dictionary = derive["street"]
 	var a := Vector2(float(st["a"][0]), float(st["a"][1]))
 	var c := Vector2(float(st["c"][0]), float(st["c"][1]))
-	var dir := (c - a).normalized()
+	# the street's axis is the derive's own `nrm` turned a quarter (the frontage runs straight along it; the a -> c chord may slant)
+	var nrm := Vector2(float(derive["nrm"][0]), float(derive["nrm"][1])).normalized()
+	var dir := Vector2(nrm.y, -nrm.x)
+	if dir.dot(c - a) < 0.0:
+		dir = -dir
 	var perp := Vector2(dir.y, -dir.x)
 	# The across axis points toward the frontage: the side the route rooms are on.
 	var rooms: Dictionary = derive["rooms"]

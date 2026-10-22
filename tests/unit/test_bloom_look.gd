@@ -21,7 +21,7 @@ func _derive() -> Dictionary:
 			"back": [[x0, 5.6, 0.12], [x1, 5.6, 0.12], [x1, 5.6, 3.68], [x0, 5.6, 3.68]]}
 		cols.append({"layer": l, "u0": 100.0 - x1, "u1": 100.0 - x0})
 	var edges: Array = [{"a": "L1N0", "b": "L2N0", "type": "facade", "path": [[78.0, 2.4, 1.9], [72.0, 2.4, 1.9], [72.0, 2.4, 1.9], [66.0, 2.4, 1.9]]}]
-	return {"street": {"a": [100.0, 0.0], "c": [0.0, 0.0]}, "rooms": rooms, "col_info": cols, "edges": edges}
+	return {"street": {"a": [100.0, 0.0], "c": [0.0, 0.0]}, "nrm": [0.0, 1.0], "rooms": rooms, "col_info": cols, "edges": edges}
 
 
 func _state(front_milli: int, layer_milli: int, enabled: bool = true) -> BloomState:
@@ -141,6 +141,8 @@ func test_a_street_in_any_direction_gets_the_same_frame() -> void:
 	var st: Dictionary = d["street"]
 	st["a"] = _p2(rot * Vector2(100.0, 0.0))
 	st["c"] = _p2(rot * Vector2(0.0, 0.0))
+	var nr := (rot.basis_xform(Vector2(0.0, 1.0)))
+	d["nrm"] = _p2(nr)
 	for id: String in d["rooms"]:
 		for key: String in ["front", "back"]:
 			for p: Array in d["rooms"][id][key]:
