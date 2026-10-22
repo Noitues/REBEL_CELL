@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="RcPencilLook" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://addons/rc_look/pencil/rc_pencil_look.gd" id="1"]
+[ext_resource type="Script" path="res://addons/rc_look/pencil/rc_pencil_pressure.gd" id="2"]
+
+[sub_resource type="Resource" id="mark"]
+script = ExtResource("2")
+land_width = 0.55
+land_len = 1.6
+lift_width = 0.3
+lift_len = 3.0
+swell = 0.14
+swell_wave = 7.0
+
+[sub_resource type="Resource" id="hero"]
+script = ExtResource("2")
+land_width = 0.5
+land_len = 1.8
+lift_width = 0.18
+lift_len = 4.0
+swell = 0.16
+swell_wave = 8.0
+
+[sub_resource type="Resource" id="word"]
+script = ExtResource("2")
+land_width = 0.95
+land_len = 0.5
+lift_width = 0.88
+lift_len = 0.8
+swell = 0.07
+swell_wave = 3.0
+
+[resource]
+script = ExtResource("1")
+mark_width_1080 = 10.0
+hero_width_1080 = 16.0
+mark_pressure = SubResource("mark")
+hero_pressure = SubResource("hero")
+word_pressure = SubResource("word")
+pressure_knots = 18
+path_wobble = 0.32
+path_wave = 9.0
+line_bow = 0.45
+line_overshoot = 0.035
+line_overshoot_min = 1.2
+hook_len = 2.6
+hook_turn_deg = 115.0
+corner_radius = 2.2
+corner_overshoot = 0.9
+loop_jitter = 0.045
+loop_egg = 0.04
+loop_overlap_deg = 34.0
+loop_tail_out = 0.11
+loop_tilt = 0.1
+word_width_em = 0.2
+word_letter_turn = 0.06
+word_baseline_jitter = 0.035
+word_size_jitter = 0.04
+word_wobble_em = 0.012

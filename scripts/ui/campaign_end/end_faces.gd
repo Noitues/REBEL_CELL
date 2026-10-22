@@ -19,4 +19,4 @@ static func typed_bold() -> Font:
 ## campaign end", open question): the one handwriting face (Permanent Marker), small and in
 ## ballpoint blue, never in the grease pencil's wax colours.
 static func ballpoint() -> Font:
-	return Palette.pencil()
+	return Palette.hand()

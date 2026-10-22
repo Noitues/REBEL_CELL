@@ -6463,7 +6463,7 @@ func _build_ui() -> void:
 	site_dim.visible = false
 	add_child(site_dim)
 	scrim = UiScrimPools.attach_after(site_dim)
-	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
+	# LOOK-TOOLBOX 12: wax never glows; the pencil casts its crisp under-shadow, no spill (AUDIT pencil 4)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -6522,16 +6522,6 @@ func _mark_scrim(p: Control) -> void:
 	for legend in p.find_children("*", "RouteLegend", true, false):
 		UiScrimPools.mark_band(legend as Control, SIDE_BOTTOM)
 	UiSpillShadows.mark_verb_stickers_in(p)
-
-
-## B1a (review D19): the map's red TARGET pencil lights the city round it (global px).
-func _target_spill() -> Array:
-	if city_overlay == null or not is_instance_valid(city_overlay) or not city_overlay.is_visible_in_tree():
-		return []
-	var word := city_overlay.target_word()
-	if word == null or not word.is_visible_in_tree():
-		return []
-	return [word.global_rect()]
 
 
 func _label(text: String) -> Label:

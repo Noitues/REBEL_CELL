@@ -277,7 +277,7 @@ func test_pencil_look_uniforms_width_dashes_and_shadow() -> void:
 	m.dashed = true
 	var line := m.get_child(1) as Line2D
 	var shadow := m.get_child(0) as Line2D
-	# B1b (review D3): §6.3's 8-10 px are 1080p (board) px: 9 px, 6 px of the 1280x720 canvas.
+	# B1b (review D3): §6.3's 8-10 px are 1080p (board) px (LOOK-TOOLBOX 12: a mark is 10).
 	assert_between(line.width / GreasePencilMark.BOARD_TO_CANVAS, 8.0, 10.0, "§6.3 width 8-10 at 1080p")
 	assert_eq(line.begin_cap_mode, Line2D.LINE_CAP_ROUND, "round caps")
 	assert_true(bool((line.material as ShaderMaterial).get_shader_parameter(&"dashed")), "dashed = what-if")

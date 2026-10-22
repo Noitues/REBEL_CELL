@@ -8,7 +8,8 @@ One face per medium (ART_BIBLE v2 §2.9, `docs/art_reference/menus/round33_ui_ch
 | Share Tech Mono Regular | Terminal (CRT): panels, menus, HUD numbers, logs, key hints, DISPATCH; CAPS tracked +8 %; the bits' 0/1 | `FONT_MONO`, `mono()` | SIL OFL 1.1 (`OFL_ShareTechMono.txt`) |
 | IBM Plex Sans Condensed Regular + Medium | Body / tooltip prose (over 3 lines), corp letterheads (Medium) | `FONT_BODY(_MEDIUM)`, `body()`, `body_medium()`, `UiTheme.BODY_TEXT` | SIL OFL 1.1 (`OFL_IBMPlexSansCondensed.txt`) |
 | Courier Prime Regular + Bold | Corp paper: typewriter fields (Regular), document titles (Bold) | `FONT_PAPER(_BOLD)`, `paper()`, `paper_bold()` | SIL OFL 1.1 (`OFL_CourierPrime.txt`) |
-| Permanent Marker Regular | Grease pencil only (plans and threats, rendered as wax); never body text, numbers or UI chrome | `FONT_PENCIL`, `pencil()` | Apache 2.0 (`LICENSE_PermanentMarker.txt`) |
+| RC Wax Regular | Grease pencil only (plans and threats, drawn as wax strokes by GreasePencilWord); never body text, numbers or UI chrome. LOOK-TOOLBOX 12: the project's own face, built with its stroke twin by `addons/rc_look/tools/build_wax_font.py` (do not edit the .ttf) | `FONT_PENCIL`, `pencil()` | own work (REBEL_CELL) |
+| Permanent Marker Regular | The auditor's ballpoint hand (campaign end), never grease pencil since LOOK-TOOLBOX 12 | `FONT_HAND`, `hand()` | Apache 2.0 (`LICENSE_PermanentMarker.txt`) |
 
 Sources: github.com/google/fonts (`ofl/ibmplexsanscondensed` for Plex, fetched 2026-09-28 on
 the art-pass branch, ported in ART-0 E); Courier Prime from github.com/quoteunquoteapps/CourierPrime

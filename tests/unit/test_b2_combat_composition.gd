@@ -286,8 +286,11 @@ func test_the_underline_is_a_hand_line_seeded_and_deterministic() -> void:
 	assert_gt(a[a.size() - 1].x, 220.0, "and past its end")
 	var wob := 0.0
 	for p in a:
-		wob = maxf(wob, absf(p.y - 200.0))
-	assert_between(wob, 0.1, GreasePencilMark.stroke_width(), "a hand's wobble, under the wax's width")
+		if p.x >= 100.0 and p.x <= 220.0:
+			wob = maxf(wob, absf(p.y - 200.0))
+	assert_between(wob, 0.1, GreasePencilMark.stroke_width(), "a hand's wobble along the chips, under the wax's width")
+	# LOOK-TOOLBOX 12: past the end it hooks down (PencilShapes.hand_line)
+	assert_gt(a[a.size() - 1].y, 200.0 + GreasePencilMark.stroke_width(), "the hooked downstroke")
 
 
 # --- D15: the fanned hand -------------------------------------------------------------------------------

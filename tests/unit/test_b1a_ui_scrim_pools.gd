@@ -351,16 +351,16 @@ func test_an_emissive_element_spills_its_colour_round_it_out_to_its_reach() -> v
 	assert_almost_eq(out.r + out.g + out.b, 0.0, EPS, "past its reach (spill_radius_scale x its radius): no light")
 
 
-func test_a_pencil_stroke_spills_along_its_line() -> void:
+func test_a_neon_line_spills_along_its_line() -> void:
 	_quality(2)
 	var h := _host()
 	var scrim: UiScrimPools = h["scrim"]
 	var line := PackedVector2Array([Vector2(200, 500), Vector2(500, 500), Vector2(800, 500)])
-	scrim.spill.add_spill_source(func() -> Array: return [line], Palette.PENCIL_PLAN)
+	scrim.spill.add_spill_source(func() -> Array: return [line], Palette.CELL_ACID)
 	scrim.spill.refresh()
 	assert_eq(scrim.spill.spills.size(), 2, "the polyline's segments")
 	var on := scrim.spill.spill_at(Vector2(650, 500))
-	assert_almost_eq(on.r, Palette.PENCIL_PLAN.r * LOOK.spill_strength, 0.01, "on the line: spill_strength")
+	assert_almost_eq(on.r, Palette.CELL_ACID.r * LOOK.spill_strength, 0.01, "on the line: spill_strength")
 	var off := scrim.spill.spill_at(Vector2(650, 500 + LOOK.line_glow_px + 1.0))
 	assert_almost_eq(off.r, 0.0, EPS, "past line_glow_px: no light")
 

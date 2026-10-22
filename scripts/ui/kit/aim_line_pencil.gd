@@ -35,11 +35,6 @@ const SHAFT_POINTS := 24
 const ARROW_SEED := 11
 const LOOP_SEED := 5
 
-## B2 underline: points along it, its hand wobble (share of the wax's width) and its pen overrun
-## past each end (share of its length: the concept's underline runs a little past the chips).
-const LINE_POINTS := 16
-const LINE_WOBBLE := 0.22
-const LINE_OVERRUN := 0.04
 
 const LOOP_MOTION := GreasePencilMark.WRITE
 const WIPE_MOTION := GreasePencilMark.WIPE
@@ -110,8 +105,9 @@ static func shapes(aim: Dictionary) -> Dictionary:
 	if from.distance_to(to) > stop + 1.0:
 		var end := to + (from - to).normalized() * stop
 		var mid := (from + end) * 0.5 + (end - from).orthogonal() * BOW
-		var shaft := PencilShapes.bezier(from, mid, end, SHAFT_POINTS)
-		out["arrow"] = PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, ARROW_SEED)
+		var hw := GreasePencilMark.stroke_width(true)
+		var shaft := PencilShapes.hand_path(PencilShapes.bezier(from, mid, end, SHAFT_POINTS), ARROW_SEED, hw)
+		out["arrow"] = PencilShapes.arrow(shaft, hw * RaidPencil.HEAD_LEN, ARROW_SEED)
 	var loop: Dictionary = aim.get("loop", {})
 	if not loop.is_empty():
 		var r := float(loop["radius"])
@@ -120,24 +116,10 @@ static func shapes(aim: Dictionary) -> Dictionary:
 	return out
 
 
-## B2: a hand underline from `from` to `to` (global px): one wax pass that overruns each end by
-## LINE_OVERRUN of its length, wobbling by up to LINE_WOBBLE of the wax's width (seeded KitNoise
-## through PencilShapes.jitter: deterministic, never game RNG), its far end lifting a little as
-## a hand's does.
+## B2: a hand underline from `from` to `to` (global px): LOOK-TOOLBOX 12, the kit's hand line
+## (PencilShapes.hand_line: a bow, the overshoot, the hooked downstroke; seeded, never game RNG).
 static func underline(from: Vector2, to: Vector2, seed: int) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	var d := to - from
-	var len := maxf(d.length(), 1.0)
-	var dir := d / len
-	var nrm := dir.orthogonal()
-	var amp := GreasePencilMark.stroke_width() * LINE_WOBBLE / PencilShapes.JITTER
-	var a := from - dir * len * LINE_OVERRUN
-	var b := to + dir * len * LINE_OVERRUN
-	for i in LINE_POINTS:
-		var t := float(i) / float(LINE_POINTS - 1)
-		var lift := t * t * GreasePencilMark.stroke_width() * LINE_WOBBLE
-		out.append(a.lerp(b, t) + nrm * (PencilShapes.jitter(seed, t) * amp + lift))
-	return out
+	return PencilShapes.hand_line(from, to, seed, GreasePencilMark.stroke_width())
 
 
 func _current() -> Dictionary:
@@ -191,12 +173,12 @@ func _lay(aim: Dictionary) -> void:
 	var arrow: Array[PackedVector2Array] = sh["arrow"]
 	if not arrow.is_empty():
 		var t := clampf(float(aim.get("arrow_t", 1.0)), 0.0, 1.0)
-		_pool.stroke("arrow", arrow, GreasePencilMark.Ink.PLAN, t, 0.0, false, ARROW_SEED)
-		_last_arrow = {"strokes": arrow, "ink": GreasePencilMark.Ink.PLAN, "seed": ARROW_SEED}
+		_pool.stroke("arrow", arrow, GreasePencilMark.Ink.PLAN, t, 0.0, false, ARROW_SEED, true)
+		_last_arrow = {"strokes": arrow, "ink": GreasePencilMark.Ink.PLAN, "seed": ARROW_SEED, "hero": true}
 	var loop: Array[PackedVector2Array] = sh["loop"]
 	if not loop.is_empty():
-		_pool.stroke("loop", loop, GreasePencilMark.Ink.PLAN, _loop_t, 0.0, false, LOOP_SEED)
-		_last_loop = {"strokes": loop, "ink": GreasePencilMark.Ink.PLAN, "seed": LOOP_SEED}
+		_pool.stroke("loop", loop, GreasePencilMark.Ink.PLAN, _loop_t, 0.0, false, LOOP_SEED, true)
+		_last_loop = {"strokes": loop, "ink": GreasePencilMark.Ink.PLAN, "seed": LOOP_SEED, "hero": true}
 	# The slices the play changes: a small hand circle each, written with the loop.
 	var marks: Dictionary = {}
 	for m: Dictionary in aim.get("marks", []):
@@ -225,5 +207,5 @@ func _lay(aim: Dictionary) -> void:
 			_start_wipe(_last_marks[key])
 	_last_marks = marks
 	for w in _wipes:
-		_pool.stroke(String(w["key"]), w["strokes"], w["ink"], 1.0, float(w["t"]), false, int(w["seed"]))
+		_pool.stroke(String(w["key"]), w["strokes"], w["ink"], 1.0, float(w["t"]), false, int(w["seed"]), bool(w.get("hero", false)))
 	_pool.end()

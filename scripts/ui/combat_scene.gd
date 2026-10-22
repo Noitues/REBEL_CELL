@@ -1537,22 +1537,6 @@ func aim_spec() -> Dictionary:
 		"lines": result_underlines()}
 
 
-## B1a (review D19): the aim's pencil lights the world under it: its shaft and its loop (global
-## px; UiSpillShadows source).
-func _aim_spill_lines() -> Array:
-	var out: Array = []
-	if selecting < 0:
-		return out
-	var shapes := AimLinePencil.shapes(aim_spec())
-	for part in ["arrow", "loop"]:
-		var strokes: Array = shapes[part]
-		if not strokes.is_empty():
-			out.append(strokes[0])
-	for ln in result_underlines():  # B2: the result chips' underlines light it too
-		out.append(AimLinePencil.underline(ln["from"], ln["to"], String(ln["key"]).hash()))
-	return out
-
-
 ## B2 (art director): the pad / keyboard focus is on the target wheel (cycle_target); a mouse
 ## move or click takes it away. The target's lime brackets show only while it is.
 var _target_focus: bool = false
@@ -2098,7 +2082,7 @@ func _build_ui() -> void:
 	add_child(heat_city)
 	scrim = UiScrimPools.attach_after(heat_city)
 	scrim.add_wheels(_views)
-	scrim.spill.add_spill_source(_aim_spill_lines, Palette.PENCIL_PLAN)
+	# LOOK-TOOLBOX 12: wax never glows; the pencil casts its crisp under-shadow, no spill (AUDIT pencil 4)
 	# ART-0 audit B1 §5.5: the Heat glitch post pass reads the backdrop drawn so far (city +
 	# Heat lights); the wheels, FX and HUD draw above it, so no value is touched.
 	heat_glitch = HeatGlitchLayer.new()

@@ -7129,7 +7129,7 @@ func _build_ui() -> void:
 	wireframe.visible = false
 	add_child(wireframe)
 	scrim = UiScrimPools.attach_after(wireframe)
-	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
+	# LOOK-TOOLBOX 12: wax never glows; the pencil casts its crisp under-shadow, no spill (AUDIT pencil 4)
 	scrim.set_map_dim_source(hq_map_dim)  # B4 (D7): the HQ idle's map dim
 	wireframe.city.far_lod_source = far_lod_rect  # M14 perf slice: full quality in the network rect
 	var root := VBoxContainer.new()
@@ -7214,16 +7214,6 @@ func _mark_scrim(page: Control) -> void:
 	if ticker != null:
 		UiScrimPools.mark_band(ticker, SIDE_BOTTOM)
 	UiSpillShadows.mark_verb_stickers_in(page)
-
-
-## B1a (review D19): the map's red TARGET pencil lights the city round it (global px).
-func _target_spill() -> Array:
-	if city_overlay == null or not is_instance_valid(city_overlay):
-		return []
-	var word := city_overlay.target_word()
-	if word == null or not word.is_visible_in_tree():
-		return []
-	return [word.global_rect()]
 
 
 ## ANIM-4: a drop layer's questions and intents come to this screen: whether a target

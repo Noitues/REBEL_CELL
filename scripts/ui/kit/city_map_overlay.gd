@@ -2038,9 +2038,11 @@ const BOSS_CHIP_ROWS := 3
 const BOSS_CHIP_RINGS := 4
 const BOSS_CHIP_RING_DIRS: Array[Vector2] = [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(-1, -1),
 	Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
-## Parity fix (GRID-13): the hand circle's widest reach as a share of its radii
-## (PencilShapes.hand_circle: 1 + its wobble 0.035 + its drift 0.05).
-const TARGET_REACH := 1.085
+## Parity fix (GRID-13; LOOK-TOOLBOX 12): the hand circle's widest reach as a share of its
+## radii: 1 + its jitter, its egg and its tail (RcPencilLook, PencilShapes.hand_circle).
+static func target_ring_reach() -> float:
+	var look := GreasePencilMark.LOOK
+	return 1.0 + look.loop_jitter + look.loop_egg + look.loop_tail_out
 ## Fight won (D17): the lit windows on a won Site's front walls: rows per wall, window step
 ## along a wall and dot radius (city px), and the share of the wall the rows span.
 const WON_ROWS := 3
@@ -2162,7 +2164,7 @@ func _boss_chip_word() -> String:
 ## circle's widest wobble and its wax stroke included.
 func _target_circle_rect(at: Vector2) -> Rect2:
 	var k := _k()
-	var radii := Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * TARGET_REACH * k + Vector2.ONE * GreasePencilMark.stroke_width() * 0.5
+	var radii := Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * target_ring_reach() * k + Vector2.ONE * GreasePencilMark.stroke_width(true) * 0.5
 	return Rect2(at - radii, radii * 2.0)
 
 
@@ -2266,6 +2268,8 @@ func boss_layout(n: Dictionary) -> Dictionary:
 	var chip := _boss_chip_box(at, others)
 	var avoid: Array[Rect2] = others.duplicate()
 	avoid.append(chip)
+	# LOOK-TOOLBOX 12 (AUDIT pencil 5): the word never sits over its own ring
+	avoid.append(_target_circle_rect(at))
 	# On the map's open part (never under the side column, the minimap or the key), then clear
 	# of the markers and the chip; else the spot on the map that covers the least, else the first.
 	var area := label_area()
@@ -2409,6 +2413,7 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_mark.name = "Target"
 		_target_mark.ink = GreasePencilMark.Ink.THREAT
 		_target_mark.seed = TARGET_SEED
+		_target_mark.hero = true  # LOOK-TOOLBOX 12: a TARGET ring is a hero mark
 		_pencil_root.add_child(_target_mark)
 		_target_word = GreasePencilWord.new()
 		_target_word.name = "TargetWord"

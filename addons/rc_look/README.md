@@ -76,3 +76,54 @@ One air term for every view, mixed in linear light, and one sky gradient. Built 
 | `RcLookAir.preset(&"day" / &"night")`, `.amount / mix / sky`, `.apply(material, preset, prefix)` | exact GDScript mirror and material filler |
 | `config/look_air.tres` (`RcLookAirConfig`, `RcLookAirPreset`) | per time of day: air colour, start, density, height, high; sky top / horizon / ground, glow_k, ground_k |
 | lab: `--module=air` | sky, five skyline rows at 20-480 BU through the air, and a facade strip (shader over mirror chips) |
+## Module 12: grease pencil
+
+Wax on glass for plans and threats (ART_BIBLE §1.2). The engine stays in `scripts/ui/kit/materials/` (36 views use
+it); the module adds the face, the look numbers, the hand and the world anchor.
+
+**Draw a mark or a word** (the only ways pencil reaches the screen):
+
+| API | Use |
+|---|---|
+| `PencilSet.under(host)` then `begin()`, `stroke(key, strokes, ink, progress, wiped, dashed, seed, hero)`, `circle(key, centre, radii, ink, seed, progress, hero)`, `word(key, text, centre, step, ink, k, shown_to, shown_from, tilt)`, `end()` | a view's keyed pencil pass; marks not laid again wipe off |
+| `PencilSet.show_on(host, strokes, ink, seed)` | one mark on a view that draws in `_draw` |
+| `GreasePencilMark` (`hero`, `ink`, `dashed`, `seed`, `progress`, `wiped_share`, `write_on()`, `wipe()`) | one mark, written on in writing order |
+| `GreasePencilWord` (`text`, `ink`, `text_step`, `shown_to`, `shown_from`) | **the one word path**: RC Wax letters as wax strokes on a GreasePencilMark |
+| `HandMarks.show_x / show_loop / clear`, `x_strokes`, `loop_strokes` | a remove X (red) and an upgrade loop (yellow) |
+
+**Inks.** `GreasePencilMark.Ink.PLAN` yellow (`Palette.PENCIL_PLAN`), `THREAT` red, `PLAN_NETRUN` orange
+(`Palette.PENCIL_PLAN_NETRUN`: the netrun plan, the HQ page's plan pencil; art-pass ruling d). Pencil never spills
+light (`UiSpillShadows`): wax casts its crisp under-shadow and never glows.
+
+**Weights.** `GreasePencilMark.stroke_width(hero)`: a mark 10 px, a hero mark 16 px at 1080p (the aim arc and loop, a
+TARGET ring), scaled with the text size, one screen width whatever the map's zoom.
+
+**The hand** (`PencilShapes`, seeded KitNoise hashes, never `randf` / `randi`):
+`hand_path(pts, seed, w)` (sideways wobble, ends kept), `hand_line(from, to, seed, w)` (bow, overshoot, hooked
+downstroke), `hand_route(pts, seed, w)` (rounded corners with a run-on), `hand_circle(centre, radii, seed)` (egg,
+jitter, seeded tilt, overlap tail), `arrow(shaft, head, seed)`, `bezier`, `trim`, `snap_to`.
+
+**Pressure.** `RcPencilPressure.factor(d, length, width, seed)`: lands light, swells, lifts off in a flick (lengths in
+stroke widths; a short flick stays pressed). Mark, hero and word profiles in the look.
+
+**The face.** RC Wax (`assets/fonts/RcWax-Regular.ttf`, `Palette.FONT_PENCIL`, `Palette.pencil()`) and its stroke twin
+(`pencil/rc_wax_strokes.json`, read by `RcWaxFont.layout(text, px, seed, look)`), both built from one stroke source by
+`python addons/rc_look/tools/build_wax_font.py` (`--check`: exit 1 when the committed outputs are stale). Caps, digits,
+punctuation; lowercase is small caps. Measuring with `Palette.pencil()` matches the strokes' advances.
+
+**World anchor.** `RcPencilAnchor.screen_point(projector, p)`, `screen_path`, `px_per_unit`, `to_canvas`: a projector is
+a `Camera3D` or a `Callable (Vector3) -> Vector2` (a view's own projection); behind the camera is `Vector2.INF`.
+`RcPencilWorldAnchor` (a Node2D) pins its children to a world point each frame and hides behind the camera.
+
+**Numbers.** `config/pencil_look.tres` (`RcPencilLook`): widths, the three pressure profiles, the hand (wobble, bow,
+overshoot, hook, corners, loop jitter / egg / overlap / tail / tilt), the word (width per em, letter turn, baseline,
+size, wobble). The engine's older locked numbers (dropouts, shadow offset, sheen, alpha) stay constants in
+`GreasePencilMark`.
+
+**Quality.** One tier: the pencil is cheap 2D (lab: 0.3-0.5 ms GPU for the whole stage at 1080p). Reduce effects and
+headless show every write-on and wipe at its end state and stop the glint (Motion).
+
+**Lab.** `python tools/run_windowed.py --log <f> -- --resolution 1920x1080 res://addons/rc_look/lab/look_lab.tscn --
+--module=pencil --shots=<dir> --times=night,day --tiers=2 --flags=none,re,rm`
+
+**Tests.** `tests/unit/test_look12_pencil.gd` (fast), `test_b1b_wax_pencil.gd`, `test_art1_material_kit.gd`.
