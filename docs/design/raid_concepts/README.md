@@ -60,3 +60,29 @@ Each concept folder holds:
 - the critic's review for that round.
 
 Mockups are rendered by `tools/raid_concepts/render_all.py`, using PIL and the shared kit `rc_draw.py`.
+
+## Round 2 (2026-10-22)
+Each concept folder has `SPEC_R2.md`, the current rules, which supersede `SPEC.md` where they differ. Its frames are under `r2/`.
+
+- **Numbers come from code, not hand-drawn.**
+  - **A, B and F.** All numbers come from `tools/raid_concepts/sim.py`, a small Python mirror of
+    `scripts/core/raid_resolver.gd` (move, hold, fire, damage, cascade, take; step cap 30), run on the shared scenario.
+    The plans run are:
+
+    | Plan | Assets | Result |
+    |---|---|---|
+    | **BARE** | none | home −20, 3 DOWN, 1 TAKEN |
+    | **DECOY ONLY** | Decoy on Firewall | home −12, nothing lost |
+    | **LURE** | turret + ICE on home, Decoy on Firewall | home −9, nothing lost |
+    | **SHIELD** | turret + ICE on home, Decoy on Proxy | home 0, 2 DOWN, 2 TAKEN |
+
+  - **C, D and E** have their own rules. A rule function in their module computes every number they show.
+- **SCUFFED** is a new mark: a teal check with a red corner and `-N`, for a node that held but lost integrity.
+- **Shared kit:**
+  - a countdown dial;
+  - the Heat → raid "why" chain (51 > 50);
+  - two-number threat chips with a route glyph (house = shortest to home, coin = richest node, cracked shield = weakest node);
+  - asset cards with glyph stats;
+  - loss icons inside the verdict stamp.
+- **Finding: no clean defense in this scenario.** Under today's rules, none of the 2058 placements from this Armory
+  gives one. The Enforcer always reaches a node or home. See RECOMMENDATION.md.
