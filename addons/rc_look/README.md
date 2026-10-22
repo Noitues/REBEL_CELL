@@ -276,3 +276,35 @@ Scanlines, flicker, the rolling band, the vignette and the edge glow, each the e
 | lab: `--module=crt_reduce` | the reduce-effects ruling sheet: the three conventions side by side with a recommendation |
 
 Reduce effects (designer 82c92714): KEEP_STATIC everywhere. Motion stops, the still scanlines and the vignette stay, only high contrast removes the texture. The wrapper defaults of crt_terminal (glass alpha 1.0) and scanline.gdshader (Fx's four values) are what the game sets. Open: crt_terminal's glass gradient divides by the panel width, not its height (DECISIONS).
+## Module 16: binary bits (`RcLookBits`)
+
+LAB-ONLY (designer, via art-pass: the raid redesign is paused; nothing migrates, nothing wires into raid screens). One
+home for the bits' look. The GPU `BinaryBits` / `BitsPath` and the CPU combat `BitPath` / `BitsSeam` run on two
+different path models; this module holds the shared math and numbers and shows the differences, it does not unify them.
+
+| API | What |
+|---|---|
+| `shaders/rc_bits.gdshaderinc`: `rcl_bits_eased(t)`, `rcl_bits_at(a, c, b, t)`, `rcl_bits_scale`, `rcl_bits_flip(age, flip_s, phase, frames)`, `rcl_bits_spin(clock, speed, phase)` / `rcl_bits_spin_turn(.., turn)`, `rcl_bits_color(hot_col, col, age, hot_s)` | the exact forms of `binary_bits.gdshader` (ease :50, Bezier :30, CUSTOM.z frame, tumble, hot mix through `rcl_hot_to`); constants named (`RCL_BITS_EASE_*`, `RCL_BITS_END_SCALE`, `RCL_BITS_TURN` 6.28, `RCL_BITS_FLIP_SPREAD`) |
+| `shaders/rc_bits_particles.gdshader` | `binary_bits.gdshader` rebuilt on the include, a drop-in (same uniforms plus `hot_color`, `spin_turn`, defaults = today); proven pixel-identical in the lab (max 0 at three clocks) |
+| `RcLookBits`: `.plan`, `.control_point`, `.at`, `.eased`, `.flight_time`, `.flip_phase`, `.spin`, `.arrivals(plan, live)`, `.flip_frame`, `.spin_angle`, `.bit_color`, `.h01` | exact GDScript mirror of `BitsPath` on KitNoise's integer hash (64-bit wrap documented in the header); `arrivals(.., false)` is the reduce-effects end state (all 0) |
+| `config/look_bits.tres` (`RcLookBitsConfig`, `RcLookBitsPreset`) | every constant of BitsPath / BinaryBits / BitsSeam and the `STREAM_*` / `SHARD_*` shares of `combat_fx_layer`; presets `wheel`, `free`, `stream`, `cpu` = today's looks. Timings stay in `ui_motion.tres` (`bits_flight`, stream and shard entries), `fx_shard_*` counts in campaign config |
+| lab: `--module=bits` | one plan through today's GPU shader, the module's shader, BinaryBits' CPU fallback and BitsSeam, at three fixed clocks (shares of `burst`'s last arrival); `--bits_probe=<json>` also writes the probe below |
+| lab: `--module=bits_rulings` | the rulings sheet: five A / B rows |
+
+**Probe results (2026-10-22).** Current vs module shader: largest pixel difference 0 at the three clocks. **Risk R7
+answered: the CUSTOM.z atlas frame channel does flip 0 / 1 on the GPU** (one stationary bit: frame 0 at clock 0.01 and
+0.02 differs by 8 anti-aliased edge pixels, frame 1 at 0.07 differs by 416).
+
+**Open rulings (the designer decides; the sheet shows each side by side).** Each is one field of a preset in `look_bits.tres`.
+1. Hot colour: WHITE_HOT (GPU bits, CPU fallback) or PAPER #F2EEE4 (BitsSeam, streams). Also stale: the hot default 0.1 s
+   in BitsSeam / CardFx vs `bits_flight`'s 0.08 s.
+2. Outline: the atlas' same-colour outline or BitsSeam's NIGHT_SKY rim at 95 %.
+3. Life in flight: flip 0 / 1 and tumble (GPU) or a steady glyph with a trail copy (BitsSeam).
+4. Spin phase: the GPU shader starts each tumble at flip phase x a turn; the CPU fallback of `BinaryBits` does not.
+5. A turn in the tumble: 6.28 (today, bit-exact) or TAU (0.18 degrees apart at most: invisible).
+Other differences, no ruling asked: BitPath hashes with Godot's `hash()` (not portable) where BitsPath uses KitNoise;
+BitPath's flight eases with a cubic and BitsPath's with the 0.35 / 0.65 blend; the raid BREACHED sprite sheet is baked.
+
+**Tests.** `tests/unit/test_rc_look_bits.gd` (fast): mirror == BitsPath for six seeds, config == the games' constants
+(including the `combat_fx_layer` shares and the shaders' literals), presets == today's looks, reduce effects gives zero
+arrivals, no global random in the module's files.
