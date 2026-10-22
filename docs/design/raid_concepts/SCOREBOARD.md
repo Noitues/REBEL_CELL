@@ -107,3 +107,42 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
 - **Both critics chose H** as the base and the first prototype, with P's node jobs and the carry rule.
 - **Both say G's draft coins and its top-3 list are solver output.** G4's depth claim had already failed for related reasons.
 - **Round 7 (H7)** takes the fixes both agree on.
+
+## Round 8: pitches, kill tests, Manhunt
+
+**Pitch critic** (one paragraph per pitch; the score is the expected score "if executed well"):
+
+| Pitch | Score |
+|---|---|
+| Pursuit | 39 |
+| Ring Pursuit | 38 |
+| Ghost | 37 |
+| Bastion H7 | 35 |
+| Rack | 34 |
+| Ring Siege | 33 |
+| Honeypot | 33 |
+| Offer | 30 |
+| Counterstrike | 30 |
+| Mirror | 29 |
+| Signal | 28 |
+| Deck | 26 |
+
+**Kill tests** (details in MEASURE_R8.md):
+- Ring Siege passes: about 9.5 viable layouts per raid and a skill gap of 53.
+- Pursuit's routing passes, but its catches fail: the best line averages 0–1.4 per campaign.
+- Ghost passes: the greedy rule is best on only 13% of networks.
+
+**Manhunt (Pursuit + Ghost), mocked, one fresh critic:**
+
+| Concept | W | P | N | D | C | Total | Fit | V |
+|---|---|---|---|---|---|---|---|---|
+| M8 Manhunt | 6 | 7 | 6 | 6 | 5 | **30** | 6 | 4 |
+
+**The critic's reasons:**
+- The playout replays an answer the exact forecast already showed.
+- Contact runs on a fixed clock, so Heat isn't the cause.
+- Losses are a small tax with no failure state.
+
+**The finding: the pitch scored 39, the mockup 30.** Every mocked raid since R3 has landed at 30–36. With a fully
+forecast, hands-off raid, P and D trade off against each other: a known outcome has no suspense, and a hidden
+outcome breaks predictability.

@@ -40,6 +40,8 @@ CONCEPTS = {
     "p6": ("concept_p6_stakes", "p_stakes"),
     "hp6": ("concept_hp6_merged", "hp_bastion_stakes"),
     "h7": ("concept_h7_bastion", "h_bastion"),
+    "m8": ("concept_m8_manhunt", "m_manhunt"),
+    "s9": ("concept_s9_spinner", "s_spinner"),
     "f3": ("concept_f3_ledger", "f_plan_ledger"),
     "c3": ("concept_c3_duel", "c_strength_duel"),
     "d3": ("concept_d3_loadout", "d_autobattler_loadout"),

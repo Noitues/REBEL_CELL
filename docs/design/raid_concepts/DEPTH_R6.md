@@ -78,3 +78,20 @@ Campaign 1 (shown in the H mockups):
 - **HP:** H and P merged.
 - **G5:** the anchor.
 - **Dropped by measurement:** J (route shaping), I (synergy) and K (traits). Each still had a near-dominant answer.
+
+## Round 7: H7 Bastion (`h7_campaign.py`, 30 seeded 3-raid legs, fairer baseline)
+H7 is the Bastion fortress with node jobs, survivors who return, corp adaptation, footholds, a CLEAN that never nets
+negative, and a flat crew bonus.
+
+The baseline is an amortized greedy player: each raid's net plus half the price of persistent buys. Results:
+
+| Measure | Planned line | Greedy line |
+|---|---|---|
+| Final bank | **+30.5 on average** (median +27) | — |
+| Legs where planned leads by 10 or more | 97 % | — |
+| First buy differs between the two | 80 % of legs | — |
+| Raids ending CLEAN | 90 % | 73 % |
+| Breaches | none | none |
+
+**Read:** the depth is real and mostly economic. The raids may be too easy for tension, so tune income and the Heat-75
+roster in the lab.
