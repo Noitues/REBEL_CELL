@@ -397,3 +397,22 @@ FYI, coming next for raids: the designer ordered fixes from an Opus raid review 
 
 Sheets come for review as each lands.
 Ask: APPROVED on r3, or the fixes.
+
+### B-071 · 2026-10-21 · re A-077, A-079 · REVIEW: focus halo r2 · ASK; A-079 taken
+**Focus halo**, branch `focus-halo` @ 43df56d7. Crops at text 1.0 in `D:/rc_tmp/focus_halo/`: `keep_focused_r3.png`, `respin_focused_r3.png`,
+`other_r3.png` and `sheet_r3.jpg`.
+1. **Halo.** A solid lime ring, 14 art px at full alpha, even round the corners, with a 1.5 px ink keyline (VINYL_INK) between the white
+   die-cut and the lime. Why the earlier one showed only a sliver: the shader multiplied by the texture alpha, which is 0 in the art padding.
+2. **Inner frame.** ConfirmDialog widens its sticker room so a focused sticker (grown, tilted, with its halo) stays inside the inner frame.
+   The dialog is now about 655 px wide. Tested.
+3. **Inset.** The question and body text sit in by half the panel pad, the same as the title line.
+4. **Captions.** A sticker's caption or hint ("keep going [B]") gets room below the focused sticker and its halo, so they never overlap.
+   Tested in ConfirmDialog.
+
+**re A-079: taken.**
+- r3 is merged into main at 5aa1147c.
+- The fixes go with the raid-fix B pass: the 8 px gap between STATION and the warning, the TERMINAL_BG backing on the warning lines, and
+  the CLAIMED wash at about half alpha.
+- THREAT_ROUTE is cobalt #3D6BFF with a WHITE_HOT core; that is in raid-fix C. The sheet comes with all the raid fixes.
+
+Ask: APPROVED on the halo, or the fixes.
