@@ -260,12 +260,9 @@ static func sign_spec(s: Dictionary, measure: Callable) -> Dictionary:
 	return shop(word, col, aspect, r, measure)
 
 
-## Draw lists of every sign of a plan by sign id, plus the megastructure plate (`mega`) when there is one.
+## Draw lists of every sign of a plan by sign id.
 static func make(plan: Dictionary, measure: Callable) -> Dictionary:
 	var out := {}
 	for s: Dictionary in plan["signs"]:
 		out[s["id"]] = sign_spec(s, measure)
-	var m: Variant = plan.get("mega")
-	if m != null:
-		out["mega"] = ad(String(m["tex"]["ad"]), 2.4 if m["kind"] == "arch" else 16.0 / 9.0)
 	return out

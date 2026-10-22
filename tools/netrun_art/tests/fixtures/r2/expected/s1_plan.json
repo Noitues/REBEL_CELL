@@ -16,7 +16,7 @@
 {"col":[0.549,0.482,1.0],"district":"halcyon","u":285.0}
 ],
 "checks":{
-"dressing.signs":{"hero_central":true,"heroes":8,"legible_ids":["shop_sign_6184_2622_1","hero_wall_6184_2622_2","sec_box_6184_2622_3","shop_sign_6061_2330_5","hero_blade_6061_2330_6","shop_sign_5975_2137_8","hero_wall_5975_2137_9","sec_box_5833_1943_13","shop_sign_5785_1845_15","hero_wall_5785_1845_16","shop_sign_5738_1748_18","sec_box_5590_1458_26","backdrop_blade_4650_1436_39","roof_board_6062_2619_68"],"legible_ov":14,"megastructure":"arch","off_face":[],"ok":true,"route_columns":8,"signs":69},
+"dressing.signs":{"hero_central":true,"heroes":8,"legible_ids":["shop_sign_6184_2622_1","hero_wall_6184_2622_2","sec_box_6184_2622_3","shop_sign_6061_2330_5","hero_blade_6061_2330_6","shop_sign_5975_2137_8","hero_wall_5975_2137_9","sec_box_5833_1943_13","shop_sign_5785_1845_15","hero_wall_5785_1845_16","shop_sign_5738_1748_18","sec_box_5590_1458_26","backdrop_blade_4650_1436_39","roof_board_6062_2619_68"],"legible_ov":14,"off_face":[],"ok":true,"route_columns":8,"signs":69},
 "frontage.silhouette":{"crown_share":0.5,"floors":[10,16,14,9,19,9,11,18,15,11,9,16],"max_equal_tops":0,"min_step":2,"ok":true},
 "horizon.break":{"ok":true,"spikes":4},
 "materials.mix":{"adjacent_same":0,"frontage_kits":["panel_grille","glass_curtain","concrete_band","panel_grille","glass_curtain","concrete_band","glass_curtain","panel_grille","concrete_band","lit_atrium","panel_grille","lit_atrium"],"kits_in_radius":4,"ok":true},
@@ -3817,17 +3817,6 @@
 "t1_shape":466.0,
 "t2_full":216.0,
 "t3_detail":70.0
-},
-"mega":{
-"col":[0.35,0.9,1.0],
-"district":"meridian",
-"emit":3.0,
-"key":"4650_1436",
-"kind":"arch",
-"pos":[59.398745,147.427674,65.412036],
-"screen":[0.466325,0.197194],
-"size":18.137788,
-"tex":{"ad":"orbital","seed":"11570197833367516375","style":"ad","sub":"","word":""}
 },
 "modules":{
 "5314_876":2,

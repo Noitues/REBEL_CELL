@@ -148,7 +148,7 @@ Source: art-pass `street_r2` scripts at {commit}, art seed 1 (the plate). Nothin
 - `inputs/s1_layout.json`  the v3 city cut to 300 BU around the street (lot records), the 10 border links, and the plate's street
   derivation (`derive_v3`). Floats are hex strings (exact doubles). Input of `layout_pass` and `plan_pass`.
 - `inputs/s1_kits.json`    the facade-kit cases (`r2_cases.kit_cases` of the plan); `seed` values are decimal strings (u64).
-- `inputs/s1_signs.json`   the plan's signs and megastructure, and the glyph boxes the plate's fonts gave (`measure` rows).
+- `inputs/s1_signs.json`   the plan's signs, and the glyph boxes the plate's fonts gave (`measure` rows).
 - `expected/s1_layout.json` heights after `layout_pass` (lot units) and its log. `s1_plan.json` the plan (signs, props, rhythm, kits, ...).
 - `expected/s1_kits.json`  per kit case: face counts and the SHA-256 of the canonical record. `s1_signs.json` the sign draw lists.
 

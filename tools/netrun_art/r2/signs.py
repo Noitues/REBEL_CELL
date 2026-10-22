@@ -230,9 +230,5 @@ def sign_spec(s: Dict[str, Any], measure: Measure) -> Dict[str, Any]:
 
 
 def make(plan: Dict[str, Any], measure: Measure) -> Dict[str, Any]:
-    """Draw lists of every sign of a plan, by sign id, plus the megastructure plate (`mega`) when the plan has one."""
-    out = {s["id"]: sign_spec(s, measure) for s in plan["signs"]}
-    m = plan.get("mega")
-    if m:
-        out["mega"] = ad(m["tex"]["ad"], 2.4 if m["kind"] == "arch" else 16 / 9)
-    return out
+    """Draw lists of every sign of a plan, by sign id."""
+    return {s["id"]: sign_spec(s, measure) for s in plan["signs"]}

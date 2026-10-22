@@ -222,11 +222,6 @@ for s in plan["signs"]:
     else:
         im = S.shop(t["word"], s["col"], aspect, r)
     specs[s["id"]] = dict(w=None if st == "ad" else im.size[0], h=None if st == "ad" else im.size[1], ops=list(ops))
-m = plan.get("mega")
-if m:
-    ops.clear()
-    S.ad(m["tex"]["ad"], 2.4 if m["kind"] == "arch" else 16 / 9)
-    specs["mega"] = dict(w=None, h=None, ops=list(ops))
 json.dump(dict(specs=specs, measure=[[k[0], k[1], k[2], v[0], v[1]] for k, v in TABLE.items()]), open(os.path.join(work, "sign_out.json"), "w"))
 '''
 
@@ -252,6 +247,28 @@ def _prep(art_root: str, work: str) -> None:
     src = os.path.join(art_root, RMG)
     for sub in ("street_r2", "storyboard"):
         shutil.copytree(os.path.join(src, sub), os.path.join(work, "rmg", sub), ignore=_ignore)
+    _drop_mega(os.path.join(work, "rmg", "street_r2", "scripts", "r2_rules.py"))
+
+
+# The designer dropped the megastructure (2026-10-22, DECISIONS): the copy of the art-pass plan_pass places none and its check does
+# not ask for one, the same drop our twins carry, so the golden comparison holds everything else to the plate.
+MEGA_DROP = [
+    ("    if cands:\n        cands.sort(key=lambda c_: (-c_[0], c_[1]))", "    if False:\n        cands.sort(key=lambda c_: (-c_[0], c_[1]))"),
+    ("signs=signs, mega=mega, lamps=lamps", "signs=signs, lamps=lamps"),
+    ("                                 megastructure=plan[\"mega\"] and plan[\"mega\"][\"kind\"],\n", ""),
+    ("S[\"signs_on_screen_min\"]\n                                 and plan[\"mega\"] is not None)", "S[\"signs_on_screen_min\"])"),
+]
+
+
+def _drop_mega(path: str) -> None:
+    with open(path, encoding="utf-8") as f:
+        s = f.read()
+    for a, b in MEGA_DROP:
+        if s.count(a) != 1:
+            raise RuntimeError("r2_rules.py changed: megastructure drop patch does not apply: " + a[:60])
+        s = s.replace(a, b)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(s)
 
 
 def _spawn(work: str, name: str, source: str, *args: str) -> None:

@@ -16,7 +16,7 @@
 {"col":[1.0,0.16,0.6],"district":"","u":129.0}
 ],
 "checks":{
-"dressing.signs":{"hero_central":true,"heroes":7,"legible_ids":["hero_wall_10:13_2","shop_sign_9:13_4","hero_blade_9:13_5","shop_sign_7:13_7","hero_blade_7:13_8","hero_blade_6:13_11","hero_blade_5:13_13","shop_sign_3:13_15","hero_wall_3:13_16","shop_sign_2:13_18","hero_wall_2:13_19","sec_box_2:13_20","roof_board_2:15_33","roof_board_9:15_39"],"legible_ov":14,"megastructure":"globe","off_face":[],"ok":true,"route_columns":7,"signs":41},
+"dressing.signs":{"hero_central":true,"heroes":7,"legible_ids":["hero_wall_10:13_2","shop_sign_9:13_4","hero_blade_9:13_5","shop_sign_7:13_7","hero_blade_7:13_8","hero_blade_6:13_11","hero_blade_5:13_13","shop_sign_3:13_15","hero_wall_3:13_16","shop_sign_2:13_18","hero_wall_2:13_19","sec_box_2:13_20","roof_board_2:15_33","roof_board_9:15_39"],"legible_ov":14,"off_face":[],"ok":true,"route_columns":7,"signs":41},
 "frontage.silhouette":{"crown_share":0.38,"floors":[11,11,10,10,12,9,16,14],"max_equal_tops":4,"min_step":0,"ok":false},
 "horizon.break":{"ok":true,"spikes":4},
 "materials.mix":{"adjacent_same":0,"frontage_kits":["concrete_band","panel_grille","concrete_band","glass_curtain","concrete_band","panel_grille","lit_atrium","concrete_band"],"kits_in_radius":4,"ok":true},
@@ -533,17 +533,6 @@
 "t1_shape":466.0,
 "t2_full":216.0,
 "t3_detail":70.0
-},
-"mega":{
-"col":[1.0,0.25,0.65],
-"district":"meridian",
-"emit":3.0,
-"key":"6:27",
-"kind":"globe",
-"pos":[-45.0,-81.0,39.073537],
-"screen":[0.495078,0.364436],
-"size":14.115557,
-"tex":{"ad":"meridian","seed":"764418108484137839","style":"ad","sub":"","word":""}
 },
 "modules":{
 "10:13":0,

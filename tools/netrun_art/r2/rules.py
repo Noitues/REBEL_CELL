@@ -15,7 +15,7 @@ Plan passes (dressing; nothing in the layout):
   materials.mix        a facade kit per building (4 kits, district weights, no two adjacent frontage buildings alike)
   repetition.guard     no more than max_same_module_adjacent identical facade modules side by side (kit + window module)
   dressing.signs       hero sign per route column, shopfront + shop sign per frontage base, secondary signs, backdrop
-                       signs, one megastructure; each sign with its LOD tiers
+                       signs; each sign with its LOD tiers
   streets.light        kerb lamp posts, fg lanes
   palette.districts    every sign / crown / bank glow coloured from its district's palette
   atmosphere.layers    plume sources, the bank-glow stops along the street
@@ -262,38 +262,6 @@ def plan_pass(seed, D, city, layout_log, merged=None, terr=None):
         u0 = bu0 + 0.3 if r_.random() < 0.5 else bu1 - 0.3 - bw
         add("backdrop_blade", b, u0, u0 + bw, z1 - bh, z1, pal[r_.randrange(len(pal))],
             dict(style="blade", word=wd, sub="", seed=art_seed(seed, "tex", key, "bd")), S["backdrop_emit"], 0.36, words=[wd])
-    # megastructure: on the tallest spike inside the central 2/3 of the OVERVIEW, off the DECISION frame
-    mega = None
-    cands = []
-    front_top = max(b["h"] for b in front)
-
-    def mega_size(cx, cy, h):
-        return 150.0 / W_ * math.dist(ov["persp"]["loc"], (cx, cy, h)) * 36.0 / ov["persp"]["lens"]
-    for b in sorted(B, key=lambda b: b["uid"]):
-        if b["uid"] in rset or b["z0"] > 0.05 or not (24.0 < far_of(b) < 170.0) or b["h"] < front_top * 0.8:
-            continue
-        cx, cy = (b["x0"] + b["x1"]) / 2, (b["y0"] + b["y1"]) / 2
-        x, y = sx_of((cx, cy, b["h"]))
-        xd, yd = sx_of((cx, cy, b["h"]), dec)
-        in_dec = 0.0 < xd < 1.0 and 0.0 < yd < 1.0
-        sz = mega_size(cx, cy, b["h"])
-        ytop = sx_of((cx, cy, b["h"] + 1.6 + sz * 0.75))[1]          # the tallest kind (globe on its mast)
-        if 1 / 6 < x < 5 / 6 and not in_dec and ytop > S["mega_headroom"] and y < 0.45:
-            cands.append((b["h"] + (40.0 if b["uid"] in spikes else 0.0), b["uid"], b, x, y))
-    if cands:
-        cands.sort(key=lambda c_: (-c_[0], c_[1]))
-        h, key, b, x, y = cands[0]
-        r_ = rng(seed, "mega", key)
-        kind = S["mega_kinds"][r_.randrange(len(S["mega_kinds"]))]
-        cx, cy = (b["x0"] + b["x1"]) / 2, (b["y0"] + b["y1"]) / 2
-        dis = dist_of(key)
-        col = [(0.35, 0.9, 1.0), (1.0, 0.25, 0.65), (1.0, 0.65, 0.2)][r_.randrange(3)]
-        # size: the megastructure reads at about 150 px wide in the OVERVIEW
-        h = b["h"]
-        size = mega_size(cx, cy, h)
-        mega = dict(kind=kind, key=key, pos=[cx, cy, h], size=size, col=list(col), screen=[x, y], district=dis,
-                    tex=dict(style="ad", ad=ADS["mega"][r_.randrange(len(ADS["mega"]))], word="", sub="",
-                             seed=art_seed(seed, "tex", key, "mega")), emit=S["mega_emit"])
     # roof boards (dressing.signs): every sign_frame crown on the camera row carries a lit board, and backdrop roofs over
     # 14 BU in the OVERVIEW carry one with p_roof_board. Boards stand on legs at the roof's street edge, facing the street.
     def roof_board(b, kind, w_, h_, st, z_lift=0.9):
@@ -318,7 +286,7 @@ def plan_pass(seed, D, city, layout_log, merged=None, terr=None):
             w_ = min(b["x1"] - b["x0"] if axis == 0 else b["y1"] - b["y0"], 7.0) * 0.85
             roof_board(b, "crown_board", w_, w_ * 0.42, ("wall", "ad", "holo")[rng(seed, "crown_board", b["uid"]).randrange(3)])
     for b in sorted(B, key=lambda b: b["uid"]):
-        if b["uid"] in rset or b["uid"] in spikes or (mega and b["uid"] == mega["key"]) or b["z0"] > 0.05 or b["h"] < 14.0:
+        if b["uid"] in rset or b["uid"] in spikes or b["z0"] > 0.05 or b["h"] < 14.0:
             continue
         if not (12.0 < far_of(b) < 170.0) or rng(seed, "p_roof_board", b["uid"]).random() > S["p_roof_board"]:
             continue
@@ -398,7 +366,7 @@ def plan_pass(seed, D, city, layout_log, merged=None, terr=None):
                 plume_src.append(((b["x0"] + b["x1"]) / 2, (b["y0"] + b["y1"]) / 2, b["h"], c_["key"]))
     for key in spikes:
         b = bk.get(key)
-        if b and (mega is None or key != mega["key"]):
+        if b:
             plume_src.append(((b["x0"] + b["x1"]) / 2, (b["y0"] + b["y1"]) / 2, b["h"], key))
     plume_src.sort(key=lambda p: (rng(seed, "plume", p[3]).random(), p[3]))
     plumes = []
@@ -429,7 +397,7 @@ def plan_pass(seed, D, city, layout_log, merged=None, terr=None):
     ul = [list(PD["hues"][d_]) for d_ in sorted({s_["district"] for s_ in stops if s_["district"]}) if d_ not in ("halcyon", "orbital")]
     plan = dict(seed=seed, axis=axis, nrm=nrm, line=line, route=route, front=fkeys, front_faces=faces, near_faces=near, trims=trims, rhythm=rhythm, props=props, lamps_dropped=lamps_dropped,
                 underlight=ul + [[1.0, 0.16, 0.6]], kits={str(k): v for k, v in kits.items()},
-                modules={str(k): v for k, v in modules.items()}, crowns=crowns, signs=signs, mega=mega, lamps=lamps,
+                modules={str(k): v for k, v in modules.items()}, crowns=crowns, signs=signs, lamps=lamps,
                 plumes=plumes, bank_stops=stops, spikes=spikes, fg_lanes=list(R["foreground.street"]["fg_lanes"]),
                 lod=R["lod.signs"], districts_in_view=sorted({dist_of(k) for k in fkeys}))
     plan["checks"] = checks(seed, plan, D, OC, B, bk)

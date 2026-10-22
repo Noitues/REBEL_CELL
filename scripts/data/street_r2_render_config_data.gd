@@ -27,7 +27,7 @@ const REQUIRED: Dictionary = {
 		"fallback_win", "wall_skin", "trim_band_h", "trim_corner_w", "trim_outset", "trim_seg", "rim_w", "rim_lift", "prism_sides", "wash_k"],
 	"materials": ["conc", "glass", "panel", "solid", "win", "neon"],
 	"props": ["kits", "emit_k", "lamp", "crowns", "crown_floors_k", "tint_mix"],
-	"signs": ["emit_k", "frame_w", "frame_col", "frame_off", "measure_h_k", "font_anton", "font_mono", "ad_col_k", "mega_k"],
+	"signs": ["emit_k", "frame_w", "frame_col", "frame_off", "measure_h_k", "font_anton", "font_mono", "ad_col_k"],
 	"lamps": ["head_emit", "pole_scale_from"],
 }
 

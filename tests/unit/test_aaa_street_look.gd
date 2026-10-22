@@ -31,10 +31,11 @@ func test_the_config_holds_the_material_spec_numbers() -> void:
 	assert_eq(CityShaderConfigData.shipped().validate().size(), 0, str(CityShaderConfigData.shipped().validate()))
 	var a := _aaa()
 	var e: Dictionary = a["emit"]
-	for k: String in ["hero", "secondary", "shop", "backdrop", "mega", "window", "trim", "panel", "lamp_head"]:
+	for k: String in ["hero", "secondary", "shop", "backdrop", "window", "trim", "panel", "lamp_head"]:
 		assert_true(e.has(k), "emit.%s" % k)
-	assert_eq([e["hero"], e["secondary"], e["shop"], e["backdrop"], e["mega"], e["window"], e["trim"], e["panel"], e["lamp_head"]],
-		[4.0, 2.6, 1.5, 2.4, 3.0, 0.9, 1.0, 4.0, 8.0], "the emissive hierarchy (MATERIAL_SPEC 8, 4)")
+	assert_eq([e["hero"], e["secondary"], e["shop"], e["backdrop"], e["window"], e["trim"], e["panel"], e["lamp_head"]],
+		[4.0, 2.6, 1.5, 2.4, 0.9, 1.0, 4.0, 8.0], "the emissive hierarchy (MATERIAL_SPEC 8, 4; the megastructure dropped 2026-10-22)")
+	assert_false(e.has("mega"), "no megastructure (designer 2026-10-22)")
 	var p: Dictionary = a["pbr"]
 	assert_eq([p["concrete"]["rough"], p["concrete"]["spec"], p["concrete"]["albedo"]], [0.55, 0.5, 0.85], "concrete")
 	assert_eq([p["glass"]["rough"], p["glass"]["metal"], p["glass"]["spec"]], [0.12, 0.2, 1.0], "glass")

@@ -19,7 +19,6 @@ extends Control
 ##   --reduce-effects=1   LOOK-TOOLBOX: frozen shader time and the static look (refactor proofs: two captures of the
 ##                        same code match to the pixel); the lab's own settings file, so the player's is untouched
 ##   --r2r.<field>.<key>=<json>  LOOK-TOOLBOX: a run-only override of the street r2 render config (e.g. --r2r.facade.wash_k=0)
-##   --mega=1             LOOK-TOOLBOX: draws the r2 plan's megastructure (lab only; na23_mega_draw.gd)
 ##   --dump-materials=<file>  LOOK-TOOLBOX: append every set shader parameter vs its text default at each shot
 ##                        (RcLookMaterialAudit)
 ## Prints NA23 lines.
@@ -100,10 +99,6 @@ func _ready() -> void:
 	view.size = Vector2(int(wh[0]), int(wh[1]))
 	add_child(view)
 	view.setup(_data, CityModel.shared(cfg, CityPlan.current_seed()), String(_walk["current"]), _walk["visited"], _walk["options"])
-	if String(_args.get("mega", "0")) == "1":
-		var md := load("res://tools/city/na23_mega_draw.gd") as GDScript
-		print("NA23 mega diag ", md.call(&"diagnose", view.rig.frontage, _data.city, _data.derive, _data.city["layout_seed"]))
-		print("NA23 mega ", md.call(&"draw", view.rig.frontage, _data.derive["nrm"]))
 	if String(_args.get("fog", "1")) == "0":
 		for n in view.rig._extras:
 			n.visible = false
