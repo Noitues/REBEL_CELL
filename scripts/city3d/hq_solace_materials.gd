@@ -17,7 +17,7 @@ const ROLES := {
 	"hq_sx_skin": {"albedo_k": 0.22, "roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05, "glow_k": 0.03, "rim_k": 1.0, "rim_pow": 4.0,
 		"back_k": 0.22},
 	"hq_sx_porc": {"roughness": 0.16, "clearcoat": 0.8, "clearcoat_roughness": 0.05},
-	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 2.0},
+	"hq_sx_neon": {"albedo_k": 0.0, "emit_gain": 2.0, "neon_core": true},
 	"hq_sx_office": {"roughness": 0.6, "emit_gain": 1.0},
 	"hq_sx_metal": {"roughness": 0.35, "metallic": 0.6},
 	"hq_sx_stone": {"albedo_k": 0.9, "roughness": 0.62},

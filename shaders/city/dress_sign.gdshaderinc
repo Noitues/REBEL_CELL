@@ -25,13 +25,16 @@ float sg_band(float x, float lo, float hi, float fw) {
 	return clamp((x - lo) / f + 0.5, 0.0, 1.0) * clamp((hi - x) / f + 0.5, 0.0, 1.0);
 }
 
-// (frame coverage, text-row coverage) of a sign face at coordinates `p` (BU from the piece centre) of size `sz`.
-vec2 sg_core(vec2 p, vec2 sz, float seed, vec2 fw) {
+// (frame coverage, text-row coverage) of a sign face at coordinates `p` (BU from the piece centre) of size `sz`; `cd` = each
+// stroke's (distance from its centre line, half width) for the hot core: frame in .xy, text row in .zw.
+vec2 sg_core(vec2 p, vec2 sz, float seed, vec2 fw, out vec4 cd) {
+	cd = vec4(1.0, 1.0, 1.0, 1.0);
 	vec2 q = p + sz * 0.5;
 	float pix = max(max(fw.x, fw.y), 0.0001);
 	float fwid = max(frame_w, core_px * pix);
 	float de = min(min(q.x, sz.x - q.x), min(q.y, sz.y - q.y));
 	float frame_cov = clamp((fwid - de) / pix + 0.5, 0.0, 1.0);
+	cd.xy = vec2(abs(de - fwid * 0.5), fwid * 0.5);
 	vec2 inner = q - vec2(fwid * 2.0);
 	vec2 isz = sz - vec2(fwid * 4.0);
 	float text = 0.0;
@@ -51,6 +54,7 @@ vec2 sg_core(vec2 p, vec2 sz, float seed, vec2 fw) {
 		float thick = min(max(stroke_h * (0.6 + 0.8 * h2), core_px * fw.y), ch * 0.6);
 		float row = sg_band(cy, ch * 0.5 - thick * 0.5, ch * 0.5 + thick * 0.5, fw.y);
 		text = present * run * row;
+		cd.zw = vec2(abs(cy - ch * 0.5), thick * 0.5);
 	}
 	return vec2(frame_cov, text);
 }

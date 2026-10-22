@@ -1,4 +1,8 @@
 extends GutTest
+
+## The shaders that draw live neon with the hot core.
+const NEON_CORE_SHADERS: Array[String] = ["res://shaders/city/dress_sign.gdshader", "res://shaders/city/city_building.gdshader",
+	"res://shaders/city/hq_solace_pbr.gdshader"]
 ## LOOK-TOOLBOX module 11 (fast tier): signage and neon. The shipped config validates; the flicker and blink numbers
 ## are pinned to dress_neon / city_glow's live ones; the "flat" tube is today's flat colour everywhere, "lighten" the
 ## same mix across the tube, "hot" reaches its core colour only on the centre line and keeps the tube colour at the
@@ -60,6 +64,31 @@ func test_core_is_white_tinted_toward_each_tube() -> void:
 	assert_true(co.b < co.r, "an orange tube's core is warm")
 	assert_true(cc.r < cc.b, "a cyan tube's core is cool")
 	assert_almost_eq(co.g, 1.0 + (0.55 - 1.0) * 0.15, 1e-6, "mix(white, tube, tint)")
+
+
+func test_live_neon_cores_use_the_hot_preset() -> void:
+	var hot := RcLookSign.preset(&"hot")
+	assert_almost_eq(hot.core_min_px, 1.0, 1e-6, "a core at least 1 px wide (designer b727956a)")
+	for path: String in NEON_CORE_SHADERS:
+		var code := FileAccess.get_file_as_string(path)
+		assert_string_contains(code, "uniform float neon_hot = %.2f;" % hot.hot, path)
+		assert_string_contains(code, "uniform float neon_core_share = %.2f;" % hot.core_share, path)
+		assert_string_contains(code, "uniform float neon_core_min_px = %.2f;" % hot.core_min_px, path)
+		assert_string_contains(code, "uniform float neon_core_tint = %.2f;" % hot.core_tint, path)
+		assert_eq(hot.core_color, Color(1, 1, 1), "neon_core_col defaults to white in %s" % path)
+		assert_string_contains(code, "uniform vec3 neon_core_col = vec3(1.0);", path)
+
+
+func test_neon_hot_core_width_floor() -> void:
+	var c := Color(1.0, 0.35, 0.75)
+	var hot := RcLookSign.preset(&"hot")
+	var core := RcLookSign.neon_core(c, hot.core_color, hot.core_tint)
+	var centre := RcLookSign.neon_hot(c, 0.0, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
+	assert_eq(centre, RcLookSign.hot_to(c, core, hot.hot), "the centre line reaches hot x the tube's core")
+	var thin := RcLookSign.neon_hot(c, 0.5, 1.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
+	assert_true(thin != c, "a 2 px tube still has a core half a pixel out (1 px floor, not 35 %)")
+	var wide := RcLookSign.neon_hot(c, 0.5, 10.0, 1.0, hot.hot, hot.core_share, hot.core_min_px, hot.core_color, hot.core_tint)
+	assert_true(wide.get_luminance() > c.get_luminance(), "inside 35 % of a wide tube")
 
 
 func test_hot_is_beam_shafts_mix() -> void:

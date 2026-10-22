@@ -49,7 +49,8 @@ void fragment() {
 		g = rcl_flicker(t, k, cust.y, 0.14, 4.0, 0.6);
 		vec3 sc = max(lscale, vec3(0.0001));
 		vec2 p = lpos.xy * sc.xy;
-		vec2 m = sg_core(p, sc.xy, cust.x, vec2(fwidth(p.x), fwidth(p.y)));
+		vec4 cd;
+		vec2 m = sg_core(p, sc.xy, cust.x, vec2(fwidth(p.x), fwidth(p.y)), cd);
 		g *= 1.0 - step(0.5, abs(lnrm.z)) * max(m.x, m.y);
 	}
 	ALBEDO = COLOR.rgb * emit * g * cust.z * emission_multiplier * look_blend;

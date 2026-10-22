@@ -5,6 +5,9 @@
 //   - rcl_hot_to(col, core_col, k): the same toward a core colour.
 //   - rcl_neon_core(tube, core_col, tint): a tube's own core colour, core_col tinted toward the tube by tint (designer
 //     ruling DIRECTION_REVIEW f4678fca: white tinted ~0.15 toward each tube's hue, not one pink NEON_CORE).
+//   - rcl_neon_hot(tube, d, half_w, pix, hot, share, min_px, core_col, tint): the approved hot core (DIRECTION_REVIEW
+//     f4678fca, b727956a): hot toward the tube's own core on a core max(share x half_w, min_px x pix) wide, d the
+//     distance from the tube's centre line and pix one pixel, both in the tube's units.
 //   - rcl_tube_cov(d, half_w, pix): a stroke's antialiased coverage at distance d from its centre line (dress_sign's
 //     frame form).
 //   - rcl_tube_core(d, core_w): 1 on the centre line falling to 0 at core_w (the thin hot core).
@@ -39,6 +42,11 @@ float rcl_tube_cov(float d, float half_w, float pix) {
 
 float rcl_tube_core(float d, float core_w) {
 	return 1.0 - smoothstep(0.0, max(core_w, 1e-5), d);
+}
+
+vec3 rcl_neon_hot(vec3 tube, float d, float half_w, float pix, float hot, float share, float min_px, vec3 core_col, float tint) {
+	float cw = max(share * half_w, min_px * pix);
+	return rcl_hot_to(tube, rcl_neon_core(tube, core_col, tint), hot * rcl_tube_core(d, cw));
 }
 
 float rcl_flicker(float t01, float bursts, float seed, float burst_len, float hum_hz, float hum_floor) {

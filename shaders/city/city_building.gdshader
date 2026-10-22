@@ -13,6 +13,14 @@ render_mode cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
+#include "res://addons/rc_look/shaders/rc_sign.gdshaderinc"
+// LOOK-TOOLBOX module 11 (designer DIRECTION_REVIEW f4678fca, b727956a): each neon tube's hot core, rcl_neon_hot. Values =
+// addons/rc_look/config/look_sign.tres "hot" (pinned by test_rc_look_sign).
+uniform float neon_hot = 0.90;
+uniform float neon_core_share = 0.35;
+uniform float neon_core_min_px = 1.00;
+uniform float neon_core_tint = 0.15;
+uniform vec3 neon_core_col = vec3(1.0);
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -289,6 +297,7 @@ void fragment() {
 	bool persp = PROJECTION_MATRIX[3][3] < 0.5;
 	NORMAL = n;
 	ROUGHNESS = 1.0;
+	float neon_px = max(length(dFdx(v_world)), length(dFdy(v_world)));  // one pixel in BU (the neon cores)
 	// INSTANCE_CUSTOM.w = crest + 2 * bits (NetrunInstancePack): cut 9, ghost 5, edge 3, dissolve 5 bits. Decoded here, not
 	// in vertex(): touching the vertex stage moves a few ink-edge pixels of the old page (parity at look_blend 0).
 	int iw = int(floor(v_inst.w + 0.5));
@@ -526,7 +535,7 @@ void fragment() {
 				float a0 = 0.2 + hash1(vec3(hs * 71.0, seed, 2.0)) * (L - sign_w - 0.4);
 				if (sa > a0 && sa < a0 + sign_w && z > sign_z0 * v_h && z < sign_z1 * v_h) {
 					vec3 sgc = sign_colors[int(hash1(vec3(hs * 13.0, seed * 7.0, 9.0)) * 4.0) % 4];
-					em = sgc * sign_emit * look_blend;
+					em = rcl_neon_hot(sgc, abs(sa - (a0 + sign_w * 0.5)), sign_w * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint) * sign_emit * look_blend;
 					base = sgc * 0.2;
 				}
 			}
@@ -547,9 +556,10 @@ void fragment() {
 		// Neon roof trim in the building's ink: the rim of the roof fan.
 		float dist = (1.0 - v_rim) * v_half * v_inst.x;
 		float px = fwidth(v_rim) * v_half * v_inst.x;
-		if (dist < max(trim_bu, px * trim_px_min)) {
+		float tw = max(trim_bu, px * trim_px_min);
+		if (dist < tw) {
 			int ii = clamp(int(v_inst.y) - 1, 0, 15);
-			em = ink_colors[ii] * neon_gain * mix(1.0, trim_emit, look_blend);
+			em = rcl_neon_hot(ink_colors[ii], abs(dist - tw * 0.5), tw * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint) * neon_gain * mix(1.0, trim_emit, look_blend);
 			base = ink_colors[ii] * 0.3;
 		}
 	}
@@ -564,16 +574,22 @@ void fragment() {
 		if (edge_emit > 0.0 && hash1(vec3(seed * 137.3, 9.0, 4.0)) < edge_share) {
 			vec3 ec = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
 			bool on_edge = false;
+			float ed = 0.0;
+			float eh = edge_bu * 0.5;
 			if (roof) {
 				float rd = (1.0 - v_rim) * v_half * v_inst.x;
 				float rpx = fwidth(v_rim) * v_half * v_inst.x;
-				on_edge = rd < max(edge_bu, rpx * 1.5);
+				float ew = max(edge_bu, rpx * 1.5);
+				on_edge = rd < ew;
+				eh = ew * 0.5;
+				ed = abs(rd - eh);
 			} else {
 				on_edge = (v_h - zl) < edge_bu;
+				ed = abs((v_h - zl) - eh);
 			}
 			if (on_edge) {
 				float eb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
-				em += ec * edge_emit * eb;
+				em += rcl_neon_hot(ec, ed, eh, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint) * edge_emit * eb;
 				base = mix(base, ec * 0.3, eb);
 			}
 		}
@@ -584,7 +600,7 @@ void fragment() {
 		if (zl >= b0 && bz < band_bu && zl < v_h - 0.5) {
 			vec3 bc = hash1(vec3(seed * 71.9, 3.0, 8.0)) < 0.5 ? edge_a : edge_b;
 			float bb = smoothstep(edge_blend.x, edge_blend.y, look_blend);
-			em += bc * band_emit * bb;
+			em += rcl_neon_hot(bc, abs(bz - band_bu * 0.5), band_bu * 0.5, neon_px, neon_hot, neon_core_share, neon_core_min_px, neon_core_col, neon_core_tint) * band_emit * bb;
 			base = mix(base, bc * 0.3, bb);
 		}
 	}
