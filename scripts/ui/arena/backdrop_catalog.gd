@@ -22,7 +22,7 @@ const NIGHT_ONLY: Array[StringName] = [&"rebel_cell"]
 ## the fight is won; measured from the won masks (the bake's silhouette pass).
 const ANCHORS := {
 	&"meridian_hq": Vector2(0.47, 0.16), &"meridian_site": Vector2(0.50, 0.27),
-	&"solace_hq": Vector2(0.50, 0.16), &"solace_site": Vector2(0.48, 0.29),
+	&"solace_hq": Vector2(0.51, 0.0), &"solace_site": Vector2(0.50, 0.12),
 	&"halcyon_hq": Vector2(0.50, 0.16), &"halcyon_site": Vector2(0.50, 0.23),
 	&"orbital_hq": Vector2(0.50, 0.16), &"orbital_site": Vector2(0.51, 0.16),
 	&"rebel_cell_hq": Vector2(0.50, 0.16), &"rebel_cell_site": Vector2(0.50, 0.16),
