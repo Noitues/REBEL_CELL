@@ -435,3 +435,22 @@ row, the left frame is before and the right frame is after.
   tokens, so they appear only in the playout.
 
 Ask: APPROVED, or the fixes, especially the countdown's placement.
+
+### B-073 · 2026-10-22 · raid review fixes A + B (with C under it) · REVIEW · ASK
+Branch `raid-fix-b` @ 3e17109d. It includes A (rules, b9416b88) and C (map, d6d0318d, already in review as B-072).
+Sheet: `D:/rc_tmp/raid_fix_b/sheet.jpg`, 4 panels at 1280x720 and text 1.0.
+- **Panel 1** (Heat 26) and **panel 2** (Heat 76): the chip carries the whole outcome, which never folds.
+  - The head line is the verdict word: REPELLED / OVERRUN / BREACHED.
+  - The lines under it: HOME a→b (Δ), N TAKEN / N DOWN, HEAT +N, SCHEMATICS +N, and INFECTED for Solace.
+  - Severity colours come from the tier (acid / amber / orange / HARM red). A lost raid is never green.
+  - THREAT INTEL rows show "HP n  DMG n".
+- **Panel 3:** hovering a defense card shows its effect words in a plate beside the hand, for example "TURRET > T1 SITE: no change: the
+  threat is too strong". The STATION line shows its effect too. (At Heat 76 the honest answer is often "no change".)
+- **Panel 4:** the after-action report reads "OUTCOME: OVERRUN, +5 HEAT" in severity ink. CELL HOLDS is now only the sticker of a won raid.
+- **A-079:** the NO CREW warning sits on a TERMINAL_BG plate, at least 8 px clear of the focus bracket. The CLAIMED wash is at about half
+  alpha.
+- **Known, older than this pass:** at Heat 76 with a target picked, THREAT INTEL folds to one route plus MORE, and the IF PLACED terminal
+  under YOUR NETWORK is clipped by the Crew / STATION block. I'd fix them next, as a right-column layout pass. Tell me if that is your call
+  instead.
+
+Ask: APPROVED on A+B (and C, B-072), or the fixes. Include where the Heat countdown goes (B-072 row 3).
