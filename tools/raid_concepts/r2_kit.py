@@ -15,7 +15,7 @@ PLANS = {
     "SHIELD": Plan({"HOME": ["TURRET", "ICE"], "PROXY": ["DECOY"]}, "SAFE"),
 }
 RUNS = {k: run(p) for k, p in PLANS.items()}
-ROUTE_KIND = {"COLLECTOR": "home", "AUDITOR": "value", "ENFORCER": "weakest"}
+ROUTE_KIND = {"COLLECTOR": "home", "AUDITOR": "value", "ENFORCER": "weakest", "LOCKDOWN": "weakest"}
 
 
 def losses(r) -> dict:

@@ -355,6 +355,7 @@ THREATS = {
     "COLLECTOR": ("COLLECTOR", 12, 5, 1, "shortest to home", "C1", "HOME"),
     "AUDITOR": ("AUDITOR", 8, 3, 2, "richest node", "C2", "VAULT"),
     "ENFORCER": ("ENFORCER", 25, 9, 1, "weakest node", "C2", "PROXY"),
+    "LOCKDOWN": ("LOCKDOWN", 18, 6, 1, "weakest node", "C1", "PROXY"),
 }
 
 
@@ -378,6 +379,11 @@ def threat(d, c, tid: str, r: float = 20, hp: int | None = None, show_hp: bool =
         for sx in (-0.5, 0, 0.5):
             d.polygon([(x + R * sx - 5, y - R), (x + R * sx, y - R - 9), (x + R * sx + 5, y - R)], fill=edge)
         d.rectangle((x - R * 0.5, y - R * 0.15, x + R * 0.5, y + R * 0.1), fill=edge)
+    elif tid == "LOCKDOWN":
+        # Lockdown Unit: a padlock block (it freezes a home link)
+        d.rounded_rectangle((x - r, y - r * 0.4, x + r, y + r), radius=4, fill=fill, outline=edge, width=3)
+        d.arc((x - r * 0.6, y - r * 1.1, x + r * 0.6, y + r * 0.2), 180, 360, fill=edge, width=4)
+        d.ellipse((x - r * 0.18, y + r * 0.1, x + r * 0.18, y + r * 0.46), fill=edge)
     if show_hp:
         name, mhp, *_ = THREATS[tid]
         hpv = mhp if hp is None else hp

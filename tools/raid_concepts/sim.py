@@ -10,6 +10,8 @@ threat is active; threats still on a node at the cap TAKE it. Prototype only: ne
 
 from __future__ import annotations
 
+import math
+
 import copy
 from dataclasses import dataclass, field
 
@@ -31,6 +33,7 @@ HOLDERS = {"ICE": 2, "TARPIT": 3}
 #   ice_blocks: a held threat does not strike (today: it is held but still strikes, except at home).
 #   fixed_routes: each threat's target and whole route are set once, when the raid starts (the telegraph IS the route);
 #     it walks that route, strikes its target until it is TAKEN, then leaves. No mid-raid re-targeting.
+#   plating (round 5, a per-raid corp trait): the Enforcer ignores any single shot of 8 or more (the Railgun's).
 #   no_cascade (round 4): a node going DOWN does not spill damage onto its neighbours.
 #   auditor_hunts (round 4): the Auditor targets the node holding the most deployed pieces (ties: value, then id),
 #     so stacking draws it; with fixed_routes it is decided at plan time and drawn live.
@@ -42,7 +45,13 @@ THREAT_DEF = {  # id: hp, dmg, speed, routing, entry
     "AUDITOR": (8, 3, 2, "value", "C2"),
     "COLLECTOR": (12, 5, 1, "home", "C1"),
     "ENFORCER": (25, 9, 1, "weakest", "C2"),
+    # Heat-75 roster adds the Lockdown Unit (content/threats/lockdown_unit.tres): before the raid it freezes the link
+    # between home and the home neighbour holding the most deployed assets (ties by id), as RaidResolver._prepare_links.
+    "LOCKDOWN": (18, 6, 1, "weakest", "C1"),
 }
+ROSTER_50 = ["AUDITOR", "COLLECTOR", "ENFORCER"]
+ROSTER_75 = ["AUDITOR", "COLLECTOR", "ENFORCER", "LOCKDOWN"]
+FROZEN: set = set()   # frozen links for the raid being run (nothing routes or shoots across them)
 
 ADJ: dict[str, list[str]] = {}
 for a, b in LINKS:
@@ -58,6 +67,8 @@ def bfs(src: str, blocked=frozenset()) -> dict[str, int]:
     while q:
         n = q.pop(0)
         for m in ADJ[n]:
+            if frozenset((n, m)) in FROZEN:
+                continue
             if m not in dist and m not in blocked:
                 dist[m] = dist[n] + 1
                 q.append(m)
@@ -101,8 +112,12 @@ class Result:
 
 
 def run(plan: Plan, threats=None, start_hp=None) -> Result:
-    threats = threats or list(THREAT_DEF)
+    threats = threats or list(ROSTER_50)
     hp = dict(NODE_HP if start_hp is None else start_hp)
+    FROZEN.clear()
+    if "LOCKDOWN" in threats:
+        nb = sorted(ADJ["HOME"], key=lambda n: (-len(plan.assets.get(n, [])), n))
+        FROZEN.add(frozenset(("HOME", nb[0])))
     cond = {k: "ok" for k in hp}
     held_by: dict[str, set] = {t: set() for t in threats}
     T = {}
@@ -244,7 +259,10 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
                     else:
                         cands.sort(key=lambda t: (dh.get(t["site"], 99), t["id"]))
                     t = cands[0]
-                    d = round(dmg * mult)
+                    d = int(math.floor(dmg * mult + 0.5))   # GDScript roundi: halves away from zero
+                    if plan.rules.get("plating") and t["id"] == "ENFORCER" and d >= 8:
+                        ev["shots"].append((site, name, t["id"], 0, t["hp"]))
+                        continue
                     t["hp"] -= d
                     ev["shots"].append((site, name, t["id"], d, max(0, t["hp"])))
                     if t["hp"] <= 0:
@@ -311,6 +329,7 @@ def run(plan: Plan, threats=None, start_hp=None) -> Result:
     res = Result(log, {k: v["path"] for k, v in T.items()}, nodes, NODE_HP["HOME"], hp["HOME"], [t for t in T if T[t]["hp"] <= 0],
                   [t for t in T if T[t]["home"] and not T[t].get("left")], clean, hp["HOME"] <= 0)
     res.routes = {k: v.get("route_fixed", v["path"]) for k, v in T.items()}
+    res.frozen = [tuple(sorted(f)) for f in FROZEN]
     return res
 
 

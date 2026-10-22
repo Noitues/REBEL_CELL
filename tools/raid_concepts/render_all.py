@@ -35,6 +35,7 @@ CONCEPTS = {
     "f2": ("concept_f2_ledger", "f_plan_ledger"),
     "g3": ("concept_g3_merged", "g_merged_telegraph"),
     "g4": ("concept_g4_merged", "g_merged_telegraph"),
+    "g5": ("concept_g5_merged", "g_merged_telegraph"),
     "f3": ("concept_f3_ledger", "f_plan_ledger"),
     "c3": ("concept_c3_duel", "c_strength_duel"),
     "d3": ("concept_d3_loadout", "d_autobattler_loadout"),

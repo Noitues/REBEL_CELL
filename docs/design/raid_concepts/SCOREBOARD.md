@@ -75,3 +75,17 @@ Phase 3 adds **V**, visual quality against AAA. The full reviews are in `_review
   - when the raid lands.
 
   Round 4 challenges them on G.
+
+## Round 4 (G4 alone; fresh critic; `_reviews/REVIEW_R4.md`)
+| Concept | W | P | N | D | C | Total |
+|---|---|---|---|---|---|---|
+| G4 | 7 | 7 | 6 | 5 | 7 | 32 |
+
+- **What the critic confirmed:** the telegraph contract now works.
+- **What it rejected:** the depth claim. The next-raid trade-off ignored patching, used the wrong roster, and was fed by a misleading draft preview. It also found a rounding mismatch with the game (`roundi`).
+- **Round 5 (G5):** fixes all of these and is rendered in `g_merged_telegraph/r5/`. It is kept as the calibration anchor for round 6, not scored on its own.
+- **Plateau finding:**
+  - The best score has run 36, 35, 35, 32 over four rounds. Decision depth never got past 7.
+  - The sweep finds a single best answer per raid.
+  - The real Heat-75 raid has 0.34 % clean plans, best net +2 (`r5_marginal.json`).
+  - The user chose a divergent round 6: three new cores aimed at decision depth, scored next to G5 by two independent critics.
