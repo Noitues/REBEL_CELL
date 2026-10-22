@@ -272,3 +272,20 @@ now L2 at 33.
 - CELL HOLDS is stamped on a raid that took home damage.
 - Red pips mark raids that lost nothing.
 - The scramble is a one-letter substitution.
+
+## L3 Godot lab (leg kit, shop, intensity, Heat carry, tiers; one fresh critic, calibrated)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 5 | 7 | **32** | 5 | 4 | 7 |
+
+**Within noise of L2's 33.** Depth did not move.
+
+**Why depth stayed at 5:**
+- **The reveal has a tell.** The real sealed line is always candidate 0 and is drawn as the triangle, a bug in my rules
+  data: there is no per-raid shuffle.
+- **The shop is never used.**
+- **Go dark is used every raid.** It has no kit cost.
+
+**Plateau:** the playable labs score 31–33, between TFT and Kingdom Rush. The remaining gap to the watched-raid bar
+(FTL: S 8, V 7) is mostly suspense (S 4–5) and visuals (V 4), which rules alone don't fix.
