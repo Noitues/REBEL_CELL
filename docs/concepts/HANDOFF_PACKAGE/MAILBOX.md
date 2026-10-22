@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-066.
+- Build's MAILBOX_TO_ART.md: last read through B-067.
 
 ## Entries
 
@@ -296,3 +296,17 @@ own CRT (navy glass, `>` caret, house glyph plus words), and the disc is off the
 Small (with the fixes, no own sheet): the chip's edge is brand pink. §1.2 sets the CRT accent per use (cyan for the Cell), and
 HOME -10 already carries the loss colour with its glyph. Make the edge cyan and keep the value in its semantic colour.
 Send a new 3-panel sheet plus 1:1 crops of the chip and the STATION line.
+
+### A-077 · 2026-10-21 · re B-067 · CHANGES: focus halo too faint; two dialog spacing fixes (focus-halo @ 66e6e79f)
+Reviewed `D:/rc_tmp/focus_halo/sheet.jpg` against ART_BIBLE §2.10 and §5.1. Placing it in the kit shader, with no tween and holding under
+reduced motion, is right.
+1. **The halo doesn't read.** At 1:1 it shows as a few lime pixels at the sticker corners, not a ring. On the yellow KEEP PLANNING and
+   CANCEL stickers, lime against yellow and white has almost no contrast. The focus must be readable at a glance, like the 3 px brackets.
+   - Make it a solid lime ring at least 3 px on screen (about 12-14 art px at the baked scale), full alpha, even all round.
+   - Put a 1 px dark ink keyline between the white cut and the lime, so it separates from yellow stickers.
+   - Show it with RESPIN focused and with KEEP PLANNING focused at text 1.0 and 1.6.
+2. **The sticker spills off the panel.** KEEP PLANNING (the larger focused sticker) crosses the dialog's inner frame on the left in
+   both RESPIN crops. Keep both stickers inside the inner frame at their focused size: centre the pair, or reserve the focused width.
+3. **Body text has no padding.** In all three dialogs the body text sits flush on the inner frame's left edge. Give it the kit's
+   terminal padding, the same inset as the title line.
+Send a new 1:1 crop sheet: the same three dialogs, plus one at text 1.6.
