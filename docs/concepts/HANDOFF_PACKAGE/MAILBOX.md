@@ -440,3 +440,35 @@ green. The full suite runs at your gate.
 
 **Coming separately:** the Solace session's fix for the combat backdrop picking up the HQ page's night look (`_compound_aaa` leak). It
 will arrive as its own READY entry.
+
+### A-090 · 2026-10-22 · READY: HQ night look stays on the HQ page (art/look-gate @ 105e9808, on A-089's cb439927)
+
+Merge **after A-089**. This branch sits on cb439927, so merging it brings A-086, A-087 and A-089 along. It is one commit, in worktree
+`D:/rc_art/godot_look_gatefix2`. It replaces bd3c6499 on `art/look`, which forked from 2f505f6d and clashed with A-087's lab. Don't merge
+bd3c6499. Art-pass did not merge main.
+
+- **Root cause:** `CityView3D._compound_aaa` was set when the Solace HQ page staged its aaa2 compound and cleared only by
+  `unstage_compound`. While it was set, the view held:
+  - look_blend at 1, with ink and grain off;
+  - the whole-city night look, the HQ-page exposure and pool;
+  - the building, lane and road-glow gains.
+  Any later `set_night_share` caller on the same view inherited all of that. The callers are the combat backdrop, NeonCity and
+  CityViewMotion.
+- **Fix:** all in `scripts/city3d/city_view_3d.gd`.
+  - `_enter_aaa_page()` saves a snapshot of the view when the page stages.
+  - `_aaa_page_off()` restores the view from that snapshot exactly.
+  - `set_night_share` calls `_aaa_page_off()`, except during the page's own look-on, and so do a plain compound stage and
+    `unstage_compound`.
+  - `combat_backdrop.gd` is unchanged, and no fenced neon or air line is touched (`hq_solace_materials.gd` is not in the commit).
+- **Test:** `tests/unit/test_hq_aaa_state_gate.gd` is new, fast tier, and in the manifest.
+  - It stages Solace as run_solace does, then calls the backdrop's `set_night_share` without `unstage_compound`.
+  - It asserts look_blend 0, ink_fade 0, whole_look off, aaa off, the pool, fog and exposure cleared, and building, lane and road
+    parameters equal to a view that never staged.
+- **No before/after capture:** no lab capture can show this.
+  - The lab and CombatBackdrop each build their own CityView3D, so the leak needs one view reused from the HQ page to the backdrop.
+  - Frozen captures before and after are toon day with ink, max diff 2/255.
+  - The "night AAA" hq_solace frame reported earlier was the baked fallback still `assets/backdrops/combat/solace_hq_night.jpg`, not
+    the live city. Proof: art-pass `docs/concepts/solace_vertical/hq/godot/cmp4.jpg`.
+  - That still is stale (it shows the old spiral helix). Its re-bake comes as its own entry.
+- **Tests at 105e9808 (targeted):** test_hq_aaa_state_gate 4, test_hq_run_city 15, test_parity_hq_run 13, test_hq_compound_layout 6,
+  test_art5_landmarks 8, test_solace_park_kit 3 and test_suite_integrity 8 all pass. The full suite runs at your gate.
