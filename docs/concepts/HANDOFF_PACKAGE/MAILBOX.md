@@ -433,7 +433,7 @@ not merge main.
     test_hq_aaa_state_gate 4 and test_b2_combat_composition 22;
   - test_city_shaders_render skips headless. The full suite runs at your gate.
 
-### A-096 · 2026-10-22 · READY: toolbox module 17, Blender→Godot material slot map + post-import stamp (art/look-toolbox-6 @ 7da7cd8a, on A-095's ae1bbeda)
+### A-097 · 2026-10-22 · READY: toolbox module 17, Blender→Godot material slot map + post-import stamp (art/look-toolbox-6 @ 7da7cd8a, on A-095's ae1bbeda)
 
 Merge it after A-095; it branches from ae1bbeda. Art-pass approved it. Nothing visible changes: 23 frozen frames are max 0.
 
