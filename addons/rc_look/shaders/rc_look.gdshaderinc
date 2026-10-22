@@ -58,10 +58,21 @@ vec2 rcl_hash22(vec2 p) {
 	return fract((q.xx + q.yz) * q.zy);
 }
 
-// The kit's older sin hash and its 3D value noise (toon_ink / toon_ink_hull grain), kept bit-exact so those views keep
-// their pixels; new code uses rcl_hash13 / rcl_vnoise3.
+// The older sin hashes and their value noise (toon_ink / toon_ink_hull grain, the sea, its plane, smears and seabed),
+// kept bit-exact so those views keep their pixels; new code uses rcl_hash13 / rcl_vnoise3.
 float rcl_hash13_sin(vec3 p) {
 	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+}
+
+float rcl_hash12_sin(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float rcl_vnoise2_sin(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(rcl_hash12_sin(i), rcl_hash12_sin(i + vec2(1.0, 0.0)), u.x), mix(rcl_hash12_sin(i + vec2(0.0, 1.0)), rcl_hash12_sin(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
 float rcl_vnoise3_sin(vec3 p) {

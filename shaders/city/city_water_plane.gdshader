@@ -8,6 +8,8 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// LOOK-TOOLBOX module 8: the sin hash and 2D value noise are rc_look's (rcl_hash12_sin / rcl_vnoise2_sin).
+#include "res://addons/rc_look/shaders/rc_look.gdshaderinc"
 
 uniform sampler2D bed_tex : filter_linear, repeat_disable;
 uniform vec2 bed_origin = vec2(0.0);
@@ -72,19 +74,9 @@ uniform vec3 grade = vec3(1.0);
 uniform float time_scale = 1.0;
 varying vec3 v_world;
 
-float h2(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float vnoise(vec2 p) {
-	vec2 i = floor(p);
-	vec2 f = fract(p);
-	vec2 u = f * f * (3.0 - 2.0 * f);
-	return mix(mix(h2(i), h2(i + vec2(1.0, 0.0)), u.x), mix(h2(i + vec2(0.0, 1.0)), h2(i + vec2(1.0, 1.0)), u.x), u.y);
-}
 
 float fbm(vec2 p) {
-	return vnoise(p) * 0.55 + vnoise(p * 2.03 + 3.1) * 0.3 + vnoise(p * 4.1 - 1.7) * 0.15;
+	return rcl_vnoise2_sin(p) * 0.55 + rcl_vnoise2_sin(p * 2.03 + 3.1) * 0.3 + rcl_vnoise2_sin(p * 4.1 - 1.7) * 0.15;
 }
 
 // The finer layers fade out where a pixel spans more than their wavelength (Cycles averages them; here they would alias).
@@ -97,7 +89,7 @@ float height(vec2 p, float t, float px) {
 }
 
 float marble(vec2 p, float t) {
-	vec2 dq = vec2(vnoise(p + vec2(5.2, 1.3 + t)), vnoise(p + vec2(-3.1, 7.7 - t))) * 2.0 - 1.0;
+	vec2 dq = vec2(rcl_vnoise2_sin(p + vec2(5.2, 1.3 + t)), rcl_vnoise2_sin(p + vec2(-3.1, 7.7 - t))) * 2.0 - 1.0;
 	float n = fbm(p + dq * marble_distort);
 	return 1.0 - smoothstep(0.0, marble_width, abs(2.0 * n - 1.0));
 }

@@ -10,6 +10,8 @@ render_mode cull_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/lib/netrun_clock.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
+// LOOK-TOOLBOX module 8: the puddle noise and roughness are rc_wet's.
+#include "res://addons/rc_look/shaders/rc_wet.gdshaderinc"
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -49,21 +51,6 @@ void vertex() {
 	v_ny = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz).y;
 }
 
-float puddle_noise(vec3 p) {
-	float a = 0.5;
-	float s = 0.0;
-	float w = 0.0;
-	for (int i = 0; i < 8; i++) {
-		if (i >= noise_octaves) {
-			break;
-		}
-		s += a * nr_noise3(p);
-		w += a;
-		p *= 2.0;
-		a *= 0.5;
-	}
-	return s / max(w, 0.0001);
-}
 
 void fragment() {
 	ROUGHNESS = 0.0;
@@ -73,9 +60,8 @@ void fragment() {
 	} else {
 		vec3 col = COLOR.rgb;
 		if (look_blend > 0.0) {
-			float n = puddle_noise(vec3(v_world.x, 0.0, v_world.z) * noise_scale);
-			float k = smoothstep(rough_noise.x, rough_noise.y, n);
-			float rough = mix(rough_wet.x, rough_wet.y, k);
+			float n = rcl_fbm3_n(vec3(v_world.x, 0.0, v_world.z) * noise_scale, noise_octaves);
+			float rough = rcl_puddle_rough(n, rough_noise, rough_wet);
 			rough = mix(rough_wet.x, rough, clamp(puddles_sharp, 0.0, 1.0));
 			// NA-25b: the wet roughness at every look_blend (it used to scale with it: a half blend was a near mirror).
 			ROUGHNESS = rough;

@@ -41,25 +41,13 @@ uniform float land_night_lift = 0.0;
 varying vec3 v_world;
 varying vec3 v_nw;
 
-float h3(vec3 p) {
-	return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-}
-
-float vnoise3(vec3 p) {
-	vec3 i = floor(p);
-	vec3 f = fract(p);
-	vec3 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(mix(h3(i), h3(i + vec3(1.0, 0.0, 0.0)), u.x), mix(h3(i + vec3(0.0, 1.0, 0.0)), h3(i + vec3(1.0, 1.0, 0.0)), u.x), u.y);
-	float b = mix(mix(h3(i + vec3(0.0, 0.0, 1.0)), h3(i + vec3(1.0, 0.0, 1.0)), u.x), mix(h3(i + vec3(0.0, 1.0, 1.0)), h3(i + vec3(1.0)), u.x), u.y);
-	return mix(a, b, u.z);
-}
 
 // Two octaves (Blender's noise at detail 1.5), domain-distorted by a second field (its Distortion input).
 float fbm_d(vec2 p, float w) {
 	vec3 q = vec3(p, w);
-	vec2 dq = vec2(vnoise3(q + vec3(5.2, 1.3, 0.0)), vnoise3(q + vec3(-3.1, 7.7, 0.0))) * 2.0 - 1.0;
+	vec2 dq = vec2(rcl_vnoise3_sin(q + vec3(5.2, 1.3, 0.0)), rcl_vnoise3_sin(q + vec3(-3.1, 7.7, 0.0))) * 2.0 - 1.0;
 	q.xy += dq * caustic_distort;
-	return vnoise3(q) * 0.67 + vnoise3(q * 2.0 + vec3(1.7, 9.2, 0.0)) * 0.33;
+	return rcl_vnoise3_sin(q) * 0.67 + rcl_vnoise3_sin(q * 2.0 + vec3(1.7, 9.2, 0.0)) * 0.33;
 }
 
 float ripple(vec2 p, float scale, float off, float w) {
@@ -85,7 +73,7 @@ void fragment() {
 		vec2 p = v_world.xz;
 		float rip = (ripple(p, caustic_scale, 0.0, 1.3 + t) + ripple(p, caustic_scale * 1.6, 3.3, 7.9 - t * 0.7)) * 0.5;
 		float cnet = caustic_floor + rip * (1.0 - caustic_floor);
-		float pm = smoothstep(0.42, 0.68, vnoise3(vec3(p * caustic_patch_scale, t * 0.3)));
+		float pm = smoothstep(0.42, 0.68, rcl_vnoise3_sin(vec3(p * caustic_patch_scale, t * 0.3)));
 		cnet *= caustic_patch + pm * (1.0 - caustic_patch);
 		float up = v_nw.y * v_nw.y;
 		e += caustic_col * cnet * up * exp(-d / caustic_depth_bu) * caustic_k * mix(caustic_day_k, 1.0, night);
