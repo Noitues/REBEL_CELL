@@ -1957,6 +1957,8 @@ func _build_hq_page(page_name: String) -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stack.add_child(card)
 	page.add_child(column)
+	if raid_mode and _if_placed_term != null and is_instance_valid(_if_placed_term):
+		page.add_child(_if_placed_term)
 	if site != null and not raid_mode:
 		# 12Q-HQ (L31-L34): a card taller than its column pages its rows (CardPager); this tab turns
 		# it, placed with the column (`_place_card_tab`) and drawn over it.
@@ -3009,6 +3011,7 @@ func _place_hq() -> void:
 		bottom -= _page_card(column, col_w, bottom - top, col_x, bottom)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
+	_place_if_placed(page, column)
 	if panel_name != "raid":
 		_place_card_tab(column)
 	var was_free := _hq_free
@@ -4588,10 +4591,7 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	intel_fit.name = "ThreatIntelFit"
 	intel_fit.builder = func(_m: float, d: int) -> Control: return _threat_intel(raid, pending, projection, d)
 	_intel_others = -1.0
-	var levels: Array[int] = [0]
-	for step in clampi(raid_route_groups(projection).size(), 1, INTEL_ROWS_MAX):
-		levels.append(FitBuildBox.fold(2, step))
-	intel_fit.details = levels
+	intel_fit.details = intel_levels(raid_route_groups(projection).size())
 	intel_fit.floor_mul = HqLayout.FIT_FLOOR
 	var more := MenuChip.new(ORDER_MORE, "", DecryptedHoloPanel.ink(RaidSkin.of(RunManager.campaign.corporation_id).holo))
 	more.name = "IntelMore"
@@ -4611,7 +4611,9 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
 	stack.add_child(_your_network(projection))
-	stack.add_child(_if_placed_terminal())
+	# RAID-FIX D6: IF PLACED is no part of the column (the column ends over the Crew / STATION block and clipped it):
+	# the page holds it, over the map beside the column's foot (`_place_if_placed`).
+	_if_placed_term = _if_placed_terminal()
 
 
 ## Parity RAID-06 (round 40): the IF PLACED terminal on the right: what the defence card hovered
@@ -4625,6 +4627,7 @@ func _if_placed_terminal() -> RaidTerminal:
 	# defence card is pointed at, focused or carried (`show_if_placed`).
 	term.visible = false
 	_if_placed_term = term
+	term.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var lines := VBoxContainer.new()
 	lines.name = "IfPlacedLines"
 	lines.add_theme_constant_override("separation", 2)
@@ -4647,8 +4650,26 @@ func point_card(index: int) -> void:
 	show_if_placed(index)
 	if _if_placed_term != null and is_instance_valid(_if_placed_term):
 		_if_placed_term.visible = true
+		_place_if_placed(_panel, _panel.get_node("CardColumn") as Control)
 	if _hand_effect != null and is_instance_valid(_hand_effect):
 		_hand_effect.visible = _hand_effect_words.text != ""
+
+
+## RAID-FIX D6: IF PLACED's width (px at text 1.0 x the objects' scale) and its gap from the column.
+const IF_PLACED_W := 292.0
+
+
+## RAID-FIX D6: puts the IF PLACED terminal over the map, left of the column, its foot on the column's foot (so it
+## never meets the Crew / STATION block), and on screen.
+func _place_if_placed(page: Control, column: Control) -> void:
+	var term := _if_placed_term
+	if term == null or not is_instance_valid(term) or term.get_parent() != page:
+		return
+	var w := IF_PLACED_W * HqLayout.object_scale(Settings.text_scale)
+	term.size = Vector2(w, term.get_combined_minimum_size().y)
+	var x := column.position.x - HqLayout.GAP - w
+	var y := column.position.y + column.size.y - term.size.y
+	term.position = Vector2(maxf(x, 0.0), maxf(y, 0.0))
 
 
 ## B3: hides the IF PLACED terminal (the card left the pointer and the focus).
@@ -4667,6 +4688,7 @@ func show_if_placed(index: int) -> void:
 		return
 	var c := RunManager.campaign
 	for k in box.get_children():
+		box.remove_child(k)
 		k.queue_free()
 	if_placed_index = index if index >= 0 and index < c.armory.size() else -1
 	var lines: Array = []
@@ -4786,16 +4808,13 @@ var _network_peek: bool = false
 
 ## B3 b (art director: at big text YOUR NETWORK stays visible, never below the fold): the
 ## setup's card column holds `room` px; when THREAT INTEL and the whole of YOUR NETWORK need more
-## (IF PLACED, shown only while a card is pointed at, never counts), YOUR NETWORK keeps its header
+## (IF PLACED stands over the map beside the column, RAID-FIX D6: it takes no room here), YOUR NETWORK keeps its header
 ## and the CORE row. Returns whether it is collapsed.
 func _fit_network(stack_holder: Control, room: float, col_w: float = 0.0) -> bool:
 	if _network_win == null or not is_instance_valid(_network_win):
 		return false
 	_set_network_mode(NetworkMode.FULL)
 	var need := stack_holder.get_combined_minimum_size().y
-	var placed := _if_placed_term
-	if placed != null and is_instance_valid(placed) and placed.visible:
-		need -= placed.get_combined_minimum_size().y + float((placed.get_parent() as VBoxContainer).get_theme_constant("separation"))
 	var mode := NetworkMode.FULL
 	if need > room + 0.5:
 		var small := _network_smallest()
@@ -5529,7 +5548,11 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 	# step that lists fewer routes (and leaves the strip) when even a page at the 1.0 size is too tall.
 	var page := FitBuildBox.page_of(detail)
 	var step := FitBuildBox.step_of(detail)
-	var rows_max := maxi(INTEL_ROWS_MAX - step, 1)
+	# RAID-FIX D6: a step is a chunked fold (`intel_levels`): page p lists routes (p-1) * rows .. p * rows - 1, whole
+	# (threats, stats, route), so every threat's HP and DMG is on some page. Step 0 pages by content instead.
+	var chunked := step >= 1
+	var rows_max := INTEL_ROWS_MAX + 1 - step if chunked else INTEL_ROWS_MAX
+	var first_row := (page - 1) * rows_max if chunked else 0
 	var c := RunManager.campaign
 	var holo := RaidHolo.new(c.corporation_id, tr("THREAT INTEL // SCAN"), RaidHolo.key_of(StringName(String(pending.get("raid_id", raid.id)))))
 	holo.name = "ThreatIntel"
@@ -5553,7 +5576,7 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 			if not seen.has(cid):
 				seen[cid] = true
 				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
-		if gi >= rows_max:
+		if gi < first_row or gi >= first_row + rows_max:
 			continue
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -5591,11 +5614,11 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 			stat_l.name = "ThreatStats_%s" % g["letter"]
 			stat_l.reparent(words)
 			words.move_child(stat_l, 1)
-			stat_l.visible = page != 2
-		head.visible = page != 2
-		sub.visible = page != 1
-	if groups.size() > rows_max:
-		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - rows_max))
+			stat_l.visible = chunked or page != 2
+		head.visible = chunked or page != 2
+		sub.visible = chunked or page != 1
+	if not chunked and groups.size() > rows_max:
+		holo.add_line(tr("+%d more routes (lettered on the map)") % (groups.size() - rows_max))
 
 	if groups.is_empty():
 		holo.add_line(tr("No threats can reach your network."))
@@ -5622,8 +5645,26 @@ static func threat_stats_words(st: Dictionary) -> String:
 
 ## THREAT INTEL shows its scanned threats strip up to this text scale.
 const INTEL_STRIP_SCALE_MAX := 1.0
-## THREAT INTEL lists at most this many entry routes (A, B, C); the rest are a count.
+## THREAT INTEL lists at most this many entry routes (A, B, C) on a page.
 const INTEL_ROWS_MAX := 3
+
+
+## RAID-FIX D6: THREAT INTEL's fit levels for `groups` entry routes, most complete first. Up to INTEL_ROWS_MAX routes
+## the panel is whole, then paged by content (threats / routes), then chunked; more routes than that are always chunked
+## (step s lists INTEL_ROWS_MAX + 1 - s routes a page, MORE / BACK turning them): no route is ever only "+N more".
+static func intel_levels(groups: int) -> Array[int]:
+	var out: Array[int] = []
+	if groups <= INTEL_ROWS_MAX:
+		out.append(0)
+		out.append(FitBuildBox.fold(2))
+	for step in range(1, INTEL_ROWS_MAX + 1):
+		var per_page := INTEL_ROWS_MAX + 1 - step
+		var pages := ceili(float(groups) / float(per_page))
+		if pages >= 2 and pages <= FitBuildBox.FOLD_PAGES - 1:
+			out.append(FitBuildBox.fold(pages, step))
+	if out.is_empty():
+		out.append(0)
+	return out
 
 
 ## ART-6 3A: the projection's threats grouped by their entry Site, in entry order (A first):

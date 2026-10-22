@@ -27,7 +27,7 @@ extends Node2D
 signal written
 signal wiped
 
-enum Ink { PLAN, THREAT, THREAT_ROUTE, THREAT_CORE }
+enum Ink { PLAN, THREAT, THREAT_ROUTE, THREAT_CORE, THREAT_EDGE }
 
 const SHADER := preload("res://shaders/kit/marker_stroke.gdshader")
 ## Every mark on screen (PencilLint).
@@ -277,6 +277,8 @@ static func set_dropouts(mat: ShaderMaterial, gap: Vector2) -> void:
 
 ## The colour of `ink`.
 static func ink_color(i: Ink) -> Color:
+	if i == Ink.THREAT_EDGE:
+		return Palette.INK
 	if i == Ink.THREAT_CORE:
 		return Palette.WHITE_HOT
 	if i == Ink.THREAT_ROUTE:

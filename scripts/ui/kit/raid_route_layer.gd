@@ -17,9 +17,12 @@ const ENTRY_R := Vector2(30, 20)
 const ARROW_STOP := 1.9
 const LETTER_STEP := UiTheme.TITLE
 const LETTER_OFF := Vector2(34, -22)
+## RAID-FIX D1: the white-hot core is a thin 0.18 of the width (the cobalt stays saturated either side of it), and a dark
+## ink edge 1.3 x the width sits under the route so it reads as a drawn threat path, not a network link.
 ## RAID-FIX C2: the white-hot core's share of the stroke width; the count tick ("x2") on a segment several threats
 ## share, and where it sits off the segment's middle (px).
-const CORE_SHARE := 0.34
+const CORE_SHARE := 0.18
+const EDGE_SHARE := 1.3
 const COUNT_FORMAT := "x%d"
 const COUNT_OFF := Vector2(0, -18)
 
@@ -238,8 +241,10 @@ func _lay() -> void:
 		var strokes: Array[PackedVector2Array] = [hand]
 		if arrow:
 			strokes = PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
+		var edge := _pool.stroke("edge_%d" % i, strokes, GreasePencilMark.Ink.THREAT_EDGE, write_u, wipe_u, false, 31 + i)
+		edge.width_share = EDGE_SHARE
 		_pool.stroke("route_%d" % i, strokes, threat, write_u, wipe_u, false, 31 + i)
-		# C2: the white-hot core, a third of the width, centred on the cobalt stroke.
+		# C2: the white-hot core, a thin sliver of the width, centred on the cobalt stroke.
 		var core := _pool.stroke("core_%d" % i, strokes, GreasePencilMark.Ink.THREAT_CORE, write_u, wipe_u, false, 31 + i)
 		core.width_share = CORE_SHARE
 		if cues:
