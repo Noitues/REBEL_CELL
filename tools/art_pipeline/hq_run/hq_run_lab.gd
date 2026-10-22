@@ -229,6 +229,9 @@ func _process(delta: float) -> void:
 	var out :=String(_args.get("out", "user://hq_run_lab"))
 	DirAccess.make_dir_recursive_absolute(out)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, state])
+	if _args.has("dump-materials"):
+		# LOOK-TOOLBOX: every set shader parameter vs its text default (true-defaults passes).
+		RcLookMaterialAudit.dump(get_tree().root, String(_args["dump-materials"]))
 	if _args.has("raw") and _backdrop != null and _backdrop.on_city():
 		# S-ARENA: the close-up's own render before the backdrop's grade (test fixtures).
 		var raw := _backdrop.city.get_texture().get_image()
