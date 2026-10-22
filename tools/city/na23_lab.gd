@@ -129,6 +129,13 @@ func _apply_bloom() -> void:
 	if _args.has("bloom-u"):
 		look = BloomLook.with_uniforms(look, String(_args["bloom-u"]))
 	view.rig.view.set_bloom(look)
+	var lay := BloomLook.street_layout(_data.derive)
+	var po := view.rig.pose
+	var fp := Vector2(float(po.F[0]), float(po.F[1]))
+	var lp := po.loc()
+	var f_fr := Vector2(float(lay["x0"]) - (fp - (lay["origin"] as Vector2)).dot(lay["dir"]), float(lay["y0"]) + (fp - (lay["origin"] as Vector2)).dot(lay["perp"]))
+	var c_fr := Vector2(float(lay["x0"]) - (Vector2(float(lp[0]), float(lp[1])) - (lay["origin"] as Vector2)).dot(lay["dir"]), float(lay["y0"]) + (Vector2(float(lp[0]), float(lp[1])) - (lay["origin"] as Vector2)).dot(lay["perp"]))
+	print("NA23 bloom frame: pose focus x,y=%s camera x,y=%s layer_x=%s facade_y=%.2f" % [f_fr, c_fr, lay["layer_x"], float(lay["facade_y"])])
 	print("NA23 bloom front=%.3f band=%s frame x=%.2f boxes=%d" % [front, BloomLook.BAND_NAMES[band], float(look["front"]), int(look["uniforms"].get(&"bl_box_n", 0))])
 
 
