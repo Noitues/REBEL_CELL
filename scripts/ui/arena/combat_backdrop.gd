@@ -597,7 +597,10 @@ static func render_px(sz: Vector2) -> Vector2i:
 func _light_city() -> void:
 	var cfg := CityView3D.CONFIG
 	city.set_night_share(0.0, BackdropCatalog.city_look(cfg, String(shot.get("focus", "hq"))))
+	apply_post(city.post_material(), cfg)
+	aim_key(city, cfg.backdrop_key_cam)
 	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure)
+	_mat.set_shader_parameter(&"city_white", cfg.backdrop_white)
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
 	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
 	_mat.set_shader_parameter(&"city_grade", _city_ready)
@@ -613,14 +616,43 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
 
 
-## The shader's city grade (`graded`) on `c`, the value the shader samples, for the tests and the contrast
-## checks: value V -> 1 - (1 - V)^exposure, hue kept, times the tint (`corp`'s from
-## backdrop_tint_by_corp), then the saturation.
+## LOOK-TOOLBOX: the close-up's key light from `key_cam` (camera frame: x right, y up, z toward the viewer) on every
+## directional light of `view` (its sun). No-op before the view has a camera.
+static func aim_key(view: CityView3D, key_cam: Vector3) -> void:
+	if view.camera == null or key_cam.is_zero_approx():
+		return
+	var to_light := (view.camera.global_transform.basis * key_cam).normalized()
+	for n in view.find_children("*", "DirectionalLight3D", true, false):
+		var l := n as DirectionalLight3D
+		var up := Vector3.UP if absf(to_light.dot(Vector3.UP)) < 0.99 else Vector3.FORWARD
+		l.global_transform = Transform3D(Basis.looking_at(-to_light, up), l.global_position)
+
+
+## LOOK-TOOLBOX: the close-up's own post preset (CityConfig.backdrop_post) on its view's post material `m` (no-op
+## when null: the scene is not built yet).
+static func apply_post(m: ShaderMaterial, cfg: CityConfig) -> void:
+	if m == null:
+		return
+	for k: String in cfg.backdrop_post:
+		m.set_shader_parameter(StringName(k), cfg.backdrop_post[k])
+
+
+## The grade's highlight shoulder on exposed linear light `l` (extended Reinhard): `white` lands on 1, mid-tones
+## stay close to `l`; `white` 0 is no shoulder.
+static func _shoulder(l: float, white: float) -> float:
+	return l * (1.0 + l / (white * white)) / (1.0 + l) if white > 0.0 else l
+
+
+## The shader's city grade (`graded`) on `c`, the sRGB value the shader samples, for the tests and the contrast
+## checks: decoded to linear, times backdrop_exposure, encoded back to sRGB, times the tint (`corp`'s from backdrop_tint_by_corp),
+## then the saturation.
 static func graded(cfg: CityConfig, c: Color, corp: StringName = &"") -> Color:
-	var v := maxf(c.r, maxf(c.g, c.b))
-	var k := (1.0 - pow(1.0 - clampf(v, 0.0, 1.0), cfg.backdrop_exposure)) / maxf(v, 0.0001)
+	var lc := c.srgb_to_linear()
+	var e := Color(_shoulder(maxf(lc.r * cfg.backdrop_exposure, 0.0), cfg.backdrop_white),
+			_shoulder(maxf(lc.g * cfg.backdrop_exposure, 0.0), cfg.backdrop_white),
+			_shoulder(maxf(lc.b * cfg.backdrop_exposure, 0.0), cfg.backdrop_white)).linear_to_srgb()
 	var t: Color = cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint)
-	var g := Vector3(clampf(c.r * k * t.r, 0.0, 1.0), clampf(c.g * k * t.g, 0.0, 1.0), clampf(c.b * k * t.b, 0.0, 1.0))
+	var g := Vector3(clampf(e.r * t.r, 0.0, 1.0), clampf(e.g * t.g, 0.0, 1.0), clampf(e.b * t.b, 0.0, 1.0))
 	var grey := g.dot(Vector3(0.2126, 0.7152, 0.0722))
 	var o := Vector3(grey, grey, grey).lerp(g, cfg.backdrop_saturation)
 	return Color(o.x, o.y, o.z, c.a)

@@ -77,9 +77,9 @@ func _several_target_card(scene: Control) -> int:
 
 # --- D1: the perspective close-up ------------------------------------------------------------------
 
-func test_every_close_up_is_a_low_perspective_view_with_an_open_street() -> void:
+func test_every_close_up_is_an_elevated_perspective_view_with_an_open_street() -> void:
 	var cfg := CityView3D.CONFIG
-	assert_between(cfg.backdrop_close_pitch_deg, 6.0, 10.0, "D1: 6 to 10 degrees above the street")
+	assert_between(cfg.backdrop_close_pitch_deg, 30.0, 40.0, "designer 2026-10-21 (supersedes D1 for backdrops): 30 to 40 degrees, down into the canyon")
 	assert_between(cfg.backdrop_close_fov_deg, 39.6, 54.4, "D1: a 35 to 50 mm lens (horizontal field on a 36 mm frame)")
 	assert_between(cfg.backdrop_haze_k, 0.15, 0.2, "D1: depth haze 15 to 20 %")
 	var size := Vector2(1280, 720)
@@ -88,7 +88,7 @@ func test_every_close_up_is_a_low_perspective_view_with_an_open_street() -> void
 		var cam: CityIsoCamera = shot["camera"]
 		assert_true(cam.perspective(), "%s boss: a perspective close-up (designer 2026-10-06)" % corp)
 		if String(shot["focus"]) == "hq":
-			assert_almost_eq(cam.pitch_deg, cfg.backdrop_close_pitch_deg, 0.001, "%s: the street-level pitch" % corp)
+			assert_almost_eq(cam.pitch_deg, cfg.backdrop_close_pitch_deg, 0.001, "%s: the close-up pitch" % corp)
 			assert_true(shot.has("subject"), "%s: the subject's box (for the open street)" % corp)
 			var box: AABB = shot["subject"]
 			var px := BackdropCatalog.projected_box(cam, box)

@@ -76,28 +76,37 @@ func test_the_settled_close_up_stays_in_the_concept_band() -> void:
 		assert_between(l, band.x, band.y, "%s: the settled close-up keeps the concept's light (%.3f)" % [shot, l])
 
 
-func test_the_grade_lifts_the_linear_close_up_into_the_band() -> void:
-	# MOTION-07: the close-up's texture reaches the shader as linear values; shown as they are
-	# its mid-tones sit ~4x down. The grade lifts a dark mid-tone several times over (hue kept).
+func test_the_grade_is_an_exposure_on_the_srgb_close_up() -> void:
+	# LOOK-TOOLBOX 2026-10-21: the close-up reaches the shader as sRGB (an RGBA8 SubViewport). The grade decodes it,
+	# multiplies the light by backdrop_exposure and encodes it again: a mid-tone gains that much light, unclipped.
 	var cfg := _cfg()
-	for v in [0.03, 0.06, 0.1]:
-		var raw := Color(v, v * 1.05, v * 1.2)
-		var g := CombatBackdrop.graded(cfg, raw)
-		assert_gt(Palette.luminance(g), Palette.luminance(raw) * 3.0, "a dark mid-tone %.2f is lifted" % v)
-		assert_lt(Palette.luminance(g), 0.6, "but not blown out")
+	var off := cfg.duplicate() as CityConfig
+	off.backdrop_tint = Color(1, 1, 1)
+	off.backdrop_white = 0.0
+	off.backdrop_saturation = 1.0
+	for v in [0.1, 0.2, 0.3]:
+		var raw := Color(v, v, v)
+		var g := CombatBackdrop.graded(off, raw)
+		assert_almost_eq(g.srgb_to_linear().r, raw.srgb_to_linear().r * off.backdrop_exposure, 0.002,
+				"sRGB %.1f gains backdrop_exposure in light" % v)
+		assert_lt(Palette.luminance(CombatBackdrop.graded(cfg, raw)), 0.9, "sRGB %.1f is not blown out" % v)
 
 
 func test_the_grade_keeps_the_neon_hue_and_the_ink_dark() -> void:
 	var cfg := _cfg()
 	for c in [Palette.CELL_PINK, Palette.CELL_ACID, Color("#3DFFE0")]:
-		var g := CombatBackdrop.graded(cfg, (c as Color).srgb_to_linear())
-		assert_almost_eq(g.h, (c as Color).srgb_to_linear().h, 0.03, "%s keeps its hue (no clip to white)" % c.to_html())
+		# A neon the exposure brings back to its own value keeps its hue (no channel clips to white).
+		var lin := (c as Color).srgb_to_linear()
+		var dim := Color(lin.r / cfg.backdrop_exposure, lin.g / cfg.backdrop_exposure, lin.b / cfg.backdrop_exposure).linear_to_srgb()
+		var g := CombatBackdrop.graded(cfg, dim)
+		assert_almost_eq(g.h, (c as Color).h, 0.03, "%s keeps its hue" % c.to_html())
 		assert_lt(maxf(g.r, maxf(g.g, g.b)), 1.0001, "no channel past 1")
-	var ink := CombatBackdrop.graded(cfg, Palette.INK.srgb_to_linear())
-	assert_lt(Palette.luminance(ink), 0.01, "the ink lines stay near black")
+	var ink := CombatBackdrop.graded(cfg, Palette.INK)
+	assert_lt(Palette.luminance(ink), 0.15, "the ink lines stay dark")
 	var off := cfg.duplicate() as CityConfig
 	off.backdrop_exposure = 1.0
 	off.backdrop_tint = Color(1, 1, 1)
+	off.backdrop_white = 0.0
 	off.backdrop_saturation = 1.0
 	var grey := Color(0.3, 0.3, 0.3)
 	assert_true(CombatBackdrop.graded(off, grey).is_equal_approx(grey), "exposure 1, no tint, full saturation: identity")

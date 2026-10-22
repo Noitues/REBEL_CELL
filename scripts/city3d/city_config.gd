@@ -250,7 +250,7 @@ extends Resource
 ## (the concept stills' blue-grey rainy city, not the Grid's dark night grade), applied once
 ## through CityView3D.set_night_share (night share 0 = this look in full; rain and fog kept,
 ## the landmarks' look per focus below). Keys as CityViewMotion.day_look.
-@export var backdrop_ramp: Array[Color] = [Color(0.30, 0.33, 0.46), Color(0.50, 0.54, 0.66), Color(0.72, 0.75, 0.84)]
+@export var backdrop_ramp: Array[Color] = [Color(0.34, 0.25, 0.38), Color(0.56, 0.43, 0.58), Color(0.92, 0.80, 0.88)]
 @export var backdrop_sky: Color = Color(0.17, 0.16, 0.27)
 @export var backdrop_window_gain: float = 1.4
 @export var backdrop_neon_gain: float = 1.2
@@ -263,14 +263,16 @@ extends Resource
 @export var backdrop_hq_landmarks_night: bool = false
 @export var backdrop_site_landmarks_night: bool = true
 ## The canvas grade over the close-up (combat_backdrop.gdshader `city_exposure` / `city_tint`,
-## city only; the stills are the concept already): each pixel's value V (its brightest
-## channel) goes to 1 - (1 - V) ^ exposure, hue kept (no neon clips to white),
-## then times the tint (the concept's cool blue-grey).
-@export var backdrop_exposure: float = 5.0
+## city only; the stills are the concept already): the sRGB close-up decoded to linear, times this exposure,
+## encoded back to sRGB (1 = identity), then times the tint (LOOK-TOOLBOX 2026-10-21; was 1 - (1 - V)^5).
+@export var backdrop_exposure: float = 8.0
+## The grade's highlight shoulder: the exposed linear light that lands on white (extended Reinhard; 0: a plain
+## clip). Keeps snow, cloud and lit roofs from blowing out at the close-up's exposure (LOOK-TOOLBOX 2026-10-21).
+@export var backdrop_white: float = 3.0
 @export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
 ## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
 ## concept band without a little more light).
-@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14)}
+@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14), &"meridian": Color(1.08, 1.08, 1.1), &"orbital": Color(1.08, 1.08, 1.1)}
 ## ... and its saturation toward the grey (1 = kept). B2 (art director): 1: the 0.6 cap is the wheel
 ## pools' only (UiScrimPools); between the wheels the subject and its neon keep full saturation.
 @export var backdrop_saturation: float = 1.0
@@ -303,13 +305,13 @@ extends Resource
 @export var backdrop_site_frame: Rect2 = Rect2(0.33, 0.24, 0.34, 0.56)
 @export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
 ## B2 (integration review D1, designer 2026-10-06: "a perspective close-up for every fight"): the
-## close-ups' camera is a perspective view backdrop_close_pitch_deg above the street (D1: 6 to 10),
+## close-ups' camera is a perspective view backdrop_close_pitch_deg down (designer 2026-10-21: 30 to 40, into the lit canyon of r11 / r26; supersedes D1's 6 to 10 for backdrops),
 ## looking at the facade, its horizontal field of view backdrop_close_fov_deg (D1: a 35 to 50 mm
 ## lens on a 36 mm frame = 54 to 40 degrees; 44 is a 44 mm lens), the canyon's `fov_deg` path
 ## (HQRUN-08). It replaces backdrop_hq_pitch_deg 24 / backdrop_site_pitch_deg 22 (the iso
 ## look). Depth haze past the subject toward the night sky (backdrop_sky) at backdrop_haze_k
 ## (D1: 15 to 20 %).
-@export var backdrop_close_pitch_deg: float = 8.0
+@export var backdrop_close_pitch_deg: float = 30.0
 @export var backdrop_close_fov_deg: float = 44.0
 @export var backdrop_haze_k: float = 0.18
 ## B2 (art director): the close-up's rain: thin streaks at this strength that never lift the blacks.
@@ -325,22 +327,22 @@ extends Resource
 ## B2 (art director): a Site fight's subject building between the wheels: its middle at this
 ## share of the view, its height this share of the view's (35-45 %), its width at most this share.
 @export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
-@export var backdrop_site_close_height: float = 0.4
+@export var backdrop_site_close_height: float = 0.9
 @export var backdrop_site_close_max_width: float = 0.6
 ## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
-@export var backdrop_site_close_min_eye_bu: float = 180.0
+@export var backdrop_site_close_min_eye_bu: float = 60.0
 @export var backdrop_site_close_min_fov_deg: float = 10.0
 ## ... and its focus: the city outside the block dims by this share, the ellipse (the block's
 ## shape) reaching this times its half width, the block lit by this factor.
-@export var backdrop_site_focus_dim: float = 0.45
+@export var backdrop_site_focus_dim: float = 0.05
 @export var backdrop_site_focus_reach: float = 1.2
-@export var backdrop_site_focus_lift: float = 1.5
+@export var backdrop_site_focus_lift: float = 1.8
 ## B2 b (art director): the Site block lit by its own neon instead of backdrop_site_focus_lift (kept
 ## for the stills): its windows x this, a rim of the corp colour at this strength on its edges, the
 ## street in front catching it at this strength.
-@export var backdrop_site_window_gain: float = 2.0
-@export var backdrop_site_rim_gain: float = 0.9
-@export var backdrop_site_street_gain: float = 0.5
+@export var backdrop_site_window_gain: float = 2.6
+@export var backdrop_site_rim_gain: float = 0.0
+@export var backdrop_site_street_gain: float = 1.2
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
 ## landmark is a block of backdrop_site_hq_height over its HQ lots.
@@ -373,7 +375,16 @@ extends Resource
 ## The close-up renders at most this many px tall (0: the view's own size) and is drawn scaled
 ## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
 ## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
-@export var backdrop_render_height: int = 640
+@export var backdrop_render_height: int = 0
+## LOOK-TOOLBOX (2026-10-21): the close-up's own city_post uniforms (uniform -> value), set on the backdrop's view
+## only (CityView3D.post_material) after its look, so the whole-city and map looks never move. The concept's
+## (r11 / r26 combat) ink: one clean line on silhouettes and strong creases, no wobble doubling, no grime blots.
+## LOOK-TOOLBOX (2026-10-21): the close-up's key light comes from this direction in the camera's own frame (x right,
+## y up, z toward the viewer): from the upper left, a little in front, as the concepts light their facades (r11 / r26
+## combat). The city's world sun (to_light) lit whatever faces it met at each close-up's yaw, often only the backs.
+@export var backdrop_key_cam: Vector3 = Vector3(-0.55, 0.6, 0.55)
+@export var backdrop_post: Dictionary = {"ink_wobble_px": 0.0, "ink_normal_edge": 0.8, "ink_depth_edge": 3.0,
+	"ink_alpha": 0.9, "ink_width": 1.0, "grime": 0.0}
 ## plan1 1B-COMBAT F10 (one backdrop per fight): how long (s) a fight's backdrop waits on its
 ## night sky for the close-up; a close-up not ready by then is dropped and the still shows for
 ## the rest of the fight (the still is never swapped for the close-up mid-fight).

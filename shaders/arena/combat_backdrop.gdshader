@@ -38,13 +38,14 @@ uniform float pool_falloff = 4.0;
 // The still's aspect (width / height), to keep pools round.
 uniform float aspect = 1.7777778;
 
-// Parity fix S-ARENA: the city close-up's canvas grade (CityConfig backdrop_exposure /
-// backdrop_tint), city only (the stills are the concept already), before the pools: the
-// value V (brightest channel) goes to 1 - (1 - V)^exposure, hue kept (no neon clips), then the
-// tint and the saturation (toward its grey; the concept's calmer rainy city). CombatBackdrop.graded
-// mirrors it for the tests.
+// The city close-up's canvas grade (CityConfig backdrop_exposure / backdrop_tint), city only (the stills are the
+// concept already), before the pools. The close-up's texture holds linear light: LOOK-TOOLBOX (2026-10-21) shows it
+// with the exact sRGB transfer after a linear exposure (it was 1 - (1 - V)^5, which lifted the night sky to a
+// day-bright band and flattened the facets' tones), then the tint and the saturation. CombatBackdrop.graded mirrors it.
 uniform bool city_grade = false;
 uniform float city_exposure = 1.0;
+// The highlight shoulder's white point (exposed linear light that lands on 1; 0: no shoulder, a plain clip).
+uniform float city_white = 0.0;
 uniform vec3 city_tint = vec3(1.0);
 uniform float city_saturation = 1.0;
 // S-ARENA round 2: the subject's focus (UV), its ellipse radius (share of the width), the blur
@@ -77,9 +78,13 @@ vec3 graded(vec3 c) {
 	if (!city_grade) {
 		return c;
 	}
-	float v = max(max(c.r, c.g), c.b);
-	float k = (1.0 - pow(1.0 - clamp(v, 0.0, 1.0), city_exposure)) / max(v, 0.0001);
-	vec3 g = clamp(c * k * city_tint, 0.0, 1.0);
+	vec3 lin = mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c));
+	vec3 l = max(lin * city_exposure, vec3(0.0));
+	if (city_white > 0.0) {
+		l = l * (1.0 + l / (city_white * city_white)) / (1.0 + l);
+	}
+	vec3 s = mix(l * 12.92, 1.055 * pow(l, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), l));
+	vec3 g = clamp(s * city_tint, 0.0, 1.0);
 	return mix(vec3(dot(g, vec3(0.2126, 0.7152, 0.0722))), g, city_saturation);
 }
 

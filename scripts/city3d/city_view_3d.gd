@@ -1778,6 +1778,12 @@ func set_ink_keep(px_rect: Rect2) -> void:
 		_post.set_shader_parameter(&"ink_keep_feather", cfg.far_ink_feather_share * float(size.y))
 
 
+## LOOK-TOOLBOX: this view's post material (city_post), for a caller that owns a preset of its own (the combat
+## backdrop's ink and grime: CityConfig.backdrop_post); null before the scene is built.
+func post_material() -> ShaderMaterial:
+	return _post
+
+
 ## The ink weight (0..1) the post pass gives view pixel `p` (CPU mirror of city_post's ink box).
 func ink_weight(p: Vector2) -> float:
 	if not ink_keep.has_area():
