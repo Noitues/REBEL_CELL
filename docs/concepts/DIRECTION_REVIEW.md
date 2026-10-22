@@ -1644,3 +1644,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     0.12 by deleting the no-op lerp.
 - **Bloom reach in Godot (designer, 2026-10-22):** the tendril reach scales with the street's layer spacing, not a fixed 24 BU, so
   CREEPING sits about one layer ahead of the front on any street, and each TIDE band reads the same everywhere.
+- **Street slab (designer, 2026-10-22):** the black slab in the street view is the A2 elevated deck and its pillars
+  (Ground/A2Features), drawn with the wet_street ground material. Two fixes:
+  - The deck's non-flat faces get a concrete lift by world normal (option A: albedo lift, matte roughness, spill on their own
+    normal, violet rim).
+  - The deck is hidden from the street camera only. It stays on the city map and the HQ, and no layout rule changes.
+  - Goal: an open skyline like the plate. The remaining gap in overall brightness to the plate (L ~30 vs 53) is a separate item.
+  - Sheet: `docs/concepts/look_parity/slab/slab_sheet.png`.
