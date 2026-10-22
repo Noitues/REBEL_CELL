@@ -118,10 +118,11 @@ func test_the_verdict_is_cell_holds_only_when_nothing_is_lost_for_every_corporat
 					assert_false(verdict.contains("HOME HIT"), "%s: no HOME HIT" % tag)
 					var any_lost := bool(r["campaign_lost"]) or int(r["home_after"]) < int(r["home_before"]) \
 						or not (r.get("down", []) as Array).is_empty() or not (r.get("taken", []) as Array).is_empty()
-					# RAID-FIX A1: the verdict is the rules' won / lost / breach, whatever the losses.
-					var want := RaidOutcome.Verdict.BREACHED if bool(r["campaign_lost"]) else (RaidOutcome.Verdict.REPELLED if bool(r["won"]) else RaidOutcome.Verdict.OVERRUN)
-					assert_eq(verdict, RaidVerdict.words(want, int(r["heat_delta"]), int(r["schematics_delta"])), "%s: the verdict follows the result (%s)" % [tag, verdict.replace("\n", " / ")])
-					assert_eq(verdict.begins_with(CityMapOverlay.tr_word(RaidVerdict.REPELLED)), bool(r["won"]), "%s: REPELLED only when the raid is won" % tag)
+					# D28: the verdict is CELL HOLDS or BREACHED; the second line is the consequence.
+					var want := RaidOutcome.Verdict.BREACHED if bool(r["campaign_lost"]) else RaidOutcome.Verdict.CELL_HOLDS
+					assert_eq(verdict, RaidVerdict.words(want, int(r["heat_delta"]), int(r["schematics_delta"]), RaidVerdict.losses(r)), "%s: the verdict follows the result (%s)" % [tag, verdict.replace("\n", " / ")])
+					assert_eq(verdict.begins_with(CityMapOverlay.tr_word(RaidVerdict.CELL_HOLDS)), not bool(r["campaign_lost"]), "%s: CELL HOLDS unless breached" % tag)
+					assert_false(any_lost and not bool(r["campaign_lost"]) and verdict.contains("+"), "%s: damage gains nothing" % tag)
 					if bool(r["won"]) and any_lost:
 						lossy_but_won += 1
 					if bool(r["campaign_lost"]):
@@ -158,11 +159,11 @@ func _play(c: CampaignState, r: Dictionary) -> RaidFxLayer:
 
 
 func test_the_verdict_words_follow_the_rules() -> void:
-	var rep := RaidOutcome.Verdict.REPELLED
-	assert_eq(RaidVerdict.words(rep, 0, 8), "%s\n%s" % [CityMapOverlay.tr_word("REPELLED"), CityMapOverlay.tr_word("%s SCHEMATICS") % "+8"])
-	assert_eq(RaidVerdict.words(RaidOutcome.Verdict.OVERRUN, 5, 0), "%s\n%s" % [CityMapOverlay.tr_word("OVERRUN"), CityMapOverlay.tr_word("%s HEAT") % "+5"])
+	var holds := RaidOutcome.Verdict.CELL_HOLDS
+	assert_eq(RaidVerdict.words(holds, 5, 12), "CELL HOLDS\n+5 HEAT · +12 SCHEMATICS", "a clean defense")
+	assert_eq(RaidVerdict.words(holds, 0, 0, {"home": 10, "down": 0, "taken": 1}), "CELL HOLDS\nNO HEAT · HOME -10 · 1 TAKEN", "a damaged hold")
 	assert_eq(RaidVerdict.words(RaidOutcome.Verdict.BREACHED, 0, 0), CityMapOverlay.tr_word("BREACHED"))
-	var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF", RaidVerdict.words(RaidOutcome.Verdict.OVERRUN, 5, 0)))
+	var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF", RaidVerdict.words(RaidOutcome.Verdict.CELL_HOLDS, 5, 12)))
 	stamp.size = Vector2(124, 124)
 	assert_eq(stamp.verdict_lines().size(), 2, "the word and its cost")
 	var lay := stamp.layout()
@@ -386,11 +387,13 @@ func _hud_value(hq: Control, tag: String) -> String:
 
 
 func test_the_raids_top_bar_changes_with_the_line_that_changes_it() -> void:
-	# A lost raid from Heat 1: the feed says where Heat went from and to, and the top bar
+	# A clean defense from Heat 1 (D27): the feed says where Heat went from and to, and the top bar
 	# shows the old Heat and RAIDS until the lines that change them are told.
-	_raid_campaign(&"solace", false)
+	_raid_campaign(&"solace", true)
 	var c := RunManager.campaign
 	c.heat = 1
+	var node: StringName = c.grid.claimed_ids()[0] if c.grid.claimed_ids()[0] != c.grid.home_site_id else c.grid.claimed_ids()[1]
+	CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, node)  # the second turret: a clean defense (D27: only a clean defense gains Heat)
 	var hq := _scene(HQ)
 	await _frames(1)
 	hq.show_raid()
@@ -423,7 +426,7 @@ func test_the_raids_top_bar_changes_with_the_line_that_changes_it() -> void:
 		if t == "raid_end":
 			# ANIM-R6 C11: it drops with the verdict (the playout's end), not the "Raid over" line.
 			assert_eq(_hud_value(hq, "RAIDS"), str(raids_before), "RAIDS holds through the raid's end line")
-	assert_ne(heat_line, "", "a lost raid tells its Heat")
+	assert_ne(heat_line, "", "a clean defense tells its Heat")
 	assert_string_contains(heat_line, "1 → ", "from Heat 1")
 
 

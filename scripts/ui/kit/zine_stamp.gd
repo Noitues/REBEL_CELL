@@ -1,6 +1,6 @@
 class_name ZineStamp
 extends Button
-## Circular rubber stamp (STYLE_GUIDE 4): JACK IN at HQ, the result stamps (REPELLED,
+## Circular rubber stamp (STYLE_GUIDE 4): JACK IN at HQ, the result stamps (CELL HOLDS,
 ## CLEAN EXIT...). `hint` is an optional key hint under the word (empty by default: H20,
 ## a stamp only names a key that really presses it). A result stamp is `display_only()`:
 ## no focus, no clicks.

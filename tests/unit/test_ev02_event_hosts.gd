@@ -385,7 +385,7 @@ func test_a_lost_raid_offers_nothing() -> void:
 	c.pending_raids.append({"raid_id": "ev02_lost_raid", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25})
 	s._maybe_raid_interlude()
 	s.raid_fight()
-	assert_eq(c.raids_won, 0, "the raid was not repelled")
+	assert_eq(c.raids_won, 0, "the raid was not a clean defense")
 	assert_ne(s.run.phase, RunState.Phase.EVENT, "only a win offers the event")
 	assert_eq(c.venue_event_due, -1)
 

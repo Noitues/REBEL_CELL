@@ -1285,8 +1285,9 @@ func _ev01_event_schema() -> int:
 	return fails
 
 
-## RAID-FIX A: the amber severity line is config (default 25, shipped 25).
+## RAID-RULES E (D27): a clean defense gains `clean_defense_heat` (default 5, shipped 5); the old lost-raid Heat and
+## `raid_amber_home_loss_pct` are retired (damage gains no Heat; any Home loss is amber).
 func _raid_fix_a_config() -> int:
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
-	print("RAID-FIX A amber line (expect 25): ", cfg.raid_amber_home_loss_pct)
-	return 0 if cfg.raid_amber_home_loss_pct == CampaignConfigData.new().raid_amber_home_loss_pct and cfg.raid_amber_home_loss_pct > 0 else 1
+	print("RAID-RULES E clean defense Heat (expect 5): ", cfg.clean_defense_heat)
+	return 0 if cfg.clean_defense_heat == CampaignConfigData.new().clean_defense_heat and cfg.clean_defense_heat > 0 else 1

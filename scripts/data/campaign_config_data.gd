@@ -9,9 +9,8 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var heat_max: int = 100
 @export var heat_thresholds: Array[HeatThresholdData] = []
 @export var death_heat_base: int = 10
-@export var lost_raid_heat: int = 5
+@export var clean_defense_heat: int = 5
 ## RAID-FIX A: a raid whose Home loses more than this percent of its integrity is AMBER (severity tier 1).
-@export var raid_amber_home_loss_pct: int = 25
 ## Heat per Exploit extracted (11.5).
 @export var exploit_heat: int = 10
 ## Heat per Server Rack capture, indexed by tier - 1.

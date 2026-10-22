@@ -75,19 +75,12 @@ const FEED_CUTS := "%s cuts a new route: %s - %s." # TR
 const FEED_NO_ROUTE := "%s finds no locked route to open near %s." # TR
 const FEED_FREEZES := "%s freezes the link %s - %s for this raid." # TR
 const FEED_RECALLED := "%s returns to the reserves." # TR
-const FEED_REPELLED := "Raid repelled after %d step(s)." # TR
+const FEED_CLEAN := "Clean defense after %d step(s)." # TR
 const FEED_ENDED := "Raid over after %d step(s)." # TR
 const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d." # TR
 const FEED_WON := "Reward: %s Schematics." # TR
 const FEED_CAMPAIGN_LOST := "The home server is BREACHED. Campaign lost." # TR
 const FEED_HEAT := "Heat %s: %d → %d." # TR
-## ANIM-R5 P3: the raid's Heat says why, in words that agree with its verdict (RaidVerdict):
-## the rules add it whenever a threat was not destroyed ("lost raid"), even when home holds,
-## so it never says the raid was lost. Threats that hit CORE are named first, else the
-## threats still standing; the last form when the feed has not seen the threats.
-const FEED_HEAT_REACHED := "Heat %s: %s reached %s: %d → %d." # TR
-const FEED_HEAT_STANDING := "Heat %s: %s not destroyed: %d → %d." # TR
-const FEED_HEAT_UNSTOPPED := "Heat %s: not every threat was destroyed: %d → %d." # TR
 ## ANIM-R4 H11a: a Heat threshold the raid's Heat crossed, and what it brings.
 const FEED_THRESHOLD := "Heat %d crossed: %s" # TR
 const FEED_STEP := "— STEP %d —" # TR
@@ -475,7 +468,7 @@ func feed_line(e: Dictionary) -> String:
 		"recalled":
 			text = tr(FEED_RECALLED) % operative_word(e.get("operative", ""))
 		"raid_end":
-			text = (tr(FEED_REPELLED) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
+			text = (tr(FEED_CLEAN) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
 			if not results.is_empty():
 				# ANIM-R5 P18: the nodes counted by their outcome, as the verdict counts them (a node
 				# DOWN then TAKEN is one TAKEN node).
@@ -494,7 +487,7 @@ func feed_line(e: Dictionary) -> String:
 			# final Heat: "+5 ... now 5" from 1).
 			var after := int(e.get("after", RunManager.campaign.heat if RunManager.campaign != null else 0))
 			var before := int(e.get("before", after - amount))
-			text = raid_heat_line(amount, before, after) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT) % [TextDb.signed(amount), before, after]
+			text = tr(FEED_HEAT) % [TextDb.signed(amount), before, after]
 		"heat_threshold":
 			var brings := _threshold_text(int(e.get("heat", 0)))
 			text = tr(FEED_THRESHOLD) % [int(e.get("heat", 0)), brings]
@@ -520,25 +513,6 @@ func _note_threat(t: String, e: Dictionary) -> void:
 				_told_reached[id] = true
 	if not _told_threats.has(id):
 		_told_threats[id] = threat_word(e)
-
-
-## ANIM-R5 P3: the raid's Heat line (the rules' "lost raid": not every threat was destroyed),
-## saying why in the verdict's terms: the threats that hit CORE ("Heat +5: Collector reached
-## CORE: 0 → 5."), else those still standing ("Heat +5: Collector not destroyed: 0 → 5."),
-## else, with no threats told, that not every threat was destroyed. Never "lost": home may
-## well hold (the verdict HOME -5 · HOLDS or CELL HOLDS).
-func raid_heat_line(amount: int, before: int, after: int) -> String:
-	var reached := _told_names(_told_reached.keys())
-	if not reached.is_empty():
-		return tr(FEED_HEAT_REACHED) % [TextDb.signed(amount), ", ".join(reached), site_word(_home()), before, after]
-	var standing: Array = []
-	for id in _told_threats:
-		if not _told_gone.has(id):
-			standing.append(id)
-	var names := _told_names(standing)
-	if not names.is_empty():
-		return tr(FEED_HEAT_STANDING) % [TextDb.signed(amount), ", ".join(names), before, after]
-	return tr(FEED_HEAT_UNSTOPPED) % [TextDb.signed(amount), before, after]
 
 
 ## The names of threats `ids`, each once, in id order (a wave of three Collectors reads

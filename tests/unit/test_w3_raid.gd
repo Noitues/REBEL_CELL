@@ -176,7 +176,7 @@ func test_the_report_outcome_is_the_stamps_word_for_seeded_raids() -> void:
 		if bool(r.get("campaign_lost", false)):
 			assert_string_contains(word, "BREACHED")
 		var holds: Node = hq._panel.find_child("CellHolds", true, false)
-		assert_eq(holds != null, bool(r.get("won", false)), "seed %d: CELL HOLDS only when the raid is REPELLED" % seed_value)
+		assert_eq(holds != null, not bool(r.get("campaign_lost", false)), "seed %d: CELL HOLDS whenever Home survives" % seed_value)
 		hq.get_parent().queue_free()
 		await _frames(1)
 
@@ -214,15 +214,11 @@ func test_the_report_verdict_is_a_sticker_and_no_pencil_layer() -> void:
 	hq.show_raid()
 	await _frames(2)
 	RunManager.fight_raid()
-	RunManager.campaign.last_raid["won"] = true  # RAID-FIX A1: the sticker belongs to a REPELLED report; this test is its layout
+	RunManager.campaign.last_raid["campaign_lost"] = false  # D28: the sticker belongs to a CELL HOLDS report; this test is its layout
 	hq.show_raid_summary()
 	await _frames(4)
-	var r: Dictionary = RunManager.campaign.last_raid
 	var holds: Node = hq._panel.find_child("CellHolds", true, false)
 	assert_null(hq._panel.find_child("ReportPencil", true, false), "ART-R1 3a: no pencil verdict layer")
-	if not bool(r.get("won", false)):
-		assert_null(holds)
-		return
 	assert_true(holds is RaidSticker, "ART-R1 3a: CELL HOLDS is a sticker on the paper (Q7)")
 	assert_eq((holds as RaidSticker).mouse_filter, Control.MOUSE_FILTER_IGNORE, "CELL HOLDS takes no input")
 	assert_eq((holds as RaidSticker).text, tr(RaidVerdict.CELL_HOLDS))
@@ -262,7 +258,7 @@ func test_cell_holds_sticker_clears_every_text_row() -> void:
 		hq.show_raid()
 		await _frames(2)
 		RunManager.fight_raid()
-		RunManager.campaign.last_raid["won"] = true  # RAID-FIX A1: the sticker belongs to a REPELLED report; this test is its layout
+		RunManager.campaign.last_raid["campaign_lost"] = false  # D28: the sticker belongs to a CELL HOLDS report; this test is its layout
 		hq.show_raid_summary()
 		await _frames(8)
 		var holds := hq._panel.find_child("CellHolds", true, false) as Control

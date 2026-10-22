@@ -388,7 +388,7 @@ func test_the_report_is_the_corps_paper_with_cell_holds_when_the_cell_survived()
 		var r: Dictionary = RunManager.campaign.last_raid
 		assert_true(hq._panel.find_child("RaidReport", true, false) is RaidPaper, "the after-action report is corp paper")
 		var holds: Node = hq._panel.find_child("CellHolds", true, false)
-		assert_eq(holds != null, bool(r["won"]), "CELL HOLDS only when the raid is REPELLED (lost %s)" % lost)
+		assert_eq(holds != null, not bool(r["campaign_lost"]), "CELL HOLDS whenever Home survives (lost %s)" % lost)
 		# Parity RAID-12 (round 40): no result disc; the paper carries the numbers.
 		assert_null(hq._panel.find_child("RaidVerdict", true, false), "no result disc on the report")
 		hq.get_parent().queue_free()

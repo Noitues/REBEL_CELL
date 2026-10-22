@@ -298,17 +298,12 @@ func test_the_raids_heat_line_agrees_with_its_verdict_across_the_sweep() -> void
 					var verdict := RaidVerdict.of_result(r)
 					for e in events:
 						var line := panel.feed_line(e)
-						if String(e.get("type", "")) != "heat" or String(e.get("reason", "")) != "lost raid":
+						if String(e.get("type", "")) != "heat" or String(e.get("reason", "")) != "clean defense":
 							continue
 						told += 1
-						assert_false(line.to_lower().contains("lost"), "%s: the Heat line never says the raid was lost (%s / %s)" % [tag, line, verdict.replace("\n", " ")])
-						var reached := int(r.get("home_after", 0)) < int(r.get("home_before", 0))
-						if reached:
-							assert_string_contains(line, tr("HOME SERVER"), "%s: home was hit: the line names what reached the HOME SERVER" % tag)
-						else:
-							assert_false(line.contains(tr("HOME SERVER")), "%s: nothing reached the HOME SERVER (%s)" % [tag, verdict.replace("\n", " ")])
+						assert_true(bool(r.get("won", false)), "%s: Heat only comes from a clean defense (%s)" % [tag, verdict.replace("\n", " ")])
 						assert_string_contains(line, "%d → %d" % [int(e["before"]), int(e["after"])], "%s: from and to" % tag)
-	assert_gt(told, 5, "raids that raised Heat were told")
+	assert_gt(told, 0, "clean defenses that raised Heat were told")
 	assert_false(FileAccess.get_file_as_string("res://assets/text/strings.csv").contains("for the lost raid"), "the old line is gone from the catalogue")
 
 
@@ -343,7 +338,7 @@ func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 		"threats_destroyed": 0, "threats_reached_home": 0, "nodes": {String(site): {"before": 30, "after": 0, "outcome": "taken"}},
 		"down": [String(site)], "taken": [String(site)]}
 	assert_eq(int(RaidVerdict.losses(r)["taken"]) + int(RaidVerdict.losses(r)["down"]), 1, "the loss counts the node once, as the stronger loss")
-	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.OVERRUN), "a lost raid is OVERRUN")
+	assert_eq(RaidVerdict.of_result(r), "CELL HOLDS\nNO HEAT · 1 TAKEN", "a damaged raid is CELL HOLDS with no Heat")
 	var panel := RaidPlayoutPanel.new(null)
 	add_child_autofree(panel)
 	panel.results = r

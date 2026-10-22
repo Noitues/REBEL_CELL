@@ -14,12 +14,14 @@ func before_all() -> void:
 	_lookup = GridFixture.lookup()
 
 
-func test_a_lost_raid_names_the_next_raid_for_the_corporation() -> void:
+func test_a_clean_defenses_heat_names_the_next_raid_for_the_corporation() -> void:
 	var corp := ContentRegistry.get_content(&"meridian") as CorporationData
 	var c := CampaignRules.new_campaign(corp, _cfg, _lookup, 3, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())
 	HeatRules.add_heat(c, 26, _cfg, "test")
-	c.heat = 50 - _cfg.lost_raid_heat
-	var events := CampaignRules.fight_raid(c, corp, _cfg, _lookup, c.pending_raids[0])
+	c.heat = 50 - _cfg.clean_defense_heat
+	# D27: only a clean defense gains Heat; the Heat it adds can queue the next raid, which is named.
+	var events := HeatRules.add_heat(c, _cfg.clean_defense_heat, _cfg, "clean defense")
+	CampaignRules.name_pending_raids(c, _lookup, events)
 	var names := []
 	for e in events:
 		if e.get("type", "") == "raid_pending":
