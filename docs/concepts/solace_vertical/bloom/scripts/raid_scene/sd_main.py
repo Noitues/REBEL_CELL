@@ -1302,6 +1302,9 @@ lights()
 camera()
 print("BUILD %.1f s, %d builders DAYV=%s N2=%s EMIT_K=%s" % (time.time() - t_start, len(BUILD), DAYV, N2, L.EMIT_K), flush=True)
 
+if MODE == "map" and os.environ.get("BLOOM_CFG"):
+    exec(open(os.path.join(HERE, "bloom3d_raid.py"), encoding="utf-8").read())      # Bloom world material
+
 # ------------------------------------------------------------------ render settings
 out_path = os.path.abspath(A["out"])
 os.makedirs(os.path.dirname(out_path), exist_ok=True)

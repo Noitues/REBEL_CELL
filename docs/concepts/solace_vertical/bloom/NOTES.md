@@ -41,3 +41,35 @@ Scratch: `D:/rc_scratch/solace_v1/bloom/`. Needs the street_r2 render_s1 passes,
 
 ## Known limits
 Street CLOSE shows little coverage (front a layer behind the operative, as asked). B and C textures are world-space on grazing ground, so they foreshorten. HQ skin is screen-space-scaled, not tube-coordinate. Gauge A fill is dark by design (plum on navy).
+
+## A in 3D (designer picked A Necrosis; world material, portable)
+Files: `A3d_street_{creeping,close,catching}.png`, `A3d_hq_{overview,decision}.png`, `A3d_raid_{20,60,90}.png`, `A3d_gauge.png`, `sheet_A3d.jpg`.
+- **Street** (street_r2 scene copy `scripts/street3d/`, Cycles, DECISION camera, GPU lock `solace_bloom`): `bloom3d_mat.py` = node groups BL_FIELD / BL_SHADER wrapped
+  round every material's look under the section cut (r2_build.section) and the ground (sweep). Everything is a function of world position: ragged front with fingers and
+  tendrils, domain-warped 3D Voronoi cell borders as veins, 45 degree world hatch, hairline pink front edge, plum diffuse body. `bloom3d_ribbons.py` adds emissive vein
+  ribbon decals that crawl ahead of the front on the ground. Keep-out (solace.md): route-room AABBs (+10 %, jamb, frame ring) and link boxes are masked to zero for skin and ribbons;
+  the Bloom sits in the material under the section cut, so ghosted/flattened blocks carry it only at their cut height. Mock operative on L2_1; gaps 2.5 / 1.25 / 0.6 layers (front at layer -0.5 / 0.75 / 1.4).
+  Note: INFECTED-room plum wash and hairline on room frames were not drawn here (route chrome is build's). Post = street_r2 post at the CLEAN plate's exposure (0.372).
+- **HQ** (v5 scene copy `scripts/hq3d/`, Cycles): the strand mesh gets a per-vertex `tube` attribute (z, phi, tower); `bloom3d_hq.py` shader reads it, so the front (one z for both strands plus phi-only tongues),
+  veins (Voronoi on the tube cylinder stretched along z, so they follow the twist), fingers ahead of the front and the hatch run along the strand. The UP stair band stays clean and the windows are mesh holes.
+  Windows below the front die: the shared emission material is wrapped (helix radius < 30, above the plinth; route-room index 5 untouched) to dim pink. Front: overview floor 9 of 27 (CATCHING),
+  decision floor 9 minus 1.25 layers (CLOSE).
+- **Raid** (district copy `scripts/raid_scene/`, Eevee cel + ink): `bloom3d_raid.py` wraps every cel material; field = noise-warped distance from the two defended nodes, per-lot values, tide line on walls.
+  The percent is calibrated by cover-mask renders (bisect) so the infected share of non-defended visible area is 20.9 / 60.7 / 89.4 %. Defended nodes never recoloured. Re-inked with the clean ink pass.
+- **Gauge strip / bits**: 2D as before, over the 3D CATCHING street frame.
+
+Values (median / under 0.10 / over 0.85):
+| Frame | clean | Bloom |
+|---|---|---|
+| street CREEPING | clean DECISION plate 0.141 (street_r2 plates.json, exposure 0.372) | 0.1487 |
+| street CLOSE | same | 0.1414 |
+| street CATCHING | same | 0.1486 |
+| HQ overview | 0.1230 | 0.1231 |
+| HQ decision | 0.1474 | 0.1473 |
+| raid 20 / 60 / 90 | 0.2604 | 0.2553 / 0.2503 / 0.2588 |
+All street/HQ within +-0.01 of clean. Raid 60 is 0.0101 under (the cel map is bright; the plum body lifts with `plum`).
+Render times: street finals 428 s (CREEPING), 269 s (CLOSE), 1795 s (CATCHING, GPU shared with a concurrent job); street 640x360 tests 54-240 s; HQ finals 1920x1080 231 s overview / 93 s decision
+(clean 156 / 135 s); HQ tests 35-42 s; raid 10-23 s per 1920x1080 frame plus 7 calibration renders of about 3 s.
+Rebuild: `street3d/bloom3d_street.py run finals <STATE> 1920 48` then `plate <STATE> F_dec_closed`; `hq3d/bloom3d_hq_run.py b3d overview decision clean_overview clean_decision`;
+`bloom3d_raid_run.py 20,60,90`; `bloom3d_strip.py`; `bloom3d_sheet.py`. Scratch `D:/rc_scratch/solace_v1/bloom3d/`.
+Port notes: the field is pure position/attribute math (no textures), so it maps to a Godot spatial shader on world position (street, raid) and on a (z, phi) vertex attribute or UV (helix).
