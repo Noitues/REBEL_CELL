@@ -1631,3 +1631,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     front separates from clean at thumbnail size.
   - The raid body goes darker plum: plum-black skin with hot pink veins and front edge, as on street and HQ. The TIDE gauge and % stay
     the loudest elements. The raid view itself waits for the redesign.
+- **Solace backdrop stills (designer, 2026-10-22)** (`solace_vertical/hq/godot/stills_then_now.jpg`): the re-baked stills match the
+  live close-up, so the hand-over has no pop. Day stills = night stills until a live day look exists, because CombatBackdrop's city path
+  ignores place.day. A real day backdrop would be its own task. Art-pass call: the live Site close-up framing gets fixed (fit to the S2
+  hospital, cut the towers in front of it). Today the hospital is buried and the subject doesn't read.
