@@ -1405,9 +1405,11 @@ static func word_covered_by(word: GreasePencilWord, r: Rect2) -> bool:
 
 ## ART-R2 7: true when control `ctl` (visible) is UI the pencil may not touch: a panel's scrim pool, a button, or
 ## any control that takes the mouse (a chip, a sheet) that is not the page's full-screen host, and the word meets it.
+## A-093: a plain layout container (a Container other than a PanelContainer: it draws nothing) is not UI; what it
+## holds is tested on its own.
 static func word_blocked_by(word: GreasePencilWord, ctl: Control, screen: Rect2) -> bool:
 	var ui := ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton
-	if not ui and ctl.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+	if not ui and ctl.mouse_filter != Control.MOUSE_FILTER_IGNORE and not (ctl is Container and not ctl is PanelContainer):
 		ui = ctl.get_global_rect().get_area() < screen.get_area() * LOOT_HOST_SHARE
 	return ui and word_covered_by(word, ctl.get_global_rect())
 
