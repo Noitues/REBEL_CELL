@@ -2062,7 +2062,8 @@ RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN LOCKS YOUR PLAYS,RESPIN LOCKS YOUR PLAYS
-RESPIN now? It locks the %d play(s) you staged this turn.,RESPIN now? It locks the %d play(s) you staged this turn.
+RESPIN now? It locks the %d plays you staged this turn.,RESPIN now? It locks the %d plays you staged this turn.
+RESPIN now? It locks the 1 play you staged this turn.,RESPIN now? It locks the 1 play you staged this turn.
 RESPIN: ?,RESPIN: ?
 RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 REST,REST

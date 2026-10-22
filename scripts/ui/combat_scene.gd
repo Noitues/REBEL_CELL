@@ -633,7 +633,8 @@ func nudge_wheel(wheel_id: StringName, direction: int, ring: int = RC.RingScope.
 ## PB-SOL-1 I2 (B-06 / C-05, designer default D-04 (a)): a RESPIN is a random event, so UNDO cannot cross it
 ## and it commits every play staged before it. The rule stands; the player is told first.
 const RESPIN_WARN_TITLE := "RESPIN LOCKS YOUR PLAYS" # TR
-const RESPIN_WARN_QUESTION := "RESPIN now? It locks the %d play(s) you staged this turn." # TR
+const RESPIN_WARN_QUESTION := "RESPIN now? It locks the %d plays you staged this turn." # TR
+const RESPIN_WARN_QUESTION_ONE := "RESPIN now? It locks the 1 play you staged this turn." # TR
 const RESPIN_WARN_BODY := "A RESPIN is a random spin. UNDO can't go back past it, so the cards and nudges you staged before it (and the RAM they cost) can't be taken back this turn." # TR
 const RESPIN_WARN_YES := "RESPIN" # TR
 const RESPIN_WARN_NO := "KEEP PLANNING" # TR
@@ -664,7 +665,7 @@ func request_respin() -> void:
 	if n <= 0:
 		respin()
 		return
-	var d := ConfirmDialog.new(tr(RESPIN_WARN_QUESTION) % n, RESPIN_WARN_YES, RESPIN_WARN_NO, RESPIN_WARN_TITLE, tr(RESPIN_WARN_BODY))
+	var d := ConfirmDialog.new(tr(RESPIN_WARN_QUESTION_ONE) if n == 1 else tr(RESPIN_WARN_QUESTION) % n, RESPIN_WARN_YES, RESPIN_WARN_NO, RESPIN_WARN_TITLE, tr(RESPIN_WARN_BODY))
 	d.name = "RespinConfirm"
 	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
 	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
