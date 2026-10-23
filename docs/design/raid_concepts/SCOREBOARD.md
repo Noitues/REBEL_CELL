@@ -367,3 +367,25 @@ Review: `_reviews/REVIEW_LAB_L5.md`. Sheet: `_reviews/LAB_L5_side_by_side.png`.
   does not fully resolve.
 
 Review: `_reviews/REVIEW_LAB_L7.md`. Sheets: `_reviews/LAB_L7_side_by_side.png` and `raid_target/LAB_L7_vs_target.png`.
+
+## L8 city-raid lab (city view between HQs, capture phase, typed sentries; one batch critic, stills only)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 6 | 7 | **33** | 5 | 6 | 6 |
+
+**Level with Kingdom Rush (33).** This critic was a batch request: one Opus call with 15 contact sheets and the text
+anchors. It had no reference screenshots and saw no motion, so the result is not fully comparable with the agent
+critics. L8 is a first build of new rules, without the L6/L7 readability and motion passes.
+
+**What the critic found:**
+- **The forecast's BEST row solves the response before launch.**
+- **The board doesn't show the forecast's facts.** The hits, blocks and HOME damage appear only as text, and the
+  hunter's path isn't drawn.
+- **Severity colors clash with the palette.** HOLDS is cobalt, BATTERED is orange like the enforcer, and DAMAGED and
+  BREACHED share one red.
+- **Sentries are never built,** and no district ever becomes TAKEN.
+
+**Estimate:** the critic puts its three changes at 38–39 together.
+
+Review: `_reviews/REVIEW_LAB_L8_batch.md`.
