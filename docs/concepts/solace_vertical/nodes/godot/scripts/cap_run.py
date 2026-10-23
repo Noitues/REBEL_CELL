@@ -8,7 +8,7 @@ import gpu_lock
 
 gpu_lock.ME = "solace_nodes"
 BASE = "D:/rc_scratch/solace_v1/nodes/"
-shots = sys.argv[1] if len(sys.argv) > 1 else "map,rest,workshop,cache"
+shots = sys.argv[1] if len(sys.argv) > 1 else "map,rest,workshop,event,cache"
 which = sys.argv[2].split(",") if len(sys.argv) > 2 else ["now", "then"]
 gpu_lock.acquire("godot nodes captures")
 try:

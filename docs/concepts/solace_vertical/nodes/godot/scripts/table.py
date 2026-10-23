@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0, ".")
 exec(open('hue_search2.py').read().split("res = {}")[0])
-c = (136, 8, 28)
+c = (210, 44, 64)
 names = {"fight": "FIGHT ring (#6CF7FF)", "elite": "ELITE ring (#FF8C1A)", "event": "EVENT ring (#4EFF9E)", "shop": "SHOP ring (#62A9FF)", "rack": "RACK ring (#FFA02A)",
  "rest": "REST (#BF73FF)", "workshop": "WORKSHOP (#FFD14D)", "r_router": "room router (#389EFF)", "r_terminal": "room terminal (#4DF280)", "r_mainframe": "room mainframe (#6673FF)",
  "r_rack": "room server_rack (#FF9433)", "r_elite": "room elite (#FF591F)", "ring_walked": "ring walked (#D4FF00)", "ring_next": "ring next (#FF8C1A)", "ring_unavail": "ring not yet (#F2F6FF)", "pink": "Cell pink (#FF3DA8)"}
