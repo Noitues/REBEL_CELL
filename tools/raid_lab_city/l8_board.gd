@@ -3,9 +3,10 @@ extends Node3D
 ## The city view of raid lab L8 (SPEC section 8). It shows a dark slab city block in iso with a long lens, with our amber HQ
 ## on the left and the cobalt corp HQ on the right. Three lit routes and four cross streets run between them. Districts are
 ## small building clusters with rings, value pips and exploit keys. The board also draws sentries, the ghost, typed
-## vehicles that travel the lines, the hunter hound and the sealed candidates.
+## vehicles that travel the lines, the hunter hound, the sealed candidates, planned paths and the playout's trails.
 ## Everything is built in code, and it runs inside a SubViewport that the main scene creates. It holds no rule: the lab
-## hands it the leg (`setup`), the state (`show_state`) and a playout's cues (`play`), and the board only draws them.
+## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`) and a playout's cues (`play`), and
+## the board only draws them. The camera is fitted so the whole board sits in the free area left of the side panel.
 ## Cosmetic motion is seeded or time-based, never global random.
 
 signal cues_finished
@@ -27,11 +28,11 @@ const FLOOR_COL := Color8(6, 10, 24)
 const SLAB_COL := Color8(12, 18, 36)
 const ASPHALT := Color8(9, 12, 22)
 const STEEL := Color8(26, 30, 46)
-const WARM_METAL := Color8(43, 32, 24)
-const NEUTRAL_BODY := Color8(28, 31, 40)
-const TAKEN_BODY := Color8(14, 20, 52)
-const HQ_BODY_HOME := Color8(58, 42, 30)
-const HQ_BODY_CORP := Color8(16, 24, 60)
+const WARM_METAL := Color8(64, 46, 30)
+const NEUTRAL_BODY := Color8(30, 32, 38)
+const TAKEN_BODY := Color8(18, 28, 72)
+const HQ_BODY_HOME := Color8(72, 50, 30)
+const HQ_BODY_CORP := Color8(18, 28, 72)
 const HOT_WIN := Color8(255, 226, 168)
 const AMBIENT := Color8(40, 52, 96)
 const KEY_LIGHT := Color(0.55, 0.62, 1.0)
@@ -48,26 +49,34 @@ const E_ROUTE_CORE := 3.0
 const E_STREET := 1.0
 const E_GRID := 0.35
 const E_RIM := 1.7
-const E_RING := 2.4
-const E_RING_DIM := 0.5
+const E_RING := 2.6
+const E_RING_DOWN := 1.1
+const E_RING_DIM := 0.35
+const E_DECAL := 0.8
+const DECAL_A_OK := 0.16
+const DECAL_A_DOWN := 0.08
+const DECAL_A_TAKEN := 0.24
 const E_WIN := 2.2
-const E_WIN_DIM := 0.3
+const E_WIN_DIM := 0.25
 const E_WIN_DOWN := 1.2
 const E_PIP := 2.6
-const E_PIP_DIM := 0.5
+const E_PIP_DIM := 0.45
 const E_KEY := 3.0
 const E_KEY_DIM := 0.8
-const E_SENTRY := 3.2
+const E_SENTRY := 3.4
 const E_GHOST := 2.6
 const E_VEH := 3.5
 const E_CAND_LIT := 6.0
 const E_FX := 5.0
 const E_HQ_WIN := 2.0
+const E_HQ_EDGE := 2.6
 const E_BEACON := 3.0
 const E_HL := 2.5
-const E_SKY := 0.7
+const E_SKY := 0.6
 const E_MOTE := 2.0
-const E_WRENCH := 1.6
+const E_WRENCH := 1.8
+const E_PATH := 2.6
+const E_TRAIL := 4.0
 const DECAL_ALPHA := 0.18
 const HALO_ALPHA := 0.35
 const HALO_E_K := 0.6
@@ -84,16 +93,20 @@ const HQ_LIGHT_RANGE := 9.0
 const HQ_LIGHT_Y := 3.0
 const HEAT_REF := 100.0
 
-const CAM_TARGET := Vector3(0.0, 0.4, 0.4)
-const CAM_PITCH_DEG := -46.0
+## The camera angles; distance and offsets are computed by the fit (see _fit_camera).
+const CAM_PITCH_DEG := -48.0
 const CAM_YAW_DEG := -20.0
-const CAM_DIST := 62.0
 const CAM_FOV := 16.0
-## Shifts the board left of the 420 px side panel and a little below the HUD (world units at the camera).
-const CAM_H_OFFSET := 5.0
-const CAM_V_OFFSET := 0.4
 const CAM_NEAR := 1.0
 const CAM_FAR := 400.0
+## The reference viewport and the free board area in it: left of the 420 px panel, between the HUD and the legend.
+const FIT_VIEW := Vector2(1280.0, 720.0)
+const FIT_FREE := Rect2(0.0, 64.0, 860.0, 606.0)
+const FIT_MARGIN := 40.0
+## World units above the HQ pips kept inside the fitted box (tower tops, labels).
+const FIT_HEADROOM := 0.6
+const FIT_ITERS := 24
+const FIT_FAR_PAD := 120.0
 ## How far flat glyphs (shapes, keys, wrenches) tilt toward the camera (fraction of its pitch).
 const GLYPH_TILT := 0.6
 
@@ -116,6 +129,13 @@ const ROUTE_EDGE_W := 0.04
 const STREET_W := 0.26
 const STREET_EXT := 0.9
 const STREET_LIFT := 0.006
+## Layer heights above the roads: cell decals, planned paths, playout trails, highlights.
+const DECAL_Y := 0.045
+const DECAL_T := 0.006
+const PATH_Y := 0.06
+const TRAIL_Y := 0.08
+const LANE_T := 0.012
+const HL_Y := 0.1
 
 const BLD_SEED := 811
 const SEED_MX := 31
@@ -126,6 +146,9 @@ const BLD_W_MIN := 0.42
 const BLD_W_MAX := 0.62
 const BLD_H_MIN := 0.35
 const BLD_H_MAX := 1.5
+## Height caps so the roads through a district stay visible: front quads (toward the camera) and back-left quads.
+const BLD_FRONT_H := 0.45
+const BLD_SIDE_H := 0.95
 const VALUE_MIN := 4
 const VALUE_MAX := 12
 const FLOOR_H := 0.26
@@ -136,6 +159,7 @@ const RING_Y := 0.05
 const RING_R_IN := 1.0
 const RING_R_OUT := 1.12
 const RING_FLAT := 0.25
+const DECAL_R := 0.95
 const HEX := 6
 const TRI_SEGS := 3
 const CIRCLE_SEGS := 24
@@ -161,10 +185,10 @@ const HASH_B := 78.233
 const HASH_C := 37.719
 const HASH_D := 43758.5453
 
-const SENTRY_POLE := Vector2(0.05, 0.85)
+const SENTRY_POLE := Vector2(0.05, 0.95)
 const SENTRY_BASE := Vector2(0.18, 0.08)
-const SENTRY_GLYPH_Y := 1.12
-const SENTRY_GLYPH_S := 0.22
+const SENTRY_GLYPH_Y := 1.22
+const SENTRY_GLYPH_S := 0.27
 const SENTRY_DECAL := Vector2(0.48, 0.58)
 const GHOST_R := 1.34
 const GHOST_HOME_R := 2.0
@@ -178,6 +202,7 @@ const HQ_BASE := 1.5
 const HQ_STEP := 0.18
 const HQ_TIER_H := 0.85
 const HQ_WIN_ROWS := 3
+const HQ_EDGE_W := 0.05
 const HQ_BEACON_R := 0.22
 const HOME_HP_MAX := 3
 const HOME_PIP := Vector3(0.34, 0.24, 0.06)
@@ -204,6 +229,9 @@ const WIGGLE_AMP := 0.07
 const SPAWN_DROP := 4.0
 const TURN_FAST := 4.0
 const EPS := 0.0001
+## A new vehicle enters this far back along its line (fraction of a cell): routes from the corp platform, streets from the street end.
+const ENTRY_ROUTE_K := 0.62
+const ENTRY_STREET_K := 0.35
 ## Headings (rotation.y with +x as forward): toward HOME (-x), down a street (+z, y = 0 -> 2).
 const HEADING_HOME := PI
 const HEADING_DOWN := -PI * 0.5
@@ -212,6 +240,40 @@ const HOUND_PARTS := [[Vector3(0.0, 0.42, 0.0), Vector3(0.52, 0.2, 0.22)], [Vect
 const CAND_DX := 0.55
 const CAND_ALPHA := 0.32
 const CAND_SHRINK := 0.2
+
+## Planned paths: dashed lanes, a chevron at the exit, the type glyph at the entry.
+const LANE_GAP := 0.2
+const PATH_W := 0.11
+const DASH_L := 0.34
+const DASH_G := 0.2
+const PATH_ALPHA := 0.9
+const PATH_DIM_K := 0.45
+const PATH_GLYPH_Y := 0.55
+const PATH_GLYPH_S := 0.16
+const ARROW_L := 0.42
+const ARROW_W := 0.09
+const ARROW_ANG := 0.62
+## Playout trails: solid lanes that fade to a resting glow, plus persistent hit, block, home, turn and jam marks.
+const TRAIL_W := 0.14
+const TRAIL_DOT_R := 0.12
+const TRAIL_MIN := 0.05
+const TRAIL_ALPHA := 0.95
+const TRAIL_REST := 0.6
+const TRAIL_REST_E := 0.55
+const TRAIL_FADE_T := 1.6
+const HIT_MARK_R := Vector2(1.16, 1.25)
+const HIT_GLYPH_POS := Vector3(0.95, 0.35, 0.95)
+const HIT_GLYPH_STEP := Vector3(-0.34, 0.0, 0.0)
+const HIT_GLYPH_S := 0.15
+const BLOCK_DOME_R := 0.62
+const BLOCK_DOME_FLAT := 0.7
+const BLOCK_BAR := Vector3(0.1, 0.14, 0.9)
+const BLOCK_BAR_BACK := 0.45
+const BLOCK_ALPHA := 0.4
+const TURN_MARK_R := Vector2(0.72, 0.82)
+const HOME_MARK_R := Vector2(1.5, 1.62)
+const JAM_MARK := Vector3(0.6, 0.08, 0.05)
+const JAM_MARK_Y := 0.5
 
 const SHIELD_R := Vector2(0.3, 0.9)
 const STRIKE := Vector3(0.16, 5.0, 0.16)
@@ -230,7 +292,6 @@ const HOME_LABEL_Y := 4.6
 const SHAKE_AMP := 0.12
 const SHAKE_HZ := 28.0
 const SCREEN_Y := 0.9
-const HL_Y := 0.03
 const HL_ALPHA := 0.35
 const HL_R := 1.25
 const HL_HZ := 1.6
@@ -241,11 +302,11 @@ const SKY_N := 46
 const SKY_X := Vector2(-28.0, 28.0)
 const SKY_Z := Vector2(-30.0, -9.0)
 const SKY_W := Vector2(1.5, 4.5)
-const SKY_H := Vector2(3.0, 16.0)
+const SKY_H := Vector2(3.0, 10.0)
 const SKY_EDGE := 0.06
 const MOTE_SEED := 2026
 const MOTE_N := 90
-const MOTE_BOX := Vector3(14.0, 6.0, 9.0)
+const MOTE_BOX := Vector3(14.0, 3.5, 9.0)
 const MOTE_S := 0.07
 
 ## Seconds at 1x, per cue kind and per effect.
@@ -278,6 +339,8 @@ var _tilt: float = deg_to_rad(CAM_PITCH_DEG) * GLYPH_TILT
 var _mats: Dictionary = {}
 var _unit_box: BoxMesh
 var _board: Node3D
+var _path_root: Node3D
+var _trail_root: Node3D
 var _fx_root: Node3D
 var _hl_root: Node3D
 var _w: int = DEFAULT_W
@@ -304,6 +367,12 @@ var _cand_real: int = -1
 var _fx: Array = []
 var _shakes: Dictionary = {}
 var _hl: Array = []
+var _path_use: Dictionary = {}
+var _trail_fade: Array = []
+var _trail_arrow: Dictionary = {}
+var _lane: Dictionary = {}
+var _road_use: Dictionary = {}
+var _hit_count: Dictionary = {}
 var _queue: Array = []
 var _qi: int = -1
 var _cur_cue: Dictionary = {}
@@ -322,10 +391,23 @@ func _init() -> void:
 	_build_env()
 	_board = Node3D.new()
 	add_child(_board)
+	_path_root = Node3D.new()
+	add_child(_path_root)
+	_trail_root = Node3D.new()
+	add_child(_trail_root)
 	_fx_root = Node3D.new()
 	add_child(_fx_root)
 	_hl_root = Node3D.new()
 	add_child(_hl_root)
+	_fit_camera()
+
+
+func _ready() -> void:
+	cam.make_current()
+	_fit_camera()
+	var vp := get_viewport()
+	if vp != null and not vp.size_changed.is_connected(_fit_camera):
+		vp.size_changed.connect(_fit_camera)
 
 
 # ======================= public API =======================
@@ -354,7 +436,7 @@ func setup(leg: Dictionary) -> void:
 	_home_root = _build_hq(-1, AMBER, HQ_BODY_HOME)
 	var corp := _build_hq(_w, COBALT, HQ_BODY_CORP)
 	_beacon_mat = _mat_live(COBALT_HOT, E_BEACON)
-	_sphere(corp, Vector3(0.0, HQ_TIERS * HQ_TIER_H + HQ_BEACON_R, 0.0), HQ_BEACON_R, _beacon_mat)
+	_sphere(corp, Vector3(0.0, HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HQ_BEACON_R, 0.0), HQ_BEACON_R, _beacon_mat)
 	_build_home_pips()
 	for c: Vector2i in _cells():
 		var root := Node3D.new()
@@ -363,9 +445,11 @@ func setup(leg: Dictionary) -> void:
 		_cell_root[c] = root
 		_status[c] = "NEUTRAL"
 		_refresh_cell(c)
+	_fit_camera()
 
 
 ## Show a state {owned: {cell: OK/DOWN/TAKEN}, home_hp, heat} and a placement {sentries: {cell: D/N/E}, ghost: cell|"HOME"|null}.
+## Trails of the last playout stay; reset_playout() clears them.
 func show_state(st: Dictionary, place: Dictionary) -> void:
 	var owned: Dictionary = st.get("owned", {})
 	for c: Vector2i in _cells():
@@ -384,12 +468,12 @@ func show_state(st: Dictionary, place: Dictionary) -> void:
 		_beacon_mat.emission_energy_multiplier = E_BEACON * (1.0 + float(_heat) / HEAT_REF)
 
 
-## The sealed candidates [{route, type}]: real -1 = ghosted convoys at the corp end (a new raid: the playout is reset);
-## real >= 0 = the settled reveal (two gone, the real one lit).
+## The sealed candidates [{route, type}]: real -1 = ghosted convoys at the corp end (a new raid: vehicles, effects and
+## trails are reset, planned paths stay); real >= 0 = the settled reveal (two gone, the real one lit).
 func show_candidates(cands: Array, real: int = -1) -> void:
 	if real < 0 or _cands.is_empty():
 		if real < 0:
-			reset_playout()
+			_reset_motion()
 		_clear_candidates()
 		for cd: Dictionary in cands:
 			var route := int(cd.get("route", 0))
@@ -404,8 +488,27 @@ func show_candidates(cands: Array, real: int = -1) -> void:
 	_face_all()
 
 
+## Draw planned lines (line dictionaries {kind, index, cells, type, home}, optional dim: bool) as type-colored dashed
+## lanes along their roads, each with its type glyph at the entry and a chevron at the exit (routes end into HOME).
+## Replaces any paths shown before.
+func show_paths(lines: Array) -> void:
+	clear_paths()
+	for lv: Variant in lines:
+		if lv is Dictionary:
+			_draw_path(lv as Dictionary)
+
+
+## Remove every planned path.
+func clear_paths() -> void:
+	for ch in _path_root.get_children():
+		ch.queue_free()
+	_path_use.clear()
+
+
 ## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, evaded) and emit cues_finished at the end.
+## Planned paths are cleared; every beam leaves a trail with its hits and stops until reset_playout().
 func play(cues: Array, speed: float = 1.0) -> Signal:
+	clear_paths()
 	_queue = cues.duplicate()
 	_qi = -1
 	_speed = maxf(speed, SPEED_MIN)
@@ -418,13 +521,15 @@ func play(cues: Array, speed: float = 1.0) -> Signal:
 	return cues_finished
 
 
-## Instant on: every cue settles in one frame and effects show frozen at their settled look. Turning it on mid-playout
-## finishes the playout at once.
+## Instant on: every cue settles in one frame, effects show frozen at their settled look and trails at rest. Turning it
+## on mid-playout finishes the playout at once.
 func set_instant(on: bool) -> void:
 	_instant = on
-	if on and _playing:
-		_settle_cue(_cur_cue)
-		_finish_instant()
+	if on:
+		_snap_trails()
+		if _playing:
+			_settle_cue(_cur_cue)
+			_finish_instant()
 
 
 ## Change the playout speed (1, 2, 4) while it runs.
@@ -460,20 +565,78 @@ func clear_highlight() -> void:
 	_hl.clear()
 
 
-## Drop every vehicle, effect, shake and candidate (a fresh raid).
+## Drop every vehicle, effect, shake, candidate, trail and planned path (a fresh raid).
 func reset_playout() -> void:
-	for v: Dictionary in _vehicles.values():
-		(v["node"] as Node3D).queue_free()
-	_vehicles.clear()
-	_clear_fx()
-	_clear_candidates()
-	_cand_real = -1
-	_shakes.clear()
-	_playing = false
-	for c: Vector2i in _cell_root:
-		(_cell_root[c] as Node3D).position = _grid_world(c)
-	if _home_root != null:
-		_home_root.position = _home_world()
+	_reset_motion()
+	clear_paths()
+
+
+# ======================= camera fit =======================
+func _view_size() -> Vector2:
+	if is_inside_tree():
+		var s := get_viewport().get_visible_rect().size
+		if s.x > 0.0 and s.y > 0.0:
+			return s
+	return FIT_VIEW
+
+
+func _slab_half() -> Vector2:
+	return Vector2((_w + 1) * 0.5 * CELL_DX + SLAB_PAD.x, (_h - 1) * 0.5 * CELL_DZ + SLAB_PAD.y)
+
+
+## Fit the camera: aim at the board box (slab, both HQs, tower headroom), pick the distance so its 8 projected corners
+## fill the free area, and shift the image there with h_offset / v_offset (camera-plane units). Same math as Godot's
+## perspective projection (KEEP_HEIGHT), so cell_screen_pos matches what is drawn.
+func _fit_camera() -> void:
+	if cam == null:
+		return
+	var cb := Basis.from_euler(Vector3(deg_to_rad(CAM_PITCH_DEG), deg_to_rad(CAM_YAW_DEG), 0.0))
+	var half := _slab_half()
+	var top := HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HOME_PIP_Y + FIT_HEADROOM
+	var box := AABB(Vector3(-half.x, 0.0, -half.y), Vector3(half.x * 2.0, top, half.y * 2.0))
+	var center := box.get_center()
+	var inv := cb.transposed()
+	var rel: Array[Vector3] = []
+	for i in range(8):
+		rel.append(inv * (box.get_endpoint(i) - center))
+	var vp := _view_size()
+	var k := Vector2(vp.x / FIT_VIEW.x, vp.y / FIT_VIEW.y)
+	var ref := FIT_FREE.grow(-FIT_MARGIN)
+	var area := Rect2(ref.position * k, ref.size * k)
+	var n0 := Vector2(area.position.x / vp.x * 2.0 - 1.0, 1.0 - area.end.y / vp.y * 2.0)
+	var n1 := Vector2(area.end.x / vp.x * 2.0 - 1.0, 1.0 - area.position.y / vp.y * 2.0)
+	var t_size := n1 - n0
+	var t_mid := (n0 + n1) * 0.5
+	var ty := tan(deg_to_rad(CAM_FOV) * 0.5)
+	var tx := ty * vp.x / vp.y
+	var d := box.size.length() / ty
+	var off := Vector2.ZERO
+	for it in range(FIT_ITERS):
+		var r := _ndc_rect(rel, d, off, tx, ty)
+		var s := maxf(r.size.x / t_size.x, r.size.y / t_size.y)
+		d *= s
+		off *= s
+		r = _ndc_rect(rel, d, off, tx, ty)
+		var shift := t_mid - r.get_center()
+		off -= Vector2(shift.x * d * tx, shift.y * d * ty)
+	cam.keep_aspect = Camera3D.KEEP_HEIGHT
+	cam.fov = CAM_FOV
+	cam.near = CAM_NEAR
+	cam.far = maxf(CAM_FAR, d + FIT_FAR_PAD)
+	cam.transform = Transform3D(cb, center + cb * Vector3(0.0, 0.0, d))
+	cam.h_offset = off.x
+	cam.v_offset = off.y
+
+
+func _ndc_rect(rel: Array[Vector3], d: float, off: Vector2, tx: float, ty: float) -> Rect2:
+	var lo := Vector2(INF, INF)
+	var hi := Vector2(-INF, -INF)
+	for r: Vector3 in rel:
+		var depth := maxf(d - r.z, EPS)
+		var p := Vector2((r.x - off.x) / (depth * tx), (r.y - off.y) / (depth * ty))
+		lo = lo.min(p)
+		hi = hi.max(p)
+	return Rect2(lo, hi - lo)
 
 
 # ======================= helpers: positions, materials, meshes =======================
@@ -499,6 +662,15 @@ func _world(c: Vector2i, hunter: bool) -> Vector3:
 
 func _home_entry(row: int) -> Vector3:
 	return Vector3(_home_world().x + HQ_PLAT.x * 0.5, VEH_Y, _grid_world(Vector2i(0, row)).z)
+
+
+## The head of a street: just above row 0, where the hound starts its run.
+func _street_head(x: int) -> Vector3:
+	return _grid_world(Vector2i(x, 0)) - Vector3(0.0, 0.0, CELL_DZ * ENTRY_STREET_K)
+
+
+func _type_col(type: String) -> Color:
+	return TYPE_COLOR.get(type, GREY)
 
 
 func _mat(col: Color, energy: float, alpha: float = 1.0) -> StandardMaterial3D:
@@ -615,6 +787,18 @@ func _shape(parent: Node3D, pos: Vector3, type: String, s: float, mat: Material)
 	return holder
 
 
+## A flat chevron lying on the road, its tip at `tip`, pointing along `dir`.
+func _chevron(parent: Node3D, tip: Vector3, dir: Vector3, mat: Material) -> Node3D:
+	var holder := Node3D.new()
+	holder.position = tip
+	holder.rotation.y = _heading(dir, 0.0)
+	parent.add_child(holder)
+	for s: float in [1.0, -1.0]:
+		var arm := Vector3(-cos(ARROW_ANG), 0.0, s * sin(ARROW_ANG))
+		_box(holder, arm * ARROW_L * 0.5, Vector3(ARROW_L, LANE_T * 2.0, ARROW_W), mat).rotation.y = s * ARROW_ANG
+	return holder
+
+
 func _dashed_ring(parent: Node3D, r: float, mat: Material) -> Node3D:
 	var holder := Node3D.new()
 	holder.position = Vector3(0.0, RING_Y * 2.0, 0.0)
@@ -629,6 +813,24 @@ func _dashed_ring(parent: Node3D, r: float, mat: Material) -> Node3D:
 func _ease_out(u: float) -> float:
 	var x := 1.0 - clampf(u, 0.0, 1.0)
 	return 1.0 - x * x * x
+
+
+## A road key ("R" + z for routes, "S" + x for streets) so lines sharing a road get side-by-side lanes.
+func _road_key(p: Vector3, horiz: bool) -> String:
+	return ("R%d" % roundi(p.z * 10.0)) if horiz else ("S%d" % roundi(p.x * 10.0))
+
+
+func _lateral(horiz: bool) -> Vector3:
+	return Vector3(0.0, 0.0, 1.0) if horiz else Vector3(1.0, 0.0, 0.0)
+
+
+## The next lane offset on a road: 0, +gap, -gap, +2 gap...
+func _lane_offset(use: Dictionary, road: String) -> float:
+	var n := int(use.get(road, 0))
+	use[road] = n + 1
+	if n == 0:
+		return 0.0
+	return LANE_GAP * float(ceili(float(n) * 0.5)) * (1.0 if n % 2 == 1 else -1.0)
 
 
 # ======================= the static set =======================
@@ -651,14 +853,10 @@ func _build_env() -> void:
 	add_child(we)
 	cam = Camera3D.new()
 	cam.projection = Camera3D.PROJECTION_PERSPECTIVE
+	cam.keep_aspect = Camera3D.KEEP_HEIGHT
 	cam.fov = CAM_FOV
 	cam.near = CAM_NEAR
 	cam.far = CAM_FAR
-	cam.h_offset = CAM_H_OFFSET
-	cam.v_offset = CAM_V_OFFSET
-	cam.rotation_degrees = Vector3(CAM_PITCH_DEG, CAM_YAW_DEG, 0.0)
-	cam.position = CAM_TARGET + cam.transform.basis.z * CAM_DIST
-	cam.current = true
 	add_child(cam)
 	var key := DirectionalLight3D.new()
 	key.light_color = KEY_LIGHT
@@ -669,10 +867,10 @@ func _build_env() -> void:
 
 func _build_floor() -> void:
 	_box(_board, Vector3(0.0, -SLAB_T - FLOOR_DROP, 0.0), Vector3(FLOOR_SIZE, SLAB_T, FLOOR_SIZE), _solid(FLOOR_COL))
-	var half := Vector2((_w + 1) * 0.5 * CELL_DX + SLAB_PAD.x, (_h - 1) * 0.5 * CELL_DZ + SLAB_PAD.y)
+	var half := _slab_half()
 	_box(_board, Vector3(0.0, -SLAB_T * 0.5, 0.0), Vector3(half.x * 2.0, SLAB_T, half.y * 2.0), _solid(SLAB_COL))
 	var rim := _mat(AMBER, E_RIM)
-	for s in [-1.0, 1.0]:
+	for s: float in [-1.0, 1.0]:
 		_box(_board, Vector3(0.0, ROAD_Y, half.y * s), Vector3(half.x * 2.0, ROAD_T, RIM_W), rim)
 		_box(_board, Vector3(half.x * s, ROAD_Y, 0.0), Vector3(RIM_W, ROAD_T, half.y * 2.0), rim)
 	var grid := _mat(NET, E_GRID, HALO_ALPHA)
@@ -695,7 +893,7 @@ func _build_roads() -> void:
 		var z := _grid_world(Vector2i(0, y)).z
 		_box(_board, Vector3(mid, ROAD_Y, z), Vector3(length, ROAD_T, ROUTE_W), _solid(ASPHALT))
 		_box(_board, Vector3(mid, ROAD_Y + STREET_LIFT, z), Vector3(length, ROAD_T, ROUTE_CORE_W), _mat(GOLD, E_ROUTE_CORE))
-		for s in [-1.0, 1.0]:
+		for s: float in [-1.0, 1.0]:
 			_box(_board, Vector3(mid, ROAD_Y + STREET_LIFT, z + s * ROUTE_W * 0.5), Vector3(length, ROAD_T, ROUTE_EDGE_W), _mat(AMBER, E_ROUTE))
 	var z0 := _grid_world(Vector2i(0, 0)).z - STREET_EXT
 	var z1 := _grid_world(Vector2i(0, _h - 1)).z + STREET_EXT
@@ -742,7 +940,8 @@ func _build_motes() -> void:
 	_board.add_child(mmi)
 
 
-## An HQ campus at column x (-1 = ours, w = the corp's): a platform across the routes, a stepped tower, window bands, a light.
+## An HQ campus at column x (-1 = ours, w = the corp's): a platform across the routes, a stepped tower with glowing
+## corner edges and crowns in the HQ's color, window bands, a light.
 func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	var root := Node3D.new()
 	root.position = Vector3(_grid_world(Vector2i(xcol, 0)).x, 0.0, 0.0)
@@ -750,14 +949,23 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	var depth := (_h - 1) * CELL_DZ + ROUTE_W * 2.0
 	_box(root, Vector3(0.0, HQ_PLAT.y * 0.5, 0.0), Vector3(HQ_PLAT.x, HQ_PLAT.y, depth), _solid(STEEL))
 	var edge := _mat(col, E_RING)
-	for s in [-1.0, 1.0]:
+	for s: float in [-1.0, 1.0]:
 		_box(root, Vector3(HQ_PLAT.x * 0.5 * s, HQ_PLAT.y, 0.0), Vector3(RIM_W, ROAD_T, depth), edge)
 	var body := _solid(body_col)
+	var accent := _mat(col, E_HQ_EDGE)
 	var win := _mat(HOT_WIN if col == AMBER else COBALT_HOT, E_HQ_WIN)
 	for i in range(HQ_TIERS):
 		var s := HQ_BASE - i * HQ_STEP
 		var y := HQ_PLAT.y + (i + 0.5) * HQ_TIER_H
-		_box(root, Vector3(0.0, y, 0.0), Vector3(s, HQ_TIER_H * 0.92, s), body)
+		var th := HQ_TIER_H * 0.92
+		_box(root, Vector3(0.0, y, 0.0), Vector3(s, th, s), body)
+		for cx: float in [-1.0, 1.0]:
+			for cz: float in [-1.0, 1.0]:
+				_box(root, Vector3(cx * s * 0.5, y, cz * s * 0.5), Vector3(HQ_EDGE_W, th, HQ_EDGE_W), accent)
+		var ty := y + th * 0.5
+		for sd: float in [-1.0, 1.0]:
+			_box(root, Vector3(0.0, ty, sd * s * 0.5), Vector3(s, HQ_EDGE_W, HQ_EDGE_W), accent)
+			_box(root, Vector3(sd * s * 0.5, ty, 0.0), Vector3(HQ_EDGE_W, HQ_EDGE_W, s), accent)
 		for k in range(HQ_WIN_ROWS):
 			var wy := y + (k - (HQ_WIN_ROWS - 1) * 0.5) * HQ_TIER_H / float(HQ_WIN_ROWS + 1)
 			_box(root, Vector3(0.0, wy, s * 0.5 + WIN_EPS), Vector3(s * WIN_FRAC, WIN_H, WIN_EPS), win)
@@ -803,18 +1011,22 @@ func _refresh_cell(c: Vector2i) -> void:
 	_rebuild_cell(c, st, sen)
 
 
+## NEUTRAL: dim gray. OK: warm amber ring, decal and lit pips. DOWN: dim amber, a wrench and flicker. TAKEN: cobalt.
 func _rebuild_cell(c: Vector2i, st: String, sen: String) -> void:
 	var root: Node3D = _cell_root[c]
 	for ch in root.get_children():
 		root.remove_child(ch)
 		ch.queue_free()
 	var v := int(_values.get(c, VALUE_MIN))
-	var owned := st != "NEUTRAL"
 	var body_col := NEUTRAL_BODY
 	var win_col := GREY
 	var win_e := E_WIN_DIM
 	var ring_col := GREY
 	var ring_e := E_RING_DIM
+	var pip_col := GREY
+	var pip_e := E_PIP_DIM
+	var decal_col := AMBER
+	var decal_a := 0.0
 	match st:
 		"OK":
 			body_col = WARM_METAL
@@ -822,16 +1034,28 @@ func _rebuild_cell(c: Vector2i, st: String, sen: String) -> void:
 			win_e = E_WIN
 			ring_col = AMBER
 			ring_e = E_RING
+			pip_col = AMBER
+			pip_e = E_PIP
+			decal_a = DECAL_A_OK
 		"DOWN":
 			body_col = DEAD
 			win_col = AMBER
 			win_e = E_WIN_DOWN
+			ring_col = AMBER
+			ring_e = E_RING_DOWN
+			pip_col = AMBER
+			pip_e = E_PIP_DIM
+			decal_a = DECAL_A_DOWN
 		"TAKEN":
 			body_col = TAKEN_BODY
 			win_col = COBALT_HOT
 			win_e = E_WIN
 			ring_col = COBALT
 			ring_e = E_RING
+			pip_col = COBALT
+			pip_e = E_PIP
+			decal_col = COBALT
+			decal_a = DECAL_A_TAKEN
 	var win := _mat_live(win_col, win_e)
 	_win_mats[c] = win
 	var body := _solid(body_col)
@@ -840,7 +1064,8 @@ func _rebuild_cell(c: Vector2i, st: String, sen: String) -> void:
 	var hmax := lerpf(BLD_H_MIN, BLD_H_MAX, clampf(float(v - VALUE_MIN) / float(VALUE_MAX - VALUE_MIN), 0.0, 1.0))
 	for q: Vector2 in QUADS:
 		var off := Vector3(q.x * BLD_OFF, 0.0, q.y * BLD_OFF)
-		var h := rng.randf_range(BLD_H_MIN, maxf(BLD_H_MIN, hmax))
+		var cap := BLD_FRONT_H if q.y > 0.0 else (BLD_SIDE_H if q.x < 0.0 else BLD_H_MAX)
+		var h := minf(rng.randf_range(BLD_H_MIN, maxf(BLD_H_MIN, hmax)), cap)
 		var w := rng.randf_range(BLD_W_MIN, BLD_W_MAX)
 		_box(root, off + Vector3(0.0, h * 0.5, 0.0), Vector3(w, h, w), body)
 		var floors := maxi(1, int(h / FLOOR_H))
@@ -848,13 +1073,14 @@ func _rebuild_cell(c: Vector2i, st: String, sen: String) -> void:
 			var y := (f + 0.5) * h / float(floors)
 			_box(root, off + Vector3(0.0, y, w * 0.5 + WIN_EPS), Vector3(w * WIN_FRAC, WIN_H, WIN_EPS), win)
 			_box(root, off + Vector3(-w * 0.5 - WIN_EPS, y, 0.0), Vector3(WIN_EPS, WIN_H, w * WIN_FRAC), win)
+	if decal_a > 0.0:
+		_cyl(root, Vector3(0.0, DECAL_Y, 0.0), DECAL_R, DECAL_T, CIRCLE_SEGS, _mat(decal_col, E_DECAL, decal_a))
 	_torus(root, Vector3(0.0, RING_Y, 0.0), RING_R_IN, RING_R_OUT, HEX, _mat(ring_col, ring_e))
-	var pip_col := COBALT if st == "TAKEN" else AMBER
-	var pip := _mat(pip_col, E_PIP if owned else E_PIP_DIM)
+	var pip := _mat(pip_col, pip_e)
 	for i in range(v / 2):
 		_box(root, PIP_POS + Vector3(0.0, PIP_SIZE.y * 0.5 + i * PIP_STEP, 0.0), PIP_SIZE, pip)
 	if _exploits.has(c):
-		_build_key(root, _mat(ACID, E_KEY if owned and st != "TAKEN" else E_KEY_DIM))
+		_build_key(root, _mat(ACID, E_KEY if st == "OK" or st == "DOWN" else E_KEY_DIM))
 	if st == "DOWN":
 		_build_wrench(root)
 	if sen != "":
@@ -885,20 +1111,194 @@ func _build_wrench(root: Node3D) -> void:
 
 
 func _build_sentry(root: Node3D, type: String) -> void:
-	var col: Color = TYPE_COLOR.get(type, GREY)
+	var col := _type_col(type)
 	var m := _mat(col, E_SENTRY)
-	_torus(root, Vector3(0.0, RING_Y * 1.5, 0.0), SENTRY_DECAL.x, SENTRY_DECAL.y, CIRCLE_SEGS, m)
-	_cyl(root, Vector3(0.0, RING_Y, 0.0), SENTRY_DECAL.x, ROAD_T, CIRCLE_SEGS, _mat(col, E_SENTRY * HALO_E_K, DECAL_ALPHA))
+	_torus(root, Vector3(0.0, DECAL_Y + RING_Y * 0.5, 0.0), SENTRY_DECAL.x, SENTRY_DECAL.y, CIRCLE_SEGS, m)
+	_cyl(root, Vector3(0.0, DECAL_Y + DECAL_T, 0.0), SENTRY_DECAL.x, DECAL_T, CIRCLE_SEGS, _mat(col, E_SENTRY * HALO_E_K, DECAL_ALPHA))
 	_cyl(root, Vector3(0.0, SENTRY_BASE.y * 0.5, 0.0), SENTRY_BASE.x, SENTRY_BASE.y, HEX, _solid(STEEL))
-	_cyl(root, Vector3(0.0, SENTRY_POLE.y * 0.5, 0.0), SENTRY_POLE.x, SENTRY_POLE.y, HEX, _solid(STEEL))
+	_cyl(root, Vector3(0.0, SENTRY_POLE.y * 0.5, 0.0), SENTRY_POLE.x, SENTRY_POLE.y, HEX, _mat(col, E_SENTRY * HALO_E_K))
 	_shape(root, Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, m)
+
+
+# ======================= planned paths =======================
+## One planned line: a dashed lane from its entry to its exit (HOME platform for routes), glyph at entry, chevron at exit.
+func _draw_path(ln: Dictionary) -> void:
+	var cells: Array = ln.get("cells", [])
+	if cells.is_empty():
+		return
+	var type := str(ln.get("type", "D"))
+	var route := str(ln.get("kind", "ROUTE")) == "ROUTE"
+	var first: Vector2i = cells[0]
+	var last: Vector2i = cells[cells.size() - 1]
+	var step := Vector2i(-1, 0) if route else Vector2i(0, 1)
+	if cells.size() > 1:
+		var second: Vector2i = cells[1]
+		step = Vector2i(signi(second.x - first.x), signi(second.y - first.y))
+	var sv := Vector3(float(step.x), 0.0, float(step.y))
+	var horiz := step.x != 0
+	var a := Vector3.ZERO
+	var b := Vector3.ZERO
+	if horiz:
+		a = _grid_world(first) - sv * CELL_DX * ENTRY_ROUTE_K
+		b = _home_entry(last.y) if bool(ln.get("home", route)) else _grid_world(last) + sv * CELL_DX * ENTRY_ROUTE_K
+	else:
+		a = _grid_world(first) - sv * STREET_EXT
+		b = _grid_world(last) + sv * STREET_EXT
+	a.y = PATH_Y
+	b.y = PATH_Y
+	var d := b - a
+	var length := d.length()
+	if length < EPS:
+		return
+	var dir := d / length
+	var lat := _lateral(horiz) * _lane_offset(_path_use, _road_key(a, horiz))
+	var k := PATH_DIM_K if bool(ln.get("dim", false)) else 1.0
+	var m := _mat(_type_col(type), E_PATH * k, PATH_ALPHA * k)
+	var rot := _heading(dir, 0.0)
+	var stop := length - ARROW_L * 0.3
+	var u := 0.0
+	while u < stop:
+		var e := minf(u + DASH_L, stop)
+		_box(_path_root, a + dir * ((u + e) * 0.5) + lat, Vector3(e - u, LANE_T, PATH_W), m).rotation.y = rot
+		u += DASH_L + DASH_G
+	_chevron(_path_root, b + lat, dir, m)
+	_shape(_path_root, a + lat + Vector3(0.0, PATH_GLYPH_Y, 0.0), type, PATH_GLYPH_S, m)
+
+
+# ======================= playout trails and marks =======================
+func _trail_add(mats: Array) -> void:
+	if _instant:
+		_tint(mats, TRAIL_REST, TRAIL_REST_E)
+	else:
+		_tint(mats, 1.0, 1.0)
+		_trail_fade.append({"mats": mats, "t": 0.0})
+
+
+func _snap_trails() -> void:
+	for f: Dictionary in _trail_fade:
+		_tint(f["mats"], TRAIL_REST, TRAIL_REST_E)
+	_trail_fade.clear()
+
+
+func _step_trails(dt: float) -> void:
+	if _trail_fade.is_empty():
+		return
+	var keep: Array = []
+	for f: Dictionary in _trail_fade:
+		f["t"] = float(f["t"]) + dt
+		var u := clampf(float(f["t"]) / TRAIL_FADE_T, 0.0, 1.0)
+		var e := _ease_out(u)
+		_tint(f["mats"], lerpf(1.0, TRAIL_REST, e), lerpf(1.0, TRAIL_REST_E, e))
+		if u < 1.0:
+			keep.append(f)
+	_trail_fade = keep
+
+
+## A trail segment of one line from a to b on the ground (its own lane per road), with a dot and the line's moving chevron.
+func _trail_seg(line: int, a: Vector3, b: Vector3, col: Color) -> void:
+	var a0 := Vector3(a.x, TRAIL_Y, a.z)
+	var b0 := Vector3(b.x, TRAIL_Y, b.z)
+	var d := b0 - a0
+	var flat := Vector2(d.x, d.z).length()
+	if flat < TRAIL_MIN:
+		return
+	var horiz := absf(d.x) >= absf(d.z)
+	var road := _road_key(a0, horiz)
+	var key := "%d|%s" % [line, road]
+	if not _lane.has(key):
+		_lane[key] = _lane_offset(_road_use, road)
+	var lat := _lateral(horiz) * float(_lane[key])
+	var m := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
+	_box(_trail_root, (a0 + b0) * 0.5 + lat, Vector3(flat, LANE_T, TRAIL_W), m).rotation.y = _heading(d, 0.0)
+	_cyl(_trail_root, b0 + lat, TRAIL_DOT_R, LANE_T * 1.5, HEX, m)
+	if _trail_arrow.has(line):
+		var old: Node3D = _trail_arrow[line]
+		if is_instance_valid(old):
+			old.queue_free()
+	var am := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
+	_trail_arrow[line] = _chevron(_trail_root, b0 + lat + d.normalized() * ARROW_L * 0.6, d.normalized(), am)
+	_trail_add([m, am])
+
+
+func _mark_hit(cell: Vector2i, type: String) -> void:
+	var m := _mat_live(_type_col(type), E_TRAIL, TRAIL_ALPHA)
+	_torus(_trail_root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), HIT_MARK_R.x, HIT_MARK_R.y, HEX, m)
+	var n := int(_hit_count.get(cell, 0))
+	_hit_count[cell] = n + 1
+	_shape(_trail_root, _grid_world(cell) + HIT_GLYPH_POS + HIT_GLYPH_STEP * float(n), type, HIT_GLYPH_S, m)
+	_trail_add([m])
+
+
+## A block: a type-colored shield dome over the sentry and a bar across the lane where the line stopped.
+func _mark_block(cell: Vector2i, type: String, dir: Vector3) -> void:
+	var col := _type_col(type)
+	var dm := _mat_live(col, E_FX, BLOCK_ALPHA)
+	var dome := _sphere(_trail_root, _grid_world(cell), BLOCK_DOME_R, dm)
+	dome.scale = Vector3(1.0, BLOCK_DOME_FLAT, 1.0)
+	var bm := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
+	var flat := Vector3(dir.x, 0.0, dir.z)
+	if flat.length() > EPS:
+		var d := flat.normalized()
+		var holder := Node3D.new()
+		holder.position = _grid_world(cell) - d * BLOCK_BAR_BACK + Vector3(0.0, TRAIL_Y + BLOCK_BAR.y * 0.5, 0.0)
+		holder.rotation.y = _heading(d, 0.0)
+		_trail_root.add_child(holder)
+		_box(holder, Vector3.ZERO, BLOCK_BAR, bm)
+	_trail_add([dm, bm])
+
+
+func _mark_home() -> void:
+	var m := _mat_live(RED, E_TRAIL, TRAIL_ALPHA)
+	_torus(_trail_root, _home_world() + Vector3(0.0, HQ_PLAT.y + RING_Y, 0.0), HOME_MARK_R.x, HOME_MARK_R.y, CIRCLE_SEGS, m)
+	_trail_add([m])
+
+
+func _mark_turn(cell: Vector2i) -> void:
+	var m := _mat_live(COBALT_HOT, E_TRAIL, TRAIL_ALPHA)
+	_torus(_trail_root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), TURN_MARK_R.x, TURN_MARK_R.y, CIRCLE_SEGS, m)
+	_trail_add([m])
+
+
+func _mark_jam(pos: Vector3) -> void:
+	var m := _mat_live(RED, E_TRAIL, TRAIL_ALPHA)
+	var holder := _facing(_trail_root, pos + Vector3(0.0, JAM_MARK_Y, 0.0))
+	for s: float in [1.0, -1.0]:
+		_box(holder, Vector3.ZERO, JAM_MARK, m).rotation.z = s * PI * 0.25
+	_trail_add([m])
+
+
+func _clear_trails() -> void:
+	for ch in _trail_root.get_children():
+		ch.queue_free()
+	_trail_fade.clear()
+	_trail_arrow.clear()
+	_lane.clear()
+	_road_use.clear()
+	_hit_count.clear()
+
+
+## Vehicles, effects, shakes, candidates and trails go; planned paths stay.
+func _reset_motion() -> void:
+	for v: Dictionary in _vehicles.values():
+		(v["node"] as Node3D).queue_free()
+	_vehicles.clear()
+	_clear_fx()
+	_clear_candidates()
+	_clear_trails()
+	_cand_real = -1
+	_shakes.clear()
+	_playing = false
+	for c: Vector2i in _cell_root:
+		(_cell_root[c] as Node3D).position = _grid_world(c)
+	if _home_root != null:
+		_home_root.position = _home_world()
 
 
 # ======================= vehicles, the hound, the candidates =======================
 func _make_vehicle(type: String, hunter: bool, alpha: float) -> Dictionary:
 	var root := Node3D.new()
 	_fx_root.add_child(root)
-	var col: Color = COBALT_HOT if hunter else TYPE_COLOR.get(type, GREY)
+	var col: Color = COBALT_HOT if hunter else _type_col(type)
 	var m := _mat_live(col, E_VEH, alpha)
 	var parts: Array = []
 	var faces: Array = []
@@ -937,9 +1337,17 @@ func _heading(d: Vector3, fallback: float) -> float:
 	return atan2(-d.z, d.x)
 
 
-## Where a new vehicle enters: one cell back along its line (read ahead in the cue queue), else it drops from the sky.
-func _entry_point(line: int, cell: Vector2i, hunter: bool) -> Vector3:
-	if not hunter:
+## Where a new beam vehicle enters: a little back along its line (the cue's optional "from" cell, else read ahead in the
+## queue), else it drops from the sky.
+func _entry_point(line: int, cell: Vector2i) -> Vector3:
+	var step := Vector2i.ZERO
+	if _qi >= 0 and _qi < _queue.size():
+		var cur: Dictionary = _queue[_qi]
+		var fv: Variant = cur.get("from", null)
+		if fv is Vector2i:
+			var fc: Vector2i = fv
+			step = Vector2i(signi(cell.x - fc.x), signi(cell.y - fc.y))
+	if step == Vector2i.ZERO:
 		for j in range(_qi + 1, _queue.size()):
 			var q: Dictionary = _queue[j]
 			var kind := str(q.get("kind", ""))
@@ -949,17 +1357,20 @@ func _entry_point(line: int, cell: Vector2i, hunter: bool) -> Vector3:
 			if kind == "home":
 				nc = Vector2i(-1, cell.y)
 			if nc != cell:
-				return _world(cell - Vector2i(signi(nc.x - cell.x), signi(nc.y - cell.y)), false)
-	return _world(cell, hunter) + Vector3(0.0, SPAWN_DROP, 0.0)
+				step = Vector2i(signi(nc.x - cell.x), signi(nc.y - cell.y))
+				break
+	if step == Vector2i.ZERO:
+		return _world(cell, false) + Vector3(0.0, SPAWN_DROP, 0.0)
+	return _world(cell, false) - Vector3(step.x * CELL_DX * ENTRY_ROUTE_K, 0.0, step.y * CELL_DZ * ENTRY_STREET_K)
 
 
-func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i) -> Dictionary:
+func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at: Vector3) -> Dictionary:
 	if _vehicles.has(line):
 		var old: Dictionary = _vehicles[line]
 		if bool(old["hunter"]) or not hunter:
 			return old
 		_kill_vehicle(line)
-	var entry := _entry_point(line, cell, hunter)
+	var entry: Vector3 = (drop_at + Vector3(0.0, SPAWN_DROP, 0.0)) if hunter else _entry_point(line, cell)
 	if not hunter and _cand_real >= 0:
 		for cv: Dictionary in _cands:
 			if int(cv["route"]) == _cand_real and cell == Vector2i(_w - 1, _cand_real):
@@ -969,7 +1380,8 @@ func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i) -> Dict
 	var v := _make_vehicle(type, hunter, 1.0)
 	var n: Node3D = v["node"]
 	n.position = entry
-	n.rotation.y = _heading(_world(cell, hunter) - entry, HEADING_HOME)
+	var target: Vector3 = drop_at if hunter else _world(cell, false)
+	n.rotation.y = _heading(target - entry, HEADING_HOME)
 	_vehicles[line] = v
 	return v
 
@@ -1079,28 +1491,39 @@ func _start_cue(cue: Dictionary) -> void:
 	_cur_line = NO_LINE
 	match kind:
 		"beam_step", "hit", "block":
-			var v := _vehicle_for(line, type, false, cell)
-			_aim(v, _world(cell, bool(v["hunter"])))
+			var v := _vehicle_for(line, type, false, cell, Vector3.ZERO)
+			var hunter := bool(v["hunter"])
+			_aim(v, _world(cell, hunter))
 			_cur_line = line
+			var a: Vector3 = v["from"]
+			var b: Vector3 = v["to"]
+			_trail_seg(line, a, b, COBALT_HOT if hunter else _type_col(type))
 			if kind == "hit":
 				_fx_strike(cell, type)
 				_shakes[cell] = SHAKE_T
+				_mark_hit(cell, type)
 			elif kind == "block":
 				_fx_shield(cell, type)
+				_mark_block(cell, type, b - a)
 		"home":
 			var row := cell.y
-			var v := _vehicle_for(line, type, false, Vector2i(-1, row))
+			var v := _vehicle_for(line, type, false, Vector2i(-1, row), Vector3.ZERO)
 			_aim(v, _home_entry(row))
 			_cur_line = line
+			_trail_seg(line, v["from"] as Vector3, v["to"] as Vector3, _type_col(type))
+			_mark_home()
 		"hunter_turn", "jam":
-			var v := _vehicle_for(line, type, true, cell)
-			_aim(v, _world(cell, true))
+			var head := _street_head(cell.x)
+			var v := _vehicle_for(line, type, true, cell, head)
+			_aim(v, head)
 			_cur_line = line
+			_mark_turn(cell)
 			if kind == "hunter_turn":
 				v["rot_to"] = HEADING_DOWN
 				v["turn_k"] = 1.0
 			else:
-				_fx_slash(cell)
+				_fx_slash(head)
+				_mark_jam(head)
 		"reveal":
 			if line >= 0:
 				_cand_real = line
@@ -1183,14 +1606,14 @@ func _fx_apply(f: Dictionary, u: float) -> void:
 
 
 func _fx_shield(cell: Vector2i, type: String) -> void:
-	var col: Color = TYPE_COLOR.get(type, GREY)
+	var col := _type_col(type)
 	var m := _mat_live(col, E_FX, HALO_ALPHA)
 	_fx_add(_sphere(_fx_root, _world(cell, false), 1.0, m), "shield", FX_SHIELD_T, [m])
 	_fx_ring(_grid_world(cell), col, 1.0)
 
 
 func _fx_strike(cell: Vector2i, type: String) -> void:
-	var col: Color = TYPE_COLOR.get(type, GREY)
+	var col := _type_col(type)
 	var m := _mat_live(col, E_FX)
 	_fx_add(_box(_fx_root, _grid_world(cell) + Vector3(0.0, STRIKE.y * 0.5, 0.0), STRIKE, m), "strike", FX_STRIKE_T, [m])
 	_fx_ring(_grid_world(cell), col, 1.0)
@@ -1202,9 +1625,9 @@ func _fx_ring(pos: Vector3, col: Color, r: float) -> void:
 	_fx_add(t, "ring", FX_RING_TIME, [m], {"r": r})
 
 
-func _fx_slash(cell: Vector2i) -> void:
+func _fx_slash(pos: Vector3) -> void:
 	var m := _mat_live(RED, E_FX)
-	var holder := _facing(_fx_root, _grid_world(cell) + Vector3(0.0, SLASH_Y, 0.0))
+	var holder := _facing(_fx_root, pos + Vector3(0.0, SLASH_Y, 0.0))
 	_box(holder, Vector3.ZERO, SLASH, m).rotation.z = SLASH_ROT
 	_fx_add(holder, "slash", T_JAM + FX_FADE_T, [m])
 
@@ -1244,6 +1667,7 @@ func _process(delta: float) -> void:
 				_settle_cue(_cur_cue)
 				_next_cue()
 		_step_fx(dt)
+		_step_trails(dt)
 		_step_shakes(dt)
 		_animate(delta)
 	_face_all()

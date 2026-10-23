@@ -109,9 +109,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	font = ThemeDB.fallback_font
 	_parse_args()
+	# A fixed 1280x720 board render: with stretch on, a HiDPI window doubles the SubViewport and the board is cropped.
 	var svc := SubViewportContainer.new()
-	svc.stretch = true
-	svc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	svc.stretch = false
+	svc.position = Vector2.ZERO
 	svc.size = VIEW
 	svc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(svc)
@@ -614,6 +615,7 @@ func _toggle_instant() -> void:
 # ---------------------------------------------------------------- CAPTURE
 func _enter_capture() -> void:
 	board.reset_playout()
+	board.clear_paths()
 	cap_opts = L8Rules.capture_options(leg, st)
 	cap_cell = null
 	board.show_state(st, {"sentries": st["sentries"], "ghost": null})
@@ -698,6 +700,7 @@ func _enter_plan() -> void:
 			sd[c] = t
 			counts[t] = int(counts[t]) + 1
 	place = {"sentries": sd, "ghost": null}
+	_show_plan_paths()
 	undo = []
 	tool = ""
 	fc = []
@@ -885,6 +888,19 @@ func _beam_row(y: float, label: String, ln: Dictionary, live: bool, note: String
 
 
 # ---------------------------------------------------------------- FORECAST
+## Draw this raid's known beams (the ones its launch Heat brings) and the three sealed candidates on the board.
+func _show_plan_paths() -> void:
+	var rd: Dictionary = leg["raids"][raid]
+	var h := L8Rules.launch_heat(st, place)
+	var lines: Array = [rd["b1"]]
+	if h >= L8Rules.EXTRA_AT:
+		lines.append(rd["extra1"])
+	if h >= L8Rules.STRONG_AT:
+		lines.append(rd["extra2"])
+	lines.append_array(rd["cands"])
+	board.show_paths(lines)
+
+
 func _enter_forecast() -> void:
 	if phase != Phase.PLAN:
 		return
@@ -893,6 +909,7 @@ func _enter_forecast() -> void:
 		status_msg = "Placement: " + err
 		return
 	fc = L8Rules.forecast(leg, raid, st, place)
+	_show_plan_paths()
 	tool = ""
 	board.clear_highlight()
 	phase = Phase.FORECAST
@@ -1035,6 +1052,7 @@ func _launch() -> void:
 		if String(e[0]) in ["beam1", "extra1", "extra2"]:
 			known_tr.append(e)
 	board.clear_highlight()
+	board.clear_paths()
 	board.show_candidates(_cand_view(), -1)
 	board.show_state(st, place)
 	phase = Phase.PLAY
@@ -1342,6 +1360,7 @@ func _draw_after() -> void:
 
 # ---------------------------------------------------------------- BETWEEN
 func _enter_between() -> void:
+	board.clear_paths()
 	b_repair = null
 	b_build = null
 	b_inten = "NORMAL"
