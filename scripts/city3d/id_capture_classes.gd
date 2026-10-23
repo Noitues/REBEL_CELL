@@ -13,7 +13,13 @@ const MOVER := 6
 ## NA-ID-b: class 4 is the ground: the ground meshes, and the parts of a landmark compound that lie on it (plaza carpet, apron trims,
 ## rails at grade). A hidden ground would read as class 0 and join the {0, 2} background mask of the 12.2 / R-FOCUS-1 checks.
 const GROUND := 4
-const CLASSES: Array[int] = [SKY, LANDMARK, CITY, LINK, GROUND, ROOM, MOVER]
+## LOOK-TOOLBOX module 19 (d): class 7 is the land past the city (the outer asphalt plane and the outer land, OUTER_NODE_NAMES under
+## the view's ground layer), apart from the city's ground (4) so a band table never counts it as street floor. It is backdrop, not
+## playable floor: the checks' background mask of 12.2 / R-FOCUS-1 is {0, 2, 7} (composition.json, art-pass ruling 2026-10-22).
+const OUTER := 7
+const CLASSES: Array[int] = [SKY, LANDMARK, CITY, LINK, GROUND, ROOM, MOVER, OUTER]
+## The ground-layer nodes of CityView3D that are the land past the city (class OUTER, every mesh under them).
+const OUTER_NODE_NAMES: Array[String] = ["OuterGround", "OuterLand"]
 
 ## Scene groups a builder sets on a node (and, for a mover or a link, on any mesh under it): the id pass paints every mesh of a
 ## tagged node with that class. Landmark compounds need no group (everything under the `landmarks` layer is class 1).
@@ -40,7 +46,7 @@ static func room_bytes(place_1based: int, layer: int) -> Vector3i:
 	return bytes(ROOM, place_1based, layer)
 
 
-## True when `cls` is a class Godot writes (0, 1, 2, 3, 4, 5, 6).
+## True when `cls` is a class Godot writes (0, 1, 2, 3, 4, 5, 6, 7).
 static func is_written(cls: int) -> bool:
 	return CLASSES.has(cls)
 

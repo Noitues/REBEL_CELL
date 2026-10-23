@@ -23,6 +23,14 @@ uniform vec2 wash_h = vec2(4.75, 12.35);
 uniform vec3 wash_a = vec3(1.0, 0.16, 0.6);
 uniform vec3 wash_b = vec3(0.62, 0.38, 1.0);
 uniform float wash_cell = 12.0;
+// LOOK-TOOLBOX module 19 (a): face washes. A cell whose hash < face_share (0 = off) is washed up its whole face to face_top BU
+// at face_gain (the plate's lit pink / violet slabs), in the same hue as its street wash.
+uniform float face_share = 0.0;
+uniform float face_gain = 0.0;
+uniform float face_top = 30.0;
+// The face wash is full to face_top * face_fade0 and fades out at face_top; face_var spreads the cells' strength (0 = all equal).
+uniform float face_fade0 = 0.25;
+uniform float face_var = 0.0;
 
 varying vec3 v_col;
 varying vec3 v_wpos;
@@ -43,7 +51,12 @@ void fragment() {
 	} else if (wash_gain > 0.0) {
 		float pick = fract(sin(floor(v_wpos.x / wash_cell) * 12.9898 + floor(v_wpos.z / wash_cell) * 78.233) * 43758.5453);
 		float wash = 1.0 - smoothstep(wash_h.x, wash_h.y, v_wpos.y);
-		EMISSION = mix(wash_a, wash_b, step(0.5, pick)) * wash_gain * wash;
+		float g = wash_gain * wash;
+		if (face_share > 0.0 && fract(pick * 7.13 + 0.37) < face_share) {
+			float fk = 1.0 - face_var * fract(pick * 13.7 + 0.11);
+			g = max(g, face_gain * fk * (1.0 - smoothstep(face_top * face_fade0, face_top, v_wpos.y)));
+		}
+		EMISSION = mix(wash_a, wash_b, step(0.5, pick)) * g;
 	}
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;

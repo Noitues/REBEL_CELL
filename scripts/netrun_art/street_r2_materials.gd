@@ -8,6 +8,7 @@ const SURFACE := preload("res://shaders/street_r2/street_r2_surface.gdshader")
 const SIGN := preload("res://shaders/street_r2/street_r2_sign.gdshader")
 
 var _by_id: Dictionary = {}
+var _plain: Dictionary = {}
 var _tinted: Dictionary = {}
 
 
@@ -39,6 +40,16 @@ func for_slot(slot: String) -> ShaderMaterial:
 		"glass":
 			return surface("glass")
 	return surface("solid")
+
+
+## Module 19 (a): the material of `mat` without the face wash (face_share 0), for a route column and its neighbours.
+func surface_plain(mat: String) -> ShaderMaterial:
+	if not _plain.has(mat):
+		var m := surface(mat).duplicate() as ShaderMaterial
+		if m.get_shader_parameter(&"face_share") != null:
+			m.set_shader_parameter(&"face_share", 0.0)
+		_plain[mat] = m
+	return _plain[mat]
 
 
 ## A sign board material showing `tex` at emission `emit`.
@@ -85,7 +96,13 @@ func _make(mat: String, use_tint: float, emit_override: float) -> ShaderMaterial
 		var wf: Array = b["wash_floors"]
 		var wa: Array = b["wash_a"]
 		var wb: Array = b["wash_b"]
-		m.set_shader_parameter(&"wash_gain", float(b["wash_gain"]) * float(StreetR2RenderConfigData.shipped().facade["wash_k"]))
+		var fc: Dictionary = StreetR2RenderConfigData.shipped().facade
+		m.set_shader_parameter(&"wash_gain", float(b["wash_gain"]) * float(fc["wash_k"]))
+		m.set_shader_parameter(&"face_share", float(fc["face_share"]))
+		m.set_shader_parameter(&"face_gain", float(fc["face_gain"]))
+		m.set_shader_parameter(&"face_top", float(fc["face_top"]))
+		m.set_shader_parameter(&"face_fade0", float(fc["face_fade0"]))
+		m.set_shader_parameter(&"face_var", float(fc["face_var"]))
 		m.set_shader_parameter(&"wash_h", Vector2(float(wf[0]) * fl, float(wf[1]) * fl))
 		m.set_shader_parameter(&"wash_a", Vector3(float(wa[0]), float(wa[1]), float(wa[2])))
 		m.set_shader_parameter(&"wash_b", Vector3(float(wb[0]), float(wb[1]), float(wb[2])))

@@ -33,7 +33,8 @@ func _state(v: CityView3D) -> int:
 
 
 func test_the_class_table_is_the_adopted_one() -> void:
-	assert_eq(IdCaptureClasses.CLASSES, [0, 1, 2, 3, 4, 5, 6] as Array[int])
+	assert_eq(IdCaptureClasses.CLASSES, [0, 1, 2, 3, 4, 5, 6, 7] as Array[int])
+	assert_true(IdCaptureClasses.is_written(IdCaptureClasses.OUTER), "class 7 (the land past the city) is written")
 	assert_true(IdCaptureClasses.is_written(IdCaptureClasses.GROUND), "class 4 (the ground) is written")
 	assert_eq(IdCaptureClasses.room_bytes(3, 2), Vector3i(5, 3, 2), "class 5: G the place in the run graph, B the layer")
 	assert_eq(IdCaptureClasses.bytes(2, IdCaptureClasses.STUB_G, 0), Vector3i(2, 255, 0), "a stub is class 2, G 255, B 0")
@@ -51,7 +52,9 @@ func test_class_counts_and_the_written_set() -> void:
 	img.set_pixel(3, 1, Color8(4, 0, 0))
 	assert_true(IdCaptureClasses.only_written_classes(img), "a class 4 pixel is allowed")
 	img.set_pixel(3, 1, Color8(7, 0, 0))
-	assert_false(IdCaptureClasses.only_written_classes(img), "a class 7 pixel is not")
+	assert_true(IdCaptureClasses.only_written_classes(img), "a class 7 pixel (the land past the city) is allowed")
+	img.set_pixel(3, 1, Color8(8, 0, 0))
+	assert_false(IdCaptureClasses.only_written_classes(img), "a class 8 pixel is not")
 
 
 func test_capture_json_is_canonical() -> void:
@@ -115,6 +118,9 @@ func test_landmarks_movers_and_links_get_their_classes_and_everything_is_restore
 		if cls[gm] == IdCaptureClasses.GROUND:
 			ground_meshes += 1
 	assert_gt(ground_meshes, 1, "the ground itself is drawn as class 4")
+	var outer := v.layer(&"ground").get_node_or_null(^"OuterGround") as GeometryInstance3D
+	assert_not_null(outer, "the view has its outer plane")
+	assert_eq(cls[outer], IdCaptureClasses.OUTER, "the outer plane past the city is class 7, not floor")
 	assert_eq(cls[node_part], IdCaptureClasses.GROUND, "a mesh under a node named id_ground (the glb's ground node) is class 4")
 	assert_eq(cls[tower], IdCaptureClasses.LANDMARK, "a vertical body beside it stays class 1")
 	var mat := tower.material_override as ShaderMaterial

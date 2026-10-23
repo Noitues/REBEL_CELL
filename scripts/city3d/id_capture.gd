@@ -124,6 +124,13 @@ func classify() -> Dictionary:
 	for g in _ground_shown:
 		for m in _meshes(g):
 			out[m] = IdCaptureClasses.GROUND
+	var gl := view.layer(&"ground")
+	for nm: String in IdCaptureClasses.OUTER_NODE_NAMES:
+		var outer := gl.get_node_or_null(NodePath(nm)) if gl != null else null
+		if outer != null:
+			for m in _meshes(outer):
+				if out.has(m):
+					out[m] = IdCaptureClasses.OUTER
 	for pair: Array in [[IdCaptureClasses.GROUP_GROUND, IdCaptureClasses.GROUND], [IdCaptureClasses.GROUP_LINK, IdCaptureClasses.LINK],
 			[IdCaptureClasses.GROUP_MOVER, IdCaptureClasses.MOVER]]:
 		for n in _tree.get_nodes_in_group(pair[0]):
