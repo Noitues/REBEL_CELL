@@ -25,7 +25,7 @@ static var _shipped: StreetR2RenderConfigData = null
 const REQUIRED: Dictionary = {
 	"facade": ["radius", "lite_radius", "push", "seen_dot", "min_face", "min_h", "win_p", "win_w_min", "win_w_max", "win_w_lo", "win_w_span",
 		"win_h_lo", "win_h_span", "win_h_cap", "win_z", "win_tone_lo", "win_tone_span", "win_outset", "concrete_cells", "families", "terr_mix",
-		"fallback_win", "wall_skin", "trim_band_h", "trim_corner_w", "trim_outset", "trim_seg", "rim_w", "rim_lift", "prism_sides", "wash_k"],
+		"fallback_win", "wall_skin", "trim_band_h", "trim_corner_w", "trim_outset", "trim_seg", "rim_w", "rim_lift", "prism_sides", "wash_k", "face_share", "face_gain", "face_top", "face_fade0", "face_var"],
 	"materials": ["conc", "glass", "panel", "solid", "win", "neon"],
 	"props": ["kits", "emit_k", "lamp", "crowns", "crown_floors_k", "tint_mix"],
 	"signs": ["emit_k", "frame_w", "frame_col", "frame_off", "measure_h_k", "font_anton", "font_mono", "ad_col_k"],

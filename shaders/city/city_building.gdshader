@@ -123,6 +123,16 @@ uniform float win_share = 0.3;
 uniform float win_floor = 0.5;
 uniform float win_pow = 1.0;
 uniform float win_emit = 1.0;
+// LOOK-TOOLBOX module 19 (a): hot buildings (hash < win_hot_bldg; 0 = off, every view but the street look, which sets it through
+// street_route.tres look.building) carry hot floor bands (win_hot_floors floors, hash < win_hot_band): a hot band lights
+// win_hot_lit of its windows, mixed win_hot_white toward white, at win_hot_k times the emission. Clustered lit blocks with whole
+// dark buildings between (the plate's lit panels), not an even sparkle.
+uniform float win_hot_bldg = 0.0;
+uniform float win_hot_band = 0.5;
+uniform float win_hot_floors = 3.0;
+uniform float win_hot_lit = 0.85;
+uniform float win_hot_white = 0.5;
+uniform float win_hot_k = 1.0;
 // LOOK L5 (whole city, the plate's neon signage): above 0 this share of the off-territory facade faces carries one vertical
 // sign strip, sign_w BU wide from sign_z0 to sign_z1 of the height, in one of sign_colors, lit at sign_emit (x look_blend).
 uniform float sign_share = 0.0;
@@ -516,6 +526,13 @@ void fragment() {
 					float skip = (L > 5.0 && hash1(vec3(ui, band * 0.37, seed * 3.3)) < 0.2) ? 0.0 : 1.0;
 					share = mix(share, min(lit * bm, 1.0) * skip, look_blend);
 				}
+				bool hot = false;
+				if (win_hot_bldg > 0.0 && look_blend > 0.0 && v_crest < 0.5 && hash1(vec3(seed * 3.1, 11.0, 5.0)) < win_hot_bldg) {
+					hot = hash1(vec3(floor(vi / max(win_hot_floors, 1.0)), seed * 9.7, 13.0)) < win_hot_band;
+					if (hot) {
+						share = max(share, win_hot_lit);
+					}
+				}
 				if (r < share) {
 					int ci = int(hash1(key + 17.0) * 6.0) % 6;
 					vec3 wc = v_crest > 0.5 && hash1(key + 5.0) < 0.8 ? vec3(0.95, 0.24, 0.22) : window_colors[ci];
@@ -526,6 +543,9 @@ void fragment() {
 						wc = mix(wc, terr_c * max(max(wc.r, wc.g), wc.b) / max(max(max(terr_c.r, terr_c.g), terr_c.b), 1e-3), terr_win_k);
 					}
 					em = wc * s * window_gain * mix(1.0, win_emit, look_blend);
+					if (hot) {
+						em = mix(em, mix(wc, vec3(1.0), win_hot_white) * window_gain * win_emit * win_hot_k, look_blend);
+					}
 					base = wc * s * 0.25;
 				}
 			}

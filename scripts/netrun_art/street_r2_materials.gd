@@ -85,7 +85,13 @@ func _make(mat: String, use_tint: float, emit_override: float) -> ShaderMaterial
 		var wf: Array = b["wash_floors"]
 		var wa: Array = b["wash_a"]
 		var wb: Array = b["wash_b"]
-		m.set_shader_parameter(&"wash_gain", float(b["wash_gain"]) * float(StreetR2RenderConfigData.shipped().facade["wash_k"]))
+		var fc: Dictionary = StreetR2RenderConfigData.shipped().facade
+		m.set_shader_parameter(&"wash_gain", float(b["wash_gain"]) * float(fc["wash_k"]))
+		m.set_shader_parameter(&"face_share", float(fc["face_share"]))
+		m.set_shader_parameter(&"face_gain", float(fc["face_gain"]))
+		m.set_shader_parameter(&"face_top", float(fc["face_top"]))
+		m.set_shader_parameter(&"face_fade0", float(fc["face_fade0"]))
+		m.set_shader_parameter(&"face_var", float(fc["face_var"]))
 		m.set_shader_parameter(&"wash_h", Vector2(float(wf[0]) * fl, float(wf[1]) * fl))
 		m.set_shader_parameter(&"wash_a", Vector3(float(wa[0]), float(wa[1]), float(wa[2])))
 		m.set_shader_parameter(&"wash_b", Vector3(float(wb[0]), float(wb[1]), float(wb[2])))
