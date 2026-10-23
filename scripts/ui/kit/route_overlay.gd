@@ -34,7 +34,10 @@ const NEXT_GLOW_ALPHA := 0.28
 ## (`tools/art_pipeline/parity/export_route_stickers.py`, manifest in ROUTE_ART_DIR); the
 ## concept kind each route kind shows.
 const ROUTE_ART_DIR := "res://assets/netrun/route/"
-const STICKER_ART := {CityMapOverlay.KIND_FIGHT: "router", CityMapOverlay.KIND_ELITE: "elite", CityMapOverlay.KIND_EVENT: "terminal", CityMapOverlay.KIND_SHOP: "shop", CityMapOverlay.KIND_RACK: "rack"}
+const STICKER_ART := {CityMapOverlay.KIND_FIGHT: "router", CityMapOverlay.KIND_ELITE: "elite", CityMapOverlay.KIND_EVENT: "terminal", CityMapOverlay.KIND_SHOP: "shop", CityMapOverlay.KIND_RACK: "rack",
+	CityMapOverlay.KIND_REST: "rest", CityMapOverlay.KIND_WORKSHOP: "workshop", CityMapOverlay.KIND_CACHE: "cache"}
+## The legend's simplified glyph of a kind (its own file), where the full sticker mushes at 16.8 px.
+const LEGEND_ART := {CityMapOverlay.KIND_CACHE: "node_cache_legend"}
 ## A cut-off sticker's alpha (its art is the concept's grey `past` sticker).
 const CUT_ALPHA := 0.75
 ## The choice number's chip: side and lettering (screen px at text scale 1.0).
@@ -69,7 +72,7 @@ const CUT_EDGE_ALPHA := 0.5
 ## `state` (STATE_*) on `ci`: soft glow when selectable, ink keyline, the state ring, the
 ## white die-cut, the kind's colour and its symbol. `k` = local px per screen px. Shared with
 ## the legend strip so the key shows what the map draws.
-static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, state: String, k: float, alpha: float = 1.0) -> void:
+static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, state: String, k: float, alpha: float = 1.0, small: bool = false) -> void:
 	var ring_col := RouteInk.ring_of(state)
 	var ring_r := r - RING_WIDTH * 0.5 * k
 	var disc_r := r - (RING_WIDTH + RING_GAP + DIE_CUT_WIDTH) * k
@@ -80,14 +83,16 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 		ci.draw_arc(p, ring_r, 0, TAU, 40, Color(ring_col, NEXT_GLOW_ALPHA * a), NEXT_GLOW_WIDTH * k)
 	# M14 asset parity: the concept's own node sticker (round 37 r32ui.node_sd: the round 31
 	# icon on a die-cut vinyl sticker; its grey `past` look when cut off), sized to the die-cut.
-	var t := sticker_art(kind, state == STATE_CUT)
+	var t := sticker_art(kind, state == STATE_CUT, small)
 	var cut := disc_r + DIE_CUT_WIDTH * k
 	var sz := Vector2(t.get_width(), t.get_height()) * (cut * 2.0 / maxf(1.0, t.get_width()))
 	ci.draw_texture_rect(t, Rect2(p - sz * 0.5, sz), false, Color(Palette.NO_TINT, a))
 	if CityMapOverlay.KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", CityMapOverlay.icon_id(kind))
 	draw_state_ring(ci, p, ring_r, state, k, a)
-	draw_shape_badge(ci, kind, p, r, k, a)
+	# The three run-graph v2 kinds (slap-tag stickers) are told by their own silhouette: no corner badge.
+	if not ROUTE_SHAPES.has(kind):
+		draw_shape_badge(ci, kind, p, r, k, a)
 
 
 ## W3-ROUTE (C7): the badge's centre (share of the sticker's reach, right and down), its reach
@@ -136,8 +141,8 @@ static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2A
 	return pts
 
 
-## Route-only badge silhouettes (placeholders for the REST, WORKSHOP and CACHE kinds, which have no
-## city icon; art-pass owns the final icons). Kept out of CityMapOverlay.KIND_SHAPES, whose icons must stay unique.
+## Route-only silhouettes of the REST, WORKSHOP and CACHE kinds. They no longer draw as corner badges: their slap-tag stickers (STICKER_ART) are
+## told by their own outline; the polygons stay for `shape_polygon`. Kept out of CityMapOverlay.KIND_SHAPES, whose icons must stay unique.
 const ROUTE_SHAPES := {"rest": "house", "workshop": "hexagon", "cache": "diamond"}
 
 
@@ -187,8 +192,11 @@ static func draw_state_ring(ci: CanvasItem, p: Vector2, ring_r: float, state: St
 
 ## The concept sticker a route kind shows (STICKER_ART names, round 37's kinds; `past` = the
 ## grey cut-off look), loaded once.
-static func sticker_art(kind: String, past: bool = false) -> Texture2D:
+static func sticker_art(kind: String, past: bool = false, small: bool = false) -> Texture2D:
+	# `small` = the 16.8 px legend glyph where a kind has one (CACHE's fewer, fatter bricks: node_cache_legend.png).
 	var name := "node_%s%s" % [STICKER_ART.get(kind, "router"), "_past" if past else ""]
+	if small and not past and LEGEND_ART.has(kind):
+		name = String(LEGEND_ART[kind])
 	if not _art_cache.has(name):
 		_art_cache[name] = load(ROUTE_ART_DIR + name + ".png") as Texture2D
 	return _art_cache[name]

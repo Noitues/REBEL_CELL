@@ -1,0 +1,71 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "route_node_stickers_v2",
+ "about": "REST / WORKSHOP / CACHE route node stickers, direction C (slap-tag). Built by tools/art_pipeline/route_nodes/export_route_nodes.py.",
+ "source": {
+  "concept": "docs/concepts/solace_vertical/nodes",
+  "driver": "tools/art_pipeline/route_nodes/export_route_nodes.py"
+ },
+ "items": [
+  {
+   "file": "node_rest.png",
+   "made_by": "icons.make('C', 'rest').render(1.0)",
+   "size": [
+    130,
+    130
+   ]
+  },
+  {
+   "file": "node_rest_past.png",
+   "made_by": "past(node_rest.png)",
+   "size": [
+    130,
+    130
+   ],
+   "note": "cut-off look: greyscale 0.7"
+  },
+  {
+   "file": "node_workshop.png",
+   "made_by": "icons.make('C', 'workshop').render(1.0)",
+   "size": [
+    130,
+    130
+   ]
+  },
+  {
+   "file": "node_workshop_past.png",
+   "made_by": "past(node_workshop.png)",
+   "size": [
+    130,
+    130
+   ],
+   "note": "cut-off look: greyscale 0.7"
+  },
+  {
+   "file": "node_cache.png",
+   "made_by": "icons.make('C', 'cache').render(1.0)",
+   "size": [
+    130,
+    130
+   ]
+  },
+  {
+   "file": "node_cache_past.png",
+   "made_by": "past(node_cache.png)",
+   "size": [
+    130,
+    130
+   ],
+   "note": "cut-off look: greyscale 0.7"
+  },
+  {
+   "file": "node_cache_legend.png",
+   "made_by": "icons.c_cache_small().render(1.0)",
+   "size": [
+    130,
+    130
+   ],
+   "note": "the legend's 16.8 px glyph: the same stack, fewer and fatter bricks, wider mortar"
+  }
+ ]
+}

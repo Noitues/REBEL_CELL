@@ -410,6 +410,7 @@ CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
 CYCLES,CYCLES
 CYCLES %s,CYCLES %s
+Cache,Cache
 Cache: a stash of Cycles and a card.,Cache: a stash of Cycles and a card.
 Cache: placeholder text,Cache: placeholder text
 Campaign code (share it: it starts this campaign),Campaign code (share it: it starts this campaign)
@@ -2223,9 +2224,9 @@ Rest: placeholder text,Rest: placeholder text
 RestConfirm,RestConfirm
 RestHint,RestHint
 RestHp,RestHp
-RestLeave,RestLeave
 RestPatch,RestPatch
 RestUndo,RestUndo
+RestWindow,RestWindow
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -3462,12 +3463,12 @@ Window mode,Window mode
 Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
+Workshop,Workshop
 Workshop: placeholder text,Workshop: placeholder text
 Workshop: refit a wheel slice for Cycles.,Workshop: refit a wheel slice for Cycles.
-WorkshopBuy,WorkshopBuy
 WorkshopCycles,WorkshopCycles
 WorkshopHint,WorkshopHint
-WorkshopLeave,WorkshopLeave
+WorkshopWindow,WorkshopWindow
 Xbox,Xbox
 YES,YES
 YOU,YOU
