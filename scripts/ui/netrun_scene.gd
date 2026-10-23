@@ -853,8 +853,8 @@ func leave_shop() -> void:
 
 
 ## The loot title's kind stamp (px at text scale 1: its side, its anchor offsets as shares of the side, its tilt in rad).
-const LOOT_STAMP_PX := 150.0
-const LOOT_STAMP_OFFSET := Vector4(-0.40, -0.34, 0.60, 0.66)
+const LOOT_STAMP_PX := 105.0
+const LOOT_STAMP_OFFSET := Vector4(0.0, -0.10, 1.0, 0.90)
 const LOOT_STAMP_TILT := 0.14
 
 
@@ -877,6 +877,7 @@ func _loot_kind_stamp(s: NetrunSession, os: float) -> TextureRect:
 	r.offset_bottom = LOOT_STAMP_OFFSET.w * side
 	r.pivot_offset = Vector2(side * 0.5, side * 0.5)
 	r.rotation = LOOT_STAMP_TILT
+	r.z_index = 1  # over the strip beneath the title, as a sticker slapped on
 	return r
 
 

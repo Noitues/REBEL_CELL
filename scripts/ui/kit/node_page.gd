@@ -21,10 +21,12 @@ var _second: int = -1
 var _keys: Array[Button] = []
 
 ## Look (px at text scale 1): the choice stickers' width, the gaps between them, the verbs' lettering and the grid's columns.
-const ROW_W := 540.0
+const ROW_W := 380.0
 const ROW_GAP := 14.0
 const BLOCK_GAP := 10.0
-const VERB_PX := 36
+const VERB_PX := 30
+## The offers' share of a slot row's width (three offers stand in the width of two slots).
+const OFFER_SHARE := 0.62
 const SLOT_COLUMNS := 2
 const OFFER_COLUMNS := 3
 ## The verbs' tint and the dim of a spent verb.
@@ -54,6 +56,7 @@ func _label(text: String, node_name: String = "") -> Label:
 	if node_name != "":
 		l.name = node_name
 	l.add_theme_font_override(&"font", Palette.mono())
+	l.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
 	l.add_theme_color_override(&"font_color", Palette.TEXT_MID)
 	return l
 
@@ -93,6 +96,7 @@ func _choice(text: String, node_name: String, number: int, width: float, tip: St
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD
 	b.custom_minimum_size.x = width * minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.add_child(ChoiceSticker.new(number, Settings.text_scale))
 	return b
 
@@ -224,7 +228,7 @@ func _build_workshop() -> void:
 	var offer_box := _grid("WorkshopOffers", OFFER_COLUMNS)
 	win.body.add_child(offer_box)
 	for i in offers.size():
-		var b := _choice(_name_of(StringName(String(offers[i]))), "WorkshopOffer%d" % i, i + 1, ROW_W * 2.0 / float(OFFER_COLUMNS))
+		var b := _choice(_name_of(StringName(String(offers[i]))), "WorkshopOffer%d" % i, i + 1, ROW_W * OFFER_SHARE)
 		b.toggle_mode = true
 		b.button_pressed = i == _first
 		b.disabled = spent

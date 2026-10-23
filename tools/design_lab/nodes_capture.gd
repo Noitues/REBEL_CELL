@@ -11,10 +11,15 @@ const SLOT := "nodes_capture"
 const BAKE_WAIT_S := 14.0
 const SETTLE_FRAMES := 30
 ## The wheel slots and offer picked on the pages, and the HP the REST page shows (a share of max).
-const REST_PICKS: Array[int] = [0, 2]
-const WORKSHOP_PICKS: Array[int] = [1, 2]
+const REST_PICKS: Array[int] = [0, 3]
+const WORKSHOP_PICKS: Array[int] = [1, 3]
 const HP_SHARE := 0.68
 const CYCLES := 160
+## The map waits this many bake waits for the entry dive to land on the route.
+const ENTRY_WAITS := 3.0
+const RESOLUTION := Vector2i(1920, 1080)
+## Seconds the loot page takes to come in.
+const LOOT_ENTRANCE_S := 5.0
 
 var out := ""
 var shots: PackedStringArray = ["map", "rest", "workshop", "cache"]
@@ -33,6 +38,9 @@ func _ready() -> void:
 	AudioDirector.muted = true
 	Settings.reduce_effects = true
 	Settings.tutorial_done = true
+	Settings.resolution = RESOLUTION  # the player's 1080p: a sticker is 41.6 px (k = 1)
+	Settings.apply_display()
+	await _frames(2)  # the root is busy setting up its children inside _ready
 	for s in shots:
 		await _one(s)
 	RunManager.delete_save()
@@ -58,11 +66,13 @@ func _fresh() -> void:
 		net.queue_free()
 		await _frames(4)
 	RunManager.reset()
-	RunManager.new_campaign(7)
+	RunManager.new_campaign(3, &"meridian")
 	net = NETRUN.instantiate()
 	get_tree().root.add_child(net)
 	await _frames(2)
-	net.start_run(1)
+	var c := RunManager.campaign
+	RunManager.netrun = NetrunSession.start(RunManager.resolver, c, c.roster[0].id, 1, &"m1_a", 5, RunManager.corporation)
+	net._show_current()
 	await _until(func() -> bool: return net.arrival_ready(), 900)
 	await _wait(BAKE_WAIT_S)
 
@@ -95,8 +105,11 @@ func _page() -> Node:
 func _enter(node_type: int) -> void:
 	await _fresh()
 	var s: NetrunSession = RunManager.netrun
-	var first: StringName = s.available_nodes()[0]
+	var first: StringName = s.available_nodes().back()
 	s.run.map.get_node(first)["type"] = node_type
+	s.run.map.get_node(first)["layer"] = 2  # a plain room: layer 1 is the ladder's "gate" word
+	s.run.operative.slot_firmware_ids[0] = &"overvolt"
+	s.run.operative.slot_firmware_ids[2] = &"skimmer"
 	s.run.operative.hp = maxi(1, roundi(s.run.operative.max_hp * HP_SHARE))
 	s.run.cycles = CYCLES
 	net.enter_node(first)
@@ -108,10 +121,19 @@ func _one(shot_name: String) -> void:
 		"map":
 			await _fresh()
 			_all_kinds()
+			net.set("_street_data", null)  # the street is derived again from the changed kinds
 			net._show_current()
 			await _until(func() -> bool: return net.arrival_ready(), 900)
-			await _wait(BAKE_WAIT_S)
-			await _shot("map")
+			await _until(func() -> bool: return net.street_view != null and is_instance_valid(net.street_view) and net.street_view.rig != null and net.street_view.rig.is_prepared(), 3600)
+			await _wait(BAKE_WAIT_S * ENTRY_WAITS)  # the rebuilt street and its entry dive come first
+			# the whole run at once (Z flips to OVERVIEW), then back to the decision view
+			if net.street_view != null:
+				net.street_view.set_base_view(StreetRouteRules.toggled(net.street_view.base_view))
+				await _wait(BAKE_WAIT_S * 0.5)
+				await _shot("map_overview")
+				net.street_view.set_base_view(StreetRouteRules.toggled(net.street_view.base_view))
+				await _wait(BAKE_WAIT_S * 0.5)
+				await _shot("map")
 		"rest":
 			await _enter(RC.InfilNodeType.REST)
 			var p := _page()
@@ -132,5 +154,5 @@ func _one(shot_name: String) -> void:
 			await _shot("workshop")
 		"cache":
 			await _enter(RC.InfilNodeType.CACHE)
-			await _wait(2.0)
+			await _wait(LOOT_ENTRANCE_S)
 			await _shot("cache")
