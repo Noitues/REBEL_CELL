@@ -114,3 +114,25 @@ and the outcome never varies.
 
 **Weak spot:** the shop is rarely used (3 buys in 40 steps, all decoys). Kit prices are high against repairs and
 income.
+
+## L4: seeded real line, dark as kit, cheaper shop, BATTERED (`sweep_l4.py`, 20 legs)
+
+**What the L4 changes did:**
+- **The sealed line is no longer always candidate 0.** Planning across a real unknown raised the planner's lead over
+  greedy play from 3.6 to **6.7** (≥ 3 on 65% of legs, up from half).
+- **Shop use rose:** 13 buys in 40 steps, up from 3 (decoy 9, spoof 2, dark 2, ghost 0).
+- **Go dark as a kit item** is used 0.63 per raid.
+- **Intensity mix:** LOW 17, NORMAL 5, HOT 18. NORMAL is still the weakest choice.
+- **Outcome tiers** over 60 raids: BATTERED 31, HOLDS 24, DAMAGED 3, EVADED 2. Half of all raids now cost real assets,
+  where L3 had 54 of 60 as HOLDS.
+
+**Other numbers:**
+- Kit use per raid: ghost 0.32, spoof 0.58, decoys 0.8.
+- Near-tied first-raid plans: 3.4.
+
+**Breaches:** careful play 0%, greedy 0%, careless play 45%. Careless play averages 80 points below the planner.
+
+**Weak spots:**
+- No one buys a ghost at 4.
+- NORMAL intensity is rarely the best choice.
+- EVADED is rare (2 of 60).
