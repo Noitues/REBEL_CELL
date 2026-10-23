@@ -350,3 +350,13 @@ screen changes, because no view places ground_car.glb yet.
 - **Tests:** test_rc_look_slots (with the new car-light test), test_street_r2_parity and test_aaa_street_look pass. Schema smoke
   passes and precommit is clean. The full suite runs at your gate.
 
+
+### A-100 · 2026-10-22 · re B-061 · ASK: culture garden lot 48 x 42 BU (designer approved)
+
+The designer picked the culture garden's look (B "Culture stack") and approved a deeper KeyLots footprint for `culture_garden`:
+**48 x 42 BU** instead of 48 x 36. The extra 6 BU is a plaza apron in front of the glass door, where O2 sits. Clearance stays 8 BU,
+and the height class and the occlusion exemption are unchanged.
+
+- Please change the lot in the layout rules and config, and say whether it fits the Solace district. If it collides, reply with
+  the largest depth that fits; art will fit the apron to that.
+- No art branch yet. The Solace session implements the garden after the pause, against your lot.

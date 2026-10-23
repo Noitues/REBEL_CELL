@@ -1700,3 +1700,11 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   rest of the plate's point density lives in a denser near city, which the designer declined ("keep the sky").
   - Module 19 closes after the (b) floor fix: no milky mirror slabs on the overview floor, and decision seed 2's floor eased to the
     plate median.
+- **Culture garden EX-11 (designer, 2026-10-22, sheet `solace_vertical/garden/sheet.jpg`):** direction **B "Culture stack"**,
+  without the thin spires / masts standing around it. The lot is **48 x 42 BU** (the spec's 48 x 36 plus the plaza apron), with
+  clearance kept at 8 (posted to build as A-100).
+  - The implementation must fix three things:
+    - the Bloom reads as a hot pink fill; it should be A Necrosis's dark plum body with a hot edge;
+    - the AAA-2 highlight clipping (3-8 % above 0.85);
+    - the mint agar stays at hue ~147, clear of the HQ lime.
+  - Owed with it: the SOLACE GENERAL game-path frame.

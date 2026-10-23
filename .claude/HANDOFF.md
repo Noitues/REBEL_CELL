@@ -33,7 +33,8 @@
 - **Open READY entries:**
   - A-098: car-light slot fix, art/look-toolbox-7 @ 3ad4043a. Not merged yet; no pixel change.
   - A-099: nodes, merged as main 505d4152 (B-079) and pruned.
-- **Next free number: A-100.**
+- A-100: ASK to build, garden lot 48 x 42 (designer approved).
+- **Next free number: A-101.**
 - Older ACK / FYI entries (A-044..A-068, A-080, A-083, A-085, A-088) remain. Prune them as build closes them.
 
 ## Sessions managed (all report to art-pass)
@@ -95,7 +96,7 @@ Gates and what follows:
   - Cycles only where needed.
 - Directions: A "Glass ward", B "Culture stack", C "Hanging mountain".
 - Frames: the map / HQ view, the street plaza with the Bloom CREEPING, and an inside cutaway with the Bloom CATCHING. No raid zoom.
-- **Next designer touch:** the garden direction pick. Review the sheet first, then AskUserQuestion with a recommendation.
+- **Garden picked (designer):** B "Culture stack", without the spires; lot 48 x 42 (A-100 to build). Next: implementation once build replies to A-100. HANDOFF_SOLACE.md has the update.
 - Deferred: the district raid-zoom re-shoot (when the raid redesign lands); key_intel and key_breach stay placeholders (B-061).
 
 ## Rulings logged today (DIRECTION_REVIEW, 2026-10-22)

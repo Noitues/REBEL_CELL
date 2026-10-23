@@ -121,3 +121,9 @@ See "Final state" below.
   - art/look-nodes 3a13c63b, art/look-bloom a91a2995, art/look-stills 56430048 (all merged);
   - art/look-gate 4458938c and art/look bd3c6499 (superseded; don't merge);
   - art-pass: see `git log -1` after this file's commit.
+
+## Update from art-pass, after this handoff (2026-10-22)
+- **Garden pick (designer):** B "Culture stack", **without the thin spires / masts around it**. The lot is 48 x 42 BU, posted to
+  build as A-100; wait for build's reply before you lock the footprint.
+- **Next:** implement it in Godot on a new art branch from the latest main. Fix the hot-pink Bloom fill (it should be A Necrosis's
+  plum body with a hot edge), the AAA-2 clipping, and include the owed SOLACE GENERAL game-path frame. Send the sheet to art-pass.
