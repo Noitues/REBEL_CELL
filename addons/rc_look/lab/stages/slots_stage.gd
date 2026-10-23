@@ -24,6 +24,7 @@ const BG := Color(0.11, 0.11, 0.13)
 ## Role -> flat colour (the street surfaces, the landmark roles by number; anything else grey).
 const ROLE_COLORS := {"solid": Color(0.45, 0.45, 0.5), "conc": Color(0.62, 0.58, 0.5), "panel": Color(0.35, 0.55, 0.75),
 	"glass": Color(0.5, 0.85, 0.95), "win": Color(1.0, 0.85, 0.4), "neon": Color(1.0, 0.3, 0.75), "lamp_emit": Color(1.0, 0.95, 0.7),
+	"car_head": Color(1.0, 0.97, 0.9), "car_tail": Color(1.0, 0.18, 0.14),
 	"-1": Color(1.0, 1.0, 1.0), "0": Color(0.5, 0.5, 0.55), "1": Color(0.3, 0.3, 0.35), "2": Color(0.9, 0.75, 0.5),
 	"3": Color(1.0, 0.3, 0.75), "4": Color(1.0, 0.85, 0.4), "5": Color(0.95, 0.6, 0.2), "6": Color(0.8, 0.7, 0.3),
 	"7": Color(0.95, 0.4, 0.1), "8": Color(0.4, 0.9, 0.6)}

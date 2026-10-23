@@ -1234,6 +1234,9 @@ func _p2_street_r2_render_config() -> int:
 	var bad: StreetR2RenderConfigData = cfg.duplicate(true)
 	(bad.materials as Dictionary).erase("neon")
 	if not ",".join(bad.validate()).contains("materials.neon"): fails += 1
+	var no_car: StreetR2RenderConfigData = cfg.duplicate(true)
+	(no_car.lamps as Dictionary).erase("car_tail_emit")
+	if not ",".join(no_car.validate()).contains("car_tail_emit"): fails += 1
 	return fails
 
 

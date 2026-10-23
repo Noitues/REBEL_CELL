@@ -14,6 +14,8 @@ uniform float rough = 0.55;
 uniform float metal = 0.0;
 uniform float emit = 0.0;
 uniform float use_tint = 0.0;
+// A fixed light colour (the street kit car lights, `StreetR2RenderConfigData.lamps.car_*`): a > 0 replaces the vertex / tint colour.
+uniform vec4 light_color = vec4(0.0);
 // The street-level wash of the city building (NA-22c, `CityShaderConfigData.building.wash_*`): the lowest floors take the street's
 // sign hues (pink / violet, one per building cell) so the facade luma rises toward the street. 0 = off (the lit materials).
 uniform float wash_gain = 0.0;
@@ -29,7 +31,7 @@ void vertex() {
 	v_wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	vec3 tint = INSTANCE_CUSTOM.rgb;
 	float k = INSTANCE_CUSTOM.a * use_tint;
-	v_col = mix(COLOR.rgb, tint, k);
+	v_col = mix(mix(COLOR.rgb, tint, k), light_color.rgb, step(0.5, light_color.a));
 }
 
 void fragment() {

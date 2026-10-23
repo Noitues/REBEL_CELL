@@ -43,6 +43,20 @@ func test_the_street_slots_equal_for_slot() -> void:
 	assert_eq(RcLookSlots.of("never_exported")["role"], c.street_fallback, "and names the fallback it would get")
 
 
+## Designer ruling (via art-pass): the street kit car lights glow, headlight warm white, tail light red, numbers in config.
+func test_the_car_lights_glow_in_their_config_colours() -> void:
+	var mats := StreetR2Materials.new()
+	var l: Dictionary = StreetR2RenderConfigData.shipped().lamps
+	for pair: Array in [["headlight_emit", "car_head"], ["taillight_emit", "car_tail"]]:
+		var m := mats.for_slot(pair[0])
+		var c: Array = l[pair[1] + "_color"]
+		assert_eq(m.get_shader_parameter(&"light_color"), Vector4(float(c[0]), float(c[1]), float(c[2]), 1.0), pair[0])
+		assert_eq(float(m.get_shader_parameter(&"emit")), float(l[pair[1] + "_emit"]), pair[0])
+		assert_gt(float(m.get_shader_parameter(&"emit")), 0.0, "%s is emissive" % pair[0])
+	assert_gt(float((l["car_head_color"] as Array)[2]), float((l["car_tail_color"] as Array)[2]), "head warm white, tail red")
+	assert_eq(mats.surface("solid").get_shader_parameter(&"light_color"), null, "other materials keep the default (off)")
+
+
 func test_every_export_lists_every_slot() -> void:
 	var files: Array[String] = []
 	_glbs("res://assets", files)

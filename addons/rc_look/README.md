@@ -358,5 +358,7 @@ committed. The plugin is enabled in `project.godot` beside GUT; a folder joins t
 HqCompoundMaterials.LANDMARK_NAME; the street names equal `StreetR2Materials.for_slot` by behaviour (prefix and fallback
 included); every glb under `assets/` lists every slot; the pilots carry the stamp.
 
-**Found (not changed).** The street kit's `headlight_emit` and `taillight_emit` fall to `solid` in `for_slot` (not
-emissive): the car lights do not glow from their slot. Listed as `solid` so the map equals today.
+**Car lights (designer ruling via art-pass, after A-097).** `headlight_emit` (role `car_head`, warm white) and
+`taillight_emit` (`car_tail`, red) are emissive: `StreetR2Materials.for_slot` gives the neon surface a fixed `light_color`,
+numbers in `street_r2_render.tres` `lamps.car_head_color / _emit`, `car_tail_color / _emit` (colours = the city car's
+`headlight` / `street_tail`). No view places `ground_car.glb` yet, so no frame changes.

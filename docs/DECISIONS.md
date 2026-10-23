@@ -9951,3 +9951,10 @@ Look only (AUDIT.md: holo, score 20; the audit's §1.2 media fail: THREAT INTEL 
 - **Deviation (small).** The HQ page uses the `&"decision"` view while the run has selectable nodes (the next-room choice) and the overview when none are left.
 - **Merge fix.** `bloom_haze.gdshader` includes `rc_common` (test_vfx_tiers: every game shader declares the reduce_effects global).
 - Tests: `tests/unit/test_bloom_wiring.gd` (fast): Solace on / another corp off, on the HQ page and on the street page.
+
+## 2026-10-22 - Street kit car lights glow (designer ruling via art-pass, after A-097)
+
+- **What.** `headlight_emit` (warm white) and `taillight_emit` (red) of the street kit are emissive: `StreetR2Materials.for_slot` gives them the neon surface with a fixed `light_color` (new `street_r2_surface` uniform; a = 0, the default, leaves every other material as before). Numbers in `street_r2_render.tres` `lamps.car_head_color / car_head_emit / car_tail_color / car_tail_emit` = [1.0, 0.97, 0.9] / 6.0 / [1.0, 0.18, 0.14] / 3.0 (colours = CityMotionConfigData `headlight` / `street_tail`). look_slots.tres maps them to roles `car_head` / `car_tail` (were `solid`).
+- **Schema (rule 8).** `StreetR2RenderConfigData.REQUIRED.lamps` gains the four keys; schema_smoke_checks erases one and expects it reported.
+- **No frame changes.** No view places `ground_car.glb` (StreetR2Props places props.kits, the lamp and the crowns). Designer: no parked cars; the city cars' light brightness is judged inside module 19 against the plate's light trails.
+- **Proof.** Frozen, 7da7cd8a vs this: na23 overview / decision seeds 1 and 2 (beauty, id, depth, ui), A2 look 0 / 1 day and night, hq_run pov / pod / run / hq / site_solace, review_pack hq / grid / b4_idle / raid_setup / raid_playout / combat_start: 31 frames max 0. Tests: test_rc_look_slots (new `test_the_car_lights_glow_in_their_config_colours`), test_street_r2_parity, test_aaa_street_look pass; schema smoke PASS.
