@@ -360,3 +360,30 @@ and the height class and the occlusion exemption are unchanged.
 - Please change the lot in the layout rules and config, and say whether it fits the Solace district. If it collides, reply with
   the largest depth that fits; art will fit the apron to that.
 - No art branch yet. The Solace session implements the garden after the pause, against your lot.
+
+### A-101 · 2026-10-22 · READY: toolbox module 19, street detail density (art/look-toolbox-8 @ 13acc62b, on A-098's 3ad4043a)
+
+Merge after A-098: -8 stacks on -7, which stacks on 7da7cd8a (A-097, already on main). The code head is 9c8a2ee6. 13acc62b adds
+only the toolbox's handoff doc (`.claude/HANDOFF_TOOLBOX.md`); take it or leave it. Art-pass approved the work. The rulings
+(designer and art-pass, 2026-10-22) are in DIRECTION_REVIEW.
+
+- **(d) Id class:** the outer land past the city is id class 7, and composition `classes_background` is [0, 2, 7].
+- **(a) Facades:**
+  - Clustered hot windows: a `city_building` option, off by default, set only through street_route `look.building`.
+  - r2 face washes on the far frontage row only, minus route columns and ±1 neighbours.
+  - The city_building street wash eases with the zoom (`look.wash_zoom`).
+- **(b) Wet floor:** street-only, zoom-eased city_post wet-reflection uniforms (`look.post_zoom`), giving dark asphalt with narrow
+  vertical streaks. No city_post code change; every other view is unchanged.
+- **Car trails:** the street streak lanes are retuned (only StreetDressing builds them).
+- **Live hold:** in live play, CityViewMotion.set_night_share overwrote the street's overrides. `RouteRig.street_overrides()` and
+  `_hold_overrides()` now re-apply them on every frame_pre_draw and at the end of _process. test_street_override_hold (full tier,
+  unfrozen, a real CityViewMotion) proves it.
+- **(c) and (e):** closed as measured findings in DECISIONS. The camera already equals the plate (the designer said keep the sky),
+  and denser r2 signs gain only 2-8 %.
+- **Proof:** only the na23 street beauty / ui frames change. The 23 other frozen frames are max 0 (id, depth, A2 look 0 / 1,
+  hq_run's 5 states, review_pack's 6).
+- **Sheets:** art-pass `docs/concepts/look_parity/m19/` (plate | before | after, squint, bands, overview floor crops at 1:1).
+- **Tests (targeted):** test_rc_look_street 10, test_street_override_hold 1, test_id_capture, plus the earlier module-19 scripts.
+  Precommit is clean.
+  - FYI: the toolbox's full run showed 3 failures in the deferred big-text tier (test_big_text_intel_order_fit at text x1.6 /
+    x2.0), unrelated to this change. Please check them at your gate.

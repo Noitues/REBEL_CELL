@@ -5,7 +5,7 @@
 | Written | 2026-10-22, late evening |
 | Branch / commit | `art-pass` in the worktree `D:/rc_art/art-pass` (see `git log -1`). |
 | Main | `D:/Godot/rebel_cell` main @ 505d4152, which includes A-099. It is read-only for art-pass. |
-| State | Two sessions are working: the toolbox (module 19) and Solace (garden concepts). Nothing waits on the designer. |
+| State | **Paused.** The toolbox and Solace both finished, committed, wrote their handoffs and stopped. No agents are running. Waiting on build: A-098 and A-101 (READY), A-100 (ASK). |
 
 ## Role (keep these)
 - Art-pass is the **only** session the designer talks to for visual work. It:
@@ -33,20 +33,22 @@
 - **Open READY entries:**
   - A-098: car-light slot fix, art/look-toolbox-7 @ 3ad4043a. Not merged yet; no pixel change.
   - A-099: nodes, merged as main 505d4152 (B-079) and pruned.
-- A-100: ASK to build, garden lot 48 x 42 (designer approved).
-- **Next free number: A-101.**
+  - A-101: toolbox module 19, art/look-toolbox-8 @ 13acc62b (code 9c8a2ee6). Merge after A-098. Sheets are in
+    `docs/concepts/look_parity/m19/`.
+- **Open ASK:** A-100, the garden lot at 48 x 42 (designer approved). Build was woken; its reply gates the garden implementation.
+- **Next free number: A-102.**
 - Older ACK / FYI entries (A-044..A-068, A-080, A-083, A-085, A-088) remain. Prune them as build closes them.
 
 ## Sessions managed (all report to art-pass)
 | Session | Id | Folder / branch | State | Next |
 |---|---|---|---|---|
-| Look-toolbox library | local_59edc93f-f0e0-43fb-8a07-aa94f76898ce | D:/rc_art/godot_look_toolbox_5 (+ D:/rc_art/godot_look) / art/look-toolbox-8 @ 177cf088 | Working on module 19 | See "Toolbox" below |
-| Solace visual list | local_92774ce2-f55e-46ef-9a1e-b7bf80d81f52 | D:/rc_art/godot_look_hqport, art-pass for sheets | Garden concept round running | See "Solace" below |
-| Toolbox module 13, vinyl (lab only) | local_fa015c16-d915-4677-8036-3b24f98c2145 | godot_look/.claude/worktrees/look-m13-vinyl-3bea20 | Idle; rulings applied ("\\" band on both families, card seam to kit) | Lab only on raid screens until the redesign lands |
-| Toolbox module 14, CRT (lab only) | local_bb06fec7-aab4-425a-ac00-eb0946cab754 | .../look-m14-crt-8c2d79 | Idle; KEEP_STATIC ruled | Same |
-| Toolbox module 16, binary bits (lab only) | local_59d9417f-9ef1-48aa-b05a-b7d5a22eee00 | .../look-m16-bits-6fad31 | Idle; bits rulings applied | Same |
-| Toolbox grease-pencil polish | local_7ce28862-4a22-41fd-84e9-dcd4651418a2 | .../gifted-yonath-0c2f42 | Idle since 2026-10-22 morning | The toolbox owns it; ask the toolbox before reusing it |
-| Toolbox decrypted holo (THREAT INTEL) | local_247ffb72-43e4-46f5-919e-ebda3871bebb | .../goofy-lalande-0a48b3 | Idle | Same |
+| Look-toolbox library | local_59edc93f-f0e0-43fb-8a07-aa94f76898ce | D:/rc_art/godot_look_toolbox_5 (+ D:/rc_art/godot_look) / art/look-toolbox-8 @ 13acc62b | **Stopped.** Handoff: `D:/rc_art/godot_look_toolbox_5/.claude/HANDOFF_TOOLBOX.md` (13acc62b) | Module 18 (perf) after A-101 merges |
+| Solace visual list | local_92774ce2-f55e-46ef-9a1e-b7bf80d81f52 | D:/rc_art/godot_look_hqport, art-pass for sheets | **Stopped.** Handoff: `D:/rc_art/art-pass/.claude/HANDOFF_SOLACE.md` (090e83f6, plus art-pass's garden-pick update) | Garden B implementation after build answers A-100 |
+| Toolbox module 13, vinyl (lab only) | local_fa015c16-d915-4677-8036-3b24f98c2145 | godot_look/.claude/worktrees/look-m13-vinyl-3bea20 | Done; landed in -8 | Archive on the designer's yes |
+| Toolbox module 14, CRT (lab only) | local_bb06fec7-aab4-425a-ac00-eb0946cab754 | .../look-m14-crt-8c2d79 | Done; landed in -8 | Archive on the designer's yes |
+| Toolbox module 16, binary bits (lab only) | local_59d9417f-9ef1-48aa-b05a-b7d5a22eee00 | .../look-m16-bits-6fad31 | Done; landed in -8 | Archive on the designer's yes |
+| Toolbox grease-pencil polish | local_7ce28862-4a22-41fd-84e9-dcd4651418a2 | .../gifted-yonath-0c2f42 | Done; landed in -8 | Archive on the designer's yes |
+| Toolbox decrypted holo (THREAT INTEL) | local_247ffb72-43e4-46f5-919e-ebda3871bebb | .../goofy-lalande-0a48b3 | Done; landed in -8 | Archive on the designer's yes |
 | L2 Godot-reachable twin | local_c5bfd172-9efd-4fd2-bcb0-5726fb78fb7b | C: worktree loving-rhodes-0be732 | Done (2026-10-20) | Archive on the designer's yes |
 | First HQ parity sheet (Meridian) | local_745f968c-1ab6-4ed9-b91c-499407a39d82 | C: worktree determined-goodall-5b942e | Done | Archive on the designer's yes |
 | horizon_break never lowers | local_71a1a7f4-d984-4f60-8948-52b6841bdd62 | art-pass | Done (A-067 merged) | Archive on the designer's yes |
@@ -62,41 +64,40 @@ The street matched the golden plate's camera, but lacked the plate's small brigh
 
 | Step | State | What |
 |---|---|---|
+**Module 19 is closed and approved, posted as A-101.**
+
+| Step | State | What |
+|---|---|---|
 | (d) | done, b2ae906d | The outer land is id class 7, counted as background. |
 | (c) | closed as a finding | The designer said **keep the sky**: no infill blocks. |
-| (a) | done, 314a783b | Clustered hot windows (b55w7) and r2 face washes. |
-| (b) | in progress, 177cf088 | Wet reflections. |
-| (e) | approved, not started | Denser frontage signs and edges. |
+| (a) | done, 314a783b and fe1485ea | Clustered hot windows (b55w7), face washes on the far row only (minus route columns ±1), and a zoom-eased wash. |
+| (b) | done, 177cf088 and 9c8a2ee6 | Street-only `look.post_zoom` wet reflections: dark asphalt with narrow vertical streaks. |
+| Car trails | done, 6b43a352 | Street streak lanes retuned. |
+| Live hold | done, fe1485ea | RouteRig re-applies its overrides every frame, proved by an unfrozen test_street_override_hold. |
+| (e) | skipped, a measured finding | Denser r2 signs gain only 2–8 %. |
 
-Owed in (a) and (b):
-- **(a) fix:** no face wash on a block next to a route column. On decision seed 2, the VOLTA neighbour became a flat pink column.
-- **(b) scope:** street-only `look.post` wet_refl overrides applied by route_rig, with no city_post code change. I lifted the
-  city_post hold only that far. Judge the city cars' light brightness against the plate's trails here too.
-- **Live stomp fix:** in live play, `CityViewMotion.set_night_share` rewrites whole_building, which drops the street's overrides.
-  route_rig must re-apply them after every night_share and look change. This must be proved by an **unfrozen** live test.
-- **(e) scope:** denser frontage signs and edges via the r2 rules, updating both twins and the art-pass oracle fixtures.
-
-Gates and what follows:
-- Each step is judged per band (facades and floor, not frame totals), on R-DET-2 toward the plate (facades 1421, floor 4–6k),
-  over_085, R-HUE-1 ≥ 3.8 and the lit-blocks squint read. Non-street frames must stay max 0.
-- Then -8 comes to art-pass for **one** READY (A-101 or the next free number).
-- After that: module 18 (perf), measured on the final street.
+- What's left of the plate gap (R-DET-2 about 3–4x short on the facades, more on the floor) would need a denser near city, which
+  the designer declined. Don't reopen it without the designer.
+- City_post: the hold is lifted only for street-only uniform overrides. Any city_post code change needs a sheet to art-pass.
+- **Next:** module 18 (perf), measured on the final street, then whatever HANDOFF_TOOLBOX.md lists.
+- The toolbox noticed 3 failures in the deferred big-text tier (test_big_text_intel_order_fit at x1.6 / x2.0). They are unrelated
+  and flagged to build in A-101.
 
 ### Solace: the visual list
 - Done today:
   - the Bloom port (A-096, merged);
   - REST / WORKSHOP / CACHE (A-099, merged);
   - the district S4 re-shoot (accepted, no branch).
-- Owed: one hospital frame from the game path, the shifted Site point.
-- **Now:** the culture garden EX-11 concept round. The brief is `D:/rc_scratch/solace_v1/BRIEF_garden.md`, approved with 5 additions:
-  - route and door readability over the building;
-  - Solace green and cream, with lime kept apart from the helix green and plum Bloom, and no red cross;
-  - the HQ in the map frame;
-  - a stacking note per direction;
-  - Cycles only where needed.
-- Directions: A "Glass ward", B "Culture stack", C "Hanging mountain".
-- Frames: the map / HQ view, the street plaza with the Bloom CREEPING, and an inside cutaway with the Bloom CATCHING. No raid zoom.
-- **Garden picked (designer):** B "Culture stack", without the spires; lot 48 x 42 (A-100 to build). Next: implementation once build replies to A-100. HANDOFF_SOLACE.md has the update.
+- Owed: one hospital frame from the game path (the shifted Site point). It is deferred into the garden implementation's capture.
+- **Garden concept round: done.** The sheet is `docs/concepts/solace_vertical/garden/sheet.jpg` (5e6f9ae7), with NOTES.md; the
+  brief is `D:/rc_scratch/solace_v1/BRIEF_garden.md`.
+- **Designer's pick:** B "Culture stack" (stacked incubator trays, hex skin, mint agar at hue ~147, cryo-drum vault), **without the
+  thin spires / masts around it**. The lot is 48 x 42 BU (A-100 ASK to build).
+- **Next:** the Godot implementation on a new art branch from the latest main, once build answers A-100. It must fix:
+  - the hot-pink Bloom fill (it should be A Necrosis's plum body with a hot edge);
+  - the AAA-2 clipping;
+  - the owed hospital frame.
+  The sheet goes to art-pass; then a READY.
 - Deferred: the district raid-zoom re-shoot (when the raid redesign lands); key_intel and key_breach stay placeholders (B-061).
 
 ## Rulings logged today (DIRECTION_REVIEW, 2026-10-22)
