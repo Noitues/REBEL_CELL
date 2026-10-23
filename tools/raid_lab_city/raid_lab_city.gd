@@ -1,11 +1,16 @@
 extends Control
-## Raid lab L8/L9: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with L9_CHANGES.md applied).
+## Raid lab L8/L9/L10: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with L9_CHANGES.md and the
+## L10_CHANGES.md presentation applied).
 ## This is the root script of raid_lab_city.tscn, and everything is built in code. A 3D L8Board renders in a SubViewport
 ## behind a 2D overlay. The overlay holds the HUD, the 420 px right panel, the legend strip and the hint line.
 ## Every state change goes through L8Rules. The view only reads its results and turns traces into board cues.
 ## Flow per raid: DECAY (raids 2 and 3), CAPTURE, PLAN, FORECAST, the known beams, the REVEAL, the RESPONSE, then the
 ## sealed beam and the hunter, AFTERMATH, BETWEEN. RECORD follows raid 3 or a breach.
-## In PLAN and FORECAST one sealed route is selected (Q W E or a panel row) and its HOLD outcome is drawn on the board.
+## In PLAN and FORECAST one sealed route is selected (Q W E or a panel row). Its HOLD outcome is drawn on the board, and
+## the other candidate routes are drawn faint.
+## Tiers read without words: each has a mark and a hue (check, shield, cracked shield, X, skull on black).
+## Highlights carry meaning: capture targets, repair targets, and picked choices (a white check ring).
+## At HOME 1/3 the last HOME pip pulses red with a skull, and the between screen warns that the next hit ends the campaign.
 ## Flags (after --): --leg=N (golden seeds 0 3 5 8), --auto=greedy|naive, --shots=<abs dir> (with --auto), --scramble.
 
 enum Phase { CAPTURE, PLAN, FORECAST, PLAY, REVEAL, RESPONSE, AFTER, BETWEEN, RECORD, DECAY }
@@ -25,6 +30,7 @@ const ROW_H := 38.0
 const AUTO_WAIT := 0.6
 const UNTIL_GUARD := 60000
 const SCRAMBLE_SEED := 8808
+const LETHAL_HZ := 1.5
 const LINE_ID := {"beam1": 10, "extra1": 11, "extra2": 12, "sealed": 13, "hunter": 14}
 const BEAM_NAME := {"beam1": "BEAM 1", "extra1": "EXTRA 1", "extra2": "EXTRA 2", "sealed": "SEALED", "hunter": "HUNTER"}
 const CELL_ROW := ["NOR", "MID", "SOU"]
@@ -49,11 +55,12 @@ const WHITE := Color8(255, 255, 255)
 const BLACK := Color8(0, 0, 0)
 const HEAT_COL := Color8(255, 122, 40)
 const GREY := Color8(110, 116, 134)
+const HOLDS_COL := Color8(63, 224, 176)
 const TYPE_COLOR := {"D": Color8(92, 225, 255), "N": Color8(255, 64, 214), "E": Color8(255, 140, 26)}
-## Tier colors (L9): EVADED acid, HOLDS amber, BATTERED yellow, DAMAGED red, BREACHED white on black with a red border.
-## Each tier also has a glyph: check, shield, crack, cross, skull (see _tier_glyph).
-const TIER_COLOR := {"BREACHED": Color8(255, 255, 255), "DAMAGED": Color8(255, 61, 77), "BATTERED": Color8(255, 236, 60),
-	"HOLDS": Color8(255, 176, 32), "EVADED": Color8(212, 255, 0)}
+## Tier language (L10): EVADED check in acid green, HOLDS shield in green-cyan, BATTERED cracked shield in amber,
+## DAMAGED X in red, BREACHED skull on black with a red border. The marks are drawn by _tier_glyph.
+const TIER_COLOR := {"BREACHED": Color8(255, 255, 255), "DAMAGED": Color8(255, 61, 77), "BATTERED": Color8(255, 176, 32),
+	"HOLDS": Color8(63, 224, 176), "EVADED": Color8(212, 255, 0)}
 const TIER_TEXT := {"BREACHED": "HOME is at 0: the campaign is lost.", "DAMAGED": "HOME lost integrity this raid.",
 	"EVADED": "Nothing was touched: Heat -10.", "BATTERED": "2+ districts went DOWN, or one was TAKEN.",
 	"HOLDS": "The cell holds."}
@@ -106,6 +113,7 @@ var busy: bool = false
 var speed: float = 1.0
 var instant: bool = false
 var hud_hp: int = 3
+var lethal_on: bool = false
 var status_msg: String = ""
 var mouse := Vector2(-100.0, -100.0)
 var hits: Array = []
@@ -200,6 +208,9 @@ func _start_leg() -> void:
 	decay_lines = PackedStringArray()
 	hud_hp = int(st["home_hp"])
 	board.setup({"w": L8Rules.W, "h": L8Rules.H, "values": leg["values"], "exploits": leg["exploits"]})
+	board.set_scramble(scramble)
+	lethal_on = int(st["home_hp"]) == 1
+	board.set_lethal(lethal_on)
 	board.clear_outcome()
 	board.show_state(st, _empty_place())
 	_begin_raid()
@@ -251,6 +262,17 @@ func _score_text(s: Dictionary) -> String:
 	if int(s["home_hp"]) <= 0:
 		return "campaign lost"
 	return _num(L8Rules.score(leg, s))
+
+
+## The one-line breakdown of the leg value: bank, districts, exploits, HOME, Heat.
+func _parts_text(s: Dictionary) -> String:
+	if s.is_empty():
+		return ""
+	var sp: Dictionary = L8Rules.score_parts(leg, s)
+	if bool(sp["breach"]):
+		return "a breach leaves no score"
+	return "bank %d + districts %d + exploits %d - HOME %d - Heat %s" % [int(sp["bank"]), int(sp["cells"]),
+		int(sp["exploits"]), int(sp["home_loss"]), _num(float(sp["heat_carry"]))]
 
 
 func _status_of(s: Dictionary, c: Variant) -> String:
@@ -347,6 +369,10 @@ func _pick(pos: Vector2, with_home: bool) -> Variant:
 	if with_home and board.cell_screen_pos(HOME_CELL).distance_to(pos) < bd:
 		best = L8Rules.HOME
 	return best
+
+
+func _now() -> float:
+	return float(Time.get_ticks_msec()) / 1000.0
 
 
 # ---------------------------------------------------------------- scramble and text
@@ -479,11 +505,25 @@ func _skull(c: Vector2, r: float, col: Color, hole: Color) -> void:
 	ui.draw_line(c + Vector2(r * 0.15, r * 0.5), c + Vector2(r * 0.15, r * 0.9), hole, tw)
 
 
+## A white check ring around a picked or committed choice, with a check badge at its upper right.
+func _check_ring(p: Vector2) -> void:
+	ui.draw_arc(p, 34.0, 0.0, TAU, 40, WHITE, 3.0)
+	var c := p + Vector2(24.0, -24.0)
+	ui.draw_circle(c, 9.0, BLACK)
+	ui.draw_arc(c, 9.0, 0.0, TAU, 20, WHITE, 1.5)
+	ui.draw_polyline(PackedVector2Array([c + Vector2(-5.0, 0.0), c + Vector2(-1.5, 4.0), c + Vector2(5.0, -4.0)]), WHITE, 2.5)
+
+
 func _tier_col(tier: String) -> Color:
 	return TIER_COLOR.get(tier, INK)
 
 
-## The tier's own shape: EVADED check, HOLDS shield, BATTERED crack, DAMAGED cross, BREACHED skull.
+func _shield_pts(c: Vector2, r: float) -> PackedVector2Array:
+	return PackedVector2Array([c + Vector2(-r * 0.8, -r * 0.85), c + Vector2(r * 0.8, -r * 0.85),
+		c + Vector2(r * 0.8, -r * 0.05), c + Vector2(0.0, r * 0.95), c + Vector2(-r * 0.8, -r * 0.05)])
+
+
+## The tier's own mark: EVADED check, HOLDS shield, BATTERED cracked shield, DAMAGED X, BREACHED skull.
 func _tier_glyph(c: Vector2, tier: String, r: float, col: Color) -> void:
 	var w := maxf(2.0, r * 0.3)
 	match tier:
@@ -491,11 +531,12 @@ func _tier_glyph(c: Vector2, tier: String, r: float, col: Color) -> void:
 			ui.draw_polyline(PackedVector2Array([c + Vector2(-r * 0.85, -r * 0.05), c + Vector2(-r * 0.3, r * 0.6),
 				c + Vector2(r * 0.85, -r * 0.65)]), col, w)
 		"HOLDS":
-			ui.draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 0.8, -r * 0.85), c + Vector2(r * 0.8, -r * 0.85),
-				c + Vector2(r * 0.8, -r * 0.05), c + Vector2(0.0, r * 0.95), c + Vector2(-r * 0.8, -r * 0.05)]), col)
+			ui.draw_colored_polygon(_shield_pts(c, r), col)
 		"BATTERED":
-			ui.draw_polyline(PackedVector2Array([c + Vector2(-r * 0.15, -r), c + Vector2(r * 0.35, -r * 0.35),
-				c + Vector2(-r * 0.3, r * 0.1), c + Vector2(r * 0.25, r * 0.55), c + Vector2(-r * 0.05, r)]), col, w)
+			ui.draw_colored_polygon(_shield_pts(c, r), col)
+			ui.draw_polyline(PackedVector2Array([c + Vector2(-r * 0.1, -r * 0.9), c + Vector2(r * 0.25, -r * 0.35),
+				c + Vector2(-r * 0.2, r * 0.1), c + Vector2(r * 0.15, r * 0.55), c + Vector2(0.0, r * 0.9)]), BG,
+				maxf(1.5, r * 0.22))
 		"DAMAGED":
 			ui.draw_line(c + Vector2(-r * 0.75, -r * 0.75), c + Vector2(r * 0.75, r * 0.75), col, w)
 			ui.draw_line(c + Vector2(r * 0.75, -r * 0.75), c + Vector2(-r * 0.75, r * 0.75), col, w)
@@ -505,7 +546,20 @@ func _tier_glyph(c: Vector2, tier: String, r: float, col: Color) -> void:
 			ui.draw_circle(c, r * 0.5, col)
 
 
-## A small right-aligned tier stamp: glyph then name. BREACHED sits white on black inside a red border.
+## A square tier pip (record rows and the record strip): the mark in a box of its hue; BREACHED is black with a red border.
+func _tier_pip(c: Vector2, tier: String, r: float) -> void:
+	var col := _tier_col(tier)
+	var rect := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
+	if tier == "BREACHED":
+		ui.draw_rect(rect, BLACK)
+		ui.draw_rect(rect, RED, false, 2.0)
+	else:
+		ui.draw_rect(rect, PANEL)
+		ui.draw_rect(rect, col, false, 2.0)
+	_tier_glyph(c, tier, r * 0.68, col)
+
+
+## A small right-aligned tier stamp: mark then name. BREACHED sits white on black inside a red border.
 func _tier_tag(right: Vector2, tier: String, size: int = 13) -> void:
 	var col := _tier_col(tier)
 	var tw := _tw(tier, size)
@@ -757,7 +811,7 @@ func _begin_raid() -> void:
 			phase = Phase.DECAY
 			busy = true
 			board.set_instant(instant)
-			await board.decay_beat(gone)
+			await board.decay(gone)
 			st = dec
 			board.show_state(st, {"sentries": st["sentries"], "ghost": null})
 			busy = false
@@ -791,7 +845,8 @@ func _enter_capture() -> void:
 		_enter_plan()
 		return
 	phase = Phase.CAPTURE
-	board.highlight(cap_opts, GOLD)
+	board.clear_highlight()
+	board.highlight_kind(cap_opts, "capture")
 
 
 func _do_capture(c: Variant) -> void:
@@ -1143,8 +1198,8 @@ func _beam_row(y: float, label: String, ln: Dictionary, live: bool, note: String
 
 
 # ---------------------------------------------------------------- FORECAST
-## Draw this raid's known beams (the ones its launch Heat brings) and the three sealed candidates on the board; the
-## candidates not selected are dimmed.
+## Draw this raid's known beams (the ones its launch Heat brings) and the three sealed candidates on the board. The
+## board draws the selected candidate (its index in the lines) and the known beams at full strength, the others faint.
 func _show_plan_paths() -> void:
 	var r_now: Dictionary = leg["raids"][raid]
 	var h := L8Rules.launch_heat(st, place)
@@ -1154,11 +1209,12 @@ func _show_plan_paths() -> void:
 	if h >= L8Rules.STRONG_AT:
 		lines.append(r_now["extra2"])
 	var cands: Array = r_now["cands"]
+	var selected := -1
 	for k in range(cands.size()):
-		var ln: Dictionary = (cands[k] as Dictionary).duplicate()
-		ln["dim"] = k != sel_route
-		lines.append(ln)
-	board.show_paths(lines)
+		lines.append(cands[k])
+		if k == sel_route:
+			selected = lines.size() - 1
+	board.show_paths(lines, selected)
 
 
 ## True when some response for sealed route k gives other touches or another tier than HOLD.
@@ -1744,16 +1800,53 @@ func _down_cells() -> Array:
 	return out
 
 
+## Repair targets (DOWN districts) get the repair highlight; the picked repair gets the picked check ring.
 func _highlight_down() -> void:
-	var cells := _down_cells()
-	if cells.is_empty():
-		board.clear_highlight()
-	else:
-		board.highlight(cells, AMBER)
+	board.clear_highlight()
+	var todo: Array = []
+	for cv: Variant in _down_cells():
+		if not L8Rules._same(b_repair, cv):
+			todo.append(cv)
+	if not todo.is_empty():
+		board.highlight_kind(todo, "repair")
+	if not _none(b_repair):
+		board.highlight_kind([b_repair], "picked")
 
 
 func _bp(inten: String) -> Dictionary:
 	return L8Rules.between_parts(leg, st, b_repair, b_build, inten)
+
+
+## The next raid's routes to HOME left uncovered by a between choice, worst case and before any forecast: beam 1 when
+## it is a route, and each sealed route. A route counts as covered when, after this step and the next raid's decay,
+## the pool holds a sentry of its type and a live district sits on that route. Entries are [label, type].
+func _home_gaps(repair: Variant, build: Variant) -> Array:
+	var out: Array = []
+	if raid + 1 >= L8Rules.RAIDS:
+		return out
+	var p := L8Rules.between_parts(leg, st, repair, build, b_inten)
+	var ds: Dictionary = L8Rules.decay(leg, p["state"])
+	var pool: Dictionary = ds["pool"]
+	var rows := {}
+	for cv: Variant in L8Rules.live_cells(ds):
+		if typeof(cv) == TYPE_VECTOR2I:
+			var v: Vector2i = cv
+			rows[v.y] = true
+	var rn: Dictionary = leg["raids"][raid + 1]
+	var threats: Array = []
+	var b1: Dictionary = rn["b1"]
+	if bool(b1["home"]):
+		threats.append(["BEAM 1 " + String(L8Rules.ROUTE_NAMES[int(b1["index"])]), b1])
+	for cv: Variant in rn["cands"]:
+		var ln: Dictionary = cv
+		threats.append([String(L8Rules.ROUTE_NAMES[int(ln["index"])]), ln])
+	for thv: Variant in threats:
+		var th: Array = thv
+		var ln: Dictionary = th[1]
+		var t := String(ln["type"])
+		if int(pool.get(t, 0)) <= 0 or not rows.has(int(ln["index"])):
+			out.append([String(th[0]), t])
+	return out
 
 
 func _between_click(c: Variant) -> void:
@@ -1764,6 +1857,7 @@ func _between_click(c: Variant) -> void:
 		return
 	if L8Rules._same(b_repair, c):
 		b_repair = null
+		_highlight_down()
 		return
 	var p := L8Rules.between_parts(leg, st, c, b_build, b_inten)
 	if _none(p["repaired"]):
@@ -1773,6 +1867,7 @@ func _between_click(c: Variant) -> void:
 	if not _none(b_build) and _none(p["built"]):
 		b_build = null
 		status_msg = "The repair leaves too little for the build: the build is dropped."
+	_highlight_down()
 
 
 func _set_build(t: Variant) -> void:
@@ -1814,6 +1909,31 @@ func _draw_between() -> void:
 	var w := PANEL_W - 2.0 * PAD
 	var y := _head("BETWEEN RAIDS", "Repair, build, pick an intensity. Enter: next raid.")
 	var parts := _bp(b_inten)
+	if int(st["home_hp"]) == 1:
+		var br := Rect2(x, y - 4.0, w, 24.0)
+		ui.draw_rect(br, RED.darkened(0.45))
+		ui.draw_rect(br, RED, false, 2.0)
+		_skull(br.position + Vector2(13.0, 12.0), 8.0, WHITE, BLACK)
+		_t(br.position + Vector2(28.0, 4.0), "Next HOME hit ends the campaign", 13, WHITE)
+		y += 26.0
+	# Which repair or build protects HOME next raid (only when the worst case could reach it).
+	var base := _home_gaps(null, null)
+	var guard_builds: Array = []
+	var guard_repairs: Array = []
+	if not base.is_empty():
+		var nb := _home_gaps(b_repair, null).size()
+		for tv: Variant in L8Rules.TYPES:
+			var t: String = tv
+			if _none(L8Rules.between_parts(leg, st, b_repair, t, b_inten)["built"]):
+				continue
+			if _home_gaps(b_repair, t).size() < nb:
+				guard_builds.append(t)
+		var nr := _home_gaps(null, b_build).size()
+		for cv: Variant in _down_cells():
+			if _none(L8Rules.between_parts(leg, st, cv, b_build, b_inten)["repaired"]):
+				continue
+			if _home_gaps(cv, b_build).size() < nr:
+				guard_repairs.append(cv)
 	_t(Vector2(x, y), "1  REPAIR ONE DISTRICT (click a DOWN one; cost value / 2)", 12, DIM)
 	y += 20.0
 	if _none(b_repair):
@@ -1846,9 +1966,39 @@ func _draw_between() -> void:
 			_glyph(r.position + Vector2(14.0, 20.0), t, 8.0, TYPE_COLOR[t] if ok else DIM)
 			_t(r.position + Vector2(26.0, 4.0), _tname(t).substr(0, 6), 11, INK if ok else DIM)
 			_t(r.position + Vector2(26.0, 21.0), "[%d] -%d" % [i, L8Rules.SENTRY_PRICE], 11, DIM)
+			if guard_builds.has(t):
+				ui.draw_rect(Rect2(r.position.x + 4.0, r.end.y - 5.0, r.size.x - 8.0, 3.0), ACID)
 		if ok:
 			hits.append({"rect": r, "id": "build:" + ("none" if t == "" else t)})
-	y += 50.0
+	y += 46.0
+	if not base.is_empty():
+		var gaps := _home_gaps(b_repair, b_build)
+		if gaps.is_empty():
+			_t(Vector2(x, y), "HOME NEXT RAID: this choice can block every route to HOME", 11, ACID)
+		else:
+			var head := "HOME NEXT RAID OPEN:"
+			_t(Vector2(x, y), head, 11, RED)
+			var gx := x + _tw(head, 11) + 8.0
+			for gv: Variant in gaps:
+				var g: Array = gv
+				var gt := String(g[1])
+				_glyph(Vector2(gx + 5.0, y + 7.0), gt, 5.5, TYPE_COLOR.get(gt, GREY))
+				_t(Vector2(gx + 13.0, y), String(g[0]), 11, INK)
+				gx += 22.0 + _tw(String(g[0]), 11)
+		y += 16.0
+		var prot := PackedStringArray()
+		for tv: Variant in guard_builds:
+			prot.append("build " + _tname(String(tv)))
+		for cv: Variant in guard_repairs:
+			prot.append("repair " + _cell_name(cv))
+		if not prot.is_empty():
+			_t(Vector2(x, y), "PROTECTS HOME: " + ", ".join(prot), 11, ACID)
+		elif not gaps.is_empty():
+			var ghost_ok := int((parts["state"]["kit"] as Dictionary).get("ghost", 0)) > 0
+			_t(Vector2(x, y), "No repair or build here covers it%s" % (": a ghost on HOME does" if ghost_ok else "."), 11, DIM)
+		y += 18.0
+	else:
+		y += 4.0
 	_t(Vector2(x, y), "3  RUN INTENSITY   [L N O]   next Heat: no ghost - with a ghost", 12, DIM)
 	y += 20.0
 	var cw := (w - 16.0) / 3.0
@@ -1874,7 +2024,7 @@ func _draw_between() -> void:
 		_t(cr.position + Vector2(8.0, 68.0), "bank -> %d" % int(ns["bank"]), 12, INK)
 		_t(cr.position + Vector2(8.0, 87.0), "next Heat %s" % hr, 11, RED if k1 > 1 else DIM)
 		_t(cr.position + Vector2(8.0, 104.0), "%s known beam%s" % [kn, "" if k1 == 1 else "s"], 11, RED if k1 > 1 else DIM)
-	y += 136.0
+	y += 132.0
 	var ns2: Dictionary = parts["state"]
 	_t(Vector2(x, y), "BANK %d - repair %d - build %d + income %d = %d" % [int(st["bank"]), int(parts["repair_cost"]),
 		int(parts["build_cost"]), int(parts["income"]), int(ns2["bank"])], 13, INK)
@@ -1882,8 +2032,9 @@ func _draw_between() -> void:
 	_t(Vector2(x, y), "HEAT %d + %d = %d" % [int(st["heat"]), int(parts["heat_add"]), int(ns2["heat"])], 13, HEAT_COL)
 	y += 20.0
 	_t(Vector2(x, y), "Leg value after this step: %s" % _score_text(ns2), 13, INK)
-	y += 26.0
-	_draw_kit(y, false)
+	y += 24.0
+	if y + 48.0 <= LEGEND_Y - 62.0:
+		_draw_kit(y, false)
 	_btn(Rect2(x, LEGEND_Y - 58.0, w, 42.0), "NEXT RAID [Enter]", "next", true, false, 16)
 
 
@@ -1898,7 +2049,12 @@ func _draw_record() -> void:
 	ui.draw_rect(Rect2(0.0, HUD_H, PANEL_X, LEGEND_Y - HUD_H), Color(BG, 0.86))
 	var x := 40.0
 	var y := HUD_H + 20.0
-	_t(Vector2(x, y), "LEG RECORD  (leg %d)" % leg_seed, 24, AMBER)
+	var title := "LEG RECORD  (leg %d)" % leg_seed
+	_t(Vector2(x, y), title, 24, AMBER)
+	var px0 := x + _tw(title, 24) + 26.0
+	for i in range(history.size()):
+		var hd: Dictionary = history[i]
+		_tier_pip(Vector2(px0 + i * 30.0, y + 15.0), String(hd["tier"]), 11.0)
 	y += 38.0
 	if breached:
 		_skull(Vector2(x + 9.0, y + 11.0), 9.0, RED, BG)
@@ -1916,7 +2072,7 @@ func _draw_record() -> void:
 		else:
 			_box(r, tcol, PANEL)
 		_t(r.position + Vector2(14.0, 8.0), "RAID %d" % (int(h["raid"]) + 1), 18, DIM)
-		_tier_glyph(r.position + Vector2(120.0, 19.0), tier, 9.0, tcol)
+		_tier_pip(r.position + Vector2(116.0, 19.0), tier, 10.0)
 		_t(r.position + Vector2(136.0, 8.0), tier, 18, tcol)
 		var cap := "no capture" if _none(h["capture"]) else "captured " + _cell_name(h["capture"])
 		_t(r.position + Vector2(280.0, 10.0), cap, 13, INK)
@@ -2002,7 +2158,8 @@ func _draw_ui() -> void:
 
 
 func _hud_values() -> Dictionary:
-	var v := {"heat": int(st["heat"]), "note": "", "bank": int(st["bank"]), "hp": int(st["home_hp"]), "score": _score_text(st)}
+	var v := {"heat": int(st["heat"]), "note": "", "bank": int(st["bank"]), "hp": int(st["home_hp"]), "score": _score_text(st),
+		"sstate": st}
 	match phase:
 		Phase.PLAN, Phase.FORECAST:
 			var lh := L8Rules.launch_heat(st, place)
@@ -2014,12 +2171,14 @@ func _hud_values() -> Dictionary:
 			v["note"] = "at launch"
 			v["hp"] = hud_hp
 			v["score"] = _score_text(before)
+			v["sstate"] = before
 		Phase.BETWEEN:
 			var ns: Dictionary = _bp(b_inten)["state"]
 			v["heat"] = int(ns["heat"])
 			v["note"] = "after the run"
 			v["bank"] = int(ns["bank"])
 			v["score"] = _score_text(ns)
+			v["sstate"] = ns
 	return v
 
 
@@ -2051,17 +2210,28 @@ func _draw_hud() -> void:
 	_t(Vector2(480.0, 22.0), "%d/%d" % [mini(raid + 1, L8Rules.RAIDS), L8Rules.RAIDS], 24, INK)
 	_t(Vector2(560.0, 7.0), "HOME", 12, DIM)
 	var hp := int(v["hp"])
+	var lethal := hp == 1
+	if lethal != lethal_on:
+		lethal_on = lethal
+		board.set_lethal(lethal)
+	var pulse := 1.0 if shots_dir != "" else 0.5 + 0.5 * sin(_now() * TAU * LETHAL_HZ)
 	for k in range(L8Rules.HOME_HP):
 		var pr := Rect2(560.0 + k * 26.0, 30.0, 20.0, 16.0)
 		if k < hp:
-			ui.draw_rect(pr, GOLD)
+			if lethal:
+				ui.draw_rect(pr, RED.darkened(0.6).lerp(RED, pulse))
+				ui.draw_rect(pr, WHITE.lerp(RED, 1.0 - pulse), false, 2.0)
+				_skull(pr.get_center(), 6.0, WHITE, BLACK)
+			else:
+				ui.draw_rect(pr, GOLD)
 		else:
 			ui.draw_rect(pr, RED.darkened(0.5))
 			ui.draw_rect(pr, RED, false, 2.0)
 	_t(Vector2(670.0, 7.0), "BANK", 12, DIM)
 	_t(Vector2(670.0, 22.0), str(int(v["bank"])), 24, GOLD)
 	_t(Vector2(750.0, 7.0), "LEG VALUE NOW", 12, DIM)
-	_t(Vector2(750.0, 22.0), String(v["score"]), 24, INK)
+	_t(Vector2(750.0, 20.0), String(v["score"]), 22, INK)
+	_t(Vector2(750.0, 48.0), _parts_text(v["sstate"]), 10, DIM)
 	var tag := "L8 CITY RAID  |  leg %d" % leg_seed
 	if auto_line != "":
 		tag += "  |  auto %s" % auto_line
@@ -2069,7 +2239,8 @@ func _draw_hud() -> void:
 	_tr(Vector2(VIEW.x - PAD, 30.0), "speed %dx%s" % [int(speed), "  instant" if instant else ""], 12, DIM)
 
 
-## Overlay marks on the board: cell tags, the hovered cell, repair costs, the redeploy pick and the hovered row's moves.
+## Overlay marks on the board: cell tags, the hovered cell, repair costs, the picked repair and redeploy source (white
+## check rings), and the hovered response row's moves.
 func _draw_board_marks() -> void:
 	if phase in [Phase.PLAN, Phase.FORECAST, Phase.RESPONSE, Phase.AFTER, Phase.BETWEEN, Phase.DECAY]:
 		for c: Vector2i in L8Rules.CELLS:
@@ -2080,10 +2251,10 @@ func _draw_board_marks() -> void:
 			var p := _screen(c)
 			_tc(p + Vector2(0.0, -50.0), "-%d" % L8Rules.repair_cost(leg, c), 15, AMBER)
 		if not _none(b_repair):
-			ui.draw_arc(_screen(b_repair), 34.0, 0.0, TAU, 40, ACID, 3.0)
+			_check_ring(_screen(b_repair))
 	if phase == Phase.RESPONSE:
 		if not _none(redeploy_from):
-			ui.draw_arc(_screen(redeploy_from), 34.0, 0.0, TAU, 40, ACID, 3.0)
+			_check_ring(_screen(redeploy_from))
 		if resp_hover >= 0 and resp_hover < resp_rows.size():
 			var row: Dictionary = resp_rows[resp_hover]
 			for mv: Variant in row["members"]:

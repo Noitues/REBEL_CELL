@@ -1,5 +1,8 @@
-"""Lab round 8 (L8) rules oracle: the city raid (SPEC docs/handoff/raid_lab_l8/SPEC.md, designer 2026-10-23), with the
-L9 rule changes applied in place (docs/handoff/raid_lab_l8/L9_CHANGES.md): DECAY and SENTRY_PRICE 3.
+"""Lab round 8 (L8) rules oracle: the city raid (SPEC docs/handoff/raid_lab_l8/SPEC.md, designer 2026-10-23).
+
+Rule changes applied in place:
+- L9 (docs/handoff/raid_lab_l8/L9_CHANGES.md): DECAY and SENTRY_PRICE 3.
+- L10 (docs/handoff/raid_lab_l8/L10_CHANGES.md): POOL_START D1 N1 E0, and new SUMMARY metrics.
 
 The map
 - A 4 x 3 grid of districts between our HQ (HOME, off-grid at x = -1) and the corp HQ (off-grid at x = 4).
@@ -16,6 +19,7 @@ A leg is 3 raids
   decayed state.
 - PLAN: re-place every pool sentry (at most 1 per owned non-TAKEN cell). Optionally a ghost (kit) on an owned
   non-TAKEN cell or HOME, for +5 Heat.
+  - L10: the pool starts at D1 N1 E0. Two sentries cover at most two of the three sealed routes.
 - LAUNCH: beam 1, then extra 1 (Heat >= 50) and extra 2 (Heat >= 75), using launch Heat with the ghost. Then the
   REVEAL of the sealed route, the RESPONSE, the sealed beam, and the hunter.
 - BETWEEN (not after raid 3): repair <= 1 DOWN cell (v // 2), build <= 1 sentry (3), pick an intensity. Income and
@@ -51,8 +55,14 @@ Score
 - - 1.0 per Heat above 44
 - A breach scores -100.
 
-Measured (python sweep_l8.py): greedy (each phase maximizes EV over the sealed candidates with the best response,
-kit valued KIT_VALUE mid-leg) against naive, over 20 legs. Both apply DECAY before every capture after raid 1."""
+Measured (python sweep_l8.py)
+- Greedy (each phase maximizes EV over the sealed candidates with the best response, kit valued KIT_VALUE mid-leg)
+  against naive, over 20 legs. Both apply DECAY before every capture after raid 1.
+- L10 metrics, per player:
+  - split_raids: the share of raids whose three candidates' HOLD (touches, tier) differ;
+  - response_decides: the share of raids where the chosen response's (touches, tier) differs from HOLD's on the real
+    candidate;
+  - redeploy_use: the share of raids answered with REDEPLOY."""
 from __future__ import annotations
 
 import json
@@ -86,7 +96,7 @@ EXTRA_AT, STRONG_AT = 50, 75
 HOME_HP = 3
 GHOST_HEAT, SPOOF_HEAT, EVADE_HEAT = 5, 2, 10
 SENTRY_PRICE = 3    # L9 (was 4)
-POOL_START = (("D", 1), ("N", 1), ("E", 1))
+POOL_START = (("D", 1), ("N", 1), ("E", 0))    # L10 (was 1/1/1): one sealed route is always uncovered
 KIT_START = (("ghost", 2), ("spoof", 2))
 INTENSITY = {"LOW": (6, 0.5), "NORMAL": (12, 1.0), "HOT": (18, 1.5)}
 DECAY = True        # L9: DOWN -> TAKEN (sentry lost) at the start of every raid after the first, before CAPTURE
@@ -95,7 +105,7 @@ DECAY = True        # L9: DOWN -> TAKEN (sentry lost) at the start of every raid
 EXPLOIT_BONUS, HOME_LOSS_COST, HEAT_CARRY, BREACH = 6, 8, 1.0, 100
 KIT_VALUE = 2.5     # planner heuristic only: an unspent kit item (ghost, spoof, pool sentry) mid-leg
 EPS = 1e-9          # float ties keep the earlier option
-OUT = r"D:/rc_tmp/raid_design_lab/sweep_l9.json"
+OUT = r"D:/rc_tmp/raid_design_lab/sweep_l10.json"
 
 
 def ck(c) -> tuple:
@@ -660,6 +670,23 @@ def state_json(st: State) -> dict:
             "pool": dict(st.pool), "kit": dict(st.kit)}
 
 
+def _outcome(touches, tr: str) -> tuple:
+    """A comparable raid outcome: (touches, tier)."""
+    return (tuple((tuple(c) if c != HOME else c, k) for c, k in touches), tr)
+
+
+def _raid_metrics(leg: Leg, before: State, x: dict) -> tuple:
+    """L10 metrics for one logged raid: (split, response decides)."""
+    place = (dict(x["place"]["sentries"]), x["place"]["ghost"])
+    outs = []
+    for k in range(CANDIDATES):
+        ns, t = resolve(leg, x["raid"], before, k, place, ("HOLD",))
+        outs.append(_outcome(t, tier(before, ns, t)))
+    split = len(set(outs)) > 1
+    decides = _outcome(x["touches"], x["tier"]) != outs[x["cand_real"]]
+    return split, decides
+
+
 def _leg_stats(leg: Leg, end: State, log: list) -> dict:
     vals = dict(leg.values)
     ex = set(leg.exploits)
@@ -667,6 +694,7 @@ def _leg_stats(leg: Leg, end: State, log: list) -> dict:
     launch = [b.heat + (GHOST_HEAT if x["place"]["ghost"] is not None else 0) for b, x in zip(befores, log)]
     caps = [x["capture"] for x in log if x["capture"] is not None]
     bw = [x["between"] for x in log if x["between"]]
+    metrics = [_raid_metrics(leg, b, x) for b, x in zip(befores, log)]
     return {"score": score(leg, end), "breach": end.home_hp <= 0, "raids": len(log),
             "tiers": [x["tier"] for x in log],
             "blocks": sum(1 for x in log for _, k in x["touches"] if k == "block"),
@@ -679,7 +707,9 @@ def _leg_stats(leg: Leg, end: State, log: list) -> dict:
             "repairs": sum(b["repair"] is not None for b in bw), "home_lost": HOME_HP - end.home_hp,
             "decayed": sum(len(x["decayed"]) for x in log),
             "taken_end": sum(s == TAKEN for _, s in end.owned), "down_end": sum(s == DOWN for _, s in end.owned),
-            "extra_raids": sum(h >= EXTRA_AT for h in launch), "strong_raids": sum(h >= STRONG_AT for h in launch)}
+            "extra_raids": sum(h >= EXTRA_AT for h in launch), "strong_raids": sum(h >= STRONG_AT for h in launch),
+            "split": sum(m[0] for m in metrics), "decides": sum(m[1] for m in metrics),
+            "redeploys": sum(x["response"][0] == "REDEPLOY" for x in log)}
 
 
 def _agg(rows: list, p: str) -> dict:
@@ -709,7 +739,10 @@ def _agg(rows: list, p: str) -> dict:
             "taken_end": round(stats.mean(r[p]["taken_end"] for r in rows), 2),
             "down_end": round(stats.mean(r[p]["down_end"] for r in rows), 2),
             "extra_raid_share": round(sum(r[p]["extra_raids"] for r in rows) / raids, 2),
-            "strong_raid_share": round(sum(r[p]["strong_raids"] for r in rows) / raids, 2)}
+            "strong_raid_share": round(sum(r[p]["strong_raids"] for r in rows) / raids, 2),
+            "split_raids": round(sum(r[p]["split"] for r in rows) / raids, 2),
+            "response_decides": round(sum(r[p]["decides"] for r in rows) / raids, 2),
+            "redeploy_use": round(sum(r[p]["redeploys"] for r in rows) / raids, 2)}
 
 
 if __name__ == "__main__":
@@ -727,6 +760,8 @@ if __name__ == "__main__":
             "gap_share_ge3": sum(r["gap"] >= 3 for r in rows) / len(rows)}
     summ["decay"] = {p: {"decayed_per_leg": summ[p]["decayed_per_leg"], "taken_end": summ[p]["taken_end"]}
                      for p in ("greedy", "naive")}
+    summ["l10"] = {p: {k: summ[p][k] for k in ("split_raids", "response_decides", "redeploy_use")}
+                   for p in ("greedy", "naive")}
     print("SUMMARY", json.dumps(summ), flush=True)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w") as f:

@@ -1,10 +1,11 @@
 class_name L8Rules
 extends RefCounted
-## The round-8 (L8) city-raid rules with the L9 changes, ported from tools/raid_concepts/sweep_l8.py (the oracle).
-## Covers decay, capture, placements, the launch (beam 1, extras, sealed, hunter), responses, between, tier, score and
-## forecast. Pure and deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3, y 0..2); HOME is the String
-## "HOME". Every enumeration walks CELLS (y, then x), never dictionary order.
-## Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md. Changes: docs/handoff/raid_lab_l8/L9_CHANGES.md.
+## The round-8 (L8) city-raid rules with the L9 and L10 changes, ported from tools/raid_concepts/sweep_l8.py (the
+## oracle). Covers decay, capture, placements, the launch (beam 1, extras, sealed, hunter), responses, between, tier,
+## score and forecast. Pure and deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3, y 0..2); HOME is
+## the String "HOME". Every enumeration walks CELLS (y, then x), never dictionary order.
+## Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md. Changes: docs/handoff/raid_lab_l8/L9_CHANGES.md and
+## docs/handoff/raid_lab_l8/L10_CHANGES.md.
 
 # Grid: cell order is y, then x.
 const W := 4
@@ -47,7 +48,7 @@ const EVADE_HEAT := 10
 const SENTRY_PRICE := 3		# L9: was 4
 const REPAIR_DIV := 2
 const INCOME_DIV := 3
-const POOL_START: Dictionary = {"D": 1, "N": 1, "E": 1}
+const POOL_START: Dictionary = {"D": 1, "N": 1, "E": 0}	# L10: was 1/1/1 (two sentries, three sealed routes)
 const KIT_START: Dictionary = {"ghost": 2, "spoof": 2}
 const INTENSITY_ORDER: Array = ["LOW", "NORMAL", "HOT"]
 const INTENSITY: Dictionary = {"LOW": [6, 0.5], "NORMAL": [12, 1.0], "HOT": [18, 1.5]}
@@ -320,13 +321,13 @@ static func leg_from_json(d: Dictionary) -> Dictionary:
 		"start": _sort_cells(start), "raids": raids}
 
 
-## sweep_l8.initial: the leg-start state (the seeded x = 0 cells owned OK).
+## sweep_l8.initial: the leg-start state (the seeded x = 0 cells owned OK, pool POOL_START, kit KIT_START).
 static func initial(leg: Dictionary) -> Dictionary:
 	var owned := {}
 	for c: Vector2i in leg["start"]:
 		owned[c] = OK
 	return {"heat": START_HEAT, "bank": START_BANK, "home_hp": HOME_HP, "owned": _ordered(owned), "sentries": {},
-		"pool": POOL_START.duplicate(), "kit": KIT_START.duplicate()}
+		"pool": _pool_t(POOL_START), "kit": KIT_START.duplicate()}
 
 
 ## A state from the golden's state_json form (owned and sentries as [[x, y, s]]).
@@ -508,7 +509,7 @@ static func check_place(st: Dictionary, place: Dictionary) -> String:
 		counts[t] = int(counts[t]) + 1
 	var pool: Dictionary = st["pool"]
 	for t: String in TYPES:
-		if int(counts[t]) > int(pool[t]):
+		if int(counts[t]) > int(pool.get(t, 0)):
 			return "more sentries than the pool"
 	var g: Variant = p["ghost"]
 	if not _is_none(g):
@@ -773,7 +774,7 @@ static func score(leg: Dictionary, st: Dictionary, mid: bool = false) -> float:
 		for k: String in ["ghost", "spoof"]:
 			n += int(st["kit"][k])
 		for t: String in TYPES:
-			n += int(st["pool"][t])
+			n += int(st["pool"].get(t, 0))
 		s += KIT_VALUE * n
 	return s
 

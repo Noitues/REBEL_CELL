@@ -389,3 +389,29 @@ critics. L8 is a first build of new rules, without the L6/L7 readability and mot
 **Estimate:** the critic puts its three changes at 38–39 together.
 
 Review: `_reviews/REVIEW_LAB_L8_batch.md`.
+
+## L9 and L10 city-raid lab (batch rounds; one batch critic each, stills only)
+
+| Round | W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|---|
+| L9: decay, forecast on board, tier colors | 7 | 9 | 5 | 6 | 7 | 34 | 4 | 6 | 7 |
+| L10: two starting sentries, tier language, lethal warning | 8 | 9 | 6 | 6 | 8 | **37** | 4 | 6 | 7 |
+
+**L10 matches the best score so far (L7, 37), on the new city design.** Every line was batch-drafted (about $14 in
+total). In the L9 run, the breach capture was cut short by a lab bug, since fixed.
+
+**L10 measurement (20 legs):**
+- The sealed candidates differ in every raid (split_raids 1.0).
+- The response changes the outcome in 42% of raids.
+- REDEPLOY is used in 13% of raids.
+- Careful play never breaches; careless play breaches in 85% of legs.
+
+**What the critic found:** the board is still solved at the forecast when the player can cover every route. Builds
+bring a third sentry back from raid 2. Its next three changes:
+- **Cap coverage by rule** (S +3).
+- **Show "last chance" between raids, and cut decided raids short.**
+- **A no-words pass on the board.**
+
+Estimate: 41–42.
+
+Reviews: `_reviews/REVIEW_LAB_L9_batch.md` and `_reviews/REVIEW_LAB_L10_batch.md`.
