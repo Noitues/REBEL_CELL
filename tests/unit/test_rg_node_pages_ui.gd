@@ -109,7 +109,7 @@ func test_the_rest_page_is_the_event_layout_in_the_rest_hue() -> void:
 	assert_true(_btn("RestPatch") is HoloSticker, "PATCH is a vinyl verb sticker")
 	var side := _scene.find_child("NodeSide", true, false)
 	assert_not_null(side, "the side column stands beside the window")
-	assert_not_null(side.find_child("EventRun", true, false), "the RUN terminal is in it")
+	assert_null(side.find_child("EventRun", true, false), "no RUN terminal: the top bar carries HP and Cycles")
 	assert_eq((side.find_child("NodeIcon", true, false) as TextureRect).texture, RouteOverlay.sticker_art(CityMapOverlay.KIND_REST), "the kind's route sticker is stamped under the title")
 
 

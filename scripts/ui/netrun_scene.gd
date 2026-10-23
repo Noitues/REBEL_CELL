@@ -908,7 +908,7 @@ const NODE_STAMP_TILT := 0.10
 const NODE_SIDE_GAP := 22
 
 
-## The side column of a REST / WORKSHOP page: the RUN terminal, the node's title sticker (the event page's) and the kind's route
+## The side column of a REST / WORKSHOP page: the node's title sticker (the event page's) and the kind's route
 ## sticker stamped under it, so the page, the map sticker and the street room are one thing.
 func _node_side(s: NetrunSession) -> VBoxContainer:
 	var rest := s.run.phase == RunState.Phase.REST
@@ -918,7 +918,6 @@ func _node_side(s: NetrunSession) -> VBoxContainer:
 	side.name = "NodeSide"
 	side.add_theme_constant_override(&"separation", roundi(NODE_SIDE_GAP * os))
 	side.custom_minimum_size.x = NODE_SIDE_W * os
-	side.add_child(_event_run_window(s))
 	var title := HoloSticker.word(tr("REST") if rest else tr("WORKSHOP"), VinylSticker.Fill.WHITE, os, EVENT_STICKER_PX)
 	title.name = "NodeSticker"
 	title.focus_mode = Control.FOCUS_NONE
@@ -1391,11 +1390,16 @@ func _focus_now(page, first) -> void:
 ## Cell's colours, OURS NOW written on in yellow pencil: CombatBackdrop's own won look); the event page on the run's
 ## Site close-up dimmed to EVENT_DIM with the corp's tint (EVENT_TINT_SHARE), its CAM feed reading the close-up
 ## (SiteCopy) before the dim, so the feed is never an empty box. Every other page hides them.
+## The pages that stand on the run's Site close-up dimmed to EVENT_DIM with the corp tint: the event, and (nodes round 3, the pages' backdrop level
+## matches the event page's) the REST and WORKSHOP pages.
+const SITE_DIM_SCREENS: Array[String] = ["event", "rest", "workshop"]
+
+
 func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
-	var on := (screen == "loot" or screen == "event") and s != null and RunManager.campaign != null
+	var on := (screen == "loot" or screen in SITE_DIM_SCREENS) and s != null and RunManager.campaign != null
 	site_backdrop.visible = on
 	site_copy.visible = on and screen == "event"
-	site_dim.visible = on and screen == "event"
+	site_dim.visible = on and screen in SITE_DIM_SCREENS
 	if not on:
 		return
 	var corp := RunManager.campaign.corporation_id

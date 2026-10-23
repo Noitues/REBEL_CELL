@@ -2,7 +2,7 @@ class_name NodePage
 extends VBoxContainer
 ## RG-02/03: the page of a REST or WORKSHOP node. Look (art, nodes round 2: the event page's layout): the window is a CRT terminal in the
 ## kind's hue (`RouteInk.accent_of`), the rows are the event page's choice stickers (the number on the yellow tab), the verbs are vinyl
-## stickers; the scene stands the kind sticker, its icon and the RUN terminal beside it (`netrun_scene._show_node_page`). Every element,
+## stickers; the scene stands the kind sticker and its icon beside it (`netrun_scene._show_node_page`). Every element,
 ## name and string is the placeholder page's. Mouse and keyboard: click a button, or press 1-9 to pick a wheel slot / offer,
 ## Enter confirms the open pick, Esc clears an open pick. The page only reads the
 ## session and emits signals; the scene calls the session (Signal Up, Call Down).
