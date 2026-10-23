@@ -18,6 +18,13 @@ var b2: Array
 ## NONE (hold), a cell of the lit line (SKIP) or L5Rules.JAM once the player has chosen.
 var spoof: Vector2i = L5Rules.NONE
 var spoof_used: bool = false
+## Fast mode (a settled breach): one short beat per beam, every step of a beam shown at once, no decision and no
+## "no spoof left" beat; the response is always HOLD. The rules' result is the same as in the slow playout.
+var fast: bool = false
+const FAST_BEAT := 0.5
+const FAST_UNSEAL := 0.4
+const FAST_TURN := 0.4
+const FAST_END := 0.5
 ## True when the kit holds a spoof, so the decision after the reveal is offered.
 var can_spoof: bool = false
 ## True when the sweep was cut short by the breach.
@@ -91,6 +98,8 @@ func beam_idx() -> int:
 func head() -> float:
 	if state != S.BEAM:
 		return 0.0
+	if fast:
+		return float(beam_steps(bi).size())
 	return minf(t / L5Config.STEP_T, float((beam_steps(bi)).size()))
 
 
@@ -210,15 +219,18 @@ func advance(dt: float) -> void:
 	match state:
 		S.BEAM:
 			var steps: Array = beam_steps(bi)
-			while _next_step < steps.size() and t >= (_next_step + 1) * L5Config.STEP_T:
+			while _next_step < steps.size() and (fast or t >= (_next_step + 1) * L5Config.STEP_T):
 				_log(steps[_next_step], order[bi])
 				_next_step += 1
 				if cut:
 					return
-			if t >= _beam_len(bi):
+			if t >= (FAST_BEAT if fast else _beam_len(bi)):
 				_after_beam()
 		S.UNSEAL:
-			if t >= L5Config.UNSEAL_T:
+			if fast:
+				if t >= FAST_UNSEAL:
+					_enter_beam(order.find("b2"))
+			elif t >= L5Config.UNSEAL_T:
 				if can_spoof:
 					state = S.DECIDE
 					t = 0.0
@@ -229,10 +241,10 @@ func advance(dt: float) -> void:
 			if t >= L5Config.NOTE_T:
 				_enter_beam(order.find("b2"))
 		S.TURN:
-			if t >= L5Config.TURN_T:
+			if t >= (FAST_TURN if fast else L5Config.TURN_T):
 				_enter_beam(bi)
 		S.END:
-			if t >= L5Config.END_T:
+			if t >= (FAST_END if fast else L5Config.END_T):
 				state = S.DONE
 
 

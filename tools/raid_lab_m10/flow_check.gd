@@ -30,6 +30,8 @@ func _init() -> void:
 		_planned_leg(planned_seed)
 	_naive_legs()
 	_breach_warning()
+	_kit_strip_amber()
+	_lanes()
 	_responses_and_jam()
 	_view_planned()
 	_view_jam()
@@ -173,6 +175,107 @@ func _between_flow() -> void:
 	_ok("[between] finish: kit +1 item, bank paid, next raid", _kit_total(m.state) == kit0 + 1 and m.raid == 1 and m.pending_buy == "" and m.pending_intensity == "NORMAL")
 
 
+## The plan screen's "kit after this raid" strip equals what the raid really leaves: the kit (a spoof counts whole in the
+## strip, so a used one is added back), the Heat the plan leaves (= Heat after + evade - spoof Heat), and the next raid's beam
+## count at the Heat after plus the cheapest run, checked against the real between step at LOW when nothing moved the Heat.
+func _kit_strip_matches(tag: String, m: L5Model, row: Dictionary, has_next: bool) -> void:
+	var sp: Dictionary = row["strip"]
+	var after: L5State = row["after_raid"]
+	var l: Dictionary = row["ledger"]
+	var kit: Dictionary = sp["kit"]
+	var kit_ok: bool = int(kit["ghost"]) == int(after.kit["ghost"]) and int(kit["decoy"]) == int(after.kit["decoy"]) \
+		and int(kit["dark"]) == int(after.kit["dark"]) and int(kit["spoof"]) == int(after.kit["spoof"]) + int(l["kit_used"]["spoof"])
+	_ok(tag + " the kit strip = the kit after the raid", kit_ok)
+	_ok(tag + " the strip's Heat = the Heat after, plus the evade credit, less the spoof's Heat", int(sp["heat_leaves"]) == int(l["heat_after"]) + int(l["evade"]) - int(l["spoof_heat"]))
+	_ok(tag + " the strip's beam counts = extra_count at that Heat and at the cheapest run",
+		int(sp["beams_now"]) == 1 + int(l["extra"]) and int(sp["beams_next"]) == 1 + L5Rules.extra_count(int(sp["heat_leaves"]) + int(L5Config.INTENSITY_HEAT["LOW"])))
+	if has_next and int(l["evade"]) == 0 and int(l["spoof_heat"]) == 0:
+		var low := L5Rules.between_parts(m.leg, after, row["alloc"]["dark"], [], "LOW", "")["state"] as L5State
+		_ok(tag + " the strip's next-raid beams = the real next raid's beams after a LOW run", int(sp["beams_next"]) == 1 + L5Rules.extra_count(low.heat))
+
+
+## Amber: the plan spends the last kit item and the next raid will run more beams than this one.
+func _kit_strip_amber() -> void:
+	L5Config.reset()
+	var m := L5Model.new(0)
+	m.state.heat = 46
+	for k in L5Config.KITS:
+		m.state.kit[k] = 0
+	var pv := m.kit_after_preview()
+	_ok("[kit strip] an empty kit at Heat 46: LOW takes the next raid to 52, one more beam, so amber", bool(pv["amber"]) and int(pv["levers_left"]) == 0 and int(pv["beams_next"]) == int(pv["beams_now"]) + 1)
+	m.state.heat = 30
+	_ok("[kit strip] an empty kit but no new beam next raid: not amber", not bool(m.kit_after_preview()["amber"]))
+	m.state.heat = 46
+	m.state.kit["spoof"] = 1
+	var pv2 := m.kit_after_preview()
+	_ok("[kit strip] one lever left: not amber, and it is counted", not bool(pv2["amber"]) and int(pv2["levers_left"]) == 1)
+	var fresh := L5Model.new(0)
+	fresh.state.kit["ghost"] = 1
+	_ok("[kit strip] the ghost is placed on an asset", fresh.place("ghost", (fresh.values().keys()[0] as Vector2i)))
+	var pv3 := fresh.kit_after_preview()
+	_ok("[kit strip] a placed ghost leaves the kit and adds its Heat", int(pv3["kit"]["ghost"]) == 0 and int(pv3["heat_leaves"]) == fresh.state.heat + L5Config.GHOST_HEAT)
+
+
+## Parallel beams on one row or column take fixed, ordered, distinct lanes, centered on it; the hunter has its own lane on
+## every column; the node's value is one pip per 2.
+func _lanes() -> void:
+	var view := _make_view(0)
+	if view == null:
+		return
+	var apart := true
+	var ordered := true
+	var centered := true
+	var hunter_clear := true
+	var n_lines := 0
+	for seed_id in L5Config.LEGS:
+		view.model.new_leg(seed_id)
+		for rx in range(L5Config.RAIDS * 3):
+			var r: int = rx / 3
+			view.model.raid = r
+			view.lane_extra = rx % 3	## 0, 1 or 2 extra known beams: only the beams that run take a lane
+			var offs: Array = view._offsets()
+			var lines: Array = view._all_lines()
+			var by_key := {}
+			for i in range(lines.size()):
+				if not view._lane_live(i):
+					continue
+				var key: String = view._lane_key(lines[i])
+				if not by_key.has(key):
+					by_key[key] = []
+				(by_key[key] as Array).append(float(offs[i]))
+				n_lines += 1
+			for key: String in by_key:
+				var lanes: Array = by_key[key]
+				var all_lanes := lanes.duplicate()
+				if key.begins_with("c"):
+					all_lanes.append(view._h_off(int(key.substr(1))))
+				for a in range(all_lanes.size()):
+					if a > 0:
+						apart = apart and float(all_lanes[a]) - float(all_lanes[a - 1]) >= view.LANE - 0.01
+					ordered = ordered and (a == 0 or float(all_lanes[a]) > float(all_lanes[a - 1]))
+				var total := 0.0
+				for v in all_lanes:
+					total += float(v)
+				centered = centered and absf(total) < 0.01
+			for x in range(L5Config.W):
+				for ln_off in (by_key.get("c%d" % x, []) as Array):
+					hunter_clear = hunter_clear and absf(float(ln_off) - view._h_off(x)) >= view.LANE - 0.01
+	_ok("[lanes] beams on one row or column are at least a lane apart (%d lines over 6 legs)" % n_lines, apart)
+	_ok("[lanes] the lanes keep the order beam 1, extra, extra 2, candidates", ordered)
+	_ok("[lanes] the lanes are centered on the row or column (never between rows)", centered)
+	_ok("[lanes] the hunter's lane never shares a lane with a line on its column", hunter_clear)
+	var pips_ok := true
+	for v in [4, 6, 8, 10, 12]:
+		pips_ok = pips_ok and G_pips(v) == v / 2
+	_ok("[pips] a node of value v wears v / 2 pips (4 to 12 give 2 to 6)", pips_ok)
+	view.queue_free()
+
+
+func G_pips(v: int) -> int:
+	var G = load("res://tools/raid_lab_m10/l5_glyphs.gd")
+	return int(G.pip_count(v))
+
+
 func _scramble() -> void:
 	var G = load("res://tools/raid_lab_m10/l5_glyphs.gd")
 	G.scramble = true
@@ -199,6 +302,7 @@ func _run_raid(m: L5Model, alloc: Dictionary, spoof: Vector2i) -> Dictionary:
 				return {}
 	var fc := m.forecast()
 	var extra := m.extra_now()
+	var strip := m.kit_after_preview()
 	var play := m.make_play()
 	var seen: Array = []
 	var guard := 0
@@ -231,6 +335,7 @@ func _run_raid(m: L5Model, alloc: Dictionary, spoof: Vector2i) -> Dictionary:
 	row["play"] = play
 	row["forecast"] = fc
 	row["extra_planned"] = extra
+	row["strip"] = strip
 	row["seen"] = seen
 	return row
 
@@ -295,6 +400,7 @@ func _planned_leg(seed_id: int) -> void:
 		_ok("%s raid %d heat band at the sweep = extra beams in the trace" % [tag, i + 1],
 			int(row["extra_planned"]) == int(row["ledger"]["extra"]) and (row["beams"] as Array).size() == 3 + int(row["extra_planned"]) - (1 if spoof == L5Rules.JAM else 0))
 		var play: L5Play = row["play"]
+		_kit_strip_matches(tag + " raid %d" % (i + 1), m, row, i < steps.size() - 1)
 		var want_touches := _touched_arr(s["touched"])
 		_ok("%s raid %d touches = golden" % [tag, i + 1], _touched_arr_of(row["touches"]) == want_touches)
 		_ok("%s raid %d touches logged beat by beat = result" % [tag, i + 1], play.logged_touches() == want_touches)
@@ -662,6 +768,7 @@ func _view_planned() -> void:
 	if b["buy"] != null:
 		view._act("buy:" + String(b["buy"]))
 	view._act("inten:" + String(b["intensity"]))
+	_ok(tag + " a safe between step is not a settled breach: Enter goes to the next contact", not view.model.breach_settled())
 	for nm: String in L5Config.INTENSITIES:
 		var rc: Dictionary = view.risk_card(nm)
 		var want_risk: int = L5Rules.breach_risk(view.model.leg, view.model.raid + 1, view.model.between_preview(nm)["state"])
@@ -737,6 +844,37 @@ func _view_jam() -> void:
 	view.queue_free()
 
 
+## The settled breach: launching the between screen plays the next raid fast and straight to the BREACHED card. No contact,
+## plan, forecast or decision screen, one short beat per beam, no levers, and the same result as the slow playout of HOLD.
+func _fast_breach(view: Control, tag: String) -> void:
+	_seen_states = []
+	var screens: Array = []
+	var p: L5Play = view.play
+	_ok(tag + " Enter on the settled between screen goes straight to the playout of raid 3", view.phase == view.Phase.PLAY and view.fast_play and p.fast and view.model.raid == 2)
+	_ok(tag + " the fast raid runs with no levers", (p.alloc["ghost"] as Array).is_empty() and (p.alloc["decoys"] as Array).is_empty() and (p.alloc["dark"] as Array).is_empty())
+	var slow := L5Play.new(view.model.leg, 2, p.before.copy(), L5Rules.empty_alloc(), p.b2)
+	var g2 := 0
+	while not slow.is_done() and g2 < 4000:
+		if slow.state == L5Play.S.DECIDE:
+			slow.pass_spoof()
+		else:
+			slow.advance(0.05)
+		g2 += 1
+	var guard := 0
+	while view.phase == view.Phase.PLAY and guard < 400:
+		if not _seen_states.has(p.state):
+			_seen_states.append(p.state)
+		if not screens.has(view.phase):
+			screens.append(view.phase)
+		view._process(0.05)
+		guard += 1
+	_ok(tag + " the fast playout needs no decision and no 'no spoof' beat", not _seen_states.has(L5Play.S.DECIDE) and not _seen_states.has(L5Play.S.NOTE))
+	_ok(tag + " the fast playout stays on the playout screen until the card (%d ticks of 0.05 s)" % guard, screens == [view.Phase.PLAY] and view.phase == view.Phase.BREACH)
+	var cap := 5.0 * L5Play.FAST_BEAT + L5Play.FAST_UNSEAL + L5Play.FAST_TURN + L5Play.FAST_END + 0.3
+	_ok(tag + " the fast playout takes one short beat per beam (under %.1f s)" % cap, float(guard) * 0.05 <= cap)
+	_ok(tag + " the fast result = the slow playout's: same touches, HOME 0", _touched_arr_of(view.row["touches"]) == _touched_arr_of(slow.shown_touches()) and slow.cut and view.row["cut"])
+
+
 func _view_breach() -> void:
 	var view := _make_view(0)
 	if view == null:
@@ -744,6 +882,8 @@ func _view_breach() -> void:
 	var tag := "[view breach]"
 	var guard := 0
 	while view.phase != view.Phase.BREACH and guard < 4:
+		if view.phase == view.Phase.PLAY:
+			break	## the settled breach is already playing
 		var d := L5Rules.naive_decide(view.model.leg, view.model.raid, view.model.state)
 		_view_raid(view, d["alloc"], d["spoof"])
 		if view.phase == view.Phase.AFTER:
@@ -752,12 +892,17 @@ func _view_breach() -> void:
 			for c: Vector2i in L5Rules.naive_repairs(view.model.leg, view.model.state).slice(0, L5Config.REPAIR_SLOTS):
 				view._act("cell:%d,%d" % [c.x, c.y])
 			if view.model.raid == 1:
+				_ok(tag + " between raids 2 and 3: the loss is settled (breach_risk 3/3 on every card)", view.model.breach_settled())
 				for nm: String in L5Config.INTENSITIES:
 					var rc: Dictionary = view.risk_card(nm)
 					_ok(tag + " between raids 2 and 3: the %s card says 'BREACH on 3/3 lines whatever you pick'" % nm,
 						rc["line1"] == "BREACH on 3/3 lines" and rc["line2"] == "whatever you pick" and int(rc["risk"]) == L5Rules.breach_risk(view.model.leg, 2, view.model.between_preview(nm)["state"]))
 			view._key(KEY_ENTER)
 		guard += 1
+	if view.phase == view.Phase.PLAY:
+		_fast_breach(view, tag)
+	else:
+		_ok(tag + " the settled breach plays fast (it did not: the naive leg 0 loss is settled after raid 2)", false)
 	_ok(tag + " the naive line ends in the full-screen BREACH", view.phase == view.Phase.BREACH)
 	_ok(tag + " breach on raid 3 with HOME 0", view.model.raid == 2 and view.model.state.home_hp == 0 and view.model.breached)
 	_ok(tag + " the breach raid's tier is BREACHED", view.row["tier"] == "BREACHED" and view.row["cut"])

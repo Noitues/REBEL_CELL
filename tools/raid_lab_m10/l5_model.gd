@@ -405,6 +405,40 @@ func risk_for(intensity: String) -> Dictionary:
 	return _risk_cache[key]
 
 
+## True while the between step shows a certain loss: the next raid empties HOME on all CANDIDATES sealed lines whatever the
+## intensity (breach_risk 3/3 on every card, with the picks so far). Launch then plays the raid fast, straight to the card.
+func breach_settled() -> bool:
+	if not between_open():
+		return false
+	for nm: String in L5Config.INTENSITIES:
+		if int(risk_for(nm)["risk"]) < L5Config.CANDIDATES:
+			return false
+	return true
+
+
+## The plan screen's "kit after this raid" strip, from numbers the rules already produce: the kit the plan leaves (a spoof
+## is spent only if used after the reveal, so it counts whole), the Heat the plan leaves (the ghost's, no evade credit), the
+## least Heat the next raid arrives with (the cheapest run, LOW), and the beams at each. `amber`: the plan spends the last
+## kit item and the next raid will run more beams than this one.
+func kit_after_preview() -> Dictionary:
+	var kit := kit_left()
+	var left := 0
+	for k: String in L5Config.KITS:
+		left += int(kit[k])
+	var heat_leaves := heat_now()
+	var heat_next := heat_leaves + int(L5Config.INTENSITY_HEAT["LOW"])
+	var beams_now := 1 + L5Rules.extra_count(heat_leaves)
+	var beams_next := 1 + L5Rules.extra_count(heat_next)
+	return {"kit": kit, "levers_left": left, "heat_leaves": heat_leaves, "heat_next": heat_next, "beams_now": beams_now,
+		"beams_next": beams_next, "amber": left == 0 and beams_next > beams_now}
+
+
+## The leg's score on the golden careless (naive) line: the yardstick the record ranks the played leg against.
+func careless_score() -> int:
+	var steps: Array = leg["naive"]
+	return int(steps.back()["score_after"]) if not steps.is_empty() else 0
+
+
 ## Pick the one shop buy ("ghost" / "decoy" / "spoof" / "dark") or take it back (same pick again, or "" for none). "" or the reason.
 func set_buy(what: String) -> String:
 	if what == "":
