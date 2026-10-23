@@ -44,13 +44,7 @@ const HEAT_MAX: int = 100
 const LEGS: Array = [0, 3, 5, 8, 11, 14]
 const KITS: Array = ["ghost", "decoy", "spoof", "dark"]
 
-## Playout timing in seconds at 1x.
-const STEP_T: float = 0.32
-const UNSEAL_T: float = 1.1
-const TURN_T: float = 1.1
-const END_T: float = 0.9
-## The beat that says "no spoof left" when the kit holds none (the decision is skipped, not left blank).
-const NOTE_T: float = 0.9
+## Playout timing lives in l7_config.gd (L7Config): every duration of the raid layer is in that one file.
 
 const SPOOF_VIEWS: Array = ["range", "off"]
 const KEY_LABELS: Array = ["Schematics", "Scrap", "Credits"]

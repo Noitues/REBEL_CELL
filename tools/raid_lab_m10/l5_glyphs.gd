@@ -1,26 +1,72 @@
 class_name L5Glyphs
 extends RefCounted
-## Vector placeholder glyphs and palette for the L3 lab, matching the r10 mockups and the M9 glyph language:
-## threats cobalt, the Cell yellow, red only marks loss, teal only the Cell's holds and spoof. All UI text goes through
-## `text()`, so `scramble` (the --scramble capture flag) replaces every letter for the no-words test.
+## Vector glyphs and palette of the lab, in the look of the Blender target frames (docs/design/raid_concepts/raid_target):
+## threats cobalt, the Cell and HOME gold and amber, Heat orange, red only marks loss, the Cell's acid marks the spoof and
+## what holds. All UI text goes through `text()`, so `scramble` (the --scramble capture flag) replaces every letter for
+## the no-words test. Fonts: Anton for numbers, stamps and headlines, Share Tech Mono for labels, IBM Plex Sans
+## Condensed for body text (chosen by `font_for`, so every measure and every draw agrees).
 
-const BG := Color8(14, 16, 32)
-const PANEL := Color8(26, 30, 54)
-const PANEL_EDGE := Color8(70, 80, 130)
+const BG := Color8(7, 11, 30)
+const PANEL := Color8(11, 16, 40)
+const PANEL_EDGE := Color8(58, 70, 122)
 const INK := Color8(232, 236, 245)
-const DIM := Color8(140, 148, 175)
-const CELL := Color8(255, 210, 63)
+const DIM := Color8(138, 146, 172)
+const CELL := Color8(255, 210, 77)
 const THREAT := Color8(61, 107, 255)
-const THREAT_LIGHT := Color8(140, 170, 255)
-const THREAT_FADE := Color8(50, 60, 110)
-const DMG := Color8(255, 77, 77)
-const HEAT := Color8(255, 110, 40)
-const CLEAN := Color8(90, 220, 200)
-const HOLD := Color8(255, 170, 40)
+const THREAT_HOT := Color8(159, 192, 255)
+const THREAT_LIGHT := Color8(150, 182, 255)
+const THREAT_FADE := Color8(44, 56, 112)
+const DMG := Color8(255, 61, 77)
+const HEAT := Color8(255, 106, 26)
+const CLEAN := Color8(212, 255, 0)
+const HOLD := Color8(255, 176, 32)
+const COPPER := Color8(201, 116, 26)
 const EMPTY_NODE := Color8(40, 46, 80)
+
+const FONT_HEAD := "res://assets/fonts/Anton-Regular.ttf"
+const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
+const FONT_BODY := "res://assets/fonts/IBMPlexSansCondensed-Medium.ttf"
 
 static var font: Font = ThemeDB.fallback_font
 static var scramble: bool = false
+static var _fonts: Dictionary = {}
+
+
+## The three fonts, loaded once (the fallback font if a file is missing).
+static func _font(kind: String) -> Font:
+	if _fonts.is_empty():
+		var head: Font = load(FONT_HEAD) as Font
+		var mono_base: Font = load(FONT_MONO) as Font
+		var body: Font = load(FONT_BODY) as Font
+		var mono: Font = mono_base
+		if mono_base != null:
+			var fv := FontVariation.new()
+			fv.base_font = mono_base
+			fv.spacing_glyph = 1
+			mono = fv
+		_fonts = {"head": head if head != null else font, "mono": mono if mono != null else font, "body": body if body != null else font}
+	return _fonts[kind]
+
+
+## The font a string is set in: lowercase text is body; capitals are a mono label, or Anton from 22 px up; bare digits and
+## signs are Anton from 20 px up. `kind` forces one ("head", "mono", "body").
+static func font_for(s: String, size: int, kind: String = "") -> Font:
+	if kind != "":
+		return _font(kind)
+	var has_lower := false
+	var has_upper := false
+	for i in range(s.length()):
+		var code := s.unicode_at(i)
+		if code >= 97 and code <= 122:
+			has_lower = true
+			break
+		if code >= 65 and code <= 90:
+			has_upper = true
+	if has_lower:
+		return _font("body")
+	if has_upper:
+		return _font("head") if size >= 22 else _font("mono")
+	return _font("head") if size >= 20 else _font("body")
 
 
 static var _word_cache: Dictionary = {}
@@ -67,7 +113,7 @@ const BATTERED := Color8(250, 176, 40)
 const DAMAGED_C := Color8(255, 100, 56)
 
 
-## The color of an outcome tier: EVADED teal, HOLDS neutral, BATTERED amber, DAMAGED orange, BREACHED red.
+## The color of an outcome tier: EVADED lime, HOLDS neutral, BATTERED amber, DAMAGED orange, BREACHED red.
 static func tier_color(tier: String) -> Color:
 	match tier:
 		"EVADED":
@@ -95,42 +141,57 @@ static func tier_word(tier: String) -> String:
 	return "BREACHED"
 
 
-## Text with its top-left at `p`.
-static func text(ci: CanvasItem, p: Vector2, s: String, size: int, col: Color = INK, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0) -> void:
-	ci.draw_string(font, p + Vector2(0, size * 0.95), scr(s), align, width, size, col)
+## Text with its top-left at `p`. `kind` forces a font ("head" Anton, "mono", "body"); empty picks by `font_for`.
+static func text(ci: CanvasItem, p: Vector2, s: String, size: int, col: Color = INK, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, kind: String = "") -> void:
+	var t := scr(s)
+	ci.draw_string(font_for(t, size, kind), p + Vector2(0, size * 0.95), t, align, width, size, col)
 
 
 ## Text centered on `c`.
-static func text_c(ci: CanvasItem, c: Vector2, s: String, size: int, col: Color = INK) -> void:
+static func text_c(ci: CanvasItem, c: Vector2, s: String, size: int, col: Color = INK, kind: String = "") -> void:
 	var t := scr(s)
-	var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	ci.draw_string(font, c + Vector2(-w * 0.5, size * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	var f := font_for(t, size, kind)
+	var w := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	ci.draw_string(f, c + Vector2(-w * 0.5, size * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 
 ## Text ending at x = right.
-static func text_r(ci: CanvasItem, p: Vector2, s: String, size: int, col: Color = INK) -> void:
+static func text_r(ci: CanvasItem, p: Vector2, s: String, size: int, col: Color = INK, kind: String = "") -> void:
 	var t := scr(s)
-	var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	ci.draw_string(font, p + Vector2(-w, size * 0.95), t, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	var f := font_for(t, size, kind)
+	var w := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	ci.draw_string(f, p + Vector2(-w, size * 0.95), t, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 
-static func text_w(s: String, size: int) -> float:
-	return font.get_string_size(scr(s), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+## Anton text with its top-left at `p` (numbers, names, headlines).
+static func head(ci: CanvasItem, p: Vector2, s: String, size: int, col: Color = INK) -> void:
+	text(ci, p, s, size, col, HORIZONTAL_ALIGNMENT_LEFT, -1.0, "head")
 
 
+static func text_w(s: String, size: int, kind: String = "") -> float:
+	var t := scr(s)
+	return font_for(t, size, kind).get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+
+
+## A panel in the frames' style: a dark slab with a hairline edge (amber for the Cell's, cobalt for threats, acid for the
+## spoof, red for loss) and a soft glow of that edge colour. Plain slate edges stay flat.
 static func panel(ci: CanvasItem, r: Rect2, edge: Color = PANEL_EDGE, fill: Color = PANEL, width: float = 2.0) -> void:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = fill
-	sb.set_corner_radius_all(6)
+	sb.bg_color = Color(fill.r, fill.g, fill.b, minf(fill.a, 0.94))
+	sb.set_corner_radius_all(4)
 	sb.border_color = edge
-	sb.set_border_width_all(int(width))
+	sb.set_border_width_all(maxi(1, int(width)))
+	if edge != PANEL_EDGE and edge.a > 0.0 and fill.a > 0.0:
+		sb.shadow_color = Color(edge.r, edge.g, edge.b, 0.2)
+		sb.shadow_size = 6
 	ci.draw_style_box(sb, r)
 
 
+## The big action button: Anton label on a dark slab with a gold edge (acid-lit when hot).
 static func button(ci: CanvasItem, r: Rect2, label: String, hot: bool = false, enabled: bool = true, size: int = 18) -> void:
 	var edge := CELL if enabled else PANEL_EDGE
-	panel(ci, r, edge, Color8(60, 52, 24) if (hot and enabled) else PANEL, 3.0)
-	text_c(ci, r.get_center(), label, size, CELL if enabled else DIM)
+	panel(ci, r, edge, Color8(48, 40, 14) if (hot and enabled) else PANEL, 2.0)
+	text_c(ci, r.get_center(), label, size, CELL if enabled else DIM, "head")
 
 
 static func line(ci: CanvasItem, a: Vector2, b: Vector2, col: Color, w: float = 2.0) -> void:
@@ -239,10 +300,11 @@ static func badge(ci: CanvasItem, c: Vector2, n: Variant, col: Color = THREAT) -
 	if s == "+" or s == "++":
 		beam_plus(ci, c, s.length(), col)
 		return
-	var r := 11.0 if s.length() < 2 else 15.0
+	var r := 12.0 if s.length() < 2 else 15.0
+	ci.draw_arc(c, r + 3.0, 0.0, TAU, 24, Color(col.r, col.g, col.b, 0.35), 4.0, true)
 	ci.draw_circle(c, r, col)
-	ci.draw_arc(c, r, 0.0, TAU, 20, INK, 1.5, true)
-	text_c(ci, c, s, 15, INK)
+	ci.draw_arc(c, r, 0.0, TAU, 24, INK, 1.8, true)
+	text_c(ci, c, s, 16, INK, "head")
 
 
 ## Wrench (the DOWN mark): a handle with an open jaw.
@@ -251,7 +313,7 @@ static func wrench(ci: CanvasItem, c: Vector2, r: float, col: Color = DMG) -> vo
 	ci.draw_arc(c + Vector2(-r * 0.5, -r * 0.5), r * 0.62, PI * 0.9, PI * 2.55, 14, col, 4.0, true)
 
 
-## Spoof key: the teal skip-chevron in a rounded key (the spoof's own mark; no other thing uses a chevron).
+## Spoof key: the lime skip-chevron in a rounded key (the spoof's own mark; no other thing uses a chevron).
 static func spoof_key(ci: CanvasItem, c: Vector2, col: Color) -> void:
 	panel(ci, Rect2(c.x - 26, c.y - 14, 52, 28), col, Color(0, 0, 0, 0), 3.0)
 	skip_chevron(ci, c, 8.0, col, 3.0)
@@ -270,21 +332,44 @@ static func diamond(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float =
 	ci.draw_polyline(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0), c + Vector2(0, -r)]), col, w, true)
 
 
-## A stamp: a bordered word, tilted.
-static func stamp(ci: CanvasItem, c: Vector2, word: String, col: Color, size: int, sub: String = "") -> void:
-	ci.draw_set_transform(c, -0.12, Vector2.ONE)
-	var w := maxf(text_w(word, size), text_w(sub, int(size * 0.62)) if sub != "" else 0.0) + 36.0
-	var h := size * 1.2 + (size * 0.7 if sub != "" else 0.0) + 18.0
+## A stamp slammed onto the screen (frame 3's HOME -1 slab): a tilted dark slab edged in `col`, the word in Anton, the
+## sub-line below, speed lines trailing right. `prog` 0..1 is the slam: it drops in large, lands with a small shake, and
+## leaves echo slabs behind while it lands. prog 1 is the settled stamp.
+static func stamp(ci: CanvasItem, c: Vector2, word: String, col: Color, size: int, sub: String = "", prog: float = 1.0, sub_col: Color = INK) -> void:
+	if prog <= 0.0:
+		return
+	var u := clampf(prog, 0.0, 1.0)
+	var k := 1.0 - u
+	var sc := 1.0 + 1.3 * k * k
+	var a := clampf(u * 4.0, 0.0, 1.0)
+	var shake := Vector2(sin(u * 90.0), cos(u * 70.0)) * 4.0 * k if u > 0.5 else Vector2.ZERO
+	var sub_size := int(size * 0.5)
+	var w := maxf(text_w(word, size, "head"), text_w(sub, sub_size, "head") if sub != "" else 0.0) + 44.0
+	var h := size * 1.1 + (sub_size * 1.2 if sub != "" else 0.0) + 26.0
 	var r := Rect2(-w * 0.5, -h * 0.5, w, h)
+	var fill := Color(col.r * 0.22, col.g * 0.06 + 0.02, col.b * 0.1 + 0.02, 0.82 * a)
+	# Speed lines trail to the right of the slab while and after it lands.
+	ci.draw_set_transform(c + shake, -0.07, Vector2(sc, sc))
+	for i in range(4):
+		var y := -h * 0.5 + h * (0.18 + 0.22 * i)
+		ci.draw_line(Vector2(w * 0.5 - 6.0, y), Vector2(w * 0.5 + 40.0 + 26.0 * (i % 2) + 40.0 * k, y), Color(col.r, col.g, col.b, 0.5 * a), 2.0)
+	# Echoes of the slab, offset back along the slam.
+	for e in range(3):
+		var off := (e + 1) * (7.0 + 14.0 * k)
+		ci.draw_rect(Rect2(r.position + Vector2(-off, 0), r.size), Color(col.r, col.g, col.b, 0.1 * a), false, 2.0)
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0, 0, 0, 0.35)
-	sb.set_corner_radius_all(6)
-	sb.border_color = col
-	sb.set_border_width_all(5)
+	sb.bg_color = fill
+	sb.set_corner_radius_all(3)
+	sb.border_color = Color(col.r, col.g, col.b, a)
+	sb.set_border_width_all(4)
+	sb.shadow_color = Color(col.r, col.g, col.b, 0.28 * a)
+	sb.shadow_size = 12
 	ci.draw_style_box(sb, r)
-	text_c(ci, Vector2(0, -h * 0.5 + 9.0 + size * 0.6), word, size, col)
+	ci.draw_rect(r.grow(-8.0), Color(col.r, col.g, col.b, 0.35 * a), false, 1.0)
+	var tc := Color(col.r, col.g, col.b, a)
+	text_c(ci, Vector2(0, -h * 0.5 + 13.0 + size * 0.55), word, size, tc, "head")
 	if sub != "":
-		text_c(ci, Vector2(0, h * 0.5 - 9.0 - size * 0.35), sub, int(size * 0.62), col)
+		text_c(ci, Vector2(0, h * 0.5 - 13.0 - sub_size * 0.55), sub, sub_size, Color(sub_col.r, sub_col.g, sub_col.b, a), "head")
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -450,7 +535,7 @@ static func beam_plus(ci: CanvasItem, c: Vector2, n: int, col: Color = THREAT) -
 ## The Heat meter's danger gradient: calm blue, warm yellow, hot red (t 0..1).
 static func heat_color(t: float) -> Color:
 	var u := clampf(t, 0.0, 1.0)
-	var calm := Color8(70, 140, 200)
-	var warm := Color8(255, 200, 50)
-	var hot := Color8(255, 60, 40)
+	var calm := Color8(255, 168, 48)
+	var warm := Color8(255, 106, 26)
+	var hot := Color8(255, 48, 52)
 	return calm.lerp(warm, u * 2.0) if u < 0.5 else warm.lerp(hot, (u - 0.5) * 2.0)
