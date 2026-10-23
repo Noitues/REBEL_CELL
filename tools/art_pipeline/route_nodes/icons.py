@@ -17,7 +17,7 @@ CREAM = (248, 245, 234)
 KIND = {
     "rest": dict(acc=(191, 115, 255), field=(46, 28, 76), hi=(86, 52, 132), mid=(150, 92, 214)),
     "workshop": dict(acc=(255, 209, 77), field=(72, 52, 14), hi=(122, 92, 28), mid=(214, 168, 46)),
-    "cache": dict(acc=(236, 92, 98), field=(60, 8, 18), hi=(136, 36, 46), mid=(136, 8, 28)),  # brick crimson (round 2: off FIGHT cyan)
+    "cache": dict(acc=(255, 140, 120), field=(60, 8, 18), hi=(220, 80, 96), mid=(210, 44, 64)),  # brick crimson (round 2: off FIGHT cyan)
 }
 
 

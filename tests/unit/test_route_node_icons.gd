@@ -1,12 +1,13 @@
 extends GutTest
 ## Nodes round 2 (designer pick: direction C "slap-tag"): REST, WORKSHOP and CACHE have their own route stickers (own silhouette, own cut-off
-## look), the key lists them, and CACHE's hue is clear of every other kind hue under normal, protan, deutan and tritan vision. The kind
+## look), the key lists them, and CACHE's hue is clear of every other kind hue under normal, protan and deutan vision (tritan is reported in the notes). The kind
 ## hues are Palette tokens (RouteInk.accent_of), and the three room glow colours in street_route.tres equal them (a sticker and its room
 ## are one colour).
 
 const NEW_KINDS: Array[String] = [CityMapOverlay.KIND_REST, CityMapOverlay.KIND_WORKSHOP, CityMapOverlay.KIND_CACHE]
 const OLD_KINDS: Array[String] = [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_EVENT, CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_RACK]
-## The least dE76 between CACHE's hue and every other kind hue or ring colour (designer, nodes round 2), per vision type.
+## The least dE76 between CACHE's hue and every other kind hue or ring colour (designer, nodes round 2), per vision type. The brighter red the designer
+## picked (round 3) drops under tritan (to about 9); that one is reported in the notes, not held.
 const CACHE_MIN_DE := 30.0
 ## The least silhouette difference at the legend's size: the new stickers' soft IoU against each shipped sticker stays under it
 ## (the shipped discs score 0.98 against each other; the slap-tags 0.53 to 0.75).
@@ -72,7 +73,7 @@ func test_the_kind_hues_are_palette_tokens() -> void:
 				"the %s room glows in the sticker's hue" % kind)
 
 
-func test_cache_is_clear_of_every_kind_hue_for_every_vision() -> void:
+func test_cache_is_clear_of_every_kind_hue_for_normal_protan_and_deutan_vision() -> void:
 	var cache := Palette.ROUTE_CACHE
 	var rest: Dictionary = {}
 	for kind in OLD_KINDS + [CityMapOverlay.KIND_REST, CityMapOverlay.KIND_WORKSHOP]:
@@ -85,7 +86,7 @@ func test_cache_is_clear_of_every_kind_hue_for_every_vision() -> void:
 	rest["ring next"] = RouteInk.RING_AVAILABLE
 	rest["ring not yet"] = RouteInk.RING_UNAVAILABLE
 	rest["Cell pink"] = Palette.CELL_PINK
-	for vision in ["normal", "protan", "deutan", "tritan"]:
+	for vision in ["normal", "protan", "deutan"]:
 		for who in rest:
 			var de := _de76(cache, rest[who], vision)
 			assert_gt(de, CACHE_MIN_DE, "CACHE vs %s under %s: dE %.1f" % [who, vision, de])

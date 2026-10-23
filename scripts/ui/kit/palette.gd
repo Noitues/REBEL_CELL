@@ -145,9 +145,9 @@ const RING_UNAVAILABLE := Color("#F2F6FF")
 const RING_CUT := Color("#6A6A6A")
 
 ## Route node identity hues (the ring colour of round 37's five stickers, and the street room glow colour of the three run-graph v2
-## kinds; `tools/art_pipeline/route_nodes`). A kind is never told by hue alone: each has its own silhouette. CACHE's brick crimson
-## is chosen at least dE76 30 from every other kind hue and ring colour under normal, protan, deutan and tritan vision
-## (`docs/concepts/solace_vertical/nodes/godot/NOTES.md`); the test (test_route_node_icons) holds the number.
+## kinds; `tools/art_pipeline/route_nodes`). A kind is never told by hue alone: each has its own silhouette. CACHE's hot brick red
+## is chosen at least dE76 30 from every other kind hue, room colour and ring colour under normal, protan and deutan vision (tritan
+## drops to about 9: reported, not held; `docs/concepts/solace_vertical/nodes/godot/NOTES.md`); test_route_node_icons holds the number.
 const ROUTE_FIGHT := Color("#6CF7FF")
 const ROUTE_ELITE := Color("#FF8C1A")
 const ROUTE_EVENT := Color("#4EFF9E")
@@ -155,7 +155,7 @@ const ROUTE_SHOP := Color("#62A9FF")
 const ROUTE_RACK := Color("#FFA02A")
 const ROUTE_REST := Color("#BF73FF")
 const ROUTE_WORKSHOP := Color("#FFD14D")
-const ROUTE_CACHE := Color("#88081C")
+const ROUTE_CACHE := Color("#D22C40")
 
 ## §2.8 Heat colour per band. Paired with: the band word, always printed (never colour
 ## alone). Heat is never green. PURGE has its own token with HUNTED's look until the art
