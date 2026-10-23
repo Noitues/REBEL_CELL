@@ -26,6 +26,8 @@ var _push: Dictionary = {}
 var _tris: Dictionary = {}
 var _faces: Dictionary = {}
 var _facades: int = 0
+## Module 19 (a): the buildings whose walls take the face wash (the far frontage row away from the route).
+var _face: Dictionary = {}
 
 
 ## Builds the street of derive `derive` on `city` for the art seed `layout_seed`. `measure` is the glyph-box Callable of the sign rules
@@ -41,6 +43,7 @@ func _build(city: Dictionary, derive: Dictionary, layout_seed: Variant, measure_
 	_seed = StreetR2Adapter.seed_of(layout_seed)
 	_mats = StreetR2Materials.new()
 	plan = StreetR2Adapter.plan_street(city, derive, layout_seed)
+	_face = face_uids(plan, int(_cfg.facade["face_route_gap"]))
 	var fonts := StreetR2SignCanvas.load_fonts()
 	var measure := measure_in if measure_in.is_valid() else StreetR2SignCanvas.make_measure(fonts)
 	root = Node3D.new()
@@ -265,10 +268,28 @@ func _emit_building(uid: String, accs: Dictionary, centre: Vector3) -> void:
 	var sides := int(_cfg.facade["prism_sides"])
 	for pr: Array in solid.prims:
 		StreetR2Geometry.add(bucket, "solid", StreetR2Geometry.prim_faces(pr, sides))
-	_add_mesh("bld_" + uid, bucket, centre)
+	_add_mesh("bld_" + uid, bucket, centre, not _face.has(uid))
 
 
-func _add_mesh(node_name: String, bucket: Dictionary, centre: Vector3) -> void:
+## Module 19 (a): the buildings that take the face wash: the far frontage row (plan.front, the plate's lit slabs across the street)
+## minus the route columns (plan.route) and their `gap` neighbours either side, so the route UI never sits on a lit sheet; the
+## near side and the blocks behind never take it.
+static func face_uids(p: Dictionary, gap: int) -> Dictionary:
+	var front: Array = p.get("front", [])
+	var out: Dictionary = {}
+	for uid: Variant in front:
+		out[String(uid)] = true
+	for uid: Variant in p.get("route", []):
+		out.erase(String(uid))
+		var i := front.find(uid)
+		if i < 0:
+			continue
+		for k in range(maxi(0, i - gap), mini(front.size(), i + gap + 1)):
+			out.erase(String(front[k]))
+	return out
+
+
+func _add_mesh(node_name: String, bucket: Dictionary, centre: Vector3, plain: bool = false) -> void:
 	var surf := {}
 	var mesh := StreetR2Geometry.mesh(bucket, centre, surf)
 	if mesh == null:
@@ -277,7 +298,7 @@ func _add_mesh(node_name: String, bucket: Dictionary, centre: Vector3) -> void:
 		_faces[m] = int(_faces[m]) + (bucket[m] as Array).size()
 		_tris[m] = int(_tris[m]) + StreetR2Geometry.tri_count(bucket[m])
 	for m: String in surf:
-		mesh.surface_set_material(int(surf[m]), _mats.surface(m))
+		mesh.surface_set_material(int(surf[m]), _mats.surface_plain(m) if plain else _mats.surface(m))
 	var mi := MeshInstance3D.new()
 	mi.name = node_name
 	mi.mesh = mesh

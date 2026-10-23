@@ -60,6 +60,8 @@ var _win_boxes := PackedVector4Array()
 var _win_zs := PackedVector2Array()
 var _win_open := PackedFloat32Array()
 var _haze_cur := -1.0
+## Module 19 (a): the zoom-eased street wash (gain, floors lo, floors hi); x < 0 until the first pose.
+var _wash_cur := Vector3(-1.0, 0.0, 0.0)
 ## Tools: a fixed post exposure (the exposure solve); 0 = the framing's solved value.
 var exposure_override := 0.0
 var _grit_skip: Dictionary = {}
@@ -98,6 +100,8 @@ func setup(p_data: StreetRouteData, model: CityModel) -> void:
 	pose = data.overview_state()["pose"]
 	_apply_pose()
 	view.model_ready.connect(_on_model_ready, CONNECT_ONE_SHOT)
+	if not RenderingServer.frame_pre_draw.is_connected(_hold_overrides):
+		RenderingServer.frame_pre_draw.connect(_hold_overrides)
 	if not CityView3D.can_render():
 		_on_model_ready.call_deferred()
 	set_process(true)
@@ -161,6 +165,8 @@ func _on_model_ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED and view != null:
 		_resize_view()
+	elif what == NOTIFICATION_PREDELETE and RenderingServer.frame_pre_draw.is_connected(_hold_overrides):
+		RenderingServer.frame_pre_draw.disconnect(_hold_overrides)
 
 
 ## `CityView3D.set_view_size` re-applies the iso camera, so the netrun pose goes back on after it.
@@ -272,24 +278,65 @@ func _mount_route_buildings() -> void:
 ## elevated decks and pillars stood across the street's foreground); the city map and the HQ keep them.
 func _apply_street_look() -> void:
 	var lk: Dictionary = StreetRouteConfigData.shipped().look
-	var bm := view.building_material()
-	var over: Dictionary = lk["building"]
-	for k: String in over:
-		bm.set_shader_parameter(StringName(k), float(over[k]))
 	var lane := view.lane_material()
 	if lane != null:
 		var ln: Dictionary = lk["lane"]
 		lane.shader = load("res://shaders/city/route_lane.gdshader")
 		lane.set_shader_parameter(&"street_gain", float(ln["gain"]))
 		lane.set_shader_parameter(&"lane_sat", float(ln["sat"]))
-	var gm := _ground_material()
-	if gm != null:
-		var gd: Dictionary = lk["ground"]
-		for k: String in gd:
-			var v: Variant = gd[k]
-			gm.set_shader_parameter(StringName(k), Vector3(float(v[0]), float(v[1]), float(v[2])) if v is Array else float(v))
 	if view.features != null:
 		view.features.visible = not bool(lk["hide_a2_features"])
+	_hold_overrides()
+
+
+## Module 19: every street override as [material, {uniform: value}]: look.building and the zoom haze on the building material,
+## look.ground on the ground, look.post on the post chain (street only; city_post's code is unchanged).
+func street_overrides() -> Array:
+	var lk: Dictionary = StreetRouteConfigData.shipped().look
+	var out: Array = []
+	var b := _uniforms(lk["building"])
+	if _haze_cur >= 0.0:
+		b["haze_k"] = _haze_cur
+	if _wash_cur.x >= 0.0:
+		b["wash_gain"] = _wash_cur.x
+		b["wash_floors"] = Vector2(_wash_cur.y, _wash_cur.z)
+	out.append([view.building_material(), b])
+	var gm := _ground_material()
+	if gm != null:
+		out.append([gm, _uniforms(lk["ground"])])
+	if view.post_material() != null:
+		out.append([view.post_material(), _uniforms(lk["post"])])
+	return out
+
+
+func _uniforms(d: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for k: String in d:
+		var v: Variant = d[k]
+		if v is Array:
+			var a: Array = v
+			if a.size() == 2:
+				out[k] = Vector2(float(a[0]), float(a[1]))
+			elif a.size() == 4:
+				out[k] = Vector4(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+			else:
+				out[k] = Vector3(float(a[0]), float(a[1]), float(a[2]))
+		else:
+			out[k] = v if v is bool else float(v)
+	return out
+
+
+## Module 19 live hold (art-pass): puts back every street override a view call changed (CityView3D re-runs _whole_building on
+## set_night_share and setup_post on look / exposure changes). On every frame_pre_draw and after the rig's own view calls.
+func _hold_overrides() -> void:
+	if view == null or not is_instance_valid(view) or view.building_material() == null:
+		return
+	for pair: Array in street_overrides():
+		var m: ShaderMaterial = pair[0]
+		var d: Dictionary = pair[1]
+		for k: String in d:
+			if m.get_shader_parameter(StringName(k)) != d[k]:
+				m.set_shader_parameter(StringName(k), d[k])
 
 
 ## The view's ground material (city_ground / wet_street by look blend), as its A2 feature parts carry it (CityA2Features.make:
@@ -440,6 +487,10 @@ func _apply_zoom_look() -> void:
 	if not is_equal_approx(haze, _haze_cur):
 		_haze_cur = haze
 		view.building_material().set_shader_parameter(&"haze_k", haze)
+	# Module 19 (a): the street wash eases from the OVERVIEW's lit lower blocks to the DECISION's (`look.wash_zoom`).
+	var wz: Dictionary = StreetRouteConfigData.shipped().look["wash_zoom"]
+	_wash_cur = Vector3(lerpf(float(wz["gain"][0]), float(wz["gain"][1]), zd), lerpf(float(wz["floors_lo"][0]), float(wz["floors_lo"][1]), zd),
+			lerpf(float(wz["floors_hi"][0]), float(wz["floors_hi"][1]), zd))
 	# The value band holds on both framings: the exposure eases from the OVERVIEW solve to the DECISION solve (`look.exposure`).
 	var fk: Array = StreetRouteConfigData.shipped().look["frame"]
 	for rid: String in _room_mats:
@@ -447,6 +498,7 @@ func _apply_zoom_look() -> void:
 	var ex: Array = StreetRouteConfigData.shipped().look["exposure"]
 	var expo: float = exposure_override if exposure_override > 0.0 else lerpf(float(ex[0]), float(ex[1]), zd)
 	view.set_aaa_exposure(expo)
+	_hold_overrides()
 	_scale_transparent_emitters(expo)
 
 
@@ -676,3 +728,4 @@ func _process(delta: float) -> void:
 		var ease_s := float(NetrunArtConfigData.shipped().occlusion["ease_s"])
 		_occ_t = minf(1.0, _occ_t + delta / maxf(ease_s, 0.001))
 		_write_occlusion(NetrunCameraRig.ease(_occ_t) if _occ_t < 1.0 else 1.0)
+	_hold_overrides()

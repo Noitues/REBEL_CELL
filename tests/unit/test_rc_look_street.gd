@@ -94,3 +94,27 @@ func test_the_street_lights_hot_bands_and_face_washes_only_where_set() -> void:
 		assert_almost_eq(float(m.get_shader_parameter(StringName(k))), float(fc[k]), 1e-6, k)
 	assert_gt(float(fc["face_share"]), 0.0, "on in the street")
 	assert_eq(StreetR2Materials.new().surface("neon").get_shader_parameter(&"face_share"), null, "lit materials carry no wash")
+
+
+## Module 19 (a), art-pass fix: the face wash lights only the far frontage row, never a route column or its neighbours either
+## side (the route UI never sits on a lit sheet), and never the near side.
+func test_face_washes_skip_the_route_columns_their_neighbours_and_the_near_side() -> void:
+	var plan := {"front": ["a", "b", "c", "d", "e", "f"], "route": ["c"]}
+	var got: Dictionary = StreetR2Builder.face_uids(plan, 1)
+	var keys: Array = got.keys()
+	keys.sort()
+	assert_eq(keys, ["a", "e", "f"], "c and its neighbours b, d take no wash")
+	assert_false(got.has("near_side"), "a building off the far row never takes it")
+	assert_eq(StreetR2Builder.face_uids({"front": ["a"], "route": ["z"]}, 1).keys(), ["a"], "a route column off the row skips nobody")
+	var plain := StreetR2Materials.new().surface_plain("conc")
+	assert_eq(float(plain.get_shader_parameter(&"face_share")), 0.0, "the plain wall has no face wash")
+
+
+## Module 19 (a): the street wash eases with the zoom: the OVERVIEW lights its lower blocks, the DECISION keeps its own wash.
+func test_the_street_wash_is_stronger_on_the_overview() -> void:
+	var wz: Dictionary = StreetRouteConfigData.shipped().look["wash_zoom"]
+	assert_gt(float(wz["gain"][0]), float(wz["gain"][1]), "OVERVIEW over DECISION")
+	assert_almost_eq(float(wz["gain"][1]), float(StreetRouteConfigData.shipped().look["building"]["wash_gain"]), 1e-6,
+			"the DECISION keeps the street's wash gain")
+	for k: String in ["floors_lo", "floors_hi"]:
+		assert_lt(float(wz[k][1]), float(wz[k][0]), "%s: the OVERVIEW wash climbs higher" % k)

@@ -8,6 +8,7 @@ const SURFACE := preload("res://shaders/street_r2/street_r2_surface.gdshader")
 const SIGN := preload("res://shaders/street_r2/street_r2_sign.gdshader")
 
 var _by_id: Dictionary = {}
+var _plain: Dictionary = {}
 var _tinted: Dictionary = {}
 
 
@@ -39,6 +40,16 @@ func for_slot(slot: String) -> ShaderMaterial:
 		"glass":
 			return surface("glass")
 	return surface("solid")
+
+
+## Module 19 (a): the material of `mat` without the face wash (face_share 0), for a route column and its neighbours.
+func surface_plain(mat: String) -> ShaderMaterial:
+	if not _plain.has(mat):
+		var m := surface(mat).duplicate() as ShaderMaterial
+		if m.get_shader_parameter(&"face_share") != null:
+			m.set_shader_parameter(&"face_share", 0.0)
+		_plain[mat] = m
+	return _plain[mat]
 
 
 ## A sign board material showing `tex` at emission `emit`.
