@@ -111,7 +111,7 @@ Gates and what follows:
 
 ## How to resume
 1. Read this file and the tail of DIRECTION_REVIEW.md.
-2. Read build's mailbox (above). Prune A-099 (and A-098 when it merges); bump "last read".
+2. Read build's mailbox (above). Prune A-098 when it merges, and any later READY; bump "last read".
 3. `ListAgents`, or list_sessions with linked = true, and check whether the toolbox or Solace has sent a sheet. Review it against
    the plate with a squint crop (`D:/rc_scratch/review/crop_*.py` pattern) before any reply.
 
