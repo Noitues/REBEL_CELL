@@ -79,7 +79,7 @@ Owed in (a) and (b):
 Gates and what follows:
 - Each step is judged per band (facades and floor, not frame totals), on R-DET-2 toward the plate (facades 1421, floor 4–6k),
   over_085, R-HUE-1 ≥ 3.8 and the lit-blocks squint read. Non-street frames must stay max 0.
-- Then -8 comes to art-pass for **one** READY (A-100 or the next free number).
+- Then -8 comes to art-pass for **one** READY (A-101 or the next free number).
 - After that: module 18 (perf), measured on the final street.
 
 ### Solace: the visual list
