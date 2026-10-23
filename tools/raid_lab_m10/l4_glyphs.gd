@@ -1,4 +1,4 @@
-class_name L3Glyphs
+class_name L4Glyphs
 extends RefCounted
 ## Vector placeholder glyphs and palette for the L3 lab, matching the r10 mockups and the M9 glyph language:
 ## threats cobalt, the Cell yellow, red only marks loss, teal only the Cell's holds and spoof. All UI text goes through
@@ -63,16 +63,36 @@ static func _noise_word(w: String) -> String:
 	return out
 
 
-## The color of an outcome tier: EVADED teal, HOLDS neutral, DAMAGED orange, BREACHED red.
+const BATTERED := Color8(250, 176, 40)
+const DAMAGED_C := Color8(255, 100, 56)
+
+
+## The color of an outcome tier: EVADED teal, HOLDS neutral, BATTERED amber, DAMAGED orange, BREACHED red.
 static func tier_color(tier: String) -> Color:
 	match tier:
 		"EVADED":
 			return CLEAN
 		"HOLDS":
 			return HOLD_OK
+		"BATTERED":
+			return BATTERED
 		"DAMAGED":
-			return HOLD
+			return DAMAGED_C
 	return DMG
+
+
+## The tier's word on the stamp and the record.
+static func tier_word(tier: String) -> String:
+	match tier:
+		"EVADED":
+			return "EVADED"
+		"HOLDS":
+			return "CELL HOLDS"
+		"BATTERED":
+			return "CELL BATTERED"
+		"DAMAGED":
+			return "CELL DAMAGED"
+	return "BREACHED"
 
 
 ## Text with its top-left at `p`.
@@ -310,3 +330,48 @@ static func pip(ci: CanvasItem, c: Vector2, s: float, mode: String) -> void:
 			ci.draw_rect(r.grow(3.0), CLEAN, false, 2.0)
 		_:
 			ci.draw_rect(r, PANEL_EDGE, false, 2.0)
+
+
+## The hunter's rule: an arrow that leaves the first touch and turns down its column (a quarter turn, heading right
+## at the top of a ring round the node, heading down at its right side). `prog` 0..1 draws it growing.
+static func turn_arrow(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 4.0, prog: float = 1.0) -> void:
+	var a0 := -PI * 0.5
+	var a1 := a0 + PI * 0.5 * clampf(prog, 0.0, 1.0)
+	ci.draw_arc(c, r, a0, a1, 14, col, w, true)
+	var tip := c + Vector2(cos(a1), sin(a1)) * r
+	var d := Vector2(-sin(a1), cos(a1))
+	var n := Vector2(-d.y, d.x)
+	ci.draw_colored_polygon(PackedVector2Array([tip + d * 11.0, tip - d * 3.0 + n * 8.0, tip - d * 3.0 - n * 8.0]), col)
+
+
+## A small chevron pointing down (the hunter runs this way).
+static func chevron_down(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 3.0) -> void:
+	ci.draw_polyline(PackedVector2Array([c + Vector2(-r, -r * 0.5), c + Vector2(0, r * 0.5), c + Vector2(r, -r * 0.5)]), col, w, true)
+
+
+## A beam's stop: a bar across the beam with a short tick behind it. `d` is the beam's direction.
+static func stop_bar(ci: CanvasItem, c: Vector2, d: Vector2, col: Color) -> void:
+	var n := Vector2(-d.y, d.x)
+	ci.draw_line(c - n * 17.0, c + n * 17.0, col, 6.0, true)
+	ci.draw_line(c - n * 11.0 - d * 7.0, c + n * 11.0 - d * 7.0, col, 2.0, true)
+
+
+## The go-dark glyph: a black disc with a grey ring.
+static func dark_disc(ci: CanvasItem, c: Vector2, r: float, col: Color = DIM) -> void:
+	ci.draw_circle(c, r, Color8(10, 10, 16))
+	circle(ci, c, r, col, maxf(2.0, r * 0.18))
+
+
+## The ghost's detour: a half ring round a node on one side of the beam (`d` is the beam's direction, `side` +1 / -1).
+static func detour(ci: CanvasItem, c: Vector2, r: float, d: Vector2, side: float, col: Color, w: float = 3.0) -> void:
+	var n := Vector2(-d.y, d.x) * side
+	var pts := PackedVector2Array()
+	for k in range(13):
+		var th := PI * k / 12.0
+		pts.append(c - d * (r * cos(th)) + n * (r * sin(th)))
+	ci.draw_polyline(pts, col, w, true)
+	var last := pts[pts.size() - 1]
+	var prev := pts[pts.size() - 2]
+	var dd := (last - prev).normalized()
+	var nn := Vector2(-dd.y, dd.x)
+	ci.draw_colored_polygon(PackedVector2Array([last + dd * 8.0, last - dd * 2.0 + nn * 6.0, last - dd * 2.0 - nn * 6.0]), col)

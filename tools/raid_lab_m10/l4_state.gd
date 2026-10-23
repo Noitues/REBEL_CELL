@@ -1,17 +1,17 @@
-class_name L3State
+class_name L4State
 extends RefCounted
 ## The campaign numbers the rules read and write: Heat, bank (Schematics), home integrity, one status per asset
-## ("OK" / "DOWN" / "TAKEN") and the leg kit (ghosts, decoys, spoofs left). A value object; the rules return fresh ones.
+## ("OK" / "DOWN" / "TAKEN") and the leg kit (ghosts, decoys, spoofs, dark charges left). A value object; the rules return fresh ones.
 
-var heat: int = L3Config.START_HEAT
-var bank: int = L3Config.START_BANK
-var home_hp: int = L3Config.HOME_HP
+var heat: int = L4Config.START_HEAT
+var bank: int = L4Config.START_BANK
+var home_hp: int = L4Config.HOME_HP
 var status: Dictionary = {}
-var kit: Dictionary = L3Config.KIT_START.duplicate()
+var kit: Dictionary = L4Config.KIT_START.duplicate()
 
 
-func copy() -> L3State:
-	var s := L3State.new()
+func copy() -> L4State:
+	var s := L4State.new()
 	s.heat = heat
 	s.bank = bank
 	s.home_hp = home_hp
@@ -21,15 +21,15 @@ func copy() -> L3State:
 
 
 ## The golden's state dictionary: {heat, bank, home_hp, status: [[x, y, "OK"], ...], kit: {...}}.
-static func from_golden(d: Dictionary) -> L3State:
-	var s := L3State.new()
+static func from_golden(d: Dictionary) -> L4State:
+	var s := L4State.new()
 	s.heat = int(d["heat"])
 	s.bank = int(d["bank"])
 	s.home_hp = int(d["home_hp"])
 	for e in d["status"]:
 		s.status[Vector2i(int(e[0]), int(e[1]))] = String(e[2])
 	s.kit = {}
-	for k in L3Config.KITS:
+	for k in L4Config.KITS:
 		s.kit[k] = int(d["kit"][k])
 	return s
 
@@ -44,9 +44,9 @@ func status_list() -> Array:
 	return out
 
 
-## [heat, bank, home_hp, statuses, ghost, decoy, spoof] for comparisons.
+## [heat, bank, home_hp, statuses, ghost, decoy, spoof, dark] for comparisons.
 func to_array() -> Array:
-	return [heat, bank, home_hp, status_list(), int(kit["ghost"]), int(kit["decoy"]), int(kit["spoof"])]
+	return [heat, bank, home_hp, status_list(), int(kit["ghost"]), int(kit["decoy"]), int(kit["spoof"]), int(kit["dark"])]
 
 
 func count(what: String) -> int:
