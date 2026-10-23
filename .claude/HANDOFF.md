@@ -1,117 +1,116 @@
-﻿# Handoff â€” REBEL_CELL art-pass (art director session)
+﻿# Handoff: REBEL_CELL art-pass (single art interface)
 
 | | |
 |---|---|
-| Written | 2026-10-16 ~01:30 local |
-| Branch / commit | `art-pass` @ `41615f83` (pushed). Worktree: `C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass` |
-| State | Round 1 is done and accepted by the art director. The designer reviews it in the morning (2026-10-16). No agents are running and the GPU is free. |
+| Written | 2026-10-22, late evening |
+| Branch / commit | `art-pass` in the worktree `D:/rc_art/art-pass` (see `git log -1`). |
+| Main | `D:/Godot/rebel_cell` main @ 505d4152, which includes A-099. It is read-only for art-pass. |
+| State | Two sessions are working: the toolbox (module 19) and Solace (garden concepts). Nothing waits on the designer. |
 
-## Goal
-I am the art director for REBEL_CELL on `art-pass`. Art only: no game design (memory `art-pass-no-game-design`).
-- The concept work feeds a **pipeline-tools spec**: the Blender + Python tools that generate every netrun.
-- The spec then goes as ONE hand-off package to the build session "Resume per HANDOFF.md" on `D:\Godot\rebel_cell`.
-- That build session has the same name as this one, so address it by its ref [9d3b7c].
+## Role (keep these)
+- Art-pass is the **only** session the designer talks to for visual work. It:
+  - reviews every sheet from the look-toolbox and Solace against the golden plate, ART_BIBLE §1.2 and a squint test;
+  - puts design picks to the designer with AskUserQuestion, recommendation first;
+  - logs rulings in `docs/concepts/DIRECTION_REVIEW.md` and relays them back;
+  - posts, numbers and prunes the A entries in `docs/concepts/HANDOFF_PACKAGE/MAILBOX.md`. Only art-pass numbers and prunes.
+- Art calls (readability, bible rules, the order of work) art-pass rules on itself and logs.
+- Hard rules:
+  - Never write in `D:/Godot/rebel_cell`.
+  - Never run `python -`.
+  - Never `taskkill /IM`, and never touch the designer's Blender or its MCP.
+  - Use the D: drive only.
+  - No game design in art-pass.
+  - Commit by explicit paths, with the Opus trailer. Never commit .uid, scratch or GPU_DONE files.
+  - Redirect Godot output, never pipe it.
+  - Build does all merges.
+- Build's replies are in main `docs/handoff/netrun_art/MAILBOX_TO_ART.md`. Read it with `git -C D:/Godot/rebel_cell show
+  main:docs/handoff/netrun_art/MAILBOX_TO_ART.md > D:/rc_scratch/review/mb_to_art.md`. Last read: **B-078**.
+- Prune merged entries with `python D:/rc_scratch/review/prune.py <MAILBOX.md> A-NNN B-old B-new`.
+- Raid reviews are **paused** for the raid redesign (A-088), and the mailbox cron is stopped. Restart both only when build says the
+  redesign has landed. No raid-zoom renders until then.
 
-The designer's rule: the old art-direction session [061bfa] / `local_520d0498â€¦` is retired. Don't send it anything. All agents run from this session.
+## Mailbox state
+- **Open READY entries:**
+  - A-098: car-light slot fix, art/look-toolbox-7 @ 3ad4043a. Not merged yet; no pixel change.
+  - A-099: nodes. **Merged as main 505d4152**, so prune it next time; build's B entry is to come.
+- **Next free number: A-100.**
+- Older ACK / FYI entries (A-044..A-068, A-080, A-083, A-085, A-088) remain. Prune them as build closes them.
 
-## Round 1: delivered and accepted by the AD (waiting for the designer's morning review)
-**Storyboard v3, round 3** (`c83e3b00`), `route_map_graph/storyboard/`:
-- Soft volumetric beam cones, coloured fog banks, a wet lit foreground, per-zoom exposure.
-- `storyboard_v3a.mp4` is kept for comparison.
-- Weak spots: the beam core reads as a line at dive height, and the nearest plinths in hover 2 stay dark.
+## Sessions managed (all report to art-pass)
+| Session | Id | Folder / branch | State | Next |
+|---|---|---|---|---|
+| Look-toolbox library | local_59edc93f-f0e0-43fb-8a07-aa94f76898ce | D:/rc_art/godot_look_toolbox_5 (+ D:/rc_art/godot_look) / art/look-toolbox-8 @ 177cf088 | Working on module 19 | See "Toolbox" below |
+| Solace visual list | local_92774ce2-f55e-46ef-9a1e-b7bf80d81f52 | D:/rc_art/godot_look_hqport, art-pass for sheets | Garden concept round running | See "Solace" below |
+| Toolbox module 13, vinyl (lab only) | local_fa015c16-d915-4677-8036-3b24f98c2145 | godot_look/.claude/worktrees/look-m13-vinyl-3bea20 | Idle; rulings applied ("\\" band on both families, card seam to kit) | Lab only on raid screens until the redesign lands |
+| Toolbox module 14, CRT (lab only) | local_bb06fec7-aab4-425a-ac00-eb0946cab754 | .../look-m14-crt-8c2d79 | Idle; KEEP_STATIC ruled | Same |
+| Toolbox module 16, binary bits (lab only) | local_59d9417f-9ef1-48aa-b05a-b7d5a22eee00 | .../look-m16-bits-6fad31 | Idle; bits rulings applied | Same |
+| Toolbox grease-pencil polish | local_7ce28862-4a22-41fd-84e9-dcd4651418a2 | .../gifted-yonath-0c2f42 | Idle since 2026-10-22 morning | The toolbox owns it; ask the toolbox before reusing it |
+| Toolbox decrypted holo (THREAT INTEL) | local_247ffb72-43e4-46f5-919e-ebda3871bebb | .../goofy-lalande-0a48b3 | Idle | Same |
+| L2 Godot-reachable twin | local_c5bfd172-9efd-4fd2-bcb0-5726fb78fb7b | C: worktree loving-rhodes-0be732 | Done (2026-10-20) | Archive on the designer's yes |
+| First HQ parity sheet (Meridian) | local_745f968c-1ab6-4ed9-b91c-499407a39d82 | C: worktree determined-goodall-5b942e | Done | Archive on the designer's yes |
+| horizon_break never lowers | local_71a1a7f4-d984-4f60-8948-52b6841bdd62 | art-pass | Done (A-067 merged) | Archive on the designer's yes |
+| Art-deco / Graffiti concept renders | local_05591f85-5e7e-43e0-afd9-52dcaa9aef41 / local_d16966a0-0a8f-4f92-a79b-55ed0b87af39 | art-pass | Idle style studies | Archive on the designer's yes |
 
-**City all corps, revision 2b** (`a032bf6c`), `city_all_corps/`:
-- The 7 districts read without labels, and there is one soft beam per landmark.
-- The Tethys bay has clear water.
-- The Meridian freight line runs from the north gate to the seawall at deck 17.5 BU. Its polyline is in `D:\rc_scratch\city_all_corps\meridian_rail.json`.
+Not managed by art-pass, for reference only:
+- the build session "Resume per HANDOFF.md" (local_aa799908-e44d-4a41-b49f-2f1c55e227c9, D:/Godot/rebel_cell);
+- its "Raid design lab" (local_05b0606e-cf14-4893-86ac-ea102b70d3b5), which owns the raid redesign.
 
-**HQ v2, all five** (`ae17ed12`, `46d161ce`, `41615f83`), `route_map_graph/hq_<corp>/*_v2.png`:
-- The generalised kit, the dense city to the walls, and the occlusion rule (flatten, then ghost).
-- Rebel Cell: a two-level Tokyo street with MAINFRAME as the hero.
-- Meridian: the freight line on a 3 % grade, with the moat on W, S and E only.
-- Solace: twin helix towers.
-- Halcyon and Orbital finals predate the occlusion rule.
+### Toolbox: module 19, street detail density, on art/look-toolbox-8
+The street matched the golden plate's camera, but lacked the plate's small bright points. Ruled by art-pass and the designer
+(DIRECTION_REVIEW 2026-10-22):
 
-**Pipeline spec draft** (`418d1e13`), `route_map_graph/PIPELINE_SPEC.md`:
-- 16 sections, with AD rulings on 24 source conflicts (Â§15).
-- Â§13 holds the procedural-vs-hand-built gap rules; Â§12.7 holds the automatic composition checks.
-- `TODO(refresh after sb v3 rev)` markers in Â§4/Â§11: refresh them from `sb_ocjobs.LOOK` now that the storyboard round 3 has landed.
+| Step | State | What |
+|---|---|---|
+| (d) | done, b2ae906d | The outer land is id class 7, counted as background. |
+| (c) | closed as a finding | The designer said **keep the sky**: no infill blocks. |
+| (a) | done, 314a783b | Clustered hot windows (b55w7) and r2 face washes. |
+| (b) | in progress, 177cf088 | Wet reflections. |
+| (e) | approved, not started | Denser frontage signs and edges. |
 
-**Procedural vs hand-built** (`87ca3762`), `route_map_graph/proc_vs_custom/`:
-- 4 sheets plus metrics; the re-run command is in COMPARISON.md.
-- Key finding: the procedural STREET is well behind the hand-built r3. It has a flat skyline, no signs, cut rooftops in the foreground, and thin fog. That is the main item for round 2.
+Owed in (a) and (b):
+- **(a) fix:** no face wash on a block next to a route column. On decision seed 2, the VOLTA neighbour became a flat pink column.
+- **(b) scope:** street-only `look.post` wet_refl overrides applied by route_rig, with no city_post code change. I lifted the
+  city_post hold only that far. Judge the city cars' light brightness against the plate's trails here too.
+- **Live stomp fix:** in live play, `CityViewMotion.set_night_share` rewrites whole_building, which drops the street's overrides.
+  route_rig must re-apply them after every night_share and look change. This must be proved by an **unfrozen** live test.
+- **(e) scope:** denser frontage signs and edges via the r2 rules, updating both twins and the art-pass oracle fixtures.
 
-## Decisions logged today (`docs/concepts/DIRECTION_REVIEW.md`)
-- **Meridian freight line:** the line leads out of the fort, so the wallâ†”train shuttles are viable.
-- **HQ occlusion rule:** sight-cone flatten to a 1â€“2 floor stub, then ghost to 15â€“20 %, with a 0.35 s ease.
+Gates and what follows:
+- Each step is judged per band (facades and floor, not frame totals), on R-DET-2 toward the plate (facades 1421, floor 4–6k),
+  over_085, R-HUE-1 ≥ 3.8 and the lit-blocks squint read. Non-street frames must stay max 0.
+- Then -8 comes to art-pass for **one** READY (A-100 or the next free number).
+- After that: module 18 (perf), measured on the final street.
 
-## Waiting on the designer
-- Reviews of all of round 1.
-- Spec questions Q1â€“Q10 (`PIPELINE_SPEC.md` Â§14):
-  - HQ scale against its lot;
-  - mapping the graph onto slots;
-  - distance LOD;
-  - median tolerance;
-  - landmark ratio above 2Ã— (MAINFRAME is about 12Ã—, Solace 2.8Ã—, Halcyon 2.9Ã—);
-  - one power-cut level;
-  - in-game entry durations;
-  - the off-screen target marker;
-  - art RNG streams;
-  - zoom time (proposed 1.0 s).
+### Solace: the visual list
+- Done today:
+  - the Bloom port (A-096, merged);
+  - REST / WORKSHOP / CACHE (A-099, merged);
+  - the district S4 re-shoot (accepted, no branch).
+- Owed: one hospital frame from the game path, the shifted Site point.
+- **Now:** the culture garden EX-11 concept round. The brief is `D:/rc_scratch/solace_v1/BRIEF_garden.md`, approved with 5 additions:
+  - route and door readability over the building;
+  - Solace green and cream, with lime kept apart from the helix green and plum Bloom, and no red cross;
+  - the HQ in the map frame;
+  - a stacking note per direction;
+  - Cycles only where needed.
+- Directions: A "Glass ward", B "Culture stack", C "Hanging mountain".
+- Frames: the map / HQ view, the street plaza with the Bloom CREEPING, and an inside cutaway with the Bloom CATCHING. No raid zoom.
+- **Next designer touch:** the garden direction pick. Review the sheet first, then AskUserQuestion with a recommendation.
+- Deferred: the district raid-zoom re-shoot (when the raid redesign lands); key_intel and key_breach stay placeholders (B-061).
 
-## Next steps (after the designer's reviews)
-1. Apply the designer's notes on round 1.
-2. Round 2: implement the Â§13 gap rules on the procedural street, then re-run proc_vs_custom until the street passes:
-   - `frontage.silhouette`, `dressing.signs`, `streets.light`, `foreground.street`, `atmosphere.layers`, `palette.districts`;
-   - and on the HQs and city, `density.falloff`.
-3. Refresh the spec's look values, and close the TODO markers.
-4. Build the ONE hand-off package for [9d3b7c] and send it to the designer first. The build session cuts no work before the designer approves.
-5. Later, when the designer schedules them: the boss wheel polish sessions, the Aurelian and Tethys HQ passes, and the Orbital cutscenes.
+## Rulings logged today (DIRECTION_REVIEW, 2026-10-22)
+- Bloom reach in layers.
+- Street slab: concrete lift, and the deck hidden in the street view.
+- Car lights: the slot fix only, judged in 19.
+- The street gap is detail density, not exposure.
+- Skyline: keep the sky.
+- Module 19 (a)/(b) fence and the live stomp.
+- Nodes: C icons, A pages, the CACHE header; CACHE #D22C40 with tritan 9 vs ELITE glow accepted; no RUN column; event-level backdrop;
+  no plan arrows.
+- Archived sheets are under `docs/concepts/look_parity/{a093,slab,gap}`.
 
-## Working model and gotchas (unchanged)
-**GPU:**
-- The protocol is in `D:\rc_scratch\GPU_QUEUE.md`: one Cycles job at a time, `GPU_LOCK`, and `GPU_WAITING_<name>`.
-- Watch for orphan runners after agents are stopped.
-
-**Rendering:**
-- Headless Blender 5.2 with HIP. Never use the Blender MCP, and never touch the designer's Blender (pid 11904).
-- ffmpeg isn't on PATH; encode with Blender's sequencer.
-- Heavy scratch goes in `D:\rc_scratch\<task>\`.
-
-**Shell:** never `python -` (agents keep slipping on this), never launch Godot, never write in `D:\Godot\rebel_cell`.
-
-**Commits:**
-- Use explicit paths. Never commit the `GPU_DONE` markers, `slicelib.py`, `tools/design_lab/w3_strips.gd.uid` or `__pycache__`.
-- Big scratch folders (storyboard/scratch is about 133 MB) are not committed; only the crops are.
-
-**Reviewing images:**
-- Some PNGs can't be read directly. Convert them with the scratchpad's `topreview.py`, and build contact sheets with `sheet.py`.
-- Values come from `values.py` (sRGB luma).
-
-## Update 2026-10-16 evening (round 2 delivered)
-- **Committed and pushed through `199a450e`:**
-  - HQ finals: Rebel Cell v3, Solace v4 (hybrid interiors, no people), Meridian v3 (Gatehouse Gantry), Tethys v2 (pier city, whales).
-  - City 4K finals on layout A2 (Horseshoe Bay, `city_planner/city_A2.json`), with terrain, bay and translucent day sea.
-  - Street round 2 (`route_map_graph/street_r2/`), decision sheets (`route_map_graph/decisions/`), city planner designs A–E plus A2.
-  - The spec answers all designer questions (`PIPELINE_SPEC.md`).
-- **Not yet in the spec:**
-  - the A2 layout-from-JSON step (`zoning_a2.py`), terrain (`terrain_a2.py`), bay (`city_bay_a2.py`);
-  - the landmark-module hook (`LANDMARK_MODULES`, Meridian and Tethys);
-  - the Solace hybrid interior-mapping shader (`hq_solace/scripts/hq_imap.py`).
-- **Known gaps for the build session:**
-  - road cuttings and tunnels (roads ride the terrain);
-  - a straight sea edge at the far right of the city;
-  - unique building ids;
-  - JSON elements not mapped: undercity, drone corridors, ferries as routes, checkpoints, civic glyphs.
-- **Next:** spec update (Sonnet, low effort), then the ONE hand-off package to build session [9d3b7c], shown to the designer first.
-- **Token economy:** Sonnet/Haiku for mechanical work (memory `token-economy-agents`). Never taskkill by image name (memory `never-taskkill-by-image`).
-
-## Queued after the token reset (agreed with the build session, 2026-10-16)
-1. Tethys decision and hover finals (hq_tethys).
-2. Aurelian Concord HQ design pass (fresh architect agent; full-city circus with columns as canonical).
-3. A golden-plates section in the spec plus a plate set (PNG + values JSON + camera params) for the build session's drift checks.
-4. Landmark .glb exports per corp.
-Ownership: art-pass = Blender and visual quality; build session = tools/netrun_art, GDScript, Godot. See the build replan at D:\Godot\rebel_cell\docs\handoff\gates\REPLAN_2026-10-16.md §D.
-5. Extract standalone <corp>_landmark.py modules (build(ctx) contract) for Halcyon, Solace, Orbital, Aurelian and the Rebel Cell centre. They are built-ins in city_all_corps/scripts/landmarks.py today; the HQ-scale builders are each corp's hq_<corp>/scripts/hq_build*.py. Then export .glb for each corp (promised to the build session).
-
-**Superseded 2026-10-16 late:** the current resume doc is docs/concepts/HANDOFF_PACKAGE/ART_SESSION_HANDOFF.md.
+## How to resume
+1. Read this file and the tail of DIRECTION_REVIEW.md.
+2. Read build's mailbox (above). Prune A-099 (and A-098 when it merges); bump "last read".
+3. `ListAgents`, or list_sessions with linked = true, and check whether the toolbox or Solace has sent a sheet. Review it against
+   the plate with a squint crop (`D:/rc_scratch/review/crop_*.py` pattern) before any reply.
