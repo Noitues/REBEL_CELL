@@ -1,8 +1,8 @@
-class_name L3Data
+class_name L4Data
 extends RefCounted
-## Loads data/l3_golden.json (tools/raid_concepts/l3_golden.py) into typed legs for the rules.
+## Loads data/l4_golden.json (tools/raid_concepts/l4_golden.py) into typed legs for the rules.
 
-const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l3_golden.json"
+const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l4_golden.json"
 static var _cache: Dictionary = {}
 
 
@@ -30,7 +30,7 @@ static func cells(arr: Array) -> Array:
 	return out
 
 
-## A leg: {seed, home, values (cell -> v), raids [{b1, extra, extra2, cands, own3}], planned, greedy, naive (raw golden
+## A leg: {seed, home, values (cell -> v), raids [{b1, extra, extra2, cands, own3, real, shapes}], planned, greedy, naive (raw golden
 ## step lists)}. Empty if the seed is not in the golden.
 static func load_leg(seed_id: int) -> Dictionary:
 	var g := load_json(GOLDEN_PATH)
@@ -47,7 +47,7 @@ static func load_leg(seed_id: int) -> Dictionary:
 			for ln in r["cands"]:
 				cands.append(cells(ln))
 			raids.append({"b1": cells(r["b1"]), "extra": cells(r["extra"]), "extra2": cells(r["extra2"]),
-				"cands": cands, "own3": cells(r["own3"])})
+				"cands": cands, "own3": cells(r["own3"]), "real": int(r["real"]), "shapes": (r["shapes"] as Array).map(func(s: Variant) -> int: return int(s))})
 		return {"seed": seed_id, "home": cell(lg["home"]), "values": values, "raids": raids,
 			"planned": raw["planned"], "greedy": raw["greedy"], "naive": raw["naive"]}
 	return {}
@@ -61,5 +61,5 @@ static func alloc_of(a: Dictionary) -> Dictionary:
 ## A golden spoof ([x, y] or null) as a cell; NONE when absent.
 static func spoof_of(s: Variant) -> Vector2i:
 	if s == null:
-		return L3Rules.NONE
+		return L4Rules.NONE
 	return cell(s)

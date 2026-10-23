@@ -1,7 +1,7 @@
-class_name L3Config
+class_name L4Config
 extends RefCounted
-## Lab config for the round-3 (L3) sweep raid. Rule numbers mirror tools/raid_concepts/sweep_l3.py (which builds on
-## sweep_l2.py); parity_check.gd compares them to the "config" block of data/l3_golden.json.
+## Lab config for the round-4 (L4) sweep raid. Rule numbers mirror tools/raid_concepts/sweep_l4.py (which builds on sweep_l3.py and
+## sweep_l2.py); parity_check.gd compares them to the "config" block of data/l4_golden.json.
 ## Lab keys F1 / F2 change the two toggles; the command line sets them too (--spoofview=range|off, --key=<label>).
 
 const W: int = 4
@@ -21,10 +21,10 @@ const RAIDS: int = 3
 const MAX_GHOST: int = 1
 const MAX_DECOY: int = 2
 const MAX_DARK: int = 1
-## Leg kit: ghosts, decoys and spoofs for the whole leg (decoys cost no Schematics).
-const KIT_START: Dictionary = {"ghost": 2, "decoy": 2, "spoof": 2}
+## Leg kit: ghosts, decoys, spoofs and go-dark charges for the whole leg (decoys cost no Schematics; dark still costs the asset next income).
+const KIT_START: Dictionary = {"ghost": 2, "decoy": 2, "spoof": 2, "dark": 2}
 ## One shop buy between raids (Schematics).
-const PRICES: Dictionary = {"ghost": 6, "decoy": 4, "spoof": 5}
+const PRICES: Dictionary = {"ghost": 4, "decoy": 3, "spoof": 3, "dark": 3}
 ## Run intensity: Heat added between raids and the income multiplier (as num / den, income rounded down).
 const INTENSITIES: Array = ["LOW", "NORMAL", "HOT"]
 const INTENSITY_HEAT: Dictionary = {"LOW": 6, "NORMAL": 12, "HOT": 18}
@@ -37,10 +37,9 @@ const INCOME_DIV: int = 3
 const REPAIR_DIV: int = 2
 ## Display only: the Heat meter's full scale.
 const HEAT_MAX: int = 100
-## The golden legs the lab can play, and the revealed sealed line (candidate 0 is the corp's real pick in the python).
+## The golden legs the lab can play. The real sealed line is raid.real (seeded per raid), the shape of each candidate raid.shapes.
 const LEGS: Array = [0, 3, 5, 8, 11, 14]
-const REVEAL: int = 0
-const KITS: Array = ["ghost", "decoy", "spoof"]
+const KITS: Array = ["ghost", "decoy", "spoof", "dark"]
 
 ## Playout timing in seconds at 1x.
 const STEP_T: float = 0.32
