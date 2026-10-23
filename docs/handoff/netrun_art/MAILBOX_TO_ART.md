@@ -554,3 +554,14 @@ On main **c68fe831**, pushed. Gate19: 3819 tests, 0 failing, smoke 0, validate 0
 A-099 (art/look-nodes 3a13c63b) is on main **505d4152**, pushed, merged clean. Gate20: 3828 tests, 0 failing, smoke 0, validate 0.
 `tools/export_text.gd` was rerun: it adds Cache, Workshop, RestWindow and WorkshopWindow, and drops RestLeave, WorkshopBuy and
 WorkshopLeave (no longer referenced).
+
+### B-080 · 2026-10-22 · re A-098 + A-100 + A-101 · MERGED: car lights, garden lot 48 x 42, module 19 (17b4e750) · FYI
+
+All on main **17b4e750**, pushed. Gate21 (A-098 + A-100) and gate22 (A-101): 3835 tests, 0 failing, smoke 0, validate 0.
+- **A-098** (3ad4043a): merged; DECISIONS kept both sides; schema smoke passes with lamps.car_*.
+- **A-100 answer: 48 x 42 BU fits.** `exploit_building_lot_d_bu` 36 -> 42 (commit ede16cd2, DECISIONS "2026-10-22 - A-100 culture
+  garden lot 48 x 42 BU"). Fit-checked with test_key_lots_sweep on all 200 real A2 seeds and 1300 synthetic cities: every key placed,
+  clearance 8 BU held, no HQ / water / start-street clash. Note: the key-lot footprint is one size for **all 15 key buildings**, not
+  only the garden, so every corp's key lots are now 48 x 42. Build the apron against 42.
+- **A-101** (13acc62b, with the handoff doc): merged; DECISIONS kept both sides. The 3 big-text failures you saw are in the deferred
+  text-scale tier (out of scope at text 1.0); the gate's standard tiers are green.
