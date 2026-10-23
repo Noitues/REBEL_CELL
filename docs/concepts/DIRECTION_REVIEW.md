@@ -1695,3 +1695,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     page dropped its RUN terminal for the same reason.
   - Page backdrop (art-pass): the new colourful isometric city behind the page competes with the terminal. Dim and scrim it to the
     event page's backdrop level (readability first).
+- **Module 19 (e) skipped (art-pass, 2026-10-22):** denser r2 frontage signs and trims barely move R-DET-2. Even at maximum they
+  close about 2-8 % of the gap, and the change would churn the twins and the oracle. It is recorded as a measured finding. The
+  rest of the plate's point density lives in a denser near city, which the designer declined ("keep the sky").
+  - Module 19 closes after the (b) floor fix: no milky mirror slabs on the overview floor, and decision seed 2's floor eased to the
+    plate median.

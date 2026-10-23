@@ -158,7 +158,7 @@ Start a new session in `D:/rc_art/art-pass` with: "Resume art-pass per .claude/H
 > You are the Solace visual-list session for REBEL_CELL. You work in `D:/rc_art/godot_look_hqport` (Godot) and
 > `D:/rc_art/art-pass` (sheets, under docs/concepts/solace_vertical/).
 >
-> First read `.claude/HANDOFF_SOLACE.md` in godot_look_hqport, then CLAUDE.md, ART_BIBLE §1.2 and the tail of art-pass
+> First read `D:/rc_art/art-pass/.claude/HANDOFF_SOLACE.md`, then CLAUDE.md, ART_BIBLE §1.2 and the tail of art-pass
 > `docs/concepts/DIRECTION_REVIEW.md`.
 >
 > - You report only to art-pass. Every sheet and design pick goes to art-pass, never to the designer.
