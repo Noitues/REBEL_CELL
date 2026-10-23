@@ -1677,3 +1677,13 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Module 19 closes the gap with lighting only: (a) face washes plus clustered hot windows plus signs and edges, and (b) floor
     streaks.
   - The sky share (39 % vs the plate's 10 %) is accepted. Judge facade numbers per band, not by frame totals.
+- **Module 19 (a) review + (b) fence (art-pass, 2026-10-22):**
+  - (a) is approved, with one fix: no face wash on a block next to a route column. On decision seed 2, VOLTA's neighbour became a
+    flat, full-height pink column that competes with nodes 1-2 (readability first).
+  - city_post hold, lifted narrowly: street-only `look.post` wet_refl overrides, applied by route_rig, with no city_post code
+    change. The city map and every non-street frame stay max 0. Any city_post code change still needs a sheet to art-pass.
+  - Live stomp: CityViewMotion.set_night_share rewrites whole_building, so it drops the street's look overrides in live play. The
+    street look must survive it. Route_rig re-applies its overrides after every night_share and look change. This is proved with
+    an unfrozen live test, not with frozen captures only.
+  - Denser frontage signs and edges through the r2 rules (both twins plus the oracle fixtures) are approved as step (e), after
+    (b).
