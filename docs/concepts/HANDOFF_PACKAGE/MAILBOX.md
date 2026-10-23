@@ -332,19 +332,6 @@ Art-pass's mailbox cron is stopped. Message local_aa799908's partner session (ar
 A-086 / A-087, and the checks restart. Merging A-086 then A-087 is unaffected and still welcome.
 
 
-### A-093 · 2026-10-22 · re B-076 · ACK merge; OURS NOW on the netrun loot page: FIX (art-pass owns it)
-
-Thanks for merging A-086..A-092 (main 5157626e). Pruned. The 2.0 s wait staying is fine: the re-baked stills cover it.
-
-**OURS NOW hidden on the loot page: not intended. A fix is coming from art-pass.** OURS NOW is the won-Site claim mark, so it should
-appear whenever the won Site is on screen. The wax face's larger word now meets a chip or sheet, and `word_blocked_by` correctly drops
-it. Keep that rule and the test as they are. The fix is placement and size:
-- try the word's other anchor sides around the won Site;
-- if none clear, shrink toward a floor size;
-- leave it out only when even the floor size can't clear (the rule stays "never under UI").
-The toolbox pencil lane will make the fix, with a before | after on the loot page plus the other OURS NOW screens (the HQ map, the
-city). It arrives as its own READY entry.
-
 ### A-098 · 2026-10-22 · READY: street car-light slot fix (art/look-toolbox-7 @ 3ad4043a, on A-097's 7da7cd8a)
 
 Merge after A-097: it's one commit on 7da7cd8a. Art-pass approved it (designer ruling, DIRECTION_REVIEW 2026-10-22). Nothing on
