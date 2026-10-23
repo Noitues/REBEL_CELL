@@ -1,0 +1,59 @@
+{
+ "A": {
+  "garden_ratio": 1.04,
+  "hq_ratio": 1.106,
+  "garden_px": 96354,
+  "hq_px": 97183,
+  "garden_area_vs_hq": 0.991,
+  "garden_lab": {
+   "dE": 4.9,
+   "dL": 1.3,
+   "chroma": 13.4
+  },
+  "hq_lab": {
+   "dE": 7.1,
+   "dL": 5.8,
+   "chroma": 23.1
+  },
+  "garden_h_px": 366,
+  "hq_h_px": 567
+ },
+ "B": {
+  "garden_ratio": 1.081,
+  "hq_ratio": 1.112,
+  "garden_px": 105921,
+  "hq_px": 96032,
+  "garden_area_vs_hq": 1.103,
+  "garden_lab": {
+   "dE": 6.0,
+   "dL": 3.3,
+   "chroma": 16.0
+  },
+  "hq_lab": {
+   "dE": 7.6,
+   "dL": 6.1,
+   "chroma": 23.3
+  },
+  "garden_h_px": 381,
+  "hq_h_px": 567
+ },
+ "C": {
+  "garden_ratio": 1.087,
+  "hq_ratio": 1.098,
+  "garden_px": 93671,
+  "hq_px": 100718,
+  "garden_area_vs_hq": 0.93,
+  "garden_lab": {
+   "dE": 4.5,
+   "dL": 3.4,
+   "chroma": 17.2
+  },
+  "hq_lab": {
+   "dE": 6.7,
+   "dL": 5.3,
+   "chroma": 23.0
+  },
+  "garden_h_px": 314,
+  "hq_h_px": 566
+ }
+}
