@@ -1,17 +1,17 @@
-class_name L4State
+class_name L5State
 extends RefCounted
 ## The campaign numbers the rules read and write: Heat, bank (Schematics), home integrity, one status per asset
 ## ("OK" / "DOWN" / "TAKEN") and the leg kit (ghosts, decoys, spoofs, dark charges left). A value object; the rules return fresh ones.
 
-var heat: int = L4Config.START_HEAT
-var bank: int = L4Config.START_BANK
-var home_hp: int = L4Config.HOME_HP
+var heat: int = L5Config.START_HEAT
+var bank: int = L5Config.START_BANK
+var home_hp: int = L5Config.HOME_HP
 var status: Dictionary = {}
-var kit: Dictionary = L4Config.KIT_START.duplicate()
+var kit: Dictionary = L5Config.KIT_START.duplicate()
 
 
-func copy() -> L4State:
-	var s := L4State.new()
+func copy() -> L5State:
+	var s := L5State.new()
 	s.heat = heat
 	s.bank = bank
 	s.home_hp = home_hp
@@ -21,15 +21,15 @@ func copy() -> L4State:
 
 
 ## The golden's state dictionary: {heat, bank, home_hp, status: [[x, y, "OK"], ...], kit: {...}}.
-static func from_golden(d: Dictionary) -> L4State:
-	var s := L4State.new()
+static func from_golden(d: Dictionary) -> L5State:
+	var s := L5State.new()
 	s.heat = int(d["heat"])
 	s.bank = int(d["bank"])
 	s.home_hp = int(d["home_hp"])
 	for e in d["status"]:
 		s.status[Vector2i(int(e[0]), int(e[1]))] = String(e[2])
 	s.kit = {}
-	for k in L4Config.KITS:
+	for k in L5Config.KITS:
 		s.kit[k] = int(d["kit"][k])
 	return s
 

@@ -1,7 +1,7 @@
-class_name L4Model
+class_name L5Model
 extends RefCounted
 ## Lab state of one leg of 3 raids on ONE network: the leg kit, the player's plan, undo, the campaign numbers, the
-## settled raids and the between-raids step (repairs, one shop buy, run intensity). The rules are all in L4Rules.
+## settled raids and the between-raids step (repairs, one shop buy, run intensity). The rules are all in L5Rules.
 
 const LEVERS: Array = ["ghost", "decoy", "dark"]
 const ALLOC_KEY := {"ghost": "ghost", "decoy": "decoys", "dark": "dark"}
@@ -10,8 +10,8 @@ var leg: Dictionary = {}
 var seed_id: int = 0
 var raid: int = 0
 ## The network, kit and campaign numbers at contact (before the plan charges anything).
-var state: L4State
-var plan: Dictionary = L4Rules.empty_alloc()
+var state: L5State
+var plan: Dictionary = L5Rules.empty_alloc()
 var _undo: Array = []
 ## Settled raids: {raid, before, alloc, spoof, touches, outcomes, summary, after_raid, evaded, tier, cut, ledger,
 ## beams, between (set when the between step is done)}.
@@ -28,6 +28,10 @@ var intensity_committed: bool = false
 ## The last between step: {repaired, repair_cost, bought, buy_cost, income, heat_add, intensity, before, after};
 ## empty on raid 1.
 var run_note: Dictionary = {}
+## Raids each DOWN asset has now stayed down (cell -> n; the raid that took it down counts as 1).
+var down_raids: Dictionary = {}
+## breach_risk of the next raid per between-step state, cached (the search is the heavy part): key -> {risk, empty}.
+var _risk_cache: Dictionary = {}
 
 
 func _init(p_seed: int = 0) -> void:
@@ -36,10 +40,11 @@ func _init(p_seed: int = 0) -> void:
 
 func new_leg(p_seed: int) -> void:
 	seed_id = p_seed
-	leg = L4Data.load_leg(p_seed)
+	leg = L5Data.load_leg(p_seed)
 	raid = 0
-	state = L4Rules.initial(leg)
+	state = L5Rules.initial(leg)
 	history = []
+	down_raids = {}
 	breached = false
 	_reset_between()
 	run_note = {}
@@ -47,7 +52,7 @@ func new_leg(p_seed: int) -> void:
 
 
 func _reset_plan() -> void:
-	plan = L4Rules.empty_alloc()
+	plan = L5Rules.empty_alloc()
 	_undo = []
 
 
@@ -65,12 +70,12 @@ func raid_data() -> Dictionary:
 
 ## The corp's real sealed line (the candidate the playout reveals).
 func real() -> int:
-	return L4Rules.real_cand(leg, raid)
+	return L5Rules.real_cand(leg, raid)
 
 
 ## The shape drawn for candidate k of this raid (0 triangle, 1 square, 2 circle).
 func shape(k: int) -> int:
-	return L4Rules.shape_of(leg, raid, k)
+	return L5Rules.shape_of(leg, raid, k)
 
 
 func b2() -> Array:
@@ -86,17 +91,17 @@ func values() -> Dictionary:
 
 
 func leg_over() -> bool:
-	return breached or history.size() >= L4Config.RAIDS
+	return breached or history.size() >= L5Config.RAIDS
 
 
 ## Heat shown on the meter: the ghost already raised it.
 func heat_now() -> int:
-	return state.heat + L4Config.GHOST_HEAT * (plan["ghost"] as Array).size()
+	return state.heat + L5Config.GHOST_HEAT * (plan["ghost"] as Array).size()
 
 
 ## Extra known beams the raid will run with at the current plan.
 func extra_now() -> int:
-	return L4Rules.extra_count(heat_now())
+	return L5Rules.extra_count(heat_now())
 
 
 ## The kit left if the plan goes ahead (a spoof is spent only if used after the reveal, so it stays whole here).
@@ -107,7 +112,7 @@ func kit_left() -> Dictionary:
 
 
 func why_not(lever: String, c: Vector2i) -> String:
-	return L4Rules.why_not(leg, state, plan, lever, c)
+	return L5Rules.why_not(leg, state, plan, lever, c)
 
 
 func place(lever: String, c: Vector2i) -> bool:
@@ -160,7 +165,7 @@ func forecast() -> Array:
 	var can := int(state.kit["spoof"]) > 0
 	for k in range((rd["cands"] as Array).size()):
 		var cand: Array = rd["cands"][k]
-		var so := L4Rules.spoof_options(leg, raid, state, cand, plan)
+		var so := L5Rules.spoof_options(leg, raid, state, cand, plan)
 		var hold: Dictionary = so["hold"]
 		var fl: Dictionary = so["floor"]
 		var save_cells: Array = []
@@ -168,12 +173,14 @@ func forecast() -> Array:
 			for o: Dictionary in so["options"]:
 				if o["saves"]:
 					save_cells.append(o["cell"])
-		var hs: L4State = hold["state"]
-		out.append({"cand": k, "shape": shape(k), "touches": hold["touches"], "outcomes": L4Rules.outcomes(state, hold["touches"]),
-			"summary": L4Rules.summary(state, hold["touches"]), "state": hs,
-			"tier": L4Rules.tier(state, hs, (hold["touches"] as Array).size()),
-			"save_cells": save_cells, "floor_summary": L4Rules.summary(state, fl["touches"]),
-			"floor_state": fl["state"], "floor_touches": fl["touches"], "can_spoof": can, "saves": not save_cells.is_empty(),
+		var hs: L5State = hold["state"]
+		var jam_saves: bool = can and bool(so["jam"]["saves"])
+		out.append({"cand": k, "shape": shape(k), "touches": hold["touches"], "outcomes": L5Rules.outcomes(state, hold["touches"]),
+			"summary": L5Rules.summary(state, hold["touches"]), "state": hs,
+			"tier": L5Rules.tier(state, hs, (hold["touches"] as Array).size()),
+			"save_cells": save_cells, "jam_saves": jam_saves, "floor_summary": L5Rules.summary(state, fl["touches"]),
+			"floor_state": fl["state"], "floor_touches": fl["touches"], "can_spoof": can,
+			"saves": not save_cells.is_empty() or jam_saves,
 			"first": hold["first"], "beams": hold["beams"]})
 	return out
 
@@ -197,13 +204,13 @@ func worst_case(fc: Array = []) -> Dictionary:
 	var best: Dictionary = {}
 	var best_s := 1000000
 	for f: Dictionary in lines:
-		var s: int = L4Rules.score(leg, f["state"])
+		var s: int = L5Rules.score(leg, f["state"])
 		if s < hold_s:
 			hold_s = s
 			hold = (f["summary"] as Dictionary).duplicate()
 			hold["shape"] = f["shape"]
-		var fs: L4State = f["floor_state"] if f["can_spoof"] else f["state"]
-		var s2: int = L4Rules.score(leg, fs)
+		var fs: L5State = f["floor_state"] if f["can_spoof"] else f["state"]
+		var s2: int = L5Rules.score(leg, fs)
 		if s2 < best_s:
 			best_s = s2
 			best = (f["floor_summary"] if f["can_spoof"] else f["summary"]).duplicate()
@@ -233,7 +240,7 @@ func breach_possible(fc: Array = []) -> bool:
 ## breaching, searched in the order ghost, dark, decoy over the cells; [] when the kit has none. Returns
 ## {steps: [{lever, cell}]} or {}. It never changes the plan (a bounded search: 1200 forecasts).
 func breach_fix() -> Dictionary:
-	var saved := L4Rules.copy_alloc(plan)
+	var saved := L5Rules.copy_alloc(plan)
 	var found: Array = []
 	for max_depth in range(1, 5):
 		found = _fix_search(0, -1, 1, max_depth, [1200])
@@ -247,7 +254,7 @@ const FIX_ORDER: Array = ["ghost", "dark", "decoy"]
 
 
 func _fix_search(lever_i: int, cell_from: int, depth: int, max_depth: int, budget: Array) -> Array:
-	var cells := L4Rules.nodes()
+	var cells := L5Rules.nodes()
 	for li in range(lever_i, FIX_ORDER.size()):
 		var lever: String = FIX_ORDER[li]
 		var start: int = cell_from + 1 if li == lever_i else 0
@@ -272,9 +279,9 @@ func _fix_search(lever_i: int, cell_from: int, depth: int, max_depth: int, budge
 	return []
 
 
-## Assets kept now (sweep_l4.score term): live assets' value, a DOWN one less its repair.
+## Assets kept now (sweep_l5.score term): live assets' value, a DOWN one less its repair.
 func kept_now() -> int:
-	return L4Rules.assets_kept(leg, state)
+	return L5Rules.assets_kept(leg, state)
 
 
 ## Assets kept after the between picks so far (a repaired asset counts whole).
@@ -282,19 +289,19 @@ func kept_after_picks() -> int:
 	var st := state.copy()
 	for c: Vector2i in pending_repairs:
 		st.status[c] = "OK"
-	return L4Rules.assets_kept(leg, st)
+	return L5Rules.assets_kept(leg, st)
 
 
 ## A fresh playout for the current plan.
-func make_play() -> L4Play:
-	return L4Play.new(leg, raid, state.copy(), L4Rules.copy_alloc(plan), b2())
+func make_play() -> L5Play:
+	return L5Play.new(leg, raid, state.copy(), L5Rules.copy_alloc(plan), b2())
 
 
 ## Settle the raid from a finished playout: ledger and campaign numbers. A sweep cut by the breach keeps only the
 ## touches it showed. Returns the history row.
-func settle(play: L4Play) -> Dictionary:
+func settle(play: L5Play) -> Dictionary:
 	var res: Dictionary = play.res
-	var after: L4State = (res["state"] as L4State).copy()
+	var after: L5State = (res["state"] as L5State).copy()
 	var touches: Array = res["touches"]
 	if play.cut:
 		touches = play.shown_touches()
@@ -314,63 +321,88 @@ func settle(play: L4Play) -> Dictionary:
 		tail["steps"] = (tail["steps"] as Array).slice(0, n_shown)
 		tail["stopped"] = true
 		beams[lb] = tail
-	var alloc := L4Rules.copy_alloc(plan)
+	var alloc := L5Rules.copy_alloc(plan)
 	var used := {"ghost": (alloc["ghost"] as Array).size(), "decoy": (alloc["decoys"] as Array).size(),
 		"spoof": 1 if play.spoof_used else 0, "dark": (alloc["dark"] as Array).size()}
 	var ledger := {
-		"heat_before": state.heat, "ghost": L4Config.GHOST_HEAT * used["ghost"],
-		"evade": L4Config.EVADE_HEAT if touches.is_empty() else 0, "heat_after": after.heat,
+		"heat_before": state.heat, "ghost": L5Config.GHOST_HEAT * used["ghost"],
+		"evade": L5Config.EVADE_HEAT if touches.is_empty() else 0,
+		"spoof_heat": L5Config.SPOOF_HEAT if play.spoof_used else 0,
+		"spoof_kind": "" if not play.spoof_used else ("JAM" if play.spoof == L5Rules.JAM else "SKIP"), "heat_after": after.heat,
 		"home_before": state.home_hp, "home_lost": state.home_hp - after.home_hp, "home_after": after.home_hp,
 		"kit_before": state.kit.duplicate(), "kit_used": used, "kit_after": after.kit.duplicate(),
-		"bank": state.bank, "run_heat": play.run_heat, "extra": L4Rules.extra_count(play.run_heat),
-		"carried": L4Rules.heat_carried(after)}
+		"bank": state.bank, "run_heat": play.run_heat, "extra": L5Rules.extra_count(play.run_heat),
+		"carried": L5Rules.heat_carried(after)}
 	var row := {"raid": raid, "before": state.copy(), "alloc": alloc, "spoof": play.spoof, "touches": touches,
-		"outcomes": L4Rules.outcomes(state, touches), "summary": L4Rules.summary(state, touches), "after_raid": after,
-		"evaded": touches.is_empty(), "tier": L4Rules.tier(state, after, touches.size()),
+		"outcomes": L5Rules.outcomes(state, touches), "summary": L5Rules.summary(state, touches), "after_raid": after,
+		"evaded": touches.is_empty(), "tier": L5Rules.tier(state, after, touches.size()),
 		"cut": play.cut, "ledger": ledger, "beams": beams, "between": {}, "real": real(), "real_shape": shape(real()), "first": play.hunter_from()}
 	history.append(row)
+	var nd := {}
+	for c: Vector2i in after.status:
+		if after.status[c] == "DOWN":
+			nd[c] = (int(down_raids.get(c, 0)) + 1) if state.status.get(c, "") == "DOWN" else 1
+	down_raids = nd
 	state = after
 	breached = after.home_hp <= 0
 	return row
 
 
-## True when the ledger's rows add up: Heat before + ghost - evade = Heat after; home before - lost = home after; kit
+## True when the ledger's rows add up: Heat before + ghost - evade + spoof = Heat after; home before - lost = home after; kit
 ## before - used = kit after for ghost, decoy, spoof and dark; the bank does not move in a raid.
 static func ledger_reconciles(l: Dictionary, bank_after: int) -> bool:
-	for k in L4Config.KITS:
+	for k in L5Config.KITS:
 		if int(l["kit_before"][k]) - int(l["kit_used"][k]) != int(l["kit_after"][k]):
 			return false
-	return int(l["heat_before"]) + int(l["ghost"]) - int(l["evade"]) == int(l["heat_after"]) \
+	return int(l["heat_before"]) + int(l["ghost"]) - int(l["evade"]) + int(l["spoof_heat"]) == int(l["heat_after"]) \
 		and int(l["home_before"]) - int(l["home_lost"]) == int(l["home_after"]) and int(l["bank"]) == bank_after
 
 
 ## True while the between step is open (a raid settled, the leg goes on).
 func between_open() -> bool:
-	return not history.is_empty() and history.size() == raid + 1 and not breached and raid < L4Config.RAIDS - 1
+	return not history.is_empty() and history.size() == raid + 1 and not breached and raid < L5Config.RAIDS - 1
 
 
 ## Schematics left after the picks so far (repairs, then the shop buy), before the interval's income.
 func budget() -> int:
 	var b := state.bank
 	for c: Vector2i in pending_repairs:
-		b -= L4Rules.idiv(int(values()[c]), L4Config.REPAIR_DIV)
+		b -= L5Rules.idiv(int(values()[c]), L5Config.REPAIR_DIV)
 	if pending_buy != "":
-		b -= int(L4Config.PRICES[pending_buy])
+		b -= int(L5Config.PRICES[pending_buy])
 	return b
 
 
-## Click a DOWN asset in the between step: pick it for repair or take the pick back. "" or the reason.
+## Click a DOWN asset in the between step: pick it for repair or take the pick back. There is one crew
+## (L5Config.REPAIR_SLOTS): picking another asset moves the pick. "" or the reason.
 func toggle_repair(c: Vector2i) -> String:
 	if pending_repairs.has(c):
 		pending_repairs.erase(c)
 		return ""
 	if state.status.get(c, "") != "DOWN":
 		return "only a DOWN asset can be repaired"
-	var cost := L4Rules.idiv(int(values()[c]), L4Config.REPAIR_DIV)
-	if cost > budget():
-		return "not enough %s now: repair costs %d (repairs are paid before income)" % [L4Config.key_label(), cost]
+	var cost := L5Rules.idiv(int(values()[c]), L5Config.REPAIR_DIV)
+	var held := 0
+	for p: Vector2i in pending_repairs:
+		held += L5Rules.idiv(int(values()[p]), L5Config.REPAIR_DIV)
+	if cost > budget() + held:
+		return "not enough %s now: repair costs %d (repairs are paid before income)" % [L5Config.key_label(), cost]
+	while pending_repairs.size() >= L5Config.REPAIR_SLOTS:
+		pending_repairs.remove_at(0)
 	pending_repairs.append(c)
 	return ""
+
+
+## The next raid's breach risk if the run goes at this intensity with the picks so far: {risk (the fewest sealed lines that
+## still breach with the best plan and response, sweep_l5.breach_risk), empty (lines that breach with no lever at all),
+## state (the next raid's starting state)}. Cached per state: the search is the heavy part.
+func risk_for(intensity: String) -> Dictionary:
+	var ns: L5State = between_preview(intensity)["state"]
+	var key := "%d|%d|%s|%d|%d|%s" % [seed_id, raid, str(ns.status_list()), ns.heat, ns.home_hp, str(ns.kit)]
+	if not _risk_cache.has(key):
+		_risk_cache[key] = {"risk": L5Rules.breach_risk(leg, raid + 1, ns),
+			"empty": L5Rules.breach_lines(leg, raid + 1, ns, L5Rules.empty_alloc()), "state": ns}
+	return _risk_cache[key]
 
 
 ## Pick the one shop buy ("ghost" / "decoy" / "spoof" / "dark") or take it back (same pick again, or "" for none). "" or the reason.
@@ -383,17 +415,17 @@ func set_buy(what: String) -> String:
 		pending_buy = ""
 		buy_committed = false
 		return ""
-	var price: int = int(L4Config.PRICES[what])
-	var spent := budget() + (int(L4Config.PRICES[pending_buy]) if pending_buy != "" else 0)
+	var price: int = int(L5Config.PRICES[what])
+	var spent := budget() + (int(L5Config.PRICES[pending_buy]) if pending_buy != "" else 0)
 	if price > spent:
-		return "not enough %s now: a %s costs %d (repairs are paid first)" % [L4Config.key_label(), what, price]
+		return "not enough %s now: a %s costs %d (repairs are paid first)" % [L5Config.key_label(), what, price]
 	pending_buy = what
 	buy_committed = true
 	return ""
 
 
 func set_intensity(what: String) -> void:
-	if L4Config.INTENSITIES.has(what):
+	if L5Config.INTENSITIES.has(what):
 		pending_intensity = what
 		intensity_committed = true
 
@@ -401,7 +433,7 @@ func set_intensity(what: String) -> void:
 ## The between step with the picks so far: {repaired, repair_cost, bought, buy_cost, income, heat_add, state}.
 func between_preview(intensity: String = "") -> Dictionary:
 	var dark: Array = history.back()["alloc"]["dark"]
-	return L4Rules.between_parts(leg, state, dark, pending_repairs, pending_intensity if intensity == "" else intensity, pending_buy)
+	return L5Rules.between_parts(leg, state, dark, pending_repairs, pending_intensity if intensity == "" else intensity, pending_buy)
 
 
 ## Close the between step and go on to the next raid's contact.
@@ -414,6 +446,8 @@ func finish_between() -> bool:
 		"buy_cost": parts["buy_cost"], "income": parts["income"], "heat_add": parts["heat_add"],
 		"intensity": pending_intensity, "before": state.copy(), "after": parts["state"]}
 	run_note = row["between"]
+	for rc: Vector2i in parts["repaired"]:
+		down_raids.erase(rc)
 	state = parts["state"]
 	raid += 1
 	_reset_between()
@@ -421,9 +455,9 @@ func finish_between() -> bool:
 	return true
 
 
-## Leg score (sweep_l4.score) of the network as it stands.
+## Leg score (sweep_l5.score) of the network as it stands.
 func final_score() -> int:
-	return L4Rules.score(leg, state)
+	return L5Rules.score(leg, state)
 
 
 ## The best case of a forecast line: with a spoof when the kit holds one, else the hold result.

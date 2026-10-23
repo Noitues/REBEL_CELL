@@ -1,4 +1,4 @@
-class_name L4Glyphs
+class_name L5Glyphs
 extends RefCounted
 ## Vector placeholder glyphs and palette for the L3 lab, matching the r10 mockups and the M9 glyph language:
 ## threats cobalt, the Cell yellow, red only marks loss, teal only the Cell's holds and spoof. All UI text goes through
@@ -332,16 +332,43 @@ static func pip(ci: CanvasItem, c: Vector2, s: float, mode: String) -> void:
 			ci.draw_rect(r, PANEL_EDGE, false, 2.0)
 
 
-## The hunter's rule: an arrow that leaves the first touch and turns down its column (a quarter turn, heading right
-## at the top of a ring round the node, heading down at its right side). `prog` 0..1 draws it growing.
-static func turn_arrow(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 4.0, prog: float = 1.0) -> void:
-	var a0 := -PI * 0.5
-	var a1 := a0 + PI * 0.5 * clampf(prog, 0.0, 1.0)
-	ci.draw_arc(c, r, a0, a1, 14, col, w, true)
-	var tip := c + Vector2(cos(a1), sin(a1)) * r
-	var d := Vector2(-sin(a1), cos(a1))
-	var n := Vector2(-d.y, d.x)
-	ci.draw_colored_polygon(PackedVector2Array([tip + d * 11.0, tip - d * 3.0 + n * 8.0, tip - d * 3.0 - n * 8.0]), col)
+## The hunter's rule: an arrow that comes in from the upper right of the first touch, turns and ends ON its column, just
+## above the node, heading down (a quarter turn of radius `r`). `dx` is the column's offset from the node's x (a column
+## drawn shifted to stay clear of another line). `prog` 0..1 draws it growing. Returns the tip.
+static func turn_arrow(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 4.0, prog: float = 1.0, dx: float = 0.0) -> Vector2:
+	var end := Vector2(c.x + dx, c.y - 36.0)
+	var k := end + Vector2(r, 0.0)
+	var pts := PackedVector2Array()
+	var n_seg := 16
+	var upto := clampf(prog, 0.0, 1.0)
+	var th := -PI * 0.5
+	for i in range(int(ceil(n_seg * upto)) + 1):
+		var f := minf(float(i) / n_seg, upto)
+		th = -PI * 0.5 - PI * 0.5 * f
+		pts.append(k + Vector2(cos(th), sin(th)) * r)
+	if pts.size() >= 2:
+		ci.draw_polyline(pts, col, w, true)
+	var tip: Vector2 = pts[pts.size() - 1]
+	var d := Vector2(sin(th), -cos(th))
+	var nn := Vector2(-d.y, d.x)
+	ci.draw_colored_polygon(PackedVector2Array([tip + d * 11.0, tip - d * 3.0 + nn * 8.0, tip - d * 3.0 - nn * 8.0]), col)
+	return tip
+
+
+## JAM: the hunter's down chevrons inside a ring, struck by a slash ("the hunter does not run").
+static func jam_mark(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float = 2.5) -> void:
+	chevron_down(ci, c + Vector2(0, -r * 0.35), r * 0.55, col, w)
+	chevron_down(ci, c + Vector2(0, r * 0.3), r * 0.55, col, w)
+	ci.draw_line(c + Vector2(-r * 0.95, r * 0.95), c + Vector2(r * 0.95, -r * 0.95), DMG, w + 0.5, true)
+
+
+## The hunter's own line when nothing was touched: a ring-topped pin on the column (it has no target, it runs its fixed
+## line), drawn at c.
+static func own_line(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	circle(ci, c, r, col, 3.0)
+	ci.draw_circle(c, r * 0.4, col)
+	ci.draw_line(c + Vector2(0, r), c + Vector2(0, r * 2.2), col, 3.0, true)
+	ci.draw_line(c + Vector2(-r * 0.7, r * 2.2), c + Vector2(r * 0.7, r * 2.2), col, 3.0, true)
 
 
 ## A small chevron pointing down (the hunter runs this way).

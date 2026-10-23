@@ -1,7 +1,7 @@
-class_name L4Config
+class_name L5Config
 extends RefCounted
-## Lab config for the round-4 (L4) sweep raid. Rule numbers mirror tools/raid_concepts/sweep_l4.py (which builds on sweep_l3.py and
-## sweep_l2.py); parity_check.gd compares them to the "config" block of data/l4_golden.json.
+## Lab config for the round-5 (L5) sweep raid. Rule numbers mirror tools/raid_concepts/sweep_l5.py (which builds on sweep_l3.py and
+## sweep_l2.py); parity_check.gd compares them to the "config" block of data/l5_golden.json.
 ## Lab keys F1 / F2 change the two toggles; the command line sets them too (--spoofview=range|off, --key=<label>).
 
 const W: int = 4
@@ -23,6 +23,9 @@ const MAX_DECOY: int = 2
 const MAX_DARK: int = 1
 ## Leg kit: ghosts, decoys, spoofs and go-dark charges for the whole leg (decoys cost no Schematics; dark still costs the asset next income).
 const KIT_START: Dictionary = {"ghost": 2, "decoy": 2, "spoof": 2, "dark": 2}
+## Heat added after the sweep when a spoof (SKIP or JAM) is used, and the repairs one between step allows (one crew).
+const SPOOF_HEAT: int = 2
+const REPAIR_SLOTS: int = 1
 ## One shop buy between raids (Schematics).
 const PRICES: Dictionary = {"ghost": 4, "decoy": 3, "spoof": 3, "dark": 3}
 ## Run intensity: Heat added between raids and the income multiplier (as num / den, income rounded down).
@@ -46,6 +49,8 @@ const STEP_T: float = 0.32
 const UNSEAL_T: float = 1.1
 const TURN_T: float = 1.1
 const END_T: float = 0.9
+## The beat that says "no spoof left" when the kit holds none (the decision is skipped, not left blank).
+const NOTE_T: float = 0.9
 
 const SPOOF_VIEWS: Array = ["range", "off"]
 const KEY_LABELS: Array = ["Schematics", "Scrap", "Credits"]
