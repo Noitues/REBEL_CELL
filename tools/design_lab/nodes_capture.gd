@@ -15,14 +15,12 @@ const REST_PICKS: Array[int] = [0, 3]
 const WORKSHOP_PICKS: Array[int] = [1, 3]
 const HP_SHARE := 0.68
 const CYCLES := 160
-## The map waits this many bake waits for the entry dive to land on the route.
-const ENTRY_WAITS := 3.0
 const RESOLUTION := Vector2i(1920, 1080)
 ## Seconds the loot page takes to come in.
 const LOOT_ENTRANCE_S := 5.0
 
 var out := ""
-var shots: PackedStringArray = ["map", "rest", "workshop", "cache"]
+var shots: PackedStringArray = ["map", "rest", "workshop", "event", "cache"]
 var net: Node = null
 
 
@@ -61,7 +59,7 @@ func _shot(shot_name: String) -> void:
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, shot_name])
 
 
-func _fresh() -> void:
+func _fresh(kinds: bool = false) -> void:
 	if net != null and is_instance_valid(net):
 		net.queue_free()
 		await _frames(4)
@@ -72,9 +70,25 @@ func _fresh() -> void:
 	await _frames(2)
 	var c := RunManager.campaign
 	RunManager.netrun = NetrunSession.start(RunManager.resolver, c, c.roster[0].id, 1, &"m1_a", 5, RunManager.corporation)
+	if kinds:
+		_all_kinds()  # the kinds are on the map before the street is derived
 	net._show_current()
 	await _until(func() -> bool: return net.arrival_ready(), 900)
 	await _wait(BAKE_WAIT_S)
+
+
+## The run as the HQ launches it: started first (the street entry is pending), the kinds set, then the scene opens on it.
+func _fresh_street() -> void:
+	if net != null and is_instance_valid(net):
+		net.queue_free()
+		await _frames(4)
+	RunManager.reset()
+	RunManager.new_campaign(7)
+	RunManager.start_run()
+	_all_kinds()
+	net = NETRUN.instantiate()
+	get_tree().root.add_child(net)
+	await _frames(2)
 
 
 func _until(cond: Callable, limit: int) -> void:
@@ -119,21 +133,16 @@ func _enter(node_type: int) -> void:
 func _one(shot_name: String) -> void:
 	match shot_name:
 		"map":
-			await _fresh()
-			_all_kinds()
-			net.set("_street_data", null)  # the street is derived again from the changed kinds
-			net._show_current()
-			await _until(func() -> bool: return net.arrival_ready(), 900)
+			await _fresh_street()
 			await _until(func() -> bool: return net.street_view != null and is_instance_valid(net.street_view) and net.street_view.rig != null and net.street_view.rig.is_prepared(), 3600)
-			await _wait(BAKE_WAIT_S * ENTRY_WAITS)  # the rebuilt street and its entry dive come first
-			# the whole run at once (Z flips to OVERVIEW), then back to the decision view
+			await _wait(BAKE_WAIT_S)  # the entry dive (about 13 s) lands on the decision view
+			await _shot("map")
+			# the whole run at once: Z flips to OVERVIEW
 			if net.street_view != null:
 				net.street_view.set_base_view(StreetRouteRules.toggled(net.street_view.base_view))
 				await _wait(BAKE_WAIT_S * 0.5)
 				await _shot("map_overview")
 				net.street_view.set_base_view(StreetRouteRules.toggled(net.street_view.base_view))
-				await _wait(BAKE_WAIT_S * 0.5)
-				await _shot("map")
 		"rest":
 			await _enter(RC.InfilNodeType.REST)
 			var p := _page()
@@ -152,6 +161,10 @@ func _one(shot_name: String) -> void:
 				p._pick_target(WORKSHOP_PICKS[1])
 			await _wait(1.0)
 			await _shot("workshop")
+		"event":
+			await _enter(RC.InfilNodeType.TERMINAL)
+			await _wait(LOOT_ENTRANCE_S)
+			await _shot("event")
 		"cache":
 			await _enter(RC.InfilNodeType.CACHE)
 			await _wait(LOOT_ENTRANCE_S)
