@@ -342,3 +342,28 @@ the next "one obvious answer". The measured depth (regret 3.6 → 10.3) does not
 deterministic choice reads as solved however close the options are.
 
 Review: `_reviews/REVIEW_LAB_L5.md`. Sheet: `_reviews/LAB_L5_side_by_side.png`.
+
+## L6 + target frames + L7 Godot lab (readability, Blender target, look and motion; one fresh critic, calibrated)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 8 | 6 | 6 | 9 | **37** | 6 | 7 | 7 |
+
+**New best: 37, between Invisible, Inc. (39) and FTL (35).** Same L5 rules; L6 and L7 only change the presentation.
+- **Visuals:** V went from 3 to 7, level with the shipped games.
+- **Suspense:** S went from 4 to 6, mostly from motion.
+- **Depth:** D went from 5 to 6.
+
+**What the critic found:**
+- **The one live decision is usually trivial.** The response rows are often identical or have one clear winner, and HOLD
+  dominates.
+- **The breach is locked two raids early.** The risk cards look one raid ahead and say "safe" on a leg that is
+  already lost.
+- **Good play still reads as losing.** The best line stamps BATTERED in all three raids.
+
+**Ceiling, per the critic:**
+- Presentation alone reaches about 39–40.
+- Past 42 needs response choices that are real trades, plus either input during the sweep or a reveal the forecast
+  does not fully resolve.
+
+Review: `_reviews/REVIEW_LAB_L7.md`. Sheets: `_reviews/LAB_L7_side_by_side.png` and `raid_target/LAB_L7_vs_target.png`.
