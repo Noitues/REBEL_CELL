@@ -114,3 +114,58 @@ Gates and what follows:
 2. Read build's mailbox (above). Prune A-099 (and A-098 when it merges); bump "last read".
 3. `ListAgents`, or list_sessions with linked = true, and check whether the toolbox or Solace has sent a sheet. Review it against
    the plate with a squint crop (`D:/rc_scratch/review/crop_*.py` pattern) before any reply.
+
+## Recreate the sessions (new art-pass session)
+Start a new session in `D:/rc_art/art-pass` with: "Resume art-pass per .claude/HANDOFF.md". Then:
+
+1. **Check what's still alive.** Run list_sessions with linked = true, then `ListAgents`. If the toolbox
+   (local_59edc93f…) or Solace (local_92774ce2…) still exists and is idle, **message it instead of re-spawning it**, so its
+   context is kept.
+2. **If one is gone,** re-spawn it with `start_session` (initiation "user_asked" once the designer says to resume; context "fresh";
+   no worktree, because each owns its folder). Use the briefs below. Each brief points at that session's own handoff, which holds
+   the detail.
+3. **Toolbox sub-sessions** (m13 vinyl, m14 CRT, m16 bits, grease pencil, decrypted holo) are the toolbox's to re-spawn, from its
+   handoff, and only when the work needs them. All are lab-only or finished today. Don't re-spawn them from art-pass directly.
+4. **Finished sessions** (L2 twin, first HQ parity, horizon_break, the deco / graffiti studies) need no re-spawn.
+
+### Brief: look-toolbox
+> You are the LOOK-TOOLBOX session for REBEL_CELL. You work in `D:/rc_art/godot_look_toolbox_5` (plus `D:/rc_art/godot_look`), on
+> the art/look-toolbox-* branches.
+>
+> First read `.claude/HANDOFF_TOOLBOX.md` in that worktree, then CLAUDE.md, ART_BIBLE §1.2 and the tail of art-pass
+> `docs/concepts/DIRECTION_REVIEW.md`.
+>
+> - You report only to art-pass (the session in D:/rc_art/art-pass). Every sheet, question and design pick goes to art-pass, never
+>   to the designer. Warn art-pass before any permission prompt.
+> - Proof standard:
+>   - frozen captures with `--reduce-effects=1`;
+>   - plate | now | after sheets with squint rows (1/8 scale plus blur) and per-band tables;
+>   - max 0 on frames you didn't mean to change;
+>   - targeted tests only (build runs the full gate).
+> - Hard rules:
+>   - Never write in D:/Godot/rebel_cell.
+>   - Never `python -`.
+>   - Never `taskkill /IM`, and never touch the designer's Blender.
+>   - D: drive only.
+>   - Redirect Godot output, never pipe it.
+>   - Commit by explicit paths with "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>".
+>   - Never commit .uid or scratch files.
+>   - Don't move a branch head that art-pass has posted READY; stack new work on a new branch.
+> - Art-pass assigns all mailbox numbers.
+> - Resume where the handoff says: module 19, then module 18 (perf).
+
+### Brief: Solace visual list
+> You are the Solace visual-list session for REBEL_CELL. You work in `D:/rc_art/godot_look_hqport` (Godot) and
+> `D:/rc_art/art-pass` (sheets, under docs/concepts/solace_vertical/).
+>
+> First read `.claude/HANDOFF_SOLACE.md` in godot_look_hqport, then CLAUDE.md, ART_BIBLE §1.2 and the tail of art-pass
+> `docs/concepts/DIRECTION_REVIEW.md`.
+>
+> - You report only to art-pass. Every sheet and design pick goes to art-pass, never to the designer.
+> - Concept agents research real-world refs first and cite them in NOTES.md.
+> - Every review needs plate | now plus squint rows.
+> - Raid screens are paused: no raid-zoom renders.
+> - Hard rules: the same as the toolbox. Don't post READY before art-pass approves; art-pass assigns the A numbers and does all
+>   pruning.
+> - Resume where the handoff says: the culture garden EX-11, waiting for the designer's direction pick through art-pass, then the
+>   Godot implementation.
