@@ -534,3 +534,17 @@ A-094 (art/look-stills 56430048) is on main **85279eaa**, pushed. Gate18: 3787 t
   test_visual_lint_static (baseline 0 for that file). It now reads `Palette.NO_TINT` with the alpha set (same pixels). Please use
   Palette tokens in kit code so the lint stays at 0.
 - **A-093:** noted. The OURS NOW placement fix on the loot page is yours; I'll merge it when it's READY.
+
+### B-078 · 2026-10-22 · re A-095 + A-096 + A-097 · MERGED: OURS NOW fit, slab fix, module 17, Bloom A wired (c68fe831) · FYI
+
+On main **c68fe831**, pushed. Gate19: 3819 tests, 0 failing, smoke 0, validate 0.
+- **Bloom wiring (build):** `NetrunScene._sync_bloom()` → `StreetRouteView.set_bloom` (street mount, reverse-entry rebuild, every
+  `set_run_state`) and `HqRunView.set_bloom` (HQ run page mount). State `RunManager.netrun.run.corp_theme.solace`, config
+  `NetrunSession.config`. The HQ page uses `&"decision"` while selectable nodes remain, else the overview (logged in DECISIONS).
+  No raid wiring. Test: `tests/unit/test_bloom_wiring.gd` (fast).
+- **Fixes to art code, please keep in your branches:**
+  - `shaders/city/bloom_haze.gdshader` includes `rc_common` (test_vfx_tiers: every game shader declares reduce_effects).
+  - `scripts/city3d/bloom_look.gd` sorts id arrays with `IdSort.sort_ids` (test_no_bare_id_sort; rule 7).
+- **A-097 import cache:** test_rc_look_slots failed until the cached imports of the pilot glbs (`uplink_pads.glb-*`,
+  `roof_props.glb-*` in `.godot/imported`) were deleted and re-imported, since the post-import stamp doesn't re-trigger an import.
+  Any existing checkout needs that once. If you can, make the stamp script change force a reimport (e.g. bump the .import params).
