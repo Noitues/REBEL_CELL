@@ -1,4 +1,5 @@
-"""Lab round 8 (L8) rules oracle: the city raid (SPEC docs/handoff/raid_lab_l8/SPEC.md, designer 2026-10-23).
+"""Lab round 8 (L8) rules oracle: the city raid (SPEC docs/handoff/raid_lab_l8/SPEC.md, designer 2026-10-23), with the
+L9 rule changes applied in place (docs/handoff/raid_lab_l8/L9_CHANGES.md): DECAY and SENTRY_PRICE 3.
 
 The map
 - A 4 x 3 grid of districts between our HQ (HOME, off-grid at x = -1) and the corp HQ (off-grid at x = 4).
@@ -9,12 +10,15 @@ The map
 - At leg start we own 2 seeded x = 0 cells (OK).
 
 A leg is 3 raids
-- CAPTURE: claim 1 NEUTRAL cell orthogonally adjacent to an owned non-TAKEN cell, or a cell at x = 0.
+- DECAY (L9; every raid after the first, before CAPTURE): every owned cell still DOWN becomes TAKEN and loses its
+  sentry (removed from the sentries and from the pool).
+- CAPTURE: claim 1 NEUTRAL cell orthogonally adjacent to an owned non-TAKEN cell, or a cell at x = 0. It works on the
+  decayed state.
 - PLAN: re-place every pool sentry (at most 1 per owned non-TAKEN cell). Optionally a ghost (kit) on an owned
   non-TAKEN cell or HOME, for +5 Heat.
 - LAUNCH: beam 1, then extra 1 (Heat >= 50) and extra 2 (Heat >= 75), using launch Heat with the ghost. Then the
   REVEAL of the sealed route, the RESPONSE, the sealed beam, and the hunter.
-- BETWEEN (not after raid 3): repair <= 1 DOWN cell (v // 2), build <= 1 sentry (4), pick an intensity. Income and
+- BETWEEN (not after raid 3): repair <= 1 DOWN cell (v // 2), build <= 1 sentry (3), pick an intensity. Income and
   Heat are added after that.
 
 Beams
@@ -48,7 +52,7 @@ Score
 - A breach scores -100.
 
 Measured (python sweep_l8.py): greedy (each phase maximizes EV over the sealed candidates with the best response,
-kit valued KIT_VALUE mid-leg) against naive, over 20 legs."""
+kit valued KIT_VALUE mid-leg) against naive, over 20 legs. Both apply DECAY before every capture after raid 1."""
 from __future__ import annotations
 
 import json
@@ -81,16 +85,17 @@ START_BANK, START_HEAT = 10, 44
 EXTRA_AT, STRONG_AT = 50, 75
 HOME_HP = 3
 GHOST_HEAT, SPOOF_HEAT, EVADE_HEAT = 5, 2, 10
-SENTRY_PRICE = 4
+SENTRY_PRICE = 3    # L9 (was 4)
 POOL_START = (("D", 1), ("N", 1), ("E", 1))
 KIT_START = (("ghost", 2), ("spoof", 2))
 INTENSITY = {"LOW": (6, 0.5), "NORMAL": (12, 1.0), "HOT": (18, 1.5)}
+DECAY = True        # L9: DOWN -> TAKEN (sentry lost) at the start of every raid after the first, before CAPTURE
 
 # Score.
 EXPLOIT_BONUS, HOME_LOSS_COST, HEAT_CARRY, BREACH = 6, 8, 1.0, 100
 KIT_VALUE = 2.5     # planner heuristic only: an unspent kit item (ghost, spoof, pool sentry) mid-leg
 EPS = 1e-9          # float ties keep the earlier option
-OUT = r"D:/rc_tmp/raid_design_lab/sweep_l8.json"
+OUT = r"D:/rc_tmp/raid_design_lab/sweep_l9.json"
 
 
 def ck(c) -> tuple:
@@ -105,7 +110,7 @@ def config() -> dict:
             "EVADE_HEAT": EVADE_HEAT, "SENTRY_PRICE": SENTRY_PRICE, "POOL_START": dict(POOL_START),
             "KIT_START": dict(KIT_START), "INTENSITY": {k: list(v) for k, v in INTENSITY.items()},
             "EXPLOIT_BONUS": EXPLOIT_BONUS, "HOME_LOSS_COST": HOME_LOSS_COST, "HEAT_CARRY": HEAT_CARRY,
-            "BREACH": BREACH, "KIT_VALUE": KIT_VALUE}
+            "BREACH": BREACH, "KIT_VALUE": KIT_VALUE, "DECAY": DECAY}
 
 
 @dataclass(frozen=True)
@@ -204,6 +209,25 @@ def make_leg(seed: int) -> Leg:
 
 def initial(leg: Leg) -> State:
     return State(owned=tuple((c, OK) for c in leg.start))
+
+
+def decay_cells(leg: Leg, st: State) -> list:
+    """The owned cells DECAY turns TAKEN (status still DOWN), in cell order."""
+    return [c for c, s in st.owned if s == DOWN]
+
+
+def decay(leg: Leg, st: State) -> State:
+    """L9 DECAY, applied at the start of every raid after the first, before CAPTURE: every owned DOWN cell becomes
+    TAKEN and loses its sentry (removed from the sentries and from the pool). The caller decides when (raid > 0)."""
+    owned = dict(st.owned)
+    sent = dict(st.sentries)
+    pool = dict(st.pool)
+    for c in decay_cells(leg, st):
+        owned[c] = TAKEN
+        t = sent.pop(c, None)
+        if t is not None:
+            pool[t] -= 1
+    return replace(st, owned=_otup(owned), sentries=_otup(sent), pool=_pool_t(pool))
 
 
 def capture_options(leg: Leg, st: State) -> list:
@@ -504,7 +528,9 @@ def forecast(leg: Leg, raid: int, st: State, place) -> list:
 
 
 def _next_value(leg: Leg, raid: int, st: State) -> float:
-    """Between-step lookahead: the next raid's best EV with no capture, no ghost and HOLD."""
+    """Between-step lookahead: DECAY (raid > 0), then the next raid's best EV with no capture, no ghost and HOLD."""
+    if raid > 0:
+        st = decay(leg, st)
     mid = raid < RAIDS - 1
     best = None
     for place in placements(leg, st):
@@ -516,17 +542,23 @@ def _next_value(leg: Leg, raid: int, st: State) -> float:
     return best if best is not None else score(leg, st, mid)
 
 
-def _entry(i, cap, place, resp, k, touches, tr, after) -> dict:
-    return {"raid": i, "capture": cap, "place": {"sentries": dict(place[0]), "ghost": place[1]}, "response": resp,
+def _entry(i, cap, place, resp, k, touches, tr, after, decayed=()) -> dict:
+    return {"raid": i, "decayed": list(decayed), "capture": cap,
+            "place": {"sentries": dict(place[0]), "ghost": place[1]}, "response": resp,
             "cand_real": k, "touches": touches, "tier": tr, "after_raid": after, "between": None}
 
 
 def greedy_leg(leg: Leg):
-    """Capture + plan jointly maximize the EV over the 3 candidates with the best response per candidate (kit valued
-    mid-leg); the real candidate is then played with its best response. Between: the best one-raid lookahead."""
+    """DECAY (raid > 0), then capture + plan jointly maximize the EV over the 3 candidates with the best response per
+    candidate (kit valued mid-leg); the real candidate is then played with its best response. Between: the best
+    one-raid lookahead (which sees the next DECAY)."""
     st = initial(leg)
     log = []
     for i in range(RAIDS):
+        dec = []
+        if i > 0:
+            dec = decay_cells(leg, st)
+            st = decay(leg, st)
         mid = i < RAIDS - 1
         best = None
         for cap in capture_options(leg, st) or [None]:
@@ -539,7 +571,7 @@ def greedy_leg(leg: Leg):
         _, cap, s1, place, per = best
         k = leg.raids[i].real
         _, resp, ns, t = per[k]
-        entry = _entry(i, cap, place, resp, k, t, tier(s1, ns, t), ns)
+        entry = _entry(i, cap, place, resp, k, t, tier(s1, ns, t), ns, dec)
         log.append(entry)
         if ns.home_hp <= 0 or i == RAIDS - 1:
             return ns, log
@@ -571,12 +603,16 @@ def _naive_sentries(st: State) -> dict:
 
 
 def naive_leg(leg: Leg):
-    """Capture the highest value (first in cell order); keep sentries; never ghost or respond; repair the biggest
-    affordable DOWN cell; build nothing; NORMAL."""
+    """DECAY (raid > 0); capture the highest value (first in cell order); keep sentries; never ghost or respond;
+    repair the biggest affordable DOWN cell; build nothing; NORMAL."""
     vals = dict(leg.values)
     st = initial(leg)
     log = []
     for i in range(RAIDS):
+        dec = []
+        if i > 0:
+            dec = decay_cells(leg, st)
+            st = decay(leg, st)
         cap = None
         for c in capture_options(leg, st):
             if cap is None or vals[c] > vals[cap]:
@@ -586,7 +622,7 @@ def naive_leg(leg: Leg):
         k = leg.raids[i].real
         resp = ("HOLD",)
         ns, t = resolve(leg, i, s1, k, place, resp)
-        entry = _entry(i, cap, place, resp, k, t, tier(s1, ns, t), ns)
+        entry = _entry(i, cap, place, resp, k, t, tier(s1, ns, t), ns, dec)
         log.append(entry)
         if ns.home_hp <= 0 or i == RAIDS - 1:
             return ns, log
@@ -600,10 +636,12 @@ def naive_leg(leg: Leg):
 
 
 def replay_befores(leg: Leg, log: list) -> list:
-    """The post-capture state of every raid in a log."""
+    """The post-capture state of every raid in a log (DECAY, then capture, for raids after the first)."""
     st = initial(leg)
     out = []
     for x in log:
+        if x["raid"] > 0:
+            st = decay(leg, st)
         s1 = capture(leg, st, x["capture"]) if x["capture"] is not None else st
         out.append(s1)
         if x["between"]:
@@ -639,6 +677,7 @@ def _leg_stats(leg: Leg, end: State, log: list) -> dict:
             "cap_exploits": sum(c in ex for c in caps),
             "intensity": [b["intensity"] for b in bw], "builds": [b["build"] for b in bw],
             "repairs": sum(b["repair"] is not None for b in bw), "home_lost": HOME_HP - end.home_hp,
+            "decayed": sum(len(x["decayed"]) for x in log),
             "taken_end": sum(s == TAKEN for _, s in end.owned), "down_end": sum(s == DOWN for _, s in end.owned),
             "extra_raids": sum(h >= EXTRA_AT for h in launch), "strong_raids": sum(h >= STRONG_AT for h in launch)}
 
@@ -666,6 +705,7 @@ def _agg(rows: list, p: str) -> dict:
             "builds": {str(b): builds.count(b) for b in (None,) + TYPES},
             "repairs": sum(r[p]["repairs"] for r in rows),
             "home_lost": round(stats.mean(r[p]["home_lost"] for r in rows), 2),
+            "decayed_per_leg": round(stats.mean(r[p]["decayed"] for r in rows), 2),
             "taken_end": round(stats.mean(r[p]["taken_end"] for r in rows), 2),
             "down_end": round(stats.mean(r[p]["down_end"] for r in rows), 2),
             "extra_raid_share": round(sum(r[p]["extra_raids"] for r in rows) / raids, 2),
@@ -685,6 +725,8 @@ if __name__ == "__main__":
     summ = {"greedy": _agg(rows, "greedy"), "naive": _agg(rows, "naive"),
             "mean_gap": round(stats.mean(r["gap"] for r in rows), 1),
             "gap_share_ge3": sum(r["gap"] >= 3 for r in rows) / len(rows)}
+    summ["decay"] = {p: {"decayed_per_leg": summ[p]["decayed_per_leg"], "taken_end": summ[p]["taken_end"]}
+                     for p in ("greedy", "naive")}
     print("SUMMARY", json.dumps(summ), flush=True)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w") as f:

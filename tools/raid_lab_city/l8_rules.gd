@@ -1,9 +1,10 @@
 class_name L8Rules
 extends RefCounted
-## The round-8 (L8) city-raid rules, ported from tools/raid_concepts/sweep_l8.py (the oracle). Covers capture,
-## placements, the launch (beam 1, extras, sealed, hunter), responses, between, tier, score and forecast. Pure and
-## deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3, y 0..2); HOME is the String "HOME".
-## Every enumeration walks CELLS (y, then x), never dictionary order. Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md.
+## The round-8 (L8) city-raid rules with the L9 changes, ported from tools/raid_concepts/sweep_l8.py (the oracle).
+## Covers decay, capture, placements, the launch (beam 1, extras, sealed, hunter), responses, between, tier, score and
+## forecast. Pure and deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3, y 0..2); HOME is the String
+## "HOME". Every enumeration walks CELLS (y, then x), never dictionary order.
+## Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md. Changes: docs/handoff/raid_lab_l8/L9_CHANGES.md.
 
 # Grid: cell order is y, then x.
 const W := 4
@@ -43,7 +44,7 @@ const HOME_HP := 3
 const GHOST_HEAT := 5
 const SPOOF_HEAT := 2
 const EVADE_HEAT := 10
-const SENTRY_PRICE := 4
+const SENTRY_PRICE := 3		# L9: was 4
 const REPAIR_DIV := 2
 const INCOME_DIV := 3
 const POOL_START: Dictionary = {"D": 1, "N": 1, "E": 1}
@@ -81,7 +82,7 @@ static func config() -> Dictionary:
 	return {"W": W, "H": H, "TYPES": TYPES.duplicate(), "VALUES": VALUES.duplicate(), "EXPLOITS": EXPLOITS,
 		"START_CELLS": START_CELLS, "RAIDS": RAIDS, "START_BANK": START_BANK, "START_HEAT": START_HEAT,
 		"EXTRA_AT": EXTRA_AT, "STRONG_AT": STRONG_AT, "HOME_HP": HOME_HP, "GHOST_HEAT": GHOST_HEAT,
-		"SPOOF_HEAT": SPOOF_HEAT, "EVADE_HEAT": EVADE_HEAT, "SENTRY_PRICE": SENTRY_PRICE,
+		"SPOOF_HEAT": SPOOF_HEAT, "EVADE_HEAT": EVADE_HEAT, "SENTRY_PRICE": SENTRY_PRICE, "DECAY": true,
 		"POOL_START": POOL_START.duplicate(), "KIT_START": KIT_START.duplicate(), "INTENSITY": inten,
 		"EXPLOIT_BONUS": EXPLOIT_BONUS, "HOME_LOSS_COST": HOME_LOSS_COST, "HEAT_CARRY": HEAT_CARRY,
 		"BREACH": BREACH, "KIT_VALUE": KIT_VALUE}
@@ -387,9 +388,43 @@ static func _norm_place(place: Dictionary) -> Dictionary:
 	return {"sentries": _ordered(sent), "ghost": to_cell(place.get("ghost"))}
 
 
+# ---------------------------------------------------------------- decay (L9)
+
+## The cells decay(leg, st) would turn TAKEN: every owned cell still DOWN, in cell order (for the lab's DECAY beat).
+static func decaying_cells(st: Dictionary) -> Array:
+	var owned: Dictionary = st["owned"]
+	var out: Array = []
+	for c: Vector2i in CELLS:
+		if _status(owned, c) == DOWN:
+			out.append(c)
+	return out
+
+
+## sweep_l8.decay (L9): every owned cell whose status is still DOWN becomes TAKEN and loses its sentry (removed from
+## the sentries and from the pool). Heat, bank, HOME and kit are unchanged. The caller applies it at the start of
+## every raid after the first, before CAPTURE (the replay order is decay, then capture).
+static func decay(leg: Dictionary, st: Dictionary) -> Dictionary:
+	var out := copy_state(st)
+	var owned: Dictionary = out["owned"]
+	var sent: Dictionary = out["sentries"]
+	var pool: Dictionary = out["pool"]
+	for c: Vector2i in CELLS:
+		if _status(owned, c) == DOWN:
+			owned[c] = TAKEN
+			if sent.has(c):
+				var t := String(sent[c])
+				sent.erase(c)
+				pool[t] = int(pool.get(t, 0)) - 1
+	out["owned"] = _ordered(owned)
+	out["sentries"] = _ordered(sent)
+	out["pool"] = _pool_t(pool)
+	return out
+
+
 # ---------------------------------------------------------------- capture and placement
 
 ## sweep_l8.capture_options: NEUTRAL cells adjacent to an owned non-TAKEN cell, or at x = 0; in cell order.
+## From raid 2 on, pass the decayed state.
 static func capture_options(leg: Dictionary, st: Dictionary) -> Array:
 	var owned: Dictionary = st["owned"]
 	var out: Array = []

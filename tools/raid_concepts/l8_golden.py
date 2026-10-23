@@ -1,7 +1,8 @@
-"""Parity golden for the L8 city-raid lab (tools/raid_lab_city): sweep_l8.py rules.
-Legs 0, 3, 5, 8: leg data and the greedy and naive lines step by step (state before, capture, state after capture, place,
-response, real candidate, trace with beams, tier, after the raid, between choice, after, score), plus random raids,
-between steps and capture checks reached by random legal play. Writes tools/raid_lab_city/data/l8_golden.json.
+"""Parity golden for the L8 city-raid lab (tools/raid_lab_city): sweep_l8.py rules (L9: decay before each capture).
+Legs 0, 3, 5, 8: leg data and the greedy and naive lines step by step (state before, state after decay, capture, state
+after capture, place, response, real candidate, trace with beams, tier, after the raid, between choice, after, score),
+plus random raids, between steps and capture checks reached by random legal play. Writes
+tools/raid_lab_city/data/l8_golden.json.
     python tools/raid_concepts/l8_golden.py"""
 from __future__ import annotations
 
@@ -57,7 +58,11 @@ def replay(leg, log):
     steps = []
     for x in log:
         i = x["raid"]
-        rec = {"raid": i, "before_capture": sj(st), "capture": cj(x["capture"])}
+        rec = {"raid": i, "before_capture": sj(st)}
+        if i > 0:
+            st = S.decay(leg, st)
+        rec["after_decay"] = sj(st)
+        rec["capture"] = cj(x["capture"])
         st = S.capture(leg, st, x["capture"]) if x["capture"] is not None else st
         place = (dict(x["place"]["sentries"]), x["place"]["ghost"])
         ns, rr = raid_rec(leg, i, st, place, x["cand_real"], x["response"])
@@ -81,6 +86,8 @@ def randoms(n_raid=200, n_between=100, n_capture=100):
         leg = S.make_leg(rng.choice(LEGS))
         st = S.initial(leg)
         for i in range(S.RAIDS):
+            if i > 0:
+                st = S.decay(leg, st)
             opts = S.capture_options(leg, st)
             if len(captures) < n_capture:
                 captures.append({"leg": leg.seed, "state": sj(st), "options": [cj(c) for c in opts]})

@@ -1,14 +1,18 @@
 extends SceneTree
-## Parity check of the L8 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
+## Parity check of the L8/L9 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
 ## (tools/raid_concepts/l8_golden.py; oracle tools/raid_concepts/sweep_l8.py).
 ## It checks:
 ## - the config;
 ## - the leg data of every golden leg (leg_from_json);
-## - every step of the greedy and naive line of each leg. Per step: the state before the capture, capture_options
-##   holds the capture, capture() gives `before`, placements() holds the place, response_options() holds the response,
-##   then resolve / trace / hunter_line / tier / score, the forecast, between_options() holds the between step,
-##   between() gives `after`, and score(after);
-## - every random raid, random between step and random capture check.
+## - every step of the greedy and naive line of each leg. Per step:
+##   - the state before the capture;
+##   - DECAY: for raid > 0, decay(before_capture) gives `after_decay`. For raid 0, `after_decay` equals
+##     `before_capture` and no decay runs;
+##   - capture_options of the decayed state holds the capture, and capture() of the decayed state gives `before`;
+##   - placements() holds the place, and response_options() holds the response;
+##   - resolve / trace / hunter_line / tier / score, then the forecast;
+##   - between_options() holds the between step, between() gives `after`, and score(after);
+## - every random raid, random between step and random capture check (no decay there).
 ## States are compared as L8Rules.state_to_json against the golden JSON, by deep compare (ints stay ints; floats to
 ## 1e-6). The first 20 mismatches are printed with their path. Exits 0 only on full parity.
 ##   godot --headless --path . -s res://tools/raid_lab_city/parity_check.gd
@@ -24,6 +28,7 @@ var _checks: int = 0
 var _shown: int = 0
 var _steps: int = 0
 var _blocks: int = 0
+var _decayed: int = 0
 var _raids: int = 3
 var _kit_value: float = 2.5
 var _legs: Dictionary = {}
@@ -103,8 +108,8 @@ func _init() -> void:
 			continue
 		_check_captures(tag, leg, r)
 
-	print("%d lines, %d golden steps (responses %s, %d blocks), %d random raids, %d random betweens (%d off the between_options list), %d random captures"
-		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, rr.size(), rb.size(), _off_option_betweens, rc.size()])
+	print("%d lines, %d golden steps (responses %s, %d blocks, %d decayed cells), %d random raids, %d random betweens (%d off the between_options list), %d random captures"
+		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, _decayed, rr.size(), rb.size(), _off_option_betweens, rc.size()])
 	if _fails == 0:
 		print("PARITY PASS %d checks" % _checks)
 	else:
@@ -209,7 +214,7 @@ func _check_leg(seed_id: int, leg: Dictionary, raw: Dictionary) -> void:
 		_check(t + " hunter_street", rd.get("hunter_street"), g["hunter_street"])
 
 
-## Replays one golden line from initial(leg), chaining our own states.
+## Replays one golden line from initial(leg), chaining our own states: decay (raid > 0), capture, raid, between.
 func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 	_check_true(tag + " has steps", steps.size() > 0)
 	var st: Dictionary = L8Rules.initial(leg)
@@ -221,12 +226,13 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 		_steps += 1
 		_check(t + " raid index", i, n)
 		_check_state(t + " before capture", st, s["before_capture"])
+		st = _decay_step(t, leg, i, st, s)
 		var opts_j := _cells_json(L8Rules.capture_options(leg, st))
 		var cap: Variant = _cell(s["capture"])
 		if typeof(cap) == TYPE_NIL:
-			_check(t + " no capture only when there is no option", opts_j, [])
+			_check(t + " no capture only when there is no option (after decay)", opts_j, [])
 		else:
-			_check_true(t + " capture is a capture option", _has(opts_j, _cj(cap)),
+			_check_true(t + " capture is a capture option (after decay)", _has(opts_j, _cj(cap)),
 				"%s not in %s" % [_s(_cj(cap)), _s(opts_j)])
 			var snap := JSON.stringify(L8Rules.state_to_json(st))
 			var nxt: Dictionary = L8Rules.capture(leg, st, cap)
@@ -265,6 +271,30 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 				"%d more steps follow" % (steps.size() - 1 - n))
 			break
 	_check_true(tag + " the line runs to the last raid or a breach", ended_ok)
+
+
+## The DECAY step of a golden step. For raid > 0 it runs decay(leg, st) and checks it against `after_decay`. For
+## raid 0 no decay runs, and the golden `after_decay` must equal `before_capture`. Returns the state for capture.
+func _decay_step(t: String, leg: Dictionary, i: int, st: Dictionary, s: Dictionary) -> Dictionary:
+	var has_ad := s.has("after_decay")
+	_check_true(t + " golden step has after_decay", has_ad)
+	if i == 0:
+		if has_ad:
+			_check(t + " after_decay = before_capture on the first raid", s["after_decay"], s["before_capture"])
+		return st
+	var snap := JSON.stringify(L8Rules.state_to_json(st))
+	var dec: Dictionary = L8Rules.decay(leg, st)
+	_check_true(t + " decay() leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(st)) == snap)
+	var before_owned: Dictionary = st.get("owned", {})
+	var after_owned: Dictionary = dec.get("owned", {})
+	for c: Variant in before_owned:
+		if String(before_owned[c]) == "DOWN" and String(after_owned.get(c, "")) == "TAKEN":
+			_decayed += 1
+	for c: Variant in after_owned:
+		_check_true("%s after decay %s is not DOWN" % [t, str(c)], String(after_owned[c]) != "DOWN")
+	if has_ad:
+		_check_state(t + " after decay", dec, s["after_decay"])
+	return dec
 
 
 ## One raid from st against a golden raid record (place, cand, response, trace, hunter, tier, after_raid, score_raid).
