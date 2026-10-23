@@ -236,6 +236,9 @@ static func cand_shape(ci: CanvasItem, c: Vector2, i: int, r: float, col: Color,
 ## Beam-order badge (1, 2, 3).
 static func badge(ci: CanvasItem, c: Vector2, n: Variant, col: Color = THREAT) -> void:
 	var s := str(n)
+	if s == "+" or s == "++":
+		beam_plus(ci, c, s.length(), col)
+		return
 	var r := 11.0 if s.length() < 2 else 15.0
 	ci.draw_circle(c, r, col)
 	ci.draw_arc(c, r, 0.0, TAU, 20, INK, 1.5, true)
@@ -402,3 +405,52 @@ static func detour(ci: CanvasItem, c: Vector2, r: float, d: Vector2, side: float
 	var dd := (last - prev).normalized()
 	var nn := Vector2(-dd.y, dd.x)
 	ci.draw_colored_polygon(PackedVector2Array([last + dd * 8.0, last - dd * 2.0 + nn * 6.0, last - dd * 2.0 - nn * 6.0]), col)
+
+
+## Value pips: one per PIP_VALUE of value (the node's worth without a number). Also the income chip's pip.
+const PIP_VALUE := 2
+const GREY_PIP := Color8(170, 176, 196)
+
+
+static func pip_count(value: int) -> int:
+	return int(ceil(float(value) / float(PIP_VALUE)))
+
+
+## A centered row of `n` small squares at c.
+static func pips(ci: CanvasItem, c: Vector2, n: int, col: Color, size: float = 4.5, gap: float = 2.5) -> void:
+	var total := n * size + maxi(0, n - 1) * gap
+	var x := c.x - total * 0.5
+	for k in range(n):
+		ci.draw_rect(Rect2(x + k * (size + gap), c.y - size * 0.5, size, size), col)
+
+
+## A closed eye (go dark): a lid curve with three lashes.
+static func eye_closed(ci: CanvasItem, c: Vector2, r: float, col: Color = DIM, w: float = 2.5) -> void:
+	var k := c + Vector2(0, -r * 0.6)
+	ci.draw_arc(k, r * 1.1, PI * 0.2, PI * 0.8, 14, col, w, true)
+	for a in [0.32, 0.5, 0.68]:
+		var d := Vector2(cos(PI * a), sin(PI * a))
+		ci.draw_line(k + d * r * 1.1, k + d * r * 1.55, col, w * 0.8, true)
+
+
+## The extra known beam: a beam arrow with one "+" tick per extra (n = 1 for the beam Heat 50 adds, 2 for the one Heat 75
+## adds). The Heat meter's notches and the beams they add wear the same glyph.
+static func beam_plus(ci: CanvasItem, c: Vector2, n: int, col: Color = THREAT) -> void:
+	var r := 12.5
+	ci.draw_circle(c, r, col)
+	ci.draw_arc(c, r, 0.0, TAU, 20, INK, 1.5, true)
+	ci.draw_line(c + Vector2(-7.5, 4), c + Vector2(4, 4), INK, 2.5, true)
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(8.5, 4), c + Vector2(3, 0), c + Vector2(3, 8)]), INK)
+	for k in range(n):
+		var q := c + Vector2(-5.0 + k * 8.0, -5.0)
+		ci.draw_line(q + Vector2(-3, 0), q + Vector2(3, 0), INK, 2.0, true)
+		ci.draw_line(q + Vector2(0, -3), q + Vector2(0, 3), INK, 2.0, true)
+
+
+## The Heat meter's danger gradient: calm blue, warm yellow, hot red (t 0..1).
+static func heat_color(t: float) -> Color:
+	var u := clampf(t, 0.0, 1.0)
+	var calm := Color8(70, 140, 200)
+	var warm := Color8(255, 200, 50)
+	var hot := Color8(255, 60, 40)
+	return calm.lerp(warm, u * 2.0) if u < 0.5 else warm.lerp(hot, (u - 0.5) * 2.0)

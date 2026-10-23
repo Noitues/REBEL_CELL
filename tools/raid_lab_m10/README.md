@@ -1,10 +1,59 @@
-# Sweep-raid lab, round 5 (L5)
+# Sweep-raid lab, round 6 (L6: the L5 rules, a readability pass, no dead raid)
 
 A playable Godot prototype of the round-5 sweep raid, so a critic can judge suspense, decision depth and readability in motion
 with every number coming from one rules engine. A design tool, not part of the game: nothing outside `tools/raid_lab_m10/` is
 touched. Brief: `docs/handoff/raid_lab_l5/BRIEF.md`. Rules source of truth: `tools/raid_concepts/sweep_l5.py` (python; it builds
 on `sweep_l4.py`, `sweep_l3.py` and `sweep_l2.py`). The folder name `raid_lab_m10` and the scene `raid_lab_m10.tscn` are kept as
 the entry point.
+
+## Round 6 (L6): what changed
+
+Presentation only. The rules (`l5_rules.gd`, `l5_golden.json`, `sweep_l5.py`) are untouched and `parity_check.gd` passes unchanged.
+Brief: `docs/handoff/raid_lab_l6/BRIEF.md`; the findings it answers are in `docs/design/raid_concepts/_reviews/REVIEW_LAB_L5.md`.
+
+**No-words pass** (every item reads with `--scramble` on):
+
+- **Node value as pips.** One small square per 2 of value under the number (`L5Glyphs.pips`, `PIP_VALUE`), on every node status
+  (OK yellow, DOWN grey, TAKEN cobalt). Income chips (go dark, between screen) use the same pip, one per point of income.
+- **Go dark has its own look.** A hollow, dimmed node (no fill, thin grey ring) with a closed-eye glyph and dim pips, and its income
+  chip struck in red. It no longer resembles DOWN (grey fill, bolt). Dark on a DOWN or TAKEN node keeps that look and gets a
+  closed-eye chip.
+- **Heat meter as a danger gradient** (calm blue, warm yellow, hot red), with two hard notches at 50 and 75. Each notch carries
+  the glyph of the beam it adds (a beam arrow with one "+" at 50, two at 75), and that same glyph is the badge on the beam it adds
+  (`L5Glyphs.beam_plus`, used by `badge` for "+" and "++": the start badge, the track, the contact chips).
+- **Beams in fixed lanes.** `_offsets()`: beams on one row or column take fixed, ordered lanes (beam 1, extra, extra 2, the three
+  sealed lines), `LANE` = 18 px apart, **centered on the row or column**, so none sits on another or drifts between rows. Only the
+  beams that run this raid take a lane (`lane_extra`). Every column also reserves a lane after its own lines for the hunter
+  (`_h_off`), and the plan's per-shape hunter columns take the lanes beyond. Fixes `shots_jam/36_r3_no_spoof_left`.
+- **Sealed-line outcomes on the board.** In the forecast each sealed line's result is a pill on its own line, in its lane, next to
+  the cell it hits: the line's shape plus DOWN (bolt), TAKEN (corp flag) or HOME with -1 (`_outcome_pill`); the hunter's touch
+  under that line sits in the hunter's lane below the node. The side-panel table stays.
+- **Good play reads as good.** The leg record has a verdict strip: the assets as glyphs, "CELL KEPT 4/6", "HOME 3/3" with pips, and
+  the score against the golden careless line of the same leg (two bars and the difference; "CARELESS: BREACH" when that line loses
+  the campaign). Presentation of `final_score()` and the golden `naive` score.
+
+**No dead raids.**
+
+- **A certain loss is settled at once.** When `breach_risk` for the next raid is 3/3 on every intensity (`L5Model.breach_settled()`,
+  live with the picks), the between screen shows a red DECIDED banner and the button reads "LAUNCH: THE CELL FALLS". Launch plays
+  the raid in **fast mode** (`L5Play.fast`: one 0.5 s beat per beam, all steps of a beam at once, no decision, no "no spoof left"
+  beat, HOLD, no levers) straight to the BREACHED card, under a "THE CELL FALLS" banner. No contact, plan or forecast screen. The
+  result is the slow playout's (checked): every plan and every response loses HOME in that raid.
+- **Warn one step earlier, in the plan.** A "kit after this raid" strip under the grid (`L5Model.kit_after_preview()`,
+  `_draw_kit_strip`): the kit the plan leaves (ghosts, decoys, spoofs, go dark; a spoof counts whole, it is spent only if used after
+  the reveal), the Heat the plan leaves on a meter with the 50 and 75 glyphs (the ghost's +5, no evade credit), and "next raid: N
+  beams, M levers left" with N = beams at that Heat plus the cheapest run (LOW, +6). **Amber** when the plan spends the last kit item
+  and N is more beams than this raid. No new rule: `kit_left`, `heat_now`, `extra_count`. Demo frames: `--demo=amber`.
+
+Capture flags added: `--demo=amber`. New checks in `flow_check.gd`: the lanes (distinct, ordered, centered, hunter lane clear, over
+the six legs and 0/1/2 extras), pips = value / 2, the kit strip against what every golden planned raid really leaves (kit, Heat,
+beams, and the real next raid after a LOW run), the amber cases, the settled breach (settled after raid 2 on the naive leg 0, not
+settled on a planned leg, fast playout with no decision screen and no contact / plan / forecast, one beat per beam, same result as
+the slow playout).
+
+Delivered L6 runs are in `D:/rc_tmp/raid_design_lab/lab_l6/`: `shots/` (leg 0, planned, 45 frames), `shots_breach/` (leg 0, naive,
+35 frames: `30_r2_between_picked` DECIDED, `31_r3_fall_start`, `32_r3_fall_home_breached`, `33_r3_breach`, `34_record`),
+`shots_scrambled/` (leg 5, planned, scrambled, 42 frames), `shots_jam/` (leg 3, planned, 42 frames), `shots_amber/` (2 frames).
 
 **Earlier rounds were replaced, not kept behind a `RULESET` constant.** The L4 code (`l4_*.gd`, `l4_golden.json`) is in git
 history (commit 14a7f25f and earlier); L3 and L2 before that. The critic reviews that drove the rounds are
@@ -22,8 +71,8 @@ history (commit 14a7f25f and earlier); L3 and L2 before that. The critic reviews
   numbered PNG per screen and per playout beat. `--lite` takes fewer frames, `--scramble` runs the no-words test.
   `--demo=breachfix` takes 3 frames of the pre-launch breach warning that names a lever (golden naive leg 0 at raid 3 with one
   ghost put back in the kit). `--demo=ownline` takes frames of the hunter's own line (every asset TAKEN, HOME ghosted).
-  Delivered runs (in `D:/rc_tmp/raid_design_lab/lab_l5/`): `shots/` (leg 0, planned line, 45 frames), `shots_breach/` (leg 0, naive
-  line, breach in raid 3, 38 frames), `shots_scrambled/` (leg 5, planned, scrambled, 42 frames), `shots_jam/` (leg 3, planned:
+  L5 runs (in `D:/rc_tmp/raid_design_lab/lab_l5/`; L6 runs are listed above): `shots/` (leg 0, planned line, 45 frames), `shots_breach/` (leg 0, naive
+  line, breach in raid 3, 38 frames; in L6 the naive leg 0 skips raid 3's screens and plays it fast), `shots_scrambled/` (leg 5, planned, scrambled, 42 frames), `shots_jam/` (leg 3, planned:
   raid 1 jams the hunter, 42 frames), `shots_ownline/` (9 frames). Leg 0's planned line never uses JAM (it holds or skips), so the
   JAM frames are in `shots_jam/` (`06_r1_decision`, `07_r1_after_decision`, `08_r1_beam_b2`, `09_r1_aftermath`); the scrambled
   leg 5 also jams in raid 2 (`22_r2_decision` .. `25_r2_aftermath`). Every frame was re-read after the last code change.
@@ -112,10 +161,10 @@ raid, the between step, state after, score, the lab's naive policy reproducing t
 intensity at every between step (breach_risk recomputed from the between state)**; each raid's `real` and `shapes`; the re-drawn
 sealed lines (distinct, non-empty, pairwise different asset / HOME hit sets) in all 18 raids; all 200 random single-raid
 resolutions (21 with JAM) and all 200 random between steps, with the 40 random `risk` values; every golden allocation passes the
-lab's lever validation. Result: 2433 checks, 148 breach_risk values, 0 failed, `PARITY PASS`, exit 0. Log:
-`D:/rc_tmp/raid_design_lab/lab_l5/parity.log`.
+lab's lever validation. Result (L6, unchanged): 2433 checks, 148 breach_risk values, 0 failed, `PARITY PASS`, exit 0. Log:
+`D:/rc_tmp/raid_design_lab/lab_l6/parity.log`.
 
-`flow_check.gd`: PASS (see the log `D:/rc_tmp/raid_design_lab/lab_l5/flow.log` for the count): kit and caps, undo, heat bands, the
+`flow_check.gd`: PASS, 734 checks (log `D:/rc_tmp/raid_design_lab/lab_l6/flow.log`; the L6 checks are listed above): kit and caps, undo, heat bands, the
 forecast (JAM among the responses that save), the response rules (HOLD +0 Heat, SKIP and JAM +2 and one spoof, JAM removes exactly
 the hunter's touches and beam), **the decision screen's forecast equals the result for every option** (a fresh playout of each
 option gives the same touches, state, Heat after, summary, Heat-line crossings, and only JAM drops the hunter), the "no spoof
@@ -130,6 +179,18 @@ The headless flow check does not draw (no renderer); every `_draw` path is exerc
 scanned for script errors (0).
 
 ## Findings (rules ambiguities) and known gaps
+
+L6 gaps:
+
+- The kit strip's "next raid" beam count assumes the cheapest run (LOW, +6 Heat) and no evade credit; the real next raid can have
+  more beams (a hotter run) or fewer (an untouched sweep gives -10). It is a floor, labeled with the Heat the plan leaves.
+- "Settled" reads `breach_risk` 3/3 on all three intensity cards with the picks so far. A shop buy that changes the kit can unsettle
+  it, which is correct (the banner follows the picks), but the fast raid is only offered when it is settled at Launch.
+- The sealed-outcome pills share a row with the beam lanes: on a row with four or more lines they sit tight and can touch a beam
+  badge. Hunter-lane pills below the node can touch the next row's node tag on the last column.
+- The scramble leaves the digits and the "+" / "-" signs; node value, Heat notches, dark and the sealed outcomes read without words,
+  but the response rows' "-1" and the Heat arrows still carry numbers.
+- Speed and SKIP controls are hidden during the fast breach (it has no pacing choice).
 
 - **The naive breach is settled after raid 2 on legs 0 and 8** (risk 3 on every intensity card; the warning before launch says "No
   lever left in the kit avoids it"). Leg 5's naive line no longer breaches at all (its between risk is 0). The cards say "BREACH
