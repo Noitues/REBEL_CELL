@@ -1,8 +1,8 @@
-class_name L4Data
+class_name L5Data
 extends RefCounted
-## Loads data/l4_golden.json (tools/raid_concepts/l4_golden.py) into typed legs for the rules.
+## Loads data/l5_golden.json (tools/raid_concepts/l5_golden.py) into typed legs for the rules.
 
-const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l4_golden.json"
+const GOLDEN_PATH := "res://tools/raid_lab_m10/data/l5_golden.json"
 static var _cache: Dictionary = {}
 
 
@@ -58,8 +58,10 @@ static func alloc_of(a: Dictionary) -> Dictionary:
 	return {"ghost": cells(a["ghost"]), "dark": cells(a["dark"]), "decoys": cells(a["decoys"])}
 
 
-## A golden spoof ([x, y] or null) as a cell; NONE when absent.
+## A golden spoof (null, [x, y] = SKIP, or "JAM") as a cell; NONE when absent, JAM for the jam.
 static func spoof_of(s: Variant) -> Vector2i:
 	if s == null:
-		return L4Rules.NONE
+		return L5Rules.NONE
+	if s is String:
+		return L5Rules.JAM
 	return cell(s)
