@@ -1687,3 +1687,11 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     an unfrozen live test, not with frozen captures only.
   - Denser frontage signs and edges through the r2 rules (both twins plus the oracle fixtures) are approved as step (e), after
     (b).
+- **Nodes implementation review (2026-10-22, sheet `solace_vertical/nodes/godot/impl_sheet.jpg`):**
+  - CACHE icon (designer): a brighter, hotter brick red, so it reads on the dark map at the squint. It may give up some tritan
+    margin, but must stay ΔE >= 30 normal / protan / deutan from every kind, room and state colour, and the ELITE fill is still
+    separated by the outline. The CACHE room glow follows the new hue.
+  - RUN column (art-pass): dropped from the REST and WORKSHOP pages. It repeats the top bar's HP and Cycles, and the shipped event
+    page dropped its RUN terminal for the same reason.
+  - Page backdrop (art-pass): the new colourful isometric city behind the page competes with the terminal. Dim and scrim it to the
+    event page's backdrop level (readability first).
