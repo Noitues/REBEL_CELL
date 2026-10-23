@@ -62,6 +62,8 @@ var _win_open := PackedFloat32Array()
 var _haze_cur := -1.0
 ## Module 19 (a): the zoom-eased street wash (gain, floors lo, floors hi); x < 0 until the first pose.
 var _wash_cur := Vector3(-1.0, 0.0, 0.0)
+## Module 19 (b): the zoom-eased post uniforms of look.post_zoom (empty until the first pose).
+var _post_cur: Dictionary = {}
 ## Tools: a fixed post exposure (the exposure solve); 0 = the framing's solved value.
 var exposure_override := 0.0
 var _grit_skip: Dictionary = {}
@@ -305,7 +307,9 @@ func street_overrides() -> Array:
 	if gm != null:
 		out.append([gm, _uniforms(lk["ground"])])
 	if view.post_material() != null:
-		out.append([view.post_material(), _uniforms(lk["post"])])
+		var pd := _uniforms(lk["post"])
+		pd.merge(_post_cur, true)
+		out.append([view.post_material(), pd])
 	return out
 
 
@@ -491,6 +495,17 @@ func _apply_zoom_look() -> void:
 	var wz: Dictionary = StreetRouteConfigData.shipped().look["wash_zoom"]
 	_wash_cur = Vector3(lerpf(float(wz["gain"][0]), float(wz["gain"][1]), zd), lerpf(float(wz["floors_lo"][0]), float(wz["floors_lo"][1]), zd),
 			lerpf(float(wz["floors_hi"][0]), float(wz["floors_hi"][1]), zd))
+	# Module 19 (b): the wet reflections ease from the OVERVIEW's to the DECISION's (`look.post_zoom`).
+	var pz: Dictionary = StreetRouteConfigData.shipped().look["post_zoom"]
+	for k: String in pz:
+		var a: Variant = pz[k][0]
+		var c: Variant = pz[k][1]
+		if a is Array:
+			var va: Vector4 = _uniforms({"v": a})["v"]
+			var vc: Vector4 = _uniforms({"v": c})["v"]
+			_post_cur[k] = va.lerp(vc, zd)
+		else:
+			_post_cur[k] = lerpf(float(a), float(c), zd)
 	# The value band holds on both framings: the exposure eases from the OVERVIEW solve to the DECISION solve (`look.exposure`).
 	var fk: Array = StreetRouteConfigData.shipped().look["frame"]
 	for rid: String in _room_mats:
