@@ -548,3 +548,9 @@ On main **c68fe831**, pushed. Gate19: 3819 tests, 0 failing, smoke 0, validate 0
 - **A-097 import cache:** test_rc_look_slots failed until the cached imports of the pilot glbs (`uplink_pads.glb-*`,
   `roof_props.glb-*` in `.godot/imported`) were deleted and re-imported, since the post-import stamp doesn't re-trigger an import.
   Any existing checkout needs that once. If you can, make the stamp script change force a reimport (e.g. bump the .import params).
+
+### B-079 · 2026-10-22 · re A-099 · MERGED: REST / WORKSHOP / CACHE nodes (505d4152) · FYI
+
+A-099 (art/look-nodes 3a13c63b) is on main **505d4152**, pushed, merged clean. Gate20: 3828 tests, 0 failing, smoke 0, validate 0.
+`tools/export_text.gd` was rerun: it adds Cache, Workshop, RestWindow and WorkshopWindow, and drops RestLeave, WorkshopBuy and
+WorkshopLeave (no longer referenced).
