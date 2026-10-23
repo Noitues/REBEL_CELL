@@ -311,3 +311,34 @@ art. Its three changes (a real trade-off after the reveal, damage that sticks, t
 screen) are estimated at 38–39.
 
 Review: `_reviews/REVIEW_LAB_L4.md`. Sheet: `_reviews/LAB_L4_vs_itb.png`.
+
+## L5 Godot lab (SKIP or JAM with Heat, re-drawn lines, one repair, breach risk; one fresh critic, calibrated)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 5 | 8 | **33** | 4 | 3 | 6 |
+
+**Same total as L4.** The L4 critic estimated 38–39 if its three changes landed. They landed in the rules (the response
+matters in 93% of raids; damage sticks; regret 10.3), and C rose to 8. But this critic still scores D 5: every spoof costs
+the same +2, so the screen reads "is any row better than HOLD?", and LOW intensity looks dominant. W fell 1 and V 1.
+
+**What it found:**
+- **A dead raid.** The breach is settled a raid before any warning, and the risk check only looks one raid ahead.
+- **One obvious answer per decision.** The responses all cost the same, and LOW intensity wins every between step.
+- **The no-words reads fail:** node value, what Heat does, and go dark versus damaged.
+
+**Plateau, six playable rounds:**
+
+| Round | Total |
+|---|---|
+| M10 | 31 |
+| L2 | 33 |
+| L3 | 32 |
+| L4 | 33 |
+| L5 | 33 |
+
+All of these are within the ±3 critic noise. Each round fixes the last critic's top findings, and a fresh critic finds
+the next "one obvious answer". The measured depth (regret 3.6 → 10.3) does not reach the D axis. A fully previewed,
+deterministic choice reads as solved however close the options are.
+
+Review: `_reviews/REVIEW_LAB_L5.md`. Sheet: `_reviews/LAB_L5_side_by_side.png`.
