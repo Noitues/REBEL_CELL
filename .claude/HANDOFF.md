@@ -5,7 +5,7 @@
 | Written | 2026-10-22, late evening |
 | Branch / commit | `art-pass` in the worktree `D:/rc_art/art-pass` (see `git log -1`). |
 | Main | `D:/Godot/rebel_cell` main @ 505d4152, which includes A-099. It is read-only for art-pass. |
-| State | **Paused.** The toolbox and Solace both finished, committed, wrote their handoffs and stopped. No agents are running. Waiting on build: A-098 and A-101 (READY), A-100 (ASK). |
+| State | **Paused.** The toolbox and Solace both finished, committed, wrote their handoffs and stopped. No agents are running. Build merged everything (B-080, main 17b4e750); nothing waits on build. |
 
 ## Role (keep these)
 - Art-pass is the **only** session the designer talks to for visual work. It:
@@ -30,20 +30,19 @@
   redesign has landed. No raid-zoom renders until then.
 
 ## Mailbox state
-- **Open READY entries:**
-  - A-098: car-light slot fix, art/look-toolbox-7 @ 3ad4043a. Not merged yet; no pixel change.
-  - A-099: nodes, merged as main 505d4152 (B-079) and pruned.
-  - A-101: toolbox module 19, art/look-toolbox-8 @ 13acc62b (code 9c8a2ee6). Merge after A-098. Sheets are in
-    `docs/concepts/look_parity/m19/`.
-- **Open ASK:** A-100, the garden lot at 48 x 42 (designer approved). Build was woken; its reply gates the garden implementation.
+- **Nothing open.** B-080 (main 17b4e750, gate22 green) merged A-098, A-101 and answered A-100. All three are pruned, and
+  "last read" is B-080. The m19 sheets stay in `docs/concepts/look_parity/m19/`.
+- **A-100 answer:** 48 x 42 BU fits (`exploit_building_lot_d_bu` 36 → 42). The key-lot footprint is one size for **all 15 key
+  buildings**, so every corp's key lots are now 48 x 42. Build the garden apron against 42. Check the other key buildings' looks
+  against the bigger lot when they come up for review.
 - **Next free number: A-102.**
 - Older ACK / FYI entries (A-044..A-068, A-080, A-083, A-085, A-088) remain. Prune them as build closes them.
 
 ## Sessions managed (all report to art-pass)
 | Session | Id | Folder / branch | State | Next |
 |---|---|---|---|---|
-| Look-toolbox library | local_59edc93f-f0e0-43fb-8a07-aa94f76898ce | D:/rc_art/godot_look_toolbox_5 (+ D:/rc_art/godot_look) / art/look-toolbox-8 @ 13acc62b | **Stopped.** Handoff: `D:/rc_art/godot_look_toolbox_5/.claude/HANDOFF_TOOLBOX.md` (13acc62b) | Module 18 (perf) after A-101 merges |
-| Solace visual list | local_92774ce2-f55e-46ef-9a1e-b7bf80d81f52 | D:/rc_art/godot_look_hqport, art-pass for sheets | **Stopped.** Handoff: `D:/rc_art/art-pass/.claude/HANDOFF_SOLACE.md` (090e83f6, plus art-pass's garden-pick update) | Garden B implementation after build answers A-100 |
+| Look-toolbox library | local_59edc93f-f0e0-43fb-8a07-aa94f76898ce | D:/rc_art/godot_look_toolbox_5 (+ D:/rc_art/godot_look) / art/look-toolbox-8 @ 13acc62b | **Stopped.** Handoff: `D:/rc_art/godot_look_toolbox_5/.claude/HANDOFF_TOOLBOX.md` (13acc62b) | Module 18 (perf); A-101 is merged |
+| Solace visual list | local_92774ce2-f55e-46ef-9a1e-b7bf80d81f52 | D:/rc_art/godot_look_hqport, art-pass for sheets | **Stopped.** Handoff: `D:/rc_art/art-pass/.claude/HANDOFF_SOLACE.md` (090e83f6, plus art-pass's garden-pick update) | Garden B implementation; A-100 is answered (lot 48 x 42), so it can start |
 | Toolbox module 13, vinyl (lab only) | local_fa015c16-d915-4677-8036-3b24f98c2145 | godot_look/.claude/worktrees/look-m13-vinyl-3bea20 | Done; landed in -8 | Archive on the designer's yes |
 | Toolbox module 14, CRT (lab only) | local_bb06fec7-aab4-425a-ac00-eb0946cab754 | .../look-m14-crt-8c2d79 | Done; landed in -8 | Archive on the designer's yes |
 | Toolbox module 16, binary bits (lab only) | local_59d9417f-9ef1-48aa-b05a-b7d5a22eee00 | .../look-m16-bits-6fad31 | Done; landed in -8 | Archive on the designer's yes |
@@ -93,7 +92,7 @@ The street matched the golden plate's camera, but lacked the plate's small brigh
   brief is `D:/rc_scratch/solace_v1/BRIEF_garden.md`.
 - **Designer's pick:** B "Culture stack" (stacked incubator trays, hex skin, mint agar at hue ~147, cryo-drum vault), **without the
   thin spires / masts around it**. The lot is 48 x 42 BU (A-100 ASK to build).
-- **Next:** the Godot implementation on a new art branch from the latest main, once build answers A-100. It must fix:
+- **Next:** the Godot implementation on a new art branch from the latest main, from main 17b4e750 or later (A-100 is answered: 48 x 42 fits). It must fix:
   - the hot-pink Bloom fill (it should be A Necrosis's plum body with a hot edge);
   - the AAA-2 clipping;
   - the owed hospital frame.
