@@ -136,3 +136,29 @@ income.
 - No one buys a ghost at 4.
 - NORMAL intensity is rarely the best choice.
 - EVADED is rare (2 of 60).
+
+## L5: SKIP or JAM with a Heat cost, re-drawn sealed lines, one repair, breach risk (`sweep_l5.py`, 20 legs)
+
+**The response after the reveal is now a decision.** On the real line, the options give different results in 93% of
+planned raids.
+- The planned line responds in 55% of raids: SKIP 0.42, JAM 0.13.
+- **Two tunings before the final run:**
+  - **JAM.** First tried as "the hunter runs its own line": it was never chosen, so it became "the hunter does not
+    run".
+  - **Spoof Heat cost.** At 4 the planned line held in 13 of 18 raids, so the cost became 2.
+
+**Damage sticks.** With one repair per step, the planned line ends a leg with 1.85 assets DOWN and 0.55 TAKEN.
+
+**Planning matters more.** Over greedy play: 10.3 (≥ 3 on 90% of legs). L4: 6.7; L3: 3.6.
+
+**Other numbers:**
+- Tiers over 60 raids: BATTERED 28, HOLDS 24, EVADED 6, DAMAGED 2.
+- Intensity mix: LOW 24, NORMAL 7, HOT 9.
+- Buys: 16 of 40 steps (decoy 10, dark 5, spoof 1, ghost 0).
+- Near-tied first-raid plans: 3.9.
+
+**Breaches:** careful play 0%, greedy 0%, careless play 40%.
+
+**Breach risk** (the fewest sealed lines that breach with the best levers) never changes with intensity in the golden
+lines. Careless legs that breach already show 3/3 after raid 2. The decision that loses the campaign is earlier: the
+levers spent in raids 1 and 2.
