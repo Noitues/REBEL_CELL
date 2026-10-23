@@ -121,14 +121,16 @@ func test_the_street_wash_is_stronger_on_the_overview() -> void:
 
 
 ## Module 19 (b): the street's wet reflections (city_post's aaa_wr_* uniforms, street only through look.post_zoom; city_post's
-## code and its shipped numbers are unchanged) are stronger and longer on the OVERVIEW than on the DECISION.
+## code and its shipped numbers are unchanged): sparse vertical streaks, longer on the OVERVIEW, no mirror slabs.
 func test_the_street_wet_reflections_ease_with_the_zoom() -> void:
 	var pz: Dictionary = StreetRouteConfigData.shipped().look["post_zoom"]
 	var code := FileAccess.get_file_as_string("res://shaders/city/city_post.gdshader")
 	for k: String in pz:
 		assert_true(code.contains("uniform vec4 %s" % k), "%s is a city_post uniform" % k)
 		assert_eq((pz[k] as Array).size(), 2, "%s: [OVERVIEW, DECISION]" % k)
-	assert_gt(float(pz["aaa_wr_march"][0][3]), float(pz["aaa_wr_march"][1][3]), "stronger on the OVERVIEW")
-	assert_gt(float(pz["aaa_wr_shape"][0][3]), float(pz["aaa_wr_shape"][1][3]), "longer smears on the OVERVIEW")
+	assert_gt(float(pz["aaa_wr_shape"][0][3]), float(pz["aaa_wr_shape"][1][3]), "longer vertical streaks on the OVERVIEW")
+	assert_lt(float(pz["aaa_wr_shape"][0][2]), float(pz["aaa_wr_shape"][1][2]), "they fade slower on the OVERVIEW")
+	for i in 2:
+		assert_lte(float(pz["aaa_wr_march"][i][3]), 1.0, "no mirror slabs: the smear strength stays low (art-pass)")
 	var wr: Dictionary = CityShaderConfigData.shipped().aaa["wet_refl"]
 	assert_eq(wr["march"], [0.004, 1.12, 0.7, 0.4], "the shipped city_post numbers (every other view) are unchanged")

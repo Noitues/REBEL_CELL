@@ -9974,3 +9974,13 @@ Look only (AUDIT.md: holo, score 20; the audit's §1.2 media fail: THREAT INTEL 
 - **What.** The street's traffic streak lanes (`city_shaders.tres` streak, built only by StreetDressing) at emit 6.0 (was 2.5), floor 0.3 (0.15), power 1.2 (1.6), width 0.6 BU (0.2): thicker, brighter trails like the plate's.
 - **Numbers (floor over_085, plate | before | now; seed 1 / seed 2).** Decision .012 | .0021 / .0006 | .0161 / .0139 (at the plate); overview .0145 | .0002 / .0005 | .0013 / .0035.
 - **Proof.** Frozen 177cf088 vs this: na23 beauty / ui only; id, depth, A2 look 0 / 1, hq_run 5 states, review_pack 6 screens: 23 frames max 0. Tests: test_city_shaders, test_city_shaders_render, test_na24_dressing, test_aaa_street_look, test_rc_look_street.
+
+## 2026-10-22 - LOOK-TOOLBOX module 19 (b) fix: the overview floor is dark asphalt with streaks (art-pass: z2 not approved)
+
+- **What.** `look.post_zoom` y2 replaces z2: march [.004, 1.12, .85, .5] / [.004, 1.12, .7, .5], shape [.03, .3, 2.0, 2.0] / [.03, .3, 2.5, .8], rough [.03, .3, .3, 1] / [.03, .3, .4, 1], bokeh [30, .9, 2.0, 1] / [40, .9, .8, 2] (OVERVIEW / DECISION). Mirror strength (march.w) is at most 1.0 at both zooms: no milky mirror slabs; the overview's reflections are narrow, long vertical streaks plus bokeh, and under_010 stays dark.
+- **Numbers (floor band, seed 1 / seed 2).** Overview median .112 / .062, under_010 .41 / .68, R-DET-2 85 / 172. Decision median .096 / .117 (plate .110; z2 was .103 / .138).
+- **Proof.** Frozen 6b43a352 vs this: na23 beauty / ui only; id, depth, A2 look 0 / 1, hq_run 5 states, review_pack 6 screens: 23 frames max 0. Tests: test_rc_look_street (post test: the overview's streaks are longer and slower to fade, march.w <= 1.0), test_street_override_hold.
+
+## 2026-10-22 - LOOK-TOOLBOX module 19 (e) closed as a measured finding (art-pass: skip)
+
+- **Found.** The street frontage's signs and edge trims come from the r2 plan (dressing.signs, silhouette trims), not city_building. Denser signs and trims (lab values e1 / e2) gain only 2-8 % R-DET-2 on the overview facades (plate 1421, now about 233 / 411), so the detail gap is not closed by density. Not shipped; no config changed. Also logged in art-pass DIRECTION_REVIEW. Module 19 closes with (b).
