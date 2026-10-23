@@ -88,6 +88,27 @@ func test_a_thousand_synthetic_cities_place_every_key_on_its_own_lot() -> void:
 	assert_true(keys >= 14250, "95 percent of the 15,000 keys are placed (%d)" % keys)
 
 
+func test_a100_lot_is_48_by_42_with_clearance_across_synthetic_cities() -> void:
+	assert_eq(_cfg.exploit_building_lot_w_bu, 48.0)
+	assert_eq(_cfg.exploit_building_lot_d_bu, 42.0, "A-100: the plaza apron makes the lot 42 BU deep")
+	assert_eq(_cfg.exploit_building_clearance_bu, 8.0)
+	var want := Vector2(_cfg.exploit_building_lot_w_bu, _cfg.exploit_building_lot_d_bu) / LOT_BU
+	var clear := _cfg.exploit_building_clearance_bu / LOT_BU
+	var bad := PackedStringArray()
+	for s in 300:
+		var p := _place(_city(s))
+		var fps: Array[Rect2] = []
+		for key: Dictionary in p["keys"]:
+			var fp: Rect2 = key["footprint"]
+			if fp.size != want:
+				bad.append("seed %d: %s footprint %s" % [s, key["bid"], fp.size])
+			for o in fps:
+				if o.intersects(fp.grow(clear)):
+					bad.append("seed %d: %s within clearance of another key" % [s, key["bid"]])
+			fps.append(fp)
+	assert_eq(bad, PackedStringArray(), "every placed key is 48 x 42 BU, clear of the others by the clearance")
+
+
 func test_three_distinct_lots_per_corporation_and_kinds() -> void:
 	var c := _city(3)
 	var p := _place(c)

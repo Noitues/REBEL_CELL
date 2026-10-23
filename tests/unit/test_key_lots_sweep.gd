@@ -24,6 +24,16 @@ func test_two_hundred_real_cities() -> void:
 		var lots := CityA2Builder.lots_for(plan, CityPlan.plan_config(), NeonCity.HQ_LOTS, NeonCity.FIST_TERRITORY, 1.0)
 		for e in KeyLots.validate(p, lots, plan.hq_rects(NeonCity.HQ_LOTS), cfg, LOT_BU):
 			bad.append("seed %d: %s" % [s, e])
+		# A-100: the garden lot is 48 x 42 BU (7 lots deep); every key must be placed at the configured size.
+		var want := Vector2(cfg.exploit_building_lot_w_bu, cfg.exploit_building_lot_d_bu) / LOT_BU
+		var garden := 0
+		for key: Dictionary in p["keys"]:
+			if (key["footprint"] as Rect2).size != want:
+				bad.append("seed %d: %s footprint %s is not the configured %s lots" % [s, key["bid"], (key["footprint"] as Rect2).size, want])
+			if key["building"] == &"culture_garden":
+				garden += 1
+		if garden != 1:
+			bad.append("seed %d: %d culture gardens placed (want 1)" % [s, garden])
 		if (p["keys"] as Array).size() != corps.size() * 3:
 			bad.append("seed %d: %d keys" % [s, (p["keys"] as Array).size()])
 		CityPlan.forget_all()

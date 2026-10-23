@@ -311,7 +311,7 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## The footprint (BU, width along lot i, depth along lot j) and height class of an exploit building, and the clearance
 ## round it (BU, the border-street width) that the run's start stands outside of. Art-pass may overrule.
 @export var exploit_building_lot_w_bu: float = 48.0
-@export var exploit_building_lot_d_bu: float = 36.0
+@export var exploit_building_lot_d_bu: float = 42.0
 @export var exploit_building_height_class: int = 2
 @export var exploit_building_clearance_bu: float = 8.0
 ## How far (lots) beyond the clearance the border street's start lot is looked for.
