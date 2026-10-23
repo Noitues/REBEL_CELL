@@ -1,10 +1,119 @@
-# Sweep-raid lab, round 6 (L6: the L5 rules, a readability pass, no dead raid)
+# Sweep-raid lab, round 7 (L7: the target frames' look and the suspense motion; the L5 rules, the L6 readability pass)
 
 A playable Godot prototype of the round-5 sweep raid, so a critic can judge suspense, decision depth and readability in motion
 with every number coming from one rules engine. A design tool, not part of the game: nothing outside `tools/raid_lab_m10/` is
-touched. Brief: `docs/handoff/raid_lab_l5/BRIEF.md`. Rules source of truth: `tools/raid_concepts/sweep_l5.py` (python; it builds
+touched. Briefs: `docs/handoff/raid_lab_l5/BRIEF.md` (rules), `docs/handoff/raid_lab_l6/BRIEF.md` (readability),
+`docs/handoff/raid_lab_l7/BRIEF.md` (look and motion). Rules source of truth: `tools/raid_concepts/sweep_l5.py` (python; it builds
 on `sweep_l4.py`, `sweep_l3.py` and `sweep_l2.py`). The folder name `raid_lab_m10` and the scene `raid_lab_m10.tscn` are kept as
 the entry point.
+
+## Round 7 (L7): what changed
+
+**No rule changed.** `l5_rules.gd` and `data/l5_golden.json` are untouched and `parity_check.gd` passes unchanged (2433 checks).
+The designer ruled on 2026-10-22 that the raid lab does its own visual and motion pass (no art-pass routing). Target: the three
+Blender frames in `docs/design/raid_concepts/raid_target/` (README there: palette, board, camera). Motion follows
+`docs/STYLE_GUIDE.md` section 5.3: raids play from the resolver's events and are never recomputed.
+
+### The look
+
+- **A 3D board behind the 2D overlay.** `l7_board.gd` (`L7Board`) builds the frames' set in a `SubViewport` the size of the screen:
+  the slab with its amber rim and faint cyan grid, the copper links, a hex pedestal and tower per asset (gold caps and slits; DOWN
+  grey and scattered; TAKEN cobalt on corp ground; go dark a black dome; the decoy a gold octahedron; a ghost a gold wire holo
+  with a dashed floor ring; HOME's three-tier tower), cobalt-eyed pylons where lines start, the wireframe skyline, the data motes,
+  bloom. It holds no rule and no state: the view hands it the cell statuses every frame (`apply`) and it rebuilds only the cells
+  whose look changed. Geometry, palette and materials are `tools/raid_concepts/target/raid_scene.py`'s.
+- **The same camera for the overlay.** `l7_cam.gd` (`L7Cam`) is the Blender camera (116 mm lens, the frames' position) as a pure
+  pinhole projection at 0.54 of the frame, shifted so the board sits left of the side panel. Beams, rings, chips and pills are
+  drawn in 2D at projected positions (`nx(c)` the beam plane over a cell, `chip_at(c)` the chip floating over the tower), so they
+  land on the 3D towers and stay deterministic and headless-testable. The L6 lanes (`LANE` px apart, centered) are unchanged.
+- **Palette and type** (`l5_glyphs.gd`): threats cobalt `#3D6BFF` with a hot `#9FC0FF` core, the Cell and HOME gold `#FFD24D` and
+  amber `#FFB020`, Heat orange `#FF6A1A`, loss red `#FF3D4D`, the spoof and what holds in the Cell's acid `#D4FF00` (it replaces the
+  old teal everywhere: SKIP and JAM marks, the lime chevron, EVADED). Anton for numbers, stamps and headlines, Share Tech Mono for
+  labels, IBM Plex Sans Condensed for body text, chosen by `font_for` so every measure and every draw agree.
+- **Restyled, not removed** (every L6 no-words glyph is still there): value pips (under the number in the chip), the dark eye and
+  its struck income pip, the Heat meter's notches with their beam glyphs (the meter is the frames' orange bar; the glyph pops and
+  pulses when a line is crossed), the lanes, the sealed-outcome pills, the kit strip, the DECIDED banner, the BREACH warning. Panels
+  are dark slabs with a hairline edge and a soft glow in the edge colour (amber the Cell's, cobalt threats, acid the spoof, red loss);
+  buttons are Anton on gold. New from the frames: word tags over placed levers (GHOST, DECOY, DARK) and over the hunter's column,
+  a PLACED chip on a lever card, SKIP TARGET and JAM TARGET tags, the big BEAM 2 UNSEALED headline.
+- **Where the frames and the rules disagree, the rules win.** The impact stamp reads the rules' tier word (CELL BATTERED, CELL
+  DAMAGED, BREACHED ... with `2 DOWN  HOME -1` under it), never the frame's "HOME -1 / HOLDS" (a home hit is DAMAGED). The frames
+  omit HOLD; the response screen keeps HOLD beside every SKIP and JAM.
+
+### The motion (all timings in `l7_config.gd`, `L7Config`)
+
+| # | Beat | What plays | Config |
+|---|------|-----------|--------|
+| 1 | Launch | a beam glows at its pylon (lead), then its head sweeps cell by cell along its fixed lane; every touched cell flashes (a hex ring spreads on the floor, the chip rings out, the tower lights); a decoy pulls the beam aside with three arcs and stops it | `BEAM_LEAD`, `STEP_T`, `FLASH_T`, `DECOY_PULL_T` |
+| 2 | Unseal | the three sealed lines shimmer; two collapse back to their pylons and are struck out with a red X; the real line ignites end to end; the lit line then holds before it fires | `UNSEAL_T`, `UNSEAL_SHIMMER_END`, `UNSEAL_COLLAPSE_END`, `FIRE_HOLD` |
+| 3 | Spoof window | every SKIP target pulses in lime brackets, JAM pulses on the hunter's column; a countdown ring and a draining bar run in the response box and never force a pick (the lab is turn-based); the pick draws the skipped node's bypass arc, or strikes the hunter's turn out with a red X | `DECIDE_RING_T`, `PICK_FX_T`, `PULSE_T` |
+| 4 | Hunter | the turn arrow draws from the first touch, then the beam runs down the column | `TURN_T`, `HUNTER_LEAD` |
+| 5 | Impact | DOWN: the wrench drops onto the node with a bounce and the node shakes; TAKEN: the ground flips (the tower squashes through zero and comes back in corp cobalt, the flag pops in); HOME: the tower and ring flash red, a red -1 floats up, the HUD pip goes at once and a white lag bar drains behind it | `WRENCH_T`, `SHAKE_T`, `FLIP_T`, `HOME_LAG_DELAY`, `HOME_LAG_T`, `HOME_NUM_T` |
+| 6 | Stamp | the tier stamp drops in large and slams onto the board with echo slabs and speed lines, and stays into the aftermath; on the leg record the verdict counts up (CELL KEPT, HOME, the score bars, the difference) | `STAMP_DELAY`, `STAMP_T`, `END_T`, `COUNT_UP_T` |
+| 7 | Heat | the meter eases to the new Heat; every line crossed pulses (a ring, the notch glyph popping); on the between screen the NEXT RAID strip shows one chip per beam as the meter fills, the new beam's chip popping in | `HEAT_EASE_T`, `HEAT_PULSE_T` |
+| 8 | Settled breach | the L6 fast playout under THE CELL FALLS, HOME draining to 0 with its lag bar, the BREACHED stamp, then the BREACHED card slamming in over the dead board | `FAST_*`, `BREACH_CARD_T` |
+
+Controls: speed 1x / 2x / 4x (keys 1 2 4 or the buttons; it scales the whole raid layer), SKIP (S), and **INSTANT** (key I or the
+button; `--instant` on the command line): the playout runs to the next decision or to its end in one frame with every effect drawn
+settled, for captures. The same events happen in the same order either way.
+
+How it is built (STYLE_GUIDE 5.3): `L5Play` still sequences the beats from `L5Rules.resolve`; `L7Fx` (`l7_fx.gd`) reads the new
+events after every advance into an ordered cue list (launch, touch, decoy pull, unseal, spoof window, pick, hunter turn, impact,
+stamp); the view draws every effect from the events' own times and those cues. Nothing is recomputed for the show.
+
+### Checks
+
+`parity_check.gd`: unchanged, PASS (log `D:/rc_tmp/raid_design_lab/lab_l7/parity_final.log`). `flow_check.gd`: all L6 checks, plus
+(`_motion` and the per-raid ones): **the event order of the animation equals the resolver's touch order** (every raid of the planned
+and naive lines of all golden legs, and the scene runs), **instant mode yields the same final state, ledger and cues as animated
+mode** (legs 0 and 3 planned, 0 and 8 naive, and the settled breach), instant needs no pacing, 1x / 2x / 4x finish a raid in
+about 1 : 1/2 : 1/4 of the frames, key I and the button toggle instant, the camera (the aim point lands, chip above beam above
+floor, columns left to right, the whole slab left of the panel and under the HUD), and the timings are positive and ordered.
+
+### Captures (`capture_l7.py`, `compare_sheet.py`)
+
+`python tools/raid_lab_m10/capture_l7.py` runs, one at a time through `tools/run_windowed.py`: the four still sets, the two Movie
+Maker clips and the comparison sheet. Output (this round, all under `D:/rc_tmp/raid_design_lab/lab_l7/`):
+
+- `shots/` leg 0 planned line, `shots_breach/` leg 0 naive line (the settled breach and the BREACHED card), `shots_scrambled/`
+  leg 5 planned with `--scramble`, `shots_jam/` leg 3 planned (raid 1 jams the hunter). New frames per raid, by label:
+  `launch_b1`, `beam_*`, `impact_down` / `impact_taken` / `impact_home` / `impact_decoy`, `unseal_shimmer`, `unseal_collapse`,
+  `unseal_ignite`, `decision`, `after_decision`, `hunter_turn`, `stamp_slam`, `after_open` / `after_heat`, `between_fill_a` /
+  `between_fill_b` (the meter filling), `fall_home_drain`.
+- `clips/planned_raid.avi` and `clips/breach_raid.avi` (Movie Maker, 1280x720, 30 fps), key frames in `clips/frames/planned_raid/`
+  and `clips/frames/breach_raid/` (8 each, saved from the very frames the clip records).
+- `comparison_sheet.png`: each target frame next to its lab still.
+
+Which frames show which beat (stills in `shots/`, raid 1 unless noted; clip key frames in `clips/frames/planned_raid/` (P) and
+`clips/frames/breach_raid/` (B)):
+
+| Beat | Stills | Clip frames |
+|---|---|---|
+| 1 Launch (cell by cell, flash, decoy pull) | `04_r1_launch_b1`, `05_r1_impact_down`, `06_r1_beam_b1`, `07_r1_impact_decoy` | P `01_launch_flash`, P `02_impact_down` |
+| 2 Unseal (shimmer, two collapse, real ignites) | `08_r1_unseal_shimmer`, `09_r1_unseal_collapse`, `10_r1_unseal_ignite` | P `03_unseal_collapse`, P `04_unseal_ignite` |
+| 3 Spoof window and pick | `11_r1_decision`, `12_r1_after_decision` (SKIP bypass arc); JAM struck out in `shots_jam/` `11_r1_decision` to `13_r1_beam_b2` | P `05_spoof_window` |
+| 4 Hunter | `14_r1_hunter_turn`, `15_r1_beam_hunter` | |
+| 5 Impact (wrench, flip, HOME drain) | `06_r1_impact_down`, `30_r2_impact_taken` (flip), HOME in `shots_breach/` `13_r1_impact_home` and `34_r2_impact_home` | P `02_impact_down`, B `02_home_hit`, B `03_home_drain` |
+| 6 Stamp, count-up | `16_r1_stamp_slam`, `19_r1_aftermath`; `72_record` (settled count) | P `06_stamp`, B `04_stamp`, B `07_record_count` |
+| 7 Heat pulse, next-raid beams | `17_r1_after_open`, `18_r1_after_heat`, `20_r1_between_fill_a` / `21_r1_between_fill_b` | P `07_between_fill` |
+| 8 Settled breach | `shots_breach/` `51_r2_between_picked` (DECIDED), `52_r3_fall_start`, `53_r3_fall_home_breached`, `54_r3_fall_home_drain`, `55_r3_breach` | B `00_decided` to `06_breached_card` |
+
+New flags: `--instant`, `--speed=0|1|2`, `--maxshots=N`, `--clip=planned|breach` with `--clipdir=<dir>` (a scripted real-time run for
+Movie Maker: `... res://tools/raid_lab_m10/raid_lab_m10.tscn --write-movie <file>.avi --fixed-fps 30 -- --clip=planned --clipdir=<dir>`).
+
+### L7 known gaps
+
+- The overlay is 2D over the 3D board: beams and rings are light ribbons drawn with layered alpha, not 3D light, so the board is not
+  lit by the beams (the towers light only through the per-cell flash light). The frames' translucent blue beam volumes are a flat
+  ribbon with a floor wash here.
+- The board is drawn at 0.54 of the target frame so that it fits left of the 460 px side panel in the lab's 1280x720 window; the
+  towers and chips read smaller than in the frames. The 3D set (pylons, skyline) is dressing: it never changes the rules' picture.
+- Pylons are lit by where a line starts (rows from left or right, columns from the top); a column that starts at the bottom has no pylon.
+- The fast breach has no head travel (L6: one 0.5 s beat per beam, all steps at once), so its motion is the flashes, the HOME
+  drain and the card, not a sweep.
+- In a capture the effects of one frame are paced by the capture script (a fixed step of 0.05 s, settled before each screen shot);
+  the clips are the real-time motion.
+- Text scale 1.0, mouse and keyboard only, as before.
 
 ## Round 6 (L6): what changed
 
@@ -101,7 +210,7 @@ New in L5:
 
 Intensities: LOW +6 Heat, income x0.5; NORMAL +12, x1; HOT +18, x1.5 (income = sum of v // 3 over OK, non-dark assets, rounded
 down). **Leg score** = bank + assets kept - HOME lost x 8 - Heat carried; a breach has no leg score (the campaign is lost).
-**Tiers**: EVADED teal, HOLDS neutral, BATTERED amber, DAMAGED orange, BREACHED red.
+**Tiers**: EVADED lime (acid), HOLDS neutral, BATTERED amber, DAMAGED orange, BREACHED red.
 
 ## How to play
 
@@ -132,7 +241,7 @@ candidates (a different shape on each) and learns which was real only at the rev
 6. **Between raids** (one screen): 1 **REPAIRS, 1 crew: pick one** (click a DOWN asset; a second click moves the pick, "N stay
    DOWN" is said); 2 one shop buy; 3 run intensity. **Every intensity card shows the next raid's breach risk**, live as the repair
    and the buy change: red "BREACH on k/3 lines" with "whatever you pick" (k = 3, same on all three cards) or "even with the best
-   plan"; amber "safe with levers" (a plan is needed: "no lever: n/3 breach"); teal "safe". The ledger shows Schematics next to Heat.
+   plan"; amber "safe with levers" (a plan is needed: "no lever: n/3 breach"); lime "safe". The ledger shows Schematics next to Heat.
 7. **Leg record.** Raid by raid: tier, Heat, beams, a mini map (ring = changed in this raid), what changed, kit used and the
    spoof kind with its Heat ("JAM  Heat +2"), the sealed line's shape, assets kept, the between step, and **the network after the
    raid (OK / DOWN / TAKEN)**; below the cards the score formula and **LEG END: n OK, n DOWN, n TAKEN**.
@@ -150,7 +259,7 @@ same length (digits, glyphs and case stay), for the no-words test.
 | `l5_data.gd` | loads `data/l5_golden.json` (`tools/raid_concepts/l5_golden.py`): the legs with each raid's `real` and `shapes`, spoof `null` / `[x, y]` / `"JAM"`, `risk` per intensity on every between step |
 | `l5_model.gd`, `l5_play.gd` | lab state (plan, undo, kit tray, forecast, worst case, breach warning, between picks with one repair slot, DOWN age, cached `risk_for`) and the playout state machine with the response options; they only call the rules |
 
-The view is `raid_lab_m10.gd` (placeholder `_draw()` visuals; glyphs and the scramble in `l5_glyphs.gd`). Deterministic
+The view is `raid_lab_m10.gd` (the 2D overlay: `_draw()` over the 3D board of `l7_board.gd`; projection `l7_cam.gd`, effect helpers `l7_draw.gd`, cues `l7_fx.gd`, timings `l7_config.gd`; glyphs, fonts and the scramble in `l5_glyphs.gd`). Deterministic
 `RefCounted` rules, no randomness anywhere in the lab.
 
 ## Parity status: PASS
@@ -161,10 +270,10 @@ raid, the between step, state after, score, the lab's naive policy reproducing t
 intensity at every between step (breach_risk recomputed from the between state)**; each raid's `real` and `shapes`; the re-drawn
 sealed lines (distinct, non-empty, pairwise different asset / HOME hit sets) in all 18 raids; all 200 random single-raid
 resolutions (21 with JAM) and all 200 random between steps, with the 40 random `risk` values; every golden allocation passes the
-lab's lever validation. Result (L6, unchanged): 2433 checks, 148 breach_risk values, 0 failed, `PARITY PASS`, exit 0. Log:
-`D:/rc_tmp/raid_design_lab/lab_l6/parity.log`.
+lab's lever validation. Result (L7, unchanged from L6): 2433 checks, 148 breach_risk values, 0 failed, `PARITY PASS`, exit 0. Log:
+`D:/rc_tmp/raid_design_lab/lab_l7/parity_final.log`.
 
-`flow_check.gd`: PASS, 734 checks (log `D:/rc_tmp/raid_design_lab/lab_l6/flow.log`; the L6 checks are listed above): kit and caps, undo, heat bands, the
+`flow_check.gd`: PASS, 904 checks (log `D:/rc_tmp/raid_design_lab/lab_l7/flow_final.log`; the L6 and L7 checks are listed above; L6 had 734): kit and caps, undo, heat bands, the
 forecast (JAM among the responses that save), the response rules (HOLD +0 Heat, SKIP and JAM +2 and one spoof, JAM removes exactly
 the hunter's touches and beam), **the decision screen's forecast equals the result for every option** (a fresh playout of each
 option gives the same touches, state, Heat after, summary, Heat-line crossings, and only JAM drops the hunter), the "no spoof
@@ -213,5 +322,5 @@ L6 gaps:
 - Three known beams (Heat 75 and up) still crowd the grid: badges are nudged apart but the hunter's `3` badge can sit on a node
   glyph, and the decision-row preview of a column shares that crowding. Heat is never capped; the meter is drawn to 100.
 - The "down N raids" label sits top-left of the node; on a crowded grid it can overlap a start badge of a known beam.
-- Placeholder vector visuals, no animation polish beyond pulses and beam heads, no sound, no save, no text scale or gamepad (out of
+- Vector glyphs (no art-pass assets), no sound, no save, no text scale or gamepad (out of
   scope).

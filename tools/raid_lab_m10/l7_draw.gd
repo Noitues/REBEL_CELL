@@ -18,6 +18,11 @@ static func beam(ci: CanvasItem, path: PackedVector2Array, col: Color, w: float,
 	ci.draw_polyline(path, Color(col.r, col.g, col.b, 0.05 * glow), w * 8.0, true)
 	ci.draw_polyline(path, Color(col.r, col.g, col.b, 0.12 * glow), w * 4.2, true)
 	ci.draw_polyline(path, Color(col.r, col.g, col.b, 0.3 * glow), w * 2.3, true)
+	# The slab's top face: the same ribbon lifted a little, so the light reads as a volume, not a line on the floor.
+	var top := PackedVector2Array()
+	for pt in path:
+		top.append(pt + Vector2(0.0, -w * 0.85))
+	ci.draw_polyline(top, Color(col.r, col.g, col.b, 0.17 * glow), w * 1.6, true)
 	ci.draw_polyline(path, col, w * 1.2, true)
 	var hot := Color(G.THREAT_HOT.r, G.THREAT_HOT.g, G.THREAT_HOT.b, minf(1.0, 0.5 + 0.4 * glow))
 	ci.draw_polyline(path, hot, maxf(1.5, w * 0.24), true)

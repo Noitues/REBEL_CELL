@@ -265,10 +265,10 @@ func _build() -> void:
 	env.ambient_light_energy = 0.55
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.glow_enabled = true
-	env.glow_intensity = 0.9
+	env.glow_intensity = 0.8
 	env.glow_strength = 1.1
 	env.glow_bloom = 0.08
-	env.glow_hdr_threshold = 0.85
+	env.glow_hdr_threshold = 0.95
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
 	var we := WorldEnvironment.new()
 	we.environment = env
@@ -352,7 +352,7 @@ func _build_floor() -> void:
 	grid_m.shader = gs
 	grid_m.set_shader_parameter("spacing", 1.0)
 	grid_m.set_shader_parameter("width", 0.022)
-	grid_m.set_shader_parameter("energy", 0.11)
+	grid_m.set_shader_parameter("energy", 0.085)
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(x1 - x0, y1 - y0)
 	_inst(_static_root, pm, grid_m, Vector3((x0 + x1) * 0.5, (y0 + y1) * 0.5, 0.012))
@@ -425,8 +425,10 @@ func _build_pylons() -> void:
 			face = Vector3(1.6, 1.1, 2.6)
 		_box(root, Vector3(0, 0, 1.3), face, body)
 		_box(root, Vector3(0, 0, 2.9), Vector3(face.x * 0.64, face.y * 0.7, 0.5), body)
-		var eye := _box(root, Vector3(0, 0, 2.9), Vector3(face.x * 0.7, face.y * 0.7, 0.24), _emit(COBALT, 0.9))
-		_pylon_eye[k] = eye
+		var eyes: Array = []
+		eyes.append(_box(root, Vector3(0, -face.y * 0.36, 2.9), Vector3(face.x * 0.6, 0.06, 0.2), _emit(COBALT, 0.9)))
+		eyes.append(_box(root, Vector3(0, -face.y * 0.5 - 0.02, 1.4), Vector3(face.x * 0.82, 0.05, 0.07), _emit(COBALT, 0.9)))
+		_pylon_eye[k] = eyes
 		_pylon_lit[k] = false
 
 
@@ -436,7 +438,8 @@ func light_pylons(keys: Array) -> void:
 		var on: bool = keys.has(k)
 		if _pylon_lit[k] != on:
 			_pylon_lit[k] = on
-			(_pylon_eye[k] as MeshInstance3D).material_override = _emit(COBALT_HOT if on else COBALT, 4.5 if on else 0.9)
+			for eye: MeshInstance3D in (_pylon_eye[k] as Array):
+				eye.material_override = _emit(COBALT_HOT if on else COBALT, 4.0 if on else 0.9)
 
 
 func _build_motes() -> void:
@@ -540,13 +543,13 @@ func _rebuild_cell(c: Vector2i, kind: String, n: int, hit: bool) -> void:
 		var rm := StandardMaterial3D.new()
 		rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		var hc: Color = RED if hit else GOLD
-		rm.albedo_color = Color(hc.r * 3.8 * 0.55, hc.g * 3.8 * 0.55, hc.b * 3.8 * 0.55)
+		rm.albedo_color = Color(hc.r * 2.4 * 0.55, hc.g * 2.4 * 0.55, hc.b * 2.4 * 0.55)
 		rm.set_meta("col", hc)
-		rm.set_meta("base", 3.8)
+		rm.set_meta("base", 2.4)
 		_ring(root, Vector3(0, 0, 0.3), 1.72, 1.52, 6, rm, deg_to_rad(30))
 		_cell_ring[c] = rm
 		var body := _solid(Color8(58, 42, 30), 0.35, 0.6)
-		var win := _emit(Color8(255, 176, 160) if hit else Color8(255, 226, 168), 4.5 if hit else 2.6)
+		var win := _emit(Color8(255, 176, 160) if hit else Color8(255, 226, 168), 3.2 if hit else 1.5)
 		for i in range(3):
 			var z := 0.65 + i * 0.8
 			var s := 1.35 - i * 0.12
@@ -556,7 +559,7 @@ func _rebuild_cell(c: Vector2i, kind: String, n: int, hit: bool) -> void:
 				_box(root, Vector3(s * 0.5 + 0.005, 0, z - 0.22 + k * 0.22), Vector3(0.02, s * 0.78, 0.06), win)
 		return
 	if kind.begins_with("decoy"):
-		_pedestal(root, GOLD, 3.0, 0.9, c)
+		_pedestal(root, GOLD, 2.2, 0.9, c)
 		if kind == "decoy":
 			var dm := StandardMaterial3D.new()
 			dm.albedo_color = Color8(255, 192, 64)
@@ -566,7 +569,7 @@ func _rebuild_cell(c: Vector2i, kind: String, n: int, hit: bool) -> void:
 			dm.emission = Color8(255, 154, 16)
 			dm.emission_energy_multiplier = 1.1
 			_octa(root, Vector3(0, 0, 1.45), 0.85, 1.5, dm)
-			_ring(root, Vector3(0, 0, 0.05), 1.55, 1.42, 48, _emit(GOLD, 3.0))
+			_ring(root, Vector3(0, 0, 0.05), 1.55, 1.42, 48, _emit(GOLD, 2.0))
 		else:
 			var rr := RandomNumberGenerator.new()
 			rr.seed = c.x * 31 + c.y * 7
@@ -593,14 +596,14 @@ func _rebuild_cell(c: Vector2i, kind: String, n: int, hit: bool) -> void:
 			var a0: float = k * TAU / 14.0
 			var a1: float = a0 + 0.26 * TAU / 14.0 * 2.2
 			dash.append([Vector2(1.3 * cos(a0), 1.3 * sin(a0)), Vector2(1.3 * cos(a1), 1.3 * sin(a1))])
-		_ribbons(root, dash, 0.1, _emit(GOLD, 3.2), 0.05)
+		_ribbons(root, dash, 0.1, _emit(GOLD, 2.0), 0.05)
 		return
 	# stacks: ok / down / taken
 	var st := kind.rstrip("0123456789")
 	var down := st == "down"
 	var taken := st == "taken"
 	var ring_col := DEAD_RING if down else (COBALT if taken else AMBER)
-	_pedestal(root, ring_col, 1.0 if down else 3.2, 1.05, c)
+	_pedestal(root, ring_col, 0.9 if down else 2.0, 1.05, c)
 	if down:
 		var rr2 := RandomNumberGenerator.new()
 		rr2.seed = c.x * 31 + c.y * 7
@@ -608,8 +611,8 @@ func _rebuild_cell(c: Vector2i, kind: String, n: int, hit: bool) -> void:
 			_box(root, Vector3(rr2.randf_range(-0.55, 0.55), rr2.randf_range(-0.55, 0.55), 0.34 + (i % 2) * 0.1), Vector3(0.7, 0.7, 0.26), _solid(DEAD, 0.6, 0.3), rr2.randf_range(0, 3.1))
 		return
 	var body_col := Color8(14, 20, 52) if taken else WARM_METAL
-	var glow := _emit(COBALT_HOT if taken else AMBER, 2.6)
-	var cap := _emit(COBALT if taken else GOLD, 2.2)
+	var glow := _emit(COBALT_HOT if taken else Color8(255, 214, 120), 2.6)
+	var cap := _emit(COBALT if taken else Color8(255, 226, 120), 2.1)
 	var body := _solid(body_col, 0.38, 0.55)
 	for i in range(n):
 		var z := 0.5 + i * 0.5

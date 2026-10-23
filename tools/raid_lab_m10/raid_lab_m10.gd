@@ -1312,6 +1312,11 @@ func _hunter_col(x: int, col: Color, w: float, badge_s: String, dash: Vector2, k
 		G.cand_shape(self, b + Vector2(0, 18), shape_i, 7.0, col, G.BG, 2.0)
 	if badge_s != "":
 		G.badge(self, _mid(g), badge_s)
+		# The word the frames put at the column's end (the hunter's down chevron, then HUNTER).
+		var tr := Rect2(b.x - 36.0, b.y + 10.0, 84.0, 19.0)
+		G.panel(self, tr, G.THREAT, Color(0.02, 0.03, 0.09, 0.95), 1.0)
+		G.chevron_down(self, Vector2(tr.position.x + 11.0, tr.position.y + 9.5), 4.0, G.THREAT_LIGHT, 2.0)
+		G.text(self, Vector2(tr.position.x + 22.0, tr.position.y + 3.0), "HUNTER", 12, G.THREAT_LIGHT)
 
 
 ## Down chevrons between the rows of a hunter column, up to the path position u.
@@ -1421,6 +1426,10 @@ func _draw_plan() -> void:
 	_draw_hunter_plan(fc)
 	_draw_net(true)	## the nodes sit over the beams, so a number or a pip is never struck through
 	_draw_ghost_skips()
+	# Words beside the placed levers, as in the frames (the glyphs and the 3D markers say it without them).
+	for lv: Array in [["ghost", "GHOST"], ["decoys", "DECOY"], ["dark", "DARK"]]:
+		for lc: Vector2i in model.plan[lv[0]]:
+			_lever_tag(chip_at(lc), String(lv[1]))
 	if fc_mode:
 		_draw_forecast_marks(fc)
 	if sel_lever != "":
@@ -1449,6 +1458,14 @@ func _draw_plan() -> void:
 	_draw_breach_warning(fc)
 	_draw_kit_strip()
 	_draw_legend()
+
+
+## A small word tag over a placed lever's chip (GHOST, DECOY, DARK), amber like the frames' lever labels.
+func _lever_tag(p: Vector2, word: String) -> void:
+	var w := G.text_w(word, 12) + 14.0
+	var r := Rect2(p.x - w * 0.5, p.y - NODE_R - 27.0, w, 19.0)
+	G.panel(self, r, G.HOLD, Color(0.02, 0.03, 0.09, 0.95), 1.0)
+	G.text_c(self, r.get_center(), word, 12, G.CELL)
 
 
 ## PLAN / FORECAST: "kit after this raid" under the grid. The kit the plan leaves (ghosts, decoys, spoofs, go dark), the Heat
@@ -1891,12 +1908,23 @@ func _draw_play() -> void:
 	elif not p.hunter_runs() and not p.cut:
 		_draw_jam_chip(Vector2(20, 82))
 	_draw_pick_fx()
+	# The unseal's headline (frame 2): it lights as the real line ignites and stays while the response is open.
+	if (st == L5Play.S.UNSEAL and p.t / (L5Play.FAST_UNSEAL if p.fast else L7Config.UNSEAL_T) >= L7Config.UNSEAL_COLLAPSE_END) or st in [L5Play.S.DECIDE, L5Play.S.NOTE]:
+		_draw_headline("BEAM 2 UNSEALED")
 	# The response after the reveal: the focused option's consequence on the grid, a SKIP target on every lit node, JAM pulsing.
 	if st == L5Play.S.DECIDE:
 		_draw_spoof_window()
 		_draw_decision_preview()
 	_draw_end_stamp()
 	_draw_play_panel()
+
+
+## A big glowing cobalt headline over the top-left of the board (Anton, the frames' "BEAM 2 UNSEALED").
+func _draw_headline(word: String) -> void:
+	var p := Vector2(24, 80)
+	for off: Vector2 in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(0, 2), Vector2(0, 0)]:
+		G.text(self, p + off * 1.5, word, 38, Color(G.THREAT.r, G.THREAT.g, G.THREAT.b, 0.18), HORIZONTAL_ALIGNMENT_LEFT, -1.0, "head")
+	G.text(self, p, word, 38, G.THREAT_HOT, HORIZONTAL_ALIGNMENT_LEFT, -1.0, "head")
 
 
 func _pulse_col(e: Dictionary) -> Color:
@@ -2275,7 +2303,6 @@ func _draw_response_box(box: Rect2) -> void:
 	G.spoof_key(self, Vector2(box.position.x + 40, box.position.y + 22), G.CLEAN)
 	G.text(self, Vector2(box.position.x + 82, box.position.y + 4), "AFTER THE REVEAL: PICK ONE", 16, G.CLEAN)
 	var remain := 1.0 if (fx.decide_at < 0.0 or L7Config.instant) else clampf(1.0 - (p.clock - fx.decide_at) / L7Config.DECIDE_RING_T, 0.0, 1.0)
-	G.text_r(self, Vector2(box.end.x - 66, box.position.y + 10), "spoofs in the kit", 13, G.DIM)
 	L7Draw.countdown_ring(self, Vector2(box.end.x - 36, box.position.y + 28), 19.0, remain, G.CLEAN, str(int(p.before.kit["spoof"])))
 	L7Draw.drain_bar(self, Rect2(box.position.x + 8, box.position.y + 52, box.size.x - 16, 3), remain, G.CLEAN)
 	G.text(self, Vector2(box.position.x + 82, box.position.y + 28), "SKIP or JAM costs +%d Heat after the sweep." % L5Config.SPOOF_HEAT, 12, G.DIM)
@@ -3148,6 +3175,9 @@ func _cap_adv(dt: float = 0.05) -> void:
 	play.advance(dt)
 	fx.consume(play)
 	fx_clock += dt
+	# A capture draws no frame between its steps: the stamp counts as landed once its slam time has passed.
+	if play.state in [L5Play.S.END, L5Play.S.DONE] and fx.end_at >= 0.0 and play.clock - fx.end_at >= L7Config.STAMP_DELAY + L7Config.STAMP_T:
+		_stamp_shown = true
 
 
 ## Play the sweep of the current raid beat by beat, taking a picture at each, choosing the spoof from the line's step.
@@ -3547,6 +3577,8 @@ func _clip_breach() -> void:
 	await _clip_frame("decided")
 	await _wait(0.6)
 	_act("next")	## LAUNCH: the cell falls
+	await _wait(0.06)
+	await _clip_frame("fall_start")
 	var seen := {}
 	var guard := 0
 	while phase == Phase.PLAY and guard < 3000:
@@ -3555,9 +3587,9 @@ func _clip_breach() -> void:
 		var p := play
 		if p == null:
 			break
-		if p.state == L5Play.S.BEAM and p.t >= 0.25 and not seen.has("b_" + p.beam_id()) and p.beam_id() in ["b1", "b2"]:
-			seen["b_" + p.beam_id()] = true
-			await _clip_frame("fall_" + p.beam_id())
+		if p.state in [L5Play.S.END, L5Play.S.DONE] and fx.end_at >= 0.0 and not seen.has("stamp") and p.clock - fx.end_at >= L7Config.STAMP_DELAY + 0.3:
+			seen["stamp"] = true
+			await _clip_frame("stamp")
 		for e: Dictionary in p.events:
 			if e["outcome"] == "HOME" and not seen.has("hit") and p.clock - float(e["at"]) >= 0.18:
 				seen["hit"] = true
@@ -3569,6 +3601,10 @@ func _clip_breach() -> void:
 	await _clip_frame("breached_slam")
 	await _wait(1.4)
 	await _clip_frame("breached_card")
-	await _wait(1.2)
+	await _wait(0.5)
+	_act("next")	## the leg record: the verdict counts up
+	await _wait(0.55)
+	await _clip_frame("record_count")
+	await _wait(1.6)
 
 
