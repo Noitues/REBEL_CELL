@@ -9968,3 +9968,9 @@ Look only (AUDIT.md: holo, score 20; the audit's §1.2 media fail: THREAT INTEL 
 - **Numbers (floor band, plate | before (a) | now; seed 1 / seed 2).** Overview median .155 | .108 / .054 | .122 / .092, under_010 .14 | .43 / .73 | .37 / .53, R-DET-2 6325 | 64 / 66 | 287 / 449. Decision median .110 | .084 / .099 | .103 / .138, R-DET-2 4258 | 183 / 158 | 242 / 266. over_085 on the floor stays near 0 (.0002-.0021 vs plate .012-.0145): a reflection is never brighter than its dim source.
 - **Found (sweep tool, not the game).** A first sweep showed no change because the lab tool rewrote street_route.tres over its own look.post patch.
 - **Proof.** Frozen fe1485ea vs this: na23 beauty / ui change only; id, depth, A2 look 0 / 1, hq_run 5 states, review_pack 6 screens: 23 frames max 0. Tests: test_rc_look_street (`test_the_street_wet_reflections_ease_with_the_zoom`), test_street_override_hold (the post keys held through set_aaa_exposure), test_na23_route_flow.
+
+## 2026-10-22 - LOOK-TOOLBOX module 19: the city car light trails against the plate (designer: judge them inside module 19)
+
+- **What.** The street's traffic streak lanes (`city_shaders.tres` streak, built only by StreetDressing) at emit 6.0 (was 2.5), floor 0.3 (0.15), power 1.2 (1.6), width 0.6 BU (0.2): thicker, brighter trails like the plate's.
+- **Numbers (floor over_085, plate | before | now; seed 1 / seed 2).** Decision .012 | .0021 / .0006 | .0161 / .0139 (at the plate); overview .0145 | .0002 / .0005 | .0013 / .0035.
+- **Proof.** Frozen 177cf088 vs this: na23 beauty / ui only; id, depth, A2 look 0 / 1, hq_run 5 states, review_pack 6 screens: 23 frames max 0. Tests: test_city_shaders, test_city_shaders_render, test_na24_dressing, test_aaa_street_look, test_rc_look_street.
