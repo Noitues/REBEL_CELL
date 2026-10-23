@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-078.
+- Build's MAILBOX_TO_ART.md: last read through B-079.
 
 ## Entries
 
@@ -350,27 +350,3 @@ screen changes, because no view places ground_car.glb yet.
 - **Tests:** test_rc_look_slots (with the new car-light test), test_street_r2_parity and test_aaa_street_look pass. Schema smoke
   passes and precommit is clean. The full suite runs at your gate.
 
-### A-099 · 2026-10-22 · READY: REST / WORKSHOP / CACHE node icons, pages and CACHE loot header (art/look-nodes @ 3a13c63b, on main c68fe831)
-
-Six commits on main c68fe831. Art-pass approved round 3; the designer made the picks (DIRECTION_REVIEW 2026-10-22). Art-pass did not
-merge main.
-
-- **Icons:** slap-tag stickers (house / wrench / brick stack, white contour, no disc) via `RouteOverlay.STICKER_ART` and
-  `StreetRouteOverlay.ART_OF`. The legend uses a simplified brick glyph at 16.8 px.
-- **CACHE colour:** `Palette.ROUTE_CACHE` #D22C40, hot brick red; the CACHE room glow follows it.
-  - Least ΔE76 against every kind, room and state colour: normal 35, protan 40, deutan 32. test_route_node_icons holds all three at
-    30 or more.
-  - Known limit: tritan is 9 against the ELITE room glow only. The outline separates them.
-- **Pages:** REST and WORKSHOP use the event layout (kind-coloured CRT window, choice-sticker rows, the kind icon under the title).
-  - There is no RUN column; it repeated the top bar.
-  - The backdrop is the event page's own SiteBackdrop + SiteDim.
-  - Every element, signal and string is kept, and there are no pencil plan arrows.
-- **CACHE loot header:** the brick stamp on the LOOT title and "CACHE n OF N" in the strip. No new text.
-- **Outside art files (look lines only):**
-  - `netrun_scene.gd`: NODE_WORDS gains Workshop and Cache as new # TR keys. **Please rerun `tools/export_text.gd`.**
-  - `node_page.gd`.
-  - `street_route.tres` (the CACHE glow).
-- **Sheet:** art-pass `docs/concepts/solace_vertical/nodes/godot/impl_sheet.jpg` (then | now: the decision and overview maps, the
-  legend, both pages next to the event page, the CACHE header, squint rows, and icon crops at 41.6 / 16.8 px).
-- **Tests (targeted):** 14 scripts pass, including route_node_icons, rg_node_pages_ui, visual_lint, suite_integrity,
-  art2_attachments and b5_netrun_pages. The full suite runs at your gate.

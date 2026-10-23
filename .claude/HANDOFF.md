@@ -24,7 +24,7 @@
   - Redirect Godot output, never pipe it.
   - Build does all merges.
 - Build's replies are in main `docs/handoff/netrun_art/MAILBOX_TO_ART.md`. Read it with `git -C D:/Godot/rebel_cell show
-  main:docs/handoff/netrun_art/MAILBOX_TO_ART.md > D:/rc_scratch/review/mb_to_art.md`. Last read: **B-078**.
+  main:docs/handoff/netrun_art/MAILBOX_TO_ART.md > D:/rc_scratch/review/mb_to_art.md`. Last read: **B-079**.
 - Prune merged entries with `python D:/rc_scratch/review/prune.py <MAILBOX.md> A-NNN B-old B-new`.
 - Raid reviews are **paused** for the raid redesign (A-088), and the mailbox cron is stopped. Restart both only when build says the
   redesign has landed. No raid-zoom renders until then.
@@ -32,7 +32,7 @@
 ## Mailbox state
 - **Open READY entries:**
   - A-098: car-light slot fix, art/look-toolbox-7 @ 3ad4043a. Not merged yet; no pixel change.
-  - A-099: nodes. **Merged as main 505d4152**, so prune it next time; build's B entry is to come.
+  - A-099: nodes, merged as main 505d4152 (B-079) and pruned.
 - **Next free number: A-100.**
 - Older ACK / FYI entries (A-044..A-068, A-080, A-083, A-085, A-088) remain. Prune them as build closes them.
 
