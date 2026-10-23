@@ -36,6 +36,7 @@ func _init() -> void:
 	_view_planned()
 	_view_jam()
 	_view_breach()
+	_motion()
 	L5Config.reset()
 	print("%d checks" % _checks)
 	print("FLOW %s" % ("PASS" if _fails == 0 else "FAIL"))
@@ -304,6 +305,8 @@ func _run_raid(m: L5Model, alloc: Dictionary, spoof: Vector2i) -> Dictionary:
 	var extra := m.extra_now()
 	var strip := m.kit_after_preview()
 	var play := m.make_play()
+	var fx := L7Fx.new()
+	fx.consume(play)
 	var seen: Array = []
 	var guard := 0
 	var options_ok := true
@@ -324,8 +327,13 @@ func _run_raid(m: L5Model, alloc: Dictionary, spoof: Vector2i) -> Dictionary:
 				play.choose_spoof(spoof)
 		else:
 			play.advance(0.05)
+		fx.consume(play)
 		guard += 1
 	_ok("raid %d playout finished" % (m.raid + 1), play.is_done() and (seen.has(L5Play.S.TURN) or spoof == L5Rules.JAM) or play.cut)
+	# The animation's cues come in the resolver's touch order (a sweep cut by the breach shows the prefix it reached).
+	var want: Array = _touched_arr_of(play.shown_touches() if play.cut else play.res["touches"])
+	_ok("raid %d: the animation's touch order equals the resolver's touch order (%d touches)" % [m.raid + 1, want.size()], fx.touch_order() == want)
+	_ok("raid %d: the animation cues launch every beam, then stamp once" % (m.raid + 1), fx.kinds().count("stamp") == 1 and fx.kinds().count("launch") >= 1)
 	if seen.has(-1):
 		_ok("raid %d: the decision screen's forecast equals the real result for each of its %d options" % [m.raid + 1, n_options], options_ok)
 		_ok("raid %d: the decision offers HOLD, one SKIP per lit node and JAM" % (m.raid + 1), n_options == 2 + play.b2.size())
@@ -693,7 +701,7 @@ func _make_view(seed_id: int) -> Control:
 
 ## One raid through the view: levers by key and click, forecast, launch, the spoof by click or hold, to the end of the
 ## playout. Leaves the view on AFTER or BREACH.
-func _view_raid(view: Control, alloc: Dictionary, spoof: Vector2i) -> void:
+func _view_raid(view: Control, alloc: Dictionary, spoof: Vector2i) -> int:
 	_seen_states = []
 	view._key(KEY_ENTER)
 	_ok("Enter goes to the plan", view.phase == view.Phase.PLAN)
@@ -729,6 +737,7 @@ func _view_raid(view: Control, alloc: Dictionary, spoof: Vector2i) -> void:
 		view._process(0.05)
 		guard += 1
 	_ok("the playout ends by itself", view.phase in [view.Phase.AFTER, view.Phase.BREACH] and not view.row.is_empty())
+	return guard
 
 
 func _view_planned() -> void:
@@ -918,3 +927,154 @@ func _view_breach() -> void:
 	view._key(KEY_ENTER)
 	_ok(tag + " Enter starts the leg again", view.phase == view.Phase.CONTACT and view.model.raid == 0 and view.model.state.home_hp == 3)
 	view.queue_free()
+
+
+# ---------- L7: the look and the motion ----------
+## The camera, the timings, the speed and instant toggles, instant = animated, the animation's order = the resolver's.
+func _motion() -> void:
+	_motion_cam()
+	_motion_timings()
+	for pair in [[0, "planned"], [3, "planned"], [0, "naive"], [8, "naive"]]:
+		_motion_instant_vs_animated(int(pair[0]), String(pair[1]))
+	_motion_breach_instant()
+	_motion_speed()
+	L7Config.instant = false
+
+
+## The target camera: the aim point lands where the board is centered, chips float above the beam plane above the floor, rows
+## run far to near and columns left to right, and the whole slab fits left of the side panel and under the HUD (text 1.0).
+func _motion_cam() -> void:
+	var tag := "[l7 camera]"
+	var aim: Vector2 = L7Cam.project(L7Cam.AIM)
+	_ok(tag + " the Blender aim point lands on the chosen screen spot", aim.distance_to(L7Cam.AIM_SCREEN) < 0.6)
+	var stacked := true
+	var ordered := true
+	var inside := true
+	for y in range(L5Config.H):
+		for x in range(L5Config.W):
+			var c := Vector2i(x, y)
+			stacked = stacked and L7Cam.chip_pos(c).y < L7Cam.beam_pos(c).y and L7Cam.beam_pos(c).y < L7Cam.cell_at(c, 0.0).y
+			if x > 0:
+				ordered = ordered and L7Cam.beam_pos(c).x > L7Cam.beam_pos(Vector2i(x - 1, y)).x
+			if y > 0:
+				ordered = ordered and L7Cam.beam_pos(c).y > L7Cam.beam_pos(Vector2i(x, y - 1)).y
+			var chip: Vector2 = L7Cam.chip_pos(c, true)
+			inside = inside and chip.x > 40.0 and chip.x < 740.0 and chip.y > 80.0 and chip.y < 600.0
+	_ok(tag + " the chip floats above the beam plane, which floats above the floor", stacked)
+	_ok(tag + " columns run left to right, rows far to near", ordered)
+	_ok(tag + " every chip stays inside the board area (left of the panel, under the HUD)", inside)
+	var fits := true
+	for corner in [Vector3(L7Cam.SLAB_X0, L7Cam.SLAB_Y0, 0), Vector3(L7Cam.SLAB_X1, L7Cam.SLAB_Y0, 0), Vector3(L7Cam.SLAB_X1, L7Cam.SLAB_Y1, 0), Vector3(L7Cam.SLAB_X0, L7Cam.SLAB_Y1, 0)]:
+		var q: Vector2 = L7Cam.project(corner)
+		fits = fits and q.x >= 0.0 and q.x < 768.0 and q.y > 60.0 and q.y < 676.0
+	_ok(tag + " the whole slab fits left of the side panel and above the status strip", fits)
+	var gm := L7Cam.hfov_deg()
+	_ok(tag + " the 3D camera's field of view matches the projection (%.2f deg)" % gm, gm > 5.0 and gm < 40.0)
+
+
+func _motion_timings() -> void:
+	var tag := "[l7 timings]"
+	var all_pos := true
+	for v in [L7Config.BEAM_LEAD, L7Config.STEP_T, L7Config.BEAM_TAIL, L7Config.FLASH_T, L7Config.DECOY_PULL_T, L7Config.UNSEAL_T, L7Config.FIRE_HOLD,
+			L7Config.DECIDE_RING_T, L7Config.PICK_FX_T, L7Config.TURN_T, L7Config.WRENCH_T, L7Config.SHAKE_T, L7Config.FLIP_T, L7Config.HOME_LAG_T,
+			L7Config.STAMP_T, L7Config.END_T, L7Config.COUNT_UP_T, L7Config.HEAT_EASE_T, L7Config.HEAT_PULSE_T]:
+		all_pos = all_pos and float(v) > 0.0
+	_ok(tag + " every timing is positive and read from L7Config", all_pos)
+	_ok(tag + " the unseal shimmers, then collapses, then ignites (in that order, inside the unseal)", L7Config.UNSEAL_SHIMMER_END > 0.0 and L7Config.UNSEAL_SHIMMER_END < L7Config.UNSEAL_COLLAPSE_END and L7Config.UNSEAL_COLLAPSE_END < 1.0)
+	_ok(tag + " the lit real line holds before it fires (FIRE_HOLD is the beam 2 lead)", L7Config.FIRE_HOLD > 0.0)
+	_ok(tag + " the speed toggle offers 1x, 2x and 4x", L7Config.SPEEDS == [1.0, 2.0, 4.0])
+	var p := L5Play.new(L5Data.load_leg(0), 0, L5Rules.initial(L5Data.load_leg(0)), L5Rules.empty_alloc(), L5Data.load_leg(0)["raids"][0]["cands"][0])
+	_ok(tag + " the playout's beam 2 leads by FIRE_HOLD and the others by BEAM_LEAD", is_equal_approx(p.lead_of("b2"), L7Config.FIRE_HOLD) and is_equal_approx(p.lead_of("b1"), L7Config.BEAM_LEAD))
+
+
+## One golden raid through the scene's own input path, animated (a frame at a time) or instant; what it ended with.
+func _mode_run(seed_id: int, line: String, instant: bool) -> Dictionary:
+	L7Config.instant = instant
+	var view := _make_view(seed_id)
+	var s: Dictionary = view.model.leg[line][0]
+	var frames := _view_raid(view, L5Data.alloc_of(s["alloc"]), L5Data.spoof_of(s["spoof"]))
+	var out := {"frames": frames, "ledger": var_to_str(view.row["ledger"]), "after": (view.row["after_raid"] as L5State).to_array(),
+		"state": view.model.state.to_array(), "sig": view.fx.signature(), "touch": view.fx.touch_order(), "tier": view.row["tier"],
+		"want": _touched_arr_of(view.play.shown_touches() if view.play.cut else view.play.res["touches"]), "phase": view.phase}
+	L7Config.instant = false
+	view.queue_free()
+	return out
+
+
+func _motion_instant_vs_animated(seed_id: int, line: String) -> void:
+	var tag := "[instant leg %d %s]" % [seed_id, line]
+	var a := _mode_run(seed_id, line, false)
+	var b := _mode_run(seed_id, line, true)
+	_ok(tag + " instant ends in the same state as animated", a["state"] == b["state"] and a["after"] == b["after"] and a["phase"] == b["phase"])
+	_ok(tag + " instant writes the same ledger as animated", a["ledger"] == b["ledger"] and a["tier"] == b["tier"])
+	_ok(tag + " instant cues the same events in the same order (%d cues)" % (a["sig"] as Array).size(), a["sig"] == b["sig"] and not (a["sig"] as Array).is_empty())
+	_ok(tag + " the animation's touch order equals the resolver's (animated and instant)", a["touch"] == a["want"] and b["touch"] == b["want"])
+	_ok(tag + " instant needs no pacing (%d frames against %d)" % [b["frames"], a["frames"]], int(b["frames"]) * 8 < int(a["frames"]))
+
+
+## The settled breach (fast playout) animated and instant: the same BREACHED end, ledger and cues.
+func _motion_breach_instant() -> void:
+	var results: Array = []
+	for instant in [false, true]:
+		L7Config.instant = false
+		var view := _make_view(0)
+		var steps: Array = view.model.leg["naive"]
+		for i in range(2):
+			view._play_step_instant(steps[i])
+			if view.phase == view.Phase.REPAIR:
+				view._pick_between(steps[i])
+				if i == 0:
+					view._act("next")
+		var settled: bool = view.phase == view.Phase.REPAIR and view.model.breach_settled()
+		view._act("next")	## launch the settled breach
+		L7Config.instant = instant
+		var guard := 0
+		while view.phase == view.Phase.PLAY and guard < 400:
+			view._process(0.05)
+			guard += 1
+		results.append({"settled": settled, "ledger": var_to_str(view.row["ledger"]), "state": view.model.state.to_array(), "sig": view.fx.signature(),
+			"touch": view.fx.touch_order(), "want": _touched_arr_of(view.play.shown_touches() if view.play.cut else view.play.res["touches"]),
+			"phase": view.phase, "bp": view.Phase.BREACH, "frames": guard})
+		L7Config.instant = false
+		view.queue_free()
+	var tag := "[instant breach]"
+	_ok(tag + " the naive leg 0 is settled after raid 2 in both runs", results[0]["settled"] and results[1]["settled"])
+	_ok(tag + " both end on the BREACHED card with the same state and ledger", results[0]["phase"] == results[0]["bp"] and results[1]["phase"] == results[1]["bp"] and results[0]["state"] == results[1]["state"] and results[0]["ledger"] == results[1]["ledger"])
+	_ok(tag + " both cue the same events, in the resolver's touch order", results[0]["sig"] == results[1]["sig"] and results[0]["touch"] == results[0]["want"] and results[1]["touch"] == results[1]["want"])
+	_ok(tag + " the instant run is not slower than the animated one (%d frames against %d)" % [results[1]["frames"], results[0]["frames"]], int(results[1]["frames"]) <= int(results[0]["frames"]))
+
+
+## The speed toggle scales the raid layer (4x runs the same raid in about a quarter of the frames) and the instant toggle is a key.
+func _motion_speed() -> void:
+	var tag := "[speed]"
+	var counts: Array = []
+	for speed_i in range(3):
+		L7Config.instant = false
+		var view := _make_view(0)
+		view._act("speed:%d" % speed_i)
+		_ok(tag + " the %dx button sets the speed" % int(L7Config.SPEEDS[speed_i]), view.speed_i == speed_i)
+		var s: Dictionary = view.model.leg["planned"][0]
+		view._key(KEY_ENTER)
+		for pair in [["ghost", KEY_1, "ghost"], ["decoy", KEY_2, "decoys"], ["dark", KEY_3, "dark"]]:
+			for c: Vector2i in L5Data.alloc_of(s["alloc"])[pair[2]]:
+				if view.sel_lever != pair[0]:
+					view._key(pair[1])
+				view._act("cell:%d,%d" % [c.x, c.y])
+		view._key(KEY_ENTER)
+		view._key(KEY_ENTER)
+		var frames := 0
+		while view.phase == view.Phase.PLAY and frames < 6000:
+			if view.play.state == L5Play.S.DECIDE:
+				view._key(KEY_H)
+			view._process(0.02)
+			frames += 1
+		counts.append(frames)
+		view.queue_free()
+	_ok(tag + " 2x runs the raid in about half the frames of 1x (%d against %d)" % [counts[1], counts[0]], absf(float(counts[0]) / float(counts[1]) - 2.0) < 0.3)
+	_ok(tag + " 4x runs it in about a quarter of the frames (%d against %d)" % [counts[2], counts[0]], absf(float(counts[0]) / float(counts[2]) - 4.0) < 0.6)
+	var view2 := _make_view(0)
+	view2._key(KEY_I)
+	_ok(tag + " key I turns the instant toggle on", L7Config.instant)
+	view2._act("instant")
+	_ok(tag + " the instant button turns it off again", not L7Config.instant)
+	view2.queue_free()

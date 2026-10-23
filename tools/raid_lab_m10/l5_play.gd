@@ -21,10 +21,10 @@ var spoof_used: bool = false
 ## Fast mode (a settled breach): one short beat per beam, every step of a beam shown at once, no decision and no
 ## "no spoof left" beat; the response is always HOLD. The rules' result is the same as in the slow playout.
 var fast: bool = false
-const FAST_BEAT := 0.5
-const FAST_UNSEAL := 0.4
-const FAST_TURN := 0.4
-const FAST_END := 0.5
+const FAST_BEAT := L7Config.FAST_BEAT
+const FAST_UNSEAL := L7Config.FAST_UNSEAL
+const FAST_TURN := L7Config.FAST_TURN
+const FAST_END := L7Config.FAST_END
 ## True when the kit holds a spoof, so the decision after the reveal is offered.
 var can_spoof: bool = false
 ## True when the sweep was cut short by the breach.
@@ -100,7 +100,20 @@ func head() -> float:
 		return 0.0
 	if fast:
 		return float(beam_steps(bi).size())
-	return minf(t / L5Config.STEP_T, float((beam_steps(bi)).size()))
+	return minf(maxf(0.0, t - lead_of(order[bi])) / L7Config.STEP_T, float((beam_steps(bi)).size()))
+
+
+## How long beam `id` glows at its start before its head moves: the lit real line holds before it fires, the hunter leads
+## shorter. Fast mode has none.
+func lead_of(id: String) -> float:
+	if fast:
+		return 0.0
+	match id:
+		"b2":
+			return L7Config.FIRE_HOLD
+		"hunter":
+			return L7Config.HUNTER_LEAD
+	return L7Config.BEAM_LEAD
 
 
 func is_waiting() -> bool:
@@ -208,7 +221,7 @@ func _log(step: Dictionary, id: String) -> void:
 
 
 func _beam_len(k: int) -> float:
-	return float(beam_steps(k).size()) * L5Config.STEP_T + 0.35
+	return lead_of(order[k]) + float(beam_steps(k).size()) * L7Config.STEP_T + L7Config.BEAM_TAIL
 
 
 func advance(dt: float) -> void:
@@ -219,7 +232,7 @@ func advance(dt: float) -> void:
 	match state:
 		S.BEAM:
 			var steps: Array = beam_steps(bi)
-			while _next_step < steps.size() and (fast or t >= (_next_step + 1) * L5Config.STEP_T):
+			while _next_step < steps.size() and (fast or t - lead_of(order[bi]) >= (_next_step + 1) * L7Config.STEP_T):
 				_log(steps[_next_step], order[bi])
 				_next_step += 1
 				if cut:
@@ -230,7 +243,7 @@ func advance(dt: float) -> void:
 			if fast:
 				if t >= FAST_UNSEAL:
 					_enter_beam(order.find("b2"))
-			elif t >= L5Config.UNSEAL_T:
+			elif t >= L7Config.UNSEAL_T:
 				if can_spoof:
 					state = S.DECIDE
 					t = 0.0
@@ -238,13 +251,13 @@ func advance(dt: float) -> void:
 					state = S.NOTE
 					t = 0.0
 		S.NOTE:
-			if t >= L5Config.NOTE_T:
+			if t >= L7Config.NOTE_T:
 				_enter_beam(order.find("b2"))
 		S.TURN:
-			if t >= (FAST_TURN if fast else L5Config.TURN_T):
+			if t >= (FAST_TURN if fast else L7Config.TURN_T):
 				_enter_beam(bi)
 		S.END:
-			if t >= (FAST_END if fast else L5Config.END_T):
+			if t >= (FAST_END if fast else L7Config.END_T):
 				state = S.DONE
 
 
