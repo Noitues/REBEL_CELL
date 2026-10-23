@@ -289,3 +289,25 @@ now L2 at 33.
 
 **Plateau:** the playable labs score 31–33, between TFT and Kingdom Rush. The remaining gap to the watched-raid bar
 (FTL: S 8, V 7) is mostly suspense (S 4–5) and visuals (V 4), which rules alone don't fix.
+
+## L4 Godot lab (seeded real line, dark as kit, cheaper shop, BATTERED; one fresh critic, calibrated)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 8 | 6 | 5 | 6 | **33** | 4 | 4 | 6 |
+
+**Ties Kingdom Rush (33), just under FTL (35).** The presentation fixes landed (W +1, N +1). Depth is still 5.
+
+**What the critic found:**
+- **The decision after the reveal is usually empty.** Holding is strictly best, or every option gives the same
+  result. The planned leg has one real spoof choice.
+- **Repair wipes the damage.** The best line takes the same right-column hits every raid (BATTERED, BATTERED,
+  BATTERED), then repairs everything and buys nothing. C fell to 6.
+- **A breach is settled on the between screen, with no warning there.** Intensity changes the beam count, but no
+  intensity card says whether the next raid breaches.
+
+**Ceiling, in the critic's words: "mainly a rules ceiling"** for D, C and S. W and P are at 8; V 4 is placeholder
+art. Its three changes (a real trade-off after the reveal, damage that sticks, the breach warning on the between
+screen) are estimated at 38–39.
+
+Review: `_reviews/REVIEW_LAB_L4.md`. Sheet: `_reviews/LAB_L4_vs_itb.png`.
