@@ -1,21 +1,28 @@
 extends Control
-## Raid lab L8 to L11: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with the L9_CHANGES.md,
-## L10_CHANGES.md and L11_CHANGES.md presentation applied).
+## Raid lab L8 to L12: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with the L9_CHANGES.md,
+## L10_CHANGES.md, L11_CHANGES.md and L12_CHANGES.md presentation applied).
 ## This is the root script of raid_lab_city.tscn, and everything is built in code. A 3D L8Board renders in a SubViewport
 ## behind a 2D overlay. The overlay holds the HUD, the 420 px right panel, the legend strip and the hint line.
 ## Every state change goes through L8Rules. The view only reads its results and turns traces into board cues.
 ## Flow per raid: DECAY (raids 2 and 3), CAPTURE, PLAN, FORECAST, the known beams, the REVEAL, the RESPONSE, then the
 ## sealed beam and the hunter, AFTERMATH, BETWEEN. RECORD follows raid 3, a breach, or a DECIDED cut.
 ## In PLAN and FORECAST one sealed route is selected (Q W E or a panel row). Its HOLD outcome is drawn on the board, and
-## the other candidate routes are drawn faint.
+## the other candidate routes are drawn faint. In FORECAST each route also gets its HOLD tier stamped where it meets
+## HOME (L8Board.show_route_verdicts); the stamps go at launch.
+## Launch friction (L12): when every sealed route breaks HOME with this plan (even with the best response), LAUNCH needs
+## a second Enter or click. The panel names one fix: the first placement, in the rules' enumeration order, that holds
+## HOME on every candidate from the post-capture state (or says no plan holds).
 ## PLAN places at most L8Rules.MAX_PLACED sentries; the rest of the pool is the reserve, shown as a tray. After the reveal
 ## a DEPLOY puts a reserve sentry on a free district, a REDEPLOY moves a placed one. Hovering or selecting a response
 ## row previews its effect on the board (arrows, or the hunter crossed out).
 ## Tiers read without words: each has a mark and a hue (check, shield, cracked shield, X, skull on black).
 ## Highlights carry meaning: capture targets, repair targets, and picked choices (a white check ring).
 ## At HOME 1/3 the last HOME pip pulses red with a skull, and the between screen warns that the next hit ends the campaign.
-## Between raids, every intensity card shows SAFE (shield) or AT RISK (skull) from L8Rules.safe_next. When no between
-## option is safe, the screen says DECIDED, a fall beat plays and the record follows: no dead raid is played.
+## Between raids (L12), every intensity card and every repair and build option carries a verdict from
+## L8Rules.safe_next: "HOLDABLE: a plan exists" (shield) or "LOST: no plan holds HOME" (skull). A red-bordered line names
+## an option the next raid needs ("Repair MID 0, or raid 3 cannot be held"). The checks are cached per (leg, raid,
+## state hash, option) and worked off a queue a few per frame, so the screen stays responsive. When no between option
+## holds, the screen says DECIDED, a fall beat plays and the record follows: no dead raid is played.
 ## Flags (after --): --leg=N (golden seeds 0 3 5 8), --auto=greedy|naive, --shots=<abs dir> (with --auto), --scramble.
 
 enum Phase { CAPTURE, PLAN, FORECAST, PLAY, REVEAL, RESPONSE, AFTER, BETWEEN, RECORD, DECAY, FALL }
@@ -42,6 +49,10 @@ const CELL_ROW := ["NOR", "MID", "SOU"]
 const INTEN_KEY := ["L", "N", "O"]
 const ROUTE_KEY := ["Q", "W", "E"]
 const CARD_H := 128.0
+## Milliseconds of queued safe_next checks worked per frame on the between screen (at least one per frame).
+const SAFE_BUDGET_MS := 12
+const REP_ROW_H := 21.0
+const FRICTION_TEXT := "Every route breaks HOME with this plan: change it?"
 
 # Palette (matches l8_board.gd).
 const BG := Color8(3, 5, 15)
@@ -95,6 +106,10 @@ var undo: Array = []
 var tool: String = ""
 var fc: Array = []
 var fc_change: Array = []
+var fc_doom: bool = false
+var launch_armed: bool = false
+var launch_fix: Variant = null
+var fix_cache: Dictionary = {}
 var sel_route: int = 0
 var sel_hold: Dictionary = {}
 var rd: Dictionary = {}
@@ -121,7 +136,13 @@ var b_repair: Variant = null
 var b_build: Variant = null
 var b_inten: String = "NORMAL"
 var build_armed: bool = false
+## Between verdicts: option key (leg, raid, state hash, repair, build, intensity) -> bool; persistent across screens.
 var safe_cache: Dictionary = {}
+## safe_next results by (leg, raid, hash of the state it runs on) -> bool; options that give the same state share it.
+var next_cache: Dictionary = {}
+## Checks still to run: option key -> [repair, build, intensity], worked by _process.
+var safe_pending: Dictionary = {}
+var b_hash: int = 0
 var b_all_unsafe: int = -1
 var decay_lines: PackedStringArray = PackedStringArray()
 
@@ -224,6 +245,9 @@ func _start_leg() -> void:
 	history = []
 	result = {}
 	decay_lines = PackedStringArray()
+	launch_armed = false
+	launch_fix = null
+	safe_pending = {}
 	hud_hp = int(st["home_hp"])
 	board.setup({"w": L8Rules.W, "h": L8Rules.H, "values": leg["values"], "exploits": leg["exploits"]})
 	board.set_scramble(scramble)
@@ -231,12 +255,15 @@ func _start_leg() -> void:
 	board.set_lethal(lethal_on)
 	board.clear_outcome()
 	board.clear_response_preview()
+	board.hide_route_verdicts()
 	resp_prev = -2
 	board.show_state(st, _empty_place())
 	_begin_raid()
 
 
 func _process(_delta: float) -> void:
+	if phase == Phase.BETWEEN and not safe_pending.is_empty():
+		_work_safe()
 	ui.queue_redraw()
 
 
@@ -363,6 +390,22 @@ func _resp_label(r: Array, sentries: Dictionary) -> String:
 	return "MOVE %s %s > %s" % [_tname(t), _cell_name(r[1]), _cell_name(r[2])]
 
 
+## A placement in words: "DRONE on NOR 0, NETRUNNER on MID 1, ghost on HOME".
+func _place_text(p: Dictionary) -> String:
+	var parts := PackedStringArray()
+	var sd: Dictionary = p.get("sentries", {})
+	for c: Vector2i in L8Rules.sorted_cells(sd):
+		parts.append("%s on %s" % [_tname(String(sd[c])), _cell_name(c)])
+	var g: Variant = p.get("ghost")
+	if _is_home(g):
+		parts.append("ghost on HOME")
+	elif typeof(g) == TYPE_VECTOR2I:
+		parts.append("ghost on " + _cell_name(g))
+	if parts.is_empty():
+		return "no sentries, no ghost"
+	return ", ".join(parts)
+
+
 func _placed(t: String) -> int:
 	var n := 0
 	var sd: Dictionary = place.get("sentries", {})
@@ -407,6 +450,11 @@ func _pick(pos: Vector2, with_home: bool) -> Variant:
 
 func _now() -> float:
 	return float(Time.get_ticks_msec()) / 1000.0
+
+
+## A stable hash of a state (its JSON form), for the verdict caches.
+func _state_hash(s: Dictionary) -> int:
+	return str(L8Rules.state_to_json(s)).hash()
 
 
 # ---------------------------------------------------------------- scramble and text
@@ -645,6 +693,32 @@ func _tier_big(p: Vector2, tier: String) -> float:
 	return h + 12.0
 
 
+## A right-aligned between verdict: a shield and HOLDABLE, a skull and LOST, or a dim ring while still checking.
+func _verdict_mark(right: Vector2, v: int, size: int = 11) -> void:
+	var text := "HOLDABLE" if v == 1 else ("LOST" if v == 0 else "checking")
+	var col := HOLDS_COL if v == 1 else (RED if v == 0 else DIM)
+	var tw := _tw(text, size)
+	var h := font.get_height(size)
+	var gc := Vector2(right.x - tw - 9.0, right.y + h * 0.5)
+	if v == 1:
+		_tier_glyph(gc, "HOLDS", 5.5, col)
+	elif v == 0:
+		_skull(gc, 5.5, col, BLACK)
+	else:
+		ui.draw_arc(gc, 4.0, 0.0, TAU, 12, col, 1.5)
+	_tr(right, text, size, col)
+
+
+## The verdict as a mark only (build buttons): shield, skull, or a dim ring while still checking.
+func _verdict_dot(c: Vector2, v: int) -> void:
+	if v == 1:
+		_tier_glyph(c, "HOLDS", 6.0, HOLDS_COL)
+	elif v == 0:
+		_skull(c, 6.0, RED, BLACK)
+	else:
+		ui.draw_arc(c, 4.0, 0.0, TAU, 12, DIM, 1.5)
+
+
 # ---------------------------------------------------------------- input
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -814,6 +888,14 @@ func _act(id: String) -> void:
 			_respond(o["response"])
 	elif id.begins_with("dep:"):
 		_arm_deploy(id.substr(4))
+	elif id.begins_with("rep:"):
+		var i := int(id.substr(4))
+		if i == 0:
+			_clear_repair()
+		else:
+			var downs := _down_cells()
+			if i - 1 < downs.size():
+				_between_click(downs[i - 1])
 	elif id.begins_with("build:"):
 		var t := id.substr(6)
 		if t == "none":
@@ -863,6 +945,7 @@ func _toggle_instant() -> void:
 ## Its sentry goes back to the reserve. CAPTURE then works on the decayed state.
 func _begin_raid() -> void:
 	decay_lines = PackedStringArray()
+	board.hide_route_verdicts()
 	if raid > 0:
 		var dec: Dictionary = L8Rules.decay(leg, st)
 		var gone: Array = []
@@ -910,6 +993,7 @@ func _enter_capture() -> void:
 	board.reset_playout()
 	board.clear_paths()
 	board.clear_outcome()
+	board.hide_route_verdicts()
 	cap_opts = L8Rules.capture_options(leg, st)
 	cap_cell = null
 	board.show_state(st, {"sentries": st["sentries"], "ghost": null})
@@ -1030,9 +1114,13 @@ func _enter_plan() -> void:
 	tool = ""
 	fc = []
 	fc_change = []
+	fc_doom = false
+	launch_armed = false
+	launch_fix = null
 	sel_route = 0
 	phase = Phase.PLAN
 	board.clear_highlight()
+	board.hide_route_verdicts()
 	_plan_view()
 
 
@@ -1143,11 +1231,16 @@ func _undo() -> void:
 	_plan_view()
 
 
+## Leave FORECAST for PLAN: the route verdict stamps go and the launch friction is disarmed.
 func _back_to_plan() -> void:
 	if phase == Phase.FORECAST:
 		phase = Phase.PLAN
 		fc = []
 		fc_change = []
+		fc_doom = false
+		launch_armed = false
+		launch_fix = null
+		board.hide_route_verdicts()
 
 
 ## A sentry tool places, moves (when the type's pool is all placed) or lifts a sentry. At most MAX_PLACED go on the
@@ -1337,6 +1430,47 @@ func _response_changes(k: int) -> bool:
 	return false
 
 
+## The board's route verdicts: each sealed route's HOLD tier, stamped where the route meets HOME.
+func _route_verdicts() -> Array:
+	var out: Array = []
+	var cands: Array = leg["raids"][raid]["cands"]
+	for fv: Variant in fc:
+		var f: Dictionary = fv
+		var k := int(f["cand"])
+		out.append({"route": int(cands[k]["index"]), "tier": String(f["hold"]["tier"])})
+	return out
+
+
+## True when every sealed route breaks HOME with this placement, with HOLD and with the forecast's best response.
+func _forecast_doomed() -> bool:
+	if fc.is_empty():
+		return false
+	for fv: Variant in fc:
+		var f: Dictionary = fv
+		var hs: Dictionary = f["hold"]["state"]
+		var bs: Dictionary = f["best"]["state"]
+		if int(hs["home_hp"]) > 0 or int(bs["home_hp"]) > 0:
+			return false
+	return true
+
+
+## The launch friction's fix: the first placement (L8Rules.placements order) from the post-capture state that keeps
+## HOME above 0 on every sealed candidate with its best response (the inner check of L8Rules.safe_next, for the capture
+## already made). null when no plan holds. Cached per (leg, raid, state hash).
+func _fix_for() -> Variant:
+	var key := "%d|%d|%d" % [leg_seed, raid, _state_hash(st)]
+	if not fix_cache.has(key):
+		var found: Variant = null
+		var midleg := raid < L8Rules.RAIDS - 1
+		for pv: Variant in L8Rules.placements(leg, st):
+			var p: Dictionary = pv
+			if L8Rules._place_safe(leg, raid, st, p, midleg):
+				found = p
+				break
+		fix_cache[key] = {"place": found}
+	return (fix_cache[key] as Dictionary)["place"]
+
+
 func _enter_forecast() -> void:
 	if phase != Phase.PLAN:
 		return
@@ -1349,11 +1483,15 @@ func _enter_forecast() -> void:
 	for fv: Variant in fc:
 		var f: Dictionary = fv
 		fc_change.append(_response_changes(int(f["cand"])))
+	fc_doom = _forecast_doomed()
+	launch_armed = false
+	launch_fix = null
 	tool = ""
 	board.clear_highlight()
 	phase = Phase.FORECAST
 	_show_plan_paths()
 	_refresh_outcome()
+	board.show_route_verdicts(_route_verdicts())
 
 
 func _draw_forecast() -> void:
@@ -1388,9 +1526,26 @@ func _draw_forecast() -> void:
 		var ch: bool = bool(fc_change[i]) if i < fc_change.size() else false
 		_t(Vector2(x + 64.0, yy), "a response changes this" if ch else "no response changes this", 12, ACID if ch else DIM)
 		y += 98.0
+	if launch_armed:
+		var wr := Rect2(x, y + 2.0, w, 24.0)
+		ui.draw_rect(wr, BLACK)
+		ui.draw_rect(wr, RED, false, 2.0)
+		_skull(wr.position + Vector2(13.0, 12.0), 8.0, RED, BLACK)
+		_t(wr.position + Vector2(28.0, 4.0), FRICTION_TEXT, 12, WHITE)
+		y += 32.0
+		if typeof(launch_fix) == TYPE_DICTIONARY:
+			_t(Vector2(x, y), "One fix (the first plan that holds HOME on every route):", 11, ACID)
+			y += 16.0
+			_t(Vector2(x + 10.0, y), _place_text(launch_fix), 12, INK)
+			y += 18.0
+		else:
+			_t(Vector2(x, y), "No plan holds HOME on every route this raid.", 12, RED)
+			y += 18.0
+		_t(Vector2(x, y), "Enter again launches anyway; B or any edit goes back to the plan.", 11, DIM)
 	var by := LEGEND_Y - 58.0
 	_btn(Rect2(x, by, 110.0, 42.0), "BACK [B]", "back")
-	_btn(Rect2(x + 122.0, by, w - 122.0, 42.0), "LAUNCH [Enter]", "next", true, false, 16)
+	_btn(Rect2(x + 122.0, by, w - 122.0, 42.0), "LAUNCH ANYWAY [Enter]" if launch_armed else "LAUNCH [Enter]", "next",
+		true, launch_armed, 16)
 
 
 # ---------------------------------------------------------------- LAUNCH and playout
@@ -1476,6 +1631,8 @@ func _cand_view() -> Array:
 	return out
 
 
+## LAUNCH. When every sealed route breaks HOME with this plan, the first call only arms the friction (and finds a fix);
+## the second call launches.
 func _launch() -> void:
 	if busy or phase != Phase.FORECAST:
 		return
@@ -1483,6 +1640,13 @@ func _launch() -> void:
 	if err != "":
 		status_msg = "Placement: " + err
 		return
+	if fc_doom and not launch_armed:
+		launch_armed = true
+		launch_fix = _fix_for()
+		status_msg = FRICTION_TEXT
+		return
+	launch_armed = false
+	board.hide_route_verdicts()
 	before = L8Rules.copy_state(st)
 	rd = leg["raids"][raid]
 	real = int(rd["real"])
@@ -2069,12 +2233,14 @@ func _enter_between() -> void:
 	board.clear_paths()
 	board.clear_outcome()
 	board.clear_response_preview()
+	board.hide_route_verdicts()
 	resp_prev = -2
 	b_repair = null
 	b_build = null
 	b_inten = "NORMAL"
 	build_armed = false
-	safe_cache = {}
+	safe_pending = {}
+	b_hash = _state_hash(st)
 	b_all_unsafe = -1
 	phase = Phase.BETWEEN
 	_highlight_down()
@@ -2105,63 +2271,138 @@ func _bp(inten: String) -> Dictionary:
 	return L8Rules.between_parts(leg, st, b_repair, b_build, inten)
 
 
-## SAFE / AT RISK for a between option: L8Rules.safe_next on the next raid's state after the step and its decay. Cached
-## per (repair, build, intensity) for this between screen.
-func _safe(repair: Variant, build: Variant, inten: String) -> bool:
-	var key := "%s|%s|%s" % [str(repair), str(build), inten]
-	if not safe_cache.has(key):
-		var ns: Dictionary = L8Rules.between(leg, st, repair, build, inten)
-		safe_cache[key] = L8Rules.safe_next(leg, raid + 1, L8Rules.decay(leg, ns))
-	return bool(safe_cache[key])
+func _opt_key(repair: Variant, build: Variant, inten: String) -> String:
+	return "%d|%d|%d|%s|%s|%s" % [leg_seed, raid, b_hash, str(repair), str(build), inten]
 
 
-## DECIDED: every intensity card for the current repair and build shows a skull, and no between option at all is safe.
-func _is_decided() -> bool:
+## safe_next on the next raid from a post-between state, cached by (leg, raid, state hash).
+func _safe_next_cached(raid_i: int, s: Dictionary) -> bool:
+	var key := "%d|%d|%d" % [leg_seed, raid_i, _state_hash(s)]
+	if not next_cache.has(key):
+		next_cache[key] = L8Rules.safe_next(leg, raid_i, s)
+	return bool(next_cache[key])
+
+
+func _compute_safe(key: String, repair: Variant, build: Variant, inten: String) -> bool:
+	var ns: Dictionary = L8Rules.between(leg, st, repair, build, inten)
+	var ok := _safe_next_cached(raid + 1, L8Rules.decay(leg, ns))
+	safe_cache[key] = ok
+	safe_pending.erase(key)
+	return ok
+
+
+## The verdict of a between option: L8Rules.safe_next on the next raid's state after the step and its decay.
+## 1 = HOLDABLE (a plan exists), 0 = LOST (no plan holds HOME), -1 = still being checked (queued for _process).
+## force (and --auto) computes it at once.
+func _safe(repair: Variant, build: Variant, inten: String, force: bool = false) -> int:
+	var key := _opt_key(repair, build, inten)
+	if safe_cache.has(key):
+		return 1 if bool(safe_cache[key]) else 0
+	if force or auto_line != "":
+		return 1 if _compute_safe(key, repair, build, inten) else 0
+	if not safe_pending.has(key):
+		safe_pending[key] = [repair, build, inten]
+	return -1
+
+
+## Work queued verdict checks for up to SAFE_BUDGET_MS this frame (at least one).
+func _work_safe() -> void:
+	var t0 := Time.get_ticks_msec()
+	while not safe_pending.is_empty():
+		var key: String = safe_pending.keys()[0]
+		var a: Array = safe_pending[key]
+		_compute_safe(key, a[0], a[1], String(a[2]))
+		if Time.get_ticks_msec() - t0 >= SAFE_BUDGET_MS:
+			break
+
+
+## DECIDED: every intensity card for the current repair and build is LOST, and no between option at all holds.
+## 1 = decided, 0 = not, -1 = still being checked (force computes everything at once).
+func _decided(force: bool = false) -> int:
 	if raid + 1 >= L8Rules.RAIDS:
-		return false
+		return 0
+	var unknown := false
 	for nv: Variant in L8Rules.INTENSITY_ORDER:
-		if _safe(b_repair, b_build, String(nv)):
-			return false
+		var v := _safe(b_repair, b_build, String(nv), force)
+		if v == 1:
+			return 0
+		if v < 0:
+			unknown = true
+	if unknown:
+		return -1
 	if b_all_unsafe < 0:
-		b_all_unsafe = 1
+		var unk := false
 		for ov: Variant in L8Rules.between_options(leg, st):
 			var o: Array = ov
-			if _safe(o[0], o[1], String(o[2])):
+			var v := _safe(o[0], o[1], String(o[2]), force)
+			if v == 1:
 				b_all_unsafe = 0
-				break
-	return b_all_unsafe == 1
+				return 0
+			if v < 0:
+				unk = true
+		if unk:
+			return -1
+		b_all_unsafe = 1
+	return b_all_unsafe
 
 
-## The next raid's routes to HOME left uncovered by a between choice, worst case and before any forecast: beam 1 when
-## it is a route, and each sealed route. A route counts as covered when, after this step and the next raid's decay,
-## the pool holds a sentry of its type and a live district sits on that route. Entries are [label, type].
-func _home_gaps(repair: Variant, build: Variant) -> Array:
-	var out: Array = []
-	if raid + 1 >= L8Rules.RAIDS:
-		return out
-	var p := L8Rules.between_parts(leg, st, repair, build, b_inten)
-	var ds: Dictionary = L8Rules.decay(leg, p["state"])
-	var pool: Dictionary = ds["pool"]
-	var rows := {}
-	for cv: Variant in L8Rules.live_cells(ds):
-		if typeof(cv) == TYPE_VECTOR2I:
-			var v: Vector2i = cv
-			rows[v.y] = true
-	var rn: Dictionary = leg["raids"][raid + 1]
-	var threats: Array = []
-	var b1: Dictionary = rn["b1"]
-	if bool(b1["home"]):
-		threats.append(["BEAM 1 " + String(L8Rules.ROUTE_NAMES[int(b1["index"])]), b1])
-	for cv: Variant in rn["cands"]:
-		var ln: Dictionary = cv
-		threats.append([String(L8Rules.ROUTE_NAMES[int(ln["index"])]), ln])
-	for thv: Variant in threats:
-		var th: Array = thv
-		var ln: Dictionary = th[1]
-		var t := String(ln["type"])
-		if int(pool.get(t, 0)) <= 0 or not rows.has(int(ln["index"])):
-			out.append([String(th[0]), t])
+## The repair options at the current build: none, then every DOWN district the bank can pay for.
+func _repair_opts() -> Array:
+	var out: Array = [null]
+	for cv: Variant in _down_cells():
+		if not _none(L8Rules.between_parts(leg, st, cv, b_build, b_inten)["repaired"]):
+			out.append(cv)
 	return out
+
+
+## The build options at the current repair: none, then every type the bank can pay for after the repair.
+func _build_opts() -> Array:
+	var out: Array = [null]
+	for tv: Variant in L8Rules.TYPES:
+		if not _none(L8Rules.between_parts(leg, st, b_repair, tv, b_inten)["built"]):
+			out.append(tv)
+	return out
+
+
+## The requirement line for repair (is_repair) or build options at the selected intensity: when some options hold the
+## next raid and others lose it, name the holding ones ("Repair MID 0, or raid 3 cannot be held"). "" otherwise, or
+## while a verdict is still being checked.
+func _req_text(opts: Array, is_repair: bool) -> String:
+	if raid + 1 >= L8Rules.RAIDS or opts.size() <= 1:
+		return ""
+	var good := PackedStringArray()
+	var bad := false
+	for o: Variant in opts:
+		var v := _safe(o if is_repair else b_repair, b_build if is_repair else o, b_inten)
+		if v < 0:
+			return ""
+		if v == 1:
+			if _none(o):
+				good.append("nothing")
+			else:
+				good.append(_cell_name(o) if is_repair else String(o))
+		else:
+			bad = true
+	if good.is_empty() or not bad:
+		return ""
+	return "%s %s, or raid %d cannot be held" % ["Repair" if is_repair else "Build", " or ".join(good), raid + 2]
+
+
+## A red-bordered requirement line. Returns the y after.
+func _req_line(y: float, text: String) -> float:
+	var x := PANEL_X + PAD
+	var r := Rect2(x, y, PANEL_W - 2.0 * PAD, 20.0)
+	ui.draw_rect(r, RED.darkened(0.7))
+	ui.draw_rect(r, RED, false, 2.0)
+	_t(r.position + Vector2(8.0, 3.0), text, 12, WHITE)
+	return y + 24.0
+
+
+func _clear_repair() -> void:
+	if phase != Phase.BETWEEN:
+		return
+	b_repair = null
+	_highlight_down()
 
 
 func _between_click(c: Variant) -> void:
@@ -2209,7 +2450,8 @@ func _confirm_between() -> void:
 	if phase != Phase.BETWEEN or busy:
 		return
 	var parts := _bp(b_inten)
-	var cut := _is_decided()
+	var cut := _decided(true) == 1
+	safe_pending = {}
 	if not history.is_empty():
 		var row: Dictionary = history.back()
 		row["between"] = {"repair": parts["repaired"], "build": parts["built"], "intensity": b_inten,
@@ -2243,6 +2485,7 @@ func _draw_between() -> void:
 	var w := PANEL_W - 2.0 * PAD
 	var y := _head("BETWEEN RAIDS", "Repair, build, pick an intensity. Enter: next raid.")
 	var parts := _bp(b_inten)
+	_safe(b_repair, b_build, b_inten)	# the current choice is checked first
 	if int(st["home_hp"]) == 1:
 		var br := Rect2(x, y - 4.0, w, 24.0)
 		ui.draw_rect(br, RED.darkened(0.45))
@@ -2250,39 +2493,46 @@ func _draw_between() -> void:
 		_skull(br.position + Vector2(13.0, 12.0), 8.0, WHITE, BLACK)
 		_t(br.position + Vector2(28.0, 4.0), "Next HOME hit ends the campaign", 13, WHITE)
 		y += 26.0
-	# Which repair or build protects HOME next raid (only when the worst case could reach it).
-	var base := _home_gaps(null, null)
-	var guard_builds: Array = []
-	var guard_repairs: Array = []
-	if not base.is_empty():
-		var nb := _home_gaps(b_repair, null).size()
-		for tv: Variant in L8Rules.TYPES:
-			var t: String = tv
-			if _none(L8Rules.between_parts(leg, st, b_repair, t, b_inten)["built"]):
-				continue
-			if _home_gaps(b_repair, t).size() < nb:
-				guard_builds.append(t)
-		var nr := _home_gaps(null, b_build).size()
-		for cv: Variant in _down_cells():
-			if _none(L8Rules.between_parts(leg, st, cv, b_build, b_inten)["repaired"]):
-				continue
-			if _home_gaps(cv, b_build).size() < nr:
-				guard_repairs.append(cv)
+	# 1: repair rows, each with its own verdict at the selected intensity and the current build.
 	_t(Vector2(x, y), "1  REPAIR ONE DISTRICT (click a DOWN one; cost value / 2)", 12, DIM)
 	y += 20.0
-	if _none(b_repair):
-		_t(Vector2(x + 18.0, y), "none" if not _down_cells().is_empty() else "nothing is DOWN", 13, DIM)
+	var downs := _down_cells()
+	if downs.is_empty():
+		_t(Vector2(x + 18.0, y), "nothing is DOWN", 13, DIM)
+		y += 22.0
 	else:
-		_t(Vector2(x + 18.0, y), "%s   -%d" % [_cell_name(b_repair), int(parts["repair_cost"])], 13, ACID)
-	y += 22.0
-	for cv: Variant in _down_cells():
-		var c: Vector2i = cv
-		if L8Rules._same(b_repair, c):
-			continue
-		_down_icon(Vector2(x + 26.0, y + 8.0))
-		_t(Vector2(x + 40.0, y), "%s is DOWN: repair it or lose it (-%d)" % [_cell_name(c), L8Rules.repair_cost(leg, c)], 12, RED)
-		y += 18.0
+		var ropts: Array = [null]
+		ropts.append_array(downs)
+		for i in range(ropts.size()):
+			var o: Variant = ropts[i]
+			var rr := Rect2(x, y, w, REP_ROW_H - 2.0)
+			var picked := L8Rules._same(b_repair, o)
+			var afford := _none(o) or not _none(L8Rules.between_parts(leg, st, o, b_build, b_inten)["repaired"])
+			var hot := afford and rr.has_point(mouse)
+			if picked or hot:
+				_box(rr, AMBER if picked else INK, PANEL_HI, 1.0)
+			if _none(o):
+				_t(rr.position + Vector2(22.0, 2.0), "no repair [click]" if not picked else "no repair", 12, INK if picked else DIM)
+			else:
+				var c: Vector2i = o
+				var cost := L8Rules.repair_cost(leg, c)
+				_down_icon(rr.position + Vector2(10.0, 9.5))
+				if picked:
+					_t(rr.position + Vector2(22.0, 2.0), "repair %s   -%d" % [_cell_name(c), cost], 12, ACID)
+				else:
+					_t(rr.position + Vector2(22.0, 2.0), "%s is DOWN: repair it or lose it (-%d)" % [_cell_name(c), cost], 12,
+						RED if afford else DIM)
+			if afford:
+				_verdict_mark(Vector2(rr.end.x - 4.0, rr.position.y + 3.0), _safe(o, b_build, b_inten))
+				hits.append({"rect": rr, "id": "rep:%d" % i})
+			else:
+				_tr(Vector2(rr.end.x - 4.0, rr.position.y + 3.0), "bank too low", 11, DIM)
+			y += REP_ROW_H
+	var rq := _req_text(_repair_opts(), true)
+	if rq != "":
+		y = _req_line(y + 2.0, rq)
 	y += 6.0
+	# 2: build buttons, each with its own verdict mark.
 	_t(Vector2(x, y), "2  BUILD ONE SENTRY (-%d)   [B then 1 2 3, 0 none]" % L8Rules.SENTRY_PRICE, 12, DIM)
 	y += 20.0
 	var bw := (w - 24.0) / 4.0
@@ -2295,44 +2545,19 @@ func _draw_between() -> void:
 		var hot := ok and r.has_point(mouse)
 		_box(r, AMBER if picked else (INK if hot else EDGE), PANEL_HI if (picked or hot) else PANEL)
 		if t == "":
-			_tc(r.get_center(), "NONE [0]", 12, INK)
+			_tc(r.get_center() - Vector2(6.0, 0.0), "NONE [0]", 12, INK)
 		else:
 			_glyph(r.position + Vector2(14.0, 20.0), t, 8.0, TYPE_COLOR[t] if ok else DIM)
 			_t(r.position + Vector2(26.0, 4.0), _tname(t).substr(0, 6), 11, INK if ok else DIM)
 			_t(r.position + Vector2(26.0, 21.0), "[%d] -%d" % [i, L8Rules.SENTRY_PRICE], 11, DIM)
-			if guard_builds.has(t):
-				ui.draw_rect(Rect2(r.position.x + 4.0, r.end.y - 5.0, r.size.x - 8.0, 3.0), ACID)
 		if ok:
+			_verdict_dot(Vector2(r.end.x - 9.0, r.position.y + 10.0), _safe(b_repair, null if t == "" else t, b_inten))
 			hits.append({"rect": r, "id": "build:" + ("none" if t == "" else t)})
 	y += 46.0
-	if not base.is_empty():
-		var gaps := _home_gaps(b_repair, b_build)
-		if gaps.is_empty():
-			_t(Vector2(x, y), "HOME NEXT RAID: this choice can block every route to HOME", 11, ACID)
-		else:
-			var head := "HOME NEXT RAID OPEN:"
-			_t(Vector2(x, y), head, 11, RED)
-			var gx := x + _tw(head, 11) + 8.0
-			for gv: Variant in gaps:
-				var g: Array = gv
-				var gt := String(g[1])
-				_glyph(Vector2(gx + 5.0, y + 7.0), gt, 5.5, TYPE_COLOR.get(gt, GREY))
-				_t(Vector2(gx + 13.0, y), String(g[0]), 11, INK)
-				gx += 22.0 + _tw(String(g[0]), 11)
-		y += 16.0
-		var prot := PackedStringArray()
-		for tv: Variant in guard_builds:
-			prot.append("build " + _tname(String(tv)))
-		for cv: Variant in guard_repairs:
-			prot.append("repair " + _cell_name(cv))
-		if not prot.is_empty():
-			_t(Vector2(x, y), "PROTECTS HOME: " + ", ".join(prot), 11, ACID)
-		elif not gaps.is_empty():
-			var ghost_ok := int((parts["state"]["kit"] as Dictionary).get("ghost", 0)) > 0
-			_t(Vector2(x, y), "No repair or build here covers it%s" % (": a ghost on HOME does" if ghost_ok else "."), 11, DIM)
-		y += 18.0
-	else:
-		y += 4.0
+	var bq := _req_text(_build_opts(), false)
+	if bq != "":
+		y = _req_line(y, bq)
+	# 3: intensity cards, each with its verdict badge.
 	_t(Vector2(x, y), "3  RUN INTENSITY   [L N O]   beams next raid: no ghost / with a ghost", 12, DIM)
 	y += 20.0
 	var kt: Array = []
@@ -2359,26 +2584,32 @@ func _draw_between() -> void:
 			_flame(Vector2(cr.end.x - 11.0 - f * 13.0, cr.position.y + 14.0), 5.5)
 		_t(cr.position + Vector2(8.0, 25.0), "Heat +%d -> %d" % [int(p["heat_add"]), h0], 11, HEAT_COL)
 		_t(cr.position + Vector2(8.0, 41.0), "income +%d  bank %d" % [int(p["income"]), int(ns["bank"])], 11, GOLD)
-		var ry := cr.position.y + 65.0
+		var ry := cr.position.y + 63.0
 		_beam_icons(Vector2(cr.position.x + 16.0, ry), kt, k0)
 		_tr(Vector2(cr.end.x - 8.0, ry - 7.0), "H%d" % h0, 10, RED if k0 > 1 else DIM)
-		ry += 18.0
+		ry += 17.0
 		if ghost_ok:
 			_ghost_icon(Vector2(cr.position.x + 11.0, ry), 4.5, GOLD)
 			_beam_icons(Vector2(cr.position.x + 28.0, ry), kt, k1)
 			_tr(Vector2(cr.end.x - 8.0, ry - 7.0), "H%d" % h1, 10, RED if k1 > 1 else DIM)
 		else:
 			_t(Vector2(cr.position.x + 8.0, ry - 7.0), "no ghost left", 10, DIM)
-		var safe := _safe(b_repair, b_build, nm)
-		var badge := Rect2(cr.position.x + 6.0, cr.position.y + 96.0, cr.size.x - 12.0, 24.0)
-		if safe:
+		var sv := _safe(b_repair, b_build, nm)
+		var badge := Rect2(cr.position.x + 6.0, cr.position.y + 94.0, cr.size.x - 12.0, 30.0)
+		if sv == 1:
 			_box(badge, HOLDS_COL, PANEL, 2.0)
-			_tier_glyph(badge.position + Vector2(13.0, 12.0), "HOLDS", 8.0, HOLDS_COL)
-			_t(badge.position + Vector2(26.0, 5.0), "SAFE", 12, HOLDS_COL)
-		else:
+			_tier_glyph(badge.position + Vector2(11.0, 9.0), "HOLDS", 6.5, HOLDS_COL)
+			_t(badge.position + Vector2(21.0, 1.0), "HOLDABLE:", 12, HOLDS_COL)
+			_t(badge.position + Vector2(6.0, 15.0), "a plan exists", 10, HOLDS_COL)
+		elif sv == 0:
 			_box(badge, RED, BLACK, 2.0)
-			_skull(badge.position + Vector2(13.0, 12.0), 8.0, RED, BLACK)
-			_t(badge.position + Vector2(26.0, 5.0), "AT RISK", 12, RED)
+			_skull(badge.position + Vector2(11.0, 9.0), 6.5, RED, BLACK)
+			_t(badge.position + Vector2(21.0, 1.0), "LOST:", 12, RED)
+			_t(badge.position + Vector2(6.0, 15.0), "no plan holds HOME", 10, RED)
+		else:
+			_box(badge, EDGE, PANEL, 1.5)
+			ui.draw_arc(badge.position + Vector2(11.0, 15.0), 4.5, 0.0, TAU, 12, DIM, 1.5)
+			_t(badge.position + Vector2(21.0, 7.0), "checking...", 11, DIM)
 	y += CARD_H + 8.0
 	var ns2: Dictionary = parts["state"]
 	_t(Vector2(x, y), "BANK %d - repair %d - build %d + income %d = %d" % [int(st["bank"]), int(parts["repair_cost"]),
@@ -2388,7 +2619,7 @@ func _draw_between() -> void:
 	y += 20.0
 	_t(Vector2(x, y), "Leg value after this step: %s" % _score_text(ns2), 13, INK)
 	y += 24.0
-	var dec := _is_decided()
+	var dec := _decided() == 1
 	if dec:
 		var dr := Rect2(x, y, w, 26.0)
 		ui.draw_rect(dr, BLACK)
@@ -2396,7 +2627,7 @@ func _draw_between() -> void:
 		_skull(dr.position + Vector2(14.0, 13.0), 9.0, RED, BLACK)
 		_t(dr.position + Vector2(30.0, 5.0), "DECIDED: the cell falls next raid", 13, WHITE)
 		y += 30.0
-		_t(Vector2(x, y), "No repair, build or intensity is SAFE.", 11, DIM)
+		_t(Vector2(x, y), "No repair, build or intensity leaves a plan that holds HOME.", 11, DIM)
 		y += 18.0
 	elif y + 48.0 <= LEGEND_Y - 62.0:
 		_draw_kit(y, false)
@@ -2421,6 +2652,7 @@ func _enter_record() -> void:
 	board.clear_highlight()
 	board.clear_outcome()
 	board.clear_response_preview()
+	board.hide_route_verdicts()
 	resp_prev = -2
 
 
@@ -2442,7 +2674,7 @@ func _draw_record() -> void:
 		_t(Vector2(x + 26.0, y), "BREACHED in raid %d: the campaign is lost." % history.size(), 18, RED)
 	elif decided:
 		_skull(Vector2(x + 9.0, y + 11.0), 9.0, RED, BG)
-		_t(Vector2(x + 26.0, y), "DECIDED before raid %d: no safe line remained. The cell falls." % (decided_raid + 1), 18, RED)
+		_t(Vector2(x + 26.0, y), "DECIDED before raid %d: no plan could hold HOME. The cell falls." % (decided_raid + 1), 18, RED)
 	else:
 		_t(Vector2(x, y), "THE CELL SURVIVED THE LEG", 18, ACID)
 	y += 40.0
@@ -2714,6 +2946,8 @@ func _hint() -> String:
 		Phase.PLAN:
 			return "PLAN: 1 2 3 a sentry (2 at most), G the ghost, click a district (again to lift). Q W E preview a route. Z undoes, Enter forecasts."
 		Phase.FORECAST:
+			if launch_armed:
+				return "FORECAST: every route breaks HOME. Enter again launches anyway; B or any edit returns to the plan."
 			return "FORECAST: Q W E or a row shows a route on the board. Enter launches, B goes back; any edit returns to the plan."
 		Phase.PLAY, Phase.REVEAL:
 			return "PLAYOUT: 1 2 4 set the speed, I toggles instant."
@@ -2722,9 +2956,9 @@ func _hint() -> String:
 		Phase.AFTER:
 			return "AFTERMATH: Enter goes on."
 		Phase.BETWEEN:
-			return "BETWEEN: click a DOWN district to repair it, B then 1 2 3 builds (0 for none), L N O sets the intensity, Enter starts the next raid."
+			return "BETWEEN: click a DOWN district (or its row) to repair it, B then 1 2 3 builds (0 for none), L N O sets the intensity, Enter starts the next raid."
 		Phase.FALL:
-			return "DECIDED: no safe line remains. The record follows."
+			return "DECIDED: no plan can hold HOME. The record follows."
 		Phase.RECORD:
 			return "RECORD: Enter plays the leg again."
 	return ""
@@ -2812,7 +3046,7 @@ func _verify(s: Dictionary) -> void:
 			_num(float(row["score"])), String(s["tier"]), _num(float(s["score_raid"]))])
 
 
-## Compare the cards' SAFE / AT RISK badges with the golden's safe_next for the chosen repair and build.
+## Compare the cards' HOLDABLE / LOST verdicts with the golden's safe_next for the chosen repair and build.
 func _verify_safe(s: Dictionary) -> void:
 	var g: Variant = s.get("safe_next")
 	if typeof(g) != TYPE_DICTIONARY:
@@ -2820,17 +3054,18 @@ func _verify_safe(s: Dictionary) -> void:
 	var gd: Dictionary = g
 	var bad := PackedStringArray()
 	for k: Variant in gd:
-		if _safe(b_repair, b_build, String(k)) != bool(gd[k]):
+		if (_safe(b_repair, b_build, String(k), true) == 1) != bool(gd[k]):
 			bad.append(String(k))
 	if bad.is_empty():
-		print("auto %s raid %d: safe_next badges match the golden" % [auto_line, int(s["raid"]) + 1])
+		print("auto %s raid %d: safe_next verdicts match the golden" % [auto_line, int(s["raid"]) + 1])
 	else:
 		push_warning("auto %s raid %d safe_next MISMATCH on %s" % [auto_line, int(s["raid"]) + 1, ", ".join(bad)])
 
 
 ## Replay the golden line's choices for this leg through the same UI handlers (capture, place, response, between).
-## DECAY runs on its own at the start of raids 2 and 3, so the golden's capture is made from the decayed state. When a
-## between screen is DECIDED, the fall beat plays and the replay stops at the record.
+## DECAY runs on its own at the start of raids 2 and 3, so the golden's capture is made from the decayed state. The
+## launch friction, when it shows, is shot and confirmed at once. When a between screen is DECIDED, the fall beat plays
+## and the replay stops at the record.
 func _run_auto() -> void:
 	var steps: Array = leg_entry.get(auto_line, [])
 	if shots_dir != "":
@@ -2855,6 +3090,9 @@ func _run_auto() -> void:
 		_enter_forecast()
 		await _beat("r%d_forecast" % rn)
 		_launch()
+		if phase == Phase.FORECAST and launch_armed:
+			await _beat("r%d_launch_friction" % rn)
+			_launch()
 		await _until([Phase.RESPONSE])
 		var resp := L8Rules.norm_response(s["response"])
 		_auto_select(resp)
