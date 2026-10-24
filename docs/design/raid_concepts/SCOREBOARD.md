@@ -415,3 +415,36 @@ bring a third sentry back from raid 2. Its next three changes:
 Estimate: 41–42.
 
 Reviews: `_reviews/REVIEW_LAB_L9_batch.md` and `_reviews/REVIEW_LAB_L10_batch.md`.
+
+## L11 city-raid lab (batch round; one batch critic, stills only)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 7 | 6 | 6 | 8 | **35** | 5 | 6 | 7 |
+
+**Within the ±3 noise of L10 (37).**
+
+**What L11 changed:**
+- At most 2 sentries are placed per raid, and the rest wait in reserve.
+- A new DEPLOY response puts a reserve sentry on the board after the reveal.
+- A district that is TAKEN returns its sentry to the pool.
+- Each between-raid card shows whether the next raid can be survived (`safe_next`), and a decided raid is cut short.
+- The hound hunter, flame icons and response arrows are new.
+
+**Measurement:**
+- The response changes the outcome in 45% of raids.
+- DEPLOY is used in 10% of raids and REDEPLOY in 15%.
+- No careful leg was cut as decided.
+
+**What the critic found:** P fell from 9 to 7. A "SAFE" badge, which means a good plan exists, sits next to a
+forecast that breaches for the player's current placement. It also says the response menu labels its own best answer.
+
+**Estimate:** about 40–41 from three changes:
+- verdicts between raids that state their cause;
+- verdict glyphs on the board;
+- an economy where intensity and Heat bands matter.
+
+**Above about 41 it is a rules ceiling.** That needs more simultaneous pressure, for example two sealed beams, or a
+response that trades a district for HOME.
+
+Review: `_reviews/REVIEW_LAB_L11_batch.md`.

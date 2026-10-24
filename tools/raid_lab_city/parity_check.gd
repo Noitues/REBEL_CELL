@@ -1,5 +1,5 @@
 extends SceneTree
-## Parity check of the L8/L9 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
+## Parity check of the L8–L11 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
 ## (tools/raid_concepts/l8_golden.py; oracle tools/raid_concepts/sweep_l8.py).
 ## It checks:
 ## - the config;
@@ -7,11 +7,16 @@ extends SceneTree
 ## - every step of the greedy and naive line of each leg. Per step:
 ##   - the state before the capture;
 ##   - DECAY: for raid > 0, decay(before_capture) gives `after_decay`. For raid 0, `after_decay` equals
-##     `before_capture` and no decay runs;
+##     `before_capture` and no decay runs. A decayed cell's sentry leaves the placement and goes back to the pool,
+##     so the pool counts stay the same (L11);
 ##   - capture_options of the decayed state holds the capture, and capture() of the decayed state gives `before`;
-##   - placements() holds the place, and response_options() holds the response;
+##   - placements() holds the place (at most MAX_PLACED sentries), and response_options() holds the response
+##     (HOLD, REDEPLOY, DEPLOY or JAM);
 ##   - resolve / trace / hunter_line / tier / score, then the forecast;
 ##   - between_options() holds the between step, between() gives `after`, and score(after);
+##   - SAFE_NEXT (L11): per intensity in the golden `safe_next`,
+##     safe_next(leg, raid + 1, decay(leg, between(leg, after_raid, repair, build, intensity))) equals the golden bool;
+##   - safe_next(leg, RAIDS, st) is true at the end of each line;
 ## - every random raid, random between step and random capture check (no decay there).
 ## States are compared as L8Rules.state_to_json against the golden JSON, by deep compare (ints stay ints; floats to
 ## 1e-6). The first 20 mismatches are printed with their path. Exits 0 only on full parity.
@@ -31,9 +36,13 @@ var _blocks: int = 0
 var _decayed: int = 0
 var _raids: int = 3
 var _kit_value: float = 2.5
+var _max_placed: int = -1
 var _legs: Dictionary = {}
-var _resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "JAM": 0}
+var _resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "JAM": 0}
+var _rand_resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "JAM": 0}
 var _off_option_betweens: int = 0
+var _safe_checked: int = 0
+var _safe_true: int = 0
 
 
 func _init() -> void:
@@ -56,6 +65,8 @@ func _init() -> void:
 	_check("config", L8Rules.config(), cfg)
 	_raids = int(cfg["RAIDS"])
 	_kit_value = float(cfg["KIT_VALUE"])
+	if cfg.has("MAX_PLACED"):
+		_max_placed = int(cfg["MAX_PLACED"])
 
 	var n_lines := 0
 	for raw: Variant in gold["legs"]:
@@ -77,6 +88,8 @@ func _init() -> void:
 			continue
 		var st: Dictionary = L8Rules.state_from_json(r["before"])
 		_check_state(tag + " before (state_from_json round trip)", st, r["before"])
+		var rk := String((r["response"] as Array)[0])
+		_rand_resp_use[rk] = int(_rand_resp_use.get(rk, 0)) + 1
 		var ns := _raid(tag, leg, int(r["raid"]), st, r)
 		_check_mid_score(tag, leg, ns, r["after_raid"])
 
@@ -108,8 +121,9 @@ func _init() -> void:
 			continue
 		_check_captures(tag, leg, r)
 
-	print("%d lines, %d golden steps (responses %s, %d blocks, %d decayed cells), %d random raids, %d random betweens (%d off the between_options list), %d random captures"
-		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, _decayed, rr.size(), rb.size(), _off_option_betweens, rc.size()])
+	print("%d lines, %d golden steps (responses %s, %d blocks, %d decayed cells, safe_next %d checked / %d safe), %d random raids (responses %s), %d random betweens (%d off the between_options list), %d random captures"
+		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, _decayed, _safe_checked, _safe_true, rr.size(),
+			JSON.stringify(_rand_resp_use), rb.size(), _off_option_betweens, rc.size()])
 	if _fails == 0:
 		print("PARITY PASS %d checks" % _checks)
 	else:
@@ -261,6 +275,7 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 			var snap := JSON.stringify(L8Rules.state_to_json(ns))
 			after = L8Rules.between(leg, ns, rep, build, inten)
 			_check_true(t + " between() leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(ns)) == snap)
+			_check_safe_next(t, leg, i, ns, rep, build, inten, s)
 		if s.has("after"):
 			_check_state(t + " after", after, s["after"])
 		_check_score(t + " score after", L8Rules.score(leg, after), s["score_after"])
@@ -271,10 +286,43 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 				"%d more steps follow" % (steps.size() - 1 - n))
 			break
 	_check_true(tag + " the line runs to the last raid or a breach", ended_ok)
+	var past: Variant = L8Rules.safe_next(leg, _raids, st)
+	_check(tag + " safe_next(raid = RAIDS) is true", past, true)
+
+
+## The SAFE_NEXT record of a golden step with a between step (L11). For every intensity in the golden
+## `safe_next` dict: safe_next(leg, raid + 1, decay(leg, between(leg, after_raid, repair, build, intensity)))
+## equals the golden bool. The chosen intensity must be among the keys.
+func _check_safe_next(t: String, leg: Dictionary, i: int, ns: Dictionary, rep: Variant, build: Variant, chosen: String, s: Dictionary) -> void:
+	var has_sn := s.has("safe_next")
+	_check_true(t + " golden step with a between step has safe_next", has_sn)
+	if not has_sn:
+		return
+	var sn_v: Variant = s["safe_next"]
+	if typeof(sn_v) != TYPE_DICTIONARY:
+		_fail(t + " safe_next", "is a %s, want a Dictionary {intensity: bool}" % type_string(typeof(sn_v)))
+		return
+	var sn: Dictionary = sn_v
+	_check_true(t + " safe_next lists the chosen intensity", sn.has(chosen), "%s not in %s" % [chosen, _s(sn.keys())])
+	var keys: Array = sn.keys()
+	keys.sort()
+	var snap := JSON.stringify(L8Rules.state_to_json(ns))
+	for k: Variant in keys:
+		var inten := String(k)
+		var tk := "%s safe_next %s" % [t, inten]
+		var nb: Dictionary = L8Rules.between(leg, ns, rep, build, inten)
+		var nd: Dictionary = L8Rules.decay(leg, nb)
+		var got: Variant = L8Rules.safe_next(leg, i + 1, nd)
+		_safe_checked += 1
+		if typeof(sn[k]) == TYPE_BOOL and bool(sn[k]):
+			_safe_true += 1
+		_check(tk, got, sn[k])
+	_check_true(t + " safe_next leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(ns)) == snap)
 
 
 ## The DECAY step of a golden step. For raid > 0 it runs decay(leg, st) and checks it against `after_decay`. For
-## raid 0 no decay runs, and the golden `after_decay` must equal `before_capture`. Returns the state for capture.
+## raid 0 no decay runs, and the golden `after_decay` must equal `before_capture`. A decayed cell's sentry leaves
+## the placement but stays in the pool (L11). Returns the state for capture.
 func _decay_step(t: String, leg: Dictionary, i: int, st: Dictionary, s: Dictionary) -> Dictionary:
 	var has_ad := s.has("after_decay")
 	_check_true(t + " golden step has after_decay", has_ad)
@@ -292,6 +340,12 @@ func _decay_step(t: String, leg: Dictionary, i: int, st: Dictionary, s: Dictiona
 			_decayed += 1
 	for c: Variant in after_owned:
 		_check_true("%s after decay %s is not DOWN" % [t, str(c)], String(after_owned[c]) != "DOWN")
+	var dec_sent: Dictionary = dec.get("sentries", {})
+	for c: Variant in dec_sent:
+		_check_true("%s after decay no sentry on TAKEN %s" % [t, str(c)], String(after_owned.get(c, "")) != "TAKEN")
+	var sj_before: Dictionary = L8Rules.state_to_json(st)
+	var sj_after: Dictionary = L8Rules.state_to_json(dec)
+	_check(t + " decay keeps the pool (a lost sentry goes back to the pool)", sj_after.get("pool"), sj_before.get("pool"))
 	if has_ad:
 		_check_state(t + " after decay", dec, s["after_decay"])
 	return dec
@@ -304,6 +358,10 @@ func _raid(t: String, leg: Dictionary, i: int, st: Dictionary, g: Dictionary) ->
 	var cand := int(g["cand"])
 	var resp := _resp(g["response"])
 	_check_true(t + " cand is a candidate", cand >= 0 and cand < CANDIDATES, str(cand))
+	if _max_placed >= 0:
+		var n_placed := (place["sentries"] as Dictionary).size()
+		_check_true(t + " place holds at most MAX_PLACED sentries", n_placed <= _max_placed,
+			"%d > %d" % [n_placed, _max_placed])
 	var snap_st := JSON.stringify(L8Rules.state_to_json(st))
 	var pkey := JSON.stringify(_place_json(place))
 	var found := false
@@ -555,13 +613,18 @@ func _place_json(p: Variant) -> Dictionary:
 	return {"sentries": out, "ghost": _cj(d.get("ghost"))}
 
 
+## A golden response to the lab form: ["HOLD"], ["JAM"], ["REDEPLOY", Vector2i, Vector2i] or
+## ["DEPLOY", type, Vector2i].
 func _resp(j: Array) -> Array:
 	var kind := String(j[0])
 	if kind == "REDEPLOY":
 		return [kind, _cell(j[1]), _cell(j[2])]
+	if kind == "DEPLOY":
+		return [kind, String(j[1]), _cell(j[2])]
 	return [kind]
 
 
+## A lab response to its JSON form (cells as [x, y], the DEPLOY type as a String).
 func _resp_json(r: Variant) -> Array:
 	var a: Array = r
 	var out: Array = [String(a[0])]

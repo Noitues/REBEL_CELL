@@ -3,6 +3,8 @@
 Rule changes applied in place:
 - L9 (docs/handoff/raid_lab_l8/L9_CHANGES.md): DECAY and SENTRY_PRICE 3.
 - L10 (docs/handoff/raid_lab_l8/L10_CHANGES.md): POOL_START D1 N1 E0, and new SUMMARY metrics.
+- L11 (docs/handoff/raid_lab_l8/L11_CHANGES.md): MAX_PLACED 2 (the rest of the pool is the reserve), the DEPLOY
+  response, a lost district returns its sentry to the pool, safe_next, and new SUMMARY metrics.
 
 The map
 - A 4 x 3 grid of districts between our HQ (HOME, off-grid at x = -1) and the corp HQ (off-grid at x = 4).
@@ -13,13 +15,13 @@ The map
 - At leg start we own 2 seeded x = 0 cells (OK).
 
 A leg is 3 raids
-- DECAY (L9; every raid after the first, before CAPTURE): every owned cell still DOWN becomes TAKEN and loses its
-  sentry (removed from the sentries and from the pool).
+- DECAY (L9; every raid after the first, before CAPTURE): every owned cell still DOWN becomes TAKEN. L11: its sentry
+  leaves the placement and goes back to the pool (the pool count is unchanged).
 - CAPTURE: claim 1 NEUTRAL cell orthogonally adjacent to an owned non-TAKEN cell, or a cell at x = 0. It works on the
   decayed state.
-- PLAN: re-place every pool sentry (at most 1 per owned non-TAKEN cell). Optionally a ghost (kit) on an owned
-  non-TAKEN cell or HOME, for +5 Heat.
-  - L10: the pool starts at D1 N1 E0. Two sentries cover at most two of the three sealed routes.
+- PLAN: place min(pool, live cells, MAX_PLACED = 2) sentries (at most 1 per owned non-TAKEN cell). The pool sentries
+  not placed are the RESERVE. Optionally a ghost (kit) on an owned non-TAKEN cell or HOME, for +5 Heat.
+  - L10: the pool starts at D1 N1 E0.
 - LAUNCH: beam 1, then extra 1 (Heat >= 50) and extra 2 (Heat >= 75), using launch Heat with the ghost. Then the
   REVEAL of the sealed route, the RESPONSE, the sealed beam, and the hunter.
 - BETWEEN (not after raid 3): repair <= 1 DOWN cell (v // 2), build <= 1 sentry (3), pick an intensity. Income and
@@ -37,8 +39,8 @@ Beams
 Scanning a line
 - A ghosted cell: pass.
 - A sentry of the beam's type: BLOCK. The line stops, so a stopped route never reaches HOME.
-- An owned live cell not yet hit this raid: HIT (OK -> DOWN, DOWN -> TAKEN; a TAKEN cell loses its sentry and the
-  pool loses it).
+- An owned live cell not yet hit this raid: HIT (OK -> DOWN, DOWN -> TAKEN; L11: a TAKEN cell's sentry leaves the
+  placement and returns to the pool).
 - Otherwise: pass.
 - At the end of a route: HOME -1, unless HOME is ghosted or was already hit this raid.
 - No touches at all = EVADED: Heat -10.
@@ -46,7 +48,14 @@ Scanning a line
 Response (after the reveal; a spoof charge + 2 Heat after the sweep)
 - HOLD.
 - REDEPLOY s -> c (applies to the sealed beam and the hunter).
+- DEPLOY t -> c (L11): a reserve sentry of type t onto an owned live cell with no sentry, after beam 1 and the extras.
+  It stays placed after the raid.
 - JAM (no hunter).
+- Order: HOLD, every REDEPLOY, every DEPLOY (types D, N, E, then target cells in cell order), JAM.
+
+safe_next (L11)
+- True if some capture, then some placement, with the best response per sealed candidate, keeps HOME above 0 on
+  every candidate of the given raid. It takes the post-decay state; True when raid >= RAIDS.
 
 Score
 - bank + sum(v - (v // 2 if DOWN)) over owned non-TAKEN cells
@@ -58,11 +67,8 @@ Score
 Measured (python sweep_l8.py)
 - Greedy (each phase maximizes EV over the sealed candidates with the best response, kit valued KIT_VALUE mid-leg)
   against naive, over 20 legs. Both apply DECAY before every capture after raid 1.
-- L10 metrics, per player:
-  - split_raids: the share of raids whose three candidates' HOLD (touches, tier) differ;
-  - response_decides: the share of raids where the chosen response's (touches, tier) differs from HOLD's on the real
-    candidate;
-  - redeploy_use: the share of raids answered with REDEPLOY."""
+- Per player: split_raids, response_decides, redeploy_use (L10), deploy_use, and decided_cuts (L11: legs where,
+  after some between step, safe_next is False for every between option)."""
 from __future__ import annotations
 
 import json
@@ -97,15 +103,16 @@ HOME_HP = 3
 GHOST_HEAT, SPOOF_HEAT, EVADE_HEAT = 5, 2, 10
 SENTRY_PRICE = 3    # L9 (was 4)
 POOL_START = (("D", 1), ("N", 1), ("E", 0))    # L10 (was 1/1/1): one sealed route is always uncovered
+MAX_PLACED = 2      # L11: PLAN places at most 2 sentries; the rest of the pool is the reserve
 KIT_START = (("ghost", 2), ("spoof", 2))
 INTENSITY = {"LOW": (6, 0.5), "NORMAL": (12, 1.0), "HOT": (18, 1.5)}
-DECAY = True        # L9: DOWN -> TAKEN (sentry lost) at the start of every raid after the first, before CAPTURE
+DECAY = True        # L9: DOWN -> TAKEN at the start of every raid after the first, before CAPTURE
 
 # Score.
 EXPLOIT_BONUS, HOME_LOSS_COST, HEAT_CARRY, BREACH = 6, 8, 1.0, 100
 KIT_VALUE = 2.5     # planner heuristic only: an unspent kit item (ghost, spoof, pool sentry) mid-leg
 EPS = 1e-9          # float ties keep the earlier option
-OUT = r"D:/rc_tmp/raid_design_lab/sweep_l10.json"
+OUT = r"D:/rc_tmp/raid_design_lab/sweep_l11.json"
 
 
 def ck(c) -> tuple:
@@ -118,6 +125,7 @@ def config() -> dict:
             "RAIDS": RAIDS, "START_BANK": START_BANK, "START_HEAT": START_HEAT, "EXTRA_AT": EXTRA_AT,
             "STRONG_AT": STRONG_AT, "HOME_HP": HOME_HP, "GHOST_HEAT": GHOST_HEAT, "SPOOF_HEAT": SPOOF_HEAT,
             "EVADE_HEAT": EVADE_HEAT, "SENTRY_PRICE": SENTRY_PRICE, "POOL_START": dict(POOL_START),
+            "MAX_PLACED": MAX_PLACED,
             "KIT_START": dict(KIT_START), "INTENSITY": {k: list(v) for k, v in INTENSITY.items()},
             "EXPLOIT_BONUS": EXPLOIT_BONUS, "HOME_LOSS_COST": HOME_LOSS_COST, "HEAT_CARRY": HEAT_CARRY,
             "BREACH": BREACH, "KIT_VALUE": KIT_VALUE, "DECAY": DECAY}
@@ -168,8 +176,8 @@ class State:
     bank: int = START_BANK
     home_hp: int = HOME_HP
     owned: tuple = ()       # ((cell, status), ...) in cell order; NEUTRAL cells absent
-    sentries: tuple = ()    # ((cell, type), ...) in cell order: the last placement
-    pool: tuple = POOL_START
+    sentries: tuple = ()    # ((cell, type), ...) in cell order: the last placement (with any DEPLOY)
+    pool: tuple = POOL_START    # every sentry owned, placed or in reserve
     kit: tuple = KIT_START
 
 
@@ -187,6 +195,11 @@ def _kit_t(d: dict) -> tuple:
 
 def _live(st: State) -> list:
     return [c for c, s in st.owned if s in LIVE]
+
+
+def _reserve(pool: dict, sent: dict, t: str) -> int:
+    """Pool sentries of type t not in the placement `sent`."""
+    return pool[t] - sum(1 for v in sent.values() if v == t)
 
 
 def _rand_line(rng: random.Random) -> Line:
@@ -228,16 +241,14 @@ def decay_cells(leg: Leg, st: State) -> list:
 
 def decay(leg: Leg, st: State) -> State:
     """L9 DECAY, applied at the start of every raid after the first, before CAPTURE: every owned DOWN cell becomes
-    TAKEN and loses its sentry (removed from the sentries and from the pool). The caller decides when (raid > 0)."""
+    TAKEN. L11: its sentry leaves the placement and returns to the pool (pool counts unchanged). The caller decides
+    when (raid > 0)."""
     owned = dict(st.owned)
     sent = dict(st.sentries)
-    pool = dict(st.pool)
     for c in decay_cells(leg, st):
         owned[c] = TAKEN
-        t = sent.pop(c, None)
-        if t is not None:
-            pool[t] -= 1
-    return replace(st, owned=_otup(owned), sentries=_otup(sent), pool=_pool_t(pool))
+        sent.pop(c, None)
+    return replace(st, owned=_otup(owned), sentries=_otup(sent))
 
 
 def capture_options(leg: Leg, st: State) -> list:
@@ -264,11 +275,12 @@ def capture(leg: Leg, st: State, cell) -> State:
 
 
 def placements(leg: Leg, st: State):
-    """Yields (sentries {cell: type}, ghost) with every pool sentry placed (as many as live cells allow).
-    Distinct maps only (same-type sentries are not permuted). Ghost order: None, HOME, then live cells."""
+    """Yields (sentries {cell: type}, ghost) with min(pool, live cells, MAX_PLACED) sentries placed (L11 cap; the rest
+    is the reserve). Distinct maps only (same-type sentries are not permuted), in the established DFS order (cells in
+    cell order, types D, N, E, then skip). Ghost order: None, HOME, then live cells."""
     live = _live(st)
     left = dict(st.pool)
-    need = min(sum(left.values()), len(live))
+    need = min(sum(left.values()), len(live), MAX_PLACED)
     maps = []
 
     def rec(idx: int, cur: dict, k: int):
@@ -297,6 +309,8 @@ def placements(leg: Leg, st: State):
 def _check_place(st: State, place) -> None:
     sent, ghost = place
     live = set(_live(st))
+    if len(sent) > MAX_PLACED:
+        raise ValueError(f"more than {MAX_PLACED} sentries placed")
     counts = {t: 0 for t in TYPES}
     for c, t in sent.items():
         if c not in live or t not in TYPES:
@@ -310,7 +324,7 @@ def _check_place(st: State, place) -> None:
 
 
 def norm_response(r) -> tuple:
-    """None / "HOLD" / "JAM" / ("REDEPLOY", s, c) (lists accepted) -> a canonical tuple."""
+    """None / "HOLD" / "JAM" / ("REDEPLOY", s, c) / ("DEPLOY", t, c) (lists accepted) -> a canonical tuple."""
     if r is None:
         return ("HOLD",)
     if isinstance(r, str):
@@ -318,6 +332,8 @@ def norm_response(r) -> tuple:
     r = tuple(r)
     if r[0] == "REDEPLOY" and len(r) == 3:
         return ("REDEPLOY", tuple(r[1]), tuple(r[2]))
+    if r[0] == "DEPLOY" and len(r) == 3:
+        return ("DEPLOY", str(r[1]), tuple(r[2]))
     if r[0] in ("HOLD", "JAM") and len(r) == 1:
         return r
     raise ValueError(f"unknown response {r}")
@@ -335,7 +351,6 @@ class _Sweep:
         self.seen = set()
         self.trace = []
         self.first = None
-        self.lost = []
 
     def scan(self, name: str, ln: Line) -> None:
         for c in ln.cells:
@@ -352,8 +367,7 @@ class _Sweep:
                     self.owned[c] = DOWN
                 else:
                     self.owned[c] = TAKEN
-                    if c in self.sent:
-                        self.lost.append(self.sent.pop(c))
+                    self.sent.pop(c, None)      # L11: the sentry returns to the pool (count unchanged)
                 self.trace.append((name, c, "hit"))
                 self.seen.add(c)
                 if self.first is None:
@@ -390,6 +404,11 @@ def _resolve(leg: Leg, raid: int, st: State, cand: int, place, response):
         if s not in sw.sent or c == s or c in sw.sent or sw.owned.get(c) not in LIVE:
             raise ValueError(f"illegal redeploy {s} -> {c}")
         sw.sent[c] = sw.sent.pop(s)
+    elif resp[0] == "DEPLOY":
+        t, c = resp[1], resp[2]
+        if t not in TYPES or _reserve(dict(st.pool), sw.sent, t) <= 0 or c in sw.sent or sw.owned.get(c) not in LIVE:
+            raise ValueError(f"illegal deploy {t} -> {c}")
+        sw.sent[c] = t
     sw.scan("sealed", rd.cands[cand])
     if resp[0] != "JAM":
         col = sw.first[0] if sw.first is not None else rd.hunter_street
@@ -401,17 +420,14 @@ def _resolve(leg: Leg, raid: int, st: State, cand: int, place, response):
         kit["spoof"] -= 1
     if place[1] is not None:
         kit["ghost"] -= 1
-    pool = dict(st.pool)
-    for t in sw.lost:
-        pool[t] -= 1
-    ns = State(heat, st.bank, sw.hp, _otup(sw.owned), _otup(sw.sent), _pool_t(pool), _kit_t(kit))
+    ns = State(heat, st.bank, sw.hp, _otup(sw.owned), _otup(sw.sent), st.pool, _kit_t(kit))
     return ns, sw.trace
 
 
 def resolve(leg: Leg, raid: int, st: State, cand: int, place, response=None):
     """One raid (raid = index into leg.raids) from the post-capture state. place = (sentries {cell: type}, ghost);
-    response = HOLD / JAM / ("REDEPLOY", s, c), any legal one. Returns (state after the raid, touches
-    [(cell | "HOME", "hit" | "block" | "home")])."""
+    response = HOLD / JAM / ("REDEPLOY", s, c) / ("DEPLOY", t, c), any legal one. Returns (state after the raid,
+    touches [(cell | "HOME", "hit" | "block" | "home")])."""
     ns, tr = _resolve(leg, raid, st, cand, place, response)
     return ns, [(c, k) for _, c, k in tr]
 
@@ -432,8 +448,8 @@ def hunter_line(leg: Leg, raid: int, st: State, cand: int, place, response=None)
 
 
 def response_options(leg: Leg, raid: int, st: State, cand: int, place) -> list:
-    """HOLD, then (with a spoof charge) every REDEPLOY (source by cell order, then target), then JAM. Legality is read
-    after beam 1 and the extras."""
+    """HOLD, then (with a spoof charge) every REDEPLOY (source by cell order, then target), every DEPLOY (types D, N, E
+    with a reserve sentry, then target in cell order), then JAM. Legality is read after beam 1 and the extras."""
     out = [("HOLD",)]
     if dict(st.kit)["spoof"] <= 0:
         return out
@@ -443,6 +459,11 @@ def response_options(leg: Leg, raid: int, st: State, cand: int, place) -> list:
         for c in targets:
             if c != s:
                 out.append(("REDEPLOY", s, c))
+    pool = dict(st.pool)
+    for t in TYPES:
+        if _reserve(pool, sw.sent, t) > 0:
+            for c in targets:
+                out.append(("DEPLOY", t, c))
     out.append(("JAM",))
     return out
 
@@ -506,6 +527,39 @@ def between_options(leg: Leg, st: State):
         for b in [None] + (list(TYPES) if left >= SENTRY_PRICE else []):
             for inten in INTENSITY:
                 yield (r, b, inten)
+
+
+def safe_next(leg: Leg, raid: int, st: State) -> bool:
+    """L11: True if some capture option (none = no capture), then some placement, with the best response per sealed
+    candidate, keeps HOME above 0 on every sealed candidate of raid `raid`. `st` is the post-decay state (the caller
+    applies DECAY). True when raid >= RAIDS. Two exact shortcuts: HOME loses at most 1 per raid (so home_hp >= 2 is
+    safe), and a ghost on HOME (kit ghost > 0) always keeps HOME; otherwise the search stops at the first safe plan."""
+    if raid >= RAIDS:
+        return True
+    if st.home_hp <= 0:
+        return False
+    if st.home_hp >= 2 or dict(st.kit)["ghost"] > 0:
+        return True
+    for cap in capture_options(leg, st) or [None]:
+        s1 = capture(leg, st, cap) if cap is not None else st
+        for place in placements(leg, s1):
+            opts = response_options(leg, raid, s1, 0, place)
+            if all(any(resolve(leg, raid, s1, k, place, r)[0].home_hp > 0 for r in opts) for k in range(CANDIDATES)):
+                return True
+    return False
+
+
+def safe_after_between(leg: Leg, nxt: int, st: State, repair=None, build=None, intensity: str = "NORMAL") -> bool:
+    """safe_next for raid `nxt` after a between step on the post-raid state `st`: between, DECAY (nxt > 0), safe_next."""
+    s = between(leg, st, repair, build, intensity)
+    if nxt > 0:
+        s = decay(leg, s)
+    return safe_next(leg, nxt, s)
+
+
+def decided(leg: Leg, nxt: int, st: State) -> bool:
+    """L11 "decided" cut: True when no between option on the post-raid state `st` makes raid `nxt` safe."""
+    return not any(safe_after_between(leg, nxt, st, *opt) for opt in between_options(leg, st))
 
 
 def _best_per_cand(leg: Leg, raid: int, st: State, place, mid: bool) -> list:
@@ -597,17 +651,22 @@ def greedy_leg(leg: Leg):
 
 
 def _naive_sentries(st: State) -> dict:
-    """Keep each pool sentry where it was; place the rest on the first free live cells (cell order, type order)."""
+    """Keep pool sentries where they were (cell order, at most MAX_PLACED); fill up to MAX_PLACED on the first free
+    live cells (cell order, type order)."""
     live = _live(st)
     left = dict(st.pool)
     out = {}
     for c, t in st.sentries:
+        if len(out) >= MAX_PLACED:
+            break
         if c in live and left[t] > 0:
             out[c] = t
             left[t] -= 1
     free = [c for c in live if c not in out]
     rest = [t for t in TYPES for _ in range(left[t])]
     for c, t in zip(free, rest):
+        if len(out) >= MAX_PLACED:
+            break
         out[c] = t
     return out
 
@@ -695,6 +754,7 @@ def _leg_stats(leg: Leg, end: State, log: list) -> dict:
     caps = [x["capture"] for x in log if x["capture"] is not None]
     bw = [x["between"] for x in log if x["between"]]
     metrics = [_raid_metrics(leg, b, x) for b, x in zip(befores, log)]
+    cut = any(decided(leg, x["raid"] + 1, x["after_raid"]) for x in log if x["between"])
     return {"score": score(leg, end), "breach": end.home_hp <= 0, "raids": len(log),
             "tiers": [x["tier"] for x in log],
             "blocks": sum(1 for x in log for _, k in x["touches"] if k == "block"),
@@ -709,7 +769,9 @@ def _leg_stats(leg: Leg, end: State, log: list) -> dict:
             "taken_end": sum(s == TAKEN for _, s in end.owned), "down_end": sum(s == DOWN for _, s in end.owned),
             "extra_raids": sum(h >= EXTRA_AT for h in launch), "strong_raids": sum(h >= STRONG_AT for h in launch),
             "split": sum(m[0] for m in metrics), "decides": sum(m[1] for m in metrics),
-            "redeploys": sum(x["response"][0] == "REDEPLOY" for x in log)}
+            "redeploys": sum(x["response"][0] == "REDEPLOY" for x in log),
+            "deploys": sum(x["response"][0] == "DEPLOY" for x in log),
+            "decided_cut": cut}
 
 
 def _agg(rows: list, p: str) -> dict:
@@ -724,7 +786,7 @@ def _agg(rows: list, p: str) -> dict:
             "mean_score_unbreached": round(stats.mean([r[p]["score"] for r in rows if not r[p]["breach"]] or [0]), 1),
             "breach_rate": sum(r[p]["breach"] for r in rows) / len(rows),
             "raids": raids, "blocks_per_raid": round(sum(r[p]["blocks"] for r in rows) / raids, 2),
-            "response_use": {k: resp.count(k) for k in ("HOLD", "REDEPLOY", "JAM")},
+            "response_use": {k: resp.count(k) for k in ("HOLD", "REDEPLOY", "DEPLOY", "JAM")},
             "ghost_per_raid": round(sum(r[p]["ghosts"] for r in rows) / raids, 2),
             "ghost_home": sum(r[p]["ghost_home"] for r in rows),
             "tier_mix": {t: tiers.count(t) for t in ("BREACHED", "DAMAGED", "EVADED", "BATTERED", "HOLDS")},
@@ -742,7 +804,9 @@ def _agg(rows: list, p: str) -> dict:
             "strong_raid_share": round(sum(r[p]["strong_raids"] for r in rows) / raids, 2),
             "split_raids": round(sum(r[p]["split"] for r in rows) / raids, 2),
             "response_decides": round(sum(r[p]["decides"] for r in rows) / raids, 2),
-            "redeploy_use": round(sum(r[p]["redeploys"] for r in rows) / raids, 2)}
+            "redeploy_use": round(sum(r[p]["redeploys"] for r in rows) / raids, 2),
+            "deploy_use": round(sum(r[p]["deploys"] for r in rows) / raids, 2),
+            "decided_cuts": sum(r[p]["decided_cut"] for r in rows)}
 
 
 if __name__ == "__main__":
@@ -761,6 +825,8 @@ if __name__ == "__main__":
     summ["decay"] = {p: {"decayed_per_leg": summ[p]["decayed_per_leg"], "taken_end": summ[p]["taken_end"]}
                      for p in ("greedy", "naive")}
     summ["l10"] = {p: {k: summ[p][k] for k in ("split_raids", "response_decides", "redeploy_use")}
+                   for p in ("greedy", "naive")}
+    summ["l11"] = {p: {k: summ[p][k] for k in ("split_raids", "response_decides", "deploy_use", "decided_cuts")}
                    for p in ("greedy", "naive")}
     print("SUMMARY", json.dumps(summ), flush=True)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

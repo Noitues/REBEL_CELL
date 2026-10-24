@@ -1,22 +1,28 @@
 class_name L8Board
 extends Node3D
-## The city view of raid lab L8 (SPEC section 8, with the L9 and L10 presentation changes). It shows a dark slab city
-## block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the right. Three lit routes
-## and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the corp end of the routes,
-## and street numbers 0-3 sit at the north edge. Districts are small building clusters with rings, value pips and
-## exploit keys. The board also draws:
+## The city view of raid lab L8 (SPEC section 8, with the L9, L10 and L11 presentation changes). It shows a dark slab
+## city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the right. Three lit
+## routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the corp end of the
+## routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with rings, value pips
+## and exploit keys. The board also draws:
 ## - sentries, the ghost and the sealed candidates;
-## - typed vehicles that travel the lines, and the hunter (a white hound with a cobalt trail and a small type badge);
+## - typed vehicles that travel the lines;
+## - the hunter: a cobalt hound silhouette with glowing eyes and a small type badge. It stands at the head of its street
+##   in PLAN and FORECAST (the outcome overlay) and runs the street in the playout;
 ## - planned paths, where candidate routes other than the selected one are drawn at 25% alpha, and the playout's trails;
 ## - a forecast outcome overlay (crack, shield, skull and hunter path glyphs);
+## - a response preview: an arc arrow in the sentry's type color from the source (a sentry, or the reserve tray at our
+##   HQ) to the target cell for REDEPLOY / DEPLOY, and a red cross over the hound for JAM;
 ## - decay beats, where a cell left DOWN flips to cobalt TAKEN with a pulse;
+## - the decided fall beat: our HQ tower turns red and collapses, with a red skull over the rubble;
 ## - highlights by meaning: an amber plus (capture), a red wrench outline (repair) and a white check ring (picked);
 ## - the lethal mark: at HOME 1/3 the last HOME pip pulses red and a red skull pulses on our HQ tower.
 ## Everything is built in code, and it runs inside a SubViewport that the main scene creates. It holds no rule. The lab
-## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`), an outcome (`show_outcome`) and a
-## playout's cues (`play`, `decay`); the board only draws them. `set_scramble` swaps the board labels for seeded noise.
-## The camera is fitted so the board fills the free area left of the side panel. Glow is capped while impacts flash, so
-## hits read as shapes. Cosmetic motion is seeded or time-based, never global random.
+## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`), an outcome (`show_outcome`), a
+## response preview (`show_response_preview`) and a playout's cues (`play`, `decay`, `show_fall`); the board only draws
+## them. `set_scramble` swaps the board labels for seeded noise. The camera is fitted so the board fills the free area
+## left of the side panel. Glow is capped while impacts flash, so hits read as shapes. Cosmetic motion is seeded or
+## time-based, never global random.
 
 signal cues_finished
 
@@ -52,9 +58,13 @@ const WARM_LIGHT := Color(1.0, 0.7, 0.4)
 const SHADOW_INK := Color(0.0, 0.0, 0.0, 0.8)
 ## Sentry and threat colors by type: drone = cyan, netrunner = magenta, enforcer = orange.
 const TYPE_COLOR := {"D": Color8(92, 225, 255), "N": Color8(255, 64, 214), "E": Color8(255, 140, 26)}
-## The hunter has its own look whatever its type: a white hound with a cobalt trail. Only its badge shows the type.
-const HUNTER_BODY := Color8(236, 242, 255)
+## The hunter has its own look whatever its type: a cobalt hound silhouette with glowing eyes and a cobalt trail. Only
+## its badge shows the type.
+const HUNTER_BODY := COBALT
+const HUNTER_EYE := Color8(235, 248, 255)
 const HUNTER_TRAIL := COBALT
+## The collapsed HQ's body color in the fall beat.
+const FALL_BODY := Color8(70, 14, 20)
 
 const ALBEDO_K := 0.25
 const ROUGH := 0.45
@@ -82,6 +92,7 @@ const E_SENTRY := 2.6
 const E_GHOST := 2.2
 const E_VEH := 3.0
 const E_HUNTER := 1.6
+const E_EYE := 6.0
 const E_CAND_LIT := 4.0
 ## Impact flashes (shield, strike, rings) are kept low so they read as a shape, not a white blob.
 const E_FX := 2.4
@@ -100,6 +111,8 @@ const E_OUT := 2.4
 const E_LABEL := 1.0
 const E_LETHAL := 2.6
 const E_LETHAL_PIP := 3.2
+const E_RESP := 2.6
+const E_FALL := 2.6
 const DECAL_ALPHA := 0.18
 const HALO_ALPHA := 0.35
 const HALO_E_K := 0.6
@@ -267,6 +280,19 @@ const LETHAL_HZ := 1.4
 const LETHAL_LOW := 0.3
 const LETHAL_GROW := 0.08
 
+## The decided fall beat: the tower squashes to rubble, spreads and tilts, the pips drop with it, and a red skull
+## stands over the rubble at the end.
+const FALL_SCALE_Y := 0.14
+const FALL_SPREAD := 0.18
+const FALL_TILT := 0.22
+const FALL_FLASH := 1.5
+const FALL_PIP_Y := 1.2
+const FALL_SKULL_Y := 1.7
+const FALL_SKULL_S := 1.1
+const FALL_SHAKE_U := 0.8
+const FALL_RING_K := 1.4
+const FALL_PULSE_K := 2.2
+
 const VEH_Y := 0.38
 const VEH_GLYPH_Y := 0.95
 const VEH_GLYPH_S := 0.2
@@ -293,10 +319,20 @@ const ENTRY_STREET_K := 0.35
 ## Headings (rotation.y with +x as forward): toward HOME (-x), down a street (+z, y = 0 -> 2).
 const HEADING_HOME := PI
 const HEADING_DOWN := -PI * 0.5
-## The hound: [position, size] boxes, forward +x, standing on the floor.
-const HOUND_PARTS := [[Vector3(0.0, 0.42, 0.0), Vector3(0.52, 0.2, 0.22)], [Vector3(0.33, 0.56, 0.0), Vector3(0.2, 0.18, 0.18)], [Vector3(0.47, 0.53, 0.0), Vector3(0.12, 0.08, 0.1)], [Vector3(0.3, 0.7, 0.05), Vector3(0.05, 0.12, 0.04)], [Vector3(0.3, 0.7, -0.05), Vector3(0.05, 0.12, 0.04)], [Vector3(0.18, 0.2, 0.08), Vector3(0.05, 0.26, 0.05)], [Vector3(0.18, 0.2, -0.08), Vector3(0.05, 0.26, 0.05)], [Vector3(-0.18, 0.2, 0.08), Vector3(0.05, 0.26, 0.05)], [Vector3(-0.18, 0.2, -0.08), Vector3(0.05, 0.26, 0.05)], [Vector3(-0.32, 0.52, 0.0), Vector3(0.16, 0.04, 0.04)]]
+## The hound, forward +x, standing on the floor, built inside a holder scaled by HOUND_S.
+## Body parts: [position, size] or [position, size, rotation.z] (torso, chest, haunch, neck, head, snout, ears, tail).
+const HOUND_S := 1.2
+const HOUND_PARTS := [[Vector3(-0.02, 0.44, 0.0), Vector3(0.56, 0.19, 0.22)], [Vector3(0.18, 0.47, 0.0), Vector3(0.2, 0.26, 0.24)], [Vector3(-0.22, 0.45, 0.0), Vector3(0.16, 0.22, 0.22)], [Vector3(0.3, 0.6, 0.0), Vector3(0.12, 0.16, 0.14), -0.5], [Vector3(0.38, 0.66, 0.0), Vector3(0.2, 0.16, 0.17)], [Vector3(0.52, 0.62, 0.0), Vector3(0.14, 0.08, 0.1)], [Vector3(0.33, 0.78, 0.05), Vector3(0.05, 0.13, 0.04), 0.25], [Vector3(0.33, 0.78, -0.05), Vector3(0.05, 0.13, 0.04), 0.25], [Vector3(-0.38, 0.55, 0.0), Vector3(0.2, 0.045, 0.045), -0.6]]
+## Legs: [position, size, gait phase sign] (diagonal pairs swing together).
+const HOUND_LEGS := [[Vector3(0.18, 0.17, 0.08), Vector3(0.06, 0.32, 0.06), 1.0], [Vector3(0.18, 0.17, -0.08), Vector3(0.06, 0.32, 0.06), -1.0], [Vector3(-0.22, 0.17, 0.08), Vector3(0.06, 0.32, 0.06), -1.0], [Vector3(-0.22, 0.17, -0.08), Vector3(0.06, 0.32, 0.06), 1.0]]
+## The glowing eyes on the front of the head, above the snout.
+const HOUND_EYES := [[Vector3(0.485, 0.69, 0.048), Vector3(0.035, 0.06, 0.06)], [Vector3(0.485, 0.69, -0.048), Vector3(0.035, 0.06, 0.06)]]
+const GAIT_HZ := 3.2
+const GAIT_AMP := 0.05
+const EYE_HZ := 0.8
+const EYE_LOW := 0.55
 ## The hunter's type badge: a small type shape on a dark disc above the hound.
-const HUNTER_BADGE_Y := 1.0
+const HUNTER_BADGE_Y := 1.15
 const HUNTER_BADGE_S := 0.13
 const BADGE_BACK_K := 1.6
 const CAND_DX := 0.55
@@ -370,8 +406,37 @@ const SKULL_JAW_Y := -0.25
 const SKULL_TOOTH := Vector3(0.03, 0.15, 0.04)
 const SKULL_TOOTH_X := [-0.07, 0.07]
 const OUT_HOUND_S := 1.15
-const OUT_HOUND_GLYPH_Y := 1.15
+const OUT_HOUND_GLYPH_Y := 1.35
 const OUT_HOUND_GLYPH_K := 1.4
+
+## Response preview: an arc arrow from the source to the target (ends cut back so it lands on the rings), a cone head,
+## a spinning dashed ring at a sentry source, the reserve tray at our HQ for DEPLOY, a ghost sentry at the target, and
+## for JAM a red cross over the hound (which dims).
+const RESP_END_Y := 0.3
+const RESP_ARC_H := 0.9
+const RESP_ARC_K := 0.12
+const RESP_ARC_SEGS := 16
+const RESP_ARC_W := 0.09
+const RESP_HEAD_L := 0.4
+const RESP_HEAD_R := 0.17
+const RESP_HEAD_SEGS := 8
+const RESP_HEAD_CUT := 0.6
+const RESP_SRC_CUT := 0.55
+const RESP_DST_CUT := 0.6
+const RESP_TRAY_CUT := 0.35
+const RESP_SRC_R := 0.8
+const RESP_TRAY_DX := 1.45
+const RESP_TRAY := Vector3(0.56, 0.06, 0.4)
+const RESP_TRAY_R := 0.36
+const RESP_BADGE_Y := 0.55
+const RESP_BADGE_S := 0.16
+const RESP_GHOST_A := 0.5
+const RESP_JAM_R := 0.7
+const RESP_JAM_Y := 0.6
+const RESP_JAM_FWD := 0.5
+const RESP_JAM_BAR := Vector3(1.0, 0.13, 0.05)
+const RESP_JAM_DIM := 0.35
+const RESP_PULSE := 0.35
 
 ## Highlights by meaning. Capture: an amber plus over the district and a pulsing amber ring. Repair: a red outline
 ## around the district's wrench and a red hex ring. Picked: a steady white ring with a check on its camera-side edge.
@@ -437,6 +502,7 @@ const T_JAM := 0.7
 const T_REVEAL := 1.4
 const T_EVADED := 1.2
 const T_DECAY := 0.8
+const T_FALL := 1.8
 const FX_SHIELD_T := 0.6
 const FX_STRIKE_T := 0.55
 const FX_RING_TIME := 0.6
@@ -461,6 +527,7 @@ var _unit_box: BoxMesh
 var _board: Node3D
 var _path_root: Node3D
 var _outcome_root: Node3D
+var _resp_root: Node3D
 var _trail_root: Node3D
 var _fx_root: Node3D
 var _hl_root: Node3D
@@ -484,6 +551,9 @@ var _cell_key: Dictionary = {}
 var _win_mats: Dictionary = {}
 var _spin: Array = []
 var _home_root: Node3D
+var _home_tower: Node3D
+var _home_light: OmniLight3D
+var _home_pip_holder: Node3D
 var _home_pips: Array = []
 var _home_ghost: Node3D
 var _beacon_mat: StandardMaterial3D
@@ -491,6 +561,15 @@ var _lethal: bool = false
 var _lethal_root: Node3D
 var _lethal_pip: StandardMaterial3D
 var _lethal_mats: Array = []
+var _fallen: bool = false
+var _fall_mats: Array = []
+var _fall_skull: Node3D = null
+var _out_hound: Node3D = null
+var _out_hound_mats: Array = []
+var _eyes: Array = []
+var _resp_mats: Array = []
+var _resp_last: Dictionary = {}
+var _resp_dimmed: bool = false
 var _vehicles: Dictionary = {}
 var _cands: Array = []
 var _cand_real: int = -1
@@ -525,6 +604,8 @@ func _init() -> void:
 	add_child(_path_root)
 	_outcome_root = Node3D.new()
 	add_child(_outcome_root)
+	_resp_root = Node3D.new()
+	add_child(_resp_root)
 	_trail_root = Node3D.new()
 	add_child(_trail_root)
 	_fx_root = Node3D.new()
@@ -545,7 +626,7 @@ func _ready() -> void:
 # ======================= public API =======================
 ## Build the board for a leg: {w, h, values: {Vector2i: int}, exploits: Array[Vector2i]}. The optional keys
 ## route_names (3 Strings) and street_names (w Strings) replace the board's coordinate labels. set_scramble() still
-## applies on top of them.
+## applies on top of them. A fallen HQ (show_fall) is rebuilt standing.
 func setup(leg: Dictionary) -> void:
 	_w = int(leg.get("w", DEFAULT_W))
 	_h = int(leg.get("h", DEFAULT_H))
@@ -559,6 +640,7 @@ func setup(leg: Dictionary) -> void:
 	reset_playout()
 	clear_highlight()
 	clear_outcome()
+	clear_response_preview()
 	_board.queue_free()
 	_board = Node3D.new()
 	add_child(_board)
@@ -570,12 +652,17 @@ func setup(leg: Dictionary) -> void:
 	_spin.clear()
 	_home_ghost = null
 	_lethal_root = null
+	_fallen = false
+	_fall_mats.clear()
+	_fall_skull = null
 	_build_floor()
 	_build_roads()
 	_build_coord_labels()
 	_build_skyline()
 	_build_motes()
 	_home_root = _build_hq(-1, AMBER, HQ_BODY_HOME)
+	_home_tower = _home_root.get_meta("tower") as Node3D
+	_home_light = _home_root.get_meta("light") as OmniLight3D
 	var corp := _build_hq(_w, COBALT, HQ_BODY_CORP)
 	_beacon_mat = _mat_live(COBALT_HOT, E_BEACON)
 	_sphere(corp, Vector3(0.0, HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HQ_BEACON_R, 0.0), HQ_BEACON_R, _beacon_mat)
@@ -665,8 +752,9 @@ func clear_paths() -> void:
 ## - Hit cells get a red crack glyph.
 ## - Blocks get a shield glyph in the sentry's type color.
 ## - A HOME hit puts a red skull over our HQ.
-## - The hunter's street gets a dashed cobalt line, with the white hound and its type badge at its start.
-## Replaces any outcome shown before. play() clears it.
+## - The hunter's street gets a dashed cobalt line, with the cobalt hound (glowing eyes, type badge) standing at its
+##   start, facing down the street.
+## Replaces any outcome shown before; an active response preview is redrawn on top. play() clears it.
 func show_outcome(o: Dictionary) -> void:
 	clear_outcome()
 	var hits: Array = o.get("hits", [])
@@ -686,22 +774,77 @@ func show_outcome(o: Dictionary) -> void:
 	var hl: Variant = o.get("hunter", null)
 	if hl is Dictionary:
 		_out_hunter(hl as Dictionary)
+	if not _resp_last.is_empty():
+		show_response_preview(_resp_last.duplicate())
 
 
 ## Remove the outcome overlay.
 func clear_outcome() -> void:
+	_out_hound = null
+	_out_hound_mats = []
 	if _outcome_root == null:
 		return
 	for ch in _outcome_root.get_children():
 		ch.queue_free()
 
 
-## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, evaded, decay) and emit cues_finished at
-## the end. Planned paths and the outcome overlay are cleared; every beam leaves a trail with its hits and stops until
-## reset_playout().
+## Draw a response row's effect on the board: p = {kind: "REDEPLOY"|"DEPLOY"|"JAM"|"HOLD", from: Vector2i or null,
+## to: Vector2i or null, type: String}, with the optional key street: int (the hunter's street for JAM when no outcome
+## hound is shown).
+## - REDEPLOY / DEPLOY: an arc arrow in the sentry type's color from the source to the target cell, with a ghost
+##   sentry at the target. The source is a spinning dashed ring on the sentry's cell, or (from = null) the reserve tray
+##   just right of our HQ on the target's route.
+## - JAM: a red cross over the hound (the outcome hound, else the head of p.street); the hound and its path dim.
+## - HOLD: nothing.
+## Replaces any preview shown before. play() clears it.
+func show_response_preview(p: Dictionary) -> void:
+	clear_response_preview()
+	_resp_last = p.duplicate()
+	var kind := str(p.get("kind", "HOLD"))
+	var type := str(p.get("type", "D"))
+	match kind:
+		"REDEPLOY", "DEPLOY":
+			var tv: Variant = p.get("to", null)
+			if not (tv is Vector2i):
+				return
+			var to: Vector2i = tv
+			var m := _mat_live(_type_col(type), E_RESP)
+			_resp_mats.append(m)
+			var fv: Variant = p.get("from", null)
+			var a := Vector3.ZERO
+			var cut := RESP_SRC_CUT
+			if fv is Vector2i:
+				a = _grid_world(fv as Vector2i)
+				_resp_source(a, m)
+			else:
+				a = _tray_pos(to)
+				cut = RESP_TRAY_CUT
+				_resp_tray(a, type, m)
+			_resp_arrow(a, _grid_world(to), cut, RESP_DST_CUT, m)
+			_resp_target(to, type, m)
+		"JAM":
+			_resp_jam(p)
+
+
+## Remove the response preview (and undim the hound).
+func clear_response_preview() -> void:
+	if _resp_root != null:
+		for ch in _resp_root.get_children():
+			ch.queue_free()
+	_resp_mats.clear()
+	_resp_last = {}
+	if _resp_dimmed:
+		_tint(_out_hound_mats, 1.0, 1.0)
+	_resp_dimmed = false
+
+
+## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, evaded, decay, fall) and emit
+## cues_finished at the end. Planned paths, the outcome overlay and the response preview are cleared; every beam
+## leaves a trail with its hits and stops until reset_playout().
 func play(cues: Array, speed: float = 1.0) -> Signal:
 	clear_paths()
 	clear_outcome()
+	clear_response_preview()
 	_queue = cues.duplicate()
 	_qi = -1
 	_speed = maxf(speed, SPEED_MIN)
@@ -722,6 +865,13 @@ func decay(cells: Array) -> Signal:
 		if c is Vector2i:
 			cues.append({"kind": "decay", "cell": c})
 	return play(cues, _speed)
+
+
+## The decided fall beat: our HQ tower turns red, shakes and collapses to rubble, every HOME pip goes red, and a red
+## skull stands over the rubble. It plays at the current speed (instant settles at once) and returns cues_finished.
+## The HQ stays fallen until the next setup().
+func show_fall() -> Signal:
+	return play([{"kind": "fall"}], _speed)
 
 
 ## Instant on: every cue settles in one frame, effects show frozen at their settled look and trails at rest. Turning it
@@ -800,10 +950,11 @@ func clear_highlight() -> void:
 	_hl.clear()
 
 
-## Drop every vehicle, effect, shake, candidate, trail and planned path (a fresh raid).
+## Drop every vehicle, effect, shake, candidate, trail, planned path and response preview (a fresh raid).
 func reset_playout() -> void:
 	_reset_motion()
 	clear_paths()
+	clear_response_preview()
 
 
 # ======================= camera fit =======================
@@ -828,7 +979,7 @@ func _fit_camera() -> void:
 		return
 	var cb := Basis.from_euler(Vector3(deg_to_rad(CAM_PITCH_DEG), deg_to_rad(CAM_YAW_DEG), 0.0))
 	var half := _slab_half()
-	var top := HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HOME_PIP_Y + FIT_HEADROOM
+	var top := _pip_top() + FIT_HEADROOM
 	var box := AABB(Vector3(-half.x, 0.0, -half.y), Vector3(half.x * 2.0 + ROUTE_LABEL_SPAN, top, half.y * 2.0))
 	var center := box.get_center()
 	var inv := cb.transposed()
@@ -903,6 +1054,11 @@ func _home_entry(row: int) -> Vector3:
 ## The head of a street: just above row 0, where the hound starts its run.
 func _street_head(x: int) -> Vector3:
 	return _grid_world(Vector2i(x, 0)) - Vector3(0.0, 0.0, CELL_DZ * ENTRY_STREET_K)
+
+
+## The height of the HOME pips above our HQ's base (the tower top plus the pip lift).
+func _pip_top() -> float:
+	return HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HOME_PIP_Y
 
 
 ## The camera's backward axis (toward the viewer) at the board's pitch and yaw.
@@ -1013,6 +1169,40 @@ func _torus(parent: Node3D, pos: Vector3, r_in: float, r_out: float, segs: int, 
 	return mi
 
 
+## A thin box from p0 to p1 in 3D (any direction except straight up), w thick.
+func _seg3(parent: Node3D, p0: Vector3, p1: Vector3, w: float, mat: Material) -> void:
+	var d := p1 - p0
+	var length := d.length()
+	if length < EPS:
+		return
+	var xv := d / length
+	var zv := xv.cross(Vector3.UP)
+	if zv.length() < EPS:
+		zv = Vector3.FORWARD
+	zv = zv.normalized()
+	var yv := zv.cross(xv)
+	var mi := _mi(parent, _unit_box, mat, (p0 + p1) * 0.5)
+	mi.basis = Basis(xv * (length + w * 0.5), yv * w, zv * w)
+
+
+## A cone with its apex at `tip`, pointing along `dir`.
+func _cone(parent: Node3D, tip: Vector3, dir: Vector3, r: float, h: float, mat: Material) -> void:
+	if dir.length() < EPS:
+		return
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.0
+	cm.bottom_radius = r
+	cm.height = h
+	cm.radial_segments = RESP_HEAD_SEGS
+	cm.rings = 1
+	var yv := dir.normalized()
+	var ref := Vector3.RIGHT if absf(yv.dot(Vector3.RIGHT)) < 0.9 else Vector3.FORWARD
+	var xv := yv.cross(ref).normalized()
+	var zv := xv.cross(yv)
+	var mi := _mi(parent, cm, mat, tip - yv * h * 0.5)
+	mi.basis = Basis(xv, yv, zv)
+
+
 ## A billboard text label, drawn over everything, with a dark outline.
 func _label(parent: Node3D, text: String, pos: Vector3, col: Color, size: int, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER) -> Label3D:
 	var l := Label3D.new()
@@ -1063,6 +1253,32 @@ func _badge(parent: Node3D, pos: Vector3, type: String, s: float, mat: Material)
 	_backing(holder, s * BADGE_BACK_K)
 	_shape_into(holder, type, s, mat)
 	return holder
+
+
+## The hound silhouette (forward +x, on the floor) in a holder scaled by HOUND_S: body parts in `body`, glowing eyes in
+## `eye`. Returns the leg nodes, each with a "gait" meta (+1 or -1) for the run cycle.
+func _build_hound(parent: Node3D, body: Material, eye: Material) -> Array:
+	var holder := Node3D.new()
+	holder.scale = Vector3.ONE * HOUND_S
+	parent.add_child(holder)
+	for p: Array in HOUND_PARTS:
+		var pos: Vector3 = p[0]
+		var size: Vector3 = p[1]
+		var b := _box(holder, pos, size, body)
+		if p.size() > 2:
+			b.rotation.z = float(p[2])
+	var legs: Array = []
+	for p: Array in HOUND_LEGS:
+		var pos: Vector3 = p[0]
+		var size: Vector3 = p[1]
+		var leg := _box(holder, pos, size, body)
+		leg.set_meta("gait", float(p[2]))
+		legs.append(leg)
+	for p: Array in HOUND_EYES:
+		var pos: Vector3 = p[0]
+		var size: Vector3 = p[1]
+		_box(holder, pos, size, eye)
+	return legs
 
 
 ## A flat chevron lying on the road, its tip at `tip`, pointing along `dir`.
@@ -1311,7 +1527,8 @@ func _build_motes() -> void:
 
 
 ## An HQ campus at column x (-1 = ours, w = the corp's): a platform across the routes, a stepped tower with glowing
-## corner edges and crowns in the HQ's color, window bands, a light.
+## corner edges and crowns in the HQ's color, window bands, a light. The tower sits in its own node (meta "tower") and
+## the light is kept as meta "light", so the fall beat can collapse and redden them.
 func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	var root := Node3D.new()
 	root.position = Vector3(_grid_world(Vector2i(xcol, 0)).x, 0.0, 0.0)
@@ -1321,6 +1538,9 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	var edge := _mat(col, E_RING)
 	for s: float in [-1.0, 1.0]:
 		_box(root, Vector3(HQ_PLAT.x * 0.5 * s, HQ_PLAT.y, 0.0), Vector3(RIM_W, ROAD_T, depth), edge)
+	var tower := Node3D.new()
+	root.add_child(tower)
+	root.set_meta("tower", tower)
 	var body := _solid(body_col)
 	var accent := _mat(col, E_HQ_EDGE)
 	var win := _mat(HOT_WIN if col == AMBER else COBALT_HOT, E_HQ_WIN)
@@ -1328,32 +1548,33 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 		var s := HQ_BASE - i * HQ_STEP
 		var y := HQ_PLAT.y + (i + 0.5) * HQ_TIER_H
 		var th := HQ_TIER_H * 0.92
-		_box(root, Vector3(0.0, y, 0.0), Vector3(s, th, s), body)
+		_box(tower, Vector3(0.0, y, 0.0), Vector3(s, th, s), body)
 		for cx: float in [-1.0, 1.0]:
 			for cz: float in [-1.0, 1.0]:
-				_box(root, Vector3(cx * s * 0.5, y, cz * s * 0.5), Vector3(HQ_EDGE_W, th, HQ_EDGE_W), accent)
+				_box(tower, Vector3(cx * s * 0.5, y, cz * s * 0.5), Vector3(HQ_EDGE_W, th, HQ_EDGE_W), accent)
 		var ty := y + th * 0.5
 		for sd: float in [-1.0, 1.0]:
-			_box(root, Vector3(0.0, ty, sd * s * 0.5), Vector3(s, HQ_EDGE_W, HQ_EDGE_W), accent)
-			_box(root, Vector3(sd * s * 0.5, ty, 0.0), Vector3(HQ_EDGE_W, HQ_EDGE_W, s), accent)
+			_box(tower, Vector3(0.0, ty, sd * s * 0.5), Vector3(s, HQ_EDGE_W, HQ_EDGE_W), accent)
+			_box(tower, Vector3(sd * s * 0.5, ty, 0.0), Vector3(HQ_EDGE_W, HQ_EDGE_W, s), accent)
 		for k in range(HQ_WIN_ROWS):
 			var wy := y + (k - (HQ_WIN_ROWS - 1) * 0.5) * HQ_TIER_H / float(HQ_WIN_ROWS + 1)
-			_box(root, Vector3(0.0, wy, s * 0.5 + WIN_EPS), Vector3(s * WIN_FRAC, WIN_H, WIN_EPS), win)
-			_box(root, Vector3(-s * 0.5 - WIN_EPS, wy, 0.0), Vector3(WIN_EPS, WIN_H, s * WIN_FRAC), win)
+			_box(tower, Vector3(0.0, wy, s * 0.5 + WIN_EPS), Vector3(s * WIN_FRAC, WIN_H, WIN_EPS), win)
+			_box(tower, Vector3(-s * 0.5 - WIN_EPS, wy, 0.0), Vector3(WIN_EPS, WIN_H, s * WIN_FRAC), win)
 	var lt := OmniLight3D.new()
 	lt.light_color = WARM_LIGHT if col == AMBER else COBALT
 	lt.light_energy = HQ_LIGHT_E
 	lt.omni_range = HQ_LIGHT_RANGE
 	lt.position = Vector3(0.0, HQ_LIGHT_Y, 0.0)
 	root.add_child(lt)
+	root.set_meta("light", lt)
 	return root
 
 
 func _build_home_pips() -> void:
 	_home_pips.clear()
-	var holder := _facing(_home_root, Vector3(0.0, HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HOME_PIP_Y, 0.0))
+	_home_pip_holder = _facing(_home_root, Vector3(0.0, _pip_top(), 0.0))
 	for i in range(HOME_HP_MAX):
-		_home_pips.append(_box(holder, Vector3((i - (HOME_HP_MAX - 1) * 0.5) * HOME_PIP_GAP, 0.0, 0.0), HOME_PIP, _mat(GOLD, E_PIP)))
+		_home_pips.append(_box(_home_pip_holder, Vector3((i - (HOME_HP_MAX - 1) * 0.5) * HOME_PIP_GAP, 0.0, 0.0), HOME_PIP, _mat(GOLD, E_PIP)))
 	_refresh_pips()
 
 
@@ -1366,14 +1587,14 @@ func _refresh_pips() -> void:
 		(_home_pips[i] as MeshInstance3D).material_override = m
 
 
-## Build or remove the lethal mark (the pulsing skull on our tower and the pulsing last pip).
+## Build or remove the lethal mark (the pulsing skull on our tower and the pulsing last pip). A fallen HQ has none.
 func _refresh_lethal() -> void:
 	if is_instance_valid(_lethal_root):
 		_lethal_root.queue_free()
 	_lethal_root = null
 	_lethal_pip = null
 	_lethal_mats.clear()
-	if _lethal and _home_root != null:
+	if _lethal and _home_root != null and not _fallen:
 		var m := _mat_live(RED, E_LETHAL)
 		_lethal_pip = _mat_live(RED, E_LETHAL_PIP)
 		_lethal_mats = [m, _lethal_pip]
@@ -1683,7 +1904,8 @@ func _out_home() -> void:
 	_skull(_outcome_root, _home_world() + Vector3(0.0, SKULL_Y, 0.0) + _cam_back() * SKULL_FWD, SKULL_S, m)
 
 
-## The hunter's run: a dashed cobalt lane down its street, with the white hound and its type badge at its start.
+## The hunter's run: a dashed cobalt lane down its street, with the cobalt hound (glowing eyes, type badge) standing
+## at its start, facing down the street. Its materials are kept so a JAM preview can dim it.
 func _out_hunter(ln: Dictionary) -> void:
 	var span := _line_span(ln, OUT_PATH_Y)
 	if span.is_empty():
@@ -1692,8 +1914,11 @@ func _out_hunter(ln: Dictionary) -> void:
 	var b: Vector3 = span[1]
 	var horiz: bool = span[2]
 	var type := str(ln.get("type", "D"))
-	var m := _mat(HUNTER_TRAIL, E_PATH)
-	var body := _mat(HUNTER_BODY, E_HUNTER)
+	var m := _mat_live(HUNTER_TRAIL, E_PATH)
+	var body := _mat_live(HUNTER_BODY, E_HUNTER)
+	var eye := _mat_live(HUNTER_EYE, E_EYE)
+	var bm := _mat_live(_type_col(type), E_OUT)
+	_out_hound_mats = [m, body, bm]
 	var lat := _lateral(horiz) * _lane_offset(_path_use.duplicate(), _road_key(a, horiz))
 	_dashes(_outcome_root, a, b, lat, m)
 	var dir := (b - a).normalized()
@@ -1702,11 +1927,101 @@ func _out_hunter(ln: Dictionary) -> void:
 	hound.rotation.y = _heading(dir, HEADING_DOWN)
 	hound.scale = Vector3.ONE * OUT_HOUND_S
 	_outcome_root.add_child(hound)
-	for p: Array in HOUND_PARTS:
-		var pos: Vector3 = p[0]
-		var size: Vector3 = p[1]
-		_box(hound, pos, size, body)
-	_badge(_outcome_root, hound.position + Vector3(0.0, OUT_HOUND_GLYPH_Y, 0.0), type, HUNTER_BADGE_S * OUT_HOUND_GLYPH_K, _mat(_type_col(type), E_OUT))
+	_build_hound(hound, body, eye)
+	_eyes.append({"node": hound, "mat": eye})
+	_out_hound = hound
+	_badge(_outcome_root, hound.position + Vector3(0.0, OUT_HOUND_GLYPH_Y, 0.0), type, HUNTER_BADGE_S * OUT_HOUND_GLYPH_K, bm)
+
+
+# ======================= response preview =======================
+## Where the reserve tray sits for a DEPLOY: just right of our HQ platform, on the target's route row.
+func _tray_pos(to: Vector2i) -> Vector3:
+	var z := _grid_world(Vector2i(0, clampi(to.y, 0, _h - 1))).z
+	return Vector3(_home_world().x + RESP_TRAY_DX, 0.0, z)
+
+
+## The reserve tray: a small steel tray with a hex ring and the type badge above it.
+func _resp_tray(pos: Vector3, type: String, m: Material) -> void:
+	_box(_resp_root, pos + Vector3(0.0, RESP_TRAY.y * 0.5, 0.0), RESP_TRAY, _solid(STEEL))
+	_torus(_resp_root, pos + Vector3(0.0, RESP_TRAY.y, 0.0), RESP_TRAY_R, RESP_TRAY_R + HL_RING_W, HEX, m)
+	_badge(_resp_root, pos + Vector3(0.0, RESP_BADGE_Y, 0.0), type, RESP_BADGE_S, m)
+
+
+## A sentry source: a spinning dashed ring in the type color around the sentry's cell.
+func _resp_source(pos: Vector3, m: Material) -> void:
+	var holder := Node3D.new()
+	holder.position = pos
+	_resp_root.add_child(holder)
+	_dashed_ring(holder, RESP_SRC_R, m)
+
+
+## The target: a ghost sentry of the type (half alpha) and a ring in the type color.
+func _resp_target(c: Vector2i, type: String, m: Material) -> void:
+	var pos := _grid_world(c)
+	var gm := _mat_live(_type_col(type), E_SENTRY, RESP_GHOST_A)
+	_resp_mats.append(gm)
+	_torus(_resp_root, pos + Vector3(0.0, DECAL_Y + RING_Y * 0.5, 0.0), SENTRY_DECAL.x, SENTRY_DECAL.y, CIRCLE_SEGS, gm)
+	_cyl(_resp_root, pos + Vector3(0.0, SENTRY_POLE.y * 0.5, 0.0), SENTRY_POLE.x, SENTRY_POLE.y, HEX, gm)
+	_shape(_resp_root, pos + Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, gm)
+	_torus(_resp_root, pos + Vector3(0.0, HL_Y, 0.0), HL_R, HL_R + HL_RING_W, CIRCLE_SEGS, m)
+
+
+## An arc arrow from a to b (ground points), its ends cut back by a_cut / b_cut, peaking higher for longer moves, with
+## a cone head landing on the target.
+func _resp_arrow(a: Vector3, b: Vector3, a_cut: float, b_cut: float, m: Material) -> void:
+	var flat := Vector3(b.x - a.x, 0.0, b.z - a.z)
+	var dist := flat.length()
+	if dist < EPS:
+		return
+	var dir := flat / dist
+	if dist <= a_cut + b_cut + EPS:
+		a_cut = 0.0
+		b_cut = 0.0
+	var p0 := a + dir * a_cut
+	var p1 := b - dir * b_cut
+	p0.y = RESP_END_Y
+	p1.y = RESP_END_Y
+	var hgt := RESP_ARC_H + RESP_ARC_K * dist
+	var pts: Array[Vector3] = []
+	for i in range(RESP_ARC_SEGS + 1):
+		var u := float(i) / float(RESP_ARC_SEGS)
+		var p := p0.lerp(p1, u)
+		p.y += hgt * 4.0 * u * (1.0 - u)
+		pts.append(p)
+	var last := pts.size() - 1
+	var t := (pts[last] - pts[last - 1]).normalized()
+	for i in range(RESP_ARC_SEGS):
+		var q1 := pts[i + 1]
+		if i == RESP_ARC_SEGS - 1:
+			q1 -= t * RESP_HEAD_L * RESP_HEAD_CUT
+		_seg3(_resp_root, pts[i], q1, RESP_ARC_W, m)
+	_cone(_resp_root, pts[last], t, RESP_HEAD_R, RESP_HEAD_L, m)
+
+
+## JAM: a red cross (pushed toward the camera) and a red ring over the hound, and the hound and its path dim. Uses the
+## outcome hound, else the head of p.street; draws nothing without either.
+func _resp_jam(p: Dictionary) -> void:
+	var pos := Vector3.ZERO
+	var have := false
+	if is_instance_valid(_out_hound):
+		pos = _out_hound.position
+		have = true
+	else:
+		var sv: Variant = p.get("street", null)
+		if sv is int:
+			pos = _street_head(int(sv))
+			have = true
+	if not have:
+		return
+	var m := _mat_live(RED, E_RESP)
+	_resp_mats.append(m)
+	_torus(_resp_root, Vector3(pos.x, HL_Y, pos.z), RESP_JAM_R, RESP_JAM_R + HL_RING_W, CIRCLE_SEGS, m)
+	var holder := _facing(_resp_root, Vector3(pos.x, RESP_JAM_Y, pos.z) + _cam_back() * RESP_JAM_FWD)
+	for s: float in [1.0, -1.0]:
+		_box(holder, Vector3.ZERO, RESP_JAM_BAR, m).rotation.z = s * PI * 0.25
+	if not _out_hound_mats.is_empty():
+		_tint(_out_hound_mats, RESP_JAM_DIM, RESP_JAM_DIM)
+		_resp_dimmed = true
 
 
 # ======================= playout trails and marks =======================
@@ -1839,7 +2154,8 @@ func _reset_motion() -> void:
 
 
 # ======================= vehicles, the hound, the candidates =======================
-## A beam vehicle in its type color and shape, or the hunter: a white hound with a cobalt halo and a small type badge.
+## A beam vehicle in its type color and shape, or the hunter: the cobalt hound (glowing eyes, running legs) with a
+## cobalt halo and a small type badge.
 func _make_vehicle(type: String, hunter: bool, alpha: float) -> Dictionary:
 	var root := Node3D.new()
 	_fx_root.add_child(root)
@@ -1850,10 +2166,9 @@ func _make_vehicle(type: String, hunter: bool, alpha: float) -> Dictionary:
 	var faces: Array = []
 	var base_y := 0.0 if hunter else VEH_Y
 	if hunter:
-		for p: Array in HOUND_PARTS:
-			var pos: Vector3 = p[0]
-			var size: Vector3 = p[1]
-			_box(root, pos, size, m)
+		var eye := _mat_live(HUNTER_EYE, E_EYE, alpha)
+		mats.append(eye)
+		parts = _build_hound(root, m, eye)
 		var bm := _mat_live(_type_col(type), E_VEH, alpha)
 		mats.append(bm)
 		faces.append(_badge(root, Vector3(0.0, HUNTER_BADGE_Y, 0.0), type, HUNTER_BADGE_S, bm))
@@ -1984,6 +2299,50 @@ func _face_all() -> void:
 				f.global_rotation = Vector3(_tilt, _yaw, 0.0)
 
 
+# ======================= the fall beat =======================
+## Start the fall: the tower's materials swap to dark red bodies and hot red edges, the light turns red, every HOME
+## pip goes red, the lethal mark goes, and a red ring and dome burst from the platform.
+func _start_fall() -> void:
+	if _home_root == null or not is_instance_valid(_home_tower):
+		return
+	_fallen = true
+	_lethal = false
+	if _fall_mats.is_empty():
+		var hot := _mat_live(RED, E_FALL)
+		_fall_mats = [hot]
+		var body := _solid(FALL_BODY)
+		for n: Node in _home_tower.find_children("*", "MeshInstance3D", true, false):
+			var mi := n as MeshInstance3D
+			var old := mi.material_override as StandardMaterial3D
+			mi.material_override = hot if old != null and old.emission_enabled else body
+	if is_instance_valid(_home_light):
+		_home_light.light_color = RED
+	_home_hp = 0
+	_refresh_lethal()
+	_fx_ring(_home_world(), RED, GHOST_HOME_R * FALL_RING_K)
+	var m := _mat_live(RED, E_FX, HALO_ALPHA)
+	_fx_add(_sphere(_fx_root, _home_world() + Vector3(0.0, HQ_PLAT.y, 0.0), 1.0, m), "pulse", T_FALL, [m], {"r": FALL_PULSE_K})
+
+
+## The collapse at progress u: the tower squashes, spreads and tilts, the pips drop with it, the red edges flash then
+## settle, the HQ shakes (not in instant), and at the end a red skull stands over the rubble.
+func _apply_fall(u: float) -> void:
+	if not _fallen or not is_instance_valid(_home_tower):
+		return
+	var k := clampf(u, 0.0, 1.0)
+	var e := k * k
+	var spread := 1.0 + FALL_SPREAD * e
+	_home_tower.scale = Vector3(spread, lerpf(1.0, FALL_SCALE_Y, e), spread)
+	_home_tower.rotation.z = FALL_TILT * e
+	if is_instance_valid(_home_pip_holder):
+		_home_pip_holder.position.y = lerpf(_pip_top(), FALL_PIP_Y, e)
+	_tint(_fall_mats, 1.0, 1.0 + FALL_FLASH * (1.0 - k))
+	if not _instant and k < FALL_SHAKE_U:
+		_shakes["HOME"] = SHAKE_T * (1.0 - k / FALL_SHAKE_U)
+	if k >= 1.0 and not is_instance_valid(_fall_skull):
+		_fall_skull = _skull(_home_root, Vector3(0.0, FALL_SKULL_Y, 0.0) + _cam_back() * SKULL_FWD, FALL_SKULL_S, _mat(RED, E_LETHAL))
+
+
 # ======================= cue playback =======================
 func _cue_dur_of(kind: String) -> float:
 	match kind:
@@ -2003,6 +2362,8 @@ func _cue_dur_of(kind: String) -> float:
 			return T_EVADED
 		"decay":
 			return T_DECAY
+		"fall":
+			return T_FALL
 	return T_STEP
 
 
@@ -2088,6 +2449,8 @@ func _start_cue(cue: Dictionary) -> void:
 				_sentries.erase(cell)
 				_refresh_cell(cell)
 				_fx_pulse(cell)
+		"fall":
+			_start_fall()
 	if _instant:
 		_update_cue(1.0)
 
@@ -2098,8 +2461,11 @@ func _update_cue(u: float) -> void:
 		var n: Node3D = v["node"]
 		n.position = (v["from"] as Vector3).lerp(v["to"], _ease_out(u))
 		n.rotation.y = lerp_angle(float(v["rot_from"]), float(v["rot_to"]), minf(1.0, u * float(v["turn_k"])))
-	if str(_cur_cue.get("kind", "")) == "reveal":
+	var kind := str(_cur_cue.get("kind", ""))
+	if kind == "reveal":
 		_apply_reveal(u)
+	elif kind == "fall":
+		_apply_fall(u)
 
 
 func _settle_cue(cue: Dictionary) -> void:
@@ -2156,7 +2522,7 @@ func _fx_apply(f: Dictionary, u: float) -> void:
 			var s := lerpf(FLASH_R.x, FLASH_R.y, e) * float(f.get("r", 1.0))
 			n.scale = Vector3(s, RING_FLAT, s)
 		"pulse":
-			var s := lerpf(PULSE_R.x, PULSE_R.y, e)
+			var s := lerpf(PULSE_R.x, PULSE_R.y, e) * float(f.get("r", 1.0))
 			n.scale = Vector3(s, s * BLOCK_DOME_FLAT, s)
 		"strike":
 			n.scale = Vector3(STRIKE.x * k, STRIKE.y, STRIKE.z * k)
@@ -2280,11 +2646,16 @@ func _step_shakes(dt: float) -> void:
 
 func _animate(delta: float) -> void:
 	var all: Array = _vehicles.values() + _cands
+	var gait := sin(_time * GAIT_HZ * TAU) * GAIT_AMP
 	for v: Dictionary in all:
 		var parts: Array = v["parts"]
+		var hunter := bool(v["hunter"])
 		for i in range(parts.size()):
 			var p: Node3D = parts[i]
 			var base: Vector3 = p.get_meta("base", p.position)
+			if hunter:
+				p.position = base + Vector3(gait * float(p.get_meta("gait", 0.0)), 0.0, 0.0)
+				continue
 			var ph := _time * BOB_HZ * TAU + i
 			match str(v["type"]):
 				"N":
@@ -2297,6 +2668,13 @@ func _animate(delta: float) -> void:
 			(s as Node3D).rotation.y += GHOST_SPIN * delta
 			live.append(s)
 	_spin = live
+	var ep := lerpf(EYE_LOW, 1.0, 0.5 + 0.5 * sin(_time * EYE_HZ * TAU)) * (RESP_JAM_DIM if _resp_dimmed else 1.0)
+	var live_eyes: Array = []
+	for e: Dictionary in _eyes:
+		if is_instance_valid(e["node"]):
+			(e["mat"] as StandardMaterial3D).emission_energy_multiplier = E_EYE * ep
+			live_eyes.append(e)
+	_eyes = live_eyes
 	for c: Vector2i in _win_mats:
 		if str(_status.get(c, "")) != "DOWN":
 			continue
@@ -2305,6 +2683,8 @@ func _animate(delta: float) -> void:
 		(_win_mats[c] as StandardMaterial3D).emission_energy_multiplier = E_WIN_DOWN * (1.0 if on else FLICKER_LOW)
 	var pulse := 1.0 - HL_PULSE + HL_PULSE * sin(_time * HL_HZ * TAU)
 	_tint(_hl, pulse, pulse)
+	if not _resp_mats.is_empty():
+		_tint(_resp_mats, 1.0, 1.0 - RESP_PULSE + RESP_PULSE * sin(_time * HL_HZ * TAU))
 	if _lethal and not _lethal_mats.is_empty():
 		var lp := 0.5 + 0.5 * sin(_time * LETHAL_HZ * TAU)
 		_tint(_lethal_mats, 1.0, lerpf(LETHAL_LOW, 1.0, lp))

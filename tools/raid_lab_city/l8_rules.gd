@@ -1,11 +1,11 @@
 class_name L8Rules
 extends RefCounted
-## The round-8 (L8) city-raid rules with the L9 and L10 changes, ported from tools/raid_concepts/sweep_l8.py (the
+## The round-8 (L8) city-raid rules with the L9, L10 and L11 changes, ported from tools/raid_concepts/sweep_l8.py (the
 ## oracle). Covers decay, capture, placements, the launch (beam 1, extras, sealed, hunter), responses, between, tier,
-## score and forecast. Pure and deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3, y 0..2); HOME is
-## the String "HOME". Every enumeration walks CELLS (y, then x), never dictionary order.
-## Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md. Changes: docs/handoff/raid_lab_l8/L9_CHANGES.md and
-## docs/handoff/raid_lab_l8/L10_CHANGES.md.
+## score, forecast and safe_next. Pure and deterministic: no randomness, no nodes. Cells are Vector2i (x 0..3,
+## y 0..2); HOME is the String "HOME". Every enumeration walks CELLS (y, then x), never dictionary order.
+## Data shapes: docs/handoff/raid_lab_l8/GD_CONTRACT.md. Changes: docs/handoff/raid_lab_l8/L9_CHANGES.md,
+## docs/handoff/raid_lab_l8/L10_CHANGES.md and docs/handoff/raid_lab_l8/L11_CHANGES.md.
 
 # Grid: cell order is y, then x.
 const W := 4
@@ -49,6 +49,7 @@ const SENTRY_PRICE := 3		# L9: was 4
 const REPAIR_DIV := 2
 const INCOME_DIV := 3
 const POOL_START: Dictionary = {"D": 1, "N": 1, "E": 0}	# L10: was 1/1/1 (two sentries, three sealed routes)
+const MAX_PLACED := 2		# L11: PLAN places at most 2 sentries; the rest of the pool is the reserve
 const KIT_START: Dictionary = {"ghost": 2, "spoof": 2}
 const INTENSITY_ORDER: Array = ["LOW", "NORMAL", "HOT"]
 const INTENSITY: Dictionary = {"LOW": [6, 0.5], "NORMAL": [12, 1.0], "HOT": [18, 1.5]}
@@ -86,7 +87,7 @@ static func config() -> Dictionary:
 		"SPOOF_HEAT": SPOOF_HEAT, "EVADE_HEAT": EVADE_HEAT, "SENTRY_PRICE": SENTRY_PRICE, "DECAY": true,
 		"POOL_START": POOL_START.duplicate(), "KIT_START": KIT_START.duplicate(), "INTENSITY": inten,
 		"EXPLOIT_BONUS": EXPLOIT_BONUS, "HOME_LOSS_COST": HOME_LOSS_COST, "HEAT_CARRY": HEAT_CARRY,
-		"BREACH": BREACH, "KIT_VALUE": KIT_VALUE}
+		"BREACH": BREACH, "KIT_VALUE": KIT_VALUE, "MAX_PLACED": MAX_PLACED}
 
 
 static func _fail(msg: String) -> void:
@@ -234,6 +235,24 @@ static func income(leg: Dictionary, owned: Dictionary, intensity: String) -> int
 		if _status(owned, c) == OK:
 			sum += idiv(int(vals[c]), INCOME_DIV)
 	return int(sum * float(INTENSITY[intensity][1]))
+
+
+## L11: how many sentries of type t are in reserve (pool count minus the placed ones of that type).
+static func _reserve_left(pool: Dictionary, sent: Dictionary, t: String) -> int:
+	var n := 0
+	for c: Variant in sent:
+		if String(sent[c]) == t:
+			n += 1
+	return int(pool.get(t, 0)) - n
+
+
+## L11: the reserve by type for a placement ({D, N, E}: pool minus placed), for the lab's reserve tray.
+static func reserve_counts(st: Dictionary, sentries: Dictionary) -> Dictionary:
+	var pool := _pool_t(st["pool"])
+	var out := {}
+	for t: String in TYPES:
+		out[t] = maxi(0, _reserve_left(pool, sentries, t))
+	return out
 
 
 # ---------------------------------------------------------------- lines
@@ -389,7 +408,7 @@ static func _norm_place(place: Dictionary) -> Dictionary:
 	return {"sentries": _ordered(sent), "ghost": to_cell(place.get("ghost"))}
 
 
-# ---------------------------------------------------------------- decay (L9)
+# ---------------------------------------------------------------- decay (L9, L11)
 
 ## The cells decay(leg, st) would turn TAKEN: every owned cell still DOWN, in cell order (for the lab's DECAY beat).
 static func decaying_cells(st: Dictionary) -> Array:
@@ -401,24 +420,25 @@ static func decaying_cells(st: Dictionary) -> Array:
 	return out
 
 
-## sweep_l8.decay (L9): every owned cell whose status is still DOWN becomes TAKEN and loses its sentry (removed from
-## the sentries and from the pool). Heat, bank, HOME and kit are unchanged. The caller applies it at the start of
-## every raid after the first, before CAPTURE (the replay order is decay, then capture).
+## sweep_l8.decay_cells: the same list as decaying_cells.
+static func decay_cells(leg: Dictionary, st: Dictionary) -> Array:
+	return decaying_cells(st)
+
+
+## sweep_l8.decay (L9, L11): every owned cell whose status is still DOWN becomes TAKEN; its sentry leaves the
+## placement and goes back to the pool (L11: the pool count is unchanged). Heat, bank, HOME and kit are unchanged.
+## The caller applies it at the start of every raid after the first, before CAPTURE. Idempotent.
 static func decay(leg: Dictionary, st: Dictionary) -> Dictionary:
 	var out := copy_state(st)
 	var owned: Dictionary = out["owned"]
 	var sent: Dictionary = out["sentries"]
-	var pool: Dictionary = out["pool"]
 	for c: Vector2i in CELLS:
 		if _status(owned, c) == DOWN:
 			owned[c] = TAKEN
 			if sent.has(c):
-				var t := String(sent[c])
 				sent.erase(c)
-				pool[t] = int(pool.get(t, 0)) - 1
 	out["owned"] = _ordered(owned)
 	out["sentries"] = _ordered(sent)
-	out["pool"] = _pool_t(pool)
 	return out
 
 
@@ -473,15 +493,16 @@ static func _place_rec(live: Array, left: Dictionary, idx: int, cur: Dictionary,
 	_place_rec(live, left, idx + 1, cur, k, maps)
 
 
-## sweep_l8.placements: every {sentries, ghost} with all pool sentries placed (as many as live cells allow), distinct
-## maps only. Ghost order: null, HOME, then live cells; maps in the python recursion order within each ghost.
+## sweep_l8.placements: every {sentries, ghost} with min(pool total, live cells, MAX_PLACED) sentries placed (L11
+## cap), distinct maps only; unplaced pool sentries are the reserve. Ghost order: null, HOME, then live cells; maps in
+## the python recursion order within each ghost.
 static func placements(leg: Dictionary, st: Dictionary) -> Array:
 	var live := live_cells(st)
 	var left := _pool_t(st["pool"])
 	var total := 0
 	for t: String in TYPES:
 		total += int(left[t])
-	var need := mini(total, live.size())
+	var need := mini(mini(total, live.size()), MAX_PLACED)
 	var maps: Array = []
 	_place_rec(live, left, 0, {}, need, maps)
 	var ghosts: Array = [null]
@@ -495,12 +516,14 @@ static func placements(leg: Dictionary, st: Dictionary) -> Array:
 	return out
 
 
-## sweep_l8._check_place: "" when the place is legal for the state, else the reason.
+## sweep_l8._check_place: "" when the place is legal for the state, else the reason (L11: at most MAX_PLACED).
 static func check_place(st: Dictionary, place: Dictionary) -> String:
 	var p := _norm_place(place)
 	var sd: Dictionary = p["sentries"]
 	if sd.size() != (place.get("sentries", {}) as Dictionary).size():
 		return "illegal sentry cell"
+	if sd.size() > MAX_PLACED:
+		return "more than %d sentries placed" % MAX_PLACED
 	var counts := {"D": 0, "N": 0, "E": 0}
 	for c: Vector2i in sd:
 		var t := String(sd[c])
@@ -520,8 +543,8 @@ static func check_place(st: Dictionary, place: Dictionary) -> String:
 
 # ---------------------------------------------------------------- responses
 
-## sweep_l8.norm_response: null / "HOLD" / "JAM" / ["REDEPLOY", s, c] (JSON cells accepted) -> the canonical array.
-## Returns [] for an unknown response.
+## sweep_l8.norm_response: null / "HOLD" / "JAM" / ["REDEPLOY", s, c] / ["DEPLOY", t, c] (JSON cells accepted) ->
+## the canonical array. Returns [] for an unknown response.
 static func norm_response(r: Variant) -> Array:
 	if _is_none(r):
 		return ["HOLD"]
@@ -537,16 +560,20 @@ static func norm_response(r: Variant) -> Array:
 	var head := String(a[0])
 	if head == "REDEPLOY" and a.size() == 3:
 		return ["REDEPLOY", to_cell(a[1]), to_cell(a[2])]
+	if head == "DEPLOY" and a.size() == 3:
+		return ["DEPLOY", String(a[1]), to_cell(a[2])]
 	if (head == "HOLD" or head == "JAM") and a.size() == 1:
 		return [head]
 	return []
 
 
-## A response in JSON form: ["HOLD"], ["JAM"] or ["REDEPLOY", [x, y], [x, y]].
+## A response in JSON form: ["HOLD"], ["JAM"], ["REDEPLOY", [x, y], [x, y]] or ["DEPLOY", type, [x, y]].
 static func response_to_json(r: Variant) -> Array:
 	var a := norm_response(r)
 	if not a.is_empty() and a[0] == "REDEPLOY":
 		return ["REDEPLOY", cell_to_json(a[1]), cell_to_json(a[2])]
+	if not a.is_empty() and a[0] == "DEPLOY":
+		return ["DEPLOY", String(a[1]), cell_to_json(a[2])]
 	return a
 
 
@@ -555,16 +582,16 @@ static func response_to_json(r: Variant) -> Array:
 static func _new_sweep(st: Dictionary, place: Dictionary) -> Dictionary:
 	return {"sent": (place["sentries"] as Dictionary).duplicate(), "ghost": place["ghost"],
 		"owned": (st["owned"] as Dictionary).duplicate(), "hp": int(st["home_hp"]), "home_hit": false,
-		"seen": {}, "trace": [], "first": null, "lost": []}
+		"seen": {}, "trace": [], "first": null}
 
 
 ## sweep_l8._Sweep.scan: one line, cell by cell (ghost pass, typed BLOCK stops the line, HIT, else pass), then HOME.
+## L11: a cell turned TAKEN drops its sentry from the placement; the sentry returns to the pool (count unchanged).
 static func _scan(sw: Dictionary, beam: String, ln: Dictionary) -> void:
 	var sent: Dictionary = sw["sent"]
 	var owned: Dictionary = sw["owned"]
 	var seen: Dictionary = sw["seen"]
 	var tr: Array = sw["trace"]
-	var lost: Array = sw["lost"]
 	var t := String(ln["type"])
 	for c: Vector2i in ln["cells"]:
 		if _same(c, sw["ghost"]):
@@ -581,7 +608,6 @@ static func _scan(sw: Dictionary, beam: String, ln: Dictionary) -> void:
 			else:
 				owned[c] = TAKEN
 				if sent.has(c):
-					lost.append(String(sent[c]))
 					sent.erase(c)
 			tr.append([beam, c, "hit"])
 			seen[c] = true
@@ -626,6 +652,7 @@ static func _resolve(leg: Dictionary, raid_i: int, st: Dictionary, cand: int, pl
 	var heat: int = la["heat"]
 	var sw: Dictionary = la["sw"]
 	var sent: Dictionary = sw["sent"]
+	var pool := _pool_t(st["pool"])
 	if resp[0] == "REDEPLOY":
 		var s: Variant = resp[1]
 		var c: Variant = resp[2]
@@ -634,6 +661,13 @@ static func _resolve(leg: Dictionary, raid_i: int, st: Dictionary, cand: int, pl
 		var t: Variant = sent[s]
 		sent.erase(s)
 		sent[c] = t
+	elif resp[0] == "DEPLOY":
+		var dt := String(resp[1])
+		var dc: Variant = resp[2]
+		if not TYPES.has(dt) or _reserve_left(pool, sent, dt) <= 0 or typeof(dc) != TYPE_VECTOR2I \
+				or sent.has(dc) or not _live_status(_status(sw["owned"], dc)):
+			return {"error": "illegal deploy %s -> %s" % [dt, str(dc)]}
+		sent[dc] = dt
 	_scan(sw, "sealed", rd["cands"][cand])
 	if resp[0] != "JAM":
 		var col: int = (sw["first"] as Vector2i).x if not _is_none(sw["first"]) else int(rd["hunter_street"])
@@ -647,9 +681,6 @@ static func _resolve(leg: Dictionary, raid_i: int, st: Dictionary, cand: int, pl
 		kit["spoof"] = int(kit["spoof"]) - 1
 	if not _is_none(to_cell(place.get("ghost"))):
 		kit["ghost"] = int(kit["ghost"]) - 1
-	var pool := _pool_t(st["pool"])
-	for t: String in sw["lost"]:
-		pool[t] = int(pool[t]) - 1
 	var ns := {"heat": heat, "bank": int(st["bank"]), "home_hp": int(sw["hp"]), "owned": _ordered(sw["owned"]),
 		"sentries": _ordered(sent), "pool": pool, "kit": kit}
 	return {"error": "", "state": ns, "trace": tr, "heat_launch": heat_launch}
@@ -703,8 +734,9 @@ static func hunter_line(leg: Dictionary, raid_i: int, st: Dictionary, cand: int,
 	return street(col, true, String(rd["hunter_type"]))
 
 
-## sweep_l8.response_options: HOLD, then (with a spoof charge) every REDEPLOY (source in cell order, then target in cell
-## order), then JAM. Legality is read after beam 1 and the extras.
+## sweep_l8.response_options: HOLD, then (with a spoof charge) every REDEPLOY (source in cell order, then target in
+## cell order), every DEPLOY (L11: reserve types in D, N, E order, then target in cell order), then JAM. Legality and
+## the reserve are read after beam 1 and the extras.
 static func response_options(leg: Dictionary, raid_i: int, st: Dictionary, cand: int, place: Dictionary) -> Array:
 	var out: Array = [["HOLD"]]
 	if int(st["kit"]["spoof"]) <= 0:
@@ -716,6 +748,7 @@ static func response_options(leg: Dictionary, raid_i: int, st: Dictionary, cand:
 	var sw: Dictionary = la["sw"]
 	var sent: Dictionary = sw["sent"]
 	var owned: Dictionary = sw["owned"]
+	var pool := _pool_t(st["pool"])
 	var targets: Array = []
 	for c: Vector2i in CELLS:
 		if _live_status(_status(owned, c)) and not sent.has(c):
@@ -724,6 +757,10 @@ static func response_options(leg: Dictionary, raid_i: int, st: Dictionary, cand:
 		for c: Vector2i in targets:
 			if c != s:
 				out.append(["REDEPLOY", s, c])
+	for t: String in TYPES:
+		if _reserve_left(pool, sent, t) > 0:
+			for c: Vector2i in targets:
+				out.append(["DEPLOY", t, c])
 	out.append(["JAM"])
 	return out
 
@@ -865,20 +902,25 @@ static func between_options(leg: Dictionary, st: Dictionary) -> Array:
 
 # ---------------------------------------------------------------- forecast
 
+## The best response for one candidate {value, response, state, touches} over opts; ties keep the earliest response.
+static func _best_for(leg: Dictionary, raid_i: int, st: Dictionary, k: int, place: Dictionary, opts: Array, mid: bool) -> Dictionary:
+	var best: Dictionary = {}
+	for r: Array in opts:
+		var res := resolve(leg, raid_i, st, k, place, r)
+		if res.has("error"):
+			continue
+		var v := score(leg, res["state"], mid)
+		if best.is_empty() or v > float(best["value"]) + EPS:
+			best = {"value": v, "response": r, "state": res["state"], "touches": res["touches"]}
+	return best
+
+
 ## sweep_l8._best_per_cand: per sealed candidate {value, response, state, touches}; ties keep the earliest response.
 static func _best_per_cand(leg: Dictionary, raid_i: int, st: Dictionary, place: Dictionary, mid: bool) -> Array:
 	var opts := response_options(leg, raid_i, st, 0, place)
 	var per: Array = []
 	for k in range(CANDIDATES):
-		var best: Dictionary = {}
-		for r: Array in opts:
-			var res := resolve(leg, raid_i, st, k, place, r)
-			if res.has("error"):
-				continue
-			var v := score(leg, res["state"], mid)
-			if best.is_empty() or v > float(best["value"]) + EPS:
-				best = {"value": v, "response": r, "state": res["state"], "touches": res["touches"]}
-		per.append(best)
+		per.append(_best_for(leg, raid_i, st, k, place, opts, mid))
 	return per
 
 
@@ -902,3 +944,43 @@ static func forecast(leg: Dictionary, raid_i: int, st: Dictionary, place: Dictio
 			"best": {"response": best["response"], "state": ns, "touches": best["touches"],
 				"tier": tier(st, ns, best["touches"]), "score": score(leg, ns), "value": best["value"]}})
 	return out
+
+
+# ---------------------------------------------------------------- safe_next (L11)
+
+## True when every sealed candidate's best response (as in _best_per_cand) keeps HOME above 0 for this placement.
+static func _place_safe(leg: Dictionary, raid_i: int, st: Dictionary, place: Dictionary, mid: bool) -> bool:
+	var opts := response_options(leg, raid_i, st, 0, place)
+	for k in range(CANDIDATES):
+		var best := _best_for(leg, raid_i, st, k, place, opts, mid)
+		if best.is_empty() or int((best["state"] as Dictionary)["home_hp"]) <= 0:
+			return false
+	return true
+
+
+## sweep_l8.safe_next (L11): true if some capture option (none when there is no option), then some placement, with
+## the best response per sealed candidate, keeps HOME above 0 on every sealed candidate of raid raid_i. It runs on
+## the post-decay state; decay is idempotent, so it is applied here too when raid_i > 0. True when raid_i >= RAIDS.
+static func safe_next(leg: Dictionary, raid_i: int, st: Dictionary) -> bool:
+	if raid_i >= RAIDS:
+		return true
+	var s0: Dictionary = copy_state(st)
+	if raid_i > 0:
+		s0 = decay(leg, s0)
+	if int(s0["home_hp"]) <= 0:
+		return false
+	var mid := raid_i < RAIDS - 1
+	var caps: Array = capture_options(leg, s0)
+	if caps.is_empty():
+		caps = [null]
+	for cap: Variant in caps:
+		var s1: Dictionary = s0 if _is_none(cap) else capture(leg, s0, cap)
+		for place: Dictionary in placements(leg, s1):
+			if _place_safe(leg, raid_i, s1, place, mid):
+				return true
+	return false
+
+
+## The lab's between-screen badge: safe_next on the next raid after between(repair, build, intensity) and decay.
+static func safe_after_between(leg: Dictionary, st: Dictionary, next_raid: int, repair: Variant, build: Variant, intensity: String) -> bool:
+	return safe_next(leg, next_raid, between(leg, st, repair, build, intensity))

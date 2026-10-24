@@ -1,7 +1,9 @@
-"""Parity golden for the L8 city-raid lab (tools/raid_lab_city): sweep_l8.py rules (L9: decay before each capture).
+"""Parity golden for the L8 city-raid lab (tools/raid_lab_city): sweep_l8.py rules (L9: decay before each capture;
+L11: MAX_PLACED cap, DEPLOY response, lost districts return their sentry, safe_next).
 Legs 0, 3, 5, 8: leg data and the greedy and naive lines step by step (state before, state after decay, capture, state
-after capture, place, response, real candidate, trace with beams, tier, after the raid, between choice, after, score),
-plus random raids, between steps and capture checks reached by random legal play. Writes
+after capture, place, response, real candidate, trace with beams, tier, after the raid, between choice, safe_next per
+intensity for the chosen repair and build, after, score), plus random raids (responses from response_options, so
+DEPLOY included), between steps and capture checks reached by random legal play. Writes
 tools/raid_lab_city/data/l8_golden.json.
     python tools/raid_concepts/l8_golden.py"""
 from __future__ import annotations
@@ -36,11 +38,29 @@ def place_json(place):
 
 def resp_json(r):
     r = S.norm_response(r)
-    return [r[0], cj(r[1]), cj(r[2])] if r[0] == "REDEPLOY" else [r[0]]
+    if r[0] == "REDEPLOY":
+        return [r[0], cj(r[1]), cj(r[2])]
+    if r[0] == "DEPLOY":
+        return [r[0], r[1], cj(r[2])]
+    return [r[0]]
 
 
 def trace_json(tr):
     return [[b, cj(c), k] for b, c, k in tr]
+
+
+def intensities(leg, st):
+    """Intensity names in the Python between_options order (first appearance)."""
+    return list(dict.fromkeys(o[2] for o in S.between_options(leg, st)))
+
+
+def safe_next_json(leg, i, ns, repair, build):
+    """{intensity: safe_next(leg, i + 1, decay(between(ns, repair, build, intensity)))} for the chosen repair/build."""
+    out = {}
+    for inten in intensities(leg, ns):
+        after = S.between(leg, ns, repair, build, inten)
+        out[inten] = bool(S.safe_next(leg, i + 1, S.decay(leg, after)))
+    return out
 
 
 def raid_rec(leg, i, st, place, k, resp):
@@ -65,11 +85,14 @@ def replay(leg, log):
         rec["capture"] = cj(x["capture"])
         st = S.capture(leg, st, x["capture"]) if x["capture"] is not None else st
         place = (dict(x["place"]["sentries"]), x["place"]["ghost"])
-        ns, rr = raid_rec(leg, i, st, place, x["cand_real"], x["response"])
+        resp = S.norm_response(x["response"])
+        ns, rr = raid_rec(leg, i, st, place, x["cand_real"], resp)
         rec.update(rr)
         b = x["between"]
         after = S.between(leg, ns, b["repair"], b["build"], b["intensity"]) if b else ns
         rec["between"] = {"repair": cj(b["repair"]), "build": b["build"], "intensity": b["intensity"]} if b else None
+        if b:
+            rec["safe_next"] = safe_next_json(leg, i, ns, b["repair"], b["build"])
         rec["after"] = sj(after)
         rec["score_after"] = S.score(leg, after)
         steps.append(rec)
