@@ -466,3 +466,31 @@ Review: `_reviews/REVIEW_LAB_L11_batch.md`.
 the backlog.
 
 Review: `_reviews/REVIEW_LAB_L12_batch.md`.
+
+## L13 city-raid lab (rules R2–R5 plus UI, batch; one batch critic)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 6 | 8 | **34** | **6** | 6 | 7 |
+
+**Rules applied:**
+- **R2:** a sealed pair of hunter streets.
+- **R3:** the SACRIFICE response.
+- **R4:** Heat bands, and HOME costs 15.
+- **R5:** the intensity perks.
+
+**Measurement (20 legs):**
+- The response decides the outcome in 65% of raids, up from 45%.
+- SACRIFICE is used in 22% of raids.
+- The two hunter streets give different results in 82% of raids.
+- HOT became dominant (38/40) with 1.5× income. A local probe found HOT at ×0.5 income balanced (HOT 7 / LOW 4 /
+  NORMAL 9), and that was applied after the critic as L13b.
+
+**Critic:** S rose to 6, the best batch-critic suspense so far, but the total stays at 34.
+
+**PLATEAU CALLED (2026-10-23 overnight).** L9–L13 scored 34, 37, 35, 34 and 34: five rounds inside the ±3 noise. All
+three of the last critics put polish at about 37–38. Past that needs rule levers that are design decisions: deck-fed
+tools (R9), escalation that adds options alongside threats (R13), and partial information instead of a fully solved
+menu (R14). See RULE_BACKLOG.md.
+
+Review: `_reviews/REVIEW_LAB_L13_batch.md`.

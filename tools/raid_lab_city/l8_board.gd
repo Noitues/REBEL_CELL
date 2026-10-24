@@ -1,31 +1,38 @@
 class_name L8Board
 extends Node3D
-## The city view of raid lab L8 (SPEC section 8, with the L9, L10, L11 and L12 presentation changes). It shows a dark
-## slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the right. Three
-## lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the corp end of the
-## routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with rings, value pips
-## and exploit keys. The board also draws:
-## - sentries, the ghost and the sealed candidates;
+## The city view of raid lab L8 (SPEC section 8, with the L9-L12 presentation changes and the L13 UI). It shows a
+## dark slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the right.
+## Three lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the corp end
+## of the routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with rings, value
+## pips and exploit keys. The board also draws:
+## - sentries, the ghost and the sealed candidates. L13: the three candidates share one "?" glyph, tethered to each,
+##   that collapses into the real one at the reveal;
 ## - typed vehicles that travel the lines;
-## - the hunter: a cobalt hound silhouette with glowing eyes and a small type badge. It stands at the head of its street
-##   in PLAN and FORECAST (the outcome overlay) and runs the street in the playout;
+## - the hunter: a cobalt hound silhouette with glowing eyes and a small type badge. L13: its two sealed streets are
+##   dashed hound lanes with a pawprint and a "?" badge, the hound standing between them (show_hunter_cands). At the
+##   HUNTER REVEAL (hunter_reveal) one lane ignites, the other dissolves and the hound steps to its head, then runs it;
 ## - planned paths (L12): known beams as solid lanes at full strength, the selected candidate dashed at full strength
 ##   with a pulse, other candidates at 15% alpha with no arrowheads. While paths are shown, cross streets that no line
 ##   uses are hidden;
 ## - the playout's trails;
 ## - a forecast outcome overlay (crack, shield, skull and hunter path glyphs);
-## - route verdicts (L12): per sealed route, the tier glyph where the route meets HOME (heart, broken heart or skull);
+## - route verdicts (L12, moved by L13): per sealed route, the tier glyph at the lane's corp-side entry (heart, broken
+##   heart or skull). They stay through the launch until hide_route_verdicts();
 ## - district marks (L12): a cobalt "1" countdown ring next to the wrench of every DOWN district (TAKEN next raid), and
 ##   a crack decal on a district hit this raid that is OK again (until the next raid);
 ## - a response preview: an arc arrow in the sentry's type color from the source (a sentry, or the reserve tray at our
-##   HQ) to the target cell for REDEPLOY / DEPLOY, and a red cross over the hound for JAM;
+##   HQ) to the target cell for REDEPLOY / DEPLOY, a red cross over the hound for JAM, and (L13) for SACRIFICE the cell
+##   crumbling under a cobalt veil with a shield dome over our HQ;
+## - L13 Heat ghosts: one ghost beam on the corp tower per extra beam the current Heat brings, plus a faint one for the
+##   next threshold (set_heat_ghosts);
 ## - decay beats, where a cell left DOWN flips to cobalt TAKEN with a pulse;
 ## - the decided fall beat: our HQ tower turns red and collapses, with a red skull over the rubble;
 ## - highlights by meaning: an amber plus (capture), a red wrench outline (repair) and a white check ring (picked);
 ## - the lethal mark: at HOME 1/3 the last HOME pip pulses red and a red skull pulses on our HQ tower.
 ## Everything is built in code, and it runs inside a SubViewport that the main scene creates. It holds no rule. The lab
 ## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`), an outcome (`show_outcome`),
-## route verdicts (`show_route_verdicts`), a response preview (`show_response_preview`) and a playout's cues (`play`,
+## route verdicts (`show_route_verdicts`), the hunter streets (`show_hunter_cands`), a response preview
+## (`show_response_preview`), the Heat ghosts (`set_heat_ghosts`) and a playout's cues (`play`, `hunter_reveal`,
 ## `decay`, `show_fall`); the board only draws them. `set_scramble` swaps the board labels for seeded noise. The camera
 ## is fitted to the board's real geometry (slab, HQ towers, labels) so it fills the free area left of the side panel,
 ## with no dark sky margin; the starfield is dimmed. Glow is capped while impacts flash, so hits read as shapes.
@@ -72,7 +79,7 @@ const HUNTER_EYE := Color8(235, 248, 255)
 const HUNTER_TRAIL := COBALT
 ## The collapsed HQ's body color in the fall beat.
 const FALL_BODY := Color8(70, 14, 20)
-## L12 route verdicts: the heart of a held route (HOLDS / EVADED).
+## L12 route verdicts: the heart of a held route (HOLDS / EVADED). L13: also the SACRIFICE shield over our HQ.
 const HOLD_COL := Color8(70, 235, 160)
 
 const ALBEDO_K := 0.25
@@ -185,11 +192,13 @@ const ROUTE_EDGE_W := 0.04
 const STREET_W := 0.26
 const STREET_EXT := 0.9
 const STREET_LIFT := 0.006
-## Layer heights above the roads: cell decals, crack decals, planned paths, outcome paths, playout trails, highlights.
+## Layer heights above the roads: cell decals, crack decals, planned paths, hunter lanes, outcome paths, playout
+## trails, highlights.
 const DECAL_Y := 0.045
 const DECAL_T := 0.006
 const CRACK_DECAL_Y := 0.055
 const PATH_Y := 0.06
+const HUNT_Y := 0.065
 const OUT_PATH_Y := 0.07
 const TRAIL_Y := 0.08
 const LANE_T := 0.012
@@ -370,9 +379,41 @@ const EYE_LOW := 0.55
 const HUNTER_BADGE_Y := 1.15
 const HUNTER_BADGE_S := 0.13
 const BADGE_BACK_K := 1.6
-const CAND_DX := 0.55
+## L13: the sealed candidates wait on the corp platform's edge (fraction of a cell past the last district), so the
+## route verdicts fit between them and the districts.
+const CAND_DX := 0.64
 const CAND_ALPHA := 0.32
 const CAND_SHRINK := 0.2
+## L13: the shared "?" over the three sealed candidates (raised, pushed toward the camera), tethered to each one.
+const CQ_Y := 1.75
+const CQ_FWD := 0.3
+const CQ_S := 1.2
+const CQ_TETHER_W := 0.03
+const CQ_TETHER_A := 0.5
+const CQ_TETHER_TOP := 0.3
+const CQ_TETHER_BOT := 0.22
+## A "?" glyph: a billboard "?" on a dark disc (the scramble never touches "?").
+const Q_BACK_R := 0.26
+const Q_FONT := 56
+const Q_Z := 0.05
+const Q_MIN_S := 0.001
+
+## L13 hunter street candidates: dashed cobalt hound lanes, a pawprint at each lane's head and a "?" badge above it.
+## The hound stands between the two heads. At the reveal the real lane ignites (alpha to full, emission up) and the
+## other dissolves; both "?" badges collapse and the hound steps to the real head.
+const HC_ALPHA := 0.55
+const HC_IGNITE_E := 1.9
+const HC_PAW_Y := 0.55
+const HC_PAW_S := 1.0
+const HC_Q_Y := 1.25
+const HC_Q_S := 1.0
+const HC_RING_K := 0.9
+const PAW_BACK_R := 0.27
+const PAW_PAD_R := 0.1
+const PAW_PAD := Vector2(0.0, -0.06)
+const PAW_PAD_SCALE := Vector3(1.25, 1.0, 0.95)
+const PAW_TOE_R := 0.045
+const PAW_TOES := [Vector2(-0.13, 0.07), Vector2(-0.05, 0.15), Vector2(0.05, 0.15), Vector2(0.13, 0.07)]
 
 ## Planned paths: dashed lanes (sealed candidates, faded extras) or solid lanes (known beams), a chevron at the exit,
 ## the type glyph at the entry.
@@ -449,14 +490,14 @@ const OUT_HOUND_S := 1.15
 const OUT_HOUND_GLYPH_Y := 1.35
 const OUT_HOUND_GLYPH_K := 1.4
 
-## L12 route verdicts: a glyph just past where each route meets HOME (right of our HQ platform), raised and pushed
-## toward the camera, with a ring on the road below it. Heart = HOLDS / EVADED, broken heart = BATTERED / DAMAGED,
-## skull = BREACHED. The heart is a diamond with two lobes; the break is a dark zigzag in front of it.
-const VERDICT_DX := 0.45
+## Route verdicts (L13: at each lane's corp-side entry, between the last district and the waiting candidate), raised
+## and pushed toward the camera, with a ring on the road below. Heart = HOLDS / EVADED, broken heart = BATTERED /
+## DAMAGED, skull = BREACHED. The heart is a diamond with two lobes; the break is a dark zigzag in front of it.
+const VERDICT_DX := 0.36
 const VERDICT_Y := 0.95
-const VERDICT_FWD := 0.35
-const VERDICT_S := 1.5
-const VERDICT_SKULL_S := 0.8
+const VERDICT_FWD := 0.45
+const VERDICT_S := 1.15
+const VERDICT_SKULL_S := 0.62
 const VERDICT_RING_R := Vector2(0.32, 0.4)
 const HEART_SQ := 0.26
 const HEART_SQ_Y := -0.06
@@ -495,6 +536,40 @@ const RESP_JAM_FWD := 0.5
 const RESP_JAM_BAR := Vector3(1.0, 0.13, 0.05)
 const RESP_JAM_DIM := 0.35
 const RESP_PULSE := 0.35
+## L13 SACRIFICE preview: a cobalt veil column over the district with seeded cobalt debris falling through it (a
+## loop), a cobalt hex ring, and a tall translucent shield dome over our HQ with a shield glyph and a ring.
+const SAC_SEED := 1313
+const SAC_N := 10
+const SAC_CUBE := 0.14
+const SAC_VEIL_H := 1.6
+const SAC_VEIL_A := 0.22
+const SAC_SPREAD := 0.85
+const SAC_Y := Vector2(0.5, 1.7)
+const SAC_FLOOR_Y := 0.07
+const SAC_HZ := 0.7
+const SAC_SPIN := 3.0
+const SAC_DOME_R := 1.6
+const SAC_DOME_STRETCH := 2.4
+const SAC_DOME_A := 0.16
+const SAC_SHIELD_Y := 2.2
+const SAC_SHIELD_FWD := 1.2
+const SAC_SHIELD_S := 1.5
+
+## L13 Heat ghosts: floating ghost beams off the corp tower's HOME-facing side, one slot per extra beam, pointing at
+## HOME. Active ones are bright and pulse; the faint one marks the next threshold.
+const HG_SLOTS := 3
+const HG_Y0 := 2.35
+const HG_STEP := 0.5
+const HG_GAP := 0.08
+const HG_LEN := 1.0
+const HG_BAR := Vector2(0.08, 0.14)
+const HG_ORB_R := 0.09
+const HG_A := 0.75
+const HG_A_FAINT := 0.18
+const E_HG := 2.2
+const E_HG_FAINT := 0.6
+const HG_PULSE := 0.35
+const HG_HZ := 0.9
 
 ## Highlights by meaning. Capture: an amber plus over the district and a pulsing amber ring. Repair: a red outline
 ## around the district's wrench and a red hex ring. Picked: a steady white ring with a check on its camera-side edge.
@@ -558,6 +633,7 @@ const T_HOME := 0.7
 const T_TURN := 0.9
 const T_JAM := 0.7
 const T_REVEAL := 1.4
+const T_HUNT_REVEAL := 1.2
 const T_EVADED := 1.2
 const T_DECAY := 0.8
 const T_FALL := 1.8
@@ -586,6 +662,7 @@ var _board: Node3D
 var _path_root: Node3D
 var _outcome_root: Node3D
 var _verdict_root: Node3D
+var _hunter_root: Node3D
 var _resp_root: Node3D
 var _trail_root: Node3D
 var _fx_root: Node3D
@@ -622,6 +699,11 @@ var _home_pip_holder: Node3D
 var _home_pips: Array = []
 var _home_ghost: Node3D
 var _beacon_mat: StandardMaterial3D
+var _corp_root: Node3D = null
+var _heat_root: Node3D = null
+var _hg_active: int = 0
+var _hg_faint: bool = false
+var _hg_mats: Array = []
 var _lethal: bool = false
 var _lethal_root: Node3D
 var _lethal_pip: StandardMaterial3D
@@ -632,12 +714,25 @@ var _fall_skull: Node3D = null
 var _out_hound: Node3D = null
 var _out_hound_mats: Array = []
 var _eyes: Array = []
+var _hc_lanes: Array = []
+var _hc_streets: Dictionary = {}
+var _hc_hound: Node3D = null
+var _hc_hound_mats: Array = []
+var _hc_from: Vector3 = Vector3.ZERO
+var _hc_real: int = -1
+var _hc_spawned: bool = false
 var _resp_mats: Array = []
 var _resp_last: Dictionary = {}
 var _resp_dimmed: bool = false
+var _resp_dim_mats: Array = []
+var _resp_crumble: Array = []
 var _vehicles: Dictionary = {}
 var _cands: Array = []
 var _cand_real: int = -1
+var _cand_q: Node3D = null
+var _cand_q_holder: Node3D = null
+var _cand_q_base: Vector3 = Vector3.ZERO
+var _cand_q_mats: Array = []
 var _fx: Array = []
 var _shakes: Dictionary = {}
 var _hl: Array = []
@@ -671,6 +766,8 @@ func _init() -> void:
 	add_child(_outcome_root)
 	_verdict_root = Node3D.new()
 	add_child(_verdict_root)
+	_hunter_root = Node3D.new()
+	add_child(_hunter_root)
 	_resp_root = Node3D.new()
 	add_child(_resp_root)
 	_trail_root = Node3D.new()
@@ -693,7 +790,8 @@ func _ready() -> void:
 # ======================= public API =======================
 ## Build the board for a leg: {w, h, values: {Vector2i: int}, exploits: Array[Vector2i]}. The optional keys
 ## route_names (3 Strings) and street_names (w Strings) replace the board's coordinate labels. set_scramble() still
-## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts and crack decals are cleared.
+## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts, hunter street candidates and
+## crack decals are cleared; the Heat ghosts are rebuilt from the last set_heat_ghosts().
 func setup(leg: Dictionary) -> void:
 	_w = int(leg.get("w", DEFAULT_W))
 	_h = int(leg.get("h", DEFAULT_H))
@@ -709,6 +807,7 @@ func setup(leg: Dictionary) -> void:
 	clear_outcome()
 	clear_response_preview()
 	hide_route_verdicts()
+	clear_hunter_cands()
 	_cracked.clear()
 	_board.queue_free()
 	_board = Node3D.new()
@@ -734,8 +833,10 @@ func setup(leg: Dictionary) -> void:
 	_home_tower = _home_root.get_meta("tower") as Node3D
 	_home_light = _home_root.get_meta("light") as OmniLight3D
 	var corp := _build_hq(_w, COBALT, HQ_BODY_CORP)
+	_corp_root = corp
 	_beacon_mat = _mat_live(COBALT_HOT, E_BEACON)
 	_sphere(corp, Vector3(0.0, HQ_PLAT.y + HQ_TIERS * HQ_TIER_H + HQ_BEACON_R, 0.0), HQ_BEACON_R, _beacon_mat)
+	_refresh_heat_ghosts()
 	_build_home_pips()
 	_refresh_lethal()
 	for c: Vector2i in _cells():
@@ -770,8 +871,9 @@ func show_state(st: Dictionary, place: Dictionary) -> void:
 		_beacon_mat.emission_energy_multiplier = E_BEACON * (1.0 + float(_heat) / HEAT_REF)
 
 
-## The sealed candidates [{route, type}]: real -1 = ghosted convoys at the corp end (a new raid: vehicles, effects,
-## trails and crack decals are reset, planned paths stay); real >= 0 = the settled reveal (two gone, the real one lit).
+## The sealed candidates [{route, type}]: real -1 = ghosted convoys at the corp end under one shared "?" glyph (a new
+## raid: vehicles, effects, trails and crack decals are reset, planned paths stay); real >= 0 = the settled reveal (two
+## gone, the real one lit, the "?" collapsed).
 func show_candidates(cands: Array, real: int = -1) -> void:
 	if real < 0 or _cands.is_empty():
 		if real < 0:
@@ -786,9 +888,103 @@ func show_candidates(cands: Array, real: int = -1) -> void:
 			n.rotation.y = HEADING_HOME
 			v["route"] = route
 			_cands.append(v)
+		_build_cand_q()
 	_cand_real = real
 	_apply_reveal(1.0 if real >= 0 else 0.0)
 	_face_all()
+
+
+## L13: the hunter's two sealed streets (street indices, in hunter_cands order) for a hunter of the given type. Each
+## street is a dashed cobalt hound lane with a pawprint at its head and a "?" badge above it; the hound (glowing eyes,
+## type badge) stands between the two heads. Both streets count as used (they stay visible while paths are shown).
+## real >= 0 shows the settled reveal at once. Replaces any shown before; they stay through play() until
+## clear_hunter_cands() or setup(). The next hunter cue spawns its hound where this one stands.
+func show_hunter_cands(streets: Array, type: String, real: int = -1) -> void:
+	clear_hunter_cands()
+	var heads: Array = []
+	for sv: Variant in streets:
+		var x := int(sv)
+		var root := Node3D.new()
+		_hunter_root.add_child(root)
+		var lane := {"street": x, "root": root, "mats": [], "q": null, "head": Vector3.ZERO}
+		_hc_lanes.append(lane)
+		if x < 0 or x >= _w:
+			continue
+		var cs: Array = []
+		for y in range(_h):
+			cs.append(Vector2i(x, y))
+		var span := _line_span({"kind": "STREET", "index": x, "cells": cs, "type": type, "home": false}, HUNT_Y)
+		if span.is_empty():
+			continue
+		var a: Vector3 = span[0]
+		var b: Vector3 = span[1]
+		var horiz: bool = span[2]
+		var m := _mat_live(HUNTER_TRAIL, E_PATH, HC_ALPHA)
+		var gm := _mat_live(COBALT_HOT, E_HL_GLYPH)
+		lane["mats"] = [m, gm]
+		var lat := _lateral(horiz) * _lane_offset(_path_use.duplicate(), _road_key(a, horiz))
+		_dashes(root, a, b, lat, m)
+		_paw(root, a + lat + Vector3(0.0, HC_PAW_Y - a.y, 0.0), HC_PAW_S, gm)
+		var q := _qmark(root, a + lat + Vector3(0.0, HC_Q_Y - a.y, 0.0), HC_Q_S, COBALT_HOT)
+		lane["q"] = q
+		var head := Vector3(a.x, 0.0, a.z) + lat
+		lane["head"] = head
+		heads.append(head)
+		_hc_streets[x] = true
+	if not heads.is_empty():
+		var mid := Vector3.ZERO
+		for hp: Vector3 in heads:
+			mid += hp
+		mid /= float(heads.size())
+		_hc_hound = Node3D.new()
+		_hc_hound.position = mid
+		_hunter_root.add_child(_hc_hound)
+		var inner := Node3D.new()
+		inner.rotation.y = HEADING_DOWN
+		inner.scale = Vector3.ONE * OUT_HOUND_S
+		_hc_hound.add_child(inner)
+		var body := _mat_live(HUNTER_BODY, E_HUNTER)
+		var eye := _mat_live(HUNTER_EYE, E_EYE)
+		var bm := _mat_live(_type_col(type), E_OUT)
+		_hc_hound_mats = [body, bm]
+		_build_hound(inner, body, eye)
+		_eyes.append({"node": _hc_hound, "mat": eye})
+		_badge(_hc_hound, Vector3(0.0, OUT_HOUND_GLYPH_Y, 0.0), type, HUNTER_BADGE_S * OUT_HOUND_GLYPH_K, bm)
+		_hc_from = mid
+	_hc_hound_vis()
+	_apply_street_vis()
+	if real >= 0 and real < _hc_lanes.size():
+		_hc_real = real
+		_apply_hunter_reveal(1.0)
+
+
+## L13: the HUNTER REVEAL beat. The lane of hunter street candidate real (an index into show_hunter_cands' streets)
+## ignites, the other dissolves, both "?" badges collapse and the hound steps to the real lane's head. It plays at the
+## current speed (instant settles at once) and returns cues_finished; the hunter's run cues follow it.
+func hunter_reveal(real: int) -> Signal:
+	return play([{"kind": "hunter_reveal", "line": real}], _speed)
+
+
+## L13: remove the hunter street candidates and their hound (every cross street shows again).
+func clear_hunter_cands() -> void:
+	if _hunter_root != null:
+		for ch in _hunter_root.get_children():
+			ch.queue_free()
+	_hc_lanes.clear()
+	_hc_streets.clear()
+	_hc_hound = null
+	_hc_hound_mats = []
+	_hc_real = -1
+	_hc_spawned = false
+	_apply_street_vis()
+
+
+## L13: the Heat ghosts on the corp tower: `active` bright ghost beams (one per extra beam the current Heat brings) and,
+## when next_faint, one faint ghost for the next threshold. Kept across setup().
+func set_heat_ghosts(active: int, next_faint: bool) -> void:
+	_hg_active = maxi(0, active)
+	_hg_faint = next_faint
+	_refresh_heat_ghosts()
 
 
 ## Draw planned lines along their roads, each with its type glyph at the entry. A line is {kind, index, cells, type,
@@ -836,7 +1032,7 @@ func clear_paths() -> void:
 ## - Blocks get a shield glyph in the sentry's type color.
 ## - A HOME hit puts a red skull over our HQ.
 ## - The hunter's street gets a dashed cobalt line, with the cobalt hound (glowing eyes, type badge) standing at its
-##   start, facing down the street. Its street counts as used (it stays visible while paths are shown).
+##   start, facing down the street (the hunter-candidates hound hides meanwhile). Its street counts as used.
 ## Replaces any outcome shown before; an active response preview is redrawn on top. play() clears it.
 func show_outcome(o: Dictionary) -> void:
 	clear_outcome()
@@ -871,13 +1067,14 @@ func clear_outcome() -> void:
 		return
 	for ch in _outcome_root.get_children():
 		ch.queue_free()
+	_hc_hound_vis()
 	_apply_street_vis()
 
 
-## L12: stamp each sealed route's forecast tier where that route meets HOME. v = [{route: int, tier: String}], one
+## Stamp each sealed route's forecast tier at that lane's corp-side entry (L13). v = [{route: int, tier: String}], one
 ## entry per candidate route. HOLDS / EVADED: a green heart; BATTERED / DAMAGED: an amber broken heart; BREACHED: a red
-## skull. Each glyph floats just right of our HQ platform on its route, with a ring on the road. Replaces any verdicts
-## shown before; play() hides them (launch).
+## skull, each with a ring on the road. Replaces any verdicts shown before; they stay through the launch (play() keeps
+## them) until hide_route_verdicts() or setup().
 func show_route_verdicts(v: Array) -> void:
 	hide_route_verdicts()
 	for ev: Variant in v:
@@ -890,7 +1087,7 @@ func show_route_verdicts(v: Array) -> void:
 		_verdict(route, str(e.get("tier", "")))
 
 
-## L12: remove the route verdicts.
+## Remove the route verdicts.
 func hide_route_verdicts() -> void:
 	if _verdict_root == null:
 		return
@@ -916,13 +1113,16 @@ func clear_cracks() -> void:
 	_refresh_all_cells()
 
 
-## Draw a response row's effect on the board: p = {kind: "REDEPLOY"|"DEPLOY"|"JAM"|"HOLD", from: Vector2i or null,
-## to: Vector2i or null, type: String}, with the optional key street: int (the hunter's street for JAM when no outcome
-## hound is shown).
+## Draw a response row's effect on the board: p = {kind: "REDEPLOY"|"DEPLOY"|"SACRIFICE"|"JAM"|"HOLD", from: Vector2i
+## or null, to: Vector2i or null, type: String}, with the optional keys street: int (the hunter's street for JAM when
+## no hound is shown) and cell: Vector2i (the SACRIFICE cell; to is accepted too).
 ## - REDEPLOY / DEPLOY: an arc arrow in the sentry type's color from the source to the target cell, with a ghost
 ##   sentry at the target. The source is a spinning dashed ring on the sentry's cell, or (from = null) the reserve tray
 ##   just right of our HQ on the target's route.
-## - JAM: a red cross over the hound (the outcome hound, else the head of p.street); the hound and its path dim.
+## - SACRIFICE (L13): the cell crumbles under a cobalt veil (falling cobalt debris, a cobalt hex ring), and a shield
+##   dome with a shield glyph stands over our HQ.
+## - JAM: a red cross over the hound (the outcome hound, else the hunter-candidates hound, else the head of p.street);
+##   the hound and its path dim.
 ## - HOLD: nothing.
 ## Replaces any preview shown before. play() clears it.
 func show_response_preview(p: Dictionary) -> void:
@@ -950,6 +1150,10 @@ func show_response_preview(p: Dictionary) -> void:
 				_resp_tray(a, type, m)
 			_resp_arrow(a, _grid_world(to), cut, RESP_DST_CUT, m)
 			_resp_target(to, type, m)
+		"SACRIFICE":
+			var cv: Variant = p.get("cell", p.get("to", null))
+			if cv is Vector2i:
+				_resp_sacrifice(cv as Vector2i)
 		"JAM":
 			_resp_jam(p)
 
@@ -960,20 +1164,22 @@ func clear_response_preview() -> void:
 		for ch in _resp_root.get_children():
 			ch.queue_free()
 	_resp_mats.clear()
+	_resp_crumble.clear()
 	_resp_last = {}
 	if _resp_dimmed:
-		_tint(_out_hound_mats, 1.0, 1.0)
+		_tint(_resp_dim_mats, 1.0, 1.0)
+	_resp_dim_mats = []
 	_resp_dimmed = false
 
 
-## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, evaded, decay, fall) and emit
-## cues_finished at the end. Planned paths, the outcome overlay, the route verdicts and the response preview are
-## cleared; every beam leaves a trail with its hits and stops until reset_playout(). Hit cells get the crack mark.
+## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, hunter_reveal, evaded, decay, fall) and
+## emit cues_finished at the end. Planned paths, the outcome overlay and the response preview are cleared; the route
+## verdicts and the hunter street candidates stay. Every beam leaves a trail with its hits and stops until
+## reset_playout(). Hit cells get the crack mark.
 func play(cues: Array, speed: float = 1.0) -> Signal:
 	clear_paths()
 	clear_outcome()
 	clear_response_preview()
-	hide_route_verdicts()
 	_queue = cues.duplicate()
 	_qi = -1
 	_speed = maxf(speed, SPEED_MIN)
@@ -1020,7 +1226,7 @@ func set_speed(speed: float) -> void:
 
 
 ## Scramble on: the board labels (route names, street numbers, the EVADED stamp) show seeded noise of the same length.
-## Off: the real names come back.
+## Off: the real names come back. "?" glyphs are never scrambled.
 func set_scramble(on: bool) -> void:
 	_scramble = on
 	_apply_label_text()
@@ -1079,13 +1285,13 @@ func clear_highlight() -> void:
 	_hl.clear()
 
 
-## Drop every vehicle, effect, shake, candidate, trail, planned path, route verdict and response preview (a fresh raid).
-## Crack decals stay until the next raid's show_candidates(-1).
+## Drop every vehicle, effect, shake, candidate, trail, planned path and response preview (a fresh raid). Route
+## verdicts stay until hide_route_verdicts(), hunter street candidates until clear_hunter_cands(), crack decals until
+## the next raid's show_candidates(-1).
 func reset_playout() -> void:
 	_reset_motion()
 	clear_paths()
 	clear_response_preview()
-	hide_route_verdicts()
 
 
 # ======================= camera fit =======================
@@ -1416,6 +1622,34 @@ func _badge(parent: Node3D, pos: Vector3, type: String, s: float, mat: Material)
 	return holder
 
 
+## L13: a "?" glyph (a billboard "?" over a dark disc) in a facing holder scaled by s.
+func _qmark(parent: Node3D, pos: Vector3, s: float, col: Color) -> Node3D:
+	var holder := _facing(parent, pos)
+	holder.scale = Vector3.ONE * s
+	_backing(holder, Q_BACK_R)
+	_label(holder, "?", Vector3(0.0, 0.0, Q_Z), col, Q_FONT)
+	return holder
+
+
+## L13: a pawprint glyph (an oval pad and four toes) on a dark disc, facing the camera, scaled by s.
+func _paw(parent: Node3D, pos: Vector3, s: float, m: Material) -> Node3D:
+	var holder := _facing(parent, pos)
+	holder.scale = Vector3.ONE * s
+	_backing(holder, PAW_BACK_R)
+	var pad := _cyl(holder, Vector3(PAW_PAD.x, PAW_PAD.y, 0.0), PAW_PAD_R, SHAPE_DEPTH, CIRCLE_SEGS, m)
+	pad.rotation.x = -PI * 0.5
+	pad.scale = PAW_PAD_SCALE
+	for t: Vector2 in PAW_TOES:
+		_cyl(holder, Vector3(t.x, t.y, 0.0), PAW_TOE_R, SHAPE_DEPTH, CIRCLE_SEGS, m).rotation.x = -PI * 0.5
+	return holder
+
+
+## A shield shape (a bar and a downward point) built flat in an existing facing holder's plane.
+func _shield_into(holder: Node3D, m: Material) -> void:
+	_box(holder, Vector3(0.0, SHIELD_TOP_Y, 0.0), SHIELD_TOP, m)
+	_cyl(holder, Vector3(0.0, SHIELD_TIP_Y, 0.0), SHIELD_TIP_R, SHAPE_DEPTH, TRI_SEGS, m).rotation.x = PI * 0.5
+
+
 ## The hound silhouette (forward +x, on the floor) in a holder scaled by HOUND_S: body parts in `body`, glowing eyes in
 ## `eye`. Returns the leg nodes, each with a "gait" meta (+1 or -1) for the run cycle.
 func _build_hound(parent: Node3D, body: Material, eye: Material) -> Array:
@@ -1654,13 +1888,13 @@ func _build_roads() -> void:
 		_street_nodes.append(_box(_board, Vector3(px, ROAD_Y + STREET_LIFT * 2.0, (z0 + z1) * 0.5), Vector3(STREET_W, ROAD_T, z1 - z0), _mat(STREET_COL, E_STREET)))
 
 
-## While planned paths are shown, a cross street shows only when a shown line (a planned STREET line or the outcome
-## hunter's street) uses it; otherwise every street shows.
+## While planned paths are shown, a cross street shows only when a shown line (a planned STREET line, the outcome
+## hunter's street or a hunter street candidate) uses it; otherwise every street shows.
 func _apply_street_vis() -> void:
 	for x in range(_street_nodes.size()):
 		var n: Variant = _street_nodes[x]
 		if is_instance_valid(n):
-			(n as Node3D).visible = not _paths_on or _path_streets.has(x) or _out_streets.has(x)
+			(n as Node3D).visible = not _paths_on or _path_streets.has(x) or _out_streets.has(x) or _hc_streets.has(x)
 
 
 ## Route names right of the corp platform on each road (the corp end), and street numbers at the north edge. Both
@@ -1758,6 +1992,38 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	root.add_child(lt)
 	root.set_meta("light", lt)
 	return root
+
+
+## L13: rebuild the Heat ghosts on the corp tower from _hg_active / _hg_faint.
+func _refresh_heat_ghosts() -> void:
+	if is_instance_valid(_heat_root):
+		_heat_root.queue_free()
+	_heat_root = null
+	_hg_mats.clear()
+	if not is_instance_valid(_corp_root):
+		return
+	_heat_root = Node3D.new()
+	_corp_root.add_child(_heat_root)
+	var n := mini(_hg_active, HG_SLOTS)
+	for k in range(n):
+		_heat_ghost(k, false)
+	if _hg_faint and n < HG_SLOTS:
+		_heat_ghost(n, true)
+
+
+## One Heat ghost in slot k: a floating bar off the corp tower's HOME side with an orb at its root and a chevron
+## pointing at HOME. Active ghosts pulse; the faint one is dim and still.
+func _heat_ghost(k: int, faint: bool) -> void:
+	var y := HG_Y0 + HG_STEP * float(k)
+	var x0 := -HQ_BASE * 0.5 - HG_GAP
+	var x1 := x0 - HG_LEN
+	var m := _mat_live(COBALT_HOT, E_HG_FAINT if faint else E_HG, HG_A_FAINT if faint else HG_A)
+	var bar_end := x1 + ARROW_L * 0.3
+	_box(_heat_root, Vector3((x0 + bar_end) * 0.5, y, 0.0), Vector3(x0 - bar_end, HG_BAR.x, HG_BAR.y), m)
+	_chevron(_heat_root, Vector3(x1, y, 0.0), Vector3(-1.0, 0.0, 0.0), m)
+	_sphere(_heat_root, Vector3(x0, y, 0.0), HG_ORB_R, m)
+	if not faint:
+		_hg_mats.append(m)
 
 
 func _build_home_pips() -> void:
@@ -2150,8 +2416,7 @@ func _out_block(c: Vector2i, type: String) -> void:
 	_torus(_outcome_root, _grid_world(c) + Vector3(0.0, OUT_RING_Y, 0.0), SHIELD_RING_R.x, SHIELD_RING_R.y, CIRCLE_SEGS, m)
 	var holder := _facing(_outcome_root, _grid_world(c) + Vector3(0.0, OUT_GLYPH_Y, 0.0))
 	_backing(holder, OUT_BACK_R)
-	_box(holder, Vector3(0.0, SHIELD_TOP_Y, 0.0), SHIELD_TOP, m)
-	_cyl(holder, Vector3(0.0, SHIELD_TIP_Y, 0.0), SHIELD_TIP_R, SHAPE_DEPTH, TRI_SEGS, m).rotation.x = PI * 0.5
+	_shield_into(holder, m)
 
 
 ## HOME hit: a red skull in front of our HQ tower and a red ring on its platform.
@@ -2163,6 +2428,7 @@ func _out_home() -> void:
 
 ## The hunter's run: a dashed cobalt lane down its street, with the cobalt hound (glowing eyes, type badge) standing
 ## at its start, facing down the street. Its materials are kept so a JAM preview can dim it; its street counts as used.
+## The hunter-candidates hound hides while this one stands.
 func _out_hunter(ln: Dictionary) -> void:
 	if str(ln.get("kind", "")) == "STREET":
 		_out_streets[int(ln.get("index", -1))] = true
@@ -2190,14 +2456,52 @@ func _out_hunter(ln: Dictionary) -> void:
 	_eyes.append({"node": hound, "mat": eye})
 	_out_hound = hound
 	_badge(_outcome_root, hound.position + Vector3(0.0, OUT_HOUND_GLYPH_Y, 0.0), type, HUNTER_BADGE_S * OUT_HOUND_GLYPH_K, bm)
+	_hc_hound_vis()
+
+
+# ======================= hunter street candidates (L13) =======================
+## The hunter-candidates hound shows until its hunter spawns, and hides while an outcome hound stands.
+func _hc_hound_vis() -> void:
+	if is_instance_valid(_hc_hound):
+		_hc_hound.visible = not _hc_spawned and not is_instance_valid(_out_hound)
+
+
+## The hunter reveal at progress u: both "?" badges collapse, the real lane ignites, the other dissolves, and the
+## hound steps from where it stood to the real lane's head. With no real lane set, everything shows sealed.
+func _apply_hunter_reveal(u: float) -> void:
+	var e := _ease_out(u)
+	for i in range(_hc_lanes.size()):
+		var ln: Dictionary = _hc_lanes[i]
+		var root: Node3D = ln["root"]
+		if not is_instance_valid(root):
+			continue
+		var qv: Variant = ln["q"]
+		var q: Node3D = qv as Node3D if is_instance_valid(qv) else null
+		if _hc_real < 0:
+			_tint(ln["mats"], 1.0, 1.0)
+			root.visible = true
+			if q != null:
+				q.scale = Vector3.ONE * HC_Q_S
+				q.visible = true
+			continue
+		if q != null:
+			q.scale = Vector3.ONE * HC_Q_S * maxf(1.0 - e, Q_MIN_S)
+			q.visible = u < 1.0
+		if i == _hc_real:
+			_tint(ln["mats"], lerpf(1.0, 1.0 / HC_ALPHA, u), lerpf(1.0, HC_IGNITE_E, u))
+		else:
+			_tint(ln["mats"], 1.0 - u, 1.0 - u)
+			root.visible = u < 1.0
+	if _hc_real >= 0 and _hc_real < _hc_lanes.size() and is_instance_valid(_hc_hound) and not _hc_spawned:
+		var head: Vector3 = (_hc_lanes[_hc_real] as Dictionary)["head"]
+		_hc_hound.position = _hc_from.lerp(head, e)
 
 
 # ======================= route verdicts =======================
-## One route's verdict: a ring on the road just right of our HQ platform and the tier glyph above it, pushed toward the
-## camera. Unknown tiers draw nothing.
+## One route's verdict at the lane's corp-side entry: a ring on the road between the last district and the waiting
+## candidate, and the tier glyph above it, pushed toward the camera. Unknown tiers draw nothing.
 func _verdict(route: int, tier_name: String) -> void:
-	var entry := _home_entry(route)
-	var ground := Vector3(entry.x + VERDICT_DX, 0.0, entry.z)
+	var ground := Vector3(_grid_world(Vector2i(_w - 1, route)).x + VERDICT_DX * CELL_DX, 0.0, _grid_world(Vector2i(0, route)).z)
 	var pos := ground + Vector3(0.0, VERDICT_Y, 0.0) + _cam_back() * VERDICT_FWD
 	var col := HOLD_COL
 	match tier_name:
@@ -2285,14 +2589,51 @@ func _resp_arrow(a: Vector3, b: Vector3, a_cut: float, b_cut: float, m: Material
 	_cone(_resp_root, pts[last], t, RESP_HEAD_R, RESP_HEAD_L, m)
 
 
+## L13 SACRIFICE: the cell crumbles to cobalt (a cobalt veil column, a cobalt hex ring, seeded debris falling through
+## the veil in a loop) and a translucent shield dome with a shield glyph and a ring stands over our HQ.
+func _resp_sacrifice(c: Vector2i) -> void:
+	var pos := _grid_world(c)
+	var m := _mat_live(COBALT, E_RESP)
+	var veil := _mat_live(COBALT, E_FX * 0.5, SAC_VEIL_A)
+	var hot := _mat_live(COBALT_HOT, E_RESP)
+	_resp_mats.append_array([m, veil, hot])
+	_torus(_resp_root, pos + Vector3(0.0, OUT_RING_Y, 0.0), HIT_MARK_R.x, HIT_MARK_R.y, HEX, m)
+	_cyl(_resp_root, pos + Vector3(0.0, SAC_VEIL_H * 0.5, 0.0), DECAL_R, SAC_VEIL_H, HEX, veil)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = SAC_SEED + c.x * SEED_MX + c.y * SEED_MY
+	for i in range(SAC_N):
+		var base := pos + Vector3(rng.randf_range(-SAC_SPREAD, SAC_SPREAD), rng.randf_range(SAC_Y.x, SAC_Y.y), rng.randf_range(-SAC_SPREAD, SAC_SPREAD))
+		var cube := _box(_resp_root, base, Vector3.ONE * SAC_CUBE, hot)
+		_resp_crumble.append({"node": cube, "base": base, "ph": rng.randf()})
+	var hm := _mat_live(HOLD_COL, E_RESP)
+	var dome := _mat_live(HOLD_COL, E_FX * 0.5, SAC_DOME_A)
+	_resp_mats.append_array([hm, dome])
+	var hp := _home_world() + Vector3(0.0, HQ_PLAT.y, 0.0)
+	_sphere(_resp_root, hp, SAC_DOME_R, dome).scale = Vector3(1.0, SAC_DOME_STRETCH, 1.0)
+	_torus(_resp_root, hp + Vector3(0.0, RING_Y, 0.0), HOME_MARK_R.x, HOME_MARK_R.y, CIRCLE_SEGS, hm)
+	var holder := _facing(_resp_root, _home_world() + Vector3(0.0, SAC_SHIELD_Y, 0.0) + _cam_back() * SAC_SHIELD_FWD)
+	holder.scale = Vector3.ONE * SAC_SHIELD_S
+	_backing(holder, OUT_BACK_R)
+	_shield_into(holder, hm)
+
+
 ## JAM: a red cross (pushed toward the camera) and a red ring over the hound, and the hound and its path dim. Uses the
-## outcome hound, else the head of p.street; draws nothing without either.
+## outcome hound, else the hunter-candidates hound (its lanes dim too), else the head of p.street; draws nothing
+## without any.
 func _resp_jam(p: Dictionary) -> void:
 	var pos := Vector3.ZERO
 	var have := false
+	var dim: Array = []
 	if is_instance_valid(_out_hound):
 		pos = _out_hound.position
 		have = true
+		dim = _out_hound_mats.duplicate()
+	elif is_instance_valid(_hc_hound) and not _hc_spawned:
+		pos = _hc_hound.position
+		have = true
+		dim = _hc_hound_mats.duplicate()
+		for ln: Dictionary in _hc_lanes:
+			dim.append_array(ln["mats"])
 	else:
 		var sv: Variant = p.get("street", null)
 		if sv is int:
@@ -2306,8 +2647,9 @@ func _resp_jam(p: Dictionary) -> void:
 	var holder := _facing(_resp_root, Vector3(pos.x, RESP_JAM_Y, pos.z) + _cam_back() * RESP_JAM_FWD)
 	for s: float in [1.0, -1.0]:
 		_box(holder, Vector3.ZERO, RESP_JAM_BAR, m).rotation.z = s * PI * 0.25
-	if not _out_hound_mats.is_empty():
-		_tint(_out_hound_mats, RESP_JAM_DIM, RESP_JAM_DIM)
+	if not dim.is_empty():
+		_tint(dim, RESP_JAM_DIM, RESP_JAM_DIM)
+		_resp_dim_mats = dim
 		_resp_dimmed = true
 
 
@@ -2423,7 +2765,8 @@ func _clear_trails() -> void:
 	_hit_count.clear()
 
 
-## Vehicles, effects, shakes, candidates and trails go; planned paths and crack decals stay.
+## Vehicles, effects, shakes, candidates and trails go; planned paths, route verdicts, hunter street candidates and
+## crack decals stay.
 func _reset_motion() -> void:
 	for v: Dictionary in _vehicles.values():
 		(v["node"] as Node3D).queue_free()
@@ -2517,6 +2860,8 @@ func _entry_point(line: int, cell: Vector2i) -> Vector3:
 	return _world(cell, false) - Vector3(step.x * CELL_DX * ENTRY_ROUTE_K, 0.0, step.y * CELL_DZ * ENTRY_STREET_K)
 
 
+## The vehicle of a line, made on first use. A new hunter starts where the hunter-candidates hound stands (that hound
+## then hides), else it drops from the sky over drop_at.
 func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at: Vector3) -> Dictionary:
 	if _vehicles.has(line):
 		var old: Dictionary = _vehicles[line]
@@ -2524,6 +2869,10 @@ func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at
 			return old
 		_kill_vehicle(line)
 	var entry: Vector3 = (drop_at + Vector3(0.0, SPAWN_DROP, 0.0)) if hunter else _entry_point(line, cell)
+	if hunter and is_instance_valid(_hc_hound) and not _hc_spawned:
+		entry = Vector3(_hc_hound.position.x, 0.0, _hc_hound.position.z)
+		_hc_spawned = true
+		_hc_hound_vis()
 	if not hunter and _cand_real >= 0:
 		for cv: Dictionary in _cands:
 			if int(cv["route"]) == _cand_real and cell == Vector2i(_w - 1, _cand_real):
@@ -2534,7 +2883,7 @@ func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at
 	var n: Node3D = v["node"]
 	n.position = entry
 	var target: Vector3 = drop_at if hunter else _world(cell, false)
-	n.rotation.y = _heading(target - entry, HEADING_HOME)
+	n.rotation.y = _heading(target - entry, HEADING_DOWN if hunter else HEADING_HOME)
 	_vehicles[line] = v
 	return v
 
@@ -2560,10 +2909,37 @@ func _clear_candidates() -> void:
 	for cv: Dictionary in _cands:
 		(cv["node"] as Node3D).queue_free()
 	_cands.clear()
+	if is_instance_valid(_cand_q):
+		_cand_q.queue_free()
+	_cand_q = null
+	_cand_q_holder = null
+	_cand_q_mats.clear()
 
 
-## 0 = all three sealed and ghosted; 1 = two dissolved, the real one lit.
+## L13: the shared "?" over the sealed candidates: one glyph above their middle, pushed toward the camera, with a thin
+## tether down to each candidate's glyph.
+func _build_cand_q() -> void:
+	if _cands.is_empty():
+		return
+	_cand_q = Node3D.new()
+	_fx_root.add_child(_cand_q)
+	var c := Vector3.ZERO
+	for cv: Dictionary in _cands:
+		c += (cv["node"] as Node3D).position
+	c /= float(_cands.size())
+	_cand_q_base = Vector3(c.x, CQ_Y, c.z) + _cam_back() * CQ_FWD
+	_cand_q_mats.clear()
+	for cv: Dictionary in _cands:
+		var tm := _mat_live(WHITE, E_PATH * PATH_DIM_K, CQ_TETHER_A)
+		_cand_q_mats.append(tm)
+		var g := (cv["node"] as Node3D).position + Vector3(0.0, VEH_GLYPH_Y - VEH_Y + CQ_TETHER_BOT, 0.0)
+		_seg3(_cand_q, _cand_q_base - Vector3(0.0, CQ_TETHER_TOP, 0.0), g, CQ_TETHER_W, tm)
+	_cand_q_holder = _qmark(_cand_q, _cand_q_base, CQ_S, WHITE)
+
+
+## 0 = all three sealed and ghosted under the "?"; 1 = two dissolved, the real one lit, the "?" collapsed into it.
 func _apply_reveal(u: float) -> void:
+	var dst := _cand_q_base
 	for cv: Dictionary in _cands:
 		var n: Node3D = cv["node"]
 		if _cand_real < 0:
@@ -2572,10 +2948,26 @@ func _apply_reveal(u: float) -> void:
 			n.visible = true
 		elif int(cv["route"]) == _cand_real:
 			_tint(cv["mats"], lerpf(1.0, 1.0 / CAND_ALPHA, u), lerpf(1.0, E_CAND_LIT / E_VEH, u))
+			dst = n.position + Vector3(0.0, VEH_GLYPH_Y - VEH_Y, 0.0)
 		else:
 			_tint(cv["mats"], 1.0 - u, 1.0 - u)
 			n.scale = Vector3.ONE * lerpf(1.0, CAND_SHRINK, u)
 			n.visible = u < 1.0
+	if not is_instance_valid(_cand_q):
+		return
+	if _cand_real < 0:
+		_cand_q.visible = true
+		_tint(_cand_q_mats, 1.0, 1.0)
+		if is_instance_valid(_cand_q_holder):
+			_cand_q_holder.position = _cand_q_base
+			_cand_q_holder.scale = Vector3.ONE * CQ_S
+		return
+	var e := _ease_out(u)
+	_tint(_cand_q_mats, 1.0 - u, 1.0 - u)
+	if is_instance_valid(_cand_q_holder):
+		_cand_q_holder.position = _cand_q_base.lerp(dst, e)
+		_cand_q_holder.scale = Vector3.ONE * CQ_S * maxf(1.0 - e, Q_MIN_S)
+	_cand_q.visible = u < 1.0
 
 
 func _face_all() -> void:
@@ -2645,6 +3037,8 @@ func _cue_dur_of(kind: String) -> float:
 			return T_JAM
 		"reveal":
 			return T_REVEAL
+		"hunter_reveal":
+			return T_HUNT_REVEAL
 		"evaded":
 			return T_EVADED
 		"decay":
@@ -2729,6 +3123,14 @@ func _start_cue(cue: Dictionary) -> void:
 		"reveal":
 			if line >= 0:
 				_cand_real = line
+		"hunter_reveal":
+			var hi := int(cue.get("line", -1))
+			if hi >= 0 and hi < _hc_lanes.size():
+				_hc_real = hi
+				if is_instance_valid(_hc_hound):
+					_hc_from = _hc_hound.position
+				var lane: Dictionary = _hc_lanes[hi]
+				_fx_ring(lane["head"] as Vector3, COBALT_HOT, HC_RING_K)
 		"evaded":
 			_fx_label(_board_text("EVADED", SCRAMBLE_FX), Vector3(0.0, LABEL_Y, 0.0), ACID, LABEL_BIG)
 		"decay":
@@ -2752,6 +3154,8 @@ func _update_cue(u: float) -> void:
 	var kind := str(_cur_cue.get("kind", ""))
 	if kind == "reveal":
 		_apply_reveal(u)
+	elif kind == "hunter_reveal":
+		_apply_hunter_reveal(u)
 	elif kind == "fall":
 		_apply_fall(u)
 
@@ -2975,6 +3379,17 @@ func _animate(delta: float) -> void:
 		_tint(_path_pulse, 1.0, 1.0 + PATH_PULSE * sin(_time * PATH_PULSE_HZ * TAU))
 	if not _resp_mats.is_empty():
 		_tint(_resp_mats, 1.0, 1.0 - RESP_PULSE + RESP_PULSE * sin(_time * HL_HZ * TAU))
+	for cb: Dictionary in _resp_crumble:
+		var cn: Variant = cb["node"]
+		if not is_instance_valid(cn):
+			continue
+		var node: Node3D = cn
+		var cu := fposmod(_time * SAC_HZ + float(cb["ph"]), 1.0)
+		var cbase: Vector3 = cb["base"]
+		node.position = Vector3(cbase.x, lerpf(cbase.y, SAC_FLOOR_Y, cu * cu), cbase.z)
+		node.rotation = Vector3(cu * SAC_SPIN, cu * SAC_SPIN * GLYPH_TILT, 0.0)
+	if not _hg_mats.is_empty():
+		_tint(_hg_mats, 1.0, 1.0 - HG_PULSE + HG_PULSE * sin(_time * HG_HZ * TAU))
 	if _lethal and not _lethal_mats.is_empty():
 		var lp := 0.5 + 0.5 * sin(_time * LETHAL_HZ * TAU)
 		_tint(_lethal_mats, 1.0, lerpf(LETHAL_LOW, 1.0, lp))

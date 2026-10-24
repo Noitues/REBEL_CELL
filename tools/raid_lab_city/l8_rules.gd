@@ -55,7 +55,7 @@ const POOL_START: Dictionary = {"D": 1, "N": 1, "E": 0}	# L10: was 1/1/1 (two se
 const MAX_PLACED := 2		# L11: PLAN places at most 2 sentries; the rest of the pool is the reserve
 const KIT_START: Dictionary = {"ghost": 2, "spoof": 2}
 const INTENSITY_ORDER: Array = ["LOW", "NORMAL", "HOT"]
-const INTENSITY: Dictionary = {"LOW": [6, 0.5], "NORMAL": [12, 1.0], "HOT": [18, 1.5]}
+const INTENSITY: Dictionary = {"LOW": [6, 0.5], "NORMAL": [12, 1.0], "HOT": [18, 0.5]}	# L13b: HOT income x0.5 (x1.5 made HOT 38/40)
 const FREE_REPAIR_AT := "NORMAL"	# L13 R5: this between step's repair is free
 const EXTRA_CAPTURE_AT := "HOT"	# L13 R5: the next raid's CAPTURE takes two cells
 

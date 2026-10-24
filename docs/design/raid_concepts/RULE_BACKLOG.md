@@ -24,3 +24,19 @@ pressure and costly choices) and R9 (deck tie-in).
 | R10 | **Captured districts change route geometry** (e.g. a district you hold forks or blocks a street) | D +1 | L12 | Choices that interact across raids. |
 | R11 | **Exploits change which routes can be sealed** (holding an exploit removes one candidate, or reveals its type early) | D +1, S +0.5 | L12 | Gives the EXPLOIT key a raid role beyond score. |
 | R12 | **The hunter's street depends on your placement** (the L8–L11 first-touch rule did this; L13 R2 replaces it with a sealed pair) | D +0.5 | L12 | Revisit if R2 measures badly. |
+
+## Added from the L13 critic, plus the tally of what was applied
+| # | Rule change | Axes and est. gain | Source | Notes |
+|---|---|---|---|---|
+| R13 | **Escalation adds options too** (each Heat band crossed grants one reserve sentry or spoof) | D +1.5, S +0.5 | L13 | Raid 3 stops being "pick the least-bad row". |
+| R14 | **Don't print the best response** (show the per-route table, and sell the "best response" hint for Heat) | D +1, S +1, P −0.5 | L13, L12 | Partial information instead of a solved menu. |
+
+**Applied so far:**
+- R2, R3, R4 and R5 in L13. R5 was rebalanced as L13b: HOT ×0.5 income.
+- R7's first step (decay) in L9.
+- R8 in part (`safe_next`) in L11.
+
+**Measured effect:** the response decides the outcome in 65% of raids (from 45%), and the critic's S rose from 4–5 to
+6. The total did not move (34).
+
+**Next calls need the designer:** R9 (deck tie-in), R1 (two sealed beams), R13 and R14.

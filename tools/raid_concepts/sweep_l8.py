@@ -130,7 +130,7 @@ SENTRY_PRICE = 3    # L9 (was 4)
 POOL_START = (("D", 1), ("N", 1), ("E", 0))    # L10 (was 1/1/1): one sealed route is always uncovered
 MAX_PLACED = 2      # L11: PLAN places at most 2 sentries; the rest of the pool is the reserve
 KIT_START = (("ghost", 2), ("spoof", 2))
-INTENSITY = {"LOW": (6, 0.5), "NORMAL": (12, 1.0), "HOT": (18, 1.5)}
+INTENSITY = {"LOW": (6, 0.5), "NORMAL": (12, 1.0), "HOT": (18, 0.5)}    # L13b: HOT income x0.5 (x1.5 made HOT 38/40)
 PERKS = {"LOW": None, "NORMAL": "FREE_REPAIR", "HOT": "EXTRA_CAPTURE"}    # L13 R5
 DECAY = True        # L9: DOWN -> TAKEN at the start of every raid after the first, before CAPTURE
 
