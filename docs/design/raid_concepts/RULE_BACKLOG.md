@@ -17,3 +17,10 @@ designer call before a rules round. Estimated gains are the critics' own figures
 
 **Ceiling statement (critics, L7–L11):** presentation alone tops out near 40–41. Past that needs R1–R3 (simultaneous
 pressure and costly choices) and R9 (deck tie-in).
+
+## Added from the L12 critic
+| # | Rule change | Axes and est. gain | Source | Notes |
+|---|---|---|---|---|
+| R10 | **Captured districts change route geometry** (e.g. a district you hold forks or blocks a street) | D +1 | L12 | Choices that interact across raids. |
+| R11 | **Exploits change which routes can be sealed** (holding an exploit removes one candidate, or reveals its type early) | D +1, S +0.5 | L12 | Gives the EXPLOIT key a raid role beyond score. |
+| R12 | **The hunter's street depends on your placement** (the L8–L11 first-touch rule did this; L13 R2 replaces it with a sealed pair) | D +0.5 | L12 | Revisit if R2 measures badly. |

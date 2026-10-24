@@ -448,3 +448,21 @@ forecast that breaches for the player's current placement. It also says the resp
 response that trades a district for HOME.
 
 Review: `_reviews/REVIEW_LAB_L11_batch.md`.
+
+## L12 city-raid lab (presentation polish, batch; one batch critic)
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 6 | 8 | **34** | 5 | 6 | 7 |
+
+**Flat: 34–37 across L9–L12, inside the noise.**
+
+**What the critic found:**
+- **The hunter is nearly invisible.**
+- **Warnings come one raid late.**
+- **Responses label their own answer.**
+
+**Ceiling:** the critic calls it presentation for W, N and V, and rules for D and S. New rule ideas R10–R12 are in
+the backlog.
+
+Review: `_reviews/REVIEW_LAB_L12_batch.md`.
