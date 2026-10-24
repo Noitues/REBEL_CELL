@@ -49,3 +49,11 @@ pressure and costly choices) and R9 (deck tie-in).
 **Applied in L14 (designer 2026-10-24):** R9 (the dummy deck plus wounds; no reward for holding), R1 (a second sealed
 beam), R13 (one more card drawn per Heat band) and R14 (a Heat-priced hint). R14's hidden results were reverted in the
 L15 presentation after the L14 critic showed they misled players.
+
+## Added from the L17 critic
+| # | Rule change | Axes and est. gain | Source | Notes |
+|---|---|---|---|---|
+| R16 | **Responses trade on axes the tier hides**: district value at risk, wound count and Heat-band crossings, with different costs per response | D +1, S +0.5 | L17 (also R6) | Now that the forecast is complete, a three-tier response collapses to one row. |
+| R17 | **Richer cards**: more than type plus verb (e.g. a cost, a second effect, a card that changes beam geometry) | D +1, Fit +0.5 | L17 | Placement is mostly type matching. |
+
+**Next calls need the designer:** R15, R16 and R17. These are D/S levers; presentation has plateaued at 36–39.

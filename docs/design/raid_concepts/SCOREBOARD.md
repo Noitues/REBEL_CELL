@@ -568,3 +568,35 @@ Review: `_reviews/REVIEW_LAB_L15_batch.md`.
 - A further rules lever goes to R15 in the backlog: let JAM also cancel sealed B, or let SHIFT act after reveal B.
 
 Review: `_reviews/REVIEW_LAB_L16_batch.md`.
+
+## L17 (batch, 2026-10-24): presentation only
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 8 | 5 | 6 | 9 | **36** | 6 | 6 | 7 |
+
+**Changes (presentation only):**
+- an honest guard line ("HOLD → tier · best: row → tier");
+- the confirm fires at any HOME value;
+- fast resolve only when every row is uniform;
+- the forecast ghosted on the board;
+- the leg value shown on the intensity cards.
+
+**Critic:**
+- 36. The critics now contradict each other: L16 asked for the "best:" line, and L17 says to stop printing it.
+
+**PLATEAU CALLED (2026-10-24).** L15–L17 scored 39, 38 and 36, all inside the ±3 noise. The best is L15 at 39, level
+with Invisible, Inc. and up from 34–37 before the deck rules. P and C are at their ceiling (8–9). N and V are
+presentation: the critic's next step is moving the forecast fully onto the city.
+
+**D and S are rules-limited:**
+- Most raids lock at PLAN.
+- Responses differ only by tier.
+- Cards differ only by type and verb.
+
+**Designer calls for these:**
+- R15: one variable stays live through the response;
+- R16: responses that trade on axes the tier hides;
+- R17: richer cards.
+
+Review: `_reviews/REVIEW_LAB_L17_batch.md`.
