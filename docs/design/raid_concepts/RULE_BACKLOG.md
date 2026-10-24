@@ -44,7 +44,7 @@ pressure and costly choices) and R9 (deck tie-in).
 ## Added from the L15 critic
 | # | Rule change | Axes and est. gain | Source | Notes |
 |---|---|---|---|---|
-| R15 | **One variable stays live through the response**: for example, the hunter cannot be fully pre-covered by 2 sentries plus the ghost, or the B pair is drawn so that one placement cannot cover both | S +2, D +1 | L15, L14 | Most raids are LOCKED at PLAN; S is capped near 5 otherwise. Needs a designer call. |
+| R15 | **One variable stays live through the response**: for example, the hunter cannot be fully pre-covered by 2 sentries plus the ghost, or the B pair is drawn so that one placement cannot cover both | S +2, D +1 | L15, L14, L16 | Also (L16): JAM also cancels sealed B, or SHIFT acts after reveal B, so held tools stay live. Most raids are LOCKED at PLAN; S is capped near 5 otherwise. Needs a designer call. |
 
 **Applied in L14 (designer 2026-10-24):** R9 (the dummy deck plus wounds; no reward for holding), R1 (a second sealed
 beam), R13 (one more card drawn per Heat band) and R14 (a Heat-priced hint). R14's hidden results were reverted in the

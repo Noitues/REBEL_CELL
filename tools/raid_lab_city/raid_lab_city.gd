@@ -1,8 +1,8 @@
 extends Control
-## Raid lab L8 to L15: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with the L9_CHANGES.md,
-## L10_CHANGES.md, L11_CHANGES.md, L12_CHANGES.md, L13_UI.md, L14_UI.md and L15_UI.md presentation applied).
+## Raid lab L8 to L16: the playable city raid (docs/handoff/raid_lab_l8/SPEC.md section 8, with the L9_CHANGES.md,
+## L10_CHANGES.md, L11_CHANGES.md, L12_CHANGES.md, L13_UI.md, L14_UI.md, L15_UI.md and L16_UI.md presentation applied).
 ## This is the root script of raid_lab_city.tscn, and everything is built in code. A 3D L8Board renders in a SubViewport
-## behind a 2D overlay. The overlay holds the HUD, the 420 px right panel, the legend strip and the hint line. Two more
+## behind a 2D overlay. The overlay holds the HUD, the right panel, the legend strip and the hint line. Two more
 ## Controls sit in the bottom bar: the deck strip (left edge, one pip per card, wounds as red cracked pips, hover shows
 ## the counts) and the hand row (the cards dealt this raid; wordless faces: verb glyph, type corner badge).
 ## Every state change goes through L8Rules. The view only reads its results and turns traces into board cues.
@@ -16,12 +16,20 @@ extends Control
 ## - the known beams (one by one, each dimmed when done), REVEAL A, the RESPONSE, sealed A, REVEAL B, sealed B, the
 ##   HUNTER REVEAL and the hunter run (unless JAM);
 ## - AFTERMATH, BETWEEN (repair, add a D / N / E guard card or CLEAN a wound, intensity, all as icons), RECORD.
-## RESPONSE (L15): every row shows its worst / best tier glyphs inline over the 4 (B, hunter) outcomes. Rows with
-## identical outcomes merge ("xN variants", hover lists them); rows whose mean score beats HOLD sort first with a gold
-## edge; a paid row that changes nothing versus HOLD is greyed. Impossible kinds show as ghost rows with the reason.
+## L16:
+## - a LOCKED raid (all 12 HOLD outcomes share a tier) plays back to back at 2x with no reveal holds and a
+##   "LOCKED: fast resolve" chip; it skips the RESPONSE panel only when every response row changes nothing. Unlocked
+##   raids hold each reveal beat briefly. Skipped beats still emit their shot (the fast frame);
+## - response rows lead with a large verb glyph; hovering or selecting a row previews it on the board
+##   (board.preview_response);
+## - five tier shapes everywhere (L8Board.tier_icon), and a tier ladder pinned in the bottom bar, best to worst;
+## - HOLD at HOME <= 1 asks for a second commit when a visible row has a strictly better worst tier;
+## - the intensity cards show the projected Heat penalty and the leg-value delta instead of a verdict;
+## - the playout collapses the side panel to a slim strip and fits the board wider (board.set_view_rect), and at
+##   Heat >= 75 the board fans stacked markers out (board.set_fan);
+## - panel text is at least 14 px and never truncated.
 ## Launch friction (L15): a second Enter is needed when HOME drops on every one of the 12 HOLD outcomes, or whenever
-## HOME is at 1. The confirm reads the worst and best of the 12 outcomes.
-## Between raids every intensity card and every repair and build option carries a verdict from L8Rules.safe_next.
+## HOME is at 1.
 ## Flags (after --): --leg=N (golden seeds 0 3 5 8), --auto=greedy|naive, --shots=<abs dir> (with --auto), --scramble.
 
 enum Phase { CAPTURE, DRAW, PLAN, FORECAST, PLAY, REVEAL, RESPONSE, AFTER, BETWEEN, RECORD, DECAY, FALL }
@@ -30,6 +38,9 @@ const GOLDEN_PATH := "res://tools/raid_lab_city/data/l8_golden.json"
 const VIEW := Vector2(1280.0, 720.0)
 const PANEL_W := 420.0
 const PANEL_X := 860.0
+## L16 item 6: the slim strip during the playout.
+const SLIM_W := 250.0
+const SLIM_X := 1030.0
 const PAD := 16.0
 const HUD_H := 64.0
 const LEGEND_Y := 672.0
@@ -37,12 +48,13 @@ const HINT_Y := 698.0
 const PICK_R := 40.0
 const HOME_CELL := Vector2i(-1, 1)
 const HEAT_MAX := 100.0
-## Response list (L15): a group row (two 13 px lines), a variant row in the hover list, a ghost / fold row.
+## Response list (L15): a group row (two lines), a variant row in the hover list, a ghost / fold row.
 const GROUP_H := 44.0
-const SUB_H := 20.0
-const GHOST_H := 22.0
+const SUB_H := 22.0
+const GHOST_H := 24.0
 const MAX_GROUPS := 8
-const POP_W := 250.0
+const POP_W := 260.0
+const RESP_GLYPH_W := 34.0
 const AUTO_WAIT := 0.6
 const UNTIL_GUARD := 60000
 const SCRAMBLE_SEED := 8808
@@ -55,15 +67,23 @@ const INTEN_KEY := ["L", "N", "O"]
 const ROUTE_KEY := ["Q", "W", "E"]
 const HUNT_KEY := ["A", "B"]
 const CARD_H := 160.0
-## Text never goes below this size (L13 item 8, L14 item 7, L15 item 5).
-const TXT := 13
+## Panel text never goes below this size (L16 item 7).
+const TXT := 14
+## The bottom bar, the HUD's small labels and the board tags (outside the panel).
+const BAR_TXT := 13
 const SAFE_BUDGET_MS := 12
-const REP_ROW_H := 21.0
+const REP_ROW_H := 22.0
 const MEAN_EPS := 1e-6
 const FRICTION_BREACH := "Every outcome breaks HOME with this plan: change it?"
 const FRICTION_LOSS := "Every outcome costs HOME with this plan: change it?"
 const FRICTION_LAST := "HOME is at 1/3: one hit ends the campaign. Launch?"
+const FRICTION_HOLD := "HOLD is worse than"
 const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "BATTERED": 2, "DAMAGED": 3, "BREACHED": 4}
+## L16 item 3: the tier ladder, best to worst.
+const TIER_LADDER := ["EVADED", "HOLDS", "BATTERED", "DAMAGED", "BREACHED"]
+## L16 item 1: a LOCKED raid plays at this multiple of the chosen speed; unlocked reveals hold this long (at 1x).
+const FAST_K := 2.0
+const REVEAL_HOLD := 0.45
 ## The bottom bar (L14): the deck strip at the left edge, the hand row right of it.
 const DECK_W := 66.0
 const HAND_X := 74.0
@@ -167,7 +187,8 @@ var stage: String = ""
 var resp_opts: Array = []
 ## The visible response groups (merged by identical outcomes): {members: [option index], better, mean, first}.
 var resp_groups: Array = []
-var resp_ghosts: PackedStringArray = PackedStringArray()
+## Ghost rows: [head, text] per impossible kind.
+var resp_ghosts: Array = []
 var hold_mean: float = 0.0
 var redeploy_from: Variant = null
 var deploy_type: String = ""
@@ -179,7 +200,10 @@ var resp_head_y: Dictionary = {}
 var resp_pop_rect: Rect2 = Rect2()
 var resp_follow: bool = false
 var resp_prev: int = -2
-var resp_hunters: Array = []
+var resp_skipped: bool = false
+## L16 item 4: HOLD needs a second commit; hold_better is the group whose worst tier beats HOLD's.
+var hold_armed: bool = false
+var hold_better: int = -1
 var result: Dictionary = {}
 var b_repair: Variant = null
 var b_build: Variant = null
@@ -195,6 +219,12 @@ var decay_lines: PackedStringArray = PackedStringArray()
 var busy: bool = false
 var speed: float = 1.0
 var instant: bool = false
+## L16 item 1: this launch is LOCKED and plays fast.
+var fast: bool = false
+## L16 item 6: the side panel is a slim strip.
+var slim: bool = false
+var fan_on: bool = false
+var tier_tex: Dictionary = {}
 var hud_hp: int = 3
 var lethal_on: bool = false
 var heat_ghosts_k: int = -1
@@ -315,12 +345,20 @@ func _start_leg() -> void:
 	fly_cards = []
 	fc = []
 	fc_locked = ""
+	fast = false
+	hold_armed = false
+	hold_better = -1
 	hud_hp = int(st["home_hp"])
 	board.setup({"w": L8Rules.W, "h": L8Rules.H, "values": leg["values"], "exploits": leg["exploits"]})
 	board.set_scramble(scramble)
 	lethal_on = int(st["home_hp"]) == 1
 	board.set_lethal(lethal_on)
 	heat_ghosts_k = -1
+	fan_on = false
+	board.set_fan(false)
+	slim = false
+	_apply_view()
+	board.set_speed(speed)
 	board.clear_outcome()
 	board.clear_response_preview()
 	board.hide_route_verdicts()
@@ -351,6 +389,28 @@ func _is_home(v: Variant) -> bool:
 
 func _empty_place() -> Dictionary:
 	return {"sentries": {}, "ghost": null}
+
+
+## The left edge of the side panel (the slim strip during the playout).
+func _px() -> float:
+	return SLIM_X if slim else PANEL_X
+
+
+## L16 item 6: the free board area the camera fills (left of the panel or of the slim strip).
+func _apply_view() -> void:
+	board.set_view_rect(Rect2(0.0, HUD_H, _px(), LEGEND_Y - 2.0 - HUD_H))
+
+
+func _set_slim(on: bool) -> void:
+	if slim == on:
+		return
+	slim = on
+	_apply_view()
+
+
+## L16 item 1: the playout speed (doubled for a LOCKED launch).
+func _pspeed() -> float:
+	return speed * (FAST_K if fast else 1.0)
 
 
 ## The card lookup the board reads: {id: [type, verb]} for every card of the state's deck.
@@ -711,8 +771,8 @@ func _wrap(text: String, size: int, maxw: float) -> PackedStringArray:
 	return out
 
 
-## Wrapped text (L15: panel lines wrap, never "..."). Returns the height used.
-func _tf(p: Vector2, text: String, size: int = TXT, col: Color = INK, right_x: float = PANEL_X + PANEL_W - PAD) -> float:
+## Wrapped text (panel lines wrap, never "..."). Returns the height used.
+func _tf(p: Vector2, text: String, size: int = TXT, col: Color = INK, right_x: float = VIEW.x - PAD) -> float:
 	var ls := _wrap(text, size, right_x - p.x)
 	for i in range(ls.size()):
 		_t(p + Vector2(0.0, float(i) * _lh(size)), ls[i], size, col)
@@ -720,7 +780,7 @@ func _tf(p: Vector2, text: String, size: int = TXT, col: Color = INK, right_x: f
 
 
 ## One line, shrunk from size down to TXT to fit; wrapped at TXT when even that is too wide. Returns the height used.
-func _ts(p: Vector2, text: String, size: int = TXT, col: Color = INK, right_x: float = PANEL_X + PANEL_W - PAD) -> float:
+func _ts(p: Vector2, text: String, size: int = TXT, col: Color = INK, right_x: float = VIEW.x - PAD) -> float:
 	var maxw := right_x - p.x
 	var s := _fsize(text, size, maxw)
 	if _tw(text, s) <= maxw:
@@ -742,9 +802,8 @@ func _btn(r: Rect2, label: String, id: String, on: bool = true, sel: bool = fals
 		hits.append({"rect": r, "id": id})
 
 
-func _head(title: String, todo: String) -> float:
-	var x := PANEL_X + PAD
-	_t(Vector2(x, HUD_H + 10.0), title, 20, AMBER)
+func _head(title: String, todo: String, x: float = PANEL_X + PAD) -> float:
+	_t(Vector2(x, HUD_H + 10.0), title, _fsize(title, 20, VIEW.x - PAD - x), AMBER)
 	var h := _tf(Vector2(x, HUD_H + 38.0), todo, TXT, INK)
 	return HUD_H + 38.0 + maxf(h, 18.0) + 8.0
 
@@ -865,11 +924,11 @@ func _key_icon(c: Vector2, col: Color) -> void:
 	cv.draw_line(c + Vector2(3.0, 0.0), c + Vector2(3.0, 3.0), col, 2.0)
 
 
-func _hound_icon(c: Vector2) -> void:
-	cv.draw_rect(Rect2(c + Vector2(-7.0, -3.0), Vector2(11.0, 5.0)), COBALT_HOT)
-	cv.draw_rect(Rect2(c + Vector2(3.0, -7.0), Vector2(6.0, 5.0)), COBALT_HOT)
+func _hound_icon(c: Vector2, col: Color = COBALT_HOT) -> void:
+	cv.draw_rect(Rect2(c + Vector2(-7.0, -3.0), Vector2(11.0, 5.0)), col)
+	cv.draw_rect(Rect2(c + Vector2(3.0, -7.0), Vector2(6.0, 5.0)), col)
 	for lx: float in [-6.0, -3.0, 0.0, 3.0]:
-		cv.draw_line(c + Vector2(lx, 2.0), c + Vector2(lx, 7.0), COBALT_HOT, 1.5)
+		cv.draw_line(c + Vector2(lx, 2.0), c + Vector2(lx, 7.0), col, 1.5)
 
 
 func _skull(c: Vector2, r: float, col: Color, hole: Color) -> void:
@@ -894,14 +953,14 @@ func _heart(c: Vector2, r: float, col: Color, broken: bool) -> void:
 			maxf(1.5, r * 0.22))
 
 
-## HOME after an outcome: a heart (kept), a broken heart (lost integrity) or a skull (breached).
+## HOME after an outcome, as a tier icon (L16 item 3): kept HOLDS, lost integrity DAMAGED, at 0 BREACHED.
 func _home_glyph(c: Vector2, hp: int, hp0: int, r: float) -> void:
+	var t := "HOLDS"
 	if hp <= 0:
-		_skull(c, r, RED, BLACK)
+		t = "BREACHED"
 	elif hp < hp0:
-		_heart(c, r, RED, true)
-	else:
-		_heart(c, r, HOLDS_COL, false)
+		t = "DAMAGED"
+	_tier_glyph(c, t, r, _tier_col(t))
 
 
 func _flame(c: Vector2, r: float) -> void:
@@ -955,12 +1014,28 @@ func _shield_pts(c: Vector2, r: float) -> PackedVector2Array:
 		c + Vector2(r * 0.8, -r * 0.05), c + Vector2(0.0, r * 0.95), c + Vector2(-r * 0.8, -r * 0.05)])
 
 
+## L16 item 3: the board's tier icon (cached; null falls back to the drawn shapes).
+func _tier_tex(t: String) -> Texture2D:
+	if tier_tex.has(t):
+		return tier_tex[t]
+	var tex: Texture2D = L8Board.tier_icon(t)
+	tier_tex[t] = tex
+	return tex
+
+
+## A tier glyph of radius r: the board's tier icon, or the same five shapes drawn (HOLDS full shield, BATTERED
+## cracked shield, DAMAGED broken heart, BREACHED skull, EVADED open eye).
 func _tier_glyph(c: Vector2, tier: String, r: float, col: Color) -> void:
+	var tex := _tier_tex(tier)
+	if tex != null:
+		cv.draw_texture_rect(tex, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), false, Color(1.0, 1.0, 1.0, col.a))
+		return
 	var w := maxf(2.0, r * 0.3)
 	match tier:
 		"EVADED":
-			cv.draw_polyline(PackedVector2Array([c + Vector2(-r * 0.85, -r * 0.05), c + Vector2(-r * 0.3, r * 0.6),
-				c + Vector2(r * 0.85, -r * 0.65)]), col, w)
+			cv.draw_arc(c + Vector2(0.0, r * 0.55), r, PI * 1.2, PI * 1.8, 12, col, w * 0.6)
+			cv.draw_arc(c - Vector2(0.0, r * 0.55), r, PI * 0.2, PI * 0.8, 12, col, w * 0.6)
+			cv.draw_circle(c, r * 0.32, col)
 		"HOLDS":
 			cv.draw_colored_polygon(_shield_pts(c, r), col)
 		"BATTERED":
@@ -969,8 +1044,7 @@ func _tier_glyph(c: Vector2, tier: String, r: float, col: Color) -> void:
 				c + Vector2(-r * 0.2, r * 0.1), c + Vector2(r * 0.15, r * 0.55), c + Vector2(0.0, r * 0.9)]), BG,
 				maxf(1.5, r * 0.22))
 		"DAMAGED":
-			cv.draw_line(c + Vector2(-r * 0.75, -r * 0.75), c + Vector2(r * 0.75, r * 0.75), col, w)
-			cv.draw_line(c + Vector2(r * 0.75, -r * 0.75), c + Vector2(-r * 0.75, r * 0.75), col, w)
+			_heart(c, r, col, true)
 		"BREACHED":
 			_skull(c, r, col, BLACK)
 		_:
@@ -986,14 +1060,14 @@ func _tier_pip(c: Vector2, tier: String, r: float) -> void:
 	else:
 		cv.draw_rect(rect, PANEL)
 		cv.draw_rect(rect, col, false, 2.0)
-	_tier_glyph(c, tier, r * 0.68, col)
+	_tier_glyph(c, tier, r * 0.75, col)
 
 
 func _tier_tag(right: Vector2, tier: String, size: int = TXT) -> float:
 	var col := _tier_col(tier)
 	var tw := _tw(tier, size)
 	var h := font.get_height(size)
-	var gr := float(size) * 0.45
+	var gr := float(size) * 0.5
 	var gx := right.x - tw - gr - 6.0
 	var left := gx - gr - 4.0
 	if tier == "BREACHED":
@@ -1019,17 +1093,16 @@ func _tier_glyphs(right: Vector2, ta: String, tb: String) -> float:
 	if ta == tb:
 		return _tier_tag(right, ta)
 	var cy := right.y + 9.0
-	_tier_glyph(Vector2(right.x - 8.0, cy), tb, 6.5, _tier_col(tb))
-	_tc(Vector2(right.x - 22.0, cy), "/", TXT, DIM)
-	_tier_glyph(Vector2(right.x - 36.0, cy), ta, 6.5, _tier_col(ta))
-	return right.x - 46.0
+	_tier_glyph(Vector2(right.x - 8.0, cy), tb, 7.5, _tier_col(tb))
+	_tc(Vector2(right.x - 23.0, cy), "/", TXT, DIM)
+	_tier_glyph(Vector2(right.x - 38.0, cy), ta, 7.5, _tier_col(ta))
+	return right.x - 48.0
 
 
-func _tier_big(p: Vector2, tier: String) -> float:
-	var size := 34
+func _tier_big(p: Vector2, tier: String, size: int = 34) -> float:
 	var col := _tier_col(tier)
 	var h := font.get_height(size)
-	var gr := 15.0
+	var gr := float(size) * 0.44
 	if tier == "BREACHED":
 		var r := Rect2(p.x - 6.0, p.y - 4.0, gr * 2.0 + 26.0 + _tw(tier, size), h + 8.0)
 		cv.draw_rect(r, BLACK)
@@ -1039,15 +1112,33 @@ func _tier_big(p: Vector2, tier: String) -> float:
 	return h + 12.0
 
 
-## L15 item 2: "LOCKED: <glyph> <TIER>" when all 12 outcomes share one tier.
-func _lock_line(p: Vector2, tier: String) -> void:
+## L15 item 2: "LOCKED: <glyph> <TIER>" when all 12 outcomes share one tier. Returns the height used.
+func _lock_line(p: Vector2, tier: String) -> float:
 	var lab := "LOCKED:"
 	_t(p, lab, TXT, WHITE)
-	var gx := p.x + _tw(lab, TXT) + 12.0
+	var gx := p.x + _tw(lab, TXT) + 13.0
 	var col := _tier_col(tier)
-	_tier_glyph(Vector2(gx, p.y + 9.0), tier, 6.5, col)
-	_t(Vector2(gx + 11.0, p.y), tier, TXT, col)
-	_t(Vector2(gx + 19.0 + _tw(tier, TXT), p.y), "on all 12 outcomes", TXT, DIM)
+	_tier_glyph(Vector2(gx, p.y + 9.0), tier, 7.5, col)
+	_t(Vector2(gx + 12.0, p.y), tier, TXT, col)
+	var tail := "on all 12 outcomes"
+	var tx := gx + 20.0 + _tw(tier, TXT)
+	if tx + _tw(tail, TXT) <= VIEW.x - PAD:
+		_t(Vector2(tx, p.y), tail, TXT, DIM)
+		return 22.0
+	_t(Vector2(p.x, p.y + _lh(TXT)), tail, TXT, DIM)
+	return 22.0 + _lh(TXT)
+
+
+## L16 item 1: the "LOCKED: fast resolve" chip. Returns the y below it.
+func _fast_chip(p: Vector2, w: float) -> float:
+	var lab := "LOCKED: fast resolve"
+	var cw := minf(w, _tw(lab, TXT) + 44.0)
+	var r := Rect2(p, Vector2(cw, 24.0))
+	_box(r, GOLD, PANEL_HI, 2.0)
+	var t := fc_locked if fc_locked != "" else "HOLDS"
+	_tier_glyph(r.position + Vector2(14.0, 12.0), t, 7.5, _tier_col(t))
+	_t(r.position + Vector2(28.0, 3.0), lab, TXT, GOLD)
+	return p.y + 30.0
 
 
 ## A value delta right-aligned at right: a small up / down triangle and the signed number.
@@ -1069,9 +1160,9 @@ func _verdict_mark(right: Vector2, v: int, size: int = TXT) -> void:
 	var h := font.get_height(size)
 	var gc := Vector2(right.x - tw - 9.0, right.y + h * 0.5)
 	if v == 1:
-		_tier_glyph(gc, "HOLDS", 5.5, col)
+		_tier_glyph(gc, "HOLDS", 6.0, col)
 	elif v == 0:
-		_skull(gc, 5.5, col, BLACK)
+		_tier_glyph(gc, "BREACHED", 6.0, col)
 	else:
 		cv.draw_arc(gc, 4.0, 0.0, TAU, 12, col, 1.5)
 	_tr(right, text, size, col)
@@ -1079,11 +1170,50 @@ func _verdict_mark(right: Vector2, v: int, size: int = TXT) -> void:
 
 func _verdict_dot(c: Vector2, v: int) -> void:
 	if v == 1:
-		_tier_glyph(c, "HOLDS", 6.0, HOLDS_COL)
+		_tier_glyph(c, "HOLDS", 6.5, HOLDS_COL)
 	elif v == 0:
-		_skull(c, 6.0, RED, BLACK)
+		_tier_glyph(c, "BREACHED", 6.5, RED)
 	else:
 		cv.draw_arc(c, 4.0, 0.0, TAU, 12, DIM, 1.5)
+
+
+## L16 item 2: a response's large verb glyph: HOLD (two bars), REDEPLOY (curved arrow), DEPLOY (an arrow dropping on
+## a pad), SACRIFICE (a dome over a cracked base), JAM (a struck-out hound).
+func _resp_glyph(c: Vector2, r: Array, rad: float, dim: bool) -> void:
+	var head := "HOLD" if r.is_empty() else String(r[0])
+	var col := INK
+	match head:
+		"REDEPLOY":
+			col = ACID
+			if r.size() > 1 and not mid.is_empty():
+				col = TYPE_COLOR.get(_ctype(String((mid["sentries"] as Dictionary).get(r[1], ""))), ACID)
+		"DEPLOY":
+			col = TYPE_COLOR.get(String(r[1]), ACID) if r.size() > 1 else ACID
+		"SACRIFICE":
+			col = COBALT_HOT
+		"JAM":
+			col = RED
+	if dim:
+		col = LATER
+	var lw := maxf(2.0, rad * 0.22)
+	match head:
+		"HOLD":
+			cv.draw_rect(Rect2(c + Vector2(-rad * 0.6, -rad * 0.75), Vector2(rad * 0.4, rad * 1.5)), col)
+			cv.draw_rect(Rect2(c + Vector2(rad * 0.2, -rad * 0.75), Vector2(rad * 0.4, rad * 1.5)), col)
+		"REDEPLOY":
+			_verb_glyph(c, "SHIFT", rad, col)
+		"DEPLOY":
+			cv.draw_line(c + Vector2(0.0, -rad), c + Vector2(0.0, rad * 0.15), col, lw)
+			cv.draw_colored_polygon(PackedVector2Array([c + Vector2(-rad * 0.45, rad * 0.05), c + Vector2(rad * 0.45, rad * 0.05),
+				c + Vector2(0.0, rad * 0.6)]), col)
+			cv.draw_line(c + Vector2(-rad * 0.8, rad * 0.85), c + Vector2(rad * 0.8, rad * 0.85), col, lw)
+		"SACRIFICE":
+			cv.draw_arc(c + Vector2(0.0, rad * 0.45), rad * 0.9, PI, TAU, 16, col, lw)
+			cv.draw_line(c + Vector2(-rad, rad * 0.5), c + Vector2(rad, rad * 0.5), col, lw)
+			_crack(c + Vector2(0.0, rad * 0.1), rad * 0.4, col, maxf(1.5, lw * 0.6))
+		"JAM":
+			_hound_icon(c, COBALT_HOT.darkened(0.3) if not dim else LATER)
+			cv.draw_line(c + Vector2(-rad, rad * 0.8), c + Vector2(rad, -rad * 0.8), col, lw)
 
 
 # ---------------------------------------------------------------- input
@@ -1110,7 +1240,7 @@ func _click(pos: Vector2) -> void:
 				return
 	if auto_line != "" or busy:
 		return
-	if pos.x >= PANEL_X or pos.y < HUD_H or pos.y > LEGEND_Y:
+	if pos.x >= _px() or pos.y < HUD_H or pos.y > LEGEND_Y:
 		return
 	status_msg = ""
 	match phase:
@@ -1123,6 +1253,7 @@ func _click(pos: Vector2) -> void:
 			if not _none(c):
 				_plan_click(c)
 		Phase.RESPONSE:
+			hold_armed = false
 			_response_click(_pick(pos, false))
 		Phase.BETWEEN:
 			var c: Variant = _pick(pos, false)
@@ -1175,6 +1306,8 @@ func _key(code: int) -> void:
 			if enter:
 				_next()
 		Phase.RESPONSE:
+			if code != KEY_H and not enter:
+				hold_armed = false
 			match code:
 				KEY_H:
 					_respond(["HOLD"])
@@ -1262,14 +1395,19 @@ func _act(id: String) -> void:
 		var gi := int(id.substr(5))
 		if gi >= 0 and gi < resp_groups.size():
 			var mem: Array = resp_groups[gi]["members"]
-			_respond((resp_opts[int(mem[0])] as Dictionary)["response"])
+			var r: Array = (resp_opts[int(mem[0])] as Dictionary)["response"]
+			if String(r[0]) != "HOLD":
+				hold_armed = false
+			_respond(r)
 	elif id.begins_with("ropt:"):
 		var oi := int(id.substr(5))
 		if oi >= 0 and oi < resp_opts.size():
+			hold_armed = false
 			_respond((resp_opts[oi] as Dictionary)["response"])
 	elif id == "rmore":
 		resp_page += 1
 		resp_open = -1
+		hold_armed = false
 	elif id.begins_with("dep:"):
 		_arm_deploy(id.substr(4))
 	elif id.begins_with("rep:"):
@@ -1316,7 +1454,7 @@ func _next() -> void:
 
 func _set_speed(s: float) -> void:
 	speed = s
-	board.set_speed(s)
+	board.set_speed(_pspeed())
 
 
 func _toggle_instant() -> void:
@@ -1368,6 +1506,9 @@ func _fly_beams(taken: Dictionary, beams: Array) -> void:
 
 # ---------------------------------------------------------------- DECAY
 func _begin_raid() -> void:
+	_set_slim(false)
+	fast = false
+	board.set_speed(speed)
 	decay_lines = PackedStringArray()
 	board.hide_route_verdicts()
 	board.clear_hunter_cands()
@@ -1488,7 +1629,7 @@ func _draw_capture() -> void:
 		_t(r.position + Vector2(130.0, 6.0), "value %d" % int(vals[c]), 14, AMBER)
 		if ex.has(c):
 			_key_icon(r.position + Vector2(260.0, 15.0), ACID)
-			_t(r.position + Vector2(276.0, 7.0), "EXPLOIT", TXT, ACID)
+			_t(r.position + Vector2(276.0, 6.0), "EXPLOIT", TXT, ACID)
 		hits.append({"rect": r, "id": "cap:%d" % i})
 		y += 34.0
 	y += 8.0
@@ -1503,7 +1644,7 @@ func _draw_capture() -> void:
 		var p := _screen(c)
 		_tc(p + Vector2(0.0, -50.0), str(int(vals[c])), 16, AMBER)
 		if ex.has(c):
-			_tc(p + Vector2(0.0, -32.0), "KEY", TXT, ACID)
+			_tc(p + Vector2(0.0, -32.0), "KEY", BAR_TXT, ACID)
 
 
 ## The deck and the kit. In PLAN and FORECAST: the placed slots (n/MAX_PLACED) and the hand; otherwise the deck mix.
@@ -1520,12 +1661,12 @@ func _draw_kit(y: float, planning: bool) -> float:
 		for c: Vector2i in L8Rules.sorted_cells(sd):
 			ids.append(String(sd[c]))
 		for s in range(cap):
-			var sr := Rect2(x + 62.0 + s * 40.0, y - 2.0, 36.0, 20.0)
+			var sr := Rect2(x + 66.0 + s * 40.0, y - 2.0, 36.0, 20.0)
 			if s < ids.size():
 				_mini_card(sr.position, _hand_card(String(ids[s])))
 			else:
 				_box(sr, EDGE, PANEL, 1.5)
-		_t(Vector2(x + 66.0 + cap * 40.0, y), "%d/%d" % [n, cap], TXT, AMBER if n >= cap else INK)
+		_t(Vector2(x + 70.0 + cap * 40.0, y), "%d/%d" % [n, cap], TXT, AMBER if n >= cap else INK)
 		var dead := 0
 		for cd: Array in hand_cards:
 			if L8Rules.is_wound(cd):
@@ -1547,7 +1688,7 @@ func _draw_kit(y: float, planning: bool) -> float:
 			_glyph(Vector2(gx, y + 9.0), t, 7.0, TYPE_COLOR[t])
 			_t(Vector2(gx + 11.0, y), "x%d" % int(nt[t]), TXT, INK)
 		var wn := _wounds_in(deck)
-		_t(Vector2(x + 290.0, y), "wounds %d" % wn, TXT, RED if wn > 0 else DIM)
+		_ts(Vector2(x + 284.0, y), "wounds %d" % wn, TXT, RED if wn > 0 else DIM)
 	y += 22.0
 	_t(Vector2(x, y), "KIT", TXT, DIM)
 	_ghost_icon(Vector2(x + 108.0, y + 9.0), 7.0, GOLD)
@@ -1600,6 +1741,7 @@ func _draw_draw() -> void:
 
 # ---------------------------------------------------------------- PLAN
 func _enter_plan() -> void:
+	_set_slim(false)
 	var sd := {}
 	var prev: Dictionary = st["sentries"]
 	for c: Vector2i in L8Rules.sorted_cells(prev):
@@ -1771,6 +1913,7 @@ func _card_act(i: int) -> void:
 	if phase == Phase.PLAN or phase == Phase.FORECAST:
 		_select_card(i)
 	elif phase == Phase.RESPONSE:
+		hold_armed = false
 		var cd: Array = hand_cards[i]
 		if L8Rules.is_wound(cd):
 			status_msg = "A wound is a dead draw: it cannot be spent."
@@ -1894,24 +2037,24 @@ func _draw_plan() -> void:
 	var right := PANEL_X + PANEL_W - PAD
 	var y := _head("PLAN  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "Pick a hand card (1-6 or click it), then a district.")
 	y = _draw_kit(y, true)
-	var gr := Rect2(x, y, 128.0, 36.0)
+	var gr := Rect2(x, y, 128.0, 38.0)
 	var gon := int(st["kit"]["ghost"]) > 0
 	var ghot := gon and gr.has_point(mouse)
 	_box(gr, AMBER if tool == "G" else (INK if ghot else EDGE), PANEL_HI if (tool == "G" or ghot) else PANEL)
-	_ghost_icon(gr.position + Vector2(16.0, 18.0), 8.0, GOLD if gon else DIM)
-	_t(gr.position + Vector2(30.0, 2.0), "GHOST [G]", TXT, INK if gon else DIM)
-	_t(gr.position + Vector2(30.0, 18.0), "+%d Heat" % L8Rules.GHOST_HEAT, TXT, DIM)
+	_ghost_icon(gr.position + Vector2(16.0, 19.0), 8.0, GOLD if gon else DIM)
+	_t(gr.position + Vector2(30.0, 1.0), "GHOST [G]", TXT, INK if gon else DIM)
+	_t(gr.position + Vector2(30.0, 19.0), "+%d Heat" % L8Rules.GHOST_HEAT, TXT, DIM)
 	if gon:
 		hits.append({"rect": gr, "id": "tool:G"})
-	var sr := Rect2(x + 136.0, y, w - 136.0, 36.0)
+	var sr := Rect2(x + 136.0, y, w - 136.0, 38.0)
 	_box(sr, AMBER if sel_card != "" else EDGE, PANEL, 1.5)
 	if sel_card != "":
-		_mini_card(sr.position + Vector2(8.0, 8.0), _hand_card(sel_card))
+		_mini_card(sr.position + Vector2(8.0, 9.0), _hand_card(sel_card))
 		_ts(sr.position + Vector2(50.0, 10.0), "%s %s: click a district" % [_tname(_ctype(sel_card)), _cverb(sel_card)],
 			TXT, INK, sr.end.x - 6.0)
 	else:
 		_ts(sr.position + Vector2(10.0, 10.0), "no card picked", TXT, DIM, sr.end.x - 6.0)
-	y += 44.0
+	y += 46.0
 	y += maxf(18.0, _tf(Vector2(x, y), "A card's sentry blocks its own type. At most %d placed." % L8Rules.MAX_PLACED, TXT, DIM))
 	y += maxf(18.0, _tf(Vector2(x, y), "Unplaced SHIFT and JAM cards are held to pay a response.", TXT, ACID))
 	y += maxf(24.0, _tf(Vector2(x, y), "The ghost lets every beam pass its district or HOME.", TXT, DIM) + 6.0)
@@ -1926,11 +2069,11 @@ func _draw_plan() -> void:
 		y += 22.0
 	if not fc.is_empty():
 		if fc_locked != "":
-			_lock_line(Vector2(x, y), fc_locked)
+			y += _lock_line(Vector2(x, y), fc_locked)
 		else:
 			var lft := _tier_pair(Vector2(right, y), String(fc_range[0]), String(fc_range[1]))
 			_ts(Vector2(x, y), "12 outcomes with HOLD, worst / best:", TXT, DIM, lft - 8.0)
-		y += 22.0
+			y += 22.0
 	var err := L8Rules.check_place(leg, raid, st, place)
 	if err != "":
 		_tf(Vector2(x, y + 2.0), "Placement: " + err, TXT, RED)
@@ -1954,47 +2097,47 @@ func _draw_beam_info(y: float) -> float:
 	var cands: Array = r_now["cands"]
 	for k in range(cands.size()):
 		var t := String(cands[k]["type"])
-		var gx := x + 84.0 + k * 102.0
-		var sr := Rect2(gx - 12.0, y - 3.0, 96.0, 21.0)
+		var gx := x + 84.0 + k * 104.0
+		var sr := Rect2(gx - 12.0, y - 3.0, 100.0, 22.0)
 		if k == sel_route:
 			_box(sr, AMBER, PANEL_HI, 1.5)
 		elif sr.has_point(mouse):
 			_box(sr, INK, PANEL, 1.0)
 		_glyph(Vector2(gx, y + 8.0), t, 7.0, TYPE_COLOR[t])
-		_ts(Vector2(gx + 10.0, y), "%s [%s]" % [L8Rules.ROUTE_NAMES[k], ROUTE_KEY[k]], TXT, INK, gx + 82.0)
+		_ts(Vector2(gx + 10.0, y), "%s [%s]" % [L8Rules.ROUTE_NAMES[k], ROUTE_KEY[k]], TXT, INK, gx + 86.0)
 		hits.append({"rect": sr, "id": "route:%d" % k})
-	y += 22.0
+	y += 23.0
 	_t(Vector2(x, y), "SEALED B", TXT, INK)
 	var bs := L8Rules.other_cands(sel_route)
 	for i in range(bs.size()):
 		var b := int(bs[i])
 		var t := String(cands[b]["type"])
-		var gx := x + 84.0 + i * 102.0
-		var sr := Rect2(gx - 12.0, y - 3.0, 96.0, 21.0)
+		var gx := x + 84.0 + i * 104.0
+		var sr := Rect2(gx - 12.0, y - 3.0, 100.0, 22.0)
 		if i == sel_b:
 			_box(sr, AMBER, PANEL_HI, 1.5)
 		elif sr.has_point(mouse):
 			_box(sr, INK, PANEL, 1.0)
 		_glyph(Vector2(gx, y + 8.0), t, 7.0, TYPE_COLOR[t])
-		_ts(Vector2(gx + 10.0, y), String(L8Rules.ROUTE_NAMES[b]), TXT, INK, gx + 82.0)
+		_ts(Vector2(gx + 10.0, y), String(L8Rules.ROUTE_NAMES[b]), TXT, INK, gx + 86.0)
 		hits.append({"rect": sr, "id": "bsel:%d" % i})
 	_tr(Vector2(PANEL_X + PANEL_W - PAD, y), "[R]", TXT, DIM)
-	y += 20.0
+	y += 21.0
 	y += maxf(22.0, _tf(Vector2(x + 84.0, y), "two convoys come: A, then B from the other two", TXT, DIM) + 4.0)
 	var ht := String(r_now["hunter_type"])
 	var hc: Array = r_now["hunter_cands"]
 	_hound_icon(Vector2(x + 6.0, y + 8.0))
 	_t(Vector2(x + 18.0, y), "HUNT", TXT, COBALT_HOT)
 	for h in range(hc.size()):
-		var gx := x + 84.0 + h * 102.0
-		var sr := Rect2(gx - 12.0, y - 3.0, 96.0, 21.0)
+		var gx := x + 84.0 + h * 104.0
+		var sr := Rect2(gx - 12.0, y - 3.0, 100.0, 22.0)
 		if h == sel_hunt:
 			_box(sr, AMBER, PANEL_HI, 1.5)
 		elif sr.has_point(mouse):
 			_box(sr, INK, PANEL, 1.0)
-		_ts(Vector2(gx - 4.0, y), "%s: street %d" % [HUNT_KEY[h], int(hc[h])], TXT, INK, gx + 82.0)
+		_ts(Vector2(gx - 4.0, y), "%s: street %d" % [HUNT_KEY[h], int(hc[h])], TXT, INK, gx + 86.0)
 		hits.append({"rect": sr, "id": "hunt:%d" % h})
-	y += 20.0
+	y += 21.0
 	_glyph(Vector2(x + 90.0, y + 9.0), ht, 6.0, TYPE_COLOR[ht])
 	y += maxf(22.0, _tf(Vector2(x + 100.0, y), "%s hound runs one of them  [H]" % _tname(ht), TXT, DIM) + 4.0)
 	return y
@@ -2012,8 +2155,8 @@ func _beam_row(y: float, label: String, ln: Dictionary, live: bool, note: String
 		var off := "off (%s)" % note
 		_tr(Vector2(right, y), off, TXT, DIM)
 		lim = right - _tw(off, TXT) - 8.0
-	_ts(Vector2(x + 104.0, y), "%s, %s" % [_tname(t), _line_name(ln)], TXT, col, lim)
-	return y + 20.0
+	var used := _ts(Vector2(x + 104.0, y), "%s, %s" % [_tname(t), _line_name(ln)], TXT, col, lim)
+	return y + maxf(20.0, used + 1.0)
 
 
 # ---------------------------------------------------------------- FORECAST
@@ -2109,12 +2252,12 @@ func _friction_text() -> String:
 	return ""
 
 
-## One forecast cell as glyphs (L15 item 5): tier glyph, HOME heart / broken heart / skull, hit and block counts.
+## One forecast cell as glyphs: tier icon, HOME as a tier icon, hit and block counts.
 func _fc_cell(cr: Rect2, o: Dictionary, on: bool) -> void:
 	var cy := cr.position.y + 9.0
 	var tier := String(o["tier"])
-	_tier_glyph(Vector2(cr.position.x + 11.0, cy), tier, 6.0, _tier_col(tier))
-	_home_glyph(Vector2(cr.position.x + 29.0, cy), int((o["state"] as Dictionary)["home_hp"]), int(st["home_hp"]), 6.0)
+	_tier_glyph(Vector2(cr.position.x + 11.0, cy), tier, 7.0, _tier_col(tier))
+	_home_glyph(Vector2(cr.position.x + 30.0, cy), int((o["state"] as Dictionary)["home_hp"]), int(st["home_hp"]), 6.5)
 	var hitn := 0
 	var blkn := 0
 	for e: Array in o["touches"]:
@@ -2123,16 +2266,16 @@ func _fc_cell(cr: Rect2, o: Dictionary, on: bool) -> void:
 			hitn += 1
 		elif k == "block":
 			blkn += 1
-	var x := cr.position.x + 44.0
+	var x := cr.position.x + 46.0
 	var tc := INK if on else DIM
 	if hitn > 0:
 		_crack(Vector2(x + 3.0, cy), 6.0, RED, 1.5)
 		_t(Vector2(x + 9.0, cy - 9.0), str(hitn), TXT, tc)
-		x += 26.0
+		x += 28.0
 	if blkn > 0:
 		_verb_glyph(Vector2(x + 4.0, cy), "GUARD", 5.5, COBALT_HOT)
 		_t(Vector2(x + 11.0, cy - 9.0), str(blkn), TXT, tc)
-		x += 26.0
+		x += 28.0
 	if hitn == 0 and blkn == 0:
 		_t(Vector2(x, cy - 9.0), "-", TXT, DIM)
 
@@ -2150,13 +2293,13 @@ func _draw_forecast() -> void:
 	for h in range(L8Rules.HUNTER_CANDS):
 		_ts(Vector2(cx0 + h * cw + 4.0, y), "hunter %s: st %d" % [HUNT_KEY[h], _hunt_street(h)], TXT, COBALT_HOT,
 			cx0 + (h + 1) * cw - 4.0)
-	y += 18.0
+	y += 19.0
 	for i in range(fc.size()):
 		var f: Dictionary = fc[i]
 		var k := int(f["cand"])
 		var t := String(cands[k]["type"])
 		var outs: Array = f["outcomes"]
-		var r := Rect2(x, y, w, 60.0)
+		var r := Rect2(x, y, w, 62.0)
 		var sel := k == sel_route
 		_box(r, AMBER if sel else (INK if r.has_point(mouse) else EDGE), PANEL_HI if sel else PANEL)
 		hits.append({"rect": r, "id": "route:%d" % k})
@@ -2165,7 +2308,7 @@ func _draw_forecast() -> void:
 		_tr(Vector2(r.end.x - 10.0, r.position.y + 2.0), tag, TXT, AMBER if sel else DIM)
 		_ts(r.position + Vector2(28.0, 2.0), "A: %s ROUTE  %s" % [L8Rules.ROUTE_NAMES[k], _tname(t)], TXT, INK,
 			r.end.x - 18.0 - _tw(tag, TXT))
-		var yy := r.position.y + 21.0
+		var yy := r.position.y + 22.0
 		var bs := L8Rules.other_cands(k)
 		for bi in range(bs.size()):
 			var b := int(bs[bi])
@@ -2175,7 +2318,7 @@ func _draw_forecast() -> void:
 			var row: Array = outs[bi]
 			for h in range(row.size()):
 				var o: Dictionary = row[h]
-				var cr := Rect2(cx0 + h * cw, yy - 1.0, cw - 4.0, 18.0)
+				var cr := Rect2(cx0 + h * cw, yy - 1.0, cw - 4.0, 19.0)
 				var on := sel and bi == sel_b and h == sel_hunt
 				if on:
 					_box(cr, ACID, PANEL_HI, 1.0)
@@ -2183,47 +2326,48 @@ func _draw_forecast() -> void:
 					_box(cr, INK, PANEL, 1.0)
 				_fc_cell(cr, o, on)
 				hits.append({"rect": cr, "id": "fc:%d:%d:%d" % [k, bi, h]})
-			yy += 18.0
-		y += 64.0
+			yy += 19.0
+		y += 66.0
 	var lx := x
 	var ly := y + 9.0
-	_heart(Vector2(lx + 6.0, ly), 6.0, HOLDS_COL, false)
-	_t(Vector2(lx + 15.0, y), "kept", TXT, DIM)
+	_tier_glyph(Vector2(lx + 6.0, ly), "HOLDS", 6.5, _tier_col("HOLDS"))
+	_t(Vector2(lx + 16.0, y), "kept", TXT, DIM)
+	lx += 54.0
+	_tier_glyph(Vector2(lx + 6.0, ly), "DAMAGED", 6.5, _tier_col("DAMAGED"))
+	_t(Vector2(lx + 16.0, y), "-1", TXT, DIM)
+	lx += 42.0
+	_tier_glyph(Vector2(lx + 6.0, ly), "BREACHED", 6.5, _tier_col("BREACHED"))
+	_t(Vector2(lx + 16.0, y), "lost", TXT, DIM)
 	lx += 52.0
-	_heart(Vector2(lx + 6.0, ly), 6.0, RED, true)
-	_t(Vector2(lx + 15.0, y), "-1", TXT, DIM)
-	lx += 40.0
-	_skull(Vector2(lx + 6.0, ly), 6.0, RED, BLACK)
-	_t(Vector2(lx + 15.0, y), "lost", TXT, DIM)
-	lx += 50.0
 	_crack(Vector2(lx + 4.0, ly), 6.0, RED, 1.5)
 	_t(Vector2(lx + 12.0, y), "cells hit", TXT, DIM)
-	lx += 76.0
+	lx += 80.0
 	_verb_glyph(Vector2(lx + 5.0, ly), "GUARD", 5.5, COBALT_HOT)
 	_t(Vector2(lx + 14.0, y), "blocks", TXT, DIM)
 	y += 22.0
 	var ht := String(r_now["hunter_type"])
-	var hr := Rect2(x, y, w, 24.0)
+	var hr := Rect2(x, y, w, 26.0)
 	_box(hr, INK if hr.has_point(mouse) else EDGE, PANEL, 1.5)
 	hits.append({"rect": hr, "id": "hunt:%d" % (1 - sel_hunt)})
-	_hound_icon(hr.position + Vector2(12.0, 12.0))
-	_glyph(hr.position + Vector2(30.0, 12.0), ht, 6.0, TYPE_COLOR[ht])
-	_ts(hr.position + Vector2(42.0, 3.0), "HUNTER %s: A street %d or B street %d   [H] %s shown" % [_tname(ht),
+	_hound_icon(hr.position + Vector2(12.0, 13.0))
+	_glyph(hr.position + Vector2(30.0, 13.0), ht, 6.0, TYPE_COLOR[ht])
+	_ts(hr.position + Vector2(42.0, 4.0), "HUNTER %s: A street %d or B street %d   [H] %s shown" % [_tname(ht),
 		_hunt_street(0), _hunt_street(1), HUNT_KEY[sel_hunt]], TXT, COBALT_HOT, hr.end.x - 8.0)
-	y += 30.0
+	y += 32.0
 	if fc_locked != "":
-		_lock_line(Vector2(x, y), fc_locked)
+		y += _lock_line(Vector2(x, y), fc_locked) + 2.0
 	else:
 		var lft := _tier_pair(Vector2(right, y), String(fc_range[0]), String(fc_range[1]))
 		_ts(Vector2(x, y), "12 outcomes with HOLD, worst / best:", TXT, DIM, lft - 8.0)
-	y += 24.0
+		y += 24.0
 	if fric > 0:
-		var wr := Rect2(x, y, w, 24.0)
+		var lines := _wrap(_friction_text(), TXT, w - 36.0)
+		var wr := Rect2(x, y, w, 8.0 + float(lines.size()) * _lh(TXT))
 		cv.draw_rect(wr, BLACK)
 		cv.draw_rect(wr, RED, false, 2.0)
-		_skull(wr.position + Vector2(13.0, 12.0), 8.0, RED, BLACK)
-		_ts(wr.position + Vector2(28.0, 4.0), _friction_text(), TXT, WHITE, wr.end.x - 6.0)
-		y += 30.0
+		_skull(wr.position + Vector2(13.0, 13.0), 8.0, RED, BLACK)
+		_tf(wr.position + Vector2(28.0, 4.0), _friction_text(), TXT, WHITE, wr.end.x - 6.0)
+		y += wr.size.y + 6.0
 		if launch_armed:
 			_tf(Vector2(x, y), "Enter again launches anyway; B or an edit goes back.", TXT, DIM)
 		else:
@@ -2291,11 +2435,20 @@ func _hunter_cues(tr: Array, resp: Array) -> Array:
 func _play_batch(cues: Array, label: String) -> void:
 	busy = true
 	board.set_instant(instant)
-	await board.play(cues, speed)
+	await board.play(cues, _pspeed())
 	busy = false
 	_restore_launch_marks()
 	if shots_dir != "" and label != "":
 		await _shot(label)
+
+
+## L16 item 1: an unlocked raid holds a reveal beat briefly so it lands; a LOCKED (fast) one does not.
+func _reveal_hold() -> void:
+	if fast or instant:
+		return
+	busy = true
+	await get_tree().create_timer(REVEAL_HOLD / maxf(speed, 0.1)).timeout
+	busy = false
 
 
 func _restore_launch_marks() -> void:
@@ -2333,6 +2486,11 @@ func _launch() -> void:
 	hunter_revealed = false
 	used_card = ""
 	cur_resp = ["HOLD"]
+	resp_skipped = false
+	hold_armed = false
+	fast = fc_locked != ""
+	board.set_speed(_pspeed())
+	_set_slim(true)
 	heat_launch = L8Rules.launch_heat(st, place)
 	hud_hp = int(st["home_hp"])
 	var hold_tr := L8Rules.trace(leg, raid, st, real, real_b, hunt, place, ["HOLD"])
@@ -2377,7 +2535,8 @@ func _launch() -> void:
 	stage = "reveal"
 	var sealed: Dictionary = rd["cands"][real]
 	await _play_batch([_cue("reveal", Vector2i(L8Rules.W - 1, real), String(sealed["type"]), real)], "r%d_reveal" % rn)
-	_enter_response()
+	await _reveal_hold()
+	await _enter_response()
 
 
 func _beams_now() -> Array:
@@ -2420,71 +2579,111 @@ func _beam_state(b: String) -> String:
 	return "now"
 
 
+## A beam's playout description and type ("" when still sealed).
+func _beam_desc(b: String) -> Array:
+	var srank := _stage_rank()
+	var desc := ""
+	var t := ""
+	match b:
+		"beam1", "extra1", "extra2":
+			var ln: Dictionary = rd["b1" if b == "beam1" else b]
+			t = String(ln["type"])
+			desc = _line_name(ln)
+		"sealed":
+			if stage == "known":
+				desc = "one of the three routes"
+			else:
+				var ln2: Dictionary = rd["cands"][real]
+				t = String(ln2["type"])
+				desc = _line_name(ln2)
+		"sealed_b":
+			if stage == "known":
+				desc = "one of the other two routes"
+			elif srank < 3 or phase == Phase.RESPONSE:
+				var ob := L8Rules.other_cands(real)
+				desc = "%s or %s, sealed" % [L8Rules.ROUTE_NAMES[int(ob[0])], L8Rules.ROUTE_NAMES[int(ob[1])]]
+			else:
+				var ln3: Dictionary = rd["cands"][real_b]
+				t = String(ln3["type"])
+				desc = _line_name(ln3)
+		"hunter":
+			t = String(rd["hunter_type"])
+			if stage == "hreveal" or stage == "hunt":
+				desc = "street %d (%s)%s" % [_hunt_street(hunt), HUNT_KEY[hunt],
+					", jammed" if String(cur_resp[0]) == "JAM" else ""]
+			else:
+				desc = "street %d (A) or %d (B), sealed" % [_hunt_street(0), _hunt_street(1)]
+	return [desc, t]
+
+
+## The playout panel; in the slim strip (L16 item 6) each beam row wraps its description under its name.
 func _draw_play() -> void:
-	var x := PANEL_X + PAD
-	var w := PANEL_W - 2.0 * PAD
-	var right := PANEL_X + PANEL_W - PAD
-	var y := _head("LAUNCH  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "The raid runs. 1 2 4 set the speed, I toggles instant.")
+	var x := _px() + PAD
+	var w := VIEW.x - _px() - 2.0 * PAD
+	var right := VIEW.x - PAD
+	var y := _head("LAUNCH  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "1 2 4 set the speed, I toggles instant.", x)
 	y += maxf(20.0, _tf(Vector2(x, y), "Launch Heat %d: %d known beam%s" % [heat_launch, 1 + L8Rules.extra_count(heat_launch),
 		"" if L8Rules.extra_count(heat_launch) == 0 else "s"], TXT, HEAT_COL) + 2.0)
-	if fc_locked != "":
-		_lock_line(Vector2(x, y), fc_locked)
+	if fast:
+		y = _fast_chip(Vector2(x, y), w)
+	elif slim:
+		y += _tf(Vector2(x, y), "With HOLD, worst / best of 12:", TXT, DIM)
+		_tier_pair(Vector2(right, y), String(fc_range[0]), String(fc_range[1]))
+		y += 24.0
 	else:
 		var lft := _tier_pair(Vector2(right, y), String(fc_range[0]), String(fc_range[1]))
 		_ts(Vector2(x, y), "With HOLD, worst / best of 12:", TXT, DIM, lft - 8.0)
-	y += 22.0
-	var srank := _stage_rank()
+		y += 22.0
+	if resp_skipped:
+		y += maxf(20.0, _tf(Vector2(x, y), "No response changes an outcome: HOLD.", TXT, ACID) + 2.0)
 	for bv: Variant in _beams_now():
 		var b: String = bv
 		var s := _beam_state(b)
 		var col := INK if s == "now" else (DIM if s == "done" else LATER)
-		var r := Rect2(x, y, w, 28.0)
-		_box(r, AMBER if s == "now" else EDGE, PANEL_HI if s == "now" else PANEL)
-		_t(r.position + Vector2(10.0, 5.0), String(BEAM_NAME[b]), TXT, col)
-		var desc := ""
-		var t := ""
-		match b:
-			"beam1", "extra1", "extra2":
-				var ln: Dictionary = rd["b1" if b == "beam1" else b]
-				t = String(ln["type"])
-				desc = _line_name(ln)
-			"sealed":
-				if stage == "known":
-					desc = "one of the three routes"
-				else:
-					var ln2: Dictionary = rd["cands"][real]
-					t = String(ln2["type"])
-					desc = _line_name(ln2)
-			"sealed_b":
-				if srank < 3 or phase == Phase.RESPONSE:
-					var ob := L8Rules.other_cands(real)
-					desc = "%s or %s, sealed" % [L8Rules.ROUTE_NAMES[int(ob[0])], L8Rules.ROUTE_NAMES[int(ob[1])]] \
-						if stage != "known" else "one of the other two routes"
-				else:
-					var ln3: Dictionary = rd["cands"][real_b]
-					t = String(ln3["type"])
-					desc = _line_name(ln3)
-			"hunter":
-				t = String(rd["hunter_type"])
-				if stage == "hreveal" or stage == "hunt":
-					desc = "street %d (%s)%s" % [_hunt_street(hunt), HUNT_KEY[hunt],
-						", jammed" if String(cur_resp[0]) == "JAM" else ""]
-				else:
-					desc = "street %d (A) or %d (B), sealed" % [_hunt_street(0), _hunt_street(1)]
-		if t != "":
-			_glyph(r.position + Vector2(100.0, 14.0), t, 7.0, TYPE_COLOR[t])
-		else:
-			_t(r.position + Vector2(96.0, 5.0), "?", TXT, COBALT_HOT)
+		var dt := _beam_desc(b)
+		var desc := String(dt[0])
+		var t := String(dt[1])
 		var stx := s.to_upper()
-		_tr(Vector2(r.end.x - 8.0, r.position.y + 5.0), stx, TXT, AMBER if s == "now" else DIM)
-		_ts(r.position + Vector2(114.0, 5.0), desc, TXT, col, r.end.x - 16.0 - _tw(stx, TXT))
-		y += 32.0
+		var name := String(BEAM_NAME[b])
+		if slim:
+			var dl := _wrap(desc, TXT, w - 16.0)
+			var rh := 24.0 + float(dl.size()) * _lh(TXT)
+			var r := Rect2(x, y, w, rh)
+			_box(r, AMBER if s == "now" else EDGE, PANEL_HI if s == "now" else PANEL)
+			_t(r.position + Vector2(8.0, 3.0), name, TXT, col)
+			var gx := r.position.x + 18.0 + _tw(name, TXT)
+			if t != "":
+				_glyph(Vector2(gx, r.position.y + 12.0), t, 7.0, TYPE_COLOR[t])
+			else:
+				_t(Vector2(gx - 4.0, r.position.y + 3.0), "?", TXT, COBALT_HOT)
+			_tr(Vector2(r.end.x - 8.0, r.position.y + 3.0), stx, TXT, AMBER if s == "now" else DIM)
+			for i in range(dl.size()):
+				_t(r.position + Vector2(8.0, 22.0 + float(i) * _lh(TXT)), dl[i], TXT, col)
+			y += rh + 4.0
+		else:
+			var r := Rect2(x, y, w, 28.0)
+			_box(r, AMBER if s == "now" else EDGE, PANEL_HI if s == "now" else PANEL)
+			_t(r.position + Vector2(10.0, 5.0), name, TXT, col)
+			if t != "":
+				_glyph(r.position + Vector2(100.0, 14.0), t, 7.0, TYPE_COLOR[t])
+			else:
+				_t(r.position + Vector2(96.0, 5.0), "?", TXT, COBALT_HOT)
+			_tr(Vector2(r.end.x - 8.0, r.position.y + 5.0), stx, TXT, AMBER if s == "now" else DIM)
+			_ts(r.position + Vector2(114.0, 5.0), desc, TXT, col, r.end.x - 16.0 - _tw(stx, TXT))
+			y += 32.0
 	y += 4.0
 	var labels: Array = [1.0, 2.0, 4.0]
-	for i in range(3):
-		var sp: float = labels[i]
-		_btn(Rect2(x + i * 78.0, y, 70.0, 32.0), "%dx" % int(sp), "speed:%d" % int(sp), true, is_equal_approx(speed, sp))
-	_btn(Rect2(x + 240.0, y, w - 240.0, 32.0), "INSTANT [I]", "instant", true, instant)
+	if slim:
+		var bw := (w - 18.0) / 4.0
+		for i in range(3):
+			var sp: float = labels[i]
+			_btn(Rect2(x + i * (bw + 6.0), y, bw, 32.0), "%dx" % int(sp), "speed:%d" % int(sp), true, is_equal_approx(speed, sp))
+		_btn(Rect2(x + 3.0 * (bw + 6.0), y, bw, 32.0), "I", "instant", true, instant)
+	else:
+		for i in range(3):
+			var sp: float = labels[i]
+			_btn(Rect2(x + i * 78.0, y, 70.0, 32.0), "%dx" % int(sp), "speed:%d" % int(sp), true, is_equal_approx(speed, sp))
+		_btn(Rect2(x + 240.0, y, w - 240.0, 32.0), "INSTANT [I]", "instant", true, instant)
 	y += 44.0
 	if stage != "known":
 		_t(Vector2(x, y), "THE KNOWN BEAMS TOUCHED", TXT, DIM)
@@ -2493,7 +2692,7 @@ func _draw_play() -> void:
 
 
 func _draw_touch_lines(tr: Array, y: float) -> float:
-	var x := PANEL_X + PAD
+	var x := _px() + PAD
 	var any := false
 	for bv: Variant in L8Rules.BEAMS:
 		var b: String = bv
@@ -2507,7 +2706,7 @@ func _draw_touch_lines(tr: Array, y: float) -> float:
 		y += _tf(Vector2(x, y), "%s: %s" % [String(BEAM_NAME.get(b, b)), ", ".join(parts)], TXT, INK)
 	if not any:
 		_t(Vector2(x, y), "Nothing touched.", TXT, DIM)
-		y += 18.0
+		y += 19.0
 	return y
 
 
@@ -2521,8 +2720,18 @@ func _out_core(o: Dictionary) -> String:
 	return "%s|%d|%s|%d" % [String(o["tier"]), int(s["home_hp"]), "".join(ow), L8Rules.wound_count(s)]
 
 
+## L16 item 1: every response row other than HOLD changes nothing.
+func _all_nothing() -> bool:
+	for ov: Variant in resp_opts:
+		var o: Dictionary = ov
+		if String((o["response"] as Array)[0]) != "HOLD" and not bool(o["nothing"]):
+			return false
+	return true
+
+
 ## Every legal response, resolved on both B routes and both hunter streets (still sealed), with its mean score, its
-## outcome signatures and the L15 flags: better (mean beats HOLD) and nothing (paid, every outcome as HOLD).
+## outcome signatures and the flags: better (mean beats HOLD) and nothing (paid, every outcome as HOLD). A LOCKED
+## launch where every row changes nothing skips the panel and holds (L16 item 1).
 func _enter_response() -> void:
 	resp_opts = []
 	var bs := L8Rules.other_cands(real)
@@ -2568,12 +2777,6 @@ func _enter_response() -> void:
 		var head := String((o["response"] as Array)[0])
 		o["better"] = head != "HOLD" and float(o["mean"]) > hold_mean + MEAN_EPS
 		o["nothing"] = bool(o["paid"]) and String(o["core"]) == hold_core
-	_build_ghosts()
-	resp_hunters = []
-	for h in range(L8Rules.HUNTER_CANDS):
-		var hl: Variant = L8Rules.hunter_line(leg, raid, before, real, int(bs[0]), h, place, ["HOLD"])
-		if typeof(hl) == TYPE_DICTIONARY:
-			resp_hunters.append(hl)
 	redeploy_from = null
 	deploy_type = ""
 	resp_page = 0
@@ -2581,6 +2784,18 @@ func _enter_response() -> void:
 	resp_open = -1
 	resp_pop_rect = Rect2()
 	resp_follow = false
+	resp_head_y = {}
+	hold_armed = false
+	hold_better = -1
+	if fast and _all_nothing():
+		resp_skipped = true
+		if shots_dir != "":
+			await _shot("r%d_response" % (raid + 1))
+		phase = Phase.RESPONSE
+		_respond(["HOLD"], true)
+		return
+	_set_slim(false)
+	_build_ghosts()
 	phase = Phase.RESPONSE
 	board.clear_response_preview()
 	_show_hunter()
@@ -2588,9 +2803,9 @@ func _enter_response() -> void:
 	_highlight_sources()
 
 
-## L15 item 3: one ghost row per impossible kind, with its reason.
+## L15 item 3: one ghost row per impossible kind, with its reason ([head, text]).
 func _build_ghosts() -> void:
-	resp_ghosts = PackedStringArray()
+	resp_ghosts = []
 	var heads := {}
 	for ov: Variant in resp_opts:
 		heads[String(((ov as Dictionary)["response"] as Array)[0])] = true
@@ -2602,18 +2817,18 @@ func _build_ghosts() -> void:
 			has_shift = true
 	if not heads.has("REDEPLOY"):
 		if not has_shift:
-			resp_ghosts.append("REDEPLOY: no SHIFT card in hand")
+			resp_ghosts.append(["REDEPLOY", "REDEPLOY: no SHIFT card in hand"])
 		elif sent.is_empty():
-			resp_ghosts.append("REDEPLOY: no sentry on the board")
+			resp_ghosts.append(["REDEPLOY", "REDEPLOY: no sentry on the board"])
 		else:
-			resp_ghosts.append("REDEPLOY: no free district")
+			resp_ghosts.append(["REDEPLOY", "REDEPLOY: no free district"])
 	if not heads.has("DEPLOY"):
 		if rc.is_empty():
-			resp_ghosts.append("DEPLOY: no card left in hand")
+			resp_ghosts.append(["DEPLOY", "DEPLOY: no card left in hand"])
 		else:
-			resp_ghosts.append("DEPLOY: no free district")
+			resp_ghosts.append(["DEPLOY", "DEPLOY: no free district"])
 	if not heads.has("JAM"):
-		resp_ghosts.append("JAM: no JAM card in hand")
+		resp_ghosts.append(["JAM", "JAM: no JAM card in hand"])
 
 
 ## The visible groups: options filtered by a picked sentry (REDEPLOY source) or a deploy type, merged when their
@@ -2663,6 +2878,7 @@ func _build_resp_groups() -> void:
 		resp_sel = -1
 	resp_open = -1
 	resp_page = 0
+	resp_head_y = {}
 
 
 func _has_jam() -> bool:
@@ -2719,6 +2935,7 @@ func _pick_source(cell: Vector2i) -> void:
 func _arm_deploy(t: String) -> void:
 	if phase != Phase.RESPONSE or busy:
 		return
+	hold_armed = false
 	if deploy_type == t:
 		deploy_type = ""
 		_build_resp_groups()
@@ -2782,14 +2999,57 @@ func _response_click(c: Variant) -> void:
 	status_msg = "Not a legal target: an owned, live district with no sentry."
 
 
+## L16 item 4: the visible group whose worst tier is strictly better than HOLD's (best first), when HOME <= 1; else -1.
+func _hold_better() -> int:
+	if mid.is_empty() or int(mid["home_hp"]) > 1:
+		return -1
+	var hold_w := ""
+	for ov: Variant in resp_opts:
+		var o: Dictionary = ov
+		if String((o["response"] as Array)[0]) == "HOLD":
+			hold_w = String(_tier_range(o["outs"])[0])
+	if hold_w == "":
+		return -1
+	var idxs: Array = []
+	if resp_head_y.is_empty():
+		for i in range(resp_groups.size()):
+			idxs.append(i)
+	else:
+		idxs = resp_head_y.keys()
+	var best := -1
+	var best_rank := _rank(hold_w)
+	for iv: Variant in idxs:
+		var gi := int(iv)
+		if gi < 0 or gi >= resp_groups.size():
+			continue
+		var g: Dictionary = resp_groups[gi]
+		var o: Dictionary = resp_opts[int((g["members"] as Array)[0])]
+		if String((o["response"] as Array)[0]) == "HOLD":
+			continue
+		var wr := _rank(String(_tier_range(o["outs"])[0]))
+		if wr < best_rank:
+			best_rank = wr
+			best = gi
+	return best
+
+
 ## Commit a response: sealed A, REVEAL B, sealed B, the HUNTER REVEAL, then the hunter run (or the jam). Every district
-## turned TAKEN sends a wound into the deck strip; each beam is marked done as the next one starts.
-func _respond(r: Array) -> void:
+## turned TAKEN sends a wound into the deck strip; each beam is marked done as the next one starts. HOLD at HOME <= 1
+## with a better visible row needs a second commit unless force.
+func _respond(r: Array, force: bool = false) -> void:
 	if busy or phase != Phase.RESPONSE:
 		return
 	var resp := L8Rules.norm_response(r)
 	if resp.is_empty():
 		return
+	if not force and String(resp[0]) == "HOLD" and not hold_armed:
+		var bg := _hold_better()
+		if bg >= 0:
+			hold_armed = true
+			hold_better = bg
+			status_msg = "%s %s: launch anyway? H again holds." % [FRICTION_HOLD, _group_label(resp_groups[bg])]
+			return
+	hold_armed = false
 	var res := L8Rules.resolve(leg, raid, before, real, real_b, hunt, place, resp)
 	if res.has("error"):
 		status_msg = "Response: " + String(res["error"])
@@ -2822,6 +3082,8 @@ func _respond(r: Array) -> void:
 	deploy_type = ""
 	phase = Phase.PLAY
 	stage = "sealed"
+	_set_slim(true)
+	board.set_speed(_pspeed())
 	var rn := raid + 1
 	if typeof(sac) == TYPE_VECTOR2I:
 		busy = true
@@ -2840,6 +3102,7 @@ func _respond(r: Array) -> void:
 	await board.reveal_b(real_b)
 	busy = false
 	_restore_launch_marks()
+	await _reveal_hold()
 	if shots_dir != "":
 		await _shot("r%d_reveal_b" % rn)
 	stage = "sealed_b"
@@ -2853,12 +3116,15 @@ func _respond(r: Array) -> void:
 	await board.hunter_reveal(hunt)
 	busy = false
 	hunter_revealed = true
+	await _reveal_hold()
 	if shots_dir != "":
 		await _shot("r%d_hunter_reveal" % rn)
 	stage = "hunt"
 	await _play_batch(_hunter_cues(tr, resp), "r%d_sealed_hunter" % rn)
 	await _fly_beams(taken, ["hunter"])
 	_beam_done("hunter")
+	fast = false
+	board.set_speed(speed)
 	var ns: Dictionary = res["state"]
 	result = {"state": ns, "touches": res["touches"], "trace": tr, "tier": L8Rules.tier(before, ns, res["touches"]),
 		"response": resp}
@@ -2887,37 +3153,8 @@ func _preview_opt() -> int:
 	return -1
 
 
-## An option's board preview, in both the board's {kind, from, to, type, cell} form and the move-list form.
-func _preview_of(oi: int) -> Dictionary:
-	var o: Dictionary = resp_opts[oi]
-	var r: Array = o["response"]
-	var head := String(r[0])
-	var sd: Dictionary = mid["sentries"]
-	var h0: Variant = resp_hunters[0] if not resp_hunters.is_empty() else null
-	var p := {"kind": head, "from": null, "to": null, "type": "D", "cell": null, "moves": [], "jam": false,
-		"sacrifice": null, "hunter": h0, "hunters": resp_hunters.duplicate()}
-	match head:
-		"REDEPLOY":
-			var t := _ctype(String(sd.get(r[1], "")))
-			p["from"] = r[1]
-			p["to"] = r[2]
-			p["type"] = t
-			p["verb"] = _cverb(String(sd.get(r[1], "")))
-			p["moves"] = [{"kind": "REDEPLOY", "from": r[1], "to": r[2], "type": t}]
-		"DEPLOY":
-			p["to"] = r[2]
-			p["type"] = String(r[1])
-			p["verb"] = _cverb(String(o["card"]))
-			p["moves"] = [{"kind": "DEPLOY", "from": null, "to": r[2], "type": String(r[1])}]
-		"SACRIFICE":
-			p["cell"] = r[1]
-			p["to"] = r[1]
-			p["sacrifice"] = r[1]
-		"JAM":
-			p["jam"] = true
-	return p
-
-
+## L16 item 2: preview the hovered or selected row on the board (SACRIFICE dome and crumble, REDEPLOY ghost arrow,
+## DEPLOY ghost sentry, JAM struck-out hound on the hunter lanes); HOLD clears it.
 func _sync_resp_preview() -> void:
 	var j := _preview_opt()
 	if j == resp_prev:
@@ -2926,11 +3163,18 @@ func _sync_resp_preview() -> void:
 	if j < 0:
 		board.clear_response_preview()
 		return
-	var p := _preview_of(j)
-	if String(p["kind"]) == "HOLD":
-		board.clear_response_preview()
-	else:
-		board.show_response_preview(p)
+	var r: Array = (resp_opts[j] as Dictionary)["response"]
+	match String(r[0]):
+		"REDEPLOY":
+			board.preview_response("REDEPLOY", r[1], r[2])
+		"DEPLOY":
+			board.preview_response("DEPLOY", r[2], String(r[1]))
+		"SACRIFICE":
+			board.preview_response("SACRIFICE", r[1], null)
+		"JAM":
+			board.preview_response("JAM", (rd["hunter_cands"] as Array).duplicate(), String(rd["hunter_type"]))
+		_:
+			board.clear_response_preview()
 
 
 ## A group's label: the exact response, or for merged groups their shared part with "xN variants".
@@ -2957,7 +3201,8 @@ func _group_label(g: Dictionary) -> String:
 	return "%s  \u00d7%d variants" % [base, mem.size()]
 
 
-## One group row: label and card, then its HOME / Heat ranges, its cost note and its worst / best tier glyphs.
+## One group row: a large verb glyph, then label and card, then its HOME / Heat ranges, its cost note and its worst /
+## best tier glyphs.
 func _draw_group(gi: int, y: float) -> bool:
 	var x := PANEL_X + PAD
 	var w := PANEL_W - 2.0 * PAD
@@ -2975,13 +3220,15 @@ func _draw_group(gi: int, y: float) -> bool:
 	_box(rr, ACID if hot else (AMBER if sel else (EDGE.darkened(0.35) if nothing else EDGE)), fill)
 	if bool(g["better"]):
 		cv.draw_rect(rr.grow(2.0), GOLD, false, 2.5)
+	_resp_glyph(rr.position + Vector2(RESP_GLYPH_W * 0.5 + 2.0, rr.size.y * 0.5), r, 12.0, nothing)
+	var tx := x + RESP_GLYPH_W + 6.0
 	var card := String(o["card"])
 	var lim := rr.end.x - 8.0
 	if card != "":
 		_mini_card(Vector2(rr.end.x - 42.0, rr.position.y + 3.0), _hand_card(card))
 		lim = rr.end.x - 48.0
 	else:
-		_tr(Vector2(rr.end.x - 8.0, rr.position.y + 3.0), "free", TXT, DIM)
+		_tr(Vector2(rr.end.x - 8.0, rr.position.y + 2.0), "free", TXT, DIM)
 		lim = rr.end.x - 16.0 - _tw("free", TXT)
 	var key := ""
 	if head == "HOLD":
@@ -2989,9 +3236,9 @@ func _draw_group(gi: int, y: float) -> bool:
 	elif head == "JAM":
 		key = "  [J]"
 	var tcol := DIM if nothing else INK
-	_ts(rr.position + Vector2(8.0, 3.0), _group_label(g) + key, TXT, tcol, lim)
+	_ts(Vector2(tx, rr.position.y + 2.0), _group_label(g) + key, TXT, tcol, lim)
 	var rg := _tier_range(outs)
-	var left := _tier_glyphs(Vector2(rr.end.x - 8.0, rr.position.y + 21.0), String(rg[0]), String(rg[1]))
+	var left := _tier_glyphs(Vector2(rr.end.x - 8.0, rr.position.y + 20.0), String(rg[0]), String(rg[1]))
 	var hp_lo := 99
 	var hp_hi := -1
 	var he_lo := 999
@@ -3019,14 +3266,20 @@ func _draw_group(gi: int, y: float) -> bool:
 	if bool(g["better"]):
 		note = (note + "  " if note != "" else "") + "beats HOLD"
 		ncol = GOLD if not nothing else ncol
-	var ly := rr.position.y + 21.0
+	var ly := rr.position.y + 20.0
 	var iw := _tw(info, TXT)
-	if iw + 10.0 + _tw(note, TXT) <= left - 8.0 - (x + 8.0):
-		_t(Vector2(x + 8.0, ly), info, TXT, tcol)
+	if note == "" or iw + 10.0 + _tw(note, TXT) <= left - 8.0 - tx:
+		_ts(Vector2(tx, ly), info, TXT, tcol, left - 8.0)
 		if note != "":
-			_t(Vector2(x + 18.0 + iw, ly), note, TXT, ncol)
+			_t(Vector2(tx + 10.0 + iw, ly), note, TXT, ncol)
+	elif iw <= left - 8.0 - tx:
+		_t(Vector2(tx, ly), info, TXT, tcol)
+		var nl := _tw(note, TXT)
+		if tx + iw + 10.0 + nl > left - 8.0:
+			note = "beats HOLD" if bool(g["better"]) else note
+		_ts(Vector2(tx + iw + 10.0, ly), note, TXT, ncol, left - 8.0)
 	else:
-		_ts(Vector2(x + 8.0, ly), info + "  " + note, TXT, tcol, left - 8.0)
+		_ts(Vector2(tx, ly), info, TXT, tcol, left - 8.0)
 	hits.append({"rect": rr, "id": "rgrp:%d" % gi})
 	if hot:
 		resp_hover_opt = int(mem[0])
@@ -3037,24 +3290,39 @@ func _draw_response() -> void:
 	var x := PANEL_X + PAD
 	var w := PANEL_W - 2.0 * PAD
 	var right := PANEL_X + PANEL_W - PAD
-	var y := _head("RESPONSE  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "H holds, J jams, click a row; or a sentry / card, then a district.")
+	var y := _head("RESPONSE  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "Hover a row to preview it. H holds, J jams.")
+	if fast:
+		y = _fast_chip(Vector2(x, y - 2.0), w)
 	var sealed: Dictionary = rd["cands"][real]
 	var t := String(sealed["type"])
-	_glyph(Vector2(x + 8.0, y + 9.0), t, 8.0, TYPE_COLOR[t])
-	_ts(Vector2(x + 22.0, y), "SEALED A: %s ROUTE, %s" % [L8Rules.ROUTE_NAMES[real], _tname(t)], 14, INK)
-	y += 22.0
+	_glyph(Vector2(x + 8.0, y + 10.0), t, 8.0, TYPE_COLOR[t])
+	y += maxf(22.0, _ts(Vector2(x + 22.0, y), "SEALED A: %s ROUTE, %s" % [L8Rules.ROUTE_NAMES[real], _tname(t)], 14, INK) + 2.0)
 	var ob := L8Rules.other_cands(real)
 	y += maxf(18.0, _tf(Vector2(x, y), "B is %s or %s, the hunter street is sealed: worst / best of 4." % [
 		L8Rules.ROUTE_NAMES[int(ob[0])], L8Rules.ROUTE_NAMES[int(ob[1])]], TXT, COBALT_HOT))
 	y += maxf(20.0, _tf(Vector2(x, y), "A card response costs +%d Heat; HOLD and SACRIFICE are free. Gold: beats HOLD." %
 		L8Rules.SPOOF_HEAT, TXT, DIM) + 2.0)
 	_t(Vector2(x, y), "RESPONSE HAND", TXT, DIM)
-	var mx := x + 118.0
+	var mx := x + 124.0
 	for id: String in L8Rules.response_hand(leg, raid, before, place):
 		if mx + 34.0 > right:
 			break
-		mx += _mini_card(Vector2(mx, y - 2.0), _hand_card(id))
+		mx += _mini_card(Vector2(mx, y - 1.0), _hand_card(id))
 	y += 26.0
+	if hold_armed and hold_better >= 0 and hold_better < resp_groups.size():
+		var hg: Dictionary = resp_groups[hold_better]
+		var hb: Dictionary = resp_opts[int((hg["members"] as Array)[0])]
+		var br := Rect2(x, y, w, 48.0)
+		cv.draw_rect(br, BLACK)
+		cv.draw_rect(br, RED, false, 2.0)
+		_t(br.position + Vector2(8.0, 4.0), FRICTION_HOLD, TXT, WHITE)
+		var gx := br.position.x + 8.0 + _tw(FRICTION_HOLD, TXT) + 16.0
+		_resp_glyph(Vector2(gx, br.position.y + 13.0), hb["response"], 10.0, false)
+		var wt := String(_tier_range(hb["outs"])[0])
+		_tier_glyph(Vector2(gx + 24.0, br.position.y + 13.0), wt, 8.0, _tier_col(wt))
+		_ts(Vector2(gx + 36.0, br.position.y + 4.0), ": launch anyway?", TXT, WHITE, br.end.x - 6.0)
+		_ts(br.position + Vector2(8.0, 25.0), "H again holds; any other choice cancels.", TXT, DIM, br.end.x - 6.0)
+		y += 54.0
 	var filtered := false
 	if not _none(redeploy_from):
 		var sid := String((mid["sentries"] as Dictionary).get(redeploy_from, ""))
@@ -3066,7 +3334,7 @@ func _draw_response() -> void:
 		filtered = true
 	elif resp_opts.size() <= 1:
 		y += maxf(20.0, _tf(Vector2(x, y), "No card response is available: HOLD.", TXT, AMBER) + 2.0)
-	var ghosts := PackedStringArray() if filtered else resp_ghosts
+	var ghosts: Array = [] if filtered else resp_ghosts
 	var bottom := LEGEND_Y - 6.0
 	var avail := bottom - y - float(ghosts.size()) * GHOST_H
 	var ng := resp_groups.size()
@@ -3101,16 +3369,17 @@ func _draw_response() -> void:
 		var fhot := fr.has_point(mouse)
 		_box(fr, INK if fhot else EDGE, PANEL_HI if fhot else PANEL, 1.5)
 		var shown_to := mini(ng, g0 + per)
-		_ts(fr.position + Vector2(8.0, 1.0), "MORE  rows %d-%d of %d  (click for the next %s)" % [g0 + 1, shown_to, ng,
+		_ts(fr.position + Vector2(8.0, 1.0), "MORE  rows %d-%d of %d  (click: next %s)" % [g0 + 1, shown_to, ng,
 			"rows" if shown_to < ng else "fold"], TXT, AMBER, fr.end.x - 6.0)
 		hits.append({"rect": fr, "id": "rmore"})
 		y += GHOST_H
-	for gt: String in ghosts:
+	for gv: Variant in ghosts:
+		var ga: Array = gv
 		var gr := Rect2(x, y, w, GHOST_H - 3.0)
 		cv.draw_rect(gr, BG)
 		cv.draw_rect(gr, EDGE.darkened(0.45), false, 1.0)
-		_xmark(gr.position + Vector2(11.0, 9.5), 4.0, LATER, 1.5)
-		_ts(gr.position + Vector2(22.0, 1.0), gt, TXT, LATER, gr.end.x - 6.0)
+		_resp_glyph(gr.position + Vector2(RESP_GLYPH_W * 0.5 + 2.0, gr.size.y * 0.5), [String(ga[0])], 7.5, true)
+		_ts(gr.position + Vector2(RESP_GLYPH_W + 6.0, 1.0), String(ga[1]), TXT, LATER, gr.end.x - 6.0)
 		y += GHOST_H
 
 
@@ -3123,7 +3392,7 @@ func _draw_resp_pop() -> void:
 	if mem.size() < 2:
 		return
 	var n := mini(mem.size(), int((LEGEND_Y - HUD_H - 34.0) / SUB_H))
-	var h := 26.0 + float(n) * SUB_H
+	var h := 28.0 + float(n) * SUB_H
 	var py := clampf(float(resp_head_y[resp_open]), HUD_H + 4.0, LEGEND_Y - 4.0 - h)
 	var r := Rect2(PANEL_X - POP_W, py, POP_W + PAD + 2.0, h)
 	_box(r, INK, Color(PANEL, 0.97), 1.5)
@@ -3131,7 +3400,7 @@ func _draw_resp_pop() -> void:
 	var sd: Dictionary = mid["sentries"]
 	for k in range(n):
 		var oi := int(mem[k])
-		var sr := Rect2(r.position.x + 4.0, py + 24.0 + k * SUB_H, POP_W - 8.0, SUB_H - 2.0)
+		var sr := Rect2(r.position.x + 4.0, py + 26.0 + k * SUB_H, POP_W - 8.0, SUB_H - 2.0)
 		var hot := sr.has_point(mouse) and auto_line == "" and not busy
 		if hot:
 			_box(sr, ACID, PANEL_HI, 1.0)
@@ -3143,12 +3412,13 @@ func _draw_resp_pop() -> void:
 
 
 # ---------------------------------------------------------------- AFTERMATH
+## The aftermath (in the slim strip during the playout, L16 item 6).
 func _draw_after() -> void:
-	var x := PANEL_X + PAD
-	var w := PANEL_W - 2.0 * PAD
+	var x := _px() + PAD
+	var w := VIEW.x - _px() - 2.0 * PAD
 	var tier := String(result.get("tier", "HOLDS"))
-	var y := _head("AFTERMATH  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "Enter goes on.")
-	y += _tier_big(Vector2(x, y), tier)
+	var y := _head("AFTERMATH  RAID %d/%d" % [raid + 1, L8Rules.RAIDS], "Enter goes on.", x)
+	y += _tier_big(Vector2(x, y), tier, 24 if slim else 34)
 	y += maxf(24.0, _tf(Vector2(x, y), String(TIER_TEXT.get(tier, "")), TXT, INK) + 6.0)
 	var resp: Array = result["response"]
 	y += maxf(20.0, _tf(Vector2(x, y), "Response: %s" % _resp_label(resp, mid.get("sentries", place["sentries"])), TXT, ACID) + 2.0)
@@ -3166,13 +3436,11 @@ func _draw_after() -> void:
 		notes.append("card +%d" % L8Rules.SPOOF_HEAT)
 	var note := "" if notes.is_empty() else "  (%s)" % ", ".join(notes)
 	y += maxf(22.0, _tf(Vector2(x, y), "Heat: launch %d -> %d%s" % [heat_launch, int(st["heat"]), note], TXT, HEAT_COL) + 4.0)
-	_t(Vector2(x, y), "HOME: %d -> %d" % [int(before["home_hp"]), int(st["home_hp"])], TXT,
-		RED if int(st["home_hp"]) < int(before["home_hp"]) else INK)
-	y += 22.0
+	y += maxf(22.0, _tf(Vector2(x, y), "HOME: %d -> %d" % [int(before["home_hp"]), int(st["home_hp"])], TXT,
+		RED if int(st["home_hp"]) < int(before["home_hp"]) else INK) + 3.0)
 	var wb := L8Rules.wound_count(before)
 	var wa := L8Rules.wound_count(st)
-	_t(Vector2(x, y), "Wounds in the deck: %d -> %d" % [wb, wa], TXT, RED if wa > wb else DIM)
-	y += 22.0
+	y += maxf(22.0, _tf(Vector2(x, y), "Wounds in the deck: %d -> %d" % [wb, wa], TXT, RED if wa > wb else DIM) + 3.0)
 	var live := L8Rules.live_cells(st).size()
 	_tf(Vector2(x, y), "Districts held: %d    Leg value now: %s" % [live, _score_text(st)], TXT, INK)
 	var last := breached or raid >= L8Rules.RAIDS - 1
@@ -3181,6 +3449,7 @@ func _draw_after() -> void:
 
 # ---------------------------------------------------------------- BETWEEN
 func _enter_between() -> void:
+	_set_slim(false)
 	board.clear_paths()
 	board.clear_outcome()
 	board.clear_response_preview()
@@ -3471,7 +3740,7 @@ func _draw_between() -> void:
 		cv.draw_rect(br, RED.darkened(0.45))
 		cv.draw_rect(br, RED, false, 2.0)
 		_skull(br.position + Vector2(13.0, 12.0), 8.0, WHITE, BLACK)
-		_t(br.position + Vector2(28.0, 3.0), "Next HOME hit ends the campaign", TXT, WHITE)
+		_ts(br.position + Vector2(28.0, 3.0), "Next HOME hit ends the campaign", TXT, WHITE, br.end.x - 6.0)
 		y += 26.0
 	y += maxf(20.0, _tf(Vector2(x, y), "1  REPAIR ONE DOWN DISTRICT  (v / 2, free on NORMAL)", TXT, DIM) + 2.0)
 	var downs := _down_cells()
@@ -3489,7 +3758,7 @@ func _draw_between() -> void:
 			var hot := afford and rr.has_point(mouse)
 			if picked or hot:
 				_box(rr, AMBER if picked else INK, PANEL_HI, 1.0)
-			var lim := rr.end.x - 100.0
+			var lim := rr.end.x - 104.0
 			if _none(o):
 				_ts(rr.position + Vector2(22.0, 1.0), "no repair" if picked else "no repair [click]", TXT,
 					INK if picked else DIM, lim)
@@ -3497,7 +3766,7 @@ func _draw_between() -> void:
 				var c: Vector2i = o
 				var cost := L8Rules.repair_cost(leg, c, b_inten)
 				var ct := "free" if cost == 0 else "-%d" % cost
-				_down_icon(rr.position + Vector2(10.0, 9.5))
+				_down_icon(rr.position + Vector2(10.0, 10.0))
 				if picked:
 					_ts(rr.position + Vector2(22.0, 1.0), "repair %s   %s" % [_cell_name(c), ct], TXT, ACID, lim)
 				else:
@@ -3527,7 +3796,7 @@ func _draw_between() -> void:
 		var cr := Rect2(r.position + Vector2(5.0, 5.0), Vector2(22.0, 30.0))
 		if t == "":
 			_dash_rect(cr, DIM)
-			_t(r.position + Vector2(32.0, 12.0), "[0]", TXT, DIM)
+			_t(r.position + Vector2(32.0, 11.0), "[0]", TXT, DIM)
 		else:
 			var price := L8Rules.CLEAN_PRICE if t == L8Rules.CLEAN else L8Rules.SENTRY_PRICE
 			if t == L8Rules.CLEAN:
@@ -3535,7 +3804,7 @@ func _draw_between() -> void:
 			else:
 				_card_face(cr, ["b", t, L8Rules.V_GUARD], not ok)
 			_coin(r.position + Vector2(37.0, 12.0), 5.0, GOLD if ok else DIM)
-			_t(r.position + Vector2(45.0, 3.0), "%d" % price, TXT, GOLD if ok else DIM)
+			_t(r.position + Vector2(45.0, 2.0), "%d" % price, TXT, GOLD if ok else DIM)
 			var key := "[C]" if t == L8Rules.CLEAN else "[%d]" % i
 			if t == L8Rules.CLEAN and wn == 0:
 				key = "-"
@@ -3573,14 +3842,14 @@ func _draw_between() -> void:
 			_flame(Vector2(cr.end.x - 10.0 - f * 12.0, cr.position.y + 12.0), 5.0)
 		_ts(cr.position + Vector2(7.0, 3.0), "%s [%s]" % [nm, INTEN_KEY[i]], TXT, AMBER if sel else INK,
 			cr.end.x - 14.0 - 12.0 * (i + 1))
-		_flame(cr.position + Vector2(13.0, 30.0), 5.0)
-		_ts(cr.position + Vector2(24.0, 21.0), "+%d > %d" % [int(p["heat_add"]), h0], TXT, HEAT_COL, cr.end.x - 4.0)
-		_coin(cr.position + Vector2(13.0, 47.0), 5.5)
-		_ts(cr.position + Vector2(24.0, 38.0), "+%d > %d" % [int(p["income"]), int(ns["bank"])], TXT, GOLD, cr.end.x - 4.0)
-		var ry := cr.position.y + 66.0
+		_flame(cr.position + Vector2(13.0, 31.0), 5.0)
+		_ts(cr.position + Vector2(24.0, 22.0), "+%d > %d" % [int(p["heat_add"]), h0], TXT, HEAT_COL, cr.end.x - 4.0)
+		_coin(cr.position + Vector2(13.0, 49.0), 5.5)
+		_ts(cr.position + Vector2(24.0, 40.0), "+%d > %d" % [int(p["income"]), int(ns["bank"])], TXT, GOLD, cr.end.x - 4.0)
+		var ry := cr.position.y + 68.0
 		_beam_icons(Vector2(cr.position.x + 16.0, ry), kt, k0)
 		_tr(Vector2(cr.end.x - 7.0, ry - 9.0), "H%d" % h0, TXT, RED if k0 > 1 else DIM)
-		ry += 17.0
+		ry += 18.0
 		if ghost_ok:
 			_ghost_icon(Vector2(cr.position.x + 11.0, ry), 4.5, GOLD)
 			_beam_icons(Vector2(cr.position.x + 28.0, ry), kt, k1)
@@ -3588,29 +3857,21 @@ func _draw_between() -> void:
 		else:
 			_ghost_icon(Vector2(cr.position.x + 11.0, ry), 4.5, DIM)
 			_xmark(Vector2(cr.position.x + 11.0, ry), 4.0, DIM, 1.5)
-		var py := cr.position.y + 96.0
+		var py := cr.position.y + 100.0
 		_draw_perk(Vector2(cr.position.x + 6.0, py), nm, sel)
-		var dv := L8Rules.score(leg, ns) - s_now if int(ns["home_hp"]) > 0 else 0.0
-		_delta_r(Vector2(cr.end.x - 7.0, py - 1.0), dv)
-		var sv := _safe(b_repair, b_build, nm)
+		# L16 item 5: the projected Heat penalty at leg end and the leg-value delta, from score() on this state.
 		var badge := Rect2(cr.position.x + 5.0, cr.position.y + 122.0, cr.size.x - 10.0, 32.0)
-		if sv == 1:
-			_box(badge, HOLDS_COL, PANEL, 2.0)
-			_tier_glyph(badge.position + Vector2(12.0, 16.0), "HOLDS", 6.5, HOLDS_COL)
-			_ts(badge.position + Vector2(23.0, 7.0), "HOLDABLE", TXT, HOLDS_COL, badge.end.x - 3.0)
-		elif sv == 0:
-			_box(badge, RED, BLACK, 2.0)
-			_skull(badge.position + Vector2(12.0, 16.0), 6.5, RED, BLACK)
-			_ts(badge.position + Vector2(23.0, 7.0), "LOST", TXT, RED, badge.end.x - 3.0)
-		else:
-			_box(badge, EDGE, PANEL, 1.5)
-			cv.draw_arc(badge.position + Vector2(12.0, 16.0), 4.5, 0.0, TAU, 12, DIM, 1.5)
-			_ts(badge.position + Vector2(23.0, 7.0), "checking", TXT, DIM, badge.end.x - 3.0)
+		_box(badge, EDGE, PANEL, 1.5)
+		var pen := L8Rules.heat_cost(h0)
+		_flame(badge.position + Vector2(10.0, 17.0), 5.0)
+		_t(badge.position + Vector2(19.0, 7.0), "-%s" % _num(pen), TXT, HEAT_COL)
+		var dv := L8Rules.score(leg, ns) - s_now if int(ns["home_hp"]) > 0 else 0.0
+		_delta_r(Vector2(badge.end.x - 5.0, badge.position.y + 7.0), dv)
 	y += CARD_H + 8.0
 	var ns2: Dictionary = parts["state"]
 	var dec := _decided() == 1
 	if dec:
-		y = minf(y, LEGEND_Y - 110.0)
+		y = minf(y, LEGEND_Y - 112.0)
 		var dr := Rect2(x, y, w, 26.0)
 		cv.draw_rect(dr, BLACK)
 		cv.draw_rect(dr, RED, false, 2.0)
@@ -3632,13 +3893,14 @@ func _draw_between() -> void:
 func _draw_fall() -> void:
 	var x := PANEL_X + PAD
 	var y := _head("DECIDED", "The cell falls next raid.")
-	_skull(Vector2(x + 10.0, y + 10.0), 10.0, RED, BG)
+	_tier_glyph(Vector2(x + 10.0, y + 10.0), "BREACHED", 10.0, RED)
 	y += maxf(24.0, _tf(Vector2(x + 28.0, y), "No line keeps HOME above 0 in raid %d." % (decided_raid + 1), TXT, RED) + 6.0)
 	_tf(Vector2(x, y), "Every repair, build and intensity leaves a sealed route that ends the campaign.", TXT, DIM)
 
 
 # ---------------------------------------------------------------- RECORD
 func _enter_record() -> void:
+	_set_slim(false)
 	phase = Phase.RECORD
 	board.clear_highlight()
 	board.clear_outcome()
@@ -3665,10 +3927,10 @@ func _draw_record() -> void:
 		_tier_pip(Vector2(px0 + history.size() * 30.0, y + 15.0), "BREACHED", 11.0)
 	y += 38.0
 	if breached:
-		_skull(Vector2(x + 9.0, y + 11.0), 9.0, RED, BG)
+		_tier_glyph(Vector2(x + 9.0, y + 11.0), "BREACHED", 9.0, RED)
 		_ts(Vector2(x + 26.0, y), "BREACHED in raid %d: the campaign is lost." % history.size(), 18, RED, PANEL_X - 20.0)
 	elif decided:
-		_skull(Vector2(x + 9.0, y + 11.0), 9.0, RED, BG)
+		_tier_glyph(Vector2(x + 9.0, y + 11.0), "BREACHED", 9.0, RED)
 		_ts(Vector2(x + 26.0, y), "DECIDED before raid %d: no plan could hold HOME. The cell falls." % (decided_raid + 1), 18,
 			RED, PANEL_X - 20.0)
 	else:
@@ -3678,7 +3940,7 @@ func _draw_record() -> void:
 		var h: Dictionary = hv
 		var tier := String(h["tier"])
 		var tcol := _tier_col(tier)
-		var r := Rect2(x, y, 780.0, 74.0)
+		var r := Rect2(x, y, 780.0, 76.0)
 		if tier == "BREACHED":
 			_box(r, RED, BLACK, 3.0)
 		else:
@@ -3705,9 +3967,9 @@ func _draw_record() -> void:
 			if not _none(b["build"]):
 				bld = "cleaned a wound" if String(b["build"]) == L8Rules.CLEAN else "added a %s guard" % _tname(String(b["build"]))
 			var perk := ", 2 captures next raid" if int(b.get("extra_capture", 0)) > 0 else ""
-			_ts(r.position + Vector2(14.0, 53.0), "then %s, %s, ran %s (income +%d, Heat +%d%s)" % [rep, bld,
+			_ts(r.position + Vector2(14.0, 54.0), "then %s, %s, ran %s (income +%d, Heat +%d%s)" % [rep, bld,
 				String(b["intensity"]), int(b["income"]), int(b["heat_add"]), perk], TXT, DIM, r.end.x - 10.0)
-		y += 82.0
+		y += 84.0
 	var live := L8Rules.live_cells(st)
 	var ex_kept := 0
 	for c: Variant in leg["exploits"]:
@@ -3740,8 +4002,7 @@ func _draw_record() -> void:
 			var a: Array = rw
 			var val := String(a[1])
 			_tr(Vector2(px + w, py), val, 14, AMBER)
-			_ts(Vector2(px, py), String(a[0]), 14, INK, px + w - _tw(val, 14) - 10.0)
-			py += 24.0
+			py += maxf(24.0, _ts(Vector2(px, py), String(a[0]), 14, INK, px + w - _tw(val, 14) - 10.0) + 5.0)
 		cv.draw_line(Vector2(px, py + 2.0), Vector2(px + w, py + 2.0), EDGE, 2.0)
 		py += 10.0
 		_t(Vector2(px, py), "TOTAL", 18, INK)
@@ -3760,8 +4021,9 @@ func _draw_ui() -> void:
 		_t(Vector2(40.0, 40.0), load_error, 18, RED)
 		return
 	_draw_hud()
-	cv.draw_rect(Rect2(PANEL_X, HUD_H, PANEL_W, LEGEND_Y - HUD_H), Color(PANEL, 0.93))
-	cv.draw_line(Vector2(PANEL_X, HUD_H), Vector2(PANEL_X, LEGEND_Y), EDGE, 1.0)
+	var px := _px()
+	cv.draw_rect(Rect2(px, HUD_H, VIEW.x - px, LEGEND_Y - HUD_H), Color(PANEL, 0.93))
+	cv.draw_line(Vector2(px, HUD_H), Vector2(px, LEGEND_Y), EDGE, 1.0)
 	match phase:
 		Phase.DECAY:
 			_draw_decay()
@@ -3834,11 +4096,15 @@ func _draw_hud() -> void:
 	if ghosts != heat_ghosts_k:
 		heat_ghosts_k = ghosts
 		board.set_heat_ghosts(ghosts, ghosts < 2)
+	var fan := heat >= L8Rules.STRONG_AT
+	if fan != fan_on:
+		fan_on = fan
+		board.set_fan(fan)
 	var hx := 20.0
 	var hy := 30.0
 	var hw := 300.0
 	var hh := 16.0
-	_t(Vector2(hx, 7.0), "HEAT", TXT, DIM)
+	_t(Vector2(hx, 7.0), "HEAT", BAR_TXT, DIM)
 	cv.draw_rect(Rect2(hx, hy, hw, hh), Color8(20, 22, 36))
 	var f := clampf(float(heat) / HEAT_MAX, 0.0, 1.0)
 	cv.draw_rect(Rect2(hx, hy, hw * f, hh), AMBER.lerp(RED, f))
@@ -3849,18 +4115,18 @@ func _draw_hud() -> void:
 		var col := RED if lit else DIM
 		cv.draw_line(Vector2(nx, hy - 5.0), Vector2(nx, hy + hh + 5.0), INK if lit else DIM, 3.0)
 		var lab := "%d" % at
-		_t(Vector2(nx + 4.0, 7.0), lab, TXT, col)
-		var ix := nx + 4.0 + _tw(lab, TXT) + 10.0
+		_t(Vector2(nx + 4.0, 7.0), lab, BAR_TXT, col)
+		var ix := nx + 4.0 + _tw(lab, BAR_TXT) + 10.0
 		_beam_tick(Vector2(ix, 15.0), col)
 		_card_tick(Vector2(ix + 15.0, 15.0), GOLD if lit else DIM)
 	_t(Vector2(hx + hw + 12.0, 14.0), str(heat), 28, HEAT_COL)
 	if String(v["note"]) != "":
-		_ts(Vector2(hx + hw + 62.0, 12.0), String(v["note"]), TXT, DIM, hx + hw + 156.0)
+		_t(Vector2(hx + hw + 62.0, 12.0), String(v["note"]), BAR_TXT, DIM)
 	var hn := hand_ids.size() if (_hand_phase() and not hand_ids.is_empty()) else L8Rules.hand_size(heat)
-	_ts(Vector2(hx + hw + 62.0, 32.0), "hand %d" % hn, TXT, GOLD if hn > L8Rules.HAND_BASE else DIM, hx + hw + 156.0)
-	_t(Vector2(480.0, 7.0), "RAID", TXT, DIM)
+	_t(Vector2(hx + hw + 62.0, 32.0), "hand %d" % hn, BAR_TXT, GOLD if hn > L8Rules.HAND_BASE else DIM)
+	_t(Vector2(480.0, 7.0), "RAID", BAR_TXT, DIM)
 	_t(Vector2(480.0, 22.0), "%d/%d" % [mini(raid + 1, L8Rules.RAIDS), L8Rules.RAIDS], 24, INK)
-	_t(Vector2(560.0, 7.0), "HOME", TXT, DIM)
+	_t(Vector2(560.0, 7.0), "HOME", BAR_TXT, DIM)
 	var hp := int(v["hp"])
 	var lethal := hp == 1
 	if lethal != lethal_on:
@@ -3879,16 +4145,21 @@ func _draw_hud() -> void:
 		else:
 			cv.draw_rect(pr, RED.darkened(0.5))
 			cv.draw_rect(pr, RED, false, 2.0)
-	_t(Vector2(670.0, 7.0), "BANK", TXT, DIM)
+	_t(Vector2(670.0, 7.0), "BANK", BAR_TXT, DIM)
 	_t(Vector2(670.0, 22.0), str(int(v["bank"])), 24, GOLD)
-	_t(Vector2(750.0, 7.0), "LEG VALUE NOW", TXT, DIM)
+	_t(Vector2(750.0, 7.0), "LEG VALUE NOW", BAR_TXT, DIM)
 	_t(Vector2(750.0, 20.0), String(v["score"]), 22, INK)
-	_ts(Vector2(750.0, 45.0), _parts_text(v["sstate"]), TXT, DIM, VIEW.x - PAD)
+	var pt := _parts_text(v["sstate"])
+	var ps := BAR_TXT
+	while ps > 10 and _tw(pt, ps) > VIEW.x - PAD - 750.0:
+		ps -= 1
+	_t(Vector2(750.0, 46.0), pt, ps, DIM)
 	var tag := "L8 CITY RAID  |  leg %d" % leg_seed
 	if auto_line != "":
 		tag += "  |  auto %s" % auto_line
-	_tr(Vector2(VIEW.x - PAD, 6.0), tag, TXT, DIM)
-	_tr(Vector2(VIEW.x - PAD, 24.0), "speed %dx%s" % [int(speed), "  instant" if instant else ""], TXT, DIM)
+	_tr(Vector2(VIEW.x - PAD, 6.0), tag, BAR_TXT, DIM)
+	_tr(Vector2(VIEW.x - PAD, 24.0), "speed %dx%s%s" % [int(speed), "  instant" if instant else "",
+		"  (2x locked)" if fast else ""], BAR_TXT, GOLD if fast else DIM)
 
 
 ## Overlay marks on the board: cell tags, repair costs, check rings, the DEPLOY line from the response card to its
@@ -3896,7 +4167,9 @@ func _draw_hud() -> void:
 func _draw_board_marks() -> void:
 	if phase in [Phase.PLAN, Phase.FORECAST, Phase.RESPONSE, Phase.AFTER, Phase.BETWEEN, Phase.DECAY, Phase.FALL]:
 		for c: Vector2i in L8Rules.CELLS:
-			_tc(_screen(c) + Vector2(0.0, 36.0), _cell_name(c), TXT, Color(DIM, 0.9))
+			var p := _screen(c)
+			if p.x < _px():
+				_tc(p + Vector2(0.0, 36.0), _cell_name(c), BAR_TXT, Color(DIM, 0.9))
 	if phase == Phase.BETWEEN:
 		for dv: Variant in _down_cells():
 			var c: Vector2i = dv
@@ -3919,7 +4192,6 @@ func _draw_board_marks() -> void:
 				var a := _card_rect(ci).get_center() if ci >= 0 else DECK_POS
 				var b := _screen(r[2])
 				cv.draw_line(a, b, Color(col, 0.7), 2.0)
-				cv.draw_arc(b, 30.0, 0.0, TAU, 32, col, 2.5)
 	if not fly_cards.is_empty():
 		var keep: Array = []
 		var now := _now()
@@ -3939,43 +4211,81 @@ func _draw_board_marks() -> void:
 		return
 	if not (phase in [Phase.CAPTURE, Phase.PLAN, Phase.FORECAST, Phase.RESPONSE, Phase.BETWEEN]):
 		return
-	if mouse.x >= PANEL_X or mouse.y < HUD_H or mouse.y > LEGEND_Y or resp_pop_rect.has_point(mouse):
+	if mouse.x >= _px() or mouse.y < HUD_H or mouse.y > LEGEND_Y or resp_pop_rect.has_point(mouse):
 		return
 	var hc: Variant = _pick(mouse, phase == Phase.PLAN or phase == Phase.FORECAST)
 	if not _none(hc):
 		cv.draw_arc(_screen(hc), 30.0, 0.0, TAU, 32, INK, 2.0)
 
 
-## The bottom bar: legend and hint (right of the deck strip); in the hand phases the hand row takes the left part and
-## the hint wraps in the right part.
+## L16 item 3: the tier ladder width at a font size.
+func _ladder_w(size: int) -> float:
+	var w := 0.0
+	for tv: Variant in TIER_LADDER:
+		w += 17.0 + _tw(String(tv), size) + 10.0
+	return w - 10.0
+
+
+## The tier ladder (glyph + one word, best to worst) with its center line at p.y.
+func _draw_ladder(p: Vector2, size: int) -> void:
+	var x := p.x
+	var h := font.get_height(size)
+	for tv: Variant in TIER_LADDER:
+		var t: String = tv
+		_tier_glyph(Vector2(x + 7.0, p.y), t, 7.0, _tier_col(t))
+		_t(Vector2(x + 17.0, p.y - h * 0.5), t, size, _tier_col(t))
+		x += 17.0 + _tw(t, size) + 10.0
+
+
+## The bottom bar: legend with the pinned tier ladder, and the hint (right of the deck strip); in the hand phases the
+## hand row takes the left part, and the right part holds the tier ladder over the wrapped hint.
 func _draw_bottom() -> void:
 	cv.draw_rect(Rect2(0.0, LEGEND_Y, VIEW.x, VIEW.y - LEGEND_Y), Color(BG, 0.92))
 	cv.draw_line(Vector2(0.0, LEGEND_Y), Vector2(VIEW.x, LEGEND_Y), EDGE, 1.0)
 	var msg := status_msg if status_msg != "" else _hint()
-	if auto_line != "" and status_msg == "":
-		msg = "[AUTO %s] %s" % [auto_line.to_upper(), msg]
 	var col := AMBER if status_msg != "" else DIM
 	if _hand_phase():
 		cv.draw_line(Vector2(PANEL_X, LEGEND_Y), Vector2(PANEL_X, VIEW.y), EDGE, 1.0)
-		var lines := _wrap(msg, TXT, PANEL_W - 2.0 * PAD)
-		for i in range(mini(lines.size(), 3)):
-			_t(Vector2(PANEL_X + PAD, LEGEND_Y + 2.0 + float(i) * 15.0), lines[i], TXT, col)
+		var maxw := PANEL_W - 16.0
+		var ls := BAR_TXT
+		while ls > 10 and _ladder_w(ls) > maxw:
+			ls -= 1
+		_draw_ladder(Vector2(PANEL_X + 8.0, LEGEND_Y + 10.0), ls)
+		var lines := _wrap(msg, BAR_TXT, maxw)
+		for i in range(mini(lines.size(), 2)):
+			_t(Vector2(PANEL_X + 8.0, LEGEND_Y + 19.0 + float(i) * 14.0), lines[i], BAR_TXT, col)
 		return
+	if auto_line != "" and status_msg == "":
+		msg = "[AUTO %s] %s" % [auto_line.to_upper(), msg]
 	_draw_legend()
-	_ts(Vector2(HAND_X, HINT_Y + 3.0), msg, TXT, col, VIEW.x - PAD)
+	var hs := BAR_TXT
+	while hs > 10 and _tw(msg, hs) > VIEW.x - PAD - HAND_X:
+		hs -= 1
+	_t(Vector2(HAND_X, HINT_Y + 3.0), msg, hs, col)
 
 
 func _draw_legend() -> void:
 	var y := LEGEND_Y + 12.0
+	var lw := _ladder_w(BAR_TXT)
+	var lx := VIEW.x - PAD - lw
+	_draw_ladder(Vector2(lx, y), BAR_TXT)
+	cv.draw_line(Vector2(lx - 10.0, LEGEND_Y + 3.0), Vector2(lx - 10.0, LEGEND_Y + 21.0), EDGE, 1.0)
+	var stop := lx - 16.0
 	var x := HAND_X
 	for tv: Variant in L8Rules.TYPES:
 		var t: String = tv
+		var tw := _tw(_tname(t), BAR_TXT)
+		if x + 20.0 + tw > stop:
+			return
 		_glyph(Vector2(x + 8.0, y), t, 8.0, TYPE_COLOR[t])
-		_t(Vector2(x + 20.0, y - 9.0), _tname(t), TXT, INK)
-		x += 32.0 + _tw(_tname(t), TXT)
+		_t(Vector2(x + 20.0, y - 9.0), _tname(t), BAR_TXT, INK)
+		x += 26.0 + tw
 	var items: Array = ["SENTRY", "GHOST", "DOWN", "TAKEN", "EXPLOIT", "HUNTER", "HOME", "WOUND"]
 	for iv: Variant in items:
 		var it: String = iv
+		var tw := _tw(it, BAR_TXT)
+		if x + 20.0 + tw > stop:
+			return
 		var c := Vector2(x + 8.0, y)
 		match it:
 			"SENTRY":
@@ -3995,8 +4305,8 @@ func _draw_legend() -> void:
 			"WOUND":
 				cv.draw_rect(Rect2(c - Vector2(5.0, 7.0), Vector2(10.0, 14.0)), WOUND_FILL)
 				_xmark(c, 4.0, RED, 1.5)
-		_t(Vector2(x + 20.0, y - 9.0), it, TXT, DIM)
-		x += 32.0 + _tw(it, TXT)
+		_t(Vector2(x + 20.0, y - 9.0), it, BAR_TXT, DIM)
+		x += 26.0 + tw
 
 
 ## The hand row (a Control of its own): wordless cards (verb glyph dominant, type corner badge, wounds cracked with a
@@ -4057,11 +4367,11 @@ func _draw_hand() -> void:
 			_verb_glyph(gc, verb, 13.0, DIM if dim else INK)
 			_glyph(r.position + Vector2(10.0, 10.0), t, 6.0, col.darkened(0.45) if dim else col)
 		if phase == Phase.PLAN or phase == Phase.FORECAST:
-			_tr(Vector2(r.end.x - 6.0, r.position.y + 2.0), "[%d]" % (i + 1), TXT, DIM)
+			_tr(Vector2(r.end.x - 6.0, r.position.y + 2.0), "[%d]" % (i + 1), BAR_TXT, DIM)
 		else:
-			_tr(Vector2(r.end.x - 6.0, r.position.y + 2.0), id, TXT, LATER)
+			_tr(Vector2(r.end.x - 6.0, r.position.y + 2.0), id, BAR_TXT, LATER)
 		if tag != "":
-			_tr(Vector2(r.end.x - 6.0, r.position.y + 22.0), tag, TXT, tag_col)
+			_tr(Vector2(r.end.x - 6.0, r.position.y + 22.0), tag, BAR_TXT, tag_col)
 		if phase in [Phase.PLAN, Phase.FORECAST, Phase.RESPONSE]:
 			hand_hits.append({"rect": r, "id": "card:%d" % i})
 
@@ -4077,7 +4387,7 @@ func _draw_deck() -> void:
 	var r := Rect2(0.0, LEGEND_Y, DECK_W, VIEW.y - LEGEND_Y)
 	cv.draw_rect(r, Color(BG, 0.96))
 	cv.draw_line(Vector2(r.end.x, LEGEND_Y), Vector2(r.end.x, VIEW.y), EDGE, 1.0)
-	_t(Vector2(6.0, LEGEND_Y + 2.0), "DECK %d" % deck.size(), TXT, DIM)
+	_t(Vector2(6.0, LEGEND_Y + 2.0), "DECK %d" % deck.size(), BAR_TXT, DIM)
 	for i in range(deck.size()):
 		var cd: Array = deck[i]
 		var col_i := i % PIP_COLS
@@ -4109,10 +4419,10 @@ func _draw_deck() -> void:
 	var bw := 0.0
 	for lv: Variant in lines:
 		bw = maxf(bw, _tw(String(lv), TXT))
-	var box := Rect2(4.0, LEGEND_Y - 10.0 - lines.size() * 18.0 - 8.0, bw + 20.0, lines.size() * 18.0 + 10.0)
+	var box := Rect2(4.0, LEGEND_Y - 10.0 - lines.size() * 19.0 - 8.0, bw + 20.0, lines.size() * 19.0 + 10.0)
 	_box(box, EDGE, Color(PANEL, 0.97), 1.5)
 	for k in range(lines.size()):
-		_t(box.position + Vector2(10.0, 5.0 + k * 18.0), String(lines[k]), TXT, RED if k == 3 and wn > 0 else INK)
+		_t(box.position + Vector2(10.0, 5.0 + k * 19.0), String(lines[k]), TXT, RED if k == 3 and wn > 0 else INK)
 
 
 func _hint() -> String:
@@ -4124,19 +4434,23 @@ func _hint() -> String:
 				return "CAPTURE: claim %d of %d (HOT perk). Click a glowing district, or its row in the panel." % [cap_cells.size() + 1, cap_slots]
 			return "CAPTURE: click a glowing district, or its row in the panel."
 		Phase.DRAW:
-			return "DRAW: the run deck deals this raid's hand. 1 2 4 set the speed, I toggles instant."
+			return "DRAW: the run deck deals this raid's hand. 1 2 4 speed, I instant."
 		Phase.PLAN:
-			return "PLAN: 1-6 or a card, then a district (2 at most). G ghost. Q W E route A, R route B, H hunter. Z undo, Enter forecast."
+			return "PLAN: 1-6 a card, then a district (2 max). G ghost. Q W E, R, H outcomes. Z undo, Enter forecast."
 		Phase.FORECAST:
 			if launch_armed:
-				return "FORECAST: Enter again launches anyway; B or any edit returns to the plan."
+				return "FORECAST: Enter again launches anyway; B or an edit goes back."
 			if fric > 0:
-				return "FORECAST: this launch needs a second Enter. Q W E, R, H or a table cell show an outcome; B goes back."
-			return "FORECAST: Q W E, R, H or a table cell show an outcome on the board. Enter launches, B goes back."
+				return "FORECAST: launching needs a second Enter. Q W E, R, H show outcomes; B goes back."
+			return "FORECAST: Q W E, R, H or a cell show an outcome. Enter launches, B goes back."
 		Phase.PLAY, Phase.REVEAL:
+			if fast:
+				return "PLAYOUT: LOCKED, fast resolve at 2x. 1 2 4 set the speed, I toggles instant."
 			return "PLAYOUT: 1 2 4 set the speed, I toggles instant."
 		Phase.RESPONSE:
-			return "RESPONSE: rows show worst / best of 4. H holds, J jams; a sentry then a district (REDEPLOY); a card or 1 2 3 then a district (DEPLOY)."
+			if hold_armed:
+				return "RESPONSE: H again holds anyway; any other row or key cancels."
+			return "RESPONSE: hover a row to preview. H hold, J jam. Sentry > district moves; card or 1 2 3 > district deploys."
 		Phase.AFTER:
 			return "AFTERMATH: Enter goes on."
 		Phase.BETWEEN:
@@ -4272,7 +4586,8 @@ func _verify_safe(s: Dictionary) -> void:
 
 ## Replay the golden line's choices (every capture, the card placement, the response, the between step) through the
 ## same UI handlers. DECAY and DRAW run on their own; the golden hand is checked against the dealt one. The launch
-## friction, when it shows, is shot and confirmed at once.
+## friction and the HOLD confirm, when they show, are shot and confirmed at once. A skipped RESPONSE (LOCKED, nothing
+## changes) holds on its own.
 func _run_auto() -> void:
 	var steps: Array = leg_entry.get(auto_line, [])
 	if shots_dir != "":
@@ -4312,11 +4627,17 @@ func _run_auto() -> void:
 		if phase == Phase.FORECAST and launch_armed:
 			await _beat("r%d_launch_friction" % rn)
 			_launch()
-		await _until([Phase.RESPONSE])
+		await _until([Phase.RESPONSE, Phase.AFTER])
 		var resp := L8Rules.norm_response(s["response"])
-		_auto_select(resp)
-		await _beat("r%d_response" % rn)
-		_auto_respond(resp)
+		if phase == Phase.RESPONSE:
+			_auto_select(resp)
+			await _beat("r%d_response" % rn)
+			_auto_respond(resp)
+			if phase == Phase.RESPONSE and hold_armed:
+				await _beat("r%d_hold_confirm" % rn)
+				_auto_respond(resp)
+		elif not resp.is_empty() and String(resp[0]) != "HOLD":
+			push_warning("auto %s raid %d: response skipped (LOCKED), golden %s" % [auto_line, rn, str(resp)])
 		await _until([Phase.AFTER])
 		_verify(s)
 		await _beat("r%d_aftermath" % rn)

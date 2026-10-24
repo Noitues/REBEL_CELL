@@ -545,3 +545,26 @@ Review: `_reviews/REVIEW_LAB_L14_batch.md`.
 - The rules idea goes to the backlog as R15.
 
 Review: `_reviews/REVIEW_LAB_L15_batch.md`.
+
+## L16 (batch, 2026-10-24): presentation only
+
+| Total | S | V | Fit |
+|---|---|---|---|
+| **38** | 5 | 7 | 8 |
+
+**Changes (presentation only):**
+- fast resolve when a raid is locked;
+- response previews on the board;
+- five tier shapes;
+- the HOLD confirm at HOME 1;
+- Heat priced on the intensity cards;
+- a wider board during playout.
+
+**Critic:**
+- 38 is level with L15. V rose to 7.
+- A bare "LOCKED" label hid that a SACRIFICE would have saved HOME, so the guard must be honest.
+- D and S are a rules ceiling: polish tops out around 41–42.
+- **Next:** L17 presentation (an honest guard line, the confirm at any HOME, the forecast ghosted on the board).
+- A further rules lever goes to R15 in the backlog: let JAM also cancel sealed B, or let SHIFT act after reveal B.
+
+Review: `_reviews/REVIEW_LAB_L16_batch.md`.
