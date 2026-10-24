@@ -522,3 +522,26 @@ Review: `_reviews/REVIEW_LAB_L13_batch.md`.
 - **Next:** L15, a presentation-only round.
 
 Review: `_reviews/REVIEW_LAB_L14_batch.md`.
+
+## L15 (batch, 2026-10-24): presentation only
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 9 | 6 | 7 | 9 | **39** | 5 | 6 | **8** |
+
+**Changes (presentation only):**
+- response results inline, with free gold edges on rows that beat HOLD; SCAN removed;
+- LOCKED labels;
+- ghost rows that give a reason;
+- the launch confirm fixed;
+- wordless cards and intensity icons;
+- dimmed DONE beams.
+
+**Critic:**
+- **39, the best batch score so far.** It ties Invisible, Inc.
+- S drops to 5 because most raids are LOCKED at PLAN. The critic calls this the Into the Breach trade.
+- **Next:** L16 presentation (fast resolve when locked, glyph-first responses, five tier shapes, Heat priced on the
+  cards, more room for the board).
+- The rules idea goes to the backlog as R15.
+
+Review: `_reviews/REVIEW_LAB_L15_batch.md`.

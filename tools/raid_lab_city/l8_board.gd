@@ -1,10 +1,10 @@
 class_name L8Board
 extends Node3D
-## The city view of raid lab L8 (SPEC section 8, with the L9-L12 presentation changes, the L13 UI and the L14 UI). It
-## shows a dark slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the
-## right. Three lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the
-## corp end of the routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with
-## rings, value pips and exploit keys. The board also draws:
+## The city view of raid lab L8 (SPEC section 8, with the L9-L12 presentation changes, the L13 UI, the L14 UI and the
+## L15 UI). It shows a dark slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp
+## HQ on the right. Three lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit
+## at the corp end of the routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters
+## with rings, value pips and exploit keys. The board also draws:
 ## - sentries, the ghost and the sealed candidates. L13: the three candidates share one "?" glyph, tethered to each,
 ##   that collapses into the real one at the reveal;
 ## - typed vehicles that travel the lines;
@@ -24,7 +24,7 @@ extends Node3D
 ##   HQ) to the target cell for REDEPLOY / DEPLOY, a red cross over the hound for JAM, and (L13) for SACRIFICE the cell
 ##   crumbling under a cobalt veil with a shield dome over our HQ;
 ## - L13 Heat ghosts: one ghost beam on the corp tower per extra beam the current Heat brings, plus a faint one for the
-##   next threshold (set_heat_ghosts). L14: each ghost carries a small gold-edged "+1 card" tag;
+##   next threshold (set_heat_ghosts). L15: each ghost carries two small icons, a beam "+1" and a card "+1";
 ## - decay beats, where a cell left DOWN flips to cobalt TAKEN with a pulse;
 ## - the decided fall beat: our HQ tower turns red and collapses, with a red skull over the rubble;
 ## - highlights by meaning: an amber plus (capture), a red wrench outline (repair), a white check ring (picked) and
@@ -37,14 +37,21 @@ extends Node3D
 ## - wound_fly: a cracked gray card flies from a district to a screen point (the lab's deck strip);
 ## - the second sealed beam: show_b_cands / reveal_b, and a sealed_b beam spawns from the lit B convoy;
 ## - set_fit_free: the free screen area the camera fills (room for the hand row and the deck strip).
+## L15 additions (all additive):
+## - playout clarity: only the current beam's trail is at full strength; DONE beams dim to 25% alpha with thin lines
+##   (automatically when another beam starts moving, or with set_beam_done). Block markers and hit glyph stacks are
+##   drawn only for the current beam; every hit cell keeps a small red X for the rest of the raid;
+## - the hunter candidate streets fade once the hunter is revealed and runs (the dissolved street is no longer kept);
+## - home glyphs: per route, the worst tier glyph at the route's lane end at our HQ (show_home_glyphs).
 ## Everything is built in code, and it runs inside a SubViewport that the main scene creates. It holds no rule. The lab
 ## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`), an outcome (`show_outcome`),
-## route verdicts (`show_route_verdicts`), the hunter streets (`show_hunter_cands`), the B routes (`show_b_cands`), a
-## response preview (`show_response_preview`), the Heat ghosts (`set_heat_ghosts`) and a playout's cues (`play`,
-## `hunter_reveal`, `reveal_b`, `decay`, `show_fall`, `wound_fly`); the board only draws them. `set_scramble` swaps the
-## board labels for seeded noise. The camera is fitted to the board's real geometry (slab, HQ towers, labels) so it
-## fills the free area left of the side panel, with no dark sky margin; the starfield is dimmed. Glow is capped while
-## impacts flash, so hits read as shapes. Cosmetic motion is seeded or time-based, never global random.
+## route verdicts (`show_route_verdicts`), home glyphs (`show_home_glyphs`), the hunter streets (`show_hunter_cands`),
+## the B routes (`show_b_cands`), a response preview (`show_response_preview`), the Heat ghosts (`set_heat_ghosts`)
+## and a playout's cues (`play`, `hunter_reveal`, `reveal_b`, `decay`, `show_fall`, `wound_fly`); the board only draws
+## them. `set_scramble` swaps the board labels for seeded noise. The camera is fitted to the board's real geometry
+## (slab, HQ towers, labels) so it fills the free area left of the side panel, with no dark sky margin; the starfield
+## is dimmed. Glow is capped while impacts flash, so hits read as shapes. Cosmetic motion is seeded or time-based,
+## never global random.
 
 signal cues_finished
 
@@ -153,6 +160,8 @@ const E_VERB := 2.0
 const E_GOLD := 2.4
 const E_WOUND := 0.9
 const E_WOUND_EDGE := 1.2
+## L15: the small persistent X on a hit cell.
+const E_HIT_X := 2.0
 const DECAL_ALPHA := 0.18
 const HALO_ALPHA := 0.35
 const HALO_E_K := 0.6
@@ -463,6 +472,8 @@ const HC_PAW_S := 1.0
 const HC_Q_Y := 1.25
 const HC_Q_S := 1.0
 const HC_RING_K := 0.9
+## L15: once the revealed hunter starts its run, its candidate lane fades to this fraction (alpha and emission).
+const HC_DONE_K := 0.25
 const PAW_BACK_R := 0.27
 const PAW_PAD_R := 0.1
 const PAW_PAD := Vector2(0.0, -0.06)
@@ -490,7 +501,7 @@ const PATH_GLYPH_S := 0.16
 const ARROW_L := 0.42
 const ARROW_W := 0.09
 const ARROW_ANG := 0.62
-## Playout trails: solid lanes that fade to a resting glow, plus persistent hit, block, home, turn and jam marks.
+## Playout trails: solid lanes that fade to a resting glow, plus hit, block, home, turn and jam marks.
 const TRAIL_W := 0.14
 const TRAIL_DOT_R := 0.12
 const TRAIL_MIN := 0.05
@@ -498,10 +509,19 @@ const TRAIL_ALPHA := 0.95
 const TRAIL_REST := 0.6
 const TRAIL_REST_E := 0.55
 const TRAIL_FADE_T := 1.6
+## L15 DONE beams: their trail drops to this fraction of its alpha (25%) and emission, and its lines thin to DONE_W_K.
+const DONE_ALPHA_K := 0.25
+const DONE_E_K := 0.35
+const DONE_W_K := 0.45
 const HIT_MARK_R := Vector2(1.16, 1.25)
 const HIT_GLYPH_POS := Vector3(0.95, 0.35, 0.95)
 const HIT_GLYPH_STEP := Vector3(-0.34, 0.0, 0.0)
 const HIT_GLYPH_S := 0.15
+## L15: the small persistent X on every cell hit this raid (front-left of the cell, on a dark disc).
+const HIT_X_POS := Vector3(-0.95, 0.35, 0.95)
+const HIT_X_BAR := Vector3(0.26, 0.055, 0.04)
+const HIT_X_BACK_R := 0.17
+const HIT_X_Z := 0.02
 const BLOCK_DOME_R := 0.62
 const BLOCK_DOME_FLAT := 0.7
 const BLOCK_BAR := Vector3(0.1, 0.14, 0.9)
@@ -562,6 +582,12 @@ const HEART_BACK_R := 0.3
 const HEART_BREAK_W := 0.045
 const HEART_BREAK_Z := 0.03
 const HEART_BREAK := [Vector2(0.0, 0.17), Vector2(0.05, 0.05), Vector2(-0.04, -0.05), Vector2(0.03, -0.15), Vector2(0.0, -0.26)]
+## L15 home glyphs: each route's worst tier glyph on the road between our HQ platform and the first district (world
+## units right of our HQ's center), smaller than the corp-side verdicts.
+const HOME_GLYPH_DX := 1.45
+const HOME_GLYPH_FWD := 0.35
+const HOME_GLYPH_S := 0.95
+const HOME_GLYPH_SKULL_S := 0.52
 
 ## Response preview: an arc arrow from the source to the target (ends cut back so it lands on the rings), a cone head,
 ## a spinning dashed ring at a sentry source, the reserve tray at our HQ for DEPLOY, a ghost sentry at the target, and
@@ -625,16 +651,21 @@ const E_HG := 2.2
 const E_HG_FAINT := 0.6
 const HG_PULSE := 0.35
 const HG_HZ := 0.9
-## L14 "+1 card" tags: a small gold-edged card glyph above each ghost's tip with a short label beside it (toward the
-## tower). The faint ghost's tag is faint too.
+## L15 tick icons (replacing the L14 "+1 card" tag): above each ghost's tip, a beam icon "+1" and a gold-edged card
+## icon "+1", side by side (toward the tower). The faint ghost's icons are faint too.
 const HG_TAG_DX := 0.25
 const HG_TAG_Y := 0.2
 const HG_TAG_CARD := Vector3(0.13, 0.19, 0.02)
 const HG_TAG_EDGE := 0.025
 const HG_TAG_FONT := 30
-const HG_TAG_LX := 0.12
-const HG_TAG_TEXT := "+1 card"
+const HG_TAG_LX := 0.14
+const HG_TAG_TEXT := "+1"
 const HG_TAG_A_FAINT := 0.35
+const HG_ICON_X := [0.0, 0.5]
+const HG_ICON_BACK_R := 0.12
+const HG_ICON_LINE := 0.04
+const HG_BEAM_PTS := [Vector2(0.1, 0.0), Vector2(-0.09, 0.0)]
+const HG_BEAM_HEAD := [[Vector2(-0.1, 0.0), Vector2(-0.03, 0.06)], [Vector2(-0.1, 0.0), Vector2(-0.03, -0.06)]]
 
 ## Highlights by meaning. Capture: an amber plus over the district and a pulsing amber ring. Repair: a red outline
 ## around the district's wrench and a red hex ring. Picked: a steady white ring with a check on its camera-side edge.
@@ -749,6 +780,7 @@ var _board: Node3D
 var _path_root: Node3D
 var _outcome_root: Node3D
 var _verdict_root: Node3D
+var _home_glyph_root: Node3D
 var _hunter_root: Node3D
 var _b_root: Node3D
 var _resp_root: Node3D
@@ -838,6 +870,10 @@ var _trail_arrow: Dictionary = {}
 var _lane: Dictionary = {}
 var _road_use: Dictionary = {}
 var _hit_count: Dictionary = {}
+## L15: per playout line, {beam, mats, thin: [[node, kind]], marks: Node3D or null, done}.
+var _beam_rec: Dictionary = {}
+var _active_line: int = NO_LINE
+var _hit_x: Dictionary = {}
 var _queue: Array = []
 var _qi: int = -1
 var _cur_cue: Dictionary = {}
@@ -862,6 +898,8 @@ func _init() -> void:
 	add_child(_outcome_root)
 	_verdict_root = Node3D.new()
 	add_child(_verdict_root)
+	_home_glyph_root = Node3D.new()
+	add_child(_home_glyph_root)
 	_hunter_root = Node3D.new()
 	add_child(_hunter_root)
 	_b_root = Node3D.new()
@@ -888,9 +926,9 @@ func _ready() -> void:
 # ======================= public API =======================
 ## Build the board for a leg: {w, h, values: {Vector2i: int}, exploits: Array[Vector2i]}. The optional keys
 ## route_names (3 Strings) and street_names (w Strings) replace the board's coordinate labels. set_scramble() still
-## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts, hunter street candidates, B
-## candidates, wound cards in flight and crack decals are cleared; the Heat ghosts are rebuilt from the last
-## set_heat_ghosts().
+## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts, home glyphs, hunter street
+## candidates, B candidates, wound cards in flight and crack decals are cleared; the Heat ghosts are rebuilt from the
+## last set_heat_ghosts().
 func setup(leg: Dictionary) -> void:
 	_w = int(leg.get("w", DEFAULT_W))
 	_h = int(leg.get("h", DEFAULT_H))
@@ -906,6 +944,7 @@ func setup(leg: Dictionary) -> void:
 	clear_outcome()
 	clear_response_preview()
 	hide_route_verdicts()
+	clear_home_glyphs()
 	clear_hunter_cands()
 	_clear_wounds()
 	_cracked.clear()
@@ -1101,7 +1140,8 @@ func wound_fly(cell: Vector2i, to: Vector2) -> Signal:
 ## street is a dashed cobalt hound lane with a pawprint at its head and a "?" badge above it; the hound (glowing eyes,
 ## type badge) stands between the two heads. Both streets count as used (they stay visible while paths are shown).
 ## real >= 0 shows the settled reveal at once. Replaces any shown before; they stay through play() until
-## clear_hunter_cands() or setup(). The next hunter cue spawns its hound where this one stands.
+## clear_hunter_cands() or setup(). The next hunter cue spawns its hound where this one stands. L15: after the reveal
+## the dissolved street stops counting as used, and once the hunter starts its run the revealed lane fades.
 func show_hunter_cands(streets: Array, type: String, real: int = -1) -> void:
 	clear_hunter_cands()
 	var heads: Array = []
@@ -1183,8 +1223,8 @@ func clear_hunter_cands() -> void:
 
 
 ## L13: the Heat ghosts on the corp tower: `active` bright ghost beams (one per extra beam the current Heat brings) and,
-## when next_faint, one faint ghost for the next threshold. L14: with tags (the default) each ghost carries a small
-## gold-edged "+1 card" tag (the extra card the band deals). Kept across setup().
+## when next_faint, one faint ghost for the next threshold. L15: with tags (the default) each ghost carries two small
+## icons, a beam "+1" and a gold-edged card "+1" (what the band brings). Kept across setup().
 func set_heat_ghosts(active: int, next_faint: bool, tags: bool = true) -> void:
 	_hg_active = maxi(0, active)
 	_hg_faint = next_faint
@@ -1307,6 +1347,39 @@ func hide_route_verdicts() -> void:
 		ch.queue_free()
 
 
+## L15: per route, its worst tier glyph at the route's lane end at our HQ (between our HQ platform and the first
+## district), with a ring on the road. per_route holds either tier Strings indexed by route (null or "" skips a route)
+## or {route: int, tier: String} entries. Same glyphs as the route verdicts (heart, broken heart, skull). Replaces any
+## shown before; they stay (play() keeps them) until clear_home_glyphs() or setup().
+func show_home_glyphs(per_route: Array) -> void:
+	clear_home_glyphs()
+	if _home_root == null:
+		return
+	for i in range(per_route.size()):
+		var ev: Variant = per_route[i]
+		var route := i
+		var t := ""
+		if ev is Dictionary:
+			route = int((ev as Dictionary).get("route", i))
+			t = str((ev as Dictionary).get("tier", ""))
+		elif typeof(ev) == TYPE_NIL:
+			continue
+		else:
+			t = str(ev)
+		if route < 0 or route >= _h or t == "":
+			continue
+		var ground := Vector3(_home_world().x + HOME_GLYPH_DX, 0.0, _grid_world(Vector2i(0, route)).z)
+		_tier_glyph(_home_glyph_root, ground, t, HOME_GLYPH_S, HOME_GLYPH_SKULL_S, HOME_GLYPH_FWD)
+
+
+## L15: remove the home glyphs.
+func clear_home_glyphs() -> void:
+	if _home_glyph_root == null:
+		return
+	for ch in _home_glyph_root.get_children():
+		ch.queue_free()
+
+
 ## L12: the districts marked as hit this raid (Vector2i). Those still or again OK show a crack decal until the next
 ## raid (show_candidates with real -1) or clear_cracks(). The playout adds every hit cell on its own.
 func set_cracked(cells: Array) -> void:
@@ -1328,7 +1401,7 @@ func clear_cracks() -> void:
 ## Draw a response row's effect on the board: p = {kind: "REDEPLOY"|"DEPLOY"|"SACRIFICE"|"JAM"|"HOLD", from: Vector2i
 ## or null, to: Vector2i or null, type: String}, with the optional keys street: int (the hunter's street for JAM when
 ## no hound is shown), cell: Vector2i (the SACRIFICE cell; to is accepted too), verb: String (L14: the card verb shown
-## on the ghost sentry) and gold: bool (L14: a gold double edge on the target, for the SCAN's pick).
+## on the ghost sentry) and gold: bool (L14: a gold double edge on the target).
 ## - REDEPLOY / DEPLOY: an arc arrow in the sentry type's color from the source to the target cell, with a ghost
 ##   sentry at the target. The source is a spinning dashed ring on the sentry's cell, or (from = null) the reserve tray
 ##   just right of our HQ on the target's route.
@@ -1395,11 +1468,14 @@ func clear_response_preview() -> void:
 
 ## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, reveal_b, hunter_reveal, evaded, decay,
 ## fall, wound) and emit cues_finished at the end. Planned paths, the outcome overlay and the response preview are
-## cleared; the route verdicts, the hunter street candidates and the B candidates stay. Every beam leaves a trail with
-## its hits and stops until reset_playout(). Hit cells get the crack mark.
+## cleared; the route verdicts, home glyphs, the hunter street candidates and the B candidates stay. Every beam leaves
+## a trail with its hits and stops until reset_playout(). Hit cells get the crack mark.
 ## L14 cue keys: beam ("beam1", "extra1", "extra2", "sealed", "sealed_b", "hunter"), optional; a "sealed" beam enters
 ## from the lit A convoy and a "sealed_b" beam from the lit B convoy. A "wound" cue {cell, to: Vector2} starts a wound
 ## card flight (see wound_fly) and moves on after a short beat.
+## L15: the line whose cue moves is the current beam (full strength, with its block markers and hit glyphs). When a
+## different line starts moving, every other line becomes DONE: its trail dims to 25% alpha with thin lines and its
+## block markers and hit glyphs go. Every hit cell keeps a small red X until the next raid.
 func play(cues: Array, speed: float = 1.0) -> Signal:
 	clear_paths()
 	clear_outcome()
@@ -1414,6 +1490,16 @@ func play(cues: Array, speed: float = 1.0) -> Signal:
 	else:
 		_next_cue()
 	return cues_finished
+
+
+## L15: mark a beam's trail DONE (dimmed to 25% alpha, thin lines, no block markers or hit glyphs). beam is a cue's
+## beam key ("beam1", "extra1", "extra2", "sealed", "sealed_b", "hunter"); "" or "*" marks every line drawn so far.
+## The playout does this on its own when another line starts moving; this is for the lab's beats between plays.
+func set_beam_done(beam: String) -> void:
+	for k: Variant in _beam_rec.keys():
+		var rec: Dictionary = _beam_rec[k]
+		if beam == "" or beam == "*" or str(rec["beam"]) == beam:
+			_set_line_done(int(k))
 
 
 ## The decay beat at the start of raid 2 and raid 3. Each cell (Vector2i) left DOWN flips to cobalt TAKEN with a short
@@ -1450,8 +1536,8 @@ func set_speed(speed: float) -> void:
 	_speed = maxf(speed, SPEED_MIN)
 
 
-## Scramble on: the board labels (route names, street numbers, the EVADED stamp, the "+1 card" tags) show seeded noise
-## of the same length. Off: the real names come back. "?" glyphs are never scrambled.
+## Scramble on: the board labels (route names, street numbers, the EVADED stamp, the Heat tick "+1" labels) show seeded
+## noise of the same length. Off: the real names come back. "?" glyphs are never scrambled.
 func set_scramble(on: bool) -> void:
 	_scramble = on
 	_apply_label_text()
@@ -1484,7 +1570,7 @@ func highlight(cells: Array, color: Color) -> void:
 ## - "capture": an amber plus over the district and a pulsing amber ring;
 ## - "repair": a red outline around the district's wrench and a pulsing red hex ring;
 ## - "picked": a steady white ring with a check mark (a picked or committed choice);
-## - "gold" (L14): a steady gold double edge (the SCAN's pick, a Heat-dealt card's district).
+## - "gold" (L14): a steady gold double edge.
 ## Any other kind falls back to a gray glow. add = false clears the highlights shown before; add = true keeps them, so
 ## kinds can be combined.
 func highlight_kind(cells: Array, kind: String, add: bool = false) -> void:
@@ -1513,9 +1599,10 @@ func clear_highlight() -> void:
 	_hl.clear()
 
 
-## Drop every vehicle, effect, shake, candidate (A and B), trail, planned path and response preview (a fresh raid).
-## Route verdicts stay until hide_route_verdicts(), hunter street candidates until clear_hunter_cands(), crack decals
-## until the next raid's show_candidates(-1); wound cards keep flying.
+## Drop every vehicle, effect, shake, candidate (A and B), trail (with the hit X marks), planned path and response
+## preview (a fresh raid). Route verdicts stay until hide_route_verdicts(), home glyphs until clear_home_glyphs(),
+## hunter street candidates until clear_hunter_cands(), crack decals until the next raid's show_candidates(-1); wound
+## cards keep flying.
 func reset_playout() -> void:
 	_reset_motion()
 	clear_paths()
@@ -2328,7 +2415,7 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	return root
 
 
-## L13: rebuild the Heat ghosts on the corp tower from _hg_active / _hg_faint (L14: with their "+1 card" tags).
+## L13: rebuild the Heat ghosts on the corp tower from _hg_active / _hg_faint (L15: with their beam and card icons).
 func _refresh_heat_ghosts() -> void:
 	if is_instance_valid(_heat_root):
 		_heat_root.queue_free()
@@ -2347,8 +2434,8 @@ func _refresh_heat_ghosts() -> void:
 
 
 ## One Heat ghost in slot k: a floating bar off the corp tower's HOME side with an orb at its root and a chevron
-## pointing at HOME. Active ghosts pulse; the faint one is dim and still. L14: a gold-edged card glyph with "+1 card"
-## above the ghost's tip.
+## pointing at HOME. Active ghosts pulse; the faint one is dim and still. L15: above the ghost's tip, two icons side by
+## side: a beam arrow "+1" (cobalt) and a gold-edged card "+1".
 func _heat_ghost(k: int, faint: bool) -> void:
 	var y := HG_Y0 + HG_STEP * float(k)
 	var x0 := -HQ_BASE * 0.5 - HG_GAP
@@ -2362,16 +2449,38 @@ func _heat_ghost(k: int, faint: bool) -> void:
 		_hg_mats.append(m)
 	if not _hg_tags:
 		return
-	var tm := _mat_live(GOLD, E_HG_FAINT if faint else E_HG, HG_A_FAINT if faint else 1.0)
+	var ia := HG_A_FAINT if faint else 1.0
+	var ie := E_HG_FAINT if faint else E_HG
+	var tm := _mat_live(GOLD, ie, ia)
+	var bm := _mat_live(COBALT_HOT, ie, ia)
 	var holder := _facing(_heat_root, Vector3(x1 + HG_TAG_DX, y + HG_TAG_Y, 0.0))
-	_box(holder, Vector3.ZERO, HG_TAG_CARD, _solid(BG))
-	_card_edges(holder, HG_TAG_CARD, HG_TAG_EDGE, tm)
 	var a := HG_TAG_A_FAINT if faint else 1.0
-	var l := _label(holder, _board_text(HG_TAG_TEXT, SCRAMBLE_TAG + k), Vector3(HG_TAG_LX, 0.0, 0.0), Color(GOLD, a), HG_TAG_FONT, HORIZONTAL_ALIGNMENT_LEFT)
-	l.outline_modulate = Color(SHADOW_INK, SHADOW_INK.a * a)
-	_hg_labels.append([l, k])
+	# The beam icon: an arrow pointing at HOME.
+	var bi := Node3D.new()
+	bi.position = Vector3(float(HG_ICON_X[0]), 0.0, 0.0)
+	holder.add_child(bi)
+	_backing(bi, HG_ICON_BACK_R)
+	_polyline(bi, HG_BEAM_PTS, HG_ICON_LINE, bm)
+	for hd: Array in HG_BEAM_HEAD:
+		_polyline(bi, hd, HG_ICON_LINE, bm)
+	_hg_tag_label(holder, float(HG_ICON_X[0]) + HG_TAG_LX, a, COBALT_HOT, k * 2)
+	# The card icon: a dark card with gold edges.
+	var ci := Node3D.new()
+	ci.position = Vector3(float(HG_ICON_X[1]), 0.0, 0.0)
+	holder.add_child(ci)
+	_box(ci, Vector3.ZERO, HG_TAG_CARD, _solid(BG))
+	_card_edges(ci, HG_TAG_CARD, HG_TAG_EDGE, tm)
+	_hg_tag_label(holder, float(HG_ICON_X[1]) + HG_TAG_LX, a, GOLD, k * 2 + 1)
 	if not faint:
 		_hg_mats.append(tm)
+		_hg_mats.append(bm)
+
+
+## L15: one "+1" label beside a Heat tick icon (scramble slot SCRAMBLE_TAG + slot).
+func _hg_tag_label(holder: Node3D, x: float, a: float, col: Color, slot: int) -> void:
+	var l := _label(holder, _board_text(HG_TAG_TEXT, SCRAMBLE_TAG + slot), Vector3(x, 0.0, 0.0), Color(col, a), HG_TAG_FONT, HORIZONTAL_ALIGNMENT_LEFT)
+	l.outline_modulate = Color(SHADOW_INK, SHADOW_INK.a * a)
+	_hg_labels.append([l, slot])
 
 
 func _build_home_pips() -> void:
@@ -2828,14 +2937,16 @@ func _hc_hound_vis() -> void:
 
 
 ## The hunter reveal at progress u: both "?" badges collapse, the real lane ignites, the other dissolves, and the
-## hound steps from where it stood to the real lane's head. With no real lane set, everything shows sealed.
+## hound steps from where it stood to the real lane's head. With no real lane set, everything shows sealed. L15: at
+## the end the dissolved street stops counting as used.
 func _apply_hunter_reveal(u: float) -> void:
 	var e := _ease_out(u)
 	for i in range(_hc_lanes.size()):
 		var ln: Dictionary = _hc_lanes[i]
-		var root: Node3D = ln["root"]
-		if not is_instance_valid(root):
+		var rv: Variant = ln["root"]
+		if not is_instance_valid(rv):
 			continue
+		var root: Node3D = rv
 		var qv: Variant = ln["q"]
 		var q: Node3D = qv as Node3D if is_instance_valid(qv) else null
 		if _hc_real < 0:
@@ -2856,6 +2967,28 @@ func _apply_hunter_reveal(u: float) -> void:
 	if _hc_real >= 0 and _hc_real < _hc_lanes.size() and is_instance_valid(_hc_hound) and not _hc_spawned:
 		var head: Vector3 = (_hc_lanes[_hc_real] as Dictionary)["head"]
 		_hc_hound.position = _hc_from.lerp(head, e)
+	if _hc_real >= 0 and _hc_real < _hc_lanes.size() and u >= 1.0:
+		var real_x := int((_hc_lanes[_hc_real] as Dictionary)["street"])
+		for i in range(_hc_lanes.size()):
+			var x := int((_hc_lanes[i] as Dictionary)["street"])
+			if i != _hc_real and x != real_x:
+				_hc_streets.erase(x)
+		_apply_street_vis()
+
+
+## L15: the hunter has started its run: the "?" badges go, the revealed lane (every lane when none was revealed)
+## fades to HC_DONE_K and the dissolved ones hide.
+func _hc_fade() -> void:
+	for i in range(_hc_lanes.size()):
+		var ln: Dictionary = _hc_lanes[i]
+		var qv: Variant = ln["q"]
+		if is_instance_valid(qv):
+			(qv as Node3D).visible = false
+		var rv: Variant = ln["root"]
+		if _hc_real < 0 or i == _hc_real:
+			_tint(ln["mats"], HC_DONE_K, HC_DONE_K)
+		elif is_instance_valid(rv):
+			(rv as Node3D).visible = false
 
 
 # ======================= B candidates (L14) =======================
@@ -3010,12 +3143,17 @@ func _emit_flight(f: WoundFlight) -> void:
 		f.done.emit()
 
 
-# ======================= route verdicts =======================
+# ======================= route verdicts and home glyphs =======================
 ## One route's verdict at the lane's corp-side entry: a ring on the road between the last district and the waiting
 ## candidate, and the tier glyph above it, pushed toward the camera. Unknown tiers draw nothing.
 func _verdict(route: int, tier_name: String) -> void:
 	var ground := Vector3(_grid_world(Vector2i(_w - 1, route)).x + VERDICT_DX * CELL_DX, 0.0, _grid_world(Vector2i(0, route)).z)
-	var pos := ground + Vector3(0.0, VERDICT_Y, 0.0) + _cam_back() * VERDICT_FWD
+	_tier_glyph(_verdict_root, ground, tier_name, VERDICT_S, VERDICT_SKULL_S, VERDICT_FWD)
+
+
+## A tier glyph over a ground point: a ring on the road and, raised and pushed toward the camera by fwd, a green heart
+## (HOLDS / EVADED), an amber broken heart (BATTERED / DAMAGED) or a red skull (BREACHED). Unknown tiers draw nothing.
+func _tier_glyph(parent: Node3D, ground: Vector3, tier_name: String, s: float, skull_s: float, fwd: float) -> void:
 	var col := HOLD_COL
 	match tier_name:
 		"HOLDS", "EVADED":
@@ -3026,15 +3164,16 @@ func _verdict(route: int, tier_name: String) -> void:
 			col = RED
 		_:
 			return
+	var pos := ground + Vector3(0.0, VERDICT_Y, 0.0) + _cam_back() * fwd
 	var m := _mat(col, E_VERDICT)
-	_torus(_verdict_root, ground + Vector3(0.0, OUT_RING_Y, 0.0), VERDICT_RING_R.x, VERDICT_RING_R.y, CIRCLE_SEGS, m)
+	_torus(parent, ground + Vector3(0.0, OUT_RING_Y, 0.0), VERDICT_RING_R.x, VERDICT_RING_R.y, CIRCLE_SEGS, m)
 	match tier_name:
 		"HOLDS", "EVADED":
-			_heart(_verdict_root, pos, VERDICT_S, m, false)
+			_heart(parent, pos, s, m, false)
 		"BATTERED", "DAMAGED":
-			_heart(_verdict_root, pos, VERDICT_S, m, true)
+			_heart(parent, pos, s, m, true)
 		_:
-			_skull(_verdict_root, pos, VERDICT_SKULL_S, m)
+			_skull(parent, pos, skull_s, m)
 
 
 # ======================= response preview =======================
@@ -3174,12 +3313,91 @@ func _resp_jam(p: Dictionary, gold: bool = false) -> void:
 
 
 # ======================= playout trails and marks =======================
-func _trail_add(mats: Array) -> void:
+## L15: the record of a playout line (made on first use): its beam key, every trail material, the nodes to thin when
+## DONE, and the node holding its current-beam-only markers (blocks, hit glyphs, turn rings).
+func _line_rec(line: int) -> Dictionary:
+	if not _beam_rec.has(line):
+		var marks := Node3D.new()
+		_trail_root.add_child(marks)
+		_beam_rec[line] = {"beam": "", "mats": [], "thin": [], "marks": marks, "done": false}
+	return _beam_rec[line]
+
+
+## L15: the node a line's current-beam-only markers go under, or null once the line is DONE (they are not drawn).
+func _marks_of(line: int) -> Node3D:
+	var rec := _line_rec(line)
+	var mv: Variant = rec["marks"]
+	if bool(rec["done"]) or not is_instance_valid(mv):
+		return null
+	return mv as Node3D
+
+
+## L15: the line of the cue that moves is the current beam; every other line becomes DONE.
+func _activate_line(line: int) -> void:
+	var rec := _line_rec(line)
+	var b := _cue_beam()
+	if b != "":
+		rec["beam"] = b
+	if line == _active_line:
+		return
+	for k: Variant in _beam_rec.keys():
+		if int(k) != line:
+			_set_line_done(int(k))
+	_active_line = line
+
+
+## L15: a line's trail goes DONE: 25% alpha, low emission, thin lines; its block markers and hit glyphs go.
+func _set_line_done(line: int) -> void:
+	if not _beam_rec.has(line):
+		return
+	var rec: Dictionary = _beam_rec[line]
+	if bool(rec["done"]):
+		return
+	rec["done"] = true
+	var keep: Array = []
+	for f: Dictionary in _trail_fade:
+		if int(f.get("line", NO_LINE)) != line:
+			keep.append(f)
+	_trail_fade = keep
+	_tint(rec["mats"], DONE_ALPHA_K, DONE_E_K)
+	for e: Array in rec["thin"]:
+		_thin(e[0], str(e[1]))
+	if _trail_arrow.has(line):
+		_thin(_trail_arrow[line], "arrow")
+	var mv: Variant = rec["marks"]
+	if is_instance_valid(mv):
+		(mv as Node3D).queue_free()
+	rec["marks"] = null
+	if line == _active_line:
+		_active_line = NO_LINE
+
+
+## L15: thin a DONE trail node: a segment loses width, a dot shrinks flat, a chevron shrinks.
+func _thin(nv: Variant, kind: String) -> void:
+	if not is_instance_valid(nv):
+		return
+	var n: Node3D = nv
+	match kind:
+		"seg":
+			n.scale = Vector3(n.scale.x, n.scale.y, n.scale.z * DONE_W_K)
+		"dot":
+			n.scale = Vector3(n.scale.x * DONE_W_K, n.scale.y, n.scale.z * DONE_W_K)
+		_:
+			n.scale = n.scale * DONE_W_K
+
+
+func _trail_add(mats: Array, line: int = NO_LINE) -> void:
+	if line != NO_LINE:
+		var rec := _line_rec(line)
+		(rec["mats"] as Array).append_array(mats)
+		if bool(rec["done"]):
+			_tint(mats, DONE_ALPHA_K, DONE_E_K)
+			return
 	if _instant:
 		_tint(mats, TRAIL_REST, TRAIL_REST_E)
 	else:
 		_tint(mats, 1.0, 1.0)
-		_trail_fade.append({"mats": mats, "t": 0.0})
+		_trail_fade.append({"mats": mats, "t": 0.0, "line": line})
 
 
 func _snap_trails() -> void:
@@ -3210,6 +3428,7 @@ func _trail_seg(line: int, a: Vector3, b: Vector3, col: Color) -> void:
 	var flat := Vector2(d.x, d.z).length()
 	if flat < TRAIL_MIN:
 		return
+	var rec := _line_rec(line)
 	var horiz := absf(d.x) >= absf(d.z)
 	var road := _road_key(a0, horiz)
 	var key := "%d|%s" % [line, road]
@@ -3217,31 +3436,60 @@ func _trail_seg(line: int, a: Vector3, b: Vector3, col: Color) -> void:
 		_lane[key] = _lane_offset(_road_use, road)
 	var lat := _lateral(horiz) * float(_lane[key])
 	var m := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
-	_box(_trail_root, (a0 + b0) * 0.5 + lat, Vector3(flat, LANE_T, TRAIL_W), m).rotation.y = _heading(d, 0.0)
-	_cyl(_trail_root, b0 + lat, TRAIL_DOT_R, LANE_T * 1.5, HEX, m)
+	var seg := _box(_trail_root, (a0 + b0) * 0.5 + lat, Vector3(flat, LANE_T, TRAIL_W), m)
+	seg.rotation.y = _heading(d, 0.0)
+	var dot := _cyl(_trail_root, b0 + lat, TRAIL_DOT_R, LANE_T * 1.5, HEX, m)
+	(rec["thin"] as Array).append([seg, "seg"])
+	(rec["thin"] as Array).append([dot, "dot"])
 	if _trail_arrow.has(line):
-		var old: Node3D = _trail_arrow[line]
+		var old: Variant = _trail_arrow[line]
 		if is_instance_valid(old):
-			old.queue_free()
+			(old as Node3D).queue_free()
 	var am := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
-	_trail_arrow[line] = _chevron(_trail_root, b0 + lat + d.normalized() * ARROW_L * 0.6, d.normalized(), am)
-	_trail_add([m, am])
+	var arrow := _chevron(_trail_root, b0 + lat + d.normalized() * ARROW_L * 0.6, d.normalized(), am)
+	_trail_arrow[line] = arrow
+	if bool(rec["done"]):
+		_thin(seg, "seg")
+		_thin(dot, "dot")
+		_thin(arrow, "arrow")
+	_trail_add([m, am], line)
 
 
-func _mark_hit(cell: Vector2i, type: String) -> void:
+## A hit on the current beam: a type-colored hex ring and the stacked hit glyphs (current beam only, under its marks).
+func _mark_hit(cell: Vector2i, type: String, line: int) -> void:
+	var root := _marks_of(line)
+	if root == null:
+		return
 	var m := _mat_live(_type_col(type), E_TRAIL, TRAIL_ALPHA)
-	_torus(_trail_root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), HIT_MARK_R.x, HIT_MARK_R.y, HEX, m)
-	var n := int(_hit_count.get(cell, 0))
-	_hit_count[cell] = n + 1
-	_shape(_trail_root, _grid_world(cell) + HIT_GLYPH_POS + HIT_GLYPH_STEP * float(n), type, HIT_GLYPH_S, m)
-	_trail_add([m])
+	_torus(root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), HIT_MARK_R.x, HIT_MARK_R.y, HEX, m)
+	var hk := "%d|%s" % [line, str(cell)]
+	var n := int(_hit_count.get(hk, 0))
+	_hit_count[hk] = n + 1
+	_shape(root, _grid_world(cell) + HIT_GLYPH_POS + HIT_GLYPH_STEP * float(n), type, HIT_GLYPH_S, m)
+	_trail_add([m], line)
 
 
-## A block: a type-colored shield dome over the sentry and a bar across the lane where the line stopped.
-func _mark_block(cell: Vector2i, type: String, dir: Vector3) -> void:
+## L15: the small persistent red X on a cell hit this raid (one per cell, until the next raid's trails reset).
+func _mark_hit_x(cell: Vector2i) -> void:
+	if _hit_x.has(cell):
+		return
+	_hit_x[cell] = true
+	var m := _mat(RED, E_HIT_X)
+	var holder := _facing(_trail_root, _grid_world(cell) + HIT_X_POS)
+	_backing(holder, HIT_X_BACK_R)
+	for s: float in [1.0, -1.0]:
+		_box(holder, Vector3(0.0, 0.0, HIT_X_Z), HIT_X_BAR, m).rotation.z = s * PI * 0.25
+
+
+## A block on the current beam: a type-colored shield dome over the sentry and a bar across the lane where the line
+## stopped (current beam only).
+func _mark_block(cell: Vector2i, type: String, dir: Vector3, line: int) -> void:
+	var root := _marks_of(line)
+	if root == null:
+		return
 	var col := _type_col(type)
 	var dm := _mat_live(col, E_FX, BLOCK_ALPHA)
-	var dome := _sphere(_trail_root, _grid_world(cell), BLOCK_DOME_R, dm)
+	var dome := _sphere(root, _grid_world(cell), BLOCK_DOME_R, dm)
 	dome.scale = Vector3(1.0, BLOCK_DOME_FLAT, 1.0)
 	var bm := _mat_live(col, E_TRAIL, TRAIL_ALPHA)
 	var flat := Vector3(dir.x, 0.0, dir.z)
@@ -3250,29 +3498,32 @@ func _mark_block(cell: Vector2i, type: String, dir: Vector3) -> void:
 		var holder := Node3D.new()
 		holder.position = _grid_world(cell) - d * BLOCK_BAR_BACK + Vector3(0.0, TRAIL_Y + BLOCK_BAR.y * 0.5, 0.0)
 		holder.rotation.y = _heading(d, 0.0)
-		_trail_root.add_child(holder)
+		root.add_child(holder)
 		_box(holder, Vector3.ZERO, BLOCK_BAR, bm)
-	_trail_add([dm, bm])
+	_trail_add([dm, bm], line)
 
 
-func _mark_home() -> void:
+func _mark_home(line: int) -> void:
 	var m := _mat_live(RED, E_TRAIL, TRAIL_ALPHA)
 	_torus(_trail_root, _home_world() + Vector3(0.0, HQ_PLAT.y + RING_Y, 0.0), HOME_MARK_R.x, HOME_MARK_R.y, CIRCLE_SEGS, m)
-	_trail_add([m])
+	_trail_add([m], line)
 
 
-func _mark_turn(cell: Vector2i) -> void:
+func _mark_turn(cell: Vector2i, line: int) -> void:
+	var root := _marks_of(line)
+	if root == null:
+		return
 	var m := _mat_live(COBALT_HOT, E_TRAIL, TRAIL_ALPHA)
-	_torus(_trail_root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), TURN_MARK_R.x, TURN_MARK_R.y, CIRCLE_SEGS, m)
-	_trail_add([m])
+	_torus(root, _grid_world(cell) + Vector3(0.0, RING_Y, 0.0), TURN_MARK_R.x, TURN_MARK_R.y, CIRCLE_SEGS, m)
+	_trail_add([m], line)
 
 
-func _mark_jam(pos: Vector3) -> void:
+func _mark_jam(pos: Vector3, line: int) -> void:
 	var m := _mat_live(RED, E_TRAIL, TRAIL_ALPHA)
 	var holder := _facing(_trail_root, pos + Vector3(0.0, JAM_MARK_Y, 0.0))
 	for s: float in [1.0, -1.0]:
 		_box(holder, Vector3.ZERO, JAM_MARK, m).rotation.z = s * PI * 0.25
-	_trail_add([m])
+	_trail_add([m], line)
 
 
 func _clear_trails() -> void:
@@ -3283,10 +3534,13 @@ func _clear_trails() -> void:
 	_lane.clear()
 	_road_use.clear()
 	_hit_count.clear()
+	_beam_rec.clear()
+	_active_line = NO_LINE
+	_hit_x.clear()
 
 
-## Vehicles, effects, shakes, candidates (A and B) and trails go; planned paths, route verdicts, hunter street
-## candidates, wound cards in flight and crack decals stay.
+## Vehicles, effects, shakes, candidates (A and B) and trails go; planned paths, route verdicts, home glyphs, hunter
+## street candidates, wound cards in flight and crack decals stay.
 func _reset_motion() -> void:
 	for v: Dictionary in _vehicles.values():
 		(v["node"] as Node3D).queue_free()
@@ -3390,9 +3644,9 @@ func _entry_point(line: int, cell: Vector2i) -> Vector3:
 
 
 ## The vehicle of a line, made on first use. A new hunter starts where the hunter-candidates hound stands (that hound
-## then hides), else it drops from the sky over drop_at. After a reveal, the first non-hunter vehicle takes over the
-## lit A convoy (beam "sealed", or entering at its corp end); after REVEAL B, the lit B convoy (beam "sealed_b", or
-## entering at its corp end). The waiting convoys then go.
+## then hides and, L15, the candidate lanes fade), else it drops from the sky over drop_at. After a reveal, the first
+## non-hunter vehicle takes over the lit A convoy (beam "sealed", or entering at its corp end); after REVEAL B, the
+## lit B convoy (beam "sealed_b", or entering at its corp end). The waiting convoys then go.
 func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at: Vector3) -> Dictionary:
 	if _vehicles.has(line):
 		var old: Dictionary = _vehicles[line]
@@ -3404,6 +3658,7 @@ func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at
 		entry = Vector3(_hc_hound.position.x, 0.0, _hc_hound.position.z)
 		_hc_spawned = true
 		_hc_hound_vis()
+		_hc_fade()
 	var beam := _cue_beam()
 	if not hunter and _cand_real >= 0 and beam != "sealed_b":
 		for cv: Dictionary in _cands:
@@ -3629,6 +3884,7 @@ func _start_cue(cue: Dictionary) -> void:
 	_cur_line = NO_LINE
 	match kind:
 		"beam_step", "hit", "block":
+			_activate_line(line)
 			var v := _vehicle_for(line, type, false, cell, Vector3.ZERO)
 			var hunter := bool(v["hunter"])
 			_aim(v, _world(cell, hunter))
@@ -3640,29 +3896,32 @@ func _start_cue(cue: Dictionary) -> void:
 				_cracked[cell] = true
 				_fx_strike(cell, type)
 				_shakes[cell] = SHAKE_T
-				_mark_hit(cell, type)
+				_mark_hit(cell, type, line)
+				_mark_hit_x(cell)
 			elif kind == "block":
 				_fx_shield(cell, type)
-				_mark_block(cell, type, b - a)
+				_mark_block(cell, type, b - a, line)
 		"home":
+			_activate_line(line)
 			var row := cell.y
 			var v := _vehicle_for(line, type, false, Vector2i(-1, row), Vector3.ZERO)
 			_aim(v, _home_entry(row))
 			_cur_line = line
 			_trail_seg(line, v["from"] as Vector3, v["to"] as Vector3, _type_col(type))
-			_mark_home()
+			_mark_home(line)
 		"hunter_turn", "jam":
+			_activate_line(line)
 			var head := _street_head(cell.x)
 			var v := _vehicle_for(line, type, true, cell, head)
 			_aim(v, head)
 			_cur_line = line
-			_mark_turn(cell)
+			_mark_turn(cell, line)
 			if kind == "hunter_turn":
 				v["rot_to"] = HEADING_DOWN
 				v["turn_k"] = 1.0
 			else:
 				_fx_slash(head)
-				_mark_jam(head)
+				_mark_jam(head, line)
 		"reveal":
 			if line >= 0:
 				_cand_real = line
