@@ -1,10 +1,10 @@
 class_name L8Board
 extends Node3D
-## The city view of raid lab L8 (SPEC section 8, with the L9-L12 presentation changes and the L13 UI). It shows a
-## dark slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the right.
-## Three lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the corp end
-## of the routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with rings, value
-## pips and exploit keys. The board also draws:
+## The city view of raid lab L8 (SPEC section 8, with the L9-L12 presentation changes, the L13 UI and the L14 UI). It
+## shows a dark slab city block in iso with a long lens. Our amber HQ sits on the left and the cobalt corp HQ on the
+## right. Three lit routes and four gray cross streets run between them. Large NORTH / MID / SOUTH labels sit at the
+## corp end of the routes, and street numbers 0-3 sit at the north edge. Districts are small building clusters with
+## rings, value pips and exploit keys. The board also draws:
 ## - sentries, the ghost and the sealed candidates. L13: the three candidates share one "?" glyph, tethered to each,
 ##   that collapses into the real one at the reveal;
 ## - typed vehicles that travel the lines;
@@ -24,21 +24,33 @@ extends Node3D
 ##   HQ) to the target cell for REDEPLOY / DEPLOY, a red cross over the hound for JAM, and (L13) for SACRIFICE the cell
 ##   crumbling under a cobalt veil with a shield dome over our HQ;
 ## - L13 Heat ghosts: one ghost beam on the corp tower per extra beam the current Heat brings, plus a faint one for the
-##   next threshold (set_heat_ghosts);
+##   next threshold (set_heat_ghosts). L14: each ghost carries a small gold-edged "+1 card" tag;
 ## - decay beats, where a cell left DOWN flips to cobalt TAKEN with a pulse;
 ## - the decided fall beat: our HQ tower turns red and collapses, with a red skull over the rubble;
-## - highlights by meaning: an amber plus (capture), a red wrench outline (repair) and a white check ring (picked);
+## - highlights by meaning: an amber plus (capture), a red wrench outline (repair), a white check ring (picked) and
+##   (L14) a gold double edge (gold, the SCAN's pick or a Heat-dealt card);
 ## - the lethal mark: at HOME 1/3 the last HOME pip pulses red and a red skull pulses on our HQ tower.
+## L14 additions (all additive):
+## - card sentries: show_state accepts {cell: card_id} sentries plus a card lookup (the state's deck, or `cards`); each
+##   sentry keeps its card's verb glyph (GUARD shield, SHIFT curved arrow, JAM zigzag) on a small disc beside its type
+##   shape, and the cards listed in place.gold get a gold edge;
+## - wound_fly: a cracked gray card flies from a district to a screen point (the lab's deck strip);
+## - the second sealed beam: show_b_cands / reveal_b, and a sealed_b beam spawns from the lit B convoy;
+## - set_fit_free: the free screen area the camera fills (room for the hand row and the deck strip).
 ## Everything is built in code, and it runs inside a SubViewport that the main scene creates. It holds no rule. The lab
 ## hands it the leg (`setup`), the state (`show_state`), planned lines (`show_paths`), an outcome (`show_outcome`),
-## route verdicts (`show_route_verdicts`), the hunter streets (`show_hunter_cands`), a response preview
-## (`show_response_preview`), the Heat ghosts (`set_heat_ghosts`) and a playout's cues (`play`, `hunter_reveal`,
-## `decay`, `show_fall`); the board only draws them. `set_scramble` swaps the board labels for seeded noise. The camera
-## is fitted to the board's real geometry (slab, HQ towers, labels) so it fills the free area left of the side panel,
-## with no dark sky margin; the starfield is dimmed. Glow is capped while impacts flash, so hits read as shapes.
-## Cosmetic motion is seeded or time-based, never global random.
+## route verdicts (`show_route_verdicts`), the hunter streets (`show_hunter_cands`), the B routes (`show_b_cands`), a
+## response preview (`show_response_preview`), the Heat ghosts (`set_heat_ghosts`) and a playout's cues (`play`,
+## `hunter_reveal`, `reveal_b`, `decay`, `show_fall`, `wound_fly`); the board only draws them. `set_scramble` swaps the
+## board labels for seeded noise. The camera is fitted to the board's real geometry (slab, HQ towers, labels) so it
+## fills the free area left of the side panel, with no dark sky margin; the starfield is dimmed. Glow is capped while
+## impacts flash, so hits read as shapes. Cosmetic motion is seeded or time-based, never global random.
 
 signal cues_finished
+
+## L14: the handle behind wound_fly's signal; `done` fires once that card has landed (or was cleared).
+class WoundFlight extends RefCounted:
+	signal done
 
 # ======================= tuning (palette, energies, camera, geometry, timings) =======================
 const COBALT := Color8(61, 107, 255)
@@ -81,6 +93,9 @@ const HUNTER_TRAIL := COBALT
 const FALL_BODY := Color8(70, 14, 20)
 ## L12 route verdicts: the heart of a held route (HOLDS / EVADED). L13: also the SACRIFICE shield over our HQ.
 const HOLD_COL := Color8(70, 235, 160)
+## L14 wound cards: a cracked gray card body and its lighter edge.
+const WOUND_COL := Color8(82, 86, 98)
+const WOUND_EDGE_COL := Color8(160, 166, 182)
 
 const ALBEDO_K := 0.25
 const ROUGH := 0.45
@@ -133,6 +148,11 @@ const E_FALL := 2.6
 const E_COUNT := 2.4
 const E_CRACK := 1.8
 const E_VERDICT := 2.4
+## L14: verb glyphs, gold edges and wound cards (the card body stays below the glow threshold).
+const E_VERB := 2.0
+const E_GOLD := 2.4
+const E_WOUND := 0.9
+const E_WOUND_EDGE := 1.2
 const DECAL_ALPHA := 0.18
 const HALO_ALPHA := 0.35
 const HALO_E_K := 0.6
@@ -158,7 +178,8 @@ const CAM_YAW_DEG := -20.0
 const CAM_FOV := 16.0
 const CAM_NEAR := 1.0
 const CAM_FAR := 400.0
-## The reference viewport and the free board area in it: left of the 420 px panel, between the HUD and the legend.
+## The reference viewport and the default free board area in it: left of the 420 px panel, between the HUD and the
+## legend. L14: set_fit_free replaces the free area (for example to leave room for the hand row).
 const FIT_VIEW := Vector2(1280.0, 720.0)
 const FIT_FREE := Rect2(0.0, 64.0, 860.0, 606.0)
 const FIT_MARGIN := 8.0
@@ -192,14 +213,15 @@ const ROUTE_EDGE_W := 0.04
 const STREET_W := 0.26
 const STREET_EXT := 0.9
 const STREET_LIFT := 0.006
-## Layer heights above the roads: cell decals, crack decals, planned paths, hunter lanes, outcome paths, playout
-## trails, highlights.
+## Layer heights above the roads: cell decals, crack decals, planned paths, hunter lanes, outcome paths, B candidate
+## lanes, playout trails, highlights.
 const DECAL_Y := 0.045
 const DECAL_T := 0.006
 const CRACK_DECAL_Y := 0.055
 const PATH_Y := 0.06
 const HUNT_Y := 0.065
 const OUT_PATH_Y := 0.07
+const B_LANE_Y := 0.075
 const TRAIL_Y := 0.08
 const LANE_T := 0.012
 const HL_Y := 0.1
@@ -219,6 +241,7 @@ const STREET_LABEL_Y := 0.2
 const SCRAMBLE_SEED := 4049
 const SCRAMBLE_STREET_K := 100
 const SCRAMBLE_FX := 900
+const SCRAMBLE_TAG := 950
 const LETTERS := 26
 const CODE_A := 65
 const CODE_Z := 90
@@ -297,6 +320,26 @@ const SENTRY_BASE := Vector2(0.18, 0.08)
 const SENTRY_GLYPH_Y := 1.22
 const SENTRY_GLYPH_S := 0.27
 const SENTRY_DECAL := Vector2(0.48, 0.58)
+## L14: a gold edge ring outside the sentry decal (a card in place.gold).
+const SENTRY_GOLD := Vector2(0.64, 0.72)
+## L14 verb glyphs: a small dark disc right of the sentry's type shape (in its facing plane), holding the verb glyph
+## drawn in local units scaled by VERB_S. GUARD = shield, SHIFT = curved arrow (an arc over the top ending in a
+## downward head), JAM = zigzag.
+const VERB_POS := Vector2(0.42, -0.04)
+const VERB_Z := 0.02
+const VERB_BACK_R := 0.17
+const VERB_GOLD_R := Vector2(0.17, 0.2)
+const VERB_S := 0.42
+const VERB_LINE_W := 0.11
+const VERB_SHIELD_DY := 0.07
+const SHIFT_SEGS := 8
+const SHIFT_C := Vector2(0.0, -0.06)
+const SHIFT_R := 0.26
+const SHIFT_A := Vector2(PI * 1.05, -PI * 0.05)
+const SHIFT_TIP := 0.04
+const SHIFT_HEAD_L := 0.16
+const SHIFT_HEAD_ANG := 0.65
+const JAM_PTS := [Vector2(-0.3, -0.12), Vector2(-0.15, 0.14), Vector2(0.0, -0.12), Vector2(0.15, 0.14), Vector2(0.3, -0.12)]
 const GHOST_R := 1.34
 const GHOST_HOME_R := 2.0
 const GHOST_DASHES := 16
@@ -397,6 +440,18 @@ const Q_BACK_R := 0.26
 const Q_FONT := 56
 const Q_Z := 0.05
 const Q_MIN_S := 0.001
+
+## L14 B candidates: the two remaining routes as pulsing dashed lanes in their type color, a ghosted convoy waiting at
+## the corp end and a "?" above it. At REVEAL B the real one ignites (lane and convoy lit), the other dissolves and
+## both "?" collapse.
+const B_LANE_A := 0.5
+const B_IGNITE_E := 1.8
+const B_PULSE := 0.45
+const B_PULSE_HZ := 1.4
+const B_Q_DY := 1.15
+const B_Q_FWD := 0.25
+const B_Q_S := 0.9
+const B_RING_K := 0.9
 
 ## L13 hunter street candidates: dashed cobalt hound lanes, a pawprint at each lane's head and a "?" badge above it.
 ## The hound stands between the two heads. At the reveal the real lane ignites (alpha to full, emission up) and the
@@ -570,9 +625,20 @@ const E_HG := 2.2
 const E_HG_FAINT := 0.6
 const HG_PULSE := 0.35
 const HG_HZ := 0.9
+## L14 "+1 card" tags: a small gold-edged card glyph above each ghost's tip with a short label beside it (toward the
+## tower). The faint ghost's tag is faint too.
+const HG_TAG_DX := 0.25
+const HG_TAG_Y := 0.2
+const HG_TAG_CARD := Vector3(0.13, 0.19, 0.02)
+const HG_TAG_EDGE := 0.025
+const HG_TAG_FONT := 30
+const HG_TAG_LX := 0.12
+const HG_TAG_TEXT := "+1 card"
+const HG_TAG_A_FAINT := 0.35
 
 ## Highlights by meaning. Capture: an amber plus over the district and a pulsing amber ring. Repair: a red outline
 ## around the district's wrench and a red hex ring. Picked: a steady white ring with a check on its camera-side edge.
+## Gold (L14): a steady gold double ring.
 const HL_GLYPH_Y := 1.75
 const HL_BACK_R := 0.42
 const HL_RING_W := 0.1
@@ -589,6 +655,23 @@ const PICK_CHECK_Y := 0.4
 const PICK_BACK_R := 0.26
 const CHECK_W := 0.07
 const CHECK_PTS := [Vector2(-0.15, 0.01), Vector2(-0.04, -0.1), Vector2(0.16, 0.13)]
+const GOLD_R := 1.32
+const GOLD_RING_W := 0.06
+const GOLD_RING_GAP := 0.12
+
+## L14 wound flight: a cracked gray card rises off the district and arcs to the target screen point, shrinking (its
+## apparent size ends at WOUND_END_K), turning a little and fading at the end. Drawn over everything.
+const WOUND_CARD := Vector3(0.42, 0.6, 0.03)
+const WOUND_EDGE_W := 0.035
+const WOUND_CRACK_S := 0.8
+const WOUND_START_Y := 1.4
+const WOUND_ARC := 1.6
+const WOUND_DEPTH_K := 0.8
+const WOUND_END_K := 0.45
+const WOUND_SPIN := 0.6
+const WOUND_FADE_U := 0.85
+const WOUND_SETTLE_U := 0.65
+const WOUND_PRIORITY := 10
 
 const SHIELD_R := Vector2(0.25, 0.7)
 const STRIKE := Vector3(0.1, 3.2, 0.1)
@@ -633,10 +716,13 @@ const T_HOME := 0.7
 const T_TURN := 0.9
 const T_JAM := 0.7
 const T_REVEAL := 1.4
+const T_REVEAL_B := 1.3
 const T_HUNT_REVEAL := 1.2
 const T_EVADED := 1.2
 const T_DECAY := 0.8
 const T_FALL := 1.8
+const T_WOUND := 1.0
+const T_WOUND_CUE := 0.25
 const FX_SHIELD_T := 0.6
 const FX_STRIKE_T := 0.55
 const FX_RING_TIME := 0.6
@@ -656,6 +742,7 @@ var cam: Camera3D
 var _env: Environment
 var _yaw: float = deg_to_rad(CAM_YAW_DEG)
 var _tilt: float = deg_to_rad(CAM_PITCH_DEG) * GLYPH_TILT
+var _fit_free: Rect2 = FIT_FREE
 var _mats: Dictionary = {}
 var _unit_box: BoxMesh
 var _board: Node3D
@@ -663,6 +750,7 @@ var _path_root: Node3D
 var _outcome_root: Node3D
 var _verdict_root: Node3D
 var _hunter_root: Node3D
+var _b_root: Node3D
 var _resp_root: Node3D
 var _trail_root: Node3D
 var _fx_root: Node3D
@@ -683,6 +771,8 @@ var _path_pulse: Array = []
 var _scramble: bool = false
 var _status: Dictionary = {}
 var _sentries: Dictionary = {}
+var _sentry_verb: Dictionary = {}
+var _sentry_gold: Dictionary = {}
 var _cracked: Dictionary = {}
 var _ghost_cell: Vector2i = NO_CELL
 var _ghost_home: bool = false
@@ -703,7 +793,9 @@ var _corp_root: Node3D = null
 var _heat_root: Node3D = null
 var _hg_active: int = 0
 var _hg_faint: bool = false
+var _hg_tags: bool = true
 var _hg_mats: Array = []
+var _hg_labels: Array = []
 var _lethal: bool = false
 var _lethal_root: Node3D
 var _lethal_pip: StandardMaterial3D
@@ -733,6 +825,10 @@ var _cand_q: Node3D = null
 var _cand_q_holder: Node3D = null
 var _cand_q_base: Vector3 = Vector3.ZERO
 var _cand_q_mats: Array = []
+var _bcands: Array = []
+var _b_real: int = -1
+var _b_pulse: Array = []
+var _wounds: Array = []
 var _fx: Array = []
 var _shakes: Dictionary = {}
 var _hl: Array = []
@@ -768,6 +864,8 @@ func _init() -> void:
 	add_child(_verdict_root)
 	_hunter_root = Node3D.new()
 	add_child(_hunter_root)
+	_b_root = Node3D.new()
+	add_child(_b_root)
 	_resp_root = Node3D.new()
 	add_child(_resp_root)
 	_trail_root = Node3D.new()
@@ -790,8 +888,9 @@ func _ready() -> void:
 # ======================= public API =======================
 ## Build the board for a leg: {w, h, values: {Vector2i: int}, exploits: Array[Vector2i]}. The optional keys
 ## route_names (3 Strings) and street_names (w Strings) replace the board's coordinate labels. set_scramble() still
-## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts, hunter street candidates and
-## crack decals are cleared; the Heat ghosts are rebuilt from the last set_heat_ghosts().
+## applies on top of them. A fallen HQ (show_fall) is rebuilt standing. Route verdicts, hunter street candidates, B
+## candidates, wound cards in flight and crack decals are cleared; the Heat ghosts are rebuilt from the last
+## set_heat_ghosts().
 func setup(leg: Dictionary) -> void:
 	_w = int(leg.get("w", DEFAULT_W))
 	_h = int(leg.get("h", DEFAULT_H))
@@ -808,7 +907,11 @@ func setup(leg: Dictionary) -> void:
 	clear_response_preview()
 	hide_route_verdicts()
 	clear_hunter_cands()
+	_clear_wounds()
 	_cracked.clear()
+	_sentries.clear()
+	_sentry_verb.clear()
+	_sentry_gold.clear()
 	_board.queue_free()
 	_board = Node3D.new()
 	add_child(_board)
@@ -850,16 +953,39 @@ func setup(leg: Dictionary) -> void:
 	_fit_camera()
 
 
-## Show a state {owned: {cell: OK/DOWN/TAKEN}, home_hp, heat} and a placement {sentries: {cell: D/N/E}, ghost: cell|"HOME"|null}.
+## Show a state {owned: {cell: OK/DOWN/TAKEN}, home_hp, heat} and a placement {sentries: {cell: D/N/E or card_id},
+## ghost: cell|"HOME"|null}.
+## L14: a sentry value may be a card id. It is looked up in `cards` ({id: [id, type, verb] or [type, verb] or
+## {type, verb}}) and else in st.deck ([[id, type, verb]]); the sentry takes the card's type and shows its verb glyph
+## (GUARD, SHIFT, JAM). A plain type shows no verb glyph (the L13 look); an unknown id or a wound shows no sentry. The
+## optional place.gold (Array of card ids) gives those sentries a gold edge.
 ## Every DOWN district shows the "TAKEN next raid" countdown mark; an OK district hit this raid shows a crack decal.
 ## Trails of the last playout stay; reset_playout() clears them.
-func show_state(st: Dictionary, place: Dictionary) -> void:
+func show_state(st: Dictionary, place: Dictionary, cards: Dictionary = {}) -> void:
 	var owned: Dictionary = st.get("owned", {})
 	for c: Vector2i in _cells():
 		_status[c] = str(owned.get(c, "NEUTRAL"))
 	_home_hp = int(st.get("home_hp", HOME_HP_MAX))
 	_heat = int(st.get("heat", 0))
-	_sentries = (place.get("sentries", {}) as Dictionary).duplicate()
+	var lookup := _card_lookup(st, cards)
+	var gold := {}
+	var gl: Variant = place.get("gold", [])
+	if gl is Array:
+		for gv: Variant in gl:
+			gold[str(gv)] = true
+	_sentries.clear()
+	_sentry_verb.clear()
+	_sentry_gold.clear()
+	var sd: Dictionary = place.get("sentries", {})
+	for k: Variant in sd:
+		var tv := _sentry_of(sd[k], lookup)
+		if str(tv[0]) == "":
+			continue
+		_sentries[k] = str(tv[0])
+		if str(tv[1]) != "":
+			_sentry_verb[k] = str(tv[1])
+		if gold.has(str(sd[k])):
+			_sentry_gold[k] = true
 	var g: Variant = place.get("ghost", null)
 	_ghost_home = g is String and String(g) == "HOME"
 	_ghost_cell = g if g is Vector2i else NO_CELL
@@ -872,8 +998,8 @@ func show_state(st: Dictionary, place: Dictionary) -> void:
 
 
 ## The sealed candidates [{route, type}]: real -1 = ghosted convoys at the corp end under one shared "?" glyph (a new
-## raid: vehicles, effects, trails and crack decals are reset, planned paths stay); real >= 0 = the settled reveal (two
-## gone, the real one lit, the "?" collapsed).
+## raid: vehicles, effects, trails, B candidates and crack decals are reset, planned paths stay); real >= 0 = the
+## settled reveal (two gone, the real one lit, the "?" collapsed).
 func show_candidates(cands: Array, real: int = -1) -> void:
 	if real < 0 or _cands.is_empty():
 		if real < 0:
@@ -892,6 +1018,83 @@ func show_candidates(cands: Array, real: int = -1) -> void:
 	_cand_real = real
 	_apply_reveal(1.0 if real >= 0 else 0.0)
 	_face_all()
+
+
+## L14: the second sealed beam's candidates, the two routes other than the real A. routes holds route indices or
+## {route, type} entries. Each route shows a pulsing dashed lane in its type color (cobalt when untyped), a ghosted
+## convoy of that type waiting at the corp end (none when untyped) and a "?" above it. real >= 0 (a route index) shows
+## the settled reveal at once. Replaces any shown before; they stay through play() until the B beam spawns (a cue
+## with beam "sealed_b", or the first non-hunter vehicle entering at the corp end of the revealed route), the next
+## show_candidates(-1) or setup().
+func show_b_cands(routes: Array, real: int = -1) -> void:
+	_clear_b_cands()
+	_b_real = -1
+	for rv: Variant in routes:
+		var route := -1
+		var type := ""
+		if rv is Dictionary:
+			route = int((rv as Dictionary).get("route", -1))
+			type = str((rv as Dictionary).get("type", ""))
+		else:
+			route = int(rv)
+		if route < 0 or route >= _h:
+			continue
+		var typed := TYPE_COLOR.has(type)
+		var col: Color = _type_col(type) if typed else COBALT_HOT
+		var root := Node3D.new()
+		_b_root.add_child(root)
+		var bc := {"route": route, "type": type, "root": root, "node": null, "mats": [], "parts": [], "faces": [],
+			"hunter": false, "lane": [], "q": null}
+		var cs: Array = []
+		for x in range(_w - 1, -1, -1):
+			cs.append(Vector2i(x, route))
+		var span := _line_span({"kind": "ROUTE", "index": route, "cells": cs, "type": type, "home": true}, B_LANE_Y)
+		if not span.is_empty():
+			var lm := _mat_live(col, E_PATH, B_LANE_A)
+			bc["lane"] = [lm]
+			_b_pulse.append(lm)
+			_dashes(root, span[0] as Vector3, span[1] as Vector3, Vector3.ZERO, lm)
+		var pos := _grid_world(Vector2i(_w - 1, route)) + Vector3(CAND_DX * CELL_DX, VEH_Y, 0.0)
+		if typed:
+			var v := _make_vehicle(type, false, CAND_ALPHA)
+			var n: Node3D = v["node"]
+			n.position = pos
+			n.rotation.y = HEADING_HOME
+			bc["node"] = n
+			bc["mats"] = v["mats"]
+			bc["parts"] = v["parts"]
+			bc["faces"] = v["faces"]
+		bc["q"] = _qmark(root, pos + Vector3(0.0, B_Q_DY, 0.0) + _cam_back() * B_Q_FWD, B_Q_S, col)
+		_bcands.append(bc)
+	if real >= 0 and _b_has(real):
+		_b_real = real
+		_apply_b_reveal(1.0)
+	else:
+		_apply_b_reveal(0.0)
+	_face_all()
+
+
+## L14: the REVEAL B beat. The B candidate on route `real` (a route index) ignites, the other dissolves and both "?"
+## collapse. It plays at the current speed (instant settles at once) and returns cues_finished; the sealed_b cues
+## follow it.
+func reveal_b(real: int) -> Signal:
+	return play([{"kind": "reveal_b", "line": real}], _speed)
+
+
+## L14: remove the B candidates.
+func clear_b_cands() -> void:
+	_clear_b_cands()
+	_b_real = -1
+
+
+## L14: a cracked gray card flies from district `cell` to the screen point `to` (viewport pixels of this board's
+## viewport, the same space as cell_screen_pos), for a district turned TAKEN. It does not interrupt a playout and runs
+## at the current speed. Returns a signal that fires when the card lands (in instant mode: the next frame, the card
+## left frozen near its end until the next play() or reset).
+func wound_fly(cell: Vector2i, to: Vector2) -> Signal:
+	var f := WoundFlight.new()
+	_start_wound(cell, to, f)
+	return f.done
 
 
 ## L13: the hunter's two sealed streets (street indices, in hunter_cands order) for a hunter of the given type. Each
@@ -980,11 +1183,20 @@ func clear_hunter_cands() -> void:
 
 
 ## L13: the Heat ghosts on the corp tower: `active` bright ghost beams (one per extra beam the current Heat brings) and,
-## when next_faint, one faint ghost for the next threshold. Kept across setup().
-func set_heat_ghosts(active: int, next_faint: bool) -> void:
+## when next_faint, one faint ghost for the next threshold. L14: with tags (the default) each ghost carries a small
+## gold-edged "+1 card" tag (the extra card the band deals). Kept across setup().
+func set_heat_ghosts(active: int, next_faint: bool, tags: bool = true) -> void:
 	_hg_active = maxi(0, active)
 	_hg_faint = next_faint
+	_hg_tags = tags
 	_refresh_heat_ghosts()
+
+
+## L14: the free screen area (in the 1280 x 720 reference viewport) the camera fits the board into. An empty rect
+## restores the default (left of the 420 px panel, between the HUD and the legend).
+func set_fit_free(r: Rect2) -> void:
+	_fit_free = r if r.size.x > 0.0 and r.size.y > 0.0 else FIT_FREE
+	_fit_camera()
 
 
 ## Draw planned lines along their roads, each with its type glyph at the entry. A line is {kind, index, cells, type,
@@ -1115,7 +1327,8 @@ func clear_cracks() -> void:
 
 ## Draw a response row's effect on the board: p = {kind: "REDEPLOY"|"DEPLOY"|"SACRIFICE"|"JAM"|"HOLD", from: Vector2i
 ## or null, to: Vector2i or null, type: String}, with the optional keys street: int (the hunter's street for JAM when
-## no hound is shown) and cell: Vector2i (the SACRIFICE cell; to is accepted too).
+## no hound is shown), cell: Vector2i (the SACRIFICE cell; to is accepted too), verb: String (L14: the card verb shown
+## on the ghost sentry) and gold: bool (L14: a gold double edge on the target, for the SCAN's pick).
 ## - REDEPLOY / DEPLOY: an arc arrow in the sentry type's color from the source to the target cell, with a ghost
 ##   sentry at the target. The source is a spinning dashed ring on the sentry's cell, or (from = null) the reserve tray
 ##   just right of our HQ on the target's route.
@@ -1123,13 +1336,14 @@ func clear_cracks() -> void:
 ##   dome with a shield glyph stands over our HQ.
 ## - JAM: a red cross over the hound (the outcome hound, else the hunter-candidates hound, else the head of p.street);
 ##   the hound and its path dim.
-## - HOLD: nothing.
+## - HOLD: nothing (a gold edge goes on our HQ).
 ## Replaces any preview shown before. play() clears it.
 func show_response_preview(p: Dictionary) -> void:
 	clear_response_preview()
 	_resp_last = p.duplicate()
 	var kind := str(p.get("kind", "HOLD"))
 	var type := str(p.get("type", "D"))
+	var gold := bool(p.get("gold", false))
 	match kind:
 		"REDEPLOY", "DEPLOY":
 			var tv: Variant = p.get("to", null)
@@ -1149,13 +1363,20 @@ func show_response_preview(p: Dictionary) -> void:
 				cut = RESP_TRAY_CUT
 				_resp_tray(a, type, m)
 			_resp_arrow(a, _grid_world(to), cut, RESP_DST_CUT, m)
-			_resp_target(to, type, m)
+			_resp_target(to, type, m, str(p.get("verb", "")))
+			if gold:
+				_gold_rings(_resp_root, _grid_world(to), GOLD_R)
 		"SACRIFICE":
 			var cv: Variant = p.get("cell", p.get("to", null))
 			if cv is Vector2i:
 				_resp_sacrifice(cv as Vector2i)
+				if gold:
+					_gold_rings(_resp_root, _grid_world(cv as Vector2i), GOLD_R)
 		"JAM":
-			_resp_jam(p)
+			_resp_jam(p, gold)
+		_:
+			if gold and _home_root != null:
+				_gold_rings(_resp_root, _home_world() + Vector3(0.0, HQ_PLAT.y, 0.0), GHOST_HOME_R + PICK_HOME_PAD)
 
 
 ## Remove the response preview (and undim the hound).
@@ -1172,10 +1393,13 @@ func clear_response_preview() -> void:
 	_resp_dimmed = false
 
 
-## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, hunter_reveal, evaded, decay, fall) and
-## emit cues_finished at the end. Planned paths, the outcome overlay and the response preview are cleared; the route
-## verdicts and the hunter street candidates stay. Every beam leaves a trail with its hits and stops until
-## reset_playout(). Hit cells get the crack mark.
+## Play cues in order (beam_step, block, hit, home, hunter_turn, jam, reveal, reveal_b, hunter_reveal, evaded, decay,
+## fall, wound) and emit cues_finished at the end. Planned paths, the outcome overlay and the response preview are
+## cleared; the route verdicts, the hunter street candidates and the B candidates stay. Every beam leaves a trail with
+## its hits and stops until reset_playout(). Hit cells get the crack mark.
+## L14 cue keys: beam ("beam1", "extra1", "extra2", "sealed", "sealed_b", "hunter"), optional; a "sealed" beam enters
+## from the lit A convoy and a "sealed_b" beam from the lit B convoy. A "wound" cue {cell, to: Vector2} starts a wound
+## card flight (see wound_fly) and moves on after a short beat.
 func play(cues: Array, speed: float = 1.0) -> Signal:
 	clear_paths()
 	clear_outcome()
@@ -1209,12 +1433,13 @@ func show_fall() -> Signal:
 	return play([{"kind": "fall"}], _speed)
 
 
-## Instant on: every cue settles in one frame, effects show frozen at their settled look and trails at rest. Turning it
-## on mid-playout finishes the playout at once.
+## Instant on: every cue settles in one frame, effects show frozen at their settled look and trails at rest; wound
+## cards in flight land at once. Turning it on mid-playout finishes the playout at once.
 func set_instant(on: bool) -> void:
 	_instant = on
 	if on:
 		_snap_trails()
+		_clear_wounds()
 		if _playing:
 			_settle_cue(_cur_cue)
 			_finish_instant()
@@ -1225,8 +1450,8 @@ func set_speed(speed: float) -> void:
 	_speed = maxf(speed, SPEED_MIN)
 
 
-## Scramble on: the board labels (route names, street numbers, the EVADED stamp) show seeded noise of the same length.
-## Off: the real names come back. "?" glyphs are never scrambled.
+## Scramble on: the board labels (route names, street numbers, the EVADED stamp, the "+1 card" tags) show seeded noise
+## of the same length. Off: the real names come back. "?" glyphs are never scrambled.
 func set_scramble(on: bool) -> void:
 	_scramble = on
 	_apply_label_text()
@@ -1258,7 +1483,8 @@ func highlight(cells: Array, color: Color) -> void:
 ## Mark the given cells (Vector2i, or the String "HOME") by meaning:
 ## - "capture": an amber plus over the district and a pulsing amber ring;
 ## - "repair": a red outline around the district's wrench and a pulsing red hex ring;
-## - "picked": a steady white ring with a check mark (a picked or committed choice).
+## - "picked": a steady white ring with a check mark (a picked or committed choice);
+## - "gold" (L14): a steady gold double edge (the SCAN's pick, a Heat-dealt card's district).
 ## Any other kind falls back to a gray glow. add = false clears the highlights shown before; add = true keeps them, so
 ## kinds can be combined.
 func highlight_kind(cells: Array, kind: String, add: bool = false) -> void:
@@ -1274,6 +1500,8 @@ func highlight_kind(cells: Array, kind: String, add: bool = false) -> void:
 				_hl_repair(pos, home)
 			"picked":
 				_hl_picked(pos, home)
+			"gold":
+				_hl_gold(pos, home)
 			_:
 				_hl_disc(pos, GREY)
 
@@ -1285,9 +1513,9 @@ func clear_highlight() -> void:
 	_hl.clear()
 
 
-## Drop every vehicle, effect, shake, candidate, trail, planned path and response preview (a fresh raid). Route
-## verdicts stay until hide_route_verdicts(), hunter street candidates until clear_hunter_cands(), crack decals until
-## the next raid's show_candidates(-1).
+## Drop every vehicle, effect, shake, candidate (A and B), trail, planned path and response preview (a fresh raid).
+## Route verdicts stay until hide_route_verdicts(), hunter street candidates until clear_hunter_cands(), crack decals
+## until the next raid's show_candidates(-1); wound cards keep flying.
 func reset_playout() -> void:
 	_reset_motion()
 	clear_paths()
@@ -1338,8 +1566,8 @@ func _fit_points() -> Array[Vector3]:
 
 
 ## Fit the camera. It aims at the board's fit points (see _fit_points) and picks the distance so their projections
-## fill the free area, then shifts the image there with h_offset / v_offset (camera-plane units). This is the same math
-## as Godot's perspective projection (KEEP_HEIGHT), so cell_screen_pos matches what is drawn.
+## fill the free area (_fit_free), then shifts the image there with h_offset / v_offset (camera-plane units). This is
+## the same math as Godot's perspective projection (KEEP_HEIGHT), so cell_screen_pos matches what is drawn.
 func _fit_camera() -> void:
 	if cam == null:
 		return
@@ -1355,7 +1583,7 @@ func _fit_camera() -> void:
 		rel.append(inv * (p - center))
 	var vp := _view_size()
 	var k := Vector2(vp.x / FIT_VIEW.x, vp.y / FIT_VIEW.y)
-	var ref := FIT_FREE.grow(-FIT_MARGIN)
+	var ref := _fit_free.grow(-FIT_MARGIN)
 	var area := Rect2(ref.position * k, ref.size * k)
 	var n0 := Vector2(area.position.x / vp.x * 2.0 - 1.0, 1.0 - area.end.y / vp.y * 2.0)
 	var n1 := Vector2(area.end.x / vp.x * 2.0 - 1.0, 1.0 - area.position.y / vp.y * 2.0)
@@ -1454,6 +1682,14 @@ func _mat(col: Color, energy: float, alpha: float = 1.0) -> StandardMaterial3D:
 ## A material of its own (for fades, flicker and pulses); its base alpha and energy are kept as metadata.
 func _mat_live(col: Color, energy: float, alpha: float = 1.0) -> StandardMaterial3D:
 	return _make_mat(col, energy, alpha, true)
+
+
+## L14: a material of its own drawn over everything (wound cards in flight).
+func _mat_top(col: Color, energy: float, alpha: float = 1.0) -> StandardMaterial3D:
+	var m := _mat_live(col, energy, alpha)
+	m.no_depth_test = true
+	m.render_priority = WOUND_PRIORITY
+	return m
 
 
 func _make_mat(col: Color, energy: float, alpha: float, transparent: bool) -> StandardMaterial3D:
@@ -1650,6 +1886,62 @@ func _shield_into(holder: Node3D, m: Material) -> void:
 	_cyl(holder, Vector3(0.0, SHIELD_TIP_Y, 0.0), SHIELD_TIP_R, SHAPE_DEPTH, TRI_SEGS, m).rotation.x = PI * 0.5
 
 
+## L14: a card verb glyph built flat in a facing holder's plane (local units, about +-0.3): GUARD a shield, SHIFT a
+## curved arrow, JAM a zigzag. Other verbs draw nothing.
+func _verb_into(g: Node3D, verb: String, m: Material) -> void:
+	match verb:
+		"GUARD":
+			var s := Node3D.new()
+			s.position = Vector3(0.0, VERB_SHIELD_DY, 0.0)
+			g.add_child(s)
+			_shield_into(s, m)
+		"SHIFT":
+			var pts: Array = []
+			for i in range(SHIFT_SEGS + 1):
+				var a := lerpf(SHIFT_A.x, SHIFT_A.y, float(i) / float(SHIFT_SEGS))
+				pts.append(SHIFT_C + Vector2(cos(a), sin(a)) * SHIFT_R)
+			_polyline(g, pts, VERB_LINE_W, m)
+			var dir := Vector2(sin(SHIFT_A.y), -cos(SHIFT_A.y))
+			var tip: Vector2 = (pts[pts.size() - 1] as Vector2) + dir * SHIFT_TIP
+			for sd: float in [1.0, -1.0]:
+				_polyline(g, [tip, tip - dir.rotated(sd * SHIFT_HEAD_ANG) * SHIFT_HEAD_L], VERB_LINE_W, m)
+		"JAM":
+			_polyline(g, JAM_PTS, VERB_LINE_W, m)
+
+
+## L14: the verb badge on a sentry glyph holder: a small dark disc right of the type shape (gold-ringed when gold)
+## holding the verb glyph.
+func _verb_badge(holder: Node3D, verb: String, m: Material, gold: bool) -> void:
+	var b := Node3D.new()
+	b.position = Vector3(VERB_POS.x, VERB_POS.y, VERB_Z)
+	holder.add_child(b)
+	_backing(b, VERB_BACK_R)
+	if gold:
+		var ring := _torus(b, Vector3.ZERO, VERB_GOLD_R.x, VERB_GOLD_R.y, CIRCLE_SEGS, _mat(GOLD, E_GOLD))
+		ring.scale = Vector3.ONE
+		ring.rotation.x = -PI * 0.5
+	var g := Node3D.new()
+	g.scale = Vector3.ONE * VERB_S
+	b.add_child(g)
+	_verb_into(g, verb, m)
+
+
+## L14: the four edges of a flat card (size x by y) in a facing holder's plane, just in front of its face.
+func _card_edges(holder: Node3D, size: Vector3, w: float, m: Material) -> void:
+	var z := size.z * 0.5 + SHAPE_DEPTH * 0.25
+	for s: float in [1.0, -1.0]:
+		_box(holder, Vector3(0.0, s * size.y * 0.5, z), Vector3(size.x + w, w, SHAPE_DEPTH), m)
+		_box(holder, Vector3(s * size.x * 0.5, 0.0, z), Vector3(w, size.y + w, SHAPE_DEPTH), m)
+
+
+## L14: a steady gold double ring on the ground at pos (outer radius r).
+func _gold_rings(parent: Node3D, pos: Vector3, r: float) -> void:
+	var m := _mat(GOLD, E_GOLD)
+	var p := pos + Vector3(0.0, HL_Y, 0.0)
+	_torus(parent, p, r, r + GOLD_RING_W, CIRCLE_SEGS, m)
+	_torus(parent, p, r - GOLD_RING_GAP - GOLD_RING_W, r - GOLD_RING_GAP, CIRCLE_SEGS, m)
+
+
 ## The hound silhouette (forward +x, on the floor) in a holder scaled by HOUND_S: body parts in `body`, glowing eyes in
 ## `eye`. Returns the leg nodes, each with a "gait" meta (+1 or -1) for the run cycle.
 func _build_hound(parent: Node3D, body: Material, eye: Material) -> Array:
@@ -1771,6 +2063,44 @@ func _lane_offset(use: Dictionary, road: String) -> float:
 	return LANE_GAP * float(ceili(float(n) * 0.5)) * (1.0 if n % 2 == 1 else -1.0)
 
 
+# ======================= cards (L14) =======================
+## The card lookup {id: [type, verb]}: st.deck ([[id, type, verb]]) first, then `cards` on top ({id: [id, type, verb]
+## or [type, verb] or {type, verb} or a type String}).
+func _card_lookup(st: Dictionary, cards: Dictionary) -> Dictionary:
+	var out := {}
+	var deck: Variant = st.get("deck", [])
+	if deck is Array:
+		for cd: Variant in deck:
+			if cd is Array and (cd as Array).size() >= 3:
+				out[str(cd[0])] = [str(cd[1]), str(cd[2])]
+	for k: Variant in cards:
+		var v: Variant = cards[k]
+		if v is Array:
+			var a: Array = v
+			if a.size() >= 3:
+				out[str(k)] = [str(a[1]), str(a[2])]
+			elif a.size() == 2:
+				out[str(k)] = [str(a[0]), str(a[1])]
+		elif v is Dictionary:
+			out[str(k)] = [str((v as Dictionary).get("type", "")), str((v as Dictionary).get("verb", ""))]
+		elif v is String:
+			out[str(k)] = [String(v), ""]
+	return out
+
+
+## A sentry value (a type or a card id) as [type, verb]; ["", ""] for an unknown id or a wound.
+func _sentry_of(v: Variant, lookup: Dictionary) -> Array:
+	var s := str(v)
+	if TYPE_COLOR.has(s):
+		return [s, ""]
+	if lookup.has(s):
+		var tv: Array = lookup[s]
+		var t := str(tv[0])
+		if TYPE_COLOR.has(t) and str(tv[1]) != "WOUND":
+			return [t, str(tv[1])]
+	return ["", ""]
+
+
 # ======================= board labels and scramble =======================
 ## The text a board label shows: the real text, or seeded noise of the same length while scrambled.
 func _board_text(text: String, slot: int) -> String:
@@ -1813,6 +2143,10 @@ func _apply_label_text() -> void:
 		var l: Variant = _street_labels[x]
 		if is_instance_valid(l):
 			(l as Label3D).text = _board_text(_street_name(x), SCRAMBLE_STREET_K + x)
+	for e: Array in _hg_labels:
+		var l: Variant = e[0]
+		if is_instance_valid(l):
+			(l as Label3D).text = _board_text(HG_TAG_TEXT, SCRAMBLE_TAG + int(e[1]))
 
 
 # ======================= the static set =======================
@@ -1994,12 +2328,13 @@ func _build_hq(xcol: int, col: Color, body_col: Color) -> Node3D:
 	return root
 
 
-## L13: rebuild the Heat ghosts on the corp tower from _hg_active / _hg_faint.
+## L13: rebuild the Heat ghosts on the corp tower from _hg_active / _hg_faint (L14: with their "+1 card" tags).
 func _refresh_heat_ghosts() -> void:
 	if is_instance_valid(_heat_root):
 		_heat_root.queue_free()
 	_heat_root = null
 	_hg_mats.clear()
+	_hg_labels.clear()
 	if not is_instance_valid(_corp_root):
 		return
 	_heat_root = Node3D.new()
@@ -2012,7 +2347,8 @@ func _refresh_heat_ghosts() -> void:
 
 
 ## One Heat ghost in slot k: a floating bar off the corp tower's HOME side with an orb at its root and a chevron
-## pointing at HOME. Active ghosts pulse; the faint one is dim and still.
+## pointing at HOME. Active ghosts pulse; the faint one is dim and still. L14: a gold-edged card glyph with "+1 card"
+## above the ghost's tip.
 func _heat_ghost(k: int, faint: bool) -> void:
 	var y := HG_Y0 + HG_STEP * float(k)
 	var x0 := -HQ_BASE * 0.5 - HG_GAP
@@ -2024,6 +2360,18 @@ func _heat_ghost(k: int, faint: bool) -> void:
 	_sphere(_heat_root, Vector3(x0, y, 0.0), HG_ORB_R, m)
 	if not faint:
 		_hg_mats.append(m)
+	if not _hg_tags:
+		return
+	var tm := _mat_live(GOLD, E_HG_FAINT if faint else E_HG, HG_A_FAINT if faint else 1.0)
+	var holder := _facing(_heat_root, Vector3(x1 + HG_TAG_DX, y + HG_TAG_Y, 0.0))
+	_box(holder, Vector3.ZERO, HG_TAG_CARD, _solid(BG))
+	_card_edges(holder, HG_TAG_CARD, HG_TAG_EDGE, tm)
+	var a := HG_TAG_A_FAINT if faint else 1.0
+	var l := _label(holder, _board_text(HG_TAG_TEXT, SCRAMBLE_TAG + k), Vector3(HG_TAG_LX, 0.0, 0.0), Color(GOLD, a), HG_TAG_FONT, HORIZONTAL_ALIGNMENT_LEFT)
+	l.outline_modulate = Color(SHADOW_INK, SHADOW_INK.a * a)
+	_hg_labels.append([l, k])
+	if not faint:
+		_hg_mats.append(tm)
 
 
 func _build_home_pips() -> void:
@@ -2078,7 +2426,7 @@ func _refresh_cell(c: Vector2i) -> void:
 		return
 	var st: String = _status.get(c, "NEUTRAL")
 	var sen := str(_sentries.get(c, ""))
-	var key := "%s|%s|%s|%s" % [st, sen, c == _ghost_cell, _cracked.has(c)]
+	var key := "%s|%s|%s|%s|%s|%s" % [st, sen, str(_sentry_verb.get(c, "")), _sentry_gold.has(c), c == _ghost_cell, _cracked.has(c)]
 	if str(_cell_key.get(c, "")) == key:
 		return
 	_cell_key[c] = key
@@ -2162,7 +2510,7 @@ func _rebuild_cell(c: Vector2i, st: String, sen: String) -> void:
 	if st == "OK" and _cracked.has(c):
 		_build_crack(root)
 	if sen != "":
-		_build_sentry(root, sen)
+		_build_sentry(root, sen, str(_sentry_verb.get(c, "")), _sentry_gold.has(c))
 	if c == _ghost_cell:
 		_dashed_ring(root, GHOST_R, _mat(GOLD, E_GHOST))
 
@@ -2220,14 +2568,20 @@ func _build_crack(root: Node3D) -> void:
 	_polyline(holder, CRACK_BRANCH_2, CRACK_W * 0.8, m)
 
 
-func _build_sentry(root: Node3D, type: String) -> void:
+## A sentry: a type-colored decal, a pylon and its type shape. L14: the card's verb glyph on a small disc beside the
+## shape, and a gold edge ring (and gold-ringed verb disc) for a gold card.
+func _build_sentry(root: Node3D, type: String, verb: String = "", gold: bool = false) -> void:
 	var col := _type_col(type)
 	var m := _mat(col, E_SENTRY)
 	_torus(root, Vector3(0.0, DECAL_Y + RING_Y * 0.5, 0.0), SENTRY_DECAL.x, SENTRY_DECAL.y, CIRCLE_SEGS, m)
 	_cyl(root, Vector3(0.0, DECAL_Y + DECAL_T, 0.0), SENTRY_DECAL.x, DECAL_T, CIRCLE_SEGS, _mat(col, E_SENTRY * HALO_E_K, DECAL_ALPHA))
 	_cyl(root, Vector3(0.0, SENTRY_BASE.y * 0.5, 0.0), SENTRY_BASE.x, SENTRY_BASE.y, HEX, _solid(STEEL))
 	_cyl(root, Vector3(0.0, SENTRY_POLE.y * 0.5, 0.0), SENTRY_POLE.x, SENTRY_POLE.y, HEX, _mat(col, E_SENTRY * HALO_E_K))
-	_shape(root, Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, m)
+	var holder := _shape(root, Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, m)
+	if verb != "":
+		_verb_badge(holder, verb, _mat(WHITE, E_VERB), gold)
+	if gold:
+		_torus(root, Vector3(0.0, DECAL_Y + RING_Y * 0.5, 0.0), SENTRY_GOLD.x, SENTRY_GOLD.y, CIRCLE_SEGS, _mat(GOLD, E_GOLD))
 
 
 # ======================= highlights =======================
@@ -2283,6 +2637,13 @@ func _hl_picked(pos: Vector3, home: bool) -> void:
 	var holder := _facing(_hl_root, pos + _cam_ground() * r + Vector3(0.0, PICK_CHECK_Y + lift, 0.0))
 	_backing(holder, PICK_BACK_R)
 	_polyline(holder, CHECK_PTS, CHECK_W, m)
+
+
+## L14 gold edge: a steady gold double ring around the district (or our HQ platform).
+func _hl_gold(pos: Vector3, home: bool) -> void:
+	var r := (GHOST_HOME_R + PICK_HOME_PAD) if home else GOLD_R
+	var lift := HQ_PLAT.y if home else 0.0
+	_gold_rings(_hl_root, pos + Vector3(0.0, lift, 0.0), r)
 
 
 # ======================= planned paths =======================
@@ -2497,6 +2858,158 @@ func _apply_hunter_reveal(u: float) -> void:
 		_hc_hound.position = _hc_from.lerp(head, e)
 
 
+# ======================= B candidates (L14) =======================
+func _b_has(route: int) -> bool:
+	for bc: Dictionary in _bcands:
+		if int(bc["route"]) == route:
+			return true
+	return false
+
+
+func _clear_b_cands() -> void:
+	for bc: Dictionary in _bcands:
+		var nv: Variant = bc["node"]
+		if is_instance_valid(nv):
+			(nv as Node3D).queue_free()
+	if _b_root != null:
+		for ch in _b_root.get_children():
+			ch.queue_free()
+	_bcands.clear()
+	_b_pulse.clear()
+
+
+## REVEAL B at progress u: both "?" collapse, the real route's lane and convoy ignite, the other dissolves. With no
+## real route set, everything shows sealed.
+func _apply_b_reveal(u: float) -> void:
+	var e := _ease_out(u)
+	for bc: Dictionary in _bcands:
+		var root: Node3D = bc["root"]
+		var nv: Variant = bc["node"]
+		var n: Node3D = nv as Node3D if is_instance_valid(nv) else null
+		var qv: Variant = bc["q"]
+		var q: Node3D = qv as Node3D if is_instance_valid(qv) else null
+		var lane: Array = bc["lane"]
+		if _b_real < 0:
+			_tint(bc["mats"], 1.0, 1.0)
+			_tint(lane, 1.0, 1.0)
+			if n != null:
+				n.scale = Vector3.ONE
+				n.visible = true
+			if is_instance_valid(root):
+				root.visible = true
+			if q != null:
+				q.scale = Vector3.ONE * B_Q_S
+				q.visible = true
+			continue
+		if q != null:
+			q.scale = Vector3.ONE * B_Q_S * maxf(1.0 - e, Q_MIN_S)
+			q.visible = u < 1.0
+		if int(bc["route"]) == _b_real:
+			_tint(bc["mats"], lerpf(1.0, 1.0 / CAND_ALPHA, u), lerpf(1.0, E_CAND_LIT / E_VEH, u))
+			_tint(lane, lerpf(1.0, 1.0 / B_LANE_A, u), lerpf(1.0, B_IGNITE_E, u))
+		else:
+			_tint(bc["mats"], 1.0 - u, 1.0 - u)
+			_tint(lane, 1.0 - u, 1.0 - u)
+			if n != null:
+				n.scale = Vector3.ONE * lerpf(1.0, CAND_SHRINK, u)
+				n.visible = u < 1.0
+			if is_instance_valid(root):
+				root.visible = u < 1.0
+
+
+# ======================= wound cards (L14) =======================
+## Start one wound card flight from `cell` to the screen point `to` (see wound_fly); f fires when it lands.
+func _start_wound(cell: Vector2i, to: Vector2, f: WoundFlight) -> void:
+	if f == null:
+		f = WoundFlight.new()
+	if cam == null or not cam.is_inside_tree():
+		_emit_flight.call_deferred(f)
+		return
+	var p0 := _grid_world(cell) + Vector3(0.0, WOUND_START_Y, 0.0)
+	var fwd := -cam.global_transform.basis.z
+	var d0 := maxf((p0 - cam.global_position).dot(fwd), CAM_NEAR * 2.0)
+	var p1 := cam.project_position(to, d0 * WOUND_DEPTH_K)
+	var ctrl := (p0 + p1) * 0.5 + Vector3(0.0, WOUND_ARC, 0.0)
+	var holder := Node3D.new()
+	holder.rotation = Vector3(deg_to_rad(CAM_PITCH_DEG), _yaw, 0.0)
+	_fx_root.add_child(holder)
+	var inner := Node3D.new()
+	holder.add_child(inner)
+	var body := _mat_top(WOUND_COL, E_WOUND)
+	var edge := _mat_top(WOUND_EDGE_COL, E_WOUND_EDGE)
+	var crack := _mat_top(RED, E_CRACK)
+	var mats: Array = [body, edge, crack]
+	_box(inner, Vector3.ZERO, WOUND_CARD, body)
+	_card_edges(inner, WOUND_CARD, WOUND_EDGE_W, edge)
+	var cn := Node3D.new()
+	cn.position = Vector3(0.0, 0.0, WOUND_CARD.z * 0.5 + SHAPE_DEPTH)
+	cn.scale = Vector3.ONE * WOUND_CRACK_S
+	inner.add_child(cn)
+	_polyline(cn, CRACK_PTS, CRACK_W, crack)
+	_polyline(cn, CRACK_BRANCH, CRACK_W * 0.8, crack)
+	_polyline(cn, CRACK_BRANCH_2, CRACK_W * 0.8, crack)
+	_fx_ring(_grid_world(cell), RED, 1.0)
+	var w := {"node": holder, "inner": inner, "mats": mats, "p0": p0, "p1": p1, "ctrl": ctrl, "s0": 1.0,
+		"s1": WOUND_DEPTH_K * WOUND_END_K, "t": 0.0, "dur": T_WOUND, "flight": f}
+	if _instant:
+		_apply_wound(w, WOUND_SETTLE_U)
+		_fx_add(holder, "wound_rest", T_WOUND, mats)
+		_emit_flight.call_deferred(f)
+		return
+	_apply_wound(w, 0.0)
+	_wounds.append(w)
+
+
+## A wound card at flight progress u: along a raised arc, shrinking, turning a little, fading at the end.
+func _apply_wound(w: Dictionary, u: float) -> void:
+	var holder: Node3D = w["node"]
+	if not is_instance_valid(holder):
+		return
+	var k := clampf(u, 0.0, 1.0)
+	var e := k * k * (3.0 - 2.0 * k)
+	var p0: Vector3 = w["p0"]
+	var p1: Vector3 = w["p1"]
+	var c: Vector3 = w["ctrl"]
+	holder.position = p0.lerp(c, e).lerp(c.lerp(p1, e), e)
+	holder.scale = Vector3.ONE * lerpf(float(w["s0"]), float(w["s1"]), e)
+	(w["inner"] as Node3D).rotation.z = WOUND_SPIN * e
+	var fade := 1.0 if k < WOUND_FADE_U else 1.0 - (k - WOUND_FADE_U) / (1.0 - WOUND_FADE_U)
+	_tint(w["mats"], fade, 1.0)
+
+
+func _step_wounds(dt: float) -> void:
+	if _wounds.is_empty():
+		return
+	var keep: Array = []
+	for w: Dictionary in _wounds:
+		w["t"] = float(w["t"]) + dt
+		var u := float(w["t"]) / float(w["dur"])
+		if u >= 1.0:
+			var n: Variant = w["node"]
+			if is_instance_valid(n):
+				(n as Node3D).queue_free()
+			_emit_flight.call_deferred(w["flight"])
+			continue
+		_apply_wound(w, u)
+		keep.append(w)
+	_wounds = keep
+
+
+## Every wound card in flight lands at once (its signal fires next frame).
+func _clear_wounds() -> void:
+	for w: Dictionary in _wounds:
+		var n: Variant = w["node"]
+		if is_instance_valid(n):
+			(n as Node3D).queue_free()
+		_emit_flight.call_deferred(w["flight"])
+	_wounds.clear()
+
+
+func _emit_flight(f: WoundFlight) -> void:
+	if f != null:
+		f.done.emit()
+
+
 # ======================= route verdicts =======================
 ## One route's verdict at the lane's corp-side entry: a ring on the road between the last district and the waiting
 ## candidate, and the tier glyph above it, pushed toward the camera. Unknown tiers draw nothing.
@@ -2546,14 +3059,19 @@ func _resp_source(pos: Vector3, m: Material) -> void:
 	_dashed_ring(holder, RESP_SRC_R, m)
 
 
-## The target: a ghost sentry of the type (half alpha) and a ring in the type color.
-func _resp_target(c: Vector2i, type: String, m: Material) -> void:
+## The target: a ghost sentry of the type (half alpha) and a ring in the type color. L14: with the card's verb glyph
+## when verb is set.
+func _resp_target(c: Vector2i, type: String, m: Material, verb: String = "") -> void:
 	var pos := _grid_world(c)
 	var gm := _mat_live(_type_col(type), E_SENTRY, RESP_GHOST_A)
 	_resp_mats.append(gm)
 	_torus(_resp_root, pos + Vector3(0.0, DECAL_Y + RING_Y * 0.5, 0.0), SENTRY_DECAL.x, SENTRY_DECAL.y, CIRCLE_SEGS, gm)
 	_cyl(_resp_root, pos + Vector3(0.0, SENTRY_POLE.y * 0.5, 0.0), SENTRY_POLE.x, SENTRY_POLE.y, HEX, gm)
-	_shape(_resp_root, pos + Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, gm)
+	var holder := _shape(_resp_root, pos + Vector3(0.0, SENTRY_GLYPH_Y, 0.0), type, SENTRY_GLYPH_S, gm)
+	if verb != "":
+		var vm := _mat_live(WHITE, E_VERB, RESP_GHOST_A)
+		_resp_mats.append(vm)
+		_verb_badge(holder, verb, vm, false)
 	_torus(_resp_root, pos + Vector3(0.0, HL_Y, 0.0), HL_R, HL_R + HL_RING_W, CIRCLE_SEGS, m)
 
 
@@ -2619,8 +3137,8 @@ func _resp_sacrifice(c: Vector2i) -> void:
 
 ## JAM: a red cross (pushed toward the camera) and a red ring over the hound, and the hound and its path dim. Uses the
 ## outcome hound, else the hunter-candidates hound (its lanes dim too), else the head of p.street; draws nothing
-## without any.
-func _resp_jam(p: Dictionary) -> void:
+## without any. L14: gold adds a gold double edge under the hound.
+func _resp_jam(p: Dictionary, gold: bool = false) -> void:
 	var pos := Vector3.ZERO
 	var have := false
 	var dim: Array = []
@@ -2647,6 +3165,8 @@ func _resp_jam(p: Dictionary) -> void:
 	var holder := _facing(_resp_root, Vector3(pos.x, RESP_JAM_Y, pos.z) + _cam_back() * RESP_JAM_FWD)
 	for s: float in [1.0, -1.0]:
 		_box(holder, Vector3.ZERO, RESP_JAM_BAR, m).rotation.z = s * PI * 0.25
+	if gold:
+		_gold_rings(_resp_root, Vector3(pos.x, 0.0, pos.z), RESP_JAM_R + GOLD_RING_GAP * 2.0)
 	if not dim.is_empty():
 		_tint(dim, RESP_JAM_DIM, RESP_JAM_DIM)
 		_resp_dim_mats = dim
@@ -2765,16 +3285,18 @@ func _clear_trails() -> void:
 	_hit_count.clear()
 
 
-## Vehicles, effects, shakes, candidates and trails go; planned paths, route verdicts, hunter street candidates and
-## crack decals stay.
+## Vehicles, effects, shakes, candidates (A and B) and trails go; planned paths, route verdicts, hunter street
+## candidates, wound cards in flight and crack decals stay.
 func _reset_motion() -> void:
 	for v: Dictionary in _vehicles.values():
 		(v["node"] as Node3D).queue_free()
 	_vehicles.clear()
 	_clear_fx()
 	_clear_candidates()
+	_clear_b_cands()
 	_clear_trails()
 	_cand_real = -1
+	_b_real = -1
 	_shakes.clear()
 	_playing = false
 	for c: Vector2i in _cell_root:
@@ -2833,6 +3355,13 @@ func _heading(d: Vector3, fallback: float) -> float:
 	return atan2(-d.z, d.x)
 
 
+## The current cue's optional beam key ("" when absent).
+func _cue_beam() -> String:
+	if _qi >= 0 and _qi < _queue.size():
+		return str((_queue[_qi] as Dictionary).get("beam", ""))
+	return ""
+
+
 ## Where a new beam vehicle enters: a little back along its line (the cue's optional "from" cell, else read ahead in the
 ## queue), else it drops from the sky.
 func _entry_point(line: int, cell: Vector2i) -> Vector3:
@@ -2861,7 +3390,9 @@ func _entry_point(line: int, cell: Vector2i) -> Vector3:
 
 
 ## The vehicle of a line, made on first use. A new hunter starts where the hunter-candidates hound stands (that hound
-## then hides), else it drops from the sky over drop_at.
+## then hides), else it drops from the sky over drop_at. After a reveal, the first non-hunter vehicle takes over the
+## lit A convoy (beam "sealed", or entering at its corp end); after REVEAL B, the lit B convoy (beam "sealed_b", or
+## entering at its corp end). The waiting convoys then go.
 func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at: Vector3) -> Dictionary:
 	if _vehicles.has(line):
 		var old: Dictionary = _vehicles[line]
@@ -2873,12 +3404,20 @@ func _vehicle_for(line: int, type: String, hunter: bool, cell: Vector2i, drop_at
 		entry = Vector3(_hc_hound.position.x, 0.0, _hc_hound.position.z)
 		_hc_spawned = true
 		_hc_hound_vis()
-	if not hunter and _cand_real >= 0:
+	var beam := _cue_beam()
+	if not hunter and _cand_real >= 0 and beam != "sealed_b":
 		for cv: Dictionary in _cands:
-			if int(cv["route"]) == _cand_real and cell == Vector2i(_w - 1, _cand_real):
+			if int(cv["route"]) == _cand_real and (beam == "sealed" or cell == Vector2i(_w - 1, _cand_real)):
 				entry = (cv["node"] as Node3D).position
 		_clear_candidates()
 		_cand_real = -1
+	elif not hunter and _b_real >= 0 and beam != "sealed":
+		for bc: Dictionary in _bcands:
+			var bn: Variant = bc["node"]
+			if int(bc["route"]) == _b_real and is_instance_valid(bn) and (beam == "sealed_b" or cell == Vector2i(_w - 1, _b_real)):
+				entry = (bn as Node3D).position
+		_clear_b_cands()
+		_b_real = -1
 	var v := _make_vehicle(type, hunter, 1.0)
 	var n: Node3D = v["node"]
 	n.position = entry
@@ -2971,10 +3510,10 @@ func _apply_reveal(u: float) -> void:
 
 
 func _face_all() -> void:
-	var all: Array = _vehicles.values() + _cands
+	var all: Array = _vehicles.values() + _cands + _bcands
 	for v: Dictionary in all:
 		for f: Node3D in v["faces"]:
-			if f.is_inside_tree():
+			if is_instance_valid(f) and f.is_inside_tree():
 				f.global_rotation = Vector3(_tilt, _yaw, 0.0)
 
 
@@ -3037,6 +3576,8 @@ func _cue_dur_of(kind: String) -> float:
 			return T_JAM
 		"reveal":
 			return T_REVEAL
+		"reveal_b":
+			return T_REVEAL_B
 		"hunter_reveal":
 			return T_HUNT_REVEAL
 		"evaded":
@@ -3045,6 +3586,8 @@ func _cue_dur_of(kind: String) -> float:
 			return T_DECAY
 		"fall":
 			return T_FALL
+		"wound":
+			return T_WOUND_CUE
 	return T_STEP
 
 
@@ -3123,6 +3666,12 @@ func _start_cue(cue: Dictionary) -> void:
 		"reveal":
 			if line >= 0:
 				_cand_real = line
+		"reveal_b":
+			var br := int(cue.get("line", -1))
+			if _b_has(br):
+				_b_real = br
+				var ground := _grid_world(Vector2i(_w - 1, br)) + Vector3(CAND_DX * CELL_DX, 0.0, 0.0)
+				_fx_ring(ground, COBALT_HOT, B_RING_K)
 		"hunter_reveal":
 			var hi := int(cue.get("line", -1))
 			if hi >= 0 and hi < _hc_lanes.size():
@@ -3137,10 +3686,16 @@ func _start_cue(cue: Dictionary) -> void:
 			if _cell_root.has(cell):
 				_status[cell] = "TAKEN"
 				_sentries.erase(cell)
+				_sentry_verb.erase(cell)
+				_sentry_gold.erase(cell)
 				_refresh_cell(cell)
 				_fx_pulse(cell)
 		"fall":
 			_start_fall()
+		"wound":
+			var tv: Variant = cue.get("to", null)
+			if tv is Vector2 and cell != NO_CELL:
+				_start_wound(cell, tv as Vector2, null)
 	if _instant:
 		_update_cue(1.0)
 
@@ -3154,6 +3709,8 @@ func _update_cue(u: float) -> void:
 	var kind := str(_cur_cue.get("kind", ""))
 	if kind == "reveal":
 		_apply_reveal(u)
+	elif kind == "reveal_b":
+		_apply_b_reveal(u)
 	elif kind == "hunter_reveal":
 		_apply_hunter_reveal(u)
 	elif kind == "fall":
@@ -3184,6 +3741,8 @@ func _advance_status(c: Vector2i) -> void:
 		"DOWN":
 			_status[c] = "TAKEN"
 			_sentries.erase(c)
+			_sentry_verb.erase(c)
+			_sentry_gold.erase(c)
 	_refresh_cell(c)
 
 
@@ -3208,6 +3767,8 @@ func _fx_apply(f: Dictionary, u: float) -> void:
 	var k := 1.0 - u
 	var e := _ease_out(u)
 	match str(f["kind"]):
+		"wound_rest":
+			return
 		"shield":
 			n.scale = Vector3.ONE * lerpf(SHIELD_R.x, SHIELD_R.y, e)
 		"ring":
@@ -3297,6 +3858,7 @@ func _process(delta: float) -> void:
 				_settle_cue(_cur_cue)
 				_next_cue()
 		_step_fx(dt)
+		_step_wounds(dt)
 		_step_trails(dt)
 		_step_shakes(dt)
 		_animate(delta)
@@ -3337,13 +3899,15 @@ func _step_shakes(dt: float) -> void:
 
 
 func _animate(delta: float) -> void:
-	var all: Array = _vehicles.values() + _cands
+	var all: Array = _vehicles.values() + _cands + _bcands
 	var gait := sin(_time * GAIT_HZ * TAU) * GAIT_AMP
 	for v: Dictionary in all:
 		var parts: Array = v["parts"]
 		var hunter := bool(v["hunter"])
 		for i in range(parts.size()):
 			var p: Node3D = parts[i]
+			if not is_instance_valid(p):
+				continue
 			var base: Vector3 = p.get_meta("base", p.position)
 			if hunter:
 				p.position = base + Vector3(gait * float(p.get_meta("gait", 0.0)), 0.0, 0.0)
@@ -3377,6 +3941,9 @@ func _animate(delta: float) -> void:
 	_tint(_hl, pulse, pulse)
 	if not _path_pulse.is_empty():
 		_tint(_path_pulse, 1.0, 1.0 + PATH_PULSE * sin(_time * PATH_PULSE_HZ * TAU))
+	if _b_real < 0 and not _b_pulse.is_empty():
+		var bp := 1.0 - B_PULSE + B_PULSE * sin(_time * B_PULSE_HZ * TAU)
+		_tint(_b_pulse, bp, bp)
 	if not _resp_mats.is_empty():
 		_tint(_resp_mats, 1.0, 1.0 - RESP_PULSE + RESP_PULSE * sin(_time * HL_HZ * TAU))
 	for cb: Dictionary in _resp_crumble:

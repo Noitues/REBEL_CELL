@@ -494,3 +494,31 @@ tools (R9), escalation that adds options alongside threats (R13), and partial in
 menu (R14). See RULE_BACKLOG.md.
 
 Review: `_reviews/REVIEW_LAB_L13_batch.md`.
+
+## L14 (batch, 2026-10-24): designer rules R9 + R1 + R13 + R14
+
+| W | P | N | D | C | Total | S | V | Fit |
+|---|---|---|---|---|---|---|---|---|
+| 7 | 8 | 5 | 6 | 8 | **34** | 6 | 6 | **7** |
+
+**Rules applied:**
+- **R9:** an 8-card dummy deck; the hand feeds sentries and responses.
+- **Wounds:** each lost district adds a dead card, at −5 at leg end.
+- **R1:** a second sealed beam.
+- **R13:** one more card drawn per Heat band.
+- **R14:** the best response is sold for +3 Heat.
+
+**Measurement (20 legs):**
+- The greedy player averages 38.1 with no breaches. The naive player breaches 100% of the time.
+- Wounds: 0.45 per leg for greedy, 2.2 for naive.
+- Intensity mix: LOW 5, NORMAL 18, HOT 17.
+- The response decides the outcome in 53% of raids, or 72% of the full outcome table.
+
+**Critic:**
+- Fit rose to 7, the best yet, and C is 8.
+- R14 backfired: hiding results pushed the player away from SACRIFICE, which was the better row.
+- Forecasts often collapse to one tier.
+- The critic calls the remaining gap mostly presentation, about +3 to 38–40.
+- **Next:** L15, a presentation-only round.
+
+Review: `_reviews/REVIEW_LAB_L14_batch.md`.
