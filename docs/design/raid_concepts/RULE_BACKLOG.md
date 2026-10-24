@@ -1,0 +1,19 @@
+# Raid rules backlog: rule changes that raise the bar (tally)
+
+These are rule changes the critics named as the way past the presentation ceiling. None are applied yet. Each needs a
+designer call before a rules round. Estimated gains are the critics' own figures (±3 noise).
+
+| # | Rule change | Axes and est. gain | Source (review) | Notes |
+|---|---|---|---|---|
+| R1 | **Two sealed beams per raid** (or a sealed beam plus a sealed hunter street), so more than one unknown is live at the reveal | S +2–3, D +1 | L11, L7 ("more simultaneous pressure") | The strongest suspense lever. The forecast table grows to 3×3 or uses ranges. |
+| R2 | **The hunter's street is decided at the response step**, not by the first touch: one live unknown during the reveal | S +2, P −1 | L11 (optional 4th change) | Cheap to build; trades prediction for suspense. |
+| R3 | **A response that trades a district for HOME** (e.g. SACRIFICE: a chosen owned cell absorbs the HOME hit and goes TAKEN) | D +1.5, S +1 | L11, L5 ("real trade-offs, not one obvious row") | Gives the post-reveal menu a costly option instead of a lookup. |
+| R4 | **Heat charged in bands** (50 / 75 thresholds) instead of a flat −1 per point; **HOME pips priced well above Heat** | D +1, C +0.5 | L11 | Makes LOW/NORMAL/HOT a real trade. |
+| R5 | **Each intensity buys something different** (HOT = an extra capture, LOW = a free sentry, NORMAL = a repair) | D +1, C +0.5 | L11, L5 ("LOW dominant"), L3 | LOW is chosen 36 of 40 times in every measurement since L3. |
+| R6 | **Different costs for different responses** (SKIP/JAM/REDEPLOY/DEPLOY), and value for a leftover spoof at leg end | D +1, S +1 | L5, L7 | The spoof Heat cost is currently flat. |
+| R7 | **Damage escalates if left** (done in L9: decay DOWN → TAKEN). Possible next step: **a TAKEN district becomes a corp staging point** that adds a beam origin | C +1, D +0.5 | L4, L9 | Builds on the decay that already exists. |
+| R8 | **Look ahead over the whole leg:** warn when HOME first drops, with a projection two raids ahead | P +1, D +1 | L7, L5 | Partly done by `safe_next` (one raid ahead). |
+| R9 | **Tie it to the deck:** sentries, kit or responses come from cards in the run deck | Fit +2, D +1 | L8, L9, L10, L11 ("the raid is a minigame beside the deckbuilder") | The largest Fit lever, and a GDD-level decision. |
+
+**Ceiling statement (critics, L7–L11):** presentation alone tops out near 40–41. Past that needs R1–R3 (simultaneous
+pressure and costly choices) and R9 (deck tie-in).
