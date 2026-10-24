@@ -1,23 +1,29 @@
 extends SceneTree
-## Parity check of the L8–L11 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
+## Parity check of the L8–L13 rules (L8Rules, tools/raid_lab_city/l8_rules.gd) against data/l8_golden.json
 ## (tools/raid_concepts/l8_golden.py; oracle tools/raid_concepts/sweep_l8.py).
 ## It checks:
 ## - the config;
-## - the leg data of every golden leg (leg_from_json);
+## - the leg data of every golden leg (leg_from_json), including the L13 `hunter_cands` (2 distinct streets in 0..3)
+##   and `hunter_real` (0 or 1). The removed `hunter_street` field must be absent;
 ## - every step of the greedy and naive line of each leg. Per step:
-##   - the state before the capture;
+##   - the state before the capture (state JSON carries `extra_capture`, an int);
 ##   - DECAY: for raid > 0, decay(before_capture) gives `after_decay`. For raid 0, `after_decay` equals
-##     `before_capture` and no decay runs. A decayed cell's sentry leaves the placement and goes back to the pool,
-##     so the pool counts stay the same (L11);
-##   - capture_options of the decayed state holds the capture, and capture() of the decayed state gives `before`;
-##   - placements() holds the place (at most MAX_PLACED sentries), and response_options() holds the response
-##     (HOLD, REDEPLOY, DEPLOY or JAM);
-##   - resolve / trace / hunter_line / tier / score, then the forecast;
+##     `before_capture` and no decay runs. A decayed cell's sentry leaves the placement but stays in the pool (L11);
+##   - CAPTURE (L13 R5): `capture` is a list of 0 to 2 cells. Each capture is checked against capture_options of the
+##     current state (the second capture uses the state after the first). A second capture only when extra_capture > 0.
+##     A missing capture only when there is no option. The phase then clears extra_capture, and the result is `before`;
+##   - `cand` is the real sealed candidate and `hunt` the real hunter street (hunter_real);
+##   - placements() holds the place (at most MAX_PLACED sentries), and response_options() holds the response (HOLD,
+##     REDEPLOY, DEPLOY, SACRIFICE or JAM), in the kind order HOLD, REDEPLOY…, DEPLOY…, SACRIFICE…, JAM;
+##   - resolve / trace / hunter_line with hunt (L13 R2), tier and score. The hunter runs
+##     street(hunter_cands[hunt]) top to bottom unless JAM. A SACRIFICE cell ends TAKEN with no sentry and the sealed
+##     beam never harms HOME; a "shielded" touch only appears under SACRIFICE. A raid keeps the pool counts;
+##   - the forecast: per candidate, the HOLD outcome for each of the 2 hunter streets;
 ##   - between_options() holds the between step, between() gives `after`, and score(after);
 ##   - SAFE_NEXT (L11): per intensity in the golden `safe_next`,
 ##     safe_next(leg, raid + 1, decay(leg, between(leg, after_raid, repair, build, intensity))) equals the golden bool;
 ##   - safe_next(leg, RAIDS, st) is true at the end of each line;
-## - every random raid, random between step and random capture check (no decay there).
+## - every random raid (with its `hunt`), random between step and random capture check (no decay there).
 ## States are compared as L8Rules.state_to_json against the golden JSON, by deep compare (ints stay ints; floats to
 ## 1e-6). The first 20 mismatches are printed with their path. Exits 0 only on full parity.
 ##   godot --headless --path . -s res://tools/raid_lab_city/parity_check.gd
@@ -26,20 +32,27 @@ const GOLDEN_PATH := "res://tools/raid_lab_city/data/l8_golden.json"
 const MAX_SHOWN := 20
 const EPS := 1e-6
 const CANDIDATES := 3
+const HUNTERS := 2
+const STREETS := 4
 const KNOWN_BEAMS := ["b1", "extra1", "extra2"]
+const RESPONSE_RANK := {"HOLD": 0, "REDEPLOY": 1, "DEPLOY": 2, "SACRIFICE": 3, "JAM": 4}
+const TYPE_RANK := {"D": 0, "N": 1, "E": 2}
 
 var _fails: int = 0
 var _checks: int = 0
 var _shown: int = 0
 var _steps: int = 0
 var _blocks: int = 0
+var _shielded: int = 0
 var _decayed: int = 0
+var _double_captures: int = 0
 var _raids: int = 3
+var _rows: int = 3
 var _kit_value: float = 2.5
 var _max_placed: int = -1
 var _legs: Dictionary = {}
-var _resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "JAM": 0}
-var _rand_resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "JAM": 0}
+var _resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "SACRIFICE": 0, "JAM": 0}
+var _rand_resp_use: Dictionary = {"HOLD": 0, "REDEPLOY": 0, "DEPLOY": 0, "SACRIFICE": 0, "JAM": 0}
 var _off_option_betweens: int = 0
 var _safe_checked: int = 0
 var _safe_true: int = 0
@@ -67,6 +80,8 @@ func _init() -> void:
 	_kit_value = float(cfg["KIT_VALUE"])
 	if cfg.has("MAX_PLACED"):
 		_max_placed = int(cfg["MAX_PLACED"])
+	if cfg.has("H"):
+		_rows = int(cfg["H"])
 
 	var n_lines := 0
 	for raw: Variant in gold["legs"]:
@@ -82,7 +97,8 @@ func _init() -> void:
 	var rr: Array = gold["random_raids"]
 	for idx in range(rr.size()):
 		var r: Dictionary = rr[idx]
-		var tag := "random raid %d (leg %d raid %d cand %d)" % [idx, int(r["leg"]), int(r["raid"]) + 1, int(r["cand"])]
+		var tag := "random raid %d (leg %d raid %d cand %d hunt %s)" % [idx, int(r["leg"]), int(r["raid"]) + 1,
+			int(r["cand"]), str(r.get("hunt"))]
 		var leg := _leg_of(tag, r["leg"])
 		if leg.is_empty():
 			continue
@@ -121,9 +137,9 @@ func _init() -> void:
 			continue
 		_check_captures(tag, leg, r)
 
-	print("%d lines, %d golden steps (responses %s, %d blocks, %d decayed cells, safe_next %d checked / %d safe), %d random raids (responses %s), %d random betweens (%d off the between_options list), %d random captures"
-		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, _decayed, _safe_checked, _safe_true, rr.size(),
-			JSON.stringify(_rand_resp_use), rb.size(), _off_option_betweens, rc.size()])
+	print("%d lines, %d golden steps (responses %s, %d blocks, %d shielded, %d decayed cells, %d double captures, safe_next %d checked / %d safe), %d random raids (responses %s), %d random betweens (%d off the between_options list), %d random captures"
+		% [n_lines, _steps, JSON.stringify(_resp_use), _blocks, _shielded, _decayed, _double_captures, _safe_checked,
+			_safe_true, rr.size(), JSON.stringify(_rand_resp_use), rb.size(), _off_option_betweens, rc.size()])
 	if _fails == 0:
 		print("PARITY PASS %d checks" % _checks)
 	else:
@@ -173,9 +189,9 @@ func _check_state(label: String, st: Dictionary, want: Variant) -> void:
 	_check_true(label + " ints stay ints", why == "", why)
 
 
-## "" when heat, bank, home_hp and the pool and kit counts are ints, else what is not.
+## "" when heat, bank, home_hp, extra_capture and the pool and kit counts are ints, else what is not.
 func _state_types(sj: Dictionary) -> String:
-	for k: String in ["heat", "bank", "home_hp"]:
+	for k: String in ["heat", "bank", "home_hp", "extra_capture"]:
 		if typeof(sj.get(k)) != TYPE_INT:
 			return "%s is a %s" % [k, type_string(typeof(sj.get(k)))]
 	for group: String in ["pool", "kit"]:
@@ -198,7 +214,7 @@ func _leg_of(tag: String, seed_v: Variant) -> Dictionary:
 	return _legs[s]
 
 
-## leg_from_json kept every value, exploit, start cell and line of the golden leg.
+## leg_from_json kept every value, exploit, start cell and line of the golden leg, and the L13 hunter fields.
 func _check_leg(seed_id: int, leg: Dictionary, raw: Dictionary) -> void:
 	var tag := "leg %d data" % seed_id
 	_check(tag + " seed", leg.get("seed"), raw["seed"])
@@ -225,10 +241,21 @@ func _check_leg(seed_id: int, leg: Dictionary, raw: Dictionary) -> void:
 		_check(t + " perm", _strs(rd.get("perm", [])), g["perm"])
 		_check(t + " real", rd.get("real"), g["real"])
 		_check(t + " hunter_type", _str(rd.get("hunter_type")), g["hunter_type"])
-		_check(t + " hunter_street", rd.get("hunter_street"), g["hunter_street"])
+		_check_true(t + " golden raid has hunter_cands and hunter_real", g.has("hunter_cands") and g.has("hunter_real"),
+			str(g.keys()))
+		_check(t + " hunter_cands", rd.get("hunter_cands"), g.get("hunter_cands"))
+		_check(t + " hunter_real", rd.get("hunter_real"), g.get("hunter_real"))
+		var hc := _ints(rd.get("hunter_cands", []))
+		var hc_ok := hc.size() == HUNTERS and int(hc[0]) != int(hc[1])
+		for x: Variant in hc:
+			hc_ok = hc_ok and int(x) >= 0 and int(x) < STREETS
+		_check_true(t + " hunter_cands are 2 distinct streets in 0..3", hc_ok, _s(hc))
+		var hr := int(rd.get("hunter_real", -1))
+		_check_true(t + " hunter_real is 0 or 1", hr == 0 or hr == 1, str(rd.get("hunter_real")))
+		_check_true(t + " hunter_street is gone (L13)", not rd.has("hunter_street") and not g.has("hunter_street"))
 
 
-## Replays one golden line from initial(leg), chaining our own states: decay (raid > 0), capture, raid, between.
+## Replays one golden line from initial(leg), chaining our own states: decay (raid > 0), capture(s), raid, between.
 func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 	_check_true(tag + " has steps", steps.size() > 0)
 	var st: Dictionary = L8Rules.initial(leg)
@@ -241,24 +268,22 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 		_check(t + " raid index", i, n)
 		_check_state(t + " before capture", st, s["before_capture"])
 		st = _decay_step(t, leg, i, st, s)
-		var opts_j := _cells_json(L8Rules.capture_options(leg, st))
-		var cap: Variant = _cell(s["capture"])
-		if typeof(cap) == TYPE_NIL:
-			_check(t + " no capture only when there is no option (after decay)", opts_j, [])
-		else:
-			_check_true(t + " capture is a capture option (after decay)", _has(opts_j, _cj(cap)),
-				"%s not in %s" % [_s(_cj(cap)), _s(opts_j)])
-			var snap := JSON.stringify(L8Rules.state_to_json(st))
-			var nxt: Dictionary = L8Rules.capture(leg, st, cap)
-			_check_true(t + " capture() leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(st)) == snap)
-			st = nxt
+		st = _capture_phase(t, leg, st, s)
 		_check_state(t + " before (after the capture)", st, s["before"])
-		_check(t + " cand is the real candidate", int(s["cand"]), (leg["raids"][i] as Dictionary).get("real"))
+		var rd: Dictionary = leg["raids"][i]
+		_check(t + " cand is the real candidate", int(s["cand"]), rd.get("real"))
+		_check_true(t + " golden step has hunt", s.has("hunt"))
+		if s.has("hunt"):
+			_check(t + " hunt is the real hunter street", int(s["hunt"]), rd.get("hunter_real"))
 		var place := _place(s["place"])
 		var resp := _resp(s["response"])
-		_resp_use[resp[0]] = int(_resp_use.get(resp[0], 0)) + 1
+		var rk := String(resp[0])
+		_resp_use[rk] = int(_resp_use.get(rk, 0)) + 1
+		if not greedy:
+			_check(t + " naive never responds", _resp_json(resp), ["HOLD"])
+			_check(t + " naive never ghosts", _cj(place["ghost"]), null)
 		var ns := _raid(t, leg, i, st, s)
-		_check_forecast(t, leg, i, st, place, int(s["cand"]), s, greedy)
+		_check_forecast(t, leg, i, st, place, int(s["cand"]), int(s.get("hunt", 0)), s)
 		var breached := int(ns.get("home_hp", 0)) <= 0
 		var last := i == _raids - 1
 		var after: Dictionary = ns
@@ -270,6 +295,9 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 			var rep: Variant = _cell(b["repair"])
 			var build: Variant = _str(b["build"])
 			var inten := String(b["intensity"])
+			if not greedy:
+				_check(t + " naive builds nothing", build, null)
+				_check(t + " naive plays NORMAL", inten, "NORMAL")
 			_check_true(t + " between step is one of between_options()", _option_listed(leg, ns, rep, build, inten),
 				_s([_cj(rep), build, inten]))
 			var snap := JSON.stringify(L8Rules.state_to_json(ns))
@@ -288,6 +316,44 @@ func _replay(tag: String, leg: Dictionary, steps: Array, greedy: bool) -> void:
 	_check_true(tag + " the line runs to the last raid or a breach", ended_ok)
 	var past: Variant = L8Rules.safe_next(leg, _raids, st)
 	_check(tag + " safe_next(raid = RAIDS) is true", past, true)
+
+
+## The CAPTURE phase of a golden step (L13 R5). The golden `capture` is a list of 0 to 2 cells. Capture 1 always
+## runs; capture 2 runs when extra_capture > 0, on the updated state's options. A capture may be missing only when
+## there is no option. The phase then clears extra_capture. Returns the state after the phase.
+func _capture_phase(t: String, leg: Dictionary, st: Dictionary, s: Dictionary) -> Dictionary:
+	var raw: Variant = s.get("capture")
+	var caps: Array = []
+	if typeof(raw) == TYPE_ARRAY:
+		caps = raw
+	else:
+		_fail(t + " capture", "is a %s (%s), want a list of 0 to 2 cells" % [type_string(typeof(raw)), _s(raw)])
+	var extra := int(st.get("extra_capture", 0))
+	var allowed := 2 if extra > 0 else 1
+	_check_true(t + " captures at most 1 + (extra_capture > 0)", caps.size() <= allowed,
+		"%d captures with extra_capture %d" % [caps.size(), extra])
+	var cur: Dictionary = st
+	for n in range(maxi(allowed, caps.size())):
+		var tc := "%s capture %d" % [t, n + 1]
+		var opts_j := _cells_json(L8Rules.capture_options(leg, cur))
+		if n >= caps.size():
+			_check(tc + " is skipped only when there is no option", opts_j, [])
+			continue
+		var cap: Variant = _cell(caps[n])
+		if typeof(cap) != TYPE_VECTOR2I:
+			_fail(tc, "is %s, want a cell [x, y]" % _s(caps[n]))
+			continue
+		_check_true(tc + " is a capture option", _has(opts_j, _cj(cap)), "%s not in %s" % [_s(_cj(cap)), _s(opts_j)])
+		var snap := JSON.stringify(L8Rules.state_to_json(cur))
+		var nxt: Dictionary = L8Rules.capture(leg, cur, cap)
+		_check_true(tc + " capture() leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(cur)) == snap)
+		cur = nxt
+	if caps.size() >= 2:
+		_double_captures += 1
+	if cur.has("extra_capture") and int(cur["extra_capture"]) != 0:
+		cur = cur.duplicate(true)
+		cur["extra_capture"] = 0
+	return cur
 
 
 ## The SAFE_NEXT record of a golden step with a between step (L11). For every intensity in the golden
@@ -346,18 +412,23 @@ func _decay_step(t: String, leg: Dictionary, i: int, st: Dictionary, s: Dictiona
 	var sj_before: Dictionary = L8Rules.state_to_json(st)
 	var sj_after: Dictionary = L8Rules.state_to_json(dec)
 	_check(t + " decay keeps the pool (a lost sentry goes back to the pool)", sj_after.get("pool"), sj_before.get("pool"))
+	_check(t + " decay keeps extra_capture", sj_after.get("extra_capture"), sj_before.get("extra_capture"))
 	if has_ad:
 		_check_state(t + " after decay", dec, s["after_decay"])
 	return dec
 
 
-## One raid from st against a golden raid record (place, cand, response, trace, hunter, tier, after_raid, score_raid).
-## Returns our state after the raid.
+## One raid from st against a golden raid record (place, cand, hunt, response, trace, hunter, tier, after_raid,
+## score_raid). Returns our state after the raid.
 func _raid(t: String, leg: Dictionary, i: int, st: Dictionary, g: Dictionary) -> Dictionary:
 	var place := _place(g["place"])
 	var cand := int(g["cand"])
+	var hunt_ok := g.has("hunt")
+	_check_true(t + " golden raid has hunt", hunt_ok)
+	var hunt := int(g["hunt"]) if hunt_ok else 0
 	var resp := _resp(g["response"])
 	_check_true(t + " cand is a candidate", cand >= 0 and cand < CANDIDATES, str(cand))
+	_check_true(t + " hunt is 0 or 1", hunt >= 0 and hunt < HUNTERS, str(hunt))
 	if _max_placed >= 0:
 		var n_placed := (place["sentries"] as Dictionary).size()
 		_check_true(t + " place holds at most MAX_PLACED sentries", n_placed <= _max_placed,
@@ -375,7 +446,8 @@ func _raid(t: String, leg: Dictionary, i: int, st: Dictionary, g: Dictionary) ->
 	for r: Variant in L8Rules.response_options(leg, i, st, cand, place):
 		r_opts.append(_resp_json(r))
 	_check_true(t + " response is one of response_options()", _has(r_opts, _resp_json(resp)), "%s not in %s" % [rkey, _s(r_opts)])
-	var res: Dictionary = L8Rules.resolve(leg, i, st, cand, place, resp)
+	_check_response_order(t, st, r_opts)
+	var res: Dictionary = L8Rules.resolve(leg, i, st, cand, hunt, place, resp)
 	if not (res.has("state") and res.has("touches")):
 		_fail(t + " resolve", "result lacks state / touches: %s" % str(res.keys()))
 		return st
@@ -386,15 +458,110 @@ func _raid(t: String, leg: Dictionary, i: int, st: Dictionary, g: Dictionary) ->
 		want_touches.append([e[1], e[2]])
 		if String(e[2]) == "block":
 			_blocks += 1
+		elif String(e[2]) == "shielded":
+			_shielded += 1
 	_check(t + " touches", _touches_json(touches), want_touches)
-	_check(t + " trace", _trace_json(L8Rules.trace(leg, i, st, cand, place, resp)), g["trace"])
-	_check(t + " hunter line", _line_json(L8Rules.hunter_line(leg, i, st, cand, place, resp)), g["hunter"])
+	var tr_j := _trace_json(L8Rules.trace(leg, i, st, cand, hunt, place, resp))
+	_check(t + " trace", tr_j, g["trace"])
+	var hl_j: Variant = _line_json(L8Rules.hunter_line(leg, i, st, cand, hunt, place, resp))
+	_check(t + " hunter line", hl_j, g["hunter"])
+	_check_hunter_shape(t, leg, i, hunt, resp, hl_j)
+	var is_sac := String(resp[0]) == "SACRIFICE"
+	for e: Variant in tr_j:
+		if String(e[2]) == "shielded":
+			_check_true(t + " a shielded touch only under SACRIFICE", is_sac, _s(e))
+	if is_sac:
+		_check_sacrifice(t, resp[1], ns, tr_j)
 	_check(t + " tier", L8Rules.tier(st, ns, touches), g["tier"])
 	_check_state(t + " after raid", ns, g["after_raid"])
+	_check(t + " the raid keeps the pool counts", L8Rules.state_to_json(ns).get("pool"), L8Rules.state_to_json(st).get("pool"))
 	_check_score(t + " score after raid", L8Rules.score(leg, ns), g["score_raid"])
 	_check_true(t + " the raid leaves the state before untouched", JSON.stringify(L8Rules.state_to_json(st)) == snap_st)
 	_check_true(t + " the raid leaves the place untouched", JSON.stringify(_place_json(place)) == pkey)
 	return ns
+
+
+## L13 R2: unless JAM, the hunter runs street(hunter_cands[hunt]) top to bottom (y = 0→2) in hunter_type and does not
+## reach HOME. Under JAM there is no hunter line.
+func _check_hunter_shape(t: String, leg: Dictionary, i: int, hunt: int, resp: Array, hl_j: Variant) -> void:
+	if String(resp[0]) == "JAM":
+		_check(t + " JAM: no hunter line", hl_j, null)
+		return
+	var rd: Dictionary = leg["raids"][i]
+	var hc := _ints(rd.get("hunter_cands", []))
+	if hunt < 0 or hunt >= hc.size():
+		_fail(t + " hunter street", "hunt %d out of hunter_cands %s" % [hunt, _s(hc)])
+		return
+	var x := int(hc[hunt])
+	var cells: Array = []
+	for y in range(_rows):
+		cells.append([x, y])
+	var want := {"kind": "STREET", "index": x, "cells": cells, "type": _str(rd.get("hunter_type")), "home": false}
+	_check(t + " hunter runs hunter_cands[hunt] top to bottom", hl_j, want)
+
+
+## L13 R3: the sacrificed cell ends TAKEN without a sentry, and the sealed beam never records a HOME loss.
+func _check_sacrifice(t: String, cell: Variant, ns: Dictionary, tr_j: Array) -> void:
+	if typeof(cell) != TYPE_VECTOR2I:
+		_fail(t + " SACRIFICE", "target is %s, want a cell" % _s(_cj(cell)))
+		return
+	var owned: Dictionary = ns.get("owned", {})
+	var sent: Dictionary = ns.get("sentries", {})
+	_check_true(t + " SACRIFICE cell is TAKEN after the raid", String(owned.get(cell, "")) == "TAKEN",
+		"%s is %s" % [str(cell), str(owned.get(cell))])
+	_check_true(t + " SACRIFICE cell keeps no sentry", not sent.has(cell))
+	for e: Variant in tr_j:
+		_check_true(t + " SACRIFICE: the sealed beam does not harm HOME",
+			not (String(e[0]) == "sealed" and String(e[2]) == "home"), _s(e))
+
+
+## response_options order (L13): HOLD first, then REDEPLOY…, DEPLOY… (types D, N, E, then cells in cell order),
+## SACRIFICE… (every owned non-TAKEN cell in cell order), JAM. Options are in JSON form.
+func _check_response_order(t: String, st: Dictionary, r_opts: Array) -> void:
+	var why := ""
+	var prev := -1
+	var holds := 0
+	var jams := 0
+	var last_dep := -1
+	var sac: Array = []
+	for o: Variant in r_opts:
+		var a: Array = o
+		var k := String(a[0])
+		if not RESPONSE_RANK.has(k):
+			why = "unknown response kind %s" % _s(a)
+			break
+		var rk := int(RESPONSE_RANK[k])
+		if rk < prev:
+			why = "%s comes after a later kind" % _s(a)
+			break
+		prev = rk
+		if k == "HOLD":
+			holds += 1
+		elif k == "JAM":
+			jams += 1
+		elif k == "DEPLOY":
+			var ty := String(a[1])
+			var c: Array = a[2]
+			var key := int(TYPE_RANK.get(ty, 9)) * 10000 + int(c[1]) * 100 + int(c[0])
+			if key <= last_dep:
+				why = "DEPLOY %s is out of type / cell order" % _s(a)
+				break
+			last_dep = key
+		elif k == "SACRIFICE":
+			sac.append(a[1])
+	if why == "" and (r_opts.is_empty() or String((r_opts[0] as Array)[0]) != "HOLD"):
+		why = "HOLD is not first"
+	if why == "" and (holds != 1 or jams > 1):
+		why = "%d HOLD and %d JAM rows" % [holds, jams]
+	_check_true(t + " response_options order", why == "", why + "   " + _s(r_opts))
+	var owned: Dictionary = st.get("owned", {})
+	var cells: Array = owned.keys()
+	cells.sort_custom(_cell_less)
+	var want_sac: Array = []
+	for c: Variant in cells:
+		if String(owned[c]) != "TAKEN":
+			want_sac.append(_cj(c))
+	_check(t + " SACRIFICE rows = every owned non-TAKEN cell in cell order", sac, want_sac)
 
 
 ## score(mid = true) adds KIT_VALUE per unspent ghost, spoof and pool sentry (a breach stays -BREACH).
@@ -411,58 +578,67 @@ func _check_mid_score(t: String, leg: Dictionary, ns: Dictionary, after_j: Dicti
 	_check_score(t + " mid-leg score", L8Rules.score(leg, ns, true), want)
 
 
-## forecast(): HOLD per candidate equals resolve(HOLD), every best response replays to its own result, and the played
-## candidate matches the golden step (the best response on the greedy line, HOLD on the naive line).
-func _check_forecast(t: String, leg: Dictionary, i: int, st: Dictionary, place: Dictionary, cand: int, g: Dictionary, greedy: bool) -> void:
+## forecast() (L13): per candidate {cand, outcomes: [HOLD for hunt 0, HOLD for hunt 1]}, each equal to
+## resolve(HOLD) with that hunt. When the golden response is HOLD, the played candidate's real-hunt outcome is the
+## golden tier and after-raid state.
+func _check_forecast(t: String, leg: Dictionary, i: int, st: Dictionary, place: Dictionary, cand: int, hunt: int, g: Dictionary) -> void:
 	var fc: Array = L8Rules.forecast(leg, i, st, place)
 	_check(t + " forecast size", fc.size(), CANDIDATES)
+	var played_hold := JSON.stringify(g["response"]) == JSON.stringify(["HOLD"])
 	for k in range(mini(fc.size(), CANDIDATES)):
 		var tk := "%s forecast cand %d" % [t, k]
 		if typeof(fc[k]) != TYPE_DICTIONARY:
 			_fail(tk, "entry is not a Dictionary")
 			continue
 		var e: Dictionary = fc[k]
-		var shape_ok: bool = typeof(e.get("hold")) == TYPE_DICTIONARY and typeof(e.get("best")) == TYPE_DICTIONARY \
-			and typeof(e["hold"].get("state")) == TYPE_DICTIONARY and typeof(e["best"].get("state")) == TYPE_DICTIONARY
-		_check_true(tk + " has hold and best with states", shape_ok, str(e.keys()))
+		var outs_v: Variant = e.get("outcomes")
+		var shape_ok: bool = typeof(outs_v) == TYPE_ARRAY and (outs_v as Array).size() == HUNTERS
+		if shape_ok:
+			for o: Variant in outs_v:
+				shape_ok = shape_ok and typeof(o) == TYPE_DICTIONARY and typeof((o as Dictionary).get("state")) == TYPE_DICTIONARY
+		_check_true(tk + " has 2 outcomes with states", shape_ok, str(e.keys()))
 		if not shape_ok:
 			continue
 		_check(tk + " cand", e.get("cand"), k)
-		var hold: Dictionary = e["hold"]
-		var best: Dictionary = e["best"]
-		var hres: Dictionary = L8Rules.resolve(leg, i, st, k, place, ["HOLD"])
-		_check(tk + " hold touches", _touches_json(hold.get("touches", [])), _touches_json(hres["touches"]))
-		_check(tk + " hold state", L8Rules.state_to_json(hold["state"]), L8Rules.state_to_json(hres["state"]))
-		_check(tk + " hold tier", hold.get("tier"), L8Rules.tier(st, hres["state"], hres["touches"]))
-		var bres: Dictionary = L8Rules.resolve(leg, i, st, k, place, best.get("response", ["HOLD"]))
-		_check(tk + " best touches replay", _touches_json(best.get("touches", [])), _touches_json(bres["touches"]))
-		_check(tk + " best state replay", L8Rules.state_to_json(best["state"]), L8Rules.state_to_json(bres["state"]))
-		_check(tk + " best tier replay", best.get("tier"), L8Rules.tier(st, bres["state"], bres["touches"]))
-		if k != cand:
+		var outs: Array = outs_v
+		for h in range(HUNTERS):
+			var th := "%s hunt %d" % [tk, h]
+			var o: Dictionary = outs[h]
+			var hres: Dictionary = L8Rules.resolve(leg, i, st, k, h, place, ["HOLD"])
+			_check(th + " hold touches", _touches_json(o.get("touches", [])), _touches_json(hres["touches"]))
+			_check(th + " hold state", L8Rules.state_to_json(o["state"]), L8Rules.state_to_json(hres["state"]))
+			_check(th + " hold tier", o.get("tier"), L8Rules.tier(st, hres["state"], hres["touches"]))
+		if k != cand or not played_hold or hunt < 0 or hunt >= HUNTERS:
 			continue
-		var side: Dictionary = best if greedy else hold
-		var side_name := "best" if greedy else "hold"
-		if greedy:
-			_check(tk + " best response = the golden response", _resp_json(best.get("response", [])), g["response"])
-		_check(tk + " %s tier = the golden tier" % side_name, side.get("tier"), g["tier"])
-		_check(tk + " %s state = the golden after raid" % side_name, L8Rules.state_to_json(side["state"]), g["after_raid"])
+		var real: Dictionary = outs[hunt]
+		_check(tk + " real hunt hold tier = the golden tier", real.get("tier"), g["tier"])
+		_check(tk + " real hunt hold state = the golden after raid", L8Rules.state_to_json(real["state"]), g["after_raid"])
 
 
 ## The options from capture_options (in cell order), and capture() of each = the state with that cell owned OK.
+## extra_capture may be kept or consumed by capture() itself (the CAPTURE phase clears it anyway).
 func _check_captures(tag: String, leg: Dictionary, r: Dictionary) -> void:
 	var st: Dictionary = L8Rules.state_from_json(r["state"])
 	_check_state(tag + " state (state_from_json round trip)", st, r["state"])
 	_check(tag + " options", _cells_json(L8Rules.capture_options(leg, st)), r["options"])
 	var snap := JSON.stringify(L8Rules.state_to_json(st))
+	var e_in := int((r["state"] as Dictionary).get("extra_capture", 0))
 	for oj: Variant in r["options"]:
 		var c := Vector2i(int(oj[0]), int(oj[1]))
+		var tc := "%s capture %s" % [tag, str(c)]
 		var want: Dictionary = (r["state"] as Dictionary).duplicate(true)
 		var owned: Array = (want["owned"] as Array).duplicate(true)
 		owned.append([c.x, c.y, "OK"])
 		owned.sort_custom(func(a: Variant, b: Variant) -> bool:
 			return int(a[1]) < int(b[1]) or (int(a[1]) == int(b[1]) and int(a[0]) < int(b[0])))
 		want["owned"] = owned
-		_check_state("%s capture %s" % [tag, str(c)], L8Rules.capture(leg, st, c), want)
+		var got: Dictionary = L8Rules.capture(leg, st, c)
+		var e_out: Variant = L8Rules.state_to_json(got).get("extra_capture")
+		_check_true(tc + " extra_capture is kept or consumed",
+			typeof(e_out) == TYPE_INT and (int(e_out) == e_in or int(e_out) == 0), "%s from %d" % [str(e_out), e_in])
+		if want.has("extra_capture"):
+			want["extra_capture"] = e_out
+		_check_state(tc, got, want)
 	_check_true(tag + " capture() leaves the state untouched", JSON.stringify(L8Rules.state_to_json(st)) == snap)
 
 
@@ -560,6 +736,16 @@ func _strs(arr: Variant) -> Array:
 	return out
 
 
+## Every entry as an int ([] when arr is not an Array).
+func _ints(arr: Variant) -> Array:
+	var out: Array = []
+	if typeof(arr) != TYPE_ARRAY:
+		return out
+	for e: Variant in arr:
+		out.append(int(e))
+	return out
+
+
 ## A golden cell ([x, y], "HOME" or null) to the lab form (Vector2i, "HOME" or null).
 func _cell(j: Variant) -> Variant:
 	match typeof(j):
@@ -568,7 +754,9 @@ func _cell(j: Variant) -> Variant:
 		TYPE_STRING, TYPE_STRING_NAME:
 			return String(j)
 		TYPE_ARRAY:
-			return Vector2i(int(j[0]), int(j[1]))
+			var a: Array = j
+			if a.size() == 2 and _is_num(typeof(a[0])) and _is_num(typeof(a[1])):
+				return Vector2i(int(a[0]), int(a[1]))
 	return j
 
 
@@ -613,14 +801,16 @@ func _place_json(p: Variant) -> Dictionary:
 	return {"sentries": out, "ghost": _cj(d.get("ghost"))}
 
 
-## A golden response to the lab form: ["HOLD"], ["JAM"], ["REDEPLOY", Vector2i, Vector2i] or
-## ["DEPLOY", type, Vector2i].
+## A golden response to the lab form: ["HOLD"], ["JAM"], ["REDEPLOY", Vector2i, Vector2i],
+## ["DEPLOY", type, Vector2i] or ["SACRIFICE", Vector2i].
 func _resp(j: Array) -> Array:
 	var kind := String(j[0])
 	if kind == "REDEPLOY":
 		return [kind, _cell(j[1]), _cell(j[2])]
 	if kind == "DEPLOY":
 		return [kind, String(j[1]), _cell(j[2])]
+	if kind == "SACRIFICE":
+		return [kind, _cell(j[1])]
 	return [kind]
 
 
