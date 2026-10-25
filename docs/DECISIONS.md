@@ -9663,3 +9663,36 @@ Port of the approved Solace HQ v5 golden plates (art-pass `docs/concepts/solace_
 - **Counters.** `raids_won` / `raids_lost` keep their names: "won" is a clean defense, "lost" is a damaged hold or a breach. Achievements and the profile read them unchanged.
 - **Verdict words (D28).** `RaidOutcome.Verdict` is CELL_HOLDS or BREACHED; REPELLED and OVERRUN are gone. `RaidOutcome.verdict_of(campaign_lost)`. Tier (CLEAN / AMBER / DOWN / TAKEN) carries the severity. `RaidVerdict.words(verdict, heat, schematics, losses)` gives the second line: "+5 HEAT · +12 SCHEMATICS" (clean) or "NO HEAT · HOME -10 · 1 TAKEN" (damaged). The CELL HOLDS sticker shows whenever Home survives.
 - **Per-node data for visuals.** `RaidOutcome.project` / `of_dict` return `"nodes"`: an Array of `{id, outcome: "holds"|"down"|"taken"|"passed", before, after}` sorted by id, and `"clean"`; `if_placed` `verdict_from/to` use the new verdict.
+
+### 2026-10-25 - Solace raid: the Infected Tide (designer rulings R-A to R-H)
+Source: docs/design/raid_concepts/INTEGRATION_DECISION.md (G1–G3 simulations in tools/raid_concepts/sweep_g1.py, blind
+critics). This plans the design only: no rules change in scripts/ until the Phase 2 port.
+- **R-A (approved).** The Infected Tide sweep becomes the Solace raid and replaces GDD §7.1–7.2 for Solace.
+  `raid_resolver.gd` stays for the other corps until each one is ported (behind a per-corp raid model switch).
+- **Raid lines (designer rule).** Every raid line starts at the corp HQ, ends at our HQ and takes its own path through
+  the corp's network. The board is the network as shipped, with no content regroup, so it fits a network of any
+  shape.
+- **R-B (approved).** The corp hunts you. Its sealed candidates are the paths through the most owned Sites (P-target),
+  and corp beams may use locked links.
+- **R-C (approved).** The defense deck is campaign-wide: the Armory as cards, plus one class card from each stationed
+  operative. It is not the operative's run deck.
+- **R-D (approved, revised).**
+  - Each lost Site adds an INFECTED card tied to that Site. It is a dead draw in raid hands.
+  - In Solace netruns, each INFECTED card in the defense deck starts the street virus front (netrun_session bloom)
+    one step closer. There is no currency cost.
+  - INFECTED cards are not added to netrun combat decks.
+- **R-E (approved).** CITY LOST, when INFECTED cards outnumber healthy cards, is a campaign loss with its own verdict
+  word, separate from BREACHED.
+- **R-F (approved, revised).** There is no separate purge condition. The win stays the game's own: take the 3 exploits,
+  breach the Genome Core and release the antidote code to the public. Doses are stolen antidote samples, and each one
+  cures an infected district.
+  - **The INFECTED count at the breach sets the strength of the final Genome Core netrun.** The narrative: Solace
+    infects the city to sell the antidote and decide who lives; the Cell leaks the antidote so anyone can make it.
+- **R-G (approved).** Solace's step-based infection and the separate tide timer are dropped. The Bloom front on the
+  city map is drawn from the INFECTED Sites and their TAKEN neighbors.
+- **R-H (approved).** DECAY: a Site still DOWN at the next raid goes TAKEN, amending GDD §3.3 for Solace.
+- **Next:**
+  - Phase 1: re-measure with the real HOME integrity and damage, the real Solace values, the virus-front link and the
+    final-run strength.
+  - Then write the golden for parity.
+  - Then Phase 2: the core port.

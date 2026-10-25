@@ -62,3 +62,14 @@ C's board and paths, plus D's deck infection. Simulated in tools/raid_concepts/s
 | 0 | Log the rulings in DECISIONS.md once approved. Merge this branch's tools and docs into main (one MAILBOX conflict) when the designer says so | Waiting on the designer |
 | 1 | The graph oracle, done in G1–G3. Remaining: re-measure with the real HOME 50 / damage numbers and the real Solace values, then write the golden for parity | Next |
 | 2+ | Core port, Solace wiring, the vertical-slice UI | Per the plan |
+
+## Designer rulings (2026-10-25)
+
+R-A, R-B, R-C, R-E, R-G and R-H are approved as written. Two are revised:
+- **R-D:** INFECTED cards move the Solace netrun virus front one step closer each (no "bank" cost; netruns use Cycles,
+  and the street Bloom already exists).
+- **R-F:** there is no purge. The win is the existing one: breach the Genome Core and release the antidote code. Doses
+  are stolen antidote samples that cure a district. The INFECTED count at the breach scales the final Genome Core
+  netrun's strength.
+
+The rulings are logged in docs/DECISIONS.md (2026-10-25).
