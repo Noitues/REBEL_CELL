@@ -154,9 +154,10 @@ class BaseGeo:
 class GraphGeo(BaseGeo):
     """The real Solace graph (concepts A and C). path_rule in P-open / P-all / P-target; hunter in street / tongue."""
 
-    def __init__(self, path_rule: str, hunter: str = "street", known_route: float = 0.5):
+    def __init__(self, path_rule: str, hunter: str = "street", known_route: float = 0.5, known_early=(0, 0.0)):
         self.name = "graph"
         self.known_route = known_route      # chance a known beam is a route (else a street); G1 0.5
+        self.known_early = known_early      # (N, p): raids with index < N (st.raid_n) use chance p instead (G3)
         self.path_rule = path_rule
         self.hunter = hunter
         self.sites = tuple(sorted(SOL_TIER))
@@ -274,7 +275,8 @@ class GraphGeo(BaseGeo):
         spool = self.street_pool(cands, st.owned)
         known = []
         for _ in range(3):
-            if rng.random() < self.known_route:
+            p = self.known_early[1] if getattr(st, "raid_n", 0) < self.known_early[0] else self.known_route
+            if rng.random() < p:
                 known.append(Line("ROUTE", rng.choice(pool), rng.choice(TYPES), True))
             else:
                 known.append(Line("STREET", rng.choice(spool), rng.choice(TYPES), False))

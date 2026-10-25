@@ -13,9 +13,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = r"D:/rc_tmp/raid_design_lab/g2/tune"
+OUT = os.environ.get("G2_TUNE_OUT", r"D:/rc_tmp/raid_design_lab/g2/tune")
 COLS = ("loss", "breached", "city_lost", "win", "purge", "locked_at_plan", "response_decides", "b_flip_rate",
-        "infected_per_campaign", "home_hit_rate")
+        "infected_per_campaign", "home_hit_rate", "sac_rate", "discard_rate")
 
 
 def main() -> None:

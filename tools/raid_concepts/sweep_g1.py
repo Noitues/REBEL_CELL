@@ -77,7 +77,7 @@ D_DRAW, D_INFECTED_DRAW_COST, D_SPREAD_COST = 5, 2, 2.0
 
 # H: Infected Tide (G2_SIM.md): C-target's board and paths + D's deck infection. Concept codes: "H" (full),
 # "Hb" (H-noB: sealed B fixed at generation), "Hs" (H-nospread). Numbers below are G2 assumptions/tuning.
-H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl"}
+H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl", "H3": "H3"}
 # H numbers. G2 tuned values (G2_RESULTS.md section 2); every one can be overridden from the environment (g2_tune.py).
 # H-brief ("Hl") keeps the brief's literal numbers, so the tuning can be compared against the brief as written.
 #   BRULE: the corp's post-response B rule. "typed" = owned Sites before the first sentry of the route's type (brief
@@ -87,22 +87,45 @@ H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl"}
 #   for the spread. DOSE_EVERY: a DOSE card every Nth netrun. CLEAN: price to clean an INFECTED card between raids.
 #   PATCH: PATCH HOME price (+1 pip). HOME: HOME pips. ESCALATE: "" or "N:K" (from raid N, K extra known beams).
 #   MAX_PLACED: sentries at PLAN (probe only). DOWN_RISK: planner value per DOWN Site (INFECTED at DECAY unless repaired).
+# G3 keys (G3 round of docs/handoff/raid_integration/G2_SIM.md; all off for the G2 variants so they reproduce G2):
+#   PURGE_MAX: a PURGE is a raid closed with at most this many INFECTED cards while the 3 Exploits are live (G2 0).
+#   DOSE_PURGE: 1 = spending 2 DOSE cards at one DECAY (with the 3 Exploits live after the raid) is also a PURGE.
+#   DOSES_PER_DECAY: DOSE cards that can be spent at one DECAY (G2 1).
+#   EARLY_RAIDS / EARLY_ROUTE: the first N raids draw known route beams at this chance (then KNOWN_ROUTE).
+#   SAC_GAP: SACRIFICE allowed only if the last one was at least SAC_GAP raids ago (1 = always; 2 = once per 2 raids).
+#   DISCARD: 1 = one INFECTED card drawn in a raid hand may be discarded from the deck for +DISCARD_HEAT Heat.
+#   AUTO_DOSE: 1 = DOSE cards are spent at DECAY automatically, for every player (no decision).
+#   START_HP: HOME pips at the start (0 = HOME, the maximum).
+_H_G3_OFF = {"PURGE_MAX": 0, "DOSE_PURGE": 0, "DOSES_PER_DECAY": 1, "EARLY_RAIDS": 0, "EARLY_ROUTE": 0.0,
+             "SAC_GAP": 1, "DISCARD": 0, "DISCARD_HEAT": 2, "AUTO_DOSE": 0, "START_HP": 0}
 H_TUNED = {"BRULE": "any", "KNOWN_ROUTE": 0.1, "SPREAD_MIN": 2, "DOSE_EVERY": 2, "CLEAN": 2, "PATCH": 8,
-           "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0}
+           "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0, **_H_G3_OFF}
 H_BRIEF = {"BRULE": "typed", "KNOWN_ROUTE": 0.5, "SPREAD_MIN": 1, "DOSE_EVERY": DOSE_EVERY, "CLEAN": CLEAN_PRICE,
-           "PATCH": PATCH_PRICE, "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0}
-for _k, _v in list(H_TUNED.items()):
-    _e = os.environ.get("H_" + _k)
-    if _e is not None:
-        H_TUNED[_k] = type(_v)(_e) if not isinstance(_v, str) else _e
+           "PATCH": PATCH_PRICE, "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0,
+           **_H_G3_OFF}
+# H3 (G3): G2's tuned H plus the blind critic's four fixes; values tuned in G3 (G3_RESULTS.md section 2).
+H3 = dict(H_TUNED, PURGE_MAX=1, DOSE_PURGE=1, DOSES_PER_DECAY=2, EARLY_RAIDS=3, EARLY_ROUTE=0.6, SAC_GAP=2,
+          DISCARD=1, AUTO_DOSE=1)
+
+
+def _env_over(d: dict, prefix: str) -> None:
+    for _k, _v in list(d.items()):
+        _e = os.environ.get(prefix + _k)
+        if _e is not None:
+            d[_k] = type(_v)(_e) if not isinstance(_v, str) else _e
+
+
+_env_over(H_TUNED, "H_")
+_env_over(H3, "H3_")
 
 
 def hp(c: str, key: str):
-    """An H number for concept code c (H-brief reads the brief's values; the rest read the tuned ones)."""
-    return (H_BRIEF if c == "Hl" else H_TUNED)[key]
+    """An H number for concept code c (H-brief: the brief's values; H3: G3 values; the rest: G2 tuned values)."""
+    return (H_BRIEF if c == "Hl" else H3 if c == "H3" else H_TUNED)[key]
 
 VARIANTS = ("A-open", "A-all", "A-target", "B-wards", "C-open", "C-all", "C-target",
-            "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice", "H", "H-noB", "H-nospread", "H-brief")
+            "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice", "H", "H-noB", "H-nospread", "H-brief",
+            "H3")
 POLICIES = ("greedy", "keys", "random")
 PLAYERS = ("greedy", "naive")
 OUT = r"D:/rc_tmp/raid_design_lab/g1/sweep_g1.json"
@@ -114,7 +137,9 @@ def geo_for(variant: str):
     g = _GEO.get(variant)
     if g is None:
         if variant in H_CODES:
-            g = G.GraphGeo("P-target", "street", hp(H_CODES[variant], "KNOWN_ROUTE"))
+            hc = H_CODES[variant]
+            g = G.GraphGeo("P-target", "street", hp(hc, "KNOWN_ROUTE"),
+                           (hp(hc, "EARLY_RAIDS"), hp(hc, "EARLY_ROUTE")))
         elif variant.startswith("A-") or variant.startswith("C-"):
             rule = {"open": "P-open", "all": "P-all", "target": "P-target"}[variant.split("-")[1]]
             g = G.GraphGeo(rule, "tongue" if variant.endswith("tongue") else "street")
@@ -130,12 +155,16 @@ def geo_for(variant: str):
 class St:
     __slots__ = ("heat", "bank", "hp", "owned", "deck", "ghost", "opened", "inf", "wards", "fallen", "ward50",
                  "front", "crossed", "infected", "doses", "dose_buys", "dose_n", "obj_done", "breach_used", "lost",
-                 "wounds_total", "sites_lost", "front_downs", "lost_flag", "last_lost", "inf_n", "purged")
+                 "wounds_total", "sites_lost", "front_downs", "lost_flag", "last_lost", "inf_n", "purged",
+                 "raid_n", "last_sac", "dose_spent")
 
     def __init__(self):
         self.lost_flag = 0          # H: Sites lost since the last spread check
         self.last_lost = ""         # H: the Site the spread card is tied to
         self.inf_n = 0              # H: monotonic INFECTED card id
+        self.raid_n = 0             # H: index of the raid being played (known-beam early chance)
+        self.last_sac = -9          # H3: raid index of the last SACRIFICE
+        self.dose_spent = 0         # H3: DOSE cards spent at this raid's DECAY
         self.purged = False         # H: a raid survived with 0 INFECTED while holding the 3 Exploits
         self.heat, self.bank, self.hp = START_HEAT, START_BANK, HOME_HP
         self.owned = {}
@@ -176,12 +205,12 @@ def is_h(c: str) -> bool:
 
 
 def h_spread(c: str) -> bool:
-    return c in ("H", "Hb", "Hl")
+    return c in ("H", "Hb", "Hl", "H3")
 
 
 def h_dyn_b(c: str) -> bool:
     """H: the corp picks sealed B after the response by the readable rule (H-noB keeps the generation pick)."""
-    return c in ("H", "Hs", "Hl")
+    return c in ("H", "Hs", "Hl", "H3")
 
 
 def add_infected(st: "St", sites, loss: bool = True) -> None:
@@ -381,14 +410,21 @@ def decay(geo, c: str, st: St, greedy: bool, log: dict | None = None) -> None:
         add_infected(st, downs)
         spread = h_spread(c) and st.lost_flag >= hp(c, "SPREAD_MIN")
         st.lost_flag = 0
-        dc = dose_cards(st.deck)
-        if greedy and dc and (spread or wound_count(st.deck) > 0):
-            remove_card(st, dc[0][0])        # one DOSE per DECAY: block the spread, else remove 1 INFECTED
-            if not spread:
+        st.dose_spent = 0
+        spender = greedy or hp(c, "AUTO_DOSE")
+        for _ in range(hp(c, "DOSES_PER_DECAY")):
+            dc = dose_cards(st.deck)
+            if not (spender and dc and (spread or wound_count(st.deck) > 0)):
+                break
+            remove_card(st, dc[0][0])        # a DOSE: block the spread, else remove 1 INFECTED
+            st.dose_spent += 1
+            if spread:
+                spread = False
+            else:
                 remove_card(st, max(x for x in st.deck if x[2] == "WOUND")[0])
             if log is not None:
                 log["decay_dose"] = log.get("decay_dose", 0) + 1
-        elif spread:
+        if spread:
             add_infected(st, [st.last_lost], loss=False)
             if log is not None:
                 log["spread"] = log.get("spread", 0) + 1
@@ -597,12 +633,13 @@ def scan(geo, sw: Sweep, ln, ctype: dict) -> None:
 
 class Ctx:
     """One raid: geometry, concept, draw, hand, card types."""
-    __slots__ = ("geo", "c", "draw", "hand", "cards", "ctype", "rel", "seed", "raid")
+    __slots__ = ("geo", "c", "draw", "hand", "cards", "ctype", "rel", "seed", "raid", "sac_ok")
 
 
 def make_ctx(geo, c: str, st: St, seed: int, raid: int) -> Ctx:
     ctx = Ctx()
     ctx.geo, ctx.c, ctx.seed, ctx.raid = geo, c, seed, raid
+    ctx.sac_ok = not is_h(c) or raid - st.last_sac >= hp(c, "SAC_GAP")
     ctx.draw = geo.draw(st, random.Random("raid:%d:%d" % (seed, raid)))
     ids = sorted(x[0] for x in st.deck)
     random.Random("hand:%d:%d" % (seed, raid)).shuffle(ids)
@@ -677,7 +714,7 @@ def response_options(ctx: Ctx, sw: Sweep, rhand) -> list:
         if _deploy_card(rhand, t) is not None:
             for cell in targets:
                 out.append(("DEPLOY", t, cell))
-    if sw.ghost != G.HOME and not sw.home_hit:
+    if sw.ghost != G.HOME and not sw.home_hit and ctx.sac_ok:
         sac = list(live_rel)
         off = [cell for cell in geo.cells if cell not in ctx.rel and geo.cell_live(cell, sw.owned)]
         if off:
@@ -832,7 +869,8 @@ def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
     elif c == "D":
         lose_annexes(geo, ns)
     check_loss(geo, c, ns)
-    if is_h(c) and not ns.lost and wound_count(ns.deck) == 0 and exploits_live(geo, ns) >= 3:
+    if is_h(c) and not ns.lost and exploits_live(geo, ns) >= 3 and (
+            wound_count(ns.deck) <= hp(c, "PURGE_MAX") or hp(c, "DOSE_PURGE") and ns.dose_spent >= 2):
         ns.purged = True
     return ns
 
@@ -1098,7 +1136,19 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
         decay(geo, c, st, greedy, rec)
         if st.lost:
             return st
+    st.raid_n = idx
     ctx = make_ctx(geo, c, st, seed, idx)
+    discarded = False
+    if is_h(c) and hp(c, "DISCARD"):
+        bad = sorted(j for j in ctx.hand if ctx.cards[j][1] == "WOUND")
+        if bad:
+            s2 = st.copy()
+            remove_card(s2, bad[0])
+            s2.heat += hp(c, "DISCARD_HEAT")
+            if not greedy or value(geo, c, s2) > value(geo, c, st) + EPS:
+                st = s2
+                ctx.hand = [j for j in ctx.hand if j != bad[0]]
+                discarded = True
     d = ctx.draw
     k, b, h = d.real, d.real_b, d.hunt_real
     bi = [x for x in range(3) if x != k].index(b)
@@ -1159,7 +1209,10 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
         "touch": touch, "ran": len(ran), "home": sw.home_hit, "ghost": place[1] is not None,
         "dead": sum(1 for j in ctx.hand if ctx.cards[j][1] == "WOUND"),
         "b_flip": b_flip, "front": front0, "inf_start": inf0, "inf_add": ns.wounds_total - st.wounds_total,
-        "inf_rows": inf_rows if is_h(c) else None, "inf_fc": inf_fc if is_h(c) else None})
+        "inf_rows": inf_rows if is_h(c) else None, "inf_fc": inf_fc if is_h(c) else None,
+        "discard": discarded, "sac_blocked": not ctx.sac_ok})
+    if resp[0] == "SACRIFICE":
+        ns.last_sac = idx
     if ns.lost:
         return ns
     opt = greedy_between(geo, c, ns) if greedy else naive_between(geo, c, ns)
@@ -1172,7 +1225,7 @@ def campaign(variant: str, policy: str, player: str, seed: int) -> dict:
     c = concept_of(variant)
     st = St()
     if is_h(c):
-        st.hp = hp(c, "HOME")
+        st.hp = hp(c, "START_HP") or hp(c, "HOME")
     if c == "B":
         for _ in range(B_START_DOSES):
             add_dose_card(st)
@@ -1259,6 +1312,8 @@ def aggregate(rows: list) -> dict:
         "tier_mix": {t: tiers.count(t) for t in ("BREACHED", "DAMAGED", "EVADED", "BATTERED", "HOLDS")},
         "response_mix": {k: resp.count(k) for k in sorted(set(resp))},
         "ghost_rate": round(sum(r["ghost"] for r in raids) / nr, 3),
+        "sac_rate": round(sum(1 for r in raids if r["resp"] == "SACRIFICE") / nr, 3),
+        "discard_rate": round(sum(1 for r in raids if r.get("discard")) / nr, 3),
         "hold3": round(sum(1 for x in rows if x.get("hold3")) / n, 3),
         "purge": round(sum(1 for x in rows if x.get("purged")) / n, 3),
         "infected_per_campaign": round(stats.mean(x["wounds"] for x in rows), 2),
