@@ -192,3 +192,143 @@ G = skilled player (greedy planner), N = careless player (naive placement, alway
   - Rule checks.
   - The golden asserts that each campaign ends where `sweep_g1.campaign("H4", ...)` ends.
   - It regenerates byte for byte.
+
+---
+
+## 6. H5: H4 plus the Phase 1 rule changes (designer approved, DECISIONS 2026-10-25 "Phase 1 rule changes")
+
+**Oracle:** `sweep_g1.py` variant `H5`. Its numbers are the `H5` dict, overridable as `H5_<KEY>`.
+- H4, H3 and the other variants match commit 82322009 byte for byte (90 campaigns).
+- `--check` passes for 18 variants.
+- The H4 golden regenerates byte for byte as `data/solace_raid_golden_h4.json`.
+
+**Raw output:** `D:/rc_tmp/raid_design_lab/g5/` (`h5_final.json`, `h5_re2.json`, the grids `t1`–`t5`).
+
+**Runtime:**
+- 28 s per 1,200 campaigns;
+- 5 grids at 60 campaigns per policy: about 5 min;
+- the golden: 3 s.
+
+**The rules as simulated:**
+1. **A HOME hit adds one INFECTED card** tied to HOME. It is not a lost Site, so it does not count toward the spread.
+2. **The breach allows one retry.**
+   - Each failure is a death (death Heat at tier 4).
+   - The second failure spends the held Exploits.
+   - Each Exploit is re-taken by a completed netrun on its Exploit Site, while the Site is still the Cell's.
+   - With 3 Exploits again, the breach has two attempts again.
+3. **DIVERT.**
+   - At RESPONSE, spend a SHIFT card (+2 Heat) to bend one known beam onto another path of its pool that starts or
+     ends at the same Site.
+   - To make that possible, **the known beams are shown at PLAN but fire after the RESPONSE** (H4 fired them before
+     REVEAL A).
+   - The forecast and the response list include every DIVERT target.
+4. **Heat raids reset the cadence counter.**
+   - The H4 oracle already reset the counter after every raid. So H4's 0.52 raids per netrun already included this;
+     the change adds nothing by itself.
+   - The rate came down only by tuning the cadence to 3.
+
+**Oracle fix (H5 only, so H4 reproduces):**
+- In H4, a cleared but not yet installed Site was not territory for the next claim. The real rule
+  (`touches_territory`) counts claimed or cleared Sites.
+- In H5 it counts. Before the fix, H5 campaigns stalled after the third Exploit: win 0.65 with breach reached 0.78,
+  but only on the keys and greedy paths.
+
+### H5 against the targets (all claim policies pooled, 600 campaigns per cell)
+
+| Target | H5 G | H5 N | Met? | H4 G / N |
+|---|---|---|---|---|
+| Skilled loss 5–15 % | **0.107** (all BREACHED) | | met | 0.052 |
+| Careless loss 55–85 % | | **0.642** (BREACHED 0.590, CITY LOST 0.052) | met | 0.512 |
+| Win 35–60 % | **0.637** | 0.355 | **missed** (slightly high) | 0.318 / 0.150 |
+| Locked at plan ≤ 0.5 | **0.576** | 0.980 | **missed** | 0.516 |
+| Response decides ≥ 0.4 | **0.436** | 0 | met | 0.365 |
+| HOME hit 0.15–0.30 | **0.165** | 0.987 | met | 0.207 |
+| Raids per netrun 0.33–0.5 | **0.388** | 0.400 | met | 0.522 |
+| Median campaign 12–20 netruns | **15** (won: 11) | **13** (won: 10) | met | 13 / 23 |
+
+**Other measures:**
+- **CITY LOST** now happens: 0.052 for N (0 for G).
+- **INFECTED per campaign:** 5.8 (G) and 10.2 (N), against 4.6 and 3.3 in H4.
+- **Netrun deaths:** 3.3 per campaign for both players (0.178 per netrun for G, 0.240 for N), against 1.15 and 0.73 in
+  H4.
+  - The HOME-hit INFECTED cards move the Bloom (R-D), and the early raids now always aim at HOME.
+  - **This is the largest change H5 makes.**
+- **Breach:** reached 0.77 (G) and 0.66 (N); success 0.49 (G) and 0.32 (N).
+- **Breach failures:** 4 % of G campaigns end at the cap after losing their Exploits.
+- **Capped at 30 netruns:** 0.215 (G), almost all from the random policy.
+- **Responses (G, 4,262 raids):**
+
+| HOLD | DEPLOY | SACRIFICE | JAM | JAM_B | DIVERT | REDEPLOY |
+|---|---|---|---|---|---|---|
+| 1,614 | 1,464 | 823 | 180 | 90 | **49 (1.1 %)** | 42 |
+
+- **Response decides** rose from 0.365 to 0.436, but mostly because the known beams now fire after the response: a
+  SACRIFICE shield or a DEPLOY now also meets them. DIVERT itself is rarely the best response.
+- **Other:** SACRIFICE 19 % of raids; B flip 0.03; between entropy 2.55.
+
+**Per claim policy (G / N):**
+
+| Policy | Loss | Win | Netruns (median) | Locked | Response decides |
+|---|---|---|---|---|---|
+| greedy | 0.155 / 0.435 | 0.815 / 0.565 | 12 / 11 | 0.61 / 0.98 | 0.40 / 0 |
+| keys | 0.125 / 0.525 | 0.870 / 0.475 | 9 / 10 | 0.65 / 0.98 | 0.34 / 0 |
+| random | 0.040 / 0.965 | 0.225 / 0.025 | 30 / 19 | 0.52 / 0.98 | 0.50 / 0 |
+
+With H5's costs, the greedy claim planner heads for the Exploits as the keys policy does. For the careless player the
+two policies give identical rows (checked: the same claims, netrun by netrun).
+
+**INFECTED at the first breach (R-F now bites for the careless player):**
+
+| INFECTED at first breach | 0 | 1 | 2 | 3 | 4 | 5 | 6+ | Mean | Mean success chance |
+|---|---|---|---|---|---|---|---|---|---|
+| G | 0.752 | 0.220 | 0.006 | 0.009 | 0.011 | 0 | 0.002 | 0.32 | 0.507 |
+| N | 0 | 0.071 | 0.098 | 0.106 | 0.348 | 0.335 | 0.043 | 3.94 | 0.362 |
+
+### H5 tuning (within the rulings; grids `t1`–`t5`, 60 campaigns per policy)
+
+| Number | H4 | H5 | Why |
+|---|---|---|---|
+| Raid cadence | 2 | **3** | Cadence 2 gives skilled loss 0.17–0.26 (the deaths add Heat) and 0.53 raids per netrun. Cadence 3: loss 0.09–0.12, 0.38–0.39 raids per netrun |
+| Early raids drawing known routes | 3 at 60 % | **4 at 100 %** | At cadence 3, HOME hit falls to 0.10. 4 raids at 100 % restores 0.15–0.17 |
+| Known route chance after the early raids | 0.0 | 0.0 | 0.1–0.3 raise locked to 0.53–0.70 |
+| DOSE card | every 4th netrun | every 4th | Every 3rd changes little (loss ±0.01) |
+| CLEAN | 10 | 10 | 6 lowers skilled loss by about 0.02 at cadence 2 only |
+| Beams at Heat | 75 / 100 | 75 / 100 | 100 only: locked does not fall (0.52–0.63) |
+
+**Sensitivity (200 per policy):** H5 at cadence 2 with H4's early routes (`h5_re2.json`) gives skilled loss 0.193,
+win 0.52, locked 0.515, response decides 0.42, HOME hit 0.19, 0.53 raids per netrun, careless loss 0.84.
+
+### What still needs a ruling (H5)
+
+1. **Win 0.64 (target 35–60 %).**
+   - One retry plus re-taking the Exploits makes the breach hard to miss. Breach reached: 0.77 pooled, and every keys
+     or greedy skilled campaign reaches it.
+   - **Measured option: the second failure ends the campaign** (instead of spending the Exploits; `h5_lose0.json`):
+     - win 0.568 (met);
+     - but skilled loss falls to 0.013 and careless loss to 0.335, because campaigns end before the late raids.
+     - So it trades one target for two.
+   - Other options:
+     - the R-F scaling counts more than the 0.04 per card assumed;
+     - or the boss is weaker than BAL-05's 52 % reference.
+   - Tuning within the rulings cannot move it: every grid cell gave 0.57–0.74.
+2. **Locked at plan 0.58 (target ≤ 0.5).**
+   - The four early raids that always aim at HOME are fixed at PLAN for the outcome tier: a HOME route is DAMAGED
+     whatever you place, unless a sentry of its type sits on it.
+   - Every grid cell with HOME hit ≥ 0.15 had locked ≥ 0.55; HOME hit and locked trade on this graph.
+   - Ruling options:
+     - count "locked" on the tier excluding HOME damage;
+     - or let PLAN see the known beams' types only after placement;
+     - or lower the HOME-hit target to about 0.10–0.12, where locked is about 0.48.
+3. **DIVERT is used in 1.1 % of skilled raids.**
+   - The real lift in response-decides came from moving the known beams after the response.
+   - If DIVERT should be a common play, it needs a wider target set (for example any path sharing one Site) or no
+     SHIFT cost. Both are ruling changes.
+4. **Netrun deaths tripled (3.3 per campaign; 0.18 per netrun for G).**
+   - The HOME-hit INFECTED cards plus the literal R-D step (one entry pace per card) make the street Bloom lethal at
+     FLAGGED and HUNTED.
+   - If that is more than intended, use `solace_tide_infected_front_step_pct` 50 (a tuning value the spec exposes;
+     `h5_step50.json`):
+     - deaths 2.8 per campaign (0.151 per netrun);
+     - skilled loss 0.065, careless loss 0.588, win 0.66.
+     - Other targets are unchanged within ±0.02.
+   - The designer's call: R-D says "one step".

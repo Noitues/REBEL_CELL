@@ -1,12 +1,18 @@
-# Solace raid spec: the Infected Tide (H4), the contract for the scripts/core port
+# Solace raid spec: the Infected Tide (H5), the contract for the scripts/core port
 
-**Status:** frozen from the G4 oracle (designer rulings R-A to R-H, DECISIONS 2026-10-25). Measurements and reasons:
-docs/design/raid_concepts/G4_RESULTS.md.
+**Status:** frozen from the G4 oracle, variant H5:
+- the designer rulings R-A to R-H (DECISIONS 2026-10-25, "Solace raid: the Infected Tide");
+- the Phase 1 rule changes (DECISIONS 2026-10-25, "Phase 1 rule changes"): a HOME hit infects, one breach retry,
+  DIVERT, and Heat raids reset the cadence.
+
+Measurements and reasons: docs/design/raid_concepts/G4_RESULTS.md (section 6 for H5).
 
 **Sources of truth:**
-- **Oracle:** `tools/raid_concepts/sweep_g1.py`, variant `H4` (with `g1_geo.py` and `g4_real.py`). The Python is the
+- **Oracle:** `tools/raid_concepts/sweep_g1.py`, variant `H5` (with `g1_geo.py` and `g4_real.py`). The Python is the
   source of truth; this file describes it.
-- **Golden:** `tools/raid_concepts/data/solace_raid_golden.json`, written by `solace_raid_golden.py`.
+- **Golden:** `tools/raid_concepts/data/solace_raid_golden.json`, written by `solace_raid_golden.py` (H5).
+  - The H4 golden of commit 82322009 is kept as `data/solace_raid_golden_h4.json`, from `--variant H4`.
+- **What H5 changes from H4:** the items marked **[H5]** below.
 
 The port is Phase 2 (INTEGRATION_PLAN). Nothing here changes `raid_resolver.gd` for the other corps.
 
@@ -42,8 +48,8 @@ Names below:
 - **Card:** `[id: String, type: String, verb: String]`. Cards are kept sorted by id.
 - **verb GUARD / SHIFT / JAM:** type is D, N or E. The card is placeable as a sentry of that type. SHIFT can be
   spent on REDEPLOY and JAM on JAM / JAM_B.
-- **verb WOUND = INFECTED:** type holds the Site it is tied to (or `"-"`). The id is `"w%03d"` from the counter
-  `inf_n`. It is a dead draw.
+- **verb WOUND = INFECTED:** type holds the Site it is tied to (`"HOME"` for a HOME hit [H5], or `"-"`). The id is
+  `"w%03d"` from the counter `inf_n`. It is a dead draw.
 - **verb DOSE:** type `"-"`, id `"x%d"` from `dose_n`. Not placeable. It counts as healthy for CITY LOST and is
   spent only at DECAY.
 - **Armory drop:** `"a%02d"` from `asset_n`, verb GUARD.
@@ -58,6 +64,7 @@ Names below:
 - `lost_since_raid: int`, `last_lost: StringName`, `last_sac: int` (the raid index, −9 at start), `raid_n: int`,
   `netruns_since_raid: int`.
 - `purge_queued: bool` (Heat 100 crossed for the first time since the last raid), `dose_spent: int`.
+- `breach_fails: int` **[H5]**: failed Genome Core breaches since the Exploits were last taken.
 
 **Campaign fields the tide reads** (they exist already):
 - `heat`, `schematics` (the oracle's `bank`), `grid` (Site condition OK / DOWN / TAKEN; CLEARED = the oracle's
@@ -72,7 +79,8 @@ Names below:
 - `["DEPLOY", type, site]`;
 - `["SACRIFICE", site]`;
 - `["JAM"]`;
-- `["JAM_B"]`.
+- `["JAM_B"]`;
+- `["DIVERT", known_index, cells]` **[H5]**.
 
 **Trace entry:** `[beam, site_or_"HOME", kind]`:
 - beam is `known0`..`known2`, `sealed_a`, `sealed_b` or `hunter`;
@@ -89,12 +97,24 @@ rule):
      the Genome Core.
    - Then the player may launch the final netrun (the game's existing boss run). R-F: its strength scales with the
      INFECTED count (section 5).
-   - Otherwise a netrun clears one Site (section 6).
+   - **One retry [H5]:**
+     - a failed breach is a death (death Heat at tier 4, as today) and `breach_fails += 1`;
+     - while `breach_fails <= solace_tide_breach_retries` (1), the breach can be tried again on a later netrun;
+     - the failure after that **spends the held Exploits** (the corp patches them): `exploits` is emptied and
+       `breach_fails = 0`.
+   - **Re-taking the Exploits [H5]:**
+     - each Exploit is re-taken by a completed netrun on its Exploit Site: the Site stays the Cell's, and the run is
+       launchable while the Site is live and its Exploit is not held;
+     - the Exploit Heat is paid again;
+     - with 3 Exploits held again, the breach has its two attempts again.
+   - Otherwise a netrun clears one Site (section 6). Claims are next to the territory: a claimed **or cleared** Site
+     counts (`CampaignRules.touches_territory`) **[H5; the H4 oracle counted claimed Sites only]**.
 2. **Raid queue.** `netruns_since_raid += 1`. A raid fires after the netrun when either holds:
-   - `netruns_since_raid >= solace_tide_raid_every` (2);
+   - `netruns_since_raid >= solace_tide_raid_every` (3 [H5]);
    - or the netrun crossed a raid Heat threshold (25 / 50 / 75 / 100) for the first time.
 
-   One netrun queues at most one raid.
+   One netrun queues at most one raid. **Every raid, a Heat-threshold raid included, resets `netruns_since_raid` to
+   0** (the Phase 1 rule; the H4 oracle already did this).
 3. **The raid**, then the HQ step (section 7).
 
 **The raid** [`raid`, `play_one`]:
@@ -115,8 +135,8 @@ rule):
    - **Types:** a shuffled permutation of D, N, E gives the 3 candidates distinct types.
    - **Real A:** a uniform pick among the 3. The drawn real B is not used: the corp picks B by rule (step 7).
    - **Known beams:** `1 + len(solace_tide_beam_heat)` (3) are drawn. Each is:
-     - a route (uniform from the pool, uniform type) with chance `solace_tide_early_route_pct` (60) in raids
-       0 .. `solace_tide_early_raids` − 1 (3), and `solace_tide_known_route_pct` (0) after;
+     - a route (uniform from the pool, uniform type) with chance `solace_tide_early_route_pct` (100 [H5]) in raids
+       0 .. `solace_tide_early_raids` − 1 (4 [H5]), and `solace_tide_known_route_pct` (0) after;
      - else a street (uniform from the street pool, uniform type).
    - **Hunter:** a uniform type, then 2 distinct streets sampled from the street pool (both if fewer), and a uniform
      real one of the two.
@@ -134,8 +154,9 @@ rule):
    - **Ghost:** none, or HOME when `ghost > 0`. HOME is then skipped by every beam, at +`solace_tide_ghost_heat` (5)
      Heat and −1 ghost.
    - **Order:** as the Python generator lists them (the golden's `n_placements`).
-5. **Known beams** fire: `1 + count of solace_tide_beam_heat (75, 100) <= heat + ghost Heat`, in draw order. See the
-   SCAN rule below.
+5. **Known beams are shown** **[H5]**: `1 + count of solace_tide_beam_heat (75, 100) <= heat + ghost Heat` of them, in
+   draw order. They are shown here but fire after the RESPONSE (step 7b), so a response can act on them. In H4 they
+   fired here.
 6. **REVEAL A and the corp's lean.**
    - `lean = b_rule(pre-response board, tie 0)`.
    - The board shows real A, the other two candidates and the lean.
@@ -145,7 +166,9 @@ rule):
    - DEPLOY t to every target, for each type t of a non-INFECTED response-hand card (the card used is the lowest id of
      that type);
    - SACRIFICE (see below);
-   - JAM and JAM_B, if a JAM card is in the response hand.
+   - JAM and JAM_B, if a JAM card is in the response hand;
+   - **DIVERT [H5]**, if a SHIFT card is in the response hand: for each fired known beam i, and each of its DIVERT
+     targets in pool order, `["DIVERT", i, cells]`.
 
    **Terms:**
    - **Targets:** live `rel` Sites without a sentry.
@@ -154,8 +177,14 @@ rule):
      - **when:** only if HOME is not ghosted, not yet hit, and `raid_n − last_sac >= solace_tide_sacrifice_gap` (2);
      - **targets:** every live `rel` Site, plus the cheapest live owned Site off every line;
      - **effect:** the Site goes TAKEN now, its sentry is removed, and HOME is shielded this raid.
-   - **Cost:** REDEPLOY, DEPLOY, JAM and JAM_B cost +`solace_tide_card_response_heat` (2) Heat. HOLD and SACRIFICE are
-     free.
+   - **DIVERT [H5]:**
+     - it bends known beam i onto `cells`: the beam keeps its kind, type and whether it reaches HOME;
+     - **DIVERT targets** of a beam are the other paths of its own pool that **start or end at the same Site**: the
+       route pool for a route (same first Site = where it leaves the Genome Core, or same last Site = where it enters
+       HOME), this raid's street pool for a street;
+     - the board shows them as the beam's bend options. The golden lists them per raid (`divert_neighbors`).
+   - **Cost:** REDEPLOY, DEPLOY, JAM, JAM_B and DIVERT cost +`solace_tide_card_response_heat` (2) Heat. HOLD and
+     SACRIFICE are free.
    - **The corp's B pick:**
      - the board after the response is scored with `b_rule(…, tie = lean)`;
      - JAM_B flips the pick to the other candidate.
@@ -164,11 +193,15 @@ rule):
        type;
      - the candidate with more of them is the pick, and a tie keeps the tie value;
      - the corp sees sentries, not their types ("any").
+7b. **Known beams fire [H5]** (SCAN), a DIVERTed one along its new cells. The B pick (step 7) is made before they
+    fire, on the board after the response.
 8. **Sealed A, then sealed B** fire (SCAN).
 9. **Hunter:** the real hunter street fires unless the response was JAM.
 10. **Close** [`close`]:
     - **INFECTED:** each Site newly TAKEN this raid adds an INFECTED card tied to it, in Site-id order.
       `lost_since_raid += n`, and `last_lost` = the lowest of those Site ids.
+    - **HOME infects [H5]:** if HOME was hit (not shielded, not ghosted), one more INFECTED card tied to `"HOME"` is
+      added after them. It is not a lost Site: it does not count toward the spread or `last_lost`.
     - **Heat:** + ghost Heat, + card-response Heat.
     - **Clean defense:**
       - **when:** HOME is not lower and no Site changed condition;
@@ -249,6 +282,8 @@ rule):
     `CampaignRules.boss_overrides`), calibrated with `CampaignSimulator` until the reference win falls about 4 points
     per card.
   - Open question for the designer; the default is that proposal.
+- **Breach retry [H5]:** see section 2, step 1. In the oracle a failed breach at `breach_fails > 1` empties
+  `held`; the port empties `campaign.exploits` and must re-show the Exploit Sites as launchable re-take runs.
 - **Doses (R-F revised):** a DOSE card arrives every `solace_tide_dose_every` (4) netruns (counted on every netrun,
   deaths included). DOSE cards are spent automatically at DECAY. Each cures one INFECTED card or blocks the spread.
 
@@ -294,8 +329,8 @@ There is no card build: healthy cards come from the Armory drops (R-C).
 | `solace_tide_ghost_start` | 2 | `GHOST_START` |
 | `solace_tide_ghost_heat` | 5 | `GHOST_HEAT` |
 | `solace_tide_card_response_heat` | 2 | `SPOOF_HEAT` |
-| `solace_tide_early_raids` | 3 | `EARLY_RAIDS` |
-| `solace_tide_early_route_pct` | 60 | `EARLY_ROUTE` |
+| `solace_tide_early_raids` | 4 [H5] | `EARLY_RAIDS` |
+| `solace_tide_early_route_pct` | 100 [H5] | `EARLY_ROUTE` |
 | `solace_tide_known_route_pct` | 0 | `KNOWN_ROUTE` |
 | `solace_tide_home_hit_damage_by_band` | [5, 10, 13, 29, 43] | `home_hit_damage_by_band` |
 | `solace_tide_spread_min` | 2 | `SPREAD_MIN` |
@@ -303,7 +338,10 @@ There is no card build: healthy cards come from the Armory drops (R-C).
 | `solace_tide_dose_every` | 4 | `DOSE_EVERY` |
 | `solace_tide_sacrifice_gap` | 2 | `SAC_GAP` |
 | `solace_tide_clean_price` | 10 | `CLEAN` |
-| `solace_tide_raid_every` | 2 | `RAID_EVERY` |
+| `solace_tide_raid_every` | 3 [H5] | `RAID_EVERY` |
+| `solace_tide_home_hit_infects` | true [H5] | `HOME_INF` |
+| `solace_tide_breach_retries` | 1 [H5] | `BREACH_RETRY` (with `BREACH_LOSE` 1) |
+| `solace_tide_divert` | true [H5] | `DIVERT` |
 | `solace_tide_infected_front_step_pct` | 100 | `INF_STEP_PCT` |
 | `solace_tide_boss_hp_pct_per_infected` | to calibrate (section 5) | `BREACH_K` (0.04 of win) |
 | `solace_tide_start_deck` | the 8 cards in section 1 (until the R-C mapping) | `START_DECK` |
@@ -344,7 +382,7 @@ There is no card build: healthy cards come from the Armory drops (R-C).
 - `lost_since_raid`, `last_lost`, `last_sac`, `raid_n`, `netruns_since_raid`;
 - `purge_queued`, `dose_spent`.
 
-`infection_bp` is dropped. Save compatibility is not required (ruling 2026-10-05); the port reports the format
+`breach_fails` **[H5]** is saved too. `infection_bp` is dropped. Save compatibility is not required (ruling 2026-10-05); the port reports the format
 change.
 
 **Open port items:**
@@ -370,12 +408,17 @@ change.
    NETRUN and BREACH phases are oracle abstractions: check only their state effects on completion (Heat, Schematics,
    Exploit, CLEARED, Armory drop) and on death (death Heat).
 2. **Preview equals result.** For random states, the forecast row for (A, B slot, hunter) under HOLD, and under each
-   response option, equals `play` with the same inputs. Also: the shown lean equals the B the corp picks under HOLD.
+   response option (DIVERT included [H5]), equals `play` with the same inputs. Also: the shown lean equals the B the corp picks under HOLD.
 3. **Seeded replay.** The same campaign seed and inputs give the same draws, hands and states (the `raids` stream). A
    save and load mid-campaign continues identically.
 4. **Rewind never crosses a checkpoint.** The raid is one checkpoint: PLAN and RESPONSE can be undone before the
    resolve, never after; DECAY is never undone.
 5. **Rule tests:**
+   - **[H5]** a HOME hit adds one INFECTED card tied to HOME (none when shielded or ghosted, and it does not count for
+     the spread);
+   - **[H5]** DIVERT: the targets per beam (start or end at the same Site, pool order); a DIVERTed beam scans its new
+     cells; the B pick is unchanged by the known beams;
+   - **[H5]** breach: one retry; the second failure empties the Exploits; a re-take run restores one;
    - DECAY → TAKEN + INFECTED;
    - spread and dose order;
    - CITY LOST at INFECTED > healthy (DOSE counts as healthy);

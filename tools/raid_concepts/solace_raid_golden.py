@@ -1,5 +1,6 @@
-"""Parity golden for the Solace raid (the Infected Tide, H4): docs/handoff/raid_integration/SOLACE_RAID_SPEC.md.
-The oracle is tools/raid_concepts/sweep_g1.py, variant H4 (G4_PHASE1.md). The future GDScript port
+"""Parity golden for the Solace raid (the Infected Tide, H5): docs/handoff/raid_integration/SOLACE_RAID_SPEC.md.
+The oracle is tools/raid_concepts/sweep_g1.py, variant H5 (H4 + the 2026-10-25 Phase 1 rule changes). The future
+GDScript port
 (scripts/core/solace_tide_rules.gd) reads tools/raid_concepts/data/solace_raid_golden.json in its parity test.
 
 Contents:
@@ -15,9 +16,12 @@ Contents:
   response among response_options, random A and hunter street, the corp's B by rule).
 - random_betweens: random legal HQ steps.
 - checks: the small rule functions (hand size, beams fired, HOME damage, breach chance, prices, the Bloom start gap).
-Run: python tools/raid_concepts/solace_raid_golden.py   (about 10 s)"""
+Run: python tools/raid_concepts/solace_raid_golden.py [--variant H5|H4]   (a few seconds)
+H5 writes data/solace_raid_golden.json (the port's golden); H4 writes data/solace_raid_golden_h4.json (the G4 golden of
+commit 82322009, kept reproducible byte for byte)."""
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import random
@@ -28,9 +32,14 @@ import g1_geo as G          # noqa: E402
 import g4_bloom             # noqa: E402
 import sweep_g1 as S        # noqa: E402
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden.json")
+OUT = {"H5": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden.json"),
+       "H4": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden_h4.json")}
+VARIANT = "H5"
 CAMPAIGNS = (("keys", "greedy", 0), ("keys", "greedy", 1), ("greedy", "greedy", 2), ("random", "greedy", 3),
              ("keys", "naive", 0), ("greedy", "naive", 5), ("keys", "greedy", 11), ("greedy", "greedy", 17))
+# H5 only: a second breach failure then a re-take and a win (keys/greedy 5), CITY LOST (keys/naive 4), BREACHED for
+# the skilled player (greedy/greedy 4), two DIVERTs (keys/greedy 83); found by search over seeds 0..199.
+H5_EXTRA = (("keys", "greedy", 5), ("keys", "naive", 4), ("greedy", "greedy", 4), ("keys", "greedy", 83))
 RANDOM_RAIDS = 120
 RANDOM_BETWEENS = 80
 RNG_SEED = 2510
@@ -51,12 +60,17 @@ def st_from_json(d: dict) -> S.St:
     st.lost_flag, st.last_lost, st.inf_n = d["lost_since_raid"], d["last_lost"], d["inf_n"]
     st.dose_n, st.asset_n, st.last_sac, st.cools = d["dose_n"], d["asset_n"], d["last_sac"], d["cools"]
     st.wounds_total, st.sites_lost, st.dose_spent = d["infected_total"], d["sites_lost"], d["dose_spent"]
+    st.bfails = d.get("breach_fails", 0)
     return st
 
 
 def config_json() -> dict:
-    rules = {k: v for k, v in S.H4.items() if not k.startswith("_")}
-    return {"variant": "H4", "rules": rules, "real": S.H4["_REAL"],
+    nums = S.H5 if VARIANT == "H5" else S.H4
+    rules = {k: v for k, v in nums.items() if not k.startswith("_")}
+    if VARIANT == "H4":     # the G4 golden had no H5 keys
+        for k in ("HOME_INF", "BREACH_LOSE", "DIVERT", "PENDING_TERRITORY"):
+            rules.pop(k, None)
+    return {"variant": VARIANT, "rules": rules, "real": nums["_REAL"],
             "lab": {"START_DECK": [list(x) for x in S.START_DECK], "HAND_BASE": S.HAND_BASE,
                     "MAX_PLACED": S.MAX_PLACED, "GHOST_START": S.GHOST_START, "GHOST_HEAT": S.GHOST_HEAT,
                     "SPOOF_HEAT": S.SPOOF_HEAT, "TYPES": list(S.TYPES)},
@@ -81,8 +95,8 @@ def graph_json(geo) -> dict:
 
 def play_campaign(policy: str, player: str, seed: int) -> dict:
     rec = {"raids": [], "between": [], "golden": []}
-    st = S.campaign_h4(policy, player, seed, rec)
-    ref = S.campaign("H4", policy, player, seed)          # the sweep's own run: the golden must match it
+    st = S.campaign_h4(policy, player, seed, rec, VARIANT)
+    ref = S.campaign(VARIANT, policy, player, seed)          # the sweep's own run: the golden must match it
     assert (st.won, st.lost, st.heat, st.hp, st.deaths, rec["netruns"]) == \
         (ref["win"], ref["lost"], ref["heat"], ref["hp"], ref["deaths"], ref["netruns"]), (policy, player, seed)
     return {"seed": seed, "policy": policy, "player": player, "steps": rec["golden"], "end": S.state_json(st),
@@ -90,7 +104,7 @@ def play_campaign(policy: str, player: str, seed: int) -> dict:
 
 
 def random_raid(geo, st: S.St, rng: random.Random, seed: int, idx: int) -> dict:
-    ctx = S.make_ctx(geo, "H4", st, seed, idx)
+    ctx = S.make_ctx(geo, VARIANT, st, seed, idx)
     places = S.placements(ctx, st, ctx.rel, True)
     place = places[rng.randrange(len(places))]
     heat, sw0, rhand = S.launch(ctx, st, place)
@@ -104,7 +118,8 @@ def random_raid(geo, st: S.St, rng: random.Random, seed: int, idx: int) -> dict:
             "place": {"sentries": [[c, j] for c, j in sorted(place[0].items())], "ghost": place[1]},
             "n_placements": len(places), "response_options": [list(o) for o in opts], "response": list(resp),
             "a": k, "hunter": h, "lean": sw.lean, "b_pick": sw.bpick, "home_dmg": sw.home_dmg, "trace": sw.trace,
-            "tier": tr, "after": S.state_json(ns)}
+            "tier": tr, "after": S.state_json(ns),
+            **({"divert_neighbors": [[list(p) for p in x] for x in ctx.nbrs]} if ctx.nbrs is not None else {})}
 
 
 def checks() -> dict:
@@ -140,13 +155,19 @@ def checks() -> dict:
 
 
 def main() -> None:
-    geo = S.geo_for("H4")
-    camps = [play_campaign(*c) for c in CAMPAIGNS]
+    global VARIANT
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--variant", default="H5", choices=("H5", "H4"))
+    VARIANT = ap.parse_args().variant
+    S.set_family(VARIANT)
+    geo = S.geo_for(VARIANT)
+    camps = [play_campaign(*c) for c in (CAMPAIGNS + H5_EXTRA if VARIANT == "H5" else CAMPAIGNS)]
     rng = random.Random(RNG_SEED)
     pool = [step["after_decay"] if "after_decay" in step else step["before"]
             for c in camps for step in c["steps"] if step["phase"] == "RAID"]
     pool = [p for p in pool if not p["lost"]]
     raids = []
+    S.set_family(VARIANT)
     for i in range(RANDOM_RAIDS):
         st = st_from_json(pool[rng.randrange(len(pool))])
         raids.append(random_raid(geo, st, rng, 9000 + i, rng.randrange(8)))
@@ -154,19 +175,20 @@ def main() -> None:
     after = [r["after"] for r in raids if not r["after"]["lost"]]
     for i in range(RANDOM_BETWEENS):
         st = st_from_json(after[rng.randrange(len(after))])
-        opts = S.between_options(geo, "H4", st)
+        opts = S.between_options(geo, VARIANT, st)
         o = opts[rng.randrange(len(opts))]
         betweens.append({"before": S.state_json(st), "options": [[x[0], x[1], x[3]] for x in opts],
                          "choice": {"repair": o[0], "build": o[1], "patch": o[3]},
-                         "after": S.state_json(S.between(geo, "H4", st, o))})
+                         "after": S.state_json(S.between(geo, VARIANT, st, o))})
     out = {"config": config_json(), "graph": graph_json(geo), "campaigns": camps, "random_raids": raids,
            "random_betweens": betweens, "checks": checks()}
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w") as f:
+    out_path = OUT[VARIANT]
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w") as f:
         json.dump(out, f, sort_keys=True, separators=(",", ":"))
     n_steps = sum(len(c["steps"]) for c in camps)
     print("golden: %d campaigns (%d phases), %d random raids, %d random betweens -> %s (%d KB)"
-          % (len(camps), n_steps, len(raids), len(betweens), OUT, os.path.getsize(OUT) // 1024))
+          % (len(camps), n_steps, len(raids), len(betweens), out_path, os.path.getsize(out_path) // 1024))
     for c in camps:
         print(" ", c["policy"], c["player"], c["seed"], "netruns", c["netruns"], "raids", c["raids"], "won", c["end"]["won"],
               "lost", c["end"]["lost"] or "-")
