@@ -329,6 +329,63 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var raid_infection_decay_hold_bp: int = 1000
 @export var raid_infection_decay_per_kill_bp: int = 100
 @export var raid_infection_decay_cure_bp: int = 1500
+
+@export_group("Solace tide")
+## The Solace raid, the Infected Tide (H5; docs/handoff/raid_integration/SOLACE_RAID_SPEC.md section 7). SolaceTideRules
+## reads every number from here. The oracle name of each key is in the spec.
+## Longest Genome Core -> HOME route the corp may use, in links (locked links count).
+@export var solace_tide_route_max_links: int = 5
+## Sealed route candidates the corp draws each raid (the top of the P-target order).
+@export var solace_tide_candidates: int = 3
+## Raid hand size: the base, plus one for each Heat level in solace_tide_hand_heat reached.
+@export var solace_tide_hand_base: int = 4
+@export var solace_tide_hand_heat: PackedInt32Array = PackedInt32Array([25, 50, 75])
+## A known beam fires for each level in this list the Heat (with the ghost's Heat) reaches, on top of the first.
+@export var solace_tide_beam_heat: PackedInt32Array = PackedInt32Array([75, 100])
+## Sentries the PLAN can place from the hand.
+@export var solace_tide_max_placed: int = 2
+@export var solace_tide_ghost_start: int = 2
+@export var solace_tide_ghost_heat: int = 5
+## Heat a card response (REDEPLOY, DEPLOY, JAM, JAM_B, DIVERT) costs.
+@export var solace_tide_card_response_heat: int = 2
+## The first `early_raids` raids draw each known beam as a route to HOME with `early_route_pct` percent; later raids
+## with `known_route_pct` percent (else it is a street).
+@export var solace_tide_early_raids: int = 4
+@export var solace_tide_early_route_pct: int = 100
+@export var solace_tide_known_route_pct: int = 0
+## HOME integrity one hit removes, by Heat band (COOL, NOTICED, FLAGGED, HUNTED, PURGE). Index 4 only for the raid the
+## first crossing of the PURGE level queued. Equals the threat damage of the Solace raids (see the schema smoke check).
+@export var solace_tide_home_hit_damage_by_band: PackedInt32Array = PackedInt32Array([5, 10, 13, 29, 43])
+## Sites lost since the last raid that make the infection spread at DECAY.
+@export var solace_tide_spread_min: int = 2
+@export var solace_tide_doses_per_decay: int = 2
+## A DOSE card arrives every Nth netrun.
+@export var solace_tide_dose_every: int = 4
+## SACRIFICE needs this many raids since the last one.
+@export var solace_tide_sacrifice_gap: int = 2
+## Schematics to clean one INFECTED card at the HQ.
+@export var solace_tide_clean_price: int = 10
+## A raid fires after this many netruns since the last raid (a Heat-threshold raid also resets the count).
+@export var solace_tide_raid_every: int = 3
+## H5: a HOME hit adds an INFECTED card tied to HOME.
+@export var solace_tide_home_hit_infects: bool = true
+## H5: failed Genome Core breaches allowed before the Exploits are spent (one retry = 1).
+@export var solace_tide_breach_retries: int = 1
+## H5: a SHIFT card may bend a known beam (DIVERT).
+@export var solace_tide_divert: bool = true
+## R-D: percent of an entry step the Bloom start front moves per INFECTED card.
+@export var solace_tide_infected_front_step_pct: int = 100
+## R-F: percent of the Genome Core's HP added per INFECTED card at the breach. 0 = off until it is calibrated with the
+## CampaignSimulator (Phase 2b).
+@export var solace_tide_boss_hp_pct_per_infected: int = 0
+## The opening defense deck, one "id:type:verb" per card (type D, N or E; verb GUARD, SHIFT or JAM) until R-C maps the
+## Armory and the stationed operatives onto cards.
+@export var solace_tide_start_deck: PackedStringArray = PackedStringArray(["s0:D:GUARD", "s1:D:GUARD", "s2:N:GUARD",
+	"s3:N:GUARD", "s4:E:GUARD", "s5:D:SHIFT", "s6:E:SHIFT", "s7:N:JAM"])
+## SACRIFICE picks the cheapest live Site off every line: a Site is worth this by tier (index tier - 1, clamped), plus
+## the bonus for an Exploit Site. (Spec ambiguity: the oracle's TIER_VALUE and EXPLOIT_BONUS were not listed in section 7.)
+@export var solace_tide_site_value_by_tier: PackedInt32Array = PackedInt32Array([6, 8, 10])
+@export var solace_tide_exploit_site_value: int = 6
 ## Halcyon THE EYE: sector width and step (degrees), octants moved per campaign turn (one ended netrun), turns
 ## fixed after an Exploit.
 @export var eye_sector_deg: int = 90
@@ -685,6 +742,38 @@ func major_heat_levels() -> Array[int]:
 	return out
 
 
+## The Solace tide's opening deck as cards: [[id, type, verb], ...] (see `solace_tide_start_deck`).
+func solace_tide_start_cards() -> Array:
+	var out: Array = []
+	for entry in solace_tide_start_deck:
+		var p := entry.split(":")
+		if p.size() == 3:
+			out.append([p[0], p[1], p[2]])
+	return out
+
+
+func _validate_solace_tide(errors: PackedStringArray) -> void:
+	if solace_tide_home_hit_damage_by_band.size() != 5:
+		errors.append("solace_tide_home_hit_damage_by_band needs 5 entries (COOL .. PURGE).")
+	if solace_tide_route_max_links < 2 or solace_tide_candidates < 2 or solace_tide_max_placed < 0:
+		errors.append("solace_tide route links, candidates and max placed are out of range.")
+	if solace_tide_dose_every < 1 or solace_tide_raid_every < 1:
+		errors.append("solace_tide_dose_every and solace_tide_raid_every must be >= 1.")
+	if solace_tide_early_route_pct < 0 or solace_tide_early_route_pct > 100 or solace_tide_known_route_pct < 0 or solace_tide_known_route_pct > 100:
+		errors.append("solace_tide route percents must be 0..100.")
+	if solace_tide_site_value_by_tier.is_empty():
+		errors.append("solace_tide_site_value_by_tier needs at least one entry.")
+	if solace_tide_start_cards().size() != solace_tide_start_deck.size():
+		errors.append("solace_tide_start_deck entries must be id:type:verb.")
+
+
+## What a Solace Site is worth to the SACRIFICE choice (tier clamped to the table).
+func solace_tide_site_value(tier: int, exploit: bool) -> int:
+	var t := solace_tide_site_value_by_tier
+	var v := 0 if t.is_empty() else int(t[clampi(tier - 1, 0, t.size() - 1)])
+	return v + (solace_tide_exploit_site_value if exploit else 0)
+
+
 ## Where the Heat bands start, ascending (GDD 4.3): the MAJOR levels and the PURGE level.
 ## Below the first is COOL; then NOTICED, FLAGGED, HUNTED, PURGE.
 func heat_band_levels() -> Array[int]:
@@ -785,6 +874,7 @@ func validate() -> PackedStringArray:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
 	_validate_enrage(errors)
+	_validate_solace_tide(errors)
 	if easy_normal_fights < 0:
 		errors.append("easy_normal_fights must be >= 0.")
 	if event_fight_tier_cap < 1 or event_fight_tier_cap > enemy_hp_scale_by_tier.size():

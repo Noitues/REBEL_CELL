@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _raid_fix_a_config() + _ev01_event_schema()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _raid_fix_a_config() + _ev01_event_schema() + _solace_tide_config()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -1294,3 +1294,49 @@ func _raid_fix_a_config() -> int:
 	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("RAID-RULES E clean defense Heat (expect 5): ", cfg.clean_defense_heat)
 	return 0 if cfg.clean_defense_heat == CampaignConfigData.new().clean_defense_heat and cfg.clean_defense_heat > 0 else 1
+
+
+## Solace tide (Phase 2a, SOLACE_RAID_SPEC section 7): the shipped keys equal the defaults, the config validates, and the
+## HOME damage table equals its derivation from the raid content: the threat damage of raid_claim, raid_heat_25 / 50 / 75
+## and raid_purge as if every threat reached HOME, plus the HUNTED band's raid strength from the 75 raid on.
+func _solace_tide_config() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("Solace tide defaults (expect 5 3 4 3 true 1 true 10): ", d.solace_tide_route_max_links, " ", d.solace_tide_candidates,
+		" ", d.solace_tide_hand_base, " ", d.solace_tide_raid_every, " ", d.solace_tide_home_hit_infects,
+		" ", d.solace_tide_breach_retries, " ", d.solace_tide_divert, " ", d.solace_tide_clean_price)
+	if d.solace_tide_route_max_links != 5 or d.solace_tide_candidates != 3 or d.solace_tide_hand_base != 4 or d.solace_tide_raid_every != 3: fails += 1
+	if not d.solace_tide_home_hit_infects or d.solace_tide_breach_retries != 1 or not d.solace_tide_divert or d.solace_tide_clean_price != 10: fails += 1
+	if d.solace_tide_start_cards().size() != 8 or d.solace_tide_start_cards()[7] != ["s7", "N", "JAM"]: fails += 1
+	if not _tide_errors(d).is_empty(): fails += 1
+	if shipped == null or shipped.solace_tide_hand_heat != d.solace_tide_hand_heat or shipped.solace_tide_beam_heat != d.solace_tide_beam_heat 			or shipped.solace_tide_home_hit_damage_by_band != d.solace_tide_home_hit_damage_by_band or shipped.solace_tide_start_deck != d.solace_tide_start_deck:
+		fails += 1
+	# the damage table against the raid content
+	var strength := 0.0
+	for t in shipped.heat_thresholds:
+		if t != null and t.heat == 75:
+			for m in t.ongoing_modifiers:
+				if m != null and m.type == RC.RuleModifierType.RAID_STRENGTH_PCT:
+					strength = m.value
+	var derived: Array[int] = []
+	var names := ["raid_claim", "raid_heat_25", "raid_heat_50", "raid_heat_75", "raid_purge"]
+	for i in names.size():
+		var raid: RaidData = load("res://content/raids/%s.tres" % names[i])
+		var dmg := 0
+		for w in raid.waves:
+			for th in w.threats:
+				dmg += th.damage
+		var scale := 1.0 + (strength / 100.0 if i >= 3 else 0.0)
+		derived.append(int(floor(dmg * scale + 0.5)))
+	print("Solace tide HOME damage table (shipped / derived): ", Array(shipped.solace_tide_home_hit_damage_by_band), " ", derived)
+	if Array(shipped.solace_tide_home_hit_damage_by_band) != derived: fails += 1
+	return fails
+
+
+func _tide_errors(cfg: CampaignConfigData) -> Array:
+	var out: Array = []
+	for e in cfg.validate():
+		if String(e).contains("solace_tide"):
+			out.append(e)
+	return out
