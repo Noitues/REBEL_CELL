@@ -153,7 +153,7 @@ static func add_heat(st: SolaceTideState, delta: int, cfg: CampaignConfigData) -
 			fresh = true
 			if i == levels.size() - 1:
 				st.purge_queued = true
-	st.crossed_heat.sort()
+	IdSort.sort_ids(st.crossed_heat)
 	return fresh
 
 
@@ -330,7 +330,7 @@ static func draw_hand(st: SolaceTideState, cfg: CampaignConfigData, rng: RandomN
 	var ids: Array = []
 	for c in st.deck:
 		ids.append(String(c[0]))
-	ids.sort()
+	IdSort.sort_ids(ids)
 	_shuffle(ids, rng)
 	return ids.slice(0, mini(hand_size(st.heat, cfg), ids.size()))
 
