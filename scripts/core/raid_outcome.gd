@@ -8,7 +8,8 @@ extends RefCounted
 ## The raid's verdict (designer R3, D28): CELL_HOLDS (Home survives) or BREACHED (Home fell: the
 ## campaign is lost). How well the Cell held is the `Tier`; the consequence is the Heat and
 ## Schematics delta. A CLEAN defense (`RaidResult.won`) gains Heat and Schematics; damage gains no Heat (D27).
-enum Verdict { CELL_HOLDS, BREACHED }
+## CITY_LOST (Solace tide, R-E): INFECTED cards outnumber healthy cards; a campaign loss apart from BREACHED.
+enum Verdict { CELL_HOLDS, BREACHED, CITY_LOST }
 
 ## Severity tiers, mildest first: a clean defense, any Home loss (amber), a node DOWN (orange), a
 ## node TAKEN or Home BREACHED (red). A damaged CELL HOLDS is never CLEAN.
@@ -22,6 +23,17 @@ const REASON_WRONG_LANE := &"wrong_lane"
 ## The verdict of a raid with this flag (RaidResult.campaign_lost).
 static func verdict_of(campaign_lost: bool) -> Verdict:
 	return Verdict.BREACHED if campaign_lost else Verdict.CELL_HOLDS
+
+
+## The verdict of a Solace tide raid from the state's `lost` word (see SolaceTideState): "" holds, "BREACHED" (HOME 0),
+## "CITY_LOST" (INFECTED outnumber healthy cards).
+static func verdict_of_tide(lost_word: String) -> Verdict:
+	match lost_word:
+		"BREACHED":
+			return Verdict.BREACHED
+		"CITY_LOST":
+			return Verdict.CITY_LOST
+	return Verdict.CELL_HOLDS
 
 
 ## The verdict of a `RaidResult`.

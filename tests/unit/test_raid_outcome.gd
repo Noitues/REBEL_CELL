@@ -42,7 +42,7 @@ func _build(layout: Array) -> Dictionary:
 func test_verdict_is_cell_holds_or_breached() -> void:
 	assert_eq(RaidOutcome.verdict_of(false), RaidOutcome.Verdict.CELL_HOLDS)
 	assert_eq(RaidOutcome.verdict_of(true), RaidOutcome.Verdict.BREACHED)
-	assert_eq(RaidOutcome.Verdict.keys(), ["CELL_HOLDS", "BREACHED"], "the two verdicts only")
+	assert_eq(RaidOutcome.Verdict.keys(), ["CELL_HOLDS", "BREACHED", "CITY_LOST"], "the verdicts: holds, breached, and CITY_LOST (R-E, 2026-10-25)")
 
 
 func test_the_projection_equals_what_apply_does_for_every_layout() -> void:

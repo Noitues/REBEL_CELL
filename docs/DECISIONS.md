@@ -10053,3 +10053,17 @@ Source: docs/design/raid_concepts/G4_RESULTS.md. With real numbers the infection
   response list show it.
 - **4. Tuning (Claude's call).** Raids from Heat thresholds reset the raid cadence counter.
 - **Next:** fold these into the H4 oracle, the spec and the golden; re-measure once; then the Phase 2 core port.
+
+### 2026-10-25 - Solace Infected Tide: Phase 2a core port (SolaceTideBoard, SolaceTideRules, SolaceTideState)
+Source: docs/handoff/raid_integration/SOLACE_RAID_SPEC.md (H5). Core only, no campaign wiring, no UI; `raid_resolver.gd` untouched.
+- New: `scripts/core/solace_tide_board.gd`, `scripts/core/solace_tide_rules.gd`, `scripts/state/solace_tide_state.gd`;
+  `RaidOutcome.Verdict.CITY_LOST` (appended) and `verdict_of_tide`; the spec section 7 keys in `CampaignConfigData`
+  (group "Solace tide") and `campaign_config.tres`. Rule 8: `tools/schema_smoke_checks.gd` `_solace_tide_config` (defaults,
+  shipped keys, the HOME damage table equals its derivation from the raid content).
+- Spec ambiguities resolved (Claude's call): (1) SACRIFICE's "cheapest live Site off every line" needs a Site value the
+  spec did not list; added `solace_tide_site_value_by_tier` [6, 8, 10] and `solace_tide_exploit_site_value` 6 (the
+  oracle's TIER_VALUE and EXPLOIT_BONUS). (2) `solace_tide_boss_hp_pct_per_infected` ships 0 (off) until Phase 2b
+  calibrates it with the CampaignSimulator. (3) The state holds a working copy of the campaign fields the tide reads
+  (heat, Schematics, HOME, Site conditions, Exploits held); 2b maps CampaignState in and out. (4) The oracle's
+  BREACH_BASE/K/MIN and the netrun abstractions (ELITE_RUN, CYCLE_SCHEM, P_COMBAT) are not ported (spec "not ported").
+  (5) `ghost` in a place is `&""` for none. (6) Card ids sort as text ("x10" before "x2"), as the oracle's tuples do.

@@ -40,6 +40,7 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
+rc_look/stamp_slots=false
 gltf/naming_version=2
 gltf/embedded_image_handling=1
 gltf/texture_map_mode=1
