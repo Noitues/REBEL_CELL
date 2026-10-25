@@ -14,6 +14,10 @@ Campaign (shared by every concept)
   concept dose verbs).
 - Loss: HOME 0 (BREACHED) or the concept's timer (CITY LOST). Win proxy: 3 live Exploits at the end with HOME > 0.
 
+G2 (docs/handoff/raid_integration/G2_SIM.md): H "Infected Tide" = C-target's board + D's deck infection (INFECTED
+cards tied to Sites, spread, DOSE cards, PURGE win) + the corp's sealed B picked after the response by a readable rule.
+Variants H, H-noB, H-nospread (tuned numbers, H_TUNED) and H-brief (the brief's literal numbers, H_BRIEF).
+
 Run: python tools/raid_concepts/sweep_g1.py [--campaigns N] [--jobs J] [--variants A-open,C-all,...] [--check]
 Output: D:/rc_tmp/raid_design_lab/g1/sweep_g1.json (summary per variant x claim policy x raid player)."""
 from __future__ import annotations
@@ -41,7 +45,7 @@ START_DECK = (("s0", "D", "GUARD"), ("s1", "D", "GUARD"), ("s2", "N", "GUARD"), 
               ("s4", "E", "GUARD"), ("s5", "D", "SHIFT"), ("s6", "E", "SHIFT"), ("s7", "N", "JAM"))
 TYPES = ("D", "N", "E")
 PLACEABLE = ("GUARD", "SHIFT", "JAM")
-CARD_RESPONSES = ("REDEPLOY", "DEPLOY", "JAM")
+CARD_RESPONSES = ("REDEPLOY", "DEPLOY", "JAM", "JAM_B")
 EPS = 1e-9
 
 # Campaign model (G1_SIM; assumed where the brief is silent: listed in G1_RESULTS.md).
@@ -71,8 +75,34 @@ DOSE_VALUE = 3.0            # planner: a held dose / DOSE card mid-campaign
 # D: Carrier Deck.
 D_DRAW, D_INFECTED_DRAW_COST, D_SPREAD_COST = 5, 2, 2.0
 
+# H: Infected Tide (G2_SIM.md): C-target's board and paths + D's deck infection. Concept codes: "H" (full),
+# "Hb" (H-noB: sealed B fixed at generation), "Hs" (H-nospread). Numbers below are G2 assumptions/tuning.
+H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl"}
+# H numbers. G2 tuned values (G2_RESULTS.md section 2); every one can be overridden from the environment (g2_tune.py).
+# H-brief ("Hl") keeps the brief's literal numbers, so the tuning can be compared against the brief as written.
+#   BRULE: the corp's post-response B rule. "typed" = owned Sites before the first sentry of the route's type (brief
+#     literal: the corp sees through types and dodges every block); "any" = before the first sentry of any type (the
+#     corp sees sentries, not their types); "greed" = all owned Sites on the route (sentries ignored).
+#   KNOWN_ROUTE: chance a known beam is a route to HOME (else a street). SPREAD_MIN: Sites lost since the last raid
+#   for the spread. DOSE_EVERY: a DOSE card every Nth netrun. CLEAN: price to clean an INFECTED card between raids.
+#   PATCH: PATCH HOME price (+1 pip). HOME: HOME pips. ESCALATE: "" or "N:K" (from raid N, K extra known beams).
+#   MAX_PLACED: sentries at PLAN (probe only). DOWN_RISK: planner value per DOWN Site (INFECTED at DECAY unless repaired).
+H_TUNED = {"BRULE": "any", "KNOWN_ROUTE": 0.1, "SPREAD_MIN": 2, "DOSE_EVERY": 2, "CLEAN": 2, "PATCH": 8,
+           "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0}
+H_BRIEF = {"BRULE": "typed", "KNOWN_ROUTE": 0.5, "SPREAD_MIN": 1, "DOSE_EVERY": DOSE_EVERY, "CLEAN": CLEAN_PRICE,
+           "PATCH": PATCH_PRICE, "HOME": HOME_HP, "ESCALATE": "", "MAX_PLACED": MAX_PLACED, "DOWN_RISK": 2.0}
+for _k, _v in list(H_TUNED.items()):
+    _e = os.environ.get("H_" + _k)
+    if _e is not None:
+        H_TUNED[_k] = type(_v)(_e) if not isinstance(_v, str) else _e
+
+
+def hp(c: str, key: str):
+    """An H number for concept code c (H-brief reads the brief's values; the rest read the tuned ones)."""
+    return (H_BRIEF if c == "Hl" else H_TUNED)[key]
+
 VARIANTS = ("A-open", "A-all", "A-target", "B-wards", "C-open", "C-all", "C-target",
-            "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice")
+            "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice", "H", "H-noB", "H-nospread", "H-brief")
 POLICIES = ("greedy", "keys", "random")
 PLAYERS = ("greedy", "naive")
 OUT = r"D:/rc_tmp/raid_design_lab/g1/sweep_g1.json"
@@ -83,7 +113,9 @@ _GEO = {}
 def geo_for(variant: str):
     g = _GEO.get(variant)
     if g is None:
-        if variant.startswith("A-") or variant.startswith("C-"):
+        if variant in H_CODES:
+            g = G.GraphGeo("P-target", "street", hp(H_CODES[variant], "KNOWN_ROUTE"))
+        elif variant.startswith("A-") or variant.startswith("C-"):
             rule = {"open": "P-open", "all": "P-all", "target": "P-target"}[variant.split("-")[1]]
             g = G.GraphGeo(rule, "tongue" if variant.endswith("tongue") else "street")
         elif variant == "B-wards":
@@ -98,9 +130,13 @@ def geo_for(variant: str):
 class St:
     __slots__ = ("heat", "bank", "hp", "owned", "deck", "ghost", "opened", "inf", "wards", "fallen", "ward50",
                  "front", "crossed", "infected", "doses", "dose_buys", "dose_n", "obj_done", "breach_used", "lost",
-                 "wounds_total", "sites_lost", "front_downs")
+                 "wounds_total", "sites_lost", "front_downs", "lost_flag", "last_lost", "inf_n", "purged")
 
     def __init__(self):
+        self.lost_flag = 0          # H: Sites lost since the last spread check
+        self.last_lost = ""         # H: the Site the spread card is tied to
+        self.inf_n = 0              # H: monotonic INFECTED card id
+        self.purged = False         # H: a raid survived with 0 INFECTED while holding the 3 Exploits
         self.heat, self.bank, self.hp = START_HEAT, START_BANK, HOME_HP
         self.owned = {}
         self.deck = START_DECK
@@ -132,7 +168,50 @@ class St:
 
 
 def concept_of(variant: str) -> str:
-    return variant[0]
+    return H_CODES.get(variant, variant[0])
+
+
+def is_h(c: str) -> bool:
+    return c[0] == "H"
+
+
+def h_spread(c: str) -> bool:
+    return c in ("H", "Hb", "Hl")
+
+
+def h_dyn_b(c: str) -> bool:
+    """H: the corp picks sealed B after the response by the readable rule (H-noB keeps the generation pick)."""
+    return c in ("H", "Hs", "Hl")
+
+
+def add_infected(st: "St", sites, loss: bool = True) -> None:
+    """H: one INFECTED card per Site (the card's type field holds the Site it is tied to; ids are monotonic)."""
+    if not sites:
+        return
+    cards = list(st.deck)
+    for s in sites:
+        cards.append(("w%03d" % st.inf_n, s, "WOUND"))
+        st.inf_n += 1
+    st.deck = tuple(sorted(cards))
+    st.wounds_total += len(sites)
+    if loss:
+        st.lost_flag += len(sites)
+        st.last_lost = min(sites)
+
+
+def infected_sites(st: "St") -> set:
+    return {c[1] for c in st.deck if c[2] == "WOUND" and c[1] != "-"}
+
+
+def front_size(geo, st: "St") -> int:
+    """H: the visible front = Sites tied to INFECTED cards plus their TAKEN neighbours (base links)."""
+    tied = infected_sites(st)
+    out = set(tied)
+    for s in tied:
+        for n in geo.base_adj.get(s, ()):
+            if st.owned.get(n) == "TAKEN":
+                out.add(n)
+    return len(out)
 
 
 def wound_count(deck) -> int:
@@ -197,7 +276,7 @@ def value(geo, c: str, st: St, mid: bool = True) -> float:
         elif v == "DOWN":
             x = G.TIER_VALUE[geo.tier[site]]
             s += x - x // 2 + (EXPLOIT_BONUS if site in geo.exploits else 0)
-    s -= HOME_LOSS_COST * (HOME_HP - st.hp)
+    s -= HOME_LOSS_COST * ((hp(c, "HOME") if is_h(c) else HOME_HP) - st.hp)
     s -= HEAT_CARRY * max(0, st.heat - START_HEAT)
     s -= HEAT_BAND * (int(st.heat >= EXTRA_AT) + int(st.heat >= STRONG_AT))
     w = wound_count(st.deck)
@@ -218,6 +297,13 @@ def value(geo, c: str, st: St, mid: bool = True) -> float:
         s -= D_SPREAD_COST * w
         if mid:
             s += DOSE_VALUE * len(dose_cards(st.deck))
+        if is_h(c) and mid:
+            # forecast rows: each Site left DOWN becomes an INFECTED card at DECAY unless repaired, and a loss
+            # spreads +1 INFECTED at the next raid unless a DOSE card is spent
+            downs = sum(1 for v in st.owned.values() if v == "DOWN")
+            s -= hp(c, "DOWN_RISK") * downs
+            if h_spread(c) and st.lost_flag + downs >= hp(c, "SPREAD_MIN"):
+                s -= DOSE_VALUE if dose_cards(st.deck) else WOUND_COST + D_SPREAD_COST
     return s
 
 
@@ -236,6 +322,10 @@ def check_loss(geo, c: str, st: St) -> None:
     elif c == "D":
         w = wound_count(st.deck)
         if w > 0 and w >= len(st.deck) - w:
+            st.lost = "CITY_LOST"
+    elif is_h(c):
+        w = wound_count(st.deck)
+        if w > len(st.deck) - w:         # INFECTED outnumber healthy cards (DOSE cards count as healthy)
             st.lost = "CITY_LOST"
 
 
@@ -283,10 +373,27 @@ def lose_annexes(geo, st: St) -> None:
 
 def decay(geo, c: str, st: St, greedy: bool, log: dict | None = None) -> None:
     """DECAY (every raid after the first): owned DOWN Sites go TAKEN, a wound each (A: +5 % each). D: the spread."""
-    downs = [s for s, v in st.owned.items() if v == "DOWN"]
+    downs = sorted(s for s, v in st.owned.items() if v == "DOWN")
     for s in downs:
         st.owned[s] = "TAKEN"
     st.sites_lost += len(downs)
+    if is_h(c):
+        add_infected(st, downs)
+        spread = h_spread(c) and st.lost_flag >= hp(c, "SPREAD_MIN")
+        st.lost_flag = 0
+        dc = dose_cards(st.deck)
+        if greedy and dc and (spread or wound_count(st.deck) > 0):
+            remove_card(st, dc[0][0])        # one DOSE per DECAY: block the spread, else remove 1 INFECTED
+            if not spread:
+                remove_card(st, max(x for x in st.deck if x[2] == "WOUND")[0])
+            if log is not None:
+                log["decay_dose"] = log.get("decay_dose", 0) + 1
+        elif spread:
+            add_infected(st, [st.last_lost], loss=False)
+            if log is not None:
+                log["spread"] = log.get("spread", 0) + 1
+        check_loss(geo, c, st)
+        return
     add_wounds(st, len(downs))
     if c == "A":
         st.inf += A_TAKEN * len(downs)
@@ -363,14 +470,17 @@ def netrun(geo, c: str, st: St, site, seed: int, n: int) -> bool:
             if st.front < col and col not in st.crossed:
                 st.crossed = st.crossed + (col,)
                 queue = True
-    elif c == "D":
+    elif c == "D" or is_h(c):
         ids = sorted(x[0] for x in st.deck)
         random.Random("run:%d:%d" % (seed, n)).shuffle(ids)
         kinds = {x[0]: x[2] for x in st.deck}
         bad = sum(1 for i in ids[:D_DRAW] if kinds[i] == "WOUND")
         st.bank = max(0, st.bank - D_INFECTED_DRAW_COST * bad)
-    if n % DOSE_EVERY == 0:
-        if c in "BD":
+    if is_h(c):
+        if n % hp(c, "DOSE_EVERY") == 0:
+            add_dose_card(st)
+    elif n % DOSE_EVERY == 0:
+        if c in ("B", "D"):
             add_dose_card(st)
         elif c == "C":
             st.doses += 1
@@ -401,7 +511,7 @@ def choose_claim(geo, c: str, st: St, policy: str, rng: random.Random, seed: int
 # ------------------------------------------------------------------------------------------------ the raid sweep
 class Sweep:
     __slots__ = ("sent", "ghost", "owned", "hp", "home_hit", "home_ward", "shield", "seen", "hits", "touches",
-                 "quar", "taken", "front", "infected", "late", "dose_used")
+                 "quar", "taken", "front", "infected", "late", "dose_used", "bpick", "lean", "jam_b")
 
     def copy(self) -> "Sweep":
         o = Sweep.__new__(Sweep)
@@ -421,6 +531,9 @@ class Sweep:
         o.infected = self.infected
         o.late = self.late
         o.dose_used = self.dose_used
+        o.bpick = self.bpick
+        o.lean = self.lean
+        o.jam_b = self.jam_b
         return o
 
 
@@ -442,6 +555,9 @@ def new_sweep(st: St, place) -> Sweep:
     sw.infected = st.infected
     sw.late = None
     sw.dose_used = None
+    sw.bpick = -1
+    sw.lean = -1
+    sw.jam_b = False
     return sw
 
 
@@ -513,14 +629,24 @@ def hunters_now(ctx: Ctx, sw: Sweep) -> list:
     return ctx.draw.hunters
 
 
+def escalation(ctx: Ctx) -> int:
+    """H: extra known beams from raid N on (ESCALATE "N:K"; raid index counts from 0)."""
+    if not is_h(ctx.c) or not hp(ctx.c, "ESCALATE"):
+        return 0
+    n, k = (int(x) for x in hp(ctx.c, "ESCALATE").split(":"))
+    return k if ctx.raid >= n else 0
+
+
+def n_known(ctx: Ctx, heat: int) -> int:
+    e = escalation(ctx)
+    return 1 + int(heat >= EXTRA_AT or e >= 1) + int(heat >= STRONG_AT or e >= 2)
+
+
 def launch(ctx: Ctx, st: St, place):
     heat = st.heat + (GHOST_HEAT if place[1] is not None else 0)
     sw = new_sweep(st, place)
-    scan(ctx.geo, sw, ctx.draw.known[0], ctx.ctype)
-    if heat >= EXTRA_AT:
-        scan(ctx.geo, sw, ctx.draw.known[1], ctx.ctype)
-    if heat >= STRONG_AT:
-        scan(ctx.geo, sw, ctx.draw.known[2], ctx.ctype)
+    for i in range(n_known(ctx, heat)):
+        scan(ctx.geo, sw, ctx.draw.known[i], ctx.ctype)
     used = set(place[0].values())
     rhand = [(j,) + ctx.cards[j] for j in ctx.hand if j not in used]
     return heat, sw, rhand
@@ -560,6 +686,8 @@ def response_options(ctx: Ctx, sw: Sweep, rhand) -> list:
             out.append(("SACRIFICE", cell))
     if _has(rhand, "JAM"):
         out.append(("JAM",))
+        if h_dyn_b(ctx.c):
+            out.append(("JAM_B",))      # H: the JAM card scrambles the corp's B pick instead of the hunter
     if ctx.c == "B" and _has(rhand, "DOSE"):
         for w in range(3):
             if any(geo.ward_of[s] == w and v != "TAKEN" for s, v in sw.owned.items()):
@@ -584,6 +712,47 @@ def respond(ctx: Ctx, sw: Sweep, r: tuple, rhand) -> None:
     elif k == "QUARANTINE":
         sw.quar = r[1]
         sw.dose_used = min(x[0] for x in rhand if x[2] == "DOSE")
+    elif k == "JAM_B":
+        sw.jam_b = True
+
+
+def route_pull(geo, sw: Sweep, ln, ctype: dict, rule: str) -> int:
+    """H B rule: live owned Sites on a route before the first sentry of its type (the route's unblocked Sites)."""
+    n = 0
+    for cell in ln.cells:
+        if cell == sw.ghost:
+            continue
+        j = sw.sent.get(cell)
+        if j is not None and (rule == "any" or rule == "typed" and ctype[j] == ln.type):
+            break
+        for s in geo.cell_sites[cell]:
+            if sw.owned.get(s) in ("OK", "DOWN"):
+                n += 1
+    return n
+
+
+def b_rule(ctx: Ctx, sw: Sweep, k: int, tie: int) -> int:
+    """H: the corp's B (index into the two candidates other than A) = the one with more unblocked owned Sites;
+    a tie keeps `tie` (the lean shown at REVEAL A; the lean itself breaks ties by display order)."""
+    others = [x for x in range(3) if x != k]
+    p = [route_pull(ctx.geo, sw, ctx.draw.cands[b], ctx.ctype, hp(ctx.c, "BRULE")) for b in others]
+    if p[0] > p[1]:
+        return 0
+    if p[1] > p[0]:
+        return 1
+    return tie
+
+
+def b_pairs(ctx: Ctx, sw_pre: Sweep, sw_post: Sweep, k: int) -> list:
+    """The (bi, b) outcomes the planner averages over: both for fixed-B concepts, the corp's pick for H."""
+    others = [x for x in range(3) if x != k]
+    if not h_dyn_b(ctx.c):
+        return list(enumerate(others))
+    lean = b_rule(ctx, sw_pre, k, 0)
+    bi = b_rule(ctx, sw_post, k, lean)
+    if sw_post.jam_b:
+        bi = 1 - bi
+    return [(bi, others[bi])]
 
 
 def late_options(ctx: Ctx, st: St, sw: Sweep, rhand, resp) -> list:
@@ -626,7 +795,10 @@ def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
     if place[1] is not None:
         ns.ghost -= 1
     ns.sites_lost += sw.taken
-    add_wounds(ns, sw.taken)
+    if is_h(c):
+        add_infected(ns, sorted(s for s, v in sw.owned.items() if v == "TAKEN" and st.owned.get(s) != "TAKEN"))
+    else:
+        add_wounds(ns, sw.taken)
     if sw.dose_used is not None:
         remove_card(ns, sw.dose_used)
     if sw.late == "CURE":
@@ -660,6 +832,8 @@ def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
     elif c == "D":
         lose_annexes(geo, ns)
     check_loss(geo, c, ns)
+    if is_h(c) and not ns.lost and wound_count(ns.deck) == 0 and exploits_live(geo, ns) >= 3:
+        ns.purged = True
     return ns
 
 
@@ -678,8 +852,13 @@ def tier(before: St, after: St, sw: Sweep) -> str:
 def play_one(ctx: Ctx, st: St, place, resp, k: int, bi: int, late, h: int):
     """One full raid on one (A, B, late, hunter) outcome. Returns (state after, tier, sweep)."""
     heat, sw, rhand = launch(ctx, st, place)
+    pre = sw.copy()
     respond(ctx, sw, resp, rhand)
     d = ctx.draw
+    if h_dyn_b(ctx.c):
+        sw.lean = b_rule(ctx, pre, k, 0)
+        bi = b_pairs(ctx, pre, sw, k)[0][0]
+    sw.bpick = bi
     scan(ctx.geo, sw, d.cands[k], ctx.ctype)
     b = [x for x in range(3) if x != k][bi]
     scan(ctx.geo, sw, d.cands[b], ctx.ctype)
@@ -707,7 +886,8 @@ def eval_place(ctx: Ctx, st: St, place, responses: bool):
             scan(geo, sw2, d.cands[k], ctx.ctype)
             tot = 0.0
             lp = {}
-            for bi, b in enumerate([x for x in range(3) if x != k]):
+            pairs = b_pairs(ctx, sw0, sw1, k)
+            for bi, b in pairs:
                 sw3 = sw2.copy()
                 scan(geo, sw3, d.cands[b], ctx.ctype)
                 best_l = None
@@ -726,7 +906,7 @@ def eval_place(ctx: Ctx, st: St, place, responses: bool):
                         best_l = (v, lo)
                 tot += best_l[0]
                 lp[bi] = best_l[1]
-            v = tot / 2
+            v = tot / len(pairs)
             if per[k] is None or v > per[k][0] + EPS:
                 per[k] = (v, r, lp)
     return per
@@ -756,6 +936,8 @@ def placements(ctx: Ctx, st: St, cells: list, ghost_ok: bool) -> list:
                     if j2 is not None:
                         maps.append({ca: j1, cb: j2})
     ghosts = [None] + ([G.HOME] if ghost_ok and st.ghost > 0 else [])
+    if is_h(ctx.c) and hp(ctx.c, "MAX_PLACED") < MAX_PLACED:
+        maps = [m for m in maps if len(m) <= hp(ctx.c, "MAX_PLACED")]
     return [(m, g) for g in ghosts for m in maps]
 
 
@@ -802,7 +984,8 @@ def greedy_plan(ctx: Ctx, st: St):
 def naive_place(ctx: Ctx, st: St):
     geo = ctx.geo
     live = geo.live_cells(st.owned)
-    ids = [j for j in ctx.hand if ctx.cards[j][1] in PLACEABLE][:min(MAX_PLACED, len(live))]
+    cap = hp(ctx.c, "MAX_PLACED") if is_h(ctx.c) else MAX_PLACED
+    ids = [j for j in ctx.hand if ctx.cards[j][1] in PLACEABLE][:min(cap, len(live))]
     cells = sorted(live, key=lambda cell: (-geo.cell_value(cell, st.owned), geo.cells.index(cell)))
     return (dict(zip(cells, ids)), None)
 
@@ -823,11 +1006,16 @@ def choose_late(ctx: Ctx, st: St, place, resp, k: int, bi: int):
 
 
 # ------------------------------------------------------------------------------------------------ between
+def clean_price(c: str) -> int:
+    return hp(c, "CLEAN") if is_h(c) else CLEAN_PRICE
+
+
 def between(geo, c: str, st: St, opt) -> St:
     rep, build, dose, patch = opt
     ns = st.copy()
-    if patch and ns.hp < HOME_HP and ns.bank >= PATCH_PRICE:
-        ns.bank -= PATCH_PRICE
+    hp_max, price = (hp(c, "HOME"), hp(c, "PATCH")) if is_h(c) else (HOME_HP, PATCH_PRICE)
+    if patch and ns.hp < hp_max and ns.bank >= price:
+        ns.bank -= price
         ns.hp += 1
     if rep is not None and ns.owned.get(rep) == "DOWN":
         cost = G.TIER_VALUE[geo.tier[rep]] // 2
@@ -837,10 +1025,10 @@ def between(geo, c: str, st: St, opt) -> St:
     if build in TYPES and ns.bank >= SENTRY_PRICE:
         ns.bank -= SENTRY_PRICE
         ns.deck = tuple(sorted(ns.deck + (("b%d" % sum(1 for x in ns.deck if x[0].startswith("b")), build, "GUARD"),)))
-    elif build == "CLEAN" and ns.bank >= CLEAN_PRICE:
+    elif build == "CLEAN" and ns.bank >= clean_price(c):
         ws = [x for x in ns.deck if x[2] == "WOUND"]
         if ws:
-            ns.bank -= CLEAN_PRICE
+            ns.bank -= clean_price(c)
             remove_card(ns, max(ws)[0])
     if dose == "HQ" and ns.doses > 0:
         ns.doses -= 1
@@ -864,16 +1052,17 @@ def between_options(geo, c: str, st: St) -> list:
         if st.doses > 0:
             doses.append("HQ")
         doses.append("BUY")
-    patches = [False, True] if st.hp < HOME_HP else [False]
+    hp_max, price = (hp(c, "HOME"), hp(c, "PATCH")) if is_h(c) else (HOME_HP, PATCH_PRICE)
+    patches = [False, True] if st.hp < hp_max else [False]
     out = []
     for r in [None] + downs:
         rc = G.TIER_VALUE[geo.tier[r]] // 2 if r else 0
         for b in builds:
-            bc = 0 if b is None else (CLEAN_PRICE if b == "CLEAN" else SENTRY_PRICE)
+            bc = 0 if b is None else (clean_price(c) if b == "CLEAN" else SENTRY_PRICE)
             for d in doses:
                 dc = (C_DOSE_PRICE + C_DOSE_STEP * st.dose_buys) if d == "BUY" else 0
                 for pt in patches:
-                    if rc + bc + dc + (PATCH_PRICE if pt else 0) <= st.bank:
+                    if rc + bc + dc + (price if pt else 0) <= st.bank:
                         out.append((r, b, d, pt))
     return out
 
@@ -891,8 +1080,9 @@ def greedy_between(geo, c: str, st: St):
 
 def naive_between(geo, c: str, st: St):
     """Patch HOME when it is down and affordable, then repair the biggest affordable DOWN Site."""
-    patch = st.hp < HOME_HP and st.bank >= PATCH_PRICE
-    bank = st.bank - (PATCH_PRICE if patch else 0)
+    hp_max, price = (hp(c, "HOME"), hp(c, "PATCH")) if is_h(c) else (HOME_HP, PATCH_PRICE)
+    patch = st.hp < hp_max and st.bank >= price
+    bank = st.bank - (price if patch else 0)
     rep = None
     for s, v in sorted(st.owned.items()):
         if v == "DOWN" and not (c == "C" and s in st.infected):
@@ -919,11 +1109,27 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
     else:
         place, gap, n_places = naive_place(ctx, st), None, None
         resp, late = ("HOLD",), None
+    front0 = front_size(geo, st) if is_h(c) else 0
+    inf0 = wound_count(st.deck)
     ns, tr, sw = play_one(ctx, st, place, resp, k, bi, late, h)
+    b_flip = None
+    if h_dyn_b(c):
+        b_flip = sw.bpick != sw.lean
+        bi = sw.bpick
+        b = [x for x in range(3) if x != k][bi]
     # metrics
-    hold_tiers = [play_one(ctx, st, place, ("HOLD",), kk, bb, None, hh)[1]
-                  for kk in range(3) for bb in range(2) for hh in range(2)]
-    real_hold = hold_tiers[k * 4 + bi * 2 + h]
+    hold = [play_one(ctx, st, place, ("HOLD",), kk, bb, None, hh)
+            for kk in range(3) for bb in range(2) for hh in range(2)]
+    hold_tiers = [x[1] for x in hold]
+    if h_dyn_b(c):
+        real_hold = play_one(ctx, st, place, ("HOLD",), k, 0, None, h)[1]
+    else:
+        real_hold = hold_tiers[k * 4 + bi * 2 + h]
+    def at_risk(x):     # INFECTED this outcome adds now (TAKEN) or at the next DECAY (new DOWN, if not repaired)
+        return (x[0].wounds_total - st.wounds_total
+                + sum(1 for q, v in x[0].owned.items() if v == "DOWN" and st.owned.get(q) == "OK"))
+    inf_rows = sum(1 for x in hold if at_risk(x) > 0) / len(hold)
+    inf_fc = sum(at_risk(x) for x in hold) / len(hold)
     after = []
     for bb in range(2):
         lo = choose_late(ctx, st, place, resp, k, bb) if greedy else None
@@ -934,7 +1140,7 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
         late_dec = play_one(ctx, st, place, resp, k, bi, None, h)[1] != tr
     owned_live = {s for s, v in st.owned.items() if v != "TAKEN"}
     heat_l = st.heat + (GHOST_HEAT if place[1] is not None else 0)
-    ran = [d.known[0]] + ([d.known[1]] if heat_l >= EXTRA_AT else []) + ([d.known[2]] if heat_l >= STRONG_AT else [])
+    ran = list(d.known[:n_known(ctx, heat_l)])
     ran += [d.cands[k], d.cands[b]]
     if resp[0] != "JAM":
         hsw = new_sweep(st, place)
@@ -951,7 +1157,9 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
         "decides": tr != real_hold, "late": late, "late_decides": late_dec, "resp": resp[0],
         "gap": gap, "n_places": n_places, "n_paths": d.n_paths, "variety": len(set(lines)),
         "touch": touch, "ran": len(ran), "home": sw.home_hit, "ghost": place[1] is not None,
-        "dead": sum(1 for j in ctx.hand if ctx.cards[j][1] == "WOUND")})
+        "dead": sum(1 for j in ctx.hand if ctx.cards[j][1] == "WOUND"),
+        "b_flip": b_flip, "front": front0, "inf_start": inf0, "inf_add": ns.wounds_total - st.wounds_total,
+        "inf_rows": inf_rows if is_h(c) else None, "inf_fc": inf_fc if is_h(c) else None})
     if ns.lost:
         return ns
     opt = greedy_between(geo, c, ns) if greedy else naive_between(geo, c, ns)
@@ -963,6 +1171,8 @@ def campaign(variant: str, policy: str, player: str, seed: int) -> dict:
     geo = geo_for(variant)
     c = concept_of(variant)
     st = St()
+    if is_h(c):
+        st.hp = hp(c, "HOME")
     if c == "B":
         for _ in range(B_START_DOSES):
             add_dose_card(st)
@@ -984,8 +1194,9 @@ def campaign(variant: str, policy: str, player: str, seed: int) -> dict:
             since = 0
             if st.lost:
                 break
-    win = not st.lost and st.hp > 0 and exploits_live(geo, st) >= 3
-    return {"lost": st.lost, "win": win, "netruns": netruns, "raids": n_raids, "wounds": st.wounds_total,
+    hold3 = not st.lost and st.hp > 0 and exploits_live(geo, st) >= 3
+    win = hold3 and (st.purged or not is_h(c))
+    return {"lost": st.lost, "win": win, "hold3": hold3, "purged": st.purged, "spread": rec.get("spread", 0), "netruns": netruns, "raids": n_raids, "wounds": st.wounds_total,
             "sites_lost": st.sites_lost, "timer": timer_pct(c, st), "front_downs": st.front_downs,
             "exploits": exploits_live(geo, st), "hp": st.hp, "heat": st.heat, "rec": rec,
             "decay_dose": rec.get("decay_dose", 0)}
@@ -1048,7 +1259,22 @@ def aggregate(rows: list) -> dict:
         "tier_mix": {t: tiers.count(t) for t in ("BREACHED", "DAMAGED", "EVADED", "BATTERED", "HOLDS")},
         "response_mix": {k: resp.count(k) for k in sorted(set(resp))},
         "ghost_rate": round(sum(r["ghost"] for r in raids) / nr, 3),
+        "hold3": round(sum(1 for x in rows if x.get("hold3")) / n, 3),
+        "purge": round(sum(1 for x in rows if x.get("purged")) / n, 3),
+        "infected_per_campaign": round(stats.mean(x["wounds"] for x in rows), 2),
+        "spread": round(stats.mean(x.get("spread", 0) for x in rows), 2),
+        "b_flip_rate": _rate([r.get("b_flip") for r in raids]),
+        "b_flip_nonhold": _rate([r.get("b_flip") for r in raids if r["resp"] != "HOLD"]),
+        "front_size": round(sum(r.get("front", 0) for r in raids) / nr, 2),
+        "inf_add_per_raid": round(sum(r.get("inf_add", 0) for r in raids) / nr, 2),
+        "forecast_inf_rows": _rate([r.get("inf_rows") for r in raids]),
+        "forecast_inf_mean": _rate([r.get("inf_fc") for r in raids]),
     }
+
+
+def _rate(xs):
+    xs = [float(x) for x in xs if x is not None]
+    return round(sum(xs) / len(xs), 3) if xs else None
 
 
 def check(campaigns: int) -> None:
@@ -1061,7 +1287,8 @@ def check(campaigns: int) -> None:
     print("check ok: seeded replay matches for", len(VARIANTS), "variants x", len(PLAYERS), "players", flush=True)
 
 
-TABLE_COLS = ("loss", "city_lost", "win", "raids_per_netrun", "locked_at_plan", "live_after_response",
+TABLE_COLS = ("loss", "city_lost", "win", "hold3", "purge", "b_flip_rate", "infected_per_campaign", "spread",
+              "front_size", "forecast_inf_rows", "raids_per_netrun", "locked_at_plan", "live_after_response",
               "response_decides", "late_use", "late_decides", "placement_gap", "between_entropy", "path_variety",
               "paths_available", "relevance", "home_hit_rate", "wounds", "sites_lost", "timer_end", "netruns")
 
@@ -1076,7 +1303,7 @@ def print_table(path: str) -> None:
             for pl in PLAYERS:
                 if pol in byp and pl in byp[pol]:
                     r = byp[pol][pl]
-                    print(v, pol, pl, " ".join(str(r[c]) for c in TABLE_COLS))
+                    print(v, pol, pl, " ".join(str(r.get(c)) for c in TABLE_COLS))
 
 
 def main() -> None:
