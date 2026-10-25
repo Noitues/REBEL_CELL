@@ -9696,3 +9696,14 @@ critics). This plans the design only: no rules change in scripts/ until the Phas
     final-run strength.
   - Then write the golden for parity.
   - Then Phase 2: the core port.
+
+### 2026-10-25 - Solace Infected Tide: Phase 1 rule changes (designer approved 1-3)
+Source: docs/design/raid_concepts/G4_RESULTS.md. With real numbers the infection barely bit: CITY LOST never happened,
+85 % of skilled breaches carried 0 INFECTED cards, and the PLAN and response targets were missed.
+- **1. A HOME hit adds an INFECTED card.** The infection reaches the Cell.
+- **2. The Genome Core breach allows one retry.** A failed attempt costs death Heat as today. A second failure ends the
+  attempt until the Cell rebuilds its exploits (the port spec defines it).
+- **3. The DIVERT response.** Spend a SHIFT card to bend a known beam onto a neighboring path. The forecast and the
+  response list show it.
+- **4. Tuning (Claude's call).** Raids from Heat thresholds reset the raid cadence counter.
+- **Next:** fold these into the H4 oracle, the spec and the golden; re-measure once; then the Phase 2 core port.
