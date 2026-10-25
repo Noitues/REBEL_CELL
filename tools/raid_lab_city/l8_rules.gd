@@ -389,7 +389,7 @@ static func deck_ids(st: Dictionary) -> Array:
 	var ids: Array = []
 	for cd: Array in st["deck"]:
 		ids.append(String(cd[0]))
-	ids.sort()
+	IdSort.sort_ids(ids)
 	return ids
 
 
