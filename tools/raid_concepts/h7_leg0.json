@@ -1,0 +1,134 @@
+{
+ "leg": [
+  [
+   [
+    "COURIER",
+    "C2"
+   ],
+   [
+    "ENFORCER",
+    "C1"
+   ]
+  ],
+  [
+   [
+    "COURIER",
+    "C1"
+   ],
+   [
+    "BAILIFF",
+    "C1"
+   ],
+   [
+    "COLLECTOR",
+    "C1"
+   ]
+  ],
+  [
+   [
+    "COURIER",
+    "C2"
+   ],
+   [
+    "LOCKDOWN",
+    "C2"
+   ],
+   [
+    "BAILIFF",
+    "C2"
+   ],
+   [
+    "COLLECTOR",
+    "C2"
+   ]
+  ]
+ ],
+ "planned": [
+  {
+   "raid": 0,
+   "buy": [
+    "TURRET",
+    "DECOY"
+   ],
+   "place": [
+    "FW",
+    "FW"
+   ],
+   "crew": "FW",
+   "bank": 31,
+   "clean": true
+  },
+  {
+   "raid": 1,
+   "buy": [
+    "TURRET",
+    "ICE"
+   ],
+   "place": [
+    "FW",
+    "RELAY"
+   ],
+   "crew": "FW",
+   "bank": 51,
+   "clean": true
+  },
+  {
+   "raid": 2,
+   "buy": [
+    "SENTRY",
+    "ICE"
+   ],
+   "place": [
+    "PROXY",
+    "PROXY"
+   ],
+   "crew": "PROXY",
+   "bank": 61,
+   "clean": true
+  }
+ ],
+ "greedy": [
+  {
+   "raid": 0,
+   "buy": [
+    "SENTRY",
+    "SENTRY"
+   ],
+   "place": [
+    "VAULT",
+    "PROXY"
+   ],
+   "crew": "PROXY",
+   "bank": 27,
+   "clean": true
+  },
+  {
+   "raid": 1,
+   "buy": [
+    "RAILGUN",
+    "ICE"
+   ],
+   "place": [
+    "HOME",
+    "RELAY"
+   ],
+   "crew": "HOME",
+   "bank": 43,
+   "clean": true
+  },
+  {
+   "raid": 2,
+   "buy": [
+    "RAILGUN",
+    "RAILGUN"
+   ],
+   "place": [
+    "HOME",
+    "HOME"
+   ],
+   "crew": "HOME",
+   "bank": 45,
+   "clean": true
+  }
+ ]
+}

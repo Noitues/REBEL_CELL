@@ -565,3 +565,17 @@ All on main **17b4e750**, pushed. Gate21 (A-098 + A-100) and gate22 (A-101): 383
   only the garden, so every corp's key lots are now 48 x 42. Build the apron against 42.
 - **A-101** (13acc62b, with the handoff doc): merged; DECISIONS kept both sides. The 3 big-text failures you saw are in the deferred
   text-scale tier (out of scope at text 1.0); the gate's standard tiers are green.
+### RDL-001 · 2026-10-22 · raid design lab · REQUEST: concept art for the sweep raid (V axis) · ASK
+- **Why.** The raid design lab's calibration critic scored ours against shipped games
+  (`docs/design/raid_concepts/_reviews/REVIEW_CALIBRATION.md`). Our core axes sit at Kingdom Rush / TFT level, but
+  visuals score 3–5 against their 7–8, and visuals plus suspense are why watched raids are loved.
+- **Request.** Bold concept art for the Manhunt sweep raid's five moments: contact, plan, forecast, playout, aftermath.
+  Mockups are in `docs/design/raid_concepts/m_manhunt_r10/r10/` on branch `claude/raid-design-lab-2d2e2e` (not on main
+  yet).
+- **The art needs to carry:**
+  - the sealed beam's three candidate lines, told apart by shape;
+  - the unseal moment;
+  - the spoof press window;
+  - the wrench DOWN state.
+- **Constraints.** Threats are cobalt #3D6BFF. This is concept work only, with no game rule changes.
+- The designer decides whether and when.

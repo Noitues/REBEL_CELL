@@ -1,0 +1,258 @@
+{
+ "heat50": {
+  "clean_pct": 5.25,
+  "marginal": {
+   "TURRET": 1,
+   "ICE": 6,
+   "DECOY": -7,
+   "SENTRY": -1,
+   "RAILGUN": 11
+  },
+  "best": [
+   [
+    "TURRET+ICE+RAILGUN",
+    [
+     10,
+     true,
+     {
+      "RELAY": [
+       "TURRET",
+       "RAILGUN"
+      ],
+      "PROXY": [
+       "ICE"
+      ]
+     },
+     "RELAY"
+    ]
+   ],
+   [
+    "ICE+SENTRY+RAILGUN",
+    [
+     9,
+     true,
+     {
+      "RELAY": [
+       "ICE"
+      ],
+      "PROXY": [
+       "SENTRY",
+       "RAILGUN"
+      ]
+     },
+     "PROXY"
+    ]
+   ],
+   [
+    "TURRET+SENTRY+RAILGUN",
+    [
+     4,
+     true,
+     {
+      "SAFE": [
+       "TURRET"
+      ],
+      "PROXY": [
+       "SENTRY",
+       "RAILGUN"
+      ]
+     },
+     "PROXY"
+    ]
+   ]
+  ]
+ },
+ "heat50 +plating": {
+  "clean_pct": 0.88,
+  "marginal": {
+   "TURRET": -5,
+   "ICE": 6,
+   "DECOY": -6,
+   "SENTRY": 6,
+   "RAILGUN": 5
+  },
+  "best": [
+   [
+    "ICE+SENTRY+RAILGUN",
+    [
+     4,
+     true,
+     {
+      "PROXY": [
+       "ICE",
+       "SENTRY"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "PROXY"
+    ]
+   ],
+   [
+    "TURRET+ICE+SENTRY",
+    [
+     -1,
+     true,
+     {
+      "VAULT": [
+       "TURRET"
+      ],
+      "PROXY": [
+       "ICE",
+       "SENTRY"
+      ]
+     },
+     "PROXY"
+    ]
+   ],
+   [
+    "TURRET+ICE+RAILGUN",
+    [
+     -2,
+     false,
+     {
+      "HOME": [
+       "TURRET",
+       "ICE"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "FW"
+    ]
+   ]
+  ]
+ },
+ "heat75": {
+  "clean_pct": 0.34,
+  "marginal": {
+   "TURRET": 3,
+   "ICE": 9,
+   "DECOY": -6,
+   "SENTRY": -3,
+   "RAILGUN": 3
+  },
+  "best": [
+   [
+    "TURRET+ICE+RAILGUN",
+    [
+     2,
+     false,
+     {
+      "VAULT": [
+       "TURRET"
+      ],
+      "RELAY": [
+       "ICE"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "FW"
+    ]
+   ],
+   [
+    "TURRET+ICE+SENTRY",
+    [
+     -1,
+     false,
+     {
+      "RELAY": [
+       "TURRET",
+       "ICE",
+       "SENTRY"
+      ]
+     },
+     "RELAY"
+    ]
+   ],
+   [
+    "ICE+SENTRY+RAILGUN",
+    [
+     -1,
+     false,
+     {
+      "RELAY": [
+       "ICE"
+      ],
+      "VAULT": [
+       "SENTRY"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "FW"
+    ]
+   ]
+  ]
+ },
+ "heat75 +plating": {
+  "clean_pct": 0.0,
+  "marginal": {
+   "TURRET": 3,
+   "ICE": 9,
+   "DECOY": -6,
+   "SENTRY": -3,
+   "RAILGUN": 3
+  },
+  "best": [
+   [
+    "TURRET+ICE+RAILGUN",
+    [
+     2,
+     false,
+     {
+      "VAULT": [
+       "TURRET"
+      ],
+      "RELAY": [
+       "ICE"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "FW"
+    ]
+   ],
+   [
+    "TURRET+ICE+SENTRY",
+    [
+     -1,
+     false,
+     {
+      "RELAY": [
+       "TURRET",
+       "ICE",
+       "SENTRY"
+      ]
+     },
+     "RELAY"
+    ]
+   ],
+   [
+    "ICE+SENTRY+RAILGUN",
+    [
+     -1,
+     false,
+     {
+      "RELAY": [
+       "ICE"
+      ],
+      "VAULT": [
+       "SENTRY"
+      ],
+      "FW": [
+       "RAILGUN"
+      ]
+     },
+     "FW"
+    ]
+   ]
+  ]
+ }
+}

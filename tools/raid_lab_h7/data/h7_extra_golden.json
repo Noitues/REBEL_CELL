@@ -1,0 +1,5437 @@
+{
+ "leg0_bare": {
+  "leg": 0,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -9,
+    "bank": 15,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#2",
+      "C2"
+     ],
+     [
+      "ENFORCER#2",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COURIER#2",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER#2",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "scuffed",
+      9
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COURIER",
+     "COURIER#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -18,
+    "bank": 5,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "BAILIFF#3",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "ENFORCER#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "scuffed",
+      24
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -12,
+    "bank": -7,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg0_fw_turret_ice": {
+  "leg": 0,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "TURRET",
+     "ICE"
+    ],
+    "place": [
+     "FW",
+     "RELAY"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -9,
+    "bank": 4,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#2",
+      "C2"
+     ],
+     [
+      "ENFORCER#2",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COURIER#2",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER#2",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "BAILIFF",
+     "COLLECTOR",
+     "COURIER",
+     "COURIER#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 16,
+    "bank": 22,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "ENFORCER#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 20,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg0_decoy_sentry": {
+  "leg": 0,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "DECOY",
+     "SENTRY"
+    ],
+    "place": [
+     "SAFE",
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      11
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "scuffed",
+      6
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -23,
+    "bank": -7,
+    "lost": [
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "ENFORCER#2",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "ICE"
+    ],
+    "place": [
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "SAFE",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "ENFORCER#2",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "down",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -9,
+    "bank": -11,
+    "lost": [
+     "PROXY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C1"
+     ],
+     [
+      "BAILIFF#3",
+      "SAFE"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "ENFORCER#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "SAFE",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "scuffed",
+      9
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COURIER",
+     "COURIER#3"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -23,
+    "bank": -34,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "SAFE"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg0_heavy_home": {
+  "leg": 0,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      5
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "scuffed",
+      12
+     ]
+    },
+    "kills": [
+     "COURIER",
+     "ENFORCER"
+    ],
+    "clean": true,
+    "breached": false,
+    "net": 14,
+    "bank": 31,
+    "lost": [],
+    "survivors": []
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "C1",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      5
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -20,
+    "bank": 12,
+    "lost": [
+     "PROXY",
+     "RELAY"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C1"
+     ],
+     [
+      "BAILIFF#3",
+      "C1"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COLLECTOR#3"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 6,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C1"
+     ],
+     [
+      "BAILIFF#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg1_bare": {
+  "leg": 1,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      9
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -6,
+    "bank": 18,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#2",
+      "C1"
+     ],
+     [
+      "INSPECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#2",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "taken",
+      0
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 30,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#3",
+      "C1"
+     ],
+     [
+      "INSPECTOR#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "FW",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "taken",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -5,
+    "bank": 25,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C1"
+     ],
+     [
+      "BAILIFF#4",
+      "FW"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "INSPECTOR#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg1_fw_turret_ice": {
+  "leg": 1,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "TURRET",
+     "ICE"
+    ],
+    "place": [
+     "FW",
+     "RELAY"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "scuffed",
+      11
+     ]
+    },
+    "kills": [
+     "LOCKDOWN"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 0,
+    "bank": 13,
+    "lost": [
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "INSPECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "AUDITOR",
+      "VAULT",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "INSPECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "COURIER",
+     "INSPECTOR#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 12,
+    "bank": 29,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "BAILIFF",
+     "COURIER",
+     "LOCKDOWN",
+     "LOCKDOWN#3"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 6,
+    "bank": 29,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg1_decoy_sentry": {
+  "leg": 1,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "DECOY",
+     "SENTRY"
+    ],
+    "place": [
+     "SAFE",
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "HOME",
+      "SAFE"
+     ]
+    ],
+    "steps": 8,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      14
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "scuffed",
+      9
+     ],
+     "PROXY": [
+      "scuffed",
+      9
+     ]
+    },
+    "kills": [
+     "INSPECTOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -14,
+    "bank": 2,
+    "lost": [
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#2",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "ICE"
+    ],
+    "place": [
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "AUDITOR",
+      "SAFE",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "LOCKDOWN#2",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      14
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      9
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -4,
+    "bank": 6,
+    "lost": [
+     "PROXY",
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "HOME",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -5,
+    "bank": 1,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C1"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg1_heavy_home": {
+  "leg": 1,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      16
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      9
+     ],
+     "PROXY": [
+      "scuffed",
+      11
+     ]
+    },
+    "kills": [
+     "INSPECTOR",
+     "LOCKDOWN"
+    ],
+    "clean": true,
+    "breached": false,
+    "net": 14,
+    "bank": 31,
+    "lost": [],
+    "survivors": []
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "AUDITOR",
+      "C1",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      [
+       "PLATED"
+      ]
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      8
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      12
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -7,
+    "bank": 27,
+    "lost": [
+     "PROXY"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C1",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -10,
+    "bank": 7,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C1"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg2_bare": {
+  "leg": 2,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "HAULER",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      10
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "scuffed",
+      5
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -30,
+    "bank": -3,
+    "lost": [
+     "PROXY"
+    ],
+    "survivors": [
+     [
+      "HAULER#2",
+      "C1"
+     ],
+     [
+      "COLLECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#2",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -15,
+    "bank": -10,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ],
+     [
+      "BAILIFF#3",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "HAULER#3",
+      "C1"
+     ],
+     [
+      "COLLECTOR#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "PROXY",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#3",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "taken",
+      0
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -5,
+    "bank": -15,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "AUDITOR#4",
+      "PROXY"
+     ],
+     [
+      "INSPECTOR#4",
+      "C1"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg2_fw_turret_ice": {
+  "leg": 2,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "TURRET",
+     "ICE"
+    ],
+    "place": [
+     "FW",
+     "RELAY"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "HAULER",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      10
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "scuffed",
+      5
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -30,
+    "bank": -14,
+    "lost": [
+     "PROXY"
+    ],
+    "survivors": [
+     [
+      "HAULER#2",
+      "C1"
+     ],
+     [
+      "COLLECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "PROXY",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#2",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COLLECTOR",
+     "COLLECTOR#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 3,
+    "bank": -9,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ],
+     [
+      "BAILIFF#3",
+      "PROXY"
+     ],
+     [
+      "HAULER#3",
+      "C1"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "PROXY",
+      []
+     ],
+     [
+      "HAULER#3",
+      "C1",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "COURIER",
+     "COURIER#3",
+     "INSPECTOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 16,
+    "bank": 1,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "PROXY"
+     ],
+     [
+      "HAULER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg2_decoy_sentry": {
+  "leg": 2,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "DECOY",
+     "SENTRY"
+    ],
+    "place": [
+     "SAFE",
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "HAULER",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      10
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "scuffed",
+      5
+     ],
+     "PROXY": [
+      "down",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -25,
+    "bank": -9,
+    "lost": [
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "HAULER#2",
+      "C1"
+     ],
+     [
+      "COLLECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "ICE"
+    ],
+    "place": [
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "SAFE",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#2",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      5
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "down",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -29,
+    "bank": -30,
+    "lost": [
+     "PROXY",
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ],
+     [
+      "BAILIFF#3",
+      "SAFE"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "HAULER#3",
+      "C1"
+     ],
+     [
+      "COLLECTOR#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "HOME",
+    "roster": [
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "SAFE",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#3",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -10,
+    "bank": -40,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "AUDITOR#4",
+      "PROXY"
+     ],
+     [
+      "INSPECTOR#4",
+      "C1"
+     ],
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "BAILIFF#4",
+      "SAFE"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg2_heavy_home": {
+  "leg": 2,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "HAULER",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      10
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "scuffed",
+      5
+     ],
+     "PROXY": [
+      "scuffed",
+      10
+     ]
+    },
+    "kills": [
+     "HAULER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -31,
+    "bank": -14,
+    "lost": [],
+    "survivors": [
+     [
+      "COLLECTOR#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF",
+      "C1",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "down",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -19,
+    "bank": -33,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ],
+     [
+      "BAILIFF#3",
+      "C1"
+     ],
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "COLLECTOR#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C2",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ],
+     [
+      "BAILIFF#3",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "scuffed",
+      10
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "scuffed",
+      10
+     ],
+     "RELAY": [
+      "scuffed",
+      2
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "BAILIFF#3",
+     "COURIER",
+     "COURIER#3",
+     "INSPECTOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -33,
+    "bank": -76,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "C2"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg3_bare": {
+  "leg": 3,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": 0,
+    "bank": 24,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "INSPECTOR#2",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR#2",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 8,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "scuffed",
+      4
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "INSPECTOR#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -18,
+    "bank": 14,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "ENFORCER#3",
+      "C1"
+     ],
+     [
+      "INSPECTOR#3",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR#3",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "taken",
+      0
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 18,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "INSPECTOR#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ],
+     [
+      "INSPECTOR#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg3_fw_turret_ice": {
+  "leg": 3,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "TURRET",
+     "ICE"
+    ],
+    "place": [
+     "FW",
+     "RELAY"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": 0,
+    "bank": 13,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "INSPECTOR#2",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "ENFORCER",
+      "C1",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR#2",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "scuffed",
+      26
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "ENFORCER",
+     "INSPECTOR",
+     "INSPECTOR#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 12,
+    "bank": 27,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "INSPECTOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 8,
+    "bank": 29,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg3_decoy_sentry": {
+  "leg": 3,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "DECOY",
+     "SENTRY"
+    ],
+    "place": [
+     "SAFE",
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "HOME",
+      "SAFE"
+     ]
+    ],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "holds",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "scuffed",
+      9
+     ]
+    },
+    "kills": [
+     "INSPECTOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -2,
+    "bank": 14,
+    "lost": [
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "ICE"
+    ],
+    "place": [
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "ENFORCER",
+      "C1",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "AUDITOR",
+      "SAFE",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -5,
+    "bank": 14,
+    "lost": [
+     "PROXY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "ENFORCER#3",
+      "C1"
+     ],
+     [
+      "INSPECTOR#3",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "HOME",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ],
+     [
+      "INSPECTOR#3",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "taken",
+      0
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 18,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "INSPECTOR#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ],
+     [
+      "INSPECTOR#4",
+      "C2"
+     ],
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg3_heavy_home": {
+  "leg": 3,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ],
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      16
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "scuffed",
+      5
+     ]
+    },
+    "kills": [
+     "INSPECTOR",
+     "LOCKDOWN"
+    ],
+    "clean": true,
+    "breached": false,
+    "net": 14,
+    "bank": 31,
+    "lost": [],
+    "survivors": []
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "ENFORCER",
+      "C1",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "AUDITOR",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      6
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -9,
+    "bank": 22,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "ENFORCER#3",
+      "C1"
+     ],
+     [
+      "AUDITOR#3",
+      "C2"
+     ],
+     [
+      "INSPECTOR#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "LOCKDOWN",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "AUDITOR",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C1",
+      []
+     ],
+     [
+      "AUDITOR#3",
+      "C2",
+      []
+     ],
+     [
+      "INSPECTOR#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [
+     [
+      "FW",
+      "HOME"
+     ]
+    ],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "taken",
+      0
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 16,
+    "lost": [
+     "FW",
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "LOCKDOWN#4",
+      "C2"
+     ],
+     [
+      "INSPECTOR#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ],
+     [
+      "AUDITOR#4",
+      "C2"
+     ],
+     [
+      "INSPECTOR#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg4_bare": {
+  "leg": 4,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "AUDITOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 9,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      12
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -3,
+    "bank": 21,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "AUDITOR#2",
+      "C1"
+     ],
+     [
+      "HAULER#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C2",
+      []
+     ],
+     [
+      "AUDITOR#2",
+      "C1",
+      []
+     ],
+     [
+      "HAULER#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "scuffed",
+      12
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "AUDITOR#2",
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -20,
+    "bank": 9,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#3",
+      "PROXY"
+     ],
+     [
+      "ENFORCER#3",
+      "C2"
+     ],
+     [
+      "HAULER#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "SAFE",
+    "roster": [
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C2",
+      []
+     ],
+     [
+      "HAULER#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "scuffed",
+      24
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "taken",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -12,
+    "bank": -3,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "PROXY"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "COLLECTOR#4",
+      "PROXY"
+     ],
+     [
+      "ENFORCER#4",
+      "C2"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg4_fw_turret_ice": {
+  "leg": 4,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "TURRET",
+     "ICE"
+    ],
+    "place": [
+     "FW",
+     "RELAY"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "AUDITOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "holds",
+      20
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 4,
+    "bank": 20,
+    "lost": [
+     "PROXY"
+    ],
+    "survivors": [
+     [
+      "HAULER#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "HAULER#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 7,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "down",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COLLECTOR",
+     "ENFORCER",
+     "HAULER#2"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 3,
+    "bank": 27,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COURIER#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "TURRET"
+    ],
+    "place": [
+     "FW"
+    ],
+    "crew": "FW",
+    "roster": [
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "COURIER#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 6,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      20
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "down",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "COLLECTOR",
+     "COURIER",
+     "COURIER#3",
+     "ENFORCER",
+     "HAULER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": 11,
+    "bank": 32,
+    "lost": [
+     "PROXY",
+     "VAULT"
+    ],
+    "survivors": []
+   }
+  ]
+ },
+ "leg4_decoy_sentry": {
+  "leg": 4,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "DECOY",
+     "SENTRY"
+    ],
+    "place": [
+     "SAFE",
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "AUDITOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      17
+     ],
+     "SAFE": [
+      "taken",
+      0
+     ],
+     "RELAY": [
+      "scuffed",
+      12
+     ],
+     "PROXY": [
+      "scuffed",
+      5
+     ]
+    },
+    "kills": [
+     "AUDITOR"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -12,
+    "bank": 4,
+    "lost": [
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "HAULER#2",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "ICE"
+    ],
+    "place": [
+     "PROXY"
+    ],
+    "crew": "PROXY",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "SAFE",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C2",
+      [
+       "ARMORED"
+      ]
+     ],
+     [
+      "HAULER#2",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 5,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "holds",
+      20
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "holds",
+      15
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -1,
+    "bank": 11,
+    "lost": [
+     "PROXY",
+     "SAFE"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#3",
+      "SAFE"
+     ],
+     [
+      "ENFORCER#3",
+      "C2"
+     ],
+     [
+      "HAULER#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [],
+    "place": [],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR#3",
+      "SAFE",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C2",
+      []
+     ],
+     [
+      "HAULER#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "taken",
+      20
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [],
+    "clean": false,
+    "breached": false,
+    "net": -10,
+    "bank": 1,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "SAFE",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "PROXY"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "ENFORCER#4",
+      "C1"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "COLLECTOR#4",
+      "SAFE"
+     ],
+     [
+      "ENFORCER#4",
+      "C2"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ },
+ "leg4_heavy_home": {
+  "leg": 4,
+  "rows": [
+   {
+    "raid": 0,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "AUDITOR",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "holds",
+      50
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      14
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      12
+     ],
+     "PROXY": [
+      "down",
+      0
+     ]
+    },
+    "kills": [
+     "AUDITOR",
+     "HAULER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -6,
+    "bank": 11,
+    "lost": [],
+    "survivors": []
+   },
+   {
+    "raid": 1,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "COLLECTOR",
+      "C1",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C2",
+      [
+       "PLATED"
+      ]
+     ]
+    ],
+    "frozen": [],
+    "steps": 4,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      45
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "scuffed",
+      9
+     ],
+     "SAFE": [
+      "holds",
+      20
+     ],
+     "RELAY": [
+      "scuffed",
+      10
+     ],
+     "PROXY": [
+      "taken",
+      0
+     ]
+    },
+    "kills": [
+     "COURIER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -17,
+    "bank": -3,
+    "lost": [
+     "PROXY"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#3",
+      "C1"
+     ],
+     [
+      "ENFORCER#3",
+      "C2"
+     ]
+    ]
+   },
+   {
+    "raid": 2,
+    "buy": [
+     "RAILGUN"
+    ],
+    "place": [
+     "HOME"
+    ],
+    "crew": "HOME",
+    "roster": [
+     [
+      "COLLECTOR",
+      "PROXY",
+      []
+     ],
+     [
+      "COURIER",
+      "C2",
+      []
+     ],
+     [
+      "ENFORCER",
+      "C1",
+      []
+     ],
+     [
+      "HAULER",
+      "C2",
+      [
+       "PLATED"
+      ]
+     ],
+     [
+      "COLLECTOR#3",
+      "C1",
+      []
+     ],
+     [
+      "ENFORCER#3",
+      "C2",
+      []
+     ]
+    ],
+    "frozen": [],
+    "steps": 3,
+    "nodes": {
+     "HOME": [
+      "scuffed",
+      40
+     ],
+     "FW": [
+      "holds",
+      30
+     ],
+     "VAULT": [
+      "taken",
+      0
+     ],
+     "SAFE": [
+      "scuffed",
+      15
+     ],
+     "RELAY": [
+      "taken",
+      0
+     ],
+     "PROXY": [
+      "taken",
+      15
+     ]
+    },
+    "kills": [
+     "ENFORCER"
+    ],
+    "clean": false,
+    "breached": false,
+    "net": -11,
+    "bank": -24,
+    "lost": [
+     "PROXY",
+     "RELAY",
+     "VAULT"
+    ],
+    "survivors": [
+     [
+      "COLLECTOR#4",
+      "PROXY"
+     ],
+     [
+      "COURIER#4",
+      "C2"
+     ],
+     [
+      "HAULER#4",
+      "C2"
+     ],
+     [
+      "COLLECTOR#4",
+      "C1"
+     ],
+     [
+      "ENFORCER#4",
+      "C2"
+     ]
+    ]
+   }
+  ]
+ }
+}
