@@ -106,7 +106,7 @@ static func sentry_check(ctx: SolaceTideRules.Ctx, st: SolaceTideState, place: D
 		if (ln["cells"] as Array).has(site):
 			types[String(ln["type"])] = true
 	var bt: Array = types.keys()
-	bt.sort()
+	IdSort.sort_ids(bt)
 	var out := {"useless": false, "why": "", "card_type": ctype, "beam_types": bt}
 	if bt.is_empty():
 		out["useless"] = true
