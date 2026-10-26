@@ -135,22 +135,33 @@ func test_undo_works_before_the_launch_and_the_forecast_equals_the_resolve() -> 
 	assert_eq(String(RunManager.campaign.last_raid["tier"]), real_tier, "the forecast row of the real outcome is the result")
 
 
-func test_decay_that_ends_the_campaign_closes_the_raid_as_city_lost() -> void:
+func test_infected_over_healthy_after_decay_plays_the_raid_then_city_lost() -> void:
 	var env := _campaign(1)
 	var c: CampaignState = env["c"]
 	var tide := c.corp_theme.solace.tide
-	# Many INFECTED cards: after DECAY they outnumber the healthy ones.
+	# Many INFECTED cards: after DECAY they outnumber the healthy ones. R-I (2026-10-26): the raid is still played and
+	# CITY LOST is checked when it resolves, after the response.
 	var ids: Array = []
 	for i in 12:
 		ids.append(&"t1_a")
 	SolaceTideRules.add_infected(tide, ids, false)
 	var f := _open(env)
-	assert_true(f.raid.over, "DECAY ended the campaign")
+	assert_false(f.raid.over, "R-I: DECAY does not end the campaign")
+	assert_false(c.is_over())
+	assert_eq(SolaceTideRules.loss_margin(f.raid.st), 0, "the PLAN can warn: the city falls at the raid's end")
 	f.advance()
+	f.advance()
+	assert_eq(f.phase, TideRaidFlow.Phase.PLAN, "the raid is played")
+	assert_true(f.to_forecast())
+	if f.launch() == "confirm":
+		f.launch()
+	f.reveal_done()
+	assert_eq(f.commit([TideRaidFlow.HOLD], true), "committed")
+	f.playout_done()
 	assert_eq(f.phase, TideRaidFlow.Phase.AFTERMATH)
 	assert_true(c.pending_raids.is_empty(), "the raid is consumed")
 	assert_true(c.is_over())
-	assert_eq(String(f.aftermath()["tier"]), "CITY LOST")
+	assert_eq(String(f.aftermath()["lost"]), SolaceTideState.LOST_CITY, "lost at the close (HOME stands)")
 	assert_eq(String(f.aftermath()["banner"]), "CITY LOST")
 	f.advance()
 	assert_eq(f.phase, TideRaidFlow.Phase.DONE, "a lost campaign has no HQ step")

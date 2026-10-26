@@ -440,3 +440,138 @@ func test_a_netrun_death_and_the_dose_cadence() -> void:
 	for n in range(1, 9):
 		SolaceTideRules.end_netrun(st, _cfg, n)
 	assert_eq(st.dose_cards().size(), 2, "a DOSE card every 4th netrun")
+
+
+# ------------------------------------------------------------------------------------------------ H6 (R-I, R-J; 2026-10-26)
+## A config copy with the R-I / R-J flags set (the loaded Resource is never changed).
+func _cfg_with(city_end: bool, known_target: bool) -> CampaignConfigData:
+	var c: CampaignConfigData = _cfg.duplicate()
+	c.solace_tide_city_lost_at_raid_end = city_end
+	c.solace_tide_known_target = known_target
+	return c
+
+
+## 8 healthy start cards and 7 INFECTED ones, with two owned DOWN Sites: the next DECAY puts INFECTED over healthy.
+func _near_lost() -> SolaceTideState:
+	var st := _st({"t1_a": SolaceTideState.Cond.DOWN, "t1_b": SolaceTideState.Cond.DOWN, "t1_c": SolaceTideState.Cond.OK})
+	var ids: Array = []
+	for i in 7:
+		ids.append(&"t3_h")
+	SolaceTideRules.add_infected(st, ids, false)
+	return st
+
+
+func test_loss_margin_counts_the_infected_cards_that_end_the_city() -> void:
+	var st := _st()
+	assert_eq(SolaceTideRules.loss_margin(st), 9, "8 healthy cards: the 9th INFECTED card ends the city")
+	SolaceTideRules.add_infected(st, [&"t1_a", &"t1_b", &"t1_c", &"t1_d", &"t1_e", &"t1_f", &"t1_g"], false)
+	assert_eq(SolaceTideRules.loss_margin(st), 2)
+	SolaceTideRules.add_infected(st, [&"t1_h"], false)
+	assert_eq(SolaceTideRules.loss_margin(st), 1, "8 against 8: one more = CITY LOST")
+	SolaceTideRules.check_loss(st)
+	assert_eq(st.lost, "", "a tie is not lost")
+	SolaceTideRules.add_dose(st)
+	assert_eq(SolaceTideRules.loss_margin(st), 2, "a DOSE counts as healthy")
+	SolaceTideRules.add_infected(st, [&"t2_d", &"t2_e"], false)
+	assert_eq(SolaceTideRules.loss_margin(st), 0, "INFECTED outnumber healthy: the margin is spent")
+	SolaceTideRules.check_loss(st)
+	assert_eq(st.lost, "CITY_LOST", "margin 0 is exactly the CITY LOST condition")
+	SolaceTideRules.add_infected(st, [&"t2_f"], false)
+	assert_eq(SolaceTideRules.loss_margin(st), 0, "never negative")
+
+
+func test_decay_crossing_the_threshold_does_not_end_the_campaign() -> void:
+	var st := _near_lost()
+	SolaceTideRules.decay(st, _cfg)
+	assert_gt(st.wound_count(), st.deck.size() - st.wound_count(), "DECAY put INFECTED over healthy")
+	assert_eq(st.lost, "", "R-I: DECAY does not end the campaign")
+	assert_eq(SolaceTideRules.loss_margin(st), 0)
+	SolaceTideRules.end_netrun(st, _cfg, 1)
+	assert_eq(st.lost, "", "R-I: nor does a netrun's close")
+	var h5 := _near_lost()
+	SolaceTideRules.decay(h5, _cfg_with(false, true))
+	assert_eq(h5.lost, "CITY_LOST", "with the flag off (H5) DECAY ends it")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	assert_not_null(SolaceTideRules.begin_raid(_board, _near_lost(), _cfg, rng, 1), "the raid is drawn and played")
+
+
+func test_city_lost_fires_when_the_raid_resolves() -> void:
+	var st := _near_lost()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var ctx := SolaceTideRules.begin_raid(_board, st, _cfg, rng, 1)
+	assert_eq(st.lost, "")
+	var place: Dictionary = SolaceTideRules.placements(ctx, st)[0]
+	var opts := SolaceTideRules.response_options(ctx, SolaceTideRules.launch(ctx, st, place))
+	var n := 0
+	for resp in opts:
+		for row in SolaceTideRules.forecast(ctx, st, place, resp):
+			var res := SolaceTideRules.play(ctx, st, place, resp, row["a"], row["hunter"])
+			var ns: SolaceTideState = res["state"]
+			assert_eq(ns.to_dict(), (row["result"]["state"] as SolaceTideState).to_dict(), "preview == result")
+			assert_ne(ns.lost, "", "the close checks the loss")
+			if ns.home > 0:
+				assert_eq(ns.lost, "CITY_LOST", "CITY LOST after the response")
+				assert_eq(RaidOutcome.verdict_of_tide(ns.lost), RaidOutcome.Verdict.CITY_LOST)
+				n += 1
+	assert_gt(n, 0)
+	assert_eq(st.lost, "", "the raid's own state is untouched")
+
+
+func _live_on(cells: Array, st: SolaceTideState) -> int:
+	var n := 0
+	for s in cells:
+		if st.is_live(s):
+			n += 1
+	return n
+
+
+func _best_live(paths: Array, st: SolaceTideState) -> int:
+	var best := 0
+	for p in paths:
+		best = maxi(best, _live_on(p, st))
+	return best
+
+
+func test_known_beams_cross_an_owned_site_when_one_exists() -> void:
+	var st := _st({"t1_a": SolaceTideState.Cond.OK, "t2_intel": SolaceTideState.Cond.DOWN, "t3_e": SolaceTideState.Cond.OK,
+		"t1_d": SolaceTideState.Cond.TAKEN})
+	var off := _cfg_with(true, false)
+	var missed_off := 0
+	var n := 0
+	for seed_i in 60:
+		st.raid_n = seed_i % 8
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_i
+		var d := SolaceTideRules.draw_lines(_board, st, _cfg, rng)
+		var cand_cells: Array = []
+		for ln in d["cands"]:
+			cand_cells.append(ln["cells"])
+		var spool := _board.street_pool(cand_cells, st.owned)
+		for ln in d["known"]:
+			var pool: Array = _board.route_pool if ln["kind"] == "ROUTE" else spool
+			var best := _best_live(pool, st)
+			assert_eq(_live_on(ln["cells"], st), best, "R-J: a known beam takes a path through the most owned Sites")
+			if best > 0:
+				assert_gt(_live_on(ln["cells"], st), 0, "it crosses an owned Site")
+			n += 1
+		var r2 := RandomNumberGenerator.new()
+		r2.seed = seed_i
+		for ln in SolaceTideRules.draw_lines(_board, st, off, r2)["known"]:
+			if _live_on(ln["cells"], st) == 0:
+				missed_off += 1
+	assert_eq(n, 180)
+	assert_gt(missed_off, 0, "the H5 uniform draw (flag off) misses the owned Sites at times")
+
+
+func test_known_beams_keep_the_old_draw_when_no_path_crosses_an_owned_site() -> void:
+	var st := _st({"t1_d": SolaceTideState.Cond.TAKEN})
+	for seed_i in 20:
+		st.raid_n = seed_i % 8
+		var a := RandomNumberGenerator.new()
+		a.seed = seed_i
+		var b := RandomNumberGenerator.new()
+		b.seed = seed_i
+		assert_eq(SolaceTideRules.draw_lines(_board, st, _cfg, a), SolaceTideRules.draw_lines(_board, st, _cfg_with(true, false), b),
+			"no live owned Site: the same draw as before R-J")

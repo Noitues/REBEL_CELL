@@ -155,9 +155,10 @@ class GraphGeo(BaseGeo):
     """The real Solace graph (concepts A and C). path_rule in P-open / P-all / P-target; hunter in street / tongue."""
 
     def __init__(self, path_rule: str, hunter: str = "street", known_route: float = 0.5, known_early=(0, 0.0),
-                 n_known: int = 3):
+                 n_known: int = 3, known_target: bool = False):
         self.name = "graph"
         self.n_known = n_known              # known beams drawn per raid (G4 H4: 4, the PURGE band's third extra)
+        self.known_target = known_target    # H6 (R-J): known beams draw among the paths through the most owned Sites
         self.known_route = known_route      # chance a known beam is a route (else a street); G1 0.5
         self.known_early = known_early      # (N, p): raids with index < N (st.raid_n) use chance p instead (G3)
         self.path_rule = path_rule
@@ -261,6 +262,16 @@ class GraphGeo(BaseGeo):
                 tiers.append(t)
         return tiers[:2]
 
+    @staticmethod
+    def most_owned(paths, owned) -> list:
+        """H6 (R-J): the paths through the most live owned Sites, in pool order; every path when none crosses one."""
+        live = {s for s, v in owned.items() if v != "TAKEN"}
+        counts = [sum(1 for s in p if s in live) for p in paths]
+        best = max(counts) if counts else 0
+        if best == 0:
+            return list(paths)
+        return [p for p, n in zip(paths, counts) if n == best]
+
     def draw(self, st, rng) -> RaidDraw:
         pool = self.route_pool(st.owned, st.opened)
         if self.path_rule == "P-target":
@@ -275,13 +286,17 @@ class GraphGeo(BaseGeo):
         real = rng.randrange(3)
         real_b = [k for k in range(3) if k != real][rng.randrange(2)]
         spool = self.street_pool(cands, st.owned)
+        kpool, kspool = pool, spool
+        if self.known_target:       # H6 (R-J): the known beams aim at the owned Sites, as the sealed candidates do
+            kpool = self.most_owned(pool, st.owned)
+            kspool = self.most_owned(spool, st.owned)
         known = []
         for _ in range(self.n_known):
             p = self.known_early[1] if getattr(st, "raid_n", 0) < self.known_early[0] else self.known_route
             if rng.random() < p:
-                known.append(Line("ROUTE", rng.choice(pool), rng.choice(TYPES), True))
+                known.append(Line("ROUTE", rng.choice(kpool), rng.choice(TYPES), True))
             else:
-                known.append(Line("STREET", rng.choice(spool), rng.choice(TYPES), False))
+                known.append(Line("STREET", rng.choice(kspool), rng.choice(TYPES), False))
         ht = rng.choice(TYPES)
         if self.hunter == "tongue":
             spokes = sorted({self.spoke[s] for cells in cands for s in cells})

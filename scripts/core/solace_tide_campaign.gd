@@ -268,7 +268,8 @@ static func netrun_closed(campaign: CampaignState, corp: CorporationData, cfg: C
 		events.append({"type": "dose", "text": "A stolen antidote sample (DOSE) joins the defense deck."})
 	sweep_crossings(campaign, cfg)
 	var st := load_state(campaign, corp, cfg)
-	SolaceTideRules.check_loss(st)
+	if not cfg.solace_tide_city_lost_at_raid_end:  # R-I: only a raid's close checks CITY LOST
+		SolaceTideRules.check_loss(st)
 	if st.lost != SolaceTideState.LOST_NONE:
 		events.append_array(store_state(campaign, st))
 		return events

@@ -373,6 +373,12 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var solace_tide_breach_retries: int = 1
 ## H5: a SHIFT card may bend a known beam (DIVERT).
 @export var solace_tide_divert: bool = true
+## H6 (R-I, designer 2026-10-26): CITY LOST is checked only when a raid closes, after the RESPONSE; DECAY and netruns no
+## longer end the campaign. False = the H5 checks (after DECAY and after every netrun too).
+@export var solace_tide_city_lost_at_raid_end: bool = true
+## H6 (R-J, designer 2026-10-26): a known beam draws its path among the paths of its pool through the most live owned
+## Sites (the sealed candidates' P-target rule); every path when none crosses one. False = the H5 uniform draw.
+@export var solace_tide_known_target: bool = true
 ## R-D: percent of an entry step the Bloom start front moves per INFECTED card.
 @export var solace_tide_infected_front_step_pct: int = 100
 ## R-F: percent of the Genome Core's HP added per INFECTED card at the breach. 0 = off until it is calibrated with the

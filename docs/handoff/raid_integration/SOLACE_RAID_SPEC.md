@@ -4,6 +4,9 @@
 - the designer rulings R-A to R-H (DECISIONS 2026-10-25, "Solace raid: the Infected Tide");
 - the Phase 1 rule changes (DECISIONS 2026-10-25, "Phase 1 rule changes"): a HOME hit infects, one breach retry,
   DIVERT, and Heat raids reset the cadence.
+- **[H6]** the designer rulings of 2026-10-26 (DECISIONS "CITY LOST at raid end (R-I), known beams aim at owned Sites
+  (R-J)"): the oracle is now variant `H6`, the golden `solace_raid_golden.json` is H6 and the H5 golden is kept as
+  `data/solace_raid_golden_h5.json`. The items marked **[H6]** below; everything else is H5.
 
 Measurements and reasons: docs/design/raid_concepts/G4_RESULTS.md (section 6 for H5).
 
@@ -128,7 +131,8 @@ rule):
       - if spread is pending, cancel it;
       - else remove the highest-id INFECTED card.
    4. If spread is still pending, add one INFECTED card tied to `last_lost` (it does not count as a loss).
-   5. Check CITY LOST.
+   5. Check CITY LOST. **[H6, R-I]** Not any more: DECAY never ends the campaign; CITY LOST is checked only at the
+      close (step 10). `SolaceTideRules.loss_margin(state)` tells the PLAN how many more INFECTED cards end the city.
 2. **DRAW** [`GraphGeo.draw`]: the board's lines for this raid, from the `raids` stream (section 4).
    - **Candidates:** the route pool sorted by (most live owned Sites on the path first, then a random key); the first
      `solace_tide_candidates` (3) are the sealed candidates (R-B, P-target).
@@ -138,6 +142,8 @@ rule):
      - a route (uniform from the pool, uniform type) with chance `solace_tide_early_route_pct` (100 [H5]) in raids
        0 .. `solace_tide_early_raids` − 1 (4 [H5]), and `solace_tide_known_route_pct` (0) after;
      - else a street (uniform from the street pool, uniform type).
+     - **[H6, R-J]** "uniform from the pool" is uniform among the paths of that pool through the most live owned Sites
+       (the P-target count, pool order kept); the whole pool when no path crosses one (`SolaceTideRules.most_owned`).
    - **Hunter:** a uniform type, then 2 distinct streets sampled from the street pool (both if fewer), and a uniform
      real one of the two.
 3. **HAND** [`make_ctx`]:
@@ -234,7 +240,7 @@ rule):
 - **CELL HOLDS:** the campaign survives the raid.
 - **BREACHED:** HOME 0.
 - **CITY LOST** (new, R-E): INFECTED cards outnumber healthy cards. DOSE cards count as healthy. It is checked after
-  DECAY, after the raid, and after each netrun.
+  DECAY, after the raid, and after each netrun. **[H6, R-I]** Only after the raid (the close), BREACHED first.
 
 ---
 

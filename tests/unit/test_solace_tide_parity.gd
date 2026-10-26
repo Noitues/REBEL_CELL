@@ -1,7 +1,8 @@
 extends GutTest
 ## Solace tide, Phase 2a (SOLACE_RAID_SPEC.md section 10, item 1): golden parity. The port (SolaceTideBoard,
 ## SolaceTideRules, SolaceTideState) replays tools/raid_concepts/data/solace_raid_golden.json, written by the oracle
-## (tools/raid_concepts/sweep_g1.py, variant H5). Draws and hands are FED from the golden (Python's random streams differ
+## (tools/raid_concepts/sweep_g1.py, variant H6 = H5 + R-I CITY LOST at raid end + R-J known beams aim at owned Sites;
+## the H5 golden is kept as solace_raid_golden_h5.json). Draws and hands are FED from the golden (Python's random streams differ
 ## from RngService), so only the rules are compared, never RNG output.
 
 const GOLDEN := "res://tools/raid_concepts/data/solace_raid_golden.json"
@@ -128,6 +129,8 @@ func test_config_matches_oracle() -> void:
 	_eq("home infects", c.solace_tide_home_hit_infects, r["HOME_INF"] == 1)
 	_eq("retries", c.solace_tide_breach_retries, r["BREACH_RETRY"])
 	_eq("divert", c.solace_tide_divert, r["DIVERT"] == 1)
+	_eq("city lost at raid end (R-I)", c.solace_tide_city_lost_at_raid_end, r["CITY_END"] == 1)
+	_eq("known beams aim (R-J)", c.solace_tide_known_target, r["KNOWN_TARGET"] == 1)
 	_eq("step pct", c.solace_tide_infected_front_step_pct, r["INF_STEP_PCT"])
 	_eq("start deck", c.solace_tide_start_cards(), _g["config"]["lab"]["START_DECK"])
 	# the existing keys the tide reads
@@ -328,6 +331,36 @@ func test_random_raids() -> void:
 		_check_raid("random raid %d" % n, st, int(rec["raid"]), rec, false)
 		n += 1
 	assert_eq(n, 120)
+	_done()
+
+
+## R-J: every known beam the oracle drew (campaign raids and random raids) is a path of its pool that `most_owned` keeps:
+## the port's candidate rule and the oracle's agree on the golden's states.
+func test_golden_known_beams_are_most_owned_paths() -> void:
+	var recs: Array = []
+	for camp in _g["campaigns"]:
+		for step in camp["steps"]:
+			if step["phase"] == "RAID" and step.has("draw"):
+				recs.append([step["after_discard"], step["draw"]])
+	for rec in _g["random_raids"]:
+		recs.append([rec["before"], rec["draw"]])
+	var n := 0
+	for r in recs:
+		var st := _state(r[0])
+		var cand_cells: Array = []
+		for ln in r[1]["cands"]:
+			cand_cells.append((ln["cells"] as Array).map(func(x: String) -> StringName: return StringName(x)))
+		var spool := _board.street_pool(cand_cells, st.owned)
+		for ln in r[1]["known"]:
+			var pool: Array = _board.route_pool if ln["kind"] == "ROUTE" else spool
+			var ok := false
+			for p in SolaceTideRules.most_owned(pool, st):
+				if _plain(p) == ln["cells"]:
+					ok = true
+			if not ok:
+				_bad("known beam %s is not a most-owned path of its pool" % str(ln["cells"]))
+			n += 1
+	assert_gt(n, 300)
 	_done()
 
 
