@@ -47,14 +47,14 @@ func _scene() -> Control:
 	return scene
 
 
-func _own_three(c: CampaignState) -> void:
+func _own_three(c: CampaignState, n: int = 3) -> void:
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
 	var ring: Array[StringName] = []
 	for l in corp.city_grid.get_site(corp.city_grid.home_site_id).links:
 		ring.append(l)
 	ring.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
-	for id in ring.slice(0, 3):
+	for id in ring.slice(0, n):
 		var run := RunState.new()
 		run.site_id = id
 		CampaignRules.on_run_completed(c, corp, cfg, run)
@@ -233,3 +233,217 @@ func test_one_more_infected_card_shows_the_warning_at_plan() -> void:
 	assert_true(screen.flow.loss_warning())
 	assert_not_null(screen.body.find_child("LossBanner", true, false), "PLAN warns: 1 more = CITY LOST")
 	assert_not_null(screen.hud_strip.find_child("LossWarning", true, false), "and so does the HUD")
+
+
+# ------------------------------------------------------------------------------------------------ Phase 3c
+func _pending(c: CampaignState) -> void:
+	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
+
+
+## Opens the tide screen on the first raid (`heat`), or with `lost` the second raid with INFECTED one card short of the line.
+func _open_tide(heat: int, lost: bool = false) -> Array:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	c.schematics = 300
+	_own_three(c, 4)
+	c.heat = heat
+	c.raids_lost = 0
+	if lost:
+		c.raids_won = 1
+		c.raids_lost = 0
+		var corp := RunManager.corporation
+		var ring: Array[StringName] = []
+		for l in corp.city_grid.get_site(corp.city_grid.home_site_id).links:
+			ring.append(l)
+		ring.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+		c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
+		var st := SolaceTideCampaign.load_state(c, corp, RunManager.config())
+		var healthy := st.deck.size() - st.wound_count()
+		var ids: Array = []
+		for i in healthy - st.wound_count() - 1:
+			ids.append(ring[1 + i % 3])
+		SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	_pending(c)
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+	await _frames()
+	return [hq, hq.tide_screen]
+
+
+func _to_response_screen(screen: TideRaidScreen, place: bool = false) -> void:
+	var flow := screen.flow
+	var p0 := flow.phase
+	screen.cont()
+	screen.cont()
+	assert_eq(flow.phase, TideRaidFlow.Phase.PLAN, "start phase %d" % p0)
+	var placed := 0
+	for h in flow.hand_cards():
+		var sites := flow.placeable_sites()
+		if not place or placed >= 2 or sites.is_empty():
+			break
+		if h["verb"] == "GUARD":
+			screen.card_pressed(h["id"])
+			screen.site_clicked(sites[0])
+			placed += 1
+	screen.to_forecast()
+	screen.launch()
+	if flow.phase == TideRaidFlow.Phase.FORECAST:
+		screen.launch()
+	if flow.phase == TideRaidFlow.Phase.REVEAL:
+		flow.reveal_done()
+		screen._rebuild()
+
+
+func test_the_header_shows_the_pending_heat_and_a_placed_card_keeps_its_cost() -> void:
+	var o := await _open_tide(60)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	screen.cont()
+	screen.cont()
+	var cost := flow.cfg.solace_tide_card_response_heat
+	var picked := ""
+	for h in flow.hand_cards():
+		if h["verb"] == "GUARD":
+			picked = h["id"]
+			break
+	assert_ne(picked, "")
+	var sites := flow.placeable_sites()
+	screen.card_pressed(picked)
+	screen.site_clicked(sites[0])
+	var face := screen.hand_row.find_child("Card_%s" % picked, true, false) as TideGlyphView
+	assert_eq(face.heat, cost, "a placed card keeps its Heat cost, it does not flip to 0")
+	assert_true(flow.raid.st.ghost > 0)
+	screen.ghost()
+	var lab := screen.hud_strip.find_child("HeatLabel", true, false) as Label
+	var p := flow.pending_heat()
+	assert_true(lab.text.begins_with("HEAT 60 "), "the header leads with the Heat now: " + lab.text)
+	assert_true(int(p["hi"]) != 60 and lab.text.contains("→"), "and shows where the plan leaves it: " + lab.text)
+	assert_gte(int(p["lo"]), 60 + flow.cfg.solace_tide_ghost_heat, "the ghost's Heat is in it")
+
+
+func test_response_rows_carry_their_numbers_the_commit_is_pinned_and_a_lethal_pick_asks_twice() -> void:
+	var o := await _open_tide(80, true)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	_to_response_screen(screen)
+	assert_eq(flow.phase, TideRaidFlow.Phase.RESPONSE, "phase=%d fast=%s groups=%d" % [flow.phase, flow.fast, flow.groups.size()])
+	assert_not_null(screen.foot.find_child("Commit", true, false), "COMMIT is pinned under the scrolling list")
+	assert_null(screen.body.find_child("Commit", true, false))
+	var lethal := -1
+	for gi in flow.groups.size():
+		var m: Dictionary = flow.groups[gi]["members"][0]
+		var row := screen.body.find_child("Resp_%d" % gi, true, false)
+		assert_not_null(row)
+		var heat := row.find_child("HeatChip", true, false).find_child("Val", true, false) as Label
+		var inf := row.find_child("InfChip", true, false).find_child("Val", true, false) as Label
+		assert_eq(heat.text, ("%+d" % int(m["heat_lo"])) if int(m["heat_lo"]) == int(m["heat_hi"]) else "%+d..%+d" % [m["heat_lo"], m["heat_hi"]], "the Heat chip is the forecast's")
+		assert_eq(inf.text, ("%+d" % int(m["inf_lo"])) if int(m["inf_lo"]) == int(m["inf_hi"]) else "%+d..%+d" % [m["inf_lo"], m["inf_hi"]], "the INFECTED chip is the forecast's")
+		if bool(flow.groups[gi]["lethal_any"]) and lethal < 0:
+			lethal = gi
+	assert_gte(lethal, 0)
+	screen.select_group(lethal)
+	screen.commit()
+	assert_eq(flow.phase, TideRaidFlow.Phase.RESPONSE, "the first press only arms")
+	assert_not_null(screen.foot.find_child("LethalConfirm", true, false), "the foot says the pick can end the run")
+	assert_string_contains((screen.foot.find_child("Commit", true, false) as Button).text, "END THE RUN")
+	screen.commit()
+	await _frames()
+	assert_true(flow.phase in [TideRaidFlow.Phase.PLAYOUT, TideRaidFlow.Phase.AFTERMATH])
+
+
+func test_the_top_bar_keeps_the_raid_count_through_the_playout_and_the_stops_follow_the_trace() -> void:
+	var o := await _open_tide(80, true)
+	var hq: Control = o[0]
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	_to_response_screen(screen)
+	flow.commit([TideRaidFlow.HOLD], true)
+	screen._rebuild()
+	var raids := ""
+	for it in hq.hud.stats.items:
+		if String(it[0]) == "RAIDS":
+			raids = String(it[1])
+	assert_eq(raids, "1", "RAIDS still counts the raid while it plays")
+	for b in flow.beats():
+		var want := ""
+		for e in b["trace"]:
+			if e[2] == "block":
+				want = String(e[1])
+				break
+			if e[2] == "home" or e[2] == "shield":
+				want = "HOME"
+		assert_eq(screen._stop_of(b), want, "a beam stops at its guard or at HOME")
+	flow.playout_done()
+	screen._rebuild()
+	for it in hq.hud.stats.items:
+		if String(it[0]) == "RAIDS":
+			raids = String(it[1])
+	assert_eq(raids, "0", "and drops it at the aftermath")
+
+
+func test_city_lost_is_a_full_screen_moment_over_the_raids_own_tier() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	c.raids_won = 1
+	var ids: Array = []
+	for i in 12:
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	_pending(c)
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+	await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	var flow := screen.flow
+	_to_response_screen(screen)
+	if flow.phase == TideRaidFlow.Phase.RESPONSE:
+		screen.select_group(0)
+		screen.commit()
+		if flow.phase == TideRaidFlow.Phase.RESPONSE:
+			screen.commit()
+	await _frames()
+	if flow.phase == TideRaidFlow.Phase.PLAYOUT:
+		flow.playout_done()
+		screen._rebuild()
+	assert_eq(flow.phase, TideRaidFlow.Phase.AFTERMATH)
+	assert_true(screen.city_lost_showing(), "CITY LOST covers the screen")
+	var banner := screen.body.find_child("Banner", true, false) as Label
+	assert_eq(banner.text, "CITY LOST")
+	var stamp := screen.body.find_child("AftermathStamp", true, false)
+	var words := ""
+	for ch in stamp.get_children():
+		if ch is Label:
+			words = (ch as Label).text
+	assert_ne(words, "CITY LOST", "the stamp is the raid's own tier")
+	assert_eq(words, screen._tierw(String(flow.aftermath()["tier"])))
+	screen.cont()
+	assert_false(screen.city_lost_showing(), "CONTINUE lets the aftermath go on")
+
+
+func test_the_aftermath_tally_keeps_decay_and_the_raid_apart_and_the_hq_pick_shows() -> void:
+	var o := await _open_tide(80, true)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	_to_response_screen(screen)
+	flow.commit([TideRaidFlow.HOLD], true)
+	flow.playout_done()
+	screen._rebuild()
+	var tally := screen.body.find_child("InfectedTally", true, false)
+	assert_not_null(tally.find_child("TallyDecay", true, false), "DECAY rows are their own section: %s" % [flow.decay_tally])
+	assert_not_null(tally.find_child("TallyRaid", true, false), "and so are the raid's")
+	screen.cont()
+	if flow.phase == TideRaidFlow.Phase.HQ_STEP:
+		var acts := flow.hq_actions([&"", "", false])
+		for a in acts:
+			if bool(a["enabled"]):
+				screen._hq_pick(a)
+				assert_gt(flow.hq_total([screen._hq_repair, screen._hq_build, screen._hq_patch]), 0, "the pick counts")
+				var name_ := "Hq_%s" % a["kind"] if StringName(a["site"]) == &"" else "Hq_%s_%s" % [a["kind"], a["site"]]
+				var btn := screen.body.find_child(name_, true, false).find_child("Pick", true, false) as Button
+				assert_true(btn.text.begins_with("> "), "the picked row is marked")
+				break
