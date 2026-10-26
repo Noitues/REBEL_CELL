@@ -19,6 +19,7 @@ const ALLOWED: Array[String] = [
 	"text_db.gd:out", "netrun_scene.gd:kids", "city_perf_probe.gd:sorted", "na25_e2e_lab.gd:sorted", "profile_frames.gd:_times",
 	"schema_check.gd:keys", "lint_static_cli.gd:keys", "perf_pack.gd:sorted", "perf_pack.gd:names",
 	"visual_lint_static.gd:out", "visual_lint_static.gd:sorted",
+	"parity_check.gd:keys", "parity_check.gd:sorted_shapes", "parity_check.gd:hs", "h7_campaign.gd:sl", "h7_campaign.gd:lost", "h7_result.gd:out", "h7_sim.gd:decoys", "h7_sim.gd:_ids", "h7_sim.gd:pair", "h7_sim.gd:sites", "flow_check.gd:out", "flow_check.gd:perm",  # frozen raid design labs (tools/raid_lab_*): lab-local keys, parity-pinned order
 	"na25_e2e_lab.gd:sorted",   # frame times (floats)
 	"wheel_state.gd:status_ints", "result_chip_model.gd:seen_statuses",
 	"halcyon_hq_graph.gd:picks",   # Halcyon v2: next-layer column indices (ints)
