@@ -13,6 +13,8 @@ const SETTLE_FRAMES := 30
 const PLAYOUT_WAIT_FRAMES := 1500
 const START_HEAT := 80
 const SEED := 7
+## The "warn" scenario leaves INFECTED this many cards short of the line before the raid.
+const WARN_SHORT := 2
 
 var _out := ""
 var _seed := SEED
@@ -59,7 +61,7 @@ func _setup() -> void:
 	c.heat = START_HEAT
 	# The default scenario is the campaign's FIRST raid (no DECAY yet, raid number 1); "decay" and "lost" are its second (raid number 2). The
 	# raids fought count both won and lost, and the claims above may have played a raid, so both are set.
-	c.raids_won = 0 if _scn == "" else 1
+	c.raids_won = 0 if (_scn == "" or _scn == "warn") else 1
 	c.raids_lost = 0
 	# One district is DOWN (it waits for a repair at the HQ step, or DECAY takes it) and HOME took damage.
 	c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
@@ -67,14 +69,23 @@ func _setup() -> void:
 	c.grid.site(c.grid.home_site_id)["integrity"] = c.grid.home_integrity
 	if _scn == "decay":
 		c.grid.site(ring[1])["condition"] = GridState.Condition.DOWN
-	if _scn == "lost":
-		# DECAY takes the DOWN district (+1 INFECTED), then INFECTED equals healthy: one more card ends the city.
+	if _scn == "lost" or _scn == "forced":
+		# lost: DECAY takes the DOWN district (+1 INFECTED), then INFECTED equals healthy: one more card ends the city.
+		# forced: INFECTED equals healthy before DECAY, so DECAY alone puts it over the line (THE CITY FALLS).
 		var st := SolaceTideCampaign.load_state(c, corp, cfg)
 		var healthy := st.deck.size() - st.wound_count()
 		var ids: Array = []
-		for i in healthy - st.wound_count() - 1:
+		for i in healthy - st.wound_count() - (1 if _scn == "lost" else 0):
 			ids.append(ring[1 + i % 3])
 		SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	if _scn == "warn":
+		# The first raid, with INFECTED a few cards short of the line: the HQ step warns about the next DECAY (the DOWN districts left fall to it).
+		var st2 := SolaceTideCampaign.load_state(c, corp, cfg)
+		var healthy2 := st2.deck.size() - st2.wound_count()
+		var ids2: Array = []
+		for i in healthy2 - st2.wound_count() - WARN_SHORT:
+			ids2.append(ring[1 + i % 3])
+		SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids2, false)
 	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
 
 
@@ -98,10 +109,17 @@ func _run() -> void:
 		print("CAPTURE FAIL no tide screen")
 		return
 	var flow := screen.flow
-	var p := "r1" if _scn == "" else ("r2_" + _scn)
+	var p := "r1" if (_scn == "" or _scn == "warn") else ("r2_" + _scn)
+	if _scn == "warn":
+		p = "r1_warn"
 	print("CAPTURE scenario=%s raid=%d decay=%s infected=%d healthy=%d" % [_scn, flow.raid_number(), flow.decay_tally, flow.hud()["infected"], flow.hud()["healthy"]])
 	await _shot(p + "_decay")
-	screen.cont()
+	if flow.forced():
+		# THE CITY FALLS: no PLAN, no RESPONSE; the raid plays straight through to CITY LOST.
+		screen.city_falls()
+		await _playout_shots(p, screen)
+	else:
+		screen.cont()
 	await _settle()
 	if flow.phase == TideRaidFlow.Phase.DRAW:
 		await _shot(p + "_draw")
@@ -111,6 +129,23 @@ func _run() -> void:
 		await _shot(p + "_plan_empty")
 		if _scn != "lost":
 			var placed := 0
+			# A card that stops nothing: flagged as a ghost while it is picked, red once it stands on the Site.
+			var flagged := false
+			for h in flow.hand_cards():
+				if flagged or not SolaceTideRules.PLACEABLE.has(h["verb"]):
+					continue
+				for s in flow.placeable_sites():
+					var chk := SolaceTideTally.sentry_check(flow.raid.ctx, flow.raid.st, flow.raid.place, s, h["id"])
+					if bool(chk["useless"]) and String(chk["why"]) == "type":
+						screen.card_pressed(h["id"])
+						await _settle()
+						await _shot(p + "_plan_ghost_flags")
+						screen.site_clicked(s)
+						await _settle()
+						await _shot(p + "_plan_mismatch")
+						flagged = true
+						break
+			print("CAPTURE mismatch_flagged=%s" % flagged)
 			for h in flow.hand_cards():
 				if placed >= flow.cfg.solace_tide_max_placed:
 					break
@@ -132,6 +167,15 @@ func _run() -> void:
 		screen.to_forecast()
 		await _settle()
 		await _shot(p + "_forecast")
+		# Point at the worst tier of the odds: the map draws the Sites that go DOWN and HOME's damage.
+		var odds := flow.plan_odds()
+		if not odds.is_empty():
+			screen._set_fc_hover({"a": -1, "tier": String(odds[0]["tier"]), "inf": -1})
+			await _settle()
+			print("CAPTURE forecast_hover tier=%s marks=%s" % [odds[0]["tier"], screen.layer.fc_marks])
+			await _shot(p + "_forecast_hover")
+			screen._set_fc_hover({})
+			await _settle()
 		screen.launch()
 		if flow.phase == TideRaidFlow.Phase.FORECAST:
 			await _shot(p + "_launch_confirm")
@@ -160,21 +204,7 @@ func _run() -> void:
 				await _settle()
 				await _shot(p + ("_lethal_confirm" if flow.lethal_armed else "_hold_confirm"))
 				screen.commit()
-		# One still per beat stage: the pulse travelling (stage 0), the impact landing (1), the beat settled (2); the hunter's two lit streets.
-		var last_key := ""
-		for i in PLAYOUT_WAIT_FRAMES:
-			if flow.phase != TideRaidFlow.Phase.PLAYOUT:
-				break
-			var key := _beat_key(screen)
-			if key != last_key:
-				last_key = key
-				var wait := 0.5 if screen._stage == 0 else (0.2 if screen._stage == 1 else 0.05)
-				await get_tree().create_timer(wait).timeout
-				if flow.phase != TideRaidFlow.Phase.PLAYOUT or _beat_key(screen) != key:
-					continue
-				var tag := "lit" if screen._hunter_stage == 1 else "stage%d" % screen._stage
-				await _shot("%s_playout_beam%d_%s" % [p, screen._beam_n, tag])
-			await get_tree().process_frame
+		await _playout_shots(p, screen)
 	await _settle()
 	if screen.city_lost_showing():
 		await _shot(p + "_city_lost")
@@ -198,6 +228,32 @@ func _run() -> void:
 		await _settle()
 		await _shot(p + "_hq_step_picked")
 	hq.queue_free()
+
+
+## One still per beat stage: the pulse travelling (stage 0), the impact landing (1), the beat settled (2); the hunter's two lit streets. A merged quiet
+## sweep is one step (its stills carry the last beam's index and "sweep").
+func _playout_shots(p: String, screen: TideRaidScreen) -> void:
+	var flow := screen.flow
+	var last_key := ""
+	var n_steps := 0
+	for i in PLAYOUT_WAIT_FRAMES:
+		if flow.phase != TideRaidFlow.Phase.PLAYOUT:
+			break
+		var key := _beat_key(screen)
+		if key != last_key:
+			last_key = key
+			var wait := 0.5 if screen._stage == 0 else (0.2 if screen._stage == 1 else 0.05)
+			await get_tree().create_timer(wait).timeout
+			if flow.phase != TideRaidFlow.Phase.PLAYOUT or _beat_key(screen) != key:
+				continue
+			var tag := "lit" if screen._hunter_stage == 1 else "stage%d" % screen._stage
+			if screen._quiet_step:
+				tag = "sweep_" + tag
+			if screen._stage == 0:
+				n_steps += 1
+			await _shot("%s_playout_beam%d_%s" % [p, screen._beam_n, tag])
+		await get_tree().process_frame
+	print("CAPTURE playout steps=%d beats=%d" % [n_steps, flow.beats().size()])
 
 
 ## The beat the playout is at, as a key: beam, the hunter's reveal stage, the beat stage.

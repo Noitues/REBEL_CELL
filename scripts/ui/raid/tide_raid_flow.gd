@@ -41,6 +41,10 @@ var lethal_armed: bool = false
 var _lethal_key: String = ""
 ## INFECTED cards the playout has landed so far (the HUD, the meter and the deck strip tick with them); -1 outside the playout.
 var landed: int = -1
+## HOME's integrity once the playout's HOME hit has landed (the HUD drops at that beat); -1 until then.
+var home_live: int = -1
+## True when the raid was committed by `commit_forced` (THE CITY FALLS: no PLAN, no RESPONSE).
+var forced_run: bool = false
 ## The raids pending when the response was committed (the top bar's RAIDS holds this until the aftermath); -1 before.
 var raids_before: int = -1
 var _fresh: Array = []
@@ -117,6 +121,8 @@ func hud() -> Dictionary:
 ## cards land one by one as the beams hit; the rest of the numbers stay as they were until the aftermath).
 func hud_live(n: int) -> Dictionary:
 	var out := hud_pre.duplicate(true)
+	if home_live >= 0:
+		out["home"] = home_live
 	var fresh := new_wounds()
 	var s: SolaceTideState = raid.st.duplicate_state()
 	for i in mini(n, fresh.size()):
@@ -151,6 +157,27 @@ func new_wounds() -> Array:
 func land_infected() -> void:
 	if landed >= 0:
 		landed = mini(landed + 1, new_wounds().size())
+
+
+## The playout's HOME hit landed: HOME shows what the raid leaves from now on.
+func land_home() -> void:
+	if landed >= 0 and not result.is_empty():
+		home_live = (result["state"] as SolaceTideState).home
+
+
+## True when no response can save the city (SolaceTideTally.forced_loss on the state after DECAY): THE CITY FALLS skips PLAN to RESPONSE.
+func forced() -> bool:
+	return raid.ctx != null and not raid.over and not raid.resolved and SolaceTideTally.forced_loss(raid.st)
+
+
+## THE CITY FALLS: the raid plays with no guards and no response, straight through. Only when `forced`. Returns "committed" or "no".
+func commit_forced() -> String:
+	if phase != Phase.DECAY or not forced():
+		return "no"
+	forced_run = true
+	phase = Phase.RESPONSE
+	var r := commit([HOLD], true)
+	return r
 
 
 ## The top bar's RAIDS count while the playout runs (the raid is not dealt with until the aftermath); -1 = the campaign's own.
@@ -202,18 +229,42 @@ func site_name(id: StringName) -> String:
 	return nm if nm != "" else TextDb.mark("Site")
 
 
-## Hand cards in drawn order: {id, type, verb, site (the Site it stands on or ""), extra (the card a Heat level dealt)}.
-func hand_cards() -> Array:
+## A Site's name cut to fit `max_chars` on a word boundary (a card caption): the whole name when it fits, else its first words, else its start.
+func site_short(id: StringName, max_chars: int = 12) -> String:
+	var nm := site_name(id)
+	if nm.length() <= max_chars:
+		return nm
+	var out := ""
+	for w in nm.split(" "):
+		var next: String = w if out == "" else out + " " + w
+		if next.length() > max_chars:
+			break
+		out = next
+	return out if out != "" else nm.substr(0, max_chars)
+
+
+## Hand cards in drawn order: {id, type, verb, site (the Site it stands on or ""), extra (the card a Heat level dealt), played (the Site the response
+## `resp` plays it on, or "")}. `resp` is the response picked or committed ([] = none): a DEPLOY marks the hand card it spends, a REDEPLOY the card it moves.
+func hand_cards(resp: Array = []) -> Array:
 	var out: Array = []
 	if raid.ctx == null:
 		return out
 	var on := {}
 	for s in raid.place["sentries"]:
 		on[raid.place["sentries"][s]] = s
+	var played := {}
+	if not resp.is_empty():
+		if String(resp[0]) == "DEPLOY":
+			var sw := SolaceTideRules.launch(raid.ctx, raid.st, raid.place)
+			var did := SolaceTideRules._deploy_card(sw.rhand, String(resp[1]))
+			if did != "":
+				played[did] = String(resp[2])
+		elif String(resp[0]) == "REDEPLOY" and (raid.place["sentries"] as Dictionary).has(resp[1]):
+			played[(raid.place["sentries"] as Dictionary)[resp[1]]] = String(resp[2])
 	var i := 0
 	for id in raid.ctx.hand:
 		var c: Array = raid.ctx.cards[id]
-		out.append({"id": id, "type": c[0], "verb": c[1], "site": String(on.get(id, "")), "extra": i >= cfg.solace_tide_hand_base})
+		out.append({"id": id, "type": c[0], "verb": c[1], "site": String(on.get(id, "")), "extra": i >= cfg.solace_tide_hand_base, "played": String(played.get(id, ""))})
 		i += 1
 	return out
 
@@ -519,7 +570,7 @@ func _build_responses() -> void:
 		var fc := SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r)
 		var rng := tier_range(fc)
 		var row := {"resp": r, "head": String(r[0]), "worst": rng[0], "best": rng[1], "mean": mean_damage(fc), "min_home": min_home(fc),
-			"sig": _signature(fc), "index": i}
+			"sig": _signature(fc), "index": i, "odds": SolaceTideTally.tier_odds(fc)}
 		row.merge(outcome_stats(fc))
 		rows.append(row)
 		if row["head"] == HOLD:
@@ -640,6 +691,98 @@ func route_tiles(a: int) -> Array:
 		if rx != ry:
 			return rx > ry
 		return int(x["inf"]) > int(y["inf"]))
+	return out
+
+
+## The odds of the plan under HOLD: [{tier, n}], worst tier first (SolaceTideTally.tier_odds over the 12 outcomes).
+func plan_odds(resp: Array = [HOLD]) -> Array:
+	return SolaceTideTally.tier_odds(forecast(resp))
+
+
+## The forecast rows a pick of the forecast stands for: route `a` (-1 = every route), tier `tier` ("" = every tier), INFECTED added `inf` (-1 = any).
+func rows_of(a: int = -1, tier: String = "", inf: int = -1) -> Array:
+	var out: Array = []
+	for r in forecast():
+		if a >= 0 and int(r["a"]) != a:
+			continue
+		if tier != "" and String(r["tier"]) != tier:
+			continue
+		if inf >= 0 and (r["result"]["state"] as SolaceTideState).wound_count() - raid.st.wound_count() != inf:
+			continue
+		out.append(r)
+	return out
+
+
+## What those rows do to the map: {down, taken, home, n} (SolaceTideTally.outcome_marks).
+func marks_of(rows: Array) -> Dictionary:
+	return SolaceTideTally.outcome_marks(rows, raid.st)
+
+
+## The check of every sentry now placed: site -> SolaceTideTally.sentry_check. A card that does nothing is `useless`, with its `why`.
+func sentry_checks() -> Dictionary:
+	var out := {}
+	var sent: Dictionary = raid.place["sentries"]
+	for s in sent:
+		out[s] = SolaceTideTally.sentry_check(raid.ctx, raid.st, raid.place, s, String(sent[s]))
+	return out
+
+
+## The check of the picked (not yet placed) card on every Site it could stand on: site -> sentry_check. Empty without a picked card.
+func ghost_checks() -> Dictionary:
+	var out := {}
+	if sel_card == "" or phase != Phase.PLAN:
+		return out
+	for s in placeable_sites():
+		out[s] = SolaceTideTally.sentry_check(raid.ctx, raid.st, raid.place, s, sel_card)
+	return out
+
+
+## The words of a useless sentry's reason, for the label over it: "DRONE does not stop an ENFORCER beam".
+func useless_reason(chk: Dictionary) -> String:
+	var beams := PackedStringArray()
+	for t in chk["beam_types"]:
+		beams.append(type_name(String(t)))
+	match String(chk["why"]):
+		"type":
+			return tr("%s card does not stop %s") % [type_name(String(chk["card_type"])), " / ".join(beams)]
+		"none":
+			return tr("no beam reaches this district")
+		"same":
+			return tr("changes no outcome: another guard already covers it")
+	return ""
+
+
+## The next DECAY's threat after the HQ picks `sel` ([repair Site or &"", build, patch]): SolaceTideTally.next_decay on the state the step leaves.
+func hq_threat(sel: Array) -> Dictionary:
+	var st := SolaceTideCampaign.load_state(campaign, corp, cfg)
+	return SolaceTideTally.next_decay(SolaceTideRules.between(st, sel, cfg), cfg)
+
+
+## The HQ actions (kind + Site) that lift the threat when added to the picks `sel`: ["repair:<site>", "clean"]. Empty when no threat or nothing helps.
+func hq_fixes(sel: Array) -> Array:
+	var now := hq_threat(sel)
+	var out: Array = []
+	if not (bool(now["fatal"]) or bool(now["near"])):
+		return out
+	var st := SolaceTideCampaign.load_state(campaign, corp, cfg)
+	var level := 2 if bool(now["fatal"]) else 1
+	for a in hq_actions(sel):
+		if not bool(a["enabled"]) or bool(a["picked"]):
+			continue
+		var alt: Array = [sel[0], sel[1], sel[2]]
+		var key := ""
+		if String(a["kind"]) == "repair" and StringName(a["site"]) != &"":
+			alt[0] = a["site"]
+			key = "repair:%s" % a["site"]
+		elif String(a["kind"]) == "clean":
+			alt[1] = SolaceTideRules.BUILD_CLEAN
+			key = "clean"
+		else:
+			continue
+		var t := SolaceTideTally.next_decay(SolaceTideRules.between(st, alt, cfg), cfg)
+		var l := 2 if bool(t["fatal"]) else (1 if bool(t["near"]) else 0)
+		if l < level:
+			out.append(key)
 	return out
 
 
@@ -930,6 +1073,7 @@ func commit(resp: Array, force: bool = false) -> String:
 	events = RunManager.fight_tide_raid(raid)
 	last_raid = campaign.last_raid.duplicate(true)
 	landed = 0
+	home_live = -1
 	phase = Phase.PLAYOUT
 	return "committed"
 

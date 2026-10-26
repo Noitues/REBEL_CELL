@@ -6,8 +6,158 @@ extends GutTest
 var _cfg: CampaignConfigData
 
 
+const GOLDEN := "res://tools/raid_concepts/data/solace_raid_golden.json"
+var _board: SolaceTideBoard
+
+
 func before_all() -> void:
 	_cfg = load("res://content/config/campaign_config.tres")
+	var golden: Dictionary = JSON.parse_string(FileAccess.open(GOLDEN, FileAccess.READ).get_as_text())
+	_board = SolaceTideBoard.from_dict(golden["graph"], _cfg.solace_tide_route_max_links)
+
+
+func _line(cells: Array, kind: String, t: String) -> Dictionary:
+	var c: Array = []
+	for x in cells:
+		c.append(StringName(x))
+	return {"kind": kind, "cells": c, "type": t, "home": kind == "ROUTE"}
+
+
+## A raid on a hand-built board: route A is an N route over t3_f, t2_f, t1_f; B an E route; C a D route; no known beam.
+func _ctx(st: SolaceTideState) -> SolaceTideRules.Ctx:
+	var wounds: Array = []
+	for c in st.deck:
+		if c[2] == SolaceTideState.VERB_WOUND:
+			wounds.append(c)
+	st.deck = [["s0", "D", "GUARD"], ["s1", "N", "GUARD"], ["s2", "E", "SHIFT"], ["s3", "D", "GUARD"], ["x0", "-", "DOSE"]]
+	st.deck.append_array(wounds)
+	st.sort_deck()
+	for s in ["t3_f", "t2_f", "t1_f", "t3_g", "t2_g", "t1_g", "t3_d", "t2_d", "t1_d", "t3_h", "t1_h"]:
+		st.owned[StringName(s)] = SolaceTideState.Cond.OK
+	# Four known beams (more than any Heat fires) over their own Sites, so the number that fire never runs the list dry.
+	var known: Array = []
+	for s in ["t3_k1", "t3_k2", "t3_k3", "t3_k4"]:
+		known.append(_line([s], "STREET", "E"))
+	var draw := {"known": known, "cands": [_line(["t3_f", "t2_f", "t1_f"], "ROUTE", "N"), _line(["t3_g", "t2_g", "t1_g"], "ROUTE", "E"),
+		_line(["t3_d", "t2_d", "t1_d"], "ROUTE", "D")], "real_a": 0, "real_b_drawn": 1, "hunter_type": "D",
+		"hunters": [_line(["t3_h"], "STREET", "D"), _line(["t1_h"], "STREET", "D")], "hunter_real": 0, "n_paths": 29}
+	return SolaceTideRules.make_ctx(_board, st, _cfg, draw, ["s0", "s1", "s2", "s3"], 1)
+
+
+func test_the_odds_count_every_row_worst_tier_first() -> void:
+	var rows: Array = []
+	for t in ["HOLDS", "HOLDS", "BATTERED", "BREACHED", "HOLDS", "EVADED"]:
+		rows.append({"tier": t})
+	var odds := SolaceTideTally.tier_odds(rows)
+	assert_eq(odds.map(func(o: Dictionary) -> String: return String(o["tier"])), ["BREACHED", "BATTERED", "HOLDS", "EVADED"])
+	var sum := 0
+	for o in odds:
+		sum += int(o["n"])
+	assert_eq(sum, rows.size())
+	assert_eq(int(odds[2]["n"]), 3)
+
+
+func test_the_outcome_marks_are_what_the_forecast_rows_do_to_the_board() -> void:
+	var st := SolaceTideState.start(_cfg, 50)
+	var ctx := _ctx(st)
+	var rows := SolaceTideRules.forecast(ctx, st, {"sentries": {}, "ghost": &""}, ["HOLD"])
+	assert_eq(rows.size(), 12)
+	var all := SolaceTideTally.outcome_marks(rows, st)
+	assert_false((all["down"] as Array).is_empty(), "an unguarded raid takes Sites down")
+	var worst_home := 0
+	for r in rows:
+		worst_home = maxi(worst_home, st.home - (r["result"]["state"] as SolaceTideState).home)
+	assert_eq(int(all["home"]), worst_home)
+	var one := SolaceTideTally.outcome_marks([rows[0]], st)
+	for s in one["down"]:
+		assert_true((all["down"] as Array).has(s), "a row's marks are within the union")
+		assert_eq(int((rows[0]["result"]["state"] as SolaceTideState).owned[s]), SolaceTideState.Cond.DOWN)
+
+
+func test_a_sentry_of_the_wrong_type_is_useless_and_one_of_the_right_type_is_not() -> void:
+	var st := SolaceTideState.start(_cfg, 50)
+	var ctx := _ctx(st)
+	var place := {"sentries": {}, "ghost": &""}
+	var wrong := SolaceTideTally.sentry_check(ctx, st, place, &"t3_f", "s0")  # a D card on an N route
+	assert_true(wrong["useless"])
+	assert_eq(wrong["why"], "type")
+	assert_eq(wrong["beam_types"], ["N"])
+	var right := SolaceTideTally.sentry_check(ctx, st, place, &"t3_f", "s1")  # the N card
+	assert_false(right["useless"])
+	var none := SolaceTideTally.sentry_check(ctx, st, place, &"t2_zz", "s1")
+	assert_true(none["useless"])
+	assert_eq(none["why"], "none", "no beam reaches that Site")
+	# The same answer once the card is placed.
+	var placed := {"sentries": {&"t3_f": "s0"}, "ghost": &""}
+	assert_true(SolaceTideTally.sentry_check(ctx, st, placed, &"t3_f", "s0")["useless"])
+
+
+func test_a_second_guard_behind_the_first_changes_no_outcome() -> void:
+	var st := SolaceTideState.start(_cfg, 50)
+	var ctx := _ctx(st)
+	var place := {"sentries": {&"t3_f": "s1"}, "ghost": &""}
+	# The N card on t2_f stands behind the one on t3_f that already blocks the N route: the type fits, the outcome is the same.
+	var behind := SolaceTideTally.sentry_check(ctx, st, place, &"t2_f", "s1")
+	assert_true(behind["useless"] or behind["why"] == "")
+	if behind["useless"]:
+		assert_eq(behind["why"], "same")
+
+
+func test_the_check_agrees_with_the_forecast_it_is_built_on() -> void:
+	var st := SolaceTideState.start(_cfg, 50)
+	var ctx := _ctx(st)
+	var place := {"sentries": {}, "ghost": &""}
+	var base := SolaceTideRules.forecast(ctx, st, place, ["HOLD"])
+	var guarded := SolaceTideRules.forecast(ctx, st, {"sentries": {&"t3_f": "s1"}, "ghost": &""}, ["HOLD"])
+	var useful := SolaceTideTally.outcome_signature(base) != SolaceTideTally.outcome_signature(guarded)
+	assert_eq(not SolaceTideTally.sentry_check(ctx, st, place, &"t3_f", "s1")["useless"], useful)
+
+
+func test_a_forced_loss_is_the_city_already_over_the_line_and_it_holds_on_every_setup() -> void:
+	var st := SolaceTideState.start(_cfg, 50)
+	assert_false(SolaceTideTally.forced_loss(st))
+	var healthy := st.deck.size()
+	var ids: Array = []
+	for i in healthy + 1:
+		ids.append(StringName("w_%02d" % i))
+	SolaceTideRules.add_infected(st, ids, false)
+	assert_eq(SolaceTideRules.loss_margin(st), 0)
+	assert_true(SolaceTideTally.forced_loss(st))
+	# Every placement and every response ends the run on every outcome.
+	var ctx := _ctx(st)
+	var checked := 0
+	for p in SolaceTideRules.placements(ctx, st):
+		var sw := SolaceTideRules.launch(ctx, st, p)
+		for resp in SolaceTideRules.response_options(ctx, sw):
+			for r in SolaceTideRules.forecast(ctx, st, p, resp):
+				assert_ne((r["result"]["state"] as SolaceTideState).lost, SolaceTideState.LOST_NONE)
+				checked += 1
+	assert_gt(checked, 0)
+
+
+func test_the_next_decay_warns_when_the_downs_would_end_the_city() -> void:
+	var st := _state(0, 0, 0)
+	var calm := SolaceTideTally.next_decay(st, _cfg)
+	assert_false(calm["fatal"])
+	assert_false(calm["near"])
+	# Fill the deck with INFECTED up to one short of the line, then leave Sites DOWN.
+	var healthy := st.deck.size()
+	var ids: Array = []
+	for i in healthy - 1:
+		ids.append(StringName("w_%02d" % i))
+	SolaceTideRules.add_infected(st, ids, false)
+	st.owned[&"d1"] = SolaceTideState.Cond.DOWN
+	var t := SolaceTideTally.next_decay(st, _cfg)
+	var run := st.duplicate_state()
+	SolaceTideRules.decay(run, _cfg)
+	assert_eq(int(t["added"]), run.wound_count() - st.wound_count(), "it is the real DECAY")
+	assert_eq(int(t["margin"]), SolaceTideRules.loss_margin(run))
+	assert_eq(bool(t["fatal"]), SolaceTideRules.loss_margin(run) == 0)
+	assert_eq(t["downs"], [&"d1"])
+	# Repairing the DOWN Site (what the HQ step does) lifts the threat.
+	st.owned[&"d1"] = SolaceTideState.Cond.OK
+	var fixed := SolaceTideTally.next_decay(st, _cfg)
+	assert_true(int(fixed["margin"]) > int(t["margin"]) or not bool(t["fatal"]))
 
 
 func _state(downs: int, wounds: int, doses: int, lost_since: int = 0) -> SolaceTideState:

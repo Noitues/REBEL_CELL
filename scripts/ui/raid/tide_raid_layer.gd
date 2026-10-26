@@ -53,6 +53,8 @@ const FLIGHT_H := 28.0
 const FLIGHT_ARC := 46.0
 const BLOOM_R := 44.0
 const BURST_SPOKES := 12
+## The radius a heavy hit's impact swells to (px).
+const SLAM_R := 72.0
 
 var overlay: CityMapOverlay = null
 var core: StringName = &""
@@ -84,6 +86,15 @@ var impacts: Array = []
 var bursts: Array = []
 var flights: Array = []
 var hovered: StringName = &""
+## The map's room between the deck strip, the side panel, the HUD and the hand (this layer's px); empty = the whole layer.
+var bounds: Rect2 = Rect2()
+## The forecast outcome the player points at (a tile or a bar segment): {down, taken, home}; empty = none. The Sites that go DOWN or TAKEN and the HOME
+## damage are drawn on the map as a prediction.
+var fc_marks: Dictionary = {}
+## Placed sentries that do nothing: site -> the reason. They turn red, and the reason shows beside them.
+var bad_sentries: Dictionary = {}
+## The picked card tried on each Site it could stand on: site -> {useless, reason}. A ring per Site: clear (it would work) or red (it would not).
+var ghost_sites: Dictionary = {}
 ## The response being previewed (hovered or picked): [] or its response array, drawn as a ghost on the map.
 var preview: Array = []
 var preview_type: String = ""
@@ -96,6 +107,8 @@ var pulse_secs: float = 0.0
 var _keep: Array = []
 var _labels: Array = []
 var _boxes: Array[Rect2] = []
+## Every tag of the frame (DOWN / TAKEN stamps, HIT names, forecast and mismatch notes, beam labels), laid out together so none covers another.
+var _tags: Array = []
 
 
 func _init() -> void:
@@ -245,18 +258,23 @@ func _draw() -> void:
 	_build_keepout()
 	_labels = []
 	_boxes = []
+	_tags = []
 	_draw_tints()
 	for b in beams:
 		_draw_beam(b)
 	_draw_hits()
-	_draw_stamps()
 	_draw_sentries()
 	_draw_home()
-	_draw_labels()
 	_draw_preview()
 	_draw_impacts()
 	_draw_bursts()
 	_draw_flights()
+	# The tags last, in the order of their weight: the stamps first (they say what happened), then the hits, the notes and the beam labels.
+	_collect_stamps()
+	_collect_marks()
+	_collect_impact_tags()
+	_collect_beam_tags()
+	_draw_tags()
 
 
 ## The points a label keeps off: every Site of the map, the HQ star and HOME.
@@ -270,6 +288,11 @@ func _build_keepout() -> void:
 		var p := at(id)
 		if p.x != INF:
 			_keep.append([p, KEEP_END_R])
+	# A standing sentry is drawn above its Site: tags keep off it too.
+	for id in sentries:
+		var p := at(id)
+		if p.x != INF:
+			_keep.append([p + Vector2(0.0, -24.0), 16.0])
 
 
 func _clearance(p: Vector2) -> float:
@@ -399,7 +422,7 @@ func _dashed(pts: PackedVector2Array, col: Color, w: float) -> void:
 # ------------------------------------------------------------------------------------------------ labels on leader lines
 ## Every beam label, set where it covers no Site, the HQ star, HOME or another label, on a leader line to its beam. The HUNTER's hound
 ## stands on its street at the same clear point (never on a hex).
-func _draw_labels() -> void:
+func _collect_beam_tags() -> void:
 	for l in _labels:
 		var pts: PackedVector2Array = l["pts"]
 		if pts.size() < 2:
@@ -410,16 +433,50 @@ func _draw_labels() -> void:
 		var text := String(l["text"])
 		if text == "":
 			continue
-		var col: Color = l["col"]
-		var lsize := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX) + Vector2(LABEL_PAD * 2.0, 6.0)
-		var box := _label_box(anchor, lsize)
+		_add_tag({"kind": "label", "anchor": anchor, "text": text, "col": l["col"], "a": float(l["a"]), "px": LABEL_PX})
+
+
+## Adds a tag to the frame: {kind, anchor (the map point it belongs to), text, col, px, prefer (where the box likes to sit, from the anchor), own
+## (true: the anchor is a Site, which the box may touch)}.
+func _add_tag(t: Dictionary) -> void:
+	_tags.append(t)
+
+
+## Lays the frame's tags out in order, each on the clearest box near its anchor (the Sites, the HQ star, HOME and the tags before it kept clear), and draws them.
+func _draw_tags() -> void:
+	for t in _tags:
+		var text := String(t["text"])
+		var px := int(t.get("px", LABEL_PX))
+		var col: Color = t["col"]
+		var a := float(t.get("a", 1.0))
+		var anchor: Vector2 = t["anchor"]
+		var lsize := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px) + Vector2(LABEL_PAD * 2.0 + float(t.get("icon", 0.0)), 6.0)
+		var own: Vector2 = anchor if bool(t.get("own", false)) else Vector2.INF
+		var box := _label_box(anchor, lsize, t.get("prefer", Vector2.INF), own)
+		# A tag never leaves the map's room (the deck strip, the panel and the hand stand outside it).
+		var room := bounds if bounds.size.x > 0.0 else Rect2(Vector2.ZERO, size)
+		box.position.x = clampf(box.position.x, room.position.x, maxf(room.position.x, room.end.x - box.size.x))
+		box.position.y = clampf(box.position.y, room.position.y, maxf(room.position.y, room.end.y - box.size.y))
 		_boxes.append(box)
 		var edge := Vector2(clampf(anchor.x, box.position.x, box.end.x), clampf(anchor.y, box.position.y, box.end.y))
-		draw_line(anchor, edge, Color(col, 0.9), 1.5)
-		draw_circle(anchor, 2.5, col)
-		draw_rect(box, Color(TideGlyphs.BLACK, 0.82))
-		draw_rect(box, Color(col, 0.9), false, 1.5)
-		draw_string(_font, box.position + Vector2(LABEL_PAD, lsize.y - 5.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX, Color(TideGlyphs.INK, float(l["a"])))
+		if edge.distance_to(anchor) > 6.0:
+			draw_line(anchor, edge, Color(col, 0.9), 1.5)
+			draw_circle(anchor, 2.5, col)
+		draw_rect(box, Color(TideGlyphs.BLACK, 0.86))
+		draw_rect(box, Color(col, 0.95), false, 2.0 if String(t["kind"]) != "label" else 1.5)
+		var tx := box.position.x + LABEL_PAD
+		var gc := Vector2(box.position.x + 9.0, box.get_center().y)
+		match String(t["kind"]):
+			"stamp_taken":
+				TideGlyphs.crack(self, gc, 5.0, col, 1.5)
+				tx += 12.0
+			"stamp_down":
+				draw_colored_polygon(PackedVector2Array([gc + Vector2(1.0, -6.0), gc + Vector2(-4.0, 1.0), gc + Vector2(-0.5, 1.0), gc + Vector2(-1.5, 6.0), gc + Vector2(4.0, -1.5), gc + Vector2(0.5, -1.5)]), TideGlyphs.INK)
+				tx += 12.0
+			"bad":
+				TideGlyphs.xmark(self, gc, 5.0, col, 2.0)
+				tx += 12.0
+		draw_string(_font, Vector2(tx, box.end.y - 5.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(TideGlyphs.INK, a))
 
 
 ## The point of `pts` farthest from the map's Sites and ends, within the middle half of the path.
@@ -437,15 +494,22 @@ func _clear_point(pts: PackedVector2Array) -> Vector2:
 
 
 ## The first box of size `size` near `anchor` that covers the least of the keep-out and the labels placed so far.
-func _label_box(anchor: Vector2, bsize: Vector2) -> Rect2:
+func _label_box(anchor: Vector2, bsize: Vector2, prefer: Vector2 = Vector2.INF, own: Vector2 = Vector2.INF) -> Rect2:
 	var best := Rect2(anchor + Vector2(12.0, -bsize.y - 12.0), bsize)
 	var least := INF
+	if prefer.x != INF:
+		var pbox := Rect2(anchor + prefer - bsize * 0.5, bsize)
+		var pc := _box_cost(pbox, own)
+		if pc <= 0.0:
+			return pbox
+		best = pbox
+		least = pc
 	for ring in LABEL_RINGS:
 		for k in LABEL_DIRS:
 			var dir := Vector2.from_angle(TAU * float(k) / float(LABEL_DIRS) - PI * 0.5)
 			var c := anchor + dir * ring
 			var box := Rect2(c - bsize * 0.5, bsize)
-			var cost := _box_cost(box)
+			var cost := _box_cost(box, own)
 			if cost < least:
 				least = cost
 				best = box
@@ -454,11 +518,13 @@ func _label_box(anchor: Vector2, bsize: Vector2) -> Rect2:
 	return best
 
 
-func _box_cost(box: Rect2) -> float:
+func _box_cost(box: Rect2, own: Vector2 = Vector2.INF) -> float:
 	var cost := 0.0
 	var inner := box.grow(3.0)
 	for k in _keep:
 		var c: Vector2 = k[0]
+		if own.x != INF and c.distance_to(own) < 1.0:
+			continue
 		var near := Vector2(clampf(c.x, inner.position.x, inner.end.x), clampf(c.y, inner.position.y, inner.end.y))
 		var gap := float(k[1]) - near.distance_to(c)
 		if gap > 0.0:
@@ -466,7 +532,7 @@ func _box_cost(box: Rect2) -> float:
 	for o in _boxes:
 		if o.grow(3.0).intersects(inner):
 			cost += 60.0
-	var r := Rect2(Vector2.ZERO, size)
+	var r := bounds if bounds.size.x > 0.0 else Rect2(Vector2.ZERO, size)
 	if not r.encloses(box):
 		cost += 80.0
 	return cost
@@ -478,6 +544,9 @@ func _draw_hits() -> void:
 		var p := at(id)
 		if p.x == INF:
 			continue
+		# A Site the raid hit turns the infection's magenta.
+		draw_circle(p, INFECT_R, INFECT_COL)
+		draw_arc(p, INFECT_R, 0.0, TAU, 24, Palette.TIDE_INFECT_EDGE, 2.0)
 		TideGlyphs.xmark(self, p, 7.0, TideGlyphs.RED, 2.5)
 	for e in blocks:
 		var p := at(StringName(String(e[0])))
@@ -488,29 +557,73 @@ func _draw_hits() -> void:
 
 
 ## DOWN and TAKEN, stamped on their own Sites: a tilted plate under the Site with a bolt (DOWN) or a crack (TAKEN).
-func _draw_stamps() -> void:
+func _collect_stamps() -> void:
 	for id in downs:
-		_stamp(id, "DOWN", Palette.TIDE_BATTERED, false)
+		_stamp(id, "DOWN", Palette.TIDE_BATTERED, "stamp_down")
 	for id in taken:
-		_stamp(id, "TAKEN", TideGlyphs.RED, true)
+		_stamp(id, "TAKEN", TideGlyphs.RED, "stamp_taken")
 
 
-func _stamp(id: StringName, word: String, col: Color, cracked: bool) -> void:
+func _stamp(id: StringName, word: String, col: Color, kind: String) -> void:
 	var p := at(id)
 	if p.x == INF:
 		return
-	var tw := _font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, STAMP_PX).x
-	var box := Rect2(Vector2(-(tw + 22.0) * 0.5, -9.0), Vector2(tw + 22.0, 18.0))
-	draw_set_transform(p + Vector2(0.0, STAMP_DROP), STAMP_TILT, Vector2.ONE)
-	draw_rect(box, Color(TideGlyphs.BLACK, 0.88))
-	draw_rect(box, col, false, 2.0)
-	var gc := box.position + Vector2(9.0, 9.0)
-	if cracked:
-		TideGlyphs.crack(self, gc, 5.0, col, 1.5)
-	else:
-		draw_colored_polygon(PackedVector2Array([gc + Vector2(1.0, -6.0), gc + Vector2(-4.0, 1.0), gc + Vector2(-0.5, 1.0), gc + Vector2(-1.5, 6.0), gc + Vector2(4.0, -1.5), gc + Vector2(0.5, -1.5)]), TideGlyphs.INK)
-	draw_string(_font, box.position + Vector2(17.0, 13.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, STAMP_PX, col)
-	draw_set_transform(Vector2.ZERO)
+	_add_tag({"kind": kind, "anchor": p, "text": word, "col": col, "px": STAMP_PX, "icon": 12.0, "prefer": Vector2(0.0, STAMP_DROP), "own": true})
+
+
+## The forecast prediction the player points at, the mismatched sentries and the picked card's fit: rings on the Sites and a tag each where a word is needed.
+func _collect_marks() -> void:
+	for id in fc_marks.get("down", []):
+		var p := at(StringName(String(id)))
+		if p.x == INF:
+			continue
+		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
+		_add_tag({"kind": "note", "anchor": p, "text": tr("would go DOWN"), "col": Palette.TIDE_BATTERED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+	for id in fc_marks.get("taken", []):
+		var p := at(StringName(String(id)))
+		if p.x == INF:
+			continue
+		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
+		_add_tag({"kind": "note", "anchor": p, "text": tr("would fall"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+	if not fc_marks.is_empty():
+		var hp := at(home)
+		if hp.x != INF:
+			var dmg := int(fc_marks.get("home", 0))
+			var word := tr("HOME -%d") % dmg if dmg > 0 else tr("HOME safe")
+			var hc: Color = TideGlyphs.RED if dmg > 0 else TideGlyphs.TIER_COLOR["HOLDS"]
+			draw_arc(hp, 28.0, 0.0, TAU, 32, hc, 3.5)
+			_add_tag({"kind": "note", "anchor": hp, "text": word, "col": hc, "px": LABEL_PX, "prefer": Vector2(0.0, -46.0), "own": true})
+	var hov: StringName = overlay.hover_id if overlay != null and is_instance_valid(overlay) else &""
+	for id in bad_sentries:
+		var p := at(id)
+		if p.x == INF:
+			continue
+		draw_arc(p + Vector2(0.0, -24.0), 17.0, 0.0, TAU, 24, TideGlyphs.RED, 3.0)
+		TideGlyphs.xmark(self, p + Vector2(0.0, -24.0), 14.0, TideGlyphs.RED, 3.0)
+		_add_tag({"kind": "bad", "anchor": p, "text": String(bad_sentries[id]) if hov == id or bad_sentries.size() == 1 else tr("does nothing"),
+			"col": TideGlyphs.RED, "px": SMALL_PX, "icon": 12.0, "prefer": Vector2(0.0, -62.0), "own": true})
+	for id in ghost_sites:
+		var p := at(id)
+		if p.x == INF:
+			continue
+		var g: Dictionary = ghost_sites[id]
+		if bool(g["useless"]):
+			draw_arc(p, 19.0, 0.0, TAU, 24, Color(TideGlyphs.RED, 0.9), 2.5)
+			TideGlyphs.xmark(self, p, 7.0, TideGlyphs.RED, 2.5)
+			if hov == id:
+				_add_tag({"kind": "bad", "anchor": p, "text": String(g["reason"]), "col": TideGlyphs.RED, "px": SMALL_PX, "icon": 12.0, "prefer": Vector2(0.0, -48.0), "own": true})
+		else:
+			draw_arc(p, 19.0, 0.0, TAU, 24, Color(TideGlyphs.TIER_COLOR["HOLDS"], 0.9), 2.5)
+
+
+## "HIT: name" beside each Site the beat hits.
+func _collect_impact_tags() -> void:
+	for im in impacts:
+		var p := at(StringName(String(im["site"])))
+		var lab := String(im.get("label", ""))
+		if p.x == INF or lab == "":
+			continue
+		_add_tag({"kind": "note", "anchor": p, "text": lab, "col": im["col"], "px": LABEL_PX, "prefer": Vector2(70.0, -30.0), "own": true})
 
 
 func _draw_sentries() -> void:
@@ -560,13 +673,6 @@ func _draw_impacts() -> void:
 			var d := Vector2.from_angle(TAU * float(s) / float(IMPACT_SPOKES) + 0.2)
 			draw_line(p + d * (IMPACT_R + 5.0), p + d * (IMPACT_R + 13.0 + 6.0 * k), col, 2.0)
 		TideGlyphs.xmark(self, p, 7.0, TideGlyphs.RED, 3.0)
-		var lab := String(im.get("label", ""))
-		if lab != "":
-			var w := _font.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX).x
-			var box := Rect2(p + Vector2(18.0, -34.0), Vector2(w + 12.0, 20.0))
-			draw_rect(box, Color(TideGlyphs.BLACK, 0.85))
-			draw_rect(box, col, false, 2.0)
-			draw_string(_font, box.position + Vector2(6.0, 15.0), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX, TideGlyphs.INK)
 
 
 ## The shield bursts, HOME impacts and infection blooms of the beat.
@@ -586,8 +692,20 @@ func _draw_bursts() -> void:
 				draw_polyline(_closed(TideGlyphs.shield_pts(p, r)), TideGlyphs.INK, 2.5)
 				draw_arc(p, 20.0 + 38.0 * k, 0.0, TAU, 32, Color(col, 1.0 - k), 3.0)
 				draw_arc(p, 20.0 + 22.0 * k, 0.0, TAU, 32, Color(TideGlyphs.INK, 0.8 * (1.0 - k)), 2.0)
+			"slam":
+				# A Site is hit: a heavy magenta impact, a hard ring and spokes, the whole map flashing.
+				var r := lerpf(10.0, SLAM_R, 1.0 - pow(1.0 - k, 3.0))
+				draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.TIDE_INFECT_EDGE, 0.16 * (1.0 - k)))
+				draw_circle(p, r, Color(INFECT_COL, 0.75))
+				draw_arc(p, r, 0.0, TAU, 40, Color(TideGlyphs.INK, 1.0 - 0.6 * k), 5.0)
+				draw_arc(p, r * 0.6, 0.0, TAU, 32, Palette.TIDE_INFECT_EDGE, 3.5)
+				for s in BURST_SPOKES:
+					var d := Vector2.from_angle(TAU * float(s) / float(BURST_SPOKES) + 0.15)
+					draw_line(p + d * (r * 0.7), p + d * (r + 14.0 * (1.0 - k)), Color(Palette.TIDE_INFECT_CRACK, 1.0 - k), 3.0)
+				TideGlyphs.crack(self, p, 14.0 + 8.0 * k, Palette.TIDE_INFECT_CRACK, 3.0)
 			"home":
 				# The beam lands on HOME: a hot flash, a ring and spokes.
+				draw_rect(Rect2(Vector2.ZERO, size), Color(TideGlyphs.RED, 0.2 * (1.0 - k)))
 				draw_circle(p, 22.0 + 30.0 * k, Color(TideGlyphs.RED, 0.5 * (1.0 - k)))
 				draw_arc(p, 26.0 + 46.0 * k, 0.0, TAU, 36, Color(TideGlyphs.INK, 1.0 - k), 4.0)
 				for s in BURST_SPOKES:
