@@ -10181,3 +10181,11 @@ Designer rulings 2026-10-26 (Phase 3b, branch raid-tide-3b-rules). Oracle varian
   0.101) and fewer raids are locked at PLAN.
 - **Q for the designer:** the skilled HOME-hit rate (0.101) is now under its 0.15-0.30 target; raise it (for example more known
   routes after raid 4, `solace_tide_known_route_pct`) or move the target?
+
+## 2026-10-26 Solace Infected Tide: lower HOME-hit rate accepted (designer)
+- **Ruling:** the skilled HOME-hit rate of 0.101 under R-J is accepted. Owned Sites taking the damage is fine, so the
+  0.15-0.30 HOME-hit target is retired for the tide model. This answers the R-J question above.
+- **Ideas the designer opened for later, for damage variety (not built; each needs a sim run and a fresh critic
+  first):**
+  - multi-prong or splitting raid lines, and other complex path shapes;
+  - per-corp special abilities, for example a beam that bypasses one sentry.
