@@ -144,12 +144,11 @@ func test_claiming_needs_a_cleared_site_a_relay_path_and_schematics() -> void:
 	assert_eq(c.schematics, schematics - 20)
 	assert_string_contains(CampaignRules.claim_error(c, _corp, _cfg, _lookup, &"t2_intel", &"relay"), "beyond your Relays", "a Safehouse does not extend reach")
 	assert_true(c.schematics >= 20, "still affordable, so the refusal is about reach")
-	var provoked := false
+	# Phase 2b: Solace plays the Infected Tide, whose raids come from its cadence and Heat levels only (a claim queues none);
+	# the resolver's claim raid is covered below on a corporation that keeps the resolver.
 	for e in events:
-		if e.get("type", "") == "raid_pending":
-			provoked = true
-	assert_true(provoked, "t1_a touches corporate Sites: a claim raid is queued")
-	assert_eq(c.pending_raids[c.pending_raids.size() - 1]["source"], RC.RaidTriggerSource.TERRITORY_CLAIM)
+		assert_ne(e.get("type", ""), "raid_pending", "a tide campaign queues no claim raid")
+	assert_true(c.pending_raids.is_empty())
 	c.grid.site(&"t1_a")["node_type"] = "relay"
 	assert_eq(CampaignRules.claim_error(c, _corp, _cfg, _lookup, &"t2_intel", &"relay"), "", "a Relay extends reach")
 	c.schematics = 5
@@ -218,13 +217,18 @@ func test_deployed_assets_persist_can_be_repositioned_and_the_armory_is_capped()
 
 
 func test_claim_raid_takes_or_holds_and_updates_counters() -> void:
-	var c := _campaign()
-	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
-	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"relay")
+	# Meridian keeps RaidResolver (Phase 2b: Solace plays the tide, see test_raid_model_switch).
+	var corp := ContentRegistry.get_content(&"meridian") as CorporationData
+	assert_false(corp.uses_tide())
+	var c := CampaignRules.new_campaign(corp, _cfg, _lookup, 1, _breaker, GridFixture.home_node())
+	c.schematics = 100
+	var first: StringName = &"m1_a"
+	CampaignRules.on_run_completed(c, corp, _cfg, _run(first))
+	CampaignRules.claim(c, corp, _cfg, _lookup, first, &"relay")
 	var pending := CampaignRules.pending_raid(c)
-	assert_eq(pending["raid_id"], "raid_claim")
-	var projection := CampaignRules.project_raid(c, _corp, _cfg, _lookup, pending)
-	var events := CampaignRules.fight_raid(c, _corp, _cfg, _lookup, pending)
+	assert_eq(pending["raid_id"], "raid_mer_claim")
+	var projection := CampaignRules.project_raid(c, corp, _cfg, _lookup, pending)
+	var events := CampaignRules.fight_raid(c, corp, _cfg, _lookup, pending)
 	assert_eq(c.pending_raids.size(), 0)
 	assert_eq(c.last_raid["home_after"], projection.home_after, "projection matched the playout")
 	assert_eq(c.raids_won + c.raids_lost, 1)

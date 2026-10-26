@@ -68,7 +68,14 @@ static func fire_threshold(campaign: CampaignState, t: HeatThresholdData) -> Arr
 	var events: Array[Dictionary] = []
 	events.append({"type": "heat_threshold", "heat": t.heat, "kind": t.kind,
 		"text": "Heat threshold %d (%s): %s" % [t.heat, RC.ThresholdKind.keys()[t.kind], t.event_text]})
-	if t.event_raid != null:
+	var tide := campaign.corp_theme.solace.tide
+	if tide != null and (t.kind == RC.ThresholdKind.MAJOR or t.kind == RC.ThresholdKind.PURGE):
+		# The Infected Tide: a raid Heat level does not queue a raid itself. The netrun's close reads the flag and counts it
+		# with the cadence (SolaceTideCampaign.netrun_closed); the PURGE level queues the PURGE raid's HOME damage.
+		tide.heat_crossed = true
+		if t.kind == RC.ThresholdKind.PURGE:
+			tide.purge_queued = true
+	elif t.event_raid != null:
 		campaign.pending_raids.append({"raid_id": String(t.event_raid.id), "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": t.heat,
 			"corporation": String(campaign.corporation_id)})
 		# The name comes from the corporation's own raid when one replaces the shared one

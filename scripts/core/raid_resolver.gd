@@ -33,8 +33,9 @@ class RaidResult:
 	var down: Array[String] = []
 	var events: Array[Dictionary] = []
 	var grid_after: GridState = null
-	## WH-12 Solace raid infection (basis points, 0..10000; empty figures = not a Solace raid).
-	## infection_figures[0] is the start, [i] the figure after step i (the raid HUD reads it).
+	## WH-12 Solace raid infection (basis points, 0..10000; empty figures = not a Solace raid). Phase 2b: Solace plays the
+	## Infected Tide (raid_model "tide"), the resolver never fills these, and they stay at their defaults (the raid views
+	## still read them until Phase 3).
 	var infection_applies: bool = false
 	var infection_start_bp: int = 0
 	var infection_bp: int = 0
@@ -93,12 +94,6 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		before[String(id)] = int(grid.site(id)["integrity"]) if id != grid.home_site_id else grid.home_integrity
 	var taken_now: Array[String] = []
 	var down_now: Array[String] = []
-	var infected := SolaceRaidRules.applies(campaign)
-	if infected:
-		result.infection_applies = true
-		result.infection_start_bp = SolaceRaidRules.start_bp(campaign, config)
-		result.infection_bp = result.infection_start_bp
-		result.infection_figures = [result.infection_bp]
 	result.eye_wedge = EyeRules.raid_wedge(campaign, grid_data, config)
 	var step := 0
 	while step < config.raid_step_cap:
@@ -123,16 +118,6 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 			result.campaign_lost = true
 			result.events.append({"type": "home_lost", "step": step, "text": "Step %d: HOME SERVER integrity 0. Campaign lost." % step})
 			break
-		if infected:
-			var living := _active(threats).size()
-			result.infection_bp = SolaceRaidRules.advance(result.infection_bp, living, config)
-			result.infection_figures.append(result.infection_bp)
-			if SolaceRaidRules.is_lost(result.infection_bp, config):
-				result.city_lost = true
-				result.campaign_lost = true
-				result.events.append({"type": "city_lost", "step": step, "infection_bp": result.infection_bp,
-					"text": "Step %d: infection %d%%. The city is infected; only Solace has the cure." % [step, SolaceRaidRules.pct(result.infection_bp)]})
-				break
 		if _active(threats).is_empty() and step >= _last_wave_step(waves):
 			break
 	result.steps_run = step
@@ -169,10 +154,6 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		result.nodes[id] = {"before": before[id], "after": after, "outcome": outcome}
 	result.taken = taken_now
 	result.down = down_now
-	if result.infection_applies:
-		var holds := SolaceRaidRules.cell_holds(result.campaign_lost, taken_now.size())
-		result.infection_decay_bp = SolaceRaidRules.hold_decay_bp(result.threats_destroyed, config) if holds else 0
-		result.infection_end_bp = SolaceRaidRules.after_decay(result.infection_bp, result.infection_decay_bp)
 	result.events.append({"type": "raid_end", "won": result.won, "steps": result.steps_run,
 		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d DOWN, %d TAKEN." % [
 			"CLEAN" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
@@ -186,8 +167,6 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	campaign.grid = result.grid_after.duplicate_state()
 	campaign.grid.frozen_links.clear()  # freezes last one raid; opened links stay open
 	campaign.last_raid = result.to_dict()
-	if result.infection_applies:
-		campaign.corp_theme.solace.infection_bp = result.infection_end_bp
 	for sid in result.taken:
 		var s := campaign.grid.site(StringName(sid))
 		if s.get("stationed", "") != "":

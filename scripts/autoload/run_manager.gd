@@ -277,7 +277,7 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 				netrun = NetrunSession.start_hq_ladder(resolver, campaign, operative_id, site_id, site.tier, run_seed, corporation)
 			else:
 				netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
-					corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
+					corporation.final_boss.id, CampaignRules.breach_overrides(campaign, corporation, config()), corporation)
 			if has_node("/root/Dialogue"):
 				get_node("/root/Dialogue").speak("boss", RC.Voice.DISPATCH, corporation.id, &"", campaign.campaign_seed)
 		"reclaim":

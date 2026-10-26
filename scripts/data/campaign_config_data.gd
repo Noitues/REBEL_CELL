@@ -382,6 +382,18 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## Armory and the stationed operatives onto cards.
 @export var solace_tide_start_deck: PackedStringArray = PackedStringArray(["s0:D:GUARD", "s1:D:GUARD", "s2:N:GUARD",
 	"s3:N:GUARD", "s4:E:GUARD", "s5:D:SHIFT", "s6:E:SHIFT", "s7:N:JAM"])
+## R-C (Phase 2b): an Armory asset becomes a defense card. Indexed by RC.AssetType (TURRET, ICE_LOCK, DECOY): the card's
+## type (D, N or E) and verb. A damage asset guards, an ICE Lock jams, a Decoy shifts the beam.
+@export var solace_tide_asset_card_types: PackedStringArray = PackedStringArray(["D", "N", "E"])
+@export var solace_tide_asset_card_verbs: PackedStringArray = PackedStringArray(["GUARD", "JAM", "SHIFT"])
+## R-C: the class card a stationed operative adds to the raid deck, one "class_id:type:verb" per class.
+@export var solace_tide_class_cards: PackedStringArray = PackedStringArray(["breaker:D:GUARD", "wrecker:D:GUARD",
+	"overclocker:D:SHIFT", "ghost:E:GUARD", "phantom:E:SHIFT", "rigger:N:GUARD", "botnet:N:JAM", "hivemind:N:SHIFT"])
+## The automatic defense (the simulator and an unattended raid) scores each placement by the raid's damage over the
+## forecast's 12 outcomes: HOME points lost, Sites newly TAKEN and Sites newly DOWN, each times its weight; the lowest wins.
+@export var solace_tide_auto_home_weight: int = 4
+@export var solace_tide_auto_taken_weight: int = 3
+@export var solace_tide_auto_down_weight: int = 1
 ## SACRIFICE picks the cheapest live Site off every line: a Site is worth this by tier (index tier - 1, clamped), plus
 ## the bonus for an Exploit Site. (Spec ambiguity: the oracle's TIER_VALUE and EXPLOIT_BONUS were not listed in section 7.)
 @export var solace_tide_site_value_by_tier: PackedInt32Array = PackedInt32Array([6, 8, 10])
@@ -752,7 +764,34 @@ func solace_tide_start_cards() -> Array:
 	return out
 
 
+## The class card of `class_id` as [id, type, verb] ("c_<class>" is not used: the caller names the id), or [] for none.
+func solace_tide_class_card(class_id: StringName) -> Array:
+	for entry in solace_tide_class_cards:
+		var p := entry.split(":")
+		if p.size() == 3 and p[0] == String(class_id):
+			return [p[0], p[1], p[2]]
+	return []
+
+
+## The [type, verb] card an Armory asset of `asset_type` (RC.AssetType) becomes.
+func solace_tide_asset_card(asset_type: int) -> Array:
+	var i := clampi(asset_type, 0, solace_tide_asset_card_types.size() - 1)
+	return [solace_tide_asset_card_types[i], solace_tide_asset_card_verbs[clampi(i, 0, solace_tide_asset_card_verbs.size() - 1)]]
+
+
 func _validate_solace_tide(errors: PackedStringArray) -> void:
+	if solace_tide_asset_card_types.size() != solace_tide_asset_card_verbs.size() or solace_tide_asset_card_types.is_empty():
+		errors.append("solace_tide_asset_card_types and _verbs need one entry per asset type.")
+	for t in solace_tide_asset_card_types:
+		if not ["D", "N", "E"].has(t):
+			errors.append("solace_tide_asset_card_types: '%s' is not D, N or E." % t)
+	for v in solace_tide_asset_card_verbs:
+		if not ["GUARD", "SHIFT", "JAM"].has(v):
+			errors.append("solace_tide_asset_card_verbs: '%s' is not GUARD, SHIFT or JAM." % v)
+	for entry in solace_tide_class_cards:
+		var p := entry.split(":")
+		if p.size() != 3 or not ["D", "N", "E"].has(p[1]) or not ["GUARD", "SHIFT", "JAM"].has(p[2]):
+			errors.append("solace_tide_class_cards entry '%s' must be class:type:verb." % entry)
 	if solace_tide_home_hit_damage_by_band.size() != 5:
 		errors.append("solace_tide_home_hit_damage_by_band needs 5 entries (COOL .. PURGE).")
 	if solace_tide_route_max_links < 2 or solace_tide_candidates < 2 or solace_tide_max_placed < 0:

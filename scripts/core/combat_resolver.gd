@@ -51,7 +51,7 @@ func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 ##   mini-bosses), "boss_extra_pointer" (+N pointers on the final boss),
 ##   "no_first_turn_free_nudge" (bool),
 ##   "extra_free_nudges" (int, assist mode),
-##   Exploit effects: "remove_boss_pointers", "boss_corrupt_slices", "reveal_phases".
+##   Exploit effects: "remove_boss_pointers", "boss_corrupt_slices", "reveal_phases"; "boss_hp_pct" (R-F, the boss's HP +n %).
 ## Call begin_combat() next to run the first START_TURN.
 func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: RandomNumberGenerator, ring: InnerRingData = null, heat_majors_crossed: int = 0, overrides: Dictionary = {}) -> CombatState:
 	var s := CombatState.new()
@@ -136,6 +136,10 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		if bool(overrides.get("event_enemy_frozen", false)):
 			e.wheel.frozen = true
 		if enemy_datas[i].is_boss:
+			var boss_hp_pct := int(overrides.get("boss_hp_pct", 0))  # R-F: the Genome Core grows with the INFECTED count
+			if boss_hp_pct > 0:
+				e.max_hp = maxi(1, roundi(e.max_hp * (100 + boss_hp_pct) / 100.0))
+				e.hp = e.max_hp
 			_add_pointers(e, int(overrides.get("boss_extra_pointer", 0)))
 			_trim_pointers(e, int(s.flags["boss_pointer_removal"]))
 			for k in int(overrides.get("boss_corrupt_slices", 0)):

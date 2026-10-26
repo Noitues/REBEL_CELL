@@ -1,13 +1,11 @@
 class_name SolaceRaidRules
 extends RefCounted
-## Plan 2 WH-12 (Solace raid hook, docs/handoff/plan2/drafts/themes/solace.md section 1 rules
-## 15-20): the population infection figure of a Solace raid. Basis points (0..10000, the
-## percentage is bp / 100). v2 (S1): it is ONE campaign figure (CampaignState.corp_theme.solace),
-## never reset per raid. It rises each resolution step by base + per_threat x living threats,
-## falls only by the decay hooks (a raid that CELL HOLDS, cure objectives), and at the config
-## threshold the city is infected and Solace wins the raid. Pure functions of (heat, per-step living-threat counts)
-## and the config: no randomness, every number from CampaignConfigData. Operatives are never
-## touched here (Q24.1 / RD-03: operatives are never killed during raids).
+## Plan 2 WH-12 (Solace raid hook), reduced by Phase 2b / R-G. Solace now plays the Infected Tide (CorporationData.raid_model
+## "tide": SolaceTideRules, SolaceTideCampaign); the step-based population infection and its campaign figure `infection_bp`
+## are retired, and nothing in scripts/core reads them any more. What is left is read by the raid VIEWS until Phase 3 replaces
+## them: scripts/ui/hq_scene.gd calls `preview` (the old infection chip over a resolver projection, which is now always
+## "does not apply" because RaidResolver never fills the infection fields) and `heat_band_index` is the Bloom's Heat band.
+## Delete this file with the Phase 3 raid UI. Pure functions of the config; no randomness.
 
 const SOLACE_ID := &"solace"
 ## Unit conversion, not tuning: basis points per whole percent.
@@ -28,11 +26,6 @@ static func heat_band_index(campaign: CampaignState, cfg: CampaignConfigData) ->
 	return idx
 
 
-## Infection (bp) a raid starts at: the campaign's figure.
-static func start_bp(campaign: CampaignState, cfg: CampaignConfigData) -> int:
-	return clampi(campaign.corp_theme.solace.infection_bp, 0, cfg.raid_infection_lost_bp)
-
-
 ## Whether a raid ended CELL HOLDS: the campaign survived and no node was TAKEN.
 static func cell_holds(campaign_lost: bool, taken_count: int) -> bool:
 	return not campaign_lost and taken_count <= 0
@@ -46,16 +39,6 @@ static func hold_decay_bp(threats_destroyed: int, cfg: CampaignConfigData) -> in
 ## `bp` after a fall of `amount`, never below 0.
 static func after_decay(bp: int, amount: int) -> int:
 	return maxi(0, bp - maxi(0, amount))
-
-
-## A cure (Heat objective Site or Proxy Relay completion) on a Solace campaign: the figure falls by
-## decay_cure_bp. Returns the bp removed (0 outside Solace or at 0).
-static func cure(campaign: CampaignState, cfg: CampaignConfigData) -> int:
-	if not applies(campaign):
-		return 0
-	var before := campaign.corp_theme.solace.infection_bp
-	campaign.corp_theme.solace.infection_bp = after_decay(before, cfg.raid_infection_decay_cure_bp)
-	return before - campaign.corp_theme.solace.infection_bp
 
 
 ## Rise of one resolution step with `living` threats still alive (never negative).

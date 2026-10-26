@@ -78,7 +78,8 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 		s.run.map = ExploitBuildingGraph.generate(s.config, RngStreams.make_stream(run_seed, RngStreams.EXPLOIT_GRAPH_STREAM), exploit, tier)
 	else:
 		s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct, s.config.map_v2_enabled)
-	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false)
+	var fa := SolaceTideCampaign.front_args(p_campaign, corp, s.config)
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, false, fa["infected"], fa["band"], fa["virus"])
 	s._bloom_load_keys(corp)
 	s._halcyon_begin_street(corp, site_id)
 	p_campaign.runs_started += 1
@@ -193,7 +194,8 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 		"elite": true, "next": [] as Array[StringName], "heat": 0}])
 	s.run.map = graph
 	if kind == "boss":
-		BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+		var fa := SolaceTideCampaign.front_args(p_campaign, corp, s.config)
+		BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true, fa["infected"], fa["band"], fa["virus"])
 		s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
@@ -282,7 +284,8 @@ static func start_hq_ladder(p_resolver: CombatResolver, p_campaign: CampaignStat
 		s._halcyon_begin_hq(corp, site_id, graph_stream)
 	else:
 		s.run.map = SolaceHqGraph.generate(s.config, graph_stream)
-	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true)
+	var fa := SolaceTideCampaign.front_args(p_campaign, corp, s.config)
+	BloomRules.begin(s.run.corp_theme.solace, s.config, corp, tier, true, fa["infected"], fa["band"], fa["virus"])
 	s._bloom_load_keys(corp)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "HQ ladder started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
@@ -903,7 +906,7 @@ func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenera
 	elif bool(run.current_node().get("boss", false)) and corporation != null and corporation.final_boss != null:
 		enemy_id = corporation.final_boss.id  # WH-10: the HQ ladder's crown is the final boss
 		if run.kind == HQ_LADDER_KIND:
-			boss_exploits = CampaignRules.boss_overrides(campaign, corporation)  # the Exploits bite the crown only
+			boss_exploits = CampaignRules.breach_overrides(campaign, corporation, config)  # the Exploits bite the crown only
 	var seed := combat_rng.randi()
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
@@ -2206,6 +2209,8 @@ func _complete_run() -> void:
 			_add_heat(int(e["amount"]), String(e.get("source_id", "daemon")))
 	if corporation != null:
 		var done := CampaignRules.on_run_completed(campaign, corporation, config, run, lookup)
+		if run.kind != EVENT_KIND:
+			done.append_array(CampaignRules.on_run_closed(campaign, corporation, config, lookup, false))  # the Infected Tide counts the netrun
 		CampaignRules.name_pending_raids(campaign, lookup, done)
 		last_events.append_array(done)
 		_eye_turn_end(done)
@@ -2237,6 +2242,8 @@ func _die() -> void:
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
 	_add_heat(HeatRules.death_heat(campaign, config, run.tier), "operative death")
+	if corporation != null and run.kind != EVENT_KIND:  # the Infected Tide counts the netrun; a dead Genome Core run is a failed breach
+		last_events.append_array(CampaignRules.on_run_closed(campaign, corporation, config, lookup, run.kind == "boss" or run.kind == HQ_LADDER_KIND))
 	_eye_turn_end([] as Array[Dictionary])
 
 
@@ -2320,6 +2327,7 @@ func _bank_assets_to_armory() -> void:
 			last_events.append({"type": "armory_full", "asset": a, "text": "Armory full (%d): %s discarded." % [config.armory_capacity, a]})
 			continue
 		campaign.armory.append(a)
+		SolaceTideCampaign.asset_banked(campaign, config, lookup, a)  # R-C: an Armory asset is a defense card of the tide
 	run.banked_assets.clear()
 
 

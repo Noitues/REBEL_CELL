@@ -13,8 +13,11 @@ const SOLACE_ID := &"solace"
 
 
 ## Starts the Bloom on `b` for a netrun of `tier` (1..4) or an HQ run. Disabled for any other
-## corporation or when the pace table gives 0.
-static func begin(b: BloomState, cfg: CampaignConfigData, corp: CorporationData, tier: int, hq: bool) -> void:
+## corporation or when the pace table gives 0. R-D (Infected Tide): each of the `infected` INFECTED cards moves the start
+## front one step closer (`start_front_gap`), a step being the entry pace at the campaign's Heat band `heat_band` and with the
+## Virus key `virus`. A start gap of 0 or less is CAUGHT at the first entry.
+static func begin(b: BloomState, cfg: CampaignConfigData, corp: CorporationData, tier: int, hq: bool, infected: int = 0,
+		heat_band: int = 0, virus: bool = false) -> void:
 	var fresh := BloomState.new()
 	b.front_milli = fresh.front_milli
 	b.layer_milli = 0
@@ -29,7 +32,19 @@ static func begin(b: BloomState, cfg: CampaignConfigData, corp: CorporationData,
 		return
 	var gaps := cfg.bloom_start_gap_milli_by_tier
 	var start_gap: int = cfg.bloom_hq_start_gap_milli if hq else int(gaps[clampi(tier - 1, 0, gaps.size() - 1)])
+	if infected > 0:
+		start_gap = start_front_gap(cfg, tier, hq, start_gap, infected, heat_band, virus)
 	b.front_milli = -start_gap
+
+
+## The start gap with `infected` INFECTED cards (R-D): `SolaceTideRules.bloom_start_gap` over this netrun's real entry pace
+## (the node pace of `tier`, or the HQ's, scaled by the Heat band and the Virus key).
+static func start_front_gap(cfg: CampaignConfigData, tier: int, hq: bool, start_gap: int, infected: int, heat_band: int, virus: bool) -> int:
+	var probe := BloomState.new()
+	probe.hq = hq
+	probe.heat_pct = heat_pct_for_band(cfg, heat_band)
+	var pace := scaled_with_virus(probe, cfg, _pace_node(probe, cfg, tier), false, virus)
+	return SolaceTideRules.bloom_start_gap(start_gap, pace, infected, cfg)
 
 
 static func gap_milli(b: BloomState) -> int:

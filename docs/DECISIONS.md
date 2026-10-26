@@ -10073,3 +10073,36 @@ Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch
 - **Per-corp switch.** `CorporationData.raid_model` (`&"resolver"` by default, `&"tide"` in solace.tres) picks the raid rules of a
   corporation's campaign; `CorporationData.uses_tide()`. Rule 8: `tools/schema_smoke_checks.gd` `_raid_model_switch`
   (defaults, which corp ships what, a bad word fails `validate`). Meridian, Halcyon, Orbital and REBEL_CELL keep `RaidResolver`.
+- **Campaign wiring (new `SolaceTideCampaign`, `SolaceTideRaid`).** `CampaignRules.project_raid` returns null for a tide corporation and
+  `fight_raid` branches; `project_tide_raid` plays the raid on a copy (preview == result). The tide's block is
+  `campaign.corp_theme.solace.tide`; Heat, Schematics, HOME, the Sites' condition and the Exploits held stay the campaign's own,
+  mapped in and out around every raid: claimed OK / DOWN, TAKEN, CLEARED = pending. A raid is `open` (DECAY, once, committed at
+  once) -> PLAN / RESPONSE (undoable) -> `resolve` (the checkpoint; nothing rewinds after it). The raid's draws come from the
+  `raids` stream of an `RngStreams` seeded from (campaign seed, raid index), a pure function, so a projection equals the result and
+  a load resumes identically. The Armory drop already uses the netrun's `rewards` stream. Without a player's plan an automatic
+  defense plays (the placement with the least forecast damage under HOLD, weights `solace_tide_auto_*_weight`).
+- **Queue.** A tide campaign queues no resolver raid (claim, story, retaliation, node-built): `queue_raid` returns nothing, and a raid Heat
+  level sets `tide.heat_crossed` (PURGE also `purge_queued`) instead of queuing. The netrun session calls `CampaignRules.on_run_closed`
+  after every completed or dead run: the dose clock, the Heat levels reached (also those a raid's own Heat reached: the oracle fires them at
+  the next netrun), `note_netrun` (cadence 3 or a level), one raid queued at most (only when none waits). The campaign's own rules already
+  pay the netrun's Heat, Schematics and Exploit, so the tide's `netrun_complete` / `netrun_death` are not called. A dead Genome Core run
+  is `breach_failed` (`SolaceTideRules.breach_retry`: one retry, then `campaign.exploits` is emptied); an Exploit Site that is still
+  claimed with its Exploit not held is `retake_sites` (launchable, kind "netrun", completes without touching the Site's status, pays
+  `exploit_heat` again, no second story beat). Extra block fields beyond spec section 9: `heat_crossed`, `decayed` (an opened raid
+  decays once even across a save).
+- **HQ step.** The campaign's own actions in the spec's order: `CampaignRules.tide_hq_step` = PATCH (`repair_home`), REPAIR one DOWN Site
+  (`CampaignRules.repair`, the campaign's own price), CLEAN (`solace_tide_clean_price`, removes the highest-id INFECTED card) or COOL
+  (`buy_heat_reduction`). Installing a CLEARED Site stays the player's claim (it needs a node type).
+- **R-D.** `BloomRules.begin(..., infected, heat_band, virus)`: each INFECTED card moves the start front one real entry-pace step closer
+  (Heat band and Virus key as the golden's `checks.bloom_start_gap`); `SolaceTideCampaign.front_args` feeds the three netrun starts.
+- **R-C mapping (Claude's call, in `campaign_config.tres`).** An Armory asset becomes a card when it is banked, by its asset type:
+  damage asset (TURRET) -> `D` GUARD, ICE Lock -> `N` JAM, Decoy -> `E` SHIFT (`solace_tide_asset_card_types` / `_verbs`). A living
+  operative stationed on a Site adds its class card to the raid deck while it stands there (derived at load, never saved):
+  breaker and wrecker `D` GUARD, overclocker `D` SHIFT, ghost `E` GUARD, phantom `E` SHIFT, rigger `N` GUARD, botnet `N` JAM, hivemind
+  `N` SHIFT (`solace_tide_class_cards`). The 8-card start deck stays as the Cell's baseline (it stood in for exactly this in the oracle).
+  Q for the designer: is the baseline kept once the Armory fills, or does the deck shrink to Armory + crew?
+- **R-G.** `infection_bp` is gone from `SolaceCampaignTheme` (the save keeps only the tide block); `RaidResolver` no longer infects any
+  campaign; the Heat objective / Proxy Relay cure is dropped (doses cure now). `solace_raid_rules.gd` stays only because
+  `scripts/ui/hq_scene.gd` calls `SolaceRaidRules.preview` (it now always reads "does not apply"); delete it with the Phase 3 raid UI.
+  Save format: Solace campaigns save `corp_theme.solace.tide` (deck + counters) instead of `corp_theme.solace.infection_bp`;
+  no compatibility needed (ruling 2026-10-05), `SAVE_VERSION` unchanged.
