@@ -205,7 +205,7 @@ func _gap(px: float = 4.0) -> Control:
 
 
 func _tier_word(t: String) -> String:
-	return tr(t)
+	return _tierw(t)
 
 
 ## A tier glyph and its word.
@@ -366,17 +366,35 @@ func _card_tip(c: Dictionary) -> String:
 		"SHIFT": tr("SHIFT: stands guard, or moves a sentry at the RESPONSE."),
 		"JAM": tr("JAM: stands guard, or stops the hunter at the RESPONSE."),
 		"WOUND": tr("INFECTED: a dead card that clogs the hand."), "DOSE": tr("DOSE: a healthy card that cures at DECAY.")}
-	return "%s (%s)" % [verb_tip.get(c["verb"], ""), tr(_type_name(String(c["type"])))] if c["verb"] != "WOUND" else verb_tip["WOUND"]
+	return "%s (%s)" % [verb_tip.get(c["verb"], ""), _type_name(String(c["type"]))] if c["verb"] != "WOUND" else verb_tip["WOUND"]
 
 
 func _type_name(t: String) -> String:
 	match t:
 		"D":
-			return "DRONE"
+			return tr("DRONE")
 		"N":
-			return "NETRUNNER"
+			return tr("NETRUNNER")
 		"E":
-			return "ENFORCER"
+			return tr("ENFORCER")
+	return t
+
+
+## The raid tier words, translated.
+func _tierw(t: String) -> String:
+	match t:
+		"HOLDS":
+			return tr("HOLDS")
+		"BATTERED":
+			return tr("BATTERED")
+		"DAMAGED":
+			return tr("DAMAGED")
+		"BREACHED":
+			return tr("BREACHED")
+		"EVADED":
+			return tr("EVADED")
+		"CITY LOST":
+			return tr("CITY LOST")
 	return t
 
 
@@ -441,6 +459,7 @@ func _sync_layer() -> void:
 	layer.home_tiers = []
 	layer.ghost_home = false
 	layer.beams = []
+	layer.preview = []
 	layer.blocks = []
 	layer.hits = {}
 	layer.sentries = _sentries_now()
@@ -451,6 +470,8 @@ func _sync_layer() -> void:
 			layer.home_tiers = f.route_tiers()
 	if f.phase == TideRaidFlow.Phase.PLAYOUT or (f.phase == TideRaidFlow.Phase.AFTERMATH and f.raid.resolved and not f.raid.over):
 		_playout_beams()
+	if f.phase == TideRaidFlow.Phase.RESPONSE and not _preview.is_empty():
+		_set_layer_preview(_preview)
 
 
 func _sentries_now() -> Dictionary:
@@ -736,9 +757,15 @@ func _beat_line(b: Dictionary) -> String:
 			"shield":
 				parts.append(tr("HOME shielded"))
 	var head := _beam_label(b)
+	var line := "%s: %s" % [head, ", ".join(parts) if not parts.is_empty() else tr("touches nothing")]
 	if String(b["kind"]) == "sealed_b":
-		head += " (%s)" % (tr("lean flipped") if bool(b.get("flipped", false)) else tr("the corp picked it"))
-	return "%s: %s" % [head, ", ".join(parts) if not parts.is_empty() else tr("touches nothing")]
+		var others := SolaceTideRules._others(flow.raid.ctx, flow.real_a())
+		var lean: String = ["A", "B", "C"][int(others[int(b["lean"])])]
+		var pick: String = ["A", "B", "C"][int(others[int(b["pick"])])]
+		line = (tr("The corp leans to route %s") % lean) + "\n" + (tr("JAM flips the pick: route %s") % pick if bool(b.get("flipped", false)) else tr("It picks route %s") % pick) + "\n" + line
+	elif String(b["kind"]) == "hunter":
+		line = tr("HUNTER REVEAL: street %d") % (int(flow.raid.ctx.draw["hunter_real"]) + 1) + "\n" + line
+	return line
 
 
 func done_hq() -> void:
@@ -792,7 +819,7 @@ func _beam_legend() -> void:
 		var live := i < n_fire
 		var r := _hrow(6)
 		r.add_child(_type_icon(String(ln["type"]), not live))
-		r.add_child(_lab(tr("Known beam %d: %s, fires after the RESPONSE") % [i + 1, tr(_type_name(String(ln["type"])))] if live else tr("Known beam %d: waits for more Heat") % (i + 1), SMALL, INK if live else Palette.TIDE_OFF, true))
+		r.add_child(_lab(tr("Known beam %d: %s, fires after the RESPONSE") % [i + 1, _type_name(String(ln["type"]))] if live else tr("Known beam %d: waits for more Heat") % (i + 1), SMALL, INK if live else Palette.TIDE_OFF, true))
 		body.add_child(r)
 	var rr := _hrow(6)
 	for i in (d["cands"] as Array).size():
@@ -828,7 +855,7 @@ func _guard_line() -> Control:
 	box.add_child(_lab(tr("HOLD"), TXT, INK, false))
 	box.add_child(_arrow_view(INK))
 	box.add_child(TideGlyphView.tier(String(g["hold"]), 18.0))
-	box.add_child(_lab(tr(String(g["hold"])), TXT, TideGlyphs.tier_color(String(g["hold"])), false))
+	box.add_child(_lab(_tierw(String(g["hold"])), TXT, TideGlyphs.tier_color(String(g["hold"])), false))
 	if (g["best"] as Dictionary).is_empty():
 		box.add_child(_lab("· " + tr("no response changes this"), SMALL, DIM, true))
 	else:
@@ -837,7 +864,7 @@ func _guard_line() -> Control:
 		box.add_child(TideGlyphView.resp(best["resp"], 24.0))
 		box.add_child(_arrow_view(GOLD))
 		box.add_child(TideGlyphView.tier(String(best["worst"]), 18.0))
-		box.add_child(_lab(tr(String(best["worst"])), TXT, TideGlyphs.tier_color(String(best["worst"])), false))
+		box.add_child(_lab(_tierw(String(best["worst"])), TXT, TideGlyphs.tier_color(String(best["worst"])), false))
 	return box
 
 
@@ -854,7 +881,7 @@ func _summary_lines() -> void:
 	if bool(s["locked"]):
 		var r := _hrow(4)
 		r.add_child(TideGlyphView.tier(String(s["worst"]), 18.0))
-		r.add_child(_lab(tr("LOCKED: every outcome is %s under HOLD.") % tr(String(s["worst"])), TXT, GOLD, true))
+		r.add_child(_lab(tr("LOCKED: every outcome is %s under HOLD.") % _tierw(String(s["worst"])), TXT, GOLD, true))
 		body.add_child(r)
 	else:
 		var r := _hrow(4)
@@ -878,7 +905,7 @@ func _page_forecast() -> void:
 		col.add_theme_constant_override("separation", 3)
 		var head := _hrow(4)
 		head.add_child(_type_icon(String(flow.raid.ctx.draw["cands"][a]["type"]), false))
-		head.add_child(_lab("A=%s" % ["A", "B", "C"][a], SMALL, INK, false))
+		head.add_child(_lab(["A", "B", "C"][a], SMALL, INK, false))
 		head.add_child(TideGlyphView.tier(String(tiers[a]), 16.0))
 		col.add_child(head)
 		var grid := GridContainer.new()
@@ -896,7 +923,7 @@ func _page_forecast() -> void:
 				pip.custom_minimum_size = Vector2(28, 28)
 				var tw := tier_word
 				pip.draw.connect(func() -> void: TideGlyphs.tier_pip(pip, pip.size * 0.5, tw, 12.0))
-				pip.tooltip_text = tr("B slot %d, hunter street %d: %s") % [slot + 1, h + 1, tr(tw)]
+				pip.tooltip_text = tr("B slot %d, hunter street %d: %s") % [slot + 1, h + 1, _tierw(tw)]
 				cell.queue_free()
 				grid.add_child(pip)
 		col.add_child(grid)
@@ -931,7 +958,7 @@ func _page_reveal() -> void:
 	var ln: Dictionary = flow.raid.ctx.draw["cands"][flow.real_a()]
 	var r := _hrow(6)
 	r.add_child(_type_icon(String(ln["type"]), false))
-	r.add_child(_lab(tr("Sealed route A is a %s route. It fires after your RESPONSE.") % tr(_type_name(String(ln["type"]))), TXT))
+	r.add_child(_lab(tr("Sealed route A is a %s route. It fires after your RESPONSE.") % _type_name(String(ln["type"])), TXT))
 	body.add_child(r)
 	if flow.fast:
 		body.add_child(_fast_chip())
@@ -1000,8 +1027,8 @@ func _group_row(gi: int) -> Control:
 	var row := _hrow(6)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 6
-	row.offset_right = -6
+	row.offset_left = 4
+	row.offset_right = -2
 	var sent_t := ""
 	if String(m["head"]) == "REDEPLOY":
 		sent_t = String(flow.raid.ctx.cards[(flow.raid.place["sentries"] as Dictionary).get(m["resp"][1], "")][0]) if (flow.raid.place["sentries"] as Dictionary).has(m["resp"][1]) else ""
@@ -1023,10 +1050,10 @@ func _group_row(gi: int) -> Control:
 	var best := String(m["best"])
 	var tr_ := _hrow(2)
 	tr_.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tr_.add_child(_ignore(TideGlyphView.tier(worst, 20.0)))
+	tr_.add_child(_ignore(TideGlyphView.tier(worst, 18.0)))
 	if best != worst:
 		tr_.add_child(_lab("/", SMALL, DIM, false))
-		tr_.add_child(_ignore(TideGlyphView.tier(best, 20.0)))
+		tr_.add_child(_ignore(TideGlyphView.tier(best, 18.0)))
 	row.add_child(tr_)
 	btn.add_child(row)
 	btn.tooltip_text = _group_tip(g)
@@ -1055,7 +1082,7 @@ func _card_need(r: Array) -> String:
 		"REDEPLOY", "DIVERT":
 			return tr("needs a SHIFT card")
 		"DEPLOY":
-			return tr("uses a %s card") % tr(_type_name(String(r[1])))
+			return tr("uses a %s card") % _type_name(String(r[1]))
 		"JAM", "JAM_B":
 			return tr("needs a JAM card")
 	return ""
@@ -1072,7 +1099,7 @@ func _group_label(g: Dictionary) -> String:
 		"REDEPLOY":
 			base = tr("MOVE %s") % flow.site_name(StringName(r0[1]))
 		"DEPLOY":
-			base = tr("DEPLOY %s") % tr(_type_name(String(r0[1])))
+			base = tr("DEPLOY %s") % _type_name(String(r0[1]))
 		"SACRIFICE":
 			base = tr("SACRIFICE")
 		"DIVERT":
@@ -1089,7 +1116,7 @@ func _resp_label(r: Array) -> String:
 		"JAM_B":
 			return tr("JAM sealed B")
 		"DEPLOY":
-			return tr("DEPLOY %s > %s") % [tr(_type_name(String(r[1]))), flow.site_name(StringName(r[2]))]
+			return tr("DEPLOY %s > %s") % [_type_name(String(r[1])), flow.site_name(StringName(r[2]))]
 		"SACRIFICE":
 			return tr("SACRIFICE %s") % flow.site_name(StringName(r[1]))
 		"REDEPLOY":
@@ -1102,7 +1129,7 @@ func _resp_label(r: Array) -> String:
 func _group_tip(g: Dictionary) -> String:
 	var m: Dictionary = g["members"][0]
 	var lines := PackedStringArray([_resp_label(m["resp"])])
-	lines.append(tr("Worst %s, best %s over the remaining outcomes.") % [tr(String(m["worst"])), tr(String(m["best"]))])
+	lines.append(tr("Worst %s, best %s over the remaining outcomes.") % [_tierw(String(m["worst"])), _tierw(String(m["best"]))])
 	if bool(g["better"]):
 		lines.append(tr("Better than doing nothing."))
 	return "\n".join(lines)
@@ -1121,14 +1148,25 @@ func _variants(gi: int) -> Control:
 
 
 func _hover_group(gi: int) -> void:
-	if flow.phase != TideRaidFlow.Phase.RESPONSE or flow.resp_sel >= 0 and flow.resp_sel != gi:
+	if flow.phase != TideRaidFlow.Phase.RESPONSE or flow.resp_sel >= 0 or layer == null:
 		return
+	_set_layer_preview(flow.groups[gi]["members"][0]["resp"])
+
+
+func _set_layer_preview(r: Array) -> void:
+	layer.preview = r
+	layer.preview_type = ""
+	if not r.is_empty() and String(r[0]) == "REDEPLOY":
+		var sent: Dictionary = flow.raid.place["sentries"]
+		if sent.has(r[1]):
+			layer.preview_type = String(flow.raid.ctx.cards[sent[r[1]]][0])
 
 
 func select_group(gi: int, mi: int = 0) -> void:
 	_preview = flow.select_group(gi, mi)
 	_status = ""
 	_rebuild()
+	_set_layer_preview(_preview)
 
 
 func _page_playout() -> void:
@@ -1147,14 +1185,14 @@ func _page_aftermath() -> void:
 	stamp.name = "AftermathStamp"
 	if tier_word != "CITY LOST":
 		stamp.add_child(TideGlyphView.tier(tier_word, 48.0))
-		stamp.add_child(_lab(tr(tier_word), 28, TideGlyphs.tier_color(tier_word), false))
+		stamp.add_child(_lab(_tierw(tier_word), 28, TideGlyphs.tier_color(tier_word), false))
 	else:
 		stamp.add_child(TideGlyphView.tier("BREACHED", 48.0))
 		stamp.add_child(_lab(tr("CITY LOST"), 28, TideGlyphs.RED, false))
 	body.add_child(stamp)
 	var banner := String(a["banner"])
 	var col := TideGlyphs.TIER_COLOR["HOLDS"] if banner == "CELL HOLDS" else TideGlyphs.RED
-	body.add_child(_lab(tr(banner), BIG, col))
+	body.add_child(_lab(_banner_word(banner), BIG, col))
 	if not bool(a["campaign_lost"]):
 		body.add_child(_lab(tr("HOME %d to %d") % [a["home_before"], a["home_after"]], TXT))
 		body.add_child(_lab(tr("%d DOWN, %d TAKEN, %d INFECTED in all") % [(a["down"] as Array).size(), (a["taken"] as Array).size(), a["infected"]], TXT))
@@ -1210,6 +1248,17 @@ func _page_hq() -> void:
 
 
 ## The tier ladder, best to worst, pinned in the panel foot.
+func _banner_word(b: String) -> String:
+	match b:
+		"CELL HOLDS":
+			return tr("CELL HOLDS")
+		"BREACHED":
+			return tr("BREACHED")
+		"CITY LOST":
+			return tr("CITY LOST")
+	return b
+
+
 func _ladder() -> Control:
 	var box := HFlowContainer.new()
 	box.name = "TierLadder"
@@ -1217,6 +1266,6 @@ func _ladder() -> Control:
 	for t in TideGlyphs.TIER_LADDER:
 		var r := _hrow(2)
 		r.add_child(TideGlyphView.tier(t, 16.0))
-		r.add_child(_lab(tr(t), 11, TideGlyphs.tier_color(t), false))
+		r.add_child(_lab(_tierw(t), 11, TideGlyphs.tier_color(t), false))
 		box.add_child(r)
 	return box

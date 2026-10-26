@@ -41,6 +41,11 @@ var blocks: Array = []
 var home_tiers: Array = []
 var ghost_home: bool = false
 var hovered: StringName = &""
+## The response being previewed (hovered or picked): [] or its response array, drawn as a ghost on the map.
+var preview: Array = []
+var preview_type: String = ""
+const SENTRY_SCALE := 1.3
+const GHOST_ALPHA := 0.7
 var _font: Font = null
 
 
@@ -101,6 +106,7 @@ func _draw() -> void:
 	_draw_hits()
 	_draw_sentries()
 	_draw_home()
+	_draw_preview()
 
 
 func _draw_tints() -> void:
@@ -193,7 +199,7 @@ func _draw_sentries() -> void:
 		if p.x == INF:
 			continue
 		var c: Array = sentries[id]
-		TideGlyphs.sentry(self, p + Vector2(0.0, -22.0), String(c[0]), String(c[1]))
+		TideGlyphs.sentry(self, p + Vector2(0.0, -24.0), String(c[0]), String(c[1]), SENTRY_SCALE)
 		draw_line(p + Vector2(0.0, -9.0), p + Vector2(0.0, -9.0), TideGlyphs.INK, 1.0)
 
 
@@ -212,3 +218,39 @@ func _draw_home() -> void:
 	var cp := at(core)
 	if cp.x != INF:
 		draw_arc(cp, 26.0, 0.0, TAU, 28, TideGlyphs.COBALT_HOT, 2.0)
+
+
+## A response's effect on the board as a ghost: DEPLOY a sentry dropping in, REDEPLOY an arrow from the source to the target, SACRIFICE a
+## dome on HOME and a cobalt crumble on the district, JAM a struck-out hound on the hunter lanes.
+func _draw_preview() -> void:
+	if preview.is_empty():
+		return
+	var head := String(preview[0])
+	var ghost_col := Color(TideGlyphs.GOLD, GHOST_ALPHA)
+	match head:
+		"DEPLOY":
+			var p := at(StringName(preview[2]))
+			if p.x != INF:
+				TideGlyphs.sentry(self, p + Vector2(0.0, -24.0), String(preview[1]), "GUARD", SENTRY_SCALE)
+				draw_arc(p, 20.0, 0.0, TAU, 20, ghost_col, 2.0)
+		"REDEPLOY":
+			var a := at(StringName(preview[1]))
+			var b := at(StringName(preview[2]))
+			if a.x != INF and b.x != INF:
+				draw_line(a + Vector2(0.0, -24.0), b + Vector2(0.0, -24.0), ghost_col, 3.0)
+				TideGlyphs.sentry(self, b + Vector2(0.0, -24.0), preview_type, "SHIFT", SENTRY_SCALE)
+				draw_arc(b, 20.0, 0.0, TAU, 20, ghost_col, 2.0)
+		"SACRIFICE":
+			var s := at(StringName(preview[1]))
+			if s.x != INF:
+				draw_circle(s, FRONT_R, TAKEN_COL)
+				draw_arc(s, 20.0, 0.0, TAU, 20, TideGlyphs.COBALT_HOT, 3.0)
+			var h := at(home)
+			if h.x != INF:
+				draw_arc(h + Vector2(0.0, 6.0), 30.0, PI, TAU, 20, TideGlyphs.COBALT_HOT, 3.0)
+		"JAM", "JAM_B":
+			for b in beams:
+				if String(b["role"]) == "hunter":
+					var pts := path(_beam_ids(b))
+					if pts.size() > 1:
+						draw_line(pts[0] + Vector2(-12, -12), pts[0] + Vector2(12, 12), TideGlyphs.RED, 4.0)

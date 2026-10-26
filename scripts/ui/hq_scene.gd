@@ -659,7 +659,10 @@ func show_tide_raid() -> void:
 	tide_flow = flow
 	var screen := TideRaidScreen.new()
 	tide_screen = screen
-	screen.custom_minimum_size = Vector2(size.x, maxf(size.y - hud.get_global_rect().end.y, 200.0))
+	_fit_tide_screen()
+	var host_box := _panel_host.get_parent() as Control
+	if host_box != null and not host_box.resized.is_connected(_fit_tide_screen):
+		host_box.resized.connect(_fit_tide_screen)
 	screen.finished.connect(_tide_done)
 	_set_panel(screen, "raid_tide")
 	var g := tide_graph(flow)
@@ -667,6 +670,14 @@ func show_tide_raid() -> void:
 	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
 	screen.setup(flow, city_overlay)
 	get_tree().process_frame.connect(_frame_tide, CONNECT_ONE_SHOT)
+
+
+## The tide screen fills the page's visible room (it follows the page host when the bars above change its height).
+func _fit_tide_screen() -> void:
+	if tide_screen == null or not is_instance_valid(tide_screen):
+		return
+	var host_box := _panel_host.get_parent() as Control
+	tide_screen.custom_minimum_size = Vector2(size.x, host_box.size.y - 2.0) if host_box != null and host_box.size.y > 200.0 		else Vector2(size.x, maxf(size.y - hud.get_global_rect().end.y, 200.0))
 
 
 ## The city graph of the tide raid: the Cell's network (claimed and TAKEN Sites, HOME, the Genome Core) and every Site on a raid line.
@@ -704,8 +715,8 @@ func _frame_tide() -> void:
 	var pts := PackedVector2Array()
 	for n in city_overlay.nodes:
 		pts.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
-	var scr := get_global_rect()
-	var top := hud.get_global_rect().end.y + TideRaidScreen.HUD_H + TIDE_FREE_MARGIN
+	var scr := tide_screen.get_global_rect() if tide_screen != null and is_instance_valid(tide_screen) else get_global_rect()
+	var top := scr.position.y + TideRaidScreen.HUD_H + TIDE_FREE_MARGIN * 1.5
 	var left := scr.position.x + TideRaidScreen.DECK_W + TIDE_FREE_MARGIN * 2.0
 	var area := Rect2(Vector2(left, top), Vector2(scr.end.x - TideRaidScreen.PANEL_W - TIDE_FREE_MARGIN * 3.0 - left, scr.end.y - TideRaidScreen.HAND_H - TIDE_FREE_MARGIN * 2.0 - top))
 	wireframe.frame_points(pts, area, playout_zoom(), RaidZoomFit.zoom_of(CityView3D.CONFIG.zoom_ortho_max, size.x))

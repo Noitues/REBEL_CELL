@@ -206,22 +206,22 @@ func pick_card(id: String) -> bool:
 ## Why card `id` cannot be placed on `site` ("" when it can).
 func place_error(id: String, site: StringName) -> String:
 	if id == "":
-		return "Pick a card first."
+		return TextDb.mark("Pick a card first.")
 	if not SolaceTideRules.PLACEABLE.has(raid.ctx.cards[id][1]):
-		return "That card cannot stand guard."
+		return TextDb.mark("That card cannot stand guard.")
 	if not raid.ctx.rel.has(site):
-		return "No beam reaches that district."
+		return TextDb.mark("No beam reaches that district.")
 	if (raid.place["sentries"] as Dictionary).has(site):
-		return "A sentry already stands there."
+		return TextDb.mark("A sentry already stands there.")
 	if (raid.place["sentries"] as Dictionary).size() >= cfg.solace_tide_max_placed:
-		return "Only %d cards can stand guard." % cfg.solace_tide_max_placed
+		return TextDb.mark("Only %d cards can stand guard.") % cfg.solace_tide_max_placed
 	return ""
 
 
 ## Places the picked card on `site` (a Site on the raid's lines). Returns the error ("" = placed).
 func place_on(site: StringName) -> String:
 	if phase != Phase.PLAN:
-		return "Not now."
+		return TextDb.mark("Not now.")
 	var err := place_error(sel_card, site)
 	if err != "":
 		return err
@@ -509,19 +509,19 @@ func _build_ghosts(opts: Array) -> void:
 	var sent_n := (raid.place["sentries"] as Dictionary).size()
 	if not heads.has("REDEPLOY"):
 		if not has_shift:
-			ghosts.append(["REDEPLOY", "REDEPLOY: no SHIFT card in hand"])
+			ghosts.append(["REDEPLOY", TextDb.mark("REDEPLOY: no SHIFT card in hand")])
 		elif sent_n == 0:
-			ghosts.append(["REDEPLOY", "REDEPLOY: no sentry on the board"])
+			ghosts.append(["REDEPLOY", TextDb.mark("REDEPLOY: no sentry on the board")])
 		else:
-			ghosts.append(["REDEPLOY", "REDEPLOY: no free district"])
+			ghosts.append(["REDEPLOY", TextDb.mark("REDEPLOY: no free district")])
 	if not heads.has("DEPLOY"):
-		ghosts.append(["DEPLOY", "DEPLOY: no card left in hand" if sw.rhand.is_empty() else "DEPLOY: no free district"])
+		ghosts.append(["DEPLOY", TextDb.mark("DEPLOY: no card left in hand") if sw.rhand.is_empty() else TextDb.mark("DEPLOY: no free district")])
 	if not heads.has("JAM"):
-		ghosts.append(["JAM", "JAM: no JAM card in hand"])
+		ghosts.append(["JAM", TextDb.mark("JAM: no JAM card in hand")])
 	if cfg.solace_tide_divert and not heads.has("DIVERT"):
-		ghosts.append(["DIVERT", "DIVERT: no SHIFT card in hand" if not has_shift else "DIVERT: no beam to bend"])
+		ghosts.append(["DIVERT", TextDb.mark("DIVERT: no SHIFT card in hand") if not has_shift else TextDb.mark("DIVERT: no beam to bend")])
 	if not heads.has("SACRIFICE"):
-		ghosts.append(["SACRIFICE", "SACRIFICE: not available this raid"])
+		ghosts.append(["SACRIFICE", TextDb.mark("SACRIFICE: not available this raid")])
 
 
 ## The honest guard line of the plan (HOLD) and the best row: {hold, best: {resp, worst} | {}, uniform}. In PLAN it is
