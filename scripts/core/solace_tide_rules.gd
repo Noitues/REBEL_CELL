@@ -169,6 +169,14 @@ static func check_loss(st: SolaceTideState) -> void:
 		st.lost = SolaceTideState.LOST_CITY
 
 
+## How many more INFECTED cards end the city (R-I, for the PLAN banner "1 more = CITY LOST"): the smallest k with
+## INFECTED + k > healthy (DOSE counts as healthy). 0 when INFECTED already outnumber healthy cards: the raid's close
+## will end the campaign unless HOME falls first (BREACHED is checked first).
+static func loss_margin(st: SolaceTideState) -> int:
+	var w := st.wound_count()
+	return maxi(0, st.deck.size() - 2 * w + 1)
+
+
 ## Adds one INFECTED card per site (id "w%03d"; `type` = the site). `loss` = they are lost Sites (they count toward
 ## the spread and set `last_lost` to the lowest site id); a HOME hit is not a loss.
 static func add_infected(st: SolaceTideState, sites: Array, loss: bool = true) -> void:
@@ -215,7 +223,9 @@ static func _live(owned: Dictionary, site: StringName) -> bool:
 # ------------------------------------------------------------------------------------------------ DECAY
 ## DECAY (every raid after the first, R-H): owned DOWN Sites go TAKEN, each adds an INFECTED card. Then the spread:
 ## `spread_min` or more Sites lost since the last raid. Doses (up to `doses_per_decay`) cancel the spread, else cure the
-## highest-id INFECTED card. A spread still pending adds an INFECTED card tied to the last lost Site. Checks CITY LOST.
+## highest-id INFECTED card. A spread still pending adds an INFECTED card tied to the last lost Site. DECAY never ends the
+## campaign (R-I, `solace_tide_city_lost_at_raid_end`): CITY LOST is checked when the raid closes; with the flag off
+## (H5) it is checked here.
 static func decay(st: SolaceTideState, cfg: CampaignConfigData) -> void:
 	var downs: Array = []
 	for s in st.owned.keys():
@@ -245,7 +255,8 @@ static func decay(st: SolaceTideState, cfg: CampaignConfigData) -> void:
 			st.remove_card(worst)
 	if spread:
 		add_infected(st, [st.last_lost], false)
-	check_loss(st)
+	if not cfg.solace_tide_city_lost_at_raid_end:
+		check_loss(st)
 
 
 # ------------------------------------------------------------------------------------------------ DRAW and HAND
@@ -259,6 +270,27 @@ static func _shuffle(arr: Array, rng: RandomNumberGenerator) -> void:
 
 static func _line(kind: String, cells: Array, line_type: String, home: bool) -> Dictionary:
 	return {"kind": kind, "cells": cells, "type": line_type, "home": home}
+
+
+## R-J: the paths of a pool through the most live owned Sites, in pool order (the known beams' candidates, as the sealed
+## beams' P-target rule); the whole pool when no path crosses a live owned Site.
+static func most_owned(paths: Array, st: SolaceTideState) -> Array:
+	var best := 0
+	var counts: Array[int] = []
+	for p in paths:
+		var n := 0
+		for s in p:
+			if st.is_live(s):
+				n += 1
+		counts.append(n)
+		best = maxi(best, n)
+	if best == 0:
+		return paths
+	var out: Array = []
+	for i in paths.size():
+		if counts[i] == best:
+			out.append(paths[i])
+	return out
 
 
 ## The raid's lines, from the `raids` stream (the order of draws is the spec's, section 4): candidate sort keys, the type
@@ -297,14 +329,19 @@ static func draw_lines(board: SolaceTideBoard, st: SolaceTideState, cfg: Campaig
 			others.append(k)
 	var real_b: int = others[rng.randi_range(0, others.size() - 1)]
 	var spool := board.street_pool(cand_cells, st.owned)
+	var kpool: Array = pool
+	var kspool: Array = spool
+	if cfg.solace_tide_known_target:
+		kpool = most_owned(pool, st)
+		kspool = most_owned(spool, st)
 	var known: Array = []
 	for _i in 1 + cfg.solace_tide_beam_heat.size():
 		var pct := cfg.solace_tide_early_route_pct if st.raid_n < cfg.solace_tide_early_raids else cfg.solace_tide_known_route_pct
 		if rng.randf() * 100.0 < float(pct):
-			var r: Array = pool[rng.randi_range(0, pool.size() - 1)]
+			var r: Array = kpool[rng.randi_range(0, kpool.size() - 1)]
 			known.append(_line("ROUTE", r.duplicate(), TYPES[rng.randi_range(0, TYPES.size() - 1)], true))
 		else:
-			var c: Array = spool[rng.randi_range(0, spool.size() - 1)]
+			var c: Array = kspool[rng.randi_range(0, kspool.size() - 1)]
 			known.append(_line("STREET", c.duplicate(), TYPES[rng.randi_range(0, TYPES.size() - 1)], false))
 	var htype: String = TYPES[rng.randi_range(0, TYPES.size() - 1)]
 	var hc: Array = []
@@ -382,7 +419,8 @@ static func make_ctx(board: SolaceTideBoard, st: SolaceTideState, cfg: CampaignC
 
 
 ## Starts raid `raid_idx`: resets the cadence count, runs DECAY (every raid after the first), then draws the lines and
-## the hand from `rng` (the `raids` stream). Returns null when DECAY ended the campaign (CITY LOST).
+## the hand from `rng` (the `raids` stream). Returns null when DECAY ended the campaign (CITY LOST; H5 only, R-I keeps
+## the raid going: `close` checks CITY LOST).
 static func begin_raid(board: SolaceTideBoard, st: SolaceTideState, cfg: CampaignConfigData,
 		rng: RandomNumberGenerator, raid_idx: int) -> Ctx:
 	st.netruns_since_raid = 0
@@ -902,11 +940,12 @@ static func netrun_death(st: SolaceTideState, cfg: CampaignConfigData, tier: int
 
 
 ## The close of every netrun, deaths included (netrun number `n`, from 1): a DOSE card every `dose_every`, then the
-## CITY LOST check.
+## CITY LOST check (H5 only: with `solace_tide_city_lost_at_raid_end`, R-I, only a raid's close checks it).
 static func end_netrun(st: SolaceTideState, cfg: CampaignConfigData, n: int) -> void:
 	if n % cfg.solace_tide_dose_every == 0:
 		add_dose(st)
-	check_loss(st)
+	if not cfg.solace_tide_city_lost_at_raid_end:
+		check_loss(st)
 
 
 ## Counts a netrun toward the raid cadence. True when a raid fires after it: `crossed` (the netrun crossed a raid Heat

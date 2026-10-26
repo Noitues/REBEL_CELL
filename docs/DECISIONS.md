@@ -10144,3 +10144,40 @@ Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch
   "more" fold, ghost rows with a reason, the guard line, the launch confirm (HOME drops on every outcome, or HOME at 1), the HOLD confirm,
   LOCKED fast resolve only when every row gives one tier on every outcome, five tier shapes, dimmed DONE beams, wordless cards.
 - The INFECTED front on the city map is a flat translucent tint (the Bloom look API is the netrun street's): left for the art-pass.
+
+### 2026-10-26 Solace Infected Tide: CITY LOST at raid end (R-I), known beams aim at owned Sites (R-J)
+Designer rulings 2026-10-26 (Phase 3b, branch raid-tide-3b-rules). Oracle variant `H6` = H5 + R-I + R-J in
+`tools/raid_concepts/sweep_g1.py` (keys `CITY_END`, `KNOWN_TARGET`; absent from H4 / H5, so both goldens regenerate byte for byte).
+- **R-I.** DECAY (DOWN -> TAKEN and its INFECTED cards) and a netrun's close no longer end the campaign. CITY LOST (INFECTED
+  outnumber healthy, DOSE counts as healthy) is checked once, when the raid closes, after the player's response; BREACHED (HOME 0) is
+  still checked first. Port: `solace_tide_city_lost_at_raid_end` (true) gates the checks in `SolaceTideRules.decay`, `end_netrun` and
+  `SolaceTideCampaign.netrun_closed`; `close` checks as before. `SolaceTideRaid.open` therefore never ends a raid at DECAY under R-I.
+  New pure query for the PLAN banner: `SolaceTideRules.loss_margin(state) -> int` = the INFECTED cards that end the city
+  (healthy - INFECTED + 1, at least 0); 1 = "1 more = CITY LOST", 0 = the city falls when this raid closes unless HOME falls first.
+- **R-J.** A known beam draws its path among the paths of its own pool (the route pool for a route, this raid's street pool for a
+  street) through the most live owned Sites, the sealed candidates' P-target rule; when no path crosses one, every path of the
+  pool, so the draw is the old one. The draw count from the `raids` stream is unchanged (one pick per beam), ties are the pool's own
+  order. Port: `solace_tide_known_target` (true), `SolaceTideRules.most_owned`, used in `draw_lines`.
+- Rule 8: both flags are `CampaignConfigData` fields, shipped true; `tools/schema_smoke_checks.gd` `_solace_tide_config` checks them.
+- **Golden.** `data/solace_raid_golden.json` is now H6 (14 campaigns, 267 phases; two extra seeds where DECAY puts INFECTED over healthy
+  and the raid still plays: random/naive 30 ends CITY LOST, keys/naive 20 BREACHED). The H5 golden is kept as
+  `data/solace_raid_golden_h5.json` (`--variant H5`).
+- **H5 -> H6 (sweep_g1.py, 200 campaigns per claim policy, 600 pooled per cell, same seeds; G = skilled, N = careless):**
+
+| Metric | H5 | H6 | Change |
+|---|---|---|---|
+| Skilled loss | 0.107 | 0.110 | +0.003 |
+| Careless loss | 0.642 | 0.643 | +0.001 (CITY LOST 0.052 -> 0.025, BREACHED 0.590 -> 0.618) |
+| Win G / N | 0.637 / 0.355 | 0.632 / 0.355 | -0.005 / 0 |
+| Locked at plan (G) | 0.576 | 0.478 | -0.098 (now meets <= 0.5) |
+| Response decides (G) | 0.436 | 0.439 | +0.003 |
+| HOME hit G / N | 0.165 / 0.987 | 0.101 / 0.967 | -0.064 (G now below the 0.15-0.30 target) |
+| Raids per netrun G / N | 0.388 / 0.400 | 0.385 / 0.401 | -0.003 / +0.001 |
+| Relevance (G) | 0.618 | 0.756 | +0.138 |
+
+  Split (H6 with one flag off): R-I alone changes no outcome rate, it only relabels: nothing in a raid removes INFECTED, so a
+  DECAY crossing still loses at that raid's close, now BREACHED when HOME also falls (careless CITY LOST 0.052 -> 0.025). R-J alone
+  gives every other change: known beams that cross owned Sites meet sentries more often, so fewer reach HOME (HOME hit 0.165 ->
+  0.101) and fewer raids are locked at PLAN.
+- **Q for the designer:** the skilled HOME-hit rate (0.101) is now under its 0.15-0.30 target; raise it (for example more known
+  routes after raid 4, `solace_tide_known_route_pct`) or move the target?

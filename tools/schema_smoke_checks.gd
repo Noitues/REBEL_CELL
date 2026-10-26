@@ -1310,6 +1310,10 @@ func _solace_tide_config() -> int:
 	if not d.solace_tide_home_hit_infects or d.solace_tide_breach_retries != 1 or not d.solace_tide_divert or d.solace_tide_clean_price != 10: fails += 1
 	if d.solace_tide_boss_hp_pct_per_infected != 25 or shipped == null or shipped.solace_tide_boss_hp_pct_per_infected != 25: fails += 1  # R-F, calibrated in Phase 2b
 	if d.solace_tide_story_band != 2 or d.solace_tide_retaliation_band != 0 or shipped == null or shipped.solace_tide_story_band != 2: fails += 1  # designer ruling 2026-10-25
+	print("Solace tide H6 (expect true true / true true): ", d.solace_tide_city_lost_at_raid_end, " ", d.solace_tide_known_target,
+		" / ", shipped.solace_tide_city_lost_at_raid_end if shipped != null else null, " ", shipped.solace_tide_known_target if shipped != null else null)
+	if not d.solace_tide_city_lost_at_raid_end or not d.solace_tide_known_target or shipped == null \
+			or not shipped.solace_tide_city_lost_at_raid_end or not shipped.solace_tide_known_target: fails += 1  # R-I, R-J (designer 2026-10-26)
 	if d.solace_tide_start_cards().size() != 8 or d.solace_tide_start_cards()[7] != ["s7", "N", "JAM"]: fails += 1
 	if not _tide_errors(d).is_empty(): fails += 1
 	if shipped == null or shipped.solace_tide_hand_heat != d.solace_tide_hand_heat or shipped.solace_tide_beam_heat != d.solace_tide_beam_heat 			or shipped.solace_tide_home_hit_damage_by_band != d.solace_tide_home_hit_damage_by_band or shipped.solace_tide_start_deck != d.solace_tide_start_deck:

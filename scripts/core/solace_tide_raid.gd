@@ -18,7 +18,8 @@ var ctx: SolaceTideRules.Ctx = null
 ## The current setup: the placement ({"sentries": {site: card}, "ghost": &"" | HOME}) and the response (["HOLD"], ...).
 var place: Dictionary = {"sentries": {}, "ghost": &""}
 var resp: Array = ["HOLD"]
-## True once DECAY ended the campaign (CITY LOST) or the raid was resolved.
+## True once DECAY ended the campaign (CITY LOST; only with `solace_tide_city_lost_at_raid_end` off, the H5 rule: under
+## R-I DECAY never ends it and the raid is always played) or the raid was resolved.
 var over: bool = false
 var resolved: bool = false
 ## Events DECAY produced when the raid opened.
@@ -27,7 +28,8 @@ var _history: Array = []
 
 
 ## Opens the pending raid: DECAY (every raid after the first, never undone, once), then the lines and the hand from the
-## `raids` stream of this raid. Returns the raid; `over` is true when DECAY ended the campaign.
+## `raids` stream of this raid. Returns the raid; `over` is true when DECAY ended the campaign (H5 only; R-I checks CITY
+## LOST at `resolve`, after the RESPONSE).
 static func open(p_campaign: CampaignState, p_corp: CorporationData, p_cfg: CampaignConfigData, p_pending: Dictionary = {}) -> SolaceTideRaid:
 	var r := SolaceTideRaid.new()
 	r.campaign = p_campaign

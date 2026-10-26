@@ -77,7 +77,8 @@ D_DRAW, D_INFECTED_DRAW_COST, D_SPREAD_COST = 5, 2, 2.0
 
 # H: Infected Tide (G2_SIM.md): C-target's board and paths + D's deck infection. Concept codes: "H" (full),
 # "Hb" (H-noB: sealed B fixed at generation), "Hs" (H-nospread). Numbers below are G2 assumptions/tuning.
-H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl", "H3": "H3", "H4": "H4", "H5": "H5"}
+H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl", "H3": "H3", "H4": "H4", "H5": "H5",
+           "H6": "H6"}
 # H numbers. G2 tuned values (G2_RESULTS.md section 2); every one can be overridden from the environment (g2_tune.py).
 # H-brief ("Hl") keeps the brief's literal numbers, so the tuning can be compared against the brief as written.
 #   BRULE: the corp's post-response B rule. "typed" = owned Sites before the first sentry of the route's type (brief
@@ -158,21 +159,41 @@ _h4_real()
 H5 = dict(H4, HOME_INF=1, BREACH_RETRY=1, BREACH_LOSE=1, DIVERT=1, PENDING_TERRITORY=1, RAID_EVERY=3, EARLY_RAIDS=4,
           EARLY_ROUTE=1.0, KNOWN_ROUTE=0.0)
 H4.update(HOME_INF=0, BREACH_LOSE=0, DIVERT=0, PENDING_TERRITORY=0)
-HFAM = ("H4", "H5")
+# H6 (designer 2026-10-26, DECISIONS "CITY LOST at raid end (R-I), known beams aim at owned Sites (R-J)"): H5 plus
+#   CITY_END: 1 = CITY LOST is checked only once, when a raid closes (after the RESPONSE): DECAY and netruns no longer
+#     end the campaign (R-I);
+#   KNOWN_TARGET: 1 = a known beam draws its path among the paths of its pool through the most live owned Sites (the
+#     sealed beams' P-target rule); when no path crosses one, every path of the pool, as before (R-J).
+# The two keys are absent from H4 / H5 (read with .get, default 0), so their goldens regenerate byte for byte.
+H6 = dict(H5, CITY_END=1, KNOWN_TARGET=1)
+HFAM = ("H4", "H5", "H6")
+H5FAM = ("H5", "H6")        # the variants with the H5 raid (known beams fire after the RESPONSE, DIVERT, HOME infects)
 _env_over(H_TUNED, "H_")
 _env_over(H3, "H3_")
 _env_over(H4, "H4_")
 _env_over(H5, "H5_")
+_env_over(H6, "H6_")
 HX = H4         # the H4-family numbers of the campaign being played (set_family sets it)
+
+
+def _hdict(c: str) -> dict:
+    return (H_BRIEF if c == "Hl" else H3 if c == "H3" else H4 if c == "H4" else H5 if c == "H5" else H6 if c == "H6"
+            else H_TUNED)
 
 
 def hp(c: str, key: str):
     """An H number for concept code c (H-brief: the brief's values; H3: G3 values; H4: G4; the rest: G2 tuned)."""
-    return (H_BRIEF if c == "Hl" else H3 if c == "H3" else H4 if c == "H4" else H5 if c == "H5" else H_TUNED)[key]
+    return _hdict(c)[key]
+
+
+def city_end(c: str) -> bool:
+    """H6 (R-I): CITY LOST is checked only when a raid closes."""
+    return c in HFAM and bool(HX.get("CITY_END", 0))
+
 
 VARIANTS = ("A-open", "A-all", "A-target", "B-wards", "C-open", "C-all", "C-target",
             "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice", "H", "H-noB", "H-nospread", "H-brief",
-            "H3", "H4", "H5")
+            "H3", "H4", "H5", "H6")
 POLICIES = ("greedy", "keys", "random")
 PLAYERS = ("greedy", "naive")
 OUT = r"D:/rc_tmp/raid_design_lab/g1/sweep_g1.json"
@@ -187,7 +208,8 @@ def geo_for(variant: str):
             hc = H_CODES[variant]
             g = G.GraphGeo("P-target", "street", hp(hc, "KNOWN_ROUTE"),
                            (hp(hc, "EARLY_RAIDS"), hp(hc, "EARLY_ROUTE")),
-                           1 + len(_ints(hp(hc, "BEAM_HEAT"))) if hc in HFAM else 3)
+                           1 + len(_ints(hp(hc, "BEAM_HEAT"))) if hc in HFAM else 3,
+                           bool(_hdict(hc).get("KNOWN_TARGET", 0)))
         elif variant.startswith("A-") or variant.startswith("C-"):
             rule = {"open": "P-open", "all": "P-all", "target": "P-target"}[variant.split("-")[1]]
             g = G.GraphGeo(rule, "tongue" if variant.endswith("tongue") else "street")
@@ -265,12 +287,12 @@ def is_h(c: str) -> bool:
 
 
 def h_spread(c: str) -> bool:
-    return c in ("H", "Hb", "Hl", "H3", "H4", "H5")
+    return c in ("H", "Hb", "Hl", "H3", "H4", "H5", "H6")
 
 
 def h_dyn_b(c: str) -> bool:
     """H: the corp picks sealed B after the response by the readable rule (H-noB keeps the generation pick)."""
-    return c in ("H", "Hs", "Hl", "H3", "H4", "H5")
+    return c in ("H", "Hs", "Hl", "H3", "H4", "H5", "H6")
 
 
 def add_infected(st: "St", sites, loss: bool = True) -> None:
@@ -569,7 +591,8 @@ def netrun_h4(geo, st: "St", site, seed: int, n: int, roll: bool = True) -> bool
                 st.asset_n += 1
     if roll and n % HX["DOSE_EVERY"] == 0:
         add_dose_card(st)
-    check_loss(geo, "H4", st)
+    if not HX.get("CITY_END", 0):      # H6 (R-I): CITY LOST only when a raid closes
+        check_loss(geo, "H4", st)
     return q and bool(HX["HEAT_RAIDS"])
 
 
@@ -621,9 +644,9 @@ def h4_wants_breach(geo, st: "St", greedy: bool, n: int) -> bool:
 
 
 def set_family(c: str) -> None:
-    """Select the H4-family numbers (HX) for variant code c ("H4" or "H5")."""
+    """Select the H4-family numbers (HX) for variant code c ("H4", "H5" or "H6")."""
     global HX
-    HX = H5 if c == "H5" else H4
+    HX = H6 if c == "H6" else H5 if c == "H5" else H4
 
 
 def campaign_h4(policy: str, player: str, seed: int, rec: dict, c: str = "H4") -> "St":
@@ -813,7 +836,8 @@ def decay(geo, c: str, st: St, greedy: bool, log: dict | None = None) -> None:
             add_infected(st, [st.last_lost], loss=False)
             if log is not None:
                 log["spread"] = log.get("spread", 0) + 1
-        check_loss(geo, c, st)
+        if not city_end(c):      # H6 (R-I): DECAY no longer ends the campaign
+            check_loss(geo, c, st)
         return
     add_wounds(st, len(downs))
     if c == "A":
@@ -1063,7 +1087,7 @@ def make_ctx(geo, c: str, st: St, seed: int, raid: int) -> Ctx:
             for ln in ctx.draw.hunter_fn(f):
                 rel.update(ln.cells)
     ctx.rel = [cell for cell in geo.cells if cell in rel and geo.cell_live(cell, st.owned)]
-    if c == "H5" and HX["DIVERT"]:
+    if c in H5FAM and HX["DIVERT"]:
         ctx.nbrs = divert_neighbors(geo, ctx.draw, st)
     return ctx
 
@@ -1117,7 +1141,7 @@ def launch(ctx: Ctx, st: St, place):
         sw.home_dmg = h4_home_dmg(st.heat, st.purge_q)
     if getattr(ctx, "trace", False):
         sw.trace = []
-    if ctx.c == "H5":
+    if ctx.c in H5FAM:
         sw.n_known = n_known(ctx, heat)     # they fire after the RESPONSE (fire_known)
     else:
         for i in range(n_known(ctx, heat)):
@@ -1288,7 +1312,7 @@ def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
     ns.sites_lost += sw.taken
     if is_h(c):
         add_infected(ns, sorted(s for s, v in sw.owned.items() if v == "TAKEN" and st.owned.get(s) != "TAKEN"))
-        if c == "H5" and sw.home_hit and HX["HOME_INF"]:
+        if c in H5FAM and sw.home_hit and HX["HOME_INF"]:
             add_infected(ns, ["HOME"], loss=False)      # H5: a HOME hit infects the Cell
     else:
         add_wounds(ns, sw.taken)
@@ -1353,7 +1377,7 @@ def play_one(ctx: Ctx, st: St, place, resp, k: int, bi: int, late, h: int):
         sw.lean = b_rule(ctx, pre, k, 0)
         bi = b_pairs(ctx, pre, sw, k)[0][0]
     sw.bpick = bi
-    if ctx.c == "H5":
+    if ctx.c in H5FAM:
         fire_known(ctx, sw)
     sw.beam = "sealed_a"
     scan(ctx.geo, sw, d.cands[k], ctx.ctype)
@@ -1381,7 +1405,7 @@ def eval_place(ctx: Ctx, st: St, place, responses: bool):
         respond(ctx, sw1, r, rhand)
         lates = late_options(ctx, st, sw1, rhand, r) if responses else [None]
         swk = sw1
-        if c == "H5":
+        if c in H5FAM:
             swk = sw1.copy()
             fire_known(ctx, swk)
         for k in range(3):
