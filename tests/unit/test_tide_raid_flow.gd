@@ -643,3 +643,28 @@ func test_the_hq_step_warns_a_raid_early_and_names_what_lifts_it() -> void:
 	var repair := f.hq_threat([ring[0], "", false])
 	assert_true(int(repair["added"]) < int(base["added"]), "repairing the DOWN Site stops its card")
 	assert_true(fixes.has("repair:%s" % ring[0]), "REPAIR is named as a way out: %s" % [fixes])
+
+
+func test_the_aftermath_counts_and_the_maps_stamps_come_from_one_event_list() -> void:
+	for sd in [7, 11, 23, 31]:
+		var f := _to_response(_env(sd, 1, 80, 2))
+		f.commit([TideRaidFlow.HOLD], true)
+		f.playout_done()
+		var a := f.aftermath()
+		var owned := f.aftermath_owned()
+		var map_down := 0
+		var map_taken := 0
+		for s in owned:
+			if int(owned[s]) == SolaceTideState.Cond.DOWN:
+				map_down += 1
+			elif int(owned[s]) == SolaceTideState.Cond.TAKEN:
+				map_taken += 1
+		var c: Dictionary = a["counts"]
+		assert_eq(int(c["down"]), map_down, "seed %d: the DOWN count is the DOWN stamps on the map" % sd)
+		assert_eq(int(c["taken"]), map_taken, "seed %d: the TAKEN count is the TAKEN stamps on the map" % sd)
+		assert_eq((a["events"] as Array).size(), map_down + map_taken, "seed %d: one event per stamp" % sd)
+		assert_eq(int(c["decay_taken"]), f.decay_sites().size(), "seed %d: DECAY's takings are kept apart" % sd)
+		assert_eq(int(c["raid_taken"]), (f.last_raid["taken"] as Array).size(), "seed %d: and so are the raid's own" % sd)
+		assert_eq(int(c["raid_down"]), (f.last_raid["down"] as Array).size())
+		assert_eq(int(c["decay_taken"]) + int(c["raid_taken"]) + int(c["earlier_taken"]), int(c["taken"]), "the parts add up")
+		assert_gt(int(c["decay_taken"]), 0, "DECAY took the DOWN Sites, so the raid's own count alone would contradict the map")

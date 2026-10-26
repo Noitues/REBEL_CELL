@@ -571,28 +571,46 @@ func _stamp(id: StringName, word: String, col: Color, kind: String) -> void:
 	_add_tag({"kind": kind, "anchor": p, "text": word, "col": col, "px": STAMP_PX, "icon": 12.0, "prefer": Vector2(0.0, STAMP_DROP), "own": true})
 
 
+## The words of the HOME tag for the forecast marks `m` ({down, taken, home}): the Sites that would be hit, then HOME: "2 Sites DOWN, HOME safe".
+func forecast_summary(m: Dictionary) -> String:
+	var parts := PackedStringArray()
+	var nd := (m.get("down", []) as Array).size()
+	var nt := (m.get("taken", []) as Array).size()
+	if nd > 0:
+		parts.append(tr("%d Sites DOWN") % nd if nd > 1 else tr("1 Site DOWN"))
+	if nt > 0:
+		parts.append(tr("%d Sites TAKEN") % nt if nt > 1 else tr("1 Site TAKEN"))
+	var dmg := int(m.get("home", 0))
+	parts.append(tr("HOME -%d") % dmg if dmg > 0 else tr("HOME safe"))
+	return ", ".join(parts)
+
+
 ## The forecast prediction the player points at, the mismatched sentries and the picked card's fit: rings on the Sites and a tag each where a word is needed.
 func _collect_marks() -> void:
+	# One summary tag at HOME says what the rings mean ("2 Sites DOWN, HOME safe"); a single marked Site also gets its own word.
+	var lone := (fc_marks.get("down", []) as Array).size() + (fc_marks.get("taken", []) as Array).size() == 1
 	for id in fc_marks.get("down", []):
 		var p := at(StringName(String(id)))
 		if p.x == INF:
 			continue
 		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
-		_add_tag({"kind": "note", "anchor": p, "text": tr("would go DOWN"), "col": Palette.TIDE_BATTERED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+		if lone:
+			_add_tag({"kind": "note", "anchor": p, "text": tr("would go DOWN"), "col": Palette.TIDE_BATTERED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
 	for id in fc_marks.get("taken", []):
 		var p := at(StringName(String(id)))
 		if p.x == INF:
 			continue
 		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
-		_add_tag({"kind": "note", "anchor": p, "text": tr("would fall"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+		if lone:
+			_add_tag({"kind": "note", "anchor": p, "text": tr("would fall"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
 	if not fc_marks.is_empty():
 		var hp := at(home)
 		if hp.x != INF:
 			var dmg := int(fc_marks.get("home", 0))
-			var word := tr("HOME -%d") % dmg if dmg > 0 else tr("HOME safe")
-			var hc: Color = TideGlyphs.RED if dmg > 0 else TideGlyphs.TIER_COLOR["HOLDS"]
+			var hit_sites := not (fc_marks.get("down", []) as Array).is_empty() or not (fc_marks.get("taken", []) as Array).is_empty()
+			var hc: Color = TideGlyphs.RED if dmg > 0 else (Palette.TIDE_BATTERED if hit_sites else TideGlyphs.TIER_COLOR["HOLDS"])
 			draw_arc(hp, 28.0, 0.0, TAU, 32, hc, 3.5)
-			_add_tag({"kind": "note", "anchor": hp, "text": word, "col": hc, "px": LABEL_PX, "prefer": Vector2(0.0, -46.0), "own": true})
+			_add_tag({"kind": "note", "anchor": hp, "text": forecast_summary(fc_marks), "col": hc, "px": LABEL_PX, "prefer": Vector2(0.0, -46.0), "own": true})
 	var hov: StringName = overlay.hover_id if overlay != null and is_instance_valid(overlay) else &""
 	for id in bad_sentries:
 		var p := at(id)

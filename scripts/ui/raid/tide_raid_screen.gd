@@ -47,6 +47,8 @@ const ROW_ODDS_W := 60.0
 const ROW_ODDS_H := 18.0
 ## A hand card's column (px): one width in every beat, so the hand never reflows. The caption under it holds two lines.
 const COL_W := 80.0
+## The gold outline of the selected hand card (px).
+const SELECT_EDGE_W := 3.0
 const CAPTION_H := 26.0
 ## The characters one line of a response row's label holds, and a row's base and per-line height (px).
 const ROW_LINE_CHARS := 17
@@ -492,8 +494,11 @@ func _build_hand() -> void:
 			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 				card_pressed(id))
 		if flow.sel_card == id:
-			cv.custom_minimum_size.y += 0.0
-			cv.modulate = Palette.TIDE_GOLD
+			# Selection is a gold outline, never a tint: the card's type glyph keeps its type color.
+			cv.set_meta("selected", true)
+			cv.draw.connect(func() -> void:
+				cv.draw_rect(Rect2(Vector2.ZERO, cv.size), Palette.TIDE_GOLD, false, SELECT_EDGE_W)
+				cv.draw_rect(Rect2(Vector2.ONE * SELECT_EDGE_W, cv.size - Vector2.ONE * SELECT_EDGE_W * 2.0), Color(Palette.TIDE_GOLD, 0.45), false, 1.0))
 		col.add_child(cv)
 		# One caption box of a fixed size under every card (two lines, never wider than the column): the hand keeps its shape in every beat.
 		var cap_text := ""
@@ -611,11 +616,10 @@ func _sync_layer() -> void:
 	var st: SolaceTideState = f.raid.st
 	var infected: Array[StringName] = []
 	var taken: Array[StringName] = []
-	var after := f.phase >= TideRaidFlow.Phase.AFTERMATH and f.raid.resolved and not f.raid.over
 	var owned: Dictionary = st.owned
 	var deck: Array = f.hud()["deck"]
-	if after:
-		owned = SolaceTideCampaign.load_state(f.campaign, f.corp, f.cfg).owned
+	if f.phase >= TideRaidFlow.Phase.AFTERMATH:
+		owned = f.aftermath_owned()  # the same board the aftermath counts read (TideRaidFlow.aftermath_events)
 	elif f.phase == TideRaidFlow.Phase.PLAYOUT and f.raid.resolved and not f.raid.over:
 		owned = _live_owned()
 	var downs: Array[StringName] = []
@@ -959,6 +963,16 @@ func cont() -> void:
 		pass
 	elif flow.phase == TideRaidFlow.Phase.DONE:
 		finished.emit()
+
+
+func _focus_when_live(c: Control) -> void:
+	if is_instance_valid(c) and c.is_inside_tree() and c.is_visible_in_tree():
+		c.grab_focus()
+
+
+## Ends the playout's waits now: every beat still lands, the screen goes straight on to the aftermath (CITY LOST on a forced loss).
+func skip_playout() -> void:
+	_skip = true
 
 
 ## THE CITY FALLS: the raid plays straight through, with no guard and no response, to CITY LOST (only when the flow says it is forced).
@@ -1520,7 +1534,28 @@ func _guard_line(resp: Array = [TideRaidFlow.HOLD], hot: bool = true) -> Control
 	words.name = "OddsWords"
 	words.text = ", ".join(_odds_phrases(odds))
 	box.add_child(words)
+	# What each tier means, so a tier never reads as a HOME verdict it is not (BATTERED is Sites lost with HOME unharmed).
+	for o in odds:
+		var cl := _lab(tr("%s: %s") % [_tierw(String(o["tier"])), _tier_cause(String(o["tier"]))], SMALL, DIM, true)
+		cl.name = "TierCause_%s" % o["tier"]
+		box.add_child(cl)
 	return box
+
+
+## What a raid tier means in the rules (SolaceTideRules.tier_of), in the words of the map.
+func _tier_cause(t: String) -> String:
+	match t:
+		"EVADED":
+			return tr("no Site hit, HOME safe")
+		"HOLDS":
+			return tr("HOME safe, at most 1 Site DOWN")
+		"BATTERED":
+			return tr("2 or more Sites DOWN or 1 TAKEN, HOME safe")
+		"DAMAGED":
+			return tr("HOME takes damage")
+		"BREACHED":
+			return tr("HOME falls to 0")
+	return ""
 
 
 ## "7 of 12 HOLDS" for each tier of `odds`, worst first.
@@ -1547,7 +1582,7 @@ func _summary_lines() -> void:
 	if bool(s["locked"]):
 		var r := _hrow(4)
 		r.add_child(TideGlyphView.tier(String(s["worst"]), 18.0))
-		r.add_child(_lab(tr("LOCKED: every outcome is %s under HOLD.") % _tierw(String(s["worst"])), TXT, GOLD, true))
+		r.add_child(_lab(tr("LOCKED: every outcome is %s (%s) under HOLD.") % [_tierw(String(s["worst"])), _tier_cause(String(s["worst"]))], TXT, GOLD, true))
 		body.add_child(r)
 	_refresh_checks()
 	for site in _checks:
@@ -1882,7 +1917,15 @@ func _page_playout() -> void:
 		var who := tr("%d beams") % _step.size() if _step.size() > 1 else _beam_label(flow.beats()[_beam_n])
 		body.add_child(_lab(tr("%s: travelling...") % who, TXT, DIM))
 	if _playing:
-		body.add_child(_btn(tr("SKIP"), func() -> void: _skip = true))
+		if flow.forced_run:
+			# The loss is already decided: the way to its result is one press (or ENTER, the playout's skip key) away.
+			var sk := _btn(tr("SKIP TO CITY LOST"), skip_playout, true, TideGlyphs.RED)
+			sk.name = "SkipToCityLost"
+			sk.focus_mode = Control.FOCUS_ALL
+			body.add_child(sk)
+			_focus_when_live.call_deferred(sk)
+		else:
+			body.add_child(_btn(tr("SKIP"), skip_playout))
 
 
 func _page_aftermath() -> void:
@@ -1897,6 +1940,13 @@ func _page_aftermath() -> void:
 	stamp.add_child(TideGlyphView.tier("BREACHED" if lost_word else tier_word, 48.0))
 	stamp.add_child(_lab(_tierw(tier_word), 28, TideGlyphs.RED if lost_word else TideGlyphs.tier_color(tier_word), false))
 	body.add_child(stamp)
+	if bool(a["raided"]):
+		# The tier says what was hurt: BATTERED is Sites lost with HOME unharmed, so its cause is spelled out beside HOME's own numbers.
+		var c: Dictionary = a["counts"]
+		var home_part := tr("HOME safe") if int(a["home_after"]) >= int(a["home_before"]) else tr("HOME %d to %d") % [a["home_before"], a["home_after"]]
+		var cause := _lab(tr("Sites: %d DOWN, %d TAKEN. %s") % [int(c["raid_down"]), int(c["raid_taken"]), home_part], SMALL, DIM)
+		cause.name = "TierCauseLine"
+		body.add_child(cause)
 	var banner := String(a["banner"])
 	var col := TideGlyphs.TIER_COLOR["HOLDS"] if banner == "CELL HOLDS" else TideGlyphs.RED
 	var bl := _lab(_banner_word(banner), BIG, col)
@@ -1904,7 +1954,7 @@ func _page_aftermath() -> void:
 	body.add_child(bl)
 	if bool(a["raided"]):
 		body.add_child(_lab(tr("HOME %d to %d") % [a["home_before"], a["home_after"]], TXT))
-		body.add_child(_lab(tr("%d DOWN, %d TAKEN, %d INFECTED in all") % [(a["down"] as Array).size(), (a["taken"] as Array).size(), a["infected"]], TXT))
+		_aftermath_counts(a)
 		if int(a["heat_delta"]) != 0 or int(a["schematics_delta"]) != 0:
 			body.add_child(_lab(tr("Heat %+d, Schematics %+d") % [a["heat_delta"], a["schematics_delta"]], TXT, DIM))
 		if flow.raids_before >= 0:
@@ -1918,6 +1968,27 @@ func _page_aftermath() -> void:
 	body.add_child(_btn(tr("CONTINUE"), cont))
 	if banner_is_loss(a) and not _lost_shown:
 		_show_city_lost(a)
+
+
+## The Sites the map stamps, counted from the same event list (TideRaidFlow.aftermath_events): the board's total first, then DECAY's takings and the
+## raid's own apart, then any Site that was already DOWN or TAKEN, and the INFECTED count.
+func _aftermath_counts(a: Dictionary) -> void:
+	var c: Dictionary = a["counts"]
+	var all := _lab(tr("On the map: %d DOWN, %d TAKEN") % [c["down"], c["taken"]], TXT)
+	all.name = "MapCounts"
+	body.add_child(all)
+	var raid_l := _lab(tr("RAID: %d DOWN, %d TAKEN") % [int(c["raid_down"]), int(c["raid_taken"])], SMALL, DIM)
+	raid_l.name = "RaidCounts"
+	body.add_child(raid_l)
+	if int(c["decay_taken"]) > 0:
+		var dl := _lab(tr("DECAY: %d TAKEN") % int(c["decay_taken"]), SMALL, DIM)
+		dl.name = "DecayCounts"
+		body.add_child(dl)
+	if int(c["earlier_down"]) + int(c["earlier_taken"]) > 0:
+		var el := _lab(tr("EARLIER: %d DOWN, %d TAKEN") % [int(c["earlier_down"]), int(c["earlier_taken"])], SMALL, DIM)
+		el.name = "EarlierCounts"
+		body.add_child(el)
+	body.add_child(_lab(tr("%d INFECTED in all") % int(a["infected"]), TXT))
 
 
 ## True when the aftermath is the CITY LOST stamp.

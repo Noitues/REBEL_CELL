@@ -109,6 +109,9 @@ const REFUSAL_OUTLINE_W: int = 4
 ## (`caption_crossfade`). Drawn only: the rects and the value shown at rest never change.
 ## Tag name -> {bump: 0..1, roll: 0..1, from: int, to: int, rolls: bool, tween}.
 var _moving: Dictionary = {}
+## True while another view draws the same numbers beside the bar (the tide raid's HUD strip): a changed value still bumps but its number lands at once,
+## so the bar and the strip never show two values at one beat.
+var snap_numbers: bool = false
 ## Caption cross-fade: 0 -> 1 (1 = the new captions only) and the old captions' look.
 var _caption_fade: float = 1.0
 var _old_captions: Array = []
@@ -278,7 +281,7 @@ func _bump(key: String, from: String, to: String, kind: StringName) -> void:
 		var old_tw: Tween = _moving[key]["tween"]
 		if old_tw != null and old_tw.is_valid():
 			old_tw.kill()
-	var rolls := from.is_valid_int() and to.is_valid_int()
+	var rolls := not snap_numbers and from.is_valid_int() and to.is_valid_int()
 	var rising := rolls and to.to_int() > from.to_int()
 	var roll_id := &"count_up" if rising and kind in [StatIcon.CYCLES, StatIcon.SCHEMATICS] else &"number_roll"
 	var m := {"bump": 0.0, "roll": 0.0, "from": from.to_int() if rolls else 0, "to": to.to_int() if rolls else 0, "rolls": rolls}

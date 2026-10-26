@@ -586,3 +586,86 @@ func test_the_hq_step_shows_the_decay_warning_and_the_fix() -> void:
 	screen._rebuild()
 	var still := screen.flow.hq_threat([ring[0], "", false])
 	assert_eq(screen.body.find_child("DecayWarning", true, false) != null, bool(still["fatal"]) or bool(still["near"]), "the warning follows the picks")
+
+
+# ------------------------------------------------------------------------------------------------ 3e bug fixes
+func test_the_aftermath_panel_counts_equal_the_map_stamps_and_the_tier_says_its_cause() -> void:
+	var o := await _open_tide(80, true)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	_to_response_screen(screen)
+	flow.commit([TideRaidFlow.HOLD], true)
+	flow.playout_done()
+	screen._rebuild()
+	var c: Dictionary = flow.aftermath()["counts"]
+	assert_eq(screen.layer.downs.size(), int(c["down"]), "the DOWN stamps on the map are the panel's DOWN count")
+	assert_eq(screen.layer.taken.size(), int(c["taken"]), "the TAKEN stamps on the map are the panel's TAKEN count")
+	var all := screen.body.find_child("MapCounts", true, false) as Label
+	assert_not_null(all)
+	assert_true(all.text.contains(str(int(c["taken"]))), all.text)
+	assert_not_null(screen.body.find_child("RaidCounts", true, false), "the raid's own count is its own line")
+	var cause := screen.body.find_child("TierCauseLine", true, false) as Label
+	assert_not_null(cause, "the tier is followed by what it hit")
+	var a := flow.aftermath()
+	if int(a["home_after"]) >= int(a["home_before"]):
+		assert_true(cause.text.contains("HOME safe"), "a tier with no HOME damage says HOME is safe: " + cause.text)
+
+
+func test_the_forecast_hover_summary_and_the_odds_explain_a_tier_without_home_damage() -> void:
+	var layer := TideRaidLayer.new()
+	autofree(layer)
+	assert_eq(layer.forecast_summary({"down": [&"a", &"b"], "taken": [], "home": 0}), "2 Sites DOWN, HOME safe")
+	assert_eq(layer.forecast_summary({"down": [], "taken": [&"a"], "home": 5}), "1 Site TAKEN, HOME -5")
+	assert_eq(layer.forecast_summary({"down": [], "taken": [], "home": 0}), "HOME safe")
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	assert_true(screen._tier_cause("BATTERED").contains("HOME safe"), "BATTERED is Sites lost, HOME unharmed")
+	assert_true(screen._tier_cause("DAMAGED").contains("HOME"))
+	var guard := screen._guard_line()
+	autofree(guard)
+	var odds := screen.flow.plan_odds([TideRaidFlow.HOLD])
+	for t in odds:
+		assert_not_null(guard.find_child("TierCause_%s" % t["tier"], true, false), "every tier in the odds is explained")
+
+
+func test_the_top_bar_numbers_land_at_once_while_the_tide_screen_plays() -> void:
+	var o := await _open_tide(80)
+	var hq: Control = o[0]
+	assert_true(hq.hud.stats.snap_numbers, "the tide raid's bar does not roll numbers behind its own strip")
+	var st := HudStats.new()
+	autofree(st)
+	st.snap_numbers = true
+	st.items = [["HOME", "44", "/50", ""]]
+	st.items = [["HOME", "15", "/50", ""]]
+	assert_eq(st.shown_value(0), "15", "the bar shows HOME's new value at once, as the strip does")
+
+
+func test_a_selected_card_keeps_its_type_color_and_shows_selection_as_an_outline() -> void:
+	var o := await _open_tide(60)
+	var screen: TideRaidScreen = o[1]
+	screen.cont()
+	screen.cont()
+	var h: Dictionary = screen.flow.hand_cards()[0]
+	var id: String = h["id"]
+	var before := (screen.hand_row.find_child("Card_%s" % id, true, false) as Control).modulate
+	screen.card_pressed(id)
+	var cv := screen.hand_row.find_child("Card_%s" % id, true, false) as Control
+	assert_eq(cv.modulate, before, "selecting a card never tints its glyph")
+	assert_true(bool(cv.get_meta("selected", false)), "the selection is an outline on the card")
+
+
+func test_a_forced_playout_offers_a_keyboard_reachable_skip_to_city_lost() -> void:
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	screen.flow.forced_run = true
+	screen.flow.phase = TideRaidFlow.Phase.PLAYOUT
+	screen._playing = true
+	screen._rebuild()
+	var sk := screen.body.find_child("SkipToCityLost", true, false) as Button
+	assert_not_null(sk, "the forced playout has a skip")
+	assert_eq(sk.focus_mode, Control.FOCUS_ALL, "reachable by keyboard")
+	screen._skip = false
+	sk.pressed.emit()
+	assert_true(screen._skip, "pressing it ends the playout's waits, so the aftermath's CITY LOST comes next")
+	screen._playing = false
+	screen.flow.forced_run = false
