@@ -308,3 +308,252 @@ func test_the_loss_warning_shows_at_a_margin_of_one() -> void:
 	assert_false(f.loss_warning() and int(h["infected"]) < int(h["healthy"]), "no warning while the city has room")
 	var near := {"infected": 5, "healthy": 5, "margin": 1}
 	assert_eq(f.loss_margin(near), 1, "the flow reads the margin from the HUD snapshot")
+
+
+# ------------------------------------------------------------------------------------------------ Phase 3c
+## A campaign for the 3c rules: `heat`, `downs` districts DOWN, and with `margin_one` the INFECTED count one card short of the line.
+func _env(seed_: int, raids_done: int, heat: int = 80, downs: int = 1, margin_one: bool = false) -> Dictionary:
+	RunManager.reset()
+	RunManager.new_campaign(seed_)
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	c.schematics = 300
+	var ring: Array[StringName] = []
+	for l in corp.city_grid.get_site(corp.city_grid.home_site_id).links:
+		ring.append(l)
+	ring.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	for id in ring.slice(0, 4):
+		var run := RunState.new()
+		run.site_id = id
+		CampaignRules.on_run_completed(c, corp, cfg, run)
+		CampaignRules.claim(c, corp, cfg, RunManager.lookup(), id, &"relay")
+	c.pending_raids.clear()
+	c.heat = heat
+	c.raids_won = raids_done
+	c.raids_lost = 0
+	for i in downs:
+		c.grid.site(ring[i])["condition"] = GridState.Condition.DOWN
+	if margin_one:
+		var st := SolaceTideCampaign.load_state(c, corp, cfg)
+		var healthy := st.deck.size() - st.wound_count()
+		var ids: Array = []
+		for i in healthy - st.wound_count() - downs:
+			ids.append(ring[1 + i % 3])
+		SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
+	return {"c": c, "corp": corp, "cfg": cfg}
+
+
+## Plays the flow to the RESPONSE: up to two GUARD cards on the first free Sites, the ghost when asked, the launch (confirmed) and the reveal.
+func _to_response(env: Dictionary, ghost: bool = false) -> TideRaidFlow:
+	var f := _open(env)
+	f.advance()
+	f.advance()
+	var placed := 0
+	for h in f.hand_cards():
+		var sites := f.placeable_sites()
+		if placed >= 2 or sites.is_empty():
+			break
+		if h["verb"] == "GUARD":
+			f.pick_card(h["id"])
+			f.place_on(sites[0])
+			placed += 1
+	if ghost:
+		f.toggle_ghost()
+	f.to_forecast()
+	if f.launch() == "confirm":
+		f.launch()
+	f.reveal_done()
+	return f
+
+
+func test_a_rows_heat_and_infected_change_are_what_the_resolve_gives() -> void:
+	for sd in [7, 11, 23]:
+		for pick in [0, 1]:
+			var f := _to_response(_env(sd, 1, 80, 1), sd == 11)
+			var g: Dictionary = f.groups[mini(pick, f.groups.size() - 1)]
+			var m: Dictionary = g["members"][0]
+			var real := f.real_row(m["resp"])
+			var ns: SolaceTideState = real["result"]["state"]
+			var heat_before := f.raid.st.heat
+			var inf_before := f.raid.st.wound_count()
+			assert_true(int(m["heat_lo"]) <= ns.heat - heat_before and ns.heat - heat_before <= int(m["heat_hi"]), "the row's Heat range holds the real outcome (seed %d)" % sd)
+			assert_true(int(m["inf_lo"]) <= ns.wound_count() - inf_before and ns.wound_count() - inf_before <= int(m["inf_hi"]), "and so does its INFECTED range")
+			f.commit(m["resp"], true)
+			assert_eq(int(f.last_raid["heat_delta"]), ns.heat - heat_before, "the real Heat change is the preview's (seed %d, row %d)" % [sd, pick])
+			assert_eq(int(f.last_raid["infected"]) - inf_before, ns.wound_count() - inf_before, "the real INFECTED change is the preview's")
+
+
+func test_the_pending_heat_in_plan_is_the_heat_a_hold_leaves() -> void:
+	for ghost in [false, true]:
+		var env := _env(7, 1, 80, 1)
+		var f := _open(env)
+		f.advance()
+		f.advance()
+		if ghost:
+			assert_true(f.toggle_ghost())
+		f.to_forecast()
+		var p := f.pending_heat()
+		assert_eq(int(p["now"]), 80)
+		if ghost:
+			assert_gte(int(p["lo"]), 80 + int(env["cfg"].solace_tide_ghost_heat), "the ghost's Heat is in the header's number")
+		if f.launch() == "confirm":
+			f.launch()
+		f.reveal_done()
+		f.commit([TideRaidFlow.HOLD], true)
+		var heat: int = (env["c"] as CampaignState).heat
+		assert_true(int(p["lo"]) <= heat and heat <= int(p["hi"]), "the Heat after the raid is inside the pending range (ghost %s)" % ghost)
+
+
+func test_every_response_row_has_the_card_it_names() -> void:
+	for sd in [7, 3, 11, 19, 31]:
+		var f := _to_response(_env(sd, 1, 80, 2), sd == 3)
+		var cards := f.hand_cards()
+		for g in f.groups:
+			for m in g["members"]:
+				var r: Array = m["resp"]
+				var need := f.resp_need(r)
+				assert_true(bool(need["have"]), "%s has its card (seed %d)" % [f.resp_label_long(r), sd])
+				var ok := false
+				for c in cards:
+					if c["site"] != "" or c["verb"] == "WOUND":
+						continue
+					match String(r[0]):
+						"DEPLOY":
+							ok = ok or c["type"] == String(r[1])
+						"REDEPLOY", "DIVERT":
+							ok = ok or c["verb"] == "SHIFT"
+						"JAM", "JAM_B":
+							ok = ok or c["verb"] == "JAM"
+						_:
+							ok = true
+				assert_true(ok, "a card in hand backs %s (seed %d)" % [r[0], sd])
+
+
+func test_response_rows_are_unique() -> void:
+	var divert_seen := 0
+	for sd in [7, 3, 11, 19, 31]:
+		var f := _to_response(_env(sd, 1, 80, 2), true)
+		var seen := {}
+		for g in f.groups:
+			var lab := String(g["label"])
+			assert_false(seen.has(lab), "'%s' is listed once (seed %d)" % [lab, sd])
+			seen[lab] = true
+			if String(g["members"][0]["head"]) == "DIVERT":
+				divert_seen += 1
+	assert_gt(divert_seen, 0, "the sweep met DIVERT rows")
+
+
+func test_the_infected_change_and_the_ends_run_mark_come_from_the_forecast_and_rank_last() -> void:
+	var f := _to_response(_env(7, 1, 80, 1, true))
+	var any_lethal := false
+	var seen_lethal := false
+	for g in f.groups:
+		var m: Dictionary = g["members"][0]
+		var rows := SolaceTideRules.forecast(f.ctx(), f.raid.st, f.raid.place, m["resp"])
+		var dead := 0
+		var hi := -99
+		for r in rows:
+			var ns: SolaceTideState = r["result"]["state"]
+			hi = maxi(hi, ns.wound_count() - f.raid.st.wound_count())
+			if ns.lost != SolaceTideState.LOST_NONE:
+				dead += 1
+		assert_eq(int(m["inf_hi"]), hi, "the row's INFECTED change is the forecast's")
+		assert_eq(bool(m["lethal_any"]), dead > 0)
+		assert_eq(bool(m["lethal_all"]), dead == rows.size())
+		any_lethal = any_lethal or dead > 0
+		if bool(g["lethal_any"]):
+			seen_lethal = true
+		else:
+			assert_false(seen_lethal, "a row that ends the run never ranks above one that does not")
+	assert_true(any_lethal, "the lost scenario has a response that ends the run")
+	for a in 3:
+		var n := 0
+		for t in f.route_tiles(a):
+			n += int(t["n"])
+		assert_eq(n, 4, "the forecast column tiles hold all four outcomes of route %d" % a)
+
+
+func test_a_response_that_ends_the_run_needs_a_second_press() -> void:
+	var f := _to_response(_env(7, 1, 80, 1, true))
+	var lethal := -1
+	var safe := -1
+	for gi in f.groups.size():
+		if bool(f.groups[gi]["lethal_any"]) and lethal < 0:
+			lethal = gi
+		if not bool(f.groups[gi]["lethal_any"]) and String(f.groups[gi]["members"][0]["head"]) != TideRaidFlow.HOLD and safe < 0:
+			safe = gi
+	assert_gte(lethal, 0)
+	var resp: Array = f.select_group(lethal)
+	assert_eq(f.commit(resp), "confirm", "the first press only arms")
+	assert_true(f.lethal_armed)
+	assert_eq(f.phase, TideRaidFlow.Phase.RESPONSE)
+	assert_eq(f.commit(resp), "committed", "the second press commits")
+	if safe >= 0:
+		var g := _to_response(_env(7, 1, 80, 1, true))
+		var r2: Array = g.select_group(safe)
+		assert_ne(g.commit(r2), "confirm", "a response that cannot end the run commits at once")
+
+
+func test_the_raids_count_holds_until_the_aftermath() -> void:
+	var env := _env(7, 1, 80, 1)
+	var f := _to_response(env)
+	assert_eq(f.raids_shown(), -1)
+	f.commit([TideRaidFlow.HOLD], true)
+	assert_eq(f.phase, TideRaidFlow.Phase.PLAYOUT)
+	assert_eq((env["c"] as CampaignState).pending_raids.size(), 0, "the campaign has dealt with the raid")
+	assert_eq(f.raids_shown(), 1, "the top bar still counts it while the playout runs")
+	f.playout_done()
+	assert_eq(f.raids_shown(), -1, "and drops it at the aftermath")
+
+
+func test_the_aftermath_always_has_the_raids_tier_and_keeps_decay_apart() -> void:
+	var env := _env(7, 1, 80, 2, true)
+	var f := _to_response(env)
+	f.commit([TideRaidFlow.HOLD], true)
+	f.playout_done()
+	var a := f.aftermath()
+	assert_true(bool(a["raided"]))
+	assert_eq(String(a["tier"]), String((env["c"] as CampaignState).last_raid["tier"]), "the tier shown is the resolve's")
+	assert_ne(String(a["tier"]), "CITY LOST", "the tier is the raid's, the loss is the banner")
+	assert_eq(int(a["home_after"]), (env["c"] as CampaignState).grid.home_integrity, "HOME shown is HOME")
+	var t: Dictionary = a["tally"]
+	assert_eq(int(t["mid"]), int(t["decay"]["after"]), "DECAY's rows end where the raid's begin")
+	assert_eq(int(t["raid"]["before"]), int(t["mid"]))
+	assert_eq(int(t["mid"]) + int(t["raid"]["added"]), int(t["after"]), "the raid's rows add up to the final count")
+
+
+func test_a_held_shift_card_gets_a_row_or_a_reason_and_the_infected_land_live() -> void:
+	var found := false
+	for sd in [7, 3, 11, 19, 31, 5, 13, 17, 29, 37, 41, 43]:
+		var f := _to_response(_env(sd, 1, 80, 2))
+		var sw := SolaceTideRules.launch(f.ctx(), f.raid.st, f.raid.place)
+		if not SolaceTideRules._has_verb(sw.rhand, SolaceTideState.VERB_SHIFT):
+			continue
+		found = true
+		var named := false
+		for g in f.groups:
+			named = named or String(g["members"][0]["head"]) in ["REDEPLOY", "DIVERT"]
+		for gh in f.ghosts:
+			named = named or String(gh[0]) in ["REDEPLOY", "DIVERT"]
+		assert_true(named, "the held SHIFT card has a row or a ghost row (seed %d)" % sd)
+	assert_true(found, "the sweep met a held SHIFT card")
+	# The INFECTED cards land one by one during the playout and end at the campaign's count.
+	var f2 := _to_response(_env(7, 1, 80, 1, true))
+	var sac := -1
+	for gi in f2.groups.size():
+		if String(f2.groups[gi]["members"][0]["head"]) == "SACRIFICE":
+			sac = gi
+			break
+	if sac >= 0:
+		var pre := int(f2.hud()["infected"])
+		f2.commit(f2.select_group(sac), true)
+		assert_eq(int(f2.hud()["infected"]), pre, "nothing has landed when the playout starts")
+		var added := f2.new_wounds().size()
+		assert_gt(added, 0, "a sacrificed Site adds an INFECTED card")
+		for i in added:
+			f2.land_infected()
+		assert_eq(int(f2.hud()["infected"]), pre + added)
+		f2.playout_done()
+		assert_eq(int(f2.hud()["infected"]), int(f2.last_raid["infected"]))

@@ -675,6 +675,8 @@ func show_tide_raid() -> void:
 
 ## A beat of the tide raid: the top bar follows the screen's numbers.
 func _tide_beat(_label: String) -> void:
+	# The raid is not dealt with until its aftermath: RAIDS holds the count it had when the response was committed through the playout.
+	hud_raids_shown = tide_flow.raids_shown() if tide_flow != null else -1
 	_refresh_status()
 
 

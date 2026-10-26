@@ -20,6 +20,9 @@ var heat: int = -1
 ## A forecast tile's outcome count, the INFECTED meter's INFECTED and healthy cards.
 var count: int = 0
 var healthy: int = 0
+## A forecast tile's INFECTED change and whether the outcome ends the campaign.
+var inf: int = 0
+var lethal: bool = false
 
 
 static func tier(tier_word: String, px: float = 20.0) -> TideGlyphView:
@@ -53,11 +56,13 @@ static func card_face(c: Array, size_px: Vector2, is_dim: bool = false, is_gold:
 
 
 ## A forecast tile: the tier glyph on its color, "xN" when `n` outcomes share it.
-static func tile(tier_word: String, size_px: Vector2, n: int = 1) -> TideGlyphView:
+static func tile(tier_word: String, size_px: Vector2, n: int = 1, p_inf: int = 0, p_lethal: bool = false) -> TideGlyphView:
 	var g := TideGlyphView.new()
 	g.kind = Kind.TILE
 	g.word = tier_word
 	g.count = n
+	g.inf = p_inf
+	g.lethal = p_lethal
 	g.custom_minimum_size = size_px
 	return g
 
@@ -105,7 +110,7 @@ func _draw() -> void:
 		Kind.CARD:
 			TideGlyphs.card_face(self, Rect2(Vector2.ZERO, size), card, dim, gold, title, heat)
 		Kind.TILE:
-			TideGlyphs.tier_tile(self, Rect2(Vector2.ZERO, size), word, count)
+			TideGlyphs.tier_tile(self, Rect2(Vector2.ZERO, size), word, count, inf, lethal)
 		Kind.CHIP:
 			TideGlyphs.route_chip(self, c, word, r, color)
 		Kind.METER:

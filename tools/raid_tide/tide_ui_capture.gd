@@ -57,8 +57,10 @@ func _setup() -> void:
 		CampaignRules.claim(c, corp, cfg, RunManager.lookup(), id, &"relay")
 	c.pending_raids.clear()
 	c.heat = START_HEAT
-	# The default scenario is the campaign's FIRST raid (no DECAY yet); "decay" and "lost" are its second.
+	# The default scenario is the campaign's FIRST raid (no DECAY yet, raid number 1); "decay" and "lost" are its second (raid number 2). The
+	# raids fought count both won and lost, and the claims above may have played a raid, so both are set.
 	c.raids_won = 0 if _scn == "" else 1
+	c.raids_lost = 0
 	# One district is DOWN (it waits for a repair at the HQ step, or DECAY takes it) and HOME took damage.
 	c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
 	c.grid.home_integrity -= 6
@@ -143,40 +145,64 @@ func _run() -> void:
 		if flow.phase == TideRaidFlow.Phase.RESPONSE:
 			await _settle()
 			await _shot(p + "_response")
-			screen.select_group(0)
+			# The lost scenario picks a row that can end the run (the decision point the stills must show); the others pick the first row.
+			var pick := 0
+			if _scn == "lost":
+				for gi in flow.groups.size():
+					if bool(flow.groups[gi]["lethal_any"]):
+						pick = gi
+						break
+			screen.select_group(pick)
 			await _settle()
 			await _shot(p + "_response_picked")
 			screen.commit()
 			if flow.phase == TideRaidFlow.Phase.RESPONSE:
-				await _shot(p + "_hold_confirm")
+				await _settle()
+				await _shot(p + ("_lethal_confirm" if flow.lethal_armed else "_hold_confirm"))
 				screen.commit()
-		var last := -2
-		var last_stage := 0
+		# One still per beat stage: the pulse travelling (stage 0), the impact landing (1), the beat settled (2); the hunter's two lit streets.
+		var last_key := ""
 		for i in PLAYOUT_WAIT_FRAMES:
 			if flow.phase != TideRaidFlow.Phase.PLAYOUT:
 				break
-			if screen._beam_n != last or screen._hunter_stage != last_stage:
-				last = screen._beam_n
-				last_stage = screen._hunter_stage
-				await _settle(12)
-				await _shot("%s_playout_beam%d_stage%d" % [p, last, last_stage])
+			var key := _beat_key(screen)
+			if key != last_key:
+				last_key = key
+				var wait := 0.5 if screen._stage == 0 else (0.2 if screen._stage == 1 else 0.05)
+				await get_tree().create_timer(wait).timeout
+				if flow.phase != TideRaidFlow.Phase.PLAYOUT or _beat_key(screen) != key:
+					continue
+				var tag := "lit" if screen._hunter_stage == 1 else "stage%d" % screen._stage
+				await _shot("%s_playout_beam%d_%s" % [p, screen._beam_n, tag])
 			await get_tree().process_frame
 	await _settle()
+	if screen.city_lost_showing():
+		await _shot(p + "_city_lost")
+		screen._dismiss_city_lost()
+		await _settle()
 	await _shot(p + "_aftermath")
-	print("CAPTURE aftermath tier=%s phase=%d tally=%s" % [flow.aftermath()["tier"], flow.phase, flow.aftermath()["tally"]])
+	print("CAPTURE aftermath tier=%s banner=%s phase=%d tally=%s" % [flow.aftermath()["tier"], flow.aftermath()["banner"], flow.phase, flow.aftermath()["tally"]])
 	screen.cont()
 	await _settle()
 	if flow.phase == TideRaidFlow.Phase.HQ_STEP:
 		await _shot(p + "_hq_step")
-		# Pick a repair and a build: the picked rows, the total and the greyed rows with their reasons.
+		# Pick the first action the Cell can take (a repair, else a patch, a clean or a cool): the picked row and the total show.
 		var acts := flow.hq_actions([&"", "", false])
-		for a in acts:
-			if a["kind"] == "repair" and bool(a["enabled"]):
-				screen._hq_pick(a)
-				break
+		var picked := false
+		for kind in ["repair", "patch", "clean", "cool"]:
+			for a in acts:
+				if a["kind"] == kind and bool(a["enabled"]) and not picked:
+					screen._hq_pick(a)
+					picked = true
+		print("CAPTURE hq_pick picked=%s total=%d" % [picked, flow.hq_total([screen._hq_repair, screen._hq_build, screen._hq_patch])])
 		await _settle()
 		await _shot(p + "_hq_step_picked")
 	hq.queue_free()
+
+
+## The beat the playout is at, as a key: beam, the hunter's reveal stage, the beat stage.
+func _beat_key(screen: TideRaidScreen) -> String:
+	return "%d_%d_%d" % [screen._beam_n, screen._hunter_stage, screen._stage]
 
 
 func _settle(n: int = SETTLE_FRAMES) -> void:

@@ -286,7 +286,9 @@ static func response(cv: CanvasItem, c: Vector2, r: Array, rad: float, dim: bool
 
 
 ## A forecast tile: the outcome tier tinted with its color, its glyph and, when `n` outcomes share it, "x N". Pairs the five tier shapes with color.
-static func tier_tile(cv: CanvasItem, r: Rect2, tier_word: String, n: int = 1) -> void:
+## `inf` is the INFECTED cards that outcome adds ("+1" in the INFECTED red, "+0" dim) and `lethal` marks an outcome that ends the campaign (a skull
+## on the right and a red frame).
+static func tier_tile(cv: CanvasItem, r: Rect2, tier_word: String, n: int = 1, inf: int = 0, lethal: bool = false) -> void:
 	if tier_word == "":
 		return
 	var col := tier_color(tier_word)
@@ -296,10 +298,23 @@ static func tier_tile(cv: CanvasItem, r: Rect2, tier_word: String, n: int = 1) -
 	else:
 		cv.draw_rect(r, Color(col, TILE_FILL_ALPHA))
 		cv.draw_rect(r, col, false, 2.0)
+	if lethal:
+		cv.draw_rect(r.grow(-1.0), RED, false, 2.0)
 	var gr := minf(r.size.y * 0.5, 13.0) * 0.8
 	tier(cv, Vector2(r.position.x + gr + 5.0, r.get_center().y), tier_word, gr, col)
+	var x := r.position.x + gr * 2.0 + 10.0
+	var f := ThemeDB.fallback_font
 	if n > 1:
-		cv.draw_string(ThemeDB.fallback_font, Vector2(r.position.x + gr * 2.0 + 10.0, r.get_center().y + 5.0), "x%d" % n, HORIZONTAL_ALIGNMENT_LEFT, -1, TILE_TEXT_PX, INK)
+		var t := "x%d" % n
+		cv.draw_string(f, Vector2(x, r.get_center().y + 5.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, TILE_TEXT_PX, INK)
+		x += f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, TILE_TEXT_PX).x + 6.0
+	# The INFECTED change: the wound pip and its count.
+	var pip := Rect2(Vector2(x, r.get_center().y - 5.5), Vector2(8.0, 11.0))
+	cv.draw_rect(pip, WOUND_FILL)
+	crack(cv, pip.get_center(), 3.5, RED if inf > 0 else DIM, 1.2)
+	cv.draw_string(f, Vector2(x + 11.0, r.get_center().y + 5.0), "+%d" % inf, HORIZONTAL_ALIGNMENT_LEFT, -1, TILE_TEXT_PX, RED if inf > 0 else DIM)
+	if lethal:
+		skull(cv, Vector2(r.end.x - 11.0, r.get_center().y), 7.0, INK, BLACK)
 
 
 ## A route chip: a disk in the beam's type color with the route letter in it (the forecast column and the map's beam carry the same one).

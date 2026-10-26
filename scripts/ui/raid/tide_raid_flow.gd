@@ -36,9 +36,20 @@ var fast: bool = false
 var launch_armed: bool = false
 ## The HOLD confirm: HOLD loses HOME integrity some row saves; a second press commits.
 var hold_armed: bool = false
+## The lethal confirm: the picked response ends the campaign on some outcome; a second press commits.
+var lethal_armed: bool = false
+var _lethal_key: String = ""
+## INFECTED cards the playout has landed so far (the HUD, the meter and the deck strip tick with them); -1 outside the playout.
+var landed: int = -1
+## The raids pending when the response was committed (the top bar's RAIDS holds this until the aftermath); -1 before.
+var raids_before: int = -1
+var _fresh: Array = []
+var _fresh_ready: bool = false
 ## The RESPONSE rows (groups) of the current placement and the picked one.
 var groups: Array = []
 var ghosts: Array = []
+## head -> how many rows of it fold into HOLD (they change nothing this raid).
+var folded: Dictionary = {}
 var resp_sel: int = -1
 ## The raid played (SolaceTideRules.play result), the events RunManager returned and the campaign's `last_raid`.
 var result: Dictionary = {}
@@ -95,9 +106,56 @@ func hud_of(st: SolaceTideState) -> Dictionary:
 
 ## The HUD numbers now: before the raid until the aftermath, then what the campaign holds.
 func hud() -> Dictionary:
+	if phase == Phase.PLAYOUT and raid.resolved and not raid.over and landed >= 0:
+		return hud_live(landed)
 	if phase >= Phase.AFTERMATH and phase != Phase.DONE and raid.resolved:
 		return hud_of(SolaceTideCampaign.load_state(campaign, corp, cfg)) if not raid.over else hud_pre
 	return hud_pre
+
+
+## The HUD while the playout runs: the state after DECAY with the first `n` INFECTED cards the raid adds already in the deck (the
+## cards land one by one as the beams hit; the rest of the numbers stay as they were until the aftermath).
+func hud_live(n: int) -> Dictionary:
+	var out := hud_pre.duplicate(true)
+	var fresh := new_wounds()
+	var s: SolaceTideState = raid.st.duplicate_state()
+	for i in mini(n, fresh.size()):
+		s.deck.append(fresh[i])
+	s.sort_deck()
+	var h := hud_of(s)
+	for k in ["infected", "healthy", "margin", "deck"]:
+		out[k] = h[k]
+	return out
+
+
+## The INFECTED cards the resolved raid added to the deck, in deck order (empty before the resolve).
+func new_wounds() -> Array:
+	if _fresh_ready:
+		return _fresh
+	var out: Array = []
+	if not raid.resolved or raid.over:
+		return out
+	var post := SolaceTideCampaign.load_state(campaign, corp, cfg)
+	var had := {}
+	for c in raid.st.deck:
+		had[String(c[0])] = true
+	for c in post.deck:
+		if not had.has(String(c[0])) and String(c[2]) == SolaceTideState.VERB_WOUND:
+			out.append(c)
+	_fresh = out
+	_fresh_ready = true
+	return out
+
+
+## The playout landed one more INFECTED card (the screen tells the flow at the beat a Site is lost).
+func land_infected() -> void:
+	if landed >= 0:
+		landed = mini(landed + 1, new_wounds().size())
+
+
+## The top bar's RAIDS count while the playout runs (the raid is not dealt with until the aftermath); -1 = the campaign's own.
+func raids_shown() -> int:
+	return raids_before if phase == Phase.PLAYOUT and raids_before >= 0 else -1
 
 
 ## The raid's number as the player counts it: the first raid of the campaign is 1.
@@ -462,6 +520,7 @@ func _build_responses() -> void:
 		var rng := tier_range(fc)
 		var row := {"resp": r, "head": String(r[0]), "worst": rng[0], "best": rng[1], "mean": mean_damage(fc), "min_home": min_home(fc),
 			"sig": _signature(fc), "index": i}
+		row.merge(outcome_stats(fc))
 		rows.append(row)
 		if row["head"] == HOLD:
 			hold_row = row
@@ -488,14 +547,24 @@ func _build_responses() -> void:
 	# A card response whose every outcome equals HOLD's is not a choice: it folds into the HOLD row ("+N same as hold").
 	var kept: Array = []
 	var same_n := 0
+	folded = {}
 	for g in groups:
 		if bool(g["changes_nothing"]):
 			same_n += (g["members"] as Array).size()
+			var fh := String(g["members"][0]["head"])
+			folded[fh] = int(folded.get(fh, 0)) + (g["members"] as Array).size()
 		else:
 			kept.append(g)
 	groups = kept
 	for g in groups:
 		g["same"] = same_n if String(g["members"][0]["head"]) == HOLD else 0
+		var any := false
+		var every := true
+		for m in g["members"]:
+			any = any or bool(m["lethal_any"])
+			every = every and bool(m["lethal_all"])
+		g["lethal_any"] = any
+		g["lethal_all"] = every
 	var good: Array = []
 	var rest: Array = []
 	for g in groups:
@@ -506,8 +575,201 @@ func _build_responses() -> void:
 		if absf(ma - mb) > MEAN_EPS:
 			return ma < mb
 		return int(a["first"]) < int(b["first"]))
-	groups = good + rest
+	# A row that can end the campaign ranks below every row that cannot, whatever its tier.
+	var safe: Array = []
+	var deadly: Array = []
+	for g in good + rest:
+		(deadly if bool(g["lethal_any"]) else safe).append(g)
+	groups = safe + deadly
+	_label_groups()
 	_build_ghosts(opts)
+
+
+## What a set of outcome rows (a forecast, from SolaceTideRules.forecast) does to the Heat and to the INFECTED count, and whether it ends the
+## campaign: {heat_lo, heat_hi (the Heat change), inf_lo, inf_hi (the INFECTED cards added), lethal_any, lethal_all (the campaign is lost on
+## some / every outcome), n}. Read from the rules' own states, so it equals what the resolve gives.
+func outcome_stats(rows: Array) -> Dictionary:
+	var out := {"heat_lo": 0, "heat_hi": 0, "inf_lo": 0, "inf_hi": 0, "lethal_any": false, "lethal_all": not rows.is_empty(), "n": rows.size()}
+	var first := true
+	for r in rows:
+		var ns: SolaceTideState = r["result"]["state"]
+		var dh := ns.heat - raid.st.heat
+		var di := ns.wound_count() - raid.st.wound_count()
+		var dead := ns.lost != SolaceTideState.LOST_NONE
+		if first:
+			out["heat_lo"] = dh
+			out["heat_hi"] = dh
+			out["inf_lo"] = di
+			out["inf_hi"] = di
+			first = false
+		else:
+			out["heat_lo"] = mini(int(out["heat_lo"]), dh)
+			out["heat_hi"] = maxi(int(out["heat_hi"]), dh)
+			out["inf_lo"] = mini(int(out["inf_lo"]), di)
+			out["inf_hi"] = maxi(int(out["inf_hi"]), di)
+		out["lethal_any"] = bool(out["lethal_any"]) or dead
+		out["lethal_all"] = bool(out["lethal_all"]) and dead
+	return out
+
+
+## The stats of response `r` (a response array) over the placement now.
+func resp_stats(r: Array) -> Dictionary:
+	return outcome_stats(SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r))
+
+
+## The tiles of route column `a` under HOLD: one per (tier, INFECTED added, ends the campaign), worst first, each
+## {tier, n, inf (cards added), lethal}. The forecast column draws them.
+func route_tiles(a: int) -> Array:
+	var by_key := {}
+	for r in forecast():
+		if int(r["a"]) != a:
+			continue
+		var ns: SolaceTideState = r["result"]["state"]
+		var di := ns.wound_count() - raid.st.wound_count()
+		var dead := ns.lost != SolaceTideState.LOST_NONE
+		var key := "%s|%d|%s" % [r["tier"], di, dead]
+		if not by_key.has(key):
+			by_key[key] = {"tier": String(r["tier"]), "n": 0, "inf": di, "lethal": dead}
+		by_key[key]["n"] = int(by_key[key]["n"]) + 1
+	var out: Array = by_key.values()
+	out.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		if bool(x["lethal"]) != bool(y["lethal"]):
+			return bool(x["lethal"])
+		var rx := TideGlyphs.rank(String(x["tier"]))
+		var ry := TideGlyphs.rank(String(y["tier"]))
+		if rx != ry:
+			return rx > ry
+		return int(x["inf"]) > int(y["inf"]))
+	return out
+
+
+## The Heat the plan leaves under HOLD: {now, lo, hi} (the Heat now, and the lowest and highest Heat after the raid). The ghost and the
+## clean-defense bonus are in it; equals the real Heat change of a HOLD (the forecast is the resolve).
+func pending_heat() -> Dictionary:
+	var st := outcome_stats(forecast())
+	return {"now": raid.st.heat, "lo": raid.st.heat + int(st["heat_lo"]), "hi": raid.st.heat + int(st["heat_hi"])}
+
+
+## The forecast row of the real outcome (the real sealed A and hunter street) for response `r`: what `commit` will play.
+func real_row(r: Array) -> Dictionary:
+	var a := int(raid.ctx.draw["real_a"])
+	var h := int(raid.ctx.draw["hunter_real"])
+	for row in SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r):
+		if int(row["a"]) == a and int(row["hunter"]) == h and int(row["b_slot"]) == 0:
+			return row
+	return {}
+
+
+func type_name(t: String) -> String:
+	match t:
+		"D":
+			return tr("DRONE")
+		"N":
+			return tr("NETRUNNER")
+		"E":
+			return tr("ENFORCER")
+	return t
+
+
+## The short text of response `r`: the verb and where (the row's glyph and chips carry the rest).
+func resp_label(r: Array) -> String:
+	match String(r[0]):
+		"HOLD":
+			return tr("HOLD")
+		"JAM":
+			return tr("JAM hunter")
+		"JAM_B":
+			return tr("JAM sealed B")
+		"DEPLOY":
+			return tr("DEPLOY > %s") % site_name(StringName(r[2]))
+		"SACRIFICE":
+			return tr("SACRIFICE %s") % site_name(StringName(r[1]))
+		"REDEPLOY":
+			return tr("MOVE %s > %s") % [site_name(StringName(r[1])), site_name(StringName(r[2]))]
+		"DIVERT":
+			return tr("DIVERT beam %d") % (int(r[1]) + 1)
+	return String(r[0])
+
+
+## The long text of response `r`: names the card or the path too, so two rows never read alike.
+func resp_label_long(r: Array) -> String:
+	match String(r[0]):
+		"DEPLOY":
+			return tr("DEPLOY %s > %s") % [type_name(String(r[1])), site_name(StringName(r[2]))]
+		"DIVERT":
+			return tr("DIVERT beam %d via %s") % [int(r[1]) + 1, _divert_via(r)]
+	return resp_label(r)
+
+
+## The district a DIVERT's new path goes through that the beam's own line does not (its last cell when none differs).
+func _divert_via(r: Array) -> String:
+	var known: Array = raid.ctx.draw["known"][int(r[1])]["cells"]
+	var path: Array = r[2]
+	for c in path:
+		if not known.has(c):
+			return site_name(StringName(String(c)))
+	return site_name(StringName(String(path[path.size() - 1]))) if not path.is_empty() else tr("a new street")
+
+
+## Gives every group its `label`: short text, "xN" when variants share it, the long form when two groups would read alike, and a
+## number as the last resort. Row labels are unique.
+func _label_groups() -> void:
+	var seen := {}
+	for g in groups:
+		var members: Array = g["members"]
+		var lab := resp_label(members[0]["resp"])
+		if members.size() > 1:
+			lab = _multi_label(g)
+		g["label"] = lab
+		seen[lab] = int(seen.get(lab, 0)) + 1
+	for g in groups:
+		if int(seen[g["label"]]) > 1:
+			var members: Array = g["members"]
+			var lab := resp_label_long(members[0]["resp"])
+			if members.size() > 1:
+				lab = "%s  x%d" % [_multi_base(members[0]["resp"], true), members.size()]
+			g["label"] = lab
+	var used := {}
+	for g in groups:
+		var lab: String = g["label"]
+		if used.has(lab):
+			used[lab] = int(used[lab]) + 1
+			g["label"] = "%s (%d)" % [lab, int(used[lab])]
+		else:
+			used[lab] = 1
+
+
+func _multi_label(g: Dictionary) -> String:
+	var members: Array = g["members"]
+	return "%s  x%d" % [_multi_base(members[0]["resp"], false), members.size()]
+
+
+func _multi_base(r0: Array, long: bool) -> String:
+	match String(r0[0]):
+		"REDEPLOY":
+			return tr("MOVE %s") % site_name(StringName(r0[1]))
+		"DEPLOY":
+			return tr("DEPLOY %s") % type_name(String(r0[1]))
+		"SACRIFICE":
+			return tr("SACRIFICE")
+		"DIVERT":
+			return tr("DIVERT beam %d via %s") % [int(r0[1]) + 1, _divert_via(r0)] if long else tr("DIVERT beam %d") % (int(r0[1]) + 1)
+	return String(r0[0])
+
+
+## What a response needs from the hand: {kind ("" | "SHIFT" | "JAM" | type letter), have (bool)}. The flow's rows are built from the rules' options,
+## which offer a row only when the card is in the response hand; this reads it back so the screen can name the card and a test can pin it.
+func resp_need(r: Array) -> Dictionary:
+	var sw := SolaceTideRules.launch(raid.ctx, raid.st, raid.place)
+	match String(r[0]):
+		"REDEPLOY", "DIVERT":
+			return {"kind": SolaceTideState.VERB_SHIFT, "have": SolaceTideRules._has_verb(sw.rhand, SolaceTideState.VERB_SHIFT)}
+		"JAM", "JAM_B":
+			return {"kind": SolaceTideState.VERB_JAM, "have": SolaceTideRules._has_verb(sw.rhand, SolaceTideState.VERB_JAM)}
+		"DEPLOY":
+			var id := SolaceTideRules._deploy_card(sw.rhand, String(r[1]))
+			return {"kind": String(r[1]), "have": id != "", "card": id}
+	return {"kind": "", "have": true}
 
 
 func _signature(fc: Array) -> String:
@@ -524,13 +786,17 @@ func _signature(fc: Array) -> String:
 
 
 func _uniform() -> bool:
+	# One tier everywhere is not enough to skip the choice: a response that adds INFECTED cards or ends the run is a decision too.
 	var tiers := {}
+	var marks := {}
 	for g in groups:
 		for m in g["members"]:
 			var fc := SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, m["resp"])
 			for r in fc:
 				tiers[r["tier"]] = true
-	return tiers.size() <= 1
+				var ns: SolaceTideState = r["result"]["state"]
+				marks["%d|%s" % [ns.wound_count() - raid.st.wound_count(), ns.lost != SolaceTideState.LOST_NONE]] = true
+	return tiers.size() <= 1 and marks.size() <= 1
 
 
 func _build_ghosts(opts: Array) -> void:
@@ -560,6 +826,16 @@ func _build_ghosts(opts: Array) -> void:
 		ghosts.append(["DIVERT", TextDb.mark("DIVERT: no SHIFT card in hand") if not has_shift else TextDb.mark("DIVERT: no beam to bend")])
 	if not heads.has("SACRIFICE"):
 		ghosts.append(["SACRIFICE", TextDb.mark("SACRIFICE: not available this raid")])
+	# A card the player holds for the RESPONSE always gets a row or a reason: the rows that fold into HOLD say so.
+	var shown := {}
+	for g in groups:
+		shown[String(g["members"][0]["head"])] = true
+	var words := {"REDEPLOY": "MOVE", "DEPLOY": "DEPLOY", "DIVERT": "DIVERT", "JAM": "JAM", "JAM_B": "JAM sealed B"}
+	var hs: Array = folded.keys()
+	IdSort.sort_ids(hs)
+	for h in hs:
+		if not shown.has(h) and words.has(h):
+			ghosts.append([h, tr("%s: same result as HOLD") % tr(String(words[h]))])
 
 
 ## The honest guard line of the plan (HOLD) and the best row: {hold, best: {resp, worst} | {}, uniform}. In PLAN it is
@@ -588,7 +864,7 @@ func _guard_of_groups() -> Dictionary:
 		if m["head"] == HOLD:
 			hold_w = m["worst"]
 	for g in groups:
-		if g["better"]:
+		if g["better"] and not bool(g["lethal_any"]):
 			var m: Dictionary = g["members"][0]
 			if best.is_empty() or TideGlyphs.rank(m["worst"]) < TideGlyphs.rank(best["worst"]) \
 					or (TideGlyphs.rank(m["worst"]) == TideGlyphs.rank(best["worst"]) and float(m["mean"]) < float(best["mean"]) - MEAN_EPS):
@@ -621,24 +897,39 @@ func select_group(gi: int, mi: int = 0) -> Array:
 		return []
 	resp_sel = gi
 	hold_armed = false
+	lethal_armed = false
 	var members: Array = groups[gi]["members"]
 	return members[clampi(mi, 0, members.size() - 1)]["resp"]
 
 
-## Commits the response: the raid plays (the checkpoint). HOLD that loses HOME integrity a visible row saves needs a second
-## press (returns "confirm"). Returns "committed", "confirm" or "no".
+## True when response `resp` ends the campaign on some outcome (read from the forecast, as the rows are).
+func is_lethal(resp: Array) -> bool:
+	return bool(resp_stats(resp)["lethal_any"])
+
+
+## Commits the response: the raid plays (the checkpoint). A response that ends the campaign on some outcome needs a second press
+## (returns "confirm"); so does HOLD when it loses HOME integrity a visible row saves. Returns "committed", "confirm" or "no".
 func commit(resp: Array, force: bool = false) -> String:
 	if phase != Phase.RESPONSE and not (phase == Phase.REVEAL and fast):
 		return "no"
+	if not force and is_lethal(resp) and not (lethal_armed and _lethal_key == str(resp)):
+		lethal_armed = true
+		_lethal_key = str(resp)
+		hold_armed = false
+		return "confirm"
 	if String(resp[0]) == HOLD and not force and not fast and not hold_armed and hold_worse_group() >= 0:
 		hold_armed = true
 		return "confirm"
 	hold_armed = false
+	lethal_armed = false
+	raids_before = campaign.pending_raids.size()
+	_fresh_ready = false
 	raid.set_response(resp)
 	result = SolaceTideRules.play(raid.ctx, raid.st, raid.place, raid.resp, int(raid.ctx.draw["real_a"]), int(raid.ctx.draw["hunter_real"]))
 	_beats = _make_beats(result)
 	events = RunManager.fight_tide_raid(raid)
 	last_raid = campaign.last_raid.duplicate(true)
+	landed = 0
 	phase = Phase.PLAYOUT
 	return "committed"
 
@@ -685,6 +976,7 @@ static func _of(trace: Array, beam: String) -> Array:
 
 func playout_done() -> void:
 	if phase == Phase.PLAYOUT:
+		landed = -1
 		phase = Phase.AFTERMATH
 
 
@@ -701,7 +993,7 @@ func aftermath() -> Dictionary:
 	return {"tier": tier_word, "banner": banner, "home_before": int(lr.get("home_before", 0)), "home_after": int(lr.get("home_after", 0)),
 		"down": lr.get("down", []), "taken": lr.get("taken", []), "infected": int(lr.get("infected", 0)),
 		"heat_delta": int(lr.get("heat_delta", 0)), "schematics_delta": int(lr.get("schematics_delta", 0)), "lost": String(lr.get("lost", "")),
-		"campaign_lost": bool(lr.get("campaign_lost", false)), "tally": infected_tally()}
+		"campaign_lost": bool(lr.get("campaign_lost", false)), "tally": infected_tally(), "raided": raid.resolved and not raid.over}
 
 
 ## The Sites DECAY took (DOWN to TAKEN), in id order, read from the events DECAY produced.
@@ -715,10 +1007,11 @@ func decay_sites() -> Array[StringName]:
 
 
 ## Where the INFECTED count of this raid came from: {before (the count when the raid opened, before DECAY), decay (DECAY's tally or {}),
-## raid (the raid's tally or {} when DECAY ended the campaign), after}.
+## mid (the count after DECAY, when the raid itself begins), raid (the raid's tally or {} when DECAY ended the campaign), after}. DECAY's
+## changes end at `mid` and the raid's start there: the two never share a row.
 func infected_tally() -> Dictionary:
 	var after := int(last_raid.get("infected", hud_pre["infected"]))
-	var out := {"before": int(decay_tally.get("before", hud_pre["infected"])), "decay": decay_tally, "raid": {}, "after": after}
+	var out := {"before": int(decay_tally.get("before", hud_pre["infected"])), "decay": decay_tally, "mid": int(hud_pre["infected"]), "raid": {}, "after": after}
 	if raid.resolved and not raid.over:
 		out["raid"] = SolaceTideTally.raid_tally(int(hud_pre["infected"]), after, (last_raid.get("taken", []) as Array).size())
 	return out

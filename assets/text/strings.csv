@@ -53,8 +53,9 @@ keys,en
 "%d held, earned in a campaign.","%d held, earned in a campaign."
 %d known beams will fire after your RESPONSE; they are shown now.,%d known beams will fire after your RESPONSE; they are shown now.
 %d netruns,%d netruns
-%d of %d outcomes of route %s end %s.,%d of %d outcomes of route %s end %s.
+"%d of %d outcomes of route %s end %s, +%d INFECTED.","%d of %d outcomes of route %s end %s, +%d INFECTED."
 %d powered,%d powered
+%d rows = HOLD,%d rows = HOLD
 %d still at large.,%d still at large.
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
 %d/%d  -  BREACH READY,%d/%d  -  BREACH READY
@@ -165,9 +166,11 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: SKIP,%s: SKIP
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
+%s: same result as HOLD,%s: same result as HOLD
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
+%s: travelling...,%s: travelling...
 (%+d AT SEND IT),(%+d AT SEND IT)
 (%+d THIS PLAY),(%+d THIS PLAY)
 (same road as choice %d),(same road as choice %d)
@@ -180,7 +183,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d EARLIER,+%d EARLIER
 +%d HP,+%d HP
 +%d HP healed,+%d HP healed
-+%d Heat,+%d Heat
 +%d MORE,+%d MORE
 +%d NEEDLE,+%d NEEDLE
 +%d RAM,+%d RAM
@@ -190,7 +192,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d block and shield gained,+%d block and shield gained
 +%d more routes (lettered on the map),+%d more routes (lettered on the map)
 +%d resistance each turn from its enrage.,+%d resistance each turn from its enrage.
-+%d same as hold,+%d same as hold
 +1 = %d,+1 = %d
 ", a run in progress",", a run in progress"
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
@@ -417,6 +418,7 @@ CONFIRM HOLD,CONFIRM HOLD
 CONFIRM LAUNCH,CONFIRM LAUNCH
 CONFIRM REWIRE,CONFIRM REWIRE
 CONFIRM: %s (Enter),CONFIRM: %s (Enter)
+CONFIRM: END THE RUN,CONFIRM: END THE RUN
 CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
 CONTAINMENT OFFICE,CONTAINMENT OFFICE
@@ -698,6 +700,7 @@ DAMAGE %s,DAMAGE %s
 DAMAGED,DAMAGED
 DE-ORBITED,DE-ORBITED
 DECAY,DECAY
+DECAY (before the raid),DECAY (before the raid)
 DECAY TAKEN: %s,DECAY TAKEN: %s
 DECEASED,DECEASED
 DECISION,DECISION
@@ -713,6 +716,7 @@ DELETE SLOT,DELETE SLOT
 DELETED,DELETED
 DEPLOY %s,DEPLOY %s
 DEPLOY %s > %s,DEPLOY %s > %s
+DEPLOY > %s,DEPLOY > %s
 DEPLOY: no card left in hand,DEPLOY: no card left in hand
 DEPLOY: no free district,DEPLOY: no free district
 DISCARD,DISCARD
@@ -722,6 +726,7 @@ DISPATCH // ECHO 00,DISPATCH // ECHO 00
 DISPATCH HAS YOUR CELL,DISPATCH HAS YOUR CELL
 DIVERT,DIVERT
 DIVERT beam %d,DIVERT beam %d
+DIVERT beam %d via %s,DIVERT beam %d via %s
 DIVERT: no SHIFT card in hand,DIVERT: no SHIFT card in hand
 DIVERT: no beam to bend,DIVERT: no beam to bend
 DO NOT FORWARD,DO NOT FORWARD
@@ -850,6 +855,9 @@ EMPTY,EMPTY
 EMPTY SLOT,EMPTY SLOT
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
+ENDS RUN,ENDS RUN
+ENDS RUN on %s of the outcomes: the infection outnumbers the healthy cards.,ENDS RUN on %s of the outcomes: the infection outnumbers the healthy cards.
+ENDS RUN: the infection outnumbers the healthy cards.,ENDS RUN: the infection outnumbers the healthy cards.
 ENFORCER,ENFORCER
 ENRAGE %d,ENRAGE %d
 ENTRY POINT,ENTRY POINT
@@ -863,7 +871,6 @@ EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
 EYE ALERT,EYE ALERT
-"Each column is one sealed route A. Its tiles count the outcomes that end in that tier, over the corp's B pick and the hunter's street.","Each column is one sealed route A. Its tiles count the outcomes that end in that tier, over the corp's B pick and the hunter's street."
 "Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied","Each fight turn there: -%s of gap per turn, Heat and Exploit cuts applied"
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
@@ -1006,7 +1013,7 @@ Event,Event
 Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.,Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.
 Every outcome breaks HOME with this plan: change it?,Every outcome breaks HOME with this plan: change it?
 Every outcome costs HOME with this plan: change it?,Every outcome costs HOME with this plan: change it?
-"Every outcome of this plan under HOLD: sealed route A, then B, then the hunter's street. HOME's tier sits at the end of each route.","Every outcome of this plan under HOLD: sealed route A, then B, then the hunter's street. HOME's tier sits at the end of each route."
+"Every outcome of this plan under HOLD. Each column is the corp's first sealed route (A, B or C); its tiles count the outcomes that end in that tier, over the corp's second route and the hunter's street.","Every outcome of this plan under HOLD. Each column is the corp's first sealed route (A, B or C); its tiles count the outcomes that end in that tier, over the corp's second route and the hunter's street."
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
 Exploit Heat,Exploit Heat
@@ -1124,6 +1131,7 @@ HEAT %d,HEAT %d
 HEAT %d CROSSED,HEAT %d CROSSED
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
+HEAT %d → %s,HEAT %d → %s
 HEAT %s,HEAT %s
 HEAT %s -> %d,HEAT %s -> %d
 HEAT & BANKING,HEAT & BANKING
@@ -1199,6 +1207,7 @@ Heat %d,Heat %d
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
 Heat %s,Heat %s
+"Heat %s, INFECTED %s.","Heat %s, INFECTED %s."
 Heat %s: %d → %d.,Heat %s: %d → %d.
 "Heat %s: %s for flatlining on a run, %s from the route's nodes and events.","Heat %s: %s for flatlining on a run, %s from the route's nodes and events."
 Heat %s: flatlined on a run (and the route before it).,Heat %s: flatlined on a run (and the route before it).
@@ -1218,6 +1227,7 @@ Heat reduction Site,Heat reduction Site
 Heat settles here: what the raid changed.,Heat settles here: what the raid changed.
 Heat sink,Heat sink
 Heat stops at its limit,Heat stops at its limit
+Heat the raid leaves with this response.,Heat the raid leaves with this response.
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
 Heat thresholds,Heat thresholds
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
@@ -1320,9 +1330,11 @@ INFC,INFC
 INFECT,INFECT
 INFECTED,INFECTED
 INFECTED %d  healthy %d,INFECTED %d  healthy %d
+INFECTED %d outnumber the healthy cards (%d),INFECTED %d outnumber the healthy cards (%d)
 INFECTED %d to %d,INFECTED %d to %d
 INFECTED %d%% → %d%%,INFECTED %d%% → %d%%
 INFECTED TIDE RAID,INFECTED TIDE RAID
+INFECTED cards this response adds.,INFECTED cards this response adds.
 INFECTED: a dead card that clogs the hand.,INFECTED: a dead card that clogs the hand.
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
@@ -1362,8 +1374,8 @@ JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
 JAM,JAM
 JAM flips the pick: route %s,JAM flips the pick: route %s
+JAM hunter,JAM hunter
 JAM sealed B,JAM sealed B
-JAM the hunter,JAM the hunter
 JAM: no JAM card in hand,JAM: no JAM card in hand
 "JAM: stands guard, or stops the hunter at the RESPONSE.","JAM: stands guard, or stops the hunter at the RESPONSE."
 K%d,K%d
@@ -1921,6 +1933,7 @@ No Firmware installed in this slot.,No Firmware installed in this slot.
 No First Turn Free Nudge,No First Turn Free Nudge
 No Going Back,No Going Back
 No INFECTED card to clean.,No INFECTED card to clean.
+"No Site lost, no HOME hit: no INFECTED card.","No Site lost, no HOME hit: no INFECTED card."
 No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.,No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.
 No beam reaches that district.,No beam reaches that district.
 No boss of theirs met yet.,No boss of theirs met yet.
@@ -3147,6 +3160,7 @@ TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
 THE MAINFRAME,THE MAINFRAME
+THE RAID,THE RAID
 THE TAGS,THE TAGS
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
@@ -3517,6 +3531,7 @@ This REST is spent.,This REST is spent.
 This Site's Heat objective is switched off at this ICE level.,This Site's Heat objective is switched off at this ICE level.
 This Workshop is spent.,This Workshop is spent.
 This is your HOME SERVER: you defend it in raids; you never run it.,This is your HOME SERVER: you defend it in raids; you never run it.
+This response can END THE RUN. Press again to commit it.,This response can END THE RUN. Press again to commit it.
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."
 This tag shows where the needle lands after this play.,This tag shows where the needle lands after this play.
 ThreatData.auditor.display_name,Auditor
@@ -3658,6 +3673,7 @@ a Shop,a Shop
 a T%d %s,a T%d %s
 "a choice, and its price","a choice, and its price"
 "a full run, no objective","a full run, no objective"
+a new street,a new street
 a practice run in a simulated net,a practice run in a simulated net
 a threat,a threat
 abandon the campaign [hold A],abandon the campaign [hold A]
@@ -3679,7 +3695,6 @@ boss,boss
 calibrate_handler,calibrate_handler
 card,card
 card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
-changes nothing,changes nothing
 chip,chip
 claimed,claimed
 cleared,cleared
@@ -3701,6 +3716,7 @@ elite,elite
 empty,empty
 erase slot %s [A],erase slot %s [A]
 events can heal; the run's end heals fully,events can heal; the run's end heals fully
+every one,every one
 every tab back to its defaults,every tab back to its defaults
 everything unlocked,everything unlocked
 exploit,exploit
@@ -3747,6 +3763,7 @@ locked link,locked link
 loot_socket,loot_socket
 lost,lost
 max_hp,max_hp
+may END RUN,may END RUN
 maybe a Firmware chip,maybe a Firmware chip
 mini,mini
 minimum to breach,minimum to breach
@@ -3806,6 +3823,7 @@ slot %s,slot %s
 slots,slots
 socket,socket
 sold out,sold out
+some,some
 "spend Cycles: cards, Firmware, slices","spend Cycles: cards, Firmware, slices"
 spinner,spinner
 stats,stats
