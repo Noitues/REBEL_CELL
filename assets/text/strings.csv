@@ -846,7 +846,6 @@ ENTRY POINT,ENTRY POINT
 ENTRY SITES,ENTRY SITES
 EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
 ESC,ESC
-EVADED,EVADED
 EVENT,EVENT
 EVENT LOOT,EVENT LOOT
 "EXHAUST: once played, the card leaves your deck for this fight.","EXHAUST: once played, the card leaves your deck for this fight."
@@ -3532,6 +3531,7 @@ UNFINISHED,UNFINISHED
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
+UNTOUCHED,UNTOUCHED
 UP,UP
 "UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key).","UP: same tower, next rung.  ACROSS (a raised arc): the other tower's next rung, at extra Bloom pace (free with the Breach key)."
 UPGRADE,UPGRADE

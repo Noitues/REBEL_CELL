@@ -21,7 +21,6 @@ static func tier(tier_word: String, px: float = 20.0) -> TideGlyphView:
 	g.kind = Kind.TIER
 	g.word = tier_word
 	g.custom_minimum_size = Vector2(px, px)
-	g.tooltip_text = tier_word
 	return g
 
 

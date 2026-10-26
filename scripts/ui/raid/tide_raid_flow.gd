@@ -104,7 +104,7 @@ func heat_ticks() -> Array:
 		levels[int(lv)] = levels.get(int(lv), {"heat": int(lv), "beam": false, "card": false})
 		levels[int(lv)]["beam"] = true
 	var ks: Array = levels.keys()
-	ks.sort()
+	ks.sort_custom(func(a: int, b: int) -> bool: return a < b)
 	for k in ks:
 		out.append(levels[k])
 	return out

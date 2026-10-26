@@ -392,7 +392,7 @@ func _tierw(t: String) -> String:
 		"BREACHED":
 			return tr("BREACHED")
 		"EVADED":
-			return tr("EVADED")
+			return tr("UNTOUCHED")  # the rules' tier word EVADED is a retired player word (N14): the player reads UNTOUCHED
 		"CITY LOST":
 			return tr("CITY LOST")
 	return t
