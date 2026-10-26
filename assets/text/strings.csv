@@ -29,13 +29,13 @@ keys,en
 %d BLOCKED,%d BLOCKED
 %d CYCLES,%d CYCLES
 %d DOWN,%d DOWN
-"%d DOWN, %d TAKEN, %d INFECTED in all","%d DOWN, %d TAKEN, %d INFECTED in all"
 %d ENTRIES,%d ENTRIES
 %d HP,%d HP
 %d HP lost,%d HP lost
 %d HP lost: LETHAL,%d HP lost: LETHAL
 %d IN %d WAVE,%d IN %d WAVE
 %d IN %d WAVES,%d IN %d WAVES
+%d INFECTED in all,%d INFECTED in all
 %d LANDS HERE,%d LANDS HERE
 %d NEEDLES,%d NEEDLES
 %d NODES,%d NODES
@@ -43,6 +43,8 @@ keys,en
 %d SCHEM.,%d SCHEM.
 %d SCHEMATICS,%d SCHEMATICS
 %d SLICES,%d SLICES
+%d Sites DOWN,%d Sites DOWN
+%d Sites TAKEN,%d Sites TAKEN
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
 %d beams,%d beams
@@ -204,9 +206,12 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 ...,...
 // %s // RANK %d,// %s // RANK %d
 1 NODE,1 NODE
+1 Site DOWN,1 Site DOWN
+1 Site TAKEN,1 Site TAKEN
 1 more = CITY LOST,1 more = CITY LOST
 1x,1x
 1x (full replay),1x (full replay)
+"2 or more Sites DOWN or 1 TAKEN, HOME safe","2 or more Sites DOWN or 1 TAKEN, HOME safe"
 2x,2x
 2x (twice as fast),2x (twice as fast)
 2x NUDGE,2x NUDGE
@@ -709,6 +714,7 @@ DECAY,DECAY
 DECAY (before the raid),DECAY (before the raid)
 DECAY TAKEN: %s,DECAY TAKEN: %s
 DECAY adds %d INFECTED.,DECAY adds %d INFECTED.
+DECAY: %d TAKEN,DECAY: %d TAKEN
 DECEASED,DECEASED
 DECISION,DECISION
 DECK,DECK
@@ -854,6 +860,7 @@ Dragging it onto a slot of the small spinner picks it too.,Dragging it onto a sl
 Drop,Drop
 Drop a nudge card here to aim it this way.,Drop a nudge card here to aim it this way.
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
+"EARLIER: %d DOWN, %d TAKEN","EARLIER: %d DOWN, %d TAKEN"
 ECHO,ECHO
 EFFECTS & MOTION,EFFECTS & MOTION
 ELITE,ELITE
@@ -1178,11 +1185,14 @@ HOME SERVER  %02d/%d   //   NODES ENCRYPTED  %d/%d,HOME SERVER  %02d/%d   //   N
 HOME SERVER %d > %d,HOME SERVER %d > %d
 HOME SERVER - %d/%d,HOME SERVER - %d/%d
 HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.,HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.
+HOME falls to 0,HOME falls to 0
 HOME hit,HOME hit
 HOME is at 1: one hit ends the campaign. Launch?,HOME is at 1: one hit ends the campaign. Launch?
 HOME is at full integrity.,HOME is at full integrity.
 HOME safe,HOME safe
+"HOME safe, at most 1 Site DOWN","HOME safe, at most 1 Site DOWN"
 HOME shielded,HOME shielded
+HOME takes damage,HOME takes damage
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
 HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
@@ -1422,7 +1432,7 @@ LOCKDOWN,LOCKDOWN
 LOCKED,LOCKED
 LOCKED: clear %s first (ringed on the map).,LOCKED: clear %s first (ringed on the map).
 LOCKED: clear the Sites between it and your network first.,LOCKED: clear the Sites between it and your network first.
-LOCKED: every outcome is %s under HOLD.,LOCKED: every outcome is %s under HOLD.
+LOCKED: every outcome is %s (%s) under HOLD.,LOCKED: every outcome is %s (%s) under HOLD.
 "LOCKED: every response gives one tier, fast resolve","LOCKED: every response gives one tier, fast resolve"
 LOCKED: the breach needs %d Exploits (you hold %d).,LOCKED: the breach needs %d Exploits (you hold %d).
 LOG,LOG
@@ -2015,6 +2025,7 @@ OVERVIEW,OVERVIEW
 OVERWRITTEN,OVERWRITTEN
 OVFL,OVFL
 Off (no correction),Off (no correction)
+"On the map: %d DOWN, %d TAKEN","On the map: %d DOWN, %d TAKEN"
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.,One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.
 One nudge per turn costs no RAM. It refreshes at the start of every turn. Extra nudges cost 1 RAM each.,One nudge per turn costs no RAM. It refreshes at the start of every turn. Extra nudges cost 1 RAM each.
@@ -2187,6 +2198,7 @@ RAID INCOMING  //  %s,RAID INCOMING  //  %s
 RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
 RAID SETUP: a raid is coming along the red pencil routes: set up the defense.,RAID SETUP: a raid is coming along the red pencil routes: set up the defense.
+"RAID: %d DOWN, %d TAKEN","RAID: %d DOWN, %d TAKEN"
 RAIDS,RAIDS
 RAIDS HELD,RAIDS HELD
 RAM,RAM
@@ -2444,6 +2456,7 @@ SIMULATE,SIMULATE
 SINKS,SINKS
 SITES TAKEN,SITES TAKEN
 SKIP,SKIP
+SKIP TO CITY LOST,SKIP TO CITY LOST
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle
 SLICES (on the wheels),SLICES (on the wheels)
@@ -2675,6 +2688,7 @@ SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites,Sites
+"Sites: %d DOWN, %d TAKEN. %s","Sites: %d DOWN, %d TAKEN. %s"
 Skip,Skip
 Skip tutorial,Skip tutorial
 SliceData.citation.display_name,Citation
@@ -3796,6 +3810,7 @@ netrun,netrun
 netruns,netruns
 next,next
 next: pick one (numbered),next: pick one (numbered)
+"no Site hit, HOME safe","no Site hit, HOME safe"
 no beam reaches this district,no beam reaches this district
 no change,no change
 no change: %s,no change: %s

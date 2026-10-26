@@ -1137,7 +1137,52 @@ func aftermath() -> Dictionary:
 	return {"tier": tier_word, "banner": banner, "home_before": int(lr.get("home_before", 0)), "home_after": int(lr.get("home_after", 0)),
 		"down": lr.get("down", []), "taken": lr.get("taken", []), "infected": int(lr.get("infected", 0)),
 		"heat_delta": int(lr.get("heat_delta", 0)), "schematics_delta": int(lr.get("schematics_delta", 0)), "lost": String(lr.get("lost", "")),
-		"campaign_lost": bool(lr.get("campaign_lost", false)), "tally": infected_tally(), "raided": raid.resolved and not raid.over}
+		"campaign_lost": bool(lr.get("campaign_lost", false)), "tally": infected_tally(), "raided": raid.resolved and not raid.over,
+		"events": aftermath_events(), "counts": aftermath_counts()}
+
+
+## The owned Sites as the aftermath map shows them: the campaign's state once the raid is played, the state after DECAY when DECAY ended the campaign.
+func aftermath_owned() -> Dictionary:
+	if raid.resolved and not raid.over:
+		return SolaceTideCampaign.load_state(campaign, corp, cfg).owned
+	return raid.st.owned
+
+
+## The one event list behind the aftermath: every Site the map stamps DOWN or TAKEN, once, in id order: [{site, kind ("down" | "taken"), src
+## ("decay" | "raid" | "earlier")}]. DECAY's takings and the raid's own are kept apart; "earlier" is a Site that was already DOWN or TAKEN when this
+## raid opened. The panel's counts (`aftermath_counts`) and the map's stamps both read the board `aftermath_owned` gives, so they cannot differ.
+func aftermath_events() -> Array[Dictionary]:
+	var owned := aftermath_owned()
+	var raided := raid.resolved and not raid.over
+	var r_taken: Array = last_raid.get("taken", []) if raided else []
+	var r_down: Array = last_raid.get("down", []) if raided else []
+	var decayed := decay_sites()
+	var ids: Array = owned.keys()
+	IdSort.sort_ids(ids)
+	var out: Array[Dictionary] = []
+	for s in ids:
+		var cond := int(owned[s])
+		if cond != SolaceTideState.Cond.TAKEN and cond != SolaceTideState.Cond.DOWN:
+			continue
+		var src := "earlier"
+		if r_taken.has(String(s)) or r_down.has(String(s)):
+			src = "raid"
+		elif cond == SolaceTideState.Cond.TAKEN and decayed.has(StringName(s)):
+			src = "decay"
+		out.append({"site": StringName(s), "kind": "taken" if cond == SolaceTideState.Cond.TAKEN else "down", "src": src})
+	return out
+
+
+## The counts of `aftermath_events`: {"<src>_<kind>": n for src decay / raid / earlier and kind down / taken, down (all), taken (all)}.
+func aftermath_counts() -> Dictionary:
+	var out := {"down": 0, "taken": 0}
+	for src in ["decay", "raid", "earlier"]:
+		for kind in ["down", "taken"]:
+			out["%s_%s" % [src, kind]] = 0
+	for e in aftermath_events():
+		out["%s_%s" % [e["src"], e["kind"]]] += 1
+		out[e["kind"]] += 1
+	return out
 
 
 ## The Sites DECAY took (DOWN to TAKEN), in id order, read from the events DECAY produced.

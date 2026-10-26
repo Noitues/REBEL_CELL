@@ -7366,6 +7366,7 @@ func _refresh_status() -> void:
 	hud.set_heat(heat_now, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
 	hud.heat_gauge.raid_next = HeatRules.next_raid(c, cfg) if panel_name in HEAT_BUTTON_PAGES else {}  # RAID-FIX C4
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
+	hud.stats.snap_numbers = not tide.is_empty()  # the tide raid's strip shows these numbers without a roll: the bar must match it at every beat
 	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(schem_now), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(home_now), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
