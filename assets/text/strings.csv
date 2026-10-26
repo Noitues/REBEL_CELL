@@ -383,6 +383,7 @@ CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CHOSEN,CHOSEN
+CITY FALLS AT RAID END,CITY FALLS AT RAID END
 CITY LOST,CITY LOST
 CITY LOST at %d,CITY LOST at %d
 CITY LOST at step %d.,CITY LOST at step %d.
@@ -3492,6 +3493,7 @@ The hand's next page: the rest of the cards and offers.,The hand's next page: th
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
+"The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first.","The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first."
 The infection now outnumbers the healthy cards.,The infection now outnumbers the healthy cards.
 The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.,The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.

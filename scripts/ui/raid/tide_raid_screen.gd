@@ -304,8 +304,8 @@ func _build_hud() -> void:
 	meter.name = "InfectedMeter"
 	mrow.add_child(meter)
 	var margin := flow.loss_margin(h)
-	if margin == 1:
-		var wl := _lab(tr("1 more = CITY LOST"), SMALL, TideGlyphs.RED, false)
+	if margin <= 1:
+		var wl := _lab(tr("1 more = CITY LOST") if margin == 1 else tr("CITY FALLS AT RAID END"), SMALL, TideGlyphs.RED, false)
 		wl.name = "LossWarning"
 		mrow.add_child(wl)
 	else:
@@ -988,9 +988,11 @@ func _loss_banner() -> void:
 	chip.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI, TideGlyphs.RED, 2, 8, 4))
 	var r := _hrow(6)
 	r.add_child(TideGlyphView.tier("BREACHED", 20.0))
-	r.add_child(_lab(tr("1 more = CITY LOST"), BIG, TideGlyphs.RED, false))
+	var fallen := flow.loss_margin() == 0
+	r.add_child(_lab(tr("CITY FALLS AT RAID END") if fallen else tr("1 more = CITY LOST"), BIG if not fallen else TXT, TideGlyphs.RED, false))
 	chip.add_child(r)
-	chip.tooltip_text = tr("One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.")
+	chip.tooltip_text = tr("The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first.") if fallen \
+		else tr("One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.")
 	body.add_child(chip)
 
 

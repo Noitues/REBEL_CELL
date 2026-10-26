@@ -112,9 +112,9 @@ func loss_margin(h: Dictionary = {}) -> int:
 	return SolaceTideTally.loss_margin(int(hh["infected"]), int(hh["healthy"]))
 
 
-## True when one more INFECTED card ends the city.
+## True when one more INFECTED card ends the city (margin 1) or the city already falls when this raid closes (margin 0).
 func loss_warning() -> bool:
-	return loss_margin() == 1
+	return loss_margin() <= 1
 
 
 ## The Heat levels (config) with what each adds to the raid: [{heat, beam (bool), card (bool)}].
