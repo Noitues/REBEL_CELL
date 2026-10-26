@@ -10067,3 +10067,9 @@ Source: docs/handoff/raid_integration/SOLACE_RAID_SPEC.md (H5). Core only, no ca
   (heat, Schematics, HOME, Site conditions, Exploits held); 2b maps CampaignState in and out. (4) The oracle's
   BREACH_BASE/K/MIN and the netrun abstractions (ELITE_RUN, CYCLE_SCHEM, P_COMBAT) are not ported (spec "not ported").
   (5) `ghost` in a place is `&""` for none. (6) Card ids sort as text ("x10" before "x2"), as the oracle's tuples do.
+
+### 2026-10-25 - Solace Infected Tide: Phase 2b campaign wiring (rules and state only, no UI)
+Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch raid-tide-wire.
+- **Per-corp switch.** `CorporationData.raid_model` (`&"resolver"` by default, `&"tide"` in solace.tres) picks the raid rules of a
+  corporation's campaign; `CorporationData.uses_tide()`. Rule 8: `tools/schema_smoke_checks.gd` `_raid_model_switch`
+  (defaults, which corp ships what, a bad word fails `validate`). Meridian, Halcyon, Orbital and REBEL_CELL keep `RaidResolver`.

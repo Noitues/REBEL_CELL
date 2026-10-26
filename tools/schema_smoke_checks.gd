@@ -8,7 +8,7 @@ extends RefCounted
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
 		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n12_slot_sizes() + _n21_resistance() + _n14_sandbox_charges() + _n22_normal_pool() + _na21_netrun_art_config() + _n8_status_stacks() + _na22_city_shader_config() + _n20_slice_riders() + _na23_street_route_config() + _n6_listeners() + _na24_dressing_config() + _na12_city_gen() \
-		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _raid_fix_a_config() + _ev01_event_schema() + _solace_tide_config()
+		+ _wh02_corp_theme_config() + _p2_street_r2_config() + _p2_street_r2_render_config() + _city_a2_config() + _raid_fix_a_config() + _ev01_event_schema() + _solace_tide_config() + _raid_model_switch()
 
 
 ## Plan 2 WH-02: CampaignConfigData's "Corp theme" section ships the WH-01 tables' defaults
@@ -1331,6 +1331,27 @@ func _solace_tide_config() -> int:
 		derived.append(int(floor(dmg * scale + 0.5)))
 	print("Solace tide HOME damage table (shipped / derived): ", Array(shipped.solace_tide_home_hit_damage_by_band), " ", derived)
 	if Array(shipped.solace_tide_home_hit_damage_by_band) != derived: fails += 1
+	return fails
+
+
+## Phase 2b rule 8: CorporationData.raid_model defaults to resolver, only Solace ships tide, and a bad word is rejected.
+func _raid_model_switch() -> int:
+	var fails := 0
+	var d := CorporationData.new()
+	print("raid_model default (expect resolver false): ", d.raid_model, " ", d.uses_tide())
+	if d.raid_model != &"resolver" or d.uses_tide(): fails += 1
+	for id in ["solace", "meridian", "halcyon", "orbital", "rebel_cell"]:
+		var c: CorporationData = load("res://content/corporations/%s.tres" % id)
+		var want := &"tide" if id == "solace" else &"resolver"
+		print("raid_model ", id, " (expect ", want, "): ", c.raid_model)
+		if c.raid_model != want: fails += 1
+	d.id = &"x"
+	d.raid_model = &"bogus"
+	var bad := false
+	for e in d.validate():
+		if String(e).contains("raid_model"):
+			bad = true
+	if not bad: fails += 1
 	return fails
 
 
