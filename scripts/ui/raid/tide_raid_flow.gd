@@ -832,7 +832,7 @@ func _build_ghosts(opts: Array) -> void:
 		shown[String(g["members"][0]["head"])] = true
 	var words := {"REDEPLOY": "MOVE", "DEPLOY": "DEPLOY", "DIVERT": "DIVERT", "JAM": "JAM", "JAM_B": "JAM sealed B"}
 	var hs: Array = folded.keys()
-	hs.sort()
+	IdSort.sort_ids(hs)
 	for h in hs:
 		if not shown.has(h) and words.has(h):
 			ghosts.append([h, tr("%s: same result as HOLD") % tr(String(words[h]))])
