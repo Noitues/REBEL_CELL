@@ -148,3 +148,88 @@ func test_a_resolver_corporation_still_opens_the_resolver_raid_setup() -> void:
 	assert_ne(hq.panel_name, "raid_tide", "the resolver raid keeps its screens")
 	assert_false(hq.tide_raid_pending())
 	RaidModelFixture.restore()
+
+
+func _bar_agrees(hq: Control, flow: TideRaidFlow, tag: String) -> void:
+	var h := flow.hud()
+	assert_eq(hq.hud.heat_gauge.heat, int(h["heat"]), "the top bar's Heat is the screen's at " + tag)
+	assert_eq(String(hq.hud.stats.items[0][1]), str(h["schematics"]), "the top bar's Schematics are the screen's at " + tag)
+	assert_eq(String(hq.hud.stats.items[1][1]), str(h["home"]), "the top bar's HOME is the screen's at " + tag)
+
+
+func test_the_top_bar_and_the_panels_agree_at_every_beat_and_the_hq_step_lists_every_action() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	c.schematics = 300
+	c.raids_won = 1
+	var owned_ids: Array = []
+	for s in c.grid.sites.keys():
+		if c.grid.is_claimed(s) and s != c.grid.home_site_id:
+			owned_ids.append(s)
+	IdSort.sort_ids(owned_ids)
+	c.grid.site(owned_ids[0])["condition"] = GridState.Condition.DOWN
+	c.grid.home_integrity -= 4
+	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+		await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	var flow: TideRaidFlow = screen.flow
+	assert_eq(flow.raid_number(), 2)
+	_bar_agrees(hq, flow, "DECAY")
+	assert_not_null(screen.body.find_child("InfectedTally", true, false), "DECAY says where the INFECTED cards came from")
+	screen.cont()
+	screen.cont()
+	_bar_agrees(hq, flow, "PLAN")
+	assert_not_null(screen.hud_strip.find_child("InfectedMeter", true, false), "the HUD carries the INFECTED meter")
+	screen.to_forecast()
+	assert_not_null(screen.body.find_child("ForecastTable", true, false))
+	screen.launch()
+	if flow.phase == TideRaidFlow.Phase.FORECAST:
+		screen.launch()
+	if flow.phase == TideRaidFlow.Phase.REVEAL:
+		flow.reveal_done()
+		screen._rebuild()
+	if flow.phase == TideRaidFlow.Phase.RESPONSE:
+		screen.select_group(0)
+		screen.commit()
+		if flow.phase == TideRaidFlow.Phase.RESPONSE:
+			screen.commit()
+	await _frames()
+	if flow.phase == TideRaidFlow.Phase.PLAYOUT:
+		flow.playout_done()
+		screen._rebuild()
+	_bar_agrees(hq, flow, "AFTERMATH")
+	assert_not_null(screen.body.find_child("InfectedTally", true, false), "the aftermath explains the INFECTED count")
+	screen.cont()
+	if flow.phase == TideRaidFlow.Phase.HQ_STEP:
+		_bar_agrees(hq, flow, "HQ step")
+		for k in ["Hq_patch", "Hq_clean", "Hq_cool", "Hq_install"]:
+			assert_not_null(screen.body.find_child(k, true, false), "the HQ step lists " + k)
+		screen.done_hq()
+	assert_eq(flow.phase, TideRaidFlow.Phase.DONE)
+
+
+func test_one_more_infected_card_shows_the_warning_at_plan() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	var st := SolaceTideCampaign.load_state(c, RunManager.corporation, RunManager.config())
+	var ids: Array = []
+	for i in st.deck.size() - st.wound_count():
+		ids.append(StringName("w_%02d" % i))
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
+	var hq := _scene()
+	await _frames()
+	hq.show_raid()
+	await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	screen.cont()
+	screen.cont()
+	assert_true(screen.flow.loss_warning())
+	assert_not_null(screen.body.find_child("LossBanner", true, false), "PLAN warns: 1 more = CITY LOST")
+	assert_not_null(screen.hud_strip.find_child("LossWarning", true, false), "and so does the HUD")

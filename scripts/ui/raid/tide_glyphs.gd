@@ -30,6 +30,12 @@ const NIGHT := Palette.TIDE_NIGHT
 const ACID := Palette.TIDE_EVADED
 ## The shade of a sentry's disk and of a dimmed ring.
 const DISK_ALPHA := 0.62
+## The font size of a card's title and Heat number.
+const CARD_TITLE_PX := 11
+const TILE_FILL_ALPHA := 0.3
+const TILE_TEXT_PX := 13
+const METER_GAP := 2.0
+const METER_CELL_MAX := 16.0
 
 
 ## The color of raid tier `tier`.
@@ -96,26 +102,37 @@ static func verb(cv: CanvasItem, c: Vector2, v: String, r: float, col: Color) ->
 
 ## A wordless card face in `r`: the verb glyph dominates, the type shape is a corner badge. A wound is a cracked gray card with a red
 ## X; `card` is [id, type, verb]. `gold` = the extra card a Heat level deals.
-static func card_face(cv: CanvasItem, r: Rect2, card: Array, dim: bool = false, gold: bool = false) -> void:
+static func card_face(cv: CanvasItem, r: Rect2, card: Array, dim: bool = false, gold: bool = false, title: String = "", heat: int = -1) -> void:
 	if card.size() < 3:
 		return
 	var s := minf(r.size.x, r.size.y)
 	var verb_word := String(card[2])
 	var edge := GOLD if gold else (EDGE.darkened(0.4) if dim else EDGE)
+	var font := ThemeDB.fallback_font
+	var ink := DIM if dim else INK
 	if verb_word == "WOUND":
 		cv.draw_rect(r, WOUND_FILL)
 		cv.draw_rect(r, GREY, false, 1.5)
-		var c := r.get_center()
-		crack(cv, c, s * 0.4, GREY.lightened(0.2), maxf(1.5, s * 0.06))
-		xmark(cv, c, s * 0.28, RED.darkened(0.35) if dim else RED, maxf(1.5, s * 0.09))
+		var c := r.get_center() + Vector2(0.0, 6.0)
+		crack(cv, c, s * 0.34, GREY.lightened(0.2), maxf(1.5, s * 0.06))
+		xmark(cv, c, s * 0.24, RED.darkened(0.35) if dim else RED, maxf(1.5, s * 0.09))
+		if title != "":
+			cv.draw_string(font, r.position + Vector2(4.0, 13.0), title, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 8.0, CARD_TITLE_PX, GREY.lightened(0.35))
 		return
 	cv.draw_rect(r, PANEL)
 	cv.draw_rect(r, edge, false, 2.0 if gold else 1.5)
 	var t := String(card[1])
-	verb(cv, r.get_center() + Vector2(0.0, s * 0.05), verb_word, s * 0.32, DIM if dim else INK)
-	var br := maxf(3.0, s * 0.13)
+	if title != "":
+		cv.draw_string(font, r.position + Vector2(4.0, 13.0), title, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 8.0, CARD_TITLE_PX, ink)
+	verb(cv, r.get_center() + Vector2(0.0, 1.0), verb_word, s * 0.27, ink)
+	# The foot: the target glyph (the beam type the card answers) at left, the Heat cost at right.
+	var foot := r.end.y - 11.0
 	if verb_word != "DOSE":
-		type_shape(cv, r.position + Vector2(br + 3.0, br + 3.0), t, br, type_color(t).darkened(0.45) if dim else type_color(t))
+		type_shape(cv, Vector2(r.position.x + 12.0, foot), t, 6.5, type_color(t).darkened(0.45) if dim else type_color(t))
+	if heat >= 0:
+		var hc := HEAT_COL.darkened(0.45) if dim else HEAT_COL
+		flame(cv, Vector2(r.end.x - 30.0, foot + 1.0), 4.4)
+		cv.draw_string(font, Vector2(r.end.x - 23.0, foot + 4.5), "+%d" % heat if heat > 0 else "0", HORIZONTAL_ALIGNMENT_LEFT, 22.0, CARD_TITLE_PX, hc)
 
 
 static func heart(cv: CanvasItem, c: Vector2, r: float, col: Color, broken: bool) -> void:
@@ -266,3 +283,51 @@ static func response(cv: CanvasItem, c: Vector2, r: Array, rad: float, dim: bool
 		"JAM", "JAM_B":
 			hound(cv, c, COBALT_HOT.darkened(0.3) if not dim else LATER)
 			cv.draw_line(c + Vector2(-rad, rad * 0.8), c + Vector2(rad, -rad * 0.8), col, lw)
+
+
+## A forecast tile: the outcome tier tinted with its color, its glyph and, when `n` outcomes share it, "x N". Pairs the five tier shapes with color.
+static func tier_tile(cv: CanvasItem, r: Rect2, tier_word: String, n: int = 1) -> void:
+	if tier_word == "":
+		return
+	var col := tier_color(tier_word)
+	if tier_word == "BREACHED":
+		cv.draw_rect(r, BLACK)
+		cv.draw_rect(r, RED, false, 2.0)
+	else:
+		cv.draw_rect(r, Color(col, TILE_FILL_ALPHA))
+		cv.draw_rect(r, col, false, 2.0)
+	var gr := minf(r.size.y * 0.5, 13.0) * 0.8
+	tier(cv, Vector2(r.position.x + gr + 5.0, r.get_center().y), tier_word, gr, col)
+	if n > 1:
+		cv.draw_string(ThemeDB.fallback_font, Vector2(r.position.x + gr * 2.0 + 10.0, r.get_center().y + 5.0), "x%d" % n, HORIZONTAL_ALIGNMENT_LEFT, -1, TILE_TEXT_PX, INK)
+
+
+## A route chip: a disk in the beam's type color with the route letter in it (the forecast column and the map's beam carry the same one).
+static func route_chip(cv: CanvasItem, c: Vector2, letter: String, r: float, col: Color) -> void:
+	cv.draw_circle(c, r * 0.95, BLACK)
+	cv.draw_circle(c, r * 0.8, col)
+	var px := int(maxf(9.0, r * 1.15))
+	cv.draw_string(ThemeDB.fallback_font, c + Vector2(-px * 0.3, px * 0.36), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, BLACK)
+
+
+## The INFECTED vs healthy meter: one cell per INFECTED card the city can bear plus the cell that ends it. INFECTED cells fill red from the left;
+## the last cell is the CITY LOST line, marked with a flag above it, and shows a cross when the city is lost.
+static func infected_meter(cv: CanvasItem, r: Rect2, infected: int, healthy: int) -> void:
+	var cells := healthy + 1
+	var cw := minf(METER_CELL_MAX, (r.size.x - METER_GAP * float(cells - 1)) / float(maxi(1, cells)))
+	var top := r.position.y + 7.0
+	var ch := r.size.y - 7.0
+	for i in cells:
+		var x := r.position.x + float(i) * (cw + METER_GAP)
+		var cell := Rect2(x, top, cw, ch)
+		if i < infected:
+			cv.draw_rect(cell, RED.darkened(0.15))
+		else:
+			cv.draw_rect(cell, WOUND_FILL)
+			cv.draw_rect(cell, GREY.darkened(0.2), false, 1.0)
+		if i == cells - 1:
+			cv.draw_rect(cell.grow(1.0), RED, false, 2.0)
+			var fx := cell.get_center().x
+			cv.draw_colored_polygon(PackedVector2Array([Vector2(fx - 4.0, r.position.y), Vector2(fx + 4.0, r.position.y), Vector2(fx, r.position.y + 6.0)]), RED)
+			if infected > healthy:
+				xmark(cv, cell.get_center(), minf(cw, ch) * 0.3, INK, 1.5)

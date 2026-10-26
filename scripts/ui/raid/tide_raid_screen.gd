@@ -29,6 +29,12 @@ const GOLD := TideGlyphs.GOLD
 const PANEL_BG := Palette.TIDE_PANEL_GLASS
 const EDGE := TideGlyphs.EDGE
 const PLAYOUT_LOG_MAX := 12
+const METER_MAX_W := 150.0
+const METER_CELL_W := 13.0
+const METER_H := 20.0
+## The forecast tile (px).
+const TILE_W := 62.0
+const TILE_H := 26.0
 
 var flow: TideRaidFlow = null
 var overlay: CityMapOverlay = null
@@ -220,6 +226,9 @@ func _tier_tag(t: String, px: float = 20.0) -> HBoxContainer:
 func _rebuild() -> void:
 	if flow == null:
 		return
+	_focus_hover = ""
+	if flow.phase != TideRaidFlow.Phase.PLAN:
+		_focus_pin = ""
 	_clear(body)
 	_clear(hand_row)
 	_sync_layer()
@@ -249,6 +258,11 @@ func _rebuild() -> void:
 	body.add_child(_ladder())
 	last_beat = phase_label()
 	beat.emit(last_beat)
+
+
+## The beam the PLAN legend points at: the row under the mouse, else the one the player clicked ("" = none).
+func _focus_now() -> String:
+	return _focus_hover if _focus_hover != "" else _focus_pin
 
 
 ## The shot name of the flow's current beat.
@@ -282,8 +296,22 @@ func _build_hud() -> void:
 	var danger := int(h["infected"]) > int(h["healthy"])
 	in_row.add_child(_lab(tr("INFECTED %d  healthy %d") % [h["infected"], h["healthy"]], TXT, TideGlyphs.RED if danger else INK, false))
 	inf.add_child(in_row)
-	inf.add_child(_lab(tr("CITY LOST when INFECTED passes %d") % int(h["healthy"]), SMALL, DIM, false))
-	inf.tooltip_text = tr("CITY LOST: the INFECTED cards outnumber the healthy ones (DOSE counts as healthy).")
+	# The meter: one cell per INFECTED card the city bears, the last cell (flagged) is the CITY LOST line.
+	var mrow := _hrow(6)
+	var cells := int(h["healthy"]) + 1
+	var mw := minf(METER_MAX_W, float(cells) * METER_CELL_W)
+	var meter := TideGlyphView.meter(int(h["infected"]), int(h["healthy"]), Vector2(mw, METER_H))
+	meter.name = "InfectedMeter"
+	mrow.add_child(meter)
+	var margin := flow.loss_margin(h)
+	if margin == 1:
+		var wl := _lab(tr("1 more = CITY LOST"), SMALL, TideGlyphs.RED, false)
+		wl.name = "LossWarning"
+		mrow.add_child(wl)
+	else:
+		mrow.add_child(_lab(tr("CITY LOST at %d") % (int(h["healthy"]) + 1), SMALL, DIM, false))
+	inf.add_child(mrow)
+	inf.tooltip_text = tr("CITY LOST: the INFECTED cards outnumber the healthy ones (DOSE counts as healthy). The flagged cell of the meter is the line.")
 	inf.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(inf)
 	# HOME integrity.
@@ -325,8 +353,10 @@ func _build_hud() -> void:
 	# DOSE count and the hand and beam counts.
 	var misc := VBoxContainer.new()
 	misc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	misc.add_child(_lab(tr("RAID %d") % flow.raid_number(), TXT, GOLD, false))
 	misc.add_child(_lab(tr("DOSE %d  ghost %d") % [h["doses"], h["ghost"]], SMALL, DIM, false))
-	misc.add_child(_lab(tr("hand %d  beams %d") % [h["hand"], h["beams"]], SMALL, DIM, false))
+	misc.tooltip_text = tr("Raid %d of the campaign. The hand holds %d cards and %d known beams fire.") % [flow.raid_number(), h["hand"], h["beams"]]
+	misc.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(misc)
 
 
@@ -343,7 +373,10 @@ func _build_hand() -> void:
 		var col := VBoxContainer.new()
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_theme_constant_override("separation", 2)
-		var cv := TideGlyphView.card_face(card, Vector2(CARD_W, CARD_H - 22.0), placed, bool(c["extra"]))
+		var heat_cost := -1
+		if SolaceTideRules.PLACEABLE.has(String(c["verb"])):
+			heat_cost = 0 if placed else flow.cfg.solace_tide_card_response_heat
+		var cv := TideGlyphView.card_face(card, Vector2(CARD_W, CARD_H - 22.0), placed, bool(c["extra"]), _verb_title(String(c["verb"])), heat_cost)
 		cv.name = "Card_%s" % c["id"]
 		cv.mouse_filter = Control.MOUSE_FILTER_STOP
 		cv.tooltip_text = _card_tip(c)
@@ -361,12 +394,33 @@ func _build_hand() -> void:
 		hand_row.add_child(col)
 
 
+## The card's title word.
+func _verb_title(verb: String) -> String:
+	match verb:
+		"GUARD":
+			return tr("GUARD")
+		"SHIFT":
+			return tr("SHIFT")
+		"JAM":
+			return tr("JAM")
+		"WOUND":
+			return tr("INFECTED")
+		"DOSE":
+			return tr("DOSE")
+	return verb
+
+
 func _card_tip(c: Dictionary) -> String:
 	var verb_tip := {"GUARD": tr("GUARD: stands on a district and blocks a beam of its own type."),
 		"SHIFT": tr("SHIFT: stands guard, or moves a sentry at the RESPONSE."),
 		"JAM": tr("JAM: stands guard, or stops the hunter at the RESPONSE."),
 		"WOUND": tr("INFECTED: a dead card that clogs the hand."), "DOSE": tr("DOSE: a healthy card that cures at DECAY.")}
-	return "%s (%s)" % [verb_tip.get(c["verb"], ""), _type_name(String(c["type"]))] if c["verb"] != "WOUND" else verb_tip["WOUND"]
+	if c["verb"] == "WOUND":
+		return verb_tip["WOUND"]
+	var tip := "%s (%s)" % [verb_tip.get(c["verb"], ""), _type_name(String(c["type"]))]
+	if SolaceTideRules.PLACEABLE.has(String(c["verb"])):
+		tip += "\n" + tr("Standing guard is free; playing it at the RESPONSE adds %d Heat.") % flow.cfg.solace_tide_card_response_heat
+	return tip
 
 
 func _type_name(t: String) -> String:
@@ -457,17 +511,22 @@ func _sync_layer() -> void:
 	layer.front = front
 	layer.taken = taken
 	layer.home_tiers = []
+	layer.home_cols = []
 	layer.ghost_home = false
 	layer.beams = []
 	layer.preview = []
 	layer.blocks = []
 	layer.hits = {}
+	layer.impacts = []
+	layer.focus = _focus_now() if f.phase == TideRaidFlow.Phase.PLAN else ""
 	layer.sentries = _sentries_now()
 	if f.raid.ctx != null and f.phase >= TideRaidFlow.Phase.PLAN and f.phase <= TideRaidFlow.Phase.RESPONSE:
 		layer.ghost_home = f.raid.place["ghost"] != &""
 		_plan_beams()
 		if f.phase == TideRaidFlow.Phase.PLAN or f.phase == TideRaidFlow.Phase.FORECAST:
 			layer.home_tiers = f.route_tiers()
+			for ln in (f.raid.ctx.draw["cands"] as Array):
+				layer.home_cols.append(TideGlyphs.type_color(String(ln["type"])))
 	if f.phase == TideRaidFlow.Phase.PLAYOUT or (f.phase == TideRaidFlow.Phase.AFTERMATH and f.raid.resolved and not f.raid.over):
 		_playout_beams()
 	if f.phase == TideRaidFlow.Phase.RESPONSE and not _preview.is_empty():
@@ -490,9 +549,9 @@ func _sentries_now() -> Dictionary:
 	return out
 
 
-func _line_beam(ln: Dictionary, role: String, label: String, alpha: float, dashed: bool, width: float = TideRaidLayer.LINE_W) -> Dictionary:
+func _line_beam(ln: Dictionary, role: String, label: String, alpha: float, dashed: bool, width: float = TideRaidLayer.LINE_W, beam_name: String = "") -> Dictionary:
 	return {"cells": ln["cells"], "type": ln["type"], "role": role, "label": label, "alpha": alpha, "dashed": dashed, "width": width,
-		"route": String(ln["kind"]) == "ROUTE", "home": bool(ln["home"])}
+		"route": String(ln["kind"]) == "ROUTE", "home": bool(ln["home"]), "name": beam_name}
 
 
 func _plan_beams() -> void:
@@ -502,16 +561,20 @@ func _plan_beams() -> void:
 	var revealed := f.phase >= TideRaidFlow.Phase.REVEAL
 	for i in (d["known"] as Array).size():
 		if i < n_fire:
-			layer.beams.append(_line_beam(d["known"][i], "known", tr("K%d") % (i + 1), 0.95, false))
+			layer.beams.append(_line_beam(d["known"][i], "known", tr("K%d") % (i + 1), 0.95, false, TideRaidLayer.LINE_W, "known%d" % i))
 	for i in (d["cands"] as Array).size():
 		var is_real := i == f.real_a()
 		if revealed and not is_real:
-			layer.beams.append(_line_beam(d["cands"][i], "cand", "", 0.3, true))
+			layer.beams.append(_line_beam(d["cands"][i], "cand", "", 0.3, true, TideRaidLayer.LINE_W, "cand%d" % i))
 		else:
-			layer.beams.append(_line_beam(d["cands"][i], "cand", ["A", "B", "C"][i] if not revealed else tr("SEALED A"), 1.0 if revealed else 0.7, not revealed, 5.0 if revealed else TideRaidLayer.LINE_W))
+			var cb := _line_beam(d["cands"][i], "cand", "" if not revealed else tr("SEALED A"), 1.0 if revealed else 0.7, not revealed, 5.0 if revealed else TideRaidLayer.LINE_W, "cand%d" % i)
+			cb["chip"] = ["A", "B", "C"][i]
+			layer.beams.append(cb)
 	if not revealed:
 		for i in (d["hunters"] as Array).size():
-			layer.beams.append(_line_beam(d["hunters"][i], "hunter", tr("HUNTER %d") % (i + 1), 0.55, true, 2.0))
+			var hn := "hunter%d" % i
+			# The HUNTER word only shows for the street the player points at, so it never covers a district tag.
+			layer.beams.append(_line_beam(d["hunters"][i], "hunter", tr("HUNTER %d") % (i + 1) if _focus_now() == hn else "", 0.55, true, 2.0, hn))
 	if f.phase == TideRaidFlow.Phase.RESPONSE and not _preview.is_empty():
 		_preview_beam()
 
@@ -526,6 +589,13 @@ func _preview_beam() -> void:
 
 var _cur_beam: String = ""
 var _beam_n: int = -1
+## The hunter reveal's stage: 0 none, 1 both streets lit, 2 the other street dark.
+var _hunter_stage: int = 0
+## The street the hunter does not take fades to this alpha.
+const HUNTER_DARK_ALPHA := 0.12
+## Plan focus: the beam the legend row under the mouse names, and the one the player clicked.
+var _focus_hover: String = ""
+var _focus_pin: String = ""
 
 
 func _playout_beams() -> void:
@@ -543,15 +613,40 @@ func _playout_beams() -> void:
 		var lab := ""
 		if cur:
 			lab = _beam_label(b)
-		var beam := _line_beam(ln, role, lab, alpha, String(b["kind"]) == "hunter_jammed", 5.0 if cur else 2.0)
+		if cur and _hunter_stage == 1 and role == "hunter":
+			_hunter_stage_beams()
+			continue
+		var beam := _line_beam(ln, role, lab, alpha, String(b["kind"]) == "hunter_jammed", 5.0 if cur else 2.0, String(b["beam"]))
 		beam["current"] = cur
 		layer.beams.append(beam)
+		if cur and _hunter_stage == 2 and role == "hunter":
+			_dark_street_beam()
 		if done or cur or flow.phase == TideRaidFlow.Phase.AFTERMATH:
 			for e in b["trace"]:
 				if e[2] == "hit":
 					layer.hits[StringName(e[1])] = "hit"
+					if cur:
+						layer.impacts.append({"site": e[1], "col": TideGlyphs.type_color(String(ln["type"])), "label": tr("HIT: %s") % flow.site_name(StringName(e[1]))})
 				elif e[2] == "block" and cur:
 					layer.blocks.append([e[1], ln["type"]])
+
+
+## The hunter's reveal, stage 1: both candidate streets lit at full strength and numbered.
+func _hunter_stage_beams() -> void:
+	var hs: Array = flow.raid.ctx.draw["hunters"]
+	for hi in hs.size():
+		var hb := _line_beam(hs[hi], "hunter", tr("HUNTER %d") % (hi + 1), 1.0, false, 5.0, "hunter%d" % hi)
+		hb["current"] = true
+		layer.beams.append(hb)
+
+
+## Stage 2: the street the hunter does not take goes dark (the taken one plays as the beat).
+func _dark_street_beam() -> void:
+	var hs: Array = flow.raid.ctx.draw["hunters"]
+	var real := int(flow.raid.ctx.draw["hunter_real"])
+	for hi in hs.size():
+		if hi != real:
+			layer.beams.append(_line_beam(hs[hi], "hunter", "", HUNTER_DARK_ALPHA, true, 3.0, "hunter%d" % hi))
 
 
 func _beam_label(b: Dictionary) -> String:
@@ -723,6 +818,17 @@ func _play() -> void:
 	for i in beats.size():
 		_beam_n = i
 		var b: Dictionary = beats[i]
+		if String(b["kind"]).begins_with("hunter"):
+			# The reveal, staged: both candidate streets light and hold for a beat, then one goes dark as the hunter takes the other.
+			_hunter_stage = 1
+			_log.append(tr("HUNTER: both streets are lit."))
+			_sync_layer()
+			_playout_refresh()
+			if gap > 0.0 and not _skip:
+				await get_tree().create_timer(gap).timeout
+				if not is_inside_tree():
+					return
+			_hunter_stage = 2
 		_log.append(_beat_line(b))
 		_sync_layer()
 		_playout_refresh()
@@ -730,6 +836,7 @@ func _play() -> void:
 			await get_tree().create_timer(gap).timeout
 			if not is_inside_tree():
 				return
+	_hunter_stage = 0
 	_playing = false
 	_beam_n = beats.size()
 	flow.playout_done()
@@ -777,15 +884,74 @@ func done_hq() -> void:
 # ------------------------------------------------------------------------------------------------ pages
 func _page_decay() -> void:
 	body.add_child(_title(tr("DECAY")))
-	body.add_child(_lab(tr("Raid %d") % (flow.raid.raid_idx + 1), TXT, DIM))
-	if flow.raid.open_events.is_empty():
-		body.add_child(_lab(tr("Nothing decays before the first raid, and no district sat DOWN since the last."), TXT))
+	body.add_child(_lab(tr("Raid %d") % flow.raid_number(), TXT, DIM))
+	if flow.raid.raid_idx == 0:
+		body.add_child(_lab(tr("Nothing decays before the first raid."), TXT))
+	elif flow.decay_tally.is_empty() or _tally_parts(flow.decay_tally, {}).is_empty():
+		body.add_child(_lab(tr("No district sat DOWN since the last raid: nothing decays."), TXT))
 	else:
-		for e in flow.raid.open_events:
-			body.add_child(_lab(String(e.get("text", "")), TXT))
+		body.add_child(_lab(tr("Districts left DOWN since the last raid fall to the Tide."), TXT))
+		_tally_block(flow.infected_tally(), true)
 	if flow.raid.over:
-		body.add_child(_lab(tr("CITY LOST in the DECAY: the infection outnumbers the healthy defenses."), TXT, TideGlyphs.RED))
+		body.add_child(_lab(tr("The infection now outnumbers the healthy cards."), TXT, TideGlyphs.RED))
 	body.add_child(_btn(tr("CONTINUE"), cont))
+
+
+## The INFECTED tally rows: [{label, n (signed), tip}] for DECAY's tally `dec` and the raid's `rd` (either may be empty).
+func _tally_parts(dec: Dictionary, rd: Dictionary) -> Array:
+	var parts: Array = []
+	if not dec.is_empty():
+		if int(dec["taken"]) > 0:
+			var names := PackedStringArray()
+			for s in flow.decay_sites():
+				names.append(flow.site_name(s))
+			parts.append({"label": tr("DECAY TAKEN: %s") % ", ".join(names), "n": int(dec["taken"]), "tip": tr("A district left DOWN since the last raid is TAKEN and adds an INFECTED card.")})
+		if bool(dec["spread"]):
+			parts.append({"label": tr("Spread: the Tide moves on"), "n": 1, "tip": tr("Enough Sites fell since the last raid for the infection to spread.")})
+		if bool(dec["cancelled"]):
+			parts.append({"label": tr("A DOSE stopped the spread"), "n": 0, "tip": ""})
+		if int(dec["cured"]) > 0:
+			parts.append({"label": tr("DOSE cured %d") % int(dec["cured"]), "n": -int(dec["cured"]), "tip": ""})
+	if not rd.is_empty():
+		if int(rd["sites"]) > 0:
+			var lost := PackedStringArray()
+			for s in flow.last_raid.get("taken", []):
+				lost.append(flow.site_name(StringName(String(s))))
+			parts.append({"label": tr("Site lost: %s") % ", ".join(lost), "n": int(rd["sites"]), "tip": tr("TAKEN in the raid: each lost Site adds an INFECTED card.")})
+		if int(rd["home"]) > 0:
+			parts.append({"label": tr("HOME hit"), "n": int(rd["home"]), "tip": tr("A hit on HOME infects a card.")})
+	return parts
+
+
+## "INFECTED a -> b" and, under it, one row per source of the change (see `_tally_parts`). `decay_only` stops after DECAY's rows.
+func _tally_block(t: Dictionary, decay_only: bool) -> void:
+	var box := VBoxContainer.new()
+	box.name = "InfectedTally"
+	box.add_theme_constant_override("separation", 2)
+	var rd: Dictionary = {} if decay_only else t["raid"]
+	var parts := _tally_parts(t["decay"], rd)
+	var start := int(t["before"])
+	var end := int(t["after"]) if not decay_only else int(t["decay"].get("after", t["after"]))
+	var head := _hrow(6)
+	var gv := TideGlyphView.new()
+	gv.kind = TideGlyphView.Kind.PIP_DECK
+	gv.word = "WOUND"
+	gv.custom_minimum_size = Vector2(18, 18)
+	head.add_child(gv)
+	head.add_child(_lab(tr("INFECTED %d to %d") % [start, end], TXT, TideGlyphs.RED if end > start else INK, false))
+	box.add_child(head)
+	for p in parts:
+		var r := _hrow(6)
+		var n := int(p["n"])
+		var sign_txt := "+%d" % n if n > 0 else ("%d" % n if n < 0 else "0")
+		r.add_child(_lab(sign_txt, SMALL, TideGlyphs.RED if n > 0 else (TideGlyphs.TIER_COLOR["HOLDS"] if n < 0 else DIM), false))
+		var l := _lab(String(p["label"]), SMALL, INK, true)
+		r.add_child(l)
+		if String(p["tip"]) != "":
+			r.tooltip_text = String(p["tip"])
+			r.mouse_filter = Control.MOUSE_FILTER_PASS
+		box.add_child(r)
+	body.add_child(box)
 
 
 func _page_draw() -> void:
@@ -799,6 +965,7 @@ func _page_draw() -> void:
 func _page_plan() -> void:
 	body.add_child(_title(tr("PLAN")))
 	body.add_child(_lab(tr("Pick a card, then a district on a beam's path. Up to %d guards. The ghost shields HOME for a Heat cost.") % flow.cfg.solace_tide_max_placed, TXT))
+	_loss_banner()
 	_beam_legend()
 	body.add_child(_guard_line())
 	_summary_lines()
@@ -811,6 +978,22 @@ func _page_plan() -> void:
 	_status_line()
 
 
+## The PLAN legend. Each row names a beam; the one under the mouse (or clicked) stays lit on the map and every other route dims.
+## The warning when one more INFECTED card ends the city.
+func _loss_banner() -> void:
+	if not flow.loss_warning():
+		return
+	var chip := PanelContainer.new()
+	chip.name = "LossBanner"
+	chip.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI, TideGlyphs.RED, 2, 8, 4))
+	var r := _hrow(6)
+	r.add_child(TideGlyphView.tier("BREACHED", 20.0))
+	r.add_child(_lab(tr("1 more = CITY LOST"), BIG, TideGlyphs.RED, false))
+	chip.add_child(r)
+	chip.tooltip_text = tr("One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.")
+	body.add_child(chip)
+
+
 func _beam_legend() -> void:
 	var d: Dictionary = flow.raid.ctx.draw
 	var n_fire := flow.known_firing()
@@ -820,12 +1003,17 @@ func _beam_legend() -> void:
 		var r := _hrow(6)
 		r.add_child(_type_icon(String(ln["type"]), not live))
 		r.add_child(_lab(tr("Known beam %d: %s, fires after the RESPONSE") % [i + 1, _type_name(String(ln["type"]))] if live else tr("Known beam %d: waits for more Heat") % (i + 1), SMALL, INK if live else Palette.TIDE_OFF, true))
-		body.add_child(r)
+		if live:
+			body.add_child(_legend_hot(r, "known%d" % i))
+		else:
+			body.add_child(r)
 	var rr := _hrow(6)
+	rr.add_child(_lab(tr("Sealed routes: two will fire"), SMALL, DIM, false))
 	for i in (d["cands"] as Array).size():
-		rr.add_child(_type_icon(String(d["cands"][i]["type"]), false))
-		rr.add_child(_lab(["A", "B", "C"][i], SMALL, DIM, false))
-	rr.add_child(_lab(tr("Sealed routes: two will fire"), SMALL, DIM, true))
+		var cell := _hrow(3)
+		cell.add_child(TideGlyphView.chip(["A", "B", "C"][i], TideGlyphs.type_color(String(d["cands"][i]["type"]))))
+		cell.add_child(_type_icon(String(d["cands"][i]["type"]), false))
+		rr.add_child(_legend_hot(cell, "cand%d" % i))
 	body.add_child(rr)
 	var hr := _hrow(6)
 	var hd: Array = d["hunters"]
@@ -834,8 +1022,48 @@ func _beam_legend() -> void:
 	hh.custom_minimum_size = Vector2(18, 18)
 	hh.draw.connect(func() -> void: TideGlyphs.hound(hh, hh.size * 0.5))
 	hr.add_child(hh)
-	hr.add_child(_lab(tr("Hunter: one of %d streets, revealed last") % hd.size(), SMALL, DIM, true))
+	hr.add_child(_lab(tr("Hunter: one of %d streets, revealed last") % hd.size(), SMALL, DIM, false))
+	for i in hd.size():
+		var cell := _hrow(2)
+		cell.add_child(_lab("%d" % (i + 1), SMALL, INK, false))
+		hr.add_child(_legend_hot(cell, "hunter%d" % i))
 	body.add_child(hr)
+	if _focus_pin != "":
+		body.add_child(_lab(tr("Click the lit row again to show every route."), 11, DIM))
+
+
+## Makes legend row `row` point at beam `beam`: hover lights it, a click pins it. Returns the wrapper to add.
+func _legend_hot(row: Control, beam: String) -> Control:
+	var box := PanelContainer.new()
+	box.name = "Legend_%s" % beam
+	var pinned := _focus_pin == beam
+	box.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI if pinned else Palette.CLEAR, GOLD if pinned else Palette.CLEAR, 1, 3, 1))
+	box.mouse_filter = Control.MOUSE_FILTER_STOP
+	box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	box.add_child(row)
+	_ignore_tree(row)
+	box.mouse_entered.connect(func() -> void: _set_hover(beam))
+	box.mouse_exited.connect(func() -> void:
+		if _focus_hover == beam:
+			_set_hover(""))
+	box.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			_focus_pin = "" if _focus_pin == beam else beam
+			_focus_hover = ""
+			_rebuild())
+	return box
+
+
+func _ignore_tree(c: Node) -> void:
+	if c is Control:
+		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for ch in c.get_children():
+		_ignore_tree(ch)
+
+
+func _set_hover(beam: String) -> void:
+	_focus_hover = beam
+	_sync_layer()
 
 
 func _type_icon(t: String, dim: bool) -> TideGlyphView:
@@ -895,41 +1123,37 @@ func _summary_lines() -> void:
 func _page_forecast() -> void:
 	body.add_child(_title(tr("FORECAST")))
 	body.add_child(_lab(tr("Every outcome of this plan under HOLD: sealed route A, then B, then the hunter's street. HOME's tier sits at the end of each route."), SMALL, DIM))
+	_loss_banner()
 	var rows := flow.forecast()
-	var tiers := flow.route_tiers()
 	var table := HBoxContainer.new()
 	table.add_theme_constant_override("separation", 10)
 	table.name = "ForecastTable"
 	for a in (flow.raid.ctx.draw["cands"] as Array).size():
 		var col := VBoxContainer.new()
-		col.add_theme_constant_override("separation", 3)
+		col.name = "Route_%s" % ["A", "B", "C"][a]
+		col.add_theme_constant_override("separation", 4)
+		# The column head carries the same chip (letter on the beam's color) the map draws at that route's start and at HOME.
 		var head := _hrow(4)
-		head.add_child(_type_icon(String(flow.raid.ctx.draw["cands"][a]["type"]), false))
-		head.add_child(_lab(["A", "B", "C"][a], SMALL, INK, false))
-		head.add_child(TideGlyphView.tier(String(tiers[a]), 16.0))
+		var rtype := String(flow.raid.ctx.draw["cands"][a]["type"])
+		head.add_child(TideGlyphView.chip(["A", "B", "C"][a], TideGlyphs.type_color(rtype), 22.0))
+		head.add_child(_type_icon(rtype, false))
 		col.add_child(head)
-		var grid := GridContainer.new()
-		grid.columns = 2
-		grid.add_theme_constant_override("h_separation", 3)
-		grid.add_theme_constant_override("v_separation", 3)
-		for slot in 2:
-			for h in 2:
-				var tier_word := ""
-				for r in rows:
-					if r["a"] == a and r["b_slot"] == slot and r["hunter"] == h:
-						tier_word = String(r["tier"])
-				var cell := TideGlyphView.tier(tier_word, 24.0)
-				var pip := TideGlyphView.new()
-				pip.custom_minimum_size = Vector2(28, 28)
-				var tw := tier_word
-				pip.draw.connect(func() -> void: TideGlyphs.tier_pip(pip, pip.size * 0.5, tw, 12.0))
-				pip.tooltip_text = tr("B slot %d, hunter street %d: %s") % [slot + 1, h + 1, _tierw(tw)]
-				cell.queue_free()
-				grid.add_child(pip)
-		col.add_child(grid)
+		# The outcomes of this route, grouped by tier (worst first) with their count: no row of identical tiles.
+		var counts := {}
+		var total := 0
+		for r in rows:
+			if r["a"] == a:
+				counts[String(r["tier"])] = int(counts.get(String(r["tier"]), 0)) + 1
+				total += 1
+		var kinds: Array = counts.keys()
+		kinds.sort_custom(func(x: String, y: String) -> bool: return TideGlyphs.rank(x) > TideGlyphs.rank(y))
+		for k in kinds:
+			var tile := TideGlyphView.tile(String(k), Vector2(TILE_W, TILE_H), int(counts[k]))
+			tile.tooltip_text = tr("%d of %d outcomes of route %s end %s.") % [counts[k], total, ["A", "B", "C"][a], _tierw(String(k))]
+			col.add_child(tile)
 		table.add_child(col)
 	body.add_child(table)
-	body.add_child(_lab(tr("Rows: the corp's B pick (slot 1 or 2). Columns: the hunter's street."), SMALL, DIM))
+	body.add_child(_lab(tr("Each column is one sealed route A. Its tiles count the outcomes that end in that tier, over the corp's B pick and the hunter's street."), SMALL, DIM))
 	body.add_child(_guard_line())
 	_summary_lines()
 	var fr := flow.friction()
@@ -1042,7 +1266,7 @@ func _group_row(gi: int) -> Control:
 	var lab := _lab(_group_label(g), TXT, DIM if nothing else INK, false)
 	lab.clip_text = true
 	col.add_child(lab)
-	var sub := _cost_note(m, nothing)
+	var sub := _cost_note(m, nothing, int(g.get("same", 0)))
 	if sub != "":
 		col.add_child(_lab(sub, 11, DIM, false))
 	row.add_child(col)
@@ -1065,8 +1289,10 @@ func _ignore(c: Control) -> Control:
 	return c
 
 
-func _cost_note(m: Dictionary, nothing: bool) -> String:
+func _cost_note(m: Dictionary, nothing: bool, same: int = 0) -> String:
 	var parts := PackedStringArray()
+	if same > 0:
+		parts.append(tr("+%d same as hold") % same)
 	if SolaceTideRules.CARD_RESPONSES.has(String(m["head"])):
 		parts.append(tr("+%d Heat") % flow.cfg.solace_tide_card_response_heat)
 	if nothing:
@@ -1183,7 +1409,7 @@ func _page_aftermath() -> void:
 	var tier_word := String(a["tier"])
 	var stamp := _hrow(10)
 	stamp.name = "AftermathStamp"
-	if tier_word != "CITY LOST":
+	if tier_word != "CITY LOST" and not banner_is_loss(a):
 		stamp.add_child(TideGlyphView.tier(tier_word, 48.0))
 		stamp.add_child(_lab(_tierw(tier_word), 28, TideGlyphs.tier_color(tier_word), false))
 	else:
@@ -1198,53 +1424,85 @@ func _page_aftermath() -> void:
 		body.add_child(_lab(tr("%d DOWN, %d TAKEN, %d INFECTED in all") % [(a["down"] as Array).size(), (a["taken"] as Array).size(), a["infected"]], TXT))
 		if int(a["heat_delta"]) != 0 or int(a["schematics_delta"]) != 0:
 			body.add_child(_lab(tr("Heat %+d, Schematics %+d") % [a["heat_delta"], a["schematics_delta"]], TXT, DIM))
+	# Where the INFECTED cards came from, so the count never jumps unexplained.
+	_tally_block(a["tally"], false)
+	if banner_is_loss(a):
+		body.add_child(_lab(tr("CITY LOST: the INFECTED cards outnumber the healthy ones."), TXT, TideGlyphs.RED))
 	body.add_child(_btn(tr("CONTINUE"), cont))
+
+
+## True when the aftermath is the CITY LOST stamp.
+func banner_is_loss(a: Dictionary) -> bool:
+	return String(a["banner"]) == "CITY LOST"
 
 
 func _page_hq() -> void:
 	body.add_child(_title(tr("HQ STEP")))
 	var m := flow.hq_menu()
-	body.add_child(_lab(tr("Schematics: %d. One repair, one build and a patch.") % int(m["schematics"]), TXT, DIM))
-	var patch: Array = m["patch"]
-	if bool(m["can_patch"]):
-		var cb := CheckBox.new()
-		cb.text = tr("PATCH HOME +%d (%d Schematics)") % [patch[0], patch[1]]
-		cb.button_pressed = _hq_patch
-		cb.toggled.connect(func(on: bool) -> void:
-			_hq_patch = on
-			_rebuild())
-		body.add_child(cb)
-	for d in m["downs"]:
-		var cb := CheckBox.new()
-		cb.text = tr("REPAIR %s (%d Schematics)") % [flow.site_name(d), m["repair_cost"]]
-		cb.button_pressed = _hq_repair == d
-		cb.toggled.connect(func(on: bool) -> void:
-			_hq_repair = d if on else &""
-			_rebuild())
-		body.add_child(cb)
-	var build_row := _hrow(6)
-	build_row.add_child(_btn(tr("no build"), func() -> void:
-		_hq_build = ""
-		_rebuild(), true, GOLD if _hq_build == "" else EDGE))
-	if bool(m["can_clean"]):
-		build_row.add_child(_btn(tr("CLEAN (%d)") % int(m["clean_price"]), func() -> void:
-			_hq_build = "CLEAN"
-			_rebuild(), true, GOLD if _hq_build == "CLEAN" else EDGE))
-	if bool(m["can_cool"]):
-		build_row.add_child(_btn(tr("COOL (%d)") % int(m["cool_price"]), func() -> void:
-			_hq_build = "COOL"
-			_rebuild(), true, GOLD if _hq_build == "COOL" else EDGE))
-	body.add_child(build_row)
-	if (m["cleared"] as Array).size() > 0:
-		body.add_child(_lab(tr("%d cleared districts wait to be installed at the HQ.") % (m["cleared"] as Array).size(), SMALL, DIM))
-	var opt: Array = [_hq_repair, _hq_build, _hq_patch]
+	var sel: Array = [_hq_repair, _hq_build, _hq_patch]
+	body.add_child(_lab(tr("Schematics: %d. One repair, one build and a patch. Every price is in Schematics.") % int(m["schematics"]), TXT, DIM))
+	# Every action the step offers: the ones the Cell cannot take now stay on the list, greyed, with the reason under them.
+	for act in flow.hq_actions(sel):
+		body.add_child(_hq_row(act))
+	var total := flow.hq_total(sel)
+	body.add_child(_lab(tr("Picked: %d of %d Schematics") % [total, int(m["schematics"])], TXT, GOLD if total > 0 else DIM))
 	var legal := false
 	for o in flow.hq_options():
-		if o[0] == opt[0] and o[1] == opt[1] and o[2] == opt[2]:
+		if o[0] == sel[0] and o[1] == sel[1] and o[2] == sel[2]:
 			legal = true
 	if not legal:
 		body.add_child(_lab(tr("The Schematics do not cover that."), SMALL, TideGlyphs.RED))
 	body.add_child(_btn(tr("DONE"), done_hq, legal))
+
+
+## One action of the HQ step: a toggle button with its price, and under it the reason when it cannot be taken.
+func _hq_row(act: Dictionary) -> Control:
+	var box := VBoxContainer.new()
+	var kind := String(act["kind"])
+	box.name = "Hq_%s" % kind if StringName(act["site"]) == &"" else "Hq_%s_%s" % [kind, act["site"]]
+	box.add_theme_constant_override("separation", 0)
+	var label := ""
+	match kind:
+		"patch":
+			label = tr("PATCH HOME +%d") % int(act["points"]) if int(act["points"]) > 0 else tr("PATCH HOME")
+		"repair":
+			label = tr("REPAIR %s") % flow.site_name(StringName(act["site"])) if StringName(act["site"]) != &"" else tr("REPAIR a district")
+		"clean":
+			label = tr("CLEAN an INFECTED card")
+		"cool":
+			label = tr("COOL: Heat -%d") % flow.cfg.heat_purchase_amount
+		"install":
+			label = tr("INSTALL %d cleared districts") % int(act["points"])
+	var picked := bool(act["picked"])
+	var b := _btn("%s%s  (%d)" % ["> " if picked else "", label, int(act["cost"])], func() -> void: _hq_pick(act), bool(act["enabled"]), GOLD if picked else EDGE)
+	b.name = "Pick"
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.clip_text = true
+	b.tooltip_text = label
+	box.add_child(b)
+	if String(act["why"]) != "":
+		var why := tr(String(act["why"]))
+		if (act["why_args"] as Array).size() > 0:
+			why = why % act["why_args"]
+		var wl := _lab(why, 11, TideGlyphs.RED.darkened(0.15), true)
+		wl.name = "Why"
+		box.add_child(wl)
+	return box
+
+
+## Toggles the pick of HQ action `act` (a patch, a repair, one build).
+func _hq_pick(act: Dictionary) -> void:
+	match String(act["kind"]):
+		"patch":
+			_hq_patch = not _hq_patch
+		"repair":
+			var s := StringName(act["site"])
+			_hq_repair = &"" if _hq_repair == s else s
+		"clean":
+			_hq_build = "" if _hq_build == SolaceTideRules.BUILD_CLEAN else SolaceTideRules.BUILD_CLEAN
+		"cool":
+			_hq_build = "" if _hq_build == SolaceTideRules.BUILD_COOL else SolaceTideRules.BUILD_COOL
+	_rebuild()
 
 
 ## The tier ladder, best to worst, pinned in the panel foot.

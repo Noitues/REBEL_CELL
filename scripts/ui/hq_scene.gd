@@ -664,12 +664,18 @@ func show_tide_raid() -> void:
 	if host_box != null and not host_box.resized.is_connected(_fit_tide_screen):
 		host_box.resized.connect(_fit_tide_screen)
 	screen.finished.connect(_tide_done)
+	screen.beat.connect(_tide_beat)
 	_set_panel(screen, "raid_tide")
 	var g := tide_graph(flow)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.5), playout_zoom())
 	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
 	screen.setup(flow, city_overlay)
 	get_tree().process_frame.connect(_frame_tide, CONNECT_ONE_SHOT)
+
+
+## A beat of the tide raid: the top bar follows the screen's numbers.
+func _tide_beat(_label: String) -> void:
+	_refresh_status()
 
 
 ## The tide screen fills the page's visible room (it follows the page host when the bars above change its height).
@@ -7349,11 +7355,16 @@ func _refresh_status() -> void:
 		return
 	# HQ-B (Q1): Heat is the gauge in the bar's first slot (the HEAT stat tag gave it its place);
 	# at the HQ it opens the Heat terminal (Scrub Heat).
-	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
+	# The tide raid screen owns the numbers while it plays: the bar shows the same Heat, Schematics and HOME as its HUD at every beat.
+	var tide: Dictionary = tide_flow.hud() if panel_name == "raid_tide" and tide_flow != null else {}
+	var heat_now: int = int(tide["heat"]) if not tide.is_empty() else (c.heat if hud_heat_shown < 0 else hud_heat_shown)
+	var schem_now: int = int(tide["schematics"]) if not tide.is_empty() else c.schematics
+	var home_now: int = int(tide["home"]) if not tide.is_empty() else (c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown)
+	hud.set_heat(heat_now, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
 	hud.heat_gauge.raid_next = HeatRules.next_raid(c, cfg) if panel_name in HEAT_BUTTON_PAGES else {}  # RAID-FIX C4
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
-	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
-		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
+	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(schem_now), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
+		[TextDb.mark("HOME"), str(home_now), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
 		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defense before the next run.")],
 		[TextDb.mark("ICE"), str(c.ice_level), "", _ice_description(c.ice_level)],

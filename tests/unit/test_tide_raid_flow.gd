@@ -180,3 +180,120 @@ func test_the_guard_the_hold_confirm_and_the_fast_resolve_follow_the_forecast() 
 	else:
 		assert_eq(f.commit([TideRaidFlow.HOLD]), "committed")
 	assert_eq(f.commit([TideRaidFlow.HOLD], true), "no", "a second commit after the resolve is refused")
+
+
+func _action(acts: Array, kind: String, site: StringName = &"") -> Dictionary:
+	for a in acts:
+		if a["kind"] == kind and (site == &"" or a["site"] == site):
+			return a
+	return {}
+
+
+func test_the_hq_step_lists_every_action_with_a_price_and_a_reason_when_it_cannot_be_taken() -> void:
+	var env := _campaign()
+	var c: CampaignState = env["c"]
+	var f := _open(env)
+	var acts := f.hq_actions([&"", "", false])
+	for k in ["patch", "repair", "clean", "cool", "install"]:
+		assert_false(_action(acts, k).is_empty(), "the %s action is listed" % k)
+	assert_false(bool(_action(acts, "patch")["enabled"]), "HOME is full: no patch")
+	assert_ne(String(_action(acts, "patch")["why"]), "", "and it says why")
+	assert_false(bool(_action(acts, "repair")["enabled"]), "no district is DOWN")
+	assert_ne(String(_action(acts, "repair")["why"]), "")
+	assert_false(bool(_action(acts, "install")["enabled"]), "installing happens at the HQ map")
+	# Damage HOME, take a district DOWN, cool the Cell down: now every action but install can be taken.
+	var ring: Array = []
+	for s in c.grid.sites.keys():
+		if c.grid.is_claimed(s) and s != c.grid.home_site_id:
+			ring.append(s)
+	IdSort.sort_ids(ring)
+	c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
+	c.grid.home_integrity -= 6
+	c.heat = 40
+	c.schematics = 300
+	acts = f.hq_actions([&"", "", false])
+	assert_true(bool(_action(acts, "patch")["enabled"]))
+	assert_eq(int(_action(acts, "patch")["points"]), 6)
+	assert_true(bool(_action(acts, "repair", ring[0])["enabled"]))
+	assert_eq(int(_action(acts, "repair", ring[0])["cost"]), SolaceTideRules.repair_cost(env["cfg"]))
+	assert_true(bool(_action(acts, "cool")["enabled"]))
+	assert_eq(int(_action(acts, "cool")["cost"]), SolaceTideRules.cool_price(SolaceTideCampaign.load_state(c, env["corp"], env["cfg"]), env["cfg"]))
+	# Too few Schematics: the price is shown, the action is off and the reason names the need.
+	c.schematics = SolaceTideRules.repair_cost(env["cfg"]) + 1
+	acts = f.hq_actions([ring[0], "", false])
+	assert_true(bool(_action(acts, "repair", ring[0])["picked"]))
+	assert_false(bool(_action(acts, "cool")["enabled"]), "a repair and a cool do not both fit")
+	assert_string_contains(String(_action(acts, "cool")["why"]), "Needs")
+	assert_eq(f.hq_total([ring[0], "", false]), SolaceTideRules.repair_cost(env["cfg"]))
+	# Every pick the screen can make is one the rules list as legal.
+	c.schematics = 300
+	var legal := f.hq_options()
+	assert_true(legal.size() > 1)
+	for o in legal:
+		assert_true(f.hq_total(o) <= 300, "a legal option costs no more than the Cell holds")
+
+
+func test_a_card_response_that_changes_nothing_folds_into_the_hold_row() -> void:
+	var env := _campaign()
+	var f := _open(env)
+	f.advance()
+	f.advance()
+	f.to_forecast()
+	if f.launch() == "confirm":
+		f.launch()
+	var opts := f.raid.response_options()
+	var members := 0
+	var hold_same := -1
+	for g in f.groups:
+		assert_false(bool(g["changes_nothing"]), "no row says 'changes nothing': it folds into HOLD")
+		members += (g["members"] as Array).size()
+		if g["members"][0]["head"] == TideRaidFlow.HOLD:
+			hold_same = int(g["same"])
+	assert_gte(hold_same, 0, "the HOLD row carries the count")
+	assert_eq(members + hold_same, opts.size(), "every response is either a row or counted as the same as HOLD")
+
+
+func test_the_raid_is_counted_from_one_and_decay_explains_the_infected_jump() -> void:
+	var env := _campaign(0)
+	var first := _open(env)
+	assert_eq(first.raid_number(), 1, "the first raid is raid 1")
+	assert_true(first.decay_tally.is_empty(), "nothing decays before the first raid")
+	RunManager.reset()
+	var env2 := _campaign(1)
+	var c: CampaignState = env2["c"]
+	var down: StringName = &""
+	for s in c.grid.sites.keys():
+		if c.grid.is_claimed(s) and s != c.grid.home_site_id:
+			down = s
+			break
+	c.grid.site(down)["condition"] = GridState.Condition.DOWN
+	var f := _open(env2)
+	assert_eq(f.raid_number(), 2)
+	assert_eq(int(f.decay_tally["taken"]), 1, "the DOWN district was TAKEN")
+	assert_eq(f.decay_sites().size(), 1)
+	assert_eq(f.decay_sites()[0], down)
+	var t := f.infected_tally()
+	assert_eq(int(t["after"]), int(f.hud_pre["infected"]))
+	assert_eq(int(t["before"]) + int(f.decay_tally["taken"]) + (1 if bool(f.decay_tally["spread"]) else 0) - int(f.decay_tally["cured"]), int(t["after"]), "the tally adds up to the count the HUD shows")
+
+
+func test_site_names_are_display_names_never_ids() -> void:
+	var env := _campaign()
+	var f := _open(env)
+	var corp: CorporationData = env["corp"]
+	for sd in corp.city_grid.sites:
+		if sd == null or sd.id == corp.city_grid.home_site_id:
+			continue
+		var nm := f.site_name(sd.id)
+		assert_ne(nm, String(sd.id), "%s is shown by its name" % sd.id)
+		assert_false(nm.begins_with("T1 ") or nm.begins_with("T2 ") or nm.begins_with("T3 "), "never 'T1 Site': %s" % nm)
+
+
+func test_the_loss_warning_shows_at_a_margin_of_one() -> void:
+	var env := _campaign()
+	var f := _open(env)
+	var h := f.hud()
+	assert_eq(f.loss_margin(h), int(h["healthy"]) - int(h["infected"]) + 1)
+	assert_false(f.loss_warning() and int(h["infected"]) < int(h["healthy"]), "no warning while the city has room")
+	var near := {"infected": 5, "healthy": 5}
+	assert_eq(f.loss_margin(near), 1)

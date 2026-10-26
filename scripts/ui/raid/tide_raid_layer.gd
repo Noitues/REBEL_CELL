@@ -22,6 +22,12 @@ const TAKEN_COL := Palette.TIDE_TAKEN_FILL
 const INK_ALPHA := 0.7
 const SMALL_PX := 12
 const LABEL_PX := 13
+## A beam that is not the focused one keeps this share of its alpha.
+const FOCUS_DIM := 0.18
+const IMPACT_R := 16.0
+const IMPACT_SPOKES := 8
+const IMPACT_PERIOD := 0.9
+const CHIP_R := 8.0
 
 var overlay: CityMapOverlay = null
 var core: StringName = &""
@@ -39,7 +45,13 @@ var hits: Dictionary = {}
 var blocks: Array = []
 ## The worst tier of each candidate route at HOME (empty: none), drawn at HOME.
 var home_tiers: Array = []
+## The type color of each of those routes (the chip colors that match the forecast columns).
+var home_cols: Array[Color] = []
 var ghost_home: bool = false
+## The beam (its `name`) the player hovers or picked: every other beam dims. "" = none, all beams show alike.
+var focus: String = ""
+## What the current playout beat hits: [{site, col, label}], drawn as an impact burst on the Site.
+var impacts: Array = []
 var hovered: StringName = &""
 ## The response being previewed (hovered or picked): [] or its response array, drawn as a ghost on the map.
 var preview: Array = []
@@ -107,6 +119,7 @@ func _draw() -> void:
 	_draw_sentries()
 	_draw_home()
 	_draw_preview()
+	_draw_impacts()
 
 
 func _draw_tints() -> void:
@@ -132,6 +145,8 @@ func _draw_beam(b: Dictionary) -> void:
 		return
 	var col := TideGlyphs.type_color(String(b["type"]))
 	var a := float(b.get("alpha", 1.0))
+	if focus != "" and String(b.get("name", "")) != focus:
+		a *= FOCUS_DIM
 	col.a = a
 	var w := float(b.get("width", LINE_W))
 	var ink := Color(TideGlyphs.BLACK, INK_ALPHA * a)
@@ -155,6 +170,9 @@ func _draw_beam(b: Dictionary) -> void:
 		draw_string(_font, mid, lab, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX, Color(col, a).lightened(0.3))
 	if String(b["role"]) == "hunter":
 		TideGlyphs.hound(self, start + Vector2(0.0, -14.0), col)
+	var chip := String(b.get("chip", ""))
+	if chip != "" and a > FOCUS_DIM:
+		TideGlyphs.route_chip(self, start + Vector2(14.0, -14.0), chip, CHIP_R, Color(TideGlyphs.type_color(String(b["type"])), a))
 	if bool(b.get("current", false)):
 		draw_arc(start, 12.0, 0.0, TAU, 20, Color(TideGlyphs.INK, a), 2.0)
 
@@ -214,10 +232,39 @@ func _draw_home() -> void:
 			var c := hp + off
 			draw_circle(c, HOME_GLYPH_R + 4.0, Color(TideGlyphs.BLACK, INK_ALPHA))
 			TideGlyphs.tier(self, c, tw, HOME_GLYPH_R)
-			draw_string(_font, c + Vector2(-4, HOME_GLYPH_R + 15.0), CAND_LETTERS[i], HORIZONTAL_ALIGNMENT_LEFT, -1, SMALL_PX, TideGlyphs.DIM)
+			var chip_col: Color = home_cols[i] if i < home_cols.size() else TideGlyphs.DIM
+			TideGlyphs.route_chip(self, c + Vector2(0.0, HOME_GLYPH_R + 13.0), CAND_LETTERS[i], CHIP_R, chip_col)
 	var cp := at(core)
 	if cp.x != INF:
 		draw_arc(cp, 26.0, 0.0, TAU, 28, TideGlyphs.COBALT_HOT, 2.0)
+
+
+## The beat's impact on each Site it hits: a solid ring, a pulse ring swelling out of it (still under reduce motion), spokes and a
+## named chip, so a beam that lands is a visible event and not only a log line.
+func _draw_impacts() -> void:
+	if impacts.is_empty():
+		return
+	var animated := Motion.seconds_live(&"raid_step_beat") > 0.0
+	var k := fmod(float(Time.get_ticks_msec()) / 1000.0 / IMPACT_PERIOD, 1.0) if animated else 0.5
+	for im in impacts:
+		var p := at(StringName(String(im["site"])))
+		if p.x == INF:
+			continue
+		var col: Color = im["col"]
+		draw_circle(p, IMPACT_R + 4.0, Color(TideGlyphs.BLACK, 0.45))
+		draw_arc(p, IMPACT_R, 0.0, TAU, 28, col, 3.5)
+		draw_arc(p, IMPACT_R + 22.0 * k, 0.0, TAU, 28, Color(col, 1.0 - k), 2.5)
+		for s in IMPACT_SPOKES:
+			var d := Vector2.from_angle(TAU * float(s) / float(IMPACT_SPOKES) + 0.2)
+			draw_line(p + d * (IMPACT_R + 5.0), p + d * (IMPACT_R + 13.0 + 6.0 * k), col, 2.0)
+		TideGlyphs.xmark(self, p, 7.0, TideGlyphs.RED, 3.0)
+		var lab := String(im.get("label", ""))
+		if lab != "":
+			var w := _font.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX).x
+			var box := Rect2(p + Vector2(18.0, -34.0), Vector2(w + 12.0, 20.0))
+			draw_rect(box, Color(TideGlyphs.BLACK, 0.85))
+			draw_rect(box, col, false, 2.0)
+			draw_string(_font, box.position + Vector2(6.0, 15.0), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_PX, TideGlyphs.INK)
 
 
 ## A response's effect on the board as a ghost: DEPLOY a sentry dropping in, REDEPLOY an arrow from the source to the target, SACRIFICE a
