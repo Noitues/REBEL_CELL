@@ -133,11 +133,11 @@ static func known_count(heat: int, cfg: CampaignConfigData) -> int:
 
 
 ## HOME integrity one hit removes. `purge` = the raid the first crossing of the PURGE level queued.
-static func home_damage(heat: int, purge: bool, cfg: CampaignConfigData) -> int:
+static func home_damage(heat: int, purge: bool, cfg: CampaignConfigData, min_band: int = 0) -> int:
 	var t := cfg.solace_tide_home_hit_damage_by_band
 	if purge:
 		return t[4]
-	return t[mini(3, band(heat, cfg))]
+	return t[mini(3, maxi(min_band, band(heat, cfg)))]
 
 
 ## Adds `delta` Heat (clamped 0..heat_max). Returns true when a raid Heat level (25 / 50 / 75 / PURGE) is crossed for
@@ -464,7 +464,7 @@ static func launch(ctx: Ctx, st: SolaceTideState, place: Dictionary) -> Sweep:
 	sw.sent = (place["sentries"] as Dictionary).duplicate()
 	sw.owned = st.owned.duplicate()
 	sw.home = st.home
-	sw.home_dmg = home_damage(st.heat, st.purge_queued, cfg)
+	sw.home_dmg = home_damage(st.heat, st.purge_queued, cfg, st.min_band)
 	sw.n_known = known_count(sw.heat, cfg)
 	var used := {}
 	for j in sw.sent.values():

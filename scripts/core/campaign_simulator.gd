@@ -37,6 +37,8 @@ var home: HomeServerVariantData
 ## `turn_override` is a Callable(NetrunSession) -> bool: true when it played and ended the combat turn itself (skill knob).
 var probe: RefCounted = null
 var turn_override: Callable = Callable()
+## Tooling (tools/raid_tide): a tide raid defense every raid is fought with ({"place", "resp"}); empty = the automatic defense.
+var raid_plan: Dictionary = {}
 
 
 func _init(p_resolver: CombatResolver, corporation_id: StringName = &"solace", class_id: StringName = &"breaker", home_id: StringName = &"home_standard") -> void:
@@ -118,6 +120,8 @@ func _fight_raids(c: CampaignState, stats: Dictionary) -> void:
 		guard += 1
 		_deploy_armory(c)
 		var raid_id := String(c.pending_raids[0].get("raid_id", ""))
+		if not raid_plan.is_empty():
+			c.pending_raids[0]["plan"] = raid_plan
 		CampaignRules.fight_raid(c, corp, config, lookup, c.pending_raids[0])
 		if probe != null:
 			probe.on_raid(c)

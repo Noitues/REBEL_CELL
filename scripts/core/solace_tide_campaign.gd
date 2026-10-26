@@ -46,6 +46,17 @@ static func raid_streams(campaign_seed: int, raid_idx: int) -> RandomNumberGener
 	return RngStreams.seeded(RngStreams.derive_seed(campaign_seed, StringName("tide_raid_%d" % raid_idx))).get_stream(&"raids")
 
 
+## The weakest Heat band the HOME hit of a raid queued by `source` may have (config): story and retaliation raids carry their own
+## strength; every other source (cadence, Heat level) is decided by the Heat alone (0).
+static func trigger_band(source: int, cfg: CampaignConfigData) -> int:
+	match source:
+		RC.RaidTriggerSource.STORY:
+			return cfg.solace_tide_story_band
+		RC.RaidTriggerSource.RETALIATION:
+			return cfg.solace_tide_retaliation_band
+	return 0
+
+
 ## Raids fought so far (each one adds to exactly one of the two counters).
 static func raids_fought(campaign: CampaignState) -> int:
 	return campaign.raids_won + campaign.raids_lost

@@ -102,7 +102,43 @@ func test_a_tide_campaign_queues_no_resolver_raid() -> void:
 	HeatRules.add_heat(c, 30, _cfg, "test")  # crosses the 25 level
 	assert_true(c.pending_raids.is_empty(), "a Heat level queues nothing itself: the netrun's close does")
 	assert_true(c.corp_theme.solace.tide.heat_crossed)
-	assert_eq(CampaignRules.queue_raid(c, _corp, RC.RaidTriggerSource.STORY, &"", "story").size(), 0)
+	assert_eq(CampaignRules.queue_raid(c, _corp, RC.RaidTriggerSource.TERRITORY_CLAIM, &"", "claim").size(), 0, "claim raids stay off")
+	assert_eq(CampaignRules.queue_raid(c, _corp, RC.RaidTriggerSource.NODE_BUILT, &"", "node").size(), 0, "node-built raids stay off")
+	assert_true(c.pending_raids.is_empty())
+
+
+func test_story_and_retaliation_trigger_a_tide_raid_that_resets_the_cadence() -> void:
+	# designer ruling 2026-10-25
+	var c := _campaign()
+	_own(c, 3)
+	c.corp_theme.solace.tide.netruns_since_raid = 2
+	for src in [RC.RaidTriggerSource.STORY, RC.RaidTriggerSource.RETALIATION]:
+		c.pending_raids.clear()
+		var ev := CampaignRules.queue_raid(c, _corp, src, &"", "trigger")
+		assert_eq(ev.size(), 1)
+		assert_eq(c.pending_raids.size(), 1)
+		assert_eq(c.pending_raids[0]["model"], "tide")
+		var before := c.raids_won + c.raids_lost
+		CampaignRules.fight_raid(c, _corp, _cfg, _lookup, c.pending_raids[0])
+		assert_eq(c.raids_won + c.raids_lost, before + 1, "fought as a tide raid")
+		assert_eq(c.last_raid["model"], "tide")
+		assert_eq(c.corp_theme.solace.tide.netruns_since_raid, 0, "it resets the cadence")
+		c.corp_theme.solace.tide.netruns_since_raid = 2
+
+
+func test_story_raid_hits_home_at_least_as_hard_as_its_band() -> void:
+	assert_eq(SolaceTideCampaign.trigger_band(RC.RaidTriggerSource.STORY, _cfg), _cfg.solace_tide_story_band)
+	assert_eq(SolaceTideCampaign.trigger_band(RC.RaidTriggerSource.HEAT_THRESHOLD, _cfg), 0)
+	var t := _cfg.solace_tide_home_hit_damage_by_band
+	assert_eq(SolaceTideRules.home_damage(0, false, _cfg, 2), t[2], "COOL Heat, a story raid: band 2")
+	assert_eq(SolaceTideRules.home_damage(0, false, _cfg), t[0])
+	assert_eq(SolaceTideRules.home_damage(80, false, _cfg, 2), t[3], "the Heat band wins when higher")
+	var c := _campaign()
+	_own(c, 2)
+	c.heat = 0
+	var raid := SolaceTideRaid.open(c, _corp, _cfg, {"source": RC.RaidTriggerSource.STORY})
+	assert_eq(raid.st.min_band, _cfg.solace_tide_story_band)
+	assert_eq(SolaceTideRules.launch(raid.ctx, raid.st, raid.place).home_dmg, t[2])
 
 
 # --------------------------------------------------------------------------------------- the mapping (item 2)

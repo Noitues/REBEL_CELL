@@ -49,6 +49,8 @@ var heat_crossed: bool = false
 ## DECAY of the pending raid has run and is part of the campaign (a raid is one checkpoint: DECAY is never undone, and an
 ## opened raid that is saved and loaded does not decay twice). Cleared when the raid resolves.
 var decayed: bool = false
+## Not saved: the weakest Heat band this raid's HOME hit may have (a story or retaliation raid, 0 = the Heat decides).
+var min_band: int = 0
 
 # --- the working view of the campaign ---
 var heat: int = 0
@@ -154,6 +156,7 @@ func duplicate_state() -> SolaceTideState:
 	s.breach_fails = breach_fails
 	s.heat_crossed = heat_crossed
 	s.decayed = decayed
+	s.min_band = min_band
 	s.heat = heat
 	s.schematics = schematics
 	s.home = home

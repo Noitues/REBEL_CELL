@@ -54,6 +54,7 @@ static func open(p_campaign: CampaignState, p_corp: CorporationData, p_cfg: Camp
 		start = SolaceTideCampaign.load_state(p_campaign, p_corp, p_cfg)
 	start.netruns_since_raid = 0
 	start.raid_n = r.raid_idx
+	start.min_band = SolaceTideCampaign.trigger_band(int(p_pending.get("source", -1)), p_cfg)
 	r.st = start
 	var board := SolaceTideCampaign.board_for(p_corp, p_cfg)
 	var rng := SolaceTideCampaign.raid_streams(p_campaign.campaign_seed, r.raid_idx)

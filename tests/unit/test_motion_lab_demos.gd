@@ -84,6 +84,10 @@ var _reduce: bool = false
 var _typing: bool = true
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func before_all() -> void:
 	_reduce = Settings.reduce_effects
 	_typing = Settings.subtitle_typing
@@ -342,3 +346,7 @@ func test_the_switch_check_names_a_view_that_never_asks() -> void:
 	assert_true(_asked_through(through, &"raid_move"), "an ask through the layer's own functions counts")
 	assert_false(_asked_through(through, &"raid_flip"), "an id it never passes does not")
 	assert_true(_asked_through(_game_sources(), &"raid_threat_withdraw"), "the raid layer asks about a withdrawal through beat_u")
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

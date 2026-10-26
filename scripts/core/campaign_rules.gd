@@ -431,7 +431,15 @@ static func clear_preview(campaign: CampaignState, corp: CorporationData, config
 static func queue_raid(campaign: CampaignState, corp: CorporationData, source: int, entry: StringName, why: String) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	if SolaceTideCampaign.active(campaign):
-		return events  # the tide's raids come from its cadence and Heat levels only (SolaceTideCampaign.netrun_closed)
+		# The tide's raids come from its cadence and Heat levels (SolaceTideCampaign.netrun_closed). Designer ruling 2026-10-25: story
+		# and retaliation triggers also queue one (claim and node-built stay off); it is fought like any tide raid and resets the cadence.
+		if source == RC.RaidTriggerSource.STORY or source == RC.RaidTriggerSource.RETALIATION:
+			var tr := _raid_for(corp, source)
+			campaign.pending_raids.append({"raid_id": String(tr.id) if tr != null else "", "source": source, "site_id": String(entry),
+				"corporation": String(campaign.corporation_id), "model": "tide"})
+			events.append({"type": "raid_pending", "raid_id": tr.id if tr != null else &"", "source": source,
+				"text": "%s provoked a raid%s." % [why, (": " + tr.display_name) if tr != null else ""]})
+		return events
 	var raid := _raid_for(corp, source)
 	if raid == null:
 		return events

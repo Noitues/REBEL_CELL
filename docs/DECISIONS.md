@@ -10116,3 +10116,18 @@ Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch
   so 4 points per card = 25 %. (Read on the builtin's own baseline instead, a relative drop of 4/52 = 7.7 % per card is 14 %.)
   Caveat: the confidence interval is wide; the `reference` policy (lookahead 2) needed more than 28 minutes for 60 fights and was
   stopped. Q for the designer / balance: re-measure once with `--policy reference` at 0 / 1 / 2 / 3 cards.
+
+### 2026-10-25 - Solace keeps story and retaliation raids (designer ruling) and Phase 2b follow-ups
+- **Ruling.** In a tide campaign a story or retaliation trigger (`CampaignRules.queue_raid`, from a story beat or an Exploit taken under
+  Heat) queues a tide raid (`model: tide`); it is fought through the same `SolaceTideRaid` flow and `begin` resets the cadence counter
+  like a Heat raid. Claim and node-built raids stay off.
+- **Strength.** The content gives them their own threats (story: Enforcer 9 + Lockdown Unit 6 = 15; retaliation: Auditor 3 + Icebreaker 4
+  = 7, summed as the HOME damage table was derived). They map to the tide's damage bands by the nearest table value: `solace_tide_story_band`
+  = 2 (13) and `solace_tide_retaliation_band` = 0 (5). The raid's HOME hit is at least that band's damage
+  (`SolaceTideRules.home_damage(..., min_band)`, set from the pending raid's source in `SolaceTideRaid.open`; not saved).
+- **Pacing re-run** (builtin bot, 80 Solace campaigns, seeds 1000..1079, `tools/raid_tide/tide_sim.gd`, cadence 3 unchanged):
+  raids per netrun 0.342 skilled (automatic defense), 0.352 careless (no sentries, HOLD): inside the 0.33-0.5 target, so no retune.
+  Campaign outcomes: skilled 11 WON / 49 LOST / 20 at the run cap; careless 5 WON / 68 LOST / 7 at the cap. The bot dies 16-28 times
+  a campaign and ends at Heat 100, so the losses are mostly the bot (the S5 note); the careless-skilled gap is 12 points of loss.
+- Test-only: the three full-tier scripts that drive the resolver raid UI on Solace (`test_anim4_drag_drop`, `test_anim4b_run_drag_drop`,
+  `test_motion_lab_demos`) use `RaidModelFixture`.

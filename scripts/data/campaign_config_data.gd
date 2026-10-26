@@ -389,6 +389,12 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## R-C: the class card a stationed operative adds to the raid deck, one "class_id:type:verb" per class.
 @export var solace_tide_class_cards: PackedStringArray = PackedStringArray(["breaker:D:GUARD", "wrecker:D:GUARD",
 	"overclocker:D:SHIFT", "ghost:E:GUARD", "phantom:E:SHIFT", "rigger:N:GUARD", "botnet:N:JAM", "hivemind:N:SHIFT"])
+## Designer ruling 2026-10-25: Solace keeps its story and retaliation raids (claim and node-built stay off); in a tide campaign
+## each queues a tide raid. A raid's HOME hit is at least the damage of this Heat band (index into
+## `solace_tide_home_hit_damage_by_band`): story = 9 + 6 as if every threat reached HOME (15, nearest the 13 of band 2),
+## retaliation = 3 + 4 (7, nearest the 5 of band 0).
+@export var solace_tide_story_band: int = 2
+@export var solace_tide_retaliation_band: int = 0
 ## The automatic defense (the simulator and an unattended raid) scores each placement by the raid's damage over the
 ## forecast's 12 outcomes: HOME points lost, Sites newly TAKEN and Sites newly DOWN, each times its weight; the lowest wins.
 @export var solace_tide_auto_home_weight: int = 4
@@ -780,6 +786,8 @@ func solace_tide_asset_card(asset_type: int) -> Array:
 
 
 func _validate_solace_tide(errors: PackedStringArray) -> void:
+	if solace_tide_story_band < 0 or solace_tide_story_band > 4 or solace_tide_retaliation_band < 0 or solace_tide_retaliation_band > 4:
+		errors.append("solace_tide_story_band and _retaliation_band are Heat bands 0..4.")
 	if solace_tide_asset_card_types.size() != solace_tide_asset_card_verbs.size() or solace_tide_asset_card_types.is_empty():
 		errors.append("solace_tide_asset_card_types and _verbs need one entry per asset type.")
 	for t in solace_tide_asset_card_types:
