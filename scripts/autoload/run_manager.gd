@@ -434,6 +434,32 @@ func fight_raid() -> Array[Dictionary]:
 		return []
 	var won_before := campaign.raids_won
 	var events := CampaignRules.fight_raid(campaign, corporation, config(), lookup(), pending)
+	_raid_fought(won_before)
+	return events
+
+
+## Phase 3: plays the Solace tide raid the player set up on the tide screen (`raid`: the SolaceTideRaid the screen opened and
+## planned) and applies it, as `fight_raid` does for the automatic defense: the pending raid is consumed, the raid is resolved
+## (or, when DECAY already ended the campaign, closed as CITY LOST), the profile and the save follow. Returns the events.
+func fight_tide_raid(raid: SolaceTideRaid) -> Array[Dictionary]:
+	var pending := pending_raid()
+	if pending.is_empty() or raid == null:
+		return []
+	var won_before := campaign.raids_won
+	campaign.pending_raids.erase(pending)
+	campaign.next_raid_mods = {}
+	var events: Array[Dictionary] = []
+	if raid.over:
+		events = raid.open_events.duplicate()
+		events.append({"type": "raid_end", "won": false, "tier": "CITY LOST", "text": "Tide raid %d: CITY LOST in the DECAY." % (raid.raid_idx + 1)})
+	else:
+		events = raid.resolve()
+	CampaignRules.name_pending_raids(campaign, lookup(), events)
+	_raid_fought(won_before)
+	return events
+
+
+func _raid_fought(won_before: int) -> void:
 	if campaign.raids_won > won_before and config().raid_win_event_enabled and campaign.venue_event_due < 0 and not campaign.is_over():
 		campaign.venue_event_due = TerminalEventData.Venue.RAID_WIN  # EV-02 hosts (Q6): the hub opens the event after the result
 	sync_profile_with_campaign()
@@ -441,7 +467,6 @@ func fight_raid() -> Array[Dictionary]:
 		campaign_ended.emit(campaign)
 	autosave()
 	campaign_changed.emit(campaign)
-	return events
 
 
 # --- Hub events (EV-02 hosts: RAID_WIN after a raid fought at HQ, HQ_VIEW) ----------------------

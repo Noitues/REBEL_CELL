@@ -359,3 +359,9 @@ static func clean(campaign: CampaignState, cfg: CampaignConfigData) -> Array[Dic
 	events.append({"type": "clean", "card": worst, "cost": clean_price(cfg),
 		"text": "CLEAN: one infected district is cured (-%d Schematics)." % clean_price(cfg)})
 	return events
+
+
+## The damage of one raid outcome in the automatic defense's weights (HOME points, newly TAKEN and newly DOWN Sites): what the
+## tide screen ranks a response by. 0 is untouched; lower is better.
+static func damage_of(before: SolaceTideState, after: SolaceTideState, cfg: CampaignConfigData) -> int:
+	return _damage(before, after, cfg)
