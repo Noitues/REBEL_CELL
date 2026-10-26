@@ -9,6 +9,10 @@ var _meridian: CorporationData
 var _solace: CorporationData
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func before_all() -> void:
 	_resolver = CombatFixture.resolver()
 	_cfg = CombatFixture.config()
@@ -237,3 +241,7 @@ func test_the_orbital_finale_foreshadows_rebel_cell() -> void:
 	for p in corp.story_paths:
 		found = found or p.foreshadows == &"rebel_cell"
 	assert_true(found)
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

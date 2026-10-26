@@ -28,6 +28,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	Motion.force_live = false
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_s_mapview"
@@ -37,6 +38,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	AudioDirector.muted = false
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())

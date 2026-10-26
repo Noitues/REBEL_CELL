@@ -30,6 +30,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	_pseudo_before = TranslationServer.pseudolocalization_enabled
 	RunManager.save_slot = SLOT
@@ -40,6 +41,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	if TranslationServer.pseudolocalization_enabled != _pseudo_before:
 		TranslationServer.pseudolocalization_enabled = _pseudo_before
 	if not is_equal_approx(Settings.text_scale, _text_scale_before):

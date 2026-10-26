@@ -9,6 +9,10 @@ var _corp: CorporationData
 var _breaker: ClassData
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func before_all() -> void:
 	_cfg = CombatFixture.config()
 	_lookup = GridFixture.lookup()
@@ -160,3 +164,7 @@ func test_profile_ice_cap_follows_wins() -> void:
 	assert_eq(p.ice_cap_for(&"solace", _cfg.new_corp_ice_offset), 20, "capped at 20")
 	var again := ProfileState.from_dict(p.to_dict())
 	assert_eq(again.ice_cap_for(&"solace", _cfg.new_corp_ice_offset), 20)
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

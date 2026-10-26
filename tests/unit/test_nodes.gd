@@ -10,6 +10,10 @@ var _breaker: ClassData
 var _resolver: CombatResolver
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func before_all() -> void:
 	_resolver = CombatFixture.resolver()
 	_cfg = _resolver.config
@@ -194,3 +198,7 @@ func test_netrun_boosts_are_bought_at_hq_and_consumed_by_the_next_run() -> void:
 	assert_eq(c.get_operative(c.roster[0].id).deck.size(), deck_size)
 	var none := NetrunSession.start(_resolver, c, c.roster[0].id, 1, &"t1_b", 4, _corp)
 	assert_eq(none.run.cycles, 0, "boosts are one-time")
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

@@ -18,6 +18,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_reduce = Settings.reduce_effects
 	Motion.force_live = false
 	AudioDirector.muted = true
@@ -28,6 +29,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	if Settings.reduce_effects != _reduce:
 		Settings.set_reduce_effects(_reduce)
 	Motion.force_live = false

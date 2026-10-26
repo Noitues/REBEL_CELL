@@ -10,6 +10,7 @@ const PAPER_MIN_H := 320.0
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_raid_paper"
 	RunManager.scene_switching_enabled = false
@@ -19,6 +20,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	Settings.text_scale = 1.0
 
 
