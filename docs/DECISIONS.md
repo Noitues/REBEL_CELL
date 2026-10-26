@@ -10131,3 +10131,16 @@ Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch
   a campaign and ends at Heat 100, so the losses are mostly the bot (the S5 note); the careless-skilled gap is 12 points of loss.
 - Test-only: the three full-tier scripts that drive the resolver raid UI on Solace (`test_anim4_drag_drop`, `test_anim4b_run_drag_drop`,
   `test_motion_lab_demos`) use `RaidModelFixture`.
+
+## 2026-10-25 Phase 3: the Solace Infected Tide raid screen (branch raid-tide-ui)
+- A pending raid of a `uses_tide` corporation opens `TideRaidScreen` (scripts/ui/raid/, panel "raid_tide" in `hq_scene`), in place of the
+  resolver's setup and playout; other corporations are unchanged. `show_raid` and `_build_hq_page` route to it.
+- `TideRaidFlow` (RefCounted) holds the phase and every choice the screen offers; the rules stay in `SolaceTideRaid` / `SolaceTideRules`.
+  DECAY is committed at open (never undone, as the rules say); PLAN and FORECAST undo with `SolaceTideRaid.rewind`; the RESPONSE commit is
+  the checkpoint (`RunManager.fight_tide_raid` resolves and applies, then nothing rewinds). A mid-raid reload reopens the same lines and
+  hand (the raid's `raids` stream depends only on the seed and the raid index); the placement is not saved.
+- Presentation choices ported from the raid lab (L14 to L17): inline worst/best tier glyphs on the response rows (gold edge = beats HOLD by
+  worst tier, then mean damage in the automatic defense's weights), rows merged when their 12 outcomes are identical, at most 8 groups and a
+  "more" fold, ghost rows with a reason, the guard line, the launch confirm (HOME drops on every outcome, or HOME at 1), the HOLD confirm,
+  LOCKED fast resolve only when every row gives one tier on every outcome, five tier shapes, dimmed DONE beams, wordless cards.
+- The INFECTED front on the city map is a flat translucent tint (the Bloom look API is the netrun street's): left for the art-pass.
