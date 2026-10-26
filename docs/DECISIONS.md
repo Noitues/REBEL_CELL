@@ -10189,3 +10189,20 @@ Designer rulings 2026-10-26 (Phase 3b, branch raid-tide-3b-rules). Oracle varian
   first):**
   - multi-prong or splitting raid lines, and other complex path shapes;
   - per-corp special abilities, for example a beam that bypasses one sentry.
+
+## 2026-10-26 Solace tide: forced loss skips to the loss beat; HQ-step warning (designer)
+- **Ruling:** when every response ends the run, the raid screen shows no response menu and no confirms. It plays a short
+  THE CITY FALLS sequence: the DECAY tally, the raid straight through, then CITY LOST. One raid earlier, at the HQ step, it
+  warns when the next DECAY could end the city, and points at REPAIR and CLEAN as the way out.
+- **Built (screen and read-only queries; no rule changed, preview() still equals resolve()):**
+  - `SolaceTideTally.forced_loss(st)`: INFECTED already outnumber the healthy cards (or HOME is gone) when the raid opens. The raid only
+    adds INFECTED cards, so every placement, response and outcome ends the campaign; a test walks every placement and response.
+  - `SolaceTideTally.next_decay(st, cfg)`: runs the real DECAY on a copy; `fatal` = the city is lost at that raid's close, `near` = one
+    more INFECTED card after DECAY ends it. The HQ step applies the player's picks first (`SolaceTideRules.between`), so REPAIR and
+    CLEAN show whether they lift the threat.
+  - Also read-only: `tier_odds` (the odds bar, "7 of 12 HOLDS"), `outcome_marks` (the Sites that go DOWN and HOME damage a forecast
+    tile draws on the map), `sentry_check` (a placed or picked card that stops nothing: the type rule plus the forecast with and
+    without it).
+- **Not done:** the top bar's RAIDS tag keeps its name (its icon and tests key on it); its tooltip, the tide HUD and the aftermath
+  now say "raids queued" and why the count drops. A DOWN hit sends no INFECTED card to the deck: the card is made at DECAY (or at
+  TAKEN), so only a TAKEN Site and a HOME hit fly one.

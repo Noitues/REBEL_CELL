@@ -447,3 +447,142 @@ func test_the_aftermath_tally_keeps_decay_and_the_raid_apart_and_the_hq_pick_sho
 				var btn := screen.body.find_child(name_, true, false).find_child("Pick", true, false) as Button
 				assert_true(btn.text.begins_with("> "), "the picked row is marked")
 				break
+
+
+# ------------------------------------------------------------------------------------------------ Phase 3d
+func test_a_forced_loss_shows_the_city_falls_not_the_menu() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	c.raids_won = 1
+	var ids: Array = []
+	for i in 12:
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	_pending(c)
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+	await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	var flow := screen.flow
+	assert_not_null(screen.body.find_child("CityFallsButton", true, false), "the DECAY beat offers THE CITY FALLS")
+	assert_not_null(screen.body.find_child("CityFalls", true, false))
+	screen.city_falls()
+	await _frames()
+	assert_true(flow.forced_run)
+	assert_false(flow.phase == TideRaidFlow.Phase.RESPONSE, "no response menu, no confirm")
+	if flow.phase == TideRaidFlow.Phase.PLAYOUT:
+		flow.playout_done()
+		screen._rebuild()
+	assert_eq(flow.phase, TideRaidFlow.Phase.AFTERMATH)
+	assert_true(screen.city_lost_showing(), "the sequence ends on CITY LOST")
+
+
+func test_the_forecast_odds_and_a_pointed_outcome_draw_on_the_map() -> void:
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	screen.cont()
+	screen.cont()
+	screen.to_forecast()
+	var odds := flow.plan_odds()
+	var total := 0
+	for t in odds:
+		total += int(t["n"])
+	assert_eq(total, 12, "the bar counts all twelve outcomes")
+	var bar := screen.body.find_child("OddsBar", true, false) as TideOddsBar
+	assert_not_null(bar)
+	assert_eq(bar.total, 12)
+	assert_eq(odds.map(func(t: Dictionary) -> String: return String(t["tier"])), SolaceTideTally.tier_odds(flow.forecast()).map(func(t: Dictionary) -> String: return String(t["tier"])))
+	var worst := String(odds[0]["tier"])
+	screen._set_fc_hover({"a": -1, "tier": worst, "inf": -1})
+	var want := flow.marks_of(flow.rows_of(-1, worst))
+	assert_eq(screen.layer.fc_marks, want, "the map shows what that tier does: the Sites that go DOWN and HOME's damage")
+	screen._set_fc_hover({})
+	assert_true(screen.layer.fc_marks.is_empty())
+
+
+func test_a_card_that_stops_nothing_turns_red_and_is_flagged_before_it_is_placed() -> void:
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	screen.cont()
+	screen.cont()
+	# Pick each placeable card in turn and find a Site where the rule says it does nothing.
+	var hit := false
+	for h in flow.hand_cards():
+		if hit or not SolaceTideRules.PLACEABLE.has(h["verb"]):
+			continue
+		screen.card_pressed(h["id"])
+		for s in flow.placeable_sites():
+			var chk: Dictionary = SolaceTideTally.sentry_check(flow.raid.ctx, flow.raid.st, flow.raid.place, s, h["id"])
+			if bool(chk["useless"]):
+				assert_true(screen.layer.ghost_sites.has(s), "the ghost is flagged before the card is placed")
+				assert_true(bool(screen.layer.ghost_sites[s]["useless"]))
+				screen.site_clicked(s)
+				assert_true(screen.layer.bad_sentries.has(s), "the placed card turns red with its reason")
+				assert_ne(String(screen.layer.bad_sentries[s]), "")
+				assert_not_null(screen.body.find_child("Mismatch_%s" % s, true, false), "and the page says why")
+				hit = true
+				break
+		if not hit:
+			screen.card_pressed(h["id"])  # let go
+	assert_true(hit, "the sweep met a card that stops nothing")
+
+
+func test_blocked_beams_merge_into_one_sweep_and_hits_stand_alone() -> void:
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	_to_response_screen(screen, true)
+	flow.commit([TideRaidFlow.HOLD], true)
+	var beats := flow.beats()
+	var steps := screen._make_steps(beats)
+	var n := 0
+	var prev_quiet := false
+	for s in steps:
+		n += (s["idx"] as Array).size()
+		if bool(s["quiet"]):
+			assert_false(prev_quiet, "two quiet steps never follow each other")
+		else:
+			assert_eq((s["idx"] as Array).size(), 1, "a hit is its own step")
+		prev_quiet = bool(s["quiet"])
+	assert_eq(n, beats.size(), "every beam is in a step")
+	assert_true(steps.size() <= beats.size())
+	flow.playout_done()
+
+
+func test_the_hq_step_shows_the_decay_warning_and_the_fix() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	c.schematics = 300
+	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	var ring: Array[StringName] = []
+	for l in corp.city_grid.get_site(corp.city_grid.home_site_id).links:
+		ring.append(l)
+	ring.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
+	var st := SolaceTideCampaign.load_state(c, corp, cfg)
+	var ids: Array = []
+	for i in (st.deck.size() - st.wound_count()) - st.wound_count():
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	_pending(c)
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+	await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	screen.flow.phase = TideRaidFlow.Phase.HQ_STEP
+	screen._rebuild()
+	assert_not_null(screen.body.find_child("DecayWarning", true, false), "the HQ step warns that the next DECAY threatens the city")
+	assert_not_null(screen.body.find_child("Fix", true, false), "and marks the way out")
+	screen._hq_repair = ring[0]
+	screen._rebuild()
+	var still := screen.flow.hq_threat([ring[0], "", false])
+	assert_eq(screen.body.find_child("DecayWarning", true, false) != null, bool(still["fatal"]) or bool(still["near"]), "the warning follows the picks")

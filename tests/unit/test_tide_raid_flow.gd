@@ -557,3 +557,89 @@ func test_a_held_shift_card_gets_a_row_or_a_reason_and_the_infected_land_live() 
 		assert_eq(int(f2.hud()["infected"]), pre + added)
 		f2.playout_done()
 		assert_eq(int(f2.hud()["infected"]), int(f2.last_raid["infected"]))
+
+
+# ------------------------------------------------------------------------------------------------ Phase 3d
+func _over_the_line(env: Dictionary) -> void:
+	var ids: Array = []
+	for i in 12:
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(env["c"].corp_theme.solace.tide, ids, false)
+
+
+func test_a_forced_loss_skips_the_menu_and_plays_the_raid_to_city_lost() -> void:
+	var env := _campaign(1)
+	_over_the_line(env)
+	var f := _open(env)
+	assert_true(f.forced(), "DECAY alone put INFECTED over the line: no response can save the city")
+	assert_eq(f.phase, TideRaidFlow.Phase.DECAY)
+	assert_eq(f.commit_forced(), "committed", "THE CITY FALLS plays from the DECAY beat: no PLAN, no RESPONSE, no confirm")
+	assert_true(f.forced_run)
+	assert_eq(f.phase, TideRaidFlow.Phase.PLAYOUT)
+	assert_false(f.beats().is_empty(), "the raid plays straight through")
+	var camp: CampaignState = env["c"]
+	assert_true(camp.is_over(), "the campaign is lost")
+	assert_eq(String(f.last_raid["lost"]), SolaceTideState.LOST_CITY)
+	f.playout_done()
+	assert_eq(String(f.aftermath()["banner"]), "CITY LOST")
+	# A healthy city is never forced.
+	var ok := _open(_campaign(1))
+	assert_false(ok.forced())
+	assert_eq(ok.commit_forced(), "no")
+
+
+func test_home_shows_the_raids_damage_from_the_beat_that_hits_it() -> void:
+	for sd in [7, 11, 23, 31]:
+		var f := _to_response(_env(sd, 1, 80, 2))
+		f.commit([TideRaidFlow.HOLD], true)
+		var pre := int(f.hud()["home"])
+		assert_eq(f.home_live, -1, "HOME has not dropped when the playout starts")
+		f.land_home()
+		var after := (f.result["state"] as SolaceTideState).home
+		assert_eq(int(f.hud()["home"]), after, "from the HOME beat on the HUD shows what the raid leaves")
+		assert_true(after <= pre)
+		f.playout_done()
+
+
+func test_a_deployed_card_is_marked_where_it_is_played() -> void:
+	for sd in [7, 11, 23, 31, 41, 53]:
+		var f := _to_response(_env(sd, 1, 80, 2))
+		for gi in f.groups.size():
+			var r: Array = f.groups[gi]["members"][0]["resp"]
+			if String(r[0]) == "DEPLOY":
+				var marked := 0
+				for c in f.hand_cards(r):
+					if String(c["played"]) != "":
+						marked += 1
+						assert_eq(String(c["played"]), String(r[2]))
+				assert_eq(marked, 1, "exactly the card the DEPLOY spends carries the Site it goes to")
+				return
+	pending("no DEPLOY row on these seeds")
+
+
+func test_the_hq_step_warns_a_raid_early_and_names_what_lifts_it() -> void:
+	var env := _campaign(0)
+	var c: CampaignState = env["c"]
+	var corp: CorporationData = env["corp"]
+	var cfg: CampaignConfigData = env["cfg"]
+	var ring: Array[StringName] = []
+	for l in corp.city_grid.get_site(corp.city_grid.home_site_id).links:
+		ring.append(l)
+	ring.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	c.grid.site(ring[0])["condition"] = GridState.Condition.DOWN
+	# INFECTED equal to the healthy cards: the DOWN Site that falls at the next DECAY is the card that ends the city.
+	var st := SolaceTideCampaign.load_state(c, corp, cfg)
+	var ids: Array = []
+	for i in (st.deck.size() - st.wound_count()) - st.wound_count():
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	var f := _open(env)
+	var none: Array = [&"", "", false]
+	var base := f.hq_threat(none)
+	var real := SolaceTideTally.next_decay(SolaceTideCampaign.load_state(c, corp, cfg), cfg)
+	assert_eq(base, real, "the flow reads the core's query on the campaign's state")
+	assert_true(bool(base["fatal"]) or bool(base["near"]), "a DOWN Site at the line is a threat")
+	var fixes := f.hq_fixes(none)
+	var repair := f.hq_threat([ring[0], "", false])
+	assert_true(int(repair["added"]) < int(base["added"]), "repairing the DOWN Site stops its card")
+	assert_true(fixes.has("repair:%s" % ring[0]), "REPAIR is named as a way out: %s" % [fixes])

@@ -43,6 +43,11 @@ static func tier_color(tier: String) -> Color:
 	return TIER_COLOR.get(tier, INK)
 
 
+## The player's word for raid tier `tier` (the rules' EVADED is read UNTOUCHED).
+static func tier_word(tier: String) -> String:
+	return String(TranslationServer.translate("UNTOUCHED" if tier == "EVADED" else tier))
+
+
 ## 0 (best) to 4 (worst).
 static func rank(tier: String) -> int:
 	return int(TIER_RANK.get(tier, 0))

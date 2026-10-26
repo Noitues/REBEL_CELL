@@ -45,6 +45,8 @@ keys,en
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
+%d beams,%d beams
+%d beams change nothing: %s,%d beams change nothing: %s
 %d cards,%d cards
 "%d damage parked at the phase line: it is lost, and the next phase starts after this turn","%d damage parked at the phase line: it is lost, and the next phase starts after this turn"
 %d fewer nodes lost,%d fewer nodes lost
@@ -52,10 +54,12 @@ keys,en
 %d held,%d held
 "%d held, earned in a campaign.","%d held, earned in a campaign."
 %d known beams will fire after your RESPONSE; they are shown now.,%d known beams will fire after your RESPONSE; they are shown now.
+%d more choices change nothing,%d more choices change nothing
 %d netruns,%d netruns
+%d of %d %s,%d of %d %s
 "%d of %d outcomes of route %s end %s, +%d INFECTED.","%d of %d outcomes of route %s end %s, +%d INFECTED."
 %d powered,%d powered
-%d rows = HOLD,%d rows = HOLD
+"%d raids queued. A raid leaves the queue at its aftermath, when it is dealt with.","%d raids queued. A raid leaves the queue at its aftermath, when it is dealt with."
 %d still at large.,%d still at large.
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
 %d/%d  -  BREACH READY,%d/%d  -  BREACH READY
@@ -119,6 +123,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s Site,%s Site
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
+%s card does not stop %s,%s card does not stop %s
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
 %s doesn't fit %s. It fits Slot %s: pick it on the spinner.,%s doesn't fit %s. It fits Slot %s: pick it on the spinner.
 %s enters at %s.,%s enters at %s.
@@ -649,6 +654,7 @@ Click,Click
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
 "Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange.","Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange."
 Click the lit row again to show every route.,Click the lit row again to show every route.
+Click the lit tile again to let go.,Click the lit tile again to let go.
 Click to play.,Click to play.
 Clinic Gate,Clinic Gate
 Close,Close
@@ -702,6 +708,7 @@ DE-ORBITED,DE-ORBITED
 DECAY,DECAY
 DECAY (before the raid),DECAY (before the raid)
 DECAY TAKEN: %s,DECAY TAKEN: %s
+DECAY adds %d INFECTED.,DECAY adds %d INFECTED.
 DECEASED,DECEASED
 DECISION,DECISION
 DECK,DECK
@@ -738,6 +745,7 @@ DOSE: a healthy card that cures at DECAY.,DOSE: a healthy card that cures at DEC
 DOUBLE,DOUBLE
 DOWN,DOWN
 DOWN / TAKEN,DOWN / TAKEN
+DOWN districts fall to DECAY (%s): +%d INFECTED.,DOWN districts fall to DECAY (%s): +%d INFECTED.
 DOWN: repair the node on the Grid. The cost is half its install cost.,DOWN: repair the node on the Grid. The cost is half its install cost.
 DRAG / WASD,DRAG / WASD
 DRAW,DRAW
@@ -1155,12 +1163,14 @@ HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
 HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps fighting.
 HOME,HOME
+HOME %d (-%d),HOME %d (-%d)
 HOME %d / %d,HOME %d / %d
 HOME %d to %d,HOME %d to %d
 HOME %d → %d,HOME %d → %d
 HOME %d → %d (%s),HOME %d → %d (%s)
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
+HOME -%d,HOME -%d
 HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
 HOME SERVER,HOME SERVER
@@ -1171,6 +1181,7 @@ HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lo
 HOME hit,HOME hit
 HOME is at 1: one hit ends the campaign. Launch?,HOME is at 1: one hit ends the campaign. Launch?
 HOME is at full integrity.,HOME is at full integrity.
+HOME safe,HOME safe
 HOME shielded,HOME shielded
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
 HOTFIX,HOTFIX
@@ -1855,6 +1866,7 @@ NEXT,NEXT
 NEXT %d (%s),NEXT %d (%s)
 "NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: its HP after SEND IT, if you press it now (the tag above says why)."
 "NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
+NEXT DECAY ENDS THE CITY,NEXT DECAY ENDS THE CITY
 NEXT OPERATIVE >,NEXT OPERATIVE >
 NEXT RUN'S BOOSTS,NEXT RUN'S BOOSTS
 NEXT TURN %d,NEXT TURN %d
@@ -1974,6 +1986,8 @@ Nudge ring (outer / inner),Nudge ring (outer / inner)
 Nudge wheel (mine / target),Nudge wheel (mine / target)
 Null,Null
 OBSERVER,OBSERVER
+ODDS if you HOLD (worst to best),ODDS if you HOLD (worst to best)
+ODDS with this response (worst to best),ODDS with this response (worst to best)
 OFF,OFF
 OFF // static edge tint,OFF // static edge tint
 ON,ON
@@ -2091,6 +2105,7 @@ Picking a chip up and moving it onto a slot of the small spinner picks it too.,P
 Picking it up and moving it onto a slot of the small spinner picks it too.,Picking it up and moving it onto a slot of the small spinner picks it too.
 "Pips: the Site's tier, 1 to 3 (harder runs, better rewards). Gold pips: an Exploit Site.","Pips: the Site's tier, 1 to 3 (harder runs, better rewards). Gold pips: an Exploit Site."
 PlayStation,PlayStation
+Point at it to see on the map what it does; click to keep it.,Point at it to see on the map what it does; click to keep it.
 Point here to show every Site; unselectable regular Sites are hidden to keep the map clear.,Point here to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Press,Press
 Press %s on,Press %s on
@@ -2158,6 +2173,7 @@ IN PROGRESS:"
 RESULT:","RAID
 RESULT:"
 RAID %d,RAID %d
+RAID %d · %d queued,RAID %d · %d queued
 RAID // %s,RAID // %s
 RAID AT %d u00b7 %d AWAY,RAID AT %d u00b7 %d AWAY
 RAID AT HEAT %d,RAID AT HEAT %d
@@ -2208,6 +2224,7 @@ REMOVE,REMOVE
 REPAIR,REPAIR
 REPAIR %s,REPAIR %s
 REPAIR %s: bring the DOWN node back online (%d Schematics).,REPAIR %s: bring the DOWN node back online (%d Schematics).
+REPAIR a DOWN district or CLEAN an INFECTED card to pull back from the line.,REPAIR a DOWN district or CLEAN an INFECTED card to pull back from the line.
 REPAIR a district,REPAIR a district
 RES%s,RES%s
 RESIST,RESIST
@@ -2334,7 +2351,8 @@ RaidData.raid_retaliation.warning_text,Solace traces the breach back along your 
 RaidData.raid_story.display_name,Collections: Quiet Word
 RaidData.raid_story.warning_text,"Somebody read what you read. A Lockdown Unit and an Enforcer are on their way, no notice filed."
 Raids,Raids
-Raids pending against your network. Set up the defense before the next run.,Raids pending against your network. Set up the defense before the next run.
+"Raids queued against your network. A raid leaves the queue at its aftermath, when it is dealt with. Set up the defense before the next run.","Raids queued against your network. A raid leaves the queue at its aftermath, when it is dealt with. Set up the defense before the next run."
+"Raids queued: %d to %d. This raid is dealt with, so it leaves the queue.","Raids queued: %d to %d. This raid is dealt with, so it leaves the queue."
 Raids won / lost,Raids won / lost
 Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
@@ -3159,6 +3177,7 @@ TERMINAL // %s,TERMINAL // %s
 TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
+THE CITY FALLS,THE CITY FALLS
 THE MAINFRAME,THE MAINFRAME
 THE RAID,THE RAID
 THE TAGS,THE TAGS
@@ -3509,9 +3528,11 @@ The home server fell: the campaign is lost.,The home server fell: the campaign i
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 "The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first.","The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first."
 The infection now outnumbers the healthy cards.,The infection now outnumbers the healthy cards.
+The infection now outnumbers the healthy cards. Nothing you play can change that: the raid will take the city.,The infection now outnumbers the healthy cards. Nothing you play can change that: the raid will take the city.
 The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.,The infection rises +%d%% per step; the Cell's defense takes %d%% off if CELL HOLDS (no node TAKEN). Exact: the playout matches it.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
+The next DECAY no longer threatens the city.,The next DECAY no longer threatens the city.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
@@ -3592,7 +3613,6 @@ UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
-"Under HOLD, worst","Under HOLD, worst"
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
 Unlocks: %s,Unlocks: %s
 V-sync,V-sync
@@ -3689,12 +3709,11 @@ back room","ask about the
 back room"
 asset,asset
 back,back
-best,best
-best:,best:
 boss,boss
 calibrate_handler,calibrate_handler
 card,card
 card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
+changes no outcome: another guard already covers it,changes no outcome: another guard already covers it
 chip,chip
 claimed,claimed
 cleared,cleared
@@ -3709,8 +3728,10 @@ cycles_after,cycles_after
 daemon,daemon
 decryption is not offered.  your station is no longer yours.,decryption is not offered.  your station is no longer yours.
 delete,delete
+deployed on %s,deployed on %s
 depowered,depowered
 difficulty %d of %d,difficulty %d of %d
+does nothing,does nothing
 down,down
 elite,elite
 empty,empty
@@ -3775,11 +3796,11 @@ netrun,netrun
 netruns,netruns
 next,next
 next: pick one (numbered),next: pick one (numbered)
+no beam reaches this district,no beam reaches this district
 no change,no change
 no change: %s,no change: %s
 no names. who ran this cell?,no names. who ran this cell?
 no power,no power
-no response changes this,no response changes this
 no saved campaign yet,no saved campaign yet
 no threat comes this way,no threat comes this way
 none,none
@@ -3845,6 +3866,7 @@ the top of the scale,the top of the scale
 then:,then:
 they walked away at heat %d. nobody walks away.,they walked away at heat %d. nobody walks away.
 they'll be back. flag ICE %d.,they'll be back. flag ICE %d.
+this pulls the city back from the line,this pulls the city back from the line
 threat,threat
 threat route,threat route
 threats route to it,threats route to it
@@ -3863,6 +3885,8 @@ weakest threat,weakest threat
 wheel,wheel
 withdraw,withdraw
 won,won
+would fall,would fall
+would go DOWN,would go DOWN
 x%d,x%d
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5

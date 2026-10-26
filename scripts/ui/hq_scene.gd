@@ -665,6 +665,7 @@ func show_tide_raid() -> void:
 		host_box.resized.connect(_fit_tide_screen)
 	screen.finished.connect(_tide_done)
 	screen.beat.connect(_tide_beat)
+	screen.hud_changed.connect(_refresh_status)
 	_set_panel(screen, "raid_tide")
 	var g := tide_graph(flow)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.5), playout_zoom())
@@ -7368,7 +7369,7 @@ func _refresh_status() -> void:
 	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(schem_now), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(home_now), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
-		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defense before the next run.")],
+		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids queued against your network. A raid leaves the queue at its aftermath, when it is dealt with. Set up the defense before the next run.")],
 		[TextDb.mark("ICE"), str(c.ice_level), "", _ice_description(c.ice_level)],
 		[TextDb.mark("CREW"), str(c.living_operatives().size()), "", tr("Living operatives in the Cell.")]],
 		# H24 S16: whose numbers these are (a run adds its own group).
