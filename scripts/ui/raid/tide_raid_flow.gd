@@ -44,6 +44,8 @@ var resp_sel: int = -1
 var result: Dictionary = {}
 var events: Array[Dictionary] = []
 var last_raid: Dictionary = {}
+## DECAY's INFECTED accounting (SolaceTideTally.decay_tally), empty when DECAY did not run for this raid.
+var decay_tally: Dictionary = {}
 ## The beats the screen plays after the commit (see `beats`).
 var _beats: Array = []
 var _fc_key: String = ""
@@ -61,7 +63,12 @@ static func open(p_campaign: CampaignState, p_corp: CorporationData, p_cfg: Camp
 	f.campaign = p_campaign
 	f.corp = p_corp
 	f.cfg = p_cfg
+	var pre: SolaceTideState = null
+	if SolaceTideCampaign.raids_fought(p_campaign) > 0 and not p_campaign.corp_theme.solace.tide.decayed:
+		pre = SolaceTideCampaign.load_state(p_campaign, p_corp, p_cfg)
 	f.raid = SolaceTideRaid.open(p_campaign, p_corp, p_cfg, pending)
+	if pre != null:
+		f.decay_tally = SolaceTideTally.decay_tally(pre, p_cfg)
 	f.hud_pre = f.hud_of(f.raid.st)
 	f.phase = Phase.DECAY
 	return f
@@ -81,7 +88,7 @@ func board() -> SolaceTideBoard:
 func hud_of(st: SolaceTideState) -> Dictionary:
 	var wounds := st.wound_count()
 	var healthy := st.deck.size() - wounds
-	return {"infected": wounds, "healthy": healthy, "doses": st.dose_cards().size(), "home": st.home, "home_max": st.home_max, "heat": st.heat,
+	return {"infected": wounds, "healthy": healthy, "margin": SolaceTideRules.loss_margin(st), "doses": st.dose_cards().size(), "home": st.home, "home_max": st.home_max, "heat": st.heat,
 		"band": SolaceTideRules.band(st.heat, cfg), "hand": SolaceTideRules.hand_size(st.heat, cfg), "beams": SolaceTideRules.known_count(st.heat, cfg),
 		"ghost": st.ghost, "deck": st.deck.duplicate(true), "schematics": st.schematics}
 
@@ -91,6 +98,23 @@ func hud() -> Dictionary:
 	if phase >= Phase.AFTERMATH and phase != Phase.DONE and raid.resolved:
 		return hud_of(SolaceTideCampaign.load_state(campaign, corp, cfg)) if not raid.over else hud_pre
 	return hud_pre
+
+
+## The raid's number as the player counts it: the first raid of the campaign is 1.
+func raid_number() -> int:
+	return raid.raid_idx + 1
+
+
+## How many more INFECTED cards end the city, at the HUD numbers `h` (the state at PLAN).
+## How many more INFECTED cards end the city (SolaceTideRules.loss_margin of the HUD's state).
+func loss_margin(h: Dictionary = {}) -> int:
+	var hh := h if not h.is_empty() else hud()
+	return int(hh["margin"])
+
+
+## True when one more INFECTED card ends the city (margin 1) or the city already falls when this raid closes (margin 0).
+func loss_warning() -> bool:
+	return loss_margin() <= 1
 
 
 ## The Heat levels (config) with what each adds to the raid: [{heat, beam (bool), card (bool)}].
@@ -114,7 +138,10 @@ func site_name(id: StringName) -> String:
 	if id == board().home or id == SolaceTideRules.HOME_WORD:
 		return "HOME"
 	var sd := corp.city_grid.get_site(id)
-	return SiteText.tiered(sd, campaign.grid.home_site_id) if sd != null else String(id)
+	if sd == null:
+		return TextDb.mark("Site")
+	var nm := TextDb.t(sd, "display_name")
+	return nm if nm != "" else TextDb.mark("Site")
 
 
 ## Hand cards in drawn order: {id, type, verb, site (the Site it stands on or ""), extra (the card a Heat level dealt)}.
@@ -458,6 +485,17 @@ func _build_responses() -> void:
 			var nothing: bool = not hold_row.is_empty() and row["head"] != HOLD and row["sig"] == hold_row["sig"] \
 				and SolaceTideRules.CARD_RESPONSES.has(String(row["head"]))
 			groups.append({"members": [row], "better": better, "changes_nothing": nothing, "first": groups.size()})
+	# A card response whose every outcome equals HOLD's is not a choice: it folds into the HOLD row ("+N same as hold").
+	var kept: Array = []
+	var same_n := 0
+	for g in groups:
+		if bool(g["changes_nothing"]):
+			same_n += (g["members"] as Array).size()
+		else:
+			kept.append(g)
+	groups = kept
+	for g in groups:
+		g["same"] = same_n if String(g["members"][0]["head"]) == HOLD else 0
 	var good: Array = []
 	var rest: Array = []
 	for g in groups:
@@ -663,7 +701,27 @@ func aftermath() -> Dictionary:
 	return {"tier": tier_word, "banner": banner, "home_before": int(lr.get("home_before", 0)), "home_after": int(lr.get("home_after", 0)),
 		"down": lr.get("down", []), "taken": lr.get("taken", []), "infected": int(lr.get("infected", 0)),
 		"heat_delta": int(lr.get("heat_delta", 0)), "schematics_delta": int(lr.get("schematics_delta", 0)), "lost": String(lr.get("lost", "")),
-		"campaign_lost": bool(lr.get("campaign_lost", false))}
+		"campaign_lost": bool(lr.get("campaign_lost", false)), "tally": infected_tally()}
+
+
+## The Sites DECAY took (DOWN to TAKEN), in id order, read from the events DECAY produced.
+func decay_sites() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for e in raid.open_events:
+		if String(e.get("type", "")) == "taken":
+			out.append(StringName(String(e["site"])))
+	IdSort.sort_ids(out)
+	return out
+
+
+## Where the INFECTED count of this raid came from: {before (the count when the raid opened, before DECAY), decay (DECAY's tally or {}),
+## raid (the raid's tally or {} when DECAY ended the campaign), after}.
+func infected_tally() -> Dictionary:
+	var after := int(last_raid.get("infected", hud_pre["infected"]))
+	var out := {"before": int(decay_tally.get("before", hud_pre["infected"])), "decay": decay_tally, "raid": {}, "after": after}
+	if raid.resolved and not raid.over:
+		out["raid"] = SolaceTideTally.raid_tally(int(hud_pre["infected"]), after, (last_raid.get("taken", []) as Array).size())
+	return out
 
 
 ## The HQ step choices now (SolaceTideRules.between_options on the campaign's state).
@@ -687,7 +745,85 @@ func hq_menu() -> Dictionary:
 		"patch": SolaceTideRules.patch_cost(st, cfg)}
 
 
-## Applies the HQ step `opt` = [repair Site or &"", build "" / "CLEAN" / "COOL", patch bool] (CampaignRules.tide_hq_step) and
+## Every action the HQ step offers, whether it can be taken now or not, for the selection `sel` = [repair Site or &"", build "" / "CLEAN" /
+## "COOL", patch bool]: [{kind ("patch" | "repair" | "clean" | "cool" | "install"), site, cost, points, enabled, why (a key, "" when enabled),
+## why_args, picked}]. An action is disabled for a missing need (HOME full, nothing DOWN, no INFECTED card, Heat 0) or when it, added to the
+## other picked actions, costs more Schematics than the Cell holds. The patch runs first and takes every HOME point the Schematics buy
+## (CampaignRules.tide_hq_step), so its cost is the real one.
+func hq_actions(sel: Array) -> Array:
+	var st := SolaceTideCampaign.load_state(campaign, corp, cfg)
+	var out: Array = []
+	var have := st.schematics
+	var patch := SolaceTideRules.patch_cost(st, cfg)
+	var repair_c := SolaceTideRules.repair_cost(cfg)
+	var clean_c := cfg.solace_tide_clean_price
+	var cool_c := SolaceTideRules.cool_price(st, cfg)
+	var picked_patch := bool(sel[2])
+	var picked_repair := StringName(sel[0]) != &""
+	var build := String(sel[1])
+	var spend_patch := int(patch[1]) if picked_patch else 0
+	var spend_repair := repair_c if picked_repair else 0
+	var spend_build := (clean_c if build == SolaceTideRules.BUILD_CLEAN else (cool_c if build == SolaceTideRules.BUILD_COOL else 0))
+	# PATCH HOME.
+	var p := {"kind": "patch", "site": &"", "cost": int(patch[1]), "points": int(patch[0]), "picked": picked_patch, "enabled": true, "why": "", "why_args": []}
+	if st.home >= st.home_max:
+		_refuse(p, TextDb.mark("HOME is at full integrity."))
+	elif int(patch[0]) <= 0:
+		_refuse(p, TextDb.mark("Not enough Schematics to patch HOME."))
+	elif not picked_patch and int(patch[1]) + spend_repair + spend_build > have:
+		_refuse(p, TextDb.mark("Needs %d Schematics with the rest of your picks, %d held."), [int(patch[1]) + spend_repair + spend_build, have])
+	out.append(p)
+	# REPAIR, one row per DOWN district, or one disabled row when none is.
+	var downs: Array = []
+	for s in st.owned.keys():
+		if int(st.owned[s]) == SolaceTideState.Cond.DOWN:
+			downs.append(s)
+	IdSort.sort_ids(downs)
+	if downs.is_empty():
+		var r := {"kind": "repair", "site": &"", "cost": repair_c, "points": 0, "picked": false, "enabled": true, "why": "", "why_args": []}
+		_refuse(r, TextDb.mark("No district is DOWN."))
+		out.append(r)
+	for d in downs:
+		var r := {"kind": "repair", "site": d, "cost": repair_c, "points": 0, "picked": StringName(sel[0]) == d, "enabled": true, "why": "", "why_args": []}
+		if not r["picked"] and repair_c + spend_patch + spend_build > have:
+			_refuse(r, TextDb.mark("Needs %d Schematics with the rest of your picks, %d held."), [repair_c + spend_patch + spend_build, have])
+		out.append(r)
+	# CLEAN and COOL (one build).
+	var c := {"kind": "clean", "site": &"", "cost": clean_c, "points": 0, "picked": build == SolaceTideRules.BUILD_CLEAN, "enabled": true, "why": "", "why_args": []}
+	if st.wound_count() <= 0:
+		_refuse(c, TextDb.mark("No INFECTED card to clean."))
+	elif not c["picked"] and clean_c + spend_patch + spend_repair > have:
+		_refuse(c, TextDb.mark("Needs %d Schematics with the rest of your picks, %d held."), [clean_c + spend_patch + spend_repair, have])
+	out.append(c)
+	var k := {"kind": "cool", "site": &"", "cost": cool_c, "points": 0, "picked": build == SolaceTideRules.BUILD_COOL, "enabled": true, "why": "", "why_args": []}
+	if st.heat <= 0:
+		_refuse(k, TextDb.mark("Heat is already 0."))
+	elif not k["picked"] and cool_c + spend_patch + spend_repair > have:
+		_refuse(k, TextDb.mark("Needs %d Schematics with the rest of your picks, %d held."), [cool_c + spend_patch + spend_repair, have])
+	out.append(k)
+	# INSTALL: the cleared districts are installed at the HQ map, not by this step.
+	var inst := {"kind": "install", "site": &"", "cost": cfg.node_base_cost, "points": st.pending.size(), "picked": false, "enabled": false, "why": "", "why_args": []}
+	_refuse(inst, TextDb.mark("Installed at the HQ map after this step.") if st.pending.size() > 0 else TextDb.mark("No cleared district waits to be installed."))
+	out.append(inst)
+	return out
+
+
+func _refuse(a: Dictionary, why: String, args: Array = []) -> void:
+	a["enabled"] = false
+	a["why"] = why
+	a["why_args"] = args
+
+
+## The Schematics the picks `sel` cost, in the order the step runs them.
+func hq_total(sel: Array) -> int:
+	var total := 0
+	for a in hq_actions(sel):
+		if bool(a["picked"]):
+			total += int(a["cost"])
+	return total
+
+
+## Applies the HQ step `opt` =[repair Site or &"", build "" / "CLEAN" / "COOL", patch bool] (CampaignRules.tide_hq_step) and
 ## ends the raid. Returns the events.
 func apply_hq_step(opt: Array) -> Array[Dictionary]:
 	var ev := CampaignRules.tide_hq_step(campaign, cfg, RunManager.lookup(), opt)
