@@ -9,6 +9,7 @@ var _tutorial_done: bool
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_tutorial_done = Settings.tutorial_done
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_w3b_flow"
@@ -19,6 +20,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	Settings.tutorial_done = _tutorial_done
 	RunManager.pending_tutorial = false
 	Motion.force_live = false

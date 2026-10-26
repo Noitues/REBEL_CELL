@@ -40,7 +40,7 @@ func test_an_old_v5_save_loads_every_theme_field_as_default() -> void:
 	assert_false(r.corp_theme.solace.enabled, "an old save loads the Bloom disabled (DORMANT)")
 	assert_null(r.corp_theme.rebel_cell.hq_strike, "no HQ strike outside an HQ run")
 	assert_eq(c.corp_theme.halcyon.eye_index, 0)
-	assert_eq(c.corp_theme.solace.infection_bp, 0)
+	assert_null(c.corp_theme.solace.tide, "an old save has no Infected Tide block")  # R-G: infection_bp is retired
 	assert_eq(c.corp_theme.rebel_cell.lane_tag(&"any_site", &"STREET"), &"STREET")
 	assert_eq(r.corp_theme.meridian.weigh_stations_passed.size(), 0)
 
@@ -61,7 +61,7 @@ func test_a_non_default_field_changes_the_hash_and_joins_the_save() -> void:
 	var cases: Array[Callable] = [
 		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.halcyon.eye_index = 3,
 		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.rebel_cell.lanes_scouted.append(&"ROOF"),
-		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.solace.infection_bp = 500,
+		func(c: CampaignState, _r: RunState) -> void: c.corp_theme.solace.tide = SolaceTideState.new(),  # R-G: the tide block replaces infection_bp
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.solace.front_milli = 1500,
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.orbital.lit_until_layer = 2,
 		func(_c: CampaignState, r: RunState) -> void: r.corp_theme.meridian.capacity_bonus = -2,
@@ -91,7 +91,12 @@ func test_every_theme_field_round_trips_the_save() -> void:
 	c.corp_theme.halcyon.eye_fixed_left = 2
 	c.corp_theme.rebel_cell.lane_tags[&"site_b"] = &"SEWER"
 	c.corp_theme.rebel_cell.lanes_scouted.assign([&"ROOF", &"SEWER"])
-	c.corp_theme.solace.infection_bp = 1250
+	var tide := SolaceTideState.new()
+	tide.deck = [["a00", "D", "GUARD"], ["w000", "t1_a", "WOUND"]]
+	tide.inf_n = 1
+	tide.ghost = 2
+	tide.breach_fails = 1
+	c.corp_theme.solace.tide = tide
 	c.corp_theme.raid.rebel_cell.raid_arrival_step = 4
 	c.corp_theme.raid.orbital.dark_nodes.assign([&"home", &"site_a"])
 	var r := RunState.new()
@@ -122,6 +127,7 @@ func test_every_theme_field_round_trips_the_save() -> void:
 	assert_eq(c2.state_hash(), c.state_hash())
 	assert_eq(r2.state_hash(), r.state_hash())
 	assert_eq(c2.corp_theme.halcyon.eye_index, 5)
+	assert_eq(c2.corp_theme.solace.tide.block_dict(), tide.block_dict(), "the tide block round trips")
 	assert_eq(c2.corp_theme.rebel_cell.lane_tag(&"site_b", &"STREET"), &"SEWER")
 	assert_eq(c2.corp_theme.rebel_cell.lane_tag(&"site_c", &"STREET"), &"STREET")
 	assert_eq(c2.corp_theme.rebel_cell.lanes_scouted, [&"ROOF", &"SEWER"] as Array[StringName])

@@ -43,6 +43,14 @@ var purge_queued: bool = false
 var dose_spent: int = 0
 ## Failed Genome Core breaches since the Exploits were last (re-)taken.
 var breach_fails: int = 0
+## A netrun crossed a raid Heat level for the first time since the last `note_netrun` (the campaign sets it when a
+## Heat threshold fires; the netrun's close reads and clears it). Phase 2b; not in the spec's section 9 list.
+var heat_crossed: bool = false
+## DECAY of the pending raid has run and is part of the campaign (a raid is one checkpoint: DECAY is never undone, and an
+## opened raid that is saved and loaded does not decay twice). Cleared when the raid resolves.
+var decayed: bool = false
+## Not saved: the weakest Heat band this raid's HOME hit may have (a story or retaliation raid, 0 = the Heat decides).
+var min_band: int = 0
 
 # --- the working view of the campaign ---
 var heat: int = 0
@@ -146,6 +154,9 @@ func duplicate_state() -> SolaceTideState:
 	s.purge_queued = purge_queued
 	s.dose_spent = dose_spent
 	s.breach_fails = breach_fails
+	s.heat_crossed = heat_crossed
+	s.decayed = decayed
+	s.min_band = min_band
 	s.heat = heat
 	s.schematics = schematics
 	s.home = home
@@ -200,6 +211,41 @@ func to_dict() -> Dictionary:
 		"asset_n": asset_n, "last_sac": last_sac, "cools": cools, "infected_total": infected_total,
 		"sites_lost": sites_lost, "dose_spent": dose_spent, "breach_fails": breach_fails, "raid_n": raid_n,
 		"netruns_since_raid": netruns_since_raid, "home_max": home_max}
+
+
+## The block the campaign saves (SOLACE_RAID_SPEC.md section 9, plus `heat_crossed`): the deck as [[id, type, verb], ...] and
+## the counters. The working view of the campaign fields (Heat, HOME, Site conditions, ...) is not saved here: the
+## campaign owns them and `SolaceTideCampaign` loads them before every raid.
+func block_dict() -> Dictionary:
+	var d_deck: Array = []
+	for c in deck:
+		d_deck.append([String(c[0]), String(c[1]), String(c[2])])
+	return {"deck": d_deck, "inf_n": inf_n, "dose_n": dose_n, "asset_n": asset_n, "ghost": ghost,
+		"lost_since_raid": lost_since_raid, "last_lost": String(last_lost), "last_sac": last_sac, "raid_n": raid_n,
+		"netruns_since_raid": netruns_since_raid, "purge_queued": purge_queued, "dose_spent": dose_spent,
+		"breach_fails": breach_fails, "heat_crossed": heat_crossed, "decayed": decayed}
+
+
+## A state with only the tide block filled (the inverse of `block_dict`; the JSON round trip gives floats for ints).
+static func from_block(d: Dictionary) -> SolaceTideState:
+	var s := SolaceTideState.new()
+	for c in d.get("deck", []):
+		s.deck.append([String(c[0]), String(c[1]), String(c[2])])
+	s.inf_n = int(d.get("inf_n", 0))
+	s.dose_n = int(d.get("dose_n", 0))
+	s.asset_n = int(d.get("asset_n", 0))
+	s.ghost = int(d.get("ghost", 0))
+	s.lost_since_raid = int(d.get("lost_since_raid", 0))
+	s.last_lost = StringName(String(d.get("last_lost", "")))
+	s.last_sac = int(d.get("last_sac", -9))
+	s.raid_n = int(d.get("raid_n", 0))
+	s.netruns_since_raid = int(d.get("netruns_since_raid", 0))
+	s.purge_queued = bool(d.get("purge_queued", false))
+	s.dose_spent = int(d.get("dose_spent", 0))
+	s.breach_fails = int(d.get("breach_fails", 0))
+	s.heat_crossed = bool(d.get("heat_crossed", false))
+	s.decayed = bool(d.get("decayed", false))
+	return s
 
 
 static func from_dict(d: Dictionary) -> SolaceTideState:

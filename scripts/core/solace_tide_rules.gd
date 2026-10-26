@@ -133,11 +133,11 @@ static func known_count(heat: int, cfg: CampaignConfigData) -> int:
 
 
 ## HOME integrity one hit removes. `purge` = the raid the first crossing of the PURGE level queued.
-static func home_damage(heat: int, purge: bool, cfg: CampaignConfigData) -> int:
+static func home_damage(heat: int, purge: bool, cfg: CampaignConfigData, min_band: int = 0) -> int:
 	var t := cfg.solace_tide_home_hit_damage_by_band
 	if purge:
 		return t[4]
-	return t[mini(3, band(heat, cfg))]
+	return t[mini(3, maxi(min_band, band(heat, cfg)))]
 
 
 ## Adds `delta` Heat (clamped 0..heat_max). Returns true when a raid Heat level (25 / 50 / 75 / PURGE) is crossed for
@@ -194,9 +194,9 @@ static func add_dose(st: SolaceTideState) -> void:
 	st.sort_deck()
 
 
-## An Armory card drops (type D, N or E; verb GUARD).
-static func add_asset(st: SolaceTideState, card_type: String) -> void:
-	st.deck.append(["a%02d" % st.asset_n, card_type, SolaceTideState.VERB_GUARD])
+## An Armory card drops (type D, N or E; verb GUARD unless the R-C mapping gives another).
+static func add_asset(st: SolaceTideState, card_type: String, verb: String = SolaceTideState.VERB_GUARD) -> void:
+	st.deck.append(["a%02d" % st.asset_n, card_type, verb])
 	st.asset_n += 1
 	st.sort_deck()
 
@@ -464,7 +464,7 @@ static func launch(ctx: Ctx, st: SolaceTideState, place: Dictionary) -> Sweep:
 	sw.sent = (place["sentries"] as Dictionary).duplicate()
 	sw.owned = st.owned.duplicate()
 	sw.home = st.home
-	sw.home_dmg = home_damage(st.heat, st.purge_queued, cfg)
+	sw.home_dmg = home_damage(st.heat, st.purge_queued, cfg, st.min_band)
 	sw.n_known = known_count(sw.heat, cfg)
 	var used := {}
 	for j in sw.sent.values():
@@ -921,13 +921,21 @@ static func note_netrun(st: SolaceTideState, cfg: CampaignConfigData, crossed: b
 static func breach_failed(st: SolaceTideState, cfg: CampaignConfigData, n: int) -> bool:
 	st.deaths += 1
 	var crossed := add_heat(st, cfg.death_heat_base + 4, cfg)
+	breach_retry(st, cfg)
+	if n % cfg.solace_tide_dose_every == 0:
+		add_dose(st)
+	return crossed
+
+
+## The retry rule of a failed breach, without the death Heat (a campaign has paid it already): one more failure; after more
+## than `breach_retries` the held Exploits are spent and the count starts again. Returns true when the Exploits were spent.
+static func breach_retry(st: SolaceTideState, cfg: CampaignConfigData) -> bool:
 	st.breach_fails += 1
 	if st.breach_fails > cfg.solace_tide_breach_retries:
 		st.held = []
 		st.breach_fails = 0
-	if n % cfg.solace_tide_dose_every == 0:
-		add_dose(st)
-	return crossed
+		return true
+	return false
 
 
 ## The Exploit Sites whose Exploit can be re-taken: still the Cell's and live, Exploit not held. Sorted.

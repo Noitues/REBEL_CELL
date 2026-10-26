@@ -8,6 +8,7 @@ var _hq: Control
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	RunManager.save_slot = "gut_test"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
@@ -16,6 +17,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	RunManager.delete_save()
 	RunManager.reset()
 	RunManager.save_slot = RunManager.DEFAULT_SLOT

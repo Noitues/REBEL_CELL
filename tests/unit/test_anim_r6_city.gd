@@ -24,6 +24,7 @@ class Counter extends Node:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_reduce = Settings.reduce_effects
 	_scale = Settings.text_scale
 	Motion.force_live = false
@@ -36,6 +37,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	CityBakeCache.simulate = false
 	CityBakeCache.shutdown()
 	Motion.force_live = false

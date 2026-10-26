@@ -19,6 +19,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_c21_city"
 	RunManager.scene_switching_enabled = false
@@ -27,6 +28,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	if not is_equal_approx(Settings.text_scale, _text_scale_before):
 		Settings.set_text_scale(_text_scale_before)
 	Dialogue.clear()

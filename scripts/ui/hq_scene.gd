@@ -13,7 +13,7 @@ const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.Si
 
 ## Screen numbers on the HUD strip, by panel name (STYLE_GUIDE 4, "Neon city"); the
 ## titles are `screen_title`.
-const SCREEN_NUMBERS := {"start": "00", "hq": "01", "raid": "03", "raid_playout": "03", "raid_summary": "03"}
+const SCREEN_NUMBERS := {"start": "00", "hq": "01", "raid": "03", "raid_playout": "03", "raid_summary": "03", "raid_tide": "03"}
 
 ## The home server's name on the Grid, the raid map and the orders (never its id).
 const HOME_LABEL := "HOME SERVER" # TR
@@ -632,6 +632,107 @@ func request_start_defense() -> void:
 	add_child(d)
 
 
+# --- Phase 3: the Solace Infected Tide raid screen ------------------------------------------------
+## The tide raid screen (TideRaidScreen) while one is open (null otherwise).
+var tide_screen: TideRaidScreen = null
+## The flow it plays (TideRaidFlow).
+var tide_flow: TideRaidFlow = null
+## The gap round the tide screen's panels in the map's free part (px).
+const TIDE_FREE_MARGIN := 16.0
+
+
+## True when the campaign plays the Infected Tide and a raid is pending: the raid is played on the tide screen, not the resolver's.
+func tide_raid_pending() -> bool:
+	var c := RunManager.campaign
+	return c != null and RunManager.corporation != null and CampaignRules.uses_tide(RunManager.corporation) \
+		and SolaceTideCampaign.active(c) and not RunManager.pending_raid().is_empty()
+
+
+## Opens the pending Solace raid on the tide screen: DECAY, DRAW, PLAN, FORECAST, REVEAL, RESPONSE, the playout, the aftermath and the HQ step.
+func show_tide_raid() -> void:
+	var c := RunManager.campaign
+	var flow := TideRaidFlow.open(c, RunManager.corporation, RunManager.config(), RunManager.pending_raid())
+	if flow == null:
+		show_hq()
+		return
+	hand_tab = HandTab.CREW
+	tide_flow = flow
+	var screen := TideRaidScreen.new()
+	tide_screen = screen
+	_fit_tide_screen()
+	var host_box := _panel_host.get_parent() as Control
+	if host_box != null and not host_box.resized.is_connected(_fit_tide_screen):
+		host_box.resized.connect(_fit_tide_screen)
+	screen.finished.connect(_tide_done)
+	_set_panel(screen, "raid_tide")
+	var g := tide_graph(flow)
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.5), playout_zoom())
+	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
+	screen.setup(flow, city_overlay)
+	get_tree().process_frame.connect(_frame_tide, CONNECT_ONE_SHOT)
+
+
+## The tide screen fills the page's visible room (it follows the page host when the bars above change its height).
+func _fit_tide_screen() -> void:
+	if tide_screen == null or not is_instance_valid(tide_screen):
+		return
+	var host_box := _panel_host.get_parent() as Control
+	tide_screen.custom_minimum_size = Vector2(size.x, host_box.size.y - 2.0) if host_box != null and host_box.size.y > 200.0 		else Vector2(size.x, maxf(size.y - hud.get_global_rect().end.y, 200.0))
+
+
+## The city graph of the tide raid: the Cell's network (claimed and TAKEN Sites, HOME, the Genome Core) and every Site on a raid line.
+func tide_graph(flow: TideRaidFlow) -> Dictionary:
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var want := {}
+	var board := flow.board()
+	want[board.home] = true
+	want[board.core] = true
+	for id in c.grid.sites.keys():
+		var status := c.grid.status_of(id)
+		if status == GridState.SiteStatus.CLAIMED or status == GridState.SiteStatus.TAKEN:
+			want[id] = true
+	for l in flow.lines():
+		for cell in l["line"]["cells"]:
+			want[cell] = true
+	var g := CityLayout.grid_graph(c, corp, [], &"")
+	var nodes: Array[Dictionary] = []
+	for n in g["nodes"]:
+		if want.has(n["id"]):
+			n["assets"] = []
+			nodes.append(n)
+	var edges: Array[Dictionary] = []
+	for e in g["edges"]:
+		if want.has(e["a"]) and want.has(e["b"]):
+			edges.append(e)
+	return {"nodes": nodes, "edges": edges}
+
+
+## Fits the raid's Sites into the map's free part (the page minus the tide screen's panels) once the page is laid out.
+func _frame_tide() -> void:
+	if panel_name != "raid_tide" or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var pts := PackedVector2Array()
+	for n in city_overlay.nodes:
+		pts.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
+	var scr := tide_screen.get_global_rect() if tide_screen != null and is_instance_valid(tide_screen) else get_global_rect()
+	var top := scr.position.y + TideRaidScreen.HUD_H + TIDE_FREE_MARGIN * 1.5
+	var left := scr.position.x + TideRaidScreen.DECK_W + TIDE_FREE_MARGIN * 2.0
+	var area := Rect2(Vector2(left, top), Vector2(scr.end.x - TideRaidScreen.PANEL_W - TIDE_FREE_MARGIN * 3.0 - left, scr.end.y - TideRaidScreen.HAND_H - TIDE_FREE_MARGIN * 2.0 - top))
+	wireframe.frame_points(pts, area, playout_zoom(), RaidZoomFit.zoom_of(CityView3D.CONFIG.zoom_ortho_max, size.x))
+
+
+## The tide raid and its HQ step are over: the end page when the campaign is lost, else the HQ (a hub event first when one is owed).
+func _tide_done() -> void:
+	tide_screen = null
+	tide_flow = null
+	wireframe.city.release_influence()
+	if RunManager.campaign.is_over():
+		show_end()
+	elif not RunManager.open_due_venue_event():
+		show_hq()
+
+
 func fight_raid() -> void:
 	# ANIM-5: the playout starts from the Grid as it stood (a view copy, read only) and the
 	# city holds its pre-raid tint until the raid has played; the result spreads at the end.
@@ -981,7 +1082,7 @@ func _set_panel(p: Control, name: String) -> void:
 			wireframe.city.ring_halos = true
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
-	var on_city := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var on_city := name in ["hq", "raid", "raid_playout", "raid_summary", "raid_tide", "end_lock"] or name.begins_with("city")
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# M14 12Q-WORDS (L41): the campaign's end pages give DISPATCH's verdict a two-line band (at big
@@ -997,7 +1098,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
 	# frame at once.
-	if wireframe != null and not name in ["hq", "raid", "raid_playout"]:
+	if wireframe != null and not name in ["hq", "raid", "raid_playout", "raid_tide"]:
 		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
@@ -1012,7 +1113,7 @@ func _set_panel(p: Control, name: String) -> void:
 		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else UiTheme.CRT_GLASS_PANEL
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "raid_tide", "end", "end_lock"] or name.begins_with("city") else UiTheme.CRT_GLASS_PANEL
 	_panel_glass.visible = _panel_host.theme_type_variation != &""  # B5: the kit glass is the glass page's fill
 	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot). B3 (review
 	# Q10, round 44 `raid_setup.png`): while the DEFENCE hand is open the page is the raid setup:
@@ -1033,7 +1134,7 @@ func _set_panel(p: Control, name: String) -> void:
 	# ANIM-R3 B5: the raid playout goes on from the raid setup's map: it shows whole at once
 	# (a page entrance showed a dim, half-drawn map for its first frames).
 	# ART-11 4D: the campaign's end plays its own motion (the lock, the dossier's cover).
-	if entering and not name in ["raid_playout", "end_lock", "end"]:
+	if entering and not name in ["raid_playout", "raid_tide", "end_lock", "end"]:
 		if _panel_host.theme_type_variation == &"" and name != "start":
 			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
 		if Fx.cover_opaque():
@@ -1050,7 +1151,7 @@ func _set_panel(p: Control, name: String) -> void:
 		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var net := name in ["hq", "raid", "raid_playout", "raid_summary", "raid_tide", "end_lock"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
 	AudioDirector.play_music("raid" if name.begins_with("raid") else "hq",
@@ -1085,6 +1186,8 @@ static func screen_title(p_name: String) -> String:
 			return TranslationServer.translate(RAID_SETUP_TITLE)
 		"raid_playout":
 			return TranslationServer.translate("RAID IN PROGRESS")
+		"raid_tide":
+			return TranslationServer.translate("INFECTED TIDE RAID")
 		"raid_summary":
 			return TranslationServer.translate("RAID REPORT")
 		"codex":
@@ -1771,6 +1874,9 @@ func show_hq() -> void:
 ## HQ-B: builds the HQ page as `page_name`: "hq" (the CREW / MARKET / DEFENCE hands) or "raid"
 ## (the DEFENCE hand as the raid setup, in place: the same city, camera, card row and slot).
 func _build_hq_page(page_name: String) -> void:
+	if tide_raid_pending():  # Phase 3: a Solace raid is played on its own screen
+		show_tide_raid()
+		return
 	# CITY-A2 r2: the city takes the campaign's city seed before the page lays out and fits on it (the poll would switch
 	# it a moment later: the Sites' lots, and so the fit, moved under a framing that should hold).
 	if wireframe != null and wireframe.city != null:
@@ -4528,6 +4634,9 @@ func prereqs_of(id: StringName) -> Array[StringName]:
 ## goes back to the crew; the raid waits until the defence starts.
 func show_raid() -> void:
 	var c := RunManager.campaign
+	if tide_raid_pending():
+		show_tide_raid()
+		return
 	if c == null or RunManager.pending_raid().is_empty():
 		hand_tab = HandTab.CREW
 		show_hq()
@@ -5150,7 +5259,7 @@ func _crt_line(text: String, on_pressed: Callable) -> Button:
 
 
 ## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.
-const RAID_CITY_PAGES: Array[String] = ["raid", "raid_playout", "raid_summary"]
+const RAID_CITY_PAGES: Array[String] = ["raid", "raid_playout", "raid_summary", "raid_tide"]
 
 
 ## Makes claimed node `site_id` the raid setup's target (map click, or its target button

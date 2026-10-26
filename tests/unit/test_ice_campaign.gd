@@ -11,6 +11,10 @@ var _breaker: ClassData
 var _resolver: CombatResolver
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func before_all() -> void:
 	_resolver = CombatFixture.resolver()
 	_cfg = _resolver.config
@@ -144,3 +148,7 @@ func test_ice_14_strengthens_raids_from_taken_sites_and_ice_19_adds_a_wave() -> 
 			entered_two += 1
 	assert_eq(entered_two, entered_one * 2, "the last wave comes again")
 	assert_eq(CampaignRules.project_raid(c19, _corp, _cfg, _lookup, plain).steps_run, two.steps_run, "projection uses the extra wave")
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

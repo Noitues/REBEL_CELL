@@ -27,6 +27,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_reduce = Settings.reduce_effects
 	_speed = Motion.speed
 	_scale = Settings.text_scale
@@ -39,6 +40,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	if Settings.reduce_effects != _reduce:
 		Settings.set_reduce_effects(_reduce)
 	if not is_equal_approx(Settings.text_scale, _scale):

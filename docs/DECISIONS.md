@@ -10067,3 +10067,80 @@ Source: docs/handoff/raid_integration/SOLACE_RAID_SPEC.md (H5). Core only, no ca
   (heat, Schematics, HOME, Site conditions, Exploits held); 2b maps CampaignState in and out. (4) The oracle's
   BREACH_BASE/K/MIN and the netrun abstractions (ELITE_RUN, CYCLE_SCHEM, P_COMBAT) are not ported (spec "not ported").
   (5) `ghost` in a place is `&""` for none. (6) Card ids sort as text ("x10" before "x2"), as the oracle's tuples do.
+
+### 2026-10-25 - Solace Infected Tide: Phase 2b campaign wiring (rules and state only, no UI)
+Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch raid-tide-wire.
+- **Per-corp switch.** `CorporationData.raid_model` (`&"resolver"` by default, `&"tide"` in solace.tres) picks the raid rules of a
+  corporation's campaign; `CorporationData.uses_tide()`. Rule 8: `tools/schema_smoke_checks.gd` `_raid_model_switch`
+  (defaults, which corp ships what, a bad word fails `validate`). Meridian, Halcyon, Orbital and REBEL_CELL keep `RaidResolver`.
+- **Campaign wiring (new `SolaceTideCampaign`, `SolaceTideRaid`).** `CampaignRules.project_raid` returns null for a tide corporation and
+  `fight_raid` branches; `project_tide_raid` plays the raid on a copy (preview == result). The tide's block is
+  `campaign.corp_theme.solace.tide`; Heat, Schematics, HOME, the Sites' condition and the Exploits held stay the campaign's own,
+  mapped in and out around every raid: claimed OK / DOWN, TAKEN, CLEARED = pending. A raid is `open` (DECAY, once, committed at
+  once) -> PLAN / RESPONSE (undoable) -> `resolve` (the checkpoint; nothing rewinds after it). The raid's draws come from the
+  `raids` stream of an `RngStreams` seeded from (campaign seed, raid index), a pure function, so a projection equals the result and
+  a load resumes identically. The Armory drop already uses the netrun's `rewards` stream. Without a player's plan an automatic
+  defense plays (the placement with the least forecast damage under HOLD, weights `solace_tide_auto_*_weight`).
+- **Queue.** A tide campaign queues no resolver raid (claim, story, retaliation, node-built): `queue_raid` returns nothing, and a raid Heat
+  level sets `tide.heat_crossed` (PURGE also `purge_queued`) instead of queuing. The netrun session calls `CampaignRules.on_run_closed`
+  after every completed or dead run: the dose clock, the Heat levels reached (also those a raid's own Heat reached: the oracle fires them at
+  the next netrun), `note_netrun` (cadence 3 or a level), one raid queued at most (only when none waits). The campaign's own rules already
+  pay the netrun's Heat, Schematics and Exploit, so the tide's `netrun_complete` / `netrun_death` are not called. A dead Genome Core run
+  is `breach_failed` (`SolaceTideRules.breach_retry`: one retry, then `campaign.exploits` is emptied); an Exploit Site that is still
+  claimed with its Exploit not held is `retake_sites` (launchable, kind "netrun", completes without touching the Site's status, pays
+  `exploit_heat` again, no second story beat). Extra block fields beyond spec section 9: `heat_crossed`, `decayed` (an opened raid
+  decays once even across a save).
+- **HQ step.** The campaign's own actions in the spec's order: `CampaignRules.tide_hq_step` = PATCH (`repair_home`), REPAIR one DOWN Site
+  (`CampaignRules.repair`, the campaign's own price), CLEAN (`solace_tide_clean_price`, removes the highest-id INFECTED card) or COOL
+  (`buy_heat_reduction`). Installing a CLEARED Site stays the player's claim (it needs a node type).
+- **R-D.** `BloomRules.begin(..., infected, heat_band, virus)`: each INFECTED card moves the start front one real entry-pace step closer
+  (Heat band and Virus key as the golden's `checks.bloom_start_gap`); `SolaceTideCampaign.front_args` feeds the three netrun starts.
+- **R-C mapping (Claude's call, in `campaign_config.tres`).** An Armory asset becomes a card when it is banked, by its asset type:
+  damage asset (TURRET) -> `D` GUARD, ICE Lock -> `N` JAM, Decoy -> `E` SHIFT (`solace_tide_asset_card_types` / `_verbs`). A living
+  operative stationed on a Site adds its class card to the raid deck while it stands there (derived at load, never saved):
+  breaker and wrecker `D` GUARD, overclocker `D` SHIFT, ghost `E` GUARD, phantom `E` SHIFT, rigger `N` GUARD, botnet `N` JAM, hivemind
+  `N` SHIFT (`solace_tide_class_cards`). The 8-card start deck stays as the Cell's baseline (it stood in for exactly this in the oracle).
+  Q for the designer: is the baseline kept once the Armory fills, or does the deck shrink to Armory + crew?
+- **R-G.** `infection_bp` is gone from `SolaceCampaignTheme` (the save keeps only the tide block); `RaidResolver` no longer infects any
+  campaign; the Heat objective / Proxy Relay cure is dropped (doses cure now). `solace_raid_rules.gd` stays only because
+  `scripts/ui/hq_scene.gd` calls `SolaceRaidRules.preview` (it now always reads "does not apply"); delete it with the Phase 3 raid UI.
+  Save format: Solace campaigns save `corp_theme.solace.tide` (deck + counters) instead of `corp_theme.solace.infection_bp`;
+  no compatibility needed (ruling 2026-10-05), `SAVE_VERSION` unchanged.
+- **R-F calibration (`solace_tide_boss_hp_pct_per_infected` = 25).** The Genome Core's HP is +25 % per INFECTED card at the breach
+  (`CampaignRules.breach_overrides` -> combat override `boss_hp_pct`, applied to the boss's max HP only). Method: 80 breach states
+  from builtin-bot campaigns (seeds 1000..1079, this branch, `balance.py run boss --source campaign --dump-state`), each rewritten
+  with one INFECTED card (`tools/raid_tide/set_infected.py`) and fought at k = 0, 20, 40, 60, 80, 100, 130, 160 percent
+  (`--source save`, n = 80 each, same combat seeds): wins 6, 5, 6, 5, 5, 4, 4, 1 of 80. A logistic fit gives
+  logit(P) = -2.40 - 0.00631 k. The builtin bot wins only 8 % (S5 note: it plays the boss badly), so 4 absolute points cannot be
+  read off it; the fit's slope is carried to the reference win of 52 % (BAL-05): dP/dk = 0.25 x 0.00631 = 0.158 points per percent,
+  so 4 points per card = 25 %. (Read on the builtin's own baseline instead, a relative drop of 4/52 = 7.7 % per card is 14 %.)
+  Caveat: the confidence interval is wide; the `reference` policy (lookahead 2) needed more than 28 minutes for 60 fights and was
+  stopped. Q for the designer / balance: re-measure once with `--policy reference` at 0 / 1 / 2 / 3 cards.
+
+### 2026-10-25 - Solace keeps story and retaliation raids (designer ruling) and Phase 2b follow-ups
+- **Ruling.** In a tide campaign a story or retaliation trigger (`CampaignRules.queue_raid`, from a story beat or an Exploit taken under
+  Heat) queues a tide raid (`model: tide`); it is fought through the same `SolaceTideRaid` flow and `begin` resets the cadence counter
+  like a Heat raid. Claim and node-built raids stay off.
+- **Strength.** The content gives them their own threats (story: Enforcer 9 + Lockdown Unit 6 = 15; retaliation: Auditor 3 + Icebreaker 4
+  = 7, summed as the HOME damage table was derived). They map to the tide's damage bands by the nearest table value: `solace_tide_story_band`
+  = 2 (13) and `solace_tide_retaliation_band` = 0 (5). The raid's HOME hit is at least that band's damage
+  (`SolaceTideRules.home_damage(..., min_band)`, set from the pending raid's source in `SolaceTideRaid.open`; not saved).
+- **Pacing re-run** (builtin bot, 80 Solace campaigns, seeds 1000..1079, `tools/raid_tide/tide_sim.gd`, cadence 3 unchanged):
+  raids per netrun 0.342 skilled (automatic defense), 0.352 careless (no sentries, HOLD): inside the 0.33-0.5 target, so no retune.
+  Campaign outcomes: skilled 11 WON / 49 LOST / 20 at the run cap; careless 5 WON / 68 LOST / 7 at the cap. The bot dies 16-28 times
+  a campaign and ends at Heat 100, so the losses are mostly the bot (the S5 note); the careless-skilled gap is 12 points of loss.
+- Test-only: the three full-tier scripts that drive the resolver raid UI on Solace (`test_anim4_drag_drop`, `test_anim4b_run_drag_drop`,
+  `test_motion_lab_demos`) use `RaidModelFixture`.
+
+## 2026-10-25 Phase 3: the Solace Infected Tide raid screen (branch raid-tide-ui)
+- A pending raid of a `uses_tide` corporation opens `TideRaidScreen` (scripts/ui/raid/, panel "raid_tide" in `hq_scene`), in place of the
+  resolver's setup and playout; other corporations are unchanged. `show_raid` and `_build_hq_page` route to it.
+- `TideRaidFlow` (RefCounted) holds the phase and every choice the screen offers; the rules stay in `SolaceTideRaid` / `SolaceTideRules`.
+  DECAY is committed at open (never undone, as the rules say); PLAN and FORECAST undo with `SolaceTideRaid.rewind`; the RESPONSE commit is
+  the checkpoint (`RunManager.fight_tide_raid` resolves and applies, then nothing rewinds). A mid-raid reload reopens the same lines and
+  hand (the raid's `raids` stream depends only on the seed and the raid index); the placement is not saved.
+- Presentation choices ported from the raid lab (L14 to L17): inline worst/best tier glyphs on the response rows (gold edge = beats HOLD by
+  worst tier, then mean damage in the automatic defense's weights), rows merged when their 12 outcomes are identical, at most 8 groups and a
+  "more" fold, ghost rows with a reason, the guard line, the launch confirm (HOME drops on every outcome, or HOME at 1), the HOLD confirm,
+  LOCKED fast resolve only when every row gives one tier on every outcome, five tier shapes, dimmed DONE beams, wordless cards.
+- The INFECTED front on the city map is a flat translucent tint (the Bloom look API is the netrun street's): left for the art-pass.

@@ -15,6 +15,7 @@ var _scale: float
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_scale = Settings.text_scale
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_plan1_b_repro"
@@ -26,6 +27,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	Motion.force_live = false
 	CityBakeCache.shutdown()
 	if not is_equal_approx(Settings.text_scale, _scale):

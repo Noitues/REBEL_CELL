@@ -451,3 +451,41 @@ func test_the_breach_fields_round_trip_and_an_old_save_loads_them_off() -> void:
 	old.load_dict({"front_milli": -3000, "enabled": true})
 	assert_false(old.breach_applied)
 	assert_eq(old.heat_pct, 100)
+
+
+## Phase 2b / R-D (Infected Tide): each INFECTED card moves the start front one entry-pace step closer. The pace is the REAL
+## BloomRules.entry_pace at the Heat band and Virus key; every row of the golden's checks.bloom_start_gap must agree.
+func test_infected_cards_move_the_start_front_by_the_real_entry_pace() -> void:
+	var f := FileAccess.open("res://tools/raid_concepts/data/solace_raid_golden.json", FileAccess.READ)
+	var g: Dictionary = JSON.parse_string(f.get_as_text())
+	var rows: Array = g["checks"]["bloom_start_gap"]
+	assert_gt(rows.size(), 20)
+	for row in rows:
+		var tier: int = row[0]
+		var band: int = row[1]
+		var virus: bool = int(row[2]) == 1
+		var n: int = row[3]
+		var probe := BloomState.new()
+		probe.heat_pct = BloomRules.heat_pct_for_band(_cfg, band)
+		probe.key_virus = virus
+		assert_eq(BloomRules.entry_pace(probe, _cfg, tier), int(row[4]), "entry pace %s" % str(row))
+		var b := BloomState.new()
+		BloomRules.begin(b, _cfg, _solace, tier, false, n, band, virus)
+		assert_eq(-b.front_milli, int(row[5]), "start gap %s" % str(row))
+		var s := _cfg.bloom_start_gap_milli_by_tier[tier - 1]
+		assert_eq(BloomRules.start_front_gap(_cfg, tier, false, s, n, band, virus), int(row[5]))
+
+
+func test_zero_infected_changes_nothing_and_a_gap_of_zero_is_caught() -> void:
+	var a := BloomState.new()
+	var b := BloomState.new()
+	BloomRules.begin(a, _cfg, _solace, 2, false)
+	BloomRules.begin(b, _cfg, _solace, 2, false, 0, 4, true)
+	assert_eq(a.front_milli, b.front_milli, "no INFECTED card: the band and key are not read")
+	var c := BloomState.new()
+	BloomRules.begin(c, _cfg, _solace, 1, false, 99, 0, false)
+	c.layer_milli = 0
+	assert_eq(BloomRules.band_for_gap(BloomRules.gap_milli(c), _cfg), BloomRules.Band.CAUGHT, "a start gap of 0 or less is CAUGHT at the first entry")
+	var other := BloomState.new()
+	BloomRules.begin(other, _cfg, _meridian, 2, false, 5, 0, false)
+	assert_false(other.enabled, "another corporation has no Bloom at all")

@@ -20,6 +20,17 @@ extends Resource
 @export var events: Array[TerminalEventData] = []
 ## REBEL_CELL: build grid, enemies and raids from the player's profile.
 @export var generated_from_profile: bool = false
+## Which raid rules this corporation's campaign plays: RAID_MODEL_RESOLVER (the wave resolver, GDD 7.1-7.2) or
+## RAID_MODEL_TIDE (the Solace Infected Tide, SolaceTideRules). The per-corp switch (SOLACE_RAID_SPEC.md section 8).
+@export var raid_model: StringName = &"resolver"
+
+const RAID_MODEL_RESOLVER: StringName = &"resolver"
+const RAID_MODEL_TIDE: StringName = &"tide"
+
+
+## True when this corporation's raids are the Infected Tide.
+func uses_tide() -> bool:
+	return raid_model == RAID_MODEL_TIDE
 
 
 func validate(min_exploits: int = 3) -> PackedStringArray:
@@ -40,6 +51,8 @@ func validate(min_exploits: int = 3) -> PackedStringArray:
 		if e:
 			errors.append_array(e.validate())
 	errors.append_array(letterhead_errors())
+	if raid_model != RAID_MODEL_RESOLVER and raid_model != RAID_MODEL_TIDE:
+		errors.append("Corporation %s: raid_model '%s' must be resolver or tide." % [id, raid_model])
 	return errors
 
 

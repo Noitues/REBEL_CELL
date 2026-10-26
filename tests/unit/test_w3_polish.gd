@@ -12,7 +12,12 @@ const COMBAT := "res://scenes/combat/combat_scene.tscn"
 const SCREEN := Vector2(1280, 720)
 
 
+func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
+
+
 func after_each() -> void:
+	RaidModelFixture.restore()
 	RunManager.reset()
 
 

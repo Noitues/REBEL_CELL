@@ -14,6 +14,7 @@ var _tutorial_done := true
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	_scale = Settings.text_scale
 	_tutorial_done = Settings.tutorial_done
 	AudioDirector.muted = true
@@ -25,6 +26,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	Settings.set_text_scale(_scale)
 	Settings.set_tutorial_done(_tutorial_done)
 	Motion.force_live = false

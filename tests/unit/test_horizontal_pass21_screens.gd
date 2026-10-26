@@ -29,6 +29,7 @@ func before_all() -> void:
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
@@ -38,6 +39,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	NetrunScript.force_street_error = ""
 	if _translation != null:
 		TranslationServer.set_locale(_locale_before)

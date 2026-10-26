@@ -9,6 +9,7 @@ const SCREEN := Rect2(0, 0, 1280, 720)
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_raid_station"
 	RunManager.scene_switching_enabled = false
@@ -84,3 +85,7 @@ func test_the_no_crew_dialog_says_where_to_station() -> void:
 	var hq := _scene()
 	assert_false(hq.NO_CREW_BODY.contains("at HQ first"), "the dialog no longer sends the player to another page")
 	assert_string_contains(hq.NO_CREW_BODY, "STATION")
+
+
+func after_each() -> void:
+	RaidModelFixture.restore()

@@ -1,9 +1,8 @@
 extends GutTest
-## Plan 2 WH-12 (Solace raid), fast tier: the population infection figure is a pure function
-## of the raid's steps (living threats per step), the Heat band and the config; a replay gives
-## identical figures; slower play infects more; the config threshold means the city is infected
-## and Solace wins the raid; operatives are never killed in any raid (RD-03, Q24.1); numbers only
-## from config; the figure survives the (v5, additive) save.
+## Plan 2 WH-12 (Solace raid), fast tier. Phase 2b / R-G: Solace now plays the Infected Tide, so the resolver's step-based
+## infection and the campaign figure `infection_bp` are retired (the tide's tests are test_solace_tide_*). What stays here:
+## SolaceRaidRules' pure figure helpers (the raid views still read them until Phase 3), the resolver no longer infecting any
+## campaign, operatives never killed in any raid (RD-03, Q24.1), and no inline numbers in the rules file.
 
 const SaveServiceScript := preload("res://scripts/autoload/save_service.gd")
 
@@ -52,74 +51,13 @@ func test_the_figure_never_decreases_and_caps_at_the_threshold() -> void:
 	assert_eq(SolaceRaidRules.lost_step(calm, _cfg), -1, "never lost")
 
 
-func test_the_start_figure_is_the_campaign_figure_not_the_heat_band() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var c: CampaignState = s[0]
-	var levels := HeatRules.band_levels(c, _cfg)
-	for band in 5:
-		c.heat = 0 if band == 0 else levels[band - 1]
-		assert_eq(SolaceRaidRules.start_bp(c, _cfg), 0, "Heat no longer sets the start (band %d)" % band)
-	c.corp_theme.solace.infection_bp = 1250
-	assert_eq(SolaceRaidRules.start_bp(c, _cfg), 1250)
-	assert_eq(SolaceRaidRules.pct(1250), 12)
-
-
-func test_a_resolved_raid_carries_the_figures_and_a_replay_matches() -> void:
-	var s := _setup([&"r1", &"r2"], {&"r1": &"relay", &"r2": &"relay"})
-	var c: CampaignState = s[0]
-	c.heat = 40
-	var a := _res(c, s[1], [&"collector", &"auditor"])
-	var b := _res(c, s[1], [&"collector", &"auditor"])
-	assert_true(a.infection_applies)
-	assert_eq(a.infection_figures[0], SolaceRaidRules.start_bp(c, _cfg), "starts at the band value")
-	assert_eq(a.infection_figures.size(), a.steps_run + 1, "one figure per step plus the start")
-	assert_eq(a.infection_figures, b.infection_figures, "a replay gives identical figures")
-	assert_eq(a.infection_bp, a.infection_figures.back())
-	assert_eq(a.summary_hash(), b.summary_hash())
-	for i in range(1, a.infection_figures.size()):
-		assert_true(a.infection_figures[i] > a.infection_figures[i - 1], "rises every resolution step")
-	assert_eq(a.infection_pct_at(0), a.infection_start_bp / 100)
-	assert_eq(a.infection_pct_at(999), a.infection_bp / 100, "clamped to the last step")
-
-
-func test_slower_play_infects_more() -> void:
-	var short := _setup([&"r1"], {&"r1": &"relay"})
-	var long := _setup([&"r1", &"r2", &"r3", &"r4"], {&"r1": &"relay", &"r2": &"relay", &"r3": &"relay", &"r4": &"relay"})
-	var a := _res(short[0], short[1], [&"collector"])
-	var b := _res(long[0], long[1], [&"collector"])
-	assert_true(b.steps_run > a.steps_run)
-	assert_true(b.infection_bp > a.infection_bp, "more steps, more infection")
-	var many := _res(short[0], short[1], [&"collector", &"collector", &"collector"])
-	assert_true(many.infection_figures[1] - many.infection_figures[0] > a.infection_figures[1] - a.infection_figures[0], "more living threats rise faster")
-
-
-func test_past_the_threshold_the_city_is_infected_and_solace_wins() -> void:
-	var cfg: CampaignConfigData = _cfg.duplicate()
-	cfg.raid_infection_lost_bp = 200
-	var s := _setup([&"r1", &"r2", &"r3"], {&"r1": &"relay", &"r2": &"relay", &"r3": &"relay"})
-	var c: CampaignState = s[0]
-	var r := _res(c, s[1], [&"collector"], cfg)
-	assert_true(r.city_lost)
-	assert_true(r.campaign_lost)
-	assert_false(r.won)
-	assert_eq(r.infection_bp, 200)
-	assert_eq(r.steps_run, SolaceRaidRules.lost_step(r.infection_figures, cfg), "ends on the step the threshold is reached")
-	var events := RaidResolver.apply(c, r, GridFixture.raid(&"wh12", [&"collector"]), cfg)
-	assert_eq(c.outcome, CampaignState.Outcome.LOST)
-	assert_eq(events.back()["type"], "city_lost", "its own end text")
-	assert_eq(c.corp_theme.solace.infection_bp, 200, "the figure is stored")
-	var calm := _res(c, s[1], [&"collector"])
-	assert_false(calm.city_lost, "the default threshold does not lose this raid")
-
-
-func test_a_holding_raid_ends_normally() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var r := _res(s[0], s[1], [&"collector"])
-	assert_false(r.city_lost)
-	assert_false(r.campaign_lost)
-
-
-func test_other_corporations_have_no_infection() -> void:
+func test_the_resolver_no_longer_infects_any_campaign() -> void:
+	# R-G: a Solace-id campaign through RaidResolver (a bare grid, no raid_model) carries no infection figures either.
+	var sol := _setup([&"r1"], {&"r1": &"relay"})
+	var rs := _res(sol[0], sol[1], [&"collector"])
+	assert_false(rs.infection_applies, "R-G: the step-based infection is gone")
+	assert_true(rs.infection_figures.is_empty())
+	assert_false(rs.city_lost)
 	var s := _setup([&"r1"], {&"r1": &"relay"}, &"halcyon")
 	var r := _res(s[0], s[1], [&"collector"])
 	assert_false(r.infection_applies)
@@ -130,84 +68,13 @@ func test_other_corporations_have_no_infection() -> void:
 	assert_false(_res(s[0], s[1], [&"collector"], cfg).city_lost, "even at a tiny threshold")
 
 
-func test_infection_persists_across_raids() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var c: CampaignState = s[0]
-	c.corp_theme.solace.infection_bp = 3000
-	var raid := GridFixture.raid(&"wh12", [&"collector"])
-	var first := RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"])
-	assert_eq(first.infection_figures[0], 3000, "the raid starts at the saved value")
-	RaidResolver.apply(c, first, raid, _cfg)
-	assert_eq(c.corp_theme.solace.infection_bp, first.infection_end_bp)
-	var second := RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"])
-	assert_eq(second.infection_figures[0], first.infection_end_bp, "the next raid starts where the last left it")
-
-
-func test_decay_on_hold_per_kill_floor_and_none_when_taken() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var c: CampaignState = s[0]
-	var raid := GridFixture.raid(&"wh12", [&"collector"])
-	var held := RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"])
-	if not (held.taken.is_empty() and not held.campaign_lost):
-		pending("this fixture raid takes a node")
-		return
-	var want := SolaceRaidRules.hold_decay_bp(held.threats_destroyed, _cfg)
-	assert_eq(want, _cfg.raid_infection_decay_hold_bp + _cfg.raid_infection_decay_per_kill_bp * held.threats_destroyed)
-	assert_eq(held.infection_decay_bp, want)
-	assert_eq(held.infection_end_bp, maxi(0, held.infection_bp - want), "floor at zero")
-	assert_eq(SolaceRaidRules.after_decay(50, 5000), 0)
+func test_pure_helpers_after_decay_and_cell_holds() -> void:
+	assert_eq(SolaceRaidRules.after_decay(50, 5000), 0, "floor at zero")
 	assert_false(SolaceRaidRules.cell_holds(false, 1), "a TAKEN node: no decay")
 	assert_false(SolaceRaidRules.cell_holds(true, 0), "a lost campaign: no decay")
 	assert_true(SolaceRaidRules.cell_holds(false, 0))
-
-
-func test_the_raid_preview_equals_the_played_out_value_with_the_decay() -> void:
-	var s := _setup([&"r1", &"r2"], {&"r1": &"relay", &"r2": &"relay"})
-	var c: CampaignState = s[0]
-	c.corp_theme.solace.infection_bp = 2000
-	var raid := GridFixture.raid(&"wh12", [&"collector", &"auditor"])
-	var proj := RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"])
-	var pv := SolaceRaidRules.preview(proj, _cfg)
-	assert_true(bool(pv["applies"]))
-	assert_eq(pv["now_pct"], 20)
-	var played := RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"])
-	RaidResolver.apply(c, played, raid, _cfg)
-	assert_eq(pv["end_pct"], SolaceRaidRules.pct(c.corp_theme.solace.infection_bp), "the projection equals the played-out figure")
-	assert_eq(pv["lost_step"], -1)
+	assert_eq(SolaceRaidRules.pct(1250), 12)
 	assert_false(SolaceRaidRules.preview(null, _cfg)["applies"])
-
-
-func test_cures_lower_the_campaign_figure_never_below_zero_and_only_for_solace() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var c: CampaignState = s[0]
-	c.corp_theme.solace.infection_bp = 2000
-	assert_eq(SolaceRaidRules.cure(c, _cfg), _cfg.raid_infection_decay_cure_bp)
-	assert_eq(c.corp_theme.solace.infection_bp, 2000 - _cfg.raid_infection_decay_cure_bp)
-	SolaceRaidRules.cure(c, _cfg)
-	assert_eq(c.corp_theme.solace.infection_bp, 0, "floor at zero")
-	assert_eq(SolaceRaidRules.cure(c, _cfg), 0)
-	var o := _setup([&"r1"], {&"r1": &"relay"}, &"halcyon")
-	(o[0] as CampaignState).corp_theme.solace.infection_bp = 900
-	assert_eq(SolaceRaidRules.cure(o[0], _cfg), 0, "other corporations are untouched")
-
-
-func test_a_heat_objective_site_cures_the_infection() -> void:
-	var corp := ContentRegistry.get_content(&"solace") as CorporationData
-	var c := CampaignRules.new_campaign(corp, _cfg, _lookup, 1, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())
-	var site: SiteData = null
-	for sd in corp.city_grid.sites:
-		if sd.objective == RC.SiteObjective.HEAT_REDUCTION:
-			site = sd
-			break
-	if site == null:
-		pending("no Heat objective Site in this grid")
-		return
-	c.corp_theme.solace.infection_bp = 4000
-	var run := RunState.new()
-	run.site_id = site.id
-	run.kind = "netrun"
-	CampaignRules.on_run_completed(c, corp, _cfg, run, _lookup)
-	assert_eq(c.corp_theme.solace.infection_bp, 4000 - _cfg.raid_infection_decay_cure_bp)
 
 
 func test_rd03_operatives_are_never_killed_in_any_raid() -> void:
@@ -231,19 +98,6 @@ func test_rd03_operatives_are_never_killed_in_any_raid() -> void:
 		assert_eq(c.roster.size(), 1, "no operative lost (%s, %d)" % [case[0], case[1]])
 		assert_eq(c.roster[0].hp, before, "no operative damaged")
 		assert_true(c.roster[0].hp > 0)
-
-
-func test_the_figure_round_trips_the_save_without_a_version_bump() -> void:
-	var s := _setup([&"r1"], {&"r1": &"relay"})
-	var c: CampaignState = s[0]
-	c.corp_theme.solace.infection_bp = 5000
-	var raid := GridFixture.raid(&"wh12", [&"collector"])
-	RaidResolver.apply(c, RaidResolver.resolve(c, s[1], raid, _lookup, _cfg, [&"entry"]), raid, _cfg)
-	var c2 := CampaignState.from_dict(JSON.parse_string(JSON.stringify(c.to_dict())))
-	assert_eq(c2.corp_theme.solace.infection_bp, c.corp_theme.solace.infection_bp)
-	assert_true(c2.corp_theme.solace.infection_bp > 0, "the figure itself was kept")
-	assert_eq(c2.state_hash(), c.state_hash())
-	assert_eq(SaveServiceScript.SAVE_VERSION, 5)
 
 
 func test_the_rules_hold_no_inline_tuning_numbers() -> void:

@@ -43,6 +43,8 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 		c.grid.sites[c.grid.home_site_id]["integrity"] = c.grid.home_max_integrity
 		c.grid.sites[c.grid.home_site_id]["max_integrity"] = c.grid.home_max_integrity
 	c.story_path_id = pick_story_path(corp, campaign_seed)
+	if uses_tide(corp):
+		SolaceTideCampaign.start(c, config)  # the Infected Tide: this corporation's raid rules (CorporationData.raid_model)
 	if EyeRules.applies(corp):
 		c.corp_theme.halcyon.eye_index = EyeRules.draw_start(campaign_seed, config)  # stored, never redrawn
 	var fewer := -int(c.rule_modifier(config, RC.RuleModifierType.HEAT_OBJECTIVE_SITES))
@@ -55,6 +57,11 @@ static func new_campaign(corp: CorporationData, config: CampaignConfigData, look
 		for i in mini(fewer, objectives.size()):
 			c.disabled_objectives.append(objectives[objectives.size() - 1 - i])
 	return c
+
+
+## True when `corp`'s campaign plays the Infected Tide instead of the raid resolver (CorporationData.raid_model).
+static func uses_tide(corp: CorporationData) -> bool:
+	return corp != null and corp.uses_tide()
 
 
 ## The Site's objective for this campaign (NONE when ICE switched it off).
@@ -170,8 +177,8 @@ static func launchable_sites(campaign: CampaignState, corp: CorporationData, con
 	for s in corp.city_grid.sites:
 		if s == null or s.id == corp.city_grid.home_site_id:
 			continue
-		if campaign.grid.is_taken(s.id):
-			out.append(s)
+		if campaign.grid.is_taken(s.id) or is_retake(campaign, s):
+			out.append(s)  # TAKEN: Reclaim. Tide: a claimed Exploit Site whose Exploit is not held (re-take run)
 		elif campaign.grid.is_corporate(s.id) and touches_territory(campaign, corp, s.id):
 			if s.objective == RC.SiteObjective.CENTRAL_SERVER and campaign.exploits.size() < config.min_exploits_for_breach:
 				continue
@@ -197,7 +204,15 @@ static func patrol_sites(campaign: CampaignState, corp: CorporationData) -> Arra
 
 static func is_patrol(campaign: CampaignState, site: SiteData) -> bool:
 	return site != null and site.objective != RC.SiteObjective.CENTRAL_SERVER and site.id != campaign.grid.home_site_id \
-		and (campaign.grid.is_cleared(site.id) or campaign.grid.is_claimed(site.id))
+		and (campaign.grid.is_cleared(site.id) or campaign.grid.is_claimed(site.id)) and not is_retake(campaign, site)
+
+
+## Infected Tide (SPEC section 2): the Exploit Sites the Cell still owns whose Exploit is not held (the corporation patched
+## them after a second failed breach) can be run again; the run takes the Exploit back and pays its Heat again. The same Sites
+## as SolaceTideRules.retake_sites (a live claimed Exploit Site, Exploit not held). False without a tide.
+static func is_retake(campaign: CampaignState, site: SiteData) -> bool:
+	return SolaceTideCampaign.active(campaign) and site != null and site.objective == RC.SiteObjective.EXPLOIT \
+		and campaign.grid.is_claimed(site.id) and site.id != campaign.grid.home_site_id and not campaign.has_exploit(site.exploit_type)
 
 
 ## Highest netrun tier the operative's Rank allows (GDD 5.3).
@@ -266,7 +281,7 @@ static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:
 		return "boss"
 	if is_patrol(campaign, site):
 		return "patrol"
-	return "netrun"
+	return "netrun"  # includes a tide re-take run (is_retake)
 
 
 ## EX-11: the exploit building (its kind) a netrun at `site` of `corp` plays through, or &"" for a street netrun: an Exploit
@@ -298,6 +313,16 @@ static func boss_overrides(campaign: CampaignState, corp: CorporationData) -> Di
 	return out
 
 
+## R-F: the Genome Core is as strong as the city is infected. `boss_overrides` plus `boss_hp_pct` (the INFECTED cards at the
+## breach times `solace_tide_boss_hp_pct_per_infected`) when the campaign plays the Infected Tide and the percent is above 0.
+static func breach_overrides(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData) -> Dictionary:
+	var out := boss_overrides(campaign, corp)
+	var pct := SolaceTideCampaign.infected_count(campaign) * config.solace_tide_boss_hp_pct_per_infected
+	if pct > 0:
+		out["boss_hp_pct"] = pct
+	return out
+
+
 # --- Run outcomes -----------------------------------------------------------------------------
 
 ## What a completed run does to the campaign: clears the Site, extracts its Exploit
@@ -320,14 +345,22 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 		if lookup != null:
 			events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 		return events
-	campaign.grid.sites[site.id]["status"] = GridState.SiteStatus.CLEARED
-	events.append({"type": "site_cleared", "site": site.id, "text": "%s cleared: it can be claimed now." % site.id})
+	var retake := is_retake(campaign, site)
+	if not retake:  # a re-take run leaves the claimed Site claimed
+		campaign.grid.sites[site.id]["status"] = GridState.SiteStatus.CLEARED
+		events.append({"type": "site_cleared", "site": site.id, "text": "%s cleared: it can be claimed now." % site.id})
 	if run.kind == "reclaim":
 		return events
 	match site_objective(campaign, site):
 		RC.SiteObjective.EXPLOIT:
 			if campaign.has_exploit(site.exploit_type):
 				return events  # already held: no second copy, Heat or story beat
+			if retake:
+				campaign.exploits.append(site.exploit_type)
+				events.append({"type": "exploit", "exploit": site.exploit_type, "retake": true,
+					"text": "Exploit taken back: %s (%d held)." % [RC.ExploitType.keys()[site.exploit_type], campaign.exploits.size()]})
+				events.append_array(HeatRules.add_heat(campaign, config.exploit_heat + int(campaign.rule_modifier(config, RC.RuleModifierType.EXPLOIT_HEAT)), config, "Exploit taken back"))
+				return events  # no story beat, links or retaliation again
 			campaign.exploits.append(site.exploit_type)
 			events.append({"type": "exploit", "exploit": site.exploit_type, "text": "Exploit extracted: %s (%d held)." % [RC.ExploitType.keys()[site.exploit_type], campaign.exploits.size()]})
 			var exploit_heat := config.exploit_heat + int(campaign.rule_modifier(config, RC.RuleModifierType.EXPLOIT_HEAT))
@@ -352,7 +385,6 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 				events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s under Heat %d" % [site.id, campaign.heat]))
 		RC.SiteObjective.HEAT_REDUCTION:
 			events.append_array(HeatRules.add_heat(campaign, site.heat_change, config, "Heat objective %s" % site.id))
-			events.append_array(_infection_cure_events(campaign, config, "Heat objective %s" % site.id))
 	if lookup != null:
 		events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 	return events
@@ -398,6 +430,16 @@ static func clear_preview(campaign: CampaignState, corp: CorporationData, config
 ## that source in the content = nothing happens.
 static func queue_raid(campaign: CampaignState, corp: CorporationData, source: int, entry: StringName, why: String) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
+	if SolaceTideCampaign.active(campaign):
+		# The tide's raids come from its cadence and Heat levels (SolaceTideCampaign.netrun_closed). Designer ruling 2026-10-25: story
+		# and retaliation triggers also queue one (claim and node-built stay off); it is fought like any tide raid and resets the cadence.
+		if source == RC.RaidTriggerSource.STORY or source == RC.RaidTriggerSource.RETALIATION:
+			var tr := _raid_for(corp, source)
+			campaign.pending_raids.append({"raid_id": String(tr.id) if tr != null else "", "source": source, "site_id": String(entry),
+				"corporation": String(campaign.corporation_id), "model": "tide"})
+			events.append({"type": "raid_pending", "raid_id": tr.id if tr != null else &"", "source": source,
+				"text": "%s provoked a raid%s." % [why, (": " + tr.display_name) if tr != null else ""]})
+		return events
 	var raid := _raid_for(corp, source)
 	if raid == null:
 		return events
@@ -448,17 +490,6 @@ static func _node_passives_on_completion(campaign: CampaignState, corp: Corporat
 						events.append({"type": "node_passive", "site": site_id, "effect": e.type, "amount": e.amount,
 							"text": "%s (%s): Heat %+d." % [node.display_name, site_id, e.amount]})
 						events.append_array(HeatRules.add_heat(campaign, e.amount, config, node.display_name))
-						if node.node_type == RC.NetworkNodeType.PROXY_RELAY:
-							events.append_array(_infection_cure_events(campaign, config, node.display_name))
-	return events
-
-
-## Solace v2: a cure (Heat objective Site, Proxy Relay completion) lowers the campaign infection.
-static func _infection_cure_events(campaign: CampaignState, config: CampaignConfigData, why: String) -> Array[Dictionary]:
-	var events: Array[Dictionary] = []
-	var cured := SolaceRaidRules.cure(campaign, config)
-	if cured > 0:
-		events.append({"type": "infection_cure", "amount_bp": cured, "text": "%s: population infection -%d%% (%d%%)." % [why, SolaceRaidRules.pct(cured), SolaceRaidRules.pct(campaign.corp_theme.solace.infection_bp)]})
 	return events
 
 
@@ -1071,6 +1102,8 @@ static func raid_entries(campaign: CampaignState, corp: CorporationData, pending
 
 ## Exact outcome if the raid ran now (setup phase, GDD 7.1).
 static func project_raid(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, pending: Dictionary) -> RaidResolver.RaidResult:
+	if uses_tide(corp):
+		return null  # the tide's preview is project_tide_raid (a Dictionary, not a resolver result)
 	var raid := raid_data(pending, lookup)
 	return RaidResolver.resolve(campaign, corp.city_grid, raid, lookup, config, raid_entries(campaign, corp, pending),
 		raid_strength_pct(campaign, config, pending, corp), raid_extra_waves(campaign, config))
@@ -1078,6 +1111,10 @@ static func project_raid(campaign: CampaignState, corp: CorporationData, config:
 
 ## Plays the raid out and applies it; the pending entry is consumed.
 static func fight_raid(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, pending: Dictionary) -> Array[Dictionary]:
+	if uses_tide(corp):
+		campaign.pending_raids.erase(pending)
+		campaign.next_raid_mods = {}
+		return SolaceTideCampaign.fight(campaign, corp, config, lookup, pending)
 	var raid := raid_data(pending, lookup)
 	var result := project_raid(campaign, corp, config, lookup, pending)
 	campaign.pending_raids.erase(pending)
@@ -1085,4 +1122,49 @@ static func fight_raid(campaign: CampaignState, corp: CorporationData, config: C
 	var events: Array[Dictionary] = result.events.duplicate()
 	events.append_array(RaidResolver.apply(campaign, result, raid, config))
 	name_pending_raids(campaign, lookup, events)  # a lost raid's Heat can queue the next one
+	return events
+
+
+## The tide raid's exact outcome if it ran now: the raid played on a copy of the campaign (so the preview is the result), as
+## `campaign.last_raid` of that copy plus "events". {} when the corporation does not play the tide.
+static func project_tide_raid(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, pending: Dictionary) -> Dictionary:
+	if not uses_tide(corp):
+		return {}
+	var copy := campaign.duplicate_state()
+	var events := SolaceTideCampaign.fight(copy, corp, config, lookup, pending)
+	var out := copy.last_raid.duplicate(true)
+	out["events"] = events
+	return out
+
+
+## The raid content a queued tide raid carries (its name and warning in the lists): the Heat-threshold raid when a Heat level
+## crossed, else the territory-claim raid; null when the corporation has none.
+static func tide_raid_for(corp: CorporationData, crossed: bool) -> RaidData:
+	var r := _raid_for(corp, RC.RaidTriggerSource.HEAT_THRESHOLD if crossed else RC.RaidTriggerSource.TERRITORY_CLAIM)
+	return r if r != null else _raid_for(corp, RC.RaidTriggerSource.HEAT_THRESHOLD)
+
+
+## What a closed netrun does to the Infected Tide (SolaceTideCampaign.netrun_closed): called by the netrun session after a
+## run completes or dies. `breach_failed` = the run on the Genome Core died. No tide, no events.
+static func on_run_closed(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, breach_failed: bool) -> Array[Dictionary]:
+	var events := SolaceTideCampaign.netrun_closed(campaign, corp, config, breach_failed)
+	if lookup != null:
+		name_pending_raids(campaign, lookup, events)
+	return events
+
+
+## The Solace HQ step (SPEC section 6) by the campaign's own rules: PATCH (every HOME point the Schematics buy), REPAIR one DOWN
+## Site, then CLEAN (an INFECTED card) or COOL (the Heat purchase). `opt` = [repair Site id or &"", build "" / "CLEAN" / "COOL",
+## patch bool]. Installing a CLEARED Site stays the player's claim action (it needs a node type). Returns events.
+static func tide_hq_step(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, opt: Array) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	if bool(opt[2]):
+		events.append_array(repair_home(campaign, config))
+	if StringName(opt[0]) != &"":
+		events.append_array(repair(campaign, config, lookup, StringName(opt[0])))
+	match String(opt[1]):
+		SolaceTideRules.BUILD_CLEAN:
+			events.append_array(SolaceTideCampaign.clean(campaign, config))
+		SolaceTideRules.BUILD_COOL:
+			events.append_array(buy_heat_reduction(campaign, config))
 	return events

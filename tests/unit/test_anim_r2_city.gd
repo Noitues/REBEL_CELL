@@ -23,6 +23,7 @@ var _scale: float
 const NetrunRouteScript := preload("res://scripts/ui/netrun_scene.gd")
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	# The street cannot be derived here (test seam): this test reads the fallback route-window page.
 	NetrunRouteScript.force_street_error = "test seam: no street"
 	_reduce = Settings.reduce_effects
@@ -37,6 +38,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	NetrunRouteScript.force_street_error = ""
 	CityBakeCache.simulate = false
 	CityBakeCache.shutdown()

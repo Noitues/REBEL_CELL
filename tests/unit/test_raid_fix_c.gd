@@ -8,6 +8,7 @@ const SCREEN := Rect2(0, 0, 1280, 720)
 
 
 func before_each() -> void:
+	RaidModelFixture.use_resolver()  # Phase 2b: Solace is the resolver's carrier here (raid views of the tide are Phase 3)
 	AudioDirector.muted = true
 	RunManager.save_slot = "gut_raid_fix_c"
 	RunManager.scene_switching_enabled = false
@@ -16,6 +17,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	RaidModelFixture.restore()
 	Dialogue.clear()
 	AudioDirector.muted = false
 	RunManager.delete_save()
