@@ -14,12 +14,15 @@ const SEED := 7
 
 var _out := ""
 var _seed := SEED
+var _lost := false
 
 
 func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			_out = a.trim_prefix("--out=")
+		elif a == "--scenario=lost":
+			_lost = true
 		elif a.begins_with("--seed="):
 			_seed = int(a.trim_prefix("--seed="))
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -56,6 +59,11 @@ func _setup() -> void:
 	# One district went DOWN since the last raid, one is already INFECTED.
 	var down: StringName = ring[0]
 	c.grid.site(down)["condition"] = GridState.Condition.DOWN
+	if _lost:
+		var ids: Array = []
+		for i in 12:
+			ids.append(&"t1_a")
+		SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
 	c.pending_raids.append({"raid_id": "raid_claim", "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": "", "corporation": "solace", "model": "tide"})
 
 
@@ -81,7 +89,13 @@ func _run() -> void:
 	var flow := screen.flow
 	var hb := hq._panel_host.get_parent() as Control
 	print("CAPTURE geometry host=%s %s screen=%s %s hq=%s" % [hb.get_global_rect(), hb.get_class(), screen.get_global_rect(), screen.size, hq.get_global_rect()])
-	await _shot("r1_decay")
+	await _shot("r1_decay" if not _lost else "r2_decay_city_lost")
+	if _lost:
+		screen.cont()
+		await _settle()
+		await _shot("r2_aftermath_city_lost")
+		hq.queue_free()
+		return
 	screen.cont()
 	await _settle()
 	await _shot("r1_draw")

@@ -133,3 +133,50 @@ func test_undo_works_before_the_launch_and_the_forecast_equals_the_resolve() -> 
 	f.reveal_done()
 	f.commit([TideRaidFlow.HOLD], true)
 	assert_eq(String(RunManager.campaign.last_raid["tier"]), real_tier, "the forecast row of the real outcome is the result")
+
+
+func test_decay_that_ends_the_campaign_closes_the_raid_as_city_lost() -> void:
+	var env := _campaign(1)
+	var c: CampaignState = env["c"]
+	var tide := c.corp_theme.solace.tide
+	# Many INFECTED cards: after DECAY they outnumber the healthy ones.
+	var ids: Array = []
+	for i in 12:
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(tide, ids, false)
+	var f := _open(env)
+	assert_true(f.raid.over, "DECAY ended the campaign")
+	f.advance()
+	assert_eq(f.phase, TideRaidFlow.Phase.AFTERMATH)
+	assert_true(c.pending_raids.is_empty(), "the raid is consumed")
+	assert_true(c.is_over())
+	assert_eq(String(f.aftermath()["tier"]), "CITY LOST")
+	assert_eq(String(f.aftermath()["banner"]), "CITY LOST")
+	f.advance()
+	assert_eq(f.phase, TideRaidFlow.Phase.DONE, "a lost campaign has no HQ step")
+
+
+func test_the_guard_the_hold_confirm_and_the_fast_resolve_follow_the_forecast() -> void:
+	var env := _campaign()
+	var f := _open(env)
+	f.advance()
+	f.advance()
+	f.to_forecast()
+	var hold_rows := f.forecast()
+	assert_eq(String(f.guard()["hold"]), String(f.tier_range(hold_rows)[0]), "the guard's HOLD tier is the forecast's worst")
+	if f.launch() == "confirm":
+		f.launch()
+	var tiers := {}
+	for g in f.groups:
+		for m in g["members"]:
+			for r in SolaceTideRules.forecast(f.ctx(), f.raid.st, f.raid.place, m["resp"]):
+				tiers[r["tier"]] = true
+	assert_eq(f.fast, tiers.size() <= 1, "fast resolve only when every row gives one tier everywhere")
+	var worse := f.hold_worse_group()
+	f.reveal_done()
+	if not f.fast and worse >= 0:
+		assert_eq(f.commit([TideRaidFlow.HOLD]), "confirm", "HOLD that loses HOME some row saves asks first")
+		assert_eq(f.commit([TideRaidFlow.HOLD]), "committed")
+	else:
+		assert_eq(f.commit([TideRaidFlow.HOLD]), "committed")
+	assert_eq(f.commit([TideRaidFlow.HOLD], true), "no", "a second commit after the resolve is refused")
