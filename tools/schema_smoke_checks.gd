@@ -1308,6 +1308,7 @@ func _solace_tide_config() -> int:
 		" ", d.solace_tide_breach_retries, " ", d.solace_tide_divert, " ", d.solace_tide_clean_price)
 	if d.solace_tide_route_max_links != 5 or d.solace_tide_candidates != 3 or d.solace_tide_hand_base != 4 or d.solace_tide_raid_every != 3: fails += 1
 	if not d.solace_tide_home_hit_infects or d.solace_tide_breach_retries != 1 or not d.solace_tide_divert or d.solace_tide_clean_price != 10: fails += 1
+	if d.solace_tide_boss_hp_pct_per_infected != 25 or shipped == null or shipped.solace_tide_boss_hp_pct_per_infected != 25: fails += 1  # R-F, calibrated in Phase 2b
 	if d.solace_tide_start_cards().size() != 8 or d.solace_tide_start_cards()[7] != ["s7", "N", "JAM"]: fails += 1
 	if not _tide_errors(d).is_empty(): fails += 1
 	if shipped == null or shipped.solace_tide_hand_heat != d.solace_tide_hand_heat or shipped.solace_tide_beam_heat != d.solace_tide_beam_heat 			or shipped.solace_tide_home_hit_damage_by_band != d.solace_tide_home_hit_damage_by_band or shipped.solace_tide_start_deck != d.solace_tide_start_deck:

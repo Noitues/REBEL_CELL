@@ -377,7 +377,7 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var solace_tide_infected_front_step_pct: int = 100
 ## R-F: percent of the Genome Core's HP added per INFECTED card at the breach. 0 = off until it is calibrated with the
 ## CampaignSimulator (Phase 2b).
-@export var solace_tide_boss_hp_pct_per_infected: int = 0
+@export var solace_tide_boss_hp_pct_per_infected: int = 25
 ## The opening defense deck, one "id:type:verb" per card (type D, N or E; verb GUARD, SHIFT or JAM) until R-C maps the
 ## Armory and the stationed operatives onto cards.
 @export var solace_tide_start_deck: PackedStringArray = PackedStringArray(["s0:D:GUARD", "s1:D:GUARD", "s2:N:GUARD",

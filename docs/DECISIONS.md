@@ -10106,3 +10106,13 @@ Source: docs/handoff/raid_integration/PHASE2B.md and SOLACE_RAID_SPEC.md. Branch
   `scripts/ui/hq_scene.gd` calls `SolaceRaidRules.preview` (it now always reads "does not apply"); delete it with the Phase 3 raid UI.
   Save format: Solace campaigns save `corp_theme.solace.tide` (deck + counters) instead of `corp_theme.solace.infection_bp`;
   no compatibility needed (ruling 2026-10-05), `SAVE_VERSION` unchanged.
+- **R-F calibration (`solace_tide_boss_hp_pct_per_infected` = 25).** The Genome Core's HP is +25 % per INFECTED card at the breach
+  (`CampaignRules.breach_overrides` -> combat override `boss_hp_pct`, applied to the boss's max HP only). Method: 80 breach states
+  from builtin-bot campaigns (seeds 1000..1079, this branch, `balance.py run boss --source campaign --dump-state`), each rewritten
+  with one INFECTED card (`tools/raid_tide/set_infected.py`) and fought at k = 0, 20, 40, 60, 80, 100, 130, 160 percent
+  (`--source save`, n = 80 each, same combat seeds): wins 6, 5, 6, 5, 5, 4, 4, 1 of 80. A logistic fit gives
+  logit(P) = -2.40 - 0.00631 k. The builtin bot wins only 8 % (S5 note: it plays the boss badly), so 4 absolute points cannot be
+  read off it; the fit's slope is carried to the reference win of 52 % (BAL-05): dP/dk = 0.25 x 0.00631 = 0.158 points per percent,
+  so 4 points per card = 25 %. (Read on the builtin's own baseline instead, a relative drop of 4/52 = 7.7 % per card is 14 %.)
+  Caveat: the confidence interval is wide; the `reference` policy (lookahead 2) needed more than 28 minutes for 60 fights and was
+  stopped. Q for the designer / balance: re-measure once with `--policy reference` at 0 / 1 / 2 / 3 cards.
