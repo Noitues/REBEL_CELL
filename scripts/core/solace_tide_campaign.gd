@@ -243,6 +243,40 @@ static func owned_same(a: Dictionary, b: Dictionary) -> bool:
 	return true
 
 
+# ------------------------------------------------------------------------------------------------ R-K: retake a TAKEN Site
+## R-K (designer 2026-10-26): a won reclaim run on a TAKEN Site of a tide campaign brings the Site back claimed OK at once,
+## with `solace_tide_retake_node` installed, for `solace_tide_retake_schematics` and `solace_tide_retake_heat` (the run's
+## own Heat is paid by the run). With fewer Schematics, without the node in `lookup` or with the rule off it stays CLEARED
+## (claim it again). An Exploit the Cell no longer holds comes back with its Heat, as for any run on its Site
+## (SolaceTideRules.netrun_complete). Its INFECTED card stays: DOSE and CLEAN cure it. Called after the Site was cleared.
+static func retaken(campaign: CampaignState, corp: CorporationData, cfg: CampaignConfigData, site: SiteData,
+		lookup: ContentLookup) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	if not active(campaign) or not cfg.solace_tide_retake_taken or lookup == null or site == null:
+		return events
+	var node := lookup.get_content(cfg.solace_tide_retake_node) as NetworkNodeData
+	if node == null or campaign.schematics < cfg.solace_tide_retake_schematics or not campaign.grid.is_cleared(site.id):
+		return events
+	campaign.schematics -= cfg.solace_tide_retake_schematics
+	var s := campaign.grid.site(site.id)
+	s["status"] = GridState.SiteStatus.CLAIMED
+	s["node_type"] = String(node.id)
+	s["integrity"] = node.integrity
+	s["max_integrity"] = node.integrity
+	s["condition"] = GridState.Condition.OK
+	s["assets"] = []
+	events.append({"type": "retaken", "site": site.id, "node": node.id,
+		"text": "%s retaken: claimed again with a %s." % [site.id, node.display_name]})
+	if cfg.solace_tide_retake_heat > 0:
+		events.append_array(HeatRules.add_heat(campaign, cfg.solace_tide_retake_heat, cfg, "Site retaken"))
+	if site.objective == RC.SiteObjective.EXPLOIT and not campaign.has_exploit(site.exploit_type):
+		campaign.exploits.append(site.exploit_type)
+		events.append({"type": "exploit", "exploit": site.exploit_type, "retake": true,
+			"text": "Exploit taken back: %s (%d held)." % [RC.ExploitType.keys()[site.exploit_type], campaign.exploits.size()]})
+		events.append_array(HeatRules.add_heat(campaign, cfg.exploit_heat + int(campaign.rule_modifier(cfg, RC.RuleModifierType.EXPLOIT_HEAT)), cfg, "Exploit taken back"))
+	return events
+
+
 # ------------------------------------------------------------------------------------------------ the netrun's close
 ## The close of every netrun, deaths included (SPEC section 2 and 6): a failed Genome Core breach counts (one retry, then
 ## the held Exploits are spent), a DOSE card arrives every `dose_every` netruns, the raid Heat levels the Heat has reached

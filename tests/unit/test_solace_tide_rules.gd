@@ -324,6 +324,67 @@ func test_the_breach_has_one_retry_then_the_exploits_are_spent_and_retaken() -> 
 	assert_eq(SolaceTideRules.retake_sites(st, _board).size(), 2)
 
 
+# ------------------------------------------------------------------------------------------------ H7: R-K, R-L, R-M
+func test_rk_a_won_run_on_a_taken_site_brings_it_back_ok_and_keeps_its_infected_card() -> void:
+	var st := _st({"t1_a": SolaceTideState.Cond.TAKEN, "t1_b": SolaceTideState.Cond.OK})
+	SolaceTideRules.add_infected(st, [&"t1_a"])
+	var inf := _wounds(st, "t1_a")
+	var h0 := st.heat
+	var s0 := st.schematics
+	SolaceTideRules.netrun_complete(st, _board, _cfg, &"t1_a", 0, 0)
+	assert_eq(st.owned[&"t1_a"], SolaceTideState.Cond.OK, "retaken: OK at once")
+	assert_false(st.pending.has(&"t1_a"), "not waiting for an install")
+	assert_eq(_wounds(st, "t1_a"), inf, "its INFECTED card stays (DOSE / CLEAN cure it)")
+	assert_eq(st.heat - h0, _cfg.rack_heat_by_tier[0] + _cfg.solace_tide_retake_heat, "the run's Heat plus the retake's")
+	assert_eq(st.schematics - s0, _cfg.rack_schematics_by_tier[0] - _cfg.solace_tide_retake_schematics)
+	# priced above the bank: the Site waits as a cleared claim; the rule off: the old pending claim
+	var c: CampaignConfigData = _cfg.duplicate()
+	c.solace_tide_retake_schematics = 999
+	var st2 := _st({"t1_a": SolaceTideState.Cond.TAKEN})
+	SolaceTideRules.netrun_complete(st2, _board, c, &"t1_a", 0, 0)
+	assert_eq(st2.owned[&"t1_a"], SolaceTideState.Cond.TAKEN)
+	assert_true(st2.pending.has(&"t1_a"), "too few Schematics: cleared, not retaken")
+	c.solace_tide_retake_schematics = 0
+	c.solace_tide_retake_taken = false
+	var st3 := _st({"t1_a": SolaceTideState.Cond.TAKEN})
+	SolaceTideRules.netrun_complete(st3, _board, c, &"t1_a", 0, 0)
+	assert_true(st3.pending.has(&"t1_a"), "R-K off: the H6 claim")
+
+
+func test_rl_a_blocking_sentry_shields_its_site_for_the_rest_of_the_raid() -> void:
+	for shields in [true, false]:
+		var c: CampaignConfigData = _cfg.duplicate()
+		c.solace_tide_sentry_shields = shields
+		var st := _st({"t1_a": SolaceTideState.Cond.OK})
+		var draw := _draw([_line(["t1_a"], "ROUTE", "D")])
+		var ctx := SolaceTideRules.make_ctx(_board, st, c, draw, ["s0", "s1", "s2", "s5"], 1)
+		var sw := SolaceTideRules.launch(ctx, st, _place({"t1_a": "s0"}))
+		sw.beam = "known0"
+		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "D"))
+		assert_eq(sw.trace.back(), ["known0", "t1_a", "block"], "the D sentry blocks the D beam")
+		sw.beam = "sealed_a"
+		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "N"))
+		if shields:
+			assert_eq(sw.owned[&"t1_a"], SolaceTideState.Cond.OK, "R-L: the later N beam passes the shielded Site")
+		else:
+			assert_eq(sw.owned[&"t1_a"], SolaceTideState.Cond.DOWN, "without R-L the next beam hits it")
+		# a second D beam is still blocked by the sentry
+		sw.beam = "hunter"
+		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "D"))
+		assert_eq(sw.trace.back()[2], "block")
+
+
+func test_rm_the_sites_lost_tier() -> void:
+	var before := _st({"t1_a": SolaceTideState.Cond.DOWN, "t1_b": SolaceTideState.Cond.OK})
+	var after := before.duplicate_state()
+	after.owned[&"t1_a"] = SolaceTideState.Cond.TAKEN
+	var sw := SolaceTideRules.Sweep.new()
+	sw.touches = 1
+	assert_eq(SolaceTideRules.tier_of(before, after, sw), "SITES LOST", "R-M: one Site newly TAKEN")
+	assert_eq(SolaceTideRules.TIER_SITES_LOST, "SITES LOST")
+	assert_eq(SolaceTideTally.TIERS_WORST_FIRST[2], "SITES LOST")
+
+
 func test_decay_takes_down_sites_and_infects() -> void:
 	var st := _st({"t1_a": SolaceTideState.Cond.DOWN, "t1_c": SolaceTideState.Cond.OK})
 	SolaceTideRules.decay(st, _cfg)
@@ -419,9 +480,9 @@ func test_clean_defense_pays_heat_and_schematics() -> void:
 
 func test_cadence_a_heat_raid_resets_the_count() -> void:
 	var st := _st()
-	assert_false(SolaceTideRules.note_netrun(st, _cfg, false))
-	assert_false(SolaceTideRules.note_netrun(st, _cfg, false))
-	assert_true(SolaceTideRules.note_netrun(st, _cfg, false), "the third netrun fires a raid")
+	for i in _cfg.solace_tide_raid_every - 1:
+		assert_false(SolaceTideRules.note_netrun(st, _cfg, false))
+	assert_true(SolaceTideRules.note_netrun(st, _cfg, false), "the Nth netrun fires a raid (H7: every second)")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1
 	st.owned[&"t1_a"] = SolaceTideState.Cond.OK

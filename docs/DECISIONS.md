@@ -10206,3 +10206,54 @@ Designer rulings 2026-10-26 (Phase 3b, branch raid-tide-3b-rules). Oracle varian
 - **Not done:** the top bar's RAIDS tag keeps its name (its icon and tests key on it); its tooltip, the tide HUD and the aftermath
   now say "raids queued" and why the count drops. A DOWN hit sends no INFECTED card to the deck: the card is made at DECAY (or at
   TAKEN), so only a TAKEN Site and a HOME hit fly one.
+
+## 2026-10-26 Solace tide H7: retake TAKEN Sites (R-K), a sentry shields its Site (R-L), BATTERED renamed SITES LOST (R-M)
+Designer rulings 2026-10-26 (branch raid-tide-h7), after `docs/design/raid_concepts/RESPONSE_CENSUS.md` showed at most one live owned
+Site at raid time on real boards. Oracle variant `H7` = H6 + R-K + R-L in `tools/raid_concepts/sweep_g1.py` (keys `RETAKE`,
+`RETAKE_HEAT`, `RETAKE_COST`, `SHIELD`; absent from H4..H6, whose goldens regenerate byte for byte).
+- **R-K.** Any TAKEN Site (next to the territory or not) is a netrun target (the existing Reclaim run). Winning it brings the Site back
+  claimed OK at once with `solace_tide_retake_node` (firewall_relay) installed. Simplest consistent price: the run itself (its Heat, its
+  death risk, a netrun slot) plus `solace_tide_retake_heat` (0) and `solace_tide_retake_schematics` (0; with fewer Schematics the Site
+  is only cleared). An Exploit the Cell no longer holds comes back with its Heat, as on any run on its Site. Its INFECTED card stays.
+  Port: `SolaceTideRules.netrun_complete`, `SolaceTideCampaign.retaken` (called from `CampaignRules.on_run_completed` for a reclaim);
+  `solace_tide_retake_taken` (true) gates both. Measured: retake price 0 / 10 / 20 Schematics or +5 Heat moved no rate by more than 0.01.
+- **R-L.** A sentry that blocks a beam of its type shields its Site for the rest of the raid (no later beam hits it); the beam still
+  stops, and a later beam of the sentry's type is still blocked. Port: `SolaceTideRules.scan`, `solace_tide_sentry_shields` (true).
+- **R-M.** The tier BATTERED is SITES LOST everywhere in the game (rules `TIER_SITES_LOST`, `SolaceTideTally`, TextDb, palette
+  `TIDE_SITES_LOST`, glyphs, screen, census tool, tests); `test_names_pass` bans the old word from player text, `scripts/` and
+  `tools/raid_tide/`. The oracle keeps the old word for H4..H6 and the older raid labs keep theirs.
+- **Bot (CampaignSimulator, tide campaigns only):** retakes a TAKEN Site (launch key 450: below an Exploit, above a Heat objective) and
+  claims every cleared Site with a relay while a recruit stays in reserve (it claimed one relay in all before, which is why the census
+  saw one live Site).
+- **Fold row (UI, `tide_raid_flow.gd` `_signature`):** a card response folds into HOLD only when the tier, HOME, every Site, the Heat,
+  the INFECTED cards added and the run's end all equal HOLD's on every row. The +2 card Heat now keeps nearly every card response a row.
+- **Tuned:** `solace_tide_raid_every` 3 -> 2. R-L alone dropped the skilled loss to 0.050 (R-K alone moves it < 0.01); retake price,
+  `KNOWN_ROUTE` 0.1-0.3, `EARLY_RAIDS` 5-6, `SAC_GAP` 3-4 and `BEAM_HEAT` could not bring it back into 0.08-0.15
+  (`MAX_PLACED` 1 did, but locks 0.98 of raids); the cadence does.
+- **H6 -> H7 (sweep_g1.py, 200 campaigns per claim policy, 600 pooled per cell, same seeds; G = skilled, N = careless):**
+
+| Metric | H6 | H7 (cadence 2) | H7 at cadence 3 |
+|---|---|---|---|
+| Skilled loss | 0.110 | 0.113 | 0.050 |
+| Careless loss | 0.643 | 0.702 | 0.623 |
+| Win G / N | 0.632 / 0.355 | 0.642 / 0.298 | 0.688 / 0.375 |
+| Response decides (G) | 0.439 | 0.466 | 0.440 |
+| Locked at plan (G) | 0.478 | 0.373 | 0.393 |
+| HOME hit G / N | 0.101 / 0.967 | 0.082 / 0.947 | 0.054 / 0.958 |
+| Live owned Sites at raid (G / N) | 3.74 / 2.06 | 4.75 / 2.19 | 5.16 / 2.46 |
+| Raids per netrun (G) | 0.385 | 0.538 | 0.388 |
+| Retake runs per campaign (G) | 3.4 (adjacent only, via install) | 3.86 | n/a |
+
+- **Real game (`tools/raid_tide/response_census.gd`, seeds 2000..2031, real board):**
+
+| Metric | before, auto | H7, auto | before, oracle | H7, oracle |
+|---|---|---|---|---|
+| Live owned Sites at raid (mean) | 0.79 | 4.78 | 0.79 | 5.43 |
+| `response_decides` | 0.360 | 0.415 | 0.360 | 0.698 |
+| >= 1 option differs from HOLD | 0.362 | 0.831 | 0.370 | 0.905 |
+| >= 2 options differ from HOLD | 0.000 | 0.752 | 0.002 | 0.801 |
+| LOCKED | 1.000 | 0.360 | 1.000 | 0.701 |
+| Raids measured | 500 | 508 | 500 | 592 |
+
+- **Open for the designer:** the auto placement's `response_decides` is 0.415, under the 0.44 target (the oracle placement gives 0.698);
+  the builtin bot also loses more campaigns (26 of 32 vs 19 of 32: more raids at cadence 2 against a weak combat bot).

@@ -350,6 +350,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 		campaign.grid.sites[site.id]["status"] = GridState.SiteStatus.CLEARED
 		events.append({"type": "site_cleared", "site": site.id, "text": "%s cleared: it can be claimed now." % site.id})
 	if run.kind == "reclaim":
+		events.append_array(SolaceTideCampaign.retaken(campaign, corp, config, site, lookup))  # R-K
 		return events
 	match site_objective(campaign, site):
 		RC.SiteObjective.EXPLOIT:

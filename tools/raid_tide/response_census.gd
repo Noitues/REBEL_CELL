@@ -10,7 +10,7 @@ const BalanceContent := preload("res://tools/balance/balance_content.gd")
 ## rows of the real A (ties keep the earlier option, HOLD first). One line per raid ("RAID {json}") and a summary of the run.
 ## Read-only on the rules: nothing under scripts/ changes. No RNG of its own (the campaign's streams do all the drawing).
 
-const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "BATTERED": 2, "DAMAGED": 3, "BREACHED": 4}
+const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "SITES LOST": 2, "DAMAGED": 3, "BREACHED": 4}
 
 var _cfg: CampaignConfigData
 var _policy: String = "auto"

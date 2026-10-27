@@ -5,9 +5,11 @@ extends RefCounted
 ## CampaignState from content; same seed + ICE = same report.
 ##
 ## Policies: fight pending raids first with the Armory on home; patch home, repair, recruit to two
-## living operatives, scrub Heat at 70+; claim one Firewall Relay next to home when rich;
+## living operatives, scrub Heat at 70+; claim one Firewall Relay next to home when rich (Infected Tide:
+## every cleared Site, in id order, while the Schematics keep the recruit reserve);
 ## launch the highest-ranked operative at the breach when open, else an Exploit Site,
-## else a Heat objective at Heat 50+, else the deepest Site its Rank allows (ties by id).
+## else (Infected Tide, R-K) a TAKEN Site to retake, else a Heat objective at Heat 50+,
+## else the deepest Site its Rank allows (ties by id).
 ## In a run: avoid elites below half HP, visit a Mainframe with 75+ Cycles, take the first
 ## card while the deck is under 16, socket Firmware (never Heat-costing Burner) in the first slot that fits, take
 ## Daemons, pick the last (safest) event choice, remove Bug cards at Mainframes.
@@ -25,6 +27,8 @@ const SCHEMATIC_RESERVE_ROOKIES := 2
 const DAEMON_SCORES := {&"kernel_sync": 4.5, &"zero_day": 3.8, &"clean_signal": 3.5, &"cold_exit": 3.5,
 	&"scrubber": 3.5, &"botnet_seed": 3.0, &"twin_pointer": 0.0, &"stolen_intent": 0.5, &"linked_bus": 0.5}
 const MAX_STEPS_PER_RUN := 400
+## Infected Tide (R-K): a retake of a TAKEN Site ranks below an Exploit (500) and above a Heat objective (400).
+const TIDE_RETAKE_KEY := 450
 
 var resolver: CombatResolver
 var lookup: ContentLookup
@@ -157,12 +161,29 @@ func _maintain(c: CampaignState) -> void:
 			break
 	var claimed := c.grid.claimed_ids().size() - 1
 	var relay := lookup.get_content(&"firewall_relay") as NetworkNodeData
+	if SolaceTideCampaign.active(c) and relay != null:
+		_claim_cleared(c, relay)
+		return
 	if claimed < 1 and relay != null and c.schematics >= relay.install_cost + config.rookie_cost:
 		for n in c.grid.neighbors(c.grid.home_site_id, corp.city_grid):
 			var sd := corp.city_grid.get_site(n)
 			if c.grid.is_cleared(n) and sd != null and sd.claimable:
 				CampaignRules.claim(c, corp, config, lookup, n, relay.id)
 				break
+
+
+## Infected Tide: the tide's raids hit claimed Sites only, so a sensible player builds on every cleared Site (id order)
+## while the Schematics keep a recruit in reserve.
+func _claim_cleared(c: CampaignState, relay: NetworkNodeData) -> void:
+	var ids: Array = c.grid.sites.keys()
+	IdSort.sort_ids(ids)
+	for id in ids:
+		var sd := corp.city_grid.get_site(id)
+		if not c.grid.is_cleared(id) or sd == null or not sd.claimable:
+			continue
+		if c.schematics < relay.install_cost + config.rookie_cost:
+			return
+		CampaignRules.claim(c, corp, config, lookup, id, relay.id)
 
 
 func _pick_launch(c: CampaignState) -> Dictionary:
@@ -174,8 +195,9 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 	var best_key := -1000000
 	var targets := CampaignRules.launchable_sites(c, corp, config)
 	targets.append_array(CampaignRules.patrol_sites(c, corp))
+	var retake := SolaceTideCampaign.active(c) and config.solace_tide_retake_taken
 	for site in targets:
-		if c.grid.is_taken(site.id):
+		if c.grid.is_taken(site.id) and not retake:
 			continue
 		for op in ops:
 			var cls := lookup.get_content(op.class_id) as ClassData
@@ -186,6 +208,9 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 			if CampaignRules.is_patrol(c, site):
 				objective = RC.SiteObjective.NONE  # a patrol holds no objective
 				key -= 200  # only when nothing corporate is open to this operative
+			if c.grid.is_taken(site.id):
+				objective = RC.SiteObjective.NONE  # a retake (R-K) brings the Site back; its objective was paid
+				key += TIDE_RETAKE_KEY
 			match objective:
 				RC.SiteObjective.CENTRAL_SERVER:
 					key += 1000

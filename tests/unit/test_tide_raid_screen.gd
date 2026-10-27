@@ -331,6 +331,9 @@ func test_response_rows_carry_their_numbers_the_commit_is_pinned_and_a_lethal_pi
 	assert_eq(flow.phase, TideRaidFlow.Phase.RESPONSE, "phase=%d fast=%s groups=%d" % [flow.phase, flow.fast, flow.groups.size()])
 	assert_not_null(screen.foot.find_child("Commit", true, false), "COMMIT is pinned under the scrolling list")
 	assert_null(screen.body.find_child("Commit", true, false))
+	if flow.groups.size() > TideRaidScreen.MAX_GROUPS:
+		screen._more_open = true  # H7 fold rule: a card response's +Heat keeps it a row, so the list can pass the "more" fold
+		screen._rebuild()
 	var lethal := -1
 	for gi in flow.groups.size():
 		var m: Dictionary = flow.groups[gi]["members"][0]
@@ -619,7 +622,7 @@ func test_the_forecast_hover_summary_and_the_odds_explain_a_tier_without_home_da
 	assert_eq(layer.forecast_summary({"down": [], "taken": [], "home": 0}), "HOME safe")
 	var o := await _open_tide(80)
 	var screen: TideRaidScreen = o[1]
-	assert_true(screen._tier_cause("BATTERED").contains("HOME safe"), "BATTERED is Sites lost, HOME unharmed")
+	assert_true(screen._tier_cause("SITES LOST").contains("HOME safe"), "SITES LOST is Sites lost, HOME unharmed")
 	assert_true(screen._tier_cause("DAMAGED").contains("HOME"))
 	var guard := screen._guard_line()
 	autofree(guard)

@@ -915,6 +915,8 @@ func resp_need(r: Array) -> Dictionary:
 	return {"kind": "", "have": true}
 
 
+## Per outcome row: the tier, HOME, every Site's condition, the Heat, the INFECTED cards added and whether the run ends
+## (H7 fold rule): a card response folds into HOLD only when all of these equal HOLD's on every row.
 func _signature(fc: Array) -> String:
 	var parts := PackedStringArray()
 	for r in fc:
@@ -924,7 +926,8 @@ func _signature(fc: Array) -> String:
 		var s := ""
 		for k in ks:
 			s += "%s=%d," % [k, int(ns.owned[k])]
-		parts.append("%s/%d/%s" % [r["tier"], ns.home, s])
+		parts.append("%s/%d/%s/h%d/i%d/%s" % [r["tier"], ns.home, s, ns.heat, ns.wound_count() - raid.st.wound_count(),
+			ns.lost != SolaceTideState.LOST_NONE])
 	return "|".join(parts)
 
 

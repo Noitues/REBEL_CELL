@@ -78,7 +78,7 @@ D_DRAW, D_INFECTED_DRAW_COST, D_SPREAD_COST = 5, 2, 2.0
 # H: Infected Tide (G2_SIM.md): C-target's board and paths + D's deck infection. Concept codes: "H" (full),
 # "Hb" (H-noB: sealed B fixed at generation), "Hs" (H-nospread). Numbers below are G2 assumptions/tuning.
 H_CODES = {"H": "H", "H-noB": "Hb", "H-nospread": "Hs", "H-brief": "Hl", "H3": "H3", "H4": "H4", "H5": "H5",
-           "H6": "H6"}
+           "H6": "H6", "H7": "H7"}
 # H numbers. G2 tuned values (G2_RESULTS.md section 2); every one can be overridden from the environment (g2_tune.py).
 # H-brief ("Hl") keeps the brief's literal numbers, so the tuning can be compared against the brief as written.
 #   BRULE: the corp's post-response B rule. "typed" = owned Sites before the first sentry of the route's type (brief
@@ -166,19 +166,30 @@ H4.update(HOME_INF=0, BREACH_LOSE=0, DIVERT=0, PENDING_TERRITORY=0)
 #     sealed beams' P-target rule); when no path crosses one, every path of the pool, as before (R-J).
 # The two keys are absent from H4 / H5 (read with .get, default 0), so their goldens regenerate byte for byte.
 H6 = dict(H5, CITY_END=1, KNOWN_TARGET=1)
-HFAM = ("H4", "H5", "H6")
-H5FAM = ("H5", "H6")        # the variants with the H5 raid (known beams fire after the RESPONSE, DIVERT, HOME infects)
+# H7 (designer 2026-10-26, DECISIONS "Solace tide H7"): H6 plus
+#   RETAKE: 1 = any TAKEN Site (adjacent or not) can be the target of a netrun (R-K); winning it returns the Site to
+#     OK at once (no install), for the run's own Heat plus RETAKE_HEAT and RETAKE_COST Schematics (paid only when the
+#     bank holds them, else the Site waits as a cleared claim). Its INFECTED card stays (DOSE / CLEAN cure it).
+#   SHIELD: 1 = a sentry that blocks a beam of its type shields its Site for the rest of the raid (R-L): no later
+#     beam hits it. The tier BATTERED is named SITES LOST from H7 on (R-M; the older variants keep their word).
+# Absent from H4..H6 (read with .get, default 0), so their goldens regenerate byte for byte.
+# H7 tuning: R-L alone dropped the skilled loss to 0.05 (R-K alone moves it < 0.01); RETAKE_HEAT / RETAKE_COST,
+# KNOWN_ROUTE, EARLY_RAIDS, SAC_GAP and BEAM_HEAT could not bring it back into 0.08-0.15, the raid cadence 3 -> 2 does.
+H7 =dict(H6, RETAKE=1, SHIELD=1, RETAKE_HEAT=0, RETAKE_COST=0, RAID_EVERY=2)
+HFAM = ("H4", "H5", "H6", "H7")
+H5FAM = ("H5", "H6", "H7")        # the variants with the H5 raid (known beams fire after the RESPONSE, DIVERT, HOME infects)
 _env_over(H_TUNED, "H_")
 _env_over(H3, "H3_")
 _env_over(H4, "H4_")
 _env_over(H5, "H5_")
 _env_over(H6, "H6_")
+_env_over(H7, "H7_")
 HX = H4         # the H4-family numbers of the campaign being played (set_family sets it)
 
 
 def _hdict(c: str) -> dict:
     return (H_BRIEF if c == "Hl" else H3 if c == "H3" else H4 if c == "H4" else H5 if c == "H5" else H6 if c == "H6"
-            else H_TUNED)
+            else H7 if c == "H7" else H_TUNED)
 
 
 def hp(c: str, key: str):
@@ -193,7 +204,7 @@ def city_end(c: str) -> bool:
 
 VARIANTS = ("A-open", "A-all", "A-target", "B-wards", "C-open", "C-all", "C-target",
             "C-open-tongue", "C-all-tongue", "C-target-tongue", "D-lattice", "H", "H-noB", "H-nospread", "H-brief",
-            "H3", "H4", "H5", "H6")
+            "H3", "H4", "H5", "H6", "H7")
 POLICIES = ("greedy", "keys", "random")
 PLAYERS = ("greedy", "naive")
 OUT = r"D:/rc_tmp/raid_design_lab/g1/sweep_g1.json"
@@ -287,12 +298,12 @@ def is_h(c: str) -> bool:
 
 
 def h_spread(c: str) -> bool:
-    return c in ("H", "Hb", "Hl", "H3", "H4", "H5", "H6")
+    return c in ("H", "Hb", "Hl", "H3", "H4", "H5", "H6", "H7")
 
 
 def h_dyn_b(c: str) -> bool:
     """H: the corp picks sealed B after the response by the readable rule (H-noB keeps the generation pick)."""
-    return c in ("H", "Hs", "Hl", "H3", "H4", "H5", "H6")
+    return c in ("H", "Hs", "Hl", "H3", "H4", "H5", "H6", "H7")
 
 
 def add_infected(st: "St", sites, loss: bool = True) -> None:
@@ -570,7 +581,14 @@ def h4_clear(geo, st: "St", site) -> bool:
         if site in geo.objective_heat and site not in st.obj_done:
             st.obj_done = st.obj_done | {site}
             d += geo.objective_heat[site]
-        if st.owned.get(site) not in ("OK", "DOWN"):
+        if HX.get("RETAKE", 0) and st.owned.get(site) == "TAKEN":     # H7 (R-K): the Site is back OK at once
+            d += HX["RETAKE_HEAT"]
+            if st.bank >= HX["RETAKE_COST"]:
+                st.bank -= HX["RETAKE_COST"]
+                st.owned[site] = "OK"
+            else:
+                st.pending = tuple(sorted(set(st.pending) | {site}))
+        elif st.owned.get(site) not in ("OK", "DOWN"):
             st.pending = tuple(sorted(set(st.pending) | {site}))
     return h4_add_heat(st, d)
 
@@ -609,8 +627,16 @@ def h4_territory(st: "St") -> dict:
     return t
 
 
-def choose_claim_h4(geo, st: "St", policy: str, rng: random.Random, seed: int, n: int):
+def h4_claim_options(geo, st: "St") -> list:
+    """The netrun targets: claimable Sites (not pending); H7 (R-K) adds every TAKEN Site, in id order."""
     opts = [s for s in geo.claimable(h4_territory(st)) if s not in st.pending]
+    if HX.get("RETAKE", 0):
+        opts += [s for s in sorted(st.owned) if st.owned[s] == "TAKEN" and s not in opts and s not in st.pending]
+    return opts
+
+
+def choose_claim_h4(geo, st: "St", policy: str, rng: random.Random, seed: int, n: int):
+    opts = h4_claim_options(geo, st)
     if HX["BREACH_LOSE"]:       # H5: an Exploit Site still held live can be run again to re-take its Exploit
         opts += [s for s in sorted(geo.exploits) if st.owned.get(s) in ("OK", "DOWN") and s not in st.held]
     if not opts:
@@ -646,7 +672,7 @@ def h4_wants_breach(geo, st: "St", greedy: bool, n: int) -> bool:
 def set_family(c: str) -> None:
     """Select the H4-family numbers (HX) for variant code c ("H4", "H5" or "H6")."""
     global HX
-    HX = H6 if c == "H6" else H5 if c == "H5" else H4
+    HX = H7 if c == "H7" else H6 if c == "H6" else H5 if c == "H5" else H4
 
 
 def campaign_h4(policy: str, player: str, seed: int, rec: dict, c: str = "H4") -> "St":
@@ -699,10 +725,11 @@ def campaign_h4(policy: str, player: str, seed: int, rec: dict, c: str = "H4") -
             site = choose_claim_h4(geo, st, policy, rng, seed, n)
             if gl is not None:
                 tier = 1 if site is None else geo.tier[site]
-                gl.append({"phase": "NETRUN", "netrun": n, "before": gb, "options": [s for s in geo.claimable(h4_territory(st))
-                           if s not in st.pending], "site": site, "death_p": h4_death_chance(st, tier),
+                gl.append({"phase": "NETRUN", "netrun": n, "before": gb, "options": h4_claim_options(geo, st), "site": site, "death_p": h4_death_chance(st, tier),
                            "death_roll": random.Random("death:%d:%d" % (seed, n)).random()})
             d0 = st.deaths
+            if site is not None and st.owned.get(site) == "TAKEN":
+                rec["retakes"] = rec.get("retakes", 0) + 1      # H7 metric: netruns aimed at a TAKEN Site
             q = netrun_h4(geo, st, site, seed, n)
             if gl is not None:
                 gl[-1].update(died=st.deaths > d0, raid_queued=q, after=state_json(st))
@@ -1025,6 +1052,8 @@ def scan(geo, sw: Sweep, ln, ctype: dict) -> None:
         j = sw.sent.get(cell)
         if j is not None and ctype[j] == ln.type:
             sw.touches += 1
+            if HX.get("SHIELD", 0):        # H7 (R-L): the block shields the Site for the rest of the raid
+                sw.seen.update(cs[cell])
             if sw.trace is not None:
                 sw.trace.append([sw.beam, cell, "block"])
             return
@@ -1364,7 +1393,9 @@ def tier(before: St, after: St, sw: Sweep) -> str:
     new_taken = sum(1 for s, v in after.owned.items() if v == "TAKEN" and before.owned.get(s) != "TAKEN")
     if sw.touches == 0 and new_taken == 0:
         return "EVADED"
-    return "BATTERED" if new_down >= 2 or new_taken >= 1 else "HOLDS"
+    if new_down >= 2 or new_taken >= 1:
+        return "SITES LOST" if HX.get("SHIELD", 0) else "BATTERED"     # H7 (R-M): BATTERED is named SITES LOST
+    return "HOLDS"
 
 
 def play_one(ctx: Ctx, st: St, place, resp, k: int, bi: int, late, h: int):
@@ -1778,7 +1809,8 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
         "dead": sum(1 for j in ctx.hand if ctx.cards[j][1] == "WOUND"),
         "b_flip": b_flip, "front": front0, "inf_start": inf0, "inf_add": ns.wounds_total - st.wounds_total,
         "inf_rows": inf_rows if is_h(c) else None, "inf_fc": inf_fc if is_h(c) else None,
-        "discard": discarded, "sac_blocked": not ctx.sac_ok})
+        "discard": discarded, "sac_blocked": not ctx.sac_ok,
+        "live0": sum(1 for v in st.owned.values() if v in ("OK", "DOWN"))})
     if c in HFAM:
         rec["raids"][-1].update(hp0=st.hp, hp1=ns.hp, heat0=st.heat, bank0=st.bank, band=h4_band(st.heat), inf0=wound_count(st.deck))
         ns.purge_q = False      # the PURGE raid has fired
@@ -1810,7 +1842,7 @@ def campaign(variant: str, policy: str, player: str, seed: int) -> dict:
                 "inf_first_breach": b0[1] if b0 else None, "p_first_breach": b0[2] if b0 else None,
                 "inf_end": wound_count(st.deck), "capped": not st.lost and not st.won and not st.breaches,
                 "breach_failed": not st.lost and not st.won and bool(st.breaches),
-                "bank": st.bank}
+                "bank": st.bank, "retakes": rec.get("retakes", 0)}
     st = St()
     if is_h(c):
         st.hp = hp(c, "START_HP") or hp(c, "HOME")
@@ -1890,6 +1922,7 @@ def aggregate(rows: list) -> dict:
         "paths_available": round(sum(r["n_paths"] for r in raids) / nr, 1),
         "relevance": round(sum(r["touch"] for r in raids) / max(1, sum(r["ran"] for r in raids)), 3),
         "home_hit_rate": round(sum(r["home"] for r in raids) / nr, 3),
+        "live_owned": round(sum(r.get("live0", 0) for r in raids) / nr, 2),
         "wounds": round(stats.mean(x["wounds"] for x in rows), 2),
         "sites_lost": round(stats.mean(x["sites_lost"] for x in rows), 2),
         "timer_end": round(stats.mean(x["timer"] for x in rows), 1),
@@ -1897,7 +1930,8 @@ def aggregate(rows: list) -> dict:
         "front_downs": round(stats.mean(x["front_downs"] for x in rows), 2),
         "decay_dose": round(stats.mean(x["decay_dose"] for x in rows), 2),
         "dead_per_hand": round(sum(r["dead"] for r in raids) / nr, 2),
-        "tier_mix": {t: tiers.count(t) for t in ("BREACHED", "DAMAGED", "EVADED", "BATTERED", "HOLDS")},
+        "tier_mix": {t: tiers.count(t) for t in ("BREACHED", "DAMAGED", "EVADED", "BATTERED", "SITES LOST",
+                                                        "HOLDS")},
         "response_mix": {k: resp.count(k) for k in sorted(set(resp))},
         "ghost_rate": round(sum(r["ghost"] for r in raids) / nr, 3),
         "sac_rate": round(sum(1 for r in raids if r["resp"] == "SACRIFICE") / nr, 3),
@@ -1948,6 +1982,7 @@ def _h4_extra(rows: list) -> dict:
         else None,
         "inf_end": round(stats.mean(x["inf_end"] for x in rows), 2),
         "bank_end": round(stats.mean(x["bank"] for x in rows), 1),
+        "retakes": round(stats.mean(x.get("retakes", 0) for x in rows), 2),
     }
 
 
@@ -1970,7 +2005,7 @@ TABLE_COLS = ("loss", "breached", "city_lost", "win", "breach_reached", "breach_
               "deaths", "death_per_netrun", "capped", "netruns_median", "hold3", "purge", "b_flip_rate", "infected_per_campaign", "spread",
               "front_size", "forecast_inf_rows", "raids_per_netrun", "locked_at_plan", "live_after_response",
               "response_decides", "late_use", "late_decides", "placement_gap", "between_entropy", "path_variety",
-              "paths_available", "relevance", "home_hit_rate", "wounds", "sites_lost", "timer_end", "netruns")
+              "paths_available", "relevance", "home_hit_rate", "live_owned", "wounds", "sites_lost", "timer_end", "netruns")
 
 
 def print_table(path: str) -> None:

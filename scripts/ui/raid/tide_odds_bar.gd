@@ -29,7 +29,7 @@ static func make(p_odds: Array, size_px: Vector2) -> TideOddsBar:
 	return b
 
 
-## "7 of 12 HOLDS, 5 of 12 BATTERED".
+## "7 of 12 HOLDS, 5 of 12 SITES LOST".
 func words() -> String:
 	var parts := PackedStringArray()
 	for o in odds:

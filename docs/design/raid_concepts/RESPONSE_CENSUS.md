@@ -113,3 +113,19 @@ The healthy-board oracle gets 0.73 and 0.74 for the second figure, so the respon
 ## Tool
 `godot --headless --path . -s tools/raid_tide/response_census.gd -- --seeds 2000:2007 --policy auto|oracle --out file.jsonl`
 (one `RAID {json}` line per measured raid; `mode` is `real` or `healthy`). Aggregation: `D:/rc_tmp/raid_tide_3e/measure/agg.py`.
+
+## H7 re-measure (2026-10-26, branch raid-tide-h7)
+Same tool, same seeds (2000..2031), after R-K (retake TAKEN Sites), R-L (a sentry shields its Site), R-M (SITES LOST), the cadence
+3 -> 2, and the bot retaking TAKEN Sites and claiming every cleared Site. Real board (`mode` real); raw data in
+`D:/rc_tmp/raid_tide_h7/census/`.
+
+| Metric | before auto | H7 auto | before oracle | H7 oracle |
+|---|---|---|---|---|
+| live owned Sites at raid (mean) | 0.79 | 4.78 | 0.79 | 5.43 |
+| `response_decides` | 0.360 | 0.415 | 0.360 | 0.698 |
+| >= 2 options differ from HOLD | 0.000 | 0.752 | 0.002 | 0.801 |
+| >= 1 option differs from HOLD | 0.362 | 0.831 | 0.370 | 0.905 |
+| LOCKED | 1.000 | 0.360 | 1.000 | 0.701 |
+
+Targets: live >= 3 met; >= 2 differing options in about half the raids met; `response_decides` >= 0.44 met by the oracle placement,
+not by `auto_plan` (0.415). Full entry: DECISIONS "2026-10-26 Solace tide H7".

@@ -365,8 +365,9 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 @export var solace_tide_sacrifice_gap: int = 2
 ## Schematics to clean one INFECTED card at the HQ.
 @export var solace_tide_clean_price: int = 10
-## A raid fires after this many netruns since the last raid (a Heat-threshold raid also resets the count).
-@export var solace_tide_raid_every: int = 3
+## A raid fires after this many netruns since the last raid (a Heat-threshold raid also resets the count). H7: 3 -> 2
+## (R-L lowered the skilled loss to 0.05; the cadence brings it back into 0.08-0.15).
+@export var solace_tide_raid_every: int = 2
 ## H5: a HOME hit adds an INFECTED card tied to HOME.
 @export var solace_tide_home_hit_infects: bool = true
 ## H5: failed Genome Core breaches allowed before the Exploits are spent (one retry = 1).
@@ -379,6 +380,17 @@ const RETIRED_FIELDS: Array[String] = ["corrupted_self_damage", "corrupted_damag
 ## H6 (R-J, designer 2026-10-26): a known beam draws its path among the paths of its pool through the most live owned
 ## Sites (the sealed candidates' P-target rule); every path when none crosses one. False = the H5 uniform draw.
 @export var solace_tide_known_target: bool = true
+## H7 (R-K, designer 2026-10-26): any TAKEN Site can be the target of a netrun (a reclaim run); winning it returns the
+## Site to claimed OK at once (its INFECTED card stays). False = a reclaim run only clears it (claim it again).
+@export var solace_tide_retake_taken: bool = true
+## R-K: Heat a retake adds on top of the run's own.
+@export var solace_tide_retake_heat: int = 0
+## R-K: Schematics a retake pays to bring the Site back OK; with fewer the Site is only cleared (claim it again).
+@export var solace_tide_retake_schematics: int = 0
+## R-K: the node a retaken Site comes back with (its old node was lost when it was TAKEN).
+@export var solace_tide_retake_node: StringName = &"firewall_relay"
+## H7 (R-L, designer 2026-10-26): a sentry that blocks a beam of its type shields its Site for the rest of the raid.
+@export var solace_tide_sentry_shields: bool = true
 ## R-D: percent of an entry step the Bloom start front moves per INFECTED card.
 @export var solace_tide_infected_front_step_pct: int = 100
 ## R-F: percent of the Genome Core's HP added per INFECTED card at the breach. 0 = off until it is calibrated with the
@@ -812,6 +824,8 @@ func _validate_solace_tide(errors: PackedStringArray) -> void:
 		errors.append("solace_tide route links, candidates and max placed are out of range.")
 	if solace_tide_dose_every < 1 or solace_tide_raid_every < 1:
 		errors.append("solace_tide_dose_every and solace_tide_raid_every must be >= 1.")
+	if solace_tide_retake_heat < 0 or solace_tide_retake_schematics < 0 or solace_tide_retake_node == &"":
+		errors.append("solace_tide_retake_heat / _schematics must be >= 0 and solace_tide_retake_node set.")
 	if solace_tide_early_route_pct < 0 or solace_tide_early_route_pct > 100 or solace_tide_known_route_pct < 0 or solace_tide_known_route_pct > 100:
 		errors.append("solace_tide route percents must be 0..100.")
 	if solace_tide_site_value_by_tier.is_empty():
