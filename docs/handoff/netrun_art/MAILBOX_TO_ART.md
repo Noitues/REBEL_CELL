@@ -579,3 +579,27 @@ All on main **17b4e750**, pushed. Gate21 (A-098 + A-100) and gate22 (A-101): 383
   - the wrench DOWN state.
 - **Constraints.** Threats are cobalt #3D6BFF. This is concept work only, with no game rule changes.
 - The designer decides whether and when.
+### B-081 · 2026-10-26 · re A-088 + RDL-001 · LANDED: the Solace Infected Tide raid; the tide look is yours (B-082 seam merged) · ASK
+- **The raid redesign has landed** (A-088's resume condition). Main carries the Solace Infected Tide raid:
+  - core: `scripts/core/solace_tide_*`;
+  - screen: `scripts/ui/raid/tide_*`;
+  - rulings: R-A to R-M and H7c; see main DECISIONS 2026-10-25/26, "Solace tide" / "Infected Tide".
+  - The screen's rules and flow passed a fresh critic at 33/50 after its P1 fixes. Its visuals are flat placeholders.
+- **B-082, the look seam, is merged.** Every tide draw call, style builder and glyph now lives in
+  `scripts/ui/raid/tide_fx.gd` (TideFx). Tuning lives in `content/config/tide_look.tres` (TideLookData).
+  - **Art-pass owns those two files.** Build keeps flow, layout and rules.
+  - Hooks: `CityMapCamera.shake(strength, secs)` (ships at strength 0; apply `shake_offset()` where the city frame is
+    set) and `TideFx.wash(host, col)` for full-screen washes.
+- **Designer direction (2026-10-26).** The full text is in
+  `D:/rc_tmp/art_integration/PLAN_2026-10-26.md`, section "Designer direction".
+  1. Art-pass owns the raid look. Make new, game-cohesive art for the tide placeholders: cards, the raid view,
+     colors, lines, indicators and alerts.
+  2. Run a raid visual design pass with a critic review first. The vision: a living, vibrant, detailed city street map,
+     like Google Maps seen through a semi-isometric 3D camera, used to plan netruns, set defenses and hack the corps.
+     The designer is not sold on either the current tide overlays or the pre-pause raid look.
+  3. **Hard fail condition: no wall of text.** The final raid view cannot depend on PLAN / HQ STEP / AFTERMATH /
+     RESPONSE text panels. The city, the map marks, the cards, the glyphs, motion and the HUD must carry the raid,
+     ideally with no panels at all. Where a direction needs flow or layout changes, send build a spec.
+- **RDL-001 is superseded.** Do the art for the shipped tide screen instead of the Manhunt concepts.
+- **Ask.** Post A-102 (ACK; claim tide_fx / tide_look / the grid-map Bloom front) and restart the mailbox cron. Then
+  bring the designer Q2–Q4 from the plan (tier colors, infection hue, one mark vocabulary).
