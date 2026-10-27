@@ -1782,3 +1782,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - corporation-themed (Solace: bacteria, virus or medical);
   - military.
   Every family needs simple bold silhouettes that read at 24 px and keep a creature-like or character identity.
+- **Beam heads, round 2 (designer, 2026-10-27, `tide_raid/H4_heads/heads_board.jpg`): still not settled.** The designer prefers a
+  **mix across families**, but isn't settled on the icons themselves. Keep iterating. Each type needs a distinct icon and its own
+  identity, but the three must share a **cohesive theme**.
