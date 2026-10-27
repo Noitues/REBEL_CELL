@@ -10257,3 +10257,49 @@ Site at raid time on real boards. Oracle variant `H7` = H6 + R-K + R-L in `tools
 
 - **Open for the designer:** the auto placement's `response_decides` is 0.415, under the 0.44 target (the oracle placement gives 0.698);
   the builtin bot also loses more campaigns (26 of 32 vs 19 of 32: more raids at cadence 2 against a weak combat bot).
+
+## 2026-10-26 Solace tide H7c: cadence back to 3; shield lasts one beam; unguarded hit Sites fall at raid close (designer chose H7B variant 2)
+Designer ruling 2026-10-26 (branch raid-tide-h7c), choosing variant 2 of `docs/design/raid_concepts/H7B_LEVERS.md`
+(`SHIELD_BEAMS=1;DECAY_FAST=1`) over the rank-1 recommendation. Oracle variant `H7C` is now named in
+`tools/raid_concepts/sweep_g1.py` (`H7_NAMED`; it equals `H7B:SHIELD_BEAMS=1;DECAY_FAST=1` byte for byte). The golden is regenerated as
+H7C; the H7 golden is kept as `solace_raid_golden_h7.json` and reproduces byte for byte.
+- **Cadence.** `solace_tide_raid_every` 2 -> 3.
+- **Shield (replaces R-L's whole-raid shield).** A sentry that blocks a beam of its type shields its Site from the next
+  `solace_tide_sentry_shield_beams` (1) beams only; 0 = the rest of the raid (H7). Every beam that fires counts, blocked or not (known beams,
+  sealed A, sealed B, hunter); a new block renews the shield; a beam of the sentry's type is still blocked by the sentry itself.
+  Port: `SolaceTideRules.scan` (`Sweep.shl`, `Sweep.nbeam`).
+- **Unguarded falls.** When a raid closes, every DOWN Site with no sentry standing on it is TAKEN at once (no repair window), id order;
+  it counts as a Site lost and adds its INFECTED card like any TAKEN Site. As in the oracle, this also takes a Site that was already DOWN
+  before the raid (left unrepaired) when no sentry stands on it. Port: `SolaceTideRules.close` -> `fall_unguarded` (`Sweep.fell`),
+  gated by `solace_tide_unguarded_fall` (true). `campaign.last_raid["fell"]` carries the fallen Sites.
+- **Screen.** The playout marks a shielded Site (ring, "SHIELDED", log "X shielded") on the beam after its block and "shield gone" on the
+  beam after that; a block reads "BLOCKED at X: shielded from the next beam". The forecast marks show "falls" (and "N Sites fall (no
+  sentry)" at HOME) for an unguarded hit Site; the last beat lands the fall ("FALLS: X", its INFECTED card flies then). The aftermath
+  counts the fallen Sites as UNGUARDED (`aftermath_counts` source `unguarded`), apart from the beams' own takings.
+- **Oracle (sweep_g1.py, 200 campaigns per claim policy, 600 pooled per cell; G = skilled, N = careless):**
+
+| Metric | H7 (cadence 2) | H7 at cadence 3 | H7C |
+|---|---|---|---|
+| Skilled loss | 0.113 | 0.050 | 0.112 |
+| Careless loss | 0.702 | 0.623 | 0.742 |
+| Win G / N | 0.642 / 0.298 | 0.688 / 0.375 | 0.558 / 0.258 |
+| Response decides (G) | 0.466 | 0.440 | 0.459 |
+| Locked at plan (G) | 0.373 | 0.393 | 0.428 |
+| HOME hit (G) | 0.082 | 0.054 | 0.084 |
+| Live owned Sites at raid (G) | 4.75 | 5.16 | 4.65 |
+| Raids per netrun (G) | 0.538 | 0.388 | 0.388 |
+
+- **Real game (`tools/raid_tide/response_census.gd`, seeds 2000..2031, real board):**
+
+| Metric | H7, auto | H7c, auto | H7, oracle | H7c, oracle |
+|---|---|---|---|---|
+| Live owned Sites at raid (mean) | 4.78 | 3.32 | 5.43 | 3.52 |
+| `response_decides` | 0.415 | 0.417 | 0.698 | 0.606 |
+| >= 1 option differs from HOLD | 0.831 | 0.783 | 0.905 | 0.793 |
+| >= 2 options differ from HOLD | 0.752 | 0.696 | 0.801 | 0.736 |
+| LOCKED | 0.360 | 0.426 | 0.701 | 0.728 |
+| Raids measured | 508 | 345 | 592 | 386 |
+
+- **Open for the designer:** with the auto placement `response_decides` is 0.417, still under the 0.44 target (H7 gave 0.415; the oracle
+  measured 0.459 for its skilled planner; the census's oracle placement gives 0.606). The real board keeps fewer live Sites (3.32, from 4.78) because the bot's unguarded hit
+  Sites now fall instead of waiting for a repair. The builtin bot ends 27 of 32 campaigns LOST, 3 at the run cap, 2 WON (H7: 26 / 4 / 2).

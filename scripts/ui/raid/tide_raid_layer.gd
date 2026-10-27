@@ -72,6 +72,11 @@ var downs: Array[StringName] = []
 ## Persistent hit marks: site -> "hit" | "block". The block markers show for the current beam only (see `blocks`).
 var hits: Dictionary = {}
 var blocks: Array = []
+## H7c: the Sites a sentry's shield covers on the current beam, and the Sites whose shield just ended (the beat before was its last).
+var shields: Array = []
+var shields_gone: Array = []
+## H7c: the Sites that fell at the raid's close (DOWN with no sentry -> TAKEN), stamped TAKEN with a "falls" note.
+var falls: Array = []
 ## The worst tier of each candidate route at HOME (empty: none), drawn at HOME.
 var home_tiers: Array = []
 ## The type color of each of those routes (the chip colors that match the forecast columns).
@@ -554,6 +559,16 @@ func _draw_hits() -> void:
 			continue
 		draw_arc(p, 17.0, 0.0, TAU, 20, TideGlyphs.type_color(String(e[1])), 3.0)
 		TideGlyphs.verb(self, p + Vector2(0, -24.0), "GUARD", 8.0, TideGlyphs.INK)
+	for id in shields:
+		var p := at(StringName(String(id)))
+		if p.x == INF:
+			continue
+		draw_arc(p, 23.0, 0.0, TAU, 28, TideGlyphs.COBALT_HOT, 3.0)
+	for id in shields_gone:
+		var p := at(StringName(String(id)))
+		if p.x == INF:
+			continue
+		draw_arc(p, 23.0, 0.0, TAU, 28, Color(TideGlyphs.COBALT_HOT, 0.35), 1.5)
 
 
 ## DOWN and TAKEN, stamped on their own Sites: a tilted plate under the Site with a bolt (DOWN) or a crack (TAKEN).
@@ -562,6 +577,18 @@ func _collect_stamps() -> void:
 		_stamp(id, "DOWN", Palette.TIDE_SITES_LOST, "stamp_down")
 	for id in taken:
 		_stamp(id, "TAKEN", TideGlyphs.RED, "stamp_taken")
+	for id in falls:
+		var p := at(StringName(String(id)))
+		if p.x != INF:
+			_add_tag({"kind": "note", "anchor": p, "text": tr("falls: no sentry"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 22.0), "own": true})
+	for id in shields:
+		var p := at(StringName(String(id)))
+		if p.x != INF:
+			_add_tag({"kind": "note", "anchor": p, "text": tr("SHIELDED"), "col": TideGlyphs.COBALT_HOT, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true})
+	for id in shields_gone:
+		var p := at(StringName(String(id)))
+		if p.x != INF:
+			_add_tag({"kind": "note", "anchor": p, "text": tr("shield gone"), "col": TideGlyphs.DIM, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true})
 
 
 func _stamp(id: StringName, word: String, col: Color, kind: String) -> void:
@@ -571,15 +598,18 @@ func _stamp(id: StringName, word: String, col: Color, kind: String) -> void:
 	_add_tag({"kind": kind, "anchor": p, "text": word, "col": col, "px": STAMP_PX, "icon": 12.0, "prefer": Vector2(0.0, STAMP_DROP), "own": true})
 
 
-## The words of the HOME tag for the forecast marks `m` ({down, taken, home}): the Sites that would be hit, then HOME: "2 Sites DOWN, HOME safe".
+## The words of the HOME tag for the forecast marks `m` ({down, taken, falls, home}): the Sites that would be hit, then HOME: "2 Sites DOWN, HOME safe".
 func forecast_summary(m: Dictionary) -> String:
 	var parts := PackedStringArray()
 	var nd := (m.get("down", []) as Array).size()
 	var nt := (m.get("taken", []) as Array).size()
+	var nf := (m.get("falls", []) as Array).size()
 	if nd > 0:
 		parts.append(tr("%d Sites DOWN") % nd if nd > 1 else tr("1 Site DOWN"))
 	if nt > 0:
 		parts.append(tr("%d Sites TAKEN") % nt if nt > 1 else tr("1 Site TAKEN"))
+	if nf > 0:
+		parts.append(tr("%d Sites fall (no sentry)") % nf if nf > 1 else tr("1 Site falls (no sentry)"))
 	var dmg := int(m.get("home", 0))
 	parts.append(tr("HOME -%d") % dmg if dmg > 0 else tr("HOME safe"))
 	return ", ".join(parts)
@@ -588,7 +618,7 @@ func forecast_summary(m: Dictionary) -> String:
 ## The forecast prediction the player points at, the mismatched sentries and the picked card's fit: rings on the Sites and a tag each where a word is needed.
 func _collect_marks() -> void:
 	# One summary tag at HOME says what the rings mean ("2 Sites DOWN, HOME safe"); a single marked Site also gets its own word.
-	var lone := (fc_marks.get("down", []) as Array).size() + (fc_marks.get("taken", []) as Array).size() == 1
+	var lone := (fc_marks.get("down", []) as Array).size() + (fc_marks.get("taken", []) as Array).size() + (fc_marks.get("falls", []) as Array).size() == 1
 	for id in fc_marks.get("down", []):
 		var p := at(StringName(String(id)))
 		if p.x == INF:
@@ -603,11 +633,20 @@ func _collect_marks() -> void:
 		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
 		if lone:
 			_add_tag({"kind": "note", "anchor": p, "text": tr("would fall"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+	# H7c: a Site hit and left DOWN with no sentry on it falls when the raid closes: every such Site says so (the rule is new to the player).
+	for id in fc_marks.get("falls", []):
+		var p := at(StringName(String(id)))
+		if p.x == INF:
+			continue
+		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
+		draw_arc(p, 26.0, 0.0, TAU, 28, Color(TideGlyphs.RED, 0.5), 1.5)
+		_add_tag({"kind": "note", "anchor": p, "text": tr("falls"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
 	if not fc_marks.is_empty():
 		var hp := at(home)
 		if hp.x != INF:
 			var dmg := int(fc_marks.get("home", 0))
-			var hit_sites := not (fc_marks.get("down", []) as Array).is_empty() or not (fc_marks.get("taken", []) as Array).is_empty()
+			var hit_sites := not (fc_marks.get("down", []) as Array).is_empty() or not (fc_marks.get("taken", []) as Array).is_empty() \
+				or not (fc_marks.get("falls", []) as Array).is_empty()
 			var hc: Color = TideGlyphs.RED if dmg > 0 else (Palette.TIDE_SITES_LOST if hit_sites else TideGlyphs.TIER_COLOR["HOLDS"])
 			draw_arc(hp, 28.0, 0.0, TAU, 32, hc, 3.5)
 			_add_tag({"kind": "note", "anchor": hp, "text": forecast_summary(fc_marks), "col": hc, "px": LABEL_PX, "prefer": Vector2(0.0, -46.0), "own": true})

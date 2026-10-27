@@ -1,9 +1,10 @@
 extends GutTest
 ## Solace tide, Phase 2a (SOLACE_RAID_SPEC.md section 10, item 1): golden parity. The port (SolaceTideBoard,
 ## SolaceTideRules, SolaceTideState) replays tools/raid_concepts/data/solace_raid_golden.json, written by the oracle
-## (tools/raid_concepts/sweep_g1.py, variant H7 = H5 + R-I CITY LOST at raid end + R-J known beams aim at owned Sites
-## (H6) + R-K retake TAKEN Sites + R-L a sentry shields its Site + R-M the tier SITES LOST; the H6 and H5 goldens are kept
-## as solace_raid_golden_h6.json and solace_raid_golden_h5.json). Draws and hands are FED from the golden (Python's random streams differ
+## (tools/raid_concepts/sweep_g1.py, variant H7C = H5 + R-I CITY LOST at raid end + R-J known beams aim at owned Sites
+## (H6) + R-K retake TAKEN Sites + R-L a sentry shields its Site + R-M the tier SITES LOST (H7) + H7c: cadence 3, a one-beam
+## shield, unguarded DOWN Sites fall at the close; the H7, H6 and H5 goldens are kept as solace_raid_golden_h7.json,
+## solace_raid_golden_h6.json and solace_raid_golden_h5.json). Draws and hands are FED from the golden (Python's random streams differ
 ## from RngService), so only the rules are compared, never RNG output.
 
 const GOLDEN := "res://tools/raid_concepts/data/solace_raid_golden.json"
@@ -136,6 +137,8 @@ func test_config_matches_oracle() -> void:
 	_eq("retake heat (R-K)", c.solace_tide_retake_heat, r["RETAKE_HEAT"])
 	_eq("retake schematics (R-K)", c.solace_tide_retake_schematics, r["RETAKE_COST"])
 	_eq("sentry shields (R-L)", c.solace_tide_sentry_shields, r["SHIELD"] == 1)
+	_eq("shield beams (H7c)", c.solace_tide_sentry_shield_beams, int(r.get("SHIELD_BEAMS", 0)))
+	_eq("unguarded fall (H7c)", c.solace_tide_unguarded_fall, int(r.get("DECAY_FAST", 0)) == 1)
 	_eq("step pct", c.solace_tide_infected_front_step_pct, r["INF_STEP_PCT"])
 	_eq("start deck", c.solace_tide_start_cards(), _g["config"]["lab"]["START_DECK"])
 	# the existing keys the tide reads

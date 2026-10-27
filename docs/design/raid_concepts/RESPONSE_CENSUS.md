@@ -129,3 +129,21 @@ Same tool, same seeds (2000..2031), after R-K (retake TAKEN Sites), R-L (a sentr
 
 Targets: live >= 3 met; >= 2 differing options in about half the raids met; `response_decides` >= 0.44 met by the oracle placement,
 not by `auto_plan` (0.415). Full entry: DECISIONS "2026-10-26 Solace tide H7".
+
+## H7c re-measure (2026-10-26, branch raid-tide-h7c)
+Same tool, same seeds (2000..2031), after H7c: cadence 2 -> 3, a block shields its Site from the next beam only (was the rest of the raid),
+and a hit Site left DOWN with no sentry is TAKEN when the raid closes. Real board (`mode` real); raw data in
+`D:/rc_tmp/raid_tide_h7c/census/`.
+
+| Metric | H7 auto | H7c auto | H7 oracle | H7c oracle |
+|---|---|---|---|---|
+| live owned Sites at raid (mean) | 4.78 | 3.32 | 5.43 | 3.52 |
+| `response_decides` | 0.415 | 0.417 | 0.698 | 0.606 |
+| >= 2 options differ from HOLD | 0.752 | 0.696 | 0.801 | 0.736 |
+| >= 1 option differs from HOLD | 0.831 | 0.783 | 0.905 | 0.793 |
+| LOCKED | 0.360 | 0.426 | 0.701 | 0.728 |
+| raids measured | 508 | 345 | 592 | 386 |
+
+Targets: live >= 3 met (3.32); >= 2 differing options in about half the raids met (0.696); `response_decides` >= 0.44 with `auto_plan`
+**not met** (0.417, +0.002 on H7: within noise); met by the oracle placement (0.606, from 0.698). Fewer raids (cadence 3) and fewer live Sites (unguarded hit Sites fall instead of waiting
+for a repair). Full entry: DECISIONS "2026-10-26 Solace tide H7c".

@@ -176,6 +176,21 @@ H6 = dict(H5, CITY_END=1, KNOWN_TARGET=1)
 # H7 tuning: R-L alone dropped the skilled loss to 0.05 (R-K alone moves it < 0.01); RETAKE_HEAT / RETAKE_COST,
 # KNOWN_ROUTE, EARLY_RAIDS, SAC_GAP and BEAM_HEAT could not bring it back into 0.08-0.15, the raid cadence 3 -> 2 does.
 H7 =dict(H6, RETAKE=1, SHIELD=1, RETAKE_HEAT=0, RETAKE_COST=0, RAID_EVERY=2)
+# H7B (designer 2026-10-26, DECISIONS "Solace tide H7b"): H7 at cadence 3 plus the lever keys below (all off by default; read
+# with .get, so H4..H7 reproduce). A variant "H7B:KEY=VAL;KEY=VAL" sets them (BEAM_HEAT uses "+" for ","); see
+# docs/design/raid_concepts/H7B_LEVERS.md.
+#   SHIELD_BEAMS: 0 = a block shields the Site for the rest of the raid (H7); n = for the next n beams only (a).
+#   SHIELD_HEAT: Heat added per sentry whose block shielded a live Site (b). SHIELD_WEAR: 1 = a shielded Site that is OK
+#     ends the raid DOWN; 2 = the sentry card that shielded sits out the next raid's hand (b).
+#   SEALED3_HEAT: from this Heat the third candidate beam also fires (an extra sealed beam) (c); BEAM_HEAT: the known-beam
+#     thresholds (c).  HUNTER: 1 = the hunter beam ignores shields; 2 = it also hits twice (OK -> TAKEN) (d).
+#   DECAY_FAST: 1 = at the close of a raid every DOWN Site with no sentry on it goes TAKEN at once (e).
+#   RETAKE_HEAT: Heat per retake (f). RETAKE_CD: netruns before a retaken Site is live (f).  MAX_PLACED: sentries (g).
+H7_BASE = dict(H7)
+H7B_BASE = dict(H7, RAID_EVERY=3)
+# H7C (designer 2026-10-26, DECISIONS "Solace tide H7c"): the chosen lever, H7B variant 2 (H7B_LEVERS.md): cadence 3, a block
+# shields its Site from the next beam only, and a DOWN Site with no sentry on it is TAKEN when the raid closes.
+H7_NAMED = {"H7C": "H7B:SHIELD_BEAMS=1;DECAY_FAST=1"}
 HFAM = ("H4", "H5", "H6", "H7")
 H5FAM = ("H5", "H6", "H7")        # the variants with the H5 raid (known beams fire after the RESPONSE, DIVERT, HOME infects)
 _env_over(H_TUNED, "H_")
@@ -185,6 +200,25 @@ _env_over(H5, "H5_")
 _env_over(H6, "H6_")
 _env_over(H7, "H7_")
 HX = H4         # the H4-family numbers of the campaign being played (set_family sets it)
+
+
+def apply_variant(variant: str) -> None:
+    """H7B variants rewrite the H7 dict in place (one campaign at a time per process); every other variant restores it.
+    A named variant (H7_NAMED: H7C) is its H7B spec."""
+    variant = H7_NAMED.get(variant, variant)
+    if variant.startswith("H7B"):
+        H7.clear()
+        H7.update(H7B_BASE)
+        spec = variant.partition(":")[2]
+        for kv in (x for x in spec.split(";") if x):
+            k, _, v = kv.partition("=")
+            if k in ("BEAM_HEAT", "HAND_HEAT"):
+                H7[k] = v.replace("+", ",")
+            else:
+                H7[k] = float(v) if "." in v else int(v)
+    elif H7 != H7_BASE:
+        H7.clear()
+        H7.update(H7_BASE)
 
 
 def _hdict(c: str) -> dict:
@@ -215,8 +249,8 @@ _GEO = {}
 def geo_for(variant: str):
     g = _GEO.get(variant)
     if g is None:
-        if variant in H_CODES:
-            hc = H_CODES[variant]
+        if variant in H_CODES or variant.startswith("H7B") or variant in H7_NAMED:
+            hc = H_CODES.get(variant, "H7")
             g = G.GraphGeo("P-target", "street", hp(hc, "KNOWN_ROUTE"),
                            (hp(hc, "EARLY_RAIDS"), hp(hc, "EARLY_ROUTE")),
                            1 + len(_ints(hp(hc, "BEAM_HEAT"))) if hc in HFAM else 3,
@@ -238,9 +272,11 @@ class St:
                  "front", "crossed", "infected", "doses", "dose_buys", "dose_n", "obj_done", "breach_used", "lost",
                  "wounds_total", "sites_lost", "front_downs", "lost_flag", "last_lost", "inf_n", "purged",
                  "raid_n", "last_sac", "dose_spent", "held", "pending", "deaths", "won", "breaches", "crossed_h",
-                 "ready_at", "asset_n", "purge_q", "cools", "bfails")
+                 "ready_at", "asset_n", "purge_q", "cools", "bfails", "cool", "worn")
 
     def __init__(self):
+        self.cool = ()              # H7B: (Site, netrun) of retaken Sites still cooling down
+        self.worn = frozenset()     # H7B: sentry cards worn out by the last raid (sit out the next hand)
         self.held = frozenset()     # H4: Exploits extracted (permanent, campaign.exploits)
         self.pending = ()           # H4: Sites cleared but not yet installed (no Schematics for the node)
         self.deaths = 0             # H4: operatives lost (Bloom, combat, failed breach)
@@ -290,6 +326,8 @@ class St:
 
 
 def concept_of(variant: str) -> str:
+    if variant.startswith("H7B") or variant in H7_NAMED:
+        return "H7"
     return H_CODES.get(variant, variant[0])
 
 
@@ -567,7 +605,7 @@ def h4_install_pending(st: "St") -> None:
     st.pending = tuple(left)
 
 
-def h4_clear(geo, st: "St", site) -> bool:
+def h4_clear(geo, st: "St", site, n: int = 0) -> bool:
     """A completed netrun on `site` (None = patrol): rack Heat and Schematics, Exploit, objective Heat, then the claim
     (install now if affordable, else pending). Returns True when a raid threshold was crossed."""
     tier = 1 if site is None else geo.tier[site]
@@ -583,7 +621,9 @@ def h4_clear(geo, st: "St", site) -> bool:
             d += geo.objective_heat[site]
         if HX.get("RETAKE", 0) and st.owned.get(site) == "TAKEN":     # H7 (R-K): the Site is back OK at once
             d += HX["RETAKE_HEAT"]
-            if st.bank >= HX["RETAKE_COST"]:
+            if HX.get("RETAKE_CD", 0):          # H7B (f): the Site is live again only after RETAKE_CD netruns
+                st.cool = st.cool + ((site, n),)
+            elif st.bank >= HX["RETAKE_COST"]:
                 st.bank -= HX["RETAKE_COST"]
                 st.owned[site] = "OK"
             else:
@@ -601,7 +641,7 @@ def netrun_h4(geo, st: "St", site, seed: int, n: int, roll: bool = True) -> bool
         st.deaths += 1
         q = h4_add_heat(st, HX["_REAL"]["death_heat_base"] + tier)
     else:
-        q = h4_clear(geo, st, site)
+        q = h4_clear(geo, st, site, n)
         if roll:
             ar = random.Random("asset:%d:%d" % (seed, n))
             if ar.random() < HX["_REAL"]["asset_drop_chance"]:
@@ -631,7 +671,9 @@ def h4_claim_options(geo, st: "St") -> list:
     """The netrun targets: claimable Sites (not pending); H7 (R-K) adds every TAKEN Site, in id order."""
     opts = [s for s in geo.claimable(h4_territory(st)) if s not in st.pending]
     if HX.get("RETAKE", 0):
-        opts += [s for s in sorted(st.owned) if st.owned[s] == "TAKEN" and s not in opts and s not in st.pending]
+        cooling = {x[0] for x in st.cool}
+        opts += [s for s in sorted(st.owned) if st.owned[s] == "TAKEN" and s not in opts and s not in st.pending
+                 and s not in cooling]
     return opts
 
 
@@ -687,6 +729,11 @@ def campaign_h4(policy: str, player: str, seed: int, rec: dict, c: str = "H4") -
     rec["netruns"] = 0
     for n in range(1, HX["CAP"] + 1):
         rec["netruns"] = n
+        if st.cool:                             # H7B (f): retaken Sites whose cooldown is over are live again
+            for s2, n0 in st.cool:
+                if n - n0 >= HX["RETAKE_CD"]:
+                    st.owned[s2] = "OK"
+            st.cool = tuple(x for x in st.cool if n - x[1] < HX["RETAKE_CD"])
         if st.ready_at < 0 and h4_t3_ready(geo, st):
             st.ready_at = n
         gl = rec.get("golden")
@@ -984,7 +1031,7 @@ def choose_claim(geo, c: str, st: St, policy: str, rng: random.Random, seed: int
 class Sweep:
     __slots__ = ("sent", "ghost", "owned", "hp", "home_hit", "home_ward", "shield", "seen", "hits", "touches",
                  "quar", "taken", "front", "infected", "late", "dose_used", "bpick", "lean", "jam_b", "home_dmg",
-                 "trace", "beam", "n_known", "divert")
+                 "trace", "beam", "n_known", "divert", "shl", "nbeam", "blk_cells", "blk_cards", "shsites")
 
     def copy(self) -> "Sweep":
         o = Sweep.__new__(Sweep)
@@ -1012,6 +1059,11 @@ class Sweep:
         o.beam = self.beam
         o.n_known = self.n_known
         o.divert = self.divert
+        o.shl = dict(self.shl)
+        o.nbeam = self.nbeam
+        o.blk_cells = set(self.blk_cells)
+        o.blk_cards = set(self.blk_cards)
+        o.shsites = set(self.shsites)
         return o
 
 
@@ -1041,30 +1093,42 @@ def new_sweep(st: St, place) -> Sweep:
     sw.beam = ""
     sw.n_known = 0              # H5: known beams that fire after the RESPONSE
     sw.divert = None            # H5: (known index, cells) of a DIVERT
+    sw.shl = {}                 # H7B: Site -> last beam index its shield covers
+    sw.nbeam = 0                # H7B: beams scanned so far this raid
+    sw.blk_cells = set()        # H7B: cells whose sentry shielded a live Site
+    sw.blk_cards = set()        # H7B: the cards of those sentries
+    sw.shsites = set()          # H7B: the Sites shielded
     return sw
 
 
 def scan(geo, sw: Sweep, ln, ctype: dict) -> None:
     cs = geo.cell_sites
+    sw.nbeam += 1
+    nb = sw.nbeam
+    hunter_mode = HX.get("HUNTER", 0) if sw.beam == "hunter" else 0
     for cell in ln.cells:
         if cell == sw.ghost:
             continue
         j = sw.sent.get(cell)
         if j is not None and ctype[j] == ln.type:
             sw.touches += 1
-            if HX.get("SHIELD", 0):        # H7 (R-L): the block shields the Site for the rest of the raid
-                sw.seen.update(cs[cell])
+            if HX.get("SHIELD", 0):        # H7 (R-L): the block shields the Site (H7B: SHIELD_BEAMS limits for how long)
+                sb = HX.get("SHIELD_BEAMS", 0)
+                for s in cs[cell]:
+                    sw.shl[s] = nb + sb if sb else 1 << 30
+                    if sw.owned.get(s) in ("OK", "DOWN"):
+                        sw.blk_cells.add(cell)
+                        sw.blk_cards.add(j)
+                        sw.shsites.add(s)
             if sw.trace is not None:
                 sw.trace.append([sw.beam, cell, "block"])
             return
         for s in cs[cell]:
             v = sw.owned.get(s)
-            if (v == "OK" or v == "DOWN") and s not in sw.seen:
-                if v == "OK":
+            if (v == "OK" or v == "DOWN") and s not in sw.seen and (hunter_mode or sw.shl.get(s, 0) < nb):
+                if v == "OK" and hunter_mode < 2:
                     sw.owned[s] = "DOWN"
-                elif sw.quar >= 0 and geo.ward_of[s] == sw.quar:
-                    pass                                # B QUARANTINE: the ward's Sites stop at DOWN
-                else:
+                elif v == "OK" or not (sw.quar >= 0 and geo.ward_of[s] == sw.quar):
                     sw.owned[s] = "TAKEN"
                     sw.taken += 1
                     if not geo.cell_live(cell, sw.owned):
@@ -1100,7 +1164,7 @@ def make_ctx(geo, c: str, st: St, seed: int, raid: int) -> Ctx:
     ctx.nbrs = None
     ctx.sac_ok = not is_h(c) or raid - st.last_sac >= hp(c, "SAC_GAP")
     ctx.draw = geo.draw(st, random.Random("raid:%d:%d" % (seed, raid)))
-    ids = sorted(x[0] for x in st.deck)
+    ids = sorted(x[0] for x in st.deck if x[0] not in st.worn)
     random.Random("hand:%d:%d" % (seed, raid)).shuffle(ids)
     ctx.hand = ids[:(h4_hand(st.heat) if c in HFAM else hand_size(st.heat))]
     ctx.cards = {x[0]: (x[1], x[2]) for x in st.deck}
@@ -1318,6 +1382,17 @@ def do_late(ctx: Ctx, sw: Sweep, opt, rhand) -> None:
 
 def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
     geo, c = ctx.geo, ctx.c
+    if c in H5FAM:
+        if HX.get("SHIELD_WEAR", 0) == 1:       # H7B (b): a shielded Site that is still OK ends the raid DOWN
+            for s2 in sorted(sw.shsites):
+                if sw.owned.get(s2) == "OK":
+                    sw.owned[s2] = "DOWN"
+        if HX.get("DECAY_FAST", 0):             # H7B (e): a DOWN Site with no sentry on it is TAKEN at the close
+            cov = {s2 for cell in sw.sent for s2 in geo.cell_sites[cell]}
+            for s2 in sorted(sw.owned):
+                if sw.owned[s2] == "DOWN" and s2 not in cov:
+                    sw.owned[s2] = "TAKEN"
+                    sw.taken += 1
     ns = st.copy()
     ns.owned = sw.owned
     ns.hp = sw.hp
@@ -1335,6 +1410,9 @@ def close(ctx: Ctx, st: St, place, heat: int, sw: Sweep, resp: tuple) -> St:
         heat -= EVADE_HEAT
     if resp[0] in CARD_RESPONSES:
         heat += SPOOF_HEAT
+    if c in H5FAM:
+        heat += HX.get("SHIELD_HEAT", 0) * len(sw.blk_cells)     # H7B (b)
+        ns.worn = frozenset(sw.blk_cards) if HX.get("SHIELD_WEAR", 0) == 2 else frozenset()
     ns.heat = max(0, heat) if c not in HFAM else max(0, min(HX["_REAL"]["heat_max"], heat))
     if place[1] is not None:
         ns.ghost -= 1
@@ -1415,6 +1493,10 @@ def play_one(ctx: Ctx, st: St, place, resp, k: int, bi: int, late, h: int):
     b = [x for x in range(3) if x != k][bi]
     sw.beam = "sealed_b"
     scan(ctx.geo, sw, d.cands[b], ctx.ctype)
+    s3 = HX.get("SEALED3_HEAT", 0) if ctx.c in H5FAM else 0
+    if s3 and heat >= s3:                   # H7B (c): the third candidate fires too
+        sw.beam = "sealed_c"
+        scan(ctx.geo, sw, d.cands[3 - k - b], ctx.ctype)
     do_late(ctx, sw, late, rhand)
     if resp[0] != "JAM":
         sw.beam = "hunter"
@@ -1428,6 +1510,7 @@ def eval_place(ctx: Ctx, st: St, place, responses: bool):
     two hunter streets). responses=False: HOLD only, no late slot (the HOLD screen)."""
     geo, c = ctx.geo, ctx.c
     heat, sw0, rhand = launch(ctx, st, place)
+    s3 = HX.get("SEALED3_HEAT", 0) if c in H5FAM else 0
     opts = response_options(ctx, sw0, rhand) if responses else [("HOLD",)]
     d = ctx.draw
     per = [None, None, None]
@@ -1448,6 +1531,8 @@ def eval_place(ctx: Ctx, st: St, place, responses: bool):
             for bi, b in pairs:
                 sw3 = sw2.copy()
                 scan(geo, sw3, d.cands[b], ctx.ctype)
+                if s3 and heat >= s3:
+                    scan(geo, sw3, d.cands[3 - k - b], ctx.ctype)
                 best_l = None
                 for lo in lates:
                     sw4 = sw3.copy()
@@ -1791,6 +1876,8 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
     heat_l = st.heat + (GHOST_HEAT if place[1] is not None else 0)
     ran = list(d.known[:n_known(ctx, heat_l)])
     ran += [d.cands[k], d.cands[b]]
+    if c in H5FAM and HX.get("SEALED3_HEAT", 0) and heat_l >= HX["SEALED3_HEAT"]:
+        ran.append(d.cands[3 - k - b])
     if resp[0] != "JAM":
         hsw = new_sweep(st, place)
         hsw.front = sw.front
@@ -1828,6 +1915,7 @@ def raid(geo, c: str, st: St, seed: int, idx: int, greedy: bool, rec: dict) -> S
 
 
 def campaign(variant: str, policy: str, player: str, seed: int) -> dict:
+    apply_variant(variant)
     geo = geo_for(variant)
     c = concept_of(variant)
     if c in HFAM:

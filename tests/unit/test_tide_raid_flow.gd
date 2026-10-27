@@ -645,6 +645,22 @@ func test_the_hq_step_warns_a_raid_early_and_names_what_lifts_it() -> void:
 	assert_true(fixes.has("repair:%s" % ring[0]), "REPAIR is named as a way out: %s" % [fixes])
 
 
+## H7c: the playout shows a block's shield on the next beat only, then "shield gone"; a new block renews it.
+func test_shield_spans_show_a_one_beam_shield_then_its_end() -> void:
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	var beats: Array = []
+	for t in [[["known0", "t1_a", "block"]], [], [["sealed_b", "t1_b", "block"]], [["hunter", "t1_b", "block"]], []]:
+		beats.append({"trace": t})
+	TideRaidFlow.shield_spans(beats, cfg)
+	var on: Array = []
+	var gone: Array = []
+	for b in beats:
+		on.append(b["shielded"])
+		gone.append(b["shield_gone"])
+	assert_eq(on, [[], [&"t1_a"], [], [&"t1_b"], [&"t1_b"]], "shielded on the beat after each block")
+	assert_eq(gone, [[], [], [&"t1_a"], [], []], "then gone; a renewed shield runs on")
+
+
 func test_the_aftermath_counts_and_the_maps_stamps_come_from_one_event_list() -> void:
 	for sd in [7, 11, 23, 31]:
 		var f := _to_response(_env(sd, 1, 80, 2))
@@ -664,7 +680,8 @@ func test_the_aftermath_counts_and_the_maps_stamps_come_from_one_event_list() ->
 		assert_eq(int(c["taken"]), map_taken, "seed %d: the TAKEN count is the TAKEN stamps on the map" % sd)
 		assert_eq((a["events"] as Array).size(), map_down + map_taken, "seed %d: one event per stamp" % sd)
 		assert_eq(int(c["decay_taken"]), f.decay_sites().size(), "seed %d: DECAY's takings are kept apart" % sd)
-		assert_eq(int(c["raid_taken"]), (f.last_raid["taken"] as Array).size(), "seed %d: and so are the raid's own" % sd)
+		assert_eq(int(c["raid_taken"]) + int(c["unguarded_taken"]), (f.last_raid["taken"] as Array).size(), "seed %d: and so are the raid's own" % sd)
+		assert_eq(int(c["unguarded_taken"]), (f.last_raid["fell"] as Array).size(), "seed %d: H7c: the fallen Sites are 'unguarded'" % sd)
 		assert_eq(int(c["raid_down"]), (f.last_raid["down"] as Array).size())
-		assert_eq(int(c["decay_taken"]) + int(c["raid_taken"]) + int(c["earlier_taken"]), int(c["taken"]), "the parts add up")
+		assert_eq(int(c["decay_taken"]) + int(c["raid_taken"]) + int(c["unguarded_taken"]) + int(c["earlier_taken"]), int(c["taken"]), "the parts add up")
 		assert_gt(int(c["decay_taken"]), 0, "DECAY took the DOWN Sites, so the raid's own count alone would contradict the map")

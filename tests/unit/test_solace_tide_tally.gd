@@ -63,7 +63,12 @@ func test_the_outcome_marks_are_what_the_forecast_rows_do_to_the_board() -> void
 	var rows := SolaceTideRules.forecast(ctx, st, {"sentries": {}, "ghost": &""}, ["HOLD"])
 	assert_eq(rows.size(), 12)
 	var all := SolaceTideTally.outcome_marks(rows, st)
-	assert_false((all["down"] as Array).is_empty(), "an unguarded raid takes Sites down")
+	# H7c: with no sentry anywhere every Site a beam leaves DOWN falls at the close: the marks say "falls", not DOWN
+	assert_true((all["down"] as Array).is_empty(), "no unguarded Site stays DOWN")
+	assert_false((all["falls"] as Array).is_empty(), "an unguarded raid's hit Sites fall")
+	for r in rows:
+		for s in (r["result"]["sweep"] as SolaceTideRules.Sweep).fell:
+			assert_true((all["falls"] as Array).has(s) or (all["taken"] as Array).has(s), "every fallen Site is marked")
 	var worst_home := 0
 	for r in rows:
 		worst_home = maxi(worst_home, st.home - (r["result"]["state"] as SolaceTideState).home)

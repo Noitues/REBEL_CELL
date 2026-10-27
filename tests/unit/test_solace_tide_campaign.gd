@@ -321,7 +321,7 @@ func test_an_opened_raid_does_not_decay_twice_after_a_save() -> void:
 # --------------------------------------------------------------------------------------- the raid queue (cadence + Heat)
 func test_the_cadence_queues_a_raid_every_nth_netrun_and_a_raid_resets_it() -> void:
 	var c := _campaign()
-	assert_eq(_cfg.solace_tide_raid_every, 2, "H7 cadence: a raid every second netrun")
+	assert_eq(_cfg.solace_tide_raid_every, 3, "H7c cadence: a raid every third netrun")
 	for i in _cfg.solace_tide_raid_every - 1:
 		c.runs_completed += 1
 		CampaignRules.on_run_closed(c, _corp, _cfg, _lookup, false)

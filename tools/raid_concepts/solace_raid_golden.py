@@ -1,7 +1,8 @@
-"""Parity golden for the Solace raid (the Infected Tide, H7): docs/handoff/raid_integration/SOLACE_RAID_SPEC.md.
-The oracle is tools/raid_concepts/sweep_g1.py, variant H7 (H4 + the 2026-10-25 Phase 1 rule changes = H5, + the
+"""Parity golden for the Solace raid (the Infected Tide, H7C): docs/handoff/raid_integration/SOLACE_RAID_SPEC.md.
+The oracle is tools/raid_concepts/sweep_g1.py, variant H7C (H4 + the 2026-10-25 Phase 1 rule changes = H5, + the
 2026-10-26 rulings R-I CITY LOST at raid end and R-J known beams aim at owned Sites = H6, + the 2026-10-26 rulings
-R-K TAKEN Sites can be retaken, R-L a sentry shields its Site, R-M BATTERED named SITES LOST). The GDScript port
+R-K TAKEN Sites can be retaken, R-L a sentry shields its Site, R-M BATTERED named SITES LOST = H7, + the 2026-10-26
+ruling H7c: cadence 3, the shield lasts one beam, an unguarded DOWN Site falls at the raid's close). The GDScript port
 (scripts/core/solace_tide_rules.gd) reads tools/raid_concepts/data/solace_raid_golden.json in its parity test.
 
 Contents:
@@ -17,9 +18,9 @@ Contents:
   response among response_options, random A and hunter street, the corp's B by rule).
 - random_betweens: random legal HQ steps.
 - checks: the small rule functions (hand size, beams fired, HOME damage, breach chance, prices, the Bloom start gap).
-Run: python tools/raid_concepts/solace_raid_golden.py [--variant H7|H6|H5|H4]   (a few seconds)
-H7 writes data/solace_raid_golden.json (the port's golden); H6 writes data/solace_raid_golden_h6.json (the Phase 3b
-golden), H5 data/solace_raid_golden_h5.json (the Phase 2 golden of commit 1ea858b0) and H4
+Run: python tools/raid_concepts/solace_raid_golden.py [--variant H7C|H7|H6|H5|H4]   (a few seconds)
+H7C writes data/solace_raid_golden.json (the port's golden); H7 writes data/solace_raid_golden_h7.json (the H7 golden of
+commit 11eb2ec8), H6 data/solace_raid_golden_h6.json (the Phase 3b golden), H5 data/solace_raid_golden_h5.json (the Phase 2 golden of commit 1ea858b0) and H4
 data/solace_raid_golden_h4.json (the G4 golden of commit 82322009), all kept reproducible byte for byte."""
 from __future__ import annotations
 
@@ -34,11 +35,13 @@ import g1_geo as G          # noqa: E402
 import g4_bloom             # noqa: E402
 import sweep_g1 as S        # noqa: E402
 
-OUT = {"H7": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden.json"),
+OUT = {"H7C": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden.json"),
+       "H7": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden_h7.json"),
        "H6": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden_h6.json"),
        "H5": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden_h5.json"),
        "H4": os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "solace_raid_golden_h4.json")}
-VARIANT = "H7"
+VARIANT = "H7C"
+FAM = "H7"      # the oracle's concept code of VARIANT (H7C plays as H7 with its levers set)
 CAMPAIGNS = (("keys", "greedy", 0), ("keys", "greedy", 1), ("greedy", "greedy", 2), ("random", "greedy", 3),
              ("keys", "naive", 0), ("greedy", "naive", 5), ("keys", "greedy", 11), ("greedy", "greedy", 17))
 # H5 only: a second breach failure then a re-take and a win (keys/greedy 5), CITY LOST (keys/naive 4), BREACHED for
@@ -51,6 +54,8 @@ H6_EXTRA = (("random", "naive", 30), ("keys", "naive", 20))
 # passes its Site): keys/greedy 76 (2 retakes away from the territory) and greedy/greedy 103 (3), both won; found by
 # search over seeds 0..199.
 H7_EXTRA = (("keys", "greedy", 76), ("greedy", "greedy", 103))
+# H7C needs no extra campaign: in its golden a one-beam shield that a later beam passes shows in 21 of the 120 random
+# raids (13 campaign raids) and an unguarded hit Site falling at the close in 55 (46).
 RANDOM_RAIDS = 120
 RANDOM_BETWEENS = 80
 RNG_SEED = 2510
@@ -76,7 +81,7 @@ def st_from_json(d: dict) -> S.St:
 
 
 def config_json() -> dict:
-    nums = S.H7 if VARIANT == "H7" else S.H6 if VARIANT == "H6" else S.H5 if VARIANT == "H5" else S.H4
+    nums = S.H7 if FAM == "H7" else S.H6 if VARIANT == "H6" else S.H5 if VARIANT == "H5" else S.H4
     rules = {k: v for k, v in nums.items() if not k.startswith("_")}
     if VARIANT == "H4":     # the G4 golden had no H5 keys
         for k in ("HOME_INF", "BREACH_LOSE", "DIVERT", "PENDING_TERRITORY"):
@@ -106,7 +111,7 @@ def graph_json(geo) -> dict:
 
 def play_campaign(policy: str, player: str, seed: int) -> dict:
     rec = {"raids": [], "between": [], "golden": []}
-    st = S.campaign_h4(policy, player, seed, rec, VARIANT)
+    st = S.campaign_h4(policy, player, seed, rec, FAM)
     ref = S.campaign(VARIANT, policy, player, seed)          # the sweep's own run: the golden must match it
     assert (st.won, st.lost, st.heat, st.hp, st.deaths, rec["netruns"]) == \
         (ref["win"], ref["lost"], ref["heat"], ref["hp"], ref["deaths"], ref["netruns"]), (policy, player, seed)
@@ -115,7 +120,7 @@ def play_campaign(policy: str, player: str, seed: int) -> dict:
 
 
 def random_raid(geo, st: S.St, rng: random.Random, seed: int, idx: int) -> dict:
-    ctx = S.make_ctx(geo, VARIANT, st, seed, idx)
+    ctx = S.make_ctx(geo, FAM, st, seed, idx)
     places = S.placements(ctx, st, ctx.rel, True)
     place = places[rng.randrange(len(places))]
     heat, sw0, rhand = S.launch(ctx, st, place)
@@ -166,20 +171,22 @@ def checks() -> dict:
 
 
 def main() -> None:
-    global VARIANT
+    global VARIANT, FAM
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", default="H7", choices=("H7", "H6", "H5", "H4"))
+    ap.add_argument("--variant", default="H7C", choices=("H7C", "H7", "H6", "H5", "H4"))
     VARIANT = ap.parse_args().variant
-    S.set_family(VARIANT)
+    FAM = S.concept_of(VARIANT)
+    S.apply_variant(VARIANT)
+    S.set_family(FAM)
     geo = S.geo_for(VARIANT)
-    extra = H6_EXTRA if VARIANT == "H6" else H6_EXTRA + H7_EXTRA if VARIANT == "H7" else ()
-    camps = [play_campaign(*c) for c in (CAMPAIGNS + H5_EXTRA + extra if VARIANT in S.H5FAM else CAMPAIGNS)]
+    extra = H6_EXTRA if FAM == "H6" else H6_EXTRA + H7_EXTRA if FAM == "H7" else ()
+    camps = [play_campaign(*c) for c in (CAMPAIGNS + H5_EXTRA + extra if FAM in S.H5FAM else CAMPAIGNS)]
     rng = random.Random(RNG_SEED)
     pool = [step["after_decay"] if "after_decay" in step else step["before"]
             for c in camps for step in c["steps"] if step["phase"] == "RAID"]
     pool = [p for p in pool if not p["lost"]]
     raids = []
-    S.set_family(VARIANT)
+    S.set_family(FAM)
     for i in range(RANDOM_RAIDS):
         st = st_from_json(pool[rng.randrange(len(pool))])
         raids.append(random_raid(geo, st, rng, 9000 + i, rng.randrange(8)))
@@ -187,11 +194,11 @@ def main() -> None:
     after = [r["after"] for r in raids if not r["after"]["lost"]]
     for i in range(RANDOM_BETWEENS):
         st = st_from_json(after[rng.randrange(len(after))])
-        opts = S.between_options(geo, VARIANT, st)
+        opts = S.between_options(geo, FAM, st)
         o = opts[rng.randrange(len(opts))]
         betweens.append({"before": S.state_json(st), "options": [[x[0], x[1], x[3]] for x in opts],
                          "choice": {"repair": o[0], "build": o[1], "patch": o[3]},
-                         "after": S.state_json(S.between(geo, VARIANT, st, o))})
+                         "after": S.state_json(S.between(geo, FAM, st, o))})
     out = {"config": config_json(), "graph": graph_json(geo), "campaigns": camps, "random_raids": raids,
            "random_betweens": betweens, "checks": checks()}
     out_path = OUT[VARIANT]

@@ -52,26 +52,38 @@ static func tier_odds(rows: Array) -> Array:
 
 
 ## What a set of outcome rows (SolaceTideRules.forecast rows) does to the board relative to `before`, for the map to draw: {down (Sites that
-## go OK -> DOWN on some row), taken (Sites newly TAKEN on some row), home (the most HOME integrity any row loses), n}. Both lists are sorted by id.
+## go OK -> DOWN on some row), taken (Sites a beam newly TAKES on some row), falls (H7c: Sites that fall at the close, DOWN with no sentry
+## -> TAKEN, on some row and taken by a beam on none), home (the most HOME integrity any row loses), n}. The lists are sorted by id.
 static func outcome_marks(rows: Array, before: SolaceTideState) -> Dictionary:
 	var down := {}
 	var taken := {}
+	var falls := {}
 	var home := 0
 	for r in rows:
 		var ns: SolaceTideState = r["result"]["state"]
+		var fell: Array = []
+		if r["result"].has("sweep"):
+			fell = (r["result"]["sweep"] as SolaceTideRules.Sweep).fell
 		for s in ns.owned.keys():
 			var was := int(before.owned.get(s, -1))
 			var now := int(ns.owned[s])
 			if now == SolaceTideState.Cond.DOWN and was == SolaceTideState.Cond.OK:
 				down[s] = true
 			elif now == SolaceTideState.Cond.TAKEN and was != SolaceTideState.Cond.TAKEN:
-				taken[s] = true
+				if fell.has(s):
+					falls[s] = true
+				else:
+					taken[s] = true
 		home = maxi(home, before.home - ns.home)
+	for s in taken.keys():
+		falls.erase(s)
 	var d: Array = down.keys()
 	var t: Array = taken.keys()
+	var f: Array = falls.keys()
 	IdSort.sort_ids(d)
 	IdSort.sort_ids(t)
-	return {"down": d, "taken": t, "home": home, "n": rows.size()}
+	IdSort.sort_ids(f)
+	return {"down": d, "taken": t, "falls": f, "home": home, "n": rows.size()}
 
 
 ## One string that is equal for two forecasts exactly when every outcome ends alike (tier, HOME, Heat, every Site's condition).
