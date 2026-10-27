@@ -1110,6 +1110,47 @@ func _make_beats(res: Dictionary) -> Array:
 		out.append({"beam": "hunter", "kind": "hunter", "line": d["hunters"][int(d["hunter_real"])], "trace": _of(trace, "hunter")})
 	else:
 		out.append({"beam": "hunter", "kind": "hunter_jammed", "line": d["hunters"][int(d["hunter_real"])], "trace": []})
+	shield_spans(out, cfg)
+	return out
+
+
+## H7c: what the sentries' shields do beat by beat. Each beat gets "shielded" (the Sites a block on an earlier beat still shields while it
+## fires) and "shield_gone" (the Sites whose shield ended with the beat before), id order. A block shields its Site from the next
+## `solace_tide_sentry_shield_beams` beams (0 = the rest of the raid); a new block renews it. Every beat that fires is one beam (SolaceTideRules.scan).
+static func shield_spans(beats: Array, p_cfg: CampaignConfigData) -> void:
+	var ends := {}
+	var sb := p_cfg.solace_tide_sentry_shield_beams
+	for j in beats.size():
+		var on: Array = []
+		var gone: Array = []
+		for s in ends.keys():
+			if int(ends[s]) >= j:
+				on.append(s)
+			elif int(ends[s]) == j - 1:
+				gone.append(s)
+		IdSort.sort_ids(on)
+		IdSort.sort_ids(gone)
+		beats[j]["shielded"] = on
+		beats[j]["shield_gone"] = gone
+		if not p_cfg.solace_tide_sentry_shields:
+			continue
+		for e in beats[j]["trace"]:
+			if String(e[2]) == "block":
+				ends[StringName(String(e[1]))] = j + sb if sb > 0 else beats.size()
+
+
+## H7c: the Sites that fell when the raid closed (hit, left DOWN with no sentry on them, TAKEN at the close), id order; [] before it plays.
+func fell_sites() -> Array:
+	return last_raid.get("fell", [])
+
+
+## The Sites the raid's beams took (TAKEN by a hit), without the ones that fell at the close.
+func beam_taken() -> Array:
+	var out: Array = []
+	var fell := fell_sites()
+	for s in last_raid.get("taken", []):
+		if not fell.has(s):
+			out.append(s)
 	return out
 
 
@@ -1152,13 +1193,14 @@ func aftermath_owned() -> Dictionary:
 
 
 ## The one event list behind the aftermath: every Site the map stamps DOWN or TAKEN, once, in id order: [{site, kind ("down" | "taken"), src
-## ("decay" | "raid" | "earlier")}]. DECAY's takings and the raid's own are kept apart; "earlier" is a Site that was already DOWN or TAKEN when this
-## raid opened. The panel's counts (`aftermath_counts`) and the map's stamps both read the board `aftermath_owned` gives, so they cannot differ.
+## ("decay" | "raid" | "unguarded" | "earlier")}]. DECAY's takings and the raid's own are kept apart, and of the raid's the Sites that fell at the
+## close with no sentry on them (H7c) are "unguarded"; "earlier" is a Site that was already DOWN or TAKEN when this raid opened. The panel's counts (`aftermath_counts`) and the map's stamps both read the board `aftermath_owned` gives, so they cannot differ.
 func aftermath_events() -> Array[Dictionary]:
 	var owned := aftermath_owned()
 	var raided := raid.resolved and not raid.over
 	var r_taken: Array = last_raid.get("taken", []) if raided else []
 	var r_down: Array = last_raid.get("down", []) if raided else []
+	var r_fell: Array = fell_sites() if raided else []
 	var decayed := decay_sites()
 	var ids: Array = owned.keys()
 	IdSort.sort_ids(ids)
@@ -1168,7 +1210,9 @@ func aftermath_events() -> Array[Dictionary]:
 		if cond != SolaceTideState.Cond.TAKEN and cond != SolaceTideState.Cond.DOWN:
 			continue
 		var src := "earlier"
-		if r_taken.has(String(s)) or r_down.has(String(s)):
+		if r_fell.has(String(s)) and cond == SolaceTideState.Cond.TAKEN:
+			src = "unguarded"
+		elif r_taken.has(String(s)) or r_down.has(String(s)):
 			src = "raid"
 		elif cond == SolaceTideState.Cond.TAKEN and decayed.has(StringName(s)):
 			src = "decay"
@@ -1176,10 +1220,10 @@ func aftermath_events() -> Array[Dictionary]:
 	return out
 
 
-## The counts of `aftermath_events`: {"<src>_<kind>": n for src decay / raid / earlier and kind down / taken, down (all), taken (all)}.
+## The counts of `aftermath_events`: {"<src>_<kind>": n for src decay / raid / unguarded / earlier and kind down / taken, down (all), taken (all)}.
 func aftermath_counts() -> Dictionary:
 	var out := {"down": 0, "taken": 0}
-	for src in ["decay", "raid", "earlier"]:
+	for src in ["decay", "raid", "unguarded", "earlier"]:
 		for kind in ["down", "taken"]:
 			out["%s_%s" % [src, kind]] = 0
 	for e in aftermath_events():

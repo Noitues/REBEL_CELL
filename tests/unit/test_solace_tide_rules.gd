@@ -83,7 +83,8 @@ func test_forecast_equals_play_on_the_golden_raids() -> void:
 				var f: Dictionary = row["result"]
 				rows_checked += 1
 				if res["tier"] != row["tier"] or res["trace"] != f["trace"] or res["b_pick"] != f["b_pick"] \
-						or res["lean"] != f["lean"] or res["state"].to_dict() != f["state"].to_dict():
+						or res["lean"] != f["lean"] or res["state"].to_dict() != f["state"].to_dict() \
+						or (res["sweep"] as SolaceTideRules.Sweep).fell != (f["sweep"] as SolaceTideRules.Sweep).fell:
 					bad += 1
 	gut.p("forecast rows compared: %d (DIVERT responses %d)" % [rows_checked, divert_seen])
 	assert_eq(bad, 0, "forecast rows that differ from play")
@@ -213,7 +214,8 @@ func test_a_home_hit_adds_one_infected_card_tied_to_home() -> void:
 	var st := _st({"t1_b": SolaceTideState.Cond.OK})
 	var ctx := _ctx(st, _draw([_line(["t3_b", "t2_breach", "t1_b"]), _line(["t3_c", "t2_virus", "t1_c"]),
 		_line(["t3_c", "t2_virus", "t1_c"], "ROUTE", "N")]))
-	var res := SolaceTideRules.play(ctx, st, _place(), ["HOLD"], 0, 0)
+	# an N sentry on t1_b: the D route still hits it, and the guarded DOWN Site does not fall (H7c) at the close
+	var res := SolaceTideRules.play(ctx, st, _place({"t1_b": "s2"}), ["HOLD"], 0, 0)
 	var ns: SolaceTideState = res["state"]
 	assert_eq(ns.home, 50 - 5, "HOME is hit once per raid even when several routes arrive")
 	assert_eq(_wounds(ns, "HOME"), 1, "one INFECTED card tied to HOME")
@@ -324,7 +326,7 @@ func test_the_breach_has_one_retry_then_the_exploits_are_spent_and_retaken() -> 
 	assert_eq(SolaceTideRules.retake_sites(st, _board).size(), 2)
 
 
-# ------------------------------------------------------------------------------------------------ H7: R-K, R-L, R-M
+# ------------------------------------------------------------------------------------------------ H7: R-K, R-L (H7c), R-M
 func test_rk_a_won_run_on_a_taken_site_brings_it_back_ok_and_keeps_its_infected_card() -> void:
 	var st := _st({"t1_a": SolaceTideState.Cond.TAKEN, "t1_b": SolaceTideState.Cond.OK})
 	SolaceTideRules.add_infected(st, [&"t1_a"])
@@ -351,27 +353,72 @@ func test_rk_a_won_run_on_a_taken_site_brings_it_back_ok_and_keeps_its_infected_
 	assert_true(st3.pending.has(&"t1_a"), "R-K off: the H6 claim")
 
 
-func test_rl_a_blocking_sentry_shields_its_site_for_the_rest_of_the_raid() -> void:
-	for shields in [true, false]:
+## H7c (designer 2026-10-26) replaces R-L's whole-raid shield: a block shields its Site from the next
+## `solace_tide_sentry_shield_beams` beams (1 shipped); 0 = the rest of the raid (H7); the rule off = no shield.
+func test_h7c_a_block_shields_its_site_from_the_next_beam_only() -> void:
+	assert_eq(_cfg.solace_tide_sentry_shield_beams, 1, "shipped: one beam")
+	# [shields, beams] -> the Site after the 2nd (N) beam and after the 3rd (N) beam
+	var cases := [[true, 1, SolaceTideState.Cond.OK, SolaceTideState.Cond.DOWN],
+		[true, 0, SolaceTideState.Cond.OK, SolaceTideState.Cond.OK],
+		[false, 1, SolaceTideState.Cond.DOWN, SolaceTideState.Cond.DOWN]]
+	for k in cases:
 		var c: CampaignConfigData = _cfg.duplicate()
-		c.solace_tide_sentry_shields = shields
+		c.solace_tide_sentry_shields = k[0]
+		c.solace_tide_sentry_shield_beams = k[1]
 		var st := _st({"t1_a": SolaceTideState.Cond.OK})
-		var draw := _draw([_line(["t1_a"], "ROUTE", "D")])
-		var ctx := SolaceTideRules.make_ctx(_board, st, c, draw, ["s0", "s1", "s2", "s5"], 1)
+		var ctx := SolaceTideRules.make_ctx(_board, st, c, _draw([_line(["t1_a"], "ROUTE", "D")]), ["s0", "s1", "s2", "s5"], 1)
 		var sw := SolaceTideRules.launch(ctx, st, _place({"t1_a": "s0"}))
 		sw.beam = "known0"
 		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "D"))
 		assert_eq(sw.trace.back(), ["known0", "t1_a", "block"], "the D sentry blocks the D beam")
 		sw.beam = "sealed_a"
 		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "N"))
-		if shields:
-			assert_eq(sw.owned[&"t1_a"], SolaceTideState.Cond.OK, "R-L: the later N beam passes the shielded Site")
+		assert_eq(sw.owned[&"t1_a"], k[2], "%s: the next (N) beam" % [k])
+		sw.beam = "sealed_b"
+		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "N"))
+		assert_eq(sw.owned[&"t1_a"], k[3], "%s: the beam after it" % [k])
+		assert_eq(sw.nbeam, 3, "every scan counts as a beam")
+	# a fresh block renews the shield, and a D beam is still blocked by the sentry itself
+	var st2 := _st({"t1_a": SolaceTideState.Cond.OK})
+	var ctx2 := _ctx(st2, _draw([_line(["t1_a"], "ROUTE", "D")]))
+	var sw2 := SolaceTideRules.launch(ctx2, st2, _place({"t1_a": "s0"}))
+	for t in ["D", "N", "D", "N"]:
+		SolaceTideRules.scan(ctx2, sw2, _line(["t1_a"], "STREET", t))
+	assert_eq(sw2.owned[&"t1_a"], SolaceTideState.Cond.OK, "block, pass, block, pass")
+	SolaceTideRules.scan(ctx2, sw2, _line(["t1_a"], "STREET", "N"))
+	assert_eq(sw2.owned[&"t1_a"], SolaceTideState.Cond.DOWN, "two beams after the last block: hit")
+
+
+## H7c (designer 2026-10-26): when a raid closes, a DOWN Site with no sentry on it is TAKEN at once (and infects); a
+## DOWN Site under a sentry stays DOWN; the rule off keeps both DOWN. Preview == result on the same setup.
+func test_h7c_an_unguarded_down_site_falls_when_the_raid_closes() -> void:
+	# N beams through t1_a (an N-blind D sentry stands there) and t1_b (no sentry): both go DOWN
+	var cands := [_line(["t1_a", "t1_b"], "STREET", "N"), _line(["t1_a", "t1_b"], "STREET", "N"),
+		_line(["t1_a", "t1_b"], "STREET", "N")]
+	for fall in [true, false]:
+		var c: CampaignConfigData = _cfg.duplicate()
+		c.solace_tide_unguarded_fall = fall
+		var st := _st({"t1_a": SolaceTideState.Cond.OK, "t1_b": SolaceTideState.Cond.OK, "t1_c": SolaceTideState.Cond.OK})
+		var ctx := SolaceTideRules.make_ctx(_board, st, c, _draw([_line(["t3_c"], "STREET")], cands), ["s0", "s1", "s2", "s5"], 1)
+		var place := _place({"t1_a": "s0"})
+		var res := SolaceTideRules.play(ctx, st, place, ["HOLD"], 0, 0)
+		var ns: SolaceTideState = res["state"]
+		var sw: SolaceTideRules.Sweep = res["sweep"]
+		assert_eq(ns.owned[&"t1_a"], SolaceTideState.Cond.DOWN, "guarded: stays DOWN (repair it)")
+		assert_eq(ns.owned[&"t1_c"], SolaceTideState.Cond.OK, "not hit: untouched")
+		if fall:
+			assert_eq(ns.owned[&"t1_b"], SolaceTideState.Cond.TAKEN, "unguarded and hit: falls at the close")
+			assert_eq(sw.fell, [&"t1_b"])
+			assert_eq(_wounds(ns, "t1_b"), 1, "the fallen Site infects like any TAKEN Site")
+			assert_eq(ns.sites_lost, st.sites_lost + 1)
+			assert_eq(res["tier"], SolaceTideRules.TIER_SITES_LOST)
 		else:
-			assert_eq(sw.owned[&"t1_a"], SolaceTideState.Cond.DOWN, "without R-L the next beam hits it")
-		# a second D beam is still blocked by the sentry
-		sw.beam = "hunter"
-		SolaceTideRules.scan(ctx, sw, _line(["t1_a"], "STREET", "D"))
-		assert_eq(sw.trace.back()[2], "block")
+			assert_eq(ns.owned[&"t1_b"], SolaceTideState.Cond.DOWN, "rule off: DOWN until DECAY")
+			assert_eq(sw.fell, [])
+		for row in SolaceTideRules.forecast(ctx, st, place, ["HOLD"]):
+			var r2 := SolaceTideRules.play(ctx, st, place, ["HOLD"], row["a"], row["hunter"])
+			assert_eq((row["result"]["state"] as SolaceTideState).to_dict(), (r2["state"] as SolaceTideState).to_dict(), "preview == result")
+			assert_eq((row["result"]["sweep"] as SolaceTideRules.Sweep).fell, (r2["sweep"] as SolaceTideRules.Sweep).fell)
 
 
 func test_rm_the_sites_lost_tier() -> void:
@@ -482,7 +529,7 @@ func test_cadence_a_heat_raid_resets_the_count() -> void:
 	var st := _st()
 	for i in _cfg.solace_tide_raid_every - 1:
 		assert_false(SolaceTideRules.note_netrun(st, _cfg, false))
-	assert_true(SolaceTideRules.note_netrun(st, _cfg, false), "the Nth netrun fires a raid (H7: every second)")
+	assert_true(SolaceTideRules.note_netrun(st, _cfg, false), "the Nth netrun fires a raid (H7c: every third)")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1
 	st.owned[&"t1_a"] = SolaceTideState.Cond.OK

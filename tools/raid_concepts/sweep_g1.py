@@ -188,6 +188,9 @@ H7 =dict(H6, RETAKE=1, SHIELD=1, RETAKE_HEAT=0, RETAKE_COST=0, RAID_EVERY=2)
 #   RETAKE_HEAT: Heat per retake (f). RETAKE_CD: netruns before a retaken Site is live (f).  MAX_PLACED: sentries (g).
 H7_BASE = dict(H7)
 H7B_BASE = dict(H7, RAID_EVERY=3)
+# H7C (designer 2026-10-26, DECISIONS "Solace tide H7c"): the chosen lever, H7B variant 2 (H7B_LEVERS.md): cadence 3, a block
+# shields its Site from the next beam only, and a DOWN Site with no sentry on it is TAKEN when the raid closes.
+H7_NAMED = {"H7C": "H7B:SHIELD_BEAMS=1;DECAY_FAST=1"}
 HFAM = ("H4", "H5", "H6", "H7")
 H5FAM = ("H5", "H6", "H7")        # the variants with the H5 raid (known beams fire after the RESPONSE, DIVERT, HOME infects)
 _env_over(H_TUNED, "H_")
@@ -200,7 +203,9 @@ HX = H4         # the H4-family numbers of the campaign being played (set_family
 
 
 def apply_variant(variant: str) -> None:
-    """H7B variants rewrite the H7 dict in place (one campaign at a time per process); every other variant restores it."""
+    """H7B variants rewrite the H7 dict in place (one campaign at a time per process); every other variant restores it.
+    A named variant (H7_NAMED: H7C) is its H7B spec."""
+    variant = H7_NAMED.get(variant, variant)
     if variant.startswith("H7B"):
         H7.clear()
         H7.update(H7B_BASE)
@@ -244,7 +249,7 @@ _GEO = {}
 def geo_for(variant: str):
     g = _GEO.get(variant)
     if g is None:
-        if variant in H_CODES or variant.startswith("H7B"):
+        if variant in H_CODES or variant.startswith("H7B") or variant in H7_NAMED:
             hc = H_CODES.get(variant, "H7")
             g = G.GraphGeo("P-target", "street", hp(hc, "KNOWN_ROUTE"),
                            (hp(hc, "EARLY_RAIDS"), hp(hc, "EARLY_ROUTE")),
@@ -321,7 +326,7 @@ class St:
 
 
 def concept_of(variant: str) -> str:
-    if variant.startswith("H7B"):
+    if variant.startswith("H7B") or variant in H7_NAMED:
         return "H7"
     return H_CODES.get(variant, variant[0])
 

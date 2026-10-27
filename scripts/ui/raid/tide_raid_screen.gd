@@ -650,6 +650,9 @@ func _sync_layer() -> void:
 	layer.beams = []
 	layer.preview = []
 	layer.blocks = []
+	layer.shields = []
+	layer.shields_gone = []
+	layer.falls = []
 	layer.hits = {}
 	layer.impacts = []
 	layer.bounds = Rect2(Vector2(DECK_W + PAD * 2.0, HUD_H + PAD * 2.0), Vector2(size.x - DECK_W - PANEL_W - PAD * 4.0, size.y - HUD_H - HAND_H - PAD * 3.0))
@@ -783,7 +786,7 @@ var _focus_pin: String = ""
 
 func _playout_beams() -> void:
 	var beats := flow.beats()
-	var taken_now: Array = flow.last_raid.get("taken", [])
+	var taken_now: Array = flow.beam_taken()
 	var first: int = int(_step[0]) if not _step.is_empty() else _beam_n
 	for i in beats.size():
 		var b: Dictionary = beats[i]
@@ -823,6 +826,16 @@ func _playout_beams() -> void:
 						layer.impacts.append({"site": e[1], "col": TideGlyphs.type_color(String(ln["type"])), "label": tr("HIT: %s") % flow.site_name(StringName(e[1]))})
 				elif e[2] == "block" and cur:
 					layer.blocks.append([e[1], ln["type"]])
+		# H7c: a shield lasts one beam: the Sites it covers on the current beam, and the ones whose shield the beam before used up.
+		if cur and flow.phase == TideRaidFlow.Phase.PLAYOUT:
+			layer.shields.append_array(b.get("shielded", []))
+			layer.shields_gone.append_array(b.get("shield_gone", []))
+		# H7c: once the last beam lands the raid closes, and the unguarded hit Sites fall.
+		if i == beats.size() - 1 and landed:
+			for s in flow.fell_sites():
+				layer.falls.append(StringName(String(s)))
+				if cur and flow.phase == TideRaidFlow.Phase.PLAYOUT:
+					layer.impacts.append({"site": s, "col": TideGlyphs.RED, "label": tr("FALLS: %s") % flow.site_name(StringName(String(s)))})
 
 
 ## Where beat `b` stops: its guard when a sentry blocks it, HOME when it ends there (a hit or a shield), "" when it runs its whole path.
@@ -1149,7 +1162,7 @@ func _wait(secs: float) -> bool:
 ## The beat `b` lands: what its trace says the beam did, as effects on the map, and the INFECTED cards it adds tick the HUD live.
 func _land_beat(b: Dictionary, weight_t: float = 0.0) -> void:
 	var col := TideGlyphs.type_color(String(b["line"]["type"]))
-	var taken_now: Array = flow.last_raid.get("taken", [])
+	var taken_now: Array = flow.beam_taken()
 	var shield_t := Motion.seconds_live(&"shield_hex")
 	var mark_t := maxf(Motion.seconds_live(&"impact_mark"), weight_t)
 	for e in b["trace"]:
@@ -1171,6 +1184,12 @@ func _land_beat(b: Dictionary, weight_t: float = 0.0) -> void:
 				layer.add_burst("slam", site, col, mark_t)
 				if taken_now.has(String(e[1])):
 					_land_card(site)
+	# H7c: the last beam closes the raid: every hit Site left DOWN with no sentry falls (TAKEN) and sends its INFECTED card.
+	var beats := flow.beats()
+	if not beats.is_empty() and b == beats[beats.size() - 1]:
+		for s in flow.fell_sites():
+			layer.add_burst("slam", StringName(String(s)), TideGlyphs.RED, mark_t)
+			_land_card(StringName(String(s)))
 
 
 ## The playout's steps in firing order: [{idx (beat indices), quiet}]. Consecutive beats that change nothing (a guard stops them, they touch
@@ -1263,11 +1282,19 @@ func _beat_line(b: Dictionary) -> String:
 			"hit":
 				parts.append(tr("hits %s") % flow.site_name(StringName(e[1])))
 			"block":
-				parts.append(tr("BLOCKED at %s") % flow.site_name(StringName(e[1])))
+				parts.append(tr("BLOCKED at %s: shielded from the next beam") % flow.site_name(StringName(e[1])))
 			"home":
 				parts.append(tr("HOME hit"))
 			"shield":
 				parts.append(tr("HOME shielded"))
+	for s in b.get("shielded", []):
+		parts.append(tr("%s shielded") % flow.site_name(StringName(String(s))))
+	for s in b.get("shield_gone", []):
+		parts.append(tr("%s shield gone") % flow.site_name(StringName(String(s))))
+	var beats := flow.beats()
+	if not beats.is_empty() and b == beats[beats.size() - 1]:
+		for s in flow.fell_sites():
+			parts.append(tr("%s falls: no sentry") % flow.site_name(StringName(String(s))))
 	var head := _beam_label(b)
 	var line := "%s: %s" % [head, ", ".join(parts) if not parts.is_empty() else tr("touches nothing")]
 	var extra := _beat_extra(b)
@@ -1944,7 +1971,7 @@ func _page_aftermath() -> void:
 		# The tier says what was hurt: SITES LOST is Sites lost with HOME unharmed, so its cause is spelled out beside HOME's own numbers.
 		var c: Dictionary = a["counts"]
 		var home_part := tr("HOME safe") if int(a["home_after"]) >= int(a["home_before"]) else tr("HOME %d to %d") % [a["home_before"], a["home_after"]]
-		var cause := _lab(tr("Sites: %d DOWN, %d TAKEN. %s") % [int(c["raid_down"]), int(c["raid_taken"]), home_part], SMALL, DIM)
+		var cause := _lab(tr("Sites: %d DOWN, %d TAKEN. %s") % [int(c["raid_down"]), int(c["raid_taken"]) + int(c["unguarded_taken"]), home_part], SMALL, DIM)
 		cause.name = "TierCauseLine"
 		body.add_child(cause)
 	var banner := String(a["banner"])
@@ -1980,6 +2007,10 @@ func _aftermath_counts(a: Dictionary) -> void:
 	var raid_l := _lab(tr("RAID: %d DOWN, %d TAKEN") % [int(c["raid_down"]), int(c["raid_taken"])], SMALL, DIM)
 	raid_l.name = "RaidCounts"
 	body.add_child(raid_l)
+	if int(c["unguarded_taken"]) > 0:
+		var ul := _lab(tr("UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)") % int(c["unguarded_taken"]), SMALL, DIM)
+		ul.name = "UnguardedCounts"
+		body.add_child(ul)
 	if int(c["decay_taken"]) > 0:
 		var dl := _lab(tr("DECAY: %d TAKEN") % int(c["decay_taken"]), SMALL, DIM)
 		dl.name = "DecayCounts"

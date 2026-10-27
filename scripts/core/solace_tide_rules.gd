@@ -1,8 +1,8 @@
 class_name SolaceTideRules
 extends RefCounted
-## The Solace raid, the Infected Tide (H7): the pure rules of SOLACE_RAID_SPEC.md, ported from the oracle
-## tools/raid_concepts/sweep_g1.py (variant H7 = H5 + R-I, R-J (H6) + R-K retake TAKEN Sites, R-L sentry shield, R-M the
-## tier SITES LOST). No Node, no global randomness: the draws take an RNG stream
+## The Solace raid, the Infected Tide (H7C): the pure rules of SOLACE_RAID_SPEC.md, ported from the oracle
+## tools/raid_concepts/sweep_g1.py (variant H7C = H5 + R-I, R-J (H6) + R-K retake TAKEN Sites, R-L sentry shield, R-M the
+## tier SITES LOST (H7) + H7c: cadence 3, the shield lasts one beam, unguarded DOWN Sites fall at the close). No Node, no global randomness: the draws take an RNG stream
 ## (the campaign's `raids` stream), every number comes from CampaignConfigData (`solace_tide_*` and the existing
 ## Heat, economy and Bloom keys). Static functions over a `SolaceTideBoard` (the graph) and a `SolaceTideState`.
 ##
@@ -34,6 +34,8 @@ const TIER_DAMAGED := "DAMAGED"
 const TIER_EVADED := "EVADED"
 const TIER_SITES_LOST := "SITES LOST"
 const TIER_HOLDS := "HOLDS"
+## R-L with `solace_tide_sentry_shield_beams` 0: a shield's last beam that no raid reaches.
+const SHIELD_WHOLE_RAID := 1 << 30
 
 
 ## One raid's working board during a sweep.
@@ -64,6 +66,12 @@ class Sweep extends RefCounted:
 	var heat: int = 0
 	## The response hand: [id, type, verb] of the hand cards not placed.
 	var rhand: Array = []
+	## H7c: Site -> the last beam (1-based count of this raid's scans) its sentry's shield covers.
+	var shl: Dictionary = {}
+	## H7c: the beams scanned so far this raid.
+	var nbeam: int = 0
+	## H7c: the Sites that fell (DOWN with no sentry -> TAKEN) when the raid closed, id order.
+	var fell: Array = []
 
 	func duplicate_sweep() -> Sweep:
 		var o := Sweep.new()
@@ -86,6 +94,9 @@ class Sweep extends RefCounted:
 		o.divert = divert.duplicate(true)
 		o.heat = heat
 		o.rhand = rhand
+		o.shl = shl.duplicate()
+		o.nbeam = nbeam
+		o.fell = fell.duplicate()
 		return o
 
 
@@ -637,20 +648,24 @@ static func _others(ctx: Ctx, a: int) -> Array:
 
 # ------------------------------------------------------------------------------------------------ SCAN, play
 ## SCAN one line: walk the cells in order (skipping the ghost's). A sentry of the line's type blocks and stops it (R-L,
-## `solace_tide_sentry_shields`: and shields its Site, which no later beam of this raid hits); else the cell's live Site
-## not yet hit is hit (OK -> DOWN, DOWN -> TAKEN, a TAKEN Site loses its sentry) and the beam goes on. A route that
-## reaches HOME hits it once per raid (or the shield stops it) unless the ghost stands there.
+## `solace_tide_sentry_shields`: and shields its Site from the next `solace_tide_sentry_shield_beams` beams, H7c; 0 = the
+## rest of the raid); else the cell's live Site not yet hit and not shielded is hit (OK -> DOWN, DOWN -> TAKEN, a TAKEN
+## Site loses its sentry) and the beam goes on. A route that reaches HOME hits it once per raid (or the shield stops it)
+## unless the ghost stands there. Every scan counts as one beam (`Sweep.nbeam`), blocked or not.
 static func scan(ctx: Ctx, sw: Sweep, ln: Dictionary) -> void:
+	sw.nbeam += 1
+	var nb := sw.nbeam
 	for cell in ln["cells"]:
 		if cell == sw.ghost:
 			continue
 		if sw.sent.has(cell) and ctx.cards[sw.sent[cell]][0] == ln["type"]:
 			sw.touches += 1
 			if ctx.cfg.solace_tide_sentry_shields:
-				sw.seen[cell] = true  # R-L: shielded for the rest of the raid
+				var sb := ctx.cfg.solace_tide_sentry_shield_beams
+				sw.shl[cell] = nb + sb if sb > 0 else SHIELD_WHOLE_RAID  # R-L, H7c: the next sb beams
 			sw.trace.append([sw.beam, String(cell), "block"])
 			return
-		if _live(sw.owned, cell) and not sw.seen.has(cell):
+		if _live(sw.owned, cell) and not sw.seen.has(cell) and int(sw.shl.get(cell, 0)) < nb:
 			if int(sw.owned[cell]) == SolaceTideState.Cond.OK:
 				sw.owned[cell] = SolaceTideState.Cond.DOWN
 			else:
@@ -756,11 +771,14 @@ static func forecast(ctx: Ctx, st: SolaceTideState, place: Dictionary, resp: Arr
 
 
 # ------------------------------------------------------------------------------------------------ close, tiers
-## Closes a raid: the new state. INFECTED cards for the Sites newly TAKEN (id order) and, after them, one tied to HOME
-## for a HOME hit (H5); the Heat (ghost, card response, clean defense); the Schematics of a clean defense; the ghost
-## used; CITY LOST / BREACHED. Does not reset `purge_queued` or set `last_sac` (`finish_raid`).
+## Closes a raid: the new state. First (H7c, `solace_tide_unguarded_fall`) every DOWN Site with no sentry on it falls
+## to TAKEN (id order, into `sw.fell`). Then INFECTED cards for the Sites newly TAKEN (id order) and, after them, one tied
+## to HOME for a HOME hit (H5); the Heat (ghost, card response, clean defense); the Schematics of a clean defense; the
+## ghost used; CITY LOST / BREACHED. Does not reset `purge_queued` or set `last_sac` (`finish_raid`).
 static func close(ctx: Ctx, st: SolaceTideState, place: Dictionary, sw: Sweep, resp: Array) -> SolaceTideState:
 	var cfg := ctx.cfg
+	if cfg.solace_tide_unguarded_fall:
+		fall_unguarded(sw)
 	var ns := st.duplicate_state()
 	ns.owned = sw.owned.duplicate()
 	ns.home = sw.home
@@ -789,6 +807,18 @@ static func close(ctx: Ctx, st: SolaceTideState, place: Dictionary, sw: Sweep, r
 		add_infected(ns, [HOME_WORD], false)
 	check_loss(ns)
 	return ns
+
+
+## H7c: at a raid's close every DOWN Site with no sentry standing on it is TAKEN at once (no repair window); the Sites
+## that fell go to `sw.fell` (id order) and count in `sw.taken`.
+static func fall_unguarded(sw: Sweep) -> void:
+	var ids: Array = sw.owned.keys()
+	IdSort.sort_ids(ids)
+	for s in ids:
+		if int(sw.owned[s]) == SolaceTideState.Cond.DOWN and not sw.sent.has(s):
+			sw.owned[s] = SolaceTideState.Cond.TAKEN
+			sw.taken += 1
+			sw.fell.append(s)
 
 
 ## The raid tier: BREACHED (HOME 0), DAMAGED (HOME lower), EVADED (nothing touched, nothing taken), SITES LOST (R-M; two or

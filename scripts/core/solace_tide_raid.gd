@@ -149,6 +149,9 @@ func resolve() -> Array[Dictionary]:
 			taken.append(String(id))
 		elif now == SolaceTideState.Cond.DOWN and was == SolaceTideState.Cond.OK:
 			down.append(String(id))
+	var fell: Array[String] = []
+	for id in (res["sweep"] as SolaceTideRules.Sweep).fell:
+		fell.append(String(id))
 	var tier_word := String(res["tier"])
 	events.append({"type": "raid_end", "won": clean, "tier": tier_word,
 		"text": "Tide raid %d: %s. HOME %d -> %d, %d DOWN, %d TAKEN, %d INFECTED." % [raid_idx + 1, tier_word, home_before, ns.home, down.size(), taken.size(), ns.wound_count()]})
@@ -156,7 +159,7 @@ func resolve() -> Array[Dictionary]:
 	campaign.last_raid = {"raid_id": String(pending.get("raid_id", "")), "model": "tide", "raid": raid_idx, "tier": tier_word, "won": clean,
 		"campaign_lost": ns.lost != SolaceTideState.LOST_NONE, "lost": ns.lost, "home_before": home_before, "home_after": ns.home,
 		"heat_delta": ns.heat - heat_before, "schematics_delta": ns.schematics - schem_before, "taken": taken, "down": down,
-		"infected": ns.wound_count(), "trace": (res["trace"] as Array).duplicate(true)}
+		"fell": fell, "infected": ns.wound_count(), "trace": (res["trace"] as Array).duplicate(true)}
 	if ns.lost != SolaceTideState.LOST_NONE:
 		campaign.raids_lost += 1
 	elif clean:

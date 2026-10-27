@@ -45,6 +45,7 @@ keys,en
 %d SLICES,%d SLICES
 %d Sites DOWN,%d Sites DOWN
 %d Sites TAKEN,%d Sites TAKEN
+%d Sites fall (no sentry),%d Sites fall (no sentry)
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
 %d beams,%d beams
@@ -129,6 +130,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
 %s doesn't fit %s. It fits Slot %s: pick it on the spinner.,%s doesn't fit %s. It fits Slot %s: pick it on the spinner.
 %s enters at %s.,%s enters at %s.
+%s falls: no sentry,%s falls: no sentry
 %s finds no locked route to open near %s.,%s finds no locked route to open near %s.
 "%s fits no slot. Pick another, or Skip.","%s fits no slot. Pick another, or Skip."
 %s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
@@ -153,6 +155,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s on a random slice,%s on a random slice
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
+%s shield gone,%s shield gone
+%s shielded,%s shielded
 %s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.,%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
 "%s turns it back, %s forward.","%s turns it back, %s forward."
@@ -208,6 +212,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 1 NODE,1 NODE
 1 Site DOWN,1 Site DOWN
 1 Site TAKEN,1 Site TAKEN
+1 Site falls (no sentry),1 Site falls (no sentry)
 1 more = CITY LOST,1 more = CITY LOST
 1x,1x
 1x (full replay),1x (full replay)
@@ -321,7 +326,7 @@ BIN IT,BIN IT
 BLCK,BLCK
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
-BLOCKED at %s,BLOCKED at %s
+BLOCKED at %s: shielded from the next beam,BLOCKED at %s: shielded from the next beam
 BLOOM GAP,BLOOM GAP
 BOSS,BOSS
 BOSS: %s,BOSS: %s
@@ -1035,6 +1040,7 @@ Exploit Site,Exploit Site
 Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.,Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.
 Exploits,Exploits
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
+FALLS: %s,FALLS: %s
 FIGHT,FIGHT
 FIGHT WON,FIGHT WON
 FILED,FILED
@@ -2444,6 +2450,7 @@ SFX volume,SFX volume
 SHARE CODES,SHARE CODES
 SHIELD,SHIELD
 SHIELD %d,SHIELD %d
+SHIELDED,SHIELDED
 SHIFT,SHIFT
 "SHIFT: stands guard, or moves a sentry at the RESPONSE.","SHIFT: stands guard, or moves a sentry at the RESPONSE."
 SHIM,SHIM
@@ -3617,6 +3624,7 @@ UNDO,UNDO
 UNDO %s,UNDO %s
 UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
+"UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)","UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)"
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
@@ -3756,6 +3764,8 @@ every tab back to its defaults,every tab back to its defaults
 everything unlocked,everything unlocked
 exploit,exploit
 exploits,exploits
+falls,falls
+falls: no sentry,falls: no sentry
 fewer,fewer
 "filed by: %s, AUDIT %d","filed by: %s, AUDIT %d"
 firmware,firmware
@@ -3854,6 +3864,7 @@ saved to profile,saved to profile
 schematics,schematics
 select,select
 selectable,selectable
+shield gone,shield gone
 slice,slice
 slot %s,slot %s
 slots,slots
