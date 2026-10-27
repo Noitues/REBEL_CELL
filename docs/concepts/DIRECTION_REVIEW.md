@@ -1775,3 +1775,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - **Heads:** not settled. Run a head-shape exploration (options per type) before polish.
   - **Tritan:** DAMAGED orange, BREACHED red and the N magenta collide under tritan. Fix this in polish: a yellower DAMAGED and a
     non-hue cue on the HOME-hit burst.
+- **Beam heads, round 1 (designer, 2026-10-27, `tide_raid/H3_heads/heads_board.jpg`): none picked.** The designer likes the
+  *identity* of B (daemon creatures with character), but the detailed icons don't work, so the next round must be simpler. New
+  themes to explore:
+  - computer hacking;
+  - corporation-themed (Solace: bacteria, virus or medical);
+  - military.
+  Every family needs simple bold silhouettes that read at 24 px and keep a creature-like or character identity.
