@@ -1796,3 +1796,9 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   1280)**, with SVG sources in `heads/`. In polish, the N claw gets thicker prongs and an asymmetric hook so it never reads as "£" or
   "3" at any heading. Crowd-test finding for build and the plates: draw Site tags and tier pips **above** the beam/head layer,
   because a parked head hides 81–91% of the pip strip at every size.
+- **Tide polish iter 1 (designer, 2026-10-27, critic `tide_raid/CRITIC_P1.md`: S8 V8 R8 M8 W8, bar not beaten):**
+  - DAMAGED = FF9A00 (accepted from the tritan fix).
+  - **SITES LOST** keeps C98410 ochre, drawn as an **ink-black ring with a white rim, ochre hatch and its own tier glyph**, so it reads
+    by value and shape. Every tier must stay distinct at 320 px in greyscale.
+  - **Iteration 2: go.** It runs the critic's top 10 on one shared base: the P1 plate, the H6 heads and the palette. The plates,
+    motion and interactivity must all match, and the next critic views every plate and real MP4 frames.
