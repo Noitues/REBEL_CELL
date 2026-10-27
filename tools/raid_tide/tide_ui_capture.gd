@@ -19,6 +19,8 @@ const WARN_SHORT := 2
 var _out := ""
 var _seed := SEED
 var _scn := ""
+## --still: reduce effects and reduce motion on, so the city holds still and two runs of the same code give the same pixels.
+var _still := false
 
 
 func _ready() -> void:
@@ -27,10 +29,15 @@ func _ready() -> void:
 			_out = a.trim_prefix("--out=")
 		elif a.begins_with("--scenario="):
 			_scn = a.trim_prefix("--scenario=")
+		elif a == "--still":
+			_still = true
 		elif a.begins_with("--seed="):
 			_seed = int(a.trim_prefix("--seed="))
 	DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://tide_ui_capture_settings.json"
+	if _still:
+		Settings.reduce_effects = true
+		Settings.reduce_motion = true
 	SaveService.save_dir = "user://saves/tide_ui_capture"
 	RunManager.save_slot = "gut_tide_ui_capture"
 	RunManager.scene_switching_enabled = false

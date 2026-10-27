@@ -451,9 +451,9 @@ func tier_range(rows: Array) -> Array:
 	var best := ""
 	for r in rows:
 		var t := String(r["tier"])
-		if worst == "" or TideGlyphs.rank(t) > TideGlyphs.rank(worst):
+		if worst == "" or TideFx.rank(t) > TideFx.rank(worst):
 			worst = t
-		if best == "" or TideGlyphs.rank(t) < TideGlyphs.rank(best):
+		if best == "" or TideFx.rank(t) < TideFx.rank(best):
 			best = t
 	if worst == "":
 		return [SolaceTideRules.TIER_HOLDS, SolaceTideRules.TIER_HOLDS]
@@ -589,8 +589,8 @@ func _build_responses() -> void:
 			by_key[key] = groups.size()
 			var better := false
 			if not hold_row.is_empty() and row["head"] != HOLD:
-				var rw := TideGlyphs.rank(row["worst"])
-				var hw := TideGlyphs.rank(hold_row["worst"])
+				var rw := TideFx.rank(row["worst"])
+				var hw := TideFx.rank(hold_row["worst"])
 				better = rw < hw or (rw == hw and float(row["mean"]) < float(hold_row["mean"]) - MEAN_EPS)
 			var nothing: bool = not hold_row.is_empty() and row["head"] != HOLD and row["sig"] == hold_row["sig"] \
 				and SolaceTideRules.CARD_RESPONSES.has(String(row["head"]))
@@ -686,8 +686,8 @@ func route_tiles(a: int) -> Array:
 	out.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
 		if bool(x["lethal"]) != bool(y["lethal"]):
 			return bool(x["lethal"])
-		var rx := TideGlyphs.rank(String(x["tier"]))
-		var ry := TideGlyphs.rank(String(y["tier"]))
+		var rx := TideFx.rank(String(x["tier"]))
+		var ry := TideFx.rank(String(y["tier"]))
 		if rx != ry:
 			return rx > ry
 		return int(x["inf"]) > int(y["inf"]))
@@ -1012,8 +1012,8 @@ func _guard_of_groups() -> Dictionary:
 	for g in groups:
 		if g["better"] and not bool(g["lethal_any"]):
 			var m: Dictionary = g["members"][0]
-			if best.is_empty() or TideGlyphs.rank(m["worst"]) < TideGlyphs.rank(best["worst"]) \
-					or (TideGlyphs.rank(m["worst"]) == TideGlyphs.rank(best["worst"]) and float(m["mean"]) < float(best["mean"]) - MEAN_EPS):
+			if best.is_empty() or TideFx.rank(m["worst"]) < TideFx.rank(best["worst"]) \
+					or (TideFx.rank(m["worst"]) == TideFx.rank(best["worst"]) and float(m["mean"]) < float(best["mean"]) - MEAN_EPS):
 				best = {"resp": m["resp"], "worst": m["worst"], "mean": m["mean"]}
 	return {"hold": hold_w, "best": best}
 

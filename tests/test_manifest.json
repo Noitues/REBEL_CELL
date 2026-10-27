@@ -29,6 +29,10 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_tide_fx_seam.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_tide_raid_screen.gd": {
 			"seconds": 6.0,
 			"tier": "fast"
