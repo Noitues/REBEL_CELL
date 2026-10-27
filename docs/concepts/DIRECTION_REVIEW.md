@@ -1761,3 +1761,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     (motion tests, hover / drag / focus states, the what-if preview). The target is to **beat the critic's visual scores of the
     reference games**. A fresh critic first sets the baseline in `tide_raid/REF_BASELINE.md`. The brief is
     `D:/rc_scratch/tide_concepts/BRIEF_POLISH.md`.
+- **Toolbox on hold (designer, 2026-10-27):** module 18 (perf) and the module 19 README wait until the tide raid design work wraps
+  up, because design changes may overtake them. The toolbox commits where it stopped on art/look-toolbox-9 and stops; it posts no
+  READY.
