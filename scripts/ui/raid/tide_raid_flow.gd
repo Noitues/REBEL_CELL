@@ -441,7 +441,7 @@ func forecast(resp: Array = [HOLD]) -> Array:
 	var key := str([raid.place, resp])
 	if key != _fc_key:
 		_fc_key = key
-		_fc = SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, resp)
+		_fc = SolaceTideTally.ladder(SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, resp))
 	return _fc
 
 
@@ -567,7 +567,7 @@ func _build_responses() -> void:
 	var hold_row: Dictionary = {}
 	for i in opts.size():
 		var r: Array = opts[i]
-		var fc := SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r)
+		var fc := SolaceTideTally.ladder(SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r))
 		var rng := tier_range(fc)
 		var row := {"resp": r, "head": String(r[0]), "worst": rng[0], "best": rng[1], "mean": mean_damage(fc), "min_home": min_home(fc),
 			"sig": _signature(fc), "index": i, "odds": SolaceTideTally.tier_odds(fc)}
@@ -797,7 +797,7 @@ func pending_heat() -> Dictionary:
 func real_row(r: Array) -> Dictionary:
 	var a := int(raid.ctx.draw["real_a"])
 	var h := int(raid.ctx.draw["hunter_real"])
-	for row in SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r):
+	for row in SolaceTideTally.ladder(SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, r)):
 		if int(row["a"]) == a and int(row["hunter"]) == h and int(row["b_slot"]) == 0:
 			return row
 	return {}
@@ -937,7 +937,7 @@ func _uniform() -> bool:
 	var marks := {}
 	for g in groups:
 		for m in g["members"]:
-			var fc := SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, m["resp"])
+			var fc := SolaceTideTally.ladder(SolaceTideRules.forecast(raid.ctx, raid.st, raid.place, m["resp"]))
 			for r in fc:
 				tiers[r["tier"]] = true
 				var ns: SolaceTideState = r["result"]["state"]

@@ -35,7 +35,6 @@ keys,en
 %d HP lost: LETHAL,%d HP lost: LETHAL
 %d IN %d WAVE,%d IN %d WAVE
 %d IN %d WAVES,%d IN %d WAVES
-%d INFECTED in all,%d INFECTED in all
 %d LANDS HERE,%d LANDS HERE
 %d NEEDLES,%d NEEDLES
 %d NODES,%d NODES
@@ -403,7 +402,6 @@ CITY LOST,CITY LOST
 CITY LOST at %d,CITY LOST at %d
 CITY LOST at step %d.,CITY LOST at step %d.
 CITY LOST: the INFECTED cards outnumber the healthy ones (DOSE counts as healthy). The flagged cell of the meter is the line.,CITY LOST: the INFECTED cards outnumber the healthy ones (DOSE counts as healthy). The flagged cell of the meter is the line.
-CITY LOST: the INFECTED cards outnumber the healthy ones.,CITY LOST: the INFECTED cards outnumber the healthy ones.
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
 CLAIM,CLAIM
 CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.,CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.
@@ -717,7 +715,7 @@ DE-ORBITED,DE-ORBITED
 DECAY,DECAY
 DECAY (before the raid),DECAY (before the raid)
 DECAY TAKEN: %s,DECAY TAKEN: %s
-DECAY adds %d INFECTED.,DECAY adds %d INFECTED.
+DECAY adds %d INFECTED in all.,DECAY adds %d INFECTED in all.
 DECAY: %d TAKEN,DECAY: %d TAKEN
 DECEASED,DECEASED
 DECISION,DECISION
@@ -755,7 +753,6 @@ DOSE: a healthy card that cures at DECAY.,DOSE: a healthy card that cures at DEC
 DOUBLE,DOUBLE
 DOWN,DOWN
 DOWN / TAKEN,DOWN / TAKEN
-DOWN districts fall to DECAY (%s): +%d INFECTED.,DOWN districts fall to DECAY (%s): +%d INFECTED.
 DOWN: repair the node on the Grid. The cost is half its install cost.,DOWN: repair the node on the Grid. The cost is half its install cost.
 DRAG / WASD,DRAG / WASD
 DRAW,DRAW
@@ -1191,13 +1188,18 @@ HOME SERVER %d > %d,HOME SERVER %d > %d
 HOME SERVER - %d/%d,HOME SERVER - %d/%d
 HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.,HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.
 HOME falls to 0,HOME falls to 0
+HOME fell to 0.,HOME fell to 0.
 HOME hit,HOME hit
+"HOME holds, but the raid cost Sites.","HOME holds, but the raid cost Sites."
+HOME holds: at most 1 Site went DOWN.,HOME holds: at most 1 Site went DOWN.
+HOME holds: nothing was touched.,HOME holds: nothing was touched.
 HOME is at 1: one hit ends the campaign. Launch?,HOME is at 1: one hit ends the campaign. Launch?
 HOME is at full integrity.,HOME is at full integrity.
 HOME safe,HOME safe
 "HOME safe, at most 1 Site DOWN","HOME safe, at most 1 Site DOWN"
-HOME shielded,HOME shielded
+HOME shielded by the SACRIFICE,HOME shielded by the SACRIFICE
 HOME takes damage,HOME takes damage
+HOME took damage.,HOME took damage.
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
 HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
@@ -1225,10 +1227,11 @@ HUNTER %d,HUNTER %d
 HUNTER JAMMED,HUNTER JAMMED
 HUNTER REVEAL: street %d,HUNTER REVEAL: street %d
 HUNTER: both streets are lit.,HUNTER: both streets are lit.
+"HUNTER: one of %d streets, revealed last","HUNTER: one of %d streets, revealed last"
 Heal %d%% of max HP. One mode per visit.,Heal %d%% of max HP. One mode per visit.
 Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.,Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.
 Heat,Heat
-"Heat %+d, Schematics %+d","Heat %+d, Schematics %+d"
+"Heat %+d for the whole raid, Schematics %+d","Heat %+d for the whole raid, Schematics %+d"
 Heat %d,Heat %d
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
@@ -1253,8 +1256,8 @@ Heat reduction Site,Heat reduction Site
 Heat settles here: what the raid changed.,Heat settles here: what the raid changed.
 Heat sink,Heat sink
 Heat stops at its limit,Heat stops at its limit
-Heat the raid leaves with this response.,Heat the raid leaves with this response.
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
+"Heat the whole raid leaves with this response: the ghost, a clean defense and the response card, all together.","Heat the whole raid leaves with this response: the ghost, a clean defense and the response card, all together."
 Heat thresholds,Heat thresholds
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
 HeatThresholdData.heat_10.event_text,The next netrun's Mainframe carries one item fewer.
@@ -1333,7 +1336,6 @@ HubCoreData.wrecker_core.description,No spin bonus. Perfect: the slice resolves 
 HubCoreData.wrecker_core.display_name,Wrecker Core
 HubCoreData.wrecker_core_mk2.description,+1 spin on all cards. Perfect: the slice resolves again at 1.5x.
 HubCoreData.wrecker_core_mk2.display_name,Wrecker Core Mk2
-"Hunter: one of %d streets, revealed last","Hunter: one of %d streets, revealed last"
 ICE,ICE
 ICE %d: %s,ICE %d: %s
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
@@ -2695,7 +2697,6 @@ SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites,Sites
-"Sites: %d DOWN, %d TAKEN. %s","Sites: %d DOWN, %d TAKEN. %s"
 Skip,Skip
 Skip tutorial,Skip tutorial
 SliceData.citation.display_name,Citation
@@ -3524,6 +3525,7 @@ The Eye moves to octant %d after this turn.,The Eye moves to octant %d after thi
 The Eye stays FIXED after this turn: %d left.,The Eye stays FIXED after this turn: %d left.
 The Heat a lost raid adds.,The Heat a lost raid adds.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
+The INFECTED cards outnumber the healthy ones.,The INFECTED cards outnumber the healthy ones.
 The Schematics a clean defense pays.,The Schematics a clean defense pays.
 The Schematics do not cover that.,The Schematics do not cover that.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
@@ -3558,6 +3560,7 @@ The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for 
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
 "The other page of THREAT INTEL: the threats, or their routes and the scanned strip.","The other page of THREAT INTEL: the threats, or their routes and the scanned strip."
+"The raid was %s, but the INFECTED cards outnumber the healthy ones.","The raid was %s, but the INFECTED cards outnumber the healthy ones."
 "The rest of the work order: the forecast, what it would cost.","The rest of the work order: the forecast, what it would cost."
 The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
 "The smallest division of a wheel: 30 per wheel, 5 per slice. The tick under the pointer decides which slice resolves and how precisely.","The smallest division of a wheel: 30 per wheel, 5 per slice. The tick under the pointer decides which slice resolves and how precisely."
@@ -3624,7 +3627,8 @@ UNDO,UNDO
 UNDO %s,UNDO %s
 UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
-"UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)","UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)"
+UNGUARDED: %d TAKEN,UNGUARDED: %d TAKEN
+"UNGUARDED: hit, no sentry, fell at the close.","UNGUARDED: hit, no sentry, fell at the close."
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS ·,UNLOCKS ·
@@ -3850,6 +3854,7 @@ press a key...,press a key...
 price,price
 purge,purge
 queued: %s,queued: %s
+raid,raid
 raid incoming mid-run,raid incoming mid-run
 raids,raids
 reclaim,reclaim
@@ -3914,6 +3919,7 @@ won,won
 would fall,would fall
 would go DOWN,would go DOWN
 x%d,x%d
+x%d: %d ways to play it end alike; pick one below.,x%d: %d ways to play it end alike; pick one below.
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.

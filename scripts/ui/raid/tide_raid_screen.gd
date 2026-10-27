@@ -478,9 +478,10 @@ func _build_hand() -> void:
 		col.custom_minimum_size.x = COL_W
 		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		col.add_theme_constant_override("separation", 2)
+		# The badge is what the card really costs: standing guard is free (0), a card played at the RESPONSE adds the response Heat.
 		var heat_cost := -1
 		if SolaceTideRules.PLACEABLE.has(String(c["verb"])):
-			heat_cost = flow.cfg.solace_tide_card_response_heat  # a card keeps its cost where it stands: standing guard is free, playing it adds it
+			heat_cost = flow.cfg.solace_tide_card_response_heat if played else 0
 		var cv := TideGlyphView.card_face(card, Vector2(CARD_W, CARD_H - 22.0), placed, bool(c["extra"]), _verb_title(String(c["verb"])), heat_cost)
 		cv.name = "Card_%s" % c["id"]
 		cv.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -831,7 +832,7 @@ func _playout_beams() -> void:
 			layer.shields.append_array(b.get("shielded", []))
 			layer.shields_gone.append_array(b.get("shield_gone", []))
 		# H7c: once the last beam lands the raid closes, and the unguarded hit Sites fall.
-		if i == beats.size() - 1 and landed:
+		if i == beats.size() - 1 and landed and flow.phase == TideRaidFlow.Phase.PLAYOUT:  # the aftermath map has its own stamps
 			for s in flow.fell_sites():
 				layer.falls.append(StringName(String(s)))
 				if cur and flow.phase == TideRaidFlow.Phase.PLAYOUT:
@@ -1286,7 +1287,7 @@ func _beat_line(b: Dictionary) -> String:
 			"home":
 				parts.append(tr("HOME hit"))
 			"shield":
-				parts.append(tr("HOME shielded"))
+				parts.append(tr("HOME shielded by the SACRIFICE"))
 	for s in b.get("shielded", []):
 		parts.append(tr("%s shielded") % flow.site_name(StringName(String(s))))
 	for s in b.get("shield_gone", []):
@@ -1348,12 +1349,12 @@ func _page_decay() -> void:
 
 
 ## The INFECTED tally rows: [{label, n (signed), tip}] for DECAY's tally `dec` and the raid's `rd` (either may be empty).
-func _tally_parts(dec: Dictionary, rd: Dictionary) -> Array:
+func _tally_parts(dec: Dictionary, rd: Dictionary, decay_ids: Array = []) -> Array:
 	var parts: Array = []
 	if not dec.is_empty():
 		if int(dec["taken"]) > 0:
 			var names := PackedStringArray()
-			for s in flow.decay_sites():
+			for s in (decay_ids if not decay_ids.is_empty() else flow.decay_sites()):
 				names.append(flow.site_name(s))
 			parts.append({"label": tr("DECAY TAKEN: %s") % ", ".join(names), "n": int(dec["taken"]), "tip": tr("A district left DOWN since the last raid is TAKEN and adds an INFECTED card.")})
 		if bool(dec["spread"]):
@@ -1438,8 +1439,10 @@ func _page_plan() -> void:
 	row.add_child(_btn(tr("GHOST OFF") if ghost_on else tr("GHOST ON HOME (+%d Heat)") % flow.cfg.solace_tide_ghost_heat, ghost, ghost_on or flow.raid.st.ghost > 0))
 	row.add_child(_btn(tr("UNDO"), undo, flow.can_undo()))
 	body.add_child(row)
-	body.add_child(_btn(tr("FORECAST"), to_forecast))
-	_status_line()
+	_status_line(foot)
+	var fc_btn := _btn(tr("FORECAST"), to_forecast)
+	fc_btn.name = "ForecastButton"
+	foot.add_child(fc_btn)
 
 
 ## The PLAN legend. Each row names a beam; the one under the mouse (or clicked) stays lit on the map and every other route dims.
@@ -1488,7 +1491,7 @@ func _beam_legend() -> void:
 	hh.custom_minimum_size = Vector2(18, 18)
 	hh.draw.connect(func() -> void: TideGlyphs.hound(hh, hh.size * 0.5))
 	hr.add_child(hh)
-	hr.add_child(_lab(tr("Hunter: one of %d streets, revealed last") % hd.size(), SMALL, DIM, false))
+	hr.add_child(_lab(tr("HUNTER: one of %d streets, revealed last") % hd.size(), SMALL, DIM, false))
 	for i in hd.size():
 		var cell := _hrow(2)
 		cell.add_child(_lab("%d" % (i + 1), SMALL, INK, false))
@@ -1582,6 +1585,8 @@ func _tier_cause(t: String) -> String:
 			return tr("HOME takes damage")
 		"BREACHED":
 			return tr("HOME falls to 0")
+		"CITY LOST":
+			return tr("the INFECTED cards outnumber the healthy ones")
 	return ""
 
 
@@ -1836,6 +1841,7 @@ func _stat_chip(kind: String, lo: int, hi: int) -> Control:
 	var h := _hrow(2)
 	h.name = "HeatChip" if kind == "HEAT" else "InfChip"
 	if kind == "HEAT":
+		h.add_child(_ignore(_lab(tr("raid"), 11, DIM, false)))
 		h.add_child(_ignore(TideGlyphView.icon(TideGlyphView.Kind.FLAME, 16.0)))
 	else:
 		var pip := TideGlyphView.new()
@@ -1849,7 +1855,7 @@ func _stat_chip(kind: String, lo: int, hi: int) -> Control:
 	var v := _lab(txt, SMALL, col, false)
 	v.name = "Val"
 	h.add_child(_ignore(v))
-	h.tooltip_text = tr("Heat the raid leaves with this response.") if kind == "HEAT" else tr("INFECTED cards this response adds.")
+	h.tooltip_text = tr("Heat the whole raid leaves with this response: the ghost, a clean defense and the response card, all together.") if kind == "HEAT" else tr("INFECTED cards this response adds.")
 	return h
 
 
@@ -1890,6 +1896,8 @@ func _group_tip(g: Dictionary) -> String:
 	var need := _card_need(m["resp"])
 	if need != "":
 		lines.append(need)
+	if (g["members"] as Array).size() > 1:
+		lines.append(tr("x%d: %d ways to play it end alike; pick one below.") % [(g["members"] as Array).size(), (g["members"] as Array).size()])
 	if bool(g["lethal_any"]):
 		lines.append(tr("ENDS RUN on %s of the outcomes: the infection outnumbers the healthy cards.") % (tr("every one") if bool(g["lethal_all"]) else tr("some")))
 	if bool(g["better"]):
@@ -1959,42 +1967,52 @@ func _page_aftermath() -> void:
 	body.add_child(_title(tr("AFTERMATH")))
 	var a := flow.aftermath()
 	var tier_word := String(a["tier"])
-	# The raid's own tier always stamps; CITY LOST is the banner under it, never a replacement for it (DECAY alone can end the city: then
-	# there is no raid tier and the stamp is the loss itself).
-	var lost_word := tier_word == "CITY LOST"
+	# One headline from the outcome ladder: the worst thing that happened (CITY LOST beats the raid's own tier). The subline agrees with it.
+	var banner := String(a["banner"])
+	var head_word := TideGlyphs.TIER_CITY_LOST if banner == "CITY LOST" else tier_word
 	var stamp := _hrow(10)
 	stamp.name = "AftermathStamp"
-	stamp.add_child(TideGlyphView.tier("BREACHED" if lost_word else tier_word, 48.0))
-	stamp.add_child(_lab(_tierw(tier_word), 28, TideGlyphs.RED if lost_word else TideGlyphs.tier_color(tier_word), false))
+	stamp.add_child(TideGlyphView.tier(head_word, 48.0))
+	stamp.add_child(_lab(_tierw(head_word), 28, TideGlyphs.tier_color(head_word), false))
 	body.add_child(stamp)
-	if bool(a["raided"]):
-		# The tier says what was hurt: SITES LOST is Sites lost with HOME unharmed, so its cause is spelled out beside HOME's own numbers.
-		var c: Dictionary = a["counts"]
-		var home_part := tr("HOME safe") if int(a["home_after"]) >= int(a["home_before"]) else tr("HOME %d to %d") % [a["home_before"], a["home_after"]]
-		var cause := _lab(tr("Sites: %d DOWN, %d TAKEN. %s") % [int(c["raid_down"]), int(c["raid_taken"]) + int(c["unguarded_taken"]), home_part], SMALL, DIM)
-		cause.name = "TierCauseLine"
-		body.add_child(cause)
-	var banner := String(a["banner"])
-	var col := TideGlyphs.TIER_COLOR["HOLDS"] if banner == "CELL HOLDS" else TideGlyphs.RED
-	var bl := _lab(_banner_word(banner), BIG, col)
+	var bl := _lab(_aftermath_subline(a, tier_word), TXT, TideGlyphs.RED if head_word == TideGlyphs.TIER_CITY_LOST or head_word == "BREACHED" else DIM)
 	bl.name = "Banner"
 	body.add_child(bl)
 	if bool(a["raided"]):
 		body.add_child(_lab(tr("HOME %d to %d") % [a["home_before"], a["home_after"]], TXT))
 		_aftermath_counts(a)
 		if int(a["heat_delta"]) != 0 or int(a["schematics_delta"]) != 0:
-			body.add_child(_lab(tr("Heat %+d, Schematics %+d") % [a["heat_delta"], a["schematics_delta"]], TXT, DIM))
-		if flow.raids_before >= 0:
+			body.add_child(_lab(tr("Heat %+d for the whole raid, Schematics %+d") % [a["heat_delta"], a["schematics_delta"]], TXT, DIM))
+		if flow.raids_before >= 0 and not banner_is_loss(a):
 			var rq := _lab(tr("Raids queued: %d to %d. This raid is dealt with, so it leaves the queue.") % [flow.raids_before, flow.campaign.pending_raids.size()], SMALL, DIM)
 			rq.name = "RaidsQueuedNote"
 			body.add_child(rq)
 	# Where the INFECTED cards came from, so the count never jumps unexplained: DECAY's changes and the raid's own, apart.
 	_tally_block(a["tally"], false)
-	if banner_is_loss(a):
-		body.add_child(_lab(tr("CITY LOST: the INFECTED cards outnumber the healthy ones."), TXT, TideGlyphs.RED))
-	body.add_child(_btn(tr("CONTINUE"), cont))
+	var cont_btn := _btn(tr("CONTINUE"), cont)
+	cont_btn.name = "ContinueButton"
+	foot.add_child(cont_btn)
 	if banner_is_loss(a) and not _lost_shown:
 		_show_city_lost(a)
+
+
+## The line under the aftermath headline. It agrees with the headline: CITY LOST names the raid's own tier as its subline, any other headline names
+## what the raid did to HOME and to the Sites, with its cause.
+func _aftermath_subline(a: Dictionary, tier_word: String) -> String:
+	if String(a["banner"]) == "CITY LOST":
+		if tier_word == "" or tier_word == TideGlyphs.TIER_CITY_LOST:
+			return tr("The INFECTED cards outnumber the healthy ones.")
+		return tr("The raid was %s, but the INFECTED cards outnumber the healthy ones.") % _tierw(tier_word)
+	match tier_word:
+		"BREACHED":
+			return tr("HOME fell to 0.")
+		"DAMAGED":
+			return tr("HOME took damage.")
+		"SITES LOST":
+			return tr("HOME holds, but the raid cost Sites.")
+		"EVADED":
+			return tr("HOME holds: nothing was touched.")
+	return tr("HOME holds: at most 1 Site went DOWN.")
 
 
 ## The Sites the map stamps, counted from the same event list (TideRaidFlow.aftermath_events): the board's total first, then DECAY's takings and the
@@ -2004,22 +2022,19 @@ func _aftermath_counts(a: Dictionary) -> void:
 	var all := _lab(tr("On the map: %d DOWN, %d TAKEN") % [c["down"], c["taken"]], TXT)
 	all.name = "MapCounts"
 	body.add_child(all)
-	var raid_l := _lab(tr("RAID: %d DOWN, %d TAKEN") % [int(c["raid_down"]), int(c["raid_taken"])], SMALL, DIM)
-	raid_l.name = "RaidCounts"
-	body.add_child(raid_l)
+	# The sources of the board, on one wrapping line so the aftermath fits the panel (a long fall tally never pushes the tally below the fold).
+	var src := PackedStringArray([tr("RAID: %d DOWN, %d TAKEN") % [int(c["raid_down"]), int(c["raid_taken"])]])
 	if int(c["unguarded_taken"]) > 0:
-		var ul := _lab(tr("UNGUARDED: %d TAKEN (hit, no sentry, fell at the close)") % int(c["unguarded_taken"]), SMALL, DIM)
-		ul.name = "UnguardedCounts"
-		body.add_child(ul)
+		src.append(tr("UNGUARDED: %d TAKEN") % int(c["unguarded_taken"]))
 	if int(c["decay_taken"]) > 0:
-		var dl := _lab(tr("DECAY: %d TAKEN") % int(c["decay_taken"]), SMALL, DIM)
-		dl.name = "DecayCounts"
-		body.add_child(dl)
+		src.append(tr("DECAY: %d TAKEN") % int(c["decay_taken"]))
 	if int(c["earlier_down"]) + int(c["earlier_taken"]) > 0:
-		var el := _lab(tr("EARLIER: %d DOWN, %d TAKEN") % [int(c["earlier_down"]), int(c["earlier_taken"])], SMALL, DIM)
-		el.name = "EarlierCounts"
-		body.add_child(el)
-	body.add_child(_lab(tr("%d INFECTED in all") % int(a["infected"]), TXT))
+		src.append(tr("EARLIER: %d DOWN, %d TAKEN") % [int(c["earlier_down"]), int(c["earlier_taken"])])
+	var raid_l := _lab(" | ".join(src), SMALL, DIM)
+	raid_l.name = "RaidCounts"
+	raid_l.mouse_filter = Control.MOUSE_FILTER_PASS
+	raid_l.tooltip_text = tr("UNGUARDED: hit, no sentry, fell at the close.")
+	body.add_child(raid_l)
 
 
 ## True when the aftermath is the CITY LOST stamp.
@@ -2155,8 +2170,19 @@ func _hq_threat_banner(sel: Array) -> void:
 		var names := PackedStringArray()
 		for d in downs:
 			names.append(flow.site_name(StringName(d)))
-		var why := tr("DOWN districts fall to DECAY (%s): +%d INFECTED.") % [", ".join(names), int(thr["added"])] if not downs.is_empty() else tr("DECAY adds %d INFECTED.") % int(thr["added"])
-		col.add_child(_lab(why + " " + tr("REPAIR a DOWN district or CLEAN an INFECTED card to pull back from the line."), SMALL, INK))
+		# Every card DECAY would add or cure, in the DECAY tally's own words, so the lines add up to the "+N INFECTED" of the warning.
+		var parts := _tally_parts(thr["tally"], {}, downs)
+		for p in parts:
+			var pr := _hrow(6)
+			pr.name = "DecayLine"
+			var pn := int(p["n"])
+			pr.add_child(_lab("+%d" % pn if pn > 0 else "%d" % pn, SMALL, TideGlyphs.RED if pn > 0 else (TideGlyphs.TIER_COLOR["HOLDS"] if pn < 0 else DIM), false))
+			pr.add_child(_lab(String(p["label"]), SMALL, INK, true))
+			col.add_child(pr)
+		var total := _lab(tr("DECAY adds %d INFECTED in all.") % int(thr["added"]), SMALL, INK)
+		total.name = "DecayTotal"
+		col.add_child(total)
+		col.add_child(_lab(tr("REPAIR a DOWN district or CLEAN an INFECTED card to pull back from the line."), SMALL, DIM))
 		chip.add_child(col)
 		body.add_child(chip)
 	elif bool(base["fatal"]) or bool(base["near"]):

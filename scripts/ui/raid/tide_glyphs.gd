@@ -7,10 +7,13 @@ extends RefCounted
 
 const TYPE_COLOR := {"D": Palette.TIDE_TYPE_D, "N": Palette.TIDE_TYPE_N, "E": Palette.TIDE_TYPE_E}
 const TIER_COLOR := {"BREACHED": Palette.TIDE_BREACHED, "DAMAGED": Palette.TIDE_DAMAGED, "SITES LOST": Palette.TIDE_SITES_LOST,
-	"HOLDS": Palette.TIDE_HOLDS, "EVADED": Palette.TIDE_EVADED}
-## Best first: the raid tier ladder the legend pins.
-const TIER_LADDER: Array[String] = ["EVADED", "HOLDS", "SITES LOST", "DAMAGED", "BREACHED"]
-const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "SITES LOST": 2, "DAMAGED": 3, "BREACHED": 4}
+	"HOLDS": Palette.TIDE_HOLDS, "EVADED": Palette.TIDE_EVADED, "CITY LOST": Palette.TIDE_RED}
+## Best first: the one outcome ladder the legend pins, the odds bars, the tiles and the aftermath share. CITY LOST (the run ends) is the
+## presentation tier above BREACHED; the rules' `tier_of` never returns it.
+const TIER_LADDER: Array[String] = ["EVADED", "HOLDS", "SITES LOST", "DAMAGED", "BREACHED", "CITY LOST"]
+const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "SITES LOST": 2, "DAMAGED": 3, "BREACHED": 4, "CITY LOST": 5}
+## The terminal presentation tier.
+const TIER_CITY_LOST := "CITY LOST"
 
 const INK := Palette.TIDE_INK
 const DIM := Palette.TIDE_DIM
@@ -178,6 +181,13 @@ static func tier(cv: CanvasItem, c: Vector2, tier_word: String, r: float, col: C
 			heart(cv, c, r, k, true)
 		"BREACHED":
 			skull(cv, c, r, k, BLACK)
+		"CITY LOST":
+			skull(cv, c, r, k, BLACK)
+			var xw := maxf(1.5, r * 0.22)
+			cv.draw_line(c + Vector2(-r * 0.95, -r * 0.95), c + Vector2(r * 0.95, r * 0.95), BLACK, xw + 2.0)
+			cv.draw_line(c + Vector2(r * 0.95, -r * 0.95), c + Vector2(-r * 0.95, r * 0.95), BLACK, xw + 2.0)
+			cv.draw_line(c + Vector2(-r * 0.95, -r * 0.95), c + Vector2(r * 0.95, r * 0.95), k, xw)
+			cv.draw_line(c + Vector2(r * 0.95, -r * 0.95), c + Vector2(-r * 0.95, r * 0.95), k, xw)
 		_:
 			cv.draw_circle(c, r * 0.5, k)
 
@@ -186,7 +196,7 @@ static func tier(cv: CanvasItem, c: Vector2, tier_word: String, r: float, col: C
 static func tier_pip(cv: CanvasItem, c: Vector2, tier_word: String, r: float) -> void:
 	var col := tier_color(tier_word)
 	var rect := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
-	if tier_word == "BREACHED":
+	if tier_word == "BREACHED" or tier_word == TIER_CITY_LOST:
 		cv.draw_rect(rect, BLACK)
 		cv.draw_rect(rect, RED, false, 2.0)
 	else:
@@ -297,7 +307,7 @@ static func tier_tile(cv: CanvasItem, r: Rect2, tier_word: String, n: int = 1, i
 	if tier_word == "":
 		return
 	var col := tier_color(tier_word)
-	if tier_word == "BREACHED":
+	if tier_word == "BREACHED" or tier_word == TIER_CITY_LOST:
 		cv.draw_rect(r, BLACK)
 		cv.draw_rect(r, RED, false, 2.0)
 	else:
