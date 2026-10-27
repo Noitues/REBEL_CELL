@@ -1757,3 +1757,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
      - D, N and E shown together.
   2. **Iterate the visual polish** to true golden plates (AAA finish, critic-scored against real refs) that the Godot run can match
      for parity. No tide group starts in Godot before the designer approves the plates.
+  - **Polish scope (designer, 2026-10-27):** the polish passes add **animation concepts, storyboards and interactivity concepts**
+    (motion tests, hover / drag / focus states, the what-if preview). The target is to **beat the critic's visual scores of the
+    reference games**. A fresh critic first sets the baseline in `tide_raid/REF_BASELINE.md`. The brief is
+    `D:/rc_scratch/tide_concepts/BRIEF_POLISH.md`.
