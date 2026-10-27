@@ -1792,3 +1792,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - the 4th unit (bonus) = the T2 beetle.
   The in-game look follows the **family-test row**: heads at about 40–48 px in the raid (scaled at 1280), with the shared rim light,
   core dot and outline. Next: one finalise pass to harmonise the four heads into a single language, then the plates take them.
+- **Beam heads locked (designer, 2026-10-27, `tide_raid/H6_heads_final/`):** the harmonised family at **44 px at 1920 (29 at
+  1280)**, with SVG sources in `heads/`. In polish, the N claw gets thicker prongs and an asymmetric hook so it never reads as "£" or
+  "3" at any heading. Crowd-test finding for build and the plates: draw Site tags and tier pips **above** the beam/head layer,
+  because a parked head hides 81–91% of the pip strip at every size.
