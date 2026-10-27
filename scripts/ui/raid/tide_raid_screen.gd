@@ -23,16 +23,16 @@ const DECK_W := 70.0
 const CARD_W := 74.0
 const CARD_H := 104.0
 const MAX_GROUPS := 8
-const TXT := 14
-const SMALL := 13
-const BIG := 22
-const CITY_LOST_PX := 72
+const TXT := TideFx.TXT
+const SMALL := TideFx.SMALL
+const BIG := TideFx.BIG
+const CITY_LOST_PX := TideFx.CITY_LOST_PX
 const PAD := 8.0
-const INK := TideGlyphs.INK
-const DIM := TideGlyphs.DIM
-const GOLD := TideGlyphs.GOLD
-const PANEL_BG := Palette.TIDE_PANEL_GLASS
-const EDGE := TideGlyphs.EDGE
+const INK := TideFx.INK
+const DIM := TideFx.DIM
+const GOLD := TideFx.GOLD
+const PANEL_BG := TideFx.PANEL_BG
+const EDGE := TideFx.EDGE
 const PLAYOUT_LOG_MAX := 12
 const METER_MAX_W := 150.0
 const METER_CELL_W := 13.0
@@ -48,7 +48,6 @@ const ROW_ODDS_H := 18.0
 ## A hand card's column (px): one width in every beat, so the hand never reflows. The caption under it holds two lines.
 const COL_W := 80.0
 ## The gold outline of the selected hand card (px).
-const SELECT_EDGE_W := 3.0
 const CAPTION_H := 26.0
 ## The characters one line of a response row's label holds, and a row's base and per-line height (px).
 const ROW_LINE_CHARS := 17
@@ -145,7 +144,7 @@ func _build_frame() -> void:
 	panel.offset_top = PAD
 	panel.offset_bottom = -HAND_H - PAD
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.add_theme_stylebox_override("panel", UiTheme.box(PANEL_BG, EDGE, 2, 10, 8))
+	TideFx.style_panel(panel)
 	add_child(panel)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
@@ -175,7 +174,7 @@ func _build_frame() -> void:
 	hud_strip.offset_top = PAD
 	hud_strip.offset_bottom = PAD + HUD_H
 	hud_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud_strip.add_theme_stylebox_override("panel", UiTheme.box(PANEL_BG, EDGE, 1, 8, 4))
+	TideFx.style_hud(hud_strip)
 	add_child(hud_strip)
 
 	deck_strip = Control.new()
@@ -200,7 +199,7 @@ func _build_frame() -> void:
 	hand_box.offset_top = -HAND_H
 	hand_box.offset_bottom = -PAD
 	hand_box.mouse_filter = Control.MOUSE_FILTER_STOP
-	hand_box.add_theme_stylebox_override("panel", UiTheme.box(PANEL_BG, EDGE, 1, 8, 6))
+	TideFx.style_hand(hand_box)
 	add_child(hand_box)
 	hand_row = HBoxContainer.new()
 	hand_row.name = "TideHand"
@@ -217,9 +216,7 @@ func _clear(c: Node) -> void:
 func _lab(text: String, px: int = TXT, col: Color = INK, wrap: bool = true) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", px)
-	l.add_theme_color_override("font_color", col)
-	l.add_theme_font_override("font", Palette.mono())
+	TideFx.style_label(l, px, col)
 	if wrap:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -227,19 +224,12 @@ func _lab(text: String, px: int = TXT, col: Color = INK, wrap: bool = true) -> L
 	return l
 
 
-func _btn(text: String, cb: Callable, enabled: bool = true, accent: Color = TideGlyphs.TIER_COLOR["HOLDS"]) -> Button:
+func _btn(text: String, cb: Callable, enabled: bool = true, accent: Color = TideFx.TIER_COLOR["HOLDS"]) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.disabled = not enabled
 	b.focus_mode = Control.FOCUS_ALL
-	b.add_theme_font_size_override("font_size", TXT)
-	b.add_theme_font_override("font", Palette.mono())
-	b.add_theme_stylebox_override("normal", UiTheme.box(Palette.TIDE_BUTTON, accent, 2, 10, 6))
-	b.add_theme_stylebox_override("hover", UiTheme.box(Palette.TIDE_BUTTON_HOT, accent.lightened(0.3), 2, 10, 6))
-	b.add_theme_stylebox_override("pressed", UiTheme.box(accent.darkened(0.4), accent, 2, 10, 6))
-	b.add_theme_stylebox_override("disabled", UiTheme.box(Palette.TIDE_BUTTON_OFF, Palette.TIDE_EDGE_OFF, 1, 10, 6))
-	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_disabled_color", Palette.TIDE_OFF)
+	TideFx.style_button(b, accent)
 	b.pressed.connect(cb)
 	return b
 
@@ -272,7 +262,7 @@ func _tier_word(t: String) -> String:
 func _tier_tag(t: String, px: float = 20.0) -> HBoxContainer:
 	var h := _hrow(4)
 	h.add_child(TideGlyphView.tier(t, px))
-	h.add_child(_lab(_tier_word(t), TXT, TideGlyphs.tier_color(t), false))
+	h.add_child(_lab(_tier_word(t), TXT, TideFx.tier_color(t), false))
 	return h
 
 
@@ -330,7 +320,7 @@ func phase_label() -> String:
 
 func _status_line(parent: Control = null) -> void:
 	if _status != "":
-		var l := _lab(_status, TXT, TideGlyphs.RED)
+		var l := _lab(_status, TXT, TideFx.RED)
 		l.name = "TideStatus"
 		(parent if parent != null else body).add_child(l)
 
@@ -352,7 +342,7 @@ func _build_hud() -> void:
 	gv.custom_minimum_size = Vector2(20, 20)
 	in_row.add_child(gv)
 	var danger := int(h["infected"]) > int(h["healthy"])
-	in_row.add_child(_lab(tr("INFECTED %d  healthy %d") % [h["infected"], h["healthy"]], TXT, TideGlyphs.RED if danger else INK, false))
+	in_row.add_child(_lab(tr("INFECTED %d  healthy %d") % [h["infected"], h["healthy"]], TXT, TideFx.RED if danger else INK, false))
 	inf.add_child(in_row)
 	# The meter: one cell per INFECTED card the city bears, the last cell (flagged) is the CITY LOST line.
 	var mrow := _hrow(6)
@@ -363,7 +353,7 @@ func _build_hud() -> void:
 	mrow.add_child(meter)
 	var margin := flow.loss_margin(h)
 	if margin <= 1:
-		var wl := _lab(tr("1 more = CITY LOST") if margin == 1 else tr("CITY FALLS AT RAID END"), SMALL, TideGlyphs.RED, false)
+		var wl := _lab(tr("1 more = CITY LOST") if margin == 1 else tr("CITY FALLS AT RAID END"), SMALL, TideFx.RED, false)
 		wl.name = "LossWarning"
 		mrow.add_child(wl)
 	else:
@@ -379,7 +369,7 @@ func _build_hud() -> void:
 	hr.add_child(TideGlyphView.tier("HOLDS" if int(h["home"]) > 0 else "BREACHED", 20.0))
 	# During the playout HOME's number drops at the beat that hits it: in red, with the damage beside it.
 	var dropped := int(flow.hud_pre["home"]) - int(h["home"]) if flow.phase == TideRaidFlow.Phase.PLAYOUT else 0
-	var home_lab := _lab((tr("HOME %d (-%d)") % [h["home"], dropped]) if dropped > 0 else (tr("HOME %d / %d") % [h["home"], h["home_max"]]), TXT, TideGlyphs.RED if dropped > 0 else INK, false)
+	var home_lab := _lab((tr("HOME %d (-%d)") % [h["home"], dropped]) if dropped > 0 else (tr("HOME %d / %d") % [h["home"], h["home_max"]]), TXT, TideFx.RED if dropped > 0 else INK, false)
 	home_lab.name = "HomeLabel"
 	hr.add_child(home_lab)
 	if _home_pop and dropped > 0:
@@ -401,14 +391,14 @@ func _build_hud() -> void:
 	var heat_top := _hrow(4)
 	var fl := TideGlyphView.icon(TideGlyphView.Kind.FLAME, 20.0)
 	heat_top.add_child(fl)
-	var heat_lab := _lab(_heat_text(h), TXT, TideGlyphs.HEAT_COL, false)
+	var heat_lab := _lab(_heat_text(h), TXT, TideFx.HEAT_COL, false)
 	heat_lab.name = "HeatLabel"
 	heat_top.add_child(heat_lab)
 	heat.add_child(heat_top)
 	var ticks := _hrow(6)
 	for t in flow.heat_ticks():
 		var on: bool = int(h["heat"]) >= int(t["heat"])
-		var col := GOLD if on else Palette.TIDE_OFF
+		var col := GOLD if on else TideFx.OFF
 		ticks.add_child(_lab("%d" % int(t["heat"]), SMALL, col, false))
 		if bool(t["beam"]):
 			ticks.add_child(TideGlyphView.icon(TideGlyphView.Kind.BEAM, 14.0, col))
@@ -488,7 +478,7 @@ func _build_hand() -> void:
 		cv.tooltip_text = _card_tip(c)
 		cv.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		if useless:
-			cv.modulate = TideGlyphs.RED.lightened(0.55)
+			cv.modulate = TideFx.useless_tint()
 			cv.tooltip_text += "\n" + flow.useless_reason(_checks[StringName(c["site"])])
 		var id: String = c["id"]
 		cv.gui_input.connect(func(ev: InputEvent) -> void:
@@ -497,9 +487,7 @@ func _build_hand() -> void:
 		if flow.sel_card == id:
 			# Selection is a gold outline, never a tint: the card's type glyph keeps its type color.
 			cv.set_meta("selected", true)
-			cv.draw.connect(func() -> void:
-				cv.draw_rect(Rect2(Vector2.ZERO, cv.size), Palette.TIDE_GOLD, false, SELECT_EDGE_W)
-				cv.draw_rect(Rect2(Vector2.ONE * SELECT_EDGE_W, cv.size - Vector2.ONE * SELECT_EDGE_W * 2.0), Color(Palette.TIDE_GOLD, 0.45), false, 1.0))
+			cv.draw.connect(func() -> void: TideFx.select_frame(cv, cv.size))
 		col.add_child(cv)
 		# One caption box of a fixed size under every card (two lines, never wider than the column): the hand keeps its shape in every beat.
 		var cap_text := ""
@@ -508,7 +496,7 @@ func _build_hand() -> void:
 			cap_text = tr("on %s") % flow.site_short(StringName(c["site"]), 11)
 			if useless:
 				cap_text += "\n" + tr("does nothing")
-				cap_col = TideGlyphs.RED
+				cap_col = TideFx.RED
 		elif played:
 			cap_text = tr("deployed on %s") % flow.site_short(StringName(c["played"]), 9)
 			cap_col = GOLD
@@ -587,24 +575,11 @@ func _draw_deck() -> void:
 	var h := flow.hud() if flow != null else {}
 	if h.is_empty():
 		return
-	deck_strip.draw_rect(Rect2(Vector2.ZERO, deck_strip.size), PANEL_BG)
-	deck_strip.draw_rect(Rect2(Vector2.ZERO, deck_strip.size), EDGE, false, 1.0)
-	deck_strip.draw_string(ThemeDB.fallback_font, Vector2(6, 16), "DECK", HORIZONTAL_ALIGNMENT_LEFT, -1, SMALL, DIM)
 	var deck: Array = h["deck"]
+	var cells := PackedVector2Array()
 	for i in deck.size():
-		var c: Array = deck[i]
-		var p := _deck_cell(i)
-		var wound := String(c[2]) == "WOUND"
-		var r := Rect2(p, DECK_CELL)
-		if wound:
-			deck_strip.draw_rect(r, TideGlyphs.WOUND_FILL)
-			TideGlyphs.crack(deck_strip, p + Vector2(5.5, 6.5), 5.0, TideGlyphs.RED, 1.2)
-		elif String(c[2]) == "DOSE":
-			deck_strip.draw_rect(r, TideGlyphs.PANEL)
-			deck_strip.draw_rect(r, TideGlyphs.ACID, false, 1.0)
-		else:
-			deck_strip.draw_rect(r, TideGlyphs.type_color(String(c[1])).darkened(0.5))
-			deck_strip.draw_rect(r, TideGlyphs.type_color(String(c[1])), false, 1.0)
+		cells.append(_deck_cell(i))
+	TideFx.deck_strip(deck_strip, deck_strip.size, deck, cells, DECK_CELL)
 	deck_strip.tooltip_text = tr("Deck: %d cards, %d INFECTED, %d DOSE.") % [deck.size(), h["infected"], h["doses"]]
 
 
@@ -674,7 +649,7 @@ func _sync_layer() -> void:
 		if f.phase == TideRaidFlow.Phase.PLAN or f.phase == TideRaidFlow.Phase.FORECAST:
 			layer.home_tiers = f.route_tiers()
 			for ln in (f.raid.ctx.draw["cands"] as Array):
-				layer.home_cols.append(TideGlyphs.type_color(String(ln["type"])))
+				layer.home_cols.append(TideFx.type_color(String(ln["type"])))
 	if f.phase == TideRaidFlow.Phase.PLAYOUT or (f.phase == TideRaidFlow.Phase.AFTERMATH and f.raid.resolved and not f.raid.over):
 		_playout_beams()
 	if f.phase == TideRaidFlow.Phase.RESPONSE and not _preview.is_empty():
@@ -736,7 +711,7 @@ func _sentries_now() -> Dictionary:
 	return out
 
 
-func _line_beam(ln: Dictionary, role: String, label: String, alpha: float, dashed: bool, width: float = TideRaidLayer.LINE_W, beam_name: String = "") -> Dictionary:
+func _line_beam(ln: Dictionary, role: String, label: String, alpha: float, dashed: bool, width: float = TideFx.LINE_W, beam_name: String = "") -> Dictionary:
 	return {"cells": ln["cells"], "type": ln["type"], "role": role, "label": label, "alpha": alpha, "dashed": dashed, "width": width,
 		"route": String(ln["kind"]) == "ROUTE", "home": bool(ln["home"]), "name": beam_name}
 
@@ -748,13 +723,13 @@ func _plan_beams() -> void:
 	var revealed := f.phase >= TideRaidFlow.Phase.REVEAL
 	for i in (d["known"] as Array).size():
 		if i < n_fire:
-			layer.beams.append(_line_beam(d["known"][i], "known", tr("K%d") % (i + 1), 0.95, false, TideRaidLayer.LINE_W, "known%d" % i))
+			layer.beams.append(_line_beam(d["known"][i], "known", tr("K%d") % (i + 1), 0.95, false, TideFx.LINE_W, "known%d" % i))
 	for i in (d["cands"] as Array).size():
 		var is_real := i == f.real_a()
 		if revealed and not is_real:
-			layer.beams.append(_line_beam(d["cands"][i], "cand", "", 0.3, true, TideRaidLayer.LINE_W, "cand%d" % i))
+			layer.beams.append(_line_beam(d["cands"][i], "cand", "", 0.3, true, TideFx.LINE_W, "cand%d" % i))
 		else:
-			var cb := _line_beam(d["cands"][i], "cand", "" if not revealed else tr("SEALED A"), 1.0 if revealed else 0.7, not revealed, 5.0 if revealed else TideRaidLayer.LINE_W, "cand%d" % i)
+			var cb := _line_beam(d["cands"][i], "cand", "" if not revealed else tr("SEALED A"), 1.0 if revealed else 0.7, not revealed, 5.0 if revealed else TideFx.LINE_W, "cand%d" % i)
 			cb["chip"] = ["A", "B", "C"][i]
 			layer.beams.append(cb)
 	if not revealed:
@@ -798,7 +773,7 @@ func _playout_beams() -> void:
 		if not shown:
 			continue
 		var role := "known" if b["kind"] == "known" else ("hunter" if String(b["kind"]).begins_with("hunter") else "cand")
-		var alpha := 1.0 if cur else TideRaidLayer.DONE_ALPHA
+		var alpha := 1.0 if cur else TideFx.DONE_ALPHA
 		var lab := ""
 		if cur and _step.size() <= 1:
 			lab = _beam_label(b)
@@ -824,7 +799,7 @@ func _playout_beams() -> void:
 				if e[2] == "hit":
 					layer.hits[StringName(e[1])] = "hit"
 					if cur and not taken_now.has(String(e[1])):
-						layer.impacts.append({"site": e[1], "col": TideGlyphs.type_color(String(ln["type"])), "label": tr("HIT: %s") % flow.site_name(StringName(e[1]))})
+						layer.impacts.append({"site": e[1], "col": TideFx.type_color(String(ln["type"])), "label": tr("HIT: %s") % flow.site_name(StringName(e[1]))})
 				elif e[2] == "block" and cur:
 					layer.blocks.append([e[1], ln["type"]])
 		# H7c: a shield lasts one beam: the Sites it covers on the current beam, and the ones whose shield the beam before used up.
@@ -836,7 +811,7 @@ func _playout_beams() -> void:
 			for s in flow.fell_sites():
 				layer.falls.append(StringName(String(s)))
 				if cur and flow.phase == TideRaidFlow.Phase.PLAYOUT:
-					layer.impacts.append({"site": s, "col": TideGlyphs.RED, "label": tr("FALLS: %s") % flow.site_name(StringName(String(s)))})
+					layer.impacts.append({"site": s, "col": TideFx.RED, "label": tr("FALLS: %s") % flow.site_name(StringName(String(s)))})
 
 
 ## Where beat `b` stops: its guard when a sentry blocks it, HOME when it ends there (a hit or a shield), "" when it runs its whole path.
@@ -1162,7 +1137,7 @@ func _wait(secs: float) -> bool:
 
 ## The beat `b` lands: what its trace says the beam did, as effects on the map, and the INFECTED cards it adds tick the HUD live.
 func _land_beat(b: Dictionary, weight_t: float = 0.0) -> void:
-	var col := TideGlyphs.type_color(String(b["line"]["type"]))
+	var col := TideFx.type_color(String(b["line"]["type"]))
 	var taken_now: Array = flow.beam_taken()
 	var shield_t := Motion.seconds_live(&"shield_hex")
 	var mark_t := maxf(Motion.seconds_live(&"impact_mark"), weight_t)
@@ -1172,9 +1147,10 @@ func _land_beat(b: Dictionary, weight_t: float = 0.0) -> void:
 			"block":
 				layer.add_burst("shield", site, col, shield_t)
 			"shield":
-				layer.add_burst("shield", &"HOME", TideGlyphs.COBALT_HOT, shield_t)
+				layer.add_burst("shield", &"HOME", TideFx.COBALT_HOT, shield_t)
 			"home":
-				layer.add_burst("home", &"HOME", TideGlyphs.RED, mark_t)
+				layer.add_burst("home", &"HOME", TideFx.RED, mark_t)
+				CityMapCamera.shake(TideFx.look().home_hit_shake_strength, TideFx.look().home_hit_shake_secs)
 				# HOME's number drops at this beat (the HUD and the top bar follow), and it infects a card when the rules say so.
 				flow.land_home()
 				_home_pop = true
@@ -1189,7 +1165,7 @@ func _land_beat(b: Dictionary, weight_t: float = 0.0) -> void:
 	var beats := flow.beats()
 	if not beats.is_empty() and b == beats[beats.size() - 1]:
 		for s in flow.fell_sites():
-			layer.add_burst("slam", StringName(String(s)), TideGlyphs.RED, mark_t)
+			layer.add_burst("slam", StringName(String(s)), TideFx.RED, mark_t)
 			_land_card(StringName(String(s)))
 
 
@@ -1332,16 +1308,16 @@ func _page_decay() -> void:
 		body.add_child(_lab(tr("Districts left DOWN since the last raid fall to the Tide."), TXT))
 		_tally_block(flow.infected_tally(), true)
 	if flow.raid.over:
-		body.add_child(_lab(tr("The infection now outnumbers the healthy cards."), TXT, TideGlyphs.RED))
+		body.add_child(_lab(tr("The infection now outnumbers the healthy cards."), TXT, TideFx.RED))
 	if flow.forced():
 		# No response can save the city: no PLAN, no RESPONSE, no confirms. The raid plays straight through to CITY LOST.
 		var fr := _hrow(6)
 		fr.name = "CityFalls"
 		fr.add_child(TideGlyphView.tier("BREACHED", 28.0))
-		fr.add_child(_lab(tr("THE CITY FALLS"), BIG, TideGlyphs.RED, false))
+		fr.add_child(_lab(tr("THE CITY FALLS"), BIG, TideFx.RED, false))
 		body.add_child(fr)
-		body.add_child(_lab(tr("The infection now outnumbers the healthy cards. Nothing you play can change that: the raid will take the city."), TXT, TideGlyphs.RED))
-		var fall_btn := _btn(tr("THE CITY FALLS"), city_falls, true, TideGlyphs.RED)
+		body.add_child(_lab(tr("The infection now outnumbers the healthy cards. Nothing you play can change that: the raid will take the city."), TXT, TideFx.RED))
+		var fall_btn := _btn(tr("THE CITY FALLS"), city_falls, true, TideFx.RED)
 		fall_btn.name = "CityFallsButton"
 		body.add_child(fall_btn)
 		return
@@ -1401,13 +1377,13 @@ func _tally_section(title: String, node_name: String, start: int, end: int, part
 	gv.word = "WOUND"
 	gv.custom_minimum_size = Vector2(18, 18)
 	head.add_child(gv)
-	head.add_child(_lab(tr("INFECTED %d to %d") % [start, end], TXT, TideGlyphs.RED if end > start else INK, false))
+	head.add_child(_lab(tr("INFECTED %d to %d") % [start, end], TXT, TideFx.RED if end > start else INK, false))
 	sec.add_child(head)
 	for p in parts:
 		var r := _hrow(6)
 		var n := int(p["n"])
 		var sign_txt := "+%d" % n if n > 0 else ("%d" % n if n < 0 else "0")
-		r.add_child(_lab(sign_txt, SMALL, TideGlyphs.RED if n > 0 else (TideGlyphs.TIER_COLOR["HOLDS"] if n < 0 else DIM), false))
+		r.add_child(_lab(sign_txt, SMALL, TideFx.RED if n > 0 else (TideFx.TIER_COLOR["HOLDS"] if n < 0 else DIM), false))
 		var l := _lab(String(p["label"]), SMALL, INK, true)
 		r.add_child(l)
 		if String(p["tip"]) != "":
@@ -1452,11 +1428,11 @@ func _loss_banner() -> void:
 		return
 	var chip := PanelContainer.new()
 	chip.name = "LossBanner"
-	chip.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI, TideGlyphs.RED, 2, 8, 4))
+	TideFx.style_chip(chip, TideFx.RED)
 	var r := _hrow(6)
 	r.add_child(TideGlyphView.tier("BREACHED", 20.0))
 	var fallen := flow.loss_margin() == 0
-	r.add_child(_lab(tr("CITY FALLS AT RAID END") if fallen else tr("1 more = CITY LOST"), BIG if not fallen else TXT, TideGlyphs.RED, false))
+	r.add_child(_lab(tr("CITY FALLS AT RAID END") if fallen else tr("1 more = CITY LOST"), BIG if not fallen else TXT, TideFx.RED, false))
 	chip.add_child(r)
 	chip.tooltip_text = tr("The infection already outnumbers the healthy cards: the city falls when this raid closes, unless HOME falls first.") if fallen \
 		else tr("One more INFECTED card and the infection outnumbers the healthy cards: the campaign ends when this raid resolves.")
@@ -1471,7 +1447,7 @@ func _beam_legend() -> void:
 		var live := i < n_fire
 		var r := _hrow(6)
 		r.add_child(_type_icon(String(ln["type"]), not live))
-		r.add_child(_lab(tr("Known beam %d: %s, fires after the RESPONSE") % [i + 1, _type_name(String(ln["type"]))] if live else tr("Known beam %d: waits for more Heat") % (i + 1), SMALL, INK if live else Palette.TIDE_OFF, true))
+		r.add_child(_lab(tr("Known beam %d: %s, fires after the RESPONSE") % [i + 1, _type_name(String(ln["type"]))] if live else tr("Known beam %d: waits for more Heat") % (i + 1), SMALL, INK if live else TideFx.OFF, true))
 		if live:
 			body.add_child(_legend_hot(r, "known%d" % i))
 		else:
@@ -1480,7 +1456,7 @@ func _beam_legend() -> void:
 	rr.add_child(_lab(tr("Sealed routes: two will fire"), SMALL, DIM, false))
 	for i in (d["cands"] as Array).size():
 		var cell := _hrow(3)
-		cell.add_child(TideGlyphView.chip(["A", "B", "C"][i], TideGlyphs.type_color(String(d["cands"][i]["type"]))))
+		cell.add_child(TideGlyphView.chip(["A", "B", "C"][i], TideFx.type_color(String(d["cands"][i]["type"]))))
 		cell.add_child(_type_icon(String(d["cands"][i]["type"]), false))
 		rr.add_child(_legend_hot(cell, "cand%d" % i))
 	body.add_child(rr)
@@ -1489,7 +1465,7 @@ func _beam_legend() -> void:
 	hr.add_child(_type_icon(String(d["hunter_type"]), false))
 	var hh := TideGlyphView.new()
 	hh.custom_minimum_size = Vector2(18, 18)
-	hh.draw.connect(func() -> void: TideGlyphs.hound(hh, hh.size * 0.5))
+	hh.draw.connect(func() -> void: TideFx.hunter_glyph(hh))
 	hr.add_child(hh)
 	hr.add_child(_lab(tr("HUNTER: one of %d streets, revealed last") % hd.size(), SMALL, DIM, false))
 	for i in hd.size():
@@ -1506,7 +1482,7 @@ func _legend_hot(row: Control, beam: String) -> Control:
 	var box := PanelContainer.new()
 	box.name = "Legend_%s" % beam
 	var pinned := _focus_pin == beam
-	box.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI if pinned else Palette.CLEAR, GOLD if pinned else Palette.CLEAR, 1, 3, 1))
+	TideFx.style_legend_row(box, pinned)
 	box.mouse_filter = Control.MOUSE_FILTER_STOP
 	box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	box.add_child(row)
@@ -1539,7 +1515,7 @@ func _type_icon(t: String, dim: bool) -> TideGlyphView:
 	var g := TideGlyphView.new()
 	g.kind = TideGlyphView.Kind.TYPE
 	g.word = t
-	g.color = TideGlyphs.type_color(t).darkened(0.5) if dim else Palette.CLEAR
+	g.color = TideFx.type_color(t).darkened(0.5) if dim else Palette.CLEAR
 	g.custom_minimum_size = Vector2(18, 18)
 	return g
 
@@ -1605,7 +1581,7 @@ func _arrow_view(col: Color) -> Control:
 	var a := Control.new()
 	a.custom_minimum_size = Vector2(16, 16)
 	a.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	a.draw.connect(func() -> void: TideGlyphs.arrow(a, 1.0, 8.0, col))
+	a.draw.connect(func() -> void: TideFx.arrow_glyph(a, col))
 	return a
 
 
@@ -1624,7 +1600,7 @@ func _summary_lines() -> void:
 		var wr := _hrow(4)
 		wr.name = "Mismatch_%s" % site
 		wr.add_child(TideGlyphView.tier("BREACHED", 18.0))
-		wr.add_child(_lab(tr("%s: %s") % [flow.site_short(StringName(site), 20), flow.useless_reason(chk)], SMALL, TideGlyphs.RED, true))
+		wr.add_child(_lab(tr("%s: %s") % [flow.site_short(StringName(site), 20), flow.useless_reason(chk)], SMALL, TideFx.RED, true))
 		body.add_child(wr)
 
 
@@ -1643,8 +1619,8 @@ func _page_forecast() -> void:
 		# the beam glyph in its color and the type shape.
 		var head := _hrow(4)
 		var rtype := String(flow.raid.ctx.draw["cands"][a]["type"])
-		head.add_child(TideGlyphView.chip(["A", "B", "C"][a], TideGlyphs.type_color(rtype), 22.0))
-		head.add_child(TideGlyphView.icon(TideGlyphView.Kind.BEAM, 22.0, TideGlyphs.type_color(rtype)))
+		head.add_child(TideGlyphView.chip(["A", "B", "C"][a], TideFx.type_color(rtype), 22.0))
+		head.add_child(TideGlyphView.icon(TideGlyphView.Kind.BEAM, 22.0, TideFx.type_color(rtype)))
 		head.add_child(_type_icon(rtype, false))
 		col.add_child(head)
 		# The outcomes of this route, one tile per (tier, INFECTED added, ends the run), worst first: no row of identical tiles.
@@ -1678,11 +1654,11 @@ func _page_forecast() -> void:
 	_summary_lines()
 	var fr := flow.friction()
 	if fr != TideRaidFlow.FRICTION_NONE:
-		body.add_child(_lab(_friction_text(fr), TXT, TideGlyphs.HEAT_COL))
+		body.add_child(_lab(_friction_text(fr), TXT, TideFx.HEAT_COL))
 	var row := _hrow(6)
 	row.add_child(_btn(tr("BACK"), back))
 	var armed := flow.launch_armed
-	row.add_child(_btn(tr("CONFIRM LAUNCH") if armed else tr("LAUNCH"), launch, true, GOLD if armed else TideGlyphs.TIER_COLOR["HOLDS"]))
+	row.add_child(_btn(tr("CONFIRM LAUNCH") if armed else tr("LAUNCH"), launch, true, GOLD if armed else TideFx.TIER_COLOR["HOLDS"]))
 	foot.add_child(row)
 
 
@@ -1714,7 +1690,7 @@ func _page_reveal() -> void:
 func _fast_chip() -> Control:
 	var chip := PanelContainer.new()
 	chip.name = "FastChip"
-	chip.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI, GOLD, 2, 8, 3))
+	TideFx.style_chip(chip, GOLD, 8.0, 3.0)
 	chip.add_child(_lab(tr("LOCKED: every response gives one tier, fast resolve"), SMALL, GOLD))
 	return chip
 
@@ -1736,7 +1712,7 @@ func _page_response() -> void:
 	for g in flow.ghosts:
 		var gr := _hrow(6)
 		gr.add_child(TideGlyphView.resp([g[0]], 20.0, "", true))
-		gr.add_child(_lab(tr(String(g[1])), 11, Palette.TIDE_OFF, true))
+		gr.add_child(_lab(tr(String(g[1])), 11, TideFx.OFF, true))
 		gr.name = "Ghost_%s" % g[0]
 		body.add_child(gr)
 	body.add_child(_gap(18))  # room under the last row: it never sits against the COMMIT bar
@@ -1745,23 +1721,23 @@ func _page_response() -> void:
 		var lr := _hrow(4)
 		lr.name = "LethalConfirm"
 		lr.add_child(TideGlyphView.tier("BREACHED", 22.0))
-		lr.add_child(_lab(tr("This response can END THE RUN. Press again to commit it."), TXT, TideGlyphs.RED, true))
+		lr.add_child(_lab(tr("This response can END THE RUN. Press again to commit it."), TXT, TideFx.RED, true))
 		foot.add_child(lr)
 	elif flow.hold_armed:
 		var w := flow.hold_worse_group()
 		var r := _hrow(4)
-		r.add_child(_lab(tr("HOLD is worse than"), TXT, TideGlyphs.HEAT_COL, false))
+		r.add_child(_lab(tr("HOLD is worse than"), TXT, TideFx.HEAT_COL, false))
 		if w >= 0:
 			r.add_child(TideGlyphView.resp(flow.groups[w]["members"][0]["resp"], 24.0))
-		r.add_child(_lab(tr("launch anyway?"), TXT, TideGlyphs.HEAT_COL, false))
+		r.add_child(_lab(tr("launch anyway?"), TXT, TideFx.HEAT_COL, false))
 		foot.add_child(r)
 	_status_line(foot)
 	var armed := flow.hold_armed or flow.lethal_armed
 	var word := tr("COMMIT")
-	var accent: Color = TideGlyphs.TIER_COLOR["HOLDS"]
+	var accent: Color = TideFx.TIER_COLOR["HOLDS"]
 	if flow.lethal_armed:
 		word = tr("CONFIRM: END THE RUN")
-		accent = TideGlyphs.RED
+		accent = TideFx.RED
 	elif flow.hold_armed:
 		word = tr("CONFIRM HOLD")
 		accent = GOLD
@@ -1785,10 +1761,8 @@ func _group_row(gi: int) -> Control:
 	var lines := ceili(float(String(g["label"]).length()) / float(ROW_LINE_CHARS))
 	var note_h := ROW_LINE_H * ceilf(float(_row_note_text(g).length()) / 24.0)
 	btn.custom_minimum_size.y = maxf(42.0, ROW_BASE_H + ROW_LINE_H * float(maxi(1, lines) - 1) + note_h)
-	var edge := TideGlyphs.RED if lethal else (GOLD if better else EDGE)
-	btn.add_theme_stylebox_override("normal", UiTheme.box(Palette.TIDE_PANEL_HI if sel else Palette.TIDE_ROW, edge, 2, 6, 3))
-	btn.add_theme_stylebox_override("hover", UiTheme.box(Palette.TIDE_ROW_HOT, edge.lightened(0.3), 2, 6, 3))
-	btn.add_theme_stylebox_override("pressed", UiTheme.box(Palette.TIDE_ROW_PRESSED, GOLD, 2, 6, 3))
+	var edge := TideFx.RED if lethal else (GOLD if better else EDGE)
+	TideFx.style_row(btn, sel, edge)
 	btn.pressed.connect(func() -> void: select_group(gi))
 	btn.mouse_entered.connect(func() -> void: _hover_group(gi))
 	var row := _hrow(5)
@@ -1851,7 +1825,7 @@ func _stat_chip(kind: String, lo: int, hi: int) -> Control:
 		h.add_child(_ignore(pip))
 	var txt := "%+d" % lo if lo == hi else "%+d..%+d" % [lo, hi]
 	var bad := hi > 0 if kind == "INFECTED" else false
-	var col: Color = TideGlyphs.RED if bad else (TideGlyphs.HEAT_COL if kind == "HEAT" and hi > 0 else DIM)
+	var col: Color = TideFx.RED if bad else (TideFx.HEAT_COL if kind == "HEAT" and hi > 0 else DIM)
 	var v := _lab(txt, SMALL, col, false)
 	v.name = "Val"
 	h.add_child(_ignore(v))
@@ -1870,7 +1844,7 @@ func _row_note_text(g: Dictionary) -> String:
 
 
 func _row_note(g: Dictionary) -> Label:
-	var col := TideGlyphs.RED if bool(g["lethal_any"]) else DIM
+	var col := TideFx.RED if bool(g["lethal_any"]) else DIM
 	var l := _lab(_row_note_text(g), 11, col, true)
 	l.name = "Note"
 	return l
@@ -1916,7 +1890,7 @@ func _variants(gi: int) -> Control:
 	for mi in members.size():
 		var m: Dictionary = members[mi]
 		var b := _btn(flow.resp_label_long(m["resp"]), func() -> void: select_group(gi, mi), true, EDGE)
-		b.add_theme_font_size_override("font_size", SMALL)
+		TideFx.style_button_small(b)
 		box.add_child(b)
 	return box
 
@@ -1954,7 +1928,7 @@ func _page_playout() -> void:
 	if _playing:
 		if flow.forced_run:
 			# The loss is already decided: the way to its result is one press (or ENTER, the playout's skip key) away.
-			var sk := _btn(tr("SKIP TO CITY LOST"), skip_playout, true, TideGlyphs.RED)
+			var sk := _btn(tr("SKIP TO CITY LOST"), skip_playout, true, TideFx.RED)
 			sk.name = "SkipToCityLost"
 			sk.focus_mode = Control.FOCUS_ALL
 			body.add_child(sk)
@@ -1969,13 +1943,13 @@ func _page_aftermath() -> void:
 	var tier_word := String(a["tier"])
 	# One headline from the outcome ladder: the worst thing that happened (CITY LOST beats the raid's own tier). The subline agrees with it.
 	var banner := String(a["banner"])
-	var head_word := TideGlyphs.TIER_CITY_LOST if banner == "CITY LOST" else tier_word
+	var head_word := TideFx.TIER_CITY_LOST if banner == "CITY LOST" else tier_word
 	var stamp := _hrow(10)
 	stamp.name = "AftermathStamp"
 	stamp.add_child(TideGlyphView.tier(head_word, 48.0))
-	stamp.add_child(_lab(_tierw(head_word), 28, TideGlyphs.tier_color(head_word), false))
+	stamp.add_child(_lab(_tierw(head_word), 28, TideFx.tier_color(head_word), false))
 	body.add_child(stamp)
-	var bl := _lab(_aftermath_subline(a, tier_word), TXT, TideGlyphs.RED if head_word == TideGlyphs.TIER_CITY_LOST or head_word == "BREACHED" else DIM)
+	var bl := _lab(_aftermath_subline(a, tier_word), TXT, TideFx.RED if head_word == TideFx.TIER_CITY_LOST or head_word == "BREACHED" else DIM)
 	bl.name = "Banner"
 	body.add_child(bl)
 	if bool(a["raided"]):
@@ -2000,7 +1974,7 @@ func _page_aftermath() -> void:
 ## what the raid did to HOME and to the Sites, with its cause.
 func _aftermath_subline(a: Dictionary, tier_word: String) -> String:
 	if String(a["banner"]) == "CITY LOST":
-		if tier_word == "" or tier_word == TideGlyphs.TIER_CITY_LOST:
+		if tier_word == "" or tier_word == TideFx.TIER_CITY_LOST:
 			return tr("The INFECTED cards outnumber the healthy ones.")
 		return tr("The raid was %s, but the INFECTED cards outnumber the healthy ones.") % _tierw(tier_word)
 	match tier_word:
@@ -2052,11 +2026,9 @@ func _show_city_lost(a: Dictionary) -> void:
 	ov.name = "CityLost"
 	ov.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ov.mouse_filter = Control.MOUSE_FILTER_STOP
-	var wash := ColorRect.new()
-	wash.color = Color(Palette.TIDE_RED.darkened(0.82), 0.93)
-	wash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ov.add_child(wash)
+	TideFx.wash(ov, TideFx.lost_wash_color())
+	var lk := TideFx.look()
+	CityMapCamera.shake(lk.city_lost_shake_strength, lk.city_lost_shake_secs)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2069,7 +2041,7 @@ func _show_city_lost(a: Dictionary) -> void:
 	var skull := TideGlyphView.tier("BREACHED", 150.0)
 	skull.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(skull)
-	var title := _lab(tr("CITY LOST"), CITY_LOST_PX, TideGlyphs.RED, false)
+	var title := _lab(tr("CITY LOST"), CITY_LOST_PX, TideFx.RED, false)
 	title.name = "CityLostTitle"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
@@ -2077,7 +2049,7 @@ func _show_city_lost(a: Dictionary) -> void:
 	var sub := _lab(tr("INFECTED %d outnumber the healthy cards (%d)") % [int(a["infected"]), int(h["healthy"])], BIG, INK, false)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(sub)
-	var go := _btn(tr("CONTINUE"), _dismiss_city_lost, true, TideGlyphs.RED)
+	var go := _btn(tr("CONTINUE"), _dismiss_city_lost, true, TideFx.RED)
 	go.name = "CityLostContinue"
 	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	go.custom_minimum_size = Vector2(220, 44)
@@ -2147,7 +2119,7 @@ func _page_hq() -> void:
 		if o[0] == sel[0] and o[1] == sel[1] and o[2] == sel[2]:
 			legal = true
 	if not legal:
-		body.add_child(_lab(tr("The Schematics do not cover that."), SMALL, TideGlyphs.RED))
+		body.add_child(_lab(tr("The Schematics do not cover that."), SMALL, TideFx.RED))
 	body.add_child(_btn(tr("DONE"), done_hq, legal))
 
 
@@ -2160,11 +2132,11 @@ func _hq_threat_banner(sel: Array) -> void:
 		var fatal := bool(thr["fatal"])
 		var chip := PanelContainer.new()
 		chip.name = "DecayWarning"
-		chip.add_theme_stylebox_override("panel", UiTheme.box(Palette.TIDE_PANEL_HI, TideGlyphs.RED, 2, 8, 4))
+		TideFx.style_chip(chip, TideFx.RED)
 		var col := VBoxContainer.new()
 		var head := _hrow(6)
 		head.add_child(TideGlyphView.tier("BREACHED", 22.0))
-		head.add_child(_lab(tr("NEXT DECAY ENDS THE CITY") if fatal else tr("1 more = CITY LOST"), TXT, TideGlyphs.RED, false))
+		head.add_child(_lab(tr("NEXT DECAY ENDS THE CITY") if fatal else tr("1 more = CITY LOST"), TXT, TideFx.RED, false))
 		col.add_child(head)
 		var downs: Array = thr["downs"]
 		var names := PackedStringArray()
@@ -2176,7 +2148,7 @@ func _hq_threat_banner(sel: Array) -> void:
 			var pr := _hrow(6)
 			pr.name = "DecayLine"
 			var pn := int(p["n"])
-			pr.add_child(_lab("+%d" % pn if pn > 0 else "%d" % pn, SMALL, TideGlyphs.RED if pn > 0 else (TideGlyphs.TIER_COLOR["HOLDS"] if pn < 0 else DIM), false))
+			pr.add_child(_lab("+%d" % pn if pn > 0 else "%d" % pn, SMALL, TideFx.decay_count_color(pn), false))
 			pr.add_child(_lab(String(p["label"]), SMALL, INK, true))
 			col.add_child(pr)
 		var total := _lab(tr("DECAY adds %d INFECTED in all.") % int(thr["added"]), SMALL, INK)
@@ -2186,7 +2158,7 @@ func _hq_threat_banner(sel: Array) -> void:
 		chip.add_child(col)
 		body.add_child(chip)
 	elif bool(base["fatal"]) or bool(base["near"]):
-		var ok := _lab(tr("The next DECAY no longer threatens the city."), SMALL, TideGlyphs.TIER_COLOR["HOLDS"])
+		var ok := _lab(tr("The next DECAY no longer threatens the city."), SMALL, TideFx.TIER_COLOR["HOLDS"])
 		ok.name = "DecaySafe"
 		body.add_child(ok)
 
@@ -2224,7 +2196,7 @@ func _hq_row(act: Dictionary, fix: bool = false) -> Control:
 		var why := tr(String(act["why"]))
 		if (act["why_args"] as Array).size() > 0:
 			why = why % act["why_args"]
-		var wl := _lab(why, 11, TideGlyphs.RED.darkened(0.15), true)
+		var wl := _lab(why, 11, TideFx.RED.darkened(0.15), true)
 		wl.name = "Why"
 		box.add_child(wl)
 	return box
@@ -2261,9 +2233,9 @@ func _ladder() -> Control:
 	var box := HFlowContainer.new()
 	box.name = "TierLadder"
 	box.add_theme_constant_override("h_separation", 8)
-	for t in TideGlyphs.TIER_LADDER:
+	for t in TideFx.TIER_LADDER:
 		var r := _hrow(2)
 		r.add_child(TideGlyphView.tier(t, 16.0))
-		r.add_child(_lab(_tierw(t), 11, TideGlyphs.tier_color(t), false))
+		r.add_child(_lab(_tierw(t), 11, TideFx.tier_color(t), false))
 		box.add_child(r)
 	return box

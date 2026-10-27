@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="TideLookData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/tide_look_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+dash_on = 10.0
+dash_off = 7.0
+front_r = 30.0
+infect_r = 22.0
+home_glyph_r = 11.0
+ink_alpha = 0.7
+focus_dim = 0.18
+impact_r = 16.0
+impact_spokes = 8
+impact_period = 0.9
+chip_r = 8.0
+pulse_r = 9.0
+pulse_tail = 0.22
+label_pad = 5.0
+flight_w = 20.0
+flight_h = 28.0
+flight_arc = 46.0
+bloom_r = 44.0
+burst_spokes = 12
+slam_r = 72.0
+sentry_scale = 1.3
+ghost_alpha = 0.7
+disk_alpha = 0.62
+tile_fill_alpha = 0.3
+meter_gap = 2.0
+meter_cell_max = 16.0
+odds_glyph_min_w = 26.0
+select_edge_w = 3.0
+slam_flash_alpha = 0.16
+home_flash_alpha = 0.2
+lost_wash_darken = 0.82
+lost_wash_alpha = 0.93
+home_hit_shake_strength = 0.0
+home_hit_shake_secs = 0.25
+city_lost_shake_strength = 0.0
+city_lost_shake_secs = 0.4

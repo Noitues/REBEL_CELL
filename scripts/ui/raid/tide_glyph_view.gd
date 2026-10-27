@@ -1,6 +1,6 @@
 class_name TideGlyphView
 extends Control
-## Phase 3: one TideGlyphs glyph as a Control, so a panel row can carry a tier, a response or a card face between its labels.
+## Phase 3: one TideFx glyph as a Control, so a panel row can carry a tier, a response or a card face between its labels.
 ## View only: it draws the glyph it is told.
 
 enum Kind { TIER, RESPONSE, CARD, TYPE, VERB, FLAME, BEAM, CARD_TICK, PIP_DECK, TILE, CHIP, METER }
@@ -104,32 +104,26 @@ func _draw() -> void:
 	var r := minf(size.x, size.y) * 0.5
 	match kind:
 		Kind.TIER:
-			TideGlyphs.tier(self, c, word, r * 0.92)
+			TideFx.tier(self, c, word, r * 0.92)
 		Kind.RESPONSE:
-			TideGlyphs.response(self, c, response, r * 0.8, dim, sent_type)
+			TideFx.response(self, c, response, r * 0.8, dim, sent_type)
 		Kind.CARD:
-			TideGlyphs.card_face(self, Rect2(Vector2.ZERO, size), card, dim, gold, title, heat)
+			TideFx.card_face(self, Rect2(Vector2.ZERO, size), card, dim, gold, title, heat)
 		Kind.TILE:
-			TideGlyphs.tier_tile(self, Rect2(Vector2.ZERO, size), word, count, inf, lethal)
+			TideFx.tier_tile(self, Rect2(Vector2.ZERO, size), word, count, inf, lethal)
 		Kind.CHIP:
-			TideGlyphs.route_chip(self, c, word, r, color)
+			TideFx.route_chip(self, c, word, r, color)
 		Kind.METER:
-			TideGlyphs.infected_meter(self, Rect2(Vector2.ZERO, size), count, healthy)
+			TideFx.infected_meter(self, Rect2(Vector2.ZERO, size), count, healthy)
 		Kind.TYPE:
-			TideGlyphs.type_shape(self, c, word, r * 0.9, color if color.a > 0.0 else TideGlyphs.type_color(word))
+			TideFx.type_shape(self, c, word, r * 0.9, color if color.a > 0.0 else TideFx.type_color(word))
 		Kind.VERB:
-			TideGlyphs.verb(self, c, word, r * 0.85, color if color.a > 0.0 else TideGlyphs.INK)
+			TideFx.verb(self, c, word, r * 0.85, color if color.a > 0.0 else TideFx.INK)
 		Kind.FLAME:
-			TideGlyphs.flame(self, c, r * 0.65)
+			TideFx.flame(self, c, r * 0.65)
 		Kind.BEAM:
-			TideGlyphs.beam_tick(self, c, color if color.a > 0.0 else TideGlyphs.GOLD)
+			TideFx.beam_tick(self, c, color if color.a > 0.0 else TideFx.GOLD)
 		Kind.CARD_TICK:
-			TideGlyphs.card_tick(self, c, color if color.a > 0.0 else TideGlyphs.GOLD)
+			TideFx.card_tick(self, c, color if color.a > 0.0 else TideFx.GOLD)
 		Kind.PIP_DECK:
-			var rr := Rect2(c - Vector2(r, r) * 0.7, Vector2(r, r) * 1.4)
-			if word == "WOUND":
-				draw_rect(rr, TideGlyphs.WOUND_FILL)
-				TideGlyphs.crack(self, c, r * 0.6, TideGlyphs.RED, 1.5)
-			else:
-				draw_rect(rr, TideGlyphs.type_color(word).darkened(0.45))
-				draw_rect(rr, TideGlyphs.type_color(word), false, 1.0)
+			TideFx.deck_pip(self, c, r, word)

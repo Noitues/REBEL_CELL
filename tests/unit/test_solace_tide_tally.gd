@@ -244,8 +244,8 @@ func test_the_ladder_puts_a_run_ending_row_on_the_city_lost_tier_and_leaves_tier
 	assert_eq(rows[1]["tier"], "HOLDS")
 	var odds := SolaceTideTally.tier_odds(rows)
 	assert_eq(odds[0]["tier"], "CITY LOST", "the odds bar draws the worst tier first")
-	assert_eq(TideGlyphs.TIER_LADDER[TideGlyphs.TIER_LADDER.size() - 1], "CITY LOST", "the legend ends on CITY LOST")
-	assert_gt(TideGlyphs.rank("CITY LOST"), TideGlyphs.rank("BREACHED"))
+	assert_eq(TideFx.TIER_LADDER[TideFx.TIER_LADDER.size() - 1], "CITY LOST", "the legend ends on CITY LOST")
+	assert_gt(TideFx.rank("CITY LOST"), TideFx.rank("BREACHED"))
 
 
 func test_the_next_decay_forecast_lists_every_card_it_adds() -> void:

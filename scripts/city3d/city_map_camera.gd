@@ -193,3 +193,32 @@ static func _largest_ok(ok: Callable) -> float:
 		else:
 			hi = mid
 	return lo
+
+
+# ------------------------------------------------------------------------------------------------ the shake hook
+## View state, never game state: the shake in flight (px of the map frame) and when it ends (ms of the engine clock).
+static var _shake_strength: float = 0.0
+static var _shake_t0: int = 0
+static var _shake_secs: float = 0.0
+
+
+## B-082 art hook: shakes the map frame by up to `strength` px for `secs` (the strength fades out over it). A no-op for a strength or a
+## time of 0 and under reduce motion (reduce effects, headless): the page that frames the city reads `shake_offset` and adds it.
+static func shake(strength: float, secs: float) -> void:
+	if strength <= 0.0 or secs <= 0.0 or not Motion.animating():
+		return
+	_shake_strength = strength
+	_shake_secs = secs
+	_shake_t0 = Time.get_ticks_msec()
+
+
+## The frame offset (px) of the shake now: Vector2.ZERO when none runs. A fixed pattern of the elapsed time, no RNG.
+static func shake_offset() -> Vector2:
+	if _shake_strength <= 0.0:
+		return Vector2.ZERO
+	var t := float(Time.get_ticks_msec() - _shake_t0) / 1000.0
+	if t >= _shake_secs:
+		_shake_strength = 0.0
+		return Vector2.ZERO
+	var fade := 1.0 - t / _shake_secs
+	return Vector2(sin(t * 83.0), cos(t * 97.0)) * _shake_strength * fade

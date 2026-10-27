@@ -9,9 +9,6 @@ signal segment_hovered(tier: String)
 ## A segment was clicked.
 signal segment_pressed(tier: String)
 
-const GLYPH_MIN_W := 26.0
-const COUNT_PX := 13
-
 var odds: Array = []
 var total: int = 0
 var lit: String = ""
@@ -33,7 +30,7 @@ static func make(p_odds: Array, size_px: Vector2) -> TideOddsBar:
 func words() -> String:
 	var parts := PackedStringArray()
 	for o in odds:
-		parts.append("%d of %d %s" % [int(o["n"]), total, TideGlyphs.tier_word(String(o["tier"]))])
+		parts.append("%d of %d %s" % [int(o["n"]), total, TideFx.tier_word(String(o["tier"]))])
 	return ", ".join(parts)
 
 
@@ -49,24 +46,7 @@ func segments() -> Array[Rect2]:
 
 
 func _draw() -> void:
-	var segs := segments()
-	var f := ThemeDB.fallback_font
-	for i in segs.size():
-		var t := String(odds[i]["tier"])
-		var r := segs[i].grow_individual(-1.0, 0.0, -1.0, 0.0)
-		var col := TideGlyphs.tier_color(t)
-		if t == "BREACHED" or t == TideGlyphs.TIER_CITY_LOST:
-			draw_rect(r, TideGlyphs.BLACK)
-			draw_rect(r, TideGlyphs.RED, false, 2.0)
-		else:
-			draw_rect(r, Color(col, 0.55 if lit == "" or lit == t else 0.25))
-			draw_rect(r, col, false, 2.0 if lit == t else 1.0)
-		var x := r.position.x + 3.0
-		if r.size.x >= GLYPH_MIN_W + 14.0:
-			TideGlyphs.tier(self, Vector2(x + 8.0, r.get_center().y), t, minf(8.0, r.size.y * 0.4), col)
-			x += 19.0
-		if r.size.x >= 14.0:
-			draw_string(f, Vector2(x, r.get_center().y + 5.0), "%d" % int(odds[i]["n"]), HORIZONTAL_ALIGNMENT_LEFT, r.end.x - x, COUNT_PX, TideGlyphs.INK)
+	TideFx.odds_bar(self, odds, segments(), lit)
 
 
 func _segment_at(x: float) -> String:

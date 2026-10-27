@@ -10303,3 +10303,11 @@ H7C; the H7 golden is kept as `solace_raid_golden_h7.json` and reproduces byte f
 - **Open for the designer:** with the auto placement `response_decides` is 0.417, still under the 0.44 target (H7 gave 0.415; the oracle
   measured 0.459 for its skilled planner; the census's oracle placement gives 0.606). The real board keeps fewer live Sites (3.32, from 4.78) because the bot's unguarded hit
   Sites now fall instead of waiting for a repair. The builtin bot ends 27 of 32 campaigns LOST, 3 at the run cap, 2 WON (H7: 26 / 4 / 2).
+
+## B-082: the tide look seam (2026-10-26)
+- `TideGlyphs` is renamed `TideFx` (`scripts/ui/raid/tide_fx.gd`, static functions) and takes every draw call, color, line width, glyph shape,
+  StyleBox builder and font size of the tide raid screen (the layer, the glyph view, the odds bar, the screen). The flow, layout positions, rules calls and
+  signals stay where they were. Pixels unchanged (five scenarios, windowed, diffed 0). Art-pass owns tide_fx.gd and `content/config/tide_look.tres`.
+- New schema `scripts/data/tide_look_data.gd` (`TideLookData`, rule 8; smoke check `_b082_tide_look`) with the look numbers; palette TIDE_* tokens stay in palette.gd.
+- Art hooks: `CityMapCamera.shake(strength, secs)` (static view state, no-op under reduce motion; `shake_offset()` is what the page that frames the city adds)
+  and `TideFx.wash(host, col)` (the CITY LOST overlay uses it). Both default to today's look: the shake strengths are 0 in tide_look.tres.

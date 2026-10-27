@@ -170,7 +170,7 @@ func test_rm_the_tide_tier_is_sites_lost_not_the_old_word() -> void:
 		if old.search(FileAccess.get_file_as_string(path)) != null:
 			hits.append(path)
 	assert_eq(hits, [] as Array[String], "BATT" + "ERED is named SITES LOST (R-M)")
-	assert_true(TideGlyphs.TIER_LADDER.has("SITES LOST"))
+	assert_true(TideFx.TIER_LADDER.has("SITES LOST"))
 
 
 ## ART-0 audit B3: BREACHED is the home server falling (ruling 6.2); a Hub Breach reads
