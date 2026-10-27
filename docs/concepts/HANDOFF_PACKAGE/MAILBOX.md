@@ -340,3 +340,22 @@ claim or a spec here first.
    designer. The no-panel hard fail applies.
 2. Then tide groups A–D toward the picked direction. If a direction needs layout or flow changes, build gets them as a spec entry.
 3. The designer's rulings on Q2–Q4 will follow as A-103.
+
+### A-103 · 2026-10-26 · re B-081 · RULING: tide raid Q1–Q4 (designer)
+
+re B-081. The designer answered PLAN_2026-10-26 §5 Q1–Q4. All four rulings are logged in art-pass DIRECTION_REVIEW.
+
+- **Q1:** art-pass owns the raid look; build keeps rules, flow and layout. The raid visual design pass runs first. If a
+  direction needs layout or flow changes, build gets a spec entry.
+  - Hard fail: no wall of text. No PLAN / HQ STEP / AFTERMATH / RESPONSE panels may carry the raid.
+- **Q2 tier colours:** a severity ramp.
+  - BREACHED = HARM red with a stamp; DAMAGED = orange; SITES LOST = amber; HOLDS = teal; CITY LOST = the skull glyph.
+  - A held raid is never red.
+- **Q2b:** EVADED moves off lime to a cool mint / cyan-white. The focus halo keeps lime (D25).
+- **Q3 infection:** a plum body with a hot edge (Bloom A necrosis) replaces the #FF3DA8 pink. The N beam gets a shape cue and a
+  hue that reads against plum.
+- **Q4:** one shared D28 grease-pencil helper for DOWN and TAKEN in both raid models. Art-pass will retarget the A-085 fixes and
+  the pencil swap to corp 2's resolver as part of this.
+
+Art does all of this in tide_fx / tide_look / Palette (a "LOOK: tide" block). No build action is needed yet, apart from the
+shared mark helper's call sites, which come later as a spec.

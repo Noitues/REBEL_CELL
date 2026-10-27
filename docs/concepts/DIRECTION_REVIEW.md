@@ -1708,3 +1708,16 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     - the AAA-2 highlight clipping (3-8 % above 0.85);
     - the mint agar stays at hue ~147, clear of the HQ lime.
   - Owed with it: the SOLACE GENERAL game-path frame.
+- **Tide raid look (designer, 2026-10-26, PLAN_2026-10-26 §5 Q1–Q4):**
+  - **Q1:** art-pass owns the raid look (cards, raid view, colours, lines, indicators, alerts). Build and the raid lab keep rules,
+    flow and layout. A raid visual design pass (2–3 concept directions on the real Solace territory plus a fresh critic) comes
+    before tide groups A–D.
+    - Vision: a living, vibrant, detailed city street map, like Google Maps seen through a semi-isometric 3D camera.
+    - **Hard fail:** no wall of text. No PLAN / HQ STEP / AFTERMATH / RESPONSE panels carry the raid.
+  - **Q2 tier colours:** a severity ramp.
+    - BREACHED = HARM red with a stamp; DAMAGED = orange; SITES LOST = amber; HOLDS = teal; CITY LOST = the skull glyph.
+    - A held raid is never red (A-085).
+  - **Q2b:** EVADED moves off lime to a cool mint / cyan-white. The focus halo keeps lime game-wide (D25).
+  - **Q3 infection:** the Bloom A necrosis look, a plum body with a hot edge, replaces the #FF3DA8 pink. The N beam (#FF40D6) gets
+    a shape cue and a hue that reads against plum.
+  - **Q4 marks:** one shared D28 grease-pencil helper draws DOWN and TAKEN in both raid models.
