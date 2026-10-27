@@ -1747,3 +1747,13 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     - A's day grade.
   - Keep the hunter eye white; yellow is the E beam alone.
   - Next: render one hybrid concept set for the designer's sign-off before any Godot work. Then tide groups A–D build toward it.
+- **Tide hybrid concept set (designer, 2026-10-27, sheet `tide_raid/H_jack_in_hybrid/sheet.jpg`): not signed off.** The designer:
+  it "is not even close to a polish visual look… at the proof of concept basic stage". Two stages follow, both in art-pass:
+  1. **Settle the concept.** One more concept pass fixes the grammar:
+     - the cold braid: split the tier rails from the tower cyan;
+     - D blue lost at squint;
+     - amber against E yellow;
+     - the busy ram head;
+     - D, N and E shown together.
+  2. **Iterate the visual polish** to true golden plates (AAA finish, critic-scored against real refs) that the Godot run can match
+     for parity. No tide group starts in Godot before the designer approves the plates.
