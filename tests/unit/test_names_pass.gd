@@ -158,6 +158,21 @@ func test_a_control_state_key_is_not_a_raid_word_but_a_raid_outcome_key_is() -> 
 			assert_false(src.contains(dodge), "%s writes the state key plainly, no %s" % [path, dodge])
 
 
+## R-M (designer 2026-10-26): the tide's raid tier is SITES LOST; the old word is gone from player text and from the game's
+## code (scripts/ and the tide tools). The oracle and the older raid labs keep it for their own variants.
+func test_rm_the_tide_tier_is_sites_lost_not_the_old_word() -> void:
+	var old := RegEx.create_from_string("(?i)\\b" + "BATT" + "ERED\\b")
+	var hits: Array[String] = []
+	for s in _csv_strings() + _content_strings():
+		if old.search(s) != null:
+			hits.append(s)
+	for path in _files("res://scripts", ["gd"]) + _files("res://tools/raid_tide", ["gd"]):
+		if old.search(FileAccess.get_file_as_string(path)) != null:
+			hits.append(path)
+	assert_eq(hits, [] as Array[String], "BATT" + "ERED is named SITES LOST (R-M)")
+	assert_true(TideGlyphs.TIER_LADDER.has("SITES LOST"))
+
+
 ## ART-0 audit B3: BREACHED is the home server falling (ruling 6.2); a Hub Breach reads
 ## LOCKDOWN (ART_BIBLE v2 3.3, Appendix C #11) in the combat log and on the hub line.
 func test_a_hub_breach_says_lockdown_not_breached() -> void:

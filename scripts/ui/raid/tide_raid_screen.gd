@@ -569,8 +569,8 @@ func _tierw(t: String) -> String:
 	match t:
 		"HOLDS":
 			return tr("HOLDS")
-		"BATTERED":
-			return tr("BATTERED")
+		"SITES LOST":
+			return tr("SITES LOST")
 		"DAMAGED":
 			return tr("DAMAGED")
 		"BREACHED":
@@ -1534,7 +1534,7 @@ func _guard_line(resp: Array = [TideRaidFlow.HOLD], hot: bool = true) -> Control
 	words.name = "OddsWords"
 	words.text = ", ".join(_odds_phrases(odds))
 	box.add_child(words)
-	# What each tier means, so a tier never reads as a HOME verdict it is not (BATTERED is Sites lost with HOME unharmed).
+	# What each tier means, so a tier never reads as a HOME verdict it is not (SITES LOST is Sites lost with HOME unharmed).
 	for o in odds:
 		var cl := _lab(tr("%s: %s") % [_tierw(String(o["tier"])), _tier_cause(String(o["tier"]))], SMALL, DIM, true)
 		cl.name = "TierCause_%s" % o["tier"]
@@ -1549,7 +1549,7 @@ func _tier_cause(t: String) -> String:
 			return tr("no Site hit, HOME safe")
 		"HOLDS":
 			return tr("HOME safe, at most 1 Site DOWN")
-		"BATTERED":
+		"SITES LOST":
 			return tr("2 or more Sites DOWN or 1 TAKEN, HOME safe")
 		"DAMAGED":
 			return tr("HOME takes damage")
@@ -1941,7 +1941,7 @@ func _page_aftermath() -> void:
 	stamp.add_child(_lab(_tierw(tier_word), 28, TideGlyphs.RED if lost_word else TideGlyphs.tier_color(tier_word), false))
 	body.add_child(stamp)
 	if bool(a["raided"]):
-		# The tier says what was hurt: BATTERED is Sites lost with HOME unharmed, so its cause is spelled out beside HOME's own numbers.
+		# The tier says what was hurt: SITES LOST is Sites lost with HOME unharmed, so its cause is spelled out beside HOME's own numbers.
 		var c: Dictionary = a["counts"]
 		var home_part := tr("HOME safe") if int(a["home_after"]) >= int(a["home_before"]) else tr("HOME %d to %d") % [a["home_before"], a["home_after"]]
 		var cause := _lab(tr("Sites: %d DOWN, %d TAKEN. %s") % [int(c["raid_down"]), int(c["raid_taken"]), home_part], SMALL, DIM)

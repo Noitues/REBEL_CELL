@@ -559,7 +559,7 @@ func _draw_hits() -> void:
 ## DOWN and TAKEN, stamped on their own Sites: a tilted plate under the Site with a bolt (DOWN) or a crack (TAKEN).
 func _collect_stamps() -> void:
 	for id in downs:
-		_stamp(id, "DOWN", Palette.TIDE_BATTERED, "stamp_down")
+		_stamp(id, "DOWN", Palette.TIDE_SITES_LOST, "stamp_down")
 	for id in taken:
 		_stamp(id, "TAKEN", TideGlyphs.RED, "stamp_taken")
 
@@ -595,7 +595,7 @@ func _collect_marks() -> void:
 			continue
 		draw_arc(p, 21.0, 0.0, TAU, 28, TideGlyphs.RED, 3.0)
 		if lone:
-			_add_tag({"kind": "note", "anchor": p, "text": tr("would go DOWN"), "col": Palette.TIDE_BATTERED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
+			_add_tag({"kind": "note", "anchor": p, "text": tr("would go DOWN"), "col": Palette.TIDE_SITES_LOST, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 20.0), "own": true})
 	for id in fc_marks.get("taken", []):
 		var p := at(StringName(String(id)))
 		if p.x == INF:
@@ -608,7 +608,7 @@ func _collect_marks() -> void:
 		if hp.x != INF:
 			var dmg := int(fc_marks.get("home", 0))
 			var hit_sites := not (fc_marks.get("down", []) as Array).is_empty() or not (fc_marks.get("taken", []) as Array).is_empty()
-			var hc: Color = TideGlyphs.RED if dmg > 0 else (Palette.TIDE_BATTERED if hit_sites else TideGlyphs.TIER_COLOR["HOLDS"])
+			var hc: Color = TideGlyphs.RED if dmg > 0 else (Palette.TIDE_SITES_LOST if hit_sites else TideGlyphs.TIER_COLOR["HOLDS"])
 			draw_arc(hp, 28.0, 0.0, TAU, 32, hc, 3.5)
 			_add_tag({"kind": "note", "anchor": hp, "text": forecast_summary(fc_marks), "col": hc, "px": LABEL_PX, "prefer": Vector2(0.0, -46.0), "own": true})
 	var hov: StringName = overlay.hover_id if overlay != null and is_instance_valid(overlay) else &""

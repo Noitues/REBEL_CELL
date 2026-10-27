@@ -1,7 +1,8 @@
 class_name SolaceTideRules
 extends RefCounted
-## The Solace raid, the Infected Tide (H5): the pure rules of SOLACE_RAID_SPEC.md, ported from the oracle
-## tools/raid_concepts/sweep_g1.py (variant H5). No Node, no global randomness: the draws take an RNG stream
+## The Solace raid, the Infected Tide (H7): the pure rules of SOLACE_RAID_SPEC.md, ported from the oracle
+## tools/raid_concepts/sweep_g1.py (variant H7 = H5 + R-I, R-J (H6) + R-K retake TAKEN Sites, R-L sentry shield, R-M the
+## tier SITES LOST). No Node, no global randomness: the draws take an RNG stream
 ## (the campaign's `raids` stream), every number comes from CampaignConfigData (`solace_tide_*` and the existing
 ## Heat, economy and Bloom keys). Static functions over a `SolaceTideBoard` (the graph) and a `SolaceTideState`.
 ##
@@ -31,7 +32,7 @@ const BUILD_COOL := "COOL"
 const TIER_BREACHED := "BREACHED"
 const TIER_DAMAGED := "DAMAGED"
 const TIER_EVADED := "EVADED"
-const TIER_BATTERED := "BATTERED"
+const TIER_SITES_LOST := "SITES LOST"
 const TIER_HOLDS := "HOLDS"
 
 
@@ -635,15 +636,18 @@ static func _others(ctx: Ctx, a: int) -> Array:
 
 
 # ------------------------------------------------------------------------------------------------ SCAN, play
-## SCAN one line: walk the cells in order (skipping the ghost's). A sentry of the line's type blocks and stops it; else
-## the cell's live Site not yet hit is hit (OK -> DOWN, DOWN -> TAKEN, a TAKEN Site loses its sentry) and the beam goes
-## on. A route that reaches HOME hits it once per raid (or the shield stops it) unless the ghost stands there.
+## SCAN one line: walk the cells in order (skipping the ghost's). A sentry of the line's type blocks and stops it (R-L,
+## `solace_tide_sentry_shields`: and shields its Site, which no later beam of this raid hits); else the cell's live Site
+## not yet hit is hit (OK -> DOWN, DOWN -> TAKEN, a TAKEN Site loses its sentry) and the beam goes on. A route that
+## reaches HOME hits it once per raid (or the shield stops it) unless the ghost stands there.
 static func scan(ctx: Ctx, sw: Sweep, ln: Dictionary) -> void:
 	for cell in ln["cells"]:
 		if cell == sw.ghost:
 			continue
 		if sw.sent.has(cell) and ctx.cards[sw.sent[cell]][0] == ln["type"]:
 			sw.touches += 1
+			if ctx.cfg.solace_tide_sentry_shields:
+				sw.seen[cell] = true  # R-L: shielded for the rest of the raid
 			sw.trace.append([sw.beam, String(cell), "block"])
 			return
 		if _live(sw.owned, cell) and not sw.seen.has(cell):
@@ -787,7 +791,7 @@ static func close(ctx: Ctx, st: SolaceTideState, place: Dictionary, sw: Sweep, r
 	return ns
 
 
-## The raid tier: BREACHED (HOME 0), DAMAGED (HOME lower), EVADED (nothing touched, nothing taken), BATTERED (two or
+## The raid tier: BREACHED (HOME 0), DAMAGED (HOME lower), EVADED (nothing touched, nothing taken), SITES LOST (R-M; two or
 ## more Sites newly DOWN or one newly TAKEN), else HOLDS.
 static func tier_of(before: SolaceTideState, after: SolaceTideState, sw: Sweep) -> String:
 	if after.home <= 0:
@@ -805,7 +809,7 @@ static func tier_of(before: SolaceTideState, after: SolaceTideState, sw: Sweep) 
 			new_taken += 1
 	if sw.touches == 0 and new_taken == 0:
 		return TIER_EVADED
-	return TIER_BATTERED if new_down >= 2 or new_taken >= 1 else TIER_HOLDS
+	return TIER_SITES_LOST if new_down >= 2 or new_taken >= 1 else TIER_HOLDS
 
 
 ## After the raid is read: the PURGE raid has fired, and a SACRIFICE sets the gap counter.
@@ -912,7 +916,9 @@ static func install_pending(st: SolaceTideState, cfg: CampaignConfigData) -> voi
 # ------------------------------------------------------------------------------------------------ netrun effects
 ## A completed netrun on `site` (&"" = a patrol run): rack Heat and Schematics of its tier (plus the elites' Heat and the
 ## unspent Cycles the caller passes), the Exploit (Heat again when it is re-taken), the objective's Heat change, and the
-## Site becomes CLEARED (pending). Returns true when a raid Heat level was crossed.
+## Site becomes CLEARED (pending). R-K (`solace_tide_retake_taken`): a TAKEN Site is retaken instead: back OK at once for
+## `solace_tide_retake_heat` more Heat and `solace_tide_retake_schematics` (pending like a claim when the Schematics are
+## short); its INFECTED card stays. Returns true when a raid Heat level was crossed.
 static func netrun_complete(st: SolaceTideState, board: SolaceTideBoard, cfg: CampaignConfigData, site: StringName,
 		extra_heat: int, extra_schematics: int) -> bool:
 	var t := 1 if site == &"" else int(board.tier[site])
@@ -927,7 +933,15 @@ static func netrun_complete(st: SolaceTideState, board: SolaceTideBoard, cfg: Ca
 			st.obj_done.append(site)
 			IdSort.sort_ids(st.obj_done)
 			d += int(board.objective_heat[site])
-		if not st.is_live(site) and not st.pending.has(site):
+		if cfg.solace_tide_retake_taken and int(st.owned.get(site, -1)) == SolaceTideState.Cond.TAKEN:
+			d += cfg.solace_tide_retake_heat
+			if st.schematics >= cfg.solace_tide_retake_schematics:
+				st.schematics -= cfg.solace_tide_retake_schematics
+				st.owned[site] = SolaceTideState.Cond.OK
+			elif not st.pending.has(site):
+				st.pending.append(site)
+				IdSort.sort_ids(st.pending)
+		elif not st.is_live(site) and not st.pending.has(site):
 			st.pending.append(site)
 			IdSort.sort_ids(st.pending)
 	return add_heat(st, d, cfg)

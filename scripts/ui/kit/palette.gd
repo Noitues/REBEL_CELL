@@ -701,10 +701,10 @@ const RING_PLATE_FILL := Color("#0C0A12", 0.95)
 const TIDE_TYPE_D := Color8(92, 225, 255)
 const TIDE_TYPE_N := Color8(255, 64, 214)
 const TIDE_TYPE_E := Color8(255, 140, 26)
-## The five raid tiers (best to worst: EVADED, HOLDS, BATTERED, DAMAGED, BREACHED).
+## The five raid tiers (best to worst: EVADED, HOLDS, SITES LOST, DAMAGED, BREACHED).
 const TIDE_EVADED := Color8(212, 255, 0)
 const TIDE_HOLDS := Color8(63, 224, 176)
-const TIDE_BATTERED := Color8(255, 176, 32)
+const TIDE_SITES_LOST := Color8(255, 176, 32)
 const TIDE_DAMAGED := Color8(255, 61, 77)
 const TIDE_BREACHED := Color8(255, 255, 255)
 const TIDE_INK := Color8(232, 236, 250)

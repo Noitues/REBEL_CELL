@@ -46,10 +46,10 @@ func _ctx(st: SolaceTideState) -> SolaceTideRules.Ctx:
 
 func test_the_odds_count_every_row_worst_tier_first() -> void:
 	var rows: Array = []
-	for t in ["HOLDS", "HOLDS", "BATTERED", "BREACHED", "HOLDS", "EVADED"]:
+	for t in ["HOLDS", "HOLDS", "SITES LOST", "BREACHED", "HOLDS", "EVADED"]:
 		rows.append({"tier": t})
 	var odds := SolaceTideTally.tier_odds(rows)
-	assert_eq(odds.map(func(o: Dictionary) -> String: return String(o["tier"])), ["BREACHED", "BATTERED", "HOLDS", "EVADED"])
+	assert_eq(odds.map(func(o: Dictionary) -> String: return String(o["tier"])), ["BREACHED", "SITES LOST", "HOLDS", "EVADED"])
 	var sum := 0
 	for o in odds:
 		sum += int(o["n"])

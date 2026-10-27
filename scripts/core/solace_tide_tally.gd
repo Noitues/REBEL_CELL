@@ -35,7 +35,7 @@ static func raid_tally(before: int, after: int, sites: int) -> Dictionary:
 
 # ------------------------------------------------------------------------------------------------ Phase 3d: read-only queries
 ## The raid tiers, worst first: the order the odds bar draws them in.
-const TIERS_WORST_FIRST: Array[String] = ["BREACHED", "DAMAGED", "BATTERED", "HOLDS", "EVADED"]
+const TIERS_WORST_FIRST: Array[String] = ["BREACHED", "DAMAGED", "SITES LOST", "HOLDS", "EVADED"]
 
 
 ## The odds of a forecast: how many of its outcome rows end in each tier, worst tier first, tiers with no row left out:

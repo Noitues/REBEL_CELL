@@ -205,7 +205,7 @@ func test_a_tide_raid_applies_to_the_campaign_and_counts() -> void:
 	assert_true(c.corp_theme.solace.tide.raid_n == 0 and not c.corp_theme.solace.tide.decayed)
 	assert_true(events.size() > 0)
 	var tier: String = c.last_raid["tier"]
-	assert_true(["BREACHED", "DAMAGED", "EVADED", "BATTERED", "HOLDS"].has(tier), tier)
+	assert_true(["BREACHED", "DAMAGED", "EVADED", "SITES LOST", "HOLDS"].has(tier), tier)
 
 
 func test_the_tide_raid_is_seeded_and_the_preview_equals_the_result() -> void:
@@ -319,15 +319,16 @@ func test_an_opened_raid_does_not_decay_twice_after_a_save() -> void:
 
 
 # --------------------------------------------------------------------------------------- the raid queue (cadence + Heat)
-func test_the_cadence_queues_a_raid_every_third_netrun_and_a_raid_resets_it() -> void:
+func test_the_cadence_queues_a_raid_every_nth_netrun_and_a_raid_resets_it() -> void:
 	var c := _campaign()
-	for i in 2:
+	assert_eq(_cfg.solace_tide_raid_every, 2, "H7 cadence: a raid every second netrun")
+	for i in _cfg.solace_tide_raid_every - 1:
 		c.runs_completed += 1
 		CampaignRules.on_run_closed(c, _corp, _cfg, _lookup, false)
 		assert_true(c.pending_raids.is_empty(), "netrun %d" % (i + 1))
 	c.runs_completed += 1
 	CampaignRules.on_run_closed(c, _corp, _cfg, _lookup, false)
-	assert_eq(c.pending_raids.size(), 1, "the third netrun queues a raid (solace_tide_raid_every)")
+	assert_eq(c.pending_raids.size(), 1, "the Nth netrun queues a raid (solace_tide_raid_every)")
 	assert_eq(c.pending_raids[0]["model"], "tide")
 	c.runs_completed += 1
 	CampaignRules.on_run_closed(c, _corp, _cfg, _lookup, false)
@@ -434,6 +435,47 @@ func test_a_retake_run_restores_one_exploit_and_pays_its_heat_again() -> void:
 	assert_gt(events.size(), 0)
 	st = SolaceTideCampaign.load_state(c, _corp, _cfg)
 	assert_false(SolaceTideRules.retake_sites(st, board).has(first.id))
+
+
+## H7 (R-K): a reclaim run on a TAKEN Site brings it back claimed OK with the retake node; its INFECTED card stays; the
+## preview (clear_preview) is the result.
+func test_rk_a_reclaim_run_retakes_a_taken_site_claimed_ok() -> void:
+	var cfg: CampaignConfigData = _cfg.duplicate()
+	cfg.solace_tide_retake_node = &"relay"  # GridFixture's node
+	var c := _campaign()
+	var id := _own(c, 1)[0]
+	var s := c.grid.site(id)
+	s["status"] = GridState.SiteStatus.TAKEN  # as SolaceTideCampaign.store_state leaves a Site the tide took
+	s["node_type"] = ""
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, [id])
+	var inf := SolaceTideCampaign.infected_count(c)
+	var site := _corp.city_grid.get_site(id)
+	var ids: Array[StringName] = []
+	for x in CampaignRules.launchable_sites(c, _corp, cfg):
+		ids.append(x.id)
+	assert_true(ids.has(id), "a TAKEN Site is a netrun target")
+	assert_eq(CampaignRules.run_kind_for(c, site), "reclaim")
+	var preview := CampaignRules.clear_preview(c, _corp, cfg, site, _lookup)
+	var heat := c.heat
+	var sch := c.schematics
+	var events := CampaignRules.on_run_completed(c, _corp, cfg, _run(id, "reclaim"), _lookup)
+	assert_true(c.grid.is_claimed(id), "claimed again")
+	assert_eq(c.grid.site(id)["node_type"], "relay")
+	assert_eq(int(c.grid.site(id)["condition"]), GridState.Condition.OK)
+	assert_eq(SolaceTideCampaign.infected_count(c), inf, "the INFECTED card stays")
+	assert_eq(c.heat - heat, cfg.solace_tide_retake_heat)
+	assert_eq(sch - c.schematics, cfg.solace_tide_retake_schematics)
+	assert_true(events.any(func(e: Dictionary) -> bool: return e["type"] == "retaken"))
+	assert_eq(int(preview["heat"]), c.heat - heat, "preview == result (Heat)")
+	var st := SolaceTideCampaign.load_state(c, _corp, cfg)
+	assert_eq(st.owned[id], SolaceTideState.Cond.OK, "the tide sees it live")
+	# the rule off: a reclaim only clears it
+	cfg.solace_tide_retake_taken = false
+	var c2 := _campaign()
+	var id2 := _own(c2, 1)[0]
+	c2.grid.site(id2)["status"] = GridState.SiteStatus.TAKEN
+	CampaignRules.on_run_completed(c2, _corp, cfg, _run(id2, "reclaim"), _lookup)
+	assert_true(c2.grid.is_cleared(id2), "R-K off: cleared, claim it again")
 
 
 # --------------------------------------------------------------------------------------- R-C, CLEAN, R-F

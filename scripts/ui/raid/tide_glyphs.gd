@@ -1,16 +1,16 @@
 class_name TideGlyphs
 extends RefCounted
 ## Phase 3 (Solace Infected Tide raid screen): the wordless glyph set, drawn on any CanvasItem. Ported from the raid lab
-## (L14 to L17 UI): five tier shapes (HOLDS full shield, BATTERED cracked shield, DAMAGED broken heart, BREACHED skull,
+## (L14 to L17 UI): five tier shapes (HOLDS full shield, SITES LOST cracked shield, DAMAGED broken heart, BREACHED skull,
 ## EVADED open eye), the type shapes (D triangle, N square, E circle), the verb glyphs (GUARD shield, SHIFT curved arrow,
 ## JAM zigzag, a wound's crack), the response glyphs and the small HUD icons. Pure drawing: no state, no rules.
 
 const TYPE_COLOR := {"D": Palette.TIDE_TYPE_D, "N": Palette.TIDE_TYPE_N, "E": Palette.TIDE_TYPE_E}
-const TIER_COLOR := {"BREACHED": Palette.TIDE_BREACHED, "DAMAGED": Palette.TIDE_DAMAGED, "BATTERED": Palette.TIDE_BATTERED,
+const TIER_COLOR := {"BREACHED": Palette.TIDE_BREACHED, "DAMAGED": Palette.TIDE_DAMAGED, "SITES LOST": Palette.TIDE_SITES_LOST,
 	"HOLDS": Palette.TIDE_HOLDS, "EVADED": Palette.TIDE_EVADED}
 ## Best first: the raid tier ladder the legend pins.
-const TIER_LADDER: Array[String] = ["EVADED", "HOLDS", "BATTERED", "DAMAGED", "BREACHED"]
-const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "BATTERED": 2, "DAMAGED": 3, "BREACHED": 4}
+const TIER_LADDER: Array[String] = ["EVADED", "HOLDS", "SITES LOST", "DAMAGED", "BREACHED"]
+const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "SITES LOST": 2, "DAMAGED": 3, "BREACHED": 4}
 
 const INK := Palette.TIDE_INK
 const DIM := Palette.TIDE_DIM
@@ -170,7 +170,7 @@ static func tier(cv: CanvasItem, c: Vector2, tier_word: String, r: float, col: C
 			cv.draw_circle(c, r * 0.32, k)
 		"HOLDS":
 			cv.draw_colored_polygon(shield_pts(c, r), k)
-		"BATTERED":
+		"SITES LOST":
 			cv.draw_colored_polygon(shield_pts(c, r), k)
 			cv.draw_polyline(PackedVector2Array([c + Vector2(-r * 0.1, -r * 0.9), c + Vector2(r * 0.25, -r * 0.35), c + Vector2(-r * 0.2, r * 0.1),
 				c + Vector2(r * 0.15, r * 0.55), c + Vector2(0.0, r * 0.9)]), NIGHT, maxf(1.5, r * 0.22))
