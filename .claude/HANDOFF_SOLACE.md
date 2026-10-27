@@ -127,3 +127,38 @@ See "Final state" below.
   build as A-100; wait for build's reply before you lock the footprint.
 - **Next:** implement it in Godot on a new art branch from the latest main. Fix the hot-pink Bloom fill (it should be A Necrosis's
   plum body with a hot edge), the AAA-2 clipping, and include the owed SOLACE GENERAL game-path frame. Send the sheet to art-pass.
+
+## Garden B implementation: PAUSED (2026-10-27)
+The designer paused the Solace roadmap, including this work, until the tide raid concept passes wrap and the plan is reassessed. Resume
+only when art-pass says so. No READY was posted and no A-number was taken.
+- **Brief:** D:/rc_scratch/solace_v1/BRIEF_garden_impl.md (scope, must-fixes, off-limits list, slices). Re-read it, and any new art-pass
+  ruling, before you resume.
+- **Branch:** worktree D:/rc_art/godot_look_hqport, branch art/solace-garden @ 628ba8dd (one WIP commit on main 885975b6). Not for
+  merge. Rebase onto the latest main before you resume, and delete the untracked .uid files that collide with main first.
+- **What 628ba8dd holds (the agent was stopped mid slice 3; nothing is tested or captured):**
+  - Slice 1, the asset, is drafted:
+    - pipeline tools/art_pipeline/city/{culture_garden_spec,build_culture_garden,make_culture_garden,validate_culture_garden}.py;
+    - outputs assets/city/key_buildings/culture_garden/{culture_garden.glb, manifest.json}.
+    - Verify the spires are dropped, the fit to 48 x 42, and that the trays are modular.
+  - Slices 2-3, the look, are drafted:
+    - scripts/city3d/garden_{stage,materials,lights,look}.gd;
+    - shaders/city/garden_{pbr,glass}.gdshader and garden_bloom.gdshaderinc (the garden's own include);
+    - city_view_3d.gd: +93 lines, stage_garden / set_key_buildings / unstage_garden. These are additions only; the Bloom code is untouched.
+      The intended build call is `view3d.set_key_buildings(KeyLots.for_seed(seed, corps, lot_bu))`.
+    - Lab: tools/art_pipeline/garden/garden_lab.{gd,tscn}.
+    - The agent stopped on "GardenLook overrides from the manifest's bloom block", so treat garden_look.gd as unfinished.
+- **Still to do:**
+  - Finish slice 3: the plaza O0-O3, rooms I1-I5, the WORKSHOP alcove at I3, the vault crown target at I5.
+  - Check the must-fixes:
+    - Bloom: a plum body with a hot edge, not a pink fill;
+    - clipping: under 2 % over 0.85, median 0.12-0.15;
+    - agar hue ~147.
+  - Slice 4, captures and the compare sheet: plate | before | after, squint rows, band tables, plus the owed SOLACE GENERAL game-path
+    frame.
+  - Slice 5: the fast-tier test, the manifest entry, the touched tests, the DECISIONS entry "2026-10-27 - LOOK Solace culture garden (B)".
+  - Then the sheet goes to art-pass, and READY only after an explicit APPROVED (take the A-number from MAILBOX.md then).
+- **State at pause:**
+  - No agents running.
+  - No processes of this work left: no Godot or Blender command lines mention hqport or garden.
+  - This work holds no GPU lock.
+  - No capture worktrees were created.
