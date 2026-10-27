@@ -1764,3 +1764,6 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Toolbox on hold (designer, 2026-10-27):** module 18 (perf) and the module 19 README wait until the tide raid design work wraps
   up, because design changes may overtake them. The toolbox commits where it stopped on art/look-toolbox-9 and stops; it posts no
   READY.
+- **Solace roadmap paused (designer, 2026-10-27):** garden B (in progress on art/solace-garden) and the rest of the Solace queue
+  (OURS NOW, the cohesion audit, the key-lot buildings) pause until the tide raid concept passes wrap. The designer then reassesses,
+  because the two lines touch many of the same areas. Solace commits where it stopped and stops; it posts no READY.
