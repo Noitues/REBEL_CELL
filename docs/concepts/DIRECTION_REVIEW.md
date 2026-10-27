@@ -1721,3 +1721,9 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - **Q3 infection:** the Bloom A necrosis look, a plum body with a hot edge, replaces the #FF3DA8 pink. The N beam (#FF40D6) gets
     a shape cue and a hue that reads against plum.
   - **Q4 marks:** one shared D28 grease-pencil helper draws DOWN and TAKEN in both raid models.
+- **Tide raid concept round 1 (designer, 2026-10-27, sheet `tide_raid/compare_sheet.jpg`, critic `tide_raid/CRITIC.md`):**
+  - Not picked. Scores: A Live Nav 38/50 (Vision 8); B ctOS 31/50 (Vision 5); C War Table 38/50 (Vision 4). None fully passed the
+    no-panel test: the sealed and hunter reveals failed in all three.
+  - The designer asked for a second round, one direction with a **circuitry look**, remembering that "this is a cyberpunk world we
+    are hacking". After it, the designer combines the best of all six.
+  - **E beam = signal yellow** (it was orange, which is now DAMAGED). D stays blue, N magenta with a shape cue.
