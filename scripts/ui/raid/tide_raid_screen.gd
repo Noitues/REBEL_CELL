@@ -565,7 +565,7 @@ func _tierw(t: String) -> String:
 		"BREACHED":
 			return tr("BREACHED")
 		"EVADED":
-			return tr("UNTOUCHED")  # the rules' tier word EVADED is a retired player word (N14): the player reads UNTOUCHED
+			return tr("HOLDS")  # the rules' EVADED is folded into HOLDS for the player (designer 2026-10-26)
 		"CITY LOST":
 			return tr("CITY LOST")
 	return t
@@ -1552,7 +1552,7 @@ func _guard_line(resp: Array = [TideRaidFlow.HOLD], hot: bool = true) -> Control
 func _tier_cause(t: String) -> String:
 	match t:
 		"EVADED":
-			return tr("no Site hit, HOME safe")
+			return tr("HOME safe, at most 1 Site DOWN")
 		"HOLDS":
 			return tr("HOME safe, at most 1 Site DOWN")
 		"SITES LOST":
@@ -1985,7 +1985,7 @@ func _aftermath_subline(a: Dictionary, tier_word: String) -> String:
 		"SITES LOST":
 			return tr("HOME holds, but the raid cost Sites.")
 		"EVADED":
-			return tr("HOME holds: nothing was touched.")
+			return tr("HOME holds: at most 1 Site went DOWN.")
 	return tr("HOME holds: at most 1 Site went DOWN.")
 
 

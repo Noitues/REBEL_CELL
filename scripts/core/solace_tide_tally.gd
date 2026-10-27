@@ -35,7 +35,12 @@ static func raid_tally(before: int, after: int, sites: int) -> Dictionary:
 
 # ------------------------------------------------------------------------------------------------ Phase 3d: read-only queries
 ## The raid tiers, worst first: the order the odds bar draws them in.
-const TIERS_WORST_FIRST: Array[String] = ["CITY LOST", "BREACHED", "DAMAGED", "SITES LOST", "HOLDS", "EVADED"]
+const TIERS_WORST_FIRST: Array[String] = ["CITY LOST", "BREACHED", "DAMAGED", "SITES LOST", "HOLDS"]
+
+
+## The tier the player sees: the rules' EVADED (nothing touched) reads as HOLDS (designer 2026-10-26).
+static func shown_tier(tier: String) -> String:
+	return "HOLDS" if tier == "EVADED" else tier
 ## The presentation tier of an outcome that ends the run (the rules' `tier_of` never returns it).
 const TIER_CITY_LOST := "CITY LOST"
 
@@ -46,6 +51,7 @@ static func ladder(rows: Array) -> Array:
 	for r in rows:
 		if not r.has("raid_tier"):
 			r["raid_tier"] = r["tier"]
+		r["tier"] = shown_tier(String(r["tier"]))
 		if (r["result"]["state"] as SolaceTideState).lost != SolaceTideState.LOST_NONE:
 			r["tier"] = TIER_CITY_LOST
 	return rows
@@ -56,7 +62,8 @@ static func ladder(rows: Array) -> Array:
 static func tier_odds(rows: Array) -> Array:
 	var counts := {}
 	for r in rows:
-		counts[String(r["tier"])] = int(counts.get(String(r["tier"]), 0)) + 1
+		var t := shown_tier(String(r["tier"]))
+		counts[t] = int(counts.get(t, 0)) + 1
 	var out: Array = []
 	for t in TIERS_WORST_FIRST:
 		if counts.has(t):

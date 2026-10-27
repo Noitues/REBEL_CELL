@@ -15,8 +15,8 @@ const TIER_COLOR := {"BREACHED": Palette.TIDE_BREACHED, "DAMAGED": Palette.TIDE_
 	"HOLDS": Palette.TIDE_HOLDS, "EVADED": Palette.TIDE_EVADED, "CITY LOST": Palette.TIDE_RED}
 ## Best first: the one outcome ladder the legend pins, the odds bars, the tiles and the aftermath share. CITY LOST (the run ends) is the
 ## presentation tier above BREACHED; the rules' `tier_of` never returns it.
-const TIER_LADDER: Array[String] = ["EVADED", "HOLDS", "SITES LOST", "DAMAGED", "BREACHED", "CITY LOST"]
-const TIER_RANK := {"EVADED": 0, "HOLDS": 1, "SITES LOST": 2, "DAMAGED": 3, "BREACHED": 4, "CITY LOST": 5}
+const TIER_LADDER: Array[String] = ["HOLDS", "SITES LOST", "DAMAGED", "BREACHED", "CITY LOST"]
+const TIER_RANK := {"EVADED": 0, "HOLDS": 0, "SITES LOST": 1, "DAMAGED": 2, "BREACHED": 3, "CITY LOST": 4}
 ## The terminal presentation tier.
 const TIER_CITY_LOST := "CITY LOST"
 
@@ -64,12 +64,12 @@ static func look() -> TideLookData:
 
 ## The color of raid tier `tier`.
 static func tier_color(tier: String) -> Color:
-	return TIER_COLOR.get(tier, INK)
+	return TIER_COLOR.get(SolaceTideTally.shown_tier(tier), INK)
 
 
-## The player's word for raid tier `tier` (the rules' EVADED is read UNTOUCHED).
+## The player's word for raid tier `tier` (the rules' EVADED is read HOLDS).
 static func tier_word(tier: String) -> String:
-	return String(TranslationServer.translate("UNTOUCHED" if tier == "EVADED" else tier))
+	return String(TranslationServer.translate(SolaceTideTally.shown_tier(tier)))
 
 
 ## 0 (best) to 4 (worst).
@@ -187,7 +187,7 @@ static func skull(cv: CanvasItem, c: Vector2, r: float, col: Color, hole: Color)
 static func tier(cv: CanvasItem, c: Vector2, tier_word: String, r: float, col: Color = Palette.CLEAR) -> void:
 	var k := col if col.a > 0.0 else tier_color(tier_word)
 	var w := maxf(2.0, r * 0.3)
-	match tier_word:
+	match SolaceTideTally.shown_tier(tier_word):
 		"EVADED":
 			cv.draw_arc(c + Vector2(0.0, r * 0.55), r, PI * 1.2, PI * 1.8, 12, k, w * 0.6)
 			cv.draw_arc(c - Vector2(0.0, r * 0.55), r, PI * 0.2, PI * 0.8, 12, k, w * 0.6)

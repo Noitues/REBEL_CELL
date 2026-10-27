@@ -49,12 +49,12 @@ func test_the_odds_count_every_row_worst_tier_first() -> void:
 	for t in ["HOLDS", "HOLDS", "SITES LOST", "BREACHED", "HOLDS", "EVADED"]:
 		rows.append({"tier": t})
 	var odds := SolaceTideTally.tier_odds(rows)
-	assert_eq(odds.map(func(o: Dictionary) -> String: return String(o["tier"])), ["BREACHED", "SITES LOST", "HOLDS", "EVADED"])
+	assert_eq(odds.map(func(o: Dictionary) -> String: return String(o["tier"])), ["BREACHED", "SITES LOST", "HOLDS"], "EVADED folds into HOLDS")
+	assert_eq(int(odds[2]["n"]), 4)
 	var sum := 0
 	for o in odds:
 		sum += int(o["n"])
 	assert_eq(sum, rows.size())
-	assert_eq(int(odds[2]["n"]), 3)
 
 
 func test_the_outcome_marks_are_what_the_forecast_rows_do_to_the_board() -> void:
