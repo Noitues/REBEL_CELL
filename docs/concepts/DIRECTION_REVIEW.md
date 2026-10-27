@@ -1767,3 +1767,11 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Solace roadmap paused (designer, 2026-10-27):** garden B (in progress on art/solace-garden) and the rest of the Solace queue
   (OURS NOW, the cohesion audit, the key-lot buildings) pause until the tide raid concept passes wrap. The designer then reassesses,
   because the two lines touch many of the same areas. Solace commits where it stopped and stops; it posts no READY.
+- **Tide hybrid concept pass 2 (designer, 2026-10-27, `tide_raid/H2_jack_in_settle/`, grammar.png):**
+  - **Tier carrier:** on the target only (a tier ring under the Site, a stop block where the beam dies, the intent tile). Beams stay
+    pure type hue. Polish makes the ring and block bolder so the tiers read at a squint.
+  - **Yellow** marks the E type everywhere it answers E (a card tab, the guard wall against E, glyphs), never as a full card fill.
+    Blue for D and magenta for N follow the same rule.
+  - **Heads:** not settled. Run a head-shape exploration (options per type) before polish.
+  - **Tritan:** DAMAGED orange, BREACHED red and the N magenta collide under tritan. Fix this in polish: a yellower DAMAGED and a
+    non-hue cue on the HOME-hit burst.
