@@ -1727,3 +1727,23 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - The designer asked for a second round, one direction with a **circuitry look**, remembering that "this is a cyberpunk world we
     are hacking". After it, the designer combines the best of all six.
   - **E beam = signal yellow** (it was orange, which is now DAMAGED). D stays blue, N magenta with a shape cue.
+- **Tide raid direction (designer, 2026-10-27, sheets `tide_raid/compare_sheet.jpg` and `compare_sheet_r2.jpg`, critic
+  `tide_raid/CRITIC_R2.md`): the hybrid "Jack-in over the Night City".**
+  - Base E Jack-in:
+    - ICE data towers on the Sites only;
+    - black-ICE daemons, used as type-silhouette heads on a single beam body;
+    - E's wordless sealed reveal (a fog corridor and a letter lock that opens into the type silhouette);
+    - E's HUNTER reveal (an eye and a reticle locking one street).
+  - Over F's saturated night grade.
+  - Takes:
+    - from F: the intent tiles, the grease-pencil odds tally at HOME and the wheatpaste verdict poster;
+    - from A: the traffic-coloured route chevrons;
+    - from D: the HOME tick ring with a damage chip, the plum infection with a hot hairline, and the HOME-hit burst;
+    - shield flash with bits.
+  - Drops:
+    - E's blue grade and side bars;
+    - D's decorative copper and analyzer panel;
+    - F's paint-everywhere, outcome strip and legend stack;
+    - A's day grade.
+  - Keep the hunter eye white; yellow is the E beam alone.
+  - Next: render one hybrid concept set for the designer's sign-off before any Godot work. Then tide groups A–D build toward it.
