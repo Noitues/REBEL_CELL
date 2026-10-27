@@ -1785,3 +1785,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Beam heads, round 2 (designer, 2026-10-27, `tide_raid/H4_heads/heads_board.jpg`): still not settled.** The designer prefers a
   **mix across families**, but isn't settled on the icons themselves. Keep iterating. Each type needs a distinct icon and its own
   identity, but the three must share a **cohesive theme**.
+- **Beam heads picked (designer, 2026-10-27, `tide_raid/H5_heads/heads_board.jpg`):**
+  - D = the T2 worm;
+  - N = the T5 thorn claw;
+  - E = the T4 sea-mine / virion, drawn about 15% smaller than N so N and E separate by size;
+  - the 4th unit (bonus) = the T2 beetle.
+  The in-game look follows the **family-test row**: heads at about 40–48 px in the raid (scaled at 1280), with the shared rim light,
+  core dot and outline. Next: one finalise pass to harmonise the four heads into a single language, then the plates take them.
