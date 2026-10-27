@@ -429,7 +429,7 @@ func test_rm_the_sites_lost_tier() -> void:
 	sw.touches = 1
 	assert_eq(SolaceTideRules.tier_of(before, after, sw), "SITES LOST", "R-M: one Site newly TAKEN")
 	assert_eq(SolaceTideRules.TIER_SITES_LOST, "SITES LOST")
-	assert_eq(SolaceTideTally.TIERS_WORST_FIRST[2], "SITES LOST")
+	assert_eq(SolaceTideTally.TIERS_WORST_FIRST[3], "SITES LOST")
 
 
 func test_decay_takes_down_sites_and_infects() -> void:

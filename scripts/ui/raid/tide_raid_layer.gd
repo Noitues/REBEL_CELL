@@ -444,6 +444,15 @@ func _collect_beam_tags() -> void:
 ## Adds a tag to the frame: {kind, anchor (the map point it belongs to), text, col, px, prefer (where the box likes to sit, from the anchor), own
 ## (true: the anchor is a Site, which the box may touch)}.
 func _add_tag(t: Dictionary) -> void:
+	# One label per Site: a state tag (`state` rank: shield 1, HIT 2, DOWN 3, falls 4, TAKEN 5) on a Site that already has one replaces it when it is the same
+	# or a later state, and is dropped when it is an earlier one.
+	if t.has("state"):
+		for i in _tags.size():
+			var o: Dictionary = _tags[i]
+			if o.has("state") and (o["anchor"] as Vector2).distance_to(t["anchor"]) < 1.0:
+				if int(t["state"]) >= int(o["state"]):
+					_tags[i] = t
+				return
 	_tags.append(t)
 
 
@@ -580,22 +589,23 @@ func _collect_stamps() -> void:
 	for id in falls:
 		var p := at(StringName(String(id)))
 		if p.x != INF:
-			_add_tag({"kind": "note", "anchor": p, "text": tr("falls: no sentry"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 22.0), "own": true})
+			_add_tag({"kind": "note", "anchor": p, "text": tr("falls: no sentry"), "col": TideGlyphs.RED, "px": SMALL_PX, "prefer": Vector2(0.0, STAMP_DROP + 22.0), "own": true, "state": 4})
 	for id in shields:
 		var p := at(StringName(String(id)))
 		if p.x != INF:
-			_add_tag({"kind": "note", "anchor": p, "text": tr("SHIELDED"), "col": TideGlyphs.COBALT_HOT, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true})
+			_add_tag({"kind": "note", "anchor": p, "text": tr("SHIELDED"), "col": TideGlyphs.COBALT_HOT, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true, "state": 1})
 	for id in shields_gone:
 		var p := at(StringName(String(id)))
 		if p.x != INF:
-			_add_tag({"kind": "note", "anchor": p, "text": tr("shield gone"), "col": TideGlyphs.DIM, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true})
+			_add_tag({"kind": "note", "anchor": p, "text": tr("shield gone"), "col": TideGlyphs.DIM, "px": SMALL_PX, "prefer": Vector2(0.0, -48.0), "own": true, "state": 1})
 
 
 func _stamp(id: StringName, word: String, col: Color, kind: String) -> void:
 	var p := at(id)
 	if p.x == INF:
 		return
-	_add_tag({"kind": kind, "anchor": p, "text": word, "col": col, "px": STAMP_PX, "icon": 12.0, "prefer": Vector2(0.0, STAMP_DROP), "own": true})
+	_add_tag({"kind": kind, "anchor": p, "text": word, "col": col, "px": STAMP_PX, "icon": 12.0, "prefer": Vector2(0.0, STAMP_DROP), "own": true,
+		"state": 5 if kind == "stamp_taken" else 3})
 
 
 ## The words of the HOME tag for the forecast marks `m` ({down, taken, falls, home}): the Sites that would be hit, then HOME: "2 Sites DOWN, HOME safe".
@@ -680,7 +690,8 @@ func _collect_impact_tags() -> void:
 		var lab := String(im.get("label", ""))
 		if p.x == INF or lab == "":
 			continue
-		_add_tag({"kind": "note", "anchor": p, "text": lab, "col": im["col"], "px": LABEL_PX, "prefer": Vector2(70.0, -30.0), "own": true})
+		_add_tag({"kind": "note", "anchor": p, "text": lab, "col": im["col"], "px": LABEL_PX, "prefer": Vector2(70.0, -30.0), "own": true,
+			"state": 4 if lab.begins_with("FALLS") else 2})
 
 
 func _draw_sentries() -> void:

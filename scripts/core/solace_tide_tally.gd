@@ -35,7 +35,20 @@ static func raid_tally(before: int, after: int, sites: int) -> Dictionary:
 
 # ------------------------------------------------------------------------------------------------ Phase 3d: read-only queries
 ## The raid tiers, worst first: the order the odds bar draws them in.
-const TIERS_WORST_FIRST: Array[String] = ["BREACHED", "DAMAGED", "SITES LOST", "HOLDS", "EVADED"]
+const TIERS_WORST_FIRST: Array[String] = ["CITY LOST", "BREACHED", "DAMAGED", "SITES LOST", "HOLDS", "EVADED"]
+## The presentation tier of an outcome that ends the run (the rules' `tier_of` never returns it).
+const TIER_CITY_LOST := "CITY LOST"
+
+
+## One outcome ladder (presentation only): marks every forecast row whose state ends the run with the tier CITY LOST, the raid's own tier kept in
+## `raid_tier`. Returns `rows` (edited in place; the rules build fresh rows per call). `tier_of` is unchanged.
+static func ladder(rows: Array) -> Array:
+	for r in rows:
+		if not r.has("raid_tier"):
+			r["raid_tier"] = r["tier"]
+		if (r["result"]["state"] as SolaceTideState).lost != SolaceTideState.LOST_NONE:
+			r["tier"] = TIER_CITY_LOST
+	return rows
 
 
 ## The odds of a forecast: how many of its outcome rows end in each tier, worst tier first, tiers with no row left out:
@@ -150,7 +163,7 @@ static func forced_loss(st: SolaceTideState) -> bool:
 
 ## What the next DECAY does to `st` (the state at an HQ step, with the picks applied): runs the real DECAY on a copy. {downs (the DOWN Sites that
 ## fall), added (INFECTED cards net), margin (loss_margin after it), fatal (the city is lost the moment that raid closes, whatever the player does),
-## near (one more INFECTED card after DECAY ends the city)}.
+## near (one more INFECTED card after DECAY ends the city), tally (`decay_tally` of `st`: the whole forecast, DOWN to TAKEN, spread, DOSE)}.
 static func next_decay(st: SolaceTideState, cfg: CampaignConfigData) -> Dictionary:
 	var downs: Array = []
 	for s in st.owned.keys():
@@ -161,4 +174,5 @@ static func next_decay(st: SolaceTideState, cfg: CampaignConfigData) -> Dictiona
 	SolaceTideRules.decay(run, cfg)
 	var margin := SolaceTideRules.loss_margin(run)
 	var fatal := run.lost != SolaceTideState.LOST_NONE or margin == 0
-	return {"downs": downs, "added": run.wound_count() - st.wound_count(), "margin": margin, "fatal": fatal, "near": not fatal and margin == 1}
+	return {"downs": downs, "added": run.wound_count() - st.wound_count(), "margin": margin, "fatal": fatal, "near": not fatal and margin == 1,
+		"tally": decay_tally(st, cfg)}

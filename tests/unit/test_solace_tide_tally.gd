@@ -231,3 +231,27 @@ func test_the_loss_margin_counts_the_cards_that_end_the_city() -> void:
 	SolaceTideRules.add_infected(st, [&"w_x"], false)
 	SolaceTideRules.check_loss(st)
 	assert_eq(st.lost, SolaceTideState.LOST_CITY, "one more INFECTED card ends the city")
+
+
+func test_the_ladder_puts_a_run_ending_row_on_the_city_lost_tier_and_leaves_tier_of_alone() -> void:
+	var live := SolaceTideState.start(_cfg, 50)
+	var dead := live.duplicate_state()
+	dead.lost = SolaceTideState.LOST_CITY
+	var rows: Array = [{"tier": "DAMAGED", "result": {"state": dead}}, {"tier": "HOLDS", "result": {"state": live}}]
+	SolaceTideTally.ladder(rows)
+	assert_eq(rows[0]["tier"], "CITY LOST", "a row that ends the run is CITY LOST, not the raid's own tier")
+	assert_eq(rows[0]["raid_tier"], "DAMAGED", "the raid's tier stays as the subline")
+	assert_eq(rows[1]["tier"], "HOLDS")
+	var odds := SolaceTideTally.tier_odds(rows)
+	assert_eq(odds[0]["tier"], "CITY LOST", "the odds bar draws the worst tier first")
+	assert_eq(TideGlyphs.TIER_LADDER[TideGlyphs.TIER_LADDER.size() - 1], "CITY LOST", "the legend ends on CITY LOST")
+	assert_gt(TideGlyphs.rank("CITY LOST"), TideGlyphs.rank("BREACHED"))
+
+
+func test_the_next_decay_forecast_lists_every_card_it_adds() -> void:
+	for downs in [1, 2, 3]:
+		var st := _state(downs, 2, 0, 1)
+		var t := SolaceTideTally.next_decay(st, _cfg)
+		var d: Dictionary = t["tally"]
+		var sum := int(d["taken"]) + (1 if bool(d["spread"]) else 0) - int(d["cured"])
+		assert_eq(sum, int(t["added"]), "the warning's lines (DOWN to TAKEN, spread, DOSE) add up to its +N: downs %d" % downs)

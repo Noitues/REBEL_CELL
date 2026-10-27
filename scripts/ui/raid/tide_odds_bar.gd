@@ -55,7 +55,7 @@ func _draw() -> void:
 		var t := String(odds[i]["tier"])
 		var r := segs[i].grow_individual(-1.0, 0.0, -1.0, 0.0)
 		var col := TideGlyphs.tier_color(t)
-		if t == "BREACHED":
+		if t == "BREACHED" or t == TideGlyphs.TIER_CITY_LOST:
 			draw_rect(r, TideGlyphs.BLACK)
 			draw_rect(r, TideGlyphs.RED, false, 2.0)
 		else:

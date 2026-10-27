@@ -313,7 +313,8 @@ func test_the_header_shows_the_pending_heat_and_a_placed_card_keeps_its_cost() -
 	screen.card_pressed(picked)
 	screen.site_clicked(sites[0])
 	var face := screen.hand_row.find_child("Card_%s" % picked, true, false) as TideGlyphView
-	assert_eq(face.heat, cost, "a placed card keeps its Heat cost, it does not flip to 0")
+	assert_eq(face.heat, 0, "a card standing guard is free: its badge says 0, not a cost the raid never charges (P1-1)")
+	assert_ne(face.heat, cost)
 	assert_true(flow.raid.st.ghost > 0)
 	screen.ghost()
 	var lab := screen.hud_strip.find_child("HeatLabel", true, false) as Label
@@ -416,14 +417,15 @@ func test_city_lost_is_a_full_screen_moment_over_the_raids_own_tier() -> void:
 	assert_eq(flow.phase, TideRaidFlow.Phase.AFTERMATH)
 	assert_true(screen.city_lost_showing(), "CITY LOST covers the screen")
 	var banner := screen.body.find_child("Banner", true, false) as Label
-	assert_eq(banner.text, "CITY LOST")
 	var stamp := screen.body.find_child("AftermathStamp", true, false)
 	var words := ""
 	for ch in stamp.get_children():
 		if ch is Label:
 			words = (ch as Label).text
-	assert_ne(words, "CITY LOST", "the stamp is the raid's own tier")
-	assert_eq(words, screen._tierw(String(flow.aftermath()["tier"])))
+	assert_eq(words, "CITY LOST", "the headline is the worst thing that happened (P1-3, P1-4)")
+	var raid_tier := String(flow.aftermath()["tier"])
+	if raid_tier != "" and raid_tier != "CITY LOST":
+		assert_true(banner.text.contains(screen._tierw(raid_tier)), "the raid's own tier is the subline: " + banner.text)
 	screen.cont()
 	assert_false(screen.city_lost_showing(), "CONTINUE lets the aftermath go on")
 
@@ -584,6 +586,9 @@ func test_the_hq_step_shows_the_decay_warning_and_the_fix() -> void:
 	screen.flow.phase = TideRaidFlow.Phase.HQ_STEP
 	screen._rebuild()
 	assert_not_null(screen.body.find_child("DecayWarning", true, false), "the HQ step warns that the next DECAY threatens the city")
+	var thr := screen.flow.hq_threat([&"", "", false])
+	var lines := screen.body.find_children("DecayLine", "", true, false)
+	assert_eq(lines.size(), screen._tally_parts(thr["tally"], {}, thr["downs"]).size(), "one line per card DECAY adds or cures (P1-5)")
 	assert_not_null(screen.body.find_child("Fix", true, false), "and marks the way out")
 	screen._hq_repair = ring[0]
 	screen._rebuild()
@@ -607,11 +612,12 @@ func test_the_aftermath_panel_counts_equal_the_map_stamps_and_the_tier_says_its_
 	assert_not_null(all)
 	assert_true(all.text.contains(str(int(c["taken"]))), all.text)
 	assert_not_null(screen.body.find_child("RaidCounts", true, false), "the raid's own count is its own line")
-	var cause := screen.body.find_child("TierCauseLine", true, false) as Label
-	assert_not_null(cause, "the tier is followed by what it hit")
+	var cause := screen.body.find_child("Banner", true, false) as Label
+	assert_not_null(cause, "the headline is followed by a subline that agrees with it")
 	var a := flow.aftermath()
-	if int(a["home_after"]) >= int(a["home_before"]):
-		assert_true(cause.text.contains("HOME safe"), "a tier with no HOME damage says HOME is safe: " + cause.text)
+	if int(a["home_after"]) >= int(a["home_before"]) and String(a["banner"]) != "CITY LOST":
+		assert_true(cause.text.contains("HOME holds"), "a tier with no HOME damage says HOME holds: " + cause.text)
+	assert_false(_all_text(screen.body).contains("CELL HOLDS"), "no second headline under the first (P1-4)")
 
 
 func test_the_forecast_hover_summary_and_the_odds_explain_a_tier_without_home_damage() -> void:
@@ -672,3 +678,110 @@ func test_a_forced_playout_offers_a_keyboard_reachable_skip_to_city_lost() -> vo
 	assert_true(screen._skip, "pressing it ends the playout's waits, so the aftermath's CITY LOST comes next")
 	screen._playing = false
 	screen.flow.forced_run = false
+
+
+## All the label text under `n`.
+func _all_text(n: Node) -> String:
+	var out := ""
+	if n is Label:
+		out += (n as Label).text + "\n"
+	for ch in n.get_children():
+		out += _all_text(ch)
+	return out
+
+
+func test_the_heat_the_header_promises_is_the_heat_the_raid_charges() -> void:
+	var o := await _open_tide(60)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	screen.cont()
+	screen.cont()
+	for h in flow.hand_cards():
+		var sites := flow.placeable_sites()
+		if h["verb"] == "GUARD" and not sites.is_empty():
+			screen.card_pressed(h["id"])
+			screen.site_clicked(sites[0])
+			break
+	screen.ghost()
+	var pend := flow.pending_heat()
+	screen.to_forecast()
+	screen.launch()
+	if flow.phase == TideRaidFlow.Phase.FORECAST:
+		screen.launch()
+	if flow.phase == TideRaidFlow.Phase.REVEAL:
+		flow.reveal_done()
+	flow.commit([TideRaidFlow.HOLD], true)
+	var real := 60 + int(flow.aftermath()["heat_delta"])
+	assert_gte(real, int(pend["lo"]), "the header's Heat is what the raid charged (P1-1): %s vs %d" % [pend, real])
+	assert_lte(real, int(pend["hi"]))
+	flow.playout_done()
+	screen._rebuild()
+	assert_true(_all_text(screen.body).contains("whole raid"), "the aftermath says its Heat is the total")
+
+
+func test_forecast_launch_and_commit_stay_pinned_outside_the_scroll() -> void:
+	var o := await _open_tide(80)
+	var screen: TideRaidScreen = o[1]
+	var flow := screen.flow
+	screen.cont()
+	screen.cont()
+	assert_not_null(screen.foot.find_child("ForecastButton", true, false), "FORECAST is pinned in the foot (P1-2)")
+	assert_null(screen.body.find_child("ForecastButton", true, false))
+	screen.to_forecast()
+	var launch_found := false
+	for b in screen.foot.find_children("*", "Button", true, false):
+		if (b as Button).text.contains("LAUNCH"):
+			launch_found = true
+	assert_true(launch_found, "LAUNCH is pinned in the foot")
+	assert_eq(flow.phase, TideRaidFlow.Phase.FORECAST)
+
+
+func test_the_forced_aftermath_tally_adds_up_and_fits_the_panel() -> void:
+	RunManager.new_campaign(7)
+	var c := RunManager.campaign
+	_own_three(c)
+	c.raids_won = 1
+	var ids: Array = []
+	for i in 12:
+		ids.append(&"t1_a")
+	SolaceTideRules.add_infected(c.corp_theme.solace.tide, ids, false)
+	_pending(c)
+	var hq := _scene()
+	await _frames()
+	if hq.tide_screen == null:
+		hq.show_raid()
+	await _frames()
+	var screen: TideRaidScreen = hq.tide_screen
+	var flow := screen.flow
+	screen.city_falls()
+	await _frames()
+	if flow.phase == TideRaidFlow.Phase.PLAYOUT:
+		flow.playout_done()
+		screen._rebuild()
+	assert_eq(flow.phase, TideRaidFlow.Phase.AFTERMATH)
+	var t := flow.infected_tally()
+	var dsum := 0
+	for p in screen._tally_parts(t["decay"], {}):
+		dsum += int(p["n"])
+	assert_eq(dsum, int(t["mid"]) - int(t["before"]), "DECAY's lines add up to its INFECTED change (P1-7)")
+	var rsum := 0
+	for p in screen._tally_parts({}, t["raid"]):
+		rsum += int(p["n"])
+	assert_eq(rsum, int(t["after"]) - int(t["mid"]), "the raid's lines add up to its INFECTED change: %s" % [t])
+	assert_eq(screen.layer.falls.size(), 0, "the playout's falls labels are cleared at the aftermath (P1-6)")
+	await _frames(4)
+	var scroll := screen.body.get_parent() as ScrollContainer
+	assert_lte(screen.body.get_combined_minimum_size().y, scroll.size.y + 1.0, "the forced aftermath fits without a scroll fold (P1-7)")
+
+
+func test_one_label_per_site_the_newest_state_replaces_the_old() -> void:
+	var layer := TideRaidLayer.new()
+	autofree(layer)
+	var p := Vector2(100, 100)
+	layer._add_tag({"kind": "note", "anchor": p, "text": "HIT: A", "col": Color.RED, "own": true, "state": 2})
+	layer._add_tag({"kind": "stamp_down", "anchor": p, "text": "DOWN", "col": Color.RED, "own": true, "state": 3})
+	layer._add_tag({"kind": "note", "anchor": p, "text": "falls", "col": Color.RED, "own": true, "state": 4})
+	layer._add_tag({"kind": "note", "anchor": p, "text": "SHIELDED", "col": Color.RED, "own": true, "state": 1})
+	layer._add_tag({"kind": "note", "anchor": Vector2(300, 100), "text": "HIT: B", "col": Color.RED, "own": true, "state": 2})
+	assert_eq(layer._tags.size(), 2, "one tag per Site")
+	assert_eq(layer._tags[0]["text"], "falls", "the later state wins and an earlier one never comes back")
