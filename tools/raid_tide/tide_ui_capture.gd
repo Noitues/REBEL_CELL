@@ -180,7 +180,9 @@ func _run() -> void:
 		if flow.phase == TideRaidFlow.Phase.FORECAST:
 			await _shot(p + "_launch_confirm")
 			screen.launch()
-		await _settle()
+		# The REVEAL page holds only for the phase gap, then moves on: shoot it the frame it is built, not after the settle.
+		if flow.phase != TideRaidFlow.Phase.REVEAL:
+			await _settle()
 		await _shot(p + "_reveal_a")
 		for i in PLAYOUT_WAIT_FRAMES:
 			if flow.phase != TideRaidFlow.Phase.REVEAL:
