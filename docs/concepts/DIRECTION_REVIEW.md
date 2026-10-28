@@ -1841,5 +1841,5 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Unit HP = cream lit segments in a dark socket along the unit's arc.
   - Hit = 1-4 red chevrons on the inward edge of each covered sector. A single chevron has no stem; stems appear only on stacks of 2 or more (critic note).
   - Defense: shield = a cyan bracket over the segments, emptied first; armor = a bevelled steel rim cap; sealed = faint whole-ring hatching plus a padlock and a SEALED +2 tag.
-- **Tower slice HP:** use option H's thinner floating bar segments (not A's thick socketed bar), if slice HP is still a concept in E8 (a rules question for build).
+- **Tower slice HP:** option H's thin floating bar with 2 segments. Build confirmed slices keep 2 HP in E8 (3 only if the census needs it): intact / cracked / broken. Breaking a slice loses its ability and drives the scrap star.
 - Raw numbers stay off the board (designer's E8 ruling).
