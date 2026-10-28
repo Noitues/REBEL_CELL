@@ -1814,3 +1814,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   In scope: city materials, lights, post / grade, signage and props, plus the parity tooling. The target is the P2/P3 plates.
   - City layout, gameplay data and generators stay build's. If a look change needs a data or flow change, write it as a spec.
   - The critic returns only for live Godot frames, once parity is close.
+- **Overnight parity bar (designer, 2026-10-27):** "be very critical when comparing godot to the plate and do not settle for
+  anything. Iterate and fix till it looks extremely close and then pass it to the visual critic for their score."
+  - Acceptance: the plate and Godot are indistinguishable at a glance (full size and at 320 px), the per-band metrics are within
+    tolerance, the signature elements are present, and perf is measured.
+  - Only then does a fresh critic score the live frames.
