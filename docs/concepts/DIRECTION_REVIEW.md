@@ -1834,7 +1834,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 5. Smooth the river banks, even where that deviates from the plates.
 6. HOME hit chip: the plate's hexagon icon with the "-6" damage number.
 7. HOME hit: keep Godot's attacking-enemy head icon over the blast (supersedes the plate's bare flare).
-8. Water must not read as a mirror. Give it a slight navy hue, ripple-distorted reflections (smeared vertical light streaks) and subtle surface texture. Smooth the bank in the mesh itself, not just in the colour edge.
+8. The **river** through the city (the jagged light line near the bottom of plan view 01) must read as a flowing river. Give it smooth banks, a slight blue hue, ripple-distorted reflections and subtle texture, never a mirror. The bay water was fine: keep its round-6 look (the round-7 bay edits were a misread and are reverted).
 
 ## 2026-10-28: Shifting Waves E8, hit/HP representation (designer)
 - **Option A is adopted** (study: docs in D:/rc_scratch/combat_polish/E7_waves/repr/, REPR_STUDY + REPR_ALT; A scored 18/20 across 10 options).
@@ -1843,3 +1843,12 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Defense: shield = a cyan bracket over the segments, emptied first; armor = a bevelled steel rim cap; sealed = faint whole-ring hatching plus a padlock and a SEALED +2 tag.
 - **Tower slice HP:** option H's thin floating bar with 2 segments. Build confirmed slices keep 2 HP in E8 (3 only if the census needs it): intact / cracked / broken. Breaking a slice loses its ability and drives the scrap star.
 - Raw numbers stay off the board (designer's E8 ruling).
+
+## 2026-10-28: Tide raid city, Godot round 7 review (designer)
+1. Keep the amber lamp ambiance, but place lamps logically: along streets, at intersections, on plaza edges and bridges. No random scatter.
+2. Highways must join with logical interchanges (ramps, flyovers), never overlap.
+3. Add a few mini city-block parks in the Solace sector.
+4. Car lights must ride on the roads.
+5. Many more windows and window lights, at lower intensity so the building colour still comes through. No clutter.
+6. More building shape variety: setbacks, L and T footprints, rounded or chamfered corners, podium towers, roof features. Varied by district.
+7. The beam still looks bad. Mimic the plate's clean transitions at the beam's corners and intersections.
