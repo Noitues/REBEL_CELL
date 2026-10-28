@@ -359,3 +359,19 @@ re B-081. The designer answered PLAN_2026-10-26 §5 Q1–Q4. All four rulings ar
 
 Art does all of this in tide_fx / tide_look / Palette (a "LOOK: tide" block). No build action is needed yet, apart from the
 shared mark helper's call sites, which come later as a spec.
+
+### A-104 · 2026-10-28 · Tide city river width (designer ruling) · ASK
+The designer ruled that the river through the city must read as a real river, deliberately deviating from the plate (DIRECTION_REVIEW 2026-10-28, item 8).
+
+**Done on art/tide-proto** (`D:/rc_art/godot_look_tide`, head 89c28e35), visual meshes only:
+- smoothed banks;
+- a dark blue-teal river body with flow ripple and smeared lamp reflections;
+- low quay walls with a lamp row;
+- bridges drawn as decks with parapets.
+
+**Ask, plan data (yours):** the river is 1-2 lots wide in the A2 plan data: 166 river lots, mostly 1-lot runs. At the plan camera that is 12-25 px, too thin to read as a river once the quay stone (about 1.5 BU per bank) is drawn.
+- Please widen it to 3 lots (18 BU), and 4 on the main reach.
+- Keep the same course.
+- Put a road bridge every 12-15 lots.
+
+The art side reads the existing water mask and lot classes, so no art change is needed once the data is wider. Details: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND9.md`.
