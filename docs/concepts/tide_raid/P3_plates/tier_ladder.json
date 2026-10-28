@@ -1,0 +1,42 @@
+{
+ "UNTOUCHED": {
+  "inner_luma": 0.592,
+  "band_luma": 0.755,
+  "surround_luma": 0.478,
+  "inner_minus_surround": 0.113,
+  "band_minus_surround": 0.276,
+  "inner_std": 0.093
+ },
+ "HOLDS": {
+  "inner_luma": 0.642,
+  "band_luma": 0.78,
+  "surround_luma": 0.333,
+  "inner_minus_surround": 0.309,
+  "band_minus_surround": 0.447,
+  "inner_std": 0.11
+ },
+ "SITES LOST": {
+  "inner_luma": 0.471,
+  "band_luma": 0.738,
+  "surround_luma": 0.276,
+  "inner_minus_surround": 0.194,
+  "band_minus_surround": 0.462,
+  "inner_std": 0.171
+ },
+ "DAMAGED": {
+  "inner_luma": 0.6,
+  "band_luma": 0.773,
+  "surround_luma": 0.306,
+  "inner_minus_surround": 0.294,
+  "band_minus_surround": 0.468,
+  "inner_std": 0.195
+ },
+ "BREACHED": {
+  "inner_luma": 0.708,
+  "band_luma": 0.666,
+  "surround_luma": 0.31,
+  "inner_minus_surround": 0.398,
+  "band_minus_surround": 0.356,
+  "inner_std": 0.052
+ }
+}

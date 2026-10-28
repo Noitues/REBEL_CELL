@@ -1,0 +1,22 @@
+f = open('p1_final.py').read()
+f = f.replace("""    for b in beats:
+        build(b, ui_on='--noui' not in sys.argv)
+        print('built', b)""", """    for b in beats:
+        build(b, ui_on='--noui' not in sys.argv)
+        print('built', b)
+    import json as _j
+    _f = L.OUT + 'tile_distances_%s.json' % ('_'.join(beats) if len(beats) < 3 else 'all')
+    _j.dump(TILE_LOG, open(_f, 'w'), indent=1)""")
+open('p1_final.py', 'w').write(f)
+b = open('p1_bloom.py').read()
+b = b.replace("def fbm_grid(shape, seed, scales=(64, 24, 9)):", "def fbm_grid(shape, seed, scales=(96, 40, 18)):")
+b = b.replace("wx = GX + warp * 46.0 * spread\n    wz = GZ + fbm_grid((nz, nx), seed + 1) * 46.0 * spread", "wx = GX + warp * 30.0 * spread\n    wz = GZ + fbm_grid((nz, nx), seed + 1) * 30.0 * spread")
+b = b.replace("climb = np.clip(s * 0.9 + 6.0, 0, 62) + (fbm_grid((nz, nx), seed + 2) * 40.0)", "climb = np.clip(s * 0.9 + 6.0, 0, 62) + (fbm_grid((nz, nx), seed + 2) * 14.0)")
+open('p1_bloom.py', 'w').write(b)
+g = open('p1_bl.py').read()
+g = g.replace("vr.inputs['Scale'].default_value = 0.4", "vr.inputs['Scale'].default_value = 0.12")
+g = g.replace("vm = N.new('ShaderNodeMapRange'); vm.inputs[1].default_value = 0.032;", "vm = N.new('ShaderNodeMapRange'); vm.inputs[1].default_value = 0.05;")
+g = g.replace("hl = N.new('ShaderNodeMapRange'); hl.inputs[1].default_value = 0.035;", "hl = N.new('ShaderNodeMapRange'); hl.inputs[1].default_value = 0.02;")
+g = g.replace("cm = N.new('ShaderNodeMapRange'); cm.inputs[1].default_value = 0.9;", "cm = N.new('ShaderNodeMapRange'); cm.inputs[1].default_value = 0.6;")
+open('p1_bl.py', 'w').write(g)
+print(f.count('TILE_LOG'), b.count('96, 40'), g.count('0.12'))

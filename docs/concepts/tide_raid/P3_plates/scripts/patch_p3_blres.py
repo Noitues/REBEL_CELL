@@ -1,0 +1,7 @@
+s = open('p1_bl.py').read()
+s = s.replace("""        cy.samples = max(16, S0 // 3)
+        # P3: ambient""", """        cy.samples = max(16, S0 // 3)
+        scene.render.resolution_percentage = 50     # P3: the ghost layer is the faint see-through copy: half-res (1080p at S=2), upscaled on load (GPU is shared)
+        # P3: ambient""")
+open('p1_bl.py', 'w').write(s)
+print(s.count('resolution_percentage = 50'))

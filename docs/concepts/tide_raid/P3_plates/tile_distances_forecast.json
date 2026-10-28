@@ -1,0 +1,35 @@
+[
+ {
+  "beat": "forecast",
+  "site": "t1_c",
+  "tier": "HOLDS",
+  "dist_px": 55.6,
+  "r": 44,
+  "centre": [
+   507.5,
+   427.5
+  ]
+ },
+ {
+  "beat": "forecast",
+  "site": "t1_b",
+  "tier": "SITES_LOST",
+  "dist_px": 60.5,
+  "r": 44,
+  "centre": [
+   664.5,
+   369.8
+  ]
+ },
+ {
+  "beat": "forecast",
+  "site": "t2_intel",
+  "tier": "UNTOUCHED",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   849.0,
+   329.7
+  ]
+ }
+]

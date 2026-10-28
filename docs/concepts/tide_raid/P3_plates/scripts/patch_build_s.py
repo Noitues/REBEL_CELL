@@ -1,0 +1,12 @@
+s = open('p2_build.py').read()
+s = s.replace("_cache['geo'] = dict(np.load(L.WORK + 'geo.npz'))\n        _cache['sg'] = S.signs(_cache['geo'], np.load(L.WORK + 'recon15.npz')['P'])",
+              "_cache['geo'] = dict(np.load(L.WORK + ('geo.npz' if C.S == 1 else 'geo30.npz')))\n        _cache['sg'] = S.signs(_cache['geo'], np.load(L.WORK + C.REC)['P'])")
+s = s.replace("yy, xx = np.mgrid[0:C.H, 0:C.W].astype(np.float32)\n        hm =", "yy, xx = (np.mgrid[0:C.H, 0:C.W].astype(np.float32) / C.S)\n        hm =")
+open('p2_build.py', 'w').write(s)
+g = open('p2_geo.py').read()
+g = g.replace("W, H = 1920, 1080\n", "import os\nS = int(os.environ.get('P2_S', '1'))\nW, H = 1920 * S, 1080 * S\nREC = 'recon15.npz' if S == 1 else 'recon30.npz'\nGEO = 'geo.npz' if S == 1 else 'geo30.npz'\n", 1)
+g = g.replace("np.load(L.WORK + 'recon15.npz')", "np.load(L.WORK + REC)")
+g = g.replace("np.savez_compressed(L.WORK + 'geo.npz'", "np.savez_compressed(L.WORK + GEO")
+g = g.replace("ndi.gaussian_filter(P[..., i], 0.8)", "ndi.gaussian_filter(P[..., i], 0.8 * S)")
+open('p2_geo.py', 'w').write(g)
+print('ok')

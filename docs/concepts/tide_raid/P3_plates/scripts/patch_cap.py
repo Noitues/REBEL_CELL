@@ -1,0 +1,8 @@
+s = open('p2_build.py').read()
+s = s.replace("refl_k=0.9, e_bloom=0.6, home_bloom=1.0, burn=None):", "refl_k=0.9, e_bloom=0.6, home_bloom=1.0, burn=None, cap_occ=None, cap_spill=None):")
+s = s.replace("    occ = lay['world_occ']; gh = lay['world_ghost']\n", "    occ = lay['world_occ']; gh = lay['world_ghost']\n    if cap_occ:\n        occ = occ.copy(); gh = gh.copy()\n        occ[..., :3] = C.softcap(occ[..., :3], cap_occ, 0.45)\n        gh[..., :3] = C.softcap(gh[..., :3], cap_occ, 0.45)\n    if cap_spill:\n        lay['spill'] = lay['spill'].copy()\n        lay['spill'][..., :3] = C.softcap(lay['spill'][..., :3], cap_spill, 0.4)\n", 1)
+open('p2_build.py', 'w').write(s)
+f = open('p1_final.py').read()
+f = f.replace("OPTS = {'aftermath': {}}", "OPTS = {'impact': dict(cap_occ=1.5, cap_spill=1.2), 'home_hit': dict(cap_occ=1.7, cap_spill=1.4)}")
+open('p1_final.py', 'w').write(f)
+print('ok')

@@ -1,0 +1,24 @@
+[
+ {
+  "beat": "aftermath",
+  "site": "t1_b",
+  "tier": "SITES_LOST",
+  "dist_px": 60.5,
+  "r": 40,
+  "centre": [
+   664.5,
+   369.8
+  ]
+ },
+ {
+  "beat": "aftermath",
+  "site": "t1_c",
+  "tier": "HOLDS",
+  "dist_px": 55.6,
+  "r": 36,
+  "centre": [
+   507.5,
+   427.5
+  ]
+ }
+]

@@ -1,0 +1,7 @@
+s = open('p1_heads.py').read()
+s = s.replace("SIZE = 44\n", "import os\nS = int(os.environ.get('P2_S', '1'))\nSIZE = 44\n", 1)
+s = s.replace("im = sprite(it['typ'], it['ang'], it.get('size', SIZE))", "im = sprite(it['typ'], it['ang'], it.get('size', SIZE) * S)")
+s = s.replace("off = (int(round(it['x'] - im.width / 2)), int(round(it['y'] - im.height / 2)))", "off = (int(round(it['x'] * S - im.width / 2)), int(round(it['y'] * S - im.height / 2)))")
+s = s.replace("        pad = 24\n", "        pad = 24 * S\n")
+open('p1_heads.py', 'w').write(s)
+print('ok')

@@ -1,0 +1,24 @@
+[
+ {
+  "beat": "city_lost",
+  "site": "t1_b",
+  "tier": "SITES_LOST",
+  "dist_px": 60.5,
+  "r": 40,
+  "centre": [
+   664.5,
+   369.8
+  ]
+ },
+ {
+  "beat": "city_lost",
+  "site": "t2_intel",
+  "tier": "SITES_LOST",
+  "dist_px": 56.0,
+  "r": 40,
+  "centre": [
+   849.0,
+   329.7
+  ]
+ }
+]

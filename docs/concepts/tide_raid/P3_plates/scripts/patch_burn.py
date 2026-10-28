@@ -1,0 +1,10 @@
+s = open('p2_press.py').read()
+s = s.replace("        ring = np.clip(1 - np.abs(dd - edge * 0.96) / 4.0, 0, 1) * (n > 0.40)\n        ember = np.maximum(ember, ring)",
+              "        ring = np.clip(1 - np.abs(dd - edge * 0.96) / 6.0, 0, 1) * (n > 0.36)\n        crack = np.clip(1 - np.abs(((n * 9.0) % 1.0) - 0.5) * 9.0, 0, 1) * np.clip((edge * 0.9 - dd) / 8.0, 0, 1)\n        ember = np.maximum(ember, np.maximum(ring, crack * 0.8))\n        smold = np.exp(-(dd / (edge * 0.75)) ** 2) * 0.35\n        glow = np.maximum(glow, smold)")
+s = s.replace("    soot = np.zeros((H, W), np.float32); ember = np.zeros((H, W), np.float32)\n    n = C.noise2(seed + 1, 18)", "    soot = np.zeros((H, W), np.float32); ember = np.zeros((H, W), np.float32); glow = np.zeros((H, W), np.float32)\n    n = C.noise2(seed + 1, 18)")
+s = s.replace("img = img + emb_c[None, None] * (ember * 0.9 * k)[..., None] + emb_c[None, None] * (C.blur(ember, 5) * 1.2 * k)[..., None]", "img = img + emb_c[None, None] * (ember * 1.6 * k)[..., None] + emb_c[None, None] * (C.blur(ember, 5) * 2.2 * k)[..., None] + emb_c[None, None] * (glow * 0.6 * k)[..., None]")
+open('p2_press.py', 'w').write(s)
+f = open('p1_final.py').read()
+f = f.replace("w.sites['t1_a']['B'][1], 46)", "w.sites['t1_a']['B'][1], 62)").replace("w.sites['t1_b']['B'][1], 46)", "w.sites['t1_b']['B'][1], 62)").replace("w.home[1] + 6, 74)", "w.home[1] + 6, 96)")
+open('p1_final.py', 'w').write(f)
+print('ok')

@@ -1,0 +1,13 @@
+s = open('p2_press.py').read()
+s = s.replace("W, H = 1920, 1080\n", "W, H = C.W, C.H\nS = C.S\n", 1)
+s = s.replace("_P = np.load(L.WORK + 'recon15.npz')['P']", "_P = np.load(L.WORK + C.REC)['P']")
+s = s.replace("m = ndi.gaussian_filter(m, 0.8) * k", "m = C.blur(m, 0.8) * k")
+s = s.replace("ndi.gaussian_filter(hair, 3)", "C.blur(hair, 3)")
+s = s.replace("            q = (np.interp(s, cs, p[:, 0]), np.interp(s, cs, p[:, 1]))\n            r = 34 + 14 * (1 - t)\n            d.ellipse([q[0] - r, q[1] - r * 0.8, q[0] + r, q[1] + r * 0.8], fill=int(255 * w))",
+              "            q = (np.interp(s, cs, p[:, 0]) * S, np.interp(s, cs, p[:, 1]) * S)\n            r = (34 + 14 * (1 - t)) * S\n            d.ellipse([q[0] - r, q[1] - r * 0.8, q[0] + r, q[1] + r * 0.8], fill=int(255 * w))")
+s = s.replace("a = ndi.gaussian_filter(a, 16)", "a = C.blur(a, 16)")
+s = s.replace("    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)\n    soot = np.zeros((H, W), np.float32); ember = np.zeros((H, W), np.float32)", "    yy, xx = (np.mgrid[0:H, 0:W].astype(np.float32) / S)\n    soot = np.zeros((H, W), np.float32); ember = np.zeros((H, W), np.float32)")
+s = s.replace("soot = ndi.gaussian_filter(soot, 1.2)", "soot = C.blur(soot, 1.2)")
+s = s.replace("ndi.gaussian_filter(ember, 5)", "C.blur(ember, 5)")
+open('p2_press.py', 'w').write(s)
+print('ok')

@@ -1,0 +1,8 @@
+s = open('p2_build.py').read()
+s = s.replace("shaft_k=0.7, facade_k=1.0):", "shaft_k=0.7, facade_k=1.0, ghost_over=False):")
+s = s.replace("    img = img + ghost_rgb\n    rib_e", "    if ghost_over:       # tier test plate: hidden ground marks keep their ink (an additive ghost cannot darken)\n        img = img * (1 - np.clip(gA * ghost_k, 0, 1))\n    img = img + ghost_rgb\n    rib_e")
+open('p2_build.py', 'w').write(s)
+f = open('p1_final.py').read()
+f = f.replace("OPTS = {'impact':", "OPTS = {'tiers': dict(ghost_over=True), 'impact':")
+open('p1_final.py', 'w').write(f)
+print(s.count('ghost_over'), f.count('ghost_over'))

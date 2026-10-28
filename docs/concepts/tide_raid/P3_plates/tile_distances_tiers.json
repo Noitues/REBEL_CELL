@@ -1,0 +1,57 @@
+[
+ {
+  "beat": "tiers",
+  "site": "t1_a",
+  "tier": "UNTOUCHED",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   451.3,
+   389.9
+  ]
+ },
+ {
+  "beat": "tiers",
+  "site": "t1_d",
+  "tier": "HOLDS",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   600.5,
+   558.9
+  ]
+ },
+ {
+  "beat": "tiers",
+  "site": "t2_virus",
+  "tier": "SITES_LOST",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   887.4,
+   468.2
+  ]
+ },
+ {
+  "beat": "tiers",
+  "site": "t3_c",
+  "tier": "DAMAGED",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   1187.8,
+   371.2
+  ]
+ },
+ {
+  "beat": "tiers",
+  "site": "t3_core",
+  "tier": "BREACHED",
+  "dist_px": 56.0,
+  "r": 44,
+  "centre": [
+   1137.4,
+   247.4
+  ]
+ }
+]
