@@ -1,0 +1,7 @@
+s = open('p2_post.py').read()
+s = s.replace("out = Image.new('RGB', (5 * 252 + 12, 190 + 6 * 40 + 70), (8, 6, 20))", "out = Image.new('RGB', (5 * 252 + 12, 700), (8, 6, 20))")
+s = s.replace("box = (int(cx - 30), int(cy - 44), int(cx + 30), int(cy + 12))", "box = (int(cx - 30), int(cy - 34), int(cx + 30), int(cy + 10))")
+s = s.replace("c = g320.crop(box).resize((246, 226), Image.NEAREST).convert('RGB')", "c = g320.crop(box).resize((246, 180), Image.NEAREST).convert('RGB')")
+s = s.replace("d.text((10 + i * 252, y0 + 230), name,", "d.text((10 + i * 252, y0 + 186), name,")
+s = s.replace("out = out.crop((0, 0, out.width, y0 + 256))", "out = out.crop((0, 0, out.width, y0 + 212))")
+open('p2_post.py', 'w').write(s)

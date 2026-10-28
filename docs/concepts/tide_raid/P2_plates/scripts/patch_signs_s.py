@@ -1,0 +1,7 @@
+s = open('p2_signs.py').read()
+s = s.replace("import p1lib as L\n\nW, H = 1920, 1080\n", "import p1lib as L\nimport p1_comp as C\n\nW, H = C.W, C.H\nS = C.S\n", 1)
+s = s.replace("m = ndi.binary_opening(m, iterations=1)", "m = ndi.binary_opening(m, iterations=S)")
+s = s.replace("if area < 700:", "if area < 700 * S * S:")
+s = s.replace("area=area, cx=float(cx + sl[1].start), cy=float(cy + sl[0].start), mask=(lab == i)))", "area=area / (S * S), cx=float(cx + sl[1].start) / S, cy=float(cy + sl[0].start) / S, mask=(lab == i)))")
+open('p2_signs.py', 'w').write(s)
+print('ok')
