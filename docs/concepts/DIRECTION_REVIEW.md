@@ -1880,3 +1880,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
    - cool white or cyan LED is the second voice;
    - magenta, pink, violet and blue signage clusters at commercial hotspots (Times Square / Shinjuku style), not spread evenly.
 7. **Contrast:** deep near-black darks between bright lines. Optionally, low haze glows over the densest districts.
+- **Cyberpunk colour refs (designer, second set):** Shibuya aerial, Shinjuku street trails, two wet neon streets; local copies `cp_*` in D:/rc_scratch/g1/refs_night.
+  - **The Shibuya aerial is the closest match to our camera.** Its colour comes from the facades: giant screens and billboards are saturated rectangles (cyan, magenta, green, orange) on the building faces and roofs. Sign spill tints the bodies (pink, cream, teal).
+  - Crossings and plazas in the hotspot are bright white or amber. Trees are dark green, lit from below.
+  - **Palette:** deep blue-black sky and shadow; cyan/teal plus magenta/pink as the neon pair; amber sodium and orange/red tail-light trails; white headlights; green accents.
+  - **Wet streets in the hotspots** reflect the neon as long vertical colour streaks. That fits our rain, but only in the neon districts. Elsewhere the streets stay amber and dark.
+  - Apply the signage colour as facade screens and spill in 1-2 hotspots per district. The rest of the city follows the night-light guide above.
