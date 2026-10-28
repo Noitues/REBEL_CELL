@@ -246,7 +246,8 @@ Reference: `round41_wheel_stack/combat_typical_v4.png`, `combat_worst_case_v4.pn
   off with a cloth wipe (never an alpha fade); a refused click re-scribbles it once (T1, 0.25 s).
   No NUDGE LOCKED words and no refusal toast. UNDO keeps its grey lock tick. No UI covers the slash.
 - The **CELL-9 // CLASS** name sticker sits just above the RAM readout, bottom left.
-- **No forecast tags, no NEXT plates.** Beside each HP value sits this turn's result if SEND IT is
+- **No forecast tags, no NEXT plates** (except on a ring wheel with a printed schedule, such as Shifting
+  Waves: see §3.22). Beside each HP value sits this turn's result if SEND IT is
   pressed now, in this order:
   `[final damage]` (red, boxed) `(N shield)` (blue, absorbed, no box) `+N shield` (green)
   `−N <icon>` (other losses, e.g. RAM) `<status icons ×N>`.
@@ -704,6 +705,86 @@ Rules:
 
 The worst case (2 drones + parasite + status on every slice of both wheels, inner ring populated)
 fits at 0 % off-screen with no HUD covered (`combat_worst_case_v4.png`).
+
+### 3.22 Ring-wheel combat: Shifting Waves "converged" look (LOCKED as front runner, designer 2026-10-28)
+Reference: `docs/concepts/combat_bible_test/converged/` (p1_decide, p2_preview, p3_resolve,
+compare_converged.jpg, e7_readiness.jpg); full draft in its `BIBLE_AMENDMENTS.md`.
+The concept keeps **one board**: the player's code-base wheel in the centre and the wave rings around it.
+Everything on it is drawn in this bible's media (1.2): family-C CRT slices and ring cells, the D4 frame,
+vinyl cards, CRT plates, grease pencil only for the player's plan. **Spinner only:** no table or grid may
+restate the wheel's sectors anywhere on the screen (designer ruling, PL7).
+- **Camera and frame:**
+  - Top-down, so the rings are concentric.
+  - One D4 frame scaled up to outer r ≈ 460 at 1080p, with the code-base slices at r ≥ 170.
+  - Rings are radially aligned with the player's slices, so a sector is one radial strip.
+  - Sector digits 0–5 are engraved in the bezel; the needle is sector 0.
+- **Ring depth, four ways, never colour alone:**
+  - concentric position;
+  - the lane style on the cell border: now = solid red 4 px, +1 = solid pink 3 px, +2 = dashed pale 3 px;
+  - the same lane style on the unit token base;
+  - the words `NOW` / `+1` / `+2` in the ring gutter.
+  - An empty cell is dark glass with a 30 % lane border.
+- **Units:**
+  - Each unit is a family-C cell showing the unit's programme screen in the owning corp's bezel.
+  - Read order along the cell is `[token][was][value][HP][arrival]`.
+    - Token: the glyph on a disc of at least 54 px, programme colour, lane-style border.
+    - `was`: the struck old value, only on a wounded unit.
+    - Value: Anton 36.
+    - HP: a plate glyph and number.
+    - Arrival: an arrow and a sector digit (back rings only).
+  - A wound is written in one form everywhere: `24→10`.
+  - **Wide units:** a unit spanning several sectors is ONE stretched cell, up to the full span (a ring).
+    Every slice it covers gets threat trim.
+  - **Enemy forms:** an enemy type may be a unit, a satellite on the rim, or a whole ring. The boss
+    (e.g. the Adjuster) can take any of these forms and must read as the boss in each (skull glyph,
+    corp bezel, its own plate on the right).
+- **Unit glyphs (twin check required):** Packet = square with an arrow, Worm = zigzag, Jammer = ring
+  with a slash, Payload = diamond with two bars, Adjuster = skull. White silhouette with an ink outline (3.5).
+- **Threat trim and slice states:**
+  - The slice colour stays the slice TYPE (2.3).
+  - A slice hit this turn gets a solid `HARM` LED arc on its outer edge; one hit next turn gets a
+    dashed pink arc. A number always goes with it.
+  - `HOLDS 1` (a shield that blocks and survives at 1 HP) is an amber `9>1` badge plus the word HOLDS.
+  - `BROKEN` is a red `6>0` badge, red hatch while previewed, then black-out with a red X, plus the
+    word BROKEN. The two states never share a colour or a word.
+  - `FIREWALL` mark: an orange hatched wedge with a flame glyph and a `-4` pop per unit burned.
+- **Schedule bezel** (in place of the readout rail for a printed schedule):
+  - One bezel cell per printed step, running clockwise from the needle; arc length = step × 60°.
+  - Chevrons point in the direction of travel.
+  - Text runs along the arc, Share Tech Mono at least 16 px: `+2 THIS TURN`, `+1 THEN`, `HOLD` for 0.
+    Text on the lower half is flipped so it reads left to right.
+  - **Rail rule, everywhere:** rail or bezel text must be at least 16 px at 1080p; otherwise it moves
+    to chips or cells.
+- **Bill (right column, top to bottom):**
+  1. Title plate.
+  2. The **YOU** bill as the single hero box: the HP chips, then one mono closure line with the
+     sim's own numbers, e.g. `62 RAW - 10 SHOT DOWN = 52 = 33 THROUGH + 19 ABSORBED`. Riders and
+     shot-down units are always in the equation. Never show a raw figure before the gun phase it
+     does not survive.
+  3. **NEXT** rows: the same chips for next turn if nothing more is played.
+  4. The boss plate with its range track.
+  5. The RAM / Trace terminal.
+  - The hand sits bottom right, with SEND IT overlapping its last card. The CELL-9 sticker is bottom left.
+- **Card-play preview for wave cards:**
+  - Previews show on the schedule bezel, the NEXT rows and the units' arrival digits. Ghosts carry a
+    number only (ghost rim chips per sector), never ghost cells.
+  - An option card (Twist +1 / -1) splits NEXT into one row per option, with the hovered one outlined
+    in yellow. If this turn is unchanged, say so in one mono line.
+  - The player's plan or a hovered unit's path is the only grease pencil: yellow, 7 px with an ink
+    edge, through the cell centres to the slice it hits, with one CRT tag. Other units dim to 38 %.
+- **Default fire:** gun-target tracers on the decide state show each gun's default target and its
+  number; an idle gun says `NO TARGET`.
+- **Clutter budget:** at most 12 loose chips on the board at rest. Sector digits and the schedule are
+  bezel engravings; unit HP and arrival are cell text, not chips.
+- **Waves beyond the rim (E7, illustrative):**
+  - One concentric arc per printed wave outside the bezel, with a `W<n>` tab and unit pips.
+  - The climax wave is the outermost arc, in HARM red with hazard stripes.
+  - A `WAVES N LEFT` CRT plate with N pips.
+  - A Trigger pierce is the player's plan: yellow pencil along the sector, with an X on each unit pierced.
+- **Open:** nudge may be reconsidered in this combat (designer 2026-10-28). Draw no nudge buttons on
+  the ring wheel until build settles it.
+- **Known weak spots to fix next:** ring-0 threat cells are too dark at 320 px (borrow brightness
+  from the E5 plates), and the resolve plate is dense.
 
 ---
 
