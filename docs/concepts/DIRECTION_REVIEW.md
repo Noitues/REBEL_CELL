@@ -1834,3 +1834,12 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 5. Smooth the river banks, even where that deviates from the plates.
 6. HOME hit chip: the plate's hexagon icon with the "-6" damage number.
 7. HOME hit: keep Godot's attacking-enemy head icon over the blast (supersedes the plate's bare flare).
+8. Water must not read as a mirror. Give it a slight navy hue, ripple-distorted reflections (smeared vertical light streaks) and subtle surface texture. Smooth the bank in the mesh itself, not just in the colour edge.
+
+## 2026-10-28: Shifting Waves E8, hit/HP representation (designer)
+- **Option A is adopted** (study: docs in D:/rc_scratch/combat_polish/E7_waves/repr/, REPR_STUDY + REPR_ALT; A scored 18/20 across 10 options).
+  - Unit HP = cream lit segments in a dark socket along the unit's arc.
+  - Hit = 1-4 red chevrons on the inward edge of each covered sector. A single chevron has no stem; stems appear only on stacks of 2 or more (critic note).
+  - Defense: shield = a cyan bracket over the segments, emptied first; armor = a bevelled steel rim cap; sealed = faint whole-ring hatching plus a padlock and a SEALED +2 tag.
+- **Tower slice HP:** use option H's thinner floating bar segments (not A's thick socketed bar), if slice HP is still a concept in E8 (a rules question for build).
+- Raw numbers stay off the board (designer's E8 ruling).
