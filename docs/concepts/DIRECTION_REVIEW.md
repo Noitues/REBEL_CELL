@@ -1809,3 +1809,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   2. **A real-time Godot prototype** of the daemon travel and the HOME hit. It lives only in the art-owned tide_fx.gd / tide_look.tres
      (plus the grid Bloom front API and a lab capture scene), on an art branch, with no rules or flow code. Its captures become the
      true motion reference and prove the plates can be built.
+- **Godot must look like the plates (designer, 2026-10-27):** the critic is skipped on the prototype. Art-pass may **build new tools
+  and challenge the current Godot city build** on the art branch (art/tide-proto in D:/rc_art/godot_look_tide, separate from main).
+  In scope: city materials, lights, post / grade, signage and props, plus the parity tooling. The target is the P2/P3 plates.
+  - City layout, gameplay data and generators stay build's. If a look change needs a data or flow change, write it as a spec.
+  - The critic returns only for live Godot frames, once parity is close.
