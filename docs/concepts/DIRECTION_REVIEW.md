@@ -1863,3 +1863,20 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 2. Give each streetlight a seeded random intensity for variation.
 3. No lights along the river (quay lamp row removed).
 4. No pink in the gardens: remove the bloom domes and the plum park-edge glow; parks are green only. This supersedes the earlier "magenta blooms" direction, which came from the plate.
+
+## 2026-10-28: Tide raid city, night-light guide from the designer's real-city refs
+The refs are NYC aerials and Tokyo river and highway shots; local copies are in D:/rc_scratch/g1/refs_night. They guide the light only. The designer wants MORE building colour than these photos show.
+1. **Light lives on the street network.** From altitude, streetlights merge into continuous amber lines along the streets, not separate dots or pools. Main avenues are brighter and wider than side streets, and the street grid is the brightest pattern in the city.
+2. **Highways glow from traffic, not lamps.** They read as warm orange or red ribbons, from sodium deck light and tail-light streams, with white headlight streams in the other direction. Interchanges are bright tangles of these ribbons.
+3. **Open areas are dark voids.** Parks are near-black, like Central Park, with at most a faint path line. Plazas and vacant ground stay dark.
+4. **Water is black.** It shows only smeared reflections of the lit shore and bridges. Bridges read as strings of lights along the span. There are no lamp rows along the banks.
+5. **Buildings:**
+   - windows are tiny, dense points;
+   - light concentrates at street level (storefront glow at the base);
+   - upper floors are sparser;
+   - tall towers carry accent lighting (lit crowns, cyan or white LED edges).
+6. **Colour mix:**
+   - warm sodium amber is the base;
+   - cool white or cyan LED is the second voice;
+   - magenta, pink, violet and blue signage clusters at commercial hotspots (Times Square / Shinjuku style), not spread evenly.
+7. **Contrast:** deep near-black darks between bright lines. Optionally, low haze glows over the densest districts.
