@@ -1857,3 +1857,9 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - The big "lands → through" pair stays as digits: the one exception to "no raw numbers". The option chips' lands > through pair counts as the same quantity. Every other count stays as marks and tallies, with digits only on hover.
 - Pink is reserved for unit screens only (designer): the CELL-9 sticker and code-base frame are cyan, SEND IT is yellow and the lane is pale blue. Recorded in ART_BIBLE §3.22.
 - PL10 conflict resolved: keep pink for unit screens, but darken or desaturate the unit bodies so the red chevrons pop.
+
+## 2026-10-28: Tide raid city, round 9 review (designer)
+1. Still too many lights in open areas: cut the lamps around open ground, so open ground reads dark.
+2. Give each streetlight a seeded random intensity for variation.
+3. No lights along the river (quay lamp row removed).
+4. No pink in the gardens: remove the bloom domes and the plum park-edge glow; parks are green only. This supersedes the earlier "magenta blooms" direction, which came from the plate.
