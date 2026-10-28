@@ -1819,3 +1819,8 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
   - Acceptance: the plate and Godot are indistinguishable at a glance (full size and at 320 px), the per-band metrics are within
     tolerance, the signature elements are present, and perf is measured.
   - Only then does a fresh critic score the live frames.
+
+## 2026-10-28: Waves converged study, designer answers
+- **Adjuster / enemy types:** an enemy type can be a unit, a satellite or a ring. The Adjuster is ultimately the boss of the wave fight and may affect other enemies and the battlefield. Art must give the boss a look that works in all three forms (unit cell, rim satellite, whole ring).
+- **Wide units:** units may stretch across sectors, up to the full sector span, which makes the unit a ring. One stretched cell is the drawing rule.
+- **Nudge:** it may be reconsidered in the new combat approach (a rules question for build). Art does not draw nudge buttons for Waves until it is settled.
