@@ -1825,3 +1825,12 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - **Wide units:** units may stretch across sectors, up to the full sector span, which makes the unit a ring. One stretched cell is the drawing rule.
 - **Nudge:** it may be reconsidered in the new combat approach (a rules question for build). Art does not draw nudge buttons for Waves until it is settled.
 - **Converged look adopted (designer, 2026-10-28):** "converged look is the primary front runner, use it". Shifting Waves uses the converged single board drawn in the ART_BIBLE's media. ART_BIBLE §3.22 was added with the ring-wheel rules (from the converged study's amendments, reworded for the PL7 lessons), and the §3.1 "no forecast tags" bullet now carries the ring-wheel exception. All E7 plates use this look.
+
+## 2026-10-28: Tide raid, Godot vs plate review (designer)
+1. The live beam must be one blended ribbon, not overlapping segments.
+2. The plates' shadows read deeper than Godot's. Godot gets runtime AO and sky visibility from the city height field.
+3. **No cage around the HQ** (agrees with Godot). Remove the green cage from the golden plates and the STYLE_CONTRACT.
+4. Bug: roads show through buildings in Godot. Fix the occlusion.
+5. Smooth the river banks, even where that deviates from the plates.
+6. HOME hit chip: the plate's hexagon icon with the "-6" damage number.
+7. HOME hit: keep Godot's attacking-enemy head icon over the blast (supersedes the plate's bare flare).
