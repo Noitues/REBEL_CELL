@@ -792,7 +792,7 @@ restate the wheel's sectors anywhere on the screen (designer ruling, PL7).
   - Tower slices use H's thin bar, 2 segments.
   - No raw digits on the board, with one exception: the big `lands → through` pair, and the
     option chips' same pair. Every other count is a tally, and digits show on hover.
-  - **Pink has one job: unit screens.** This overrides the pink lane and stickers on this
+  - **Pink has one job: unit screens**, darkened or desaturated so the red chevrons pop (designer, PL10). This overrides the pink lane and stickers on this
     screen. The CELL-9 sticker and the code-base frame are cyan, SEND IT is yellow, the lane / next-turn
     trim is pale blue, and the rider is lavender.
 
