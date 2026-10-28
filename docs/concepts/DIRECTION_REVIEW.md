@@ -1845,7 +1845,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 - Raw numbers stay off the board (designer's E8 ruling).
 
 ## 2026-10-28: Tide raid city, Godot round 7 review (designer)
-1. Keep the amber lamp ambiance, but place lamps logically: along streets, at intersections, on plaza edges and bridges. No random scatter. No streetlights along highways.
+1. Keep the amber lamp ambiance, but place lamps logically: along streets, at intersections, on plaza edges and bridges. No random scatter. No streetlights along highways. If the lamps become too much, shrink them (glow and pool) rather than thinning them: keep the density.
 2. Highways must join with logical interchanges (ramps, flyovers), never overlap.
 3. Add a few mini city-block parks in the Solace sector.
 4. Car lights must ride on the roads.
