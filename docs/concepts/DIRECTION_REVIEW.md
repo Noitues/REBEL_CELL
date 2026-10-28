@@ -1855,4 +1855,4 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 
 ## 2026-10-28: Shifting Waves E9 (designer)
 - The big "lands → through" pair stays as digits: the one exception to "no raw numbers". The option chips' lands > through pair counts as the same quantity. Every other count stays as marks and tallies, with digits only on hover.
-- Open: pink reserved for unit screens only (the CELL-9 sticker and code-base frame cyan, SEND IT yellow, the lane pale blue) is a proposed bible deviation, awaiting a ruling.
+- Pink is reserved for unit screens only (designer): the CELL-9 sticker and code-base frame are cyan, SEND IT is yellow and the lane is pale blue. Recorded in ART_BIBLE §3.22.

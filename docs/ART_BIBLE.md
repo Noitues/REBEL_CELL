@@ -785,6 +785,16 @@ restate the wheel's sectors anywhere on the screen (designer ruling, PL7).
   the ring wheel until build settles it.
 - **Known weak spots to fix next:** ring-0 threat cells are too dark at 320 px (borrow brightness
   from the E5 plates), and the resolve plate is dense.
+- **E8/E9 display, designer 2026-10-28:**
+  - Units use display A: cream HP segments, and 1-4 red chevrons per covered sector (no stem on a single chevron).
+  - Defences: shield is a cyan bracket; armour is a steel rim cap; Brace is a cream clamp plate on the slice.
+  - Soak is orange chevrons on the marked slices.
+  - Tower slices use H's thin bar, 2 segments.
+  - No raw digits on the board, with one exception: the big `lands → through` pair, and the
+    option chips' same pair. Every other count is a tally, and digits show on hover.
+  - **Pink has one job: unit screens.** This overrides the pink lane and stickers on this
+    screen. The CELL-9 sticker and the code-base frame are cyan, SEND IT is yellow, the lane / next-turn
+    trim is pale blue, and the rider is lavender.
 
 ---
 
