@@ -1852,3 +1852,7 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
 5. Many more windows and window lights, at lower intensity so the building colour still comes through. No clutter.
 6. More building shape variety: setbacks, L and T footprints, rounded or chamfered corners, podium towers, roof features. Varied by district.
 7. The beam still looks bad. Mimic the plate's clean transitions at the beam's corners and intersections.
+
+## 2026-10-28: Shifting Waves E9 (designer)
+- The big "lands → through" pair stays as digits: the one exception to "no raw numbers". The option chips' lands > through pair counts as the same quantity. Every other count stays as marks and tallies, with digits only on hover.
+- Open: pink reserved for unit screens only (the CELL-9 sticker and code-base frame cyan, SEND IT yellow, the lane pale blue) is a proposed bible deviation, awaiting a ruling.
