@@ -1802,3 +1802,10 @@ Concept rounds 1-5 in `solace_vertical/district/` (sheets `sheet.jpg`, `sheet_r2
     by value and shape. Every tier must stay distinct at 320 px in greyscale.
   - **Iteration 2: go.** It runs the critic's top 10 on one shared base: the P1 plate, the H6 heads and the palette. The plates,
     motion and interactivity must all match, and the next critic views every plate and real MP4 frames.
+- **Tide polish iter 2 (designer, 2026-10-27, critic `tide_raid/CRITIC_P2.md`: whole S8 V8 R8 M8 W8, plates S9 W9).** Iteration 3
+  runs two tracks:
+  1. **Plates:** the critic's top 10, including the tier-tile anchor bug, tiers that survive at 320 px, hero light shafts, declutter,
+     the lock glyphs in 03, a quieter cage and hidden ambient ground marks.
+  2. **A real-time Godot prototype** of the daemon travel and the HOME hit. It lives only in the art-owned tide_fx.gd / tide_look.tres
+     (plus the grid Bloom front API and a lab capture scene), on an art branch, with no rules or flow code. Its captures become the
+     true motion reference and prove the plates can be built.
