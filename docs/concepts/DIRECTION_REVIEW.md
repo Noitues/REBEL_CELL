@@ -1964,3 +1964,12 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - The teal district reads blue-white, so its value comes down.
   - White towers go down to 8 in the plan frame.
   - The magenta low-rise district is toned down 20 %, so it doesn't fight the neon.
+- Critic on r20: 30/50 (review: D:/rc_tmp/visual_critic/city_r20/REVIEW.md). The rail pole is gone, but removing the glow plane lost r19's warm highway read.
+- ART CALL 20 (round 21):
+  - **Highways:** restore r19's warm highway ribbons from vehicle light only. Wide warm tail-light and headlight streams with bloom, no flat glow plane, no lamps.
+  - **Core zones:** 3-4 value and temperature zones that survive the squint. Enlarge the amber district toward the lower left as on the plate, keep dark seams at 6-8 %, and lower the base window gain rather than the exposure to raise structure.
+  - **White towers:** clearly brighter than their neighbours.
+  - **Roof outlines:** on under 15 % of roofs.
+  - **Magenta and violet low-rise blocks:** more varied footprints.
+  - **Hotspots:** narrow wet streaks under them.
+  - **Seed-3 campus towers:** lit pavilion roofs.
