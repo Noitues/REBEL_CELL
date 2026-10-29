@@ -375,3 +375,15 @@ The designer ruled that the river through the city must read as a real river, de
 - Put a road bridge every 12-15 lots.
 
 The art side reads the existing water mask and lot classes, so no art change is needed once the data is wider. Details: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND9.md`.
+
+### A-105 · 2026-10-28 · Solace pocket parks (designer ask) · ASK
+The designer wants a few mini city-block parks in the Solace sector (DIRECTION_REVIEW 2026-10-28, city note 3).
+
+**Art side, visual only:** art/tide-proto 06fa2a1d draws 5 pocket parks. Each one hides one of the lowest single-lot buildings on a street within 26 lots of the Solace HQ and lays a lawn, trees, a path and an edge lamp in its place. The Solace layout leaves no free lots, which is why the view has to hide a building.
+
+**Ask, plan data (yours):** in the Solace pass, reserve 5-8 single K_PARK lots inside the Solace sector:
+- each with street frontage;
+- not Sites and not HQ;
+- spaced one every 5 or more lots.
+
+Then no building is generated there, and the view's skip goes away. Details: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND10.md`.
