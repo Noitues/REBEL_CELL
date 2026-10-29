@@ -2097,3 +2097,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Fix:** wider bands in saturated hues, with the core gain capped so the hue survives the tone map. Each avenue stays continuous along its whole street line and stops only at a real open-ground run of 2 or more lots, the river or a highway zone.
   The buildings and the ground stay locked.
 - **Designer on r30 ground (2026-10-29):** "the brown is maybe a bit too brown, maybe push toward gray/green." The bay water stays blue: under the bay, the ground colour transitions to blue so the transparent water shows blue, the way the river does. Both are added to round 31.
+- Round 31: the avenues are accepted. They are wide, saturated and continuous, in green, cyan, violet and amber, and at last read as round 6. Perf is 8.94 ms.
+  - **Not met, ground:** the multiplier is grey-green, but in the avenue close-up the ground between the avenues still reads mauve-maroon, so some other ground layer (lot ground, a grade cast or the haze) keeps the old hue.
+  - **Not met, bay:** the bay and seed 3's open sea still read as a flat dark grey-violet plane, not blue like the river.
+- ART CALL 32 (round 32): find and fix the two ground and water layers by bisection, as a pixel probe per layer:
+  - the ground reads dark grey-green everywhere;
+  - the whole bay and the open sea read blue like the river.
+  Everything else stays locked.
