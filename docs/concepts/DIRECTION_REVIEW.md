@@ -1957,3 +1957,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   2. districts with distinct value and hue, separated by dark gaps;
   3. a few white-hot vertical tower accents, like the plate's pale glass towers.
   Each is judged on the squint itself, not on close-ups.
+- Round 19 accepted: the clearest step since r12. Districts now read, highways are warm lines, white towers act as landmarks, and squint structure is up 12-14 % (83-89 % of the plate).
+- ART CALL 19 (round 20):
+  - Highway glow becomes crisp light lines: drop the flat additive slab that reads as a peach haze band over the roofs, and keep the red and white streams plus a thin edge.
+  - Dark-gap buildings drop from 23 % to about 10 % of the frame. They read as black slabs.
+  - The teal district reads blue-white, so its value comes down.
+  - White towers go down to 8 in the plan frame.
+  - The magenta low-rise district is toned down 20 %, so it doesn't fight the neon.
