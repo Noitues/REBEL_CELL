@@ -2133,3 +2133,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Recommendation:** option (b), a headless CityLint over 25 seeds, plus targeted layout rules. No rewrite.
   - **Build:** the layout asks went as A-110.
   - **Art, after r36:** derive decks from one road source, assert that the view hides nothing once the corridors land, and end avenues and traffic at real intersections and roads.
+- **Designer, 2026-10-29: "do your recommended action for the procedural generation finds."** Build hasn't answered since B-081, so art acts within its own lane and leaves the layout untouched:
+  1. **CityLint prototype:** pure, read-only, on art/city-lint in worktree D:/rc_art/godot_lint, swept over 25 seeds. It measures the defects and produces coordinates for build, and goes to build as a proposal for A-110 item 1.
+  2. **View-side fixes, round 37 (queued after r36):**
+     - one road-geometry source, with ramps built from the plan's own interchanges;
+     - a no-hide assertion that reports the skip lists;
+     - avenue and traffic end rules.
+  The layout rules themselves stay with build (A-110).
