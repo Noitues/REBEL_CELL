@@ -2081,3 +2081,11 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     - **Bay:** it reads as a flat royal-blue plane on seed 3.
     - **Traffic:** no top-deck occlusion yet.
     - **Haze:** a pink fringe remains on the west edge of seed 3.
+- **Designer on r29 (2026-10-29):** "Buildings are looking good (colors and all)." The navy ground shifts to a dark brown. Otherwise keep going.
+- ART CALL 30 (round 30):
+  - streets, lots and land go dark brown; the lawn stays dark green and the bay stays water;
+  - avenues become continuous glowing neon lines with a halo, not dashed slabs;
+  - the bay stops reading as a flat royal-blue plane;
+  - upper decks hide the traffic below them, with glow only on the top deck;
+  - remove the pink fringe on seed 3.
+  The buildings are locked as they are.
