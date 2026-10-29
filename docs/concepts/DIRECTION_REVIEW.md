@@ -1940,3 +1940,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - ART CALL 12 (round 17): round 14's traffic ribbons, district tints and roof-tile thinning are too subtle to register. Push each until it reads at the plan camera: traffic as continuous red/white ribbons, district tints at a distinct hue, roof tiles on ≤20 % of roofs.
 - ART CALL 13: the critic's "saturate the neon" conflicts with the designer's "r12 was better", so the r12 character is kept. Only the cream and white FILL blocks get cut, not the white-hot glow.
 - ART CALL 14: the dark cubes in the seed-3 HQ park are real Solace site buildings, so they stay. They get campus styling (lit glass pavilions, roof gardens) instead of being removed.
+- ART CALL 15 (round 18): the elevated rail and stations are real plan features, so they are drawn, not hidden (r17 had hidden them).
+  - Like the wall, building lots under the rail route are skipped in the view so no building is pierced.
+  - The plan reroute goes to build as A-106.
+- ART CALL 16 (round 18): the Solace campus roof gardens in r17 read as flat, bright green squares (placeholder look). Use darker, varied greens with tree tufts and a lit path, at a glance the same family as the HQ park.

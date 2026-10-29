@@ -387,3 +387,15 @@ The designer wants a few mini city-block parks in the Solace sector (DIRECTION_R
 - spaced one every 5 or more lots.
 
 Then no building is generated there, and the view's skip goes away. Details: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND10.md`.
+
+### A-106 · 2026-10-29 · Tide city plan data: the elevated rail and district wall routes cross building lots · ASK
+Found by the art/tide-r17 placement audit (`D:/rc_art/godot_look_tide`, 241d0e3e). Visual only so far.
+
+1. **Elevated rail:** the plan's monorail (`A2Features/Rails` plus stations) runs through building lots, so the pillars and deck pierce towers.
+   - Example: seed 7 at plan zoom 4, around screen 1090,760.
+   - Art now skips those building lots in the view (ART CALL 15).
+   - **Ask:** route the rails over streets and open ground only, or keep the lots under them free of buildings.
+2. **District wall:** its route crosses 1 building lot on seed 3, and 0 on seeds 1 and 7. Art skips that lot in the view.
+   - **Ask:** the same constraint for the wall: no building lots under its route.
+
+Audit code: `CityA2Features.wall_segments` and `wall_clash`, plus the rails check in round 18. Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND17.md`.
