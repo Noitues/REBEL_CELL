@@ -2123,3 +2123,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **HQ ring:** gone. The park edge reads as tree line and lawn.
   - **Perf:** 10.52 ms.
   - **Generalised beyond the frame:** every non-Solace wall route (Halcyon, Orbital, Meridian, Aurelian, Tethys) now draws as a highway, and Solace's draws nothing. Flagged for the designer, because Meridian's HQ is a walled container yard by its landmark rule (ART_BIBLE §2.4). If that yard wall is one of these routes, it should probably stay a wall.
+- **Designer on r35 (2026-10-29):** "the colored streets show cuts in them, likely from clipping into some terrain. need to fix so it is cohesive."
+- ART CALL 36 (round 36):
+  - every avenue-strip cut is mapped by cause;
+  - the strips follow the terrain height with a constant offset, and a depth bias keeps the ground from clipping them;
+  - single-lot stops in the middle of an avenue are bridged;
+  - the shoreline highlight goes in if there is time.
