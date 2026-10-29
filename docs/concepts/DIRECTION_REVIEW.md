@@ -1891,3 +1891,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 ## 2026-10-28: Tide raid city, round 10 review (designer)
 - Agrees with the art-pass issue list for round 11: the neon hotspots, the street grid as the brightest pattern, the mid-tone veil, building shapes that read from above, and the low-district light grid.
 - Lower the streetlight intensity overall, and further in low-building areas, while keeping the line read and the density.
+- **Tone up the neons (designer):** "this is a futuristic cyberpunk city in a video game". Neon goes past photo realism:
+  - more and stronger hotspots, and neon avenues;
+  - background signage everywhere: blade signs, edge strips, rooftop logos;
+  - saturated cyan and magenta plus accents;
+  - floating holo ads above the tallest towers;
+  - stronger spill and wet reflections.
+  The streetlights stay dim amber, there is still no pink in parks, and the darks stay deep.
