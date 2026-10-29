@@ -2117,3 +2117,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
      - the one cutting north-south through the city gets the same highway treatment as the other highways (deck, colour rails, streak traffic);
      - the one around the HQ is removed.
 - ART CALL 35 (round 35): these changes are view-side only. Build gets a note that the wall routes now draw as a highway or not at all, in case gameplay reads them.
+- Round 35 accepted.
+  - **Land and water:** the strip under the bay highway is land. Blue now appears only on the plan river and its banks, the south sea and the bay.
+  - **North-south route:** the core's wall route draws as an elevated highway with rails, streaks and pylons, at its own lift. It has no interchange where it meets the other highways.
+  - **HQ ring:** gone. The park edge reads as tree line and lawn.
+  - **Perf:** 10.52 ms.
+  - **Generalised beyond the frame:** every non-Solace wall route (Halcyon, Orbital, Meridian, Aurelian, Tethys) now draws as a highway, and Solace's draws nothing. Flagged for the designer, because Meridian's HQ is a walled container yard by its landmark rule (ART_BIBLE §2.4). If that yard wall is one of these routes, it should probably stay a wall.

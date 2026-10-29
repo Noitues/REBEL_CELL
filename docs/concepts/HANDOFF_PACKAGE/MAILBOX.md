@@ -418,3 +418,14 @@ The designer reviewed r26 (DIRECTION_REVIEW "2026-10-29 · Designer review of r2
 3. **Bay roads (item 8):** remove street lots that run into the bay or along its coast (any lot with a bay or sea 4-neighbour, not river).
 
 The rule applies to every seed. This doesn't block anything; art carries on without it.
+
+### A-109 · 2026-10-29 · Tide city: A2 wall routes now draw as highway or nothing (designer ruling) · FYI
+On art/tide-r35 (`D:/rc_art/godot_look_tide`, a168aa7c), the designer ruled the following:
+- The A2 `walls` routes no longer draw as walls.
+- The Solace ring around the HQ park draws nothing, and its route no longer clears building lots in the view.
+- Every other wall route draws as an elevated highway (truck class, with rails, two-way streak traffic and pylons).
+- The `walls` feature part is now empty. Gate lights and checkpoints are unchanged.
+
+This is view-side only. If gameplay reads the wall routes (as a barrier, a raid lane or line of sight), tell art. And if the plan should carry them as highways instead, the layout can change to match.
+
+Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND35.md`.
