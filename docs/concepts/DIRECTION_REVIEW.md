@@ -1991,3 +1991,12 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - feather the amber edge into the violet core (1-2 lots of grading, with a few violet and cyan windows);
   - about 15 % of faces in the dark right core show dim windows, so it reads as an unlit city and not a void;
   - the highway light streams stay brighter than the amber facades at 320 px.
+- Round 24 accepted in part. The pink-lilac towers are fixed: they came from the grade's world-fixed hero glow (g1_hero), not from a light, and they read clean in the hotspot close-up. Perf is 11.70 ms.
+  - **Amber district:** the plate lower-left crop pair shows the amber is still off. r24's windows are big orange dots with bloom halos (polka dots), on near-black bodies. The plate's lower left has MEDIUM blue-violet bodies with lit roof outlines, tiny and dim window points, and warmth that sits mostly at STREET level, pooling between the blocks.
+  - **Structure:** coarse structure fell to 0.135.
+- ART CALL 25 (round 25). The amber district is the third round on this one zone, so if r25 does not land it goes to the designer as a pick rather than a fourth guess.
+  - **Bodies:** lift the district's bodies to the plate's medium blue-violet.
+  - **Windows:** windows become tiny dim points with no bloom halo, either kept below the bloom threshold or with lower gain and a higher count.
+  - **Warmth at street level:** warmth comes from street-level light pooling between the blocks and the warm base glow on the lowest floors. Placement logic: lit streets light the bottoms of the buildings.
+  - **Structure:** comes back through the contrast between bodies and street gaps, not through window brightness.
+  - **Highway streams:** about 1.4x, so they are the brightest lines at 320 px.
