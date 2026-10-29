@@ -1898,3 +1898,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - floating holo ads above the tallest towers;
   - stronger spill and wet reflections.
   The streetlights stay dim amber, there is still no pink in parks, and the darks stay deep.
+
+## 2026-10-28: Tide raid city, round 13 (designer)
+- "I actually really like where it is." Round 13 (art/tide-proto de4c3896) is the baseline.
+- A visual critic scores round 13 as is.
+- A neon-pushed variant is being built on the separate branch art/tide-neon-push, exposed as a config preset, for comparison.
