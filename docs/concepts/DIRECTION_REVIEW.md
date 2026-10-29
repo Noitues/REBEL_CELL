@@ -1907,3 +1907,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - "r12 was better." The round-12 neon look is preferred over round 13 and over the neon-push. Neon-push stays an off preset.
   - Take critic fixes 3-8. Fix 1 is NOT taken: the street grid stays dim as ruled.
   - Fix 2 is replaced by: increase the traffic head- and tail-lights.
+
+## 2026-10-28 night: autonomy for the city iteration (designer)
+"Progress through the iteration by making your own calls and logging them. Keep in mind the real city references, and this is a cyberpunk game, and to follow logical placements of all things in the scene."
+- Art-pass makes the city look calls overnight and logs each one below as "ART CALL".
+- Guardrails:
+  - the real-city refs in D:/rc_scratch/g1/refs_night;
+  - a cyberpunk game look;
+  - logical placement of everything in the scene: lamps on streets, traffic on roads, signs on facades facing streets, holos above tall towers, nothing floating or detached;
+  - every earlier ruling still holds.
+- Nothing merges or replaces final/ without the designer's review. Work stays on art/tide-r14 and its successors.
+
+### Overnight art calls
