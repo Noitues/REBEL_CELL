@@ -2089,3 +2089,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - upper decks hide the traffic below them, with glow only on the top deck;
   - remove the pink fringe on seed 3.
   The buildings are locked as they are.
+- Round 30 accepted. The dark umber ground reads well under the locked buildings, the sea plane's royal blue and the seed-3 pink fringe are gone (both were the outer land plane), and upper decks now hide the traffic beneath. Perf is 9.43 ms.
+- ART CALL 31 (round 31, avenues only): the avenues are still the gap to round 6, for three reasons:
+  - **Too pale:** the cores tone-map to near white, so they read pastel white-yellow and white-cyan. Round 6's are wide saturated bands of green, cyan, violet, amber and magenta-free hues.
+  - **Too thin:** at plan zoom they almost vanish.
+  - **Broken:** they break wherever a lot has fewer than two buildings beside it.
+  - **Fix:** wider bands in saturated hues, with the core gain capped so the hue survives the tone map. Each avenue stays continuous along its whole street line and stops only at a real open-ground run of 2 or more lots, the river or a highway zone.
+  The buildings and the ground stay locked.
