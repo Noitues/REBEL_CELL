@@ -1950,3 +1950,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - lamp pools are softer;
   - p50/p75 are still on target.
   The A-106 ask now carries the counts: the rail crosses 869/940/773 building lots on seeds 1/3/7. A fresh visual critic is scoring r18.
+- Critic on r18: 29/50 (review: D:/rc_tmp/visual_critic/city_r18/REVIEW.md). The score has plateaued at 29-30 since r13, so the approach changes.
+- ART CALL 17 (round 19, reverses ART CALL 15): until build reroutes the rail (A-106), the rail and stations are hidden and the city keeps its buildings. The rail read as a hairline with a dangling pod, and the cleared lanes left diagonal scars. Logic wins over completeness: no rail through towers and no scars.
+- ART CALL 18 (round 19): the core of the plateau is the 320 px squint, which reads as one purple mass. Since the grid stays dim (ruled), structure has to come from three things:
+  1. the highways as bright warm ribbons: dense red tail-light and white headlight streams plus a lit deck edge, the brightest LINES in the frame (as in the Tokyo highway ref);
+  2. districts with distinct value and hue, separated by dark gaps;
+  3. a few white-hot vertical tower accents, like the plate's pale glass towers.
+  Each is judged on the squint itself, not on close-ups.
