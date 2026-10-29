@@ -2013,3 +2013,12 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   3. **Low-rise breaks:** 3-4 breaks at about 35 % height along the diagonal highway and beside the hotspot tower, ONLY if the heights are art-side (shape kit). If they come from plan data, it goes to build through the mailbox.
   4. **Lit share:** the lit window share varies per building (25-60 %), with dark facets.
   The bay haze and far-shore lights (critic #5) are declined: the bay was reverted to r6 at the designer's request and gets no new content without them.
+- Round 26 accepted. The warm strips read as lit streets, not a grid, and the audit is clean. The core faces are now brighter than the roofs, and the lit share varies. Coarse structure is 0.137 and perf 12.31 ms, with a thin margin.
+  - The low-rise breaks need layout heights, so they went to build as a general rule for every seed in A-107.
+  - Against the plate crop, the plate's lower-left streets are brighter warm lines than ours. That gap stays, because the designer ruled the grid dim and rejected light grids twice.
+- ART CALL 28: the overnight loop stops at r26. The remaining gap to the plate is bounded by designer rulings and pending items:
+  - the dim street grid;
+  - the amber district pick;
+  - layout heights (A-107);
+  - the rail route (A-106).
+  More rounds would only oscillate, as r21-r25 did on the amber zone, and the perf margin is thin. Next comes the designer's review: the amber pick, then whether the street grid may brighten toward the plate in the amber district only.

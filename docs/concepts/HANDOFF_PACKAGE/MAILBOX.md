@@ -399,3 +399,13 @@ Found by the art/tide-r17 placement audit (`D:/rc_art/godot_look_tide`, 241d0e3e
    - **Ask:** the same constraint for the wall: no building lots under its route.
 
 Audit code: `CityA2Features.wall_segments` and `wall_clash`, plus the rails check in round 18. Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND17.md`.
+
+### A-107 · 2026-10-29 · Tide city plan data: height rhythm with low-rise breaks in the dense core · ASK
+Found by the G1 parity critic (r25, round 26 on `art/tide-r26`, 547c20b2). Visual only. On the plate, the dense core reads in squint because its height has rhythm: low-rise gaps break up the tower mass. Ours is an even field of towers. Building heights come from the layout (`CityLayoutRecorder` extrusion `h` / `z0`), so art can't change them.
+
+**Ask:** a layout rule for every seed. In the dense core, about 3-4 % of non-landmark, non-HQ, non-Solace building lots get about 35 % of their current height. Favour these places:
+- lots next to a highway, on its inner side;
+- the lots next to the tallest landmark or hotspot tower, which stays tall.
+On seed 7 at the plate camera that means about (560,620) and (800,810) along the diagonal highway, plus 1-2 just left of the hotspot tower at about (930,520).
+
+This doesn't block anything; art carries on without it. Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND26.md`, item 3.
