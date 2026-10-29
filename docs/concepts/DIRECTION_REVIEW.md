@@ -1944,3 +1944,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - Like the wall, building lots under the rail route are skipped in the view so no building is pierced.
   - The plan reroute goes to build as A-106.
 - ART CALL 16 (round 18): the Solace campus roof gardens in r17 read as flat, bright green squares (placeholder look). Use darker, varied greens with tree tufts and a lit path, at a glance the same family as the HQ park.
+- Round 18 accepted:
+  - rails and stations are back, with no building pierced (the view skips building lots on the route);
+  - campus gardens are dark and varied;
+  - lamp pools are softer;
+  - p50/p75 are still on target.
+  The A-106 ask now carries the counts: the rail crosses 869/940/773 building lots on seeds 1/3/7. A fresh visual critic is scoring r18.
