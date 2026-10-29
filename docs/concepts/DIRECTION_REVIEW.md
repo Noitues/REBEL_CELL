@@ -1925,3 +1925,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - ART CALL 4 (round 15): bridges get light strings along the span: lamps on both rails at a regular spacing, warm amber, as in the Tokyo river ref.
 - ART CALL 5 (round 15): spread hotspots to the north-east and far south-west. Every district has at least 1 cluster, with dark gaps between clusters.
 - ART CALL 6 (round 15): the brown arc gets traced by dumping the node tree, then removed or fixed.
+- ART CALL 7 (round 16): round 15 made the neon too calm for a cyberpunk game, because the street-facing-only rule cut the screens.
+  - Screens may face streets OR plazas (still never alleys or neighbouring walls).
+  - Hotspot screen counts and gain go back to r14 loudness.
+  - Holos go up from 5 to about 10-12 in the plan, over tall towers only.
+- ART CALL 8 (round 16): the corporate district wall (A2Features/Walls, the "brown arc") is a real feature of the plan, so it is redrawn instead of hidden. It becomes a dark security wall with a thin red/cyan light strip on top and gate lights at the checkpoints, never lamp-lit amber.
+- ART CALL 9 (round 16): the river stays thin until build's A-104 lands. Bridge strings stay.
