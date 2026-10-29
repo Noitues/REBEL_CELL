@@ -1973,3 +1973,5 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Magenta and violet low-rise blocks:** more varied footprints.
   - **Hotspots:** narrow wet streaks under them.
   - **Seed-3 campus towers:** lit pavilion roofs.
+- Round 21 accepted with one fix. The squint now has real zones: a warm lower left, a dark cool centre and a violet/glass right. Highways read warm again, structure is 0.144 full frame and 0.164 in the core, and perf is fine.
+- ART CALL 21 (round 22): the amber district's building bodies have drifted to salmon/orange, which is the round-6 defect. Its warmth has to come from LIGHT (amber windows, storefront glow, warm crowns) on violet-indigo bodies, as on the plate. Fix the bodies and keep the zone's value. Also identify and fix the pale pink translucent columns beside the hotspot tower.
