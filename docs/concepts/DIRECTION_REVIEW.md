@@ -2006,3 +2006,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   The plate's own 320 px lower left is subtler than r23's solid orange, so C may be the more faithful of the two. The numbers alone don't settle it (A-020).
 - **DESIGNER PICK PENDING (amber district):** r25/amber_options.jpg, A (white points) / B (amber points) / C (lifted bodies with street warmth, the working base), or back to r23's solid-orange zone, which squints stronger but drifts from the plate. Work goes on with C until the designer picks.
 - ART CALL 26: stop iterating the amber zone until the pick. In round 26 the warm pools become strips along the streets, not discs. A fresh critic runs on r25 first, so its top fixes fold into r26 instead of costing a round.
+- Critic on r25: 30/50 (review: D:/rc_tmp/visual_critic/city_r25/REVIEW.md). Craft and cohesion each gained a point and readability lost one: the core is a flat, speckled violet mass, and its roofs are brighter than its faces, the reverse of the plate.
+- ART CALL 27 (round 26). Critic fixes taken:
+  1. **Warm strips:** warm pools become continuous dim-amber strips along the streets. Full strength in the amber district. City-wide they run at no more than 20 %, with random intensity per segment, never in open areas, on highways or on the river. This is capped low because the designer has twice rejected visible grids of street light.
+  2. **Roofs:** darken the core roofs one stop and halve the white roof tiles, so faces read brighter than roofs, as on the plate.
+  3. **Low-rise breaks:** 3-4 breaks at about 35 % height along the diagonal highway and beside the hotspot tower, ONLY if the heights are art-side (shape kit). If they come from plan data, it goes to build through the mailbox.
+  4. **Lit share:** the lit window share varies per building (25-60 %), with dark facets.
+  The bay haze and far-shore lights (critic #5) are declined: the bay was reverted to r6 at the designer's request and gets no new content without them.
