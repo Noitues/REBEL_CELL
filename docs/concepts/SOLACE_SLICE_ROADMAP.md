@@ -106,3 +106,12 @@ Most of these exist from earlier rounds but were drawn against the old city. Rec
 - Commit by explicit paths with the co-author line.
 - Review every sheet side by side with its reference, against the ART_BIBLE, and with a squint test.
 - Show the designer a checkpoint every few rounds rather than running long stretches alone.
+
+## Added 2026-10-29: city layout realism
+- **Evaluation:** `tide_raid/city_gen_eval/CITY_GEN_EVAL.md`.
+- **Build (A-110):** a CityLint pass over 25 seeds, plus layout rules for corridors, street/water/park edges, dead ends, the height field, the waterfront band and street hierarchy.
+- **Art view (after r36):**
+  - one road-geometry source for decks and ramps;
+  - a no-hide assertion once build's corridors land;
+  - avenue strips and traffic end at real intersections and on real roads.
+- **Zoom checks:** each art round renders seeds 1, 3, 7 plus 2 random seeds at four zooms, anchored on the worst lint offenders.
