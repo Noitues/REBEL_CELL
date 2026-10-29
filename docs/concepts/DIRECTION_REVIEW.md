@@ -2022,3 +2022,21 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - layout heights (A-107);
   - the rail route (A-106).
   More rounds would only oscillate, as r21-r25 did on the amber zone, and the perf margin is thin. Next comes the designer's review: the amber pick, then whether the street grid may brighten toward the plate in the amber district only.
+
+## 2026-10-29 · Designer review of r26 (red-box screenshots) · DESIGNER RULINGS
+1. **Highway interchange by the bay:** its deck overhangs. The highway stops where the interchange arcs start.
+2. **Traffic:** traffic is individual thin red and white streaks, like very fast cars moving along the roadways, and gets animated later in the "living city" pass. Road and highway surfaces are plain road colour. No blotchy red/white rectangles: only the light lines carry the traffic colour.
+3. **Signs:** no fully white buildings. A sign is never full building height, it has real colour, and its light spreads onto the neighbouring buildings.
+4. **Breaks:** no random breaks in roads or highways (the city highway curve, the low areas near the river).
+5. **Open areas by the river:** the empty no-building areas near the river are filled with buildings or parks.
+6. **Parks split by streets:** where park lies on both sides of a road, the road is removed so the park reads as one, and the strip is filled with foliage.
+7. **Park ground:** the ground under parks is green, or tinted green.
+8. **Bay roads:** roads that run into the bay or along its coast are removed.
+9. **City colour (the original idea, restored):**
+   - Each building's lights take a CORPORATION colour.
+   - The choice is uniformly random, except that near a corp's HQ that corp's colour becomes denser.
+   - Each building's concrete takes a slight tint toward its light colour.
+   - The neon outlines come back: vertical neon on some building edges and along the roof tops.
+   - The overall city is too dark and uniform, and the look has strayed far from the original idea.
+10. **Amber rule abandoned:** the "amber district" (ART CALL 20 onward) is dropped, along with the art-district profiles that stood in for corp colour. The city is coloured per corporation and is generally random. In this Solace case study more buildings are Solace-coloured, but not all: the weight rises with proximity to a corp's HQ and never reaches 100 %.
+- Art-pass note: the overnight loop chased the plate's warm lower-left and the critic's squint metric, and drifted from the corp-colour concept. The corp rule above now outranks the plate's local colour and the structure metric. The pending amber pick (A/B/C) is void.
