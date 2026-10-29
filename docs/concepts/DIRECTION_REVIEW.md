@@ -2096,3 +2096,4 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Broken:** they break wherever a lot has fewer than two buildings beside it.
   - **Fix:** wider bands in saturated hues, with the core gain capped so the hue survives the tone map. Each avenue stays continuous along its whole street line and stops only at a real open-ground run of 2 or more lots, the river or a highway zone.
   The buildings and the ground stay locked.
+- **Designer on r30 ground (2026-10-29):** "the brown is maybe a bit too brown, maybe push toward gray/green." The bay water stays blue: under the bay, the ground colour transitions to blue so the transparent water shows blue, the way the river does. Both are added to round 31.
