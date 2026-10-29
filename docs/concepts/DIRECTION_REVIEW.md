@@ -2040,3 +2040,20 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
    - The overall city is too dark and uniform, and the look has strayed far from the original idea.
 10. **Amber rule abandoned:** the "amber district" (ART CALL 20 onward) is dropped, along with the art-district profiles that stood in for corp colour. The city is coloured per corporation and is generally random. In this Solace case study more buildings are Solace-coloured, but not all: the weight rises with proximity to a corp's HQ and never reaches 100 %.
 - Art-pass note: the overnight loop chased the plate's warm lower-left and the critic's squint metric, and drifted from the corp-colour concept. The corp rule above now outranks the plate's local colour and the structure metric. The pending amber pick (A/B/C) is void.
+
+## 2026-10-29 · Designer: the city returns to the round-6 look · DESIGNER RULING
+- Sheet: `tide_raid/G1_parity/r26/city_soul_then_vs_now.jpg`. The designer: "round 6 and 40 are roughly the same, only round 40 view is darkened to accent the raid placement lines … city should look like round 6." Remake the current city (the A2 planner layout, tide raid Godot view) with round 6's building look (`round6_city_restyle/views/restyle_night_crop.png`).
+- Round 6's traits:
+  - **Buildings:** Cv2 faceted low-poly buildings with tone jitter per facet.
+  - **Toon and ink:** 3 hard toon bands, wobbly ink outlines from id, normal and depth edges.
+  - **Shapes:** varied forms (hex, octagon, wedge, stepped, tapered).
+  - **Colour:** muted, corp-tinted concrete in mauve, teal and slate, with small square windows in the corp colour.
+  - **Neon:** neon roof-top outlines and vertical edge strips in the corp colour, plus antenna beacons with diamond tips.
+  - **Streets:** coloured glowing avenues.
+  - **Spill:** light spills onto walls and streets.
+- **Traffic and highways:** they follow round 26 city motion (`round26_city_motion/storyboard_ambient_v2.png`, `interchanges_v2.png`):
+  - elevated decks, each with a highway colour rail;
+  - dense head and tail streak traffic, two-way on highways and one-way on ramps and loops;
+  - upper decks hide the traffic beneath;
+  - glow only on the top deck.
+- This matches the standing rule that the city map keeps cel + ink at raid zoom (2026-10-20, ART_BIBLE 1.2); the realism (AAA-2) look applies only where 1.2 names it. Round 27's corp colour system (HQ proximity, 0.65 cap) and its geometry fixes carry over. The round-6 look supersedes the dim-street-grid and lamp work where they conflict. A/B check: the round-6 coloured avenues versus a dimmer street level.
