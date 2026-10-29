@@ -1887,3 +1887,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Wet streets in the hotspots** reflect the neon as long vertical colour streaks. That fits our rain, but only in the neon districts. Elsewhere the streets stay amber and dark.
   - Apply the signage colour as facade screens and spill in 1-2 hotspots per district. The rest of the city follows the night-light guide above.
 - **Street-lamp falloff (designer):** street light lights the street and the bottom of buildings, then fades dark going up, by about 3-4 floors. Today it projects upward and misses the building bases, which is a bug. Upper floors are lit only by windows, crowns and signage.
+
+## 2026-10-28: Tide raid city, round 10 review (designer)
+- Agrees with the art-pass issue list for round 11: the neon hotspots, the street grid as the brightest pattern, the mid-tone veil, building shapes that read from above, and the low-district light grid.
+- Lower the streetlight intensity overall, and further in low-building areas, while keeping the line read and the density.
