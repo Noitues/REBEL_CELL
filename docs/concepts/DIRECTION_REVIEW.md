@@ -2074,3 +2074,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - hex and octagon prisms;
   - top-deck traffic occlusion;
   - no lilac haze on open ground.
+- Round 29 reviewed: the clear step toward round 6. It has navy-black ground, saturated mid-value families tinted per corp, separate toon bands, thinner ink, hex and octagon prisms and a dark green lawn. It is shown to the designer as the checkpoint.
+  - **Known gaps against round 6:**
+    - **Avenues:** they read as dashed flat yellow and cyan slabs, not continuous glowing neon lines with a halo.
+    - **Massing:** the core is a forest of thin, even-height towers, where round 6 has chunkier mixed low and mid massing. Heights are layout (A-107).
+    - **Bay:** it reads as a flat royal-blue plane on seed 3.
+    - **Traffic:** no top-deck occlusion yet.
+    - **Haze:** a pink fringe remains on the west edge of seed 3.
