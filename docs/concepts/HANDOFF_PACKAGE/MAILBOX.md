@@ -409,3 +409,12 @@ Found by the G1 parity critic (r25, round 26 on `art/tide-r26`, 547c20b2). Visua
 On seed 7 at the plate camera that means about (560,620) and (800,810) along the diagonal highway, plus 1-2 just left of the hotspot tower at about (930,520).
 
 This doesn't block anything; art carries on without it. Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND26.md`, item 3.
+
+### A-108 · 2026-10-29 · Tide city plan data: river infill, park-split streets, bay roads (designer rulings) · ASK
+The designer reviewed r26 (DIRECTION_REVIEW "2026-10-29 · Designer review of r26", items 5, 6 and 8). Art can't make these changes, because they are layout data. Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND27.md`, section E.
+
+1. **River infill (item 5):** fill every lot within 3 lots of a river lot that has no building, street, park or water. Use low-rise buildings or park.
+2. **Park-split streets (item 6):** where a straight street lot has park on both lateral sides, it becomes a park lot filled with foliage, so the park reads as one. If a gameplay route needs that street, tell art and we'll treat it visually instead.
+3. **Bay roads (item 8):** remove street lots that run into the bay or along its coast (any lot with a bay or sea 4-neighbour, not river).
+
+The rule applies to every seed. This doesn't block anything; art carries on without it.
