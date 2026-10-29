@@ -1886,3 +1886,4 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Palette:** deep blue-black sky and shadow; cyan/teal plus magenta/pink as the neon pair; amber sodium and orange/red tail-light trails; white headlights; green accents.
   - **Wet streets in the hotspots** reflect the neon as long vertical colour streaks. That fits our rain, but only in the neon districts. Elsewhere the streets stay amber and dark.
   - Apply the signage colour as facade screens and spill in 1-2 hotspots per district. The rest of the city follows the night-light guide above.
+- **Street-lamp falloff (designer):** street light lights the street and the bottom of buildings, then fades dark going up, by about 3-4 floors. Today it projects upward and misses the building bases, which is a bug. Upper floors are lit only by windows, crowns and signage.
