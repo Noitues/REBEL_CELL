@@ -2000,3 +2000,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Warmth at street level:** warmth comes from street-level light pooling between the blocks and the warm base glow on the lowest floors. Placement logic: lit streets light the bottoms of the buildings.
   - **Structure:** comes back through the contrast between bodies and street gaps, not through window brightness.
   - **Highway streams:** about 1.4x, so they are the brightest lines at 320 px.
+- Round 25 reviewed side by side with the plate's lower-left crop. Option C (committed) is the closest so far at plan scale: medium violet blocks, dim window points and warm light between the blocks. It is accepted as the working base. Two problems remain:
+  1. The warm pools are round discs in the zoom-3 close-up, while the plate's warmth runs as LINES along the streets.
+  2. The warm zone disappears at 320 px, and coarse structure stays at 0.135.
+  The plate's own 320 px lower left is subtler than r23's solid orange, so C may be the more faithful of the two. The numbers alone don't settle it (A-020).
+- **DESIGNER PICK PENDING (amber district):** r25/amber_options.jpg, A (white points) / B (amber points) / C (lifted bodies with street warmth, the working base), or back to r23's solid-orange zone, which squints stronger but drifts from the plate. Work goes on with C until the designer picks.
+- ART CALL 26: stop iterating the amber zone until the pick. In round 26 the warm pools become strips along the streets, not discs. A fresh critic runs on r25 first, so its top fixes fold into r26 instead of costing a round.
