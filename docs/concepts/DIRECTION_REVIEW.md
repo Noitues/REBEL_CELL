@@ -2152,3 +2152,14 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     2. P0 layout rules: corridors, streets kept off water and parks, dead ends and connectivity.
     3. P1: the height field, waterfront band, river infill, street hierarchy and a single road source.
     4. Retire the view skip lists.
+- Rounds 36 and 37 accepted.
+  - **r36:** the avenue cuts are fixed. Each strip piece now sits at the highest ground under it plus a small lift, and gaps shorter than 3 lots are bridged, so the bands read continuous.
+  - **r37:** the strips start and end at intersections with buildings on both sides, ground cars run only on connected streets, and ramps land only on road lots: plan interchange ramps (17 of 84 accepted) plus filtered invented ramps.
+  - **No-hide test:** a test now reports the view skip lists (wall skip 9 and 7, pockets 5), and they can only shrink once the layout corridors land.
+  - **Perf:** 10.38 ms.
+  - **Open:**
+    - at some crossings two hues overlap where they meet;
+    - sky lanes still follow the avenues;
+    - no shoreline highlight;
+    - the decks are not yet snapped to the raster centre line.
+  - **Next:** the city view waits for the layout branch (art/city-layout-p0), then renders it.
