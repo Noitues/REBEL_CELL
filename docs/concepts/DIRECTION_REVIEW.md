@@ -1931,3 +1931,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - Holos go up from 5 to about 10-12 in the plan, over tall towers only.
 - ART CALL 8 (round 16): the corporate district wall (A2Features/Walls, the "brown arc") is a real feature of the plan, so it is redrawn instead of hidden. It becomes a dark security wall with a thin red/cyan light strip on top and gate lights at the checkpoints, never lamp-lit amber.
 - ART CALL 9 (round 16): the river stays thin until build's A-104 lands. Bridge strings stay.
+- ART CALL 10 (round 17): the redrawn district wall reads as a thin grey pole slicing through buildings, and its light strip doesn't show.
+  - The wall may never clip a building. Building lots touching the wall route are skipped or set back.
+  - If the plan's wall route crosses building lots, that's a build spec.
+  - The wall goes to about 2x thickness, with a visible red or cyan top strip at the plan camera.
