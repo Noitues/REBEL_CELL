@@ -1935,3 +1935,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - The wall may never clip a building. Building lots touching the wall route are skipped or set back.
   - If the plan's wall route crosses building lots, that's a build spec.
   - The wall goes to about 2x thickness, with a visible red or cyan top strip at the plan camera.
+- Critic on r16: 29/50 (r13 was 30). Review: D:/rc_tmp/visual_critic/city_r16/REVIEW.md. The main regressions are a darker, flatter frame (p50 0.265 / p75 0.369 vs plate 0.325 / 0.481) and the wall artefact.
+- ART CALL 11 (round 17): lift the plan value back to about p50 0.31 / p75 0.43. Do it by brightening lit windows, crowns and street-facing lower walls. NOT by brightening the street grid (ruled dim) or lifting the blacks.
+- ART CALL 12 (round 17): round 14's traffic ribbons, district tints and roof-tile thinning are too subtle to register. Push each until it reads at the plan camera: traffic as continuous red/white ribbons, district tints at a distinct hue, roof tiles on ≤20 % of roofs.
+- ART CALL 13: the critic's "saturate the neon" conflicts with the designer's "r12 was better", so the r12 character is kept. Only the cream and white FILL blocks get cut, not the white-hot glow.
+- ART CALL 14: the dark cubes in the seed-3 HQ park are real Solace site buildings, so they stay. They get campus styling (lit glass pavilions, roof gardens) instead of being removed.
