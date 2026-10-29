@@ -2111,3 +2111,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - Round 34 accepted. The OuterLand expanse renders as opaque deep-blue bay water in the river's family, the city ground stays grey-green, and perf is 9.23 ms.
   - **Open, small:** the bay meets the city rect's grey apron band with a hard edge, with no shoreline highlight yet; that needs the coast contour. A few structures sit in the bay: shore building clusters, three cubes and road stubs. The roads are with build (A-108).
   - **Next:** a checkpoint with the designer.
+- **Designer on r34 (2026-10-29):** the r33 and r34 changes are agreed.
+  1. The area under the highway near the bay shows as water, but it is still land, so it renders as land.
+  2. The pink-topped walls (A2Features/Walls) are changed:
+     - the one cutting north-south through the city gets the same highway treatment as the other highways (deck, colour rails, streak traffic);
+     - the one around the HQ is removed.
+- ART CALL 35 (round 35): these changes are view-side only. Build gets a note that the wall routes now draw as a highway or not at all, in case gameplay reads them.
