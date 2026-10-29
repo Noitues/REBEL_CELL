@@ -1986,3 +1986,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Amber district overshoot:** the district now overshoots. At gain 20 the faces read as solid orange terracotta, the round-6 "brick" problem coming back through light. The plate's lower left is dark bodies with crisp amber window POINTS and dark mullions between them, so it sparkles. Window gain drops so the face between windows stays dark, the windows become smaller and crisper points, the lit share varies per floor (a few fully lit floors, many dark ones), and the warm glow at the base stays. Its warmth has to survive the squint at a lower face fill.
   - **Pink-lilac towers beside the hotspot:** they survive every mesh and post toggle, so the suspect is a LIGHT. Dump and toggle the light sources near the hotspot: omni/spot lights, lamp-plan lights, the env/reflection probe and the hotspot's own light.
   - **Critic:** a visual critic runs on r23 in parallel.
+- Critic on r23: 29/50 (review: D:/rc_tmp/visual_critic/city_r23/REVIEW.md). Readability rose a point because the 320 px zones now read, but craft and cohesion lost a point each: the amber faces read as solid orange and the pink-lilac towers stand out. Both are already in ART CALL 23.
+- ART CALL 24 (added to round 24):
+  - feather the amber edge into the violet core (1-2 lots of grading, with a few violet and cyan windows);
+  - about 15 % of faces in the dark right core show dim windows, so it reads as an unlit city and not a void;
+  - the highway light streams stay brighter than the amber facades at 320 px.
