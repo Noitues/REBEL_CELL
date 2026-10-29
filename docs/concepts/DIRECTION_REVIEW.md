@@ -1903,3 +1903,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - "I actually really like where it is." Round 13 (art/tide-proto de4c3896) is the baseline.
 - A visual critic scores round 13 as is.
 - A neon-pushed variant is being built on the separate branch art/tide-neon-push, exposed as a config preset, for comparison.
+- **Critic review (30/50) and neon verdict (designer):**
+  - "r12 was better." The round-12 neon look is preferred over round 13 and over the neon-push. Neon-push stays an off preset.
+  - Take critic fixes 3-8. Fix 1 is NOT taken: the street grid stays dim as ruled.
+  - Fix 2 is replaced by: increase the traffic head- and tail-lights.
