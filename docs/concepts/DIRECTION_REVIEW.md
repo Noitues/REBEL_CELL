@@ -2057,3 +2057,20 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - upper decks hide the traffic beneath;
   - glow only on the top deck.
 - This matches the standing rule that the city map keeps cel + ink at raid zoom (2026-10-20, ART_BIBLE 1.2); the realism (AAA-2) look applies only where 1.2 names it. Round 27's corp colour system (HQ proximity, 0.65 cap) and its geometry fixes carry over. The round-6 look supersedes the dim-street-grid and lamp work where they conflict. A/B check: the round-6 coloured avenues versus a dimmer street level.
+- Round 28 (round-6 look, first pass) reviewed against `restyle_night_crop.png`.
+  - **Matches round 6:** toon bands, wobbly ink, corp neon rims, mast diamonds and tone jitter. They came from the old raid post, which the realism grade had been hiding.
+  - **Fails:**
+    - **Colour:** grey-green and murky.
+    - **Ground:** grey ground, grey-black parks and a grey bay.
+    - **Avenues:** pale pastel blocks with gaps instead of glowing rivers of light.
+    - **Ink:** too heavy, and rough on tall towers.
+- ART CALL 29 (round 29), so the designer isn't shown a known miss:
+  - navy-black ground, a dark green lawn and a navy bay;
+  - continuous saturated glowing avenues joined through intersections;
+  - a saturating grade with mid-value saturated building families;
+  - stronger toon contrast and thinner ink;
+  - crisp small windows;
+  - mast tips that keep their hue;
+  - hex and octagon prisms;
+  - top-deck traffic occlusion;
+  - no lilac haze on open ground.
