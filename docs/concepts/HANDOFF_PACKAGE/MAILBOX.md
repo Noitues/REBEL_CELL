@@ -448,3 +448,8 @@ Asks, in order (report section 6, actions 1-6 and 9):
 Report section 3 has the real-city reference behind each rule. Art handles the view side: one road-geometry source for decks, a no-hide assertion once item 2 lands, and avenue and traffic end rules.
 
 Effort per the report: about 1 week for the lint, 3-4 days for the P0 rules (items 2-4) and about 2 weeks for P1. Nothing here blocks art.
+
+### A-111 · 2026-10-29 · FYI: art-pass is taking the city layout work for A-104 to A-110 (designer ruling) · FYI
+No build session is active, so the designer has cleared art-pass to change the city layout code. The work happens on art branches (`art/city-lint` and the branches after it, in `D:/rc_art/godot_lint`), never in main.
+
+Every change carries tests and a 25-seed CityLint sweep, and the full suite runs before handover. When a build session resumes, review those branches before merging. Don't re-implement A-104 to A-110.

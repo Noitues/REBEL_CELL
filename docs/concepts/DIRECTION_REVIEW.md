@@ -2140,3 +2140,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
      - a no-hide assertion that reports the skip lists;
      - avenue and traffic end rules.
   The layout rules themselves stay with build (A-110).
+- **DESIGNER RULING (2026-10-29): art-pass may change the city layout code.** "There is no build session active … I think you are free to make changes as needed." Art-pass now owns the layout-realism work (A-104 to A-110): the builder, raster, plan, terrain, features and plan data.
+  - **Where:** in art clones and branches only, never in D:/Godot/rebel_cell main. Merging to main waits for the designer.
+  - **Rules for every change:**
+    - deterministic core;
+    - a test for every rule;
+    - the CityLint sweep before and after;
+    - the full test suite before any branch is called done.
+  - **Order:**
+    1. Lint (in progress).
+    2. P0 layout rules: corridors, streets kept off water and parks, dead ends and connectivity.
+    3. P1: the height field, waterfront band, river infill, street hierarchy and a single road source.
+    4. Retire the view skip lists.
