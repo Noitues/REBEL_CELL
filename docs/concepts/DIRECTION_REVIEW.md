@@ -1919,3 +1919,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - Nothing merges or replaces final/ without the designer's review. Work stays on art/tide-r14 and its successors.
 
 ### Overnight art calls
+- ART CALL 1 (round 14c): the hotspot tree underglow is off entirely (it made pale mint wedges). The crossing glow is at 0.05.
+- ART CALL 2 (round 15): neon signs go only on street-facing walls. When a building has a street on more than one side, prefer the camera-facing one. No signs on walls facing an alley or a neighbouring wall.
+- ART CALL 3 (round 15): an automated placement audit runs every round. Every neon quad is checked against its building's footprint, height and steps, and nothing may float, clip or face a neighbouring wall.
+- ART CALL 4 (round 15): bridges get light strings along the span: lamps on both rails at a regular spacing, warm amber, as in the Tokyo river ref.
+- ART CALL 5 (round 15): spread hotspots to the north-east and far south-west. Every district has at least 1 cluster, with dark gaps between clusters.
+- ART CALL 6 (round 15): the brown arc gets traced by dumping the node tree, then removed or fixed.
