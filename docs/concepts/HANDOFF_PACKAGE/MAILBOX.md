@@ -429,3 +429,22 @@ On art/tide-r35 (`D:/rc_art/godot_look_tide`, a168aa7c), the designer ruled the 
 This is view-side only. If gameplay reads the wall routes (as a barrier, a raid lane or line of sight), tell art. And if the plan should carry them as highways instead, the layout can change to match.
 
 Notes: `docs/concepts/tide_raid/G1_parity/NOTES_ROUND35.md`.
+
+### A-110 · 2026-10-29 · City layout realism: a CityLint pass plus P0 layout rules (designer ask) · ASK
+The designer is worried that zoomed-in views will show "silly mistakes" in the city layout and in how its elements interact. Art ran a read-only evaluation: `docs/concepts/tide_raid/city_gen_eval/CITY_GEN_EVAL.md`. It finds the macro A2 plan sound, but three things below it cause most of the defects art currently hides in the view:
+- **No cross-checks between layers:** rails, walls, ramps and stations are never rasterised. Spot-checked: there is no rail, wall or interchange logic in `city_a2_raster.gd`, `city_a2_builder.gd` or `city_plan.gd`.
+- **The street grid ignores water and parks:** it is painted onto any ground or park lot (`city_a2_builder.gd:345-358`), and the coast setback keeps street frontage (:421-424).
+- **Heights are uncorrelated:** one `randf` per lot (:607).
+
+Asks, in order (report section 6, actions 1-6 and 9):
+1. **CityLint:** pure, headless, in `scripts/core/`, run on 25 seeds in CI. Checks 1-13 are in report section 5, layer 1. Its output is a list of lots, so later asks come with coordinates.
+2. **Corridors:** rasterise the rail, station, ramp and wall-highway polylines, and clear buildings within a corridor in metres. This covers A-106 and A-109 and lets art retire its skip lists.
+3. **Streets:** a street never 4-touches sea except at flagged quays and bridges. The grid stops at park edges. This extends A-108 items 2 and 3.
+4. **Pruning:** prune to a fixed point, ban dead ends, and add a single-component connectivity check.
+5. **Heights:** a block-scale height field times core falloff, a 3-5 lot step-down at territory, park and water edges, and 3-4 % low-rise breaks. This covers A-107.
+6. **Waterfront band:** the first 2 lots from the sea are quay road plus low-rise, port or park. Add river-margin infill too. This covers A-104 and A-108 item 1.
+7. **Street hierarchy:** an arterial every 8-12 lots, continuous across districts.
+
+Report section 3 has the real-city reference behind each rule. Art handles the view side: one road-geometry source for decks, a no-hide assertion once item 2 lands, and avenue and traffic end rules.
+
+Effort per the report: about 1 week for the lint, 3-4 days for the P0 rules (items 2-4) and about 2 weeks for P1. Nothing here blocks art.

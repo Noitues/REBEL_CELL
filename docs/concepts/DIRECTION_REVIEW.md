@@ -2129,3 +2129,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - the strips follow the terrain height with a constant offset, and a depth bias keeps the ground from clipping them;
   - single-lot stops in the middle of an avenue are bridged;
   - the shoreline highlight goes in if there is time.
+- **City generation evaluation (designer ask, 2026-10-29):** `tide_raid/city_gen_eval/CITY_GEN_EVAL.md`. Verdict: the A2 macro plan is sound, but below it the layout layers are never cross-checked, and the view hides the collisions.
+  - **Recommendation:** option (b), a headless CityLint over 25 seeds, plus targeted layout rules. No rewrite.
+  - **Build:** the layout asks went as A-110.
+  - **Art, after r36:** derive decks from one road source, assert that the view hides nothing once the corridors land, and end avenues and traffic at real intersections and roads.
