@@ -2569,3 +2569,12 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   5. **Signs:** rebuild sign tiers T2–T4 under their caps.
   6. **Capture:** make it deterministic.
 - **Parallel work:** per-element LOD review sheets (designer ask) start in a separate worktree from 9a5069c1.
+- **Designer traffic notes (2026-10-30):**
+  1. **Head and tail colours.** Headlights fade to white, so drop the white lerp.
+     - Head = the current tail colour and intensity (the corp hue).
+     - Tail = a darker shade of the corp hue, but not so dark that the lights read black, grey or red.
+  2. **Randomness.** Traffic must be random, not uniform.
+     - The current uniformity comes from the implementation: a fixed 8 BU gap and one constant speed per class. It is not intended.
+     - Use random spacing and gaps (platoons), per-car speed variance and random density per street, all seeded.
+  3. **Speed:** all traffic about 10x faster, at every zoom.
+  4. **Light-streak swap:** above a speed threshold (in px/s on screen), replace the car model with a coloured light streak, at any zoom.
