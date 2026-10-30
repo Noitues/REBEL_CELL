@@ -102,7 +102,7 @@ def convoy(img, cam, routes):
 
 def work_order(img):
     rows = [("TARGET", "CORE (CELL)"), ("UNITS", "6 IN 1 WAVE", (170, 30, 25)), ("ENTRY SITES", "3"), ("IF RUN NOW", "HOME 50 > 41")]
-    p = KT.work_order(rows, w=228, seed=52, scale=TS, title="MANIFEST AUDIT", sub="WO 52-MF-207")
+    p = KT.work_order(rows, w=228, seed=52, scale=TS, title="STRAIN AUDIT", sub="WO 52-SB-207")
     return K.paste_paper(img, p, (14, 150), angle=-1.2, sh=0.6)
 
 
@@ -112,8 +112,8 @@ def threat_intel(img):
 
     def extra(im, y):
         f, fs = KT.F(K.MONO, int(14 * s)), KT.F(K.MONO, int(11 * s))
-        for letter, who, rule in (("A", "HAULER + COURIER", "> VAULT"), ("B", "HAULER + COURIER", "> CORE (home)"),
-                                  ("C", "HAULER + COURIER", "> weakest node")):
+        for letter, who, rule in (("A", "WARDEN + SPORE DRONE", "> VAULT"), ("B", "WARDEN + SPORE DRONE", "> CORE (home)"),
+                                  ("C", "WARDEN + SPORE DRONE", "> weakest node")):
             d = K.BD(im)
             d.ellipse([x0 + 18, y - 13, x0 + 18 + 26 * s * 0.85, y - 13 + 26 * s * 0.85], outline=K.HARM + (255,), width=3)
             K.text(im, (x0 + 18 + 13 * s * 0.85, y - 13 + 13 * s * 0.85), letter, KT.F(K.ANTON, int(15 * s)), K.HARM, "mm", 0)
@@ -122,7 +122,7 @@ def threat_intel(img):
             y += 50 * s * 0.8
         # scanned silhouettes (the corp's own units, scanlined in the corp tint)
         xs = x0 + 24
-        for unit in ("HAULER", "COURIER"):
+        for unit, label in (("HAULER", "WARDEN"), ("COURIER", "SPORE DRONE")):
             sp, _, _ = S39.mer_sprite(unit, 2)
             sp = sp.resize((int(sp.width * 0.9), int(sp.height * 0.9)), Image.LANCZOS)
             a = np.asarray(sp, np.float32)
@@ -131,11 +131,11 @@ def threat_intel(img):
             a[::3, :, 3] *= 0.4
             sp = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
             im.alpha_composite(sp, (int(xs), int(y - 14)))
-            K.text(im, (xs + 8, y + sp.height - 14), unit, fs, K.CORP["meridian"], "la", 0.6)
+            K.text(im, (xs + 8, y + sp.height - 14), label, fs, K.CORP["meridian"], "la", 0.6)
             xs += 120
         return im
     rows = [("THREATS", "6  //  +52% (HEAT)")]
-    return KT.holo_file(img, (x0, y0, x1, 486), "THREAT INTEL  //  SCAN", rows, sub="MERIDIAN FREIGHT  //  YARD SECURITY NET",
+    return KT.holo_file(img, (x0, y0, x1, 486), "THREAT INTEL  //  SCAN", rows, sub="SOLACE BIOSYSTEMS  //  GARDEN NET",
                         seed=7, scale=s * 0.82, key_w=118, extra=extra)
 
 
@@ -143,8 +143,8 @@ def your_network(img):
     x0, y0, x1, y1 = 1488, 504, 1904, 846
     img = KT.term(img, (x0, y0, x1, y1), "YOUR NETWORK", tag="9 NODES", seed=19)
     s = TS * 0.82
-    rows = [("core", "CORE (home)", "HOME 50", K.PINK, 1.0), ("firewall", "RETURNS PROC.", "DISABLED", K.AMBER, 0.0),
-            ("vault", "ROUTING MIRROR", "HOLDS", K.GREEN, 0.7), ("safehouse", "SHIFT PLANNER", "HOLDS", K.GREEN, 0.35)]
+    rows = [("core", "CORE (home)", "HOME 50", K.PINK, 1.0), ("firewall", "CULTURE INTAKE", "DISABLED", K.AMBER, 0.0),
+            ("vault", "ROUTING MIRROR", "HOLDS", K.GREEN, 0.7), ("safehouse", "GROWTH PLANNER", "HOLDS", K.GREEN, 0.35)]
     y = y0 + 58
     f, fs = KT.F(K.MONO, int(16 * s)), KT.F(K.MONO, int(12 * s))
     for kind, name, chip, col, hp in rows:

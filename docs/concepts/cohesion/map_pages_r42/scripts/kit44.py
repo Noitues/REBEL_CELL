@@ -322,7 +322,7 @@ def holo_file(img, box, title, rows, corp="meridian", seed=4, stamp=True, sub=No
 
 
 # ------------------------------------------------------------------ corp paper: the intercepted work order
-def work_order(rows, w=330, seed=5, scale=1.0, title="ROUTE AUDIT", head="MERIDIAN FREIGHT", sub="YARD SECURITY  //  WO 52-MF"):
+def work_order(rows, w=330, seed=5, scale=1.0, title="CULTURE AUDIT", head="SOLACE BIOSYSTEMS", sub="GARDEN SECURITY  //  WO 52-SB"):
     """RAID INCOMING = the intercepted corp work order (Courier Prime fields, Plex letterhead, INTERCEPTED stamp, clip)."""
     s = scale
     lh = int(28 * s)
@@ -426,7 +426,7 @@ def paste_polaroid(img, p, x, y, angle=0.0, lift=0.0):
 # ------------------------------------------------------------------ small terminal chips and tags
 def chip(img, xy, s, col=CYAN, size=15, anchor="mm", bright=False, pad=10):
     f = F(K.MONO, size)
-    tw_ = f.getlength(s)
+    tw_ = f.getlength(s) + 0.8 * max(0, len(s) - 1)     # K.text tracking (0.8 px a gap) so the glyphs stay inside the box
     hh = size + 12
     x, y = xy
     if anchor == "mm":

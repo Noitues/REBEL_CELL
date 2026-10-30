@@ -37,3 +37,31 @@ Neon = bright and saturated pixels (S>0.45, V>0.55), grown 1 px and blurred; the
 7. Process slip: I twice typed `python -` inside a shell command (a stdin read that hung, then was stopped by task id). No code was run from it and nothing was changed by it.
 
 Rebuild: from `scripts/`: `python layout36.py`, `NET36=net_scope.json python scope39.py`, `python run44.py veh` (Blender), copy `route_map_graph/hq_solace/scratch/emblems/*.png` to `scratch/emblems/`, `python runmap38.py` (RUN_V3=1 NET36=net_scope.json), then `python build_hq.py idle selected --grade strong`, `python build_route.py --grade strong`, `python build_raid.py --grade strong`, `python squint.py hq_idle hq_node_selected route_page raid_setup`, `python make_strip.py`, `python make_contact.py`.
+
+## Solace names (2026-10-30)
+Designer ruling: Solace is the only vertical slice, so every name and order on these four plates is Solace. Display text only: data ids (`sink_the_cargo_logs`, `m2_d`), corp keys (`meridian`, `MERIDIAN` in the veh/unit data) and gameplay terms are unchanged.
+
+| old (Meridian) | new (Solace) | where |
+|---|---|---|
+| MERIDIAN FREIGHT | SOLACE BIOSYSTEMS | work order head (hq, raid), THREAT INTEL sub, route dossier header |
+| ROUTE AUDIT | CULTURE AUDIT | HQ work order title |
+| MANIFEST AUDIT | STRAIN AUDIT | raid work order title |
+| YARD SECURITY | GARDEN SECURITY | HQ work order sub |
+| WO 52-MF / WO 52-MF-207 | WO 52-SB / WO 52-SB-207 | work order codes (MF = Meridian Freight) |
+| YARD SECURITY NET | GARDEN NET | THREAT INTEL sub (shortened to fit the holo) |
+| PRIORITY LANE EXCHANGE | SEED VAULT EXCHANGE | Site name tag, T2 Site file title, jack hint (PRIORITY_LANE to SEED_VAULT) |
+| Priority exchange // router run | Seed exchange // router run | T2 Site file TYPE row |
+| SINK THE CARGO LOGS | BURN THE TRIAL LOGS | T3 Site file title, name tag (SINK CARGO LOGS to BURN TRIAL LOGS), jack hint |
+| RETURNS PROCESSING / RETURNS PROC. | CULTURE INTAKE | Site LINK row, NOVA status, YOUR NETWORK row |
+| SHIFT PLANNER | GROWTH PLANNER | T3 Site LINK row, YOUR NETWORK row |
+| HAULER + COURIER | WARDEN + SPORE DRONE | THREAT INTEL route rows A/B/C |
+| HAULER / COURIER (silhouette labels) | WARDEN / SPORE DRONE | THREAT INTEL unit labels (the silhouettes are still the truck and van models) |
+| MERIDIAN (dossier header) | SOLACE | route page CELL-9 file |
+| FREIGHT SECURITY | BIOSECURITY | route page CELL-9 file |
+| INTERCEPTED // MERIDIAN: lane audit moved up a shift | INTERCEPTED // SOLACE: culture-lane audit moved up a shift | HQ toast (already the text on the idle plate in build_hq) |
+
+Code touched (copies in `scripts/` only): `build_hq.py`, `hq44.py`, `raid44.py`, `kit44.py` (work_order defaults), `r35ui.py` (dossier). One non-text fix in `kit44.py` `chip()`: the box width now includes the 0.8 px K.text tracking, so the last glyph of the Site name tags (e.g. the S in BURN TRIAL LOGS) no longer runs into the box border. This also widens chips on any other plate that uses `KT.chip`.
+
+Kept as is, to decide: ROUTING MIRROR (YOUR NETWORK node, not in the ruling list); the TARGET / CENTRAL SERVER / CORE (home) wording; the threat silhouettes (truck and van models under WARDEN / SPORE DRONE); the route dossier header stays in the Meridian orange (`MER`), not Solace lime.
+
+Rebuilt: `python build_hq.py idle selected --grade strong`, `python build_route.py --grade strong`, `python build_raid.py --grade strong`, `python build_hq.py strengths`, `python make_strip.py`, `python make_contact.py`, `python squint.py hq_idle hq_node_selected route_page raid_setup`.

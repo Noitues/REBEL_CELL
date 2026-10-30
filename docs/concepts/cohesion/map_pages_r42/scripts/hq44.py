@@ -116,7 +116,7 @@ def tabs(img, active="CREW"):
 
 def crew(img, runner=True):
     cards = [("CELL-9", "breaker", "R2", "READY", K.GREEN, False),
-             ("NOVA", "ghost", "R1", "ON RETURNS PROC.", K.CYAN, False),
+             ("NOVA", "ghost", "R1", "ON CULTURE INTAKE", K.CYAN, False),
              ("RIG-4", "rigger", "R0", "READY", K.GREEN, False),
              ("HEX", "phantom", "R1", "FLATLINED", (150, 150, 162), True)]
     x = 236
@@ -167,9 +167,9 @@ def site_holo(img):
         row = RL.outcome_row([("schem", "+12", True), ("heat", "+3", False), ("none", "OPENS 2", True)], size=17, gap=8)
         im.alpha_composite(row, (1486, int(y + 22)))
         return im
-    rows = [("TYPE", "Priority exchange  //  router run"), ("REWARDS", "+12 Schematics, firmware"),
-            ("LINK", "from RETURNS PROCESSING"), ("sep",)]
-    return KT.holo_file(img, (1466, 586, 1902, 872), "T2  //  PRIORITY LANE EXCHANGE", rows, sub="MERIDIAN FREIGHT  //  SITE FILE 207",
+    rows = [("TYPE", "Seed exchange  //  router run"), ("REWARDS", "+12 Schematics, firmware"),
+            ("LINK", "from CULTURE INTAKE"), ("sep",)]
+    return KT.holo_file(img, (1466, 586, 1902, 872), "T2  //  SEED VAULT EXCHANGE", rows, sub="SOLACE BIOSYSTEMS  //  SITE FILE 207",
                         extra=extra, seed=9)
 
 
@@ -224,7 +224,7 @@ def build(mode):
     img = K.over(img, (3, 2, 8), KT.soft_l((0, 830, 900, 1080), blur=40), 0.3)
     img, tpen = target_edge(img, cam)
     if mode == "idle":
-        img = name_tag(img, cam, SELECTED, "PRIORITY LANE EXCHANGE", K.GOLD)
+        img = name_tag(img, cam, SELECTED, "SEED VAULT EXCHANGE", K.GOLD)
     else:
         img = name_tag(img, cam, "core", "CORE  //  HOME SERVER", K.LIME)
     img = work_order_panel(img)
@@ -235,9 +235,9 @@ def build(mode):
         img = site_holo(img)
         sd = KT.rainbow_sweep(KT.sticker("JACK IN", 84, "pink", seed=31), pos=0.56, k=0.55)
         img = KT.place_sticker(img, sd, 1712, 968, angle=-3, spill_col=K.PINK, spill_k=0.3)
-        K.text(img, (1902, 1062), "> jack --to PRIORITY_LANE  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6,
+        K.text(img, (1902, 1062), "> jack --to SEED_VAULT  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6,
                alpha=150)
-        img = toast(img, "INTERCEPTED // MERIDIAN: lane audit moved up a shift")
+        img = toast(img, "INTERCEPTED // SOLACE: culture-lane audit moved up a shift")
         # the one plan: CELL-9 runs Priority Lane Exchange (yellow pencil, solid = will happen)
         sx, sy = prj(cam, NODES[SELECTED]["lot"])
         ppen = KT.pencil(KT.PEN_Y, 442)

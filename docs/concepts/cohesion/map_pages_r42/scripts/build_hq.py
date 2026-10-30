@@ -142,19 +142,19 @@ def build(mode, grade="mid"):
     img = K.over(img, (3, 2, 8), KT.soft_l((0, 0, 1920, 96), blur=24), 0.35)
     img = K.over(img, (3, 2, 8), KT.soft_l((0, 830, 900, 1080), blur=40), 0.3)
     img, tpen = target_helix(img, cam)
-    name = "PRIORITY LANE EXCHANGE" if mode == "idle" else "SINK CARGO LOGS"
+    name = "SEED VAULT EXCHANGE" if mode == "idle" else "BURN TRIAL LOGS"
     img = H.name_tag(img, cam, H.SELECTED, name, SOLACE)
     img = H.work_order_panel(img)
     img = H.topbar_full(img)
     img = H.tabs(img, "CREW")
     img, anchors = H.crew(img, runner=(mode == "idle"))
     if mode == "idle":
-        img = site_holo_for("T2  //  PRIORITY LANE EXCHANGE",
-                            [("TYPE", "Priority exchange  //  router run"), ("REWARDS", "+12 Schematics, firmware"),
-                             ("LINK", "from RETURNS PROCESSING")], "SOLACE BIOSYSTEMS  //  SITE FILE 207", 9)(img)
+        img = site_holo_for("T2  //  SEED VAULT EXCHANGE",
+                            [("TYPE", "Seed exchange  //  router run"), ("REWARDS", "+12 Schematics, firmware"),
+                             ("LINK", "from CULTURE INTAKE")], "SOLACE BIOSYSTEMS  //  SITE FILE 207", 9)(img)
         sd = KT.rainbow_sweep(KT.sticker("JACK IN", 84, "pink", seed=31), pos=0.56, k=0.55)
         img = KT.place_sticker(img, sd, 1712, 968, angle=-3, spill_col=K.PINK, spill_k=0.3)
-        K.text(img, (1902, 1062), "> jack --to PRIORITY_LANE  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6, alpha=150)
+        K.text(img, (1902, 1062), "> jack --to SEED_VAULT  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6, alpha=150)
         img = H.toast(img, "INTERCEPTED // SOLACE: culture-lane audit moved up a shift")
         sx, sy = prj(cam, H.NODES[H.SELECTED]["lot"])
         ppen = KT.pencil(KT.PEN_Y, 442)
@@ -164,12 +164,12 @@ def build(mode, grade="mid"):
         img = KT.spill(img, ppen.mask.resize((1920, 1080)), KT.PEN_Y, 0.12, 30)
         img = KT.ink(img, ppen)
     else:
-        img = site_holo_for("T3  //  SINK THE CARGO LOGS",
+        img = site_holo_for("T3  //  BURN THE TRIAL LOGS",
                             [("TYPE", "Heat objective  //  elite run"), ("REWARDS", "-10 Heat, +30 Schematics"),
-                             ("LINK", "from SHIFT PLANNER")], "SOLACE BIOSYSTEMS  //  SITE FILE 311", 14)(img)
+                             ("LINK", "from GROWTH PLANNER")], "SOLACE BIOSYSTEMS  //  SITE FILE 311", 14)(img)
         sd = KT.rainbow_sweep(KT.sticker("JACK IN", 84, "pink", seed=31), pos=0.56, k=0.55)
         img = KT.place_sticker(img, sd, 1712, 968, angle=-3, spill_col=K.PINK, spill_k=0.3)
-        K.text(img, (1902, 1062), "> jack --to SINK_CARGO_LOGS  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6, alpha=150)
+        K.text(img, (1902, 1062), "> jack --to BURN_TRIAL_LOGS  [SPACE]", KT.F(K.MONO, 13), (120, 170, 190), "ra", 0.6, alpha=150)
         cx, cy = prj(cam, H.NODES[H.SELECTED]["lot"])
         img = K.focus_brackets(img, (cx - 34, cy - 58, cx + 34, cy + 16), gap=6, ln=12, w=3)
         img = KT.cursor(img, cx + 16, cy - 10)
