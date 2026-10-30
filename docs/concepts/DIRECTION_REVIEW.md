@@ -2284,3 +2284,14 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - **ART CALL 44:** the city phase is closed apart from the two items above, which round 43 takes.
   - It is before 08:00, so the cohesion phase starts now, as the designer ruled.
   - The netrun-look decision stays with the designer.
+
+## Cohesion review (art-pass, 2026-10-30)
+- **Accepted:** `cohesion/slice_sheet.jpg`, its squint version, and COHESION_REVIEW.md. All 11 states have a frame. Four are only partial: win, lose, HQ run and the raid HUD.
+- **Art-pass squint verdict:**
+  - The r42 city is the outlier: the only bright, multi-hue, high-frequency frame. Every UI page still sits on the older flat violet city.
+  - The bridge is a dimmed under-UI grade of r42, the same one as the raid grade in round 43. It keeps the corp colour but steps it back so the chrome leads.
+  - **Loudest jumps:** the cream dossier page and E10's orange ring.
+- **ART CALL 45:**
+  - Redo item 1: lay the City Grid, Site dossier, route page and raid setup again over the r42 city, using the dim grade.
+  - This starts now as composite concept plates, not Godot work, under the concept-vs-polish rule.
+  - Items 3, 4 and 5 and both win/lose screens wait for the designer's answers in COHESION_REVIEW.md, netrun look first.
