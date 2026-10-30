@@ -2295,3 +2295,17 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - Redo item 1: lay the City Grid, Site dossier, route page and raid setup again over the r42 city, using the dim grade.
   - This starts now as composite concept plates, not Godot work, under the concept-vs-polish rule.
   - Items 3, 4 and 5 and both win/lose screens wait for the designer's answers in COHESION_REVIEW.md, netrun look first.
+
+## Cohesion redo 1 review: map pages on r42 (art-pass, 2026-10-30)
+- **Accepted as concept plates** (`cohesion/map_pages_r42/`, b78b7dec). Checked side by side with the old pages in contact_old_vs_new.jpg and by squint.
+- **The strong under-UI grade works:**
+  - values: x0.58 outside the focus area, x0.78 inside it;
+  - saturation pull: 0.18 on buildings, 0.55 on neon.
+  - The r42 city keeps its corp hues and its cel/ink identity, and the chrome, network, TARGET and raid routes lead.
+  - The flat violet field is gone, and the pages now belong to the same world as the raid beats.
+  - The grade is the reference for the Godot under-UI grade. Round 43's raid grade should land close to it.
+- **Notes for the port, not blocking:**
+  1. The node network is an affine diamond lattice. In Godot it must follow the real r42 road graph.
+  2. The route page is a soft 2x upscale. In Godot it needs a real transit-zoom camera.
+  3. Solace lime (#96FF46) and Cell lime (#D4FF00) sit close together. The colour-blind check in the polish step must cover them.
+- **Designer questions** (added to COHESION_REVIEW): should the Site names and work orders still read as Meridian on a Solace slice? This is game data, so not art's call.

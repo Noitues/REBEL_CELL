@@ -144,3 +144,6 @@ Reference. Lime park and helix are Solace; district hues are per-corp tints. No 
 4. **Combat backdrop.** The r42 city seen from a canyon, or a Solace-specific park and helix backdrop?
 5. **Win and lose.** Does the slice need Solace-specific screens, or does the generic dossier and lock with a Solace crest do?
 6. **E10 plates.** Accept E10 as the combat target for the slice? It has no DIRECTION_REVIEW verdict yet.
+
+## Added after redo 1 (map pages on r42)
+7. Site names, work orders and THREAT INTEL still read as Meridian (for example PRIORITY LANE EXCHANGE and MANIFEST AUDIT) on the Solace slice. Should the slice data be Solace-flavoured? This is game data, not art.
