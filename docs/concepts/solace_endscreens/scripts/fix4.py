@@ -1,0 +1,17 @@
+p='ui_lib.py'
+s=open(p,encoding='utf-8').read()
+s=s.replace("d.rounded_rectangle(S([pad + 3, pad + 3, pad + w - 3, pad + h - 3]), radius=S(9), fill=fill)","d.rounded_rectangle(S([pad + 3, pad + 3, pad + w - 3, pad + h - 3]), radius=S(9), fill=(24, 16, 34, 255))")
+s=s.replace("stroke_width=int(5 * K), stroke_fill=(15, 8, 20, 255))\n    d.text((cxx * K, cyy * K), label, font=f, fill=fg, anchor='mm')","stroke_width=int(4 * K), stroke_fill=(0, 0, 0, 255))\n    d.text((cxx * K, cyy * K), label, font=f, fill=fill, anchor='mm')")
+s=s.replace("(232, 232, 236, 255), (20, 12, 28, 255), rot=1, size=30)","(236, 236, 242, 255), None, rot=1, size=30)")
+s=s.replace("new_fill, new_fg, rot=-1.5, size=38)","new_fill, None, rot=-1.5, size=38)")
+open(p,'w',encoding='utf-8').write(s)
+p='d1_specimen.py'
+s=open(p,encoding='utf-8').read()
+s=s.replace("polaroid(img, (1560, 40, 1900, 400), 'HOME SERVER' + (' 50/50' if win else ' 0/50'), 610, 190, -6)","polaroid(img, (1560, 40, 1900, 400), 'HOME SERVER' + (' 50/50' if win else ' 0/50'), 640, 150, -6)")
+s=s.replace("'BEACON', 690, 360, 3)","'BEACON', 700, 335, 3)")
+s=s.replace("'NODES AT THE END', 610, 520, -3)","'NODES AT THE END', 625, 520, -3)")
+s=s.replace("font('hand', 17), (30, 60, 130, 255), 'mm')","font('hand', 15), (30, 60, 130, 255), 'mm')")
+s=s.replace("stamp(img, 'CONTAINMENT FAILED', 1400, 405, (205, 40, 50, 235), rot=-7, size=70)","stamp(img, 'CONTAINMENT FAILED', 1590, 640, (205, 40, 50, 235), rot=-7, size=54)")
+s=s.replace("heat_graph(L, 96, y + 34, 930, y + 34 + 200, ink, True)","heat_graph(L, 96, y + 34, 800, y + 34 + 150, ink, True)")
+s=s.replace("heat_graph(L, 96, y + 34, 930, y + 34 + 150, ink, False)","heat_graph(L, 96, y + 34, 800, y + 34 + 130, ink, False)")
+open(p,'w',encoding='utf-8').write(s)
