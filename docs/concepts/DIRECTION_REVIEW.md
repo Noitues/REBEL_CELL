@@ -2418,3 +2418,21 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **LOSE:** every node is crossed out and the Bloom spreads.
   - **For the Godot port:** the map is drawn from the real city plan, and the marks come from the player's actual network.
   - **Polish note:** B's city detail comes from the 1920 r42 plan. A sharper source render is needed for the final.
+
+## Cutaway backdrop v2 review (art-pass, 2026-10-30)
+- **The kit direction is accepted** (`combat_backdrop/v2/`, 9f090a75).
+  - The bare backdrop (room_bio_bare.png) is a clear, charming iso cutaway: a hatched section slab, a lime-lit lab above a SOLACE lobby, and a wet street.
+  - All three rooms put the board first at squint; the server room is the loudest.
+  - The seeded generator (kit_gen.py) is a sound basis for the port:
+    - a 9x7 grid;
+    - a hero prop as the key light;
+    - corp colour on the trim;
+    - low props only on the cut edge.
+- **Gaps:**
+  - The facades are flat boxes, and the ink is even rather than wobbly.
+  - The props are sparse, at 0.32–0.41 density against a 0.5–0.7 target.
+  - The street does not match the city: it has the same problem the designer flagged for the netrun. The cutaway must be the real building on the real netrun street.
+- **Next:** once netrun_cel v2 has a real-data street, render the cutaway from that street's chosen building, add facade modules and raise prop density.
+- **Designer questions:**
+  1. Should there be one room type per Site role, or rooms by corp theme only?
+  2. Should the lobby stay visible under the room, or be cropped for a bigger room?
