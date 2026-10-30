@@ -2245,3 +2245,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   2. All 7 beats of the tide raid sequence are re-rendered on r41 into `G1_parity/final_proposed/`, using the same side-by-side and squint format as final/.
   3. The hand-off notes are drafted.
   final/ stays untouched until the designer reviews it.
+- Critic on r41: 26/50, "not ready, yes-with-fixes in about two rounds" (review: D:/rc_tmp/visual_critic/city_r41/REVIEW.md). It read only part of its inputs.
+- ART CALL 43, my rulings on its list:
+  - **Declined:**
+    - #1, more corp colour on the core walls: the designer approved the r29 buildings "colors and all", so corp colour stays in windows, rims and neon.
+    - Its call for an orange or amber core: already ruled out.
+  - **Taken into round 42:**
+    1. **Towers piercing the highway loop:** verify with a 3D deck-vs-building clearance audit and fix the cause, whether layout corridor or deck path.
+    2. **Park artefacts:** remove the grey diamond holes, haze rectangles and stray pink patches.
+    3. **Apron:** the grey slab behind the quay gets warehouse or lawn lots out to the highway zone, and the pylons stand on dressed ground.
+    4. **Avenues:** they run along the arterials (P1's street hierarchy) so they read as continuous lines, not stubs.
+    5. **Low-rise breaks:** biased to lots beside highways and around the hotspot tower (A-107's intent).
+  - **Final render:** final_proposed is re-rendered on r42.
