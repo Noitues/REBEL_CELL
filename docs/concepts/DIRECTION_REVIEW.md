@@ -2584,3 +2584,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     - blade signs;
     - the Close band.
   - **Known faults:** the fascia text overlaps; the road's lane glow reads as a pink slab at Near and Street.
+- **Traffic follow-up 3 done** (Godot 5df3d8ae, art ab01a063).
+  - **Colours:** head is the corp hue at V 0.55 (no white); tail is the same hue at V 0.38.
+  - **Random generator:** seeded `CityTrafficGen` with platoons, quiet streets, lane choice, and ±25 % speed per lane.
+  - **Speed:** 10x, with decks at 3.5x streets.
+  - **Light-streak swap:** at 200 px/s on screen, with a cross-fade.
+  - **Checks:** motion verified by frame diffs; p95 7.14 ms; 56 targeted tests, 0 failing.
+  - At close-up nearly all cars are streaks. Raising `traffic_streak_px_per_s` brings the car models back.
