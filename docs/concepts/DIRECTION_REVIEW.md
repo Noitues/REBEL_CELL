@@ -2401,3 +2401,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **The street view to the helix:** it is cool but may not be possible in the real layout. It can serve as an alternate street netrun leading up to the HQ, but only where a real avenue points at the helix.
   - **The HQ netrun is unique and hand-authored,** not procedural. Only the city behind it matches the procedural city.
   - **The general zoom in and out between the city view and the netrun is right.**
+
+## Folder-memo end screens v2 review (art-pass, 2026-10-30)
+- **Accepted for the designer** (`solace_endscreens/v2/`, 051059ef).
+- **The folder works:** the open manila corp file (crest tab, hazard strip, routing slip, ROUTED/FILED stamps, TO/FROM/RE memo) keeps D1's wit and the existing summary fields.
+- **Image slot, art-pass pick: A, the glossy helix print,** with B's grease-pencil network drawn over it as a possible combination.
+  - A is the sharpest and reads at squint: lime→cyan on WIN, pink Bloom on LOSE.
+  - B is second; it could be driven by the real network data.
+  - C is the most narrative but the weakest at squint.
+- **Start page (G7):** the Solace folder sits open, with the other corps closed behind it.
+  - It shows only the GDD pickers.
+  - With the end screens it reads as bookends: the file opens at the start and closes at the end.
+- **Open:** the Halcyon "win" dossier reads as a defeat, and the numbers are placeholders. Both are game data.
