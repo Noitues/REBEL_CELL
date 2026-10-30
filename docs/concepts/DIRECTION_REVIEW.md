@@ -2373,3 +2373,13 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Art-pass pick: 2 Cutaway** (the chosen building opened on its street). It answers the designer's idea, keeps the city's iso, ink and neon, and is quiet.
   - **Next:** after the pick, a polished render of the chosen direction from the netrun_cel street, then the E10 micro-detail polish against it.
 - Both wait on the designer's picks.
+
+## 2026-10-30: designer picks, end screens and combat backdrop (ART CALL 47)
+- **End screens: D1, the file folder.**
+  - Designer: "The campaign start is choosing a file folder from a corporation and this would mirror that style. Its like the corporation internal memo on your activities."
+  - Replace the Petri dish with the D2 view (the helix hacked, or the Bloom spreading). The designer is "open to other ideas as that doesn't feel quite right yet."
+  - **Next:** v2 of the folder memo, matched to the campaign-start corp folder, with the D2 view as the folder's image plus 2 alternatives for that element.
+- **Combat backdrop: 2, the cutaway.**
+  - Designer: "Some light procedural generation work to define the interiors, then we just toss that up. Seems like easiest and keeps on brand."
+  - **Next:** a procedural interior kit concept. Rooms are built from modules, with the room type chosen by Site kind. It is rendered as an iso cutaway at golden-plate polish behind the E10 board, and must match the netrun_cel street.
+  - The E10 micro-detail polish follows, against that backdrop.
