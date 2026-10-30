@@ -2478,3 +2478,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   3. On arrival, swap the near frontage for a high-detail procedural facade kit, the counterpart of the cutaway interior kit. It uses the same lots, heights and corp colours; storefronts, signs, fire escapes, water towers and wires are kit modules.
   4. Add a skyline and sky behind.
   - **Designer pick needed:** the netrun camera framing.
+- **Designer ruling (2026-10-30): the netrun stays at street level** (framed like street_overview), not the raised angle.
+  - **Develop new procedural rules, logic first, for nearing and reaching street level.** Past a zoom threshold, phase in:
+    - building signage and more facade detail;
+    - small city clutter;
+    - small extra lights;
+    - road texture, wetness and reflection.
+  - **Camera rules that optimise the view:** flatten or hide foreground buildings that are not part of the netrun node set or that block the street, and avoid lamps and debris.
+  - **Each netrun sub-element is attached to a real city object** and has phases tied to zoom thresholds:
+    - a building starts as its basic shape and lighting, gains wall detail and some signage mid-zoom, and ramps to full detail at street level;
+    - trees and bushes start as the city's blocky sphere, become overlapping spheres with a trunk mid-zoom, and get a detailed version at street level;
+    - repeat for every city element.
+  - **Process:** write the rules, implement them, then render and judge whether they bridge the gap to the plates.
