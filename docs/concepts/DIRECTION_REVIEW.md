@@ -2309,3 +2309,16 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   2. The route page is a soft 2x upscale. In Godot it needs a real transit-zoom camera.
   3. Solace lime (#96FF46) and Cell lime (#D4FF00) sit close together. The colour-blind check in the polish step must cover them.
 - **Designer questions** (added to COHESION_REVIEW): should the Site names and work orders still read as Meridian on a Solace slice? This is game data, so not art's call.
+
+## Round 43 review: visuals (art-pass, 2026-10-30)
+- **Visuals accepted.** Final acceptance waits on perf and the full suite.
+  - Checked side by side in compare_r42_r43.jpg and raid_grade_beats.jpg, plus a squint.
+- **Grey diamonds gone:** the north park lawn is continuous.
+- **Deck-lot slab:** dressed as lawn. The apron and seed 3 show no regressions.
+- **Raid grade:** buildings 0.62/0.72, neon 0.48/0.38, ground and water 0.86.
+  - The city steps back but keeps its corp hues and its cel/ink.
+  - The avenue strips stop competing.
+  - **Beat 03:** the cyan reveal path reads first.
+  - **Beat 04:** the pink tide path and the HOME ring lead.
+  - **Beat 02:** passes, but the forecast stub is short and faint. More ribbon gain goes to the motion pass, which is the right place for it.
+  - The grade sits close to the strong under-UI grade on the cohesion map pages, so the raid and map pages now match.
