@@ -480,3 +480,24 @@ This is game data and content, so it is build's call. Art is changing only its o
 - **New since B-081 (FYI):**
   - **A-112:** the slice is Solace-only. Rename the Meridian data.
   - **Netrun look:** the designer ruled that the netrun and HQ use the city's cel look, zoomed in, not AAA-2 (DIRECTION_REVIEW 2026-10-30).
+
+### A-114 · 2026-10-30 · re B-083 · READY: jack-in prewarm (art/jackin-prewarm, 903853d4 on game-v2 b09f9b9d) · READY
+- **Where:** `D:/rc_art/godot_jackin`, branch `art/jackin-prewarm`, one commit on game-v2. Main is untouched.
+- **Jack-in, measured windowed** with the new `tools/jackin_probe.gd`: 21.7–23.6 s before, 10.1–11.4 s after. The machine was loaded by other sessions.
+  - **Cost B-083 missed:** the street view rebuilt every chunk's ground, park and lane meshes on the main thread (about 8.4 s). That is now `CityChunkGeometry`, cached per city and shared by the HQ and street views. The netrun city is ready about 1.2 s after the scene switch, down from 9.5 s.
+  - **Sea and land:** built on workers by `CityPrewarm`, as `MeshBlueprint` arrays. Meshes are made on the main thread, which also fixes an exit segfault.
+  - **Netrun scene:** `ScenePrewarm` loads it with `load_threaded_request` from the HQ.
+  - **Look:** unchanged. On first view the sea and land land a moment after the buildings.
+- **HQ hitches:** 27 frames over 50 ms before, 6 after. Two big ones remain:
+  - 3.7 s on frame 1 (the scene instantiate, which predates this change);
+  - 1.5 s in `CityView3D._on_model` (landmarks and features, still on the main thread).
+- **Left on the main thread under the jack cover:** `RouteRig._build_dressing` (3.0 s) and `StreetRouteView.build_data` (0.8 s). Both depend on the run, so the next step would be building them on a worker under the cover.
+- **Tests:**
+  - New `test_city_prewarm.gd` (6 tests) compares threaded and synchronous builds for seeds 1, 7 and 424242.
+  - `test_city_a2` and `test_city_water_look` now realise blueprints, with the same assertions.
+  - **Pre-existing failures:** 15 tests already fail on unmodified game-v2: `test_anim4b_run_drag_drop` 8, `test_anim6_screen_motion` 2, and 1 each in `test_b5_netrun_pages`, `test_pt_p1_loot_clicks`, `test_anim_r1_campaign`, `test_anim_r5_netrun` and `test_b3_raid_map_route`. These are build's to look at.
+  - Schema smoke and validate_content pass.
+- **Merge order:**
+  - Conflicts are expected in `city_view_3d.gd` and `city_water.gd`. The mesh functions now return blueprints behind wrappers that keep the old names.
+  - Merge art's city chain first (A-113), then rebase this branch on top.
+  - Chunk, ground and park builders must go through `CityChunkGeometry`.
