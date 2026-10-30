@@ -2224,3 +2224,12 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - a surface-use lot kind under the decks;
   - avenues along the arterials;
   - retiring the skip lists and the Solace pockets.
+- Round 40 accepted. P1 merged into the view cleanly. The holo ads are off, and the wall skip is at 0 on seeds 1 and 3. The height field reads as a dense core with lower fringes. Perf is 9.36 ms.
+  - **Weakened test:** test_city_motion was weakened to "road count ≥ 0" because its model rect is now park. The test-fix agent is restoring it, since a weakened test cannot merge.
+- ART CALL 41 (round 41, view plus layout under the 2026-10-29 clearance):
+  - **Bay apron:** remove the lone apron towers and turn the bare grey apron into a waterfront (quay promenade with a tree line, port blocks or a linear park).
+  - **Odd buildings:** bring the odd slab and the glass cluster into the height field.
+  - **North park:** brighter path cores, with lamps on the park paths only.
+  - **Bare lots:** fill the dark and bare lots beside the Solace park.
+  - **South-west low-rise:** vary it so it matches the core's style.
+  - **Plan zoom:** drop the stray guide dots.
