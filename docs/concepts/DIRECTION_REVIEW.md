@@ -2257,3 +2257,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     4. **Avenues:** they run along the arterials (P1's street hierarchy) so they read as continuous lines, not stubs.
     5. **Low-rise breaks:** biased to lots beside highways and around the hotspot tower (A-107's intent).
   - **Final render:** final_proposed is re-rendered on r42.
+- **Full suite green:** art/city-test-fixes (a76b09b6, based on art/tide-r40) runs 4,069 tests with 0 failing, and schema smoke and validate_content pass.
+  - **Code fixes:** rc_common includes in 7 shaders, Palette tokens in tide_fx, and explicit sort comparators.
+  - **Two stale tests updated,** each citing its ruling.
+  - **Weakened test restored:** test_city_motion is back, now on a densest-window helper.
+  - **P1 thresholds:** the agent's own P1 threshold cuts were reverted.
+  - **Merge note:** r42 must merge art/city-test-fixes before the final render.
