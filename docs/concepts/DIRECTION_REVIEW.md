@@ -2395,3 +2395,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     - route poles louder than the street.
   - Frame 2 fails the squint test: the avenue and the route are lost.
 - **v2 is commissioned** with notes on each of those: darker value, selective neon on about 1 building in 3, small irregular windows, haze, streaks and sky, grime texture, quieter route marks, and a new frame-2 camera.
+- **Designer feedback on netrun cel v1 (2026-10-30):**
+  - **The zoom does not match.** Frame 1 → frame 2 does not feel like zooming into the district. That is because v1's frames 2–4 were a separate Blender district, not the city.
+    - **Ruling for v2:** the netrun is built from the real procedural city data for that block, with a continuous camera move from the city view. A zoom-match overlay proves it.
+  - **The street view to the helix:** it is cool but may not be possible in the real layout. It can serve as an alternate street netrun leading up to the HQ, but only where a real avenue points at the helix.
+  - **The HQ netrun is unique and hand-authored,** not procedural. Only the city behind it matches the procedural city.
+  - **The general zoom in and out between the city view and the netrun is right.**
