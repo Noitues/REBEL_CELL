@@ -2263,3 +2263,24 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Weakened test restored:** test_city_motion is back, now on a densest-window helper.
   - **P1 thresholds:** the agent's own P1 threshold cuts were reverted.
   - **Merge note:** r42 must merge art/city-test-fixes before the final render.
+
+## Round 42 review (art-pass, 2026-10-30 01:50)
+- **Accepted:** art/tide-r42 bbdc20ae, which is r41 plus art/city-test-fixes.
+  - Full suite: 4,070 tests, 0 failing. Schema smoke and validate_content pass.
+  - Perf: GPU p95 10.15 ms, against a 12.57 ms limit.
+- **Checked side by side** with r41 and with final/ (old_vs_new.jpg).
+  - **Highway decks:** no towers pierce them; the deck-clearance audit finds 0 on seeds 1, 3 and the camera seed.
+  - **Arterial avenues** read as continuous corridors.
+  - **The pink ramp stubs** are gone.
+  - **Low-rise breaks** sit along the highways.
+  - **Squint:** buildings, avenues and highway loops hold. The bay is blue and the ground is grey-green.
+- **Still open, carried to round 43:**
+  1. A row of grey diamonds on the north park lawn. These are chunk-ground lot quads, so the fix needs a per-lot probe.
+  2. A grey slab behind the quay at the top of the plan.
+- **final_proposed (7 beats on r42):** the tide path reads clearly in beats 04 and 05.
+  - In beats 02 and 03, the cyan forecast path competes with the cyan and green avenues.
+  - This is the case for the raid-mode dimmed grade in the cohesion phase: during a raid the city must step back so the raid marks lead.
+  - final_proposed waits for the designer's review. final/ is untouched.
+- **ART CALL 44:** the city phase is closed apart from the two items above, which round 43 takes.
+  - It is before 08:00, so the cohesion phase starts now, as the designer ruled.
+  - The netrun-look decision stays with the designer.
