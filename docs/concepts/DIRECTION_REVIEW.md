@@ -2440,3 +2440,19 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - The room types are bio-lab, server room, greenhouse, records/office and lobby, mapped to the existing Site roles as in combat_backdrop/v2/NOTES.md.
   - Corp colour drives the trim and light.
   - The lobby question (keep it, or crop it for a bigger room) is still open. Art-pass default: keep a thin lobby band for the street context and give the room more of the frame.
+
+## Netrun cel v2 review (art-pass, 2026-10-30)
+- **The layout match is proven** (`netrun_cel/v2/zoom_match.jpg`): frame 2 is built from the real r43 lot dump with frame 1's camera at x3, and its edges sit on frame 1's roofs, plaza rings and park edge.
+  - A real avenue at lot row j -37 points at the helix, so the street view to the helix is a possible view.
+  - The HQ helix set is authored, with the procedural city behind it.
+- **The rendering does not match yet.** Frame 2 is generic purple boxes and blob trees, so the zoom still will not *feel* like the same city. It has none of these from frame 1:
+  - Cv2 facets and corp-colour panels;
+  - roof dressing and ink;
+  - the highway.
+  - A Blender re-creation cannot match without re-implementing the city shaders.
+- **Frame 3** is a big step toward the plates' mood: a dark mass, a bright storefront band, a wet street and one lime route line. It is still busier and more saturated than the plates.
+- **Frame 4:** a strong vista, but the trees are toy-like and the sky is over-saturated.
+- **Art-pass recommendation:** do the next round as a Godot zoom prototype in the tide clone.
+  - Pull the real CityView3D camera from the city view down to district and then street level.
+  - See where the real look breaks, then add the per-zoom detail layers from netrun_cel/NOTES.md (storefront bays, signs, windows, haze) in the engine.
+  - This gives a true continuous zoom, and it is the path the port has to take anyway.
