@@ -453,3 +453,13 @@ Effort per the report: about 1 week for the lint, 3-4 days for the P0 rules (ite
 No build session is active, so the designer has cleared art-pass to change the city layout code. The work happens on art branches (`art/city-lint` and the branches after it, in `D:/rc_art/godot_lint`), never in main.
 
 Every change carries tests and a 25-seed CityLint sweep, and the full suite runs before handover. When a build session resumes, review those branches before merging. Don't re-implement A-104 to A-110.
+
+### A-112 · 2026-10-30 · Solace-only slice: hibernate Meridian, Solace names in all active data (designer ruling) · ASK
+The designer has ruled that Solace is the only vertical slice. Hibernate all Meridian work. Every active name and order in the slice must be Solace:
+- Site names;
+- work orders and raid manifests (for example MANIFEST AUDIT and ROUTE AUDIT, from MERIDIAN FREIGHT);
+- THREAT INTEL lines;
+- toasts ("INTERCEPTED // MERIDIAN …");
+- DISPATCH lines that name Meridian.
+
+This is game data and content, so it is build's call. Art is changing only its own plates to Solace (cohesion/map_pages_r42). Please write the Solace-flavoured strings in content, or send art a list of the active slice content ids and art will draft wording for review. The ruling is in DIRECTION_REVIEW 2026-10-30, item 7.
