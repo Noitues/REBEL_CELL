@@ -2457,3 +2457,24 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - See where the real look breaks, then add the per-zoom detail layers from netrun_cel/NOTES.md (storefront bays, signs, windows, haze) in the engine.
   - This gives a true continuous zoom, and it is the path the port has to take anyway.
 - **Designer (2026-10-30): "Yes, Godot zoom."** The next netrun round is a Godot zoom prototype on `art/netrun-zoom`, off art/tide-r43 in the tide clone.
+
+## Godot zoom prototype review (art-pass, 2026-10-30)
+- **Output:** `netrun_cel/godot_zoom/`, art/netrun-zoom at b7b60a9f.
+  - Targeted tests: 179, 0 failing.
+  - GPU p95: 9.13 ms at stage 3 and 6.80 ms at stage 5, both with the layers on.
+- **Stages 1–3 (city → x3 district) hold:** it is truly one continuous city, and the real look survives a 3x zoom. This is the continuity the designer asked for.
+- **Stages 4–5 (40 m and 10 m perspective) fail against the plates:**
+  - the 40–80 m prisms read as blank walls;
+  - the street is flat asphalt;
+  - the lamps and trees look like toys;
+  - there is no sky;
+  - one billboard dominates.
+  - The shader and quad detail layers barely register at that scale.
+- **Art-pass diagnosis:** the city's geometry is built to be read from altitude, not at eye level. Shader layers cannot make an 80 m prism into a plate facade.
+  - Both golden plates frame one street frontage from an elevated oblique or frontal camera, with mid-rise facades and sky above.
+- **Proposal for the next round:**
+  1. Keep the Godot zoom to about x3 in the real look.
+  2. The final netrun camera is an elevated oblique on one street frontage, framed like hq_rebel_cell_overview, not eye level.
+  3. On arrival, swap the near frontage for a high-detail procedural facade kit, the counterpart of the cutaway interior kit. It uses the same lots, heights and corp colours; storefronts, signs, fire escapes, water towers and wires are kit modules.
+  4. Add a skyline and sky behind.
+  - **Designer pick needed:** the netrun camera framing.
