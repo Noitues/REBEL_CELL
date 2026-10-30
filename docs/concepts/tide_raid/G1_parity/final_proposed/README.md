@@ -24,7 +24,7 @@ Level 3 city GPU p95 10.15 ms (mean 7.67), limit 12.57 (perf.md, round 42).
 - The first full run found two regressions of mine (shape-kit low-rise slant, spike count with the wider corridors) and a schema-smoke pin on the 45 m corridor; all fixed in tests / config before the green run.
 
 ## Merge order
-art/city-lint, then art/city-layout-p0, then art/city-layout-p1, then art/city-test-fixes (merged, green), then art/tide-r42. (r42 contains P0 and P1 by merge; the test fixes touch test_city_motion's weakened road-count assertion.)
+art/city-lint, then art/city-layout-p0, then art/city-layout-p1, then art/city-test-fixes (merged, green), then art/tide-r42, then art/tide-r43 (head e2c9976c: park ground sink, deck-lot lawn, raid-mode grade; full suite 4,080 / 0 failing). The renders here are r42; r43 changes only the north park, the deck-lot slab and the grade during raid beats (see ../r43/). (r42 contains P0 and P1 by merge; the test fixes touch test_city_motion's weakened road-count assertion.)
 
 ## Open items
 - The tall teal tower on the bay apron, the pale slab at the park / core edge and the glass cluster are Site buildings (a Site keeps its lot); they need a build decision, not a view fix.

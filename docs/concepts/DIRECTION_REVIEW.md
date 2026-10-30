@@ -2322,3 +2322,11 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Beat 04:** the pink tide path and the HOME ring lead.
   - **Beat 02:** passes, but the forecast stub is short and faint. More ribbon gain goes to the motion pass, which is the right place for it.
   - The grade sits close to the strong under-UI grade on the cohesion map pages, so the raid and map pages now match.
+- **Round 43 fully accepted:** art/tide-r43 e2c9976c.
+  - Full suite: 4,080 tests, 0 failing. Schema smoke and validate_content pass.
+  - GPU p95: 10.05 ms with the grade off, 8.73 ms with it on.
+  - This is now the head the designer reviews. It is r42 (the base of final_proposed) plus the park, slab and raid-grade fixes.
+  - The merge order in final_proposed/README.md ends at art/tide-r43 instead of r42.
+- **Status at 03:45:** the cohesion phase is done up to what art-pass can do alone.
+  - The remaining redo items (netrun/HQ look, combat backdrop, pink scope, Solace win/lose, slice data flavour) wait for the designer's answers in cohesion/COHESION_REVIEW.md.
+  - No further autonomous rounds will run.
