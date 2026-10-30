@@ -2547,3 +2547,25 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Checks:** frame diffs confirm motion; GPU p95 7.09 ms; 62 targeted tests, 0 failing.
   - Art-pass checked the close-up side by side: the roads carry no colour, the decks read as fine corp-coloured dashes, and the city is calmer than r43.
   - Waits for the designer's look at the GIFs.
+
+## Zoom rules round 1 review (art-pass, 2026-10-30)
+- **Output:** art/netrun-zoom 9a5069c1, art 197d382c, `netrun_cel/zoom_rules/round1/`.
+  - **Checks:** GPU p95 8.70 ms at the Street band; 264 targeted tests, 0 failing.
+  - **City band:** effectively unchanged; 0.02 % of pixels differ outside animated pixels.
+- **Progress:**
+  - With the rules off, stage 5 was a void of toy trees. With them on, it is a framed street with real-scale windows, a continuous storefront band, wet asphalt and plum sky fog.
+  - Stages 1–3 are unchanged, as required.
+- **Squint against street_overview: FAIL.** It reads as dark towers, one bright slab and a thin bar at the bottom.
+  - **Structural cause:** our frontage is a canyon of 60–80 m towers. The plate is a ~100 m row of about 33 m mid-rises across a wide wet street, with towers behind them in fog.
+  - **Scale bugs:**
+    - fascia text is several times too large ("HEBAR", "HOTID");
+    - one pink/white panel dominates.
+  - **Missing:** the storefront band and the reflections are not the brightest horizontal; there are no car streaks or lamp row.
+- **Round 2 (art-pass brief):**
+  1. **Framing:** pick netrun frontages across the widest real street or plaza, preferring low and mid-rise rows. Fog-grade tower bodies above about 35 m toward the sky value, so towers sit behind as in the plate.
+  2. **Fascia text:** scale to real size, with letters about 0.4–0.6 m.
+  3. **Pink/white panel:** find it and cap it.
+  4. **Brightness:** make the storefront band plus its wet reflection the brightest horizontal, and add car streaks and a lamp row.
+  5. **Signs:** rebuild sign tiers T2–T4 under their caps.
+  6. **Capture:** make it deterministic.
+- **Parallel work:** per-element LOD review sheets (designer ask) start in a separate worktree from 9a5069c1.
