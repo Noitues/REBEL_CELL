@@ -2233,3 +2233,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Bare lots:** fill the dark and bare lots beside the Solace park.
   - **South-west low-rise:** vary it so it matches the core's style.
   - **Plan zoom:** drop the stray guide dots.
+- Round 41 accepted.
+  - **Bay apron:** dressed as a quay with a tree line and warehouses.
+  - **Paths and lots:** the park paths are lit, and the bare lots are now lawn.
+  - **South-west:** low-rise shapes vary.
+  - **Plan zoom:** the far-tier sky cars no longer show.
+  - **Perf:** 9.40 ms.
+  - **Left alone:** the apron tower, the slab and the glass cluster sit on Site or landmark lots, so they stay. Some grey slab remains beyond the apron band.
+- ART CALL 42: the city phase closes on r41.
+  1. A fresh visual critic reviews r41 against the round-6 target.
+  2. All 7 beats of the tide raid sequence are re-rendered on r41 into `G1_parity/final_proposed/`, using the same side-by-side and squint format as final/.
+  3. The hand-off notes are drafted.
+  final/ stays untouched until the designer reviews it.
