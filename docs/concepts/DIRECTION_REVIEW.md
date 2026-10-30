@@ -2518,3 +2518,18 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **When:** queued after implementation round 1.
   - **How:** a lab scene renders one instance of each element in isolation at each band, plus an in-context crop.
   - Bands the spec defines but the code does not yet build are shown as "not yet built", with the spec text.
+
+## Traffic corp-colour variant review (art-pass, 2026-10-30)
+- **Output:** `tide_raid/variants/traffic_corp/` (94887711), Godot art/tide-traffic-corp 87323d34. The switch `traffic_corp_colour_on` is off by default.
+- **Road colour is fully removed:** avenue strips, lane glow hatches (the pink/green bundles the designer marked), RoadGlow and deck rails are now neutral grey.
+- **Cars:** head = lerp(corp, white, 0.6), tail = corp at V 0.55. The glow has a halo.
+- **Checked:**
+  - **Gif motion:** about 1.2–1.3 % of pixels change between frames 0 and 79, so the cars move.
+  - **Perf:** p95 7.22 ms.
+  - **Tests:** targeted, 0 failing.
+- **Honest verdict:**
+  - The city is calmer, and the corp colour shows in the cars at close-up.
+  - **Street grid lost at plan scale:** without the strips the grid stops reading. The low-rise grid becomes dark slots, and the cars are too small to show it.
+  - **Busy decks:** the highway decks now carry a multicolour lime/magenta/white dash pattern that is busier than r43's red/white.
+  - **Possible tunes:** a faint neutral street line (`traffic_lane_neutral_gain` about 0.9), and a calmer deck dash, either fewer corp cars or a lower tail gain.
+- Waits for the designer's evaluation.
