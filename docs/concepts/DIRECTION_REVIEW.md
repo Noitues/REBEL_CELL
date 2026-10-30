@@ -2163,3 +2163,17 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     - no shoreline highlight;
     - the decks are not yet snapped to the raster centre line.
   - **Next:** the city view waits for the layout branch (art/city-layout-p0), then renders it.
+- **City layout P0 landed:** CityLint is on art/city-lint (78fbe945, 19 rules), and the P0 layout rules are on art/city-layout-p0 (6ea2d710). Totals over 25 seeds:
+  - **Down to 0:** streets touching sea, streets in parks, dead ends and disconnected street components. Buildings in rail, highway, ramp and wall corridors also went to 0, from 13,011.
+  - **Small side effects:**
+    - bare lots in the dense zone +2 %, as deck and shore lots become park strips;
+    - buildings without street frontage +7 %;
+    - lots with a park street on both sides rose from 760 to 1,037.
+  - **Sites:** the site-on-road check was mis-specified, so it was re-specified. 773 Sites remain, and none were moved.
+  - **Full suite:** 4,050 tests, 5 failing. They fail in vfx_tiers, s_mapview, art5_city_integration, visual_lint_static (tide_fx) and no_bare_id_sort (tide_fx, look_parity). The P0 diff touches none of those files. Pre-existing, but still to fix before any merge.
+- ART CALL 37: round 38 merges city-layout-p0 into the r37 view, renders the fixed layout and checks the no-hide baselines drop. P1 runs in parallel on art/city-layout-p1:
+  - street hierarchy and block merge;
+  - the height field and step-downs;
+  - the waterfront band;
+  - ramp ends;
+  - retiring the skip lists.

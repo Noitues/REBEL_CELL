@@ -1,0 +1,21 @@
+{
+	"bare_in_dense": 7502,
+	"corridor_highway": 0,
+	"corridor_rail": 0,
+	"corridor_ramp": 0,
+	"corridor_wall": 0,
+	"dead_end": 0,
+	"height_cliff": 1498,
+	"interchange_off_land": 0,
+	"low_rise_share": 19,
+	"no_frontage": 28628,
+	"park_street_both_sides": 1037,
+	"ramp_end_off_land": 182,
+	"singleton_building": 136,
+	"site_on_road_or_park": 773,
+	"site_without_street": 0,
+	"street_components": 0,
+	"street_in_park": 0,
+	"street_touches_sea": 0,
+	"view_skip_lists": 320
+}
