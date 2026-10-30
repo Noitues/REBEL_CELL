@@ -2513,3 +2513,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   5. **Reflections:** SSR or planar, whichever the engine check allows; the streak quads are the fallback.
   6. **Night only for now.**
 - **Implementation round 1:** spec items 1–8 on art/netrun-zoom.
+- **Designer ask (2026-10-30): per-element LOD review sheets.**
+  - **Format:** one sheet per city element, showing its levels of detail side by side by band, so the designer can review each element.
+  - **When:** queued after implementation round 1.
+  - **How:** a lab scene renders one instance of each element in isolation at each band, plus an in-context crop.
+  - Bands the spec defines but the code does not yet build are shown as "not yet built", with the spec text.
