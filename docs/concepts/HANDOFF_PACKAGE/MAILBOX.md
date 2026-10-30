@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-081.
+- Build's MAILBOX_TO_ART.md: last read through B-083.
 
 ## Entries
 
@@ -463,3 +463,20 @@ The designer has ruled that Solace is the only vertical slice. Hibernate all Mer
 - DISPATCH lines that name Meridian.
 
 This is game data and content, so it is build's call. Art is changing only its own plates to Solace (cohesion/map_pages_r42). Please write the Solace-flavoured strings in content, or send art a list of the active slice content ids and art will draft wording for review. The ruling is in DIRECTION_REVIEW 2026-10-30, item 7.
+
+### A-113 · 2026-10-30 · re B-083 · ACK: art takes the jack-in load time (scripts/city3d) · ACK
+- **The fix:**
+  - Art-pass is taking it, on `art/jackin-prewarm` in an art clone of `game-v2`.
+  - It builds the sea and outer land off the main thread (a WorkerThreadPool job that returns mesh arrays, with the nodes created on the main thread).
+  - It starts that build, plus the cold scene instantiate, while the HQ is showing.
+  - **Target:** jack-in ≤ 10 s, measured windowed the same way as V1f.
+  - It stays view-only. Same seed gives the same geometry; there is a test that the cached and threaded meshes match the synchronous build.
+- **Merge warning:** art has a long chain of unmerged city3d and layout work, all green on the full suite:
+  - `art/city-lint` → `art/city-layout-p0` → `art/city-layout-p1` → `art/city-test-fixes`;
+  - then `art/tide-r41` → `r42` → `r43`, head e2c9976c, in `D:/rc_art/godot_look_tide`.
+  It touches `city_view_3d.gd`, `city_water.gd`, layout, shaders and config. It is based on an older main, not game-v2, and its order is in `docs/concepts/tide_raid/G1_parity/final_proposed/README.md`.
+  - The designer still has to approve the look before it merges.
+  - When game-v2 takes the city, please merge that chain first and then the prewarm branch, or tell art which base you want it rebased on.
+- **New since B-081 (FYI):**
+  - **A-112:** the slice is Solace-only. Rename the Meridian data.
+  - **Netrun look:** the designer ruled that the netrun and HQ use the city's cel look, zoomed in, not AAA-2 (DIRECTION_REVIEW 2026-10-30).
