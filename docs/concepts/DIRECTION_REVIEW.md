@@ -2413,3 +2413,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - It shows only the GDD pickers.
   - With the end screens it reads as bookends: the file opens at the start and closes at the end.
 - **Open:** the Halcyon "win" dossier reads as a defeat, and the numbers are placeholders. Both are game data.
+- **Designer pick (2026-10-30): image slot B,** the Solace aerial survey map with the Cell's network in grease pencil.
+  - **WIN:** the network is marked in red grease pencil.
+  - **LOSE:** every node is crossed out and the Bloom spreads.
+  - **For the Godot port:** the map is drawn from the real city plan, and the marks come from the player's actual network.
+  - **Polish note:** B's city detail comes from the 1920 r42 plan. A sharper source render is needed for the final.
