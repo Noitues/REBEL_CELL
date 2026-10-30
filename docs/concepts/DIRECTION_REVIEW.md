@@ -2188,3 +2188,11 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - one rule for avenue crossings;
   - the shoreline highlight;
   - sky lanes avoid the bay and bare lots.
+- Round 39 accepted.
+  - **Park:** the north park now has clearings, winding paths, ponds and lawn under the deck.
+  - **Avenues:** where two avenues cross, the brighter one wins, so the colours no longer overlap.
+  - **Shore and sky:** a bank highlight runs along the bay apron, and sky lanes split at street gaps.
+  - **Perf:** 10.04 ms.
+  - **Holo ads:** they now sit on the roof (gap 0.6 BU), but by design they still read as floating pale cubes at plan zoom.
+  - **Bare lots:** the big grey bare lots (bay apron, north of the core, beside the Solace park) are layout, and P1 handles them.
+- ART CALL 39: the holo cubes are off in the city view (`neon_holo_share` 0) until a proper holo design exists. They read as floating boxes, and the designer's sign rule (coloured, partial height, spilling light) is already met by the screens and blades. This goes into the round that merges P1.
