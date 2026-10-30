@@ -84,3 +84,6 @@ Level 3 city GPU p95 9.36 ms (mean 6.06); limit 12.57.
 
 ## Round 41
 Level 3 city GPU p95 9.40 ms (mean 6.10); limit 12.57.
+
+## Round 42
+Level 3 city GPU p95 10.15 ms (mean 7.67); limit 12.57.
