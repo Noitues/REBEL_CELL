@@ -2206,3 +2206,21 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **What this allows:** once the city phase is staged (final_proposed, staged plates and the hand-off draft), art-pass starts roadmap step 2, the cohesion pass, before 08:00 on 2026-10-30.
   - **Scope:** the slice sheet of every Solace state against the new city, the redo list, and a dimmed raid-mode grade.
   - **Out of scope:** the netrun-look decision stays with the designer, and nothing replaces final/ or the golden plates.
+- **City layout P1 landed** (8a817aad on art/city-layout-p1). Totals over 25 seeds, P0 → P1:
+  - no_frontage 28,628 → 2,651
+  - height_cliff 1,498 → 92
+  - bare_in_dense 7,502 → 0
+  - singleton 136 → 13
+  - park_street_both_sides 1,037 → 396
+  - ramp ends off land 182 → 0
+  - low_rise_share in its band on every seed
+  - the wall skip is empty on seeds 1 and 3
+- **Checks:**
+  - Full suite: 4,064 tests, with the same 5 failing that already failed before this work (s_mapview, vfx_tiers, art5_city_integration, visual_lint_static, no_bare_id_sort).
+  - Schema smoke passes. The two hung runs came from a parse error in the agent's own edit, which is fixed.
+  - Building counts fell about 15 %, so three "enough buildings" test thresholds were lowered. Sites were not moved.
+- ART CALL 40: the 5 failing tests are art-owned (tide_fx colours, bare sorts in tide_fx and look_parity), so art-pass fixes them now on art/city-test-fixes, before any merge.
+- **Next for layout (P2):**
+  - a surface-use lot kind under the decks;
+  - avenues along the arterials;
+  - retiring the skip lists and the Solace pockets.

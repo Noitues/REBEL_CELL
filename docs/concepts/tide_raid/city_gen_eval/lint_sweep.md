@@ -15,17 +15,18 @@ Thresholds are the `CityLint.DEFAULTS` dictionary (the campaign config has no li
 | corridor_rail | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
 | corridor_ramp | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
 | corridor_wall | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
-| ramp_end_off_land | **10** | **4** | **8** | **4** | **6** | **10** | **4** | **8** | **8** | **2** | **8** | **8** | **4** | **8** | **10** | **6** | **6** | **8** | **8** | **12** | **6** | **8** | **10** | **10** | **6** | 182 | 25/25 (structural) |
+| ramp_end_off_land | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
 | interchange_off_land | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
-| park_street_both_sides | **40** | **38** | **29** | **40** | **44** | **43** | **46** | **32** | **39** | **44** | **39** | **34** | **59** | **37** | **35** | **50** | **33** | **44** | **43** | **63** | **52** | **41** | **48** | **32** | **32** | 1037 | 25/25 (structural) |
-| bare_in_dense | **335** | **361** | **275** | **376** | **346** | **373** | **245** | **235** | **312** | **300** | **323** | **280** | **335** | **329** | **317** | **316** | **229** | **178** | **324** | **292** | **276** | **297** | **272** | **292** | **284** | 7502 | 25/25 (structural) |
-| singleton_building | 6 | 3 | 9 | 2 | 3 | 4 | 8 | 5 | 9 | 5 | 5 | 6 | 9 | 7 | 5 | 2 | 7 | 4 | 5 | 5 | 2 | 8 | 1 | 9 | 7 | 136 | 0/25 |
-| height_cliff | 44 | 40 | 69 | 52 | 64 | 35 | 73 | 58 | 63 | 48 | 62 | 71 | 62 | 86 | 66 | 63 | 46 | 62 | 64 | 39 | 58 | 72 | 62 | 68 | 71 | 1498 | 0/25 |
-| low_rise_share | **1** | **1** | 0 | **1** | **1** | 0 | **1** | **1** | **1** | 0 | **1** | **1** | **1** | **1** | 0 | **1** | **1** | **1** | **1** | **1** | **1** | **1** | **1** | 0 | 0 | 19 | 19/25 |
-| no_frontage | **1206** | **1019** | **1189** | **825** | **1111** | **1186** | **1183** | **1063** | **1289** | **935** | **999** | **1390** | **1145** | **1138** | **1609** | **1026** | **1037** | **866** | **933** | **1059** | **1585** | **1165** | **1149** | **1460** | **1061** | 28628 | 25/25 (structural) |
+| park_street_both_sides | **15** | **12** | **14** | **13** | **14** | **16** | **28** | **11** | **16** | **10** | **22** | **12** | **21** | **15** | **13** | **18** | **19** | **16** | **22** | **19** | **13** | **15** | **13** | **15** | **14** | 396 | 25/25 (structural) |
+| bare_in_dense | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
+| singleton_building | 1 | 0 | 1 | 0 | 1 | 0 | 0 | 0 | 1 | 2 | 0 | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 2 | 1 | 0 | 0 | 1 | 0 | 13 | 0/25 |
+| height_cliff | 4 | 6 | 6 | 1 | 3 | 7 | 7 | 1 | 3 | 5 | 1 | 1 | 13 | 1 | 7 | 0 | 3 | 9 | 3 | 7 | 0 | 0 | 2 | 0 | 2 | 92 | 0/25 |
+| low_rise_share | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
+| no_frontage | **60** | **124** | **111** | **104** | **84** | **85** | **122** | **102** | **122** | **71** | **83** | **85** | **161** | **77** | **81** | **150** | **95** | **88** | **92** | **179** | **99** | **132** | **98** | **123** | **123** | 2651 | 25/25 (structural) |
 | site_on_road_or_park | **34** | **34** | **30** | **30** | **30** | **33** | **35** | **29** | **37** | **25** | **32** | **32** | **31** | **31** | **35** | **26** | **27** | **30** | **29** | **29** | **38** | **34** | **21** | **26** | **35** | 773 | 25/25 (structural) |
 | site_without_street | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0/25 |
-| view_skip_lists | **16** | **15** | **17** | **12** | **11** | **15** | **5** | **12** | **19** | **6** | **21** | **17** | **6** | **17** | **22** | **12** | **5** | **11** | **7** | **22** | **18** | **12** | **5** | **12** | **5** | 320 | 25/25 (structural) |
+| apron_singleton | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | **1** | 0 | 0 | 3 | 2/25 |
+| view_skip_lists | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | **5** | 125 | 25/25 (structural) |
 
 Bold = over budget. Budget per rule is in the offender sections.
 
@@ -33,31 +34,31 @@ Bold = over budget. Budget per rule is in the offender sections.
 
 | seed | street components | main component lots | low-rise share (band 3-4%) | dead-end budget | in-ring buildings |
 |---|---|---|---|---|---|
-| 1 | 12 | 7025 | 1.4% | 136 | 4204 |
-| 2 | 8 | 7218 | 2.0% | 140 | 4093 |
-| 3 | 8 | 7085 | 3.3% | 138 | 4159 |
-| 7 | 7 | 7381 | 2.3% | 144 | 4034 |
-| 11 | 12 | 7083 | 1.5% | 138 | 4137 |
-| 23 | 8 | 7002 | 3.4% | 136 | 4174 |
-| 37 | 13 | 7185 | 2.5% | 139 | 4107 |
-| 41 | 9 | 7313 | 2.3% | 144 | 4072 |
-| 59 | 4 | 6977 | 1.6% | 135 | 4281 |
-| 61 | 5 | 7310 | 3.7% | 142 | 3987 |
-| 73 | 8 | 7367 | 2.5% | 143 | 4053 |
-| 89 | 9 | 6844 | 2.6% | 132 | 4250 |
-| 97 | 9 | 7057 | 2.4% | 137 | 4036 |
-| 101 | 10 | 7036 | 2.1% | 138 | 4143 |
-| 103 | 8 | 6713 | 3.5% | 130 | 4411 |
-| 107 | 4 | 7320 | 2.1% | 142 | 4094 |
-| 109 | 10 | 7332 | 2.4% | 143 | 4081 |
-| 113 | 11 | 7609 | 2.6% | 149 | 3989 |
-| 127 | 8 | 7261 | 2.5% | 141 | 3982 |
-| 131 | 4 | 7249 | 2.6% | 141 | 4124 |
-| 137 | 5 | 6686 | 2.6% | 129 | 4367 |
-| 139 | 10 | 7047 | 2.9% | 137 | 4174 |
-| 149 | 7 | 6904 | 2.5% | 135 | 4101 |
-| 151 | 8 | 6779 | 3.0% | 132 | 4360 |
-| 157 | 12 | 7209 | 3.8% | 141 | 4135 |
+| 1 | 10 | 8007 | 3.6% | 156 | 2847 |
+| 2 | 8 | 7887 | 3.5% | 154 | 2823 |
+| 3 | 11 | 7667 | 3.5% | 149 | 2818 |
+| 7 | 11 | 7543 | 3.5% | 147 | 2876 |
+| 11 | 7 | 7759 | 3.4% | 150 | 2888 |
+| 23 | 10 | 7654 | 3.5% | 149 | 2898 |
+| 37 | 12 | 7824 | 3.4% | 151 | 2878 |
+| 41 | 11 | 8125 | 3.6% | 159 | 2806 |
+| 59 | 8 | 7533 | 3.5% | 147 | 2859 |
+| 61 | 9 | 7615 | 3.4% | 148 | 2809 |
+| 73 | 11 | 7847 | 3.6% | 154 | 2816 |
+| 89 | 7 | 7800 | 3.5% | 152 | 2863 |
+| 97 | 11 | 7788 | 3.8% | 150 | 2878 |
+| 101 | 5 | 7894 | 3.3% | 154 | 2818 |
+| 103 | 12 | 7967 | 3.7% | 156 | 2882 |
+| 107 | 9 | 7536 | 3.4% | 146 | 2915 |
+| 109 | 7 | 7606 | 3.4% | 149 | 2924 |
+| 113 | 8 | 7894 | 3.6% | 154 | 2879 |
+| 127 | 11 | 7636 | 3.6% | 149 | 2841 |
+| 131 | 8 | 7268 | 3.6% | 141 | 2906 |
+| 137 | 10 | 7641 | 3.4% | 149 | 2883 |
+| 139 | 11 | 7706 | 3.4% | 148 | 2874 |
+| 149 | 8 | 7538 | 3.4% | 148 | 2845 |
+| 151 | 7 | 7802 | 3.5% | 152 | 2826 |
+| 157 | 4 | 7575 | 3.9% | 147 | 2893 |
 
 ## Before / after (total offenders over 25 seeds)
 
@@ -71,19 +72,20 @@ Bold = over budget. Budget per rule is in the offender sections.
 | corridor_rail | 10060 | 0 |
 | corridor_ramp | 827 | 0 |
 | corridor_wall | 669 | 0 |
-| ramp_end_off_land | 214 | 182 |
+| ramp_end_off_land | 214 | 0 |
 | interchange_off_land | 0 | 0 |
-| park_street_both_sides | 760 | 1037 |
-| bare_in_dense | 7343 | 7502 |
-| singleton_building | 102 | 136 |
-| height_cliff | 1617 | 1498 |
-| low_rise_share | 24 | 19 |
-| no_frontage | 26683 | 28628 |
+| park_street_both_sides | 760 | 396 |
+| bare_in_dense | 7343 | 0 |
+| singleton_building | 102 | 13 |
+| height_cliff | 1617 | 92 |
+| low_rise_share | 24 | 0 |
+| no_frontage | 26683 | 2651 |
 | site_on_road_or_park | 2113 | 773 |
 | site_without_street | n/a | 0 |
-| view_skip_lists | 335 | 320 |
+| apron_singleton | n/a | 3 |
+| view_skip_lists | 335 | 125 |
 
-### Notes on the P0 layout rules
+### Notes on the layout rules
 
 - P0 rules cleared: corridors (all four classes), street_touches_sea, street_in_park, street_components, dead_end, site_without_street are at 0 or inside budget on every seed.
 - Declared exemptions (flags in `lots["flagged"]`, counted in `lots["street_info"]`): plaza (A2 stations), cul_de_sac (a Site's street end; dead-end runs of at most `city_a2_cul_de_sac_max` lots), quay (A2 roads on the water or along the shore, and local shore runs), plan_end (an A2 road ending on its own), site_street, solace_border (the Solace park outline needs its border streets). A Site and its 8 neighbours are exempt from the corridor rule.
@@ -130,11 +132,7 @@ No offenders on any seed.
 
 ### ramp_end_off_land
 
-- seed 1, lot (2, -23): plan ix_01 end on building (score 1.00)
-- seed 1, lot (2, -23): plan ix_01 end on building (score 1.00)
-- seed 1, lot (-3, -19): plan ix_09 end on building (score 1.00)
-- seed 1, lot (-3, -19): plan ix_09 end on building (score 1.00)
-- seed 1, lot (45, -3): plan ix_04 end on building (score 1.00)
+No offenders on any seed.
 
 ### interchange_off_land
 
@@ -142,35 +140,31 @@ No offenders on any seed.
 
 ### park_street_both_sides
 
-- seed 1, lot (17, -34): streets W+E and N+S (score 2.00)
-- seed 2, lot (-7, -55): streets W+E and N+S (score 2.00)
-- seed 2, lot (35, 23): streets W+E and N+S (score 2.00)
-- seed 23, lot (71, -16): streets W+E and N+S (score 2.00)
-- seed 23, lot (2, -3): streets W+E and N+S (score 2.00)
+- seed 1, lot (58, -5): streets W+E and N+S (score 2.00)
+- seed 1, lot (1, 5): streets W+E and N+S (score 2.00)
+- seed 2, lot (-1, -58): streets W+E and N+S (score 2.00)
+- seed 2, lot (22, -54): streets W+E and N+S (score 2.00)
+- seed 2, lot (66, -11): streets W+E and N+S (score 2.00)
 
 ### bare_in_dense
 
-- seed 1, lot (-2, -58): bare (score 1.00)
-- seed 1, lot (-1, -58): bare (score 1.00)
-- seed 1, lot (-5, -57): bare (score 1.00)
-- seed 1, lot (-2, -57): bare (score 1.00)
-- seed 1, lot (-4, -56): bare (score 1.00)
+No offenders on any seed.
 
 ### singleton_building
 
-- seed 1, lot (-12, -51): no building within 2 lots (score 1.00)
-- seed 1, lot (-49, -36): no building within 2 lots (score 1.00)
-- seed 1, lot (-44, -33): no building within 2 lots (score 1.00)
-- seed 1, lot (-38, -29): no building within 2 lots (score 1.00)
-- seed 1, lot (-3, -19): no building within 2 lots (score 1.00)
+- seed 1, lot (-16, -24): no building within 2 lots (score 1.00)
+- seed 3, lot (-16, -24): no building within 2 lots (score 1.00)
+- seed 11, lot (-16, -24): no building within 2 lots (score 1.00)
+- seed 59, lot (-28, 37): no building within 2 lots (score 1.00)
+- seed 61, lot (-16, -24): no building within 2 lots (score 1.00)
 
 ### height_cliff
 
-- seed 103, lot (44, 136): 82.2 vs 0.0 BU (x8220.9) (score 82.20)
-- seed 103, lot (44, 136): 82.2 vs 0.0 BU (x8220.9) (score 82.20)
-- seed 59, lot (48, 129): 78.9 vs 0.0 BU (x7892.4) (score 78.91)
-- seed 59, lot (48, 129): 78.9 vs 0.0 BU (x7892.4) (score 78.91)
-- seed 59, lot (48, 129): 78.9 vs 0.0 BU (x7892.4) (score 78.91)
+- seed 97, lot (47, 125): 43.1 vs 0.0 BU (x4312.8) (score 43.12)
+- seed 113, lot (88, 45): 45.1 vs 3.5 BU (x13.0) (score 41.60)
+- seed 61, lot (43, 122): 40.5 vs 0.0 BU (x4046.8) (score 40.46)
+- seed 61, lot (43, 122): 40.5 vs 0.0 BU (x4046.8) (score 40.46)
+- seed 109, lot (40, 126): 39.1 vs 0.0 BU (x3910.9) (score 39.10)
 
 ### low_rise_share
 
@@ -178,11 +172,11 @@ No offenders on any seed.
 
 ### no_frontage
 
-- seed 1, lot (-14, -80): no street neighbour (score 1.00)
-- seed 1, lot (-6, -80): no street neighbour (score 1.00)
-- seed 1, lot (-1, -80): no street neighbour (score 1.00)
-- seed 1, lot (1, -80): no street neighbour (score 1.00)
-- seed 1, lot (6, -80): no street neighbour (score 1.00)
+- seed 1, lot (-34, -76): no street neighbour (score 1.00)
+- seed 1, lot (-33, -76): no street neighbour (score 1.00)
+- seed 1, lot (-35, -75): no street neighbour (score 1.00)
+- seed 1, lot (-34, -75): no street neighbour (score 1.00)
+- seed 1, lot (-33, -75): no street neighbour (score 1.00)
 
 ### site_on_road_or_park
 
@@ -196,15 +190,27 @@ No offenders on any seed.
 
 No offenders on any seed.
 
+### apron_singleton
+
+- seed 59, lot (74, -31): no building within 2 lots on the shore apron (score 1.00)
+- seed 59, lot (-28, 37): no building within 2 lots on the shore apron (score 1.00)
+- seed 149, lot (-27, 65): no building within 2 lots on the shore apron (score 1.00)
+
 ### view_skip_lists
 
-- seed 1, lot (-36, -56): pocket_lots (score 1.00)
-- seed 1, lot (-47, -54): pocket_lots (score 1.00)
-- seed 1, lot (-61, -39): pocket_lots (score 1.00)
-- seed 1, lot (-22, -28): pocket_lots (score 1.00)
-- seed 1, lot (-27, -23): pocket_lots (score 1.00)
+- seed 1, lot (-33, -58): pocket_lots (score 1.00)
+- seed 1, lot (-24, -58): pocket_lots (score 1.00)
+- seed 1, lot (-47, -57): pocket_lots (score 1.00)
+- seed 1, lot (-42, -57): pocket_lots (score 1.00)
+- seed 1, lot (-20, -54): pocket_lots (score 1.00)
 
 ## Checks not implemented, or implemented in part
 
 - View skip list `_in_cleared` (landmark / HQ compound footprints): it is built by the scene-side CityView3D from node meshes; no headless data. wall_skip and pocket_lots are computed.
 - Quay / bridge exemption for street-touches-sea and dead ends: the plan declares no quays or cul-de-sacs; only A2 road `bridges` polylines exempt a lot. Dead ends have no 'declared end' flag, so every end counts.
+
+## Verification on 8a817aad (branch art/city-layout-p1)
+
+- Full suite: `python tools/run_tests.py` (4 shards, log D:/rc_tmp/lint/full_suite5.log), run on the layout code as committed; the only later edits are docs/DECISIONS.md and the P1 schema smoke check. 4,064 tests, 5 failing, 117 pending. The 5 fail identically on the pre-change base and alone: test_s_mapview (veil band), test_vfx_tiers (city_finish.gdshader rc_common), test_art5_city_integration (day look), test_visual_lint_static (tide_fx.gd literal colours), test_no_bare_id_sort (bare sorts in tide_fx.gd and tools/look_parity). None touch the layout or gameplay.
+- Schema smoke: `timeout 300 godot --headless --path . -s tools/schema_smoke_test.gd` on 8a817aad exits 0, "SCHEMA SMOKE TEST: PASS" (log D:/rc_tmp/lint/smoke_final.log), City layout P0 and P1 checks included.
+- Earlier hung smoke runs (PIDs 5532, 15464): a parse error in my own edit of tools/schema_smoke_checks.gd left the script unloaded, so `-s` never reached quit(). Fixed before the commit.
