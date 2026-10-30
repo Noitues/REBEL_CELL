@@ -6,10 +6,7 @@ S = "D:/rc_scratch/traffic/"
 OUT = "D:/rc_art/art-pass/docs/concepts/tide_raid/variants/traffic_corp/"
 VIEWS = [
     ("plan", S + "cap/plan_b.png", S + "cap/plan_v.png", "plan (seed 7, plate camera)"),
-    ("seed3", S + "cap/seed3_b.png", S + "cap/seed3_v.png", "seed 3"),
-    ("closeup", S + "cap/cu_b.png", S + "cap/cu_v.png", "downtown close-up, street level (zoom 5 at lot -57,3)"),
-    ("deck", S + "cap/deck_b.png", S + "cap/deck_v.png", "downtown deck / viaduct close-up (zoom 2.2 at lot -60,-22)"),
-    ("beat02", S + "lab/beat02_b/f_0060.png", S + "lab/beat02_v/f_0060.png", "raid beat 02 forecast, raid grade on"),
+    ("closeup", S + "cap/cu_b.png", S + "cap/cu_v.png", "downtown close-up, street level + deck (zoom 5 at lot -57,3)"),
 ]
 
 
