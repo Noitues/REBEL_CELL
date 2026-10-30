@@ -2533,3 +2533,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Busy decks:** the highway decks now carry a multicolour lime/magenta/white dash pattern that is busier than r43's red/white.
   - **Possible tunes:** a faint neutral street line (`traffic_lane_neutral_gain` about 0.9), and a calmer deck dash, either fewer corp cars or a lower tail gain.
 - Waits for the designer's evaluation.
+- **Designer ruling (2026-10-30): corp-colour traffic is adopted.**
+  - "Not worried about streets not reading, as they read due to the break in the buildings, and the movement sells it."
+  - **Tunes:**
+    1. Surface traffic moves a little faster.
+    2. Car lights are brighter: more intense, not bigger.
+    3. Highway traffic uses the same thin car form as surface traffic (no wide bodies), moving much faster. The deck streaks must move; today they are static quads.
+  - Once tuned, art/tide-traffic-corp joins the city chain after art/tide-r43.
