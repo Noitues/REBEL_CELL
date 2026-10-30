@@ -2383,3 +2383,15 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - Designer: "Some light procedural generation work to define the interiors, then we just toss that up. Seems like easiest and keeps on brand."
   - **Next:** a procedural interior kit concept. Rooms are built from modules, with the room type chosen by Site kind. It is rendered as an iso cutaway at golden-plate polish behind the E10 board, and must match the netrun_cel street.
   - The E10 micro-detail polish follows, against that backdrop.
+
+## Netrun cel concept v1 review (art-pass, 2026-10-30)
+- **Direction accepted, polish failed** (`netrun_cel/`, checked side by side in ref_vs_new.jpg).
+  - **Works:** one procedural district seen by three cameras, so buildings and corp colours hold across zooms. The street and route read, and frame 4's helix vista is a strong composition.
+  - **Against the golden plates:**
+    - mid-value facades, where the plates sit at 10–20 %;
+    - neon rims on every edge, which reads as a Tron/toy wireframe;
+    - large uniform windows;
+    - no haze, streaks or sky;
+    - route poles louder than the street.
+  - Frame 2 fails the squint test: the avenue and the route are lost.
+- **v2 is commissioned** with notes on each of those: darker value, selective neon on about 1 building in 3, small irregular windows, haze, streaks and sky, grime texture, quieter route marks, and a new frame-2 camera.
