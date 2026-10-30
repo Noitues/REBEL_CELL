@@ -106,6 +106,44 @@ def work_order(img):
     return K.paste_paper(img, p, (14, 150), angle=-1.2, sh=0.6)
 
 
+SIL_PX = 81                 # the old mer_sprite (90 px) at its 0.9 step, so the silhouette keeps the old size
+SIL_CANVAS = 126            # design grid, drawn at 4x and reduced to SIL_PX
+
+
+def unit_silhouette(kind):
+    """Flat PIL silhouette for a THREAT INTEL row (opaque body, transparent details), SIL_PX square.
+    WARDEN = squat biosecurity guard bot: domed body on legs with a sprayer arm.
+    SPORE DRONE = small hover drone: a pod on a rotor bar, with spore puffs under it."""
+    S = 4
+    im = Image.new("RGBA", (SIL_CANVAS * S, SIL_CANVAS * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    body = (235, 235, 240, 255)
+    hole = (0, 0, 0, 0)
+
+    def box(x0, y0, x1, y1):
+        return [x0 * S, y0 * S, x1 * S, y1 * S]
+
+    if kind == "WARDEN":
+        d.line([(92 * S, 74 * S), (116 * S, 52 * S)], fill=body, width=7 * S)           # sprayer arm
+        d.polygon([(110 * S, 40 * S), (124 * S, 48 * S), (114 * S, 62 * S)], fill=body)  # nozzle head
+        d.rounded_rectangle(box(40, 84, 53, 112), radius=3 * S, fill=body)               # legs
+        d.rounded_rectangle(box(73, 84, 86, 112), radius=3 * S, fill=body)
+        d.rounded_rectangle(box(30, 54, 94, 90), radius=9 * S, fill=body)                # squat body
+        d.ellipse(box(38, 26, 86, 66), fill=body)                                       # domed head
+        d.rectangle(box(50, 42, 76, 48), fill=hole)                                     # visor slit
+    else:                                                                              # SPORE DRONE
+        d.rounded_rectangle(box(14, 28, 112, 36), radius=4 * S, fill=body)              # rotor bar
+        d.rectangle(box(40, 34, 47, 46), fill=body)                                     # struts
+        d.rectangle(box(79, 34, 86, 46), fill=body)
+        d.ellipse(box(38, 40, 88, 76), fill=body)                                       # pod
+        d.rounded_rectangle(box(48, 70, 78, 80), radius=4 * S, fill=body)               # pod base
+        d.ellipse(box(30, 86, 46, 102), fill=body)                                      # spore puffs
+        d.ellipse(box(50, 96, 68, 114), fill=body)
+        d.ellipse(box(72, 84, 88, 100), fill=body)
+        d.ellipse(box(88, 100, 100, 112), fill=body)
+    return im.resize((SIL_PX, SIL_PX), Image.LANCZOS)
+
+
 def threat_intel(img):
     x0, y0, x1 = 1488, 18, 1904
     s = TS
@@ -122,16 +160,15 @@ def threat_intel(img):
             y += 50 * s * 0.8
         # scanned silhouettes (the corp's own units, scanlined in the corp tint)
         xs = x0 + 24
-        for unit, label in (("HAULER", "WARDEN"), ("COURIER", "SPORE DRONE")):
-            sp, _, _ = S39.mer_sprite(unit, 2)
-            sp = sp.resize((int(sp.width * 0.9), int(sp.height * 0.9)), Image.LANCZOS)
+        for unit in ("WARDEN", "SPORE DRONE"):
+            sp = unit_silhouette(unit)
             a = np.asarray(sp, np.float32)
             lum = a[..., :3].mean(axis=2, keepdims=True)
             a[..., :3] = np.clip(lum / 255 * 1.5, 0, 1) * np.array(K.CORP["meridian"], np.float32)
             a[::3, :, 3] *= 0.4
             sp = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
             im.alpha_composite(sp, (int(xs), int(y - 14)))
-            K.text(im, (xs + 8, y + sp.height - 14), label, fs, K.CORP["meridian"], "la", 0.6)
+            K.text(im, (xs + 8, y + sp.height - 14), unit, fs, K.CORP["meridian"], "la", 0.6)
             xs += 120
         return im
     rows = [("THREATS", "6  //  +52% (HEAT)")]
