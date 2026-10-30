@@ -2177,3 +2177,14 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - the waterfront band;
   - ramp ends;
   - retiring the skip lists.
+- Round 38 accepted. The P0 layout merged into the view cleanly: streets stay out of parks, and the north park now reads as one park.
+  - **Wall-clash skip rose** to 11 and 12 lots, all in the west corner, where the wall corridor doesn't seem to cover the route. Sent to P1.
+  - **Floating holo cubes** over the core: they must anchor to a host building.
+  - **North park:** a featureless tree mass, which needs paths, clearings and lawn under the deck.
+  - **Bay apron:** bare, with lone buildings. This is P1's waterfront band.
+- ART CALL 38 (round 39, view only):
+  - anchor the holos;
+  - dress the north park like the Solace district;
+  - one rule for avenue crossings;
+  - the shoreline highlight;
+  - sky lanes avoid the bay and bare lots.
