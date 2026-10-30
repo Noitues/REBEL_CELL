@@ -2490,3 +2490,26 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     - trees and bushes start as the city's blocky sphere, become overlapping spheres with a trunk mid-zoom, and get a detailed version at street level;
     - repeat for every city element.
   - **Process:** write the rules, implement them, then render and judge whether they bridge the gap to the plates.
+
+## ZOOM_RULES spec review (art-pass, 2026-10-30)
+- **Accepted:** `netrun_cel/zoom_rules/ZOOM_RULES.md`.
+  - **Five px/BU bands:** City below 8, District 8–16, Near-street 16–28, Street 28–56, and Close.
+  - **Thresholds are grounded in real scale:** the plate's 4 m storefront band measures about 55 px, and sign letters need about 7 px.
+  - **Transitions:** a min-pixel rule converges props to real scale with no pop, plus hysteresis and prefetch.
+  - **Per-element phase tables:** for every element the city builds.
+  - **Street-level camera:** 40° FOV, eye at 4 m, horizon at 0.74 of frame height.
+  - **Node attachment:** uses the GDD §4.2 node types (Router, Elite Router, Terminal, Mainframe, Server Rack).
+- **Art-pass defaults for the open items,** so the work can proceed (the designer may override):
+  1. **Long lens, with non-node foreground hidden or flattened:** this follows the designer's own camera ruling.
+  2. **Dolly along the route:** the 7 layers do not fit one frame.
+  3. **Node anchors as specced:**
+     - Router: street cabinet.
+     - Elite Router: rooftop relay.
+     - Terminal: kiosk or alley door.
+     - Mainframe: storefront.
+     - Server Rack: data-hall entrance.
+     The marker colours stay placeholders until the designer picks.
+  4. **Palette:** grade the Street band toward the plate's near-black values. Keep corp colour logic and do not hue-shift the city.
+  5. **Reflections:** SSR or planar, whichever the engine check allows; the streak quads are the fallback.
+  6. **Night only for now.**
+- **Implementation round 1:** spec items 1–8 on art/netrun-zoom.
