@@ -2202,3 +2202,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   3. A fresh visual critic runs on r40 against the round-6 target, and only clear fixes follow.
   4. Stage a PROPOSED final in `G1_parity/final_proposed/`, with the golden-plate updates staged beside it and the hand-off notes drafted.
   Nothing replaces final/, the golden plates or main without the designer's review (standing rule). Every call gets logged as an ART CALL.
+- **Designer, 2026-10-29:** "if you reach the end of this current phase and its before 8am tomorrow, please proceed to the Cohesion phase without asking for any input from me."
+  - **What this allows:** once the city phase is staged (final_proposed, staged plates and the hand-off draft), art-pass starts roadmap step 2, the cohesion pass, before 08:00 on 2026-10-30.
+  - **Scope:** the slice sheet of every Solace state against the new city, the redo list, and a dimmed raid-mode grade.
+  - **Out of scope:** the netrun-look decision stays with the designer, and nothing replaces final/ or the golden plates.
