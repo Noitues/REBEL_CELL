@@ -2578,3 +2578,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
      - Use random spacing and gaps (platoons), per-car speed variance and random density per street, all seeded.
   3. **Speed:** all traffic about 10x faster, at every zoom.
   4. **Light-streak swap:** above a speed threshold (in px/s on screen), replace the car model with a coloured light streak, at any zoom.
+- **Per-element LOD sheets are ready for the designer** (`netrun_cel/zoom_rules/lod_sheets/`, 8a119777): 17 elements across 5 bands, each with isolated and in-context rows, the spec captions and a status bar per band.
+  - **Art-pass note:** many elements are still the r43 look in every band, with nothing new built yet:
+    - trees, parks, highway and water;
+    - blade signs;
+    - the Close band.
+  - **Known faults:** the fascia text overlaps; the road's lane glow reads as a pink slab at Near and Street.
