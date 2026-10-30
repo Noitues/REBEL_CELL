@@ -2540,3 +2540,10 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
     2. Car lights are brighter: more intense, not bigger.
     3. Highway traffic uses the same thin car form as surface traffic (no wide bodies), moving much faster. The deck streaks must move; today they are static quads.
   - Once tuned, art/tide-traffic-corp joins the city chain after art/tide-r43.
+- **Traffic tune done** (Godot a74be602, art 0c05cabc).
+  - Street cars run at 1.4x.
+  - Light gain is 2.6, with no bigger streaks; tails keep their corp hue.
+  - Highway decks now carry moving thin cars at 3.5x street speed, both directions, so the static deck quads are gone.
+  - **Checks:** frame diffs confirm motion; GPU p95 7.09 ms; 62 targeted tests, 0 failing.
+  - Art-pass checked the close-up side by side: the roads carry no colour, the decks read as fine corp-coloured dashes, and the city is calmer than r43.
+  - Waits for the designer's look at the GIFs.
