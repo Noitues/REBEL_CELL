@@ -2358,3 +2358,18 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - The WARDEN and SPORE DRONE silhouettes read at panel size.
   - The route file header is now Solace lime.
   - Data ids (hauler, courier, sink_the_cargo_logs) are unchanged on the plates; renaming them in game data is build's job (A-112).
+
+## Concept review: Solace end screens and combat backdrops (art-pass, 2026-10-30)
+- **End screens** (`solace_endscreens/sheet.jpg`, 4a7266ac):
+  - All three directions read well and pass the squint test.
+  - **D2 (helix hacked lime→cyan / Bloom swallows the city)** is the strongest. It is the only one set in the game world, and its colour story is one swap.
+  - **D1 (specimen file)** has the most charm. **D3 (Solace Live)** has the best voice but a flat ground.
+  - **Art-pass pick: D2,** with D1's lab-paper wit as a possible insert.
+  - **Data flag:** the Halcyon "win" dossier reads as a defeat (STATUS PROCESSED, CASE CLOSED). The numbers on the Solace win screens are placeholders.
+  - These are concepts. The final needs a real render, not the soft hue shift of an upscaled crop.
+- **Combat backdrops** (`combat_backdrop/sheet.jpg`):
+  - All three are cool and dark and put the board first, while the old gold crane mass is gone.
+  - **Honest note:** the plates are crude PIL composites, far below golden-plate polish. They show direction only.
+  - **Art-pass pick: 2 Cutaway** (the chosen building opened on its street). It answers the designer's idea, keeps the city's iso, ink and neon, and is quiet.
+  - **Next:** after the pick, a polished render of the chosen direction from the netrun_cel street, then the E10 micro-detail polish against it.
+- Both wait on the designer's picks.
