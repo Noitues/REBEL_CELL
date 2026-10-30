@@ -2456,3 +2456,4 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - Pull the real CityView3D camera from the city view down to district and then street level.
   - See where the real look breaks, then add the per-zoom detail layers from netrun_cel/NOTES.md (storefront bays, signs, windows, haze) in the engine.
   - This gives a true continuous zoom, and it is the path the port has to take anyway.
+- **Designer (2026-10-30): "Yes, Godot zoom."** The next netrun round is a Godot zoom prototype on `art/netrun-zoom`, off art/tide-r43 in the tide clone.
