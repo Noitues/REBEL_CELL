@@ -2436,3 +2436,7 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - **Designer questions:**
   1. Should there be one room type per Site role, or rooms by corp theme only?
   2. Should the lobby stay visible under the room, or be cropped for a bigger room?
+- **Designer answer (2026-10-30): one room type per Site role,** themed by corp.
+  - The room types are bio-lab, server room, greenhouse, records/office and lobby, mapped to the existing Site roles as in combat_backdrop/v2/NOTES.md.
+  - Corp colour drives the trim and light.
+  - The lobby question (keep it, or crop it for a bigger room) is still open. Art-pass default: keep a thin lobby band for the street context and give the room more of the frame.
