@@ -2330,3 +2330,23 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - **Status at 03:45:** the cohesion phase is done up to what art-pass can do alone.
   - The remaining redo items (netrun/HQ look, combat backdrop, pink scope, Solace win/lose, slice data flavour) wait for the designer's answers in cohesion/COHESION_REVIEW.md.
   - No further autonomous rounds will run.
+
+## 2026-10-30: designer answers to the cohesion questions (ART CALL 46)
+1. **Netrun and HQ share the city's look, zoomed in.**
+   - The bar for detail and polish is the golden plates `street_overview.png` and `hq_rebel_cell_overview.png`:
+     - cel street facades with neon-edged signs;
+     - a wet reflective street with light streaks;
+     - dense storefront signage, windows, water towers and catwalks.
+   - This settles the netrun-look decision: one continuous cel look from the city down to the street.
+   - ART_BIBLE §1.2 and §4.6 (AAA-2 realism for the netrun) are superseded.
+2. **The netrun street carries the colours of its part of the city.**
+   - Building corp colours and signs come from the same procedural city.
+   - Procedural generation adds street-level detail as the camera zooms in from the city view: signs, storefronts, windows and props.
+3. **Rules can bend for the look.** The goal is visuals that look amazing; rules may stretch, bend or break to get there, and the designer wants to see the result. Pink may be used where it serves the theme and polish. This loosens the "pink only on unit screens" rule to a judgement call, case by case.
+4. **Combat backdrop:** the netrun is the zoomed view of the street being run, so combat can take place in the room or building chosen on that street. Concepts and alternatives are welcome.
+5. **Win and lose screens are corp-specific.** Show concepts, starting with Solace.
+6. **E10:** a reminder sheet was sent (`cohesion/E10_reminder.jpg`). Waiting for the designer's answer.
+7. **Solace is the only vertical slice.**
+   - Meridian work is hibernated.
+   - Every active name, work order, Site name and THREAT INTEL line is Solace.
+   - Art plates are redone in art-pass. Game data goes to build as A-112.
