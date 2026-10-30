@@ -73,3 +73,59 @@ Frames 3 and 4 hit the *content* of the plates (cel facades, neon-edged signs, d
 - Frame 3 has no sky or skyline silhouette (the back towers fill the frame), so it lacks the plate's silhouette variety. Frame 4 sky is a flat dark gradient.
 - No searchlight beams are visible in the frames (they are in the scene but out of shot).
 - Nothing animated, so the wheel/HUD layout and the combat backdrop are not tested here.
+
+
+---
+
+# v2 changes (files in `v2/`)
+
+Designer feedback after v1: frames 3 and 4 read as Tron wireframe; frame 1 to 2 did not feel like a zoom; the HQ netrun is hand-authored. v2 answers all of it. Frames: `v2/frame1_city.png` to `v2/frame4_solace_hq.png`, `v2/storyboard_sheet.jpg`, `v2/ref_vs_new.jpg` (plates on the left), `v2/zoom_match.jpg`, `v2/squint_*`. The v1 files above are kept for comparison.
+
+## Real city data (frames 1 to 3, and the city behind frame 4)
+- Source: the r43 tide clone (`D:/rc_art/godot_look_tide`, branch art/tide-r43), the default plan capture (same as plan_a). I made an untracked copy of `parity_capture.gd` as `tools/look_parity/nr_dump.gd` in that clone (not committed there; `v2/scripts/mk_nr_dump.py` regenerates it). With `--lot-dump` it also writes every prism (footprint polygon, ground, height, territory, corp colour kind), every street, plaza and park lot, the HQ rects, the terrain height per lot and the iso camera. Committed copies: `v2/data/lots_city.json` (4756 prisms, 165 x 165 lots) and `v2/data/lots.json`.
+- Frame 1 is that same capture (`nr_plan.png`, not committed, 4 MB) with a highlight polygon built from real lots (lots i -47..-29, j -31..-17) and the frame-2 zoom box. The helix, plaza and park are the real ones.
+- Frames 2 to 4 are rebuilt in Blender from the dump (`v2/scripts/nr_city.py`, assembled by `mk_nr_city.py` from `nr_scene_v2.py` (look kit) and `nr_city_part.py` (layout)). Scale: 1 world BU = 2 m, so a lot is 12 m. Each building is the real lot footprint, real ground height, real height and real corp colour (CityCorpColor kind: 1 Solace, 2 Halcyon, 3 Meridian, 4 Orbital). Streets, parks and plazas come from the same lot sets. Ground is the real terrain per lot (smoothed at corners).
+- Camera match proof: `v2/zoom_match.jpg`. Frame 2 uses frame 1's camera (yaw 135, pitch 40, ortho) at x3 on the block centre. Panels: the frame-1 crop of the zoom box, frame 2, a 50% blend, and frame 2's edges over frame 1. The plaza rings, park edge and tall-tower positions land in the same places. Separate proof of the data: `v2/scripts/nr_check_proj.py` projects every prism roof centre with the game's iso maths onto the capture, and they sit on the roofs.
+- What does not match in frame 2: the elevated highway at left, the dense hand-placed tree canopy, the pods in the park and the Cv2 facet shading of frame 1 are not in the dump. I used box footprints (the game's towers are round or faceted), a simple taper step, and blob trees. Frame 2 is also graded darker than frame 1 (value notes below), brightened to bridge. It is a match in layout, heights, corp colours and camera, not in rendering.
+- Frame 3 street: the real 3-lot-wide boulevard (rows j -26..-24, lots i -44..-30) with the park on its north side. The camera stands at the park edge looking south across it to the real row of buildings at j -23 and beyond. The corp mix there is whatever the data gives (about half Solace in the region: 121 of 248 buildings).
+- Avenue check (designer item 2): the real street at lot row j -37 runs from i about -80 to -52 and ends at the park lawn, which continues to the Solace plaza (rect i -43..-34, j -42..-33, centre j -37). So a real avenue does point at the helix, to within half a lot. Frame 4 stands on it at lot i -78 and looks east. The stretch between the avenue end and the plaza is lawn, so the last part of the route crosses the park (an authored path, not a street).
+
+## Real vs authored
+- Real (from the data): lots, footprints, heights, ground, corp colour, which lots are street, park and plaza, which sides of a building face a street, the city skyline behind the helix, and the searchlight towers (the four tallest real buildings of each view).
+- Procedural on top (seeded by the real prism key, so a building keeps the same signs at every zoom): windows, accents, storefronts, signs, blade signs, AC units, fire escapes, roof water towers and signs, lamps, pavements, car streaks.
+- BESPOKE, hand-authored, NOT procedural: the Solace HQ set piece in frame 4 (also visible in frames 2 and 3): the helix (170 m, 2.6 turns, pink and lime rungs, cell pods, halo ring), the plaza rings and spokes, and the route's approach across the lawn. The Solace HQ stand-in prisms from the dump are removed and replaced by this set. The other three HQ stand-ins (Halcyon, Meridian, Orbital) stay as the data has them.
+- Only the city behind the HQ matches the procedural city: in frame 4 the avenue, the buildings and the skyline come from the same data as frame 3.
+
+## Designer notes, one by one
+1. Value structure: facade bases are now about 10 to 20% value (body strength 0.5, down from 0.82; palette darkened; height bands softer). The lit storefront band (emission 2.2 to 3 plus a pavement spill quad) is the brightest horizontal in frame 3.
+2. Selective neon: about 45% of Solace buildings and 28% of the others carry one accent (a parapet line, one vertical corner strip, or a crown). The rest have no glow, only the ink hull. Ink is thinner (2 px, dark, wobbly), never glowing. Corp colour lives in the accent, the window tint and the signs.
+3. Windows: cell 0.95 x 1.25 m (a third of v1), irregular size per cell, 10 to 30% lit, warm amber majority, about 24% cool corp tint, a few cyan-white. Frame 2 uses x2.6 cells so they do not turn to noise at ortho scale.
+4. Atmosphere: ground mist (Volume Scatter box, 8 m high, density 0.028), long red and white car streaks on the boulevard and the avenue, searchlight beams that fade along their length (up to four per frame, from real towers), a sky with a horizon glow and noise cloud, and a fog tint by distance. Frame 3 has a sky strip and a skyline (limited, see gaps).
+5. Texture: facade grime (two noise layers, vertical streaks) multiplied into the cel bands, so the base stays flat.
+6. Route markers: ribbon half-width 0.34 m (was 0.55), small ground discs (1.0 to 1.4 m), and only the selected node has a pole, marker and white ring. In frame 3 the route is the first read at squint through placement and contrast: it is the only continuous bright lime horizontal on a dark ground.
+7. Frame 2 looks at the real block with frame 1's camera (see above), and frame 4 shows the helix uncropped.
+Signs: kept the density and added blade signs with icons (cross, ring, leaf, drop, bars, helix, pill, bowl), roof billboards with a coloured panel, icon and text, and icon-bearing shop boards.
+
+## Squint (v2, `v2/squint_sheet.jpg`)
+- Frame 1: pass. The highlighted block is the lightest shape on a dark city.
+- Frame 2: the park, plaza rings and the building mass read, but the route and the street do not (windows and buildings make a noisy mass at this scale). Fail for the route. It needs a calmer window grade or a wider route at ortho scale.
+- Frame 3: pass. One lime line across the lower third with a single bright marker, a bright storefront band above it, and a dark facade mass. It reads as one street with a clear route.
+- Frame 4: pass. The helix and the beams are the strongest shapes, the avenue's route is a bright vertical line to its base, and the real skyline is a clear dark band.
+
+## Gaps vs the plates (v2)
+- Closer in mood: dark facades, selective accents, small dense windows, a wet street with mist and long streaks, a sky, searchlights, bays of signs with icons.
+- Still short: the plates have far more micro detail per metre (balconies, pipes, roof clutter, painted panel breakup) and a calmer palette (mine is more saturated, especially the purple sky in frame 4 and the amber windows). Their sign hierarchy is flatter and more graphic. Frame 3's real boulevard has tall buildings (up to 80 m), so tops are cut and the sky is only a strip; the plate shows whole towers against sky. Frame 4's lawn trees are low-poly blobs and read as toys, and the foreground ground is dark and empty. The helix is a plain tube, not the glass-and-cell look of the Solace brand sheet.
+- Footprints are boxes, the facade style keys of the data are unused, and the Godot port will need its own window and sign systems. This is concept art only.
+
+## Procedural detail per zoom, revised for real data
+| Zoom | From the data | Procedural on top |
+|---|---|---|
+| City (frame 1) | everything: lots, heights, corp colour, parks, plazas, helix | nothing |
+| District (frame 2) | same | window grid (2.6 m cells), corp accent on about a third of buildings, a lit ground-floor strip on the first street side, roof billboards on tall buildings, street colour lines, tree blobs |
+| Street (frame 3) | same, plus which sides face a street | storefront bays, awnings, sign boards with icons, blade signs, AC units, fire escapes, lanterns, roof water towers and billboards, pavement and kerb, lamps, wires, car streaks, wet ground, mist |
+| HQ approach (frame 4) | the avenue, the city behind, the park lots | the authored HQ set (helix, plaza, route across the lawn) |
+Rule: detail level is chosen by distance in lots from the camera focus (street detail within about 16 lots, district detail within about 55), seeded by prism key.
+
+## Process notes
+- The windowed capture ran through the clone's `gpu_lock_run.py` and `run_windowed.py`, as its `run_capture.sh` does. `gpu_lock_run.py` registers the lock holder as "tide_g1", so the lock file named that session while my two short captures ran.
+- Heavy renders are in `D:/rc_scratch/netrun_cel/v2c/` and the raw capture is in `D:/rc_scratch/netrun_cel/city/` (not committed). `nr_city.py` reads `lots_city.json` from `D:/rc_scratch/netrun_cel/city/`; the committed copy is `v2/data/lots_city.json`.
