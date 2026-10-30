@@ -2196,3 +2196,9 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Holo ads:** they now sit on the roof (gap 0.6 BU), but by design they still read as floating pale cubes at plan zoom.
   - **Bare lots:** the big grey bare lots (bay apron, north of the core, beside the Solace park) are layout, and P1 handles them.
 - ART CALL 39: the holo cubes are off in the city view (`neon_holo_share` 0) until a proper holo design exists. They read as floating boxes, and the designer's sign rule (coloured, partial height, spilling light) is already met by the screens and blades. This goes into the round that merges P1.
+- **Designer, 2026-10-29 evening: "progress without my input."** Overnight plan:
+  1. Finish P1.
+  2. Round 40 merges P1 into the view, turns the holos off, and renders.
+  3. A fresh visual critic runs on r40 against the round-6 target, and only clear fixes follow.
+  4. Stage a PROPOSED final in `G1_parity/final_proposed/`, with the golden-plate updates staged beside it and the hand-off notes drafted.
+  Nothing replaces final/, the golden plates or main without the designer's review (standing rule). Every call gets logged as an ART CALL.
