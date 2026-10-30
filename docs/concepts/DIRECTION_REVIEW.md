@@ -2353,3 +2353,8 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - **Item 6 answered (designer):** "Yes E10 is the latest approved plate. I think a ton of the micro details and sub-elements of the combat plate could be improved, but as a whole it meets the visuals we want."
   - E10 is the approved combat target as a whole.
   - A micro-detail polish pass on its sub-elements is queued after the combat backdrop pick, so it is polished against the backdrop that will ship.
+- **Solace names on the cohesion map pages: accepted** (8957fdc5, 6d6abe20).
+  - No Meridian text remains on the plates.
+  - The WARDEN and SPORE DRONE silhouettes read at panel size.
+  - The route file header is now Solace lime.
+  - Data ids (hauler, courier, sink_the_cargo_logs) are unchanged on the plates; renaming them in game data is build's job (A-112).
