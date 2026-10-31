@@ -2672,3 +2672,17 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
 - **Designer feedback on the zoom (2026-10-30):** the zoom effect looks good, and the netrun street is "way better". But the camera makes about a 90° right turn away from the target street and ends up in a completely different part of the city.
   - **Bug:** the dolly path and the final street camera do not share a target.
   - **Fix, round 4 item 0:** one target street segment drives the highlight, every dolly pose and the final camera. A tracking strip proves it, with a bounded heading change.
+
+## Zoom rules round 4 review (art-pass, 2026-10-30)
+- **Output:** art/netrun-zoom bf1e5737, `netrun_cel/zoom_rules/round4/`. City band bit-exact.
+- **Dolly fix confirmed by data:** a single target (`CityZoomTarget`, centre lot (34.5,-7.5), look N) drives the plan frame, district camera, dolly and street camera.
+  - `zoom_track.jpg` projects the target into all 75 frames: the target centre drifts at most 45 px, and the heading turn is at most 18 deg/s, a 45° total turn by the shortest arc.
+- **Look is now a clear step toward the plate:**
+  - plum facades with pink and cyan signs;
+  - a dark glossy road with a mirrored reflection;
+  - readable beams;
+  - quiet ground-disc route markers.
+  - **Still short:** our upper facades are lit more evenly than the plate's near-black masses, and the road has little streak activity.
+  - **Open target:** the storefront band is at 2.2x the facade mean against 2.5x, and its row sits at 80 % down instead of 70–75 %.
+- **Perf unverified:** the numbers swung between 3.5 ms and 14.3 ms with the road on or off, which looks like outside GPU load. Re-measure on a quiet GPU before calling it.
+- Waits for the designer's look.
