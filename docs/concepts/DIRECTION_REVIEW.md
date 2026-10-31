@@ -2669,3 +2669,6 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
   2. Make the road a dark glossy asphalt with real mirrored reflection and bright streaks, with the storefront band as the brightest horizontal.
   3. Stronger lamp pools and corp-colour streaks.
   4. Quiet the route markers.
+- **Designer feedback on the zoom (2026-10-30):** the zoom effect looks good, and the netrun street is "way better". But the camera makes about a 90° right turn away from the target street and ends up in a completely different part of the city.
+  - **Bug:** the dolly path and the final street camera do not share a target.
+  - **Fix, round 4 item 0:** one target street segment drives the highlight, every dolly pose and the final camera. A tracking strip proves it, with a bounded heading change.
