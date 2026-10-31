@@ -51,7 +51,7 @@ Rule: The combat backdrop is a cutaway of the chosen building on its street. One
 2. **Rules may stretch for the look (general).** Designer's exact words: "rules may stretch, bend or break to get there, and the designer wants to see the result." Numeric limit: No numeric limit given: unknown.
 3. **Netrun AAA-2 realism exception (ART_BIBLE 1.2).** Loosened to "one continuous cel look"; the exception is removed. Numeric limit: No numeric limit given: unknown.
 4. **Traffic "no car models" in the netrun (ART_BIBLE 4.6).** Designer's ruling: streaks at 200 px/s on screen, car models below it. The threshold 200 px/s is numeric and given in the files. Other numeric limit: No numeric limit given: unknown.
-5. **Map "lit building" and "wheel-free dive" wording.** Loosened by the transitions re-storyboard. Numeric limit: No numeric limit given: unknown.
+5. **Netrun entry flow wording (ART_BIBLE 4.6).** The "wheel-free dive" and "lit building" wording is replaced by the 12 transitions in ART CALL 49: a camera zoom to the netrun street, with no wheel-circle zoom. Numeric limit: none given (timings are in transitions/v2/STORYBOARD.md, proposed by art-pass).
 
 ## Part 4: open items
 

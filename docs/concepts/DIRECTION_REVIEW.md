@@ -2732,3 +2732,5 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
 - **Art-pass choices:**
   - O-8: keep "STREET MERC" and "CELL-9", because they are not corp names.
   - O-9: the event card's CAM photo is still the old pale slab. It gets a street-cam frame from the netrun street in a later pass.
+- **ART_BIBLE amendments draft checked** (`ART_BIBLE_AMENDMENTS_DRAFT.md`, 82d2bdd2): 12 superseded entries, 6 new sections, 5 loosened rules. The ppb bands match ZOOM_RULES. Part 3 item 5 is reworded to point at ART CALL 49.
+  - O-10: the draft stays a draft. Art-pass will fold it into ART_BIBLE.md only when the designer reviews it.
