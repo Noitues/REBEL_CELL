@@ -1,0 +1,6 @@
+run_tests: 25 scripts in 2 shard(s); logs in D:\rc_scratch\nrzoom\r2\targeted2
+run_tests: shard 1 finished in 154s (exit 0)
+run_tests: shard 0 finished in 524s (exit 0)
+
+run_tests: 289 tests, 0 failing, 11 pending, wall 524s
+run_tests: PASSED

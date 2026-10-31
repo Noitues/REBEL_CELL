@@ -1,0 +1,48 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.315 - Forward+ - Using Device #0: AMD - AMD Radeon RX 6700 XT
+
+NRZOOM plan ortho=394.592555346413 target=(-338.619, 0.0, -124.6844) lod=1
+NRZOOM city_rect=[P: (-80, -80), S: (165, 165)] area=[P: (-80, -80), S: (165, 165)] prisms=4756 road_lots=7930
+NRZOOM heights p10=1.7 p25=3.1 p50=7.3 p75=17.2 p90=28.6 max=40.0
+NRZOOM scan ms=9162
+FRAME front=(28.5, 1.0) look=S score=0.608 row=0.10 fill=0.45 open=0.96 wide=1.00(31) back=0.80 mean_h=24.0 tower_share=0.55
+FRAME front=(27.5, 1.0) look=S score=0.597 row=0.08 fill=0.45 open=0.93 wide=1.00(30) back=0.80 mean_h=26.3 tower_share=0.55
+FRAME front=(37.5, 19.0) look=N score=0.587 row=0.33 fill=0.73 open=0.82 wide=0.92(12) back=0.62 mean_h=22.7 tower_share=0.73
+FRAME front=(47.0, 16.5) look=W score=0.584 row=0.14 fill=0.45 open=0.83 wide=1.00(17) back=0.78 mean_h=23.3 tower_share=0.45
+FRAME front=(-40.0, 0.5) look=W score=0.563 row=0.06 fill=0.45 open=0.86 wide=1.00(26) back=0.73 mean_h=17.1 tower_share=0.45
+FRAME front=(43.0, 30.5) look=E score=0.560 row=0.19 fill=0.55 open=0.85 wide=1.00(21) back=0.62 mean_h=19.6 tower_share=0.36
+FRAME front=(38.5, 19.0) look=N score=0.558 row=0.33 fill=0.64 open=0.81 wide=0.85(11) back=0.62 mean_h=21.8 tower_share=0.73
+FRAME front=(-40.0, 1.5) look=W score=0.548 row=0.01 fill=0.45 open=0.83 wide=1.00(27) back=0.73 mean_h=13.6 tower_share=0.45
+FRAME front=(-40.0, 2.5) look=W score=0.547 row=0.00 fill=0.45 open=0.83 wide=1.00(28) back=0.73 mean_h=9.1 tower_share=0.45
+FRAME front=(1.0, -6.5) look=W score=0.538 row=0.25 fill=0.55 open=0.86 wide=1.00(16) back=0.47 mean_h=15.7 tower_share=0.27
+FRAME front=(22.5, -8.0) look=S score=0.534 row=0.26 fill=0.64 open=0.81 wide=0.54(7) back=0.82 mean_h=24.8 tower_share=0.55
+FRAME front=(54.5, 25.0) look=S score=0.521 row=0.13 fill=0.55 open=0.98 wide=0.69(9) back=0.65 mean_h=17.6 tower_share=0.36
+FRAME front=(53.5, 25.0) look=S score=0.514 row=0.13 fill=0.55 open=0.95 wide=0.69(9) back=0.65 mean_h=17.6 tower_share=0.36
+FRAME front=(28.5, -3.0) look=N score=0.513 row=0.20 fill=0.55 open=0.95 wide=1.00(19) back=0.34 mean_h=25.4 tower_share=0.18
+FRAME front=(23.5, -8.0) look=S score=0.508 row=0.26 fill=0.55 open=0.85 wide=0.46(6) back=0.78 mean_h=22.6 tower_share=0.45
+FRAME front=(-40.0, -24.5) look=W score=0.487 row=0.25 fill=0.45 open=0.81 wide=0.54(7) back=0.71 mean_h=14.5 tower_share=0.64
+FRAME front=(57.5, -37.0) look=N score=0.484 row=0.36 fill=0.55 open=0.80 wide=0.38(5) back=0.72 mean_h=19.1 tower_share=0.64
+FRAME front=(55.5, 25.0) look=S score=0.471 row=0.06 fill=0.45 open=0.98 wide=0.69(9) back=0.51 mean_h=18.5 tower_share=0.27
+FRAME front=(-37.0, -22.5) look=W score=0.464 row=0.15 fill=0.45 open=0.82 wide=0.38(5) back=0.80 mean_h=24.4 tower_share=0.55
+FRAME front=(40.0, 22.5) look=E score=0.453 row=0.19 fill=0.45 open=0.86 wide=0.31(4) back=0.75 mean_h=25.9 tower_share=0.45
+FRAME front=(48.0, 22.5) look=W score=0.445 row=0.21 fill=0.45 open=0.87 wide=0.23(3) back=0.76 mean_h=24.0 tower_share=0.55
+FRAME front=(50.0, 20.5) look=W score=0.440 row=0.17 fill=0.45 open=0.88 wide=0.23(3) back=0.76 mean_h=25.2 tower_share=0.55
+FRAME front=(50.0, 21.5) look=W score=0.439 row=0.17 fill=0.55 open=0.85 wide=0.23(3) back=0.76 mean_h=26.7 tower_share=0.55
+FRAME front=(48.0, 21.5) look=W score=0.438 row=0.21 fill=0.45 open=0.84 wide=0.23(3) back=0.76 mean_h=24.0 tower_share=0.55
+FRAME front=(50.0, 22.5) look=W score=0.436 row=0.17 fill=0.55 open=0.83 wide=0.23(3) back=0.76 mean_h=26.7 tower_share=0.55
+FRAME front=(18.5, 16.0) look=N score=0.433 row=0.30 fill=0.45 open=0.80 wide=0.31(4) back=0.65 mean_h=13.9 tower_share=0.36
+FRAME front=(45.0, 15.5) look=W score=0.422 row=0.25 fill=0.45 open=0.82 wide=0.23(3) back=0.69 mean_h=19.1 tower_share=0.64
+FRAME front=(-40.5, 5.0) look=S score=0.413 row=0.12 fill=0.55 open=0.82 wide=0.38(5) back=0.60 mean_h=11.9 tower_share=0.36
+FRAME front=(-14.5, -12.0) look=S score=0.397 row=0.03 fill=0.45 open=0.87 wide=1.00(17) back=0.07 mean_h=6.2 tower_share=0.00
+FRAME front=(55.5, 26.0) look=S score=0.395 row=0.08 fill=0.45 open=0.83 wide=0.08(1) back=0.80 mean_h=14.6 tower_share=0.55
+FRAME front=(-13.5, -12.0) look=S score=0.395 row=0.03 fill=0.55 open=0.85 wide=1.00(17) back=0.08 mean_h=5.9 tower_share=0.00
+FRAME front=(-12.5, -12.0) look=S score=0.389 row=0.03 fill=0.55 open=0.82 wide=1.00(17) back=0.08 mean_h=5.9 tower_share=0.00
+FRAME front=(45.0, 14.5) look=W score=0.386 row=0.25 fill=0.45 open=0.88 wide=0.08(1) back=0.62 mean_h=19.1 tower_share=0.73
+FRAME front=(5.0, -18.5) look=W score=0.376 row=0.10 fill=0.45 open=0.82 wide=0.38(5) back=0.48 mean_h=7.0 tower_share=0.27
+FRAME front=(-37.5, 5.0) look=S score=0.364 row=0.05 fill=0.55 open=0.83 wide=0.38(5) back=0.45 mean_h=9.4 tower_share=0.27
+FRAME front=(-38.5, 5.0) look=S score=0.356 row=0.05 fill=0.45 open=0.80 wide=0.38(5) back=0.45 mean_h=10.9 tower_share=0.27
+FRAME front=(-39.0, -59.5) look=E score=0.252 row=0.00 fill=0.45 open=0.83 wide=0.38(5) back=0.03 mean_h=2.7 tower_share=0.00
+FRAME front=(70.5, 36.0) look=S score=0.249 row=0.02 fill=0.55 open=0.81 wide=0.38(5) back=0.03 mean_h=4.1 tower_share=0.00
+FRAME front=(-22.0, 62.5) look=E score=0.242 row=0.00 fill=0.45 open=0.80 wide=0.38(5) back=0.02 mean_h=2.0 tower_share=0.00
+FRAME front=(42.0, 66.5) look=W score=0.230 row=0.00 fill=0.45 open=0.81 wide=0.31(4) back=0.03 mean_h=2.7 tower_share=0.00
+NRZOOM DONE
