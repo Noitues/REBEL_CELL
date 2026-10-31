@@ -2649,3 +2649,23 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
   - **Mocks:** the non-combat room interior, the street of node rooms, the bit effects, the raid-node states, and the failure screen.
   - **Ten assumptions** are listed as questions at the end of STORYBOARD.md.
   - **Still to fix later:** the E10 plate keeps the old backdrop.
+
+## Zoom rules round 3 review (art-pass, 2026-10-30)
+- **Output:** art/netrun-zoom b8a1d115, `netrun_cel/zoom_rules/round3/`. Targeted tests: 295, 0 failing. City band still bit-exact.
+- **Root cause fixed:** the street camera was framing 1.8x too tight (22.6° instead of 40°), so no road ever showed in rounds 1–2.
+- **Staged street works structurally:**
+  - a wide 36 m road;
+  - the real facing row, with heights untouched;
+  - lit shop fascias with readable signs;
+  - the highway pylon hidden.
+  - Compared with the plate, the composition now matches: towers over a lit band over a wide road.
+- **Still short of the plate's look, mainly in value and mood:**
+  1. **Road:** a flat, pale lilac plane. The plate's is dark, with strong glossy reflections of the signs and long light streaks.
+  2. **Facades:** mid-blue and evenly lit. The plate's are near-black, with pink and magenta mass and sparse lights.
+  3. **Wet:** the foreground carries no wet reflection, and the streaks and lamp pools are faint.
+  4. **Route markers:** the diamond markers read as toys.
+- **Round 4, art-pass brief (value and mood):**
+  1. Darken the facades to near-black plum, keep corp colour as sparse accents, and lean the palette toward the plate's magenta, pink and cyan.
+  2. Make the road a dark glossy asphalt with real mirrored reflection and bright streaks, with the storefront band as the brightest horizontal.
+  3. Stronger lamp pools and corp-colour streaks.
+  4. Quiet the route markers.
