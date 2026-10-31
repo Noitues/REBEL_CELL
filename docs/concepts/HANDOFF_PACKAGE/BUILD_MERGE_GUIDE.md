@@ -114,3 +114,15 @@ New tests on the chain: `test_city_lint`, `test_city_lint_sweep`, `test_city_lay
 - Solace names: the data ids (hauler, courier, sink_the_cargo_logs) are unchanged; renaming them is build's job (A-112).
 - Full-suite status of steps 1, 2, 3, 5, 8 and 9 is unknown. Run the full gate before merge.
 - Jack-in: the 3.7 s frame-1 scene instantiate and the 1.5 s `CityView3D._on_model` remain on the main thread (A-114).
+
+## Answers to the unknowns above (art-pass, 2026-10-30)
+- **Suite status per branch:**
+  - art/city-lint, art/city-layout-p0, art/city-layout-p1 and art/tide-r41 are contained in art/tide-r42 by merge. r42 passed the full suite with 4,070 tests and 0 failing.
+  - art/tide-r43 (e2c9976c) passed the full suite with 4,080 tests and 0 failing.
+  - The jack-in branch has its own full run, in A-114: 15 pre-existing game-v2 failures plus 1 of its own test that was fixed afterwards.
+  - The traffic branch had targeted tests only: 56 tests, 0 failing. Run the full gate at merge.
+- **Traffic branch base:** art/tide-r43.
+- **Designer approvals:**
+  - Corp-colour traffic is adopted (2026-10-30).
+  - The r43 look and the replacement of `final/` are not yet approved. The designer has seen final_proposed, but has not signed it off.
+- **Raid grade switch:** it has no separate config switch. `TideRaidGrade` turns it on for FORECAST, REVEAL, RESPONSE and PLAYOUT, and off for PLAN, AFTERMATH and HQ_STEP. The look values are in `TideLookData` (`raid_grade_*`).
