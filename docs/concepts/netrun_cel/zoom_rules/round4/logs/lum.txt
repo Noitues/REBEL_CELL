@@ -1,0 +1,1 @@
+street_frame.png: frame_mean=0.201 brightest 24px row at y=862 (80% down) value 0.429, facade(25-60%) mean 0.194, ratio 2.20, road(80-100%) mean 0.165

@@ -1,0 +1,12 @@
+run_tests: 26 scripts in 2 shard(s); logs in D:\rc_scratch\nrzoom\r4\targeted
+run_tests: shard 1 finished in 107s (exit 1)
+run_tests: shard 0 finished in 571s (exit 0)
+
+run_tests: 298 tests, 1 failing, 11 pending, wall 571s
+  FAIL res://tests/unit/test_city_zoom_r2.gd :: test_car_lights_follow_the_corp_colour_rule
+       [0.55000001192092896000] expected to equal [1.0] +/- [0.001]:  head = lerp(corp, white, 0.6)
+                   at line 259
+
+run_tests: rerunning 1 failing or not-run script(s) alone to spot order dependence
+  ALONE res://tests/unit/test_city_zoom_r2.gd: fails alone too (1 failing)
+run_tests: FAILED

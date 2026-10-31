@@ -1,0 +1,3 @@
+frames 75 max heading change 1.52 deg/frame = 18.2 deg/s at 12 fps
+centre x drift: max |x-960| = 44.9 px; centre y range 540..753 px; max angle to target 4.60 deg
+total yaw turn -45.0 deg (shortest arc)
