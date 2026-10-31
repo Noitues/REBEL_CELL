@@ -2718,3 +2718,17 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
 - **O-5, E10 micro-detail polish:** waits for the weekly reset (real look-dev).
 - **O-6, ZOOM_RULES open items:** night only; SSR or planar mirror, whichever is cheaper; a corp-themed sky tint is not added.
 - **O-7, netrun node colours:** the type colours in the route page stay as the existing placeholders until the designer picks.
+
+## Supporting screens review (art-pass, 2026-10-30 night)
+- **Accepted** (`cohesion/supporting_r42/`, f4365d6d): 7 of 7 screens redone with the strong grade.
+  - **Backdrops:** the r42 city is behind the event, dialogue, deck and heat-strip HQ and route rows. The picked cutaway is behind rewards, shop, server rack and the combat row.
+  - **Text:** Solace names are applied (Seed Vault Exchange, Claims Adjuster, Warden). No Meridian remains.
+  - **Squint:** all pass, and the chrome leads.
+- **Left as they are:**
+  - **Skipped:** the Godot `now_event.png`, a build frame with the UI only as pixels.
+  - **Generic names unchanged:** "STREET MERC" and "CELL-9".
+  - **Heat strip:** its combat row uses the cutaway, because the E10 plate is still on the old city.
+  - **Placeholder panels:** the "placeholder: own pass" panels remain.
+- **Art-pass choices:**
+  - O-8: keep "STREET MERC" and "CELL-9", because they are not corp names.
+  - O-9: the event card's CAM photo is still the old pale slab. It gets a street-cam frame from the netrun street in a later pass.
