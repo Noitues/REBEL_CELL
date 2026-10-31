@@ -2591,3 +2591,24 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - **Light-streak swap:** at 200 px/s on screen, with a cross-fade.
   - **Checks:** motion verified by frame diffs; p95 7.14 ms; 56 targeted tests, 0 failing.
   - At close-up nearly all cars are streaks. Raising `traffic_streak_px_per_s` brings the car models back.
+
+## Zoom rules round 2 review (art-pass, 2026-10-30)
+- **Output:** art/netrun-zoom f318f476, art 71397457, `netrun_cel/zoom_rules/round2/`.
+  - **Checks:** GPU p95 7.6–8.5 ms; 289 targeted tests, 0 failing; the City band is bit-exact (0 differing pixels).
+- **Better than round 1:**
+  - towers behind the row read as fogged lavender silhouettes;
+  - sign text is at real scale (LEAFLET, PAWN, HOTEL, TEA, PHARMA, KARAOKE, TEM read);
+  - the pink slab is gone: it was a neon-kit wall screen, and its area test was clipped at the viewport edge.
+- **Still fails the squint against street_overview:**
+  - **No road:** no wet road, car streaks or lamp row. The bottom 20 % is frontage reflection and park trees.
+  - **Storefront band:** not the brightest horizontal. It is 1.58x the facade mean and sits at 91 % down, against the plate's 2.72x at 73 %.
+  - **Frame composition:** a highway pylon cuts the right third, and the palette stays blue-violet where the plate is magenta.
+- **Structural finding:** the city has no frontage that matches the plate.
+  - The city is mostly low: height p50 is 7.3 BU, p75 17.2, and no plaza is open for 6.5 lots.
+  - A scan found no lot passing the default frame gates, so the shipped frame was chosen by eye.
+  - **Art-pass reading:** hunting for a real street that happens to look like the plate will not work. The plate's wide, open street is staged, so the netrun street should be a staged street.
+- **Proposed round 3, the "stage street" rule:**
+  - The route street is widened to plate proportions (road about 3x the current width), and its facing row is flattened or lowered to about 33 m. This is the designer's own camera ruling to flatten or hide foreground that is not part of the netrun, extended to the street itself.
+  - The street is paved, wet and lit as the hero: storefront band plus reflection, lamp row and car streaks.
+  - The city behind it stays real.
+  - View-only: the layout is untouched.
