@@ -2699,3 +2699,22 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
   5. A real design question (a rule, a mechanic) is logged as an open question and not decided.
 
 ## Overnight choices
+- **O-1, transitions assumptions** (the 10 questions in transitions/v2/STORYBOARD.md). Defaults chosen:
+  - The City Grid and the raid view share one iso camera, so T1 is a zoom.
+  - Select and jack-in (T2) is a UI beat that ends on the dossier card. The zoom (T3) starts from the jack-in press.
+  - The netrun street (a perspective view) is distinct from the iso route page.
+  - Event and shop rooms zoom into an interior with the card over it.
+  - The combat rings follow the encounter's ring count.
+  - A failed netrun goes to the failure screen, then to the raid view (T7 lose). The failure screen shows Heat gained and rewards lost.
+  - A lost single raid returns to the raid view, and the campaign ends only when the city is lost.
+  - The folder comes over the city.
+  - Image slot B is used on both folders.
+  - Changeable by the designer at any time.
+- **O-2, street polish: move on for now.** Round 4 passes on composition and the zoom track.
+  - The remaining gaps are upper-facade darkness, road streak activity and the storefront band at 2.2x against 2.5x. Queued as a polish pass, and a quiet-GPU frame-rate re-measure is queued with it.
+  - Reason: token economy, and a good enough bridge to the plates.
+- **O-3, combat backdrop lobby:** keep a thin lobby band for street context, and give the room more of the frame.
+- **O-4, traffic streak threshold:** leave at 200 px/s. Cars at close-up read as streaks, which is the designer's own rule (fast traffic becomes streaks).
+- **O-5, E10 micro-detail polish:** waits for the weekly reset (real look-dev).
+- **O-6, ZOOM_RULES open items:** night only; SSR or planar mirror, whichever is cheaper; a corp-themed sky tint is not added.
+- **O-7, netrun node colours:** the type colours in the route page stay as the existing placeholders until the designer picks.
