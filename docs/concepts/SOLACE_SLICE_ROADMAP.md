@@ -84,7 +84,7 @@ Most of these exist from earlier rounds but were drawn against the old city. Rec
 
 ## 7. Polish and reach (M4 / M12)
 - Reduced-motion variants.
-- Colour-blind check of the corp hues and avenue colours.
+- Colour-blind check: not a current concern (designer, 2026-10-30).
 - Perf on the lower quality tiers, since the city now has more neon and ink.
 
 ## Order

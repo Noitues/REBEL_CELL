@@ -2686,3 +2686,5 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
   - **Open target:** the storefront band is at 2.2x the facade mean against 2.5x, and its row sits at 80 % down instead of 70–75 %.
 - **Perf unverified:** the numbers swung between 3.5 ms and 14.3 ms with the road on or off, which looks like outside GPU load. Re-measure on a quiet GPU before calling it.
 - Waits for the designer's look.
+- **Designer (2026-10-30): colour-blind design is not a current concern.** Ignore the findings in `polish/colourblind/` and drop the colour-blind item from the polish list until the designer reopens it.
+- **Designer (2026-10-30): start the supporting screens.** Redo the Terminal event, Dispatch briefings, rewards, shop and deck pages on the new city, with the dimmed under-UI grade and Solace names.
