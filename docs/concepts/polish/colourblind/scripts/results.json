@@ -1,0 +1,294 @@
+{
+  "colours_srgb01": {
+    "solace_head": [
+      0.3234,
+      0.55,
+      0.1513
+    ],
+    "solace_tail": [
+      0.2234,
+      0.38,
+      0.1045
+    ],
+    "halcyon_head": [
+      0.3795,
+      0.2365,
+      0.55
+    ],
+    "halcyon_tail": [
+      0.2622,
+      0.1634,
+      0.38
+    ],
+    "meridian_head": [
+      0.55,
+      0.3025,
+      0.055
+    ],
+    "meridian_tail": [
+      0.38,
+      0.209,
+      0.038
+    ],
+    "orbital_head": [
+      0.44,
+      0.517,
+      0.55
+    ],
+    "orbital_tail": [
+      0.304,
+      0.3572,
+      0.38
+    ],
+    "aurelian_head": [
+      0.088,
+      0.473,
+      0.3575
+    ],
+    "aurelian_tail": [
+      0.0608,
+      0.3268,
+      0.247
+    ],
+    "solace_lime_96FF46": [
+      0.5882,
+      1.0,
+      0.2745
+    ],
+    "cell_lime_D4FF00": [
+      0.8314,
+      1.0,
+      0.0
+    ]
+  },
+  "pairs": [
+    {
+      "pair": "solace_lime_96FF46 vs cell_lime_D4FF00",
+      "de2000": {
+        "normal": 10.17,
+        "deutan": 4.64,
+        "protan": 1.47,
+        "tritan": 15.18
+      },
+      "risk": [
+        "deutan",
+        "protan"
+      ]
+    },
+    {
+      "pair": "solace_tail vs meridian_tail",
+      "de2000": {
+        "normal": 31.73,
+        "deutan": 6.1,
+        "protan": 10.91,
+        "tritan": 40.89
+      },
+      "risk": [
+        "deutan"
+      ]
+    },
+    {
+      "pair": "solace_tail vs aurelian_tail",
+      "de2000": {
+        "normal": 15.2,
+        "deutan": 16.1,
+        "protan": 15.07,
+        "tritan": 7.03
+      },
+      "risk": [
+        "tritan"
+      ]
+    },
+    {
+      "pair": "solace_tail vs orbital_tail",
+      "de2000": {
+        "normal": 26.26,
+        "deutan": 24.82,
+        "protan": 26.2,
+        "tritan": 7.51
+      },
+      "risk": [
+        "tritan"
+      ]
+    },
+    {
+      "pair": "solace_head vs orbital_head",
+      "de2000": {
+        "normal": 31.13,
+        "deutan": 29.99,
+        "protan": 31.08,
+        "tritan": 8.87
+      },
+      "risk": [
+        "tritan"
+      ]
+    },
+    {
+      "pair": "solace_head vs aurelian_head",
+      "de2000": {
+        "normal": 18.33,
+        "deutan": 19.39,
+        "protan": 17.75,
+        "tritan": 9.0
+      },
+      "risk": [
+        "tritan"
+      ]
+    },
+    {
+      "pair": "solace_head vs meridian_head",
+      "de2000": {
+        "normal": 39.87,
+        "deutan": 9.96,
+        "protan": 17.37,
+        "tritan": 47.21
+      },
+      "risk": [
+        "deutan"
+      ]
+    },
+    {
+      "pair": "orbital_tail vs aurelian_tail",
+      "de2000": {
+        "normal": 19.22,
+        "deutan": 10.91,
+        "protan": 13.23,
+        "tritan": 12.25
+      },
+      "risk": []
+    },
+    {
+      "pair": "meridian_tail vs aurelian_tail",
+      "de2000": {
+        "normal": 34.52,
+        "deutan": 16.09,
+        "protan": 13.25,
+        "tritan": 43.52
+      },
+      "risk": []
+    },
+    {
+      "pair": "orbital_head vs aurelian_head",
+      "de2000": {
+        "normal": 22.82,
+        "deutan": 15.7,
+        "protan": 17.87,
+        "tritan": 14.43
+      },
+      "risk": []
+    },
+    {
+      "pair": "meridian_head vs aurelian_head",
+      "de2000": {
+        "normal": 41.13,
+        "deutan": 18.39,
+        "protan": 16.81,
+        "tritan": 50.53
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_tail vs orbital_tail",
+      "de2000": {
+        "normal": 20.43,
+        "deutan": 17.1,
+        "protan": 19.22,
+        "tritan": 21.91
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_tail vs meridian_tail",
+      "de2000": {
+        "normal": 37.56,
+        "deutan": 40.44,
+        "protan": 40.49,
+        "tritan": 18.35
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_head vs meridian_head",
+      "de2000": {
+        "normal": 44.39,
+        "deutan": 48.62,
+        "protan": 48.64,
+        "tritan": 21.64
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_tail vs aurelian_tail",
+      "de2000": {
+        "normal": 35.34,
+        "deutan": 22.97,
+        "protan": 29.22,
+        "tritan": 31.62
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_head vs orbital_head",
+      "de2000": {
+        "normal": 23.46,
+        "deutan": 23.42,
+        "protan": 26.1,
+        "tritan": 29.8
+      },
+      "risk": []
+    },
+    {
+      "pair": "meridian_tail vs orbital_tail",
+      "de2000": {
+        "normal": 28.45,
+        "deutan": 26.45,
+        "protan": 26.06,
+        "tritan": 34.92
+      },
+      "risk": []
+    },
+    {
+      "pair": "solace_tail vs halcyon_tail",
+      "de2000": {
+        "normal": 57.74,
+        "deutan": 40.77,
+        "protan": 45.02,
+        "tritan": 27.32
+      },
+      "risk": []
+    },
+    {
+      "pair": "halcyon_head vs aurelian_head",
+      "de2000": {
+        "normal": 41.38,
+        "deutan": 28.8,
+        "protan": 36.46,
+        "tritan": 36.01
+      },
+      "risk": []
+    },
+    {
+      "pair": "meridian_head vs orbital_head",
+      "de2000": {
+        "normal": 34.49,
+        "deutan": 32.69,
+        "protan": 33.75,
+        "tritan": 39.93
+      },
+      "risk": []
+    },
+    {
+      "pair": "solace_head vs halcyon_head",
+      "de2000": {
+        "normal": 71.25,
+        "deutan": 50.24,
+        "protan": 55.05,
+        "tritan": 34.71
+      },
+      "risk": []
+    }
+  ],
+  "worst_pair": "solace_lime_96FF46 vs cell_lime_D4FF00",
+  "worst_de": 1.47,
+  "risky_count": 7
+}
