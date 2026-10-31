@@ -2645,3 +2645,7 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
 10. Raid view to starting a raid, then the result screen, and back to the raid view.
 11. Raid view to HQ netrun: a special fly-in to the custom HQ netrun.
 12. Custom HQ netrun to campaign win, to the dossier folder.
+- **Transitions storyboard v2 accepted for the designer's review** (`transitions/v2/`, 9a420b19): 12 strips, with each key badged REAL or MOCK, a master timing table and a flow diagram.
+  - **Mocks:** the non-combat room interior, the street of node rooms, the bit effects, the raid-node states, and the failure screen.
+  - **Ten assumptions** are listed as questions at the end of STORYBOARD.md.
+  - **Still to fix later:** the E10 plate keeps the old backdrop.
