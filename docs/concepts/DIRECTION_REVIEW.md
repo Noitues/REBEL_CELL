@@ -2688,3 +2688,14 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
 - Waits for the designer's look.
 - **Designer (2026-10-30): colour-blind design is not a current concern.** Ignore the findings in `polish/colourblind/` and drop the colour-blind item from the polish list until the designer reopens it.
 - **Designer (2026-10-30): start the supporting screens.** Redo the Terminal event, Dispatch briefings, rewards, shop and deck pages on the new city, with the dimmed under-UI grade and Solace names.
+
+## 2026-10-30 night: autonomy ruling (designer going to bed)
+- **Designer:** "Heading to bed, proceed and make choices and log them instead of ask me."
+- **Rules for the overnight run:**
+  1. Art-pass makes the choice, logs it in this file under "Overnight choices", and carries on.
+  2. Nothing replaces `final/`, the golden plates or main without designer review.
+  3. The memory rule stands: checkpoint with the designer every few rounds. Anchor each round to the rulings above, never to a metric, and do not drift.
+  4. Token economy: Sonnet at low effort or Haiku, Batch API for text, targeted tests, and no full suites.
+  5. A real design question (a rule, a mechanic) is logged as an open question and not decided.
+
+## Overnight choices
