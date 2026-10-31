@@ -2630,3 +2630,18 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   2. T2 and T3 show the old E10 backdrop. They should use the cutaway.
   3. T1 is 1.4 s, but ZOOM_RULES §5.5 caps zoom at 0.5 octaves per second (about 6 s city to street). The cap applies to the wheel zoom only. A scripted transition is a designed move and may be faster; the designer should confirm.
   4. T6 needs a real avenue-to-helix render, and the in-between frames are soft.
+
+## 2026-10-30: designer ruling, the transitions list (ART CALL 49)
+The first storyboard (962ebb45) is wrong. The correct list, in the designer's words:
+1. City Grid to raid view.
+2. Raid view to select a netrun and jack in.
+3. Jack-in zooms to the netrun street along the node route. The wheel-circle zoom-in effect is no longer used.
+4. The netrun street is a street of connected node rooms. Select a room and zoom into it, for combat OR an event or other Site.
+5. Netrun street with a room selected to combat: the wheel flies in, then the enemy invading rings fly from the isometric room as binary bits to surround the wheel, and combat starts.
+6. Combat ends and dissolves into bits, back to the netrun. Or the run fails, which needs a netrun-failure transition screen.
+7. Netrun win or lose back up to the raid view; the raid node changes according to the result.
+8. Raid view lose to the dossier folder, ending the campaign.
+9. Raid view to planning the raid, and back.
+10. Raid view to starting a raid, then the result screen, and back to the raid view.
+11. Raid view to HQ netrun: a special fly-in to the custom HQ netrun.
+12. Custom HQ netrun to campaign win, to the dossier folder.
