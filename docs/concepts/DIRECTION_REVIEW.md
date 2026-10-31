@@ -2612,3 +2612,11 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
   - The street is paved, wet and lit as the hero: storefront band plus reflection, lamp row and car streaks.
   - The city behind it stays real.
   - View-only: the layout is untouched.
+
+## 2026-10-30: designer ruling, staged netrun street (ART CALL 48)
+- **Some staging is fine.** The goal is the general look of the plate, not a real matching street.
+- **Widen the road for the netrun,** to plate proportions, about 3x the current width.
+- **Keep the row heights:** no lowering of the facing row. Instead, place netrun nodes only on visible floors, so a tall facade is never cut off at the top.
+- **Lit and wet street:** storefront band, wet reflection, lamp row, car streaks.
+- **The city stays real,** with procedural detail added on top (the ZOOM_RULES facade, sign and clutter layers).
+- **Round 3:** the stage-street rule, view-only, on art/netrun-zoom.
