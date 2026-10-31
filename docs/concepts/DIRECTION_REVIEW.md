@@ -2620,3 +2620,13 @@ The refs are NYC aerials and Tokyo river and highway shots; local copies are in 
 - **Lit and wet street:** storefront band, wet reflection, lamp row, car streaks.
 - **The city stays real,** with procedural detail added on top (the ZOOM_RULES facade, sign and clutter layers).
 - **Round 3:** the stage-street rule, view-only, on art/netrun-zoom.
+
+## Transitions storyboard review (art-pass, 2026-10-30)
+- **Accepted as a first storyboard** (`transitions/`, 962ebb45): six strips of six keys, built from existing frames, with timings and reduced-motion variants (a 0.25 s cross-fade).
+  - **Timings:** city to netrun 1.4 s; route to combat 0.8 s; combat back 0.7 s; netrun end to city 1.0 s plus the folder 0.9 s; raid 0.9 s, 0.6 s, then 1.0 s; HQ approach 1.2 s plus 0.4 s.
+  - **Flow:** the shared motion language works: chrome fades out, the camera pushes in, an iris opens onto the cutaway, and the folder drops on the city for the end screens.
+- **Fixes needed:**
+  1. T4 uses image slot A. The designer picked B (the survey map), so redo it.
+  2. T2 and T3 show the old E10 backdrop. They should use the cutaway.
+  3. T1 is 1.4 s, but ZOOM_RULES §5.5 caps zoom at 0.5 octaves per second (about 6 s city to street). The cap applies to the wheel zoom only. A scripted transition is a designed move and may be faster; the designer should confirm.
+  4. T6 needs a real avenue-to-helix render, and the in-between frames are soft.
