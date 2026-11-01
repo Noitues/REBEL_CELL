@@ -1,0 +1,2 @@
+D:/rc_art/art-pass/docs/concepts/netrun_cel/zoom_rules/round5/street_frame.png: frame_mean=0.192 brightest 24px row at y=862 (80% down) value 0.462, facade(25-60%) mean 0.168, ratio 2.75, road(80-100%) mean 0.174
+D:/rc_art/art-pass/docs/concepts/netrun_cel/zoom_rules/round5/../round4/street_frame.png: frame_mean=0.201 brightest 24px row at y=862 (80% down) value 0.429, facade(25-60%) mean 0.194, ratio 2.20, road(80-100%) mean 0.165
