@@ -1,0 +1,109 @@
+{
+ "A": {
+  "file": "A_crt_feed.png",
+  "title": "CRT FEED CUTS TO SIGNAL LOST",
+  "idea": "The netrun street feed tears and drops; DISPATCH speaks; the run log reads out the loss.",
+  "squint": {
+   "mean": 0.13775743544101715,
+   "p95": 0.39311373233795166,
+   "loud": 0.05204330632716049
+  },
+  "flash": {
+   "frames": 37,
+   "fps": 60,
+   "duration_s": 0.6,
+   "mean_linear_first": 0.0671,
+   "mean_linear_last": 0.0491,
+   "max_step_mean_linear": 0.0246,
+   "max_area_changed_ge_0p10": 0.0845,
+   "wcag_style_flash_pairs": 0,
+   "strict_mean_reversals": 0,
+   "flashes_per_second_extrapolated": 0.0,
+   "limit_per_second": 3
+  },
+  "ph": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ "B": {
+  "file": "B_route_map.png",
+  "title": "THE ROUTE, STRUCK",
+  "idea": "The run as a node route: lime where we walked, a red grease X where we fell, the loss written on the HUD chips.",
+  "squint": {
+   "mean": 0.15184475481510162,
+   "p95": 0.2954353094100952,
+   "loud": 0.016766975308641976
+  },
+  "flash": {
+   "frames": 37,
+   "fps": 60,
+   "duration_s": 0.6,
+   "mean_linear_first": 0.0671,
+   "mean_linear_last": 0.0382,
+   "max_step_mean_linear": 0.0205,
+   "max_area_changed_ge_0p10": 0.0795,
+   "wcag_style_flash_pairs": 0,
+   "strict_mean_reversals": 0,
+   "flashes_per_second_extrapolated": 0.0,
+   "limit_per_second": 3
+  },
+  "ph": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ "C": {
+  "file": "C_trace_printout.png",
+  "title": "SOLACE PRINTS THE TRACE REPORT",
+  "idea": "The corp prints its own intrusion report over the dimmed street; the Cell pins one note to it.",
+  "squint": {
+   "mean": 0.2629479765892029,
+   "p95": 0.665349006652832,
+   "loud": 0.31605854552469137
+  },
+  "flash": {
+   "frames": 37,
+   "fps": 60,
+   "duration_s": 0.6,
+   "mean_linear_first": 0.0671,
+   "mean_linear_last": 0.1139,
+   "max_step_mean_linear": 0.0311,
+   "max_area_changed_ge_0p10": 0.0883,
+   "wcag_style_flash_pairs": 0,
+   "strict_mean_reversals": 1,
+   "flashes_per_second_extrapolated": 1.67,
+   "limit_per_second": 3
+  },
+  "ph": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ "plate_squint": {
+  "mean": 0.1882684975862503,
+  "p95": 0.39346668124198914,
+  "loud": 0.05731240354938272
+ }
+}
