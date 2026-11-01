@@ -2782,3 +2782,18 @@ The first storyboard (962ebb45) is wrong. The correct list, in the designer's wo
   - O-26: **A** for T6. It continues the K5 glitch in the same CRT language, holds the most facts in one read, and stays at the combat plate's squint (loud 5.2 %); its flatlined Breaker tile is the art bible's own state. B is the strong alternative if the screen should teach "where did I fall" (and its red X could echo on the raid-view node in T7). C is rejected: it is the loudest (31.6 % loud), puts the corp's voice ahead of the Cell's, and its TRACE BURNED stamp would be misread as the combat Trace meter.
   - Designer calls: does DISPATCH speak on this screen (the copy is invented); the 9 numbered placeholders (`*_placeholders.png`); whether the game records the last fight; the Heat crossing the 60 line is not announced; what happens to the Site after a failed run is not in the docs, so it is not shown.
 - **Terminal event card CAM feed** (`cohesion/supporting_r42b/`, old_vs_new.jpg): the pale slab is replaced by a Solace-green security-cam frame of the v3.1 event room (high corner cam, fisheye, scanlines, REC dot, timestamp). Of 3 options, A is picked: it is the only one that shows a ward interior, matching the story text, and it ties to the cutaway used on the reward, shop and rack screens. The grease-pencil circle moved onto the room. Only 01_terminal_event changes (01b and 07 do not show the feed and are identical). O-9 is closed; the timestamp and channel text are invented flavour.
+
+## ART CALL 51 (2026-11-01, designer review of the E10 redesign)
+Designer notes, in order:
+1. Iterate alternate designs for the cards and the player wheel. They must read visually as player-owned; art style is the goal. Show options, one or more in street graffiti or sketchbook graffiti style. References: Into the Spider-Verse, Arcane.
+2. Dashed lines are used far too much (HP bars, outlines, movement, etc.). Each needs a clear, distinct design. What happens at the end of this turn must look different from any future turn.
+3. The HP bar with a white line through it is not understood (the designer's guess: damage taken at turn end). Use cross-hatching or another treatment.
+4. The arrowed outline is good: keep it.
+5. The colours on the outlines are not understood.
+6. Wave info past wave 3 probably does not need so much room.
+7. Consider slice-wide overlay effects (shield break, shield block, and every other effect). Each group of elements needs its own visual plan, distinct from the other groups, so it is clear what a thing is and what it belongs to.
+8. Ignore the content-ruling items for now; focus on the combat screen.
+9. Keep the hover dimming. Make plates showing each hover state per card effect type.
+10. "Overall I am a bit disappointed in the results, as I was hoping for a real polish pass at the combat plates, but only got very minor tuning."
+- **Art-pass read of 10:** the ART CALL 50 briefs told every agent to keep E10's layout and whole read ("as a whole it meets the visuals we want"), so the pass came out as refinement. The next pass is a real redesign: the style, element design and visual grammar may change freely. Only the game information stays fixed.
+- **Running:** a workflow. An art director writes a visual-language plan (element families, line types, this turn vs future, colour meanings). Then, in parallel: 5 style directions for the player wheel and cards (street graffiti, sketchbook graffiti, Spider-Verse print, Arcane painterly, zine collage); a time-and-HP grammar designer; slice-wide effect overlays; hover plates per card effect type. The art director prunes, the designers take 2 style finalists to full plates, and the art director reports. It stops at the finalists for the designer's pick.
