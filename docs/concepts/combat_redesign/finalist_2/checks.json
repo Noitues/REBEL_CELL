@@ -1,0 +1,120 @@
+{
+ "colour_dE": {
+  "CELL_PINK vs HARM": {
+   "normal": 65.7,
+   "deutan": 62.2,
+   "protan": 67.6,
+   "tritan": 23.3
+  },
+  "SOAK vs NET_CYAN": {
+   "normal": 67.5,
+   "deutan": 49.2,
+   "protan": 52.5,
+   "tritan": 33.4
+  },
+  "SOAK vs TRACE_VIOLET": {
+   "normal": 56.8,
+   "deutan": 11.0,
+   "protan": 20.4,
+   "tritan": 46.8
+  },
+  "PRESS_CYAN vs NET_CYAN": {
+   "normal": 17.2,
+   "deutan": 16.3,
+   "protan": 16.7,
+   "tritan": 14.5
+  },
+  "CELL_PINK vs SCHEDULE": {
+   "normal": 94.4,
+   "deutan": 77.2,
+   "protan": 97.4,
+   "tritan": 26.7
+  },
+  "GAIN vs PRESS_CYAN": {
+   "normal": 79.9,
+   "deutan": 75.4,
+   "protan": 77.5,
+   "tritan": 15.3
+  },
+  "PRESS_CYAN vs SOAK": {
+   "normal": 53.3,
+   "deutan": 34.8,
+   "protan": 37.4,
+   "tritan": 19.5
+  }
+ },
+ "squint": {
+  "p1_decide": {
+   "new": {
+    "mean": 0.2151,
+    "p95": 0.4569,
+    "loud_gt_0_38": 0.0815
+   },
+   "e10": {
+    "mean": 0.1843,
+    "p95": 0.3682,
+    "loud_gt_0_38": 0.041
+   }
+  },
+  "p2_preview": {
+   "new": {
+    "mean": 0.2112,
+    "p95": 0.464,
+    "loud_gt_0_38": 0.0854
+   },
+   "e10": {
+    "mean": 0.1845,
+    "p95": 0.3749,
+    "loud_gt_0_38": 0.0473
+   }
+  },
+  "p2b_hover": {
+   "new": {
+    "mean": 0.2018,
+    "p95": 0.4614,
+    "loud_gt_0_38": 0.0817
+   },
+   "e10": {
+    "mean": 0.1729,
+    "p95": 0.3674,
+    "loud_gt_0_38": 0.0409
+   }
+  },
+  "p3_resolve": {
+   "new": {
+    "mean": 0.1866,
+    "p95": 0.3899,
+    "loud_gt_0_38": 0.0558
+   },
+   "e10": {
+    "mean": 0.1651,
+    "p95": 0.3274,
+    "loud_gt_0_38": 0.0246
+   }
+  },
+  "p1_nowords": {
+   "new": {
+    "mean": 0.2125,
+    "p95": 0.4439,
+    "loud_gt_0_38": 0.0734
+   },
+   "e10": {
+    "mean": 0.1814,
+    "p95": 0.3586,
+    "loud_gt_0_38": 0.0387
+   }
+  }
+ },
+ "edge": {
+  "OURS slice gutter 90 deg (colour runs, P=pink C=press cyan K=ink W=paper)": ".K.K.KW.CK.K.",
+  "OURS slice gutter 150 deg (colour runs, P=pink C=press cyan K=ink W=paper)": ".K.K.W.K.",
+  "OURS slice gutter 270 deg (colour runs, P=pink C=press cyan K=ink W=paper)": "P.K.W.K.P.",
+  "OURS slice gutter 330 deg (colour runs, P=pink C=press cyan K=ink W=paper)": ".P.K.WCKP",
+  "THEIRS ring cell gutter 90 deg r=300": "K.K.",
+  "THEIRS ring cell gutter 270 deg r=300": "K.K.K",
+  "THEIRS ring cell gutter 150 deg r=243": ".KWK.W.K.K"
+ },
+ "n_pass": 72,
+ "n_fail": 0,
+ "n_note": 0
+}
