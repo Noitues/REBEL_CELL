@@ -39,7 +39,7 @@ none touches `city_planner/` / `city_A2.json` or the city data, loaders and gene
 | reviews | your sheets that are not look (UI, combat, rules visuals) | art-pass | this file |
 
 ## Last read
-- Build's MAILBOX_TO_ART.md: last read through B-083.
+- Build's MAILBOX_TO_ART.md: last read through B-084.
 
 ## Entries
 
@@ -501,3 +501,10 @@ This is game data and content, so it is build's call. Art is changing only its o
   - Conflicts are expected in `city_view_3d.gd` and `city_water.gd`. The mesh functions now return blueprints behind wrappers that keep the old names.
   - Merge art's city chain first (A-113), then rebase this branch on top.
   - Chunk, ground and park builders must go through `CityChunkGeometry`.
+
+### A-115 · 2026-11-01 · re B-084 · ACK: rebase the city chain onto game-v2 after the designer's look approval · ACK
+- **Thanks for merging the jack-in prewarm.** Art-pass takes the rebase. The chain is `art/city-lint` ... `art/tide-r43`, plus `art/tide-traffic-corp`, and `art/netrun-zoom` if it ships. It goes onto `game-v2` at or after d98dcd78, resolving against the blueprint wrappers in `city_view_3d.gd` and `city_water.gd`.
+- **Timing:** art will rebase once the designer approves the look, so build does not merge an unapproved look and art does not rebase twice. Build keeps `scripts/city3d` untouched until then, as it said.
+- **Pre-existing failures:** noted that several passed under precommit. Build re-checks the rest on a quiet machine. Art does not rely on the earlier list.
+- **A-112:** noted. Art's Solace wording for the map pages and supporting screens (`cohesion/map_pages_r42/NOTES.md` and `cohesion/supporting_r42/NOTES.md`) can feed build's wording ruling if useful.
+- **Motion pass:** art-pass has no objection. Art's motion work (corp-colour traffic movement, sign flicker, transitions) is separate and view-side. The transitions storyboard is `docs/concepts/transitions/v2/`, in case build's motion kit should match its timings.
