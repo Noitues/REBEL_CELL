@@ -1,0 +1,2860 @@
+{
+ "summary": {
+  "total": 199,
+  "FINAL": 169,
+  "LATENT": 21,
+  "REMOVED": 7,
+  "UNSETTLED": 2,
+  "final_traced": 149
+ },
+ "untraced_final": [
+  "slice_frame",
+  "icon_turret",
+  "icon_repair",
+  "glyph_packet",
+  "glyph_worm",
+  "glyph_payload",
+  "glyph_jammer",
+  "glyph_ring",
+  "chev_hollow",
+  "chev_sector_column",
+  "warded_mark",
+  "shield_bracket",
+  "kind_colour_set",
+  "sched_plus_cells",
+  "arc_now_dot",
+  "card_icon_set",
+  "hand_fan",
+  "stickers_nowords",
+  "hover_dim_overlay",
+  "nowords_variant"
+ ],
+ "latent_without_source": [
+  "ring_unit_wide6"
+ ],
+ "rows": {
+  "hub_disc": {
+   "status": "FINAL",
+   "names": [
+    "disc",
+    "hub_factory"
+   ],
+   "called": [
+    "disc",
+    "hub_factory"
+   ],
+   "in_source": [
+    "disc",
+    "hub_factory"
+   ]
+  },
+  "hub_inner_rings": {
+   "status": "FINAL",
+   "names": [
+    "hub_factory"
+   ],
+   "called": [
+    "hub_factory"
+   ],
+   "in_source": [
+    "hub_factory"
+   ]
+  },
+  "hub_label": {
+   "status": "FINAL",
+   "names": [
+    "hub_factory",
+    "label"
+   ],
+   "called": [
+    "hub_factory"
+   ],
+   "in_source": [
+    "hub_factory",
+    "label"
+   ]
+  },
+  "hub_emblem": {
+   "status": "FINAL",
+   "names": [
+    "_engraved",
+    "mask"
+   ],
+   "called": [
+    "_engraved",
+    "mask"
+   ],
+   "in_source": [
+    "_engraved",
+    "mask"
+   ]
+  },
+  "slice_frame": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "slice_screen": {
+   "status": "FINAL",
+   "names": [
+    "tex_phosphor"
+   ],
+   "called": [
+    "tex_phosphor"
+   ],
+   "in_source": [
+    "tex_phosphor"
+   ]
+  },
+  "slice_screen_code_text": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "slice_gutters": {
+   "status": "FINAL",
+   "names": [
+    "spokes"
+   ],
+   "called": [
+    "spokes"
+   ],
+   "in_source": [
+    "spokes"
+   ]
+  },
+  "icon_burst": {
+   "status": "FINAL",
+   "names": [
+    "burst_b",
+    "mask"
+   ],
+   "called": [
+    "mask"
+   ],
+   "in_source": [
+    "burst_b",
+    "mask"
+   ]
+  },
+  "icon_turret": {
+   "status": "FINAL",
+   "names": [
+    "turret_a"
+   ],
+   "called": [],
+   "in_source": [
+    "turret_a"
+   ]
+  },
+  "icon_shield": {
+   "status": "FINAL",
+   "names": [
+    "icons2",
+    "icons_cur"
+   ],
+   "called": [
+    "icons2",
+    "icons_cur"
+   ],
+   "in_source": [
+    "icons2",
+    "icons_cur"
+   ]
+  },
+  "icon_repair": {
+   "status": "FINAL",
+   "names": [
+    "repair_c_plain"
+   ],
+   "called": [],
+   "in_source": [
+    "repair_c_plain"
+   ]
+  },
+  "slice_hp_bars": {
+   "status": "FINAL",
+   "names": [
+    "bars2",
+    "pip"
+   ],
+   "called": [
+    "bars2",
+    "pip"
+   ],
+   "in_source": [
+    "bars2",
+    "pip"
+   ]
+  },
+  "slice_pip_lost_harm": {
+   "status": "FINAL",
+   "names": [
+    "pip",
+    "st"
+   ],
+   "called": [
+    "pip"
+   ],
+   "in_source": [
+    "pip",
+    "st"
+   ]
+  },
+  "slice_pip_lost_soak": {
+   "status": "FINAL",
+   "names": [
+    "pip",
+    "st"
+   ],
+   "called": [
+    "pip"
+   ],
+   "in_source": [
+    "pip",
+    "st"
+   ]
+  },
+  "slice_pip_mend": {
+   "status": "LATENT",
+   "names": [
+    "pip",
+    "st"
+   ],
+   "called": [
+    "pip"
+   ],
+   "in_source": [
+    "pip",
+    "st"
+   ]
+  },
+  "slice_pip_gone": {
+   "status": "LATENT",
+   "names": [
+    "pip",
+    "st"
+   ],
+   "called": [
+    "pip"
+   ],
+   "in_source": [
+    "pip",
+    "st"
+   ]
+  },
+  "slice_break_x": {
+   "status": "FINAL",
+   "names": [
+    "break_x",
+    "hatch"
+   ],
+   "called": [
+    "break_x",
+    "hatch"
+   ],
+   "in_source": [
+    "break_x",
+    "hatch"
+   ]
+  },
+  "slice_soak_break_x": {
+   "status": "FINAL",
+   "names": [
+    "break_x"
+   ],
+   "called": [
+    "break_x"
+   ],
+   "in_source": [
+    "break_x"
+   ]
+  },
+  "threat_trim": {
+   "status": "FINAL",
+   "names": [
+    "trim2"
+   ],
+   "called": [
+    "trim2"
+   ],
+   "in_source": [
+    "trim2"
+   ]
+  },
+  "hp_ring": {
+   "status": "FINAL",
+   "names": [
+    "hp_ring2"
+   ],
+   "called": [
+    "hp_ring2"
+   ],
+   "in_source": [
+    "hp_ring2"
+   ]
+  },
+  "codebase_frame": {
+   "status": "FINAL",
+   "names": [
+    "frame2"
+   ],
+   "called": [
+    "frame2"
+   ],
+   "in_source": [
+    "frame2"
+   ]
+  },
+  "nudge_ghost": {
+   "status": "REMOVED",
+   "names": [
+    "sel_for"
+   ],
+   "called": [
+    "sel_for"
+   ],
+   "in_source": [
+    "sel_for"
+   ]
+  },
+  "gun_tracers": {
+   "status": "FINAL",
+   "names": [
+    "dash_line",
+    "guns2"
+   ],
+   "called": [
+    "dash_line",
+    "guns2"
+   ],
+   "in_source": [
+    "dash_line",
+    "guns2"
+   ]
+  },
+  "gun_result_hit": {
+   "status": "FINAL",
+   "names": [
+    "spark"
+   ],
+   "called": [
+    "spark"
+   ],
+   "in_source": [
+    "spark"
+   ]
+  },
+  "gun_result_armor": {
+   "status": "LATENT",
+   "names": [
+    "chevron_result"
+   ],
+   "called": [
+    "chevron_result"
+   ],
+   "in_source": [
+    "chevron_result"
+   ]
+  },
+  "gun_result_ward": {
+   "status": "FINAL",
+   "names": [
+    "chevron_result"
+   ],
+   "called": [
+    "chevron_result"
+   ],
+   "in_source": [
+    "chevron_result"
+   ]
+  },
+  "gun_result_shield_pop": {
+   "status": "LATENT",
+   "names": [
+    "pop_shards"
+   ],
+   "called": [],
+   "in_source": [
+    "pop_shards"
+   ]
+  },
+  "gun_muzzle_beads": {
+   "status": "FINAL",
+   "names": [
+    "muzzle"
+   ],
+   "called": [
+    "muzzle"
+   ],
+   "in_source": [
+    "muzzle"
+   ]
+  },
+  "gun_result_sealed": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "gun_idle_stub": {
+   "status": "LATENT",
+   "names": [
+    "idle_stub"
+   ],
+   "called": [],
+   "in_source": [
+    "idle_stub"
+   ]
+  },
+  "gun_tracers_preview": {
+   "status": "FINAL",
+   "names": [
+    "guns_preview"
+   ],
+   "called": [
+    "guns_preview"
+   ],
+   "in_source": [
+    "guns_preview"
+   ]
+  },
+  "brace_plate": {
+   "status": "FINAL",
+   "names": [
+    "brace",
+    "brace_plate2"
+   ],
+   "called": [
+    "brace",
+    "brace_plate2"
+   ],
+   "in_source": [
+    "brace",
+    "brace_plate2"
+   ]
+  },
+  "slice_soak_marks": {
+   "status": "FINAL",
+   "names": [
+    "soak_mark2"
+   ],
+   "called": [
+    "soak_mark2"
+   ],
+   "in_source": [
+    "soak_mark2"
+   ]
+  },
+  "slice_soak_rim_arc": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "slice_cracked_mark": {
+   "status": "LATENT",
+   "names": [
+    "cracked2"
+   ],
+   "called": [
+    "cracked2"
+   ],
+   "in_source": [
+    "cracked2"
+   ]
+  },
+  "slice_broken_state": {
+   "status": "LATENT",
+   "names": [
+    "broken2"
+   ],
+   "called": [
+    "broken2"
+   ],
+   "in_source": [
+    "broken2"
+   ]
+  },
+  "spin_ghost_preview": {
+   "status": "LATENT",
+   "names": [
+    "spin_ghost"
+   ],
+   "called": [],
+   "in_source": [
+    "spin_ghost"
+   ]
+  },
+  "empty_cell": {
+   "status": "FINAL",
+   "names": [
+    "empty_cell"
+   ],
+   "called": [
+    "empty_cell"
+   ],
+   "in_source": [
+    "empty_cell"
+   ]
+  },
+  "ring_separators": {
+   "status": "FINAL",
+   "names": [
+    "gutters",
+    "interior_hairlines"
+   ],
+   "called": [
+    "gutters",
+    "interior_hairlines"
+   ],
+   "in_source": [
+    "gutters",
+    "interior_hairlines"
+   ]
+  },
+  "unit_cell_screen": {
+   "status": "FINAL",
+   "names": [
+    "mesh",
+    "screen"
+   ],
+   "called": [
+    "mesh",
+    "screen"
+   ],
+   "in_source": [
+    "mesh",
+    "screen"
+   ]
+  },
+  "unit_screen_bezel": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "unit_screen_code_text": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "unit_cell_outline": {
+   "status": "FINAL",
+   "names": [
+    "outline",
+    "token"
+   ],
+   "called": [
+    "outline",
+    "token"
+   ],
+   "in_source": [
+    "outline",
+    "token"
+   ]
+  },
+  "token_disc": {
+   "status": "FINAL",
+   "names": [
+    "disc"
+   ],
+   "called": [
+    "disc"
+   ],
+   "in_source": [
+    "disc"
+   ]
+  },
+  "token_lane_base": {
+   "status": "FINAL",
+   "names": [
+    "ring"
+   ],
+   "called": [
+    "ring"
+   ],
+   "in_source": [
+    "ring"
+   ]
+  },
+  "token_halo": {
+   "status": "FINAL",
+   "names": [
+    "halo"
+   ],
+   "called": [
+    "halo"
+   ],
+   "in_source": [
+    "halo"
+   ]
+  },
+  "glyph_packet": {
+   "status": "FINAL",
+   "names": [
+    "packet_R"
+   ],
+   "called": [],
+   "in_source": [
+    "packet_R"
+   ]
+  },
+  "glyph_worm": {
+   "status": "FINAL",
+   "names": [
+    "worm_R"
+   ],
+   "called": [],
+   "in_source": [
+    "worm_R"
+   ]
+  },
+  "glyph_payload": {
+   "status": "FINAL",
+   "names": [
+    "payload_R"
+   ],
+   "called": [],
+   "in_source": [
+    "payload_R"
+   ]
+  },
+  "glyph_jammer": {
+   "status": "FINAL",
+   "names": [
+    "jammer_R"
+   ],
+   "called": [],
+   "in_source": [
+    "jammer_R"
+   ]
+  },
+  "glyph_ring": {
+   "status": "FINAL",
+   "names": [
+    "ring_R"
+   ],
+   "called": [],
+   "in_source": [
+    "ring_R"
+   ]
+  },
+  "unit_hp_row": {
+   "status": "FINAL",
+   "names": [
+    "hp_row"
+   ],
+   "called": [
+    "hp_row"
+   ],
+   "in_source": [
+    "hp_row"
+   ]
+  },
+  "chev_solid_stack": {
+   "status": "FINAL",
+   "names": [
+    "chev_params",
+    "chevrons",
+    "stack"
+   ],
+   "called": [
+    "chev_params",
+    "chevrons",
+    "stack"
+   ],
+   "in_source": [
+    "chev_params",
+    "chevrons",
+    "stack"
+   ]
+  },
+  "chev_hollow": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "chev_sector_column": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "armor_cap": {
+   "status": "FINAL",
+   "names": [
+    "armor_cue",
+    "armour_rails"
+   ],
+   "called": [
+    "armor_cue",
+    "armour_rails"
+   ],
+   "in_source": [
+    "armor_cue",
+    "armour_rails"
+   ]
+  },
+  "warded_mark": {
+   "status": "FINAL",
+   "names": [
+    "warded"
+   ],
+   "called": [],
+   "in_source": [
+    "warded"
+   ]
+  },
+  "dead_x": {
+   "status": "FINAL",
+   "names": [
+    "dead_badge",
+    "gone_overlay",
+    "tint",
+    "veil"
+   ],
+   "called": [
+    "dead_badge",
+    "gone_overlay",
+    "tint"
+   ],
+   "in_source": [
+    "dead_badge",
+    "gone_overlay",
+    "tint",
+    "veil"
+   ]
+  },
+  "adjuster_cell": {
+   "status": "FINAL",
+   "names": [
+    "cell"
+   ],
+   "called": [
+    "cell"
+   ],
+   "in_source": [
+    "cell"
+   ]
+  },
+  "adjuster_diamond": {
+   "status": "FINAL",
+   "names": [
+    "diamond"
+   ],
+   "called": [
+    "diamond"
+   ],
+   "in_source": [
+    "diamond"
+   ]
+  },
+  "adjuster_hp_bar": {
+   "status": "FINAL",
+   "names": [
+    "hp_bar"
+   ],
+   "called": [
+    "hp_bar"
+   ],
+   "in_source": [
+    "hp_bar"
+   ]
+  },
+  "ward_arc": {
+   "status": "FINAL",
+   "names": [
+    "ward_arc"
+   ],
+   "called": [
+    "ward_arc"
+   ],
+   "in_source": [
+    "ward_arc"
+   ]
+  },
+  "consumed_unit": {
+   "status": "FINAL",
+   "names": [
+    "ghost"
+   ],
+   "called": [
+    "ghost"
+   ],
+   "in_source": [
+    "ghost"
+   ]
+  },
+  "trigger_killed_unit": {
+   "status": "FINAL",
+   "names": [
+    "ghost",
+    "wax_outline"
+   ],
+   "called": [
+    "ghost",
+    "wax_outline"
+   ],
+   "in_source": [
+    "ghost",
+    "wax_outline"
+   ]
+  },
+  "screen_motif_skull": {
+   "status": "REMOVED",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "shield_bracket": {
+   "status": "FINAL",
+   "names": [
+    "shield_bracket"
+   ],
+   "called": [],
+   "in_source": [
+    "shield_bracket"
+   ]
+  },
+  "adjuster_armor_strike": {
+   "status": "FINAL",
+   "names": [
+    "armor_and_strike"
+   ],
+   "called": [
+    "armor_and_strike"
+   ],
+   "in_source": [
+    "armor_and_strike"
+   ]
+  },
+  "ring_unit_wide6": {
+   "status": "LATENT",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "token_placement": {
+   "status": "FINAL",
+   "names": [
+    "token_pos_r2"
+   ],
+   "called": [
+    "token_pos_r2"
+   ],
+   "in_source": [
+    "token_pos_r2"
+   ]
+  },
+  "kind_colour_set": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "backdrop_grade": {
+   "status": "FINAL",
+   "names": [
+    "grade"
+   ],
+   "called": [
+    "grade"
+   ],
+   "in_source": [
+    "grade"
+   ]
+  },
+  "board_scrim": {
+   "status": "FINAL",
+   "names": [
+    "scrim"
+   ],
+   "called": [
+    "scrim"
+   ],
+   "in_source": [
+    "scrim"
+   ]
+  },
+  "board_backplate": {
+   "status": "FINAL",
+   "names": [
+    "plate"
+   ],
+   "called": [
+    "plate"
+   ],
+   "in_source": [
+    "plate"
+   ]
+  },
+  "bezel_ring": {
+   "status": "FINAL",
+   "names": [
+    "bezel_layer"
+   ],
+   "called": [
+    "bezel_layer"
+   ],
+   "in_source": [
+    "bezel_layer"
+   ]
+  },
+  "bezel_rim_lines": {
+   "status": "FINAL",
+   "names": [
+    "bezel_layer"
+   ],
+   "called": [
+    "bezel_layer"
+   ],
+   "in_source": [
+    "bezel_layer"
+   ]
+  },
+  "bezel_ticks": {
+   "status": "FINAL",
+   "names": [
+    "ticks"
+   ],
+   "called": [
+    "ticks"
+   ],
+   "in_source": [
+    "ticks"
+   ]
+  },
+  "bezel_spokes": {
+   "status": "FINAL",
+   "names": [
+    "spoke_mask"
+   ],
+   "called": [
+    "spoke_mask"
+   ],
+   "in_source": [
+    "spoke_mask"
+   ]
+  },
+  "sched_track": {
+   "status": "FINAL",
+   "names": [
+    "bezel_layer"
+   ],
+   "called": [
+    "bezel_layer"
+   ],
+   "in_source": [
+    "bezel_layer"
+   ]
+  },
+  "sector_digits": {
+   "status": "FINAL",
+   "names": [
+    "digits"
+   ],
+   "called": [
+    "digits"
+   ],
+   "in_source": [
+    "digits"
+   ]
+  },
+  "sector_digits_nowords": {
+   "status": "FINAL",
+   "names": [
+    "nowords_code"
+   ],
+   "called": [
+    "nowords_code"
+   ],
+   "in_source": [
+    "nowords_code"
+   ]
+  },
+  "needle": {
+   "status": "FINAL",
+   "names": [
+    "needle"
+   ],
+   "called": [
+    "needle"
+   ],
+   "in_source": [
+    "needle"
+   ]
+  },
+  "sched_this_turn": {
+   "status": "FINAL",
+   "names": [
+    "live_cell",
+    "live_label"
+   ],
+   "called": [
+    "live_cell",
+    "live_label"
+   ],
+   "in_source": [
+    "live_cell",
+    "live_label"
+   ]
+  },
+  "sched_chevrons": {
+   "status": "FINAL",
+   "names": [
+    "chevrons"
+   ],
+   "called": [
+    "chevrons"
+   ],
+   "in_source": [
+    "chevrons"
+   ]
+  },
+  "sched_hold_cells": {
+   "status": "FINAL",
+   "names": [
+    "hold_cell",
+    "hold_glyph"
+   ],
+   "called": [
+    "hold_cell",
+    "hold_glyph"
+   ],
+   "in_source": [
+    "hold_cell",
+    "hold_glyph"
+   ]
+  },
+  "sched_hold_live": {
+   "status": "LATENT",
+   "names": [
+    "hold_live"
+   ],
+   "called": [],
+   "in_source": [
+    "hold_live"
+   ]
+  },
+  "sched_plus_cells": {
+   "status": "FINAL",
+   "names": [
+    "plus_cell"
+   ],
+   "called": [],
+   "in_source": [
+    "plus_cell"
+   ]
+  },
+  "ring_tags": {
+   "status": "FINAL",
+   "names": [
+    "ring_tags",
+    "tag_anchor"
+   ],
+   "called": [
+    "ring_tags",
+    "tag_anchor"
+   ],
+   "in_source": [
+    "ring_tags",
+    "tag_anchor"
+   ]
+  },
+  "ring_tags_nowords": {
+   "status": "FINAL",
+   "names": [
+    "ring_tags"
+   ],
+   "called": [
+    "ring_tags"
+   ],
+   "in_source": [
+    "ring_tags"
+   ]
+  },
+  "ring_tag_no_wave": {
+   "status": "LATENT",
+   "names": [
+    "ring_tags"
+   ],
+   "called": [
+    "ring_tags"
+   ],
+   "in_source": [
+    "ring_tags"
+   ]
+  },
+  "landing_arc_frame": {
+   "status": "FINAL",
+   "names": [
+    "frame"
+   ],
+   "called": [
+    "frame"
+   ],
+   "in_source": [
+    "frame"
+   ]
+  },
+  "landing_arc_full_circle": {
+   "status": "LATENT",
+   "names": [
+    "full_circle_unit",
+    "render_full_circle"
+   ],
+   "called": [],
+   "in_source": [
+    "full_circle_unit",
+    "render_full_circle"
+   ]
+  },
+  "arc_glyph_disc": {
+   "status": "FINAL",
+   "names": [
+    "disc"
+   ],
+   "called": [
+    "disc"
+   ],
+   "in_source": [
+    "disc"
+   ]
+  },
+  "arc_wear_mark": {
+   "status": "FINAL",
+   "names": [
+    "wear"
+   ],
+   "called": [
+    "wear"
+   ],
+   "in_source": [
+    "wear"
+   ]
+  },
+  "arc_now_dot": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "arc_turn_dots": {
+   "status": "FINAL",
+   "names": [
+    "turn_dots"
+   ],
+   "called": [
+    "turn_dots"
+   ],
+   "in_source": [
+    "turn_dots"
+   ]
+  },
+  "arc_chevrons": {
+   "status": "FINAL",
+   "names": [
+    "chevrons"
+   ],
+   "called": [
+    "chevrons"
+   ],
+   "in_source": [
+    "chevrons"
+   ]
+  },
+  "arc_diamonds": {
+   "status": "FINAL",
+   "names": [
+    "diamonds"
+   ],
+   "called": [
+    "diamonds"
+   ],
+   "in_source": [
+    "diamonds"
+   ]
+  },
+  "arc_check": {
+   "status": "FINAL",
+   "names": [
+    "check_mark"
+   ],
+   "called": [
+    "check_mark"
+   ],
+   "in_source": [
+    "check_mark"
+   ]
+  },
+  "arc_soak_chevron": {
+   "status": "FINAL",
+   "names": [
+    "soak_mark"
+   ],
+   "called": [
+    "soak_mark"
+   ],
+   "in_source": [
+    "soak_mark"
+   ]
+  },
+  "arc_brace_glyph": {
+   "status": "FINAL",
+   "names": [
+    "brace_mark"
+   ],
+   "called": [
+    "brace_mark"
+   ],
+   "in_source": [
+    "brace_mark"
+   ]
+  },
+  "arc_twist_mark": {
+   "status": "FINAL",
+   "names": [
+    "twist_mark"
+   ],
+   "called": [
+    "twist_mark"
+   ],
+   "in_source": [
+    "twist_mark"
+   ]
+  },
+  "future_wave_arcs": {
+   "status": "FINAL",
+   "names": [
+    "draw_tape",
+    "fut_geom"
+   ],
+   "called": [
+    "draw_tape",
+    "fut_geom"
+   ],
+   "in_source": [
+    "draw_tape",
+    "fut_geom"
+   ]
+  },
+  "wave_arc_unit_pips": {
+   "status": "FINAL",
+   "names": [
+    "unit_pips"
+   ],
+   "called": [
+    "unit_pips"
+   ],
+   "in_source": [
+    "unit_pips"
+   ]
+  },
+  "climax_hazard_ticks": {
+   "status": "FINAL",
+   "names": [
+    "haz_ticks"
+   ],
+   "called": [
+    "haz_ticks"
+   ],
+   "in_source": [
+    "haz_ticks"
+   ]
+  },
+  "wave_tags": {
+   "status": "FINAL",
+   "names": [
+    "wave_tags"
+   ],
+   "called": [
+    "wave_tags"
+   ],
+   "in_source": [
+    "wave_tags"
+   ]
+  },
+  "header_plate": {
+   "status": "FINAL",
+   "names": [
+    "el_header_plate"
+   ],
+   "called": [
+    "el_header_plate"
+   ],
+   "in_source": [
+    "el_header_plate"
+   ]
+  },
+  "header_title": {
+   "status": "FINAL",
+   "names": [
+    "digit",
+    "el_header_title"
+   ],
+   "called": [
+    "digit",
+    "el_header_title"
+   ],
+   "in_source": [
+    "digit",
+    "el_header_title"
+   ]
+  },
+  "waves_left": {
+   "status": "FINAL",
+   "names": [
+    "el_waves_left",
+    "wedge"
+   ],
+   "called": [
+    "el_waves_left",
+    "wedge"
+   ],
+   "in_source": [
+    "el_waves_left",
+    "wedge"
+   ]
+  },
+  "help_button": {
+   "status": "FINAL",
+   "names": [
+    "el_help",
+    "focus_brackets",
+    "qmark"
+   ],
+   "called": [
+    "el_help",
+    "focus_brackets",
+    "qmark"
+   ],
+   "in_source": [
+    "el_help",
+    "focus_brackets",
+    "qmark"
+   ]
+  },
+  "bill_frame": {
+   "status": "FINAL",
+   "names": [
+    "el_bill_frame",
+    "inset"
+   ],
+   "called": [
+    "el_bill_frame",
+    "inset"
+   ],
+   "in_source": [
+    "el_bill_frame",
+    "inset"
+   ]
+  },
+  "terminal_plate_kit": {
+   "status": "FINAL",
+   "names": [
+    "_scan"
+   ],
+   "called": [
+    "_scan"
+   ],
+   "in_source": [
+    "_scan"
+   ]
+  },
+  "hud_scrim": {
+   "status": "FINAL",
+   "names": [
+    "scrim_layers"
+   ],
+   "called": [
+    "scrim_layers"
+   ],
+   "in_source": [
+    "scrim_layers"
+   ]
+  },
+  "layout_grid": {
+   "status": "FINAL",
+   "names": [
+    "draw_hud"
+   ],
+   "called": [
+    "draw_hud"
+   ],
+   "in_source": [
+    "draw_hud"
+   ]
+  },
+  "you_hp_tally": {
+   "status": "FINAL",
+   "names": [
+    "hp_tally"
+   ],
+   "called": [
+    "hp_tally"
+   ],
+   "in_source": [
+    "hp_tally"
+   ]
+  },
+  "hero_pair": {
+   "status": "FINAL",
+   "names": [
+    "hero_pair"
+   ],
+   "called": [
+    "hero_pair"
+   ],
+   "in_source": [
+    "hero_pair"
+   ]
+  },
+  "hero_nowords_proxy": {
+   "status": "FINAL",
+   "names": [
+    "hero_nw"
+   ],
+   "called": [
+    "hero_nw"
+   ],
+   "in_source": [
+    "hero_nw"
+   ]
+  },
+  "eq_row": {
+   "status": "FINAL",
+   "names": [
+    "el_eq_row"
+   ],
+   "called": [
+    "el_eq_row"
+   ],
+   "in_source": [
+    "el_eq_row"
+   ]
+  },
+  "eq_labels": {
+   "status": "FINAL",
+   "names": [
+    "tag"
+   ],
+   "called": [
+    "tag"
+   ],
+   "in_source": [
+    "tag"
+   ]
+  },
+  "row_tags": {
+   "status": "FINAL",
+   "names": [
+    "rowtag",
+    "tag"
+   ],
+   "called": [
+    "rowtag",
+    "tag"
+   ],
+   "in_source": [
+    "rowtag",
+    "tag"
+   ]
+  },
+  "tally_segments": {
+   "status": "FINAL",
+   "names": [
+    "seg",
+    "tally",
+    "tpos",
+    "twidth"
+   ],
+   "called": [
+    "seg",
+    "tally",
+    "tpos",
+    "twidth"
+   ],
+   "in_source": [
+    "seg",
+    "tally",
+    "tpos",
+    "twidth"
+   ]
+  },
+  "operators": {
+   "status": "FINAL",
+   "names": [
+    "opdraw"
+   ],
+   "called": [
+    "opdraw"
+   ],
+   "in_source": [
+    "opdraw"
+   ]
+  },
+  "empty_socket": {
+   "status": "FINAL",
+   "names": [
+    "seg"
+   ],
+   "called": [
+    "seg"
+   ],
+   "in_source": [
+    "seg"
+   ]
+  },
+  "trig_groups": {
+   "status": "FINAL",
+   "names": [
+    "trig_form"
+   ],
+   "called": [
+    "trig_form"
+   ],
+   "in_source": [
+    "trig_form"
+   ]
+  },
+  "trig_lands_group": {
+   "status": "LATENT",
+   "names": [
+    "trig_lands_form"
+   ],
+   "called": [],
+   "in_source": [
+    "trig_lands_form"
+   ]
+  },
+  "split_row": {
+   "status": "FINAL",
+   "names": [
+    "el_split_row"
+   ],
+   "called": [
+    "el_split_row"
+   ],
+   "in_source": [
+    "el_split_row"
+   ]
+  },
+  "route_arrows": {
+   "status": "FINAL",
+   "names": [
+    "dest_funnel",
+    "dest_hp",
+    "dest_hub",
+    "route"
+   ],
+   "called": [
+    "dest_funnel",
+    "dest_hp",
+    "dest_hub",
+    "route"
+   ],
+   "in_source": [
+    "dest_funnel",
+    "dest_hp",
+    "dest_hub",
+    "route"
+   ]
+  },
+  "next_row": {
+   "status": "FINAL",
+   "names": [
+    "el_next_row"
+   ],
+   "called": [
+    "el_next_row"
+   ],
+   "in_source": [
+    "el_next_row"
+   ]
+  },
+  "plan_pencil_underline": {
+   "status": "FINAL",
+   "names": [
+    "el_plan_underline",
+    "wax"
+   ],
+   "called": [
+    "el_plan_underline",
+    "wax"
+   ],
+   "in_source": [
+    "el_plan_underline",
+    "wax"
+   ]
+  },
+  "best_line_tag": {
+   "status": "FINAL",
+   "names": [
+    "el_best_tag"
+   ],
+   "called": [
+    "el_best_tag"
+   ],
+   "in_source": [
+    "el_best_tag"
+   ]
+  },
+  "without_twist_row": {
+   "status": "FINAL",
+   "names": [
+    "without_twist"
+   ],
+   "called": [
+    "without_twist"
+   ],
+   "in_source": [
+    "without_twist"
+   ]
+  },
+  "option_chips": {
+   "status": "FINAL",
+   "names": [
+    "option_chip"
+   ],
+   "called": [
+    "option_chip"
+   ],
+   "in_source": [
+    "option_chip"
+   ]
+  },
+  "option_plan_glyphs": {
+   "status": "FINAL",
+   "names": [
+    "chip_glyphs",
+    "coin"
+   ],
+   "called": [
+    "chip_glyphs",
+    "coin"
+   ],
+   "in_source": [
+    "chip_glyphs",
+    "coin"
+   ]
+  },
+  "option_name_label": {
+   "status": "FINAL",
+   "names": [
+    "chip_name"
+   ],
+   "called": [
+    "chip_name"
+   ],
+   "in_source": [
+    "chip_name"
+   ]
+  },
+  "option_outcome_bar": {
+   "status": "FINAL",
+   "names": [
+    "chip_bar"
+   ],
+   "called": [
+    "chip_bar"
+   ],
+   "in_source": [
+    "chip_bar"
+   ]
+  },
+  "option_pair": {
+   "status": "FINAL",
+   "names": [
+    "chip_pair"
+   ],
+   "called": [
+    "chip_pair"
+   ],
+   "in_source": [
+    "chip_pair"
+   ]
+  },
+  "chain_strip": {
+   "status": "FINAL",
+   "names": [
+    "chain_strip"
+   ],
+   "called": [
+    "chain_strip"
+   ],
+   "in_source": [
+    "chain_strip"
+   ]
+  },
+  "chain_step_discs": {
+   "status": "FINAL",
+   "names": [
+    "chain_strip"
+   ],
+   "called": [
+    "chain_strip"
+   ],
+   "in_source": [
+    "chain_strip"
+   ]
+  },
+  "chain_step_glyphs": {
+   "status": "FINAL",
+   "names": [
+    "chain_glyph"
+   ],
+   "called": [
+    "chain_glyph"
+   ],
+   "in_source": [
+    "chain_glyph"
+   ]
+  },
+  "chain_step_names": {
+   "status": "FINAL",
+   "names": [
+    "chain_strip"
+   ],
+   "called": [
+    "chain_strip"
+   ],
+   "in_source": [
+    "chain_strip"
+   ]
+  },
+  "chain_result_tallies": {
+   "status": "FINAL",
+   "names": [
+    "chain_strip"
+   ],
+   "called": [
+    "chain_strip"
+   ],
+   "in_source": [
+    "chain_strip"
+   ]
+  },
+  "chain_result_prose": {
+   "status": "FINAL",
+   "names": [
+    "chain_strip"
+   ],
+   "called": [
+    "chain_strip"
+   ],
+   "in_source": [
+    "chain_strip"
+   ]
+  },
+  "objectives_frame": {
+   "status": "FINAL",
+   "names": [
+    "el_obj_frame",
+    "kit_plate"
+   ],
+   "called": [
+    "el_obj_frame",
+    "kit_plate"
+   ],
+   "in_source": [
+    "el_obj_frame",
+    "kit_plate"
+   ]
+  },
+  "star_glyph": {
+   "status": "FINAL",
+   "names": [
+    "el_star",
+    "fail_mark",
+    "star_tile"
+   ],
+   "called": [
+    "el_star",
+    "star_tile"
+   ],
+   "in_source": [
+    "el_star",
+    "fail_mark",
+    "star_tile"
+   ]
+  },
+  "win_label": {
+   "status": "FINAL",
+   "names": [
+    "el_win_label"
+   ],
+   "called": [
+    "el_win_label"
+   ],
+   "in_source": [
+    "el_win_label"
+   ]
+  },
+  "challenge_labels": {
+   "status": "FINAL",
+   "names": [
+    "ch_label",
+    "objectives_row"
+   ],
+   "called": [
+    "ch_label",
+    "objectives_row"
+   ],
+   "in_source": [
+    "ch_label",
+    "objectives_row"
+   ]
+  },
+  "challenge_tallies": {
+   "status": "FINAL",
+   "names": [
+    "cap_pip",
+    "el_tally",
+    "gone_pip"
+   ],
+   "called": [
+    "cap_pip",
+    "el_tally"
+   ],
+   "in_source": [
+    "cap_pip",
+    "el_tally",
+    "gone_pip"
+   ]
+  },
+  "challenge_trigger_hits": {
+   "status": "UNSETTLED",
+   "names": [
+    "trig_tally"
+   ],
+   "called": [],
+   "in_source": [
+    "trig_tally"
+   ]
+  },
+  "ram_trace_frame": {
+   "status": "FINAL",
+   "names": [
+    "el_res_frame"
+   ],
+   "called": [
+    "el_res_frame"
+   ],
+   "in_source": [
+    "el_res_frame"
+   ]
+  },
+  "ram_trace_labels": {
+   "status": "FINAL",
+   "names": [
+    "el_res_label"
+   ],
+   "called": [
+    "el_res_label"
+   ],
+   "in_source": [
+    "el_res_label"
+   ]
+  },
+  "ram_pips": {
+   "status": "FINAL",
+   "names": [
+    "coin_img",
+    "draw_coin"
+   ],
+   "called": [
+    "coin_img",
+    "draw_coin"
+   ],
+   "in_source": [
+    "coin_img",
+    "draw_coin"
+   ]
+  },
+  "trace_pips": {
+   "status": "FINAL",
+   "names": [
+    "draw_sq",
+    "sq_img"
+   ],
+   "called": [
+    "draw_sq",
+    "sq_img"
+   ],
+   "in_source": [
+    "draw_sq",
+    "sq_img"
+   ]
+  },
+  "trace_cap_hatch": {
+   "status": "FINAL",
+   "names": [
+    "el_cap"
+   ],
+   "called": [
+    "el_cap"
+   ],
+   "in_source": [
+    "el_cap"
+   ]
+  },
+  "ends_heat": {
+   "status": "FINAL",
+   "names": [
+    "draw_flame",
+    "flame_img"
+   ],
+   "called": [
+    "draw_flame",
+    "flame_img"
+   ],
+   "in_source": [
+    "draw_flame",
+    "flame_img"
+   ]
+  },
+  "ram_refund_pop": {
+   "status": "FINAL",
+   "names": [
+    "coin_img",
+    "plus",
+    "pop_rays"
+   ],
+   "called": [
+    "coin_img",
+    "pop_rays"
+   ],
+   "in_source": [
+    "coin_img",
+    "plus",
+    "pop_rays"
+   ]
+  },
+  "card_icon_set": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "hand_fan": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "card_frame": {
+   "status": "FINAL",
+   "names": [
+    "frame_over",
+    "frame_under"
+   ],
+   "called": [
+    "frame_over",
+    "frame_under"
+   ],
+   "in_source": [
+    "frame_over",
+    "frame_under"
+   ]
+  },
+  "card_header_strip": {
+   "status": "FINAL",
+   "names": [
+    "hdr_draw"
+   ],
+   "called": [
+    "hdr_draw"
+   ],
+   "in_source": [
+    "hdr_draw"
+   ]
+  },
+  "cost_badge": {
+   "status": "FINAL",
+   "names": [
+    "coin",
+    "cost_draw"
+   ],
+   "called": [
+    "coin",
+    "cost_draw"
+   ],
+   "in_source": [
+    "coin",
+    "cost_draw"
+   ]
+  },
+  "art_band": {
+   "status": "FINAL",
+   "names": [
+    "art_draw"
+   ],
+   "called": [
+    "art_draw"
+   ],
+   "in_source": [
+    "art_draw"
+   ]
+  },
+  "card_icon": {
+   "status": "FINAL",
+   "names": [
+    "icon_draw"
+   ],
+   "called": [
+    "icon_draw"
+   ],
+   "in_source": [
+    "icon_draw"
+   ]
+  },
+  "card_multiplier": {
+   "status": "FINAL",
+   "names": [
+    "mult_draw"
+   ],
+   "called": [
+    "mult_draw"
+   ],
+   "in_source": [
+    "mult_draw"
+   ]
+  },
+  "card_title": {
+   "status": "FINAL",
+   "names": [
+    "title_draw"
+   ],
+   "called": [
+    "title_draw"
+   ],
+   "in_source": [
+    "title_draw"
+   ]
+  },
+  "type_band": {
+   "status": "FINAL",
+   "names": [
+    "type_draw"
+   ],
+   "called": [
+    "type_draw"
+   ],
+   "in_source": [
+    "type_draw"
+   ]
+  },
+  "rules_text": {
+   "status": "FINAL",
+   "names": [
+    "rules_draw"
+   ],
+   "called": [
+    "rules_draw"
+   ],
+   "in_source": [
+    "rules_draw"
+   ]
+  },
+  "loud_tab": {
+   "status": "FINAL",
+   "names": [
+    "loud_draw"
+   ],
+   "called": [
+    "loud_draw"
+   ],
+   "in_source": [
+    "loud_draw"
+   ]
+  },
+  "loud_tab_resting": {
+   "status": "FINAL",
+   "names": [
+    "loud_draw"
+   ],
+   "called": [
+    "loud_draw"
+   ],
+   "in_source": [
+    "loud_draw"
+   ]
+  },
+  "card_hover_grow": {
+   "status": "FINAL",
+   "names": [
+    "peel"
+   ],
+   "called": [
+    "peel"
+   ],
+   "in_source": [
+    "peel"
+   ]
+  },
+  "played_liner": {
+   "status": "FINAL",
+   "names": [
+    "liner_hi"
+   ],
+   "called": [
+    "liner_hi"
+   ],
+   "in_source": [
+    "liner_hi"
+   ]
+  },
+  "cards_nowords": {
+   "status": "FINAL",
+   "names": [
+    "nw_draw"
+   ],
+   "called": [
+    "nw_draw"
+   ],
+   "in_source": [
+    "nw_draw"
+   ]
+  },
+  "card_unaffordable": {
+   "status": "LATENT",
+   "names": [
+    "lat_top"
+   ],
+   "called": [
+    "lat_top"
+   ],
+   "in_source": [
+    "lat_top"
+   ]
+  },
+  "card_committed": {
+   "status": "LATENT",
+   "names": [
+    "lat_top"
+   ],
+   "called": [
+    "lat_top"
+   ],
+   "in_source": [
+    "lat_top"
+   ]
+  },
+  "card_exhaust_keyword": {
+   "status": "LATENT",
+   "names": [
+    "lat_top"
+   ],
+   "called": [
+    "lat_top"
+   ],
+   "in_source": [
+    "lat_top"
+   ]
+  },
+  "card_key_hint": {
+   "status": "LATENT",
+   "names": [
+    "lat_top"
+   ],
+   "called": [
+    "lat_top"
+   ],
+   "in_source": [
+    "lat_top"
+   ]
+  },
+  "send_it": {
+   "status": "FINAL",
+   "names": [
+    "send_base",
+    "stack_layer"
+   ],
+   "called": [
+    "send_base",
+    "stack_layer"
+   ],
+   "in_source": [
+    "send_base",
+    "stack_layer"
+   ]
+  },
+  "undo_chip": {
+   "status": "FINAL",
+   "names": [
+    "undo_tab"
+   ],
+   "called": [
+    "undo_tab"
+   ],
+   "in_source": [
+    "undo_tab"
+   ]
+  },
+  "nameplate": {
+   "status": "FINAL",
+   "names": [
+    "nameplate"
+   ],
+   "called": [
+    "nameplate"
+   ],
+   "in_source": [
+    "nameplate"
+   ]
+  },
+  "sticker_material": {
+   "status": "FINAL",
+   "names": [
+    "stack_layer",
+    "vinyl2"
+   ],
+   "called": [
+    "stack_layer",
+    "vinyl2"
+   ],
+   "in_source": [
+    "stack_layer",
+    "vinyl2"
+   ]
+  },
+  "stickers_nowords": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "bottom_hint": {
+   "status": "FINAL",
+   "names": [
+    "hint_line"
+   ],
+   "called": [
+    "hint_line"
+   ],
+   "in_source": [
+    "hint_line"
+   ]
+  },
+  "card_targeting": {
+   "status": "LATENT",
+   "names": [
+    "cues"
+   ],
+   "called": [],
+   "in_source": [
+    "cues"
+   ]
+  },
+  "adjuster_as_target": {
+   "status": "LATENT",
+   "names": [
+    "adj_geom",
+    "cues"
+   ],
+   "called": [],
+   "in_source": [
+    "adj_geom",
+    "cues"
+   ]
+  },
+  "hover_tag": {
+   "status": "FINAL",
+   "names": [
+    "hover_tag"
+   ],
+   "called": [
+    "hover_tag"
+   ],
+   "in_source": [
+    "hover_tag"
+   ]
+  },
+  "hover_path": {
+   "status": "FINAL",
+   "names": [
+    "hover_path"
+   ],
+   "called": [
+    "hover_path"
+   ],
+   "in_source": [
+    "hover_path"
+   ]
+  },
+  "hover_slice_highlight": {
+   "status": "FINAL",
+   "names": [
+    "hover_slice",
+    "trim_hover"
+   ],
+   "called": [
+    "hover_slice"
+   ],
+   "in_source": [
+    "hover_slice",
+    "trim_hover"
+   ]
+  },
+  "hover_focus_dim": {
+   "status": "FINAL",
+   "names": [
+    "tint"
+   ],
+   "called": [
+    "tint"
+   ],
+   "in_source": [
+    "tint"
+   ]
+  },
+  "hover_dim_overlay": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "hovered_cell_outline": {
+   "status": "FINAL",
+   "names": [
+    "focus_brackets",
+    "hover_cell"
+   ],
+   "called": [
+    "focus_brackets",
+    "hover_cell"
+   ],
+   "in_source": [
+    "focus_brackets",
+    "hover_cell"
+   ]
+  },
+  "trigger_path": {
+   "status": "FINAL",
+   "names": [
+    "trigger_path"
+   ],
+   "called": [
+    "trigger_path"
+   ],
+   "in_source": [
+    "trigger_path"
+   ]
+  },
+  "trigger_tower_hit": {
+   "status": "LATENT",
+   "names": [
+    "opt",
+    "tower_hit"
+   ],
+   "called": [
+    "opt"
+   ],
+   "in_source": [
+    "opt",
+    "tower_hit"
+   ]
+  },
+  "twist_badge": {
+   "status": "FINAL",
+   "names": [
+    "twist_badge"
+   ],
+   "called": [
+    "twist_badge"
+   ],
+   "in_source": [
+    "twist_badge"
+   ]
+  },
+  "refund_burst": {
+   "status": "FINAL",
+   "names": [
+    "refund_place"
+   ],
+   "called": [
+    "refund_place"
+   ],
+   "in_source": [
+    "refund_place"
+   ]
+  },
+  "refund_token": {
+   "status": "FINAL",
+   "names": [
+    "refund_token"
+   ],
+   "called": [
+    "refund_token"
+   ],
+   "in_source": [
+    "refund_token"
+   ]
+  },
+  "resolve_fire_lines": {
+   "status": "FINAL",
+   "names": [
+    "guns_preview"
+   ],
+   "called": [
+    "guns_preview"
+   ],
+   "in_source": [
+    "guns_preview"
+   ]
+  },
+  "no_target_tag": {
+   "status": "UNSETTLED",
+   "names": [
+    "idle_gun"
+   ],
+   "called": [],
+   "in_source": [
+    "idle_gun"
+   ]
+  },
+  "nowords_variant": {
+   "status": "FINAL",
+   "names": [],
+   "called": [],
+   "in_source": []
+  },
+  "send_it_states": {
+   "status": "LATENT",
+   "names": [
+    "send_state"
+   ],
+   "called": [
+    "send_state"
+   ],
+   "in_source": [
+    "send_state"
+   ]
+  },
+  "focus_brackets": {
+   "status": "FINAL",
+   "names": [
+    "focus_brackets",
+    "opt"
+   ],
+   "called": [
+    "focus_brackets",
+    "opt"
+   ],
+   "in_source": [
+    "focus_brackets",
+    "opt"
+   ]
+  }
+ },
+ "called": [
+  "<genexpr>",
+  "<lambda>",
+  "M",
+  "Off",
+  "P",
+  "__init__",
+  "_cr",
+  "_dil",
+  "_disc",
+  "_engraved",
+  "_ero",
+  "_font",
+  "_glyph_grid",
+  "_gradient_fill",
+  "_land_start",
+  "_lay",
+  "_layer",
+  "_light",
+  "_mask",
+  "_ring",
+  "_ring_dashes",
+  "_ring_full",
+  "_rnd",
+  "_scan",
+  "_shape_mask",
+  "_side",
+  "_slab",
+  "_slice_tile",
+  "_stroke",
+  "aa",
+  "adjuster",
+  "anton",
+  "arc",
+  "arc_band",
+  "arc_pts",
+  "arc_text2",
+  "arcs_data",
+  "armor_and_strike",
+  "armor_cue",
+  "armour_rails",
+  "arr_img",
+  "arrow",
+  "arrow_head",
+  "art_draw",
+  "backdrop",
+  "badge_dir",
+  "badge_xy",
+  "band",
+  "band_poly",
+  "bar",
+  "bare",
+  "bars2",
+  "bezel_ink",
+  "bezel_layer",
+  "bezel_material",
+  "bill_box",
+  "blur",
+  "border_for",
+  "box",
+  "brace",
+  "brace_mark",
+  "brace_plate2",
+  "break_x",
+  "broken2",
+  "bulb",
+  "cap_line",
+  "cap_pip",
+  "capsule",
+  "card_cached",
+  "card_glyph",
+  "card_hi",
+  "cell",
+  "cell_centre",
+  "cell_layout",
+  "cell_poly",
+  "cell_pts",
+  "cfg2",
+  "ch_label",
+  "ch_w",
+  "chain_glyph",
+  "chain_strip",
+  "check",
+  "check_mark",
+  "chev_params",
+  "chev_width",
+  "chevron_result",
+  "chevrons",
+  "chip_bar",
+  "chip_glyphs",
+  "chip_name",
+  "chip_pair",
+  "circ",
+  "circ_overlap",
+  "coin",
+  "coin_img",
+  "content",
+  "cost_draw",
+  "covered",
+  "cp",
+  "cracked2",
+  "crest",
+  "cur_cfg",
+  "dA",
+  "dash_line",
+  "dash_path",
+  "dashed_k",
+  "dead_badge",
+  "dest_funnel",
+  "dest_hp",
+  "dest_hub",
+  "diam_width",
+  "diamond",
+  "diamonds",
+  "digit",
+  "digits",
+  "disc",
+  "done",
+  "draw",
+  "draw_coin",
+  "draw_flame",
+  "draw_group",
+  "draw_hud",
+  "draw_sq",
+  "draw_tape",
+  "draw_unit",
+  "draw_units",
+  "el_best_tag",
+  "el_bill_frame",
+  "el_cap",
+  "el_eq_row",
+  "el_header_plate",
+  "el_header_title",
+  "el_help",
+  "el_next_row",
+  "el_obj_frame",
+  "el_plan_underline",
+  "el_res_frame",
+  "el_res_label",
+  "el_split_row",
+  "el_star",
+  "el_tally",
+  "el_waves_left",
+  "el_win_label",
+  "ellipse",
+  "emblem",
+  "empty_cell",
+  "f",
+  "fam_mul",
+  "fan_slots",
+  "fb_arms",
+  "fit_badge",
+  "fit_px",
+  "flame_img",
+  "fn",
+  "focus_brackets",
+  "focus_mask",
+  "frame",
+  "frame2",
+  "frame_over",
+  "frame_under",
+  "fut_geom",
+  "future",
+  "g",
+  "g_eye",
+  "g_go_ring",
+  "g_skull",
+  "ghost",
+  "glow",
+  "gly",
+  "glyph",
+  "gone_overlay",
+  "grade",
+  "grid",
+  "gun_geom",
+  "guns2",
+  "guns_preview",
+  "gutters",
+  "halo",
+  "hand_lists",
+  "hand_new",
+  "hatch",
+  "haz_ticks",
+  "hdr_draw",
+  "header",
+  "hero_nw",
+  "hero_pair",
+  "hint_line",
+  "hold",
+  "hold_cell",
+  "hold_glyph",
+  "hover_cell",
+  "hover_path",
+  "hover_sectors",
+  "hover_slice",
+  "hover_tag",
+  "hover_trim",
+  "hp_bar",
+  "hp_ring2",
+  "hp_row",
+  "hp_tally",
+  "hub_factory",
+  "hv_unit",
+  "hy_of",
+  "icon_draw",
+  "icon_geom",
+  "icon_on_canvas",
+  "icons2",
+  "icons_cur",
+  "inset",
+  "interior_hairlines",
+  "keycap",
+  "kind_glyph",
+  "kind_wash",
+  "kit_plate",
+  "landing_arcs",
+  "lane_base_style",
+  "lane_swatch",
+  "lat_top",
+  "layout",
+  "layout_items",
+  "leader",
+  "library",
+  "line",
+  "liner_cached",
+  "liner_hi",
+  "live_cell",
+  "live_label",
+  "live_units",
+  "ln",
+  "loud_draw",
+  "make_cfg",
+  "mask",
+  "masked",
+  "med_font",
+  "mesh",
+  "mix",
+  "mono",
+  "mult_draw",
+  "muzzle",
+  "name_w",
+  "nameplate",
+  "needle",
+  "now_dot",
+  "nowords_code",
+  "nw_draw",
+  "objectives_row",
+  "opdraw",
+  "opt",
+  "option_chip",
+  "outline",
+  "paint_cells",
+  "paste_block",
+  "paste_glyph",
+  "path_pts",
+  "peel",
+  "pink",
+  "pip",
+  "pip_positions",
+  "pip_states",
+  "place",
+  "plate",
+  "plex",
+  "plus_glyph",
+  "pol",
+  "poly",
+  "pop_rays",
+  "ppx",
+  "ppx_xy",
+  "pstroke",
+  "pt",
+  "put",
+  "q",
+  "qmark",
+  "radial_ext",
+  "rails",
+  "rect",
+  "refund_place",
+  "refund_token",
+  "reg",
+  "reg_font",
+  "reg_reset",
+  "render",
+  "render_core",
+  "res_label_w",
+  "resample",
+  "resources_row",
+  "rgba",
+  "ring",
+  "ring_alpha",
+  "ring_geom",
+  "ring_tags",
+  "rmid",
+  "room_relight",
+  "route",
+  "rowtag",
+  "rr_mask",
+  "rr_path_k",
+  "rseg",
+  "rtext",
+  "rules_draw",
+  "rw",
+  "sc",
+  "schedule",
+  "screen",
+  "scrim",
+  "scrim_layers",
+  "scrim_weight",
+  "sector",
+  "sectors",
+  "seg",
+  "sel_for",
+  "send_base",
+  "send_state",
+  "sep_G",
+  "sep_mode",
+  "set_room",
+  "setup",
+  "shadow_paste",
+  "smooth",
+  "soak_mark",
+  "soak_mark2",
+  "soak_rim2",
+  "span",
+  "spark",
+  "spoke_mask",
+  "spokes",
+  "sprite",
+  "sq_img",
+  "stack",
+  "stack_layer",
+  "stage",
+  "stage_fn",
+  "stamp",
+  "stamp_img",
+  "star_pts",
+  "star_tile",
+  "star_w",
+  "stroke_mask",
+  "sub_frame",
+  "sub_res",
+  "tag",
+  "tag_anchor",
+  "tag_box",
+  "tag_geom",
+  "tag_lines",
+  "tag_pos",
+  "tag_texts",
+  "tag_words",
+  "tagbox",
+  "tally",
+  "tally_bars",
+  "tally_spec",
+  "tally_w",
+  "tally_width",
+  "tan",
+  "tex_phosphor",
+  "text",
+  "text_ink",
+  "ticks",
+  "tile2",
+  "tile_paste",
+  "tint",
+  "title_draw",
+  "token",
+  "token_pos",
+  "token_pos_r2",
+  "tower_layer",
+  "tpos",
+  "tray_extent",
+  "trig_form",
+  "trigger",
+  "trigger_path",
+  "trim",
+  "trim2",
+  "ttw",
+  "turn_dots",
+  "tw",
+  "twidth",
+  "twist",
+  "twist_badge",
+  "twist_mark",
+  "txt",
+  "type_draw",
+  "u_poly",
+  "undo_arc",
+  "undo_tab",
+  "unit_bounds",
+  "unit_pips",
+  "v",
+  "vinyl2",
+  "ward_arc",
+  "warded_badge",
+  "wave_tags",
+  "wax",
+  "wax_outline",
+  "wax_v",
+  "wax_x",
+  "wear",
+  "wedge",
+  "win_w",
+  "without_twist",
+  "wrap_words",
+  "x_mark"
+ ]
+}
