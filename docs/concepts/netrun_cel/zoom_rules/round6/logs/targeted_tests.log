@@ -1,0 +1,6 @@
+run_tests: 9 scripts in 2 shard(s); logs in D:\rc_tmp\tests_r6
+run_tests: shard 1 finished in 23s (exit 0)
+run_tests: shard 0 finished in 83s (exit 0)
+
+run_tests: 137 tests, 0 failing, 8 pending, wall 84s
+run_tests: PASSED

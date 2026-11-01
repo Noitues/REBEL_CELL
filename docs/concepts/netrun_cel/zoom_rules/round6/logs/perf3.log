@@ -1,0 +1,3 @@
+PERF stage=5 layers=1 frames=500 wall mean_ms=16.72 p50_ms=16.65 p95_ms=22.91 p99_ms=29.61 max_ms=41.81
+PERF stage=5 layers=1 gpu_city mean_ms=9.32 p50_ms=9.83 p95_ms=12.65 p99_ms=14.35 max_ms=14.94
+PERF stage=5 layers=1 gpu_window mean_ms=0.90 p50_ms=0.91 p95_ms=1.28 p99_ms=1.64 max_ms=1.95
