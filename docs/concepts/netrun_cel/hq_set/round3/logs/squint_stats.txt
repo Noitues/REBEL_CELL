@@ -1,0 +1,7 @@
+hq_rebel_cell_overview: squint mean=0.242 p95=0.617 loud(>0.38)=0.223 | brightest 24px row y=587 (54% down) val 0.639 | upper(25-60%) mean 0.393 | full-frame mean 0.242
+hero: squint mean=0.217 p95=0.602 loud(>0.38)=0.144 | brightest 24px row y=900 (83% down) val 0.349 | upper(25-60%) mean 0.206 | full-frame mean 0.217
+hero: squint mean=0.222 p95=0.592 loud(>0.38)=0.174 | brightest 24px row y=634 (59% down) val 0.388 | upper(25-60%) mean 0.219 | full-frame mean 0.222
+hero: squint mean=0.249 p95=0.652 loud(>0.38)=0.222 | brightest 24px row y=740 (69% down) val 0.379 | upper(25-60%) mean 0.248 | full-frame mean 0.249
+alt_gate: squint mean=0.260 p95=0.692 loud(>0.38)=0.230 | brightest 24px row y=669 (62% down) val 0.509 | upper(25-60%) mean 0.277 | full-frame mean 0.260
+alt_high: squint mean=0.238 p95=0.570 loud(>0.38)=0.176 | brightest 24px row y=695 (64% down) val 0.423 | upper(25-60%) mean 0.225 | full-frame mean 0.238
+alt_far: squint mean=0.169 p95=0.422 loud(>0.38)=0.066 | brightest 24px row y=684 (63% down) val 0.263 | upper(25-60%) mean 0.190 | full-frame mean 0.168

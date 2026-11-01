@@ -1,0 +1,6 @@
+run_tests: 10 scripts in 2 shard(s); logs in D:\rc_tmp\claude\rebel_cell_tests_6dwyr_d2
+run_tests: shard 1 finished in 17s (exit 0)
+run_tests: shard 0 finished in 67s (exit 0)
+
+run_tests: 144 tests, 0 failing, 8 pending, wall 67s
+run_tests: PASSED
