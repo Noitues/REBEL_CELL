@@ -1,0 +1,7 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.315 - Forward+ - Using Device #0: AMD - AMD Radeon RX 6700 XT
+
+PERF pose=hero frames=500 wall mean_ms=16.68 p50_ms=16.71 p95_ms=18.55 p99_ms=19.45 max_ms=20.85
+PERF pose=hero gpu_city mean_ms=10.46 p50_ms=10.39 p95_ms=11.66 p99_ms=12.53 max_ms=13.56
+PERF pose=hero gpu_window mean_ms=1.04 p50_ms=1.02 p95_ms=1.16 p99_ms=1.58 max_ms=1.70
+HQNET DONE

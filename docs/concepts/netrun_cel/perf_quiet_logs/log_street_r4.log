@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.315 - Forward+ - Using Device #0: AMD - AMD Radeon RX 6700 XT
+
+NRZOOM plan ortho=394.592555346413 target=(-338.619, 0.0, -124.6844) lod=1
+NRZOOM street ground front=0.50 eye=0.42
+PERF stage=5 layers=1 frames=500 wall mean_ms=16.68 p50_ms=16.61 p95_ms=19.68 p99_ms=21.69 max_ms=22.44
+PERF stage=5 layers=1 gpu_city mean_ms=10.37 p50_ms=10.31 p95_ms=11.97 p99_ms=13.32 max_ms=14.16
+PERF stage=5 layers=1 gpu_window mean_ms=1.04 p50_ms=1.02 p95_ms=1.28 p99_ms=1.84 max_ms=2.29
+NRZOOM DONE

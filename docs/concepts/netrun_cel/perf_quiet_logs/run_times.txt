@@ -1,0 +1,21 @@
+street_r1 start 2026-11-01 03:57:26
+street_r1 exit 0 end 2026-11-01 03:58:28
+hq_r1 start 2026-11-01 03:58:28
+hq_r1 exit 0 end 2026-11-01 03:59:30
+street_r2 start 2026-11-01 03:59:30
+street_r2 exit 0 end 2026-11-01 04:00:30
+hq_r2 start 2026-11-01 04:00:30
+hq_r2 exit 0 end 2026-11-01 04:01:32
+street_r3 start 2026-11-01 04:01:32
+street_r3 exit 0 end 2026-11-01 04:02:33
+hq_r3 start 2026-11-01 04:02:33
+hq_r3 exit 0 end 2026-11-01 04:03:39
+street_r4 start 2026-11-01 04:03:39
+street_r4 exit 0 end 2026-11-01 04:04:41
+hq_r4 start 2026-11-01 04:04:41
+hq_r4 exit 0 end 2026-11-01 04:05:45
+street_r5 start 2026-11-01 04:05:45
+street_r5 exit 0 end 2026-11-01 04:06:47
+hq_r5 start 2026-11-01 04:06:47
+hq_r5 exit 0 end 2026-11-01 04:07:49
+ALL_DONE
