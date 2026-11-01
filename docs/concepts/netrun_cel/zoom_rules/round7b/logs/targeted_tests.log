@@ -1,0 +1,10 @@
+run_tests: 1 scripts in 1 shard(s); logs in D:\rc_tmp\claude\rebel_cell_tests_lr0xxjui
+run_tests: shard 0 finished in 11s (exit 0)
+
+run_tests: 13 tests, 0 failing, 0 pending, wall 12s
+run_tests: PASSED
+run_tests: 1 scripts in 1 shard(s); logs in D:\rc_tmp\claude\rebel_cell_tests_enteu3qg
+run_tests: shard 0 finished in 22s (exit 0)
+
+run_tests: 7 tests, 0 failing, 0 pending, wall 22s
+run_tests: PASSED
