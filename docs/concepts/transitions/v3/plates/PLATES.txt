@@ -1,0 +1,6 @@
+copied from combat_e10_design/final at build time:
+p1_decide d171e9d27d
+p1_decide_srv 1c8f4b92be
+p1_decide_gh 6f7ea19d2a
+p1_nowords 493583f2ec
+p3_resolve 6b1dc77892
