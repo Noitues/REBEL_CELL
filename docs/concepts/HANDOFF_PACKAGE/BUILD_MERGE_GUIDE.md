@@ -1,6 +1,6 @@
 # Build merge guide: art's city work
 
-Status as of 2026-10-30. Written from the branch heads, the config files, MAILBOX A-107 to A-114 and DIRECTION_REVIEW (round 42 onward). Where a fact was not found in those sources, it says "unknown". Nothing here was checked out or run.
+Status as of 2026-10-30; netrun-zoom and hq-netrun entries updated 2026-11-01. Written from the branch heads, the config files, MAILBOX A-107 to A-114 and DIRECTION_REVIEW (round 42 onward). Where a fact was not found in those sources, it says "unknown". Nothing here was checked out or run.
 
 Clones: `D:/rc_art/godot_lint` (layout chain), `D:/rc_art/godot_look_tide` (look chain, netrun zoom), `D:/rc_art/godot_look_traffic` (traffic variant), `D:/rc_art/godot_jackin` (jack-in prewarm).
 
@@ -19,7 +19,8 @@ Merge in this order. Heads are from `git log -1 --oneline <branch>`.
 9. **art/jackin-prewarm**, `903853d4`, in `D:/rc_art/godot_jackin`. Based on game-v2 `b09f9b9d`, not on the city chain. Merge it after steps 1 to 7 (A-113, A-114). Full suite: unknown; 6 new tests in `test_city_prewarm.gd`; 15 failures already exist on game-v2 (section 6).
 
 Not in the merge order:
-- **art/netrun-zoom**, `f318f476`, in `D:/rc_art/godot_look_tide`, off art/tide-r43. Pending designer decisions (section 7). Targeted tests: 289, 0 failing. Full suite: not run.
+- **art/netrun-zoom**, now `b72ea35b` (2026-11-01; rounds 4-7b: staged street, sign flicker, city-view target highlight), in `D:/rc_art/godot_look_tide`, off art/tide-r43. Pending designer decisions (section 7). Targeted tests: 145 (round 7), 0 failing. Full suite: not run. Street-band p95 on a quiet GPU: 10.82-11.97 ms over 5 runs, a PASS (`netrun_cel/perf_quiet_2026-11-01.md`). Game hooks it needs: call `zoom_street.set_target(CityZoomTarget.make(cfg))` when the jack-in zoom starts (the highlight shows only after that call); flicker reads the reduce-motion and reduce-effects settings (`zr_flick_reduce_off`).
+- **art/hq-netrun**, `52a44372` (2026-11-01, round 3), worktree `D:/rc_art/godot_look_hqnet`, off art/netrun-zoom `22979681`. The Solace HQ netrun set piece (`CityHqNet`), behind `hq_on` (default off). Targeted tests: 144, 0 failing; `test_city_hq_net.gd` is in the manifest. HQ-band p95 on a quiet GPU: 11.12-11.66 ms, a PASS. Game hooks: `CityView3D.set_hq_netrun(true)`, and the camera from `CityHqNet.pose` / `fly_pose` (T11 fly-in); the node path is art-only and not wired to the run graph. Edits shared files `city_view_3d.gd`, `city_zoom_stage.gd` and `city_zoom_street.gd`, all gated on `hq_on`. Pending designer review.
 - **art/zoom-lod-sheets**, `38f75b23`. Lab tool only. Do not merge.
 
 ## 2. Config switches
