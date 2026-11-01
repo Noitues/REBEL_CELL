@@ -1,0 +1,304 @@
+{
+ "bio": {
+  "name": "bio",
+  "mean": 0.24485023319721222,
+  "p95": 0.4968153238296509,
+  "sat": 0.3506438434123993,
+  "loud": 0.13190174858279702,
+  "density": 0.62,
+  "props": 25,
+  "clutter": 6,
+  "cables": 3,
+  "cable_cells": 2,
+  "clutter_cells": 8,
+  "density_hard": 0.49,
+  "extras": [
+   "sample_fridge"
+  ],
+  "v2_props": 15,
+  "seed": 11,
+  "room_type": "bio_lab",
+  "v3_fill": 0.54,
+  "v3_hard": 0.43,
+  "v3_mean": 0.2425391972064972,
+  "v3_p95": 0.4901333451271057,
+  "v3_loud": 0.12332811994391112,
+  "cable_paths": [
+   {
+    "a": "helix_tank",
+    "b": "centrifuge",
+    "cells": 1,
+    "new_cells": 1
+   },
+   {
+    "a": "centrifuge",
+    "b": "vat",
+    "cells": 3,
+    "new_cells": 0
+   },
+   {
+    "a": "vat",
+    "b": "monitor_cart",
+    "cells": 5,
+    "new_cells": 1
+   }
+  ],
+  "puddles": 2
+ },
+ "srv": {
+  "name": "srv",
+  "mean": 0.2485983818769455,
+  "p95": 0.5028706192970276,
+  "sat": 0.3654431402683258,
+  "loud": 0.1364290080178334,
+  "density": 0.67,
+  "props": 25,
+  "clutter": 6,
+  "cables": 2,
+  "cable_cells": 6,
+  "clutter_cells": 12,
+  "density_hard": 0.48,
+  "extras": [
+   "kvm_cart"
+  ],
+  "v2_props": 13,
+  "seed": 23,
+  "room_type": "server_room",
+  "v3_fill": 0.63,
+  "v3_hard": 0.41,
+  "v3_mean": 0.24869148433208466,
+  "v3_p95": 0.4877804219722748,
+  "v3_loud": 0.13420133271012355,
+  "cable_paths": [
+   {
+    "a": "core_tower",
+    "b": "rack",
+    "cells": 1,
+    "new_cells": 1
+   },
+   {
+    "a": "rack",
+    "b": "rack",
+    "cells": 9,
+    "new_cells": 5
+   }
+  ],
+  "puddles": 3
+ },
+ "gh": {
+  "name": "gh",
+  "mean": 0.24372506141662598,
+  "p95": 0.48277607560157776,
+  "sat": 0.3314816355705261,
+  "loud": 0.12935048358681192,
+  "density": 0.68,
+  "props": 29,
+  "clutter": 9,
+  "cables": 2,
+  "cable_cells": 5,
+  "clutter_cells": 14,
+  "density_hard": 0.46,
+  "extras": [
+   "potting_bench",
+   "water_tank"
+  ],
+  "v2_props": 13,
+  "seed": 37,
+  "room_type": "greenhouse",
+  "v3_fill": 0.68,
+  "v3_hard": 0.4,
+  "v3_mean": 0.2453351467847824,
+  "v3_p95": 0.4793037474155426,
+  "v3_loud": 0.12326819592756384,
+  "cable_paths": [
+   {
+    "a": "seed_tree",
+    "b": "planter",
+    "cells": 3,
+    "new_cells": 2
+   },
+   {
+    "a": "planter",
+    "b": "cistern",
+    "cells": 3,
+    "new_cells": 3
+   }
+  ],
+  "puddles": 4
+ },
+ "rec": {
+  "name": "rec",
+  "mean": 0.24658650159835815,
+  "p95": 0.49862533807754517,
+  "sat": 0.3189014196395874,
+  "loud": 0.13594062728460313,
+  "density": 0.59,
+  "props": 29,
+  "clutter": 9,
+  "cables": 2,
+  "cable_cells": 1,
+  "clutter_cells": 10,
+  "density_hard": 0.43,
+  "extras": [
+   "water_cooler"
+  ],
+  "v2_props": 14,
+  "seed": 41,
+  "room_type": "records_office",
+  "v3_fill": 0.59,
+  "v3_hard": 0.38,
+  "v3_mean": 0.25308772921562195,
+  "v3_p95": 0.5177643299102783,
+  "v3_loud": 0.13842597586260622,
+  "cable_paths": [
+   {
+    "a": "archive_tower",
+    "b": "water_cooler",
+    "cells": 2,
+    "new_cells": 0
+   },
+   {
+    "a": "water_cooler",
+    "b": "cabinet",
+    "cells": 4,
+    "new_cells": 1
+   }
+  ],
+  "puddles": 3
+ },
+ "lobby": {
+  "name": "lobby",
+  "mean": 0.2436269223690033,
+  "p95": 0.49963533878326416,
+  "sat": 0.3656141757965088,
+  "loud": 0.1232726902287899,
+  "density": 0.68,
+  "props": 24,
+  "clutter": 6,
+  "cables": 3,
+  "cable_cells": 6,
+  "clutter_cells": 12,
+  "density_hard": 0.49,
+  "extras": [
+   "info_wall",
+   "turnstile"
+  ],
+  "v2_props": 10,
+  "seed": 53,
+  "room_type": "lobby",
+  "v3_fill": 0.63,
+  "v3_hard": 0.35,
+  "v3_mean": 0.24054619669914246,
+  "v3_p95": 0.5060627460479736,
+  "v3_loud": 0.1100339769172689,
+  "cable_paths": [
+   {
+    "a": "emblem_sculpture",
+    "b": "info_wall",
+    "cells": 1,
+    "new_cells": 1
+   },
+   {
+    "a": "info_wall",
+    "b": "seats",
+    "cells": 5,
+    "new_cells": 5
+   },
+   {
+    "a": "seats",
+    "b": "kiosk",
+    "cells": 6,
+    "new_cells": 0
+   }
+  ],
+  "puddles": 2
+ },
+ "event": {
+  "name": "event",
+  "mean": 0.23881621658802032,
+  "p95": 0.43338608741760254,
+  "sat": 0.3386880159378052,
+  "loud": 0.11026318627979721,
+  "density": 0.7,
+  "props": 24,
+  "clutter": 6,
+  "cables": 2,
+  "cable_cells": 7,
+  "clutter_cells": 13,
+  "density_hard": 0.49,
+  "extras": [
+   "speaker_stack",
+   "lectern"
+  ],
+  "v2_props": 14,
+  "seed": 67,
+  "room_type": "event_room",
+  "v3_fill": 0.59,
+  "v3_hard": 0.44,
+  "v3_mean": 0.24173974990844727,
+  "v3_p95": 0.4406352937221527,
+  "v3_loud": 0.1136054482915663,
+  "cable_paths": [
+   {
+    "a": "holo_table",
+    "b": "med_cabinet",
+    "cells": 2,
+    "new_cells": 0
+   },
+   {
+    "a": "med_cabinet",
+    "b": "iv_stand",
+    "cells": 7,
+    "new_cells": 7
+   }
+  ],
+  "puddles": 3
+ },
+ "shop": {
+  "name": "shop",
+  "mean": 0.2547350227832794,
+  "p95": 0.5244980454444885,
+  "sat": 0.33655837178230286,
+  "loud": 0.15342945145555437,
+  "density": 0.67,
+  "props": 27,
+  "clutter": 6,
+  "cables": 3,
+  "cable_cells": 4,
+  "clutter_cells": 10,
+  "density_hard": 0.51,
+  "extras": [
+   "mannequin",
+   "checkout"
+  ],
+  "v2_props": 17,
+  "seed": 71,
+  "room_type": "shop",
+  "v3_fill": 0.62,
+  "v3_hard": 0.49,
+  "v3_mean": 0.24977484345436096,
+  "v3_p95": 0.5268366932868958,
+  "v3_loud": 0.13567995781349249,
+  "cable_paths": [
+   {
+    "a": "display_island",
+    "b": "gondola",
+    "cells": 1,
+    "new_cells": 1
+   },
+   {
+    "a": "gondola",
+    "b": "counter",
+    "cells": 2,
+    "new_cells": 1
+   },
+   {
+    "a": "counter",
+    "b": "gondola",
+    "cells": 2,
+    "new_cells": 2
+   }
+  ],
+  "puddles": 4
+ }
+}
