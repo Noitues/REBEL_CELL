@@ -1,0 +1,7 @@
+run_tests: 10 scripts in 2 shard(s); logs in D:\rc_tmp\claude\rebel_cell_tests__3rzsxl6
+run_tests: WARNING res://tests/unit/test_city_hq_net.gd is not in tests/test_manifest.json (scheduled at 10s)
+run_tests: shard 0 finished in 16s (exit 0)
+run_tests: shard 1 finished in 80s (exit 0)
+
+run_tests: 144 tests, 0 failing, 8 pending, wall 80s
+run_tests: PASSED

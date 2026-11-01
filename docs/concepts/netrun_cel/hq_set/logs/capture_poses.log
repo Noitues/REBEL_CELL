@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.315 - Forward+ - Using Device #0: AMD - AMD Radeon RX 6700 XT
+
+HQNET post g1_black=(0.12, 0.45) zr_on=1.0 zr_far=(0.4, 0.0)
+HQNET pose=hero eye=(-243.0, 30.8254, -377.0) yaw=-90.0 pitch=-0.0 fov=86.8 ppb=28.2 band=3
+HQNET post g1_black=(0.12, 0.45) zr_on=1.0 zr_far=(0.4, 0.0)
+HQNET pose=alt_far eye=(-209.0, 49.5574, -472.0) yaw=-98.2 pitch=-1.5 fov=74.1 ppb=35.3 band=3
+HQNET post g1_black=(0.12, 0.45) zr_on=1.0 zr_far=(0.4, 0.0)
+HQNET pose=alt_gate eye=(-228.0, 15.06564, -365.0) yaw=-90.0 pitch=-2.0 fov=89.2 ppb=27.1 band=3
+HQNET post g1_black=(0.12, 0.45) zr_on=1.0 zr_far=(0.4, 0.0)
+HQNET pose=alt_high eye=(-243.0, 68.21902, -387.0) yaw=-90.0 pitch=7.0 fov=84.3 ppb=29.4 band=3
+HQNET post g1_black=(0.12, 0.45) zr_on=1.0 zr_far=(0.4, 0.0)
+HQNET pose=helix eye=(-225.0, 35.26748, -315.0) yaw=-103.0 pitch=-22.1 fov=81.9 ppb=30.8 band=3
+HQNET DONE
