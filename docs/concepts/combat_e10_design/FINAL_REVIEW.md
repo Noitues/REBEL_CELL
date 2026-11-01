@@ -58,3 +58,27 @@ Notes, not blocking (the designer should know them):
 - I diffed decision rows against the coverage rows by script: 0 missing, 0 extra.
 - In `state_e10.json` f1, units 3 and 6 are warded. In p1 only unit 6's badge reads, and unit 3's is covered (O1).
 - R2 outer_rings `plate_p1_decide.png` shows HOLD NEXT intact, which confirms O2 comes from the fix pass.
+
+## Fix pass 2 (assembler, O1-O5 applied)
+
+All five art-director fixes are applied and the seven plates in `final/` are re-rendered (overwritten; not the approved E10). `e10_vs_e10d.jpg`, `checks_asm.json` and the squint/CVD sheets are remade. `fixes_crops.jpg` has before/after crops of O1-O4 at 3x. The generator is copied to `final/src/`.
+
+**Draw asserts: 353 PASS, 0 FAIL** (was 269). The 84 new asserts are O1: for each of the 3 badges in each of the 5 beats, badge px on ring tags, on the HP tray, on the chevron column and on the glyph = 0.
+
+- **O1 done.** `asm_units.pick_side` tests each badge (30 px lozenge or 26 px disc, ink rim included, 1 px grid) against all three ring-tag boxes (`r2_misc.tag_geom`, padded 2 px), the unit's HP tray bands, its chevron column (all its sectors) and the glyph mask. If the outer diagonal touches anything it mirrors to the inner diagonal (45 deg toward the start cap and the inner radius, 31 px, same sizes). Result, identical in all 5 beats: unit 3 warded -> inner (it was under NOW W1, now visible), unit 2 dead badge -> inner, unit 6 warded stays outer. The dead badge got the same test.
+- **O2 done.** The hold glyphs and the HOLD NEXT / HOLD THEN text are skipped in the schedule pass and drawn on their own layer after the spoke layer (`r2_sched.labels`). "HOLD NEXT" is intact in all beats. The spoke continuity check (`checks_asm.py`) now skips samples inside the hold-cell label boxes (r >= 357.4): run-width at r353-360 has min 7.0 px and 0 breaks on all six spokes. The older strict exact-ink-colour sampler still lists 9 r353-360 samples, from the 1 px teal board hairline that R3 already noted; the run metric is the accepted one. The r160-166 breaks are the known ring-0 cell cover, unchanged.
+- **O3 done.** The chevron notch is removed from `wc2.break_x`; the four arms are continuous. One 5 px INK diamond (1 px INK keyline) sits at the crossing only.
+- **O4 done.** The nowords live tape label reads "+ II" (the 2-stroke tally, INK keyline, same strokes as the ring tags and sector digits). In nowords the Spin card shows a 3-stroke tally right of the icon (4 px white bars, 8 px pitch, 1 px INK keyline, same form as the Trigger loud tab tally), and the icon pair is re-centred as in the words version.
+- **O5 done.** Room lift x0.57 -> x0.50 (`HULL_LIFT_F`) on bio, srv and gh, saturation unchanged. Tower icons and unit tokens were not lifted.
+
+| Squint, p1 (1/16 BOX + blur 1, same regions) | R3 (x0.57) | Now (x0.50) | E10 approved |
+|---|---|---|---|
+| room p95 / loud, bio | 0.389 / 0.066 | **0.347 / 0.025** | 0.420 / 0.156 |
+| room p95 / loud, srv | 0.396 / 0.073 | **0.352 / 0.019** | |
+| room p95 / loud, gh | 0.384 / 0.057 | **0.341 / 0.018** | |
+| board p95 / loud (bio) | 0.302 / 0.003 | **0.302 / 0.003** | 0.403 / 0.080 |
+| whole plate mean / p95 / loud | 0.188 / 0.375 / 0.046 | 0.184 / 0.368 / 0.041 | 0.260 / 0.451 / 0.134 |
+
+Other plates: p2 room 0.379 / 0.050, board 0.307 / 0.006; p2b room 0.345 / 0.024, board 0.285 / 0.003; p3 room 0.325 / 0.008, board 0.307 / 0.006; nowords room 0.347 / 0.025, board 0.299 / 0.003. The remaining gap is room p95 0.347 vs board p95 0.302 (0.045). Accepted per O5 (the board reads by structure; no tower or token lift).
+
+Not done / notes: nothing from O1-O5 is left open. The dead badge test only covers live dying tokens (the consumed and killed ghost path uses its own drawing and has no badge). The soak X notch is 5 px, so it is still sub-pixel at 320 px (hue and blob shape carry soak there, as noted before). Nothing was committed.

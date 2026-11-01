@@ -25,7 +25,7 @@ def focus_mask(feather):
     return 1 - smooth(feather[0], feather[1], d)
 
 
-HULL_LIFT_F = 0.57 / 0.84        # fix 1: baked hull x0.84 -> about x0.57-0.60 (0.57 measured: room p95 <= 0.40 on all three rooms)
+HULL_LIFT_F = 0.50 / 0.84        # fix 1: baked hull x0.84 -> about x0.57-0.60 (0.57 measured: room p95 <= 0.40 on all three rooms)
 NEON_SAT_K = 0.33 / 0.55          # fix 1: baked green / neon saturation 0.55 -> about 0.33-0.35
 
 

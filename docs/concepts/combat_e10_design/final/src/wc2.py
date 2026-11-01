@@ -308,9 +308,9 @@ def break_x(kind='A', soak=False):
             return
         x, y = ppx(C, 106, am + 20)
         x_mark(L, x, y, 8.0, col, ink=3.4 if soak else 2.4)     # fix 7: soak X keyline 1 px more
-        if soak and kind in ('N', 'B'):     # fix 7: soak X carries the ink chevron notch at its crossing, 4.2 px wide (was 3.4, N only)
-            p = [(x - 4, y - 5), (x + 2, y), (x - 4, y + 5)]
-            L.line(p, INK, 4.2)
+        if soak and kind in ('N', 'B'):     # O3: one 5 px INK diamond notch at the crossing only (1 px INK keyline); the four arms stay continuous
+            d_ = 2.5
+            L.poly([(x, y - d_), (x + d_, y), (x, y + d_), (x - d_, y)], fill=INK, outline=INK, w=1.0)
     return fn
 
 

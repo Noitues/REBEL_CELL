@@ -94,7 +94,7 @@ def live_cell(L, a0, a1, opt):
     return a0 + 7
 
 
-def live_label(L, a0, txt):
+def live_label(L, a0, txt, n=2):
     """INK 19 with a drawn plus (bar-plus glyph, 2.8 px) then the number and word."""
     px = 19
     lab_deg = len(txt) * 11.6 / RM * 57.3
@@ -106,6 +106,11 @@ def live_label(L, a0, txt):
     nx, ny = math.sin(th), -math.cos(th)
     L.line([(x - 5 * ux, y - 5 * uy), (x + 5 * ux, y + 5 * uy)], INK, 2.8)
     L.line([(x - 5 * nx, y - 5 * ny), (x + 5 * nx, y + 5 * ny)], INK, 2.8)
+    if not NOW['words']:       # O4: nowords = '+' then an n-stroke white tally (same strokes as the ring tags and sector digits)
+        for i in range(n):
+            xx, yy = ppx(C, RM, a_start + 0.9 + (11.0 + i * 5.4) / RM * 57.3)
+            L.rect([xx - 2.6, yy - 7.8, xx + 2.6, yy + 7.8], fill=INK, r=1)
+            L.rect([xx - 1.4, yy - 7.0, xx + 1.4, yy + 7.0], fill=(244, 247, 252), r=1)
     return a_start + lab_deg + 4
 
 
@@ -130,11 +135,37 @@ def hold_glyph(L, x, y, col, size=1.0, ink_disc=True):
     GL.stamp(L, 'hold', 16.5 * s, (x, y), col)
 
 
+SKIP_LABELS = [False]      # O2: the hold glyph + label text are drawn in a later pass (above the bezel spokes)
+
+
+def hold_label(L, a0, k, opt, live=False):
+    x, y = ppx(C, RM, a0 + 7.2)
+    if live:
+        hold_glyph(L, x, y, ORG_HI)
+        arc_text2(L, RM - 0.5, a0 + 28, 'HOLD THIS TURN', 18, (255, 240, 214), 'mono', bold=0.4, keyline=1.4)
+    else:
+        hold_glyph(L, x, y, ORG_HI, 1.0 if opt == 'P' else 0.92)
+        arc_text2(L, RM - 0.5, a0 + 25, 'HOLD ' + NAMES[k].split()[0], 18, ORG_PALE if opt == 'P' else ORG_HI, 'mono', bold=0.3)
+
+
+def labels(L, sched, sel={}):
+    """O2: every hold cell's glyph and text, drawn after the bezel spoke layer"""
+    cum = 0
+    for k, v in enumerate(sched):
+        if v == 0:
+            hold_label(L, cum, k, sel.get('hold', 'P'), live=(k == 0))
+            cum += 40
+        else:
+            cum += 60 * v
+
+
 def hold_cell(L, a0, a1, k, opt):
     nm = NAMES[k].split()[0]
     p = cell_pts(B0, B1, a0 + 0.8, a1 - 0.8)
     L.poly(p, fill=(16, 12, 10), outline=INK, w=4.4 if opt == 'P' else 5.0)
     L.poly(p, fill=None, outline=ORG, w=2.0 if opt == 'P' else 2.8)
+    if SKIP_LABELS[0]:
+        return
     x, y = ppx(C, RM, a0 + 7.2)
     hold_glyph(L, x, y, ORG_HI, 1.0 if opt == 'P' else 0.92)
     arc_text2(L, RM - 0.5, a0 + 25, 'HOLD ' + nm, 18, ORG_PALE if opt == 'P' else ORG_HI, 'mono', bold=0.3)
@@ -147,6 +178,8 @@ def hold_live(L, a0, a1, opt):
     for q in range(int((a1 - a0) / 3.0)):
         am = a0 + 2 + q * 3.0
         L.line([ppx(C, B0 + 3, am), ppx(C, B1 - 3, am + 2.0)], (150, 76, 18), 1.6 if opt == 'P' else 1.2)
+    if SKIP_LABELS[0]:
+        return
     x, y = ppx(C, RM, a0 + 7.2)
     hold_glyph(L, x, y, ORG_HI)
     arc_text2(L, RM - 0.5, a0 + 28, 'HOLD THIS TURN', 18, (255, 240, 214), 'mono', bold=0.4, keyline=1.4)
@@ -171,7 +204,7 @@ def schedule(L, sched, sel):
         txt = '+%d %s' % (v, NAMES[k])
         if live:
             live_cell(L, cum, cum + span_, sel.get('live', 'P'))
-            a_end = live_label(L, cum, txt)
+            a_end = live_label(L, cum, txt, v)
             chevrons(L, a0, a1, a_end, sel.get('chev', 'P'))
         else:
             S.plus_cell(L, 'A' if sel.get('plus', 'P') == 'P' else 'B', cum, cum + span_, v, k)

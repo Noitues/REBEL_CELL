@@ -58,6 +58,21 @@ for g in ids:
 REP['twin_nearest_28'] = nn
 
 # ---- 3. spoke continuity
+
+# O2: label boxes of the hold cells (angle range of the HOLD text + glyph disc, radial band B0-1 .. B1+1); the spoke continuity metric is measured outside them
+def _label_boxes():
+    sch = A.J['f1']['schedule']
+    cum = 0; out = []
+    for v in sch:
+        if v == 0:
+            out.append((cum + 4.0, cum + 40.0)); cum += 40
+        else:
+            cum += 60 * v
+    return out
+LABELS = _label_boxes()
+def in_label(k, r):
+    a = (30 + 60 * k) % 360
+    return r >= 357.4 and r <= 385.0 and any(lo <= a <= hi for lo, hi in LABELS)
 im = np.asarray(load('p1_decide'), np.float32)
 INKv = np.array([12, 10, 22], np.float32)
 
@@ -84,6 +99,8 @@ for k in range(6):
     t = (math.sin(a), -math.cos(a)); nrm = (math.cos(a), math.sin(a))
     for lo, hi, nm in ((158, 162, 'r158-162'), (160, 164, 'r160-164'), (163, 166, 'r163-166 (wide ring-0 cells cover it by design)'), (353, 357, 'r353-357'), (353, 360, 'r353-360'), (357, 359, 'r357-359')):
         for r in np.arange(lo, hi + 0.01, 0.5):
+            if in_label(k, r):
+                continue
             for off in (-3.0, 0.0, 3.0):
                 x, y = C[0] + r * t[0] + off * nrm[0], C[1] + r * t[1] + off * nrm[1]
                 p = im[int(round(y)), int(round(x))]
@@ -219,8 +236,8 @@ for k in range(6):
     a = math.radians(30 + 60 * k)
     t = (math.sin(a), -math.cos(a)); nrm = (math.cos(a), math.sin(a))
     for lo, hi, nm in ((158, 162, 'r158-162'), (160, 164, 'r160-164'), (163, 166, 'r163-166'), (353, 357, 'r353-357'), (353, 360, 'r353-360')):
-        ws = [run_w(C[0] + r * t[0], C[1] + r * t[1], nrm[0], nrm[1]) for r in np.arange(lo, hi + 0.01, 0.5)]
-        spk2['%d_%s' % (k, nm)] = dict(min_run=round(min(ws), 1), breaks=int(sum(1 for w in ws if w < 6.0)))
+        ws = [run_w(C[0] + r * t[0], C[1] + r * t[1], nrm[0], nrm[1]) for r in np.arange(lo, hi + 0.01, 0.5) if not in_label(k, r)]
+        spk2['%d_%s' % (k, nm)] = dict(min_run=round(min(ws), 1) if ws else None, breaks=int(sum(1 for w in ws if w < 6.0)))
 REP['spoke_runs'] = spk2
 # ---- R3 fix-pass extra checks
 import measure_regions as MR

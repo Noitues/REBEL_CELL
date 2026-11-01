@@ -1,3 +1,15 @@
+PASS  p1 unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p1 unit 1 arc rows == landing sectors: [3, 4] == [3, 4]
 PASS  p1 unit 1 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p1 unit 1 hollow chevrons == growth to come: [0] == [0]
@@ -46,6 +58,18 @@ PASS  p1 unit 7 body chevrons: solid == hit now, hollow == growth to come: (2, 1
 PASS  p1 Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  p1 Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  p1 hero pair == sim bill (lands, through): (12, 6) == (12, 6)
+PASS  p2 unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p2 unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p2 unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p2 unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p2 unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p2 unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p2 unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p2 unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p2 unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p2 unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p2 unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p2 unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p2 unit 3 arc rows == landing sectors: [1, 2] == [1, 2]
 PASS  p2 unit 3 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p2 unit 3 hollow chevrons == growth to come: [0] == [0]
@@ -80,6 +104,18 @@ PASS  p2 unit 7 body chevrons: solid == hit now, hollow == growth to come: (2, 1
 PASS  p2 Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  p2 Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  p2 hero pair == sim bill (lands, through): (3, 0) == (3, 0)
+PASS  p2b unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p2b unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p2b unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p2b unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p2b unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p2b unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p2b unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p2b unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p2b unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p2b unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p2b unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p2b unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p2b unit 6 arc rows == landing sectors: [0, 4, 5] == [0, 4, 5]
 PASS  p2b unit 6 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p2b unit 6 hollow chevrons == growth to come: [1] == [1]
@@ -89,6 +125,18 @@ PASS  p2b unit 6 turns-until dots == forecast k: [2] == [2]
 PASS  p2b Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  p2b Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  p2b hero pair == sim bill (lands, through): (12, 6) == (12, 6)
+PASS  p3 unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p3 unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p3 unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p3 unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p3 unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p3 unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p3 unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p3 unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p3 unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p3 unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p3 unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p3 unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p3 unit 3 arc rows == landing sectors: [1, 2] == [1, 2]
 PASS  p3 unit 3 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p3 unit 3 hollow chevrons == growth to come: [0] == [0]
@@ -123,6 +171,18 @@ PASS  p3 unit 7 body chevrons: solid == hit now, hollow == growth to come: (2, 1
 PASS  p3 Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  p3 Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  p3 hero pair == sim bill (lands, through): (3, 0) == (3, 0)
+PASS  nowords unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  nowords unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  nowords unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  nowords unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  nowords unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  nowords unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  nowords unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  nowords unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  nowords unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  nowords unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  nowords unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  nowords unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  nowords unit 1 arc rows == landing sectors: [3, 4] == [3, 4]
 PASS  nowords unit 1 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  nowords unit 1 hollow chevrons == growth to come: [0] == [0]
@@ -171,6 +231,18 @@ PASS  nowords unit 7 body chevrons: solid == hit now, hollow == growth to come: 
 PASS  nowords Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  nowords Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  nowords hero pair == sim bill (lands, through): (12, 6) == (12, 6)
+PASS  p1 unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p1 unit 1 arc rows == landing sectors: [3, 4] == [3, 4]
 PASS  p1 unit 1 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p1 unit 1 hollow chevrons == growth to come: [0] == [0]
@@ -219,6 +291,18 @@ PASS  p1 unit 7 body chevrons: solid == hit now, hollow == growth to come: (2, 1
 PASS  p1 Adjuster bar segments == sim HP, lost == sim hp_after: (10, 1) == (10, 1)
 PASS  p1 Adjuster body on ring +1 sector 2 (sim): (1, 2) == (1, 2)
 PASS  p1 hero pair == sim bill (lands, through): (12, 6) == (12, 6)
+PASS  p1 unit 2 dead badge (in side) px on tag: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on tray: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on chev: 0 == 0
+PASS  p1 unit 2 dead badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tag: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on tray: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on chev: 0 == 0
+PASS  p1 unit 3 warded badge (in side) px on glyph: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tag: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on tray: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on chev: 0 == 0
+PASS  p1 unit 6 warded badge (out side) px on glyph: 0 == 0
 PASS  p1 unit 1 arc rows == landing sectors: [3, 4] == [3, 4]
 PASS  p1 unit 1 chevrons per sector (solid + hollow) == hit at landing: [3] == [3]
 PASS  p1 unit 1 hollow chevrons == growth to come: [0] == [0]

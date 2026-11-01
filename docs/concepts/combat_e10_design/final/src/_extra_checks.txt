@@ -1,0 +1,38 @@
+# ---- R3 fix-pass extra checks
+import measure_regions as MR
+bx0, by0, bx1, by1 = [int(v) for v in box]
+cornr = [math.hypot(x - C[0], y - C[1]) for x, y in ((bx0, by0), (bx1, by0), (bx0, by1), (bx1, by1))]
+# nearest point of the box to the board centre
+nx_, ny_ = min(max(C[0], bx0), bx1), min(max(C[1], by0), by1)
+Lt2 = L2(); A.E.reg_reset(); A.A2.landing_arcs(Lt2, copy.deepcopy(A.J['f1']), {}, only={hid})
+arc_h = np.asarray(Lt2.done().split()[3]) > 8
+Lt3 = L2(); A.E.reg_reset(); A.A2.landing_arcs(Lt3, copy.deepcopy(A.J['f1']), {})
+arc_all = np.asarray(Lt3.done().split()[3]) > 8
+ov_h = int(arc_h[by0:by1, bx0:bx1].sum()); ov_all = int(arc_all[by0:by1, bx0:bx1].sum())
+REP['hover_tag_r3'] = dict(box=[bx0, by0, bx1, by1], min_r_from_board_centre=round(math.hypot(nx_ - C[0], ny_ - C[1]), 1), hud_bottom_p2b=meta['p2b']['hud_bottom'], overlap_px_hovered_arc=ov_h, overlap_px_any_landing_arc=ov_all, overlap_px_board_disc_r516=int(((np.hypot(np.arange(bx0, bx1)[None, :] - C[0], np.arange(by0, by1)[:, None] - C[1])) <= 516).sum()))
+# ---- board identical in all five states (shadow / ground): pixels with r in 516..700 from C, x < 1000, outside the nameplate box, the p2b tag box and the p2b leader
+yy_, xx_ = np.mgrid[0:1080, 0:1920]; rho_ = np.hypot(xx_ - C[0], yy_ - C[1])
+names5 = ('p1_decide', 'p2_preview', 'p2b_hover', 'p3_resolve', 'p1_nowords')
+ims5 = {n: np.asarray(load(n), np.float32) for n in names5}
+nx0, ny0, nw_, nh_ = [int(v) for v in info['name']]
+msk = (rho_ >= 516) & (rho_ < 700) & (xx_ < 1000)
+msk &= ~((xx_ >= nx0 - 30) & (xx_ <= nx0 + nw_ + 30) & (yy_ >= ny0 - 30) & (yy_ <= ny0 + nh_ + 30))
+msk &= ~((xx_ >= 840) & (yy_ >= 470) & (yy_ <= 620))      # the p2b leader's exit corridor toward the tag
+sd = {}
+for n in names5[1:]:
+    dd_ = np.abs(ims5[n] - ims5['p1_decide']).sum(-1)
+    sd[n] = dict(px_diff_gt6=int(((dd_ > 6) & msk).sum()), mean_signed_lum_diff=round(float((ims5[n] - ims5['p1_decide']).mean(-1)[msk].mean()), 3))
+REP['board_outer_ground_vs_p1'] = sd
+# ---- region squint on every plate (room hull vs board disc)
+REP['region_squint'] = {n: MR.measure(load(n)) for n in names5}
+for nm in ('srv', 'gh'):
+    REP['region_squint']['p1_decide_' + nm] = MR.measure(load('p1_decide_' + nm))
+REP['region_squint']['e10_approved_p1'] = MR.measure(Image.open(E10D + 'p1_decide.png').convert('RGB'))
+# nameplate squint spot
+sq_ = MR.squint(load('p1_decide'))
+REP['nameplate_squint'] = dict(box=info['name'], centre=round(float(sq_[int((ny0 + nh_ / 2) // 16), int((nx0 + nw_ / 2) // 16)]), 3), peak=round(float(sq_[ny0 // 16:(ny0 + nh_) // 16 + 1, nx0 // 16:(nx0 + nw_) // 16 + 1].max()), 3),
+                               send_it_peak=round(float(sq_[870 // 16:(870 + 178) // 16, 1625 // 16:(1625 + 297) // 16].max()), 3), hand_peak=round(float(sq_[832 // 16:1080 // 16, 1010 // 16:1625 // 16].max()), 3))
+# ---- jammer glyph arc stroke at 20 px
+gm = AG.mask('jammer')
+import PIL.Image as _I
+REP['jammer_stroke'] = 'arc stroke 52 mask units = %.2f px at 20 px (was 40 units = %.2f px)' % (52 / 512 * 20, 40 / 512 * 20)

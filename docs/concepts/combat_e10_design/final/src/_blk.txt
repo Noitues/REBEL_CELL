@@ -1,0 +1,7 @@
+p1 = load('p2_preview')       # p2 has soak on the SHIELD slice (mark, break X, pip) and the SOAK chips
+s320 = p1.resize((320, 180), Image.LANCZOS)
+sh = Image.new('RGB', (1920, 700), (10, 12, 20))
+sh.paste(crop4(s320, (92, 66, 126, 96), 10), (0, 30))                                     # shield slice at 320 px, 10x nearest
+sh.paste(p1.crop((552, 410, 712, 560)).resize((480, 450), Image.LANCZOS), (360, 30))     # the same at 1920, 3x
+sh.paste(p1.crop((1085, 322, 1495, 362)).resize((1230, 120), Image.LANCZOS), (700, 30))  # BRACE + SOAK ONLY row at 1920, 3x
+sh.paste(crop4(s320, (180, 52, 250, 66), 10), (700, 170))                                 # that row at 320 px, 10x nearest

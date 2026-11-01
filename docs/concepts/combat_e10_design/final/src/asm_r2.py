@@ -167,7 +167,9 @@ def render(beat='p1', room=None, check=True):
     L = L2()
     sel['hp_ring'](L, f['hp'], f['pv']['hp_after'], f['maxhp'])
     wc2.spokes(L)                                   # r44-162; wr2 gutters take over at r161 (Y15)
+    S2.SKIP_LABELS[0] = True                       # O2: hold glyphs + text are drawn after the spoke layer
     S2.schedule(L, f['schedule'], {})
+    S2.SKIP_LABELS[0] = False
     S2.digits(L, 'P')
     S2.needle(L, 'P')
     # --- 3. ring cells
@@ -224,6 +226,9 @@ def render(beat='p1', room=None, check=True):
         a_ = 60 * k_ + 30
         Lsp.line([ppx(C, G2.BZ0 - 0.5, a_), ppx(C, G2.BZ1 + 0.5, a_)], INK, 8)
     bg.alpha_composite(Lsp.done())
+    Llb = L2()                   # O2: the schedule labels (HOLD NEXT / HOLD THEN text + hold glyphs) above the spoke layer
+    S2.labels(Llb, f['schedule'], {})
+    bg.alpha_composite(Llb.done())
     if hover:
         d = Ld.done()
         d.putalpha(d.split()[3].point(lambda v: int(v * DIM_K)))
@@ -251,6 +256,9 @@ def render(beat='p1', room=None, check=True):
             INFO['hover_tag_box'] = H2.hover_tag_nowords(L3, f)
         bg.alpha_composite(L3.done())
     if check:
+        for e_ in AU.BADGE_LOG:        # O1: badge box vs ring tags, HP tray, chevron column, glyph = 0 px
+            for k_ in ('tag', 'tray', 'chev', 'glyph'):
+                B10.AD('%s unit %d %s badge (%s side) px on %s' % (beat, e_['uid'], e_['badge'], e_['side'], k_), e_['hits'][k_], 0)
         try:
             B10.draw_asserts(beat, f)
         except AssertionError:

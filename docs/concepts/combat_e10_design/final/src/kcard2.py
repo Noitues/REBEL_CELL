@@ -169,9 +169,9 @@ def icon_geom(ctx):
 def icon_draw(cv, ctx):
     cx, cy, p = icon_geom(ctx)
     x = ctx['c'].get('x')
-    if x and not ctx['nw']:
+    if x:
         sx0, sx1 = ctx['R']['art'][0] + 12, ctx['R']['art'][2] - 12
-        tw = cv.tw('×' + x, 34)
+        tw = cv.tw('×' + x, 34) if not ctx['nw'] else (int(x) - 1) * 8 + 4 + 2        # O4: nowords = a tally of x strokes
         tot = p + 2 + tw
         left = (sx0 + sx1) / 2 - tot / 2
         ctx['mult_xy'] = (left + p + 2, cy + 3)
@@ -187,7 +187,12 @@ def icon_draw(cv, ctx):
 
 def mult_draw(cv, ctx):
     x = ctx['c'].get('x')
-    if not x or ctx['nw']:
+    if not x:
+        return
+    if ctx['nw']:      # O4: the multiplier as a white tally (same form as the loud tab's 1-stroke tally: 4 px white bar, 1 px INK keyline, r 1.5)
+        mx, my = ctx['mult_xy']
+        for i in range(int(x)):
+            cv.rect([mx + 1 + i * 8, my - 11, mx + 5 + i * 8, my + 9], fill=(255, 255, 255), outline=INK_, w=1.0, r=1.5)
         return
     px = 34 if ctx['V']['mult'] == 'P' else 38
     cv.text(ctx['mult_xy'], '×' + x, px, 'anton', fill=(255, 255, 255), anchor='lm', stroke=3)

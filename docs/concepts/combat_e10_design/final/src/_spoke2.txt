@@ -1,0 +1,20 @@
+# ---- R3 spoke continuity (run-width metric: contiguous INK run through the spoke axis, tol 40; a break = run < 6 px)
+def run_w(x, y, nx, ny, lim=10.0, tol=40):
+    w = 0.0
+    for sgn in (1, -1):
+        d = 0.0
+        while d < lim:
+            p = im[int(round(y + sgn * ny * d)), int(round(x + sgn * nx * d))]
+            if np.abs(p - INKv).sum() > tol:
+                break
+            d += 0.5
+        w += d
+    return w
+spk2 = {}
+for k in range(6):
+    a = math.radians(30 + 60 * k)
+    t = (math.sin(a), -math.cos(a)); nrm = (math.cos(a), math.sin(a))
+    for lo, hi, nm in ((158, 162, 'r158-162'), (160, 164, 'r160-164'), (163, 166, 'r163-166'), (353, 357, 'r353-357'), (353, 360, 'r353-360')):
+        ws = [run_w(C[0] + r * t[0], C[1] + r * t[1], nrm[0], nrm[1]) for r in np.arange(lo, hi + 0.01, 0.5)]
+        spk2['%d_%s' % (k, nm)] = dict(min_run=round(min(ws), 1), breaks=int(sum(1 for w in ws if w < 6.0)))
+REP['spoke_runs'] = spk2
