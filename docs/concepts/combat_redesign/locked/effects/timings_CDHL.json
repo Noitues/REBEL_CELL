@@ -1,0 +1,3040 @@
+{
+ "_doc": "Effects C/D/H/L (+ P shield_block, comparison only) on the locked final board. Times in ms at 60 fps. in/hold/out from IHO; phases are [start, end] ms; flash = measured (see NOTES_CDHL.md, method).",
+ "effects": {
+  "fx_grow": {
+   "family": "C",
+   "title": "A unit grows one more hit",
+   "variant_of": null,
+   "tier": "lower",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 650,
+   "in_ms": 250,
+   "hold_ms": 67,
+   "out_ms": 333,
+   "easing_summary": "in ease-in-out cubic wipe; hold = 4-frame flat flash; out ease-in-out open + ease-out ping",
+   "easing": {
+    "wipe": "ease-in-out cubic",
+    "flash": "step (4 frames)",
+    "open": "ease-in-out cubic",
+    "ping": "ease-out cubic"
+   },
+   "phases": {
+    "wipe": [
+     0,
+     250
+    ],
+    "flash": [
+     250,
+     317
+    ],
+    "open": [
+     317,
+     460
+    ],
+    "ping": [
+     300,
+     560
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: two solid chevrons"
+    },
+    {
+     "ms": 120,
+     "caption": "shutter wipes the cell"
+    },
+    {
+     "ms": 280,
+     "caption": "flat flash, the new hollow chevron"
+    },
+    {
+     "ms": 380,
+     "caption": "shutter opens, ring ping"
+    },
+    {
+     "ms": 650,
+     "caption": "settle: hollow growth chevron"
+    }
+   ],
+   "reduce_motion": "No shutter or ping: the hollow chevron fades in over 200 ms (ease-in-out).",
+   "source": "f2 Packet 5 (ring +1, sector 0); post-state rendered with one more landing hit (land_hit = hit + 1), which the board draws as the hollow growth chevron",
+   "board_crop": [
+    360,
+    170,
+    715,
+    335
+   ],
+   "base": {
+    "pre": "p3",
+    "post": "p3grow"
+   },
+   "flash": {
+    "neutral": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 18874,
+     "crop_px": 58575,
+     "footprint_share": 0.322,
+     "peak_up_share_footprint": 0.511,
+     "peak_down_share_footprint": 0.882,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.165,
+     "peak_down_share_crop": 0.284,
+     "waves_crop": 1,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.105,
+      0.457
+     ],
+     "mean_lum_max_step": 0.172,
+     "mean_lum_crop_max_step": 0.055,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 519,
+     "crop_px": 58575,
+     "footprint_share": 0.009,
+     "peak_up_share_footprint": 0.198,
+     "peak_down_share_footprint": 0.135,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.002,
+     "peak_down_share_crop": 0.001,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.12,
+      0.143
+     ],
+     "mean_lum_max_step": 0.005,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 19179,
+     "crop_px": 58575,
+     "footprint_share": 0.327,
+     "peak_up_share_footprint": 0.514,
+     "peak_down_share_footprint": 0.95,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.168,
+     "peak_down_share_crop": 0.311,
+     "waves_crop": 1,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.119,
+      0.646
+     ],
+     "mean_lum_max_step": 0.252,
+     "mean_lum_crop_max_step": 0.082,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 18887,
+     "crop_px": 58575,
+     "footprint_share": 0.322,
+     "peak_up_share_footprint": 0.514,
+     "peak_down_share_footprint": 0.89,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.166,
+     "peak_down_share_crop": 0.287,
+     "waves_crop": 1,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.109,
+      0.547
+     ],
+     "mean_lum_max_step": 0.209,
+     "mean_lum_crop_max_step": 0.067,
+     "passes": true
+    }
+   }
+  },
+  "fx_ward_on": {
+   "family": "C",
+   "title": "Ward applies to units in the Adjuster sector",
+   "variant_of": null,
+   "tier": "lower",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 750,
+   "in_ms": 450,
+   "hold_ms": 67,
+   "out_ms": 233,
+   "easing_summary": "in sine pulse + ease-in-out scan; hold = 4-frame gold flash; out ease-out ping",
+   "easing": {
+    "pulse": "sine",
+    "wipe": "ease-in-out cubic",
+    "flash": "step (4 frames, 42 %)",
+    "ping": "ease-out cubic"
+   },
+   "phases": {
+    "pulse": [
+     0,
+     220
+    ],
+    "wipe": [
+     150,
+     450
+    ],
+    "flash": [
+     450,
+     517
+    ],
+    "ping": [
+     470,
+     700
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 120,
+     "caption": "the Adjuster edge pulses gold"
+    },
+    {
+     "ms": 245,
+     "caption": "gold scan wipes the unit cell"
+    },
+    {
+     "ms": 480,
+     "caption": "flat gold flash, lozenge"
+    },
+    {
+     "ms": 750,
+     "caption": "settle: unit warded"
+    }
+   ],
+   "reduce_motion": "No pulse, scan or flash: the lozenge fades in over 200 ms.",
+   "source": "f2 Packet 6 (ring +2, warded) next to the Adjuster (ring +1, sector 2); pre-state rendered unwarded",
+   "board_crop": [
+    690,
+    470,
+    918,
+    860
+   ],
+   "base": {
+    "pre": "p3alt",
+    "post": "p3"
+   },
+   "flash": {
+    "neutral": {
+     "frames": 64,
+     "fps": 60,
+     "footprint_px": 39312,
+     "crop_px": 88920,
+     "footprint_share": 0.442,
+     "peak_up_share_footprint": 0.52,
+     "peak_down_share_footprint": 0.501,
+     "waves_footprint": 4,
+     "flashes_footprint": 2,
+     "max_flashes_per_s_footprint": 2,
+     "peak_up_share_crop": 0.23,
+     "peak_down_share_crop": 0.222,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.094,
+      0.178
+     ],
+     "mean_lum_max_step": 0.062,
+     "mean_lum_crop_max_step": 0.027,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 64,
+     "fps": 60,
+     "footprint_px": 257,
+     "crop_px": 88920,
+     "footprint_share": 0.003,
+     "peak_up_share_footprint": 0.471,
+     "peak_down_share_footprint": 0.101,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.001,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.078,
+      0.256
+     ],
+     "mean_lum_max_step": 0.03,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 64,
+     "fps": 60,
+     "footprint_px": 39247,
+     "crop_px": 88920,
+     "footprint_share": 0.441,
+     "peak_up_share_footprint": 0.518,
+     "peak_down_share_footprint": 0.494,
+     "waves_footprint": 4,
+     "flashes_footprint": 2,
+     "max_flashes_per_s_footprint": 2,
+     "peak_up_share_crop": 0.229,
+     "peak_down_share_crop": 0.218,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.101,
+      0.184
+     ],
+     "mean_lum_max_step": 0.061,
+     "mean_lum_crop_max_step": 0.027,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 64,
+     "fps": 60,
+     "footprint_px": 39313,
+     "crop_px": 88920,
+     "footprint_share": 0.442,
+     "peak_up_share_footprint": 0.522,
+     "peak_down_share_footprint": 0.502,
+     "waves_footprint": 4,
+     "flashes_footprint": 2,
+     "max_flashes_per_s_footprint": 2,
+     "peak_up_share_crop": 0.231,
+     "peak_down_share_crop": 0.222,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.1,
+      0.185
+     ],
+     "mean_lum_max_step": 0.064,
+     "mean_lum_crop_max_step": 0.028,
+     "passes": true
+    }
+   }
+  },
+  "fx_gun_hit": {
+   "family": "D",
+   "title": "Gun shot hits a unit",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 600,
+   "in_ms": 170,
+   "hold_ms": 160,
+   "out_ms": 270,
+   "easing_summary": "in ease-out tracer + ease-out-back burst; out linear fade",
+   "easing": {
+    "tracer": "ease-out cubic",
+    "burst": "ease-out back (overshoot)",
+    "speed_lines": "sine in/out",
+    "shards": "ease-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "tracer": [
+     0,
+     100
+    ],
+    "burst": [
+     100,
+     170
+    ],
+    "speed_lines": [
+     100,
+     280
+    ],
+    "shards": [
+     120,
+     460
+    ],
+    "tick": [
+     170,
+     260
+    ],
+    "out": [
+     300,
+     520
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 60,
+     "caption": "tracer paints"
+    },
+    {
+     "ms": 140,
+     "caption": "burst opens"
+    },
+    {
+     "ms": 210,
+     "caption": "peak: starburst, speed lines, shards"
+    },
+    {
+     "ms": 400,
+     "caption": "shards out, tick gone"
+    },
+    {
+     "ms": 600,
+     "caption": "settle: tick gone"
+    }
+   ],
+   "reduce_motion": "Tracer and burst appear at full size for 300 ms, then fade 200 ms; no speed lines, no shards; the tick goes gone on the same frame.",
+   "source": "f2 guns: sector 0 BURST, 2 shots hit Worm 2 (shot 1 shown)",
+   "board_crop": [
+    270,
+    250,
+    600,
+    450
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 4125,
+     "crop_px": 66000,
+     "footprint_share": 0.062,
+     "peak_up_share_footprint": 0.489,
+     "peak_down_share_footprint": 0.499,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.031,
+     "peak_down_share_crop": 0.031,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.077,
+      0.312
+     ],
+     "mean_lum_max_step": 0.079,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 1128,
+     "crop_px": 66000,
+     "footprint_share": 0.017,
+     "peak_up_share_footprint": 0.24,
+     "peak_down_share_footprint": 0.533,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.004,
+     "peak_down_share_crop": 0.009,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.145,
+      0.334
+     ],
+     "mean_lum_max_step": 0.09,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "solace": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 4131,
+     "crop_px": 66000,
+     "footprint_share": 0.063,
+     "peak_up_share_footprint": 0.487,
+     "peak_down_share_footprint": 0.497,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.03,
+     "peak_down_share_crop": 0.031,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.081,
+      0.313
+     ],
+     "mean_lum_max_step": 0.078,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 4126,
+     "crop_px": 66000,
+     "footprint_share": 0.063,
+     "peak_up_share_footprint": 0.487,
+     "peak_down_share_footprint": 0.497,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.03,
+     "peak_down_share_crop": 0.031,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.076,
+      0.312
+     ],
+     "mean_lum_max_step": 0.079,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    }
+   }
+  },
+  "fx_strike": {
+   "family": "D",
+   "title": "Strike card hits for 2",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 700,
+   "in_ms": 200,
+   "hold_ms": 180,
+   "out_ms": 320,
+   "easing_summary": "in ease-out slash + ease-out-back burst; out linear",
+   "easing": {
+    "slash": "ease-out cubic",
+    "burst": "ease-out back",
+    "speed_lines": "sine",
+    "shards": "ease-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "slash": [
+     0,
+     120
+    ],
+    "burst": [
+     120,
+     200
+    ],
+    "speed_lines": [
+     120,
+     330
+    ],
+    "shards": [
+     130,
+     520
+    ],
+    "ticks": [
+     200,
+     300
+    ],
+    "out": [
+     380,
+     640
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 70,
+     "caption": "the slash crosses the cell"
+    },
+    {
+     "ms": 160,
+     "caption": "peak: big starburst, speed lines"
+    },
+    {
+     "ms": 320,
+     "caption": "two ticks gone"
+    },
+    {
+     "ms": 700,
+     "caption": "settle"
+    }
+   ],
+   "reduce_motion": "Slash and burst shown full at once for 300 ms, fade 200 ms; no speed lines or shards.",
+   "source": "latent (Strike is not in this hand): Strike (2) on Packet 7, ring +2 sector 5",
+   "board_crop": [
+    110,
+    300,
+    380,
+    560
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 8746,
+     "crop_px": 70200,
+     "footprint_share": 0.125,
+     "peak_up_share_footprint": 0.474,
+     "peak_down_share_footprint": 0.392,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.059,
+     "peak_down_share_crop": 0.049,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.062,
+      0.329
+     ],
+     "mean_lum_max_step": 0.075,
+     "mean_lum_crop_max_step": 0.009,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 3016,
+     "crop_px": 70200,
+     "footprint_share": 0.043,
+     "peak_up_share_footprint": 0.335,
+     "peak_down_share_footprint": 0.454,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.014,
+     "peak_down_share_crop": 0.02,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.053,
+      0.352
+     ],
+     "mean_lum_max_step": 0.146,
+     "mean_lum_crop_max_step": 0.006,
+     "passes": true
+    },
+    "solace": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 8827,
+     "crop_px": 70200,
+     "footprint_share": 0.126,
+     "peak_up_share_footprint": 0.468,
+     "peak_down_share_footprint": 0.392,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.059,
+     "peak_down_share_crop": 0.049,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.074,
+      0.333
+     ],
+     "mean_lum_max_step": 0.073,
+     "mean_lum_crop_max_step": 0.009,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 8686,
+     "crop_px": 70200,
+     "footprint_share": 0.124,
+     "peak_up_share_footprint": 0.476,
+     "peak_down_share_footprint": 0.398,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.059,
+     "peak_down_share_crop": 0.049,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.064,
+      0.331
+     ],
+     "mean_lum_max_step": 0.075,
+     "mean_lum_crop_max_step": 0.009,
+     "passes": true
+    }
+   }
+  },
+  "fx_trigger_hit": {
+   "family": "D",
+   "title": "Trigger hits units along its path",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell-wide, one burst per struck cell",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 900,
+   "in_ms": 420,
+   "hold_ms": 230,
+   "out_ms": 250,
+   "easing_summary": "in linear ignition front to back; bursts ease-out back; out linear",
+   "easing": {
+    "ignite": "linear (front to back)",
+    "bursts": "ease-out back",
+    "out": "linear"
+   },
+   "phases": {
+    "ignite": [
+     0,
+     420
+    ],
+    "burst_s3": [
+     230,
+     560
+    ],
+    "burst_s4": [
+     420,
+     750
+    ],
+    "route_out": [
+     650,
+     900
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: pencil route"
+    },
+    {
+     "ms": 200,
+     "caption": "pencil burns to paint"
+    },
+    {
+     "ms": 260,
+     "caption": "first starburst (sector 3)"
+    },
+    {
+     "ms": 450,
+     "caption": "second starburst (sector 4)"
+    },
+    {
+     "ms": 900,
+     "caption": "settle: painted marks"
+    }
+   ],
+   "reduce_motion": "Route shown painted at once; the two bursts appear together for 300 ms, no speed lines.",
+   "source": "f2 trigs: Trigger resolves Payload 4, its hits land on Packet 1 in sectors 3 and 4 (tlog trig_unit)",
+   "board_crop": [
+    240,
+    600,
+    720,
+    900
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 4861,
+     "crop_px": 144000,
+     "footprint_share": 0.034,
+     "peak_up_share_footprint": 0.286,
+     "peak_down_share_footprint": 0.206,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.01,
+     "peak_down_share_crop": 0.007,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.129,
+      0.284
+     ],
+     "mean_lum_max_step": 0.043,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 2284,
+     "crop_px": 144000,
+     "footprint_share": 0.016,
+     "peak_up_share_footprint": 0.119,
+     "peak_down_share_footprint": 0.447,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.002,
+     "peak_down_share_crop": 0.007,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.144,
+      0.25
+     ],
+     "mean_lum_max_step": 0.016,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 4861,
+     "crop_px": 144000,
+     "footprint_share": 0.034,
+     "peak_up_share_footprint": 0.286,
+     "peak_down_share_footprint": 0.206,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.01,
+     "peak_down_share_crop": 0.007,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.129,
+      0.284
+     ],
+     "mean_lum_max_step": 0.043,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 4861,
+     "crop_px": 144000,
+     "footprint_share": 0.034,
+     "peak_up_share_footprint": 0.286,
+     "peak_down_share_footprint": 0.206,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.01,
+     "peak_down_share_crop": 0.007,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.129,
+      0.284
+     ],
+     "mean_lum_max_step": 0.043,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    }
+   }
+  },
+  "fx_kill": {
+   "family": "D",
+   "title": "A unit dies",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 600,
+   "in_ms": 110,
+   "hold_ms": 220,
+   "out_ms": 270,
+   "easing_summary": "in 2-frame step flare + ease-out-back burst; out linear, cell empties ease-in-out",
+   "easing": {
+    "flare": "step (2 frames, 70 %)",
+    "burst": "ease-out back",
+    "shards": "ease-out cubic",
+    "empty": "ease-in-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "flare": [
+     17,
+     50
+    ],
+    "burst": [
+     34,
+     110
+    ],
+    "speed_lines": [
+     34,
+     260
+    ],
+    "shards": [
+     60,
+     560
+    ],
+    "empty": [
+     200,
+     420
+    ],
+    "out": [
+     330,
+     560
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: lost ticks"
+    },
+    {
+     "ms": 33,
+     "caption": "flare: 2 frames on the cell"
+    },
+    {
+     "ms": 120,
+     "caption": "KO burst, speed lines"
+    },
+    {
+     "ms": 300,
+     "caption": "shards, cell empties"
+    },
+    {
+     "ms": 600,
+     "caption": "settle: empty cell"
+    }
+   ],
+   "reduce_motion": "No flare: a 25 % white tint holds on the cell for 200 ms while the burst shows; the cell empties with a 220 ms fade.",
+   "source": "f2: Worm 2 dies to the sector 0 guns (fate dies); post-state rendered with Worm 2 and its shots removed (empty cell)",
+   "board_crop": [
+    195,
+    240,
+    690,
+    575
+   ],
+   "base": {
+    "pre": "p3",
+    "post": "p3kill"
+   },
+   "flash": {
+    "neutral": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 33871,
+     "crop_px": 165825,
+     "footprint_share": 0.204,
+     "peak_up_share_footprint": 0.921,
+     "peak_down_share_footprint": 0.869,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.188,
+     "peak_down_share_crop": 0.177,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.054,
+      0.472
+     ],
+     "mean_lum_max_step": 0.398,
+     "mean_lum_crop_max_step": 0.081,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 28016,
+     "crop_px": 165825,
+     "footprint_share": 0.169,
+     "peak_up_share_footprint": 0.001,
+     "peak_down_share_footprint": 0.218,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.037,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.05,
+      0.163
+     ],
+     "mean_lum_max_step": 0.09,
+     "mean_lum_crop_max_step": 0.015,
+     "passes": true
+    },
+    "solace": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 33941,
+     "crop_px": 165825,
+     "footprint_share": 0.205,
+     "peak_up_share_footprint": 0.92,
+     "peak_down_share_footprint": 0.868,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.188,
+     "peak_down_share_crop": 0.178,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.064,
+      0.477
+     ],
+     "mean_lum_max_step": 0.395,
+     "mean_lum_crop_max_step": 0.081,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 33872,
+     "crop_px": 165825,
+     "footprint_share": 0.204,
+     "peak_up_share_footprint": 0.921,
+     "peak_down_share_footprint": 0.869,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.188,
+     "peak_down_share_crop": 0.177,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.059,
+      0.473
+     ],
+     "mean_lum_max_step": 0.398,
+     "mean_lum_crop_max_step": 0.081,
+     "passes": true
+    }
+   }
+  },
+  "fx_ricochet": {
+   "family": "D",
+   "title": "Shot glances off armour (steel)",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 500,
+   "in_ms": 100,
+   "hold_ms": 150,
+   "out_ms": 250,
+   "easing_summary": "in ease-out tracer; glint sine; out linear",
+   "easing": {
+    "tracer": "ease-out cubic",
+    "glint": "sine",
+    "sparks": "ease-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "tracer": [
+     0,
+     100
+    ],
+    "glint": [
+     100,
+     220
+    ],
+    "sparks": [
+     100,
+     360
+    ],
+    "out": [
+     250,
+     420
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: armour cap"
+    },
+    {
+     "ms": 60,
+     "caption": "tracer"
+    },
+    {
+     "ms": 130,
+     "caption": "tracer meets the cap, glint"
+    },
+    {
+     "ms": 230,
+     "caption": "sparks fan away"
+    },
+    {
+     "ms": 500,
+     "caption": "settle: HP unchanged"
+    }
+   ],
+   "reduce_motion": "Tracer and glint shown still for 300 ms; no sparks.",
+   "source": "latent (no armoured unit in E10): stand-in steel cap drawn on Packet 5",
+   "board_crop": [
+    340,
+    190,
+    600,
+    380
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1489,
+     "crop_px": 49400,
+     "footprint_share": 0.03,
+     "peak_up_share_footprint": 0.453,
+     "peak_down_share_footprint": 0.418,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.014,
+     "peak_down_share_crop": 0.013,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.076,
+      0.244
+     ],
+     "mean_lum_max_step": 0.042,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 431,
+     "crop_px": 49400,
+     "footprint_share": 0.009,
+     "peak_up_share_footprint": 0.128,
+     "peak_down_share_footprint": 0.659,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.001,
+     "peak_down_share_crop": 0.006,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.062,
+      0.187
+     ],
+     "mean_lum_max_step": 0.029,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1491,
+     "crop_px": 49400,
+     "footprint_share": 0.03,
+     "peak_up_share_footprint": 0.453,
+     "peak_down_share_footprint": 0.417,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.014,
+     "peak_down_share_crop": 0.013,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.076,
+      0.244
+     ],
+     "mean_lum_max_step": 0.042,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1490,
+     "crop_px": 49400,
+     "footprint_share": 0.03,
+     "peak_up_share_footprint": 0.453,
+     "peak_down_share_footprint": 0.417,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.014,
+     "peak_down_share_crop": 0.013,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.076,
+      0.244
+     ],
+     "mean_lum_max_step": 0.042,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    }
+   }
+  },
+  "fx_ricochet_gold": {
+   "family": "D",
+   "title": "Shot weakened by the ward (gold)",
+   "variant_of": "fx_ricochet",
+   "tier": "core",
+   "scope": "cell-wide",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 500,
+   "in_ms": 100,
+   "hold_ms": 220,
+   "out_ms": 200,
+   "easing_summary": "in ease-out tracer; streak ease-out; out linear",
+   "easing": {
+    "tracer": "ease-out cubic",
+    "streak": "ease-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "tracer": [
+     0,
+     100
+    ],
+    "streak": [
+     100,
+     320
+    ],
+    "ring": [
+     100,
+     220
+    ],
+    "out": [
+     260,
+     520
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 60,
+     "caption": "tracer toward the ward"
+    },
+    {
+     "ms": 160,
+     "caption": "gold streak glances"
+    },
+    {
+     "ms": 300,
+     "caption": "streak at full length"
+    },
+    {
+     "ms": 500,
+     "caption": "settle: no HP lost"
+    }
+   ],
+   "reduce_motion": "Tracer and the full streak shown still for 300 ms.",
+   "source": "f2 guns: sector 4 BURST, 2 shots warded by Packet 6 (result ward, h 0)",
+   "board_crop": [
+    420,
+    730,
+    650,
+    945
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1884,
+     "crop_px": 49450,
+     "footprint_share": 0.038,
+     "peak_up_share_footprint": 0.405,
+     "peak_down_share_footprint": 0.379,
+     "waves_footprint": 3,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.015,
+     "peak_down_share_crop": 0.014,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.12,
+      0.192
+     ],
+     "mean_lum_max_step": 0.058,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1290,
+     "crop_px": 49450,
+     "footprint_share": 0.026,
+     "peak_up_share_footprint": 0.325,
+     "peak_down_share_footprint": 0.264,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.008,
+     "peak_down_share_crop": 0.007,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.158,
+      0.219
+     ],
+     "mean_lum_max_step": 0.022,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "solace": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1886,
+     "crop_px": 49450,
+     "footprint_share": 0.038,
+     "peak_up_share_footprint": 0.402,
+     "peak_down_share_footprint": 0.379,
+     "waves_footprint": 3,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.015,
+     "peak_down_share_crop": 0.014,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.121,
+      0.194
+     ],
+     "mean_lum_max_step": 0.058,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 1900,
+     "crop_px": 49450,
+     "footprint_share": 0.038,
+     "peak_up_share_footprint": 0.398,
+     "peak_down_share_footprint": 0.376,
+     "waves_footprint": 3,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.015,
+     "peak_down_share_crop": 0.014,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.123,
+      0.195
+     ],
+     "mean_lum_max_step": 0.058,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    }
+   }
+  },
+  "fx_firewall_burn": {
+   "family": "D",
+   "title": "Firewall burns a sector",
+   "variant_of": null,
+   "tier": "lower",
+   "scope": "cell-wide, one band per ring",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 1000,
+   "in_ms": 460,
+   "hold_ms": 240,
+   "out_ms": 300,
+   "easing_summary": "in ease-out rise, 130 ms ring stagger; hold with a 7 Hz height flicker; out linear",
+   "easing": {
+    "rise": "ease-out cubic",
+    "flicker": "sine 9 Hz on tongue height (no luminance swing)",
+    "embers": "linear"
+   },
+   "phases": {
+    "ring0": [
+     0,
+     200
+    ],
+    "ring1": [
+     130,
+     330
+    ],
+    "ring2": [
+     260,
+     460
+    ],
+    "ticks": [
+     330,
+     330
+    ],
+    "embers": [
+     700,
+     1000
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 100,
+     "caption": "flames catch in ring NOW"
+    },
+    {
+     "ms": 260,
+     "caption": "band steps out to ring +1"
+    },
+    {
+     "ms": 520,
+     "caption": "peak: a band per ring, 60 % deep"
+    },
+    {
+     "ms": 850,
+     "caption": "embers fade, ticks gone"
+    }
+   ],
+   "reduce_motion": "All three bands appear at full height at once, no flicker, hold 500 ms, fade 300 ms.",
+   "source": "latent (Firewall is not in this hand): Firewall (2) on sector 0; Packet 5 loses its 2 ticks",
+   "board_crop": [
+    330,
+    110,
+    745,
+    365
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 79,
+     "fps": 60,
+     "footprint_px": 17941,
+     "crop_px": 105825,
+     "footprint_share": 0.17,
+     "peak_up_share_footprint": 0.388,
+     "peak_down_share_footprint": 0.757,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.066,
+     "peak_down_share_crop": 0.128,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.052,
+      0.292
+     ],
+     "mean_lum_max_step": 0.031,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 79,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 105825,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 79,
+     "fps": 60,
+     "footprint_px": 18080,
+     "crop_px": 105825,
+     "footprint_share": 0.171,
+     "peak_up_share_footprint": 0.384,
+     "peak_down_share_footprint": 0.744,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.066,
+     "peak_down_share_crop": 0.127,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.062,
+      0.291
+     ],
+     "mean_lum_max_step": 0.03,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 79,
+     "fps": 60,
+     "footprint_px": 18024,
+     "crop_px": 105825,
+     "footprint_share": 0.17,
+     "peak_up_share_footprint": 0.386,
+     "peak_down_share_footprint": 0.7,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.066,
+     "peak_down_share_crop": 0.119,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.057,
+      0.291
+     ],
+     "mean_lum_max_step": 0.029,
+     "mean_lum_crop_max_step": 0.005,
+     "passes": true
+    }
+   }
+  },
+  "fx_hit_land": {
+   "family": "H",
+   "title": "Landing hit, one slice pip lost",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "slice-wide (outer half)",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 700,
+   "in_ms": 160,
+   "hold_ms": 170,
+   "out_ms": 370,
+   "easing_summary": "in ease-in chevrons, 2-frame frame flash, ease-out flood; out linear",
+   "easing": {
+    "chevrons": "ease-in cubic",
+    "frame_flash": "step (2 frames)",
+    "flood": "ease-out cubic",
+    "out": "linear"
+   },
+   "phases": {
+    "chevrons": [
+     0,
+     100
+    ],
+    "frame_flash": [
+     100,
+     134
+    ],
+    "flood": [
+     100,
+     260
+    ],
+    "krackle": [
+     120,
+     520
+    ],
+    "flood_out": [
+     330,
+     620
+    ],
+    "pip": [
+     260,
+     260
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: chevrons land"
+    },
+    {
+     "ms": 117,
+     "caption": "impact: frame flashes HARM"
+    },
+    {
+     "ms": 200,
+     "caption": "flood rolls in, krackle"
+    },
+    {
+     "ms": 400,
+     "caption": "flood fades, pip gone"
+    },
+    {
+     "ms": 700,
+     "caption": "settle: pip gone"
+    }
+   ],
+   "reduce_motion": "No chevron travel or krackle: the flood holds at 80 % density for 300 ms and fades; the pip goes dark on the same frame.",
+   "source": "f1 Packet 1 lands on sector 3 SHIELD (3 hits, 1 pip through)",
+   "board_crop": [
+    405,
+    590,
+    670,
+    790
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 8735,
+     "crop_px": 53000,
+     "footprint_share": 0.165,
+     "peak_up_share_footprint": 0.546,
+     "peak_down_share_footprint": 0.396,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.09,
+     "peak_down_share_crop": 0.065,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.136,
+      0.193
+     ],
+     "mean_lum_max_step": 0.043,
+     "mean_lum_crop_max_step": 0.007,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 579,
+     "crop_px": 53000,
+     "footprint_share": 0.011,
+     "peak_up_share_footprint": 0.316,
+     "peak_down_share_footprint": 0.42,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.003,
+     "peak_down_share_crop": 0.005,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.115,
+      0.172
+     ],
+     "mean_lum_max_step": 0.057,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    }
+   }
+  },
+  "fx_hit_land_worm": {
+   "family": "H",
+   "title": "Hit-land variant: worm wear (hook mark)",
+   "variant_of": "fx_hit_land",
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 700,
+   "in_ms": 160,
+   "hold_ms": 170,
+   "out_ms": 370,
+   "easing_summary": "as fx_hit_land; hook ease-out back",
+   "easing": {
+    "hook": "ease-out back"
+   },
+   "phases": {
+    "as_parent": [
+     0,
+     700
+    ],
+    "hook": [
+     160,
+     230
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 117,
+     "caption": "impact"
+    },
+    {
+     "ms": 200,
+     "caption": "flood and krackle, hook stamps"
+    },
+    {
+     "ms": 400,
+     "caption": "flood fades"
+    },
+    {
+     "ms": 700,
+     "caption": "settle: pip gone, hook stays"
+    }
+   ],
+   "reduce_motion": "As the parent; the hook appears without overshoot.",
+   "source": "f1 Worm 3 lands (wear flag); shown on sector 3",
+   "board_crop": [
+    405,
+    590,
+    670,
+    790
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 8883,
+     "crop_px": 53000,
+     "footprint_share": 0.168,
+     "peak_up_share_footprint": 0.539,
+     "peak_down_share_footprint": 0.39,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.09,
+     "peak_down_share_crop": 0.065,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.137,
+      0.193
+     ],
+     "mean_lum_max_step": 0.042,
+     "mean_lum_crop_max_step": 0.007,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 725,
+     "crop_px": 53000,
+     "footprint_share": 0.014,
+     "peak_up_share_footprint": 0.316,
+     "peak_down_share_footprint": 0.437,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.004,
+     "peak_down_share_crop": 0.006,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.129,
+      0.174
+     ],
+     "mean_lum_max_step": 0.045,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    }
+   }
+  },
+  "fx_hit_land_adjuster": {
+   "family": "H",
+   "title": "Hit-land variant: Adjuster strike (gold rim flash)",
+   "variant_of": "fx_hit_land",
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 700,
+   "in_ms": 160,
+   "hold_ms": 170,
+   "out_ms": 370,
+   "easing_summary": "as fx_hit_land; one sine gold flash",
+   "easing": {
+    "gold_flash": "sine, once"
+   },
+   "phases": {
+    "as_parent": [
+     0,
+     700
+    ],
+    "gold_flash": [
+     100,
+     200
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 117,
+     "caption": "impact"
+    },
+    {
+     "ms": 150,
+     "caption": "gold rim flash"
+    },
+    {
+     "ms": 400,
+     "caption": "flood fades"
+    },
+    {
+     "ms": 700,
+     "caption": "settle"
+    }
+   ],
+   "reduce_motion": "As the parent; the gold rim shows as a thin outline, no flash.",
+   "source": "latent: Adjuster strike (adj.strike false in E10)",
+   "board_crop": [
+    405,
+    590,
+    670,
+    790
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 10327,
+     "crop_px": 53000,
+     "footprint_share": 0.195,
+     "peak_up_share_footprint": 0.618,
+     "peak_down_share_footprint": 0.488,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.12,
+     "peak_down_share_crop": 0.095,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.153,
+      0.25
+     ],
+     "mean_lum_max_step": 0.049,
+     "mean_lum_crop_max_step": 0.01,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 581,
+     "crop_px": 53000,
+     "footprint_share": 0.011,
+     "peak_up_share_footprint": 0.315,
+     "peak_down_share_footprint": 0.408,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.003,
+     "peak_down_share_crop": 0.004,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.129,
+      0.183
+     ],
+     "mean_lum_max_step": 0.054,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    }
+   }
+  },
+  "fx_shield_break": {
+   "family": "H",
+   "title": "Our shield slice breaks while blocking",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 700,
+   "in_ms": 190,
+   "hold_ms": 190,
+   "out_ms": 320,
+   "easing_summary": "in ease-out load + crack; shards ease-out + gravity; dark ease-in-out (stays)",
+   "easing": {
+    "load": "ease-out cubic",
+    "shards": "ease-out cubic + gravity",
+    "flood": "ease-out cubic",
+    "dark": "ease-in-out cubic"
+   },
+   "phases": {
+    "load": [
+     0,
+     110
+    ],
+    "crack": [
+     20,
+     110
+    ],
+    "split": [
+     120,
+     120
+    ],
+    "shards": [
+     120,
+     560
+    ],
+    "flood": [
+     130,
+     300
+    ],
+    "krackle": [
+     130,
+     600
+    ],
+    "dark": [
+     200,
+     500
+    ],
+    "pips": [
+     300,
+     300
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: plate under load"
+    },
+    {
+     "ms": 80,
+     "caption": "hairline crack"
+    },
+    {
+     "ms": 180,
+     "caption": "plate splits, flood starts"
+    },
+    {
+     "ms": 330,
+     "caption": "shards fly, wedge darkens"
+    },
+    {
+     "ms": 700,
+     "caption": "settle: wedge dark, shield gone"
+    }
+   ],
+   "reduce_motion": "No shard flight or krackle: the plate shows split in place (shards offset 55 %) for 300 ms; flood at 70 %; the wedge darkens in one 300 ms fade.",
+   "source": "f1 sector 1 SHIELD, hp 2 -> 0",
+   "board_crop": [
+    565,
+    320,
+    785,
+    560
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 20991,
+     "crop_px": 52800,
+     "footprint_share": 0.398,
+     "peak_up_share_footprint": 0.352,
+     "peak_down_share_footprint": 0.321,
+     "waves_footprint": 3,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.14,
+     "peak_down_share_crop": 0.128,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.105,
+      0.325
+     ],
+     "mean_lum_max_step": 0.03,
+     "mean_lum_crop_max_step": 0.012,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 61,
+     "fps": 60,
+     "footprint_px": 155,
+     "crop_px": 52800,
+     "footprint_share": 0.003,
+     "peak_up_share_footprint": 0.335,
+     "peak_down_share_footprint": 0.458,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.001,
+     "peak_down_share_crop": 0.001,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.171,
+      0.242
+     ],
+     "mean_lum_max_step": 0.072,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  },
+  "fx_slice_crack": {
+   "family": "H",
+   "title": "Slice goes 2 to 1 (cracked)",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 500,
+   "in_ms": 260,
+   "hold_ms": 40,
+   "out_ms": 200,
+   "easing_summary": "in ease-out crack; flood linear",
+   "easing": {
+    "flood": "linear",
+    "crack": "ease-out cubic"
+   },
+   "phases": {
+    "flood": [
+     0,
+     300
+    ],
+    "crack": [
+     60,
+     260
+    ],
+    "tip": [
+     60,
+     300
+    ],
+    "pip": [
+     200,
+     200
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 60,
+     "caption": "flood pulse at the rim"
+    },
+    {
+     "ms": 160,
+     "caption": "crack runs, white tip"
+    },
+    {
+     "ms": 260,
+     "caption": "crack done, pip gone"
+    },
+    {
+     "ms": 500,
+     "caption": "settle: cracked, one pip left"
+    }
+   ],
+   "reduce_motion": "No flood pulse or tip spark: the crack draws in 150 ms linear.",
+   "source": "f1 sector 4 BURST, hp 2 -> 1",
+   "board_crop": [
+    335,
+    515,
+    525,
+    725
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 4862,
+     "crop_px": 39900,
+     "footprint_share": 0.122,
+     "peak_up_share_footprint": 0.419,
+     "peak_down_share_footprint": 0.418,
+     "waves_footprint": 4,
+     "flashes_footprint": 2,
+     "max_flashes_per_s_footprint": 2,
+     "peak_up_share_crop": 0.051,
+     "peak_down_share_crop": 0.051,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.137,
+      0.224
+     ],
+     "mean_lum_max_step": 0.068,
+     "mean_lum_crop_max_step": 0.008,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 49,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 39900,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  },
+  "fx_slice_break": {
+   "family": "H",
+   "title": "Slice goes to 0, ability lost",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 650,
+   "in_ms": 200,
+   "hold_ms": 180,
+   "out_ms": 270,
+   "easing_summary": "in ease-out-back stamp; black-out ease-in-out (stays)",
+   "easing": {
+    "stamp": "ease-out back (strong)",
+    "blackout": "ease-in-out cubic",
+    "halftone": "linear"
+   },
+   "phases": {
+    "flood": [
+     0,
+     380
+    ],
+    "stamp": [
+     120,
+     200
+    ],
+    "blackout": [
+     150,
+     450
+    ],
+    "halftone": [
+     200,
+     500
+    ],
+    "pips": [
+     250,
+     250
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 90,
+     "caption": "flood"
+    },
+    {
+     "ms": 180,
+     "caption": "X stamps in the outer corner"
+    },
+    {
+     "ms": 330,
+     "caption": "black-out over a halftone fade"
+    },
+    {
+     "ms": 650,
+     "caption": "settle: dark wedge, X stays"
+    }
+   ],
+   "reduce_motion": "No flood or overshoot: black-out, X and halftone fade in together over 300 ms.",
+   "source": "f1 sector 2 TURRET, hp 2 -> 0",
+   "board_crop": [
+    570,
+    515,
+    740,
+    710
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 11721,
+     "crop_px": 33150,
+     "footprint_share": 0.354,
+     "peak_up_share_footprint": 0.245,
+     "peak_down_share_footprint": 0.624,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.087,
+     "peak_down_share_crop": 0.221,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.03,
+      0.3
+     ],
+     "mean_lum_max_step": 0.05,
+     "mean_lum_crop_max_step": 0.018,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 58,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 33150,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  },
+  "fx_hp_through": {
+   "family": "H",
+   "title": "HP gets through, diamonds fly to YOU",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "arc to HUD",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 1150,
+   "in_ms": 880,
+   "hold_ms": 100,
+   "out_ms": 170,
+   "easing_summary": "in ease-out lift + ease-in-out flight, 30 ms stagger; hold = sine slap; out linear",
+   "easing": {
+    "lift": "ease-out cubic",
+    "flight": "ease-in-out cubic, 40 ms stagger",
+    "slap": "sine, once",
+    "dark": "linear"
+   },
+   "phases": {
+    "lift": [
+     0,
+     220
+    ],
+    "flight": [
+     120,
+     880
+    ],
+    "slap": [
+     800,
+     980
+    ],
+    "dark": [
+     920,
+     1100
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 100,
+     "caption": "diamonds lift off the arc"
+    },
+    {
+     "ms": 420,
+     "caption": "flight on one curve, ribbon trail"
+    },
+    {
+     "ms": 900,
+     "caption": "arrival: the strip takes the slap"
+    },
+    {
+     "ms": 1150,
+     "caption": "settle: segments dark"
+    }
+   ],
+   "reduce_motion": "No flight: the six hatched segments go dark in a 200 ms fade, no slap.",
+   "source": "f1 pv: through 6, HP 15 -> 9",
+   "board_crop": [
+    700,
+    40,
+    1420,
+    330
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 88,
+     "fps": 60,
+     "footprint_px": 10326,
+     "crop_px": 208800,
+     "footprint_share": 0.049,
+     "peak_up_share_footprint": 0.215,
+     "peak_down_share_footprint": 0.262,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.011,
+     "peak_down_share_crop": 0.013,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.24,
+      0.307
+     ],
+     "mean_lum_max_step": 0.022,
+     "mean_lum_crop_max_step": 0.001,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 88,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 208800,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  },
+  "fx_refund": {
+   "family": "L",
+   "title": "Trigger-kill refund, +1 RAM",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "cell to HUD",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 900,
+   "in_ms": 650,
+   "hold_ms": 0,
+   "out_ms": 250,
+   "easing_summary": "in ease-out-back pop + ease-in-out flight; out ease-out ring",
+   "easing": {
+    "pop": "ease-out back (overshoot)",
+    "flight": "ease-in-out cubic",
+    "light": "ease-out cubic"
+   },
+   "phases": {
+    "pop": [
+     0,
+     150
+    ],
+    "flight": [
+     150,
+     650
+    ],
+    "light": [
+     650,
+     910
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 110,
+     "caption": "coin pops with a plus"
+    },
+    {
+     "ms": 400,
+     "caption": "coin flies, ribbon trail"
+    },
+    {
+     "ms": 680,
+     "caption": "lands: the RAM coin lights"
+    },
+    {
+     "ms": 900,
+     "caption": "settle"
+    }
+   ],
+   "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot lights at once.",
+   "source": "f2: Trigger kills Packet 1, refund 1 RAM (ram 3 + 1)",
+   "board_crop": [
+    410,
+    480,
+    1280,
+    800
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 38376,
+     "crop_px": 278400,
+     "footprint_share": 0.138,
+     "peak_up_share_footprint": 0.26,
+     "peak_down_share_footprint": 0.24,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.036,
+     "peak_down_share_crop": 0.033,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.208,
+      0.241
+     ],
+     "mean_lum_max_step": 0.017,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 732,
+     "crop_px": 278400,
+     "footprint_share": 0.003,
+     "peak_up_share_footprint": 0.522,
+     "peak_down_share_footprint": 0.552,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.001,
+     "peak_down_share_crop": 0.001,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.228,
+      0.379
+     ],
+     "mean_lum_max_step": 0.06,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 38580,
+     "crop_px": 278400,
+     "footprint_share": 0.139,
+     "peak_up_share_footprint": 0.258,
+     "peak_down_share_footprint": 0.243,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.036,
+     "peak_down_share_crop": 0.034,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.218,
+      0.249
+     ],
+     "mean_lum_max_step": 0.017,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 38338,
+     "crop_px": 278400,
+     "footprint_share": 0.138,
+     "peak_up_share_footprint": 0.26,
+     "peak_down_share_footprint": 0.241,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.036,
+     "peak_down_share_crop": 0.033,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.209,
+      0.242
+     ],
+     "mean_lum_max_step": 0.017,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    }
+   }
+  },
+  "fx_clear": {
+   "family": "L",
+   "title": "Nothing gets through (arc check)",
+   "variant_of": null,
+   "tier": "still",
+   "scope": "arc",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 800,
+   "in_ms": 300,
+   "hold_ms": 100,
+   "out_ms": 400,
+   "easing_summary": "in ease-in-out wash + ease-out-back check; out linear",
+   "easing": {
+    "wash": "ease-in-out cubic",
+    "check": "ease-out back",
+    "sparkles": "sine"
+   },
+   "phases": {
+    "wash": [
+     0,
+     240
+    ],
+    "check": [
+     160,
+     300
+    ],
+    "sparkles": [
+     300,
+     680
+    ],
+    "wash_settle": [
+     400,
+     800
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: the arc"
+    },
+    {
+     "ms": 150,
+     "caption": "green wash sweeps the arc"
+    },
+    {
+     "ms": 260,
+     "caption": "check paints in"
+    },
+    {
+     "ms": 450,
+     "caption": "check with sparkles"
+    },
+    {
+     "ms": 800,
+     "caption": "settle"
+    }
+   ],
+   "reduce_motion": "No sweep or sparkles: wash and check fade in over 200 ms.",
+   "source": "f2: Worm 3 lands on sectors 1-2, soaked and braced, THROUGH 0",
+   "board_crop": [
+    790,
+    175,
+    1010,
+    570
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 67,
+     "fps": 60,
+     "footprint_px": 10589,
+     "crop_px": 86900,
+     "footprint_share": 0.122,
+     "peak_up_share_footprint": 0.641,
+     "peak_down_share_footprint": 0.403,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.078,
+     "peak_down_share_crop": 0.049,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.122,
+      0.255
+     ],
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.003,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 67,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 86900,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    },
+    "solace": {
+     "frames": 67,
+     "fps": 60,
+     "footprint_px": 10603,
+     "crop_px": 86900,
+     "footprint_share": 0.122,
+     "peak_up_share_footprint": 0.64,
+     "peak_down_share_footprint": 0.398,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.078,
+     "peak_down_share_crop": 0.049,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.123,
+      0.255
+     ],
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.003,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 67,
+     "fps": 60,
+     "footprint_px": 10561,
+     "crop_px": 86900,
+     "footprint_share": 0.122,
+     "peak_up_share_footprint": 0.642,
+     "peak_down_share_footprint": 0.398,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.078,
+     "peak_down_share_crop": 0.048,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.123,
+      0.255
+     ],
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.003,
+     "passes": true
+    }
+   }
+  },
+  "fx_repair_mend": {
+   "family": "L",
+   "title": "Repair mends one pip",
+   "variant_of": null,
+   "tier": "lower",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 900,
+   "in_ms": 560,
+   "hold_ms": 0,
+   "out_ms": 340,
+   "easing_summary": "in ease-out rise, sine width; pip ease-in-out; out linear glow",
+   "easing": {
+    "strokes": "ease-out cubic rise, sine width",
+    "pip_fill": "ease-in-out cubic"
+   },
+   "phases": {
+    "strokes": [
+     0,
+     645
+    ],
+    "plus": [
+     120,
+     780
+    ],
+    "pip_fill": [
+     380,
+     560
+    ],
+    "glow_out": [
+     550,
+     900
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate: mend-pending pip"
+    },
+    {
+     "ms": 160,
+     "caption": "strokes rise through the wedge"
+    },
+    {
+     "ms": 330,
+     "caption": "peak: strokes, plus signs"
+    },
+    {
+     "ms": 520,
+     "caption": "pip lands"
+    },
+    {
+     "ms": 900,
+     "caption": "settle: pip restored"
+    }
+   ],
+   "reduce_motion": "No strokes or glow: two static plus signs and the pip fills over 200 ms.",
+   "source": "latent (REPAIR slice mend preview, sector 5); mend-pending pip drawn as a stand-in",
+   "board_crop": [
+    330,
+    360,
+    510,
+    590
+   ],
+   "base": {
+    "pre": "p3",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 8043,
+     "crop_px": 41400,
+     "footprint_share": 0.194,
+     "peak_up_share_footprint": 0.332,
+     "peak_down_share_footprint": 0.305,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.064,
+     "peak_down_share_crop": 0.059,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.374,
+      0.418
+     ],
+     "mean_lum_max_step": 0.009,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 73,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 41400,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  },
+  "fx_shield_block": {
+   "family": "P",
+   "title": "Our shield slice blocks (for the comparison only)",
+   "variant_of": null,
+   "tier": "core",
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 560,
+   "in_ms": 100,
+   "hold_ms": 260,
+   "out_ms": 200,
+   "easing_summary": "in ease-out chevrons; sparks ease-out; out linear",
+   "easing": {
+    "chevrons": "ease-out cubic",
+    "sparks": "ease-out cubic"
+   },
+   "phases": {
+    "chevrons": [
+     0,
+     100
+    ],
+    "jolt": [
+     100,
+     170
+    ],
+    "sparks": [
+     100,
+     380
+    ],
+    "tint": [
+     100,
+     560
+    ]
+   },
+   "keyframes": [
+    {
+     "ms": 0,
+     "caption": "anticipate"
+    },
+    {
+     "ms": 80,
+     "caption": "chevrons hit the plate"
+    },
+    {
+     "ms": 180,
+     "caption": "peak: white sparks, pink tint"
+    },
+    {
+     "ms": 320,
+     "caption": "sparks out"
+    },
+    {
+     "ms": 560,
+     "caption": "settle: plate intact"
+    }
+   ],
+   "reduce_motion": "Plate and tint still; no sparks or jolt.",
+   "source": "same sector as the break (sector 1) so the two read side by side",
+   "board_crop": [
+    565,
+    320,
+    785,
+    560
+   ],
+   "base": {
+    "pre": "p1",
+    "post": null
+   },
+   "flash": {
+    "neutral": {
+     "frames": 52,
+     "fps": 60,
+     "footprint_px": 10702,
+     "crop_px": 52800,
+     "footprint_share": 0.203,
+     "peak_up_share_footprint": 0.403,
+     "peak_down_share_footprint": 0.389,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.082,
+     "peak_down_share_crop": 0.079,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.215,
+      0.274
+     ],
+     "mean_lum_max_step": 0.032,
+     "mean_lum_crop_max_step": 0.006,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 52,
+     "fps": 60,
+     "footprint_px": 0,
+     "crop_px": 52800,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.0,
+      0.0
+     ],
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
+     "passes": true
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,595 @@
+{
+ "size_px": 352,
+ "scale_vs_design": 2.0,
+ "margin_px": 36,
+ "cell": [
+  424,
+  572
+ ],
+ "anchors_design_px": {
+  "title": [
+   87.5,
+   144.5
+  ],
+  "type_word": [
+   85.5,
+   174.4
+  ],
+  "rules": [
+   80,
+   206
+  ],
+  "cost": [
+   21.5,
+   22.2
+  ],
+  "trace": [
+   133,
+   17.6
+  ],
+  "mult": [
+   139,
+   107
+  ],
+  "played_name": [
+   88,
+   159
+  ],
+  "played_word": [
+   88,
+   181
+  ]
+ },
+ "cards": [
+  {
+   "id": "Nudge",
+   "rect": [
+    0,
+    0,
+    424,
+    572
+   ],
+   "type": "TOWER",
+   "name": "NUDGE",
+   "rules": "Turn the tower 1",
+   "cost": 1,
+   "trace": 0,
+   "mult": "1",
+   "style": "benday",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Spin2",
+   "rect": [
+    424,
+    0,
+    424,
+    572
+   ],
+   "type": "TOWER",
+   "name": "SPIN 2",
+   "rules": "Turn the tower 2",
+   "cost": 1,
+   "trace": 0,
+   "mult": "2",
+   "style": "benday",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Spin3",
+   "rect": [
+    848,
+    0,
+    424,
+    572
+   ],
+   "type": "TOWER",
+   "name": "SPIN 3",
+   "rules": "Turn the tower 3",
+   "cost": 1,
+   "trace": 0,
+   "mult": "3",
+   "style": "benday",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Brace",
+   "rect": [
+    1272,
+    0,
+    424,
+    572
+   ],
+   "type": "TOWER",
+   "name": "BRACE",
+   "rules": "Block a slice",
+   "cost": 1,
+   "trace": 0,
+   "mult": null,
+   "style": "linocut",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Strike",
+   "rect": [
+    0,
+    572,
+    424,
+    572
+   ],
+   "type": "TOWER",
+   "name": "STRIKE",
+   "rules": "Hit a unit for 2",
+   "cost": 1,
+   "trace": 0,
+   "mult": null,
+   "style": "collage",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Firewall",
+   "rect": [
+    424,
+    572,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "FIREWALL",
+   "rules": "Burn 2 units",
+   "cost": 2,
+   "trace": 2,
+   "mult": null,
+   "style": "mural",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Pull",
+   "rect": [
+    848,
+    572,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "PULL",
+   "rules": "Pull a unit in",
+   "cost": 0,
+   "trace": 1,
+   "mult": null,
+   "style": "linocut",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Shove",
+   "rect": [
+    1272,
+    572,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "SHOVE",
+   "rules": "Slide a unit 1",
+   "cost": 2,
+   "trace": 2,
+   "mult": null,
+   "style": "collage",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Twist",
+   "rect": [
+    0,
+    1144,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "TWIST",
+   "rules": "Turn one ring 1",
+   "cost": 0,
+   "trace": 0,
+   "mult": null,
+   "style": "mural",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Hold",
+   "rect": [
+    424,
+    1144,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "HOLD",
+   "rules": "Pause the wave",
+   "cost": 0,
+   "trace": 0,
+   "mult": null,
+   "style": "xerox",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  },
+  {
+   "id": "Trigger",
+   "rect": [
+    848,
+    1144,
+    424,
+    572
+   ],
+   "type": "WAVE",
+   "name": "TRIGGER",
+   "rules": "Resolve a unit",
+   "cost": 1,
+   "trace": 1,
+   "mult": null,
+   "style": "jinx",
+   "anchors_cell_px": {
+    "title": [
+     211.0,
+     325.0
+    ],
+    "type_word": [
+     207.0,
+     384.8
+    ],
+    "rules": [
+     196.0,
+     448.0
+    ],
+    "cost": [
+     79.0,
+     80.4
+    ],
+    "trace": [
+     302.0,
+     71.2
+    ],
+    "mult": [
+     314.0,
+     250.0
+    ],
+    "played_name": [
+     212.0,
+     354.0
+    ],
+    "played_word": [
+     212.0,
+     398.0
+    ]
+   }
+  }
+ ]
+}

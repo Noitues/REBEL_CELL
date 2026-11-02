@@ -1,0 +1,7415 @@
+{
+ "all_pass": {
+  "draw_asserts": true,
+  "mark_pairs": true,
+  "occlusion": true,
+  "hover_vs_marks": true,
+  "hand": true,
+  "dashes": true,
+  "nowords_text": true
+ },
+ "summary": {
+  "h01_tower_turn": {
+   "asserts": "64/64",
+   "inset_asserts": [
+    "SPIN 2 63/63",
+    "NUDGE 63/63"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.181,
+    "p95": 0.4618,
+    "loud": 0.1077
+   },
+   "squint_tower": {
+    "mean": 0.3735,
+    "p95": 0.555,
+    "loud": 0.3761
+   },
+   "lit_vs_dim": 1.32,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     13,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h01_tower_turn_nowords": {
+   "asserts": "64/64",
+   "inset_asserts": [
+    "SPIN 2 63/63",
+    "NUDGE 63/63"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1784,
+    "p95": 0.4589,
+    "loud": 0.1053
+   },
+   "squint_tower": {
+    "mean": 0.3767,
+    "p95": 0.5653,
+    "loud": 0.3797
+   },
+   "lit_vs_dim": 1.37,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     13,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h02_brace": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1486,
+    "p95": 0.4484,
+    "loud": 0.0867
+   },
+   "squint_tower": {
+    "mean": 0.3862,
+    "p95": 0.61,
+    "loud": 0.5335
+   },
+   "lit_vs_dim": 1.62,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   }
+  },
+  "h02_brace_meridian": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1486,
+    "p95": 0.4484,
+    "loud": 0.0868
+   },
+   "squint_tower": {
+    "mean": 0.3865,
+    "p95": 0.61,
+    "loud": 0.5353
+   },
+   "lit_vs_dim": 1.61,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   }
+  },
+  "h02_brace_nowords": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1465,
+    "p95": 0.4458,
+    "loud": 0.0851
+   },
+   "squint_tower": {
+    "mean": 0.3894,
+    "p95": 0.6206,
+    "loud": 0.5335
+   },
+   "lit_vs_dim": 1.68,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   }
+  },
+  "h02_brace_solace": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1506,
+    "p95": 0.4484,
+    "loud": 0.0867
+   },
+   "squint_tower": {
+    "mean": 0.3864,
+    "p95": 0.61,
+    "loud": 0.5335
+   },
+   "lit_vs_dim": 1.61,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   }
+  },
+  "h03_trigger": {
+   "asserts": "56/56",
+   "inset_asserts": [
+    "TWIST + TRIGGER 56/56"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1451,
+    "p95": 0.3863,
+    "loud": 0.0541
+   },
+   "squint_tower": {
+    "mean": 0.1557,
+    "p95": 0.2217,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.2,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     6,
+     3
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     12
+    ]
+   }
+  },
+  "h03_trigger_nowords": {
+   "asserts": "56/56",
+   "inset_asserts": [
+    "TWIST + TRIGGER 56/56"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1414,
+    "p95": 0.3823,
+    "loud": 0.0516
+   },
+   "squint_tower": {
+    "mean": 0.1569,
+    "p95": 0.2282,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.23,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     6,
+     3
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     12
+    ]
+   }
+  },
+  "h04_twist": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1512,
+    "p95": 0.3875,
+    "loud": 0.0545
+   },
+   "squint_tower": {
+    "mean": 0.1541,
+    "p95": 0.2207,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.24,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h04_twist_meridian": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1518,
+    "p95": 0.3875,
+    "loud": 0.0545
+   },
+   "squint_tower": {
+    "mean": 0.1543,
+    "p95": 0.2207,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.27,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h04_twist_nowords": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1489,
+    "p95": 0.3866,
+    "loud": 0.0526
+   },
+   "squint_tower": {
+    "mean": 0.1553,
+    "p95": 0.2261,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.27,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h04_twist_solace": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1547,
+    "p95": 0.3886,
+    "loud": 0.0553
+   },
+   "squint_tower": {
+    "mean": 0.1544,
+    "p95": 0.2207,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.28,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h05_strike": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1525,
+    "p95": 0.3955,
+    "loud": 0.0583
+   },
+   "squint_tower": {
+    "mean": 0.1656,
+    "p95": 0.2244,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.28,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h05_strike_nowords": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1497,
+    "p95": 0.3949,
+    "loud": 0.0565
+   },
+   "squint_tower": {
+    "mean": 0.1667,
+    "p95": 0.2291,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.31,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h06_shove": {
+   "asserts": "62/62",
+   "inset_asserts": [
+    "SHOVE (BUMP) 63/63"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1532,
+    "p95": 0.3901,
+    "loud": 0.0561
+   },
+   "squint_tower": {
+    "mean": 0.1658,
+    "p95": 0.2249,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.23,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h06_shove_nowords": {
+   "asserts": "62/62",
+   "inset_asserts": [
+    "SHOVE (BUMP) 63/63"
+   ],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1502,
+    "p95": 0.3901,
+    "loud": 0.0546
+   },
+   "squint_tower": {
+    "mean": 0.1669,
+    "p95": 0.2291,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.26,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h07_pull": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1284,
+    "p95": 0.3843,
+    "loud": 0.0515
+   },
+   "squint_tower": {
+    "mean": 0.154,
+    "p95": 0.2207,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.25,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h07_pull_nowords": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1268,
+    "p95": 0.3854,
+    "loud": 0.0512
+   },
+   "squint_tower": {
+    "mean": 0.1552,
+    "p95": 0.2261,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.28,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h08_hold": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1661,
+    "p95": 0.4191,
+    "loud": 0.0697
+   },
+   "squint_tower": {
+    "mean": 0.166,
+    "p95": 0.2271,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.37,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h08_hold_nowords": {
+   "asserts": "62/62",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1635,
+    "p95": 0.4257,
+    "loud": 0.069
+   },
+   "squint_tower": {
+    "mean": 0.1671,
+    "p95": 0.2318,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.38,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h09_firewall": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.139,
+    "p95": 0.3826,
+    "loud": 0.0512
+   },
+   "squint_tower": {
+    "mean": 0.1588,
+    "p95": 0.2211,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.26,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h09_firewall_nowords": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 455.6,
+   "lift_dx": 32.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1366,
+    "p95": 0.3769,
+    "loud": 0.0491
+   },
+   "squint_tower": {
+    "mean": 0.16,
+    "p95": 0.2261,
+    "loud": 0.0
+   },
+   "lit_vs_dim": 1.29,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h10_soak": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1388,
+    "p95": 0.414,
+    "loud": 0.0721
+   },
+   "squint_tower": {
+    "mean": 0.369,
+    "p95": 0.5628,
+    "loud": 0.4738
+   },
+   "lit_vs_dim": 1.78,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     5
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     10
+    ]
+   }
+  },
+  "h10_soak_nowords": {
+   "asserts": "63/63",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.137,
+    "p95": 0.4148,
+    "loud": 0.0689
+   },
+   "squint_tower": {
+    "mean": 0.3722,
+    "p95": 0.5784,
+    "loud": 0.4738
+   },
+   "lit_vs_dim": 1.86,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     5
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     10
+    ]
+   }
+  },
+  "h11_unit": {
+   "asserts": "24/24",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": null,
+   "squint_plate": {
+    "mean": 0.1302,
+    "p95": 0.3879,
+    "loud": 0.0553
+   },
+   "squint_tower": {
+    "mean": 0.2522,
+    "p95": 0.5043,
+    "loud": 0.226
+   },
+   "lit_vs_dim": 1.62,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  },
+  "h11_unit_nowords": {
+   "asserts": "24/24",
+   "inset_asserts": [],
+   "mark_pairs": true,
+   "occlusion": true,
+   "hover_vs_marks": true,
+   "hover_vs_marks_px": {},
+   "hand_vs_board": true,
+   "hand_min_r": 458.9,
+   "lift_dx": 0.0,
+   "dashes": 0,
+   "dots": 0,
+   "alnum_text_nowords": [],
+   "squint_plate": {
+    "mean": 0.1278,
+    "p95": 0.3836,
+    "loud": 0.0515
+   },
+   "squint_tower": {
+    "mean": 0.2531,
+    "p95": 0.5043,
+    "loud": 0.217
+   },
+   "lit_vs_dim": 1.66,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   }
+  }
+ },
+ "notes": {
+  "squint": "1/16 BOX downscale + 1 px blur, luma; loud = share of 16 px cells above 0.38; lit_vs_dim = mean luma of lit cells / dim cells",
+  "hover_vs_marks": "hover marks (corners, PLAN arrows, pencil, bursts), ghosts and insets vs digits, labels, tags, badges, tickets, leader, tape, plates and hand: 0 px required",
+  "units_arcs": "hover over units and arcs is reported as info (hover_over_units_arcs_px_info), since corners and arrows sit on cells by design"
+ },
+ "full": {
+  "h01_tower_turn": {
+   "plate": "h01",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Spin3",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 64,
+    "passed": 64,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "SPIN 2",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    },
+    {
+     "name": "NUDGE",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 267,
+     "hover x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 161409,
+     "badges": 1179,
+     "digits": 4111,
+     "hand": 217690,
+     "hover": 12431,
+     "inset": 149499,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 98196
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.181,
+     "p95": 0.4618,
+     "loud": 0.1077
+    },
+    "tower": {
+     "mean": 0.3735,
+     "p95": 0.555,
+     "loud": 0.3761
+    },
+    "rings": {
+     "mean": 0.1582,
+     "p95": 0.3184,
+     "loud": 0.0059
+    },
+    "hand": {
+     "mean": 0.3224,
+     "p95": 0.6388,
+     "loud": 0.3536
+    },
+    "hud": {
+     "mean": 0.1195,
+     "p95": 0.3332,
+     "loud": 0.04
+    },
+    "lit_mean": 0.2187,
+    "dim_mean": 0.1652,
+    "lit_share": 0.2951,
+    "lit_vs_dim": 1.32
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     13,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "lands"
+    ],
+    "you_box": false,
+    "rot": 3
+   },
+   "note": "tower, guns, tracers and landings at the plan angle (rot 3); insets: Spin 2 and Nudge, each its own sim plan",
+   "z_order": {
+    "hover under board marks px": 52
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "seconds": 129.1
+  },
+  "h01_tower_turn_nowords": {
+   "plate": "h01",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Spin3",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 64,
+    "passed": 64,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "SPIN 2",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    },
+    {
+     "name": "NUDGE",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 267,
+     "hover x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 161409,
+     "badges": 1179,
+     "digits": 4111,
+     "hand": 217690,
+     "hover": 15006,
+     "inset": 147888,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 98196
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1784,
+     "p95": 0.4589,
+     "loud": 0.1053
+    },
+    "tower": {
+     "mean": 0.3767,
+     "p95": 0.5653,
+     "loud": 0.3797
+    },
+    "rings": {
+     "mean": 0.1561,
+     "p95": 0.3126,
+     "loud": 0.0018
+    },
+    "hand": {
+     "mean": 0.3114,
+     "p95": 0.5792,
+     "loud": 0.3162
+    },
+    "hud": {
+     "mean": 0.1155,
+     "p95": 0.3502,
+     "loud": 0.0415
+    },
+    "lit_mean": 0.2206,
+    "dim_mean": 0.1607,
+    "lit_share": 0.2951,
+    "lit_vs_dim": 1.37
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     13,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "lands"
+    ],
+    "you_box": false,
+    "rot": 3
+   },
+   "note": "tower, guns, tracers and landings at the plan angle (rot 3); insets: Spin 2 and Nudge, each its own sim plan",
+   "z_order": {
+    "hover under board marks px": 52
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "alnum_text_calls": [],
+   "seconds": 704.3
+  },
+  "h02_brace": {
+   "plate": "h02",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Brace",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 800,
+     "ghost x units": 0,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 4981,
+     "hand": 220683,
+     "hover": 9941,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1486,
+     "p95": 0.4484,
+     "loud": 0.0867
+    },
+    "tower": {
+     "mean": 0.3862,
+     "p95": 0.61,
+     "loud": 0.5335
+    },
+    "rings": {
+     "mean": 0.1125,
+     "p95": 0.2122,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3307,
+     "p95": 0.6089,
+     "loud": 0.3365
+    },
+    "hud": {
+     "mean": 0.1168,
+     "p95": 0.3265,
+     "loud": 0.04
+    },
+    "lit_mean": 0.21,
+    "dim_mean": 0.1294,
+    "lit_share": 0.2386,
+    "lit_vs_dim": 1.62
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     11
+    ],
+    "braced_sector": 2,
+    "clamp_bars": [
+     [
+      3,
+      2
+     ]
+    ]
+   },
+   "note": "clamp plate = the plan tower (Brace on sector 2) cut to the plate band at 74 percent; board at plan values without the plate",
+   "z_order": {
+    "ghost under board marks px": 0,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "seconds": 91.8
+  },
+  "h02_brace_meridian": {
+   "plate": "h02",
+   "corp": "meridian",
+   "words": true,
+   "beat": "p1",
+   "card": "Brace",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 800,
+     "ghost x units": 0,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136446,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 4981,
+     "hand": 220683,
+     "hover": 9941,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19147,
+     "units": 112363
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1486,
+     "p95": 0.4484,
+     "loud": 0.0868
+    },
+    "tower": {
+     "mean": 0.3865,
+     "p95": 0.61,
+     "loud": 0.5353
+    },
+    "rings": {
+     "mean": 0.1165,
+     "p95": 0.2123,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3303,
+     "p95": 0.6089,
+     "loud": 0.3365
+    },
+    "hud": {
+     "mean": 0.1168,
+     "p95": 0.3265,
+     "loud": 0.04
+    },
+    "lit_mean": 0.2092,
+    "dim_mean": 0.1296,
+    "lit_share": 0.2386,
+    "lit_vs_dim": 1.61
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     11
+    ],
+    "braced_sector": 2,
+    "clamp_bars": [
+     [
+      3,
+      2
+     ]
+    ]
+   },
+   "note": "clamp plate = the plan tower (Brace on sector 2) cut to the plate band at 74 percent; board at plan values without the plate",
+   "z_order": {
+    "ghost under board marks px": 0,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "seconds": 85.4
+  },
+  "h02_brace_nowords": {
+   "plate": "h02",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Brace",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 800,
+     "ghost x units": 0,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 4981,
+     "hand": 220683,
+     "hover": 12038,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1465,
+     "p95": 0.4458,
+     "loud": 0.0851
+    },
+    "tower": {
+     "mean": 0.3894,
+     "p95": 0.6206,
+     "loud": 0.5335
+    },
+    "rings": {
+     "mean": 0.1111,
+     "p95": 0.2161,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3203,
+     "p95": 0.5638,
+     "loud": 0.2981
+    },
+    "hud": {
+     "mean": 0.1118,
+     "p95": 0.3453,
+     "loud": 0.0415
+    },
+    "lit_mean": 0.212,
+    "dim_mean": 0.1259,
+    "lit_share": 0.2386,
+    "lit_vs_dim": 1.68
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     11
+    ],
+    "braced_sector": 2,
+    "clamp_bars": [
+     [
+      3,
+      2
+     ]
+    ]
+   },
+   "note": "clamp plate = the plan tower (Brace on sector 2) cut to the plate band at 74 percent; board at plan values without the plate",
+   "z_order": {
+    "ghost under board marks px": 0,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "alnum_text_calls": [],
+   "seconds": 72.3
+  },
+  "h02_brace_solace": {
+   "plate": "h02",
+   "corp": "solace",
+   "words": true,
+   "beat": "p1",
+   "card": "Brace",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 800,
+     "ghost x units": 0,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136488,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 4981,
+     "hand": 220683,
+     "hover": 9941,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 18772,
+     "units": 113372
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1506,
+     "p95": 0.4484,
+     "loud": 0.0867
+    },
+    "tower": {
+     "mean": 0.3864,
+     "p95": 0.61,
+     "loud": 0.5335
+    },
+    "rings": {
+     "mean": 0.1168,
+     "p95": 0.2178,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3309,
+     "p95": 0.6089,
+     "loud": 0.3365
+    },
+    "hud": {
+     "mean": 0.1168,
+     "p95": 0.3265,
+     "loud": 0.04
+    },
+    "lit_mean": 0.2116,
+    "dim_mean": 0.1314,
+    "lit_share": 0.2386,
+    "lit_vs_dim": 1.61
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     9,
+     4
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     11
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     11
+    ],
+    "braced_sector": 2,
+    "clamp_bars": [
+     [
+      3,
+      2
+     ]
+    ]
+   },
+   "note": "clamp plate = the plan tower (Brace on sector 2) cut to the plate band at 74 percent; board at plan values without the plate",
+   "z_order": {
+    "ghost under board marks px": 0,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "seconds": 87.7
+  },
+  "h03_trigger": {
+   "plate": "h03",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Trigger",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 56,
+    "passed": 56,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "TWIST + TRIGGER",
+     "asserts": {
+      "total": 56,
+      "passed": 56,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 2591,
+     "hover x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 95452,
+     "badges": 2763,
+     "digits": 4111,
+     "hand": 217566,
+     "hover": 11005,
+     "inset": 108828,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 127206
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1451,
+     "p95": 0.3863,
+     "loud": 0.0541
+    },
+    "tower": {
+     "mean": 0.1557,
+     "p95": 0.2217,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1577,
+     "p95": 0.2775,
+     "loud": 0.0012
+    },
+    "hand": {
+     "mean": 0.321,
+     "p95": 0.655,
+     "loud": 0.3323
+    },
+    "hud": {
+     "mean": 0.1204,
+     "p95": 0.3314,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1662,
+    "dim_mean": 0.1384,
+    "lit_share": 0.2407,
+    "lit_vs_dim": 1.2
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     6,
+     3
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     12
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     12
+    ],
+    "kills": [
+     [
+      "trig_unit",
+      3,
+      0,
+      1,
+      "Packet",
+      4,
+      5,
+      1,
+      0,
+      0
+     ],
+     [
+      "trig_unit",
+      4,
+      0,
+      1,
+      "Packet",
+      1,
+      1,
+      0,
+      0,
+      0
+     ]
+    ],
+    "victims": [
+     1
+    ],
+    "refunds": 1,
+    "bursts": [
+     [
+      1,
+      625,
+      769
+     ]
+    ]
+   },
+   "note": "the Payload resolves now down sectors 3 and 4 into the Packet on ring NOW (all 5 HP, killed, 1 RAM refunded); inset: the bill of Twist then Trigger",
+   "z_order": {
+    "hover under board marks px": 15
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    }
+   ],
+   "seconds": 143.3
+  },
+  "h03_trigger_nowords": {
+   "plate": "h03",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Trigger",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 56,
+    "passed": 56,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "TWIST + TRIGGER",
+     "asserts": {
+      "total": 56,
+      "passed": 56,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 2591,
+     "hover x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 95452,
+     "badges": 2763,
+     "digits": 4111,
+     "hand": 217566,
+     "hover": 12201,
+     "inset": 107175,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 127206
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1414,
+     "p95": 0.3823,
+     "loud": 0.0516
+    },
+    "tower": {
+     "mean": 0.1569,
+     "p95": 0.2282,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1562,
+     "p95": 0.2775,
+     "loud": 0.0012
+    },
+    "hand": {
+     "mean": 0.3103,
+     "p95": 0.6115,
+     "loud": 0.2906
+    },
+    "hud": {
+     "mean": 0.1114,
+     "p95": 0.3332,
+     "loud": 0.043
+    },
+    "lit_mean": 0.1648,
+    "dim_mean": 0.134,
+    "lit_share": 0.2407,
+    "lit_vs_dim": 1.23
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     6,
+     3
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     12
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through",
+     "lands"
+    ],
+    "you_box": [
+     9,
+     12
+    ],
+    "kills": [
+     [
+      "trig_unit",
+      3,
+      0,
+      1,
+      "Packet",
+      4,
+      5,
+      1,
+      0,
+      0
+     ],
+     [
+      "trig_unit",
+      4,
+      0,
+      1,
+      "Packet",
+      1,
+      1,
+      0,
+      0,
+      0
+     ]
+    ],
+    "victims": [
+     1
+    ],
+    "refunds": 1,
+    "bursts": [
+     [
+      1,
+      625,
+      769
+     ]
+    ]
+   },
+   "note": "the Payload resolves now down sectors 3 and 4 into the Packet on ring NOW (all 5 HP, killed, 1 RAM refunded); inset: the bill of Twist then Trigger",
+   "z_order": {
+    "hover under board marks px": 15
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 433.4
+  },
+  "h04_twist": {
+   "plate": "h04",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Twist",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 91,
+     "hover x arcs": 6916
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 147135,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 217588,
+     "hover": 13776,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1512,
+     "p95": 0.3875,
+     "loud": 0.0545
+    },
+    "tower": {
+     "mean": 0.1541,
+     "p95": 0.2207,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1878,
+     "p95": 0.2741,
+     "loud": 0.0006
+    },
+    "hand": {
+     "mean": 0.3218,
+     "p95": 0.6454,
+     "loud": 0.3451
+    },
+    "hud": {
+     "mean": 0.1162,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1751,
+    "dim_mean": 0.1409,
+    "lit_share": 0.3019,
+    "lit_vs_dim": 1.24
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved_landings": [
+     [
+      5,
+      [
+       3
+      ]
+     ],
+     [
+      4,
+      [
+       0,
+       1
+      ]
+     ]
+    ],
+    "twr": [
+     1,
+     1
+    ]
+   },
+   "note": "landing arcs at the plan values (ring +1 turns one extra sector): {4: [0, 1], 5: [3]}",
+   "z_order": {
+    "hover under board marks px": 43
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "seconds": 89.0
+  },
+  "h04_twist_meridian": {
+   "plate": "h04",
+   "corp": "meridian",
+   "words": true,
+   "beat": "p1",
+   "card": "Twist",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 91,
+     "hover x arcs": 6916
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 147131,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 217588,
+     "hover": 13776,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19147,
+     "units": 112363
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1518,
+     "p95": 0.3875,
+     "loud": 0.0545
+    },
+    "tower": {
+     "mean": 0.1543,
+     "p95": 0.2207,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1959,
+     "p95": 0.2848,
+     "loud": 0.0006
+    },
+    "hand": {
+     "mean": 0.3216,
+     "p95": 0.6454,
+     "loud": 0.3451
+    },
+    "hud": {
+     "mean": 0.1162,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1786,
+    "dim_mean": 0.1402,
+    "lit_share": 0.3019,
+    "lit_vs_dim": 1.27
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved_landings": [
+     [
+      5,
+      [
+       3
+      ]
+     ],
+     [
+      4,
+      [
+       0,
+       1
+      ]
+     ]
+    ],
+    "twr": [
+     1,
+     1
+    ]
+   },
+   "note": "landing arcs at the plan values (ring +1 turns one extra sector): {4: [0, 1], 5: [3]}",
+   "z_order": {
+    "hover under board marks px": 43
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "seconds": 242.9
+  },
+  "h04_twist_nowords": {
+   "plate": "h04",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Twist",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 15,
+     "hover x arcs": 6916
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 147135,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 217588,
+     "hover": 13765,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1489,
+     "p95": 0.3866,
+     "loud": 0.0526
+    },
+    "tower": {
+     "mean": 0.1553,
+     "p95": 0.2261,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1856,
+     "p95": 0.2737,
+     "loud": 0.0006
+    },
+    "hand": {
+     "mean": 0.3134,
+     "p95": 0.612,
+     "loud": 0.3045
+    },
+    "hud": {
+     "mean": 0.1104,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1747,
+    "dim_mean": 0.1377,
+    "lit_share": 0.3019,
+    "lit_vs_dim": 1.27
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved_landings": [
+     [
+      5,
+      [
+       3
+      ]
+     ],
+     [
+      4,
+      [
+       0,
+       1
+      ]
+     ]
+    ],
+    "twr": [
+     1,
+     1
+    ]
+   },
+   "note": "landing arcs at the plan values (ring +1 turns one extra sector): {4: [0, 1], 5: [3]}",
+   "z_order": {
+    "hover under board marks px": 52
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "alnum_text_calls": [],
+   "seconds": 319.4
+  },
+  "h04_twist_solace": {
+   "plate": "h04",
+   "corp": "solace",
+   "words": true,
+   "beat": "p1",
+   "card": "Twist",
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 91,
+     "hover x arcs": 6916
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 147152,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 217588,
+     "hover": 13776,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 18772,
+     "units": 113372
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1547,
+     "p95": 0.3886,
+     "loud": 0.0553
+    },
+    "tower": {
+     "mean": 0.1544,
+     "p95": 0.2207,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1977,
+     "p95": 0.2888,
+     "loud": 0.0047
+    },
+    "hand": {
+     "mean": 0.322,
+     "p95": 0.6454,
+     "loud": 0.3451
+    },
+    "hud": {
+     "mean": 0.1162,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1829,
+    "dim_mean": 0.1425,
+    "lit_share": 0.3019,
+    "lit_vs_dim": 1.28
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved_landings": [
+     [
+      5,
+      [
+       3
+      ]
+     ],
+     [
+      4,
+      [
+       0,
+       1
+      ]
+     ]
+    ],
+    "twr": [
+     1,
+     1
+    ]
+   },
+   "note": "landing arcs at the plan values (ring +1 turns one extra sector): {4: [0, 1], 5: [3]}",
+   "z_order": {
+    "hover under board marks px": 43
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "seconds": 251.8
+  },
+  "h05_strike": {
+   "plate": "h05",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Strike",
+   "hand": [
+    "Strike",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 3102,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128533,
+     "badges": 2574,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 6049,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 121620
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1525,
+     "p95": 0.3955,
+     "loud": 0.0583
+    },
+    "tower": {
+     "mean": 0.1656,
+     "p95": 0.2244,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1958,
+     "p95": 0.3205,
+     "loud": 0.0065
+    },
+    "hand": {
+     "mean": 0.3426,
+     "p95": 0.6834,
+     "loud": 0.391
+    },
+    "hud": {
+     "mean": 0.1159,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1806,
+    "dim_mean": 0.1408,
+    "lit_share": 0.2923,
+    "lit_vs_dim": 1.28
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "killed": true,
+    "hp_lost": 2
+   },
+   "note": "Strike on unit 5 (Packet, ring +1): killed, its HP hatched as lost at END TURN, its landing arc gone",
+   "z_order": {
+    "hover under board marks px": 2
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 267.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 272.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 387.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 272.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 387.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 32.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 32.5,
+     "slide": 5,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 274,
+     "a": 92.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 274,
+     "a": 147.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 324,
+     "a": 92.5,
+     "slide": 2,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 324,
+     "a": 147.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 3,
+     "ok": "over_unit"
+    }
+   ],
+   "seconds": 125.9
+  },
+  "h05_strike_nowords": {
+   "plate": "h05",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Strike",
+   "hand": [
+    "Strike",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 3096,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128533,
+     "badges": 2574,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 6043,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 121620
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1497,
+     "p95": 0.3949,
+     "loud": 0.0565
+    },
+    "tower": {
+     "mean": 0.1667,
+     "p95": 0.2291,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1932,
+     "p95": 0.3182,
+     "loud": 0.0059
+    },
+    "hand": {
+     "mean": 0.3313,
+     "p95": 0.6188,
+     "loud": 0.3515
+    },
+    "hud": {
+     "mean": 0.1102,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1798,
+    "dim_mean": 0.1372,
+    "lit_share": 0.2923,
+    "lit_vs_dim": 1.31
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     3
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "killed": true,
+    "hp_lost": 2
+   },
+   "note": "Strike on unit 5 (Packet, ring +1): killed, its HP hatched as lost at END TURN, its landing arc gone",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 267.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 272.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 387.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 272.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 387.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 32.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 32.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 6,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 274,
+     "a": 92.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 274,
+     "a": 147.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 324,
+     "a": 92.5,
+     "slide": 2,
+     "ok": "clear"
+    },
+    {
+     "tag": "adjuster",
+     "r": 324,
+     "a": 147.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 2,
+     "ok": "over_unit"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 103.6
+  },
+  "h06_shove": {
+   "plate": "h06",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Shove",
+   "hand": [
+    "Shove",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "SHOVE (BUMP)",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 1589,
+     "hover x arcs": 0,
+     "ghost x units": 595,
+     "ghost x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128546,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 17177,
+     "hand": 220683,
+     "hover": 9427,
+     "inset": 86563,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1532,
+     "p95": 0.3901,
+     "loud": 0.0561
+    },
+    "tower": {
+     "mean": 0.1658,
+     "p95": 0.2249,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1816,
+     "p95": 0.3307,
+     "loud": 0.0123
+    },
+    "hand": {
+     "mean": 0.334,
+     "p95": 0.6471,
+     "loud": 0.3675
+    },
+    "hud": {
+     "mean": 0.1206,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1777,
+    "dim_mean": 0.144,
+    "lit_share": 0.2743,
+    "lit_vs_dim": 1.23
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved": [
+     5,
+     [
+      1,
+      0
+     ],
+     [
+      1,
+      1
+     ]
+    ],
+    "plan_landing": [
+     3
+    ],
+    "bump_inset_hit": [
+     1,
+     2
+    ]
+   },
+   "note": "ghost = the plan frame unit 5 at sector 1 with its plan landing arc; inset: Shove into a neighbour (sim bump, 1 HP each)",
+   "z_order": {
+    "ghost under board marks px": 1079,
+    "hover under board marks px": 376
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 267.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 272.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 387.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 272.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 387.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 32.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 32.5,
+     "slide": 5,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 8,
+     "ok": "clear"
+    }
+   ],
+   "seconds": 138.9
+  },
+  "h06_shove_nowords": {
+   "plate": "h06",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Shove",
+   "hand": [
+    "Shove",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [
+    {
+     "name": "SHOVE (BUMP)",
+     "asserts": {
+      "total": 63,
+      "passed": 63,
+      "failed": []
+     }
+    }
+   ],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0,
+     "inset x digits": 0,
+     "inset x labels": 0,
+     "inset x tags": 0,
+     "inset x badges": 0,
+     "inset x tickets": 0,
+     "inset x tape": 0,
+     "inset x plates": 0,
+     "inset x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 1611,
+     "hover x arcs": 0,
+     "ghost x units": 700,
+     "ghost x arcs": 0,
+     "inset x units": 0,
+     "inset x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128546,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 17619,
+     "hand": 220683,
+     "hover": 9745,
+     "inset": 85054,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1502,
+     "p95": 0.3901,
+     "loud": 0.0546
+    },
+    "tower": {
+     "mean": 0.1669,
+     "p95": 0.2291,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1789,
+     "p95": 0.3236,
+     "loud": 0.007
+    },
+    "hand": {
+     "mean": 0.3264,
+     "p95": 0.6011,
+     "loud": 0.3387
+    },
+    "hud": {
+     "mean": 0.114,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1765,
+    "dim_mean": 0.1403,
+    "lit_share": 0.2743,
+    "lit_vs_dim": 1.26
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved": [
+     5,
+     [
+      1,
+      0
+     ],
+     [
+      1,
+      1
+     ]
+    ],
+    "plan_landing": [
+     3
+    ],
+    "bump_inset_hit": [
+     1,
+     2
+    ]
+   },
+   "note": "ghost = the plan frame unit 5 at sector 1 with its plan landing arc; inset: Shove into a neighbour (sim bump, 1 HP each)",
+   "z_order": {
+    "ghost under board marks px": 637,
+    "hover under board marks px": 52
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 218,
+     "a": 267.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 152.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 1",
+     "r": 268,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 272.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 218,
+     "a": 387.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 272.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 2",
+     "r": 268,
+     "a": 387.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 32.5,
+     "slide": 4,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 218,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 32.5,
+     "slide": 3,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "unit 3",
+     "r": 268,
+     "a": 147.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 274,
+     "a": 267.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 152.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 4",
+     "r": 324,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 274,
+     "a": 27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": -27.5,
+     "slide": 8,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 5",
+     "r": 324,
+     "a": 27.5,
+     "slide": 8,
+     "ok": "clear"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 177.1
+  },
+  "h07_pull": {
+   "plate": "h07",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Pull",
+   "hand": [
+    "Pull",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 173,
+     "hover x arcs": 0,
+     "ghost x units": 1007,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128801,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 18270,
+     "hand": 220683,
+     "hover": 2513,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112538
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1284,
+     "p95": 0.3843,
+     "loud": 0.0515
+    },
+    "tower": {
+     "mean": 0.154,
+     "p95": 0.2207,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1112,
+     "p95": 0.2319,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3239,
+     "p95": 0.6334,
+     "loud": 0.344
+    },
+    "hud": {
+     "mean": 0.1179,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1553,
+    "dim_mean": 0.1245,
+    "lit_share": 0.1276,
+    "lit_vs_dim": 1.25
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved": [
+     7,
+     [
+      2,
+      5
+     ],
+     [
+      1,
+      5
+     ]
+    ],
+    "k": [
+     2,
+     1
+    ]
+   },
+   "note": "the only legal Pull: unit 7 moves ring +2 -> +1, lands a turn sooner (k 2 -> 1)",
+   "z_order": {
+    "ghost under board marks px": 20,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    }
+   ],
+   "seconds": 132.2
+  },
+  "h07_pull_nowords": {
+   "plate": "h07",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Pull",
+   "hand": [
+    "Pull",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0,
+     "ghost x digits": 0,
+     "ghost x labels": 0,
+     "ghost x tags": 0,
+     "ghost x badges": 0,
+     "ghost x tickets": 0,
+     "ghost x tape": 0,
+     "ghost x plates": 0,
+     "ghost x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 173,
+     "hover x arcs": 0,
+     "ghost x units": 1007,
+     "ghost x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 128801,
+     "badges": 1971,
+     "digits": 4111,
+     "ghost": 18270,
+     "hand": 220683,
+     "hover": 2513,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112538
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1268,
+     "p95": 0.3854,
+     "loud": 0.0512
+    },
+    "tower": {
+     "mean": 0.1552,
+     "p95": 0.2261,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1098,
+     "p95": 0.2319,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3201,
+     "p95": 0.602,
+     "loud": 0.3184
+    },
+    "hud": {
+     "mean": 0.1122,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1566,
+    "dim_mean": 0.1224,
+    "lit_share": 0.1276,
+    "lit_vs_dim": 1.28
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     4
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "moved": [
+     7,
+     [
+      2,
+      5
+     ],
+     [
+      1,
+      5
+     ]
+    ],
+    "k": [
+     2,
+     1
+    ]
+   },
+   "note": "the only legal Pull: unit 7 moves ring +2 -> +1, lands a turn sooner (k 2 -> 1)",
+   "z_order": {
+    "ghost under board marks px": 20,
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 332,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 272.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 7",
+     "r": 382,
+     "a": 327.5,
+     "slide": 7,
+     "ok": "clear"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 143.5
+  },
+  "h08_hold": {
+   "plate": "h08",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Hold",
+   "hand": [
+    "Hold",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x hand": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 4747
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 130892,
+     "badges": 2574,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 16871,
+     "labels": 2836,
+     "plates": 39717,
+     "tags": 5798,
+     "tickets": 19096,
+     "units": 121804
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1661,
+     "p95": 0.4191,
+     "loud": 0.0697
+    },
+    "tower": {
+     "mean": 0.166,
+     "p95": 0.2271,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.2441,
+     "p95": 0.3976,
+     "loud": 0.0657
+    },
+    "hand": {
+     "mean": 0.3445,
+     "p95": 0.6423,
+     "loud": 0.3996
+    },
+    "hud": {
+     "mean": 0.116,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.2002,
+    "dim_mean": 0.146,
+    "lit_share": 0.3708,
+    "lit_vs_dim": 1.37
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "schedule": [
+     [
+      2,
+      0,
+      0
+     ],
+     [
+      0,
+      2,
+      0
+     ]
+    ],
+    "landings_changed": [
+     [
+      4,
+      [
+       0,
+       5
+      ],
+      [
+       3,
+       4
+      ],
+      "lands"
+     ],
+     [
+      5,
+      [
+       2
+      ],
+      null,
+      "dies"
+     ]
+    ]
+   },
+   "note": "schedule [2, 0, 0] -> [0, 2, 0]; landing arcs recomputed by the sim",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "seconds": 54.4
+  },
+  "h08_hold_nowords": {
+   "plate": "h08",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Hold",
+   "hand": [
+    "Hold",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 62,
+    "passed": 62,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x hand": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 4747
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 130892,
+     "badges": 2574,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 16871,
+     "labels": 1300,
+     "plates": 39717,
+     "tags": 3519,
+     "tickets": 19096,
+     "units": 121804
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1635,
+     "p95": 0.4257,
+     "loud": 0.069
+    },
+    "tower": {
+     "mean": 0.1671,
+     "p95": 0.2318,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.2394,
+     "p95": 0.3941,
+     "loud": 0.0616
+    },
+    "hand": {
+     "mean": 0.3386,
+     "p95": 0.6129,
+     "loud": 0.3739
+    },
+    "hud": {
+     "mean": 0.1103,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1979,
+    "dim_mean": 0.1433,
+    "lit_share": 0.3708,
+    "lit_vs_dim": 1.38
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "schedule": [
+     [
+      2,
+      0,
+      0
+     ],
+     [
+      0,
+      2,
+      0
+     ]
+    ],
+    "landings_changed": [
+     [
+      4,
+      [
+       0,
+       5
+      ],
+      [
+       3,
+       4
+      ],
+      "lands"
+     ],
+     [
+      5,
+      [
+       2
+      ],
+      null,
+      "dies"
+     ]
+    ]
+   },
+   "note": "schedule [2, 0, 0] -> [0, 2, 0]; landing arcs recomputed by the sim",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [],
+   "alnum_text_calls": [],
+   "seconds": 79.6
+  },
+  "h09_firewall": {
+   "plate": "h09",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": "Firewall",
+   "hand": [
+    "Firewall",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 1101,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 10871,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112649
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.139,
+     "p95": 0.3826,
+     "loud": 0.0512
+    },
+    "tower": {
+     "mean": 0.1588,
+     "p95": 0.2211,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1514,
+     "p95": 0.2641,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3271,
+     "p95": 0.6408,
+     "loud": 0.3494
+    },
+    "hud": {
+     "mean": 0.1191,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.1659,
+    "dim_mean": 0.132,
+    "lit_share": 0.2065,
+    "lit_vs_dim": 1.26
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "burns": [
+     {
+      "uid": 4,
+      "kind": "Payload",
+      "hp_lost": 0,
+      "ring": 0
+     },
+     {
+      "uid": 6,
+      "kind": "Packet",
+      "hp_lost": 1,
+      "ring": 1
+     },
+     {
+      "uid": 4,
+      "kind": "Payload",
+      "hp_lost": 0,
+      "ring": 0
+     },
+     {
+      "uid": 6,
+      "kind": "Packet",
+      "hp_lost": 1,
+      "ring": 1
+     }
+    ],
+    "legal_columns": [
+     0,
+     1,
+     2,
+     4,
+     5
+    ]
+   },
+   "note": "burns from the sim (hurt wrapped in the plan preview): [{'uid': 4, 'kind': 'Payload', 'hp_lost': 0, 'ring': 0}, {'uid': 6, 'kind': 'Packet', 'hp_lost': 1, 'ring': 1}, {'uid': 4, 'kind': 'Payload', 'hp_lost': 0, 'ring': 0}, {'uid': 6, 'kind': 'Packet', 'hp_lost': 1, 'ring': 1}]",
+   "z_order": {
+    "hover under board marks px": 176
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "column 1",
+     "r": 201,
+     "a": 38.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 1",
+     "r": 201,
+     "a": 81.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 1",
+     "r": 379,
+     "a": 38.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 1",
+     "r": 379,
+     "a": 81.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 201,
+     "a": 98.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 2",
+     "r": 201,
+     "a": 141.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 379,
+     "a": 98.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 379,
+     "a": 141.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 4",
+     "r": 201,
+     "a": 218.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 4",
+     "r": 201,
+     "a": 261.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 4",
+     "r": 379,
+     "a": 218.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 4",
+     "r": 379,
+     "a": 261.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 201,
+     "a": 278.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 5",
+     "r": 201,
+     "a": 321.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 379,
+     "a": 278.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 379,
+     "a": 321.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 201,
+     "a": -21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 201,
+     "a": 21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 379,
+     "a": -21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 379,
+     "a": 21.5,
+     "slide": 0,
+     "ok": "clear"
+    }
+   ],
+   "seconds": 80.2
+  },
+  "h09_firewall_nowords": {
+   "plate": "h09",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": "Firewall",
+   "hand": [
+    "Firewall",
+    "Brace",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 1195,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 455.6,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 220683,
+     "hover": 10995,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112649
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1366,
+     "p95": 0.3769,
+     "loud": 0.0491
+    },
+    "tower": {
+     "mean": 0.16,
+     "p95": 0.2261,
+     "loud": 0.0
+    },
+    "rings": {
+     "mean": 0.1499,
+     "p95": 0.2636,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.3174,
+     "p95": 0.6037,
+     "loud": 0.3077
+    },
+    "hud": {
+     "mean": 0.1134,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1664,
+    "dim_mean": 0.1288,
+    "lit_share": 0.2065,
+    "lit_vs_dim": 1.29
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     2
+    ],
+    "trace": [
+     3,
+     5
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "bill_rings": [],
+    "burns": [
+     {
+      "uid": 4,
+      "kind": "Payload",
+      "hp_lost": 0,
+      "ring": 0
+     },
+     {
+      "uid": 6,
+      "kind": "Packet",
+      "hp_lost": 1,
+      "ring": 1
+     },
+     {
+      "uid": 4,
+      "kind": "Payload",
+      "hp_lost": 0,
+      "ring": 0
+     },
+     {
+      "uid": 6,
+      "kind": "Packet",
+      "hp_lost": 1,
+      "ring": 1
+     }
+    ],
+    "legal_columns": [
+     0,
+     1,
+     2,
+     4,
+     5
+    ]
+   },
+   "note": "burns from the sim (hurt wrapped in the plan preview): [{'uid': 4, 'kind': 'Payload', 'hp_lost': 0, 'ring': 0}, {'uid': 6, 'kind': 'Packet', 'hp_lost': 1, 'ring': 1}, {'uid': 4, 'kind': 'Payload', 'hp_lost': 0, 'ring': 0}, {'uid': 6, 'kind': 'Packet', 'hp_lost': 1, 'ring': 1}]",
+   "z_order": {
+    "hover under board marks px": 52
+   },
+   "lift_dx": 32.0,
+   "lift_cy": 906,
+   "corners": [
+    {
+     "tag": "column 1",
+     "r": 201,
+     "a": 38.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 1",
+     "r": 201,
+     "a": 81.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 1",
+     "r": 379,
+     "a": 38.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 1",
+     "r": 379,
+     "a": 81.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 201,
+     "a": 98.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 2",
+     "r": 201,
+     "a": 141.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 379,
+     "a": 98.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 2",
+     "r": 379,
+     "a": 141.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 4",
+     "r": 201,
+     "a": 218.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 4",
+     "r": 201,
+     "a": 261.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 4",
+     "r": 379,
+     "a": 218.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 4",
+     "r": 379,
+     "a": 261.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 201,
+     "a": 278.5,
+     "slide": 0,
+     "ok": "over_unit"
+    },
+    {
+     "tag": "column 5",
+     "r": 201,
+     "a": 321.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 379,
+     "a": 278.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 5",
+     "r": 379,
+     "a": 321.5,
+     "slide": 4,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 201,
+     "a": -21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 201,
+     "a": 21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 379,
+     "a": -21.5,
+     "slide": 0,
+     "ok": "clear"
+    },
+    {
+     "tag": "column 0",
+     "r": 379,
+     "a": 21.5,
+     "slide": 0,
+     "ok": "clear"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 85.3
+  },
+  "h10_soak": {
+   "plate": "h10",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p1",
+   "card": null,
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 200996,
+     "hover": 7403,
+     "labels": 2109,
+     "plates": 15805,
+     "tags": 5798,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1388,
+     "p95": 0.414,
+     "loud": 0.0721
+    },
+    "tower": {
+     "mean": 0.369,
+     "p95": 0.5628,
+     "loud": 0.4738
+    },
+    "rings": {
+     "mean": 0.1124,
+     "p95": 0.2113,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.2885,
+     "p95": 0.5095,
+     "loud": 0.2596
+    },
+    "hud": {
+     "mean": 0.1048,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.2111,
+    "dim_mean": 0.1185,
+    "lit_share": 0.2193,
+    "lit_vs_dim": 1.78
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     5
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     10
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through"
+    ],
+    "you_box": [
+     9,
+     10
+    ],
+    "soak_sector": 1,
+    "soaked": 1
+   },
+   "note": "END TURN soak on the slice at sector 1 (sim option [1]): THROUGH 6 -> 5, HP after 9 -> 10",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "seconds": 64.8
+  },
+  "h10_soak_nowords": {
+   "plate": "h10",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": null,
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 63,
+    "passed": 63,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 136449,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 200996,
+     "hover": 7994,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.137,
+     "p95": 0.4148,
+     "loud": 0.0689
+    },
+    "tower": {
+     "mean": 0.3722,
+     "p95": 0.5784,
+     "loud": 0.4738
+    },
+    "rings": {
+     "mean": 0.111,
+     "p95": 0.2156,
+     "loud": 0.0
+    },
+    "hand": {
+     "mean": 0.2802,
+     "p95": 0.4946,
+     "loud": 0.2073
+    },
+    "hud": {
+     "mean": 0.1003,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.2139,
+    "dim_mean": 0.1153,
+    "lit_share": 0.2193,
+    "lit_vs_dim": 1.86
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     5
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     10
+    ]
+   },
+   "marks": {
+    "bill_rings": [
+     "through"
+    ],
+    "you_box": [
+     9,
+     10
+    ],
+    "soak_sector": 1,
+    "soaked": 1
+   },
+   "note": "END TURN soak on the slice at sector 1 (sim option [1]): THROUGH 6 -> 5, HP after 9 -> 10",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [],
+   "alnum_text_calls": [],
+   "seconds": 209.6
+  },
+  "h11_unit": {
+   "plate": "h11",
+   "corp": "neutral",
+   "words": true,
+   "beat": "p2b",
+   "card": null,
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 24,
+    "passed": 24,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x leader": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x leader": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x leader": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "leader x tags": 0,
+     "leader x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0,
+     "leader x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x leader": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 0,
+     "hover x arcs": 0
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 113137,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 200996,
+     "hover": 4173,
+     "labels": 2109,
+     "leader": 1426,
+     "plates": 15805,
+     "tags": 40803,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1302,
+     "p95": 0.3879,
+     "loud": 0.0553
+    },
+    "tower": {
+     "mean": 0.2522,
+     "p95": 0.5043,
+     "loud": 0.226
+    },
+    "rings": {
+     "mean": 0.1126,
+     "p95": 0.2333,
+     "loud": 0.0012
+    },
+    "hand": {
+     "mean": 0.2857,
+     "p95": 0.5095,
+     "loud": 0.2596
+    },
+    "hud": {
+     "mean": 0.105,
+     "p95": 0.3241,
+     "loud": 0.037
+    },
+    "lit_mean": 0.187,
+    "dim_mean": 0.1151,
+    "lit_share": 0.2096,
+    "lit_vs_dim": 1.62
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "route": [
+     [
+      2,
+      2
+     ],
+     [
+      1,
+      4
+     ],
+     [
+      0,
+      4
+     ]
+    ],
+    "lands_on": [
+     0,
+     4,
+     5
+    ]
+   },
+   "note": "the p2b form: the board draws the route, the cell brackets and the tag (content parked, note 8); hover dim at 0.40 / 0.45 on top",
+   "z_order": {
+    "hover under board marks px": 0
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    }
+   ],
+   "seconds": 52.5
+  },
+  "h11_unit_nowords": {
+   "plate": "h11",
+   "corp": "neutral",
+   "words": false,
+   "beat": "nowords",
+   "card": null,
+   "hand": [
+    "Brace",
+    "Spin3",
+    "Trigger",
+    "Twist"
+   ],
+   "played": [],
+   "asserts": {
+    "total": 24,
+    "passed": 24,
+    "failed": []
+   },
+   "insets": [],
+   "collisions": {
+    "mark_pairs_px": {
+     "badges x digits": 0,
+     "badges x labels": 0,
+     "badges x tags": 0,
+     "badges x tickets": 0,
+     "digits x labels": 0,
+     "digits x tags": 0,
+     "digits x tickets": 0,
+     "labels x tags": 0,
+     "labels x tickets": 0,
+     "tags x tickets": 0
+    },
+    "mark_pairs_pass": true,
+    "occlusion_px": {
+     "digits x tape": 0,
+     "digits x plates": 0,
+     "digits x hand": 0,
+     "labels x tape": 0,
+     "labels x hand": 0,
+     "tags x tape": 0,
+     "tags x plates": 0,
+     "tags x hand": 0,
+     "badges x tape": 0,
+     "badges x plates": 0,
+     "badges x hand": 0,
+     "tickets x tape": 0,
+     "tickets x plates": 0,
+     "tickets x hand": 0
+    },
+    "occlusion_pass": true,
+    "hover_vs_marks_px": {
+     "hover x digits": 0,
+     "hover x labels": 0,
+     "hover x tags": 0,
+     "hover x badges": 0,
+     "hover x tickets": 0,
+     "hover x tape": 0,
+     "hover x plates": 0,
+     "hover x hand": 0
+    },
+    "hover_vs_marks_pass": true,
+    "hover_over_units_arcs_px_info": {
+     "hover x units": 164,
+     "hover x arcs": 410
+    },
+    "hand_vs_board": {
+     "hand_min_r_px": 458.9,
+     "hand_px_inside_r455": 0,
+     "hand_px_on_board_marks": 0,
+     "pass": true
+    },
+    "mask_px": {
+     "arcs": 113137,
+     "badges": 1971,
+     "digits": 4111,
+     "hand": 200996,
+     "hover": 34974,
+     "labels": 1300,
+     "plates": 15805,
+     "tags": 3519,
+     "tape": 23589,
+     "tickets": 19096,
+     "units": 112615
+    },
+    "allowed_pairs": [
+     "labels x plates",
+     "leader x plates",
+     "leader x tape"
+    ]
+   },
+   "squint": {
+    "plate": {
+     "mean": 0.1278,
+     "p95": 0.3836,
+     "loud": 0.0515
+    },
+    "tower": {
+     "mean": 0.2531,
+     "p95": 0.5043,
+     "loud": 0.217
+    },
+    "rings": {
+     "mean": 0.1115,
+     "p95": 0.2334,
+     "loud": 0.0012
+    },
+    "hand": {
+     "mean": 0.2774,
+     "p95": 0.4946,
+     "loud": 0.2073
+    },
+    "hud": {
+     "mean": 0.1002,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "lit_mean": 0.1863,
+    "dim_mean": 0.1123,
+    "lit_share": 0.2096,
+    "lit_vs_dim": 1.66
+   },
+   "dash_calls": 0,
+   "dot_calls": 0,
+   "bill": {
+    "live": [
+     12,
+     6
+    ],
+    "plan": [
+     12,
+     6
+    ],
+    "ram": [
+     4,
+     4
+    ],
+    "trace": [
+     3,
+     3
+    ],
+    "hp_after": [
+     9,
+     9
+    ]
+   },
+   "marks": {
+    "route": [
+     [
+      2,
+      2
+     ],
+     [
+      1,
+      4
+     ],
+     [
+      0,
+      4
+     ]
+    ],
+    "lands_on": [
+     0,
+     4,
+     5
+    ]
+   },
+   "note": "the p2b form: the board draws the route, the cell brackets and the tag (content parked, note 8); hover dim at 0.40 / 0.45 on top",
+   "z_order": {
+    "hover under board marks px": 253
+   },
+   "lift_dx": 0.0,
+   "lift_cy": 866,
+   "corners": [
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 332,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 92.5,
+     "slide": 7,
+     "ok": "clear"
+    },
+    {
+     "tag": "unit 6",
+     "r": 382,
+     "a": 267.5,
+     "slide": 7,
+     "ok": "clear"
+    }
+   ],
+   "alnum_text_calls": [],
+   "seconds": 202.0
+  }
+ }
+}

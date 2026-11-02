@@ -1,0 +1,2236 @@
+{
+ "draw_asserts": {
+  "p1_decide": {
+   "total": 63,
+   "passed": 63,
+   "failures": []
+  },
+  "p2_preview": {
+   "total": 49,
+   "passed": 49,
+   "failures": []
+  },
+  "p2b_hover": {
+   "total": 24,
+   "passed": 24,
+   "failures": []
+  },
+  "p3_resolve": {
+   "total": 49,
+   "passed": 49,
+   "failures": []
+  },
+  "p1_nowords": {
+   "total": 63,
+   "passed": 63,
+   "failures": []
+  },
+  "p1_decide_solace": {
+   "total": 63,
+   "passed": 63,
+   "failures": []
+  },
+  "p2b_hover_solace": {
+   "total": 24,
+   "passed": 24,
+   "failures": []
+  },
+  "p1_decide_meridian": {
+   "total": 63,
+   "passed": 63,
+   "failures": []
+  },
+  "p2b_hover_meridian": {
+   "total": 24,
+   "passed": 24,
+   "failures": []
+  }
+ },
+ "collisions_marks": {
+  "p1_decide": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p2_preview": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p2b_hover": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x leader": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x leader": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x leader": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "leader x tags": 0,
+    "leader x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p3_resolve": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p1_nowords": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p1_decide_solace": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p2b_hover_solace": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x leader": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x leader": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x leader": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "leader x tags": 0,
+    "leader x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p1_decide_meridian": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  },
+  "p2b_hover_meridian": {
+   "pairs": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x leader": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x leader": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x leader": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "leader x tags": 0,
+    "leader x tickets": 0,
+    "tags x tickets": 0
+   },
+   "total_px": 0,
+   "pass_": true
+  }
+ },
+ "occlusion": {
+  "p1_decide": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p2_preview": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p2b_hover": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0,
+    "leader x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p3_resolve": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p1_nowords": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p1_decide_solace": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p2b_hover_solace": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0,
+    "leader x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p1_decide_meridian": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  },
+  "p2b_hover_meridian": {
+   "pairs": {
+    "digits x tape": 0,
+    "digits x plates": 0,
+    "digits x hand": 0,
+    "labels x tape": 0,
+    "labels x hand": 0,
+    "tags x tape": 0,
+    "tags x plates": 0,
+    "tags x hand": 0,
+    "badges x tape": 0,
+    "badges x plates": 0,
+    "badges x hand": 0,
+    "tickets x tape": 0,
+    "tickets x plates": 0,
+    "tickets x hand": 0,
+    "leader x hand": 0
+   },
+   "pass_": true,
+   "note": "marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)"
+  }
+ },
+ "hand_vs_board": {
+  "p1_decide": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p2_preview": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p2b_hover": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p3_resolve": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p1_nowords": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p1_decide_solace": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p2b_hover_solace": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p1_decide_meridian": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  },
+  "p2b_hover_meridian": {
+   "hand_min_r_px": 458.9,
+   "hand_px_inside_r455": 0,
+   "hand_px_on_board_marks": 0,
+   "pass": true
+  }
+ },
+ "hand_rule": "no hand pixel (alpha >= 128) inside wheel radius 455 of the board centre (536, 540), and 0 px over any board mark, tape or plate",
+ "dash_audit": {
+  "p1_decide": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p2_preview": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p2b_hover": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p3_resolve": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p1_nowords": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p1_decide_solace": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p2b_hover_solace": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p1_decide_meridian": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  },
+  "p2b_hover_meridian": {
+   "dashed_line_calls": 0,
+   "dotted_mark_calls": 0
+  }
+ },
+ "all_pass": {
+  "draw_asserts": true,
+  "collisions": true,
+  "occlusion": true,
+  "hand": true,
+  "dashes": true
+ },
+ "squint": {
+  "p1_decide": {
+   "plate": {
+    "final": {
+     "mean": 0.2286,
+     "p95": 0.4939,
+     "loud": 0.1243
+    },
+    "first_pass": {
+     "mean": 0.2328,
+     "p95": 0.5044,
+     "loud": 0.1403
+    },
+    "e10": {
+     "mean": 0.1843,
+     "p95": 0.3682,
+     "loud": 0.041
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3861,
+     "p95": 0.5609,
+     "loud": 0.4864
+    },
+    "first_pass": {
+     "mean": 0.4063,
+     "p95": 0.5779,
+     "loud": 0.5642
+    },
+    "e10": {
+     "mean": 0.243,
+     "p95": 0.3299,
+     "loud": 0.0127
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2474,
+     "p95": 0.384,
+     "loud": 0.0545
+    },
+    "first_pass": {
+     "mean": 0.2499,
+     "p95": 0.3982,
+     "loud": 0.0669
+    },
+    "e10": {
+     "mean": 0.1895,
+     "p95": 0.3118,
+     "loud": 0.0018
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3736,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.387,
+     "p95": 0.6477,
+     "loud": 0.5064
+    },
+    "e10": {
+     "mean": 0.2723,
+     "p95": 0.4489,
+     "loud": 0.1923
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "e10": {
+     "mean": 0.1326,
+     "p95": 0.227,
+     "loud": 0.0008
+    }
+   }
+  },
+  "p2_preview": {
+   "plate": {
+    "final": {
+     "mean": 0.231,
+     "p95": 0.5154,
+     "loud": 0.1353
+    },
+    "first_pass": {
+     "mean": 0.2359,
+     "p95": 0.5336,
+     "loud": 0.1514
+    },
+    "e10": {
+     "mean": 0.1845,
+     "p95": 0.3749,
+     "loud": 0.0473
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.409,
+     "p95": 0.6116,
+     "loud": 0.5787
+    },
+    "first_pass": {
+     "mean": 0.4313,
+     "p95": 0.637,
+     "loud": 0.6528
+    },
+    "e10": {
+     "mean": 0.2505,
+     "p95": 0.3584,
+     "loud": 0.0307
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2343,
+     "p95": 0.3831,
+     "loud": 0.0516
+    },
+    "first_pass": {
+     "mean": 0.2365,
+     "p95": 0.3974,
+     "loud": 0.0639
+    },
+    "e10": {
+     "mean": 0.1847,
+     "p95": 0.3011,
+     "loud": 0.0012
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3837,
+     "p95": 0.6726,
+     "loud": 0.4754
+    },
+    "first_pass": {
+     "mean": 0.4033,
+     "p95": 0.6831,
+     "loud": 0.5406
+    },
+    "e10": {
+     "mean": 0.2704,
+     "p95": 0.461,
+     "loud": 0.2083
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1667,
+     "p95": 0.3491,
+     "loud": 0.0415
+    },
+    "first_pass": {
+     "mean": 0.1667,
+     "p95": 0.3491,
+     "loud": 0.0415
+    },
+    "e10": {
+     "mean": 0.1445,
+     "p95": 0.2426,
+     "loud": 0.0
+    }
+   }
+  },
+  "p2b_hover": {
+   "plate": {
+    "final": {
+     "mean": 0.2163,
+     "p95": 0.4938,
+     "loud": 0.1203
+    },
+    "first_pass": {
+     "mean": 0.2208,
+     "p95": 0.5029,
+     "loud": 0.1351
+    },
+    "e10": {
+     "mean": 0.1729,
+     "p95": 0.3674,
+     "loud": 0.0409
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3737,
+     "p95": 0.5609,
+     "loud": 0.4756
+    },
+    "first_pass": {
+     "mean": 0.392,
+     "p95": 0.5779,
+     "loud": 0.5425
+    },
+    "e10": {
+     "mean": 0.2011,
+     "p95": 0.3328,
+     "loud": 0.0127
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.1979,
+     "p95": 0.3661,
+     "loud": 0.0428
+    },
+    "first_pass": {
+     "mean": 0.2006,
+     "p95": 0.3864,
+     "loud": 0.0534
+    },
+    "e10": {
+     "mean": 0.1637,
+     "p95": 0.2894,
+     "loud": 0.0018
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3727,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.3869,
+     "p95": 0.6477,
+     "loud": 0.5053
+    },
+    "e10": {
+     "mean": 0.2709,
+     "p95": 0.4489,
+     "loud": 0.1923
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "e10": {
+     "mean": 0.1328,
+     "p95": 0.227,
+     "loud": 0.0008
+    }
+   }
+  },
+  "p3_resolve": {
+   "plate": {
+    "final": {
+     "mean": 0.205,
+     "p95": 0.4656,
+     "loud": 0.0971
+    },
+    "first_pass": {
+     "mean": 0.2073,
+     "p95": 0.4824,
+     "loud": 0.1075
+    },
+    "e10": {
+     "mean": 0.1651,
+     "p95": 0.3274,
+     "loud": 0.0246
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.4063,
+     "p95": 0.6116,
+     "loud": 0.575
+    },
+    "first_pass": {
+     "mean": 0.4284,
+     "p95": 0.637,
+     "loud": 0.6438
+    },
+    "e10": {
+     "mean": 0.2484,
+     "p95": 0.3584,
+     "loud": 0.0307
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2268,
+     "p95": 0.3823,
+     "loud": 0.051
+    },
+    "first_pass": {
+     "mean": 0.2292,
+     "p95": 0.3947,
+     "loud": 0.0639
+    },
+    "e10": {
+     "mean": 0.1838,
+     "p95": 0.3011,
+     "loud": 0.0012
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.2274,
+     "p95": 0.5491,
+     "loud": 0.1752
+    },
+    "first_pass": {
+     "mean": 0.2292,
+     "p95": 0.5326,
+     "loud": 0.1902
+    },
+    "e10": {
+     "mean": 0.1564,
+     "p95": 0.3726,
+     "loud": 0.0438
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1471,
+     "p95": 0.3491,
+     "loud": 0.0415
+    },
+    "first_pass": {
+     "mean": 0.1471,
+     "p95": 0.3491,
+     "loud": 0.0415
+    },
+    "e10": {
+     "mean": 0.1232,
+     "p95": 0.2195,
+     "loud": 0.0
+    }
+   }
+  },
+  "p1_nowords": {
+   "plate": {
+    "final": {
+     "mean": 0.2241,
+     "p95": 0.4814,
+     "loud": 0.1199
+    },
+    "first_pass": {
+     "mean": 0.2289,
+     "p95": 0.498,
+     "loud": 0.1389
+    },
+    "e10": {
+     "mean": 0.1814,
+     "p95": 0.3586,
+     "loud": 0.0387
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3893,
+     "p95": 0.5755,
+     "loud": 0.4901
+    },
+    "first_pass": {
+     "mean": 0.4094,
+     "p95": 0.5926,
+     "loud": 0.5642
+    },
+    "e10": {
+     "mean": 0.2393,
+     "p95": 0.329,
+     "loud": 0.0127
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2438,
+     "p95": 0.3874,
+     "loud": 0.0545
+    },
+    "first_pass": {
+     "mean": 0.2465,
+     "p95": 0.4047,
+     "loud": 0.0669
+    },
+    "e10": {
+     "mean": 0.1859,
+     "p95": 0.3098,
+     "loud": 0.0018
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3629,
+     "p95": 0.6242,
+     "loud": 0.4241
+    },
+    "first_pass": {
+     "mean": 0.3803,
+     "p95": 0.6344,
+     "loud": 0.5021
+    },
+    "e10": {
+     "mean": 0.2625,
+     "p95": 0.4418,
+     "loud": 0.1538
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1398,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "first_pass": {
+     "mean": 0.1398,
+     "p95": 0.3231,
+     "loud": 0.04
+    },
+    "e10": {
+     "mean": 0.1173,
+     "p95": 0.197,
+     "loud": 0.0
+    }
+   }
+  },
+  "p1_decide_solace": {
+   "plate": {
+    "final": {
+     "mean": 0.2337,
+     "p95": 0.4946,
+     "loud": 0.1274
+    },
+    "first_pass": {
+     "mean": 0.2379,
+     "p95": 0.5051,
+     "loud": 0.1434
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3868,
+     "p95": 0.5609,
+     "loud": 0.4864
+    },
+    "first_pass": {
+     "mean": 0.4069,
+     "p95": 0.5779,
+     "loud": 0.5642
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2595,
+     "p95": 0.3977,
+     "loud": 0.0692
+    },
+    "first_pass": {
+     "mean": 0.262,
+     "p95": 0.416,
+     "loud": 0.0815
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3742,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.3872,
+     "p95": 0.6477,
+     "loud": 0.5064
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  },
+  "p2b_hover_solace": {
+   "plate": {
+    "final": {
+     "mean": 0.2216,
+     "p95": 0.4939,
+     "loud": 0.1215
+    },
+    "first_pass": {
+     "mean": 0.226,
+     "p95": 0.5038,
+     "loud": 0.1362
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3744,
+     "p95": 0.5609,
+     "loud": 0.4756
+    },
+    "first_pass": {
+     "mean": 0.3929,
+     "p95": 0.5779,
+     "loud": 0.5425
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.211,
+     "p95": 0.3772,
+     "loud": 0.0487
+    },
+    "first_pass": {
+     "mean": 0.2136,
+     "p95": 0.397,
+     "loud": 0.0587
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3733,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.3871,
+     "p95": 0.6477,
+     "loud": 0.5053
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  },
+  "p1_decide_meridian": {
+   "plate": {
+    "final": {
+     "mean": 0.2282,
+     "p95": 0.4939,
+     "loud": 0.1246
+    },
+    "first_pass": {
+     "mean": 0.2331,
+     "p95": 0.5044,
+     "loud": 0.1412
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3867,
+     "p95": 0.5609,
+     "loud": 0.4864
+    },
+    "first_pass": {
+     "mean": 0.4068,
+     "p95": 0.5779,
+     "loud": 0.5642
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.2555,
+     "p95": 0.3882,
+     "loud": 0.0563
+    },
+    "first_pass": {
+     "mean": 0.2605,
+     "p95": 0.4018,
+     "loud": 0.0716
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3729,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.3869,
+     "p95": 0.6477,
+     "loud": 0.5053
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  },
+  "p2b_hover_meridian": {
+   "plate": {
+    "final": {
+     "mean": 0.2154,
+     "p95": 0.4938,
+     "loud": 0.1203
+    },
+    "first_pass": {
+     "mean": 0.2205,
+     "p95": 0.503,
+     "loud": 0.1361
+    }
+   },
+   "tower_r<=212": {
+    "final": {
+     "mean": 0.3739,
+     "p95": 0.5609,
+     "loud": 0.4756
+    },
+    "first_pass": {
+     "mean": 0.3924,
+     "p95": 0.5779,
+     "loud": 0.5425
+    }
+   },
+   "rings_r214-430": {
+    "final": {
+     "mean": 0.204,
+     "p95": 0.368,
+     "loud": 0.0428
+    },
+    "first_pass": {
+     "mean": 0.2093,
+     "p95": 0.3944,
+     "loud": 0.0581
+    }
+   },
+   "hand_zone": {
+    "final": {
+     "mean": 0.3719,
+     "p95": 0.642,
+     "loud": 0.453
+    },
+    "first_pass": {
+     "mean": 0.3867,
+     "p95": 0.6477,
+     "loud": 0.5053
+    }
+   },
+   "hud": {
+    "final": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    },
+    "first_pass": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  }
+ },
+ "squint_note": "1/16 BOX downscale + 1 px blur, luma; loud = share of 16 px cells above 0.38. Target from O-29 fix 9: tower zone loud < 50 %.",
+ "cards": {
+  "type_colours": {
+   "TOWER": {
+    "col": "#2F5BFF",
+    "text": "#FBFAF4",
+    "text_vs_plate": 4.94,
+    "plate_vs_paper": 4.47,
+    "text_rule": ">= 4.5"
+   },
+   "WAVE": {
+    "col": "#FF8A1F",
+    "text": "#15121A",
+    "text_vs_plate": 7.86,
+    "plate_vs_paper": 2.04,
+    "text_rule": ">= 4.5"
+   }
+  },
+  "wave_variant": "orange",
+  "bone_vs_paper_if_used": 1.04,
+  "tower_vs_wave_grey": 2.19,
+  "trace_tab": {
+   "col": "#A03CFF",
+   "white_plus_vs_tab": 4.38
+  },
+  "facet_opacity": {
+   "type_plane": 0.32,
+   "type_dark_plane": 0.28,
+   "glint": 0.25,
+   "rule": "25-35 %"
+  },
+  "titles_cap_screen_px_at_1p10": {
+   "Nudge": 35.9,
+   "Spin2": 35.9,
+   "Spin3": 35.9,
+   "Brace": 35.9,
+   "Strike": 35.9,
+   "Firewall": 32.4,
+   "Pull": 35.9,
+   "Shove": 35.9,
+   "Twist": 35.9,
+   "Hold": 35.9,
+   "Trigger": 35.9
+  },
+  "title_fill_vs_keyline": 17.7,
+  "spin_arcs_screen_px": {
+   "stroke": 3.74,
+   "stroke_with_keyline": 6.82,
+   "centre_pitch": 14.3,
+   "clear_gap_between_inks": 10.56,
+   "clear_gap_between_keylines": 7.48,
+   "dot_density": {
+    "Nudge": 0.55,
+    "Spin2": 0.85,
+    "Spin3": 1.15
+   },
+   "band": {
+    "Nudge": "3BB8F2",
+    "Spin2": "44D9A6",
+    "Spin3": "FFD21F"
+   }
+  },
+  "icon_disc": {
+   "Nudge": {
+    "disc": "1A1250",
+    "disc_vs_art_around": 4.34,
+    "glyph_vs_disc": 16.11,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Spin2": {
+    "disc": "2A1C8E",
+    "disc_vs_art_around": 3.31,
+    "glyph_vs_disc": 12.13,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Spin3": {
+    "disc": "1A1250",
+    "disc_vs_art_around": 5.69,
+    "glyph_vs_disc": 16.11,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Brace": {
+    "disc": "15121A",
+    "disc_vs_art_around": 2.69,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Strike": {
+    "disc": "15121A",
+    "disc_vs_art_around": 6.41,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Firewall": {
+    "disc": "15121A",
+    "disc_vs_art_around": 2.65,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Pull": {
+    "disc": "15121A",
+    "disc_vs_art_around": 3.5,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Shove": {
+    "disc": "15121A",
+    "disc_vs_art_around": 2.53,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Twist": {
+    "disc": "15121A",
+    "disc_vs_art_around": 3.54,
+    "glyph_vs_disc": 17.72,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Hold": {
+    "disc": "FF3DA8",
+    "disc_vs_art_around": 4.77,
+    "glyph_vs_disc": 3.1,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   },
+   "Trigger": {
+    "disc": "FF3DA8",
+    "disc_vs_art_around": 3.21,
+    "glyph_vs_disc": 3.1,
+    "glyph_vs_keyline": 17.7,
+    "pass_2p5": true
+   }
+  },
+  "icon_disc_min": 2.53,
+  "icon_disc_all_ge_2p5": true
+ },
+ "corp": {
+  "tape_px": 44777,
+  "tape_match_pct_neutral": 100.0,
+  "pink_pct_enemy_zone_neutral": 0.228,
+  "tape_match_pct_solace": 97.7,
+  "pink_pct_enemy_zone_solace": 0.228,
+  "tape_match_pct_meridian": 98.0,
+  "pink_pct_enemy_zone_meridian": 0.229,
+  "kind_dE2000_plate_readback": {
+   "neutral": {
+    "1Packet-2Worm ring0": 14.6,
+    "1Packet-3Worm ring0": 9.5,
+    "4Payload-5Packet ring1": 4.4
+   },
+   "solace": {
+    "1Packet-2Worm ring0": 20.8,
+    "1Packet-3Worm ring0": 16.8,
+    "4Payload-5Packet ring1": 5.3
+   },
+   "meridian": {
+    "1Packet-2Worm ring0": 15.8,
+    "1Packet-3Worm ring0": 7.8,
+    "4Payload-5Packet ring1": 4.7
+   }
+  },
+  "kind_dE2000_swatches_min_per_ring": {
+   "neutral": [
+    6.8,
+    4.3,
+    2.3
+   ],
+   "solace": [
+    6.8,
+    4.3,
+    2.5
+   ],
+   "meridian": [
+    7.2,
+    4.5,
+    2.7
+   ],
+   "kind_gain": {
+    "solace": [
+     2.4,
+     2.1,
+     2.0
+    ],
+    "meridian": [
+     1.0,
+     1.1,
+     1.2
+    ]
+   },
+   "note": "from the first pass (locked/corp/NOTES.md, de_kinds.py with the shipped kind_gain); the cell and kind-wash code is unchanged in this pass, so the swatch numbers stand; the plate read-back above is re-measured on the final plates"
+  },
+  "meridian_hazard": {
+   "first_pass": {
+    "rim_stripe_mean_sat": 0.894,
+    "bezel_hazard_px": 2253,
+    "amber_px": 3700,
+    "min_gap_amber_to_hazard_px": 5.7
+   },
+   "final": {
+    "rim_stripe_mean_sat": 0.749,
+    "bezel_hazard_px": 309,
+    "amber_px": 3698,
+    "min_gap_amber_to_hazard_px": 37.4
+   }
+  },
+  "meridian_rule": "O-29 fix 5: hazard paint chroma -25 % (rim and bezel lip), inner bezel lip black (no stripe), gap amber mark to hazard paint >= 2 px"
+ },
+ "game_info": {
+  "cards_drawn": {
+   "p1_decide": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p2_preview": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p2b_hover": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p3_resolve": {
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "played_slots_named": [
+     "Twist",
+     "Trigger",
+     "Brace"
+    ]
+   },
+   "p1_decide_solace": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p2b_hover_solace": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p1_decide_meridian": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   },
+   "p2b_hover_meridian": {
+    "Brace": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Spin3": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 0
+    },
+    "Trigger": {
+     "missing": [],
+     "state_cost": 1,
+     "state_trace": 1
+    },
+    "Twist": {
+     "missing": [],
+     "state_cost": 0,
+     "state_trace": 0
+    }
+   }
+  },
+  "cards_all_fields_drawn": true,
+  "required_words_missing": {
+   "p1_decide": [],
+   "p2_preview": [],
+   "p2b_hover": [],
+   "p3_resolve": [],
+   "p1_decide_solace": [],
+   "p2b_hover_solace": [],
+   "p1_decide_meridian": [],
+   "p2b_hover_meridian": []
+  },
+  "state_cards_table": {
+   "Brace": {
+    "state": [
+     1,
+     0
+    ],
+    "drawn": [
+     1,
+     0
+    ],
+    "ok": true
+   },
+   "Firewall": {
+    "state": [
+     2,
+     2
+    ],
+    "drawn": [
+     2,
+     2
+    ],
+    "ok": true
+   },
+   "Hold": {
+    "state": [
+     0,
+     0
+    ],
+    "drawn": [
+     0,
+     0
+    ],
+    "ok": true
+   },
+   "Nudge": {
+    "state": [
+     1,
+     0
+    ],
+    "drawn": [
+     1,
+     0
+    ],
+    "ok": true
+   },
+   "Pull": {
+    "state": [
+     0,
+     1
+    ],
+    "drawn": [
+     0,
+     1
+    ],
+    "ok": true
+   },
+   "Shove": {
+    "state": [
+     2,
+     2
+    ],
+    "drawn": [
+     2,
+     2
+    ],
+    "ok": true
+   },
+   "Spin2": {
+    "state": [
+     1,
+     0
+    ],
+    "drawn": [
+     1,
+     0
+    ],
+    "ok": true
+   },
+   "Spin3": {
+    "state": [
+     1,
+     0
+    ],
+    "drawn": [
+     1,
+     0
+    ],
+    "ok": true
+   },
+   "Strike": {
+    "state": [
+     1,
+     0
+    ],
+    "drawn": [
+     1,
+     0
+    ],
+    "ok": true
+   },
+   "Trigger": {
+    "state": [
+     1,
+     1
+    ],
+    "drawn": [
+     1,
+     1
+    ],
+    "ok": true
+   },
+   "Twist": {
+    "state": [
+     0,
+     0
+    ],
+    "drawn": [
+     0,
+     0
+    ],
+    "ok": true
+   }
+  },
+  "nowords_alnum_text_calls": 0,
+  "tower_numbers": {
+   "f1": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 9,
+     "pending": 6,
+     "expected_lit": 9,
+     "expected_pending": 6
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "3": [
+      0
+     ],
+     "4": [
+      0,
+      2
+     ],
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0,
+      1
+     ],
+     "0": [
+      1,
+      2
+     ],
+     "5": [
+      1,
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 15,
+     "pending": 0,
+     "expected_lit": 15,
+     "expected_pending": 0
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0
+     ],
+     "3": [
+      1
+     ],
+     "0": [
+      2
+     ],
+     "4": [
+      2
+     ],
+     "5": [
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2t": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 14,
+     "pending": 1,
+     "expected_lit": 14,
+     "expected_pending": 1
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0
+     ],
+     "3": [
+      1
+     ],
+     "0": [
+      2
+     ],
+     "4": [
+      2
+     ],
+     "5": [
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2b": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 14,
+     "pending": 1,
+     "expected_lit": 14,
+     "expected_pending": 1
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "3": [
+      0
+     ],
+     "4": [
+      0,
+      2
+     ],
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0,
+      1
+     ],
+     "0": [
+      1,
+      2
+     ],
+     "5": [
+      1,
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   }
+  }
+ },
+ "grammar_step3": {
+  "chevrons_sector3": {
+   "neutral": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "chevron_rgb": [
+      254,
+      100,
+      82
+     ],
+     "cell_rgb": [
+      56,
+      74,
+      90
+     ],
+     "luma_contrast": 3.12,
+     "dE2000": 48.3,
+     "px": 406
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      218,
+      136,
+      125
+     ],
+     "cell_rgb": [
+      66,
+      68,
+      79
+     ],
+     "luma_contrast": 3.59,
+     "dE2000": 42.5,
+     "px": 347
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "chevron_rgb": [
+      149,
+      121,
+      122
+     ],
+     "cell_rgb": [
+      52,
+      60,
+      72
+     ],
+     "luma_contrast": 2.81,
+     "dE2000": 29.7,
+     "px": 280
+    }
+   ],
+   "solace": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "chevron_rgb": [
+      254,
+      100,
+      82
+     ],
+     "cell_rgb": [
+      36,
+      79,
+      77
+     ],
+     "luma_contrast": 3.11,
+     "dE2000": 54.1,
+     "px": 406
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      218,
+      136,
+      125
+     ],
+     "cell_rgb": [
+      60,
+      76,
+      66
+     ],
+     "luma_contrast": 3.38,
+     "dE2000": 48.1,
+     "px": 347
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "chevron_rgb": [
+      149,
+      121,
+      122
+     ],
+     "cell_rgb": [
+      39,
+      67,
+      61
+     ],
+     "luma_contrast": 2.71,
+     "dE2000": 37.8,
+     "px": 280
+    }
+   ],
+   "meridian": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "chevron_rgb": [
+      254,
+      100,
+      82
+     ],
+     "cell_rgb": [
+      85,
+      75,
+      69
+     ],
+     "luma_contrast": 2.89,
+     "dE2000": 38.1,
+     "px": 406
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      218,
+      136,
+      125
+     ],
+     "cell_rgb": [
+      96,
+      71,
+      59
+     ],
+     "luma_contrast": 3.17,
+     "dE2000": 34.7,
+     "px": 349
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "chevron_rgb": [
+      149,
+      121,
+      123
+     ],
+     "cell_rgb": [
+      83,
+      64,
+      54
+     ],
+     "luma_contrast": 2.46,
+     "dE2000": 23.3,
+     "px": 279
+    }
+   ]
+  },
+  "chevrons_sector0": {
+   "neutral": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "found_px": 0,
+     "note": "no chevron of the expected colour found in this column"
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      216,
+      134,
+      124
+     ],
+     "cell_rgb": [
+      59,
+      70,
+      83
+     ],
+     "luma_contrast": 3.5,
+     "dE2000": 44.3,
+     "px": 238
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "found_px": 3,
+     "note": "no chevron of the expected colour found in this column"
+    }
+   ],
+   "solace": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "found_px": 0,
+     "note": "no chevron of the expected colour found in this column"
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      216,
+      134,
+      124
+     ],
+     "cell_rgb": [
+      45,
+      77,
+      72
+     ],
+     "luma_contrast": 3.37,
+     "dE2000": 50.4,
+     "px": 238
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "found_px": 3,
+     "note": "no chevron of the expected colour found in this column"
+    }
+   ],
+   "meridian": [
+    {
+     "ring": 0,
+     "grammar": "HOT",
+     "found_px": 0,
+     "note": "no chevron of the expected colour found in this column"
+    },
+    {
+     "ring": 1,
+     "grammar": "COLD",
+     "chevron_rgb": [
+      216,
+      134,
+      124
+     ],
+     "cell_rgb": [
+      85,
+      69,
+      60
+     ],
+     "luma_contrast": 3.31,
+     "dE2000": 36.6,
+     "px": 240
+    },
+    {
+     "ring": 2,
+     "grammar": "FAR",
+     "found_px": 3,
+     "note": "no chevron of the expected colour found in this column"
+    }
+   ]
+  },
+  "hatch_on_cell": {
+   "neutral": {
+    "cell_rgb": [
+     60,
+     68,
+     80
+    ],
+    "red_HARM": {
+     "luma_contrast": 2.87,
+     "dE2000": 44.2,
+     "vs_ink_keyline": 5.72
+    },
+    "pink_ours": {
+     "luma_contrast": 3.04,
+     "dE2000": 42.1,
+     "vs_ink_keyline": 6.06
+    },
+    "blue_soak": {
+     "luma_contrast": 2.56,
+     "dE2000": 29.0,
+     "vs_ink_keyline": 5.1
+    }
+   },
+   "solace": {
+    "cell_rgb": [
+     50,
+     78,
+     70
+    ],
+    "red_HARM": {
+     "luma_contrast": 2.65,
+     "dE2000": 51.4,
+     "vs_ink_keyline": 5.72
+    },
+    "pink_ours": {
+     "luma_contrast": 2.8,
+     "dE2000": 38.2,
+     "vs_ink_keyline": 6.06
+    },
+    "blue_soak": {
+     "luma_contrast": 2.36,
+     "dE2000": 37.9,
+     "vs_ink_keyline": 5.1
+    }
+   },
+   "meridian": {
+    "cell_rgb": [
+     83,
+     64,
+     53
+    ],
+    "red_HARM": {
+     "luma_contrast": 2.85,
+     "dE2000": 36.1,
+     "vs_ink_keyline": 5.72
+    },
+    "pink_ours": {
+     "luma_contrast": 3.01,
+     "dE2000": 41.7,
+     "vs_ink_keyline": 6.06
+    },
+    "blue_soak": {
+     "luma_contrast": 2.54,
+     "dE2000": 41.2,
+     "vs_ink_keyline": 5.1
+    }
+   }
+  },
+  "hatch_on_slices": {
+   "BURST": {
+    "fill_rgb": [
+     214,
+     51,
+     141
+    ],
+    "red_luma_contrast": 1.3,
+    "red_dE2000": 28.4,
+    "blue_luma_contrast": 1.16,
+    "blue_dE2000": 37.1,
+    "note": "the hatch always rides on a 0.85 px ink keyline (red vs ink 5.7:1, blue vs ink 5.1:1)"
+   },
+   "SHIELD": {
+    "fill_rgb": [
+     35,
+     73,
+     201
+    ],
+    "red_luma_contrast": 2.14,
+    "red_dE2000": 49.9,
+    "blue_luma_contrast": 1.9,
+    "blue_dE2000": 18.7,
+    "note": "the hatch always rides on a 0.85 px ink keyline (red vs ink 5.7:1, blue vs ink 5.1:1)"
+   },
+   "TURRET": {
+    "fill_rgb": [
+     214,
+     176,
+     26
+    ],
+    "red_luma_contrast": 1.65,
+    "red_dE2000": 42.5,
+    "blue_luma_contrast": 1.85,
+    "blue_dE2000": 63.6,
+    "note": "the hatch always rides on a 0.85 px ink keyline (red vs ink 5.7:1, blue vs ink 5.1:1)"
+   },
+   "REPAIR": {
+    "fill_rgb": [
+     62,
+     179,
+     105
+    ],
+    "red_luma_contrast": 1.28,
+    "red_dE2000": 69.7,
+    "blue_luma_contrast": 1.44,
+    "blue_dE2000": 51.1,
+    "note": "the hatch always rides on a 0.85 px ink keyline (red vs ink 5.7:1, blue vs ink 5.1:1)"
+   }
+  }
+ }
+}

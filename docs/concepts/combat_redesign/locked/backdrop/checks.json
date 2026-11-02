@@ -1,0 +1,878 @@
+{
+ "method": {
+  "composite": "plate = F + T * backdrop; F, T from two renders of the final p1 board (corp/src generator, unchanged) with flat 0 and 128 backdrops. Verified against a real render on bio neutral: mean abs error 0.09/255, max 1.7/255.",
+  "squint": "locked final_checks metric: 1/16 BOX downscale + 1 px gaussian, Rec709 luma; loud = share of 16 px cells above 0.38",
+  "regions": {
+   "plate": "whole 1920x1080",
+   "board": "r <= 500 round (536, 540)",
+   "rings": "r 214-430",
+   "room": "focus hull ellipse (1500, 600; 330 x 270; m > 0.5) where the backdrop shows through (T > 0.5), cells >= 90 % inside",
+   "backdrop_visible": "every cell >= 90 % backdrop (T > 0.5): room + city"
+  },
+  "board_vs_room": "mean_ratio = (board squint mean + 0.05) / (room squint mean + 0.05); p95_ratio likewise; loud_ratio = board loud / room loud (room floored at 0.001)",
+  "detail": "detail_rms = RMS of luma minus a 6 px gaussian inside the room (0-1); detail_rel = detail_rms / room luma mean (Weber legibility, brightness-independent); sat = mean HSV saturation in the room; pink_share = room pixels of player-pink hue (295-350 deg, S > 0.35, V > 0.15)"
+ },
+ "before": "the locked final grade: r2_ground.grade(P) (hull x0.595 and neon sat 0.55->0.33 on the v3.1 bare room; city 2 px blur x0.85) + scrim(P)",
+ "after": "bd_grade.grade(per-room params) + the same scrim(P)",
+ "plates": {
+  "p1_bio": {
+   "before": {
+    "plate": {
+     "mean": 0.2282,
+     "p95": 0.4939,
+     "loud": 0.1243
+    },
+    "board": {
+     "mean": 0.2496,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1866,
+     "p95": 0.3352,
+     "loud": 0.0105
+    },
+    "backdrop_visible": {
+     "mean": 0.1649,
+     "p95": 0.3121,
+     "loud": 0.005
+    },
+    "room_detail": {
+     "detail_rms": 0.0689,
+     "detail_rel": 0.3747,
+     "sat": 0.4225,
+     "pink_share": 0.08621,
+     "luma_mean": 0.1839,
+     "luma_p99": 0.498
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.266,
+     "p95_ratio": 1.312,
+     "loud_ratio": 11.63
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2047,
+     "p95": 0.4927,
+     "loud": 0.1218
+    },
+    "board": {
+     "mean": 0.2484,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.135,
+     "p95": 0.2313,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1012,
+     "p95": 0.2174,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0414,
+     "detail_rel": 0.3088,
+     "sat": 0.4205,
+     "pink_share": 0.0,
+     "luma_mean": 0.134,
+     "luma_p99": 0.2849
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.613,
+     "p95_ratio": 1.796,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_srv": {
+   "before": {
+    "plate": {
+     "mean": 0.2299,
+     "p95": 0.4939,
+     "loud": 0.1249
+    },
+    "board": {
+     "mean": 0.2496,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1922,
+     "p95": 0.348,
+     "loud": 0.0148
+    },
+    "backdrop_visible": {
+     "mean": 0.1692,
+     "p95": 0.3206,
+     "loud": 0.007
+    },
+    "room_detail": {
+     "detail_rms": 0.0662,
+     "detail_rel": 0.3492,
+     "sat": 0.4712,
+     "pink_share": 0.00818,
+     "luma_mean": 0.1896,
+     "luma_p99": 0.4524
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.237,
+     "p95_ratio": 1.27,
+     "loud_ratio": 8.25
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2051,
+     "p95": 0.4928,
+     "loud": 0.1218
+    },
+    "board": {
+     "mean": 0.2484,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1348,
+     "p95": 0.2326,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.102,
+     "p95": 0.2161,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0402,
+     "detail_rel": 0.3005,
+     "sat": 0.444,
+     "pink_share": 0.0,
+     "luma_mean": 0.1338,
+     "luma_p99": 0.2746
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.615,
+     "p95_ratio": 1.788,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_gh": {
+   "before": {
+    "plate": {
+     "mean": 0.228,
+     "p95": 0.4939,
+     "loud": 0.1233
+    },
+    "board": {
+     "mean": 0.2497,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1834,
+     "p95": 0.3144,
+     "loud": 0.0009
+    },
+    "backdrop_visible": {
+     "mean": 0.1637,
+     "p95": 0.3028,
+     "loud": 0.0012
+    },
+    "room_detail": {
+     "detail_rms": 0.0686,
+     "detail_rel": 0.3791,
+     "sat": 0.4058,
+     "pink_share": 0.01107,
+     "luma_mean": 0.181,
+     "luma_p99": 0.4615
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.284,
+     "p95_ratio": 1.387,
+     "loud_ratio": 122.1
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2048,
+     "p95": 0.4927,
+     "loud": 0.1219
+    },
+    "board": {
+     "mean": 0.2484,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.135,
+     "p95": 0.2194,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1015,
+     "p95": 0.209,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0421,
+     "detail_rel": 0.3132,
+     "sat": 0.4032,
+     "pink_share": 0.0,
+     "luma_mean": 0.1343,
+     "luma_p99": 0.2808
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.613,
+     "p95_ratio": 1.876,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_rec": {
+   "before": {
+    "plate": {
+     "mean": 0.2285,
+     "p95": 0.4939,
+     "loud": 0.1231
+    },
+    "board": {
+     "mean": 0.2495,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1851,
+     "p95": 0.3183,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1652,
+     "p95": 0.3102,
+     "loud": 0.0008
+    },
+    "room_detail": {
+     "detail_rms": 0.0646,
+     "detail_rel": 0.3522,
+     "sat": 0.3849,
+     "pink_share": 0.09076,
+     "luma_mean": 0.1833,
+     "luma_p99": 0.4471
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.274,
+     "p95_ratio": 1.372,
+     "loud_ratio": 122.1
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2051,
+     "p95": 0.4927,
+     "loud": 0.1219
+    },
+    "board": {
+     "mean": 0.2483,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1352,
+     "p95": 0.2236,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1023,
+     "p95": 0.2117,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0411,
+     "detail_rel": 0.3053,
+     "sat": 0.381,
+     "pink_share": 0.0001,
+     "luma_mean": 0.1346,
+     "luma_p99": 0.2772
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.611,
+     "p95_ratio": 1.847,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_lobby": {
+   "before": {
+    "plate": {
+     "mean": 0.2276,
+     "p95": 0.4939,
+     "loud": 0.1245
+    },
+    "board": {
+     "mean": 0.2496,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1896,
+     "p95": 0.3463,
+     "loud": 0.0139
+    },
+    "backdrop_visible": {
+     "mean": 0.1629,
+     "p95": 0.3068,
+     "loud": 0.0066
+    },
+    "room_detail": {
+     "detail_rms": 0.066,
+     "detail_rel": 0.3537,
+     "sat": 0.4242,
+     "pink_share": 0.06889,
+     "luma_mean": 0.1866,
+     "luma_p99": 0.4468
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.25,
+     "p95_ratio": 1.275,
+     "loud_ratio": 8.78
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2041,
+     "p95": 0.4927,
+     "loud": 0.1216
+    },
+    "board": {
+     "mean": 0.2484,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1348,
+     "p95": 0.2315,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.0995,
+     "p95": 0.2146,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0403,
+     "detail_rel": 0.3017,
+     "sat": 0.4226,
+     "pink_share": 0.0,
+     "luma_mean": 0.1336,
+     "luma_p99": 0.2753
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.615,
+     "p95_ratio": 1.795,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_event": {
+   "before": {
+    "plate": {
+     "mean": 0.2265,
+     "p95": 0.4939,
+     "loud": 0.1234
+    },
+    "board": {
+     "mean": 0.2495,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1744,
+     "p95": 0.2932,
+     "loud": 0.0052
+    },
+    "backdrop_visible": {
+     "mean": 0.1596,
+     "p95": 0.2863,
+     "loud": 0.0025
+    },
+    "room_detail": {
+     "detail_rms": 0.0656,
+     "detail_rel": 0.3814,
+     "sat": 0.4453,
+     "pink_share": 0.01245,
+     "luma_mean": 0.172,
+     "luma_p99": 0.498
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.335,
+     "p95_ratio": 1.472,
+     "loud_ratio": 23.48
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2049,
+     "p95": 0.4927,
+     "loud": 0.1216
+    },
+    "board": {
+     "mean": 0.2483,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1354,
+     "p95": 0.2144,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1019,
+     "p95": 0.2046,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0428,
+     "detail_rel": 0.3185,
+     "sat": 0.4458,
+     "pink_share": 4e-05,
+     "luma_mean": 0.1344,
+     "luma_p99": 0.3035
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.609,
+     "p95_ratio": 1.911,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_shop": {
+   "before": {
+    "plate": {
+     "mean": 0.2299,
+     "p95": 0.4949,
+     "loud": 0.1251
+    },
+    "board": {
+     "mean": 0.2495,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1982,
+     "p95": 0.3444,
+     "loud": 0.0148
+    },
+    "backdrop_visible": {
+     "mean": 0.1696,
+     "p95": 0.3165,
+     "loud": 0.007
+    },
+    "room_detail": {
+     "detail_rms": 0.0584,
+     "detail_rel": 0.2982,
+     "sat": 0.3925,
+     "pink_share": 0.00721,
+     "luma_mean": 0.1958,
+     "luma_p99": 0.4471
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.207,
+     "p95_ratio": 1.281,
+     "loud_ratio": 8.25
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2047,
+     "p95": 0.4928,
+     "loud": 0.1218
+    },
+    "board": {
+     "mean": 0.2483,
+     "p95": 0.4553,
+     "loud": 0.1221
+    },
+    "rings": {
+     "mean": 0.25,
+     "p95": 0.3882,
+     "loud": 0.0574
+    },
+    "room": {
+     "mean": 0.1348,
+     "p95": 0.2254,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1008,
+     "p95": 0.212,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0368,
+     "detail_rel": 0.2749,
+     "sat": 0.3911,
+     "pink_share": 0.0,
+     "luma_mean": 0.1339,
+     "luma_p99": 0.2694
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.614,
+     "p95_ratio": 1.835,
+     "loud_ratio": 122.1
+    }
+   }
+  },
+  "p1_bio_solace": {
+   "before": {
+    "plate": {
+     "mean": 0.2334,
+     "p95": 0.4946,
+     "loud": 0.1274
+    },
+    "board": {
+     "mean": 0.2599,
+     "p95": 0.4594,
+     "loud": 0.1305
+    },
+    "rings": {
+     "mean": 0.2625,
+     "p95": 0.4022,
+     "loud": 0.0724
+    },
+    "room": {
+     "mean": 0.1866,
+     "p95": 0.3352,
+     "loud": 0.0105
+    },
+    "backdrop_visible": {
+     "mean": 0.1663,
+     "p95": 0.3121,
+     "loud": 0.005
+    },
+    "room_detail": {
+     "detail_rms": 0.0689,
+     "detail_rel": 0.3747,
+     "sat": 0.4225,
+     "pink_share": 0.08621,
+     "luma_mean": 0.1839,
+     "luma_p99": 0.498
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.31,
+     "p95_ratio": 1.322,
+     "loud_ratio": 12.43
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2098,
+     "p95": 0.493,
+     "loud": 0.1249
+    },
+    "board": {
+     "mean": 0.2587,
+     "p95": 0.4594,
+     "loud": 0.1305
+    },
+    "rings": {
+     "mean": 0.2625,
+     "p95": 0.4022,
+     "loud": 0.0724
+    },
+    "room": {
+     "mean": 0.135,
+     "p95": 0.2313,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.1026,
+     "p95": 0.2177,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0414,
+     "detail_rel": 0.3088,
+     "sat": 0.4205,
+     "pink_share": 0.0,
+     "luma_mean": 0.134,
+     "luma_p99": 0.2849
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.669,
+     "p95_ratio": 1.811,
+     "loud_ratio": 130.5
+    }
+   }
+  },
+  "p1_bio_meridian": {
+   "before": {
+    "plate": {
+     "mean": 0.228,
+     "p95": 0.4939,
+     "loud": 0.1246
+    },
+    "board": {
+     "mean": 0.2516,
+     "p95": 0.4549,
+     "loud": 0.1231
+    },
+    "rings": {
+     "mean": 0.2586,
+     "p95": 0.3906,
+     "loud": 0.0593
+    },
+    "room": {
+     "mean": 0.1866,
+     "p95": 0.3352,
+     "loud": 0.0105
+    },
+    "backdrop_visible": {
+     "mean": 0.1635,
+     "p95": 0.3113,
+     "loud": 0.005
+    },
+    "room_detail": {
+     "detail_rms": 0.0689,
+     "detail_rel": 0.3747,
+     "sat": 0.4225,
+     "pink_share": 0.08621,
+     "luma_mean": 0.1839,
+     "luma_p99": 0.498
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.275,
+     "p95_ratio": 1.311,
+     "loud_ratio": 11.72
+    }
+   },
+   "after": {
+    "plate": {
+     "mean": 0.2044,
+     "p95": 0.4927,
+     "loud": 0.1221
+    },
+    "board": {
+     "mean": 0.2504,
+     "p95": 0.4549,
+     "loud": 0.1231
+    },
+    "rings": {
+     "mean": 0.2586,
+     "p95": 0.3906,
+     "loud": 0.0593
+    },
+    "room": {
+     "mean": 0.135,
+     "p95": 0.2313,
+     "loud": 0.0
+    },
+    "backdrop_visible": {
+     "mean": 0.0999,
+     "p95": 0.2174,
+     "loud": 0.0
+    },
+    "room_detail": {
+     "detail_rms": 0.0414,
+     "detail_rel": 0.3088,
+     "sat": 0.4205,
+     "pink_share": 0.0,
+     "luma_mean": 0.134,
+     "luma_p99": 0.2849
+    },
+    "board_vs_room": {
+     "mean_ratio": 1.624,
+     "p95_ratio": 1.795,
+     "loud_ratio": 123.1
+    }
+   }
+  }
+ },
+ "real_render_vs_composite": {
+  "note": "p1 rendered by the corp/src generator with r2_ground.grade swapped for bd_grade (bd_verify.py), vs the published p1_<room>.png; 0-255 units",
+  "rooms": {
+   "bio": {
+    "room": "bio",
+    "mean_abs": 0.10100485384464264,
+    "p999": 1.0,
+    "max": 2.0,
+    "secs": 163
+   },
+   "event": {
+    "room": "event",
+    "mean_abs": 0.10424880683422089,
+    "p999": 1.0,
+    "max": 2.0,
+    "secs": 185
+   }
+  }
+ },
+ "targets": {
+  "room_squint_mean": "0.13-0.14 (was 0.17-0.20)",
+  "room_loud": "0 %",
+  "room_p95": "<= 0.25",
+  "board_vs_room_mean_ratio": ">= 1.55",
+  "detail_rel_retained": ">= 0.80 of before",
+  "sat": "within 0.05 of before (capped at 0.44)",
+  "pink_share": "< 0.1 %"
+ },
+ "pass": {
+  "p1_bio": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_srv": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_gh": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_rec": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_lobby": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_event": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_shop": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_bio_solace": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  },
+  "p1_bio_meridian": {
+   "room_mean": true,
+   "room_loud": true,
+   "room_p95": true,
+   "board_vs_room": true,
+   "detail_rel": true,
+   "sat": true,
+   "pink": true,
+   "board_unchanged": true
+  }
+ },
+ "all_pass": true
+}
