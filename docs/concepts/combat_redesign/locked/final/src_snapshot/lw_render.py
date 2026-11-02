@@ -27,6 +27,12 @@ _CORP = os.environ.get('CORP', 'neutral')
 SKIN = NeutralSkin() if _CORP == 'neutral' else _CS.SKINS[_CORP]
 if os.environ.get('LW_SKIN', '1') == '1':
     LI.install(SKIN)
+# O-30 fix 2: the step-6 room grade (bd_grade, per-room parameters from locked/backdrop/grade.json) is the default room grade.
+# env BD_GRADE=0 restores the old r2_ground.grade('P') for before/after comparisons.
+import bd_grade as _BG
+OLD_GRADE = R.A.G2.grade
+if os.environ.get('BD_GRADE', '1') == '1':
+    R.A.G2.grade = _BG.room_grade
 W = HERE + 'work/'
 os.makedirs(W, exist_ok=True)
 R.WORK = W

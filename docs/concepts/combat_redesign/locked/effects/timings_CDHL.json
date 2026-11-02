@@ -438,11 +438,11 @@
     "neutral": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4125,
+     "footprint_px": 4131,
      "crop_px": 66000,
-     "footprint_share": 0.062,
-     "peak_up_share_footprint": 0.489,
-     "peak_down_share_footprint": 0.499,
+     "footprint_share": 0.063,
+     "peak_up_share_footprint": 0.488,
+     "peak_down_share_footprint": 0.498,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -462,11 +462,11 @@
     "neutral_reduce": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 1128,
+     "footprint_px": 1134,
      "crop_px": 66000,
      "footprint_share": 0.017,
-     "peak_up_share_footprint": 0.24,
-     "peak_down_share_footprint": 0.533,
+     "peak_up_share_footprint": 0.239,
+     "peak_down_share_footprint": 0.53,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -477,20 +477,20 @@
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
       0.145,
-      0.334
+      0.333
      ],
-     "mean_lum_max_step": 0.09,
+     "mean_lum_max_step": 0.089,
      "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "solace": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4131,
+     "footprint_px": 4137,
      "crop_px": 66000,
      "footprint_share": 0.063,
      "peak_up_share_footprint": 0.487,
-     "peak_down_share_footprint": 0.497,
+     "peak_down_share_footprint": 0.496,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -500,20 +500,20 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.081,
-      0.313
+      0.082,
+      0.312
      ],
-     "mean_lum_max_step": 0.078,
+     "mean_lum_max_step": 0.077,
      "mean_lum_crop_max_step": 0.005,
      "passes": true
     },
     "meridian": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4126,
+     "footprint_px": 4132,
      "crop_px": 66000,
      "footprint_share": 0.063,
-     "peak_up_share_footprint": 0.487,
+     "peak_up_share_footprint": 0.486,
      "peak_down_share_footprint": 0.497,
      "waves_footprint": 2,
      "flashes_footprint": 1,
@@ -806,8 +806,8 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.129,
-      0.284
+      0.128,
+      0.283
      ],
      "mean_lum_max_step": 0.043,
      "mean_lum_crop_max_step": 0.001,
@@ -854,8 +854,8 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.129,
-      0.284
+      0.128,
+      0.283
      ],
      "mean_lum_max_step": 0.043,
      "mean_lum_crop_max_step": 0.001,
@@ -878,14 +878,15 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.129,
-      0.284
+      0.128,
+      0.283
      ],
      "mean_lum_max_step": 0.043,
      "mean_lum_crop_max_step": 0.001,
      "passes": true
     }
-   }
+   },
+   "in_sequence": "In the resolve beat fx_commit has already burned the pencil route and Xs into paint, so the sequenced fx_trigger_hit draws only the bursts and speed lines (same clock: s3 at 230, s4 at 420); the pencil-yellow ignite plays only when the effect runs without a commit before it (O-30)."
   },
   "fx_kill": {
    "family": "D",
@@ -974,11 +975,11 @@
     "neutral": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33871,
+     "footprint_px": 33910,
      "crop_px": 165825,
      "footprint_share": 0.204,
-     "peak_up_share_footprint": 0.921,
-     "peak_down_share_footprint": 0.869,
+     "peak_up_share_footprint": 0.92,
+     "peak_down_share_footprint": 0.868,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -988,8 +989,8 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.054,
-      0.472
+      0.055,
+      0.471
      ],
      "mean_lum_max_step": 0.398,
      "mean_lum_crop_max_step": 0.081,
@@ -998,7 +999,7 @@
     "neutral_reduce": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 28016,
+     "footprint_px": 28032,
      "crop_px": 165825,
      "footprint_share": 0.169,
      "peak_up_share_footprint": 0.001,
@@ -1022,11 +1023,11 @@
     "solace": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33941,
+     "footprint_px": 33980,
      "crop_px": 165825,
      "footprint_share": 0.205,
-     "peak_up_share_footprint": 0.92,
-     "peak_down_share_footprint": 0.868,
+     "peak_up_share_footprint": 0.919,
+     "peak_down_share_footprint": 0.867,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -1039,18 +1040,18 @@
       0.064,
       0.477
      ],
-     "mean_lum_max_step": 0.395,
+     "mean_lum_max_step": 0.394,
      "mean_lum_crop_max_step": 0.081,
      "passes": true
     },
     "meridian": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33872,
+     "footprint_px": 33911,
      "crop_px": 165825,
      "footprint_share": 0.204,
-     "peak_up_share_footprint": 0.921,
-     "peak_down_share_footprint": 0.869,
+     "peak_up_share_footprint": 0.92,
+     "peak_down_share_footprint": 0.868,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -2037,11 +2038,11 @@
     "neutral": {
      "frames": 61,
      "fps": 60,
-     "footprint_px": 20991,
+     "footprint_px": 20993,
      "crop_px": 52800,
      "footprint_share": 0.398,
-     "peak_up_share_footprint": 0.352,
-     "peak_down_share_footprint": 0.321,
+     "peak_up_share_footprint": 0.353,
+     "peak_down_share_footprint": 0.323,
      "waves_footprint": 3,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -2051,7 +2052,7 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.105,
+      0.106,
       0.325
      ],
      "mean_lum_max_step": 0.03,
@@ -2407,11 +2408,11 @@
     "neutral": {
      "frames": 88,
      "fps": 60,
-     "footprint_px": 10326,
+     "footprint_px": 10255,
      "crop_px": 208800,
      "footprint_share": 0.049,
-     "peak_up_share_footprint": 0.215,
-     "peak_down_share_footprint": 0.262,
+     "peak_up_share_footprint": 0.217,
+     "peak_down_share_footprint": 0.263,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -2421,7 +2422,7 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.24,
+      0.238,
       0.307
      ],
      "mean_lum_max_step": 0.022,
@@ -2512,7 +2513,7 @@
     }
    ],
    "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot lights at once.",
-   "source": "f2: Trigger kills Packet 1, refund 1 RAM (ram 3 + 1)",
+   "source": "f2: Trigger kills Packet 1 (tlog trig_refund), refund 1 RAM: RAM 2 + 1 = 3 (4 at turn start; Trigger 1 and Brace 1 paid, Twist 0; f2 ram 3). O-30: was \"ram 3 + 1\", the frames were right (2 lit, slot 3 lights).",
    "board_crop": [
     410,
     480,
@@ -2527,11 +2528,11 @@
     "neutral": {
      "frames": 73,
      "fps": 60,
-     "footprint_px": 38376,
+     "footprint_px": 38323,
      "crop_px": 278400,
      "footprint_share": 0.138,
      "peak_up_share_footprint": 0.26,
-     "peak_down_share_footprint": 0.24,
+     "peak_down_share_footprint": 0.241,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -2541,10 +2542,10 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.208,
+      0.207,
       0.241
      ],
-     "mean_lum_max_step": 0.017,
+     "mean_lum_max_step": 0.018,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
@@ -2575,11 +2576,11 @@
     "solace": {
      "frames": 73,
      "fps": 60,
-     "footprint_px": 38580,
+     "footprint_px": 38527,
      "crop_px": 278400,
-     "footprint_share": 0.139,
+     "footprint_share": 0.138,
      "peak_up_share_footprint": 0.258,
-     "peak_down_share_footprint": 0.243,
+     "peak_down_share_footprint": 0.244,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -2599,11 +2600,11 @@
     "meridian": {
      "frames": 73,
      "fps": 60,
-     "footprint_px": 38338,
+     "footprint_px": 38285,
      "crop_px": 278400,
      "footprint_share": 0.138,
      "peak_up_share_footprint": 0.26,
-     "peak_down_share_footprint": 0.241,
+     "peak_down_share_footprint": 0.242,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -2613,10 +2614,10 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.209,
+      0.208,
       0.242
      ],
-     "mean_lum_max_step": 0.017,
+     "mean_lum_max_step": 0.018,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     }
@@ -2775,7 +2776,7 @@
      "crop_px": 86900,
      "footprint_share": 0.122,
      "peak_up_share_footprint": 0.642,
-     "peak_down_share_footprint": 0.398,
+     "peak_down_share_footprint": 0.397,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -2989,11 +2990,11 @@
     "neutral": {
      "frames": 52,
      "fps": 60,
-     "footprint_px": 10702,
+     "footprint_px": 10707,
      "crop_px": 52800,
      "footprint_share": 0.203,
-     "peak_up_share_footprint": 0.403,
-     "peak_down_share_footprint": 0.389,
+     "peak_up_share_footprint": 0.404,
+     "peak_down_share_footprint": 0.39,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -3036,5 +3037,6 @@
     }
    }
   }
- }
+ },
+ "o30_pass": "Flash fields re-measured on the O-30 board (new room grade, solid FAR stroke, HUD occluders), 2026-11-02; timings unchanged."
 }

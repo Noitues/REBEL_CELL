@@ -156,3 +156,151 @@ All of these are on the sheets and in `timings_MPST.json`. In every reduce form:
 7. **Rings step, Hold and Wave enter are the busiest strips.** They read best on the sheets, where the neutral strip is drawn larger. Wave enter's scan-in outlines and glyphs are small at strip scale.
 8. **Soak take:** the board's own soak hatch is already on sector 1 in p3. So the pip "drain" is a SOAK fill sweeping over that pip, which then hands back to the printed hatch.
 9. **Process:** no Godot, no Blender, nothing committed, nothing written under D:/Godot/rebel_cell. Base renders and frames are under `D:/rc_scratch/combat_redesign/locked/fx_mpst/`.
+
+## O-30 pass
+
+This pass answers the art director's fix 4: the full E10 p3 resolve beat is now sequenced on the final board and flash-measured as a whole. It also fixes the reduce-motion versions of shield_block and brace_block, and checks the fx_refund RAM count. No game number, word or rule was changed. Nothing was committed.
+
+### New files
+| File | What it is |
+|---|---|
+| `resolve_beat_strip.jpg` | 16 keyframes of the whole beat, each labelled with its sequence time and its time inside the effect. A timeline row shows every step, and two rows of ticks mark every counted flash (full and reduce motion). |
+| `resolve_beat.gif` | The whole beat at 960x540, 20 fps, 13.0 s, 2.3 MB. A 30 fps copy is at `D:/rc_scratch/combat_redesign/locked/fx_o30/resolve_beat_full_960_30fps.gif`. |
+| `strips/fx_shield_block_*.jpg`, `strips/fx_brace_block_*.jpg` | Re-rendered on all three skins with the new reduce-motion timing. |
+
+Changed JSON entries:
+- `timings_MPST.json`: in fx_shield_block and fx_brace_block, `reduce_motion`, a new `reduce_phases`, and `flash_check` on all three skins.
+- `timings_CDHL.json`: fx_refund `source`, and a new `in_sequence` note on fx_trigger_hit.
+- `port/fx_timings.json`: the same entries, plus a new top-level `resolve_beat_e10` block. It holds the step list, the gaps and the measured numbers, and it is meant as the golden sequence for `FlashLimiter.stream_is_safe`. The effect count stays at 32.
+
+Source: `D:/rc_scratch/combat_redesign/locked/fx_o30/src/`.
+- `o30_seq.py` is the sequencer.
+- `o30_render.py` builds the canvases and the frames.
+- `o30_meter.py` is the flash meter.
+- `o30_publish.py` builds the strip and the GIF.
+- `o30_json.py` writes the JSON.
+
+It works from copies: `fx_eff.py`, `fxlib.py`, `fx_cdhl.py` and `fxk_lib.py` come from the two effects folders, and the generator copy in `gen_src/` comes from `final/src_snapshot`. `corp/src` was not touched.
+
+### The beat
+The order is the p3 HUD chain (1 TWIST, 2 TRIGGER, 3 BRACE, 4 GUNS, 5 LANDS, 6 RINGS STEP / W4 enters), opened by SEND IT. Brace's block plays where the braced landing stops, in LANDS, as spec 8.3 says.
+
+Spacing follows spec 8.2:
+- Effects run one after another. Each starts 100 ms after the previous one ends, so no two effects share a 100 ms window.
+- One exception, found by the meter: the END TURN hand-off holds 400 ms before RINGS STEP (see the results).
+
+Each effect is the designers' own render function. Its base plate is the previous step's settled frame, so nothing pops between effects.
+
+| ms | step | source in the state (f2) |
+|---|---|---|
+| 0-760 | fx_commit | SEND IT on the best line: p2 pencil becomes p3 paint. The HUD outside the commit box steps from preview to resolve at 560-760. |
+| 860-1520 | fx_twist | Twist [1, 1]: the ring +1 unit cells (Payload 4, Packet 5) turn one sector into their p3 places, with pink arrows and echoes |
+| 1620-2020 | fx_trace_add | Trigger played: Trace 3 to 4. Retargeted to the p3 HUD: the TRIGGER PLAYED slot glitches, then TRACE pip 4 at (1510, 513) lights. |
+| 2120-3020 | fx_trigger_hit | tlog trig_unit: Payload 4's trigger hits Packet 1 in sector 3, then sector 4 |
+| 3120-4030 | fx_refund | tlog trig_refund: Packet 1 dies, +1 RAM, RAM 2 to 3 |
+| 4130-4730 | fx_gun_hit | guns: sector 0 BURST, shot 1 on Worm 2 (h 1) |
+| 4830-5430 | fx_kill | shot 2: Worm 2, hp 2 to 0 (fate dies) |
+| 5530-6050 | fx_ricochet_gold | guns: sector 4 BURST, 2 shots warded by Packet 6 (h 0) |
+| 6150-7070 | fx_shield_block | Worm 3 lands 3 on **sector 1** SHIELD: absorbed 2 |
+| 7170-8130 | fx_soak_take | the same landing: soaked 1 |
+| 8230-9290 | fx_brace_block | Worm 3 lands 3 on sector 2 TURRET: braced 3, through 0 |
+| 9390-10190 | fx_clear | LANDS 3, THROUGH 0 |
+| 10290-10550 | settle (sequencer step) | a 260 ms dissolve: Worm 3 and the spent gun marks leave ring 0, and the old arcs, the clear wash and the brace stamp lift off the lanes |
+| 10950-11850 | fx_rings_step | END TURN, schedule [2, 0, 0] |
+| 11950-12710 | fx_wave_enter | W4 (Jammer w1 s0, Jammer w2 s4) enters ring +2 |
+
+Changes the sequence needed, all kept in the sequencer except the reduce-motion fix:
+
+1. **shield_block moved to sector 1.** The stand-alone strip shows Packet 5 on sector 3. Packet 5 is k = 1, so it lands next turn. On this END TURN the only landing is Worm 3: sector 1 absorbs 2 and soaks 1, and sector 2 braces 3. The sequence draws the same plate on sector 1 (`make_shield(60)` in `o30_seq.py`).
+2. **trigger_hit inside the sequence** drops its pencil-yellow ignite, because fx_commit has already burned the route and the Xs into paint. Drawing yellow again would turn paint back into pencil. The bursts keep their clock (sector 3 at 230 ms, sector 4 at 420 ms). This is written into `in_sequence` in both JSONs.
+3. **Arc lift moved into the settle step.** In the stand-alone fx_rings_step, the old landing arcs lift off during its own 0-160 ms anticipate. In the sequence they lift in the settle step, so they never share a window with the tape arrow.
+4. **HUD pre-state.** Until fx_trace_add, TRACE pip 4 shows unlit. Until the refund coin lands, RAM slot 3 shows empty. Both use the HUD's own pixels.
+
+### Flash meter over the whole beat
+The method is the one in this file: 60 fps, WCAG relative luminance, footprint 0.02, swing 0.10, a 25 % area event in 100 ms, a flash is a pair of opposite events, and the limit is 3 in any 1 s. It runs over all 787 frames, which include 100 ms of p2 before SEND IT and 300 ms of the settled frame after.
+
+Regions, each judged against its own footprint:
+- the whole frame;
+- each effect's crop box, over the **whole** beat, so hand-offs and neighbours count against it;
+- every 240, 120 and 60 px tile on a half-size stride (104, 354 and 1,263 tiles).
+
+| | whole frame | effect boxes | 240 px tiles | 120 px tiles | 60 px tiles | result |
+|---|---|---|---|---|---|---|
+| full motion, first run (all gaps 100 ms) | 0 | 1 | 2 | 2 | **4** | fail in one 60 px tile |
+| full motion, final | 0 | 1 | 2 | 2 | 3 | pass |
+| reduce motion, final | 0 | 1 | 1 | 2 | 2 | pass |
+
+- **The one part over 3:**
+  - Where: a 60 px tile on the THIS TURN tape at (810, 240).
+  - What counted: four flashes inside one second. The clear wash leaving gave one at 10100 ms; the rings-step cells and the tape arrow passing gave three at 10750-11033 ms.
+  - Fix: the old arcs now lift in the settle step, and the hand-off holds 400 ms before RINGS STEP. That puts the clear flash more than 1 s before the rings-step flashes.
+  - Same pattern: tile (900, 420) had the same pattern at 3 and is now 3.
+  - No effect was changed for this.
+- **Tightest spot left:**
+  - fx_rings_step on its own reaches 3 flashes per second in a few 60 px tiles: at (690, 90), on the tape, and at (180, 450-480), where the moving ring +1 and +2 cell edges cross. That is at the limit, not over it.
+  - Measured on its whole box, as in step 4, it is still 1.
+  - If the port wants headroom, slow the spiral (160-760 ms) or drop the third echo. FlashLimiter also guards it in the engine.
+- **Whole frame: 0.** The beat never moves 25 % of everything that changes at once.
+- **Reduce motion stays at or below full motion.** Overall it is 2 against 3. The worst reduce regions are the sector 1 block and the sector 2 brace in 120 and 60 px tiles, at 2 per second. I checked the sector 1 tile (630, 420) directly: it is also 2 in full motion. I did not compare every tile pair.
+
+### Reduce motion: shield_block and brace_block
+- **Before:** reduce motion counted 2 flashes per second on every skin, against 1 in full motion.
+- **Cause:** the reduce form is compact, so its footprint is small. The plate, its ink key and the hard shadow fade in together within 100 ms, which makes an up wave and a down wave: one flash. They fade out together within 160 ms: a second flash, 0.7 s later.
+  - In full motion the out-fade's down wave stays under 25 % of the larger footprint, so only one flash counts.
+  - I measured that a slower ease-in-out fade (300-400 ms), an earlier chevron fade or a weaker shadow all still gave 2.
+- **Fix:** the reduce form now appears over 120 ms (linear), holds, and dissolves out over 300 ms (linear). That is the 260-300 ms reduce dissolve the rest of the set already uses. The 300 ms dissolve spreads the per-pixel swings, so only one wave crosses 25 %.
+  - shield: appear 0-120, hold 120-620, dissolve 620-920.
+  - brace: appear 0-120, hold 120-760, dissolve 760-1060, and the stamp stays.
+  - Totals are unchanged (920 and 1060 ms). The look is unchanged.
+- **Measured:** reduce 1 per second on neutral, Solace and Meridian for both effects, equal to full motion (1).
+- **Margin:** a 260 ms dissolve still counts 2, so do not shorten it.
+- **Code:** `RED_SHIELD` and `RED_BRACE` in `fx_o30/src/fx_eff.py`.
+
+### fx_refund RAM count
+The frames were right and the source line was wrong:
+- E10 f2 starts the turn at 4 RAM (`ram0`).
+- Twist costs 0, Trigger 1 and Brace 1, which leaves 2.
+- The trigger kill refunds 1, giving 3, which matches f2 `ram` 3 and the p3 HUD (2 coins, the refunded coin, 1 empty).
+- So "2 lit, slot 3 lights" is correct, and the source line "ram 3 + 1" was not. It now reads "RAM 2 + 1 = 3" in both JSONs.
+
+The AD also wrote that the strip "pastes the RAM panel next to the board". In fact the RAM row is drawn where the p3 HUD has it (y 513, x 1150-1245), inside the effect's crop. In `resolve_beat_strip.jpg` (3520 ms) and the GIF it sits in the full frame.
+
+### Open points for the designer
+1. **Twist versus the plates.**
+   - The state stores ring +1 units at their pre-twist sectors (f1 and f2 have the same `s`), with `twr` [1, 1]. Packet 5's fate (lands on 3 = 0 + 1 twist + 2 step) shows the twist is real.
+   - p2 and p3, however, draw ring +1 untwisted. To end on the final p3 board, the sequence shows ring +1 one sector back during SEND IT, and the twist turns it into the p3 places.
+   - Side effect: in that pre-twist frame, the Payload cell sits over the Adjuster box for 1.4 s.
+   - If the board should instead show s + twr after a twist, the generator must draw that. The trigger route's origin and the later rings step would then move with it.
+   - The Adjuster is not turned, as in the plates.
+2. **Packet 1 is never seen alive.** Packet 1 is already absent on p2 and p3 (trigger-dead), so the sequence shows the trigger bursts on its sectors and the refund, but no fx_kill for it. A pre-state plate with Packet 1 drawn would let fx_kill play there.
+3. **No effect for the TURRET shot on the Adjuster** (guns sector 2, h 1): fx_gun_hit has no Adjuster form. The shot is in the state and on the HUD chain; the beat does not animate it.
+4. **Settle.** The 260 ms hand-off and the 400 ms hold before RINGS STEP are sequencer rules, not effects. They are written into `port/fx_timings.json` under `resolve_beat_e10`.
+5. **Not updated in this pass:**
+   - `fx_P_protect.png`, the sheet, still prints the step-4 reduce numbers (2). The strips and the JSON carry the new ones.
+   - GODOT_PORT_SPEC Appendix A (shield and brace "1 / 2", the refund source) and section 14 item 5 ("never flash-measured") are out of date until the spec table is regenerated from `port/fx_timings.json`.
+6. **Skins.** The sequence is measured on the neutral skin only. The shield and brace reduce fix was re-measured on all three.
+
+### Process
+- **Rule break:** once, by mistake, I ran a bare `python -` in a shell chain (`python - 2>/dev/null`) while patching a test script. It ran no code and wrote nothing; it sat waiting on stdin. I stopped it, and that shell task, at once. All real work ran from script files.
+- **Grade:** the final plates were re-graded by the room-grade pass at 04:30, while this pass was running.
+  - The sequence frames, the strip, the GIF and the re-rendered shield and brace strips all read `final/p2_preview.png` and `final/p3_resolve.png` at render time (05:00 and later), so they carry the new grade.
+  - Two helper plates come from before the re-grade, and they are used only on board pixels: the empty-rings plate (`fx_o30/work/base_neutral_p3_empty.png`, ring hole fills, settle, rings step) and the Worm-2-killed plate (`fx_cdhl/work/base_neutral_p3kill.png`, the kill cell).
+  - Between the old and new p3, the board inside r 505 differs on 1.9 % of pixels (mean 0.8 levels); the room differs on 58 %.
+  - Re-render those two from the new snapshot before any final reference capture.
+- No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell, `corp/src` not edited.
+- Big scratch is in `D:/rc_scratch/combat_redesign/locked/fx_o30/`. That covers the frames, the luminance memmaps (`work/lum_*.npy`, about 0.8 GB each) and the meter output (`work/meter_full.json`, `work/meter_red.json`).
+
+## O-30 pass (board)
+
+O-30 pass (2026-11-02): all 33 M, P, S and T strips and the four family sheets are re-rendered on the O-30 board.
+- **Board changes.** The step-6 room grade is now the default in `corp/src`. The FAR threat trim is one solid tapered stroke, with no beads. The HUD-label and hero occluders are in.
+- **Base plates.** The 11 extra base plates were rendered fresh from `corp/src` with clean caches:
+  - neutral: p1_empty, p1_noguns and p1_hold;
+  - Solace and Meridian: p1_empty, p1_hold, p2 and p3.
+  The neutral and corp p1, p2, p3 and p2b come from the re-rendered `final/` plates.
+- **Effect code** is the O-30 `fx_eff.py`, which includes the reduce-motion fix for shield_block and brace_block (reduce motion is now at 1 per second on all three skins, matching full motion).
+- **What did not change:** timings, keys and easings.
+- **Flash.** Every effect passes on every skin, in full and reduce motion. The worst case is 1 flash per second in both. The numbers moved by about 1 % or less.
+- **`timings_MPST.json`.** Only the measured `flash_check` and `strips` fields were refreshed. The O-30 `reduce_phases` and notes are kept. An `o30_pass` key records the refresh.
+- **Source.** `D:/rc_scratch/combat_redesign/locked/fx_o30b/mpst/src`.
+- **Not re-rendered:** `resolve_beat.gif` and `resolve_beat_strip.jpg` (O-30 fix 4). They were built from bases rendered before the grade went default.

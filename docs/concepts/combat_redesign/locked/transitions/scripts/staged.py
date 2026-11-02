@@ -7,7 +7,7 @@ sys.dont_write_bytecode = True
 SRC = 'D:/rc_scratch/combat_redesign/locked/corp/src'
 sys.path.insert(0, SRC)
 os.chdir(SRC)
-HERE = 'D:/rc_scratch/combat_redesign/locked/transitions_work/'
+HERE = 'D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/'
 CACHE = HERE + 'cache/' + os.environ.get('CORP', 'neutral') + '/'
 os.makedirs(CACHE, exist_ok=True)
 import numpy as np

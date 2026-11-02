@@ -17,6 +17,7 @@ BOSS_R = 14.3
 WELL_R = 12.0
 DIGIT_ANG = [-4.5, 60.0, 120.0, 180.0, 240.0, 300.0]     # O-29 fix 2: digit 0 sits 4.5 deg before the THIS TURN tape start (sector 0 spans -30..30)
 DIGIT_GAP = 2.6                                           # px of bezel left clear round each digit boss (holes punched in the schedule layer)
+HOLD_LABEL_SHIFT = 8.0                                    # O-30 fix 6: px along the arc (toward the plate's far end) so the N of HOLD THEN clears digit 3
 
 
 def digit_xy(s):
@@ -162,7 +163,8 @@ def hold_label(L, a0, k, opt, live=False):
         arc_text2(L, RM - 0.5, a0 + 28, 'HOLD THIS TURN', 18, (255, 240, 214), 'mono', bold=0.4, keyline=1.4)
     else:
         hold_glyph(L, x, y, ORG_HI, 1.0 if opt == 'P' else 0.92)
-        arc_text2(L, RM - 0.5, a0 + 27.2, 'HOLD ' + NAMES[k].split()[0], 18, ORG_PALE if opt == 'P' else ORG_HI, 'mono', bold=0.3)
+        arc_text2(L, RM - 0.5, a0 + 27.2 + math.degrees(HOLD_LABEL_SHIFT / RM), 'HOLD ' + NAMES[k].split()[0], 18, ORG_PALE if opt == 'P' else ORG_HI,
+                  'mono', bold=0.3)
 
 
 def labels(L, sched, sel={}):

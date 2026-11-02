@@ -87,3 +87,55 @@ CORP=neutral|solace|meridian python hz_run.py h01 h02 ... h11 [hNN:nw]   -> ../o
 python hz_key.py        # h00_key.png (needs h01 h02 h04 h05 h06)
 python hz_publish.py    # copies to locked/hover/, contact_sheet.jpg, checks.json
 ```
+
+## O-30 pass
+
+This pass applies the art director's fixes 1, 2, 3, 5 and 8 from `../REVIEW_FINAL.md`, and fix 6 through the board. All 26 plates, `h00_key.png`, `contact_sheet.jpg` and `checks.json` were re-rendered. No game number, word or rule changed. Every plan still comes from the E10 sim, and the draw asserts pass on every plate and inset (64/64 down to 24/24, as before).
+
+**Fix 8: one generator.** Hover now renders from `D:/rc_scratch/combat_redesign/locked/corp/src`, the single working generator.
+- The hover files (`hz_*.py`, `hv_lib_h2.py`, `plan_patch_h.py`) were merged into `corp/src`. The rest of `hover/src` differed from `corp/src` only in output paths.
+- `hz_core.HERE` still writes to `locked/hover/{out,chk}`. Caches are shared in `corp/work`.
+- `locked/hover/src` is now a stale copy; do not edit it.
+- Render commands, from `corp/src`:
+  - `python hz_set.py -j 5 all` renders all 26 plates in parallel, one process per plate (logs in `locked/hover/logs/`).
+  - `CORP=<skin> python hz_run.py hNN[:nw]` renders one plate.
+  - Then run `python hz_key.py`, then `python hz_publish.py`.
+
+**Fix 1: HUD words are an occluder class.**
+- While the board renders, every word drawn through `hud2.txt` or `obj2.txt` records its text box as `hud_labels`. These are the column labels (LANDS, THROUGH, RAW, SHOT, BRACE, RIDER, ...), the row tags, and RAM / TRACE.
+- The hero digits (or their nowords proxies) and the arrow are recorded as `hud_hero`, by capturing `hud2.hero_pair`.
+- Both are occluders in the hover collision test (`hover x hud_labels`, `hover x hud_hero`). `hud_labels` is also restored on top in `compose`.
+- `hud_hero` is tested on its glyph fill: a mark may lie on the digit's 2 px black keyline, never on the digit.
+- `hz_core.fit_oval` places every HUD pencil mark (LANDS / THROUGH, YOU pips, RAM coins). In order, it tries:
+  1. the normal ring, then wider, flatter and less drifting rings, nudged up and down;
+  2. an open horseshoe;
+  3. pencil brackets "( 9 )".
+- A candidate passes only with 0 px on the forbidden masks, measured on the real drawn ring.
+- On the bill, the hero digits sit only 2-4 px from the labels above and below, so no closed ring fits. LANDS / THROUGH therefore take pencil brackets: h01, h02, h03 and h10 (h03 nowords THROUGH takes the horseshoe). RAM, YOU and TRACE keep their rings.
+- Result: `hover x hud_labels` and `hover x hud_hero` are 0 px on all 26 plates. BRACE on h02 and SHOT on h03 are uncut (`all_pass.hud_labels_clear`).
+- The key's PENCIL RING entry now shows the bracket form.
+
+**Fix 5: slot-0 lift.**
+- `hz_core.ui_layers` measures the lifted card on its own: the other cards are drawn transparent. The card must keep every pixel outside r459 (r455 + `LIFT_CLEAR` 4 px) and stay 3 px clear (`LIFT_ARC_GAP`) of every landing mark (`MASKS['arcs']`). The whole hand still keeps outside r455.
+- The search tries lift scale (1.10 / 1.07 / 1.04), lift height (866-906) and fan slide (0-96 px), and takes the least total move.
+- Result: lift scale stays 1.10 and the lift stays 906 on every slot-0 plate.
+  - h05, h06 and h08 slide 36 px: lifted card r min 459.1.
+  - h02, h07 and h09 slide 52 px: lifted card r min 473.2. Here the Brace card's corner also has to clear the landing diamonds on lane 470.
+  - 0 lifted-card px near a landing mark on every plate (`hand_vs_board.lift_*`).
+- The lifted card covers part of its neighbour, as every lift does. On h02 the Spin 3 rules line reads "urn the tower 3" under the lifted Brace (before: "Turn the to..."). The Twist card sits a little further under UNDO / SEND IT, with no words lost.
+
+**Fix 2: room grade.** The plates use the step-6 room grade (`corp/src/bd_grade.py`, now the default). The dim then applies on top as before.
+
+**Fix 3: beaded rows and dot audit.**
+- The FAR trim is a solid tapered stroke (see `../final/NOTES.md`).
+- `hz_publish.py` runs `dot_audit.py` on every published plate (`pixel_dot_runs`).
+- Dimmed to 40 %, Meridian's hazard stripes on the bezel lip and the rim read as dashed lines. `hz_core.soften_hazard` blurs those two bands into a flat dim band, only at angles where nothing in the band is lit. That brought h02 Meridian from 3 runs to 0, and h04 Meridian from 6 to 1.
+- Result: 25 of 26 plates have 0 runs.
+
+**Fix 6.** The HOLD THEN label moved 8 px off digit 3 on the board (`r2_sched.HOLD_LABEL_SHIFT`). It shows on h08.
+
+**Not done and risks.**
+- **h04 Meridian keeps 1 dot run** (`checks.json` `all_pass.pixel_dot_runs` is false only because of it). It is 5 faint spots at (780-797, 333-355). The Meridian corrugated cell ribs meet the ring gutter edge, and that leaves a row of light dots along the edge next to the Twist PLAN channel. It is the skin's material texture, not a drawn mark. The fix belongs in `cs_skin.Meridian` (rib phase or edge line). The same texture is on the Meridian board plates, where the audit's field rule drops it.
+- **Brackets instead of rings on the bill digits** is a small change to the grammar. The key documents it. The alternative is moving the HUD rows apart, which is a HUD layout change.
+- **Tower loud share on h02** is still 53.4 % (designer call, unchanged).
+- **Process note:** I ran a bare `python -` once by mistake (an empty heredoc), which the hard rules forbid. It ran no code and wrote nothing, and I stopped it. I also ran one `python -c` JSON print. Every other step ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.

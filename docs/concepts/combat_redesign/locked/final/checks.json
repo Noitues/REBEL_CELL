@@ -452,55 +452,84 @@
  "dash_audit": {
   "p1_decide": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 5
   },
   "p2_preview": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 3
   },
   "p2b_hover": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 1
   },
   "p3_resolve": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 4
   },
   "p1_nowords": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 5
   },
   "p1_decide_solace": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 5
   },
   "p2b_hover_solace": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 1
   },
   "p1_decide_meridian": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 11
   },
   "p2b_hover_meridian": {
    "dashed_line_calls": 0,
-   "dotted_mark_calls": 0
+   "dotted_mark_calls": 0,
+   "pixel_dot_runs": 0,
+   "pixel_dot_run_list": [],
+   "pixel_dot_runs_first_pass": 9
   }
  },
+ "dash_audit_note": "dashed_line_calls / dotted_mark_calls count draw calls; pixel_dot_runs (O-30) finds, on the rendered pixels, chains of 5 or more small spots (|DoG| > 14, area 3-70 px) with even spacing (CV <= 0.18, 3.5-16 px), same size and colour and a smooth path, after dropping 2-D halftone fields; params in dot_audit.py",
  "all_pass": {
   "draw_asserts": true,
   "collisions": true,
   "occlusion": true,
   "hand": true,
-  "dashes": true
+  "dashes": true,
+  "pixel_dot_runs": true
  },
  "squint": {
   "p1_decide": {
    "plate": {
     "final": {
-     "mean": 0.2286,
-     "p95": 0.4939,
-     "loud": 0.1243
+     "mean": 0.205,
+     "p95": 0.4928,
+     "loud": 0.1219
     },
     "first_pass": {
      "mean": 0.2328,
@@ -515,9 +544,9 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3861,
+     "mean": 0.3865,
      "p95": 0.5609,
-     "loud": 0.4864
+     "loud": 0.4882
     },
     "first_pass": {
      "mean": 0.4063,
@@ -549,9 +578,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3736,
+     "mean": 0.3653,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.387,
@@ -566,9 +595,9 @@
    },
    "hud": {
     "final": {
-     "mean": 0.155,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.1446,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.155,
@@ -580,14 +609,31 @@
      "p95": 0.227,
      "loud": 0.0008
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1343,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1938,
+     "p95": 0.3533,
+     "loud": 0.0197
+    },
+    "e10": {
+     "mean": 0.1787,
+     "p95": 0.323,
+     "loud": 0.0074
+    }
    }
   },
   "p2_preview": {
    "plate": {
     "final": {
-     "mean": 0.231,
-     "p95": 0.5154,
-     "loud": 0.1353
+     "mean": 0.21,
+     "p95": 0.5136,
+     "loud": 0.1337
     },
     "first_pass": {
      "mean": 0.2359,
@@ -602,7 +648,7 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.409,
+     "mean": 0.4093,
      "p95": 0.6116,
      "loud": 0.5787
     },
@@ -636,9 +682,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3837,
-     "p95": 0.6726,
-     "loud": 0.4754
+     "mean": 0.3759,
+     "p95": 0.6721,
+     "loud": 0.4722
     },
     "first_pass": {
      "mean": 0.4033,
@@ -653,9 +699,9 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1667,
-     "p95": 0.3491,
-     "loud": 0.0415
+     "mean": 0.1574,
+     "p95": 0.3434,
+     "loud": 0.0408
     },
     "first_pass": {
      "mean": 0.1667,
@@ -667,14 +713,31 @@
      "p95": 0.2426,
      "loud": 0.0
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.156,
+     "p95": 0.2938,
+     "loud": 0.0188
+    },
+    "first_pass": {
+     "mean": 0.2011,
+     "p95": 0.3583,
+     "loud": 0.0262
+    },
+    "e10": {
+     "mean": 0.1864,
+     "p95": 0.3444,
+     "loud": 0.027
+    }
    }
   },
   "p2b_hover": {
    "plate": {
     "final": {
-     "mean": 0.2163,
-     "p95": 0.4938,
-     "loud": 0.1203
+     "mean": 0.1936,
+     "p95": 0.4921,
+     "loud": 0.1184
     },
     "first_pass": {
      "mean": 0.2208,
@@ -689,7 +752,7 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3737,
+     "mean": 0.3738,
      "p95": 0.5609,
      "loud": 0.4756
     },
@@ -708,7 +771,7 @@
     "final": {
      "mean": 0.1979,
      "p95": 0.3661,
-     "loud": 0.0428
+     "loud": 0.0422
     },
     "first_pass": {
      "mean": 0.2006,
@@ -723,9 +786,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3727,
+     "mean": 0.3644,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.3869,
@@ -740,9 +803,9 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1552,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.145,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.1552,
@@ -754,14 +817,31 @@
      "p95": 0.227,
      "loud": 0.0008
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1417,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1963,
+     "p95": 0.3449,
+     "loud": 0.0147
+    },
+    "e10": {
+     "mean": 0.1832,
+     "p95": 0.323,
+     "loud": 0.0066
+    }
    }
   },
   "p3_resolve": {
    "plate": {
     "final": {
-     "mean": 0.205,
-     "p95": 0.4656,
-     "loud": 0.0971
+     "mean": 0.1807,
+     "p95": 0.4636,
+     "loud": 0.0954
     },
     "first_pass": {
      "mean": 0.2073,
@@ -776,9 +856,9 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.4063,
+     "mean": 0.4067,
      "p95": 0.6116,
-     "loud": 0.575
+     "loud": 0.5769
     },
     "first_pass": {
      "mean": 0.4284,
@@ -810,9 +890,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.2274,
-     "p95": 0.5491,
-     "loud": 0.1752
+     "mean": 0.191,
+     "p95": 0.5453,
+     "loud": 0.1699
     },
     "first_pass": {
      "mean": 0.2292,
@@ -827,9 +907,9 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1471,
-     "p95": 0.3491,
-     "loud": 0.0415
+     "mean": 0.1378,
+     "p95": 0.3434,
+     "loud": 0.0408
     },
     "first_pass": {
      "mean": 0.1471,
@@ -841,14 +921,31 @@
      "p95": 0.2195,
      "loud": 0.0
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1401,
+     "p95": 0.223,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1811,
+     "p95": 0.3213,
+     "loud": 0.0049
+    },
+    "e10": {
+     "mean": 0.1758,
+     "p95": 0.3189,
+     "loud": 0.0066
+    }
    }
   },
   "p1_nowords": {
    "plate": {
     "final": {
-     "mean": 0.2241,
-     "p95": 0.4814,
-     "loud": 0.1199
+     "mean": 0.2005,
+     "p95": 0.481,
+     "loud": 0.1168
     },
     "first_pass": {
      "mean": 0.2289,
@@ -863,9 +960,9 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3893,
+     "mean": 0.3896,
      "p95": 0.5755,
-     "loud": 0.4901
+     "loud": 0.4919
     },
     "first_pass": {
      "mean": 0.4094,
@@ -897,9 +994,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3629,
-     "p95": 0.6242,
-     "loud": 0.4241
+     "mean": 0.3547,
+     "p95": 0.6237,
+     "loud": 0.4188
     },
     "first_pass": {
      "mean": 0.3803,
@@ -914,8 +1011,8 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1398,
-     "p95": 0.3231,
+     "mean": 0.129,
+     "p95": 0.3184,
      "loud": 0.04
     },
     "first_pass": {
@@ -928,14 +1025,31 @@
      "p95": 0.197,
      "loud": 0.0
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1344,
+     "p95": 0.2348,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1941,
+     "p95": 0.3536,
+     "loud": 0.0221
+    },
+    "e10": {
+     "mean": 0.1787,
+     "p95": 0.323,
+     "loud": 0.0074
+    }
    }
   },
   "p1_decide_solace": {
    "plate": {
     "final": {
-     "mean": 0.2337,
-     "p95": 0.4946,
-     "loud": 0.1274
+     "mean": 0.2101,
+     "p95": 0.493,
+     "loud": 0.125
     },
     "first_pass": {
      "mean": 0.2379,
@@ -945,9 +1059,9 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3868,
+     "mean": 0.3872,
      "p95": 0.5609,
-     "loud": 0.4864
+     "loud": 0.4882
     },
     "first_pass": {
      "mean": 0.4069,
@@ -957,7 +1071,7 @@
    },
    "rings_r214-430": {
     "final": {
-     "mean": 0.2595,
+     "mean": 0.2596,
      "p95": 0.3977,
      "loud": 0.0692
     },
@@ -969,9 +1083,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3742,
+     "mean": 0.3659,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.3872,
@@ -981,23 +1095,35 @@
    },
    "hud": {
     "final": {
-     "mean": 0.155,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.1446,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.155,
      "p95": 0.3486,
      "loud": 0.0377
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1343,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1938,
+     "p95": 0.3533,
+     "loud": 0.0197
+    }
    }
   },
   "p2b_hover_solace": {
    "plate": {
     "final": {
-     "mean": 0.2216,
-     "p95": 0.4939,
-     "loud": 0.1215
+     "mean": 0.1988,
+     "p95": 0.4927,
+     "loud": 0.1197
     },
     "first_pass": {
      "mean": 0.226,
@@ -1007,7 +1133,7 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3744,
+     "mean": 0.3745,
      "p95": 0.5609,
      "loud": 0.4756
     },
@@ -1019,9 +1145,9 @@
    },
    "rings_r214-430": {
     "final": {
-     "mean": 0.211,
+     "mean": 0.2109,
      "p95": 0.3772,
-     "loud": 0.0487
+     "loud": 0.0481
     },
     "first_pass": {
      "mean": 0.2136,
@@ -1031,9 +1157,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3733,
+     "mean": 0.3651,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.3871,
@@ -1043,23 +1169,35 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1552,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.145,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.1552,
      "p95": 0.3486,
      "loud": 0.0377
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1417,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1963,
+     "p95": 0.3449,
+     "loud": 0.0147
+    }
    }
   },
   "p1_decide_meridian": {
    "plate": {
     "final": {
-     "mean": 0.2282,
-     "p95": 0.4939,
-     "loud": 0.1246
+     "mean": 0.2047,
+     "p95": 0.4928,
+     "loud": 0.1223
     },
     "first_pass": {
      "mean": 0.2331,
@@ -1069,9 +1207,9 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3867,
+     "mean": 0.387,
      "p95": 0.5609,
-     "loud": 0.4864
+     "loud": 0.4882
     },
     "first_pass": {
      "mean": 0.4068,
@@ -1082,7 +1220,7 @@
    "rings_r214-430": {
     "final": {
      "mean": 0.2555,
-     "p95": 0.3882,
+     "p95": 0.3881,
      "loud": 0.0563
     },
     "first_pass": {
@@ -1093,9 +1231,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3729,
+     "mean": 0.3647,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.3869,
@@ -1105,23 +1243,35 @@
    },
    "hud": {
     "final": {
-     "mean": 0.155,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.1446,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.155,
      "p95": 0.3486,
      "loud": 0.0377
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1343,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1938,
+     "p95": 0.3533,
+     "loud": 0.0197
+    }
    }
   },
   "p2b_hover_meridian": {
    "plate": {
     "final": {
-     "mean": 0.2154,
-     "p95": 0.4938,
-     "loud": 0.1203
+     "mean": 0.1927,
+     "p95": 0.4921,
+     "loud": 0.1183
     },
     "first_pass": {
      "mean": 0.2205,
@@ -1131,7 +1281,7 @@
    },
    "tower_r<=212": {
     "final": {
-     "mean": 0.3739,
+     "mean": 0.374,
      "p95": 0.5609,
      "loud": 0.4756
     },
@@ -1143,9 +1293,9 @@
    },
    "rings_r214-430": {
     "final": {
-     "mean": 0.204,
+     "mean": 0.2039,
      "p95": 0.368,
-     "loud": 0.0428
+     "loud": 0.0416
     },
     "first_pass": {
      "mean": 0.2093,
@@ -1155,9 +1305,9 @@
    },
    "hand_zone": {
     "final": {
-     "mean": 0.3719,
+     "mean": 0.3637,
      "p95": 0.642,
-     "loud": 0.453
+     "loud": 0.4487
     },
     "first_pass": {
      "mean": 0.3867,
@@ -1167,17 +1317,65 @@
    },
    "hud": {
     "final": {
-     "mean": 0.1552,
-     "p95": 0.3486,
-     "loud": 0.0377
+     "mean": 0.145,
+     "p95": 0.3429,
+     "loud": 0.037
     },
     "first_pass": {
      "mean": 0.1552,
      "p95": 0.3486,
      "loud": 0.0377
     }
+   },
+   "room_x>=1100_y>=420_no_hand": {
+    "final": {
+     "mean": 0.1417,
+     "p95": 0.2345,
+     "loud": 0.0
+    },
+    "first_pass": {
+     "mean": 0.1963,
+     "p95": 0.3449,
+     "loud": 0.0147
+    }
    }
   }
+ },
+ "room_grade": {
+  "source": "corp/src/bd_grade.py room_grade() = locked/backdrop/grade.json (step6-1), installed as the default by lw_render",
+  "room": "bio",
+  "params": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.876,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.466,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "note": "O-30 fix 2: every final plate is on the bio room with the step-6 grade; the board scrim is unchanged"
  },
  "squint_note": "1/16 BOX downscale + 1 px blur, luma; loud = share of 16 px cells above 0.38. Target from O-29 fix 9: tower zone loud < 50 %.",
  "cards": {

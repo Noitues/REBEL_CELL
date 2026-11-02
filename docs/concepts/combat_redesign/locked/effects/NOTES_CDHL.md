@@ -122,3 +122,13 @@ Source is in `D:/rc_scratch/combat_redesign/locked/fx_cdhl/src`. It imports the 
 - `fx_build.py <ids>` renders keyframes and runs the 60 fps flash check.
 - `fx_sheets.py all` builds the sheets, strips, `timings_CDHL.json` and block-vs-break.
 - `mk_notes.py` writes this file.
+
+## O-30 pass
+
+O-30 pass (2026-11-02): all C, D, H and L keyframes, reduce-motion stills and 60 fps flash checks are re-rendered on the O-30 board, on every skin. The outputs are the four family sheets, all 19 strips and `fx_block_vs_break.png`.
+- **Board changes.** The step-6 room grade is now the default in `corp/src`. The FAR threat trim is one solid tapered stroke, with no beads. The HUD-label and hero occluders are in.
+- **Base plates.** All 12 were rendered fresh from `corp/src` (neutral, Solace and Meridian; p3, p3alt, p3grow and p3kill), with clean caches. Before they were stale. Neutral p3 matches the published `final/p3_resolve.png` to within 1/255 (`px_over_8 = 0`). The geometry probe (`geom.json`) is byte-identical to the step-4 one.
+- **What did not change:** effect code, timings, keys and easings.
+- **Flash.** Max flashes per second are the same as step 4 for every effect and skin. All pass at 3 per second or less. The footprint and swing numbers moved by about 1 % or less, because the crops are board, not room.
+- **`timings_CDHL.json`.** Only the measured `flash` fields were refreshed. The O-30 hand edits are kept: the trigger_hit `in_sequence` note and the refund RAM source. An `o30_pass` key records the refresh.
+- **Source.** `D:/rc_scratch/combat_redesign/locked/fx_o30b/cdhl/src` (a copy of `fx_cdhl/src` with the paths redirected and per-skin caches). The JSON merge is `fx_o30b/merge_json.py`.

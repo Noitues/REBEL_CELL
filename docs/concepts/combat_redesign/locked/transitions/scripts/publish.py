@@ -1,6 +1,6 @@
 """Copy the deliverables into the repo folder and write metrics.json (both skins + the old option A numbers for comparison)."""
 import os, json, shutil
-WK = 'D:/rc_scratch/combat_redesign/locked/transitions_work/'
+WK = 'D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/'
 DST = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/transitions/'
 os.makedirs(DST + 'scripts', exist_ok=True)
 cp = [('out/neutral/t5_A.gif', 't5_A.gif'), ('out/neutral/t6_A.gif', 't6_A.gif'),

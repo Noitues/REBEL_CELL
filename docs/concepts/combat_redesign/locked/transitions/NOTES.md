@@ -122,3 +122,16 @@ CORP=solace  python src/render2.py
 python src/build_sb.py                    # storyboard strips + sheet -> sb/
 python src/publish.py                     # copies to this folder, writes metrics.json
 ```
+
+## O-30 pass
+
+O-30 pass (2026-11-02): T5, T6, both storyboard strips and `sheet.jpg` are rebuilt on the O-30 board, on both skins. That board uses the step-6 room grade (`bd_grade`), which is now the default in `corp/src`. The FAR threat trim is one solid tapered stroke, and the HUD hover fixes do not show on p1. The layers were re-staged from `corp/src`. They match `R.render('p1')` to within 2/255 (`px_over_8 = 0`), and that render matches the published `final/p1_decide.png` to within 1/255.
+- T5 K6 and T6 K1 are the new published plates. The last GIF frame of T5 differs from the box-downsampled plate by 0, on both skins.
+- **One room reference.** T5 K1 and the room T6 returns to are now the v3.1 bio bare room with the same default grade, without the board scrim (`scripts/mk_graded_room.py`, which calls `bd_grade.room_grade`). Before, they were the ungraded bare room. Every board frame sits on that room. The room still dims to the plate's scrimmed room on the old 0.20-0.60 s curve.
+- **What did not change:** timing, keys, easings, glyph colours and game numbers. The storyboard K1 label and the CHANGE blocks carry an O-30 line.
+- **Flash (`metrics.json`).**
+  - Whole-frame flashes are 0 in T5 and T6 on both skins. A first run with the ungraded K1 counted 1 in each: a dip from the bright bare room to the dark graded room and back up.
+  - Mean frame luma now runs from 0.078 (graded room) up to 0.208 neutral and 0.213 Solace, which is the plate. No frame is brighter than the plate.
+  - The worst 60 px tile is 3 in 1.2 s for T5 and 3 in 0.8 s for T6, on both skins (both were 2 before). The darker room makes 10 % swings easier to reach in tiles the glyph streams cross.
+  - Every clip still passes the limit of 3 flashes in any 1 s, but the local tiles are now at that limit. If the designer wants margin, the glyph density over the room is the knob. It was not changed here.
+- Scripts now run from `D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/src/`. The commands are the ones under Rebuild, with the paths redirected, plus `python src/mk_graded_room.py` first. The copies in `scripts/` are those files.

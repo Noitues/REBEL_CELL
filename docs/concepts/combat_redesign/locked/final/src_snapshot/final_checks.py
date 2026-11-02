@@ -56,10 +56,25 @@ REP['collisions_marks'] = col
 REP['occlusion'] = occ
 REP['hand_vs_board'] = hand
 REP['hand_rule'] = 'no hand pixel (alpha >= 128) inside wheel radius 455 of the board centre (536, 540), and 0 px over any board mark, tape or plate'
+# O-30 fix 3: pixel audit for runs of evenly spaced dots (dot_audit.py), on every published plate, first pass alongside for reference
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dot_audit as DA
+for name, sfx, first in PL:
+    fp = FINAL + name + '.png'
+    if name in dash and os.path.exists(fp):
+        r = DA.audit(Image.open(fp))
+        dash[name]['pixel_dot_runs'] = r['n_runs']
+        dash[name]['pixel_dot_run_list'] = [dict(n=x['n'], spacing=x['spacing'], colour=x['colour'], bbox=x['bbox']) for x in r['runs']]
+        if os.path.exists(first):
+            dash[name]['pixel_dot_runs_first_pass'] = DA.audit(Image.open(first))['n_runs']
 REP['dash_audit'] = dash
+REP['dash_audit_note'] = ('dashed_line_calls / dotted_mark_calls count draw calls; pixel_dot_runs (O-30) finds, on the rendered pixels, chains of 5 or more '
+                          'small spots (|DoG| > %.0f, area %d-%d px) with even spacing (CV <= %.2f, %.1f-%.0f px), same size and colour and a smooth path, '
+                          'after dropping 2-D halftone fields; params in dot_audit.py' % (DA.SPOT_T, DA.SPOT_AREA[0], DA.SPOT_AREA[1], DA.SPACING_CV, DA.GAP[0], DA.GAP[1]))
 REP['all_pass'] = dict(draw_asserts=all(isinstance(v, dict) and v['passed'] == v['total'] for v in da.values()),
                        collisions=all(v['pass_'] for v in col.values()), occlusion=all(v['pass_'] for v in occ.values()),
-                       hand=all(v and v.get('pass') for v in hand.values()), dashes=all(v['dashed_line_calls'] == 0 and v['dotted_mark_calls'] == 0 for v in dash.values()))
+                       hand=all(v and v.get('pass') for v in hand.values()), dashes=all(v['dashed_line_calls'] == 0 and v['dotted_mark_calls'] == 0 for v in dash.values()),
+                       pixel_dot_runs=all(v.get('pixel_dot_runs', 1) == 0 for v in dash.values()))
 
 # ------------------------------------------------------------------ 2. squint
 lum = lambda a: 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
@@ -76,7 +91,8 @@ def squint(img, region=None):
 
 d_ = lambda x, y: np.hypot(x - CC[0], y - CC[1])
 REG = {'plate': None, 'tower_r<=212': lambda x, y: d_(x, y) <= 212, 'rings_r214-430': lambda x, y: (d_(x, y) >= 214) & (d_(x, y) <= 430),
-       'hand_zone': lambda x, y: (x >= 840) & (x <= 1660) & (y >= 780), 'hud': lambda x, y: (x >= 1070) & (y <= 400)}
+       'hand_zone': lambda x, y: (x >= 840) & (x <= 1660) & (y >= 780), 'hud': lambda x, y: (x >= 1070) & (y <= 400),
+       'room_x>=1100_y>=420_no_hand': lambda x, y: (x >= 1100) & (y >= 420) & ~((x <= 1660) & (y >= 780)) & ~((x >= 1650) & (y >= 840))}
 sq = {}
 for name, sfx, first in PL:
     fp = FINAL + name + '.png'
@@ -87,6 +103,10 @@ for name, sfx, first in PL:
         imgs['e10'] = E10F + name + '.png'
     sq[name] = {rn: {k: squint(Image.open(v).convert('RGB'), rf) for k, v in imgs.items() if os.path.exists(v)} for rn, rf in REG.items()}
 REP['squint'] = sq
+import bd_grade as _BG
+REP['room_grade'] = dict(source='corp/src/bd_grade.py room_grade() = locked/backdrop/grade.json (%s), installed as the default by lw_render' % _BG.GRADE_VERSION,
+                         room='bio', params=_BG.ROOMS['bio'],
+                         note='O-30 fix 2: every final plate is on the bio room with the step-6 grade; the board scrim is unchanged')
 REP['squint_note'] = '1/16 BOX downscale + 1 px blur, luma; loud = share of 16 px cells above 0.38. Target from O-29 fix 9: tower zone loud < 50 %.'
 
 # ------------------------------------------------------------------ 3. cards
@@ -267,7 +287,7 @@ gp.save(FINAL + 'grey_proof.jpg', quality=90)
 print('grey_proof written')
 
 first = Image.open(LOCK + 'assembled/p1_decide.png').convert('RGB')
-cols = [('locked first pass (ART CALL 53)', first), ('final (O-29 fixes)', p1)]
+cols = [('locked first pass (ART CALL 53)', first), ('final (O-29 + O-30 fixes)', p1)]
 Wc = 940
 crops = [((830, 740, 1910, 1080), 'hand'), ((440, 110, 640, 200), 'digit 0 + tape'), ((430, 880, 680, 960), 'digit 3 + HOLD THEN'), ((300, 300, 772, 780), 'wheel')]
 rows_h = [529] + [int((c[0][3] - c[0][1]) * min(Wc / (c[0][2] - c[0][0]), 2.4 if i in (1, 2) else 1.0)) for i, c in enumerate(crops)]

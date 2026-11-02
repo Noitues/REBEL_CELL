@@ -226,3 +226,50 @@ img.save('out.png')                               # RGB 1920x1080
 - **Not done here:** Meridian stencilled numbers. Solace ring 0 `kind_gain` was not lowered. Ring 2 unit kinds stay close (minimum dE about 2.5), so the glyph carries kind there.
 - **The hover leader still crosses the tape.** It is allowed and documented, not removed.
 - **Process note:** I ran a bare `python -` once by mistake. It got no stdin code and wrote nothing, and I stopped it. I also ran two empty `python -c` calls by reflex. All real work ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.
+
+## O-30 pass
+
+This pass applies the art director's ranked fixes 1, 2, 3, 5, 6 and 8 from `../REVIEW_FINAL.md` ("Top fixes, ranked"). All 9 plates, `grey_proof.jpg`, `grammar_check.jpg`, `before_after.jpg` and `checks.json` were re-rendered from `corp/src`. `before_after.jpg` still compares the locked first pass with this final. `card_sheet.jpg` was not re-rendered: no card code changed. No game number, word or rule changed. The E10 state is unchanged, and draw asserts, required words, card fields and tower numbers all match it.
+
+**Fix 2: room grade.** The step-6 grade is now the default room grade of the generator.
+- `corp/src/bd_grade.py` is the `backdrop/src` grade, with the per-room parameters from `../backdrop/grade.json` (step6-1) built in.
+- `room_grade()` picks the room from the active `room_<n>_bare.png`, and `lw_render` installs it in place of `r2_ground.grade`. `BD_GRADE=0` brings back the old grade.
+- The board scrim is unchanged.
+- Squint on p1, room zone (x >= 1100, y >= 420, outside the hand), mean / p95 / loud: 0.134 / 0.235 / 0 %. The first pass was 0.194 / 0.353 / 2.0 %, and E10 was 0.179 / 0.323 / 0.7 %.
+- Whole p1 plate: 0.205 / 0.493 / 12.2 %. These match the backdrop/ composites.
+
+**Fix 3: beaded rows.**
+- What they encode: the beads are the FAR (+2 turns) threat trim on the tower rim. That is zone k = 2 of `f1_tower.draw_trim`, a threat landing on that slice in two turns. The bead count meant nothing in the game: it was the arc length divided by 7.4 px, so 8-9 beads on every zone. The game information is the zone itself plus its two pips (k = 2), and both are kept.
+- The fix: FAR is now one solid tapered stroke on the same arc, drawn by `f1_tower.far_stroke`.
+  - It is 4.6 px wide at the middle and tapers to 1.4 px at the ends, with a 1.3 px ink keyline.
+  - It keeps the FAR colour and the two pips.
+  - Value order stays HOT (bold band, notch, glow) > COLD (band, one pip) > FAR (thin stroke, two pips).
+- Trim zones match the state on f1, f2, f2t and f2b (`checks.json` `game_info.tower_numbers`).
+- New pixel audit, `corp/src/dot_audit.py`. It works on the rendered pixels:
+  - It finds small spots: |DoG| of luma over 14, area 3-70 px, round.
+  - It drops 2-D halftone fields: any spot with 4 or more neighbours within 14 px, or with 3 or more within 1.5x its nearest-neighbour distance (the edge row of a field).
+  - It reports runs of 5 or more spots that are evenly spaced (spacing CV <= 0.18, 3.5-16 px), the same size and colour, and on a smooth path.
+- Result: 0 runs on all 9 final plates. The first-pass plates score 1-11 runs each (p1: 5), the bead rows among them. The audit runs in `final_checks.py` (`dash_audit.*.pixel_dot_runs`, `all_pass.pixel_dot_runs`) and in `hz_publish.py` for hover.
+
+**Fix 6: HOLD THEN.** `r2_sched.HOLD_LABEL_SHIFT = 8` px moves every non-live HOLD label along the arc, away from the next digit. Digit 3 now has a clear gap from the N (crop on `before_after.jpg`). HOLD NEXT moves the same 8 px, away from digit 2.
+
+**Fix 8: one generator.**
+- The hover generator (`hz_*.py`, `hv_lib_h2.py`, `plan_patch_h.py`) is merged into `corp/src`. The rest of `hover/src` differed from `corp/src` only in output paths, so nothing else needed merging.
+- Hover now renders from `corp/src`. It writes to `locked/hover/{out,chk,logs}` and shares the tower and card caches in `corp/work`.
+- `hz_set.py` is the parallel driver.
+- `locked/hover/src` is now a stale copy, kept only for reference.
+
+**Fixes 1 and 5** are hover fixes. See `../hover/NOTES.md`, "O-30 pass". They do not change the final plates: no final plate lifts a card from slot 0.
+
+**Checks (`checks.json`).** `all_pass` is true for draw asserts, collisions, occlusion, hand, dash calls and pixel dot runs.
+- Draw asserts: 63/63 on p1, nowords, Solace p1 and Meridian p1; 49/49 on p2 and p3; 24/24 on p2b on all three skins.
+- Hand: closest pixel 458.9 px from the board centre.
+- Tape match: 100 / 97.7 / 98.0 %. Enemy-zone pink: 0.228-0.229 %.
+- Tower loud share: 48.8 % on p1, 57.9 % on p2, 57.7 % on p3, 47.6 % on p2b. p2/p3 are still a designer call; this pass did not change it.
+
+**Not done.**
+- Fixes 4 (full resolve beat flash meter, reduce-motion blocks), 7 (effect layer) and 9 (latent effects) were not in this brief.
+- The effect bases and the T5/T6 end frames still use the old grade. Re-render them from `corp/src`: the new grade is now the default.
+- The beads also show on the effect strips and on `block_vs_break`. Those were not re-rendered.
+- `src_snapshot/` was refreshed (`.py` only).
+- Process note: I ran a bare `python -` once by mistake (an empty heredoc), which the hard rules forbid. It ran no code and wrote nothing, and I stopped it. I also ran one `python -c` JSON print. Every other step ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.

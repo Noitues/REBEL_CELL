@@ -423,8 +423,28 @@ def trim_data(f, skip_units=None):
     return seen
 
 
+FAR_HALF_W = 2.3        # px, half width of the FAR stroke at its middle (COLD band is 3 px half width, HOT 5)
+FAR_TIP_W = 0.7         # px, half width at the tapered ends
+FAR_INSET = 1.0         # deg trimmed off each end of the zone
+
+
+def far_stroke(cv, rc, a0, a1, n=48):
+    """one tapered stroke along radius rc from a0 to a1 (deg): ink keyline + FAR_HARM body, never beaded"""
+    pts_o, pts_i = [], []
+    for i in range(n + 1):
+        t = i / n
+        hw = FAR_TIP_W + (FAR_HALF_W - FAR_TIP_W) * math.sin(math.pi * t) ** 0.5
+        a = a0 + (a1 - a0) * t
+        pts_o.append(pol(CT, rc + hw, a))
+        pts_i.append(pol(CT, rc - hw, a))
+    body = cv.poly_mask(pts_o + pts_i[::-1])
+    cv.over(np.clip(ndi.gaussian_filter(outline_mask(body, cv.S, 1.3), 0.4) * 1.5, 0, 1), INK, 0.97)
+    cv.over(body, FAR_HARM, 1.0)
+
+
 def draw_trim(cv, f, skip_units=None, state_hot=True):
-    """HOT: bold, full chroma, glow, END notch (8 px wedge on the tower-facing end).  COLD: thinner, #D9877C solid, one pip.  FAR: dotted, 50 percent, two pips."""
+    """HOT: bold, full chroma, glow, END notch (8 px wedge on the tower-facing end).  COLD: thinner, #D9877C solid, one pip.
+    FAR: one solid tapered stroke, 50 percent, two pips (O-30: was dotted)."""
     S = cv.S
     zones = {2: (-26.5, -9.5), 1: (-8.5, 8.5), 0: (9.5, 26.5)}
     for sec, ks in trim_data(f, skip_units).items():
@@ -455,13 +475,9 @@ def draw_trim(cv, f, skip_units=None, state_hot=True):
                 cv.over(cv.circle_mask((bx, by), 3.1), INK, 1.0)
                 cv.over(cv.circle_mask((bx, by), 2.0), TMID, 1.0)
             else:
-                rc = (TRIM0 + TRIM1) / 2
-                n = int(math.radians(a1 - a0) * rc / 7.4)
-                for i in range(n + 1):
-                    a = a0 + (a1 - a0) * i / max(1, n)
-                    p = pol(CT, rc, a)
-                    cv.over(cv.circle_mask(p, 3.5), INK, 0.97)
-                    cv.over(cv.circle_mask(p, 2.2), FAR_HARM, 1.0)
+                # O-30 fix 3: FAR (+2) was a row of 8-9 beads (count = arc length / 7.4, no game meaning) that read as a dotted line.
+                # Now one solid tapered stroke on the same arc, thinner than COLD; FAR's two pips stay (they carry k = 2).
+                far_stroke(cv, (TRIM0 + TRIM1) / 2, a0 + FAR_INSET, a1 - FAR_INSET)
                 for j in range(2):
                     bx, by = pol(CT, TRIM1 + 6.5, a0 + 1.6 + j * 3.6)
                     cv.over(cv.circle_mask((bx, by), 3.1), INK, 1.0)

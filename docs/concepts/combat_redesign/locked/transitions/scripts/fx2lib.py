@@ -3,10 +3,10 @@ Layers come from staged.py (layers/<corp>_p1.npz, 1920x1080 RGBA), downsampled h
 import numpy as np, os, math, json
 from PIL import Image, ImageDraw, ImageFont
 
-HERE = 'D:/rc_scratch/combat_redesign/locked/transitions_work/'
+HERE = 'D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/'
 CORP = os.environ.get('CORP', 'neutral')
 W, H = 960, 540
-BARE_PATH = 'D:/rc_art/art-pass/docs/concepts/combat_backdrop/v3_1/room_bio_bare.png'
+BARE_PATH = 'D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/room_bio_graded.png'   # O-30: v3.1 bio bare room with the default room grade (mk_graded_room.py)
 
 
 def _load():

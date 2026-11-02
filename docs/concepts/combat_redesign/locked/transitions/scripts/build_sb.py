@@ -8,12 +8,12 @@ from helpers3 import *            # W, H, LIME, PINK, AMB, F, MF, L, GIF, zc, bl
 from text3 import TEXT
 import numpy as np
 
-WK = 'D:/rc_scratch/combat_redesign/locked/transitions_work/'
+WK = 'D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/'
 OUT = WK + 'sb/'
 os.makedirs(OUT, exist_ok=True)
 FIN = R + 'combat_redesign/locked/final/'
 plate = {'neutral': L(FIN + 'p1_decide.png'), 'solace': L(FIN + 'p1_decide_solace.png')}
-bare = L('combat_backdrop/v3_1/room_bio_bare.png')
+bare = Image.open('D:/rc_scratch/combat_redesign/locked/fx_o30b/tr/room_bio_graded.png').convert('RGB').resize((W, H), Image.LANCZOS)   # O-30: graded room
 
 
 def key(corp, which, t):
@@ -118,7 +118,7 @@ for corp, tid in (('neutral', 't05'), ('solace', 't05s')):
     base['id'] = tid
     base['title'] = 'T5  Room to combat: the spinner flies in, the enemy rings fly from the room as bits' + nm
     base['file'] = 't05_room_to_combat%s.jpg' % ('' if corp == 'neutral' else '_solace')
-    base['labels'] = ['K1  0.00 s  cutaway room, nothing on it (v3.1 bio)',
+    base['labels'] = ['K1  0.00 s  cutaway room, nothing on it (v3.1 bio, O-30 grade)',
                       'K2  0.38 s  the spinner flies in, 1.35x to 1.0x (real layer)',
                       'K3  0.55 s  glyph bits leave the lab, keylines start the rings',
                       'K4  0.85 s  rings 0-2 drawn, the frame band (silver tape) closing',
@@ -147,6 +147,10 @@ T['t06']['real'] = ('K1 is the real final locked plate (a decide-beat plate stan
 T['t06']['chg'] = ('2026-11-02: K1-K3 and K5 now use the final locked board. The win path is option A recoloured: the hand breaks into glyphs '
                    'in the WPAP type colours, the keyline eats the frame band (silver tape), rings 2, 1, 0 (corp colours), then the spinner with a '
                    'player-pink keyline whose glyphs take the slice spot inks. K4 and K6 are the v3 frames. Timing unchanged.')
+O30 = (' O-30 pass (2026-11-02): rebuilt on the O-30 board: the step-6 room grade (bd_grade) is the default room grade, so every '
+       'frame sits on the graded room, and T5 K1 and the room T6 returns to are the same graded room (one room reference, no dim-dip); the FAR threat trim is one solid tapered stroke (no beads). Timing unchanged.')
+for _k in ('t05', 't05s', 't06'):
+    T[_k]['chg'] = T[_k]['chg'] + O30
 
 COL = {'R': LIME, 'C': (70, 200, 255), 'X': AMB}
 TAG = {'R': 'REAL', 'C': 'COMP', 'X': 'CONCEPT'}
