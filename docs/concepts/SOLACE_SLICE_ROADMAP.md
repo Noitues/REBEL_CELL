@@ -115,3 +115,15 @@ Most of these exist from earlier rounds but were drawn against the old city. Rec
   - a no-hide assertion once build's corridors land;
   - avenue strips and traffic end at real intersections and on real roads.
 - **Zoom checks:** each art round renders seeds 1, 3, 7 plus 2 random seeds at four zooms, anchored on the worst lint offenders.
+
+## Added 2026-11-01: combat screen, after the player spinner is picked
+Order of work once the designer picks the punk spinner style (ART CALLs 51-52):
+1. **Lock the player family across the whole board.** Carry the picked style onto the rings, the THIS TURN tape, the frame and the nameplate, not only the inner disc; restyle the full card set with the title rule. Render all states (p1 decide, p2 preview, p2b hover, p3 resolve, nowords), then run the draw asserts, the game-info check and the squint.
+2. **Corporate layers (the enemy rings).** A corp skin per corporation, themed on the corp: palette, material, pattern, unit-token frames, cell enamel, landing arcs and schedule tape. Built as data (a token set), so a corp swap is a skin swap. Solace first (lime biotech: lab enamel, cell and helix motifs); one second corp as a proof that the swap works (Meridian stays hibernated in the slice, so as a palette proof only). Depth to decide: colour shift only, or colour plus material and pattern (the designer prefers a theme, "even if just a color shift").
+3. **Grammar on the new skins.** HOT/COLD/FAR time marks, the pending-loss cross-hatch, the arrowed movement outline and the enemy outline, all re-checked against the player skin and every corp skin.
+4. **Effects.** Rebuild the 28 effects (8 families) in the player and corp skins, with animation timings and a measured flash check.
+5. **Hover plates.** Re-render the 11 per-card hover plates on the final skins.
+6. **Backdrop and loudness.** Re-tune the cutaway room grade to the new board's loudness.
+7. **Transitions.** Update T5/T6 (bits FX in the new colours) and the T2/T3/T5/T6 frames in the storyboard.
+8. **Godot port spec.** Shaders, texture and sprite-sheet list, the corp-skin data format, then a hand-off to build through the mailbox.
+9. **ART_BIBLE.** Fold in the combat style, the grammar and the corp skin rules.
