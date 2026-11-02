@@ -1,0 +1,239 @@
+{
+ "titles": {
+  "Nudge": {
+   "name": "NUDGE",
+   "px": 38.0,
+   "width": 93.6,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Spin2": {
+   "name": "SPIN 2",
+   "px": 38.0,
+   "width": 95.6,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Spin3": {
+   "name": "SPIN 3",
+   "px": 38.0,
+   "width": 95.6,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Brace": {
+   "name": "BRACE",
+   "px": 38.0,
+   "width": 92.4,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Strike": {
+   "name": "STRIKE",
+   "px": 38.0,
+   "width": 97.9,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Firewall": {
+   "name": "FIREWALL",
+   "px": 34.25,
+   "width": 127.1,
+   "cap_design": 29.5,
+   "cap_1p15": 33.9
+  },
+  "Pull": {
+   "name": "PULL",
+   "px": 38.0,
+   "width": 69.2,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Shove": {
+   "name": "SHOVE",
+   "px": 38.0,
+   "width": 92.5,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Twist": {
+   "name": "TWIST",
+   "px": 38.0,
+   "width": 87.1,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Hold": {
+   "name": "HOLD",
+   "px": 38.0,
+   "width": 74.4,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  },
+  "Trigger": {
+   "name": "TRIGGER",
+   "px": 38.0,
+   "width": 118.2,
+   "cap_design": 32.7,
+   "cap_1p15": 37.6
+  }
+ },
+ "title_fill_vs_keyline": 17.7,
+ "title_keyline_vs_paper": 16.0,
+ "title_plate_vs_paper": 16.0,
+ "rules_ink_vs_paper": 16.0,
+ "type_text_vs_plate": {
+  "TOWER": 9.8,
+  "WAVE": 6.5
+ },
+ "type_plate_vs_paper": {
+  "TOWER": 1.6,
+  "WAVE": 2.5
+ },
+ "tower_vs_wave": 1.52,
+ "icon": {
+  "Nudge": {
+   "disc_vs_around": 1.87,
+   "halo_vs_around": 2.75,
+   "glyph_vs_disc": 5.13,
+   "disc_vs_halo": 5.13,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    85,
+    160,
+    198
+   ],
+   "disc_hex": "C81E78"
+  },
+  "Spin2": {
+   "disc_vs_around": 2.46,
+   "halo_vs_around": 2.56,
+   "glyph_vs_disc": 6.31,
+   "disc_vs_halo": 6.31,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    85,
+    173,
+    147
+   ],
+   "disc_hex": "2A4BE0"
+  },
+  "Spin3": {
+   "disc_vs_around": 3.64,
+   "halo_vs_around": 3.08,
+   "glyph_vs_disc": 11.2,
+   "disc_vs_halo": 11.2,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    191,
+    130,
+    70
+   ],
+   "disc_hex": "2B1F9E"
+  },
+  "Brace": {
+   "disc_vs_around": 2.04,
+   "halo_vs_around": 6.33,
+   "glyph_vs_disc": 3.1,
+   "disc_vs_halo": 3.1,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    85,
+    91,
+    121
+   ],
+   "disc_hex": "FF3DA8"
+  },
+  "Strike": {
+   "disc_vs_around": 6.9,
+   "halo_vs_around": 2.57,
+   "glyph_vs_disc": 17.72,
+   "disc_vs_halo": 17.72,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    155,
+    156,
+    172
+   ],
+   "disc_hex": "15121A"
+  },
+  "Firewall": {
+   "disc_vs_around": 2.19,
+   "halo_vs_around": 6.78,
+   "glyph_vs_disc": 3.1,
+   "disc_vs_halo": 3.1,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    43,
+    94,
+    111
+   ],
+   "disc_hex": "FF3DA8"
+  },
+  "Pull": {
+   "disc_vs_around": 1.88,
+   "halo_vs_around": 5.82,
+   "glyph_vs_disc": 3.1,
+   "disc_vs_halo": 3.1,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    79,
+    103,
+    96
+   ],
+   "disc_hex": "FF3DA8"
+  },
+  "Shove": {
+   "disc_vs_around": 1.47,
+   "halo_vs_around": 7.41,
+   "glyph_vs_disc": 10.92,
+   "disc_vs_halo": 10.92,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    79,
+    77,
+    126
+   ],
+   "disc_hex": "3A1C9E"
+  },
+  "Twist": {
+   "disc_vs_around": 1.39,
+   "halo_vs_around": 5.02,
+   "glyph_vs_disc": 7.01,
+   "disc_vs_halo": 7.01,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    150,
+    92,
+    88
+   ],
+   "disc_hex": "5B2BE0"
+  },
+  "Hold": {
+   "disc_vs_around": 2.36,
+   "halo_vs_around": 7.32,
+   "glyph_vs_disc": 3.1,
+   "disc_vs_halo": 3.1,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    50,
+    87,
+    107
+   ],
+   "disc_hex": "FF3DA8"
+  },
+  "Trigger": {
+   "disc_vs_around": 2.22,
+   "halo_vs_around": 12.28,
+   "glyph_vs_disc": 5.53,
+   "disc_vs_halo": 5.53,
+   "keyline_vs_halo": 17.7,
+   "around_rgb": [
+    37,
+    48,
+    84
+   ],
+   "disc_hex": "7A2CFF"
+  }
+ }
+}

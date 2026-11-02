@@ -1,0 +1,2075 @@
+{
+ "draw_asserts": {
+  "p1_decide": {
+   "total": 60,
+   "passed": 60,
+   "failed": 0,
+   "failures": []
+  },
+  "p2_preview": {
+   "total": 46,
+   "passed": 46,
+   "failed": 0,
+   "failures": []
+  },
+  "p2b_hover": {
+   "total": 21,
+   "passed": 21,
+   "failed": 0,
+   "failures": []
+  },
+  "p3_resolve": {
+   "total": 46,
+   "passed": 46,
+   "failed": 0,
+   "failures": []
+  },
+  "p1_nowords": {
+   "total": 60,
+   "passed": 60,
+   "failed": 0,
+   "failures": []
+  },
+  "p1_decide_srv": {
+   "total": 60,
+   "passed": 60,
+   "failed": 0,
+   "failures": []
+  },
+  "p1_decide_gh": {
+   "total": 60,
+   "passed": 60,
+   "failed": 0,
+   "failures": []
+  }
+ },
+ "collision": {
+  "p1_decide": {
+   "mask_px": {
+    "badges": 1971,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 5798,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p2_preview": {
+   "mask_px": {
+    "badges": 3101,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 10664,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p2b_hover": {
+   "mask_px": {
+    "badges": 1971,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 42515,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p3_resolve": {
+   "mask_px": {
+    "badges": 3101,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 10664,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p1_nowords": {
+   "mask_px": {
+    "badges": 1971,
+    "digits": 4104,
+    "labels": 1300,
+    "tags": 3519,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p1_decide_srv": {
+   "mask_px": {
+    "badges": 1971,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 5798,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  },
+  "p1_decide_gh": {
+   "mask_px": {
+    "badges": 1971,
+    "digits": 4104,
+    "labels": 2116,
+    "tags": 5798,
+    "tickets": 19096
+   },
+   "overlap_px": {
+    "badges x digits": 0,
+    "badges x labels": 0,
+    "badges x tags": 0,
+    "badges x tickets": 0,
+    "digits x labels": 0,
+    "digits x tags": 0,
+    "digits x tickets": 0,
+    "labels x tags": 0,
+    "labels x tickets": 0,
+    "tags x tickets": 0
+   }
+  }
+ },
+ "collision_total_px": {
+  "p1_decide": 0,
+  "p2_preview": 0,
+  "p2b_hover": 0,
+  "p3_resolve": 0,
+  "p1_nowords": 0,
+  "p1_decide_srv": 0,
+  "p1_decide_gh": 0
+ },
+ "dash_audit": {
+  "runtime": {
+   "p1_decide": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p2_preview": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p2b_hover": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p3_resolve": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p1_nowords": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p1_decide_srv": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   },
+   "p1_decide_gh": {
+    "dashed_line_calls": 0,
+    "dotted_mark_calls": 0
+   }
+  },
+  "code": {
+   "card_render.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "lw_tower.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "lw_ui.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "lw_skin.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "lw_install.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "asm_render.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   },
+   "f1_hand.py": {
+    "dash_args": 0,
+    "dashed_fn": 0,
+    "setLineDash": 0
+   }
+  }
+ },
+ "squint": {
+  "p1_decide": {
+   "plate": {
+    "e10": {
+     "mean": 0.1843,
+     "p95": 0.3682,
+     "loud": 0.041
+    },
+    "f1": {
+     "mean": 0.225,
+     "p95": 0.4961,
+     "loud": 0.1251
+    },
+    "locked": {
+     "mean": 0.2328,
+     "p95": 0.5044,
+     "loud": 0.1403
+    }
+   },
+   "board_disc_r<=490": {
+    "e10": {
+     "mean": 0.1858,
+     "p95": 0.3077,
+     "loud": 0.0034
+    },
+    "f1": {
+     "mean": 0.2358,
+     "p95": 0.4432,
+     "loud": 0.1213
+    },
+    "locked": {
+     "mean": 0.2563,
+     "p95": 0.4841,
+     "loud": 0.1458
+    }
+   },
+   "tower_r<=212": {
+    "e10": {
+     "mean": 0.243,
+     "p95": 0.3299,
+     "loud": 0.0127
+    },
+    "f1": {
+     "mean": 0.3917,
+     "p95": 0.5089,
+     "loud": 0.604
+    },
+    "locked": {
+     "mean": 0.4063,
+     "p95": 0.5779,
+     "loud": 0.5642
+    }
+   },
+   "rings_r214-430": {
+    "e10": {
+     "mean": 0.1895,
+     "p95": 0.3118,
+     "loud": 0.0018
+    },
+    "f1": {
+     "mean": 0.2312,
+     "p95": 0.3449,
+     "loud": 0.0106
+    },
+    "locked": {
+     "mean": 0.2499,
+     "p95": 0.3982,
+     "loud": 0.0669
+    }
+   },
+   "hand_zone": {
+    "e10": {
+     "mean": 0.2723,
+     "p95": 0.4489,
+     "loud": 0.1923
+    },
+    "f1": {
+     "mean": 0.4205,
+     "p95": 0.7207,
+     "loud": 0.4989
+    },
+    "locked": {
+     "mean": 0.387,
+     "p95": 0.6477,
+     "loud": 0.5064
+    }
+   },
+   "send_it": {
+    "e10": {
+     "mean": 0.473,
+     "p95": 0.6374,
+     "loud": 0.7417
+    },
+    "f1": {
+     "mean": 0.3842,
+     "p95": 0.609,
+     "loud": 0.45
+    },
+    "locked": {
+     "mean": 0.3932,
+     "p95": 0.6258,
+     "loud": 0.5333
+    }
+   },
+   "hud": {
+    "e10": {
+     "mean": 0.1326,
+     "p95": 0.227,
+     "loud": 0.0008
+    },
+    "f1": {
+     "mean": 0.1548,
+     "p95": 0.3537,
+     "loud": 0.0423
+    },
+    "locked": {
+     "mean": 0.155,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  },
+  "p2_preview": {
+   "plate": {
+    "e10": {
+     "mean": 0.1845,
+     "p95": 0.3749,
+     "loud": 0.0473
+    },
+    "f1": {
+     "mean": 0.2284,
+     "p95": 0.5216,
+     "loud": 0.1449
+    },
+    "locked": {
+     "mean": 0.2359,
+     "p95": 0.5336,
+     "loud": 0.1514
+    }
+   },
+   "board_disc_r<=490": {
+    "e10": {
+     "mean": 0.1769,
+     "p95": 0.3109,
+     "loud": 0.0065
+    },
+    "f1": {
+     "mean": 0.2256,
+     "p95": 0.452,
+     "loud": 0.1403
+    },
+    "locked": {
+     "mean": 0.2505,
+     "p95": 0.5075,
+     "loud": 0.1607
+    }
+   },
+   "tower_r<=212": {
+    "e10": {
+     "mean": 0.2505,
+     "p95": 0.3584,
+     "loud": 0.0307
+    },
+    "f1": {
+     "mean": 0.4014,
+     "p95": 0.5125,
+     "loud": 0.7125
+    },
+    "locked": {
+     "mean": 0.4313,
+     "p95": 0.637,
+     "loud": 0.6528
+    }
+   },
+   "rings_r214-430": {
+    "e10": {
+     "mean": 0.1847,
+     "p95": 0.3011,
+     "loud": 0.0012
+    },
+    "f1": {
+     "mean": 0.2161,
+     "p95": 0.3409,
+     "loud": 0.0082
+    },
+    "locked": {
+     "mean": 0.2365,
+     "p95": 0.3974,
+     "loud": 0.0639
+    }
+   },
+   "hand_zone": {
+    "e10": {
+     "mean": 0.2704,
+     "p95": 0.461,
+     "loud": 0.2083
+    },
+    "f1": {
+     "mean": 0.4461,
+     "p95": 0.7707,
+     "loud": 0.5577
+    },
+    "locked": {
+     "mean": 0.4033,
+     "p95": 0.6831,
+     "loud": 0.5406
+    }
+   },
+   "send_it": {
+    "e10": {
+     "mean": 0.4794,
+     "p95": 0.6534,
+     "loud": 0.7417
+    },
+    "f1": {
+     "mean": 0.3843,
+     "p95": 0.609,
+     "loud": 0.45
+    },
+    "locked": {
+     "mean": 0.3932,
+     "p95": 0.6258,
+     "loud": 0.5333
+    }
+   },
+   "hud": {
+    "e10": {
+     "mean": 0.1445,
+     "p95": 0.2426,
+     "loud": 0.0
+    },
+    "f1": {
+     "mean": 0.1668,
+     "p95": 0.3536,
+     "loud": 0.0445
+    },
+    "locked": {
+     "mean": 0.1667,
+     "p95": 0.3491,
+     "loud": 0.0415
+    }
+   }
+  },
+  "p2b_hover": {
+   "plate": {
+    "e10": {
+     "mean": 0.1729,
+     "p95": 0.3674,
+     "loud": 0.0409
+    },
+    "f1": {
+     "mean": 0.2124,
+     "p95": 0.4961,
+     "loud": 0.1215
+    },
+    "locked": {
+     "mean": 0.2208,
+     "p95": 0.5029,
+     "loud": 0.1351
+    }
+   },
+   "board_disc_r<=490": {
+    "e10": {
+     "mean": 0.1532,
+     "p95": 0.2913,
+     "loud": 0.0034
+    },
+    "f1": {
+     "mean": 0.2,
+     "p95": 0.4412,
+     "loud": 0.1135
+    },
+    "locked": {
+     "mean": 0.2219,
+     "p95": 0.4726,
+     "loud": 0.1339
+    }
+   },
+   "tower_r<=212": {
+    "e10": {
+     "mean": 0.2011,
+     "p95": 0.3328,
+     "loud": 0.0127
+    },
+    "f1": {
+     "mean": 0.3786,
+     "p95": 0.5091,
+     "loud": 0.5787
+    },
+    "locked": {
+     "mean": 0.392,
+     "p95": 0.5779,
+     "loud": 0.5425
+    }
+   },
+   "rings_r214-430": {
+    "e10": {
+     "mean": 0.1637,
+     "p95": 0.2894,
+     "loud": 0.0018
+    },
+    "f1": {
+     "mean": 0.1808,
+     "p95": 0.3,
+     "loud": 0.0053
+    },
+    "locked": {
+     "mean": 0.2006,
+     "p95": 0.3864,
+     "loud": 0.0534
+    }
+   },
+   "hand_zone": {
+    "e10": {
+     "mean": 0.2709,
+     "p95": 0.4489,
+     "loud": 0.1923
+    },
+    "f1": {
+     "mean": 0.4202,
+     "p95": 0.7207,
+     "loud": 0.4989
+    },
+    "locked": {
+     "mean": 0.3869,
+     "p95": 0.6477,
+     "loud": 0.5053
+    }
+   },
+   "send_it": {
+    "e10": {
+     "mean": 0.473,
+     "p95": 0.6374,
+     "loud": 0.7417
+    },
+    "f1": {
+     "mean": 0.3842,
+     "p95": 0.609,
+     "loud": 0.45
+    },
+    "locked": {
+     "mean": 0.3932,
+     "p95": 0.6258,
+     "loud": 0.5333
+    }
+   },
+   "hud": {
+    "e10": {
+     "mean": 0.1328,
+     "p95": 0.227,
+     "loud": 0.0008
+    },
+    "f1": {
+     "mean": 0.155,
+     "p95": 0.3537,
+     "loud": 0.0423
+    },
+    "locked": {
+     "mean": 0.1552,
+     "p95": 0.3486,
+     "loud": 0.0377
+    }
+   }
+  },
+  "p3_resolve": {
+   "plate": {
+    "e10": {
+     "mean": 0.1651,
+     "p95": 0.3274,
+     "loud": 0.0246
+    },
+    "f1": {
+     "mean": 0.1995,
+     "p95": 0.4452,
+     "loud": 0.0879
+    },
+    "locked": {
+     "mean": 0.2073,
+     "p95": 0.4824,
+     "loud": 0.1075
+    }
+   },
+   "board_disc_r<=490": {
+    "e10": {
+     "mean": 0.1759,
+     "p95": 0.3107,
+     "loud": 0.0065
+    },
+    "f1": {
+     "mean": 0.2206,
+     "p95": 0.4509,
+     "loud": 0.1383
+    },
+    "locked": {
+     "mean": 0.2471,
+     "p95": 0.5075,
+     "loud": 0.1672
+    }
+   },
+   "tower_r<=212": {
+    "e10": {
+     "mean": 0.2484,
+     "p95": 0.3584,
+     "loud": 0.0307
+    },
+    "f1": {
+     "mean": 0.3989,
+     "p95": 0.5125,
+     "loud": 0.7089
+    },
+    "locked": {
+     "mean": 0.4284,
+     "p95": 0.637,
+     "loud": 0.6438
+    }
+   },
+   "rings_r214-430": {
+    "e10": {
+     "mean": 0.1838,
+     "p95": 0.3011,
+     "loud": 0.0012
+    },
+    "f1": {
+     "mean": 0.2086,
+     "p95": 0.3389,
+     "loud": 0.0076
+    },
+    "locked": {
+     "mean": 0.2292,
+     "p95": 0.3947,
+     "loud": 0.0639
+    }
+   },
+   "hand_zone": {
+    "e10": {
+     "mean": 0.1564,
+     "p95": 0.3726,
+     "loud": 0.0438
+    },
+    "f1": {
+     "mean": 0.2725,
+     "p95": 0.6082,
+     "loud": 0.1378
+    },
+    "locked": {
+     "mean": 0.2292,
+     "p95": 0.5326,
+     "loud": 0.1902
+    }
+   },
+   "send_it": {
+    "e10": {
+     "mean": 0.4725,
+     "p95": 0.6356,
+     "loud": 0.7417
+    },
+    "f1": {
+     "mean": 0.3842,
+     "p95": 0.609,
+     "loud": 0.45
+    },
+    "locked": {
+     "mean": 0.3932,
+     "p95": 0.6258,
+     "loud": 0.5333
+    }
+   },
+   "hud": {
+    "e10": {
+     "mean": 0.1232,
+     "p95": 0.2195,
+     "loud": 0.0
+    },
+    "f1": {
+     "mean": 0.1466,
+     "p95": 0.3536,
+     "loud": 0.0445
+    },
+    "locked": {
+     "mean": 0.1471,
+     "p95": 0.3491,
+     "loud": 0.0415
+    }
+   }
+  },
+  "p1_nowords": {
+   "plate": {
+    "e10": {
+     "mean": 0.1814,
+     "p95": 0.3586,
+     "loud": 0.0387
+    },
+    "f1": {
+     "mean": 0.2228,
+     "p95": 0.5156,
+     "loud": 0.1252
+    },
+    "locked": {
+     "mean": 0.2289,
+     "p95": 0.498,
+     "loud": 0.1389
+    }
+   },
+   "board_disc_r<=490": {
+    "e10": {
+     "mean": 0.1831,
+     "p95": 0.3044,
+     "loud": 0.0034
+    },
+    "f1": {
+     "mean": 0.2337,
+     "p95": 0.4444,
+     "loud": 0.1203
+    },
+    "locked": {
+     "mean": 0.2549,
+     "p95": 0.4843,
+     "loud": 0.1458
+    }
+   },
+   "tower_r<=212": {
+    "e10": {
+     "mean": 0.2393,
+     "p95": 0.329,
+     "loud": 0.0127
+    },
+    "f1": {
+     "mean": 0.3914,
+     "p95": 0.5089,
+     "loud": 0.604
+    },
+    "locked": {
+     "mean": 0.4094,
+     "p95": 0.5926,
+     "loud": 0.5642
+    }
+   },
+   "rings_r214-430": {
+    "e10": {
+     "mean": 0.1859,
+     "p95": 0.3098,
+     "loud": 0.0018
+    },
+    "f1": {
+     "mean": 0.2277,
+     "p95": 0.3439,
+     "loud": 0.0088
+    },
+    "locked": {
+     "mean": 0.2465,
+     "p95": 0.4047,
+     "loud": 0.0669
+    }
+   },
+   "hand_zone": {
+    "e10": {
+     "mean": 0.2625,
+     "p95": 0.4418,
+     "loud": 0.1538
+    },
+    "f1": {
+     "mean": 0.424,
+     "p95": 0.7448,
+     "loud": 0.4893
+    },
+    "locked": {
+     "mean": 0.3803,
+     "p95": 0.6344,
+     "loud": 0.5021
+    }
+   },
+   "send_it": {
+    "e10": {
+     "mean": 0.5746,
+     "p95": 0.8025,
+     "loud": 0.8083
+    },
+    "f1": {
+     "mean": 0.3812,
+     "p95": 0.6157,
+     "loud": 0.475
+    },
+    "locked": {
+     "mean": 0.3433,
+     "p95": 0.5966,
+     "loud": 0.3917
+    }
+   },
+   "hud": {
+    "e10": {
+     "mean": 0.1173,
+     "p95": 0.197,
+     "loud": 0.0
+    },
+    "f1": {
+     "mean": 0.1394,
+     "p95": 0.3282,
+     "loud": 0.0408
+    },
+    "locked": {
+     "mean": 0.1398,
+     "p95": 0.3231,
+     "loud": 0.04
+    }
+   }
+  }
+ },
+ "squint_note": "1/16 BOX downscale + 1 px blur, relative luminance; loud = share of 16 px cells above 0.38. hand_zone x>=840 (the wheel hand reaches x=840).",
+ "game_info": {
+  "cards_table": {
+   "Brace": {
+    "state_cost": 1,
+    "state_trace": 0,
+    "drawn_cost": 1,
+    "drawn_trace": 0,
+    "e10_name": "BRACE",
+    "drawn_name": "BRACE",
+    "e10_text": "Block a slice",
+    "drawn_text": "Block a slice",
+    "e10_type": "TOWER",
+    "drawn_type": "TOWER",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Firewall": {
+    "state_cost": 2,
+    "state_trace": 2,
+    "drawn_cost": 2,
+    "drawn_trace": 2,
+    "e10_name": "FIREWALL",
+    "drawn_name": "FIREWALL",
+    "e10_text": "Burn 2 units",
+    "drawn_text": "Burn 2 units",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Hold": {
+    "state_cost": 0,
+    "state_trace": 0,
+    "drawn_cost": 0,
+    "drawn_trace": 0,
+    "e10_name": "HOLD",
+    "drawn_name": "HOLD",
+    "e10_text": "Pause the wave",
+    "drawn_text": "Pause the wave",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Nudge": {
+    "state_cost": 1,
+    "state_trace": 0,
+    "drawn_cost": 1,
+    "drawn_trace": 0,
+    "e10_name": "NUDGE",
+    "drawn_name": "NUDGE",
+    "e10_text": "Turn the tower 1",
+    "drawn_text": "Turn the tower 1",
+    "e10_type": "TOWER",
+    "drawn_type": "TOWER",
+    "e10_mult": null,
+    "drawn_mult": "1",
+    "ok": true
+   },
+   "Pull": {
+    "state_cost": 0,
+    "state_trace": 1,
+    "drawn_cost": 0,
+    "drawn_trace": 1,
+    "e10_name": "PULL",
+    "drawn_name": "PULL",
+    "e10_text": "Pull a unit in",
+    "drawn_text": "Pull a unit in",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Shove": {
+    "state_cost": 2,
+    "state_trace": 2,
+    "drawn_cost": 2,
+    "drawn_trace": 2,
+    "e10_name": "SHOVE",
+    "drawn_name": "SHOVE",
+    "e10_text": "Slide a unit 1",
+    "drawn_text": "Slide a unit 1",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Spin2": {
+    "state_cost": 1,
+    "state_trace": 0,
+    "drawn_cost": 1,
+    "drawn_trace": 0,
+    "e10_name": "SPIN 2",
+    "drawn_name": "SPIN 2",
+    "e10_text": "Turn the tower 2",
+    "drawn_text": "Turn the tower 2",
+    "e10_type": "TOWER",
+    "drawn_type": "TOWER",
+    "e10_mult": null,
+    "drawn_mult": "2",
+    "ok": true
+   },
+   "Spin3": {
+    "state_cost": 1,
+    "state_trace": 0,
+    "drawn_cost": 1,
+    "drawn_trace": 0,
+    "e10_name": "SPIN 3",
+    "drawn_name": "SPIN 3",
+    "e10_text": "Turn the tower 3",
+    "drawn_text": "Turn the tower 3",
+    "e10_type": "TOWER",
+    "drawn_type": "TOWER",
+    "e10_mult": null,
+    "drawn_mult": "3",
+    "ok": true
+   },
+   "Strike": {
+    "state_cost": 1,
+    "state_trace": 0,
+    "drawn_cost": 1,
+    "drawn_trace": 0,
+    "e10_name": "STRIKE",
+    "drawn_name": "STRIKE",
+    "e10_text": "Hit a unit for 2",
+    "drawn_text": "Hit a unit for 2",
+    "e10_type": "TOWER",
+    "drawn_type": "TOWER",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Trigger": {
+    "state_cost": 1,
+    "state_trace": 1,
+    "drawn_cost": 1,
+    "drawn_trace": 1,
+    "e10_name": "TRIGGER",
+    "drawn_name": "TRIGGER",
+    "e10_text": "Resolve a unit",
+    "drawn_text": "Resolve a unit",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   },
+   "Twist": {
+    "state_cost": 0,
+    "state_trace": 0,
+    "drawn_cost": 0,
+    "drawn_trace": 0,
+    "e10_name": "TWIST",
+    "drawn_name": "TWIST",
+    "e10_text": "Turn one ring 1",
+    "drawn_text": "Turn one ring 1",
+    "e10_type": "WAVE",
+    "drawn_type": "WAVE",
+    "e10_mult": null,
+    "drawn_mult": null,
+    "ok": true
+   }
+  },
+  "cards_table_all_ok": true,
+  "cards_drawn": {
+   "p1_decide": {
+    "Brace": {
+     "drawn_strings": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "expected": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Trigger": {
+     "drawn_strings": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "expected": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 1,
+     "cost_in_plate": true,
+     "trace_in_plate": true,
+     "ok": true
+    },
+    "Twist": {
+     "drawn_strings": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "expected": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 0,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   },
+   "p2_preview": {
+    "Brace": {
+     "drawn_strings": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "expected": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Trigger": {
+     "drawn_strings": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "expected": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 1,
+     "cost_in_plate": true,
+     "trace_in_plate": true,
+     "ok": true
+    },
+    "Twist": {
+     "drawn_strings": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "expected": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 0,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   },
+   "p2b_hover": {
+    "Brace": {
+     "drawn_strings": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "expected": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Trigger": {
+     "drawn_strings": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "expected": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 1,
+     "cost_in_plate": true,
+     "trace_in_plate": true,
+     "ok": true
+    },
+    "Twist": {
+     "drawn_strings": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "expected": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 0,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   },
+   "p3_resolve": {
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "PLAYED",
+      "PLAYED",
+      "PLAYED"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   },
+   "p1_decide_srv": {
+    "Brace": {
+     "drawn_strings": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "expected": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Trigger": {
+     "drawn_strings": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "expected": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 1,
+     "cost_in_plate": true,
+     "trace_in_plate": true,
+     "ok": true
+    },
+    "Twist": {
+     "drawn_strings": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "expected": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 0,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   },
+   "p1_decide_gh": {
+    "Brace": {
+     "drawn_strings": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "expected": [
+      "BRACE",
+      "TOWER",
+      "Block a slice",
+      "1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Spin3": {
+     "drawn_strings": [
+      "\u00d73",
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1"
+     ],
+     "expected": [
+      "SPIN 3",
+      "TOWER",
+      "Turn the tower 3",
+      "1",
+      "\u00d73"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    },
+    "Trigger": {
+     "drawn_strings": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "expected": [
+      "TRIGGER",
+      "WAVE",
+      "Resolve a unit",
+      "1",
+      "+1"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 1,
+     "state_trace": 1,
+     "cost_in_plate": true,
+     "trace_in_plate": true,
+     "ok": true
+    },
+    "Twist": {
+     "drawn_strings": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "expected": [
+      "TWIST",
+      "WAVE",
+      "Turn one ring 1",
+      "0"
+     ],
+     "missing": [],
+     "extra": [],
+     "state_cost": 0,
+     "state_trace": 0,
+     "cost_in_plate": true,
+     "trace_in_plate": "no trace tab (state 0)",
+     "ok": true
+    }
+   }
+  },
+  "cards_drawn_all_ok": true,
+  "text_inventory_vs_e10": {
+   "p1_decide": {
+    "chars_locked": 372,
+    "chars_e10": 321,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {
+     "T": 5,
+     "U": 3,
+     "R": 3,
+     "N": 5,
+     "2": 1,
+     "S": 2,
+     "H": 4,
+     "I": 2,
+     "A": 1,
+     "E": 6,
+     "L": 4,
+     "Y": 1,
+     "O": 4,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "Z": 1,
+     "9": 1
+    }
+   },
+   "p2_preview": {
+    "chars_locked": 443,
+    "chars_e10": 417,
+    "missing_vs_e10": {
+     "1": 2,
+     "W": 1,
+     "G": 2,
+     "A": 1,
+     "V": 2
+    },
+    "extra_vs_e10": {
+     "T": 3,
+     "U": 2,
+     "N": 4,
+     "2": 1,
+     "S": 1,
+     "H": 4,
+     "E": 2,
+     "L": 3,
+     "Y": 1,
+     "O": 3,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "9": 1,
+     "Z": 1
+    }
+   },
+   "p2b_hover": {
+    "chars_locked": 458,
+    "chars_e10": 407,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {
+     "T": 5,
+     "U": 3,
+     "R": 3,
+     "N": 5,
+     "2": 1,
+     "S": 2,
+     "H": 4,
+     "I": 2,
+     "A": 1,
+     "E": 6,
+     "L": 4,
+     "Y": 1,
+     "O": 4,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "Z": 1,
+     "9": 1
+    }
+   },
+   "p3_resolve": {
+    "chars_locked": 444,
+    "chars_e10": 393,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {
+     "T": 5,
+     "U": 3,
+     "R": 3,
+     "N": 5,
+     "2": 1,
+     "S": 2,
+     "H": 4,
+     "I": 2,
+     "A": 1,
+     "E": 6,
+     "L": 4,
+     "Y": 1,
+     "O": 4,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "Z": 1,
+     "9": 1
+    }
+   },
+   "p1_nowords": {
+    "chars_locked": 0,
+    "chars_e10": 0,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {}
+   },
+   "p1_decide_srv": {
+    "chars_locked": 372,
+    "chars_e10": 321,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {
+     "T": 5,
+     "U": 3,
+     "R": 3,
+     "N": 5,
+     "2": 1,
+     "S": 2,
+     "H": 4,
+     "I": 2,
+     "A": 1,
+     "E": 6,
+     "L": 4,
+     "Y": 1,
+     "O": 4,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "Z": 1,
+     "9": 1
+    }
+   },
+   "p1_decide_gh": {
+    "chars_locked": 372,
+    "chars_e10": 321,
+    "missing_vs_e10": {},
+    "extra_vs_e10": {
+     "T": 5,
+     "U": 3,
+     "R": 3,
+     "N": 5,
+     "2": 1,
+     "S": 2,
+     "H": 4,
+     "I": 2,
+     "A": 1,
+     "E": 6,
+     "L": 4,
+     "Y": 1,
+     "O": 4,
+     "D": 4,
+     "B": 1,
+     "C": 1,
+     "K": 1,
+     "X": 1,
+     "Z": 1,
+     "9": 1
+    }
+   }
+  },
+  "required_words_present": {
+   "p1_decide": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   },
+   "p2_preview": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   },
+   "p2b_hover": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   },
+   "p3_resolve": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   },
+   "p1_decide_srv": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   },
+   "p1_decide_gh": {
+    "TURN": true,
+    "SHIFTING WAVES": true,
+    "WAVES 6 LEFT": true,
+    "W4": true,
+    "W5": true,
+    "W6": true,
+    "NOW W1": true,
+    "+1 W2": true,
+    "+2 W3": true,
+    "YOU": true,
+    "LANDS": true,
+    "THROUGH": true,
+    "RAW": true,
+    "SHOT": true,
+    "BRACE": true,
+    "RIDER": true,
+    "SPLIT": true,
+    "ABSORBED": true,
+    "SOAK": true,
+    "NEXT": true,
+    "WIN": true,
+    "SLICES KEPT": true,
+    "KILL ADJUSTER": true,
+    "TRACE LOW": true,
+    "RAM": true,
+    "TRACE": true,
+    "ENDS = HEAT": true,
+    "BREAKER": true,
+    "SEND IT": true,
+    "UNDO": true,
+    "CELL-9": true
+   }
+  },
+  "required_words_missing": {
+   "p1_decide": [],
+   "p2_preview": [],
+   "p2b_hover": [],
+   "p3_resolve": [],
+   "p1_decide_srv": [],
+   "p1_decide_gh": []
+  },
+  "nowords_alnum_strings_drawn_by_text_calls": {
+   "count": 0,
+   "sample": []
+  },
+  "tower_numbers": {
+   "f1": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 9,
+     "pending": 6,
+     "expected_lit": 9,
+     "expected_pending": 6
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "3": [
+      0
+     ],
+     "4": [
+      0,
+      2
+     ],
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0,
+      1
+     ],
+     "0": [
+      1,
+      2
+     ],
+     "5": [
+      1,
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 15,
+     "pending": 0,
+     "expected_lit": 15,
+     "expected_pending": 0
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0
+     ],
+     "3": [
+      1
+     ],
+     "0": [
+      2
+     ],
+     "4": [
+      2
+     ],
+     "5": [
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2t": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 14,
+     "pending": 1,
+     "expected_lit": 14,
+     "expected_pending": 1
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0
+     ],
+     "3": [
+      1
+     ],
+     "0": [
+      2
+     ],
+     "4": [
+      2
+     ],
+     "5": [
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   },
+   "f2b": {
+    "slice_pips_match": true,
+    "hp_ring": {
+     "blocks": 15,
+     "lit": 14,
+     "pending": 1,
+     "expected_lit": 14,
+     "expected_pending": 1
+    },
+    "hp_ring_match": true,
+    "trim_zones": {
+     "3": [
+      0
+     ],
+     "4": [
+      0,
+      2
+     ],
+     "1": [
+      0,
+      2
+     ],
+     "2": [
+      0,
+      1
+     ],
+     "0": [
+      1,
+      2
+     ],
+     "5": [
+      1,
+      2
+     ]
+    },
+    "trim_match": true,
+    "guns": {
+     "shots": 5,
+     "idle": 0
+    }
+   }
+  }
+ }
+}

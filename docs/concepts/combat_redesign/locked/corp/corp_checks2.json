@@ -1,0 +1,17 @@
+{
+ "neutral": {
+  "1Packet-2Worm ring0": 14.6,
+  "1Packet-3Worm ring0": 9.5,
+  "4Payload-5Packet ring1": 4.4
+ },
+ "solace": {
+  "1Packet-2Worm ring0": 20.8,
+  "1Packet-3Worm ring0": 16.8,
+  "4Payload-5Packet ring1": 5.3
+ },
+ "meridian": {
+  "1Packet-2Worm ring0": 15.8,
+  "1Packet-3Worm ring0": 7.8,
+  "4Payload-5Packet ring1": 4.7
+ }
+}

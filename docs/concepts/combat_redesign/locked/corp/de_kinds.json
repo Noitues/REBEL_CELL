@@ -1,0 +1,740 @@
+{
+ "unskinned": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     61,
+     83,
+     101
+    ],
+    "Worm": [
+     74,
+     74,
+     108
+    ],
+    "Jammer": [
+     45,
+     92,
+     104
+    ],
+    "Payload": [
+     89,
+     84,
+     95
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 12.79,
+    "Packet-Jammer": 9.07,
+    "Packet-Payload": 12.63,
+    "Worm-Jammer": 21.18,
+    "Worm-Payload": 9.8,
+    "Jammer-Payload": 20.91
+   },
+   "min": 9.07,
+   "mean": 14.4
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     60,
+     72,
+     84
+    ],
+    "Worm": [
+     66,
+     65,
+     87
+    ],
+    "Jammer": [
+     52,
+     78,
+     87
+    ],
+    "Payload": [
+     77,
+     74,
+     83
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 9.69,
+    "Packet-Jammer": 6.05,
+    "Packet-Payload": 7.74,
+    "Worm-Jammer": 15.69,
+    "Worm-Payload": 6.88,
+    "Jammer-Payload": 13.27
+   },
+   "min": 6.05,
+   "mean": 9.89
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     54,
+     62,
+     72
+    ],
+    "Worm": [
+     58,
+     57,
+     73
+    ],
+    "Jammer": [
+     52,
+     65,
+     74
+    ],
+    "Payload": [
+     66,
+     64,
+     73
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 6.67,
+    "Packet-Jammer": 3.49,
+    "Packet-Payload": 5.42,
+    "Worm-Jammer": 10.29,
+    "Worm-Payload": 4.36,
+    "Jammer-Payload": 8.56
+   },
+   "min": 3.49,
+   "mean": 6.46
+  }
+ },
+ "neutral_before": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     58,
+     76,
+     93
+    ],
+    "Worm": [
+     67,
+     70,
+     98
+    ],
+    "Jammer": [
+     47,
+     82,
+     95
+    ],
+    "Payload": [
+     77,
+     77,
+     89
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 9.81,
+    "Packet-Jammer": 6.94,
+    "Packet-Payload": 8.14,
+    "Worm-Jammer": 16.52,
+    "Worm-Payload": 6.83,
+    "Jammer-Payload": 14.24
+   },
+   "min": 6.83,
+   "mean": 10.41
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     57,
+     69,
+     81
+    ],
+    "Worm": [
+     61,
+     64,
+     84
+    ],
+    "Jammer": [
+     52,
+     72,
+     84
+    ],
+    "Payload": [
+     69,
+     70,
+     81
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 6.73,
+    "Packet-Jammer": 4.26,
+    "Packet-Payload": 4.82,
+    "Worm-Jammer": 10.98,
+    "Worm-Payload": 4.72,
+    "Jammer-Payload": 8.63
+   },
+   "min": 4.26,
+   "mean": 6.69
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     53,
+     62,
+     74
+    ],
+    "Worm": [
+     56,
+     59,
+     74
+    ],
+    "Jammer": [
+     52,
+     64,
+     75
+    ],
+    "Payload": [
+     61,
+     64,
+     74
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 4.54,
+    "Packet-Jammer": 2.33,
+    "Packet-Payload": 3.37,
+    "Worm-Jammer": 6.9,
+    "Worm-Payload": 2.95,
+    "Jammer-Payload": 5.41
+   },
+   "min": 2.33,
+   "mean": 4.25
+  }
+ },
+ "neutral": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     58,
+     76,
+     93
+    ],
+    "Worm": [
+     67,
+     70,
+     98
+    ],
+    "Jammer": [
+     47,
+     82,
+     95
+    ],
+    "Payload": [
+     77,
+     77,
+     89
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 9.81,
+    "Packet-Jammer": 6.94,
+    "Packet-Payload": 8.14,
+    "Worm-Jammer": 16.52,
+    "Worm-Payload": 6.83,
+    "Jammer-Payload": 14.24
+   },
+   "min": 6.83,
+   "mean": 10.41
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     57,
+     69,
+     81
+    ],
+    "Worm": [
+     61,
+     64,
+     84
+    ],
+    "Jammer": [
+     52,
+     72,
+     84
+    ],
+    "Payload": [
+     69,
+     70,
+     81
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 6.73,
+    "Packet-Jammer": 4.26,
+    "Packet-Payload": 4.82,
+    "Worm-Jammer": 10.98,
+    "Worm-Payload": 4.72,
+    "Jammer-Payload": 8.63
+   },
+   "min": 4.26,
+   "mean": 6.69
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     53,
+     62,
+     74
+    ],
+    "Worm": [
+     56,
+     59,
+     74
+    ],
+    "Jammer": [
+     52,
+     64,
+     75
+    ],
+    "Payload": [
+     61,
+     64,
+     74
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 4.54,
+    "Packet-Jammer": 2.33,
+    "Packet-Payload": 3.37,
+    "Worm-Jammer": 6.9,
+    "Worm-Payload": 2.95,
+    "Jammer-Payload": 5.41
+   },
+   "min": 2.33,
+   "mean": 4.25
+  }
+ },
+ "solace_before": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     46,
+     81,
+     79
+    ],
+    "Worm": [
+     53,
+     76,
+     83
+    ],
+    "Jammer": [
+     37,
+     86,
+     80
+    ],
+    "Payload": [
+     61,
+     81,
+     76
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 7.36,
+    "Packet-Jammer": 3.81,
+    "Packet-Payload": 4.49,
+    "Worm-Jammer": 11.0,
+    "Worm-Payload": 7.45,
+    "Jammer-Payload": 7.12
+   },
+   "min": 3.81,
+   "mean": 6.87
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     45,
+     75,
+     69
+    ],
+    "Worm": [
+     49,
+     71,
+     71
+    ],
+    "Jammer": [
+     41,
+     78,
+     71
+    ],
+    "Payload": [
+     55,
+     76,
+     69
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 4.11,
+    "Packet-Jammer": 2.2,
+    "Packet-Payload": 2.68,
+    "Worm-Jammer": 6.13,
+    "Worm-Payload": 4.29,
+    "Jammer-Payload": 4.32
+   },
+   "min": 2.2,
+   "mean": 3.96
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     42,
+     69,
+     63
+    ],
+    "Worm": [
+     44,
+     67,
+     63
+    ],
+    "Jammer": [
+     41,
+     71,
+     64
+    ],
+    "Payload": [
+     49,
+     71,
+     63
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 2.54,
+    "Packet-Jammer": 1.15,
+    "Packet-Payload": 1.78,
+    "Worm-Jammer": 3.64,
+    "Worm-Payload": 2.48,
+    "Jammer-Payload": 2.56
+   },
+   "min": 1.15,
+   "mean": 2.36
+  }
+ },
+ "solace_gain": [
+  2.4,
+  2.1,
+  2.0
+ ],
+ "solace": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     38,
+     80,
+     78
+    ],
+    "Worm": [
+     56,
+     68,
+     88
+    ],
+    "Jammer": [
+     13,
+     92,
+     81
+    ],
+    "Payload": [
+     74,
+     81,
+     71
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 17.68,
+    "Packet-Jammer": 6.83,
+    "Packet-Payload": 11.63,
+    "Worm-Jammer": 22.95,
+    "Worm-Payload": 17.54,
+    "Jammer-Payload": 15.36
+   },
+   "min": 6.83,
+   "mean": 15.33
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     42,
+     74,
+     69
+    ],
+    "Worm": [
+     49,
+     66,
+     72
+    ],
+    "Jammer": [
+     31,
+     81,
+     72
+    ],
+    "Payload": [
+     62,
+     78,
+     67
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 9.11,
+    "Packet-Jammer": 4.33,
+    "Packet-Payload": 5.89,
+    "Worm-Jammer": 13.08,
+    "Worm-Payload": 9.82,
+    "Jammer-Payload": 8.71
+   },
+   "min": 4.33,
+   "mean": 8.49
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     41,
+     69,
+     62
+    ],
+    "Worm": [
+     44,
+     63,
+     63
+    ],
+    "Jammer": [
+     37,
+     73,
+     64
+    ],
+    "Payload": [
+     52,
+     72,
+     63
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 5.09,
+    "Packet-Jammer": 2.5,
+    "Packet-Payload": 3.16,
+    "Worm-Jammer": 7.45,
+    "Worm-Payload": 5.26,
+    "Jammer-Payload": 4.78
+   },
+   "min": 2.5,
+   "mean": 4.71
+  }
+ },
+ "meridian_before": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     90,
+     79,
+     73
+    ],
+    "Worm": [
+     98,
+     73,
+     77
+    ],
+    "Jammer": [
+     80,
+     84,
+     74
+    ],
+    "Payload": [
+     107,
+     79,
+     69
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 8.81,
+    "Packet-Jammer": 10.21,
+    "Packet-Payload": 7.17,
+    "Worm-Jammer": 19.52,
+    "Worm-Payload": 7.36,
+    "Jammer-Payload": 17.6
+   },
+   "min": 7.17,
+   "mean": 11.78
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     89,
+     72,
+     62
+    ],
+    "Worm": [
+     93,
+     68,
+     64
+    ],
+    "Jammer": [
+     85,
+     75,
+     64
+    ],
+    "Payload": [
+     100,
+     74,
+     62
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 5.41,
+    "Packet-Jammer": 4.98,
+    "Packet-Payload": 3.94,
+    "Worm-Jammer": 10.19,
+    "Worm-Payload": 4.48,
+    "Jammer-Payload": 8.59
+   },
+   "min": 3.94,
+   "mean": 6.27
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     86,
+     66,
+     55
+    ],
+    "Worm": [
+     88,
+     63,
+     56
+    ],
+    "Jammer": [
+     84,
+     68,
+     56
+    ],
+    "Payload": [
+     93,
+     67,
+     56
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 3.47,
+    "Packet-Jammer": 2.12,
+    "Packet-Payload": 2.6,
+    "Worm-Jammer": 5.54,
+    "Worm-Payload": 2.65,
+    "Jammer-Payload": 4.47
+   },
+   "min": 2.12,
+   "mean": 3.48
+  }
+ },
+ "meridian_gain": [
+  1.0,
+  1.1,
+  1.2
+ ],
+ "meridian": {
+  "ring0": {
+   "rgb": {
+    "Packet": [
+     90,
+     79,
+     73
+    ],
+    "Worm": [
+     98,
+     73,
+     77
+    ],
+    "Jammer": [
+     80,
+     84,
+     74
+    ],
+    "Payload": [
+     107,
+     79,
+     69
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 8.81,
+    "Packet-Jammer": 10.21,
+    "Packet-Payload": 7.17,
+    "Worm-Jammer": 19.52,
+    "Worm-Payload": 7.36,
+    "Jammer-Payload": 17.6
+   },
+   "min": 7.17,
+   "mean": 11.78
+  },
+  "ring1": {
+   "rgb": {
+    "Packet": [
+     89,
+     72,
+     62
+    ],
+    "Worm": [
+     93,
+     67,
+     64
+    ],
+    "Jammer": [
+     84,
+     76,
+     64
+    ],
+    "Payload": [
+     100,
+     74,
+     62
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 6.09,
+    "Packet-Jammer": 5.6,
+    "Packet-Payload": 4.47,
+    "Worm-Jammer": 11.53,
+    "Worm-Payload": 4.83,
+    "Jammer-Payload": 9.75
+   },
+   "min": 4.47,
+   "mean": 7.04
+  },
+  "ring2": {
+   "rgb": {
+    "Packet": [
+     86,
+     66,
+     55
+    ],
+    "Worm": [
+     88,
+     62,
+     56
+    ],
+    "Jammer": [
+     84,
+     69,
+     56
+    ],
+    "Payload": [
+     94,
+     67,
+     56
+    ]
+   },
+   "pairs": {
+    "Packet-Worm": 4.06,
+    "Packet-Jammer": 2.73,
+    "Packet-Payload": 3.16,
+    "Worm-Jammer": 6.77,
+    "Worm-Payload": 3.01,
+    "Jammer-Payload": 5.56
+   },
+   "min": 2.73,
+   "mean": 4.21
+  }
+ }
+}
