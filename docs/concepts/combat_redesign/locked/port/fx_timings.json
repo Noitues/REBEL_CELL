@@ -1,68 +1,959 @@
 {
- "version": "port-1",
- "doc": "Merged from effects/timings_CDHL.json and timings_MPST.json by norm_timings.py. Times in ms at 60 fps; phases are [start_ms, end_ms] on the effect clock; ease codes map to Godot Tween TRANS/EASE pairs (see GODOT_PORT_SPEC.md section 7). fx_shield_block appears once (MPST owns the P family).",
+ "version": "port-2",
+ "doc": "Merged by port/src/norm_timings.py from effects/timings_CDHL.json and effects/timings_MPST.json (the 2026-11-03 rebuild of the effects on the gate-1 board). Times in ms at 60 fps on the effect clock. Ease codes map to Godot Tween TRANS / EASE pairs (GODOT_PORT_SPEC.md 8.1). fx_shield_block appears once: the MPST P-family effect; the CDHL copy is the block-vs-break comparison only. reduce_phases are data for M/P/S/T; C/D/H/L keep one still per effect, described in reduce_motion.",
+ "sources": {
+  "timings_CDHL.json": "5da1a6d8434d70deab3be1a59c9b01bf",
+  "timings_MPST.json": "97367232db0a00269675b9e7392ce9ed"
+ },
+ "cap_ms": 600,
+ "per_effect_overrides": [],
+ "tier_vfx": "T2 for every effect (VfxTier T2 outcome, max 0.6 s; REVIEW_RESPONSE 2.11)",
+ "layer_rule": "every effect draws under the HUD and the hand (f1_render.SPLIT below / above); only fx_hp_through, fx_refund, fx_trace_add may draw above the HUD (review 1.6)",
+ "hud_layer_effects": [
+  "fx_hp_through",
+  "fx_refund",
+  "fx_trace_add"
+ ],
+ "fps": 60,
+ "p_stock": {
+  "hex": "#F6C8DE",
+  "why": "review 3.10: the FX-P plate on its own stock, a pink-tinted paper, not the card bone PAPER #F2EEE4"
+ },
+ "loudness_rule": "damage > kill > block > state (gain ranks with state)",
+ "loudness_metric": "peak over the 60 fps frames of sum(L*/100) over the pixels where the frame differs (dE76 > 5) from both the frame without the effect and the settled frame (the transient); unit full-value px",
+ "loudness_order": {
+  "cdhl": {
+   "neutral": {
+    "rule": "damage > kill > block > state (gain ranks with state)",
+    "passes": true,
+    "tiers": [
+     {
+      "upper": "damage",
+      "lower": "kill",
+      "upper_min": 2816.8,
+      "upper_min_id": "fx_hit_land",
+      "lower_max": 1813.2,
+      "lower_max_id": "fx_kill",
+      "ok": true
+     },
+     {
+      "upper": "kill",
+      "lower": "block",
+      "upper_min": 1813.2,
+      "upper_min_id": "fx_kill",
+      "lower_max": 1393.4,
+      "lower_max_id": "fx_shield_block",
+      "ok": true
+     },
+     {
+      "upper": "block",
+      "lower": "state",
+      "upper_min": 885.2,
+      "upper_min_id": "fx_ricochet_gold",
+      "lower_max": 699.9,
+      "lower_max_id": "fx_repair_mend",
+      "ok": true
+     }
+    ],
+    "rows": [
+     {
+      "rank": 1,
+      "id": "fx_firewall_burn",
+      "kind": "damage",
+      "loud": 9540.3,
+      "at_ms": 366.7,
+      "area_px": 15864,
+      "mean_L": 60.1,
+      "total": 9606.9,
+      "skin": "neutral"
+     },
+     {
+      "rank": 2,
+      "id": "fx_shield_break",
+      "kind": "damage",
+      "loud": 8377.0,
+      "at_ms": 250.0,
+      "area_px": 15499,
+      "mean_L": 54.0,
+      "total": 8382.0,
+      "skin": "neutral"
+     },
+     {
+      "rank": 3,
+      "id": "fx_strike",
+      "kind": "damage",
+      "loud": 5490.2,
+      "at_ms": 200.0,
+      "area_px": 9640,
+      "mean_L": 57.0,
+      "total": 5490.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 4,
+      "id": "fx_trigger_hit",
+      "kind": "damage",
+      "loud": 5074.0,
+      "at_ms": 283.3,
+      "area_px": 10367,
+      "mean_L": 48.9,
+      "total": 5290.9,
+      "skin": "neutral"
+     },
+     {
+      "rank": 5,
+      "id": "fx_slice_break",
+      "kind": "damage",
+      "loud": 4778.2,
+      "at_ms": 200.0,
+      "area_px": 10016,
+      "mean_L": 47.7,
+      "total": 4977.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 6,
+      "id": "fx_hit_land_adjuster",
+      "kind": "damage",
+      "loud": 3748.8,
+      "at_ms": 133.3,
+      "area_px": 7335,
+      "mean_L": 51.1,
+      "total": 3749.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 7,
+      "id": "fx_gun_hit",
+      "kind": "damage",
+      "loud": 3747.6,
+      "at_ms": 183.3,
+      "area_px": 6578,
+      "mean_L": 57.0,
+      "total": 3747.6,
+      "skin": "neutral"
+     },
+     {
+      "rank": 8,
+      "id": "fx_slice_crack",
+      "kind": "damage",
+      "loud": 3121.4,
+      "at_ms": 50.0,
+      "area_px": 6946,
+      "mean_L": 44.9,
+      "total": 3124.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 9,
+      "id": "fx_hp_through",
+      "kind": "damage",
+      "loud": 3035.2,
+      "at_ms": 450.0,
+      "area_px": 6067,
+      "mean_L": 50.0,
+      "total": 3035.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 10,
+      "id": "fx_hit_land_worm",
+      "kind": "damage",
+      "loud": 2821.6,
+      "at_ms": 183.3,
+      "area_px": 6198,
+      "mean_L": 45.5,
+      "total": 2864.7,
+      "skin": "neutral"
+     },
+     {
+      "rank": 11,
+      "id": "fx_hit_land",
+      "kind": "damage",
+      "loud": 2816.8,
+      "at_ms": 183.3,
+      "area_px": 6158,
+      "mean_L": 45.7,
+      "total": 2817.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 12,
+      "id": "fx_kill",
+      "kind": "kill",
+      "loud": 1813.2,
+      "at_ms": 16.7,
+      "area_px": 2650,
+      "mean_L": 68.4,
+      "total": 1813.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 13,
+      "id": "fx_shield_block",
+      "kind": "block",
+      "loud": 1393.4,
+      "at_ms": 100.0,
+      "area_px": 2757,
+      "mean_L": 50.5,
+      "total": 4381.1,
+      "skin": "neutral"
+     },
+     {
+      "rank": 14,
+      "id": "fx_ricochet",
+      "kind": "block",
+      "loud": 898.1,
+      "at_ms": 150.0,
+      "area_px": 1753,
+      "mean_L": 51.2,
+      "total": 1041.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 15,
+      "id": "fx_ricochet_gold",
+      "kind": "block",
+      "loud": 885.2,
+      "at_ms": 150.0,
+      "area_px": 2077,
+      "mean_L": 42.6,
+      "total": 885.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 16,
+      "id": "fx_repair_mend",
+      "kind": "gain",
+      "loud": 699.9,
+      "at_ms": 216.7,
+      "area_px": 988,
+      "mean_L": 70.8,
+      "total": 715.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 17,
+      "id": "fx_refund",
+      "kind": "gain",
+      "loud": 674.8,
+      "at_ms": 200.0,
+      "area_px": 1133,
+      "mean_L": 59.6,
+      "total": 674.8,
+      "skin": "neutral"
+     },
+     {
+      "rank": 18,
+      "id": "fx_grow",
+      "kind": "state",
+      "loud": 533.3,
+      "at_ms": 133.3,
+      "area_px": 936,
+      "mean_L": 57.0,
+      "total": 533.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 19,
+      "id": "fx_ward_on",
+      "kind": "state",
+      "loud": 390.8,
+      "at_ms": 183.3,
+      "area_px": 747,
+      "mean_L": 52.3,
+      "total": 390.8,
+      "skin": "neutral"
+     },
+     {
+      "rank": 20,
+      "id": "fx_clear",
+      "kind": "gain",
+      "loud": 84.7,
+      "at_ms": 50.0,
+      "area_px": 170,
+      "mean_L": 49.8,
+      "total": 260.3,
+      "skin": "neutral"
+     }
+    ]
+   },
+   "solace": {
+    "rule": "damage > kill > block > state (gain ranks with state)",
+    "passes": true,
+    "tiers": [
+     {
+      "upper": "damage",
+      "lower": "kill",
+      "upper_min": 2816.8,
+      "upper_min_id": "fx_hit_land",
+      "lower_max": 1816.4,
+      "lower_max_id": "fx_kill",
+      "ok": true
+     },
+     {
+      "upper": "kill",
+      "lower": "block",
+      "upper_min": 1816.4,
+      "upper_min_id": "fx_kill",
+      "lower_max": 1393.4,
+      "lower_max_id": "fx_shield_block",
+      "ok": true
+     },
+     {
+      "upper": "block",
+      "lower": "state",
+      "upper_min": 885.6,
+      "upper_min_id": "fx_ricochet_gold",
+      "lower_max": 699.9,
+      "lower_max_id": "fx_repair_mend",
+      "ok": true
+     }
+    ],
+    "rows": [
+     {
+      "rank": 1,
+      "id": "fx_firewall_burn",
+      "kind": "damage",
+      "loud": 9547.8,
+      "at_ms": 366.7,
+      "area_px": 16007,
+      "mean_L": 59.6,
+      "total": 9614.5,
+      "skin": "solace"
+     },
+     {
+      "rank": 2,
+      "id": "fx_shield_break",
+      "kind": "damage",
+      "loud": 8377.0,
+      "at_ms": 250.0,
+      "area_px": 15499,
+      "mean_L": 54.0,
+      "total": 8382.0,
+      "skin": "neutral"
+     },
+     {
+      "rank": 3,
+      "id": "fx_strike",
+      "kind": "damage",
+      "loud": 5493.5,
+      "at_ms": 200.0,
+      "area_px": 9771,
+      "mean_L": 56.2,
+      "total": 5493.5,
+      "skin": "solace"
+     },
+     {
+      "rank": 4,
+      "id": "fx_trigger_hit",
+      "kind": "damage",
+      "loud": 5075.2,
+      "at_ms": 283.3,
+      "area_px": 10403,
+      "mean_L": 48.8,
+      "total": 5292.1,
+      "skin": "solace"
+     },
+     {
+      "rank": 5,
+      "id": "fx_slice_break",
+      "kind": "damage",
+      "loud": 4778.2,
+      "at_ms": 200.0,
+      "area_px": 10016,
+      "mean_L": 47.7,
+      "total": 4977.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 6,
+      "id": "fx_gun_hit",
+      "kind": "damage",
+      "loud": 3754.4,
+      "at_ms": 183.3,
+      "area_px": 6644,
+      "mean_L": 56.5,
+      "total": 3754.4,
+      "skin": "solace"
+     },
+     {
+      "rank": 7,
+      "id": "fx_hit_land_adjuster",
+      "kind": "damage",
+      "loud": 3748.8,
+      "at_ms": 133.3,
+      "area_px": 7335,
+      "mean_L": 51.1,
+      "total": 3749.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 8,
+      "id": "fx_slice_crack",
+      "kind": "damage",
+      "loud": 3121.4,
+      "at_ms": 50.0,
+      "area_px": 6946,
+      "mean_L": 44.9,
+      "total": 3124.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 9,
+      "id": "fx_hp_through",
+      "kind": "damage",
+      "loud": 3035.2,
+      "at_ms": 450.0,
+      "area_px": 6067,
+      "mean_L": 50.0,
+      "total": 3035.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 10,
+      "id": "fx_hit_land_worm",
+      "kind": "damage",
+      "loud": 2821.6,
+      "at_ms": 183.3,
+      "area_px": 6198,
+      "mean_L": 45.5,
+      "total": 2864.7,
+      "skin": "neutral"
+     },
+     {
+      "rank": 11,
+      "id": "fx_hit_land",
+      "kind": "damage",
+      "loud": 2816.8,
+      "at_ms": 183.3,
+      "area_px": 6158,
+      "mean_L": 45.7,
+      "total": 2817.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 12,
+      "id": "fx_kill",
+      "kind": "kill",
+      "loud": 1816.4,
+      "at_ms": 16.7,
+      "area_px": 2650,
+      "mean_L": 68.5,
+      "total": 1816.4,
+      "skin": "solace"
+     },
+     {
+      "rank": 13,
+      "id": "fx_shield_block",
+      "kind": "block",
+      "loud": 1393.4,
+      "at_ms": 100.0,
+      "area_px": 2757,
+      "mean_L": 50.5,
+      "total": 4381.1,
+      "skin": "neutral"
+     },
+     {
+      "rank": 14,
+      "id": "fx_ricochet",
+      "kind": "block",
+      "loud": 898.3,
+      "at_ms": 150.0,
+      "area_px": 1756,
+      "mean_L": 51.2,
+      "total": 1048.9,
+      "skin": "solace"
+     },
+     {
+      "rank": 15,
+      "id": "fx_ricochet_gold",
+      "kind": "block",
+      "loud": 885.6,
+      "at_ms": 150.0,
+      "area_px": 2089,
+      "mean_L": 42.4,
+      "total": 885.6,
+      "skin": "solace"
+     },
+     {
+      "rank": 16,
+      "id": "fx_repair_mend",
+      "kind": "gain",
+      "loud": 699.9,
+      "at_ms": 216.7,
+      "area_px": 988,
+      "mean_L": 70.8,
+      "total": 715.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 17,
+      "id": "fx_refund",
+      "kind": "gain",
+      "loud": 674.8,
+      "at_ms": 200.0,
+      "area_px": 1133,
+      "mean_L": 59.6,
+      "total": 674.8,
+      "skin": "solace"
+     },
+     {
+      "rank": 18,
+      "id": "fx_grow",
+      "kind": "state",
+      "loud": 515.6,
+      "at_ms": 133.3,
+      "area_px": 936,
+      "mean_L": 55.1,
+      "total": 515.6,
+      "skin": "solace"
+     },
+     {
+      "rank": 19,
+      "id": "fx_ward_on",
+      "kind": "state",
+      "loud": 397.1,
+      "at_ms": 183.3,
+      "area_px": 752,
+      "mean_L": 52.8,
+      "total": 397.1,
+      "skin": "solace"
+     },
+     {
+      "rank": 20,
+      "id": "fx_clear",
+      "kind": "gain",
+      "loud": 84.7,
+      "at_ms": 50.0,
+      "area_px": 170,
+      "mean_L": 49.8,
+      "total": 260.2,
+      "skin": "solace"
+     }
+    ]
+   },
+   "meridian": {
+    "rule": "damage > kill > block > state (gain ranks with state)",
+    "passes": true,
+    "tiers": [
+     {
+      "upper": "damage",
+      "lower": "kill",
+      "upper_min": 2816.8,
+      "upper_min_id": "fx_hit_land",
+      "lower_max": 1812.5,
+      "lower_max_id": "fx_kill",
+      "ok": true
+     },
+     {
+      "upper": "kill",
+      "lower": "block",
+      "upper_min": 1812.5,
+      "upper_min_id": "fx_kill",
+      "lower_max": 1393.4,
+      "lower_max_id": "fx_shield_block",
+      "ok": true
+     },
+     {
+      "upper": "block",
+      "lower": "state",
+      "upper_min": 885.4,
+      "upper_min_id": "fx_ricochet_gold",
+      "lower_max": 699.9,
+      "lower_max_id": "fx_repair_mend",
+      "ok": true
+     }
+    ],
+    "rows": [
+     {
+      "rank": 1,
+      "id": "fx_firewall_burn",
+      "kind": "damage",
+      "loud": 9535.1,
+      "at_ms": 366.7,
+      "area_px": 15895,
+      "mean_L": 60.0,
+      "total": 9601.8,
+      "skin": "meridian"
+     },
+     {
+      "rank": 2,
+      "id": "fx_shield_break",
+      "kind": "damage",
+      "loud": 8377.0,
+      "at_ms": 250.0,
+      "area_px": 15499,
+      "mean_L": 54.0,
+      "total": 8382.0,
+      "skin": "neutral"
+     },
+     {
+      "rank": 3,
+      "id": "fx_strike",
+      "kind": "damage",
+      "loud": 5481.8,
+      "at_ms": 200.0,
+      "area_px": 9711,
+      "mean_L": 56.4,
+      "total": 5481.8,
+      "skin": "meridian"
+     },
+     {
+      "rank": 4,
+      "id": "fx_trigger_hit",
+      "kind": "damage",
+      "loud": 5074.7,
+      "at_ms": 283.3,
+      "area_px": 10389,
+      "mean_L": 48.8,
+      "total": 5291.6,
+      "skin": "meridian"
+     },
+     {
+      "rank": 5,
+      "id": "fx_slice_break",
+      "kind": "damage",
+      "loud": 4778.2,
+      "at_ms": 200.0,
+      "area_px": 10016,
+      "mean_L": 47.7,
+      "total": 4977.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 6,
+      "id": "fx_hit_land_adjuster",
+      "kind": "damage",
+      "loud": 3748.8,
+      "at_ms": 133.3,
+      "area_px": 7335,
+      "mean_L": 51.1,
+      "total": 3749.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 7,
+      "id": "fx_gun_hit",
+      "kind": "damage",
+      "loud": 3742.4,
+      "at_ms": 183.3,
+      "area_px": 6599,
+      "mean_L": 56.7,
+      "total": 3742.4,
+      "skin": "meridian"
+     },
+     {
+      "rank": 8,
+      "id": "fx_slice_crack",
+      "kind": "damage",
+      "loud": 3121.4,
+      "at_ms": 50.0,
+      "area_px": 6946,
+      "mean_L": 44.9,
+      "total": 3124.5,
+      "skin": "neutral"
+     },
+     {
+      "rank": 9,
+      "id": "fx_hp_through",
+      "kind": "damage",
+      "loud": 3035.2,
+      "at_ms": 450.0,
+      "area_px": 6067,
+      "mean_L": 50.0,
+      "total": 3035.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 10,
+      "id": "fx_hit_land_worm",
+      "kind": "damage",
+      "loud": 2821.6,
+      "at_ms": 183.3,
+      "area_px": 6198,
+      "mean_L": 45.5,
+      "total": 2864.7,
+      "skin": "neutral"
+     },
+     {
+      "rank": 11,
+      "id": "fx_hit_land",
+      "kind": "damage",
+      "loud": 2816.8,
+      "at_ms": 183.3,
+      "area_px": 6158,
+      "mean_L": 45.7,
+      "total": 2817.3,
+      "skin": "neutral"
+     },
+     {
+      "rank": 12,
+      "id": "fx_kill",
+      "kind": "kill",
+      "loud": 1812.5,
+      "at_ms": 16.7,
+      "area_px": 2649,
+      "mean_L": 68.4,
+      "total": 1812.7,
+      "skin": "meridian"
+     },
+     {
+      "rank": 13,
+      "id": "fx_shield_block",
+      "kind": "block",
+      "loud": 1393.4,
+      "at_ms": 100.0,
+      "area_px": 2757,
+      "mean_L": 50.5,
+      "total": 4381.1,
+      "skin": "neutral"
+     },
+     {
+      "rank": 14,
+      "id": "fx_ricochet",
+      "kind": "block",
+      "loud": 897.6,
+      "at_ms": 150.0,
+      "area_px": 1753,
+      "mean_L": 51.2,
+      "total": 1045.2,
+      "skin": "meridian"
+     },
+     {
+      "rank": 15,
+      "id": "fx_ricochet_gold",
+      "kind": "block",
+      "loud": 885.4,
+      "at_ms": 150.0,
+      "area_px": 2084,
+      "mean_L": 42.5,
+      "total": 885.4,
+      "skin": "meridian"
+     },
+     {
+      "rank": 16,
+      "id": "fx_repair_mend",
+      "kind": "gain",
+      "loud": 699.9,
+      "at_ms": 216.7,
+      "area_px": 988,
+      "mean_L": 70.8,
+      "total": 715.2,
+      "skin": "neutral"
+     },
+     {
+      "rank": 17,
+      "id": "fx_refund",
+      "kind": "gain",
+      "loud": 674.8,
+      "at_ms": 200.0,
+      "area_px": 1133,
+      "mean_L": 59.6,
+      "total": 674.8,
+      "skin": "meridian"
+     },
+     {
+      "rank": 18,
+      "id": "fx_grow",
+      "kind": "state",
+      "loud": 433.1,
+      "at_ms": 133.3,
+      "area_px": 941,
+      "mean_L": 46.0,
+      "total": 433.1,
+      "skin": "meridian"
+     },
+     {
+      "rank": 19,
+      "id": "fx_ward_on",
+      "kind": "state",
+      "loud": 393.1,
+      "at_ms": 183.3,
+      "area_px": 749,
+      "mean_L": 52.5,
+      "total": 393.1,
+      "skin": "meridian"
+     },
+     {
+      "rank": 20,
+      "id": "fx_clear",
+      "kind": "gain",
+      "loud": 84.7,
+      "at_ms": 50.0,
+      "area_px": 170,
+      "mean_L": 49.8,
+      "total": 260.2,
+      "skin": "meridian"
+     }
+    ]
+   }
+  },
+  "mpst": {
+   "neutral": {
+    "line": "damage 2817-9540  >  kill 1813-1813  >  block 841-1677  >  state 85-761   PASS",
+    "passes": true,
+    "checks": [
+     {
+      "louder": "damage",
+      "quieter": "kill",
+      "min_louder": [
+       "fx_hit_land",
+       2816.8
+      ],
+      "max_quieter": [
+       "fx_kill",
+       1813.2
+      ],
+      "margin": 1003.6,
+      "pass_": true
+     },
+     {
+      "louder": "kill",
+      "quieter": "block",
+      "min_louder": [
+       "fx_kill",
+       1813.2
+      ],
+      "max_quieter": [
+       "fx_brace_block",
+       1676.8
+      ],
+      "margin": 136.4,
+      "pass_": true
+     },
+     {
+      "louder": "block",
+      "quieter": "state",
+      "min_louder": [
+       "fx_soak_take",
+       841.0
+      ],
+      "max_quieter": [
+       "fx_hold",
+       761.3
+      ],
+      "margin": 79.7,
+      "pass_": true
+     }
+    ]
+   },
+   "solace": {
+    "line": "damage 2817-9548  >  kill 1816-1816  >  block 841-1678  >  state 85-768   PASS",
+    "passes": true,
+    "checks": [
+     {
+      "louder": "damage",
+      "quieter": "kill",
+      "min_louder": [
+       "fx_hit_land",
+       2816.8
+      ],
+      "max_quieter": [
+       "fx_kill",
+       1816.4
+      ],
+      "margin": 1000.4,
+      "pass_": true
+     },
+     {
+      "louder": "kill",
+      "quieter": "block",
+      "min_louder": [
+       "fx_kill",
+       1816.4
+      ],
+      "max_quieter": [
+       "fx_brace_block",
+       1678.2
+      ],
+      "margin": 138.2,
+      "pass_": true
+     },
+     {
+      "louder": "block",
+      "quieter": "state",
+      "min_louder": [
+       "fx_soak_take",
+       841.0
+      ],
+      "max_quieter": [
+       "fx_hold",
+       768.0
+      ],
+      "margin": 73.0,
+      "pass_": true
+     }
+    ]
+   },
+   "meridian": {
+    "line": "damage 2817-9535  >  kill 1812-1812  >  block 841-1678  >  state 85-761   PASS",
+    "passes": true,
+    "checks": [
+     {
+      "louder": "damage",
+      "quieter": "kill",
+      "min_louder": [
+       "fx_hit_land",
+       2816.8
+      ],
+      "max_quieter": [
+       "fx_kill",
+       1812.5
+      ],
+      "margin": 1004.3,
+      "pass_": true
+     },
+     {
+      "louder": "kill",
+      "quieter": "block",
+      "min_louder": [
+       "fx_kill",
+       1812.5
+      ],
+      "max_quieter": [
+       "fx_brace_block",
+       1677.6
+      ],
+      "margin": 134.9,
+      "pass_": true
+     },
+     {
+      "louder": "block",
+      "quieter": "state",
+      "min_louder": [
+       "fx_soak_take",
+       841.0
+      ],
+      "max_quieter": [
+       "fx_hold",
+       761.4
+      ],
+      "margin": 79.6,
+      "pass_": true
+     }
+    ]
+   }
+  }
+ },
  "count": 32,
- "unknown_ease": [],
+ "families": {
+  "T": 1,
+  "M": 8,
+  "P": 3,
+  "D": 7,
+  "H": 7,
+  "L": 3,
+  "C": 2,
+  "S": 1
+ },
  "effects": [
   {
-   "id": "fx_hold",
-   "family": "M",
-   "title": "Hold puts a 0 in the schedule",
+   "id": "fx_commit",
+   "family": "T",
+   "title": "SEND IT burns pencil marks into paint",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
-   "scope": null,
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "total_ms": 700,
-   "in_ms": null,
-   "hold_ms": null,
-   "out_ms": null,
-   "phases": [
-    {
-     "name": "stamp slams",
-     "start_ms": 0,
-     "end_ms": 140,
-     "ease": "OUT_BACK",
-     "ease_raw": "easeOutBack 2.2"
-    },
-    {
-     "name": "band turns over 205 deg",
-     "start_ms": 140,
-     "end_ms": 560,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "easeInOutCubic"
-    },
-    {
-     "name": "settle: stamp hands over to the printed HOLD glyph",
-     "start_ms": 560,
-     "end_ms": 700,
-     "ease": "LINEAR",
-     "ease_raw": "linear"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    70,
-    250,
-    400,
-    560,
-    700
-   ],
-   "reduce_motion": "No stamp slam and no wipe: the arrow appears (100 ms) and the band dissolves to the new schedule over 260 ms.",
-   "source": "",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json"
-  },
-  {
-   "id": "fx_pull",
-   "family": "M",
-   "title": "Pull drags a unit inward",
-   "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
@@ -75,107 +966,372 @@
    "out_ms": null,
    "phases": [
     {
+     "name": "SEND IT press, hold",
+     "start_ms": 0,
+     "end_ms": 60,
+     "ease": "HOLD",
+     "ease_raw": "-"
+    },
+    {
+     "name": "burn front runs the marks",
+     "start_ms": 60,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "ping at the route end",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "board, HUD and hand step preview to resolve",
+     "start_ms": 400,
+     "end_ms": 600,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "marks cross-fade yellow to pink",
+     "start_ms": 0,
+     "end_ms": 300,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "board, HUD and hand step to resolve",
+     "start_ms": 300,
+     "end_ms": 600,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 600,
+   "keyframes_ms": [
+    0,
+    120,
+    230,
+    360,
+    450,
+    600
+   ],
+   "reduce_motion": "No burn front and no ping: the marks cross-fade yellow to pink over 300 ms, then the board, the HUD and the hand step to resolve over 300 ms.",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 0,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 748.9,
+    "solace": 748.9,
+    "meridian": 748.9
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 760,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_hold",
+   "family": "M",
+   "title": "Hold puts a 0 in the schedule",
+   "kind": "state",
+   "variant_of": null,
+   "scope": null,
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 560,
+   "in_ms": null,
+   "hold_ms": null,
+   "out_ms": null,
+   "phases": [
+    {
+     "name": "stamp slams",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_BACK",
+     "ease_raw": "easeOutBack 2.2"
+    },
+    {
+     "name": "stamp hands over to the printed HOLD glyph",
+     "start_ms": 100,
+     "end_ms": 200,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    },
+    {
+     "name": "band turns over, arrow stub runs the slot",
+     "start_ms": 100,
+     "end_ms": 420,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 420,
+     "end_ms": 560,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "band dissolves to the new schedule",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
+   "keyframes_ms": [
+    0,
+    50,
+    180,
+    300,
+    420,
+    560
+   ],
+   "reduce_motion": "No stamp slam and no wipe: the arrow appears (100 ms) and the band dissolves to the new schedule over 300 ms; the arrow fades (120 ms).",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 0,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 761.3,
+    "solace": 768.0,
+    "meridian": 761.4
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_pull",
+   "family": "M",
+   "title": "Pull drags a unit inward",
+   "kind": "state",
+   "variant_of": null,
+   "scope": null,
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 500,
+   "in_ms": null,
+   "hold_ms": null,
+   "out_ms": null,
+   "phases": [
+    {
      "name": "anticipate: arrow draws",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 90,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "slide 59 px",
-     "start_ms": 120,
-     "end_ms": 480,
+     "start_ms": 90,
+     "end_ms": 400,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
     },
     {
-     "name": "settle back 2 px",
-     "start_ms": 480,
-     "end_ms": 600,
+     "name": "settle back 2 px, arrow fades",
+     "start_ms": 400,
+     "end_ms": 500,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "cell dissolves ring +2 to ring +1",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    110,
-    250,
-    330,
-    480,
-    600
+    80,
+    200,
+    280,
+    400,
+    500
    ],
-   "reduce_motion": "No echoes: arrow appears (100 ms), the cell dissolves from ring +2 to ring +1 over 260 ms, arrow fades.",
+   "reduce_motion": "The arrow appears (100 ms), the cell dissolves from ring +2 to ring +1 over 300 ms, the arrow fades (120 ms).",
    "source": "",
-   "max_flashes_per_s": 0,
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 199.7,
+    "solace": 200.2,
+    "meridian": 197.4
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 600,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_rings_step",
    "family": "M",
    "title": "Rings step in at END TURN",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 900,
+   "total_ms": 600,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
    "phases": [
     {
-     "name": "anticipate: tape arrow draws, landing arcs lift off",
+     "name": "anticipate: tape arrow draws",
      "start_ms": 0,
-     "end_ms": 160,
+     "end_ms": 100,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "spiral: -57 px, +120 deg",
-     "start_ms": 160,
-     "end_ms": 760,
+     "start_ms": 100,
+     "end_ms": 480,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
     },
     {
      "name": "settle: arrow fades",
-     "start_ms": 760,
-     "end_ms": 900,
+     "start_ms": 480,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "every cell dissolves to its new place",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    150,
-    360,
-    460,
-    620,
-    900
+    90,
+    240,
+    290,
+    400,
+    600
    ],
-   "reduce_motion": "No echoes, no spiral: the arrow appears (100 ms), every cell dissolves from its old place to its new one over 300 ms, the arrow fades.",
+   "reduce_motion": "No spiral: the arrow stub appears (100 ms), every cell dissolves from its old place to its new one over 300 ms, the arrow fades (120 ms).",
    "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 610.9,
+    "solace": 612.8,
+    "meridian": 612.6
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 900,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_shove",
    "family": "M",
    "title": "Shove slides a unit one sector",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 580,
+   "total_ms": 500,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
@@ -183,45 +1339,275 @@
     {
      "name": "anticipate: arrow draws",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 90,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "slide 62 deg",
-     "start_ms": 120,
-     "end_ms": 460,
+     "start_ms": 90,
+     "end_ms": 400,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
     },
     {
-     "name": "settle back 2 deg",
-     "start_ms": 460,
-     "end_ms": 580,
+     "name": "settle back 2 deg, arrow fades",
+     "start_ms": 400,
+     "end_ms": 500,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "cell dissolves into the next sector",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    110,
-    250,
-    330,
-    460,
-    580
+    80,
+    200,
+    280,
+    400,
+    500
    ],
-   "reduce_motion": "No echoes: arrow appears (100 ms), the cell dissolves into the next sector over 260 ms, arrow fades.",
+   "reduce_motion": "The arrow stub appears (100 ms), the cell dissolves into the next sector over 300 ms, the arrow fades (120 ms).",
    "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 357.5,
+    "solace": 353.0,
+    "meridian": 352.0
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 580,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_shove_bump",
    "family": "M",
    "title": "Shove collision (variant of fx_shove)",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
+   "scope": null,
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 480,
+   "in_ms": null,
+   "hold_ms": null,
+   "out_ms": null,
+   "phases": [
+    {
+     "name": "anticipate: arrow draws",
+     "start_ms": 0,
+     "end_ms": 90,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "slide toward the edge",
+     "start_ms": 90,
+     "end_ms": 200,
+     "ease": "IN_QUAD",
+     "ease_raw": "easeInQuad"
+    },
+    {
+     "name": "contact: bump line, starbursts, shards",
+     "start_ms": 200,
+     "end_ms": 320,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "spring back",
+     "start_ms": 200,
+     "end_ms": 380,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic + 2 deg wobble"
+    },
+    {
+     "name": "arrow and bump line fade",
+     "start_ms": 380,
+     "end_ms": 480,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow and bump line appear",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "hold",
+     "start_ms": 100,
+     "end_ms": 380,
+     "ease": "HOLD",
+     "ease_raw": "-"
+    },
+    {
+     "name": "fade",
+     "start_ms": 380,
+     "end_ms": 480,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 480,
+   "keyframes_ms": [
+    0,
+    80,
+    180,
+    215,
+    270,
+    480
+   ],
+   "reduce_motion": "No slide and no starbursts: the arrow and the bump line on the shared edge appear for 380 ms and fade; the cell never moves.",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 698.3,
+    "solace": 704.1,
+    "meridian": 696.9
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 540,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_spin",
+   "family": "M",
+   "title": "Spin 3 turns the tower",
+   "kind": "state",
+   "variant_of": null,
+   "scope": null,
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 600,
+   "in_ms": null,
+   "hold_ms": null,
+   "out_ms": null,
+   "phases": [
+    {
+     "name": "anticipate: arrow draws, gun preview fades",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "turn 183 deg",
+     "start_ms": 100,
+     "end_ms": 500,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "settle back 3 deg, arrow gone",
+     "start_ms": 500,
+     "end_ms": 600,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "tower dissolves 0 to 180 deg",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
+   "keyframes_ms": [
+    0,
+    80,
+    240,
+    330,
+    500,
+    600
+   ],
+   "reduce_motion": "No sweep: the arrow stub appears whole (100 ms), the tower dissolves from 0 to 180 deg over 300 ms (easeInOut), the arrow fades (120 ms). Icons and hub as in full motion.",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 583.5
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 820,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_twist",
+   "family": "M",
+   "title": "Twist turns ring +1 by a sector",
+   "kind": "state",
+   "variant_of": null,
    "scope": null,
    "skins": [
     "neutral",
@@ -234,172 +1620,92 @@
    "out_ms": null,
    "phases": [
     {
-     "name": "anticipate: arrow draws",
-     "start_ms": 0,
-     "end_ms": 120,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic"
-    },
-    {
-     "name": "slide toward the edge",
-     "start_ms": 120,
-     "end_ms": 260,
-     "ease": "IN_QUAD",
-     "ease_raw": "easeInQuad"
-    },
-    {
-     "name": "contact: bump line, starbursts, shards",
-     "start_ms": 260,
-     "end_ms": 400,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic"
-    },
-    {
-     "name": "spring back",
-     "start_ms": 260,
-     "end_ms": 440,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic + 2 deg wobble"
-    },
-    {
-     "name": "arrow and bump line fade",
-     "start_ms": 440,
-     "end_ms": 540,
-     "ease": "LINEAR",
-     "ease_raw": "linear"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    110,
-    230,
-    280,
-    340,
-    540
-   ],
-   "reduce_motion": "No slide and no starbursts: the arrow and the white bump line on the shared edge appear for 440 ms and fade; the cell never moves.",
-   "source": "",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json"
-  },
-  {
-   "id": "fx_spin",
-   "family": "M",
-   "title": "Spin 3 turns the tower",
-   "variant_of": null,
-   "tier": null,
-   "scope": null,
-   "skins": [
-    "neutral"
-   ],
-   "total_ms": 820,
-   "in_ms": null,
-   "hold_ms": null,
-   "out_ms": null,
-   "phases": [
-    {
-     "name": "anticipate: arrow draws, gun preview fades",
-     "start_ms": 0,
-     "end_ms": 140,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic"
-    },
-    {
-     "name": "turn 183 deg",
-     "start_ms": 140,
-     "end_ms": 680,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "easeInOutCubic"
-    },
-    {
-     "name": "settle back 3 deg, arrow gone",
-     "start_ms": 680,
-     "end_ms": 820,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    100,
-    330,
-    480,
-    680,
-    820
-   ],
-   "reduce_motion": "No echoes, no arc sweep: the arrow appears whole (100 ms fade), the tower dissolves from 0 to 180 deg over 280 ms (easeInOut), the arrow fades out. Icons and hub as in full motion.",
-   "source": "",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json"
-  },
-  {
-   "id": "fx_twist",
-   "family": "M",
-   "title": "Twist turns ring +1 by a sector",
-   "variant_of": null,
-   "tier": null,
-   "scope": null,
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "total_ms": 660,
-   "in_ms": null,
-   "hold_ms": null,
-   "out_ms": null,
-   "phases": [
-    {
      "name": "anticipate: arrows draw",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 90,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "turn 61.5 deg",
-     "start_ms": 120,
-     "end_ms": 540,
+     "start_ms": 90,
+     "end_ms": 430,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
     },
     {
-     "name": "settle back 1.5 deg",
-     "start_ms": 540,
-     "end_ms": 660,
+     "name": "settle back 1.5 deg, arrows fade",
+     "start_ms": 430,
+     "end_ms": 540,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrows appear",
+     "start_ms": 0,
+     "end_ms": 100,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "easeOutCubic"
+    },
+    {
+     "name": "ring dissolves 0 to 60 deg",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "arrows fade",
+     "start_ms": 400,
+     "end_ms": 520,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    110,
-    280,
-    400,
-    540,
-    660
+    80,
+    220,
+    320,
+    430,
+    540
    ],
-   "reduce_motion": "No echoes: the arrows appear whole (100 ms), the ring dissolves from 0 to 60 deg over 260 ms, the arrows fade.",
+   "reduce_motion": "The arrow stubs appear whole (100 ms), the ring dissolves from 0 to 60 deg over 300 ms, the arrows fade (120 ms).",
    "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 382.1,
+    "solace": 382.1,
+    "meridian": 379.9
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 660,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_wave_enter",
    "family": "M",
    "title": "The next wave enters ring +2",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 760,
+   "total_ms": 600,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
@@ -407,59 +1713,97 @@
     {
      "name": "feed arrow lights, ticket lifts",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 80,
      "ease": "STEP",
-     "ease_raw": "step 40 ms / easeOutCubic"
+     "ease_raw": "step 27 ms / easeOutCubic"
     },
     {
      "name": "ticket rides into the entry",
-     "start_ms": 120,
-     "end_ms": 520,
+     "start_ms": 80,
+     "end_ms": 360,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
     },
     {
      "name": "cells scan in, glyphs drop",
-     "start_ms": 440,
-     "end_ms": 700,
+     "start_ms": 300,
+     "end_ms": 480,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "queue moves up one slot",
-     "start_ms": 560,
-     "end_ms": 760,
+     "start_ms": 360,
+     "end_ms": 540,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "settled",
+     "start_ms": 540,
+     "end_ms": 600,
+     "ease": "HOLD",
+     "ease_raw": "-"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "ticket fades out, cells and queue cross-fade in",
+     "start_ms": 100,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "easeInOutCubic"
+    },
+    {
+     "name": "settled",
+     "start_ms": 400,
+     "end_ms": 600,
+     "ease": "HOLD",
+     "ease_raw": "-"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 600,
    "keyframes_ms": [
     0,
-    110,
-    300,
-    500,
-    660,
-    760
+    70,
+    220,
+    380,
+    460,
+    600
    ],
-   "reduce_motion": "No travel and no echoes: the W4 ticket fades out, the new cells fade in with their outlines and glyphs, and W5 / W6 cross-fade one slot right, all over 300 ms.",
+   "reduce_motion": "No travel: the W4 ticket fades out, the new cells fade in with their outlines and glyphs, and W5 / W6 cross-fade one slot right, all over 300 ms.",
    "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
    "max_flashes_per_s": 0,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 630.3,
+    "solace": 642.3,
+    "meridian": 550.3
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 760,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_brace_block",
    "family": "P",
    "title": "Brace blocks a whole landing",
+   "kind": "block",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 1060,
+   "total_ms": 600,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
@@ -467,103 +1811,111 @@
     {
      "name": "lane draws in",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 80,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
-     "name": "clamp closes (1.12 to 1.0)",
-     "start_ms": 80,
-     "end_ms": 240,
+     "name": "clamp brackets close (1.12 to 1.0)",
+     "start_ms": 60,
+     "end_ms": 180,
      "ease": "OUT_BACK",
      "ease_raw": "easeOutBack 2.0"
     },
     {
      "name": "chevrons run the lane",
-     "start_ms": 120,
-     "end_ms": 380,
+     "start_ms": 80,
+     "end_ms": 260,
      "ease": "IN_QUAD",
      "ease_raw": "easeInQuad"
     },
     {
      "name": "chevrons crumple on the bar",
-     "start_ms": 380,
-     "end_ms": 480,
+     "start_ms": 260,
+     "end_ms": 330,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
-     "name": "stamp slams on the arc",
-     "start_ms": 480,
-     "end_ms": 560,
+     "name": "stamp slams on the arc glyph (1.2 to 1.0)",
+     "start_ms": 330,
+     "end_ms": 400,
      "ease": "OUT_BACK",
      "ease_raw": "easeOutBack 2.2"
     },
     {
      "name": "hold",
-     "start_ms": 560,
-     "end_ms": 900,
+     "start_ms": 400,
+     "end_ms": 460,
      "ease": "HOLD",
      "ease_raw": "-"
     },
     {
-     "name": "clamp, bar and lane lift off (stamp stays)",
-     "start_ms": 900,
-     "end_ms": 1060,
+     "name": "clamp, bar, lane and stamp lift off (the printed glyph stays)",
+     "start_ms": 460,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
-   "keyframes_ms": [
-    0,
-    120,
-    300,
-    440,
-    560,
-    1060
-   ],
-   "reduce_motion": "No closing or crumple motion: lane, clamp, bar, the crumpled chevrons and the stamp fade in over 120 ms (linear), hold, then everything but the stamp dissolves out over 300 ms (760-1060, linear); the stamp stays. O-30: the step-4 form (120 ms ease-out in, 160 ms out at 760-920) counted 2 flashes per second against 1 in full motion.",
-   "source": "",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json",
    "reduce_phases": [
     {
-     "name": "appear: lane, clamp, bar, crumpled chevrons, stamp",
+     "name": "lane, clamp brackets, bar, crumpled chevrons and stamp appear",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 300,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
-     "name": "hold",
-     "start_ms": 120,
-     "end_ms": 760,
-     "ease": "HOLD",
-     "ease_raw": "-"
-    },
-    {
-     "name": "dissolve out (stamp stays)",
-     "start_ms": 760,
-     "end_ms": 1060,
+     "name": "dissolve",
+     "start_ms": 300,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
-   ]
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 600,
+   "keyframes_ms": [
+    0,
+    90,
+    200,
+    300,
+    380,
+    600
+   ],
+   "reduce_motion": "No closing or crumple motion: lane, clamp, bar, the crumpled chevrons and the stamp appear over 300 ms with no hard shadow and dissolve over 300 ms (measured 1 flash per s, as full motion; with a 200 ms appear it counted 2); the board's own brace glyph and brace edge stay.",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 1676.8,
+    "solace": 1678.2,
+    "meridian": 1677.6
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 1060,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_shield_block",
    "family": "P",
    "title": "SHIELD slice absorbs a landing",
+   "kind": "block",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 920,
+   "total_ms": 600,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
@@ -571,87 +1923,102 @@
     {
      "name": "chevrons arrive",
      "start_ms": 0,
-     "end_ms": 240,
+     "end_ms": 160,
      "ease": "IN_QUAD",
      "ease_raw": "easeInQuad"
     },
     {
-     "name": "plate slams (1.25 to 1.0)",
-     "start_ms": 170,
-     "end_ms": 250,
+     "name": "plate slams (1.2 to 1.0)",
+     "start_ms": 110,
+     "end_ms": 170,
      "ease": "OUT_BACK",
      "ease_raw": "easeOutBack 2.0"
     },
     {
      "name": "impact: stop dead, sparks",
-     "start_ms": 240,
-     "end_ms": 400,
+     "start_ms": 160,
+     "end_ms": 280,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
      "name": "hold",
-     "start_ms": 400,
-     "end_ms": 760,
+     "start_ms": 280,
+     "end_ms": 440,
      "ease": "HOLD",
      "ease_raw": "-"
     },
     {
      "name": "plate lifts off",
-     "start_ms": 760,
-     "end_ms": 920,
+     "start_ms": 440,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
-   "keyframes_ms": [
-    110,
-    200,
-    260,
-    330,
-    600,
-    920
-   ],
-   "reduce_motion": "No slam and no sparks: plate, tint, ticks and the two chevrons stopped at the plate edge fade in over 120 ms (linear), hold, and dissolve out over 300 ms (620-920, linear). O-30: the step-4 form (100 ms ease-out in, 160 ms out at 600-760) counted 2 flashes per second against 1 in full motion.",
-   "source": "",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json",
    "reduce_phases": [
     {
-     "name": "appear: plate, tint, ticks, stopped chevrons",
+     "name": "plate, ticks and stopped chevrons appear",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 150,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
      "name": "hold",
-     "start_ms": 120,
-     "end_ms": 620,
+     "start_ms": 150,
+     "end_ms": 250,
      "ease": "HOLD",
      "ease_raw": "-"
     },
     {
-     "name": "dissolve out",
-     "start_ms": 620,
-     "end_ms": 920,
+     "name": "dissolve",
+     "start_ms": 250,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
-   ]
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 600,
+   "keyframes_ms": [
+    80,
+    130,
+    175,
+    230,
+    380,
+    600
+   ],
+   "reduce_motion": "No slam and no sparks: the plate, its ticks and the two chevrons stopped at the plate edge appear over 150 ms (linear), hold 100 ms, and dissolve over 350 ms (linear); no hard shadow in reduce motion. Measured: this form counts 1 flash per s, as full motion (the 0-200 / 300-600 form counted 2).",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 1276.5,
+    "solace": 1276.6,
+    "meridian": 1276.5
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 920,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_soak_take",
    "family": "P",
    "title": "A soaked slice takes the overflow",
+   "kind": "block",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral"
    ],
-   "total_ms": 960,
+   "total_ms": 600,
    "in_ms": null,
    "hold_ms": null,
    "out_ms": null,
@@ -659,250 +2026,184 @@
     {
      "name": "overflow chevron arrives",
      "start_ms": 0,
-     "end_ms": 160,
+     "end_ms": 120,
      "ease": "IN_QUAD",
      "ease_raw": "easeInQuad"
     },
     {
      "name": "funnel draws in",
-     "start_ms": 120,
-     "end_ms": 300,
+     "start_ms": 80,
+     "end_ms": 220,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "chevron shrinks into the mouth",
-     "start_ms": 300,
-     "end_ms": 440,
+     "start_ms": 220,
+     "end_ms": 320,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
-     "name": "pip drains",
-     "start_ms": 440,
-     "end_ms": 600,
+     "name": "pip fills",
+     "start_ms": 300,
+     "end_ms": 420,
      "ease": "OUT_CUBIC",
      "ease_raw": "easeOutCubic"
     },
     {
      "name": "hold, flow scrolls",
-     "start_ms": 600,
-     "end_ms": 800,
+     "start_ms": 420,
+     "end_ms": 470,
      "ease": "LINEAR",
      "ease_raw": "linear"
     },
     {
-     "name": "funnel and wash lift off",
-     "start_ms": 800,
-     "end_ms": 960,
-     "ease": "LINEAR",
-     "ease_raw": "linear"
-    }
-   ],
-   "keyframes_ms": [
-    90,
-    200,
-    380,
-    520,
-    700,
-    960
-   ],
-   "reduce_motion": "No travel: funnel, wash and the filled pip fade in over 120 ms with the flow chevrons still, hold, fade out. The overflow chevron is not shown.",
-   "source": "",
-   "max_flashes_per_s": 0,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_MPST.json"
-  },
-  {
-   "id": "fx_grow",
-   "family": "C",
-   "title": "A unit grows one more hit",
-   "variant_of": null,
-   "tier": "lower",
-   "scope": "cell-wide",
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "total_ms": 650,
-   "in_ms": 250,
-   "hold_ms": 67,
-   "out_ms": 333,
-   "phases": [
-    {
-     "name": "wipe",
-     "start_ms": 0,
-     "end_ms": 250,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
-     "name": "flash",
-     "start_ms": 250,
-     "end_ms": 317,
-     "ease": "STEP",
-     "ease_raw": "step (4 frames)"
-    },
-    {
-     "name": "open",
-     "start_ms": 317,
-     "end_ms": 460,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
-     "name": "ping",
-     "start_ms": 300,
-     "end_ms": 560,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "ease-out cubic"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    120,
-    280,
-    380,
-    650
-   ],
-   "reduce_motion": "No shutter or ping: the hollow chevron fades in over 200 ms (ease-in-out).",
-   "source": "f2 Packet 5 (ring +1, sector 0); post-state rendered with one more landing hit (land_hit = hit + 1), which the board draws as the hollow growth chevron",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
-  },
-  {
-   "id": "fx_ward_on",
-   "family": "C",
-   "title": "Ward applies to units in the Adjuster sector",
-   "variant_of": null,
-   "tier": "lower",
-   "scope": "cell-wide",
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "total_ms": 750,
-   "in_ms": 450,
-   "hold_ms": 67,
-   "out_ms": 233,
-   "phases": [
-    {
-     "name": "pulse",
-     "start_ms": 0,
-     "end_ms": 220,
-     "ease": "IN_OUT_SINE",
-     "ease_raw": "sine"
-    },
-    {
-     "name": "wipe",
-     "start_ms": 150,
-     "end_ms": 450,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
-     "name": "flash",
-     "start_ms": 450,
-     "end_ms": 517,
-     "ease": "STEP",
-     "ease_raw": "step (4 frames, 42 %)"
-    },
-    {
-     "name": "ping",
+     "name": "funnel and pip fill lift off",
      "start_ms": 470,
-     "end_ms": 700,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "ease-out cubic"
+     "end_ms": 600,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
     }
    ],
-   "keyframes_ms": [
-    0,
-    120,
-    245,
-    480,
-    750
+   "reduce_phases": [
+    {
+     "name": "funnel and filled pip appear",
+     "start_ms": 0,
+     "end_ms": 200,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    },
+    {
+     "name": "hold",
+     "start_ms": 200,
+     "end_ms": 300,
+     "ease": "HOLD",
+     "ease_raw": "-"
+    },
+    {
+     "name": "dissolve",
+     "start_ms": 300,
+     "end_ms": 600,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    }
    ],
-   "reduce_motion": "No pulse, scan or flash: the lozenge fades in over 200 ms.",
-   "source": "f2 Packet 6 (ring +2, warded) next to the Adjuster (ring +1, sector 2); pre-state rendered unwarded",
-   "max_flashes_per_s": 2,
-   "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 600,
+   "keyframes_ms": [
+    60,
+    150,
+    280,
+    360,
+    450,
+    600
+   ],
+   "reduce_motion": "No travel: the funnel and the filled pip appear over 200 ms with the flow chevrons still, hold, and dissolve over 300 ms. The overflow chevron is not shown.",
+   "source": "",
+   "layer": "board",
+   "layer_raw": "board: under the HUD and the hand (review 1.6)",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 841.0
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 960,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_firewall_burn",
    "family": "D",
    "title": "Firewall burns a sector",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "lower",
    "scope": "cell-wide, one band per ring",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 1000,
-   "in_ms": 460,
-   "hold_ms": 240,
-   "out_ms": 300,
+   "total_ms": 600,
+   "in_ms": 280,
+   "hold_ms": 100,
+   "out_ms": 220,
    "phases": [
     {
      "name": "ring0",
      "start_ms": 0,
-     "end_ms": 200,
+     "end_ms": 160,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "ring1",
-     "start_ms": 130,
-     "end_ms": 330,
+     "start_ms": 60,
+     "end_ms": 220,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "ring2",
-     "start_ms": 260,
-     "end_ms": 460,
+     "start_ms": 120,
+     "end_ms": 280,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "ticks",
-     "start_ms": 330,
-     "end_ms": 330,
+     "start_ms": 220,
+     "end_ms": 220,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "embers",
-     "start_ms": 700,
-     "end_ms": 1000,
+     "start_ms": 380,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    100,
-    260,
-    520,
-    850
+    70,
+    150,
+    300,
+    520
    ],
-   "reduce_motion": "All three bands appear at full height at once, no flicker, hold 500 ms, fade 300 ms.",
+   "reduce_motion": "All three bands appear at full height at once, no flicker, hold 300 ms, fade 200 ms.",
    "source": "latent (Firewall is not in this hand): Firewall (2) on sector 0; Packet 5 loses its 2 ticks",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 9540.3,
+    "solace": 9547.8,
+    "meridian": 9535.1
+   },
+   "settles_ms": 600.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 1000,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_gun_hit",
    "family": "D",
    "title": "Gun shot hits a unit",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -910,42 +2211,42 @@
     "meridian"
    ],
    "total_ms": 600,
-   "in_ms": 170,
+   "in_ms": 140,
    "hold_ms": 160,
-   "out_ms": 270,
+   "out_ms": 220,
    "phases": [
     {
      "name": "tracer",
      "start_ms": 0,
-     "end_ms": 100,
+     "end_ms": 80,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "burst",
-     "start_ms": 100,
-     "end_ms": 170,
+     "start_ms": 80,
+     "end_ms": 140,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back (overshoot)"
     },
     {
      "name": "speed_lines",
-     "start_ms": 100,
-     "end_ms": 280,
+     "start_ms": 80,
+     "end_ms": 300,
      "ease": "IN_OUT_SINE",
      "ease_raw": "sine in/out"
     },
     {
      "name": "shards",
-     "start_ms": 120,
-     "end_ms": 460,
+     "start_ms": 100,
+     "end_ms": 420,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "tick",
-     "start_ms": 170,
-     "end_ms": 260,
+     "start_ms": 140,
+     "end_ms": 230,
      "ease": "LINEAR",
      "ease_raw": null
     },
@@ -957,26 +2258,42 @@
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    60,
-    140,
-    210,
-    400,
+    50,
+    110,
+    180,
+    380,
     600
    ],
    "reduce_motion": "Tracer and burst appear at full size for 300 ms, then fade 200 ms; no speed lines, no shards; the tick goes gone on the same frame.",
    "source": "f2 guns: sector 0 BURST, 2 shots hit Worm 2 (shot 1 shown)",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 3747.6,
+    "solace": 3754.4,
+    "meridian": 3742.4
+   },
+   "settles_ms": 516.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 600,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_kill",
    "family": "D",
    "title": "A unit dies",
+   "kind": "kill",
    "variant_of": null,
-   "tier": "core",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -984,72 +2301,88 @@
     "meridian"
    ],
    "total_ms": 600,
-   "in_ms": 110,
-   "hold_ms": 220,
-   "out_ms": 270,
+   "in_ms": 100,
+   "hold_ms": 200,
+   "out_ms": 300,
    "phases": [
     {
      "name": "flare",
      "start_ms": 17,
      "end_ms": 50,
      "ease": "STEP",
-     "ease_raw": "step (2 frames, 70 %)"
+     "ease_raw": "step (2 frames, 55 % on the token)"
     },
     {
      "name": "burst",
      "start_ms": 34,
-     "end_ms": 110,
+     "end_ms": 100,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back"
     },
     {
      "name": "speed_lines",
      "start_ms": 34,
-     "end_ms": 260,
+     "end_ms": 240,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "shards",
-     "start_ms": 60,
-     "end_ms": 560,
+     "start_ms": 50,
+     "end_ms": 460,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "empty",
-     "start_ms": 200,
-     "end_ms": 420,
+     "start_ms": 160,
+     "end_ms": 380,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "ease-in-out cubic"
     },
     {
      "name": "out",
-     "start_ms": 330,
-     "end_ms": 560,
+     "start_ms": 300,
+     "end_ms": 520,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
     33,
-    120,
-    300,
+    110,
+    280,
     600
    ],
-   "reduce_motion": "No flare: a 25 % white tint holds on the cell for 200 ms while the burst shows; the cell empties with a 220 ms fade.",
+   "reduce_motion": "No flare: a 30 % pink-tint disc holds on the token for 200 ms while the burst shows; the cell empties with a 220 ms fade.",
    "source": "f2: Worm 2 dies to the sector 0 guns (fate dies); post-state rendered with Worm 2 and its shots removed (empty cell)",
-   "max_flashes_per_s": 1,
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 0,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 1813.2,
+    "solace": 1816.4,
+    "meridian": 1812.5
+   },
+   "settles_ms": 516.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 600,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_ricochet",
    "family": "D",
    "title": "Shot glances off armour (steel)",
+   "kind": "block",
    "variant_of": null,
-   "tier": "core",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -1057,58 +2390,74 @@
     "meridian"
    ],
    "total_ms": 500,
-   "in_ms": 100,
-   "hold_ms": 150,
-   "out_ms": 250,
+   "in_ms": 80,
+   "hold_ms": 120,
+   "out_ms": 180,
    "phases": [
     {
      "name": "tracer",
      "start_ms": 0,
-     "end_ms": 100,
+     "end_ms": 80,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "glint",
-     "start_ms": 100,
-     "end_ms": 220,
+     "start_ms": 80,
+     "end_ms": 200,
      "ease": "IN_OUT_SINE",
      "ease_raw": "sine"
     },
     {
      "name": "sparks",
-     "start_ms": 100,
-     "end_ms": 360,
+     "start_ms": 80,
+     "end_ms": 380,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "out",
-     "start_ms": 250,
-     "end_ms": 420,
+     "start_ms": 220,
+     "end_ms": 380,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    60,
-    130,
-    230,
+    50,
+    110,
+    210,
     500
    ],
    "reduce_motion": "Tracer and glint shown still for 300 ms; no sparks.",
    "source": "latent (no armoured unit in E10): stand-in steel cap drawn on Packet 5",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "reduce_max_flashes_per_s": 1,
+   "loud_transient": {
+    "neutral": 898.1,
+    "solace": 898.3,
+    "meridian": 897.6
+   },
+   "settles_ms": 383.3,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 500,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_ricochet_gold",
    "family": "D",
    "title": "Shot weakened by the ward (gold)",
+   "kind": "block",
    "variant_of": "fx_ricochet",
-   "tier": "core",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -1116,779 +2465,1113 @@
     "meridian"
    ],
    "total_ms": 500,
-   "in_ms": 100,
-   "hold_ms": 220,
-   "out_ms": 200,
+   "in_ms": 80,
+   "hold_ms": 160,
+   "out_ms": 220,
    "phases": [
     {
      "name": "tracer",
      "start_ms": 0,
-     "end_ms": 100,
+     "end_ms": 80,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "streak",
-     "start_ms": 100,
-     "end_ms": 320,
+     "start_ms": 80,
+     "end_ms": 280,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "ring",
-     "start_ms": 100,
-     "end_ms": 220,
+     "start_ms": 80,
+     "end_ms": 200,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "out",
-     "start_ms": 260,
-     "end_ms": 520,
+     "start_ms": 240,
+     "end_ms": 460,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    60,
-    160,
-    300,
+    50,
+    140,
+    280,
     500
    ],
    "reduce_motion": "Tracer and the full streak shown still for 300 ms.",
    "source": "f2 guns: sector 4 BURST, 2 shots warded by Packet 6 (result ward, h 0)",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 885.2,
+    "solace": 885.6,
+    "meridian": 885.4
+   },
+   "settles_ms": 466.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 500,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_strike",
    "family": "D",
    "title": "Strike card hits for 2",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
    "scope": "cell-wide",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 700,
-   "in_ms": 200,
-   "hold_ms": 180,
-   "out_ms": 320,
+   "total_ms": 600,
+   "in_ms": 150,
+   "hold_ms": 190,
+   "out_ms": 220,
    "phases": [
     {
      "name": "slash",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 90,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "burst",
-     "start_ms": 120,
-     "end_ms": 200,
+     "start_ms": 90,
+     "end_ms": 150,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back"
     },
     {
      "name": "speed_lines",
-     "start_ms": 120,
-     "end_ms": 330,
+     "start_ms": 90,
+     "end_ms": 300,
      "ease": "IN_OUT_SINE",
      "ease_raw": "sine"
     },
     {
      "name": "shards",
-     "start_ms": 130,
-     "end_ms": 520,
+     "start_ms": 100,
+     "end_ms": 420,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "ticks",
-     "start_ms": 200,
-     "end_ms": 300,
+     "start_ms": 150,
+     "end_ms": 240,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "out",
-     "start_ms": 380,
-     "end_ms": 640,
+     "start_ms": 340,
+     "end_ms": 560,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    70,
-    160,
-    320,
-    700
+    60,
+    130,
+    300,
+    600
    ],
    "reduce_motion": "Slash and burst shown full at once for 300 ms, fade 200 ms; no speed lines or shards.",
    "source": "latent (Strike is not in this hand): Strike (2) on Packet 7, ring +2 sector 5",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 5490.2,
+    "solace": 5493.5,
+    "meridian": 5481.8
+   },
+   "settles_ms": 566.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_trigger_hit",
    "family": "D",
    "title": "Trigger hits units along its path",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
-   "scope": "cell-wide, one burst per struck cell",
+   "scope": "cell-wide, one hit frame per struck cell",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 900,
-   "in_ms": 420,
-   "hold_ms": 230,
-   "out_ms": 250,
+   "total_ms": 600,
+   "in_ms": 240,
+   "hold_ms": 100,
+   "out_ms": 260,
    "phases": [
     {
      "name": "ignite",
      "start_ms": 0,
-     "end_ms": 420,
+     "end_ms": 240,
      "ease": "LINEAR",
      "ease_raw": "linear (front to back)"
     },
     {
      "name": "burst_s3",
-     "start_ms": 230,
-     "end_ms": 560,
+     "start_ms": 120,
+     "end_ms": 460,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "burst_s4",
-     "start_ms": 420,
-     "end_ms": 750,
+     "start_ms": 240,
+     "end_ms": 580,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "route_out",
-     "start_ms": 650,
-     "end_ms": 900,
+     "start_ms": 420,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": null
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    200,
-    260,
-    450,
-    900
+    100,
+    170,
+    290,
+    600
    ],
    "reduce_motion": "Route shown painted at once; the two bursts appear together for 300 ms, no speed lines.",
    "source": "f2 trigs: Trigger resolves Payload 4, its hits land on Packet 1 in sectors 3 and 4 (tlog trig_unit)",
-   "max_flashes_per_s": 0,
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json",
-   "in_sequence": "In the resolve beat fx_commit has already burned the pencil route and Xs into paint, so the sequenced fx_trigger_hit draws only the bursts and speed lines (same clock: s3 at 230, s4 at 420); the pencil-yellow ignite plays only when the effect runs without a commit before it (O-30)."
+   "loud_transient": {
+    "neutral": 5074.0,
+    "solace": 5075.2,
+    "meridian": 5074.7
+   },
+   "settles_ms": 600.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": "In the resolve beat fx_commit has already burned the pencil route and Xs into paint, so the sequenced fx_trigger_hit draws only the hit frames and speed lines (same clock: s3 at 120, s4 at 240); the pencil-yellow ignite plays only when the effect runs without a commit before it (O-30, retimed 2026-11-03 rebuild).",
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 900,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_hit_land",
    "family": "H",
    "title": "Landing hit, one slice pip lost",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
-   "scope": "slice-wide (outer half)",
+   "scope": "slice-wide (outer part)",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "phases": [
     {
      "name": "chevrons",
      "start_ms": 0,
-     "end_ms": 100,
+     "end_ms": 80,
      "ease": "IN_CUBIC",
      "ease_raw": "ease-in cubic"
     },
     {
      "name": "frame_flash",
-     "start_ms": 100,
-     "end_ms": 134,
+     "start_ms": 80,
+     "end_ms": 114,
      "ease": "STEP",
      "ease_raw": "step (2 frames)"
     },
     {
      "name": "flood",
-     "start_ms": 100,
-     "end_ms": 260,
+     "start_ms": 80,
+     "end_ms": 200,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "krackle",
-     "start_ms": 120,
-     "end_ms": 520,
+     "start_ms": 100,
+     "end_ms": 440,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "flood_out",
-     "start_ms": 330,
-     "end_ms": 620,
+     "start_ms": 300,
+     "end_ms": 560,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "pip",
-     "start_ms": 260,
-     "end_ms": 260,
+     "start_ms": 200,
+     "end_ms": 200,
      "ease": "LINEAR",
      "ease_raw": null
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    117,
-    200,
-    400,
-    700
+    97,
+    170,
+    360,
+    600
    ],
    "reduce_motion": "No chevron travel or krackle: the flood holds at 80 % density for 300 ms and fades; the pip goes dark on the same frame.",
    "source": "f1 Packet 1 lands on sector 3 SHIELD (3 hits, 1 pip through)",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 2816.8
+   },
+   "settles_ms": 550.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_hit_land_adjuster",
    "family": "H",
    "title": "Hit-land variant: Adjuster strike (gold rim flash)",
+   "kind": "damage",
    "variant_of": "fx_hit_land",
-   "tier": "core",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "phases": [
     {
      "name": "as_parent",
      "start_ms": 0,
-     "end_ms": 700,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "gold_flash",
-     "start_ms": 100,
-     "end_ms": 200,
+     "start_ms": 80,
+     "end_ms": 170,
      "ease": "IN_OUT_SINE",
      "ease_raw": "sine, once"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    117,
-    150,
-    400,
-    700
+    97,
+    125,
+    360,
+    600
    ],
    "reduce_motion": "As the parent; the gold rim shows as a thin outline, no flash.",
    "source": "latent: Adjuster strike (adj.strike false in E10)",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 3748.8
+   },
+   "settles_ms": 550.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_hit_land_worm",
    "family": "H",
    "title": "Hit-land variant: worm wear (hook mark)",
+   "kind": "damage",
    "variant_of": "fx_hit_land",
-   "tier": "core",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "phases": [
     {
      "name": "as_parent",
      "start_ms": 0,
-     "end_ms": 700,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "hook",
-     "start_ms": 160,
-     "end_ms": 230,
+     "start_ms": 140,
+     "end_ms": 200,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    117,
-    200,
-    400,
-    700
+    97,
+    170,
+    360,
+    600
    ],
    "reduce_motion": "As the parent; the hook appears without overshoot.",
    "source": "f1 Worm 3 lands (wear flag); shown on sector 3",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 2821.6
+   },
+   "settles_ms": 550.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_hp_through",
    "family": "H",
    "title": "HP gets through, diamonds fly to YOU",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
-   "scope": "arc to HUD",
+   "scope": "arc to HUD (crosses the HUD: allowed)",
    "skins": [
     "neutral"
    ],
-   "total_ms": 1150,
-   "in_ms": 880,
-   "hold_ms": 100,
-   "out_ms": 170,
+   "total_ms": 600,
+   "in_ms": 160,
+   "hold_ms": 300,
+   "out_ms": 140,
    "phases": [
     {
      "name": "lift",
      "start_ms": 0,
-     "end_ms": 220,
+     "end_ms": 140,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "flight",
-     "start_ms": 120,
-     "end_ms": 880,
+     "start_ms": 60,
+     "end_ms": 460,
      "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic, 40 ms stagger"
+     "ease_raw": "ease-in-out cubic, 20 ms stagger"
     },
     {
      "name": "slap",
-     "start_ms": 800,
-     "end_ms": 980,
+     "start_ms": 400,
+     "end_ms": 520,
      "ease": "IN_OUT_SINE",
      "ease_raw": "sine, once"
     },
     {
      "name": "dark",
-     "start_ms": 920,
-     "end_ms": 1100,
+     "start_ms": 440,
+     "end_ms": 580,
      "ease": "LINEAR",
      "ease_raw": "linear"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    100,
-    420,
-    900,
-    1150
+    60,
+    260,
+    460,
+    600
    ],
    "reduce_motion": "No flight: the six hatched segments go dark in a 200 ms fade, no slap.",
    "source": "f1 pv: through 6, HP 15 -> 9",
-   "max_flashes_per_s": 0,
+   "layer": "hud",
+   "layer_raw": "above the HUD (allowed)",
+   "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 3035.2
+   },
+   "settles_ms": 583.3,
+   "px_on_hud_max": 6580,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 1150,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_shield_break",
    "family": "H",
    "title": "Our shield slice breaks while blocking",
+   "kind": "damage",
    "variant_of": null,
-   "tier": "core",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 190,
-   "hold_ms": 190,
-   "out_ms": 320,
+   "total_ms": 600,
+   "in_ms": 160,
+   "hold_ms": 160,
+   "out_ms": 280,
    "phases": [
     {
      "name": "load",
      "start_ms": 0,
-     "end_ms": 110,
+     "end_ms": 90,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
      "name": "crack",
      "start_ms": 20,
-     "end_ms": 110,
+     "end_ms": 90,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "split",
-     "start_ms": 120,
-     "end_ms": 120,
+     "start_ms": 100,
+     "end_ms": 100,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "shards",
-     "start_ms": 120,
-     "end_ms": 560,
+     "start_ms": 100,
+     "end_ms": 460,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic + gravity"
     },
     {
      "name": "flood",
-     "start_ms": 130,
-     "end_ms": 300,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "ease-out cubic"
-    },
-    {
-     "name": "krackle",
-     "start_ms": 130,
-     "end_ms": 600,
-     "ease": "LINEAR",
-     "ease_raw": null
-    },
-    {
-     "name": "dark",
-     "start_ms": 200,
-     "end_ms": 500,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
-     "name": "pips",
-     "start_ms": 300,
-     "end_ms": 300,
-     "ease": "LINEAR",
-     "ease_raw": null
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    80,
-    180,
-    330,
-    700
-   ],
-   "reduce_motion": "No shard flight or krackle: the plate shows split in place (shards offset 55 %) for 300 ms; flood at 70 %; the wedge darkens in one 300 ms fade.",
-   "source": "f1 sector 1 SHIELD, hp 2 -> 0",
-   "max_flashes_per_s": 1,
-   "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
-  },
-  {
-   "id": "fx_slice_break",
-   "family": "H",
-   "title": "Slice goes to 0, ability lost",
-   "variant_of": null,
-   "tier": "core",
-   "scope": "slice-wide",
-   "skins": [
-    "neutral"
-   ],
-   "total_ms": 650,
-   "in_ms": 200,
-   "hold_ms": 180,
-   "out_ms": 270,
-   "phases": [
-    {
-     "name": "flood",
-     "start_ms": 0,
-     "end_ms": 380,
-     "ease": "LINEAR",
-     "ease_raw": null
-    },
-    {
-     "name": "stamp",
-     "start_ms": 120,
-     "end_ms": 200,
-     "ease": "OUT_BACK",
-     "ease_raw": "ease-out back (strong)"
-    },
-    {
-     "name": "blackout",
-     "start_ms": 150,
-     "end_ms": 450,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
-     "name": "halftone",
-     "start_ms": 200,
-     "end_ms": 500,
-     "ease": "LINEAR",
-     "ease_raw": "linear"
-    },
-    {
-     "name": "pips",
-     "start_ms": 250,
-     "end_ms": 250,
-     "ease": "LINEAR",
-     "ease_raw": null
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    90,
-    180,
-    330,
-    650
-   ],
-   "reduce_motion": "No flood or overshoot: black-out, X and halftone fade in together over 300 ms.",
-   "source": "f1 sector 2 TURRET, hp 2 -> 0",
-   "max_flashes_per_s": 0,
-   "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
-  },
-  {
-   "id": "fx_slice_crack",
-   "family": "H",
-   "title": "Slice goes 2 to 1 (cracked)",
-   "variant_of": null,
-   "tier": "core",
-   "scope": "slice-wide",
-   "skins": [
-    "neutral"
-   ],
-   "total_ms": 500,
-   "in_ms": 260,
-   "hold_ms": 40,
-   "out_ms": 200,
-   "phases": [
-    {
-     "name": "flood",
-     "start_ms": 0,
-     "end_ms": 300,
-     "ease": "LINEAR",
-     "ease_raw": "linear"
-    },
-    {
-     "name": "crack",
-     "start_ms": 60,
+     "start_ms": 110,
      "end_ms": 260,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     },
     {
+     "name": "krackle",
+     "start_ms": 110,
+     "end_ms": 500,
+     "ease": "LINEAR",
+     "ease_raw": null
+    },
+    {
+     "name": "dark",
+     "start_ms": 160,
+     "end_ms": 420,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "ease-in-out cubic"
+    },
+    {
+     "name": "pips",
+     "start_ms": 260,
+     "end_ms": 260,
+     "ease": "LINEAR",
+     "ease_raw": null
+    }
+   ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
+   "keyframes_ms": [
+    0,
+    60,
+    150,
+    300,
+    600
+   ],
+   "reduce_motion": "No shard flight or krackle: the plate shows split in place (shards offset 55 %) for 300 ms; flood at 70 %; the wedge darkens in one 300 ms fade.",
+   "source": "f1 sector 1 SHIELD, hp 2 -> 0",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 8377.0
+   },
+   "settles_ms": 550.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 700,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_slice_break",
+   "family": "H",
+   "title": "Slice goes to 0, ability lost",
+   "kind": "damage",
+   "variant_of": null,
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 600,
+   "in_ms": 170,
+   "hold_ms": 230,
+   "out_ms": 200,
+   "phases": [
+    {
+     "name": "flood",
+     "start_ms": 0,
+     "end_ms": 360,
+     "ease": "LINEAR",
+     "ease_raw": null
+    },
+    {
+     "name": "frame_flash",
+     "start_ms": 30,
+     "end_ms": 64,
+     "ease": "LINEAR",
+     "ease_raw": null
+    },
+    {
+     "name": "stamp",
+     "start_ms": 100,
+     "end_ms": 170,
+     "ease": "OUT_BACK",
+     "ease_raw": "ease-out back (strong)"
+    },
+    {
+     "name": "blackout",
+     "start_ms": 130,
+     "end_ms": 400,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "ease-in-out cubic"
+    },
+    {
+     "name": "halftone",
+     "start_ms": 170,
+     "end_ms": 450,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    },
+    {
+     "name": "pips",
+     "start_ms": 220,
+     "end_ms": 220,
+     "ease": "LINEAR",
+     "ease_raw": null
+    }
+   ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
+   "keyframes_ms": [
+    0,
+    47,
+    150,
+    300,
+    600
+   ],
+   "reduce_motion": "No flood or overshoot: black-out, X and halftone fade in together over 300 ms.",
+   "source": "f1 sector 2 TURRET, hp 2 -> 0",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 4778.2
+   },
+   "settles_ms": 450.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 650,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_slice_crack",
+   "family": "H",
+   "title": "Slice goes 2 to 1 (cracked)",
+   "kind": "damage",
+   "variant_of": null,
+   "scope": "slice-wide",
+   "skins": [
+    "neutral"
+   ],
+   "total_ms": 500,
+   "in_ms": 220,
+   "hold_ms": 40,
+   "out_ms": 240,
+   "phases": [
+    {
+     "name": "flood",
+     "start_ms": 0,
+     "end_ms": 420,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
+    },
+    {
+     "name": "frame_flash",
+     "start_ms": 30,
+     "end_ms": 64,
+     "ease": "LINEAR",
+     "ease_raw": null
+    },
+    {
+     "name": "crack",
+     "start_ms": 50,
+     "end_ms": 220,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "ease-out cubic"
+    },
+    {
      "name": "tip",
-     "start_ms": 60,
-     "end_ms": 300,
+     "start_ms": 50,
+     "end_ms": 260,
+     "ease": "LINEAR",
+     "ease_raw": null
+    },
+    {
+     "name": "krackle",
+     "start_ms": 40,
+     "end_ms": 400,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "pip",
-     "start_ms": 200,
-     "end_ms": 200,
+     "start_ms": 180,
+     "end_ms": 180,
      "ease": "LINEAR",
      "ease_raw": null
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    60,
-    160,
-    260,
+    47,
+    130,
+    230,
     500
    ],
    "reduce_motion": "No flood pulse or tip spark: the crack draws in 150 ms linear.",
    "source": "f1 sector 4 BURST, hp 2 -> 1",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 2,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 3121.4
+   },
+   "settles_ms": 416.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 500,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_clear",
    "family": "L",
    "title": "Nothing gets through (arc check)",
+   "kind": "gain",
    "variant_of": null,
-   "tier": "still",
    "scope": "arc",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 800,
-   "in_ms": 300,
-   "hold_ms": 100,
-   "out_ms": 400,
+   "total_ms": 400,
+   "in_ms": 100,
+   "hold_ms": 0,
+   "out_ms": 260,
    "phases": [
     {
-     "name": "wash",
-     "start_ms": 0,
-     "end_ms": 240,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "ease-in-out cubic"
-    },
-    {
      "name": "check",
-     "start_ms": 160,
-     "end_ms": 300,
+     "start_ms": 0,
+     "end_ms": 100,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back"
     },
     {
-     "name": "sparkles",
-     "start_ms": 300,
-     "end_ms": 680,
-     "ease": "IN_OUT_SINE",
-     "ease_raw": "sine"
+     "name": "glow",
+     "start_ms": 100,
+     "end_ms": 360,
+     "ease": "LINEAR",
+     "ease_raw": "linear"
     },
     {
-     "name": "wash_settle",
-     "start_ms": 400,
-     "end_ms": 800,
-     "ease": "LINEAR",
-     "ease_raw": null
+     "name": "sparkles",
+     "start_ms": 100,
+     "end_ms": 360,
+     "ease": "IN_OUT_SINE",
+     "ease_raw": "sine"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    150,
-    260,
-    450,
-    800
+    50,
+    130,
+    250,
+    400
    ],
-   "reduce_motion": "No sweep or sparkles: wash and check fade in over 200 ms.",
+   "reduce_motion": "No stamp, glow or sparkles: the check shows at once.",
    "source": "f2: Worm 3 lands on sectors 1-2, soaked and braced, THROUGH 0",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 84.7,
+    "solace": 84.7,
+    "meridian": 84.7
+   },
+   "settles_ms": 366.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 800,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_refund",
    "family": "L",
    "title": "Trigger-kill refund, +1 RAM",
+   "kind": "gain",
    "variant_of": null,
-   "tier": "core",
-   "scope": "cell to HUD",
+   "scope": "cell to HUD (crosses the HUD: allowed)",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 900,
-   "in_ms": 650,
-   "hold_ms": 0,
-   "out_ms": 250,
+   "total_ms": 600,
+   "in_ms": 90,
+   "hold_ms": 310,
+   "out_ms": 200,
    "phases": [
     {
      "name": "pop",
      "start_ms": 0,
-     "end_ms": 150,
+     "end_ms": 90,
      "ease": "OUT_BACK",
      "ease_raw": "ease-out back (overshoot)"
     },
     {
      "name": "flight",
-     "start_ms": 150,
-     "end_ms": 650,
+     "start_ms": 90,
+     "end_ms": 400,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "ease-in-out cubic"
     },
     {
      "name": "light",
-     "start_ms": 650,
-     "end_ms": 910,
+     "start_ms": 400,
+     "end_ms": 600,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic"
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    110,
-    400,
-    680,
-    900
+    70,
+    250,
+    420,
+    600
    ],
-   "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot lights at once.",
-   "source": "f2: Trigger kills Packet 1 (tlog trig_refund), refund 1 RAM: RAM 2 + 1 = 3 (4 at turn start; Trigger 1 and Brace 1 paid, Twist 0; f2 ram 3). O-30: was \"ram 3 + 1\", the frames were right (2 lit, slot 3 lights).",
-   "max_flashes_per_s": 0,
+   "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot and tab show at once.",
+   "source": "f2: Trigger kills Packet 1, refund 1 RAM (ram 3 + 1)",
+   "layer": "hud",
+   "layer_raw": "above the HUD (allowed)",
+   "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 1,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 674.8,
+    "solace": 674.8,
+    "meridian": 674.8
+   },
+   "settles_ms": 600.0,
+   "px_on_hud_max": 1091,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 900,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_repair_mend",
    "family": "L",
    "title": "Repair mends one pip",
+   "kind": "gain",
    "variant_of": null,
-   "tier": "lower",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 900,
-   "in_ms": 560,
-   "hold_ms": 0,
-   "out_ms": 340,
+   "total_ms": 600,
+   "in_ms": 260,
+   "hold_ms": 140,
+   "out_ms": 200,
    "phases": [
     {
      "name": "strokes",
      "start_ms": 0,
-     "end_ms": 645,
+     "end_ms": 450,
      "ease": "OUT_CUBIC",
      "ease_raw": "ease-out cubic rise, sine width"
     },
     {
      "name": "plus",
-     "start_ms": 120,
-     "end_ms": 780,
+     "start_ms": 80,
+     "end_ms": 560,
      "ease": "LINEAR",
      "ease_raw": null
     },
     {
      "name": "pip_fill",
-     "start_ms": 380,
-     "end_ms": 560,
+     "start_ms": 260,
+     "end_ms": 400,
      "ease": "IN_OUT_CUBIC",
      "ease_raw": "ease-in-out cubic"
     },
     {
      "name": "glow_out",
-     "start_ms": 550,
-     "end_ms": 900,
+     "start_ms": 380,
+     "end_ms": 600,
      "ease": "LINEAR",
      "ease_raw": null
     }
    ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
    "keyframes_ms": [
     0,
-    160,
-    330,
-    520,
-    900
+    120,
+    240,
+    380,
+    600
    ],
    "reduce_motion": "No strokes or glow: two static plus signs and the pip fills over 200 ms.",
    "source": "latent (REPAIR slice mend preview, sector 5); mend-pending pip drawn as a stand-in",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
    "max_flashes_per_s": 1,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_CDHL.json"
+   "loud_transient": {
+    "neutral": 699.9
+   },
+   "settles_ms": 533.3,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 900,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_grow",
+   "family": "C",
+   "title": "A unit grows one more hit",
+   "kind": "state",
+   "variant_of": null,
+   "scope": "cell-wide (a line)",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 400,
+   "in_ms": 133,
+   "hold_ms": 67,
+   "out_ms": 0,
+   "phases": [
+    {
+     "name": "scan",
+     "start_ms": 0,
+     "end_ms": 133,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "ease-in-out cubic"
+    },
+    {
+     "name": "flash",
+     "start_ms": 133,
+     "end_ms": 200,
+     "ease": "STEP",
+     "ease_raw": "step (4 frames, 40 % on the new mark)"
+    }
+   ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
+   "keyframes_ms": [
+    0,
+    70,
+    150,
+    250,
+    400
+   ],
+   "reduce_motion": "No scan or flash: the hollow chevron fades in over 200 ms (ease-in-out).",
+   "source": "f2 Packet 5 (ring +1, sector 0); post-state rendered with one more landing hit (land_hit = hit + 1), which the board draws as the hollow growth chevron",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 533.3,
+    "solace": 515.6,
+    "meridian": 433.1
+   },
+   "settles_ms": 200.0,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 650,
+   "tier_vfx": "T2"
+  },
+  {
+   "id": "fx_ward_on",
+   "family": "C",
+   "title": "Ward applies to units in the Adjuster sector",
+   "kind": "state",
+   "variant_of": null,
+   "scope": "cell-wide (a line)",
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "total_ms": 400,
+   "in_ms": 133,
+   "hold_ms": 67,
+   "out_ms": 160,
+   "phases": [
+    {
+     "name": "scan",
+     "start_ms": 0,
+     "end_ms": 133,
+     "ease": "IN_OUT_CUBIC",
+     "ease_raw": "ease-in-out cubic"
+    },
+    {
+     "name": "flash",
+     "start_ms": 133,
+     "end_ms": 200,
+     "ease": "STEP",
+     "ease_raw": "step (4 frames, 50 % on the lozenge)"
+    },
+    {
+     "name": "ping",
+     "start_ms": 133,
+     "end_ms": 360,
+     "ease": "OUT_CUBIC",
+     "ease_raw": "ease-out cubic"
+    }
+   ],
+   "reduce_phases": [],
+   "reduce_phases_from": "text (reduce_motion): CDHL keeps one still per effect",
+   "reduce_total_ms": null,
+   "keyframes_ms": [
+    0,
+    70,
+    150,
+    260,
+    400
+   ],
+   "reduce_motion": "No scan, flash or ping: the lozenge fades in over 200 ms.",
+   "source": "f2 Packet 6 (ring +2, warded) next to the Adjuster (ring +1, sector 2); pre-state rendered unwarded",
+   "layer": "board",
+   "layer_raw": "under the HUD and the hand",
+   "max_flashes_per_s": 1,
+   "reduce_max_flashes_per_s": 0,
+   "loud_transient": {
+    "neutral": 390.8,
+    "solace": 397.1,
+    "meridian": 393.1
+   },
+   "settles_ms": 366.7,
+   "px_on_hud_max": 0,
+   "px_hidden_by_hud_max": 0,
+   "in_sequence": null,
+   "src_file": "effects/timings_CDHL.json",
+   "total_ms_o30": 750,
+   "tier_vfx": "T2"
   },
   {
    "id": "fx_trace_add",
    "family": "S",
    "title": "A loud card adds Trace",
+   "kind": "state",
    "variant_of": null,
-   "tier": null,
    "scope": null,
    "skins": [
     "neutral"
@@ -1920,6 +3603,24 @@
      "ease_raw": "-"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "pip lights in one step",
+     "start_ms": 166,
+     "end_ms": 166,
+     "ease": "STEP",
+     "ease_raw": "step"
+    },
+    {
+     "name": "settled",
+     "start_ms": 166,
+     "end_ms": 400,
+     "ease": "HOLD",
+     "ease_raw": "-"
+    }
+   ],
+   "reduce_phases_from": "timings_MPST.json reduce_phases",
+   "reduce_total_ms": 400,
    "keyframes_ms": [
     0,
     40,
@@ -1930,236 +3631,262 @@
    ],
    "reduce_motion": "No glitch bands: the fourth pip simply lights at 166 ms (one step, no scale).",
    "source": "",
-   "max_flashes_per_s": 1,
+   "layer": "hud",
+   "layer_raw": "over the HUD and the hand (allowed, review 1.6)",
+   "max_flashes_per_s": 2,
    "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
-  },
-  {
-   "id": "fx_commit",
-   "family": "T",
-   "title": "SEND IT burns pencil marks into paint",
-   "variant_of": null,
-   "tier": null,
-   "scope": null,
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "total_ms": 760,
-   "in_ms": null,
-   "hold_ms": null,
-   "out_ms": null,
-   "phases": [
-    {
-     "name": "SEND IT press, hold",
-     "start_ms": 0,
-     "end_ms": 80,
-     "ease": "HOLD",
-     "ease_raw": "-"
-    },
-    {
-     "name": "burn front runs the marks",
-     "start_ms": 80,
-     "end_ms": 560,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "easeInOutCubic"
-    },
-    {
-     "name": "ping at the route end",
-     "start_ms": 560,
-     "end_ms": 700,
-     "ease": "OUT_CUBIC",
-     "ease_raw": "easeOutCubic"
-    },
-    {
-     "name": "board steps preview to resolve",
-     "start_ms": 560,
-     "end_ms": 760,
-     "ease": "IN_OUT_CUBIC",
-     "ease_raw": "easeInOutCubic"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    200,
-    330,
-    480,
-    620,
-    760
-   ],
-   "reduce_motion": "No burn front and no ping: the marks cross-fade yellow to pink over 300 ms, then the board steps to resolve over 300 ms.",
-   "source": "",
-   "max_flashes_per_s": 0,
-   "reduce_max_flashes_per_s": 0,
-   "src_file": "timings_MPST.json"
+   "loud_transient": {
+    "neutral": 719.8
+   },
+   "settles_ms": null,
+   "px_on_hud_max": 1696,
+   "px_hidden_by_hud_max": null,
+   "in_sequence": null,
+   "src_file": "effects/timings_MPST.json",
+   "total_ms_o30": 400,
+   "tier_vfx": "T2"
   }
  ],
- "resolve_beat_e10": {
-  "doc": "The E10 p3 resolve beat sequenced on the final board (O-30): SEND IT, then the HUD chain order. Each effect starts 100 ms after the previous one ends; the END TURN hand-off (settle) holds 400 ms before RINGS STEP. settle is a sequencer step (260 ms dissolve: the landed unit and spent gun marks leave ring 0, the old arcs lift off the lanes), not an effect. Use as the golden sequence for FlashLimiter.stream_is_safe in test_combat_fx_timings.gd.",
-  "gap_ms": 100,
-  "gap_after": {
-   "settle": 400
-  },
-  "total_ms": 12710,
-  "steps": [
+ "resolve_beat": {
+  "skin": "neutral",
+  "total_ms": 3800,
+  "limit_ms": 4000,
+  "skip_ms": 200,
+  "skip": "any input: the frame dissolves (easeInOutCubic) to the settled frame in skip_ms; no on-screen word (open question for the designer)",
+  "order": "concurrent tracks in the HUD chain order (SEND IT, 1 TWIST, 2 TRIGGER, 4 GUNS, 3 BRACE + 5 LANDS, 6 RINGS STEP, W4 enters); every effect at its own designer's timing, each <= 600 ms",
+  "not_to_ship": "ring +1 drawn one sector back from SEND IT until Twist turns it (f2 holds ring +1 where Twist leaves it): a RULES question (REVIEW_RESPONSE \"Shove bump, Twist render\"); the strip and the GIF caption say so",
+  "tracks": [
    {
-    "step": "commit",
+    "name": "commit",
     "effect": "fx_commit",
     "start_ms": 0,
-    "dur_ms": 760
+    "dur_ms": 600,
+    "end_ms": 600,
+    "family": "T",
+    "what": "SEND IT: pencil burns into paint"
    },
    {
-    "step": "twist",
+    "name": "twist",
     "effect": "fx_twist",
-    "start_ms": 860,
-    "dur_ms": 660
+    "start_ms": 420,
+    "dur_ms": 540,
+    "end_ms": 960,
+    "family": "M",
+    "what": "1 TWIST: ring +1 turns one sector"
    },
    {
-    "step": "trace_add",
+    "name": "trace_add",
     "effect": "fx_trace_add",
-    "start_ms": 1620,
-    "dur_ms": 400
+    "start_ms": 600,
+    "dur_ms": 400,
+    "end_ms": 1000,
+    "family": "S",
+    "what": "2 TRIGGER: Trace 3 -> 4"
    },
    {
-    "step": "trigger_hit",
+    "name": "trigger_hit",
     "effect": "fx_trigger_hit",
-    "start_ms": 2120,
-    "dur_ms": 900
+    "start_ms": 760,
+    "dur_ms": 600,
+    "end_ms": 1360,
+    "family": "D",
+    "what": "2 TRIGGER: hits Packet 1 (s3, s4)"
    },
    {
-    "step": "refund",
-    "effect": "fx_refund",
-    "start_ms": 3120,
-    "dur_ms": 910
-   },
-   {
-    "step": "gun_hit",
-    "effect": "fx_gun_hit",
-    "start_ms": 4130,
-    "dur_ms": 600
-   },
-   {
-    "step": "kill",
+    "name": "kill_p1",
     "effect": "fx_kill",
-    "start_ms": 4830,
-    "dur_ms": 600
+    "start_ms": 1000,
+    "dur_ms": 600,
+    "end_ms": 1600,
+    "family": "D",
+    "what": "2 TRIGGER: Packet 1 dies"
    },
    {
-    "step": "ricochet_gold",
+    "name": "refund",
+    "effect": "fx_refund",
+    "start_ms": 1100,
+    "dur_ms": 600,
+    "end_ms": 1700,
+    "family": "L",
+    "what": "2 TRIGGER: refund, RAM 2 -> 3"
+   },
+   {
+    "name": "gun_hit",
+    "effect": "fx_gun_hit",
+    "start_ms": 1300,
+    "dur_ms": 600,
+    "end_ms": 1900,
+    "family": "D",
+    "what": "4 GUNS: s0 shot 1 on Worm 2"
+   },
+   {
+    "name": "gun_adj",
+    "effect": "fx_gun_hit",
+    "start_ms": 1360,
+    "dur_ms": 600,
+    "end_ms": 1960,
+    "family": "D",
+    "what": "4 GUNS: s2 TURRET on the Adjuster"
+   },
+   {
+    "name": "ricochet_gold",
     "effect": "fx_ricochet_gold",
-    "start_ms": 5530,
-    "dur_ms": 520
+    "start_ms": 1420,
+    "dur_ms": 500,
+    "end_ms": 1920,
+    "family": "D",
+    "what": "4 GUNS: s4 2 shots warded (Packet 6)"
    },
    {
-    "step": "shield_block",
+    "name": "kill",
+    "effect": "fx_kill",
+    "start_ms": 1560,
+    "dur_ms": 600,
+    "end_ms": 2160,
+    "family": "D",
+    "what": "4 GUNS: s0 shot 2, Worm 2 dies"
+   },
+   {
+    "name": "shield_block",
     "effect": "fx_shield_block",
-    "start_ms": 6150,
-    "dur_ms": 920
+    "start_ms": 1900,
+    "dur_ms": 600,
+    "end_ms": 2500,
+    "family": "P",
+    "what": "5 LANDS: Worm 3 on s1 SHIELD, absorbed 2"
    },
    {
-    "step": "soak_take",
-    "effect": "fx_soak_take",
-    "start_ms": 7170,
-    "dur_ms": 960
-   },
-   {
-    "step": "brace_block",
+    "name": "brace_block",
     "effect": "fx_brace_block",
-    "start_ms": 8230,
-    "dur_ms": 1060
+    "start_ms": 1900,
+    "dur_ms": 600,
+    "end_ms": 2500,
+    "family": "P",
+    "what": "3 BRACE / 5 LANDS: Worm 3 on s2, braced 3"
    },
    {
-    "step": "clear",
+    "name": "soak_take",
+    "effect": "fx_soak_take",
+    "start_ms": 1930,
+    "dur_ms": 600,
+    "end_ms": 2530,
+    "family": "P",
+    "what": "5 LANDS: s1 soaked 1 (under the plate)"
+   },
+   {
+    "name": "clear",
     "effect": "fx_clear",
-    "start_ms": 9390,
-    "dur_ms": 800
+    "start_ms": 2400,
+    "dur_ms": 400,
+    "end_ms": 2800,
+    "family": "L",
+    "what": "5 LANDS: THROUGH 0"
    },
    {
-    "step": "settle",
+    "name": "settle",
     "effect": null,
-    "start_ms": 10290,
-    "dur_ms": 260
+    "start_ms": 2640,
+    "dur_ms": 200,
+    "end_ms": 2840,
+    "family": "-",
+    "what": "board hand-off: ring NOW clears"
    },
    {
-    "step": "rings_step",
+    "name": "rings_step",
     "effect": "fx_rings_step",
-    "start_ms": 10950,
-    "dur_ms": 900
+    "start_ms": 2800,
+    "dur_ms": 600,
+    "end_ms": 3400,
+    "family": "M",
+    "what": "6 RINGS STEP"
    },
    {
-    "step": "wave_enter",
+    "name": "wave_enter",
     "effect": "fx_wave_enter",
-    "start_ms": 11950,
-    "dur_ms": 760
+    "start_ms": 3200,
+    "dur_ms": 600,
+    "end_ms": 3800,
+    "family": "M",
+    "what": "6 W4 enters"
    }
   ],
-  "measured_full": {
-   "max_flashes_per_s_any_region": 3,
-   "whole_frame": 0,
-   "effect_boxes": 1,
-   "tiles_240": 2,
-   "tiles_120": 2,
-   "tiles_60": 3,
-   "worst_tile": {
-    "size": 60,
-    "x0": 810,
-    "y0": 240,
-    "flashes": 4,
-    "max_flashes_per_s": 3,
-    "flash_ms": [
-     [
-      10100.0,
-      "clear"
-     ],
-     [
-      11100.0,
-      "rings_step"
-     ],
-     [
-      11166.7,
-      "rings_step"
-     ],
-     [
-      11333.3,
-      "rings_step"
-     ]
-    ],
-    "footprint_px": 804
+  "flash": {
+   "full": {
+    "whole_frame": 0,
+    "track_boxes": 1,
+    "tiles": {
+     "240": 2,
+     "120": 2,
+     "60": 3
+    },
+    "beat": 3,
+    "skips": 3,
+    "passes": true
    },
-   "passes": true
+   "reduce": {
+    "whole_frame": 0,
+    "track_boxes": 0,
+    "tiles": {
+     "240": 1,
+     "120": 2,
+     "60": 2
+    },
+    "beat": 2,
+    "skips": 2,
+    "passes": true
+   }
   },
-  "measured_reduce": {
-   "max_flashes_per_s_any_region": 2,
-   "whole_frame": 0,
-   "effect_boxes": 1,
-   "tiles_240": 1,
-   "tiles_120": 2,
-   "tiles_60": 2,
-   "worst_tile": {
-    "size": 60,
-    "x0": 630,
-    "y0": 420,
-    "flashes": 3,
-    "max_flashes_per_s": 2,
-    "flash_ms": [
-     [
-      6233.3,
-      "shield_block"
-     ],
-     [
-      6933.3,
-      "shield_block"
-     ],
-     [
-      8066.7,
-      "soak_take"
-     ]
+  "kill_colour": {
+   "kill_p1": {
+    "token": [
+     624.7571906056955,
+     769.4300789255503
     ],
-    "footprint_px": 1608
+    "radius_px": 90,
+    "settled_frame_px": {
+     "GAIN": 56,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 588
+    },
+    "peak_added_px": {
+     "GAIN": 0,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 2044
+    }
    },
-   "passes": true
+   "kill": {
+    "token": [
+     292.9291279553569,
+     502.1509423702948
+    ],
+    "radius_px": 90,
+    "settled_frame_px": {
+     "GAIN": 68,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 400
+    },
+    "peak_added_px": {
+     "GAIN": 0,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 1456
+    }
+   }
   },
-  "meter": "60 fps, WCAG relative luminance, the NOTES_MPST method per region (whole frame, each effect box over the whole beat, 240/120/60 px tiles)"
+  "gif": {
+   "width": 640,
+   "height": 360,
+   "caption_px": 20,
+   "fps": 30.0,
+   "frames": 136,
+   "bytes": 1017714
+  },
+  "files": [
+   "resolve_beat_strip.jpg",
+   "resolve_beat.gif"
+  ]
  }
 }

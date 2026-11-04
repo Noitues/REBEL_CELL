@@ -1,877 +1,2344 @@
 {
  "method": {
-  "composite": "plate = F + T * backdrop; F, T from two renders of the final p1 board (corp/src generator, unchanged) with flat 0 and 128 backdrops. Verified against a real render on bio neutral: mean abs error 0.09/255, max 1.7/255.",
-  "squint": "locked final_checks metric: 1/16 BOX downscale + 1 px gaussian, Rec709 luma; loud = share of 16 px cells above 0.38",
-  "regions": {
-   "plate": "whole 1920x1080",
-   "board": "r <= 500 round (536, 540)",
-   "rings": "r 214-430",
-   "room": "focus hull ellipse (1500, 600; 330 x 270; m > 0.5) where the backdrop shows through (T > 0.5), cells >= 90 % inside",
-   "backdrop_visible": "every cell >= 90 % backdrop (T > 0.5): room + city"
-  },
-  "board_vs_room": "mean_ratio = (board squint mean + 0.05) / (room squint mean + 0.05); p95_ratio likewise; loud_ratio = board loud / room loud (room floored at 0.001)",
-  "detail": "detail_rms = RMS of luma minus a 6 px gaussian inside the room (0-1); detail_rel = detail_rms / room luma mean (Weber legibility, brightness-independent); sat = mean HSV saturation in the room; pink_share = room pixels of player-pink hue (295-350 deg, S > 0.35, V > 0.15)"
+  "composite": "plate = F + T * backdrop; F, T from two renders of the current p1 board (corp/src generator with rb_patch + rb2_patch) with flat 0 and 128 backdrops (fg_extract.py), per skin.  Cross-checked against the real renders in locked/rebuild/board/ (real_render_vs_composite).",
+  "room_numbers": "rb_checks room region: x >= 1100, y >= 420, r > 505 from (536, 540), HUD / hand / SEND IT / UNDO / nameplate / YOU / hover tag cut out (dilated 4 px), and the UI scrim slabs where they darken the room by 15 % or more; L* = CIE L* of the mean luminance (reviewer measure.py); p95 = 95th percentile of per-pixel L*.  bd2_lib.stats uses the same region from the p1 capture of the skin.",
+  "gate": "room mean L* 28-34 and room p95 + 1 <= ring-NOW occupied glass p95 (rb_checks b); plus all five rb_checks on every plate",
+  "squint": "locked final_checks metric (1/16 BOX + 1 px blur, Rec709 luma, loud > 0.38), reported for continuity with step 6",
+  "before": "step6-1: bd_grade.grade(ROOMS_STEP61[room]) + scrim(P), on the same current board",
+  "after": "rb2-1: bd_grade.grade(ROOMS[key]) + scrim(P)"
  },
- "before": "the locked final grade: r2_ground.grade(P) (hull x0.595 and neon sat 0.55->0.33 on the v3.1 bare room; city 2 px blur x0.85) + scrim(P)",
- "after": "bd_grade.grade(per-room params) + the same scrim(P)",
  "plates": {
   "p1_bio": {
+   "room": "bio",
+   "corp": "neutral",
+   "grade_key": "bio",
+   "before_room": "bio",
    "before": {
-    "plate": {
-     "mean": 0.2282,
-     "p95": 0.4939,
-     "loud": 0.1243
+    "L": {
+     "room": {
+      "mean": 16.8,
+      "p95": 30.53
+     },
+     "room_hull": {
+      "mean": 17.48,
+      "p95": 30.58
+     },
+     "room_city": {
+      "mean": 7.89,
+      "p95": 17.05
+     },
+     "review_room_box": {
+      "mean": 23.94,
+      "p95": 30.88
+     },
+     "review_city_box": {
+      "mean": 12.92,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0393,
+      "detail_rel": 0.271,
+      "sat": 0.417,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2496,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2084,
+      "p95": 0.4807,
+      "loud": 0.126
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.143,
+      "p95": 0.2336,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1018,
+      "p95": 0.2208,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0413,
+      "detail_rel": 0.2963,
+      "sat": 0.4195,
+      "pink_share": 0.0,
+      "luma_mean": 0.1395,
+      "luma_p99": 0.2849
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.642,
+      "p95_ratio": 1.833,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1866,
-     "p95": 0.3352,
-     "loud": 0.0105
-    },
-    "backdrop_visible": {
-     "mean": 0.1649,
-     "p95": 0.3121,
-     "loud": 0.005
-    },
-    "room_detail": {
-     "detail_rms": 0.0689,
-     "detail_rel": 0.3747,
-     "sat": 0.4225,
-     "pink_share": 0.08621,
-     "luma_mean": 0.1839,
-     "luma_p99": 0.498
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.266,
-     "p95_ratio": 1.312,
-     "loud_ratio": 11.63
-    }
+    "room_failures": [
+     "room mean L* 16.6 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2047,
-     "p95": 0.4927,
-     "loud": 0.1218
+    "L": {
+     "room": {
+      "mean": 32.0,
+      "p95": 38.1
+     },
+     "room_hull": {
+      "mean": 32.29,
+      "p95": 38.19
+     },
+     "room_city": {
+      "mean": 29.04,
+      "p95": 34.51
+     },
+     "review_room_box": {
+      "mean": 34.54,
+      "p95": 38.89
+     },
+     "review_city_box": {
+      "mean": 14.34,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0346,
+      "detail_rel": 0.12,
+      "sat": 0.322,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2484,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2393,
+      "p95": 0.4832,
+      "loud": 0.128
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2823,
+      "p95": 0.3087,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1929,
+      "p95": 0.3043,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0353,
+      "detail_rel": 0.1253,
+      "sat": 0.3197,
+      "pink_share": 0.0,
+      "luma_mean": 0.2816,
+      "luma_p99": 0.3579
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.955,
+      "p95_ratio": 1.449,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.135,
-     "p95": 0.2313,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1012,
-     "p95": 0.2174,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0414,
-     "detail_rel": 0.3088,
-     "sat": 0.4205,
-     "pink_share": 0.0,
-     "luma_mean": 0.134,
-     "luma_p99": 0.2849
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.613,
-     "p95_ratio": 1.796,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.8,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.2,
+      "mean": 31.8,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 29.9,
+      "mean": 29.8,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_srv": {
+   "room": "srv",
+   "corp": "neutral",
+   "grade_key": "srv",
+   "before_room": "srv",
    "before": {
-    "plate": {
-     "mean": 0.2299,
-     "p95": 0.4939,
-     "loud": 0.1249
+    "L": {
+     "room": {
+      "mean": 16.81,
+      "p95": 29.89
+     },
+     "room_hull": {
+      "mean": 17.35,
+      "p95": 29.93
+     },
+     "room_city": {
+      "mean": 10.27,
+      "p95": 22.01
+     },
+     "review_room_box": {
+      "mean": 23.57,
+      "p95": 30.14
+     },
+     "review_city_box": {
+      "mean": 12.88,
+      "p95": 46.09
+     },
+     "detail": {
+      "detail_rms": 0.0379,
+      "detail_rel": 0.26,
+      "sat": 0.439,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2496,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2089,
+      "p95": 0.4807,
+      "loud": 0.1257
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1437,
+      "p95": 0.2355,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.103,
+      "p95": 0.2185,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0401,
+      "detail_rel": 0.2866,
+      "sat": 0.4425,
+      "pink_share": 0.0,
+      "luma_mean": 0.1401,
+      "luma_p99": 0.2746
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.636,
+      "p95_ratio": 1.821,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1922,
-     "p95": 0.348,
-     "loud": 0.0148
-    },
-    "backdrop_visible": {
-     "mean": 0.1692,
-     "p95": 0.3206,
-     "loud": 0.007
-    },
-    "room_detail": {
-     "detail_rms": 0.0662,
-     "detail_rel": 0.3492,
-     "sat": 0.4712,
-     "pink_share": 0.00818,
-     "luma_mean": 0.1896,
-     "luma_p99": 0.4524
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.237,
-     "p95_ratio": 1.27,
-     "loud_ratio": 8.25
-    }
+    "room_failures": [
+     "room mean L* 16.6 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2051,
-     "p95": 0.4928,
-     "loud": 0.1218
+    "L": {
+     "room": {
+      "mean": 32.45,
+      "p95": 38.12
+     },
+     "room_hull": {
+      "mean": 32.71,
+      "p95": 38.21
+     },
+     "room_city": {
+      "mean": 29.84,
+      "p95": 35.77
+     },
+     "review_room_box": {
+      "mean": 34.81,
+      "p95": 38.89
+     },
+     "review_city_box": {
+      "mean": 14.29,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0333,
+      "detail_rel": 0.114,
+      "sat": 0.372,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2484,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.24,
+      "p95": 0.4831,
+      "loud": 0.1279
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2856,
+      "p95": 0.3128,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1948,
+      "p95": 0.3092,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0341,
+      "detail_rel": 0.1199,
+      "sat": 0.371,
+      "pink_share": 0.0,
+      "luma_mean": 0.2847,
+      "luma_p99": 0.3582
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.946,
+      "p95_ratio": 1.433,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1348,
-     "p95": 0.2326,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.102,
-     "p95": 0.2161,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0402,
-     "detail_rel": 0.3005,
-     "sat": 0.444,
-     "pink_share": 0.0,
-     "luma_mean": 0.1338,
-     "luma_p99": 0.2746
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.615,
-     "p95_ratio": 1.788,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 32.4,
+      "mean": 32.2,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.4,
+      "mean": 30.2,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_gh": {
+   "room": "gh",
+   "corp": "neutral",
+   "grade_key": "gh",
+   "before_room": "gh",
    "before": {
-    "plate": {
-     "mean": 0.228,
-     "p95": 0.4939,
-     "loud": 0.1233
+    "L": {
+     "room": {
+      "mean": 16.27,
+      "p95": 30.14
+     },
+     "room_hull": {
+      "mean": 16.84,
+      "p95": 30.2
+     },
+     "room_city": {
+      "mean": 9.25,
+      "p95": 21.86
+     },
+     "review_room_box": {
+      "mean": 23.46,
+      "p95": 30.58
+     },
+     "review_city_box": {
+      "mean": 12.99,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0409,
+      "detail_rel": 0.289,
+      "sat": 0.404,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2497,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2082,
+      "p95": 0.4807,
+      "loud": 0.1259
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1399,
+      "p95": 0.2254,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1006,
+      "p95": 0.2123,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0426,
+      "detail_rel": 0.3105,
+      "sat": 0.4035,
+      "pink_share": 0.0,
+      "luma_mean": 0.1373,
+      "luma_p99": 0.2809
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.669,
+      "p95_ratio": 1.887,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1834,
-     "p95": 0.3144,
-     "loud": 0.0009
-    },
-    "backdrop_visible": {
-     "mean": 0.1637,
-     "p95": 0.3028,
-     "loud": 0.0012
-    },
-    "room_detail": {
-     "detail_rms": 0.0686,
-     "detail_rel": 0.3791,
-     "sat": 0.4058,
-     "pink_share": 0.01107,
-     "luma_mean": 0.181,
-     "luma_p99": 0.4615
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.284,
-     "p95_ratio": 1.387,
-     "loud_ratio": 122.1
-    }
+    "room_failures": [
+     "room mean L* 16.1 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2048,
-     "p95": 0.4927,
-     "loud": 0.1219
+    "L": {
+     "room": {
+      "mean": 31.91,
+      "p95": 38.12
+     },
+     "room_hull": {
+      "mean": 32.15,
+      "p95": 38.21
+     },
+     "room_city": {
+      "mean": 29.4,
+      "p95": 35.34
+     },
+     "review_room_box": {
+      "mean": 34.41,
+      "p95": 38.92
+     },
+     "review_city_box": {
+      "mean": 14.41,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0361,
+      "detail_rel": 0.125,
+      "sat": 0.301,
+      "pink_share": 3e-05
+     }
     },
-    "board": {
-     "mean": 0.2484,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2394,
+      "p95": 0.4831,
+      "loud": 0.128
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2826,
+      "p95": 0.31,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1928,
+      "p95": 0.3031,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0367,
+      "detail_rel": 0.1302,
+      "sat": 0.2945,
+      "pink_share": 3e-05,
+      "luma_mean": 0.2821,
+      "luma_p99": 0.358
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.955,
+      "p95_ratio": 1.444,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.135,
-     "p95": 0.2194,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1015,
-     "p95": 0.209,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0421,
-     "detail_rel": 0.3132,
-     "sat": 0.4032,
-     "pink_share": 0.0,
-     "luma_mean": 0.1343,
-     "luma_p99": 0.2808
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.613,
-     "p95_ratio": 1.876,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.1,
+      "mean": 31.7,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.1,
+      "mean": 29.8,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_rec": {
+   "room": "rec",
+   "corp": "neutral",
+   "grade_key": "rec",
+   "before_room": "rec",
    "before": {
-    "plate": {
-     "mean": 0.2285,
-     "p95": 0.4939,
-     "loud": 0.1231
+    "L": {
+     "room": {
+      "mean": 16.55,
+      "p95": 29.39
+     },
+     "room_hull": {
+      "mean": 17.05,
+      "p95": 29.49
+     },
+     "room_city": {
+      "mean": 10.62,
+      "p95": 24.08
+     },
+     "review_room_box": {
+      "mean": 23.34,
+      "p95": 30.03
+     },
+     "review_city_box": {
+      "mean": 12.79,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0395,
+      "detail_rel": 0.272,
+      "sat": 0.36,
+      "pink_share": 5e-05
+     }
     },
-    "board": {
-     "mean": 0.2495,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2087,
+      "p95": 0.4807,
+      "loud": 0.126
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1429,
+      "p95": 0.2254,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1025,
+      "p95": 0.213,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0415,
+      "detail_rel": 0.2962,
+      "sat": 0.3668,
+      "pink_share": 0.00011,
+      "luma_mean": 0.14,
+      "luma_p99": 0.2772
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.643,
+      "p95_ratio": 1.887,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1851,
-     "p95": 0.3183,
-     "loud": 0.0
-    },
-    "backdrop_visible": {
-     "mean": 0.1652,
-     "p95": 0.3102,
-     "loud": 0.0008
-    },
-    "room_detail": {
-     "detail_rms": 0.0646,
-     "detail_rel": 0.3522,
-     "sat": 0.3849,
-     "pink_share": 0.09076,
-     "luma_mean": 0.1833,
-     "luma_p99": 0.4471
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.274,
-     "p95_ratio": 1.372,
-     "loud_ratio": 122.1
-    }
+    "room_failures": [
+     "room mean L* 16.3 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2051,
-     "p95": 0.4927,
-     "loud": 0.1219
+    "L": {
+     "room": {
+      "mean": 32.29,
+      "p95": 38.12
+     },
+     "room_hull": {
+      "mean": 32.52,
+      "p95": 38.21
+     },
+     "room_city": {
+      "mean": 29.9,
+      "p95": 35.9
+     },
+     "review_room_box": {
+      "mean": 34.6,
+      "p95": 39.12
+     },
+     "review_city_box": {
+      "mean": 14.19,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0373,
+      "detail_rel": 0.127,
+      "sat": 0.257,
+      "pink_share": 0.00011
+     }
     },
-    "board": {
-     "mean": 0.2483,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.24,
+      "p95": 0.4832,
+      "loud": 0.1281
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2863,
+      "p95": 0.3135,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1949,
+      "p95": 0.3093,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0378,
+      "detail_rel": 0.1323,
+      "sat": 0.2553,
+      "pink_share": 0.00011,
+      "luma_mean": 0.2857,
+      "luma_p99": 0.3599
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.944,
+      "p95_ratio": 1.43,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1352,
-     "p95": 0.2236,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1023,
-     "p95": 0.2117,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0411,
-     "detail_rel": 0.3053,
-     "sat": 0.381,
-     "pink_share": 0.0001,
-     "luma_mean": 0.1346,
-     "luma_p99": 0.2772
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.611,
-     "p95_ratio": 1.847,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.9,
+      "mean": 32.1,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.4,
+      "mean": 30.1,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_lobby": {
+   "room": "lobby",
+   "corp": "neutral",
+   "grade_key": "lobby",
+   "before_room": "lobby",
    "before": {
-    "plate": {
-     "mean": 0.2276,
-     "p95": 0.4939,
-     "loud": 0.1245
+    "L": {
+     "room": {
+      "mean": 16.5,
+      "p95": 30.09
+     },
+     "room_hull": {
+      "mean": 17.19,
+      "p95": 30.12
+     },
+     "room_city": {
+      "mean": 7.38,
+      "p95": 10.33
+     },
+     "review_room_box": {
+      "mean": 23.72,
+      "p95": 30.24
+     },
+     "review_city_box": {
+      "mean": 12.82,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0378,
+      "detail_rel": 0.265,
+      "sat": 0.422,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2496,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2078,
+      "p95": 0.4807,
+      "loud": 0.1257
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1419,
+      "p95": 0.2341,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.0996,
+      "p95": 0.2175,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0402,
+      "detail_rel": 0.2906,
+      "sat": 0.4239,
+      "pink_share": 0.0,
+      "luma_mean": 0.1382,
+      "luma_p99": 0.2754
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.651,
+      "p95_ratio": 1.83,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1896,
-     "p95": 0.3463,
-     "loud": 0.0139
-    },
-    "backdrop_visible": {
-     "mean": 0.1629,
-     "p95": 0.3068,
-     "loud": 0.0066
-    },
-    "room_detail": {
-     "detail_rms": 0.066,
-     "detail_rel": 0.3537,
-     "sat": 0.4242,
-     "pink_share": 0.06889,
-     "luma_mean": 0.1866,
-     "luma_p99": 0.4468
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.25,
-     "p95_ratio": 1.275,
-     "loud_ratio": 8.78
-    }
+    "room_failures": [
+     "room mean L* 16.3 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2041,
-     "p95": 0.4927,
-     "loud": 0.1216
+    "L": {
+     "room": {
+      "mean": 32.19,
+      "p95": 38.12
+     },
+     "room_hull": {
+      "mean": 32.48,
+      "p95": 38.19
+     },
+     "room_city": {
+      "mean": 29.11,
+      "p95": 32.54
+     },
+     "review_room_box": {
+      "mean": 34.72,
+      "p95": 38.87
+     },
+     "review_city_box": {
+      "mean": 14.22,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.033,
+      "detail_rel": 0.114,
+      "sat": 0.361,
+      "pink_share": 3e-05
+     }
     },
-    "board": {
-     "mean": 0.2484,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2393,
+      "p95": 0.4831,
+      "loud": 0.1277
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.284,
+      "p95": 0.3115,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1927,
+      "p95": 0.3069,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0339,
+      "detail_rel": 0.1197,
+      "sat": 0.3578,
+      "pink_share": 2e-05,
+      "luma_mean": 0.2832,
+      "luma_p99": 0.3578
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.951,
+      "p95_ratio": 1.438,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1348,
-     "p95": 0.2315,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.0995,
-     "p95": 0.2146,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0403,
-     "detail_rel": 0.3017,
-     "sat": 0.4226,
-     "pink_share": 0.0,
-     "luma_mean": 0.1336,
-     "luma_p99": 0.2753
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.615,
-     "p95_ratio": 1.795,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.5,
+      "mean": 32.0,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.1,
+      "mean": 30.0,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_event": {
+   "room": "event",
+   "corp": "neutral",
+   "grade_key": "event",
+   "before_room": "event",
    "before": {
-    "plate": {
-     "mean": 0.2265,
-     "p95": 0.4939,
-     "loud": 0.1234
+    "L": {
+     "room": {
+      "mean": 16.8,
+      "p95": 32.32
+     },
+     "room_hull": {
+      "mean": 17.4,
+      "p95": 32.42
+     },
+     "room_city": {
+      "mean": 9.21,
+      "p95": 21.55
+     },
+     "review_room_box": {
+      "mean": 23.63,
+      "p95": 32.91
+     },
+     "review_city_box": {
+      "mean": 12.95,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0417,
+      "detail_rel": 0.286,
+      "sat": 0.429,
+      "pink_share": 5e-05
+     }
     },
-    "board": {
-     "mean": 0.2495,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2086,
+      "p95": 0.4807,
+      "loud": 0.1257
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1438,
+      "p95": 0.2184,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1025,
+      "p95": 0.207,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0434,
+      "detail_rel": 0.3092,
+      "sat": 0.4348,
+      "pink_share": 4e-05,
+      "luma_mean": 0.1405,
+      "luma_p99": 0.3035
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.635,
+      "p95_ratio": 1.937,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1744,
-     "p95": 0.2932,
-     "loud": 0.0052
-    },
-    "backdrop_visible": {
-     "mean": 0.1596,
-     "p95": 0.2863,
-     "loud": 0.0025
-    },
-    "room_detail": {
-     "detail_rms": 0.0656,
-     "detail_rel": 0.3814,
-     "sat": 0.4453,
-     "pink_share": 0.01245,
-     "luma_mean": 0.172,
-     "luma_p99": 0.498
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.335,
-     "p95_ratio": 1.472,
-     "loud_ratio": 23.48
-    }
+    "room_failures": [
+     "room mean L* 16.6 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2049,
-     "p95": 0.4927,
-     "loud": 0.1216
+    "L": {
+     "room": {
+      "mean": 31.83,
+      "p95": 38.15
+     },
+     "room_hull": {
+      "mean": 32.08,
+      "p95": 38.23
+     },
+     "room_city": {
+      "mean": 29.32,
+      "p95": 35.23
+     },
+     "review_room_box": {
+      "mean": 34.24,
+      "p95": 38.82
+     },
+     "review_city_box": {
+      "mean": 14.37,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0338,
+      "detail_rel": 0.117,
+      "sat": 0.282,
+      "pink_share": 3e-05
+     }
     },
-    "board": {
-     "mean": 0.2483,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2393,
+      "p95": 0.4831,
+      "loud": 0.128
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2819,
+      "p95": 0.3059,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1926,
+      "p95": 0.3014,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0343,
+      "detail_rel": 0.122,
+      "sat": 0.282,
+      "pink_share": 2e-05,
+      "luma_mean": 0.2814,
+      "luma_p99": 0.3592
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.957,
+      "p95_ratio": 1.461,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1354,
-     "p95": 0.2144,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1019,
-     "p95": 0.2046,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0428,
-     "detail_rel": 0.3185,
-     "sat": 0.4458,
-     "pink_share": 4e-05,
-     "luma_mean": 0.1344,
-     "luma_p99": 0.3035
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.609,
-     "p95_ratio": 1.911,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.1,
+      "mean": 31.6,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 29.8,
+      "mean": 29.7,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_shop": {
+   "room": "shop",
+   "corp": "neutral",
+   "grade_key": "shop",
+   "before_room": "shop",
    "before": {
-    "plate": {
-     "mean": 0.2299,
-     "p95": 0.4949,
-     "loud": 0.1251
+    "L": {
+     "room": {
+      "mean": 15.96,
+      "p95": 28.46
+     },
+     "room_hull": {
+      "mean": 16.57,
+      "p95": 28.54
+     },
+     "room_city": {
+      "mean": 8.02,
+      "p95": 12.36
+     },
+     "review_room_box": {
+      "mean": 23.49,
+      "p95": 29.15
+     },
+     "review_city_box": {
+      "mean": 12.61,
+      "p95": 46.08
+     },
+     "detail": {
+      "detail_rms": 0.0357,
+      "detail_rel": 0.255,
+      "sat": 0.387,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2495,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2079,
+      "p95": 0.4807,
+      "loud": 0.1256
+     },
+     "board": {
+      "mean": 0.2669,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.1392,
+      "p95": 0.2263,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.0999,
+      "p95": 0.2134,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0378,
+      "detail_rel": 0.2771,
+      "sat": 0.3883,
+      "pink_share": 0.0,
+      "luma_mean": 0.1364,
+      "luma_p99": 0.2694
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.675,
+      "p95_ratio": 1.881,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1982,
-     "p95": 0.3444,
-     "loud": 0.0148
-    },
-    "backdrop_visible": {
-     "mean": 0.1696,
-     "p95": 0.3165,
-     "loud": 0.007
-    },
-    "room_detail": {
-     "detail_rms": 0.0584,
-     "detail_rel": 0.2982,
-     "sat": 0.3925,
-     "pink_share": 0.00721,
-     "luma_mean": 0.1958,
-     "luma_p99": 0.4471
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.207,
-     "p95_ratio": 1.281,
-     "loud_ratio": 8.25
-    }
+    "room_failures": [
+     "room mean L* 15.7 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2047,
-     "p95": 0.4928,
-     "loud": 0.1218
+    "L": {
+     "room": {
+      "mean": 32.25,
+      "p95": 38.09
+     },
+     "room_hull": {
+      "mean": 32.51,
+      "p95": 38.16
+     },
+     "room_city": {
+      "mean": 29.63,
+      "p95": 33.43
+     },
+     "review_room_box": {
+      "mean": 34.79,
+      "p95": 38.71
+     },
+     "review_city_box": {
+      "mean": 13.99,
+      "p95": 46.1
+     },
+     "detail": {
+      "detail_rms": 0.0349,
+      "detail_rel": 0.119,
+      "sat": 0.294,
+      "pink_share": 1e-05
+     }
     },
-    "board": {
-     "mean": 0.2483,
-     "p95": 0.4553,
-     "loud": 0.1221
+    "squint": {
+     "plate": {
+      "mean": 0.2399,
+      "p95": 0.4831,
+      "loud": 0.1281
+     },
+     "board": {
+      "mean": 0.2675,
+      "p95": 0.4698,
+      "loud": 0.1545
+     },
+     "rings": {
+      "mean": 0.2754,
+      "p95": 0.3905,
+      "loud": 0.0811
+     },
+     "room": {
+      "mean": 0.2863,
+      "p95": 0.3171,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1948,
+      "p95": 0.3084,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0355,
+      "detail_rel": 0.1242,
+      "sat": 0.2907,
+      "pink_share": 1e-05,
+      "luma_mean": 0.2857,
+      "luma_p99": 0.353
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.944,
+      "p95_ratio": 1.416,
+      "loud_ratio": 154.5
+     }
     },
-    "rings": {
-     "mean": 0.25,
-     "p95": 0.3882,
-     "loud": 0.0574
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1348,
-     "p95": 0.2254,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1008,
-     "p95": 0.212,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0368,
-     "detail_rel": 0.2749,
-     "sat": 0.3911,
-     "pink_share": 0.0,
-     "luma_mean": 0.1339,
-     "luma_p99": 0.2694
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.614,
-     "p95_ratio": 1.835,
-     "loud_ratio": 122.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.8,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.7,
+      "median": 11.7,
+      "mean": 46.7,
+      "px": 26048
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.5,
+      "median": 37.8,
+      "mean": 38.4,
+      "px": 62695
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.4,
+      "mean": 32.0,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.8,
+      "mean": 30.1,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.0,
+      "median": 17.3,
+      "mean": 17.4,
+      "px": 53180
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
   "p1_bio_solace": {
+   "room": "bio",
+   "corp": "solace",
+   "grade_key": "bio",
+   "before_room": "bio",
    "before": {
-    "plate": {
-     "mean": 0.2334,
-     "p95": 0.4946,
-     "loud": 0.1274
+    "L": {
+     "room": {
+      "mean": 16.8,
+      "p95": 30.53
+     },
+     "room_hull": {
+      "mean": 17.48,
+      "p95": 30.58
+     },
+     "room_city": {
+      "mean": 7.89,
+      "p95": 17.05
+     },
+     "review_room_box": {
+      "mean": 23.94,
+      "p95": 30.88
+     },
+     "review_city_box": {
+      "mean": 19.57,
+      "p95": 44.34
+     },
+     "detail": {
+      "detail_rms": 0.0393,
+      "detail_rel": 0.271,
+      "sat": 0.417,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2599,
-     "p95": 0.4594,
-     "loud": 0.1305
+    "squint": {
+     "plate": {
+      "mean": 0.2099,
+      "p95": 0.4807,
+      "loud": 0.1261
+     },
+     "board": {
+      "mean": 0.2677,
+      "p95": 0.4698,
+      "loud": 0.1548
+     },
+     "rings": {
+      "mean": 0.2742,
+      "p95": 0.3911,
+      "loud": 0.0818
+     },
+     "room": {
+      "mean": 0.143,
+      "p95": 0.2336,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1034,
+      "p95": 0.2208,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0413,
+      "detail_rel": 0.2963,
+      "sat": 0.4195,
+      "pink_share": 0.0,
+      "luma_mean": 0.1395,
+      "luma_p99": 0.2849
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.646,
+      "p95_ratio": 1.833,
+      "loud_ratio": 154.8
+     }
     },
-    "rings": {
-     "mean": 0.2625,
-     "p95": 0.4022,
-     "loud": 0.0724
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1866,
-     "p95": 0.3352,
-     "loud": 0.0105
-    },
-    "backdrop_visible": {
-     "mean": 0.1663,
-     "p95": 0.3121,
-     "loud": 0.005
-    },
-    "room_detail": {
-     "detail_rms": 0.0689,
-     "detail_rel": 0.3747,
-     "sat": 0.4225,
-     "pink_share": 0.08621,
-     "luma_mean": 0.1839,
-     "luma_p99": 0.498
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.31,
-     "p95_ratio": 1.322,
-     "loud_ratio": 12.43
-    }
+    "room_failures": [
+     "room mean L* 16.6 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2098,
-     "p95": 0.493,
-     "loud": 0.1249
+    "L": {
+     "room": {
+      "mean": 32.0,
+      "p95": 38.1
+     },
+     "room_hull": {
+      "mean": 32.29,
+      "p95": 38.19
+     },
+     "room_city": {
+      "mean": 29.04,
+      "p95": 34.51
+     },
+     "review_room_box": {
+      "mean": 34.54,
+      "p95": 38.89
+     },
+     "review_city_box": {
+      "mean": 20.52,
+      "p95": 44.35
+     },
+     "detail": {
+      "detail_rms": 0.0346,
+      "detail_rel": 0.12,
+      "sat": 0.322,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2587,
-     "p95": 0.4594,
-     "loud": 0.1305
+    "squint": {
+     "plate": {
+      "mean": 0.2408,
+      "p95": 0.4832,
+      "loud": 0.1281
+     },
+     "board": {
+      "mean": 0.2684,
+      "p95": 0.4698,
+      "loud": 0.1548
+     },
+     "rings": {
+      "mean": 0.2742,
+      "p95": 0.3911,
+      "loud": 0.0818
+     },
+     "room": {
+      "mean": 0.2823,
+      "p95": 0.3087,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.1945,
+      "p95": 0.3043,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0353,
+      "detail_rel": 0.1253,
+      "sat": 0.3197,
+      "pink_share": 0.0,
+      "luma_mean": 0.2816,
+      "luma_p99": 0.3579
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.958,
+      "p95_ratio": 1.449,
+      "loud_ratio": 154.8
+     }
     },
-    "rings": {
-     "mean": 0.2625,
-     "p95": 0.4022,
-     "loud": 0.0724
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.135,
-     "p95": 0.2313,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.3
     },
-    "backdrop_visible": {
-     "mean": 0.1026,
-     "p95": 0.2177,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0414,
-     "detail_rel": 0.3088,
-     "sat": 0.4205,
-     "pink_share": 0.0,
-     "luma_mean": 0.134,
-     "luma_p99": 0.2849
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.669,
-     "p95_ratio": 1.811,
-     "loud_ratio": 130.5
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.8,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.6,
+      "median": 13.7,
+      "mean": 46.7,
+      "px": 27356
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 46.8,
+      "median": 38.1,
+      "mean": 38.6,
+      "px": 62491
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.2,
+      "mean": 31.8,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 29.9,
+      "mean": 29.8,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 21.6,
+      "median": 16.2,
+      "mean": 17.0,
+      "px": 53079
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   },
-  "p1_bio_meridian": {
+  "p1_shop_meridian": {
+   "room": "shop",
+   "corp": "meridian",
+   "grade_key": "shop_meridian",
+   "before_room": "bio",
    "before": {
-    "plate": {
-     "mean": 0.228,
-     "p95": 0.4939,
-     "loud": 0.1246
+    "L": {
+     "room": {
+      "mean": 16.8,
+      "p95": 30.53
+     },
+     "room_hull": {
+      "mean": 17.48,
+      "p95": 30.58
+     },
+     "room_city": {
+      "mean": 7.89,
+      "p95": 17.05
+     },
+     "review_room_box": {
+      "mean": 23.94,
+      "p95": 30.88
+     },
+     "review_city_box": {
+      "mean": 7.47,
+      "p95": 8.06
+     },
+     "detail": {
+      "detail_rms": 0.0393,
+      "detail_rel": 0.271,
+      "sat": 0.417,
+      "pink_share": 0.0
+     }
     },
-    "board": {
-     "mean": 0.2516,
-     "p95": 0.4549,
-     "loud": 0.1231
+    "squint": {
+     "plate": {
+      "mean": 0.2035,
+      "p95": 0.4807,
+      "loud": 0.1248
+     },
+     "board": {
+      "mean": 0.2585,
+      "p95": 0.4698,
+      "loud": 0.1511
+     },
+     "rings": {
+      "mean": 0.269,
+      "p95": 0.3891,
+      "loud": 0.0749
+     },
+     "room": {
+      "mean": 0.143,
+      "p95": 0.2336,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.0993,
+      "p95": 0.2207,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0413,
+      "detail_rel": 0.2963,
+      "sat": 0.4195,
+      "pink_share": 0.0,
+      "luma_mean": 0.1395,
+      "luma_p99": 0.2849
+     },
+     "board_vs_room": {
+      "mean_ratio": 1.598,
+      "p95_ratio": 1.833,
+      "loud_ratio": 151.1
+     }
     },
-    "rings": {
-     "mean": 0.2586,
-     "p95": 0.3906,
-     "loud": 0.0593
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": false,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.1866,
-     "p95": 0.3352,
-     "loud": 0.0105
-    },
-    "backdrop_visible": {
-     "mean": 0.1635,
-     "p95": 0.3113,
-     "loud": 0.005
-    },
-    "room_detail": {
-     "detail_rms": 0.0689,
-     "detail_rel": 0.3747,
-     "sat": 0.4225,
-     "pink_share": 0.08621,
-     "luma_mean": 0.1839,
-     "luma_p99": 0.498
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.275,
-     "p95_ratio": 1.311,
-     "loud_ratio": 11.72
-    }
+    "room_failures": [
+     "room mean L* 16.6 outside 28-34"
+    ]
    },
    "after": {
-    "plate": {
-     "mean": 0.2044,
-     "p95": 0.4927,
-     "loud": 0.1221
+    "L": {
+     "room": {
+      "mean": 32.24,
+      "p95": 38.11
+     },
+     "room_hull": {
+      "mean": 32.5,
+      "p95": 38.19
+     },
+     "room_city": {
+      "mean": 29.52,
+      "p95": 33.34
+     },
+     "review_room_box": {
+      "mean": 34.81,
+      "p95": 38.9
+     },
+     "review_city_box": {
+      "mean": 9.03,
+      "p95": 9.58
+     },
+     "detail": {
+      "detail_rms": 0.0348,
+      "detail_rel": 0.119,
+      "sat": 0.342,
+      "pink_share": 0.00034
+     }
     },
-    "board": {
-     "mean": 0.2504,
-     "p95": 0.4549,
-     "loud": 0.1231
+    "squint": {
+     "plate": {
+      "mean": 0.235,
+      "p95": 0.4831,
+      "loud": 0.1269
+     },
+     "board": {
+      "mean": 0.2591,
+      "p95": 0.4698,
+      "loud": 0.1511
+     },
+     "rings": {
+      "mean": 0.269,
+      "p95": 0.3891,
+      "loud": 0.0749
+     },
+     "room": {
+      "mean": 0.2861,
+      "p95": 0.3162,
+      "loud": 0.0
+     },
+     "backdrop_visible": {
+      "mean": 0.192,
+      "p95": 0.3079,
+      "loud": 0.0
+     },
+     "room_detail": {
+      "detail_rms": 0.0354,
+      "detail_rel": 0.1241,
+      "sat": 0.3362,
+      "pink_share": 0.00032,
+      "luma_mean": 0.2855,
+      "luma_p99": 0.3525
+     },
+     "board_vs_room": {
+      "mean_ratio": 0.92,
+      "p95_ratio": 1.419,
+      "loud_ratio": 151.1
+     }
     },
-    "rings": {
-     "mean": 0.2586,
-     "p95": 0.3906,
-     "loud": 0.0593
+    "rb_pass": {
+     "a_cell_contrast": true,
+     "b_value_order": true,
+     "c_cap_height": true,
+     "d_palette": true,
+     "e_hand": true
     },
-    "room": {
-     "mean": 0.135,
-     "p95": 0.2313,
-     "loud": 0.0
+    "plate_pass": true,
+    "room_ref": {
+     "source": "ring NOW occupied glass p95 (live cells)",
+     "value": 51.1
     },
-    "backdrop_visible": {
-     "mean": 0.0999,
-     "p95": 0.2174,
-     "loud": 0.0
-    },
-    "room_detail": {
-     "detail_rms": 0.0414,
-     "detail_rel": 0.3088,
-     "sat": 0.4205,
-     "pink_share": 0.0,
-     "luma_mean": 0.134,
-     "luma_p99": 0.2849
-    },
-    "board_vs_room": {
-     "mean_ratio": 1.624,
-     "p95_ratio": 1.795,
-     "loud_ratio": 123.1
-    }
+    "value_order": [
+     {
+      "family": "SEND IT",
+      "p95": 98.2,
+      "median": 59.4,
+      "mean": 68.1,
+      "px": 23949
+     },
+     {
+      "family": "T HOT marks",
+      "p95": 94.2,
+      "median": 37.9,
+      "mean": 52.7,
+      "px": 9951
+     },
+     {
+      "family": "P tower",
+      "p95": 89.5,
+      "median": 53.8,
+      "mean": 56.6,
+      "px": 129107
+     },
+     {
+      "family": "S HUD",
+      "p95": 87.2,
+      "median": 3.9,
+      "mean": 36.9,
+      "px": 293038
+     },
+     {
+      "family": "E token discs",
+      "p95": 84.9,
+      "median": 11.7,
+      "mean": 46.2,
+      "px": 25636
+     },
+     {
+      "family": "P hand (rest)",
+      "p95": 83.1,
+      "median": 45.1,
+      "mean": 56.6,
+      "px": 200145
+     },
+     {
+      "family": "K clock (tape, sweep, plates)",
+      "p95": 70.6,
+      "median": 47.8,
+      "mean": 46.6,
+      "px": 38807
+     },
+     {
+      "family": "E cells occupied (glass)",
+      "p95": 45.3,
+      "median": 37.4,
+      "mean": 38.2,
+      "px": 62785
+     },
+     {
+      "family": "room",
+      "p95": 37.9,
+      "median": 31.4,
+      "mean": 32.0,
+      "px": 263475
+     },
+     {
+      "family": "room as seen (scrim kept, info)",
+      "p95": 37.8,
+      "median": 30.7,
+      "mean": 30.1,
+      "px": 323620
+     },
+     {
+      "family": "E cells empty (glass)",
+      "p95": 19.7,
+      "median": 15.0,
+      "mean": 15.7,
+      "px": 53199
+     }
+    ],
+    "failures": [],
+    "cap_fails": 0,
+    "palette_fails": []
    }
   }
  },
  "real_render_vs_composite": {
-  "note": "p1 rendered by the corp/src generator with r2_ground.grade swapped for bd_grade (bd_verify.py), vs the published p1_<room>.png; 0-255 units",
-  "rooms": {
-   "bio": {
-    "room": "bio",
-    "mean_abs": 0.10100485384464264,
-    "p999": 1.0,
-    "max": 2.0,
-    "secs": 163
-   },
-   "event": {
-    "room": "event",
-    "mean_abs": 0.10424880683422089,
-    "p999": 1.0,
-    "max": 2.0,
-    "secs": 185
-   }
+  "p1_bio": {
+   "real": "p1_decide.png",
+   "mean_abs": 0.125,
+   "p999": 1.0,
+   "max": 2.0
+  },
+  "p1_bio_solace": {
+   "real": "p1_decide_solace.png",
+   "mean_abs": 0.112,
+   "p999": 1.0,
+   "max": 2.0
+  },
+  "p1_shop_meridian": {
+   "real": "p1_decide_meridian.png",
+   "mean_abs": 0.107,
+   "p999": 1.0,
+   "max": 2.0
   }
  },
  "targets": {
-  "room_squint_mean": "0.13-0.14 (was 0.17-0.20)",
-  "room_loud": "0 %",
-  "room_p95": "<= 0.25",
-  "board_vs_room_mean_ratio": ">= 1.55",
-  "detail_rel_retained": ">= 0.80 of before",
-  "sat": "within 0.05 of before (capped at 0.44)",
-  "pink_share": "< 0.1 %"
+  "room_mean": "L* 28-34 (rb_checks room region)",
+  "room_p95": "+1 <= ring-NOW occupied glass p95 of the plate",
+  "pink": "room pink share < 0.1 %",
+  "rb_checks": "a-e pass on every plate"
  },
  "pass": {
   "p1_bio": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_srv": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_gh": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_rec": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_lobby": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_event": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_shop": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
   "p1_bio_solace": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   },
-  "p1_bio_meridian": {
-   "room_mean": true,
-   "room_loud": true,
-   "room_p95": true,
-   "board_vs_room": true,
-   "detail_rel": true,
-   "sat": true,
+  "p1_shop_meridian": {
+   "room_mean_28_34": true,
+   "room_p95_below_ref": true,
    "pink": true,
-   "board_unchanged": true
+   "rb_checks_all": true
   }
  },
  "all_pass": true

@@ -1,4 +1,11 @@
 {
+ "version": "port-2",
+ "doc": "GODOT_PORT_SPEC.md 4.8 / 6.2; written by port/src/bake_cards.py, do not edit by hand",
+ "sources": {
+  "corp/src/card_render.py": "7603fd56141bb72dffd0bba9ab3c8058",
+  "final/card_sheet.jpg": "87a5a6da7d076291a3fe8b481e80e200"
+ },
+ "note_snapshot": "cards/src_snapshot/card_render.py md5 b8a435c4aa055c85d45f4c42c8ac10ae is the card session's older snapshot (before the stage-2 NO RAM and rules-wrap change); the atlas follows corp/src",
  "size_px": 352,
  "scale_vs_design": 2.0,
  "margin_px": 36,
@@ -6,39 +13,130 @@
   424,
   572
  ],
- "anchors_design_px": {
-  "title": [
-   87.5,
-   144.5
+ "cols": 4,
+ "design_card": [
+  176,
+  250
+ ],
+ "design_margin": 18,
+ "hand_scale": 1.1,
+ "files": {
+  "cards_art_atlas.png": {
+   "size": [
+    1696,
+    1716
+   ],
+   "md5": "77250b4c0d4d006b9cbb87959eda875c",
+   "alpha_px": 2105609
+  },
+  "cards_ref_atlas.png": {
+   "size": [
+    1696,
+    1716
+   ],
+   "md5": "57f8431fd7bd068814521f9cf3393267",
+   "alpha_px": 2105422
+  },
+  "cards_liner_atlas.png": {
+   "size": [
+    1696,
+    1716
+   ],
+   "md5": "f1748b8fba783add5c009f471a553276",
+   "alpha_px": 1860256
+  }
+ },
+ "fonts": {
+  "ANTON": "Anton-Regular.ttf",
+  "PLEX": "IBMPlexSansCondensed-Medium.ttf",
+  "MONO": "ShareTechMono-Regular.ttf"
+ },
+ "rules": {
+  "px": 21.0,
+  "fit_w": 124.0,
+  "cx": 80.0,
+  "ly1": [
+   206.0
   ],
-  "type_word": [
-   85.5,
-   174.4
+  "ly2": [
+   200.0,
+   221.5
   ],
-  "rules": [
-   80,
-   206
+  "bar_band": {
+   "0": [
+    11.5,
+    18.5
+   ],
+   "1": [
+    13.0,
+    20.0
+   ]
+  },
+  "bar_colour": "#FF3DA8",
+  "wrap": "a text wider than fit_w wraps at the word break giving the narrowest longest line (card_render.rules_lines)"
+ },
+ "no_ram": {
+  "word": "NO RAM",
+  "px": 17.0,
+  "track": -0.5,
+  "tab_design_px": [
+   32.0,
+   92.5,
+   10.0,
+   30.0
   ],
-  "cost": [
-   21.5,
-   22.2
-  ],
-  "trace": [
-   133,
-   17.6
-  ],
-  "mult": [
-   139,
-   107
-  ],
-  "played_name": [
-   88,
-   159
-  ],
-  "played_word": [
-   88,
-   181
+  "vis_x0": 42.5,
+  "cx": 67.2,
+  "cost_c": [
+   21.0,
+   21.0
   ]
+ },
+ "liner": {
+  "tear": 1.7,
+  "rim": 2.2,
+  "fill": [
+   "#15121A",
+   0.86
+  ],
+  "paper_v": 0.62,
+  "word_px": 21.0,
+  "word_v": [
+   0.62,
+   0.74
+  ]
+ },
+ "state_recipes": {
+  "unaffordable_dim": {
+   "file": "corp/src/card_render.py",
+   "line": 1022,
+   "n_lines": 13,
+   "source": "def _unaffordable(im):\n    \"\"\"dim glass: value x0.5, chroma x0.4, two flat glass planes.  draw_card then lays unaffordable_marks() on top at full value\n    (cost badge, padlock, NO RAM tab), so the state is told by a glyph and a word, not only by the dim.\"\"\"\n    a = np.asarray(im).astype(np.float32)\n    rgb, al = a[..., :3], a[..., 3:]\n    g = rgb.mean(-1, keepdims=True)\n    rgb = (g + (rgb - g) * 0.40) * 0.55 + np.array([8, 6, 14], np.float32) * 0.45\n    H, W = al.shape[:2]\n    y, x = np.mgrid[0:H, 0:W].astype(np.float32)\n    u = (x + y * 0.55) / W\n    gl = ((u > 0.42) & (u < 0.62)).astype(np.float32) * 0.10 + ((u > 0.70) & (u < 0.76)).astype(np.float32) * 0.08\n    rgb = rgb + gl[..., None] * (255 - rgb)\n    return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), al]).astype(np.uint8), 'RGBA')\n"
+  },
+  "unaffordable_marks": {
+   "file": "corp/src/card_render.py",
+   "line": 809,
+   "n_lines": 16,
+   "source": "def unaffordable_marks(R, spec, nowords):\n    \"\"\"AD review 3.3 (2026-11-03): the unaffordable state is told by marks, not only by the dim glass.  Drawn at full value over the\n    dimmed card: the cost badge again (it is the reason), a padlock on the badge's lower right, and a 'NO RAM' tab beside it\n    (ink plate, RAM cyan word).  nowords: the lock only.\"\"\"\n    cv = Cv(R)\n    if not nowords:\n        # the tab runs out from under the cost badge (its left end is hidden by the badge) and stops short of the +Trace tab\n        x0, x1, y0, y1 = NO_RAM_TAB\n        tab = poly(cv, [(x0, y0 + 1.0), (x1, y0 - 1.0), (x1 + 2.0, y1 - 1.0), (x0 + 2.0, y1 + 1.0)])\n        cv.paint(extrude(cv, grow(cv, tab, 1.8), 2.2, 2.8), INK)\n        cv.paint(grow(cv, tab, 1.8), INK)\n        cv.paint(tab, hx('1C1830'))\n        cv.paint(text(cv, NO_RAM, no_ram_cx(), (y0 + y1) / 2, NO_RAM_PX, ANTON, NO_RAM_TRACK, 0.0, -1.5), CYAN_HI)\n    cost_badge(cv, spec, nowords)\n    lock_glyph(cv, COST_C[0] + 17.5, COST_C[1] + 21.0, 1.15)     # on the badge's lower-right edge, clear of the digit\n    return cv.img()\n"
+  },
+  "lock_glyph": {
+   "file": "corp/src/card_render.py",
+   "line": 783,
+   "n_lines": 13,
+   "source": "def lock_glyph(cv, x, y, s=1.0):\n    \"\"\"padlock: bone body with a keyhole, ink shackle, ink keyline + hard drop.  (x, y) = body centre, s = scale (body 15 x 12)\"\"\"\n    body = poly(cv, [(x - 7.5 * s, y - 5.5 * s), (x + 7.5 * s, y - 5.5 * s), (x + 7.5 * s, y + 6.5 * s), (x - 7.5 * s, y + 6.5 * s)])\n    sh = np.zeros_like(body)\n    pts = [(x + 4.6 * s * math.cos(math.radians(a)), y - 5.5 * s - 5.6 * s * math.sin(math.radians(a))) for a in range(0, 181, 10)]\n    sh = stroke(cv, [(x + 4.6 * s, y - 4.0 * s)] + pts + [(x - 4.6 * s, y - 4.0 * s)], 3.0 * s, cap=False)\n    allm = np.maximum(body, sh)\n    cv.paint(extrude(cv, grow(cv, allm, 1.6), 1.8, 2.2), INK)\n    cv.paint(grow(cv, allm, 1.6), INK)\n    cv.paint(sh * (1 - body), hx('C9C2B0'))\n    cv.paint(body, WHITE)\n    kh = np.maximum(circle(cv, x, y - 0.4 * s, 2.0 * s), poly(cv, [(x - 1.0 * s, y), (x + 1.0 * s, y), (x + 1.5 * s, y + 4.0 * s), (x - 1.5 * s, y + 4.0 * s)]))\n    cv.paint(kh, INK)\n"
+  },
+  "liner": {
+   "file": "corp/src/card_render.py",
+   "line": 1048,
+   "n_lines": 19,
+   "source": "def _liner(R, nowords, spec):\n    cv = Cv(R)\n    seed = sum(ord(c) for c in spec['name'])\n    rect_ = [(3, 3), (CW - 3, 3), (CW - 3, CH - 3), (3, CH - 3)]\n    torn = poly(cv, jag(cv, rect_, LINER_TEAR, seed, n=5))\n    body =np.clip(1.0 - grow(cv, 1.0 - torn, LINER_RIM), 0, 1)          # the torn shape shrunk by the rim width\n    cv.paint(torn, LINER_FILL[0], LINER_FILL[1])\n    paper = np.array([0xF2, 0xEE, 0xE4], np.float32) / 255.0\n    rim = np.clip(torn - body, 0, 1)\n    cv.paint(rim, paper * LINER_PAPER_V)\n    fib = np.clip(body - np.clip(1.0 - grow(cv, 1.0 - body, 1.0), 0, 1), 0, 1)                  # fibre edge just inside the tear\n    cv.paint(fib * (halftone(cv, np.full_like(fib, 0.35), 2.6, 30) > 0.5), paper * LINER_PAPER_V, 0.55)\n    gm = glyph(cv, spec['g'], 54, CW / 2, CH / 2 - 14)\n    cv.paint(gm, paper * 0.46)\n    if not nowords:\n        # O-29 fix 4 kept: the played slot keeps the card name above PLAYED, mono small caps\n        cv.paint(text(cv, spec['nm'], CW / 2, CH / 2 + 32, LINER_WORD_PX, MONO, 1.0), paper * LINER_WORD_V[0])\n        cv.paint(text(cv, 'PLAYED', CW / 2, CH / 2 + 58, LINER_WORD_PX, MONO, 1.0), paper * LINER_WORD_V[1])\n    return cv.img()\n"
+  },
+  "draw_card": {
+   "file": "corp/src/card_render.py",
+   "line": 1069,
+   "n_lines": 47,
+   "source": "def draw_card(card, size, state='normal'):\n    spec = _spec(card)\n    if isinstance(state, str):\n        state = dict(mode=state)\n    mode = state.get('mode', 'normal')\n    nowords = bool(state.get('nowords')) or mode == 'nowords'\n    w = size[0] if isinstance(size, (tuple, list)) else size\n    s = w / CW\n    ss = 3 if s <= 1.5 else 2\n    R = s * ss\n    ck = (spec['name'], nowords, round(R, 3), json.dumps({k: spec[k] for k in ('cost', 'loud', 'txt', 'nm', 'fam')}))\n    if mode == 'played':\n        im = _liner(R, nowords, spec)\n    else:\n        if ck not in _BASE:\n            if len(_BASE) > 40:\n                _BASE.clear()\n            _BASE[ck] = render_base(spec, nowords, R).img()\n        im = _BASE[ck].copy()\n        if mode == 'hover':\n            # pink misregistered print behind the lifted card (silhouette incl. its drop), hard longer drop under it\n            a = np.asarray(im)[..., 3].astype(np.float32) / 255.0\n            sil = (a > 0.5).astype(np.float32)\n            pk = ndi.shift(sil, (6 * R, -9 * R), order=0)\n            sh = ndi.shift(sil, (11 * R, 7 * R), order=0)\n            H, W = sil.shape\n            base = np.zeros((H, W, 4), np.float32)\n            base[..., :3] = np.array([8, 6, 14])\n            base[..., 3] = sh * 0.55 * 255\n            pkl = np.zeros((H, W, 4), np.float32); pkl[..., :3] = np.array([255, 61, 168]); pkl[..., 3] = pk * 255\n            comp = Image.fromarray(base.astype(np.uint8), 'RGBA')\n            comp.alpha_composite(Image.fromarray(pkl.astype(np.uint8), 'RGBA'))\n            comp.alpha_composite(im)\n            im = comp\n        elif mode == 'unaffordable':\n            im = _unaffordable(im)\n            im.alpha_composite(unaffordable_marks(R, spec, nowords))\n        elif state.get('dim'):\n            im = _post_dim(im, float(state['dim']))\n    out_w = int(round((CW + 2 * MARGIN) * s)); out_h = int(round((CH + 2 * MARGIN) * s))\n    if mode == 'played':\n        im = im.resize((out_w, out_h), Image.LANCZOS)\n    else:\n        im = im.resize((out_w, out_h), Image.LANCZOS)\n    if not isinstance(size, (tuple, list)):\n        pass\n    return im\n"
+  }
  },
  "cards": [
   {
@@ -56,40 +154,224 @@
    "trace": 0,
    "mult": "1",
    "style": "benday",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "PI_SPIN_CW",
+   "rules_lines": [
+    {
+     "line": "Turn the",
+     "y": 200.0,
+     "w": 73.125
+    },
+    {
+     "line": "tower 1",
+     "y": 221.5,
+     "w": 66.25
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      42.875,
+      236.5
+     ],
+     [
+      119.125,
+      234.5
+     ],
+     [
+      117.125,
+      239.5
+     ],
+     [
+      40.875,
+      241.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      121.8,
+      509.0
+     ],
+     [
+      274.2,
+      505.0
+     ],
+     [
+      270.2,
+      515.0
+     ],
+     [
+      117.8,
+      519.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "\u00d71",
+     "x": 139.0,
+     "y": 107.0,
+     "px": 30.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.5,
+     "skew": 0.0,
+     "rot": -3.0,
+     "colour": "#FBFAF4",
+     "role": "mult",
+     "cell_px": [
+      314.0,
+      250.0
+     ]
+    },
+    {
+     "txt": "NUDGE",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "TOWER",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#FBFAF4",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Turn the",
+     "x": 80.0,
+     "y": 200.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      436.0
+     ]
+    },
+    {
+     "txt": "tower 1",
+     "x": 80.0,
+     "y": 221.5,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      479.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "NUDGE",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Spin2",
@@ -106,40 +388,224 @@
    "trace": 0,
    "mult": "2",
    "style": "benday",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "PI_SPIN_CW",
+   "rules_lines": [
+    {
+     "line": "Turn the",
+     "y": 200.0,
+     "w": 73.125
+    },
+    {
+     "line": "tower 2",
+     "y": 221.5,
+     "w": 66.25
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      42.875,
+      236.5
+     ],
+     [
+      119.125,
+      234.5
+     ],
+     [
+      117.125,
+      239.5
+     ],
+     [
+      40.875,
+      241.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      121.8,
+      509.0
+     ],
+     [
+      274.2,
+      505.0
+     ],
+     [
+      270.2,
+      515.0
+     ],
+     [
+      117.8,
+      519.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "\u00d72",
+     "x": 139.0,
+     "y": 107.0,
+     "px": 30.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.5,
+     "skew": 0.0,
+     "rot": -3.0,
+     "colour": "#FBFAF4",
+     "role": "mult",
+     "cell_px": [
+      314.0,
+      250.0
+     ]
+    },
+    {
+     "txt": "SPIN 2",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "TOWER",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#FBFAF4",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Turn the",
+     "x": 80.0,
+     "y": 200.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      436.0
+     ]
+    },
+    {
+     "txt": "tower 2",
+     "x": 80.0,
+     "y": 221.5,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      479.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "SPIN 2",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Spin3",
@@ -156,40 +622,224 @@
    "trace": 0,
    "mult": "3",
    "style": "benday",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "PI_SPIN_CW",
+   "rules_lines": [
+    {
+     "line": "Turn the",
+     "y": 200.0,
+     "w": 73.125
+    },
+    {
+     "line": "tower 3",
+     "y": 221.5,
+     "w": 66.25
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      42.875,
+      236.5
+     ],
+     [
+      119.125,
+      234.5
+     ],
+     [
+      117.125,
+      239.5
+     ],
+     [
+      40.875,
+      241.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      121.8,
+      509.0
+     ],
+     [
+      274.2,
+      505.0
+     ],
+     [
+      270.2,
+      515.0
+     ],
+     [
+      117.8,
+      519.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "\u00d73",
+     "x": 139.0,
+     "y": 107.0,
+     "px": 30.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.5,
+     "skew": 0.0,
+     "rot": -3.0,
+     "colour": "#FBFAF4",
+     "role": "mult",
+     "cell_px": [
+      314.0,
+      250.0
+     ]
+    },
+    {
+     "txt": "SPIN 3",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "TOWER",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#FBFAF4",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Turn the",
+     "x": 80.0,
+     "y": 200.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      436.0
+     ]
+    },
+    {
+     "txt": "tower 3",
+     "x": 80.0,
+     "y": 221.5,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      479.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "SPIN 3",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Brace",
@@ -206,40 +856,187 @@
    "trace": 0,
    "mult": null,
    "style": "linocut",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_BRACE",
+   "rules_lines": [
+    {
+     "line": "Block a slice",
+     "y": 206.0,
+     "w": 108.375
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      21.812,
+      219.5
+     ],
+     [
+      140.188,
+      217.5
+     ],
+     [
+      138.188,
+      222.5
+     ],
+     [
+      19.812,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      79.6,
+      475.0
+     ],
+     [
+      316.4,
+      471.0
+     ],
+     [
+      312.4,
+      481.0
+     ],
+     [
+      75.6,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "BRACE",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "TOWER",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#FBFAF4",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Block a slice",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "BRACE",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Strike",
@@ -256,40 +1053,187 @@
    "trace": 0,
    "mult": null,
    "style": "collage",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_STRIKE",
+   "rules_lines": [
+    {
+     "line": "Hit a unit for 2",
+     "y": 206.0,
+     "w": 123.875
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      14.062,
+      219.5
+     ],
+     [
+      147.938,
+      217.5
+     ],
+     [
+      145.938,
+      222.5
+     ],
+     [
+      12.062,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      64.1,
+      475.0
+     ],
+     [
+      331.9,
+      471.0
+     ],
+     [
+      327.9,
+      481.0
+     ],
+     [
+      60.1,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "STRIKE",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "TOWER",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#FBFAF4",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Hit a unit for 2",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "STRIKE",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Firewall",
@@ -306,40 +1250,203 @@
    "trace": 2,
    "mult": null,
    "style": "mural",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "BURN",
+   "rules_lines": [
+    {
+     "line": "Burn 2 units",
+     "y": 206.0,
+     "w": 105.5
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      23.25,
+      219.5
+     ],
+     [
+      138.75,
+      217.5
+     ],
+     [
+      136.75,
+      222.5
+     ],
+     [
+      21.25,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      82.5,
+      475.0
+     ],
+     [
+      313.5,
+      471.0
+     ],
+     [
+      309.5,
+      481.0
+     ],
+     [
+      78.5,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "FIREWALL",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 34.25,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Burn 2 units",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "2",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    },
+    {
+     "txt": "+2",
+     "x": 133.0,
+     "y": 17.6,
+     "px": 21.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#FBFAF4",
+     "role": "trace",
+     "cell_px": [
+      302.0,
+      71.2
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "FIREWALL",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "2",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Pull",
@@ -356,40 +1463,203 @@
    "trace": 1,
    "mult": null,
    "style": "linocut",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_PULL",
+   "rules_lines": [
+    {
+     "line": "Pull a unit in",
+     "y": 206.0,
+     "w": 108.0
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      22.0,
+      219.5
+     ],
+     [
+      140.0,
+      217.5
+     ],
+     [
+      138.0,
+      222.5
+     ],
+     [
+      20.0,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      80.0,
+      475.0
+     ],
+     [
+      316.0,
+      471.0
+     ],
+     [
+      312.0,
+      481.0
+     ],
+     [
+      76.0,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "PULL",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Pull a unit in",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    },
+    {
+     "txt": "+1",
+     "x": 133.0,
+     "y": 17.6,
+     "px": 21.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#FBFAF4",
+     "role": "trace",
+     "cell_px": [
+      302.0,
+      71.2
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "PULL",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Shove",
@@ -406,40 +1676,203 @@
    "trace": 2,
    "mult": null,
    "style": "collage",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_SHOVE",
+   "rules_lines": [
+    {
+     "line": "Slide a unit 1",
+     "y": 206.0,
+     "w": 113.0
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      19.5,
+      219.5
+     ],
+     [
+      142.5,
+      217.5
+     ],
+     [
+      140.5,
+      222.5
+     ],
+     [
+      17.5,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      75.0,
+      475.0
+     ],
+     [
+      321.0,
+      471.0
+     ],
+     [
+      317.0,
+      481.0
+     ],
+     [
+      71.0,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "SHOVE",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Slide a unit 1",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "2",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    },
+    {
+     "txt": "+2",
+     "x": 133.0,
+     "y": 17.6,
+     "px": 21.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#FBFAF4",
+     "role": "trace",
+     "cell_px": [
+      302.0,
+      71.2
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "SHOVE",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "2",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Twist",
@@ -456,40 +1889,208 @@
    "trace": 0,
    "mult": null,
    "style": "mural",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_TWIST",
+   "rules_lines": [
+    {
+     "line": "Turn one",
+     "y": 200.0,
+     "w": 76.875
+    },
+    {
+     "line": "ring 1",
+     "y": 221.5,
+     "w": 49.5
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      51.25,
+      236.5
+     ],
+     [
+      110.75,
+      234.5
+     ],
+     [
+      108.75,
+      239.5
+     ],
+     [
+      49.25,
+      241.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      138.5,
+      509.0
+     ],
+     [
+      257.5,
+      505.0
+     ],
+     [
+      253.5,
+      515.0
+     ],
+     [
+      134.5,
+      519.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "TWIST",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Turn one",
+     "x": 80.0,
+     "y": 200.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      436.0
+     ]
+    },
+    {
+     "txt": "ring 1",
+     "x": 80.0,
+     "y": 221.5,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      479.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "TWIST",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Hold",
@@ -506,40 +2107,208 @@
    "trace": 0,
    "mult": null,
    "style": "xerox",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_HOLD",
+   "rules_lines": [
+    {
+     "line": "Pause",
+     "y": 200.0,
+     "w": 53.25
+    },
+    {
+     "line": "the wave",
+     "y": 221.5,
+     "w": 78.75
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      36.625,
+      236.5
+     ],
+     [
+      125.375,
+      234.5
+     ],
+     [
+      123.375,
+      239.5
+     ],
+     [
+      34.625,
+      241.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      109.2,
+      509.0
+     ],
+     [
+      286.8,
+      505.0
+     ],
+     [
+      282.8,
+      515.0
+     ],
+     [
+      105.2,
+      519.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "HOLD",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Pause",
+     "x": 80.0,
+     "y": 200.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      436.0
+     ]
+    },
+    {
+     "txt": "the wave",
+     "x": 80.0,
+     "y": 221.5,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      479.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "HOLD",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "0",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   },
   {
    "id": "Trigger",
@@ -556,40 +2325,203 @@
    "trace": 1,
    "mult": null,
    "style": "jinx",
-   "anchors_cell_px": {
-    "title": [
-     211.0,
-     325.0
+   "glyph": "C_TRIG",
+   "rules_lines": [
+    {
+     "line": "Resolve a unit",
+     "y": 206.0,
+     "w": 122.125
+    }
+   ],
+   "rules_bar": {
+    "quad_design_px": [
+     [
+      14.938,
+      219.5
+     ],
+     [
+      147.062,
+      217.5
+     ],
+     [
+      145.062,
+      222.5
+     ],
+     [
+      12.938,
+      224.5
+     ]
     ],
-    "type_word": [
-     207.0,
-     384.8
-    ],
-    "rules": [
-     196.0,
-     448.0
-    ],
-    "cost": [
-     79.0,
-     80.4
-    ],
-    "trace": [
-     302.0,
-     71.2
-    ],
-    "mult": [
-     314.0,
-     250.0
-    ],
-    "played_name": [
-     212.0,
-     354.0
-    ],
-    "played_word": [
-     212.0,
-     398.0
+    "colour": "#FF3DA8",
+    "quad_cell_px": [
+     [
+      65.9,
+      475.0
+     ],
+     [
+      330.1,
+      471.0
+     ],
+     [
+      326.1,
+      481.0
+     ],
+     [
+      61.9,
+      485.0
+     ]
     ]
-   }
+   },
+   "texts": [
+    {
+     "txt": "TRIGGER",
+     "x": 87.5,
+     "y": 144.5,
+     "px": 38.0,
+     "font": "Anton-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": -2.0,
+     "colour": "#FBFAF4",
+     "role": "title",
+     "cell_px": [
+      211.0,
+      325.0
+     ]
+    },
+    {
+     "txt": "WAVE",
+     "x": 85.5,
+     "y": 174.4,
+     "px": 19.0,
+     "font": "Anton-Regular.ttf",
+     "track": 2.2,
+     "skew": 0.0,
+     "rot": -1.2,
+     "colour": "#15121A",
+     "role": "type_word",
+     "cell_px": [
+      207.0,
+      384.8
+     ]
+    },
+    {
+     "txt": "Resolve a unit",
+     "x": 80.0,
+     "y": 206.0,
+     "px": 21.0,
+     "font": "IBMPlexSansCondensed-Medium.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": -0.8,
+     "colour": "#15121A",
+     "role": "rules",
+     "cell_px": [
+      196.0,
+      448.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    },
+    {
+     "txt": "+1",
+     "x": 133.0,
+     "y": 17.6,
+     "px": 21.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#FBFAF4",
+     "role": "trace",
+     "cell_px": [
+      302.0,
+      71.2
+     ]
+    }
+   ],
+   "liner_texts": [
+    {
+     "txt": "TRIGGER",
+     "x": 88.0,
+     "y": 157.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#96948D",
+     "role": "played_name",
+     "cell_px": [
+      212.0,
+      350.0
+     ]
+    },
+    {
+     "txt": "PLAYED",
+     "x": 88.0,
+     "y": 183.0,
+     "px": 21.0,
+     "font": "ShareTechMono-Regular.ttf",
+     "track": 1.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#B3B0A9",
+     "role": "played_word",
+     "cell_px": [
+      212.0,
+      402.0
+     ]
+    }
+   ],
+   "unaffordable_texts": [
+    {
+     "txt": "NO RAM",
+     "x": 67.2,
+     "y": 20.0,
+     "px": 17.0,
+     "font": "Anton-Regular.ttf",
+     "track": -0.5,
+     "skew": 0.0,
+     "rot": -1.5,
+     "colour": "#5CE1FF",
+     "role": "no_ram",
+     "cell_px": [
+      170.4,
+      76.0
+     ]
+    },
+    {
+     "txt": "1",
+     "x": 21.5,
+     "y": 22.2,
+     "px": 27.0,
+     "font": "Anton-Regular.ttf",
+     "track": 0.0,
+     "skew": 0.0,
+     "rot": 0.0,
+     "colour": "#15121A",
+     "role": "cost",
+     "cell_px": [
+      79.0,
+      80.4
+     ]
+    }
+   ]
   }
  ]
 }

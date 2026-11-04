@@ -34,6 +34,8 @@ NAMES = {'card': 'TRIGGER HITS', 'daemon': 'KILL ADJUSTER', 'heat': 'TRACE LOW',
 PX0, PX1 = 1072, 1896        # column x1072..1896 (BRIEF 3.11 rule 14)
 OBJ_H, RES_H = 48, 50        # budget: p1 stack bottom <= y384 -> 278 + 48 + 8 + 50 = 384
 TRK = 0.08                   # mono caps tracking (type ladder)
+LBL_PX, WIN_PX = 18, 22      # mono label / WIN size (rb_patch sets the rebuild's 23 / 23: cap 16.1)
+OBJ_MIN_GAP = 0              # objectives row: below this gap per challenge the row wraps to the 2 x 2 grid (rb_patch: 22)
 
 
 def v(k):
@@ -218,21 +220,21 @@ def el_star(L, x, cy, state, big):
 
 # ------------------------------------------------------------------------------------------------------ win_label (A: mono 22 reward gold +10 percent; AD overruled B)
 def win_w(L):
-    return ttw(L, 'WIN', 22, 'mono', 0.10)
+    return ttw(L, 'WIN', WIN_PX, 'mono', 0.10)
 
 
 def el_win_label(L, x, cy):
-    txt(L, x, cy, 'WIN', 22, RGOLD, track=0.10)
+    txt(L, x, cy, 'WIN', WIN_PX, RGOLD, track=0.10)
     return x + win_w(L)
 
 
 # ------------------------------------------------------------------------------------------------------ challenge labels / tallies
 def ch_w(L, name):
-    return ttw(L, NAMES[name], 18, 'mono', TRK)
+    return ttw(L, NAMES[name], LBL_PX, 'mono', TRK)
 
 
 def ch_label(L, x, cy, name):
-    txt(L, x, cy, NAMES[name], 18, THI, track=TRK)
+    txt(L, x, cy, NAMES[name], LBL_PX, THI, track=TRK)
 
 
 TW, TH, TP, TG = 7, 15, 10, 14        # capsule w, h, pitch, group gap (bill tally geometry; group gap tighter than the bill's 16 to fit the row)
@@ -312,9 +314,6 @@ def trig_tally(L, x, cy, n, tot):
 def objectives_row(L, f, y):
     chs = [dict(c) for c in f['challenges']]
     win_state = f.get('win_state', 'open')
-    two = len(chs) > 3                      # the 4th challenge (LATENT TRIGGER HITS) wraps to a 2 x 2 grid
-    H = 84 if two else OBJ_H
-    box = (PX0, y, PX1, y + H)
     xa, xb = PX0 + 16, PX1 - 16
     ww = win_w(L)
     wcell = star_w(True, win_state) + 10 + ww
@@ -323,6 +322,10 @@ def objectives_row(L, f, y):
         c['lw'] = ch_w(L, c['name'])
         c['tw'] = tally_w(f, c['name'])
         c['w'] = star_w(False, c['state']) + 7 + c['lw'] + ((10 + c['tw']) if c['tw'] else 0)
+    # the 4th challenge (LATENT TRIGGER HITS) wraps to a 2 x 2 grid; so does a row whose gaps would fall under OBJ_MIN_GAP (2026-11-03: 23 px labels)
+    two = len(chs) > 3 or (sum(c['w'] for c in chs) + len(chs) * OBJ_MIN_GAP > xb - xdiv)
+    H = 84 if two else OBJ_H
+    box = (PX0, y, PX1, y + H)
     el_obj_frame(L, box, (xa - 10, xdiv - 7))
     reg('obj_plate', box)
     cyw = y + H / 2
@@ -551,11 +554,11 @@ def pop_rays(L, cx, cy, d=24):
 
 # ---- resources row ----------------------------------------------------------------------------------------------
 def res_label_w(L, s):
-    return ttw(L, s, 18, 'mono', TRK)
+    return ttw(L, s, LBL_PX, 'mono', TRK)
 
 
 def el_res_label(L, x, cy, s, col=TMID):
-    txt(L, x, cy, s, 18, col, track=TRK)
+    txt(L, x, cy, s, LBL_PX, col, track=TRK)
 
 
 def el_res_frame(L, box, bays):

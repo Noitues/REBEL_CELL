@@ -11,6 +11,7 @@ import a2_glyphs as GLY
 from a2_stick import kit_plate
 
 PTHREAT = (255, 28, 44)
+REFUND_PX, REFUND_W, REFUND_H = 18, 94, 26     # the REFUND tag (rb_patch sets the rebuild's 23 px mono: cap 16.1)
 HARM_C = (255, 68, 51)
 
 
@@ -82,10 +83,11 @@ def refund_place(L, f, opt='A', tok='A', words=True):
     u = [u for u in f['units'] if u['id'] == kl['uid']][0]
     tp0 = token_pos(u)
 
-    def tagbox(cx, cy, w=94):
-        kit_plate(L, (cx - w / 2, cy - 13, cx + w / 2, cy + 13), CYAN, 2, 6)
+    def tagbox(cx, cy, w=None):
+        w = w or REFUND_W
+        kit_plate(L, (cx - w / 2, cy - REFUND_H / 2, cx + w / 2, cy + REFUND_H / 2), CYAN, 2, 6)
         if words:
-            L.text((cx, cy + 1), 'REFUND', 18, 'mono', fill=CYAN)
+            L.text((cx, cy + 1), 'REFUND', REFUND_PX, 'mono', fill=CYAN)
     if opt == 'A':          # on the cell's open stretch, clear of the pencil X and the dead token; tag under it
         x, y = ppx(C, rmid(0) - 1, 203)
         refund_token(L, x, y, 44, tok)

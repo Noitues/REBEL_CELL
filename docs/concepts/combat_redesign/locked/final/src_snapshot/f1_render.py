@@ -81,6 +81,7 @@ WCR.sel_for = _sel_for
 GR.WCR.sel_for = _sel_for
 
 _tw = {}
+SPLIT = {}          # see _render: {'on': True} -> SPLIT['below'] (RGBA board), SPLIT['above'] (RGBA HUD + hand + stickers)
 
 
 def tower_img(f, tag, skip=None, hot=True, hov_sectors=None, nw=False, trim=True):
@@ -235,6 +236,12 @@ def _render(beat='p1', key=None, room=None, hover_unit=None, lift=None, with_ui=
         A.H2.hover_cell(Lh, f, 'A', w=A.K2.FB_W)
         A.M2.ring_tags(Lh, f, 'P')
         bg.alpha_composite(Lh.done())
+    # 2026-11-04 (review 1.6, ART_BIBLE 6.4 layer order): SPLIT['on'] keeps the board (room, scrim, board, tower, units, arcs, guns, labels,
+    # tags, digits) as SPLIT['below'] and everything drawn from the HUD up (HUD, YOU strip, hand, UNDO, nameplate, SEND IT, hover tag) as the
+    # transparent SPLIT['above'], so the X effect layer can sit between them (FX world layer under the HUD and the hand).  Off for plates.
+    if SPLIT.get('on'):
+        SPLIT['below'] = bg.copy()
+        bg = Image.new('RGBA', bg.size, (0, 0, 0, 0))
     bg.alpha_composite(Lhud.done())
     if extra:
         extra(bg, f)
@@ -261,6 +268,11 @@ def _render(beat='p1', key=None, room=None, hover_unit=None, lift=None, with_ui=
             A.B10.draw_asserts(beat, f)
         except AssertionError as e:
             print('DRAW ASSERT FAIL', beat, str(e)[:200], flush=True)
+    if SPLIT.get('on'):
+        SPLIT['above'] = bg.copy()
+        out = SPLIT['below'].copy()
+        out.alpha_composite(bg)
+        return out.convert('RGB')
     return bg.convert('RGB')
 
 

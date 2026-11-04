@@ -26,6 +26,9 @@ PLAN = (255, 226, 0)
 GAINC = (123, 224, 123)
 LAV = (190, 160, 255)
 RAW62 = tuple(int(c * 0.62) for c in HARM)
+LBL_PX, LBL_TRK = 18, 0.08                       # the one HUD label spec (rb_patch sets the rebuild's 23 / 0.04: cap 16.1)
+SPLIT_LY, SPLIT_YY, SPLIT_GAP, SPLIT_OP = 133, 150, 28, 21    # split row: label y, tally y, gap after a route, operator offset
+TW_XMIN_GAP, CHIP_BAR_DX = 40, 444                # WITHOUT TWIST: min gap after the NEXT tallies; option chip outcome bar x
 SEGW, SEGH, SEGP, SEGG = 7, 15, 10, 16          # tally_segments A: 7x15 r3, group gap 16
 GL = {'Twist': 'KA_twist', 'Trigger': 'KA_trigger', 'Brace': 'KA_brace', 'Hold': 'KA_hold', 'Shove': 'KA_shove', 'Spin2': 'KA_spin2',
       'Spin3': 'KA_spin3', 'Nudge': 'KA_nudge', 'Strike': 'KA_strike', 'Firewall': 'KA_firewall', 'Pull': 'KA_pull'}
@@ -65,7 +68,7 @@ def txt(L, x, y, s, px, col, kind='mono', anchor='lm', track=0.0, alpha=255, str
 
 def tag(L, x, y, s, anchor='lm', alpha=255, col=TMID):
     """the one HUD label spec: mono 18, +8 percent, TEXT_MID (eq_labels / row_tags)."""
-    return txt(L, x, y, s, 18, col, 'mono', anchor, 0.08, alpha)
+    return txt(L, x, y, s, LBL_PX, col, 'mono', anchor, LBL_TRK, alpha)
 
 
 def rowtag(L, x, y, s, al=255, centre=None):
@@ -364,7 +367,7 @@ def hp_tally(L, f, x, y):
     """you_hp_tally A: HP grammar (kept GAIN, lost now HARM + slash, gone = socket), YOU inline.  returns end x"""
     hp, mx, after = f['hp'], f['maxhp'], f['pv']['hp_after']
     w_, h_, p_, gg = 12, 20, 16, 14
-    txt(L, G['ox'] + 8, y, 'YOU', 18, THI, 'mono', 'lm', 0.08)
+    txt(L, G['ox'] + 8, y, 'YOU', LBL_PX, THI, 'mono', 'lm', LBL_TRK)
     pos = tpos(mx, w_, p_, gg)
     for i in range(mx):
         xi = x + pos[i]
@@ -502,7 +505,7 @@ def el_split_row(L, f, y, eq):
     """split_row A: one baseline per row, label above a centred tally, then arrow + destination on the SAME baseline; SOAK label TEXT_MID"""
     sx0, sx1 = G['sx0'], G['sx1']
     inset(L, (sx0, y + 120, sx1, y + 164))
-    ly, yy = y + 133, y + 150
+    ly, yy = y + SPLIT_LY, y + SPLIT_YY
     x = sx0 + 16
     tg = rowtag(L, x, yy, 'SPLIT')
     x += tg + 26
@@ -511,15 +514,15 @@ def el_split_row(L, f, y, eq):
     r0 = x
     for gi, (name, kind, n, rc, dest) in enumerate(groups):
         if gi:
-            opdraw(L, x - 21, yy, '+')
-        lw = ttw(L, name, 18, 'mono', 0.08)
+            opdraw(L, x - SPLIT_OP, yy, '+')
+        lw = ttw(L, name, LBL_PX, 'mono', LBL_TRK)
         bw = max(lw, twidth(n))
         tag(L, x + bw / 2, ly, name, 'mm')
         tally(L, x + (bw - twidth(n)) / 2, yy, kind, n)
         cols[name] = x
         xe = x + bw + 12
         xe = route(L, xe, yy, rc, dest)
-        x = xe + 28
+        x = xe + SPLIT_GAP
     R['_split_cols'] = cols
     reg('split_row', (sx0, y + 120, sx1, y + 164))
     reg('route_arrows', (r0, y + 124, x - 20, y + 164))
@@ -550,19 +553,19 @@ def el_next_row(L, f, y, tw_pay=None):
         e_all = max(e_all, e)
     reg('next_row', (G['sx0'], y + 168, G['sx1'], y + 189))
     if tw_pay:
-        without_twist(L, f, yg, tw_pay, nx, e_all + 40)
+        without_twist(L, f, yg, tw_pay, nx, e_all + TW_XMIN_GAP)
 
 
 def without_twist(L, f, yg, tp, nx, xmin):
     """without_twist_row A: twist disc + label, hollow bad case, PENCIL_PLAN arrow, solid result.  B: bad case struck by a wax line"""
     k = v('without_twist_row')
     wo = tp['without']['taken']
-    lab_w = ttw(L, 'WITHOUT TWIST', 18, 'mono', 0.08)
+    lab_w = ttw(L, 'WITHOUT TWIST', LBL_PX, 'mono', LBL_TRK)
     need = 24 + 8 + lab_w + 14 + wo * SEGP + 10 + 26 + 10 + nx['taken'] * SEGP
     xt = max(xmin, G['sx1'] - 16 - need)
     L.ellipse([xt, yg - 12, xt + 24, yg + 12], fill=(30, 26, 6), outline=PLAN, w=2.2)
     L.glyph(GL['Twist'], 17, (xt + 12, yg), PLAN)
-    x = xt + 32 + txt(L, xt + 32, yg, 'WITHOUT TWIST', 18, PLAN, 'mono', 'lm', 0.08) + 14
+    x = xt + 32 + txt(L, xt + 32, yg, 'WITHOUT TWIST', LBL_PX, PLAN, 'mono', 'lm', LBL_TRK) + 14
     xs0 = x
     for i in range(wo):
         L.rect([x + i * SEGP, yg - SEGH / 2, x + i * SEGP + SEGW, yg + SEGH / 2], fill=(30, 8, 8), outline=HARM, w=1.8, r=3)
@@ -596,17 +599,17 @@ def el_best_tag(L, y, txtm='BEST LINE'):
     """best_line_tag A: dark chip + plan-yellow hairline, right aligned in the bill header line.  B: tab hung on the top edge"""
     k = v('best_line_tag')
     xr = G['px1'] - 20
-    w = ttw(L, txtm, 18, 'mono', 0.08)
+    w = ttw(L, txtm, LBL_PX, 'mono', LBL_TRK)
     if k == 'A':
         L.rect([xr - w - 20, y + 6, xr, y + 30], fill=(26, 22, 4, 245), outline=PLAN, w=1.8, r=6)
-        txt(L, xr - 10 - w, y + 18, txtm, 18, PLAN, 'mono', 'lm', 0.08)
+        txt(L, xr - 10 - w, y + 18, txtm, LBL_PX, PLAN, 'mono', 'lm', LBL_TRK)
         reg('best_line_tag', (xr - w - 28, y, xr + 8, y + 38))
     else:
         x0, x1 = xr - w - 24, xr
         L.rect([x0 - 2, y - 15, x1 + 2, y + 6], fill=INK, r=6)
         L.rect([x0, y - 13, x1, y + 6], fill=(26, 22, 4, 255), outline=PLAN, w=1.8, r=6)
         L.rect([x0 + 2, y - 11, x1 - 2, y + 6], fill=(26, 22, 4, 255))
-        txt(L, x0 + 12, y - 3, txtm, 18, PLAN, 'mono', 'lm', 0.08)
+        txt(L, x0 + 12, y - 3, txtm, LBL_PX, PLAN, 'mono', 'lm', LBL_TRK)
         reg('best_line_tag', (x0 - 8, y - 22, x1 + 8, y + 14))
 
 
@@ -650,10 +653,10 @@ def chip_glyphs(L, x, cy, plan, soak, refund):
 def chip_name(L, x, cy, name):
     """option_name_label A: mono 18 TEXT_MID, BEST in plan yellow"""
     if name.startswith('BEST: '):
-        w = txt(L, x, cy, 'BEST: ', 18, PLAN, 'mono', 'lm', 0.08)
-        txt(L, x + w + 1, cy, name[6:], 18, THI, 'mono', 'lm', 0.08)
+        w = txt(L, x, cy, 'BEST: ', LBL_PX, PLAN, 'mono', 'lm', LBL_TRK)
+        txt(L, x + w + 1, cy, name[6:], LBL_PX, THI, 'mono', 'lm', LBL_TRK)
     else:
-        txt(L, x, cy, name, 18, TMID, 'mono', 'lm', 0.08)
+        txt(L, x, cy, name, LBL_PX, TMID, 'mono', 'lm', LBL_TRK)
 
 
 def chip_bar(L, x, cy, eq):
@@ -685,7 +688,7 @@ def option_chip(L, y, name, plan, soak, eq, sel=False, refund=False):
     ox = G['ox']
     chip_glyphs(L, ox + 12, cy, plan, soak, refund)
     chip_name(L, ox + 196, cy, name)
-    chip_bar(L, ox + 444, cy, eq)
+    chip_bar(L, ox + CHIP_BAR_DX, cy, eq)
     chip_pair(L, cy, eq)
     return y + h + G['chip_gap']
 
@@ -726,9 +729,9 @@ def chain_strip(L, f, y):
         if i:
             L.line([(x0 + 10, yy), (x1 - 10, yy)], CYAN + (46,), 1.2)
         if NOW['words']:
-            L.text((ox + 14, cy + 1), str(i + 1), 18, 'mono', fill=TMID + (255,), anchor='mm')
+            L.text((ox + 14, cy + 1), str(i + 1), LBL_PX, 'mono', fill=TMID + (255,), anchor='mm')
         chain_glyph(L, st, ox + 50, cy)
-        txt(L, ox + 76, cy, st['name'], 18, TMID, 'mono', 'lm', 0.08)
+        txt(L, ox + 76, cy, st['name'], LBL_PX, TMID, 'mono', 'lm', LBL_TRK)
         xt = xt0
         kinds = {'raw': 'lands'}
         for k_, n in st['pips']:
@@ -741,7 +744,7 @@ def chain_strip(L, f, y):
                 xt += 28
         for k_, n in st['pips']:
             if k_ == 'txt':
-                txt(L, xp0, cy, n, 18, TMID, 'mono', 'lm', 0.0)
+                txt(L, xp0, cy, n, LBL_PX, TMID, 'mono', 'lm', 0.0)
         reg('chain_row_%d' % i, (x0, yy, x1, yy + h))
         yy += h
     reg('chain_strip', (x0, y, x1, y + ph))
@@ -795,19 +798,19 @@ def ram_row(L, f, y):
     h = G['ram_h']
     P(L, (x0, y, x1, y + h), 'ram')
     cy = y + h / 2
-    txt(L, ox + 12, cy, 'RAM', 18, TMID, 'mono', 'lm', 0.08)
+    txt(L, ox + 12, cy, 'RAM', LBL_PX, TMID, 'mono', 'lm', LBL_TRK)
     for i in range(f['ram_max']):
         bx = ox + 62 + i * 30
         if i < f['ram']:
             coin(L, bx + 12, cy, 24, False)
         else:
             L.ellipse([bx, cy - 12, bx + 24, cy + 12], fill=(8, 14, 22), outline=CYAN, w=2)
-    txt(L, ox + 230, cy, 'TRACE', 18, TMID, 'mono', 'lm', 0.08)
+    txt(L, ox + 230, cy, 'TRACE', LBL_PX, TMID, 'mono', 'lm', LBL_TRK)
     for i in range(f['tcap']):
         bx = ox + 300 + i * 30
         on = i < f['trace']
         L.rect([bx, cy - 11, bx + 22, cy + 11], fill=(160, 60, 255) if on else (28, 20, 44), outline=INK if on else (160, 60, 255), w=2, r=3)
-    txt(L, ox + 520, cy, 'ENDS = HEAT', 18, AMBER, 'mono', 'lm', 0.08)
+    txt(L, ox + 520, cy, 'ENDS = HEAT', LBL_PX, AMBER, 'mono', 'lm', LBL_TRK)
     if f['pv']['trace_after']:
         tally(L, ox + 660, cy, 'gold', f['pv']['trace_after'], 8, 16, pitch=11, gap=14)
     reg('ram', (x0, y, x1, y + h))

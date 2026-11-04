@@ -1,17 +1,24 @@
 {
- "version": "step6-1",
+ "version": "rb2-1",
  "applies_to": "room_<n>_bare.png (combat_backdrop/v3_1), before the board scrim; screen space 1920x1080",
- "colour_space": "all maths on gamma-encoded sRGB values in 0-1 (the PNG values); a Godot post shader must work on the sRGB-encoded colour (or linear_to_srgb first, srgb_to_linear after). Blur radii are gaussian sigma-ish PIL radii at 1920x1080; scale with resolution.",
- "replaces": "r2_ground.grade(P): hull x0.595 with neon saturation x0.6, city 2 px blur x0.85",
- "tuning": "hull_value and chroma are solved per room (bd_solve.py): room squint mean 0.135, room mean saturation = min(before, 0.44). Everything else is shared, except event (contrast 1.24, shoulder ceil 0.32, pink_chroma 0.42). haze is in the recipe but 0 everywhere.",
+ "colour_space": "all maths on gamma-encoded sRGB values in 0-1 (the PNG values); blur radii are gaussian radii at 1920x1080; scale with resolution",
+ "replaces": "step6-1 (room mean L* 21 in the reviewer box: AD review 2.8 \"the room grade switched the room off\")",
+ "corp_room": {
+  "neutral": "bio",
+  "solace": "bio",
+  "meridian": "shop"
+ },
+ "tuning": "shared recipe (bd2_solve.SHARED) + the step6-1 per-room chroma / contrast / pink pull; the shoulder ceiling ceil is solved per room so the rb_checks room region reads p95 L* 38 on p1 composites (the mean follows; tone_lo 0.17 in every room).  On the 15 real renders of the final set (locked/final/checks.json rb_checks) the room reads mean L* 31.2-32.2, p95 37.5-38.1 on every beat and skin.  shop_meridian adds the Meridian corp light (hue 88-162 pulled to 20 deg by 0.88, chroma 1.05, neon 0.9) and its spill colour is taken after that light.",
  "order": [
-  "1 focus hull mask m: ellipse (cx, cy, rx, ry), smoothstep(f0, f1) on the normalised distance d, m = 1 inside",
-  "2 blur: gaussian hull_blur px inside, city_blur px outside, mixed by m",
-  "3 chroma: lerp to Rec709 luma; k = chroma * (1 - (1 - neon_chroma) * neon) * (1 - (1 - pink_chroma) * pink); neon = smoothstep(.35,.60,S)*smoothstep(.35,.65,V); pink = smoothstep(296,308,hue) * (1 - smoothstep(345,358,hue)) * smoothstep(.18,.35,S)",
-  "4 contrast: c = pivot + (c - pivot) * contrast (0-1 units)",
+  "1 focus hull m: polygon hull_poly (the cutaway box: walls + floor slab), m = 1 - smoothstep(-pf0, pf1, sdf) (sdf in px, + outside); d = the ellipse distance (cx, cy, rx, ry) for the vignette, spill and tone reach",
+  "2 blur ramp: hull_blur -> mid_blur -> city_blur, smoothsteps on the sdf from -pf0 to pf1 + blur_reach (one ramp, no cross-fade)",
+  "2b corp light (only when hue_amt > 0): w = window(hue_lo - hue_f .. hue_lo, hue_hi .. hue_hi + hue_f) * smoothstep(.10, .30, S); rotate the pixel about the grey axis by (hue_to - hue) * hue_amt * w, Rec709 luma kept",
+  "3 chroma: lerp to Rec709 luma; k = chroma * (1 - (1 - neon_chroma) * neon) * (1 - (1 - pink_chroma) * pink) * (m + city_chroma * (1 - m))",
+  "4 contrast: c = pivot + (c - pivot) * contrast",
   "5 value: * (hull_value * m + city_value * (1 - m))",
+  "5b local tone: x = gaussian(luma, tone_blur); target = tone_lo + (tone_hi - tone_lo) * (1 - exp(-x / tone_s)); g = clamp(target / x, 0, tone_gmax); g = 1 + (g - 1) * (m + tone_out * (1 - m) * (1 - smoothstep(tone_d0, tone_d1, d))); rgb *= g",
   "6 shoulder on luma above knee toward ceil: l2 = knee + (ceil - knee) * (1 - exp(-(l - knee) / (ceil - knee))); rgb *= l2 / l",
-  "7 haze: mix toward haze_rgb by haze",
+  "7 haze: h = haze * m + haze_out * (1 - m); colour = mix(spill_rgb, haze_rgb, smoothstep(sp0, sp1, d)); rgb = rgb * (1 - h) + colour * h",
   "8 vignette: * (1 - vignette * smoothstep(v0, v1, d)) * (1 - board_falloff * (1 - smoothstep(bx0, bx1, x)))",
   "then the board scrim (unchanged): 6 px blur weighted 1 - smoothstep(300, 520, r), and SCRIM #02030A at 0.55 * (1 - smoothstep(330, 560, r)), r from (536, 540)"
  ],
@@ -23,29 +30,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.876,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
-   "pivot": 0.16,
-   "hull_value": 0.466,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.3,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3502,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.876,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    77,
+    106,
+    68
+   ]
   },
   "srv": {
    "cx": 1500.0,
@@ -54,29 +108,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.814,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
-   "pivot": 0.16,
-   "hull_value": 0.439,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.3,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.35,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.814,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    65,
+    107,
+    85
+   ]
   },
   "gh": {
    "cx": 1500.0,
@@ -85,29 +186,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.891,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
-   "pivot": 0.16,
-   "hull_value": 0.47,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.3,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3519,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.891,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    88,
+    103,
+    61
+   ]
   },
   "rec": {
    "cx": 1500.0,
@@ -116,29 +264,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.941,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
-   "pivot": 0.16,
-   "hull_value": 0.458,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.3,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3547,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.941,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    94,
+    101,
+    69
+   ]
   },
   "lobby": {
    "cx": 1500.0,
@@ -147,29 +342,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.849,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
-   "pivot": 0.16,
-   "hull_value": 0.45,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.3,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3493,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.849,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    69,
+    109,
+    59
+   ]
   },
   "event": {
    "cx": 1500.0,
@@ -178,29 +420,76 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
-   "hull_blur": 0.4,
-   "city_blur": 4.0,
-   "chroma": 0.836,
-   "neon_chroma": 0.8,
-   "pink_chroma": 0.42,
-   "contrast": 1.24,
-   "pivot": 0.16,
-   "hull_value": 0.478,
-   "city_value": 0.55,
-   "knee": 0.18,
-   "ceil": 0.32,
-   "haze": 0.0,
-   "haze_rgb": [
-    22,
-    18,
-    40
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
    ],
-   "vignette": 0.3,
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.8,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3496,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
    "v0": 0.9,
    "v1": 2.6,
-   "board_falloff": 0.3,
+   "board_falloff": 0.08,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "chroma": 0.836,
+   "contrast": 1.24,
+   "pink_chroma": 0.42,
+   "spill_rgb": [
+    88,
+    101,
+    81
+   ]
   },
   "shop": {
    "cx": 1500.0,
@@ -209,29 +498,378 @@
    "ry": 270.0,
    "f0": 0.85,
    "f1": 1.55,
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
+   ],
+   "pf0": 10.0,
+   "pf1": 3.0,
    "hull_blur": 0.4,
+   "mid_blur": 1.6,
    "city_blur": 4.0,
-   "chroma": 0.826,
+   "blur_reach": 40.0,
    "neon_chroma": 0.8,
-   "pink_chroma": 0.55,
-   "contrast": 1.12,
+   "city_chroma": 0.3,
    "pivot": 0.16,
-   "hull_value": 0.415,
-   "city_value": 0.55,
-   "knee": 0.18,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3523,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
+   "v0": 0.9,
+   "v1": 2.6,
+   "board_falloff": 0.08,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "chroma": 0.826,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "spill_rgb": [
+    84,
+    104,
+    68
+   ]
+  },
+  "shop_meridian": {
+   "cx": 1500.0,
+   "cy": 600.0,
+   "rx": 330.0,
+   "ry": 270.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "hull_poly": [
+    [
+     1195,
+     488
+    ],
+    [
+     1465,
+     338
+    ],
+    [
+     1792,
+     523
+    ],
+    [
+     1792,
+     672
+    ],
+    [
+     1512,
+     808
+    ],
+    [
+     1195,
+     632
+    ]
+   ],
+   "pf0": 10.0,
+   "pf1": 3.0,
+   "hull_blur": 0.4,
+   "mid_blur": 1.6,
+   "city_blur": 4.0,
+   "blur_reach": 40.0,
+   "neon_chroma": 0.9,
+   "city_chroma": 0.3,
+   "pivot": 0.16,
+   "hull_value": 0.8,
+   "city_value": 0.6,
+   "tone_lo": 0.17,
+   "tone_hi": 0.38,
+   "tone_s": 0.09,
+   "tone_blur": 14.0,
+   "tone_gmax": 3.5,
+   "tone_out": 0.45,
+   "tone_d0": 1.5,
+   "tone_d1": 2.6,
+   "knee": 0.24,
+   "ceil": 0.3518,
+   "haze": 0.05,
+   "haze_out": 0.5,
+   "haze_rgb": [
+    20,
+    18,
+    34
+   ],
+   "sp0": 1.0,
+   "sp1": 2.6,
+   "vignette": 0.1,
+   "v0": 0.9,
+   "v1": 2.6,
+   "board_falloff": 0.08,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "chroma": 1.05,
+   "contrast": 1.12,
+   "pink_chroma": 0.55,
+   "hue_lo": 88.0,
+   "hue_hi": 162.0,
+   "hue_f": 14.0,
+   "hue_to": 20.0,
+   "hue_amt": 0.88,
+   "spill_rgb": [
+    106,
+    97,
+    70
+   ]
+  }
+ },
+ "rooms_step61": {
+  "bio": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
    "ceil": 0.3,
+   "chroma": 0.876,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
    "haze": 0.0,
    "haze_rgb": [
     22,
     18,
     40
    ],
-   "vignette": 0.3,
+   "hull_blur": 0.4,
+   "hull_value": 0.466,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
    "v0": 0.9,
    "v1": 2.6,
+   "vignette": 0.3
+  },
+  "event": {
    "board_falloff": 0.3,
    "bx0": 700.0,
-   "bx1": 1250.0
+   "bx1": 1250.0,
+   "ceil": 0.32,
+   "chroma": 0.836,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.24,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.478,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.42,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "gh": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.891,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.47,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "lobby": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.849,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.45,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "rec": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.941,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.458,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "shop": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.826,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.415,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
+  },
+  "srv": {
+   "board_falloff": 0.3,
+   "bx0": 700.0,
+   "bx1": 1250.0,
+   "ceil": 0.3,
+   "chroma": 0.814,
+   "city_blur": 4.0,
+   "city_value": 0.55,
+   "contrast": 1.12,
+   "cx": 1500.0,
+   "cy": 600.0,
+   "f0": 0.85,
+   "f1": 1.55,
+   "haze": 0.0,
+   "haze_rgb": [
+    22,
+    18,
+    40
+   ],
+   "hull_blur": 0.4,
+   "hull_value": 0.439,
+   "knee": 0.18,
+   "neon_chroma": 0.8,
+   "pink_chroma": 0.55,
+   "pivot": 0.16,
+   "rx": 330.0,
+   "ry": 270.0,
+   "v0": 0.9,
+   "v1": 2.6,
+   "vignette": 0.3
   }
  }
 }

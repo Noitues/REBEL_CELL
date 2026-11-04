@@ -27,11 +27,11 @@ _CORP = os.environ.get('CORP', 'neutral')
 SKIN = NeutralSkin() if _CORP == 'neutral' else _CS.SKINS[_CORP]
 if os.environ.get('LW_SKIN', '1') == '1':
     LI.install(SKIN)
-# O-30 fix 2: the step-6 room grade (bd_grade, per-room parameters from locked/backdrop/grade.json) is the default room grade.
-# env BD_GRADE=0 restores the old r2_ground.grade('P') for before/after comparisons.
+# O-30 fix 2: the room grade (bd_grade, per-room parameters from locked/backdrop/grade.json) is the default room grade.
+# 2026-11-03 stage 2: rb2-1 grade (review 2.8).  env BD_GRADE=step6 renders with the step6-1 table; BD_GRADE=0 restores r2_ground.grade('P').
 import bd_grade as _BG
 OLD_GRADE = R.A.G2.grade
-if os.environ.get('BD_GRADE', '1') == '1':
+if os.environ.get('BD_GRADE', '1') != '0':
     R.A.G2.grade = _BG.room_grade
 W = HERE + 'work/'
 os.makedirs(W, exist_ok=True)
@@ -53,6 +53,20 @@ def stack_layer(words, sel):
 
 
 AS.stack_layer = stack_layer
+
+# 2026-11-03 rebuild (AD review IMPL items, locked/REVIEW_RESPONSE.md): installed last, over every layer above.  env RB=0 = the O-30 board.
+if os.environ.get('RB', '1') == '1':
+    import rb_patch as _RB
+    _RB.install(R, R.A, SKIN)
+    # stage 2 of the rebuild (bill digits, tickets, Heat glyph, REFUND tab, YOU hatch, hand margin, played slots).  env RB2=0 skips it.
+    if os.environ.get('RB2', '1') == '1':
+        import rb2_patch as _RB2
+        _RB2.install(R, R.A, SKIN)
+        # 2026-11-04: the gate-1 fixes (value order of the E / K marks, TURRET, BEST chip, cell ratio vs the brightest empty, the dying cell,
+        # the Adjuster track, the resolve log).  env RB3=0 skips it.
+        if os.environ.get('RB3', '1') == '1':
+            import rb3_patch as _RB3
+            _RB3.install(R, R.A, SKIN)
 
 if __name__ == '__main__':
     t = time.time()

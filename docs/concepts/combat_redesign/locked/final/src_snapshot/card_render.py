@@ -3,7 +3,7 @@
     draw_card(card, size, state) -> PIL RGBA
 
 WPAP card (chamfered die-cut, flat facet planes, slanted plates, hard offset drops) with
-  * a type band whose colour is the card TYPE (TOWER = teal, WAVE = violet),
+  * a type plate whose colour is the card TYPE (TOWER = deep teal #006E66 + white word, WAVE = lilac #B4AAFF + ink word; 2026-11-03),
   * a band background in one of the other punk styles (linocut, Ben-Day, collage, Jinx, mural, xerox),
   * the xerox icon (paper-white glyph, black key line + hard drop, spot-ink disc, misregistered second ink) recoloured per card,
   * the black-book layout (see card_titles/LAYOUT.md) and the title rule (neutral fill, hard keyline, cap >= 26 design px).
@@ -12,7 +12,7 @@ card   a name from CARDS ('Brace', 'Spin3', ...) or a dict {'name':..., plus any
 size   (w, h) of the CARD box in output px, or one number = the width (height follows 176:250).
        The returned image is the card box plus MARGIN design px each side (MARGIN * size / 176 px), so drops, the lift print and
        the chamfer shadow are never cut.  Use margin_px(size) to place it: centre of the card = centre of the image.
-state  'normal' | 'hover' | 'played' | 'unaffordable' | 'nowords'  or a dict
+state  'normal' | 'hover' | 'played' | 'unaffordable' (dim glass + padlock on the cost + NO RAM tab) | 'nowords'  or a dict
        {'mode': ..., 'dim': 0.88 (value of a resting hand card), 'nowords': bool}
        hover = lifted: the caller scales the box (1.10 x) - draw_card draws the card at the size it is given, full value,
        with the pink misregistered print behind it and a longer hard drop.
@@ -37,10 +37,11 @@ INK = hx('15121A'); CREAM = hx('F4EEE0'); CREAM_D = hx('E6DCC4'); WHITE = hx('FB
 PINK = hx('FF3DA8'); PINK_D = hx('C21A7C'); WINK = hx('1B0B33')
 CYAN_COIN = hx('1A8FB8'); CYAN_HI = hx('5CE1FF')
 
-WAVE_VARIANT = os.environ.get('CARD_WAVE', 'orange')     # O-29 fix 1: 'bone' (#F1EAD6) or 'orange' (#FF8A1F); chosen by looking (bone reads as the card paper)
-TYPES = {   # the card TYPE colours (the word on the plate), O-29 fix 1: off the HUD resource colours (RAM cyan, Trace violet)
-    'TOWER': dict(col=hx('2F5BFF'), dk=hx('1A2F9E'), text=WHITE),
-    'WAVE':  dict(col=hx('FF8A1F'), dk=hx('B04E00'), text=INK) if WAVE_VARIANT == 'orange' else dict(col=hx('F1EAD6'), dk=hx('9C8E6A'), text=INK),
+TYPES = {   # the card TYPE colours (the word on the plate).  2026-11-03 rebuild (AD review 2.2, DR-5 / DR-8): one hue per type,
+            # each at CIE76 dE >= 15 from every meaning token (SOAK, SCHEDULE, BOSS_GOLD, TRACE, NET_CYAN, HARM, GAIN, PLAN) and every
+            # slice ink; TOWER and WAVE also split by value (dark plate + white word vs light plate + ink word).  Table: rebuild/cards/de.json
+    'TOWER': dict(col=hx('006E66'), dk=hx('00403B'), text=WHITE),     # deep teal, white word 5.87:1
+    'WAVE':  dict(col=hx('B4AAFF'), dk=hx('5E50C4'), text=INK),       # lilac, ink word 8.94:1
 }
 TRACE_VIOLET = hx('A03CFF')      # the +Trace tab keeps the HUD Trace violet: violet means Trace only
 
@@ -64,13 +65,13 @@ ORDER = ['Nudge', 'Spin2', 'Spin3', 'Brace', 'Strike', 'Firewall', 'Pull', 'Shov
 ART = {
     'Nudge':    dict(style='benday',  bg='3BB8F2', dot='1B4FB8', hi='E8F8FF', disc='1A1250', mis='FFC83A', arcs=1, dot_k=0.55, seed=11),
     'Spin2':    dict(style='benday',  bg='44D9A6', dot='0B5A44', hi='EFFFF8', disc='2A1C8E', mis='FF3DA8', arcs=2, dot_k=0.85, seed=12),
-    'Spin3':    dict(style='benday',  bg='FFD21F', dot='8A3A00', hi='FFF8D8', disc='1A1250', mis='1AA6E8', arcs=3, dot_k=1.15, seed=13),
+    'Spin3':    dict(style='benday',  bg='FF00F0', dot='4A0846', hi='FFE6FB', disc='1A1250', mis='1AA6E8', arcs=3, dot_k=1.15, seed=13),   # 2026-11-03: magenta, off BOSS_GOLD / TURRET
     'Brace':    dict(style='linocut', bg='2848D8', key='101018', bone='F1EAD6', disc='15121A', mis='FF3DA8', dirn='radial', seed=14),
     'Strike':   dict(style='collage', bg='C9F23C', paper=['F1EAD6', '15121A', '2A4BE0', 'C9F23C'], disc='15121A', mis='FF3DA8', seed=15),
-    'Firewall': dict(style='mural',   sky=['0B2A45', '0E4A63', '137489', '2BA9A5'], city='06182A', disc='15121A', mis='FF3DA8', seed=16),
+    'Firewall': dict(style='mural',   motif='fire', sky=['2A0612', '5C0A1E', '9E1F1A', 'E8551F'], city='1A0508', flame=['FF7A1A', 'FFC93A', 'FFF2C2'], disc='15121A', mis='FF3DA8', seed=16),
     'Pull':     dict(style='linocut', bg='18A872', key='0B1A14', bone='F1EAD6', disc='15121A', mis='FF3DA8', dirn='down', seed=17),
     'Shove':    dict(style='collage', bg='F1EAD6', paper=['2A4BE0', 'F1EAD6', '15121A', '9BD0FF'], disc='15121A', mis='FF3DA8', slide=True, seed=18),
-    'Twist':    dict(style='mural',   sky=['4A1C8C', 'A3267E', 'EE5B5B', 'FFB347'], city='2A0C4A', disc='15121A', mis='FFB347', seed=19),
+    'Twist':    dict(style='mural',   motif='rings', sky=['0B2A45', '0E4A63', '137489', '2BA9A5'], ring='8FE3D2', turn='FBFAF4', disc='15121A', mis='FFB347', seed=19),
     'Hold':     dict(style='xerox',   bg='15121A', dot='F2EEE4', spot='12A9E6', disc='FF3DA8', mis='12A9E6', seed=20),
     'Trigger':  dict(style='jinx',    bg='160B2E', neon=['27D3F5', 'FF3DA8'], disc='FF3DA8', mis='C8FF3C', seed=21),
 }
@@ -78,8 +79,8 @@ STYLE_WHY = {
     'benday': 'Ben-Day dots + speed arcs: the Spin family turns the tower, the arcs count the turns (1, 2, 3)',
     'linocut': 'carved black key on one flat plate: hard, solid, protective (Brace) and straight-down gouges (Pull)',
     'collage': 'torn paper shards and tape: impact (Strike) and sliding strips (Shove)',
-    'mural': 'spray sunset over a skyline: the waves (Twist) and the burn (Firewall) belong to the city',
-    'xerox': 'black toner and a halftone dot field: dead copier stillness for Hold',
+    'mural': 'spray mural, one motif per card: a brick wall on fire (Firewall, burn) and three ring bands with the middle one turned (Twist, turn one ring)',
+    'xerox': 'black toner and a halftone dot field: dead copier stillness for Hold (the icon is a clamp on a ring step)',
     'jinx': 'neon scribble on night ink: aim and lock-on (Trigger)',
 }
 
@@ -215,8 +216,47 @@ def text(cv, txt, x, y, px, name=ANTON, track=0.0, skew=0.0, rot=0.0):
     return out
 
 
+def _layered(cv, pieces, cut=1.5):
+    """union of glyph pieces, each later piece cut from the earlier ones by a `cut` design-px gap (the ink shows in the gap)"""
+    m = np.zeros((cv.H, cv.W), np.float32)
+    for p in pieces:
+        m = m * (1 - np.clip(grow(cv, p, cut), 0, 1))
+        m = np.maximum(m, p)
+    return m
+
+
+def glyph_hold(cv, px, x, y):
+    """HOLD (2026-11-03, AD review 3.1): a C-clamp gripping one ring step, not a pause button.
+    Three curved ring cells (a piece of the wave ring), the middle one held by a C-clamp: T-handle, screw, pad pressing the cell,
+    the frame's spine and lower jaw.  Built from solid shapes; the cut gaps between pieces show the ink."""
+    s = px / 64.0
+    ou, ov = 1.0, 0.0
+    P = lambda u, v: (x + (u + ou) * s, y + (v + ov) * s)
+    def rect(u0, v0, u1, v1):
+        return poly(cv, [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)])
+    # the ring step: two curved cells of a ring (its centre far below); the left one sits in the clamp's mouth
+    rc = (4.0, 84.0); r0, r1 = 64.0, 76.0
+    cells = []
+    for (a0, a1) in ((-15.0, -1.8), (1.8, 17.0)):
+        pts = [P(rc[0] + r1 * math.sin(math.radians(a0 + (a1 - a0) * t / 12)), rc[1] - r1 * math.cos(math.radians(a0 + (a1 - a0) * t / 12))) for t in range(13)]
+        pts += [P(rc[0] + r0 * math.sin(math.radians(a1 - (a1 - a0) * t / 12)), rc[1] - r0 * math.cos(math.radians(a1 - (a1 - a0) * t / 12))) for t in range(13)]
+        cells.append(_mask(cv, lambda d, q=[cv.p(*p) for p in pts]: d.polygon(q, fill=255)))
+    # the C-clamp: back on the left, upper and lower arms, the screw down through the upper arm onto a pad on the cell
+    frame = np.maximum.reduce([rect(-28, -18, 9, -11),            # upper arm
+                               rect(-28, -18, -21, 30),           # back
+                               rect(-28, 24, 9, 30)])             # lower arm (the fixed jaw, under the cell)
+    screw = rect(-9.0, -27, -4.0, 4.0)
+    pad = rect(-14.5, 3.0, 1.5, 8.5)
+    handle = rect(-17.5, -31, 4.5, -25.5)
+    return _layered(cv, cells + [frame, screw, pad, handle], 1.6)
+
+
+PROC_GLYPHS = {'C_HOLD': glyph_hold}
+
 _GL = {}
 def glyph(cv, name, px, x, y):
+    if name in PROC_GLYPHS:
+        return PROC_GLYPHS[name](cv, px, x, y)
     if name not in _GL:
         _GL[name] = Image.open(HERE + '/glyphs/' + name + '.png').convert('L')
     g = _GL[name]
@@ -500,18 +540,114 @@ def bg_jinx(cv, ab, A, X, Y):
         scrib([(x - 4, y), (x + 4, y)], cols[1], 1.8); scrib([(x, y - 4), (x, y + 4)], cols[1], 1.8)
 
 
-def bg_mural(cv, ab, A, X, Y):
-    r = np.random.default_rng(A['seed'])
+def _mural_sky(cv, ab, A):
+    """stepped spray sky (flat bands, hand-cut edges): the shared mural ground"""
     sky = [hx(c) for c in A['sky']]
     n = len(sky)
-    # stepped spray sky (flat bands, hand-cut edges)
     cv.paint(ab, sky[0])
     for i in range(1, n):
         y0 = 8 + (118) * i / n
-        pts = [(8, y0), (CW - 8, y0 - 5 - 3 * i)]
         pts = [(8, y0 + 4), (CW - 8, y0 - 6), (CW - 8, 126), (8, 126)]
         m = poly(cv, jag(cv, pts, 1.1, A['seed'] + i, 6))
         cv.paint(m * ab, sky[i])
+    return sky
+
+
+def _mural_fire(cv, ab, A, X, Y):
+    """Firewall (2026-11-03, AD review 3.2): a brick wall on fire.  Flame tongues rise from behind the wall top, the wall is
+    flat-cut bricks with dark mortar, two tongues lick over the bricks, spray drips run off the wall."""
+    r = np.random.default_rng(A['seed'])
+    sky = _mural_sky(cv, ab, A)
+    fl = [hx(c) for c in A['flame']]
+    wall_top = 96.0
+    # the blaze behind the icon: a flat spray disc in the flame orange, then a pale ring (keeps the ink disc >= 2.5:1 against its art)
+    cx, cy = IC
+    cv.paint(circle(cv, cx, cy, 56.0) * ab, fl[0])
+    cv.paint(np.clip(circle(cv, cx, cy, 49.0) - circle(cv, cx, cy, 44.5), 0, 1) * ab, fl[1])
+    # three flame layers, back (orange) to front (pale), each a row of jagged tongues
+    for k, (col, h0, h1, w) in enumerate(((fl[0], 34, 70, 26), (fl[1], 22, 48, 20), (fl[2], 10, 26, 14))):
+        x = 8 - r.uniform(0, w / 2)
+        pts = [(8, wall_top + 2)]
+        while x < CW - 8 + w:
+            h = r.uniform(h0, h1)
+            pts += [(x, wall_top - r.uniform(2, 8)), (x + w * 0.5 + r.uniform(-3, 3), wall_top - h), (x + w, wall_top - r.uniform(2, 8))]
+            x += w * r.uniform(0.8, 1.1)
+        pts += [(CW - 8, wall_top + 2)]
+        m = poly(cv, pts)
+        cv.paint(grow(cv, m, 1.0) * ab, hx('1A0508'), 0.85)
+        cv.paint(m * ab, col)
+    # the wall: flat bricks, staggered rows, dark mortar between (no outline dashes: each brick is a solid cut shape)
+    brick = hx('8E2A1C'); brick2 = hx('6E1E16'); mortar = hx(A['city'])
+    cv.paint(poly(cv, [(8, wall_top), (CW - 8, wall_top - 2), (CW - 8, 126), (8, 126)]) * ab, mortar)
+    bh, bw = 9.0, 21.0
+    row = 0
+    yb = wall_top + 1.6
+    while yb < 126:
+        off = (bw / 2) * (row % 2) - r.uniform(0, 3)
+        xb = 8 - bw + off
+        while xb < CW - 8:
+            col = brick if r.random() < 0.6 else brick2
+            pts = [(xb + 1.0, yb + 0.9), (xb + bw - 1.0, yb + 0.7), (xb + bw - 0.8, yb + bh - 0.9), (xb + 0.8, yb + bh - 0.8)]
+            cv.paint(poly(cv, pts) * ab, col)
+            xb += bw
+        yb += bh; row += 1
+    # two tongues licking over the bricks
+    for (fx, fw, fh) in ((30, 16, 22), (140, 14, 18)):
+        m = poly(cv, jag(cv, [(fx - fw / 2, 126), (fx - fw / 4, wall_top + 2), (fx, wall_top - fh), (fx + fw / 3, wall_top + 4), (fx + fw / 2, 126)], 0.8, A['seed'] + int(fx), 4))
+        cv.paint(grow(cv, m, 1.0) * ab, hx('1A0508'))
+        cv.paint(m * ab, fl[1])
+    # spray drips off the wall top
+    for dx in (58, 104, 122):
+        st = stroke(cv, [(dx, wall_top + 1), (dx, wall_top + r.uniform(9, 18))], 2.6)
+        cv.paint(st * ab, fl[2], 0.85)
+
+
+def _mural_rings(cv, ab, A, X, Y):
+    """Twist (2026-11-03, AD review 3.2): three spray-painted ring bands round the icon, cut into cells; the middle band is turned
+    half a cell against the other two (its cell gaps do not line up) and carries an arrow head: one ring turned."""
+    r = np.random.default_rng(A['seed'])
+    sky = _mural_sky(cv, ab, A)
+    cx, cy = IC
+    rr = np.hypot(X - cx, Y - cy)
+    ang = (np.degrees(np.arctan2(X - cx, -(Y - cy))) + 360) % 360       # 0 = 12 o'clock, clockwise
+    cellw, gap = 30.0, 3.2
+    ringc, turnc = hx(A['ring']), hx(A['turn'])
+    for k, (r0, r1, rot, col) in enumerate(((43.5, 52.0, 0.0, ringc), (55.0, 64.5, cellw / 2 + 4.0, turnc), (67.5, 77.0, 0.0, ringc))):
+        band = ((rr >= r0) & (rr < r1)).astype(np.float32)
+        a = (ang - rot) % cellw
+        gpx = np.degrees(gap / ((r0 + r1) / 2))           # the gap is a constant width in px
+        cells = band * (a > gpx).astype(np.float32)
+        cv.paint(np.clip(grow(cv, cells, 1.1), 0, 1) * band * ab * 0, INK)
+        cv.paint(cells * ab, hx('06121E'), 0.9)            # ink under-print, then the ink, offset: spray layer
+        cv.paint(shift(cv, cells, -1.0, -1.0) * ab, col)
+    # arrow heads on the turned band (clockwise), at 2 and 8 o'clock
+    for a0 in (62.0, 242.0):
+        rm = 59.75
+        a = math.radians(a0)
+        tx, ty = math.cos(a), math.sin(a)                   # clockwise tangent in screen coords for angle-from-12
+        px_, py_ = cx + rm * math.sin(a), cy - rm * math.cos(a)
+        nx, ny = math.sin(a), -math.cos(a)
+        hd = poly(cv, [(px_ + tx * 11, py_ + ty * 11), (px_ + nx * 9, py_ + ny * 9), (px_ - nx * 9, py_ - ny * 9)])
+        cv.paint(grow(cv, hd, 1.3) * ab, INK)
+        cv.paint(hd * ab, turnc)
+    # spray stars in the corners
+    for (sx, sy, s_) in ((20, 18, 4.5), (160, 112, 4.0), (156, 20, 3.4), (18, 110, 3.6)):
+        pts = []
+        for q in range(8):
+            rad_ = s_ if q % 2 == 0 else s_ * 0.3
+            a = math.pi / 4 * q
+            pts.append((sx + rad_ * math.cos(a), sy + rad_ * math.sin(a)))
+        cv.paint(poly(cv, pts) * ab, turnc, 0.9)
+
+
+def bg_mural(cv, ab, A, X, Y):
+    if A.get('motif') == 'fire':
+        return _mural_fire(cv, ab, A, X, Y)
+    if A.get('motif') == 'rings':
+        return _mural_rings(cv, ab, A, X, Y)
+    r = np.random.default_rng(A['seed'])
+    sky = _mural_sky(cv, ab, A)
+    n = len(sky)
     cx, cy = IC
     # big spray sun / swirl behind the icon: flat rings in the lightest sky colour
     for k, (rad, col) in enumerate(((58, sky[-1]), (52, sky[-2]))):
@@ -620,6 +756,111 @@ def _facets_old(cv, ab, A, X, Y):
 
 
 # ------------------------------------------------------------------ the card
+COST_C = (21.0, 21.0)
+
+
+def cost_badge(cv, spec, nowords):
+    """the cost: cyan RAM hexagon with the digit (or a tally in nowords)"""
+    hx_, hy_ = COST_C
+    hexa = [(hx_ + 19 * math.cos(math.radians(30 + 60 * k)), hy_ + 19 * math.sin(math.radians(30 + 60 * k))) for k in range(6)]
+    hm = poly(cv, hexa)
+    cv.paint(extrude(cv, grow(cv, hm, 2.0), 2.4, 3.0), INK)
+    cv.paint(grow(cv, hm, 2.2), INK)
+    cv.paint(hm, CYAN_COIN)
+    up = poly(cv, [(hx_ - 19, hy_ - 12), (hx_ + 8, hy_ - 19), (hx_ + 19, hy_ - 10), (hx_ + 1, hy_ + 2), (hx_ - 19, hy_ + 9)]) * hm
+    cv.paint(up, CYAN_HI)
+    if nowords:
+        c = int(spec['cost'])
+        if c == 0:
+            cv.paint(circle(cv, hx_, hy_ + 1, 3.0), INK)
+        for q in range(c):
+            xq = hx_ + (q - (c - 1) / 2) * 7.0
+            cv.paint(stroke(cv, [(xq, hy_ - 8), (xq + 0.4, hy_ + 9)], 3.2), INK)
+    else:
+        cv.paint(text(cv, str(spec['cost']), hx_ + 0.5, hy_ + 1.2, 27, ANTON), INK)
+
+
+def lock_glyph(cv, x, y, s=1.0):
+    """padlock: bone body with a keyhole, ink shackle, ink keyline + hard drop.  (x, y) = body centre, s = scale (body 15 x 12)"""
+    body = poly(cv, [(x - 7.5 * s, y - 5.5 * s), (x + 7.5 * s, y - 5.5 * s), (x + 7.5 * s, y + 6.5 * s), (x - 7.5 * s, y + 6.5 * s)])
+    sh = np.zeros_like(body)
+    pts = [(x + 4.6 * s * math.cos(math.radians(a)), y - 5.5 * s - 5.6 * s * math.sin(math.radians(a))) for a in range(0, 181, 10)]
+    sh = stroke(cv, [(x + 4.6 * s, y - 4.0 * s)] + pts + [(x - 4.6 * s, y - 4.0 * s)], 3.0 * s, cap=False)
+    allm = np.maximum(body, sh)
+    cv.paint(extrude(cv, grow(cv, allm, 1.6), 1.8, 2.2), INK)
+    cv.paint(grow(cv, allm, 1.6), INK)
+    cv.paint(sh * (1 - body), hx('C9C2B0'))
+    cv.paint(body, WHITE)
+    kh = np.maximum(circle(cv, x, y - 0.4 * s, 2.0 * s), poly(cv, [(x - 1.0 * s, y), (x + 1.0 * s, y), (x + 1.5 * s, y + 4.0 * s), (x - 1.5 * s, y + 4.0 * s)]))
+    cv.paint(kh, INK)
+
+
+NO_RAM = 'NO RAM'
+NO_RAM_PX = 17.0                           # 2026-11-03 stage 2: Anton 17 x 1.10 = 16.1 px cap (was 15.5 = 14.7 px)
+NO_RAM_TRACK = -0.5
+NO_RAM_TAB = (32.0, 92.5, 10.0, 30.0)      # x0, x1, y0, y1 (design px); the plate slants 2 px to the right at the bottom
+NO_RAM_VIS_X0 = 42.5                       # the badge (with its keyline) covers the tab left of this
+
+
+def no_ram_cx():
+    return (NO_RAM_VIS_X0 + NO_RAM_TAB[1]) / 2 - 0.3
+
+
+def unaffordable_marks(R, spec, nowords):
+    """AD review 3.3 (2026-11-03): the unaffordable state is told by marks, not only by the dim glass.  Drawn at full value over the
+    dimmed card: the cost badge again (it is the reason), a padlock on the badge's lower right, and a 'NO RAM' tab beside it
+    (ink plate, RAM cyan word).  nowords: the lock only."""
+    cv = Cv(R)
+    if not nowords:
+        # the tab runs out from under the cost badge (its left end is hidden by the badge) and stops short of the +Trace tab
+        x0, x1, y0, y1 = NO_RAM_TAB
+        tab = poly(cv, [(x0, y0 + 1.0), (x1, y0 - 1.0), (x1 + 2.0, y1 - 1.0), (x0 + 2.0, y1 + 1.0)])
+        cv.paint(extrude(cv, grow(cv, tab, 1.8), 2.2, 2.8), INK)
+        cv.paint(grow(cv, tab, 1.8), INK)
+        cv.paint(tab, hx('1C1830'))
+        cv.paint(text(cv, NO_RAM, no_ram_cx(), (y0 + y1) / 2, NO_RAM_PX, ANTON, NO_RAM_TRACK, 0.0, -1.5), CYAN_HI)
+    cost_badge(cv, spec, nowords)
+    lock_glyph(cv, COST_C[0] + 17.5, COST_C[1] + 21.0, 1.15)     # on the badge's lower-right edge, clear of the digit
+    return cv.img()
+
+
+# rules text (2026-11-03 stage 2, AD review check c): IBM Plex Sans Condensed Medium at 21 design px is a 16.2 px cap at the 1.10x hand scale
+# (cap ratio 0.70).  It is never shrunk.  A text that is wider than RULES_FIT_W wraps at the word break that gives the narrowest longest
+# line (Turn the / tower 3, Turn one / ring 1, Pause / the wave); one line sits at y 206 as before, two lines at y 200 / 221.5, clear of the
+# type plate's drop above and the owner triangles (x >= 134, y >= 219) on the right.  The pink bar runs under the last line.
+RULES_PX = 21.0
+RULES_FIT_W = 124.0
+RULES_CX = 80.0
+RULES_LY1 = (206.0,)
+RULES_LY2 = (200.0, 221.5)
+RULES_BAR = {0: (11.5, 18.5), 1: (13.0, 20.0)}     # bar band under the last line (y offsets), one-line / two-line layout
+
+
+def rules_lines(txt, px=RULES_PX):
+    """[(line, y, width)] of a card's rules text in design px (one or two lines, centred at RULES_CX)"""
+    w = text_w(txt, PLEX, px)
+    if w <= RULES_FIT_W:
+        return [(txt, RULES_LY1[0], w)]
+    words = txt.split(' ')
+    best = None
+    for k in range(1, len(words)):
+        a, b = ' '.join(words[:k]), ' '.join(words[k:])
+        m = max(text_w(a, PLEX, px), text_w(b, PLEX, px))
+        if best is None or m < best[0]:
+            best = (m, a, b)
+    _, a, b = best
+    return [(a, RULES_LY2[0], text_w(a, PLEX, px)), (b, RULES_LY2[1], text_w(b, PLEX, px))]
+
+
+def rules_box(txt, px=RULES_PX):
+    """the rules block's polygon in design px (text plus the pink bar), for the hand clearance check"""
+    ls = rules_lines(txt, px)
+    wmax = max(w for _, _, w in ls)
+    y0 = ls[0][1] - px * 0.62
+    y1 = ls[-1][1] + RULES_BAR[len(ls) - 1][1]
+    return [(RULES_CX - wmax / 2 - 6, y0), (RULES_CX + wmax / 2 + 6, y0), (RULES_CX + wmax / 2 + 6, y1), (RULES_CX - wmax / 2 - 6, y1)]
+
+
 def _fit_title(nm, maxw=128.0, px0=38.0, track=1.0, floor=30.5):
     px = px0
     while text_w(nm, ANTON, px, track) > maxw and px > floor:
@@ -715,20 +956,19 @@ def render_base(spec, nowords=False, R=4.0, seed=0):
     else:
         m = text(cv, fam, 85.5, ty + 0.4, 19, ANTON, 2.2, 0.0, -1.2)
         cv.paint(m, T['text'])
-    # ---------------- rules text
-    txt = spec['txt']
-    pxr = 21.0
-    while text_w(txt, PLEX, pxr) > 120 and pxr > 15:
-        pxr -= 0.5
-    ly = 206.0
-    wt = text_w(txt, PLEX, pxr)
-    if nowords:
-        bw = wt
-        cv.paint(poly(cv, [(80 - bw / 2, ly - 4), (80 + bw / 2, ly - 5), (80 + bw / 2, ly + 5), (80 - bw / 2, ly + 6)]) * cm, INK)
-    else:
-        bar = poly(cv, [(80 - wt / 2 - 4, ly + 13.5), (80 + wt / 2 + 6, ly + 11.5), (80 + wt / 2 + 4, ly + 16.5), (80 - wt / 2 - 6, ly + 18.5)])
-        cv.paint(bar * cm, PINK)
-        m = text(cv, txt, 80, ly, pxr, PLEX, 0.0, 0.0, -0.8)
+    # ---------------- rules text (2026-11-03 stage 2: never shrunk below the 16 px cap floor; a long line wraps to two, rules_lines())
+    lines = rules_lines(spec['txt'])
+    cxr = RULES_CX
+    for li, (s_, ly, wt) in enumerate(lines):
+        last = li == len(lines) - 1
+        if nowords:
+            cv.paint(poly(cv, [(cxr - wt / 2, ly - 4), (cxr + wt / 2, ly - 5), (cxr + wt / 2, ly + 5), (cxr - wt / 2, ly + 6)]) * cm, INK)
+            continue
+        if last:
+            b0, b1 = RULES_BAR[len(lines) - 1]
+            bar = poly(cv, [(cxr - wt / 2 - 4, ly + b0 + 2.0), (cxr + wt / 2 + 6, ly + b0), (cxr + wt / 2 + 4, ly + b1 - 2.0), (cxr - wt / 2 - 6, ly + b1)])
+            cv.paint(bar * cm, PINK)
+        m = text(cv, s_, cxr, ly, RULES_PX, PLEX, 0.0, 0.0, -0.8)
         cv.paint(m, INK)
     # ---------------- owner mark: three flat pink-family triangles bottom right
     bx, by = CW - 26, CH - 17
@@ -737,23 +977,7 @@ def render_base(spec, nowords=False, R=4.0, seed=0):
         cv.paint(grow(cv, t2, 1.2) * cm, INK)
         cv.paint(t2 * cm, cc)
     # ---------------- cost badge: cyan hexagon (RAM)
-    hx_, hy_ = 21, 21
-    hexa = [(hx_ + 19 * math.cos(math.radians(30 + 60 * k)), hy_ + 19 * math.sin(math.radians(30 + 60 * k))) for k in range(6)]
-    hm = poly(cv, hexa)
-    cv.paint(extrude(cv, grow(cv, hm, 2.0), 2.4, 3.0), INK)
-    cv.paint(grow(cv, hm, 2.2), INK)
-    cv.paint(hm, CYAN_COIN)
-    up = poly(cv, [(hx_ - 19, hy_ - 12), (hx_ + 8, hy_ - 19), (hx_ + 19, hy_ - 10), (hx_ + 1, hy_ + 2), (hx_ - 19, hy_ + 9)]) * hm
-    cv.paint(up, CYAN_HI)
-    if nowords:
-        c = int(spec['cost'])
-        if c == 0:
-            cv.paint(circle(cv, hx_, hy_ + 1, 3.0), INK)
-        for q in range(c):
-            xq = hx_ + (q - (c - 1) / 2) * 7.0
-            cv.paint(stroke(cv, [(xq, hy_ - 8), (xq + 0.4, hy_ + 9)], 3.2), INK)
-    else:
-        cv.paint(text(cv, str(spec['cost']), hx_ + 0.5, hy_ + 1.2, 27, ANTON), INK)
+    cost_badge(cv, spec, nowords)
     # ---------------- loud tab (+N Trace): violet eye plate, top right
     if spec['loud']:
         lx, ly2 = CW - 54, 17
@@ -796,7 +1020,8 @@ def _post_dim(im, k):
 
 
 def _unaffordable(im):
-    """dim glass: value x0.5, chroma x0.4, two flat glass planes; the cost badge keeps its colour (it is the reason)"""
+    """dim glass: value x0.5, chroma x0.4, two flat glass planes.  draw_card then lays unaffordable_marks() on top at full value
+    (cost badge, padlock, NO RAM tab), so the state is told by a glyph and a word, not only by the dim."""
     a = np.asarray(im).astype(np.float32)
     rgb, al = a[..., :3], a[..., 3:]
     g = rgb.mean(-1, keepdims=True)
@@ -809,18 +1034,35 @@ def _unaffordable(im):
     return Image.fromarray(np.dstack([np.clip(rgb, 0, 255), al]).astype(np.uint8), 'RGBA')
 
 
+# played slot (2026-11-03 stage 2, AD review 2.3; VISUAL_PLAN B "played-card empty slot: torn-paper outline (P)"): the card leaves a flat
+# torn-paper outline, drawn upright (the hand places it with no fan tilt), filled with a dark toner wash so a neighbouring slot's outline never
+# shows through it (crossing outlines read as a wireframe cage).  P family: torn paper edge in PAPER, no vector hairline, no chamfer cage.
+LINER_TEAR = 1.7            # design px, amplitude of the torn edge
+LINER_RIM = 2.2             # design px, the paper rim
+LINER_FILL = (hx('15121A'), 0.86)
+LINER_PAPER_V = 0.62        # the rim's value (PAPER x this)
+LINER_WORD_PX = 21.0        # Share Tech Mono 21 x 1.10 = 16.2 px cap
+LINER_WORD_V = (0.62, 0.74)  # card name, PLAYED
+
+
 def _liner(R, nowords, spec):
     cv = Cv(R)
-    cm = poly(cv, SHAPE)
-    ln = np.clip(grow(cv, cm, 1.5) - cm, 0, 1)
-    col = hx('A0AFC8')
-    cv.paint(ln, col, 0.9)
-    gm = glyph(cv, spec['g'], 54, CW / 2, CH / 2 - 8)
-    cv.paint(gm, hx('7A88A2'), 0.8)
+    seed = sum(ord(c) for c in spec['name'])
+    rect_ = [(3, 3), (CW - 3, 3), (CW - 3, CH - 3), (3, CH - 3)]
+    torn = poly(cv, jag(cv, rect_, LINER_TEAR, seed, n=5))
+    body =np.clip(1.0 - grow(cv, 1.0 - torn, LINER_RIM), 0, 1)          # the torn shape shrunk by the rim width
+    cv.paint(torn, LINER_FILL[0], LINER_FILL[1])
+    paper = np.array([0xF2, 0xEE, 0xE4], np.float32) / 255.0
+    rim = np.clip(torn - body, 0, 1)
+    cv.paint(rim, paper * LINER_PAPER_V)
+    fib = np.clip(body - np.clip(1.0 - grow(cv, 1.0 - body, 1.0), 0, 1), 0, 1)                  # fibre edge just inside the tear
+    cv.paint(fib * (halftone(cv, np.full_like(fib, 0.35), 2.6, 30) > 0.5), paper * LINER_PAPER_V, 0.55)
+    gm = glyph(cv, spec['g'], 54, CW / 2, CH / 2 - 14)
+    cv.paint(gm, paper * 0.46)
     if not nowords:
-        # O-29 fix 4: the played slot keeps the card name, in the PLAYED small caps (mono), at 70 percent
-        cv.paint(text(cv, spec['nm'], CW / 2, CH / 2 + 34, 17, MONO, 1.5), col, 0.70)
-        cv.paint(text(cv, 'PLAYED', CW / 2, CH / 2 + 56, 17, MONO, 1.5), col, 0.9)
+        # O-29 fix 4 kept: the played slot keeps the card name above PLAYED, mono small caps
+        cv.paint(text(cv, spec['nm'], CW / 2, CH / 2 + 32, LINER_WORD_PX, MONO, 1.0), paper * LINER_WORD_V[0])
+        cv.paint(text(cv, 'PLAYED', CW / 2, CH / 2 + 58, LINER_WORD_PX, MONO, 1.0), paper * LINER_WORD_V[1])
     return cv.img()
 
 
@@ -860,6 +1102,7 @@ def draw_card(card, size, state='normal'):
             im = comp
         elif mode == 'unaffordable':
             im = _unaffordable(im)
+            im.alpha_composite(unaffordable_marks(R, spec, nowords))
         elif state.get('dim'):
             im = _post_dim(im, float(state['dim']))
     out_w = int(round((CW + 2 * MARGIN) * s)); out_h = int(round((CH + 2 * MARGIN) * s))

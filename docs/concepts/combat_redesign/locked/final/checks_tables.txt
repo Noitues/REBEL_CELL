@@ -1,0 +1,240 @@
+== p1_decide  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   53.8   56.6
+S HUD                            87.2    4.0   37.0
+E token discs                    84.7   11.7   46.7
+P hand (rest)                    83.1   45.1   56.6
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         45.5   37.8   38.4
+room                             37.9   31.2   31.8
+room as seen (scrim kept, info)   37.8   29.9   29.8
+E cells empty (glass)            21.0   17.3   17.4
+   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p2_preview  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P lifted card                    91.1   50.2   60.3
+P tower                          89.5   57.6   58.9
+S HUD                            87.7    4.2   39.7
+P hand (rest)                    85.5   46.7   57.0
+E token discs                    84.4   10.8   45.4
+K clock (tape, sweep, plates)    70.6   47.9   46.7
+E cells occupied (glass)         44.2   34.1   37.1
+room                             37.7   30.6   31.5
+room as seen (scrim kept, info)   37.3   24.7   25.6
+E cells empty (glass)            21.0   17.3   17.5
+   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
+== p2b_hover  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+P tower                          89.5   53.8   56.7
+S HUD                            87.2    4.0   37.0
+P hand (rest)                    83.1   45.1   56.6
+E token discs                    82.6   17.8   47.5
+K clock (tape, sweep, plates)    70.8   48.2   47.0
+E cells occupied (glass)         39.0   33.9   34.6
+room                             38.0   31.3   31.9
+room as seen (scrim kept, info)   37.8   29.8   29.6
+E cells empty (glass)            21.0   17.3   17.4
+   cells: occupied NOW L* None; min ratio (live) 3.15; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p3_resolve  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P tower                          89.5   57.7   58.9
+E token discs                    84.4   10.8   45.4
+S HUD                            83.8    4.2   35.8
+P hand (rest)                    83.1   33.9   53.2
+K clock (tape, sweep, plates)    70.6   47.9   46.7
+E cells occupied (glass)         44.2   34.1   37.2
+room                             38.1   30.7   31.6
+room as seen (scrim kept, info)   37.3   21.5   24.8
+E cells empty (glass)            21.0   17.3   17.5
+   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p1_nowords  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   61.3
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   54.4   57.1
+E token discs                    84.4   11.6   45.9
+P hand (rest)                    82.3   40.0   55.7
+S HUD                            81.9    3.9   33.3
+K clock (tape, sweep, plates)    71.0   49.0   48.1
+E cells occupied (glass)         45.5   38.1   38.4
+room                             37.9   31.2   31.8
+room as seen (scrim kept, info)   37.7   29.9   29.6
+E cells empty (glass)            21.0   17.3   17.4
+   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p1_decide_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   53.8   56.6
+S HUD                            87.2    4.0   37.0
+E token discs                    84.6   13.7   46.7
+P hand (rest)                    83.1   45.1   56.6
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         46.8   38.1   38.6
+room                             37.9   31.2   31.8
+room as seen (scrim kept, info)   37.8   29.9   29.8
+E cells empty (glass)            21.6   16.2   17.0
+   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p2b_hover_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+P tower                          89.5   53.8   56.7
+S HUD                            87.2    4.0   37.0
+P hand (rest)                    83.1   45.1   56.6
+E token discs                    82.6   20.1   47.1
+K clock (tape, sweep, plates)    70.8   48.2   46.9
+E cells occupied (glass)         39.0   33.9   34.8
+room                             38.0   31.3   31.9
+room as seen (scrim kept, info)   37.8   29.8   29.6
+E cells empty (glass)            21.6   16.2   17.0
+   cells: occupied NOW L* None; min ratio (live) 3.38; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p1_decide_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   53.8   56.6
+S HUD                            87.2    4.0   37.0
+E token discs                    84.9   11.7   46.2
+P hand (rest)                    83.1   45.1   56.6
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         45.3   37.4   38.2
+room                             37.9   31.4   32.0
+room as seen (scrim kept, info)   37.8   30.7   30.1
+E cells empty (glass)            19.7   15.0   15.7
+   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.12; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p2b_hover_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+P tower                          89.5   53.8   56.7
+S HUD                            87.2    4.0   37.0
+P hand (rest)                    83.1   45.1   56.6
+E token discs                    82.6   16.6   46.8
+K clock (tape, sweep, plates)    70.8   48.2   46.9
+E cells occupied (glass)         38.9   33.6   34.4
+room                             37.9   31.5   32.2
+room as seen (scrim kept, info)   37.8   30.7   29.9
+E cells empty (glass)            19.7   15.0   15.7
+   cells: occupied NOW L* None; min ratio (live) 4.35; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p2_preview_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P lifted card                    91.1   50.2   60.3
+P tower                          89.5   57.6   58.9
+S HUD                            87.7    4.2   39.7
+P hand (rest)                    85.5   46.7   57.0
+E token discs                    84.4   11.6   45.4
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         46.3   34.3   37.3
+room                             37.7   30.6   31.5
+room as seen (scrim kept, info)   37.3   24.7   25.6
+E cells empty (glass)            21.6   16.2   17.0
+   cells: occupied NOW L* [43.1, 43.3]; min ratio (live) 3.33; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
+== p3_resolve_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P tower                          89.5   57.7   58.9
+E token discs                    84.4   11.6   45.4
+S HUD                            83.8    4.2   35.8
+P hand (rest)                    83.1   33.9   53.2
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         46.4   34.3   37.3
+room                             38.1   30.7   31.6
+room as seen (scrim kept, info)   37.3   21.5   24.8
+E cells empty (glass)            21.6   16.2   17.0
+   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p1_nowords_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   61.3
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   54.4   57.1
+E token discs                    84.3   11.7   45.9
+P hand (rest)                    82.3   40.0   55.7
+S HUD                            81.9    3.9   33.3
+K clock (tape, sweep, plates)    71.0   49.0   48.1
+E cells occupied (glass)         46.8   38.2   38.6
+room                             37.9   31.2   31.8
+room as seen (scrim kept, info)   37.7   29.9   29.6
+E cells empty (glass)            21.6   16.2   16.9
+   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p2_preview_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P lifted card                    91.1   50.2   60.3
+P tower                          89.5   57.6   58.9
+S HUD                            87.7    4.2   39.7
+P hand (rest)                    85.5   46.7   57.0
+E token discs                    84.4   10.8   44.7
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         44.6   34.0   36.8
+room                             37.5   31.1   31.2
+room as seen (scrim kept, info)   36.8   24.9   25.3
+E cells empty (glass)            19.8   15.1   15.7
+   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.14; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
+== p3_resolve_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   68.1
+T HOT marks                      94.9   47.6   55.9
+P tower                          89.5   57.7   58.9
+E token discs                    84.4   10.8   44.7
+S HUD                            83.8    4.3   35.8
+P hand (rest)                    83.1   33.9   53.2
+K clock (tape, sweep, plates)    70.6   47.8   46.6
+E cells occupied (glass)         44.6   34.0   36.9
+room                             37.7   31.1   31.7
+room as seen (scrim kept, info)   36.7   21.6   24.7
+E cells empty (glass)            19.8   15.1   15.7
+   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.13; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+== p1_nowords_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+family                            p95 median   mean
+SEND IT                          98.2   59.4   61.3
+T HOT marks                      94.2   37.9   52.7
+P tower                          89.5   54.4   57.1
+E token discs                    84.4   11.6   45.4
+P hand (rest)                    82.3   40.0   55.7
+S HUD                            81.9    4.0   33.3
+K clock (tape, sweep, plates)    71.0   49.0   48.0
+E cells occupied (glass)         45.2   37.4   38.2
+room                             37.9   31.4   32.0
+room as seen (scrim kept, info)   37.8   30.7   29.8
+E cells empty (glass)            19.7   15.0   15.7
+   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.12; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+   p1_decide stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2_preview stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2b_hover stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p3_resolve stage2: hand margin 15 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p1_nowords stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p1_decide_solace stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2b_hover_solace stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p1_decide_meridian stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2b_hover_meridian stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2_preview_solace stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p3_resolve_solace stage2: hand margin 15 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p1_nowords_solace stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p2_preview_meridian stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p3_resolve_meridian stage2: hand margin 15 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
+   p1_nowords_meridian stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]

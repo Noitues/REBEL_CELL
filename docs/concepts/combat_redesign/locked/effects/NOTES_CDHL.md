@@ -1,134 +1,143 @@
-# Effects C / D / H / L on the locked final board (roadmap step 4)
+# Effects C / D / H / L on the rebuilt board
 
-Families: **C corp, D damage, H harm, L life** (16 effects + 3 variants), plus `fx_block_vs_break.png`. The M / P / S / T families are the other effects designer's (their notes sit beside these). Every frame here is the real locked final board (the `locked/final` generator, E10 state); nothing is painted on a stand-in. No game number, word or rule was changed.
+**Status 2026-11-04: re-rendered on the rebuilt board** (the 2026-11-03 rebuild with gate 1, as published in `../final/`). Every plate in this set was rendered from scratch on that board, on every skin it had before. AD review items **1.6, 1.8, 2.10, 2.11 and 3.10 are done** for the C, D, H and L effects and for the comparison block. Items still open are listed under **Not done**, at the end.
+
+Families: **C corp, D damage, H harm, L life** (16 effects + 3 variants), plus `fx_block_vs_break.png`. The M / P / S / T families belong to the other effects designer; their notes sit beside these. No game number, word or rule was changed. Where an effect was hiding a game mark, the effect was moved (see "Found at 1x").
+
+All values here are CIE L* (D65). Loudness, settle, layer and guard are measured on the 60 fps frames the published keyframes are cut from. The P-stock numbers are measured on the published `fx_block_vs_break.png`.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `fx_C_corp.png` | grow, ward_on: neutral, Solace, Meridian rows |
+| `fx_C_corp.png` | grow, ward_on: neutral, Solace and Meridian rows |
 | `fx_D_damage.png` | gun_hit, strike, trigger_hit, kill, ricochet (+ gold), firewall_burn: all three skins |
 | `fx_H_harm.png` | hit_land (+ worm, adjuster), shield_break, slice_crack, slice_break, hp_through: player skin |
-| `fx_L_life.png` | refund, clear (all three skins), repair_mend (player skin) |
-| `fx_block_vs_break.png` | shield block (P) and shield break (H) on the same slice: peak in colour and luma, then both strips |
-| `strips/<id>.jpg` | one per effect (19 files, all under 2 MB): the same block at larger size |
-| `timings_CDHL.json` | in / hold / out, phases, easing, keyframes, reduce-motion note, board crop, base plates and the full flash numbers per skin |
+| `fx_L_life.png` | refund and clear (all three skins), repair_mend (player skin) |
+| `fx_block_vs_break.png` | shield block (P) and shield break (H) on the same slice. Shows the peak frame in colour and in luma (all four panels the same size), then both blocks. |
+| `strips/<id>.jpg` | one per effect, 19 files, each under 2 MB: the same block at a larger size |
+| `timings_CDHL.json` | in / hold / out, phases, easing, keyframes, reduce-motion note, board crop, base plates; measured flash, loudness, settle, layer and guard per skin. `rebuild_2026_11_03` holds the T2 cap, the layer rule, the loudness metric, the per-skin order tables and the P stock. |
 
-Each block shows 5-6 keyframes labelled in ms, then a yellow-framed **reduce-motion still**. Its header gives STILL, TIMING, the measured FLASH line, REDUCE MOTION, STYLE MUST KEEP and SOURCE (the state the effect comes from).
+Each block shows 5 or 6 keyframes labelled in ms, then a yellow-framed **reduce-motion still**. Its header lines are:
+- STILL
+- TIMING, with the T2 cap
+- FLASH (measured)
+- LOUDNESS: transient per skin, the neutral peak frame, area and mean L*, the rank and tier, and the total
+- LAYER: under or across the HUD, the settle time and the GAIN / FOCUS / lime px
+- REDUCE MOTION
+- STYLE MUST KEEP
+- SOURCE: the state the effect comes from
 
-## Skins and where each effect is shown
-- **Corp rings (all three skins: neutral, Solace, Meridian):** grow, ward_on, gun_hit, strike, trigger_hit, kill, ricochet, ricochet_gold, firewall_burn, refund (it pops from a ring cell) and clear (on the landing arc, next to the corp rim).
-- **Player skin only:** the tower effects (hit_land and its variants, shield_break, slice_crack, slice_break, repair_mend) and hp_through (arc to the HUD). The tower and the HUD are the same on every corp, so corp rows would repeat the same pixels.
-- **Slice-wide overlays:** hit_land, shield_break, slice_crack, slice_break and repair_mend cover their whole tower slice. The icon seat (r 37 around the icon) stays clear, except where the effect fades the icon on purpose (shield_break, slice_break).
+## 2026-11-03 rebuild
 
-## Family materials (distinct from WPAP cards, xerox/linocut spinner, corp enamel, cyan HUD)
+### What was done, per review finding
 
-| Family | Material | Why it doesn't clash |
+| # | Class | Done as |
 |---|---|---|
-| C corp | The corp's own frame enamel as a flat, opaque shutter slab with a hard 2 px lip. Neutral: steel (188,200,214), straight lip. Solace: porcelain (226,238,216) with a lime (150,236,120) rounded membrane lip. Meridian: stencil paint (236,214,178) with an oxide (224,128,40) notched lip. One flat 4-frame flash, no texture. Ward uses boss gold. | The state change wears the corp's own frame material, so it reads as the corp acting. It never uses pink, and it never uses the silver THIS TURN tape, which is time grammar. |
-| D damage | Player-owned comic hit frame: a painted pink tracer (a tapered ribbon with an ink key), an ink-keylined pink starburst with a white core, converging white speed lines, flat vector shards (pink, paper, ink). | Pink belongs to the player, so we hurt them in pink. Flat vector, no Ben-Day, so it stays off the spinner print. |
-| H harm | Misregistered red print: an X-only halftone flood (crossed marks, never round dots), black krackle with a 2 px red offset, a red stencil X. | Round dots would merge with the BURST slice's Ben-Day. The X screen is never used elsewhere. |
-| L life | The one soft rising glow in the set: brush-stroke ribbons, plus signs, four-point sparkles. GAIN green on dark, **mint (214,255,206) with an ink key on the green REPAIR wedge** (GAIN green vanishes on it), NET_CYAN for the RAM coin. | Glow is used by no other family. Cyan is used only for RAM, matching the HUD. |
+| 1.6 Effects above the HUD | IMPL | Each frame is composited in layers. First the board layer (`f1_render.SPLIT['below']`: room, scrim, board, tower, units, arcs, guns, tags, digits). Then the effect's UNDER layer. Then the HUD, YOU strip, hand, UNDO, nameplate and SEND IT (`SPLIT['above']`). The OVER layer goes on top. Only `fx_hp_through` and `fx_refund` draw into OVER (`fx_trace_add` is the MPST designer's). For any other effect the composer refuses to draw above the HUD. **Measured:** 0 px above the HUD for the 18 effects that stay under. hp_through draws at most 6580 px on the HUD; refund draws at most 1091 px. |
+| 1.8 GAIN on kill marks | IMPL | Every kill mark is in the cause colour: CELL_PINK, L* 59.4, with a pink-tint core. That covers the flare on the token, the KO starburst and the shards. **Measured** (every 60 fps frame, every skin, px within dE76 15 of the token): 0 FOCUS px and 0 lime px on every effect; 0 GAIN px on every non-L effect. GAIN appears only on the L family, by design: the clear check (277 px) and the repair pip (254 px). |
+| 2.10 Loudness order | IMPL | **Measured order: damage > kill > block > state, on all three skins** (tables below). <br>**Quieted:** <br>- grow: the shutter slab is replaced by one 1.6 px scan line in the skin's enamel ink and a 4-frame flash at 40 % on the new chevron only. <br>- ward_on: no Adjuster pulse and no slab. One gold scan line, a 4-frame flash on the lozenge, one thin ping. <br>- shield_block: no wedge tint, 10 sparks, jolt 1.0. <br>- clear: no wash along the arc. <br>- refund: the coin is drawn at the RAM coin's own size, with no glow. <br>- repair_mend: toned down so it sits under every block. <br>**Lifted:** gun_hit (starburst R 44, 14 converging speed lines), hp_through, both ricochets. |
+| 2.11 Lengths | IMPL | Every effect is **600 ms or less, with no per-effect override**. The registry asserts the total, every phase end and the last key against `T2_CAP_MS = 600`. **Measured settle** (the last frame that differs from the settled frame by dE76 > 3 anywhere in the crop): 200-600 ms. Old to new: <br>- grow 650 → 400, ward_on 750 → 400, clear 800 → 400 <br>- strike 700 → 600, trigger_hit 900 → 600, firewall_burn 1000 → 600 <br>- hit_land and its variants 700 → 600, shield_break 700 → 600, slice_break 650 → 600 <br>- hp_through 1150 → 600, refund 900 → 600, repair_mend 900 → 600 <br>- shield_block 560 → 500 <br>gun_hit, kill (600), the ricochets (500) and slice_crack (500) were already within the cap. In the resolve beat, trigger_hit keeps the O-30 sequencing note (`in_sequence` in the JSON): s3 at 120 ms, s4 at 240 ms. |
+| 3.10 Block plate on card stock | IMPL | The FX-P plate has its own stock, **P stock #F6C8DE**: a pink-tinted paper at L* 85.1. The card bone PAPER is #F2EEE4 at L* 94.2, and the two are dE76 24.2 apart. On the published `fx_block_vs_break.png`, 28283 px fall within dE76 8 of the P stock, at median L* 85.1. The block plate is drawn on it, and so are the break's 5 shards ("the same plate, in shards"). |
 
-Rules kept: no dashed or dotted lines (trails are one continuous tapered ribbon; I replaced the round-2 echo dots with ribbons because a diamond train read as a dotted line). No needle. Cross-hatch only means HP lost at this END TURN: an effect resolves the existing hatch into a gone socket or dark pip and never adds new hatch. The arrowed outline is not used (no effect is a movement). Pink stays the player's.
+### Loudness (review 2.10): method and order
 
-## Flash check (measured, 60 fps)
+**Metric** (`fxk_lib.loud_frame`). For each 60 fps frame, from 100 ms before the start to 300 ms past the end:
+1. A pixel counts when it differs by dE76 > 5 from the same frame without the effect. That reference is the pre-state, or the post-state blended through the state mask at that time.
+2. It must also differ by dE76 > 5 from the settled frame. This keeps only the transient: the light and print that come and go.
+3. Each counted pixel is weighted by L* / 100. The loudness is the peak over all frames, in full-value px (100 px at L* 100 = 100).
 
-**Method** (`fxk_lib.flash_check`):
-1. **Frames.** Every frame of the animation is rendered at 60 fps over the board crop. That runs from 100 ms before the start (pre-state held) to 300 ms past the end (settled state held). Each frame is composited on the real plate: pre base, post base through the state mask, then the effect layer.
-2. **Luminance.** Per pixel I take relative luminance Y (WCAG 2: linearised sRGB, 0.2126 R + 0.7152 G + 0.0722 B).
-3. **Region.** The *footprint* is every pixel whose Y moves more than 0.02 at any time: the frame region the effect covers. I also test against the whole crop.
-4. **Transitions.** Each pixel's Y path is cut into swings between local extremes, with hysteresis 0.10. A transition is a swing of at least 0.10 whose darker end is below 0.80.
-5. **Waves.** For each frame I count the share of the region that completed a transition in the last 100 ms. A wave is the moment an up-share or a down-share first crosses 25 % (edge-triggered).
-6. **Flashes.** One flash is an opposing pair of waves (up then down, or down then up). Flashes per second is the most flashes in any 1 s window. The pass bar is 3 or fewer.
-7. **Also reported** in `timings_CDHL.json`: the region-mean luminance series, its largest frame-to-frame step, the peak up and down shares, and the same test on the reduce-motion variant (neutral).
+**Total** is the same metric without step 2. It also counts the mark the effect leaves: a gone tick, a dark wedge, the block plate, the new chevron. Both are reported. **Call:** the gate uses the transient. The mark an effect leaves is the state, not the effect.
 
-| Effect | Fam | Total ms | In / hold / out | Skins | Max flashes/s (worst skin) | Footprint (share of crop) | Peak swing share up / down | Mean-lum max step | Reduce flashes/s | Result |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `fx_grow` | C | 650 | 250 / 67 / 333 | neu, sol, mer | 1 | 32 % | 51 / 88 % | 0.17 | 0 | pass |
-| `fx_ward_on` | C | 750 | 450 / 67 / 233 | neu, sol, mer | 2 | 44 % | 52 / 50 % | 0.06 | 0 | pass |
-| `fx_gun_hit` | D | 600 | 170 / 160 / 270 | neu, sol, mer | 1 | 6 % | 49 / 50 % | 0.08 | 0 | pass |
-| `fx_strike` | D | 700 | 200 / 180 / 320 | neu, sol, mer | 1 | 12 % | 47 / 39 % | 0.07 | 1 | pass |
-| `fx_trigger_hit` | D | 900 | 420 / 230 / 250 | neu, sol, mer | 0 | 3 % | 29 / 21 % | 0.04 | 0 | pass |
-| `fx_kill` | D | 600 | 110 / 220 / 270 | neu, sol, mer | 1 | 20 % | 92 / 87 % | 0.40 | 0 | pass |
-| `fx_ricochet` | D | 500 | 100 / 150 / 250 | neu, sol, mer | 1 | 3 % | 45 / 42 % | 0.04 | 0 | pass |
-| `fx_ricochet_gold` | D | 500 | 100 / 220 / 200 | neu, sol, mer | 1 | 4 % | 40 / 38 % | 0.06 | 1 | pass |
-| `fx_firewall_burn` | D | 1000 | 460 / 240 / 300 | neu, sol, mer | 1 | 17 % | 39 / 76 % | 0.03 | 0 | pass |
-| `fx_hit_land` | H | 700 | 160 / 170 / 370 | neu | 1 | 16 % | 55 / 40 % | 0.04 | 1 | pass |
-| `fx_hit_land_worm` | H | 700 | 160 / 170 / 370 | neu | 1 | 17 % | 54 / 39 % | 0.04 | 1 | pass |
-| `fx_hit_land_adjuster` | H | 700 | 160 / 170 / 370 | neu | 1 | 20 % | 62 / 49 % | 0.05 | 1 | pass |
-| `fx_shield_break` | H | 700 | 190 / 190 / 320 | neu | 1 | 40 % | 35 / 32 % | 0.03 | 1 | pass |
-| `fx_slice_crack` | H | 500 | 260 / 40 / 200 | neu | 2 | 12 % | 42 / 42 % | 0.07 | 0 | pass |
-| `fx_slice_break` | H | 650 | 200 / 180 / 270 | neu | 0 | 35 % | 24 / 62 % | 0.05 | 0 | pass |
-| `fx_hp_through` | H | 1150 | 880 / 100 / 170 | neu | 0 | 5 % | 22 / 26 % | 0.02 | 0 | pass |
-| `fx_refund` | L | 900 | 650 / 0 / 250 | neu, sol, mer | 0 | 14 % | 26 / 24 % | 0.02 | 1 | pass |
-| `fx_clear` | L | 800 | 300 / 100 / 400 | neu, sol, mer | 1 | 12 % | 64 / 40 % | 0.03 | 0 | pass |
-| `fx_repair_mend` | L | 900 | 560 / 0 / 340 | neu | 1 | 19 % | 33 / 30 % | 0.01 | 0 | pass |
-| `fx_shield_block` | P | 560 | 100 / 260 / 200 | neu | 1 | 20 % | 40 / 39 % | 0.03 | 0 | pass |
+On the total, shield_block is 4381 (its intact plate) against kill 1813, so the order does not hold there. On the transient it holds on every skin.
 
-Notes on the numbers:
-- **kill (1/s).** The 2-frame 70 % white flare on the cell is the biggest single event in the set: 92 % of the footprint swings, and the mean-lum step is 0.40. It is one flash.
-- **ward_on and slice_crack (2/s).** These are the only effects with two flashes. In ward_on they are the Adjuster pulse and the gold flash; in slice_crack, the rim flood pulse and the crack/pip change. Both are under the limit.
-- **firewall_burn.** The flicker is a 7 Hz change in tongue height, not in luminance, and it measures 1/s.
-- **Effects that share a beat.** No effect is above 2/s on its own. On the resolve beat, effects must stay sequenced by the VISUAL_PLAN G layer order, not overlapped. I did not measure a combined resolve sequence.
+| Tier boundary | neutral | Solace | Meridian |
+|---|---|---|---|
+| damage min > kill max | hit_land 2817 > kill 1813 | 2817 > 1816 | 2817 > 1812 |
+| kill min > block max | kill 1813 > shield_block 1393 | 1816 > 1393 | 1812 > 1393 |
+| block min > state / gain max | ricochet_gold 885 > repair_mend 700 | 886 > 700 | 885 > 700 |
 
-## Per effect: timing and reduce-motion
+Player-skin effects (H, repair_mend, shield_block) are ranked with their neutral value in the Solace and Meridian tables. Full per-skin tables: `timings_CDHL.json` `rebuild_2026_11_03.loudness_order_<skin>`.
 
-Easing names: eout = ease-out cubic, eio = ease-in-out cubic, back = ease-out back (overshoot). Full phases are in the JSON.
+### Measured, per effect (sorted by neutral transient loudness)
 
-**C corp**
-- **grow (650 ms).** Shutter wipe 0-250 (eio), flat flash 250-317 (4 frames), open 317-460 (eio), ring ping 300-560 (eout). The new hollow growth chevron is the post-state, rendered by the generator (land_hit = hit + 1). *Reduce:* no shutter or ping; the chevron fades in over 200 ms.
-- **ward_on (750 ms).** Adjuster pulse 0-220 (sine, gold fill 22 % + bright edge), gold scan 150-450 (eio), gold flash 450-517 at 42 %, lozenge and ping 470-700. *Reduce:* the lozenge fades in over 200 ms.
+The settle, layer, guard and flash columns give the worst skin.
 
-**D damage**
-- **gun_hit (600 ms).** Tracer 0-100 (eout), burst 100-170 (back), speed lines 100-280, shards 120-460, tick to gone socket at 170 with a pink pop, out 300-520. *Reduce:* tracer and burst static for 300 ms, fade 200; no lines or shards.
-- **strike (700 ms).** Slash 0-120, burst 120-200 (back), two ticks gone at 200, out 380-640. *Reduce:* as gun_hit.
-- **trigger_hit (900 ms).** The pencil route ignites to paint front to back over 0-420 (linear). Bursts at the struck cells in sector order: sector 3 at 230, sector 4 at 420. The Xs turn from pencil to pink paint as they are hit. *Reduce:* route painted at once; both bursts together for 300 ms.
-- **kill (600 ms).** Flare on frames 1-2 (17-50 ms, cell only), KO burst with no word at 34-110, shards 60-560, cell empties 200-420 (eio). The post-state is rendered with the Worm and its shots removed. *Reduce:* no flare; a 25 % tint held for 200 ms, then the cell fades empty.
-- **ricochet (500 ms).** Steel cap glint and sparks; no starburst, no HP. *Reduce:* tracer and glint static.
-- **ricochet_gold (500 ms).** A curved gold streak, a single tapered ribbon, glances off the ward mark. In E10 the warded shots deal 0, so no tick changes. *Reduce:* full streak static.
-- **firewall_burn (1000 ms).** Bands rise ring by ring (0, 130, 260 ms stagger, eout), up to 60 % of cell depth; inked pink with a lighter core and no white. The flames are cut clear of the unit token. Ticks gone at 330, embers 700-1000. *Reduce:* all bands at once, no flicker.
+| Effect | Fam | Tier | Total ms | Skins | Loudness, transient (neu / sol / mer) | Mean L* @ ms (neu) | Area px (neu) | Loudness, total (neu) | Settles ms | Under-layer px under the HUD | Px drawn on the HUD | GAIN / FOCUS / lime px | Max flashes/s | Reduce flashes/s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `fx_firewall_burn` | D | damage | 600 | neu,sol,mer | 9540 / 9548 / 9535 | 60 @ 367 | 15864 | 9607 | 600 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_shield_break` | H | damage | 600 | neu | 8377 | 54 @ 250 | 15499 | 8382 | 550 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_strike` | D | damage | 600 | neu,sol,mer | 5490 / 5494 / 5482 | 57 @ 200 | 9640 | 5490 | 567 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_trigger_hit` | D | damage | 600 | neu,sol,mer | 5074 / 5075 / 5075 | 49 @ 283 | 10367 | 5291 | 600 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_slice_break` | H | damage | 600 | neu | 4778 | 48 @ 200 | 10016 | 4977 | 450 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_hit_land_adjuster` | H | damage | 600 | neu | 3749 | 51 @ 133 | 7335 | 3750 | 550 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_gun_hit` | D | damage | 600 | neu,sol,mer | 3748 / 3754 / 3742 | 57 @ 183 | 6578 | 3748 | 517 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_slice_crack` | H | damage | 500 | neu | 3121 | 45 @ 50 | 6946 | 3124 | 417 | 0 | 0 | 0 / 0 / 0 | 2 | 0 |
+| `fx_hp_through` | H | damage | 600 | neu | 3035 | 50 @ 450 | 6067 | 3035 | 583 | 0 | 6580 (allowed) | 0 / 0 / 0 | 1 | 0 |
+| `fx_hit_land_worm` | H | damage | 600 | neu | 2822 | 46 @ 183 | 6198 | 2865 | 550 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_hit_land` | H | damage | 600 | neu | 2817 | 46 @ 183 | 6158 | 2817 | 550 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_kill` | D | kill | 600 | neu,sol,mer | 1813 / 1816 / 1812 | 68 @ 17 | 2650 | 1813 | 517 | 0 | 0 | 0 / 0 / 0 | 0 | 0 |
+| `fx_shield_block` | P | block | 500 | neu | 1393 | 50 @ 100 | 2757 | 4381 | 333 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_ricochet` | D | block | 500 | neu,sol,mer | 898 / 898 / 898 | 51 @ 150 | 1753 | 1042 | 383 | 0 | 0 | 0 / 0 / 0 | 1 | 1 |
+| `fx_ricochet_gold` | D | block | 500 | neu,sol,mer | 885 / 886 / 885 | 43 @ 150 | 2077 | 885 | 467 | 0 | 0 | 0 / 0 / 0 | 1 | 1 |
+| `fx_repair_mend` | L | gain | 600 | neu | 700 | 71 @ 217 | 988 | 715 | 533 | 0 | 0 | 254 / 0 / 0 | 1 | 0 |
+| `fx_refund` | L | gain | 600 | neu,sol,mer | 675 / 675 / 675 | 60 @ 200 | 1133 | 675 | 600 | 0 | 1091 (allowed) | 0 / 0 / 0 | 1 | 1 |
+| `fx_grow` | C | state | 400 | neu,sol,mer | 533 / 516 / 433 | 57 @ 133 | 936 | 533 | 200 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_ward_on` | C | state | 400 | neu,sol,mer | 391 / 397 / 393 | 52 @ 183 | 747 | 391 | 367 | 0 | 0 | 0 / 0 / 0 | 1 | 0 |
+| `fx_clear` | L | gain | 400 | neu,sol,mer | 85 / 85 / 85 | 50 @ 50 | 170 | 260 | 367 | 0 | 0 | 277 / 0 / 0 | 1 | 0 |
 
-**H harm**
-- **hit_land (700 ms).** Chevrons slam in 0-100 (ease-in), the wedge frame flashes HARM on 2 frames (100-134), the X flood rolls in 100-260 over the outer half (the seat stays clear), krackle 120-520, the hatched pip goes dark at 260. Variants: the worm hook stamps at 160-230 and stays; the Adjuster gives one gold rim flash at 100-200. *Reduce:* flood held at 80 % for 300 ms, no travel or krackle.
-- **shield_break (700 ms).** Plate under load with a hairline crack 0-110, splits into 5 shards at 120 (eout + gravity, 120-560), flood 130-300, krackle, wedge dark 200-500 (stays), pips dark at 300. *Reduce:* shards shown split in place.
-- **slice_crack (500 ms).** Rim flood pulse 0-300, white crack 60-260 beside the icon, pip dark at 200. *Reduce:* crack only, 150 ms.
-- **slice_break (650 ms).** Flood, red stencil X in the outer corner 120-200 (strong back), black-out 150-450 and ink X-halftone over the icon 200-500 (both stay), pips dark at 250. *Reduce:* all in one 300 ms fade.
-- **hp_through (1150 ms).** Six diamonds lift 0-220 and ride one shared curve 120-880 (eio, 30 ms stagger) behind one ribbon trail. One red slap on the taped YOU strip, then the six hatched segments go dark (920-1100). *Reduce:* segments go dark in 200 ms, no flight.
+**Flash** (60 fps, `fxk_lib.flash_check`, the method is unchanged from step 4: WCAG relative luminance, footprint and whole-crop region, a 0.10 swing with hysteresis, 25 % wave share, opposing wave pairs in any 1 s window): every effect is at **2 flashes/s or less** (slice_crack 2, the rest 0-1), and every reduce-motion variant at 1/s or less. The pass bar is 3/s. Each effect was measured alone. The resolve beat sequences them (VISUAL_PLAN G layer order); the combined beat was not measured (see Not done).
 
-**L life**
-- **refund (900 ms).** A NET_CYAN coin with a plus pops at the REFUND mark (0-150, back) and flies one curve with a cyan ribbon and soft glow (150-650). The RAM slot lights with a glow ring (650-910); the slot reads empty until the coin lands. *Reduce:* coin fades at the mark; the slot lights at once.
-- **clear (800 ms, round 2 was still-only).** GAIN wash sweeps the landing arc 0-240, a painted check stamps in at 160-300 (back), sparkles 300-680. *Reduce:* wash and check fade in over 200 ms.
-- **repair_mend (900 ms).** Mint brush ribbons with a soft glow rise through the REPAIR wedge 0-645, plus signs 120-780, the mend-pending pip fills 380-560. *Reduce:* two static plus signs and the pip fill.
+### Found at 1x on the rebuilt board (IMPL, fixed)
+- **trigger_hit ended in pencil yellow.** The "paint" route layer was drawn yellow, because `a_plan.trigger_path` uses a_plan's own `YEL`. `trig_layers.py` now swaps that name too, so the route ends CELL_PINK.
+- **firewall_burn left a 5 % residue to 800 ms.** It now fades fully by 600. Its flames also covered the wave tags' unit dots (the "••" of +2 W3 and the "•" of +1 W2); the flames are now cut clear of them, as they already were of the unit token.
+- **clear's check hid a game mark.** It covered the arc's third hit diamond and touched its "3". It moved to r 443, 78 deg, below both.
+- **hp_through hid the arc's "3".** The diamond stack lifted off over it. It now lifts off at 44 deg, before the "3".
+- **refund's pop could not be seen.** The coin popped exactly on the board's own refund coin. It now lifts 14 px off it, with one thin cyan ping.
+- **refund pre-state seams.** The RAM slot is shown empty with no REFUND tab until the coin lands. Seams at the ray tips and at x 1204 were removed (`prep_refund.py`, re-run for all three skins).
+- **Sheets.** Keyframe captions were cut at one line; they now wrap to two. The family line ran off the page; it now wraps. The luma panels in block-vs-break were narrower than the colour panels; all four are now the same size.
 
-## Honest caveats and open points
-1. **Latent effects.** strike, ricochet (steel), firewall_burn, the hit_land Adjuster variant and repair_mend have no source in the E10 state.
-   - They are drawn on real units and slices, with stand-in marks: a steel cap on Packet 5, and a mend-pending pip on sector 5.
-   - They were not checked against real game numbers.
-   - In E10, warded shots deal 0, so ricochet_gold shows no HP change.
-2. **Block vs break uses a pending slice.** The block demo sits on sector 1, which E10 forecasts to break, so the base already carries the red pending hatch under the block. That hatch is the board's, not the effect's. A real block would sit on a slice with no pending loss.
-3. **Kill post-state.** It was rendered with the Worm removed from the state and its two gun shots dropped, so the gun tracer also leaves in the post-state. In the game the tracer ends with the shot anyway.
-4. **Grow post-state.** It was rendered with land_hit = hit + 1 on Packet 5. That is how this board draws a hollow growth chevron; E10's `grown` field draws nothing on the board.
-5. **Overlay layering.** Effects are composited over the finished plate, so on crops that touch the hand they would sit above the cards. The crops avoid the hand. In engine, the slot is above the board and HUD and below the hand (`extra` hook).
-6. **Solace lime vs GAIN green.** The Solace shutter lip (150,236,120) is near GAIN green. It is a 2 px lip on a porcelain slab, on screen for under 0.5 s, and it never appears with a plus or a check.
-7. **Flash check scope.** Each effect was measured alone, not as the combined resolve sequence.
-8. **Process.** I ran a bare `python -` once by mistake, with an empty heredoc. It wrote nothing and I stopped it at once; all real work ran from script files. Earlier I also ran one `python -c` syntax check. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell, no shared generator file edited.
+### Family materials (this rebuild)
+
+| Family | Material |
+|---|---|
+| C corp | One clean 1.6 px vector scan line (1 px ink key) in the skin's own enamel ink: neutral ENAMEL #D9E1EA, Solace celadon #B8DCCC, Meridian rust #D88A4E. Then one flat 4-frame flash on the new mark only. BOSS_GOLD #D69A1A for the ward. No slab, no texture, no trail. It never uses pink, and never the silver THIS TURN tape. |
+| D damage | The player-owned comic hit frame: a painted pink tracer (a tapered ribbon with an ink key), an ink-keylined CELL_PINK starburst with a white core, converging white speed lines cut at the tower rim (r 199), and flat vector shards. Kills are in the cause colour. |
+| H harm | Misregistered red print: an X-only halftone flood (crossed marks, never round dots), black krackle with a 2 px red offset, a red stencil X. The broken shield is the P-stock plate in shards. |
+| L life | The one soft glow: brush strokes, plus signs, a painted check, four-point sparkles. GAIN on dark; mint (214,255,206) with an ink key on the green REPAIR wedge; NET_CYAN for the RAM coin. Ranked with the state changes. |
+
+Rules kept:
+- No dashed or dotted lines.
+- No needle.
+- Cross-hatch only means HP lost at this END TURN. An effect resolves hatch into a gone socket or a dark pip, and never adds new hatch.
+- No arrowed outline.
+- Pink stays the player's.
+- Gold is the boss only.
+
+Per-effect timing, phases, easing, keyframes and the reduce-motion behaviour are in `timings_CDHL.json` and on each block's TIMING and REDUCE MOTION lines (one source).
+
+## Not done
+1. **Port data.** `../port/fx_timings.json` and `GODOT_PORT_SPEC.md` section 8 still carry the old C/D/H/L durations (for example refund 910 ms, hp_through 1150 ms). They are not this designer's files. They must be regenerated from `timings_CDHL.json`. **Not done.**
+2. **P stock is not yet one token.** #F6C8DE is defined in this set's `fxk_lib.py`. It is not in `corp/src/rb_tokens.py`, and it is not coordinated with the MPST designer's `fx_shield_block` strips. Until one owner puts it in the token table, it is a second source. **Not done.**
+3. **Combined resolve beat.** Flash and loudness were measured for each effect alone, not as the sequenced beat. **Not done.**
+4. **Latent effects.** strike, ricochet (steel), firewall_burn, the hit_land Adjuster variant and repair_mend have no source in the E10 state. They are drawn on real units and slices with stand-in marks: a steel cap on Packet 5, and a mend-pending pip on sector 5. They are not checked against real game numbers. In E10 the warded shots deal 0, so ricochet_gold shows no HP change.
+5. **The block demo sits on a slice with pending loss.** Sector 1 is forecast to break, so the base carries the board's red pending hatch under the block plate. A real block would sit on a slice with no pending loss.
+6. **Reduce motion** is shown as one still per effect. The reduce flash is measured on neutral only.
+7. **Board items in the bases are the board owner's.** The gate-2 items (pencil 2.5, ticket edges 2.14, the FOCUS colour, token discs, thin 1 px lines) appear in these crops as `../final/` publishes them. When `final/` changes, every base here must be re-rendered and the set rebuilt.
+
+## Process
+- I broke the hard rule once. I ran a bare `python -` with an empty heredoc (`python - <<'EOF' 2>/dev/null || true`). It hung, ran no code and wrote nothing, and I stopped it (my own task). All real work ran from script files. Earlier passes also report one `python -c` syntax check.
+- No Godot, no Blender, nothing committed. Nothing was written under `D:/Godot/rebel_cell`. `corp/src` was imported read-only and never edited.
+- Kept from the earlier passes: the post-states are rendered by the generator. Kill: Worm 2 and its shots removed. Grow: `land_hit = hit + 1` on Packet 5, which the board draws as the hollow growth chevron. Ward: Packet 6 unwarded for the pre-state. Refund: the p3 HUD with the RAM slot empty and no tab.
 
 ## Source and re-render
-Source is in `D:/rc_scratch/combat_redesign/locked/fx_cdhl/src`. It imports the shared generator read-only (`gen_env.py`), and its caches are redirected to `fx_cdhl/work/gen`.
-- `base_render.py <skin> <p3|p3alt|p3grow|p3kill>` renders the base plates.
-- `fx_cdhl.py` holds the effects: kit, geometry and registry.
-- `fxk_lib.py` holds the layer kit, frame composer and flash meter.
-- `fx_build.py <ids>` renders keyframes and runs the 60 fps flash check.
-- `fx_sheets.py all` builds the sheets, strips, `timings_CDHL.json` and block-vs-break.
-- `mk_notes.py` writes this file.
+Source: `D:/rc_scratch/combat_redesign/locked/rebuild/fx_cdhl/src`. It imports `corp/src` read-only (`gen_env.py`, with caches in `fx_cdhl/work/gen_<skin>`). Run from `fx_cdhl/`:
+1. `python src/base_render.py <skin> p1 p3 p3alt p3grow p3kill`: the split base layers. Each is checked against the published `../final/` plate: neutral p1 max 2/255, p3 max 3/255 on all three skins, 0 px over 8.
+2. `python src/trig_layers.py`: the trigger route as pencil and as paint.
+3. `python src/prep_refund.py neutral solace meridian`: the refund pre-state.
+4. `python src/fx_build.py <ids>`: keyframes, reduce stills and the 60 fps meters (`work/flash/<id>_<skin>.json`).
+5. `python src/fx_sheets.py all`: the order tables, the four sheets, the 19 strips, `timings_CDHL.json` and `fx_block_vs_break.png`.
+6. `python src/notes_table.py` prints the measured table above. `python src/measure_pub.py` prints the P-stock L* on the published PNG.
 
-## O-30 pass
-
-O-30 pass (2026-11-02): all C, D, H and L keyframes, reduce-motion stills and 60 fps flash checks are re-rendered on the O-30 board, on every skin. The outputs are the four family sheets, all 19 strips and `fx_block_vs_break.png`.
-- **Board changes.** The step-6 room grade is now the default in `corp/src`. The FAR threat trim is one solid tapered stroke, with no beads. The HUD-label and hero occluders are in.
-- **Base plates.** All 12 were rendered fresh from `corp/src` (neutral, Solace and Meridian; p3, p3alt, p3grow and p3kill), with clean caches. Before they were stale. Neutral p3 matches the published `final/p3_resolve.png` to within 1/255 (`px_over_8 = 0`). The geometry probe (`geom.json`) is byte-identical to the step-4 one.
-- **What did not change:** effect code, timings, keys and easings.
-- **Flash.** Max flashes per second are the same as step 4 for every effect and skin. All pass at 3 per second or less. The footprint and swing numbers moved by about 1 % or less, because the crops are board, not room.
-- **`timings_CDHL.json`.** Only the measured `flash` fields were refreshed. The O-30 hand edits are kept: the trigger_hit `in_sequence` note and the refund RAM source. An `o30_pass` key records the refresh.
-- **Source.** `D:/rc_scratch/combat_redesign/locked/fx_o30b/cdhl/src` (a copy of `fx_cdhl/src` with the paths redirected and per-skin caches). The JSON merge is `fx_o30b/merge_json.py`.
+## History
+- Step 4 (2026-11-01) and the O-30 pass (2026-11-02) rendered this set on the older board, with longer effects drawn over the HUD. Their numbers are superseded by this section. They are in git history.

@@ -1,44 +1,810 @@
 {
- "_doc": "Effects C/D/H/L (+ P shield_block, comparison only) on the locked final board. Times in ms at 60 fps. in/hold/out from IHO; phases are [start, end] ms; flash = measured (see NOTES_CDHL.md, method).",
+ "_doc": "Effects C/D/H/L (+ P shield_block, comparison only) on the rebuilt board (2026-11-03 rebuild, locked/final). Times in ms at 60 fps; phases are [start, end] ms; flash, loudness, settle, layer and guard are measured per skin on the 60 fps frames (see NOTES_CDHL.md \"2026-11-03 rebuild\", method).",
+ "rebuild_2026_11_03": {
+  "t2_cap_ms": 600,
+  "per_effect_overrides": [],
+  "layer": "every effect draws under the HUD and the hand (f1_render.SPLIT below / above); only fx_hp_through, fx_refund, fx_trace_add may draw above the HUD (review 1.6)",
+  "loudness_metric": "peak over the 60 fps frames of sum(L*/100) over the pixels where the frame differs (dE76 > 5) from both the frame without the effect and the settled frame (the transient); unit full-value px",
+  "p_stock": {
+   "hex": "#F6C8DE",
+   "why": "review 3.10: the FX-P plate on its own stock, a pink-tinted paper, not the card bone PAPER #F2EEE4"
+  },
+  "loudness_order_neutral": {
+   "rule": "damage > kill > block > state (gain ranks with state)",
+   "passes": true,
+   "tiers": [
+    {
+     "upper": "damage",
+     "lower": "kill",
+     "upper_min": 2816.8,
+     "upper_min_id": "fx_hit_land",
+     "lower_max": 1813.2,
+     "lower_max_id": "fx_kill",
+     "ok": true
+    },
+    {
+     "upper": "kill",
+     "lower": "block",
+     "upper_min": 1813.2,
+     "upper_min_id": "fx_kill",
+     "lower_max": 1393.4,
+     "lower_max_id": "fx_shield_block",
+     "ok": true
+    },
+    {
+     "upper": "block",
+     "lower": "state",
+     "upper_min": 885.2,
+     "upper_min_id": "fx_ricochet_gold",
+     "lower_max": 699.9,
+     "lower_max_id": "fx_repair_mend",
+     "ok": true
+    }
+   ],
+   "rows": [
+    {
+     "rank": 1,
+     "id": "fx_firewall_burn",
+     "kind": "damage",
+     "loud": 9540.3,
+     "at_ms": 366.7,
+     "area_px": 15864,
+     "mean_L": 60.1,
+     "total": 9606.9,
+     "skin": "neutral"
+    },
+    {
+     "rank": 2,
+     "id": "fx_shield_break",
+     "kind": "damage",
+     "loud": 8377.0,
+     "at_ms": 250.0,
+     "area_px": 15499,
+     "mean_L": 54.0,
+     "total": 8382.0,
+     "skin": "neutral"
+    },
+    {
+     "rank": 3,
+     "id": "fx_strike",
+     "kind": "damage",
+     "loud": 5490.2,
+     "at_ms": 200.0,
+     "area_px": 9640,
+     "mean_L": 57.0,
+     "total": 5490.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 4,
+     "id": "fx_trigger_hit",
+     "kind": "damage",
+     "loud": 5074.0,
+     "at_ms": 283.3,
+     "area_px": 10367,
+     "mean_L": 48.9,
+     "total": 5290.9,
+     "skin": "neutral"
+    },
+    {
+     "rank": 5,
+     "id": "fx_slice_break",
+     "kind": "damage",
+     "loud": 4778.2,
+     "at_ms": 200.0,
+     "area_px": 10016,
+     "mean_L": 47.7,
+     "total": 4977.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 6,
+     "id": "fx_hit_land_adjuster",
+     "kind": "damage",
+     "loud": 3748.8,
+     "at_ms": 133.3,
+     "area_px": 7335,
+     "mean_L": 51.1,
+     "total": 3749.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 7,
+     "id": "fx_gun_hit",
+     "kind": "damage",
+     "loud": 3747.6,
+     "at_ms": 183.3,
+     "area_px": 6578,
+     "mean_L": 57.0,
+     "total": 3747.6,
+     "skin": "neutral"
+    },
+    {
+     "rank": 8,
+     "id": "fx_slice_crack",
+     "kind": "damage",
+     "loud": 3121.4,
+     "at_ms": 50.0,
+     "area_px": 6946,
+     "mean_L": 44.9,
+     "total": 3124.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 9,
+     "id": "fx_hp_through",
+     "kind": "damage",
+     "loud": 3035.2,
+     "at_ms": 450.0,
+     "area_px": 6067,
+     "mean_L": 50.0,
+     "total": 3035.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 10,
+     "id": "fx_hit_land_worm",
+     "kind": "damage",
+     "loud": 2821.6,
+     "at_ms": 183.3,
+     "area_px": 6198,
+     "mean_L": 45.5,
+     "total": 2864.7,
+     "skin": "neutral"
+    },
+    {
+     "rank": 11,
+     "id": "fx_hit_land",
+     "kind": "damage",
+     "loud": 2816.8,
+     "at_ms": 183.3,
+     "area_px": 6158,
+     "mean_L": 45.7,
+     "total": 2817.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 12,
+     "id": "fx_kill",
+     "kind": "kill",
+     "loud": 1813.2,
+     "at_ms": 16.7,
+     "area_px": 2650,
+     "mean_L": 68.4,
+     "total": 1813.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 13,
+     "id": "fx_shield_block",
+     "kind": "block",
+     "loud": 1393.4,
+     "at_ms": 100.0,
+     "area_px": 2757,
+     "mean_L": 50.5,
+     "total": 4381.1,
+     "skin": "neutral"
+    },
+    {
+     "rank": 14,
+     "id": "fx_ricochet",
+     "kind": "block",
+     "loud": 898.1,
+     "at_ms": 150.0,
+     "area_px": 1753,
+     "mean_L": 51.2,
+     "total": 1041.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 15,
+     "id": "fx_ricochet_gold",
+     "kind": "block",
+     "loud": 885.2,
+     "at_ms": 150.0,
+     "area_px": 2077,
+     "mean_L": 42.6,
+     "total": 885.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 16,
+     "id": "fx_repair_mend",
+     "kind": "gain",
+     "loud": 699.9,
+     "at_ms": 216.7,
+     "area_px": 988,
+     "mean_L": 70.8,
+     "total": 715.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 17,
+     "id": "fx_refund",
+     "kind": "gain",
+     "loud": 674.8,
+     "at_ms": 200.0,
+     "area_px": 1133,
+     "mean_L": 59.6,
+     "total": 674.8,
+     "skin": "neutral"
+    },
+    {
+     "rank": 18,
+     "id": "fx_grow",
+     "kind": "state",
+     "loud": 533.3,
+     "at_ms": 133.3,
+     "area_px": 936,
+     "mean_L": 57.0,
+     "total": 533.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 19,
+     "id": "fx_ward_on",
+     "kind": "state",
+     "loud": 390.8,
+     "at_ms": 183.3,
+     "area_px": 747,
+     "mean_L": 52.3,
+     "total": 390.8,
+     "skin": "neutral"
+    },
+    {
+     "rank": 20,
+     "id": "fx_clear",
+     "kind": "gain",
+     "loud": 84.7,
+     "at_ms": 50.0,
+     "area_px": 170,
+     "mean_L": 49.8,
+     "total": 260.3,
+     "skin": "neutral"
+    }
+   ]
+  },
+  "loudness_order_solace": {
+   "rule": "damage > kill > block > state (gain ranks with state)",
+   "passes": true,
+   "tiers": [
+    {
+     "upper": "damage",
+     "lower": "kill",
+     "upper_min": 2816.8,
+     "upper_min_id": "fx_hit_land",
+     "lower_max": 1816.4,
+     "lower_max_id": "fx_kill",
+     "ok": true
+    },
+    {
+     "upper": "kill",
+     "lower": "block",
+     "upper_min": 1816.4,
+     "upper_min_id": "fx_kill",
+     "lower_max": 1393.4,
+     "lower_max_id": "fx_shield_block",
+     "ok": true
+    },
+    {
+     "upper": "block",
+     "lower": "state",
+     "upper_min": 885.6,
+     "upper_min_id": "fx_ricochet_gold",
+     "lower_max": 699.9,
+     "lower_max_id": "fx_repair_mend",
+     "ok": true
+    }
+   ],
+   "rows": [
+    {
+     "rank": 1,
+     "id": "fx_firewall_burn",
+     "kind": "damage",
+     "loud": 9547.8,
+     "at_ms": 366.7,
+     "area_px": 16007,
+     "mean_L": 59.6,
+     "total": 9614.5,
+     "skin": "solace"
+    },
+    {
+     "rank": 2,
+     "id": "fx_shield_break",
+     "kind": "damage",
+     "loud": 8377.0,
+     "at_ms": 250.0,
+     "area_px": 15499,
+     "mean_L": 54.0,
+     "total": 8382.0,
+     "skin": "neutral"
+    },
+    {
+     "rank": 3,
+     "id": "fx_strike",
+     "kind": "damage",
+     "loud": 5493.5,
+     "at_ms": 200.0,
+     "area_px": 9771,
+     "mean_L": 56.2,
+     "total": 5493.5,
+     "skin": "solace"
+    },
+    {
+     "rank": 4,
+     "id": "fx_trigger_hit",
+     "kind": "damage",
+     "loud": 5075.2,
+     "at_ms": 283.3,
+     "area_px": 10403,
+     "mean_L": 48.8,
+     "total": 5292.1,
+     "skin": "solace"
+    },
+    {
+     "rank": 5,
+     "id": "fx_slice_break",
+     "kind": "damage",
+     "loud": 4778.2,
+     "at_ms": 200.0,
+     "area_px": 10016,
+     "mean_L": 47.7,
+     "total": 4977.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 6,
+     "id": "fx_gun_hit",
+     "kind": "damage",
+     "loud": 3754.4,
+     "at_ms": 183.3,
+     "area_px": 6644,
+     "mean_L": 56.5,
+     "total": 3754.4,
+     "skin": "solace"
+    },
+    {
+     "rank": 7,
+     "id": "fx_hit_land_adjuster",
+     "kind": "damage",
+     "loud": 3748.8,
+     "at_ms": 133.3,
+     "area_px": 7335,
+     "mean_L": 51.1,
+     "total": 3749.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 8,
+     "id": "fx_slice_crack",
+     "kind": "damage",
+     "loud": 3121.4,
+     "at_ms": 50.0,
+     "area_px": 6946,
+     "mean_L": 44.9,
+     "total": 3124.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 9,
+     "id": "fx_hp_through",
+     "kind": "damage",
+     "loud": 3035.2,
+     "at_ms": 450.0,
+     "area_px": 6067,
+     "mean_L": 50.0,
+     "total": 3035.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 10,
+     "id": "fx_hit_land_worm",
+     "kind": "damage",
+     "loud": 2821.6,
+     "at_ms": 183.3,
+     "area_px": 6198,
+     "mean_L": 45.5,
+     "total": 2864.7,
+     "skin": "neutral"
+    },
+    {
+     "rank": 11,
+     "id": "fx_hit_land",
+     "kind": "damage",
+     "loud": 2816.8,
+     "at_ms": 183.3,
+     "area_px": 6158,
+     "mean_L": 45.7,
+     "total": 2817.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 12,
+     "id": "fx_kill",
+     "kind": "kill",
+     "loud": 1816.4,
+     "at_ms": 16.7,
+     "area_px": 2650,
+     "mean_L": 68.5,
+     "total": 1816.4,
+     "skin": "solace"
+    },
+    {
+     "rank": 13,
+     "id": "fx_shield_block",
+     "kind": "block",
+     "loud": 1393.4,
+     "at_ms": 100.0,
+     "area_px": 2757,
+     "mean_L": 50.5,
+     "total": 4381.1,
+     "skin": "neutral"
+    },
+    {
+     "rank": 14,
+     "id": "fx_ricochet",
+     "kind": "block",
+     "loud": 898.3,
+     "at_ms": 150.0,
+     "area_px": 1756,
+     "mean_L": 51.2,
+     "total": 1048.9,
+     "skin": "solace"
+    },
+    {
+     "rank": 15,
+     "id": "fx_ricochet_gold",
+     "kind": "block",
+     "loud": 885.6,
+     "at_ms": 150.0,
+     "area_px": 2089,
+     "mean_L": 42.4,
+     "total": 885.6,
+     "skin": "solace"
+    },
+    {
+     "rank": 16,
+     "id": "fx_repair_mend",
+     "kind": "gain",
+     "loud": 699.9,
+     "at_ms": 216.7,
+     "area_px": 988,
+     "mean_L": 70.8,
+     "total": 715.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 17,
+     "id": "fx_refund",
+     "kind": "gain",
+     "loud": 674.8,
+     "at_ms": 200.0,
+     "area_px": 1133,
+     "mean_L": 59.6,
+     "total": 674.8,
+     "skin": "solace"
+    },
+    {
+     "rank": 18,
+     "id": "fx_grow",
+     "kind": "state",
+     "loud": 515.6,
+     "at_ms": 133.3,
+     "area_px": 936,
+     "mean_L": 55.1,
+     "total": 515.6,
+     "skin": "solace"
+    },
+    {
+     "rank": 19,
+     "id": "fx_ward_on",
+     "kind": "state",
+     "loud": 397.1,
+     "at_ms": 183.3,
+     "area_px": 752,
+     "mean_L": 52.8,
+     "total": 397.1,
+     "skin": "solace"
+    },
+    {
+     "rank": 20,
+     "id": "fx_clear",
+     "kind": "gain",
+     "loud": 84.7,
+     "at_ms": 50.0,
+     "area_px": 170,
+     "mean_L": 49.8,
+     "total": 260.2,
+     "skin": "solace"
+    }
+   ]
+  },
+  "loudness_order_meridian": {
+   "rule": "damage > kill > block > state (gain ranks with state)",
+   "passes": true,
+   "tiers": [
+    {
+     "upper": "damage",
+     "lower": "kill",
+     "upper_min": 2816.8,
+     "upper_min_id": "fx_hit_land",
+     "lower_max": 1812.5,
+     "lower_max_id": "fx_kill",
+     "ok": true
+    },
+    {
+     "upper": "kill",
+     "lower": "block",
+     "upper_min": 1812.5,
+     "upper_min_id": "fx_kill",
+     "lower_max": 1393.4,
+     "lower_max_id": "fx_shield_block",
+     "ok": true
+    },
+    {
+     "upper": "block",
+     "lower": "state",
+     "upper_min": 885.4,
+     "upper_min_id": "fx_ricochet_gold",
+     "lower_max": 699.9,
+     "lower_max_id": "fx_repair_mend",
+     "ok": true
+    }
+   ],
+   "rows": [
+    {
+     "rank": 1,
+     "id": "fx_firewall_burn",
+     "kind": "damage",
+     "loud": 9535.1,
+     "at_ms": 366.7,
+     "area_px": 15895,
+     "mean_L": 60.0,
+     "total": 9601.8,
+     "skin": "meridian"
+    },
+    {
+     "rank": 2,
+     "id": "fx_shield_break",
+     "kind": "damage",
+     "loud": 8377.0,
+     "at_ms": 250.0,
+     "area_px": 15499,
+     "mean_L": 54.0,
+     "total": 8382.0,
+     "skin": "neutral"
+    },
+    {
+     "rank": 3,
+     "id": "fx_strike",
+     "kind": "damage",
+     "loud": 5481.8,
+     "at_ms": 200.0,
+     "area_px": 9711,
+     "mean_L": 56.4,
+     "total": 5481.8,
+     "skin": "meridian"
+    },
+    {
+     "rank": 4,
+     "id": "fx_trigger_hit",
+     "kind": "damage",
+     "loud": 5074.7,
+     "at_ms": 283.3,
+     "area_px": 10389,
+     "mean_L": 48.8,
+     "total": 5291.6,
+     "skin": "meridian"
+    },
+    {
+     "rank": 5,
+     "id": "fx_slice_break",
+     "kind": "damage",
+     "loud": 4778.2,
+     "at_ms": 200.0,
+     "area_px": 10016,
+     "mean_L": 47.7,
+     "total": 4977.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 6,
+     "id": "fx_hit_land_adjuster",
+     "kind": "damage",
+     "loud": 3748.8,
+     "at_ms": 133.3,
+     "area_px": 7335,
+     "mean_L": 51.1,
+     "total": 3749.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 7,
+     "id": "fx_gun_hit",
+     "kind": "damage",
+     "loud": 3742.4,
+     "at_ms": 183.3,
+     "area_px": 6599,
+     "mean_L": 56.7,
+     "total": 3742.4,
+     "skin": "meridian"
+    },
+    {
+     "rank": 8,
+     "id": "fx_slice_crack",
+     "kind": "damage",
+     "loud": 3121.4,
+     "at_ms": 50.0,
+     "area_px": 6946,
+     "mean_L": 44.9,
+     "total": 3124.5,
+     "skin": "neutral"
+    },
+    {
+     "rank": 9,
+     "id": "fx_hp_through",
+     "kind": "damage",
+     "loud": 3035.2,
+     "at_ms": 450.0,
+     "area_px": 6067,
+     "mean_L": 50.0,
+     "total": 3035.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 10,
+     "id": "fx_hit_land_worm",
+     "kind": "damage",
+     "loud": 2821.6,
+     "at_ms": 183.3,
+     "area_px": 6198,
+     "mean_L": 45.5,
+     "total": 2864.7,
+     "skin": "neutral"
+    },
+    {
+     "rank": 11,
+     "id": "fx_hit_land",
+     "kind": "damage",
+     "loud": 2816.8,
+     "at_ms": 183.3,
+     "area_px": 6158,
+     "mean_L": 45.7,
+     "total": 2817.3,
+     "skin": "neutral"
+    },
+    {
+     "rank": 12,
+     "id": "fx_kill",
+     "kind": "kill",
+     "loud": 1812.5,
+     "at_ms": 16.7,
+     "area_px": 2649,
+     "mean_L": 68.4,
+     "total": 1812.7,
+     "skin": "meridian"
+    },
+    {
+     "rank": 13,
+     "id": "fx_shield_block",
+     "kind": "block",
+     "loud": 1393.4,
+     "at_ms": 100.0,
+     "area_px": 2757,
+     "mean_L": 50.5,
+     "total": 4381.1,
+     "skin": "neutral"
+    },
+    {
+     "rank": 14,
+     "id": "fx_ricochet",
+     "kind": "block",
+     "loud": 897.6,
+     "at_ms": 150.0,
+     "area_px": 1753,
+     "mean_L": 51.2,
+     "total": 1045.2,
+     "skin": "meridian"
+    },
+    {
+     "rank": 15,
+     "id": "fx_ricochet_gold",
+     "kind": "block",
+     "loud": 885.4,
+     "at_ms": 150.0,
+     "area_px": 2084,
+     "mean_L": 42.5,
+     "total": 885.4,
+     "skin": "meridian"
+    },
+    {
+     "rank": 16,
+     "id": "fx_repair_mend",
+     "kind": "gain",
+     "loud": 699.9,
+     "at_ms": 216.7,
+     "area_px": 988,
+     "mean_L": 70.8,
+     "total": 715.2,
+     "skin": "neutral"
+    },
+    {
+     "rank": 17,
+     "id": "fx_refund",
+     "kind": "gain",
+     "loud": 674.8,
+     "at_ms": 200.0,
+     "area_px": 1133,
+     "mean_L": 59.6,
+     "total": 674.8,
+     "skin": "meridian"
+    },
+    {
+     "rank": 18,
+     "id": "fx_grow",
+     "kind": "state",
+     "loud": 433.1,
+     "at_ms": 133.3,
+     "area_px": 941,
+     "mean_L": 46.0,
+     "total": 433.1,
+     "skin": "meridian"
+    },
+    {
+     "rank": 19,
+     "id": "fx_ward_on",
+     "kind": "state",
+     "loud": 393.1,
+     "at_ms": 183.3,
+     "area_px": 749,
+     "mean_L": 52.5,
+     "total": 393.1,
+     "skin": "meridian"
+    },
+    {
+     "rank": 20,
+     "id": "fx_clear",
+     "kind": "gain",
+     "loud": 84.7,
+     "at_ms": 50.0,
+     "area_px": 170,
+     "mean_L": 49.8,
+     "total": 260.2,
+     "skin": "meridian"
+    }
+   ]
+  }
+ },
  "effects": {
   "fx_grow": {
    "family": "C",
    "title": "A unit grows one more hit",
    "variant_of": null,
    "tier": "lower",
-   "scope": "cell-wide",
+   "kind": "state",
+   "scope": "cell-wide (a line)",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 650,
-   "in_ms": 250,
+   "total_ms": 400,
+   "in_ms": 133,
    "hold_ms": 67,
-   "out_ms": 333,
-   "easing_summary": "in ease-in-out cubic wipe; hold = 4-frame flat flash; out ease-in-out open + ease-out ping",
+   "out_ms": 0,
+   "easing_summary": "in ease-in-out scan line; hold = 4-frame flash on the new chevron; no out (the chevron is the post-state)",
    "easing": {
-    "wipe": "ease-in-out cubic",
-    "flash": "step (4 frames)",
-    "open": "ease-in-out cubic",
-    "ping": "ease-out cubic"
+    "scan": "ease-in-out cubic",
+    "flash": "step (4 frames, 40 % on the new mark)"
    },
    "phases": {
-    "wipe": [
+    "scan": [
      0,
-     250
+     133
     ],
     "flash": [
-     250,
-     317
-    ],
-    "open": [
-     317,
-     460
-    ],
-    "ping": [
-     300,
-     560
+     133,
+     200
     ]
    },
    "keyframes": [
@@ -47,23 +813,23 @@
      "caption": "anticipate: two solid chevrons"
     },
     {
-     "ms": 120,
-     "caption": "shutter wipes the cell"
+     "ms": 70,
+     "caption": "scan line crosses the cell"
     },
     {
-     "ms": 280,
-     "caption": "flat flash, the new hollow chevron"
+     "ms": 150,
+     "caption": "flash on the new hollow chevron only"
     },
     {
-     "ms": 380,
-     "caption": "shutter opens, ring ping"
-    },
-    {
-     "ms": 650,
+     "ms": 250,
      "caption": "settle: hollow growth chevron"
+    },
+    {
+     "ms": 400,
+     "caption": "settled"
     }
    ],
-   "reduce_motion": "No shutter or ping: the hollow chevron fades in over 200 ms (ease-in-out).",
+   "reduce_motion": "No scan or flash: the hollow chevron fades in over 200 ms (ease-in-out).",
    "source": "f2 Packet 5 (ring +1, sector 0); post-state rendered with one more landing hit (land_hit = hit + 1), which the board draws as the hollow growth chevron",
    "board_crop": [
     360,
@@ -75,101 +841,152 @@
     "pre": "p3",
     "post": "p3grow"
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 533.3,
+     "loud_peak_ms": 133.3,
+     "loud_peak_area_px": 936,
+     "loud_peak_mean_L": 57.0,
+     "loud_total_peak": 533.3,
+     "loud_total_peak_ms": 133.3,
+     "settles_ms": 200.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 515.6,
+     "loud_peak_ms": 133.3,
+     "loud_peak_area_px": 936,
+     "loud_peak_mean_L": 55.1,
+     "loud_total_peak": 515.6,
+     "loud_total_peak_ms": 133.3,
+     "settles_ms": 200.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 433.1,
+     "loud_peak_ms": 133.3,
+     "loud_peak_area_px": 941,
+     "loud_peak_mean_L": 46.0,
+     "loud_total_peak": 433.1,
+     "loud_total_peak_ms": 133.3,
+     "settles_ms": 200.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 58,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 18874,
+     "footprint_px": 2241,
      "crop_px": 58575,
-     "footprint_share": 0.322,
-     "peak_up_share_footprint": 0.511,
-     "peak_down_share_footprint": 0.882,
-     "waves_footprint": 2,
+     "footprint_share": 0.038,
+     "peak_up_share_footprint": 0.555,
+     "peak_down_share_footprint": 0.417,
+     "waves_footprint": 3,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.165,
-     "peak_down_share_crop": 0.284,
-     "waves_crop": 1,
-     "flashes_crop": 0,
-     "max_flashes_per_s_crop": 0,
-     "mean_lum_footprint_range": [
-      0.105,
-      0.457
-     ],
-     "mean_lum_max_step": 0.172,
-     "mean_lum_crop_max_step": 0.055,
-     "passes": true
-    },
-    "neutral_reduce": {
-     "frames": 58,
-     "fps": 60,
-     "footprint_px": 519,
-     "crop_px": 58575,
-     "footprint_share": 0.009,
-     "peak_up_share_footprint": 0.198,
-     "peak_down_share_footprint": 0.135,
-     "waves_footprint": 0,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.002,
-     "peak_down_share_crop": 0.001,
+     "peak_up_share_crop": 0.021,
+     "peak_down_share_crop": 0.016,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.12,
-      0.143
+      0.145,
+      0.202
      ],
-     "mean_lum_max_step": 0.005,
+     "mean_lum_max_step": 0.057,
+     "mean_lum_crop_max_step": 0.002,
+     "passes": true
+    },
+    "neutral_reduce": {
+     "frames": 43,
+     "fps": 60,
+     "footprint_px": 609,
+     "crop_px": 58575,
+     "footprint_share": 0.01,
+     "peak_up_share_footprint": 0.225,
+     "peak_down_share_footprint": 0.195,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.002,
+     "peak_down_share_crop": 0.002,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.127,
+      0.151
+     ],
+     "mean_lum_max_step": 0.006,
      "mean_lum_crop_max_step": 0.0,
      "passes": true
     },
     "solace": {
-     "frames": 58,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 19179,
+     "footprint_px": 2237,
      "crop_px": 58575,
-     "footprint_share": 0.327,
-     "peak_up_share_footprint": 0.514,
-     "peak_down_share_footprint": 0.95,
+     "footprint_share": 0.038,
+     "peak_up_share_footprint": 0.513,
+     "peak_down_share_footprint": 0.329,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.168,
-     "peak_down_share_crop": 0.311,
-     "waves_crop": 1,
+     "peak_up_share_crop": 0.02,
+     "peak_down_share_crop": 0.013,
+     "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.119,
-      0.646
+      0.145,
+      0.193
      ],
-     "mean_lum_max_step": 0.252,
-     "mean_lum_crop_max_step": 0.082,
+     "mean_lum_max_step": 0.049,
+     "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "meridian": {
-     "frames": 58,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 18887,
+     "footprint_px": 2091,
      "crop_px": 58575,
-     "footprint_share": 0.322,
-     "peak_up_share_footprint": 0.514,
-     "peak_down_share_footprint": 0.89,
+     "footprint_share": 0.036,
+     "peak_up_share_footprint": 0.366,
+     "peak_down_share_footprint": 0.291,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.166,
-     "peak_down_share_crop": 0.287,
-     "waves_crop": 1,
+     "peak_up_share_crop": 0.013,
+     "peak_down_share_crop": 0.01,
+     "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.109,
-      0.547
+      0.132,
+      0.16
      ],
-     "mean_lum_max_step": 0.209,
-     "mean_lum_crop_max_step": 0.067,
+     "mean_lum_max_step": 0.018,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     }
    }
@@ -179,64 +996,60 @@
    "title": "Ward applies to units in the Adjuster sector",
    "variant_of": null,
    "tier": "lower",
-   "scope": "cell-wide",
+   "kind": "state",
+   "scope": "cell-wide (a line)",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 750,
-   "in_ms": 450,
+   "total_ms": 400,
+   "in_ms": 133,
    "hold_ms": 67,
-   "out_ms": 233,
-   "easing_summary": "in sine pulse + ease-in-out scan; hold = 4-frame gold flash; out ease-out ping",
+   "out_ms": 160,
+   "easing_summary": "in ease-in-out scan line; hold = 4-frame flash on the lozenge; out ease-out ping",
    "easing": {
-    "pulse": "sine",
-    "wipe": "ease-in-out cubic",
-    "flash": "step (4 frames, 42 %)",
+    "scan": "ease-in-out cubic",
+    "flash": "step (4 frames, 50 % on the lozenge)",
     "ping": "ease-out cubic"
    },
    "phases": {
-    "pulse": [
+    "scan": [
      0,
-     220
-    ],
-    "wipe": [
-     150,
-     450
+     133
     ],
     "flash": [
-     450,
-     517
+     133,
+     200
     ],
     "ping": [
-     470,
-     700
+     133,
+     360
     ]
    },
    "keyframes": [
     {
      "ms": 0,
-     "caption": "anticipate"
+     "caption": "anticipate: unit not warded"
     },
     {
-     "ms": 120,
-     "caption": "the Adjuster edge pulses gold"
+     "ms": 70,
+     "caption": "gold scan line in the Adjuster sector"
     },
     {
-     "ms": 245,
-     "caption": "gold scan wipes the unit cell"
+     "ms": 150,
+     "caption": "lozenge, 4-frame flash on it"
     },
     {
-     "ms": 480,
-     "caption": "flat gold flash, lozenge"
+     "ms": 260,
+     "caption": "one thin gold ping"
     },
     {
-     "ms": 750,
+     "ms": 400,
      "caption": "settle: unit warded"
     }
    ],
-   "reduce_motion": "No pulse, scan or flash: the lozenge fades in over 200 ms.",
+   "reduce_motion": "No scan, flash or ping: the lozenge fades in over 200 ms.",
    "source": "f2 Packet 6 (ring +2, warded) next to the Adjuster (ring +1, sector 2); pre-state rendered unwarded",
    "board_crop": [
     690,
@@ -248,39 +1061,90 @@
     "pre": "p3alt",
     "post": "p3"
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 390.8,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 747,
+     "loud_peak_mean_L": 52.3,
+     "loud_total_peak": 390.8,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 397.1,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 752,
+     "loud_peak_mean_L": 52.8,
+     "loud_total_peak": 397.1,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 393.1,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 749,
+     "loud_peak_mean_L": 52.5,
+     "loud_total_peak": 393.1,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 64,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 39312,
+     "footprint_px": 3188,
      "crop_px": 88920,
-     "footprint_share": 0.442,
-     "peak_up_share_footprint": 0.52,
-     "peak_down_share_footprint": 0.501,
-     "waves_footprint": 4,
-     "flashes_footprint": 2,
-     "max_flashes_per_s_footprint": 2,
-     "peak_up_share_crop": 0.23,
-     "peak_down_share_crop": 0.222,
+     "footprint_share": 0.036,
+     "peak_up_share_footprint": 0.343,
+     "peak_down_share_footprint": 0.327,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.012,
+     "peak_down_share_crop": 0.012,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.094,
-      0.178
+      0.105,
+      0.145
      ],
-     "mean_lum_max_step": 0.062,
-     "mean_lum_crop_max_step": 0.027,
+     "mean_lum_max_step": 0.028,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 64,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 257,
+     "footprint_px": 239,
      "crop_px": 88920,
      "footprint_share": 0.003,
-     "peak_up_share_footprint": 0.471,
-     "peak_down_share_footprint": 0.101,
+     "peak_up_share_footprint": 0.427,
+     "peak_down_share_footprint": 0.113,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
@@ -290,59 +1154,59 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.078,
-      0.256
+      0.073,
+      0.173
      ],
-     "mean_lum_max_step": 0.03,
+     "mean_lum_max_step": 0.018,
      "mean_lum_crop_max_step": 0.0,
      "passes": true
     },
     "solace": {
-     "frames": 64,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 39247,
+     "footprint_px": 3186,
      "crop_px": 88920,
-     "footprint_share": 0.441,
-     "peak_up_share_footprint": 0.518,
-     "peak_down_share_footprint": 0.494,
-     "waves_footprint": 4,
-     "flashes_footprint": 2,
-     "max_flashes_per_s_footprint": 2,
-     "peak_up_share_crop": 0.229,
-     "peak_down_share_crop": 0.218,
+     "footprint_share": 0.036,
+     "peak_up_share_footprint": 0.341,
+     "peak_down_share_footprint": 0.332,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.012,
+     "peak_down_share_crop": 0.012,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.101,
-      0.184
+      0.11,
+      0.148
      ],
-     "mean_lum_max_step": 0.061,
-     "mean_lum_crop_max_step": 0.027,
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "meridian": {
-     "frames": 64,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 39313,
+     "footprint_px": 3185,
      "crop_px": 88920,
-     "footprint_share": 0.442,
-     "peak_up_share_footprint": 0.522,
-     "peak_down_share_footprint": 0.502,
-     "waves_footprint": 4,
-     "flashes_footprint": 2,
-     "max_flashes_per_s_footprint": 2,
-     "peak_up_share_crop": 0.231,
-     "peak_down_share_crop": 0.222,
+     "footprint_share": 0.036,
+     "peak_up_share_footprint": 0.346,
+     "peak_down_share_footprint": 0.331,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.012,
+     "peak_down_share_crop": 0.012,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.1,
-      0.185
+      0.105,
+      0.144
      ],
-     "mean_lum_max_step": 0.064,
-     "mean_lum_crop_max_step": 0.028,
+     "mean_lum_max_step": 0.027,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     }
    }
@@ -352,6 +1216,7 @@
    "title": "Gun shot hits a unit",
    "variant_of": null,
    "tier": "core",
+   "kind": "damage",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -359,9 +1224,9 @@
     "meridian"
    ],
    "total_ms": 600,
-   "in_ms": 170,
+   "in_ms": 140,
    "hold_ms": 160,
-   "out_ms": 270,
+   "out_ms": 220,
    "easing_summary": "in ease-out tracer + ease-out-back burst; out linear fade",
    "easing": {
     "tracer": "ease-out cubic",
@@ -373,23 +1238,23 @@
    "phases": {
     "tracer": [
      0,
-     100
+     80
     ],
     "burst": [
-     100,
-     170
+     80,
+     140
     ],
     "speed_lines": [
-     100,
-     280
+     80,
+     300
     ],
     "shards": [
-     120,
-     460
+     100,
+     420
     ],
     "tick": [
-     170,
-     260
+     140,
+     230
     ],
     "out": [
      300,
@@ -402,19 +1267,19 @@
      "caption": "anticipate"
     },
     {
-     "ms": 60,
+     "ms": 50,
      "caption": "tracer paints"
     },
     {
-     "ms": 140,
-     "caption": "burst opens"
+     "ms": 110,
+     "caption": "hit frame opens"
     },
     {
-     "ms": 210,
+     "ms": 180,
      "caption": "peak: starburst, speed lines, shards"
     },
     {
-     "ms": 400,
+     "ms": 380,
      "caption": "shards out, tick gone"
     },
     {
@@ -425,110 +1290,161 @@
    "reduce_motion": "Tracer and burst appear at full size for 300 ms, then fade 200 ms; no speed lines, no shards; the tick goes gone on the same frame.",
    "source": "f2 guns: sector 0 BURST, 2 shots hit Worm 2 (shot 1 shown)",
    "board_crop": [
-    270,
     250,
+    230,
     600,
-    450
+    460
    ],
    "base": {
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 3747.6,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 6578,
+     "loud_peak_mean_L": 57.0,
+     "loud_total_peak": 3747.6,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 3754.4,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 6644,
+     "loud_peak_mean_L": 56.5,
+     "loud_total_peak": 3754.4,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 3742.4,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 6599,
+     "loud_peak_mean_L": 56.7,
+     "loud_total_peak": 3742.4,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4131,
-     "crop_px": 66000,
-     "footprint_share": 0.063,
-     "peak_up_share_footprint": 0.488,
-     "peak_down_share_footprint": 0.498,
+     "footprint_px": 9211,
+     "crop_px": 80500,
+     "footprint_share": 0.114,
+     "peak_up_share_footprint": 0.511,
+     "peak_down_share_footprint": 0.363,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.031,
-     "peak_down_share_crop": 0.031,
+     "peak_up_share_crop": 0.058,
+     "peak_down_share_crop": 0.042,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.077,
-      0.312
+      0.161,
+      0.336
      ],
-     "mean_lum_max_step": 0.079,
-     "mean_lum_crop_max_step": 0.005,
+     "mean_lum_max_step": 0.069,
+     "mean_lum_crop_max_step": 0.008,
      "passes": true
     },
     "neutral_reduce": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 1134,
-     "crop_px": 66000,
-     "footprint_share": 0.017,
-     "peak_up_share_footprint": 0.239,
-     "peak_down_share_footprint": 0.53,
+     "footprint_px": 3523,
+     "crop_px": 80500,
+     "footprint_share": 0.044,
+     "peak_up_share_footprint": 0.249,
+     "peak_down_share_footprint": 0.49,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.004,
-     "peak_down_share_crop": 0.009,
+     "peak_up_share_crop": 0.011,
+     "peak_down_share_crop": 0.021,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.145,
-      0.333
+      0.186,
+      0.335
      ],
-     "mean_lum_max_step": 0.089,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.037,
+     "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "solace": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4137,
-     "crop_px": 66000,
-     "footprint_share": 0.063,
-     "peak_up_share_footprint": 0.487,
-     "peak_down_share_footprint": 0.496,
+     "footprint_px": 9216,
+     "crop_px": 80500,
+     "footprint_share": 0.114,
+     "peak_up_share_footprint": 0.512,
+     "peak_down_share_footprint": 0.366,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.03,
-     "peak_down_share_crop": 0.031,
+     "peak_up_share_crop": 0.059,
+     "peak_down_share_crop": 0.042,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.082,
-      0.312
+      0.161,
+      0.336
      ],
-     "mean_lum_max_step": 0.077,
-     "mean_lum_crop_max_step": 0.005,
+     "mean_lum_max_step": 0.069,
+     "mean_lum_crop_max_step": 0.008,
      "passes": true
     },
     "meridian": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 4132,
-     "crop_px": 66000,
-     "footprint_share": 0.063,
-     "peak_up_share_footprint": 0.486,
-     "peak_down_share_footprint": 0.497,
+     "footprint_px": 9131,
+     "crop_px": 80500,
+     "footprint_share": 0.113,
+     "peak_up_share_footprint": 0.515,
+     "peak_down_share_footprint": 0.363,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.03,
-     "peak_down_share_crop": 0.031,
+     "peak_up_share_crop": 0.058,
+     "peak_down_share_crop": 0.041,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.076,
-      0.312
+      0.159,
+      0.337
      ],
-     "mean_lum_max_step": 0.079,
-     "mean_lum_crop_max_step": 0.005,
+     "mean_lum_max_step": 0.07,
+     "mean_lum_crop_max_step": 0.008,
      "passes": true
     }
    }
@@ -538,16 +1454,17 @@
    "title": "Strike card hits for 2",
    "variant_of": null,
    "tier": "core",
+   "kind": "damage",
    "scope": "cell-wide",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 700,
-   "in_ms": 200,
-   "hold_ms": 180,
-   "out_ms": 320,
+   "total_ms": 600,
+   "in_ms": 150,
+   "hold_ms": 190,
+   "out_ms": 220,
    "easing_summary": "in ease-out slash + ease-out-back burst; out linear",
    "easing": {
     "slash": "ease-out cubic",
@@ -559,27 +1476,27 @@
    "phases": {
     "slash": [
      0,
-     120
+     90
     ],
     "burst": [
-     120,
-     200
+     90,
+     150
     ],
     "speed_lines": [
-     120,
-     330
-    ],
-    "shards": [
-     130,
-     520
-    ],
-    "ticks": [
-     200,
+     90,
      300
     ],
+    "shards": [
+     100,
+     420
+    ],
+    "ticks": [
+     150,
+     240
+    ],
     "out": [
-     380,
-     640
+     340,
+     560
     ]
    },
    "keyframes": [
@@ -588,129 +1505,180 @@
      "caption": "anticipate"
     },
     {
-     "ms": 70,
+     "ms": 60,
      "caption": "the slash crosses the cell"
     },
     {
-     "ms": 160,
+     "ms": 130,
      "caption": "peak: big starburst, speed lines"
     },
     {
-     "ms": 320,
+     "ms": 300,
      "caption": "two ticks gone"
     },
     {
-     "ms": 700,
+     "ms": 600,
      "caption": "settle"
     }
    ],
    "reduce_motion": "Slash and burst shown full at once for 300 ms, fade 200 ms; no speed lines or shards.",
    "source": "latent (Strike is not in this hand): Strike (2) on Packet 7, ring +2 sector 5",
    "board_crop": [
-    110,
-    300,
-    380,
-    560
+    90,
+    280,
+    400,
+    580
    ],
    "base": {
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 5490.2,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 9640,
+     "loud_peak_mean_L": 57.0,
+     "loud_total_peak": 5490.2,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 566.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 5493.5,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 9771,
+     "loud_peak_mean_L": 56.2,
+     "loud_total_peak": 5493.5,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 566.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 5481.8,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 9711,
+     "loud_peak_mean_L": 56.4,
+     "loud_total_peak": 5481.8,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 566.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 8746,
-     "crop_px": 70200,
+     "footprint_px": 11603,
+     "crop_px": 93000,
      "footprint_share": 0.125,
-     "peak_up_share_footprint": 0.474,
-     "peak_down_share_footprint": 0.392,
+     "peak_up_share_footprint": 0.543,
+     "peak_down_share_footprint": 0.327,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.059,
-     "peak_down_share_crop": 0.049,
+     "peak_up_share_crop": 0.068,
+     "peak_down_share_crop": 0.041,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.062,
-      0.329
+      0.067,
+      0.359
      ],
-     "mean_lum_max_step": 0.075,
-     "mean_lum_crop_max_step": 0.009,
+     "mean_lum_max_step": 0.124,
+     "mean_lum_crop_max_step": 0.016,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 3016,
-     "crop_px": 70200,
-     "footprint_share": 0.043,
-     "peak_up_share_footprint": 0.335,
-     "peak_down_share_footprint": 0.454,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.014,
-     "peak_down_share_crop": 0.02,
-     "waves_crop": 0,
-     "flashes_crop": 0,
-     "max_flashes_per_s_crop": 0,
-     "mean_lum_footprint_range": [
-      0.053,
-      0.352
-     ],
-     "mean_lum_max_step": 0.146,
-     "mean_lum_crop_max_step": 0.006,
-     "passes": true
-    },
-    "solace": {
-     "frames": 61,
-     "fps": 60,
-     "footprint_px": 8827,
-     "crop_px": 70200,
-     "footprint_share": 0.126,
-     "peak_up_share_footprint": 0.468,
-     "peak_down_share_footprint": 0.392,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.059,
-     "peak_down_share_crop": 0.049,
+     "footprint_px": 4993,
+     "crop_px": 93000,
+     "footprint_share": 0.054,
+     "peak_up_share_footprint": 0.038,
+     "peak_down_share_footprint": 0.566,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.002,
+     "peak_down_share_crop": 0.03,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
       0.074,
-      0.333
+      0.338
      ],
-     "mean_lum_max_step": 0.073,
-     "mean_lum_crop_max_step": 0.009,
+     "mean_lum_max_step": 0.035,
+     "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
-    "meridian": {
-     "frames": 61,
+    "solace": {
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 8686,
-     "crop_px": 70200,
-     "footprint_share": 0.124,
-     "peak_up_share_footprint": 0.476,
-     "peak_down_share_footprint": 0.398,
+     "footprint_px": 11333,
+     "crop_px": 93000,
+     "footprint_share": 0.122,
+     "peak_up_share_footprint": 0.555,
+     "peak_down_share_footprint": 0.336,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.059,
-     "peak_down_share_crop": 0.049,
+     "peak_up_share_crop": 0.068,
+     "peak_down_share_crop": 0.041,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.064,
-      0.331
+      0.067,
+      0.367
      ],
-     "mean_lum_max_step": 0.075,
-     "mean_lum_crop_max_step": 0.009,
+     "mean_lum_max_step": 0.128,
+     "mean_lum_crop_max_step": 0.016,
+     "passes": true
+    },
+    "meridian": {
+     "frames": 55,
+     "fps": 60,
+     "footprint_px": 11198,
+     "crop_px": 93000,
+     "footprint_share": 0.12,
+     "peak_up_share_footprint": 0.563,
+     "peak_down_share_footprint": 0.338,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.068,
+     "peak_down_share_crop": 0.041,
+     "waves_crop": 0,
+     "flashes_crop": 0,
+     "max_flashes_per_s_crop": 0,
+     "mean_lum_footprint_range": [
+      0.063,
+      0.369
+     ],
+     "mean_lum_max_step": 0.131,
+     "mean_lum_crop_max_step": 0.016,
      "passes": true
     }
    }
@@ -720,16 +1688,17 @@
    "title": "Trigger hits units along its path",
    "variant_of": null,
    "tier": "core",
-   "scope": "cell-wide, one burst per struck cell",
+   "kind": "damage",
+   "scope": "cell-wide, one hit frame per struck cell",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 900,
-   "in_ms": 420,
-   "hold_ms": 230,
-   "out_ms": 250,
+   "total_ms": 600,
+   "in_ms": 240,
+   "hold_ms": 100,
+   "out_ms": 260,
    "easing_summary": "in linear ignition front to back; bursts ease-out back; out linear",
    "easing": {
     "ignite": "linear (front to back)",
@@ -739,19 +1708,19 @@
    "phases": {
     "ignite": [
      0,
-     420
+     240
     ],
     "burst_s3": [
-     230,
-     560
+     120,
+     460
     ],
     "burst_s4": [
-     420,
-     750
+     240,
+     580
     ],
     "route_out": [
-     650,
-     900
+     420,
+     600
     ]
    },
    "keyframes": [
@@ -760,19 +1729,19 @@
      "caption": "anticipate: pencil route"
     },
     {
-     "ms": 200,
+     "ms": 100,
      "caption": "pencil burns to paint"
     },
     {
-     "ms": 260,
-     "caption": "first starburst (sector 3)"
+     "ms": 170,
+     "caption": "first hit frame (sector 3)"
     },
     {
-     "ms": 450,
-     "caption": "second starburst (sector 4)"
+     "ms": 290,
+     "caption": "second hit frame (sector 4)"
     },
     {
-     "ms": 900,
+     "ms": 600,
      "caption": "settle: painted marks"
     }
    ],
@@ -788,111 +1757,163 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 5074.0,
+     "loud_peak_ms": 283.3,
+     "loud_peak_area_px": 10367,
+     "loud_peak_mean_L": 48.9,
+     "loud_total_peak": 5290.9,
+     "loud_total_peak_ms": 283.3,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 5075.2,
+     "loud_peak_ms": 283.3,
+     "loud_peak_area_px": 10403,
+     "loud_peak_mean_L": 48.8,
+     "loud_total_peak": 5292.1,
+     "loud_total_peak_ms": 283.3,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 5074.7,
+     "loud_peak_ms": 283.3,
+     "loud_peak_area_px": 10389,
+     "loud_peak_mean_L": 48.8,
+     "loud_total_peak": 5291.6,
+     "loud_total_peak_ms": 283.3,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 4861,
+     "footprint_px": 12890,
      "crop_px": 144000,
-     "footprint_share": 0.034,
-     "peak_up_share_footprint": 0.286,
-     "peak_down_share_footprint": 0.206,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.01,
-     "peak_down_share_crop": 0.007,
+     "footprint_share": 0.09,
+     "peak_up_share_footprint": 0.355,
+     "peak_down_share_footprint": 0.316,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.032,
+     "peak_down_share_crop": 0.028,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.128,
-      0.283
+      0.082,
+      0.297
      ],
-     "mean_lum_max_step": 0.043,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.052,
+     "mean_lum_crop_max_step": 0.005,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 2284,
+     "footprint_px": 1464,
      "crop_px": 144000,
-     "footprint_share": 0.016,
-     "peak_up_share_footprint": 0.119,
-     "peak_down_share_footprint": 0.447,
+     "footprint_share": 0.01,
+     "peak_up_share_footprint": 0.237,
+     "peak_down_share_footprint": 0.589,
      "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
      "peak_up_share_crop": 0.002,
-     "peak_down_share_crop": 0.007,
+     "peak_down_share_crop": 0.006,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.144,
-      0.25
+      0.118,
+      0.199
      ],
-     "mean_lum_max_step": 0.016,
+     "mean_lum_max_step": 0.021,
      "mean_lum_crop_max_step": 0.0,
      "passes": true
     },
     "solace": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 4861,
+     "footprint_px": 12890,
      "crop_px": 144000,
-     "footprint_share": 0.034,
-     "peak_up_share_footprint": 0.286,
-     "peak_down_share_footprint": 0.206,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.01,
-     "peak_down_share_crop": 0.007,
+     "footprint_share": 0.09,
+     "peak_up_share_footprint": 0.355,
+     "peak_down_share_footprint": 0.316,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.032,
+     "peak_down_share_crop": 0.028,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.128,
-      0.283
+      0.082,
+      0.297
      ],
-     "mean_lum_max_step": 0.043,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.052,
+     "mean_lum_crop_max_step": 0.005,
      "passes": true
     },
     "meridian": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 4861,
+     "footprint_px": 12889,
      "crop_px": 144000,
-     "footprint_share": 0.034,
-     "peak_up_share_footprint": 0.286,
-     "peak_down_share_footprint": 0.206,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.01,
-     "peak_down_share_crop": 0.007,
+     "footprint_share": 0.09,
+     "peak_up_share_footprint": 0.355,
+     "peak_down_share_footprint": 0.316,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.032,
+     "peak_down_share_crop": 0.028,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.128,
-      0.283
+      0.082,
+      0.297
      ],
-     "mean_lum_max_step": 0.043,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.052,
+     "mean_lum_crop_max_step": 0.005,
      "passes": true
     }
    },
-   "in_sequence": "In the resolve beat fx_commit has already burned the pencil route and Xs into paint, so the sequenced fx_trigger_hit draws only the bursts and speed lines (same clock: s3 at 230, s4 at 420); the pencil-yellow ignite plays only when the effect runs without a commit before it (O-30)."
+   "in_sequence": "In the resolve beat fx_commit has already burned the pencil route and Xs into paint, so the sequenced fx_trigger_hit draws only the hit frames and speed lines (same clock: s3 at 120, s4 at 240); the pencil-yellow ignite plays only when the effect runs without a commit before it (O-30, retimed 2026-11-03 rebuild)."
   },
   "fx_kill": {
    "family": "D",
    "title": "A unit dies",
    "variant_of": null,
    "tier": "core",
+   "kind": "kill",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -900,12 +1921,12 @@
     "meridian"
    ],
    "total_ms": 600,
-   "in_ms": 110,
-   "hold_ms": 220,
-   "out_ms": 270,
+   "in_ms": 100,
+   "hold_ms": 200,
+   "out_ms": 300,
    "easing_summary": "in 2-frame step flare + ease-out-back burst; out linear, cell empties ease-in-out",
    "easing": {
-    "flare": "step (2 frames, 70 %)",
+    "flare": "step (2 frames, 55 % on the token)",
     "burst": "ease-out back",
     "shards": "ease-out cubic",
     "empty": "ease-in-out cubic",
@@ -918,40 +1939,40 @@
     ],
     "burst": [
      34,
-     110
+     100
     ],
     "speed_lines": [
      34,
-     260
+     240
     ],
     "shards": [
-     60,
-     560
+     50,
+     460
     ],
     "empty": [
-     200,
-     420
+     160,
+     380
     ],
     "out": [
-     330,
-     560
+     300,
+     520
     ]
    },
    "keyframes": [
     {
      "ms": 0,
-     "caption": "anticipate: lost ticks"
+     "caption": "anticipate: the dying cell (pink L7)"
     },
     {
      "ms": 33,
-     "caption": "flare: 2 frames on the cell"
+     "caption": "flare: 2 frames on the token"
     },
     {
-     "ms": 120,
+     "ms": 110,
      "caption": "KO burst, speed lines"
     },
     {
-     "ms": 300,
+     "ms": 280,
      "caption": "shards, cell empties"
     },
     {
@@ -959,7 +1980,7 @@
      "caption": "settle: empty cell"
     }
    ],
-   "reduce_motion": "No flare: a 25 % white tint holds on the cell for 200 ms while the burst shows; the cell empties with a 220 ms fade.",
+   "reduce_motion": "No flare: a 30 % pink-tint disc holds on the token for 200 ms while the burst shows; the cell empties with a 220 ms fade.",
    "source": "f2: Worm 2 dies to the sector 0 guns (fate dies); post-state rendered with Worm 2 and its shots removed (empty cell)",
    "board_crop": [
     195,
@@ -971,101 +1992,152 @@
     "pre": "p3",
     "post": "p3kill"
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 1813.2,
+     "loud_peak_ms": 16.7,
+     "loud_peak_area_px": 2650,
+     "loud_peak_mean_L": 68.4,
+     "loud_total_peak": 1813.2,
+     "loud_total_peak_ms": 16.7,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 1816.4,
+     "loud_peak_ms": 16.7,
+     "loud_peak_area_px": 2650,
+     "loud_peak_mean_L": 68.5,
+     "loud_total_peak": 1816.4,
+     "loud_total_peak_ms": 16.7,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 1812.5,
+     "loud_peak_ms": 16.7,
+     "loud_peak_area_px": 2649,
+     "loud_peak_mean_L": 68.4,
+     "loud_total_peak": 1812.7,
+     "loud_total_peak_ms": 16.7,
+     "settles_ms": 516.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33910,
+     "footprint_px": 28922,
      "crop_px": 165825,
-     "footprint_share": 0.204,
-     "peak_up_share_footprint": 0.92,
-     "peak_down_share_footprint": 0.868,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.188,
-     "peak_down_share_crop": 0.177,
+     "footprint_share": 0.174,
+     "peak_up_share_footprint": 0.145,
+     "peak_down_share_footprint": 0.453,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.025,
+     "peak_down_share_crop": 0.079,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.055,
-      0.471
+      0.041,
+      0.243
      ],
-     "mean_lum_max_step": 0.398,
-     "mean_lum_crop_max_step": 0.081,
+     "mean_lum_max_step": 0.025,
+     "mean_lum_crop_max_step": 0.004,
      "passes": true
     },
     "neutral_reduce": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 28032,
+     "footprint_px": 25773,
      "crop_px": 165825,
-     "footprint_share": 0.169,
+     "footprint_share": 0.155,
      "peak_up_share_footprint": 0.001,
-     "peak_down_share_footprint": 0.218,
-     "waves_footprint": 0,
+     "peak_down_share_footprint": 0.69,
+     "waves_footprint": 1,
      "flashes_footprint": 0,
      "max_flashes_per_s_footprint": 0,
      "peak_up_share_crop": 0.0,
-     "peak_down_share_crop": 0.037,
+     "peak_down_share_crop": 0.107,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.05,
-      0.163
+      0.04,
+      0.244
      ],
-     "mean_lum_max_step": 0.09,
-     "mean_lum_crop_max_step": 0.015,
+     "mean_lum_max_step": 0.178,
+     "mean_lum_crop_max_step": 0.028,
      "passes": true
     },
     "solace": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33980,
+     "footprint_px": 28886,
      "crop_px": 165825,
-     "footprint_share": 0.205,
-     "peak_up_share_footprint": 0.919,
-     "peak_down_share_footprint": 0.867,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.188,
-     "peak_down_share_crop": 0.178,
+     "footprint_share": 0.174,
+     "peak_up_share_footprint": 0.145,
+     "peak_down_share_footprint": 0.457,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.025,
+     "peak_down_share_crop": 0.08,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.064,
-      0.477
+      0.04,
+      0.244
      ],
-     "mean_lum_max_step": 0.394,
-     "mean_lum_crop_max_step": 0.081,
+     "mean_lum_max_step": 0.025,
+     "mean_lum_crop_max_step": 0.004,
      "passes": true
     },
     "meridian": {
      "frames": 55,
      "fps": 60,
-     "footprint_px": 33911,
+     "footprint_px": 28681,
      "crop_px": 165825,
-     "footprint_share": 0.204,
-     "peak_up_share_footprint": 0.92,
-     "peak_down_share_footprint": 0.868,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.188,
-     "peak_down_share_crop": 0.177,
+     "footprint_share": 0.173,
+     "peak_up_share_footprint": 0.146,
+     "peak_down_share_footprint": 0.478,
+     "waves_footprint": 1,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.025,
+     "peak_down_share_crop": 0.083,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.059,
-      0.473
+      0.034,
+      0.243
      ],
-     "mean_lum_max_step": 0.398,
-     "mean_lum_crop_max_step": 0.081,
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.005,
      "passes": true
     }
    }
@@ -1075,6 +2147,7 @@
    "title": "Shot glances off armour (steel)",
    "variant_of": null,
    "tier": "core",
+   "kind": "block",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -1082,9 +2155,9 @@
     "meridian"
    ],
    "total_ms": 500,
-   "in_ms": 100,
-   "hold_ms": 150,
-   "out_ms": 250,
+   "in_ms": 80,
+   "hold_ms": 120,
+   "out_ms": 180,
    "easing_summary": "in ease-out tracer; glint sine; out linear",
    "easing": {
     "tracer": "ease-out cubic",
@@ -1095,19 +2168,19 @@
    "phases": {
     "tracer": [
      0,
-     100
+     80
     ],
     "glint": [
-     100,
-     220
+     80,
+     200
     ],
     "sparks": [
-     100,
-     360
+     80,
+     380
     ],
     "out": [
-     250,
-     420
+     220,
+     380
     ]
    },
    "keyframes": [
@@ -1116,15 +2189,15 @@
      "caption": "anticipate: armour cap"
     },
     {
-     "ms": 60,
+     "ms": 50,
      "caption": "tracer"
     },
     {
-     "ms": 130,
+     "ms": 110,
      "caption": "tracer meets the cap, glint"
     },
     {
-     "ms": 230,
+     "ms": 210,
      "caption": "sparks fan away"
     },
     {
@@ -1144,101 +2217,152 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 898.1,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 1753,
+     "loud_peak_mean_L": 51.2,
+     "loud_total_peak": 1041.5,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 383.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 898.3,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 1756,
+     "loud_peak_mean_L": 51.2,
+     "loud_total_peak": 1048.9,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 383.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 897.6,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 1753,
+     "loud_peak_mean_L": 51.2,
+     "loud_total_peak": 1045.2,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 383.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1489,
+     "footprint_px": 2775,
      "crop_px": 49400,
-     "footprint_share": 0.03,
-     "peak_up_share_footprint": 0.453,
-     "peak_down_share_footprint": 0.418,
+     "footprint_share": 0.056,
+     "peak_up_share_footprint": 0.528,
+     "peak_down_share_footprint": 0.555,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.014,
-     "peak_down_share_crop": 0.013,
+     "peak_up_share_crop": 0.03,
+     "peak_down_share_crop": 0.031,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.076,
-      0.244
+      0.182,
+      0.303
      ],
-     "mean_lum_max_step": 0.042,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.047,
+     "mean_lum_crop_max_step": 0.003,
      "passes": true
     },
     "neutral_reduce": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 431,
+     "footprint_px": 570,
      "crop_px": 49400,
-     "footprint_share": 0.009,
-     "peak_up_share_footprint": 0.128,
-     "peak_down_share_footprint": 0.659,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.001,
-     "peak_down_share_crop": 0.006,
+     "footprint_share": 0.012,
+     "peak_up_share_footprint": 0.356,
+     "peak_down_share_footprint": 0.288,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.004,
+     "peak_down_share_crop": 0.003,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.062,
-      0.187
+      0.129,
+      0.176
      ],
-     "mean_lum_max_step": 0.029,
+     "mean_lum_max_step": 0.012,
      "mean_lum_crop_max_step": 0.0,
      "passes": true
     },
     "solace": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1491,
+     "footprint_px": 2775,
      "crop_px": 49400,
-     "footprint_share": 0.03,
-     "peak_up_share_footprint": 0.453,
-     "peak_down_share_footprint": 0.417,
+     "footprint_share": 0.056,
+     "peak_up_share_footprint": 0.528,
+     "peak_down_share_footprint": 0.556,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.014,
-     "peak_down_share_crop": 0.013,
+     "peak_up_share_crop": 0.03,
+     "peak_down_share_crop": 0.031,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.076,
-      0.244
+      0.182,
+      0.304
      ],
-     "mean_lum_max_step": 0.042,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.047,
+     "mean_lum_crop_max_step": 0.003,
      "passes": true
     },
     "meridian": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1490,
+     "footprint_px": 2774,
      "crop_px": 49400,
-     "footprint_share": 0.03,
-     "peak_up_share_footprint": 0.453,
-     "peak_down_share_footprint": 0.417,
+     "footprint_share": 0.056,
+     "peak_up_share_footprint": 0.524,
+     "peak_down_share_footprint": 0.55,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.014,
-     "peak_down_share_crop": 0.013,
+     "peak_up_share_crop": 0.029,
+     "peak_down_share_crop": 0.031,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.076,
-      0.244
+      0.181,
+      0.303
      ],
-     "mean_lum_max_step": 0.042,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.048,
+     "mean_lum_crop_max_step": 0.003,
      "passes": true
     }
    }
@@ -1248,6 +2372,7 @@
    "title": "Shot weakened by the ward (gold)",
    "variant_of": "fx_ricochet",
    "tier": "core",
+   "kind": "block",
    "scope": "cell-wide",
    "skins": [
     "neutral",
@@ -1255,9 +2380,9 @@
     "meridian"
    ],
    "total_ms": 500,
-   "in_ms": 100,
-   "hold_ms": 220,
-   "out_ms": 200,
+   "in_ms": 80,
+   "hold_ms": 160,
+   "out_ms": 220,
    "easing_summary": "in ease-out tracer; streak ease-out; out linear",
    "easing": {
     "tracer": "ease-out cubic",
@@ -1267,19 +2392,19 @@
    "phases": {
     "tracer": [
      0,
-     100
+     80
     ],
     "streak": [
-     100,
-     320
+     80,
+     280
     ],
     "ring": [
-     100,
-     220
+     80,
+     200
     ],
     "out": [
-     260,
-     520
+     240,
+     460
     ]
    },
    "keyframes": [
@@ -1288,15 +2413,15 @@
      "caption": "anticipate"
     },
     {
-     "ms": 60,
+     "ms": 50,
      "caption": "tracer toward the ward"
     },
     {
-     "ms": 160,
+     "ms": 140,
      "caption": "gold streak glances"
     },
     {
-     "ms": 300,
+     "ms": 280,
      "caption": "streak at full length"
     },
     {
@@ -1316,100 +2441,151 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 885.2,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 2077,
+     "loud_peak_mean_L": 42.6,
+     "loud_total_peak": 885.2,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 466.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 885.6,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 2089,
+     "loud_peak_mean_L": 42.4,
+     "loud_total_peak": 885.6,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 466.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 885.4,
+     "loud_peak_ms": 150.0,
+     "loud_peak_area_px": 2084,
+     "loud_peak_mean_L": 42.5,
+     "loud_total_peak": 885.4,
+     "loud_total_peak_ms": 150.0,
+     "settles_ms": 466.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1884,
+     "footprint_px": 2437,
      "crop_px": 49450,
-     "footprint_share": 0.038,
-     "peak_up_share_footprint": 0.405,
-     "peak_down_share_footprint": 0.379,
-     "waves_footprint": 3,
+     "footprint_share": 0.049,
+     "peak_up_share_footprint": 0.59,
+     "peak_down_share_footprint": 0.449,
+     "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.015,
-     "peak_down_share_crop": 0.014,
+     "peak_up_share_crop": 0.029,
+     "peak_down_share_crop": 0.022,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.12,
-      0.192
+      0.127,
+      0.223
      ],
-     "mean_lum_max_step": 0.058,
+     "mean_lum_max_step": 0.031,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "neutral_reduce": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1290,
+     "footprint_px": 1444,
      "crop_px": 49450,
-     "footprint_share": 0.026,
-     "peak_up_share_footprint": 0.325,
-     "peak_down_share_footprint": 0.264,
+     "footprint_share": 0.029,
+     "peak_up_share_footprint": 0.304,
+     "peak_down_share_footprint": 0.257,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.008,
-     "peak_down_share_crop": 0.007,
+     "peak_up_share_crop": 0.009,
+     "peak_down_share_crop": 0.008,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.158,
-      0.219
+      0.145,
+      0.215
      ],
-     "mean_lum_max_step": 0.022,
+     "mean_lum_max_step": 0.02,
      "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "solace": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1886,
+     "footprint_px": 2436,
      "crop_px": 49450,
-     "footprint_share": 0.038,
-     "peak_up_share_footprint": 0.402,
-     "peak_down_share_footprint": 0.379,
-     "waves_footprint": 3,
+     "footprint_share": 0.049,
+     "peak_up_share_footprint": 0.59,
+     "peak_down_share_footprint": 0.449,
+     "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.015,
-     "peak_down_share_crop": 0.014,
+     "peak_up_share_crop": 0.029,
+     "peak_down_share_crop": 0.022,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.121,
-      0.194
+      0.128,
+      0.223
      ],
-     "mean_lum_max_step": 0.058,
+     "mean_lum_max_step": 0.031,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "meridian": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 1900,
+     "footprint_px": 2435,
      "crop_px": 49450,
-     "footprint_share": 0.038,
-     "peak_up_share_footprint": 0.398,
-     "peak_down_share_footprint": 0.376,
-     "waves_footprint": 3,
+     "footprint_share": 0.049,
+     "peak_up_share_footprint": 0.591,
+     "peak_down_share_footprint": 0.449,
+     "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.015,
-     "peak_down_share_crop": 0.014,
+     "peak_up_share_crop": 0.029,
+     "peak_down_share_crop": 0.022,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.123,
-      0.195
+      0.127,
+      0.223
      ],
-     "mean_lum_max_step": 0.058,
+     "mean_lum_max_step": 0.031,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     }
@@ -1420,42 +2596,43 @@
    "title": "Firewall burns a sector",
    "variant_of": null,
    "tier": "lower",
+   "kind": "damage",
    "scope": "cell-wide, one band per ring",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 1000,
-   "in_ms": 460,
-   "hold_ms": 240,
-   "out_ms": 300,
-   "easing_summary": "in ease-out rise, 130 ms ring stagger; hold with a 7 Hz height flicker; out linear",
+   "total_ms": 600,
+   "in_ms": 280,
+   "hold_ms": 100,
+   "out_ms": 220,
+   "easing_summary": "in ease-out rise, 60 ms ring stagger; hold with a 7 Hz height flicker; out linear",
    "easing": {
     "rise": "ease-out cubic",
-    "flicker": "sine 9 Hz on tongue height (no luminance swing)",
+    "flicker": "sine 7 Hz on tongue height (no luminance swing)",
     "embers": "linear"
    },
    "phases": {
     "ring0": [
      0,
-     200
+     160
     ],
     "ring1": [
-     130,
-     330
+     60,
+     220
     ],
     "ring2": [
-     260,
-     460
+     120,
+     280
     ],
     "ticks": [
-     330,
-     330
+     220,
+     220
     ],
     "embers": [
-     700,
-     1000
+     380,
+     600
     ]
    },
    "keyframes": [
@@ -1464,23 +2641,23 @@
      "caption": "anticipate"
     },
     {
-     "ms": 100,
+     "ms": 70,
      "caption": "flames catch in ring NOW"
     },
     {
-     "ms": 260,
+     "ms": 150,
      "caption": "band steps out to ring +1"
     },
     {
-     "ms": 520,
+     "ms": 300,
      "caption": "peak: a band per ring, 60 % deep"
     },
     {
-     "ms": 850,
+     "ms": 520,
      "caption": "embers fade, ticks gone"
     }
    ],
-   "reduce_motion": "All three bands appear at full height at once, no flicker, hold 500 ms, fade 300 ms.",
+   "reduce_motion": "All three bands appear at full height at once, no flicker, hold 300 ms, fade 200 ms.",
    "source": "latent (Firewall is not in this hand): Firewall (2) on sector 0; Packet 5 loses its 2 ticks",
    "board_crop": [
     330,
@@ -1492,33 +2669,84 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 9540.3,
+     "loud_peak_ms": 366.7,
+     "loud_peak_area_px": 15864,
+     "loud_peak_mean_L": 60.1,
+     "loud_total_peak": 9606.9,
+     "loud_total_peak_ms": 366.7,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 9547.8,
+     "loud_peak_ms": 366.7,
+     "loud_peak_area_px": 16007,
+     "loud_peak_mean_L": 59.6,
+     "loud_total_peak": 9614.5,
+     "loud_total_peak_ms": 366.7,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 9535.1,
+     "loud_peak_ms": 366.7,
+     "loud_peak_area_px": 15895,
+     "loud_peak_mean_L": 60.0,
+     "loud_total_peak": 9601.8,
+     "loud_total_peak_ms": 366.7,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 79,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 17941,
+     "footprint_px": 17771,
      "crop_px": 105825,
-     "footprint_share": 0.17,
-     "peak_up_share_footprint": 0.388,
-     "peak_down_share_footprint": 0.757,
+     "footprint_share": 0.168,
+     "peak_up_share_footprint": 0.469,
+     "peak_down_share_footprint": 0.694,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.066,
-     "peak_down_share_crop": 0.128,
+     "peak_up_share_crop": 0.079,
+     "peak_down_share_crop": 0.117,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.052,
-      0.292
+      0.112,
+      0.294
      ],
-     "mean_lum_max_step": 0.031,
+     "mean_lum_max_step": 0.03,
      "mean_lum_crop_max_step": 0.005,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 79,
+     "frames": 55,
      "fps": 60,
      "footprint_px": 0,
      "crop_px": 105825,
@@ -1542,50 +2770,50 @@
      "passes": true
     },
     "solace": {
-     "frames": 79,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 18080,
+     "footprint_px": 17763,
      "crop_px": 105825,
-     "footprint_share": 0.171,
-     "peak_up_share_footprint": 0.384,
-     "peak_down_share_footprint": 0.744,
+     "footprint_share": 0.168,
+     "peak_up_share_footprint": 0.469,
+     "peak_down_share_footprint": 0.694,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.066,
-     "peak_down_share_crop": 0.127,
+     "peak_up_share_crop": 0.079,
+     "peak_down_share_crop": 0.117,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.062,
-      0.291
+      0.112,
+      0.294
      ],
      "mean_lum_max_step": 0.03,
      "mean_lum_crop_max_step": 0.005,
      "passes": true
     },
     "meridian": {
-     "frames": 79,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 18024,
+     "footprint_px": 17741,
      "crop_px": 105825,
-     "footprint_share": 0.17,
-     "peak_up_share_footprint": 0.386,
-     "peak_down_share_footprint": 0.7,
+     "footprint_share": 0.168,
+     "peak_up_share_footprint": 0.47,
+     "peak_down_share_footprint": 0.696,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.066,
-     "peak_down_share_crop": 0.119,
+     "peak_up_share_crop": 0.079,
+     "peak_down_share_crop": 0.117,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.057,
-      0.291
+      0.109,
+      0.294
      ],
-     "mean_lum_max_step": 0.029,
+     "mean_lum_max_step": 0.03,
      "mean_lum_crop_max_step": 0.005,
      "passes": true
     }
@@ -1596,14 +2824,15 @@
    "title": "Landing hit, one slice pip lost",
    "variant_of": null,
    "tier": "core",
-   "scope": "slice-wide (outer half)",
+   "kind": "damage",
+   "scope": "slice-wide (outer part)",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "easing_summary": "in ease-in chevrons, 2-frame frame flash, ease-out flood; out linear",
    "easing": {
     "chevrons": "ease-in cubic",
@@ -1614,27 +2843,27 @@
    "phases": {
     "chevrons": [
      0,
-     100
+     80
     ],
     "frame_flash": [
-     100,
-     134
+     80,
+     114
     ],
     "flood": [
-     100,
-     260
+     80,
+     200
     ],
     "krackle": [
-     120,
-     520
+     100,
+     440
     ],
     "flood_out": [
-     330,
-     620
+     300,
+     560
     ],
     "pip": [
-     260,
-     260
+     200,
+     200
     ]
    },
    "keyframes": [
@@ -1643,19 +2872,19 @@
      "caption": "anticipate: chevrons land"
     },
     {
-     "ms": 117,
+     "ms": 97,
      "caption": "impact: frame flashes HARM"
     },
     {
-     "ms": 200,
+     "ms": 170,
      "caption": "flood rolls in, krackle"
     },
     {
-     "ms": 400,
+     "ms": 360,
      "caption": "flood fades, pip gone"
     },
     {
-     "ms": 700,
+     "ms": 600,
      "caption": "settle: pip gone"
     }
    ],
@@ -1671,53 +2900,72 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 2816.8,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 6158,
+     "loud_peak_mean_L": 45.7,
+     "loud_total_peak": 2817.3,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 550.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 8735,
+     "footprint_px": 9069,
      "crop_px": 53000,
-     "footprint_share": 0.165,
-     "peak_up_share_footprint": 0.546,
-     "peak_down_share_footprint": 0.396,
+     "footprint_share": 0.171,
+     "peak_up_share_footprint": 0.536,
+     "peak_down_share_footprint": 0.59,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.09,
-     "peak_down_share_crop": 0.065,
+     "peak_up_share_crop": 0.092,
+     "peak_down_share_crop": 0.101,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.136,
-      0.193
+      0.168,
+      0.241
      ],
-     "mean_lum_max_step": 0.043,
-     "mean_lum_crop_max_step": 0.007,
+     "mean_lum_max_step": 0.058,
+     "mean_lum_crop_max_step": 0.01,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 579,
+     "footprint_px": 0,
      "crop_px": 53000,
-     "footprint_share": 0.011,
-     "peak_up_share_footprint": 0.316,
-     "peak_down_share_footprint": 0.42,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.003,
-     "peak_down_share_crop": 0.005,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.115,
-      0.172
+      0.0,
+      0.0
      ],
-     "mean_lum_max_step": 0.057,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
      "passes": true
     }
    }
@@ -1727,14 +2975,15 @@
    "title": "Hit-land variant: worm wear (hook mark)",
    "variant_of": "fx_hit_land",
    "tier": "core",
+   "kind": "damage",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "easing_summary": "as fx_hit_land; hook ease-out back",
    "easing": {
     "hook": "ease-out back"
@@ -1742,11 +2991,11 @@
    "phases": {
     "as_parent": [
      0,
-     700
+     600
     ],
     "hook": [
-     160,
-     230
+     140,
+     200
     ]
    },
    "keyframes": [
@@ -1755,19 +3004,19 @@
      "caption": "anticipate"
     },
     {
-     "ms": 117,
+     "ms": 97,
      "caption": "impact"
     },
     {
-     "ms": 200,
+     "ms": 170,
      "caption": "flood and krackle, hook stamps"
     },
     {
-     "ms": 400,
+     "ms": 360,
      "caption": "flood fades"
     },
     {
-     "ms": 700,
+     "ms": 600,
      "caption": "settle: pip gone, hook stays"
     }
    ],
@@ -1783,53 +3032,72 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 2821.6,
+     "loud_peak_ms": 183.3,
+     "loud_peak_area_px": 6198,
+     "loud_peak_mean_L": 45.5,
+     "loud_total_peak": 2864.7,
+     "loud_total_peak_ms": 183.3,
+     "settles_ms": 550.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 8883,
+     "footprint_px": 9218,
      "crop_px": 53000,
-     "footprint_share": 0.168,
-     "peak_up_share_footprint": 0.539,
-     "peak_down_share_footprint": 0.39,
+     "footprint_share": 0.174,
+     "peak_up_share_footprint": 0.527,
+     "peak_down_share_footprint": 0.588,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.09,
-     "peak_down_share_crop": 0.065,
+     "peak_up_share_crop": 0.092,
+     "peak_down_share_crop": 0.102,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.137,
-      0.193
+      0.167,
+      0.239
      ],
-     "mean_lum_max_step": 0.042,
-     "mean_lum_crop_max_step": 0.007,
+     "mean_lum_max_step": 0.057,
+     "mean_lum_crop_max_step": 0.01,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 725,
+     "footprint_px": 0,
      "crop_px": 53000,
-     "footprint_share": 0.014,
-     "peak_up_share_footprint": 0.316,
-     "peak_down_share_footprint": 0.437,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.004,
-     "peak_down_share_crop": 0.006,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.129,
-      0.174
+      0.0,
+      0.0
      ],
-     "mean_lum_max_step": 0.045,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
      "passes": true
     }
    }
@@ -1839,14 +3107,15 @@
    "title": "Hit-land variant: Adjuster strike (gold rim flash)",
    "variant_of": "fx_hit_land",
    "tier": "core",
+   "kind": "damage",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 160,
-   "hold_ms": 170,
-   "out_ms": 370,
+   "total_ms": 600,
+   "in_ms": 200,
+   "hold_ms": 100,
+   "out_ms": 260,
    "easing_summary": "as fx_hit_land; one sine gold flash",
    "easing": {
     "gold_flash": "sine, once"
@@ -1854,11 +3123,11 @@
    "phases": {
     "as_parent": [
      0,
-     700
+     600
     ],
     "gold_flash": [
-     100,
-     200
+     80,
+     170
     ]
    },
    "keyframes": [
@@ -1867,19 +3136,19 @@
      "caption": "anticipate"
     },
     {
-     "ms": 117,
+     "ms": 97,
      "caption": "impact"
     },
     {
-     "ms": 150,
+     "ms": 125,
      "caption": "gold rim flash"
     },
     {
-     "ms": 400,
+     "ms": 360,
      "caption": "flood fades"
     },
     {
-     "ms": 700,
+     "ms": 600,
      "caption": "settle"
     }
    ],
@@ -1895,53 +3164,72 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 3748.8,
+     "loud_peak_ms": 133.3,
+     "loud_peak_area_px": 7335,
+     "loud_peak_mean_L": 51.1,
+     "loud_total_peak": 3749.5,
+     "loud_total_peak_ms": 133.3,
+     "settles_ms": 550.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 10327,
+     "footprint_px": 10155,
      "crop_px": 53000,
-     "footprint_share": 0.195,
-     "peak_up_share_footprint": 0.618,
-     "peak_down_share_footprint": 0.488,
+     "footprint_share": 0.192,
+     "peak_up_share_footprint": 0.565,
+     "peak_down_share_footprint": 0.625,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.12,
-     "peak_down_share_crop": 0.095,
+     "peak_up_share_crop": 0.108,
+     "peak_down_share_crop": 0.12,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.153,
-      0.25
+      0.157,
+      0.224
      ],
-     "mean_lum_max_step": 0.049,
+     "mean_lum_max_step": 0.052,
      "mean_lum_crop_max_step": 0.01,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 581,
+     "footprint_px": 0,
      "crop_px": 53000,
-     "footprint_share": 0.011,
-     "peak_up_share_footprint": 0.315,
-     "peak_down_share_footprint": 0.408,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.003,
-     "peak_down_share_crop": 0.004,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.129,
-      0.183
+      0.0,
+      0.0
      ],
-     "mean_lum_max_step": 0.054,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.0,
+     "mean_lum_crop_max_step": 0.0,
      "passes": true
     }
    }
@@ -1951,14 +3239,15 @@
    "title": "Our shield slice breaks while blocking",
    "variant_of": null,
    "tier": "core",
+   "kind": "damage",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 700,
-   "in_ms": 190,
-   "hold_ms": 190,
-   "out_ms": 320,
+   "total_ms": 600,
+   "in_ms": 160,
+   "hold_ms": 160,
+   "out_ms": 280,
    "easing_summary": "in ease-out load + crack; shards ease-out + gravity; dark ease-in-out (stays)",
    "easing": {
     "load": "ease-out cubic",
@@ -1969,35 +3258,35 @@
    "phases": {
     "load": [
      0,
-     110
+     90
     ],
     "crack": [
      20,
-     110
+     90
     ],
     "split": [
-     120,
-     120
+     100,
+     100
     ],
     "shards": [
-     120,
-     560
+     100,
+     460
     ],
     "flood": [
-     130,
-     300
+     110,
+     260
     ],
     "krackle": [
-     130,
-     600
-    ],
-    "dark": [
-     200,
+     110,
      500
     ],
+    "dark": [
+     160,
+     420
+    ],
     "pips": [
-     300,
-     300
+     260,
+     260
     ]
    },
    "keyframes": [
@@ -2006,19 +3295,19 @@
      "caption": "anticipate: plate under load"
     },
     {
-     "ms": 80,
+     "ms": 60,
      "caption": "hairline crack"
     },
     {
-     "ms": 180,
+     "ms": 150,
      "caption": "plate splits, flood starts"
     },
     {
-     "ms": 330,
+     "ms": 300,
      "caption": "shards fly, wedge darkens"
     },
     {
-     "ms": 700,
+     "ms": 600,
      "caption": "settle: wedge dark, shield gone"
     }
    ],
@@ -2034,52 +3323,71 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 8377.0,
+     "loud_peak_ms": 250.0,
+     "loud_peak_area_px": 15499,
+     "loud_peak_mean_L": 54.0,
+     "loud_total_peak": 8382.0,
+     "loud_total_peak_ms": 250.0,
+     "settles_ms": 550.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 20993,
+     "footprint_px": 21134,
      "crop_px": 52800,
-     "footprint_share": 0.398,
-     "peak_up_share_footprint": 0.353,
-     "peak_down_share_footprint": 0.323,
-     "waves_footprint": 3,
+     "footprint_share": 0.4,
+     "peak_up_share_footprint": 0.374,
+     "peak_down_share_footprint": 0.418,
+     "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.14,
-     "peak_down_share_crop": 0.128,
+     "peak_up_share_crop": 0.15,
+     "peak_down_share_crop": 0.167,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
       0.106,
-      0.325
+      0.292
      ],
-     "mean_lum_max_step": 0.03,
-     "mean_lum_crop_max_step": 0.012,
+     "mean_lum_max_step": 0.026,
+     "mean_lum_crop_max_step": 0.01,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 61,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 155,
+     "footprint_px": 0,
      "crop_px": 52800,
-     "footprint_share": 0.003,
-     "peak_up_share_footprint": 0.335,
-     "peak_down_share_footprint": 0.458,
-     "waves_footprint": 2,
-     "flashes_footprint": 1,
-     "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.001,
-     "peak_down_share_crop": 0.001,
+     "footprint_share": 0.0,
+     "peak_up_share_footprint": 0.0,
+     "peak_down_share_footprint": 0.0,
+     "waves_footprint": 0,
+     "flashes_footprint": 0,
+     "max_flashes_per_s_footprint": 0,
+     "peak_up_share_crop": 0.0,
+     "peak_down_share_crop": 0.0,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.171,
-      0.242
+      0.0,
+      0.0
      ],
-     "mean_lum_max_step": 0.072,
+     "mean_lum_max_step": 0.0,
      "mean_lum_crop_max_step": 0.0,
      "passes": true
     }
@@ -2090,14 +3398,15 @@
    "title": "Slice goes 2 to 1 (cracked)",
    "variant_of": null,
    "tier": "core",
+   "kind": "damage",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
    "total_ms": 500,
-   "in_ms": 260,
+   "in_ms": 220,
    "hold_ms": 40,
-   "out_ms": 200,
+   "out_ms": 240,
    "easing_summary": "in ease-out crack; flood linear",
    "easing": {
     "flood": "linear",
@@ -2106,19 +3415,27 @@
    "phases": {
     "flood": [
      0,
-     300
+     420
+    ],
+    "frame_flash": [
+     30,
+     64
     ],
     "crack": [
-     60,
-     260
+     50,
+     220
     ],
     "tip": [
-     60,
-     300
+     50,
+     260
+    ],
+    "krackle": [
+     40,
+     400
     ],
     "pip": [
-     200,
-     200
+     180,
+     180
     ]
    },
    "keyframes": [
@@ -2127,15 +3444,15 @@
      "caption": "anticipate"
     },
     {
-     "ms": 60,
-     "caption": "flood pulse at the rim"
+     "ms": 47,
+     "caption": "flood, frame flash"
     },
     {
-     "ms": 160,
-     "caption": "crack runs, white tip"
+     "ms": 130,
+     "caption": "crack runs, white tip, krackle"
     },
     {
-     "ms": 260,
+     "ms": 230,
      "caption": "crack done, pip gone"
     },
     {
@@ -2155,29 +3472,48 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 3121.4,
+     "loud_peak_ms": 50.0,
+     "loud_peak_area_px": 6946,
+     "loud_peak_mean_L": 44.9,
+     "loud_total_peak": 3124.5,
+     "loud_total_peak_ms": 50.0,
+     "settles_ms": 416.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
      "frames": 49,
      "fps": 60,
-     "footprint_px": 4862,
+     "footprint_px": 7024,
      "crop_px": 39900,
-     "footprint_share": 0.122,
-     "peak_up_share_footprint": 0.419,
-     "peak_down_share_footprint": 0.418,
+     "footprint_share": 0.176,
+     "peak_up_share_footprint": 0.634,
+     "peak_down_share_footprint": 0.594,
      "waves_footprint": 4,
      "flashes_footprint": 2,
      "max_flashes_per_s_footprint": 2,
-     "peak_up_share_crop": 0.051,
-     "peak_down_share_crop": 0.051,
+     "peak_up_share_crop": 0.112,
+     "peak_down_share_crop": 0.105,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.137,
-      0.224
+      0.164,
+      0.234
      ],
-     "mean_lum_max_step": 0.068,
-     "mean_lum_crop_max_step": 0.008,
+     "mean_lum_max_step": 0.06,
+     "mean_lum_crop_max_step": 0.01,
      "passes": true
     },
     "neutral_reduce": {
@@ -2211,14 +3547,15 @@
    "title": "Slice goes to 0, ability lost",
    "variant_of": null,
    "tier": "core",
+   "kind": "damage",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 650,
-   "in_ms": 200,
-   "hold_ms": 180,
-   "out_ms": 270,
+   "total_ms": 600,
+   "in_ms": 170,
+   "hold_ms": 230,
+   "out_ms": 200,
    "easing_summary": "in ease-out-back stamp; black-out ease-in-out (stays)",
    "easing": {
     "stamp": "ease-out back (strong)",
@@ -2228,23 +3565,27 @@
    "phases": {
     "flood": [
      0,
-     380
+     360
+    ],
+    "frame_flash": [
+     30,
+     64
     ],
     "stamp": [
-     120,
-     200
+     100,
+     170
     ],
     "blackout": [
-     150,
-     450
+     130,
+     400
     ],
     "halftone": [
-     200,
-     500
+     170,
+     450
     ],
     "pips": [
-     250,
-     250
+     220,
+     220
     ]
    },
    "keyframes": [
@@ -2253,19 +3594,19 @@
      "caption": "anticipate"
     },
     {
-     "ms": 90,
-     "caption": "flood"
+     "ms": 47,
+     "caption": "flood, frame flash"
     },
     {
-     "ms": 180,
+     "ms": 150,
      "caption": "X stamps in the outer corner"
     },
     {
-     "ms": 330,
+     "ms": 300,
      "caption": "black-out over a halftone fade"
     },
     {
-     "ms": 650,
+     "ms": 600,
      "caption": "settle: dark wedge, X stays"
     }
    ],
@@ -2281,33 +3622,52 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 4778.2,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 10016,
+     "loud_peak_mean_L": 47.7,
+     "loud_total_peak": 4977.3,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 450.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 58,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 11721,
+     "footprint_px": 12099,
      "crop_px": 33150,
-     "footprint_share": 0.354,
-     "peak_up_share_footprint": 0.245,
-     "peak_down_share_footprint": 0.624,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.087,
-     "peak_down_share_crop": 0.221,
+     "footprint_share": 0.365,
+     "peak_up_share_footprint": 0.371,
+     "peak_down_share_footprint": 0.655,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.135,
+     "peak_down_share_crop": 0.239,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.03,
-      0.3
+      0.035,
+      0.257
      ],
-     "mean_lum_max_step": 0.05,
-     "mean_lum_crop_max_step": 0.018,
+     "mean_lum_max_step": 0.036,
+     "mean_lum_crop_max_step": 0.013,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 58,
+     "frames": 55,
      "fps": 60,
      "footprint_px": 0,
      "crop_px": 33150,
@@ -2337,37 +3697,38 @@
    "title": "HP gets through, diamonds fly to YOU",
    "variant_of": null,
    "tier": "core",
-   "scope": "arc to HUD",
+   "kind": "damage",
+   "scope": "arc to HUD (crosses the HUD: allowed)",
    "skins": [
     "neutral"
    ],
-   "total_ms": 1150,
-   "in_ms": 880,
-   "hold_ms": 100,
-   "out_ms": 170,
-   "easing_summary": "in ease-out lift + ease-in-out flight, 30 ms stagger; hold = sine slap; out linear",
+   "total_ms": 600,
+   "in_ms": 160,
+   "hold_ms": 300,
+   "out_ms": 140,
+   "easing_summary": "in ease-out lift + ease-in-out flight, 20 ms stagger; hold = sine slap; out linear",
    "easing": {
     "lift": "ease-out cubic",
-    "flight": "ease-in-out cubic, 40 ms stagger",
+    "flight": "ease-in-out cubic, 20 ms stagger",
     "slap": "sine, once",
     "dark": "linear"
    },
    "phases": {
     "lift": [
      0,
-     220
+     140
     ],
     "flight": [
-     120,
-     880
+     60,
+     460
     ],
     "slap": [
-     800,
-     980
+     400,
+     520
     ],
     "dark": [
-     920,
-     1100
+     440,
+     580
     ]
    },
    "keyframes": [
@@ -2376,19 +3737,19 @@
      "caption": "anticipate"
     },
     {
-     "ms": 100,
+     "ms": 60,
      "caption": "diamonds lift off the arc"
     },
     {
-     "ms": 420,
+     "ms": 260,
      "caption": "flight on one curve, ribbon trail"
     },
     {
-     "ms": 900,
+     "ms": 460,
      "caption": "arrival: the strip takes the slap"
     },
     {
-     "ms": 1150,
+     "ms": 600,
      "caption": "settle: segments dark"
     }
    ],
@@ -2397,43 +3758,62 @@
    "board_crop": [
     700,
     40,
-    1420,
+    1440,
     330
    ],
    "base": {
     "pre": "p1",
     "post": null
    },
+   "layer": "above the HUD (allowed)",
+   "measured": {
+    "neutral": {
+     "loud_peak": 3035.2,
+     "loud_peak_ms": 450.0,
+     "loud_peak_area_px": 6067,
+     "loud_peak_mean_L": 50.0,
+     "loud_total_peak": 3035.2,
+     "loud_total_peak_ms": 450.0,
+     "settles_ms": 583.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 6580,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 88,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 10255,
-     "crop_px": 208800,
-     "footprint_share": 0.049,
-     "peak_up_share_footprint": 0.217,
-     "peak_down_share_footprint": 0.263,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.011,
-     "peak_down_share_crop": 0.013,
+     "footprint_px": 14826,
+     "crop_px": 214600,
+     "footprint_share": 0.069,
+     "peak_up_share_footprint": 0.29,
+     "peak_down_share_footprint": 0.347,
+     "waves_footprint": 3,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.02,
+     "peak_down_share_crop": 0.024,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.238,
-      0.307
+      0.224,
+      0.291
      ],
-     "mean_lum_max_step": 0.022,
-     "mean_lum_crop_max_step": 0.001,
+     "mean_lum_max_step": 0.029,
+     "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 88,
+     "frames": 55,
      "fps": 60,
      "footprint_px": 0,
-     "crop_px": 208800,
+     "crop_px": 214600,
      "footprint_share": 0.0,
      "peak_up_share_footprint": 0.0,
      "peak_down_share_footprint": 0.0,
@@ -2460,17 +3840,18 @@
    "title": "Trigger-kill refund, +1 RAM",
    "variant_of": null,
    "tier": "core",
-   "scope": "cell to HUD",
+   "kind": "gain",
+   "scope": "cell to HUD (crosses the HUD: allowed)",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 900,
-   "in_ms": 650,
-   "hold_ms": 0,
-   "out_ms": 250,
-   "easing_summary": "in ease-out-back pop + ease-in-out flight; out ease-out ring",
+   "total_ms": 600,
+   "in_ms": 90,
+   "hold_ms": 310,
+   "out_ms": 200,
+   "easing_summary": "in ease-out-back pop; hold = ease-in-out flight; out ease-out ring",
    "easing": {
     "pop": "ease-out back (overshoot)",
     "flight": "ease-in-out cubic",
@@ -2479,84 +3860,135 @@
    "phases": {
     "pop": [
      0,
-     150
+     90
     ],
     "flight": [
-     150,
-     650
+     90,
+     400
     ],
     "light": [
-     650,
-     910
+     400,
+     600
     ]
    },
    "keyframes": [
     {
      "ms": 0,
-     "caption": "anticipate"
+     "caption": "anticipate: RAM slot empty"
     },
     {
-     "ms": 110,
+     "ms": 70,
      "caption": "coin pops with a plus"
     },
     {
-     "ms": 400,
+     "ms": 250,
      "caption": "coin flies, ribbon trail"
     },
     {
-     "ms": 680,
-     "caption": "lands: the RAM coin lights"
+     "ms": 420,
+     "caption": "lands: RAM coin and REFUND tab"
     },
     {
-     "ms": 900,
+     "ms": 600,
      "caption": "settle"
     }
    ],
-   "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot lights at once.",
-   "source": "f2: Trigger kills Packet 1 (tlog trig_refund), refund 1 RAM: RAM 2 + 1 = 3 (4 at turn start; Trigger 1 and Brace 1 paid, Twist 0; f2 ram 3). O-30: was \"ram 3 + 1\", the frames were right (2 lit, slot 3 lights).",
+   "reduce_motion": "No flight: the coin fades at the refund mark (150 ms) and the RAM slot and tab show at once.",
+   "source": "f2: Trigger kills Packet 1, refund 1 RAM (ram 3 + 1)",
    "board_crop": [
     410,
     480,
-    1280,
+    1300,
     800
    ],
    "base": {
-    "pre": "p3",
-    "post": null
+    "pre": "p3rf",
+    "post": "p3"
+   },
+   "layer": "above the HUD (allowed)",
+   "measured": {
+    "neutral": {
+     "loud_peak": 674.8,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 1133,
+     "loud_peak_mean_L": 59.6,
+     "loud_total_peak": 674.8,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 1091,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 674.8,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 1133,
+     "loud_peak_mean_L": 59.6,
+     "loud_total_peak": 674.8,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 1091,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 674.8,
+     "loud_peak_ms": 200.0,
+     "loud_peak_area_px": 1133,
+     "loud_peak_mean_L": 59.6,
+     "loud_total_peak": 674.8,
+     "loud_total_peak_ms": 200.0,
+     "settles_ms": 600.0,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 1091,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
    },
    "flash": {
     "neutral": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 38323,
-     "crop_px": 278400,
-     "footprint_share": 0.138,
-     "peak_up_share_footprint": 0.26,
-     "peak_down_share_footprint": 0.241,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.036,
-     "peak_down_share_crop": 0.033,
+     "footprint_px": 16900,
+     "crop_px": 284800,
+     "footprint_share": 0.059,
+     "peak_up_share_footprint": 0.281,
+     "peak_down_share_footprint": 0.256,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.017,
+     "peak_down_share_crop": 0.015,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.207,
-      0.241
+      0.168,
+      0.217
      ],
-     "mean_lum_max_step": 0.018,
+     "mean_lum_max_step": 0.034,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
      "footprint_px": 732,
-     "crop_px": 278400,
+     "crop_px": 284800,
      "footprint_share": 0.003,
-     "peak_up_share_footprint": 0.522,
-     "peak_down_share_footprint": 0.552,
+     "peak_up_share_footprint": 0.523,
+     "peak_down_share_footprint": 0.56,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
@@ -2566,7 +3998,7 @@
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.228,
+      0.227,
       0.379
      ],
      "mean_lum_max_step": 0.06,
@@ -2574,50 +4006,50 @@
      "passes": true
     },
     "solace": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 38527,
-     "crop_px": 278400,
-     "footprint_share": 0.138,
-     "peak_up_share_footprint": 0.258,
-     "peak_down_share_footprint": 0.244,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.036,
-     "peak_down_share_crop": 0.034,
+     "footprint_px": 16909,
+     "crop_px": 284800,
+     "footprint_share": 0.059,
+     "peak_up_share_footprint": 0.281,
+     "peak_down_share_footprint": 0.256,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.017,
+     "peak_down_share_crop": 0.015,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.218,
-      0.249
+      0.17,
+      0.22
      ],
-     "mean_lum_max_step": 0.017,
+     "mean_lum_max_step": 0.034,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "meridian": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 38285,
-     "crop_px": 278400,
-     "footprint_share": 0.138,
-     "peak_up_share_footprint": 0.26,
-     "peak_down_share_footprint": 0.242,
-     "waves_footprint": 1,
-     "flashes_footprint": 0,
-     "max_flashes_per_s_footprint": 0,
-     "peak_up_share_crop": 0.036,
-     "peak_down_share_crop": 0.033,
+     "footprint_px": 16924,
+     "crop_px": 284800,
+     "footprint_share": 0.059,
+     "peak_up_share_footprint": 0.281,
+     "peak_down_share_footprint": 0.256,
+     "waves_footprint": 2,
+     "flashes_footprint": 1,
+     "max_flashes_per_s_footprint": 1,
+     "peak_up_share_crop": 0.017,
+     "peak_down_share_crop": 0.015,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.208,
-      0.242
+      0.166,
+      0.215
      ],
-     "mean_lum_max_step": 0.018,
+     "mean_lum_max_step": 0.034,
      "mean_lum_crop_max_step": 0.002,
      "passes": true
     }
@@ -2628,38 +4060,35 @@
    "title": "Nothing gets through (arc check)",
    "variant_of": null,
    "tier": "still",
+   "kind": "gain",
    "scope": "arc",
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "total_ms": 800,
-   "in_ms": 300,
-   "hold_ms": 100,
-   "out_ms": 400,
-   "easing_summary": "in ease-in-out wash + ease-out-back check; out linear",
+   "total_ms": 400,
+   "in_ms": 100,
+   "hold_ms": 0,
+   "out_ms": 260,
+   "easing_summary": "in ease-out-back stamp; out linear glow",
    "easing": {
-    "wash": "ease-in-out cubic",
     "check": "ease-out back",
+    "glow": "linear",
     "sparkles": "sine"
    },
    "phases": {
-    "wash": [
-     0,
-     240
-    ],
     "check": [
-     160,
-     300
+     0,
+     100
+    ],
+    "glow": [
+     100,
+     360
     ],
     "sparkles": [
-     300,
-     680
-    ],
-    "wash_settle": [
-     400,
-     800
+     100,
+     360
     ]
    },
    "keyframes": [
@@ -2668,23 +4097,23 @@
      "caption": "anticipate: the arc"
     },
     {
-     "ms": 150,
-     "caption": "green wash sweeps the arc"
+     "ms": 50,
+     "caption": "check stamps in"
     },
     {
-     "ms": 260,
-     "caption": "check paints in"
+     "ms": 130,
+     "caption": "check with its glow, sparkles"
     },
     {
-     "ms": 450,
-     "caption": "check with sparkles"
+     "ms": 250,
+     "caption": "glow fades"
     },
     {
-     "ms": 800,
-     "caption": "settle"
+     "ms": 400,
+     "caption": "settle: the check stays"
     }
    ],
-   "reduce_motion": "No sweep or sparkles: wash and check fade in over 200 ms.",
+   "reduce_motion": "No stamp, glow or sparkles: the check shows at once.",
    "source": "f2: Worm 3 lands on sectors 1-2, soaked and braced, THROUGH 0",
    "board_crop": [
     790,
@@ -2696,33 +4125,84 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 84.7,
+     "loud_peak_ms": 50.0,
+     "loud_peak_area_px": 170,
+     "loud_peak_mean_L": 49.8,
+     "loud_total_peak": 260.3,
+     "loud_total_peak_ms": 50.0,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 277,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "solace": {
+     "loud_peak": 84.7,
+     "loud_peak_ms": 50.0,
+     "loud_peak_area_px": 170,
+     "loud_peak_mean_L": 49.8,
+     "loud_total_peak": 260.2,
+     "loud_total_peak_ms": 50.0,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 277,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    },
+    "meridian": {
+     "loud_peak": 84.7,
+     "loud_peak_ms": 50.0,
+     "loud_peak_area_px": 170,
+     "loud_peak_mean_L": 49.8,
+     "loud_total_peak": 260.2,
+     "loud_total_peak_ms": 50.0,
+     "settles_ms": 366.7,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 277,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 67,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 10589,
+     "footprint_px": 520,
      "crop_px": 86900,
-     "footprint_share": 0.122,
-     "peak_up_share_footprint": 0.641,
-     "peak_down_share_footprint": 0.403,
+     "footprint_share": 0.006,
+     "peak_up_share_footprint": 0.873,
+     "peak_down_share_footprint": 0.387,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.078,
-     "peak_down_share_crop": 0.049,
+     "peak_up_share_crop": 0.005,
+     "peak_down_share_crop": 0.002,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.122,
-      0.255
+      0.068,
+      0.388
      ],
-     "mean_lum_max_step": 0.026,
-     "mean_lum_crop_max_step": 0.003,
+     "mean_lum_max_step": 0.193,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 67,
+     "frames": 43,
      "fps": 60,
      "footprint_px": 0,
      "crop_px": 86900,
@@ -2746,51 +4226,51 @@
      "passes": true
     },
     "solace": {
-     "frames": 67,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 10603,
+     "footprint_px": 520,
      "crop_px": 86900,
-     "footprint_share": 0.122,
-     "peak_up_share_footprint": 0.64,
-     "peak_down_share_footprint": 0.398,
+     "footprint_share": 0.006,
+     "peak_up_share_footprint": 0.873,
+     "peak_down_share_footprint": 0.387,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.078,
-     "peak_down_share_crop": 0.049,
+     "peak_up_share_crop": 0.005,
+     "peak_down_share_crop": 0.002,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.123,
-      0.255
+      0.067,
+      0.388
      ],
-     "mean_lum_max_step": 0.026,
-     "mean_lum_crop_max_step": 0.003,
+     "mean_lum_max_step": 0.193,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "meridian": {
-     "frames": 67,
+     "frames": 43,
      "fps": 60,
-     "footprint_px": 10561,
+     "footprint_px": 520,
      "crop_px": 86900,
-     "footprint_share": 0.122,
-     "peak_up_share_footprint": 0.642,
-     "peak_down_share_footprint": 0.397,
+     "footprint_share": 0.006,
+     "peak_up_share_footprint": 0.873,
+     "peak_down_share_footprint": 0.387,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.078,
-     "peak_down_share_crop": 0.048,
+     "peak_up_share_crop": 0.005,
+     "peak_down_share_crop": 0.002,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.123,
-      0.255
+      0.068,
+      0.388
      ],
-     "mean_lum_max_step": 0.026,
-     "mean_lum_crop_max_step": 0.003,
+     "mean_lum_max_step": 0.193,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     }
    }
@@ -2800,14 +4280,15 @@
    "title": "Repair mends one pip",
    "variant_of": null,
    "tier": "lower",
+   "kind": "gain",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 900,
-   "in_ms": 560,
-   "hold_ms": 0,
-   "out_ms": 340,
+   "total_ms": 600,
+   "in_ms": 260,
+   "hold_ms": 140,
+   "out_ms": 200,
    "easing_summary": "in ease-out rise, sine width; pip ease-in-out; out linear glow",
    "easing": {
     "strokes": "ease-out cubic rise, sine width",
@@ -2816,19 +4297,19 @@
    "phases": {
     "strokes": [
      0,
-     645
+     450
     ],
     "plus": [
-     120,
-     780
-    ],
-    "pip_fill": [
-     380,
+     80,
      560
     ],
+    "pip_fill": [
+     260,
+     400
+    ],
     "glow_out": [
-     550,
-     900
+     380,
+     600
     ]
    },
    "keyframes": [
@@ -2837,19 +4318,19 @@
      "caption": "anticipate: mend-pending pip"
     },
     {
-     "ms": 160,
+     "ms": 120,
      "caption": "strokes rise through the wedge"
     },
     {
-     "ms": 330,
+     "ms": 240,
      "caption": "peak: strokes, plus signs"
     },
     {
-     "ms": 520,
+     "ms": 380,
      "caption": "pip lands"
     },
     {
-     "ms": 900,
+     "ms": 600,
      "caption": "settle: pip restored"
     }
    ],
@@ -2865,33 +4346,52 @@
     "pre": "p3",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 699.9,
+     "loud_peak_ms": 216.7,
+     "loud_peak_area_px": 988,
+     "loud_peak_mean_L": 70.8,
+     "loud_total_peak": 715.2,
+     "loud_total_peak_ms": 216.7,
+     "settles_ms": 533.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 254,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
-     "footprint_px": 8043,
+     "footprint_px": 4112,
      "crop_px": 41400,
-     "footprint_share": 0.194,
-     "peak_up_share_footprint": 0.332,
-     "peak_down_share_footprint": 0.305,
+     "footprint_share": 0.099,
+     "peak_up_share_footprint": 0.372,
+     "peak_down_share_footprint": 0.33,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.064,
-     "peak_down_share_crop": 0.059,
+     "peak_up_share_crop": 0.037,
+     "peak_down_share_crop": 0.033,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.374,
-      0.418
+      0.343,
+      0.409
      ],
-     "mean_lum_max_step": 0.009,
-     "mean_lum_crop_max_step": 0.002,
+     "mean_lum_max_step": 0.014,
+     "mean_lum_crop_max_step": 0.001,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 73,
+     "frames": 55,
      "fps": 60,
      "footprint_px": 0,
      "crop_px": 41400,
@@ -2921,14 +4421,15 @@
    "title": "Our shield slice blocks (for the comparison only)",
    "variant_of": null,
    "tier": "core",
+   "kind": "block",
    "scope": "slice-wide",
    "skins": [
     "neutral"
    ],
-   "total_ms": 560,
-   "in_ms": 100,
-   "hold_ms": 260,
-   "out_ms": 200,
+   "total_ms": 500,
+   "in_ms": 80,
+   "hold_ms": 220,
+   "out_ms": 180,
    "easing_summary": "in ease-out chevrons; sparks ease-out; out linear",
    "easing": {
     "chevrons": "ease-out cubic",
@@ -2937,19 +4438,19 @@
    "phases": {
     "chevrons": [
      0,
-     100
+     80
     ],
     "jolt": [
-     100,
-     170
+     80,
+     140
     ],
     "sparks": [
-     100,
-     380
+     80,
+     330
     ],
     "tint": [
-     100,
-     560
+     80,
+     480
     ]
    },
    "keyframes": [
@@ -2958,23 +4459,23 @@
      "caption": "anticipate"
     },
     {
-     "ms": 80,
+     "ms": 60,
      "caption": "chevrons hit the plate"
     },
     {
-     "ms": 180,
-     "caption": "peak: white sparks, pink tint"
+     "ms": 150,
+     "caption": "peak: white sparks off the plate"
     },
     {
-     "ms": 320,
+     "ms": 300,
      "caption": "sparks out"
     },
     {
-     "ms": 560,
+     "ms": 500,
      "caption": "settle: plate intact"
     }
    ],
-   "reduce_motion": "Plate and tint still; no sparks or jolt.",
+   "reduce_motion": "Plate still; no sparks or jolt.",
    "source": "same sector as the break (sector 1) so the two read side by side",
    "board_crop": [
     565,
@@ -2986,33 +4487,52 @@
     "pre": "p1",
     "post": null
    },
+   "layer": "under the HUD and the hand",
+   "measured": {
+    "neutral": {
+     "loud_peak": 1393.4,
+     "loud_peak_ms": 100.0,
+     "loud_peak_area_px": 2757,
+     "loud_peak_mean_L": 50.5,
+     "loud_total_peak": 4381.1,
+     "loud_total_peak_ms": 100.0,
+     "settles_ms": 333.3,
+     "under_px_hidden_by_hud_max": 0,
+     "over_px_on_hud_max": 0,
+     "guard_px": {
+      "GAIN": 0,
+      "FOCUS": 0,
+      "LIME": 0
+     }
+    }
+   },
    "flash": {
     "neutral": {
-     "frames": 52,
+     "frames": 49,
      "fps": 60,
-     "footprint_px": 10707,
+     "footprint_px": 5666,
      "crop_px": 52800,
-     "footprint_share": 0.203,
-     "peak_up_share_footprint": 0.404,
-     "peak_down_share_footprint": 0.39,
+     "footprint_share": 0.107,
+     "peak_up_share_footprint": 0.578,
+     "peak_down_share_footprint": 0.54,
      "waves_footprint": 2,
      "flashes_footprint": 1,
      "max_flashes_per_s_footprint": 1,
-     "peak_up_share_crop": 0.082,
-     "peak_down_share_crop": 0.079,
+     "peak_up_share_crop": 0.062,
+     "peak_down_share_crop": 0.058,
      "waves_crop": 0,
      "flashes_crop": 0,
      "max_flashes_per_s_crop": 0,
      "mean_lum_footprint_range": [
-      0.215,
-      0.274
+      0.223,
+      0.283
      ],
-     "mean_lum_max_step": 0.032,
-     "mean_lum_crop_max_step": 0.006,
+     "mean_lum_max_step": 0.016,
+     "mean_lum_crop_max_step": 0.002,
      "passes": true
     },
     "neutral_reduce": {
-     "frames": 52,
+     "frames": 49,
      "fps": 60,
      "footprint_px": 0,
      "crop_px": 52800,
@@ -3037,6 +4557,5 @@
     }
    }
   }
- },
- "o30_pass": "Flash fields re-measured on the O-30 board (new room grade, solid FAR stroke, HUD occluders), 2026-11-02; timings unchanged."
+ }
 }

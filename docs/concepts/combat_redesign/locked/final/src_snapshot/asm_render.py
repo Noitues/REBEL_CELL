@@ -1,10 +1,10 @@
 """asm_render: render one assembled plate (locked wheel + locked WPAP cards) with checks captured.
-python asm_render.py <beat> [room bio|srv|gh] [check 0|1]
+python asm_render.py <beat> [room auto|bio|srv|gh|rec|lobby|event|shop] [check 0|1]      (auto = the skin's room; default)
  -> out/as_<beat>[_<room>].png ; work/chk_<beat>[_<room>].json (draw asserts, collision overlaps, dash log)"""
 import sys, os, json, time
 sys.dont_write_bytecode = True
 beat = sys.argv[1] if len(sys.argv) > 1 else 'p1'
-room = sys.argv[2] if len(sys.argv) > 2 else 'bio'
+room = sys.argv[2] if len(sys.argv) > 2 else 'auto'
 check = (sys.argv[3] if len(sys.argv) > 3 else '1') == '1'
 from PIL import ImageDraw
 TEXTLOG = []
@@ -42,11 +42,14 @@ import numpy as np
 from PIL import Image
 R = LW.R
 A = R.A
-ROOMS = {'bio': R.ROOM, 'srv': 'D:/rc_art/art-pass/docs/concepts/combat_backdrop/v3_1/room_srv_bare.png',
-         'gh': 'D:/rc_art/art-pass/docs/concepts/combat_backdrop/v3_1/room_gh_bare.png'}
+# stage 2 (review 2.8): every kit room; 'auto' = the skin's own room (bd_grade.CORP_ROOM: neutral and Solace the bio lab, Meridian the shop)
+import bd_grade as _BG
+ROOMS = {r: 'D:/rc_art/art-pass/docs/concepts/combat_backdrop/v3_1/room_%s_bare.png' % r for r in _BG.KIT_ROOMS}
 HERE = 'D:/rc_scratch/combat_redesign/locked/corp/'
-sfx = beat + ('' if room == 'bio' else '_' + room)
 CORP = os.environ.get('CORP', 'neutral')
+if room == 'auto':
+    room = _BG.CORP_ROOM.get(CORP, 'bio')
+sfx = beat + ('' if room == _BG.CORP_ROOM.get(CORP, 'bio') else '_' + room)
 if CORP != 'neutral':
     sfx = sfx + '_' + CORP
 
@@ -82,6 +85,11 @@ def _cap(cls, fn_owner, fn_name, Lidx=0):
         return r
     setattr(fn_owner, fn_name, wrap)
 
+
+# 2026-11-03 rebuild: family masks, text log and card placements for rb_checks (value order, cell contrast, cap height, hand tests)
+import rb_capture as RBC
+if check:
+    RBC.install(R, A, R.FH, MASKS, beat)
 
 if check:
     _cap('digits', A.S2, 'digits')
@@ -169,5 +177,12 @@ if check:
     rep['mask_px'] = {c: int(MASKS[c].sum()) for c in cls}
     rep['overlap_px'] = ov
     np.savez_compressed(HERE + 'work/masks_%s.npz' % sfx, **{c: np.packbits(MASKS[c]) for c in cls})
+    # 2026-11-03 rebuild: capture dump + the empty-cell probe of this skin (per-ring empty reference for the occupied-vs-empty check)
+    rep['rb'] = RBC.dump()
+    rep['rb']['hover_id'] = A.J['hover']['id'] if beat == 'p2b' else None
+    rep['rb']['frame_key'] = R.KEY[beat]
+    rep['rb']['corp'] = CORP
+    rep['rb']['geometry'] = RBC.geometry(A, A.J[R.KEY[beat]], beat, rep['rb']['hover_id'])
+    RBC.empty_probe(R, A, A.J[R.KEY[beat]], beat).save(HERE + 'work/probe_%s.png' % sfx)
 json.dump(rep, open(HERE + 'work/chk_%s.json' % sfx, 'w'), indent=1)
 print('ok', sfx, round(time.time() - t, 1), 'asserts', len(LOGD), 'fail', sum(1 for x in LOGD if not x['ok']), flush=True)

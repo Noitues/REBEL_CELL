@@ -1,58 +1,455 @@
 {
- "scope": "M motion, P protect, S system, T commit (roadmap step 4, locked board)",
+ "scope": "M motion, P protect, S system, T commit",
+ "rebuild": "2026-11-03 rebuild (rebuilt board, gate 1): review 1.6, 2.10, 2.11, 3.10, 1.8",
  "fps": 60,
- "flash_method": "see NOTES_MPST.md: footprint = pixels whose WCAG relative luminance moves > 0.02 from frame 0; per-pixel extremum tracker logs a swing at >= 0.10; a region event = >= 25 % of the footprint swinging the same way inside 100 ms; a flash = two opposite region events; pass = <= 3 flashes in any 1 s window",
+ "cap_ms": 600,
+ "flash_method": "NOTES_MPST.md (unchanged): WCAG relative luminance, 2x2 decimated; footprint = px moving > 0.02 from frame 0; per-pixel extremum tracker logs a swing at >= 0.10; a region event = >= 25 % of the footprint swinging the same way inside 100 ms; a flash = two opposite region events; pass = <= 3 flashes in any 1 s window",
+ "loudness_method": "shared gated meter (the C/D/H/L designer's fxk_lib.loud_frame, read-only snapshot): per frame, px whose CIE Lab differs by dE76 > 5 from the same frame with the effect's marks off AND from the settled frame, weighted by their L* / 100; the peak over the full-motion frames. brighter_only = px >= 5 L* above max(pre, post, marks-off), x mean L* / 100 (the M/P/S/T measure before the rebuild).",
+ "loudness_order": {
+  "skin": "neutral",
+  "meter": "shared gated meter: fxk_lib.loud_frame (dE76 > 5 vs the no-effect frame AND vs the settled frame, x L* / 100), peak over the full-motion frames",
+  "rows": [
+   {
+    "id": "fx_firewall_burn",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 9540.3,
+    "area_px": 15864,
+    "t_ms": 366.7,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_shield_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 8377.0,
+    "area_px": 15499,
+    "t_ms": 250.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_strike",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5490.2,
+    "area_px": 9640,
+    "t_ms": 200.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_trigger_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5074.0,
+    "area_px": 10367,
+    "t_ms": 283.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 4778.2,
+    "area_px": 10016,
+    "t_ms": 200.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_adjuster",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3748.8,
+    "area_px": 7335,
+    "t_ms": 133.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_gun_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 3747.6,
+    "area_px": 6578,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_crack",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3121.4,
+    "area_px": 6946,
+    "t_ms": 50.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hp_through",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3035.2,
+    "area_px": 6067,
+    "t_ms": 450.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_worm",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2821.6,
+    "area_px": 6198,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2816.8,
+    "area_px": 6158,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_kill",
+    "fam": "D",
+    "kind": "kill",
+    "peak": 1813.2,
+    "area_px": 2650,
+    "t_ms": 16.7,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_brace_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1676.8,
+    "area_px": 4156,
+    "t_ms": 83.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shield_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1276.5,
+    "area_px": 2603,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_ricochet",
+    "fam": "D",
+    "kind": "block",
+    "peak": 898.1,
+    "area_px": 1753,
+    "t_ms": 150.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ricochet_gold",
+    "fam": "D",
+    "kind": "block",
+    "peak": 885.2,
+    "area_px": 2077,
+    "t_ms": 150.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_soak_take",
+    "fam": "P",
+    "kind": "block",
+    "peak": 841.0,
+    "area_px": 1760,
+    "t_ms": 433.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_hold",
+    "fam": "M",
+    "kind": "state",
+    "peak": 761.3,
+    "area_px": 1902,
+    "t_ms": 166.7,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_commit",
+    "fam": "T",
+    "kind": "state",
+    "peak": 748.9,
+    "area_px": 1041,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_trace_add",
+    "fam": "S",
+    "kind": "state",
+    "peak": 719.8,
+    "area_px": 1574,
+    "t_ms": 150.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_repair_mend",
+    "fam": "L",
+    "kind": "state",
+    "peak": 699.9,
+    "area_px": 988,
+    "t_ms": 216.7,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_shove_bump",
+    "fam": "M",
+    "kind": "state",
+    "peak": 698.3,
+    "area_px": 1933,
+    "t_ms": 233.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_refund",
+    "fam": "L",
+    "kind": "state",
+    "peak": 674.8,
+    "area_px": 1133,
+    "t_ms": 200.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_wave_enter",
+    "fam": "M",
+    "kind": "state",
+    "peak": 630.3,
+    "area_px": 1229,
+    "t_ms": 400.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_rings_step",
+    "fam": "M",
+    "kind": "state",
+    "peak": 610.9,
+    "area_px": 1566,
+    "t_ms": 300.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_spin",
+    "fam": "M",
+    "kind": "state",
+    "peak": 583.5,
+    "area_px": 1491,
+    "t_ms": 300.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_grow",
+    "fam": "C",
+    "kind": "state",
+    "peak": 533.3,
+    "area_px": 936,
+    "t_ms": 133.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ward_on",
+    "fam": "C",
+    "kind": "state",
+    "peak": 390.8,
+    "area_px": 747,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_twist",
+    "fam": "M",
+    "kind": "state",
+    "peak": 382.1,
+    "area_px": 1053,
+    "t_ms": 250.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shove",
+    "fam": "M",
+    "kind": "state",
+    "peak": 357.5,
+    "area_px": 991,
+    "t_ms": 33.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_pull",
+    "fam": "M",
+    "kind": "state",
+    "peak": 199.7,
+    "area_px": 583,
+    "t_ms": 100.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_clear",
+    "fam": "L",
+    "kind": "state",
+    "peak": 84.7,
+    "area_px": 170,
+    "t_ms": 50.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   }
+  ],
+  "checks": [
+   {
+    "louder": "damage",
+    "quieter": "kill",
+    "min_louder": [
+     "fx_hit_land",
+     2816.8
+    ],
+    "max_quieter": [
+     "fx_kill",
+     1813.2
+    ],
+    "margin": 1003.6,
+    "pass_": true
+   },
+   {
+    "louder": "kill",
+    "quieter": "block",
+    "min_louder": [
+     "fx_kill",
+     1813.2
+    ],
+    "max_quieter": [
+     "fx_brace_block",
+     1676.8
+    ],
+    "margin": 136.4,
+    "pass_": true
+   },
+   {
+    "louder": "block",
+    "quieter": "state",
+    "min_louder": [
+     "fx_soak_take",
+     841.0
+    ],
+    "max_quieter": [
+     "fx_hold",
+     761.3
+    ],
+    "margin": 79.7,
+    "pass_": true
+   }
+  ],
+  "line": "damage 2817-9540  >  kill 1813-1813  >  block 841-1677  >  state 85-761   PASS",
+  "pass": true
+ },
  "effects": {
   "fx_spin": {
    "family": "M",
    "title": "Spin 3 turns the tower",
-   "total_ms": 820,
+   "tier": "state",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "anticipate: arrow draws, gun preview fades",
      "start_ms": 0,
-     "end_ms": 140,
+     "end_ms": 100,
      "easing": "easeOutCubic"
     },
     {
      "name": "turn 183 deg",
-     "start_ms": 140,
-     "end_ms": 680,
+     "start_ms": 100,
+     "end_ms": 500,
      "easing": "easeInOutCubic"
     },
     {
      "name": "settle back 3 deg, arrow gone",
-     "start_ms": 680,
-     "end_ms": 820,
+     "start_ms": 500,
+     "end_ms": 600,
      "easing": "easeOutCubic"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "tower dissolves 0 to 180 deg",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    100,
+    80,
+    240,
     330,
-    480,
-    680,
-    820
+    500,
+    600
    ],
    "skins": [
     "neutral"
    ],
-   "reduce_motion": "No echoes, no arc sweep: the arrow appears whole (100 ms fade), the tower dissolves from 0 to 180 deg over 280 ms (easeInOut), the arrow fades out. Icons and hub as in full motion.",
+   "reduce_motion": "No sweep: the arrow stub appears whole (100 ms), the tower dissolves from 0 to 180 deg over 300 ms (easeInOut), the arrow fades (120 ms). Icons and hub as in full motion.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 132776,
-      "frames": 57,
+      "footprint_px": 132780,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       14
+       10
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.653,
-      "max_area_swing_down": 0.642,
-      "max_mean_step": 0.0056,
-      "mean_range": 0.0574,
+      "max_area_swing_up": 0.799,
+      "max_area_swing_down": 0.805,
       "passed": true
      },
      "reduce": {
@@ -62,373 +459,87 @@
      }
     }
    },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 583.5,
+     "gated_area_px": 1491,
+     "gated_t_ms": 300.0,
+     "brighter_only_peak": 241.2,
+     "brighter_only_area_px": 463,
+     "brighter_only_mean_L": 52.1
+    }
+   },
    "strips": {
     "neutral": "strips/fx_spin_neutral.jpg"
+   },
+   "total_ms_before_rebuild": 820,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_twist": {
    "family": "M",
    "title": "Twist turns ring +1 by a sector",
-   "total_ms": 660,
+   "tier": "state",
+   "total_ms": 540,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "anticipate: arrows draw",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 90,
      "easing": "easeOutCubic"
     },
     {
      "name": "turn 61.5 deg",
-     "start_ms": 120,
+     "start_ms": 90,
+     "end_ms": 430,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "settle back 1.5 deg, arrows fade",
+     "start_ms": 430,
      "end_ms": 540,
-     "easing": "easeInOutCubic"
-    },
-    {
-     "name": "settle back 1.5 deg",
-     "start_ms": 540,
-     "end_ms": 660,
      "easing": "easeOutCubic"
     }
    ],
-   "keyframes_ms": [
-    0,
-    110,
-    280,
-    400,
-    540,
-    660
-   ],
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "reduce_motion": "No echoes: the arrows appear whole (100 ms), the ring dissolves from 0 to 60 deg over 260 ms, the arrows fade.",
-   "flash_check": {
-    "neutral": {
-     "full": {
-      "footprint_px": 54132,
-      "frames": 47,
-      "flashes": 1,
-      "flash_frames": [
-       25
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.293,
-      "max_area_swing_down": 0.263,
-      "max_mean_step": 0.0049,
-      "mean_range": 0.0272,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "solace": {
-     "full": {
-      "footprint_px": 55660,
-      "frames": 47,
-      "flashes": 1,
-      "flash_frames": [
-       23
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.322,
-      "max_area_swing_down": 0.29,
-      "max_mean_step": 0.0051,
-      "mean_range": 0.0267,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "meridian": {
-     "full": {
-      "footprint_px": 55248,
-      "frames": 47,
-      "flashes": 1,
-      "flash_frames": [
-       25
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.31,
-      "max_area_swing_down": 0.277,
-      "max_mean_step": 0.0045,
-      "mean_range": 0.0255,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    }
-   },
-   "strips": {
-    "neutral": "strips/fx_twist_neutral.jpg",
-    "solace": "strips/fx_twist_solace.jpg",
-    "meridian": "strips/fx_twist_meridian.jpg"
-   }
-  },
-  "fx_pull": {
-   "family": "M",
-   "title": "Pull drags a unit inward",
-   "total_ms": 600,
-   "phases": [
+   "reduce_phases": [
     {
-     "name": "anticipate: arrow draws",
+     "name": "arrows appear",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 100,
      "easing": "easeOutCubic"
     },
     {
-     "name": "slide 59 px",
-     "start_ms": 120,
-     "end_ms": 480,
-     "easing": "easeInOutCubic"
-    },
-    {
-     "name": "settle back 2 px",
-     "start_ms": 480,
-     "end_ms": 600,
-     "easing": "easeOutCubic"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    110,
-    250,
-    330,
-    480,
-    600
-   ],
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "reduce_motion": "No echoes: arrow appears (100 ms), the cell dissolves from ring +2 to ring +1 over 260 ms, arrow fades.",
-   "flash_check": {
-    "neutral": {
-     "full": {
-      "footprint_px": 36308,
-      "frames": 43,
-      "flashes": 0,
-      "flash_frames": [],
-      "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.182,
-      "max_area_swing_down": 0.193,
-      "max_mean_step": 0.0028,
-      "mean_range": 0.0132,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "solace": {
-     "full": {
-      "footprint_px": 36356,
-      "frames": 43,
-      "flashes": 0,
-      "flash_frames": [],
-      "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.213,
-      "max_area_swing_down": 0.215,
-      "max_mean_step": 0.003,
-      "mean_range": 0.0158,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "meridian": {
-     "full": {
-      "footprint_px": 36144,
-      "frames": 43,
-      "flashes": 0,
-      "flash_frames": [],
-      "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.182,
-      "max_area_swing_down": 0.191,
-      "max_mean_step": 0.0024,
-      "mean_range": 0.0134,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    }
-   },
-   "strips": {
-    "neutral": "strips/fx_pull_neutral.jpg",
-    "solace": "strips/fx_pull_solace.jpg",
-    "meridian": "strips/fx_pull_meridian.jpg"
-   }
-  },
-  "fx_shove": {
-   "family": "M",
-   "title": "Shove slides a unit one sector",
-   "total_ms": 580,
-   "phases": [
-    {
-     "name": "anticipate: arrow draws",
-     "start_ms": 0,
-     "end_ms": 120,
-     "easing": "easeOutCubic"
-    },
-    {
-     "name": "slide 62 deg",
-     "start_ms": 120,
-     "end_ms": 460,
-     "easing": "easeInOutCubic"
-    },
-    {
-     "name": "settle back 2 deg",
-     "start_ms": 460,
-     "end_ms": 580,
-     "easing": "easeOutCubic"
-    }
-   ],
-   "keyframes_ms": [
-    0,
-    110,
-    250,
-    330,
-    460,
-    580
-   ],
-   "skins": [
-    "neutral",
-    "solace",
-    "meridian"
-   ],
-   "reduce_motion": "No echoes: arrow appears (100 ms), the cell dissolves into the next sector over 260 ms, arrow fades.",
-   "flash_check": {
-    "neutral": {
-     "full": {
-      "footprint_px": 33588,
-      "frames": 42,
-      "flashes": 1,
-      "flash_frames": [
-       16
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.367,
-      "max_area_swing_down": 0.378,
-      "max_mean_step": 0.0039,
-      "mean_range": 0.0228,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "solace": {
-     "full": {
-      "footprint_px": 33748,
-      "frames": 42,
-      "flashes": 1,
-      "flash_frames": [
-       15
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.422,
-      "max_area_swing_down": 0.423,
-      "max_mean_step": 0.0035,
-      "mean_range": 0.0232,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    },
-    "meridian": {
-     "full": {
-      "footprint_px": 33684,
-      "frames": 42,
-      "flashes": 1,
-      "flash_frames": [
-       16
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.37,
-      "max_area_swing_down": 0.379,
-      "max_mean_step": 0.0034,
-      "mean_range": 0.0239,
-      "passed": true
-     },
-     "reduce": {
-      "flashes": 0,
-      "max_flashes_per_s": 0,
-      "passed": true
-     }
-    }
-   },
-   "strips": {
-    "neutral": "strips/fx_shove_neutral.jpg",
-    "solace": "strips/fx_shove_solace.jpg",
-    "meridian": "strips/fx_shove_meridian.jpg"
-   }
-  },
-  "fx_shove_bump": {
-   "family": "M",
-   "title": "Shove collision (variant of fx_shove)",
-   "total_ms": 540,
-   "phases": [
-    {
-     "name": "anticipate: arrow draws",
-     "start_ms": 0,
-     "end_ms": 120,
-     "easing": "easeOutCubic"
-    },
-    {
-     "name": "slide toward the edge",
-     "start_ms": 120,
-     "end_ms": 260,
-     "easing": "easeInQuad"
-    },
-    {
-     "name": "contact: bump line, starbursts, shards",
-     "start_ms": 260,
+     "name": "ring dissolves 0 to 60 deg",
+     "start_ms": 100,
      "end_ms": 400,
-     "easing": "easeOutCubic"
+     "easing": "easeInOutCubic"
     },
     {
-     "name": "spring back",
-     "start_ms": 260,
-     "end_ms": 440,
-     "easing": "easeOutCubic + 2 deg wobble"
-    },
-    {
-     "name": "arrow and bump line fade",
-     "start_ms": 440,
-     "end_ms": 540,
+     "name": "arrows fade",
+     "start_ms": 400,
+     "end_ms": 520,
      "easing": "linear"
     }
    ],
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    110,
-    230,
-    280,
-    340,
+    80,
+    220,
+    320,
+    430,
     540
    ],
    "skins": [
@@ -436,21 +547,531 @@
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No slide and no starbursts: the arrow and the white bump line on the shared edge appear for 440 ms and fade; the cell never moves.",
+   "reduce_motion": "The arrow stubs appear whole (100 ms), the ring dissolves from 0 to 60 deg over 300 ms, the arrows fade (120 ms).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 11308,
+      "footprint_px": 54364,
+      "frames": 40,
+      "flashes": 1,
+      "flash_frames": [
+       14
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.42,
+      "max_area_swing_down": 0.417,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "solace": {
+     "full": {
+      "footprint_px": 54628,
       "frames": 40,
       "flashes": 1,
       "flash_frames": [
        13
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.387,
-      "max_area_swing_down": 0.377,
-      "max_mean_step": 0.013,
-      "mean_range": 0.0242,
+      "max_area_swing_up": 0.435,
+      "max_area_swing_down": 0.433,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "meridian": {
+     "full": {
+      "footprint_px": 53872,
+      "frames": 40,
+      "flashes": 1,
+      "flash_frames": [
+       14
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.427,
+      "max_area_swing_down": 0.417,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 382.1,
+     "gated_area_px": 1053,
+     "gated_t_ms": 250.0,
+     "brighter_only_peak": 222.4,
+     "brighter_only_area_px": 387,
+     "brighter_only_mean_L": 57.5
+    },
+    "solace": {
+     "gated_peak": 382.1,
+     "gated_area_px": 1052,
+     "gated_t_ms": 250.0,
+     "brighter_only_peak": 220.1,
+     "brighter_only_area_px": 382,
+     "brighter_only_mean_L": 57.6
+    },
+    "meridian": {
+     "gated_peak": 379.9,
+     "gated_area_px": 1047,
+     "gated_t_ms": 250.0,
+     "brighter_only_peak": 222.4,
+     "brighter_only_area_px": 387,
+     "brighter_only_mean_L": 57.5
+    }
+   },
+   "strips": {
+    "neutral": "strips/fx_twist_neutral.jpg",
+    "solace": "strips/fx_twist_solace.jpg",
+    "meridian": "strips/fx_twist_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 660,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 15760,
+     "frames": 39
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 15760,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
+   }
+  },
+  "fx_pull": {
+   "family": "M",
+   "title": "Pull drags a unit inward",
+   "tier": "state",
+   "total_ms": 500,
+   "cap_ms": 600,
+   "phases": [
+    {
+     "name": "anticipate: arrow draws",
+     "start_ms": 0,
+     "end_ms": 90,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "slide 59 px",
+     "start_ms": 90,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "settle back 2 px, arrow fades",
+     "start_ms": 400,
+     "end_ms": 500,
+     "easing": "easeOutCubic"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "cell dissolves ring +2 to ring +1",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 520,
+   "keyframes_ms": [
+    0,
+    80,
+    200,
+    280,
+    400,
+    500
+   ],
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "reduce_motion": "The arrow appears (100 ms), the cell dissolves from ring +2 to ring +1 over 300 ms, the arrow fades (120 ms).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
+   "flash_check": {
+    "neutral": {
+     "full": {
+      "footprint_px": 37088,
+      "frames": 39,
+      "flashes": 1,
+      "flash_frames": [
+       15
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.25,
+      "max_area_swing_down": 0.274,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "solace": {
+     "full": {
+      "footprint_px": 37116,
+      "frames": 39,
+      "flashes": 1,
+      "flash_frames": [
+       15
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.267,
+      "max_area_swing_down": 0.293,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "meridian": {
+     "full": {
+      "footprint_px": 36788,
+      "frames": 39,
+      "flashes": 0,
+      "flash_frames": [],
+      "max_flashes_per_s": 0,
+      "max_area_swing_up": 0.247,
+      "max_area_swing_down": 0.267,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 199.7,
+     "gated_area_px": 583,
+     "gated_t_ms": 100.0,
+     "brighter_only_peak": 127.4,
+     "brighter_only_area_px": 239,
+     "brighter_only_mean_L": 53.3
+    },
+    "solace": {
+     "gated_peak": 200.2,
+     "gated_area_px": 587,
+     "gated_t_ms": 100.0,
+     "brighter_only_peak": 127.4,
+     "brighter_only_area_px": 239,
+     "brighter_only_mean_L": 53.3
+    },
+    "meridian": {
+     "gated_peak": 197.4,
+     "gated_area_px": 577,
+     "gated_t_ms": 83.3,
+     "brighter_only_peak": 128.1,
+     "brighter_only_area_px": 242,
+     "brighter_only_mean_L": 52.9
+    }
+   },
+   "strips": {
+    "neutral": "strips/fx_pull_neutral.jpg",
+    "solace": "strips/fx_pull_solace.jpg",
+    "meridian": "strips/fx_pull_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 600,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 37
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
+   }
+  },
+  "fx_shove": {
+   "family": "M",
+   "title": "Shove slides a unit one sector",
+   "tier": "state",
+   "total_ms": 500,
+   "cap_ms": 600,
+   "phases": [
+    {
+     "name": "anticipate: arrow draws",
+     "start_ms": 0,
+     "end_ms": 90,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "slide 62 deg",
+     "start_ms": 90,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "settle back 2 deg, arrow fades",
+     "start_ms": 400,
+     "end_ms": 500,
+     "easing": "easeOutCubic"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "cell dissolves into the next sector",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 520,
+   "keyframes_ms": [
+    0,
+    80,
+    200,
+    280,
+    400,
+    500
+   ],
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "reduce_motion": "The arrow stub appears (100 ms), the cell dissolves into the next sector over 300 ms, the arrow fades (120 ms).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
+   "flash_check": {
+    "neutral": {
+     "full": {
+      "footprint_px": 31508,
+      "frames": 39,
+      "flashes": 1,
+      "flash_frames": [
+       12
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.386,
+      "max_area_swing_down": 0.415,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "solace": {
+     "full": {
+      "footprint_px": 31612,
+      "frames": 39,
+      "flashes": 1,
+      "flash_frames": [
+       12
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.403,
+      "max_area_swing_down": 0.437,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    },
+    "meridian": {
+     "full": {
+      "footprint_px": 31124,
+      "frames": 39,
+      "flashes": 1,
+      "flash_frames": [
+       13
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.371,
+      "max_area_swing_down": 0.399,
+      "passed": true
+     },
+     "reduce": {
+      "flashes": 0,
+      "max_flashes_per_s": 0,
+      "passed": true
+     }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 357.5,
+     "gated_area_px": 991,
+     "gated_t_ms": 33.3,
+     "brighter_only_peak": 245.4,
+     "brighter_only_area_px": 456,
+     "brighter_only_mean_L": 53.8
+    },
+    "solace": {
+     "gated_peak": 353.0,
+     "gated_area_px": 969,
+     "gated_t_ms": 33.3,
+     "brighter_only_peak": 245.4,
+     "brighter_only_area_px": 457,
+     "brighter_only_mean_L": 53.7
+    },
+    "meridian": {
+     "gated_peak": 352.0,
+     "gated_area_px": 959,
+     "gated_t_ms": 33.3,
+     "brighter_only_peak": 245.6,
+     "brighter_only_area_px": 456,
+     "brighter_only_mean_L": 53.9
+    }
+   },
+   "strips": {
+    "neutral": "strips/fx_shove_neutral.jpg",
+    "solace": "strips/fx_shove_solace.jpg",
+    "meridian": "strips/fx_shove_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 580,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 37
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
+   }
+  },
+  "fx_shove_bump": {
+   "family": "M",
+   "title": "Shove collision (variant of fx_shove)",
+   "tier": "state",
+   "total_ms": 480,
+   "cap_ms": 600,
+   "phases": [
+    {
+     "name": "anticipate: arrow draws",
+     "start_ms": 0,
+     "end_ms": 90,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "slide toward the edge",
+     "start_ms": 90,
+     "end_ms": 200,
+     "easing": "easeInQuad"
+    },
+    {
+     "name": "contact: bump line, starbursts, shards",
+     "start_ms": 200,
+     "end_ms": 320,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "spring back",
+     "start_ms": 200,
+     "end_ms": 380,
+     "easing": "easeOutCubic + 2 deg wobble"
+    },
+    {
+     "name": "arrow and bump line fade",
+     "start_ms": 380,
+     "end_ms": 480,
+     "easing": "linear"
+    }
+   ],
+   "reduce_phases": [
+    {
+     "name": "arrow and bump line appear",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "hold",
+     "start_ms": 100,
+     "end_ms": 380,
+     "easing": "-"
+    },
+    {
+     "name": "fade",
+     "start_ms": 380,
+     "end_ms": 480,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 480,
+   "keyframes_ms": [
+    0,
+    80,
+    180,
+    215,
+    270,
+    480
+   ],
+   "skins": [
+    "neutral",
+    "solace",
+    "meridian"
+   ],
+   "reduce_motion": "No slide and no starbursts: the arrow and the bump line on the shared edge appear for 380 ms and fade; the cell never moves.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
+   "flash_check": {
+    "neutral": {
+     "full": {
+      "footprint_px": 12060,
+      "frames": 36,
+      "flashes": 1,
+      "flash_frames": [
+       10
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.421,
+      "max_area_swing_down": 0.427,
       "passed": true
      },
      "reduce": {
@@ -461,17 +1082,15 @@
     },
     "solace": {
      "full": {
-      "footprint_px": 12156,
-      "frames": 40,
+      "footprint_px": 12300,
+      "frames": 36,
       "flashes": 1,
       "flash_frames": [
-       12
+       10
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.437,
-      "max_area_swing_down": 0.437,
-      "max_mean_step": 0.0132,
-      "mean_range": 0.0247,
+      "max_area_swing_up": 0.44,
+      "max_area_swing_down": 0.456,
       "passed": true
      },
      "reduce": {
@@ -482,17 +1101,15 @@
     },
     "meridian": {
      "full": {
-      "footprint_px": 12692,
-      "frames": 40,
+      "footprint_px": 11948,
+      "frames": 36,
       "flashes": 1,
       "flash_frames": [
-       13
+       10
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.338,
-      "max_area_swing_down": 0.345,
-      "max_mean_step": 0.0119,
-      "mean_range": 0.0227,
+      "max_area_swing_up": 0.401,
+      "max_area_swing_down": 0.411,
       "passed": true
      },
      "reduce": {
@@ -500,66 +1117,128 @@
       "max_flashes_per_s": 1,
       "passed": true
      }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 698.3,
+     "gated_area_px": 1933,
+     "gated_t_ms": 233.3,
+     "brighter_only_peak": 460.6,
+     "brighter_only_area_px": 768,
+     "brighter_only_mean_L": 60.0
+    },
+    "solace": {
+     "gated_peak": 704.1,
+     "gated_area_px": 1981,
+     "gated_t_ms": 233.3,
+     "brighter_only_peak": 462.0,
+     "brighter_only_area_px": 772,
+     "brighter_only_mean_L": 59.8
+    },
+    "meridian": {
+     "gated_peak": 696.9,
+     "gated_area_px": 1953,
+     "gated_t_ms": 233.3,
+     "brighter_only_peak": 467.3,
+     "brighter_only_area_px": 784,
+     "brighter_only_mean_L": 59.6
     }
    },
    "strips": {
     "neutral": "strips/fx_shove_bump_neutral.jpg",
     "solace": "strips/fx_shove_bump_solace.jpg",
     "meridian": "strips/fx_shove_bump_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 540,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 35
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 35
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_rings_step": {
    "family": "M",
    "title": "Rings step in at END TURN",
-   "total_ms": 900,
+   "tier": "state",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
-     "name": "anticipate: tape arrow draws, landing arcs lift off",
+     "name": "anticipate: tape arrow draws",
      "start_ms": 0,
-     "end_ms": 160,
+     "end_ms": 100,
      "easing": "easeOutCubic"
     },
     {
      "name": "spiral: -57 px, +120 deg",
-     "start_ms": 160,
-     "end_ms": 760,
+     "start_ms": 100,
+     "end_ms": 480,
      "easing": "easeInOutCubic"
     },
     {
      "name": "settle: arrow fades",
-     "start_ms": 760,
-     "end_ms": 900,
+     "start_ms": 480,
+     "end_ms": 600,
      "easing": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "every cell dissolves to its new place",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    150,
-    360,
-    460,
-    620,
-    900
+    90,
+    240,
+    290,
+    400,
+    600
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No echoes, no spiral: the arrow appears (100 ms), every cell dissolves from its old place to its new one over 300 ms, the arrow fades.",
+   "reduce_motion": "No spiral: the arrow stub appears (100 ms), every cell dissolves from its old place to its new one over 300 ms, the arrow fades (120 ms).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 314484,
-      "frames": 61,
+      "footprint_px": 261656,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       27
+       14
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.287,
-      "max_area_swing_down": 0.275,
-      "max_mean_step": 0.0062,
-      "mean_range": 0.0292,
+      "max_area_swing_up": 0.356,
+      "max_area_swing_down": 0.38,
       "passed": true
      },
      "reduce": {
@@ -570,17 +1249,15 @@
     },
     "solace": {
      "full": {
-      "footprint_px": 315796,
-      "frames": 61,
+      "footprint_px": 262384,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       24
+       13
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.33,
-      "max_area_swing_down": 0.305,
-      "max_mean_step": 0.0068,
-      "mean_range": 0.0309,
+      "max_area_swing_up": 0.364,
+      "max_area_swing_down": 0.388,
       "passed": true
      },
      "reduce": {
@@ -591,17 +1268,15 @@
     },
     "meridian": {
      "full": {
-      "footprint_px": 315800,
-      "frames": 61,
+      "footprint_px": 262180,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       25
+       14
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.309,
-      "max_area_swing_down": 0.283,
-      "max_mean_step": 0.0062,
-      "mean_range": 0.0289,
+      "max_area_swing_up": 0.353,
+      "max_area_swing_down": 0.373,
       "passed": true
      },
      "reduce": {
@@ -609,179 +1284,299 @@
       "max_flashes_per_s": 0,
       "passed": true
      }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 610.9,
+     "gated_area_px": 1566,
+     "gated_t_ms": 300.0,
+     "brighter_only_peak": 593.8,
+     "brighter_only_area_px": 989,
+     "brighter_only_mean_L": 60.0
+    },
+    "solace": {
+     "gated_peak": 612.8,
+     "gated_area_px": 1635,
+     "gated_t_ms": 300.0,
+     "brighter_only_peak": 594.3,
+     "brighter_only_area_px": 995,
+     "brighter_only_mean_L": 59.7
+    },
+    "meridian": {
+     "gated_peak": 612.6,
+     "gated_area_px": 1609,
+     "gated_t_ms": 300.0,
+     "brighter_only_peak": 593.6,
+     "brighter_only_area_px": 990,
+     "brighter_only_mean_L": 60.0
     }
    },
    "strips": {
     "neutral": "strips/fx_rings_step_neutral.jpg",
     "solace": "strips/fx_rings_step_solace.jpg",
     "meridian": "strips/fx_rings_step_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 900,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 41889,
+     "frames": 43
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 41889,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_hold": {
    "family": "M",
    "title": "Hold puts a 0 in the schedule",
-   "total_ms": 700,
+   "tier": "state",
+   "total_ms": 560,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "stamp slams",
      "start_ms": 0,
-     "end_ms": 140,
+     "end_ms": 100,
      "easing": "easeOutBack 2.2"
     },
     {
-     "name": "band turns over 205 deg",
-     "start_ms": 140,
-     "end_ms": 560,
+     "name": "stamp hands over to the printed HOLD glyph",
+     "start_ms": 100,
+     "end_ms": 200,
+     "easing": "linear"
+    },
+    {
+     "name": "band turns over, arrow stub runs the slot",
+     "start_ms": 100,
+     "end_ms": 420,
      "easing": "easeInOutCubic"
     },
     {
-     "name": "settle: stamp hands over to the printed HOLD glyph",
-     "start_ms": 560,
-     "end_ms": 700,
+     "name": "arrow fades",
+     "start_ms": 420,
+     "end_ms": 560,
      "easing": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "arrow appears",
+     "start_ms": 0,
+     "end_ms": 100,
+     "easing": "easeOutCubic"
+    },
+    {
+     "name": "band dissolves to the new schedule",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "arrow fades",
+     "start_ms": 400,
+     "end_ms": 520,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 520,
    "keyframes_ms": [
     0,
-    70,
-    250,
-    400,
-    560,
-    700
+    50,
+    180,
+    300,
+    420,
+    560
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No stamp slam and no wipe: the arrow appears (100 ms) and the band dissolves to the new schedule over 260 ms.",
+   "reduce_motion": "No stamp slam and no wipe: the arrow appears (100 ms) and the band dissolves to the new schedule over 300 ms; the arrow fades (120 ms).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 37464,
-      "frames": 49,
-      "flashes": 1,
-      "flash_frames": [
-       23
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.297,
-      "max_area_swing_down": 0.302,
-      "max_mean_step": 0.031,
-      "mean_range": 0.0576,
+      "footprint_px": 24292,
+      "frames": 41,
+      "flashes": 0,
+      "flash_frames": [],
+      "max_flashes_per_s": 0,
+      "max_area_swing_up": 0.193,
+      "max_area_swing_down": 0.313,
       "passed": true
      },
      "reduce": {
-      "flashes": 1,
-      "max_flashes_per_s": 1,
+      "flashes": 0,
+      "max_flashes_per_s": 0,
       "passed": true
      }
     },
     "solace": {
      "full": {
-      "footprint_px": 37664,
-      "frames": 49,
-      "flashes": 1,
-      "flash_frames": [
-       23
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.298,
-      "max_area_swing_down": 0.301,
-      "max_mean_step": 0.0309,
-      "mean_range": 0.0575,
+      "footprint_px": 24260,
+      "frames": 41,
+      "flashes": 0,
+      "flash_frames": [],
+      "max_flashes_per_s": 0,
+      "max_area_swing_up": 0.193,
+      "max_area_swing_down": 0.313,
       "passed": true
      },
      "reduce": {
-      "flashes": 1,
-      "max_flashes_per_s": 1,
+      "flashes": 0,
+      "max_flashes_per_s": 0,
       "passed": true
      }
     },
     "meridian": {
      "full": {
-      "footprint_px": 37088,
-      "frames": 49,
-      "flashes": 1,
-      "flash_frames": [
-       23
-      ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.3,
-      "max_area_swing_down": 0.303,
-      "max_mean_step": 0.0312,
-      "mean_range": 0.058,
+      "footprint_px": 23904,
+      "frames": 41,
+      "flashes": 0,
+      "flash_frames": [],
+      "max_flashes_per_s": 0,
+      "max_area_swing_up": 0.196,
+      "max_area_swing_down": 0.318,
       "passed": true
      },
      "reduce": {
-      "flashes": 1,
-      "max_flashes_per_s": 1,
+      "flashes": 0,
+      "max_flashes_per_s": 0,
       "passed": true
      }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 761.3,
+     "gated_area_px": 1902,
+     "gated_t_ms": 166.7,
+     "brighter_only_peak": 475.4,
+     "brighter_only_area_px": 809,
+     "brighter_only_mean_L": 58.8
+    },
+    "solace": {
+     "gated_peak": 768.0,
+     "gated_area_px": 1935,
+     "gated_t_ms": 166.7,
+     "brighter_only_peak": 479.3,
+     "brighter_only_area_px": 817,
+     "brighter_only_mean_L": 58.7
+    },
+    "meridian": {
+     "gated_peak": 761.4,
+     "gated_area_px": 1912,
+     "gated_t_ms": 166.7,
+     "brighter_only_peak": 480.0,
+     "brighter_only_area_px": 819,
+     "brighter_only_mean_L": 58.6
     }
    },
    "strips": {
     "neutral": "strips/fx_hold_neutral.jpg",
     "solace": "strips/fx_hold_solace.jpg",
     "meridian": "strips/fx_hold_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 700,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 21660,
+     "frames": 40
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 21660,
+     "frames": 38
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_wave_enter": {
    "family": "M",
    "title": "The next wave enters ring +2",
-   "total_ms": 760,
+   "tier": "state",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "feed arrow lights, ticket lifts",
      "start_ms": 0,
-     "end_ms": 120,
-     "easing": "step 40 ms / easeOutCubic"
+     "end_ms": 80,
+     "easing": "step 27 ms / easeOutCubic"
     },
     {
      "name": "ticket rides into the entry",
-     "start_ms": 120,
-     "end_ms": 520,
+     "start_ms": 80,
+     "end_ms": 360,
      "easing": "easeInOutCubic"
     },
     {
      "name": "cells scan in, glyphs drop",
-     "start_ms": 440,
-     "end_ms": 700,
+     "start_ms": 300,
+     "end_ms": 480,
      "easing": "easeOutCubic"
     },
     {
      "name": "queue moves up one slot",
-     "start_ms": 560,
-     "end_ms": 760,
+     "start_ms": 360,
+     "end_ms": 540,
      "easing": "easeInOutCubic"
+    },
+    {
+     "name": "settled",
+     "start_ms": 540,
+     "end_ms": 600,
+     "easing": "-"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "ticket fades out, cells and queue cross-fade in",
+     "start_ms": 100,
+     "end_ms": 400,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "settled",
+     "start_ms": 400,
+     "end_ms": 600,
+     "easing": "-"
+    }
+   ],
+   "reduce_total_ms": 600,
    "keyframes_ms": [
     0,
-    110,
-    300,
-    500,
-    660,
-    760
+    70,
+    220,
+    380,
+    460,
+    600
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No travel and no echoes: the W4 ticket fades out, the new cells fade in with their outlines and glyphs, and W5 / W6 cross-fade one slot right, all over 300 ms.",
+   "reduce_motion": "No travel: the W4 ticket fades out, the new cells fade in with their outlines and glyphs, and W5 / W6 cross-fade one slot right, all over 300 ms.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 35572,
-      "frames": 53,
+      "footprint_px": 62160,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.239,
-      "max_area_swing_down": 0.251,
-      "max_mean_step": 0.0153,
-      "mean_range": 0.0678,
+      "max_area_swing_up": 0.205,
+      "max_area_swing_down": 0.195,
       "passed": true
      },
      "reduce": {
@@ -792,15 +1587,13 @@
     },
     "solace": {
      "full": {
-      "footprint_px": 43912,
-      "frames": 53,
+      "footprint_px": 62500,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.233,
-      "max_area_swing_down": 0.236,
-      "max_mean_step": 0.011,
-      "mean_range": 0.0472,
+      "max_area_swing_up": 0.217,
+      "max_area_swing_down": 0.207,
       "passed": true
      },
      "reduce": {
@@ -811,15 +1604,13 @@
     },
     "meridian": {
      "full": {
-      "footprint_px": 38616,
-      "frames": 53,
+      "footprint_px": 61768,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.246,
-      "max_area_swing_down": 0.25,
-      "max_mean_step": 0.0115,
-      "mean_range": 0.0581,
+      "max_area_swing_up": 0.229,
+      "max_area_swing_down": 0.203,
       "passed": true
      },
      "reduce": {
@@ -829,152 +1620,209 @@
      }
     }
    },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 630.3,
+     "gated_area_px": 1229,
+     "gated_t_ms": 400.0,
+     "brighter_only_peak": 547.8,
+     "brighter_only_area_px": 737,
+     "brighter_only_mean_L": 74.3
+    },
+    "solace": {
+     "gated_peak": 642.3,
+     "gated_area_px": 1285,
+     "gated_t_ms": 400.0,
+     "brighter_only_peak": 544.6,
+     "brighter_only_area_px": 731,
+     "brighter_only_mean_L": 74.5
+    },
+    "meridian": {
+     "gated_peak": 550.3,
+     "gated_area_px": 1264,
+     "gated_t_ms": 400.0,
+     "brighter_only_peak": 445.9,
+     "brighter_only_area_px": 694,
+     "brighter_only_mean_L": 64.3
+    }
+   },
    "strips": {
     "neutral": "strips/fx_wave_enter_neutral.jpg",
     "solace": "strips/fx_wave_enter_solace.jpg",
     "meridian": "strips/fx_wave_enter_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 760,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_shield_block": {
    "family": "P",
    "title": "SHIELD slice absorbs a landing",
-   "total_ms": 920,
+   "tier": "block",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "chevrons arrive",
      "start_ms": 0,
-     "end_ms": 240,
+     "end_ms": 160,
      "easing": "easeInQuad"
     },
     {
-     "name": "plate slams (1.25 to 1.0)",
-     "start_ms": 170,
-     "end_ms": 250,
+     "name": "plate slams (1.2 to 1.0)",
+     "start_ms": 110,
+     "end_ms": 170,
      "easing": "easeOutBack 2.0"
     },
     {
      "name": "impact: stop dead, sparks",
-     "start_ms": 240,
-     "end_ms": 400,
+     "start_ms": 160,
+     "end_ms": 280,
      "easing": "linear"
     },
     {
      "name": "hold",
-     "start_ms": 400,
-     "end_ms": 760,
+     "start_ms": 280,
+     "end_ms": 440,
      "easing": "-"
     },
     {
      "name": "plate lifts off",
-     "start_ms": 760,
-     "end_ms": 920,
+     "start_ms": 440,
+     "end_ms": 600,
      "easing": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "plate, ticks and stopped chevrons appear",
+     "start_ms": 0,
+     "end_ms": 150,
+     "easing": "linear"
+    },
+    {
+     "name": "hold",
+     "start_ms": 150,
+     "end_ms": 250,
+     "easing": "-"
+    },
+    {
+     "name": "dissolve",
+     "start_ms": 250,
+     "end_ms": 600,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 600,
    "keyframes_ms": [
-    110,
-    200,
-    260,
-    330,
-    600,
-    920
+    80,
+    130,
+    175,
+    230,
+    380,
+    600
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No slam and no sparks: plate, tint, ticks and the two chevrons stopped at the plate edge fade in over 120 ms (linear), hold, and dissolve out over 300 ms (620-920, linear). O-30: the step-4 form (100 ms ease-out in, 160 ms out at 600-760) counted 2 flashes per second against 1 in full motion.",
+   "reduce_motion": "No slam and no sparks: the plate, its ticks and the two chevrons stopped at the plate edge appear over 150 ms (linear), hold 100 ms, and dissolve over 350 ms (linear); no hard shadow in reduce motion. Measured: this form counts 1 flash per s, as full motion (the 0-200 / 300-600 form counted 2).",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 13808,
-      "frames": 63,
+      "footprint_px": 4872,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       13
+       8
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.49,
-      "max_area_swing_down": 0.502,
-      "max_mean_step": 0.1256,
-      "mean_range": 0.1557,
+      "max_area_swing_up": 0.593,
+      "max_area_swing_down": 0.561,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9552,
-      "frames": 63,
       "flashes": 1,
-      "flash_frames": [
-       4
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.433,
-      "max_area_swing_down": 0.424,
-      "max_mean_step": 0.0578,
-      "mean_range": 0.1722,
       "passed": true
      }
     },
     "solace": {
      "full": {
-      "footprint_px": 13836,
-      "frames": 63,
+      "footprint_px": 4812,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       13
+       8
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.489,
-      "max_area_swing_down": 0.501,
-      "max_mean_step": 0.1255,
-      "mean_range": 0.1554,
+      "max_area_swing_up": 0.599,
+      "max_area_swing_down": 0.567,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9552,
-      "frames": 63,
       "flashes": 1,
-      "flash_frames": [
-       4
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.433,
-      "max_area_swing_down": 0.424,
-      "max_mean_step": 0.0578,
-      "mean_range": 0.1722,
       "passed": true
      }
     },
     "meridian": {
      "full": {
-      "footprint_px": 13840,
-      "frames": 63,
+      "footprint_px": 4868,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       13
+       8
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.489,
-      "max_area_swing_down": 0.501,
-      "max_mean_step": 0.1255,
-      "mean_range": 0.1554,
+      "max_area_swing_up": 0.592,
+      "max_area_swing_down": 0.56,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9552,
-      "frames": 63,
       "flashes": 1,
-      "flash_frames": [
-       4
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.433,
-      "max_area_swing_down": 0.424,
-      "max_mean_step": 0.0578,
-      "mean_range": 0.1722,
       "passed": true
      }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 1276.5,
+     "gated_area_px": 2603,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 961.6,
+     "brighter_only_area_px": 1387,
+     "brighter_only_mean_L": 69.3
+    },
+    "solace": {
+     "gated_peak": 1276.6,
+     "gated_area_px": 2603,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 961.6,
+     "brighter_only_area_px": 1387,
+     "brighter_only_mean_L": 69.3
+    },
+    "meridian": {
+     "gated_peak": 1276.5,
+     "gated_area_px": 2603,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 961.6,
+     "brighter_only_area_px": 1387,
+     "brighter_only_mean_L": 69.3
     }
    },
    "strips": {
@@ -982,180 +1830,184 @@
     "solace": "strips/fx_shield_block_solace.jpg",
     "meridian": "strips/fx_shield_block_meridian.jpg"
    },
-   "reduce_phases": [
-    {
-     "name": "appear: plate, tint, ticks, stopped chevrons",
-     "start_ms": 0,
-     "end_ms": 120,
-     "easing": "linear"
+   "total_ms_before_rebuild": 920,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
     },
-    {
-     "name": "hold",
-     "start_ms": 120,
-     "end_ms": 620,
-     "easing": "-"
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
     },
-    {
-     "name": "dissolve out",
-     "start_ms": 620,
-     "end_ms": 920,
-     "easing": "linear"
-    }
-   ],
-   "o30": "reduce-motion timing changed and re-measured on all three skins (fx_o30/src/fx_eff.py RED_SHIELD / RED_BRACE)"
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
+   }
   },
   "fx_brace_block": {
    "family": "P",
    "title": "Brace blocks a whole landing",
-   "total_ms": 1060,
+   "tier": "block",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "lane draws in",
      "start_ms": 0,
-     "end_ms": 120,
+     "end_ms": 80,
      "easing": "easeOutCubic"
     },
     {
-     "name": "clamp closes (1.12 to 1.0)",
-     "start_ms": 80,
-     "end_ms": 240,
+     "name": "clamp brackets close (1.12 to 1.0)",
+     "start_ms": 60,
+     "end_ms": 180,
      "easing": "easeOutBack 2.0"
     },
     {
      "name": "chevrons run the lane",
-     "start_ms": 120,
-     "end_ms": 380,
+     "start_ms": 80,
+     "end_ms": 260,
      "easing": "easeInQuad"
     },
     {
      "name": "chevrons crumple on the bar",
-     "start_ms": 380,
-     "end_ms": 480,
+     "start_ms": 260,
+     "end_ms": 330,
      "easing": "linear"
     },
     {
-     "name": "stamp slams on the arc",
-     "start_ms": 480,
-     "end_ms": 560,
+     "name": "stamp slams on the arc glyph (1.2 to 1.0)",
+     "start_ms": 330,
+     "end_ms": 400,
      "easing": "easeOutBack 2.2"
     },
     {
      "name": "hold",
-     "start_ms": 560,
-     "end_ms": 900,
+     "start_ms": 400,
+     "end_ms": 460,
      "easing": "-"
     },
     {
-     "name": "clamp, bar and lane lift off (stamp stays)",
-     "start_ms": 900,
-     "end_ms": 1060,
+     "name": "clamp, bar, lane and stamp lift off (the printed glyph stays)",
+     "start_ms": 460,
+     "end_ms": 600,
      "easing": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "lane, clamp brackets, bar, crumpled chevrons and stamp appear",
+     "start_ms": 0,
+     "end_ms": 300,
+     "easing": "linear"
+    },
+    {
+     "name": "dissolve",
+     "start_ms": 300,
+     "end_ms": 600,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 600,
    "keyframes_ms": [
     0,
-    120,
+    90,
+    200,
     300,
-    440,
-    560,
-    1060
+    380,
+    600
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No closing or crumple motion: lane, clamp, bar, the crumpled chevrons and the stamp fade in over 120 ms (linear), hold, then everything but the stamp dissolves out over 300 ms (760-1060, linear); the stamp stays. O-30: the step-4 form (120 ms ease-out in, 160 ms out at 760-920) counted 2 flashes per second against 1 in full motion.",
+   "reduce_motion": "No closing or crumple motion: lane, clamp, bar, the crumpled chevrons and the stamp appear over 300 ms with no hard shadow and dissolve over 300 ms (measured 1 flash per s, as full motion; with a 200 ms appear it counted 2); the board's own brace glyph and brace edge stay.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 18084,
-      "frames": 71,
+      "footprint_px": 10388,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
        7
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.474,
-      "max_area_swing_down": 0.536,
-      "max_mean_step": 0.0432,
-      "mean_range": 0.0596,
+      "max_area_swing_up": 0.399,
+      "max_area_swing_down": 0.439,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9408,
-      "frames": 71,
       "flashes": 1,
-      "flash_frames": [
-       5
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.467,
-      "max_area_swing_down": 0.429,
-      "max_mean_step": 0.0482,
-      "mean_range": 0.1152,
       "passed": true
      }
     },
     "solace": {
      "full": {
-      "footprint_px": 18112,
-      "frames": 71,
+      "footprint_px": 10336,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
-       7
+       6
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.474,
-      "max_area_swing_down": 0.535,
-      "max_mean_step": 0.0431,
-      "mean_range": 0.0594,
+      "max_area_swing_up": 0.401,
+      "max_area_swing_down": 0.441,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9440,
-      "frames": 71,
       "flashes": 1,
-      "flash_frames": [
-       5
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.465,
-      "max_area_swing_down": 0.428,
-      "max_mean_step": 0.048,
-      "mean_range": 0.1148,
       "passed": true
      }
     },
     "meridian": {
      "full": {
-      "footprint_px": 18092,
-      "frames": 71,
+      "footprint_px": 10388,
+      "frames": 43,
       "flashes": 1,
       "flash_frames": [
        7
       ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.474,
-      "max_area_swing_down": 0.536,
-      "max_mean_step": 0.0432,
-      "mean_range": 0.0596,
+      "max_area_swing_up": 0.398,
+      "max_area_swing_down": 0.439,
       "passed": true
      },
      "reduce": {
-      "footprint_px": 9424,
-      "frames": 71,
       "flashes": 1,
-      "flash_frames": [
-       5
-      ],
       "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.466,
-      "max_area_swing_down": 0.428,
-      "max_mean_step": 0.0481,
-      "mean_range": 0.1149,
       "passed": true
      }
+    }
+   },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 1676.8,
+     "gated_area_px": 4156,
+     "gated_t_ms": 83.3,
+     "brighter_only_peak": 1040.9,
+     "brighter_only_area_px": 1614,
+     "brighter_only_mean_L": 64.5
+    },
+    "solace": {
+     "gated_peak": 1678.2,
+     "gated_area_px": 4206,
+     "gated_t_ms": 83.3,
+     "brighter_only_peak": 1040.9,
+     "brighter_only_area_px": 1614,
+     "brighter_only_mean_L": 64.5
+    },
+    "meridian": {
+     "gated_peak": 1677.6,
+     "gated_area_px": 4213,
+     "gated_t_ms": 83.3,
+     "brighter_only_peak": 1040.9,
+     "brighter_only_area_px": 1614,
+     "brighter_only_mean_L": 64.5
     }
    },
    "strips": {
@@ -1163,94 +2015,111 @@
     "solace": "strips/fx_brace_block_solace.jpg",
     "meridian": "strips/fx_brace_block_meridian.jpg"
    },
-   "reduce_phases": [
-    {
-     "name": "appear: lane, clamp, bar, crumpled chevrons, stamp",
-     "start_ms": 0,
-     "end_ms": 120,
-     "easing": "linear"
+   "total_ms_before_rebuild": 1060,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 6610,
+     "frames": 43
     },
-    {
-     "name": "hold",
-     "start_ms": 120,
-     "end_ms": 760,
-     "easing": "-"
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 6610,
+     "frames": 43
     },
-    {
-     "name": "dissolve out (stamp stays)",
-     "start_ms": 760,
-     "end_ms": 1060,
-     "easing": "linear"
-    }
-   ],
-   "o30": "reduce-motion timing changed and re-measured on all three skins (fx_o30/src/fx_eff.py RED_SHIELD / RED_BRACE)"
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
+   }
   },
   "fx_soak_take": {
    "family": "P",
    "title": "A soaked slice takes the overflow",
-   "total_ms": 960,
+   "tier": "block",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "overflow chevron arrives",
      "start_ms": 0,
-     "end_ms": 160,
+     "end_ms": 120,
      "easing": "easeInQuad"
     },
     {
      "name": "funnel draws in",
-     "start_ms": 120,
-     "end_ms": 300,
+     "start_ms": 80,
+     "end_ms": 220,
      "easing": "easeOutCubic"
     },
     {
      "name": "chevron shrinks into the mouth",
-     "start_ms": 300,
-     "end_ms": 440,
+     "start_ms": 220,
+     "end_ms": 320,
      "easing": "linear"
     },
     {
-     "name": "pip drains",
-     "start_ms": 440,
-     "end_ms": 600,
+     "name": "pip fills",
+     "start_ms": 300,
+     "end_ms": 420,
      "easing": "easeOutCubic"
     },
     {
      "name": "hold, flow scrolls",
-     "start_ms": 600,
-     "end_ms": 800,
+     "start_ms": 420,
+     "end_ms": 470,
      "easing": "linear"
     },
     {
-     "name": "funnel and wash lift off",
-     "start_ms": 800,
-     "end_ms": 960,
+     "name": "funnel and pip fill lift off",
+     "start_ms": 470,
+     "end_ms": 600,
      "easing": "linear"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "funnel and filled pip appear",
+     "start_ms": 0,
+     "end_ms": 200,
+     "easing": "linear"
+    },
+    {
+     "name": "hold",
+     "start_ms": 200,
+     "end_ms": 300,
+     "easing": "-"
+    },
+    {
+     "name": "dissolve",
+     "start_ms": 300,
+     "end_ms": 600,
+     "easing": "linear"
+    }
+   ],
+   "reduce_total_ms": 600,
    "keyframes_ms": [
-    90,
-    200,
-    380,
-    520,
-    700,
-    960
+    60,
+    150,
+    280,
+    360,
+    450,
+    600
    ],
    "skins": [
     "neutral"
    ],
-   "reduce_motion": "No travel: funnel, wash and the filled pip fade in over 120 ms with the flow chevrons still, hold, fade out. The overflow chevron is not shown.",
+   "reduce_motion": "No travel: the funnel and the filled pip appear over 200 ms with the flow chevrons still, hold, and dissolve over 300 ms. The overflow chevron is not shown.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 7096,
-      "frames": 65,
-      "flashes": 0,
-      "flash_frames": [],
-      "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.219,
-      "max_area_swing_down": 0.266,
-      "max_mean_step": 0.0164,
-      "mean_range": 0.0446,
+      "footprint_px": 3604,
+      "frames": 43,
+      "flashes": 1,
+      "flash_frames": [
+       7
+      ],
+      "max_flashes_per_s": 1,
+      "max_area_swing_up": 0.45,
+      "max_area_swing_down": 0.425,
       "passed": true
      },
      "reduce": {
@@ -1260,14 +2129,40 @@
      }
     }
    },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 841.0,
+     "gated_area_px": 1760,
+     "gated_t_ms": 433.3,
+     "brighter_only_peak": 584.0,
+     "brighter_only_area_px": 987,
+     "brighter_only_mean_L": 59.2
+    }
+   },
    "strips": {
     "neutral": "strips/fx_soak_take_neutral.jpg"
+   },
+   "total_ms_before_rebuild": 960,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 0,
+     "frames": 43
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_trace_add": {
    "family": "S",
    "title": "A loud card adds Trace",
+   "tier": "state",
    "total_ms": 400,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "card glitch, 5 steps",
@@ -1288,6 +2183,21 @@
      "easing": "-"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "pip lights in one step",
+     "start_ms": 166,
+     "end_ms": 166,
+     "easing": "step"
+    },
+    {
+     "name": "settled",
+     "start_ms": 166,
+     "end_ms": 400,
+     "easing": "-"
+    }
+   ],
+   "reduce_total_ms": 400,
    "keyframes_ms": [
     0,
     40,
@@ -1300,20 +2210,20 @@
     "neutral"
    ],
    "reduce_motion": "No glitch bands: the fourth pip simply lights at 166 ms (one step, no scale).",
+   "layer": "over the HUD and the hand (allowed, review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 17360,
+      "footprint_px": 7752,
       "frames": 31,
-      "flashes": 1,
+      "flashes": 2,
       "flash_frames": [
-       5
+       5,
+       10
       ],
-      "max_flashes_per_s": 1,
-      "max_area_swing_up": 0.502,
-      "max_area_swing_down": 0.393,
-      "max_mean_step": 0.0419,
-      "mean_range": 0.0494,
+      "max_flashes_per_s": 2,
+      "max_area_swing_up": 0.378,
+      "max_area_swing_down": 0.296,
       "passed": true
      },
      "reduce": {
@@ -1323,66 +2233,106 @@
      }
     }
    },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 719.8,
+     "gated_area_px": 1574,
+     "gated_t_ms": 150.0,
+     "brighter_only_peak": 399.2,
+     "brighter_only_area_px": 1170,
+     "brighter_only_mean_L": 34.1
+    }
+   },
    "strips": {
     "neutral": "strips/fx_trace_add_neutral.jpg"
+   },
+   "total_ms_before_rebuild": 400,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 1696,
+     "opaque_hud_px_in_box": 285000,
+     "frames": 31
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 285000,
+     "frames": 31
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   },
   "fx_commit": {
    "family": "T",
    "title": "SEND IT burns pencil marks into paint",
-   "total_ms": 760,
+   "tier": "state",
+   "total_ms": 600,
+   "cap_ms": 600,
    "phases": [
     {
      "name": "SEND IT press, hold",
      "start_ms": 0,
-     "end_ms": 80,
+     "end_ms": 60,
      "easing": "-"
     },
     {
      "name": "burn front runs the marks",
-     "start_ms": 80,
-     "end_ms": 560,
+     "start_ms": 60,
+     "end_ms": 400,
      "easing": "easeInOutCubic"
     },
     {
      "name": "ping at the route end",
-     "start_ms": 560,
-     "end_ms": 700,
+     "start_ms": 400,
+     "end_ms": 520,
      "easing": "easeOutCubic"
     },
     {
-     "name": "board steps preview to resolve",
-     "start_ms": 560,
-     "end_ms": 760,
+     "name": "board, HUD and hand step preview to resolve",
+     "start_ms": 400,
+     "end_ms": 600,
      "easing": "easeInOutCubic"
     }
    ],
+   "reduce_phases": [
+    {
+     "name": "marks cross-fade yellow to pink",
+     "start_ms": 0,
+     "end_ms": 300,
+     "easing": "easeInOutCubic"
+    },
+    {
+     "name": "board, HUD and hand step to resolve",
+     "start_ms": 300,
+     "end_ms": 600,
+     "easing": "easeInOutCubic"
+    }
+   ],
+   "reduce_total_ms": 600,
    "keyframes_ms": [
     0,
-    200,
-    330,
-    480,
-    620,
-    760
+    120,
+    230,
+    360,
+    450,
+    600
    ],
    "skins": [
     "neutral",
     "solace",
     "meridian"
    ],
-   "reduce_motion": "No burn front and no ping: the marks cross-fade yellow to pink over 300 ms, then the board steps to resolve over 300 ms.",
+   "reduce_motion": "No burn front and no ping: the marks cross-fade yellow to pink over 300 ms, then the board, the HUD and the hand step to resolve over 300 ms.",
+   "layer": "board: under the HUD and the hand (review 1.6)",
    "flash_check": {
     "neutral": {
      "full": {
-      "footprint_px": 13660,
-      "frames": 53,
+      "footprint_px": 315912,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.152,
-      "max_area_swing_down": 0.541,
-      "max_mean_step": 0.0665,
-      "mean_range": 0.2798,
+      "max_area_swing_up": 0.141,
+      "max_area_swing_down": 0.443,
       "passed": true
      },
      "reduce": {
@@ -1393,15 +2343,13 @@
     },
     "solace": {
      "full": {
-      "footprint_px": 13672,
-      "frames": 53,
+      "footprint_px": 315916,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.152,
-      "max_area_swing_down": 0.541,
-      "max_mean_step": 0.0664,
-      "mean_range": 0.2796,
+      "max_area_swing_up": 0.141,
+      "max_area_swing_down": 0.443,
       "passed": true
      },
      "reduce": {
@@ -1412,15 +2360,13 @@
     },
     "meridian": {
      "full": {
-      "footprint_px": 13692,
-      "frames": 53,
+      "footprint_px": 314800,
+      "frames": 43,
       "flashes": 0,
       "flash_frames": [],
       "max_flashes_per_s": 0,
-      "max_area_swing_up": 0.158,
-      "max_area_swing_down": 0.545,
-      "max_mean_step": 0.0663,
-      "mean_range": 0.2776,
+      "max_area_swing_up": 0.141,
+      "max_area_swing_down": 0.443,
       "passed": true
      },
      "reduce": {
@@ -1430,12 +2376,1273 @@
      }
     }
    },
+   "loudness": {
+    "neutral": {
+     "gated_peak": 748.9,
+     "gated_area_px": 1041,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 357.5,
+     "brighter_only_area_px": 515,
+     "brighter_only_mean_L": 69.4
+    },
+    "solace": {
+     "gated_peak": 748.9,
+     "gated_area_px": 1041,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 357.5,
+     "brighter_only_area_px": 515,
+     "brighter_only_mean_L": 69.4
+    },
+    "meridian": {
+     "gated_peak": 748.9,
+     "gated_area_px": 1041,
+     "gated_t_ms": 183.3,
+     "brighter_only_peak": 357.5,
+     "brighter_only_area_px": 515,
+     "brighter_only_mean_L": 69.4
+    }
+   },
    "strips": {
     "neutral": "strips/fx_commit_neutral.jpg",
     "solace": "strips/fx_commit_solace.jpg",
     "meridian": "strips/fx_commit_meridian.jpg"
+   },
+   "total_ms_before_rebuild": 760,
+   "layer_check_neutral": {
+    "full": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 189490,
+     "frames": 43
+    },
+    "reduce": {
+     "max_px_on_opaque_hud": 0,
+     "opaque_hud_px_in_box": 189490,
+     "frames": 43
+    },
+    "method": "layer_check.py <skin> <ids...>: review 1.6, measured. For every 60 fps frame of each effect (0 .. total + 100 ms, full and reduce motion): (src/layer_check.py)"
    }
   }
  },
- "o30_pass": "Flash fields re-measured on the O-30 board (new room grade, solid FAR stroke, HUD occluders), 2026-11-02; timings unchanged."
+ "loudness_order_solace": {
+  "skin": "solace",
+  "meter": "shared gated meter: fxk_lib.loud_frame (dE76 > 5 vs the no-effect frame AND vs the settled frame, x L* / 100), peak over the full-motion frames",
+  "rows": [
+   {
+    "id": "fx_firewall_burn",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 9547.8,
+    "area_px": 16007,
+    "t_ms": 366.7,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_shield_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 8377.0,
+    "area_px": 15499,
+    "t_ms": 250.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_strike",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5493.5,
+    "area_px": 9771,
+    "t_ms": 200.0,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_trigger_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5075.2,
+    "area_px": 10403,
+    "t_ms": 283.3,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 4778.2,
+    "area_px": 10016,
+    "t_ms": 200.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_gun_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 3754.4,
+    "area_px": 6644,
+    "t_ms": 183.3,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_adjuster",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3748.8,
+    "area_px": 7335,
+    "t_ms": 133.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_crack",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3121.4,
+    "area_px": 6946,
+    "t_ms": 50.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hp_through",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3035.2,
+    "area_px": 6067,
+    "t_ms": 450.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_worm",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2821.6,
+    "area_px": 6198,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2816.8,
+    "area_px": 6158,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_kill",
+    "fam": "D",
+    "kind": "kill",
+    "peak": 1816.4,
+    "area_px": 2650,
+    "t_ms": 16.7,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_brace_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1678.2,
+    "area_px": 4206,
+    "t_ms": 83.3,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shield_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1276.6,
+    "area_px": 2603,
+    "t_ms": 183.3,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_ricochet",
+    "fam": "D",
+    "kind": "block",
+    "peak": 898.3,
+    "area_px": 1756,
+    "t_ms": 150.0,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ricochet_gold",
+    "fam": "D",
+    "kind": "block",
+    "peak": 885.6,
+    "area_px": 2089,
+    "t_ms": 150.0,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_soak_take",
+    "fam": "P",
+    "kind": "block",
+    "peak": 841.0,
+    "area_px": 1760,
+    "t_ms": 433.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_hold",
+    "fam": "M",
+    "kind": "state",
+    "peak": 768.0,
+    "area_px": 1935,
+    "t_ms": 166.7,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_commit",
+    "fam": "T",
+    "kind": "state",
+    "peak": 748.9,
+    "area_px": 1041,
+    "t_ms": 183.3,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_trace_add",
+    "fam": "S",
+    "kind": "state",
+    "peak": 719.8,
+    "area_px": 1574,
+    "t_ms": 150.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shove_bump",
+    "fam": "M",
+    "kind": "state",
+    "peak": 704.1,
+    "area_px": 1981,
+    "t_ms": 233.3,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_repair_mend",
+    "fam": "L",
+    "kind": "state",
+    "peak": 699.9,
+    "area_px": 988,
+    "t_ms": 216.7,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_refund",
+    "fam": "L",
+    "kind": "state",
+    "peak": 674.8,
+    "area_px": 1133,
+    "t_ms": 200.0,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_wave_enter",
+    "fam": "M",
+    "kind": "state",
+    "peak": 642.3,
+    "area_px": 1285,
+    "t_ms": 400.0,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_rings_step",
+    "fam": "M",
+    "kind": "state",
+    "peak": 612.8,
+    "area_px": 1635,
+    "t_ms": 300.0,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_spin",
+    "fam": "M",
+    "kind": "state",
+    "peak": 583.5,
+    "area_px": 1491,
+    "t_ms": 300.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_grow",
+    "fam": "C",
+    "kind": "state",
+    "peak": 515.6,
+    "area_px": 936,
+    "t_ms": 133.3,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ward_on",
+    "fam": "C",
+    "kind": "state",
+    "peak": 397.1,
+    "area_px": 752,
+    "t_ms": 183.3,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_twist",
+    "fam": "M",
+    "kind": "state",
+    "peak": 382.1,
+    "area_px": 1052,
+    "t_ms": 250.0,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shove",
+    "fam": "M",
+    "kind": "state",
+    "peak": 353.0,
+    "area_px": 969,
+    "t_ms": 33.3,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_pull",
+    "fam": "M",
+    "kind": "state",
+    "peak": 200.2,
+    "area_px": 587,
+    "t_ms": 100.0,
+    "skin": "solace",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_clear",
+    "fam": "L",
+    "kind": "state",
+    "peak": 84.7,
+    "area_px": 170,
+    "t_ms": 50.0,
+    "skin": "solace",
+    "src": "fx_cdhl"
+   }
+  ],
+  "checks": [
+   {
+    "louder": "damage",
+    "quieter": "kill",
+    "min_louder": [
+     "fx_hit_land",
+     2816.8
+    ],
+    "max_quieter": [
+     "fx_kill",
+     1816.4
+    ],
+    "margin": 1000.4,
+    "pass_": true
+   },
+   {
+    "louder": "kill",
+    "quieter": "block",
+    "min_louder": [
+     "fx_kill",
+     1816.4
+    ],
+    "max_quieter": [
+     "fx_brace_block",
+     1678.2
+    ],
+    "margin": 138.2,
+    "pass_": true
+   },
+   {
+    "louder": "block",
+    "quieter": "state",
+    "min_louder": [
+     "fx_soak_take",
+     841.0
+    ],
+    "max_quieter": [
+     "fx_hold",
+     768.0
+    ],
+    "margin": 73.0,
+    "pass_": true
+   }
+  ],
+  "line": "damage 2817-9548  >  kill 1816-1816  >  block 841-1678  >  state 85-768   PASS",
+  "pass": true
+ },
+ "loudness_order_meridian": {
+  "skin": "meridian",
+  "meter": "shared gated meter: fxk_lib.loud_frame (dE76 > 5 vs the no-effect frame AND vs the settled frame, x L* / 100), peak over the full-motion frames",
+  "rows": [
+   {
+    "id": "fx_firewall_burn",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 9535.1,
+    "area_px": 15895,
+    "t_ms": 366.7,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_shield_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 8377.0,
+    "area_px": 15499,
+    "t_ms": 250.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_strike",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5481.8,
+    "area_px": 9711,
+    "t_ms": 200.0,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_trigger_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 5074.7,
+    "area_px": 10389,
+    "t_ms": 283.3,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_break",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 4778.2,
+    "area_px": 10016,
+    "t_ms": 200.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_adjuster",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3748.8,
+    "area_px": 7335,
+    "t_ms": 133.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_gun_hit",
+    "fam": "D",
+    "kind": "damage",
+    "peak": 3742.4,
+    "area_px": 6599,
+    "t_ms": 183.3,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_slice_crack",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3121.4,
+    "area_px": 6946,
+    "t_ms": 50.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hp_through",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 3035.2,
+    "area_px": 6067,
+    "t_ms": 450.0,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land_worm",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2821.6,
+    "area_px": 6198,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_hit_land",
+    "fam": "H",
+    "kind": "damage",
+    "peak": 2816.8,
+    "area_px": 6158,
+    "t_ms": 183.3,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_kill",
+    "fam": "D",
+    "kind": "kill",
+    "peak": 1812.5,
+    "area_px": 2649,
+    "t_ms": 16.7,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_brace_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1677.6,
+    "area_px": 4213,
+    "t_ms": 83.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shield_block",
+    "fam": "P",
+    "kind": "block",
+    "peak": 1276.5,
+    "area_px": 2603,
+    "t_ms": 183.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_ricochet",
+    "fam": "D",
+    "kind": "block",
+    "peak": 897.6,
+    "area_px": 1753,
+    "t_ms": 150.0,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ricochet_gold",
+    "fam": "D",
+    "kind": "block",
+    "peak": 885.4,
+    "area_px": 2084,
+    "t_ms": 150.0,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_soak_take",
+    "fam": "P",
+    "kind": "block",
+    "peak": 841.0,
+    "area_px": 1760,
+    "t_ms": 433.3,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_hold",
+    "fam": "M",
+    "kind": "state",
+    "peak": 761.4,
+    "area_px": 1912,
+    "t_ms": 166.7,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_commit",
+    "fam": "T",
+    "kind": "state",
+    "peak": 748.9,
+    "area_px": 1041,
+    "t_ms": 183.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_trace_add",
+    "fam": "S",
+    "kind": "state",
+    "peak": 719.8,
+    "area_px": 1574,
+    "t_ms": 150.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_repair_mend",
+    "fam": "L",
+    "kind": "state",
+    "peak": 699.9,
+    "area_px": 988,
+    "t_ms": 216.7,
+    "skin": "neutral",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_shove_bump",
+    "fam": "M",
+    "kind": "state",
+    "peak": 696.9,
+    "area_px": 1953,
+    "t_ms": 233.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_refund",
+    "fam": "L",
+    "kind": "state",
+    "peak": 674.8,
+    "area_px": 1133,
+    "t_ms": 200.0,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_rings_step",
+    "fam": "M",
+    "kind": "state",
+    "peak": 612.6,
+    "area_px": 1609,
+    "t_ms": 300.0,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_spin",
+    "fam": "M",
+    "kind": "state",
+    "peak": 583.5,
+    "area_px": 1491,
+    "t_ms": 300.0,
+    "skin": "neutral",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_wave_enter",
+    "fam": "M",
+    "kind": "state",
+    "peak": 550.3,
+    "area_px": 1264,
+    "t_ms": 400.0,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_grow",
+    "fam": "C",
+    "kind": "state",
+    "peak": 433.1,
+    "area_px": 941,
+    "t_ms": 133.3,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_ward_on",
+    "fam": "C",
+    "kind": "state",
+    "peak": 393.1,
+    "area_px": 749,
+    "t_ms": 183.3,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   },
+   {
+    "id": "fx_twist",
+    "fam": "M",
+    "kind": "state",
+    "peak": 379.9,
+    "area_px": 1047,
+    "t_ms": 250.0,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_shove",
+    "fam": "M",
+    "kind": "state",
+    "peak": 352.0,
+    "area_px": 959,
+    "t_ms": 33.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_pull",
+    "fam": "M",
+    "kind": "state",
+    "peak": 197.4,
+    "area_px": 577,
+    "t_ms": 83.3,
+    "skin": "meridian",
+    "src": "mp_run"
+   },
+   {
+    "id": "fx_clear",
+    "fam": "L",
+    "kind": "state",
+    "peak": 84.7,
+    "area_px": 170,
+    "t_ms": 50.0,
+    "skin": "meridian",
+    "src": "fx_cdhl"
+   }
+  ],
+  "checks": [
+   {
+    "louder": "damage",
+    "quieter": "kill",
+    "min_louder": [
+     "fx_hit_land",
+     2816.8
+    ],
+    "max_quieter": [
+     "fx_kill",
+     1812.5
+    ],
+    "margin": 1004.3,
+    "pass_": true
+   },
+   {
+    "louder": "kill",
+    "quieter": "block",
+    "min_louder": [
+     "fx_kill",
+     1812.5
+    ],
+    "max_quieter": [
+     "fx_brace_block",
+     1677.6
+    ],
+    "margin": 134.9,
+    "pass_": true
+   },
+   {
+    "louder": "block",
+    "quieter": "state",
+    "min_louder": [
+     "fx_soak_take",
+     841.0
+    ],
+    "max_quieter": [
+     "fx_hold",
+     761.4
+    ],
+    "margin": 79.6,
+    "pass_": true
+   }
+  ],
+  "line": "damage 2817-9535  >  kill 1812-1812  >  block 841-1678  >  state 85-761   PASS",
+  "pass": true
+ },
+ "resolve_beat_e10": {
+  "files": [
+   "resolve_beat_strip.jpg",
+   "resolve_beat.gif"
+  ],
+  "skin": "neutral",
+  "total_ms": 3800,
+  "limit_ms": 4000,
+  "skip_ms": 200,
+  "skip": "any input: the frame dissolves (easeInOutCubic) to the settled frame in skip_ms; no on-screen word (open question for the designer)",
+  "tracks": [
+   {
+    "name": "commit",
+    "start_ms": 0,
+    "dur_ms": 600,
+    "family": "T",
+    "what": "SEND IT: pencil burns into paint"
+   },
+   {
+    "name": "twist",
+    "start_ms": 420,
+    "dur_ms": 540,
+    "family": "M",
+    "what": "1 TWIST: ring +1 turns one sector"
+   },
+   {
+    "name": "trace_add",
+    "start_ms": 600,
+    "dur_ms": 400,
+    "family": "S",
+    "what": "2 TRIGGER: Trace 3 -> 4"
+   },
+   {
+    "name": "trigger_hit",
+    "start_ms": 760,
+    "dur_ms": 600,
+    "family": "D",
+    "what": "2 TRIGGER: hits Packet 1 (s3, s4)"
+   },
+   {
+    "name": "kill_p1",
+    "start_ms": 1000,
+    "dur_ms": 600,
+    "family": "D",
+    "what": "2 TRIGGER: Packet 1 dies"
+   },
+   {
+    "name": "refund",
+    "start_ms": 1100,
+    "dur_ms": 600,
+    "family": "L",
+    "what": "2 TRIGGER: refund, RAM 2 -> 3"
+   },
+   {
+    "name": "gun_hit",
+    "start_ms": 1300,
+    "dur_ms": 600,
+    "family": "D",
+    "what": "4 GUNS: s0 shot 1 on Worm 2"
+   },
+   {
+    "name": "gun_adj",
+    "start_ms": 1360,
+    "dur_ms": 600,
+    "family": "D",
+    "what": "4 GUNS: s2 TURRET on the Adjuster"
+   },
+   {
+    "name": "ricochet_gold",
+    "start_ms": 1420,
+    "dur_ms": 500,
+    "family": "D",
+    "what": "4 GUNS: s4 2 shots warded (Packet 6)"
+   },
+   {
+    "name": "kill",
+    "start_ms": 1560,
+    "dur_ms": 600,
+    "family": "D",
+    "what": "4 GUNS: s0 shot 2, Worm 2 dies"
+   },
+   {
+    "name": "shield_block",
+    "start_ms": 1900,
+    "dur_ms": 600,
+    "family": "P",
+    "what": "5 LANDS: Worm 3 on s1 SHIELD, absorbed 2"
+   },
+   {
+    "name": "brace_block",
+    "start_ms": 1900,
+    "dur_ms": 600,
+    "family": "P",
+    "what": "3 BRACE / 5 LANDS: Worm 3 on s2, braced 3"
+   },
+   {
+    "name": "soak_take",
+    "start_ms": 1930,
+    "dur_ms": 600,
+    "family": "P",
+    "what": "5 LANDS: s1 soaked 1 (under the plate)"
+   },
+   {
+    "name": "clear",
+    "start_ms": 2400,
+    "dur_ms": 400,
+    "family": "L",
+    "what": "5 LANDS: THROUGH 0"
+   },
+   {
+    "name": "settle",
+    "start_ms": 2640,
+    "dur_ms": 200,
+    "family": "-",
+    "what": "board hand-off: ring NOW clears"
+   },
+   {
+    "name": "rings_step",
+    "start_ms": 2800,
+    "dur_ms": 600,
+    "family": "M",
+    "what": "6 RINGS STEP"
+   },
+   {
+    "name": "wave_enter",
+    "start_ms": 3200,
+    "dur_ms": 600,
+    "family": "M",
+    "what": "6 W4 enters"
+   }
+  ],
+  "order": "concurrent tracks in the HUD chain order (SEND IT, 1 TWIST, 2 TRIGGER, 4 GUNS, 3 BRACE + 5 LANDS, 6 RINGS STEP, W4 enters); every effect at its own designer's timing, each <= 600 ms",
+  "not_to_ship": "ring +1 drawn one sector back from SEND IT until Twist turns it (f2 holds ring +1 where Twist leaves it): a RULES question (REVIEW_RESPONSE \"Shove bump, Twist render\"); the strip and the GIF caption say so",
+  "flash_full": {
+   "whole_frame": {
+    "flashes": 0,
+    "max_flashes_per_s": 0
+   },
+   "track_boxes_max_flashes_per_s": 1,
+   "tiles": {
+    "240": {
+     "n": 106,
+     "max_flashes_per_s": 2,
+     "worst": [
+      {
+       "x0": 120,
+       "y0": 0,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         3416.7,
+         "wave_enter"
+        ],
+        [
+         3683.3,
+         "wave_enter"
+        ]
+       ]
+      },
+      {
+       "x0": 720,
+       "y0": 360,
+       "flashes": 2,
+       "max_flashes_per_s": 1,
+       "flash_ms": [
+        [
+         666.7,
+         "twist+trace_add"
+        ],
+        [
+         3150.0,
+         "rings_step"
+        ]
+       ]
+      }
+     ]
+    },
+    "120": {
+     "n": 385,
+     "max_flashes_per_s": 2,
+     "worst": [
+      {
+       "x0": 180,
+       "y0": 0,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         3366.7,
+         "rings_step+wave_enter"
+        ],
+        [
+         3700.0,
+         "wave_enter"
+        ]
+       ]
+      },
+      {
+       "x0": 180,
+       "y0": 60,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         3366.7,
+         "rings_step+wave_enter"
+        ],
+        [
+         3700.0,
+         "wave_enter"
+        ]
+       ]
+      }
+     ]
+    },
+    "60": {
+     "n": 1409,
+     "max_flashes_per_s": 3,
+     "worst": [
+      {
+       "x0": 300,
+       "y0": 480,
+       "flashes": 3,
+       "max_flashes_per_s": 3,
+       "flash_ms": [
+        [
+         1616.7,
+         "refund+gun_hit+gun_adj+ricochet_gold+kill"
+        ],
+        [
+         1733.3,
+         "gun_hit+gun_adj+ricochet_gold+kill"
+        ],
+        [
+         1783.3,
+         "gun_hit+gun_adj+ricochet_gold+kill"
+        ]
+       ]
+      },
+      {
+       "x0": 360,
+       "y0": 210,
+       "flashes": 3,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         616.7,
+         "twist+trace_add"
+        ],
+        [
+         766.7,
+         "twist+trace_add+trigger_hit"
+        ],
+        [
+         3000.0,
+         "rings_step"
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "max_flashes_per_s_beat": 3,
+   "max_flashes_per_s_skips": 3,
+   "skips": {
+    "250": 1,
+    "500": 1,
+    "750": 2,
+    "1000": 2,
+    "1250": 2,
+    "1500": 2,
+    "1750": 2,
+    "2000": 3,
+    "2250": 3,
+    "2500": 3,
+    "2750": 2,
+    "3000": 2,
+    "3250": 2,
+    "3500": 2,
+    "3750": 2
+   },
+   "passes": true
+  },
+  "flash_reduce": {
+   "whole_frame": {
+    "flashes": 0,
+    "max_flashes_per_s": 0
+   },
+   "track_boxes_max_flashes_per_s": 0,
+   "tiles": {
+    "240": {
+     "n": 102,
+     "max_flashes_per_s": 1,
+     "worst": [
+      {
+       "x0": 960,
+       "y0": 120,
+       "flashes": 1,
+       "max_flashes_per_s": 1,
+       "flash_ms": [
+        [
+         516.7,
+         "commit+twist"
+        ]
+       ]
+      },
+      {
+       "x0": 960,
+       "y0": 360,
+       "flashes": 1,
+       "max_flashes_per_s": 1,
+       "flash_ms": [
+        [
+         516.7,
+         "commit+twist"
+        ]
+       ]
+      }
+     ]
+    },
+    "120": {
+     "n": 375,
+     "max_flashes_per_s": 2,
+     "worst": [
+      {
+       "x0": 540,
+       "y0": 480,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         2050.0,
+         "kill+shield_block+brace_block+soak_take"
+        ],
+        [
+         2350.0,
+         "shield_block+brace_block+soak_take"
+        ]
+       ]
+      },
+      {
+       "x0": 540,
+       "y0": 540,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         2050.0,
+         "kill+shield_block+brace_block+soak_take"
+        ],
+        [
+         2350.0,
+         "shield_block+brace_block+soak_take"
+        ]
+       ]
+      }
+     ]
+    },
+    "60": {
+     "n": 1355,
+     "max_flashes_per_s": 2,
+     "worst": [
+      {
+       "x0": 570,
+       "y0": 510,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         2033.3,
+         "kill+shield_block+brace_block+soak_take"
+        ],
+        [
+         2350.0,
+         "shield_block+brace_block+soak_take"
+        ]
+       ]
+      },
+      {
+       "x0": 600,
+       "y0": 510,
+       "flashes": 2,
+       "max_flashes_per_s": 2,
+       "flash_ms": [
+        [
+         2033.3,
+         "kill+shield_block+brace_block+soak_take"
+        ],
+        [
+         2350.0,
+         "shield_block+brace_block+soak_take"
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "max_flashes_per_s_beat": 2,
+   "max_flashes_per_s_skips": 2,
+   "skips": {
+    "250": 1,
+    "500": 1,
+    "750": 1,
+    "1000": 1,
+    "1250": 1,
+    "1500": 1,
+    "1750": 1,
+    "2000": 2,
+    "2250": 2,
+    "2500": 2,
+    "2750": 2,
+    "3000": 2,
+    "3250": 1,
+    "3500": 1,
+    "3750": 1
+   },
+   "passes": true
+  },
+  "flash_method": "mp_beat_meter.py <full|red>: the 60 fps flash meter (NOTES_MPST method, unchanged) over the whole resolve beat and over every skip path.\nRegions, each judged against its own footprint (px whose relative luminance moves > 0.02 from frame 0 of the run):\n  whole       the whole 1920 x 1080 frame\n  box:<track> each track's own box, over the WHOLE beat (neighbours and hand-offs count against it)\n  tiles       240, 120 and 60 px windows on a half-size stride (a tile counts if 5 % of it moves); the worst per size is reported\nSkip paths: the player skips at Ts (every 250 ms): beat frames up to Ts, the 200 ms dissolve to the settled frame, 300 ms settled;\nmeasured from Ts - 1000 ms (the whole 1 s window before the skip counts), whole frame and the same tiles.\nPer pixel: extremum tracker, swing >= 0.10; region event: >= 25 % of the footprint swung the same way within 100 ms (6 frames);\nflash = two opposite region events; pass = no 1 s window holds more than 3 flashes.  -> work/beat/meter_<mode>.json",
+  "gif": {
+   "width": 640,
+   "height": 360,
+   "caption_px": 20,
+   "fps": 30.0,
+   "frames": 136,
+   "bytes": 1017714
+  },
+  "strip": {
+   "size": [
+    2900,
+    2212
+   ],
+   "bytes": 1721872,
+   "quality": 90
+  },
+  "kill_colour_check": {
+   "method": "beat_guard.py: review 1.8 in the resolve beat, measured on the rendered 60 fps beat frames (work/beat/full_*.npz, every 2nd px).\nRound each kill token (Packet 1 at kill_p1, Worm 2 at kill: CD.TOK3['1'], CD.TOK3['2']), within 90 px, during its kill track:\npx within dE76 15 of GAIN, FOCUS, lime (fxk_lib.TOKEN_GUARD) and of CELL_PINK, minus the same count on the settled beat frame\n(the board's own marks), as the peak over the track's frames, in full-size px (x 4).  -> work/beat/guard.json",
+   "kill_p1": {
+    "token": [
+     624.7571906056955,
+     769.4300789255503
+    ],
+    "radius_px": 90,
+    "settled_frame_px": {
+     "GAIN": 56,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 588
+    },
+    "peak_added_px": {
+     "GAIN": 0,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 2044
+    }
+   },
+   "kill": {
+    "token": [
+     292.9291279553569,
+     502.1509423702948
+    ],
+    "radius_px": 90,
+    "settled_frame_px": {
+     "GAIN": 68,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 400
+    },
+    "peak_added_px": {
+     "GAIN": 0,
+     "FOCUS": 0,
+     "LIME": 0,
+     "CELL_PINK": 1456
+    }
+   }
+  }
+ }
 }

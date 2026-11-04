@@ -8,7 +8,7 @@ sys.dont_write_bytecode = True
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-FINAL = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'
+FINAL = os.environ.get('FINAL_DIR', 'D:/rc_scratch/combat_redesign/locked/rebuild/board/')     # 2026-11-03 rebuild: the board dir, not the repo
 WORK = 'D:/rc_scratch/combat_redesign/locked/corp/work/'
 FD = os.path.dirname(os.path.abspath(__file__)) + '/fonts/'
 an = lambda px: ImageFont.truetype(FD + 'Anton-Regular.ttf', px)
@@ -83,8 +83,16 @@ def chevron_read(a, ang=180.0):
             continue
         cc = np.median(a[chev], 0)
         bg = np.median(a[side], 0)
+        # 2026-11-04 (gate 1): the light core line inside the chevrons (HOT's cream core, HOT_CORE_W) measured too: all channels above 170, in
+        # the column, within 4 px of a chevron pixel.  The fill ratio alone dropped when the occupied glass was lit (review 1.1).
+        from scipy import ndimage as _ndi
+        core = col & (a.min(2) > 170) & _ndi.binary_dilation(chev, iterations=4)
+        core_d = {}
+        if core.sum() >= 10:
+            ck = np.median(a[core], 0)
+            core_d = dict(core_rgb=[int(x) for x in ck], core_luma_contrast=round(cr(ck, bg), 2), core_px=int(core.sum()))
         out.append(dict(ring=d, grammar=('HOT', 'COLD', 'FAR')[d], chevron_rgb=[int(x) for x in cc], cell_rgb=[int(x) for x in bg],
-                        luma_contrast=round(cr(cc, bg), 2), dE2000=round(de(cc, bg), 1), px=int(chev.sum())))
+                        luma_contrast=round(cr(cc, bg), 2), dE2000=round(de(cc, bg), 1), px=int(chev.sum()), **core_d))
     return out
 
 
@@ -165,7 +173,8 @@ def main():
     cell_w = [int((b[2] - b[0]) * z) for _, b, z, _ in crops] + [sw_w]
     row_h = max(int((b[3] - b[1]) * z) for _, b, z, _ in crops)
     Wt = 170 + sum(cell_w) + 12 * len(cell_w)
-    Ht = 120 + (row_h + 60) * 3 + 520
+    # tall enough for the hatched tower at the bottom (2026-11-03 stage 2: a fixed 520 px cut the tower off)
+    Ht = 120 + (row_h + 60) * 3 + 10 + 44 + int(tw.height * 1.15) + 20
     sheet = Image.new('RGB', (Wt, Ht), (16, 16, 22))
     d = ImageDraw.Draw(sheet)
     d.text((16, 10), 'STEP 3: GRAMMAR ON THE FINAL SKINS (neutral, Solace, Meridian), zoomed crops of the final plates', font=an(40), fill=(255, 255, 255))
@@ -200,7 +209,8 @@ def main():
         d.text((x, y + 206), 'chevrons vs cell (sector 3):', font=mo(15), fill=(220, 220, 230))
         for k, e in enumerate(ch):
             if e and 'luma_contrast' in e:
-                d.text((x, y + 226 + k * 20), '%s %.2f:1 dE %.0f' % (e['grammar'], e['luma_contrast'], e['dE2000']), font=mo(15), fill=(220, 220, 230))
+                core_ = (' core %.1f:1' % e['core_luma_contrast']) if e['grammar'] == 'HOT' and e.get('core_luma_contrast') else ''
+                d.text((x, y + 226 + k * 20), '%s %.2f:1 dE %.0f%s' % (e['grammar'], e['luma_contrast'], e['dE2000'], core_), font=mo(15), fill=(220, 220, 230))
     # bottom row: every slice colour hatched
     y = 120 + 3 * (row_h + 60) + 10
     d.text((16, y), 'PENDING-LOSS HATCH ON EVERY SLICE COLOUR (player layer: the same on every corp skin). Red = enemy hit, blue = soaked (sectors 4, 5).', font=an(26), fill=(255, 255, 255))
