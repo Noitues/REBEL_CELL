@@ -160,6 +160,13 @@ Rules:
   they do (Appendix C): Orbital #CDF0FF sits near `TEXT_HI`, the exact problem v1 fixed, so its
   material and crest MUST carry it; Solace #96FF46 sits near Cell lime #D4FF00, so Cell lime stays
   reserved for ownership and Solace never appears on a link or ring.
+- **Designer ruling, combat enemy rings (2026-11-01, `combat_redesign/VISUAL_PLAN.md` DR-6):** on the
+  ring-wheel combat board, the corp's enemy layers carry a corp theme ("prefer the corp layers have
+  more of a theme related to the corporation, even if just a color shift"). This amends the two rules
+  above for the enemy rings only. The theme is carried by material and by the corp hue on the rim,
+  bezel lip, crest and cell edges. Cell fills stay a neutral slate ladder with a low-chroma tint, so
+  the occupied-vs-empty read and the time grammar hold. The corp hue on a ring must sit at ΔE 15 or
+  more from Cell lime, GAIN, FOCUS and HARM. Links, chrome and every other UI role are unchanged.
 - City district tints on the map are still round 6 (Solace teal, Orbital blue). A territory-colour
   pass is owed.
 
@@ -529,6 +536,11 @@ Reference: `round34_firmware_daemons/daemon_set.png`, `daemon_row.png`, `daemon_
   road layout. A building that blocks the camera is removed from both the close-up and the map.
 - **Framing:** zoomed in; the HQ fills the gap between the wheels and the wheels may overlap it.
   Blocks behind a wheel are kept low, dark and sparsely lit.
+- **Designer ruling (ART CALL 47, 2026-10-30; `combat_redesign/VISUAL_PLAN.md` DR-9):** regular Site
+  fights and HQ-run nodes use the procedural **cutaway** room (the chosen building opened on its
+  street, iso, kit modules by Site kind): "Some light procedural generation work to define the
+  interiors, then we just toss that up. Seems like easiest and keeps on brand." The boss fight keeps
+  the HQ perspective close-up below. The camera rule below applies to the boss close-up.
 - **Camera:** a perspective close-up for every fight, never the map iso (designer, 2026-10-06).
   Non-HQ Site fights use the Site's own lot; unique per-fight buildings are deferred (the Solace and
   Orbital Site subjects are interim through M14).

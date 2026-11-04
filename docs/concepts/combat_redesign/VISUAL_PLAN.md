@@ -7,6 +7,20 @@ Legend sheet: `VISUAL_PLAN_legend.png` (1920x1080, the grammars below drawn at u
 
 **R51 review (2026-11-01):** the exploration round is reviewed in `REVIEW.md` (board: `review/board.jpg`). Finalists: **F1 Black-book burner** (sketchbook graffiti tower + street-graffiti cards and SEND IT) and **F2 Zaun press** (Spider-Verse print, pushed misregistration, Arcane neon doodle layer). Rules changed by that review are marked **R51 review** below. No finalist plate may be rendered on the E10 board.
 
+**Designer rulings (binding; added 2026-11-03).** These are the designer's explicit approvals made after this plan was written. Where they disagree with a rule below, or with a LOCKED ART_BIBLE section, the ruling wins. Reviewers judge the plates against these rulings. The art-pass calls made in response to the 2026-11-03 review are in `locked/REVIEW_RESPONSE.md` and are not designer rulings.
+
+| # | Ruling | Designer's words | Overrides |
+|---|---|---|---|
+| DR-1 | No dashed lines; this turn must look different from future turns; cross-hatch replaces the HP slash; the arrowed outline is kept; outline colours must carry meaning; waves past W3 are compressed; slice-wide effect overlays in distinct families; hover dimming kept, with plates per card effect type; content rulings are out of scope (ART CALL 51) | 10-point note, 2026-11-01 | none |
+| DR-2 | The player spinner is **punk rock**; there is no needle; colour-blind checks are ignored for this concept work (ART CALL 52) | "Punk rock." / "we shouldn't have needles in this new combat concept" / "Ignore color blind checks." | 0 law 5 and E "Contrast checks" (no CVD runs) |
+| DR-3 | Cards are adapted to the new art style on a similar layout, with cohesion over keeping the black-book look | "feel free to adapt the card concept to the new art style keeping a similar layout. Rather have cohesion" | none |
+| DR-4 | **Each slice type has its own colour and texture** | "each unique slice is a different color and texture instead of just all slices the same color" | 0 law 5 ("no slice-type colours"), E table row "Slice frame" |
+| DR-5 | **No reserved colours** for player-family fills (slices, card type plates, card art) | "I dont think we need to avoid any colors" | A.1 invariant "never HARM red, PLAN yellow, SCHEDULE orange, SOAK indigo or GAIN green" (for fills; meaning tokens keep their meanings on *marks*) |
+| DR-6 | **Corp enemy layers carry a corp theme**, even if only a colour shift; the test was colour-only vs colour plus material, with Meridian as the second corp | "prefer the corp layers have more of a theme related to the corporation, even if just a color shift" | ART_BIBLE 2.4 "Solace never appears on a link or ring" / "corp hue MUST NOT be used for any UI role" (for the combat enemy rings; see the 2.4 note) |
+| DR-7 | Spinner: xerox A (flat spot inks, a distinct texture and grey value per slice type) with the linocut black key line and scissor halo, borrowing Ben-Day texture shapes; a solid coloured ring round the icon on hatched slices (ART CALL 53, O-28) | "Agree with art director suggestion." | A.1 direction table (G1-G5) |
+| DR-8 | Cards: **WPAP card style, a different colour behind each type band** (WAVE, TOWER...); **background art drawn from the other punk card styles**; xerox icons recoloured to contrast the background (ART CALL 53) | "use WPAP card style with different color behind WAVE etc. then use different card background art pulling from the other punk card art styles. Keep the xerox icon approach but recolor to contrast the background." | A.1 "one hand" invariant, for the band art (the frame, key line, disc, icons and grain stay shared) |
+| DR-9 | Combat backdrop: the procedural **cutaway** room (ART CALL 47, 2026-10-30) | "Some light procedural generation work to define the interiors, then we just toss that up. Seems like easiest and keeps on brand." | ART_BIBLE 3.14 camera rule, for regular Site fights and HQ-run nodes (see the 3.14 note) |
+
 **Parked (designer note 8, content rulings):** the inspect panel, hover tag text (`hover_tag` keeps its E10 form and content), the UNDO cause and pile counters. Nobody designs these in this pass.
 
 ---
@@ -17,7 +31,7 @@ Legend sheet: `VISUAL_PLAN_legend.png` (1920x1080, the grammars below drawn at u
 2. **A line type has one meaning** (section B). Dashed lines have **no meaning** on the combat screen: they are banned.
 3. **This END TURN is hot; future turns are cold** (section C). Hot means saturated, filled and glowing. Cold means desaturated, never glowing, with turn pips.
 4. **Cross-hatching means "lost at the end of this turn"** (section D). The colour of the hatch says who causes the loss.
-5. **Colour means a cause or an owner, never decoration** (section E). An outline that does not mean something is neutral. There are no lane colours and no slice-type colours.
+5. **Colour means a cause or an owner, never decoration** (section E). An outline that does not mean something is neutral. There are no lane colours. (Slice-type colours: superseded by designer ruling DR-4; each slice type has its own colour and texture.)
 
 ---
 
@@ -56,7 +70,7 @@ The tower, its slices, the player's HP, the guns, Brace, soak, the cards, SEND I
 - **Not on the board's information.** Drips, tape, doodles and spray overspray never cross a ring cell, a landing arc or a threat mark (GDD 9.2: zine never covers the wheels). Decoration lives on the tower (r 0-162), on the cards and on the stickers.
 - **Halftone belongs to X EFFECTS.** G3 may use dots only inside the hub art and the card art band, at 12 percent coverage or less. If G3 wins, X switches to its fallback signature (light leaks and speed lines, no dots).
 - **No glow.** Paint does not glow. P never blooms (the X family owns light).
-- **R51 review: value cap.** The brightest large P fill on the tower is L* 75 or less (paper discs multiplied to 70-72 percent value; cards at 88 percent). Peak value order: SEND IT, HOT T marks, the lifted card, tower slices, the rest of the hand, E cells.
+- **R51 review: value cap.** The brightest large P fill on the tower is L* 75 or less (paper discs multiplied to 70-72 percent value; cards at 88 percent). Peak value order: SEND IT, HOT T marks, the lifted card, tower slices, the rest of the hand, E cells. **2026-11-03 (art-pass, review response):** the K clock (tape, sweep, plates) sits below the tower at L* 45-55 gunmetal, with SCHEDULE orange on the live step only. Slice inks are L* 60-72, and the icon discs carry the tower's peak. Occupied E cells are at L* 40-45 vs empty cells at 28 (3:1 floor). Token discs never outrank HOT marks.
 - **R51 review: icons are re-inked, not re-designed.** One turret stays one turret, Brace stays the clamp, Twist stays the ring arrow.
 - **R51 review: shading on P** is single-direction hatch only; cross-hatch stays L7 (loss at END TURN).
 
