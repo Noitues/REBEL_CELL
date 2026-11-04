@@ -2826,3 +2826,54 @@ Designer notes, in order:
 - **Steps 1-9 result** (`combat_redesign/locked/`: final/, effects/, hover/, backdrop/, transitions/, port/, GODOT_PORT_SPEC.md, MAILBOX_DRAFT.md, ART_BIBLE_COMBAT_DRAFT.md, review_final.jpg, REVIEW_FINAL.md). Art director: step 1 partial (tower loud share 57.9 % / 57.5 % on p2/p3 is a designer call), steps 2-7 done with caveats, steps 8-9 drafts waiting for sign-off. WAVE went to orange #FF8A1F (bone was 1.04:1 on the card paper); Spin 3 band moved to yellow as a knock-on. All 28 effects plus 4 variants rebuilt with timings, reduce-motion versions and a flash meter (max 2 per second). The board, effects and hover plates read as one system; the seams are two room grades, pink vs yellow movement arrows, and the effect layer above vs under the HUD.
   - O-30, follow-up fix pass taken (art-pass, not designer-blocked): hover pencil rings clear of HUD labels (HUD labels become an occluder class); the new room grade carried into final/, hover/, effect bases and T5/T6 end frames; the beaded rows by the Worms redrawn as non-dotted marks with a pixel dot-run audit; full resolve beat flash-measured and reduce-motion block flashes fixed; slot-0 lift clear of r455 by 4 px; HOLD THEN shifted off digit 3; hover generator merged back into corp/src.
 - **O-30 result:** hover rings no longer cut HUD labels (LANDS and THROUGH take pencil brackets "( 9 )" where no ring fits; 0 px on 26 plates); the new room grade is the generator default and is carried through final/, hover/, every effect sheet and strip, and T5/T6; the FAR beads (meaningless count) are one solid tapered stroke, with a pixel dot-run audit (0 runs on all final plates; 1 skin-texture run left on h04 Meridian); slot-0 lift clear of r459; HOLD THEN shifted 8 px; hover merged into corp/src. Full p3 resolve beat (13.0 s) flash-measured: max 3 per second full motion, 2 reduce; shield/brace reduce motion now 1. Left: the resolve-beat GIF is on the pre-grade board; GODOT_PORT_SPEC Appendix A still has the old shield/brace and refund numbers; the lifted Brace on h02 covers more of Spin 3's rules line; p2/p3 tower loudness (designer).
+
+## Independent AD review of the overnight combat work (2026-11-03, forwarded on the designer's instruction)
+Report: `D:/Godot/rebel_cell/docs/reviews/ad_review_overnight_2026-11-02/AD_REVIEW.md` (captures A01-A11; uncommitted on main). Verdict: **NOT READY TO PORT.** Do not post A-116, and do not fold ART_BIBLE_COMBAT_DRAFT.md. Luminance was measured on the committed PNGs (sRGB to L*).
+- **S1 (blocks the port):**
+  1. Occupied and empty enemy cells share L* 30, so units read as glyph discs only.
+  2. The value order is inverted: the THIS TURN sweep reaches L* 93 and the token discs L* 100, above the tower and the HOT marks.
+  3. The Solace skin washes the rings in its corp hue, which breaks ART_BIBLE 2.4 LOCKED ("Solace never appears on a link or ring"; corp hue never takes a UI role). O-27 as applied conflicts with a locked rule, and the bible draft did not raise it. Art-pass verified the rule (ART_BIBLE.md lines 154 and 162).
+  4. COLD chevrons are lost on the Meridian brown rings.
+  5. The bill uses 11 px labels and pip tallies, below the 16 px floor.
+  6. Effects sit above the HUD and the hand.
+  7. T5/T6 still carry CONCEPT frames, and T5 K1 is black for 0.38 s.
+  8. Enemy kill marks use the player's GAIN green.
+- **S2 (before sign-off):**
+  - 11 printmaking techniques on one deck.
+  - Colour collisions: TOWER cobalt vs SOAK/SHIELD, WAVE orange vs SCHEDULE, Spin 3 yellow vs BOSS_GOLD.
+  - Played slots are cages, not torn-paper outlines.
+  - h03 duplicates the HUD.
+  - Pencil marks are 3 px vector, not 7 px wax.
+  - Hover pushes cards under SEND IT; card bottoms are clipped.
+  - The room grade at L* 21 removes the room, and ART_BIBLE 3.14 LOCKED wants a perspective close-up, not iso.
+  - The clock family has three materials and no gunmetal.
+  - Effect loudness is inverted.
+  - The resolve beat runs 12.7 s.
+  - FAR trim is unkeyed.
+  - The Adjuster wedge carries hatch and beads.
+  - Wave tickets are unreadable.
+  - Tower slices sit at L* 95-96 against the VISUAL_PLAN A.1 cap of L* 75.
+- **Why the self-checks passed:** they measured collisions, asserts and flashes, but never contrast between states, family value order, text size against the floor, or token-vs-token dE. Four checks are to be added to corp/src before the next render:
+  - occupied-vs-empty contrast of at least 3:1;
+  - p95 L* per family against the A.1 order;
+  - cap height of at least 16 px per label;
+  - Lab dE of at least 15 across the full token table.
+- **Recommended order:**
+  1. Rebuild the enemy family, then grade the tower down to meet it (slice inks L* 60-72).
+  2. Gunmetal clock.
+  3. Bill at spec size.
+  4. One printmaking technique for the deck (linocut), with a bone type plate and keyline.
+  5. Corp skins material-only on the rings.
+  6. Effects under the HUD and a beat under 4 s.
+  7. T5/T6 from the generator.
+  8. Room as a perspective close-up, or a designer amendment to 3.14.
+  9. Only then hover, the port spec and the bible fold.
+- **Its views on the overnight decisions:**
+  - Reject the tower loudness and both card colours.
+  - Material-only rings.
+  - Effects under the HUD; shorten effects rather than allow per-effect overrides.
+  - Yellow hover / pink resolve is right; write it into VISUAL_PLAN E.
+  - Shove bump and Twist are rules questions.
+  - No D4 scope change.
+  - No sign-off.
+- **Art-pass status:** the drafts (GODOT_PORT_SPEC, MAILBOX_DRAFT A-116, ART_BIBLE_COMBAT_DRAFT) are on hold. The rebuild waits for the designer's go-ahead, because it overturns several designer-facing calls (O-27, the card type colours, ART CALL 53 cards).
