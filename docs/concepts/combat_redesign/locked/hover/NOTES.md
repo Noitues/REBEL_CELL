@@ -1,17 +1,294 @@
 # Hover plates on the rebuilt board
 
-**Status 2026-11-04: re-rendered from scratch on the rebuilt board** (`../final/`, "2026-11-03 rebuild" and gate 1). Every hover plate, the key, the contact sheet and `checks.json` are new.
+**Status 2026-11-04, round 2: the set is re-rendered on the round-2 board** (`../final/`, the art-pass calls under "Round 2" in `../REVIEW_RESPONSE.md`). The 26 plates, `h00_key.png`, `contact_sheet.jpg` and `checks.json` are new, and they replace the round-1 files in this folder.
 
-- **Done on all 26 plates:** review items 2.4, 2.5, 3.8, 3.9 and 3.13 (`../REVIEW_RESPONSE.md`), and the FOCUS fix.
-- **2.6 is done on 22 of 26 plates.** It is **not done on the four Brace plates (h02)**.
-- **Check a fails on the two Trigger plates (h03)**, on one cell where the board render fails the board's own check.
-- **20 of 26 plates pass every check.** The six that fail are those two items, explained under "Not done" below.
+- **18 of 26 plates pass every check.**
+- **Not done:**
+  - C6 on the four Brace plates (h02);
+  - check d (drawn colour) on h03 x2, because of the board's gun tracer;
+  - check d on h11 x2, because of the board's own unit-hover dim on HOT.
 
-The section "2026-11-03 rebuild" below is the current state. "Earlier passes" at the end describes the old set on the old board and is kept as history only.
+  All three are explained under "Not done" in the round-2 section.
+- **Every number below is measured on the published PNG** (CIE L* via `rb_tokens.lstar`; dE76), with three exceptions:
+  - the C6 slot-0 lift scans, measured on the scan's own renders of the same hand and HUD;
+  - the 22-23 px estimate drawn from those scans;
+  - the round-1 comparison figures, quoted from round 1.
+
+  No number is taken from a code constant.
+
+"2026-11-04 round 2" below is the current state. "2026-11-03 rebuild (history: round 1)" and "Earlier passes" are kept as history only.
 
 Start with `contact_sheet.jpg` (all 11 plates plus the key) and `h00_key.png` (the grammar).
 
-## 2026-11-03 rebuild
+## 2026-11-04 round 2
+
+### What was rendered
+
+- **All 26 plates:**
+  - h01-h11, each also without words;
+  - h02 and h04 on Solace and Meridian;
+  - plus `h00_key.png`, `contact_sheet.jpg` and `checks.json`.
+- **On the round-2 board.** The board, HUD, hand, cells, pencil, FOCUS and lift all come from `locked/corp/src`, which is imported read only. The hover generator is `D:/rc_scratch/combat_redesign/locked/round2/hover/src/`, and every change it makes is an in-process patch.
+- **Same E10 state.** Every plan comes from the sim, with the card played. No game number, word or rule changed.
+- **Draw asserts pass on every board frame:**
+  - 64/64: h01;
+  - 63/63: h02, h04, h09, h10;
+  - 62/62: h05-h08;
+  - 56/56: h03;
+  - 24/24: h11.
+- **Draw asserts pass on every inset:** SPIN 2 63/63, NUDGE 63/63, SHOVE 63/63.
+- **Inset sizes:**
+  - h01: SPIN 2 and NUDGE at scale 0.35 (150 px); 0.38 (163 px) on the nowords plate;
+  - h06: SHOVE at 1.0.
+- **Viewed at 1x and in crops.** I looked at every published plate, the key and the contact sheet, with hand, HUD and RAM crops of the lifted plates. The published PNGs are byte-identical to the generator's `out/`.
+
+### Art-pass calls
+
+**C1: one pencil (DONE on all 26).**
+- On the plates:
+  - Every L6 mark is drawn by the board's drawer, `rb_pencil.wax_stroke`: 7 px wax, a 3 px ink edge on each side, and wax grain.
+  - Long marks keep the full width: the h04 landing outlines, the h06 / h07 ghost outlines, the HUD rings and the YOU underline.
+- Measured (check f, `rb_checks_r2.check_pencil`, medial axis on the PNG):
+  - **Board L6, 18 plates (gated):**
+    - wax 6.0-6.5 px. The wax-to-ink blend pixels count as ink, as they do on the board's own 6.0-6.1.
+    - whole stroke 12.66-13.0 px;
+    - ink 3.25-3.5 px a side;
+    - grain L* std 3.82-4.65.
+  - **HUD L6, 10 plates (wax and grain gated):**
+    - wax 6.0-7.0 px;
+    - whole stroke 13.0-14.0 px;
+    - grain L* std 4.19-4.82.
+  - **HUD L6 ink (reported, not gated):** 3.0-4.0 px a side. On the dark HUD panel, the anti-aliased (AA) pixel at the wax-to-ink edge lands as one whole pixel on both sides. h01 nowords reads 4.0 and h10 nowords 3.75, both over the board's 3.6.
+- The coverage width check (check `pencil`) and the grain / no-glow check (`grain`) pass on 26/26.
+
+**C2: one FOCUS drawer (DONE on all 26).**
+- On the plates: every FOCUS corner is drawn by the board's drawer, `rb_focus.draw`. Ring-tag FOCUS uses `rb_focus.rect` with 12 px legs (round 1 used 10).
+- Measured, FOCUS itself:
+  - core median #D4FF00, dE 0.0;
+  - 0 px of the old #96FE46;
+  - every call is 4 separate corners, bbox 15-21 px.
+- Measured, drawn colours (check d, the modal pigment of each class against its token):
+
+  | Class | dE | Plates | Hexes |
+  |---|---|---|---|
+  | FOCUS | 0.0 | all | |
+  | Pencil wax | 0.0-0.9 | all | #FDE000-#FFE200, against PLAN #FFE200 |
+  | Adjuster track | 0.0 | all | #D69A1A |
+  | HOT fill | 0.0-2.3 | all but h11 | #FE6452-#FF6955 |
+  | Gun tracers | under 3 | all but h03 | #FF3DA8-#FF3EA9 |
+
+- Distance from the corp inks: at least 25.4 on Meridian, and 22.7 (h02) and 50.9 (h04) on Solace.
+- Solace rim: dE 83.3-88.0 from GAIN and 75.4-80.2 from the hub HP-ring green.
+
+**C3 / C4: brightness order (check b2; DONE on all 26).**
+- **Unclassed:** 0 unclassed bright pixels inside r 480 on every plate.
+- **HOT reference:** the HOT p95 is 92.2-96.0.
+- **Class margins under the HOT p95:** every board and hover class has its p99 at least 1 under the HOT p95. The minimum margins over the 26 plates are:
+
+  | Class | Min margin |
+  |---|---|
+  | Cell outlines | 10.2 |
+  | Structure | 10.7 |
+  | Arc marks | 5.8 |
+  | Arc frames | 9.0 |
+  | Arc outcome marks | 5.0 |
+  | Schedule lines | 56.5 |
+  | Dying hatch | 7.2 |
+  | Consumed ghost | 7.7 |
+  | Skin cell detail | 23.2 |
+
+- **Pencil:** p99 89.7.
+- **C4, per disc:** every token disc has its p95 under the HOT p95, by 9.6-61.1.
+- **Tower:** the tower reference applies only on h01 x2 (p95 89.5), because the tower is lit only there.
+- **FOCUS against HOT (reported):** FOCUS p99 is 94.1, against a HOT p95 of 92.2-96.0, a margin of -1.9 to +1.3. This is the open designer call (VISUAL_PLAN A.2), not gated.
+
+**C6: hand lift (DONE on 22 plates; NOT DONE on h02 x4).**
+- On the plates: `rb_lift.layout`.
+  - Straight-up lift at hand scale (zoom 1.00).
+  - The fan keeps its slots, and the cards right of the lifted card open 36 px. The fan never closes.
+  - UNDO and SEND IT sit 16 px right, the top of the 12-16 px the call allows.
+  - Slots 1-3 lift to centre y 718.
+- Measured on the 22 plates:
+  - 0 px covered on every sibling's cost hex, **title band**, rules line and xN plate;
+  - 0 px within 2 px of SEND IT / UNDO;
+  - hand min r 456.9;
+  - lifted card min r 568.3 (h01, h05-h09), 736.0 (h03) and 903.8 (h04);
+  - 0 lifted px within 3 px of a landing mark;
+  - lowest hand pixel at y 1064-1067.
+- The round-1 risk "the lift covers the end of BRACE" is gone: title 0 px.
+- h02: see "Not done" 1.
+
+**C7: the dying cell under the tracer (DONE).**
+- The board lifts the dying glass (`rb4_patch` C7). The hover keeps that cell lit at board value.
+- Check a measures the whole glass, hatch included and guns cut, and gates the cell like a live unit.
+- Measured:
+  - h03 x2: dying Packet ring NOW sector 3 at 3.98:1 and sector 4 at 4.19:1 (round 1: 2.62:1);
+  - the other dying cells (h05, h06, h08, h09): 4.19-4.52:1.
+- Check a passes on 26/26. The lowest gated ratio per plate is 3.10-4.29. The same-state board image passes on all 26, h03 included.
+
+**C8: one HUD height (DONE on all 26).**
+- On the plates: the hover HUD is the board's `hud_rows` grid. h04's option rows are drawn into the slots the board HUD reserves, and the hover adds no ring room of its own.
+- Measured:
+  - bill 76-427 (351 px) on every plate;
+  - the row record equals the board's (references p1_decide, p1_decide_meridian, p1_decide_solace and p2_preview);
+  - HUD bottom 569, or 607 on h03 with its REFUND tab, the same as p2_preview;
+  - the HUD plate-edge rows of the board image under each plate equal the published board plate on all 26.
+- The round-1 risk "the hover HUD is 45 px taller" is gone.
+
+**C11: the HOT core (reported, not gated on hover).**
+- **Where the ring-NOW cell is lit** (h01, h05, h06, h08):
+  - core 3.0 px wide;
+  - core against the cell 4.95-4.96:1;
+  - fill against the cell 1.94-1.95:1.
+- **Elsewhere the hover dims the NOW cell**, so there is no lit cell to measure against.
+  - Core width 3.0-4.0 px on h02-h04.
+  - 2.5 px on h09 and h10, which have dimmed chevrons.
+  - No core found on h07 and h11.
+
+**C17: on Twist hovers, the PLAN halo only on the legal rings (DONE on h04 x4).**
+- On the plates: a unit whose landing the Twist changes gets the pencil outline on its own cell, on the twisted ring, 2.5 px off the cell. Round 1 edged its landing arcs on the frame band, with 8,921 PLAN px there.
+- Measured on h04 x4:
+
+  | Region | Pencil px |
+  |---|---|
+  | Ring NOW | 1,893 |
+  | Ring +1 | 19,270 |
+  | Ring +2 | 12,362 |
+  | Bezel, r 385-480 | 0 |
+  | Frame band, r 480-500 | 0 |
+  | Outside r 500 | 0 |
+
+  PLAN-coloured px (dE76 < 30) at r 480-500: 0.
+
+### Found and fixed in this pass
+
+- **Check h failed on the YOU strip.** The lit mask stopped short of the strip's edge, so the edge was dimmed and the bill edge rows did not match the board's.
+  - Fix: `hv_plates.lit_you`. When the bill is lit, the YOU strip mask, dilated 2 px, is lit too.
+- **The REFUND tab was under the lifted Trigger (h03).**
+  - Cause: h03 refunds coin 4. Centred under it, the tab ran to x 1300, and the lifted card covered 899 px of it ("REFUN").
+  - Fix: `hv_core._install_refund_tab`. The tab slides left until its right edge is 4 px off the lifted card, with its hanging line still at least 8 px inside it.
+  - h03 now: tab at [1171, 575, 1267, 607], shift -33.22 px, gap 4 px, 0 px of any card in it. A new check, k, measures this.
+  - On the board's p2 this rule moves nothing.
+- **A stale REFUND tab box.** h03's tab leaked into the next plates rendered in the same worker (h05, h08), because `obj2.R` was not cleared. `hv_comp.reset_all` now clears it.
+- **A dot run on h04 at (355-369, 219-243).** The C17 outline's outer AA edge made a fifth spot along a keyline's AA steps.
+  - Fix: the outline sits 2.5 px off the cell (`C17_OUT`). The run count is now 0.
+- **The key.** The PENCIL text is shortened. The RAM crop stops 2 px short of the lifted card.
+
+### Check adaptations on the hover side (for the reviewer to judge)
+
+The `rb_checks_r2` rules were written for board plates. On a hover plate the board is dimmed and the hover marks sit on top, so `hv_checks.py` runs the rules with these changes. Each cut or reference is reported in `checks.json`.
+
+1. **b2, HOT reference.** The reference is the loudest lit HOT class that has a core.
+   - On h03 that is arcT0, p95 93.3. Pooling all HOT gives 79.6, because the pool mixes in the dimmed chevrons.
+2. **b2, tower reference.** It applies only when at least 50 % of the tower is lit. Otherwise h06's 294 lit tower px became a reference.
+3. **b2, board classes.** These are cut to the pixels that equal the same-state board image within 8. Pixels the hover changes become their own class, `hover_changed`.
+4. **b2, ghost class.** It is cut by FOCUS and the pencil.
+5. **d2, board classes.** They are measured on lit pixels that are unchanged from the board image and off the hover marks (dilated 1 px).
+6. **d2, HOT fill.** It is also cut where a board mark is drawn over it: the dying hatch, and the later waves' arcs and chevrons. The cut counts are reported as `hot_fill_cut_under_board_marks_px`.
+7. **f, HUD pencil.** It is measured on its own, as described under C1.
+8. **dashes, board-made runs.** A dot run whose spots all appear within 1 px on the same-state board image is counted as board-made: reported, not gated.
+   - h06 x2 has one such run, at (373-388, 267-293).
+   - Hover-made runs: 0 on all 26.
+
+### Checks (`checks.json`)
+
+| Check | Result |
+|---|---|
+| asserts | 26/26 (see above) |
+| a, cell contrast (with C7) | 26/26. Lowest gated ratio 3.10-4.29. Same-state board image passes on 26/26 |
+| b, value | 26/26. Dim 0.391-0.393, lit 1.00. Lifted card p95 90.4-91.1 over resting 71.3-72.0 |
+| b2, brightness (C3 / C4) | 26/26 (see above) |
+| c, cap height | 26/26. Smallest 16.1 px, key included |
+| d, palette pairs | 26/26 |
+| d2, drawn colour (C2) | 22/26. h03 x2 and h11 x2 fail (see Not done) |
+| e, hand (C6) | 22/26. h02 x4 fail |
+| f, pencil (C1) | 26/26 |
+| h, HUD rows (C8) | 26/26 |
+| k, REFUND tab | 26/26 (present on h03 x2) |
+| c17, frame band | 26/26 (gated on h04 x4) |
+| pencil, grain, rings, hp_strip, ram, insets, options, slices, focus, collide, nowords | 26/26 each |
+| dashes | 26/26. Hover-made runs 0; h06 x2 one board-made run (reported) |
+
+### Not done, and risks
+
+1. **C6 on the four Brace plates (h02, nowords, Solace, Meridian): NOT DONE. Option (a) does not fit within the call's 12-16 px.**
+   - **The scan.** `lift_scan_hover.py` was run with the buttons 16 px right (`round2/hover/logs/scan_s0_b16.log`, `scan_s0_b16b.log`).
+     - A straight-up lift from slot 0 stays outside r459 only at centre y 906 or lower, which is an 8 px rise.
+     - To clear Spin 3's cost hex and title band, the cards to its right must open at least 43 px. At open 36 that rule fails.
+     - Opening that far reaches the buttons: open 36 is 0 px within 2 px of UNDO / SEND IT, open 38 is 25 px, and open 43 is 568 px.
+     - At y 906 the lifted Brace also comes within 3 px of the lane-470 landing diamonds (257 px). Moving the buttons does not change that.
+   - **The plates show** open 36 at y 906: Spin 3's cost hex is 166 px covered and its title 208 px, and check e fails.
+   - **Options (designer or board call):**
+     - (i) A board change. Move the fan's slot 0 right, away from the wheel, so the lift can rise and clear the lane-470 diamonds. Move the button column further right than the 16 px the call allows. For the opening alone the scans put the column at about 22-23 px; that is an estimate and was not rendered.
+     - (ii) Let a slot-0 lift move right as it rises. That is against "straight up".
+     - (iii) Record that a slot-0 hover does not lift.
+2. **h03 x2 fail check d on the board's gun tracer.**
+   - The tracer's modal pigment is #FF40B0, dE 3.8 from CELL_PINK #FF3DA8, against a limit of 3. It covers 1,725 px.
+   - The modal is fragile: its top bin is 11 px. The median is #F941A6, dE 2.9.
+   - The board image under the plate has the same pixels.
+   - This is a board-draw or check item, not hover code: the tracer draw in the board, or modal robustness in `rb_checks_r2.check_drawn`.
+3. **h11 x2 fail check d on the HOT fill.**
+   - The HOT fill reads #662C27, dE 54.7 from HARM_UP, over 770 px.
+   - These are HOT marks that the board's own unit-hover state (the p2b form) draws dimmed, inside the area the hover lights: the landing slices.
+   - Either the hover's lit mask should leave out what the unit hover dims, or the unit hover should light them. This is a designer or board call, and I did not change it.
+4. **FOCUS against HOT** is an open call (C3 above, VISUAL_PLAN A.2).
+5. **The buttons move when a hover starts (risk).**
+   - The hover runs `rb_lift` with BTN_DX 16 and OPEN_PX 36, in-process.
+   - The board plates were rendered with 12 and 30.
+   - Until `corp/src` takes the same numbers and the board is re-rendered, UNDO and SEND IT jump 4 px right when a hover starts.
+6. **h08 Hold puts pencil on the frame band.** Its PLAN arrow runs outside the rim from THIS TURN to NEXT: 13,029 pencil px at r 480-500, 6,261 of them PLAN-coloured. C17 covers Twist hovers only, so this is reported, not gated.
+7. **C11 is reported only** (above). On h09 and h10 the HOT core reads 2.5 px under the hover dim.
+8. **HUD pencil ink** reads 3.75-4.0 px a side on two nowords plates (reported, C1 above).
+
+### corp/src changes this needs (not made: corp/src was not edited)
+
+- **`rb_lift.py`:**
+  - `LIFT_CY = {2: 718}` becomes `LIFT_CY = {1: 718, 2: 718, 3: 718}`;
+  - `OPEN_PX = 30` becomes `OPEN_PX = 36`;
+  - `BTN_DX = 12` becomes `BTN_DX = 16`.
+
+  Then re-render the board plates and re-run their checks. At open 36 with the buttons at +16, the board's p2 lift (slot 2) has its window at y 714-723, and 718 sits inside it.
+- **`rb2_patch.py`, `_refund()` / `resources_row`:** add the tab clearance from `hv_core._install_refund_tab`:
+  - when the lifted card's top is above the tab bottom + 4 and its left edge is under the tab's right edge + 4, slide the tab left by `x1 - (lift_left - 4)`;
+  - do so only while the hanging line at the coin centre stays at least 8 px inside both tab ends;
+  - this needs `REFUND_TAB_CLEAR = 4` and `REFUND_TAB_HANG_IN = 8`.
+
+  On p2 it moves nothing.
+- **Optional:**
+  - clear `obj2.R` at the start of each board render;
+  - a modal-bin floor in `rb_checks_r2.check_drawn`, so that a class whose top bin holds about 0.6 % of its pixels falls back to the median.
+
+### How to render
+
+From `D:/rc_scratch/combat_redesign/locked/round2/hover/src/`. It imports `locked/corp/src` read only.
+
+```
+python hv_set.py -j 4          # all 26 plates -> ../out/<name>.png, ../chk/<name>.json + .npz (board cache in ../work; HV_NOCACHE=1 skips it)
+python hv_checks.py [name...]  # -> ../chk/<name>.checks.json
+python hv_key.py               # h00_key.png
+python hv_publish.py           # copies to locked/hover/, contact_sheet.jpg, checks.json
+python hv_ranges_r2.py         # prints the round-2 numbers quoted here
+python lift_scan_hover.py p1 <slot> [open ...]   # C6 lift windows (BTN_DX=<px> to test a button column)
+```
+
+The one-off probes are in `round2/hover/probe/`.
+
+### Process
+
+- **Three breaches of the no-inline-Python rule.** All were no-ops: none ran code or read or wrote anything.
+  - one empty heredoc into `python -` (stopped);
+  - two `python -c ""`, one of them inside a grep command.
+
+  Every real step ran from a script file under `round2/hover/`.
+- **Nothing else outside the rules:**
+  - no Godot or Blender;
+  - no commit or stash;
+  - nothing written under D:/Godot/rebel_cell;
+  - nothing posted to the mailbox;
+  - `locked/corp/src` not edited.
+- **Designer rulings DR-1 to DR-10 are kept.**
+
+## 2026-11-03 rebuild (history: round 1)
 
 ### What was rendered
 

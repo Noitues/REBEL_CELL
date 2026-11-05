@@ -1,5 +1,7 @@
 # Backdrop and loudness re-tune (roadmap step 6)
 
+> **2026-11-04 round 2:** the 9 plates, `checks.json`, `grade.json` and `before_after.jpg` are now composited on the **round-2 board** with the unchanged rb2-1 grade. See "2026-11-04 round 2" at the end. The sections before it are history.
+>
 > **2026-11-03 rebuild stage 2:** the plates, `grade.json`, `checks.json` and `before_after.jpg` in this folder are now the **rb2-1** set (AD review 2.8: the step-6 grade "switched the room off"). Meridian moved to the shop room: `p1_shop_meridian.png` replaces `p1_bio_meridian.png`. See "2026-11-03 stage 2: grade rb2-1" at the end. The step-6 text below is history.
 
 This step re-grades the 7 v3.1 cutaway rooms behind the final locked p1 board (`../final/`). The board reads first, and each room still reads as its Solace location. Nothing on the board was changed: the board pixels are the final fix-pass render. Only the room grade under the board scrim is new. Every game number, word and rule on the plate is unchanged.
@@ -240,3 +242,151 @@ The grade is unchanged (rb2-1, `grade.json`). All 9 plates were re-composited on
 - **Room** (gate region, scrim cut): mean L* 31.8-32.5 and p95 38.1 on every plate. The reference is the ring-NOW occupied glass p95, 51.1-51.3.
 - **Checks:** `rb_checks` a-e pass on all 9 plates, and `checks.json` `all_pass` is true.
 - **Room as seen** (scrim kept): on p1 it is within 2 L* of the gate value (`../final/checks.json`, room-as-seen row: 29.8-30.1). The p1 scrim is small. On p2 and p3 the taller HUD's scrim brings the as-seen value to 24.7-25.6 (`../final/NOTES.md`).
+
+## 2026-11-04 round 2: re-published on the round-2 board
+
+This pass is the backdrop part of build order step 4 in `D:/Godot/rebel_cell/docs/reviews/ad_review_overnight_2026-11-02/R1_REREVIEW.md`. All 9 plates were re-composited on the round-2 p1 board (`../final/NOTES.md`, "2026-11-04 round 2").
+
+- **The grade did not change.** It is still rb2-1: `corp/src/bd_grade.py`, `GRADE_VERSION` rb2-1, and the same `ROOMS` table. `r2_publish.py` asserts that the table equals the one in the round-1 `grade.json`.
+- **Rooms per skin did not change.** Neutral and Solace use the bio lab. Meridian keeps its non-Solace room, the shop under the amber corp light.
+- No game number, word or rule changed, and DR-1 to DR-10 are untouched.
+
+Every number below is CIE L* (dE76 for colour), measured on the published PNGs in this folder. `r2_verify.py` re-measured the published files and matched `checks.json` on every plate.
+
+### What changed on the plates
+
+The board layer is the round-2 board: `rb4_patch`, with C3, C4, C5, C8, C11, C16 and C18 as they stand on p1.
+
+The visible change behind the board comes from C8. The board HUD now always reserves the option rows, so the HUD plate ends at y 568 on p1. The HUD column's UI scrim slab now darkens the room by 15 % or more down to y 591. These rows were measured from the round-2 p1 capture and are in `checks.json` `ui_scrim_rows`.
+
+So less of the lit upper room shows on p1. Compared with round 1:
+- the room as seen drops by 0.9-1.2 L*
+- the gate value, with the scrim cut, drops by 0.1-0.3
+
+### How the plates are made
+
+The composite is the same as in round 1, `plate = F + T * backdrop`. The transfer was re-extracted from the round-2 board for neutral, Solace and Meridian, in fresh render caches.
+
+- **One render path.** A plain `lw_render` p1 is not the published p1. The published plates come from `asm_render.py` with its capture hooks on (`rb_set`). The first round-2 transfer used the plain path, and its composite differed from `../final/p1_decide.png` by up to 47/255 (7179 px over 2/255):
+  - The difference sat only at r 430-460, on the landing-arc frames: the ring +1 lane line at r ≈ 451 and the rims of the discs that sit on it.
+  - The plain and hook transfers differ there by 7180 / 8370 / 8387 px over 2/255, max 47 / 48 / 47 (neutral / Solace / Meridian). The numbers are in `round2/backdrop/work/paths_diff.json`.
+  - `r2_fg_extract.py` now installs the same hooks as `asm_render` before it renders, and it writes nothing to `corp/`.
+- **Composite vs the real round-2 render** (`../final/`):
+
+  | Plate | Real render | Mean abs error | Max error | Pixels over 2/255 |
+  |---|---|---|---|---|
+  | `p1_bio` | `p1_decide.png` | 0.070/255 | 2/255 | 0 |
+  | `p1_bio_solace` | `p1_decide_solace.png` | 0.063/255 | 2/255 | 0 |
+  | `p1_shop_meridian` | `p1_decide_meridian.png` | 0.065/255 | 2/255 | 0 |
+
+  The backdrop is now cast to uint8 the way `r2_ground.backdrop` casts it. Before that cast, the mean error was 0.17 and the room read 0.2 L* high.
+- **C14.** `round2/backdrop/c14_assert.py` is a copy of the board stage's assert. It ran in this stage before the publish and passed: p3 Solace, then p1_clean, then p3 Solace in one process, with 0 px differing and the registry intact. `r2_publish.py` refuses to publish without it.
+- **Provenance.** `corp/src` had not changed since the three transfers were rendered: `checks.json` `provenance` holds the sha1 of every module.
+
+### Checks (`checks.json`, `all_pass` true)
+
+Every plate was written to `round2/backdrop/out/` and checked there, then copied here. The copies are byte-identical (`filecmp`). No plate was held.
+
+Gates per plate:
+- C9: room mean L* 28-34, scrim cut.
+- C9 (backdrop brief): room as seen L* 28-34. Every backdrop plate is a p1 plate.
+- The room p95 + 1 is at or under the ring-NOW occupied glass p95.
+- Pink share under 0.1 %.
+- `rb_checks` a to i, the round-2 set, on the p1 capture of the plate's skin.
+- Composite vs real render, where a real render exists.
+
+| Plate | Room, round 1 | Room, round 2 (mean / p95) | As seen, round 1 | As seen, round 2 | Box part | Street part | Ring-NOW glass p95 | Detail rel | Sat | Pink | a-i |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| bio | 32.0 / 38.1 | 31.9 / 37.8 | 29.8 | 28.9 | 32.3 | 28.7 | 51.0 | 0.110 | 0.304 | 0.000 % | pass |
+| srv | 32.5 / 38.1 | 32.4 / 37.9 | 30.2 | 29.3 | 32.7 | 29.8 | 51.0 | 0.106 | 0.358 | 0.000 % | pass |
+| gh | 31.9 / 38.1 | 31.7 / 37.8 | 29.8 | 28.8 | 32.1 | 29.2 | 51.0 | 0.113 | 0.288 | 0.000 % | pass |
+| rec | 32.3 / 38.1 | 32.1 / 37.8 | 30.1 | 29.1 | 32.4 | 29.7 | 51.0 | 0.122 | 0.254 | 0.005 % | pass |
+| lobby | 32.2 / 38.1 | 32.1 / 37.8 | 30.0 | 29.1 | 32.5 | 28.8 | 51.0 | 0.100 | 0.354 | 0.000 % | pass |
+| event | 31.8 / 38.2 | 31.6 / 37.9 | 29.7 | 28.7 | 31.9 | 29.1 | 51.0 | 0.116 | 0.247 | 0.004 % | pass |
+| shop | 32.3 / 38.1 | 32.0 / 38.0 | 30.1 | 28.9 | 32.3 | 29.4 | 51.0 | 0.109 | 0.286 | 0.000 % | pass |
+| bio, Solace | 32.0 / 38.1 | 31.9 / 37.8 | 29.8 | 28.9 | 32.3 | 28.7 | 51.0 | 0.110 | 0.304 | 0.000 % | pass |
+| shop, Meridian | 32.2 / 38.1 | 31.9 / 38.0 | 30.1 | 28.9 | 32.2 | 29.3 | 50.8 | 0.109 | 0.329 | 0.042 % | pass |
+
+The round-1 columns come from the round-1 `checks.json`, which was measured on the round-1 plates with the gate-1 masks.
+
+- **C9.**
+  - Room (gate region, scrim cut): mean 31.60-32.38 and p95 37.8-38.0 on every plate.
+  - Room as seen: 28.65-29.30 on every plate. The event room is lowest, 0.65 over the floor.
+  - On the 15 real final plates the as-seen value is reported, not gated: 22.9-28.9 (`../final/checks.json`).
+- **Board first (rb_checks b, p95).**
+  - Neutral: SEND IT 98.2 > HOT 94.9 > tower 89.5 > hand 83.1 > token discs 82.6 > K clock 69.5 (median 47.8) > E occupied 45.5 > room 37.8-38.0 > E empty 21.0.
+  - Solace: E occupied 46.8, E empty 21.6.
+  - Meridian: E occupied 45.2, E empty 19.7.
+  - The room p95 sits 12.8-13.2 under the ring-NOW occupied glass p95 (50.8-51.0). The gate asks for 1.
+- **Board marks, the same as the final p1 plates:**
+  - C3: unclassed bright px 0.
+  - C4: token discs p95 82.6-84.4 and p99 85.8-91.0, per disc.
+  - C11: HOT core 3.0 px; core vs cell 4.93-4.99:1.
+  - Check a: lowest cell ratio 3.17 neutral, 3.31 Solace, 4.11 Meridian.
+  - Check d: 0 failures in 202 / 273 / 249 pairs.
+  - Smallest cap height: 16.1 px.
+  - Hand over SEND IT / UNDO: 0 px.
+  - Checks g (tickets) and h (HUD rows) pass.
+  - Check f: no pencil on p1 (`present` false), so it passes with nothing to test.
+- **C16.** On `p1_bio_solace` the rim reads median #3B827F, the teal family (check d, round 2). The room behind it is the green bio lab: the hull median is L* 31.9, C* 15.0, h 144.3, at room value (p95 37.8), under the rim's median L* 50.0 (`../final/NOTES.md`, C16).
+- **C10 squint (reported, not gated).**
+  - Room squint: mean 0.283-0.288, p95 0.308-0.322, 0 loud cells.
+  - Board: mean 0.257-0.265, p95 0.470, 14.2-14.6 % loud.
+- **The reviewer's room box** (x 1200-1800, y 450-800): mean 33.5-33.9 and p95 59.4-59.6. On the round-2 board this box includes the HUD's WIN and RAM panels (y 450-568), so it is not a room measure any more. It is reported only; the gate region is the room.
+- **Legibility.**
+  - Detail rel 0.100-0.122 (RMS 0.029-0.036), saturation 0.247-0.358, pink share 0.042 % or less.
+  - At 1:1, the props, tanks, racks and benches separate by their ink lines on every room.
+  - Each room keeps its colour: the green bio lab, the teal server room, the green-and-teal greenhouse, the lilac event hall, and the amber shop with teal floor tiles on Meridian.
+
+### Files (replaced)
+
+- **The 9 plates.**
+- **`before_after.jpg`:**
+  - one row per plate: round 1 as published | round 2 (at 1/2)
+  - the room under the HUD (x 1150-1920, y 570-1030) at 1:1, before | after
+  - the numbers and the grade parameters
+  - saved at 2/3 scale
+- **`grade.json`:** rb2-1, unchanged, plus a `round2` block:
+  - the board it was verified on
+  - the gate and as-seen room means per plate
+  - the UI scrim description and its measured rows
+- **`checks.json`:** per plate, round 1 and round 2:
+  - the room numbers, the as-seen numbers, the squint
+  - the full `rb_checks` a-i result, and composite vs real
+  - plus `ui_scrim_rows`, `c14_determinism`, `provenance`, `pass` and `all_pass`
+
+Sources (scratch): `D:/rc_scratch/combat_redesign/locked/round2/backdrop/`. Copies are in `../final/src_snapshot/backdrop/round2/`:
+- `r2_fg_extract.py <corp>`: the transfer, through the `asm_render` hooks
+- `r2_lib.py`: compose, the room region and the room numbers
+- `r2_publish.py`: stage, check and publish (`--stage` and `--only` for trials)
+- `r2_fix_grade_note.py`: rewrites the `grade.json` note from the measured scrim rows
+- `r2_verify.py`: the re-measure of the published files
+- `c14_assert.py`
+- the probes and look scripts (`probe_*.py`, `r2_crops.py`, `r2_look_pairs.py`, `r2_table.py`, `r2_sheet_crop.py`)
+
+**How to re-make.** From `D:/rc_scratch/combat_redesign/locked/round2/backdrop/` (the scripts set their own `corp/src` paths and never write there):
+
+```
+python r2_fg_extract.py neutral ; python r2_fg_extract.py solace ; python r2_fg_extract.py meridian
+python c14_assert.py solace D:/rc_scratch/combat_redesign/locked/round2/backdrop/work/c14
+python r2_publish.py
+python r2_fix_grade_note.py
+python r2_verify.py
+```
+
+### Not done, and risks (round 2)
+
+- **Two render paths in `corp/src`.** This is not fixed here, because `corp/src` is read only for this stage.
+  - The board's pixels depend on whether `asm_render`'s capture hooks are installed. The likely cause is in `gram.a2_frame`, which fills the frame polygon with `L.poly(pts, fill=(7, 9, 17, 214))`. `cv_lib.L2` draws with `ImageDraw` on RGBA, which replaces pixels, so on the plain path the translucent fill wipes the lane line already in the arc layer. With the hooks on, `rb_capture._cap2` draws the frame into its own layer and composites it, so the line shows through at 16 %.
+  - The evidence: on a radial line through the frame, the line reads sRGB 37-41 in the real render and 8-9 in the plain one. That fits a 214/255 fill composited over a line near the E line value (L* 80).
+  - Any set rendered through plain `lw_render` / `f1_render` (hover, effects, transitions, motion) will differ from the published board at the landing-arc frames, by up to 48/255.
+  - Suggested change: in `gram.a2_frame`, draw the fill into a temporary `cv_lib.L2(L.k)` and `alpha_composite` it onto `L.im`, which keeps the published look. Then check that a plain p1 render equals the `asm_render` p1, with 0 px over 2/255.
+- **Composites only.** Six of the nine plates are composites with no real render: srv, gh, rec, lobby, event and shop on neutral. The method matches the three real renders to 2/255.
+- **Small as-seen margin.** On p1 the as-seen value is 0.65-1.30 over the 28 floor. If the HUD's bottom edge or its scrim moves further down the screen, the event and gh rooms will be the first to read under 28 as seen. The gate value itself (31.6-32.4) has room to spare.
+- **Other beats.** Only p1 is a backdrop plate. On p2, p2b and p3 the as-seen value is reported, not gated, per C9: 22.9-28.3 on the final plates.
+- **Docs elsewhere were not edited:** `VISUAL_PLAN.md`, `REVIEW_RESPONSE.md`, `ART_BIBLE.md` and `../final/NOTES.md`. Their backdrop lines still hold (rb2-1 grade, gate region, rooms per skin). This section is the round-2 record for the backdrop.
+- **Process.**
+  - No Godot, no Blender, nothing committed, no stash, nothing written under D:/Godot/rebel_cell or `corp/`, and no mailbox post.
+  - Every script ran by path from `round2/backdrop/`. No `python -c` and no stdin Python.
+  - The first transfer (the plain path) was re-done once; it is kept in `round2/backdrop/work/plain_path/`.
+  - No process was killed. The only renders were my six transfer renders and the C14 assert.

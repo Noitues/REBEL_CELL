@@ -83,6 +83,10 @@ def check_cells(Y, rgb, rb, M, probeY):
     mx, mn = rgb.max(2), rgb.min(2)
     sat = (mx - mn) / np.maximum(mx, 1)
     pinkish = (sat > 0.45) & (rgb[..., 0] > 150) & (rgb[..., 2] > 90) & (rgb[..., 1] < 140)
+    for k in M:                                   # 2026-11-04 round 2: the pencil and FOCUS classes sit on the glass, they are not the glass
+        if k.startswith('pen_') or k == 'focus':
+            cut |= dil(M[k], 3)
+    cut_nopink = cut.copy()
     cut |= dil(pinkish, 2)
     rows, ok = [], True
     ring_ref = {}
@@ -115,6 +119,12 @@ def check_cells(Y, rgb, rb, M, probeY):
             if c['dep'] != dep or c['state'] not in ('live', 'dying', 'dimmed'):
                 continue
             m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=4) & ~cut & ~tray
+            if c['state'] == 'dying':
+                # 2026-11-04 round 2 (REVIEW_REBUILD: the dying rows rested on 198 / 253 px; C7): the dying glass is measured whole, its L7
+                # hatch and lifted glass included; only the marks on it (chevrons, token, badges, tags, plan), the HP tray and the gun
+                # tracers (the 'guns' capture class, not the pink-colour cut that also removed the hatch) are cut
+                cut_d = cut_nopink | dil(M.get('guns', np.zeros((1080, 1920), bool)), 2)
+                m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=2) & ~cut_d & ~tray
             if not m.any():
                 continue
             yo = float(Y[m].mean())
@@ -325,7 +335,8 @@ def check_palette(corp, cell_cols):
             for n, cn in T.NEUTRALS.items():
                 add('skin ink x neutral', corp + ' ' + k, c, n, cn)
     if corp == 'solace':
-        add('skin ink x Cell lime (2.4)', 'solace leaf', T.SKIN_INKS['solace']['leaf'], 'CELL_LIME', T.CELL_LIME)
+        for k_ in ('teal', 'teal_hi', 'porcelain'):          # 2026-11-04 round 2 (C16): Solace left leaf green for celadon / teal
+            add('skin ink x Cell lime (2.4)', 'solace ' + k_, T.SKIN_INKS['solace'][k_], 'CELL_LIME', T.CELL_LIME)
     for key, col in cell_cols.items():
         for mk, mc in (('HOT', T.HARM_UP), ('COLD', T.COLD_CHEV)):
             add('mark x skin cell', '%s mark' % mk, mc, '%s cell %s' % (corp, key), col)
@@ -360,13 +371,19 @@ def check_hand(M, rb):
     sib = []
     cards = rb.get('cards', [])
     lift = [i for i, c in enumerate(cards) if c['role'] == 'lift']
+    import rb_lift as RL
     for li in lift:
         lm = M.get('card_%d' % li)
         for j, c in enumerate(cards):
             if j == li or c['role'] != 'rest':
                 continue
-            cost, rules = card_regions(c)
-            sib.append(dict(lifted=cards[li]['name'], sibling=c['name'], cost_px=int((lm & poly_mask([cost])).sum()), rules_px=int((lm & poly_mask([rules])).sum())))
+            # 2026-11-04 round 2 (C6, review N1): the protected set is the cost hex, the title band, the rules line and (Nudge / Spin) the
+            # multiplier plate
+            pr = RL.protected(c)
+            row = dict(lifted=cards[li]['name'], sibling=c['name'])
+            for k_, poly in pr.items():
+                row[k_ + '_px'] = int((lm & poly_mask([poly])).sum())
+            sib.append(row)
     # resting cards over each other's cost hex / rules line (reported)
     rest_info = []
     for i, c in enumerate(cards):
@@ -380,8 +397,10 @@ def check_hand(M, rb):
         rest_info.append(dict(card=c['name'], cost_covered_px=int((later & poly_mask([cost])).sum()), rules_covered_px=int((later & poly_mask([rules])).sum())))
     res['lifted_vs_sibling'] = sib
     res['rest_cards_covered_info'] = rest_info
-    res['pass_'] = res['hand_x_send_px'] == 0 and res['hand_x_undo_px'] == 0 and all(s['cost_px'] == 0 and s['rules_px'] == 0 for s in sib)
-    res['rule'] = 'hand pixels under SEND IT / UNDO: 0; lifted card over a sibling card cost hex or rules line: 0 px'
+    res['lift'] = (rb.get('info') or {}).get('lift')
+    res['pass_'] = res['hand_x_send_px'] == 0 and res['hand_x_undo_px'] == 0 and all(v == 0 for s in sib for k_, v in s.items() if k_.endswith('_px'))
+    res['rule'] = ('hand pixels under SEND IT / UNDO: 0; lifted card (its alpha >= 128: card, pink print, hard drop) over a sibling card cost hex, '
+                   'title band, rules line or multiplier plate: 0 px')
     return res
 
 
@@ -403,6 +422,9 @@ def run(name, png, sfx):
         if k in M:
             cut |= M[k]
     cut = dil(cut, 3)
+    for k in M:
+        if k.startswith('pen_') or k == 'focus':
+            cut |= dil(M[k], 3)
     rho = np.hypot(xx - CC[0], yy - CC[1])
     for u in g['units']:
         cut |= np.hypot(xx - u['token'][0], yy - u['token'][1]) <= u['tok_r'] + 8
@@ -425,7 +447,25 @@ def run(name, png, sfx):
             cols['ring%d empty (probe)' % dep] = tuple(int(v) for v in np.median(prgb[m], 0))
     d = check_palette(rb.get('corp', 'neutral'), cols)
     e = check_hand(M, rb)
-    out = dict(a_cell_contrast=a, b_value_order=b, c_cap_height=c, d_palette=d, e_hand=e)
+    # 2026-11-04 round 2 (rb_checks_r2): C3 / C4 into b, C2 / C16 into d; f pencil (C1), g tickets (C5), h HUD rows (C8), i HOT core (C11)
+    import rb_checks_r2 as R2
+    tab = {r['family']: r for r in b['sorted']}
+    hot95 = tab.get('T HOT marks', {}).get('p95')
+    tow95 = tab.get('P tower', {}).get('p95')
+    bb = R2.check_bright(Y, M, hot95, tow95)
+    b['round2'] = bb
+    b['failures'] = b['failures'] + bb['failures']
+    b['pass_'] = b['pass_'] and bb['pass_']
+    dd = R2.check_drawn(rgb, M, rb.get('corp', 'neutral'), chk.get('beat'))
+    d['round2'] = dd
+    d['failures'] = d['failures'] + [dict(a=x, b='', dE=None) for x in dd['failures']]
+    d['pass_'] = d['pass_'] and dd['pass_']
+    info = rb.get('info') or {}
+    f_ = R2.check_pencil(rgb, Y, M)
+    g_ = R2.check_tickets(Y, M, info)
+    h_ = R2.check_hud_rows(rgb, info, chk.get('beat'))
+    i_ = R2.check_hot_core(rgb, Y, M, occ_now)
+    out = dict(a_cell_contrast=a, b_value_order=b, c_cap_height=c, d_palette=d, e_hand=e, f_pencil=f_, g_tickets=g_, h_hud_rows=h_, i_hot_core=i_)
     out['pass'] = {k: v['pass_'] for k, v in out.items()}
     out['plate_pass'] = all(out['pass'].values())
     return out

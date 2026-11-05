@@ -162,7 +162,9 @@ def install(R, A, FH, masks, beat):
         cur['card'] = spec.get('name') if isinstance(spec, dict) else str(spec)
         return _orb(spec, *a, **k)
     CR.render_base = rb
-    _wrap_text(CR, 'text', 'card', lambda cv, txt, x, y, px, name=CR.ANTON, *a, **k: (txt, name, px), lambda *a, **k: FH.CARD_SCALE)
+    # 2026-11-04 round 2: the lifted card sits at LIFT_S (0.94) of the hand scale, so the smallest on-screen card scale is CARD_SCALE x LIFT_S
+    _wrap_text(CR, 'text', 'card', lambda cv, txt, x, y, px, name=CR.ANTON, *a, **k: (txt, name, px),
+               lambda *a, **k: FH.CARD_SCALE * min(1.0, FH.LIFT_S))
     import xf_gfx, st_gfx
     for mod in (xf_gfx, st_gfx):
         if hasattr(mod, 'text_mask'):
@@ -298,7 +300,9 @@ def install(R, A, FH, masks, beat):
         lay, info = _ost(words, sel)
         a = np.asarray(lay.split()[3]) >= 128
         box = np.zeros_like(a)
-        box[850:900, 1655:1896] = True            # f1_render keeps only this box of the stack layer for UNDO
+        import f1_render as _F1
+        bdx = getattr(_F1, 'BTN_DX', [0])[0]       # 2026-11-04 round 2: the UNDO / SEND IT column moves right (rb_lift.BTN_DX)
+        box[850:900, 1655 + bdx:1896 + bdx] = True            # f1_render keeps only this box of the stack layer for UNDO
         MASKS['undo'] = a & box
         return lay, info
     R.AS.stack_layer = stack_layer
@@ -324,6 +328,126 @@ def install(R, A, FH, masks, beat):
         order[:] = [(nm, 'rest') for i, nm in enumerate(hand) if i != hov] + [(nm, 'played') for nm in played] + ([(hand[hov], 'lift')] if hov is not None else [])
         return _odh(base, J, beat_, nw, lift, dim_others)
     FH.draw_hand = draw_hand
+    _round2(R, A)
+
+
+def _cap2(owner, name, cls_fn, Lidx=0, min_L=None):
+    """like _layer_cap, for a drawer that is already wrapped by _layer_cap (a second, finer class on the same drawer); with min_L only the
+    drawer's pixels at or above that L* (at 1x) join the class"""
+    import cv_lib
+    orig = getattr(owner, name)
+    if getattr(orig, '_rb2c', False):
+        return
+
+    def wrap(*a, **k):
+        cls = cls_fn(*a, **k)
+        if cls is None:
+            return orig(*a, **k)
+        if DIM[0]:
+            cls = cls + '_dim'
+        L = a[Lidx]
+        T = cv_lib.L2(L.k)
+        a2 = list(a)
+        a2[Lidx] = T
+        r = orig(*a2, **k)
+        pm = getattr(T.im, '_pen_mask', None)
+        L.im.alpha_composite(T.im)
+        if pm is not None:                        # keep the BOX-reduce flags of a pencil / structure stroke drawn inside
+            import rb_pencil as PEN
+            PEN.pen_mask(L.im).paste(255, (0, 0), pm)
+        im1 = T.im.resize((1920, 1080), Image.BOX)
+        m = np.asarray(im1.split()[3]) >= 128
+        if min_L is not None:
+            m &= _lstar_img(im1) >= min_L
+        MASKS[cls] = MASKS.get(cls, np.zeros((1080, 1920), bool)) | m
+        return r
+    wrap._rb2c = True
+    setattr(owner, name, wrap)
+
+
+def _lstar_img(im):
+    import rb_tokens as T_
+    return T_.lstar(T_.lum(np.asarray(im.convert('RGB')).astype(np.float64)))
+
+
+def _img_cap(owner, name, cls, min_L=None):
+    """a drawer that returns a full-plate RGBA image (the board plate, the bezel layer): its alpha (>= 128) is the class; with min_L only its
+    pixels at or above that L* (the 1 px ring and band lines and the cube-glyph discs, not the enamel ground)"""
+    orig = getattr(owner, name)
+    if getattr(orig, '_rbi', False):
+        return
+
+    def wrap(*a, **k):
+        im = orig(*a, **k)
+        im_ = im.convert('RGBA')
+        al = np.asarray(im_.split()[3]) >= 128
+        if min_L is not None:
+            al &= _lstar_img(im_) >= min_L
+        MASKS[cls] = MASKS.get(cls, np.zeros((1080, 1920), bool)) | al[:1080, :1920]
+        return im
+    wrap._rbi = True
+    setattr(owner, name, wrap)
+
+
+def _diff_cap(owner, name, cls_fn, Lidx=0):
+    """for a drawer that reads the layer it draws on (rb4's dying-glass lift reads the cell glass under the hatch): the class is every pixel
+    the call changed"""
+    orig = getattr(owner, name)
+    if getattr(orig, '_rbd', False):
+        return
+
+    def wrap(*a, **k):
+        cls = cls_fn(*a, **k)
+        L = a[Lidx]
+        b = np.asarray(L.im).copy()
+        r = orig(*a, **k)
+        d = (np.abs(np.asarray(L.im).astype(np.int16) - b.astype(np.int16)).max(2) > 0).astype(np.uint8) * 255
+        m = np.asarray(Image.fromarray(d, 'L').resize((1920, 1080), Image.BOX)) >= 128
+        MASKS[cls] = MASKS.get(cls, np.zeros((1080, 1920), bool)) | m
+        return r
+    wrap._rbd = True
+    setattr(owner, name, wrap)
+
+
+def _round2(R, A):
+    """2026-11-04 round 2 (R1_REREVIEW C3 / C4 / C7): the board structure gets capture classes, so check b can test every board pixel inside
+    r < 480 (unclassed bright pixels fail):
+      e_line      unit cell outlines and the interior hairlines of wide cells (E structure, L3)
+      k_arcmark   the landing-arc glyph discs, turn dots, NOW dots, wear slashes and twist marks (K)
+      k_arcframe  the landing-arc frames (K structure)
+      k_struct    the plate's and the bezel's bright pixels (1 px ring and band lines, cube-glyph discs; rb4 caps them at K type)
+      k_sched     the schedule layer's bright pixels (tape-end crescent, keylines; capped at K type)
+      e_ward      the ward arc's bright pixels (capped at K type)
+      tok_u<id>   each unit's token disc (C4: the A.1 rule per disc)
+      kill_hatch  the dying unit's L7 hatch and lifted glass (C7: the dying glass is measured whole, hatch included)
+    Ground (glass, gutters, enamel, tape body) is not a class: a bright pixel in it is unclassed."""
+    import wr2_units as W2U
+    import r2_arcs as RA
+    import rb3_patch as RB3
+    import asm_units as AU
+    import rb_tokens as T_
+    _cap2(W2U, 'outline', lambda L, u, *a, **k: 'e_line')
+    _cap2(A.W2C, 'interior_hairlines', lambda L, f, *a, **k: 'e_line')
+    for nm in ('disc', 'turn_dots', 'now_dot', 'wear', 'twist_mark'):
+        if hasattr(RA, nm):
+            _cap2(RA, nm, lambda L, *a, **k: 'k_arcmark')
+    _cap2(RA, 'frame', lambda L, *a, **k: 'k_arcframe')
+    import gram as G_
+    _cap2(G_, 'a2_frame', lambda L, *a, **k: 'k_arcframe')              # gram.landing_arcs draws its frames and start marks with its own
+    _cap2(G_, 'a2_marks', lambda L, *a, **k: 'k_arcmark')               # functions (module globals), not r2_arcs.frame
+    for nm in ('brace_mark', 'soak_mark', 'check_mark'):
+        if hasattr(RA, nm):
+            _cap2(RA, nm, lambda L, *a, **k: 'arc_outcome')
+    _cap2(A.S2, 'schedule', lambda L, *a, **k: 'k_sched', min_L=T_.STRUCT_CLASS_L)
+    _cap2(A.W2B, 'ward_arc', lambda L, *a, **k: 'e_ward', min_L=T_.STRUCT_CLASS_L)
+    _img_cap(A.G2, 'plate', 'k_struct', min_L=T_.STRUCT_CLASS_L)
+    _img_cap(A.G2, 'bezel_layer', 'k_struct', min_L=T_.STRUCT_CLASS_L)
+    _cap2(AU, 'token', lambda L, u, *a, **k: 'tok_u%d' % u['id'])
+    _cap2(W2U, 'ghost', lambda L, u, *a, **k: 'ghost')                  # the consumed / trig-dead ghost: its pencil outline and Trigger stamp (N)
+    import lw_install as LI_
+    if LI_.SK[0] is not None and hasattr(LI_.SK[0], 'cell_detail'):
+        _cap2(LI_.SK[0], 'cell_detail', lambda L, *a, **k: 'e_skin')     # the skin's cell decoration (Meridian rivets and steel edge, Solace teal edge)
+    _diff_cap(RB3, 'kill_hatch', lambda L, u, *a, **k: 'kill_hatch')
 
 
 def empty_probe(R, A, f, beat):
@@ -403,4 +527,12 @@ def dump():
         INFO['rb3'] = RB3.INFO
     except Exception:
         pass
+    # 2026-11-04 round 2: rb4 (glyph registry, pencil strokes, focus calls, ticket values, hazard ticks, capped structure), the lift and the
+    # HUD row record
+    import json as _json
+    for key, mod, attr in (('rb4', 'rb4_patch', 'INFO'), ('lift', 'rb_lift', 'INFO'), ('hud_rows', 'hud_rows', 'ROWS'),
+                           ('pencil', 'rb_pencil', 'STROKES'), ('focus', 'rb_focus', 'CALLS')):
+        m_ = sys.modules.get(mod)
+        if m_ is not None and hasattr(m_, attr):
+            INFO[key] = _json.loads(_json.dumps(getattr(m_, attr), default=lambda o: o.tolist() if hasattr(o, 'tolist') else str(o)))
     return dict(text=TEXT, cards=CARDS, info=INFO, uncaptured_text=UNCAPTURED)

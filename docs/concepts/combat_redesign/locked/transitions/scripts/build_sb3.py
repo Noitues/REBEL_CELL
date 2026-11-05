@@ -1,4 +1,6 @@
-"""build_sb3 (2026-11-04 rebuild): storyboard strips T2, T3, T5 (neutral + Solace) and T6 on the rebuilt board, and sheet.jpg.
+"""build_sb3 (2026-11-04 round 2; first written for the rebuild): storyboard strips T2, T3, T5 (neutral + Solace) and T6 on the round-2
+board, and sheet.jpg.  Round 2 (C13): T6 holds on the room (the T4-reverse pull-out breaks the tile flash limit in every variant tried), so
+T6 K4 is T6's own end frame, the bare room (REAL); the v3 street composite is no longer a T6 key.
 Reads the v3 storyboard helpers and text read-only (transitions/v3/scripts), the T5 / T6 keys from out/<corp>/keys (1920x1080, rendered
 from the generator by render3.py), and the netrun-failure generator read-only (transitions/netrun_fail/scripts: build_A, nf_trans).
 Badges: REAL = an existing render used as it is; RENDER = a frame rendered by a generator from the board generator's own layers (this
@@ -15,7 +17,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 import sbkit as SB
 W, H = H3.W, H3.H
-WK = 'D:/rc_scratch/combat_redesign/locked/rebuild/transitions/'
+WK = 'D:/rc_scratch/combat_redesign/locked/round2/transitions/'
 OUT = WK + 'sb/'
 os.makedirs(OUT, exist_ok=True)
 FIN = ROOT + 'combat_redesign/locked/final/'
@@ -78,15 +80,16 @@ for corp, tid in (('neutral', 't05'), ('solace', 't05s')):
                       'K5  1.12 s  locked; guns armed, HUD and cards deal in',
                       'K6  1.20 s  combat begins: the published plate p1_decide' + ('_solace' if corp == 'solace' else '')]
     base['real'] = ('K1 is the v3.1 bare room (the last frame of T4) and K6 is the published plate (locked/final/p1_decide%s.png): both REAL. '
-                    'K2-K5 are RENDER: frames of rebuild/transitions/src/render3.py at 1920x1080, made of the board generator\'s own layers '
-                    '(corp/src, read-only; the layers recompose the published plate to within 2/255) and the bits FX, whose every bit '
+                    'K2-K5 are RENDER: frames of transitions/scripts/render3.py at 1920x1080, made of the round-2 board generator\'s own layers '
+                    '(corp/src, read-only; the layers recompose the published plate to within 1/255) and the bits FX, whose every bit '
                     'takes the colour of the board pixel it becomes. No frame is enlarged and none is CONCEPT.' % ('' if corp == 'neutral' else '_solace'))
-    base['chg'] = ('2026-11-04 rebuild (review 1.7, 3.12): every frame is on the rebuilt board. K1 is the room as T4 leaves it, at its own '
-                   'level (no black frame); the room dims to the plate grade from K2 to the lock. The bits are Share Tech Mono 0/1 in the '
-                   'colour of their source (ART_BIBLE 1.2): each reads its colour from the board pixel it becomes, white-hot (HIT_PAPER) for '
-                   'its first 80 ms, flipping and tumbling; they leave the lab, go round the rim and drop radially into their ring, so '
-                   'none crosses the wheel face. The keyline heads, ghosts and lock take each ring\'s median bit colour; the spinner snap '
-                   'and the guns stay player pink; each card deals with a trail of its own bits. Timing unchanged.')
+    base['chg'] = ('2026-11-04 round 2: every frame is on the round-2 board (C1-C18 of the re-review). C13: the bits that go more than 90 degrees '
+                   'round the rim from the lab (the far side, over the dark city) thin to 50 % at the far point, so no 120 px tile flashes '
+                   'more than 2 times in any 1 s. Kept from the rebuild (review 1.7, 3.12): K1 is the room as T4 leaves it, at its own '
+                   'level; the room dims to the plate grade from K2 to the lock. The bits are Share Tech Mono 0/1 in the colour of their '
+                   'source (ART_BIBLE 1.2), white-hot (HIT_PAPER) for 80 ms, flipping and tumbling; they leave the lab, go round the rim and '
+                   'drop radially into their ring, so none crosses the wheel face. Keylines, ghosts and lock take each ring\'s median bit '
+                   'colour; the spinner snap and the guns stay player pink. Timing unchanged.')
     T[tid] = base
 
 # ---- T6: the win path rendered from the generator (dissolve, then the T4 iris reversed); the FAIL branch from the netrun_fail generator
@@ -98,30 +101,32 @@ fail_k5 = NFT.frame(plate['neutral'], nf_bg, nf_full, 0.12)
 fail_k6 = NFT.frame(plate['neutral'], nf_bg, nf_full, 0.60)
 pub_a = Image.open(ROOT + 'transitions/netrun_fail/A_crt_feed.png').convert('RGB')
 K6_VS_PUBLISHED = int(np.abs(np.asarray(fail_k6).astype(int) - np.asarray(pub_a).astype(int)).max())
-FR['t06'] = [key('neutral', 't6', 0.0), key('neutral', 't6', .2), key('neutral', 't6', .4), SB.STREET_CLEARED.copy(), fail_k5, fail_k6]
-KIND['t06'] = 'RGGCGR'
+FR['t06'] = [key('neutral', 't6', 0.0), key('neutral', 't6', .2), key('neutral', 't6', .4), key('neutral', 't6', .8), fail_k5, fail_k6]
+KIND['t06'] = 'RGGRGR'
+T06_END_VS_ROOM = int(np.abs(np.asarray(FR['t06'][3]).astype(int) - np.asarray(key('neutral', 't5', 0.0)).astype(int)).max())
 T['t06']['labels'] = ['K1  0.00 s  combat ends (the published p1 plate)', 'K2  0.20 s  cards shed their bits; frame band and ring +2 go',
-                      'K3  0.40 s  pink keyline eats the spinner; bits drain round the rim', 'K4  0.80 s  back on the netrun street (T4 reversed), room cleared',
+                      'K3  0.40 s  pink keyline eats the spinner; bits drain round the rim', 'K4  0.80 s  the room as T4 left it; camera held (C13)',
                       'K5  0.12 s  FAIL branch: the board tears (netrun_fail A glitch-in)', 'K6  0.60 s  FAIL: netrun-failure screen A (O-26)']
 T['t06']['cam'] = ('Combat: fixed iso camera; the board dissolves in place over the cutaway and the room comes back to the level T4 left it at. '
-                   'Then the iris of T4 runs in reverse and the camera pulls back 3x to the r6 street framing it was left in, which is the '
-                   'framing T4 started from. Failure (netrun_fail design A): no pull-out; the board tears (row offsets, chroma split, never '
-                   'brighter), then a hard cut to the CRT feed of the street with SIGNAL LOST and the run log.')
+                   'Round 2 call (C13): the camera holds on the room. The T4-reverse iris and 3.4x pull-out to the street, composited into '
+                   'the 0.8 s, put a 120 px tile at 3 flashes in 1 s in every variant tried (lime, ink and soft iris edge, motion-blurred '
+                   'zoom, even with no ring bits), over the limit of 2. Failure (netrun_fail design A): no pull-out; the board tears (row '
+                   'offsets, chroma split, never brighter), then a hard cut to the CRT feed of the street with SIGNAL LOST and the run log.')
 T['t06']['ui'] = ('0.00-0.20 s: UNDO, SEND IT, the top HUD and the hand fade; each card sheds its own bits; the frame band, rings +2, +1, NOW '
-                  'and then the spinner break into bits that go round the rim and drain into the lab. 0.40-0.80 s: pull-out, street HUD fades '
-                  'up, the cleared room shows a check. Failure (nf_trans): the board tears 0.00-0.20 s, hard cut at 0.20 s, the panel opens at '
-                  '0.30 s, input (GRID VIEW [G]) at 0.60 s.')
+                  'and then the spinner break into bits that go round the rim and drain into the lab. 0.40-0.80 s: the last bits drain and '
+                  'the room settles at its T4 level; the camera holds. Failure (nf_trans): the board tears 0.00-0.20 s, hard cut at 0.20 s, '
+                  'the panel opens at 0.30 s, input (GRID VIEW [G]) at 0.60 s.')
 T['t06']['real'] = ('K1 is the published plate (a decide-beat plate stands in for the won state; no won-state plate exists): REAL. K2 and K3 '
-                    'are RENDER frames of render3.py (board layers + bits; t6_A.gif is the same shot, camera held on the room, ending at '
-                    '0.80 s on the room as T4 left it). K4 is the v3 street frame (r6 street render with mock room tags): COMP; the T4-reverse '
-                    'iris and pull-out into it are not composited (see NOTES, Not done). K5 is RENDER: the netrun_fail glitch-in generator '
+                    'are RENDER frames of render3.py (board layers + bits; t6_A.gif is the same shot). K4 is the last frame of T6, which is '
+                    'the v3.1 bare room T4 left (the same image as T5 K1): REAL. K5 is RENDER: the netrun_fail glitch-in generator '
                     '(nf_trans.py, design A) run on the published plate. K6 is design A of the netrun-failure screen '
                     '(transitions/netrun_fail/A_crt_feed.png, the O-26 pick; its numbers are its tagged placeholders): REAL.')
-T['t06']['chg'] = ('2026-11-04 rebuild (review 1.7, 3.12): K1-K3 are one rendered shot on the rebuilt board: the cards shed bits in their '
-                   'own colours, the keyline eats the frame band, rings +2, +1 and NOW, then the spinner (player-pink keyline, bits in the '
-                   'slice inks), every bit coloured by its source and draining round the rim to the lab, and the room returns to its T4 level. '
-                   'The FAIL branch now uses the netrun-failure design A and its own glitch-in on the rebuilt plate (the v3 concept terminal '
-                   'frame and tear are retired). Timing unchanged.')
+T['t06']['chg'] = ('2026-11-04 round 2: K1-K4 are one rendered shot on the round-2 board. C13: in T6 the board is eaten first, so the whole '
+                   'wheel sits over the dark city: every ring, spinner and ticket stream keeps 45 % of its bits up to 90 degrees round the '
+                   'rim from the lab and 25 % at the far point (worst tile 3 -> 2 in any 1 s). The camera holds on the room (the T4-reverse '
+                   'pull-out could not meet that limit); K4 is now T6\'s own end frame, not the v3 street. Kept: the cards shed bits in '
+                   'their own colours, the keyline eats the frame band, rings +2, +1 and NOW, then the spinner (player-pink keyline), every '
+                   'bit coloured by its source; FAIL is netrun-failure design A. Timing unchanged.')
 
 COL = {'R': LIME, 'C': (70, 200, 255), 'G': (180, 150, 255)}
 TAG = {'R': 'REAL', 'C': 'COMP', 'G': 'RENDER'}
@@ -173,7 +178,7 @@ def sheet():
     cols = max(len(t['keys']) for t in TT)
     rowh = th + 26 + g
     S = Image.new('RGB', (mx * 2 + lw + cols * (tw + g), 70 + len(TT) * rowh + 30), (14, 15, 20)); d = ImageDraw.Draw(S)
-    d.text((mx, 14), 'REBEL_CELL transitions T2 / T3 / T5 / T6 on the rebuilt combat board (green real, violet render, cyan composite)', font=F(24, True), fill=LIME)
+    d.text((mx, 14), 'REBEL_CELL transitions T2 / T3 / T5 / T6 on the round-2 combat board (green real, violet render, cyan composite)', font=F(24, True), fill=LIME)
     for r, t in enumerate(TT):
         y = 64 + r * rowh
         for k, w_ in enumerate(textwrap.wrap(t['title'], 30)[:5]):
@@ -186,7 +191,7 @@ def sheet():
             d.rectangle((x, y, x + TAGW[kind] - 20, y + 20), fill=COL[kind])
             d.text((x + 4, y + 2), TAG[kind], font=F(14, True), fill=(10, 10, 10))
             d.text((x, y + th + 4), lb[:44], font=F(12), fill=(200, 200, 208))
-    d.text((mx, S.height - 26), 'T2 and T3 contain no combat board (v3 frames). T5 is shown on the neutral skin and on Solace. No frame is CONCEPT: every T5 / T6 board key is rendered by render3.py or nf_trans.py from the board layers; T6 K4 is the v3 street composite.', font=F(15), fill=(200, 200, 208))
+    d.text((mx, S.height - 26), 'T2 and T3 contain no combat board (v3 frames). T5 is shown on the neutral skin and on Solace. No frame is CONCEPT: every T5 / T6 board key is rendered by render3.py or nf_trans.py from the round-2 board layers; T6 holds on the room (C13).', font=F(15), fill=(200, 200, 208))
     return S
 
 
@@ -196,4 +201,8 @@ if __name__ == '__main__':
         print('wrote', t['file'])
     sheet().save(OUT + 'sheet.jpg', quality=88)
     print('fail K6 (nf_trans at 0.60 s) vs netrun_fail/A_crt_feed.png: max diff', K6_VS_PUBLISHED)
+    print('T6 K4 (render3 t6 at 0.80 s) vs T5 K1 (the bare room): max diff', T06_END_VS_ROOM)
+    badges = {tid: ''.join(KIND[tid]) for tid in ORDER}
+    assert all(set(v) <= set('RCG') for v in badges.values()), badges          # REAL / COMP / RENDER only: no CONCEPT badge (review 1.7)
+    print('badges', badges)
     print('ok')

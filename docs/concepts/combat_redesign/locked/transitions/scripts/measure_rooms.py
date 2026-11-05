@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from PIL import Image
 from lstar import mean_L, pct_L
-HERE = 'D:/rc_scratch/combat_redesign/locked/rebuild/transitions/'
+HERE = 'D:/rc_scratch/combat_redesign/locked/round2/transitions/'
 FIN = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'
 out = {}
 for corp, pub in (('neutral', 'p1_decide.png'), ('solace', 'p1_decide_solace.png')):

@@ -1066,6 +1066,13 @@ def _liner(R, nowords, spec):
     return cv.img()
 
 
+# the lifted card's pink misregistered print and hard drop, (down, right) in design px.  Round 1: print (6, -9) (down-left), drop (11, 7).
+# 2026-11-04 round 2 (C6): rb_lift sets the print to the right so the straight-up lift adds nothing over its LEFT neighbour (the x3 plate and
+# the title band of the card it rises out of) or the REFUND tab
+HOVER_PRINT_OFF = [6, -9]
+HOVER_DROP_OFF = [11, 7]
+
+
 def draw_card(card, size, state='normal'):
     spec = _spec(card)
     if isinstance(state, str):
@@ -1089,8 +1096,8 @@ def draw_card(card, size, state='normal'):
             # pink misregistered print behind the lifted card (silhouette incl. its drop), hard longer drop under it
             a = np.asarray(im)[..., 3].astype(np.float32) / 255.0
             sil = (a > 0.5).astype(np.float32)
-            pk = ndi.shift(sil, (6 * R, -9 * R), order=0)
-            sh = ndi.shift(sil, (11 * R, 7 * R), order=0)
+            pk = ndi.shift(sil, (HOVER_PRINT_OFF[0] * R, HOVER_PRINT_OFF[1] * R), order=0)
+            sh = ndi.shift(sil, (HOVER_DROP_OFF[0] * R, HOVER_DROP_OFF[1] * R), order=0)
             H, W = sil.shape
             base = np.zeros((H, W, 4), np.float32)
             base[..., :3] = np.array([8, 6, 14])

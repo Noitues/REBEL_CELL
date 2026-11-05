@@ -1,228 +1,356 @@
-== p1_decide  a:PASS b:PASS c:PASS d:PASS e:PASS
+== p1_decide  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   53.8   56.6
-S HUD                            87.2    4.0   37.0
-E token discs                    84.7   11.7   46.7
 P hand (rest)                    83.1   45.1   56.6
-K clock (tape, sweep, plates)    70.6   47.8   46.6
+E token discs                    82.6   11.7   45.5
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   47.8   46.7
 E cells occupied (glass)         45.5   37.8   38.4
-room                             37.9   31.2   31.8
-room as seen (scrim kept, info)   37.8   29.9   29.8
+room                             37.8   31.1   31.9
+room as seen (scrim kept, info)   37.7   29.5   28.9
 E cells empty (glass)            21.0   17.3   17.4
-   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p2_preview  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.8, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.0), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (70.0, 84.7), 'E dying hatch (L7)': (63.6, 85.3)}
+   C4 token discs p95 / p99: {'u1': (83.3, 86.2), 'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u4': (82.6, 85.9), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 0 pairs, 0 under 15, closest None
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [49.7, 63.2, 82.2], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.1, 'core_vs_cell': 4.96, 'fill_vs_cell_reported': 1.95}
+== p2_preview  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
-P lifted card                    91.1   50.2   60.3
+T HOT marks                      95.4   60.0   62.2
+P lifted card                    91.1   51.2   61.5
 P tower                          89.5   57.6   58.9
-S HUD                            87.7    4.2   39.7
-P hand (rest)                    85.5   46.7   57.0
-E token discs                    84.4   10.8   45.4
-K clock (tape, sweep, plates)    70.6   47.9   46.7
+S HUD                            87.7    4.2   37.9
+P hand (rest)                    83.4   45.7   56.9
+E token discs                    82.6   10.8   44.3
+K clock (tape, sweep, plates)    69.5   47.9   46.7
 E cells occupied (glass)         44.2   34.1   37.1
-room                             37.7   30.6   31.5
-room as seen (scrim kept, info)   37.3   24.7   25.6
+room                             37.7   30.4   31.4
+room as seen (scrim kept, info)   37.3   23.0   25.4
 E cells empty (glass)            21.0   17.3   17.5
    cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
-== p2b_hover  a:PASS b:PASS c:PASS d:PASS e:PASS
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) [('Brace', {'cost': 0, 'rules': 0, 'title': 0}), ('Spin3', {'cost': 0, 'rules': 0, 'title': 0, 'mult': 0}), ('Twist', {'cost': 0, 'rules': 0, 'title': 0})]
+   lift: {'lift': {'card': 'Trigger', 'slot': 2, 'cx': 1371, 'cy': 718, 'ang': 0.0, 'scale': 1.1, 'open_px': 30, 'zoom': 1.0}}
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.2, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.0, 87.8), 'K arc frames': (65.4, 84.3), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.6, 85.3), 'N consumed ghost (pencil, stamp)': (87.2, 89.7)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('N pencil wax', '#FEE100', 'PLAN', 0.5), ('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 0 pairs, 0 under 15, closest None
+   f pencil (C1) PASS: [('L6', 6.0, 3.5, 4.45)]
+   g tickets (C5) PASS: edge L* [49.7, 63.2, 82.2], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 607}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.0, 'core_vs_cell': 4.97, 'fill_vs_cell_reported': 1.95}
+== p2b_hover  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
 P tower                          89.5   53.8   56.7
-S HUD                            87.2    4.0   37.0
 P hand (rest)                    83.1   45.1   56.6
-E token discs                    82.6   17.8   47.5
-K clock (tape, sweep, plates)    70.8   48.2   47.0
+E token discs                    82.6   11.1   44.8
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   48.2   47.0
 E cells occupied (glass)         39.0   33.9   34.6
-room                             38.0   31.3   31.9
-room as seen (scrim kept, info)   37.8   29.8   29.6
+room                             37.7   31.8   32.1
+room as seen (scrim kept, info)   37.6   28.8   28.3
 E cells empty (glass)            21.0   17.3   17.4
    cells: occupied NOW L* None; min ratio (live) 3.15; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p3_resolve  a:PASS b:PASS c:PASS d:PASS e:PASS
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (47.2, 72.1), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (61.0, 63.1), 'K arc frames': (56.5, 61.5), 'E dying hatch (L7)': (27.5, 83.9), 'N FOCUS': (94.1, 94.1)}
+   C4 token discs p95 / p99: {'u6': (82.6, 86.2)}
+   C2 drawn vs token: [('N FOCUS', '#D4FF00', 'FOCUS', 0.0), ('N pencil wax', '#FEE100', 'PLAN', 0.5), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 0 pairs, 0 under 15, closest None
+   f pencil (C1) PASS: [('L6', 6.1, 3.34, 4.27)]
+   g tickets (C5) PASS: edge L* [49.7, 63.2, 82.2], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: no HOT marks
+== p3_resolve  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
+T HOT marks                      95.4   60.0   62.2
 P tower                          89.5   57.7   58.9
-E token discs                    84.4   10.8   45.4
-S HUD                            83.8    4.2   35.8
 P hand (rest)                    83.1   33.9   53.2
-K clock (tape, sweep, plates)    70.6   47.9   46.7
-E cells occupied (glass)         44.2   34.1   37.2
-room                             38.1   30.7   31.6
-room as seen (scrim kept, info)   37.3   21.5   24.8
+E token discs                    82.6   10.8   44.3
+S HUD                            82.6    4.2   34.9
+K clock (tape, sweep, plates)    69.5   47.9   46.7
+E cells occupied (glass)         44.2   34.1   37.1
+room                             38.3   30.6   31.3
+room as seen (scrim kept, info)   36.5   17.4   23.1
 E cells empty (glass)            21.0   17.3   17.5
-   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p1_nowords  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.8, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.0, 87.8), 'K arc frames': (65.4, 84.3), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.6, 85.3), 'N consumed ghost (pencil, stamp)': (65.2, 85.1)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 0 pairs, 0 under 15, closest None
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [49.7, 63.2, 82.2], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 337, 'bill_h': 261}, record {'bill_top': 76, 'bill_bottom': 337, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'chain_top': 341, 'obj_top': 533, 'ram_top': 621, 'hud_bottom': 709}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.1, 'core_vs_cell': 4.95, 'fill_vs_cell_reported': 1.94}
+== p1_nowords  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   61.3
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   54.4   57.1
-E token discs                    84.4   11.6   45.9
+E token discs                    82.6   11.6   44.7
 P hand (rest)                    82.3   40.0   55.7
-S HUD                            81.9    3.9   33.3
-K clock (tape, sweep, plates)    71.0   49.0   48.1
-E cells occupied (glass)         45.5   38.1   38.4
-room                             37.9   31.2   31.8
-room as seen (scrim kept, info)   37.7   29.9   29.6
+S HUD                            79.9    4.1   29.9
+K clock (tape, sweep, plates)    69.5   49.0   48.0
+E cells occupied (glass)         45.3   38.1   38.4
+room                             37.8   31.1   31.9
+room as seen (scrim kept, info)   37.6   29.4   28.6
 E cells empty (glass)            21.0   17.3   17.4
-   cells: occupied NOW L* [42.9, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p1_decide_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.8, 43.1]; min ratio (live) 3.17; empty L* per ring {0: (21.9, None), 1: (16.7, 18.9), 2: (15.9, 15.9)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (81.7, 84.9), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K schedule lines': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (70.3, 84.7), 'E dying hatch (L7)': (60.8, 82.6)}
+   C4 token discs p95 / p99: {'u1': (83.3, 86.2), 'u2': (82.6, 86.1), 'u3': (82.6, 85.4), 'u4': (82.6, 85.9), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 0 pairs, 0 under 15, closest None
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [49.7, 63.2, 82.2], drawn [0.5, 0.701, 1.0], hazard {'x0': 47.5, 'x1': 66.0, 'free': [32, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.1, 'core_vs_cell': 4.96, 'fill_vs_cell_reported': 1.95}
+== p1_decide_solace  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   53.8   56.6
-S HUD                            87.2    4.0   37.0
-E token discs                    84.6   13.7   46.7
 P hand (rest)                    83.1   45.1   56.6
-K clock (tape, sweep, plates)    70.6   47.8   46.6
+E token discs                    82.6   13.6   45.4
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   47.8   46.6
 E cells occupied (glass)         46.8   38.1   38.6
-room                             37.9   31.2   31.8
-room as seen (scrim kept, info)   37.8   29.9   29.8
+room                             37.8   31.1   31.9
+room as seen (scrim kept, info)   37.7   29.5   28.9
 E cells empty (glass)            21.6   16.2   17.0
-   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p2b_hover_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [43.0, 43.2]; min ratio (live) 3.31; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.1), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.0, 87.8), 'K arc frames': (69.8, 84.6), 'E dying hatch (L7)': (63.6, 85.3), 'E skin cell detail (edge, rivets)': (79.2, 81.9)}
+   C4 token discs p95 / p99: {'u1': (83.2, 86.2), 'u2': (82.6, 86.0), 'u3': (84.4, 91.0), 'u4': (82.6, 85.8), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 56 pairs, 0 under 15, closest ('ring_tags', 'solace porcelain', 44.5)
+   C16 Solace rim median #3B827F LCh {'L': 50.0, 'C': 23.5, 'h': 192.7}: [('GAIN', 'median', 61.3), ('GAIN', 'modal', 51.0), ('hub HP ring green', 'median', 53.4), ('hub HP ring green', 'modal', 44.1)]
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [46.4, 58.4, 75.0], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.2, 'core_vs_cell': 4.93, 'fill_vs_cell_reported': 1.94}
+== p2b_hover_solace  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
 P tower                          89.5   53.8   56.7
-S HUD                            87.2    4.0   37.0
 P hand (rest)                    83.1   45.1   56.6
-E token discs                    82.6   20.1   47.1
-K clock (tape, sweep, plates)    70.8   48.2   46.9
+E token discs                    82.6   14.4   44.3
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   48.2   47.0
 E cells occupied (glass)         39.0   33.9   34.8
-room                             38.0   31.3   31.9
-room as seen (scrim kept, info)   37.8   29.8   29.6
+room                             37.7   31.8   32.1
+room as seen (scrim kept, info)   37.6   28.8   28.3
 E cells empty (glass)            21.6   16.2   17.0
    cells: occupied NOW L* None; min ratio (live) 3.38; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p1_decide_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (47.2, 71.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (61.1, 63.1), 'K arc frames': (56.5, 61.6), 'E dying hatch (L7)': (28.5, 83.9), 'N FOCUS': (94.1, 94.1), 'E skin cell detail (edge, rivets)': (49.5, 72.0)}
+   C4 token discs p95 / p99: {'u6': (82.6, 86.2)}
+   C2 drawn vs token: [('N FOCUS', '#D4FF00', 'FOCUS', 0.0), ('N pencil wax', '#FEE100', 'PLAN', 0.5), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 44 pairs, 0 under 15, closest ('kill_hatch', 'solace teal_deep', 55.4)
+   C16 Solace rim median #3B827F LCh {'L': 50.0, 'C': 23.5, 'h': 192.7}: [('GAIN', 'median', 61.3), ('GAIN', 'modal', 51.0), ('hub HP ring green', 'median', 53.4), ('hub HP ring green', 'modal', 44.1)]
+   f pencil (C1) PASS: [('L6', 6.1, 3.34, 4.27)]
+   g tickets (C5) PASS: edge L* [46.4, 58.4, 75.0], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: no HOT marks
+== p1_decide_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   53.8   56.6
-S HUD                            87.2    4.0   37.0
-E token discs                    84.9   11.7   46.2
 P hand (rest)                    83.1   45.1   56.6
-K clock (tape, sweep, plates)    70.6   47.8   46.6
-E cells occupied (glass)         45.3   37.4   38.2
-room                             37.9   31.4   32.0
-room as seen (scrim kept, info)   37.8   30.7   30.1
+E token discs                    82.6   11.7   44.9
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   47.8   46.6
+E cells occupied (glass)         45.2   37.4   38.1
+room                             38.0   31.2   31.9
+room as seen (scrim kept, info)   37.8   30.3   28.9
 E cells empty (glass)            19.7   15.0   15.7
-   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.12; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p2b_hover_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.6, 42.9]; min ratio (live) 4.11; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.0), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (70.1, 84.7), 'E dying hatch (L7)': (63.6, 85.3), 'E skin cell detail (edge, rivets)': (79.2, 83.1)}
+   C4 token discs p95 / p99: {'u1': (83.5, 86.2), 'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u4': (82.6, 86.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.5)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 28 pairs, 0 under 15, closest ('arcT1', 'meridian rust_hi', 25.4)
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [41.4, 51.6, 66.1], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 42.9, 'core_vs_cell': 4.99, 'fill_vs_cell_reported': 1.96}
+== p2b_hover_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
 P tower                          89.5   53.8   56.7
-S HUD                            87.2    4.0   37.0
 P hand (rest)                    83.1   45.1   56.6
-E token discs                    82.6   16.6   46.8
-K clock (tape, sweep, plates)    70.8   48.2   46.9
-E cells occupied (glass)         38.9   33.6   34.4
-room                             37.9   31.5   32.2
-room as seen (scrim kept, info)   37.8   30.7   29.9
+E token discs                    82.6   11.2   43.9
+S HUD                            82.0    4.2   33.3
+K clock (tape, sweep, plates)    69.5   48.2   47.0
+E cells occupied (glass)         39.1   33.6   34.5
+room                             37.8   31.1   31.7
+room as seen (scrim kept, info)   37.7   29.5   28.0
 E cells empty (glass)            19.7   15.0   15.7
    cells: occupied NOW L* None; min ratio (live) 4.35; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p2_preview_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (46.8, 73.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (61.1, 63.1), 'K arc frames': (56.5, 61.5), 'E dying hatch (L7)': (27.8, 83.9), 'N FOCUS': (94.1, 94.1), 'E skin cell detail (edge, rivets)': (49.9, 81.8)}
+   C4 token discs p95 / p99: {'u6': (82.6, 86.2)}
+   C2 drawn vs token: [('N FOCUS', '#D4FF00', 'FOCUS', 0.0), ('N pencil wax', '#FEE100', 'PLAN', 0.5), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 22 pairs, 0 under 15, closest ('adj_hp', 'meridian rust_hi', 26.6)
+   f pencil (C1) PASS: [('L6', 6.1, 3.34, 4.27)]
+   g tickets (C5) PASS: edge L* [41.4, 51.6, 66.1], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: no HOT marks
+== p2_preview_solace  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
-P lifted card                    91.1   50.2   60.3
+T HOT marks                      95.4   60.0   62.2
+P lifted card                    91.1   51.2   61.5
 P tower                          89.5   57.6   58.9
-S HUD                            87.7    4.2   39.7
-P hand (rest)                    85.5   46.7   57.0
-E token discs                    84.4   11.6   45.4
-K clock (tape, sweep, plates)    70.6   47.8   46.6
+S HUD                            87.7    4.2   37.9
+P hand (rest)                    83.4   45.7   56.9
+E token discs                    82.6   11.6   44.2
+K clock (tape, sweep, plates)    69.5   47.9   46.6
 E cells occupied (glass)         46.3   34.3   37.3
-room                             37.7   30.6   31.5
-room as seen (scrim kept, info)   37.3   24.7   25.6
+room                             37.7   30.4   31.4
+room as seen (scrim kept, info)   37.3   23.0   25.4
 E cells empty (glass)            21.6   16.2   17.0
-   cells: occupied NOW L* [43.1, 43.3]; min ratio (live) 3.33; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
-== p3_resolve_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [43.0, 43.2]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) [('Brace', {'cost': 0, 'rules': 0, 'title': 0}), ('Spin3', {'cost': 0, 'rules': 0, 'title': 0, 'mult': 0}), ('Twist', {'cost': 0, 'rules': 0, 'title': 0})]
+   lift: {'lift': {'card': 'Trigger', 'slot': 2, 'cx': 1371, 'cy': 718, 'ang': 0.0, 'scale': 1.1, 'open_px': 30, 'zoom': 1.0}}
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.2, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (83.9, 87.8), 'K arc frames': (65.4, 84.2), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.6, 85.3), 'N consumed ghost (pencil, stamp)': (87.2, 89.7), 'E skin cell detail (edge, rivets)': (79.2, 82.8)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.0), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('N pencil wax', '#FEE100', 'PLAN', 0.5), ('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 76 pairs, 0 under 15, closest ('arc_outcome', 'solace teal_hi', 22.7)
+   C16 Solace rim median #3B827F LCh {'L': 50.0, 'C': 23.5, 'h': 192.7}: [('GAIN', 'median', 61.3), ('GAIN', 'modal', 51.0), ('hub HP ring green', 'median', 53.4), ('hub HP ring green', 'modal', 44.1)]
+   f pencil (C1) PASS: [('L6', 6.0, 3.5, 4.45)]
+   g tickets (C5) PASS: edge L* [46.4, 58.4, 75.0], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 607}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.1, 'core_vs_cell': 4.95, 'fill_vs_cell_reported': 1.94}
+== p3_resolve_solace  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
+T HOT marks                      95.4   60.0   62.2
 P tower                          89.5   57.7   58.9
-E token discs                    84.4   11.6   45.4
-S HUD                            83.8    4.2   35.8
 P hand (rest)                    83.1   33.9   53.2
-K clock (tape, sweep, plates)    70.6   47.8   46.6
-E cells occupied (glass)         46.4   34.3   37.3
-room                             38.1   30.7   31.6
-room as seen (scrim kept, info)   37.3   21.5   24.8
+E token discs                    82.6   11.6   44.2
+S HUD                            82.6    4.2   34.9
+K clock (tape, sweep, plates)    69.5   47.9   46.6
+E cells occupied (glass)         46.3   34.3   37.3
+room                             38.3   30.6   31.3
+room as seen (scrim kept, info)   36.5   17.4   23.1
 E cells empty (glass)            21.6   16.2   17.0
-   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p1_nowords_solace  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [43.0, 43.2]; min ratio (live) 3.31; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (83.9, 87.8), 'K arc frames': (65.4, 84.2), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.6, 85.3), 'N consumed ghost (pencil, stamp)': (65.2, 85.1), 'E skin cell detail (edge, rivets)': (79.2, 82.2)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.0), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 72 pairs, 0 under 15, closest ('arc_outcome', 'solace teal_hi', 22.7)
+   C16 Solace rim median #3B827F LCh {'L': 50.0, 'C': 23.5, 'h': 192.7}: [('GAIN', 'median', 61.3), ('GAIN', 'modal', 51.0), ('hub HP ring green', 'median', 53.4), ('hub HP ring green', 'modal', 44.1)]
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [46.4, 58.4, 75.0], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 337, 'bill_h': 261}, record {'bill_top': 76, 'bill_bottom': 337, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'chain_top': 341, 'obj_top': 533, 'ram_top': 621, 'hud_bottom': 709}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.3, 'core_vs_cell': 4.92, 'fill_vs_cell_reported': 1.93}
+== p1_nowords_solace  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   61.3
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   54.4   57.1
-E token discs                    84.3   11.7   45.9
+E token discs                    82.6   11.7   44.6
 P hand (rest)                    82.3   40.0   55.7
-S HUD                            81.9    3.9   33.3
-K clock (tape, sweep, plates)    71.0   49.0   48.1
+S HUD                            79.9    4.1   29.9
+K clock (tape, sweep, plates)    69.5   49.0   48.0
 E cells occupied (glass)         46.8   38.2   38.6
-room                             37.9   31.2   31.8
-room as seen (scrim kept, info)   37.7   29.9   29.6
+room                             37.8   31.1   31.9
+room as seen (scrim kept, info)   37.6   29.4   28.6
 E cells empty (glass)            21.6   16.2   16.9
-   cells: occupied NOW L* [43.0, 43.3]; min ratio (live) 3.32; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p2_preview_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [43.0, 43.2]; min ratio (live) 3.31; empty L* per ring {0: (21.5, None), 1: (16.4, 18.5), 2: (15.4, 15.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (81.7, 84.9), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K schedule lines': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.0, 87.8), 'K arc frames': (69.9, 84.6), 'E dying hatch (L7)': (60.8, 82.6), 'E skin cell detail (edge, rivets)': (79.2, 81.0)}
+   C4 token discs p95 / p99: {'u1': (83.2, 86.2), 'u2': (82.6, 86.0), 'u3': (82.6, 85.5), 'u4': (82.6, 85.8), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.4)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 52 pairs, 0 under 15, closest ('chev1', 'solace porcelain', 51.5)
+   C16 Solace rim median #3B827F LCh {'L': 50.0, 'C': 23.5, 'h': 192.7}: [('GAIN', 'median', 61.3), ('GAIN', 'modal', 51.0), ('hub HP ring green', 'median', 53.4), ('hub HP ring green', 'modal', 44.1)]
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [46.4, 58.4, 75.0], drawn [0.5, 0.701, 1.0], hazard {'x0': 47.5, 'x1': 66.0, 'free': [32, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 43.2, 'core_vs_cell': 4.93, 'fill_vs_cell_reported': 1.94}
+== p2_preview_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
-P lifted card                    91.1   50.2   60.3
+T HOT marks                      95.4   60.0   62.2
+P lifted card                    91.1   51.3   61.5
 P tower                          89.5   57.6   58.9
-S HUD                            87.7    4.2   39.7
-P hand (rest)                    85.5   46.7   57.0
-E token discs                    84.4   10.8   44.7
-K clock (tape, sweep, plates)    70.6   47.8   46.6
+S HUD                            87.7    4.3   37.9
+P hand (rest)                    83.4   45.7   56.9
+E token discs                    82.6   10.8   43.6
+K clock (tape, sweep, plates)    69.5   47.9   46.6
 E cells occupied (glass)         44.6   34.0   36.8
-room                             37.5   31.1   31.2
-room as seen (scrim kept, info)   36.8   24.9   25.3
+room                             37.5   31.1   31.4
+room as seen (scrim kept, info)   36.9   23.8   25.3
 E cells empty (glass)            19.8   15.1   15.7
-   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.14; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules [('Brace', 0, 0), ('Spin3', 0, 0), ('Twist', 0, 0)]
-== p3_resolve_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.12; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) [('Brace', {'cost': 0, 'rules': 0, 'title': 0}), ('Spin3', {'cost': 0, 'rules': 0, 'title': 0, 'mult': 0}), ('Twist', {'cost': 0, 'rules': 0, 'title': 0})]
+   lift: {'lift': {'card': 'Trigger', 'slot': 2, 'cx': 1371, 'cy': 718, 'ang': 0.0, 'scale': 1.1, 'open_px': 30, 'zoom': 1.0}}
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.2, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (65.4, 84.3), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.5, 85.3), 'N consumed ghost (pencil, stamp)': (87.2, 89.7), 'E skin cell detail (edge, rivets)': (79.2, 84.3)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.5)}
+   C2 drawn vs token: [('N pencil wax', '#FEE100', 'PLAN', 0.5), ('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 38 pairs, 0 under 15, closest ('chev2', 'meridian rust', 22.3)
+   f pencil (C1) PASS: [('L6', 6.0, 3.5, 4.45)]
+   g tickets (C5) PASS: edge L* [41.4, 51.6, 66.1], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 607}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 42.8, 'core_vs_cell': 5.01, 'fill_vs_cell_reported': 1.97}
+== p3_resolve_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   68.1
-T HOT marks                      94.9   47.6   55.9
+T HOT marks                      95.4   60.0   62.2
 P tower                          89.5   57.7   58.9
-E token discs                    84.4   10.8   44.7
-S HUD                            83.8    4.3   35.8
 P hand (rest)                    83.1   33.9   53.2
-K clock (tape, sweep, plates)    70.6   47.8   46.6
+E token discs                    82.6   10.8   43.6
+S HUD                            82.6    4.3   34.9
+K clock (tape, sweep, plates)    69.5   47.9   46.6
 E cells occupied (glass)         44.6   34.0   36.9
-room                             37.7   31.1   31.7
-room as seen (scrim kept, info)   36.7   21.6   24.7
+room                             37.1   30.7   31.0
+room as seen (scrim kept, info)   34.7   17.4   22.9
 E cells empty (glass)            19.8   15.1   15.7
-   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.13; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
-== p1_nowords_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS
+   cells: occupied NOW L* [42.6, 42.9]; min ratio (live) 4.11; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.6)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (82.1, 85.2), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (65.4, 84.3), 'T arc outcome marks (brace, soak, check)': (86.7, 88.9), 'E dying hatch (L7)': (63.6, 85.3), 'N consumed ghost (pencil, stamp)': (65.2, 85.1), 'E skin cell detail (edge, rivets)': (79.2, 83.2)}
+   C4 token discs p95 / p99: {'u2': (82.6, 86.1), 'u3': (84.4, 91.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.5)}
+   C2 drawn vs token: [('T HOT fill', '#FF6956', 'HARM_UP', 2.4), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 36 pairs, 0 under 15, closest ('arcT1', 'meridian rust_hi', 25.4)
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [41.4, 51.6, 66.1], drawn [0.5, 0.701, 1.0], hazard {'x0': 60.0, 'x1': 78.5, 'free': [57.0, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 337, 'bill_h': 261}, record {'bill_top': 76, 'bill_bottom': 337, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'chain_top': 341, 'obj_top': 533, 'ram_top': 621, 'hud_bottom': 709}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 12, 'min': 2.25, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 42.9, 'core_vs_cell': 4.99, 'fill_vs_cell_reported': 1.96}
+== p1_nowords_meridian  a:PASS b:PASS c:PASS d:PASS e:PASS f:PASS g:PASS h:PASS i:PASS
 family                            p95 median   mean
 SEND IT                          98.2   59.4   61.3
-T HOT marks                      94.2   37.9   52.7
+T HOT marks                      94.9   49.2   58.1
 P tower                          89.5   54.4   57.1
-E token discs                    84.4   11.6   45.4
+E token discs                    82.6   11.5   44.1
 P hand (rest)                    82.3   40.0   55.7
-S HUD                            81.9    4.0   33.3
-K clock (tape, sweep, plates)    71.0   49.0   48.0
-E cells occupied (glass)         45.2   37.4   38.2
-room                             37.9   31.4   32.0
-room as seen (scrim kept, info)   37.8   30.7   29.8
+S HUD                            79.9    4.0   29.9
+K clock (tape, sweep, plates)    69.5   49.0   48.0
+E cells occupied (glass)         45.1   37.4   38.1
+room                             38.0   31.2   31.9
+room as seen (scrim kept, info)   37.8   30.2   28.5
 E cells empty (glass)            19.7   15.0   15.7
-   cells: occupied NOW L* [42.7, 42.9]; min ratio (live) 4.12; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
-   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling cost/rules []
+   cells: occupied NOW L* [42.6, 42.9]; min ratio (live) 4.11; empty L* per ring {0: (20.5, None), 1: (15.3, 16.9), 2: (14.6, 14.5)}
+   hand: x SEND IT 0 px, x UNDO 0 px, lifted over sibling protected set (cost, title, rules, x plate) []
+   C3 unclassed bright px (L* >= 80, r < 480): 0; structure rows: {'E cell outlines (L3)': (81.7, 84.9), 'K structure (plate / bezel lines, cube discs)': (84.1, 84.1), 'K schedule lines': (84.1, 84.1), 'K arc marks (discs, dots, wear, twist)': (84.3, 87.8), 'K arc frames': (70.5, 84.7), 'E dying hatch (L7)': (60.7, 82.6), 'E skin cell detail (edge, rivets)': (79.2, 81.0)}
+   C4 token discs p95 / p99: {'u1': (83.5, 86.2), 'u2': (82.6, 86.1), 'u3': (82.6, 85.4), 'u4': (82.6, 86.0), 'u5': (82.6, 86.2), 'u6': (82.6, 86.2), 'u7': (82.6, 86.5)}
+   C2 drawn vs token: [('T HOT fill', '#FF6452', 'HARM_UP', 0.0), ('P gun tracers', '#FF3EA9', 'CELL_PINK', 0.4), ('E Adjuster track', '#D69A1A', 'BOSS_GOLD', 0.0)]
+   C2 drawn vs corp ink: 26 pairs, 0 under 15, closest ('arcT1', 'meridian rust_hi', 25.4)
+   f pencil (C1) PASS: no pencil
+   g tickets (C5) PASS: edge L* [41.4, 51.6, 66.1], drawn [0.5, 0.701, 1.0], hazard {'x0': 47.5, 'x1': 66.0, 'free': [32, 81.4]}
+   h HUD rows (C8) PASS: measured {'bill_top': 76, 'bill_bottom': 427, 'bill_h': 351}, record {'bill_top': 76, 'bill_bottom': 427, 'hero_label_y': 90, 'hero_digit_y': 149, 'eq_label_y': 208, 'eq_y': 232, 'split_label_y': 264, 'split_y': 288, 'next_y': 320, 'obj_top': 431, 'ram_top': 519, 'hud_bottom': 569}
+   i HOT core (C11) PASS: {'core_w_px': 3.0, 'core_w_per_stroke': {'n': 24, 'min': 2.0, 'median': 3.0}, 'core_L': 94.0, 'cell_L': 42.9, 'core_vs_cell': 4.99, 'fill_vs_cell_reported': 1.96}
    p1_decide stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
    p2_preview stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]
    p2b_hover stage2: hand margin 12 px, ticket glyph ink [[25, 25, 24], [23, 25], [25, 25]]

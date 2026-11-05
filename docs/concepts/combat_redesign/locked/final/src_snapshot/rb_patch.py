@@ -733,7 +733,7 @@ def _skins():
     import cs_skin as CS
     from cs_skin import Acc, sstep, vor, mixc
     from cv_lib import C, ppx
-    SL = T.SKIN_INKS['solace']
+    SL = dict(T.SKIN_INKS_RETIRED['solace'], **T.SKIN_INKS['solace'])     # 2026-11-04 round 2: rb4_patch re-inks every Solace piece in teal (C16)
     MR = T.SKIN_INKS['meridian']
     SLATE_TINT_S = (44, 54, 52)       # Solace: a cool green-grey tint (low chroma) over the slate
     SLATE_TINT_M = (56, 52, 48)       # Meridian: a warm steel-grey tint

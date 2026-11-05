@@ -1,10 +1,149 @@
-# T5 / T6 bits FX (option A) and storyboard T2 / T3 / T5 / T6 on the rebuilt combat board
+# T5 / T6 bits FX (option A) and storyboard T2 / T3 / T5 / T6 on the combat board
 
-**Status 2026-11-04: re-rendered on the rebuilt board** (`../final/` after the 2026-11-03 rebuild and gate 1), on both skins. AD review items **1.7** and **3.12** are fixed here; see "2026-11-03 rebuild". What is still open is under "Not done". The sections after "History" describe the older passes and are kept as a record only.
+**Status 2026-11-04, round 2: re-rendered on the round-2 board** (`../final/` as published by the round-2 board stage), on the neutral and Solace skins. Call **C13** (re-review N4 and question 6) is done: the worst 120 px tile flashes at most 2 times in any 1 s in T5 and T6. The T6 pull-out iris was tried and cannot meet that limit, so **T6 holds on the room**, which is the recorded call. Review items **1.7** and **3.12** still hold and are re-measured. See "2026-11-04 round 2". The "2026-11-03 rebuild" section is the round-1 record; where round 2 changed a number or a call, the round-2 section says so.
 
 What T5 and T6 must show is the designer's ruling **DR-10** (`../../VISUAL_PLAN.md`, ART CALL 49 items 5 and 6). How the bits look is ART_BIBLE 1.2 (LOCKED). Bits option A (O-25) and failure screen A (O-26) are art-pass picks.
 
-## 2026-11-03 rebuild (re-rendered 2026-11-04; review 1.7, 3.12)
+## 2026-11-04 round 2 (C13; 1.7 and 3.12 re-measured)
+
+All values are CIE L* or dE76. Flash and frame values are measured on the rendered 1920x1080 frames at 25 fps, and again on the decoded GIFs at 12.5 fps (`metrics.json` `published_check`). Bit colours are measured against the published plate PNG.
+
+### What changed
+
+- **The board.** Every frame is made from the round-2 p1 plate (`../final/p1_decide.png`, `p1_decide_solace.png`): the HUD with its reserved option rows (bottom y 569), UNDO / SEND IT 12 px right, the teal Solace rim (C16, C18), the capped structure lines (C3), the C14 glyph registry fix.
+  - `staged.py` now follows the round-2 `f1_render._render` (BTN_DX on the UNDO / SEND IT keep boxes, the pencil and FOCUS resets, the glyph registry check).
+  - It also installs the same capture hooks as `asm_render.py` with check on (`rb_capture.install` and asm_render's `_cap`). Round 2's capture classes draw several drawers (unit outlines, arc frames and marks, tokens, schedule, ward arc, the dying hatch) into their own layer, and that changes pixels. Without the hooks the layers missed the published plate by up to 47/255 (5447 px over 8, on the arc frames). With them, the layers recompose the published plate to **max 1/255, 0 px over 2**, on both skins. The glyph registry is intact after staging (C14), on both skins.
+- **C13, the bit density over the dark city** (`fx3.far_keep`). A ring, spinner or ticket bit whose route goes d degrees round the rim from the lab is kept with probability `p = near - (near - far) * clamp((d - 90) / 90)`. It is drawn from its own random stream, so every bit that is kept is the same bit as in round 1. Card bits are not thinned.
+  - **T5:** near 100 %, far 50 %. The far side of the wheel is where the rim runs over the dark city at the frame edge. Bits kept: ring NOW 47 of 54, ring +1 63 of 70, ring +2 76 of 86, frame band 83 of 96, tickets 24 of 30.
+  - **T6:** near 45 %, far 25 %. In T6 the board is eaten first, so the whole wheel then sits over the dark city, and the worst tiles were inside the wheel (x 360, y 120). Bits kept: ring NOW 21 of 54, ring +1 30 of 70, ring +2 49 of 86, frame band 46 of 96, spinner 17 of 40, tickets 8 of 30 (Solace 9 of 30).
+  - At 1x, T5 still reads as a stream that thins away from the lab, and T6 still reads as the board dissolving into bits.
+- **T6 holds on the room (C13 call).** T6 ends at 0.80 s on the bare room as T4 left it (difference 0). Storyboard T6 K4 is now that end frame (REAL), not the v3 street composite.
+
+### C13: the density sweep (`metrics.json` `c13.sweep`, `scripts/fdiag.py`)
+
+Worst 120 px tile, flashes in any 1 s, rel10 (WCAG was 0 in every run without the pull-out):
+
+| Setting | T5 neutral | T5 Solace | T6 neutral | T6 Solace |
+|---|---|---|---|---|
+| Round-1 density (every bit) | 3 | 3 | 3 | 3 |
+| T5 far 50 %; T6 near 100 % far 50 % | **2** | **2** | 3 | 3 |
+| T5 far 30 %; T6 near 100 % far 30 % | 2 | 2 | 3 | 3 |
+| T6 near 60 % far 30 % | | | 3 | |
+| T6 near 50 % far 25 % | | | 3 | |
+| **T6 near 45 % far 25 % (adopted)** | | | **2** | **2** |
+| T6 near 35 % far 20 % | | | 2 | |
+
+The adopted pair is the densest that passes in both clips. T5 keeps the most bits that pass (50 % rather than 30 %).
+
+### C13: the T6 pull-out attempts
+
+Each attempt composites the T4-reverse into T6 at the adopted density: the iris closes 0.48-0.66 s over the street at 3.4x, then the camera pulls back to 1x over 0.62-0.80 s. Measured on neutral, worst tile in the 0.8 s:
+
+| Attempt | rel10 | WCAG | Tiles at 3 or more |
+|---|---|---|---|
+| Round-1 `pull_out` (lime iris ring, zoom blur) | 3 | 2 | 12 |
+| Ink iris edge; street HUD 40 → 100 % (T4 reversed); zoom blurred over 40 ms | 3 | 1 | 9 |
+| Soft iris edge (24 px), the same street and zoom | 3 | 1 | 8 |
+| Soft edge, zoom blurred over 120 ms (11 samples) | 3 | 1 | 3 |
+| The same at T6 near 35 % far 20 % | 3 | 1 | 3 |
+| The same at T6 near 25 % far 15 % | 3 | 1 | 2 |
+| The same with no ring, spinner or ticket bits at all | 3 | 1 | 3 |
+
+Even with no ring bits, the keyline eating the board plus the iris and zoom puts a tile at 3. Every attempt also adds a WCAG tile flash. So the pull-out cannot meet the limit inside 0.8 s, and **T6 holds on the room**. The attempt is kept as `PULL=2` (`sbkit.pull_out2`, `IRIS=ink|soft|lime`, `PULL_SHUTTER`, `PULL_N`).
+
+### Flash and frame values (round 2)
+
+| | Neutral T5 | Neutral T6 | Solace T5 | Solace T6 |
+|---|---|---|---|---|
+| Frame mean L*, lowest to highest (25 fps) | 27.6-38.2 | 23.5-38.2 | 27.6-38.4 | 23.5-38.4 |
+| Largest frame-to-frame step, L* (25 fps / GIF 12.5 fps) | 2.89 / 3.33 | 2.37 / 4.51 | 2.86 / 3.30 | 2.37 / 4.61 |
+| Whole-frame flashes, rel10 / WCAG | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Worst 120 px tile in any 1 s, rel10 / WCAG (25 fps) | **2** / 0 (x 240, y 0) | **2** / 0 (x 240, y 120) | **2** / 0 (x 240, y 0) | **2** / 0 (x 240, y 120) |
+| The same on the decoded GIF (12.5 fps) | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 |
+| GIF | 3.18 MB, 13 stored frames | 2.32 MB, 10 | 3.21 MB, 13 | 2.34 MB, 10 |
+
+- No frame is brighter than the plate (L* 38.2 neutral, 38.4 Solace).
+- T5's last frame and T6's first frame are the published plate (difference 0).
+- T5's first frame and T6's last frame are the bare room (difference 0).
+- The bits never cross the wheel face:
+  - T5: 0 of 3094 draws off their radial (1557 inside the rim).
+  - T6: 0 of 1735 draws (780 inside the rim).
+  - Solace: 0 of 3092 and 0 of 1743.
+- The Solace GIFs stay in scratch: `D:/rc_scratch/combat_redesign/locked/round2/transitions/out/solace/`.
+
+### 1.7, re-measured
+
+- **No CONCEPT badge.** `build_sb3.py` asserts that every key is REAL, COMP or RENDER. The badges are T2 CCCCR, T3 RCCCCCR, T5 RGGGGR (both skins) and T6 RGGRGR (R = REAL, G = RENDER, C = COMP). The `render3.py` strips use REAL and RENDER only. I checked every strip, storyboard and the sheet by eye.
+- **K1 room readable.** K1 is the bare room, which is T4's last frame (difference 0):
+  - on the rendered 1920 frame: frame mean L* 28.2; in the reviewer's room box (1200-1800 x 450-800) mean 47.8 and p95 80.3;
+  - on the decoded published GIF frame 0 (960 px): 28.0, 46.8 and 78.6.
+- T6 K4 (0.80 s) equals T5 K1 (difference 0). The FAIL K6 equals `netrun_fail/A_crt_feed.png` (difference 0).
+
+### 3.12, re-measured (`metrics.json` `<skin>.bits`, `scripts/bitstats.py`)
+
+Each drawn bit colour is the glyph core pixel as composed at alpha 1. It is compared with the published plate at the bit's point, read the same way as the source (90th percentile of C*ab over a 9 px disc), with the layers above the source masked out. The hue is dE76 over a* and b*. Values are neutral / Solace:
+
+| Stream | Bits | C* median | Hue dE median | Hue dE p90 | Share with hue dE ≤ 3 |
+|---|---|---|---|---|---|
+| T5 ring NOW | 47 | 27.6 / 27.6 | 0.11 / 0.11 | 0.25 / 0.33 | 1.00 / 1.00 |
+| T5 ring +1 | 63 | 11.4 / 9.2 | 0.21 / 0.21 | 0.40 / 0.45 | 0.98 / 0.98 |
+| T5 ring +2 | 76 | 7.1 / 6.6 | 0.18 / 0.22 | 0.31 / 0.42 | 1.00 / 1.00 |
+| T5 frame band | 83 | 8.4 / 6.7 | 0.27 / 0.27 | 0.87 / 0.58 | 0.98 / 0.98 |
+| T6 ring NOW | 21 | 28.1 / 27.6 | 0.11 / 0.07 | 0.38 / 0.23 | 1.00 / 1.00 |
+| T6 ring +1 | 30 | 10.8 / 9.2 | 0.23 / 0.28 | 0.40 / 0.42 | 1.00 / 1.00 |
+| T6 ring +2 | 49 | 6.9 / 6.7 | 0.18 / 0.24 | 0.25 / 0.35 | 1.00 / 0.98 |
+| T6 frame band | 46 | 8.6 / 7.4 | 0.28 / 0.26 | 0.96 / 2.60 | 0.98 / 0.91 |
+| T6 spinner | 17 | 51.9 / 51.9 | 0.09 / 0.09 | 0.49 / 0.49 | 0.94 / 0.94 |
+| Tickets | 24 | 7.4 / 6.1 | 0.30 / 0.12 | 0.45 / 0.38 | 1.00 / 1.00 |
+| Cards (Brace, Spin 3, Trigger, Twist) | 26 each | 37.8-53.6 | 0.00-0.42 | 0.74-5.02 | 0.88-0.96 |
+
+- The bits keep their source hue.
+- The full dE76 (median 0-43) is the L* hold: a bit's L* is held in 55-80 so it reads on the night room, for example a ticket bit from an L* 12 ticket.
+- The few outliers (hue dE up to 58.8 on Brace) are bits whose 9 px disc straddles two elements. There the plate's 90th-percentile pixel belongs to the other element than the source layer's: the card above on the plate, or a disc that is masked differently.
+- On Solace, the frame-band bits now take the teal rim.
+
+### Not done (round 2)
+
+- **The T4-reverse pull-out** is not composited (the C13 call above). How the netrun street then takes over from the room at 0.80 s (a cut, or the reduced-motion 0.25 s cross-fade) is not drawn and is an open question for the designer. DR-10's "back on the netrun street" is therefore not shown inside T6.
+- **The tile flash sits at the new limit.** It is 2, with no margin under 2.
+- **Not rendered:** the Meridian skin (this set has neutral and Solace), and the srv and gh rooms (the bit source points sit in the bio lab).
+- **Docs outside this folder are stale:** `../GODOT_PORT_SPEC.md` section 10 (the bit counts, the flash line, the "pull-out not composited yet" line) and the transitions rows of `../REVIEW_RESPONSE.md`. They were not edited in this stage. The exact changes are in the round-2 report.
+
+### Process (round 2)
+
+- Scripts ran from files under `D:/rc_scratch/combat_redesign/locked/round2/transitions/src/` (copies in `scripts/`).
+- **One breach:** a shell line that searched `text3.py` also ran `python -I -c "" 2>/dev/null`. It ran no code and wrote nothing, but it breaks the "scripts by path, never python -c" rule.
+- I killed no process. No Godot, no Blender, nothing committed or stashed, nothing written under D:/Godot/rebel_cell, no corp/src file edited.
+- There was one full render and check run at the end (`staged` was re-run once after the capture-hook fix, then `bitstats`, `render3`, `build_sb3`, `publish3`, `verify_pub`). The sweeps before it rendered T5 and / or T6 only through `fdiag.py`.
+
+### Rebuild (round 2)
+
+From `D:/rc_scratch/combat_redesign/locked/round2/transitions/`, one process per skin:
+```
+CORP=neutral python src/staged.py p1     # layers/<corp>_p1.npz + the compose check against ../final/ (asm_render capture hooks on)
+CORP=solace  python src/staged.py p1
+CORP=neutral python src/bitstats.py     # bit colours per stream vs the published plate -> out/bits_<corp>.json, out/bits_<corp>.png
+CORP=solace  python src/bitstats.py
+CORP=neutral python src/render3.py       # GIFs, strips, keys, metrics_<corp>.json -> out/<corp>/
+CORP=solace  python src/render3.py
+python src/build_sb3.py                  # storyboard strips + sheet -> sb/ (checks FAIL K6, T6 K4 = T5 K1, the badges)
+python src/publish3.py                   # copies to this folder, writes metrics.json (with the C13 sweep from out/fdiag_*.json)
+python src/verify_pub.py merge           # measures the published GIFs, adds metrics.json published_check
+```
+Sweeps: `CORP=<skin> DARK_KEEP=.. DARK_NEAR=.. DARK_KEEP6=.. DARK_NEAR6=.. [PULL=2 IRIS=soft PULL_SHUTTER=0.12 PULL_N=11] python src/fdiag.py t5,t6 <tag>`.
+
+---
+
+## 2026-11-03 rebuild (re-rendered 2026-11-04; review 1.7, 3.12): round 1, kept as the record
+
+Round 2 above replaces these items:
+- the flash table and its limit (3 → 2);
+- the bit counts (the C13 density);
+- T6 K4 (now T6's own end frame);
+- the "Not done" items on the pull-out and the tile margin;
+- the 2/255 compose figure (now 1/255);
+- the GIF sizes and frame values in the Files table (round 2 gives them in its own flash table; the file set is the same);
+- the paths. The scripts now run from `round2/transitions/src/`, and this section's commands are round 1's.
 
 Every frame is rendered at 1920x1080 by `scripts/render3.py` from the board generator's own layers (`locked/corp/src`, imported read-only, never edited). Nothing is enlarged and nothing is painted. No game number, word or rule changed.
 

@@ -11,8 +11,13 @@ sys.dont_write_bytecode = True
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import card_render as C
+import rb_lift as _RL
+# 2026-11-04 round 2 (C6): the lifted card as the board draws it (rb_lift): at the hand scale (zoom 1.00, it was 1.10), its pink print and hard
+# drop to the right
+C.HOVER_PRINT_OFF[0], C.HOVER_PRINT_OFF[1] = _RL.PRINT_OFF
+C.HOVER_DROP_OFF[0], C.HOVER_DROP_OFF[1] = _RL.DROP_OFF
 
-FINAL = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'
+FINAL ='D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'
 WORK = 'D:/rc_scratch/combat_redesign/locked/corp/work/'
 DE_OUT = 'D:/rc_scratch/combat_redesign/locked/rebuild/cards/de.json'
 FD = os.path.dirname(os.path.abspath(__file__)) + '/fonts/'
@@ -21,7 +26,7 @@ os.makedirs(FINAL, exist_ok=True)
 
 STATES = [('normal (full value)', dict(mode='normal'), 1.0),
           ('resting in hand (dim 0.88)', dict(mode='normal', dim=0.88), 1.0),
-          ('lifted / hover (1.10 x)', dict(mode='hover'), 1.10),
+          ('lifted / hover (%.2f x, print and drop right)' % _RL.LIFT_ZOOM, dict(mode='hover'), _RL.LIFT_ZOOM),
           ('played slot (name + PLAYED)', dict(mode='played'), 1.0),
           ('unaffordable (glass + lock + NO RAM)', dict(mode='unaffordable'), 1.0),
           ('nowords', dict(mode='normal', nowords=True), 1.0),

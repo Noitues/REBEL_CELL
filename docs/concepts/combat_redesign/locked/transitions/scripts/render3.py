@@ -1,4 +1,5 @@
-"""render3 (2026-11-04 rebuild): T5 / T6 on the rebuilt board, every frame rendered at 1920x1080 from the generator's layers.
+"""render3 (2026-11-04 round 2; first written for the rebuild): T5 / T6 on the round-2 board, every frame rendered at 1920x1080 from the
+generator's layers.  Round 2 (C13): the bit density over the dark city (fx3.far_keep), the PULL=2 pull-out attempt (sbkit.pull_out2).
 CORP=neutral|solace python render3.py
  -> out/<corp>/t5_A.gif, t6_A.gif (960 px, 12.5 fps = 80 ms), keys/t5_XXX.png, t6_XXX.png (1920x1080), strip_t5.jpg, strip_t6.jpg,
     metrics_<corp>.json (flash, frame L*, the wheel-face check, the bit colours, end frames)."""
@@ -16,13 +17,19 @@ T5K = [(0.0, 'K1 0.00 s'), (0.38, 'K2 0.38 s'), (0.55, 'K3 0.55 s'), (0.70, '0.7
 T6K = [(0.0, 'K1 0.00 s'), (0.08, '0.08 s'), (0.2, 'K2 0.20 s'), (0.3, '0.30 s'), (0.4, 'K3 0.40 s'), (0.52, '0.52 s'), (0.64, '0.64 s'), (0.8, 'end 0.80 s')]
 LABF = ImageFont.truetype('C:/Windows/Fonts/arialbd.ttf', 15)
 TAGF = ImageFont.truetype('C:/Windows/Fonts/arialbd.ttf', 13)
-PULL = os.environ.get('PULL', '0') == '1'      # 1: composite the T4-reverse iris + pull-out (sbkit.pull_out) into T6; off: fails the tile flash proxy (NOTES)
+PULL_MODE = os.environ.get('PULL', '0')      # 1: the round-1 T4-reverse iris + pull-out (sbkit.pull_out, lime ring); 2: the round-2 attempt
+PULL = PULL_MODE in ('1', '2')                # (sbkit.pull_out2: no bright ring, street HUD 40 -> 100 %, motion-blurred zoom); 0: camera holds on the room
+IRIS = os.environ.get('IRIS', 'ink')          # PULL=2 iris edge: ink | soft | lime
 
 
 def t6_full(t, log=None):
-    """the T6 win path: the dissolve on the room view (camera held); with PULL=1 also the T4 iris and pull-out to the street"""
+    """the T6 win path: the dissolve on the room view (camera held); with PULL=1 / 2 also the T4 iris and pull-out to the street"""
     a = to_pil(M.t6(t, log))
-    return np.asarray(SB.pull_out(a, t).convert('RGB')) if PULL else np.asarray(a)
+    if PULL_MODE == '1':
+        return np.asarray(SB.pull_out(a, t).convert('RGB'))
+    if PULL_MODE == '2':
+        return np.asarray(SB.pull_out2(a, t, IRIS).convert('RGB'))
+    return np.asarray(a)
 
 
 def render(fn, t, log=None):
@@ -188,8 +195,10 @@ if __name__ == '__main__':
                 kinds.append('R' if t in (0.0, 1.2) else 'G')
             else:
                 kinds.append('R' if (t == 0.0 or (t == 0.8 and not PULL)) else ('C' if t == 0.8 else 'G'))
-        title = {'t5': 'T5 room to combat, bits option A on the rebuilt board, every frame rendered from the generator (%s)' % nm,
-                 't6': 'T6 combat to netrun (win path), bits option A on the rebuilt board, every frame rendered from the generator (%s)' % nm}[fn]
+        title = {'t5': 'T5 room to combat, bits option A on the round-2 board, every frame rendered from the generator (%s)' % nm,
+                 't6': 'T6 combat to netrun (win path), bits option A on the round-2 board, camera holds on the room (%s)' % nm}[fn]
+        if fn == 't6' and PULL:
+            title = 'T6 combat to netrun (win path), bits option A on the round-2 board, with the T4-reverse pull-out (%s)' % nm
         strip([fr[t] for t, _ in KEYS], ['%s %s' % (fn.upper(), l) for _, l in KEYS], kinds, title, OUT + 'strip_%s.jpg' % fn)
         print(fn, {k: v for k, v in res[fn].items() if k in ('gif_mb', 'wheel_face')}, flush=True)
         print('  whole12.5', {k: v for k, v in res[fn]['whole_12p5fps'].items() if k != 'frame_mean_Lstar'}, flush=True)
@@ -199,6 +208,17 @@ if __name__ == '__main__':
     res['bits'] = json.load(open(HERE + 'out/bits_%s.json' % CORP)) if os.path.exists(HERE + 'out/bits_%s.json' % CORP) else None
     res['params'] = dict(bit_font='Share Tech Mono (corp/src/fonts/ShareTechMono-Regular.ttf), outline 1/22 of size in the bit colour',
                          bit_L_clamp=list(BIT_L), sample_disc_px=SAMPLE_R, sample_chroma_percentile=SAMPLE_PCT, white_hot_s=WHITE_HOT_S,
-                         white_hot_rgb=list(HOT_WHITE), flip_s=FLIP_S, orbit_r_px=list(R_ORBIT), rim_r_px=R_RIM, k1_room='v3.1 bare room (T4 end frame)')
+                         white_hot_rgb=list(HOT_WHITE), flip_s=FLIP_S, orbit_r_px=list(R_ORBIT), rim_r_px=R_RIM, k1_room='v3.1 bare room (T4 end frame)',
+                         bit_alpha=M.BIT_A,
+                         density_c13=dict(rule='a ring / spinner / ticket bit whose route goes d degrees round the rim from the lab is kept with '
+                                               'p = near - (near - far) * clamp((d - d0) / (180 - d0)); card bits are not thinned',
+                                          d0_deg=M.DARK_D0, t5_near=M.DARK_NEAR, t5_far=M.DARK_KEEP, t6_near=M.DARK_NEAR6, t6_far=M.DARK_KEEP6,
+                                          t5_bits_kept=dict((nm, '%d of %d' % (int(G['keep'].sum()), G['n'])) for nm, G in
+                                                            zip(('ring NOW', 'ring +1', 'ring +2', 'frame band'), M.G5)),
+                                          t5_ticket_bits_kept='%d of %d' % (int(M.TK['keep'].sum()), M.NTK),
+                                          t6_bits_kept=dict((nm, '%d of %d' % (int(G['keep'].sum()), G['n'])) for nm, G in
+                                                            zip(('ring NOW', 'ring +1', 'ring +2', 'frame band', 'spinner'), M.G6)),
+                                          t6_ticket_bits_kept='%d of %d' % (int(M.TK['keep6'].sum()), M.NTK)),
+                         pull_out=dict(mode=PULL_MODE, iris=IRIS if PULL_MODE == '2' else None))
     json.dump(res, open(OUT + 'metrics_%s.json' % CORP, 'w'), indent=1)
     print('done', round(time.time() - T0, 1))

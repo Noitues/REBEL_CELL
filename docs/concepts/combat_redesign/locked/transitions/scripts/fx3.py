@@ -3,7 +3,9 @@ T5: the room (as T4 left it) dims to the plate's grade; the spinner (its own gen
 and the W4-W6 tickets are drawn out of the lab as bits, each ring behind a keyline head; the guns arm at the lock; the HUD, the cards
 (each with a trail of its own bits) and SEND IT come in.  T6: the cards shed their bits, the keyline eats the frame band, rings +2, +1,
 NOW and then the spinner (player-pink keyline), the bits draining round the rim into the lab; the room comes back as T4 left it.
-Every bit is the colour of its source (fx3lib.sample on the generator layer it belongs to)."""
+Every bit is the colour of its source (fx3lib.sample on the generator layer it belongs to).
+Round 2 (2026-11-04, call C13): the bit density over the dark city is lowered (far_keep below) so the worst 120 px tile flashes at most 2
+times in any 1 s in T5 and T6."""
 from fx3lib import *
 
 PHI0 = -math.pi / 2 + 0.10          # sweep start just right of 12 o'clock (screen angle, y down)
@@ -76,6 +78,34 @@ def glyph_set(band, bi, seed, img, alpha=None, kind='ring'):
 G5 = [glyph_set(b, i, 11, BOARD) for i, b in enumerate(BANDS)]
 G6 = [glyph_set(b, i, 23, BOARD) for i, b in enumerate(BANDS)] + [glyph_set(CORE, 4, 23, TOWER, alpha=LY['tower'][..., 3], kind='core')]
 
+# ---- round 2 (C13, review N4 / question 6): the bit density over the dark city.  A bit whose route goes further than DARK_D0 round the
+# rim from the lab (the far side of the wheel, where the rim runs over the dark city at the frame edge) is kept with a probability that falls
+# linearly to DARK_KEEP at the far point (180 degrees).  Its own stream (seed 1000 + ...), so every kept bit is the same bit as before.
+# Round-2 values (round2/transitions/out/fd_*.txt, fdiag.py): T5 keeps every bit to 90 degrees and 50 % at the far point (worst tile 3 -> 2);
+# T6 keeps 45 % to 90 degrees and 25 % at the far point, because in T6 the board is eaten first and the whole wheel then sits over the dark
+# city (60 / 30 % and 50 / 25 % still gave 3).  Env overrides are for the sweeps only.
+DARK_KEEP = float(os.environ.get('DARK_KEEP', '0.5'))           # T5: kept share at the far point
+DARK_NEAR = float(os.environ.get('DARK_NEAR', '1.0'))           # T5: kept share up to DARK_D0 round the rim
+DARK_KEEP6 = float(os.environ.get('DARK_KEEP6', '0.25'))        # T6: the board dissolves over the city, so the whole wheel is over it
+DARK_NEAR6 = float(os.environ.get('DARK_NEAR6', '0.45'))
+DARK_D0 = float(os.environ.get('DARK_D0', '90'))
+
+
+def far_keep(routes, seed, near=None, far=None):
+    near = DARK_NEAR if near is None else near
+    far = DARK_KEEP if far is None else far
+    r = np.random.RandomState(1000 + seed)
+    u = r.rand(len(routes))
+    d = np.degrees(np.abs(np.array([g['d'] for g in routes], np.float64)))
+    p = near - (near - far) * np.clip((d - DARK_D0) / max(180.0 - DARK_D0, 1e-6), 0, 1)
+    return u < p
+
+
+for _k, _G in enumerate(G5):
+    _G['keep'] = far_keep(_G['routes'], 50 + _k)
+for _k, _G in enumerate(G6):
+    _G['keep'] = far_keep(_G['routes'], 60 + _k, DARK_NEAR6, DARK_KEEP6)
+
 # ---- the W4-W6 tickets (outside the wheel, top left): their own short stream, landing as the frame band locks
 _rt = np.random.RandomState(31)
 NTK = 30
@@ -87,6 +117,8 @@ TK['sx'], TK['sy'] = sources(NTK, 77, 3)
 TK['raw'], TK['col'] = map(list, zip(*[sample(TICK, TK['gx'][i], TK['gy'][i], alpha=LY['tickets'][..., 3]) for i in range(NTK)]))
 TK['routes'] = [make_route(TK['sx'][i], TK['sy'][i], TK['gx'][i], TK['gy'][i], R_ORBIT[0] + _rt.rand() * (R_ORBIT[1] - R_ORBIT[0])) for i in range(NTK)]
 TK_T6 = 0.04 + _rt.rand(NTK) * 0.12
+TK['keep'] = far_keep(TK['routes'], 77)
+TK['keep6'] = far_keep(TK['routes'], 78, DARK_NEAR6, DARK_KEEP6)
 
 # ---- the cards' own bits: start points on each card's opaque body, coloured from the card
 CG = []
@@ -179,6 +211,8 @@ def t5(t, log=None):
                 ov.dot(CX + rp * math.cos(a1), CY + rp * math.sin(a1), 6, col, 6)
         Tl = t0 + DUR5 * einv(np.clip(G['alpha'] / (TAU + 0.9), 0, 1))
         for i in range(n):
+            if not G['keep'][i]:
+                continue
             g = G['routes'][i]
             a = t - (Tl[i] - g['fl'])
             if a <= 0:
@@ -195,6 +229,8 @@ def t5(t, log=None):
                     ov.glyph(G['gx'][i], G['gy'][i], flipc(G['ch'][i], a, G['ph'][i]), G['col'][i], 28 * (1 - k), 1 - k, 0, tag=('t5', bi, g['tht']))
     # the tickets' stream
     for i in range(NTK):
+        if not TK['keep'][i]:
+            continue
         g = TK['routes'][i]
         a = t - (TK['land'][i] - g['fl'])
         if a <= 0:
@@ -301,6 +337,8 @@ def t6(t, log=None):
                 ova.keyline(rp, st, min(head, 0.9), dr, G['bc'], 16, 6.4, 1.0)
         Tl = t6s + dur * einv(np.clip(G['alpha'] / (TAU + 0.9), 0, 1))
         for i in range(n):
+            if not G['keep'][i]:
+                continue
             g = G['routes'][i]
             fl = min(g['fl'] + 0.04, T6_BITS_END - Tl[i])      # every bit is home before the T4 iris closes
             a = t - Tl[i]
@@ -312,6 +350,8 @@ def t6(t, log=None):
             ov.glyph(x, y, flipc(G['ch'][i], a, G['ph'][i]), hot(G['col'][i], a), 28 - 12 * pe, BIT_A * (1 - float(cl((p - 0.8) / 0.2))),
                      tumble(G, i, a, pe), tag=('t6', bi, g['tht']))
     for i in range(NTK):
+        if not TK['keep6'][i]:
+            continue
         g = TK['routes'][i]
         fl = g['fl'] + 0.04
         a = t - TK_T6[i]

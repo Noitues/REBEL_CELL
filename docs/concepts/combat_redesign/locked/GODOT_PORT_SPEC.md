@@ -1,16 +1,16 @@
 # Godot port spec: the locked combat screen (roadmap step 8)
 
-**Status: DRAFT, not posted.** Art-pass draft, rebuilt 2026-11-04 on the rebuilt board (`final/` gate 1 of 2026-11-04, the effects rebuild of 2026-11-03, room grade rb2-1). It is not signed off by the designer and has not been sent to build. The mailbox draft is `MAILBOX_DRAFT.md` (also DRAFT, not posted).
+**Status: DRAFT, not posted.** Art-pass draft, rebuilt 2026-11-04 on the rebuilt board and **regenerated 2026-11-04 on the round-2 board** (`final/` round 2, `hover/` round 2, `backdrop/` round 2, `transitions/` round 2; the effects are still the rebuild of 2026-11-03 on the gate-1 board, see 8.4; room grade rb2-1). It is not signed off by the designer and has not been sent to build. The mailbox draft is `MAILBOX_DRAFT.md` (also DRAFT, not posted; its numbers block was not regenerated in this pass).
 
-**Generated tables.** Every table and appendix that carries a number sits between a pair of `gen:` markers (HTML comments, `gen:<name> begin` and `gen:<name> end`, invisible when rendered) and is written by `port/src/port_spec.py` from the data files (`port/*.json`, `backdrop/grade.json`, `backdrop/checks.json`, `final/checks.json`). No number inside a marker is typed by hand; change the data and re-run, never edit the block.
+**Generated tables.** Every table and appendix that carries a number sits between a pair of `gen:` markers (HTML comments, `gen:<name> begin` and `gen:<name> end`, invisible when rendered) and is written by `port/src/port_spec.py` (round 2: `port/src/port_spec_r2.py`) from the data files (`port/*.json`, `backdrop/grade.json`, `backdrop/checks.json`, `final/checks.json`). No number inside a marker is typed by hand; change the data and re-run, never edit the block.
 
 **What it covers.** How to build the locked Shifting Waves combat board in Godot 4.7. The board is defined by:
-- `final/`: plates, NOTES, `checks.json` and `src_snapshot/` (rebuild, gate 1 2026-11-04);
-- `corp/NOTES.md`: the corp skins; the designer rulings DR-1..DR-10 in `VISUAL_PLAN.md`, and `docs/ART_BIBLE.md` 2.4 and 3.14 (the corp-skin and room notes);
-- `effects/`: the effects and their timings (`timings_CDHL.json`, `timings_MPST.json`, rebuild 2026-11-03);
-- `hover/`: 11 hover plates;
+- `final/`: plates, NOTES, `checks.json` and `src_snapshot/` (rebuild round 2, 2026-11-04);
+- `corp/NOTES.md`: the corp skins; the designer rulings DR-1..DR-10 in `VISUAL_PLAN.md`, and `docs/ART_BIBLE.md` 2.4 and 3.14 (the corp-skin and room notes); the art-pass calls C1-C18 of round 2 in `REVIEW_RESPONSE.md` "Round 2 (2026-11-04)";
+- `effects/`: the effects and their timings (`timings_CDHL.json`, `timings_MPST.json`, rebuild 2026-11-03; not re-rendered on the round-2 board);
+- `hover/`: 11 hover plates (26 files, round 2);
 - `backdrop/`: the room grade;
-- `transitions/`: T5 and T6.
+- `transitions/`: T5 and T6 (round 2, C13).
 
 Every element family is listed with:
 - what is a shader, with its uniforms and maths;
@@ -43,9 +43,9 @@ Every element family is listed with:
 | File | What it is |
 |---|---|
 | `port/fx_timings.json` | 32 effects (T 1, M 8, P 3, D 7, H 7, L 3, C 2, S 1) merged from `effects/timings_CDHL.json` and `timings_MPST.json`; cap 600 ms with 0 per-effect overrides; the resolve beat 3800 ms against 4000 (section 8, Appendix A). Version port-2. |
-| `port/skin_tables.json` | Tokens, marks, slice inks, card types, cell fills, the time grade, the gunmetal clock and the three skins with their material layers read from the generator source (sections 3, 4.3, 4.4, 7, Appendix B). Version port-2. |
+| `port/skin_tables.json` | Tokens, marks, slice inks, card types, cell fills, the time grade, the gunmetal clock and the three skins with their material layers read from the generator source (sections 3, 4.3, 4.4, 7, Appendix B). Version port-3. |
 | `port/cards_atlas.json`, `port/cards_proof.jpg` | The card atlas baked from the module that renders `final/card_sheet.jpg`: cell rects, every text anchor logged from the real draw call, the rules-bar quads, the state recipes; the proof shows art | worded | liner per card at the in-hand size (sections 4.8, 6.2, Appendix D). Version port-2. |
-| `port/src/` | `norm_timings.py`, `skin_tables.py`, `bake_cards.py` make the three data files; `port_spec.py` writes every table and appendix of this spec from them (and from `backdrop/grade.json`, `backdrop/checks.json`, `final/checks.json`). Re-run all four after any change upstream; a hand edit inside a `gen:` block is overwritten. |
+| `port/src/` | `norm_timings.py`, `skin_tables.py`, `bake_cards.py` make the three data files; `port_spec.py` writes every table and appendix of this spec from them (and from `backdrop/grade.json`, `backdrop/checks.json`, `final/checks.json`). Re-run all four after any change upstream; a hand edit inside a `gen:` block is overwritten. **Round 2 (2026-11-04):** `skin_tables_r2.py` runs `skin_tables.py` with `rb4_patch._solace` installed after `rb_patch._skins` (the round-2 install order), and `port_spec_r2.py` is `port_spec.py` with the round-2 checks and the C16 Solace text; both are copied here from `D:/rc_scratch/combat_redesign/locked/round2/docs/port/`. Skin tables version port-3. |
 <!-- gen:files end -->
 
 ---
@@ -138,7 +138,7 @@ All of these are views. They read `WavesState`, `WavesForecast` and the session'
 | Sector digits | r 386.5, boss r 14.3; angles -4.5, 60, 120, 180, 240, 300; hole = boss + 2.6 px | `r2_sched` |
 | Landing lanes | r 436, 453, 470 | `f1_render` |
 | Rim / crests | r 489-500; 6 crests at r 494.5, 30° + 60k | `lw_skin.rim_vector` |
-| Hand | CARD_SCALE 1.10, step 168, left card centre x 1035, y 904, fan 4°, hover push 16, lift 1.10 at y 866 (slot-0 lift: fan +32 px, LIFT_CY 906). The p2 play lift sits 24 px left at y 812 and pushes 16. No hand pixel inside r 455, and the lowest hand pixel is at least 12 px above y 1080 (2026-11-03 stage 2, review 2.7; was x 1023, y 924). | `f1_hand`, `rb2_patch` |
+| Hand | CARD_SCALE 1.10, step 168, left card centre x 1035, y 904, fan 4°. No hand pixel inside r 455, and the lowest hand pixel is at least 12 px above y 1080 (2026-11-03 stage 2, review 2.7; was x 1023, y 924). **Round 2 (C6, `rb_lift.layout`):** the fan keeps its slot positions; the hovered card lifts straight up, upright, at the hand scale (zoom 1.00; it was 1.10), centre y 718 out of slots 1-3; the cards right of it open, never close (board p2: 30 px; the hover plates: 36 px); the UNDO / SEND IT column moves right (board: +12 px; hover plates: +16 px, see 9); the lifted card's pink print and hard drop go right. The slot-0 (Brace) lift has no layout that clears its siblings at +16 (section 14). | `f1_hand`, `rb2_patch`, `rb_lift` |
 | Card | design 176 x 250, chamfer 16, art band (8,8)-(168,126), icon centre (88,66); canvas margin 18 | `card_render` |
 | Hover tag box | (1092, 404) | `a2_hover` |
 
@@ -186,7 +186,9 @@ Create one new Resource, `scripts/data/combat_look_data.gd`, stored at `content/
 | `steel_hi` | #C4CBD8 | 81.5 | The armour rail's top edge on enemy HP trays |
 | `text_hi / best_neutral` | #F2F6FF | 96.8 | BEST LINE chip and selected option chips (type), filled star; never plan_yellow |
 | `text_mid` | #AFC0D6 | 77.1 | BEST LINE chip edge, HUD mid text |
-| `p_stock` | #F6C8DE | 85.1 | FX-P plate stock and break shards (review 3.10: the FX-P plate on its own stock, a pink-tinted paper, not the card bone PAPER #F2EEE4) |
+| `p_stock` | #F6C8DE | 85.1 | FX-P plate stock and break shards, a meaning token in `rb_tokens.TOKENS` since round 2 (C15; review 3.10: the FX-P plate on its own stock, a pink-tinted paper, not the card bone PAPER #F2EEE4) |
+| `e_line` | | | Enemy E structure lines (unit cell outlines, token lane rings, landing-arc frames, ring-tag boxes, queue feed): `enamel` hue at L* 80 on ring NOW, graded per ring by the time grade (round 2, C3) |
+| `k_struct` | | | K structure (plate and bezel 1 px ring and band lines, cube-glyph disc ink, tape-end crescent, ward arc): capped at L* 84, hue kept (round 2, C3) |
 | `slice_burst` | fill #F06EAE / texture ink #9E2A66 | 63.9 | Slice ink (`rb_tokens` SLICE_INK / SLICE_TEX) |
 | `slice_shield` | fill #5E9BE0 / texture ink #234E8C | 62.7 | Slice ink (`rb_tokens` SLICE_INK / SLICE_TEX) |
 | `slice_turret` | fill #AEB24E / texture ink #5A5E1A | 70.4 | Slice ink (`rb_tokens` SLICE_INK / SLICE_TEX) |
@@ -194,7 +196,7 @@ Create one new Resource, `scripts/data/combat_look_data.gd`, stored at `content/
 | `card_tower` | #006E66 (dark #00403B, text #FBFAF4) | 41.4 | Card type plate (`card_render.TYPES`) |
 | `card_wave` | #B4AAFF (dark #5E50C4, text #15121A) | 73.3 | Card type plate (`card_render.TYPES`) |
 
-Retired, never drawn: the silver THIS TURN tape (`tape_lo` / `tape_hi`), the O-29 slice inks, BOSS_GOLD #FFC428. Targets the tokens are held to (`port/skin_tables.json` `targets`): `cell_ratio_min` 3.0, `clock_L` [45.0, 55.0], `slice_ink_L` [60.0, 72.0], `cap_min_px` 16.0, `de_min` 15.0, `order_margin` 1.0, `room_mean_L` [28.0, 34.0], `e_mark_L` 84.0, `k_type_L` 84.0, `mark_margin` 1.0, `ring_val` [1.0, 0.8, 0.62], `cell_tint_max_chroma` 8.0, `review_room_box` [1200, 450, 1800, 800].
+Retired, never drawn: the silver THIS TURN tape (`tape_lo` / `tape_hi`), the O-29 slice inks, BOSS_GOLD #FFC428, the round-1 Solace leaf rope #96FF46 / #4FA83A (C16). Targets the tokens are held to (`port/skin_tables.json` `targets`): `cell_ratio_min` 3.0, `clock_L` [45.0, 55.0], `slice_ink_L` [60.0, 72.0], `cap_min_px` 16.0, `de_min` 15.0, `order_margin` 1.0, `room_mean_L` [28.0, 34.0], `e_mark_L` 84.0, `k_type_L` 84.0, `mark_margin` 1.0, `ring_val` [1.0, 0.8, 0.62], `cell_tint_max_chroma` 8.0, `review_room_box` [1200, 450, 1800, 800]. Round-2 targets (`targets_r2`, from `rb_tokens.py`): `e_line_L` 80.0, `struct_cap_L` 84.0, `struct_class_L` 70.0, `unclassed_L` 80.0, `unclassed_r` 480.0, `drawn_de` 3.0, `pen_wax_px` [6.0, 8.0], `pen_ink_px` [2.4, 3.6], `pen_grain_L_std` 2.0, `ticket_edge_vals` [0.5, 0.7, 1.0], `ticket_step_L` 5.0, `hot_core_px_min` 3.0, `hot_core_ratio_min` 4.5, `rim_de_min` 25.0, `hub_hp_green` "#7BD37B".
 <!-- gen:tokens end -->
 
 **Time grade function** (`gramlib.grade`, used for every graded mark). For COLD and FAR, the threat red is overridden by the lifted colours.
@@ -242,21 +244,21 @@ Steps, in order (`backdrop/grade.json` `order`, verbatim):
 - 8 vignette: * (1 - vignette * smoothstep(v0, v1, d)) * (1 - board_falloff * (1 - smoothstep(bx0, bx1, x)))
 - then the board scrim (unchanged): 6 px blur weighted 1 - smoothstep(300, 520, r), and SCRIM #02030A at 0.55 * (1 - smoothstep(330, 560, r)), r from (536, 540)
 
-Measured on the graded rooms (`backdrop/checks.json`, L* of the room region, after the grade):
+Measured on the graded rooms (`backdrop/checks.json` round 2 (2026-11-04), L* of the room region on the round-2 p1 board, after the grade; "as seen" keeps the UI scrim slabs, reported and gated 28-34 on these p1 plates):
 
-| Plate | Room | Skin | mean L* | p95 L* | passes |
-|---|---|---|---|---|---|
-| `p1_bio` | bio | neutral | 32.0 | 38.1 | yes |
-| `p1_srv` | srv | neutral | 32.5 | 38.1 | yes |
-| `p1_gh` | gh | neutral | 31.9 | 38.1 | yes |
-| `p1_rec` | rec | neutral | 32.3 | 38.1 | yes |
-| `p1_lobby` | lobby | neutral | 32.2 | 38.1 | yes |
-| `p1_event` | event | neutral | 31.8 | 38.1 | yes |
-| `p1_shop` | shop | neutral | 32.2 | 38.1 | yes |
-| `p1_bio_solace` | bio | solace | 32.0 | 38.1 | yes |
-| `p1_shop_meridian` | shop_meridian | meridian | 32.2 | 38.1 | yes |
+| Plate | Room | Skin | mean L* | p95 L* | as seen mean L* | passes |
+|---|---|---|---|---|---|---|
+| `p1_bio` | bio | neutral | 31.9 | 37.8 | 28.9 | yes |
+| `p1_srv` | srv | neutral | 32.4 | 37.9 | 29.3 | yes |
+| `p1_gh` | gh | neutral | 31.7 | 37.8 | 28.8 | yes |
+| `p1_rec` | rec | neutral | 32.1 | 37.8 | 29.1 | yes |
+| `p1_lobby` | lobby | neutral | 32.1 | 37.8 | 29.1 | yes |
+| `p1_event` | event | neutral | 31.6 | 37.9 | 28.6 | yes |
+| `p1_shop` | shop | neutral | 31.9 | 38.0 | 28.9 | yes |
+| `p1_bio_solace` | bio | solace | 31.9 | 37.8 | 28.9 | yes |
+| `p1_shop_meridian` | shop_meridian | meridian | 31.9 | 38.0 | 28.9 | yes |
 
-Targets: room_mean: L* 28-34 (rb_checks room region); room_p95: +1 <= ring-NOW occupied glass p95 of the plate; pink: room pink share < 0.1 %; rb_checks: a-e pass on every plate.
+Targets: C9: room mean L* 28-34 and room as seen mean L* 28-34 on every plate (all backdrop plates are p1); room p95 + 1 <= ring-NOW occupied glass p95; room pink share < 0.1 %; rb_checks a-i (round 2) on every plate; composite vs real render mean <= 0.5/255 and max <= 3/255 where a real render exists.
 
 Shader path uniforms (`shaders/combat/room_grade.gdshader`), defaults = the `bio` room; every room's values are in Appendix C:
 ```glsl
@@ -350,9 +352,9 @@ With the skin material composited (`skin_tables.py`, the material layers over th
 
 | Skin | occupied mean L* (NOW / +1 / +2) | empty mean L* | data: luminance ratio occupied / empty, lowest ring (the check-a measure) | plate: ring NOW occupied L* | plate: lowest ratio |
 |---|---|---|---|---|---|
-| neutral | 43.1 / 38.6 / 33.9 | 22.7 / 19.1 / 16.8 | 3.54 | 42.9-43.1 | 3.17 |
-| solace | 43.1 / 38.5 / 33.9 | 22.1 / 18.4 / 15.7 | 3.73 | 43.0-43.3 | 3.32 |
-| meridian | 42.3 / 37.8 / 33.1 | 20.5 / 16.9 / 14.5 | 4.08 | 42.7-42.9 | 4.12 |
+| neutral | 43.1 / 38.6 / 33.9 | 22.7 / 19.1 / 16.8 | 3.54 | 42.8-43.1 | 3.17 |
+| solace | 43.1 / 38.5 / 33.9 | 22.1 / 18.4 / 15.7 | 3.73 | 43.0-43.2 | 3.31 |
+| meridian | 42.3 / 37.8 / 33.1 | 20.5 / 16.9 / 14.5 | 4.08 | 42.6-42.9 | 4.11 |
 <!-- gen:cells end -->
 
 - **T (bake once per corp with PIL; corp-specific vector pieces):**
@@ -645,7 +647,7 @@ All bakes import the locked generator read-only from `D:/rc_scratch/combat_redes
 | `cards_ref_atlas.png` | 1696 x 1716 | `57f8431fd7bd068814521f9cf3393267` | 2105422 | the same with words and bar: what the Labels plus the bar must reproduce |
 | `cards_liner_atlas.png` | 1696 x 1716 | `f1748b8fba783add5c009f471a553276` | 1860256 | the played-slot liner, art only (Godot labels the name and PLAYED) |
 
-4 x 3 cells of **424 x 572** (the card 352 px wide = 2x design, plus 36 px margin each side), in `card_render.ORDER`. Sources: `corp/src/card_render.py` md5 `7603fd56141bb72dffd0bba9ab3c8058`, `final/card_sheet.jpg` md5 `87a5a6da7d076291a3fe8b481e80e200`. On screen at 1.1 the card is 193.6 px wide, so the atlas is 1.82x screen.
+4 x 3 cells of **424 x 572** (the card 352 px wide = 2x design, plus 36 px margin each side), in `card_render.ORDER`. Sources: `corp/src/card_render.py` md5 `bad8254eb4c9381448f1c6af8db85b41`, `final/card_sheet.jpg` md5 `24133fe52ce4d2ad98d503dc26fc4b70`. On screen at 1.1 the card is 193.6 px wide, so the atlas is 1.82x screen.
 
 Note: cards/src_snapshot/card_render.py md5 b8a435c4aa055c85d45f4c42c8ac10ae is the card session's older snapshot (before the stage-2 NO RAM and rules-wrap change); the atlas follows corp/src.
 <!-- gen:atlas end -->
@@ -741,7 +743,7 @@ Retired fields of the 2026-11-02 draft, not ported: `kind_gain`, `cell_edge` / `
 | Skin | Class | Room | `kind_gain` | Hue inks (rim, lip, crest, cell edges) | C scan line ink | Material means, occupied L* (NOW / +1 / +2) |
 |---|---|---|---|---|---|---|
 | neutral | `lw_skin.NeutralSkin` | bio | [1.0, 1.0, 1.0] | (none) | #D9E1EA (L* 89.2) (key #748090 (L* 53.1)) | 43.1 / 38.6 / 33.9 |
-| solace | `cs_skin.Solace` | bio | [1.0, 1.0, 1.0] | leaf #96FF46 (L* 91.0), leaf_deep #4FA83A (L* 61.6), porcelain #B8DCCC (L* 84.9) | #B8DCCC (L* 84.9) (key #507868 (L* 47.2)) | 43.1 / 38.5 / 33.9 |
+| solace | `cs_skin.Solace` | bio | [1.0, 1.0, 1.0] | teal #4FA6A2 (L* 63.0), teal_deep #2E7F7E (L* 48.6), teal_hi #6FC2BC (L* 73.3), porcelain #B8DCCC (L* 84.9) | #B8DCCC (L* 84.9) (key #507868 (L* 47.2)) | 43.1 / 38.5 / 33.9 |
 | meridian | `cs_skin.Meridian` | shop | [1.0, 1.0, 1.0] | rust #B0602C (L* 49.2), rust_hi #D88A4E (L* 64.4), barcode #2A2A2E (L* 17.2) | #D88A4E (L* 64.4) (key #78401E (L* 33.5)) | 42.3 / 37.8 / 33.1 |
 
 Palettes (`pal`), as installed by `rb_patch._skins()`:
@@ -749,7 +751,7 @@ Palettes (`pal`), as installed by `rb_patch._skins()`:
 | Skin | accent | bed | edge | glass | glass_hi | hazard_a | hazard_b | ink | line | nucleus | oxide | paint | pale | panel | panel_hi | porcelain | porcelain_d | primary | rivet | secondary | steel | steel_d | strand_a | strand_b |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | neutral | #96A2B2 | #090B0F |  |  |  |  |  | #08090C | #BCC8D6 |  |  |  |  | #283240 | #6E7C8E |  |  |  |  |  | #748090 | #46505E |  |  |
-| solace |  | #06120D | #96FF46 | #2C3634 | #96AAA0 |  |  |  |  | #96AAA0 |  |  | #ECF8E2 |  |  | #B8DCCC | #96B096 | #96FF46 |  | #FF4696 |  |  | #96FF46 | #4FA83A |
+| solace |  | #06120D | #4FA6A2 | #2C3634 | #96AAA0 |  |  |  |  | #96AAA0 |  |  | #ECF8E2 |  |  | #B8DCCC | #96B096 | #4FA6A2 |  | #FF4696 |  |  | #4FA6A2 | #2E7F7E |
 | meridian |  | #0E0B09 | #B0602C |  |  | #B0602C | #140F0C |  |  |  | #383430 | #ECD6B2 |  |  |  |  |  | #B0602C | #281E18 | #FF2E28 | #463E38 |  |  |  |
 
 Retired skin fields (never port them):
@@ -787,10 +789,10 @@ id = &"solace"
 material_kind = 1   # MEMBRANE
 room = &"bio"
 c_scan_ink = Color(0.7216, 0.8627, 0.8000, 1.0000)   # #B8DCCC
-inks = {&"leaf": Color(0.5882, 1.0000, 0.2745, 1.0000), &"leaf_deep": Color(0.3098, 0.6588, 0.2275, 1.0000), &"porcelain": Color(0.7216, 0.8627, 0.8000, 1.0000)}
-pal = {&"primary": Color(0.5882, 1.0000, 0.2745, 1.0000), &"secondary": Color(1.0000, 0.2745, 0.5882, 1.0000), &"glass": Color(0.1725, 0.2118, 0.2039, 1.0000), &"glass_hi": Color(0.5882, 0.6667, 0.6275, 1.0000), &"bed": Color(0.0235, 0.0706, 0.0510, 1.0000), &"edge": Color(0.5882, 1.0000, 0.2745, 1.0000), &"porcelain": Color(0.7216, 0.8627, 0.8000, 1.0000), &"porcelain_d": Color(0.5882, 0.6902, 0.5882, 1.0000), &"strand_a": Color(0.5882, 1.0000, 0.2745, 1.0000), &"strand_b": Color(0.3098, 0.6588, 0.2275, 1.0000), &"nucleus": Color(0.5882, 0.6667, 0.6275, 1.0000), &"pale": Color(0.9255, 0.9725, 0.8863, 1.0000)}
+inks = {&"teal": Color(0.3098, 0.6510, 0.6353, 1.0000), &"teal_deep": Color(0.1804, 0.4980, 0.4941, 1.0000), &"teal_hi": Color(0.4353, 0.7608, 0.7373, 1.0000), &"porcelain": Color(0.7216, 0.8627, 0.8000, 1.0000)}
+pal = {&"primary": Color(0.3098, 0.6510, 0.6353, 1.0000), &"secondary": Color(1.0000, 0.2745, 0.5882, 1.0000), &"glass": Color(0.1725, 0.2118, 0.2039, 1.0000), &"glass_hi": Color(0.5882, 0.6667, 0.6275, 1.0000), &"bed": Color(0.0235, 0.0706, 0.0510, 1.0000), &"edge": Color(0.3098, 0.6510, 0.6353, 1.0000), &"porcelain": Color(0.7216, 0.8627, 0.8000, 1.0000), &"porcelain_d": Color(0.5882, 0.6902, 0.5882, 1.0000), &"strand_a": Color(0.3098, 0.6510, 0.6353, 1.0000), &"strand_b": Color(0.1804, 0.4980, 0.4941, 1.0000), &"nucleus": Color(0.5882, 0.6667, 0.6275, 1.0000), &"pale": Color(0.9255, 0.9725, 0.8863, 1.0000)}
 # + cell_material / bezel_material / annulus_material / arcframe_material (ShaderMaterial sub-resources, Appendix B)
-# + rim_texture (helix turns), crest (porcelain roundel, lime helix S), token_frame (porcelain ring, lime dot at 12), ticket (chamfered lab slide) (section 6.3 textures)
+# + rim_texture (round 2, C16 / C18: a celadon tube with a long-lay teal rope, 26 twists round the rim), crest (porcelain roundel, teal helix S), token_frame (porcelain ring, teal dot at 12), ticket (chamfered lab slide, teal edge) (section 6.3 textures)
 
 # content/combat/skins/meridian.tres   (cs_skin.Meridian; room shop)
 [gd_resource type="Resource" script_class="CombatCorpSkin" load_steps=2 format=3]
@@ -1004,6 +1006,7 @@ These are the types found in `scripts/core/waves_*.gd`. Rows marked *infer* come
 The full table (phases, reduce motion, flashes) is in Appendix A. It is generated from `port/fx_timings.json`.
 
 ### 8.4 Family looks (what each draws; must keep; `effects/NOTES_MPST.md` and `NOTES_CDHL.md`, rebuild 2026-11-03)
+**Round 2 (2026-11-04):** the published effects were not re-rendered on the round-2 board (section 14, item 10). Two things on the published sheets differ from the rules below and are not to be ported as drawn: the C/D/H/L comparison copy of the shield block on `fx_block_vs_break.png` throws white sparks (the real P block throws P-stock sparks), and the Solace `fx_wave_enter` scan line is the round-1 leaf #96FF46 (the C-family scan ink in section 7 is the celadon `c_scan_ink`).
 - **M motion:**
   - **no print echoes** (retired in the rebuild: on the shared loudness meter the echo copies were the loudest light of every motion effect);
   - the arrow is one solid line, never dashed: a 3 px core with a 2.5 px ink casing and an 11 px open head. On spin, twist, shove, rings step and Hold it is a stub (`ARROW_STUB`) that runs ahead of the mover and is eaten when the mover arrives; pull and the bump keep their short whole arrow;
@@ -1044,18 +1047,22 @@ Rule: damage > kill > block > state (gain ranks with state). Two meters, one per
 
 ## 9. Hover dimming (11 hover plates, `hover/`)
 
+Round 2 (2026-11-04): `hover/` is re-rendered on the round-2 board (26 plates, `hover/NOTES.md` "2026-11-04 round 2"); 18 of 26 pass every check (h02 x4 fail check e, h03 x2 and h11 x2 fail the drawn-colour check d2). Measured on the hover plates: dim luma ratio 0.391-0.393, lit 1.00; the lifted card p95 L* 90.4-91.1 over the resting hand at 71.3-72.0.
+
 | Part | Value |
 |---|---|
 | Dim outside the lit mask | value x 0.40, chroma x 0.45 (5.2) |
 | Dimmed unit layer, guns on p2b | alpha x `DIM_K` 0.38 |
 | Hand not in play | modulate value 0.70 |
 | UNDO, SEND IT, nameplate | modulate value 0.62 |
-| Focus | Lime #D4FF00 corners only: 2 px for a legal target, 3.5 px for the aimed one. A corner slides up to 12° inward if it would touch a digit, label, tag, badge or ticket. |
-| PLAN arrow | Yellow #FFE200 arrowed outline, movement only: tower turn, Shove, Pull, Trigger path, Twist ring, Hold step |
+| Focus | `FOCUS` #D4FF00 as four separate 12 px corners only (one drawer, `rb_focus`, for board and hover; round 2, C2): 2 px for a legal target, 3.5 px for the aimed one; never a joined bar. A corner slides up to 12° inward if it would touch a digit, label, tag, badge or ticket. Measured on the plates: FOCUS px at L* 94.1, 0 px of the old #96FE46 |
+| PLAN arrow | Yellow #FFE200 arrowed outline, movement only: tower turn, Shove, Pull, Trigger path, Twist ring, Hold step. Every pencil mark is one stroke (`rb_pencil`, round 2, C1): 7 px wax, a 3 px ink edge each side, wax grain, no glow; long marks keep the full width |
+| Twist halo (C17) | On a Twist hover the PLAN outline sits only on the cells of the legal rings (+1, +2), 2.5 px off the cell; 0 PLAN px on the frame band (r 480-500) on h04 x4 |
+| HUD rows (C8) | The hover HUD is the board's `hud_rows` grid: the board HUD always reserves the four NEXT row slots, so no row moves when a hover starts (bill plate y 76-427 on every board p1 / p2 / p2b plate and every hover plate) |
 | Ghost | The sim's plan units, drawn by the board's own unit and arc code at 74 %, with a pencil outline; the origin is veiled. Never a shifted copy. |
 | Pencil ring | On every number the plan changes: LANDS/THROUGH, the YOU pips that change, spent RAM coins, added TRACE pips (square) |
 | Burst | Only on a hit that removes HP, beside the token, never on it |
-| Lifted card | Lift 1.10 at y 866 with the pink print (5.5). Slot 0: the fan shifts right 32 px and the lift sits at 906, so no hand pixel enters r 455. |
+| Lifted card | Round 2 (C6, `rb_lift.layout`): straight up out of its slot at the hand scale (zoom 1.00), centre y 718 from slots 1-3, with the pink print and hard drop to the right; the cards right of it open 36 px on the hover plates (30 on board p2); the UNDO / SEND IT column sits 16 px right on the hover plates and 12 px right on the board plates, so the buttons jump 4 px when a hover starts until one value is chosen (measured on the plates: SEND IT plate edge x 1905 on the board, 1909 on the hover set). Every sibling's cost hex, title band, rules line and xN plate: 0 px covered on 22 of 26 hover plates. **Slot 0 (h02, Brace): not solved** — at open 36 and y 906 the lifted Brace covers 166 px of Spin 3's cost hex and 208 px of its title (section 14). |
 | Re-top | Digits, labels, tags, badges, tickets, the clock's band and the label plates draw back on top of the hover marks (with the dim applied where they fall outside the lit mask) |
 
 - **Lit mask:** the hover controller (in `WavesFight`, from the hovered card's legal actions and the session preview) draws the lit polygons into a SubViewport. The polygons are the target cells, the slices, the path and the landing sectors.
@@ -1073,7 +1080,7 @@ What T5 and T6 show is the designer's ruling DR-10 (`VISUAL_PLAN.md`, ART CALL 4
 | Room | Starts on the bare room (`room_<n>_bare.png`), which is T4's last frame. `grade_mix = smoothstep((t - 0.25) / 0.75)` takes it to the graded room with the board scrim (4.1) by 1.00 s. The HUD scrim slides down from 80 px above and fades in over 1.05-1.16 s (OUT_CUBIC) | The reverse: `grade_mix = 1 - smoothstep((t - 0.12) / 0.62)`, ending on the bare room as T4 left it. The HUD scrim moves up 48 px and fades over 0-0.20 s (IN_CUBIC) |
 | Spinner (`tower` layer) | Flies in from 0.25 s over 0.30 s: scale 1.35 → 1.0 (OUT_CUBIC) with the storyboard's 4 % overshoot (`- 0.04 sin(π clamp((u - 0.55) / 0.45))`; the O-25 code had 1.4 %), rotation 7° → 0, alpha `clamp(u * 2.2)`. One 90 ms pink (#FF3DA8) keyline snap round the halo at 0.56 s: r 216 (+6 → 0 px), 10 px ink with a 4 px core, alpha 150 | Eaten from 0.26 s over 0.22 s (IN_OUT_CUBIC) by a pink keyline at r 200 (18 px ink, 9 px core), 0.9 rad long. The tower's drop shadow goes with the same sweep. Its 40 bits read the slice inks (Bit colour) |
 | Ring reveal | 4 bands: ring NOW r < 271, ring +1 271-328, ring +2 328-385, frame band 385-508. Head path r 242 / 300 / 356 / 408; start 0.56 / 0.61 / 0.66 / 0.71 s; direction +, -, +, -; 0.28 s IN_OUT_CUBIC; the head runs 0 → TAU + 0.9 rad from PHI0 = -90° + 0.10 rad; reveal `clamp((head - delta - 0.35) / 0.5)`, where delta is the pixel's swept angle from PHI0. The head is a 16 px INK keyline with a 6.4 px core, 1 rad long, with a 6 px dot | Starts 0.22 / 0.16 / 0.10 / 0.04 s (frame band first), 0.26 s each; keep `1 - clamp((head - delta) / 0.5)`; the head is 0.9 rad long |
-| Bits | 54 / 70 / 86 / 96 per band, plus 30 for the W4-W6 tickets (landing at 0.86-0.98 s). Each lands on a random point of its band (r 222-263 / 279-320 / 336-377 / 394-494) as the head passes its angle. It leaves the room 0.18 + 0.12 \|d\| / π s earlier, where d is the shorter angle round the rim. Size 16 → 28 px in flight (IN_OUT_CUBIC), alpha 0.85 (fade-in 30 ms); after landing 28 → 0 px while fading over 0.12 s | 40 spinner bits (r 40-186) plus the same band counts and the 30 ticket bits. Each leaves its point as the head passes and drains to the room over 0.22 + 0.12 \|d\| / π s; all are home by 0.70 s. Size 28 → 16 px; alpha 0.85, fading over the last 20 % |
+| Bits | 54 / 70 / 86 / 96 per band, plus 30 for the W4-W6 tickets (landing at 0.86-0.98 s). Each lands on a random point of its band (r 222-263 / 279-320 / 336-377 / 394-494) as the head passes its angle. It leaves the room 0.18 + 0.12 \|d\| / π s earlier, where d is the shorter angle round the rim. Size 16 → 28 px in flight (IN_OUT_CUBIC), alpha 0.85 (fade-in 30 ms); after landing 28 → 0 px while fading over 0.12 s. Round 2 (C13): a bit whose route goes d degrees round the rim from the lab is kept with p = near - (near - far) * clamp((d - 90) / 90), from its own cosmetic stream; T5 near 1.0 far 0.5 (47/63/76/83 + 24 tickets on the shown state); card bits are not thinned | 40 spinner bits (r 40-186) plus the same band counts and the 30 ticket bits. Each leaves its point as the head passes and drains to the room over 0.22 + 0.12 \|d\| / π s; all are home by 0.70 s. Size 28 → 16 px; alpha 0.85, fading over the last 20 %. T6 near 0.45 far 0.25 (21/30/49/46, 17 spinner, 8 tickets) |
 | Bit look (ART_BIBLE 1.2) | Share Tech Mono `0`, `1`, `10` or `01` with a same-colour outline of 1/22 of the size. White-hot `HIT_PAPER` #DED8CA for the first 80 ms (smoothstep to the bit's colour). Flips 0 ↔ 1 every 70 ms. Tumbles at 200-600 °/s (either sign), settling to 0 as it lands | same; no settle |
 | Bit colour (review 3.12) | Read once, at transition start, from the board at the bit's landing point. Over a 9 px disc of the layer it belongs to, take the pixel at the 90th percentile of C*ab, then hold its L* in 55-80 with a* and b* kept. Rings and frame band read the board without the tower and guns; ticket bits read the ticket layer; card bits read their card (start points only where C*ab ≥ 20). **No skin colour field:** the colour comes with the skin's board | Read at the bit's start point, the same way; spinner bits read the tower layer |
 | Route (1.2: round the rim, never across a wheel face) | From a source point in the room (4 centres in the bio lab: (1420, 560), (1560, 610), (1330, 650), (1640, 660), jittered), in to an orbit at r 506-532, round the rim the shorter way, then straight in along the target's radius. Inside r 492 a bit moves only radially | The same path backwards |
@@ -1086,9 +1093,9 @@ What T5 and T6 show is the designer's ruling DR-10 (`VISUAL_PLAN.md`, ART CALL 4
 - **S:** `shaders/combat/ring_reveal.gdshader`, with uniforms `center`, `band_r[5]`, `band_head[4]` + `core_head`, `band_dir[5]` and `phi0`. It masks the CorpRingLayer, ScheduleBand and BoardMarkLayer during the transition.
 - **Particles:** a CPU draw through the existing `BitPath` + `BitsSeam` with `bits_atlas.png` (Share Tech Mono) and `binary_bits.gdshader`; this is the easiest to keep deterministic. The bit layout (landing points, sources, glyphs, flip phase, spin) comes from a cosmetic `RngService` stream. Each bit's colour is read from the board's layer textures at transition start (`Image.get_pixel` over the 9 px disc, the percentile and the clamp as above), about 700 reads.
 - **N:** `WavesTransitionFx`, started from `RunManager.go_to_waves_fight()` / `WavesScene._ready` (T5) and `leave_waves_fight()` (T6). The source points are per room, as data next to the room in `BackdropCatalog`.
-- **Flash** (CIE L*, `transitions/metrics.json`, both skins). 0 whole-frame flashes in T5 and T6 (O-25 rel10 and WCAG 2.x). The worst 120 px tile is at 3 in any 1 s (rel10), which is the limit, and 0 by WCAG. Frame mean L* runs 27.7-39.5 in T5 and 24.2-39.5 in T6. No frame is brighter than the plate.
+- **Flash** (CIE L*, `transitions/metrics.json`, both skins). 0 whole-frame flashes in T5 and T6 (O-25 rel10 and WCAG 2.x). The worst 120 px tile is at 2 in any 1 s (rel10, the round-2 limit, C13) and 0 by WCAG in T5 and T6, on the renders and the decoded GIFs. Frame mean L* runs 27.6-38.4 in T5 and 23.5-38.4 in T6. No frame is brighter than the plate.
 - **Godot cost:** low to medium (O-25).
-- **Not checked:** the srv and gh rooms (the source points sit in the bio lab). The T4-reverse pull-out inside T6 is not composited yet (`transitions/NOTES.md`, Not done).
+- **Not checked:** the srv and gh rooms (the source points sit in the bio lab); the Meridian skin (the set is neutral plus Solace). T6 holds on the room (C13 call): the T4-reverse pull-out leaves a tile at 3 flashes in the 0.8 s in every variant tried; the hand-over from the room to the street is open (`transitions/NOTES.md`, "2026-11-04 round 2").
 
 ---
 
@@ -1177,11 +1184,18 @@ Every check the art ran on the published plates, its rule (as `final/checks.json
 
 | Check | Rule | Threshold | Measured on the plates | GUT equivalent |
 |---|---|---|---|---|
-| rb a: cell contrast | glass mean luminance occupied / the BRIGHTEST single empty cell of the same ring (each skin-probe cell and each empty cell on the plate) >= 3.0, per ring and per covered sector; live and dying units gated (dimmed = hover dim, ghosts: reported); marks, token disc, HP tray and tracers cut out.  The Adjuster HP track: 0 px under its diamond plate or the guns layer | ratio >= 3.0 | all 15 plates pass; ring NOW occupied L* 42.7-43.3; lowest ratio per skin 3.17, 3.32, 4.12 | `test_waves_cell_contrast.gd`: for each skin and ring, the composited occupied fill over the brightest empty fill (section 4.3 data) >= `cell_ratio_min` |
-| rb b: value order | p95 L* per family region; A.1 chain SEND IT > T HOT marks > P tower > P hand (rest) > E cells occupied (glass) > E cells empty (glass); K below the tower, K median in L* 45-55; token discs below HOT marks; every E / K / T / N mark class (HP ticks, Adjuster HP and plate, badges, sector digits, ring tags, bezel labels, tickets, token discs, COLD, FAR, plan): p99 at least 1 under the HOT p95, and every E / K mark p95 at least 1 under the tower p95; room (x >= 1100, y >= 420, r > 505, UI / hand / hover tag and the UI scrim slabs cut out) mean L* 28-34 with its p95 below the ring-NOW occupied glass p95 (live cells; L* 40 when no ring-NOW cell is live) | chain holds, margin 1.0 L* | 0 failures on 15 plates; ring NOW glass p95 reference L* 40.0-51.8 | `test_combat_look_values.gd`: clock fill L* in `clock_L`, slice inks in `slice_ink_L`, K type and CREAM_HP at `e_mark_L` / `k_type_L` ± `mark_margin`, cell tint chroma <= `cell_tint_max_chroma`; the pixel order itself is a capture check (13.2) |
-| rb c: cap height | cap height (font H box x px) of every text draw >= 16 px at 1080p; card text at the hand scale; the parked hover tag text is reported, not gated; any text drawn outside the hooked drawers fails the check | >= 16 px | 1296 text draws, 0 fail; smallest cap 16.1 px | `test_waves_text_caps.gd`: every Label in the combat scene (instanced headless): font cap height of "H" x the node's scale at 1080p >= `cap_min_px` (card Labels at the hand scale) |
-| rb d: palette dE76 | dE76 >= 15: token pairs; slice inks, card type plates, skin hue inks vs the tokens they sit next to; HOT / COLD marks vs the measured cell colours | >= 15 | 178-233 pairs per plate; lowest dE76 17.3 | `test_combat_palette_de.gd`: the same pair groups computed in Lab from `CombatLookData`, the skins' inks and the card types >= `de_min` |
-| rb e: hand clearance | hand pixels under SEND IT / UNDO: 0; lifted card over a sibling card cost hex or rules line: 0 px | 0 px | hand under SEND IT / UNDO 0 / 0 px; lifted card over a sibling's cost hex / rules 0 / 0 px (9 pairs measured) | `test_waves_hand_layout.gd`: card rects (fan, lift, slot-0 shift) against the SEND IT / UNDO rects and each sibling's cost-hex and rules rects: 0 overlap |
+| rb a: cell contrast | glass mean luminance occupied / the BRIGHTEST single empty cell of the same ring (each skin-probe cell and each empty cell on the plate) >= 3.0, per ring and per covered sector; live and dying units gated (dimmed = hover dim, ghosts: reported); marks, token disc, HP tray and tracers cut out.  The Adjuster HP track: 0 px under its diamond plate or the guns layer | ratio >= 3.0 | all 15 plates pass; ring NOW occupied L* 42.6-43.2; lowest ratio per skin 3.17, 3.31, 4.11 | `test_waves_cell_contrast.gd`: for each skin and ring, the composited occupied fill over the brightest empty fill (section 4.3 data) >= `cell_ratio_min` |
+| rb b: value order | p95 L* per family region; A.1 chain SEND IT > T HOT marks > P tower > P hand (rest) > E cells occupied (glass) > E cells empty (glass); K below the tower, K median in L* 45-55; token discs below HOT marks; every E / K / T / N mark class (HP ticks, Adjuster HP and plate, badges, sector digits, ring tags, bezel labels, tickets, token discs, COLD, FAR, plan): p99 at least 1 under the HOT p95, and every E / K mark p95 at least 1 under the tower p95; room (x >= 1100, y >= 420, r > 505, UI / hand / hover tag and the UI scrim slabs cut out) mean L* 28-34 with its p95 below the ring-NOW occupied glass p95 (live cells; L* 40 when no ring-NOW cell is live) | chain holds, margin 1.0 L* | 0 failures on 15 plates; ring NOW glass p95 reference L* 40.0-51.7 | `test_combat_look_values.gd`: clock fill L* in `clock_L`, slice inks in `slice_ink_L`, K type and CREAM_HP at `e_mark_L` / `k_type_L` ± `mark_margin`, cell tint chroma <= `cell_tint_max_chroma`; the pixel order itself is a capture check (13.2) |
+| rb c: cap height | cap height (font H box x px) of every text draw >= 16 px at 1080p; card text at the hand scale; the parked hover tag text is reported, not gated; any text drawn outside the hooked drawers fails the check | >= 16 px | 1297 text draws, 0 fail; smallest cap 16.1 px | `test_waves_text_caps.gd`: every Label in the combat scene (instanced headless): font cap height of "H" x the node's scale at 1080p >= `cap_min_px` (card Labels at the hand scale) |
+| rb d: palette dE76 | dE76 >= 15: token pairs; slice inks, card type plates, skin hue inks vs the tokens they sit next to; HOT / COLD marks vs the measured cell colours | >= 15 | 196-273 pairs per plate; lowest dE76 17.3 | `test_combat_palette_de.gd`: the same pair groups computed in Lab from `CombatLookData`, the skins' inks and the card types >= `de_min` |
+| rb b (round 2): bright marks, per disc (C3, C4) | C3: every pixel inside r < 480 at L* >= 80 sits in a capture class (1 px dilation); structure rows p99 >= 1 under the HOT p95 (no class but SEND IT reaches the HOT marks), E / K p95 >= 1 under the tower p95.  C4: each token disc p95 >= 1 under the HOT p95 and the tower p95 | unclassed bright px 0; class p99 >= 1 under HOT p95; per disc | unclassed bright px 0 on 15 plates; token discs p95 82.6-84.4, p99 85.4-91.0 | capture check (13.2): the class masks come from the draw hooks; the data half is `test_combat_look_values.gd` (`e_line` / `k_struct` values) |
+| rb e: hand clearance | hand pixels under SEND IT / UNDO: 0; lifted card (its alpha >= 128: card, pink print, hard drop) over a sibling card cost hex, title band, rules line or multiplier plate: 0 px | 0 px | hand under SEND IT / UNDO 0 / 0 px; lifted card over a sibling's cost hex / title band / rules line / xN plate 0 / 0 / 0 / 0 px (9 pairs measured, board p2 on 3 skins) | `test_waves_hand_layout.gd`: card rects (fan slots kept, straight-up lift, `rb_lift.layout`) against the SEND IT / UNDO rects and each sibling's cost-hex, title-band, rules and xN rects: 0 overlap |
+| rb d (round 2): drawn colours, Solace rim (C2, C16) | C2: the drawn colour of FOCUS / HOT fill / gun tracers / Adjuster track (the modal colour of its chromatic pixels, C* > 25: keylines and the white-hot core drop out) and of the pencil wax (its brightest tenth: the grain only darkens) within dE76 3 of its token, the plain modal reported beside it; every drawn mark class (same measure) >= 15 from the skin hue inks.  C16: the Solace rim (r 491-498) >= 25 from GAIN and the hub HP green | drawn within dE76 3 of the token; >= 15 from the corp inks; rim >= 25 | drawn vs token dE76 0.0-2.4 over 45 class rows; closest drawn mark to a corp ink 22.3; Solace rim median #3B827F, dE76 vs GAIN 61.3 (median), vs GAIN 51.0 (modal), vs hub HP ring green 53.4 (median), vs hub HP ring green 44.1 (modal) | `test_combat_palette_de.gd`: the skin inks and the drawn-mark tokens in Lab; the drawn modal colour is a capture check |
+| rb f: pencil (C1) | C1 on the plate: wax width 6-8 px, ink edge 2.4-3.6 px per side, wax grain L* std >= 2.0 (wax = within dE 30 of PLAN, ink = L* < 30, inside the pencil classes; widths from the medial axis) | wax 6-8 px, ink 2.4-3.6 px a side, grain >= 2 | 6 plates with pencil: wax 6.0-6.1 px, whole stroke 12.8-13.0 px, ink 3.3-3.5 px a side, grain L* std 4.27-4.45 | capture check (13.2) on the pencil layer; the data half is the `PencilStroke` widths in `CombatLookData` |
+| rb g: ticket edges (C5) | C5: each ticket edge L* (p90 of the 3 px ring inside the keyline); the W6 / W5 / W4 edges differ step to step by >= 5 L*; the W6 hazard ticks sit in the top row (tag to turn pips), clear of the bomb glyph and its width pips | steps >= 5 L* | edge p90 L* W6 / W5 / W4: 41.4 / 51.6 / 66.1; 46.4 / 58.4 / 75.0; 49.7 / 63.2 / 82.2; smallest step 10.2 | `test_combat_look_values.gd`: the three ticket edge values are `ticket_edge_vals` of the skin edge ink |
+| rb h: HUD rows (C8) | C8: the bill plate measured on the plate (x 1072-1081 lit keyline rows) is the grid height (BILL_H + HERO_ROOM_T + HERO_ROOM_B + OPT_PITCH x 3 reserved slots; p3 without the slots) and, with the slots, the hover grid; every row of the board record equals the hover grid row (hv_core constants) | bill = hover grid | bill plate y 76-427 on 12 plates with the option rows reserved; p3 (resolve log) 76-337 | `test_waves_hud_rows.gd`: the HUD row record (hero, eq, split, NEXT, four row slots) equals `hud_rows` in board and hover states |
+| rb i: HOT core (C11) | C11: HOT core (pixels within dE 14 of HOT_CORE inside the HOT classes) medial width >= 3 px at 1x; core vs ring-NOW occupied glass (Y + 0.05 ratio) >= 4.5:1; the fill ratio is reported only | core >= 3 px, core vs cell >= 4.5:1 | core 3.0 px (pooled medial), core vs cell 4.92-5.01:1, fill vs cell 1.93-1.97:1 (reported); per-stroke cores under 3 px (small side-arc marks crossed by their lane line, open): 2.00-2.50 px wide, 2 or 4 per plate on the 12 HOT plates | capture check (13.2); the data half is `hot_core_w` in `CombatLookData` |
+| C14 determinism | render p3 solace, p1_clean, p3 solace in one process: 0 px difference, glyph registry intact | 0 px | max diff 0, px differing 0, registry ok on every step: True | `test_combat_render_determinism.gd`: the glyph registry after loading every card library equals the master set |
 | stage 2: hand margin, ticket glyphs | 2.7: hand bottom (alpha >= 128) at least 12 px above y = 1080; 2.14: every kind glyph on the three wave tickets has an ink height of 16 px or more and p90 L* within 4 of the K type value (L* 84, the same full value on every ticket; time is on the ticket edge and pips) | as the rule | hand margin 12-15 px; ticket glyph ink height 23-25 px, p90 L* 86.3-87.8 | `test_waves_hand_layout.gd` (lowest card pixel vs y 1080); `test_combat_look_values.gd` (ticket glyph colour = `k_type` on every ticket, glyph size from the ticket layout) |
 | hand vs board | no hand pixel (alpha >= 128) inside wheel radius 455 of the board centre (536, 540), and 0 px over any board mark, tape or plate | as the rule | min hand radius 457.7 px; 0 px inside | `test_waves_board_collisions.gd` (hand min radius) |
 | draw asserts | game-mark asserts from the draw log | all pass | 744 / 744 | `test_waves_board_draw_asserts.gd` |
@@ -1190,11 +1204,11 @@ Every check the art ran on the published plates, its rule (as `final/checks.json
 | card type plates | type word vs its plate | TOWER >= 4.5, WAVE >= 4.5 | TOWER 5.87:1, WAVE 8.94:1 | `test_combat_palette_de.gd` (WCAG ratio from the card type colours) |
 | effects | cap, overrides, layer, beat, flashes | <= 600 ms; 0 overrides; HUD layer only fx_hp_through, fx_refund, fx_trace_add; beat < 4000 ms; <= 3 flashes/s | longest 600 ms; 0 overrides; beat 3800 ms; flash {"full": {"whole_frame": 0, "track_boxes": 1, "tiles": {"240": 2, "120": 2, "60": 3}, "beat": 3, "skips": 3, "passes": true}, "reduce": {"whole_frame": 0, "track_boxes": 0, "tiles": {"240": 1, "120": 2, "60": 2}, "beat": 2, "skips": 2, "passes": true}} | `test_combat_fx_timings.gd`: 32 effects load; every total, phase end and reduce phase <= `cap_ms`; no override; only the three HUD-layer effects ask for the HUD slot; the sequenced beat ends before `limit_ms`; `FlashLimiter.stream_is_safe` on each effect and on the beat |
 | effect loudness order | damage > kill > block > state (gain ranks with state) | order holds | 6 of 6 meters pass | capture check (13.2): the transient meter on 60 fps captures |
-| room grade | L* 28-34 (rb_checks room region) | L* [28.0, 34.0] | mean L* 31.8-32.5, p95 L* 38.1-38.1 on 9 rooms; all pass: True | `test_room_grade_data.gd`: `RoomGradeData` equals `backdrop/grade.json` (version, every room, every parameter); the L* gate is a capture check |
+| room grade | C9: room mean L* 28-34 and room as seen mean L* 28-34 on every plate (all backdrop plates are p1); room p95 + 1 <= ring-NOW occupied glass p95; room pink share < 0.1 %; rb_checks a-i (round 2) on every plate; composite vs real render mean <= 0.5/255 and max <= 3/255 where a real render exists | L* [28.0, 34.0] | mean L* 31.6-32.4, p95 L* 37.8-38.0 on 9 rooms; all pass: True | `test_room_grade_data.gd`: `RoomGradeData` equals `backdrop/grade.json` (version, every room, every parameter); the L* gate is a capture check |
 | squint, tower zone (reported, not gated) | loud share (0-1) of the tower zone r <= 212; target < 0.50 (O-29 fix 9) is NOT met on p1 / p2 / p3: see final/NOTES.md "2026-11-04 gate 1"; reported, not gated | reported | loud share 57.0-68.7 % over 15 plates | capture check, reported only (open question, section 14) |
-| corp: pink in the enemy zone, clock match (reported) | pink share in r 214-500; the clock pixels equal across skins | reported | pink 1.39-1.39 %; clock match 97.0-100.0 % | capture check, reported |
+| corp: pink in the enemy zone, clock match (reported) | pink share in r 214-500; the clock pixels equal across skins | reported | pink 1.38-1.39 %; clock match 96.9-100.0 % | capture check, reported |
 
-All-pass flags (`final/checks.json` `all_pass`): `draw_asserts` True, `collisions` True, `occlusion` True, `hand` True, `dashes` True, `pixel_dot_runs` True, `rb_a_cell_contrast` True, `rb_b_value_order` True, `rb_c_cap_height` True, `rb_d_palette` True, `rb_e_hand` True, `stage2_hand_margin` True, `stage2_tickets` True.
+All-pass flags (`final/checks.json` `all_pass`): `draw_asserts` True, `collisions` True, `occlusion` True, `hand` True, `dashes` True, `pixel_dot_runs` True, `rb_a_cell_contrast` True, `rb_b_value_order` True, `rb_c_cap_height` True, `rb_d_palette` True, `rb_e_hand` True, `rb_f_pencil` True, `rb_g_tickets` True, `rb_h_hud_rows` True, `rb_i_hot_core` True, `c14_determinism` True, `stage2_hand_margin` True, `stage2_tickets` True.
 <!-- gen:checks end -->
 
 ---
@@ -1208,26 +1222,27 @@ Rulings already made are not open: DR-1..DR-10 (`VISUAL_PLAN.md`), the `docs/ART
 2. **Shove bump HP (RULES, REVIEW_RESPONSE S3):** round 2 said both units lose a tick; E10 has no such rule, so `fx_shove_bump` draws no HP change. The GDD or game-v2's rule decides.
 3. **Twist render (RULES, REVIEW_RESPONSE S3):** the resolve beat draws ring +1 one sector back from SEND IT until Twist turns it (`resolve_beat.not_to_ship`, 8.2). Not a shipping reference for ring +1 during the Twist track until the designer rules.
 4. **D4 scope:** "not until this board passes" (AD review section 5; REVIEW_RESPONSE). What D4 then covers is open.
-5. **Tower squint vs ink value (VISUAL_PLAN A.1):** the tower-zone loud share is over the O-29 fix 9 target of 50 % on p1, p2 and p3 (13.3); the value order (rb b) holds. Which one governs the tower is the designer's call; until then it is reported, not gated.
-6. **Skip word:** the resolve-beat skip has no on-screen word (`effects/NOTES_MPST.md`, Not done 2).
+5. **Tower squint vs ink value (VISUAL_PLAN A.1):** the tower-zone loud share is over the O-29 fix 9 target of 50 % on p1, p2 and p3 (13.3); the value order (rb b) holds. **Round 2 art-pass call (C10, open to the designer):** the value gate governs the tower; the squint share is reported, not gated.
+6. **Skip word (C12):** the art-pass call is a "SKIP" key hint (Mono 23) at the HUD edge for the length of the beat. It is drawn only in the round-2 effects scratch tree; the published beat (`effects/`) still has no on-screen word, so this stays open until the effects set is re-rendered.
 7. **Pink in the enemy zone:** measured on the rebuilt board above the 2026-11-02 bar of 0.3 % (13.3). Reported, not gated, until the bar is restated for the rebuilt board.
+8. **FOCUS vs HOT (VISUAL_PLAN A.2, open):** FOCUS drawn at its token reads L* 94.1; on the hover plates the HOT p95 is 92.2-96.0, so FOCUS cannot both stay within dE76 3 of its token (C2) and sit 1 under the HOT p95 (C3). Reported, not gated; it needs a designer call (an exception for FOCUS, or a darker FOCUS token).
+9. **Slot-0 lift (h02, C6):** within the 12-16 px button move, no straight-up Brace lift clears Spin 3's cost hex and title band (hover/NOTES.md "Not done" 1): move the board fan's slot 0 and the button column further, let a slot-0 lift move sideways, or rule that slot 0 does not lift.
 
 **Not done (known defects, not leftovers):**
 
-8. **Thin 1 px ring and band lines** peak at L* 95-100 and are not gated (`final/NOTES.md`, "2026-11-04 gate 1", Not done).
-9. **Hover (section 9)** carries the 2026-11-02 hover numbers. The `hover/` set is being rebuilt in another session; section 9 is not regenerated from it here.
-10. **P stock is not a token in `corp/src/rb_tokens.py`.** It lives in `fxk_lib.P_STOCK` and the MPST constants (one value, two sources) until its owner adds it.
-11. **The beat's pre-state:** Packet 1 is never seen alive (p2 already draws it trigger-dead), and the Adjuster shot has no HP-tick change (`effects/NOTES_MPST.md`, Not done 3 and 4).
-12. **Latent effects** with no E10 source were drawn on stand-in marks: strike, the steel ricochet, firewall_burn, the hit_land Adjuster variant and repair_mend. Check them against real game numbers once wired.
-13. **`corp/src` is order-dependent:** rendering Solace or Meridian p3 after p1_clean in one process drew a wrong TWIST glyph. Each bake runs one plate per process (6) until it is fixed.
-14. **Documents that still disagree** (other owners' files, not edited here): `VISUAL_PLAN.md` B still lists L8 dotted, and G still gives the M echoes, the P plate "over the wedge's outer 40 percent" and white block sparks; `cards/src_snapshot/card_render.py` is older than `corp/src/card_render.py` (6.2).
+10. **Effects (section 8) are on the gate-1 board.** `effects/` was not re-rendered in round 2, so its bases still show the round-1 pencil, FOCUS, bright lines, HUD rows and the Solace leaf-green rim (their Solace C scan line in wave_enter is #96FF46). The round-2 effect changes (pencil burn on the C1 stroke, C12 SKIP tab, C15 P stock from the token table, C16 teal scan line) exist only as test renders in `D:/rc_scratch/combat_redesign/locked/round2/effects/`.
+11. **The buttons jump 4 px when a hover starts** (9): the board plates use the column at +12 px, the hover plates at +16 px.
+12. **The beat's pre-state:** Packet 1 is never seen alive (p2 already draws it trigger-dead), and the Adjuster shot has no HP-tick change (`effects/NOTES_MPST.md`, Not done 3 and 4).
+13. **Latent effects** with no E10 source were drawn on stand-in marks: strike, the steel ricochet, firewall_burn, the hit_land Adjuster variant and repair_mend. Check them against real game numbers once wired.
+14. **Small HOT side-arc marks (C11):** 4 per p1 / nowords plate and 2 per p2 / p3 plate read a 2.0-2.5 px core where their lane line crosses them (13.3, rb i).
+15. **Documents that still disagree:** `cards/src_snapshot/card_render.py` is older than `corp/src/card_render.py` (6.2). Closed in round 2: the thin 1 px lines are capped and gated (C3); P stock is a token in `rb_tokens.py` (C15); the render-order bug is fixed and asserted before every publish (C14); `VISUAL_PLAN.md` G describes the published effects (round-2 docs pass).
 
 **Risks:**
 
-15. **Baked lit edges rotate during a spin** (4.6). Accepted for the turn. If it reads wrong, bake 12 rotation steps or move the highlight into a shader.
-16. **Meridian** stays hibernated (A-112). Its skin ships as a proof only. The stencilled numbers are not drawn.
-17. **The tower sheet bake (6.1)** is specified but was not run in this pass.
-18. **Game-v2 has moved** past `b09f9b9d`. Re-read the waves views at build's head before starting.
+16. **Baked lit edges rotate during a spin** (4.6). Accepted for the turn. If it reads wrong, bake 12 rotation steps or move the highlight into a shader.
+17. **Meridian** stays hibernated (A-112). Its skin ships as a proof only. The stencilled numbers are not drawn.
+18. **The tower sheet bake (6.1)** is specified but was not run in this pass.
+19. **Game-v2 has moved** past `b09f9b9d`. Re-read the waves views at build's head before starting.
 
 ---
 
@@ -1331,36 +1346,37 @@ cell  rb_patch.py:747
     {"op": "add", "line": 753, "colour": "#96AAA0", "alpha": "(1 - sstep(0.0, 1.5, f2 - f1)) * 0.12"}
     {"op": "add", "line": 757, "colour": "#D2E1DA", "alpha": "(1 - sstep(0.0, 0.9, np.abs(g1 - rr))) * keep * 0.14"}
     {"op": "add", "line": 758, "colour": "#DCEBE4", "alpha": "np.clip(np.cos(np.radians(TH - 315)), 0, 1) ** 2 * 0.05"}
-bezel  rb_patch.py:762
-    {"op": "add", "line": 765, "colour": "#141A1A", "alpha": "1.0"}
-    {"op": "add", "line": 766, "colour": "#2C3634", "alpha": "0.35 + 0.25 * np.sin(np.pi * u)"}
-    {"op": "add", "line": 768, "colour": "#788C84", "alpha": "(1 - sstep(0.0, 1.4, f2 - f1)) * 0.10"}
-    {"op": "add", "line": 770, "colour": "#4FA83A", "alpha": "np.clip(lip, 0, 1) * 0.85"}
+bezel  rb4_patch.py:479
+    {"op": "add", "line": 482, "colour": "#141A1A", "alpha": "1.0"}
+    {"op": "add", "line": 483, "colour": "#2C3634", "alpha": "0.35 + 0.25 * np.sin(np.pi * u)"}
+    {"op": "add", "line": 485, "colour": "#788C84", "alpha": "(1 - sstep(0.0, 1.4, f2 - f1)) * 0.10"}
+    {"op": "add", "line": 487, "colour": "#2E7F7E", "alpha": "np.clip(lip, 0, 1) * 0.85"}
 annulus  rb_patch.py:774
     {"op": "add", "line": 776, "colour": "#0A0E0E", "alpha": "0.55"}
     {"op": "add", "line": 778, "colour": "#6E827A", "alpha": "(1 - sstep(0.0, 1.4, f2 - f1)) * 0.08"}
 arcframe  rb_patch.py:782
     {"op": "add", "line": 784, "colour": "#161C1C", "alpha": "0.55"}
-rim  cs_skin.py:220
-    {"op": "add", "line": 225, "colour": "#B8DCCC", "alpha": "1.0", "colour_expr": "np.array(P['porcelain'], np.float32)[None, None] * k[..., None]"}
-rim_vector  cs_skin.py:278
-    {"op": "call", "line": 279, "call": "self.helix"}
-    {"op": "call", "line": 282, "call": "self.crest"}
+rim  rb4_patch.py:506
+    {"op": "add", "line": 513, "colour": "#B8DCCC", "alpha": "1.0", "colour_expr": "np.array(P['porcelain'], np.float32)[None, None] * k[..., None]"}
+    {"op": "add", "line": 514, "colour": "#FFFFFA", "alpha": "(1 - sstep(0.0, 0.18, np.abs(u - 0.80))) * np.clip(np.cos(np.radians(TH - 315)), 0, 1) * 0.20"}
+rim_vector  rb4_patch.py:518
+    {"op": "call", "line": 520, "call": "self.helix"}
+    {"op": "call", "line": 523, "call": "self.crest"}
 crest  cs_skin.py:284
     {"op": "ellipse", "line": 288, "fill": "#0A1812"}
     {"op": "ellipse", "line": 289, "fill": "#B8DCCC"}
     {"op": "ellipse", "line": 290, "outline": "#96B096", "width": 0.9}
-    {"op": "line", "line": 293, "colour": "#4FA83A", "width": 1.7}
-    {"op": "line", "line": 294, "colour": "#96FF46", "width": 1.9}
+    {"op": "line", "line": 293, "colour": "#2E7F7E", "width": 1.7}
+    {"op": "line", "line": 294, "colour": "#4FA6A2", "width": 1.9}
     {"op": "line", "line": 297, "colour": "#FFFFFF", "width": 0.9}
-cell_detail  rb_patch.py:788
-    {"op": "line", "line": 790, "colour": ["#459234@200", "#306527@130"], "width": 1.3}
-token_frame  rb_patch.py:793
-    {"op": "ellipse", "line": 796, "fill": "#080E0C"}
-    {"op": "ellipse", "line": 797, "fill": "#606C68"}
-    {"op": "line", "line": 798, "colour": "#96A29E", "width": 1.6}
-    {"op": "ellipse", "line": 799, "fill": "#080E0C"}
-    {"op": "ellipse", "line": 800, "fill": "#96FF46", "outline": "#080E0C", "width": 0.8}
+cell_detail  rb4_patch.py:491
+    {"op": "line", "line": 493, "colour": ["#296F6E@200", "#1E4F4C@130"], "width": 1.3}
+token_frame  rb4_patch.py:497
+    {"op": "ellipse", "line": 499, "fill": "#080E0C"}
+    {"op": "ellipse", "line": 500, "fill": "#606C68"}
+    {"op": "line", "line": 501, "colour": "#96A29E", "width": 1.6}
+    {"op": "ellipse", "line": 502, "fill": "#080E0C"}
+    {"op": "ellipse", "line": 503, "fill": "#4FA6A2", "outline": "#080E0C", "width": 0.8}
 disc_frame  rb_patch.py:803
     {"op": "ellipse", "line": 805, "fill": "#080E0C"}
     {"op": "ellipse", "line": 806, "fill": "#606C68"}
@@ -1517,7 +1533,7 @@ Hull polygons (plate px):
 Played liner text (every card): played_name "NUDGE" @ 88, 157, ShareTechMono-Regular 21 px, track 1, rot 0°, #96948D; played_word "PLAYED" @ 88, 183, ShareTechMono-Regular 21 px, track 1, rot 0°, #B3B0A9.
 Liner art numbers: {"tear": 1.7, "rim": 2.2, "fill": ["#15121A", 0.86], "paper_v": 0.62, "word_px": 21.0, "word_v": [0.62, 0.74]}.
 
-Card text plates, verbatim from `corp/src/card_render.py` `render_base` (md5 `7603fd56141bb72dffd0bba9ab3c8058`):
+Card text plates, verbatim from `corp/src/card_render.py` `render_base` (md5 `bad8254eb4c9381448f1c6af8db85b41`):
 
 Line 932:
 ```python
@@ -1620,7 +1636,7 @@ def _liner(R, nowords, spec):
     return cv.img()
 ```
 
-`draw_card`, `corp/src/card_render.py:1069` (the state switch; the hover print and drop offsets of 5.5 are read from it):
+`draw_card`, `corp/src/card_render.py:1076` (the state switch; the hover print and drop offsets of 5.5 are read from it):
 ```python
 def draw_card(card, size, state='normal'):
     spec = _spec(card)
@@ -1645,8 +1661,8 @@ def draw_card(card, size, state='normal'):
             # pink misregistered print behind the lifted card (silhouette incl. its drop), hard longer drop under it
             a = np.asarray(im)[..., 3].astype(np.float32) / 255.0
             sil = (a > 0.5).astype(np.float32)
-            pk = ndi.shift(sil, (6 * R, -9 * R), order=0)
-            sh = ndi.shift(sil, (11 * R, 7 * R), order=0)
+            pk = ndi.shift(sil, (HOVER_PRINT_OFF[0] * R, HOVER_PRINT_OFF[1] * R), order=0)
+            sh = ndi.shift(sil, (HOVER_DROP_OFF[0] * R, HOVER_DROP_OFF[1] * R), order=0)
             H, W = sil.shape
             base = np.zeros((H, W, 4), np.float32)
             base[..., :3] = np.array([8, 6, 14])

@@ -6,7 +6,7 @@ the wheel face)."""
 import numpy as np, os, math, json
 from PIL import Image, ImageFont, ImageDraw
 
-HERE = 'D:/rc_scratch/combat_redesign/locked/rebuild/transitions/'
+HERE = 'D:/rc_scratch/combat_redesign/locked/round2/transitions/'
 CORP = os.environ.get('CORP', 'neutral')
 W, H = 1920, 1080
 FIN = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'

@@ -1,4 +1,6 @@
-"""staged.py (2026-11-04 rebuild): render the rebuilt p1 board as separate RGBA layers for the T5 / T6 transitions.
+"""staged.py (2026-11-04 round 2; first written for the 2026-11-03 rebuild): render the round-2 p1 board as separate RGBA layers for the
+T5 / T6 transitions.  Round 2: lw_render installs rb4_patch (and rb_lift, hud_rows) after rb3; the copy below follows f1_render._render as it
+is after round 2 (BTN_DX on the UNDO / SEND IT keep boxes, the pencil / FOCUS resets, the glyph registry check).
 Usage:  CORP=neutral|solace  python staged.py [beat]
 Imports the shared generator read-only from locked/corp/src (no file there is edited); its tower / card caches go to this
 folder's cache/<corp>/.  It is a copy of the current f1_render._render (non hover beats) that keeps each stage on its own
@@ -11,7 +13,7 @@ sys.dont_write_bytecode = True
 SRC = 'D:/rc_scratch/combat_redesign/locked/corp/src'
 sys.path.insert(0, SRC)
 os.chdir(SRC)
-HERE = 'D:/rc_scratch/combat_redesign/locked/rebuild/transitions/'
+HERE = 'D:/rc_scratch/combat_redesign/locked/round2/transitions/'
 CORP = os.environ.get('CORP', 'neutral')
 CACHE = HERE + 'cache/' + CORP + '/'
 os.makedirs(CACHE, exist_ok=True)
@@ -36,8 +38,76 @@ def T():
     return Image.new('RGBA', (W, H), (0, 0, 0, 0))
 
 
+MASKS = {}
+
+
+def asm_env(beat):
+    """round 2: the published plates are rendered by asm_render.py with check=1, whose capture hooks (rb_capture.install and asm_render's
+    _cap) draw several drawers into their own L2 and composite it, which changes pixels (round 2 added the structure classes: unit outlines,
+    arc frames and marks, tokens, schedule, ward arc, the dying hatch).  The same hooks, in the same order as asm_render.py lines 89-121,
+    so the layers recompose the published plate.  Masks only go to this module's MASKS (nothing is written)."""
+    import rb_capture as RBC
+    RBC.install(R, A, R.FH, MASKS, beat)
+
+    def _cap(cls, fn_owner, fn_name, Lidx=0):
+        orig = getattr(fn_owner, fn_name)
+
+        def wrap(*a, **k):
+            L = a[Lidx]
+            Tl = R.L2()
+            a2 = list(a)
+            a2[Lidx] = Tl
+            r = orig(*a2, **k)
+            L.im.alpha_composite(Tl.im)
+            al = Tl.im.split()[3].resize((1920, 1080), Image.BOX)
+            MASKS[cls] = MASKS.get(cls, np.zeros((1080, 1920), bool)) | (np.asarray(al) >= 128)
+            return r
+        setattr(fn_owner, fn_name, wrap)
+    _cap('digits', A.S2, 'digits')
+    _cap('labels', A.S2, 'labels')
+    _cap('tags', A.M2, 'ring_tags')
+    _cap('tags', A.P2, 'refund_place')
+    _cap('badges', A.P2, 'twist_badge')
+    _cap('badges', A.AU, 'warded_badge')
+    _cap('badges', A.AU, 'dead_badge')
+    _cap('tags', A.H2, 'hover_tag')
+    _cap('leader', A.H2, 'leader')
+    _cap('tickets', A.M2, 'future')
+    _cap('tape', A.S2, 'live_cell')
+    _cap('tape', A.S2, 'live_label')
+    _cap('tape', A.S2, 'chevrons')
+    _cap('plates', A.S2, 'hold_cell')
+    _cap('plates', A.S2, 'hold_live')
+    _cap('plates', A.S2.S, 'plus_cell')
+    _odh = R.FH.draw_hand
+
+    def _hand(base, *a, **k):
+        Th = Image.new('RGBA', base.size, (0, 0, 0, 0))
+        r = _odh(Th, *a, **k)
+        base.alpha_composite(Th)
+        return r
+    R.FH.draw_hand = _hand
+
+
+if os.environ.get('ASM', '1') == '1':
+    asm_env(sys.argv[1] if len(sys.argv) > 1 else 'p1')
+
+
 def staged(beat='p1'):
-    """f1_render._render (2026-11-04, non hover) with each stage on its own transparent layer"""
+    """f1_render._render (2026-11-04 round 2, non hover) with each stage on its own transparent layer.  rb4_patch wraps F1._render with
+    the pencil / FOCUS resets and the glyph registry check (C14); this copy does the same round it"""
+    import rb_pencil as PEN, rb_focus as FOC, rb4_patch as RB4
+    PEN.reset()
+    FOC.reset()
+    out, meta = _staged(beat)
+    ok, bad = RB4.registry_ok()
+    meta['glyph_registry_ok'] = ok
+    meta['glyph_registry_bad'] = bad
+    meta['btn_dx'] = R.BTN_DX[0]
+    return out, meta
+
+
+def _staged(beat='p1'):
     A.set_room(ROOM)
     words = beat != 'nowords'
     R.NOW['words'] = words
@@ -127,8 +197,9 @@ def staged(beat='p1'):
     lay, info = R.AS.stack_layer(words, {})
     m = Image.new('L', lay.size, 0)
     dr = ImageDraw.Draw(m)
-    dr.rectangle([1655, 850, 1895, 899], fill=255)
-    dr.rectangle([1660, 1028, 1900, 1060], fill=255)
+    bdx = R.BTN_DX[0]                 # round 2 (C6, option (a)): the UNDO / SEND IT column moves right (rb_lift.BTN_DX), as f1_render._render
+    dr.rectangle([1655 + bdx, 850, 1895 + bdx, 899], fill=255)
+    dr.rectangle([1660 + bdx, 1028, 1900 + bdx, 1060], fill=255)
     lay.putalpha(ImageChops.multiply(lay.split()[3], m))
     nm = T(); FH.place_ui(nm, 'name', not words); out['name'] = nm
     sd = T(); FH.place_ui(sd, 'send', not words); sd.alpha_composite(lay); out['send'] = sd

@@ -167,6 +167,12 @@ Rules:
   bezel lip, crest and cell edges. Cell fills stay a neutral slate ladder with a low-chroma tint, so
   the occupied-vs-empty read and the time grammar hold. The corp hue on a ring must sit at ΔE 15 or
   more from Cell lime, GAIN, FOCUS and HARM. Links, chrome and every other UI role are unchanged.
+  **2026-11-04 (art-pass, combat round 2, review N5 / C18 / C16):** on the combat board, Solace's
+  enemy layers are the celadon / teal glaze (teal #4FA6A2, deep #2E7F7E, highlight #6FC2BC, glaze
+  #B8DCCC), not leaf green: green on that board is GAIN and the player's HP ring only (rim ΔE76 44
+  or more from both). The material shows in luma, not only in hue. Measured on the plates, the rim
+  band is L* 48 for Solace (a twisted rope, 52 cycles per turn) and L* 25 for Meridian (hazard
+  stripes, 18 cycles); see `combat_redesign/locked/final/grey_proof.jpg`, rim strip.
 - City district tints on the map are still round 6 (Solace teal, Orbital blue). A territory-colour
   pass is owed.
 

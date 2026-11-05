@@ -271,6 +271,7 @@ This pass applies the art director's ranked fixes 1, 2, 3, 5, 6 and 8 from `../R
 - Fixes 4 (full resolve beat flash meter, reduce-motion blocks), 7 (effect layer) and 9 (latent effects) were not in this brief.
 - The effect bases and the T5/T6 end frames still use the old grade. Re-render them from `corp/src`: the new grade is now the default.
 - The beads also show on the effect strips and on `block_vs_break`. Those were not re-rendered.
+- (Status 2026-11-04, round-2 docs pass: the effects were re-rendered from `corp/src` in round 1, on the gate-1 board, with the beat flash meter, the reduce-motion blocks and the effect layer (`../effects/NOTES_MPST.md`, `NOTES_CDHL.md`). The latent effects are drawn on stand-in marks and are not checked against real game numbers. The T5 / T6 frames were re-rendered on the round-2 board (`../transitions/NOTES.md`).)
 - `src_snapshot/` was refreshed (`.py` only).
 - Process note: I ran a bare `python -` once by mistake (an empty heredoc), which the hard rules forbid. It ran no code and wrote nothing, and I stopped it. I also ran one `python -c` JSON print. Every other step ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.
 
@@ -474,7 +475,7 @@ Stage 1 status, kept as history. Stage 2 closed every item below except the hove
 - **1.5 beyond cap height** is not done: digits with the tally as a second mark, NEXT at 70 % value (it is 60 %), written SPLIT operators.
 - **3.6:** the REFUND tag is readable now, but it is still a terminal plate inside the wheel. It was not moved and not changed to sticker material.
 - **2.8:** Meridian still uses the Solace lab room.
-- **Hover and effects publishes** (`hz_publish.py`, the effect strips) do not run `rb_checks`. They share `hud2`, `obj2` and `rb_patch`, so they will pick up these changes when re-rendered. They were not re-rendered.
+- **Hover and effects publishes** (`hz_publish.py`, the effect strips) do not run `rb_checks`. They share `hud2`, `obj2` and `rb_patch`, so they will pick up these changes when re-rendered. They were not re-rendered in stage 1. (Status since then: "2026-11-04 gate 1", "Gate item 4".)
 - **Not done in this pass:** the plates were not copied into this folder; `src_snapshot/` was not refreshed; `card_sheet.jpg` was not re-rendered.
 - **SHIELD vs the blue soak hatch:** dE2000 9 on `grammar_check.jpg`. The hatch rides on an ink keyline. Check d (dE76, slice ink vs SOAK) passes.
 - **Process note:** in this pass I ran a bare `python -` once (an empty heredoc), which the hard rules forbid. It hung with no input, ran no code and wrote nothing, and I stopped it. Every other step ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.
@@ -544,7 +545,7 @@ DR-1 to DR-9 are kept:
 - **3.11 Resolve log:** digits before its tallies. The words are Mono 23.
 - **2.14 Wave tickets** (they stay, DR-1).
   - Tickets are 84 x 70 px.
-  - The W tag (Mono 23), the kind glyphs (27 px box) and the width bars are at full value on every ticket. Time shows only in the ticket edge value (W6 50, W5 70, W4 100 %) and the turn pips.
+  - The W tag (Mono 23), the kind glyphs (27 px box) and the width bars are at full value on every ticket. Time shows only in the ticket edge value (W6 50, W5 70, W4 100 %) and the turn pips. **(Corrected 2026-11-04 round 2: on these plates W5 read the same as W6; see "2026-11-04 round 2" for the measured steps.)**
   - The waves-left count shows once: the `WAVES 6 LEFT` chip on word plates, the six pips only on nowords.
 - **3.5 Heat:** the atlas Heat glyph (`ATLAS_BURN`, 24 px), `CRT_AMBER` fill, ink outline 0.075 x size. No emoji flame.
 - **3.6 REFUND:** the word is a 112 x 32 terminal tab. It hangs 6 px under the RAM coin it returns, on a cyan hairline. The wheel keeps only the refund coin at the kill.
@@ -596,14 +597,14 @@ python final_checks.py             # checks.json (incl. stage2_measures), checks
 Then copy `rebuild/board/*` to this folder; `card_sheet.jpg` comes from `python final_cards.py all`. The backdrop set is `backdrop/src`: `fg_extract.py <corp>` (three skins), then `bd2_publish.py`. The room solve is `bd2_solve.py` + `bd2_embed.py`.
 
 **Not done, and risks (stage 2):**
-- **Hover and effects publishes** (`hover_final/`, the effect strips, transitions) were not re-rendered. They were not in this brief. They share `hud2`, `obj2`, `rb_patch` and `rb2_patch`, so they pick up these changes when re-rendered. Until then they show the older HUD, hand and room.
+- **Hover and effects publishes** (`hover_final/`, the effect strips, transitions) were not re-rendered in stage 2. They were not in this brief. (Status since then: "2026-11-04 gate 1", "Gate item 4".)
 - **SHIELD vs the blue soak hatch** is still dE2000 9 on `grammar_check.jpg`. The hatch rides on an ink keyline, and check d (dE76 slice ink vs SOAK) passes.
 - The `card_render.py` copies in `cards/src`, `assembled/src` and `../cards/src_snapshot/` are the stage-1 version (see `../cards/NOTES.md`).
 - **Process:** no bare `python -` ran in stage 2. Early on, one `python -c` one-liner and one `python -m json.tool` read ran, for inspection only. They wrote no file, but they go against "run scripts by path". Every other step ran from script files. No Godot, no Blender, nothing committed, nothing under D:/Godot/rebel_cell.
 
 ### 2026-11-04 gate 1: the independent gate's fails, fixed and re-published
 
-The independent gate on stage 2 failed three items, listed wrong or missing claims and three regressions, and found that the hover, effects and transitions sets were never re-rendered. This pass fixes the board items and re-publishes this folder and `../backdrop/`. The hover, effects and transitions sets are **not done** (see the end of this section). Every number below is CIE L* measured on the published PNG unless it says otherwise. Same E10 state. No game number, word or rule was lost: every required word is present, every card field is drawn, and the tower numbers match on f1, f2, f2t and f2b.
+The independent gate on stage 2 failed three items, listed wrong or missing claims and three regressions, and found that the hover, effects and transitions sets were never re-rendered. This pass fixes the board items and re-publishes this folder and `../backdrop/`. The hover, effects and transitions sets were not done in this pass (status since then: "Gate item 4" at the end of this section). Every number below is CIE L* measured on the published PNG unless it says otherwise. Same E10 state. No game number, word or rule was lost: every required word is present, every card field is drawn, and the tower numbers match on f1, f2, f2t and f2b.
 
 `checks.json` `all_pass` is true on every key on all 15 plates: draw asserts (63/63 on p1 and nowords, 49/49 on p2 and p3, 24/24 on p2b, every skin), collisions, occlusion, hand, dashes, pixel dot runs, `rb_a` to `rb_e`, `stage2_hand_margin` and `stage2_tickets`. The backdrop set (`../backdrop/checks.json`) is all-pass on its 9 plates.
 
@@ -628,7 +629,7 @@ The independent gate on stage 2 failed three items, listed wrong or missing clai
 - **Fail 2, check d.** TURRET moved from #D6A33A (dE76 9.6 from BOSS_GOLD) to olive #AEB24E, texture #5A5E1A. Check d now tests every slice ink against every meaning token, the light neutrals (PAPER, ENAMEL, TEXT_HI, TEXT_MID) and the other slice inks. It tests the card type colours against every token, and the skin inks against every token and the light neutrals. 178-233 pairs per plate, 0 failures. The lowest pair is BOSS_GOLD vs CRT_AMBER, at 17.3.
 - **Fail 3, 3.8 BEST.** The BEST LINE chip is neutral: TEXT_HI type and star on the terminal plate, with a TEXT_MID edge. The best option chip ("★ BEST: ALL THREE") and the selected chip take a 3 px TEXT_HI edge. PLAN yellow stays only on the pencil marks, the paths, the twist badge and the WITHOUT TWIST what-if row (VISUAL_PLAN A.5).
 - **Wrong claim a, the 3:1 gate.** Check a now compares each occupied cell with the **brightest single empty cell** of its ring: the brightest on the plate, or the ring's probe cell if that is brighter. It no longer uses the ring's mean empty. Occupied glass on +1 and +2 was lifted and empty glass lowered (fill targets 44.5 / 39.5 / 34.5 occupied, 19.5 / 14.5 / 11.0 empty).
-  - Measured on the 15 plates: occupied ring NOW 42.7-47.8 (live 42.7-43.1; the dying Worm 47.8), +1 38.7-39.7, +2 33.9-35.6. The brightest empty per ring is 20.6-24.0, 17.0-20.5 and 14.6-18.2. The lowest ratios are 3.20 (ring NOW, the p1 Worm), 3.44 (+1, the p1 Packet) and 3.15 (+2, the p2b Packet).
+  - Measured on the 15 plates: occupied ring NOW 42.7-47.8 (live 42.7-43.1; the dying Worm 47.8), +1 38.7-39.7, +2 33.9-35.6. The brightest empty per ring is 20.6-24.0, 17.0-20.5 and 14.6-18.2. The lowest ratios are 3.20 (ring NOW, the p1 Worm), 3.44 (+1, the p1 Packet) and 3.15 (+2, the p2b Packet). **(Corrected 2026-11-04 round 2: the dying Worm rows rested on only 198 and 253 px of glass, because the pink-colour cut also removed the hatch and the glass round it; round 2 measures the whole dying glass, see "2026-11-04 round 2".)**
   - **The dying unit.** It dies at this END TURN and the gun tracers end on it, so it keeps its lit glass and is gated like a live unit. Its loss is the L7 cross-hatch in CELL_PINK (our guns): 8.5 px pitch, clipped 3 px inside the cell, with a solid 2 px L7 edge. Glass pockets that the clip cuts small are filled, so the edge reads as one band. Its chevrons are dimmed 55 % toward the bed. The 62 % gone veil is retired. Before, the dying Worm's glass read 19.3 against an empty probe of 23.0.
   - Hover-dimmed cells (p2b) and ghosts are reported, not gated.
 - **Wrong claim c, the hover tag text.** The p2b hover tag (rtext, Plex 20 px, cap 14.0-14.9) is now captured. It is reported as **parked** and not gated: designer note 8 keeps the tag in its E10 form, and nobody designs it in this pass. That is 5 draws on each p2b plate. Any text drawn outside the hooked drawers fails check c, and there are 0 such draws. Text draws: 98 (p1, p2b), 116 (p2), 120 (p3), with 0 failures and a smallest cap of 16.1.
@@ -660,7 +661,7 @@ The independent gate on stage 2 failed three items, listed wrong or missing clai
 | SEND IT | 1661, 911, 1902, 1018 | 98.2 | 98.2 | 98.2 |
 | Room (reviewer box) | 1200, 450, 1800, 800 | 38.7 | 38.7 | 38.7 |
 
-  - The token disc probe (91.3) sits above the tower p95 (89.5) for that one unit, because of its 2 px ENAMEL ring and glyph. The class row (all token discs) is 84.7 and passes.
+  - The token disc probe (91.3) sits above the tower p95 (89.5) for that one unit, because of its 2 px ENAMEL ring and glyph. The class row (all token discs) is 84.7 and passes. **(Corrected 2026-11-04 round 2: it was the three ring-NOW units 1, 2 and 3 on every p1 / p2 / p3 / nowords plate, and the rule failed per disc; see "2026-11-04 round 2".)**
   - The HP tick p99 on that unit is 91.1, above the L* 84 fill target, from antialiasing against the ink bed and the grade.
   - Both are under HOT.
 
@@ -685,26 +686,211 @@ Then copy `rebuild/board/*` here and refresh `src_snapshot/`; `D:/rc_scratch/com
 
 **Not done on the board (found in gate 1, not fixed).** Thin 1 px structure lines read L* 95-100 at their peak: the ring NOW outer boundary line (for example x 784-807, y 447-633 on p1), the schedule band edges near the THIS TURN tape end (x 756-821, y 168-231), and a white crescent at the tape end (x 770-783, y 178-187). The layers are drawn at 2x and downsampled with LANCZOS, which overshoots thin light lines by about 6 L*. These lines are not capture classes, so check b does not gate them. An `ENAMEL_E` override was tried, but these lines are not drawn from it, so it is not installed. Two possible fixes, neither done: capture and re-value them, or move the layer downsample to a box filter (that changes every plate).
 
-**Not done (gate item 4).** These sets were not re-rendered in gate 1. They still show the stage-1 or O-30 board, and every item below stays open:
-- **Hover** (`../hover/`: 26 plates, the key, the contact sheet):
-  - 2.4: the duplicate HUD inset on h03.
-  - 2.5: pencil (7 px wax, 3 px ink, grain), and the "( 9 )" brackets.
-  - 2.6: the hand against SEND IT and UNDO, and the lifted card against its siblings, on h02 and h05-h09.
-  - 3.9: one RAM treatment on h03.
-  - 3.13: the Brace hover tower dim on h02.
-  - The hover code (`hz_core.py`) still holds the old HUD boxes (`BILL`, `RAMB`, `YOU`, `you_pip_x`) and the old hand search. Porting it to the rebuilt HUD and hand is the first step.
-- **Effects** (`../effects/`: 32 strips, 8 family sheets, block-vs-break, the resolve beat):
-  - 1.6: effects under the HUD. The `f1_render.SPLIT` hook is in place; the pipelines do not use it yet.
-  - 2.10: the loudness order.
-  - 2.11: the 12.7 s beat. The target is under 4 s with skip, with every effect at 600 ms or less.
-  - 3.10: the FX-P plate stock.
-  - `port/fx_timings.json` and `GODOT_PORT_SPEC.md` section 8 still carry the old lengths.
-- **Transitions** (`../transitions/`):
-  - 1.7: the T5 / T6 CONCEPT frames and the black T5 K1.
-  - 3.12: the white bits.
-  - The Solace shutter slab and bits accent in the port spec still use the old porcelain #E2EED8.
+**Gate item 4 (the hover, effects and transitions sets).** Gate 1 did not re-render these sets. The list of open items that stood here is superseded (round-2 docs pass, 2026-11-04). Each set has since been re-rendered by its own stage, and the status of every item is in `../REVIEW_RESPONSE.md`, "Round 2 (2026-11-04)":
+- **Hover** (`../hover/`): re-rendered in round 1 and again in round 2, on the round-2 board, with `rb_pencil`, `rb_focus`, `rb_lift` and `hud_rows`. 2.4, 2.5, 3.9 and 3.13 are fixed and measured (`../hover/checks.json`). 2.6 is fixed on 22 of 26 plates and **not fixed on h02 x4** (slot 0). The hover code no longer holds the old HUD boxes or the old hand search.
+- **Effects** (`../effects/`): re-rendered in round 1 (2026-11-04 03:38-04:45) on the gate-1 board. 1.6, 2.10, 2.11 and 3.10 are done there, and `port/fx_timings.json` and `GODOT_PORT_SPEC.md` section 8 carry those lengths. **Not re-rendered on the round-2 board.**
+- **Transitions** (`../transitions/`): re-rendered in round 1 and again in round 2. 1.7 and 3.12 are fixed (C13 in round 2). The old porcelain #E2EED8 is no longer in the port spec: the C family has no shutter slab, and Solace's skin inks are the round-2 teal (`port/skin_tables.json`, port-3).
 
 **Process.**
 - One bare `python -` ran by mistake in this pass, from an empty heredoc typed as a placeholder. It hung on stdin, ran no code and wrote nothing, and it was stopped with the task tool. Two `python -c` one-liners also ran: `python -c "import sys"` early on, as an inspection, and later an empty `python -c ""`. Neither wrote anything. All three break "run scripts by path".
 - Two refinements to `dot_audit.py` were tried for the p2b runs: a hysteresis rule and a "ridge" rule. Both also dropped real bead runs on the locked first-pass plates (for example 7 → 4 runs on `assembled/p1_decide_srv.png`), so both were reverted and the art was changed instead. The detector is byte-identical to the stage-2 snapshot.
 - No Godot, no Blender, nothing committed, nothing written under D:/Godot/rebel_cell. Foreign processes on the machine were left alone.
+
+## 2026-11-04 round 2
+
+This is round 2 of the board rebuild, against the independent re-review `D:/Godot/rebel_cell/docs/reviews/ad_review_overnight_2026-11-02/R1_REREVIEW.md` (S1 0, S2 6, S3 9). It covers that review's build order, steps 1-2: the board generator items, in the order C14; C2, C3, C4, C5, C1; C8; C16 and C18; C11 and C15; the board part of C6; and the cell-glass part of C7. All 15 board plates were re-rendered and published here. The hover, effects and transitions sets are later stages and were not re-rendered in this stage (status since then: "Not done", below).
+
+Every number below is measured on the published PNGs in this folder: CIE L* of sRGB luminance, and dE76 in CIE Lab. The checks ran on `rebuild/board/`, and every published file is byte-identical to the file checked there (checked with `cmp` after the publish). No game number, word or rule changed. The tower numbers match on f1, f2, f2t and f2b (`asm_numbers`). Designer rulings DR-1 to DR-10 are unchanged.
+
+`checks.json` has `all_pass` true on every key on all 15 plates:
+- draw asserts: 63/63 on p1 and nowords, 49/49 on p2 and p3, 24/24 on p2b, on every skin
+- collisions, occlusion, hand, dashes, pixel dot runs (0 on every plate)
+- `rb_a` to `rb_i`; `rb_f` to `rb_i` are new in this round
+- `c14_determinism`, `stage2_hand_margin`, `stage2_tickets`
+
+Text draws: 98-120 per plate with words, 0 failures, smallest cap height 16.1 px. Check d tests 196-273 colour pairs per plate, with 0 failures.
+
+**Generator changes (`corp/src`; all knobs are named constants in the module or in `rb_tokens.py`):**
+- `rb4_patch.py` (new). `lw_render` installs it after `rb3_patch`; `RB4=0` skips it. It installs these fixes in order: the glyph registry (C14), the BOX reduce for capped and pencil pixels, the pencil (C1), FOCUS (C2), the bright marks (C3, C4), the structure caps (C3), the HOT core (C11), the tickets (C5), the Solace teal (C16) and the dying glass (C7). It then installs `rb_lift` and `hud_rows`.
+- `rb_pencil.py` (new): the one pencil stroke, the hover set's `hv_core` wax.
+- `rb_focus.py` (new): the one FOCUS drawer.
+- `hud_rows.py` (new): one row grid for the board HUD and the hover HUD, with a 4 px panel gap and a 96 px REFUND tab.
+- `rb_lift.py`: the one lift. The fan keeps its slots, only cards right of the hovered card open, the lift is straight up, and it has its own slot search. It also holds the button offset and the print and drop offsets.
+- `rb_checks_r2.py` (new): the C1-C5, C8, C11 and C16 gates (checks b+, d+, f, g, h, i).
+- `rb_checks.py`: check a measures the whole dying glass; check e uses `rb_lift.protected` (cost hex, title band, rules line, ×N plate).
+- `rb_capture.py`: new capture classes.
+  - E: `e_line`, `e_ward`, `e_skin`
+  - K: `k_struct`, `k_sched`, `k_arcmark`, `k_arcframe`
+  - T: `arc_outcome`
+  - per disc: `tok_u<id>`
+  - other: `ghost`, `kill_hatch`, `pen_*`, `focus`
+- `rb_tokens.py`: `P_STOCK`, the Solace teal inks, and the round-2 gate constants.
+- `final_checks.py`:
+  - the C2, C3, C4, C16, f, g, h and i lines in `checks_tables.txt`
+  - `c14_determinism`, which reads `round2/board/work/c14/c14_assert.json`
+  - `corp.rim_luma_C18`
+  - the unwrapped rim strip on `grey_proof.jpg`
+  - the `before_after.jpg` labels and crops: the HUD crop is now the whole HUD, and the room crop sits under the HUD
+- `final_cards.py`, `card_render.py`: the lifted row is drawn at 1.00× with the print and drop to the right.
+- `f1_render.py`: `BTN_DX`.
+- `rb_patch.py`: the Solace re-ink hook.
+- `lw_render.py`: the `RB4` block.
+- Round-2 tools are in `D:/rc_scratch/combat_redesign/locked/round2/board/`: `c14_assert.py`, `publish_r2.py`, `dying_glass.py`, `hot_strokes.py`, `r2_numbers.py`, `r2_more.py`, and the lift and HUD search scripts. They are copied to `src_snapshot/round2_tools/`.
+
+**Per call (C numbers are the review's; neutral / Solace / Meridian where they differ):**
+- **C14, TWIST glyph by render order.** The old e10 card library re-registered the KA_* glyphs when it loaded. `rb4_patch` restores the 11 KA_* glyphs after it loads.
+  - Assert (`c14_assert.py`): in one process, render p3 Solace, then p1_clean, then p3 Solace again. Both p3 renders give 0 px difference, the registry is intact after every step, and the old library is loaded.
+  - It ran before this publish, after the final generator change. `publish_r2.py` refuses to publish unless it passed.
+- **C2, FOCUS.** #D4FF00 drawn as four separate 12 px corners and never joined. On the board p2b plate, two corners sit at each end of the hovered unit's band.
+  - Check d now measures drawn colours: the modal colour of a mark's chromatic pixels, C* > 25.
+  - FOCUS #D4FF00, dE76 0.0 from its token.
+  - Pencil wax #FEE100, dE 0.5 from PLAN.
+  - HOT fill #FF6452 / #FF6956, dE 0.0 / 2.4 from HARM_UP.
+  - Gun tracers #FF3EA9, dE 0.4 from CELL_PINK.
+  - Adjuster track #D69A1A, dE 0.0 from BOSS_GOLD.
+  - Every drawn mark colour is dE76 15 or more from the skin's corp inks. The closest pairs are 22.3 (Meridian, a +2 chevron vs rust), 22.7 (Solace, an arc outcome mark vs teal_hi) and 25.4 (Meridian, a +1 landing chevron vs rust_hi).
+- **C3, bright marks.** Every board pixel inside r 480 at L* 80 or more belongs to a capture class (1 px dilation). The plate fails on any unclassed pixel; the count is **0 on all 15 plates**.
+  - The 1 px ring and band lines read L* 95-100 at gate 1. They are now capped at K type, reduced from 2x with a box filter, and classed.
+  - The E line is ENAMEL's hue at L* 80.
+  - Structure rows on p1 neutral (p95 / p99):
+    - E cell outlines 82.1 / 85.0
+    - K structure (plate, bezel lines, cube discs) 84.1 / 84.1
+    - K schedule lines (nowords) 84.1 / 84.1
+    - K arc marks 84.3 / 87.8
+    - K arc frames 70.0 / 84.7
+    - E dying hatch 63.6 / 85.3
+  - On p2 and p3: T arc outcome marks 86.7 / 88.9, and the consumed ghost 87.2 / 89.7 (p2).
+  - E skin cell detail (Solace, Meridian rivets) p99 81.0-84.3.
+  - HOT p95: 94.9 (p1, nowords) and 95.4 (p2, p3).
+  - The highest p99 of any other class on a plate with HOT is 92.7 (gun tracers and hit stars, p3), under the HOT p95 by 2.7.
+  - Value chain, p1 neutral (p95): SEND IT 98.2 > HOT 94.9 > tower 89.5 > hand 83.1 > token discs 82.6 > K clock 69.5 > E occupied 45.5 > room 37.8 > E empty 21.0.
+- **C4, token discs per disc.** Each disc now has its own row.
+  - Every disc on every plate reads p95 82.6-84.4 and p99 85.4-91.0.
+  - The brightest is unit 3: 84.4 / 91.0. That is 5.1 under the tower p95 (89.5) and 3.9 under the HOT p95 (94.9).
+  - On the gate-1 plates, units 1, 2 and 3 read p95 90.9-91.0 and p99 94.0-94.3 (the reviewer's read, `REVIEW_REBUILD.md`).
+- **C5, tickets.** The skin hook had turned the edge value into a two-state flag, so W5 drew the same edge as W6. The three edges are now drawn at 50 / 70 / 100 % (0.500 / 0.701 / 1.000). Edge p90 L* on the plates (W6 / W5 / W4):
+
+  | Skin | W6 | W5 | W4 | Steps |
+  |---|---|---|---|---|
+  | Neutral | 49.7 | 63.2 | 82.2 | 13.5, 19.0 |
+  | Solace | 46.4 | 58.4 | 75.0 | 12.0, 16.6 |
+  | Meridian | 41.4 | 51.6 | 66.1 | 10.2, 14.5 |
+
+  The gate is 5 L* or more per step.
+  - The W6 hazard ticks now sit in the ticket's top row, between the W tag and the turn pips: ticket x 60.0-78.5, inside the free span 57.0-81.4 (nowords: x 47.5-66.0, span 32-81.4). They are clear of the bomb glyph's width pips.
+  - Ticket glyph ink is 23-25 px (stage 2 gate).
+- **C1, pencil (board p2 / p2b).** One stroke: 7 px PLAN wax, a 3 px ink edge each side, and wax grain. It covers the trigger path and X caps, the hover path and arrowhead, the ghost outlines and the bill underline. Measured on the plate:
+
+  | Plates | Whole stroke | Wax (dE < 30 of PLAN) | Ink per side (L* < 30) | Grain (L* std) | Wax median L* |
+  |---|---|---|---|---|---|
+  | p2 | 13.0 px | 6.0 px | 3.5 px | 4.45 | 83.6 |
+  | p2b | 12.8 px | 6.1 px | 3.3 px | 4.27 | 83.4 |
+
+  The gate is wax 6-8 px, ink 2.4-3.6 px per side, grain 2 or more.
+  - The whole stroke matches the 13 px drawn (7 + 3 + 3). The boundary pixels where wax blends into ink classify as ink, so the wax measures about 1 px under its drawn 7 px.
+- **C8, HUD rows.** The board HUD always reserves the hover set's option rows.
+  - The bill plate is y 76-427 (351 px) on p1, p2, p2b and nowords. That equals the hover grid (BILL_H + 19 + 26 + 30 × 3 = 351).
+  - Rows, as measured and as recorded:
+    - hero label y 90, hero digits 149
+    - eq label 208, eq 232
+    - split label 264, split 288
+    - NEXT 320
+    - WIN panel top 431, RAM top 519
+    - HUD bottom 569; 607 with the REFUND tab on p2
+  - On p3 the resolve log takes the option rows: bill 76-337, log from 341, WIN 533, RAM 621, bottom 709. Every row above the log is unchanged.
+  - The rows are checked by the lit keyline runs at x 1072-1081 (check h).
+- **C16, Solace rim.** Solace leaves leaf green for the celadon / teal glaze family: rope, cell edges, bezel lip, crest strands, token frame dot and ticket edges.
+  - The rim as drawn (r 491-498) has median #3B827F (L 50.0, C 23.5, h 192.7).
+  - dE76 vs GAIN: 61.3 (median), 51.0 (modal).
+  - dE76 vs the hub HP ring green: 53.4 (median), 44.1 (modal).
+  - The gate is 25 or more.
+- **C18, rims in luma.** The rim band mean L* is 48.4 on Solace and 25.1 on Meridian (dL 23.3). Their patterns differ as well:
+  - Solace: a twisted rope, 52 cycles per turn, amplitude 5.4 L*
+  - Meridian: hazard stripes, 18 cycles, amplitude 1.6 L*
+  - neutral, for reference: 48.3, 18 cycles, amplitude 2.4 L*
+
+  The two rims are unwrapped side by side at the foot of `grey_proof.jpg`. They differ in luma, so the ART_BIBLE 2.4 note keeps "material and hue", with this measure added.
+- **C11, HOT core.** The core is pixels within dE 14 of #FFEAE0 inside the HOT classes.
+  - Medial width (all strokes): 3.0 px on every HOT plate.
+  - Core L* 94.0. Core vs the ring NOW occupied glass: 4.92-5.01:1 (gate 4.5).
+  - Fill vs cell, reported only: 1.93-1.97:1.
+  - Per stroke, every cell chevron core is 3.0 px (12 strokes on p1, 6 on p2 and p3). The landing-arc chevron core was widened from 3.9 to 4.8 px drawn. Its open-arc strokes now measure 3.5-4.0 px (they were 2.5).
+  - Shortfall (not fixed): four small side-arc marks on p1 and nowords read 2.0-2.5 px, at x 159-193, y 756-806 and x 910-936, y 705-757. Two read 2.25-2.5 px on p2 and p3, at x 898-918, y 301-332. The arc's own lane line crosses these marks. They are listed per plate in `checks.json`, `i_hot_core.strokes_under_min`.
+- **C15, P_STOCK.** #F6C8DE is a meaning token in `rb_tokens.TOKENS` and the VISUAL_PLAN E table. Check d tests it against every token, slice ink, card type colour and skin ink: 0 failures.
+- **C6, the hand lift (board p2).** Trigger lifts straight up out of slot 2: upright, centre x 1371, y 718.
+  - Brace and Spin 3 keep their slots, and Twist opens 30 px to the right. The fan never closes over a neighbour.
+  - The UNDO / SEND IT column sits 12 px right on every plate.
+  - 0 px of any sibling's protected set is covered: Brace, Spin 3 (including its ×3 plate, and the "3" of SPIN 3 shows) and Twist, each with its cost hex, title band and rules line.
+  - Hand over SEND IT: 0 px. Hand over UNDO: 0 px. Hand margin: 12 px (15 on p3).
+  - **Deviation from round 1, written in VISUAL_PLAN H.** This fits under the p2 HUD only with all four of these changes:
+    - The lifted card stays at the hand scale (zoom 1.00, `card_hover_grow` 1.00; it was 1.10).
+    - Its pink print and hard drop go to the right.
+    - The HUD panel gaps are 4 px (they were 8).
+    - The REFUND tab is 96 px (it was 112).
+  - At 1.10, no lift height clears Spin 3's ×3 plate and stays under the HUD.
+  - `card_sheet.jpg` draws the lifted row this way.
+- **C7, dying glass (board).** The dying Worm's glass is now measured whole: the L7 hatch and lifted glass are included, and only the marks, the HP tray and the gun tracers are cut (erosion 2). It is gated like a live unit.
+
+  | Region | Glass px | L* | vs brightest empty (24.0 / 23.6 / 20.6) |
+  |---|---|---|---|
+  | Gated: whole glass | 3730-4807 | 49.6-51.2 | 4.49-6.07:1 (check a in `checks.json`; corrected from 4.48-6.06 in the round-2 docs pass) |
+  | Hatch lines cut (pink pixels, 1 px dilated) | 673-900 | 46.0-48.4 | 3.82-5.25:1 |
+  | Gate-1 region, for comparison | 193-282 | 45.0-49.5 | 3.63-5.58:1 |
+
+  The lowest live ratios: 3.17 (neutral, the ring +2 Packet), 3.31 (Solace), 4.11 (Meridian). p2b, with live cells only on ring +2: 3.15 / 3.38 / 4.35.
+- **C9 and C10 (reported).**
+  - Room mean L*, scrim cut, gated 28-34: 31.0-32.1.
+  - Room as seen, scrim kept, reported: 22.9-28.9.
+  - Tower-zone squint share, reported only: 59.3 % p1, 68.7 % p2, 57.0 % p2b, 68.0-68.2 % p3 (68.0 was the lowest skin; corrected in the round-2 docs pass), 59.9 % nowords.
+
+**REVIEW_REBUILD items closed:**
+- **The dying-cell rows rested on too few px.** They were 198 and 253 px; round 2 measures the full glass, 3730-4807 px (C7 above).
+- **The wrong NOTES claims.** The gate-1 lines on the W6 / W5 / W4 edge values and on "that one unit" for the token discs are marked as corrected in place. The measured values are in C5 and C4 above.
+  - The ticket edges on the gate-1 plates were not 50 / 70 / 100 %: W5 read the same as W6.
+  - The token-disc overshoot was three units (1, 2 and 3) on every p1 / p2 / p3 / nowords plate, not one.
+
+**Files in this folder (replaced):**
+- the 15 plates
+- `grammar_check.jpg`
+- `grey_proof.jpg`, with the new rim strip
+- `before_after.jpg`, now round 2 vs the locked first pass
+- `card_sheet.jpg`, with the lifted row at 1.00× and the print and drop to the right
+- `checks.json` and `checks_tables.txt`
+- `src_snapshot/`: 261 `.py` files from `corp/src`, plus 22 round-2 tools in `src_snapshot/round2_tools/`
+
+**How to render (round 2):** from `D:/rc_scratch/combat_redesign/locked/corp/src`:
+
+```
+python rb_set.py -j 5 --clear all
+python rb_all.py
+python asm_numbers.py
+python final_cards.py all
+python grammar_check.py
+python D:/rc_scratch/combat_redesign/locked/round2/board/c14_assert.py solace D:/rc_scratch/combat_redesign/locked/round2/board/work/c14
+python final_checks.py
+python D:/rc_scratch/combat_redesign/locked/round2/board/publish_r2.py
+```
+
+`final_cards.py` writes `card_sheet.jpg` here directly; copy it to `rebuild/board/` before `final_checks.py`. `publish_r2.py` holds back any plate that fails a check and publishes nothing if the C14 assert did not pass.
+
+**Not done, and risks** (status updated in the round-2 docs pass, 2026-11-04):
+- **Hover set** (`../hover/`, 26 plates): re-rendered later in round 2 on this board, importing `rb_pencil`, `rb_focus` and `hud_rows` and lifting with `rb_lift.layout`, each slot searched under its own HUD. Done and measured there (`../hover/NOTES.md`, `checks.json`): C1, C7 for h03 (3.98:1 and 4.19:1; it was 2.62:1), C8, C17, and C6 on 22 plates. Still open there:
+  - C6 on h02 x4 (slot 0): Spin 3's cost hex 166 px and title band 208 px under the lifted Brace;
+  - the button column at 16 px on the hover plates against 12 px here, so UNDO and SEND IT move 4 px when a hover starts;
+  - the drawn-colour test (d2) on h03 x2 (tracer #FF40B0, dE76 3.8) and h11 x2 (HOT fill #662C27, 54.7).
+- **Transitions** (`../transitions/`): re-rendered later in round 2 on this board (C13). The worst 120 px tile flashes 2 times in any 1 s in T5 and T6. T6 holds on the room.
+- **Effects** (`../effects/`): **not re-rendered on this board.** The published set is round 1's, on the gate-1 board. C12 (the SKIP hint) is not published.
+- **FOCUS vs HOT.** FOCUS drawn at its token is L* 94.1 (p99 94.1 on p2b; the p2b plan marks are 94.1 too).
+  - That is 0.8 under the lowest HOT p95 (94.9), not the 1.0 margin.
+  - p2b has no HOT marks, so the HOT rule has no reference there and is not applied. That is the only board plate with FOCUS.
+  - C2 (within dE 3 of the token) and C3 (1 under HOT) cannot both hold for FOCUS. This is a designer call for the hover stage (VISUAL_PLAN A.2, open). On the hover plates, FOCUS p99 94.1 meets a HOT p95 of 92.2-96.0, a margin of -1.9 to +1.3; that is reported, not gated, and still open.
+- **C11 side-arc marks.** Four HOT landing-arc strokes on p1 and nowords, and two on p2 and p3, read 2.0-2.5 px, under the 3 px core (above).
+- **C1 wax width.** The wax measures 6.0-6.1 px against the 7 px drawn, at the low edge of the 6-8 px gate. The whole stroke is 12.8-13.0 px.
+- **C8 empty rows.** The bill's reserved option rows are empty on p1, p2b and nowords: y 330-420, about 90 px of empty bill. That is the cost of no row moving when a hover starts.
+
+**Process.**
+- Two `python -c` commands with empty code ran inside shell `ls` checks in this round: `python -c "" 2>/dev/null`, and later `python -I -c "" 2>/dev/null`. Neither ran code or wrote anything, but both break "run every script by path".
+- A slow lift search was stopped. These were my own processes (PIDs 18606 and 18607), and vectorised scripts replaced them.
+- After the one full re-render and check run, the per-stroke HOT core showed the landing-arc cores at 2.0-2.55 px. The arc core was widened, and only the plates it changes were re-rendered: the 12 plates with HOT marks (p2b has none). Then the check run (`rb_all`, `asm_numbers`, `grammar_check`, the C14 assert, `final_checks`) was repeated in full.
+- `final_checks.py` ran once more to fix the `before_after.jpg` labels and crops. Its checks did not change.
+- No Godot, no Blender, nothing committed, no stash, nothing written under D:/Godot/rebel_cell, no mailbox post, and `ART_BIBLE_COMBAT_DRAFT.md` was not folded into `docs/ART_BIBLE.md`.

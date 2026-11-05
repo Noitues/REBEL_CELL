@@ -14,6 +14,14 @@ the two bible notes above, `locked/REVIEW_RESPONSE.md` and the rebuilt values (t
 the effects rebuild of 2026-11-03; `GODOT_PORT_SPEC.md` and its generated `port/` data). Branch `art-pass`.
 Author: art-pass (art bible editor).
 
+**Round 2 (2026-11-04, docs pass).** Brought in line with round 2 of the rebuild: the art-pass calls C1-C18 of
+`locked/REVIEW_RESPONSE.md`, "Round 2 (2026-11-04)", answering the re-review `R1_REREVIEW.md`. They are tagged
+**[R]**: art-pass calls, open to the designer, not designer rulings. Every round-2 number is measured on the
+published plates (`final/checks.json`, `hover/checks.json`, `backdrop/checks.json`, `transitions/metrics.json`).
+DR-1..DR-10 are unchanged and still win. This file is still a **draft**. In this file, "C1"-"C16" in the
+section 0 table are conflict numbers; the round-2 calls are written "call C1" to "call C18". The effects set
+(3.22.F) was not re-rendered on the round-2 board.
+
 **Sources** (later ones win where they disagree):
 - `combat_redesign/VISUAL_PLAN.md`, the designer rulings DR-1..DR-10 (they win over everything below)
 - `locked/REVIEW_RESPONSE.md` (the call on every AD-review finding: implementation or documentation) and
@@ -47,7 +55,7 @@ Each one is resolved by an entry below. The designer should confirm each resolut
 | # | Current bible says | The new combat work says | Proposed resolution |
 |---|---|---|---|
 | C1 | 1.2 "Rejected (do not reintroduce): spray paint and stencils, the dripping marker, ransom collage, ink brush". 1.1 anti-word "graffiti chaos" | The player family is punk print: xerox spot inks, linocut key line, Ben-Day, collage, mural and Jinx card art, stencil glyphs. The designer asked for street and sketchbook graffiti, then punk rock (ART CALLs 51.1, 52.2, 53) | Carve out the ring-wheel combat player family from the Rejected list. Keep the list for the city, the map and the D4 combat. "Graffiti chaos" stays an anti-word: the punk family is ordered (one key line, one halo, texture caps) |
-| C2 | 1.2 Vinyl sticker: cards are vinyl stickers (gloss, white die-cut, peel). 3.18 sticker cards, yellow cost dot, hover scale ~1.36 | WPAP print cards: chamfered die-cut, facet planes, a type plate, cyan cost hex, hover 1.10x (ART CALL 53) | 3.18 is scoped to D4 combat; the ring board uses the WPAP card (3.22.D) |
+| C2 | 1.2 Vinyl sticker: cards are vinyl stickers (gloss, white die-cut, peel). 3.18 sticker cards, yellow cost dot, hover scale ~1.36 | WPAP print cards: chamfered die-cut, facet planes, a type plate, cyan cost hex, hover 1.10x (ART CALL 53; since round 2 the hovered card lifts straight up at the hand scale, 1.00x [R, call C6]) | 3.18 is scoped to D4 combat; the ring board uses the WPAP card (3.22.D) |
 | C3 | 1.2 Binary bits carry "damage shards", and 3.20 says "All FX use bits in the source colour" | Ring-board hits use 8 effect families with their own materials (pink comic hit, red X-halftone print, corp scan line...). Bits stay for the T5/T6 transitions only | 3.20 is scoped to D4; the ring board follows 3.22.F. Bits keep their transition job |
 | C4 | 1.2 grease pencil: "Solid = what will happen; dashed = what-if". 3.17 dashed ghost blades. 3.5 status badge "dashed outline = predicted". 3.22 "+2 = dashed pale 3 px" lane | No dashed lines anywhere on the combat screen [D, ART CALL 51.2] | Dashes are banned on the ring board. What-if, predicted and +2 take the HOT/COLD/FAR grammar (3.22.B) |
 | C5 | 3.22 E8/E9: "Pink has one job: unit screens"; CELL-9 and the code-base frame cyan; SEND IT yellow; lane trim pale blue; rider lavender | Pink belongs to the player: spinner, cards, guns, SEND IT, nameplate, damage we deal [D/AP, ART CALL 51.1 and O-27]. Enemy cells are corp enamel | Replace the 3.22 E8/E9 colour block |
@@ -108,8 +116,8 @@ Each one is resolved by an entry below. The designer should confirm each resolut
 **Add** under the table:
 > **On the ring-wheel combat screen** [D/AP]: `CELL_PINK` means **ours** (the player's spinner,
 > cards, guns, SEND IT, nameplate, damage we deal, the pink hatch on enemy HP). Nothing the enemy
-> owns is pink. Measured pink-hue pixels in the enemy zone (r 214-500) on the rebuilt board: 1.39 % on
-> every skin (`final/checks.json` `corp`, gate 1; 0.23 % on the 2026-11-02 board). The share is reported,
+> owns is pink. Measured pink-hue pixels in the enemy zone (r 214-500) on the rebuilt board: 1.38-1.39 % on
+> the three skins (`final/checks.json` `corp`, round 2; 1.39 % at gate 1; 0.23 % on the 2026-11-02 board). The share is reported,
 > not gated, and which marks the pink pixels in that zone come from is not yet broken down (Q4 below) [M].
 > `NET_CYAN` means the **terminal and RAM** only (HUD plate edges, RAM coins, the
 > card cost hex). It does not mark shields or blocks on this screen.
@@ -135,6 +143,14 @@ Each one is resolved by an entry below. The designer should confirm each resolut
 | `P_STOCK` | #F6C8DE (L* 85.1; shade #D696B8) | The FX-P plate stock: block plate, clamp brackets, sparks, the broken-shield shards (review 3.10). Never the card bone `PAPER` | Plate with ink key |
 | `CARD_TOWER` | #006E66 deep teal, white text | Card type TOWER | Type plate, facets |
 | `CARD_WAVE` | #B4AAFF lilac, ink text | Card type WAVE | Type plate, facets |
+
+**Round 2 [R, calls C2, C3, C15]:** `P_STOCK` is a meaning token in `corp/src/rb_tokens.py` and is in the
+VISUAL_PLAN E table, so check d tests it against every other ink (0 failures on the 15 board plates). A mark's
+colour as drawn, measured on the plate, sits within dE76 3 of its token. Measured: `FOCUS` 0.0, pencil wax 0.5
+(board) and 0.0-0.9 (hover), HOT fill 0.0-2.4, gun tracers 0.4, Adjuster track 0.0. Every drawn mark is dE76 15
+or more from the skin's corp inks (closest 22.3). Two hover plate pairs fail this (h03 tracer 3.8, h11 HOT fill
+54.7; open). The E line (cell outlines, lane rings, arc frames, ring-tag boxes, queue feed) is `ENAMEL`'s hue at
+L* 80, and the K structure lines are capped at the `K_TYPE` value (L* 84).
 
 Measured [M] (2026-11-03 rebuild, AD review 2.2; DR-5 / DR-8 keep one hue per type): each type hue and
 the Spin 3 band sit at CIE76 dE 15 or more from SOAK, SCHEDULE, BOSS_GOLD, TRACE, NET_CYAN, HARM,
@@ -177,9 +193,16 @@ theme is carried by material and by the corp hue on the rim, bezel lip, crest an
 neutral slate ladder with a low-chroma tint; the corp hue sits at ΔE 15 or more from Cell lime, GAIN, FOCUS and
 HARM. Nothing more to fold here. How the rebuilt board meets it [M] (3.22.E has the detail):
 > - Cell fills are the same neutral slate on every skin (`kind_gain` 1.0 on every ring of every skin).
-> - Hue inks: Solace leaf #96FF46, leaf_deep #4FA83A and celadon porcelain #B8DCCC; Meridian container rust
->   #B0602C / #D88A4E; neutral steel. Solace's secondary pink is not a hue ink on the board, so pink stays the
->   player's.
+> - Hue inks (round 2 [R, call C16, within DR-6]): Solace is the celadon / teal glaze family, teal #4FA6A2,
+>   deep teal #2E7F7E, teal highlight #6FC2BC and glaze #B8DCCC (it was leaf #96FF46 / leaf_deep #4FA83A, which
+>   sat at dE76 20.4 from the hub HP ring green); Meridian container rust #B0602C / #D88A4E; neutral steel.
+>   Solace's secondary pink is not a hue ink on the board, so pink stays the player's. Green on the board is
+>   `GAIN` and the player's HP ring only. Measured: the Solace rim as drawn (r 491-498) has median #3B827F,
+>   dE76 61.3 from `GAIN` and 53.4 from the hub HP green (gate 25 or more).
+> - **The 2.4 note's "material and hue" is measured (round 2 [R, call C18]):** the two corp rims differ in
+>   luma as well as hue. Rim band mean L* is 48.4 on Solace and 25.1 on Meridian. Solace is a twisted rope at
+>   52 cycles per turn and 5.4 L* amplitude; Meridian is hazard stripes at 18 cycles and 1.6 L*. The unwrapped
+>   rims are at the foot of `final/grey_proof.jpg`. So the note stands as written.
 > - Meridian's rim stripes and outer lip are container rust, off `SCHEDULE`, and kept clear of every amber game mark.
 
 ### "### 2.9 Typography"
@@ -198,6 +221,12 @@ HARM. Nothing more to fold here. How the rebuilt board meets it [M] (3.22.E has 
 >   12 px legs, 2 px for a legal target, 3.5 px for the aimed one, never a full outline. A corner
 >   slides up to 12 deg inward if it would touch a digit, label, tag, badge or ticket, and is never
 >   dropped. Chrome keeps the 3 px / 7 px brackets above.
+> - **One FOCUS drawer (round 2 [R, call C2]):** board and hover draw the corners with the same code
+>   (`corp/src/rb_focus.py`): four separate corners, never joined into a bar. Measured: dE76 0.0 from #D4FF00 on
+>   all 26 hover plates and on the board p2b plates (276 px each, L* 94.1); 0 px of the old #96FE46. **Open:**
+>   drawn at its token, FOCUS reads L* 94.1, so it cannot also sit 1 L* under the HOT p95 (92.2-96.0 on the
+>   hover plates). That is reported, not gated, until the designer rules (an exception for FOCUS, or a darker
+>   token).
 
 ---
 
@@ -231,7 +260,10 @@ the step-6 grade and its squint acceptance of the 2026-11-02 draft, which made t
 >   with the HUD, hand, buttons, nameplate, hover tag and the UI scrim slabs, where they darken the room by 15 % or
 >   more, cut out) the mean L* is 28-34 and the p95 is at least 1 below the ring-NOW occupied glass p95 (L* 40 when
 >   no ring-NOW cell is live). Measured on the 9 backdrop plates: mean L* 31.8-32.5, p95 L* 38.1, all pass; all 15
->   final plates pass rb b [M].
+>   final plates pass rb b [M]. **Round 2 [R, call C9]:** the gate is on the room itself; the room as seen, UI scrim
+>   kept, is reported and accepted, with no scrim change. Measured on the round-2 plates: backdrop room 31.6-32.4,
+>   p95 37.8-38.0, as seen 28.65-29.30 (both gated 28-34 on these p1 plates); board room 31.0-32.1, as seen
+>   22.9-28.9 (p2 25.3-25.4, p3 22.9-23.1; reported). The grade is unchanged (rb2-1).
 
 ### "### 3.17 Card-play preview (LOCKED, animated, round 17)"
 **Add** at the top:
@@ -301,6 +333,18 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 > - Value order HOT > COLD > FAR holds on every skin (rb b, all 15 plates). On the rebuilt board check d
 >   holds every HOT / COLD mark at dE76 15 or more from the measured cell colours (lowest pair of all
 >   groups, all plates: 17.3) [M]. The 2026-11-02 luma / dE2000 table is retired with that board.
+> - **Bright marks (round 2 [R, calls C3, C4]):** every board pixel inside r 480 at L* 80 or more belongs to a
+>   classed mark, and each class keeps its p99 at least 1 under the HOT p95. E and K classes also keep their
+>   p95 at least 1 under the tower p95, and token discs are tested per disc. An unclassed bright pixel fails the
+>   plate. Thin structure lines are drawn at the K type value and reduced from 2x with a box filter. Measured:
+>   0 unclassed bright pixels on every board and hover plate; the highest other-class p99 on a HOT plate is
+>   92.7, against a HOT p95 of 94.9-95.4; token discs read p95 82.6-84.4 and p99 85.4-91.0. Value chain, p1
+>   neutral (p95): SEND IT 98.2 > HOT 94.9 > tower 89.5 > hand 83.1 > token discs 82.6 > clock 69.5 > occupied
+>   glass 45.5 > room 37.8 > empty glass 21.0 [M].
+> - **HOT core (round 2 [R, call C11]):** HOT is carried by its white-hot core: 3 px or more at 1x, and 4.5:1
+>   or more against the ring-NOW occupied glass. The fill ratio is reported only. Measured: core 3.0 px at
+>   L* 94.0, 4.92-5.01:1; fill 1.93-1.97:1. **Open:** small side-arc marks read 2.0-2.5 px where their lane
+>   line crosses them (4 per p1 / nowords plate, 2 per p2 / p3 plate).
 > - One HOT mass per family: threat has the NOW chevrons and diamonds, the clock has the live step
 >   cell, the player has the pending hatch. Nothing in the future is HOT. In resolve (p3) HOT marks lose
 >   their glow.
@@ -315,8 +359,8 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 > - **No dotted marks** [AP, gated]: VISUAL_PLAN B still lists L8 dotted for the +2 threat trim, but no
 >   plate draws one: 0 dotted calls and 0 pixel dot runs on every plate (the O-30 dot audit, part of the
 >   plate gate `all_pass`), and both effects designers treat dotted as banned. FAR is value plus two pips.
->   (The 2026-11-02 question, old Q7, is closed by the gate; VISUAL_PLAN B is the designer's file and is
->   flagged, not edited.)
+>   (The 2026-11-02 question, old Q7, is closed by the gate. Round-2 docs pass: VISUAL_PLAN B now carries a
+>   dated note that the plates draw no L8, and it keeps the L8 row for the designer to rule on.)
 >
 > **Cross-hatch = HP lost at this END TURN** [D/AP].
 > - Two directions (45 and 135 deg), 2 px lines at a 5 px pitch, clipped to the shape, with a solid
@@ -373,8 +417,12 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   a Mono 23 tag, unit kind glyphs in a 27 px box (23-27 px of ink) and 1-3 width bars per unit; tag,
 >   glyphs and bars at full value (2026-11-03 stage 2, review 2.14).
 > - Solid edges. Time is shown by the edge value (W6 50 %, W5 70 %, W4 100 %) and pips, never by a
->   dotted edge, and never by dimming the glyphs.
-> - The W6 climax ticket has a cut corner and three hazard ticks.
+>   dotted edge, and never by dimming the glyphs. **Round 2 [R, call C5]:** each step is 5 L* or more on the
+>   plate. Edge p90, W6 / W5 / W4: 49.7 / 63.2 / 82.2 (neutral), 46.4 / 58.4 / 75.0 (Solace), 41.4 / 51.6 / 66.1
+>   (Meridian) [M]. Glyph ink is 23-25 px, p90 L* 86.3-87.8.
+> - The W6 climax ticket has a cut corner and three hazard ticks. The ticks sit in the ticket's top row
+>   between the W tag and the turn pips, clear of the bomb glyph's width pips (round 2, call C5: ticket
+>   x 60.0-78.5 inside the free span 57.0-81.4).
 > - One neutral-enamel arrowed feed runs from W4 to the board edge.
 > - `WAVES 6 LEFT` stays in the header, and that is the only place the count shows (no header pips on
 >   the words plates; nowords keeps the pips). Ticket material comes from the corp skin (`ticket`).
@@ -399,10 +447,11 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   mark. Texture contrast inside a slice is at most 18 % of the icon's, and no texture sits within
 >   6 px of an icon or HP segment.
 > - **Loudness knobs** [M]: halo value x0.90 (`HALO_K`), texture x0.90 (`TEX_K`). On the rebuilt board
->   the tower-zone loud share (squint, loud above 0.38) is p1 59.3 %, p2 68.7 %, p2b 57.0 %, p3 68.2 %,
->   nowords 59.9 % (`final/checks.json` `squint_tower_zone`), over the O-29 fix-9 target of 50 %, while
->   the tower's value order holds (rb b, every plate). It is reported, not gated. Which governs the
->   tower, the squint share or the ink value order, is the designer's call (VISUAL_PLAN A.1; Q2 below).
+>   the tower-zone loud share (squint, loud above 0.38) is p1 59.3 %, p2 68.7 %, p2b 57.0 %, p3 68.0-68.2 %,
+>   nowords 59.9 % (`final/checks.json` `squint_tower_zone`, round 2), over the O-29 fix-9 target of 50 %, while
+>   the tower's value order holds (rb b, every plate). It is reported, not gated [R, call C10: the value gate
+>   governs the tower; no texture rework]. Which governs the tower, the squint share or the ink value order,
+>   stays open to the designer (VISUAL_PLAN A.1; Q2 below).
 >
 > #### 3.22.D Player family: WPAP cards (designer ART CALL 53)
 > - **Frame:** a chamfered die-cut WPAP card on the black-book layout, flat facet planes, slanted
@@ -424,8 +473,10 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   Pull, Shove and Twist use ink discs with pink in the crescent; Trigger and Hold pink discs (Hold with
 >   a black toner pool).
 > - **Cost** stays a system resource: cyan hex, Anton digit. **+Trace** tab in `TRACE_VIOLET`.
-> - **States:** normal (resting hand at 88 % value); hover (1.10x, pink misregistered print, longer
->   drop, the hand pushes right 16 px); played (2026-11-03 stage 2, review 2.3: a flat, upright torn
+> - **States:** normal (resting hand at 88 % value); hover (round 2 [R, call C6]: the card lifts straight up
+>   out of its slot at the hand scale, 1.00x, with its pink misregistered print and hard drop to the right; the
+>   fan keeps its slots and never closes, and only the cards right of the lifted one open; until round 2 it
+>   was 1.10x with the hand pushed right 16 px); played (2026-11-03 stage 2, review 2.3: a flat, upright torn
 >   dark-paper liner with a paper rim and fibre edge, no fan angle and no perspective cage; the ghost
 >   glyph at 46 % paper value; the card name over PLAYED in Mono 21 at 62 / 74 % paper value); unaffordable (dim glass, value x0.5, chroma x0.4, two flat
 >   glass planes, never hatch, plus at full value the cost badge, a padlock on it and a "NO RAM" tab;
@@ -436,12 +487,23 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   y 904, fan 4 deg; the lifted card centred at y 812, neighbours pushed 16 px). Rules text wraps to
 >   two lines at a word break, never shrinks (Plex Condensed 21, cap height 16.2 px at 1.10x). When the lifted card is in slot 0, the fan slides right 32 px and
 >   the lift drops 40 px.
+> - **The lift (round 2 [R, call C6], the reviewer's option (a); it replaces the y 812, push-16 and slot-0
+>   lines above):** one lift for board and hover (`corp/src/rb_lift.py`). The lifted card rises straight up to
+>   centre y 718 (slots 1-3). The cards right of it open 30 px on board p2 and 36 px on the hover plates. The
+>   UNDO / SEND IT column moves right 12 px on the board plates and 16 px on the hover plates, so the buttons
+>   move 4 px when a hover starts (open). Every sibling's protected set (cost hex, title band, rules line, ×N
+>   plate) has 0 px under the lifted card, gated (rb e). On board p2 this fits under the HUD only with the 1.00x
+>   lift, the print and drop to the right, 4 px HUD panel gaps and a 96 px REFUND tab. Measured: 0 px on board
+>   p2 and 22 of 26 hover plates; hand min r 457.7 (board) and 456.9 (hover); lowest hand pixel 12 px above
+>   y 1080 (15 on p3), 1064-1067 on hover. **Not met on h02 x4 (Brace, slot 0):** at the only lift height that
+>   keeps the card outside r 459 (y 906), Spin 3's cost hex is 166 px covered and its title band 208 px. The
+>   options are for the designer (VISUAL_PLAN H).
 >
 > #### 3.22.E Corp skins (designer ruling DR-6, the ART_BIBLE 2.4 note; ART CALL 53)
 > - **Material, plus the corp hue on the rim, bezel lip, crest and cell edges only** [D, DR-6], built as
 >   data (one `CorpSkin` per corp), so a corp swap is a skin swap. The cell fills are the same neutral
 >   slate on every skin. The neutral skin is clean graphite enamel. Solace: membrane-pattern glass cells,
->   a helix rim, a porcelain roundel. Meridian: corrugated steel cells, octagonal container token frames,
+>   a helix rim (round 2: a long-lay teal rope [R, calls C16, C18]), a porcelain roundel. Meridian: corrugated steel cells, octagonal container token frames,
 >   a container-rust striped rim, crane crests, shipping-tag tickets. A colour-only skin is rejected: Meridian read as the old
 >   slate, and Solace's flat green fought the pink player.
 > - **Skin inks are checked like tokens (2026-11-04, gate 1):** every skin ink sits at CIE76 dE 15 or more
@@ -454,10 +516,11 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 > - **One gunmetal clock for every corp** (VISUAL_PLAN A.4, review 2.9): the band, its cells, the lip
 >   and the groove in `CLOCK` / `CLOCK_LIGHT` / `CLOCK_GROOVE`, `SCHEDULE` on the live step only; HOLD
 >   amber and plan yellow are untouched. The band edge is the solid ink keyline. Clock pixels match the
->   neutral plate on 97.0 % (Solace) and 97.4 % (Meridian); the rest are units overlapping the band [M].
+>   neutral plate on 96.9 % (Solace) and 97.3 % (Meridian) on the round-2 plates (97.0 / 97.4 % at gate 1);
+>   the rest are units overlapping the band [M].
 >   The silver THIS TURN tape (`TAPE_LO`..`TAPE_HI` remap) is retired.
 > - **Pink is the player's:** no enemy glyph, skin or effect is pink. Enemy-zone pink on the rebuilt
->   board is 1.39 % on every skin (0.23 % on the 2026-11-02 board); it is reported, not gated, and its
+>   board is 1.38-1.39 % on the three skins (round 2; 0.23 % on the 2026-11-02 board); it is reported, not gated, and its
 >   sources are not yet broken down (Q4 below) [M].
 > - **Kind separation:** the corp tint must not collapse unit kinds. The fills are one neutral slate per
 >   kind and ring on every skin, and `kind_gain` is 1.0 everywhere (the 2026-11-02 per-skin push,
@@ -466,8 +529,12 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   ring 0 13.2-13.7, Payload 4 vs Packet 5 on ring 1 9.2-9.5 over the three skins [M]. The **kind
 >   glyph carries kind**; the wash is the second channel.
 > - **Skin inks are cell edges, rim, lip and crest only**, at ΔE 15 or more from Cell lime, GAIN, FOCUS
->   and HARM (DR-6) and dE76 15 or more from every meaning token (check d) [M]: Solace leaf #96FF46,
->   leaf_deep #4FA83A, porcelain #B8DCCC; Meridian rust #B0602C, rust_hi #D88A4E; neutral steel.
+>   and HARM (DR-6) and dE76 15 or more from every meaning token (check d) [M]: Solace teal #4FA6A2, deep
+>   teal #2E7F7E, teal highlight #6FC2BC, glaze #B8DCCC (round 2 [R, call C16]; the leaf #96FF46 / #4FA83A
+>   pair is retired); Meridian rust #B0602C, rust_hi #D88A4E; neutral steel. **Gate (round 2):** the rim as
+>   drawn is dE76 25 or more from `GAIN` and from the hub HP ring green; measured 61.3 / 53.4 (median), 51.0 /
+>   44.1 (modal). The board, hover, backdrop and transitions plates show the teal; the effects set does not
+>   (3.22.F).
 > - **Corp marks never mimic game marks:** Meridian's rim stripes and outer lip are container rust
 >   (`HAZ_DESAT` 0, off `SCHEDULE`), and the inner bezel lip is black, so amber game marks (HOLD, the
 >   Adjuster arc) keep a gap from the rust (37 px measured on the 2026-11-02 board, not re-measured on
@@ -476,8 +543,13 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   `port/skin_tables.json`), `locked/corp/NOTES.md` and `locked/final/NOTES.md` ("Skin hooks").
 >
 > #### 3.22.F Effect families and flash limits (designer ART CALL 51.7; roadmap step 4; rebuilt 2026-11-03)
-> Every event is a slice-wide (whole wedge) or cell-wide overlay. Each family has its own material so
-> it never reads as another family or as a skin (`effects/NOTES_CDHL.md`, `NOTES_MPST.md`):
+> Every event is one overlay on its footprint: a slice (the wedge or its trim band), a cell, an arc, a ring,
+> or a path from the rim to the HUD. Each family has its own material so it never reads as another family or
+> as a skin (`effects/NOTES_CDHL.md`, `NOTES_MPST.md`; the full list is VISUAL_PLAN G, rewritten 2026-11-04).
+> **Round-2 status:** the published effects are the 2026-11-03 rebuild, rendered on the gate-1 board. They
+> were **not** re-rendered on the round-2 board, so their bases show the board before calls C1, C5, C8 and C16
+> (on Solace, `fx_wave_enter`'s scan line is the old leaf #96FF46). The call C12 skip hint is not published.
+> The block-vs-break comparison copy throws white sparks where the real P block throws P-stock ones.
 >
 > | Family | Means | Material | Effects |
 > |---|---|---|---|
@@ -506,7 +578,9 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   tracks** in the HUD chain order (SEND IT, 1 TWIST, 2 TRIGGER, 4 GUNS, 3 BRACE + 5 LANDS, 6 RINGS
 >   STEP, W4 enters), each at its own timing: **3.8 s against a 4 s limit; any input skips it** (a
 >   0.2 s dissolve to the settled frame) [M]. The 2026-11-02 rule (sequenced, never two in one 100 ms
->   window) is retired.
+>   window) is retired. **Skip hint (round 2 [R, call C12]):** a "SKIP" key hint (Mono 23, cap height 16 px
+>   or more) sits at the HUD edge for the length of the beat. It is **not published**: the published beat
+>   has no on-screen word yet.
 > - **Loudness order** [R, review 2.10]: damage > kill > block > state (gain ranks with state), measured
 >   as the peak transient (sum of L*/100 over the pixels a frame changes, 60 fps) on every skin, with both
 >   designers' sets on one meter: it holds on all three skins [M].
@@ -530,6 +604,13 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   the spinner keyline stays pink; ghosts are one solid hairline. T5 starts on the room as T4 leaves
 >   it (the bare room) and dims to the plate's grade from K2 to the lock; T6 returns to it. 0
 >   whole-frame flashes; worst 120 px tile 3 in any 1 s, the limit (CIE L*, both skins) [M].
+>   **Round 2 [R, call C13]:** the bits over the dark city are thinned until the worst 120 px tile flashes
+>   2 or fewer times in any 1 s. A ring, spinner or ticket bit d degrees round the rim from the lab is kept
+>   with p = near - (near - far) * clamp((d - 90) / 90): T5 near 100 % and far 50 %, T6 near 45 % and far
+>   25 %. Card bits are not thinned. Measured on the renders and the decoded GIFs, both skins: worst tile 2
+>   in T5 and T6, WCAG count 0. No T6 pull-out variant stayed within that, so T6 holds on the bare room
+>   (call C13); the hand-over from the room to the netrun street is open. The bits keep their source's hue
+>   (drawn vs plate hue dE76 median 0.00-0.42 per stream).
 >
 > #### 3.22.G Hover and dimming (designer ART CALL 51.9)
 > - **Keep the hover dimming:** everything the card does not touch drops to value x0.40 and chroma
@@ -546,10 +627,31 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >   of hover marks.
 > - One plate per card effect type (h01 tower turn ... h11 unit hover), with nowords variants:
 >   `locked/hover/`.
+> - **Round 2 [R, calls C1, C6, C7, C8, C17; measured on the 26 hover plates]:**
+>   - **One pencil (call C1).** Board and hover draw every pencil mark with one stroke (`corp/src/rb_pencil.py`):
+>     7 px `PLAN` wax, a 3 px ink edge each side, wax grain, no glow; X caps the same stroke; long marks
+>     keep the full width. Gated on the plate: wax 6-8 px, ink 2.4-3.6 px a side, grain L* std 2 or more.
+>     Measured: wax 6.0-6.5 px, stroke 12.66-13.0, ink 3.25-3.5, grain 3.82-4.65. The HUD pencil ink reads
+>     3.0-4.0 px a side (reported).
+>   - **The lift (call C6)** is 3.22.D's. 22 of 26 plates have 0 px of any sibling's protected set covered;
+>     h02 x4 (slot 0) does not.
+>   - **One HUD (call C8).** The hover HUD is the board's row grid (`corp/src/hud_rows.py`), so no row moves
+>     when a hover starts: bill y 76-427 on every board and hover plate. The board reserves the option rows
+>     (empty on p1, p2b and nowords, about 90 px).
+>   - **Dying glass (call C7).** A unit that dies this END TURN keeps its lit glass, gated like a live unit:
+>     3:1 or more against the brightest empty cell of its ring (h03 3.98 and 4.19:1; board 4.49-6.07:1).
+>   - **Twist halo (call C17).** On a Twist hover the pencil halo is only on the legal rings: the outline on
+>     the cell of each unit whose landing changes, 2.5 px off the cell. 0 pencil px on the bezel, the frame
+>     band (r 480-500) or outside r 500. h08 (Hold) still runs its arrow on the frame band (reported).
+>   - **Dimming:** dim 0.391-0.393 of the board's luma, lit areas 1.00. The lifted card reads p95 90.4-91.1,
+>     over the resting hand's 71.3-72.0.
+>   - **Open:** two plate pairs fail the drawn-colour test, h03 x2 (gun tracer #FF40B0, dE76 3.8) and h11 x2
+>     (the HOT fill dimmed to #662C27 inside the lit area).
 >
 > #### 3.22.H Loudness and checks
 > - **Peak value order:** SEND IT, the HOT threat marks, the lifted card, the tower slices, the rest of
->   the hand, the enemy cells.
+>   the hand, the enemy cells. Measured on round 2 (p1 neutral, p95): SEND IT 98.2 > HOT 94.9 > tower 89.5 >
+>   hand 83.1 > token discs 82.6 > clock 69.5 > occupied glass 45.5 > room 37.8 > empty glass 21.0 (3.22.B).
 > - Measured p1 on the rebuilt board, whole plate: squint mean 0.240, p95 0.483, loud 12.8 % (E10
 >   4.1 %). Nearly all loud cells are the tower and the hand. **The tower is governed by the value order
 >   (rb b) [R, REVIEW_RESPONSE: tower loudness by value order]**; its squint share is reported, not
@@ -567,12 +669,18 @@ text at least 16 px), and the "never add or drop a number or word" content guard
 >     empty; K and E marks under the HOT marks and the tower) and the room L* 28-34;
 >   - rb c: every text cap height 16 px or more at 1080p (cards at the hand scale);
 >   - rb d: dE76 15 or more for every token, slice-ink, card-type and skin-ink pair;
->   - rb e: no hand pixel under SEND IT or UNDO, no lifted card over a sibling's cost or rules;
+>   - rb e: no hand pixel under SEND IT or UNDO, no lifted card over a sibling's cost hex, title band,
+>     rules line or ×N plate (round 2, call C6);
 >   - the wave tickets' kind glyphs 16 px or more of ink, at the K type value;
 >   - nowords with 0 alphanumeric text calls;
->   - a greyscale proof and a squint.
-> - **Not done on the rebuilt board:** thin 1 px ring and band lines peak at L* 95-100 and are not
->   gated (`final/NOTES.md`, gate 1).
+>   - a greyscale proof and a squint;
+>   - round 2 [R]: every bright pixel in a class (call C3); drawn colours within dE76 3 of their token and
+>     15 or more from the corp inks (calls C2, C16); rb f, the pencil (call C1); rb g, the ticket edge steps
+>     (call C5); rb h, the HUD rows (call C8); rb i, the HOT core (call C11); and a determinism assert before
+>     every publish (call C14: p3, p1_clean, p3 again in one process, 0 px difference).
+> - **Not done on the rebuilt board (gate 1):** thin 1 px ring and band lines peaked at L* 95-100 and
+>   were not gated (`final/NOTES.md`, gate 1). **Closed in round 2 (call C3):** they are capped at the K type
+>   value, reduced with a box filter and classed; 0 unclassed bright pixels on every plate.
 > - Parked (designer note 8): the inspect panel, hover tag content, UNDO cause, pile counters.
 
 ---
@@ -697,20 +805,27 @@ answers are kept. The 2026-11-02 list is closed below with where each answer liv
 1. **Q1. D4 scope.** The D4 work waits until this board passes (AD review section 5; REVIEW_RESPONSE).
    Once it does: does the punk player family stay on the ring-wheel combat only, or replace the D4
    player wheel and the vinyl sticker cards everywhere?
-2. **Q2. Tower squint vs ink value (VISUAL_PLAN A.1).** The tower is governed by the value order today
-   [R]; its tower-zone loud share (p1 59.3 %, p2 68.7 %, p2b 57.0 %, p3 68.2 %) is over the O-29 fix-9
-   target of 50 % and is reported, not gated (3.22.C). Should the squint share govern the tower instead
-   (which would mean duller slice inks), or does the value order stand?
+2. **Q2. Tower squint vs ink value (VISUAL_PLAN A.1; R1_REREVIEW question 1).** The tower is governed by the
+   value order today [R, call C10]; its tower-zone loud share (round 2: p1 59.3 %, p2 68.7 %, p2b 57.0 %, p3
+   68.0-68.2 %, nowords 59.9 %) is over the O-29 fix-9 target of 50 % and is reported, not gated (3.22.C).
+   Should the squint share govern the tower instead (which would mean duller slice inks), or does the value
+   order stand?
 3. **Q3. Shove bump HP (a RULES question, REVIEW_RESPONSE S3).** Round 2 said both units lose a tick;
    the E10 state has no such rule, so the bump draws no HP change. The GDD decides.
-4. **Q4. Pink in the enemy zone.** 1.39 % on every skin on the rebuilt board, against 0.23 % on the
+4. **Q4. Pink in the enemy zone.** 1.38-1.39 % on the three skins on the rebuilt board (round 2), against 0.23 % on the
    2026-11-02 board, where all of it came from game marks. Which marks it comes from now is not yet
    broken down. Is a bar wanted on the rebuilt board, and at what share?
 5. **Q5. Twist render (a RULES question, REVIEW_RESPONSE S3).** The resolve beat draws ring +1 one
    sector back from SEND IT until Twist turns it. It is marked not to ship until the designer rules
    how a Twist resolves on screen.
 6. **Q6. Skip word.** Any input skips the resolve beat (a 0.2 s dissolve). There is no on-screen word
-   for it. Is one wanted?
+   for it in the published beat. Round 2 called for one [R, call C12: a "SKIP" key hint at the HUD edge],
+   but it is not published yet. Is the hint wanted, and in that form?
+7. **Q7. The round-2 calls.** Calls C1-C18 (REVIEW_RESPONSE "Round 2 (2026-11-04)") are art-pass calls. The
+   ones the re-review asked the designer about are C8 (HUD height), C9 (room as seen), C10 (tower), C6 (the
+   slot-0 lift: three options), C11 (HOT core) and C13 (T6 holds on the room). Two more are open: FOCUS
+   against HOT (an exception for FOCUS, or a darker token), and whether VISUAL_PLAN keeps the L8 dotted line
+   that no plate draws.
 
 **Closed since 2026-11-02** (old numbers):
 - Old Q2 colour-blind checks: the waiver covers the concept pass only; the shipping build follows 5.1 [AP] (5.1 entry).

@@ -62,6 +62,8 @@ TOKENS = {
     'CELL_PINK': hx('FF3DA8'), 'HARM': hx('FF4433'), 'GAIN': hx('7BE07B'), 'SOAK': hx('3A7EF3'), 'PLAN': hx('FFE200'),
     'SCHEDULE': hx('FF8C1A'), 'BOSS_GOLD': hx('D69A1A'), 'NET_CYAN': hx('5CE1FF'), 'TRACE_VIOLET': hx('A03CFF'),
     'CRT_AMBER': hx('FFB000'), 'RESIST_GOLD': hx('FFD24D'), 'FOCUS': hx('D4FF00'),
+    # 2026-11-04 round 2 (C15): the P plate stock of the FX-P effects (pink paper, review 3.10), tested by check d like every token
+    'P_STOCK': hx('F6C8DE'),
 }
 BOSS_GOLD = TOKENS['BOSS_GOLD']
 BOSS_GOLD_HI = (240, 190, 70)          # the gold edge highlight line (inside the edge, never a second hue)
@@ -119,11 +121,45 @@ SKIN_INKS = {
     'neutral': {},
     # 2026-11-04 (gate 1): porcelain #E6EFE4 was dE 4.7 from PAPER (the player's paper) and 11.2 from ENAMEL; it is now a celadon glaze,
     # >= 17 from every token and light neutral (gate2_fix/pick.py)
-    'solace': {'leaf': hx('96FF46'), 'leaf_deep': hx('4FA83A'), 'porcelain': hx('B8DCCC')},
+    # 2026-11-04 round 2 (C16, review N2): the leaf-green rope (#96FF46 / #4FA83A) sat next to the hub HP ring green (dE 20.4) and GAIN; the
+    # rope, cell edges, lip and crest move to the teal family of the celadon ink, so green on the board is GAIN and the player's HP ring only
+    # (round2/board/pick_teal.py: >= 44 from GAIN and the hub HP green, >= 22.9 from every token and light neutral, LCh hue 190-195)
+    'solace': {'teal': hx('4FA6A2'), 'teal_deep': hx('2E7F7E'), 'teal_hi': hx('6FC2BC'), 'porcelain': hx('B8DCCC')},
     'meridian': {'rust': hx('B0602C'), 'rust_hi': hx('D88A4E'), 'barcode': hx('2A2A2E')},
 }
+SKIN_INKS_RETIRED = {'solace': {'leaf': hx('96FF46'), 'leaf_deep': hx('4FA83A')}}     # round 1 Solace rope (kept for rb_patch's install only)
+HUB_HP_GREEN = (123, 211, 123)        # the hub HP ring green as the reviewer measured it (N2 / C16 reference; GAIN family)
+RIM_DE_MIN = 25.0                      # C16: the Solace rim rope vs GAIN and the hub HP ring green, dE76
 SKIN_NEIGHBOURS = ('HARM', 'GAIN', 'FOCUS', 'SCHEDULE', 'BOSS_GOLD', 'PLAN', 'CELL_PINK', 'SOAK')
 CELL_LIME = hx('D4FF00')               # Cell lime (= FOCUS hex); listed for the 2.4 note
+
+# ------------------------------------------------------------------ 2026-11-04 round 2 (R1_REREVIEW build order steps 1-2)
+# C15: the FX-P plate stock (review 3.10) is a token here, not only in fxk_lib: pink paper, the player's print stock under P effects
+P_STOCK = hx('F6C8DE')
+# C3: E / K structure lines (unit cell outlines, token lane rings, landing-arc frames and lane rings) at a capped value: ENAMEL's hue at L* 80 on
+# ring NOW (graded per ring by the time grammar as before); they read L* 95-100 at their 1 px peak at full ENAMEL
+E_LINE_L = 80.0
+# C3: K structure (the plate's and the bezel's 1 px ring and band lines, the bezel cube-glyph discs' glyph ink, the schedule layer's tape-end
+# crescent and keylines, the ward arc): every pixel of these layers above K type is capped to K type (L* 84), hue kept, and reduced with BOX;
+# their bright pixels (L* >= STRUCT_CLASS_L in the layer) are capture class 'k_struct' / 'k_sched' / 'e_ward' of check b
+STRUCT_CAP_L = 84.0
+STRUCT_CLASS_L = 70.0
+# C3: every board pixel inside r < 480 at or above this L* must sit in a capture class of check b (1 px of anti-aliasing allowed around a class)
+UNCLASSED_L = 80.0
+UNCLASSED_R = 480.0
+# C2: drawn colours.  A mark class's drawn modal colour sits within DRAWN_DE of the ink it is declared in; every drawn mark colour sits at least
+# DE_MIN from the skin's corp hue inks
+DRAWN_DE = 3.0
+# C1: the one grease pencil (VISUAL_PLAN A.5 / B L6), measured on the plate: wax width, ink edge per side, wax grain (L* std inside the wax)
+PEN_WAX_PX = (6.0, 8.0)
+PEN_INK_PX = (2.4, 3.6)
+PEN_GRAIN_L_STD = 2.0
+# C5: the ticket edge time steps (W6 / W5 / W4 = 50 / 70 / 100 % of the K edge, measured), each step at least this far in L*
+TICKET_EDGE_VALS = (0.50, 0.70, 1.00)
+TICKET_STEP_L = 5.0
+# C11: HOT is carried by its white-hot core
+HOT_CORE_PX_MIN = 3.0
+HOT_CORE_RATIO_MIN = 4.5
 # the neutral slate cell fill every skin uses (a low-chroma tint is allowed on top, max chroma below)
 CELL_TINT_MAX_CHROMA = 8.0             # Lab chroma of the skin tint over the slate fill
 

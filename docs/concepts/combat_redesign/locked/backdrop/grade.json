@@ -871,5 +871,72 @@
    "v1": 2.6,
    "vignette": 0.3
   }
+ },
+ "round2": {
+  "date": "2026-11-04",
+  "grade_changed": false,
+  "note": "rb2-1 is unchanged (corp/src bd_grade.py, GRADE_VERSION rb2-1, ROOMS as in \"rooms\").  Round 2 re-verified it on the round-2 board.  The board HUD now always reserves the option rows (C8), so on p1 the HUD mask ends at y 568 and the HUD column UI scrim slab (hud2.scrim_layers: SCRIM #02030A, part of the board layer, not of this grade) darkens the room by 15 % or more down to y 591 (both measured from the round-2 p1 capture; the hand slab from y 830).  C9: the gate is on the room itself (scrim cut, L* 28-34); the room as seen with the scrim kept is gated 28-34 on these p1 plates too and reported on the other beats (locked/final/checks.json).",
+  "room_mean_L_gate_region": {
+   "p1_bio": 31.93,
+   "p1_bio_solace": 31.93,
+   "p1_event": 31.6,
+   "p1_gh": 31.74,
+   "p1_lobby": 32.07,
+   "p1_rec": 32.1,
+   "p1_shop": 31.95,
+   "p1_shop_meridian": 31.91,
+   "p1_srv": 32.38
+  },
+  "room_mean_L_as_seen": {
+   "p1_bio": 28.93,
+   "p1_bio_solace": 28.93,
+   "p1_event": 28.65,
+   "p1_gh": 28.78,
+   "p1_lobby": 29.07,
+   "p1_rec": 29.05,
+   "p1_shop": 28.92,
+   "p1_shop_meridian": 28.88,
+   "p1_srv": 29.3
+  },
+  "ui_scrim": {
+   "source": "corp/src hud2.scrim_layers (board layer, drawn on the room before the board plate; not part of this grade)",
+   "column": "rounded rect from the HUD panel left edge - 18 px to x 1920, y 0 to the HUD bottom + 14, radius 18, rgba(2, 3, 10, 140), gaussian 12",
+   "hand": "rounded rect x 960-1920, y 836-1080, radius 24, rgba(2, 3, 10, 120), gaussian 12",
+   "measured_cut_rows": {
+    "p1": {
+     "column_slab_y": [
+      0,
+      591
+     ],
+     "hand_slab_y": [
+      830,
+      1079
+     ],
+     "hud_mask_bottom_y": 568
+    },
+    "p1_solace": {
+     "column_slab_y": [
+      0,
+      591
+     ],
+     "hand_slab_y": [
+      830,
+      1079
+     ],
+     "hud_mask_bottom_y": 568
+    },
+    "p1_meridian": {
+     "column_slab_y": [
+      0,
+      591
+     ],
+     "hand_slab_y": [
+      830,
+      1079
+     ],
+     "hud_mask_bottom_y": 568
+    }
+   }
+  }
  }
 }

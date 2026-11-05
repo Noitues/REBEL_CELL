@@ -105,12 +105,43 @@ for name, sfx, _ in PL:
     for x in r['d_palette']['failures']:
         tables.append('   dE FAIL  %-22s %s  x  %-22s %s  dE %.1f' % (x['a'], x['a_hex'], x['b'], x['b_hex'], x['dE']))
     e_ = r['e_hand']
-    tables.append('   hand: x SEND IT %d px, x UNDO %d px, lifted over sibling cost/rules %s' % (
-        e_['hand_x_send_px'], e_['hand_x_undo_px'], [(s_['sibling'], s_['cost_px'], s_['rules_px']) for s_ in e_['lifted_vs_sibling']]))
+    tables.append('   hand: x SEND IT %d px, x UNDO %d px, lifted over sibling protected set (cost, title, rules, x plate) %s' % (
+        e_['hand_x_send_px'], e_['hand_x_undo_px'],
+        [(s_['sibling'], {k_[:-3]: v_ for k_, v_ in s_.items() if k_.endswith('_px')}) for s_ in e_['lifted_vs_sibling']]))
+    if e_.get('lift'):
+        tables.append('   lift: %s' % e_['lift'])
+    # 2026-11-04 round 2 (rb_checks_r2): C3 unclassed bright px, C4 per disc, C2 drawn colours, f pencil, g tickets, h HUD rows, i HOT core
+    b2 = r['b_value_order'].get('round2', {})
+    tables.append('   C3 unclassed bright px (L* >= %.0f, r < %.0f): %s; structure rows: %s' % (
+        RBK.T.UNCLASSED_L, RBK.T.UNCLASSED_R, b2.get('unclassed_px'),
+        {k_: (v_['p95'], v_['p99']) for k_, v_ in b2.get('structure_rows', {}).items()}))
+    tables.append('   C4 token discs p95 / p99: %s' % {k_: (v_['p95'], v_['p99']) for k_, v_ in b2.get('token_discs', {}).items()})
+    d2 = r['d_palette'].get('round2', {})
+    tables.append('   C2 drawn vs token: %s' % [(x_['cls'], x_['drawn_hex'], x_['token'], x_['dE']) for x_ in d2.get('drawn_vs_token', [])])
+    hue_fail = [x_ for x_ in d2.get('drawn_vs_corp_ink', []) if not x_['pass_']]
+    hue_min = min(d2.get('drawn_vs_corp_ink', []), key=lambda x_: x_['dE'], default=None)
+    tables.append('   C2 drawn vs corp ink: %d pairs, %d under 15, closest %s' % (len(d2.get('drawn_vs_corp_ink', [])), len(hue_fail),
+                                                                              hue_min and (hue_min['cls'], hue_min['ink'], hue_min['dE'])))
+    if d2.get('solace_rim'):
+        tables.append('   C16 Solace rim median %s LCh %s: %s' % (d2['solace_rim']['median_hex'], d2['solace_rim']['lch'],
+                                                                [(x_['vs'], x_['of'], x_['dE']) for x_ in d2['solace_rim']['rows']]))
+    f2 = r['f_pencil']
+    tables.append('   f pencil (C1) %s: %s' % ('PASS' if f2['pass_'] else 'FAIL', [(x_['cls'], x_['wax_w'], x_['ink_per_side'], x_['grain_L_std']) for x_ in f2['rows']] or 'no pencil'))
+    g2 = r['g_tickets']
+    tables.append('   g tickets (C5) %s: edge L* %s, drawn %s, hazard %s' % ('PASS' if g2['pass_'] else 'FAIL', [x_['edge_L_p90'] for x_ in g2.get('rows', [])],
+                                                                         g2.get('edge_vals_drawn'), g2.get('hazard_ticks')))
+    h2 = r['h_hud_rows']
+    tables.append('   h HUD rows (C8) %s: measured %s, record %s' % ('PASS' if h2['pass_'] else 'FAIL', h2.get('measured'), h2.get('row_record')))
+    i2 = r['i_hot_core']
+    tables.append('   i HOT core (C11) %s: %s' % ('PASS' if i2['pass_'] else 'FAIL', {k_: i2.get(k_) for k_ in ('core_w_px', 'core_w_per_stroke', 'core_L', 'cell_L', 'core_vs_cell', 'fill_vs_cell_reported')} if i2.get('present') else 'no HOT marks'))
 REP['rb_checks'] = rbk
 REP['rb_plate_pass'] = {k: (v['plate_pass'] if isinstance(v, dict) else False) for k, v in rbk.items()}
-for k_ in ('a_cell_contrast', 'b_value_order', 'c_cap_height', 'd_palette', 'e_hand'):
+for k_ in ('a_cell_contrast', 'b_value_order', 'c_cap_height', 'd_palette', 'e_hand', 'f_pencil', 'g_tickets', 'h_hud_rows', 'i_hot_core'):
     REP['all_pass']['rb_' + k_] = all(isinstance(v, dict) and v['pass'][k_] for v in rbk.values())
+# 2026-11-04 round 2 (C14): the determinism assert (round2/board/c14_assert.py) run before the publish
+_c14 = 'D:/rc_scratch/combat_redesign/locked/round2/board/work/c14/c14_assert.json'
+REP['c14_determinism'] = json.load(open(_c14)) if os.path.exists(_c14) else 'missing (run round2/board/c14_assert.py solace <dir>)'
+REP['all_pass']['c14_determinism'] = isinstance(REP['c14_determinism'], dict) and REP['c14_determinism'].get('pass') is True
 # 1c. 2026-11-03 stage 2: measured IMPL items that are not one of the five checks, per plate
 #   2.7 the whole hand visible with >= 12 px above y = 1080 (hand mask, alpha >= 128); 2.14 ticket kind glyphs >= 16 px ink at full value
 s2 = {}
@@ -291,6 +322,35 @@ for tag, fp in (('first_pass', LOCK + 'corp/p1_decide_meridian.png'), ('final', 
                     min_gap_amber_to_hazard_px=round(float(dist[amber].min()), 1) if amber.any() else None)
 corp['meridian_hazard'] = mer
 corp['meridian_rule'] = 'O-29 fix 5: hazard paint chroma -25 % (rim and bezel lip), inner bezel lip black (no stripe), gap amber mark to hazard paint >= 2 px'
+# 2026-11-04 round 2 (C18, review N5): the Solace and Meridian rims in luma only.  Per skin, on p1: the rim band's radial L* profile (r 484-504)
+# and its angular pattern (L* per 0.5 deg at r 491-498; dominant cycles per turn and their amplitude, from the FFT of the profile)
+RIM_R = (484, 504)
+
+
+def rim_luma(a):
+    Ls = RBK.T.lstar(RBK.T.lum(a.astype(np.float64)))
+    th = (np.degrees(np.arctan2(Y - CC[1], X - CC[0])) + 360) % 360
+    radial = {int(r_): round(float(Ls[(rho >= r_ - 0.5) & (rho < r_ + 0.5)].mean()), 1) for r_ in range(RIM_R[0], RIM_R[1] + 1)}
+    band = (rho >= 491) & (rho <= 498)
+    bins = (th[band] * 2).astype(int) % 720
+    prof = np.bincount(bins, Ls[band], 720) / np.maximum(np.bincount(bins, None, 720), 1)
+    sp = np.abs(np.fft.rfft(prof - prof.mean())) / 360.0
+    k = int(np.argmax(sp[3:200])) + 3
+    return dict(band_mean_L=round(float(prof.mean()), 1), band_std_L=round(float(prof.std()), 1), dominant_cycles_per_turn=k,
+                dominant_amp_L=round(float(sp[k]), 2), radial_L=radial), prof
+rimp, profs = {}, {}
+for n, fname in (('neutral', 'p1_decide.png'), ('solace', 'p1_decide_solace.png'), ('meridian', 'p1_decide_meridian.png')):
+    if os.path.exists(FINAL + fname):
+        rimp[n], profs[n] = rim_luma(np.asarray(Image.open(FINAL + fname).convert('RGB')))
+if 'solace' in rimp and 'meridian' in rimp:
+    s_, m_ = rimp['solace'], rimp['meridian']
+    rimp['solace_vs_meridian'] = dict(band_mean_dL=round(s_['band_mean_L'] - m_['band_mean_L'], 1),
+                                      cycles=(s_['dominant_cycles_per_turn'], m_['dominant_cycles_per_turn']),
+                                      differs=bool(abs(s_['band_mean_L'] - m_['band_mean_L']) >= 10 or
+                                                   max(s_['dominant_cycles_per_turn'], m_['dominant_cycles_per_turn']) >= 2 * min(s_['dominant_cycles_per_turn'], m_['dominant_cycles_per_turn'])))
+corp['rim_luma_C18'] = rimp
+corp['rim_luma_rule'] = ('C18: the two corp rims differ in luma when their rope-band mean L* differs by 10 or more, or their dominant angular pattern '
+                         'differs by a factor of 2 or more (cycles per turn); grey_proof.jpg shows both rims unwrapped in luma')
 REP['corp'] = corp
 
 # ------------------------------------------------------------------ 5. game information (draw-call text vs state)
@@ -389,20 +449,40 @@ for i, (n, f) in enumerate((('solace', 'p1_decide_solace.png'), ('meridian', 'p1
         g = grey(Image.open(FINAL + f)).resize((930, 523), Image.LANCZOS)
         lab(gp, n, (14 + i * 945, y2 - 30))
         gp.paste(g, (10 + i * 945, y2))
+# 2026-11-04 round 2 (C18): the two corp rims unwrapped (theta 150-330 deg screen, r 478-508) in luma at 2x, Solace above Meridian
+from scipy.ndimage import map_coordinates as _mc
+rows_ = []
+for n, f in (('solace', 'p1_decide_solace.png'), ('meridian', 'p1_decide_meridian.png')):
+    if os.path.exists(FINAL + f):
+        g_ = lum(np.asarray(Image.open(FINAL + f).convert('RGB'), np.float32))
+        th_ = np.radians(np.linspace(150, 330, 1840))
+        rr_ = np.linspace(478, 508, 60)
+        TT, RR = np.meshgrid(th_, rr_)
+        strip_ = _mc(g_, [CC[1] + RR * np.sin(TT), CC[0] + RR * np.cos(TT)], order=1)
+        rows_.append((n, Image.fromarray(np.clip(strip_, 0, 255).astype(np.uint8)).convert('RGB')))
+if rows_:
+    gp2 = Image.new('RGB', (W2, gp.height + 40 + len(rows_) * 100), (20, 20, 20))
+    gp2.paste(gp, (0, 0))
+    yb_ = gp.height + 6
+    lab(gp2, 'corp rims unwrapped in luma (theta 150-330, r 478-508, 2x): Solace above Meridian (C18)', (14, yb_))
+    for i, (n, s_) in enumerate(rows_):
+        gp2.paste(s_, (30, yb_ + 34 + i * 100))
+        lab(gp2, n, (30, yb_ + 34 + i * 100 + 62))
+    gp = gp2
 gp.save(FINAL + 'grey_proof.jpg', quality=90)
 print('grey_proof written')
 
 first = Image.open(LOCK + 'assembled/p1_decide.png').convert('RGB')
-cols = [('locked first pass (ART CALL 53)', first), ('rebuild 2026-11-03', p1)]
+cols = [('locked first pass (ART CALL 53)', first), ('round 2, 2026-11-04', p1)]
 Wc = 940
 crops = [((830, 740, 1910, 1080), 'hand'), ((440, 110, 640, 200), 'digit 0 + tape'), ((430, 880, 680, 960), 'digit 3 + HOLD THEN'), ((300, 300, 772, 780), 'wheel'),
-         ((1068, 0, 1910, 300), 'bill'), ((1100, 420, 1910, 800), 'room')]
+         ((1068, 0, 1910, 575), 'HUD (bill, WIN, RAM)'), ((1100, 585, 1910, 760), 'room')]
 # every label sits in its own 30 px band above its panel (2026-11-03 stage 2: labels drawn over the crops hid the bill header and the room)
 LB = 30
 rows_h = [529] + [int((c[0][3] - c[0][1]) * min(Wc / (c[0][2] - c[0][0]), 2.4 if i in (1, 2) else 1.0)) for i, c in enumerate(crops)]
 sheet = Image.new('RGB', (Wc * 2 + 30, 56 + sum(rows_h) + (10 + LB) * (len(rows_h) + 1) + 280), (14, 12, 22))
 dd = ImageDraw.Draw(sheet)
-dd.text((12, 10), 'before / after, p1_decide neutral: locked first pass | 2026-11-03 rebuild.  Rows: plate, hand, digit 0, digit 3, wheel, bill, room, squint', font=an, fill=(255, 255, 255))
+dd.text((12, 10), 'before / after, p1_decide neutral: locked first pass | round 2 (2026-11-04).  Rows: plate, hand, digit 0, digit 3, wheel, HUD, room, squint', font=an, fill=(255, 255, 255))
 for i, (t, im) in enumerate(cols):
     x = 10 + i * (Wc + 10)
     y = 56

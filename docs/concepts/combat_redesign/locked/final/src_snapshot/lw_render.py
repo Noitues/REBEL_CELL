@@ -67,6 +67,10 @@ if os.environ.get('RB', '1') == '1':
         if os.environ.get('RB3', '1') == '1':
             import rb3_patch as _RB3
             _RB3.install(R, R.A, SKIN)
+            # 2026-11-04 round 2 (R1_REREVIEW build order 1-2: C14 C2 C3 C4 C5 C1 C8 C16 C18 C11 C15 C6 C7).  env RB4=0 skips it.
+            if os.environ.get('RB4', '1') == '1':
+                import rb4_patch as _RB4
+                _RB4.install(R, R.A, SKIN)
 
 if __name__ == '__main__':
     t = time.time()

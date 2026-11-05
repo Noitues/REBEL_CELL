@@ -82,6 +82,7 @@ GR.WCR.sel_for = _sel_for
 
 _tw = {}
 SPLIT = {}          # see _render: {'on': True} -> SPLIT['below'] (RGBA board), SPLIT['above'] (RGBA HUD + hand + stickers)
+BTN_DX = [0]        # 2026-11-04 round 2: px the UNDO / SEND IT column (and the hint line) moves right; rb_lift sets it (C6, option (a))
 
 
 def tower_img(f, tag, skip=None, hot=True, hov_sectors=None, nw=False, trim=True):
@@ -252,8 +253,9 @@ def _render(beat='p1', key=None, room=None, hover_unit=None, lift=None, with_ui=
         lay, info = AS.stack_layer(words, {})
         m = Image.new('L', lay.size, 0)
         dr = ImageDraw.Draw(m)
-        dr.rectangle([1655, 850, 1895, 899], fill=255)
-        dr.rectangle([1660, 1028, 1900, 1060], fill=255)
+        bdx = BTN_DX[0]                  # 2026-11-04 round 2 (C6, option (a)): the UNDO / SEND IT column moves right (rb_lift.BTN_DX)
+        dr.rectangle([1655 + bdx, 850, 1895 + bdx, 899], fill=255)
+        dr.rectangle([1660 + bdx, 1028, 1900 + bdx, 1060], fill=255)
         lay.putalpha(ImageChops.multiply(lay.split()[3], m))
         FH.place_ui(bg, 'name', not words)
         FH.place_ui(bg, 'send', not words)
