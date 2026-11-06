@@ -1,0 +1,1551 @@
+City3D (SubViewport) vis=-
+  Ground (Node3D) vis=true
+    OuterGround (MeshInstance3D) vis=false mesh=ArrayMesh aabb=[P: (-4000.0, -0.02, -4000.0), S: (8000.0, 0.00001, 8000.0)]
+    Water (Node3D) vis=true
+      Void (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-4000.0, -0.04, -4000.0), S: (8000.0, 0.00001, 8000.0)]
+      Sea (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-1215.0, 0.03, -1215.0), S: (2430.0, 0.00001, 2430.0)]
+      Seabed (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-1215.0, -188.4702, -1215.0), S: (2424.0, 193.4393, 2424.0)]
+      WaterPlane (MeshInstance3D) vis=false mesh=ArrayMesh aabb=[P: (-4000.0, 0.03, -4000.0), S: (8000.0, 0.00001, 8000.0)]
+      SeaWall (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, -1.0, -495.0), S: (990.0, 3.4, 918.0)]
+      SeaWallLight (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-496.563, 0.2, -495.0), S: (993.2505, 2.22, 919.6875)]
+      Piers (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-259.5, 0.0, -175.5), S: (736.5, 0.9, 616.5)]
+      PierLamps (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-258.35, 0.9, -174.35), S: (735.0, 0.7, 615.0)]
+      ShoreReflections (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.2706, 0.05, -442.0874), S: (1008.629, 0.00001, 900.5954)]
+    OuterLand (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-1215.0, -0.017671, -1215.0), S: (1818.0, 402.7433, 1476.0)]
+      Vegetation (MultiMeshInstance3D) vis=false
+    A2Features (Node3D) vis=true
+      Roads (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-472.8337, 0.05, -444.6461), S: (897.6671, 40.96106, 844.9782)]
+      RoadGlow (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-472.062, 0.23, -444.3321), S: (896.0925, 41.06811, 843.8907)]
+      Flyovers (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-470.8402, 9.5, -437.4277), S: (892.1775, 27.483, 728.6743)]
+      Pillars (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-498.6869, 0.0, -508.5319), S: (921.2677, 62.92433, 906.536)]
+      Rails (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-498.2606, 5.002332, -508.1217), S: (859.9911, 58.6301, 725.1357)]
+      RailGlow (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-498.0318, 5.182357, -507.9112), S: (859.5519, 58.47432, 724.7087)]
+      Stations (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-449.0203, 0.0, -401.3344), S: (790.5607, 20.13679, 599.6274)]
+      Walls (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-458.6925, 0.0, -381.2227), S: (902.832, 30.3372, 723.1216)]
+      Checkpoints (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-459.4796, 0.0, -368.4293), S: (831.215, 19.08298, 686.9025)]
+      Port (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (163.3202, 0.25, 151.4402), S: (89.1001, 0.01212, 148.5002)]
+      Piers (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (105.9001, 0.0, 163.3202), S: (57.42004, 0.35, 132.6602)]
+      Entrances (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-161.9002, 0.0, -82.70007), S: (347.5004, 3.206517, 179.2002)]
+      Drowned (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-268.4094, 0.2, 181.7688), S: (151.777, 0.000313, 158.4546)]
+  Network (Node3D) vis=true
+    NetworkDecal (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-468.0, 0.33, -258.0), S: (288.0, 18.00858, 342.0)]
+    NetworkXray (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-468.0, 0.33, -258.0), S: (288.0, 18.00858, 342.0)]
+  Buildings (Node3D) vis=true
+    Chunk_-2_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_100000 (MultiMeshInstance3D) vis=true
+      Fam_100001 (MultiMeshInstance3D) vis=true
+      Fam_100010 (MultiMeshInstance3D) vis=true
+      Fam_100011 (MultiMeshInstance3D) vis=true
+      Fam_100020 (MultiMeshInstance3D) vis=true
+      Fam_100021 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@467 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, 3.303353, -303.0), S: (144.0, 10.22404, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-305.393, 4.803506, -304.979), S: (147.8392, 11.49231, 135.7488)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.35, 3.528671, -183.35), S: (130.8163, 2.188083, 24.70001)]
+    Chunk_-2_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4370 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4481 (MultiMeshInstance3D) vis=true
+      Fam_4514 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@468 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, -1.0, -159.0), S: (144.0, 6.977024, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-207.0, 0.0, -105.0), S: (50.36635, 3.168038, 73.03687)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.35, 0.02, -159.35), S: (144.7, 5.835737, 144.0763)]
+    Chunk_-3_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4642 (MultiMeshInstance3D) vis=true
+      Fam_100000 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@469 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, 0.482575, -303.0), S: (144.0, 21.1754, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-448.6635, 0.427541, -303.646), S: (147.4662, 13.31314, 146.5127)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.35, 0.815894, -301.4663), S: (143.2142, 20.60968, 142.8163)]
+    Chunk_-3_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4434 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4498 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Fam_4642 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@470 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, 0.053249, -159.0), S: (144.0, 7.487744, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-448.9514, 0.230805, -161.013), S: (100.0522, 9.868806, 123.3904)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.35, 0.091558, -159.35), S: (144.7, 7.335804, 144.7)]
+    Chunk_-1_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_100000 (MultiMeshInstance3D) vis=true
+      Fam_100020 (MultiMeshInstance3D) vis=true
+      Fam_100021 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@471 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, 0.01, -303.0), S: (144.0, 20.25508, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-161.6176, 0.0, -297.0), S: (70.75945, 13.3373, 139.0654)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-151.4663, 0.02, -303.35), S: (136.8163, 18.07471, 144.7)]
+    Chunk_-1_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@472 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -1.0, -159.0), S: (144.0, 4.3504, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-160.207, 0.0, -159.984), S: (147.1517, 5.292587, 115.0805)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.35, 0.02, -159.35), S: (144.7, 3.190698, 144.7)]
+    Chunk_-4_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@473 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 0.756119, -303.0), S: (48.0, 30.37056, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-496.6612, 0.67643, -225.0), S: (50.19458, 17.61155, 67.37111)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.35, 0.498723, -301.4663), S: (48.70001, 23.5459, 142.8163)]
+    Chunk_-4_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@474 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 0.212332, -159.0), S: (48.0, 14.34244, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-496.4862, 0.116287, -161.0811), S: (50.00507, 16.85606, 50.9199)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.35, 0.134019, -153.35), S: (48.70001, 13.46006, 126.0763)]
+    Chunk_-2_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@475 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, 6.841761, -447.0), S: (144.0, 13.83021, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.5209, 6.865761, -449.186), S: (146.1089, 9.243729, 148.1265)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.35, 8.452179, -447.35), S: (144.7, 4.819456, 132.7)]
+    Chunk_-2_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4498 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@476 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, -1.0, -15.0), S: (144.0, 2.09, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.35, 0.02, -15.35), S: (144.7, 0.914937, 144.7)]
+    Chunk_-3_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@477 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, 0.109545, -447.0), S: (144.0, 50.84955, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-327.0, 10.02191, -316.8917), S: (24.2182, 3.783685, 14.86093)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-439.4663, 10.13629, -399.35), S: (136.8163, 17.6194, 96.70001)]
+    Chunk_-3_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@478 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, 0.02537, -15.0), S: (144.0, 10.57997, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.35, 0.067682, -15.35), S: (144.7, 7.216766, 144.7)]
+    Chunk_-1_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@479 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -1.0, -447.0), S: (144.0, 21.64398, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-160.5161, 0.0, -449.0835), S: (70.04166, 13.57245, 147.5856)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-152.7263, 0.02, -447.35), S: (138.0763, 20.49929, 144.7)]
+    Chunk_-1_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@480 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -0.019349, -15.0), S: (144.0, 2.008086, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.35, 0.02, -15.35), S: (144.7, 1.758294, 144.7)]
+    Chunk_-4_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@481 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 0.110202, -447.0), S: (48.0, 88.15596, 144.0)]
+    Chunk_-4_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@482 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 0.49768, -15.0), S: (48.0, 16.54, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.35, 0.150404, -7.466316), S: (48.07632, 16.41591, 136.8163)]
+    Chunk_-2_-4 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@483 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, 6.984446, -495.0), S: (144.0, 33.67144, 48.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-249.0, 7.008446, -460.8992), S: (92.30194, 4.877597, 15.18924)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-259.4663, 7.233757, -469.4663), S: (100.8163, 4.510482, 22.81631)]
+    Chunk_-3_-4 (Node3D) vis=true
+      @MeshInstance3D@484 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, 0.527291, -495.0), S: (144.0, 102.5309, 48.0)]
+    Chunk_0_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4529 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4578 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@485 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.0, 1.282882, -303.0), S: (144.0, 21.8633, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.35, 1.701547, -303.35), S: (144.7, 19.6998, 144.7)]
+    Chunk_0_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4450 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Fam_4642 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@486 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.0, 0.951262, -159.0), S: (144.0, 1.785754, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (50.40688, 1.57308, -22.4258), S: (37.31798, 3.175176, 9.44749)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-13.46632, 1.051074, -159.35), S: (142.8163, 1.727679, 144.7)]
+    Chunk_-1_-4 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@487 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -1.0, -495.0), S: (144.0, 14.48801, 48.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-160.2679, 7.195296, -453.1653), S: (9.42276, 2.305282, 6.165344)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.35, 0.02, -495.35), S: (144.7, 13.05178, 48.70001)]
+    Chunk_-4_-4 (Node3D) vis=true
+      @MeshInstance3D@488 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 5.56241, -495.0), S: (48.0, 90.40545, 48.0)]
+    Chunk_-2_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@489 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, -1.0, 129.0), S: (144.0, 5.949686, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-301.4663, 0.02, 128.65), S: (141.5295, 4.467782, 144.7)]
+    Chunk_-3_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@490 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-447.0, -0.019026, 129.0), S: (144.0, 32.40056, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-449.6491, 4.042256, 132.942), S: (58.73041, 24.91976, 98.05801)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-403.4663, 0.04564, 128.65), S: (94.81631, 25.89539, 132.7)]
+    Chunk_0_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4529 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@491 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.0, 8.056459, -447.0), S: (144.0, 15.28531, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (56.30025, 8.08046, -448.0851), S: (73.05437, 4.481293, 20.69998)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.35, 8.606697, -447.35), S: (144.7, 14.72151, 142.8163)]
+    Chunk_0_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@492 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.0, -0.018203, -15.0), S: (144.0, 2.167811, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (49.94472, 0.124322, -16.32463), S: (79.28635, 4.501088, 104.4241)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.35, 0.02, -15.35), S: (144.7, 2.16598, 144.7)]
+    Chunk_-1_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@493 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -0.019735, 129.0), S: (18.0, 0.036042, 18.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-151.4663, 0.02, 128.65), S: (2.932617, 0.024788, 12.70001)]
+    Chunk_-4_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@494 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-495.0, 0.106727, 129.0), S: (48.0, 48.11738, 138.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-491.4423, 10.62934, 127.724), S: (46.36823, 27.22528, 104.9821)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-475.4663, 14.03314, 128.65), S: (2.932617, 1.309692, 12.70001)]
+    Chunk_0_-4 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@495 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.0, 7.483218, -495.0), S: (144.0, 2.73281, 48.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (56.68064, 7.520983, -466.6767), S: (74.27849, 3.680732, 21.18784)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.35, 7.524032, -495.35), S: (144.7, 2.804739, 48.70001)]
+    Chunk_1_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4370 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4450 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4498 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@496 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, 0.599783, -303.0), S: (144.0, 12.57495, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (164.8328, 0.610484, -298.2432), S: (108.1672, 8.828988, 140.4673)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.65, 0.643054, -301.8642), S: (144.7, 10.73291, 143.2142)]
+    Chunk_1_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4514 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@497 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, 0.291456, -159.0), S: (144.0, 1.49123, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (147.0, 0.429103, -160.6739), S: (127.2639, 3.299669, 134.6244)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.65, 0.369678, -159.35), S: (144.7, 1.347811, 144.7)]
+    Chunk_0_1 (Node3D) vis=true
+      @MeshInstance3D@498 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_-2_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@499 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.0, -0.02, 273.0), S: (144.0, 4.973144, 120.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-297.35, 0.02, 274.5337), S: (138.7, 3.22242, 106.8163)]
+    Chunk_-3_2 (Node3D) vis=true
+      @MeshInstance3D@500 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-429.0, 0.095333, 273.0), S: (126.0, 23.15034, 54.0)]
+    Chunk_1_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@501 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, 7.271724, -447.0), S: (144.0, 6.601651, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.4824, 7.295724, -447.3392), S: (146.8817, 5.676426, 146.0455)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.65, 7.362483, -447.35), S: (144.7, 5.718661, 144.7)]
+    Chunk_1_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4370 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4434 (MultiMeshInstance3D) vis=true
+      Fam_4450 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4529 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@502 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, -0.01875, -15.0), S: (144.0, 0.970012, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (127.8821, 0.028807, 57.0), S: (39.0219, 2.96662, 60.3996)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.65, 0.020661, -15.35), S: (144.7, 0.621297, 144.7)]
+    Chunk_-1_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@503 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.0, -0.02, 273.0), S: (48.0, 0.03, 126.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-159.35, 0.02, 274.5337), S: (144.7, 0.021639, 124.8163)]
+    Chunk_-4_2 (Node3D) vis=true
+      @MeshInstance3D@504 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_1_-4 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@505 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, 7.441973, -495.0), S: (144.0, 17.93321, 48.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (127.5763, 7.465973, -465.0), S: (20.89425, 3.159839, 19.40631)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (136.5337, 7.534405, -495.35), S: (110.9326, 6.470567, 48.70001)]
+    Chunk_1_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4450 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@506 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (135.0, -0.019999, 129.0), S: (138.0, 0.068834, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (136.5337, 0.02, 128.65), S: (136.8163, 0.056932, 144.7)]
+    Chunk_0_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@507 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (105.0, -0.02, 327.0), S: (24.0, 0.03, 72.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-15.35, 0.02, 328.5337), S: (144.7, 0.02, 64.19263)]
+    Chunk_-2_3 (Node3D) vis=true
+      @MeshInstance3D@508 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_2_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4210 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4242 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4322 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4386 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4450 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Fam_4626 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@509 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 1.782686, -303.0), S: (144.0, 23.70302, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (271.7672, 6.444164, -298.0951), S: (7.232788, 2.693963, 7.095062)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (272.65, 1.904246, -301.4663), S: (144.7, 15.75331, 142.8163)]
+    Chunk_2_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_67 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4258 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4274 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4481 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4578 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Fam_4642 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      Props_billboard_3 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@510 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 0.635827, -159.0), S: (144.0, 37.20682, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 0.856196, -45.47944), S: (7.644775, 2.862017, 6.807835)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (280.5337, 1.802132, -159.35), S: (136.8163, 29.74935, 144.7)]
+    Chunk_-3_3 (Node3D) vis=true
+      @MeshInstance3D@511 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_-1_3 (Node3D) vis=true
+      @MeshInstance3D@512 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_-4_3 (Node3D) vis=true
+      @MeshInstance3D@513 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_2_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@514 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 5.833653, -447.0), S: (144.0, 33.6186, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (271.7914, 7.062861, -399.4577), S: (69.36508, 5.374698, 97.9668)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (272.65, 5.935685, -447.35), S: (144.7, 11.65695, 144.7)]
+    Chunk_2_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4114 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4194 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4306 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4402 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4418 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Fam_4481 (MultiMeshInstance3D) vis=true
+      Fam_4482 (MultiMeshInstance3D) vis=true
+      Fam_4530 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4657 (MultiMeshInstance3D) vis=true
+      Fam_4658 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      Props_billboard_2 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@515 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 0.01941, -15.0), S: (144.0, 39.00703, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (392.3706, 0.115645, 85.80775), S: (25.60034, 4.588224, 44.60215)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (272.65, 0.100315, -14.39474), S: (138.7, 23.55573, 143.7448)]
+    Chunk_2_-4 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@516 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, 11.65225, -495.0), S: (144.0, 49.80674, 48.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (280.5337, 12.28339, -459.35), S: (2.932617, 3.282808, 12.70001)]
+    Chunk_1_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@517 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (129.0, -0.02, 273.0), S: (144.0, 0.0462, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (128.65, 0.02, 273.6053), S: (144.7, 0.03172, 141.8611)]
+    Chunk_0_3 (Node3D) vis=true
+      @MeshInstance3D@518 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_2_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4130 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4178 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4226 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4290 (MultiMeshInstance3D) vis=true
+      Fam_4336 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4338 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4354 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4416 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4466 (MultiMeshInstance3D) vis=true
+      Fam_4562 (MultiMeshInstance3D) vis=true
+      Fam_4609 (MultiMeshInstance3D) vis=true
+      Fam_4610 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      Props_antenna (MultiMeshInstance3D) vis=false
+      Props_billboard_0 (MultiMeshInstance3D) vis=false
+      Props_billboard_1 (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@519 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, -0.019959, 129.0), S: (144.0, 0.411687, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (393.0, 0.055543, 129.0), S: (24.45602, 2.787757, 30.46289)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (272.65, 0.02, 130.5337), S: (144.7, 0.086162, 142.8163)]
+    Chunk_3_-2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4162 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@520 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, 0.01, -303.0), S: (60.0, 28.2273, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (416.65, 0.02, -301.4663), S: (42.70001, 26.72385, 142.8163)]
+    Chunk_3_-1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_66 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4417 (MultiMeshInstance3D) vis=true
+      Fam_4465 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@521 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, 0.01, -159.0), S: (36.0, 33.68168, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (416.65, 0.02, -159.35), S: (36.70001, 32.85184, 144.7)]
+    Chunk_3_-3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@522 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, 0.087107, -447.0), S: (78.0, 53.60808, 144.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (416.65, 8.691677, -343.4663), S: (10.81631, 3.307518, 40.81631)]
+    Chunk_3_0 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@523 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, 0.01, -15.0), S: (36.0, 34.21643, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (415.8858, 0.0, 79.39787), S: (38.31155, 5.07188, 50.35291)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (416.65, 0.02, -13.46632), S: (36.70001, 34.20337, 92.93263)]
+    Chunk_1_3 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@524 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (207.0, 0.01, 417.0), S: (42.0, 0.00001, 6.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (208.5337, 0.02, 416.65), S: (38.93262, 0.02072, 6.700012)]
+    Chunk_3_-4 (Node3D) vis=true
+      @MeshInstance3D@525 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, 39.45225, -495.0), S: (78.0, 28.0153, 48.0)]
+    Chunk_2_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4145 (MultiMeshInstance3D) vis=true
+      Fam_4146 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4225 (MultiMeshInstance3D) vis=true
+      Fam_4272 (MultiMeshInstance3D) vis=true
+      Fam_4273 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4289 (MultiMeshInstance3D) vis=true
+      Fam_4337 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4353 (MultiMeshInstance3D) vis=true
+      Fam_4400 (MultiMeshInstance3D) vis=true
+      Fam_4401 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      Props_ac (MultiMeshInstance3D) vis=false
+      Props_tank (MultiMeshInstance3D) vis=false
+      @MeshInstance3D@526 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (273.0, -0.02, 273.0), S: (144.0, 0.05479, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (271.6991, 0.0, 337.3827), S: (97.86761, 2.774641, 62.76651)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (272.65, 0.02, 272.65), S: (144.7, 0.038825, 142.8163)]
+    Chunk_3_1 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      Fam_65 (MultiMeshInstance3D) vis=true
+      Fam_4144 (MultiMeshInstance3D) vis=true
+      Fam_4224 (MultiMeshInstance3D) vis=true
+      Fam_4288 (MultiMeshInstance3D) vis=true
+      Fam_4352 (MultiMeshInstance3D) vis=true
+      Fam_4464 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@527 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, -0.019985, 129.0), S: (36.0, 0.497263, 144.0)]
+      Parks (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (415.6495, 0.0, 127.2442), S: (39.7756, 3.070076, 32.00398)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (424.5337, 0.02, 160.5337), S: (28.81631, 0.156266, 112.8163)]
+    Chunk_2_3 (Node3D) vis=true
+      @MeshInstance3D@528 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+    Chunk_3_2 (Node3D) vis=true
+      Fam_64 (MultiMeshInstance3D) vis=true
+      @MeshInstance3D@529 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (417.0, -0.019989, 273.0), S: (18.0, 0.033497, 36.0)]
+      Lanes (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (416.65, 0.02, 272.65), S: (10.81631, 0.023042, 30.70001)]
+    Chunk_3_3 (Node3D) vis=true
+      @MeshInstance3D@530 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (0.0, 0.0, 0.0), S: (0.0, 0.0, 0.0)]
+  Landmarks (Node3D) vis=true
+    Landmark_halcyon (Node3D) vis=true
+      halcyon_hq (Node3D) vis=true
+        halcyon_hq__anim_eye (Node3D) vis=true
+          halcyon_hq__eye_beam (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-13.0, -10.51348, 1.566606), S: (26.0, 94.93967, 130.5114)]
+          halcyon_hq__eye_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-17.02657, 0.12, 1.8), S: (34.05314, 93.88, 143.2)]
+          halcyon_hq__eye_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-8.68, 73.32, -1.2), S: (17.36, 17.36, 4.0)]
+        halcyon_hq__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.21, 2.67, -27.21), S: (61.11, 59.64, 61.56)]
+        halcyon_hq__sign_0 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.429717, 4.833145, 27.05), S: (12.92374, 1.363392, 0.299999)]
+        halcyon_hq__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-28.8, 0.0, -27.82279), S: (64.8, 74.0, 63.1228)]
+        halcyon_hq__win (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.08, 3.6, -26.65), S: (54.16, 55.6, 53.73)]
+        id_ground (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.5, 0.02, -27.5), S: (55.0, 0.03001, 55.0)]
+      AnimationPlayer (AnimationPlayer) vis=-
+    Landmark_meridian (Node3D) vis=true
+      meridian_hq (Node3D) vis=true
+        id_ground (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-90.3, -0.058293, -41.8), S: (180.3, 0.833293, 71.89999)]
+        meridian_hq__anim_loop (Node3D) vis=true
+          meridian_hq__crane (Node3D) vis=true
+            meridian_hq__crane_lit (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-10.6, 0.0, -8.6), S: (21.2, 48.46241, 17.2)]
+            meridian_hq__crane_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-0.8, 49.45, -1.8), S: (1.6, 0.00001, 1.6)]
+            meridian_hq__crane_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-11.6, 0.0, -9.2), S: (23.2, 49.4, 31.2)]
+            meridian_hq__crane_win (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-4.06, 32.3, -2.86), S: (8.12, 0.900002, 9.61)]
+          meridian_hq__crane_p00 (Node3D) vis=true
+            meridian_hq__crane_p00_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p00_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 14.0, -43.6), S: (12.41245, 34.16556, 42.66496)]
+          meridian_hq__crane_p01 (Node3D) vis=true
+            meridian_hq__crane_p01_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p01_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 11.93333, -43.6), S: (12.41245, 36.23223, 42.66496)]
+          meridian_hq__crane_p02 (Node3D) vis=true
+            meridian_hq__crane_p02_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p02_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 9.866667, -43.6), S: (12.41245, 38.2989, 42.66496)]
+          meridian_hq__crane_p03 (Node3D) vis=true
+            meridian_hq__crane_p03_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p03_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 7.8, -43.6), S: (12.41245, 40.36556, 42.66496)]
+          meridian_hq__crane_p04 (Node3D) vis=true
+            meridian_hq__crane_p04_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p04_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 5.733333, -43.6), S: (12.41245, 42.43223, 42.66496)]
+          meridian_hq__crane_p05 (Node3D) vis=true
+            meridian_hq__crane_p05_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p05_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 3.666667, -43.6), S: (12.41245, 44.49889, 42.66496)]
+          meridian_hq__crane_p06 (Node3D) vis=true
+            meridian_hq__crane_p06_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p06_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 6.16, -43.6), S: (12.41245, 42.00556, 42.66496)]
+          meridian_hq__crane_p07 (Node3D) vis=true
+            meridian_hq__crane_p07_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 32.00723, -42.82353), S: (4.0, 4.803806, 35.83633)]
+            meridian_hq__crane_p07_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 18.56, -43.41073), S: (12.41245, 29.60954, 42.46243)]
+          meridian_hq__crane_p08 (Node3D) vis=true
+            meridian_hq__crane_p08_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 32.19569, -42.52584), S: (4.0, 6.875854, 35.54649)]
+            meridian_hq__crane_p08_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 18.56, -43.10519), S: (12.41245, 29.61149, 42.14845)]
+          meridian_hq__crane_p09 (Node3D) vis=true
+            meridian_hq__crane_p09_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 32.19569, -42.52584), S: (4.0, 6.875854, 35.54649)]
+            meridian_hq__crane_p09_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 18.56, -43.10519), S: (12.41245, 29.61149, 42.14845)]
+          meridian_hq__crane_p10 (Node3D) vis=true
+            meridian_hq__crane_p10_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.82108, -42.82353), S: (4.0, 4.989954, 35.83633)]
+            meridian_hq__crane_p10_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 18.56, -43.41073), S: (12.41245, 29.60954, 42.46243)]
+          meridian_hq__crane_p11 (Node3D) vis=true
+            meridian_hq__crane_p11_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 39.25)]
+            meridian_hq__crane_p11_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 18.56, -43.6), S: (12.41245, 29.60556, 42.66496)]
+          meridian_hq__crane_p12 (Node3D) vis=true
+            meridian_hq__crane_p12_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p12_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 9.885503, -43.6), S: (12.41245, 38.28006, 42.66496)]
+          meridian_hq__crane_p13 (Node3D) vis=true
+            meridian_hq__crane_p13_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p13_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 14.0, -43.6), S: (12.41245, 34.16556, 42.66496)]
+          meridian_hq__crane_p14 (Node3D) vis=true
+            meridian_hq__crane_p14_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p14_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 14.0, -43.6), S: (12.41245, 34.16556, 42.66496)]
+          meridian_hq__crane_p15 (Node3D) vis=true
+            meridian_hq__crane_p15_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-2.0, 31.35, -43.0), S: (4.0, 1.775, 36.0)]
+            meridian_hq__crane_p15_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-6.2, 14.0, -43.6), S: (12.41245, 34.16556, 42.66496)]
+          meridian_hq__streaks_f11 (Node3D) vis=true
+            meridian_hq__streaks_f11_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-52.0, 1.2, -35.8), S: (171.0, 4.92, 3.599998)]
+          meridian_hq__streaks_f12 (Node3D) vis=true
+            meridian_hq__streaks_f12_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-106.0, 1.2, -35.8), S: (171.0, 4.92, 3.599998)]
+          meridian_hq__streaks_f13 (Node3D) vis=true
+            meridian_hq__streaks_f13_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-196.0, 1.2, -35.8), S: (171.0, 4.92, 3.599998)]
+          meridian_hq__streaks_f14 (Node3D) vis=true
+            meridian_hq__streaks_f14_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-322.0, 1.2, -35.8), S: (171.0, 4.92, 3.599998)]
+          meridian_hq__train (Node3D) vis=true
+            meridian_hq__train_cargo (Node3D) vis=true
+            meridian_hq__train_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-8.05, 1.8, -35.6), S: (0.02, 3.9, 3.199997)]
+            meridian_hq__train_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-8.03, 0.4, -35.74915), S: (107.03, 7.6, 3.814341)]
+            meridian_hq__train_win (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-7.5, 6.3, -35.2), S: (0.00001, 1.3, 2.400002)]
+        meridian_hq__lit (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-23.68, 0.0, -23.68), S: (47.56164, 23.2, 47.36)]
+        meridian_hq__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-60.8, 0.2, -37.5), S: (121.6, 20.945, 61.425)]
+        meridian_hq__sign_0 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (21.15, 9.974558, -3.189753), S: (0.299999, 1.028269, 6.379505)]
+        meridian_hq__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-60.8, 0.0, -37.4), S: (121.6, 31.2, 61.068)]
+      AnimationPlayer (AnimationPlayer) vis=-
+    Landmark_orbital (Node3D) vis=true
+      orbital_hq (Node3D) vis=true
+        id_ground (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.5, 0.02, -27.5), S: (55.0, 0.83, 55.0)]
+        orbital_hq__sign_0 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (15.17719, 2.563957, 15.15721), S: (9.265598, 1.048763, 9.265598)]
+        orbital_hq__state_closed (Node3D) vis=true
+          orbital_hq__state_closed__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.59957, 4.52, -27.59957), S: (55.19914, 85.48, 55.19914)]
+          orbital_hq__state_closed__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-28.2, 0.0, -28.2), S: (56.2, 90.2, 56.2)]
+        orbital_hq__state_open (Node3D) vis=true
+          orbital_hq__state_open__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.59957, 0.6, -27.59957), S: (55.19914, 89.4, 55.19914)]
+          orbital_hq__state_open__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-28.2, 0.0, -28.2), S: (56.2, 90.2, 56.2)]
+    Landmark_solace (Node3D) vis=true
+      solace_hq (Node3D) vis=true
+        id_ground (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-27.5, 0.04, -27.5), S: (55.0, 0.04001, 55.0)]
+        solace_hq__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-12.33, 0.17, -12.33), S: (24.66, 90.22945, 24.66)]
+        solace_hq__plinth (Node3D) vis=true
+          solace_hq__plinth_neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-36.0325, 0.324128, -36.0325), S: (72.065, 3.415872, 72.065)]
+          solace_hq__plinth_solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-36.0, 0.2, -36.0), S: (72.0, 3.3, 72.0)]
+        solace_hq__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-12.0, 0.04, -12.0), S: (24.0, 81.06, 24.0)]
+        solace_hq__win (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-10.97872, 6.31963, -10.98143), S: (21.95744, 77.86075, 21.96285)]
+    Landmark_rebel_cell (Node3D) vis=true
+      rebel_cell_district (Node3D) vis=true
+        id_ground (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-96.0, 0.0, -96.0), S: (192.0, 0.04, 192.0)]
+        rebel_cell_district__lines (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-89.55632, 0.0, -95.64226), S: (89.12991, 32.0122, 83.30574)]
+        rebel_cell_district__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-89.55656, 6.970012, -95.60283), S: (184.8836, 42.65699, 185.1776)]
+        rebel_cell_district__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-89.99087, 0.0, -96.08323), S: (185.9175, 49.437, 185.7637)]
+        rebel_cell_district__win (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-88.34222, 1.6, -94.14576), S: (183.6681, 23.5, 183.3856)]
+        rebel_cell_district__win_fist_dispatch (MeshInstance3D) vis=false mesh=ArrayMesh aabb=[P: (-88.97186, 1.35, -94.32989), S: (135.9873, 31.6, 147.7438)]
+        rebel_cell_district__win_fist_home (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-88.97186, 1.35, -94.32989), S: (135.9873, 31.6, 147.7438)]
+        rebel_cell_district__win_lines (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-88.37846, 1.6, -90.92989), S: (104.1102, 29.2, 83.97117)]
+        rebel_cell_district__win_ring (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-88.74657, 1.6, -94.18058), S: (184.2881, 42.5, 183.6954)]
+    Landmark_site (Node3D) vis=true
+      solace_site (Node3D) vis=true
+        solace_site__neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-17.72, 1.28, -17.72), S: (35.44, 25.96, 35.44)]
+        solace_site__solid (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-18.0, 0.0, -18.0), S: (36.0, 20.52, 36.0)]
+  Props (Node3D) vis=true
+    PocketParks (Node3D) vis=true
+      @MeshInstance3D@465 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-393.6887, 2.713018, -352.1565), S: (264.6887, 12.31414, 205.1565)]
+      @MeshInstance3D@466 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-393.0, 2.931094, -348.45), S: (261.45, 9.426345, 198.9)]
+    SolacePark (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-330.0, 4.859506, -330.0), S: (192.0, 10.58349, 162.0)]
+    GradeFacades (Node3D) vis=true
+      Hero_0 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-427.889, 5.099, -106.735), S: (15.36002, 36.044, 0.00001)]
+      Hero_1 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-268.723, 5.55, -111.69), S: (0.00001, 32.426, 12.034)]
+      Hero_2 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-357.243, 9.471, 49.686), S: (0.00001, 36.627, 16.719)]
+      Hero_3 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-350.168, 8.438, -219.743), S: (9.372986, 34.598, 0.00001)]
+      Hero_4 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-207.676, 4.224, -70.244), S: (12.597, 32.544, 0.00001)]
+      Hero_5 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-255.726, 3.747, -8.588), S: (0.00001, 28.965, 10.018)]
+      Hero_6 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-170.133, 6.877, -159.691), S: (11.032, 35.014, 0.00001)]
+      Hero_7 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-346.666, 8.305, -82.105), S: (0.00001, 36.863, 8.869003)]
+      Sign_0 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-421.809, 12.1645, -106.735), S: (3.199982, 21.913, 0.00001)]
+      Sign_1 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-268.723, 19.8595, -110.4895), S: (0.00001, 11.421, 9.633003)]
+      Sign_2 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-357.243, 25.629, 51.545), S: (0.00001, 12.934, 13.0)]
+      Sign_3 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-349.167, 23.7025, -219.743), S: (7.371979, 12.203, 0.00001)]
+      Sign_4 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-202.977, 10.624, -70.244), S: (3.200012, 19.744, 0.00001)]
+      Sign_5 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-255.726, 16.5335, -7.539), S: (0.00001, 10.175, 7.92)]
+      Sign_6 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-169.008, 22.3255, -159.691), S: (8.781998, 12.353, 0.00001)]
+      Sign_7 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-346.666, 24.5665, -81.142), S: (0.00001, 13.019, 6.944)]
+      Sign_8 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-421.9595, 16.997, 14.26), S: (2.011017, 22.384, 0.00001)]
+      Sign_9 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-357.729, 21.489, -126.997), S: (0.00001, 11.612, 8.610001)]
+      Sign_10 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-303.794, 20.666, 62.687), S: (0.00001, 12.984, 5.032001)]
+      Sign_11 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-213.319, 19.106, -34.72), S: (5.039993, 12.166, 0.00001)]
+      Sign_12 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-387.245, 25.7895, -57.412), S: (0.00001, 15.171, 3.104)]
+      Sign_13 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-201.8, 6.988, -123.77), S: (5.814011, 32.957, 0.00001)]
+      Sign_14 (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-273.731, 18.172, 29.012), S: (0.00001, 11.546, 8.250002)]
+    Neon (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-487.444, 0.11, -438.93), S: (908.985, 90.88339, 835.86)]
+      NeonHaze (MeshInstance3D) vis=true mesh=ArrayMesh aabb=[P: (-494.28, -11.19389, -494.28), S: (934.5599, 99.91517, 904.6399)]
+    Props (Node3D) vis=true
+      HoloBillboards (MultiMeshInstance3D) vis=true
+      AviationLights (MultiMeshInstance3D) vis=true
+  Traffic (Node3D) vis=true
+    Traffic (Node3D) vis=true
+      StreetCars (MultiMeshInstance3D) vis=true
+  Sky (Node3D) vis=true
+    Sky (Node3D) vis=true
+      SkyCars0 (MultiMeshInstance3D) vis=false
+      SkyCars1 (MultiMeshInstance3D) vis=false
+      SkyCars2 (MultiMeshInstance3D) vis=false
+      LaneGuides (MultiMeshInstance3D) vis=true
+  Heat (Node3D) vis=true
+    Heat (Node3D) vis=true
+      @MultiMeshInstance3D@532 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@533 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@534 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@535 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@536 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@537 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@538 (MultiMeshInstance3D) vis=true
+      @MultiMeshInstance3D@539 (MultiMeshInstance3D) vis=true
+  Fx (Node3D) vis=true
+    @Node3D@531 (Node3D) vis=true
+  @WorldEnvironment@139 (WorldEnvironment) vis=-
+  @DirectionalLight3D@140 (DirectionalLight3D) vis=true
+  @Camera3D@141 (Camera3D) vis=true
+    Post (MeshInstance3D) vis=true mesh=QuadMesh aabb=[P: (-1.0, -1.0, 0.0), S: (2.0, 2.0, 0.0)]
+    MapVeil (MeshInstance3D) vis=false mesh=QuadMesh aabb=[P: (-1.0, -1.0, 0.0), S: (2.0, 2.0, 0.0)]
+  GroundPass (SubViewport) vis=-
+    @Camera3D@142 (Camera3D) vis=true
+  CityMotion (Node) vis=-
+=== HQ ===
+HqScene (Control) vis=true
+  @Control@30 (Control) vis=false
+    @Control@28 (Control) vis=true
+      CityView (Control) vis=true
+        CitySilhouette (Control) vis=true
+        BakeVeil (Control) vis=false
+        InfluenceOld (Control) vis=false
+        CityLights (Control) vis=true
+        CityBeacons (Control) vis=true
+        InfluenceFront (Control) vis=false
+        @Control@27 (Control) vis=true
+      TerritoryMarks (Control) vis=false
+    @Control@29 (Control) vis=true
+  @Control@34 (Control) vis=true
+    CameraRig (Control) vis=true
+      @Control@32 (Control) vis=true
+        CityView (Control) vis=true
+        TerritoryMarks (Control) vis=true
+        @Control@296 (Control) vis=false
+    @Control@33 (Control) vis=false
+  UiScrimPools (Control) vis=false
+    BeforeScrim (BackBufferCopy) vis=true
+    Pools (ColorRect) vis=true
+    SpillShadows (Control) vis=true
+      Shadows (ColorRect) vis=true
+      Spill (ColorRect) vis=false
+    AfterScrim (BackBufferCopy) vis=true
+  @VBoxContainer@35 (VBoxContainer) vis=false
+    HudBar (PanelContainer) vis=true
+      @HBoxContainer@37 (HBoxContainer) vis=true
+        MenuButton (Button) vis=true
+        InputChip (PanelContainer) vis=true
+        HeatGauge (Control) vis=true
+        @Control@38 (Control) vis=true
+        @Control@39 (Control) vis=true
+        ThemeChip (PanelContainer) vis=false
+        ViewLoadout (Button) vis=true
+        Daemons (Button) vis=true
+        @Label@40 (Label) vis=false
+    SubtitleStrip (Control) vis=true
+    PageScroll (ScrollContainer) vis=true
+      @PanelContainer@44 (PanelContainer) vis=true
+        TideRaidScreen (Control) vis=true
+    ScrollHintRoom (Control) vis=true
+    StartBar (HBoxContainer) vis=false
+    PadPrompts (HBoxContainer) vis=false
+      Prompt (HBoxContainer) vis=true
+        PadGlyph (Control) vis=true
+        Verb (Label) vis=true
+      @HBoxContainer@295 (HBoxContainer) vis=true
+        PadGlyph (Control) vis=true
+        Verb (Label) vis=true
+    @RichTextLabel@48 (RichTextLabel) vis=false
+  ScrollHint (Button) vis=false
+    IconMark (Control) vis=true
+  DropLayer (Control) vis=false
+    RaidDragPencil (Control) vis=true
+  RaidPencilLayer (CanvasLayer) vis=-

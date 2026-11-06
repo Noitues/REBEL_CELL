@@ -1,0 +1,6 @@
+# G1 round 36, branch art/tide-r36 (from a168aa7c). Outputs in r36/: avenue_cuts_before.jpg (cuts circled, by cause), compare_r35_r36.jpg, tools/.
+Cuts found (hotspot, before): (a) the strip was ONE flat quad per lot at the lot-centre ground height + 0.12, so any rise, lot rim or kerb across the lot poked through (the dark chips and lot-edge stripes); (c) the open-run rule stopped strips on any lot with a sparse neighbour (mid-avenue dark gaps); (d) at crossings the perpendicular strip overlapped in another hue (lilac patches). Not found: depth fighting (the offset is large enough); trees / crosswalks did not cut visibly at these zooms.
+Fixes: each lot's strip is now 4 pieces (`r6_avenue_sub`), each end at the HIGHEST ground under the band's width + 0.3 BU (`r6_avenue_lift`), so ground cannot poke through while buildings and decks still occlude; the open-run stop needs 3 or more sparse lots (a one- or two-lot gap is bridged; audit uses the same rule). Result: bands read continuous in the hotspot, seed 3 and the plan.
+Remaining: at some crossings the two hues still overlap (the later axis wins), which reads as a colour swap, not a cut. Optional shoreline highlight (item 3): NOT done.
+Perf p95 10.64 ms. Tests: neon kit 15, a2 16 + 2 pass.
+Slips: none (no `python -`).

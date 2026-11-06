@@ -1,0 +1,22 @@
+import sys; sys.path.insert(0,'.')
+from ft_scene import *
+import time; t=time.time()
+base=grade(load_plate())
+print('grade',time.time()-t)
+L=Layer()
+L2=corp_lattice(); base=commit(base,L2)
+L=Layer()
+for n,t_ in (('known0','D'),('known1','D')):
+    draw_beam(L,lane_path(n),t_)
+L2=Layer()
+draw_beam(L2,WORLD['paths']['cand0'],'E')
+draw_beam(L2,[ (p[0],p[1]+30) for p in WORLD['paths']['cand2']],'N')
+base=commit(base,L)
+base=commit(base,L2)
+L=Layer()
+for sid,s in WORLD['sites'].items():
+    site_pin(L,A[sid],s['state'],s['tier'])
+corp_hq(L,A['core'])
+base=commit(base,L)
+base.convert('RGB').save('D:/rc_scratch/tide_concepts/f_work/t1.png')
+print(time.time()-t)

@@ -1,0 +1,16 @@
+# G1 round 32, branch art/tide-r32 (from 0ee7426f). Outputs in r32/: compare_r31_r32.jpg, tools/ (probe.py, compose32.py).
+## 1. Ground: root cause found and fixed (mostly)
+The ground / street / lot surfaces are drawn with `wet_street.gdshader` whenever look_blend > 0 (the netrun path), NOT city_ground.gdshader. So since r29 `ground_mul` (set on city_ground's uniform) did nothing on them; their colour was the vertex colour lit by the VIOLET toon ramp (ramp_shadow / mid / lit) and the lilac sign fans. Fixes: `ground_mul` uniform added to wet_street (lawn exempt by vertex alpha), a neutral dark ramp for ground / lane / outer mats (`r6_ground_ramp`), ground multiplier (0.9, 1.0, 0.85), sign spill alpha 0.16 to 0.08.
+Probe table (avenue close-up, RGB mean of 5x5, base = r31 code):
+| point | base | no haze | no fog | no NeonHaze fans | spill_gain 0 | grade tint off | no bloom | r32 (final) |
+|---|---|---|---|---|---|---|---|---|
+| between avenues (400,430) | 56,56,125 | 56,56,125 | 56,56,125 | 36,53,120 | 56,56,124 | 58,62,117 | 56,56,124 | 56,56,125 |
+| street (820,740) | 42,54,108 | 42,54,108 | 42,54,108 | 37,53,106 | 42,54,107 | 45,60,100 | 42,54,108 | 27,76,147 (blue: seabed blend, see 2) |
+| lot (560,330) | 130,102,112 | 131,102,112 | 130,102,112 | 109,92,102 | 129,101,111 | 135,109,104 | 129,102,111 | 130,102,112 (avenue halo glow) |
+| dark open ground (1300,70) | 6,4,18 | 6,4,17 | 5,4,18 | 6,4,18 | 6,4,18 | 7,5,16 | 7,5,21 | 16,15,27 |
+Haze, fog, spill_gain and bloom do nothing; the NeonHaze fans (avenue halo quads and sign fans) carry the mauve cast at the first point; the ground itself was blue-violet from the ramp. After the neutral ramp the ground between avenues reads dark grey-green at most points in the close-up. NOT fully gone: the point (400,430) is still mauve-blue (56,56,125): it sits on the additive avenue halo (the avenues are locked) so the halo's colour mixes with the ground there.
+## 2. Bay: NOT MET
+Findings: the large grey-green area top-left of the plan and seed 3 is NOT water: it is the OuterLand terrain mesh (terrain height above about 12 BU, meadow green after the ground multiplier); hiding OuterLand shows the outer plane (grey); hiding Sea changes nothing. The true water (river, the straits and flooded lowland) is the translucent Sea over the land mesh: it reads blue exactly where the land under it is blue. The `r6_seabed` blend (land colour to blue under `r6_seabed_from`) therefore decides how much blue shows: from 12 BU the straits turn strongly blue but the city's own low ground does too (blue ground between the blocks, a regression), so I settled at 3 BU / span 2 which keeps the city ground grey-green and leaves the river blue as before. The wide top-left expanse stays grey-green: I could not make it blue without treating land as sea, and I could not tell which part the designer calls "the bay" from heights alone. A real answer needs the water mask of the coast (CityPlan.coast) to blend the land to blue only where the sea plane is above it; not built this round.
+A river close-up framed on the river was not obtained (two framings landed on buildings); the compare sheet carries a crop of the avenue close-up that shows the river.
+Perf p95 8.88 ms. Tests: neon kit 15, a2 16 + 2, grade 13, city3d model 12 pass.
+Slips: none (no `python -`).

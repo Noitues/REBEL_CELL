@@ -1,0 +1,296 @@
+{
+ "27": {
+  "area_D": 236,
+  "solid_D": 1.0,
+  "pieces_D": 1,
+  "fillarea_D": 130,
+  "hullfill_D": 0.72,
+  "bbox_D": [
+   27,
+   13
+  ],
+  "area_N": 383,
+  "solid_N": 1.0,
+  "pieces_N": 1,
+  "fillarea_N": 205,
+  "hullfill_N": 0.47,
+  "bbox_N": [
+   26,
+   27
+  ],
+  "area_E": 317,
+  "solid_E": 0.99,
+  "pieces_E": 1,
+  "fillarea_E": 229,
+  "hullfill_E": 0.85,
+  "bbox_E": [
+   23,
+   23
+  ],
+  "area_X": 288,
+  "solid_X": 1.0,
+  "pieces_X": 1,
+  "fillarea_X": 197,
+  "hullfill_X": 0.73,
+  "bbox_X": [
+   23,
+   19
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.51,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.396,
+  "motion_N": 0.333,
+  "motion_E": 0.241,
+  "motion_X": 0.123
+ },
+ "29": {
+  "area_D": 270,
+  "solid_D": 0.99,
+  "pieces_D": 1,
+  "fillarea_D": 148,
+  "hullfill_D": 0.74,
+  "bbox_D": [
+   30,
+   14
+  ],
+  "area_N": 442,
+  "solid_N": 1.0,
+  "pieces_N": 1,
+  "fillarea_N": 236,
+  "hullfill_N": 0.46,
+  "bbox_N": [
+   28,
+   28
+  ],
+  "area_E": 364,
+  "solid_E": 0.99,
+  "pieces_E": 1,
+  "fillarea_E": 252,
+  "hullfill_E": 0.83,
+  "bbox_E": [
+   26,
+   24
+  ],
+  "area_X": 338,
+  "solid_X": 1.0,
+  "pieces_X": 1,
+  "fillarea_X": 224,
+  "hullfill_X": 0.73,
+  "bbox_X": [
+   26,
+   20
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.52,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.391,
+  "motion_N": 0.332,
+  "motion_E": 0.236,
+  "motion_X": 0.121
+ },
+ "32": {
+  "area_D": 328,
+  "solid_D": 0.99,
+  "pieces_D": 1,
+  "fillarea_D": 179,
+  "hullfill_D": 0.72,
+  "bbox_D": [
+   33,
+   15
+  ],
+  "area_N": 534,
+  "solid_N": 0.99,
+  "pieces_N": 1,
+  "fillarea_N": 286,
+  "hullfill_N": 0.45,
+  "bbox_N": [
+   31,
+   31
+  ],
+  "area_E": 441,
+  "solid_E": 1.0,
+  "pieces_E": 1,
+  "fillarea_E": 311,
+  "hullfill_E": 0.84,
+  "bbox_E": [
+   29,
+   27
+  ],
+  "area_X": 411,
+  "solid_X": 0.99,
+  "pieces_X": 1,
+  "fillarea_X": 275,
+  "hullfill_X": 0.71,
+  "bbox_X": [
+   29,
+   23
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.52,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.39,
+  "motion_N": 0.331,
+  "motion_E": 0.237,
+  "motion_X": 0.121
+ },
+ "40": {
+  "area_D": 508,
+  "solid_D": 1.0,
+  "pieces_D": 1,
+  "fillarea_D": 275,
+  "hullfill_D": 0.69,
+  "bbox_D": [
+   40,
+   18
+  ],
+  "area_N": 842,
+  "solid_N": 1.0,
+  "pieces_N": 1,
+  "fillarea_N": 452,
+  "hullfill_N": 0.46,
+  "bbox_N": [
+   39,
+   40
+  ],
+  "area_E": 686,
+  "solid_E": 0.99,
+  "pieces_E": 1,
+  "fillarea_E": 488,
+  "hullfill_E": 0.82,
+  "bbox_E": [
+   36,
+   32
+  ],
+  "area_X": 642,
+  "solid_X": 0.99,
+  "pieces_X": 1,
+  "fillarea_X": 422,
+  "hullfill_X": 0.69,
+  "bbox_X": [
+   36,
+   28
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.51,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.395,
+  "motion_N": 0.335,
+  "motion_E": 0.24,
+  "motion_X": 0.121
+ },
+ "44": {
+  "area_D": 613,
+  "solid_D": 1.0,
+  "pieces_D": 1,
+  "fillarea_D": 337,
+  "hullfill_D": 0.68,
+  "bbox_D": [
+   44,
+   20
+  ],
+  "area_N": 1024,
+  "solid_N": 1.0,
+  "pieces_N": 1,
+  "fillarea_N": 546,
+  "hullfill_N": 0.46,
+  "bbox_N": [
+   42,
+   44
+  ],
+  "area_E": 830,
+  "solid_E": 1.0,
+  "pieces_E": 1,
+  "fillarea_E": 584,
+  "hullfill_E": 0.8,
+  "bbox_E": [
+   38,
+   36
+  ],
+  "area_X": 768,
+  "solid_X": 1.0,
+  "pieces_X": 1,
+  "fillarea_X": 518,
+  "hullfill_X": 0.69,
+  "bbox_X": [
+   38,
+   30
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.51,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.397,
+  "motion_N": 0.335,
+  "motion_E": 0.241,
+  "motion_X": 0.122
+ },
+ "48": {
+  "area_D": 729,
+  "solid_D": 1.0,
+  "pieces_D": 1,
+  "fillarea_D": 407,
+  "hullfill_D": 0.67,
+  "bbox_D": [
+   48,
+   22
+  ],
+  "area_N": 1192,
+  "solid_N": 1.0,
+  "pieces_N": 1,
+  "fillarea_N": 646,
+  "hullfill_N": 0.45,
+  "bbox_N": [
+   46,
+   48
+  ],
+  "area_E": 990,
+  "solid_E": 1.0,
+  "pieces_E": 1,
+  "fillarea_E": 696,
+  "hullfill_E": 0.81,
+  "bbox_E": [
+   42,
+   40
+  ],
+  "area_X": 912,
+  "solid_X": 1.0,
+  "pieces_X": 1,
+  "fillarea_X": 602,
+  "hullfill_X": 0.69,
+  "bbox_X": [
+   42,
+   34
+  ],
+  "iou_DN": 0.43,
+  "iou_DE": 0.54,
+  "iou_NE": 0.53,
+  "iou_XD": 0.58,
+  "iou_XN": 0.51,
+  "iou_XE": 0.64,
+  "iou_main_max": 0.54,
+  "motion_D": 0.396,
+  "motion_N": 0.335,
+  "motion_E": 0.24,
+  "motion_X": 0.121
+ }
+}

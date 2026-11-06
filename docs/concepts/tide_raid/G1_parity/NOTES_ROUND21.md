@@ -1,0 +1,11 @@
+# G1 round 21, branch art/tide-r21 (D:/rc_art/godot_look_tide, from d0e0eef2). Outputs in r21/ (compare_r20_r21.jpg with the plate | r19 | r20 | r21 real 320 px row, generality_sheet_r21.jpg, hotspot_holos_on_off_r21.png, tools/).
+
+1. Highways: DONE (vehicle light only). Stripe half width 0.10 to 0.22 of the deck half width, offsets 0.75 / 1.4, tail (5.0, 0.3, 0.06), head (4.8, 3.7, 2.4) warm white, edge gain 1.8. No plane, no lamps. At the real 320 px downsample the ring and the core motorway read as continuous warm orange lines, at least as strong as r19 (r21 bottom-right panel); at plan scale they read as orange / white dashed ribbons (the tail light goes orange, not red, through the tone map).
+2. Core zones: DONE. `art_warm_anchor` (-57, 6) (the plate's lower left) makes the warm district there (about 36 % of the frame's buildings, grown 1 lot); cool dark 0.08, teal 0.15, violet 0.10, pale 0.45 window gains and darker bodies; warm 1.75. Seams 7.2 % (half width 0.38 lots). Zones in the squint: warm lower left, dark cool centre, violet / glass right. Structure: coarse 0.144 full frame (0.164 core crop; target 0.150, plate 0.165 / 0.175): the full-frame number just misses, the core crop beats the target. Exposure 2.6 to 2.5 only to hold p75 (+3 % over target at 0.443, p50 0.305).
+3. White towers: gain 2.6 to 4.2 (the brightest things in their zone). The pale columns beside the hotspot tower: the white tower itself is an opaque building (all windows lit, no alpha). The pink translucent columns left of it are NOT holos (they stay with `--no-holo`, hotspot_holos_on_off_r21.png); not identified further (the plate look's see-through / hotspot halo fans); left for the next round.
+4. Roof trim share 0.15 to 0.07.
+5. Footprints: sprawl shape weights lowered plain from 0.52 to 0.34 (more L, T, chamfer); this is for all sprawl, magenta and violet blocks included. Heights not varied.
+6. Wet streaks: narrower (width factor 0.45 to 0.16) and stronger (alpha 0.15 to 0.35, 20 BU), same dithered glow path; not separately zoomed.
+7. Seed-3 campus: Solace prism roofs get a lit pale-teal roof (shader), seen on seed3 in the generality sheet.
+Perf p95 12.31 / 12.07 ms. Tests: neon kit 14, a2 16 + 2, grade 13, lamp plan 9, shape kit 7, city3d model 12, solace kits 7 all pass.
+Slips: none on `python -` this round. No background processes left.
