@@ -2877,3 +2877,20 @@ Report: `D:/Godot/rebel_cell/docs/reviews/ad_review_overnight_2026-11-02/AD_REVI
   - No D4 scope change.
   - No sign-off.
 - **Art-pass status:** the drafts (GODOT_PORT_SPEC, MAILBOX_DRAFT A-116, ART_BIBLE_COMBAT_DRAFT) are on hold. The rebuild waits for the designer's go-ahead, because it overturns several designer-facing calls (O-27, the card type colours, ART CALL 53 cards).
+
+## Round 2 of the combat-board rebuild (2026-11-04, art-pass)
+- **What it answers.** The independent re-review of round 1, `D:/Godot/rebel_cell/docs/reviews/ad_review_overnight_2026-11-02/R1_REREVIEW.md` (S1 0, S2 6, S3 9). Round 2 makes art-pass calls C1-C18, all open to the designer; designer rulings DR-1..DR-10 are unchanged. Record and per-finding status: `combat_redesign/locked/REVIEW_RESPONSE.md`, "Round 2 (2026-11-04)".
+- **Published and measured:** the 15 board plates (`locked/final/`, every check passes), the 26 hover plates (`locked/hover/`, 18 pass every check), the 9 backdrop plates and the T5 / T6 transitions, all on the round-2 board.
+- **Not done:** the effects set was not re-rendered on the round-2 board (it is round 1's, on the gate-1 board). The C12 skip hint is not published.
+- **Still open:** the h02 slot-0 lift, which is the one re-review S2 item left (Spin 3's cost hex and title band are under the lifted Brace). Also open:
+  - UNDO / SEND IT move 4 px when a hover starts (12 px on the board, 16 on hover);
+  - the h03 and h11 drawn-colour fails;
+  - FOCUS against HOT;
+  - the small HOT side-arc marks at 2.0-2.5 px;
+  - the T6 hand-over from the room to the netrun street;
+  - a `corp/src` render-path difference at r 430-460.
+- **Docs pass (same day):** REVIEW_RESPONSE, VISUAL_PLAN (section G rewritten to the published effects; round-2 lines in A, B, E and H), `final/NOTES.md`, GODOT_PORT_SPEC (appendices regenerated from `port/*.json`; `skin_tables.json` port-3 with the teal Solace, and `cards_atlas.json`), ART_BIBLE_COMBAT_DRAFT and this line. The drafts stay on hold: MAILBOX_DRAFT A-116 is neither regenerated nor posted, and ART_BIBLE_COMBAT_DRAFT is not folded.
+- **Outcome (2026-11-06):**
+  - The reviewer's R2 re-review of `403e9ade` gave S1 0, S2 1, S3 11, which meets the designer's exit rule.
+  - The one S2 is R2-1, the effects re-render. The h02 lift is down to S3.
+  - The effort is closed. Its status, the open designer questions Q1-Q3 and the S3 list are in `combat_redesign/locked/CLOSURE.md`.
