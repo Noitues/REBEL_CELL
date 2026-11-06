@@ -1,0 +1,35 @@
+{
+ "CELL_PINK vs HARM": {
+  "normal": 65.7,
+  "deutan": 62.2,
+  "protan": 67.4,
+  "tritan": 23.2
+ },
+ "CELL_PINK vs PINK_LO (wedge fade)": {
+  "normal": 19.0,
+  "deutan": 16.2,
+  "protan": 15.1,
+  "tritan": 14.4
+ },
+ "HARM hatch vs wedge pink (mid)": {
+  "normal": 66.0,
+  "deutan": 63.7,
+  "protan": 67.2,
+  "tritan": 19.4
+ },
+ "SOAK vs CELL_PINK": {
+  "normal": 80.7,
+  "deutan": 89.0,
+  "protan": 53.2,
+  "tritan": 104.9
+ },
+ "GAIN vs CELL_PINK": {
+  "normal": 140.7,
+  "deutan": 44.1,
+  "protan": 84.6,
+  "tritan": 118.3
+ },
+ "slice fill high-pass luminance std (sigma 6 px), sector 0, outside icon+pips by 6 px": 0.0513,
+ "icon contrast (white vs ink luminance)": 1.0,
+ "texture / icon contrast": 0.051
+}
