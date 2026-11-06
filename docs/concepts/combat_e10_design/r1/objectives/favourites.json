@@ -1,0 +1,15 @@
+{
+ "objectives_frame": "A",
+ "star_glyph": "A",
+ "win_label": "B",
+ "challenge_labels": "A",
+ "challenge_tallies": "A",
+ "challenge_trigger_hits": "A",
+ "ram_trace_frame": "B",
+ "ram_trace_labels": "A",
+ "ram_pips": "B",
+ "trace_pips": "A",
+ "trace_cap_hatch": "B",
+ "ends_heat": "C",
+ "ram_refund_pop": "A"
+}

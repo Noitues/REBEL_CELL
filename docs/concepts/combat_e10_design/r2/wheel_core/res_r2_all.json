@@ -1,0 +1,419 @@
+{
+ "hub_disc": [
+  [
+   "A",
+   "pick: radial-lifted near-black glass, NET_CYAN rim 2.6 px, ink halo 4 px at 60 percent",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_disc_A.png"
+  ],
+  [
+   "B",
+   "variant: dome with 4 px scanlines at alpha 20 (terminal kit language)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_disc_B.png"
+  ]
+ ],
+ "hub_inner_rings": [
+  [
+   "A",
+   "pick: ONE 1.4 px bevel arc at r33, light top-left (+12 value), shade bottom-right (-12)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_inner_rings_A.png"
+  ],
+  [
+   "B",
+   "variant: same arc over a faint full hairline ring",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_inner_rings_B.png"
+  ]
+ ],
+ "hub_label": [
+  [
+   "A",
+   "pick: BREAKER Anton 17, 2 px ink, 6 px below the 22 px crest, group centred in the glass",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_label_A.png"
+  ]
+ ],
+ "hub_emblem": [
+  [
+   "A",
+   "pick: cracked ring 22 px, cyan engraved into the glass (ink under-shadow, light lip); 34 px alone in nowords",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_emblem_A.png"
+  ],
+  [
+   "B",
+   "variant: flat white sticker crest (the nameplate / nowords-sticker drawing as-is)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hub_emblem_B.png"
+  ]
+ ],
+ "slice_frame": [
+  [
+   "A",
+   "pick: 2.2 px type-colour edge, 3 px ink outside, r9, inner shade",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_frame_A.png"
+  ],
+  [
+   "B",
+   "variant: same edge plus an inner glass catch-light top-left",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_frame_B.png"
+  ]
+ ],
+ "slice_screen": [
+  [
+   "A",
+   "pick: 3 px mesh, +8 percent max lift, no halo, value capped under the icon",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_screen_A.png"
+  ],
+  [
+   "B",
+   "variant: +5 percent lift (quieter, nearer the unit CRT bowls)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_screen_B.png"
+  ]
+ ],
+ "slice_gutters": [
+  [
+   "B",
+   "pick: one continuous 8 px INK strip per boundary through slices, HP ring and code-base ring (wave rings continue it)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_gutters_B.png"
+  ]
+ ],
+ "icon_burst": [
+  [
+   "A",
+   "pick: parallel twins, both tilted 35 deg, second 4 px lower, two streaks each",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_burst_A.png"
+  ],
+  [
+   "B",
+   "variant: twins splayed outward (V), second 4 px lower",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_burst_B.png"
+  ]
+ ],
+ "icon_turret": [
+  [
+   "A",
+   "pick: single bullet tilted 35 deg toward the slice rim, two streaks",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_turret_A.png"
+  ],
+  [
+   "B",
+   "variant: mirrored tilt (toward the hub side)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_turret_B.png"
+  ]
+ ],
+ "icon_shield": [
+  [
+   "A",
+   "pick: unchanged E10 split heater at 44 px (Brace and warded no longer use a shield)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_shield_A.png"
+  ]
+ ],
+ "icon_repair": [
+  [
+   "A",
+   "pick: one wide strip at 20 deg with pad square, no perforation holes (reads at 16-20 px)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_repair_A.png"
+  ],
+  [
+   "B",
+   "variant: strip with 3 perforation dots at each end",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/icon_repair_B.png"
+  ]
+ ],
+ "slice_hp_bars": [
+  [
+   "A",
+   "pick: r3 capsules 38 px long on all six slices; shape grammar carries state",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_hp_bars_A.png"
+  ]
+ ],
+ "slice_pip_lost_harm": [
+  [
+   "A",
+   "pick: HARM capsule, white 2 px slash with ink, ink keyline 2.2",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_pip_lost_harm_A.png"
+  ]
+ ],
+ "slice_pip_lost_soak": [
+  [
+   "A",
+   "pick: SOAK #6A6CFF capsule, 4 px ink chevron notch pointing in (next to a HARM pip on the same slice)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_pip_lost_soak_A.png"
+  ]
+ ],
+ "slice_pip_mend": [
+  [
+   "A",
+   "pick: GAIN 2 px solid outline, dark interior, GAIN plus (solid, never dashed)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_pip_mend_A.png"
+  ]
+ ],
+ "slice_pip_gone": [
+  [
+   "A",
+   "pick: dark socket capsule with solid hairline (same pip used for HUD empty sockets)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_pip_gone_A.png"
+  ]
+ ],
+ "slice_break_x": [
+  [
+   "A",
+   "pick: 6 px HARM X at the outer corner beside the icon + 45 deg hatch / dim at 35 percent (icon disc kept clear)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_break_x_A.png"
+  ],
+  [
+   "B",
+   "variant: X only, no dim",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_break_x_B.png"
+  ]
+ ],
+ "slice_soak_break_x": [
+  [
+   "A",
+   "pick: same corner X and hatch, SOAK #6A6CFF",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_break_x_A.png"
+  ],
+  [
+   "B",
+   "variant: SOAK X with the ink chevron notch at the crossing",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_break_x_B.png"
+  ]
+ ],
+ "threat_trim": [
+  [
+   "A",
+   "pick: fixed thirds of the rim, order later | next | now clockwise",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/threat_trim_A.png"
+  ],
+  [
+   "B",
+   "variant: thirds share one continuous ink rail",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/threat_trim_B.png"
+  ]
+ ],
+ "hp_ring": [
+  [
+   "A",
+   "pick: r3 segments, groups of 5, ring turned 6 deg so spokes meet gaps or mid-segments (no slivers)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hp_ring_A.png"
+  ],
+  [
+   "B",
+   "variant: lost segments dropped entirely (no socket) for a calmer rim",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/hp_ring_B.png"
+  ]
+ ],
+ "codebase_frame": [
+  [
+   "A",
+   "pick: one 2 px NET_CYAN ring, ink 4.4, only the 8 px spokes interrupt it",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/codebase_frame_A.png"
+  ],
+  [
+   "B",
+   "variant: ring plus a 1 px echo hairline 4 px inside",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/codebase_frame_B.png"
+  ]
+ ],
+ "nudge_ghost": [
+  [
+   "A",
+   "pick: removed (3.22 Open); the bezel needle is the only marker at sector 0",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/nudge_ghost_A.png"
+  ]
+ ],
+ "gun_tracers": [
+  [
+   "A",
+   "pick: ink-edged dashes 12/6, 3 px, start on the muzzle bead, end on the cell centre",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_tracers_A.png"
+  ]
+ ],
+ "gun_result_hit": [
+  [
+   "A",
+   "pick: white 8-point spark 18 px, ink keyline",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_hit_A.png"
+  ]
+ ],
+ "gun_result_armor": [
+  [
+   "A",
+   "pick: STEEL_HI chevron 22 px, deflected 35 deg off the tracer axis, pointing back at the muzzle",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_armor_A.png"
+  ],
+  [
+   "B",
+   "variant: same chevron backed by a short impact bar",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_armor_B.png"
+  ]
+ ],
+ "gun_result_ward": [
+  [
+   "A",
+   "pick: BOSS_GOLD chevron, same drawing as armor",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_ward_A.png"
+  ],
+  [
+   "B",
+   "variant: with impact bar",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_ward_B.png"
+  ]
+ ],
+ "gun_result_shield_pop": [
+  [
+   "A",
+   "pick: cyan ring breaking in 4 arcs around a dark core",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_shield_pop_A.png"
+  ],
+  [
+   "B",
+   "hex shard burst: 6 hexagonal shards off a dark ringed core",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_shield_pop_B.png"
+  ],
+  [
+   "C",
+   "R1 pop kept as a candidate: 8 rays + dark core ring",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_result_shield_pop_C.png"
+  ]
+ ],
+ "gun_muzzle_beads": [
+  [
+   "A",
+   "pick: beads on the code-base ring at the tracer start (BURST sector 0 shows two; TURRET sector 2 one)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_muzzle_beads_A.png"
+  ]
+ ],
+ "gun_idle_stub": [
+  [
+   "A",
+   "stub 1.4 px at 40 percent ending in an open ring; NO TARGET tag kept in words mode",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_idle_stub_A.png"
+  ],
+  [
+   "B",
+   "stub ending in a bar cap",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_idle_stub_B.png"
+  ],
+  [
+   "C",
+   "two dim 1.4 px dashes, no end mark",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_idle_stub_C.png"
+  ]
+ ],
+ "gun_tracers_preview": [
+  [
+   "A",
+   "all three guns, tracer + results at 55 percent",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_tracers_preview_A.png"
+  ],
+  [
+   "B",
+   "tracer at 55 percent, result glyphs at full value (the information)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_tracers_preview_B.png"
+  ],
+  [
+   "C",
+   "only the changed gun (sector 4 ward) at 85 percent, the unchanged guns at 40",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/gun_tracers_preview_C.png"
+  ]
+ ],
+ "brace_plate": [
+  [
+   "A",
+   "rim slab with two rivets, cyan, ink",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/brace_plate_A.png"
+  ],
+  [
+   "B",
+   "slab with two clamp jaws wrapping the wedge sides",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/brace_plate_B.png"
+  ],
+  [
+   "C",
+   "slab plus the card clamp-plate glyph at 20 px mounted under it (off the icon)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/brace_plate_C.png"
+  ]
+ ],
+ "slice_soak_marks": [
+  [
+   "A",
+   "inward chevron on the hub side, under the icon",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_marks_A.png"
+  ],
+  [
+   "B",
+   "funnel (HUD destination shape) on the hub side",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_marks_B.png"
+  ],
+  [
+   "C",
+   "chevron beside the icon, rim side",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_marks_C.png"
+  ]
+ ],
+ "slice_soak_rim_arc": [
+  [
+   "A",
+   "removed: the pip and the one mark say it",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_rim_arc_A.png"
+  ],
+  [
+   "B",
+   "SOAK replaces the type-colour frame edge on the rim (no added arc)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_rim_arc_B.png"
+  ],
+  [
+   "C",
+   "inner rail under the bars (rail + bars = 2 arcs in 12 px)",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_soak_rim_arc_C.png"
+  ]
+ ],
+ "slice_cracked_mark": [
+  [
+   "A",
+   "white zigzag across the rim corner, off the icon",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_cracked_mark_A.png"
+  ],
+  [
+   "B",
+   "glass fracture: three hairline cracks from the rim corner",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_cracked_mark_B.png"
+  ],
+  [
+   "C",
+   "chipped frame corner",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_cracked_mark_C.png"
+  ]
+ ],
+ "slice_broken_state": [
+  [
+   "A",
+   "dark socket wedge, hairline frame, ghost icon at 28 percent",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_broken_state_A.png"
+  ],
+  [
+   "B",
+   "dark socket wedge, hairline frame, one hairline fissure, no icon",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_broken_state_B.png"
+  ],
+  [
+   "C",
+   "dark socket wedge with an empty hairline socket ring where the icon was",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/slice_broken_state_C.png"
+  ]
+ ],
+ "spin_ghost_preview": [
+  [
+   "A",
+   "ghost wedge edges in the source type colour + small ghost icons on the hub side; Spin ring over the crest",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/spin_ghost_preview_A.png"
+  ],
+  [
+   "B",
+   "ghost icons full size over the live icons at 38 percent",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/spin_ghost_preview_B.png"
+  ],
+  [
+   "C",
+   "ghost edges only, large Spin ring over the hub",
+   "D:/rc_art/art-pass/docs/concepts/combat_e10_design/r2/wheel_core/crops/spin_ghost_preview_C.png"
+  ]
+ ]
+}

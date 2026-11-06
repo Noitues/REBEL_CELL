@@ -1,0 +1,9 @@
+normal: dE SOAK-LANE_PLUS1 45.9  SOAK-TRACE_VIOLET 33.5  LANE_PLUS1-TRACE_VIOLET 76.6
+deutan: dE SOAK-LANE_PLUS1 31.1  SOAK-TRACE_VIOLET 2.6  LANE_PLUS1-TRACE_VIOLET 33.5
+tritan: dE SOAK-LANE_PLUS1 19.8  SOAK-TRACE_VIOLET 41.7  LANE_PLUS1-TRACE_VIOLET 55.1
+bezel enamel lum (empty stretch r372 @270): 12
+bezel enamel lum (r372 @300): 35
+live cell panel lum (r371 @45 inside cell, off text): 120
+HARM chevron lum: 122
+unit cell wash lum (ring0 sector3 @180 r195): 44
+room hull pixel at (1500,612) ungraded vs plate: plate (np.uint8(88), np.uint8(142), np.uint8(96))

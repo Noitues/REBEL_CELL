@@ -1,0 +1,70 @@
+{
+ "nudge": [
+  "spin3",
+  0.801
+ ],
+ "spin2": [
+  "nudge",
+  0.756
+ ],
+ "spin3": [
+  "nudge",
+  0.801
+ ],
+ "brace": [
+  "crest",
+  0.551
+ ],
+ "firewall": [
+  "packet",
+  0.463
+ ],
+ "pull": [
+  "strike",
+  0.325
+ ],
+ "shove": [
+  "spin3",
+  0.266
+ ],
+ "twist": [
+  "nudge",
+  0.54
+ ],
+ "hold": [
+  "spin2",
+  0.446
+ ],
+ "trigger": [
+  "nudge",
+  0.554
+ ],
+ "strike": [
+  "pull",
+  0.325
+ ],
+ "crest": [
+  "nudge",
+  0.643
+ ],
+ "jammer": [
+  "worm",
+  0.377
+ ],
+ "ring": [
+  "packet",
+  0.407
+ ],
+ "packet": [
+  "nudge",
+  0.594
+ ],
+ "payload": [
+  "packet",
+  0.476
+ ],
+ "worm": [
+  "payload",
+  0.422
+ ]
+}
