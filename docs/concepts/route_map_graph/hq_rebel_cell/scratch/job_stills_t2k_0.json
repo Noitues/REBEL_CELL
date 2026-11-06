@@ -1,0 +1,98 @@
+{
+ "res": [
+  2560,
+  1440
+ ],
+ "samples": 24,
+ "threshold": 0.03,
+ "step_rate": 2.0,
+ "out": "D:/rc_scratch/hq_fix/rebel_cell\\bl_stills_t2k",
+ "frames": [
+  {
+   "name": "H_decision",
+   "pose": {
+    "loc": [
+     -124.0,
+     -115.40104933442349,
+     105.13549824741393
+    ],
+    "tgt": [
+     -124.0,
+     100.3,
+     10.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.0727858149005464,
+    "shift_y": 0.022535867214347624,
+    "yaw": 0.0,
+    "pitch": 23.8,
+    "dist": 235.74924328776774
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

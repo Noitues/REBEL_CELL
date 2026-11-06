@@ -1,0 +1,29 @@
+ONECITY cut faces 215 14 11
+ONECITY hero signs 8
+ONECITY rooms 19 walls 19
+BUILDINGS 14119 faces 595302
+HQ halcyon
+HQ meridian
+HQ orbital
+HQ solace
+00:11.531  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_beauty_night.png
+00:12.109  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_glow_night.png
+00:12.531  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_normal.png
+00:12.984  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_id.png
+00:13.218  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_pos_hi.exr
+00:13.468  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_pos_lo.exr
+00:13.625  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_gpos_hi.exr
+00:13.718  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_hq_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_hq_gpos_lo.exr
+SHOT m_hq
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

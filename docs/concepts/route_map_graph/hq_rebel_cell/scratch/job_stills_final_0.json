@@ -6,15 +6,15 @@
  "samples": 64,
  "threshold": 0.015,
  "step_rate": 1.2,
- "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_stills",
+ "out": "D:/rc_scratch/hq_fix/rebel_cell\\bl_stills",
  "frames": [
   {
    "name": "H_overview",
    "pose": {
     "loc": [
      -80.0,
-     -183.00138883108986,
-     101.74513018691107
+     -176.96785281502179,
+     145.01746146301113
     ],
     "tgt": [
      -80.0,
@@ -23,10 +23,10 @@
     ],
     "lens": 30.0,
     "shift_x": -0.1268939393939394,
-    "shift_y": 0.04721671025532803,
+    "shift_y": -0.0019459543731792615,
     "yaw": 0.0,
-    "pitch": 17.0,
-    "dist": 300.1149864010333
+    "pitch": 25.0,
+    "dist": 310.0137247343984
    },
    "zoom": 0.0,
    "mt": 6,
@@ -98,8 +98,8 @@
    "pose": {
     "loc": [
      -124.0,
-     -125.76073099119988,
-     82.58016045646124
+     -115.40104933442349,
+     105.13549824741393
     ],
     "tgt": [
      -124.0,
@@ -107,11 +107,11 @@
      10.0
     ],
     "lens": 30.0,
-    "shift_x": -0.07282289497595601,
-    "shift_y": 0.01895118805240408,
+    "shift_x": -0.0727858149005464,
+    "shift_y": 0.022535867214347624,
     "yaw": 0.0,
-    "pitch": 17.8,
-    "dist": 237.42648080650417
+    "pitch": 23.8,
+    "dist": 235.74924328776774
    },
    "zoom": 1.0,
    "mt": 6,
@@ -177,6 +177,100 @@
     "step": 2
    },
    "power": null
+  },
+  {
+   "name": "H_hover",
+   "pose": {
+    "loc": [
+     -132.1973638523425,
+     -104.57522100119229,
+     110.57007831751736
+    ],
+    "tgt": [
+     -121.36,
+     102.214,
+     19.240000000000002
+    ],
+    "lens": 30.0,
+    "shift_x": -0.0727858149005464,
+    "shift_y": 0.022535867214347624,
+    "yaw": 3.0,
+    "pitch": 23.8,
+    "dist": 226.31927355625695
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": {
+    "keep": [
+     "L2b",
+     "L3",
+     "LK",
+     "R2a"
+    ],
+    "k": 0.22,
+    "boost": 1.45
+   }
   }
  ],
  "force": true

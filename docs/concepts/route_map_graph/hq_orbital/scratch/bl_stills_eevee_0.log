@@ -1,25 +1,34 @@
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
   m.use_nodes = True
-[hq 1.4s] downtown towers 1708 lamps 3032
-[hq 1.4s] city built, roofs 2919
-[hq 1.4s] podium
-[hq 1.4s] doors, rocket
-[hq 1.4s] gantry
-[hq 1.4s] stations
-[hq 1.4s] antenna
-[hq 1.4s] causeway
-[hq 1.4s] rig
-[hq 1.4s] launch props
-[hq 1.4s] landmark built
-[hq 2.5s] objects 48
-[hq 2.6s] lights 142 beams 11 plumes 8
+[hq 1.6s] downtown towers 1708 lamps 3032
+[hq 1.6s] city built, roofs 2919
+[hq 1.6s] podium
+[hq 1.7s] doors, rocket
+[hq 1.7s] gantry
+[hq 1.7s] stations
+[hq 1.7s] antenna
+[hq 1.7s] causeway
+[hq 1.7s] rig
+[hq 1.7s] launch props
+[hq 1.7s] landmark built
+[hq 3.0s] objects 48
+[hq 3.1s] lights 142 beams 11 plumes 8
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
   world.use_nodes = True
-00:04.813  cycles           | WARNING CUEW initialization failed: Error opening the library
-[hq 2.6s] occlusion H_overview: flattened 17 ghosted 9 of 3311
-00:10.891  render           | Saved: 'D:\rc_scratch\hq_rev\orbital\bl_stills_eevee\H_overview.exr'
-[hq 9.1s] frame H_overview 6.5 s passes ['Combined', 'Depth', 'Emission']
-[hq 9.1s] done
+00:05.813  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 3.1s] occlusion H_overview: flattened 17 ghosted 9 of 3311
+[hq 3.5s] OCC H_overview rooms 8 hit 0 occluders 0 band None
+00:12.375  render           | Saved: 'D:\rc_scratch\hq_fix\orbital\bl_stills_eevee\H_overview.exr'
+[hq 10.2s] frame H_overview 6.7 s passes ['Combined', 'Depth', 'Emission']
+[hq 10.2s] occlusion H_decision: flattened 14 ghosted 2 of 3311
+[hq 10.6s] OCC H_decision rooms 4 hit 0 occluders 0 band 0
+00:26.032  render           | Saved: 'D:\rc_scratch\hq_fix\orbital\bl_stills_eevee\H_decision.exr'
+[hq 23.5s] frame H_decision 12.9 s passes 
+[hq 23.5s] occlusion H_hover: flattened 3 ghosted 0 of 3311
+[hq 23.9s] OCC H_hover rooms 3 hit 0 occluders 0 band 0
+00:36.735  render           | Saved: 'D:\rc_scratch\hq_fix\orbital\bl_stills_eevee\H_hover.exr'
+[hq 34.2s] frame H_hover 10.3 s passes 
+[hq 34.2s] done
 Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
 
 Blender quit

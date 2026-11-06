@@ -1,0 +1,31 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 3.1s] downtown towers 5530 lamps 9600
+[hq 3.1s] city built, roofs 7130
+[hq 4.1s] aurelian landmark: rooms 27 open bays 7 lights 32
+[hq 4.1s] landmark built
+[hq 8.3s] objects 44
+[hq 8.4s] lights 245 beams 9 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:11.047  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 8.6s] occlusion H_overview: flattened 65 ghosted 0 of 13868
+[hq 10.6s] OCC H_overview rooms 27 hit 0 occluders 0
+00:27.531  render           | Saved: 'D:\rc_scratch\aurelian\big\bl_stills_eevee\H_overview.exr'
+[hq 25.5s] frame H_overview 14.9 s passes ['Combined', 'Depth', 'Emission']
+[hq 25.9s] occlusion H_decision: flattened 145 ghosted 0 of 13868
+[hq 27.9s] OCC H_decision rooms 20 hit 0 occluders 0
+00:51.437  render           | Saved: 'D:\rc_scratch\aurelian\big\bl_stills_eevee\H_decision.exr'
+[hq 49.0s] frame H_decision 21.1 s passes 
+[hq 49.2s] occlusion H_decision_inner: flattened 0 ghosted 0 of 13868
+[hq 50.8s] OCC H_decision_inner rooms 19 hit 0 occluders 0
+01:05.547  render           | Saved: 'D:\rc_scratch\aurelian\big\bl_stills_eevee\H_decision_inner.exr'
+[hq 63.0s] frame H_decision_inner 12.2 s passes 
+[hq 63.2s] occlusion H_hover: flattened 147 ghosted 0 of 13868
+[hq 64.9s] OCC H_hover rooms 21 hit 0 occluders 0
+01:27.609  render           | Saved: 'D:\rc_scratch\aurelian\big\bl_stills_eevee\H_hover.exr'
+[hq 85.1s] frame H_hover 20.2 s passes 
+[hq 85.1s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

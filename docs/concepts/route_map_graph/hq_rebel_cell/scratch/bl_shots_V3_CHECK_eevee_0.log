@@ -1,0 +1,30 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 1.2s] city built, roofs 1144
+[hq 1.3s] district blocks {0: 507, 1: 158, 2: 120, 3: 182}
+[hq 1.4s] alley v3: textures from D:\rc_scratch\hq_rev\rebel_cell\v3\tex
+[hq 1.4s] alley v3: lots 43
+[hq 1.5s] alley v3: roofs, district blocks dressed 292 bulkhead lamps 24
+[hq 1.5s] alley v3: rooftop lane {'walk': 11, 'catwalk': 6, 'ladder': 5, 'stair': 6}
+[hq 1.7s] alley v3: facade signs {'blade': 12, 'box': 4, 'wrap': 8, 'ticker': 9, 'banner': 13, 'board': 3}
+[hq 1.7s] alley v3: poles 8 string lanterns 64 lantern rows 10
+[hq 1.8s] sewer: outfalls 20 culverts 3 work lamps 10
+[hq 1.8s] alley v3: holograms 9 billboards 6
+[hq 1.9s] street strips 171 inside the ring 82
+[hq 1.9s] option A built 
+[hq 1.9s] landmark built
+[hq 2.6s] objects 36
+[hq 2.7s] lights 369 beams 8 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:07.437  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:12.844  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\v3\bl_V3_CHECK_eevee\C_roofs.exr'
+[hq 8.6s] frame C_roofs 5.9 s passes ['Combined', 'Depth', 'Emission']
+00:14.844  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\v3\bl_V3_CHECK_eevee\C_sewer.exr'
+[hq 10.3s] frame C_sewer 1.7 s passes 
+00:18.719  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\v3\bl_V3_CHECK_eevee\C_target.exr'
+[hq 14.1s] frame C_target 3.8 s passes 
+[hq 14.1s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,28 +1,31 @@
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
   m.use_nodes = True
-[hq 0.8s] city built, roofs 1144
-[hq 0.9s] district blocks {0: 509, 1: 161, 2: 125, 3: 182}
-[hq 0.9s] alley: textures from D:\rc_scratch\hq_rev\rebel_cell\tex
-[hq 0.9s] alley: infill 18
-[hq 1.0s] alley: facades
-[hq 1.0s] alley: blade signs 65
-[hq 1.0s] alley: slab, poles 8
-[hq 1.1s] undercroft: stalls 20 poles 10 blades 30
-[hq 1.1s] alley: holograms
-[hq 1.1s] street strips 273 inside the ring 165
-[hq 1.1s] option A built 
-[hq 1.1s] landmark built
-[hq 1.3s] objects 35
-[hq 1.4s] lights 482 beams 8 plumes 8
+[hq 0.9s] city built, roofs 1144
+[hq 1.0s] district blocks {0: 507, 1: 158, 2: 120, 3: 182}
+[hq 1.0s] alley v3: textures from D:\rc_scratch\hq_rev\rebel_cell\v3\tex
+[hq 1.0s] alley v3: lots 43
+[hq 1.1s] alley v3: roofs, district blocks dressed 292 bulkhead lamps 26
+[hq 1.1s] alley v3: rooftop lane {'walk': 11, 'catwalk': 6, 'ladder': 5, 'stair': 6} work lights 8
+[hq 1.2s] alley v3: facade signs {'blade': 29, 'box': 25, 'wrap': 11, 'ticker': 10, 'banner': 8, 'board': 4}
+[hq 1.2s] alley v3: poles 8 string lanterns 64 lantern rows 10
+[hq 1.3s] sewer: vault profiles 3
+[hq 1.3s] sewer: outfalls 20 culverts 3 work lamps 14
+[hq 1.3s] alley v3: holograms 9 billboards 6
+[hq 1.3s] alley v3: background towers 6
+[hq 1.3s] street strips 171 inside the ring 82
+[hq 1.3s] option A built 
+[hq 1.3s] landmark built
+[hq 1.7s] objects 36
+[hq 1.8s] lights 380 beams 8 plumes 8
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
   world.use_nodes = True
-00:03.281  cycles           | WARNING CUEW initialization failed: Error opening the library
-[hq 1.4s] HIP devices 1
-00:14.344  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_stills_test\H_overview.exr'
-[hq 13.0s] frame H_overview 11.6 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
-00:25.859  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_stills_test\H_decision.exr'
-[hq 24.3s] frame H_decision 11.3 s passes 
-[hq 24.3s] done
+00:03.937  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 1.8s] HIP devices 1
+00:16.156  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\v3\bl_stills_test\H_overview.exr'
+[hq 14.5s] frame H_overview 12.8 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:28.734  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\v3\bl_stills_test\H_decision.exr'
+[hq 26.9s] frame H_decision 12.3 s passes 
+[hq 26.9s] done
 Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
 
 Blender quit

@@ -1,0 +1,112 @@
+ONECITY cut faces 215 14 11
+ONECITY hero signs 8
+ONECITY rooms 19 walls 19
+BUILDINGS 14119 faces 595302
+HQ halcyon
+HQ meridian
+HQ orbital
+HQ solace
+ONECITY heights front 13.4 sky 16.5
+ONECITY beams [(169, 54, 49), (-83, 30, 44), (117, 68, 43), (177, 111, 42), (40, 111, 40), (-39, 93, 28)]
+00:09.485  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:31.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0275.exr'
+TIME cycles g_0275 22.0
+00:52.219  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0276.exr'
+TIME cycles g_0276 20.8
+01:11.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0277.exr'
+TIME cycles g_0277 19.4
+01:31.328  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0278.exr'
+TIME cycles g_0278 19.7
+01:50.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0279.exr'
+TIME cycles g_0279 19.7
+02:11.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0280.exr'
+TIME cycles g_0280 20.3
+02:31.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0281.exr'
+TIME cycles g_0281 19.9
+02:50.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0282.exr'
+TIME cycles g_0282 19.0
+03:09.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0283.exr'
+TIME cycles g_0283 19.0
+03:28.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0284.exr'
+TIME cycles g_0284 19.5
+03:48.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0285.exr'
+TIME cycles g_0285 19.7
+04:09.672  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0286.exr'
+TIME cycles g_0286 21.4
+04:31.719  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0287.exr'
+TIME cycles g_0287 22.1
+04:54.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0288.exr'
+TIME cycles g_0288 22.4
+05:18.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0289.exr'
+TIME cycles g_0289 24.2
+05:42.953  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0290.exr'
+TIME cycles g_0290 24.6
+06:11.485  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0291.exr'
+TIME cycles g_0291 28.5
+06:35.953  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0292.exr'
+TIME cycles g_0292 24.4
+06:59.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0293.exr'
+TIME cycles g_0293 24.1
+07:27.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0294.exr'
+TIME cycles g_0294 27.3
+07:54.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0295.exr'
+TIME cycles g_0295 26.9
+08:24.328  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0296.exr'
+TIME cycles g_0296 30.1
+08:54.406  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0297.exr'
+TIME cycles g_0297 30.1
+09:21.781  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0298.exr'
+TIME cycles g_0298 27.3
+09:49.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0299.exr'
+TIME cycles g_0299 27.6
+10:17.906  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0300.exr'
+TIME cycles g_0300 28.6
+10:46.953  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0301.exr'
+TIME cycles g_0301 29.1
+11:18.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0302.exr'
+TIME cycles g_0302 31.4
+11:50.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0303.exr'
+TIME cycles g_0303 31.9
+12:23.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0304.exr'
+TIME cycles g_0304 33.0
+12:58.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0305.exr'
+TIME cycles g_0305 35.2
+13:30.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0306.exr'
+TIME cycles g_0306 32.3
+14:04.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0307.exr'
+TIME cycles g_0307 33.3
+14:39.688  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0308.exr'
+TIME cycles g_0308 35.6
+15:18.281  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0309.exr'
+TIME cycles g_0309 38.6
+15:58.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0310.exr'
+TIME cycles g_0310 40.5
+16:41.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0311.exr'
+TIME cycles g_0311 42.6
+17:25.422  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0312.exr'
+TIME cycles g_0312 44.0
+18:09.719  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0313.exr'
+TIME cycles g_0313 44.3
+18:54.906  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0314.exr'
+TIME cycles g_0314 45.2
+19:46.656  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0315.exr'
+TIME cycles g_0315 51.8
+20:33.797  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0316.exr'
+TIME cycles g_0316 47.1
+21:22.485  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0317.exr'
+TIME cycles g_0317 48.7
+22:10.906  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0318.exr'
+TIME cycles g_0318 48.4
+22:59.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0319.exr'
+TIME cycles g_0319 48.6
+23:48.422  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0320.exr'
+TIME cycles g_0320 48.9
+24:37.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0321.exr'
+TIME cycles g_0321 49.2
+25:27.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\g_0322.exr'
+TIME cycles g_0322 49.6
+DONE
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

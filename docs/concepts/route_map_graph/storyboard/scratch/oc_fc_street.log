@@ -1,0 +1,31 @@
+ONECITY cut faces 215 14 11
+ONECITY hero signs 8
+ONECITY rooms 19 walls 19
+BUILDINGS 14119 faces 595302
+HQ halcyon
+HQ meridian
+HQ orbital
+HQ solace
+ONECITY ground glows 89
+ONECITY heights front 13.4 sky 16.5
+ONECITY beams [(169, 54, 49), (-83, 30, 44), (117, 68, 43), (177, 111, 42), (40, 111, 40), (-39, 93, 28)] len 46.9
+00:08.828  cycles           | WARNING CUEW initialization failed: Error opening the library
+01:29.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\S_ov_closed.exr'
+TIME cycles S_ov_closed 80.9
+02:48.812  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\S_ov_open.exr'
+TIME cycles S_ov_open 79.2
+05:32.891  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\B_ov_closed.exr'
+TIME cycles B_ov_closed 164.1
+08:15.312  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\B_ov_open.exr'
+TIME cycles B_ov_open 162.4
+09:08.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\S_dec.exr'
+TIME cycles S_dec 53.1
+09:58.656  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\S_h1.exr'
+TIME cycles S_h1 50.2
+10:48.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_c\S_h2.exr'
+TIME cycles S_h2 49.7
+DONE
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

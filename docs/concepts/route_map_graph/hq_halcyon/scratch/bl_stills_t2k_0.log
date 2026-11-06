@@ -1,0 +1,24 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:219: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.9s] tiers built
+[hq 0.9s] rooms built
+[hq 0.9s] eye built
+[hq 0.9s] links built
+[hq 1.4s] downtown towers 1554 lamps 2688
+[hq 1.4s] city built, roofs 2767
+[hq 2.6s] objects 42
+[hq 2.6s] lights 254 beams 20 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:1226: DeprecationWarning: 'SpotLight.use_nodes' is expected to be removed in Blender 6.0
+  ld.use_nodes = True
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:1341: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:05.344  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.7s] HIP devices 1
+[hq 2.7s] occlusion H_decision_E: flattened 3 ghosted 0 of 3111
+[hq 3.1s] OCC H_decision_E rooms 7 hit 0 occluders 0 band 0
+00:51.813  render           | Saved: 'D:\rc_scratch\hq_fix\halcyon\bl_stills_t2k\H_decision_E.exr'
+[hq 51.0s] frame H_decision_E 47.9 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+[hq 51.0s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -6,7 +6,7 @@
  "samples": 64,
  "threshold": 0.015,
  "step_rate": 1.2,
- "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_RED_SHOTS_final",
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\v3\\bl_RED_SHOTS_final",
  "frames": [
   {
    "name": "RS_1_before",

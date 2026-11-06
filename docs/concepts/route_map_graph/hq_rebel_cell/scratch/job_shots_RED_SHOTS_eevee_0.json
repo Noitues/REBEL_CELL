@@ -5,7 +5,7 @@
  ],
  "samples": 24,
  "engine": "EEVEE",
- "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_RED_SHOTS_eevee",
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\v3\\bl_RED_SHOTS_eevee",
  "frames": [
   {
    "name": "RS_1_before",

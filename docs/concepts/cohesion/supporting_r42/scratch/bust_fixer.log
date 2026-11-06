@@ -1,0 +1,12 @@
+D:\rc_art\art-pass\docs\concepts\cohesion\supporting_r42\scripts\bust_blender.py:108: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  INK.use_nodes = True
+D:\rc_art\art-pass\docs\concepts\cohesion\supporting_r42\scripts\bust_blender.py:26: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+D:\rc_art\art-pass\docs\concepts\cohesion\supporting_r42\scripts\bust_blender.py:277: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:03.563  render           | Saved: 'D:\rc_art\art-pass\docs\concepts\cohesion\supporting_r42\scratch\bust_fixer.png'
+VIEW Standard
+RENDERED D:/rc_art/art-pass/docs/concepts/cohesion/supporting_r42/scratch/bust_fixer.png
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

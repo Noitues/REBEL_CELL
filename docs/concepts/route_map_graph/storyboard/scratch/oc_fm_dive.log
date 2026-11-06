@@ -1,0 +1,658 @@
+ONECITY cut faces 215 14 11
+ONECITY hero signs 8
+ONECITY rooms 19 walls 19
+BUILDINGS 14119 faces 595302
+HQ halcyon
+HQ meridian
+HQ orbital
+HQ solace
+00:15.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_beauty_night.png
+00:15.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_glow_night.png
+00:16.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_normal.png
+00:17.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_id.png
+00:17.688  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_pos_hi.exr
+00:18.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_pos_lo.exr
+00:18.454  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_gpos_hi.exr
+00:18.532  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0251_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0251_gpos_lo.exr
+SHOT m_g_0251
+00:19.219  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_beauty_night.png
+00:19.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_glow_night.png
+00:19.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_normal.png
+00:20.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_id.png
+00:20.188  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_pos_hi.exr
+00:20.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_pos_lo.exr
+00:20.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_gpos_hi.exr
+00:20.532  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0252_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0252_gpos_lo.exr
+SHOT m_g_0252
+00:21.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_beauty_night.png
+00:21.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_glow_night.png
+00:21.688  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_normal.png
+00:21.922  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_id.png
+00:22.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_pos_hi.exr
+00:22.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_pos_lo.exr
+00:22.422  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_gpos_hi.exr
+00:22.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0253_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0253_gpos_lo.exr
+SHOT m_g_0253
+00:23.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_beauty_night.png
+00:23.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_glow_night.png
+00:23.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_normal.png
+00:23.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_id.png
+00:24.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_pos_hi.exr
+00:24.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_pos_lo.exr
+00:24.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_gpos_hi.exr
+00:24.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0254_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0254_gpos_lo.exr
+SHOT m_g_0254
+00:25.063  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_beauty_night.png
+00:25.391  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_glow_night.png
+00:25.625  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_normal.png
+00:25.844  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_id.png
+00:25.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_pos_hi.exr
+00:26.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_pos_lo.exr
+00:26.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_gpos_hi.exr
+00:26.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0255_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0255_gpos_lo.exr
+SHOT m_g_0255
+00:26.969  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_beauty_night.png
+00:27.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_glow_night.png
+00:27.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_normal.png
+00:27.672  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_id.png
+00:27.782  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_pos_hi.exr
+00:27.907  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_pos_lo.exr
+00:28.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_gpos_hi.exr
+00:28.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0256_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0256_gpos_lo.exr
+SHOT m_g_0256
+00:28.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_beauty_night.png
+00:28.891  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_glow_night.png
+00:29.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_normal.png
+00:29.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_id.png
+00:29.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_pos_hi.exr
+00:29.563  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_pos_lo.exr
+00:29.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_gpos_hi.exr
+00:29.735  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0257_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0257_gpos_lo.exr
+SHOT m_g_0257
+00:30.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_beauty_night.png
+00:30.532  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_glow_night.png
+00:30.750  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_normal.png
+00:30.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_id.png
+00:31.063  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_pos_hi.exr
+00:31.204  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_pos_lo.exr
+00:31.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_gpos_hi.exr
+00:31.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0258_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0258_gpos_lo.exr
+SHOT m_g_0258
+00:31.875  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_beauty_night.png
+00:32.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_glow_night.png
+00:32.391  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_normal.png
+00:32.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_id.png
+00:32.688  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_pos_hi.exr
+00:32.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_pos_lo.exr
+00:32.922  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_gpos_hi.exr
+00:32.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0259_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0259_gpos_lo.exr
+SHOT m_g_0259
+00:33.485  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_beauty_night.png
+00:33.782  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_glow_night.png
+00:34.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_normal.png
+00:34.204  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_id.png
+00:34.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_pos_hi.exr
+00:34.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_pos_lo.exr
+00:34.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_gpos_hi.exr
+00:34.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0260_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0260_gpos_lo.exr
+SHOT m_g_0260
+00:35.157  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_beauty_night.png
+00:35.454  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_glow_night.png
+00:35.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_normal.png
+00:35.844  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_id.png
+00:35.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_pos_hi.exr
+00:36.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_pos_lo.exr
+00:36.188  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_gpos_hi.exr
+00:36.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0261_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0261_gpos_lo.exr
+SHOT m_g_0261
+00:36.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_beauty_night.png
+00:37.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_glow_night.png
+00:37.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_normal.png
+00:37.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_id.png
+00:37.625  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_pos_hi.exr
+00:37.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_pos_lo.exr
+00:37.860  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_gpos_hi.exr
+00:37.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0262_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0262_gpos_lo.exr
+SHOT m_g_0262
+00:38.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_beauty_night.png
+00:38.719  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_glow_night.png
+00:38.922  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_normal.png
+00:39.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_id.png
+00:39.219  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_pos_hi.exr
+00:39.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_pos_lo.exr
+00:39.454  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_gpos_hi.exr
+00:39.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0263_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0263_gpos_lo.exr
+SHOT m_g_0263
+00:40.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_beauty_night.png
+00:40.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_glow_night.png
+00:40.610  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_normal.png
+00:40.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_id.png
+00:40.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_pos_hi.exr
+00:41.157  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_pos_lo.exr
+00:41.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_gpos_hi.exr
+00:41.422  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0264_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0264_gpos_lo.exr
+SHOT m_g_0264
+00:42.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_beauty_night.png
+00:42.735  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_glow_night.png
+00:43.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_normal.png
+00:43.204  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_id.png
+00:43.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_pos_hi.exr
+00:43.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_pos_lo.exr
+00:43.610  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_gpos_hi.exr
+00:43.672  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0265_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0265_gpos_lo.exr
+SHOT m_g_0265
+00:44.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_beauty_night.png
+00:44.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_glow_night.png
+00:44.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_normal.png
+00:45.016  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_id.png
+00:45.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_pos_hi.exr
+00:45.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_pos_lo.exr
+00:45.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_gpos_hi.exr
+00:45.422  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0266_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0266_gpos_lo.exr
+SHOT m_g_0266
+00:45.969  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_beauty_night.png
+00:46.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_glow_night.png
+00:46.532  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_normal.png
+00:46.844  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_id.png
+00:46.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_pos_hi.exr
+00:47.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_pos_lo.exr
+00:47.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_gpos_hi.exr
+00:47.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0267_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0267_gpos_lo.exr
+SHOT m_g_0267
+00:47.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_beauty_night.png
+00:48.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_glow_night.png
+00:48.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_normal.png
+00:48.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_id.png
+00:48.610  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_pos_hi.exr
+00:48.735  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_pos_lo.exr
+00:48.829  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_gpos_hi.exr
+00:48.891  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0268_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0268_gpos_lo.exr
+SHOT m_g_0268
+00:49.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_beauty_night.png
+00:49.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_glow_night.png
+00:49.844  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_normal.png
+00:50.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_id.png
+00:50.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_pos_hi.exr
+00:50.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_pos_lo.exr
+00:50.344  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_gpos_hi.exr
+00:50.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0269_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0269_gpos_lo.exr
+SHOT m_g_0269
+00:50.875  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_beauty_night.png
+00:51.157  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_glow_night.png
+00:51.360  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_normal.png
+00:51.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_id.png
+00:51.704  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_pos_hi.exr
+00:51.829  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_pos_lo.exr
+00:51.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_gpos_hi.exr
+00:52.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0270_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0270_gpos_lo.exr
+SHOT m_g_0270
+00:52.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_beauty_night.png
+00:52.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_glow_night.png
+00:52.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_normal.png
+00:53.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_id.png
+00:53.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_pos_hi.exr
+00:53.360  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_pos_lo.exr
+00:53.454  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_gpos_hi.exr
+00:53.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0271_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0271_gpos_lo.exr
+SHOT m_g_0271
+00:54.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_beauty_night.png
+00:54.313  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_glow_night.png
+00:54.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_normal.png
+00:54.719  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_id.png
+00:54.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_pos_hi.exr
+00:54.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_pos_lo.exr
+00:55.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_gpos_hi.exr
+00:55.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0272_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0272_gpos_lo.exr
+SHOT m_g_0272
+00:55.610  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_beauty_night.png
+00:55.891  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_glow_night.png
+00:56.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_normal.png
+00:56.250  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_id.png
+00:56.360  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_pos_hi.exr
+00:56.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_pos_lo.exr
+00:56.563  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_gpos_hi.exr
+00:56.625  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0273_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0273_gpos_lo.exr
+SHOT m_g_0273
+00:57.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_beauty_night.png
+00:57.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_glow_night.png
+00:57.610  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_normal.png
+00:57.782  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_id.png
+00:57.875  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_pos_hi.exr
+00:58.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_pos_lo.exr
+00:58.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_gpos_hi.exr
+00:58.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0274_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0274_gpos_lo.exr
+SHOT m_g_0274
+00:58.641  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_beauty_night.png
+00:58.907  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_glow_night.png
+00:59.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_normal.png
+00:59.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_id.png
+00:59.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_pos_hi.exr
+00:59.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_pos_lo.exr
+00:59.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_gpos_hi.exr
+00:59.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0275_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0275_gpos_lo.exr
+SHOT m_g_0275
+01:00.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_beauty_night.png
+01:00.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_glow_night.png
+01:00.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_normal.png
+01:00.750  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_id.png
+01:00.860  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_pos_hi.exr
+01:00.969  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_pos_lo.exr
+01:01.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_gpos_hi.exr
+01:01.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0276_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0276_gpos_lo.exr
+SHOT m_g_0276
+01:01.641  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_beauty_night.png
+01:01.922  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_glow_night.png
+01:02.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_normal.png
+01:02.266  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_id.png
+01:02.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_pos_hi.exr
+01:02.485  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_pos_lo.exr
+01:02.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_gpos_hi.exr
+01:02.641  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0277_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0277_gpos_lo.exr
+SHOT m_g_0277
+01:03.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_beauty_night.png
+01:03.360  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_glow_night.png
+01:03.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_normal.png
+01:03.735  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_id.png
+01:03.844  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_pos_hi.exr
+01:03.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_pos_lo.exr
+01:04.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_gpos_hi.exr
+01:04.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0278_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0278_gpos_lo.exr
+SHOT m_g_0278
+01:04.563  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_beauty_night.png
+01:04.829  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_glow_night.png
+01:05.016  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_normal.png
+01:05.204  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_id.png
+01:05.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_pos_hi.exr
+01:05.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_pos_lo.exr
+01:05.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_gpos_hi.exr
+01:05.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0279_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0279_gpos_lo.exr
+SHOT m_g_0279
+01:06.016  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_beauty_night.png
+01:06.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_glow_night.png
+01:06.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_normal.png
+01:06.641  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_id.png
+01:06.750  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_pos_hi.exr
+01:06.860  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_pos_lo.exr
+01:06.954  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_gpos_hi.exr
+01:07.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0280_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0280_gpos_lo.exr
+SHOT m_g_0280
+01:07.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_beauty_night.png
+01:07.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_glow_night.png
+01:08.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_normal.png
+01:08.188  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_id.png
+01:08.282  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_pos_hi.exr
+01:08.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_pos_lo.exr
+01:08.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_gpos_hi.exr
+01:08.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0281_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0281_gpos_lo.exr
+SHOT m_g_0281
+01:09.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_beauty_night.png
+01:09.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_glow_night.png
+01:09.516  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_normal.png
+01:09.688  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_id.png
+01:09.797  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_pos_hi.exr
+01:09.907  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_pos_lo.exr
+01:10.000  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_gpos_hi.exr
+01:10.063  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0282_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0282_gpos_lo.exr
+SHOT m_g_0282
+01:10.625  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_beauty_night.png
+01:10.907  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_glow_night.png
+01:11.094  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_normal.png
+01:11.282  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_id.png
+01:11.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_pos_hi.exr
+01:11.500  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_pos_lo.exr
+01:11.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_gpos_hi.exr
+01:11.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0283_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0283_gpos_lo.exr
+SHOT m_g_0283
+01:12.125  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_beauty_night.png
+01:12.407  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_glow_night.png
+01:12.579  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_normal.png
+01:12.750  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_id.png
+01:12.860  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_pos_hi.exr
+01:12.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_pos_lo.exr
+01:13.079  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_gpos_hi.exr
+01:13.141  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0284_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0284_gpos_lo.exr
+SHOT m_g_0284
+01:13.594  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_beauty_night.png
+01:13.860  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_glow_night.png
+01:14.063  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_normal.png
+01:14.235  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_id.png
+01:14.329  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_pos_hi.exr
+01:14.438  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_pos_lo.exr
+01:14.563  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_gpos_hi.exr
+01:14.641  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0285_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0285_gpos_lo.exr
+SHOT m_g_0285
+01:15.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_beauty_night.png
+01:15.375  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_glow_night.png
+01:15.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_normal.png
+01:15.719  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_id.png
+01:15.829  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_pos_hi.exr
+01:15.938  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_pos_lo.exr
+01:16.032  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_gpos_hi.exr
+01:16.110  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0286_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0286_gpos_lo.exr
+SHOT m_g_0286
+01:16.563  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_beauty_night.png
+01:16.813  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_glow_night.png
+01:16.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_normal.png
+01:17.172  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_id.png
+01:17.282  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_pos_hi.exr
+01:17.391  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_pos_lo.exr
+01:17.485  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_gpos_hi.exr
+01:17.547  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0287_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0287_gpos_lo.exr
+SHOT m_g_0287
+01:18.016  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_beauty_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_beauty_night.png
+01:18.297  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_glow_night.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_glow_night.png
+01:18.469  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_normal.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_normal.png
+01:18.657  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_id.png'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_id.png
+01:18.766  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_pos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_pos_hi.exr
+01:18.875  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_pos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_pos_lo.exr
+01:18.985  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_gpos_hi.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_gpos_hi.exr
+01:19.047  render           | Saved: 'D:\rc_scratch\storyboard\oc_m\m_g_0288_gpos_lo.exr'
+RENDERED D:/rc_scratch/storyboard/oc_m\m_g_0288_gpos_lo.exr
+SHOT m_g_0288
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

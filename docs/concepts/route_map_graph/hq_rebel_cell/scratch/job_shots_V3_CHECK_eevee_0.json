@@ -1,0 +1,267 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\v3\\bl_V3_CHECK_eevee",
+ "frames": [
+  {
+   "name": "C_roofs",
+   "pose": {
+    "loc": [
+     -110.0,
+     4.046288856928754,
+     92.33658753430689
+    ],
+    "tgt": [
+     -110.0,
+     110.0,
+     36.0
+    ],
+    "lens": 30.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 28.0,
+    "dist": 120.0
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  },
+  {
+   "name": "C_sewer",
+   "pose": {
+    "loc": [
+     -120.0,
+     -56.160909493538114,
+     28.875763599854025
+    ],
+    "tgt": [
+     -120.0,
+     62.599999999999994,
+     -24.0
+    ],
+    "lens": 30.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 24.0,
+    "dist": 130.0
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  },
+  {
+   "name": "C_target",
+   "pose": {
+    "loc": [
+     0.0,
+     -13.377712088056683,
+     52.949402898131126
+    ],
+    "tgt": [
+     0.0,
+     104.0,
+     28.0
+    ],
+    "lens": 30.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 12.0,
+    "dist": 120.0
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

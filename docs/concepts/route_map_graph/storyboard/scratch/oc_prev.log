@@ -1,0 +1,46 @@
+ONECITY cut faces 215 14 11
+ONECITY hero signs 8
+ONECITY rooms 19 walls 19
+BUILDINGS 14119 faces 595302
+HQ halcyon
+HQ meridian
+HQ orbital
+HQ solace
+00:13.594  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_beauty_night.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_beauty_night.png
+00:13.984  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_glow_night.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_glow_night.png
+00:14.250  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_normal.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_normal.png
+00:14.578  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_id.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_id.png
+00:14.828  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_pos_hi.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_pos_hi.exr
+00:15.062  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_pos_lo.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_pos_lo.exr
+00:15.187  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_gpos_hi.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_gpos_hi.exr
+00:15.281  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_gpos_lo.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_street_gpos_lo.exr
+SHOT p_street
+00:15.609  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_beauty_night.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_beauty_night.png
+00:15.906  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_glow_night.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_glow_night.png
+00:16.109  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_normal.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_normal.png
+00:16.281  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_id.png'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_id.png
+00:16.422  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_pos_hi.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_pos_hi.exr
+00:16.547  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_pos_lo.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_pos_lo.exr
+00:16.625  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_gpos_hi.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_gpos_hi.exr
+00:16.703  render           | Saved: 'C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_gpos_lo.exr'
+RENDERED C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_prev\p_hq_gpos_lo.exr
+SHOT p_hq
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

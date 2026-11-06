@@ -1,0 +1,20 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 2.6s] downtown towers 5530 lamps 9600
+[hq 2.6s] city built, roofs 7130
+[hq 3.4s] aurelian landmark: rooms 27 open bays 7 lights 32
+[hq 3.4s] landmark built
+[hq 7.1s] objects 44
+[hq 7.2s] lights 245 beams 9 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:09.625  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 7.2s] HIP devices 1
+[hq 7.4s] occlusion H_decision: flattened 183 ghosted 0 of 13868
+[hq 9.6s] OCC H_decision rooms 18 hit 0 occluders 0 band 0
+00:55.156  render           | Saved: 'D:\rc_scratch\aurelian\big\bl_stills_test\H_decision.exr'
+[hq 53.4s] frame H_decision 43.8 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+[hq 53.4s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

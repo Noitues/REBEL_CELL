@@ -1,0 +1,5 @@
+GPU lock acquired after 0 s (aurelian test H_hover)
+stills_final chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_aurelian\scratch\bl_stills_final_0.log wall 279 s
+render rc 0 279 s
+GPU lock released
+H_hover {"median": 0.01, "under_010": 0.877, "over_085": 0.002, "landmark": 0.056, "local_bg": 0.005, "landmark_share": 0.298, "ratio": 10.492}

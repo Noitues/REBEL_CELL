@@ -1,25 +1,28 @@
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
   m.use_nodes = True
-[hq 0.8s] city built, roofs 1144
-[hq 0.8s] district blocks {0: 509, 1: 161, 2: 125, 3: 182}
-[hq 0.8s] alley: textures from D:\rc_scratch\hq_rev\rebel_cell\tex
-[hq 0.8s] alley: infill 18
-[hq 0.9s] alley: facades
-[hq 1.0s] alley: blade signs 65
-[hq 1.0s] alley: slab, poles 8
-[hq 1.0s] undercroft: stalls 20 poles 10 blades 30
-[hq 1.0s] alley: holograms
-[hq 1.1s] street strips 273 inside the ring 165
-[hq 1.1s] option A built 
-[hq 1.1s] landmark built
-[hq 1.3s] objects 35
-[hq 1.4s] lights 482 beams 8 plumes 8
+[hq 0.9s] city built, roofs 1144
+[hq 1.0s] district blocks {0: 507, 1: 158, 2: 120, 3: 182}
+[hq 1.0s] alley v3: textures from D:/rc_scratch/hq_fix/rebel_cell\tex
+[hq 1.0s] alley v3: lots 43
+[hq 1.1s] alley v3: roofs, district blocks dressed 292 bulkhead lamps 26
+[hq 1.1s] alley v3: rooftop lane {'walk': 11, 'catwalk': 6, 'ladder': 5, 'stair': 6} work lights 8
+[hq 1.3s] alley v3: facade signs {'blade': 29, 'box': 25, 'wrap': 11, 'ticker': 10, 'banner': 8, 'board': 4}
+[hq 1.3s] alley v3: poles 8 string lanterns 64 lantern rows 10
+[hq 1.4s] sewer: vault profiles 3
+[hq 1.4s] sewer: outfalls 20 culverts 3 work lamps 14
+[hq 1.4s] alley v3: holograms 9 billboards 6
+[hq 1.4s] alley v3: background towers 6
+[hq 1.4s] street strips 171 inside the ring 82
+[hq 1.4s] option A built 
+[hq 1.4s] landmark built
+[hq 1.8s] objects 36
+[hq 1.9s] lights 389 beams 8 plumes 8
 C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
   world.use_nodes = True
-00:03.672  cycles           | WARNING CUEW initialization failed: Error opening the library
-00:07.391  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_stills_eevee\H_overview.exr'
-[hq 5.4s] frame H_overview 4.1 s passes ['Combined', 'Depth', 'Emission']
-[hq 5.4s] done
+00:04.172  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:08.219  render           | Saved: 'D:\rc_scratch\hq_fix\rebel_cell\bl_stills_eevee\H_overview.exr'
+[hq 6.3s] frame H_overview 4.5 s passes ['Combined', 'Depth', 'Emission']
+[hq 6.3s] done
 Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
 
 Blender quit

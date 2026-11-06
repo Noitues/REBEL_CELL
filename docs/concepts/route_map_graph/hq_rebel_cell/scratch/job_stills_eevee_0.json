@@ -5,15 +5,15 @@
  ],
  "samples": 24,
  "engine": "EEVEE",
- "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_stills_eevee",
+ "out": "D:/rc_scratch/hq_fix/rebel_cell\\bl_stills_eevee",
  "frames": [
   {
    "name": "H_overview",
    "pose": {
     "loc": [
      -80.0,
-     -183.00138883108986,
-     101.74513018691107
+     -176.96785281502179,
+     145.01746146301113
     ],
     "tgt": [
      -80.0,
@@ -22,10 +22,10 @@
     ],
     "lens": 30.0,
     "shift_x": -0.1268939393939394,
-    "shift_y": 0.04721671025532803,
+    "shift_y": -0.0019459543731792615,
     "yaw": 0.0,
-    "pitch": 17.0,
-    "dist": 300.1149864010333
+    "pitch": 25.0,
+    "dist": 310.0137247343984
    },
    "zoom": 0.0,
    "mt": 6,

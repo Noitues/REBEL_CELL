@@ -1,0 +1,18 @@
+released superseded lock 21:53:08
+START fc_street 22:20:10
+fc_street frames 7
+fc_street exit 0 wall 650 s log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_fc_street.log
+END fc_street 22:31:03
+START fc_dive 275 299 23:10:07
+fc_dive frames 24
+fc_dive_275 exit 0 wall 891 s log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\storyboard\scratch\oc_fc_dive_275.log
+END fc_dive 275 299 23:25:00
+START fc_dive 299 323 23:27:02
+fc_dive frames 24
+skip fc_dive_299 (already rendered)
+END fc_dive 299 323 23:27:05
+START fc_move 23:29:05
+fc_move frames 39
+skip fc_move (already rendered)
+END fc_move 23:29:08
+RUNNER DONE 23:29:08

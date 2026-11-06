@@ -1,0 +1,6 @@
+GPU lock acquired after 0 s (aurelian test H_overview,H_decision_cavea)
+stills_final chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_aurelian\scratch\bl_stills_final_0.log wall 249 s
+render rc 0 249 s
+GPU lock released
+H_overview {"median": 0.148, "under_010": 0.385, "over_085": 0.007, "landmark": 0.239, "local_bg": 0.095, "landmark_share": 0.327, "ratio": 2.516}
+H_decision_cavea {"median": 0.148, "under_010": 0.308, "over_085": 0.011, "landmark": 0.193, "local_bg": 0.087, "landmark_share": 0.473, "ratio": 2.215}
