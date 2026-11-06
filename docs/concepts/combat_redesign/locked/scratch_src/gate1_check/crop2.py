@@ -1,0 +1,26 @@
+# like crop.py but plate given as a file path: python crop2.py out scale path:x0,y0,x1,y1 ... (NR = new row)
+import sys
+from PIL import Image, ImageDraw
+out, sc = sys.argv[1], float(sys.argv[2])
+rows, cur = [], []
+for a in sys.argv[3:]:
+    if a == 'NR':
+        rows.append(cur); cur = []; continue
+    p, box = a.rsplit(':', 1)
+    x0, y0, x1, y1 = map(int, box.split(','))
+    im = Image.open(p).convert('RGB').crop((x0, y0, x1, y1))
+    im = im.resize((int((x1 - x0) * sc), int((y1 - y0) * sc)), Image.NEAREST if sc >= 1 else Image.LANCZOS)
+    lab = p.split('/')[-2] + '/' + p.split('/')[-1] + ':' + box
+    d = ImageDraw.Draw(im); d.rectangle((0, 0, len(lab) * 6 + 4, 11), fill=(0, 0, 0)); d.text((2, 0), lab, fill=(255, 255, 0))
+    cur.append(im)
+if cur: rows.append(cur)
+W = max(sum(i.width for i in r) + 4 * (len(r) - 1) for r in rows)
+H = sum(max(i.height for i in r) for r in rows) + 4 * (len(rows) - 1)
+S = Image.new('RGB', (W, H), (255, 0, 255))
+y = 0
+for r in rows:
+    x = 0
+    for i in r:
+        S.paste(i, (x, y)); x += i.width + 4
+    y += max(i.height for i in r) + 4
+S.save(out); print(out, S.size)

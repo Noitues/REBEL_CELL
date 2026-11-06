@@ -1,0 +1,3 @@
+# one core: every numeric library single-threaded (user instruction: use 1 core of CPU)
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 BLIS_NUM_THREADS=1
+export PYTHONDONTWRITEBYTECODE=1

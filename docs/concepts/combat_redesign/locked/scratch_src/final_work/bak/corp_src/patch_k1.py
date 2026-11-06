@@ -1,0 +1,8 @@
+c = open('cv_board.py').read()
+c = c.replace("def render_board(f, cons, ss=2, hot_cells=None):", "HUB = {'name': 'Breaker', 'col': None}\n\n\ndef render_board(f, cons, ss=2, hot_cells=None):")
+c = c.replace("for rr, col in ((RS['s1'] / K + 2, PINK), (RS['hp0'] / K - 1, PINK)):", "FC = HUB['col'] or PINK\n    for rr, col in ((RS['s1'] / K + 2, FC), (RS['hp0'] / K - 1, FC)):")
+c = c.replace("RW_.draw_hub(over, d, gd, ss, RS['hub'] / K, PINK, RW_.CLASS_STYLE['breaker']['emblem'], 'Breaker', '')", "RW_.draw_hub(over, d, gd, ss, RS['hub'] / K, FC, RW_.CLASS_STYLE['breaker']['emblem'], HUB['name'], '')")
+open('cv_board.py', 'w').write(c)
+l = open('cv_lib.py').read()
+l = l.replace("dict(col=(255, 61, 168), dash=None, w=3, name='+1')", "dict(col=(120, 170, 255), dash=None, w=3, name='+1')")
+open('cv_lib.py', 'w').write(l)

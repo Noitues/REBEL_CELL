@@ -1,0 +1,292 @@
+"""final_checks: aggregate the O-29 final-pass checks into locked/final/checks.json and build grey_proof.jpg and before_after.jpg.
+python final_checks.py      (after the plates are rendered with asm_render.py ... 1 and copied by final_publish.py, and final_cards.py checks)"""
+import sys, os, json, re, colorsys
+sys.dont_write_bytecode = True
+from collections import Counter
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from scipy import ndimage as ndi
+
+HERE = 'D:/rc_scratch/combat_redesign/locked/hover/'
+WORK = HERE + 'work/'
+FINAL = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/final/'
+LOCK = 'D:/rc_art/art-pass/docs/concepts/combat_redesign/locked/'
+CONC = 'D:/rc_art/art-pass/docs/concepts/'
+E10F = CONC + 'combat_e10_design/final/'
+FD = os.path.dirname(os.path.abspath(__file__)) + '/fonts/'
+mo = ImageFont.truetype(FD + 'ShareTechMono-Regular.ttf', 22)
+an = ImageFont.truetype(FD + 'Anton-Regular.ttf', 30)
+J = json.load(open(HERE + 'state_e10.json'))
+REP = {}
+CC = (536, 540)
+
+# plate name -> (asm_render suffix, first-pass file for comparison)
+PL = [('p1_decide', 'p1', LOCK + 'assembled/p1_decide.png'), ('p2_preview', 'p2', LOCK + 'assembled/p2_preview.png'),
+      ('p2b_hover', 'p2b', LOCK + 'assembled/p2b_hover.png'), ('p3_resolve', 'p3', LOCK + 'assembled/p3_resolve.png'),
+      ('p1_nowords', 'nowords', LOCK + 'assembled/p1_nowords.png'),
+      ('p1_decide_solace', 'p1_solace', LOCK + 'corp/p1_decide_solace.png'), ('p2b_hover_solace', 'p2b_solace', LOCK + 'corp/p2b_hover_solace.png'),
+      ('p1_decide_meridian', 'p1_meridian', LOCK + 'corp/p1_decide_meridian.png'), ('p2b_hover_meridian', 'p2b_meridian', LOCK + 'corp/p2b_hover_meridian.png')]
+MARKS = ('digits', 'labels', 'tags', 'badges', 'tickets', 'leader')
+
+
+def chk(sfx):
+    fp = WORK + 'chk_%s.json' % sfx
+    return json.load(open(fp)) if os.path.exists(fp) else None
+
+
+# ------------------------------------------------------------------ 1. draw asserts, collisions, occluders, hand vs board, dashes
+da, col, occ, hand, dash = {}, {}, {}, {}, {}
+for name, sfx, _ in PL:
+    c = chk(sfx)
+    if not c:
+        da[name] = 'missing'
+        continue
+    A_ = c['asserts']
+    fails = [x for x in A_ if not x['ok']]
+    da[name] = dict(total=len(A_), passed=len(A_) - len(fails), failures=[dict(name=x['name'], got=x['got'][:120], want=x['want'][:120]) for x in fails][:20])
+    ov = c.get('overlap_px', {})
+    mm = {k: v for k, v in ov.items() if all(p in MARKS for p in k.split(' x '))}
+    col[name] = dict(pairs=mm, total_px=sum(mm.values()), pass_=sum(mm.values()) == 0)
+    occ[name] = dict(pairs=c.get('occlusion_px'), pass_=c.get('occlusion_pass'),
+                     note='marks (digits, labels, tags, badges, tickets) x occluders (THIS TURN tape, hold / +N plates, hand); labels x plates is allowed (a label is printed on its plate)')
+    hand[name] = c.get('hand_vs_board')
+    dash[name] = dict(dashed_line_calls=c['dash_calls'], dotted_mark_calls=c['dot_calls'])
+REP['draw_asserts'] = da
+REP['collisions_marks'] = col
+REP['occlusion'] = occ
+REP['hand_vs_board'] = hand
+REP['hand_rule'] = 'no hand pixel (alpha >= 128) inside wheel radius 455 of the board centre (536, 540), and 0 px over any board mark, tape or plate'
+REP['dash_audit'] = dash
+REP['all_pass'] = dict(draw_asserts=all(isinstance(v, dict) and v['passed'] == v['total'] for v in da.values()),
+                       collisions=all(v['pass_'] for v in col.values()), occlusion=all(v['pass_'] for v in occ.values()),
+                       hand=all(v and v.get('pass') for v in hand.values()), dashes=all(v['dashed_line_calls'] == 0 and v['dotted_mark_calls'] == 0 for v in dash.values()))
+
+# ------------------------------------------------------------------ 2. squint
+lum = lambda a: 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+
+
+def squint(img, region=None):
+    s = img.resize((img.width // 16, img.height // 16), Image.BOX).filter(ImageFilter.GaussianBlur(1.0))
+    l = lum(np.asarray(s, np.float32) / 255.0)
+    if region is not None:
+        yy, xx = np.mgrid[0:l.shape[0], 0:l.shape[1]]
+        l = l[region(xx * 16 + 8, yy * 16 + 8)]
+    return dict(mean=round(float(l.mean()), 4), p95=round(float(np.percentile(l, 95)), 4), loud=round(float((l > 0.38).mean()), 4))
+
+
+d_ = lambda x, y: np.hypot(x - CC[0], y - CC[1])
+REG = {'plate': None, 'tower_r<=212': lambda x, y: d_(x, y) <= 212, 'rings_r214-430': lambda x, y: (d_(x, y) >= 214) & (d_(x, y) <= 430),
+       'hand_zone': lambda x, y: (x >= 840) & (x <= 1660) & (y >= 780), 'hud': lambda x, y: (x >= 1070) & (y <= 400)}
+sq = {}
+for name, sfx, first in PL:
+    fp = FINAL + name + '.png'
+    if not os.path.exists(fp):
+        continue
+    imgs = {'final': fp, 'first_pass': first}
+    if name in ('p1_decide', 'p2_preview', 'p2b_hover', 'p3_resolve', 'p1_nowords'):
+        imgs['e10'] = E10F + name + '.png'
+    sq[name] = {rn: {k: squint(Image.open(v).convert('RGB'), rf) for k, v in imgs.items() if os.path.exists(v)} for rn, rf in REG.items()}
+REP['squint'] = sq
+REP['squint_note'] = '1/16 BOX downscale + 1 px blur, luma; loud = share of 16 px cells above 0.38. Target from O-29 fix 9: tower zone loud < 50 %.'
+
+# ------------------------------------------------------------------ 3. cards
+cf = WORK + 'card_checks.json'
+REP['cards'] = json.load(open(cf)) if os.path.exists(cf) else 'missing (run final_cards.py checks)'
+
+# ------------------------------------------------------------------ 4. corp skins: tape match, pink share, kind dE, Meridian hazard
+Y, X = np.mgrid[0:1080, 0:1920]
+rho = np.hypot(X - CC[0], Y - CC[1])
+ring = (rho > 214) & (rho < 500)
+
+
+def hsv(a):
+    mx, mn = a.max(2), a.min(2)
+    s = (mx - mn) / np.maximum(mx, 1)
+    dd = np.maximum(mx - mn, 1e-6)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    h = np.where(mx == r, ((g - b) / dd) % 6, np.where(mx == g, (b - r) / dd + 2, (r - g) / dd + 4)) * 60
+    return h, s, mx / 255
+
+
+corp = {}
+ims = {n: np.asarray(Image.open(FINAL + f).convert('RGB')).astype(np.float32) for n, f in
+       (('neutral', 'p1_decide.png'), ('solace', 'p1_decide_solace.png'), ('meridian', 'p1_decide_meridian.png')) if os.path.exists(FINAL + f)}
+if 'neutral' in ims:
+    base = ims['neutral']
+    h, s, v = hsv(base)
+    tape = ring & (s < 0.18) & (v > 0.62)
+    corp['tape_px'] = int(tape.sum())
+    for n, a in ims.items():
+        dmax = np.abs(a - base).max(2)
+        corp['tape_match_pct_%s' % n] = round(float((dmax[tape] <= 6).mean() * 100), 1)
+        hh, ss, vv = hsv(a)
+        pink = ring & (hh > 315) & (hh < 350) & (ss > 0.40) & (vv > 0.5)
+        corp['pink_pct_enemy_zone_%s' % n] = round(float(pink.sum() / ring.sum() * 100), 3)
+# real-plate unit wash read-back (median colour per unit cell, dE2000 between kinds in one ring)
+try:
+    os.environ['LW_SKIN'] = '0'
+    import de_kinds as DK
+    from wr_geo import cell_poly, unit_bounds
+    rb = {}
+    for n, a in ims.items():
+        med = {}
+        for u in J['f1']['units']:
+            b0, b1 = unit_bounds(u)
+            m = Image.new('L', (1920, 1080), 0)
+            ImageDraw.Draw(m).polygon(cell_poly(u['dep'], b0, b1, kind='unit'), fill=255)
+            m = np.asarray(m) > 0
+            med[u['id']] = (u['kind'], u['dep'], np.median(a[m], 0))
+        o = {}
+        for p in med:
+            for q in med:
+                if p < q and med[p][1] == med[q][1] and med[p][0] != med[q][0]:
+                    o['%d%s-%d%s ring%d' % (p, med[p][0], q, med[q][0], med[p][1])] = round(DK.de2000(DK.rgb2lab(med[p][2]), DK.rgb2lab(med[q][2])), 1)
+        rb[n] = o
+    corp['kind_dE2000_plate_readback'] = rb
+except Exception as e:
+    corp['kind_dE2000_plate_readback'] = 'failed: %r' % e
+corp['kind_dE2000_swatches_min_per_ring'] = dict(
+    neutral=[6.8, 4.3, 2.3], solace=[6.8, 4.3, 2.5], meridian=[7.2, 4.5, 2.7], kind_gain=dict(solace=[2.4, 2.1, 2.0], meridian=[1.0, 1.1, 1.2]),
+    note='from the first pass (locked/hover/NOTES.md, de_kinds.py with the shipped kind_gain); the cell and kind-wash code is unchanged in this pass, '
+         'so the swatch numbers stand; the plate read-back above is re-measured on the final plates')
+# Meridian hazard: stripe saturation (first pass vs final) and the black gap between hazard paint and amber game marks
+mer = {}
+for tag, fp in (('first_pass', LOCK + 'corp/p1_decide_meridian.png'), ('final', FINAL + 'p1_decide_meridian.png')):
+    if not os.path.exists(fp):
+        continue
+    a = np.asarray(Image.open(fp).convert('RGB')).astype(np.float32)
+    hh, ss, vv = hsv(a)
+    rim = (rho >= 490) & (rho <= 499.5)
+    stripe = rim & (hh >= 15) & (hh <= 40) & (vv > 0.55) & (ss > 0.3)
+    bez = (rho >= 386) & (rho <= 424)
+    haz = ((rim | bez) & (hh >= 18) & (hh <= 36) & (ss > 0.45) & (vv > 0.55))
+    amber = (rho >= 214) & (rho <= 430) & (hh >= 38) & (hh <= 56) & (ss > 0.55) & (vv > 0.6)
+    dist = ndi.distance_transform_edt(~haz)
+    mer[tag] = dict(rim_stripe_mean_sat=round(float(ss[stripe].mean()), 3) if stripe.any() else None,
+                    bezel_hazard_px=int((haz & bez).sum()), amber_px=int(amber.sum()),
+                    min_gap_amber_to_hazard_px=round(float(dist[amber].min()), 1) if amber.any() else None)
+corp['meridian_hazard'] = mer
+corp['meridian_rule'] = 'O-29 fix 5: hazard paint chroma -25 % (rim and bezel lip), inner bezel lip black (no stripe), gap amber mark to hazard paint >= 2 px'
+REP['corp'] = corp
+
+# ------------------------------------------------------------------ 5. game information (draw-call text vs state)
+info = {}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import card_render as CR
+norm = lambda s: re.sub(r'[^A-Z0-9]', '', str(s).upper().replace('\u00d7', 'X'))
+hands = {'p1': J['f1']['hand'], 'p2': J['f2']['hand'], 'p2b': J['f1']['hand'],
+         'p3': [c for c in J['f1']['hand'] if c not in [a[0] for a in J['f2']['played']]]}
+req = ['TURN', 'SHIFTING WAVES', 'WAVES %d LEFT' % J['f1']['waves_left'], 'W4', 'W5', 'W6', 'NOW W1', '+1 W2', '+2 W3', 'YOU', 'LANDS', 'THROUGH', 'RAW', 'SHOT', 'BRACE', 'RIDER',
+       'SPLIT', 'ABSORBED', 'SOAK', 'NEXT', 'WIN', 'SLICES KEPT', 'KILL ADJUSTER', 'TRACE LOW', 'RAM', 'TRACE', 'ENDS = HEAT', 'BREAKER', 'SEND IT', 'UNDO', 'CELL-9']
+cards_ok, words_missing = {}, {}
+for name, sfx, _ in PL:
+    c = chk(sfx)
+    if not c or sfx.startswith('nowords'):
+        continue
+    beat = sfx.split('_')[0]
+    cl = c['cardlog']
+    r = {}
+    for card in hands[beat]:
+        keys = [k for k in cl if k.startswith(card + '|0')]
+        strs = cl[keys[0]] if keys else []
+        sp = CR.CARDS[card]
+        exp = [sp['nm'], sp['fam'], sp['txt'], str(sp['cost'])] + (['+' + str(sp['loud'])] if sp['loud'] else []) + (['\u00d7' + sp['mult']] if sp.get('mult') else [])
+        r[card] = dict(missing=[e for e in exp if e not in strs], state_cost=J['cards'][card][0], state_trace=J['cards'][card][1])
+    if beat == 'p3':
+        # played slots: the liner draws the card name (fix 4); text from the liner render is not hooked, so read it from the state
+        r['played_slots_named'] = [a[0] for a in J['f2']['played']]
+    cards_ok[name] = r
+    jn = norm(''.join(c['textlog']))
+    words_missing[name] = [w for w in req if norm(w) not in jn]
+info['cards_drawn'] = cards_ok
+info['cards_all_fields_drawn'] = all(not v['missing'] for b in cards_ok.values() for k, v in b.items() if isinstance(v, dict))
+info['required_words_missing'] = words_missing
+info['state_cards_table'] = {n: dict(state=v, drawn=[CR.CARDS[n]['cost'], CR.CARDS[n]['loud']], ok=v == [CR.CARDS[n]['cost'], CR.CARDS[n]['loud']]) for n, v in J['cards'].items()}
+nw = chk('nowords')
+if nw:
+    info['nowords_alnum_text_calls'] = len([t for t in nw['textlog'] if any(ch.isalnum() for ch in t)])
+REP['game_info'] = info
+nf = WORK + 'numbers.json'
+if os.path.exists(nf):
+    REP['game_info']['tower_numbers'] = json.load(open(nf))
+
+gf = WORK + 'grammar_check.json'
+if os.path.exists(gf):
+    REP['grammar_step3'] = json.load(open(gf))
+json.dump(REP, open(FINAL + 'checks.json', 'w'), indent=1, default=str)
+print('checks.json written', REP['all_pass'], flush=True)
+
+
+# ------------------------------------------------------------------ 6. grey proof (real WPAP cards) and before / after
+def grey(im):
+    a = np.asarray(im.convert('RGB'), np.float32)
+    g = lum(a)
+    return Image.fromarray(np.clip(g, 0, 255).astype(np.uint8)).convert('RGB')
+
+
+def lab(im, t, xy=(10, 6), c=(255, 226, 0)):
+    ImageDraw.Draw(im).text(xy, t, font=mo, fill=c, stroke_width=2, stroke_fill=(0, 0, 0))
+
+
+p1 = Image.open(FINAL + 'p1_decide.png').convert('RGB')
+W2 = 1900
+gp = Image.new('RGB', (W2, 60 + 1080 // 2 * 2 + 30 + 540 + 20), (20, 20, 20))
+d = ImageDraw.Draw(gp)
+d.text((16, 12), 'GREY PROOF (luma only): final p1 neutral with the real WPAP cards, then hand and wheel at 1x, then Solace and Meridian', font=an, fill=(255, 255, 255))
+gfull = grey(p1).resize((W2 // 2 * 2 // 2 * 1, 540), Image.LANCZOS)
+gp.paste(grey(p1).resize((960, 540), Image.LANCZOS), (10, 60))
+hand_c = grey(p1.crop((880, 760, 1920, 1080)))
+gp.paste(hand_c.resize((920, int(320 * 920 / 1040)), Image.LANCZOS), (975, 60))
+lab(gp, 'hand 1x (cropped, scaled 0.88)', (985, 66))
+wh = grey(p1.crop((300, 300, 772, 780)))
+gp.paste(wh.resize((250, 254), Image.LANCZOS), (980, 350))
+lab(gp, 'tower', (986, 354))
+cs = FINAL + 'card_sheet.jpg'
+if os.path.exists(cs):
+    # TOWER (Spin 3, Brace) and WAVE (Twist, Trigger) from the card sheet's normal row: the type plates in grey
+    sh_ = Image.open(cs).convert('RGB')
+    import card_render as _CRd
+    bw = int(round(176 * 1.10 * 1.5)); mg_ = _CRd.margin_px(int(bw * 1.1)); cw_ = int(bw * 1.1) + 2 * mg_ + 6
+    ch_ = int(250 * bw / 176 * 1.1) + 2 * mg_ + 6
+    strip = Image.new('RGB', (cw_ * 4, ch_))
+    for k_, idx in enumerate((2, 3, 8, 10)):
+        strip.paste(sh_.crop((250 + idx * cw_, 120, 250 + (idx + 1) * cw_, 120 + ch_)), (k_ * cw_, 0))
+    strip = grey(strip)
+    s_ = min(650 / strip.width, 250 / strip.height)
+    gp.paste(strip.resize((int(strip.width * s_), int(strip.height * s_)), Image.LANCZOS), (1245, 350))
+    lab(gp, 'TOWER cobalt | WAVE orange, grey', (1250, 354))
+cards_g = None
+y2 = 60 + 540 + 20
+for i, (n, f) in enumerate((('solace', 'p1_decide_solace.png'), ('meridian', 'p1_decide_meridian.png'))):
+    if os.path.exists(FINAL + f):
+        g = grey(Image.open(FINAL + f)).resize((930, 523), Image.LANCZOS)
+        lab(g, n)
+        gp.paste(g, (10 + i * 945, y2))
+gp = gp.crop((0, 0, W2, y2 + 523 + 10))
+gp.save(FINAL + 'grey_proof.jpg', quality=90)
+print('grey_proof written')
+
+first = Image.open(LOCK + 'assembled/p1_decide.png').convert('RGB')
+cols = [('locked first pass (ART CALL 53)', first), ('final (O-29 fixes)', p1)]
+Wc = 940
+crops = [((830, 740, 1910, 1080), 'hand'), ((440, 110, 640, 200), 'digit 0 + tape'), ((430, 880, 680, 960), 'digit 3 + HOLD THEN'), ((300, 300, 772, 780), 'wheel')]
+rows_h = [529] + [int((c[0][3] - c[0][1]) * min(Wc / (c[0][2] - c[0][0]), 2.4 if i in (1, 2) else 1.0)) for i, c in enumerate(crops)]
+sheet = Image.new('RGB', (Wc * 2 + 30, 56 + sum(rows_h) + 10 * len(rows_h) + 280), (14, 12, 22))
+dd = ImageDraw.Draw(sheet)
+dd.text((12, 10), 'before / after, p1_decide neutral: locked first pass | final.  Rows: plate, hand, digit 0, digit 3, wheel, squint', font=an, fill=(255, 255, 255))
+for i, (t, im) in enumerate(cols):
+    x = 10 + i * (Wc + 10)
+    y = 56
+    a = im.resize((Wc, 529), Image.LANCZOS)
+    lab(a, t)
+    sheet.paste(a, (x, y)); y += 529 + 10
+    for j, (box, nm) in enumerate(crops):
+        c = im.crop(box)
+        k = min(Wc / c.width, 2.4 if j in (1, 2) else 1.0) if j != 0 else Wc / c.width
+        c = c.resize((int(c.width * k), int(c.height * k)), Image.LANCZOS)
+        lab(c, nm)
+        sheet.paste(c, (x + (Wc - c.width) // 2, y)); y += rows_h[j + 1] + 10
+    s = im.resize((120, 67), Image.BOX).filter(ImageFilter.GaussianBlur(1.0)).resize((480, 268), Image.NEAREST)
+    sheet.paste(s, (x + (Wc - 480) // 2, y))
+sheet.save(FINAL + 'before_after.jpg', quality=90)
+print('before_after written')

@@ -1,0 +1,493 @@
+"""rb_checks (2026-11-03 rebuild): the five checks the AD review asked for (AD_REVIEW section 3 + REVIEW_RESPONSE "Process"), run on every
+published plate from the PNG itself (L* = CIE L* of sRGB luminance, the reviewer's measure.py) plus the capture written by asm_render
+(work/chk_<sfx>.json 'rb', work/masks_<sfx>.npz, work/probe_<sfx>.png).  A plate fails if any check fails.
+
+  a  occupied vs empty cell contrast: per ring and per covered sector, mean luminance of the cell glass (marks cut out) vs the same ring's
+     empty glass (the plate's own empties and the skin's empty probe), ratio >= 3.0; mean L* reported (target occupied NOW L* 40-45)
+  b  family value order: p95 L* per family region, sorted table; VISUAL_PLAN A.1 (2026-11-03): SEND IT > HOT T marks > lifted card >
+     P tower > P hand > E cells occupied > E cells empty; K clock p95 below the tower and its median in L* 45-55; token discs below HOT marks
+  c  cap height of every text draw >= 16 px at 1080p
+  d  palette collision dE76 >= 15: every pair of meaning tokens (VISUAL_PLAN E); slice inks, card type plates and the skin's hue inks against
+     the tokens they sit next to; HOT / COLD marks against the skin's measured cell colours
+  e  hand vs SEND IT / UNDO (0 px) and the lifted card vs every sibling card's cost hex and rules line (0 px)
+
+2026-11-04 (gate 1) changes:
+  a  the reference is the BRIGHTEST single empty cell of the ring (plate empties per sector and the probe), not the ring's mean empty; live and
+     dying units are gated (a dying unit keeps lit glass), hover-dimmed cells and ghosts reported
+  b  one row per E / K / T / N mark class and the gun tracers + hit stars (p95, p99, median): p99 >= 1 under the HOT p95; E / K p95 >= 1 under
+     the tower p95.  Marks drawn on top (plan, hover brackets, leader, twist badge, guns) are cut from the region they cover.  Info row: the
+     room as seen (UI scrim kept)
+  c  the hover tag text (a2_hover.rtext) is PARKED (designer note 8): reported, not gated; any text drawn outside the hooked drawers fails
+  d  every slice ink, card type colour and skin ink vs EVERY meaning token and the light neutrals (PAPER, ENAMEL, TEXT_HI, TEXT_MID), and the
+     slice inks vs each other
+run(name, png, sfx) -> dict with 'pass' per check."""
+import os, sys, json, math
+sys.dont_write_bytecode = True
+import numpy as np
+from PIL import Image, ImageDraw
+from scipy import ndimage as ndi
+import rb_tokens as T
+
+HERE = 'D:/rc_scratch/combat_redesign/locked/corp/'
+WORK = HERE + 'work/'
+CC = (536, 540)
+# mark classes cut out of the cell glass before it is measured; '_dim' = the same class drawn hover-dimmed (p2b), 'plan' = the pencil
+# hover path / landing cell / trigger path, which sit on the glass but are not the glass
+_CUT_BASE = ('chev0', 'chev1', 'chev2', 'arcT0', 'arcT1', 'arcT2', 'tokens', 'badges', 'tags', 'tickets', 'hand', 'hud', 'tape', 'plates',
+             'digits', 'labels', 'leader')
+CUT = _CUT_BASE + tuple(k + '_dim' for k in _CUT_BASE) + ('plan',)
+
+
+def _L(Y):
+    return float(T.lstar(Y))
+
+
+def poly_mask(polys, shape=(1080, 1920)):
+    m = Image.new('L', (shape[1], shape[0]), 0)
+    d = ImageDraw.Draw(m)
+    for p in polys:
+        if p and len(p) > 2:
+            d.polygon([tuple(q) for q in p], fill=255)
+    return np.asarray(m) > 0
+
+
+def load_masks(sfx):
+    fp = WORK + 'masks_%s.npz' % sfx
+    if not os.path.exists(fp):
+        return {}
+    z = np.load(fp)
+    return {k: np.unpackbits(z[k])[:1080 * 1920].reshape(1080, 1920).astype(bool) for k in z.files}
+
+
+def dil(m, r):
+    return ndi.binary_dilation(m, iterations=int(r)) if m is not None and m.any() else m
+
+
+# ------------------------------------------------------------------------------------------------ a. cell contrast
+def check_cells(Y, rgb, rb, M, probeY):
+    g = rb['geometry']
+    yy, xx = np.mgrid[0:1080, 0:1920]
+    # marks cut out of the glass: chevrons, tokens, badges, arcs, tags, HP trays, tracers (pink), anything the hand / HUD covers
+    cut = np.zeros((1080, 1920), bool)
+    for k in CUT:
+        if k in M:
+            cut |= M[k]
+    cut = dil(cut, 3)
+    tray = np.zeros((1080, 1920), bool)
+    rho = np.hypot(xx - CC[0], yy - CC[1])
+    for u in g['units']:
+        tx, ty = u['token']
+        cut |= np.hypot(xx - tx, yy - ty) <= u['tok_r'] + 8
+        tray |= (rho >= u['t_in'] - 3) & (rho <= u['t_out'] + 3)
+    # gun tracers and other saturated pink marks crossing the glass
+    mx, mn = rgb.max(2), rgb.min(2)
+    sat = (mx - mn) / np.maximum(mx, 1)
+    pinkish = (sat > 0.45) & (rgb[..., 0] > 150) & (rgb[..., 2] > 90) & (rgb[..., 1] < 140)
+    for k in M:                                   # 2026-11-04 round 2: the pencil and FOCUS classes sit on the glass, they are not the glass
+        if k.startswith('pen_') or k == 'focus':
+            cut |= dil(M[k], 3)
+    cut_nopink = cut.copy()
+    cut |= dil(pinkish, 2)
+    rows, ok = [], True
+    ring_ref = {}
+    for dep in range(3):
+        # 2026-11-04 (gate 1): the reference is the BRIGHTEST single empty cell on this ring, not the mean of the ring's empties: each of the
+        # skin probe's six cells (the skin's empty-cell painter on an empty frame) and each of the plate's own empty cells, measured one by one
+        probe_cells = []
+        for c in g['probe']:
+            if c['dep'] != dep or probeY is None:
+                continue
+            m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=4)
+            if m.any():
+                probe_cells.append((c['s'], float(probeY[m].mean())))
+        plate_cells = []
+        for c in g['cells']:
+            if c['dep'] != dep or c['state'] != 'empty':
+                continue
+            m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=4) & ~cut
+            if m.sum() > 200:
+                plate_cells.append((c['s'], float(Y[m].mean())))
+        allc = [('probe s%d' % s, v) for s, v in probe_cells] + [('plate s%d' % s, v) for s, v in plate_cells]
+        ring_ref[dep] = dict(empty_L_probe_cells={k: round(_L(v), 1) for k, v in allc if k.startswith('probe')},
+                             empty_L_plate_cells={k: round(_L(v), 1) for k, v in allc if k.startswith('plate')}, n_empty_on_plate=len(plate_cells),
+                             empty_L_probe=round(_L(np.mean([v for _, v in probe_cells])), 1) if probe_cells else None,
+                             empty_L_plate=round(_L(np.mean([v for _, v in plate_cells])), 1) if plate_cells else None)
+        ref_k, ref = max(allc, key=lambda kv: kv[1]) if allc else (None, None)       # the brightest single empty cell is the reference
+        ring_ref[dep]['reference'] = ref_k
+        ring_ref[dep]['reference_L'] = None if ref is None else round(_L(ref), 1)
+        for c in g['cells']:
+            if c['dep'] != dep or c['state'] not in ('live', 'dying', 'dimmed'):
+                continue
+            m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=4) & ~cut & ~tray
+            if c['state'] == 'dying':
+                # 2026-11-04 round 2 (REVIEW_REBUILD: the dying rows rested on 198 / 253 px; C7): the dying glass is measured whole, its L7
+                # hatch and lifted glass included; only the marks on it (chevrons, token, badges, tags, plan), the HP tray and the gun
+                # tracers (the 'guns' capture class, not the pink-colour cut that also removed the hatch) are cut
+                cut_d = cut_nopink | dil(M.get('guns', np.zeros((1080, 1920), bool)), 2)
+                m = ndi.binary_erosion(poly_mask([c['poly']]), iterations=2) & ~cut_d & ~tray
+            if not m.any():
+                continue
+            yo = float(Y[m].mean())
+            ratio = yo / ref if ref else None
+            # 2026-11-04: a dying unit (it dies at this END TURN) is still on the board at decide; its cell must read occupied (the gun tracers
+            # end on it), so it is gated like a live one.  Hover-dimmed cells and ghosts stay reported only.
+            gate = c['state'] in ('live', 'dying')
+            r_ok = (ratio is not None and ratio >= T.CELL_RATIO_MIN) if gate else None
+            if gate and not r_ok:
+                ok = False
+            rows.append(dict(ring=dep, sector=c['s'], unit=c['uid'], kind=c['kind'], state=c['state'], occ_L=round(_L(yo), 1),
+                             empty_L=None if ref is None else round(_L(ref), 1), ratio=None if ratio is None else round(ratio, 2),
+                             gated=gate, pass_=r_ok, px=int(m.sum())))
+    now = [r['occ_L'] for r in rows if r['ring'] == 0 and r['gated'] and r['state'] == 'live']
+    # 2026-11-04 (gate 1, review 2.13): the Adjuster's HP segments are all visible: no segment pixel under its diamond plate or the guns layer
+    adj = None
+    if 'adj_hp' in M:
+        cov = M['adj_hp'] & (M.get('adj', np.zeros_like(M['adj_hp'])) | M.get('guns', np.zeros_like(M['adj_hp'])))
+        adj = dict(adj_hp_px=int(M['adj_hp'].sum()), covered_px=int(cov.sum()), pass_=int(cov.sum()) == 0)
+        if not adj['pass_']:
+            ok = False
+    return dict(pass_=ok, rows=rows, rings=ring_ref, occ_now_L_range=[min(now), max(now)] if now else None, adjuster_hp=adj,
+                rule='glass mean luminance occupied / the BRIGHTEST single empty cell of the same ring (each skin-probe cell and each empty cell on the '
+                     'plate) >= %.1f, per ring and per covered sector; live and dying units gated (dimmed = hover dim, ghosts: reported); marks, '
+                     'token disc, HP tray and tracers cut out.  The Adjuster HP track: 0 px under its diamond plate or the guns layer' % T.CELL_RATIO_MIN)
+
+
+# ------------------------------------------------------------------------------------------------ b. family value order
+def family_regions(M, rb, Y, glass_occ, glass_empty):
+    yy, xx = np.mgrid[0:1080, 0:1920]
+    rho = np.hypot(xx - CC[0], yy - CC[1])
+    get = lambda k: M.get(k, np.zeros((1080, 1920), bool))
+    hand_all = get('hand_rest') | get('hand_lift') | get('hand_played')
+    # stage 2: the hover tag and its leader (p2b) sit over the room; they are UI, not room.  So are the UI scrim slabs (hud_scrim) where they
+    # darken the room by 15 % or more (captured by rb_capture as 'scrim')
+    ui = get('hud') | hand_all | get('send') | get('undo') | get('name') | get('you') | get('tags') | get('leader')
+    room = (xx >= 1100) & (yy >= 420) & ~dil(ui, 4) & (rho > 505) & ~get('scrim')
+    fam = {
+        'SEND IT': get('send'),
+        'T HOT marks': get('chev0') | get('arcT0'),
+        'P lifted card': get('hand_lift'),
+        'P tower': get('tower'),
+        'P hand (rest)': get('hand_rest'),
+        'E cells occupied (glass)': glass_occ,
+        'E cells empty (glass)': glass_empty,
+        'E token discs': get('tokens') & ~dil(get('plan') | get('leader') | get('guns'), 1),   # 2026-11-04: hover brackets / leader / guns on top cut
+        'K clock (tape, sweep, plates)': get('tape') | get('plates'),
+        'S HUD': get('hud'),
+        'room': room,
+        # 2026-11-04 (gate 1): the same region with the UI scrim slabs kept, as the player sees it (info row, not gated; on p2 / p3 the
+        # scrim covers half the region and this is the number the reviewer measured)
+        'room as seen (scrim kept, info)': (xx >= 1100) & (yy >= 420) & ~dil(ui, 4) & (rho > 505),
+    }
+    return fam
+
+
+def check_order(Y, M, rb, glass_occ, glass_empty, glass_now=None):
+    fam = family_regions(M, rb, Y, glass_occ, glass_empty)
+    Ls = T.lstar(Y)
+    tab = {}
+    for k, m in fam.items():
+        if m is None or not m.any():
+            tab[k] = None
+            continue
+        v = Ls[m]
+        tab[k] = dict(p95=round(float(np.percentile(v, 95)), 1), median=round(float(np.median(v)), 1), mean=round(_L(float(Y[m].mean())), 1), px=int(m.sum()))
+    chain = ['SEND IT', 'T HOT marks', 'P lifted card', 'P tower', 'P hand (rest)', 'E cells occupied (glass)', 'E cells empty (glass)']
+    chain = [c for c in chain if tab.get(c)]
+    fails = []
+    for a, b in zip(chain, chain[1:]):
+        if not tab[a]['p95'] >= tab[b]['p95'] + T.ORDER_MARGIN:
+            fails.append('%s (%.1f) must beat %s (%.1f) by %.0f' % (a, tab[a]['p95'], b, tab[b]['p95'], T.ORDER_MARGIN))
+    k_ = tab.get('K clock (tape, sweep, plates)')
+    if k_ and tab.get('P tower'):
+        if not k_['p95'] + T.ORDER_MARGIN <= tab['P tower']['p95']:
+            fails.append('K clock p95 %.1f must sit below P tower p95 %.1f' % (k_['p95'], tab['P tower']['p95']))
+        if not (T.CLOCK_L[0] <= k_['median'] <= T.CLOCK_L[1]):
+            fails.append('K clock median L* %.1f outside gunmetal %.0f-%.0f' % (k_['median'], *T.CLOCK_L))
+    tk = tab.get('E token discs')
+    if tk and tab.get('T HOT marks') and not tk['p95'] + T.ORDER_MARGIN <= tab['T HOT marks']['p95']:
+        fails.append('token discs p95 %.1f must sit below HOT marks p95 %.1f' % (tk['p95'], tab['T HOT marks']['p95']))
+    # stage 2 (review 2.8): the room is readable (mean L* 28-34) and the board still comes first: the room's p95 sits below the occupied
+    # glass of ring NOW (live cells).  When no ring-NOW cell is live (p2b: the hover dims ring NOW; the only full-value live unit sits on
+    # ring +2, whose glass is L* 32 by the ring-depth grammar) the reference is the floor of the occupied-NOW glass band, L* 40 (A.1 /
+    # rb_tokens CELL_OCC_L).
+    rm = tab.get('room')
+    Ls_ = T.lstar(Y)
+    room_ref = None
+    if glass_now is not None and glass_now.sum() > 200:
+        room_ref = dict(source='ring NOW occupied glass p95 (live cells)', value=round(float(np.percentile(Ls_[glass_now], 95)), 1))
+    else:
+        room_ref = dict(source='no live ring-NOW cell on this plate: occupied-NOW glass band floor (CELL_OCC_L[0])', value=T.CELL_OCC_L[0])
+    if rm:
+        if not (T.ROOM_MEAN_L[0] <= rm['mean'] <= T.ROOM_MEAN_L[1]):
+            fails.append('room mean L* %.1f outside %.0f-%.0f' % (rm['mean'], *T.ROOM_MEAN_L))
+        if not rm['p95'] + T.ORDER_MARGIN <= room_ref['value']:
+            fails.append('room p95 %.1f must sit below %s %.1f by %.0f' % (rm['p95'], room_ref['source'], room_ref['value'], T.ORDER_MARGIN))
+    probes = {}
+    for nm_, (x0, y0, x1, y1) in (('review room box', T.REVIEW_ROOM_BOX), ('review left city box', T.REVIEW_CITY_BOX)):
+        probes[nm_] = dict(mean=round(_L(float(Y[y0:y1, x0:x1].mean())), 1), p95=round(float(np.percentile(Ls_[y0:y1, x0:x1], 95)), 1))
+    # 2026-11-04 (gate 1): every E and K mark class and the plan marks get a row (p95, p99, median).  "HOT second under SEND IT": no mark outranks
+    # the HOT marks (its p99 sits at least MARK_MARGIN under the HOT p95), and every E and K mark sits under the tower (p95 + margin <= tower p95).
+    # N plan marks (pencil) rank with the lifted card: under HOT, above the tower allowed.
+    marks = {}
+    get = lambda k: M.get(k, np.zeros((1080, 1920), bool))
+    MARK_ROWS = (('E HP ticks', ('hp',), 'E'), ('E Adjuster HP', ('adj_hp',), 'E'), ('E Adjuster plate', ('adj',), 'E'),
+                 ('E badges (warded, dead X)', ('badges',), 'E'), ('K sector digits', ('digits',), 'K'), ('K ring tags', ('ring_tags',), 'K'),
+                 ('K bezel labels', ('labels',), 'K'), ('K wave tickets', ('tickets',), 'K'), ('E token discs', ('tokens',), 'E'),
+                 ('T COLD marks', ('chev1', 'arcT1'), 'T'), ('T FAR marks', ('chev2', 'arcT2'), 'T'), ('N plan marks', ('plan', 'twist_badge'), 'N'),
+                 ('P gun tracers and hit stars', ('guns',), 'G'))
+    hot = tab.get('T HOT marks')
+    tower = tab.get('P tower')
+    # marks drawn on top of an E / K / T mark (the plan pencil and hover brackets, the hover leader, the twist badge, the gun tracers and hit
+    # stars) belong to their own family: they are cut from the region of the mark they cover (and get their own row)
+    over = dil(get('plan') | get('leader') | get('twist_badge') | get('guns'), 1)
+    for nm_, cls_, famk in MARK_ROWS:
+        m = np.zeros((1080, 1920), bool)
+        for c_ in cls_:
+            m |= get(c_)
+        if 'badges' in cls_:
+            m &= ~get('twist_badge')               # the twist badge is the player's plan (N), not an E badge
+        if famk in ('E', 'K', 'T') and over is not None:
+            m &= ~over
+        if m.sum() < 30:
+            continue
+        v = Ls[m]
+        r_ = dict(family=famk, p95=round(float(np.percentile(v, 95)), 1), p99=round(float(np.percentile(v, 99)), 1), median=round(float(np.median(v)), 1), px=int(m.sum()))
+        rules_ = []
+        if hot and famk in ('E', 'K', 'T', 'N', 'G'):
+            okh = r_['p99'] + T.MARK_MARGIN <= hot['p95']
+            rules_.append(('p99 under HOT p95', okh))
+            if not okh:
+                fails.append('%s p99 %.1f must sit under the HOT marks p95 %.1f by %.0f' % (nm_, r_['p99'], hot['p95'], T.MARK_MARGIN))
+        if tower and famk in ('E', 'K'):
+            okt = r_['p95'] + T.MARK_MARGIN <= tower['p95']
+            rules_.append(('p95 under the tower p95', okt))
+            if not okt:
+                fails.append('%s p95 %.1f must sit under the P tower p95 %.1f by %.0f' % (nm_, r_['p95'], tower['p95'], T.MARK_MARGIN))
+        r_['rules'] = rules_
+        marks[nm_] = r_
+    srt = sorted([(k, v) for k, v in tab.items() if v], key=lambda kv: -kv[1]['p95'])
+    return dict(pass_=not fails, failures=fails, sorted=[dict(family=k, **v) for k, v in srt], marks=marks, probes=probes, room_ref=room_ref,
+                rule='p95 L* per family region; A.1 chain ' + ' > '.join(chain) + '; K below the tower, K median in L* 45-55; token discs below HOT marks; '
+                     'every E / K / T / N mark class (HP ticks, Adjuster HP and plate, badges, sector digits, ring tags, bezel labels, tickets, token discs, '
+                     'COLD, FAR, plan): p99 at least %.0f under the HOT p95, and every E / K mark p95 at least %.0f under the tower p95; '
+                     'room (x >= 1100, y >= 420, r > 505, UI / hand / hover tag and the UI scrim slabs cut out) mean L* %.0f-%.0f with its p95 below the ring-NOW occupied '
+                     'glass p95 (live cells; L* 40 when no ring-NOW cell is live)' % (T.MARK_MARGIN, T.MARK_MARGIN, T.ROOM_MEAN_L[0], T.ROOM_MEAN_L[1]))
+
+
+# ------------------------------------------------------------------------------------------------ c. cap height
+PARKED_WHERE = ('hover tag (parked, note 8)',)
+
+
+def check_caps(rb):
+    """2026-11-04 (gate 1): the hover tag text (a_hover.rtext, Plex 20, cap 14.5-14.9 px) was not in the capture.  It is now recorded and listed
+    as PARKED (designer note 8: the hover tag keeps its E10 form and content; nobody designs it in this pass), reported and not gated.
+    Coverage: any PIL text draw made outside every hooked drawer is listed (uncaptured_text) and fails the check, so 'every text draw' holds."""
+    rows, parked = [], []
+    for t in rb['text']:
+        cap = t.get('cap_px')
+        r = dict(text=t['text'][:40], font=t['font'], px=t['px'], cap_px=cap, where=t['where'], pass_=cap is not None and cap >= T.CAP_MIN_PX - 0.05)
+        (parked if t['where'] in PARKED_WHERE else rows).append(r)
+    unc = [u for u in rb.get('uncaptured_text', []) if any(ch.isalnum() for ch in u['text'])]
+    fails = [r for r in rows if not r['pass_']]
+    return dict(pass_=not fails and not unc, n=len(rows), n_fail=len(fails), failures=fails, smallest=sorted(rows, key=lambda r: r['cap_px'] or 0)[:5],
+                parked=dict(n=len(parked), smallest_cap_px=min((r['cap_px'] or 0) for r in parked) if parked else None, rows=parked[:12],
+                            note='designer note 8 (VISUAL_PLAN, Parked): hover_tag keeps its E10 form and content; reported, not gated'),
+                uncaptured_text=unc,
+                rule='cap height (font H box x px) of every text draw >= %.0f px at 1080p; card text at the hand scale; the parked hover tag text is '
+                     'reported, not gated; any text drawn outside the hooked drawers fails the check' % T.CAP_MIN_PX)
+
+
+# ------------------------------------------------------------------------------------------------ d. palette collision
+def check_palette(corp, cell_cols):
+    import card_render as CR
+    fails, rows = [], []
+
+    def add(group, a, ca, b, cb, floor=T.DE_MIN):
+        d = T.de76(ca, cb)
+        r = dict(group=group, a=a, b=b, a_hex='#%02X%02X%02X' % tuple(ca), b_hex='#%02X%02X%02X' % tuple(cb), dE=round(d, 1), pass_=d >= floor)
+        rows.append(r)
+        if not r['pass_']:
+            fails.append(r)
+    ks = list(T.TOKENS)
+    for i in range(len(ks)):
+        for j in range(i + 1, len(ks)):
+            add('token x token', ks[i], T.TOKENS[ks[i]], ks[j], T.TOKENS[ks[j]])
+    # 2026-11-04 (gate 1): slice inks, card type plates and skin hue inks are tested against EVERY meaning token (TURRET vs BOSS_GOLD was missed
+    # because SLICE_NEIGHBOURS left BOSS_GOLD out, though the TURRET gun shoots the Adjuster in the same sector) and against the light neutrals
+    # (PAPER, ENAMEL, TEXT_HI, TEXT_MID); slice inks also against each other
+    for s, c in T.SLICE_INK.items():
+        for n in T.TOKENS:
+            add('slice ink x token', 'slice ' + s, c, n, T.TOKENS[n])
+        for n, cn in T.NEUTRALS.items():
+            add('slice ink x neutral', 'slice ' + s, c, n, cn)
+    sk = list(T.SLICE_INK)
+    for i in range(len(sk)):
+        for j in range(i + 1, len(sk)):
+            add('slice ink x slice ink', 'slice ' + sk[i], T.SLICE_INK[sk[i]], 'slice ' + sk[j], T.SLICE_INK[sk[j]])
+    for fam, tdef in CR.TYPES.items():
+        col = tuple(int(round(v)) for v in tdef['col'][:3])
+        for n in T.TOKENS:
+            add('card type x token', 'card ' + fam, col, n, T.TOKENS[n])
+    for k, c in T.SKIN_INKS.get(corp, {}).items():
+        for n in T.TOKENS:
+            add('skin ink x token', corp + ' ' + k, c, n, T.TOKENS[n])
+        if k != 'barcode':                         # Meridian's barcode is a dark print mark, not a light ink: it is not tested against the light neutrals
+            for n, cn in T.NEUTRALS.items():
+                add('skin ink x neutral', corp + ' ' + k, c, n, cn)
+    if corp == 'solace':
+        for k_ in ('teal', 'teal_hi', 'porcelain'):          # 2026-11-04 round 2 (C16): Solace left leaf green for celadon / teal
+            add('skin ink x Cell lime (2.4)', 'solace ' + k_, T.SKIN_INKS['solace'][k_], 'CELL_LIME', T.CELL_LIME)
+    for key, col in cell_cols.items():
+        for mk, mc in (('HOT', T.HARM_UP), ('COLD', T.COLD_CHEV)):
+            add('mark x skin cell', '%s mark' % mk, mc, '%s cell %s' % (corp, key), col)
+        add('mark x skin cell (FAR, reported)', 'FAR mark', T.FAR_CHEV, '%s cell %s' % (corp, key), col, floor=0.0)
+    return dict(pass_=not fails, failures=fails, n_pairs=len(rows), rows=rows,
+                rule='dE76 >= %.0f: token pairs; slice inks, card type plates, skin hue inks vs the tokens they sit next to; HOT / COLD marks vs the measured cell colours' % T.DE_MIN)
+
+
+# ------------------------------------------------------------------------------------------------ e. hand
+def card_regions(card):
+    """screen polygons of a placed card's cost hex and rules line (design coords from card_render, placement from the capture)"""
+    import card_render as CR
+    sp = CR.CARDS[card['name']]
+    rules = CR.rules_box(sp['txt'])          # stage 2: the rules block as drawn (one or two lines at 21 px, never shrunk) plus its bar
+    hx_, hy_ = CR.COST_C
+    cost = [(hx_ + 22 * math.cos(math.radians(30 + 60 * k)), hy_ + 22 * math.sin(math.radians(30 + 60 * k))) for k in range(6)]
+    m2 = CR.margin_px(card['w2'] - 2 * CR.margin_px(352)) if False else CR.margin_px(352)
+    k = card['scale'] / 2.0
+    W2, H2 = card['w2'] * k, card['h2'] * k
+    a = math.radians(card['ang'])
+
+    def tr(p):
+        x, y = (m2 + 2 * p[0]) * k - W2 / 2, (m2 + 2 * p[1]) * k - H2 / 2
+        return (card['cx'] + x * math.cos(a) + y * math.sin(a), card['cy'] - x * math.sin(a) + y * math.cos(a))
+    return [tr(p) for p in cost], [tr(p) for p in rules]
+
+
+def check_hand(M, rb):
+    get = lambda k: M.get(k, np.zeros((1080, 1920), bool))
+    hand = get('hand_rest') | get('hand_lift') | get('hand_played')
+    res = dict(hand_x_send_px=int((hand & get('send')).sum()), hand_x_undo_px=int((hand & get('undo')).sum()))
+    sib = []
+    cards = rb.get('cards', [])
+    lift = [i for i, c in enumerate(cards) if c['role'] == 'lift']
+    import rb_lift as RL
+    for li in lift:
+        lm = M.get('card_%d' % li)
+        for j, c in enumerate(cards):
+            if j == li or c['role'] != 'rest':
+                continue
+            # 2026-11-04 round 2 (C6, review N1): the protected set is the cost hex, the title band, the rules line and (Nudge / Spin) the
+            # multiplier plate
+            pr = RL.protected(c)
+            row = dict(lifted=cards[li]['name'], sibling=c['name'])
+            for k_, poly in pr.items():
+                row[k_ + '_px'] = int((lm & poly_mask([poly])).sum())
+            sib.append(row)
+    # resting cards over each other's cost hex / rules line (reported)
+    rest_info = []
+    for i, c in enumerate(cards):
+        if c['role'] != 'rest':
+            continue
+        cost, rules = card_regions(c)
+        later = np.zeros((1080, 1920), bool)
+        for j in range(i + 1, len(cards)):
+            if cards[j]['role'] == 'rest':
+                later |= M.get('card_%d' % j, np.zeros((1080, 1920), bool))
+        rest_info.append(dict(card=c['name'], cost_covered_px=int((later & poly_mask([cost])).sum()), rules_covered_px=int((later & poly_mask([rules])).sum())))
+    res['lifted_vs_sibling'] = sib
+    res['rest_cards_covered_info'] = rest_info
+    res['lift'] = (rb.get('info') or {}).get('lift')
+    res['pass_'] = res['hand_x_send_px'] == 0 and res['hand_x_undo_px'] == 0 and all(v == 0 for s in sib for k_, v in s.items() if k_.endswith('_px'))
+    res['rule'] = ('hand pixels under SEND IT / UNDO: 0; lifted card (its alpha >= 128: card, pink print, hard drop) over a sibling card cost hex, '
+                   'title band, rules line or multiplier plate: 0 px')
+    return res
+
+
+# ------------------------------------------------------------------------------------------------ all
+def run(name, png, sfx):
+    chk = json.load(open(WORK + 'chk_%s.json' % sfx))
+    rb = chk['rb']
+    M = load_masks(sfx)
+    rgb = np.asarray(Image.open(png).convert('RGB')).astype(np.float64)
+    Y = T.lum(rgb)
+    pf = WORK + 'probe_%s.png' % sfx
+    probeY = T.lum(np.asarray(Image.open(pf).convert('RGB')).astype(np.float64)) if os.path.exists(pf) else None
+    a = check_cells(Y, rgb, rb, M, probeY)
+    # glass masks for the order table and the cell colours for the palette check
+    g = rb['geometry']
+    yy, xx = np.mgrid[0:1080, 0:1920]
+    cut = np.zeros((1080, 1920), bool)
+    for k in CUT:
+        if k in M:
+            cut |= M[k]
+    cut = dil(cut, 3)
+    for k in M:
+        if k.startswith('pen_') or k == 'focus':
+            cut |= dil(M[k], 3)
+    rho = np.hypot(xx - CC[0], yy - CC[1])
+    for u in g['units']:
+        cut |= np.hypot(xx - u['token'][0], yy - u['token'][1]) <= u['tok_r'] + 8
+        cut |= (rho >= u['t_in'] - 3) & (rho <= u['t_out'] + 3) & (np.abs(((np.degrees(np.arctan2(xx - CC[0], -(yy - CC[1]))) - u['b0']) % 360)) <= (u['b1'] - u['b0']))
+    occ = ndi.binary_erosion(poly_mask([c['poly'] for c in g['cells'] if c['state'] == 'live']), iterations=4) & ~cut
+    emp = ndi.binary_erosion(poly_mask([c['poly'] for c in g['cells'] if c['state'] == 'empty']), iterations=4) & ~cut
+    occ_now = ndi.binary_erosion(poly_mask([c['poly'] for c in g['cells'] if c['state'] == 'live' and c['dep'] == 0]), iterations=4) & ~cut
+    b = check_order(Y, M, rb, occ, emp, occ_now)
+    c = check_caps(rb)
+    cols = {}
+    for dep in range(3):
+        for st, lab_ in (('live', 'occupied'), ('empty', 'empty')):
+            m = ndi.binary_erosion(poly_mask([cc['poly'] for cc in g['cells'] if cc['state'] == st and cc['dep'] == dep]), iterations=4) & ~cut
+            if m.sum() > 200:
+                cols['ring%d %s' % (dep, lab_)] = tuple(int(v) for v in np.median(rgb[m], 0))
+    if probeY is not None:
+        prgb = np.asarray(Image.open(pf).convert('RGB')).astype(np.float64)
+        for dep in range(3):
+            m = ndi.binary_erosion(poly_mask([cc['poly'] for cc in g['probe'] if cc['dep'] == dep]), iterations=4)
+            cols['ring%d empty (probe)' % dep] = tuple(int(v) for v in np.median(prgb[m], 0))
+    d = check_palette(rb.get('corp', 'neutral'), cols)
+    e = check_hand(M, rb)
+    # 2026-11-04 round 2 (rb_checks_r2): C3 / C4 into b, C2 / C16 into d; f pencil (C1), g tickets (C5), h HUD rows (C8), i HOT core (C11)
+    import rb_checks_r2 as R2
+    tab = {r['family']: r for r in b['sorted']}
+    hot95 = tab.get('T HOT marks', {}).get('p95')
+    tow95 = tab.get('P tower', {}).get('p95')
+    bb = R2.check_bright(Y, M, hot95, tow95)
+    b['round2'] = bb
+    b['failures'] = b['failures'] + bb['failures']
+    b['pass_'] = b['pass_'] and bb['pass_']
+    dd = R2.check_drawn(rgb, M, rb.get('corp', 'neutral'), chk.get('beat'))
+    d['round2'] = dd
+    d['failures'] = d['failures'] + [dict(a=x, b='', dE=None) for x in dd['failures']]
+    d['pass_'] = d['pass_'] and dd['pass_']
+    info = rb.get('info') or {}
+    f_ = R2.check_pencil(rgb, Y, M)
+    g_ = R2.check_tickets(Y, M, info)
+    h_ = R2.check_hud_rows(rgb, info, chk.get('beat'))
+    i_ = R2.check_hot_core(rgb, Y, M, occ_now)
+    out = dict(a_cell_contrast=a, b_value_order=b, c_cap_height=c, d_palette=d, e_hand=e, f_pencil=f_, g_tickets=g_, h_hud_rows=h_, i_hot_core=i_)
+    out['pass'] = {k: v['pass_'] for k, v in out.items()}
+    out['plate_pass'] = all(out['pass'].values())
+    return out
+
+
+def table_order(res):
+    lines = ['%-30s %6s %6s %6s' % ('family', 'p95', 'median', 'mean')]
+    for r in res['b_value_order']['sorted']:
+        lines.append('%-30s %6.1f %6.1f %6.1f' % (r['family'], r['p95'], r['median'], r['mean']))
+    return '\n'.join(lines)
+
+
+if __name__ == '__main__':
+    nm, png, sfx = sys.argv[1], sys.argv[2], sys.argv[3]
+    r = run(nm, png, sfx)
+    print(nm, r['pass'])
+    print(table_order(r))
+    a = r['a_cell_contrast']
+    for row in a['rows']:
+        print('  ring %d s%d u%s %-8s %-7s occ L* %5.1f  empty L* %s  ratio %s' % (row['ring'], row['sector'], row['unit'], row['kind'], row['state'], row['occ_L'], row['empty_L'], row['ratio']))
+    print('  rings', a['rings'])
+    print('caps fail', r['c_cap_height']['n_fail'], [(f['text'], f['cap_px']) for f in r['c_cap_height']['failures']])
+    print('palette fails', [(f['a'], f['b'], f['dE']) for f in r['d_palette']['failures']])
+    print('hand', {k: v for k, v in r['e_hand'].items() if k != 'rule'})
+    print('order fails', r['b_value_order']['failures'])

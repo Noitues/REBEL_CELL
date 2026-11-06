@@ -1,0 +1,5 @@
+s=open('sheets.py').read()
+s=s.replace("[(60, 60), (150, 60), (150, 66), (60, 66)], 3, ['harm'","[(60, 60), (150, 60), (150, 72), (60, 72)], 3, ['harm'")
+s=s.replace("pim = Ls.im.crop((100, 100, 340, 160)).resize((360, 90), Image.LANCZOS)","pim = Ls.im.crop((100, 100, 340, 180)).resize((360, 120), Image.LANCZOS)")
+s=s.replace("yy = y0 + (i // 3) * 290","yy = y0 + (i // 3) * 300").replace("yy = 700\n    box(d, [780, yy, 1880, 960], 'rules')","yy = 735\n    box(d, [780, yy, 1880, 980], 'rules')")
+open('sheets.py','w').write(s)
