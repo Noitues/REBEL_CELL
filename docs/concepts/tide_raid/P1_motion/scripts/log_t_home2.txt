@@ -1,0 +1,12 @@
+home normal 0 19.4
+home normal 10 0.2
+home normal 20 0.1
+home normal 30 0.6
+home normal 40 0.4
+home normal 50 0.5
+home normal 60 1.6
+home normal 70 1.5
+home normal 80 1.8
+home normal 90 1.8
+home normal 100 0.3
+home normal {'frames': 105, 'seconds': 3.5, 'max_dlum': 0.0136, 'mean_dlum': 0.0007, 'max_big_frac': 0.1593, 'frames_big_gt1pct': 11, 'max_shift_px': 6}

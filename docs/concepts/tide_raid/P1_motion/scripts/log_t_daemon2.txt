@@ -1,0 +1,18 @@
+daemon normal 40 1.9
+daemon normal 70 2.5
+daemon normal 100 0.7
+daemon normal 110 0.5
+[mov,mp4,m4a,3gp,3g2,mj2 @ 0000010b8eb860c0] moov atom not found
+[in#0 @ 0000010b8eb85cc0] Error opening input: Invalid data found when processing inputdaemon normal {'frames': 120, 'seconds': 4.0, 'max_dlum': 0.023, 'mean_dlum': 0.0007, 'max_big_frac': 0.0132, 'frames_big_gt1pct': 2, 'max_shift_px': 0}
+en processing input
+Traceback (most recent call last):
+  File "D:\rc_art\art-pass\docs\concepts\tide_raid\P1_motion\scripts\tests.py", line 109, in <module>
+    write_gif(mp4, TD + '%s_%s.gif' % (name, v))
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\rc_art\art-pass\docs\concepts\tide_raid\P1_motion\scripts\tests.py", line 75, in write_gif
+    subprocess.run(cmd, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['D:/rc_scratch/tide_concepts/venv_vid/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe', '-y', '-loglevel', 'error', '-i', 'D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/tests/daemon_normal.mp4', '-vf', 'fps=15,scale=640:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=160:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5', '-loop', '0', 'D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/tests/daemon_normal.gif']' returned non-zero exit status 3199971767.

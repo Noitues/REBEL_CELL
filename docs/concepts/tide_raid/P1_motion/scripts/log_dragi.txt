@@ -1,0 +1,8 @@
+dragi 0 21.9
+dragi 6 1.8
+dragi 10 1.5
+dragi 14 1.6
+dragi 16 1.3
+dragi 20 1.6
+dragi 26 1.7
+dragi 34 1.3

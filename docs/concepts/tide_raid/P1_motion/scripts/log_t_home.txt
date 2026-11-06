@@ -1,0 +1,24 @@
+home normal 0 39.5
+home normal 10 0.1
+home normal 20 0.5
+home normal 30 0.6
+home normal 40 2.1
+home normal 50 0.5
+home normal 60 0.3
+home normal 70 0.3
+home normal 80 0.3
+home normal 90 0.3
+home normal 100 0.3
+home normal {'frames': 105, 'seconds': 3.5, 'max_dlum': 0.0136, 'mean_dlum': 0.0009, 'max_big_frac': 0.1593, 'frames_big_gt1pct': 11, 'max_shift_px': 6}
+home reduce 0 0.8
+home reduce 10 0.1
+home reduce 20 0.1
+home reduce 30 0.1
+home reduce 40 0.3
+home reduce 50 0.4
+home reduce 60 0.3
+home reduce 70 2.7
+home reduce 80 0.6
+home reduce 90 1.8
+home reduce 100 3.6
+home reduce {'frames': 105, 'seconds': 3.5, 'max_dlum': 0.0087, 'mean_dlum': 0.0005, 'max_big_frac': 0.0098, 'frames_big_gt1pct': 0, 'max_shift_px': 0}

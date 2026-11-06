@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.315 - Forward+ - Using Device #0: AMD - AMD Radeon RX 6700 XT
+
+PROTO turns/times 0/0,45/6,90/39,45/51,180/55,135/61,90/103,135/132,180/138,45/142,90/148,90/174,90/194,45/197,180/206,45/215,90/218,90/238,45/251,180/255,135/261,45/297,0/300 marks={ "t3_b": 115.606003761292, "t2_breach": 234.745094299316, "t1_b": 344.470144271851, "t1_c": 429.979207992554, "home": 518.973361968994, "the_genome_core": 0.0 }
+PROTO moment=home type=N reduce=false path_bu=519.0 dense=104 frames=44 arrive=36.0 px_per_bu=3.879
+PROTO ribbon first=(-240.0, 7.149707, -186.0) last=(-366.0, 3.217948, 24.0) proj0=(1438.131, 291.1553) layer_vis=true
+PROTO frame 36 off=(0.0, 3.0)
+PROTO frame 37 off=(0.8845, -2.253517)
+PROTO frame 38 off=(-1.092253, 1.504319)
+PROTO frame 39 off=(0.676629, -0.721774)
+PROTO frame 40 off=(-0.007493, 0.007084)
+PROTO DONE

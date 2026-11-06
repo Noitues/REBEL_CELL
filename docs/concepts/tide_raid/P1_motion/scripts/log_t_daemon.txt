@@ -1,0 +1,22 @@
+daemon normal 0 25.9
+daemon normal 10 1.7
+daemon normal 20 1.8
+daemon normal 30 0.3
+daemon normal 40 0.4
+daemon normal 50 2.2
+daemon normal 60 1.3
+daemon normal 70 0.4
+daemon normal 80 2.8
+daemon normal 90 2.1
+daemon normal 100 0.6
+daemon normal 110 2.7
+daemon normal {'frames': 120, 'seconds': 4.0, 'max_dlum': 0.023, 'mean_dlum': 0.0007, 'max_big_frac': 0.0135, 'frames_big_gt1pct': 2, 'max_shift_px': 0}
+daemon reduce 0 0.3
+daemon reduce 10 2.2
+daemon reduce 20 1.9
+daemon reduce 30 0.3
+daemon reduce 40 2.2
+daemon reduce 50 3.9
+daemon reduce 60 3.8
+daemon reduce 70 0.8
+daemon reduce {'frames': 80, 'seconds': 2.67, 'max_dlum': 0.0046, 'mean_dlum': 0.0008, 'max_big_frac': 0.0064, 'frames_big_gt1pct': 0, 'max_shift_px': 0}

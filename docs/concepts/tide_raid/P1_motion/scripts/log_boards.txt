@@ -1,0 +1,121 @@
+  thumb jackin 0 21.6
+  thumb jackin 2 19.4
+  thumb jackin 4 9.8
+  thumb jackin 6 7.6
+  thumb jackin 8 3.4
+  thumb jackin 10 23.6
+  thumb jackin 13 22.2
+  thumb jackin 18 4.5
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_01_jackin.png (2560, 1950)
+  thumb draw 0 3.1
+  thumb draw 2 0.2
+  thumb draw 4 0.2
+  thumb draw 6 0.2
+  thumb draw 8 0.2
+  thumb draw 10 0.2
+  thumb draw 12 0.2
+  thumb draw 16 0.2
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_02_draw.png (2560, 1622)
+  thumb dragv 0 0.2
+  thumb dragv 3 0.2
+  thumb dragv 10 0.2
+  thumb dragv 14 0.3
+  thumb dragv 24 0.3
+  thumb dragv 30 0.3
+  thumb dragi 0 0.2
+  thumb dragi 10 0.2
+  thumb dragi 14 0.2
+  thumb dragi 18 1.6
+  thumb dragi 26 1.5
+  thumb dragi 34 1.5
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_03_drag.png (2560, 1808)
+  thumb daemon 0 21.4
+  thumb daemon 32 2.0
+  thumb daemon 40 2.2
+  thumb daemon 52 1.9
+  thumb daemon 68 2.1
+  thumb daemon 82 2.1
+  thumb daemon 94 3.8
+  thumb daemon 96 3.2
+  thumb daemon 100 2.1
+  thumb daemon 114 0.5
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_04_daemon.png (2560, 1692)
+  thumb lock 0 3.3
+  thumb lock 15 0.1
+  thumb lock 18 0.1
+  thumb lock 21 0.1
+  thumb lock 25 0.1
+  thumb lock 29 0.1
+  thumb lock 32 5.6
+  thumb lock 38 1.8
+  thumb lock 50 2.3
+  thumb lock 70 2.2
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_05_lock.png (2560, 1740)
+  thumb hunter 0 15.3
+  thumb hunter 8 0.6
+  thumb hunter 14 0.7
+  thumb hunter 18 0.6
+  thumb hunter 22 0.8
+  thumb hunter 25 0.7
+  thumb hunter 30 0.8
+  thumb hunter 40 0.8
+  thumb hunter 70 0.8
+  thumb hunter 76 1.0
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_06_hunter.png (2560, 1812)
+  thumb shield 0 3.3
+  thumb shield 1 3.0
+  thumb shield 2 3.1
+  thumb shield 4 3.3
+  thumb shield 8 1.4
+  thumb shield 12 0.6
+  thumb shield 18 0.6
+  thumb shield 22 0.8
+  thumb shield 30 0.7
+  thumb shield 44 0.5
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_07_shield.png (2560, 1794)
+  thumb home 0 6.9
+  thumb home 5 0.1
+  thumb home 6 3.7
+  thumb home 7 0.3
+  thumb home 8 0.4
+  thumb home 12 3.7
+  thumb home 20 0.4
+  thumb home 40 3.6
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_08_home.png (2560, 2154)
+  thumb poster 0 5.6
+  thumb poster 3 1.3
+  thumb poster 6 1.2
+  thumb poster 9 1.9
+  thumb poster 10 1.8
+  thumb poster 12 1.7
+  thumb poster 14 1.8
+  thumb poster 18 1.5
+  thumb poster 30 1.8
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_09_poster.png (2560, 1524)
+  thumb bloom 0 20.4
+  thumb bloom 14 0.8
+  thumb bloom 20 2.3
+  thumb bloom 26 15.5
+  thumb bloom 34 6.0
+  thumb bloom 48 6.9
+  thumb bloom 62 3.9
+  thumb bloom 76 1.4
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_10_bloom.png (2560, 1886)
+  thumb lost 0 4.6
+  thumb lost 4 8.0
+  thumb lost 10 16.1
+  thumb lost 20 26.0
+  thumb lost 34 30.8
+  thumb lost 48 35.0
+  thumb lost 58 22.9
+  thumb lost 66 35.4
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_11_lost.png (2560, 1810)
+  thumb jackout 0 4.3
+  thumb jackout 1 3.6
+  thumb jackout 2 3.7
+  thumb jackout 3 6.8
+  thumb jackout 4 21.9
+  thumb jackout 5 14.7
+  thumb jackout 7 2.6
+  thumb jackout 10 3.0
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_12_jackout.png (2560, 1518)

@@ -1,0 +1,10 @@
+hunter 0 5.5
+hunter 8 0.1
+hunter 14 0.1
+hunter 18 0.1
+hunter 22 0.1
+hunter 25 0.3
+hunter 30 0.8
+hunter 40 0.7
+hunter 70 0.7
+hunter 74 0.8

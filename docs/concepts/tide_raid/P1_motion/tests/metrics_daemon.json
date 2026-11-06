@@ -1,0 +1,20 @@
+{
+ "normal": {
+  "frames": 120,
+  "seconds": 4.0,
+  "max_dlum": 0.023,
+  "mean_dlum": 0.0007,
+  "max_big_frac": 0.0132,
+  "frames_big_gt1pct": 2,
+  "max_shift_px": 0
+ },
+ "reduce": {
+  "frames": 80,
+  "seconds": 2.67,
+  "max_dlum": 0.0046,
+  "mean_dlum": 0.0008,
+  "max_big_frac": 0.0064,
+  "frames_big_gt1pct": 0,
+  "max_shift_px": 0
+ }
+}

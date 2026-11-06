@@ -1,0 +1,24 @@
+{
+ "normal": {
+  "frames": 150,
+  "seconds": 5.0,
+  "max_dlum": 0.0334,
+  "mean_dlum": 0.0005,
+  "max_big_frac": 0.1099,
+  "frames_big_gt1pct": 65,
+  "max_shift_px": 4,
+  "lum_jumps_gt10pct": 0,
+  "max_lum_jumps_per_s": 0
+ },
+ "reduce": {
+  "frames": 150,
+  "seconds": 5.0,
+  "max_dlum": 0.003,
+  "mean_dlum": 0.0001,
+  "max_big_frac": 0.0003,
+  "frames_big_gt1pct": 0,
+  "max_shift_px": 0,
+  "lum_jumps_gt10pct": 0,
+  "max_lum_jumps_per_s": 0
+ }
+}

@@ -1,0 +1,10 @@
+lock 0 23.9
+lock 15 0.1
+lock 18 0.1
+lock 20 0.1
+lock 24 0.1
+lock 28 0.3
+lock 31 17.2
+lock 34 0.6
+lock 42 2.2
+lock 60 0.3

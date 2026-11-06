@@ -1,0 +1,24 @@
+lock normal 0 13.5
+lock normal 10 0.2
+lock normal 20 0.2
+lock normal 30 0.2
+lock normal 40 0.4
+lock normal 50 0.4
+lock normal 60 0.4
+lock normal 70 0.4
+lock normal 80 0.4
+lock normal 90 2.4
+lock normal 100 2.5
+lock normal {'frames': 105, 'seconds': 3.5, 'max_dlum': 0.0091, 'mean_dlum': 0.0005, 'max_big_frac': 0.0292, 'frames_big_gt1pct': 4, 'max_shift_px': 0}
+lock reduce 0 0.9
+lock reduce 10 0.2
+lock reduce 20 0.9
+lock reduce 30 2.3
+lock reduce 40 2.2
+lock reduce 50 0.4
+lock reduce 60 0.4
+lock reduce 70 2.4
+lock reduce 80 0.4
+lock reduce 90 0.4
+lock reduce 100 0.4
+lock reduce {'frames': 105, 'seconds': 3.5, 'max_dlum': 0.0046, 'mean_dlum': 0.0005, 'max_big_frac': 0.0019, 'frames_big_gt1pct': 0, 'max_shift_px': 0}

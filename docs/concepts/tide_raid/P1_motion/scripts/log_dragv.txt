@@ -1,0 +1,8 @@
+dragv 0 30.3
+dragv 3 1.9
+dragv 6 1.2
+dragv 10 0.2
+dragv 14 0.2
+dragv 20 0.6
+dragv 24 1.0
+dragv 30 0.2

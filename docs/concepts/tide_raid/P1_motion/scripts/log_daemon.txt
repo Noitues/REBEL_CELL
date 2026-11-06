@@ -1,0 +1,13 @@
+f_arr 94 v0 10.86451438255608 s_stop 1638.6146587058113
+daemon 0 21.6
+daemon 30 2.4
+daemon 34 2.0
+daemon 44 2.2
+daemon 56 2.3
+daemon 68 2.2
+daemon 80 1.8
+daemon 94 0.5
+daemon 96 0.5
+daemon 100 0.5
+daemon 106 0.5
+daemon 120 0.5

@@ -1,0 +1,36 @@
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_01_jackin.png (2560, 1950)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_02_draw.png (2560, 1622)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_03_drag.png (2560, 1808)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_04_daemon.png (2560, 1692)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_05_lock.png (2560, 1740)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_06_hunter.png (2560, 1812)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_07_shield.png (2560, 1794)
+  thumb home 0 27.0
+  thumb home 5 0.4
+  thumb home 6 17.2
+  thumb home 7 1.7
+  thumb home 8 2.0
+  thumb home 12 9.2
+  thumb home 20 0.6
+  thumb home 40 18.5
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_08_home.png (2560, 2154)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_09_poster.png (2560, 1524)
+  thumb bloom 0 15.7
+  thumb bloom 14 0.5
+  thumb bloom 20 2.1
+  thumb bloom 26 17.2
+  thumb bloom 34 5.8
+  thumb bloom 48 6.3
+  thumb bloom 62 5.2
+  thumb bloom 76 5.4
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_10_bloom.png (2560, 1886)
+  thumb lost 0 15.1
+  thumb lost 4 16.5
+  thumb lost 10 16.0
+  thumb lost 20 25.2
+  thumb lost 34 22.7
+  thumb lost 48 27.4
+  thumb lost 58 15.2
+  thumb lost 66 4.8
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_11_lost.png (2560, 1810)
+saved D:/rc_art/art-pass/docs/concepts/tide_raid/P1_motion/boards/board_12_jackout.png (2560, 1518)
