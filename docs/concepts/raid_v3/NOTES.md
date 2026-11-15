@@ -70,19 +70,31 @@ Each forecast in pencil is repeated as one HUD line under the map, with the same
 - **Little pencil on the paper.** The aftermath's pencil is sparse: there is no "RIP", and no DOWN / TAKEN example (this raid had
   no losses).
 
-## Open questions for the designer
-1. **3D city or cell grid?** Bible 4.8 locks the raid on the 3D city view (circuit-inlay network, R3 class beacons, vehicles).
-   v39's raid is a cell grid. These plates draw the grid top-down under glass. Which is the raid view? Or is the grid a
-   tactical overlay on the city?
-2. **Unit icon.** Enamel tokens with an engraved hp, or the bible's corp-colour health-fill icons with a status ring?
-3. **INCOMING panel.** Corp enamel tickets (as drawn, matching Takeover SCHEDULE), or the bible's intercepted work order (memo under
-   glass, INTERCEPTED)?
-4. **Placed operatives.** Should they leave a liner outline in CREW (as drawn), or should CREW keep showing the full roster
-   card?
-5. **Drag model.** Should a held sticker park above its slot (bible 4.8), or follow the cursor near the target (Takeover v3)?
-6. **Site raid words.** The site raid's core size and EVACUATE wording/consequence are unknown here.
+## Designer rulings, 2026-11-15 (on this set)
+These replace the open questions that were here. The plates above predate them and are not re-rendered yet.
+1. **3D city for everything.** The raid and the netrun play on the 3D city. v39's 2D grid was for gameplay testing and design
+   only. The placement cell grid is drawn on the city, **faintly visible** the whole raid.
+2. **Corp units: the bible's version** (4.8: locked vehicle models close, v4 icons far; fill = corp colour = health; the dashed
+   status ring with pips). The enamel tokens and sticker statuses in these plates are a fallback if that does not work.
+3. **INCOMING: the bible's intercepted work order** (memo under glass, corp letterhead, INTERCEPTED), not corp tickets.
+4. **CREW shows the full roster** (leaning; the designer wants context images before locking it). See `crew_options/`.
+5. **Drag model: Takeover's.** The held sticker follows the cursor with spring lag and leaves a liner outline. This deviates from
+   bible 4.8 (park above the slot).
+6. **Site raid rules are not open.** v39 already sets them: the core is 8 (`siteRaidCore`); EVACUATE reads "Evacuate (give up B2
+   without a fight, KAI back to HQ)" and ends the raid at once (site taken, no fight, Heat as an overrun raid). `r3_site.png`
+   is wrong on both: its core reads 6 → 5 and its chip text "B2 to the corp, crew walks" is invented.
 
 ## Source
 `src/raid_v3.py` (plates + sheet) and `src/raid_kit.py` (toolkit), copied from `D:/rc_scratch/raid_v3/src/`.
 - **Run:** `python raid_v3.py [plan place shop playback site aftermath sheet]`.
 - **Imports, read-only:** `insp_deface3`, `insp_deface3b`, `insp_render`, `tk_render`, `tk_states` and `sticker_lib19`.
+
+## CREW roster options (for designer ruling 4), `crew_options/`
+Same round-1 plan state for all three. On the map, the operatives are drawn as a stand-in for the bible 4.8 R3 class beacon
+(ring and emblem disc with initials), because on the 3D city the operative on the map is the beacon, not the sticker. Only the
+CREW column changes.
+- **A** (`crew_A.png`): the liner outline is left behind, with the cell in pencil (as in `r3_plan`).
+- **B** (`crew_B.png`): the full roster. The sticker stays, with "on b3" and a tick in pencil under it.
+- **C** (`crew_C.png`): the full roster, with placed operatives dimmed (lower value and colour) and the cell in pencil; the bench
+  sticker stays full bright. Dimmed must not read as the grey "away" state (grey vinyl with a red pencil reason).
+- `crew_sheet.jpg`: all three side by side (the left column and map only). Source: `src/crew_options.py`.

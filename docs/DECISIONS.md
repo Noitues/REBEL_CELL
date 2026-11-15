@@ -4491,6 +4491,17 @@ Presentation only, with no rule change. Mailbox A-118 / A-119. Spec: `docs/conce
 6. **A status is a sticker, and its value is in grease pencil.**
 7. **Words:** NAME_MAP section E (B-090). Art keeps SEND IT as the commit sticker, over the system word `COMMIT`.
 
+### 2026-11-15 — Art pass: raid in Deface v3 (designer rulings)
+Presentation only, with no rule change. Concept set: `docs/concepts/raid_v3/` (NOTES.md).
+1. **The raid and the netrun play on the 3D city.** The prototype's 2D grid was for testing and design only. The raid's
+   placement cell grid is drawn on the city, faintly visible for the whole raid.
+2. **Corp units stay as ART_BIBLE 4.8** (vehicle models and v4 icons, health fill, status ring with pips). Raid unit statuses
+   use the ring pips, not ruling 6's sticker + pencil (that stays a fallback).
+3. **INCOMING stays the bible's intercepted work order.**
+4. **Drag model follows Takeover, not bible 4.8:** the held sticker follows the cursor and leaves a liner outline (bible 4.8
+   parked it above its slot). To fold into the bible when the raid look locks.
+5. **CREW keeps the full roster** (leaning; to revisit with context images).
+
 ## Open questions for the designer
 
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
