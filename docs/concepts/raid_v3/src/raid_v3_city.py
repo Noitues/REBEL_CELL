@@ -4,9 +4,9 @@
 
 Backplate: the clean Solace night city render (tide_concepts/p2_base/city_default.png, 1920x1080, native, darkened and
 desaturated under the glass).  Its camera is orthographic, so world -> screen is affine; city_geo fits it from the per-pixel
-world positions and gives the ground height and per-pixel ground visibility.  The raid district is the plaza north of the
-Solace towers: a 13 x 13 cell grid on the city's own 6 BU lot lattice (edges at 3 mod 6 BU in world x and z), drawn faintly on
-the ground (hidden under trees and towers at a ghost alpha).
+world positions and gives the ground height and per-pixel ground visibility.  The raid district is the low-rise street block
+south-west of the Solace HQ ring (set 2 put it on the park plaza; the designer moved it): a 10 x 10 cell grid on the city's own
+6 BU lot lattice (edges at 3 mod 6 BU in world x and z), drawn faintly on the ground (hidden under towers at a ghost alpha).
 Rulings: units = bible 4.8 threat icon v4 (shape = type, fill = corp colour = health, dashed status ring with pips, stack
 badge); INCOMING = the intercepted work order (memo under glass); CREW = option B (full roster, pencil cell + tick); operatives
 on the city = R3 class beacons (2D stand-in); drag = Takeover's (spring lag, liner left in CREW, yellow arrow + circle); site
@@ -49,7 +49,7 @@ class CityGrid:
         self.X0, self.Z0, self.nc, self.nr = X0, Z0, nc, nr
         C = city()
         hs = [C.ground_h(X0 + 6 * i + 3, Z0 + 6 * j + 3) for i in range(nc) for j in range(nr)]
-        self.h = float(np.median(hs))                         # the plaza is flat: one ground height
+        self.h = float(np.median(hs))                         # one ground height for the district (the street level)
         self._clear = None
 
     def world(self, i, j):
@@ -105,7 +105,8 @@ class CityGrid:
 # the raid camera: the same orthographic camera as city_default, VIEW_ZOOM x closer.  The pixels come from the 4k render of the same
 # frame (p3_work/city_albedo4k.png, 3840x2160, aligned to city_default at 0,0 px), so a 2x zoom is a native-pixel crop, no upscale.
 VIEW_ZOOM = 2.0
-VIEW_O = (450.0, 20.0)                    # the window's top-left on city_default.png (1080 coords); window = 960 x 540
+VIEW_O = (960.0, 540.0)                   # the window's top-left on city_default.png (1080 coords); window = 960 x 540
+                                          # (as far down-right as the 4k plate allows: the street district sits at its corner)
 CITY4K = 'D:/rc_scratch/tide_concepts/p3_work/city_albedo4k.png'
 
 
@@ -113,7 +114,8 @@ def view(x, y):
     return (x - VIEW_O[0]) * VIEW_ZOOM, (y - VIEW_O[1]) * VIEW_ZOOM
 
 
-G = CityGrid(-435.0, -213.0, 10, 10)
+# the street district: avenue f (world x -189..-183) and avenue i (x -171..-165), cross streets 5, 8 and 10; towers on a-d
+G = CityGrid(-219.0, -147.0, 10, 10)
 
 
 def ground_vis_ss():
@@ -443,16 +445,24 @@ def route_cells(spec):
     return out
 
 
-SAFE = (9, 9)
-RA = route_cells([(0, 8), (8, 8), (8, 9), (9, 9)])[:-1]
-RB = route_cells([(2, 0), (2, 2), (9, 2), (9, 9)])[:-1]
-ENT_A, ENT_B = (-2, 8), (2, -2)
-BARR = (5, 8)
-PLACED = {'KAI': (4, 7), 'VEX': (5, 4), 'MOTH': (7, 7)}
+SAFE = (7, 9)
+RA = route_cells([(5, 0), (5, 9), (7, 9)])[:-1]            # A: down avenue f from the north, then along street 10
+RB = route_cells([(9, 7), (8, 7), (8, 9), (7, 9)])[:-1]    # B: in from the east along street 8, then down avenue i
+ENT_A, ENT_B = (5, -2), (11, 7)
+BARR = (5, 6)
+BARR_UP, BARR_UP2 = (5, 5), (5, 4)                          # the cells before the wall on A (held trooper, the kill)
+PLACED = {'KAI': (4, 7), 'VEX': (6, 3), 'MOTH': (4, 9)}
 WHERE = {k: G.name(*v) for k, v in PLACED.items()}
-HOVER = (8, 5)
-BEST = [((8, 5), '+3'), ((8, 6), '+2'), ((8, 3), '+1')]
+HOVER = (8, 6)
+BEST = [((8, 6), '+3'), ((7, 7), '+2'), ((7, 8), '+1')]
+BEST_NUDGE = {(7, 8): (78, 26)}                               # h9 sits under the Safehouse sticker: its label beside it
 N_BARR, N_HOVER = G.name(*BARR), G.name(*HOVER)
+
+
+def leak_at():
+    """where the B leak note sits: under the B route, right of the Safehouse"""
+    sx, sy = G.cc(*SAFE)
+    return sx + 150, sy + 56
 
 
 def route_pts(cells, entry, end=None, lead=1.2):
@@ -487,8 +497,8 @@ def map_objects(img, barricade=True, safe=False, placed=PLACED, hp_scale=0.8):
         tops[oid] = beacon(img, oid, c, r)
     if barricade:
         bx, by = G.cc(*BARR)
-        # laid across the street: the A route runs along +i (screen down-right), the barricade across it
-        stick(img, K.dev_sticker('BARRICADE'), bx + 2, by - 14, 33, scale=hp_scale)
+        # laid across the street: the A route runs along +j here (screen down-left), the barricade across it
+        stick(img, K.dev_sticker('BARRICADE'), bx - 2, by - 14, -33, scale=hp_scale)
     if safe:
         safehouse(img)
     return tops
@@ -516,7 +526,10 @@ def stop_bar(p, cell_from, cell_to, t=0.55, half=26):
     dx, dy = b[0] - a[0], b[1] - a[1]
     n = math.hypot(dx, dy); dx, dy = dx / n, dy / n
     # perpendicular on the ground: the other lattice axis
-    ox, oy = G.sp(1, 1)[0] - G.sp(1, 0)[0], G.sp(1, 1)[1] - G.sp(1, 0)[1]
+    if cell_from[0] != cell_to[0]:
+        ox, oy = G.sp(1, 1)[0] - G.sp(1, 0)[0], G.sp(1, 1)[1] - G.sp(1, 0)[1]
+    else:
+        ox, oy = G.sp(1, 1)[0] - G.sp(0, 1)[0], G.sp(1, 1)[1] - G.sp(0, 1)[1]
     on = math.hypot(ox, oy); ox, oy = ox / on, oy / on
     p0, p1 = (mx - ox * half, my - oy * half), (mx + ox * half, my + oy * half)
     p.stroke(p.wobble([p0, p1], 0.8), 8, taper=False)
@@ -525,15 +538,15 @@ def stop_bar(p, cell_from, cell_to, t=0.55, half=26):
 
 
 def plan_pencil(py, pr, leak=True):
-    stop_bar(py, (BARR[0] - 1, BARR[1]), BARR, t=0.12, half=48)
+    stop_bar(py, BARR_UP, BARR, t=0.12, half=48)
     bx, by = G.cc(*BARR)
-    py.text('holds ' + N_BARR, bx - 150, by + 64, 34, angle=-6)
-    K.pen_arrow_num(py, 6, 3, bx - 210, by + 18, 32)
+    py.text('holds ' + N_BARR, bx - 310, by + 80, 34, angle=-6)
+    K.pen_arrow_num(py, 6, 3, bx - 340, by + 34, 32)
     if leak:
-        x, y = G.cc(9, 6)
-        pr.text('2 leak', x + 130, y - 6, 34, angle=-6)
+        lx, ly = leak_at()
+        pr.text('2 leak', lx, ly, 34, angle=-6)
         sx, sy = G.cc(*SAFE)
-        pr.arrow([(x + 124, y + 22), (x + 120, y + 80), (sx + 110, sy - 10), (sx + 72, sy - 26)], width=7, head=18)
+        pr.arrow([(lx - 62, ly + 2), (lx - 78, ly - 12), (sx + 64, sy + 20)], width=7, head=16)
         K.pen_arrow_num(pr, 8, 6, sx - 36, sy + 66, 34)
 
 
@@ -741,25 +754,26 @@ def plate_place():
     pen_hatch_quad(py, [G.sp(hc - 1, hr - 1), G.sp(hc + 2, hr - 1), G.sp(hc + 2, hr + 2), G.sp(hc - 1, hr + 2)])
     hx, hy = G.cc(*HOVER)
     py.circle(hx, hy, 50, 33, width=7, start=-2.2, over=0.5, tilt=0)
+    ps = Wax(PEN_Y, 33)                                  # inked after the red: the strike, and a label that sits on a route
     for (c, r), s_ in BEST:
         x, y = G.cc(c, r)
         if (c, r) == HOVER:
             py.text(s_, x - 40, y - 100, 44, angle=-6)
         else:
-            py.text(s_, x, y + 2, 32, angle=-6)
+            nx, ny = BEST_NUDGE.get((c, r), (0, 0))
+            (ps if (c, r) in BEST_NUDGE else py).text(s_, x + nx, y + 2 + ny, 32, angle=-6)
     # B no longer leaks: the red "2 leak" struck through in yellow, 0 beside it; "safe" by the Safehouse
-    lx, ly = 1290, 458
+    lx, ly = leak_at()
     pr.text('2 leak', lx, ly, 34, angle=-6)
-    py.text('0', lx + 80, ly - 6, 40, angle=-6)
+    py.text('0', lx - 84, ly + 2, 40, angle=-6)
     sx, sy = G.cc(*SAFE)
     py.text('safe', sx - 40, sy + 66, 36, angle=-6)
     # the held sticker trails the pointer (spring lag): it is still catching up, below right of the pointer, tilted into the
     # motion; the yellow plan arrow runs from it to the hovered cell
     cxp, cyp = hx + 10, hy + 8
-    hold = (1268, 806)
-    py.arrow([(hold[0] - 44, hold[1] - 92), (hold[0] - 90, hold[1] - 150), (hx + 76, hy + 66), (hx + 40, hy + 34)], width=7, head=20)
+    hold = (1300, 830)
+    py.arrow([(hold[0] - 70, hold[1] - 76), (hold[0] - 150, hold[1] - 112), (hx + 70, hy - 52), (hx + 40, hy - 26)], width=7, head=20)
     py.ink_ss(img); pr.ink_ss(img)
-    ps = Wax(PEN_Y, 33)
     ps.stroke(ps.wobble([(lx - 52, ly + 8), (lx + 52, ly - 8)], 0.6), 7, taper=False)
     ps.ink_ss(img)
     safehouse(img)
@@ -821,10 +835,10 @@ def plate_playback():
     # the units still to enter (faint), the held trooper at the wall, the slowed bike
     unit(img, 'trooper', *G.cc(*ENT_A), 1.0, count=3, alpha=0.38)
     unit(img, 'bike', *G.cc(*ENT_B), 1.0, count=1, alpha=0.38)
-    hx, hy = G.cc(BARR[0] - 1, BARR[1])
-    bx, by = G.cc(7, 2)
-    L = Layer()                                         # glide: a short smear behind the bike (it came along from g3)
-    ux, uy = G.cc(6, 2)[0] - bx, G.cc(6, 2)[1] - by
+    hx, hy = G.cc(*BARR_UP)
+    bx, by = G.cc(8, 7)
+    L = Layer()                                         # glide: a short smear behind the bike (it came along from j8)
+    ux, uy = G.cc(9, 7)[0] - bx, G.cc(9, 7)[1] - by
     for k in range(5):
         L.d.line([(S(bx + ux * (0.35 + k * 0.12)), S(by - 28 + uy * (0.35 + k * 0.12))), (S(bx + ux * (0.45 + k * 0.12)), S(by - 28 + uy * (0.45 + k * 0.12)))],
                  fill=(170, 230, 230, 140 - k * 24), width=S(3))
@@ -837,7 +851,7 @@ def plate_playback():
     # FX: tracers from the beacons, the kill bursting into bits, damage pops
     kx, ky = tops['KAI']; vx, vy = tops['VEX']
     tracer(img, (kx, ky), (hx - 8, hy - 28), K.OPS['KAI']['col'][1])
-    ex, ey = G.cc(BARR[0] - 2, BARR[1])
+    ex, ey = G.cc(*BARR_UP2)
     tracer(img, (kx, ky), (ex + 4, ey - 24), K.OPS['KAI']['col'][1])
     tracer(img, (vx, vy), (bx - 12, by - 28), K.OPS['VEX']['col'][1])
     unit_bits(img, 'trooper', ex, ey, spread=52)
@@ -846,14 +860,14 @@ def plate_playback():
     py.text('2', hx + 62, hy - 84, 34, angle=-6)
     py.text('1', bx + 62, by - 84, 34, angle=-6)
     brx, bry = G.cc(*BARR)
-    K.pen_arrow_num(py, 6, 4, brx - 210, bry + 18, 32)      # the barricade's hp, live
+    K.pen_arrow_num(py, 6, 4, brx - 340, bry + 34, 32)      # the barricade's hp, live
     for (x, y) in ((kx - 58, ky - 30), (vx - 54, vy - 40)):  # kill tallies by KAI and VEX
         py.x(x, y, 11, 6)
     py.ink_ss(img); pr.ink_ss(img)
     safehouse(img)
     K.pop(img, F, hx - 78, hy - 84, '\u22124')
     K.pop(img, F, bx - 20, by - 116, '\u22123')
-    stick(img, K.word_sticker('HELD + BOMBARD \u00d72', (255, 110, 196), (222, 24, 136)), hx - 70, hy + 96, -4)
+    stick(img, K.word_sticker('HELD + BOMBARD \u00d72', (255, 110, 196), (222, 24, 136)), hx - 330, hy - 96, -4)      # left of the wall, clear of KAI and the Safehouse
     left_col(img, F, dict(WHERE, RUNE=G.name(*HOVER)))
     right_col(img, F, state='busy', locked=True)
     K.hud_line(img, F, 'TICK 3/8', [('killed 2', S_GAIN), DOT, ('leaked 0', S_HI), DOT, ('1 held at a wall', S_HI), DOT,
@@ -861,13 +875,13 @@ def plate_playback():
     return img
 
 
-# =============================================================================================== 5. the site raid (SITE B2) on the same plaza
-SITE, SCORE = (4, 5), (4, 6)
-SA = [(c, 5) for c in range(0, 4)]
-SB = [(4, r) for r in range(0, 5)]
-SC = [(c, 5) for c in range(9, 4, -1)]
-S_ENT = {'A': (-2, 5), 'B': (4, -2), 'C': (11, 5)}
-S_KAI, S_VEX = (3, 4), (7, 4)
+# =============================================================================================== 5. the site raid (SITE B2) on the same streets
+SITE, SCORE = (5, 7), (4, 7)                                # the site on the f8 crossing, its core one cell west (off the lanes)
+SA = [(c, 7) for c in range(9, 5, -1)]                     # A: in from the east along street 8
+SB = [(5, r) for r in range(0, 7)]                         # B: down avenue f from the north
+SC = [(5, 9), (5, 8)]                                      # C: up avenue f from the south edge
+S_ENT = {'A': (11, 7), 'B': (5, -2), 'C': (5, 11)}
+S_KAI, S_VEX = (8, 6), (4, 9)
 SROUNDS = [('ROUND 1 (now)  \u00b7  7 units', [('A', 'trooper', 'Trooper', 3), ('B', 'riot', 'Riot', 2), ('C', 'drone', 'Drone', 2)]),
            ('ROUND 2  \u00b7  8 units', [(None, 'trooper', 'Trooper', 4), (None, 'bike', 'Bike', 2), (None, 'drone', 'Drone', 2)]),
            ('ROUND 3  \u00b7  9 units', [(None, 'heavy', 'Heavy', 2), (None, 'riot', 'Riot', 3), (None, 'trooper', 'Trooper', 4)])]
@@ -888,26 +902,26 @@ def plate_site():
     pr.ink_ss(img)
     # the core one cell behind the site (sticker nudged down-left so both read), the site sticker on its cell
     stick(img, K.place_sticker('CORE', None, (255, 110, 196), (222, 24, 136), shape='hex', w=100, h=64), cx - 36, cy + 30, 3, scale=0.74)
-    L = Layer(); text(L.d, (cx - 128, cy + 36), '8/8', F['a40'], TEXT_HI + (255,), stroke=2, sfill=INK + (255,)); comp(img, L)
+    L = Layer(); text(L.d, (cx + 4, cy - 76), '8/8', F['a40'], TEXT_HI + (255,), stroke=2, sfill=INK + (255,)); comp(img, L)
     stick(img, K.place_sticker('B2', 'SITE', (150, 236, 130), (62, 170, 70), shape='socket', w=96, h=84), sx + 6, sy - 14, -3, scale=0.84)
     pr = Wax(PEN_R, 13)
     kx, ky = tops['KAI']; vx, vy = tops['VEX']
-    py.text('B2 crew', kx - 122, ky - 30, 34, angle=-6)
-    py.arrow([(1330, 760), (1270, 640), (1160, 470), (vx + 40, vy + 12)], width=7, head=18)
-    py.text('from C2', 1300, 790, 36, angle=-6)
+    py.text('B2 crew', kx + 104, ky - 30, 34, angle=-6)
+    py.arrow([(612, 858), (650, 836), (vx - 60, vy + 30), (vx - 34, vy + 14)], width=7, head=18)      # VEX came in from C2
+    py.text('from C2', 590, 890, 36, angle=-6)
     # forecast: B (riot) leaks 1 into the core
-    bx_, by_ = G.cc(4, 0)
+    bx_, by_ = G.cc(*SB[0])
     pr.text('1 leak', bx_ + 150, by_ - 14, 36, angle=-5)
-    K.pen_arrow_num(pr, 8, 7, cx - 120, cy + 100, 34)
-    # who defends: the margin note under the map, outside the district
-    py.text('who defends B2', 700, 700, 36, angle=-3)
-    py.text('KAI    B2', 650, 752, 32, angle=-3); py.tick(758, 750, 13, 6)
-    py.text('VEX    C2', 650, 800, 32, angle=-3); py.tick(758, 798, 13, 6)
+    K.pen_arrow_num(pr, 8, 7, cx - 244, cy - 44, 34)
+    # who defends: the margin note above-left of the map, outside the district
+    py.text('who defends B2', 700, 430, 36, angle=-3)
+    py.text('KAI    B2', 650, 482, 32, angle=-3); py.tick(758, 480, 13, 6)
+    py.text('VEX    C2', 650, 530, 32, angle=-3); py.tick(758, 528, 13, 6)
     py.ink_ss(img); pr.ink_ss(img)
     unit(img, 'trooper', *G.cc(*S_ENT['A']), 1.0, count=3)
     unit(img, 'riot', *G.cc(*S_ENT['B']), 1.0, count=2)
     unit(img, 'drone', *G.cc(*S_ENT['C']), 1.0, count=2)
-    K.chip(img, F, 580, 880, 'Evacuate (give up B2 without a fight, KAI back to HQ)', '', w=600)
+    K.chip(img, F, 660, 34, 'Evacuate (give up B2 without a fight, KAI back to HQ)', '', w=600)
     left_col(img, F, {'KAI': G.name(*S_KAI), 'VEX': G.name(*S_VEX), 'MOTH': 'away:A1', 'RUNE': 'away:D4'}, lose=1,
              title='RAID: SITE B2', rnd=(1, 3), counts=[('ON MAP', 2), ('AWAY', 2), ('DEVICES', 0)])
     right_col(img, F, site='SITE B2', rounds=SROUNDS, target='site B2, core')
@@ -964,11 +978,11 @@ def plate_aftermath():
 
 # =============================================================================================== sheet
 def sheet():
-    names = [('r3_plan', 'plan', 'round 1 at rest on the city: routes on the plaza lanes, wall holds f9, B leaks 2'),
-             ('r3_place', 'place', 'RUNE held (spring lag): reach hatched, i6 circled, +3 / +2 / +1, IF PLACED'),
+    names = [('r3_plan', 'plan', 'at rest: A down avenue f, B in along street 8, wall holds f7, B leaks 2'),
+             ('r3_place', 'place', 'RUNE held (spring lag): reach hatched, i7 circled, +3 / +2 / +1, IF PLACED'),
              ('r3_shop', 'shop', 'sticker sheet: SHOTGUN peeled, slapped on RUNE, merge to 2 stars'),
              ('r3_playback', 'playback', 'tick 3/8: v4 icons, ring pips + pencil values, kill bits, pops'),
-             ('r3_site', 'site raid', 'cross of lanes on B2: core 8, B2 crew + C2 support, Evacuate chip'),
+             ('r3_site', 'site raid', 'B2 on the f8 street crossing: core 8, B2 crew + C2 support, Evacuate chip'),
              ('r3_aftermath', 'aftermath', "Solace after-action report, the Cell's pencil, HELD")]
     tw_, th_ = 700, 394
     pad, cap = 12, 58
