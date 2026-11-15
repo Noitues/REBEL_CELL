@@ -1,0 +1,1000 @@
+"""raid_v3_city: the RAID screen in Deface v3, on the 3D city (set 2).  Designer rulings 2026-11-15 applied.
+
+    python raid_v3_city.py [plan place shop playback site aftermath sheet]      (default: all)
+
+Backplate: the clean Solace night city render (tide_concepts/p2_base/city_default.png, 1920x1080, native, darkened and
+desaturated under the glass).  Its camera is orthographic, so world -> screen is affine; city_geo fits it from the per-pixel
+world positions and gives the ground height and per-pixel ground visibility.  The raid district is the plaza north of the
+Solace towers: a 13 x 13 cell grid on the city's own 6 BU lot lattice (edges at 3 mod 6 BU in world x and z), drawn faintly on
+the ground (hidden under trees and towers at a ghost alpha).
+Rulings: units = bible 4.8 threat icon v4 (shape = type, fill = corp colour = health, dashed status ring with pips, stack
+badge); INCOMING = the intercepted work order (memo under glass); CREW = option B (full roster, pencil cell + tick); operatives
+on the city = R3 class beacons (2D stand-in); drag = Takeover's (spring lag, liner left in CREW, yellow arrow + circle); site
+core 8 and the v39 EVACUATE text.
+Toolkit: raid_kit (stickers, pencil, HUD), raid_v3 (report paper), crew_options (unchanged), city_geo (new).  Everything is drawn
+on a transparent supersampled overlay, which is downsampled and composited on the native-resolution city.
+"""
+import math, os, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+import raid_kit as K
+import raid_v3 as R
+import city_geo as CG
+from raid_kit import (Wax, PEN_Y, PEN_R, SL, IR, TR, S, text, Layer, comp, INK, PAPER, HARM, CYAN, TEXT_HI, TEXT_MID, ANTON, MONO,
+                      W, H, SS, F_all, glass, stick, S_GAIN, S_HARM, S_HI, S_PLAN, S_MID, TEAL, TEAL_D, TEAL_HI)
+
+OUT = 'D:/rc_art/art-pass/docs/concepts/raid_v3/'
+DOT = ('\u00b7', S_MID)
+CITY = None
+
+
+def city():
+    global CITY
+    if CITY is None:
+        CITY = CG.City()
+    return CITY
+
+
+def blank():
+    return Image.new('RGBA', (W * SS, H * SS), (0, 0, 0, 0))
+
+
+# =============================================================================================== the district grid (world space)
+class CityGrid:
+    """cells on the city's 6 BU lot lattice; (i, j) = (world x, world z) steps; i grows down-right on screen, j down-left"""
+
+    def __init__(self, X0, Z0, nc, nr):
+        self.X0, self.Z0, self.nc, self.nr = X0, Z0, nc, nr
+        C = city()
+        hs = [C.ground_h(X0 + 6 * i + 3, Z0 + 6 * j + 3) for i in range(nc) for j in range(nr)]
+        self.h = float(np.median(hs))                         # the plaza is flat: one ground height
+        self._clear = None
+
+    def world(self, i, j):
+        return self.X0 + 6.0 * i, self.Z0 + 6.0 * j
+
+    def sp1080(self, i, j, lift=0.0):
+        """the point on city_default.png (the camera the world positions were captured at)"""
+        x, z = self.world(i, j)
+        sx, sy = city().proj(x, self.h + lift, z)
+        return float(sx), float(sy)
+
+    def sp(self, i, j, lift=0.0):
+        """the point on the raid screen (the raid camera: VIEW_ZOOM closer, window at VIEW_O)"""
+        return view(*self.sp1080(i, j, lift))
+
+    def quad1080(self, c, r):
+        return [self.sp1080(c, r), self.sp1080(c + 1, r), self.sp1080(c + 1, r + 1), self.sp1080(c, r + 1)]
+
+    def cc(self, c, r, lift=0.0):
+        return self.sp(c + 0.5, r + 0.5, lift)
+
+    def quad(self, c, r, inset=0.0):
+        return [self.sp(c + inset, r + inset), self.sp(c + 1 - inset, r + inset), self.sp(c + 1 - inset, r + 1 - inset),
+                self.sp(c + inset, r + 1 - inset)]
+
+    def name(self, c, r):
+        return 'abcdefghijklmnop'[c] + str(r + 1)
+
+    def clear(self):
+        """per cell: the fraction of its screen footprint that shows open ground at this cell (not under a tree or a tower)"""
+        if self._clear is None:
+            C = city()
+            out = np.zeros((self.nc, self.nr))
+            for i in range(self.nc):
+                for j in range(self.nr):
+                    q = self.quad1080(i, j)
+                    xs, ys = [p[0] for p in q], [p[1] for p in q]
+                    bx0, by0 = max(0, int(min(xs))), max(0, int(min(ys)))
+                    bx1, by1 = min(C.W, int(max(xs)) + 1), min(C.H, int(max(ys)) + 1)
+                    if bx1 <= bx0 or by1 <= by0:
+                        continue
+                    m = Image.new('L', (bx1 - bx0, by1 - by0), 0)
+                    ImageDraw.Draw(m).polygon([(x - bx0, y - by0) for x, y in q], fill=255)
+                    mm = np.asarray(m) > 0
+                    Pc = C.P[by0:by1, bx0:bx1][mm]
+                    x, z = self.world(i + 0.5, j + 0.5)
+                    ok = (np.abs(Pc[:, 0] - x) < 4.5) & (np.abs(Pc[:, 2] - z) < 4.5) & (Pc[:, 1] - self.h < 1.6)
+                    out[i, j] = ok.mean() if len(Pc) else 0.0
+            self._clear = out
+        return self._clear
+
+
+# the raid camera: the same orthographic camera as city_default, VIEW_ZOOM x closer.  The pixels come from the 4k render of the same
+# frame (p3_work/city_albedo4k.png, 3840x2160, aligned to city_default at 0,0 px), so a 2x zoom is a native-pixel crop, no upscale.
+VIEW_ZOOM = 2.0
+VIEW_O = (450.0, 20.0)                    # the window's top-left on city_default.png (1080 coords); window = 960 x 540
+CITY4K = 'D:/rc_scratch/tide_concepts/p3_work/city_albedo4k.png'
+
+
+def view(x, y):
+    return (x - VIEW_O[0]) * VIEW_ZOOM, (y - VIEW_O[1]) * VIEW_ZOOM
+
+
+G = CityGrid(-435.0, -213.0, 10, 10)
+
+
+def ground_vis_ss():
+    """per-pixel ground visibility at SS (1 = the ground is what the camera sees here), from the 1080 world positions, cropped
+    to the raid window and scaled up (the mask is coarser than the picture: 2 px steps)"""
+    C = city()
+    gv = (~C.occlusion_screen(tol=1.6)).astype(np.uint8) * 255
+    ox, oy = int(VIEW_O[0]), int(VIEW_O[1])
+    crop = Image.fromarray(gv).crop((ox, oy, ox + int(W / VIEW_ZOOM), oy + int(H / VIEW_ZOOM)))
+    return crop.resize((W * SS, H * SS), Image.BILINEAR).filter(ImageFilter.GaussianBlur(SS))
+
+
+_GV = {}
+
+
+def masked_ground(img, L, ghost=0.22):
+    """composite a ground layer, hidden where something stands in front (kept at the ghost alpha)"""
+    if 'gv' not in _GV:
+        _GV['gv'] = ground_vis_ss()
+    gv = _GV['gv']
+    a = L.im.split()[3]
+    k = gv.point(lambda v: int(255 * (ghost + (1 - ghost) * v / 255.0)))
+    L.im.putalpha(SL.ImageChops.multiply(a, k))
+    comp(img, L)
+
+
+# =============================================================================================== the backplate
+def city_plate(dim=1.0):
+    """the native-resolution city, desaturated and darkened under the glass: the district reads, the flanks under the panels
+    and the towers below calm down"""
+    ox, oy = int(VIEW_O[0] * 2), int(VIEW_O[1] * 2)
+    s = int(round(2 * W / VIEW_ZOOM))
+    src = Image.open(CITY4K).convert('RGB').crop((ox, oy, ox + s, oy + int(round(2 * H / VIEW_ZOOM))))
+    if src.size != (W, H):                                  # only when VIEW_ZOOM > 2: Lanczos up + a light unsharp
+        src = src.resize((W, H), Image.LANCZOS).filter(ImageFilter.UnsharpMask(1.2, 60, 2))
+    a = np.asarray(src).astype(np.float32) / 255.0
+    lum = (a @ np.array([0.299, 0.587, 0.114], np.float32))[..., None]
+    a = lum + (a - lum) * 0.72
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    cx, cy = G.cc(G.nc / 2 - 0.5, G.nr / 2 - 0.5)
+    e = np.sqrt(((xx - cx) / 560.0) ** 2 + ((yy - cy) / 380.0) ** 2)
+    k = 0.52 + 0.43 * np.clip(1.25 - e, 0, 1) ** 1.2
+    for x0, x1 in ((0, 530), (1390, W)):
+        m = np.clip(np.minimum(xx - x0 + 60, x1 - xx + 60) / 60.0, 0, 1)
+        k = k * (1 - 0.42 * m)
+    a = a * (k * dim)[..., None] * np.array([0.93, 0.99, 1.08], np.float32)
+    return Image.fromarray(np.clip(a * 255, 0, 255).astype(np.uint8)).convert('RGBA')
+
+
+def finish(ov, dim=1.0):
+    out = city_plate(dim)
+    out.alpha_composite(ov.resize((W, H), Image.LANCZOS))
+    return out.convert('RGB')
+
+
+# =============================================================================================== grid on the ground
+def draw_grid(img, F, legal=(), labels=True):
+    """system: the placement cell grid on the ground, faint the whole raid; legal cells a little stronger while something is held"""
+    L = Layer(); d = L.d
+    col = (90, 214, 240)
+    for i in range(G.nc + 1):
+        d.line([tuple(S(v) for v in G.sp(i, 0)), tuple(S(v) for v in G.sp(i, G.nr))], fill=col + (84,), width=S(1.4))
+    for j in range(G.nr + 1):
+        d.line([tuple(S(v) for v in G.sp(0, j)), tuple(S(v) for v in G.sp(G.nc, j))], fill=col + (84,), width=S(1.4))
+    for (c, r) in legal:
+        q = G.quad(c, r, 0.07)
+        d.polygon([(S(x), S(y)) for x, y in q], fill=col + (30,))
+        IR.dash_poly(d, q + [q[0]], col, 1.6, on=5, off=4)
+    masked_ground(img, L)
+    if labels:
+        L = Layer(); d = L.d
+        f = TR.font(MONO, 17)
+        for i in range(G.nc):
+            x, y = G.sp(i + 0.5, -0.45)
+            text(d, (x + 6, y - 6), 'abcdefghijklmnop'[i], f, CYAN + (150,))
+        for j in range(G.nr):
+            x, y = G.sp(-0.45, j + 0.5)
+            text(d, (x - 8, y - 6), str(j + 1), f, CYAN + (150,))
+        comp(img, L)
+
+
+def legal_cells(route_cells, occupied):
+    cl = G.clear()
+    road = set(route_cells)
+    out = []
+    for c in range(G.nc):
+        for r in range(G.nr):
+            if (c, r) in road or (c, r) in occupied or cl[c, r] < 0.6:
+                continue
+            if any(abs(c - a) <= 1 and abs(r - b) <= 1 for a, b in road):
+                out.append((c, r))
+    return out
+
+
+def reach_outline(img, cells, col, alpha=130):
+    """a faint dashed outline round an operative's reach, on the ground cells"""
+    L = Layer(); d = L.d
+    cs = set(cells)
+    for (c, r) in cs:
+        for dc, dr, a, b in ((0, -1, (c, r), (c + 1, r)), (0, 1, (c, r + 1), (c + 1, r + 1)), (-1, 0, (c, r), (c, r + 1)),
+                             (1, 0, (c + 1, r), (c + 1, r + 1))):
+            if (c + dc, r + dr) not in cs:
+                IR.dash_poly(d, [G.sp(*a), G.sp(*b)], col, 2.2, on=6, off=4)
+    a_ = L.im.split()[3].point(lambda v: int(v * alpha / 255))
+    L.im.putalpha(a_)
+    masked_ground(img, L, ghost=0.5)
+
+
+def cheb(c, r, k):
+    return [(c + a, r + b) for a in range(-k, k + 1) for b in range(-k, k + 1) if 0 <= c + a < G.nc and 0 <= r + b < G.nr]
+
+
+# =============================================================================================== corp units: threat icon v4
+SOL_FILL = (120, 226, 214)          # Solace corp colour (teal porcelain) = health
+SOL_RIM = (236, 250, 248)           # the white capsule rim
+SOL_EMPTY = (22, 30, 38)
+PIP = {'S': ((110, 214, 255), 'slowed'), 'H': ((96, 150, 255), 'held'), 'J': ((150, 236, 110), 'jammed')}
+_ICON = {}
+
+
+def _icon_body(kind, r, c):
+    """SHAPE = type (bible 4.8 v4): trooper / riot / sniper = plain Solace capsule bodies, bike = FAST (chevron badge),
+    heavy = HEAVY block, drone = FLYING diamond with four rotor circles, wrecker = SPECIAL hexagon"""
+    m = Image.new('L', (int(c * 2), int(c * 2)), 0); d = ImageDraw.Draw(m)
+    if kind in ('trooper', 'riot', 'sniper'):
+        d.rounded_rectangle([c - r * 1.08, c - r * 0.68, c + r * 1.08, c + r * 0.68], radius=r * 0.66, fill=255)
+        if kind == 'riot':
+            d.rounded_rectangle([c - r * 1.32, c - r * 0.92, c - r * 0.92, c + r * 0.92], radius=r * 0.12, fill=255)
+        if kind == 'sniper':
+            d.rectangle([c + r * 0.9, c - r * 0.12, c + r * 1.55, c + r * 0.12], fill=255)
+    elif kind == 'bike':
+        d.rounded_rectangle([c - r * 1.0, c - r * 0.55, c + r * 0.85, c + r * 0.55], radius=r * 0.54, fill=255)
+    elif kind == 'heavy':
+        d.rounded_rectangle([c - r * 1.08, c - r * 0.9, c + r * 1.08, c + r * 0.9], radius=r * 0.16, fill=255)
+    elif kind == 'drone':
+        d.polygon([(c, c - r * 0.95), (c + r * 0.95, c), (c, c + r * 0.95), (c - r * 0.95, c)], fill=255)
+    elif kind == 'wrecker':
+        d.polygon([(c + r * 1.06 * math.cos(math.pi / 3 * k), c + r * 1.06 * math.sin(math.pi / 3 * k)) for k in range(6)], fill=255)
+    return m
+
+
+def icon_img(kind, hp, r=15, ring=True, pips=(), count=None):
+    """one threat icon at SS: ink key, white capsule rim, the corp fill = health draining top-down (white line at the level),
+    the dashed corp ring (~1.8x) with status pips clockwise from top right, the stack badge"""
+    key = (kind, round(hp, 2), r, ring, tuple(pips), count)
+    if key in _ICON:
+        return _ICON[key]
+    R_ = S(r)
+    c = S(r * 2.6)
+    body = _icon_body(kind, R_, c)
+    sz = body.size
+    im = Image.new('RGBA', sz, (0, 0, 0, 0))
+    keym = body.filter(ImageFilter.MaxFilter(S(2.2) * 2 + 1))
+    im = SL.over(im, INK, SL.shift(keym, S(1.5), S(2)))
+    im = SL.over(im, INK, keym)
+    bb = body.getbbox()
+    top, bot = bb[1], bb[3]
+    lvl = int(bot - (bot - top) * hp)
+    emp = Image.new('L', sz, 0); ImageDraw.Draw(emp).rectangle([0, 0, sz[0], lvl], fill=255)
+    fil = Image.new('L', sz, 0); ImageDraw.Draw(fil).rectangle([0, lvl, sz[0], sz[1]], fill=255)
+    inner = SL.erode(body, S(1.6))
+    im = SL.over(im, SOL_RIM, body)
+    im = SL.over(im, SOL_EMPTY, SL.ImageChops.multiply(inner, emp))
+    tex = SL.vgrad_tex(sz[0], sz[1], (170, 244, 234), (70, 184, 176)); tex.putalpha(SL.ImageChops.multiply(inner, fil))
+    im = Image.alpha_composite(im, tex)
+    if 0 < hp < 1:                                         # the white drain line
+        ln = Image.new('L', sz, 0); ImageDraw.Draw(ln).rectangle([0, lvl - S(1), sz[0], lvl + S(1)], fill=255)
+        im = SL.over(im, (255, 255, 255), SL.ImageChops.multiply(inner, ln))
+    d = ImageDraw.Draw(im)
+    if kind == 'bike':                                     # FAST: the >> chevron badge
+        bx, by = c + R_ * 0.95, c - R_ * 0.55
+        d.rounded_rectangle([bx - R_ * 0.55, by - R_ * 0.42, bx + R_ * 0.75, by + R_ * 0.42], radius=R_ * 0.2, fill=INK + (255,),
+                            outline=SOL_RIM + (255,), width=S(1.2))
+        for k in (0, 1):
+            x0 = bx - R_ * 0.3 + k * R_ * 0.42
+            d.line([(x0, by - R_ * 0.24), (x0 + R_ * 0.22, by), (x0, by + R_ * 0.24)], fill=(255, 255, 255, 255), width=S(1.6))
+    if kind == 'drone':                                    # FLYING: four rotor circles, the 2x2 circle glyph
+        for ax, ay in ((0, -1), (1, 0), (0, 1), (-1, 0)):
+            x, y = c + ax * R_ * 0.95, c + ay * R_ * 0.95
+            rr = R_ * 0.36
+            d.ellipse([x - rr, y - rr, x + rr, y + rr], outline=INK + (255,), width=S(2.6))
+            d.ellipse([x - rr, y - rr, x + rr, y + rr], outline=SOL_RIM + (255,), width=S(1.2))
+        for ax in (-1, 1):
+            for ay in (-1, 1):
+                x, y = c + ax * R_ * 0.2, c + ay * R_ * 0.2
+                d.ellipse([x - R_ * 0.12, y - R_ * 0.12, x + R_ * 0.12, y + R_ * 0.12], fill=INK + (255,))
+    if kind == 'wrecker':                                  # SPECIAL: its verb glyph (a wrecking hammer)
+        d.rectangle([c - R_ * 0.45, c - R_ * 0.42, c + R_ * 0.45, c - R_ * 0.1], fill=INK + (255,))
+        d.rectangle([c - R_ * 0.09, c - R_ * 0.1, c + R_ * 0.09, c + R_ * 0.55], fill=INK + (255,))
+    if kind == 'heavy':                                    # HEAVY: armour slats
+        for k in (-1, 0, 1):
+            y = c + k * R_ * 0.42
+            d.line([(c - R_ * 0.7, y), (c + R_ * 0.7, y)], fill=INK + (120,), width=S(1.2))
+    if ring:
+        RR = R_ * 1.85
+        for j in range(18):
+            a0 = j * 20
+            d.arc([c - RR, c - RR, c + RR, c + RR], a0, a0 + 11, fill=INK + (230,), width=S(4.2))
+        for j in range(18):
+            a0 = j * 20
+            d.arc([c - RR, c - RR, c + RR, c + RR], a0 + 0.5, a0 + 10.5, fill=TEAL_HI + (255,), width=S(2.6))
+        for n, code in enumerate(pips):                    # status pips, clockwise from top right
+            a = math.radians(-58 + n * 34)
+            px, py = c + RR * math.cos(a), c + RR * math.sin(a)
+            pr = S(10)
+            colp = PIP[code][0]
+            d.ellipse([px - pr - S(1.8), py - pr - S(1.8), px + pr + S(1.8), py + pr + S(1.8)], fill=INK + (255,))
+            d.ellipse([px - pr, py - pr, px + pr, py + pr], fill=colp + (255,))
+            d.text((px, py + S(0.5)), code, font=TR.font(ANTON, 15), fill=INK + (255,), anchor='mm')
+        if count:
+            s_ = '\u00d7%d' % count
+            f = TR.font(ANTON, 19)
+            tl = d.textlength(s_, font=f)
+            bx, by = c - RR * 0.72, c - RR * 0.72
+            d.rounded_rectangle([bx - tl / 2 - S(6), by - S(12), bx + tl / 2 + S(6), by + S(12)], radius=S(5), fill=TEAL + (255,),
+                                outline=INK + (255,), width=S(2))
+            d.text((bx, by + S(0.5)), s_, font=f, fill=INK + (255,), anchor='mm')
+    _ICON[key] = im
+    return im
+
+
+def unit(img, kind, x, y, hp=1.0, count=None, pips=(), alpha=1.0, r=20, lift=28):
+    """a threat on the street: the ground disc under it (drains the same way), the icon above it"""
+    L = Layer(); d = L.d
+    rx, ry = 24, 15
+    a = int(255 * alpha)
+    d.ellipse([S(x - rx - 2), S(y - ry - 2), S(x + rx + 2), S(y + ry + 2)], fill=INK + (int(a * 0.8),))
+    d.pieslice([S(x - rx), S(y - ry), S(x + rx), S(y + ry)], 90 - 180 * hp, 90 + 180 * hp, fill=SOL_FILL + (int(a * 0.75),))
+    d.ellipse([S(x - rx), S(y - ry), S(x + rx), S(y + ry)], outline=SOL_RIM + (int(a * 0.8),), width=S(1.3))
+    d.line([(S(x), S(y)), (S(x), S(y - lift + 6))], fill=SOL_RIM + (int(a * 0.6),), width=S(1.2))
+    comp(img, L)
+    im = icon_img(kind, hp, r, True, pips, count)
+    if alpha < 1:
+        im = im.copy(); im.putalpha(im.split()[3].point(lambda v: int(v * alpha)))
+    img.alpha_composite(im, (int(S(x) - im.width / 2), int(S(y - lift) - im.height / 2)))
+
+
+def unit_bits(img, kind, x, y, seed=3, r=20, spread=60, lift=28):
+    """a kill: the icon cracks and breaks into 0/1 bits in its own colours (teal fill, white rim), a few white-hot"""
+    im = icon_img(kind, 0.15, r, False)
+    w, h = im.size
+    rng = np.random.default_rng(seed)
+    y = y - lift
+    for qx, qy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+        q = im.crop((qx * w // 2, qy * h // 2, (qx + 1) * w // 2, (qy + 1) * h // 2)).rotate(rng.uniform(-35, 35), expand=True, resample=Image.BICUBIC)
+        q.putalpha(q.split()[3].point(lambda v: int(v * 0.7)))
+        dx, dy = (qx - 0.5) * S(16), (qy - 0.5) * S(16)
+        img.alpha_composite(q, (int(S(x) + dx - q.width / 2), int(S(y) + dy - q.height / 2)))
+    L = Layer(); d = L.d
+    f = TR.font(MONO, 18)
+    for k in range(30):
+        a = rng.uniform(0, 2 * math.pi); rr = rng.uniform(12, spread)
+        bx, by = x + rr * math.cos(a), y + rr * math.sin(a) * 0.8
+        col = (255, 250, 244) if rr < 22 else (SOL_FILL if k % 3 else SOL_RIM)
+        al = int(255 * (1.0 - 0.6 * (rr - 12) / max(1, spread - 12)))
+        d.text((S(bx), S(by)), '1' if rng.random() < 0.5 else '0', font=f, fill=col + (al,), anchor='mm', stroke_width=S(1), stroke_fill=col + (al,))
+    comp(img, L)
+
+
+# =============================================================================================== operatives on the city: R3 class beacons
+def beacon(img, oid, c, r, alpha=1.0, height=15.0):
+    """2D stand-in for the R3 class beacon (bible 4.8): a cone opening up from the pad on the cell to a cap ring, the class
+    emblem as a scanlined holo disc in the role colour (no light behind it)"""
+    top, bot = K.OPS[oid]['col']
+    gx, gy = G.cc(c, r)
+    cx, cy = G.cc(c, r, lift=height)
+    k = (abs(G.sp(1, 0)[0] - G.sp(0, 0)[0]) / 6.0) * math.sqrt(2)      # screen px per BU, horizontal, for a world circle
+    ky = (abs(G.sp(1, 0)[1] - G.sp(0, 0)[1]) / 6.0) * math.sqrt(2)
+    pr_x, pr_y = 2.3 * k, 2.3 * ky
+    cr_x, cr_y = 4.9 * k, 4.9 * ky
+    a = alpha
+    L = Layer(); d = L.d
+    # the pad on the ground
+    d.ellipse([S(gx - pr_x - 3), S(gy - pr_y - 2), S(gx + pr_x + 3), S(gy + pr_y + 2)], fill=INK + (int(200 * a),))
+    d.ellipse([S(gx - pr_x), S(gy - pr_y), S(gx + pr_x), S(gy + pr_y)], fill=bot + (int(150 * a),), outline=top + (int(255 * a),), width=S(2))
+    comp(img, L)
+    # the cone: a vertical gradient of the role colour, brighter towards the cap
+    L = Layer()
+    m = Image.new('L', (W * SS, H * SS), 0)
+    ImageDraw.Draw(m).polygon([(S(gx - pr_x), S(gy)), (S(cx - cr_x), S(cy)), (S(cx + cr_x), S(cy)), (S(gx + pr_x), S(gy))], fill=255)
+    ImageDraw.Draw(m).ellipse([S(cx - cr_x), S(cy - cr_y), S(cx + cr_x), S(cy + cr_y)], fill=255)
+    y0, y1 = S(cy - cr_y), S(gy)
+    gr = np.zeros((H * SS,), np.float32)
+    yy = np.arange(H * SS, dtype=np.float32)
+    gr = np.clip((y1 - yy) / max(1, (y1 - y0)), 0, 1) * 0.42 + 0.10
+    bx0, bx1 = S(cx - cr_x - 4), S(cx + cr_x + 4)
+    ma = np.asarray(m, np.float32)[:, bx0:bx1] / 255.0 * gr[:, None] * a
+    lay = np.zeros((H * SS, bx1 - bx0, 4), np.uint8)
+    lay[..., :3] = top
+    lay[..., 3] = (ma * 255).astype(np.uint8)
+    L.im.paste(Image.fromarray(lay, 'RGBA'), (bx0, 0))
+    d = L.d
+    for s in (-1, 1):                                          # the cone edges
+        d.line([(S(gx + s * pr_x), S(gy)), (S(cx + s * cr_x), S(cy))], fill=top + (int(170 * a),), width=S(1.4))
+    comp(img, L)
+    # the cap ring (and a soft glow of the ring itself)
+    L = Layer(); d = L.d
+    d.ellipse([S(cx - cr_x), S(cy - cr_y), S(cx + cr_x), S(cy + cr_y)], outline=top + (int(255 * a),), width=S(4))
+    gl = L.im.filter(ImageFilter.GaussianBlur(S(4)))
+    img.alpha_composite(gl)
+    d.ellipse([S(cx - cr_x), S(cy - cr_y), S(cx + cr_x), S(cy + cr_y)], outline=(255, 255, 255, int(220 * a)), width=S(1.3))
+    comp(img, L)
+    # the emblem: a scanlined holo disc with the class glyph, floating inside the cone under the cap
+    ex, ey = cx, cy + 30
+    er = 21
+    em = Image.new('RGBA', (S(er * 2 + 4), S(er * 2 + 4)), (0, 0, 0, 0))
+    ed = ImageDraw.Draw(em)
+    o = S(er + 2)
+    ed.ellipse([o - S(er), o - S(er), o + S(er), o + S(er)], fill=bot + (int(150 * a),), outline=top + (int(255 * a),), width=S(2))
+    gm = IR.glyph_mask(K.OPS[oid]['g'], S(er * 1.25))
+    em.paste(Image.new('RGBA', gm.size, (255, 255, 255, int(235 * a))), (o - gm.width // 2, o - gm.height // 2), gm)
+    sl = np.asarray(em).copy()
+    sl[::S(2.5) if S(2.5) > 1 else 2, :, 3] = (sl[::S(2.5) if S(2.5) > 1 else 2, :, 3] * 0.35).astype(np.uint8)
+    em = Image.fromarray(sl, 'RGBA')
+    img.alpha_composite(em, (int(S(ex) - em.width / 2), int(S(ey) - em.height / 2)))
+    return (cx, cy + 30)
+
+
+# =============================================================================================== the raid layout (STATIC ALLEY)
+def route_cells(spec):
+    """a route from a list of (c, r) corner cells: straight runs between them"""
+    out = []
+    for (a, b), (c, d) in zip(spec, spec[1:]):
+        n = max(abs(c - a), abs(d - b))
+        for k in range(n + (1 if (c, d) == spec[-1] else 0)):
+            out.append((a + (c - a) * k // max(1, n), b + (d - b) * k // max(1, n)))
+    return out
+
+
+SAFE = (9, 9)
+RA = route_cells([(0, 8), (8, 8), (8, 9), (9, 9)])[:-1]
+RB = route_cells([(2, 0), (2, 2), (9, 2), (9, 9)])[:-1]
+ENT_A, ENT_B = (-2, 8), (2, -2)
+BARR = (5, 8)
+PLACED = {'KAI': (4, 7), 'VEX': (5, 4), 'MOTH': (7, 7)}
+WHERE = {k: G.name(*v) for k, v in PLACED.items()}
+HOVER = (8, 5)
+BEST = [((8, 5), '+3'), ((8, 6), '+2'), ((8, 3), '+1')]
+N_BARR, N_HOVER = G.name(*BARR), G.name(*HOVER)
+
+
+def route_pts(cells, entry, end=None, lead=1.2):
+    p0 = G.cc(*entry)
+    pts = [p0] + [G.cc(*c) for c in cells]
+    if end:
+        pts.append(G.cc(*end))
+    return pts
+
+
+def edge_pt(entry, first):
+    """the point on the district edge where the route enters (the first route cell's outer side)"""
+    dx = (first[0] > entry[0]) - (first[0] < entry[0])
+    dy = (first[1] > entry[1]) - (first[1] < entry[1])
+    return G.sp(first[0] + 0.5 - 0.5 * dx, first[1] + 0.5 - 0.5 * dy)
+
+
+def route_line(cells, entry, end, k=0.32):
+    pts = [G.cc(*entry)] + [G.cc(*c) for c in cells]
+    a, b = pts[-1], G.cc(*end)
+    pts.append((a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k))
+    return pts
+
+
+ROUNDS = R.ROUNDS
+
+
+def map_objects(img, barricade=True, safe=False, placed=PLACED, hp_scale=0.8):
+    """runner objects on the glass over their cells: the Safehouse, the barricade; the operatives are beacons on the city"""
+    tops = {}
+    for oid, (c, r) in sorted(placed.items(), key=lambda kv: G.cc(*kv[1])[1]):        # on the city, under the glass
+        tops[oid] = beacon(img, oid, c, r)
+    if barricade:
+        bx, by = G.cc(*BARR)
+        # laid across the street: the A route runs along +i (screen down-right), the barricade across it
+        stick(img, K.dev_sticker('BARRICADE'), bx + 2, by - 14, 33, scale=hp_scale)
+    if safe:
+        safehouse(img)
+    return tops
+
+
+def safehouse(img):
+    """the Safehouse sticker, slapped over the end of both routes (drawn after the route pencil, so the routes run into it)"""
+    x, y = G.cc(*SAFE)
+    stick(img, K.place_sticker('SAFE', 'HOUSE', (255, 110, 196), (222, 24, 136)), x + 2, y - 30, -3, scale=1.0)
+
+
+def routes(pr, a=True, b=True):
+    if a:
+        K.route(pr, route_line(RA, ENT_A, SAFE), off=14)
+        K.entry_mark(pr, *edge_pt(ENT_A, RA[0]), 'A')
+    if b:
+        K.route(pr, route_line(RB, ENT_B, SAFE), off=14)
+        K.entry_mark(pr, *edge_pt(ENT_B, RB[0]), 'B')
+
+
+def stop_bar(p, cell_from, cell_to, t=0.55, half=26):
+    """the yellow stop bar across the route where it holds (perpendicular to the street on screen)"""
+    a, b = G.cc(*cell_from), G.cc(*cell_to)
+    mx, my = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    n = math.hypot(dx, dy); dx, dy = dx / n, dy / n
+    # perpendicular on the ground: the other lattice axis
+    ox, oy = G.sp(1, 1)[0] - G.sp(1, 0)[0], G.sp(1, 1)[1] - G.sp(1, 0)[1]
+    on = math.hypot(ox, oy); ox, oy = ox / on, oy / on
+    p0, p1 = (mx - ox * half, my - oy * half), (mx + ox * half, my + oy * half)
+    p.stroke(p.wobble([p0, p1], 0.8), 8, taper=False)
+    for e in (p0, p1):
+        p.stroke([(e[0] - dx * 9, e[1] - dy * 9), (e[0] + dx * 9, e[1] + dy * 9)], 5, taper=False)
+
+
+def plan_pencil(py, pr, leak=True):
+    stop_bar(py, (BARR[0] - 1, BARR[1]), BARR, t=0.12, half=48)
+    bx, by = G.cc(*BARR)
+    py.text('holds ' + N_BARR, bx - 150, by + 64, 34, angle=-6)
+    K.pen_arrow_num(py, 6, 3, bx - 210, by + 18, 32)
+    if leak:
+        x, y = G.cc(9, 6)
+        pr.text('2 leak', x + 130, y - 6, 34, angle=-6)
+        sx, sy = G.cc(*SAFE)
+        pr.arrow([(x + 124, y + 22), (x + 120, y + 80), (sx + 110, sy - 10), (sx + 72, sy - 26)], width=7, head=18)
+        K.pen_arrow_num(pr, 8, 6, sx - 36, sy + 66, 34)
+
+
+def left_col(img, F, where, core=8, lose=0, credits=7, cost=0, rnd=(1, 4), title='RAID: STATIC ALLEY', kills=None, held=None,
+             weapons=None, counts=None, undo=True, cmax=8):
+    K.core_tape(img, F, title, core, cmax, lose)
+    K.rows(img, F, rnd[0], rnd[1], credits, cost)
+    crew_b(img, F, where, held=held, kills=kills, weapons=weapons)
+    n_on = sum(1 for v in where.values() if v and not v.startswith('away'))
+    K.left_foot(img, F, counts or [('ON MAP', n_on), ('BENCH', 4 - len([v for v in where.values() if v])), ('DEVICES', 1)], undo=undo)
+
+
+def crew_b(img, F, where, held=None, kills=None, weapons=None):
+    """CREW option B (designer): the full roster stays in full colour; a placed operative gets its cell + a tick in pencil
+    under it; 'away:X' = at another site (grey vinyl, red pencil reason); held = peeled (a faint liner is left in its slot)"""
+    L = Layer(); text(L.d, (26, 182), 'CREW', F['m20'], TEXT_MID + (255,), anchor='lm'); comp(img, L)
+    py, pr = Wax(PEN_Y, 91), Wax(PEN_R, 92)
+    for oid, (x, y, ang) in K.CREW_POS.items():
+        st = where.get(oid)
+        o = K.OPS[oid]
+        away = bool(st and st.startswith('away'))
+        if oid == held:
+            K.liner(img, K.op_sticker(oid), x, y, ang)
+            continue
+        stick(img, K.op_sticker(oid, grey=away), x, y, ang)
+        wst = (weapons or {}).get(oid, o['stars'])
+        stick(img, K.wpn_sticker(o['wpn'], wst, grey=away), x + K.WPN_OFF[0], y + K.WPN_OFF[1], K.WPN_OFF[2], scale=0.82)
+        if away:
+            pr.text('at ' + st.split(':')[1], x - 4, y + 104, 30, angle=-6)
+        elif st:
+            py.text('on ' + st, x - 6, y + 104, 32, angle=-5)
+            py.tick(x + 58, y + 102, 13, 6)
+        if kills and oid in kills:
+            kx, ky = x - 40, y + 104
+            py.x(kx, ky, 11, 6)
+            py.text(str(kills[oid]), kx + 36, ky + 2, 36, angle=-6)
+    py.ink_ss(img); pr.ink_ss(img)
+
+
+# ---------------------------------------------------------------- right: INCOMING = the intercepted work order (memo under glass)
+MEMO_BOX = (1404, 18, 1898, 480)
+
+
+def mini_icon(im, kind, x, y, r=8):
+    ic = icon_img(kind, 1.0, r, ring=False)
+    im.alpha_composite(ic, (int(x - ic.width / 2), int(y - ic.height / 2)))
+
+
+def work_order(img, F, site, heat, rounds, now=0, ref='SOL-WO-2611-07', target='Cell safehouse'):
+    x0, y0, x1, y1 = MEMO_BOX
+    L = Layer(); d = L.d
+    glass(d, (x0, y0, x1, y1), alpha=215)
+    text(d, (x0 + 18, y0 + 24), 'INCOMING', F['a30'], TEXT_HI + (255,), anchor='lm')
+    text(d, (x0 + 136, y0 + 26), 'intercepted', F['m18'], TEXT_MID + (255,), anchor='lm')
+    text(d, (x1 - 18, y0 + 25), 'HEAT %d' % heat, F['a26'], TEXT_MID + (255,), anchor='rm')
+    comp(img, L)
+    # the memo (paper, at SS), slightly askew under the glass
+    pw, ph = 452, 396
+    pim = Image.new('RGBA', (S(pw), S(ph)), (0, 0, 0, 0))
+    d = ImageDraw.Draw(pim)
+    d.rectangle([0, 0, S(pw), S(ph)], fill=(236, 230, 214, 255))
+    rng = np.random.default_rng(11)
+    for _ in range(700):
+        d.point((rng.uniform(0, S(pw)), rng.uniform(0, S(ph))), fill=(212, 204, 186, 255))
+    T = lambda xy, s, f, col, anchor='lm': d.text((S(xy[0]), S(xy[1])), s, font=f, fill=col, anchor=anchor)
+    T((20, 30), 'SOLACE', TR.font(ANTON, 32), TEAL_D + (255,))
+    T((132, 33), 'Civic Assurance \u00b7 Field Operations', TR.font(MONO, 15), (40, 96, 100, 255))
+    d.rectangle([S(20), S(52), S(pw - 20), S(54.5)], fill=TEAL_D + (255,))
+    T((20, 70), 'WORK ORDER', TR.font(MONO, 15), (96, 90, 80, 255))
+    T((pw - 20, 70), ref, TR.font(MONO, 15), (96, 90, 80, 255), 'rm')
+    T((20, 98), 'RAID ORDER \u00b7 %s' % site, TR.font(ANTON, 26), INK + (255,))
+    T((20, 126), 'TARGET  %s' % target, TR.font(MONO, 16), (60, 56, 50, 255))
+    tw_ = d.textlength('TARGET  %s' % target, font=TR.font(MONO, 16)) / SS
+    d.rectangle([S(28 + tw_), S(118), S(28 + tw_ + 96), S(134)], fill=(18, 16, 20, 255))
+    y = 154
+    fh, fg = TR.font(ANTON, 21), TR.font(MONO, 17)
+    rowh = 50 if len(rounds) > 3 else 60
+    for k, (head, groups) in enumerate(rounds):
+        col = INK if k == now else (70, 66, 60)
+        T((20, y), head, fh, col + (255,))
+        gx = 30
+        for path, kind, label, n in groups:
+            gy = y + 24
+            if path:
+                T((gx, gy), path, TR.font(ANTON, 19), (170, 24, 32, 255))
+                gx += 16
+            mini_icon(pim, kind, S(gx + 12), S(gy), r=7)
+            s_ = '%s \u00d7%d' % (label, n)
+            T((gx + 26, gy), s_, fg, (40, 44, 52, 255))
+            gx += 26 + d.textlength(s_, font=fg) / SS + 18
+        d.line([(S(20), S(y + 42)), (S(pw - 20), S(y + 42))], fill=(214, 206, 190, 255), width=S(1))
+        y += rowh
+    T((20, ph - 22), 'AUTHORISED', TR.font(MONO, 14), (110, 104, 96, 255))
+    d.rectangle([S(116), S(ph - 30), S(250), S(ph - 15)], fill=(18, 16, 20, 255))
+    T((pw - 20, ph - 22), 'INTERNAL \u00b7 DO NOT FORWARD', TR.font(MONO, 14), (110, 104, 96, 255), 'rm')
+    # INTERCEPTED: red rubber stamp, worn
+    st = Image.new('L', (S(228), S(56)), 0); sd = ImageDraw.Draw(st)
+    sd.rectangle([S(3), S(3), S(225), S(53)], outline=255, width=S(3.5))
+    sd.text((S(114), S(30)), 'INTERCEPTED', font=TR.font(ANTON, 36), fill=255, anchor='mm')
+    noise = (np.random.default_rng(9).random((st.height, st.width)) > 0.25).astype(np.uint8) * 255
+    st = SL.ImageChops.multiply(st, Image.fromarray(noise)).rotate(7, expand=True, resample=Image.BICUBIC)
+    pim.paste(Image.new('RGBA', st.size, (196, 30, 40, 220)), (S(pw - 246), S(ph - 74)), st)
+    pim = pim.rotate(-1.1, expand=True, resample=Image.BICUBIC)
+    cx, cy = (x0 + x1) / 2, y0 + 60 + ph / 2 + 2
+    sh = Image.new('RGBA', pim.size, (2, 2, 4, 0))
+    sh.putalpha(pim.split()[3].filter(ImageFilter.GaussianBlur(S(5))).point(lambda v: int(v * 0.7)))
+    img.alpha_composite(sh, (int(S(cx) - pim.width / 2 + S(4)), int(S(cy) - pim.height / 2 + S(6))))
+    img.alpha_composite(pim, (int(S(cx) - pim.width / 2), int(S(cy) - pim.height / 2)))
+    # the paper clip, then the glass over it: a cool tint, one sheen band, the cyan frame corners
+    L = Layer(); d = L.d
+    clx, cly = x0 + 52, y0 + 56
+    for (a_, b_) in (((clx - 7, cly - 14), (clx + 7, cly + 34)), ((clx - 2, cly - 8), (clx + 3, cly + 24))):
+        d.rounded_rectangle([S(a_[0]), S(a_[1]), S(b_[0]), S(b_[1])], radius=S(7), outline=(150, 156, 166, 255), width=S(2.2))
+    d.rectangle([S(x0 + 2), S(y0 + 46), S(x1 - 2), S(y1 - 2)], fill=(40, 120, 150, 26))
+    comp(img, L)
+    a = np.zeros((H * SS, W * SS), np.float32)
+    yy, xx = np.mgrid[S(y0):S(y1), S(x0):S(x1)].astype(np.float32) / SS
+    u = (xx - x0) + 0.7 * (yy - y0)
+    a[S(y0):S(y1), S(x0):S(x1)] = np.exp(-((u - 250) / 70.0) ** 2) * 0.10 + np.exp(-((u - 330) / 16.0) ** 2) * 0.06
+    lay = Image.new('RGBA', (W * SS, H * SS), (210, 240, 255, 0))
+    lay.putalpha(Image.fromarray((a * 255).astype(np.uint8)))
+    img.alpha_composite(lay)
+    L = Layer(); d = L.d
+    c_ = 18
+    for (x, y_, dx, dy) in ((x0, y0, 1, 1), (x1, y0, -1, 1), (x0, y1, 1, -1), (x1, y1, -1, -1)):
+        d.line([(S(x), S(y_ + dy * c_)), (S(x), S(y_)), (S(x + dx * c_), S(y_))], fill=CYAN + (255,), width=S(4))
+    comp(img, L)
+    # the Cell's pencil marks the round that is now (on the glass)
+    py = Wax(PEN_Y, 71)
+    ry = cy - ph / 2 + 154 + now * (50 if len(rounds) > 3 else 60)
+    py.stroke(py.wobble([(x0 + 12, ry - 12), (x0 + 8, ry + 2), (x0 + 12, ry + 38)], 0.6), 6, taper=False)
+    py.ink_ss(img)
+
+
+def right_col(img, F, site='STATIC ALLEY', rounds=ROUNDS, state='ready', peeled=None, system='START ROUND 1', locked=False,
+              target='Cell safehouse'):
+    work_order(img, F, site, 25, rounds, target=target)
+    K.shop_sheet(img, F, peeled=peeled)
+    if locked:
+        L = Layer()
+        L.d.rectangle([S(1404), S(492), S(1898), S(834)], fill=(6, 8, 12, 150))
+        text(L.d, (1651, 752), 'shop opens after the round', F['m20'], TEXT_HI + (255,))
+        comp(img, L)
+    K.send_it(img, F, system=system, state=state)
+
+
+def cursor(img, x, y, scale=1.0):
+    """the OS pointer (tip at x, y)"""
+    pts = [(0, 0), (0, 25), (6, 19), (10.5, 29), (14.5, 27), (10, 17.5), (18, 17.5)]
+    L = Layer(); d = L.d
+    P = [(S(x + px * scale), S(y + py_ * scale)) for px, py_ in pts]
+    d.polygon([(a + S(2), b + S(3)) for a, b in P], fill=(0, 0, 0, 110))
+    d.polygon(P, fill=(255, 255, 255, 255), outline=INK + (255,), width=S(1.6))
+    comp(img, L)
+
+
+# ---------------------------------------------------------------- 1. plan
+def units_at_rest(img, alpha=1.0):
+    unit(img, 'trooper', *G.cc(*ENT_A), 1.0, count=5, alpha=alpha)
+    unit(img, 'bike', *G.cc(*ENT_B), 1.0, count=3, alpha=alpha)
+
+
+def plate_plan():
+    F = F_all(); img = blank()
+    draw_grid(img, F)
+    map_objects(img)
+    py, pr = Wax(PEN_Y, 1), Wax(PEN_R, 2)
+    routes(pr)
+    plan_pencil(py, pr)
+    py.ink_ss(img); pr.ink_ss(img)
+    safehouse(img)
+    units_at_rest(img)
+    left_col(img, F, WHERE, lose=2)
+    right_col(img, F)
+    K.hud_line(img, F, 'FORECAST', [('A holds at ' + N_BARR, S_GAIN), DOT, ('B 2 leak', S_HARM), DOT, ('Core 8 \u2192 6', S_HARM), DOT,
+                                    ('6/8 killed', S_HI)])
+    return img
+
+
+# ---------------------------------------------------------------- 2. place: RUNE held, Takeover's drag (spring lag)
+def pen_hatch_quad(p, q, step=14, w=5):
+    pts = q + [q[0], q[1]]
+    p.stroke(p.wobble(q + [q[0]], 1.0), w, taper=False)
+    cx = sum(x for x, _ in q) / 4; cy = sum(y for _, y in q) / 4
+    for a, b in zip(q, q[1:] + q[:1]):
+        L_ = math.dist(a, b)
+        ux, uy = (b[0] - a[0]) / L_, (b[1] - a[1]) / L_
+        for t in np.arange(8, L_ - 6, step):
+            x, y = a[0] + ux * t, a[1] + uy * t
+            ix, iy = cx - x, cy - y; n = math.hypot(ix, iy); ix, iy = ix / n, iy / n
+            p.stroke([(x + ix * 2, y + iy * 2), (x + ix * 10 + ux * 5, y + iy * 10 + uy * 5)], 2.6, taper=False)
+
+
+def plate_place():
+    F = F_all(); img = blank()
+    occ = set(PLACED.values()) | {BARR, SAFE}
+    legal = legal_cells(RA + RB, occ)
+    draw_grid(img, F, legal=legal)
+    map_objects(img)
+    py, pr = Wax(PEN_Y, 3), Wax(PEN_R, 4)
+    routes(pr)
+    plan_pencil(py, pr, leak=False)
+    # the preview: reach (Chebyshev 1 round l7) hatched on the ground cells, the hovered cell circled, kills-if-placed
+    hc, hr = HOVER
+    pen_hatch_quad(py, [G.sp(hc - 1, hr - 1), G.sp(hc + 2, hr - 1), G.sp(hc + 2, hr + 2), G.sp(hc - 1, hr + 2)])
+    hx, hy = G.cc(*HOVER)
+    py.circle(hx, hy, 50, 33, width=7, start=-2.2, over=0.5, tilt=0)
+    for (c, r), s_ in BEST:
+        x, y = G.cc(c, r)
+        if (c, r) == HOVER:
+            py.text(s_, x - 40, y - 100, 44, angle=-6)
+        else:
+            py.text(s_, x, y + 2, 32, angle=-6)
+    # B no longer leaks: the red "2 leak" struck through in yellow, 0 beside it; "safe" by the Safehouse
+    lx, ly = 1290, 458
+    pr.text('2 leak', lx, ly, 34, angle=-6)
+    py.text('0', lx + 80, ly - 6, 40, angle=-6)
+    sx, sy = G.cc(*SAFE)
+    py.text('safe', sx - 40, sy + 66, 36, angle=-6)
+    # the held sticker trails the pointer (spring lag): it is still catching up, below right of the pointer, tilted into the
+    # motion; the yellow plan arrow runs from it to the hovered cell
+    cxp, cyp = hx + 10, hy + 8
+    hold = (1268, 806)
+    py.arrow([(hold[0] - 44, hold[1] - 92), (hold[0] - 90, hold[1] - 150), (hx + 76, hy + 66), (hx + 40, hy + 34)], width=7, head=20)
+    py.ink_ss(img); pr.ink_ss(img)
+    ps = Wax(PEN_Y, 33)
+    ps.stroke(ps.wobble([(lx - 52, ly + 8), (lx + 52, ly - 8)], 0.6), 7, taper=False)
+    ps.ink_ss(img)
+    safehouse(img)
+    units_at_rest(img)
+    left_col(img, F, WHERE, held='RUNE')
+    L = Layer(); d = L.d                                 # motion streaks on the trailing side
+    for k, (ox, oy) in enumerate(((84, 92), (104, 64), (60, 112))):
+        d.line([(S(hold[0] + ox), S(hold[1] + oy)), (S(hold[0] + ox + 46), S(hold[1] + oy + 58))], fill=(235, 230, 255, 80 - k * 18), width=S(3))
+    comp(img, L)
+    stick(img, K.op_sticker('RUNE', curl=0.30), hold[0], hold[1], 9, scale=0.86, lift=1.0)
+    stick(img, K.wpn_sticker('SHOTGUN', 1), hold[0] + 72 * 0.86 - 10, hold[1] - 66 * 0.86 - 14, 16, scale=0.72, lift=1.0)
+    cursor(img, cxp, cyp)
+    right_col(img, F)
+    K.hud_line(img, F, 'IF PLACED ' + N_HOVER, [('B 2 leak', S_HARM), ('\u2192', S_MID), ('0 leak', S_GAIN), DOT, ('Core safe', S_GAIN), DOT,
+                                        ('8/8 killed', S_HI)])
+    return img
+
+
+# ---------------------------------------------------------------- 3. shop
+def plate_shop():
+    F = F_all(); img = blank()
+    draw_grid(img, F)
+    map_objects(img)
+    py, pr = Wax(PEN_Y, 5), Wax(PEN_R, 6)
+    routes(pr)
+    plan_pencil(py, pr)
+    py.ink_ss(img); pr.ink_ss(img)
+    safehouse(img)
+    units_at_rest(img)
+    left_col(img, F, WHERE, lose=2, cost=3)
+    sx, sy, sa = K.CREW_POS['RUNE']
+    wx, wy = sx + K.WPN_OFF[0], sy + K.WPN_OFF[1]
+    stick(img, K.wpn_sticker('SHOTGUN', 1, cost=3, curl=0.16), wx - 8, wy - 54, 3, scale=0.84, lift=0.7)
+    py = Wax(PEN_Y, 7)
+    py.text('MERGE', 214, 744, 32, angle=-5)
+    K.pen_star(py, 296, 742); py.text('+', 322, 744, 30); K.pen_star(py, 348, 742)
+    py.arrow([(368, 744), (386, 742), (404, 743)], width=5, head=10)
+    K.pen_star(py, 428, 742); K.pen_star(py, 454, 740)
+    py.arrow([(534, 428), (546, 452), (534, 474)], width=5, head=12)
+    py.ink_ss(img)
+    right_col(img, F, peeled='SHOTGUN')
+    K.hud_line(img, F, 'BUY', [('SHOTGUN on RUNE', S_PLAN), ('merges, 1 \u2192 2 stars', S_GAIN), DOT, ('3 credits: 7 \u2192 4', S_HI)])
+    return img
+
+
+# ---------------------------------------------------------------- 4. playback (tick 3 of 8)
+def tracer(img, p0, p1, col):
+    K.tracer(img, p0, p1, col)
+
+
+def plate_playback():
+    F = F_all(); img = blank()
+    draw_grid(img, F)
+    placed = dict(PLACED, RUNE=HOVER)
+    for oid in ('KAI', 'VEX'):
+        k = K.OPS[oid]['reach']
+        reach_outline(img, cheb(*placed[oid], k), K.OPS[oid]['col'][0], alpha=120)
+    tops = map_objects(img, placed=placed)
+    # the units still to enter (faint), the held trooper at the wall, the slowed bike
+    unit(img, 'trooper', *G.cc(*ENT_A), 1.0, count=3, alpha=0.38)
+    unit(img, 'bike', *G.cc(*ENT_B), 1.0, count=1, alpha=0.38)
+    hx, hy = G.cc(BARR[0] - 1, BARR[1])
+    bx, by = G.cc(7, 2)
+    L = Layer()                                         # glide: a short smear behind the bike (it came along from g3)
+    ux, uy = G.cc(6, 2)[0] - bx, G.cc(6, 2)[1] - by
+    for k in range(5):
+        L.d.line([(S(bx + ux * (0.35 + k * 0.12)), S(by - 28 + uy * (0.35 + k * 0.12))), (S(bx + ux * (0.45 + k * 0.12)), S(by - 28 + uy * (0.45 + k * 0.12)))],
+                 fill=(170, 230, 230, 140 - k * 24), width=S(3))
+    comp(img, L)
+    pr0 = Wax(PEN_R, 10)                                  # the routes first: the live icons ride on top of the pencil
+    routes(pr0)
+    pr0.ink_ss(img)
+    unit(img, 'trooper', hx, hy, 0.5, pips=('H',), r=22)
+    unit(img, 'bike', bx, by, 0.5, pips=('S',), r=22)
+    # FX: tracers from the beacons, the kill bursting into bits, damage pops
+    kx, ky = tops['KAI']; vx, vy = tops['VEX']
+    tracer(img, (kx, ky), (hx - 8, hy - 28), K.OPS['KAI']['col'][1])
+    ex, ey = G.cc(BARR[0] - 2, BARR[1])
+    tracer(img, (kx, ky), (ex + 4, ey - 24), K.OPS['KAI']['col'][1])
+    tracer(img, (vx, vy), (bx - 12, by - 28), K.OPS['VEX']['col'][1])
+    unit_bits(img, 'trooper', ex, ey, spread=52)
+    py, pr = Wax(PEN_Y, 9), Wax(PEN_R, 12)
+    # the value of each status in pencil beside its ring pip
+    py.text('2', hx + 62, hy - 84, 34, angle=-6)
+    py.text('1', bx + 62, by - 84, 34, angle=-6)
+    brx, bry = G.cc(*BARR)
+    K.pen_arrow_num(py, 6, 4, brx - 210, bry + 18, 32)      # the barricade's hp, live
+    for (x, y) in ((kx - 58, ky - 30), (vx - 54, vy - 40)):  # kill tallies by KAI and VEX
+        py.x(x, y, 11, 6)
+    py.ink_ss(img); pr.ink_ss(img)
+    safehouse(img)
+    K.pop(img, F, hx - 78, hy - 84, '\u22124')
+    K.pop(img, F, bx - 20, by - 116, '\u22123')
+    stick(img, K.word_sticker('HELD + BOMBARD \u00d72', (255, 110, 196), (222, 24, 136)), hx - 70, hy + 96, -4)
+    left_col(img, F, dict(WHERE, RUNE=G.name(*HOVER)))
+    right_col(img, F, state='busy', locked=True)
+    K.hud_line(img, F, 'TICK 3/8', [('killed 2', S_GAIN), DOT, ('leaked 0', S_HI), DOT, ('1 held at a wall', S_HI), DOT,
+                                    ('4 still to enter', S_MID)], ticks=(3, 8))
+    return img
+
+
+# =============================================================================================== 5. the site raid (SITE B2) on the same plaza
+SITE, SCORE = (4, 5), (4, 6)
+SA = [(c, 5) for c in range(0, 4)]
+SB = [(4, r) for r in range(0, 5)]
+SC = [(c, 5) for c in range(9, 4, -1)]
+S_ENT = {'A': (-2, 5), 'B': (4, -2), 'C': (11, 5)}
+S_KAI, S_VEX = (3, 4), (7, 4)
+SROUNDS = [('ROUND 1 (now)  \u00b7  7 units', [('A', 'trooper', 'Trooper', 3), ('B', 'riot', 'Riot', 2), ('C', 'drone', 'Drone', 2)]),
+           ('ROUND 2  \u00b7  8 units', [(None, 'trooper', 'Trooper', 4), (None, 'bike', 'Bike', 2), (None, 'drone', 'Drone', 2)]),
+           ('ROUND 3  \u00b7  9 units', [(None, 'heavy', 'Heavy', 2), (None, 'riot', 'Riot', 3), (None, 'trooper', 'Trooper', 4)])]
+
+
+def plate_site():
+    F = F_all(); img = blank()
+    draw_grid(img, F)
+    tops = {}
+    for oid, cell in (('KAI', S_KAI), ('VEX', S_VEX)):
+        tops[oid] = beacon(img, oid, *cell)
+    sx, sy = G.cc(*SITE)
+    cx, cy = G.cc(*SCORE)
+    py, pr = Wax(PEN_Y, 11), Wax(PEN_R, 12)
+    for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
+        K.route(pr, route_line(cells, S_ENT[lt], SITE, k=0.3), off=14)
+        K.entry_mark(pr, *edge_pt(S_ENT[lt], cells[0]), lt)
+    pr.ink_ss(img)
+    # the core one cell behind the site (sticker nudged down-left so both read), the site sticker on its cell
+    stick(img, K.place_sticker('CORE', None, (255, 110, 196), (222, 24, 136), shape='hex', w=100, h=64), cx - 36, cy + 30, 3, scale=0.74)
+    L = Layer(); text(L.d, (cx - 128, cy + 36), '8/8', F['a40'], TEXT_HI + (255,), stroke=2, sfill=INK + (255,)); comp(img, L)
+    stick(img, K.place_sticker('B2', 'SITE', (150, 236, 130), (62, 170, 70), shape='socket', w=96, h=84), sx + 6, sy - 14, -3, scale=0.84)
+    pr = Wax(PEN_R, 13)
+    kx, ky = tops['KAI']; vx, vy = tops['VEX']
+    py.text('B2 crew', kx - 122, ky - 30, 34, angle=-6)
+    py.arrow([(1330, 760), (1270, 640), (1160, 470), (vx + 40, vy + 12)], width=7, head=18)
+    py.text('from C2', 1300, 790, 36, angle=-6)
+    # forecast: B (riot) leaks 1 into the core
+    bx_, by_ = G.cc(4, 0)
+    pr.text('1 leak', bx_ + 150, by_ - 14, 36, angle=-5)
+    K.pen_arrow_num(pr, 8, 7, cx - 120, cy + 100, 34)
+    # who defends: the margin note under the map, outside the district
+    py.text('who defends B2', 700, 700, 36, angle=-3)
+    py.text('KAI    B2', 650, 752, 32, angle=-3); py.tick(758, 750, 13, 6)
+    py.text('VEX    C2', 650, 800, 32, angle=-3); py.tick(758, 798, 13, 6)
+    py.ink_ss(img); pr.ink_ss(img)
+    unit(img, 'trooper', *G.cc(*S_ENT['A']), 1.0, count=3)
+    unit(img, 'riot', *G.cc(*S_ENT['B']), 1.0, count=2)
+    unit(img, 'drone', *G.cc(*S_ENT['C']), 1.0, count=2)
+    K.chip(img, F, 580, 880, 'Evacuate (give up B2 without a fight, KAI back to HQ)', '', w=600)
+    left_col(img, F, {'KAI': G.name(*S_KAI), 'VEX': G.name(*S_VEX), 'MOTH': 'away:A1', 'RUNE': 'away:D4'}, lose=1,
+             title='RAID: SITE B2', rnd=(1, 3), counts=[('ON MAP', 2), ('AWAY', 2), ('DEVICES', 0)])
+    right_col(img, F, site='SITE B2', rounds=SROUNDS, target='site B2, core')
+    K.hud_line(img, F, 'FORECAST', [('A 0 leak', S_GAIN), DOT, ('B 1 leak', S_HARM), DOT, ('C 0 leak', S_GAIN), DOT,
+                                    ('Core 8 \u2192 7', S_HARM), DOT, ('6/7 killed', S_HI)])
+    return img
+
+
+# =============================================================================================== 6. aftermath: the corp's report
+def plate_aftermath():
+    F = F_all(); img = blank()
+    draw_grid(img, F, labels=False)
+    map_objects(img, placed={}, safe=True)
+    L = Layer(); L.d.rectangle([S(540), S(0), S(1390), S(H)], fill=(4, 6, 10, 140)); comp(img, L)
+    R.REPORT = [('OPERATION', 'CLEAN SWEEP'), ('TARGET', 'Cell safehouse, grid %s' % G.name(*SAFE)), ('DURATION', '4 rounds'),
+                ('UNITS COMMITTED', '34'), ('UNITS LOST', '30'), ('UNITS THROUGH', '0'), ('TARGET DAMAGE', 'none'), ('OUTCOME', None),
+                ('NEXT ACTION', 'review Heat, resubmit')]
+    paper = R.report_paper(F).rotate(R.PANG, expand=True, resample=Image.BICUBIC)
+    sh = Image.new('RGBA', paper.size, (4, 3, 6, 0))
+    sh.putalpha(paper.split()[3].filter(ImageFilter.GaussianBlur(S(10))).point(lambda v: int(v * 0.6)))
+    x, y = int(S(R.PCX) - paper.width / 2), int(S(R.PCY) - paper.height / 2)
+    img.alpha_composite(sh, (x + S(10), y + S(16)))
+    img.alpha_composite(paper, (x, y))
+    P, RVX, RY0, RDY = R.P, R.RVX, R.RY0, R.RDY
+    py = Wax(PEN_Y, 13)
+    cx, cy = P(RVX + 18, RY0 + 4 * RDY)
+    py.circle(cx, cy, 44, 28, width=7, start=-2.4, over=0.5, tilt=-0.03)
+    lx, ly = P(560, RY0 + 4 * RDY - 6)
+    py.text('30/34', lx, ly, 60, angle=R.PANG - 6)
+    for k, dx in ((5, 40), (6, 104)):
+        tx, ty = P(RVX + dx, RY0 + k * RDY)
+        py.tick(tx, ty, 13, 6)
+    hx, hy = P(590, RY0 + 6 * RDY)
+    py.text('HQ untouched', hx, hy, 32, angle=R.PANG - 4)
+    py.ink_ss(img)
+    hx, hy = P(500, RY0 + 8 * RDY + 70)
+    stick(img, K.verb_sticker('HELD', (255, 238, 96), (255, 182, 14), size=110), hx, hy, R.PANG - 7, scale=1.0)
+    left_col(img, F, {}, kills={'KAI': 11, 'VEX': 9, 'MOTH': 4, 'RUNE': 6}, rnd=(4, 4), credits=12,
+             counts=[('KILLED', 30), ('LEAKED', 0)], undo=False)
+    L = Layer(); d = L.d
+    x0, y0, x1, y1 = 1404, 18, 1898, 330
+    glass(d, (x0, y0, x1, y1))
+    text(d, (x0 + 18, y0 + 28), 'RESULT', F['m20'], TEXT_MID + (255,), anchor='lm')
+    text(d, (x0 + 18, y0 + 80), 'HELD for 4 rounds', F['a48'], S_GAIN + (255,), anchor='lm')
+    text(d, (x0 + 18, y0 + 138), '30 of 34 units killed, 0 leaked', F['a28'], S_HI + (255,), anchor='lm')
+    d.line([(S(x0 + 14), S(y0 + 172)), (S(x1 - 14), S(y0 + 172))], fill=(40, 90, 110, 255), width=S(1.5))
+    text(d, (x0 + 18, y0 + 206), 'HQ untouched', F['a28'], S_GAIN + (255,), anchor='lm')
+    text(d, (x0 + 18, y0 + 250), 'Heat \u22121', F['a28'], S_GAIN + (255,), anchor='lm')
+    text(d, (x0 + 120, y0 + 251), '25 \u2192 24', F['a28'], S_HI + (255,), anchor='lm')
+    comp(img, L)
+    K.send_it(img, F, system=None, word='CONTINUE', key='Continue [SPACE]')
+    return img
+
+
+# =============================================================================================== sheet
+def sheet():
+    names = [('r3_plan', 'plan', 'round 1 at rest on the city: routes on the plaza lanes, wall holds f9, B leaks 2'),
+             ('r3_place', 'place', 'RUNE held (spring lag): reach hatched, i6 circled, +3 / +2 / +1, IF PLACED'),
+             ('r3_shop', 'shop', 'sticker sheet: SHOTGUN peeled, slapped on RUNE, merge to 2 stars'),
+             ('r3_playback', 'playback', 'tick 3/8: v4 icons, ring pips + pencil values, kill bits, pops'),
+             ('r3_site', 'site raid', 'cross of lanes on B2: core 8, B2 crew + C2 support, Evacuate chip'),
+             ('r3_aftermath', 'aftermath', "Solace after-action report, the Cell's pencil, HELD")]
+    tw_, th_ = 700, 394
+    pad, cap = 12, 58
+    cols = 3
+    sh = Image.new('RGB', (cols * tw_ + (cols + 1) * pad, 2 * (th_ + cap) + 3 * pad + 50), (14, 14, 18))
+    d = ImageDraw.Draw(sh)
+    f = ImageFont.truetype(MONO, 15); fa = ImageFont.truetype(ANTON, 22); fb = ImageFont.truetype(ANTON, 30)
+    d.text((pad, 10), 'RAID in DEFACE v3: set 2, on the 3D city (Solace, designer rulings 2026-11-15)', font=fb, fill=TEXT_HI)
+    for k, (n, t, c) in enumerate(names):
+        im = Image.open(OUT + n + '.png').resize((tw_, th_), Image.LANCZOS)
+        x = pad + (k % cols) * (tw_ + pad); y = 54 + pad + (k // cols) * (th_ + cap + pad)
+        sh.paste(im, (x, y))
+        d.text((x + 4, y + th_ + 4), '%s   %s.png' % (t, n), font=fa, fill=TEXT_HI)
+        d.text((x + 4, y + th_ + 34), c, font=f, fill=TEXT_MID)
+    sh.save(OUT + 'r3_sheet.jpg', quality=90)
+    print('ok', OUT + 'r3_sheet.jpg', flush=True)
+
+
+PLATES = dict(plan=plate_plan, place=plate_place, shop=plate_shop, playback=plate_playback, site=plate_site, aftermath=plate_aftermath)
+
+if __name__ == '__main__':
+    os.makedirs(OUT, exist_ok=True)
+    print('camera fit residual (median, p95 px):', city().fit_res, flush=True)
+    for n in (sys.argv[1:] or ['plan', 'place', 'shop', 'playback', 'site', 'aftermath', 'sheet']):
+        if n == 'sheet':
+            sheet(); continue
+        ov = PLATES[n]()
+        finish(ov, dim=0.8 if n == 'aftermath' else 1.0).save(OUT + 'r3_%s.png' % n)
+        print('ok', OUT + 'r3_%s.png' % n, flush=True)
