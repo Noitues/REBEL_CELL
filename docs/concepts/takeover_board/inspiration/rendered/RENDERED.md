@@ -229,3 +229,41 @@ sticker lifts it off the screen, places it on the corp wheel, then it dissolves 
 - The left flank is denser than the right, with open space above SEND IT.
 - Source: `D:/rc_scratch/takeover/inspiration/insp_deface3.py`. Run `python insp_deface3.py`, or name plates. It imports
   `insp_render.py`, `tk_render.py` and `sticker_lib19` without changing them; the v1 and v2 plates are untouched.
+
+## Deface v3: missing states, 2026-11-15
+| File | What it shows |
+|---|---|
+| `df3_worm.png` | WORM peeled and held. Three yellow pencil loops round CACHE, TURRET and NODE, numbered 1-3 in pick order. One pencil line runs from the sticker over the rim into loop 1, then on to 2 and 3. "+V" (+1 virus) sits on each target. The HUD shows "WORM 1 virus on CACHE, TURRET, NODE" and "3 of 3 picked (click a loop to drop it)". RAM hatches 3 → 2. |
+| `df3_invalid.png` | BREACH held over your own NODE. The sticker won't stick: it stays curled and lifted, with a long soft shadow. A red pencil circle-and-slash sits on the wedge (the bible's nudge-lock mark), with "it's yours: needs a corp seg next to yours" written beside it. CORE and FIREWALL stay looped in yellow. The HUD reads "BREACH can't go on your NODE" and names the legal wedges. |
+| `df3_status.png` | Your statuses as small die-cut vinyl stickers (bible 1.2): BLOCK 2 on your ICE, SEAL on your FIREWALL, VIRUS 1 on corp NODE. The corp's own seal on SPAWNER stays the enamel glaze lid with SEALED. A TIME BOMB bomb-sticker sits on corp RELAY, with "2 turns, then −6" in pencil. VIRUS 1 is hovered: it lifts with a peel curl, its numbered pencil arrow 5.1 points at NODE's "→4" mark (with "−1"), and a CRT tooltip explains it. |
+| `df3_states_sheet.jpg` | The three in a row, with captions. |
+
+**State changes for these plates** (otherwise BOARD):
+- **Worm:** no other change.
+- **Invalid:** no other change. The legal wedges come from PLAY.
+- **Status:**
+  - your G2 and V1 chips are replaced by the stickers;
+  - added your SEAL on FIREWALL (seg 1) and a corp seal on SPAWNER (seg 7);
+  - a TIME BOMB, played on an earlier turn, on RELAY with 2 turns left.
+  The END TURN totals are left as BOARD's, because the bomb does not fire this turn.
+
+**Calls**
+1. **WORM picks in order.** The numbered loops show the pick order, and one pencil line visits them. Clicking a loop drops it,
+   and Enter is only live at 3 of 3. The virus outcome is "+V" by each loop. NODE's own "→4" moved aside to make room.
+2. **The illegal mark reuses the bible's red circle-and-slash** (the nudge lock, 3.1). The reason is red pencil at the wedge
+   in the rule's words. The sticker shows "can't stick" by staying curled and lifted, with no slap.
+3. **Statuses are pill-shaped mini-stickers** in the action's colour family: BLOCK blue, VIRUS green, SEAL pink. The
+   corp's own effects keep the enamel / teal material. A count (BLOCK 2, VIRUS 1) is printed on the sticker. Bible 1.2 says
+   stickers never carry a changing value, so a count change is a new sticker swapped in, not an edit. **Open question for
+   the designer:** confirm this.
+4. **TIME BOMB:** a small bomb-sticker stays on the target. Its turn count and the coming 6 damage are pencil (forecast),
+   below the rim where there is free space.
+5. **Status hover** reuses the action hover: the peel curl and lift, the numbered pencil arrow to the outcome it feeds (A3
+   step 5.1), and a CRT tooltip for the rule. No new medium is added.
+
+**Limits**
+- WORM with fewer than 3 legal targets, and a partial pick (1 of 3), are not drawn.
+- In the invalid plate the held sticker sits over the ICE / NODE border and covers the G2 chip. The slash is on NODE.
+- The status sticker positions and the pencil are hand-set. The VIRUS curl is small at this size.
+- The source is `D:/rc_scratch/takeover/inspiration/insp_deface3b.py` (`python insp_deface3b.py`). It imports
+  `insp_deface3.py` unchanged.
