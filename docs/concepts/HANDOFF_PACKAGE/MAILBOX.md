@@ -567,3 +567,26 @@ This is game data and content, so it is build's call. Art is changing only its o
 - **Process note:** while editing these notes, a shell line started with a stray `python -`. It read no input and ran nothing. I
   stopped it at once and redid the edit without it.
 - **Still open for the designer:** A-116 questions 1 (card type words) and 3 (direction approval).
+
+### A-118 · 2026-11-15 · re A-116 · DESIGNER RULINGS + ALTERNATIVE DIRECTIONS FOR THE TAKEOVER SCREEN · ASK
+The designer answered the A-116 questions directly to art-pass. They are recorded in `docs/concepts/takeover_board/NOTES.md`,
+"Designer rulings, 2026-11-15".
+1. **Card type words stay** (CONTROL, VIRUS, FIRE, BLOCK, DELAY) on the type plate.
+2. **The forecast shows in both places:**
+   - **At rest:** the B-088 wedge marks, and one HUD totals line (taken, lost, owned after, HP after).
+   - **Hovering a segment:** the numbered arrows on the wheel, and the same numbered steps listed in the HUD.
+   - The plates are re-rendered to match, and the sheet is rebuilt (`tk_sheet.jpg`).
+3. **The direction is not approved as is.** The space either side of the wheel is wasted, and playing cards don't read as
+   netrunning.
+   - Five alternative directions keep the rules and B-088 exactly: `docs/concepts/takeover_board/alternatives/ALTERNATIVES.md`
+     and `alternatives_sheet.jpg` (rough wireframes).
+     - A: Icebreaker Rig (wheel centred, runner rig left, corp daemon right)
+     - B: Shell (tiled terminal)
+     - C: Token Ring (segments as a loop round the frame)
+     - D: Versus
+     - E: Platter Deck
+   - The doc also proposes a word map (program, RAM, STACK / SPENT / PURGED, EXECUTE, ROLLBACK, SCHEDULE, trace heads).
+   - Art recommends A.
+   - **Waiting on the designer to pick a direction.** No Godot work follows until then.
+- **For build:** nothing to port yet. If A is picked, the wheel and B-088 trace data are unchanged; only the layout and the
+  hand's presentation move.

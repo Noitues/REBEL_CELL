@@ -49,7 +49,9 @@ BOARD = dict(
              rule='A segment next to a corp FIREWALL takes 1 less per hit',
              energy=(3, 3), turn=3, esc='from turn 13', runner='RHEE · RUN HEALTH', hp=(27, 30), hp_loss=1,
              plan=[('STRIKE 2', 'your weakest segment'), ('WALL', 'both sides of CORE'), ('SURGE 3', 'from CORE, both ways')],
-             status=[('SHROUD 1', 'buff'), ('TRACED', 'debuff')], piles=(7, 3), owned_after=2, forecast=[]),
+             status=[('SHROUD 1', 'buff'), ('TRACED', 'debuff')], piles=(7, 3), owned_after=2,
+             # designer 2026-11-15 (on A-116 Q2): at rest the forecast is on both, the wedges and the HUD (one totals line)
+             forecast=[[('END TURN', HI), ('+0 taken', GAIN), ('−1 lost', HARM), ('→ owned 2', HI), ('· HP 27 → 26', HARM)]]),
     hand=hand('NUDGE', 'WORM', 'BREACH', 'GUARD', 'TIMEBOMB', why={'TIMEBOMB': 'needs 4 energy'}),
 )
 
@@ -69,7 +71,8 @@ PLAY = derive(BOARD, segs=_play_segs, lift=2, focus=[2, 10], aim=2, pencil='TAKE
               outcomes={2: dict(k='take', t='TAKEN'), 5: dict(k='hp', t='→ 4'), 10: dict(k='hp', t='→ 9'),
                         11: dict(k='lose', t='LOST −1 HP')},
               hud=dict(energy=(3, 3), owned_after=3,
-                       forecast=[[('BREACH', PLAN), ('on FIREWALL 2: 3 damage, takes it', HI)]]))
+                       forecast=[[('BREACH', PLAN), ('on FIREWALL 2: 3 damage, takes it', HI)],
+                                 [('END TURN', HI), ('+1 taken', GAIN), ('−1 lost', HARM), ('→ owned 3', HI), ('· HP 27 → 26', HARM)]]))
 
 # ------------------------------------------------------------------ 2. FORECAST: your ICE hovered; every arrow and effect feeding its outcome, numbered
 _fc_segs = copy.deepcopy(BOARD['segs']); _fc_segs[11]['st'] = []       # the hover shows the GUARD as a numbered block plate instead
@@ -78,7 +81,13 @@ FORECAST = derive(BOARD, segs=_fc_segs, hover=11,
                   trace=[dict(src=('hub',), to=11, side='corp', n='11.1', amt='−2', da0=0.0, da1=0.12, r_to=262, bend=170, at_u=0.0),
                          dict(src=('self',), to=11, side='block', n='11.2', amt='BLOCK 2', at=(470, -0.12)),
                          dict(src=('seg', 10), to=11, side='corp', n='13.1', amt='−3', r0=330, da0=0.0, da1=-0.08, r_to=330, bend=430, at_u=0.5)],
-                  hud=dict(fc_hot=False, hp_n='16.1'))
+                  # designer 2026-11-15: on hover, the numbered arrows on the wheel AND the same steps listed in the HUD
+                  hud=dict(fc_hot=False, hp_n='16.1', forecast=[
+                      [('YOUR ICE', (92, 225, 255)), ('3 → retaken', HARM), ('· health −1', HARM)],
+                      [('11.1', SCHED), ('plan STRIKE: −2', MID)],
+                      [('11.2', SCHED), ('your GUARD blocks 2', MID)],
+                      [('13.1', SCHED), ('CORE counterattack: −3 → retaken', MID)],
+                      [('16.1', SCHED), ('lost: run health 27 → 26', MID)]]))
 
 # ------------------------------------------------------------------ 3. RESOLVE: the END TURN replay, at step 13; the played steps keep their numbered arrows
 _res_segs = copy.deepcopy(BOARD['segs'])
@@ -96,7 +105,8 @@ RESOLVE = derive(BOARD, segs=_res_segs, outcomes={}, firing=[0, 4, 8], burst=[11
 WALLSEAL = derive(BOARD, walls=[(3, 'corp'), (4, 'corp'), (0, 'runner')], seals=[(10, 'corp'), (1, 'runner')],
                   outcomes={5: dict(k='hp', t='→ 4'), 11: dict(k='lose', t='LOST −1 HP')},
                   hud=dict(plan=[('WALL', 'both sides of TURRET'), ('SEAL', 'CORE, one turn'), ('SURGE 3', 'from CORE, both ways')],
-                           forecast=[[('WALL', HI), ('one turn', MID), ('SEAL', HI), ('immune this turn', MID)]]))
+                           forecast=[[('END TURN', HI), ('+0 taken', GAIN), ('−1 lost', HARM), ('→ owned 2', HI), ('· HP 27 → 26', HARM)],
+                                     [('WALL', HI), ('one turn', MID), ('SEAL', HI), ('immune this turn', MID)]]))
 
 # ------------------------------------------------------------------ 5. WIN: the runner holds all 12 segments
 WIN = derive(BOARD, segs=[dict(g, owner='us', armed=0, st=[]) for g in BOARD['segs']], outcomes={},

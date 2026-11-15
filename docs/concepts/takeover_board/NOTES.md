@@ -110,3 +110,15 @@ The itemised END TURN forecast panel is gone. In its place:
 - **Limits:**
   - In the replay, the long RELAY → CORE arrow crosses two segment labels.
   - Label placement is hand-set per plate. In the game, labels need an auto-placer that keeps them off the wedge labels.
+
+## Designer rulings, 2026-11-15 (on A-116, given to art-pass directly)
+1. **Card type words stay** (CONTROL, VIRUS, FIRE, BLOCK, DELAY) on the type plate.
+2. **The forecast is shown in two places:**
+   - **At rest:** on the wedges (outcome marks) and in the HUD (one totals line: taken, lost, owned after, health after).
+   - **Hovering a segment:** the numbered arrows on the wheel (B-088), and the same numbered steps listed in the HUD.
+   - The plates are re-rendered to match: board, play and wall/seal carry the HUD totals line; forecast lists the hovered
+     wedge's steps 11.1, 11.2, 13.1, 16.1 in the HUD. This replaces "What is left in the HUD" in the B-088 section.
+3. **Direction (A-116 Q3) not approved as is.**
+   - The space either side of the wheel is wasted.
+   - The board is not strongly hacker / netrunner themed: playing cards is not on theme.
+   - An agent is exploring alternative visual approaches that keep the mechanics. Its output goes in `alternatives/`.
