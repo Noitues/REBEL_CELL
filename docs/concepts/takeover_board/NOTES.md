@@ -12,8 +12,8 @@ These are concept plates only, with no Godot work. The corp skin is Solace.
 |---|---|
 | `tk_board.png` | Board: turn 3, play phase, nothing hovered |
 | `tk_play.png` | 1. Play phase, BREACH lifted: legal targets in FOCUS corners, the aimed take in grease pencil, the HUD forecast "with this play" |
-| `tk_forecast.png` | 2. END TURN hovered: the HUD itemises END TURN in engine order (protocols, plan step, counterattack, the totals) |
-| `tk_resolve.png` | 3. Resolution (the END TURN replay): the firing pointers lit, protocol and counterattack arrows, the corp retakes your ICE |
+| `tk_forecast.png` | 2. Forecast: wedge outcome marks at rest, your ICE hovered with its numbered arrows (B-088) |
+| `tk_resolve.png` | 3. Resolution (the END TURN replay at step 13): the firing pointers lit, numbered arrows, the corp retakes your ICE |
 | `tk_wallseal.png` | 4. A corp WALL pair around TURRET, your WALL, a corp SEAL on CORE and your SEAL on FIREWALL |
 | `tk_win.png` | 5. Win at 12 / 12 |
 | `tk_sheet.jpg` | All six on one sheet |
@@ -81,3 +81,32 @@ with no Godot.
 - **The numbers are illustrative.** The states use plausible values in the prototype's rules, not a recorded seed.
 - The backdrop is the locked bio room under a dark pool, not re-graded for this board.
 - **Not done:** Meridian or other skins, motion, and effects.
+
+## Revision 2026-11-15: B-088 (designer on A-116 question 2), the forecast lives on the wedges
+The itemised END TURN forecast panel is gone. In its place:
+- **At rest, every plate:** each wedge that END TURN will change carries its cumulative outcome as a system-layer mark on its
+  inner edge, half on the wedge and half on the dark ring:
+  - cyan glass "→ n" for the integrity after END TURN;
+  - teal glass "TAKEN" for a segment that becomes yours;
+  - red "LOST −1 HP" for a segment that is retaken, with its health cost.
+  Unchanged wedges carry no mark. The segment status tags moved to the outer edge to make room. The run health strip keeps one
+  cumulative mark ("27 → 26", with the red loss hatch).
+- **Hover a wedge (`tk_forecast.png`, your ICE hovered):**
+  - the wedge takes a cyan inspect outline;
+  - every arrow and effect that feeds its outcome is drawn, each with a resolution number (ENGINE_ORDER A3 step, then the order
+    inside the step), so it reads in sequence;
+  - the run health mark takes the same cyan outline and the matching number.
+  The example trace:
+  - 11.1: the plan STRIKE from the hub, −2;
+  - 11.2: your GUARD blocks 2, shown as a P-stock plate tied to the wedge;
+  - 13.1: CORE's counterattack, −3;
+  - 16.1: LOST, −1 HP, on the outcome mark and on the health mark.
+- **Replay (`tk_resolve.png`):** the replay uses the same numbered arrows. The hub shows the step being played (13, COUNTER), and
+  the steps played so far keep their numbered arrows (8.1 RELAY repairs CORE +2, 11.1, 11.2, 13.1), with the retake burst.
+- **What is left in the HUD:** the one-line card hint while you aim a card (play), a one-line WALL / SEAL key, and the fight result
+  (win). None of these is a forecast list.
+- **Data:** build's forecast returns a per-segment trace (resolution number, source, target, kind, amount). The plates draw from
+  that shape (`trace` in `src/tk_states.py`).
+- **Limits:**
+  - In the replay, the long RELAY → CORE arrow crosses two segment labels.
+  - Label placement is hand-set per plate. In the game, labels need an auto-placer that keeps them off the wedge labels.

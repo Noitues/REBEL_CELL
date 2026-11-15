@@ -8,8 +8,8 @@ F = ImageFont.truetype('D:/rc_scratch/combat_redesign/locked/corp/src/fonts/Anto
 F2 = ImageFont.truetype('D:/rc_scratch/combat_redesign/locked/corp/src/fonts/ShareTechMono-Regular.ttf', 24)
 PLATES = [('board', 'BOARD', 'turn 3, play phase, nothing hovered'),
           ('play', '1  PLAY', 'BREACH lifted, legal targets, the take in pencil'),
-          ('forecast', '2  END TURN FORECAST', 'END TURN hovered: the exact outcome, itemised'),
-          ('resolve', '3  RESOLUTION', 'pointers fire, the corp retakes your ICE'),
+          ('forecast', '2  END TURN FORECAST', 'your ICE hovered: its outcome and numbered arrows'),
+          ('resolve', '3  RESOLUTION', 'replay at step 13: numbered arrows, the retake'),
           ('wallseal', '4  WALL AND SEAL', 'walls and seals of both sides as pieces'),
           ('win', '5  WIN', 'all 12 segments are yours')]
 TW, TH, CAP, PAD = 960, 540, 70, 20

@@ -238,9 +238,10 @@ def draw_segment_marks(img, st, f_type, f_num, f_small):
             glyph(d, g['type'], gx, gy, 34, K_TYPE + (255,), 3.2)
             text(d, (wx, wy), TYPE_WORD[g['type']], f_small, TEXT_MID + (255,))
             text(d, (nx, ny), str(g['hp']), f_num, K_TYPE + (255,))
-        # statuses: small stamped tags on the inner edge (pink keyline = the runner put it there, teal = the corp's own)
+        # statuses: small stamped tags near the outer edge (pink keyline = the runner put it there, teal = the corp's own);
+        # the inner edge of the wedge is kept for the END TURN outcome mark (B-088)
         for j, (word, side) in enumerate(g.get('st', [])):
-            tx, ty = CX + (R_IN + 22) * math.cos(am + (j - (len(g['st']) - 1) / 2) * 0.17), CY + (R_IN + 22) * math.sin(am + (j - (len(g['st']) - 1) / 2) * 0.17)
+            tx, ty = CX + (R_OUT - 30) * math.cos(am + 0.16 + j * 0.15), CY + (R_OUT - 30) * math.sin(am + 0.16 + j * 0.15)
             bb = d.textbbox((S(tx), S(ty)), word, font=f_small, anchor='mm')
             pad = S(4)
             d.rounded_rectangle([bb[0] - pad, bb[1] - pad, bb[2] + pad, bb[3] + pad], radius=S(3), fill=INK + (255,), outline=(PINK if side == 'runner' else TEAL) + (255,), width=S(2))
@@ -293,6 +294,96 @@ def draw_chips(img, st, f):
         r = 15
         d.ellipse([S(x - r), S(y - r), S(x + r), S(y + r)], fill=fill + (235,), outline=edge + (255,), width=S(3 if c.get('fires') else 2))
         text(d, (x, y + 1), str(c['hp']), f, (TEXT_HI if c.get('k') else CYAN) + (255,))
+    comp(img, L)
+
+
+def draw_outcomes(img, st, F):
+    """B-088: the cumulative END TURN outcome on the wedge itself (system layer), only where END TURN changes the wedge.
+    k: 'hp' = integrity after (cyan glass), 'take' = becomes yours (teal glass, GAIN edge), 'lose' = retaken (HARM, with its
+    health cost).  A hovered wedge (st['hover']) gets the cyan inspect outline; its numbered trace is drawn by draw_trace."""
+    oc = st.get('outcomes') or {}
+    L = Layer(); d = L.d
+    hv = st.get('hover')
+    if hv is not None:
+        a0, a1, am = seg_angles(hv, st['rot'])
+        d.polygon(wedge(R_IN - 2, R_OUT + 2, a0 - 0.006, a1 + 0.006), outline=CYAN + (255,), width=S(5))
+    for i, o in oc.items():
+        # the mark straddles the wedge's inner edge: half on the wedge, half on the dark ring, so it never meets the labels
+        a0, a1, am = seg_angles(i, st['rot'])
+        x, y = CX + (R_IN + 2) * math.cos(am), CY + (R_IN + 2) * math.sin(am)
+        k = o['k']
+        fill, edge, col = {'hp': (GLASS, (70, 150, 170), CYAN), 'take': ((16, 70, 66), GAIN, TEXT_HI),
+                           'lose': (HARM, INK, INK)}[k]
+        lines = o['t'].split('\n')
+        f = F['oc']
+        ws = [d.textbbox((0, 0), s_, font=f)[2] / SS for s_ in lines]
+        w = max(ws) + 16; h = 30 * len(lines) + 6
+        d.rounded_rectangle([S(x - w / 2), S(y - h / 2), S(x + w / 2), S(y + h / 2)], radius=S(6), fill=fill + (245,),
+                            outline=edge + (255,), width=S(3 if i == hv else 2))
+        for j, s_ in enumerate(lines):
+            text(d, (x, y - h / 2 + 18 + 30 * j), s_, f, col + (255,))
+        if o.get('n'):
+            nb(d, x + w / 2 + 6, y - h / 2 - 4, o['n'], HARM if k == 'lose' else CYAN, F['nb'])
+    comp(img, L)
+
+
+def nb(d, x, y, n, col, f):
+    """a resolution number badge: ENGINE_ORDER A3 step . order inside the step"""
+    bb = d.textbbox((S(x), S(y)), n, font=f, anchor='mm')
+    r = max((bb[2] - bb[0]) / SS / 2 + 7, 15)
+    d.rounded_rectangle([S(x - r), S(y - 14), S(x + r), S(y + 14)], radius=S(14), fill=INK + (255,), outline=col + (255,), width=S(2.5))
+    text(d, (x, y + 1), n, f, col + (255,))
+
+
+def draw_trace(img, st, F):
+    """B-088: every arrow and effect feeding the hovered wedge's outcome (or, in the replay, the steps played so far), each tagged
+    with its resolution number.  src: ('seg', i) | ('hub',) | ('self',); side: corp (HARM) | runner (PINK) | block (P stock)"""
+    tr = st.get('trace')
+    if not tr:
+        return
+    L = Layer(); d = L.d
+    P_ST = TK['P_STOCK']
+    for t in tr:
+        j = t['to']
+        a_to = seg_angles(j, st['rot'])[2]
+        col = {'corp': HARM, 'runner': PINK, 'block': P_ST}[t['side']]
+        if t['src'][0] == 'self':        # an effect on the wedge itself (a block, a virus tick): a stamped plate on the wedge
+            r, da = t.get('at', (348, 0.0))
+            lx, ly = CX + r * math.cos(a_to + da), CY + r * math.sin(a_to + da)
+            lx -= 30
+            if r > R_OUT:               # a plate off the wheel is tied to its wedge
+                px, py = pol(R_OUT - 24, a_to)
+                d.line([(px, py), (S(lx + 30), S(ly))], fill=INK + (255,), width=S(7))
+                d.line([(px, py), (S(lx + 30), S(ly))], fill=col + (255,), width=S(3))
+                d.ellipse([px - S(6), py - S(6), px + S(6), py + S(6)], fill=col + (255,), outline=INK + (255,), width=S(2))
+        else:
+            if t['src'][0] == 'hub':
+                a_from, r_from = a_to + t.get('da0', 0.0), R_HUB + 12
+            else:
+                a_from, r_from = seg_angles(t['src'][1], st['rot'])[2] + t.get('da0', 0.0), t.get('r0', 300)
+            a_end = a_to + t.get('da1', 0.0)
+            while a_end - a_from > math.pi:        # bend the short way round the wheel
+                a_end -= 2 * math.pi
+            while a_from - a_end > math.pi:
+                a_end += 2 * math.pi
+            p0 = np.array(pol(r_from, a_from)); p1 = np.array(pol(t.get('r_to', 300), a_end))
+            mid = np.array(pol(t.get('bend', 215), (a_from + a_end) / 2))
+            pts = [tuple(p0 * (1 - u) ** 2 + mid * 2 * u * (1 - u) + p1 * u * u) for u in np.linspace(0, 1, 28)]
+            d.line(pts, fill=INK + (255,), width=S(10)); d.line(pts, fill=col + (255,), width=S(5.5))
+            v = np.array(pts[-1]) - np.array(pts[-3]); v = v / (np.linalg.norm(v) + 1e-6); nrm = np.array([-v[1], v[0]])
+            tip = np.array(pts[-1]) + v * S(6)
+            d.polygon([tuple(tip), tuple(tip - v * S(22) + nrm * S(12)), tuple(tip - v * S(22) - nrm * S(12))], fill=col + (255,), outline=INK + (255,))
+            m = pts[int(len(pts) * t.get('at_u', 0.5))]       # the label rides the arrow
+            lx, ly = m[0] / SS - 18, m[1] / SS
+        # the label: number badge, then what it does (short: an amount, or a word and an amount)
+        lab = t.get('amt', '')
+        bb = d.textbbox((0, 0), lab, font=F['oc'])
+        tw = bb[2] / SS
+        box = [S(lx - 4), S(ly - 17), S(lx + 48 + tw + 12), S(ly + 17)]
+        d.rectangle([box[0] + S(3), box[1] + S(4), box[2] + S(3), box[3] + S(4)], fill=INK + (255,))
+        d.rectangle(box, fill=(col if t['side'] == 'block' else INK) + (255,), outline=col + (255,), width=S(2))
+        nb(d, lx + 18, ly, t['n'], col, F['nb'])
+        text(d, (lx + 48, ly + 1), lab, F['oc'], (INK if t['side'] == 'block' else col) + (255,), anchor='lm')
     comp(img, L)
 
 
@@ -465,6 +556,10 @@ def draw_hud(img, st, F):
             d.rectangle(box, fill=(196, 190, 176, 255), outline=INK + (255,), width=S(2))
     hp_txt = '%d/%d' % (hp, hpm) if not lose else '%d \u2192 %d' % (hp, hp - lose)
     text(d, (HX1 - 22, yy + 35), hp_txt, F['you'], (INK if not lose else (200, 24, 30)) + (255,), anchor='rm')
+    if h.get('hp_n'):               # B-088: the cumulative health mark shares the hovered wedge's resolution number
+        bb = d.textbbox((S(HX1 - 22), S(yy + 35)), hp_txt, font=F['you'], anchor='rm')
+        d.rectangle([bb[0] - S(8), bb[1] - S(8), bb[2] + S(8), bb[3] + S(8)], outline=CYAN + (255,), width=S(3))
+        nb(d, bb[0] / SS - 34, yy + 35, h['hp_n'], HARM, F['nb'])
     # 4. statuses (runner) and the corp plan strip (enamel tickets: this turn's step is live, the next steps step down in value)
     yy = 322
     glass(d, (HX0, yy, HX1, yy + 172))
@@ -496,6 +591,9 @@ def draw_hud(img, st, F):
     # 5. the exact END TURN forecast (always shown; itemised when END TURN is hovered)
     yy = 508
     fc = h['forecast']
+    if not fc:                      # B-088: no forecast list; the outcome lives on the wedges
+        comp(img, L)
+        return
     hh = 52 + 34 * (len(fc) - 1)
     glass(d, (HX0, yy, 1700, yy + hh), edge=CYAN if not h.get('fc_hot') else SCHED, w=2 if not h.get('fc_hot') else 4)
     for k, line in enumerate(fc):
@@ -602,7 +700,7 @@ def fonts():
                 you=font(ANTON, 32), tick=font(ANTON, 25), small=font(MONO, 21), fc1=font(ANTON, 30), fc2=font(ANTON, 26),
                 why1=font(ANTON, 22), why2=font(PLEX, 21), end=font(ANTON, 50), undo=font(ANTON, 26), key=font(MONO, 20),
                 win=font(ANTON, 64), seg_num=font(ANTON, 40), seg_small=font(MONO, 19), seg_type=font(ANTON, 26),
-                chip=font(MONO, 21), tag=font(ANTON, 24), hub_big=font(ANTON, 58), hub_small=font(MONO, 20))
+                chip=font(MONO, 21), tag=font(ANTON, 24), oc=font(ANTON, 23), nb=font(ANTON, 19), hub_big=font(ANTON, 58), hub_small=font(MONO, 20))
 
 
 def render(name):
@@ -623,6 +721,8 @@ def render(name):
     draw_chips(img, st, F['chip'])
     draw_pointers(img, st)
     draw_overlays(img, st, F['tag'], F['seg_small'])
+    draw_trace(img, st, F)
+    draw_outcomes(img, st, F)          # the outcome marks sit over the arrows that feed them
     draw_banner(img, st, F)
     draw_hud(img, st, F)
     draw_hand(img, st, F)

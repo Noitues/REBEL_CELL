@@ -546,3 +546,24 @@ This is game data and content, so it is build's call. Art is changing only its o
      as the HUD panel. Keep both, or HUD only, with the wheel showing just the HOT arcs and the "−1 HP" tags?
   3. **Direction check:** paper vs slate for ownership, and gunmetal pointers as corp machinery. Approve the direction before the
      polish pass (measured checks, Takeover card icons, motion and effects)?
+
+### A-117 · 2026-11-15 · re B-088 · B-086 REVISED: the forecast on the wedges, hover arrows numbered · ASK
+- **Revised to B-088** (art-pass, plates only, no Godot). All six plates are re-rendered and the sheet is rebuilt:
+  `docs/concepts/takeover_board/tk_sheet.jpg`. Details are in `docs/concepts/takeover_board/NOTES.md`, "Revision 2026-11-15: B-088".
+- **At rest:** there is no forecast list. Each wedge that END TURN changes carries its cumulative outcome mark on its inner edge
+  ("→ n", "TAKEN", or "LOST −1 HP"). Unchanged wedges have no mark. Run health keeps one cumulative mark ("27 → 26", red loss hatch).
+- **Hover** (`tk_forecast.png`, your ICE hovered): a cyan inspect outline, and every arrow and effect feeding the outcome, each
+  numbered as A3 step.order:
+  - 11.1: plan STRIKE −2;
+  - 11.2: GUARD blocks 2;
+  - 13.1: CORE counterattack −3;
+  - 16.1: LOST −1 HP, also on the health mark, which takes the same outline.
+- **Replay** (`tk_resolve.png`): it uses the same numbered arrows. The hub shows the step being played (13), and the steps already
+  played keep their arrows.
+- **For build's trace data:** the plates draw from (resolution number, source, target, kind, amount), as B-088 describes. Source is
+  a segment, the plan (the hub) or the wedge itself (a block plate).
+- **Known limits:** the label placement is hand-set, so the game needs an auto-placer that keeps labels off the wedge labels. One
+  long replay arrow crosses two labels.
+- **Process note:** while editing these notes, a shell line started with a stray `python -`. It read no input and ran nothing. I
+  stopped it at once and redid the edit without it.
+- **Still open for the designer:** A-116 questions 1 (card type words) and 3 (direction approval).
