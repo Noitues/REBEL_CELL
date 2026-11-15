@@ -70,6 +70,18 @@ graffiti chaos, cute.
 Every review of a build sheet checks this table (which medium carries which information, its
 look and its Never list) as well as the numbers (designer, 2026-10-19).
 
+**Takeover fight exceptions (designer, 2026-11-15; Deface v3, `concepts/takeover_board/TAKEOVER_PORT_SPEC.md`):**
+1. **Grease pencil may carry forecast numbers.** These are the END TURN / COMMIT outcome marks on the wedges ("→ n", TAKEN,
+   "LOST −1 HP"), the numbered hover arrows, and a status's value. Live values (integrity, RAM, health) stay engraved, Bare
+   Anton or terminal.
+2. **A status is a sticker, and its value is in grease pencil.** A buff or debuff is a fixed status sticker, with its count
+   or turns written beside it in pencil. The sticker never carries the changing value.
+3. **Programs are deface-shaped stickers** (one die-cut silhouette per program) stuck on the glass. They follow the 3.18
+   lifecycle, but the bits run to the effect's target instead of spiralling into the hub.
+4. **Pencil colours on Takeover:**
+   - yellow `#FFE200` for our plan, aim, legal targets and results;
+   - red `#FF1C2C` for corp hits, losses, can't-use reasons and the illegal slash.
+
 **The fiction behind it.** The world is the city. Stickers are the Cell's fixed objects. Pencil is
 the Cell thinking. Terminals are the Cell's computers. Paper and holo are what the Cell stole from
 the corps (paper = printed, holo = scanned and decrypted). Bits are data moving.

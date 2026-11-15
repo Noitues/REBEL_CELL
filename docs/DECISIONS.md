@@ -4476,6 +4476,21 @@ and annotated in the GDD where it changes a rule.
   keycodes, so layouts other than QWERTY keep the key positions.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
+### 2026-11-15 — Art pass: Takeover fight look is Deface v3 (designer rulings)
+Presentation only, with no rule change. Mailbox A-118 / A-119. Spec: `docs/concepts/takeover_board/TAKEOVER_PORT_SPEC.md`.
+1. **Card type words stay** (CONTROL, VIRUS, FIRE, BLOCK, DELAY).
+2. **The forecast shows on the wedges and in the HUD.**
+   - At rest: the outcome marks and a totals line.
+   - On hover: the numbered arrows on the wheel and the same steps listed in the HUD.
+3. **Layout:** option A, with the wheel centred, the runner side on the left and the corp on the right (build, B-089).
+4. **Look:** Deface v3.
+   - Programs are deface-shaped vinyl stickers on the glass.
+   - Grease pencil does the aim, the target loops and the forecast.
+   - A play is peel → slap on the wedge → dissolve into bits → effect.
+5. **Grease pencil may carry forecast numbers.** This is an exception to ART_BIBLE 1.2; live values stay engraved or terminal.
+6. **A status is a sticker, and its value is in grease pencil.**
+7. **Words:** NAME_MAP section E (B-090). Art keeps SEND IT as the commit sticker, over the system word `COMMIT`.
+
 ## Open questions for the designer
 
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
