@@ -102,3 +102,56 @@ TURN (Space) bottom right. Same sample state as `BOARD` / `PLAY`: NUDGE 0, WORM 
 - Source: `D:/rc_scratch/takeover/inspiration/insp_render.py`. Run `python insp_render.py` (all four plates and the sheet,
   one process) or name plates: `python insp_render.py pl_aim sheet`. It imports `D:/rc_scratch/takeover/src/tk_render.py`
   and `tk_states.py`, and through them the locked `rb_tokens`, `card_render`, glyphs and fonts.
+
+## Deface v2, 2026-11-15
+Designer on v1: "Really it's just reshaped cards though, right." Correct: five stencils, each with its own name, cost tag, type
+tape and key, were a hand of cards with a new outline. v2 keeps every mechanic and breaks the card shape.
+
+| File | What it shows |
+|---|---|
+| `df2_rest.png` | Rest (BOARD): one cut sheet on your wall with five cuts and hand marks, the paint can at 3/3, the worn GUARD shield and the spreading virus tag on the wheel. |
+| `df2_aim.png` | BREACH aimed at FIREWALL (PLAY): its cut lifted out of the sheet (an empty window marked "lifted") and laid on wedge 2, paint showing through; FOCUS corners on CORE and FIREWALL; the can previews 3 → 2; the rule in the HUD. |
+| `df2_after.png` | After confirming BREACH: wet pink BREACH paint on wedge 2 (5 → 2, TAKEN), the cut back in the sheet but clogged with paint and marked "used", DISCARD 3 → 4, the can at 2/3, the HUD line "BREACH sprayed: FIREWALL 5 → 2, TAKEN" and the totals. |
+| `df2_sheet.jpg` | The three in a row with captions. |
+
+**What changed**
+- **One sheet per turn, not five objects.** The hand is a single bone-paper stencil plate, torn off the roll and taped up.
+  - Each action is a **cut** in it. The glyph and the name are the holes; the knife outline round the cut is the target class
+    (wedge = a segment, round = the hub).
+  - DRAW = the roll above the sheet (7 cuts left). DISCARD = clogged cuts (they peel off with the sheet at END TURN; the count
+    goes up when you spray). EXHAUST = burnt cuts.
+- **Hand marks, not tag boxes.** By each cut, written on the sheet:
+  - the circled key (1-5);
+  - the type word in the type plate's ink (teal; deep lilac for CONTROL);
+  - cost as drips plus the number;
+  - the target in pencil ("the hub", "3 corp", "next to yours").
+  The full rule appears only in the HUD while you aim (hover).
+- **Can't use:** red tape across the TIME BOMB cut, written "needs 4", with red drips.
+- **Energy is paint.** A spray can with a fill gauge (one band per energy) replaces the coins. A pending cost shows as a hatched
+  band and "3 → 2".
+- **Playing is painting the wheel.**
+  - Aim lifts the cut piece out of the sheet and lays it on the wedge at the wedge's angle. Confirm sprays it.
+  - The paint stays on the wedge under its re-inked label, and the B-088 outcome mark sits on top.
+  - Lasting effects are paint that wears: GUARD (G2) is a painted shield, patchy where it has been hit; the virus (V1) is a tag
+    with small marks spreading toward the hub.
+- **Unchanged:** the corp compliance board, the HUD panel (OWNED and END TURN totals), END TURN and UNDO.
+
+**Why it no longer reads as cards.** There is one object, not five. The actions are holes in the same material, not things with
+frames, so nothing can be "held in a hand". The data that made v1 look like a card face (cost, type and rule boxes) is now
+marks on a working surface. Each play leaves its result on the wheel itself, so the wheel, not a panel, carries what you have
+done this fight.
+
+**Calls**
+- A sprayed cut counts as discarded right away (DISCARD 4 in the after plate), matching the card rule. The clogged sheet peels at
+  END TURN.
+- The painted wedge's own label is re-cut in ink over the paint so its integrity stays readable.
+- UNDO after a spray puts the paint back in the can.
+
+**Limits**
+- No new mechanics were added. The TIME BOMB countdown tag is described but not drawn (not in this state); WORM's three-wedge
+  spray is not shown.
+- Handwriting is Anton and Plex jittered per letter, not a real hand font.
+- The left flank is denser than the right; the space between the HUD panel and END TURN is still open.
+- The paint, sheet and cut positions are hand-set; locked checks not run; numbers from BOARD / PLAY.
+- Source: `D:/rc_scratch/takeover/inspiration/insp_deface2.py` (`python insp_deface2.py`, or name plates). It imports
+  `insp_render.py` (v1) and `tk_render.py` unchanged; the v1 plates are untouched.
