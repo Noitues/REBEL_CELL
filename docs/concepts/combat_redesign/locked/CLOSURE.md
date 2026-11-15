@@ -35,7 +35,7 @@ Build relayed a designer ruling in its mailbox, entry B-086 (`port-campaign-b:do
 - The locked `GODOT_PORT_SPEC.md` belongs to the retired Shifting Waves board.
 - The locked family's style system (ART CALL 53) **carries over** to the Campaign B Takeover board (12-segment wheel). The Shifting Waves layout does not.
 - So R2-1 (the effects re-render) and the S3 list below matter only where the Takeover brief reuses them.
-- Sign-off of this board, A-116 and the bible fold are replaced by the Takeover brief (B-086).
+- Sign-off of this board, the drafted A-116 post and the bible fold are replaced by the Takeover brief (B-086). The number A-116 went to the B-086 sheet entry instead (`docs/concepts/takeover_board/`).
 
 The text below is kept as the record.
 
