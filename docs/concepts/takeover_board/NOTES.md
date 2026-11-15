@@ -122,3 +122,8 @@ The itemised END TURN forecast panel is gone. In its place:
    - The space either side of the wheel is wasted.
    - The board is not strongly hacker / netrunner themed: playing cards is not on theme.
    - An agent is exploring alternative visual approaches that keep the mechanics. Its output goes in `alternatives/`.
+4. **Direction in progress: Deface v3** (`inspiration/rendered/df3_*`). Actions are deface-shaped vinyl stickers on the glass,
+   grease pencil does the aim and the forecast, and a play is peel → slap on the wedge → dissolve into bits → resolve. The
+   alternatives, Packet Ladder and Deface v1 / v2 were not taken.
+5. **Grease pencil may carry forecast numbers** (an exception to ART_BIBLE 1.2, which lists live numbers under pencil's Never).
+   Live values (integrity, RAM, health) stay engraved or terminal. To fold into the bible when this direction locks.

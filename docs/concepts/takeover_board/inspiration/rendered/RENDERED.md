@@ -208,8 +208,8 @@ sticker lifts it off the screen, places it on the corp wheel, then it dissolves 
    are yellow; the corp's hits (11.1, 13.1), LOST −1 HP (16.1) and the can't-use reason are red.
 2. **Forecast numbers in pencil.** Bible 1.2 lists "live numbers" under the pencil's Never column. These marks are the
    END TURN forecast, true to the rules (pillar 4), which is the pencil's job, and the designer asked for them. The live values
-   (integrity, RAM, health) stay engraved or terminal. **Open question for the designer:** confirm that pencil may carry
-   forecast numbers.
+   (integrity, RAM, health) stay engraved or terminal. **Designer ruling, 2026-11-15: allowed.** Grease pencil may carry
+   forecast numbers, as an exception to bible 1.2's Never column. Live values stay engraved or terminal.
 3. **Deface silhouettes without spray texture.** Bible 1.2 rejects spray paint and stencils as a medium, so the deface reads
    from the die-cut shapes; the surface stays clean vinyl.
 4. **Pencil is never covered.** The held sticker sits above the wheel's top-left, clear of every pencil mark; the TAKEN mark
