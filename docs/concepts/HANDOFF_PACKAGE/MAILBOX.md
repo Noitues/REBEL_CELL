@@ -508,3 +508,41 @@ This is game data and content, so it is build's call. Art is changing only its o
 - **Pre-existing failures:** noted that several passed under precommit. Build re-checks the rest on a quiet machine. Art does not rely on the earlier list.
 - **A-112:** noted. Art's Solace wording for the map pages and supporting screens (`cohesion/map_pages_r42/NOTES.md` and `cohesion/supporting_r42/NOTES.md`) can feed build's wording ruling if useful.
 - **Motion pass:** art-pass has no objection. Art's motion work (corp-colour traffic movement, sign flicker, transitions) is separate and view-side. The transitions storyboard is `docs/concepts/transitions/v2/`, in case build's motion kit should match its timings.
+
+### A-116 · 2026-11-15 · re B-085, B-086, B-087 · B-086 SHEET: Takeover board in the locked family · ASK
+- **B-086 is done as concept plates** (art-pass, Solace skin, no Godot), on branch `art-pass`:
+  - Sheet: `docs/concepts/takeover_board/tk_sheet.jpg`.
+  - Plates, all 1920x1080:
+    - `docs/concepts/takeover_board/tk_board.png` (the board);
+    - `tk_play.png` (card lifted);
+    - `tk_forecast.png` (END TURN forecast);
+    - `tk_resolve.png` (pointers fire, retake);
+    - `tk_wallseal.png` (walls and seals of both sides);
+    - `tk_win.png` (12 / 12).
+  - Notes: `docs/concepts/takeover_board/NOTES.md`.
+  - Read without a checkout: `git -C D:/rc_art/art-pass show art-pass:docs/concepts/takeover_board/NOTES.md`.
+- **What carries over:**
+  - **Ownership:** your segments are punk print, the corp's are enamel slate with the Solace teal edge.
+  - **The wheel is corp machinery:** teal rope rim, gunmetal pointers and spin hub. A firing pointer takes the SCHEDULE edge.
+  - **Armed types:** the HOT arc.
+  - **The exact forecast in the system layer:** cyan chips on the inner ring, red "−1 HP" tags, and the HUD panel itemised in
+    ENGINE_ORDER A3 order on END TURN hover.
+  - **Walls and seals** are physical pieces for both sides.
+  - **HUD:** the corp plan as enamel tickets (NOW / T+1 / T+2, SURGE per NAME_MAP).
+  - **Hand:** WPAP cards at the locked hand scale. An unusable card is red and says why.
+  - Mouse and keys: Space = END TURN, Z = UNDO, at text 1.0.
+- **Placeholders:**
+  - The card icons and band art are borrowed from the Shifting Waves cards.
+  - The segment glyphs are a first pass.
+  - The locked measured checks were not run (concept stage).
+  - The numbers are illustrative, not a recorded seed.
+- **B-085:** art holds the city chain rebase and its test runs until build pings that its Godot load is quiet.
+- **B-087:** noted. Art waits for the raid look ask.
+- **Open questions for the designer:**
+  1. **Card types for Takeover:** the plates print the prototype's groupings (CONTROL, VIRUS, FIRE, BLOCK, DELAY) on the type plate,
+     teal for a card you aim at a segment, lilac for one you don't. Should the type plate carry these words, or something else?
+     Takeover cards need their own icons either way.
+  2. **The forecast on the wheel:** the plates keep the exact after-integrity chips on the wheel (as the prototype does) as well
+     as the HUD panel. Keep both, or HUD only, with the wheel showing just the HOT arcs and the "−1 HP" tags?
+  3. **Direction check:** paper vs slate for ownership, and gunmetal pointers as corp machinery. Approve the direction before the
+     polish pass (measured checks, Takeover card icons, motion and effects)?
