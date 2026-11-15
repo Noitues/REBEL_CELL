@@ -127,3 +127,6 @@ The itemised END TURN forecast panel is gone. In its place:
    alternatives, Packet Ladder and Deface v1 / v2 were not taken.
 5. **Grease pencil may carry forecast numbers** (an exception to ART_BIBLE 1.2, which lists live numbers under pencil's Never).
    Live values (integrity, RAM, health) stay engraved or terminal. To fold into the bible when this direction locks.
+6. **Statuses: the sticker is the status, grease pencil is the value** (designer, 2026-11-15). A buff or debuff is a fixed
+   sticker (BLOCK, VIRUS, SEAL, TIME BOMB), and its count or turns are written beside it in pencil, so a changing value never
+   needs a new sticker. Designer: "liking this direction" (Deface v3).
