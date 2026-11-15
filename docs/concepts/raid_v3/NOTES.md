@@ -77,7 +77,8 @@ These replace the open questions that were here. The plates above predate them a
 2. **Corp units: the bible's version** (4.8: locked vehicle models close, v4 icons far; fill = corp colour = health; the dashed
    status ring with pips). The enamel tokens and sticker statuses in these plates are a fallback if that does not work.
 3. **INCOMING: the bible's intercepted work order** (memo under glass, corp letterhead, INTERCEPTED), not corp tickets.
-4. **CREW shows the full roster** (leaning; the designer wants context images before locking it). See `crew_options/`.
+4. **CREW shows the full roster: option B** (designer, from `crew_options/`). A placed operative's sticker stays in full colour
+   with its cell and a tick in pencil under it; the map shows the operative as its R3 class beacon.
 5. **Drag model: Takeover's.** The held sticker follows the cursor with spring lag and leaves a liner outline. This deviates from
    bible 4.8 (park above the slot).
 6. **Site raid rules are not open.** v39 already sets them: the core is 8 (`siteRaidCore`); EVACUATE reads "Evacuate (give up B2

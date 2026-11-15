@@ -4500,7 +4500,8 @@ Presentation only, with no rule change. Concept set: `docs/concepts/raid_v3/` (N
 3. **INCOMING stays the bible's intercepted work order.**
 4. **Drag model follows Takeover, not bible 4.8:** the held sticker follows the cursor and leaves a liner outline (bible 4.8
    parked it above its slot). To fold into the bible when the raid look locks.
-5. **CREW keeps the full roster** (leaning; to revisit with context images).
+5. **CREW keeps the full roster, option B** (`docs/concepts/raid_v3/crew_options/crew_B.png`): a placed operative's sticker
+   stays in full colour with its cell and a tick in pencil under it; on the city the operative is its R3 class beacon.
 
 ## Open questions for the designer
 
