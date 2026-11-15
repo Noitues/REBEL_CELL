@@ -276,3 +276,93 @@ wheel shape, and the shift animation must be proven before anything else.
 - `alternatives_sheet.jpg`: all five on one sheet.
 - Source: `D:/rc_scratch/takeover/alternatives/alt_wireframes.py` (`python alt_wireframes.py`).
 - No finished mock was made for A; the wireframe plus the existing plates' wheel cover it.
+
+---
+
+## Actions without cards (follow-up, 2026-11-14)
+
+The designer's point: a card only performs an action against a target. So the hand can stop being
+cards, and stop being card-shaped chips. Four options follow. All four use the direction A layout
+(the rig on the left, the wheel in the centre, the corp on the right). The yellow text on the
+wireframes is annotation.
+
+**The mechanics stay the same in all four.** Each action shows its RAM cost, whether it takes a target
+or not, its type word (CONTROL, VIRUS, FIRE, BLOCK, DELAY) and a hotkey (1-5). The STACK / SPENT /
+PURGED counts stay. An action you can't use is red and gives the reason ("needs 4 RAM, you have 3").
+The B-088 forecast is unchanged: an aimed action previews on the wedges. The colour of each type word
+is a wireframe placeholder. The locked type-plate colours would replace it.
+
+### A1. Command line
+`alt_act_1_command_line.png`
+- **Pitch:** each action is a command. The target is its argument.
+- **Play and aim:** press 1-5 or click a command. Its argument slot (`<host>`, `<yours>`) waits for
+  a target. Click a wedge to fill it. The prompt under the wheel shows the full line and its result
+  ("$ breach FIREWALL#2 -> 5 becomes 2"). Enter runs it; Esc cancels. A no-target command (`nudge
+  --spin +1|-1`) runs at once or takes an inline flag.
+- **Cost and piles:** "1 RAM" at the end of each line. A command you have run greys out of the list
+  into SPENT. A purged command is struck through.
+- **Style layer:** system (cyan terminal). The runner's pink is used only for the command names.
+- **Risks:** it is text-heavy and has no picture to recognise. It is close to direction B. The aim is
+  less physical, though the argument slot does tell you the target rule.
+- **Effort:** S.
+
+### A2. Tool ring (target first)
+`alt_act_2_tool_ring.png`
+- **Pitch:** pick the segment first. A radial ring of the tools that can act on it opens beside it.
+- **Play and aim:** click or Tab to a segment. Its tools fan out. A legal tool is bright; an illegal
+  one is red and says why ("only on yours", "needs 4 RAM"). Press the tool's number or click it.
+  No-target tools (NUDGE, WORM) sit on the hub ring. The tool belt on the left shows the whole hand
+  as round icons with a cost badge and a key. You can still pick from the belt first and then the
+  target.
+- **Cost and piles:** a cost badge on each belt icon. A used tool leaves the belt for SPENT.
+- **Style layer:** the belt icons are punk print; the radial menu is system glass.
+- **Risks:** the radial covers neighbouring wedges and their forecast marks. Target-first is a
+  second way to play, and it must agree with tool-first. The icons need art.
+- **Effort:** M.
+
+### A3. Daemons (recommended)
+`alt_act_3_daemons.png`
+- **Pitch:** each action is a small agent that you dispatch onto a segment. Agents whose effect
+  lasts stay on the wheel where you can see them.
+- **Play and aim:** pick a daemon in the bay (1-5 or click). Drag it, or click a wedge. It travels
+  there with the "5 -> 2" preview, then acts. A no-target daemon (NUDGE) lands on the hub. WORM
+  splits into three on its targets.
+- **What stays on the board:** GUARD sits on your segment as "G3" until the turn's cleanup. A TIME
+  BOMB stays parked with its countdown ("2"). A virus shows as "V1". These are the runner-made
+  statuses and charges, drawn as the daemon that made them. They replace the small stamped tags.
+- **Cost and piles:** the RAM cost is on each bay row. A daemon that has acted goes to SPENT; a
+  parked one goes to SPENT when it expires. A purged one burns out.
+- **Style layer:** the daemons are runner punk print (hex badges with the pink key line), so they
+  read as yours against the corp's enamel.
+- **Risks:** the tokens need room on each wedge. They would share the outer edge with the status tags
+  (B-088 moved those there). Travel motion adds about 0.2 s per play, and it must be skippable. The
+  hover trace must start at the daemon token (for example, 11.2 BLOCK starts at G3).
+- **Effort:** M. Six small badges, plus a slot rule on the wedge.
+
+### A4. Patch bay
+`alt_act_4_patch_bay.png`
+- **Pitch:** each action is a jack on the deck. You patch a cable from it into a segment's port.
+- **Play and aim:** pick a jack (1-5) and every legal port on the rim lights up. Click a port and the
+  cable runs from the jack to that segment. A no-target jack patches into the hub. A DELAY cable stays
+  plugged in with its timer.
+- **Cost and piles:** the cost sits by each jack. An unplugged jack goes to SPENT.
+- **Style layer:** the cables are runner punk colour; the ports are corp gunmetal.
+- **Risks:** cables cross the wheel and hide labels and forecast marks. With more than one live cable
+  it gets messy. The ports add 12 small targets on the rim.
+- **Effort:** M-L.
+
+### Recommendation: A3, Daemons
+- It makes "an action against a target" literal: something goes to the target and acts there.
+- It shows on the wheel what lasts (block, a delayed charge, a virus) as the runner's own pieces. The
+  B-088 trace then has a clear start point for those steps.
+- It fits direction A without layout changes: the bay replaces the chip rack.
+- It keeps the locked three layers. The runner's punk print is now on the wheel too.
+- Borrow from A2: Tab to cycle through the legal target wedges for keyboard play, with the red reason
+  shown on illegal ones.
+
+Open question: should the runner's daemon tokens replace the runner's own status tags on the wedges
+(one mark per effect), or sit beside them?
+
+Files: `alt_act_1_command_line.png`, `alt_act_2_tool_ring.png`, `alt_act_3_daemons.png`,
+`alt_act_4_patch_bay.png`, `alt_actions_sheet.jpg`. Source: `D:/rc_scratch/takeover/alternatives/alt_actions.py`
+(it imports the helpers in `alt_wireframes.py`; run `python alt_actions.py`).
