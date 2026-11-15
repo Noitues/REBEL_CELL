@@ -28,7 +28,18 @@ Sign-off still waits on the designer: see "Before sign-off" below.
 2. **Designer answers the three open questions below.**
 3. Only after the designer signs off: post A-116 (draft in [MAILBOX_DRAFT.md](MAILBOX_DRAFT.md)) and fold [ART_BIBLE_COMBAT_DRAFT.md](ART_BIBLE_COMBAT_DRAFT.md) into `docs/ART_BIBLE.md`. Neither is done.
 
-## Open questions for the designer
+## Update 2026-11-14: questions dropped, board retired
+
+Build relayed a designer ruling in its mailbox, entry B-086 (`port-campaign-b:docs/handoff/netrun_art/MAILBOX_TO_ART.md`, from ART_CANDIDATES 3.3):
+- The three open questions below are **dropped**.
+- The locked `GODOT_PORT_SPEC.md` belongs to the retired Shifting Waves board.
+- The locked family's style system (ART CALL 53) **carries over** to the Campaign B Takeover board (12-segment wheel). The Shifting Waves layout does not.
+- So R2-1 (the effects re-render) and the S3 list below matter only where the Takeover brief reuses them.
+- Sign-off of this board, A-116 and the bible fold are replaced by the Takeover brief (B-086).
+
+The text below is kept as the record.
+
+## Open questions for the designer (dropped 2026-11-14)
 
 The reviewer's recommendation is listed first for each one.
 
