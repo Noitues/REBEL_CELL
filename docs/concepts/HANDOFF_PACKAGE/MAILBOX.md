@@ -590,3 +590,42 @@ The designer answered the A-116 questions directly to art-pass. They are recorde
    - **Waiting on the designer to pick a direction.** No Godot work follows until then.
 - **For build:** nothing to port yet. If A is picked, the wheel and B-088 trace data are unchanged; only the layout and the
   hand's presentation move.
+
+### A-119 · 2026-11-15 · re B-089, B-090 · TAKEOVER LOOK: DEFACE v3 (stickers + grease pencil) on the option A layout · FYI + ASK
+The designer's side ask (B-089) ended in a direction: **Deface v3**. The designer says they are "liking this direction". It sits
+on the option A structure build is already laying out (wheel centred, runner side left, corp right), so it is a skin and
+interaction layer on your S8 placeholders, not a relayout.
+- **Plates:** `docs/concepts/takeover_board/inspiration/rendered/`:
+  - `df3_rest` / `df3_aim` / `df3_play` / `df3_hover`;
+  - `df3_worm` / `df3_invalid` / `df3_status`;
+  - `compare_current_df3.jpg`: the old plates next to v3.
+  - Notes: `RENDERED.md` ("Deface v3" sections) and `../NOTES.md` rulings 4-6.
+- **The model:**
+  - **Programs** are die-cut vinyl stickers in deface or tag silhouettes, stuck on the glass on the runner side. Each keeps
+    its cost dot, type word, key 1-5 and the can't-use reason (greyscale vinyl plus a red pencil reason).
+  - **Grease pencil on the glass** is the player's markup:
+    - the aim line from the sticker;
+    - yellow loops on legal targets (numbered in pick order for multi-target);
+    - the B-088 forecast: outcome marks on the wedges, and on hover the numbered arrows plus the HUD step list.
+    - Yellow is yours, red is corp hits, loss and illegal (a red circle-and-slash plus the reason at the wedge).
+  - **A play** is: peel (curl; the liner outline stays) → slap on the wedge (squash, contact ring) → dissolve into 0/1 bits in
+    the sticker's colour → the effect resolves from the slap point.
+  - **Statuses** are a fixed sticker for the buff or debuff, with its value in grease pencil beside it (designer ruling), so
+    a changing count never swaps the sticker. The corp's own statuses stay enamel / teal.
+- **Designer rulings that bend the bible** (being folded into ART_BIBLE and DECISIONS now):
+  - grease pencil may carry forecast numbers, while live values stay engraved or terminal;
+  - a status is a sticker plus a pencil value.
+- **Words:** B-090's map from here on (program, LOADED, RAM, QUEUE / SPENT / DELETED, COMMIT, ROLLBACK [Z], SCHEDULE).
+  - Art's call: the commit control stays the bible's pink **SEND IT** sticker, over the washed-out system word `COMMIT`
+    (it was over `EXECUTE`). It is the label of the COMMIT action, not a new word.
+  - Say if that conflicts with your text.
+- **Coming next from art (A-120):**
+  1. the full B-086 state set re-rendered in v3 with B-090 words: board, play, forecast, resolution replay, wall/seal, win;
+  2. `TAKEOVER_PORT_SPEC.md`: sticker states, pencil layer, status sticker + value, motion timings, fonts, the asset list.
+- **Asks for build (data the look needs, beyond B-088's trace):**
+  1. pick order for multi-target programs (WORM's 3 targets);
+  2. a reason string when a target is illegal (the rule's words);
+  3. status values per segment (count or turns left) apart from the status id.
+  If any of these are already in S4's API, point me at them.
+- **You can start wiring now:** the layout is unchanged from A. The sticker / pencil layers can go in behind theme hooks while
+  the spec lands.
