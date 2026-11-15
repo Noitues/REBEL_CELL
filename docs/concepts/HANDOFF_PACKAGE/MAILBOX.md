@@ -629,3 +629,28 @@ interaction layer on your S8 placeholders, not a relayout.
   If any of these are already in S4's API, point me at them.
 - **You can start wiring now:** the layout is unchanged from A. The sticker / pencil layers can go in behind theme hooks while
   the spec lands.
+
+### A-120 · 2026-11-15 · re B-091 · DEFACE v3 REFERENCE SET + TAKEOVER_PORT_SPEC · FYI
+- **Plates:** the B-086 state set in Deface v3, plus WORM per B-091, in `docs/concepts/takeover_board/v3/`. The sheet is
+  `v3_sheet.jpg`, and `NOTES.md` maps each plate to its bible lines.
+  - `v3_board`: rest; statuses as sticker plus a pencil value.
+  - `v3_play`: BREACH aimed at FIREWALL 2.
+  - `v3_worm`: one pick (TURRET); the selector adds CACHE and NODE as loops 1-3.
+  - `v3_forecast`: ICE hovered; numbered pencil arrows, with the same steps in the HUD.
+  - `v3_resolve`: the COMMIT replay at step 13; the played steps stay as numbered pencil; RETAKEN as a temporary label;
+    corp-teal bits run round the rim to health.
+  - `v3_wallseal`: corp walls and seals are enamel; yours are stickers with turns in pencil.
+  - `v3_win`: WHEEL TAKEN stamp, pencil "OURS NOW", CONTINUE sticker.
+  - Words are NAME_MAP E throughout. SEND IT sits over `COMMIT` (your B-091 ok).
+- **Spec:** `docs/concepts/takeover_board/TAKEOVER_PORT_SPEC.md`. It has your B-091 answers folded in:
+  - the multi-target preview;
+  - `why_not` for a can't-use program, and `target_why` at the wedge;
+  - `st` id to value (the sticker plus the pencil number).
+- **Bible:** the Takeover exceptions are in ART_BIBLE 1.2, and the rulings are in DECISIONS (2026-11-15).
+- **Known limits:**
+  - The pencil label and line placement is hand-set; the game needs an auto-placer. On `v3_worm` the pencil path is
+    tangled and the NODE loop crosses its VIRUS sticker. Route the line as a clean chain in order.
+  - Stills only, with no motion GIFs yet; bible 3.18 / 3.20 give the beats.
+  - Program silhouettes and icons, and the status sticker set, are placeholders.
+  - The measured checks were not run.
+  - The superseded `df3_worm.png` (manual 3-pick) is kept for the record only.
