@@ -155,3 +155,77 @@ done this fight.
 - The paint, sheet and cut positions are hand-set; locked checks not run; numbers from BOARD / PLAY.
 - Source: `D:/rc_scratch/takeover/inspiration/insp_deface2.py` (`python insp_deface2.py`, or name plates). It imports
   `insp_render.py` (v1) and `tk_render.py` unchanged; the v1 plates are untouched.
+
+## Deface v3, 2026-11-15
+Designer on v2: "The original art bible had user using stickers as buttons and grease pen marking up the monitor for movement
+and action. I think deface shaped stickers, grease pen for targeting sticker, and grease pen for forecast and such. Playing the
+sticker lifts it off the screen, places it on the corp wheel, then it dissolves into bits and is played."
+
+| File | What it shows |
+|---|---|
+| `df3_rest.png` | Rest (BOARD): five deface-shaped vinyl stickers slapped on the glass at varied angles. The B-088 forecast is grease pencil on the wedges (yellow "→9", "→4"; red "LOST −1 HP"). HUD totals, RAM pips, SEND IT over EXECUTE. |
+| `df3_aim.png` | BREACH peeled and held (peel curl, long soft shadow, its liner outline left on the glass). A yellow pencil line runs from it over the rim to FIREWALL 2, with "−3"; pencil loops round the legal wedges (CORE, FIREWALL); TAKEN in pencil. RAM hatches the cost (3 → 2); the rule shows in the HUD. |
+| `df3_play.png` | Three panels: place (slapped, squash, white contact ring), dissolve (scan front, 0/1 bits in the sticker's pink, a stream round the rim), resolve (bare Anton −3, FIREWALL 5 → 2, TAKEN in pencil). Plus a small full-screen copy of the result (sticker gone, liner left, RAM 2/3, DISCARD 4, HUD totals +1 taken). |
+| `df3_hover.png` | Your ICE hovered: numbered pencil arrows 11.1 (−2 from the hub), 13.1 (−3 from CORE), 11.2 (BLOCK 2, a yellow bracket on the wedge), 16.1 on the LOST mark; the same steps listed in the HUD (designer ruling). |
+| `df3_sheet.jpg` | The four plates, 2x2, with captions. |
+
+**What changed from v2**
+- The stencil sheet and the paint can are gone.
+  - Actions are **die-cut vinyl stickers**, each in a street-sticker silhouette that reads as the action: an impact burst (BREACH),
+    a shield (GUARD), a bomb with a fuse (TIME BOMB), a wriggle (WORM), a spin tag with an arrowhead (NUDGE).
+  - Each sticker has an Anton name with an ink key line and extrude, the type word on its locked plate, the yellow cost dot, a key
+    chip (1-5), a white die-cut border and gloss 0.22.
+- **Energy is RAM again**: terminal pips (bible 3.1). The aim hatches the cost.
+- **Piles** are one terminal line (DRAW 7, DISCARD 3, EXHAUST 0). **UNDO** is a terminal chip.
+- **SEND IT** is the pink vinyl verb over the washed-out `EXECUTE` and `> turn_resolve.exe [SPACE]` (bible 1.3).
+- **Grease pencil** (wax: opaque, dropouts, sheen line, ink edge, under-shadow) does all the marking up:
+  - aim line and legal loops;
+  - the B-088 outcome marks;
+  - the numbered hover arrows and their badges.
+  The HUD totals line and the hover step list stay as before.
+- **Play** follows bible 3.18: peel (curl, liner outline) → slap onto the wedge → Dissolve A into 0/1 bits in the source colour
+  → the effect from the slap point.
+
+**Bible lines followed**
+- 1.2: the media table.
+  - Stickers are fixed objects.
+  - Pencil is plans that are true to the rules: yellow for our plan, red for threat or loss, solid for what will happen.
+  - Bits are 0/1 glyphs in the source colour, white-hot first, going round the rim.
+  - The fiction: "Pencil is the Cell thinking".
+- 1.3: SEND IT over a system word.
+- 2.9: Anton sticker lettering; Permanent Marker as wax at 28-36 px (floor 26); Share Tech Mono bits.
+- 2.10: a focused or hovered sticker shows only the peel-back corner curl, with no lime halo.
+- 3.1: RAM terminal pips; UNDO as a terminal chip.
+- 3.18: die-cut, gloss band, yellow cost dot, greyed dot when it can't be afforded; peel, then a pencil line from the card
+  to the target and a pencil loop round the valid target, then slap (squash 1.13 / 0.86, contact ring, RAM paid, pencil
+  wipes), then dissolve A; the effect comes from the slap point.
+- 3.19: pencil 7 px with an ink edge.
+- The sticker and wax code is the repo's own `cohesion/map_pages_r42/scripts/sticker_lib19.py`, imported read-only.
+
+**Calls made**
+1. **Red as well as yellow.** Bible 1.2 already gives the pencil red `#FF1C2C` for threat, invalid and loss; 3.19's
+   "yellow only" is about the plan line. So the plan, the aim, the legal loops, our results (→ n, TAKEN) and our GUARD block
+   are yellow; the corp's hits (11.1, 13.1), LOST −1 HP (16.1) and the can't-use reason are red.
+2. **Forecast numbers in pencil.** Bible 1.2 lists "live numbers" under the pencil's Never column. These marks are the
+   END TURN forecast, true to the rules (pillar 4), which is the pencil's job, and the designer asked for them. The live values
+   (integrity, RAM, health) stay engraved or terminal. **Open question for the designer:** confirm that pencil may carry
+   forecast numbers.
+3. **Deface silhouettes without spray texture.** Bible 1.2 rejects spray paint and stencils as a medium, so the deface reads
+   from the die-cut shapes; the surface stays clean vinyl.
+4. **Pencil is never covered.** The held sticker sits above the wheel's top-left, clear of every pencil mark; the TAKEN mark
+   moved onto the dark ring to clear the wedge word.
+5. **The can't-use state follows the designer's brief**: greyscale vinyl at 80 %, a grey cost dot, and a red pencil
+   "needs 4" with an arrow. Bible 3.18's NEED tag is replaced by the pencil reason.
+6. **The marker font has no arrow glyph**, so "→ n" is a short pencil arrow plus the number.
+7. The `−3` result is bare Anton (bible: live big numbers).
+
+**Limits**
+- Statuses (V1, G2) still use the stamped chips from the locked plates; bible 1.2 would make temporary effect words stickers.
+  Not changed here.
+- The sticker art uses the borrowed card glyphs; the silhouettes are a first vector pass.
+- The idle bob, the gloss sweep and all motion are stills only; the dissolve is one frame.
+- WORM's three-target play and an illegal aim (the red pencil "invalid" mark) are not drawn.
+- Pencil positions are hand-set (an auto-placer is owed). The locked checks were not run. Numbers come from BOARD / PLAY / FORECAST.
+- The left flank is denser than the right, with open space above SEND IT.
+- Source: `D:/rc_scratch/takeover/inspiration/insp_deface3.py`. Run `python insp_deface3.py`, or name plates. It imports
+  `insp_render.py`, `tk_render.py` and `sticker_lib19` without changing them; the v1 and v2 plates are untouched.
