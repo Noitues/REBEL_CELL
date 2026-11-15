@@ -58,8 +58,13 @@ bits → HUD → temporary labels.
   - Tab cycles the legal wedges;
   - Esc or right-click sticks it back;
   - keys 1-5 peel the program in that slot.
-- **Multi-target (WORM):** picks are in order. Each pick gets a numbered yellow loop (1-3), and one pencil line runs through
-  them. Clicking a loop drops that pick. Slap is enabled only at the full count (the HUD says "3 of 3 picked").
+- **Multi-target (WORM), per B-091:** the player picks one target only. The card's selector in data adds the rest (WORM:
+  `target_and_corp_nb`, the target and then its corp neighbours).
+  - Hovering a legal wedge while WORM is held calls S8's preview (card + hovered segment → the ordered segments). Each one
+    gets a numbered yellow loop (1 = the picked target), and one pencil line runs from the sticker through them in order.
+  - Slapping on the hovered wedge plays it.
+  - The numbers match the resolver's order and the S4 trace.
+  - `df3_worm.png` predates B-091 and shows a manual 3-pick ("click a loop to drop it"). That is superseded by `v3_worm.png`.
 
 ## 3. Grease pencil layer
 - **Spec:** Permanent Marker rendered as wax, tracking 0.45, sizes 28-36 px. Strokes are 7 px with an ink edge (bible 2.9,
@@ -107,10 +112,14 @@ bits → HUD → temporary labels.
 ## 6. Data the look needs
 Already provided by S4: the B-088 per-segment trace (resolution number, source, target, kind, amount) and the exact forecast.
 
-Asked in A-119:
-1. **Pick order** for multi-target programs.
-2. **An illegal-target reason string** (the rule's words), per program and wedge.
-3. **Per-segment status values** (count or turns left), apart from the status id and owner.
+Asked in A-119, answered in B-091:
+1. **Multi-target order:** S8's preview (card + hovered segment → the ordered segments), from the card's selector.
+2. **Reasons:**
+   - `why_not(card)` gives the program-level reason (energy, rule, no_target, …): the red pencil beside a can't-use sticker.
+   - S8's `target_why(card, i)` gives the code plus the rule's words for one wedge (not corp, sealed, not next to yours, no
+     virus, hp above the cap, the card's own rule): the red pencil at the wedge, under the circle-and-slash.
+3. **Status values:** `TakeoverSegmentState.st` maps a status id to its value (stacks, or turns left for timed statuses). The
+   id picks the sticker and the value is the pencil number. Runner-side statuses work the same way on the fight state.
 
 ## 7. Designer rulings this spec depends on (2026-11-15)
 1. **Card type words stay.**
