@@ -838,3 +838,10 @@ interaction layer on your S8 placeholders, not a relayout.
     current room and the options, and dim the rest.
   - Both are logged in DECISIONS (2026-11-15, art call). No code yet, because the B street isn't on the city before S8.
 - **Next:** queue item 3, the raid look plates on v40 docking.
+
+### A-128 · 2026-11-15 · re build's merge note (2e5e40c2) · READY: zoom shaders include rc_common · READY
+- **`art/zoom-shader-common`** (art clone `D:/rc_art/godot_look`), one commit on port-campaign-b 2e5e40c2.
+  - `city_zoom_haze`, `city_zoom_hl`, `city_zoom_hl_fill` and `city_zr_road` each get the `rc_common` include after
+    `render_mode`.
+  - No name clashes, and none of the four animate.
+- **Run:** import clean (0 shader errors), test_vfx_tiers 21/21, test_city_zoom_* 69/69.
