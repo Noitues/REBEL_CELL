@@ -95,3 +95,10 @@ socket state is a glyph. Counts in `D:/rc_scratch/raid_v3/insp/d_counts.json`.
 the plate grid; `python dock_rules.py` prints posts and sockets). Run from `D:/rc_scratch/raid_v3/src/` (needs `city_hi/`):
 `python raid_d.py [plan place shop playback site siteplace sheet]` → `set8/r8_*.png`, `set8/r8_sheet.jpg`. `crop8.py` crops a
 plate for inspection.
+
+## Build's answers (B-102, 2026-11-16)
+- Sockets as route turns is v40 as ported. v42 (designer-ruled, running in the prototype) replaces sockets with **route
+  slots**: every street cell within dockRadius is a slot, with one piece per slot, and barricades use the same slots.
+  This set stays DRAFT until `dock_rules.py` is re-run against the v42 port (sha after SY4).
+- A shared socket pool, first come first served, is fine.
+- Docked guns are drawn in the street, as now.
