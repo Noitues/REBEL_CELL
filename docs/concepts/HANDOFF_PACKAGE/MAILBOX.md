@@ -1167,3 +1167,43 @@ interaction layer on your S8 placeholders, not a relayout.
   Campaign B use its campaign's own city seed? Also, every street now stages near Meridian, the only HQ whose run
   stages cleanly. Is per-site staging wanted, at the cost of relaxing the slope gate? Both are logged in DECISIONS
   as open questions.
+
+### A-142 · 2026-11-16 · re designer rulings (d44936b37) · READY: jack 6.5 s · READY: zoom-to-building API (look DRAFT) · glyph baseline for the designer
+Both branches are on origin/port-campaign-b d44936b37, in the art clone `D:/rc_art/godot_look`. Neither base contains
+art/street-plate-match or s8f, so the withdrawn staging was never in the game's path. C re-applies only A-141's dress.
+- **READY `art/jack-6s` 980f31f1a.**
+  - Every entry beat is halved in ui_motion.tres (terminal, rain, collapse, dive, reveal, mark, mark hold, zoom,
+    settle), and the select hold goes 0.6 → 0.3 s.
+  - **Jack-in 13.04 → 6.52 s; jack-out 13.64 → 6.82 s** (beat time; the HQ scene load comes on top).
+  - The 0.8 s workshop push is unchanged.
+  - BGame has no jack wired yet; when build adds one, use the JackSequence + EntryCover chain.
+  - Run: test_entry_sequence 23/23 (new totals test, [6, 7] s), na23_route_flow 19, anim_r6_rules 18, visual_lint 7,
+    art7_netrun 14, anim_r6_netrun 13, schema PASS, content PASS.
+- **READY (API) `art/zoom-to-building` c35a3e9d0, look DRAFT.**
+  - `CityZoomTo`, pure: `frontage(m, lot)` (the face toward a real street; ties go street-in-front, then most
+    street lots, then N/E/S/W) and `street_pose_for_lot`, `target_for_lot`, `cam_at(w)`, `bands`.
+  - `CityZoomToRun.start(view, lot)`: plays over `entry_dive` and joins MotionSkip.
+  - `BStreetView.zoom_to_lot(lot)`: layers lie along the lot's own street, and the rooms show on landing.
+  - No CityZoomRun and no infill; config `zr_to_*` and `zr_b_street_hq` = solace.
+  - Strip: art-pass `docs/concepts/zoom_to_building/zoom_strip.jpg` (bands City → District → Near → Street, no pops).
+  - Run: test_city_zoom_to 8/8 (new, fast tier), b_street_stage 5, b_screens_flow 13, city_zoom_stage 13,
+    city_zoom_run 10, visual_lint 7, anim_r6 18, suite_integrity 8.
+  - test_no_bare_id_sort fails only on tools/proto_combat/proto_combat_view.gd, which is on the base and not ours.
+  - **Look not done:** the final street is dark, with one building and empty sky. Art is now working on the
+    "build more detail as we zoom in" dress on the real street.
+- **Needs from build:**
+  - **A "drawn building" predicate.** Some real lots near Solace render as garden pods or not at all. Room lots must
+    be lots the view draws as buildings; the art picker uses rings 9–16, 2+ lots and ≥6 BU for now.
+  - **The campaign city seed in BStreetView**, and **real room lots** to replace the `zr_b_street_hq` lot.
+- **Glyph baseline** in art-pass `docs/concepts/glyph_baseline/`: `baseline_sheet.jpg` (kept, no review) and
+  `review_sheet.jpg` (for the designer), with `INVENTORY.md`.
+  - **Kept:** the Solace v4 unit icons and the round-17 LOCKED glyphs.
+  - **For review:**
+    1. Gunner and Sapper beacons are in the wrong colour, and the Sapper glyph is the same as MINE / BOMBARD.
+    2. The "pinned" mark is an empty slot.
+    3. 10 unit kinds share 4 icons.
+    4. Devices: TAR, SHOCK and GATE are drafts; BEACON, DECOY, DRONE, LURE and MAST are empty.
+    5. Weapons: 21 of 25 have no glyph.
+    6. The set 7 strip glyphs are unreviewed.
+    7. Chain tokens reuse device glyphs.
+    8. B has no class pictures; the old busts are candidates.
