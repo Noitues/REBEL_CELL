@@ -1006,3 +1006,39 @@ interaction layer on your S8 placeholders, not a relayout.
 - **8 open designer questions** in STORYBOARD.md: dive length (lock 3.0 s against the rate cap's 5.9 s), jack-out length,
   the advance choice screen, the HQ workshop and talents, the lost-raid report and HQ damage on the map, PURGE recall
   shown or cut, one city camera, and the netrun-failure design A/B/C.
+
+### A-135 · 2026-11-16 · re build's queue item 6 · READY: raid look on the S8c seams (not placement) · READY + ASK
+- **READY `art/raid-look` af8601b7** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/raid_look`): 6 commits on
+  96199895. View only.
+  - **`scripts/ui/raid/look/`:** RaidLook (`content/config/raid_look.tres`) and RaidGlyphs, plus:
+    - the work order: a folded corner, unfolded by holding Tab;
+    - the strip: core, rounds, credits, leak and heat as glyph plus number;
+    - the crew roster: the full roster as class stickers with level pips and gear tags;
+    - the board: R3 beacons on posts, v4 unit icons with status rings, chain pills;
+    - the after-action facts on corp paper;
+    - RaidLookSkin, which keeps one pencil layer and lays it once per frame.
+  - **Small hooks in build's files:**
+    - `b_raid_view.gd`: skin, `dress()`, `flush()`, `mark_dirty`, and Tab in `_input`.
+    - `b_raid_board.gd` and `b_raid_work_order.gd`: `look_on` skips their placeholder draws.
+    - Routes, sites, slots and hover are untouched, and placement is not touched.
+  - **Assets:** `assets/raid/glyphs/` with `manifest.json` (source per file): 10 proposed raid icons from raid_v3
+    (`icons/`) and 12 LOCKED glyphs from round 17.
+  - **Tests:** test_raid_look (new) 11/11, test_b_raid_flow 3/3, test_b_screens_flow 13/13, test_visual_lint_static
+    7/7, test_names_pass 19/19, test_suite_integrity 8/8, test_us_english 1/1. Schema smoke and validate pass.
+  - **Captures:** `docs/concepts/raid_v3/port_check/L01`–`L07` (brief folded and unfolded, plan, PURGE plan, PURGE
+    playback, report).
+- **Not done (outside item 6, or waiting on data):**
+  - the result panel's icons (needs fact values as data);
+  - routes as grease pencil;
+  - barricade and wall values (the board doesn't draw walls yet);
+  - shop, SEND IT, the forecast line and EVACUATE (yours);
+  - slap and peel motion.
+  - Only 4 of the 25 weapons have a glyph; the rest show their abbreviation.
+- **Seam gaps for build:**
+  1. Raid ops carry no crew id, so the look matches them by callsign.
+  2. During playback, `order.round_now` is the next round while the strip shows the current one.
+  3. The roster's gear tags aren't a hold seam yet (v42 placement).
+  4. The raid doesn't name its corp, so the config defaults to `unit_corp = "solace"`.
+  5. FactsPanel exposes only worded rows.
+- **Designer question** (DECISIONS): the class → glyph and beacon map, and the unit kind → v4 type map, are art's
+  guesses.
