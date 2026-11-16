@@ -8,22 +8,36 @@ as the record; it is superseded. Set 4 applies the designer's review of set 3 (t
 columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, one barricade representation.
 
 ## The city and the raid camera
-- **Pixels:** `tide_concepts/p3_work/city_albedo4k.png` (3840x2160), the 4k render of the same frame as
-  `p2_base/city_default.png` (aligned at 0,0 px). The raid camera is the same orthographic camera **3.5x closer than
-  city_default**. That is past the 4k plate's native 2x, so the plate is **upscaled 1.75x**: a float-box crop of the 4k plate
-  (window 548.6 x 308.6 px on city_default at (1215, 771)), Lanczos to 1920x1080, then a light unsharp (radius 1.4, 70 %),
-  then the under-glass grade (desaturated, darkened away from the district and under the side columns). Edges are softer than
-  native and the halftone dots of the render are enlarged; it reads as the city, not as a sharp render.
+- **Pixels: a native Godot capture of the raid window, no upscale.** Captured from **origin/main at `885975b6`** in a
+  detached throwaway worktree (`D:/rc_tmp/capture_main`, removed afterwards; nothing committed or pushed). A scratch scene
+  (`src/capture/raid_hi_capture.gd/.tscn`, adapted from the P3 `p1_depth_capture.gd`) sets up the same campaign as the P3
+  capture (seed 7, HQ scene, raid shown, overlays and the network layer hidden), keeps the P3 depth30 camera's direction
+  (rotation -40 / 45), aims the camera centre at the raid window's centre on city_default (1489.30, 942.11) and sets the
+  ortho size to **124.0148 BU** (the window at 3.5x plus 10 %), at **3840x2160**. Camera position (1237.565, 1671.248,
+  1297.660). That is K = 6.3636 capture px per city_default px. Run from the worktree after a headless `--import`:
+  `python tools/run_windowed.py --log <log> --timeout 1500 -- res://tools/_scratch_capture/raid_hi_capture.tscn -- --out=<dir>`.
+- **Grade:** `src/hi_grade.py` is the P2/P3 chain (recon, geo, grade, signs, reflections, haze, tone, as in
+  `make_albedo4k`) ported to the capture: every screen-space field (warmth and ripple noise, the water streak, the hero light,
+  haze noise and the depth range) is evaluated at each capture pixel's city_default coordinate, so it lines up with the 4k
+  plate; blur radii are scaled by K and morphology by round(K). Sign walls are chosen on the P3 data and drawn by world
+  position (1 of the 15 falls in this frame: the hero tower sign). Output `city_albedo_hi.png` (3840x2160) plus
+  `ground_vis_hi.png` and `hi_frame.json`.
+- **Match check** (`src/match_check.py`, the overlap brought to the 4k plate's density): raw capture against the P3 depth30
+  raw, NCC 0.890, best shift 0, 0 px; 156 tiles of 64 px, median 0.869, p10 0.769, none under 0.5. Graded against
+  `city_albedo4k.png`, NCC 0.928, shift 0, 0 px; tile median 0.896, p10 0.779, 1 % under 0.5. Same buildings in the same
+  places; the city did not change in this district.
+- **Plate:** the raid window (548.6 x 308.6 px on city_default at (1214.8, 787.8)) is a float box of about 3491 x 1964
+  capture px, Lanczos **down** about 1.82x to 1920x1080, then the under-glass grade (desaturated, darkened away from the
+  district and under the side columns). No unsharp.
 - **Geometry:** the camera is orthographic, so world to screen is affine. `city_geo.py` fits it from `world_pos_f16.npz`
-  (residual 0.23 px median); the raid screen is `(p1080 - VIEW_O) * 3.5`. The window snaps to 0.5 px on city_default so the 4k
-  crop starts on a whole pixel; the crop and the map share the same float box, so the grid sits on the pixels. The ground
-  visibility mask comes from the 1080 world positions, scaled 3.5x and blurred, so it is much coarser than the picture.
+  (residual 0.23 px median); the raid screen is `(p1080 - VIEW_O) * 3.5`. The plate and the map share the same float box,
+  so the grid sits on the pixels. The ground visibility mask comes from the capture's own depth (world height above the
+  ground under 1.6 BU, excluding the water id), at the capture's resolution.
 - **District:** the low-rise street block south-west of the Solace HQ ring (the set 3 district, cropped tighter). The grid is
   7 x 7 cells on the city's own 6 BU lot lattice, X0 -195, Z0 -135 (edges at 3 mod 6 BU in world x and z). Cell names a-g along
   the north-east edge, 1-7 along the north-west edge. The cell diamond is about 145 x 93 px. Open streets: avenue b (world x
   -189..-183, the whole length), street 1 (north) and streets 6-7 (south), avenue e from row 3; low-rise blocks between them.
-  The window is pinned at the plate's bottom edge (the district sits low on city_default), so the district centre is at about
-  (960, 529) on screen, not quite the intended 470.
+  The capture is centred on the district, so the district centre is at (960, 470) on screen as intended.
 - **Side columns at 0.76:** CREW, rows, core tape and the left foot are drawn at full size on their own layer and shrunk 0.76
   towards the top-left corner; the work order, the BLACK MARKET sheet, REROLL and SEND IT towards the top-right corner (they
   stack in the top 760 px). The Evacuate chip shrinks about its own centre. The HUD line stays full size. The centre display
@@ -91,19 +105,21 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
   words (WORK ORDER ref, TARGET, AUTHORISED, DO NOT FORWARD), "BLACK MARKET", credits 12 at the end.
 - **Beacon is a 2D stand-in** (cone, ring, scanlined disc), not the R3 model. Unit icons are a first pass at v4 for Solace;
   the Riot / Sniper / Wrecker variants are my guesses at "plain body" and "verb glyph".
-- **Ground visibility is coarse** (from 1080 world positions scaled 3.5x and blurred), so the grid and route tint fade behind
-  buildings with soft, blocky edges.
 - **Stills only;** kill and forecast numbers are not from the sim; pencil and stickers are hand placed (build needs an
   auto-placer); the measured checks (contrast, minimum text size) were not run.
 
 ## Honest weak points
-- **The city is upscaled 1.75x past the 4k plate.** Soft edges and enlarged halftone dots; the unsharp keeps edges, not detail.
-  A 7k (or district-cropped) render of the same frame would fix it.
+- **The capture is closer than the 4k plate, and the game renders some things differently at this zoom.** A few tall towers
+  near the left edge render see-through (the city's zoom-dependent see-through band and LOD), and the ink outlines are thinner
+  than on the 4k plate. Both are the game's own rendering at this camera size.
+- **The ported grade is close but not identical** to `city_albedo4k`: a little less warm, with fewer and smaller lamp pools.
+- **Only 1 of the 15 P3 sign walls falls in the frame**, so the district has less signage than the wide plate suggests.
+- **The ground visibility mask is new** (from the capture's depth, not the P2 world positions); it is sharper, but it has only
+  been checked by eye on these plates.
 - **Rules text in the side columns misses the 16 px cap-height aim.** Measured from the font sizes: the HUD line is about 21 px
   cap (full size); the core tape title, the rows and the chips about 13-15 px; the work order's round heads about 11 px; its unit
   rows ("Trooper ×5") about 9 px, the smallest rules text on screen. Uniform scaling cannot reach the aim for the memo; it needs
   re-laying out (fewer groups per line, bigger type) or a wider right column.
-- **The district sits a little low** (centre about 529 on screen, aim 470): the window is pinned at the plate's bottom edge.
 - **The lit zigzag road under the district** (bottom of the play area) is bright and busy behind route B, the leak notes and
   the entry stacks; it is part of the plate.
 - **The space-elevator tether** crosses in front of the district's east side (columns d-g); it is part of the plate.
@@ -138,8 +154,13 @@ These replace the open questions that were here. The plates above predate them a
 `D:/rc_scratch/raid_v3/src/`. They import `raid_kit.py`, `raid_v3.py` (report paper) and the Takeover v3 scripts read-only; the
 first set's `raid_v3.py` is unchanged and still renders `grid_v1`.
 - **Run:** `python raid_v3_city.py [plan place shop playback site aftermath sheet]`.
-- **Reads:** `tide_concepts/p3_work/city_albedo4k.png`, `tide_concepts/p2_base/layers/world_pos_f16.npz`, `street_mask.png`,
-  `occluder_mask.png` (read-only).
+- **Reads:** `D:/rc_scratch/raid_v3/city_hi/` (`city_albedo_hi.png`, `ground_vis_hi.png`, `hi_frame.json`; it falls back
+  to `tide_concepts/p3_work/city_albedo4k.png` with an upscale if they are missing), `tide_concepts/p2_base/layers/world_pos_f16.npz`,
+  `street_mask.png`, `occluder_mask.png` (read-only).
+- **The city plate:** `src/capture/raid_hi_capture.gd/.tscn` (the scratch capture scene; it was run from a detached worktree
+  of origin/main `885975b6` under `tools/_scratch_capture/` and is not part of the project), `src/hi_grade.py` (the grade
+  port; reads the capture and the P3 data read-only, writes `city_hi/`), `src/match_check.py [raw|graded]` (the overlap check
+  against the P3 plate).
 
 ## CREW roster options (for designer ruling 4), `crew_options/`
 Same round-1 plan state for all three. On the map, the operatives are drawn as a stand-in for the bible 4.8 R3 class beacon

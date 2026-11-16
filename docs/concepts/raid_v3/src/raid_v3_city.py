@@ -14,7 +14,7 @@ core 8 and the v39 EVACUATE text.
 Toolkit: raid_kit (stickers, pencil, HUD), raid_v3 (report paper), crew_options (unchanged), city_geo (new).  Everything is drawn
 on a transparent supersampled overlay, which is downsampled and composited on the native-resolution city.
 """
-import math, os, sys
+import json, math, os, sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
@@ -121,10 +121,27 @@ def view(x, y):
 G = CityGrid(-195.0, -135.0, 7, 7)
 
 
+# the high-resolution city: a native Godot capture centred on the raid window (city_hi, see hi_grade.py); its frame on city_default
+HI_DIR = 'D:/rc_scratch/raid_v3/city_hi/'
+HIF = json.load(open(HI_DIR + 'hi_frame.json')) if os.path.exists(HI_DIR + 'hi_frame.json') else None
+
+
+def hi_box():
+    """the raid window as a box in hi-capture px (hi px = centre + (city_default px - its centre) * K)"""
+    k = HIF['K']
+    x0 = HIF['w'] / 2 + (VIEW_O[0] - HIF['cx0']) * k
+    y0 = HIF['h'] / 2 + (VIEW_O[1] - HIF['cy0']) * k
+    return (x0, y0, x0 + W / VIEW_ZOOM * k, y0 + H / VIEW_ZOOM * k)
+
+
 def _frame():
-    """the camera window: the district centre on MAP_C, clamped to the 4k plate; snapped to 0.5 px so the 4k crop is whole pixels"""
+    """the camera window: the district centre on MAP_C, clamped to the source plate (the hi capture, else the 4k plate)"""
     gx, gy = G.sp1080(G.nc / 2, G.nr / 2)
     ww, wh = W / VIEW_ZOOM, H / VIEW_ZOOM
+    if HIF:
+        bx0, by0 = HIF['cx0'] - HIF['w'] / 2 / HIF['K'], HIF['cy0'] - HIF['h'] / 2 / HIF['K']
+        bx1, by1 = HIF['cx0'] + HIF['w'] / 2 / HIF['K'], HIF['cy0'] + HIF['h'] / 2 / HIF['K']
+        return min(max(gx - MAP_C[0] / VIEW_ZOOM, bx0), bx1 - ww), min(max(gy - MAP_C[1] / VIEW_ZOOM, by0), by1 - wh)
     ox = min(max(gx - MAP_C[0] / VIEW_ZOOM, 0.0), 1920.0 - ww)
     oy = min(max(gy - MAP_C[1] / VIEW_ZOOM, 0.0), 1080.0 - wh)
     return min(round(ox * 2), math.floor((1920.0 - ww) * 2)) / 2, min(round(oy * 2), math.floor((1080.0 - wh) * 2)) / 2
@@ -136,6 +153,9 @@ VIEW_O = _frame()
 def ground_vis_ss():
     """per-pixel ground visibility at SS (1 = the ground is what the camera sees here), from the 1080 world positions, cropped
     to the raid window and scaled up (the mask is coarser than the picture: 2 px steps)"""
+    if HIF:                                                 # native: from the hi capture's own world positions
+        gv = Image.open(HI_DIR + 'ground_vis_hi.png')
+        return gv.resize((W * SS, H * SS), Image.BILINEAR, box=hi_box()).filter(ImageFilter.GaussianBlur(SS))
     C = city()
     gv = (~C.occlusion_screen(tol=1.6)).astype(np.uint8) * 255
     ox, oy = VIEW_O
@@ -163,8 +183,10 @@ def city_plate(dim=1.0):
     and the towers below calm down"""
     ox, oy = VIEW_O[0] * 2, VIEW_O[1] * 2
     box = (ox, oy, ox + 2 * W / VIEW_ZOOM, oy + 2 * H / VIEW_ZOOM)
-    src = Image.open(CITY4K).convert('RGB')
-    if VIEW_ZOOM == 2.0:
+    src = Image.open(CITY4K).convert('RGB') if not HIF else None
+    if HIF:                                                 # the native capture: Lanczos DOWN from its float box, no upscale
+        src = Image.open(HI_DIR + 'city_albedo_hi.png').convert('RGB').resize((W, H), Image.LANCZOS, box=hi_box())
+    elif VIEW_ZOOM == 2.0:
         src = src.crop(tuple(int(v) for v in box))
     else:                                                   # past native: Lanczos up from the float box + a light unsharp
         src = src.resize((W, H), Image.LANCZOS, box=box).filter(ImageFilter.UnsharpMask(1.4, 70, 2))
