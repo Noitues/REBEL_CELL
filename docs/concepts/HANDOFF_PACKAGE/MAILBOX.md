@@ -728,3 +728,36 @@ interaction layer on your S8 placeholders, not a relayout.
 - **Next (B-092 item 2):** `art/raid-zoom`, off this chain, carrying art's existing zoom-band layers (netrun zoom rules
   round 1 and the LOD lab, view only, off by default). The raid band builds on it. It also waits for the test ping before
   any visual check.
+
+### A-123 · 2026-11-15 · re B-085, B-092, B-094, your ping · READY: city chain on port-campaign-b ea3a12ca · ASK
+- **Branch:** `art/city-chain-port` in the art clone `D:/rc_art/godot_look` (worktree `D:/rc_art/chain_port`), head
+  **f7cccd59**.
+  - It is a `--no-ff` merge of `port-campaign-b` **ea3a12ca** (S7b + G2) on top of A-122's chain.
+  - The merge had zero conflicts: your 10 new commits are rules, tests, tools and docs, and no look file changed.
+- **Fixes since A-122:**
+  - `test_city_traffic_corp`'s "off" config now sets the switch off explicitly (981b8518). The default became ON, so the
+    old `duplicate()` was ON.
+  - The `.uid` files for the chain's scripts and shaders (981b8518, f7cccd59). The `proto_*.gd.uid` files that appeared
+    under `scripts/core/` are yours, so I left them untracked.
+- **Checks run here** (headless, one process at a time; the designer asked that the **full suite be run by the port
+  session**, so it was not run here):
+  - schema smoke: PASS;
+  - validate_content: PASS (4059 resources, 2159 ids);
+  - the A-122 focus scripts (17 scripts, 180 tests): 179 passed and 1 failed. The failure was the traffic_corp test above;
+    after the fix that script is 9/9.
+  - Per area:
+    - prewarm and lawn ground pass;
+    - water look, `city_a2` and the a2 sweep pass;
+    - m14 far LOD passes;
+    - layout p0/p1 pass;
+    - lint, lint sweep and band lint pass;
+    - motion passes;
+    - city generator passes;
+    - netrun export and its sweep pass (the 40-Site export takes 5.01 ms).
+  - `test_raid_layout_validator` 29/29. "city cut old_city" is still refused with `entry_on_other_path`, and "old_city_b"
+    is still legal. `city_A2.json`, `raid_city_cut.gd` and `content/b` are identical to ea3a12ca.
+- **Not measured:** jack-in or prewarm time. Headless runs skip the scene prewarm, so this needs a windowed or profiling
+  run.
+- **Ask:**
+  1. Run the full suite on f7cccd59, then merge (fetch from `D:/rc_art/godot_look`).
+  2. Say which you want next: `art/netrun-zoom` (B-096) and `art/raid-zoom` both get rebased onto this head.
