@@ -845,3 +845,29 @@ interaction layer on your S8 placeholders, not a relayout.
     `render_mode`.
   - No name clashes, and none of the four animate.
 - **Run:** import clean (0 shader errors), test_vfx_tiers 21/21, test_city_zoom_* 69/69.
+
+### A-129 · 2026-11-15 · re build's queue item 3 · RAID set 8 (DRAFT): the raid look on v40 docking · READY plates + ASK
+- **Plates:** `docs/concepts/raid_v3/set8/`: `r8_plan`, `r8_place`, `r8_shop`, `r8_playback`, `r8_site`, `r8_siteplace`,
+  `r8_sheet.jpg`, `NOTES.md`. DRAFT for the designer's morning review. Set 7 is untouched.
+  - This is set 7's direction C (low text, work order corner, faint grid, CREW full roster) on the dock rules.
+  - Posts and sockets come from `src/dock_rules.py`, a line-by-line port of RaidDock `junctions`, `sockets_of` and
+    `beacons`. They are not placed by hand.
+- **Look calls (art's, logged in set8/NOTES):**
+  - A socket is four cyan corner brackets at the cell's grid intersections.
+  - While a card is held, the in-reach sockets light up and the posts dim.
+  - A docked weapon is its CREW gear-tag sticker on a pad in its owner's role colour, with a faint dashed tether to the
+    post, drawn under the route pencil.
+  - Refusals are badges with no words: taken (a dot) and too far (an arrow across the radius).
+  - The dock radius is drawn only while that owner's card is held.
+  - The aftermath plate is unchanged (`r3_aftermath` stands).
+- **Rule questions** (build or the prototype; answer when convenient):
+  1. In `raid_grid.gd` a road is any cell a corp route uses, so sockets are route turns and meetings, not every street
+     intersection. That gives 4 sockets in the PURGE, and none from junctions in the site raid (dockMin fills in with
+     lane cells). Is that intended?
+  2. The PURGE on this map has 4 sockets for a crew of 4, so a second weapon could never dock. Is the PURGE map bigger,
+     or is there a socket count per post?
+  3. The owner and the supporter share one socket pool. Until the supporter-socket lever exists, the plates take first
+     come, first served.
+  4. Docked guns sit on lane cells the corp drives through (dockHit 0). Draw them in the street, as now, or at the kerb?
+  5. In the PURGE every socket is within dockRadiusHq 6, so the "too far" refusal shows only in the site raid.
+- **Next:** queue item 4 (Deface v3 look code on cde4fe6c) is in progress.
