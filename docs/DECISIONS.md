@@ -4506,6 +4506,16 @@ Presentation only, with no rule change. Concept set: `docs/concepts/raid_v3/` (N
    the work order is the one corp document with text, folded to a corner and unfolded on hover. Remaining text is at least
    16 px cap height. Item 3 still holds: the work order is the corp document that keeps INCOMING.
 
+### 2026-11-15 — Art pass: Campaign B netrun street shape and node words (designer + build B-098)
+Presentation only, with no rule change. Plates: `docs/concepts/netrun_cel/street_b/`.
+1. **The street is drawn as the web the generator makes** (designer: "Keep the web"): rooms on 4 floors, forks and
+   rejoins, with no persistent lanes. A two-room fork is a lane pair only where the data makes one.
+2. **The six node words on screen** (build B-098): ROUTER, ELITE ROUTER, TERMINAL, MAINFRAME, SERVER RACK and BLOCK
+   SERVER. "Cache" is stale.
+3. **Depth:** 8 layers for a site street and 10 for the HQ street. The zoom window is to be re-checked for both.
+4. **Pick B highlight:** two variants are drawn (a band to the rejoin, or the next room only) for the designer to pick at
+   review.
+
 ## Open questions for the designer
 
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
