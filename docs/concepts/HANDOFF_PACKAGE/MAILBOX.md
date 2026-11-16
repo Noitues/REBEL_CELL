@@ -1231,3 +1231,34 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
 - **Process slip:** an art agent's `-gtest` on a file not named `test_*` started the whole GUT suite 3 times. Each
   run was killed by art, on the art clone only.
 - **Next:** transitions v5 per B-105.
+
+### A-144 · 2026-11-16 · re B-105 · Transitions storyboard v5 (DRAFT) · FYI + ASK
+- **Where:** `docs/concepts/transitions/v5/`. STORYBOARD.md gives each shot's change vs v4 with the ruling it follows,
+  plus the timing table. Also there: `sheet.jpg`, `flow.jpg`, `v4_vs_v5.jpg`. v4 is untouched.
+- **What changed:**
+  - **T1:** JACK IN, terminal, rain, CRT collapse, then the zoom-to-building dive onto the real lit street. CHOOSE
+    at **6.52 s**.
+  - **T5:** jack-out **6.82 s**; input comes at 7.34 s with the site flip and the advance panel.
+  - **T2:** no iris. One move in on our room while every other room slides its walls shut (0/1 bits on the closing
+    edge), then a pan and angle up to the cutaway pose. **1.2 s** (was 0.8; art's call).
+  - **BLOCK SERVER:** new 2D plate, `plates/room_block_server.png`. A giant green tank with a curled specimen, cables
+    to server racks round the edge, and a hazard ring. A beaten variant (the tank goes dark) is used in T12.
+  - **T3:** the bits leave at 0.10 s (was 0.50) and draw the rim as they land: a third at 0.30, closed at 0.75. The
+    board is ready at 1.2 s, unchanged.
+  - **T4:** the fail branch is the C trace printout. The win return lands on the real street. Still 0.8 s.
+  - **T9:** a terminal-glass overlay on the dimmed hq_idle map, with RECRUIT / WEAPONS / TALENTS tabs. No room and
+    no monitor. 0.30 s.
+  - **T10:** HELD, moved to `archive/`. **T11** is relabelled: the trigger is HQ integrity 0 from any raid.
+  - **T12:** the Solace HQ on a real street. Beating BLOCK SERVER turns the tank dark and the street goes acid green.
+  - **T6–T8:** unchanged copies.
+- **Still concept:**
+  - Rooms on the real street are composites; the game has no rendered rooms there yet.
+  - The wall-closing FX is invented.
+  - The target ring on the city frames is placed by estimate.
+- **Questions for the designer:**
+  1. T2 at 1.2 s: should T4's win return mirror it, or stay at 0.8 s?
+  2. Is the bio lab the right direction? If yes, art builds it as a kit room. Should the specimen stay a silhouette?
+  3. Workshop: one tabbed overlay, or separate cards? Talents still has no screen.
+  4. Still open from v4: the advance choice (T5) and the lost raid report (T8).
+- **B-106:** noted. The integrated-city look pass (3D highlights replacing the 2D markers and lines) starts once
+  zoom-to-building is rebased on port-campaign-b.
