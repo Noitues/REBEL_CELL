@@ -1140,3 +1140,30 @@ interaction layer on your S8 placeholders, not a relayout.
   - (c) "Device here": each device gets its own sticker with a red no-mark (`r8_devhere_key.png`).
   - (d) The B-104 answers are recorded in set8/NOTES.
 - **Still open:** our Q1 (the word "street slot") and Q6 (rest slots outside a held card).
+
+### A-141 · 2026-11-16 · re build's S8f street message · READY: game street dressed as the staged-run plates · READY + ASK
+- **READY `art/street-plate-match` 959b8b32e** (art clone `D:/rc_art/godot_look`): 4 commits on port-b/s8f b25b7027.
+- **Pose was already right; the dress differed.** Fixed view-side:
+  1. Zoom layers off. `set_zoom_layers(true)` had turned on round-1 blade signs, light boxes, slabs and the white frames.
+  2. `CityViewMotion` attached to the street city, giving the night art look: lit windows, corp tints and the r6 grade
+     (fog 0.04, not 0.22).
+  3. The run is picked near Meridian HQ (`CityConfig.zr_b_street_anchor_hq`), not the default target among
+     cone-roofed downtown towers.
+  4. The picked run keeps its own length (9 / 11), not depth × 1.
+  5. NETRUN band lock.
+  6. The post takes the 2D finish material.
+  7. The network decal is re-hidden after the model loads.
+- **Files:** `b_street_view.gd` (`stage_city`), `b_street_stage.gd` (`anchor_lot`), `city_config.gd`, the new
+  `test_b_street_plate_match` (4 tests, fast tier), and DECISIONS.
+- **Run:**
+  - passing: test_b_street_plate_match 4/4, test_b_street_stage 6/6, test_b_screens_flow 13/13,
+    test_visual_lint_static 7/7, test_anim_r6_rules 18/18, test_suite_integrity 8/8, schema PASS, content PASS;
+  - failing: test_no_bare_id_sort 1/2. The failure lists only `tools/proto_combat/proto_combat_view.gd`, a file
+    this branch doesn't touch. Not checked at b25b7027.
+- **Sheet:** `docs/concepts/review_2026-11-16/street_fix/street_vs_plate_fix.jpg`. The shop row is now continuous with
+  about 12–15 signs and lit windows, and the foreground slabs are gone.
+- **Still differs (design ASK):** the buildings behind the shop row are taller and the sky is less open. Campaign B
+  draws the default city (`city_seed` 7), while the plates use campaign A's `CampaignRules.city_seed_for(7)`. Should
+  Campaign B use its campaign's own city seed? Also, every street now stages near Meridian, the only HQ whose run
+  stages cleanly. Is per-site staging wanted, at the cost of relaxing the slope gate? Both are logged in DECISIONS
+  as open questions.
