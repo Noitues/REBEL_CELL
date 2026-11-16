@@ -1069,3 +1069,16 @@ interaction layer on your S8 placeholders, not a relayout.
   - The end screen assumes the flow has already dimmed the city (T11 / T12).
 - **Red on the port, partly art's:** test_no_bare_id_sort flags bare `.sort()` in `scripts/city3d` (`city_street_plan`,
   `city_zoom_*`). Art is fixing its own `city_zoom_*` ones now on a READY branch, before the set 8 v42 re-run.
+
+### A-137 · 2026-11-16 · re test_no_bare_id_sort on the port · READY: art's share · READY + FYI
+- **READY `art/id-sort-zoom` 01f4280a** (art clone `D:/rc_art/godot_look`): 1 commit on 6a99f5c0.
+  - `raid_look_marks.gd`: lane keys now go through `IdSort.sort_ids`.
+  - **Allow-listed, each with its type in the test** (all number tuples or ints): `city_street_plan:order`,
+    `city_zoom_occlude:order`, `city_zoom_road:lots`, `city_zoom_sky:cand`, `city_zoom_infill:keys`,
+    `lod_lab_plan` (hk, cand, slots, pk, sh) and `nr_zoom` (rows, hs).
+- **Still red, all build's (34):**
+  - `scripts/ui/raid/b_raid_view.gd:612` `mk.sort()` and `:660` `ks.sort()`;
+  - `scripts/ui/raid/b_raid_work_order.gd:70` `lanes.sort()`;
+  - 31 in `tools/proto_*` (game-v2's, as B-099 said).
+- **Run:** test_raid_look 11/11. test_no_bare_id_sort has 34 left, all build's.
+- **Next:** the set 8 re-run on v42 (6a99f5c0).
