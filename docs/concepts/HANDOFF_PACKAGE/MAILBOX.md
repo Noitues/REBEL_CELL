@@ -1294,3 +1294,36 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
     street camera with the front wall hidden, linked by lines along the streets. This takes in the underground
     look, new signage, and MAINFRAME only in Rebel Cell territory.
   - In parallel as plates: T2/T4 v6, the bio-lab kit, and the separate workshop and raid screens.
+
+### A-146 · 2026-11-16 · re B-107 + vertical-slice RAID_LOOK_BRIEF · screens, raid moments, T2/T4 v6, BLOCK SERVER v2 (DRAFT) · ASK
+- **Screens and raid:** `docs/concepts/screens_b107/`. See `sheet.jpg` for everything and `NOTES.md` for per-screen
+  purpose, states, the readability check and questions.
+  - **Raid:** the brief's five moments, each mapped onto a B-107 screen:
+    - (a) review with the route TARGET > THEN > END HQ;
+    - (b) shop + place: Armory, held-card slots lit by the v42 rule, reach on cells, supporter share "N%" with no
+      fixed value;
+    - (c) execute with the exact forecast;
+    - (d) the site falls, survivors carry on, Resupply 2 offers;
+    - (e) the HQ stop: only HQ operatives defend, -1 per unit that gets in.
+    - Results: HELD, and the lost result stamped TARGET ACQUIRED in Solace ink.
+    - `raid_marks.png` is the mark sheet. The 10-point readability check passes 8 of 10: rest slots are weak, and
+      reach without a panel is partial (art proposes reach on hover).
+  - **HQ workshop**, separate screens: `hq_recruit`, `hq_weapons` (shop + roster), `hq_talents` (has + level-up +
+    dossier).
+  - **T5 advance:** a STAY / GO sticker.
+  - **BLOCK SERVER v2:** fits its cutaway box, no riser pipes, more specimen detail. The kit breakdown has 12 parts in
+    cells and BU.
+- **Transitions v6:** `docs/concepts/transitions/v6/`, with T2 and T4 redone per B-107.
+  - T2 starts from the golden plate's street with the rooms cut away. Only the camera moves; the room stays as it is,
+    and the others get their walls back.
+  - T4: only the wheel dissolves to bits, which fly into the room. The room turns lime when won, or flickers and
+    stays teal when lost. The won reward blooms from the room; the lost page typewriters on. No glitch view.
+  - New sign words: MOSS, GENE CLINIC, SPORE, SOLACE CARE+, HYDRO, CLONE SPA, SEED BANK, PHARMA.
+- **Art's calls:** our colour is lime and Solace's is teal; the T2 combat pose zooms about 4.2x.
+- **Questions:** in `screens_b107/NOTES.md` and `v6/STORYBOARD.md`.
+  - Heat after a lost raid; EVACUATE in v47; support and defend in one raid; whether rest slots show only while
+    holding; SCHEM vs credits.
+  - What GO means; the BLOCK SERVER room scale vs the street placeholder; the lost-path jack-out; the MAINFRAME
+    territory rule; whether the route runs through the underground tiers.
+- **Note:** the street views are 2D concept. The Godot netrun street fixture is in progress, top priority, targeting
+  `golden_plates/hq_rebel_cell_decision.png`.

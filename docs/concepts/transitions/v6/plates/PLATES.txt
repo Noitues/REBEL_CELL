@@ -1,0 +1,39 @@
+sources read at build time (md5 prefix):
+map      4058ab7895 cohesion/map_pages_r42/hq_idle.png
+bio      7bc412353f combat_backdrop/v3_1/room_bio_bare.png
+event    5dcf05d629 combat_backdrop/v3_1/room_event_bare.png
+shop     eb150f2966 combat_backdrop/v3_1/room_shop_bare.png
+srv      843a7f750b combat_backdrop/v3_1/room_srv_bare.png
+board    0c45317eef takeover_board/v3/v3_board.png
+win      52a4b2e6e8 takeover_board/v3/v3_win.png
+failC    961077cf3c transitions/netrun_fail/C_trace_printout.png
+r3plan   10640d04fe raid_v3/r3_plan.png
+r3place  b5e805b593 raid_v3/r3_place.png
+r3shop   f8713a8528 raid_v3/r3_shop.png
+r3play   b958aac831 raid_v3/r3_playback.png
+r3site   1cf67076a4 raid_v3/r3_site.png
+r3aft    134012c321 raid_v3/r3_aftermath.png
+r8plan   0522af20bb raid_v3/set8/r8_plan.png
+r8place  f93cbcab06 raid_v3/set8/r8_place.png
+r8play   0e2134d0e8 raid_v3/set8/r8_playback.png
+loseB    7f74e27e3f solace_endscreens/v2/lose_B.png
+winB     67032e6287 solace_endscreens/v2/win_B.png
+cap      bd7baed5e0 transitions/v4/plates/raid_city_capture.jpg
+zt       e0983063e7 transitions/v5/plates/zoom_to/strip_00.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/strip_00.png)
+zt       c797ec06d8 transitions/v5/plates/zoom_to/strip_05.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/strip_05.png)
+zt       a74a21ad08 transitions/v5/plates/zoom_to/dense_008.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_008.png)
+zt       b56b3cfb74 transitions/v5/plates/zoom_to/dense_012.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_012.png)
+zt       518a46ea28 transitions/v5/plates/zoom_to/dense_015.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_015.png)
+zt       978b3a93bf transitions/v5/plates/zoom_to/dense_019.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_019.png)
+zt       9b57880a18 transitions/v5/plates/zoom_to/dense_021.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_021.png)
+zt       8d5c656da0 transitions/v5/plates/zoom_to/dense_023.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/dense_023.png)
+zt       f231b9e6ad transitions/v5/plates/zoom_to/final_lot3.jpg (1920 px copy of D:/rc_tmp/claude/zt/final/final_lot3.png)
+blk      ac19a8667f transitions/v5/plates/room_block_server.png (drawn by scripts/blocklab5.py over room_bio_bare)
+blk      c5f3aec971 transitions/v5/plates/room_block_server_beaten.png (drawn by scripts/blocklab5.py over room_bio_bare)
+
+v6 (B-107) additions, built by scripts/build6.py:
+street   golden_plates/hq_rebel_cell_decision.png (art lead: the netrun frame) + Solace signage and cut-away rooms painted in 2D -> netrun_street_open.png, netrun_street_combat_world.png, netrun_street_won.png, t2_combat_pose.png, t2_*.jpg, t4_*.jpg
+wheels   takeover_board/v3/v3_win.png, v3_board.png (circle crop + panels)
+failC    transitions/netrun_fail/C_trace_printout.png (rising / typed loss page)
+map      cohesion/map_pages_r42/hq_idle.png (L8); L7 = v5 plates/zoom_to/dense_015.jpg
+bsrv2    room_block_server_v2(_beaten).png from screens_b107/scripts/blockserver_v2.py
