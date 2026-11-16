@@ -1,0 +1,30 @@
+sources read at build time (md5 prefix):
+map      4058ab7895 cohesion/map_pages_r42/hq_idle.png
+ov8      2428fff554 netrun_cel/zoom_rules/staged_run/run8_city_overview_highlight.png
+ov10     fe8107c0a4 netrun_cel/zoom_rules/staged_run/run10_city_overview_highlight.png
+r8L0     037c515adf netrun_cel/zoom_rules/staged_run/run8_first_L0.png
+r8L7     86fa8fde45 netrun_cel/zoom_rules/staged_run/run8_last_L7.png
+r10L0    7a9ab23a90 netrun_cel/zoom_rules/staged_run/run10_first_L0.png
+pickB    87baab3736 netrun_cel/street_b/street_branch_B_next.png
+zr4      9c0af35543 netrun_cel/zoom_rules/round4/zoom_motion.gif
+bio      7bc412353f combat_backdrop/v3_1/room_bio_bare.png
+event    5dcf05d629 combat_backdrop/v3_1/room_event_bare.png
+shop     eb150f2966 combat_backdrop/v3_1/room_shop_bare.png
+srv      843a7f750b combat_backdrop/v3_1/room_srv_bare.png
+board    0c45317eef takeover_board/v3/v3_board.png
+win      52a4b2e6e8 takeover_board/v3/v3_win.png
+fail     badf08c870 transitions/netrun_fail/A_crt_feed.png
+r3plan   10640d04fe raid_v3/r3_plan.png
+r3place  b5e805b593 raid_v3/r3_place.png
+r3shop   f8713a8528 raid_v3/r3_shop.png
+r3play   b958aac831 raid_v3/r3_playback.png
+r3site   1cf67076a4 raid_v3/r3_site.png
+r3aft    134012c321 raid_v3/r3_aftermath.png
+r8plan   a843392432 raid_v3/set8/r8_plan.png
+r8place  3a63510032 raid_v3/set8/r8_place.png
+r8play   02a87cc1cf raid_v3/set8/r8_playback.png
+room     89156311f7 round42_hq_room/hq_room.png
+act      9feb5dab04 round42_hq_room/hq_actions.png
+loseB    7f74e27e3f solace_endscreens/v2/lose_B.png
+winB     67032e6287 solace_endscreens/v2/win_B.png
+raidcap  bd7baed5e0 transitions/v4/plates/raid_city_capture.jpg (1920 px copy of D:/rc_scratch/raid_v3/city_hi/city_albedo_hi.png)

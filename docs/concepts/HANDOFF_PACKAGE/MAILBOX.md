@@ -989,3 +989,20 @@ interaction layer on your S8 placeholders, not a relayout.
   - Some infill reads as odd pyramid roofs.
 - **Open for the designer** (DECISIONS 2026-11-16): the infill look, flattening the ground under a run, and the 0.35
   fill cap.
+
+### A-134 · 2026-11-16 · re B-100 · TRANSITIONS v4 (DRAFT): Campaign B storyboard · FYI
+- **Storyboard:** `docs/concepts/transitions/v4/`: `STORYBOARD.md`, `t01`–`t12` strips, `flow.jpg`, `sheet.jpg` and
+  `v3_vs_v4.jpg`. DRAFT for the designer's morning review. It uses v3's method: every key is badged REAL, COMP or
+  CONCEPT.
+- **Biggest change:** T1 and T5 (jack in / jack out) now follow the LOCKED bible 4.6 entry chain, about 13 s, skippable
+  with one press. v2 and v3 never applied it.
+- **Per transition:**
+  - T2: pick B on the next room.
+  - T3 and T4: the Deface v3 board assembles in layer order; the win leaves by Dissolve A; the fail branch uses
+    netrun_fail design A.
+  - T6–T8: on raid set 7, with set 8 dock pieces tagged DRAFT.
+  - T9 (HQ workshop) and T10 (PURGE recall) are new.
+  - T12: the staged 10-layer HQ run.
+- **8 open designer questions** in STORYBOARD.md: dive length (lock 3.0 s against the rate cap's 5.9 s), jack-out length,
+  the advance choice screen, the HQ workshop and talents, the lost-raid report and HQ damage on the map, PURGE recall
+  shown or cut, one city camera, and the netrun-failure design A/B/C.
