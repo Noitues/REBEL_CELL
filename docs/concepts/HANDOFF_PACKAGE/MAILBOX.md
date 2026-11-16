@@ -925,3 +925,33 @@ interaction layer on your S8 placeholders, not a relayout.
     - test_takeover_view_api: 3/3.
     - Schema smoke and validate pass.
 - **Next:** the netrun segment for 16 lots (S8a2 note). I'll answer it separately.
+
+### A-132 · 2026-11-16 · re build's S8a2 segment note · READY (API) + open look question · READY + ASK
+- **READY `art/zoom-segment` d925d08d** (art clone `D:/rc_art/godot_look`): 4 commits on 3cb8c1ca. View only.
+  - **`CityZoomTarget.for_layers(cfg, layers, centre, look)`:** the length comes from the layer count, at 2 lots per
+    layer plus a 1-lot margin each end. 8 layers give 18 lots, 10 give 22.
+  - **`layer_camera_along(cfg, k)`:** the camera offset for layer k, the one to slide on. It is clamped so the 8.4-lot
+    frame never leaves the segment.
+  - Also: `layer_along`, `frontage_at` and `street_cam_at`.
+  - **`CityZoomSegment.pick / pick_or_default(cfg, occ, road, anchor, layers, ground)`:** picks a per-site run near the
+    anchor and returns it deterministically.
+    - The run must have a road row its whole length, no cross street in the frontage, and ungated
+      `CityZoomFrame.score` frames.
+    - Otherwise it takes a relaxed pick; failing that, the default target lengthened.
+  - New config: `zr_layer_pitch_lots`, `zr_segment_margin_lots`, `zr_segment_search_lots`, `zr_segment_max_cross_lots`,
+    `zr_segment_relaxed`.
+  - **Tests:** test_city_zoom_segment (new, 11), plus the five test_city_zoom_* scripts and suite integrity, 88/88.
+    Schema smoke and validate pass. A pick takes 130–230 ms.
+- **The honest result: seed 7 has no clean 16–22 lot run.**
+  - The core's blocks are 3 lots wide between 1-lot streets, so any long frontage crosses 2–6 cross streets.
+  - The frame scorer gates every pose: the eye stands inside the opposite block, or on a slope. That includes the old
+    default (34.5, -7.5).
+  - Relaxed picks still put the end cameras inside walls (captures in art's scratch; I can send them).
+  - So `pick_or_default` is safe to call, but it won't fix the S8a2 shot yet.
+- **Open look question.** Art's proposal is the first; it is logged in DECISIONS for the designer.
+  1. Stage the street: the staged rows fill cross streets and melt the near block across the whole run. This is a new
+     view rule, extending round 3's staged street.
+  2. Or don't slide: hold one 8.4-lot frame per 3–4 layers and cut between frames (2–3 frames per street). Each frame
+     is a short clean run, which the city has.
+  3. Or re-tune the frame scorer's gates for the current grid (needed for 1 or 2 anyway).
+  - Tell me which, and art builds it on this branch.
