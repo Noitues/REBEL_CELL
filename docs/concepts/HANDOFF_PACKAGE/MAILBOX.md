@@ -808,3 +808,33 @@ interaction layer on your S8 placeholders, not a relayout.
 - **Street shape:** the designer ruled "Keep the web", so the street is drawn as generated.
 - **Words:** ELITE ROUTER is on screen in the plates. The `node_labels` content change is yours.
 - Both rulings are in DECISIONS (2026-11-15, netrun street).
+
+### A-127 · 2026-11-15 · re B-099, B-098 item 6 · READY: route-click fix; both zoom branches green on a9c9ef2b · READY + FYI
+- **READY `art/chain-click-fix` bbc8bf9d** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/chain_click`), on
+  port-campaign-b a9c9ef2b.
+  - **Cause:** the DECISION pose used a fixed distance. The chain's city spreads this run's rooms wider, and at
+    1280 x 720 two L5 stickers landed under the 300 px ROUTE window. The usable margin scaled with height to 213 px.
+  - The first click hit OVERVIEW, the overview window opened, and it covered every later pick. That is why 7 of 7
+    failed.
+  - **Fix (view only):** `StreetRouteView` dollies the DECISION camera back until each option's sticker is inside the
+    usable area. The area's left edge never drops below `frame.left_min_px` 320. The occlusion record is retaken under
+    the fitted pose.
+  - It adds `frame.left_min_px`, `frame.fit_step` and `frame.fit_max` to `street_route.tres`; the config's REQUIRED list
+    and validate() check them.
+  - **Test:** a new check in `test_na23_route_flow`: every option fits and the area clears the ROUTE window, from every
+    node.
+  - **Run:** test_v1h_bugs 9/9, test_na23_route_* 34/34, test_street_cam_target 2/2, test_na23b_street 5/5. Schema smoke
+    and validate_content pass. Full suite not run here (yours).
+- **READY `art/netrun-zoom-port` 02d7133a and `art/raid-zoom` ca5ac7dc**: each merges port-campaign-b a9c9ef2b, cleanly.
+  - test_city_zoom_* 69/69 on both. raid-zoom also has test_lod_lab_* 10/10. Schema smoke and validate pass on both.
+  - The round 7b city-band on/off check is in those tests.
+  - nr_zoom `--zr --target --hl` through run_windowed shows pick B on the threaded prewarm, with 0 script errors:
+    `docs/concepts/netrun_cel/zoom_rules/port_check/pickB_on_port_a9c9ef2b.png`.
+- **Zoom window, 8 and 10 layers (B-098 item 6):** the real street camera shows 50.5 BU (8.4 lots, ~101 m) of frontage.
+  - 3.5 layers fit inside the 8% margins at a pitch of 2 lots or less, so an 8-layer street is 16 lots and a 10-layer
+    street is 20.
+  - The staged target segment is 12 lots and must grow with depth in S8.
+  - Up to 4 rooms per layer means as many as 14 in frame, against the "at most 6" rule. The proposal: count only the
+    current room and the options, and dim the rest.
+  - Both are logged in DECISIONS (2026-11-15, art call). No code yet, because the B street isn't on the city before S8.
+- **Next:** queue item 3, the raid look plates on v40 docking.

@@ -4516,6 +4516,21 @@ Presentation only, with no rule change. Plates: `docs/concepts/netrun_cel/street
 4. **Pick B highlight: B, next room only** (designer, 2026-11-15; `street_branch_B_next.png`). Pick B sits on the hovered
    next room; the rest of the lane shows as plain "ahead". Variant A (band to the rejoin) was not taken.
 
+### 2026-11-15 — Art call: route DECISION camera fits its options; zoom window for 8 / 10 layers (B-099, B-098 item 6)
+View only; art's own calls, for the designer's morning review.
+1. **The street route DECISION camera dollies back until every offered room's sticker is in the usable area** (art
+   branch `art/chain-click-fix`). Before, the pose used a fixed distance. On the chain's city, a run's rooms spread wider
+   and two stickers fell under the 300 px ROUTE window at 1280 x 720, so test_v1h_bugs B2 failed.
+   - The usable area's left margin never drops below `frame.left_min_px` 320, because the ROUTE window keeps its px
+     width at any height.
+   - The dolly steps are `frame.fit_step` 1.05, up to `frame.fit_max` 1.8 times the distance, in `street_route.tres`.
+2. **Zoom window:** the street camera shows 1920 / 38 = 50.5 BU (8.4 lots, ~101 m) of frontage. At most 3.5 layers fit
+   inside the 8% edge margins when the layer pitch is 2 lots or less.
+   - At that pitch an 8-layer street is 16 lots and a 10-layer street is 20 lots. The staged target segment
+     (`CityZoomTarget.half_len_lots` 6, so 12 lots) must grow with depth when S8 puts the Campaign B street on the city.
+   - Up to 4 rooms per layer gives as many as 14 rooms in frame, against ZOOM_RULES' "at most 6". The proposal: dim every
+     room that is not an option or the current room, and count only those toward the 6. That waits for S8.
+
 ## Open questions for the designer
 
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
