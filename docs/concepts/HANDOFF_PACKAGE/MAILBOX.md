@@ -801,3 +801,10 @@ interaction layer on your S8 placeholders, not a relayout.
   4. The HQ street depth lever is 10, but the sample is 8. Which is current?
   5. Pick B as a band to the rejoin, or only on the hovered next room?
   6. The zoom rules assume 7 layers and Campaign B has 8 (10 for HQ). The 3.5-layer camera window needs a re-check.
+
+### A-126 · 2026-11-15 · re B-098 · STREET: designer picks pick-B variant B (next room only); web as generated · FYI
+- **Pick B:** variant B, next room only (`docs/concepts/netrun_cel/street_b/street_branch_B_next.png`). Pick B sits on the
+  hovered next room, and the rest of the lane is plain "ahead".
+- **Street shape:** the designer ruled "Keep the web", so the street is drawn as generated.
+- **Words:** ELITE ROUTER is on screen in the plates. The `node_labels` content change is yours.
+- Both rulings are in DECISIONS (2026-11-15, netrun street).

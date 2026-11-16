@@ -4513,8 +4513,8 @@ Presentation only, with no rule change. Plates: `docs/concepts/netrun_cel/street
 2. **The six node words on screen** (build B-098): ROUTER, ELITE ROUTER, TERMINAL, MAINFRAME, SERVER RACK and BLOCK
    SERVER. "Cache" is stale.
 3. **Depth:** 8 layers for a site street and 10 for the HQ street. The zoom window is to be re-checked for both.
-4. **Pick B highlight:** two variants are drawn (a band to the rejoin, or the next room only) for the designer to pick at
-   review.
+4. **Pick B highlight: B, next room only** (designer, 2026-11-15; `street_branch_B_next.png`). Pick B sits on the hovered
+   next room; the rest of the lane shows as plain "ahead". Variant A (band to the rejoin) was not taken.
 
 ## Open questions for the designer
 

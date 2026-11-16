@@ -109,3 +109,8 @@ Concept plates only, PIL compositing, built from approved plates. Not committed.
 2. **Pick B variant:** A band or B next only. The designer picks at review (B-098).
 3. **Elite word in content.** `node_labels` still says ELITE; build to change it to ELITE ROUTER in the content when it lands.
 4. **Zoom window** for 8 / 10 layers (ZOOM_RULES assumes 7 and a 3.5-layer window). Waits for build's Godot ping (B-098 item 6).
+
+## Designer pick, 2026-11-15
+**Pick B variant B, next room only** (`street_branch_B_next.png`). Variant A (band to the rejoin) was not taken. Known
+weak point to carry into the build: the pad sits 16 px from the rooms above and below, so the beam and the pad sides carry
+the read.
