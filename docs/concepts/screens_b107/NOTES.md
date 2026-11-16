@@ -314,3 +314,14 @@ All three share the same frame:
   raid. Only supporting twice in one raid is barred: the supporter of a fallen stop does not support again.
 - **Rest slots only while holding, and docked reach on hover:** look calls with no rules objection. The designer
   decides with his pick.
+
+## Answers from build (port, 2026-11-16)
+- **HQ armory stock:** since v44, every station sells its own city armory. HQ has 3 weapons and 2 devices, with the
+  same rolls and prices as the raid Armory but its own stock per station, rerolled after each raid. The weapons
+  screen should show it as "HQ stock".
+- **MAINFRAME:** only inside Rebel Cell territory, never on a Solace street.
+- **The route runs through the underground tiers too.** Rooms sit on the frontage or underground: basement, subway,
+  utility, plaza.
+- **Heat after a lost raid:** build said "unchanged". The vertical slice, which owns the rule, says the overrun Heat
+  vent applies. Art follows the vertical slice: "Heat drops".
+- **Recruit cost and the SCHEM currency:** build will answer from the port's data.
