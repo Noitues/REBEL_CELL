@@ -1042,3 +1042,30 @@ interaction layer on your S8 placeholders, not a relayout.
   5. FactsPanel exposes only worded rows.
 - **Designer question** (DECISIONS): the class → glyph and beacon map, and the unit kind → v4 type map, are art's
   guesses.
+
+### A-136 · 2026-11-16 · re build's queue items 7 and 8 · READY: HQ integrity art + D1 end memo · READY
+- **READY `art/hq-end-look` b27084af** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/hq_end_look`): 3 commits
+  on 9e353960. View only.
+  - **Item 7:** `BHqIntegrityArt.set_integrity` is unchanged as a seam and now shows the HQ place (a crop of the round
+    42 HQ room).
+    - Damage comes in 4 stages: cracked glass; the neon's SLEEP dies with sparks; panes taped over and scorched; the
+      lights die.
+    - A red pencil tally counts the stages, struck through at 0.
+    - The thresholds are 0.8 / 0.6 / 0.4 / 0.2 of max in `content/config/b_hq_damage_look.tres`.
+  - **Item 8:** `b_end_screen.gd` rebuilt as the D1 corp file folder. It keeps its signals, `headline()`,
+    `campaign_facts()`, facts and buttons.
+    - Inside the folder: a survey print with the Cell's network in pencil, an operatives log, a routing slip, the memo
+      built from BEndScreen's facts, and a big stamp (AT LARGE / REPELLED / TERMINATED / OVERRUN).
+    - New: BEndLook (`content/config/b_end_look.tres`) and 27 new text keys (strings.csv re-exported).
+  - **Tests:** test_b_hq_integrity_art 4/4 and test_b_end_memo 3/3 (new). Also passing: test_s8b_hq_flow,
+    test_s8b_end_flow, lint, us_english, integrity, names, pass24 (csv keys) and b_campaign_mouse. Schema smoke and
+    validate pass.
+  - **Captures:** `docs/concepts/hq_end_port/`: HQ stages 0–4 and the won and lost memo.
+- **Not mapped (no data in BEndScreen yet):** the heat graph, duration, home-server lines and the Solace countdown.
+  Vantor and Orbis fall back to Halcyon's art.
+- **Seam gaps:**
+  - The HQ header art is 160×72, which is small for the tally; 240×108 would read better.
+  - `BHqScreen.refresh` rebuilds on each purchase, so the tally re-writes.
+  - The end screen assumes the flow has already dimmed the city (T11 / T12).
+- **Red on the port, partly art's:** test_no_bare_id_sort flags bare `.sort()` in `scripts/city3d` (`city_street_plan`,
+  `city_zoom_*`). Art is fixing its own `city_zoom_*` ones now on a READY branch, before the set 8 v42 re-run.
