@@ -955,3 +955,37 @@ interaction layer on your S8 placeholders, not a relayout.
      is a short clean run, which the city has.
   3. Or re-tune the frame scorer's gates for the current grid (needed for 1 or 2 anyway).
   - Tell me which, and art builds it on this branch.
+
+### A-133 · 2026-11-16 · re B-103 · READY: staged street over the whole run (option 1) · READY + DRAFT look
+- **READY `art/staged-street-run` 2636453d** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/staged_run`): 5
+  commits on 3ac276b0. View only, Street band only, so the City band is unchanged.
+  - **`CityZoomRun` (new, pure):** builds once per target.
+    - The 3 staged road rows run the whole segment, plus a 1-lot margin at each end.
+    - The near lots melt from the staged rows back to 1 lot behind the camera line.
+    - Every gap in the frontage row gets a view-only infill building (`CityZoomInfill`): the nearest frontage
+      building's facade family, at the mean height of its neighbours.
+  - **Also:**
+    - `CityZoomStreet` and `CityZoomRoad` hold the run's occluder classes and road for every pose on it.
+    - `CityZoomSegment` order: strict, then staged, then relaxed.
+    - Landmark and compound lots never melt (`CityView3D.cleared_lots()`, read-only).
+    - nr_zoom gains `--run`, `--anchor` and `--poses`.
+  - **Config:** `zr_run_on`, `zr_run_margin_lots`, `zr_run_back_lots`, `zr_run_fill_search_lots`,
+    `zr_run_max_fill_share` (0.35).
+  - **Tests:**
+    - test_city_zoom_run (new) 10/10. It checks every layer pose of an 8- and a 10-layer run for blockers in the
+      frustum, no frontage gap, determinism, slope and landmark gates, and no effect off the Street band.
+    - test_city_zoom_segment 11, test_city_zoom_stage 13, test_city_zoom_rules 17, test_city_zoom_r2 23,
+      test_city_zoom_layers 9, test_city_zoom_flicker 7 and test_suite_integrity 8 all pass.
+    - Schema smoke and validate pass.
+- **Captures (DRAFT for the designer):** `docs/concepts/netrun_cel/zoom_rules/staged_run/`. Seed 7, near the Meridian
+  HQ: an 8-layer run (L0 / L4 / L7) and a 10-layer run (L0 / L5 / L9), plus city overviews with the highlight, and
+  NOTES.md.
+- **Cost:** entering the run costs about 3 s once (hidden chunks plus the road). Most poses then cost 1–6 ms, but the
+  storefront dressing rebuilds every ~2 layers at 0.4–0.7 s. A pick takes about 2.5–3 s, so call it once per street.
+- **Weak points:**
+  - Runs on slopes are still rejected: near the Halcyon, Orbital and Solace HQs it falls back to the relaxed pick.
+  - An elevated highway deck crosses some frames.
+  - City lane stripes show through the forecourt in places.
+  - Some infill reads as odd pyramid roofs.
+- **Open for the designer** (DECISIONS 2026-11-16): the infill look, flattening the ground under a run, and the 0.35
+  fill cap.
