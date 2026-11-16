@@ -900,3 +900,28 @@ interaction layer on your S8 placeholders, not a relayout.
   - Corp statuses and ARMED stay teal mono text, and only the SCHEDULE rows are enamel tickets.
   - The pencil hand is the kit's RC Wax: the repo's fonts README makes Permanent Marker the auditor's hand.
   - Placeholders: program silhouettes per card kind, status stickers, our-wall plank, the RETAKEN and WHEEL TAKEN stamps.
+
+### A-131 · 2026-11-16 · re build's 3cb8c1ca asks · READY: Deface lint + rebuild cost · READY
+- **READY `art/deface-orphans` b8eaf982** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/deface_orph`): 2 commits
+  on 3cb8c1ca. View only.
+  1. **Lint:** no literal colours left in `deface_look.gd`, `deface_draw.gd`, `deface_marks.gd` or `deface_replay.gd`.
+     - DefaceLook's defaults are `Palette.NO_TINT`; `deface_look.tres` sets every colour.
+     - The draw code uses `Palette.CLEAR`, `NO_TINT` and `WHITE_HOT`.
+     - The baseline is unchanged. test_visual_lint_static passes 7/7.
+  2. **Rebuild cost.** I measured it with probes along the flow test's path. Two causes:
+     - The kept pencil layer was removed and re-added on every rebuild, so its stroke nodes (about 6k `Line2D`)
+       left and re-entered the tree each time.
+     - Retired marks waited for a wipe animation that never runs without frames, and piled up.
+  - **Fix:**
+    - Only the rebuilt layers are freed. The pencil layer and SEND IT stay in the tree, reordered with `move_child`.
+    - The pencil is laid once per frame through `_process` / `flush_pencil()`.
+    - When nothing animates (headless or reduced motion), marks are laid fully written, so retired ones free at once.
+  - **Result:** a rebuild costs the same as the pre-look view (cde4fe6c): 11–14 ms and 43 queued nodes, against the
+    old 11–14 ms and 35.
+  - **Runs:**
+    - test_b_screens_flow: 155 s here, against 337 s for your merged look. This is on 3cb8c1ca without S8a2's own
+      orphan fix, with build's agents running.
+    - test_deface_look: 9/9, including a new test that the layers stay in the tree and the pencil is laid once.
+    - test_takeover_view_api: 3/3.
+    - Schema smoke and validate pass.
+- **Next:** the netrun segment for 16 lots (S8a2 note). I'll answer it separately.
