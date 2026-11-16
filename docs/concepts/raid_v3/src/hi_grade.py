@@ -28,6 +28,7 @@ BACK = np.array([0.541675, 0.642788, 0.541675])
 FWD = -BACK
 LUMW = np.array([0.2126, 0.7152, 0.0722], np.float32)
 W1, H1 = 1920, 1080                       # the P3 1x frame (city_default)
+DETAIL = '--no-detail' not in sys.argv     # set 6 city detail on by default
 
 
 def log(*a):
@@ -358,7 +359,13 @@ def main():
     sg = signs(geo, P, chosen)
     r = grade_city(plate, geo, P)
     img = r['img'] * (1 - sg['body'][..., None] * .7) + sg['emis']
-    refl = wet_reflect(r['emis'] + sg['emis'] * .5, r['wet'])
+    demis = 0.0
+    if DETAIL:                                          # set 6: windows, shopfronts, blade signs, street lamps (hi_detail.py)
+        import hi_detail as D
+        fr = D.Frame(O_NEW, SZ_NEW, NW, NH, RIGHT, UP, FWD)
+        gv0 = (np.abs(geo['hag']) < 1.6) & (idm != 7)
+        img, demis, _ = D.detail(img, P, geo, dep, r['wet'], gv0, fr, log)
+    refl = wet_reflect(r['emis'] + sg['emis'] * .5 + demis * .5, r['wet'])
     out = haze(img + refl * .9, dep, strength=.18)
     Image.fromarray((tone(out) * 255 + .5).astype(np.uint8)).save(HI + 'city_albedo_hi.png')
     gv = (np.abs(geo['hag']) < 1.6) & (idm != 7)

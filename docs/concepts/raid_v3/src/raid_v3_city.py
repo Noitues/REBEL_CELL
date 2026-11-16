@@ -516,8 +516,11 @@ def edge_pt(entry, first):
     return G.sp(first[0] + 0.5 - 0.5 * dx, first[1] + 0.5 - 0.5 * dy)
 
 
-def route_line(cells, entry, end, k=0.5):
-    """the route through the cell centres: from the waiting stack, cell to cell, to the edge of the end cell"""
+ROUTE_TINT = '--no-tint' not in sys.argv              # set 6: the faint route-cell tint (designer: keep only if it helps)
+
+
+def route_line(cells, entry, end, k=0.8):
+    """the route through the cell centres: from the waiting stack, cell to cell, into the end cell (its sticker covers the end)"""
     pts = [G.cc(*entry)] + [G.cc(*c) for c in cells]
     a, b = pts[-1], G.cc(*end)
     pts.append((a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k))
@@ -525,8 +528,10 @@ def route_line(cells, entry, end, k=0.5):
 
 
 def route_ground(img, cells, entry, end, col=None, part='tint'):
-    """system: the cells a route travels, tinted on the ground, with a small chevron per cell in the travel direction; the
-    entry cell (where the stack waits, off the district) tinted stronger with a solid edge"""
+    """system: the cells a route travels, tinted on the ground; the entry cell (where the stack waits, off the district) tinted
+    stronger with a solid edge.  Set 6: no chevrons (the pencil line alone carries the route; part 'chev' draws nothing)"""
+    if part != 'tint' or not ROUTE_TINT:
+        return
     col = col or (255, 60, 70)
     L = Layer(); d = L.d
     Lc = Layer(); dc_ = Lc.d
@@ -595,10 +600,10 @@ def routes_ground(img, a=True, b=True, part='tint'):
 
 def routes(pr, a=True, b=True):
     if a:
-        K.route(pr, route_line(RA, ENT_A, SAFE), off=0)
+        K.route(pr, route_line(RA, ENT_A, SAFE), off=0, head=False)
         K.entry_mark(pr, *edge_pt(ENT_A, RA[0]), 'A')
     if b:
-        K.route(pr, route_line(RB, ENT_B, SAFE), off=0)
+        K.route(pr, route_line(RB, ENT_B, SAFE), off=0, head=False)
         K.entry_mark(pr, *edge_pt(ENT_B, RB[0]), 'B')
 
 
@@ -987,7 +992,7 @@ def plate_site():
     cx, cy = G.cc(*SCORE)
     py, pr = Wax(PEN_Y, 11), Wax(PEN_R, 12)
     for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
-        K.route(pr, route_line(cells, S_ENT[lt], SITE), off=0)
+        K.route(pr, route_line(cells, S_ENT[lt], SITE), off=0, head=False)
         K.entry_mark(pr, *edge_pt(S_ENT[lt], cells[0]), lt)
     pr.ink_ss(img)
     for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
@@ -1085,7 +1090,7 @@ def sheet():
     sh = Image.new('RGB', (cols * tw_ + (cols + 1) * pad, 2 * (th_ + cap) + 3 * pad + 50), (14, 14, 18))
     d = ImageDraw.Draw(sh)
     f = ImageFont.truetype(MONO, 15); fa = ImageFont.truetype(ANTON, 22); fb = ImageFont.truetype(ANTON, 30)
-    d.text((pad, 10), 'RAID in DEFACE v3: set 4, the 3D city at 3.5x, smaller side columns (designer review of set 3)', font=fb, fill=TEXT_HI)
+    d.text((pad, 10), 'RAID in DEFACE v3: set 6, native capture of the 3D city at 3.5x, city detail, pencil-only routes (designer review of set 5)', font=fb, fill=TEXT_HI)
     for k, (n, t, c) in enumerate(names):
         im = Image.open(OUT + n + '.png').resize((tw_, th_), Image.LANCZOS)
         x = pad + (k % cols) * (tw_ + pad); y = 54 + pad + (k // cols) * (th_ + cap + pad)
@@ -1101,7 +1106,7 @@ PLATES = dict(plan=plate_plan, place=plate_place, shop=plate_shop, playback=plat
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     print('camera fit residual (median, p95 px):', city().fit_res, flush=True)
-    for n in (sys.argv[1:] or ['plan', 'place', 'shop', 'playback', 'site', 'aftermath', 'sheet']):
+    for n in ([a for a in sys.argv[1:] if not a.startswith('--')] or ['plan', 'place', 'shop', 'playback', 'site', 'aftermath', 'sheet']):
         if n == 'sheet':
             sheet(); continue
         ov = PLATES[n]()

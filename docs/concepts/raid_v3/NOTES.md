@@ -1,11 +1,13 @@
-# Raid in Deface v3, on the 3D city (set 4), 2026-11-15
+# Raid in Deface v3, on the 3D city (set 6), 2026-11-15
 
 The raid screen in the Takeover fight's look (Deface v3, A-119), played on the 3D Solace city as the designer ruled
 (2026-11-15, below). The raid rules and words are prototype Variant B v39. Layout as Takeover option A: CREW, rows and core tape
 on the left; INCOMING, the shop and SEND IT on the right; the forecast HUD line at the bottom centre; the raid district in the
 centre. Concept plates only (PIL); the numbers are illustrative. The first set (2D cell grid under glass) is kept in `grid_v1/`
 as the record; it is superseded. Set 4 applies the designer's review of set 3 (the street district at 2x): smaller side
-columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, one barricade representation.
+columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, one barricade representation. Set 5 put
+it on a native Godot capture of the raid window (no upscale). Set 6 applies the designer's review of set 5: city detail in
+the city layer (windows, shopfronts, blade signs, street lamps with pools) and routes as the red pencil line only.
 
 ## The city and the raid camera
 - **Pixels: a native Godot capture of the raid window, no upscale.** Captured from **origin/main at `885975b6`** in a
@@ -25,7 +27,31 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
 - **Match check** (`src/match_check.py`, the overlap brought to the 4k plate's density): raw capture against the P3 depth30
   raw, NCC 0.890, best shift 0, 0 px; 156 tiles of 64 px, median 0.869, p10 0.769, none under 0.5. Graded against
   `city_albedo4k.png`, NCC 0.928, shift 0, 0 px; tile median 0.896, p10 0.779, 1 % under 0.5. Same buildings in the same
-  places; the city did not change in this district.
+  places; the city did not change in this district. (Measured on set 5, before the set 6 city detail was added.)
+- **City detail (set 6):** `src/hi_detail.py`, called by `hi_grade.py` in linear light after the P3 signs and before
+  reflections, haze and tone, so it is part of the city plate and sits under the raid's glass grade like the rest of the
+  city. It follows the Near-street band of `netrun_cel/zoom_rules/ZOOM_RULES.md` (the plate is about 17 px per BU on
+  screen), pruned for the raid. Everything is placed in world space from the capture's own per-pixel world positions and
+  normals. Facade parts exist only on visible facade pixels, lamps are depth-tested against the capture's depth, and every
+  choice is a hash of world-lattice ids (ZOOM_RULES salts 9810-9863), with no RNG. In this frame:
+  - **Windows** on the 1.5 x 1.8 BU module above a 2.4 BU ground floor. They are dark glass slots, and about a third are lit
+    in short vertical runs (amber, cream, a few teal), with a per-wall bias. Floor lines and the ground-floor ledge are
+    darkened. About 330 lit windows.
+  - **Storefronts** in 2 BU bays on walls whose pavement is open ground 1.6 BU out. 62 % of bays are lit shop windows
+    (amber, cream, pink, teal, green), with two shelves and goods blocks; the rest are ribbed shutters with a warm seam.
+    Each bay has a pilaster, a fascia board and, on about half the lit bays, a lit glyph strip. Lit bays spill a pool onto
+    the pavement in front. 89 bays, 55 lit.
+  - **Blade signs** on street-facing walls of buildings at least 6.6 BU tall: 0.9 x up to 3.4 BU, from 2.7 BU up, with a
+    neon frame and five glyph blocks (glyph bars, since letters would be under 7 px). They are spaced at least 10 BU apart,
+    in five hues, with light spilling onto the surrounding facade and a pool on the pavement. 8 in the frame.
+  - **Street lamps** on the pavement, 1.4-2.0 BU off the building line: one candidate per 7 BU block, 72 % working, at least
+    5 BU apart. Each has a 3.3 BU pole, a dark housing with a bright underside (78 % sodium, 22 % cool LED), a small halo, and
+    a two-size ground pool. 41 lamps, 35 heads visible.
+  - **Ground light:** pools and spill are splatted into a world (X, Z) raster at 0.25 BU and read back only at visible
+    ground pixels, so they never land on roofs or hidden ground; a little also reaches the facade foot. Shop windows, signs
+    and lamp heads feed the wet-street reflections at a low weight.
+  - Values stay below the overlays: the glass grade desaturates and darkens the city, and routes, beacons and units read
+    first on every plate.
 - **Plate:** the raid window (548.6 x 308.6 px on city_default at (1214.8, 787.8)) is a float box of about 3491 x 1964
   capture px, Lanczos **down** about 1.82x to 1920x1080, then the under-glass grade (desaturated, darkened away from the
   district and under the side columns). No unsharp.
@@ -54,8 +80,8 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
 | INCOMING | corp paper under glass | the intercepted work order: Solace letterhead, WORK ORDER ref, a redaction bar, the v39 rows ("ROUND 1 (now) · 8 units", "A Trooper ×5  B Bike ×3"...) with mini v4 icons, a red INTERCEPTED stamp, a paper clip, glass sheen and cyan corners. The Cell's yellow pencil bracket marks the current round |
 | Drag (held operative) | runner sticker | Takeover's model: the sticker trails the pointer (spring lag), lifted with a long shadow, tilted, motion streaks; a faint liner stays in its CREW slot; a yellow pencil arrow to the hovered cell, yellow circle = valid |
 | Barricade, Safehouse, site B2, site core | runner: sticker | on the glass over their cell, sized to about one cell (Safehouse 0.66, barricade 0.56, site 0.66, core 0.56). The barricade is the sticker only; its health is a small pencil value beside it ("6 → 3") |
-| Route cells | system | every cell a route travels: a faint red tint on the ground, two small red chevrons (dark-edged, flat on the ground) pointing the way it travels. The entry cell (where the stack waits, off the district) is tinted stronger with a solid red edge; the end cell (Safehouse pink, site green) is tinted in its sticker colour with a solid edge |
-| Routes, entries | pencil, red | one line through the cell centres, from the waiting stack cell to cell into the end cell's edge (arrowhead); A/B/C circles where it crosses the district edge |
+| Route cells | system | every cell a route travels: a faint red tint on the ground, with no chevrons (set 6). The entry cell (where the stack waits, off the district) is tinted stronger with a solid red edge; the end cell (Safehouse pink, site green) is tinted in its sticker colour with a solid edge |
+| Routes, entries | pencil, red | one grease-pencil line through the cell centres, from the waiting stack cell to cell into the end cell, where it runs under the sticker. No arrowhead and no hatching; the direction is implied. A/B/C circles where it crosses the district edge |
 | Forecast, kill ticks, notes | pencil | "2 leak" arrow, "8 → 6", "+3/+2/+1", hatched reach; no stop bar and no "holds" note (the HUD line says "A holds at b4") |
 | Rows, chips, HUD line, SEND IT, shop sheet, report | unchanged from set 1, side ones at 0.76 | |
 
@@ -82,10 +108,15 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
   for the 7 x 7 grid: Safehouse c7, barricade b4, KAI c2, VEX e5, MOTH a7, hovered cell e7; site B2 on b6, core a6.
 - **Barricade: the sticker only.** The stop bar and the "holds f7" note are dropped; the HUD line already says "A holds at b4",
   and the hp is a small pencil value beside the sticker.
-- **Chevrons are drawn over the route pencil** (two per cell), with a dark edge, so the line does not hide them; the tint
-  stays under the city's buildings at a 55 % ghost, the chevrons at 80 %.
-- **Route line ends at the end cell's edge** with its arrowhead pointing into the Safehouse / site cell, so the arrow is not
-  covered by the (now cell-sized) sticker.
+- **Routes are the pencil line only (set 6, designer).** Chevrons and the arrowhead are gone. The line runs 0.8 of the way
+  from the last route cell's centre to the end cell's centre, so it ends under the Safehouse / site sticker.
+- **Route-cell tint kept (my call, set 6).** I compared `r3_plan` with and without it. Without the tint the line alone carries
+  the direction well, but which cells are on the path (what reach and placement are judged against) is harder to read, and
+  the waiting entry stacks lose their cell. The tint stays faint (52/255, 70 on the entry cell), ghosted under buildings at 55 %.
+  `python raid_v3_city.py --no-tint` renders without it.
+- **City detail is pruned from the Near-street band:** about one lit window in three (the street plate's 8-12 % is too dark
+  at this zoom; the HQ overview's 35-45 % too busy); no awnings, AC units, balconies, wires, cars or fascia letters; lamps
+  about one per 7 BU rather than ZOOM_RULES' 12 m pairs on avenues; at most 12 blade signs (8 fall in the frame).
 - **Beacons sized to the cell:** cone 8.5 BU (was 15), cap radius 2.8 BU (was 4.9), pad 1.6 BU; the emblem disc stays 42 px.
 - **Pencil moved with the layout:** the leak note under the Safehouse (left of RUNE's reach), "8 → 6" left of it; in `r3_site`
   "8/8" and "8 → 7" right of and above the core (clear of VEX's cone).
@@ -113,7 +144,16 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
   near the left edge render see-through (the city's zoom-dependent see-through band and LOD), and the ink outlines are thinner
   than on the 4k plate. Both are the game's own rendering at this camera size.
 - **The ported grade is close but not identical** to `city_albedo4k`: a little less warm, with fewer and smaller lamp pools.
-- **Only 1 of the 15 P3 sign walls falls in the frame**, so the district has less signage than the wide plate suggests.
+- **Only 1 of the 15 P3 sign walls falls in the frame**; the set 6 blade signs make up for it.
+- **City detail is painted on the capture, not built in the city.** Signs are flat on the wall (no 1 m stand-off, no side
+  face), and lamp poles are 2-3 px dark lines that mostly vanish on the dark ground, so the lamps read as heads and pools.
+  Windows only follow the two axis-aligned facade orientations; hex and octagon facets stay blank. Shop and window cells
+  are cut where the facade mask ends (corners, roof edge), so a few partial windows appear. Some low-rise walls show only
+  one row of dark slots and read as almost blank under the glass grade.
+- **Lamp reflections:** the wet-street pass turns lamp heads and shop windows into vertical streaks. I kept them short (low
+  weight), but they add vertical lines in the district streets.
+- **The detail is not checked against the game:** ZOOM_RULES is a spec, and the game does not draw these at this zoom yet.
+  The plates show the target, not the current build.
 - **The ground visibility mask is new** (from the capture's depth, not the P2 world positions); it is sharper, but it has only
   been checked by eye on these plates.
 - **Rules text in the side columns misses the 16 px cap-height aim.** Measured from the font sizes: the HUD line is about 21 px
@@ -124,10 +164,10 @@ columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, 
   the entry stacks; it is part of the plate.
 - **The space-elevator tether** crosses in front of the district's east side (columns d-g); it is part of the plate.
 - **Street blocks in front of avenue b** hide parts of its cells from this camera (the route tint drops to the ghost there);
-  the chevrons and the line carry the route through.
+  the pencil line carries the route through.
 - **18 of 49 cells are blocks or hidden behind them** (under 60 % open ground): the low-rise blocks between the streets and
   the west edge (a3-a6). They are not placeable; the grid shows them at the ghost alpha.
-- **Busy spots:** the hovered cell in `r3_place` (hatch, circle, +3, +2, the route B line and chevrons through the hatch, pointer,
+- **Busy spots:** the hovered cell in `r3_place` (hatch, circle, +3, +2, the route B line through the hatch, pointer,
   arrow head) and the wall in `r3_playback` (held unit, pip, value, −4, kill bits, KAI's cone and tally, tracers).
 - **The B entry stack sits at the bottom right**, close to the HUD line, and the C stack in `r3_site` close to the left column.
 - **The dashed unit ring is faint** on the dark streets; the fill and pips carry the read.
@@ -147,19 +187,21 @@ These replace the open questions that were here. The plates above predate them a
    without a fight, KAI back to HQ)" and ends the raid at once (site taken, no fight, Heat as an overrun raid). `r3_site.png`
    is wrong on both: its core reads 6 → 5 and its chip text "B2 to the corp, crew walks" is invented.
 
-(Sets 2-4 apply all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
+(Sets 2-6 apply all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
 
 ## Source
-`src/raid_v3_city.py` (set 4 plates + sheet) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
+`src/raid_v3_city.py` (set 6 plates + sheet) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
 `D:/rc_scratch/raid_v3/src/`. They import `raid_kit.py`, `raid_v3.py` (report paper) and the Takeover v3 scripts read-only; the
 first set's `raid_v3.py` is unchanged and still renders `grid_v1`.
-- **Run:** `python raid_v3_city.py [plan place shop playback site aftermath sheet]`.
+- **Run:** `python raid_v3_city.py [plan place shop playback site aftermath sheet] [--no-tint]`; the city plate first with
+  `python hi_grade.py [--no-detail]`.
 - **Reads:** `D:/rc_scratch/raid_v3/city_hi/` (`city_albedo_hi.png`, `ground_vis_hi.png`, `hi_frame.json`; it falls back
   to `tide_concepts/p3_work/city_albedo4k.png` with an upscale if they are missing), `tide_concepts/p2_base/layers/world_pos_f16.npz`,
   `street_mask.png`, `occluder_mask.png` (read-only).
 - **The city plate:** `src/capture/raid_hi_capture.gd/.tscn` (the scratch capture scene; it was run from a detached worktree
   of origin/main `885975b6` under `tools/_scratch_capture/` and is not part of the project), `src/hi_grade.py` (the grade
-  port; reads the capture and the P3 data read-only, writes `city_hi/`), `src/match_check.py [raw|graded]` (the overlap check
+  port; reads the capture and the P3 data read-only, writes `city_hi/`), `src/hi_detail.py` (the set 6 city detail, imported by `hi_grade.py`),
+  `src/match_check.py [raw|graded]` (the overlap check
   against the P3 plate).
 
 ## CREW roster options (for designer ruling 4), `crew_options/`
